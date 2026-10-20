@@ -1743,6 +1743,8 @@ export function draftRow(entry, book) {
     row.rwdStep = +(+entry.rwdStep).toFixed(2);
     if (+entry.rwdRate > 0) row.rwdRate = +(+entry.rwdRate).toFixed(4);   /* and the rate it was measured at (Fable's review) */
   }
+  /* 21 Oct 2026: a customer's order that takes them to their next loyalty unit; the row is in both digests, so the mark is named only when set */
+  if (entry && entry.rwd === "cross" && entry.rwdLoyal === true && dir === "SELL") row.rwdLoyal = true;
 
   /* v606: THE RATE AND THE MARGIN ARE BOTH STRUCK ON THE GOODS, on his ruling of 12 Sep 2026
      that the delivery charge is a pass-through at cost, neither more nor less. It is revenue

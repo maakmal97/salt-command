@@ -1,0 +1,12 @@
+[
+ {"name":"the verdict crosses at 19","file":"engine/stages.mjs","find":"walk.units + qty >= walk.every - 1e-9;","replace":"walk.units + qty >= walk.every - 1.5;"},
+ {"name":"a sen under their card crosses","file":"engine/stages.mjs","find":"const at = list != null && goods >= list - 0.005,","replace":"const at = list != null && goods >= list - 0.02,"},
+ {"name":"no card still crosses","file":"engine/stages.mjs","find":"const at = list != null && goods >= list - 0.005,","replace":"const at = goods >= list - 0.005,"},
+ {"name":"a paused customer crosses","file":"engine/stages.mjs","find":"const reaches = !paid && at && !walk.paused && walk.units","replace":"const reaches = !paid && at && walk.units"},
+ {"name":"a customer never crosses","file":"engine/stages.mjs","find":"  return l.walks && l.order && l.order.reaches ? { cross: true, loyal: true } : { cross: false };","replace":"  return { cross: false };"},
+ {"name":"every row carries the mark","file":"src/drafter.js","find":"  if (entry && entry.rwd === \"cross\" && entry.rwdLoyal === true && dir === \"SELL\") row.rwdLoyal = true;","replace":"  if (dir === \"SELL\") row.rwdLoyal = !!(entry && entry.rwdLoyal === true);"},
+ {"name":"the mark without the cross","file":"src/drafter.js","find":"  if (entry && entry.rwd === \"cross\" && entry.rwdLoyal === true && dir === \"SELL\") row.rwdLoyal = true;","replace":"  if (entry && entry.rwdLoyal === true && dir === \"SELL\") row.rwdLoyal = true;"},
+ {"name":"the return leg reads a loyal cross as an associate's","file":"engine/stages.mjs","find":"const r = row.rwdLoyal ? loyalReading(book, row.customer, { rid: row.rid, today }) : rewardReading(book, row.customer, { rid: row.rid });","replace":"const r = rewardReading(book, row.customer, { rid: row.rid });"},
+ {"name":"Accept stamps no loyal mark","file":"src/orders.js","find":"  if (rc.cross && rc.loyal) { entry.rwd = \"cross\"; entry.rwdLoyal = true; }","replace":"  if (rc.cross && rc.loyal) { entry.rwd = \"cross\"; }"},
+ {"name":"Accept reads no card","file":"src/orders.js","find":"rewardCrossOf(book, code, qty, goods, priced0.cost, { card: card0, today: today0 })","replace":"rewardCrossOf(book, code, qty, goods, priced0.cost, { today: today0 })"}
+]

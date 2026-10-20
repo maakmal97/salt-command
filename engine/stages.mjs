@@ -66,15 +66,39 @@ export function rewardReading(book, code, opts = {}) {
   out.order = { rid: row ? row.rid : null, margin, paid, step, rate: two(unitCost), reaches, short: paid ? 0 : two(Math.max(0, step - before - margin)) };
   return out;
 }
-/* the verdict at Accept: { cross, step }, the step it is promised at */
-export function rewardCrossOf(book, code, qty, goods, unitCost) {
+/* THE LOYALTY UNIT AT AN ORDER (his rule of 20 Oct 2026, docs/plan-loyalty-unit.html): a customer's walk (the engine's loyaltyWalk) and, for one
+   order (a preview's size, goods and card, or a row by rid), whether it takes them to the next `every` units: on top of the walk's PAID units alone,
+   at or above their own price for that size (the card at Accept, the row's listRM over listQty after), and only while they are not paused today.
+   Nothing prices from it and no figure of it reaches a customer but the share of the next unit the publish seals. */
+export function loyalReading(book, code, opts = {}) {
+  const E = POSITION_ENGINE, owner = E.ownerCode(code);
+  const walk = E.loyaltyWalk(book, owner, opts.today || undefined);
+  if (!walk || !walk.walks) return { walks: false, why: walk ? walk.why : null };
+  const out = { walks: true, every: walk.every, since: walk.since, earned: walk.earned, units: walk.units, next: walk.next, paused: walk.paused, why: walk.why,
+    order: null, unit: null };
+  const row = opts.rid ? (book.sales || []).find((s) => s && s.rid === opts.rid) : null;
+  const unit = row && row.rid ? (book.sales || []).find((s) => s && s.rewardOf === row.rid && s.loyal && !s.cancelled) : null;
+  if (unit) out.unit = { rid: unit.rid, cost: +(+unit.cost).toFixed(2), delivered: +unit.deliveredQty > 0.009 };
+  const qty = row ? +row.qty : +opts.qty, goods = row ? E.txGoods(row) : +opts.goods;
+  if (!(qty > 0) || !Number.isFinite(goods) || (row && (row.product || "salt") !== "salt")) return out;
+  const list = row ? (+row.listRM > 0 ? +row.listRM * qty / (+row.listQty > 0 ? +row.listQty : qty) : null) : (+opts.card > 0 ? +opts.card : null);
+  const at = list != null && goods >= list - 0.005, paid = !!row && E.txDates(row).fullPaid;
+  const reaches = !paid && at && !walk.paused && walk.units + qty >= walk.every - 1e-9;
+  out.order = { rid: row ? row.rid : null, qty, at, paid, reaches, short: paid ? 0 : +Math.max(0, walk.every - walk.units - qty).toFixed(2) };
+  return out;
+}
+/* the verdict at Accept: { cross, step, rate } for an associate, the step it is promised at; { cross, loyal } for a customer's loyalty unit
+   (opts: their card at the size, and today, Kuala Lumpur's day) */
+export function rewardCrossOf(book, code, qty, goods, unitCost, opts = {}) {
   const r = rewardReading(book, code, { qty, goods, unitCost });
-  return r.associate && !r.error && !r.departed && r.order && r.order.reaches ? { cross: true, step: r.order.step, rate: r.order.rate } : { cross: false };
+  if (r.associate) return !r.error && !r.departed && r.order && r.order.reaches ? { cross: true, step: r.order.step, rate: r.order.rate } : { cross: false };
+  const l = loyalReading(book, code, { qty, goods, card: opts.card, today: opts.today });
+  return l.walks && l.order && l.order.reaches ? { cross: true, loyal: true } : { cross: false };
 }
 /* THE ONE WORD THE ORDER CARRIES (CUSTOMER_FIELDS), from the book on the return leg: "given" once a reward row names the order's row (terminal),
    null to clear a "cross" that no longer holds (another order of theirs crossed first, or a payment of theirs was undone), else nothing to say.
    A new lot never clears it: the promise is the row's rwdStep. */
-export function rwdOf(book, row, now) {
+export function rwdOf(book, row, now, today) {
   if (!row || (row.product || "salt") !== "salt") return undefined;
   if (!row.rid) return undefined;
   const units = (book.sales || []).filter((s) => s && s.rewardOf && s.rewardOf === row.rid && !s.cancelled);
@@ -82,7 +106,8 @@ export function rwdOf(book, row, now) {
   if (units.length) return undefined;   /* raised and waiting for its handover: the word stands */
   if (now !== "cross") return undefined;
   if (POSITION_ENGINE.txDates(row).fullPaid) return null;
-  const r = rewardReading(book, row.customer, { rid: row.rid });
+  /* 21 Oct 2026: a loyalty unit's cross (rwdLoyal on the row) holds while it is at their price, they are not paused, and no other order crossed first */
+  const r = row.rwdLoyal ? loyalReading(book, row.customer, { rid: row.rid, today }) : rewardReading(book, row.customer, { rid: row.rid });
   return r.order && r.order.reaches ? undefined : null;
 }
 export function advanceOf(book, o, code, delivery, ctx) {

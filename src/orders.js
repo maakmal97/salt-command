@@ -27,7 +27,7 @@ import { admitInput, admitInputs } from "./input-admission.js";
 import { makerRequestFingerprint } from "./maker-request.js";
 import PRICING_ENGINE from "../engine/pricing.mjs";
 /* S1b: THE ENTRY EACH STAGE MAKES lives in engine/stages.mjs (pure); this reads, calls it, and queues. The builders stay named here for every importer. */
-import { rewardCrossOf, rewardReading, rwdOf } from "../engine/stages.mjs";
+import { rewardCrossOf, rewardReading, loyalReading, rwdOf } from "../engine/stages.mjs";
 import { rm, chargeOf, priceOf, advanceOf, acceptEntry, floorRefusal, ackRowWanted, stageAgainst, jobEntry, againEntry, keyGivenBack,
   handoverTap, receivedTap, cashTap, restateTap, pastRoom, claimRows, claimOrderFlight, claimEntry,
   stageAt, keyAfter, closedKey, ledgerKeyOf, partyOnBook, bucketFor, termsFromRow, settledFromRow, rowOut } from "../engine/stages.mjs";
@@ -308,8 +308,12 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
   /* 20 Oct 2026: AN ORDER THAT TAKES AN ASSOCIATE OVER THE NEXT REWARD says so at Accept, once paid: the verdict on the walk's paid progress at
      landed cost, stamped on the entry with the step it is promised at, which the drafter puts on the Pending row and the digest names */
   const priced0 = product === "salt" ? cogsFor(book, product, agreed.date || null) : { cost: null };
-  const rc = product === "salt" && priced0.cost != null ? rewardCrossOf(book, code, qty, goods, priced0.cost) : { cross: false };
-  if (rc.cross) { entry.rwd = "cross"; entry.rwdStep = rc.step; entry.rwdRate = rc.rate; }
+  /* 21 Oct 2026: AND ONE THAT TAKES A CUSTOMER TO THEIR NEXT LOYALTY UNIT, at or above their card for the size and not paused today: the same word,
+     the row marked rwdLoyal, which both digests name as part of the row */
+  const today0 = new Date(now.getTime() + 8 * 36e5).toISOString().slice(0, 10), card0 = product === "salt" ? cardAt(book.pricing, code, product, qty).card : null;
+  const rc = product === "salt" && priced0.cost != null ? rewardCrossOf(book, code, qty, goods, priced0.cost, { card: card0, today: today0 }) : { cross: false };
+  if (rc.cross && rc.loyal) { entry.rwd = "cross"; entry.rwdLoyal = true; }
+  else if (rc.cross) { entry.rwd = "cross"; entry.rwdStep = rc.step; entry.rwdRate = rc.rate; }
   const d = draftRow(entry, book);
   if (d.skip) return { ok: false, status: 409, error: "the drafter would not draft it: " + d.skip };
   /* V5b2 (his answers of 29 Sep 2026): PAID IN ADVANCE when what they owe at once, with this order, is over the ceiling.
@@ -327,6 +331,7 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
     floor: fl ? { rm: fl.floor, at: fl.at, exact: fl.exact } : null,
     usual: usualFor(book, d.row), told: toldOf(o), pricing, prepay: adv.prepay, owedWith: adv.owedWith, ceiling: adv.ceiling, late: adv.late || null,
     reward: product === "salt" ? rewardReading(book, code, { qty, goods, unitCost: priced0.cost }) : null, rwd: rc.cross ? "cross" : null,
+    loyal: product === "salt" ? loyalReading(book, code, { qty, goods, card: card0, today: today0 }) : null,
     hash: await stageDigest("ack", entry, d, pricing) },
     cardAt(book.pricing, code, product, qty));
 }
@@ -2013,7 +2018,7 @@ export async function tellSite(env, fixes, mirror) {
     }
     if (row.cancelled || row.defaulted) continue;
     /* 20 Oct 2026: THE REWARD WORD FOLLOWS THE BOOK (rwdOf): given once a reward row names this order's row, and a cross that no longer holds cleared */
-    const want = sole ? rwdOf(book, row, o.rwd) : undefined;
+    const want = sole ? rwdOf(book, row, o.rwd, new Date(Date.now() + 8 * 36e5).toISOString().slice(0, 10)) : undefined;
     if (want !== undefined) {
       const w = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
         method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mark: { rwd: want } })
