@@ -1,6 +1,6 @@
 {
- "v": "v1188",
- "stamped": "20 Oct 2026, 19:37 KL",
+ "v": "v1189",
+ "stamped": "20 Oct 2026, 21:55 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 13.89,
+  "STATED_STOCK": 12.89,
   "COUNT_ON": {
    "salt": "2026-10-03",
    "oil": "2026-10-20",
@@ -8216,6 +8216,23 @@
     "date": "2026-10-20",
     "note": "<b>REDEMPTION ON 20 OCT: 1 UNIT OF SALT FREE TO CM4-TO, BOOKED AS COST.</b> Settled by the reward, RM0 cash, delivered the same day. On his word of 11 Sep 2026 the row carries goodwill as well as rebate, so it is an expense and not revenue. The goods of RM56 are below the floor total of RM60 and the ask total of RM120, so RM56 a unit against a floor of RM60 and an ask of RM120. CM4-TO has 5 orders, a median rate of RM52, a range of RM5 to RM65, nothing outstanding and 0 units on credit, against a cap of 2. The row carries cost RM56, the inventory's own rate, and the fold keeps it. The drafter flagged that the desk's claim of 1 unit earned and unused cannot be checked here. Nothing is left outstanding.",
     "rid": "s276"
+   },
+   {
+    "customer": "CM4-TO-R",
+    "qty": 1,
+    "total": 150,
+    "cost": 58,
+    "cash": 150,
+    "handover": "collected",
+    "date": "2026-10-20",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-10-20",
+    "paidOn": "2026-10-20",
+    "rev": "R2",
+    "listRM": 60,
+    "listQty": 1,
+    "note": "<b>NEW PAID SALE ON 20 OCT: 1 UNIT OF SALT TO CM4-TO-R, GOODS RM150.</b> Collected, delivered and paid in full on 20 Oct, RM150 cash, booked as R2 via CM4-TO. The goods total of RM150 is above the floor total of RM60 and the ask total of RM120, so RM150 a unit against a floor of RM60 and an ask of RM120. CM4-TO-R has 2 orders, a median rate of RM91.4, a range of RM71.67 to RM91.4, nothing outstanding and 0 units on credit, against a cap of 1. The row carries cost RM58, the inventory's replacement rate, and the fold keeps it. The drafter flagged that CM4-TO typically pays about RM60 a unit, so this is 150% above; the figures confirm the rate is high but give no reason. Nothing is left outstanding.",
+    "rid": "s277"
    }
   ],
   "contacts": [
@@ -8968,7 +8985,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-20T11:17:22.814Z",
+  "QUEUE_COMMITTED": "2026-10-20T13:49:38.588Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -9111,7 +9128,7 @@
     {
      "id": "cust:oneanddone",
      "sev": "note",
-     "title": "16 of 48 customers have bought exactly once"
+     "title": "15 of 48 customers have bought exactly once"
     },
     {
      "id": "cust:noreply",
@@ -9323,17 +9340,17 @@
     "CM4-TO": {
      "salt": {
       "name": "large and regular",
-      "orders": 5,
+      "orders": 6,
       "tenureDays": 66,
-      "sinceLastDays": 1,
-      "perMonth": 2.31,
-      "unitsPerMonth": 21.45,
-      "smallShare": 0,
-      "bigShare": 1,
+      "sinceLastDays": 0,
+      "perMonth": 2.77,
+      "unitsPerMonth": 21.91,
+      "smallShare": 0.17,
+      "bigShare": 0.83,
       "frequent": true,
       "small": false,
       "bigger": true,
-      "loyal": false,
+      "loyal": true,
       "rare": false
      },
      "candy": {
@@ -10275,15 +10292,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.30097087378640774
+         "v": 0.2980769230769231
         }
        },
        "attrib": 1,
        "shrinkRate": 0.07533842547077063,
        "avgDel": {
-        "n": 219,
-        "kg": 558.81,
-        "mean": 2.5516
+        "n": 220,
+        "kg": 559.81,
+        "mean": 2.5446
        }
       },
       "policy": {
@@ -16207,10 +16224,10 @@
      ]
     }
    },
-   "v": "v1188"
+   "v": "v1189"
   },
   "OPEN": {
-   "at": "2026-10-20T11:37:15.831Z",
+   "at": "2026-10-20T13:55:40.747Z",
    "count": 9,
    "byKey": {
     "CE4-CHE|2026-10-14|400": {
@@ -16367,11 +16384,11 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 13.89,
-     "free": 12.39,
+     "onHand": 12.89,
+     "free": 11.39,
      "owedOut": 1.5,
-     "coverDays": 2.4,
-     "rate": 4.46,
+     "coverDays": 2.2,
+     "rate": 4.51,
      "owedToYou": 405,
      "promised": 1.5,
      "short": 0
@@ -16417,7 +16434,7 @@
     "rice": "2026-10-20",
     "spare": null
    },
-   "v": "v1188"
+   "v": "v1189"
   },
   "TERMS": {
    "ceiling": 250,
@@ -16425,7 +16442,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1188"
+   "v": "v1189"
   },
   "REWARD": {
    "stated": {
@@ -16439,7 +16456,7 @@
      }
     }
    },
-   "v": "v1188"
+   "v": "v1189"
   }
  }
 }
