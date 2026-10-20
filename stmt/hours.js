@@ -18,7 +18,7 @@ export function openParts(days, lo, hi) {
   if (!days || days.length !== 7 || !(hi > lo)) return out;
   function partMin(t) { var x = /^([01][0-9]|2[0-3]):([0-5][0-9])$/.exec(String(t || "")); return x ? (+x[1]) * 60 + (+x[2]) : null; }
   var l = new Date(lo + 8 * H), s = Date.UTC(l.getUTCFullYear(), l.getUTCMonth(), l.getUTCDate()) - 8 * H - D;
-  for (var n = 0; s < hi && n < 400; s += D, n++) {
+  for (var n = 0; s < hi && n < 401; s += D, n++) {
     var d = days[new Date(s + 8 * H).getUTCDay()], o = d ? partMin(d.open) : null, c = d ? partMin(d.close) : null;
     if (o === null || c === null || c === o) continue;
     var a = s + o * 60000, b = s + (c < o ? c + 1440 : c) * 60000;
