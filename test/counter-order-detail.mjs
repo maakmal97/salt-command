@@ -112,10 +112,11 @@ export async function run({ ok, pageWork }) {
     const steps = [...part(sR, "steps").querySelectorAll("li")];
     const view = steps.map((li) => [t(li.querySelector(".salt-steps__name")), !!li.querySelector(".salt-steps__mark svg"), t(li.querySelector(".salt-steps__time")),
       li.classList.contains("salt-steps__step--done") ? "done" : li.classList.contains("salt-steps__step--now") ? "now" : li.classList.contains("salt-steps__step--next") ? "next" : ""]);
-    const hm = (m) => { const k = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kuala_Lumpur", hour: "2-digit", minute: "2-digit", hourCycle: "h23", day: "2-digit" }).formatToParts(new Date(Date.now() - m * 60e3));
+    /* 20 Oct 2026 (his yes): the moments are read off the order's own history, never a clock read later, which crossed a minute (CI red on e4833483) */
+    const hm = (iso) => { const k = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kuala_Lumpur", hour: "2-digit", minute: "2-digit", hourCycle: "h23", day: "2-digit" }).formatToParts(new Date(iso));
       const g = (ty) => k.find((x) => x.type === ty).value; return g("hour") + ":" + g("minute"); };
-    const today = (m) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kuala_Lumpur" }).format(new Date(Date.now() - m * 60e3)) === new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kuala_Lumpur" }).format(new Date());
-    const wantT = [300, 280, 200].map((m) => (today(m) ? hm(m) : null));
+    const today = (iso) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kuala_Lumpur" }).format(new Date(iso)) === new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kuala_Lumpur" }).format(new Date());
+    const wantT = R.history.slice(0, 3).map((h) => (today(h.at) ? hm(h.at) : null));
     ok(part(sR, "steps").querySelector("ol").classList.contains("salt-steps--marks") && view.every((v) => v[1]) && view.map((v) => v[0]).join("|") === "Placed|Confirmed|Ready|Paid|Collected"
       && view.map((v) => v[3]).join("|") === "done|done|now||next" && view[4][2] === "Next" && /^RM [0-9.]+\/[0-9.]+$/.test(view[3][2])
       && view.slice(0, 3).every((v, i) => (wantT[i] ? v[2] === wantT[i] : /^\d\d \w{3} \d{4}$/.test(v[2]))),
