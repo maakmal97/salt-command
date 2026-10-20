@@ -6,7 +6,7 @@
  *      the goods are all handed over
  *   3  the receipt: each payment received with its way and its day where they add up to what is paid; Owed stands in the due row only while
  *      something is owed; Settled when nothing is
- *   4  Details carries the area and the sheet an order belongs to
+ *   4  Paid is the fourth of five steps: part paid it says how much of what, and it is done once settled, ahead of the goods if paid first
  * Drawn by the maker harness (test/maker-act.mjs). */
 import { richOwnerPage, byAct } from "./maker-act.mjs";
 
@@ -54,9 +54,13 @@ export async function run({ ok, pageWork }) {
     ok(!!due && /^Owed/.test(t(due)) && /RM 70/.test(t(due)) && t(A.querySelector(".ohead .oway")) === "Lirau · ASAP · +RM 10.00 delivery"
       && t(A.querySelector(".ohead .salt-band__head .salt-status")) === "To make ready",
       "something owed stands in the due row, and a delivery says where to and when, as the customer reads it: " + t(due) + " / " + t(A && A.querySelector(".oway")));
-    /* 4 */
-    const rows = [...A.querySelectorAll("details .salt-ledger__row")].map((r) => t(r));
-    ok(rows.some((x) => /^Area\s*Lirau/.test(x)) && rows.some((x) => /^Sheet\s*1 of 2/.test(x)),
-      "Details says the area and which of a sheet's orders it is: " + JSON.stringify(rows));
+    /* 4 (20 Oct 2026, canvas V17, V30): Paid is the fourth step; part paid it says how much of what, and done once nothing is owed */
+    const paidOf = (c) => c && c.querySelector('.salt-steps [data-step="paid"]'), names = (c) => [...c.querySelectorAll(".salt-steps .salt-steps__name")].map((n) => t(n));
+    const PA = paidOf(A);
+    ok(!!PA && JSON.stringify(names(A)) === JSON.stringify(["Placed", "Agreed", "Ready", "Paid", "Delivered"]) && t(PA.querySelector(".salt-steps__time")) === "RM 40/110"
+      && !PA.classList.contains("salt-steps__step--done"), "part paid, the Paid step, fourth, says how much of what: " + JSON.stringify([names(A), t(PA)]));
+    const PZ = paidOf(R);
+    ok(!!PZ && PZ.classList.contains("salt-steps__step--done") && !R.querySelector(".salt-steps__step:last-child").classList.contains("salt-steps__step--done"),
+      "settled before the goods go, Paid is done ahead of Collected: " + t(PZ));
   } finally { p.w.close(); }
 }

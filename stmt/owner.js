@@ -3887,8 +3887,7 @@ export const OWNER_JS = `
     if(split) split.classList.toggle('open', !!e);
     markOrderRows();
     if(!e) return;
-    var back=el('button','aback','← Orders'); back.type='button'; back.setAttribute('data-back','orders'); back.setAttribute('data-in',e.parts); actOn(back,'order.back');
-    root.appendChild(back);
+    /* 20 Oct 2026 (canvas V35): no back link; the rail or the app bar's Orders is the way back, a tap on it closing the order */
     if(e.order&&ordOpen(e.order)) orderCard(root,e.order); else if(e.row) rowCard(root,e); else if(e.trip) tripCard(root,e); else if(e.day) dayCard(root,e); else orderPlainCard(root,e);
     focusOrderAt();
   }
@@ -3901,9 +3900,9 @@ export const OWNER_JS = `
     /* below 860px the card takes the list's place and has its way back showing, so he is taken to the top of it; from 860px the list is the
        page's scroll and the card stands beside it, sticky, so a tap on a low row leaves the page where it is and only brings the card into view */
     try{
-      var back=document.querySelector('#makerReview [data-back="orders"]'), card=document.getElementById('makerReview');
-      if(back&&back.focus) back.focus();
-      if(back&&window.getComputedStyle(back).display!=='none') window.scrollTo(0,0);
+      var card=document.getElementById('makerReview');
+      if(card){ if(!card.hasAttribute('tabindex')) card.setAttribute('tabindex','-1'); if(card.focus) card.focus({preventScroll:true}); }
+      if(!wide()) window.scrollTo(0,0);
       else if(card&&card.scrollIntoView) card.scrollIntoView({block:'nearest'});
     }catch(x){}
   }
@@ -4058,8 +4057,33 @@ export const OWNER_JS = `
      oSteps, oMoney in stmt/page.js), so the two read alike. Admin keeps what is his alone: the code, Owed, what they say they sent, and Handed while goods remain. */
   /* 19 Oct 2026 (his word): the track is the Counter's own, Batch A's marked steps (oSteps in stmt/page.js): a drawn mark a step, its moment under
      its name and Next on the step to come, so the two cards draw one chart and a change to it reaches both */
+  /* 20 Oct 2026 (canvas V17, V29, V30): HIS FIVE STEPS, the Counter's marked steps with Paid fourth: Placed, Agreed, Ready, Paid, Delivered or
+     Collected. The goods move along Placed to Delivered as the Counter's do (oSteps); Paid is done once nothing is owed, which may come before
+     the goods go on an order paid first, and part paid it says how much of what, "RM 40/70". On his page only. */
+  var PAID_GLYPH='M12 3.5 A8.5 8.5 0 1 0 12 20.5 A8.5 8.5 0 1 0 12 3.5 M14.6 9 C14 8.2 13.1 7.8 12 7.8 C10.5 7.8 9.4 8.6 9.4 9.8 C9.4 12.6 14.6 11.4 14.6 14.2 C14.6 15.4 13.5 16.2 12 16.2 C10.9 16.2 10 15.8 9.4 15 M12 6.4 V7.8 M12 16.2 V17.6';
+  function rmShort(v){ var n=Math.round((+v||0)*100)/100; return n%1?n.toFixed(2):String(n); }
   function ordSteps(order){
-    var ol=oSteps(order).firstChild; ol.setAttribute('aria-label','Where the goods are');
+    var d=order.mode==='deliver', cur=order.status==='done'?4:movedAll(order)?3:(order.status==='ready'||(+order.moved||0)>0)?2:order.status==='acknowledged'?1:0;
+    var due=(+order.total||0)+(+order.delivery||0), paid=+order.paid||0, agreed=['acknowledged','ready','done'].indexOf(order.status)>=0;
+    var settled=agreed&&due>0&&paid>=due-0.004, pays=(order.payments||[]).filter(function(x){ return x&&(!x.claim||x.claim==='received')&&x.at; });
+    var goods=[['placed','Placed',order.at],['confirmed','Agreed',firstAt(order,'acknowledged')],['ready','Ready',firstAt(order,'ready')],[d?'delivered':'collected',d?'Delivered':'Collected','']];
+    var ol=el('ol','salt-steps salt-steps--marks ordsteps'); ol.setAttribute('aria-label','Where the goods are');
+    function step(cls,glyph,name,time,now){
+      var li=el('li','salt-steps__step'+cls); if(now) li.setAttribute('aria-current','step');
+      var mk=el('span','salt-steps__mark'), s=svgEl('svg',{viewBox:'0 0 24 24'}); mk.setAttribute('aria-hidden','true'); s.appendChild(svgEl('path',{d:glyph})); mk.appendChild(s);
+      li.appendChild(mk); li.appendChild(el('span','salt-steps__name',name)); if(time) li.appendChild(el('span','salt-steps__time',time));
+      return li;
+    }
+    goods.forEach(function(g,i){
+      var cls=i<cur?' salt-steps__step--done':i===cur?' salt-steps__step--now':i===cur+1?' salt-steps__step--next':'';
+      var time=i<=cur?(i===3?(order.movedOn?ymdDay(order.movedOn):''):stepWhen(g[2])):i===cur+1?'Next':'';
+      if(i===3){
+        var last=pays.length?pays[pays.length-1].at:'';
+        var pli=step(settled?' salt-steps__step--done':'',PAID_GLYPH,'Paid',settled?stepWhen(last):paid>0.004&&due>0?'RM '+rmShort(paid)+'/'+rmShort(due):'',false);
+        pli.setAttribute('data-step','paid'); ol.appendChild(pli);
+      }
+      ol.appendChild(step(cls,STEP_GLYPH[g[0]],g[1],time,i===cur));
+    });
     return ol;
   }
   function ordLine(label,value,flag,cls){
@@ -4175,10 +4199,7 @@ export const OWNER_JS = `
     /* 17 Oct 2026: a refund the book still owes them on this order's row */
     var owes=makerData&&makerData.refunds&&order.ledgerKey&&makerData.refunds[order.ledgerKey];
     if(+owes>0.004) card.appendChild(el('p','salt-insight','You owe them a refund of '+rm(owes)+' on this order. Close it on the Desk once it is paid.'));
-    var sh=sheetOf(order);
-    card.appendChild(detailBox('order.details',order.id,[['Reference',order.id],['Placed',fmtWhen(order.at)],['Way',order.mode==='deliver'?'Delivery':order.mode==='collect'?'Collection':''],
-      ['Area',order.mode==='deliver'?order.place||'':order.point?'Point '+order.point:''],['Exact spot',order.mode==='deliver'&&order.pin?'Shared, sealed':''],
-      ['Sheet',sh.length>1?(sh.indexOf(order)+1)+' of '+sh.length:'']].filter(function(p){ return p[1]; })));
+    /* 20 Oct 2026 (canvas V36): no Details fold; its rows stand in the band, the delivery address and the sheet's link */
   }
   /* Salt Admin A to C: the orders one sheet of theirs placed together, in the order the Desk asks the delivery on (the first by id) */
   function sheetOf(order){
@@ -4224,7 +4245,6 @@ export const OWNER_JS = `
         /* 20 Oct 2026 (his canvas comment): AGREE, CHANGE TERMS AND DECLINE IN ONE ROW OF THREE, the terms line under it. Change terms is a button
            opening the fold below the row (its own summary hidden), and Decline is drawn into the row by makerOrderMoves. */
         var row3=el('div','ordrow3'); lead.appendChild(row3);
-        var terms=el('p','ordterms'); terms.setAttribute('aria-live','polite'); lead.appendChild(terms);
         var tf=ordFold(card,'Change terms','order.terms',order.id,'terms',false);
         tf.classList.add('ordfold--rowed'); actOn(tf.querySelector('summary'),'order.terms-fold',order.id);
         var tb=actOn(el('button','salt-ghost ordrow3__terms','Change terms'),'order.terms',order.id); tb.type='button';
@@ -4249,19 +4269,7 @@ export const OWNER_JS = `
         function makerPlacedSay(text,bad,error){
           qsay.className=bad?'msg':'salt-insight'; qsay.textContent=text; withDetails(qsay,error); qfigs.textContent='';
           var accept=card.querySelector('[data-accept]'); if(accept) accept.remove();
-          termsDraw(); waitDraw(bad);
-        }
-        /* the terms Agree will send, read off the card's current choices */
-        function termsDraw(){
-          var d=makerPlacedDelivery(), w=makerPlacedWin(), at;
-          if(order.mode!=='deliver') terms.textContent='Collect · '+rm(Number(total.value)||0);
-          else if(follower) terms.textContent='Delivery on the first order';
-          else if(d==null) terms.textContent='Choose the delivery charge';
-          else{
-            if(w) at=mwDayLabel(w.slice(0,10))+', '+mwPad(+w.slice(11,13))+':00 to '+mwPad(+w.slice(11,13)+4)+':00';
-            else at=order.slot&&order.slotSpan?'their '+String(order.slotSpan).replace('-',' to ')+' on '+mwDayLabel(String(order.slot).slice(0,10)):'ASAP';
-            terms.textContent='Delivery '+rm(d)+' · '+at;
-          }
+          waitDraw(bad);
         }
         function waitDraw(bad){
           var old=lead.querySelector('[data-accept-wait]'); if(old) old.remove();
@@ -4295,7 +4303,6 @@ export const OWNER_JS = `
           else makerPlacedReading(qfigs,q.result);
           var old=card.querySelector('[data-accept]'); if(old) old.remove();
           var wait=lead.querySelector('[data-accept-wait]'); if(wait) wait.remove();
-          termsDraw();
           /* a sheet's lines take its first order's window, as they take its one delivery charge */
           var wv=makerPlacedWin(), yes=makerNeedsYes(order,q.total,wv);
           var accept=makerButton(lead,[(yes?'Ask them, ':'Agree, ')+rm(q.result.quote)+(q.result.delivery>0?' + '+rm(q.result.delivery):''),yes?'order.send-yes':'order.accept'],function(){
@@ -4762,7 +4769,7 @@ export const OWNER_JS = `
     /* 18 Oct 2026: the customer's fold (oHist in stmt/page.js), shut until a tap; opening it reads the moves once, and Read it again stays inside */
     var box=el('details','undohist salt-plan'), sm=el('summary'), cnt=el('span','salt-plan__id','·'), body=el('div','salt-plan__body'),
         list=el('div','undolist'), said=el('p','msg'); said.setAttribute('role','status'); box.setAttribute('data-history',key);
-    actOn(sm,'undo.fold',key); sm.appendChild(cnt); sm.appendChild(el('span','salt-plan__title','What happened, step by step')); box.appendChild(sm); box.appendChild(body);
+    actOn(sm,'undo.fold',key); sm.appendChild(cnt); sm.appendChild(el('span','salt-plan__title',order?'Order log':'What happened, step by step')); box.appendChild(sm); box.appendChild(body);
     var read=makerButton(body,[undoRead[key]?'Read it again':'Read the moves','undo.history',key],async function(){
       said.textContent='Reading.';
       var j=await refs('/all/maker/undo',ref);
@@ -6108,7 +6115,7 @@ export const OWNER_JS = `
   roster.addEventListener('click', function(ev){
     var bk=ev.target.closest('button[data-back]');
     if(bk){ var way=bk.getAttribute('data-back'); if(way==='accounts') openCard(null); else if(way==='orders') closeOrder(); else if(way==='form') closeForm(); return; }
-    var b=ev.target.closest('button[data-m]'); if(b){ var mm=b.getAttribute('data-m'); showPlace(mm, b.getAttribute('data-p')||(mm===placeNow?partNow:''), {fresh:true,push:true}); return; }
+    var b=ev.target.closest('button[data-m]'); if(b){ var mm=b.getAttribute('data-m'); if(mm==='orders'&&placeNow==='orders'&&ordOpened){ closeOrder(); return; } showPlace(mm, b.getAttribute('data-p')||(mm===placeNow?partNow:''), {fresh:true,push:true}); return; }
     var k=ev.target.closest('button[data-chip]');
     if(k){ nKind=k.getAttribute('data-chip'); [].forEach.call(document.querySelectorAll('.nchips button'), function(x){ x.setAttribute('aria-selected', x===k?'true':'false'); }); drawNeeds(); return; }
     var t=ev.target.closest('button[data-part]'); if(t) showPlace(t.parentNode.getAttribute('data-place'), t.getAttribute('data-part'), {push:true});

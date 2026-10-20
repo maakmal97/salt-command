@@ -217,7 +217,7 @@ export async function run({ ok, pageWork }) {
       && !byAct(d, "order.open", "ord-p2").hasAttribute("aria-current"),
     "a row opens that order's card alone, marks itself current and stands the list and the card side by side: " + JSON.stringify(p.cardsIn()));
     /* 20 Oct 2026 (his canvas comment): Agree, Change terms and Decline lead in one row; the fold's own summary is hidden behind Change terms */
-    const want = ["order.accept", "order.terms", "order.decline", "order.details", "order.terms-fold", "order.total", "order.answer", "order.reply-text", "order.quick-reply",
+    const want = ["order.accept", "order.terms", "order.decline", "order.terms-fold", "order.total", "order.answer", "order.reply-text", "order.quick-reply",
       "order.quick-reply", "order.quick-keep", "order.reply", "order.no-reply"];
     const got = p.acts("ord-p1");
     ok(same(got, want), "the card has the controls it had, less the reason, which is asked on the Decline's Sheet, and Details for its reference: " + JSON.stringify(got));
@@ -250,10 +250,9 @@ export async function run({ ok, pageWork }) {
     const d = p.d;
     await p.enter();
     await p.tapRow("ord-p2");
-    const back = byAct(d, "order.back");
-    ok(!!back && back.getAttribute("data-back") === "orders" && back.classList.contains("aback") && /Orders/.test(back.textContent) && d.querySelector("#makerReview").contains(back),
-      "a card has a way back at its head, named by its act: " + (back && back.outerHTML));
-    back.click(); await p.work.quiet();
+    /* 20 Oct 2026 (canvas V35): no back link; a tap on Orders in the rail or the app bar closes the card */
+    ok(!byAct(d, "order.back") && !d.querySelector("#makerReview [data-back]"), "a card has no back link of its own");
+    byAct(d, "nav.orders").click(); await p.work.quiet();
     ok(p.cardsIn().length === 0 && !d.getElementById("oSplit").classList.contains("open") && !byAct(d, "order.open", "ord-p2").hasAttribute("aria-current")
       && d.activeElement === byAct(d, "order.open", "ord-p2") && p.rowsShown().length === 5,
     "Back closes the card, unmarks the row and puts him on the row he came from, the list whole: " + JSON.stringify([p.cardsIn(), d.activeElement && d.activeElement.getAttribute("data-key")]));
@@ -301,12 +300,12 @@ export async function run({ ok, pageWork }) {
     tops.length = 0;
     await p.tapRow("ord-p3");
     ok(same(tops, [[0, 0]]) && into.length === 0, "below 860px a row tap takes him to the top of the card, its way back showing: " + JSON.stringify([tops, into]));
-    byAct(d, "order.back").click(); await p.work.quiet();
+    byAct(d, "nav.orders").click(); await p.work.quiet();
     tops.length = 0; into.length = 0;
-    const wide = d.createElement("style"); wide.textContent = ".adm #makerReview .aback{display:none}"; d.head.appendChild(wide);
+    w.matchMedia = (q) => ({ matches: /min-width:860px/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
     await p.tapRow("ord-p3");
     ok(tops.length === 0 && same(into, [["makerReview", '{"block":"nearest"}']]),
-      "from 860px, the way back hidden, a tap on a low row leaves the page where it is and brings the card into view: " + JSON.stringify([tops, into]));
+      "from 860px a tap on a low row leaves the page where it is and brings the card into view: " + JSON.stringify([tops, into]));
   } catch (e) { ok(false, "scrolling stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 4. THE SPLIT, from 860px */

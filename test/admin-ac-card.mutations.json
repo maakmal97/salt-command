@@ -10,6 +10,8 @@
  {"name":"a payment loses its way","file":"stmt/owner.js","find":"el('span','salt-ledger__sub',(x.method?methodWord(x.method,x.account)+', ':'')+fmtWhen(x.at))","replace":"el('span','salt-ledger__sub',fmtWhen(x.at))"},
  {"name":"Owed is not the due row","file":"stmt/owner.js","find":"due.classList.add('salt-ledger__row--due');","replace":"due.classList.add('odue2');"},
  {"name":"no Settled when paid","file":"stmt/owner.js","find":"else if(agreed||order.status==='done') L.appendChild(ordLine('Settled',rm(0),'','osettled'));","replace":"else if(agreed) L.appendChild(ordLine('Owed',rm(0)));"},
- {"name":"Details loses the sheet","file":"stmt/owner.js","find":"['Sheet',sh.length>1?(sh.indexOf(order)+1)+' of '+sh.length:'']","replace":"['Sheet','']"},
- {"name":"Details loses the area","file":"stmt/owner.js","find":"['Area',order.mode==='deliver'?order.place||'':order.point?'Point '+order.point:'']","replace":"['Area','']"}
+ {"name":"no Paid step","file":"stmt/owner.js","find":"        pli.setAttribute('data-step','paid'); ol.appendChild(pli);","replace":"        void pli;"},
+ {"name":"Paid says no part paid","file":"stmt/owner.js","find":"paid>0.004&&due>0?'RM '+rmShort(paid)+'/'+rmShort(due):''","replace":"''"},
+ {"name":"Paid never done","file":"stmt/owner.js","find":"var pli=step(settled?' salt-steps__step--done':'',","replace":"var pli=step('',"},
+ {"name":"Paid done only once the goods go","file":"stmt/owner.js","find":"var settled=agreed&&due>0&&paid>=due-0.004,","replace":"var settled=agreed&&due>0&&paid>=due-0.004&&cur>=3,"}
 ]

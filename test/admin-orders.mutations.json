@@ -102,10 +102,10 @@
   "replace": "var payload={total:Number(total.value)}"
  },
  {
-  "name": "the card has no way back",
+  "name": "a back link of its own returns",
   "file": "stmt/owner.js",
-  "find": "    root.appendChild(back);\n    if(e.order&&ordOpen(e.order))",
-  "replace": "    if(e.order&&ordOpen(e.order))"
+  "find": "    /* 20 Oct 2026 (canvas V35): no back link; the rail or the app bar's Orders is the way back, a tap on it closing the order */",
+  "replace": "    root.appendChild(actOn(el('button','aback','Orders'),'order.back'));"
  },
  {
   "name": "Back does nothing",
@@ -404,7 +404,7 @@
  {
   "name": "a row tap always takes him to the top",
   "file": "stmt/owner.js",
-  "find": "      if(back&&window.getComputedStyle(back).display!=='none') window.scrollTo(0,0);\n      else if(card&&card.scrollIntoView) card.scrollIntoView({block:'nearest'});",
+  "find": "      if(!wide()) window.scrollTo(0,0);\n      else if(card&&card.scrollIntoView) card.scrollIntoView({block:'nearest'});",
   "replace": "      window.scrollTo(0,0);"
  },
  {
@@ -416,8 +416,8 @@
  {
   "name": "a row tap scrolls the wrong way round",
   "file": "stmt/owner.js",
-  "find": "if(back&&window.getComputedStyle(back).display!=='none') window.scrollTo(0,0);",
-  "replace": "if(back&&window.getComputedStyle(back).display==='none') window.scrollTo(0,0);"
+  "find": "if(!wide()) window.scrollTo(0,0);",
+  "replace": "if(wide()) window.scrollTo(0,0);"
  },
  {
   "name": "the sticky card's foot goes under the App bar",
@@ -596,8 +596,8 @@
  {
   "name": "the floating placeholder returns",
   "file": "stmt/owner.js",
-  "find": "    if(!e) return;\n    var back=el('button'",
-  "replace": "    if(!e){ root.appendChild(el('p','rnone','Choose an order to see it here.')); return; }\n    var back=el('button'"
+  "find": "    if(!e) return;\n    /* 20 Oct 2026 (canvas V35): no back link; the rail or the app bar's Orders is the way back, a tap on it closing the order */",
+  "replace": "    if(!e){ root.appendChild(el('p','rnone','Choose an order to see it here.')); return; }\n    /* 20 Oct 2026 (canvas V35): no back link; the rail or the app bar's Orders is the way back, a tap on it closing the order */"
  },
  {
   "name": "the repeated Orders heading returns",
@@ -712,5 +712,11 @@
   "file": "stmt/page.js",
   "find": "overflow-x:auto;scroll-snap-type:x proximity;",
   "replace": "scroll-snap-type:x proximity;"
+ },
+ {
+  "name": "a tap on Orders keeps the card open",
+  "file": "stmt/owner.js",
+  "find": "if(mm==='orders'&&placeNow==='orders'&&ordOpened){ closeOrder(); return; } ",
+  "replace": ""
  }
 ]

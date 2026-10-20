@@ -312,12 +312,6 @@
   "replace": ""
  },
  {
-  "name": "Details repeats the goods",
-  "file": "stmt/owner.js",
-  "find": "['Sheet',sh.length>1?(sh.indexOf(order)+1)+' of '+sh.length:'']]",
-  "replace": "['Sheet',sh.length>1?(sh.indexOf(order)+1)+' of '+sh.length:''],['Goods',rm(order.total)]]"
- },
- {
   "name": "Money received has no heading",
   "file": "stmt/owner.js",
   "find": "        var moneyHead=el('h4','','Money received'); moneyHead.setAttribute('data-sect','money'); moneyHead.tabIndex=-1; card.appendChild(moneyHead);\n",
@@ -358,12 +352,6 @@
   "file": "stmt/owner.js",
   "find": "          },true); accept.setAttribute('data-accept',''); row3.insertBefore(accept,row3.firstChild);",
   "replace": "          },true); accept.setAttribute('data-accept',''); acts.insertBefore(accept,acts.firstChild);"
- },
- {
-  "name": "the terms do not follow the charge",
-  "file": "stmt/owner.js",
-  "find": "terms.textContent='Delivery '+rm(d)",
-  "replace": "terms.textContent='Delivery '+rm(10)"
  },
  {
   "name": "the stand-in for Agree does not ask for the charge",
@@ -446,7 +434,7 @@
  {
   "name": "the card keeps its old bar track, not the Counter marked steps",
   "file": "stmt/owner.js",
-  "find": "    var ol=oSteps(order).firstChild; ol.setAttribute('aria-label','Where the goods are');",
+  "find": "    var ol=el('ol','salt-steps salt-steps--marks ordsteps'); ol.setAttribute('aria-label','Where the goods are');",
   "replace": "    var ol=el('ol','salt-steps'); ol.setAttribute('aria-label','Where the goods are'); ['Placed','Confirmed','Ready','Collected'].forEach(function(n,i){ ol.appendChild(el('li','salt-steps__step'+(i===0?' salt-steps__step--now':''),n)); });"
  },
 {"name":"Decline goes back to the card's end","file":"stmt/owner.js","find":"var dec=makerButton(card.querySelector('.ordrow3')||tail,['Decline','order.decline'],function(){","replace":"var dec=makerButton(tail,['Decline','order.decline'],function(){"},

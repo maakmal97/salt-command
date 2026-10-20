@@ -971,6 +971,9 @@ body.ended>*:not(#aEnded){display:none}
 .adm .oband__icon{width:16px;height:16px;flex:none;fill:none;stroke:var(--salt-brass);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .adm .oway--link{min-height:44px;color:var(--salt-brass);text-decoration:underline;text-underline-offset:3px}
 .adm .oclock__track{display:block}
+.adm .ordsteps{--salt-steps-n:5;padding:20px 12px}
+.adm .ordsteps .salt-steps__name,.adm .ordsteps .salt-steps__time{white-space:nowrap}
+.adm .ordsteps .salt-steps__name{font-size:0.75rem}
 .adm .need-clock--late .oclock__min{color:var(--salt-ember)}
 .adm .need-clock{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm #makerConfirm{margin:16px 0 0}

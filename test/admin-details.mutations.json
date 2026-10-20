@@ -1,7 +1,5 @@
 [
- {"name": "an order's reference is read down its card again", "file": "stmt/owner.js", "find": "card.appendChild(detailBox('order.details',order.id,[['Reference',order.id],", "replace": "card.appendChild(el('p','maker-facts','Reference '+order.id));card.appendChild(detailBox('order.details',order.id,["},
- {"name": "an order's Details leave out when it was placed", "file": "stmt/owner.js", "find": "['Placed',fmtWhen(order.at)],", "replace": ""},
- {"name": "an order's Details call every way Collection", "file": "stmt/owner.js", "find": "order.mode==='deliver'?'Delivery':order.mode==='collect'?'Collection':''", "replace": "'Collection'"},
+ {"name":"an order's Details come back","file":"stmt/owner.js","find":"    /* 20 Oct 2026 (canvas V36): no Details fold; its rows stand in the band, the delivery address and the sheet's link */","replace":"    card.appendChild(detailBox('order.details',order.id,[['Reference',order.id]]));"},
  {"name": "a claim card has no Details", "file": "stmt/owner.js", "find": "    card.appendChild(detailBox('claim.details',key,[['Reference',claim.id],['Sent',fmtWhen(claim.at)],['Slip',claim.slip?'Attached':'None'],['Practice',claim.test?'Yes':'']]));\n", "replace": ""},
  {"name": "a claim's Details leave out when it was sent", "file": "stmt/owner.js", "find": "['Reference',claim.id],['Sent',fmtWhen(claim.at)],", "replace": "['Reference',claim.id],"},
  {"name": "a claim's Details say a slip is attached whatever it is", "file": "stmt/owner.js", "find": "['Slip',claim.slip?'Attached':'None']", "replace": "['Slip','Attached']"},

@@ -134,8 +134,8 @@ export async function run({ ok, pageWork }) {
     /* 20 Oct 2026 (his canvas comment): a placed order's Agree, Change terms and Decline stand in one row of three, the terms line under it */
     const rowOf = (id) => p.cardOf(id).querySelector(".ordlead .ordrow3"), rowActs = (id) => rowOf(id) ? [...rowOf(id).children].filter((e) => !e.hidden).map((e) => e.getAttribute("data-act")) : [];
     ok(same(moves(), []) && !foot().classList.contains("has") && same(rowActs("ord-p1"), ["order.accept", "order.terms", "order.decline"]) && byAct(d, "order.decline", "ord-p1").classList.contains("salt-ghost--danger")
-      && !byAct(d, "order.decline", "ord-p1").closest(".maker-foot") && !p.cardOf("ord-p1").querySelector(".ordend") && rowOf("ord-p1").nextElementSibling === leadOf("ord-p1").querySelector(".ordterms"),
-      "a placed order's Agree, Change terms and Decline stand in one row of three, Decline a ghost danger button, never in a sticky foot, the terms line under the row: " + JSON.stringify([moves(), rowActs("ord-p1")]));
+      && !byAct(d, "order.decline", "ord-p1").closest(".maker-foot") && !p.cardOf("ord-p1").querySelector(".ordend") && !leadOf("ord-p1").querySelector(".ordterms"),
+      "a placed order's Agree, Change terms and Decline stand in one row of three, Decline a ghost danger button, never in a sticky foot, and no terms line restates the band: " + JSON.stringify([moves(), rowActs("ord-p1")]));
     const tb = byAct(d, "order.terms", "ord-p1"), tfold = p.cardOf("ord-p1").querySelector('details[data-fold="terms"]');
     ok(!!tb && tb.tagName === "BUTTON" && tb.getAttribute("aria-expanded") === "false" && !tfold.open, "Change terms in the row is a button, its fold shut");
     tb.click(); await p.work.quiet();
@@ -147,18 +147,19 @@ export async function run({ ok, pageWork }) {
       "and the main action stands directly under the card's head and its track, ahead of Goods and Details");
     /* 19 Oct 2026 (his word): the track is the Counter's marked steps, a drawn mark on each of the four, Next on the step to come */
     const trackP1 = p.cardOf("ord-p1").querySelector("ol.salt-steps"), stepsP1 = trackP1 ? [...trackP1.children] : [];
-    ok(!!trackP1 && trackP1.classList.contains("salt-steps--marks") && trackP1.getAttribute("aria-label") === "Where the goods are" && stepsP1.length === 4
+    /* 20 Oct 2026 (canvas V17, V30): his five, Paid fourth */
+    ok(!!trackP1 && trackP1.classList.contains("salt-steps--marks") && trackP1.getAttribute("aria-label") === "Where the goods are" && stepsP1.length === 5
       && stepsP1.every((s) => s.querySelector(".salt-steps__mark svg path[d]") && s.querySelector(".salt-steps__name"))
+      && JSON.stringify(stepsP1.map((s) => s.querySelector(".salt-steps__name").textContent)) === JSON.stringify(["Placed", "Agreed", "Ready", "Paid", "Collected"])
       && stepsP1[0].classList.contains("salt-steps__step--now") && stepsP1[1].classList.contains("salt-steps__step--next") && /Next/.test(stepsP1[1].querySelector(".salt-steps__time").textContent),
-      "the card's track is the Counter's marked steps: four drawn marks, Placed now and Next on Confirmed: " + (trackP1 ? trackP1.className + " | " + trackP1.textContent : "none"));
+      "the card's track is the marked steps, five with Paid fourth, Placed now and Next on Agreed: " + (trackP1 ? trackP1.className + " | " + trackP1.textContent : "none"));
     ok(!foot().contains(byAct(d, "order.accept")) && leadOf("ord-p1").contains(byAct(d, "order.accept")) && rowOf("ord-p1").firstElementChild === byAct(d, "order.accept") && byAct(d, "order.accept").classList.contains("salt-pill")
       && !!(leadOf("ord-p1").compareDocumentPosition(p.cardOf("ord-p1").querySelector(".maker-fields")) & 4),
       "Agree is the filled pill at the top of the card, ahead of every field, and not in the foot");
-    ok(/^Collect . RM 200\.00$/.test(termsOf("ord-p1")), "and the terms it will send stand beside it in one line: " + termsOf("ord-p1"));
     await p.tapRow("ord-p2");
     ok(same(moves(), []) && rowActs("ord-p2").includes("order.decline") && !byAct(d, "order.accept"), "a delivery with no charge chosen has Decline in the row and no Agree: " + JSON.stringify([moves(), rowActs("ord-p2")]));
     const wait = () => leadOf("ord-p2").querySelector("[data-accept-wait]");
-    ok(!!wait() && wait().textContent === "Choose the delivery charge" && termsOf("ord-p2") === "Choose the delivery charge" && !wait().disabled && leadOf("ord-p2").parentNode === p.cardOf("ord-p2"),
+    ok(!!wait() && wait().textContent === "Choose the delivery charge" && !wait().disabled && leadOf("ord-p2").parentNode === p.cardOf("ord-p2"),
       "and the lead says Choose the delivery charge, as a button that sends nothing, never a half-filled Agree: " + (wait() || {}).textContent);
     const fold = (id, k) => p.cardOf(id).querySelector('details[data-fold="' + k + '"]');
     ok(!!fold("ord-p2", "terms") && !fold("ord-p2", "terms").open && !!fold("ord-p2", "answer") && !fold("ord-p2", "answer").open, "Change terms and Answer them are folded, shut by default");
@@ -166,9 +167,7 @@ export async function run({ ok, pageWork }) {
     ok(fold("ord-p2", "terms").open && p.posts.length === postsBefore, "and the stand-in opens Change terms for the charge, and sends nothing");
     byAct(d, "order.fee-10", "ord-p2").click(); await p.work.quiet();
     ok(same(moves(), []) && rowOf("ord-p2").firstElementChild === byAct(d, "order.accept") && !wait(), "and Agree takes its place at the top once the charge is chosen and the figures are read: " + JSON.stringify(moves()));
-    ok(termsOf("ord-p2") === "Delivery RM 10.00 · their 08:00 to 12:00 on 12 Oct", "with the terms written beside it: " + termsOf("ord-p2"));
     byAct(d, "order.fee-15", "ord-p2").click(); await p.work.quiet();
-    ok(termsOf("ord-p2") === "Delivery RM 15.00 · their 08:00 to 12:00 on 12 Oct", "and the terms follow the charge as it is changed: " + termsOf("ord-p2"));
     byAct(d, "order.fee-10", "ord-p2").click(); await p.work.quiet();
     await p.tapRow("ord-p4");
     ok(same(moves(), ["order.withdraw-offer"]) && same(tail("ord-p4"), ["order.decline"]), "an order with an offer out has Withdraw the offer in its foot, Decline at the card's end, and no Accept: " + JSON.stringify([moves(), tail("ord-p4")]));
@@ -373,14 +372,14 @@ export async function run({ ok, pageWork }) {
     const money = (c) => [...c.querySelectorAll("h4")].find((h) => h.textContent === "Money received");
     byAct(d, "nav.orders").click(); await p.work.quiet();
     await tapRow("ord-p1");
-    ok(/Goods RM 200\.00/.test(head("ord-p1")) && !/Owed/.test(head("ord-p1")) && !cardOf("ord-p1").querySelector(".rdet").textContent.includes("Goods"),
+    ok(/Goods RM 200\.00/.test(head("ord-p1")) && !/Owed/.test(head("ord-p1")) && !cardOf("ord-p1").querySelector(".rdet"),
       "a placed order keeps Goods in its head, with no figure owed: " + head("ord-p1"));
     await part("ready"); await tapRow("ord-r1");
     const r1 = cardOf("ord-r1");
     ok(/Owed RM 60\.00/.test(head("ord-r1")) && /Paid RM 40\.00/.test(head("ord-r1")) && /Handed 0\.5 of 1/.test(head("ord-r1")) && /Says sent RM 20\.00/.test(head("ord-r1")) && /^Goods RM 100\.00 /.test(head("ord-r1")),
       "a ready order's head is its goods, what is paid, what they say they sent, what it owes and what is handed over: " + head("ord-r1"));
-    ok(!/Goods/.test(r1.querySelector(".rdet").textContent) && r1.querySelectorAll(".salt-steps__step--done").length === 2 && /Ready/.test(r1.querySelector(".salt-steps__step--now").textContent),
-      "so Details no longer repeats them, and the track stands at Ready");
+    ok(!r1.querySelector(".rdet") && r1.querySelectorAll(".salt-steps__step--done").length === 2 && /Ready/.test(r1.querySelector(".salt-steps__step--now").textContent),
+      "so no Details repeats them, and the track stands at Ready, Paid not yet done while something is owed");
     await tapRow("ord-r2");
     ok(!/Says sent/.test(head("ord-r2")) && /Owed RM 100\.00/.test(head("ord-r2")) && /Handed 0 of 1/.test(head("ord-r2")), "an order with no claim says none: " + head("ord-r2"));
     /* plan 5 (16 Oct 2026): Bank and Cash are two tiles over one amount; the one button says the figure and the road (test/admin-card5.mjs proves the rest) */

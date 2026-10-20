@@ -2609,7 +2609,6 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.ask-close` | The sheet an order card asks on (key: the order id) | Closes the sheet, sending nothing. |
 | `order.ask-go` | Same sheet | Sends what it asked: the Decline, the Cancel, the close, the offer again, a claim's Received or Not found, or the change to the order for approval. |
 | `order.ask-keep` | Same sheet | Leaves the order as it was, sending nothing. |
-| `order.back` | The head of an open order's card, below 860px | Closes the card and returns to the list, to the row it came from. |
 | `order.cancel` | Order card (key: the order id), acknowledged or ready | Asks on a sheet, with a reason, then cancels the order. |
 | `order.cash-retry` | Order card (key: the order id), when the answer was lost | Sends the same cash again, or refreshes the card. |
 | `order.cash-undo` | Order card (key: the order id), while the cash is held | Undoes it, sending nothing. |
@@ -2617,7 +2616,6 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.claim-received` | Order card (key: the order id), one for each claim waiting (key: the claim's moment) | Asks, on the Sheet, whether to confirm the money they say they sent. |
 | `order.decline` | Order card (key: the order id), placed | Asks on a sheet, with a reason, then declines the order. |
 | `order.cancel-rest` | An agreed or ready order with goods out and some left | Asks, then closes the order at what was handed over, as Finish at fewer units does; anything paid above it opens as a refund. |
-| `order.details` | Every order card, and the card of cash held for an order not on the read (key: the order id) | Opens the order's reference, when it was placed and how it goes, as a list of names and values. |
 | `order.fee-0` | Order card (key: the order id), placed for delivery | Chooses a delivery charge of RM 0. |
 | `order.fee-10` | Order card (key: the order id), placed for delivery | Chooses a delivery charge of RM 10. |
 | `order.fee-15` | Order card (key: the order id), placed for delivery | Chooses a delivery charge of RM 15. |

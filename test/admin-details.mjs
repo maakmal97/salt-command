@@ -5,7 +5,7 @@
  * them. Now each card keeps its reference, its moment and what else it was made from behind ONE Details control, shut, as a list of names and values (the system's plain
  * Ledger list). Nothing is sent by opening one, and no request, body or request id of any card changes. Each check is red under its own mutation
  * (test/admin-details.mutations.json, run with tools/section.mjs). What is proved here:
- *   A  an order card: no reference down the card; Details (order.details) shut, holding Reference, Placed and Way as names and values; the closed order's card has it too
+ *   A  an order card: no reference down the card, and from 20 Oct 2026 no Details either (canvas V36): the band carries the short reference
  *   B  a claim card: Details (claim.details) holding Reference, Sent and the slip, and the id is not read out on the card
  *   C  a Desk row: Details (row.proposed) holds the draft's reference then the row's figures in his words, a date as a day, a size in units, a sum in RM, a yes as Yes,
  *      a name the page has no word for spaced out and a nested figure on one line; never JSON; a trip's second row has its own
@@ -34,17 +34,13 @@ export async function run({ ok, pageWork }) {
   try {
     const d = p.d;
     await p.click(byAct(d, "nav.orders"));
-    const card = p.card("ord-p1"), box = detailsOf(card, "order.details", "ord-p1");
-    ok(!!box && box.tagName === "DETAILS" && !box.open && box.querySelector("summary").textContent === "Details" && box.querySelector("summary").classList.contains("salt-ghost"),
-      "an order's card has one Details control, shut, in the system's quiet button: " + (box && box.outerHTML.slice(0, 160)));
-    ok(same(pairs(box), [["Reference", "ord-p1"], ["Placed", "10 Oct 2026, 16:00"], ["Way", "Collection"]]),
-      "and it holds the reference, the day it was placed (Kuala Lumpur, 24 hours) and how it goes, as names and values: " + JSON.stringify(pairs(box)));
+    /* 20 Oct 2026 (canvas V36): an order's card has no Details; the band carries the short reference, the moment and the way */
+    const card = p.card("ord-p1");
+    ok(!!card && !detailsOf(card, "order.details", "ord-p1") && /^[A-Z0-9]{4}-[A-Z0-9]{3}$/.test((card.querySelector(".ohead .salt-band__ref") || {}).textContent || ""),
+      "an order's card has no Details fold, its short reference in the band's corner");
     ok(!bare(card).includes("ord-p1") && ![...card.querySelectorAll(".maker-facts")].some((f) => /^Reference/.test(f.textContent)),
       "the card itself does not read the reference out: " + bare(card).slice(0, 160));
-    const deliver = detailsOf(p.card("ord-p2"), "order.details", "ord-p2");
-    ok(!!deliver && same(pairs(deliver), [["Reference", "ord-p2"], ["Way", "Delivery"], ["Exact spot", "Shared, sealed"]]), "an order with no moment is not given a Placed line, and a delivery says so, and that its spot was shared (Salt Admin A to C): " + JSON.stringify(deliver && pairs(deliver)));
-    const closed = detailsOf(p.card("ord-x1"), "order.details", "ord-x1");
-    ok(!!closed && !closed.open && pairs(closed)[0][1] === "ord-x1", "an order that is closed, with a stage he rejected, has it on its card too");
+    ok(!detailsOf(p.card("ord-p2"), "order.details", "ord-p2") && !detailsOf(p.card("ord-x1"), "order.details", "ord-x1"), "nor a delivery's, nor a closed order's");
     ok(!bare(p.card("ord-x1")).includes("ord-x1"), "and does not read its reference out either");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
