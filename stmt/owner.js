@@ -4060,8 +4060,6 @@ export const OWNER_JS = `
   /* 20 Oct 2026 (canvas V17, V29, V30): HIS FIVE STEPS, the Counter's marked steps with Paid fourth: Placed, Agreed, Ready, Paid, Delivered or
      Collected. The goods move along Placed to Delivered as the Counter's do (oSteps); Paid is done once nothing is owed, which may come before
      the goods go on an order paid first, and part paid it says how much of what, "RM 40/70". On his page only. */
-  var PAID_GLYPH='M12 3.5 A8.5 8.5 0 1 0 12 20.5 A8.5 8.5 0 1 0 12 3.5 M14.6 9 C14 8.2 13.1 7.8 12 7.8 C10.5 7.8 9.4 8.6 9.4 9.8 C9.4 12.6 14.6 11.4 14.6 14.2 C14.6 15.4 13.5 16.2 12 16.2 C10.9 16.2 10 15.8 9.4 15 M12 6.4 V7.8 M12 16.2 V17.6';
-  function rmShort(v){ var n=Math.round((+v||0)*100)/100; return n%1?n.toFixed(2):String(n); }
   function ordSteps(order){
     var d=order.mode==='deliver', cur=order.status==='done'?4:movedAll(order)?3:(order.status==='ready'||(+order.moved||0)>0)?2:order.status==='acknowledged'?1:0;
     var due=(+order.total||0)+(+order.delivery||0), paid=+order.paid||0, agreed=['acknowledged','ready','done'].indexOf(order.status)>=0;
@@ -4079,7 +4077,7 @@ export const OWNER_JS = `
       var time=i<=cur?(i===3?(order.movedOn?ymdDay(order.movedOn):''):stepWhen(g[2])):i===cur+1?'Next':'';
       if(i===3){
         var last=pays.length?pays[pays.length-1].at:'';
-        var pli=step(settled?' salt-steps__step--done':'',PAID_GLYPH,'Paid',settled?stepWhen(last):paid>0.004&&due>0?'RM '+rmShort(paid)+'/'+rmShort(due):'',false);
+        var pli=step(settled?' salt-steps__step--done':'',STEP_GLYPH.paid,'Paid',settled?stepWhen(last):paid>0.004&&due>0?'RM '+stepRm(paid)+'/'+stepRm(due):'',false);
         pli.setAttribute('data-step','paid'); ol.appendChild(pli);
       }
       ol.appendChild(step(cls,STEP_GLYPH[g[0]],g[1],time,i===cur));

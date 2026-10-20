@@ -669,6 +669,7 @@ export const EN = {
   "st.placed": "Placed",
   "st.acknowledged": "Confirmed",
   "st.ready": "Ready",
+  "st.paid": "Paid",
   "st.readyDeliver": "Ready to deliver",
   "st.readyCollect": "Ready to collect",
   "st.done": "Complete",

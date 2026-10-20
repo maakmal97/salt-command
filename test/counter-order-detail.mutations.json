@@ -26,5 +26,9 @@
  {"name":"Message goes nowhere","file":"stmt/page.js","find":"if(s){ try{ s.scrollIntoView({block:'center'}); }catch(e){} try{ s.focus({preventScroll:true}); }catch(e){} }","replace":"if(s){ try{ s.scrollIntoView({block:'center'}); }catch(e){} }"},
  {"name":"Details leaves out the point","file":"stmt/page.js","find":"    if(o.point) L.appendChild(lrow(tw('od.point')","replace":"    if(false) L.appendChild(lrow(tw('od.point')"},
  {"name":"Details says Point after collection","file":"stmt/page.js","find":"tw(movedAll(o)||o.status==='done'?'pt.atDone':'pt.code',{c:o.point})","replace":"tw('pt.code',{c:o.point})"},
- {"name":"Details carries a note","file":"stmt/page.js","find":"    var rr=lrow(tw('od.ref'),orderRef(o.id)); L.appendChild(rr);","replace":"    var rr=lrow(tw('od.ref'),orderRef(o.id)); L.appendChild(rr); L.appendChild(lrow('Note','Two bags'));"}
+ {"name":"Details carries a note","file":"stmt/page.js","find":"    var rr=lrow(tw('od.ref'),orderRef(o.id)); L.appendChild(rr);","replace":"    var rr=lrow(tw('od.ref'),orderRef(o.id)); L.appendChild(rr); L.appendChild(lrow('Note','Two bags'));"},
+ {"name":"the Counter draws no Paid step","file":"stmt/page.js","find":"    ol.insertBefore(pli,ol.lastChild);","replace":"    void pli;"},
+ {"name":"Paid says nothing part paid","file":"stmt/page.js","find":"paid>0.004&&due>0?'RM '+stepRm(paid)+'/'+stepRm(due):'';","replace":"'';"},
+ {"name":"Paid stands last","file":"stmt/page.js","find":"    ol.insertBefore(pli,ol.lastChild);","replace":"    ol.appendChild(pli);"},
+ {"name":"Paid done while owed","file":"stmt/page.js","find":"&&due>0&&paid>=due-0.004;\n    var pays=(o.payments||[])","replace":"&&due>0;\n    var pays=(o.payments||[])"}
 ]

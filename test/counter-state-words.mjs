@@ -150,11 +150,11 @@ export async function run({ ok }) {
     const parts = (s) => ({ head: t(s.querySelector('[data-part="head"] .state')), when: t(s.querySelector('[data-part="when"]')),
       steps: [...s.querySelectorAll('[data-part="steps"] li .salt-steps__name')].map(t).join("|"), money: t(s.querySelector('[data-part="money"]')), hist: t(s.querySelector('[data-part="hist"]')) });
     const sA = parts(await screen(A)), sB = parts(await screen(B)), sH = parts(await screen(H)), sD2 = parts(await screen(D2)), sE = parts(await screen(E)), sN = parts(await screen(N));
-    ok(sA.head === "Placed" && /^Waiting for us to confirm\. You will see it change here\./.test(sA.when) && sA.steps === "Placed|Confirmed|Ready|Collected",
-      "a placed order's own screen reads Placed, Waiting for us to confirm, and its steps run Placed, Confirmed, Ready, Collected: " + JSON.stringify(sA));
-    ok(sB.head === "Confirmed" && /^Confirmed on \d\d \w{3} \d{4}, and being prepared\./.test(sB.when) && sB.steps === "Placed|Confirmed|Ready|Collected",
+    ok(sA.head === "Placed" && /^Waiting for us to confirm\. You will see it change here\./.test(sA.when) && sA.steps === "Placed|Confirmed|Ready|Paid|Collected",
+      "a placed order's own screen reads Placed, Waiting for us to confirm, and its steps run Placed, Confirmed, Ready, Paid, Collected: " + JSON.stringify(sA));
+    ok(sB.head === "Confirmed" && /^Confirmed on \d\d \w{3} \d{4}, and being prepared\./.test(sB.when) && sB.steps === "Placed|Confirmed|Ready|Paid|Collected",
       "a confirmed order reads Confirmed, and the day it was confirmed: " + JSON.stringify(sB.when));
-    ok(sD2.head === "Delivered" && sD2.steps === "Placed|Confirmed|Ready|Delivered" && sN.head === "Complete" && /^Your order is now complete\./.test(sN.when),
+    ok(sD2.head === "Delivered" && sD2.steps === "Placed|Confirmed|Ready|Paid|Delivered" && sN.head === "Complete" && /^Your order is now complete\./.test(sN.when),
       "a delivered order's steps end on Delivered, and a finished one reads Complete: " + JSON.stringify([sD2.head, sD2.steps, sN.head]));
     ok(sE.head === "Declined" && /^We could not take this order\. Out of stock this week\. Nothing is owed\./.test(sE.when) && /Declined: Out of stock this week/.test(sE.hist) && sE.steps === "",
       "a declined order reads Declined, then his reason, and its history says Declined: " + JSON.stringify([sE.head, sE.when, sE.hist]));

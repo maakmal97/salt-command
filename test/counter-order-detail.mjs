@@ -116,10 +116,10 @@ export async function run({ ok, pageWork }) {
       const g = (ty) => k.find((x) => x.type === ty).value; return g("hour") + ":" + g("minute"); };
     const today = (m) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kuala_Lumpur" }).format(new Date(Date.now() - m * 60e3)) === new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kuala_Lumpur" }).format(new Date());
     const wantT = [300, 280, 200].map((m) => (today(m) ? hm(m) : null));
-    ok(part(sR, "steps").querySelector("ol").classList.contains("salt-steps--marks") && view.every((v) => v[1]) && view.map((v) => v[0]).join("|") === "Placed|Confirmed|Ready|Collected"
-      && view.map((v) => v[3]).join("|") === "done|done|now|next" && view[3][2] === "Next"
+    ok(part(sR, "steps").querySelector("ol").classList.contains("salt-steps--marks") && view.every((v) => v[1]) && view.map((v) => v[0]).join("|") === "Placed|Confirmed|Ready|Paid|Collected"
+      && view.map((v) => v[3]).join("|") === "done|done|now||next" && view[4][2] === "Next" && /^RM [0-9.]+\/[0-9.]+$/.test(view[3][2])
       && view.slice(0, 3).every((v, i) => (wantT[i] ? v[2] === wantT[i] : /^\d\d \w{3} \d{4}$/.test(v[2]))),
-      "each step is a drawn mark with the moment it happened, and Next on the step to come: " + JSON.stringify(view));
+      "each step is a drawn mark with the moment it happened, Paid fourth with how much of what while part paid, and Next on the goods' step to come: " + JSON.stringify(view));
 
     const stB = [...part(sB, "steps").querySelectorAll("li")].map((li) => t(li.querySelector(".salt-steps__time")));
     const hmAt = (s) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kuala_Lumpur", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(s));

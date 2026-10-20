@@ -575,7 +575,8 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .oband__what{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .oband__what .sub2{margin:0}
 .oband__point{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);color:var(--salt-mist-bright)}
-.salt-steps--marks{margin:0 0 16px}
+.salt-steps--marks{margin:0 0 16px;--salt-steps-n:5}
+.salt-steps--marks .salt-steps__name,.salt-steps--marks .salt-steps__time{white-space:nowrap}
 .odet{margin-top:18px}
 .odet__sum{display:flex;align-items:center;min-height:var(--salt-tap);cursor:pointer;list-style:none}
 .odet__sum::-webkit-details-marker{display:none}
@@ -5258,10 +5259,12 @@ const CLIENT_JS = `
   }
   /* GOODS ONLY: a declined or cancelled order has no track to show. Counter Batch A: each step a drawn mark (a receipt, a tick, a box, then
      a bag or a van), the moment it happened under its name, and Next on the step to come */
-  var STEP_GLYPH={placed:'M6.5 3.5 H17.5 V20.5 L15.3 19.2 L13.1 20.5 L10.9 19.2 L8.7 20.5 L6.5 19.2 Z M9.5 8 H14.5 M9.5 11.5 H14.5 M9.5 15 H12.5',
+  var STEP_GLYPH={paid:'M12 3.5 A8.5 8.5 0 1 0 12 20.5 A8.5 8.5 0 1 0 12 3.5 M14.6 9 C14 8.2 13.1 7.8 12 7.8 C10.5 7.8 9.4 8.6 9.4 9.8 C9.4 12.6 14.6 11.4 14.6 14.2 C14.6 15.4 13.5 16.2 12 16.2 C10.9 16.2 10 15.8 9.4 15 M12 6.4 V7.8 M12 16.2 V17.6',
+    placed:'M6.5 3.5 H17.5 V20.5 L15.3 19.2 L13.1 20.5 L10.9 19.2 L8.7 20.5 L6.5 19.2 Z M9.5 8 H14.5 M9.5 11.5 H14.5 M9.5 15 H12.5',
     confirmed:'M12 3.5 A8.5 8.5 0 1 0 12 20.5 A8.5 8.5 0 1 0 12 3.5 M8 12.3 L11 15.2 L16.2 9.2', ready:'M4 8 L12 4 L20 8 V16 L12 20 L4 16 Z M4 8 L12 12 L20 8 M12 12 V20',
     collected:'M6 8 H18 L17 20 H7 Z M9 8 V6.5 A3 3 0 0 1 15 6.5 V8',
     delivered:'M2.5 7 H14 V16 H2.5 Z M14 10 H18 L21.5 13.2 V16 H14 M6.5 19 A1.8 1.8 0 1 0 6.5 15.4 A1.8 1.8 0 1 0 6.5 19 M17.5 19 A1.8 1.8 0 1 0 17.5 15.4 A1.8 1.8 0 1 0 17.5 19'};
+  function stepRm(v){ var n=Math.round((+v||0)*100)/100; return n%1?n.toFixed(2):String(n); }
   function stepWhen(iso){
     if(!iso) return '';
     try{ var k=klBits(iso), n=klBits(new Date().toISOString()); return k.day===n.day&&k.month===n.month&&k.year===n.year?k.hour+':'+k.minute:dmyOf(k); }catch(e){ return ''; }
@@ -5284,6 +5287,16 @@ const CLIENT_JS = `
       if(when) li.appendChild(el('span','salt-steps__time',when));
       ol.appendChild(li);
     });
+    /* 20 Oct 2026 (his answer): PAID, the fourth step, before the goods' last: done once nothing is owed, which may come before the goods go
+       on an order paid first; part paid, how much of what, "RM 40/70" */
+    var due=(+o.total||0)+(+o.delivery||0), paid=+o.paid||0, settled=['acknowledged','ready','done'].indexOf(o.status)>=0&&due>0&&paid>=due-0.004;
+    var pays=(o.payments||[]).filter(function(x){ return x&&(!x.claim||x.claim==='received')&&x.at; }), pli=el('li','salt-steps__step'+(settled?' salt-steps__step--done':''));
+    var pmk=el('span','salt-steps__mark'), NS2='http://www.w3.org/2000/svg', ps=document.createElementNS(NS2,'svg'), pp=document.createElementNS(NS2,'path');
+    pmk.setAttribute('aria-hidden','true'); ps.setAttribute('viewBox','0 0 24 24'); pp.setAttribute('d',STEP_GLYPH.paid); ps.appendChild(pp); pmk.appendChild(ps);
+    pli.appendChild(pmk); pli.appendChild(el('span','salt-steps__name',tw('st.paid'))); pli.setAttribute('data-step','paid');
+    var ptime=settled?stepWhen(pays.length?pays[pays.length-1].at:''):paid>0.004&&due>0?'RM '+stepRm(paid)+'/'+stepRm(due):'';
+    if(ptime) pli.appendChild(el('span','salt-steps__time',ptime));
+    ol.insertBefore(pli,ol.lastChild);
     w.appendChild(ol); return w;
   }
   /* where it stands and when, in one sentence, off the record's own moments. S11 11.7: an order he ended says so

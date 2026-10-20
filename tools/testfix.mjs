@@ -401,6 +401,10 @@ export const FEATURES = [
   ["a day wanted, handed over early, its row on the handover's day (Step 2, 30 Sep 2026)", (f) => has(f, (o) => /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(o.wantBy || "")
     && +o.moved > 0 && o.movedOn < o.wantBy && String(o.ledgerKey || "").split("|")[1] === o.movedOn && o.movedOn > klDay(new Date(o.at))
     && !!f.live && f.live.pay.now.parts.some((p) => p.date === o.movedOn && Math.abs((+p.whole || 0) - (+o.total + (+o.delivery || 0))) < 0.005))],
+  ["the Paid step part paid, how much of what (20 Oct 2026)", (f) => has(f, (o) => ["acknowledged", "ready"].includes(o.status) && +o.paid > 0.004
+    && +o.paid < (+o.total || 0) + (+o.delivery || 0) - 0.004)],
+  ["the Paid step done before the goods go, paid first (20 Oct 2026)", (f) => has(f, (o) => ["acknowledged", "ready"].includes(o.status)
+    && (+o.total || 0) + (+o.delivery || 0) > 0 && +o.paid >= (+o.total || 0) + (+o.delivery || 0) - 0.004 && !(+o.moved > 0))],
   ["a group order open, joined (Pool)", (f) => (f.pools || []).some((p) => p.state === "open" && p.joins.some((j) => has(f, (o) => o.id === j.oid && o.pool === p.id))
     && p.closesOn >= klDay(new Date(f.at)))],
   ["a group order closed, its order confirmed (Pool)", (f) => (f.pools || []).some((p) => p.state === "closed"
