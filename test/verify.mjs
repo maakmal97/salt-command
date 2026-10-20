@@ -48357,6 +48357,11 @@ section("10 Oct 2026: a delivery's time window, as soon as it can or four hours 
 await (async () => {
   await (await import("./delivery-window.mjs")).run({ ok });
 })();
+
+section("Opening hours past midnight: one rule (openParts) for the status, the open minutes, the check of the week and the delivery windows (20 Oct 2026)");
+await (async () => {
+  await (await import("./hours-overnight.mjs")).run({ ok });
+})();
 section("10 Oct 2026: a delivery's exact spot, sealed on their phone to his key, ciphertext alone on the Counter");
 await (async () => {
   await (await import("./delivery-pin.mjs")).run({ ok });

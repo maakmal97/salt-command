@@ -133,7 +133,9 @@ const MAPPED = [
   "Each map point must belong to a roster party and remain inside Malaysia.",
   "Set hours or mark closed for each day of the week.",
   "Each day must be closed or have opening and closing times.",
-  "Use valid 24-hour times, with closing later than opening on the same day.",
+  "Use valid 24-hour times.",
+  "A day cannot open and close at the same time.",
+  "A day cannot open before the day before it closes.",
   "Choose whether the Counter is open or closed.",
   "Set an end time within the next 14 days.",
 ];

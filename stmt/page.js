@@ -37,6 +37,7 @@ import { PAY_SITE, PAY_ACCOUNTS, payHref } from "./pay.js";
 import { OWNER_JS } from "./owner.js";
 import { MAX_OPEN, OPEN_STATES, WANT_DAYS } from "./orders.js";
 import { slotSpan, slotNext, WINDOWS } from "./window.js";
+import { openParts } from "./hours.js";
 import GEO_ENGINE from "./geo.js";
 import { TEST_USERS, TEST_PASS } from "./testfix.js";
 import { EN, WORDS, fill, fillHtml, unitsIn } from "./words.js";
@@ -1992,7 +1993,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
       .replace("/*__PAYHREF__*/", () => payHref.toString())
       /* 10 Oct 2026: a delivery's time window, the Worker's own rule carried as it is (stmt/window.js), so the sheet offers
          exactly the windows the Worker takes */
-      .replace("/*__WINDOW__*/", () => [slotSpan, slotNext].map(String).join("\n")).replace("__WINDOWS__", JSON.stringify(WINDOWS))
+      .replace("/*__WINDOW__*/", () => [slotSpan, slotNext, openParts].map(String).join("\n")).replace("__WINDOWS__", JSON.stringify(WINDOWS))
       /* S4 4.6: the open-order limit the Worker refuses at, so the page can say it before the form */
       .replace("__MAX_OPEN__", String(MAX_OPEN)).replace("__WANT_DAYS__", String(WANT_DAYS)).replace("__OPEN_STATES__", JSON.stringify(OPEN_STATES)).replace("__TEST_USERS__", JSON.stringify(TEST_USERS))
       /* S7 7.1: the places, so the script names them as the markup does */
