@@ -130,7 +130,7 @@ try {
     await page.locator('#makerSchedule [data-act="hours.day"]').first().click();
     await page.waitForSelector("#makerSchedule .maker-dayedit select");
     const table = await page.evaluate(() => {
-      const boxes = [...document.querySelectorAll("#makerSchedule .maker-day, #makerSchedule .maker-dayedit select, #makerSchedule .maker-dayedit-acts button")].map((n) => n.getBoundingClientRect());
+      const boxes = [...document.querySelectorAll("#makerSchedule .maker-day, #makerSchedule .maker-dayedit select, #makerSchedule .maker-dayedit-acts button:not([hidden])")].map((n) => n.getBoundingClientRect());
       return { n: boxes.length, sizes: boxes.map((b) => [Math.round(b.width), Math.round(b.height)]), inside: boxes.every((b) => b.left >= 0 && b.right <= innerWidth),
         overflow: document.documentElement.scrollWidth > innerWidth };
     });
