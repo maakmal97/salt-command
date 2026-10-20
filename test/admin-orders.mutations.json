@@ -14,8 +14,8 @@
  {
   "name": "a row does not say it waits on him",
   "file": "stmt/owner.js",
-  "find": "(e.waits&&e.parts.indexOf('orders.placed')<0)?['copper','Waiting on you']:null;",
-  "replace": "null;"
+  "find": "(e.waits&&e.parts.indexOf('orders.placed')<0)?['copper','Waiting on you']:o.againOf?['brass','Again']:null;",
+  "replace": "o.againOf?['brass','Again']:null;"
  },
  {
   "name": "a row does not say a payment is sent",

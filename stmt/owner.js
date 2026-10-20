@@ -3829,10 +3829,10 @@ export const OWNER_JS = `
       t.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));
       /* ONE PILL AT MOST, and only a state the stage does not already say: Placed always waits on him, so its rows carry no Waiting on you; on any
          other stage the pill says he is wanted there (a question, a payment they say they sent). Practice, then Cash held, then Waiting on you. */
-      var pillOf=o.test?['mist','Practice']:makerCashHeld[e.id]?['brass','Cash held']:(e.waits&&e.parts.indexOf('orders.placed')<0)?['copper','Waiting on you']:null;
+      var pillOf=o.test?['mist','Practice']:makerCashHeld[e.id]?['brass','Cash held']:(e.waits&&e.parts.indexOf('orders.placed')<0)?['copper','Waiting on you']:o.againOf?['brass','Again']:null;
       if(pillOf) t.appendChild(chip(pillOf[0],pillOf[1]));
       var why=[orderAsked(o)?'asked a question':'', ordPays(o).length?'says sent':'', o.again&&o.again.length?'send again':''].filter(Boolean);
-      main.appendChild(el('span','salt-inbox-row__what',[o.mode==='deliver'?'Deliver':o.mode==='collect'?'Collect':''].concat(e.waits?why.slice(0,1):[]).filter(Boolean).join(', ')));
+      main.appendChild(el('span','salt-inbox-row__what',[o.mode==='deliver'?'Deliver':o.mode==='collect'?'Collect':''].concat(e.waits?why.slice(0,1):[]).concat(o.againOf?[orderRef(o.againOf)+' again']:[]).filter(Boolean).join(', ')));
       side.appendChild(el('span','salt-inbox-row__age',ageOf(o.at)));
       side.appendChild(el('span','salt-inbox-row__action',rm(Number(o.total||0)+Number(o.delivery||0))));
     }else if(e.row){
@@ -4251,6 +4251,8 @@ export const OWNER_JS = `
     }else wayNode=el('span','oway');
     wayNode.appendChild(bandIcon(BAND_PIN)); wayNode.appendChild(el('span','oway__text',ordWay(order))); row.appendChild(wayNode);
     var mo=el('span','omoment'); mo.appendChild(bandIcon(BAND_CLOCK)); mo.appendChild(el('span',null,ordMoment(order))); row.appendChild(mo);
+    /* P6: placed again from an order of theirs, which the band names by its short reference */
+    if(order.againOf){ var ag=el('span','obagain'); ag.setAttribute('data-again',''); ag.appendChild(chip('brass','Again')); ag.appendChild(el('span',null,orderRef(order.againOf)+' again')); row.appendChild(ag); }
     head.appendChild(row);
     var clock=orderClock(order); if(clock) head.appendChild(clock);
     /* P5 (canvas V13, V19): an order of a sheet says which of it, a link to the sheet's group on Orders */

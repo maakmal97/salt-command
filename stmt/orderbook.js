@@ -378,7 +378,7 @@ export class OrderBook {
                limit is refused here as its page refuses it; 0000-0002 is the one with room */
             const open = doc.orders.filter((o) => OPEN_STATES.includes(o.status));
             const decision = decidePlace(a.u, a.body, open, at, a.digest, "customer", null,
-              { steps: a.steps || null, hours: a.hours || null, claimWaiting: doc.claims.some((c) => c.state === "waiting") });
+              { steps: a.steps || null, hours: a.hours || null, claimWaiting: doc.claims.some((c) => c.state === "waiting"), mine: doc.orders });
             if (decision.error) return no(decision, decision.status || 400);
             order = applyEvent(null, decision.ev).order;
             order.id = order.id.slice(0, 15) + "ex" + crypto.randomUUID().replace(/-/g, "").slice(0, 6);
@@ -611,7 +611,7 @@ export class OrderBook {
          or against the account, which Negotiate reads; both read here, in the one step nobody comes between */
       const mine = this.ordersOf(u), overdue = mine.some((o) => isAdvance(o) && graceOver(o, at)), claimWaiting = mine.some(claimWaits)
         || this.state.storage.sql.exec("SELECT doc FROM acl WHERE u = ?", u).toArray().some((r) => JSON.parse(r.doc).state === "waiting");
-      const d = decidePlace(u, a.body, mine.filter((o) => OPEN_STATES.includes(o.status)), at, a.digest, a.by === "desk" ? "desk" : "customer", null, { steps: a.steps || null, claimWaiting, overdue, hours: a.hours || null });
+      const d = decidePlace(u, a.body, mine.filter((o) => OPEN_STATES.includes(o.status)), at, a.digest, a.by === "desk" ? "desk" : "customer", null, { steps: a.steps || null, claimWaiting, overdue, hours: a.hours || null, mine });
       if (d.error) return no(d, 400);
       return this.append(eid, u, d.ev.order.id, d.ev, null);
     }
