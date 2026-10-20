@@ -131,9 +131,17 @@ export async function run({ ok, pageWork }) {
     /* 18 Oct 2026 (clarity, part 3): the answer leads the card, Agree at the top with its terms beside it; the foot keeps Decline alone, a ghost danger button */
     const leadOf = (id) => p.cardOf(id).querySelector(".ordlead"), termsOf = (id) => (leadOf(id).querySelector(".ordterms") || { textContent: "" }).textContent;
     const tail = (id) => [...p.cardOf(id).querySelectorAll(".ordend [data-act]")].map((e) => e.getAttribute("data-act")).filter((a) => !/[.]cancel-retained$/.test(a));
-    ok(same(moves(), []) && !foot().classList.contains("has") && same(tail("ord-p1"), ["order.decline"]) && byAct(d, "order.decline", "ord-p1").classList.contains("salt-ghost--danger")
-      && !byAct(d, "order.decline", "ord-p1").closest(".maker-foot") && p.cardOf("ord-p1").querySelector(".ordend").nextElementSibling === foot(),
-      "Decline stands in the flow at the card's end, a ghost danger button, never in a sticky foot: " + JSON.stringify([moves(), tail("ord-p1")]));
+    /* 20 Oct 2026 (his canvas comment): a placed order's Agree, Change terms and Decline stand in one row of three, the terms line under it */
+    const rowOf = (id) => p.cardOf(id).querySelector(".ordlead .ordrow3"), rowActs = (id) => rowOf(id) ? [...rowOf(id).children].filter((e) => !e.hidden).map((e) => e.getAttribute("data-act")) : [];
+    ok(same(moves(), []) && !foot().classList.contains("has") && same(rowActs("ord-p1"), ["order.accept", "order.terms", "order.decline"]) && byAct(d, "order.decline", "ord-p1").classList.contains("salt-ghost--danger")
+      && !byAct(d, "order.decline", "ord-p1").closest(".maker-foot") && !p.cardOf("ord-p1").querySelector(".ordend") && rowOf("ord-p1").nextElementSibling === leadOf("ord-p1").querySelector(".ordterms"),
+      "a placed order's Agree, Change terms and Decline stand in one row of three, Decline a ghost danger button, never in a sticky foot, the terms line under the row: " + JSON.stringify([moves(), rowActs("ord-p1")]));
+    const tb = byAct(d, "order.terms", "ord-p1"), tfold = p.cardOf("ord-p1").querySelector('details[data-fold="terms"]');
+    ok(!!tb && tb.tagName === "BUTTON" && tb.getAttribute("aria-expanded") === "false" && !tfold.open, "Change terms in the row is a button, its fold shut");
+    tb.click(); await p.work.quiet();
+    ok(p.cardOf("ord-p1").querySelector('details[data-fold="terms"]').open && byAct(d, "order.terms", "ord-p1").getAttribute("aria-expanded") === "true",
+      "and a tap on it opens the terms under the row");
+    byAct(d, "order.terms", "ord-p1").click(); await p.work.quiet();
     ok(!!(p.cardOf("ord-p1").querySelector(".ordlead").compareDocumentPosition(p.cardOf("ord-p1").querySelector(".ordmoney")) & 4) && p.cardOf("ord-p1").querySelector(".ordlead").previousElementSibling.classList.contains("salt-steps")
       && p.cardOf("ord-p1").querySelector(".salt-steps").previousElementSibling.classList.contains("ohead"),
       "and the main action stands directly under the card's head and its track, ahead of Goods and Details");
@@ -143,12 +151,12 @@ export async function run({ ok, pageWork }) {
       && stepsP1.every((s) => s.querySelector(".salt-steps__mark svg path[d]") && s.querySelector(".salt-steps__name"))
       && stepsP1[0].classList.contains("salt-steps__step--now") && stepsP1[1].classList.contains("salt-steps__step--next") && /Next/.test(stepsP1[1].querySelector(".salt-steps__time").textContent),
       "the card's track is the Counter's marked steps: four drawn marks, Placed now and Next on Confirmed: " + (trackP1 ? trackP1.className + " | " + trackP1.textContent : "none"));
-    ok(!foot().contains(byAct(d, "order.accept")) && leadOf("ord-p1").contains(byAct(d, "order.accept")) && leadOf("ord-p1").firstElementChild === byAct(d, "order.accept") && byAct(d, "order.accept").classList.contains("salt-pill")
+    ok(!foot().contains(byAct(d, "order.accept")) && leadOf("ord-p1").contains(byAct(d, "order.accept")) && rowOf("ord-p1").firstElementChild === byAct(d, "order.accept") && byAct(d, "order.accept").classList.contains("salt-pill")
       && !!(leadOf("ord-p1").compareDocumentPosition(p.cardOf("ord-p1").querySelector(".maker-fields")) & 4),
       "Agree is the filled pill at the top of the card, ahead of every field, and not in the foot");
     ok(/^Collect . RM 200\.00$/.test(termsOf("ord-p1")), "and the terms it will send stand beside it in one line: " + termsOf("ord-p1"));
     await p.tapRow("ord-p2");
-    ok(same(moves(), []) && same(tail("ord-p2"), ["order.decline"]) && !byAct(d, "order.accept"), "a delivery with no charge chosen has Decline at the card's end and no Agree: " + JSON.stringify([moves(), tail("ord-p2")]));
+    ok(same(moves(), []) && rowActs("ord-p2").includes("order.decline") && !byAct(d, "order.accept"), "a delivery with no charge chosen has Decline in the row and no Agree: " + JSON.stringify([moves(), rowActs("ord-p2")]));
     const wait = () => leadOf("ord-p2").querySelector("[data-accept-wait]");
     ok(!!wait() && wait().textContent === "Choose the delivery charge" && termsOf("ord-p2") === "Choose the delivery charge" && !wait().disabled && leadOf("ord-p2").parentNode === p.cardOf("ord-p2"),
       "and the lead says Choose the delivery charge, as a button that sends nothing, never a half-filled Agree: " + (wait() || {}).textContent);
@@ -157,7 +165,7 @@ export async function run({ ok, pageWork }) {
     const postsBefore = p.posts.length; wait().click(); await p.work.quiet();
     ok(fold("ord-p2", "terms").open && p.posts.length === postsBefore, "and the stand-in opens Change terms for the charge, and sends nothing");
     byAct(d, "order.fee-10", "ord-p2").click(); await p.work.quiet();
-    ok(same(moves(), []) && leadOf("ord-p2").firstElementChild === byAct(d, "order.accept") && !wait(), "and Agree takes its place at the top once the charge is chosen and the figures are read: " + JSON.stringify(moves()));
+    ok(same(moves(), []) && rowOf("ord-p2").firstElementChild === byAct(d, "order.accept") && !wait(), "and Agree takes its place at the top once the charge is chosen and the figures are read: " + JSON.stringify(moves()));
     ok(termsOf("ord-p2") === "Delivery RM 10.00 · their 08:00 to 12:00 on 12 Oct", "with the terms written beside it: " + termsOf("ord-p2"));
     byAct(d, "order.fee-15", "ord-p2").click(); await p.work.quiet();
     ok(termsOf("ord-p2") === "Delivery RM 15.00 · their 08:00 to 12:00 on 12 Oct", "and the terms follow the charge as it is changed: " + termsOf("ord-p2"));

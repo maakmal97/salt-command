@@ -50,19 +50,19 @@
  {
   "name": "Accept stands in the body of the card",
   "file": "stmt/owner.js",
-  "find": "accept.setAttribute('data-accept',''); lead.insertBefore(accept,lead.firstChild);",
+  "find": "accept.setAttribute('data-accept',''); row3.insertBefore(accept,row3.firstChild);",
   "replace": "accept.setAttribute('data-accept',''); card.appendChild(accept);"
  },
  {
   "name": "Accept stands after Decline",
   "file": "stmt/owner.js",
-  "find": "accept.setAttribute('data-accept',''); lead.insertBefore(accept,lead.firstChild);",
+  "find": "accept.setAttribute('data-accept',''); row3.insertBefore(accept,row3.firstChild);",
   "replace": "accept.setAttribute('data-accept','');"
  },
  {
   "name": "Decline stands in the body of the card",
   "file": "stmt/owner.js",
-  "find": "      var dec=makerButton(tail,['Decline','order.decline'],function(){",
+  "find": "      var dec=makerButton(card.querySelector('.ordrow3')||tail,['Decline','order.decline'],function(){",
   "replace": "      var dec=makerButton(card,['Decline','order.decline'],function(){"
  },
  {
@@ -356,7 +356,7 @@
  {
   "name": "Agree stands in the foot, not at the top",
   "file": "stmt/owner.js",
-  "find": "          },true); accept.setAttribute('data-accept',''); lead.insertBefore(accept,lead.firstChild);",
+  "find": "          },true); accept.setAttribute('data-accept',''); row3.insertBefore(accept,row3.firstChild);",
   "replace": "          },true); accept.setAttribute('data-accept',''); acts.insertBefore(accept,acts.firstChild);"
  },
  {
@@ -416,7 +416,7 @@
  {
   "name": "Decline stands in the sticky foot",
   "file": "stmt/owner.js",
-  "find": "var dec=makerButton(tail,['Decline'",
+  "find": "var dec=makerButton(card.querySelector('.ordrow3')||tail,['Decline'",
   "replace": "var dec=makerButton(acts,['Decline'"
  },
  {
@@ -448,5 +448,10 @@
   "file": "stmt/owner.js",
   "find": "    var ol=oSteps(order).firstChild; ol.setAttribute('aria-label','Where the goods are');",
   "replace": "    var ol=el('ol','salt-steps'); ol.setAttribute('aria-label','Where the goods are'); ['Placed','Confirmed','Ready','Collected'].forEach(function(n,i){ ol.appendChild(el('li','salt-steps__step'+(i===0?' salt-steps__step--now':''),n)); });"
- }
+ },
+{"name":"Decline goes back to the card's end","file":"stmt/owner.js","find":"var dec=makerButton(card.querySelector('.ordrow3')||tail,['Decline','order.decline'],function(){","replace":"var dec=makerButton(tail,['Decline','order.decline'],function(){"},
+ {"name":"no Change terms in the row","file":"stmt/owner.js","find":"        row3.appendChild(tb);","replace":"        void tb;"},
+ {"name":"Change terms opens nothing","file":"stmt/owner.js","find":"tb.addEventListener('click',function(){ tf.open=!tf.open;","replace":"tb.addEventListener('click',function(){ tf.open=tf.open;"},
+ {"name":"Agree outside the row","file":"stmt/owner.js","find":"accept.setAttribute('data-accept',''); row3.insertBefore(accept,row3.firstChild);","replace":"accept.setAttribute('data-accept',''); lead.insertBefore(accept,lead.firstChild);"},
+ {"name":"the terms line above the row","file":"stmt/owner.js","find":"var row3=el('div','ordrow3'); lead.appendChild(row3);\n","replace":"var row3=el('div','ordrow3');\n"}
 ]

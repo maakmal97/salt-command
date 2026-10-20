@@ -216,8 +216,9 @@ export async function run({ ok, pageWork }) {
     ok(same(p.cardsIn(), ["ord-p1"]) && byAct(d, "order.open", "ord-p1").getAttribute("aria-current") === "true" && d.getElementById("oSplit").classList.contains("open")
       && !byAct(d, "order.open", "ord-p2").hasAttribute("aria-current"),
     "a row opens that order's card alone, marks itself current and stands the list and the card side by side: " + JSON.stringify(p.cardsIn()));
-    const want = ["order.accept", "order.details", "order.terms", "order.total", "order.answer", "order.reply-text", "order.quick-reply", "order.quick-reply", "order.quick-keep",
-      "order.reply", "order.no-reply", "order.decline"];
+    /* 20 Oct 2026 (his canvas comment): Agree, Change terms and Decline lead in one row; the fold's own summary is hidden behind Change terms */
+    const want = ["order.accept", "order.terms", "order.decline", "order.details", "order.terms-fold", "order.total", "order.answer", "order.reply-text", "order.quick-reply",
+      "order.quick-reply", "order.quick-keep", "order.reply", "order.no-reply"];
     const got = p.acts("ord-p1");
     ok(same(got, want), "the card has the controls it had, less the reason, which is asked on the Decline's Sheet, and Details for its reference: " + JSON.stringify(got));
     /* his decision 6 of 11 Oct 2026: the card reads its own preview on opening, once, and has no Preview button */

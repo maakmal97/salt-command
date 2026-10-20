@@ -3109,7 +3109,7 @@ export const OWNER_JS = `
     /* his decision 4 of 11 Oct 2026: a Decline or a Cancel asks on the page's Sheet, and the reason is asked there, on tiles */
     var tail=el('div','ordend');
     if(order.status==='placed'){
-      var dec=makerButton(tail,['Decline','order.decline'],function(){
+      var dec=makerButton(card.querySelector('.ordrow3')||tail,['Decline','order.decline'],function(){
         var why=makerWhy(order);
         makerAsk(order,dec,'decline',{title:'Decline this order?', go:'Decline the order', keep:'Keep the order', extra:why.nodes,
           say:['It is declined and goes no further. The customer is told, with your reason if you give one.'],
@@ -4121,8 +4121,17 @@ export const OWNER_JS = `
            it in one line and kept in step with the choices; the price, the delivery charge and the time are folded under Change terms, shut until a tap.
            Until the figures are read the pill is a stand-in, never a send: it asks for the charge (and opens it) or says it is reading. */
         leadPlace();
+        /* 20 Oct 2026 (his canvas comment): AGREE, CHANGE TERMS AND DECLINE IN ONE ROW OF THREE, the terms line under it. Change terms is a button
+           opening the fold below the row (its own summary hidden), and Decline is drawn into the row by makerOrderMoves. */
+        var row3=el('div','ordrow3'); lead.appendChild(row3);
         var terms=el('p','ordterms'); terms.setAttribute('aria-live','polite'); lead.appendChild(terms);
         var tf=ordFold(card,'Change terms','order.terms',order.id,'terms',false);
+        tf.classList.add('ordfold--rowed'); actOn(tf.querySelector('summary'),'order.terms-fold',order.id);
+        var tb=actOn(el('button','salt-ghost ordrow3__terms','Change terms'),'order.terms',order.id); tb.type='button';
+        tb.setAttribute('aria-expanded',tf.open?'true':'false');
+        tb.addEventListener('click',function(){ tf.open=!tf.open; ordFolds[order.id+'|terms']=tf.open; tb.setAttribute('aria-expanded',tf.open?'true':'false'); });
+        tf.addEventListener('toggle',function(){ tb.setAttribute('aria-expanded',tf.open?'true':'false'); });
+        row3.appendChild(tb);
         tf.body.appendChild(form);
         /* a sheet of several placed orders asks for the delivery charge once, on its first order (the Desk's ordPvDelivery):
            the others hide the chips and send nought */
@@ -4160,7 +4169,7 @@ export const OWNER_JS = `
           var b=el('button','btn salt-pill salt-pill--md',pick?'Choose the delivery charge':bad?'Figures not read':'Reading the figures'); b.type='button';
           b.setAttribute('data-accept-wait',''); actOn(b,'order.accept-wait');
           if(pick) b.addEventListener('click',function(){ tf.open=true; var r=tf.querySelector('input[type=radio]'); if(r&&r.focus) r.focus(); }); else b.disabled=true;
-          lead.insertBefore(b,lead.firstChild);
+          row3.insertBefore(b,row3.firstChild);
         }
         /* any failed or in-flight preview, and any changed input, clears the usable quote/hash and takes Accept away:
            none of it is usable until a fresh exact-input preview succeeds (immediate safety requirement) */
@@ -4198,7 +4207,7 @@ export const OWNER_JS = `
             if(order.test) body.prepay=s.prepay===true;
             if(order.mode==='deliver'&&!order.slot&&!order.wantBy&&wv) body.slot=wv;
             makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/accept',body,'Agreed and sent to the Desk.',order.id);
-          },true); accept.setAttribute('data-accept',''); lead.insertBefore(accept,lead.firstChild);
+          },true); accept.setAttribute('data-accept',''); row3.insertBefore(accept,row3.firstChild);
         }
         /* 13 Oct 2026 (stress, High): A CHOICE THAT DID NOT SAVE IS NOT SHOWN AS CHOSEN. The charge and the time are held on this card until the
            figures are read; a read that fails (a 500, no connection) leaves the radio he just pressed ticked over figures nobody read. The choice

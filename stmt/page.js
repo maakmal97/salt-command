@@ -650,6 +650,11 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .ordlead:empty{display:none}
 .adm .ordlead>.maker-field,.adm .ordlead>.salt-options{flex:1 1 100%}
 .adm .ordterms{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted);flex:1 1 12em}
+/* 20 Oct 2026: a placed order's three moves in one row, the terms line under it */
+.adm .ordrow3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;flex:1 1 100%}
+.adm .ordrow3>button{width:100%;min-height:44px;padding-left:8px;padding-right:8px;white-space:nowrap}
+.adm .ordrow3+.ordterms{flex:1 1 100%;text-align:center}
+.adm .ordfold--rowed>summary{display:none}
 .adm .ordfold>summary .salt-plan__title{grid-column:1 / -1}
 .adm .ordfold__body>*+*{margin-top:12px}
 .adm .abody{display:flex;flex-direction:column;gap:28px}
