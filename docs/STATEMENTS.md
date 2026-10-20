@@ -757,7 +757,11 @@ The suite section "Account leads with this device, and the door names the app" (
   Worker's `pinShape` and `PIN_MAX` hold unchanged; an amendment still names no spot. The list asks for the slip key as it draws. The check
   and the order's Details read **Spot or unit: Sealed**, since the Worker cannot tell a point from a unit. The Desk opens it after the one
   unlock: the card names "Shop · Unit 12A" before the point's line; a unit alone says so, measures no fee and is never filed (File all leaves
-  it out); filing writes the point alone. Salt Admin says "They shared a spot or unit. Open it on the Desk."
+  it out); filing writes the point alone. Salt Admin opens it too (his answer of 20 Oct 2026, reversing "Open it on the Desk"): the order
+  card's **Their spot**, Sealed with Unlock until the one unlock, then the spot's name, its floor or unit and Maps at the point (a unit alone
+  has none), read through `GET /all/maker/pins/<username>/<id>` off the Counter's own store with `readPin(..., keep = false)`, so his
+  look never keeps a finished delivery's spot past its 30 days; the opened part carries `data-maker-pin` and the lock takes it off. A
+  practice order's spot is never filed, so it offers nothing. Filing it as their place stays on the Desk.
 - **The confirm time** (item 19, P3 and P4). `stmt/confirm.js` `confirmWithin`: the median, Place to his first Accept, of his last 30
   confirmations made in Counter hours (the weekly hours as they stand, the manual switch left out), up to the next quarter hour, 15 minutes
   at least; an order sent as an offer, with a price, a group order or a test account's is left out, and a replacement is measured from the
@@ -990,8 +994,8 @@ with the slip's protocol under its own info, `salt-pin v1`, so a spot never open
 area may then be left empty. `takePin` (`stmt/pin.js`) swaps the envelope for its id before the order book is asked, so
 the book's events hold the id alone; `keepPin` files the ciphertext at `pin:<username>:<id>` for 30 days ONLY ONCE THE
 ORDER IS RECORDED AND NAMES IT, and each read by the desk files it for 30 more. A test account's is never filed. The
-customer reads `pinned` and never the id; Salt Admin says Location shared and opens nothing. **Only the desk opens
-one**: the Site orders card, with the vault open, reads it keyed (`GET /pins/<username>/<id>`, relayed from
+customer reads `pinned` and never the id; Salt Admin opens it after the one unlock from 20 Oct 2026 (above), reading it
+without keeping it, and files nothing. **The desk opens it and files it**: the Site orders card, with the vault open, reads it keyed (`GET /pins/<username>/<id>`, relayed from
 `/desk/pins/...`, never cached by `sw.js`), opens it with the slip key the one unlock holds (`ordPinPoint`), measures the
 fee to it ahead of `vault-addr` and `PLACED` (F15), names it and never its figures, and offers File as their place, which
 writes it into the places vault on the device through the vault's own road (`src: "pin"`, the address filed kept); never

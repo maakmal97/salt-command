@@ -22,7 +22,7 @@
  {"name": "Admin offers no window as theirs", "file": "stmt/owner.js", "find": "var own=order.slot&&order.slotSpan?'Theirs, '", "replace": "var own=false?'Theirs, '"},
  {"name": "Admin's sheet lines send no window", "file": "stmt/owner.js", "find": "((follower?(makerWin[group[0].id]||{}).value:win.value)||'')", "replace": "(win.value||'')"},
  {"name": "Admin offers a window begun", "file": "stmt/owner.js", "find": ".filter(function(x){ return x[2]>now; });", "replace": ".filter(function(x){ return x[2]>now-14400000; });"},
- {"name": "Admin does not say a spot was shared", "file": "stmt/owner.js", "find": "      if(order.mode==='deliver'&&order.pin) card.appendChild(el('p','maker-facts','They shared a spot or unit. Open it on the Desk.'));\n", "replace": ""},
+ {"name": "Admin does not say a spot was shared", "file": "stmt/owner.js", "find": "      if(order.mode==='deliver'&&order.pin&&!order.test) makerSpotControl(card,order);\n", "replace": ""},
  {"name": "the desk always names the window", "file": "src/orders.js", "find": "\"wantBy\"].concat(o.slot ? [\"slot\"] : []);", "replace": "\"wantBy\", \"slot\"];"},
  {"name": "the desk never names the window", "file": "src/orders.js", "find": "\"wantBy\"].concat(o.slot ? [\"slot\"] : []);", "replace": "\"wantBy\"];"},
  {"name": "the Counter needs the window named", "file": "stmt/orders.js", "find": "      ? Object.assign({ slot: null }, body.reserveReview) : body.reserveReview;", "replace": "      ? body.reserveReview : body.reserveReview;"}

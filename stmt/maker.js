@@ -3,6 +3,7 @@ import { accountRecord, exampleAccount, examplePlace, examplePools, exampleThrea
 import { POINTS_KEY, readPoints, validatePoints, resolvePoint, isPointCode } from "./points.js";
 import { hoursStatus, validateManualHours, validateWeeklyHours, HOURS_KEY, windowHours } from "./hours.js";
 import { CONFIRM_KEY, confirmWithin, confirmView } from "./confirm.js";
+import { readPin } from "./pin.js";
 
 const OWNER_EMAIL = "maakmal97@icloud.com";
 const HEADERS = {
@@ -341,6 +342,8 @@ function internalOperation(path) {
   if (path === "/all/maker/vault/key") return { kind: "slip-key" };
   const slip = /^\/all\/maker\/slips\/([a-z0-9]{4}-[a-z0-9]{4})\/([0-9a-f]{32})$/.exec(path);
   if (slip) return { kind: "slip", u: slip[1], id: slip[2] };
+  const spot = /^\/all\/maker\/pins\/([a-z0-9]{4}-[a-z0-9]{4})\/([0-9a-f]{32})$/.exec(path);
+  if (spot) return { kind: "pin", u: spot[1], id: spot[2] };
   const claim = /^\/all\/maker\/claims\/([a-z0-9]{4}-[a-z0-9]{4})\/(a[0-9]{14}-[a-z0-9]{1,8})\/(preview|received|notfound)$/.exec(path);
   if (claim) return { kind: "claim", u: claim[1], id: claim[2], action: claim[3] };
   const thread = /^\/all\/maker\/threads\/([a-z0-9]{4}-[a-z0-9]{4})$/.exec(path);
@@ -491,6 +494,13 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
         if (written.pool) pool = written.pool;
       }
       return json({ ok: true, pool, accepted, left: failed });
+    }
+    /* Salt Admin A to C (20 Oct 2026), P4: A DELIVERY'S SAVED SPOT, as filed: ciphertext off the Counter's own store, no Desk hop, opened in
+       his browser after the one unlock. Read with keep false, so looking never keeps a finished delivery's spot past its 30 days. */
+    if (op.kind === "pin") {
+      if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+      const pin = env.STMT ? await readPin(env, op.u, op.id, false) : null;
+      return pin ? json({ ok: true, pin }) : json({ ok: false, error: "that location is not kept" }, 404);
     }
     if (op.kind === "slip" || op.kind === "slip-key" || op.kind === "claims") {
       if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);

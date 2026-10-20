@@ -737,6 +737,13 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm #makerClaims .salt-inbox-row__title{gap:6px}
 .adm #makerClaims .rnone{margin:0}
 .adm .maker-slipbox{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+/* Salt Admin A to C, P4: their spot, sealed or open */
+.adm .ospot{padding:20px 24px;margin:12px 0 0;display:flex;flex-direction:column;gap:12px}
+.adm .ospot>*,.adm .ospot__open>*{margin:0}
+.adm .ospot__top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.adm .ospot__open{display:flex;flex-direction:column;gap:12px}
+.adm .ospot__acts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.adm .ospot__maps svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6}
 .adm .maker-slipbox>*{margin:0}
 .adm .maker-slip-open{display:block;min-width:var(--salt-tap);min-height:var(--salt-tap);max-width:100%;padding:0;background:var(--salt-well);border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);overflow:hidden;line-height:0;cursor:zoom-in}
 .adm .maker-slip-open .maker-slip{max-height:120px;width:auto}

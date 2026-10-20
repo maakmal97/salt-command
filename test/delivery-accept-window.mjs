@@ -216,7 +216,8 @@ export async function run({ ok, KV, assets }) {
     const bA = await acceptOf(A), bB = await acceptOf(B), bT = await acceptOf(T);
     ok(bA.slot === first[0] && bB.slot === first[0] && !("slot" in bT) && bA.delivery === 10 && bB.delivery === 0,
       "Salt Admin's Accept sends the window he picked, its sheet's other line the same, and an order with its own time none: " + JSON.stringify([bA, bB, bT]));
-    ok(/They shared a spot or unit[.] Open it on the Desk/.test(acard(PN).textContent) && !/They shared a spot/.test(acard(T).textContent) && !/abababab/.test(acard(PN).textContent),
-      "Salt Admin says a spot was shared, never its id, and opens nothing: " + acard(PN).textContent.slice(0, 200));
+    /* 20 Oct 2026 (his answer): Salt Admin opens the spot too, after the one unlock; locked, its card says Sealed and never the id */
+    ok(!!acard(PN).querySelector("[data-pin-gate]") && /Their spots*Sealed/.test(acard(PN).textContent) && !acard(T).querySelector("[data-pin-gate]") && !/abababab/.test(acard(PN).textContent),
+      "Salt Admin says a spot was shared, sealed until the one unlock, never its id: " + acard(PN).textContent.slice(0, 200));
   } finally { browser.window.close(); }
 }

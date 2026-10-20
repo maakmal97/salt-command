@@ -9,7 +9,9 @@
  * ONE PIN AN ORDER. Place carries it; it is swapped for its id BEFORE the order book is asked, so the book's events hold the
  * id alone and never the ciphertext, and ONLY ONCE THE ORDER IS RECORDED AND NAMES IT is the ciphertext filed at
  * pin:<username>:<id> for PIN_TTL (30 days): a refused Place stores nothing. The desk reads it through its keyed relay, GET
- * /desk/pins/<username>/<id>, and each read files it for another 30 days, so an order still open keeps its spot. An
+ * /desk/pins/<username>/<id>, and each Desk read files it for another 30 days, so an order still open keeps its spot; Salt
+ * Admin reads it too (GET /all/maker/pins/<username>/<id>, behind /all's two locks, his answer of 20 Oct 2026) and its read
+ * keeps nothing, so looking never holds a finished delivery's point past its 30 days. Both open it only after the one unlock. An
  * amendment before Accept keeps the order's pin (decideReplace); a test account's is never filed. Nothing here imports
  * anything but the words and the slip's shape. */
 import { refusal } from "./words.js";
@@ -43,11 +45,12 @@ export async function keepPin(env, u, pin, named) {
   if (!pin || named !== pin.id) return false;
   try { await env.STMT.put(pinKey(u, pin.id), pin.value, { expirationTtl: PIN_TTL }); return true; } catch (e) { return false; }
 }
-/** The sealed pin as filed, for the desk's relay alone, filed for another PIN_TTL as it is read; null once lapsed. */
-export async function readPin(env, u, id) {
+/** The sealed pin as filed, for the desk's relay and Salt Admin's read; the desk's (keep) files it for another PIN_TTL as it
+ *  is read, Admin's (keep false) does not; null once lapsed. */
+export async function readPin(env, u, id, keep = true) {
   if (!PIN_ID_RE.test(String(id || ""))) return null;
   let v = null;
   try { v = await env.STMT.get(pinKey(u, id), "json"); } catch (e) { v = null; }
-  if (v) try { await env.STMT.put(pinKey(u, id), JSON.stringify(v), { expirationTtl: PIN_TTL }); } catch (e) { /* read once more next time */ }
+  if (v && keep) try { await env.STMT.put(pinKey(u, id), JSON.stringify(v), { expirationTtl: PIN_TTL }); } catch (e) { /* read once more next time */ }
   return v;
 }

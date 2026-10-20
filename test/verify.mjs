@@ -50025,6 +50025,11 @@ await (async () => {
   await (await import("./admin-ac-confirm.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Admin A to C: their saved spot opened on Admin after the one unlock, and an Admin read keeps nothing (20 Oct 2026)");
+await (async () => {
+  await (await import("./admin-ac-spot.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin: the claim card reads its rows on opening, draws the slip from the one unlock, and asks on a sheet");
 await (async () => {
   await (await import("./admin-claim-card.mjs")).run({ ok, pageWork });

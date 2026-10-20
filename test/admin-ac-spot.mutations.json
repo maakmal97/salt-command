@@ -1,0 +1,17 @@
+[
+ {"name":"Admin's read keeps the spot","file":"stmt/maker.js","find":"const pin = env.STMT ? await readPin(env, op.u, op.id, false) : null;","replace":"const pin = env.STMT ? await readPin(env, op.u, op.id) : null;"},
+ {"name":"no route for a spot","file":"stmt/maker.js","find":"  if (spot) return { kind: \"pin\", u: spot[1], id: spot[2] };","replace":"  if (false) return { kind: \"pin\", u: spot[1], id: spot[2] };"},
+ {"name":"a spot not kept answers ok","file":"stmt/maker.js","find":"return pin ? json({ ok: true, pin }) : json({ ok: false, error: \"that location is not kept\" }, 404);\n    }\n    if (op.kind === \"slip\"","replace":"return json({ ok: true, pin });\n    }\n    if (op.kind === \"slip\""},
+ {"name":"no read keeps the spot","file":"stmt/pin.js","find":"  if (v && keep) try {","replace":"  if (false) try {"},
+ {"name":"no spot card","file":"stmt/owner.js","find":"      if(order.mode==='deliver'&&order.pin&&!order.test) makerSpotControl(card,order);","replace":"      if(false) makerSpotControl(card,order);"},
+ {"name":"a practice spot offers Unlock","file":"stmt/owner.js","find":"      if(order.mode==='deliver'&&order.pin&&!order.test) makerSpotControl(card,order);","replace":"      if(order.mode==='deliver'&&order.pin) makerSpotControl(card,order);"},
+ {"name":"sealed says no Sealed","file":"stmt/owner.js","find":"      if(sealed) top.appendChild(chip('mist','Sealed'));","replace":"      void sealed;"},
+ {"name":"the sealed card reads the spot","file":"stmt/owner.js","find":"    box._draw=function(){ if(!box.isConnected) return; if(!makerVault) sealedDraw(); else open(); };","replace":"    box._draw=function(){ if(!box.isConnected) return; if(!makerVault){ sealedDraw(); refs('/all/maker/pins/'+order.u+'/'+order.pin).catch(function(){}); } else open(); };"},
+ {"name":"the unlock redraws no spot","file":"stmt/owner.js","find":"    [].forEach.call(document.querySelectorAll('[data-pin-gate]'),function(b){ if(b._draw) b._draw(); });","replace":"    void 0;"},
+ {"name":"opened under the slip's info","file":"stmt/owner.js","find":"        var b=await makerSealedOpen(makerVault.slip,j.pin,'salt-pin v1');","replace":"        var b=await makerSealedOpen(makerVault.slip,j.pin,'salt-slip v1');"},
+ {"name":"no spot name","file":"stmt/owner.js","find":"      if(label) led.appendChild(ordLine('Spot',label));","replace":"      void label;"},
+ {"name":"no floor or unit","file":"stmt/owner.js","find":"      if(unit) led.appendChild(ordLine('Floor or unit',unit));","replace":"      void unit;"},
+ {"name":"Maps off the point","file":"stmt/owner.js","find":"a.href=spotHref(+p.lat,+p.lng);","replace":"a.href=spotHref(+p.lng,+p.lat);"},
+ {"name":"a unit alone gets Maps","file":"stmt/owner.js","find":"      if(p.src!=='unit'&&isFinite(p.lat)&&isFinite(p.lng)&&Math.abs(+p.lat)<=90&&Math.abs(+p.lng)<=180){","replace":"      if(true){"},
+ {"name":"the opened part unmarked","file":"stmt/owner.js","find":"      part.setAttribute('data-maker-pin','');","replace":"      part.setAttribute('data-x','');"}
+]

@@ -1079,7 +1079,7 @@ export const OWNER_JS = `
   function makerSlipClose(){
     makerSlipGeneration++;
     makerSlipUrls.forEach(function(url){ URL.revokeObjectURL(url); }); makerSlipUrls=[];
-    document.querySelectorAll('[data-maker-slip]').forEach(function(node){ node.remove(); });
+    document.querySelectorAll('[data-maker-slip],[data-maker-pin]').forEach(function(node){ node.remove(); });
   }
   /* 12 Oct 2026 (PHASE 4b, his decision 3 of 11 Oct 2026): THE ONE UNLOCK. One password, typed once on the Sheet below, opens the names, the places and the slip
      key, and every place that asked for its own password (Add ID, Amend ID, Place on the map, an unsent entry, a claim's slip) reads this instead; locked, each says
@@ -1163,6 +1163,7 @@ export const OWNER_JS = `
   /* every gate, the Shop row and the names beside the codes follow the lock */
   function makerVaultNotify(){
     [].forEach.call(document.querySelectorAll('[data-vault-gate]'),makerVaultDraw);
+    [].forEach.call(document.querySelectorAll('[data-pin-gate]'),function(b){ if(b._draw) b._draw(); });
     var state=document.getElementById('vaultState'), on=document.getElementById('vaultOn'), off=document.getElementById('vaultOff');
     if(state) state.textContent=makerVault?'Open on this phone':'Locked';
     if(on) on.hidden=!!makerVault;
@@ -1373,6 +1374,79 @@ export const OWNER_JS = `
     }
     claimRead();
   }
+  /* Salt Admin A to C (20 Oct 2026), P4: ONE OPEN for what a customer's phone seals to the slip key (stmt/slip.js, stmt/pin.js): ECDH with the
+     slip key the one unlock holds, HKDF under the kind's own info ('salt-slip v1' or 'salt-pin v1', so neither opens as the other), AES-GCM */
+  async function makerSealedOpen(privateKey,sealed,info){
+    var epk=await crypto.subtle.importKey('raw',makerFrom64(sealed.epk),{name:'ECDH',namedCurve:'P-256'},false,[]);
+    var bits=await crypto.subtle.deriveBits({name:'ECDH',public:epk},privateKey,256);
+    var hk=await crypto.subtle.importKey('raw',bits,'HKDF',false,['deriveKey']);
+    var aes=await crypto.subtle.deriveKey({name:'HKDF',hash:'SHA-256',salt:new Uint8Array(0),info:new TextEncoder().encode(info)},
+      hk,{name:'AES-GCM',length:256},false,['decrypt']);
+    return crypto.subtle.decrypt({name:'AES-GCM',iv:makerFrom64(sealed.iv)},aes,makerFrom64(sealed.ct));
+  }
+  /* Salt Admin A to C (20 Oct 2026), P4, HIS ANSWER: THEIR SPOT on a delivery, opened here too after the one unlock (it was the Desk's alone). Sealed
+     while shut, with Unlock; open, the spot's name, its floor or unit and Maps from the point, each from the seal and nothing stored: the opened
+     part carries data-maker-pin, so the lock, a hidden page and makerSlipClose take it off. A unit alone has no Maps. Filing it as their place
+     stays on the Desk. */
+  function spotHref(lat,lng){
+    var ua=(navigator&&navigator.userAgent)||'', ll=lat+','+lng;
+    if(/iPhone|iPad|iPod|Macintosh/.test(ua)) return 'https://maps.apple.com/?ll='+ll+'&q=Their%20spot';
+    if(/Android/.test(ua)) return 'geo:'+ll+'?q='+ll+'(Their%20spot)';
+    return 'https://www.google.com/maps/search/?api=1&query='+ll;
+  }
+  function makerSpotControl(parent,order){
+    var box=el('section','salt-glass-card salt-glass-card--radius-lg ospot'), top=el('div','ospot__top'), note=el('p','msg'), key=order.id;
+    box.setAttribute('aria-label','Their spot'); box.setAttribute('data-pin-gate','');
+    note.setAttribute('role','status');
+    parent.appendChild(box);
+    function head(sealed){
+      box.textContent=''; top.textContent='';
+      top.appendChild(el('h4','salt-eyebrow salt-eyebrow--copper','Their spot'));
+      if(sealed) top.appendChild(chip('mist','Sealed'));
+      box.appendChild(top);
+    }
+    function sealedDraw(){
+      head(true); note.textContent='They shared a spot or a unit with this delivery. Unlock to read it; it is read on this phone only.'; box.appendChild(note);
+      var b=ghost(['Unlock','vault.unlock','spot:'+key]); b.addEventListener('click',function(){ vaultAsk(b); }); box.appendChild(b);
+    }
+    function said(text){ head(false); note.textContent=text; box.appendChild(note); }
+    function paint(p){
+      head(false);
+      var part=el('div','ospot__open'), led=el('div','salt-ledger salt-ledger--plain'), label=typeof p.label==='string'?p.label.slice(0,24):'', unit=typeof p.unit==='string'?p.unit.slice(0,40):'';
+      part.setAttribute('data-maker-pin','');
+      if(label) led.appendChild(ordLine('Spot',label));
+      if(unit) led.appendChild(ordLine('Floor or unit',unit));
+      if(led.firstChild) part.appendChild(led);
+      var row=el('div','ospot__acts');
+      if(p.src!=='unit'&&isFinite(p.lat)&&isFinite(p.lng)&&Math.abs(+p.lat)<=90&&Math.abs(+p.lng)<=180){
+        var a=el('a','salt-ghost ospot__maps'); a.href=spotHref(+p.lat,+p.lng); a.setAttribute('data-spot-maps','');
+        if(/^https:/.test(a.getAttribute('href'))){ a.target='_blank'; a.rel='noopener'; }
+        a.appendChild(pinSvg()); a.appendChild(document.createTextNode('Maps')); row.appendChild(a);
+      }else if(p.src!=='unit') part.appendChild(el('p','msg','They shared a link, not a point: open it on the Desk, which follows it.'));
+      var lk=ghost(['Lock','vault.lock','spot:'+key]); lk.addEventListener('click',function(){ makerVaultLock(); }); row.appendChild(lk);
+      part.appendChild(row);
+      part.appendChild(el('p','msg','Filing it as their place stays on the Desk.'));
+      box.appendChild(part);
+    }
+    async function open(){
+      var generation=makerSlipGeneration;
+      said('Opening their spot.');
+      try{
+        if(!makerVault.slip) throw new Error('No slip key is filed.');
+        var j=await refs('/all/maker/pins/'+order.u+'/'+order.pin);
+        if(generation!==makerSlipGeneration||!makerVault) return;
+        var b=await makerSealedOpen(makerVault.slip,j.pin,'salt-pin v1');
+        if(generation!==makerSlipGeneration||!makerVault||!box.isConnected||document.hidden) return;
+        var p=null; try{ p=JSON.parse(new TextDecoder().decode(b)); }catch(e){ p=null; }
+        if(!p||typeof p!=='object') throw new Error('It holds nothing this page reads.');
+        paint(p);
+      }catch(error){
+        if(generation===makerSlipGeneration) said(/not kept/.test(String(error&&error.message))?'The spot they shared is no longer kept.':'Their spot could not be opened: '+(error&&error.message||error));
+      }
+    }
+    box._draw=function(){ if(!box.isConnected) return; if(!makerVault) sealedDraw(); else open(); };
+    box._draw();
+  }
   /* THE SLIP of a claim: sealed until the page holds the slip key (the one unlock, above), a thumbnail once it does, and the thumbnail is the control that enlarges
      it. The picture is a blob: URL, let go on the lock, on a page hidden, and when its card closes; the ciphertext is fetched only once there is a key to open it. */
   function makerSlipControl(parent,u,id,key){
@@ -1412,12 +1486,7 @@ export const OWNER_JS = `
         var privateKey=makerVault.slip, sealedSlip=(await refs('/all/maker/slips/'+u+'/'+id)).slip;
         if(generation!==makerSlipGeneration) return;
         if(!sealedSlip||sealedSlip.v!==1) throw new Error('This slip cannot be read.');
-        var epk=await crypto.subtle.importKey('raw',makerFrom64(sealedSlip.epk),{name:'ECDH',namedCurve:'P-256'},false,[]);
-        var bits=await crypto.subtle.deriveBits({name:'ECDH',public:epk},privateKey,256);
-        var hk=await crypto.subtle.importKey('raw',bits,'HKDF',false,['deriveKey']);
-        var aes=await crypto.subtle.deriveKey({name:'HKDF',hash:'SHA-256',salt:new Uint8Array(0),info:new TextEncoder().encode('salt-slip v1')},
-          hk,{name:'AES-GCM',length:256},false,['decrypt']);
-        var bytes=await crypto.subtle.decrypt({name:'AES-GCM',iv:makerFrom64(sealedSlip.iv)},aes,makerFrom64(sealedSlip.ct));
+        var bytes=await makerSealedOpen(privateKey,sealedSlip,'salt-slip v1');
         if(generation!==makerSlipGeneration||!parent.isConnected||!inClaims()||document.hidden) return;
         var url=URL.createObjectURL(new Blob([bytes],{type:'image/jpeg'}));
         if(generation!==makerSlipGeneration){ URL.revokeObjectURL(url); return; }
@@ -4097,8 +4166,9 @@ export const OWNER_JS = `
       /* 10 Oct 2026: the delivery time they asked for, the part of its window inside the hours, while goods are still to go */
       if(order.mode==='deliver'&&order.slot&&order.slotSpan&&!((+order.moved||0)>=(+order.qty||0)-0.004))
         card.appendChild(el('p','maker-facts','Wanted '+String(order.slotSpan).replace('-',' to ')+' on '+fmtWhen(String(order.slot).slice(0,10))+'.'));
-      /* 10 Oct 2026: their exact spot is sealed to his key: the Desk opens it, this page only says it was shared */
-      if(order.mode==='deliver'&&order.pin) card.appendChild(el('p','maker-facts','They shared a spot or unit. Open it on the Desk.'));
+      /* Salt Admin A to C, P4: their exact spot, opened here after the one unlock; a practice order's is never filed, so it offers nothing */
+      if(order.mode==='deliver'&&order.pin&&!order.test) makerSpotControl(card,order);
+      else if(order.mode==='deliver'&&order.pin) card.appendChild(el('p','maker-facts','A practice spot is never filed.'));
       var againAck=makerAgainAck(order), quoteStart=null, lead=el('div','ordlead');
       /* his decision of 06 Oct 2026: the size, the goods' price and the delivery charge stay amendable after Accept, one Correction for approval.
          16 Oct 2026 (plan 5, part 2): Change the order stands under the head, where the figures it changes are read, in place of below the money; it opens

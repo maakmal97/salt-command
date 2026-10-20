@@ -3,7 +3,7 @@
  {"name": "a pin of any size is taken", "file": "stmt/pin.js", "find": "slipShape(s) && s.ct.length <= PIN_MAX;", "replace": "slipShape(s);"},
  {"name": "a pin no order names is filed", "file": "stmt/pin.js", "find": "  if (!pin || named !== pin.id) return false;", "replace": "  if (!pin) return false;"},
  {"name": "a pin is kept for good", "file": "stmt/pin.js", "find": "pin.value, { expirationTtl: PIN_TTL }); return true;", "replace": "pin.value, {}); return true;"},
- {"name": "a read keeps it no longer", "file": "stmt/pin.js", "find": "  if (v) try { await env.STMT.put(pinKey(u, id), JSON.stringify(v), { expirationTtl: PIN_TTL }); } catch (e) { /* read once more next time */ }\n", "replace": ""},
+ {"name": "a read keeps it no longer", "file": "stmt/pin.js", "find": "  if (v && keep) try { await env.STMT.put(pinKey(u, id), JSON.stringify(v), { expirationTtl: PIN_TTL }); } catch (e) { /* read once more next time */ }\n", "replace": ""},
  {"name": "a spot needs the area too", "file": "stmt/orders.js", "find": "place.length < 2 && !pin) return refusal(\"placeWhere\");", "replace": "place.length < 2) return refusal(\"placeWhere\");"},
  {"name": "a collection takes a spot", "file": "stmt/orders.js", "find": "(!pin || mode !== \"deliver\")) return refusal(\"pinBad\");", "replace": "(!pin)) return refusal(\"pinBad\");"},
  {"name": "the customer reads the id", "file": "stmt/orders.js", "find": "  if (o && o.pin) v.pinned = true;", "replace": "  if (o && o.pin) { v.pinned = true; v.pin = o.pin; }"},

@@ -511,7 +511,9 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   theirs is never his Accept's alone** (`needsYes`): it goes to them as an offer of the whole order, their Yes the take, their
   No thanks a cancellation, a lapse or his Withdraw leaving it placed; never on a sheet (`docs/STATEMENTS.md`). The spot is
   sealed on their phone to the slip key under `salt-pin v1` (`stmt/pin.js`), ciphertext alone on the Counter for 30 days,
-  opened only on the Desk with the one unlock: the fee's point ahead of `vault-addr`. **Saved spots stay on the phone** (Counter Batch C, his
+  opened on the Desk with the one unlock, the fee's point ahead of `vault-addr`, **and on Salt Admin too** (his answer of 20 Oct 2026,
+  reversing the Desk's alone of 10 Oct): `GET /all/maker/pins/<u>/<id>` off the Counter's store, read with `keep` false so looking never
+  keeps it past its 30 days, opened in his browser behind the one unlock, nothing stored; filing it as their place stays on the Desk. **Saved spots stay on the phone** (Counter Batch C, his
   answers of 20 Oct 2026): three an account in localStorage, none picked when the sheet opens, kept through Log out; the seal carries the spot's
   name and floor or unit beside the point, or a unit alone (`src: 'unit'`), which the Desk shows and never files or measures. The point is filed as their place only on his tap: the card's, or File all for every customer with no point (his choice of 13 Oct 2026),
   one passphrase for the batch; never filed without one.
