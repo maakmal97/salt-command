@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="3efd29e15cbca0e4";
+var SALT_BUILD_ID="1a23472de22ccf72";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -5987,10 +5987,7 @@ function rewardAccount(book,id,product='salt',opts={}){
     return {error:'This book has no configured reward.'};
   const allSales=book.sales||[],sales=allSales.filter(s=>(s.product||'salt')===product);
   const introductions=state.INTRODUCTIONS||[];
-  const associate=(state.associates||[]).includes(id)
-    ||allSales.some(s=>s.rev==='R2'&&ownerCode(s.customer)===id||s.ref===id)
-    ||introductions.some(e=>e&&e.by===id)
-    ||!!(state.R0_NETWORK&&state.R0_NETWORK.reseller===id);
+  const associate=rewardIsAssociate(state,allSales,id);
   const refs=new Set();
   if(associate){
     allSales.forEach(s=>{if(s.ref===id&&s.customer)refs.add(ownerCode(s.customer));});
@@ -6020,6 +6017,86 @@ function rewardAccount(book,id,product='salt',opts={}){
   const balance={earned,applied,held:+(earned-applied).toFixed(2),associate,margin:pooled,redeemable:associate||!switched,...(opts.old?{hurdle}:{})};
   return ((state.PEOPLE||{}).departed||[]).some(p=>p&&p.id===id)
     ?{...balance,departed:true,error:"A departed party's reward waits until they return."}:balance;
+}
+/* who the reward reads as an associate: appointed, an R2 or a ref of theirs on a sale, an introduction, or the R0 reseller */
+function rewardIsAssociate(state,allSales,id){
+  return (state.associates||[]).includes(id)
+    ||allSales.some(s=>s.rev==='R2'&&ownerCode(s.customer)===id||s.ref===id)
+    ||(state.INTRODUCTIONS||[]).some(e=>e&&e.by===id)
+    ||!!(state.R0_NETWORK&&state.R0_NETWORK.reseller===id);
+}
+/* THE LOYALTY UNIT (his rule of 20 Oct 2026, salt only; docs/plan-loyalty-unit.html). From REWARD.stated.salt.loyal.since, a CUSTOMER earns one
+   unit at cost for every `every` (20) salt units they buy AT OR ABOVE THEIR OWN PRICE, everyone starting at nought on since (Ask 7). A row
+   counts its final qty, on its pOn, in pOn then rid order, when it is: (a) paid in full by any road (txDates.fullPaid); (b) at or above their
+   price, its goods against listRM over listQty for its size (the drafter's stamp, re-stamped by the fold on an amendment), a row with no
+   stamp counting nothing and a row under it counting none of its units (Ask 2); (c) not itself late, its own delay within the term; and (d)
+   bought while they were not paused on pOn. Paused is a write-off of theirs dated on or before the day, for good (Ask 5), whether or not its
+   goods went out, or the V5b2c rule over the delays as they stood that day: any late in the history and fewer than lateResetRepeat (3)
+   payments on time since, a delay still open that day counting though it was settled later, a late on the same day pausing, and the row's
+   own prompt payment counting in the run. A pause keeps progress and never resets it. A gift, a redemption, a reward or loyal row and a
+   written-off row count nothing. Every `every` units crosses once; one big order may cross twice. An associate, a partner, a supplier and
+   a -R bucket do not walk (Ask 1): they have the associate reward, or pay the Floor. Nothing prices from it. null before the switch. */
+function loyalScheme(book){
+  const R=(book&&book.state||{}).REWARD,L=R&&R.stated&&R.stated.salt&&R.stated.salt.loyal||{};
+  return +L.every>0&&typeof L.since==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(L.since)?{every:+L.every,since:L.since}:null;
+}
+function loyalWho(book,id){
+  const state=book&&book.state||{};
+  if(!id||isBucket(id))return 'bucket';
+  if((state.partners||[]).includes(id))return 'partner';
+  if((book.purchases||[]).some(p=>p&&p.supplier&&ownerCode(p.supplier)===id))return 'supplier';
+  if(rewardIsAssociate(state,book.sales||[],id))return 'associate';
+  return '';
+}
+function loyaltyWalk(book,id,today){
+  const sch=loyalScheme(book);if(!sch)return null;
+  const who=loyalWho(book,id);if(who)return {walks:false,why:who};
+  const rules=(book.state||{}).TERMS||{},need=rules.lateResetRepeat!=null?+rules.lateResetRepeat:3,term=rules.holdDays!=null?+rules.holdDays:1;
+  const mine=(book.sales||[]).filter(s=>s&&ownsCode(id,s.customer));
+  const offs=mine.filter(s=>s.defaulted).map(s=>String(s.defaultedOn||s.date||'')).filter(Boolean).sort();
+  /* why they are paused on a day: their delays as they stood that day, one settled later read as still open on it */
+  const pausedOn=day=>{
+    if(offs.length&&offs[0]<=day)return 'writeoff';
+    const ds=payDelays(mine,id,day,rules).map(x=>{
+      if(String(x.on)<=day)return x;
+      const late=dayNo(day)-dayNo(x.d);
+      return late>term?Object.assign({},x,{on:day,days:late,open:true}):null;
+    }).filter(Boolean);
+    const st=lateOffer(ds,rules);
+    return st.late&&st.run<need?'late':'';
+  };
+  const rows=[];
+  mine.forEach(s=>{
+    if((s.product||'salt')!=='salt'||s.goodwill||s.rebate||+s.coverUnits>0||s.rewardOf||s.loyal||s.cancelled||s.defaulted)return;
+    if(!s.date||s.date<sch.since)return;
+    const d=txDates(s);if(!d.fullPaid||!d.pOn)return;
+    rows.push({s,day:d.pOn});
+  });
+  rows.sort((a,b)=>a.day<b.day?-1:a.day>b.day?1:rewardRid(a.s.rid)-rewardRid(b.s.rid));
+  let units=0,earned=0;const crossings=[],read=[];
+  rows.forEach(({s,day})=>{
+    const q=+s.qty||0,list=+s.listRM,lq=+s.listQty>0?+s.listQty:q;
+    let why='';
+    if(!(list>0)||!(q>0))why='unstamped';
+    else if(txGoods(s)<list*q/lq-0.005)why='under';
+    else why=pausedOn(day);   /* (c) and (d) at once: the row's own delay is among the day's, so a row paid late pauses itself */
+    read.push({rid:s.rid,day,qty:q,counts:!why,why:why||null});
+    if(why)return;
+    units=+(units+q).toFixed(4);
+    while(units>=sch.every-1e-9){units=+(units-sch.every).toFixed(4);earned++;crossings.push({rid:s.rid,day});}
+  });
+  const on=today||new Date(Date.now()+8*36e5).toISOString().slice(0,10),why=pausedOn(on);
+  return {walks:true,every:sch.every,since:sch.since,earned,units:+units.toFixed(2),next:Math.max(0,Math.min(1,+(units/sch.every).toFixed(4))),
+    paused:!!why,why:why||null,crossings,rows:read};
+}
+/* THE MEDIAN GAP BETWEEN ORDER DATES (the desk's custCadence, moved here for Salt Admin's This customer card, 21 Oct 2026): over the priced
+   rows handed in (W.pricedSales), the party's own code, and with merge their -R bucket too; null under two dates */
+function cadenceOf(sales,id,merge){
+  const ds=[...new Set((sales||[]).filter(s=>s&&(merge?ownsCode(id,s.customer):s.customer===id)&&!s.cancelled&&s.date).map(s=>s.date))].sort();
+  if(ds.length<2)return null;
+  const g=[];for(let i=1;i<ds.length;i++)g.push(Math.round((new Date(ds[i])-new Date(ds[i-1]))/86400000));
+  const sorted=g.slice().sort((a,b)=>a-b);
+  return {n:ds.length,med:sorted[Math.floor(sorted.length/2)],last:ds[ds.length-1],gaps:g};
 }
 function coverPlan({qty,free,ask,goods,cost}){
   if(!(qty>0)||!(free>0.009)||ask==null)return null;
@@ -7502,7 +7579,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,rewardOpening:rewardOpening,rewardCut:rewardCut,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
+return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,loyaltyWalk:loyaltyWalk,loyalScheme:loyalScheme,cadenceOf:cadenceOf,rewardIsAssociate:rewardIsAssociate,rewardOpening:rewardOpening,rewardCut:rewardCut,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,
@@ -18337,13 +18414,7 @@ function actions(){
    customer with one order has no cadence and is said to have none rather than being
    given the desk average, which would invent a habit he has not shown. The suggested
    lot is the median size HE buys, quoted at today's board including his own overlay. */
-function custCadence(id,merge){
-  const ds=[...new Set(pricedSales.filter(s=>(merge?POSITION_ENGINE.ownsCode(id,s.customer):s.customer===id)&&!s.cancelled&&s.date).map(s=>s.date))].sort();
-  if(ds.length<2)return null;
-  const g=[];for(let i=1;i<ds.length;i++)g.push(Math.round((new Date(ds[i])-new Date(ds[i-1]))/86400000));
-  const sorted=g.slice().sort((a,b)=>a-b);
-  return {n:ds.length,med:sorted[Math.floor(sorted.length/2)],last:ds[ds.length-1],gaps:g};
-}
+function custCadence(id,merge){return POSITION_ENGINE.cadenceOf(pricedSales,id,merge);}   /* 21 Oct 2026: the engine's one copy */
 /* `merge` (v817, his word of 24 Sep 2026): the approach board reads an associate and their -R bucket
    as one person, the 13 Sep ruling that a bucket is not its own person, so cadence and lot read both. */
 function nextBest(id,merge){
@@ -18733,7 +18804,10 @@ const REWARD={
      engine's latestCogs: RM 580 at RM 58) of margin on their own buying and resale, counted once an order is PAID IN FULL, over the
      opening stated in REWARD_OPEN (the engine's rewardWalk); margin and r3Hurdle stay as history and as the count the openings were
      taken from. A customer's figure stays as it stands and is never redeemed. */
-  stated:{salt:{margin:500, associate:{margin:470, r3Hurdle:1.2, times:10, since:'2026-10-20'}}}
+  stated:{salt:{margin:500, associate:{margin:470, r3Hurdle:1.2, times:10, since:'2026-10-20'},
+    /* HIS RULE OF 20 OCT 2026: THE LOYALTY UNIT. A customer earns 1 unit at cost for every `every` (20) salt units bought at or above their
+       own price, paid in full, from since, everyone at nought; a late payment or a write-off pauses it (the engine's loyaltyWalk) */
+    loyal:{every:20, since:'2026-10-21'}}}
 };
 /* ============ THE REWARD, v616 FOR ASSOCIATES AND v618 FOR CUSTOMERS ============
      what counts   every priced order on the party's own code and -R account, R1 and R2 together because

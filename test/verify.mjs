@@ -50117,6 +50117,11 @@ await (async () => {
   await (await import("./assoc-reward-customer.mjs")).run({ ok });
 })();
 
+section("Loyalty unit: the walk counts units bought at their price, one at every 20, paused by a late payment or a write-off (P1, 21 Oct 2026)");
+await (async () => {
+  await (await import("./loyalty-walk.mjs")).run({ ok });
+})();
+
 section("Salt Admin A to C: Order again's tag, kept by Place for a done and paid order of theirs and shown on his row and band (20 Oct 2026)");
 await (async () => {
   await (await import("./admin-ac-again.mjs")).run({ ok, pageWork });
