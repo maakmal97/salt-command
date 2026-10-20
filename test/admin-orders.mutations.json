@@ -236,26 +236,26 @@
  {
   "name": "the orb opens the wrong part of Record",
   "file": "stmt/owner.js",
-  "find": "if(oAdd) oAdd.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); });",
-  "replace": "if(oAdd) oAdd.addEventListener('click', function(){ showPlace('record','pricing',{fresh:true,push:true}); });"
+  "find": "  [oAdd, document.getElementById('oAddRail')].forEach(function(b){ if(b) b.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); }); });",
+  "replace": "  [oAdd, document.getElementById('oAddRail')].forEach(function(b){ if(b) b.addEventListener('click', function(){ showPlace('record','pricing',{fresh:true,push:true}); }); });"
  },
  {
   "name": "the orb opens nothing",
   "file": "stmt/owner.js",
-  "find": "if(oAdd) oAdd.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); });",
+  "find": "  [oAdd, document.getElementById('oAddRail')].forEach(function(b){ if(b) b.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); }); });",
   "replace": ""
  },
  {
   "name": "the orb stays on Record",
   "file": "stmt/owner.js",
-  "find": "if(add) add.hidden=placeNow==='record';",
-  "replace": "if(add) add.hidden=false;"
+  "find": "function(add){ add.hidden=placeNow==='record'; });",
+  "replace": "function(add){ add.hidden=false; });"
  },
  {
   "name": "the orb is gone from Orders",
   "file": "stmt/owner.js",
-  "find": "if(add) add.hidden=placeNow==='record';",
-  "replace": "if(add) add.hidden=placeNow==='record'||placeNow==='orders';"
+  "find": "function(add){ add.hidden=placeNow==='record'; });",
+  "replace": "function(add){ add.hidden=placeNow==='record'||placeNow==='orders'; });"
  },
  {
   "name": "the orb has no act",
@@ -288,9 +288,9 @@
   "replace": ""
  },
  {
-  "name": "the orb keeps its phone offset on a desk",
+  "name": "the orb still floats on a desk",
   "file": "stmt/page.js",
-  "find": "@media (min-width:1080px){.adm #oAdd{right:24px;bottom:24px}}",
+  "find": "@media (min-width:1080px){.adm #oAdd{display:none}}",
   "replace": "@media (min-width:1080px){.adm #oAdd{right:24px}}"
  },
  {
@@ -404,7 +404,7 @@
  {
   "name": "a row tap always takes him to the top",
   "file": "stmt/owner.js",
-  "find": "      if(!wide()) window.scrollTo(0,0);\n      else if(card&&card.scrollIntoView) card.scrollIntoView({block:'nearest'});",
+  "find": "      if(!ordSide()) window.scrollTo(0,0);\n      else if(card&&card.scrollIntoView) card.scrollIntoView({block:'nearest'});",
   "replace": "      window.scrollTo(0,0);"
  },
  {
@@ -416,8 +416,8 @@
  {
   "name": "a row tap scrolls the wrong way round",
   "file": "stmt/owner.js",
-  "find": "if(!wide()) window.scrollTo(0,0);",
-  "replace": "if(wide()) window.scrollTo(0,0);"
+  "find": "if(!ordSide()) window.scrollTo(0,0);",
+  "replace": "if(ordSide()) window.scrollTo(0,0);"
  },
  {
   "name": "the sticky card's foot goes under the App bar",

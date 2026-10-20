@@ -311,17 +311,18 @@ export async function run({ ok, pageWork }) {
   /* 4. THE SPLIT, from 860px */
   {
     const { html, media, at } = ownerCss();
-    const split = at("(min-width:860px)", ".adm .ordgrid")[0] || "";
+    /* 21 Oct 2026 (canvas V39, his answer (a)): side by side from 860 to 1080px only; from 1080 an open order takes the list's place, as below 860 */
+    const split = at("(min-width:860px)and(max-width:1079.98px)", ".adm .ordgrid")[0] || "";
     const phone = at("(max-width:859.98px)", ".adm #oSplit.open .ordlist,.adm #oSplit:not(.open) #makerReview,.adm #oSplit.open #makerReviewStatus")[0] || "";
-    const phoneAny = media.filter((m) => m.q === "(max-width:859.98px)").flatMap((m) => m.rules).join(" ");
+    const phoneAny = media.filter((m) => m.q === "(max-width:859.98px),(min-width:1080px)").flatMap((m) => m.rules).join(" ");
     ok(/display: grid/.test(split) && /grid-template-columns: minmax\(280px,360px\) minmax\(0,1fr\)/.test(split),
-      "from 860px the list and the card stand side by side, the list 280 to 360px: " + split);
+      "from 860 to 1080px the list and the card stand side by side, the list 280 to 360px: " + split);
     ok(/\.adm #oSplit\.open \.ordlist/.test(phoneAny) && /display: none/.test(phoneAny) && /#makerReview/.test(phoneAny),
-      "below 860px an open card takes the list's place, and with none open the card's place is not shown: " + phoneAny.slice(0, 200));
+      "below 860px and from 1080px an open card takes the list's place, and with none open the card's place is not shown: " + phoneAny.slice(0, 200));
     /* the App bar stays fixed along the foot until 1080px, so in that band the sticky card's foot is kept above it: its height gives up the bar's */
-    const band = at("(min-width:860px)and(max-width:1079.98px)", ".adm #makerReview")[0] || "", plain = at("(min-width:860px)", ".adm #makerReview")[0] || "";
-    ok(/max-height: calc[(]100vh - 48px - var[(]--salt-bar-h[)]/.test(band) && /max-height: calc[(]100vh - 48px[)]/.test(plain) && !/salt-bar-h/.test(plain),
-      "between 860 and 1080px, where the App bar is still fixed, the sticky card's height gives up the bar's, and from 1080px it does not: " + band + " | " + plain);
+    const inBand = at("(min-width:860px)and(max-width:1079.98px)", ".adm #makerReview"), band = inBand.find((r) => /salt-bar-h/.test(r)) || "", plain = inBand.find((r) => /position: sticky/.test(r)) || "";
+    ok(/max-height: calc[(]100vh - 48px - var[(]--salt-bar-h[)]/.test(band) && /max-height: calc[(]100vh - 48px[)]/.test(plain) && at("(min-width:860px)", ".adm #makerReview").every((r) => !/sticky/.test(r)),
+      "between 860 and 1080px, where the App bar is still fixed, the sticky card's height gives up the bar's, and from 1080px the card is the page, never sticky: " + band + " | " + plain);
     const d = new JSDOM(html).window.document;
     const grid = d.querySelector("#oSplit .ordgrid");
     ok(!!grid && [...grid.children].map((c) => c.id).join() === "makerOrderList,makerReview" && !!d.querySelector("#oOrders #oSplit"),
@@ -454,8 +455,8 @@ export async function run({ ok, pageWork }) {
     await p.tap("nav.shop"); await p.tap("nav.add");
     ok(p.where() === "record/entry" && p.formsOpen().length === 0 && same(p.menu(), MENU.entry), "and a form left open comes back as the menu: " + p.where() + JSON.stringify([p.formsOpen(), p.menu()]));
     const orb = top(".adm #oAdd")[0] || "", wide = at("(min-width:1080px)", ".adm #oAdd")[0] || "", room = at("(max-width:1079.98px)", ".adm .amain")[0] || "";
-    ok(/position: fixed/.test(orb) && /right: 16px/.test(orb) && /z-index: 40/.test(orb) && /bottom: calc[(]var[(]--salt-bar-h[)] [+] 16px/.test(orb) && /right: 24px/.test(wide) && /bottom: 24px/.test(wide) && /padding-bottom: 72px/.test(room),
-      "the orb stands 16px above the App bar on a phone, in the corner from 1080px, under the bar and the sheets, and the room under the last section clears it: " + [orb, wide, room].join(" "));
+    ok(/position: fixed/.test(orb) && /right: 16px/.test(orb) && /z-index: 40/.test(orb) && /bottom: calc[(]var[(]--salt-bar-h[)] [+] 16px/.test(orb) && /display: none/.test(wide) && /padding-bottom: 72px/.test(room),
+      "the orb stands 16px above the App bar on a phone, gives way to the rail's + from 1080px (P10, 21 Oct 2026), under the bar and the sheets, and the room under the last section clears it: " + [orb, wide, room].join(" "));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 8. RECORD'S FORMS ARE A MENU: a row for each form, one form at a time, the form itself moved and never drawn again */

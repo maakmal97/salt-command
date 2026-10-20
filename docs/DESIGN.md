@@ -323,6 +323,19 @@ picker stay retired (the suite fails if any returns): nothing keys on a clock, t
   book hue it shares with Night, rice, 5.47 and 4.91, and of Tide's own tokens mist, 6.03 and 5.41. The lit slate and the
   aurora's core stay advice, as in `Code\salt-ds` (`DESIGN.md`, `npm run contrast`).
 
+## 21 Oct 2026: Salt Admin A to C, the pill track and Jump to (salt-ds 1.11.0)
+
+- **The pill track** (`salt-tabs salt-tabs--track` in a `salt-tabs-row`): many filters on one recessed row that slides sideways and never
+  wraps, a well with a 4px pad and gap, pills 44px at 0.8125rem and weight 500 in mist-bright, the chosen one on glass with the strong line,
+  counts brass; the right edge fades. Salt Admin's Needs you kinds.
+- **Jump to** (`salt-jump`, `salt-jump__btn`, `salt-jump__menu`, `salt-jump__item`): a 44px slate button with a brass chevron beside the
+  track, opening a 220px glass menu of every pill with its count, the current one on glass (`aria-current`), a zero count in mist (`--none`).
+- **The band** on Salt Admin's order card is the Counter's (`salt-band`), and its waited meter is `salt-meter`, its track a block inside a
+  button, ember once past the usual time.
+- **The delivery charge** is the slider (`salt-segment`) over native radios, the thumb hidden while none is chosen (`.ofee--none`).
+- **The open order from 1180px** is a grid of columns (`.ordcols--2`, `.ordcols--3`: minmax(0,1.15fr) minmax(0,1fr) minmax(0,0.9fr), gap
+  20px), page geometry only. From 1080px the order takes the list's place, reversing the split of 11 Oct 2026 at that width.
+
 ## 20 Oct 2026: Counter Batch C, the slider and bolder labels (salt-ds 1.9.0 to 1.9.2)
 
 - **Labels at 600** (item 20): `.salt-eyebrow`, `.salt-field__label` (0.18em) and `.salt-options__legend--label` (0.18em) in salt-ds; the

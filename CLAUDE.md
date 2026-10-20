@@ -385,6 +385,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 
 - **A change to the statements Worker covers Salt Counter and Salt Admin together** (his word of 20 Oct 2026): every
   batch maps each item onto `stmt/owner.js` too, its look and his side of the feature, or says why it has none.
+- **From 1080px an open order on Salt Admin fills the page** (his answer of 20 Oct 2026, canvas V39), reversing his split of 11 Oct 2026 at that
+  width: it takes the list's place and the rail's Orders closes it; two columns at 1180, three at 1440. From 860 to 1080px the list stands beside it.
 - **The site address is never in the public desk.** No address, no QR drawn.
 - **No brand on the customer's page, and no product word either.** Nothing under `stmt/` names
   Salt Command. A product is a mark (`PSYM`) carrying a letter of his (`PLET`) in every mark, 20 px and
