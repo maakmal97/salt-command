@@ -4122,7 +4122,7 @@ export const OWNER_JS = `
     r.appendChild(l); if(flag) r.appendChild(el('span','salt-ledger__flag',flag));
     return r;
   }
-  /* 20 Oct 2026 (his answer, option a): THE DISTANCE under Delivery cost, as the Desk measures it for the fee: his base (the places vault's
+  /* 20 Oct 2026 (his answer, option a): THE ROAD DISTANCE under Delivery cost, never the cost itself (his figure): his base (the places vault's
      _base) to their sealed spot opened here, else their filed point, else their locality (said so), the one distance (engine/geo.mjs) times
      the Desk's road factor off the review read. Measured in this browser after the one unlock; nothing without both points. */
   var makerPlaced={};

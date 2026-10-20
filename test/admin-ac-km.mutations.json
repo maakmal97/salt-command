@@ -10,5 +10,6 @@
  {"name":"no distance drawn","file":"stmt/owner.js","find":"dl.querySelector('.salt-ledger__label').appendChild(km); L.appendChild(dl); kmPaint(km,order);","replace":"dl.querySelector('.salt-ledger__label').appendChild(km); L.appendChild(dl);"},
  {"name":"the unlock paints no distance","file":"stmt/owner.js","find":"    [].forEach.call(document.querySelectorAll('[data-pin-gate]'),function(b){ if(b._draw) b._draw(); });\n    kmRepaint();","replace":"    [].forEach.call(document.querySelectorAll('[data-pin-gate]'),function(b){ if(b._draw) b._draw(); });"},
  {"name":"the meter keeps the wall clock","file":"stmt/owner.js","find":"var w=typeof order.waitedOpen==='number'&&order.waitedOpen>=0?order.waitedOpen:Math.max(0,Math.floor((Date.now()-t)/60000)), u=confirmUsual();","replace":"var w=Math.max(0,Math.floor((Date.now()-t)/60000)), u=confirmUsual();"},
- {"name":"the meter says Waited","file":"stmt/owner.js","find":"a=el('span',null,'Waited in hours '),","replace":"a=el('span',null,'Waited '),"}
+ {"name":"the meter says Waited","file":"stmt/owner.js","find":"a=el('span',null,'Waited in hours '),","replace":"a=el('span',null,'Waited '),"},
+ {"name":"every page carries the distance","file":"stmt/page.js","find":"      .replace(\"/*__OWNER_JS__*/\", () => (owner ? String(GEO_ENGINE.haversineKm) + \"\\n\" + OWNER_JS : \"\"))","replace":"      .replace(\"/*__OWNER_JS__*/\", () => String(GEO_ENGINE.haversineKm) + \"\\n\" + (owner ? OWNER_JS : \"\"))"}
 ]

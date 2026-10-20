@@ -13,6 +13,7 @@ import SITE_GEO from "../stmt/geo.js";
 import { openMinutes } from "../stmt/hours.js";
 import { withWaited } from "../stmt/maker.js";
 import { richOwnerPage, byAct } from "./maker-act.mjs";
+import { landingPage } from "../stmt/page.js";
 
 const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
 
@@ -20,6 +21,8 @@ export async function run({ ok, pageWork }) {
   /* 1 */
   const a = { lat: 3.1, lng: 101.6 }, b = { lat: 3.1, lng: 101.7 }, km = GEO.haversineKm(a, b);
   ok(Math.abs(km - 11.10) < 0.05 && SITE_GEO.haversineKm(a, b) === km, "the one distance is the great-circle km, and the site's copy is it: " + km);
+  ok(/function haversineKm/.test(landingPage("", "nkm", { master: "m", accounts: [] })) && !/haversineKm/.test(landingPage("abcd-efgh", "nkm", null)),
+    "the distance travels with his script alone; no customer's page carries it");
   /* 2: Monday to Saturday 09:00 to 17:00 in Kuala Lumpur, Sunday closed */
   const day = { open: "09:00", close: "17:00" }, cfg = { schedule: { days: [null, day, day, day, day, day, day] } };
   const kl = (s) => Date.parse(s + "+08:00");

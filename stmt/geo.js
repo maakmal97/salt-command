@@ -3,9 +3,9 @@
  * rewritten. Edit engine/geo.mjs, run the sync, and commit both; the gate runs --check. Everything below is that file. */
 /* engine/geo.mjs: THE DISTANCE BETWEEN TWO POINTS, ONE COPY (his answer of 20 Oct 2026).
  *
- * The Desk measures a delivery's distance for the fee it offers (master/salt_command.html, the great-circle distance times
- * RULES.delivery.roadFactor), and from 20 Oct 2026 Salt Admin says the same distance under Delivery cost on an order's Bill. Two
- * copies would drift, so this is the one: inlined into the master between markers by `node tools/engine.mjs --sync`, and carried
+ * The Desk measures with it (master/salt_command.html, a same-point check on a filed spot), and from 20 Oct 2026 Salt Admin says a
+ * delivery's road distance under Delivery cost, this times RULES.delivery.roadFactor; the delivery cost itself is his figure, not
+ * priced off the distance. Two copies would drift, so this is the one: inlined into the master between markers by `node tools/engine.mjs --sync`, and carried
  * into the statements site as stmt/geo.js, byte for byte, by `node tools/geosite.mjs --sync`, each with a --check the gate runs.
  * The points never travel: the Desk and Salt Admin each measure in the browser, after the one unlock, from points they hold. */
 const GEO_ENGINE=(function(){

@@ -17,9 +17,9 @@
 /* ==== ENGINE geo: generated from engine/geo.mjs by tools/engine.mjs. Edit the module, never this block. ==== */
 /* engine/geo.mjs: THE DISTANCE BETWEEN TWO POINTS, ONE COPY (his answer of 20 Oct 2026).
  *
- * The Desk measures a delivery's distance for the fee it offers (master/salt_command.html, the great-circle distance times
- * RULES.delivery.roadFactor), and from 20 Oct 2026 Salt Admin says the same distance under Delivery cost on an order's Bill. Two
- * copies would drift, so this is the one: inlined into the master between markers by `node tools/engine.mjs --sync`, and carried
+ * The Desk measures with it (master/salt_command.html, a same-point check on a filed spot), and from 20 Oct 2026 Salt Admin says a
+ * delivery's road distance under Delivery cost, this times RULES.delivery.roadFactor; the delivery cost itself is his figure, not
+ * priced off the distance. Two copies would drift, so this is the one: inlined into the master between markers by `node tools/engine.mjs --sync`, and carried
  * into the statements site as stmt/geo.js, byte for byte, by `node tools/geosite.mjs --sync`, each with a --check the gate runs.
  * The points never travel: the Desk and Salt Admin each measure in the browser, after the one unlock, from points they hold. */
 const GEO_ENGINE=(function(){
@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="82328486200fb2d1";
+var SALT_BUILD_ID="f2e6051c4e9b659c";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -11113,7 +11113,9 @@ const provOf=t=>t._prov||(t._buy&&t._buy._prov)||null;
 /* F15: THE FEE BY DISTANCE. Worked on the device from two points: where he is, read once when the delivery box opens and
    kept nowhere, else his base point in the places vault (_base); and the party's exact point in the places vault, else its
    locality. The great-circle distance times the road factor at RM a km, rounded to roundTo. No key, no third party. It needs
-   the vault open on the phone; locked, or on the laptop, nothing is offered and the box stands as it was. */
+   the vault open on the phone; locked, or on the laptop, nothing is offered and the box stands as it was.
+   20 Oct 2026: no code reads rmPerKm now, so nothing is priced off the distance; haversineKm here serves the same-point check, and
+   engine/geo.mjs is its one copy, which Salt Admin also reads to say the road distance under Delivery cost. */
 /* 20 Oct 2026: the one distance, engine/geo.mjs, which Salt Admin reads too */
 const haversineKm=GEO_ENGINE.haversineKm;
 const feePt=p=>p&&typeof p.lat==='number'&&typeof p.lng==='number'&&isFinite(p.lat)&&isFinite(p.lng)?{lat:p.lat,lng:p.lng}:null;

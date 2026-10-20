@@ -1992,8 +1992,6 @@ export function landingPage(user, nonce, owner, bulletin, test) {
       /* 10 Oct 2026: a delivery's time window, the Worker's own rule carried as it is (stmt/window.js), so the sheet offers
          exactly the windows the Worker takes */
       .replace("/*__WINDOW__*/", () => [slotSpan, slotNext].map(String).join("\n")).replace("__WINDOWS__", JSON.stringify(WINDOWS))
-      /* 20 Oct 2026: the one distance (stmt/geo.js, engine/geo.mjs), carried as it is */
-      .replace("/*__GEO__*/", () => String(GEO_ENGINE.haversineKm))
       /* S4 4.6: the open-order limit the Worker refuses at, so the page can say it before the form */
       .replace("__MAX_OPEN__", String(MAX_OPEN)).replace("__WANT_DAYS__", String(WANT_DAYS)).replace("__OPEN_STATES__", JSON.stringify(OPEN_STATES)).replace("__TEST_USERS__", JSON.stringify(TEST_USERS))
       /* S7 7.1: the places, so the script names them as the markup does */
@@ -2004,7 +2002,8 @@ export function landingPage(user, nonce, owner, bulletin, test) {
       .replace("__OWNER__", () => JSON.stringify(owner || null).replace(/</g, "\\u003c"))
       /* v687: the owner's script travels only on his route. A function replacement, so nothing in
          it is read as a $ pattern. */
-      .replace("/*__OWNER_JS__*/", () => (owner ? OWNER_JS : ""))
+      /* 20 Oct 2026: and with it the one distance (stmt/geo.js, engine/geo.mjs), carried as it is, so no customer's page carries it (Fable) */
+      .replace("/*__OWNER_JS__*/", () => (owner ? String(GEO_ENGINE.haversineKm) + "\n" + OWNER_JS : ""))
       /* the test surface: the shim at the head of the script's scope, the door that signs itself in, and Salt Admin's practice mode;
          on a real page each marker is taken out, leaving the script it always was */
       .replace("/*__TS__*/", () => (test ? TEST_SHIM.replace("__TCFG__", JSON.stringify({ base: String(test.base || ""), owner: !!owner, u: test.u || "", pw: TEST_PASS })) : ""))
@@ -4278,7 +4277,6 @@ const CLIENT_JS = `
   /* 10 Oct 2026: A DELIVERY'S TIME WINDOW, as soon as it can or one of six four-hour windows, each its next occurrence inside
      the Counter's hours (the Worker's slotNext and slotSpan, carried below); a window partly inside says the part inside */
   /*__WINDOW__*/
-  /*__GEO__*/
   var WINS=__WINDOWS__;
   function winCfg(){ return !hoursError&&counterHours&&counterHours.config||null; }
   function winOpen(){ var now=Date.now(), out=[];
