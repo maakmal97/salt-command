@@ -12,7 +12,8 @@
  *   10 a written-off row counts nothing
  *   11 a row the opening already read (rid at or under upTo) is not counted again; one Pending then (pend) is
  *   12 rewardAccount takes an associate's units from the walk, and refuses one with no opening; before the switch it is unchanged
- *   13 given is their own price over the goods since the last crossing, never a row over their price */
+ *   13 given is their own price over the goods since the last crossing, never a row over their price
+ *   14 a row stamped at Accept is measured at the lesser of its own cost and the Accept-day rate (rwdRate), so a dearer lot never breaks it */
 import E from "../engine/position.mjs";
 
 const lot = (rid, date, qty, total) => ({ rid, product: "salt", date, receivedOn: date, qty, total, cash: total, received: qty });
@@ -83,5 +84,8 @@ export async function run({ ok }) {
   /* 13: their price RM 320 on the crossing row (RM 20 given), RM 340 on the next (RM 40), a row over their price gives nought */
   const gv = walk(book([sale("s101", "2026-10-21", 300, { listRM: 320 }), sale("s102", "2026-10-22", 100, { listRM: 140 }),
     sale("s103", "2026-10-22", 100, { listRM: 90 })]));
+  /* 14: RM 250 carried; a RM 300 sale costed at RM 60 adds RM 240 and falls short; promised at RM 50, it adds RM 250 and crosses */
+  const costly = walk(book([sale("s101", "2026-10-21", 300, { cost: 60 })])), promised = walk(book([sale("s101", "2026-10-21", 300, { cost: 60, rwdStep: 500, rwdRate: 50 })]));
+  ok(costly.earned === 2 && promised.earned === 3, "a row is measured at the Accept-day rate it was promised at: " + JSON.stringify([costly.progress, promised.crossings]));
   ok(gv.crossings[0].given === 20 && gv.given === 40, "given is their own price over the goods since the last crossing: " + JSON.stringify([gv.crossings, gv.given]));
 }

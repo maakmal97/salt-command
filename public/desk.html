@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="1b472dc884bdb02e";
+var SALT_BUILD_ID="1105b391dcf5e3cd";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -5880,7 +5880,8 @@ function rewardWalk(book,id,today){
       if(!d.fullPaid||!d.pOn)return;
       let rm=+s.total||0,q=+s.qty||0;
       if(s.rebate){rm=Math.max(0,rm-(+s.settledRM||0));q=Math.max(0,q-(s.rebateKg!=null?+s.rebateKg:q));if(rm<0.009&&q<1e-9)return;}
-      day=d.pOn;margin=rm-q*txUnitCost(s,averageCost);
+      const uc=txUnitCost(s,averageCost),held=+s.rwdRate>0&&+s.rwdRate<uc?+s.rwdRate:uc;   /* the Accept-day rate a promise was made at (rwdRate) */
+      day=d.pOn;margin=rm-q*held;
     }
     rows.push({rid:s.rid,day,margin:+margin.toFixed(2),rwdStep:+s.rwdStep>0?+s.rwdStep:null,
       given:s.listRM!=null&&!s.goodwill?Math.max(0,+(+s.listRM-(+s.total||0)).toFixed(2)):0});

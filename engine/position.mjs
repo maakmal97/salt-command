@@ -95,7 +95,8 @@ function rewardWalk(book,id,today){
       if(!d.fullPaid||!d.pOn)return;
       let rm=+s.total||0,q=+s.qty||0;
       if(s.rebate){rm=Math.max(0,rm-(+s.settledRM||0));q=Math.max(0,q-(s.rebateKg!=null?+s.rebateKg:q));if(rm<0.009&&q<1e-9)return;}
-      day=d.pOn;margin=rm-q*txUnitCost(s,averageCost);
+      const uc=txUnitCost(s,averageCost),held=+s.rwdRate>0&&+s.rwdRate<uc?+s.rwdRate:uc;   /* the Accept-day rate a promise was made at (rwdRate) */
+      day=d.pOn;margin=rm-q*held;
     }
     rows.push({rid:s.rid,day,margin:+margin.toFixed(2),rwdStep:+s.rwdStep>0?+s.rwdStep:null,
       given:s.listRM!=null&&!s.goodwill?Math.max(0,+(+s.listRM-(+s.total||0)).toFixed(2)):0});

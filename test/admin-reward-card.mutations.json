@@ -9,5 +9,6 @@
  {"name":"the card for anyone","file":"stmt/owner.js","find":"    if(!r||r.reading||!r.associate||r.error||!(r.step>0)){ box.hidden=true; return; }","replace":"    if(!r||r.reading){ box.hidden=true; return; }"},
  {"name":"the meter leaves this order out","file":"stmt/owner.js","find":"Math.round((r.progress+add)/r.step*100)","replace":"Math.round(r.progress/r.step*100)"},
  {"name":"the note's net is the gross","file":"stmt/owner.js","find":"+rm(r.net)+' net. Salt only.'","replace":"+rm(r.rate)+' net. Salt only.'"},
- {"name":"no card under the Bill","file":"stmt/owner.js","find":"    rewardCard(card,order);   /* 20 Oct 2026: the associate reward, under the Bill */\n","replace":""}
+ {"name":"no card under the Bill","file":"stmt/owner.js","find":"    rewardCard(card,order);   /* 20 Oct 2026: the associate reward, under the Bill */\n","replace":""},
+ {"name":"a waiting unit called handed over","file":"stmt/owner.js","find":"box.appendChild(el('p','salt-insight orwdnote',r.unit.delivered?","replace":"box.appendChild(el('p','salt-insight orwdnote',true?"}
 ]

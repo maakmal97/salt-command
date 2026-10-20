@@ -92,6 +92,9 @@ export async function run({ ok }) {
     const E = (await import(at("engine/position.mjs"))).default;
     const src = await readBook();
     const ledger = JSON.parse(JSON.stringify(src.ledger));
+    /* 20 Oct 2026: the lift predates the associate reward, so its parity is taken with the reward's switch off; what the reward adds to a
+       preview (his reading and the word) is the reward's own and is left out of the comparison (test/assoc-reward-verdict.mjs proves it) */
+    if (ledger.REWARD && ledger.REWARD.stated && ledger.REWARD.stated.salt && ledger.REWARD.stated.salt.associate) delete ledger.REWARD.stated.salt.associate.since;
     const seedSql = buildSeed({ v: src.version, stamped: ledger.stamped || null, ledger }).sql;
     const migrations = join(REPO, "migrations");
     const migSql = readdirSync(migrations).filter((x) => /^\d+_.*\.sql$/.test(x)).sort().map((f) => readFileSync(join(migrations, f), "utf8"));
@@ -130,7 +133,8 @@ export async function run({ ok }) {
     const stepper = (M, w, log) => async (tag, f) => {
       CLOCK += 60000;
       let res; try { res = await f(M, w.env, new Date()); } catch (e) { res = { threw: String(e && e.message || e) }; }
-      log.push({ tag, res: JSON.stringify(res), dump: w.dump() });
+      const kept = res && typeof res === "object" && !Array.isArray(res) ? Object.fromEntries(Object.entries(res).filter(([k]) => k !== "reward" && k !== "rwd")) : res;
+      log.push({ tag, res: JSON.stringify(kept), dump: w.dump() });
     };
 
     /* the steps on one open order, the same for the old module and the new */

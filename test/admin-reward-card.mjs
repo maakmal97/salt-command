@@ -4,7 +4,7 @@
  * red under its own mutation (test/admin-reward-card.mutations.json):
  *   1  a placed order reads the preview's figures: Reaches a reward, the meter, and the note with the step, the cost, what was given and the net
  *   2  an agreed order reads his reading by its ledgerKey: the chip says how far short, and the meter names the code
- *   3  an order whose unit is raised says the unit is on this delivery, with its net
+ *   3  an order whose unit is raised says where it goes (this delivery, still to go out) and its net; once handed over, on this delivery
  *   4  no card on an oil order, nor where the Desk does not read the party as an associate
  *   5  the card's words keep to the Admin's weights: nothing of its own over 500 (the eyebrow is the system's recipe, the Bill's own) */
 import { richOwnerPage, byAct } from "./maker-act.mjs";
@@ -52,7 +52,7 @@ export async function run({ ok, pageWork }) {
     /* 3 */
     await click(byAct(d, "order.open", "ord-r3"));
     const c3 = card("ord-r3");
-    ok(!!c3 && !c3.hidden && t(c3.querySelector(".orwdnote")) === "1 reward unit on this delivery, RM 38.00 net." && !c3.querySelector(".salt-meter"),
+    ok(!!c3 && !c3.hidden && t(c3.querySelector(".orwdnote")) === "1 reward unit raised: it goes with this delivery, RM 38.00 net." && !c3.querySelector(".salt-meter"),
       "a raised unit says it is on this delivery, with its net: " + t(c3));
     /* 4 */
     await click(byAct(d, "order.open", "ord-r4"));

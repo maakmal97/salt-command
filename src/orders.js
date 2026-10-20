@@ -309,7 +309,7 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
      landed cost, stamped on the entry with the step it is promised at, which the drafter puts on the Pending row and the digest names */
   const priced0 = product === "salt" ? cogsFor(book, product, agreed.date || null) : { cost: null };
   const rc = product === "salt" && priced0.cost != null ? rewardCrossOf(book, code, qty, goods, priced0.cost) : { cross: false };
-  if (rc.cross) { entry.rwd = "cross"; entry.rwdStep = rc.step; }
+  if (rc.cross) { entry.rwd = "cross"; entry.rwdStep = rc.step; entry.rwdRate = rc.rate; }
   const d = draftRow(entry, book);
   if (d.skip) return { ok: false, status: 409, error: "the drafter would not draft it: " + d.skip };
   /* V5b2 (his answers of 29 Sep 2026): PAID IN ADVANCE when what they owe at once, with this order, is over the ceiling.

@@ -2,7 +2,7 @@
  {"name":"the step crosses a sen under","file":"engine/position.mjs","find":"while(step>0&&progress>=step-0.005)","replace":"while(step>0&&progress>=step-0.02)"},
  {"name":"the step read at today's lot","file":"engine/position.mjs","find":"const at=rewardStep(purchases,r.day,scheme.times);if(!at)return;","replace":"const at=rewardStep(purchases,today,scheme.times);if(!at)return;"},
  {"name":"the Accept stamp ignored","file":"engine/position.mjs","find":"const step=r.rwdStep!=null&&r.rwdStep<at.step?r.rwdStep:at.step;","replace":"const step=at.step;"},
- {"name":"a paid row dated by its agreement","file":"engine/position.mjs","find":"day=d.pOn;margin=rm-q*txUnitCost(s,averageCost);","replace":"day=s.date;margin=rm-q*txUnitCost(s,averageCost);"},
+ {"name":"a paid row dated by its agreement","file":"engine/position.mjs","find":"day=d.pOn;margin=rm-q*held;","replace":"day=s.date;margin=rm-q*held;"},
  {"name":"next not held at 1","file":"engine/position.mjs","find":"Math.max(0,Math.min(1,+(progress/now.step).toFixed(4)))","replace":"Math.max(0,+(progress/now.step).toFixed(4))"},
  {"name":"today's step is the switch's","file":"engine/position.mjs","find":"  const now=rewardStep(purchases,today,scheme.times);\n  return {earned:+open.earned","replace":"  const now=first;\n  return {earned:+open.earned"},
  {"name":"an unpaid row counts","file":"engine/position.mjs","find":"      if(!d.fullPaid||!d.pOn)return;\n      let rm=+s.total||0","replace":"      let rm=+s.total||0"},
@@ -15,5 +15,6 @@
  {"name":"the account keeps the old count","file":"engine/position.mjs","find":"    if(walk){earned=walk.earned;pooled=walk.progress;}","replace":"    if(walk){pooled=walk.progress;}"},
  {"name":"no opening reads nought","file":"engine/position.mjs","find":"    if(walk&&walk.error)return {error:walk.error};\n","replace":""},
  {"name":"a row over their price gives a minus","file":"engine/position.mjs","find":"given:s.listRM!=null&&!s.goodwill?Math.max(0,+(+s.listRM-(+s.total||0)).toFixed(2)):0","replace":"given:s.listRM!=null&&!s.goodwill?+(+s.listRM-(+s.total||0)).toFixed(2):0"},
- {"name":"given runs past a crossing","file":"engine/position.mjs","find":"crossings.push({rid:r.rid,day:r.day,step,rate:at.rate,given});given=0;}","replace":"crossings.push({rid:r.rid,day:r.day,step,rate:at.rate,given});}"}
+ {"name":"given runs past a crossing","file":"engine/position.mjs","find":"crossings.push({rid:r.rid,day:r.day,step,rate:at.rate,given});given=0;}","replace":"crossings.push({rid:r.rid,day:r.day,step,rate:at.rate,given});}"},
+ {"name":"the promise forgets its rate","file":"engine/position.mjs","find":"held=+s.rwdRate>0&&+s.rwdRate<uc?+s.rwdRate:uc;","replace":"held=uc;"}
 ]

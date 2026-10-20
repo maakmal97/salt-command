@@ -48,13 +48,15 @@ export async function run({ ok }) {
   /* 2: the first paid, and its reward row raised by the fold */
   const paid = bk([order("s1", 800, { cash: 800 }), order("s2", 800, { rwdStep: 500 }),
     { rid: "s3", customer: "AX1-ZED", product: "salt", qty: 1, total: 50, cost: 50, cash: 0, settledRM: 50, rebate: true, rebateKg: 1, goodwill: true, deliveredQty: 0, date: "2026-10-22", rewardOf: "s1", auto: true }]);
-  ok(rwdOf(paid, paid.sales[1], "cross") === null && rwdOf(paid, paid.sales[0], "cross") === "given",
-    "once the first is paid and earns, the second's cross is cleared and the first's is given: " + JSON.stringify([rwdOf(paid, paid.sales[1], "cross"), rwdOf(paid, paid.sales[0], "cross")]));
+  const handed = JSON.parse(JSON.stringify(paid)); handed.sales[2].deliveredQty = 1;
+  ok(rwdOf(paid, paid.sales[1], "cross") === null && rwdOf(paid, paid.sales[0], "cross") === undefined && rwdOf(handed, handed.sales[0], "cross") === "given",
+    "once the first is paid and earns, the second's cross is cleared, and the first's is given once its unit is handed over: "
+      + JSON.stringify([rwdOf(paid, paid.sales[1], "cross"), String(rwdOf(paid, paid.sales[0], "cross")), rwdOf(handed, handed.sales[0], "cross")]));
   /* 3: a paid RM 150 margin (s9) carries progress to RM 450; s2's RM 100 crosses; s9's payment undone, it no longer does. A RM 60 lot
      then lifts today's step to RM 600: s2 at RM 250 of margin over RM 300 carried holds at its promised RM 500 */
   const held = bk([order("s9", 650, { cash: 650 }), order("s2", 600, { rwdStep: 500 })], undefined, 0.6);
   const undone = bk([order("s9", 650, { cash: 0 }), order("s2", 600, { rwdStep: 500 })], undefined, 0.6);
-  const dearer = bk([order("s2", 750, { rwdStep: 500 })], [lot("p1", "2026-10-01", 500), lot("p2", "2026-10-23", 600)]);
+  const dearer = bk([order("s2", 750, { rwdStep: 500, rwdRate: 50, cost: 600 })], [lot("p1", "2026-10-01", 500), lot("p2", "2026-10-23", 600)]);
   ok(rwdOf(held, held.sales[1], "cross") === undefined && rwdOf(undone, undone.sales[1], "cross") === null && rwdOf(dearer, dearer.sales[0], "cross") === undefined,
     "an undone payment clears cross, and a dearer lot never does: " + JSON.stringify([rwdOf(held, held.sales[1], "cross"), rwdOf(undone, undone.sales[1], "cross"), rwdOf(dearer, dearer.sales[0], "cross")]));
   /* 4 */
@@ -121,7 +123,7 @@ export async function run({ ok }) {
   const va = await previewOrder(denv, pa.id, { delivery: 0 }, new Date("2031-01-02T02:00:00Z"));
   const vc = await previewOrder(denv, pc.id, { delivery: 0 }, new Date("2031-01-02T02:00:00Z"));
   const vr = (va && va.reward) || {};
-  ok(!!qx && va.ok && va.rwd === "cross" && va.row.rwdStep === (vr.order || {}).step && vr.associate === true && vr.step > 0
+  ok(!!qx && va.ok && va.rwd === "cross" && va.row.rwdStep === (vr.order || {}).step && va.row.rwdRate === (vr.order || {}).rate && va.row.rwdRate > 0 && vr.associate === true && vr.step > 0
     && vc.ok && vc.rwd === null && vc.row.rwdStep === undefined && vc.reward && vc.reward.associate === false,
     "his preview carries the verdict, his reading and the promised step; a customer's none: " + JSON.stringify([qx, va.ok ? [va.rwd, va.row.rwdStep, vr.order] : va.error, vc.ok ? [vc.rwd, vc.reward] : vc.error]));
   /* 11 */

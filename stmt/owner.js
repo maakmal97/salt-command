@@ -4224,7 +4224,8 @@ export const OWNER_JS = `
     if(!r||r.reading||!r.associate||r.error||!(r.step>0)){ box.hidden=true; return; }
     box.hidden=false;
     box.appendChild(el('h4','salt-eyebrow salt-eyebrow--copper','Associate reward'));
-    if(r.unit){ box.appendChild(el('p','salt-insight orwdnote','1 reward unit on this delivery, '+rm(r.unit.net)+' net.')); return; }
+    if(r.unit){ box.appendChild(el('p','salt-insight orwdnote',r.unit.delivered?'1 reward unit on this delivery, '+rm(r.unit.net)+' net.'
+      :'1 reward unit raised: it goes with '+(+order.moved>=(+order.qty||0)-0.0004?'their next salt delivery':'this delivery')+', '+rm(r.unit.net)+' net.')); return; }
     var o=r.order||{margin:0,reaches:false,short:Math.max(0,r.step-r.progress)}, add=o.paid?0:(+o.margin||0);
     box.appendChild(o.reaches?chip('brass','Reaches a reward'):o.paid?chip('mist','Counted, paid'):chip('mist',rm(o.short)+' short'));
     var m=el('div','salt-meter orwdmeter'), line=el('div','salt-meter__line'), a=el('span',null,''), b=el('span',null,'Next reward ');

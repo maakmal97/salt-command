@@ -2,7 +2,7 @@
  * Each check observes the order's own screen in jsdom (test/counter-b-kit.mjs) and was proved red by its own mutation
  * (test/counter-reward.mutations.json):
  *   1  an acknowledged order still to pay that carries "cross" says it brings them over to the next reward, beside pay now
- *   2  the sentence is not drawn without the word, on an order paid in full, nor on one with goods out
+ *   2  the sentence is not drawn without the word, nor on an order paid in full; with goods out and still to pay it stands
  *   3  an order carrying "given" draws a reward line: the product's mark, one unit, no charge, and no amount and no product word
  *   4  without the word, no reward line */
 import { open, ord, ago, txt, until } from "./counter-b-kit.mjs";
@@ -29,7 +29,7 @@ export async function run({ ok, pageWork }) {
     ok(k.includes("Please pay now if you can. " + CROSS), "an acknowledged order still to pay with cross says so, beside pay now: " + k);
     /* 2 */
     const n = txt(await part(A, "rw2", "when")), pd = txt(await part(A, "rw3", "when")), out = txt(await part(A, "rw4", "when"));
-    ok(n && pd && out && ![n, pd, out].some((t) => t.includes("next reward")), "not without the word, nor paid in full, nor with goods out: " + JSON.stringify([n, pd, out]));
+    ok(n && pd && out && ![n, pd].some((t) => t.includes("next reward")) && out.includes(CROSS), "not without the word, nor paid in full; with goods out and owed, it stands: " + JSON.stringify([n, pd, out]));
     /* 3 */
     const m = await part(A, "rw5", "money"), line = m && m.querySelector(".orwd");
     const lt = txt(line);

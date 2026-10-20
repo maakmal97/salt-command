@@ -14,7 +14,8 @@
  *   10 a customer who becomes an associate by a ref on a sale opens that day at their %, so no unit is raised in a lump
  *   11 the pricing snapshot (every Floor, the grid, the Ceilings, every card, the delivery the cost stack reads) is byte for byte the same with a
  *      delivered reward row; only the leak's shrink rate, information beside the Floor, reads the unit that left the shelf
- *   12 and the fold tool itself (tools/fold.mjs apply) raises it, reading the scheme from the extract */
+ *   12 and the fold tool itself (tools/fold.mjs apply) raises it, reading the scheme from the extract
+ *   13 a reward row whose order no longer earns it (STALE, not yet removed) never takes another order's unit */
 import { readFileSync, writeFileSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { pathToFileURL } from "node:url";
@@ -110,6 +111,13 @@ export async function run({ ok }) {
   ok(flagged.ok && rewards(flagged.book).length === 1 && !rewards(flagged.book)[0].cancelled
     && flagged.moves.some((m) => typeof m === "string" && m.startsWith("STALE reward on " + rewards(flagged.book)[0].rid) && /remove the row in ledger\/book\.json, never cancel/.test(m)),
     "an undone payment flags the reward STALE and withdraws nothing: " + JSON.stringify(flagged.ok ? flagged.moves.filter((m) => typeof m === "string") : flagged.problems));
+  /* 13: s9001's payment undone, its reward row left standing; then s9101 is paid and crosses */
+  const st13 = JSON.parse(JSON.stringify(one.book)), x13 = st13.sales.find((s) => s.rid === "s9001");
+  x13.cash = 0; (x13.amend || []).forEach((a) => { if (+a.cash > 0) a.undone = true; });
+  st13.sales.push(order("s9101"));
+  const next13 = go(st13, [pay(T(3, 1), "s9101", +(step + cost).toFixed(2), D(3))]);
+  ok(next13.ok && rewards(next13.book).some((s) => s.rewardOf === "s9101") && next13.moves.some((m) => typeof m === "string" && m.startsWith("STALE reward on")),
+    "a STALE reward row never takes another order's unit: " + JSON.stringify(next13.ok ? rewards(next13.book).map((s) => s.rewardOf) : next13.problems));
   /* 9 */
   const gone0 = mk([order("s9001")]); gone0.PEOPLE.departed = (gone0.PEOPLE.departed || []).concat([{ id: "AX1-ZED" }]);
   const gone = go(gone0, [pay(T(2, 1), "s9001", +(step + cost).toFixed(2), D(2))]);

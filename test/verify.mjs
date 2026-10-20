@@ -14374,7 +14374,8 @@ await (async () => {
   const rd21 = (e) => JSON.parse(String(w21.eval("JSON.stringify(" + e + ")")));
   try {
     const row21 = (o) => JSON.stringify(Object.assign({ product: "salt" }, o));
-    w21.eval("setProd('salt');BASE_SALES.push(" + [
+    /* 20 Oct 2026: from the switch a customer redeems nothing; the v621 road is measured with the switch off */
+    w21.eval("setProd('salt');delete REWARD.stated.salt.associate.since;BASE_SALES.push(" + [
       row21({ rid: "z621a", customer: "CZ9-RD", date: "2026-07-01", qty: 2, total: 1100, cost: 100, cash: 1100, deliveredQty: 2 }),
       row21({ rid: "z621b", customer: "CZ9-HALF", date: "2026-07-01", qty: 1, total: 550, cost: 50, cash: 550, deliveredQty: 1 }),
       row21({ rid: "z621c", customer: "CZ9-HALF", date: "2026-07-02", qty: 1, total: 24.64, cost: 24.64, cash: 0, settledRM: 24.64, deliveredQty: 1, rebate: true, rebateKg: 0.56, goodwill: true }),

@@ -1739,7 +1739,10 @@ export function draftRow(entry, book) {
   if (pay.note) row.note = String(pay.note);
   listStamp(row, book);
   /* 20 Oct 2026: the step his Accept promised the reward at, on the Pending row of an order that takes them over (rewardCrossOf) */
-  if (entry && entry.rwd === "cross" && +entry.rwdStep > 0 && dir === "SELL") row.rwdStep = +(+entry.rwdStep).toFixed(2);
+  if (entry && entry.rwd === "cross" && +entry.rwdStep > 0 && dir === "SELL") {
+    row.rwdStep = +(+entry.rwdStep).toFixed(2);
+    if (+entry.rwdRate > 0) row.rwdRate = +(+entry.rwdRate).toFixed(4);   /* and the rate it was measured at (Fable's review) */
+  }
 
   /* v606: THE RATE AND THE MARGIN ARE BOTH STRUCK ON THE GOODS, on his ruling of 12 Sep 2026
      that the delivery charge is a pass-through at cost, neither more nor less. It is revenue

@@ -52,29 +52,34 @@ export function rewardReading(book, code, opts = {}) {
   const out = { associate: true, departed: !!acc.departed, times: walk.times, rate: walk.rate, step: walk.step, progress: walk.progress, next: walk.next,
     given: walk.given, net: two(Math.max(0, walk.rate - walk.given)), order: null, unit: null };
   const row = opts.rid ? (book.sales || []).find((s) => s && s.rid === opts.rid) : null;
-  const unit = row ? (book.sales || []).find((s) => s && s.rewardOf === row.rid && !s.cancelled) : null;
+  const unit = row && row.rid ? (book.sales || []).find((s) => s && s.rewardOf && s.rewardOf === row.rid && !s.cancelled) : null;
   if (unit) out.unit = { rid: unit.rid, cost: two(unit.cost), given: two(+unit.given || 0), net: two(Math.max(0, +unit.cost - (+unit.given || 0))), delivered: +unit.deliveredQty > 0.009 };
   const qty = row ? +row.qty : +opts.qty, goods = row ? E.txGoods(row) : +opts.goods;
   if (!(qty > 0) || !Number.isFinite(goods) || (row && (row.product || "salt") !== "salt")) return out;
   const paid = !!row && E.txDates(row).fullPaid;
-  const unitCost = row && row.cost != null && row.qty > 0 ? E.txUnitCost(row) : +opts.unitCost > 0 ? +opts.unitCost : walk.rate;
+  const own = row && row.cost != null && row.qty > 0 ? E.txUnitCost(row) : null, promised = row && +row.rwdRate > 0 ? +row.rwdRate : null;
+  /* a row stamped at Accept is measured at the lesser of its own cost and the rate the promise was made at, so a lot landing after Accept never clears it */
+  const unitCost = own != null ? (promised != null && promised < own ? promised : own) : promised != null ? promised : +opts.unitCost > 0 ? +opts.unitCost : walk.rate;
   const margin = two(goods - qty * unitCost), step = row && +row.rwdStep > 0 ? Math.min(+row.rwdStep, walk.step) : walk.step;
   const before = walk.progress;   /* a paid row is in it already, so its margin is not added */
   const reaches = !paid && before + margin >= step - 0.005;
-  out.order = { rid: row ? row.rid : null, margin, paid, step, reaches, short: paid ? 0 : two(Math.max(0, step - before - margin)) };
+  out.order = { rid: row ? row.rid : null, margin, paid, step, rate: two(unitCost), reaches, short: paid ? 0 : two(Math.max(0, step - before - margin)) };
   return out;
 }
 /* the verdict at Accept: { cross, step }, the step it is promised at */
 export function rewardCrossOf(book, code, qty, goods, unitCost) {
   const r = rewardReading(book, code, { qty, goods, unitCost });
-  return r.associate && !r.error && !r.departed && r.order && r.order.reaches ? { cross: true, step: r.order.step } : { cross: false };
+  return r.associate && !r.error && !r.departed && r.order && r.order.reaches ? { cross: true, step: r.order.step, rate: r.order.rate } : { cross: false };
 }
 /* THE ONE WORD THE ORDER CARRIES (CUSTOMER_FIELDS), from the book on the return leg: "given" once a reward row names the order's row (terminal),
    null to clear a "cross" that no longer holds (another order of theirs crossed first, or a payment of theirs was undone), else nothing to say.
    A new lot never clears it: the promise is the row's rwdStep. */
 export function rwdOf(book, row, now) {
   if (!row || (row.product || "salt") !== "salt") return undefined;
-  if ((book.sales || []).some((s) => s && s.rewardOf === row.rid && !s.cancelled)) return now === "given" ? undefined : "given";
+  if (!row.rid) return undefined;
+  const units = (book.sales || []).filter((s) => s && s.rewardOf && s.rewardOf === row.rid && !s.cancelled);
+  if (units.some((s) => +s.deliveredQty > 0.009)) return now === "given" ? undefined : "given";   /* given once the unit is handed over (Fable's review) */
+  if (units.length) return undefined;   /* raised and waiting for its handover: the word stands */
   if (now !== "cross") return undefined;
   if (POSITION_ENGINE.txDates(row).fullPaid) return null;
   const r = rewardReading(book, row.customer, { rid: row.rid });

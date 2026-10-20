@@ -387,7 +387,8 @@ async function concurrentFixture(ok) {
   /* and the order ready at one collection point then moved to another (18 Oct 2026, Counter Batch A), open too, for the same room */
   fix.orders = fix.orders.filter((o) => !/-ex26$/.test(o.id));
   const open = fix.orders.filter((o) => ["placed", "acknowledged", "ready"].includes(o.status));
-  fix.orders = fix.orders.filter((o) => o !== open.at(-1));
+  /* 20 Oct 2026: and the reward's own case (ex48, an order that takes them over, FIX_VERSION 13), so room for one more is left as before */
+  fix.orders = fix.orders.filter((o) => o !== open.at(-1) && o.rwd !== "cross");
   fix.salt = "concurrent-fixture"; fix.makerOrders = fix.orders; fix.makerBook = { sales: [] };
   await store.put("u:" + u, JSON.stringify({ test: true, wrap: { salt: fix.salt }, prices: { digest: fix.prices.digest } }));
   await store.put(fixKey(u), JSON.stringify(fix));

@@ -902,8 +902,11 @@ function rewardFold(book, it, c, unitMoves) {
   const walk = E.rewardWalk(eb, code);
   if (!walk || walk.error) return;
   const mine = (s) => !!(s && s.rewardOf && !s.loyal && E.ownerCode(s.customer) === code);
-  for (let k = book.sales.filter(mine).length; k < walk.crossings.length; k++) {
-    const cr = walk.crossings[k], cost = +(+cr.rate).toFixed(2);
+  const seen = {};   /* per crossing order: the n-th crossing on a row is raised once that row names n units (cancelled ones included) */
+  for (const cr of walk.crossings) {
+    seen[cr.rid] = (seen[cr.rid] || 0) + 1;
+    if (book.sales.filter((s) => mine(s) && s.rewardOf === cr.rid).length >= seen[cr.rid]) continue;
+    const cost = +(+cr.rate).toFixed(2);
     const row = { customer: code, product: "salt", qty: 1, total: cost, cost, cash: 0, settledRM: cost, rebate: true, rebateKg: 1, goodwill: true,
       deliveredQty: 0, date: day, rewardOf: cr.rid, auto: true, given: cr.given,
       note: `<b>REWARD UNIT: 1 UNIT OF SALT TO ${code} AT COST, NO CHARGE.</b> Their margin on their own buying and resale reached the step of RM ${cr.step} (${walk.times} units at RM ${cr.rate} landed on ${cr.day}) with ${cr.rid}, paid in full. Raised by the fold at RM ${cost} and settled by the reward, so it is cost and not revenue; it goes with ${cr.rid}'s delivery, or with their next salt order where that has gone. RM ${cr.given} was given under their own price since the last reward (his information only).` };
@@ -911,11 +914,13 @@ function rewardFold(book, it, c, unitMoves) {
     book.sales.push(row);
     c.moves.push(`reward unit: ${row.rid}, 1 unit to ${code} at RM ${cost}, for ${cr.rid}`);
   }
-  const live = book.sales.filter((s) => mine(s) && !s.cancelled);
-  if (live.length > walk.crossings.length) {
-    const crossed = new Set(walk.crossings.map((x) => x.rid));
-    const gone = live.filter((s) => !crossed.has(s.rewardOf));
-    for (const s of (gone.length ? gone : live).slice(-(live.length - walk.crossings.length)))
+  /* a live reward row past what the walk earns on its order is flagged, per order */
+  const live = book.sales.filter((s) => mine(s) && !s.cancelled), per = {};
+  for (const x of walk.crossings) per[x.rid] = (per[x.rid] || 0) + 1;
+  const held = {};
+  for (const s of live) {
+    held[s.rewardOf] = (held[s.rewardOf] || 0) + 1;
+    if (held[s.rewardOf] > (per[s.rewardOf] || 0))
       c.moves.push(`STALE reward on ${s.rid}: the walk no longer earns it (its payment was undone); remove the row in ledger/book.json, never cancel it`);
   }
   if ((c.entryMoves || []).some((m) => m && m.product === "salt" && +m.kg < 0 && E.ownerCode(m.who) === code))

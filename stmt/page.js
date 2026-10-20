@@ -5357,8 +5357,9 @@ const CLIENT_JS = `
     else put('ow.confirmed',{d:Dd(oDay,firstAt(o,'acknowledged'))});
     /* 10 Oct 2026 (his Q4): his Accept reminds them to pay now, in words only; every term stands */
     if(s==='acknowledged'&&!(mv>0)&&(+o.total||0)+(+o.delivery||0)-paid-oClaimed(o)>0.004){ p.appendChild(document.createTextNode(' ')); put(o.prepay?'ow.payNow':'ow.payNowCredit');
-      /* 20 Oct 2026: an order that takes them over to their next reward says so while it is still to pay, with no figure */
-      if(o.rwd==='cross'){ p.appendChild(document.createTextNode(' ')); put('ow.rwdCross'); } }
+    }
+    /* 20 Oct 2026: an order that takes them over to their next reward says so while it is still to pay, goods out or not, with no figure */
+    if(o.rwd==='cross'&&(s==='acknowledged'||s==='ready')&&(+o.total||0)+(+o.delivery||0)-paid-oClaimed(o)>0.004){ p.appendChild(document.createTextNode(' ')); put('ow.rwdCross'); }
     /* 29 Sep 2026: the day they asked for, while it is still to come to them */
     if(o.wantBy&&!(mv>0)&&OPEN_ST.indexOf(s)>=0){ p.appendChild(document.createTextNode(' ')); put('ow.wantBy',{d:function(L){ return esch(ymdDay(o.wantBy,L)); }}); }
     /* 10 Oct 2026: the time asked for, while the goods are still to go */
