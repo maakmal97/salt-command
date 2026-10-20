@@ -1,0 +1,55 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-20T14:38:55.581Z",
+   "status": "approved",
+   "collection": "count",
+   "row": {
+    "product": "salt",
+    "qty": 0,
+    "date": "2026-10-20",
+    "was": 12.89,
+    "drift": -12.89
+   },
+   "reasoning": "Counted 0 unit of salt by hand on 2026-10-20, against 12.89 on the book: a difference of -12.89. The last count was 2026-10-03. A count wins over the ledger, and the fold sets the stated stock and moves COUNT_ON to this date.",
+   "flags": [
+    "The book says 12.89 and you counted 0: -12.89 unit unaccounted for. A COUNT ALWAYS WINS, so this becomes the inventory and the gap books as shrinkage across every unit sold.",
+    "1.5 unit of this inventory is OWED OUT and already paid for. If the count is right, that stock is not there to deliver, which is a different problem from shrinkage and a worse one.",
+    "Counting zero against 1.5 unit of promises means every open order on the book is unmeetable until a lot lands."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-20T14:38:55.581Z",
+    "type": "COUNT",
+    "party": "stock count",
+    "qty": 0,
+    "total": null,
+    "status": "count",
+    "raw": "Stock count: 0 unit salt on hand on 2026-10-20",
+    "payload": {
+     "mode": "count",
+     "product": "salt",
+     "direction": null,
+     "party": null,
+     "date": "2026-10-20",
+     "qty": 0,
+     "total": null,
+     "cash": null,
+     "kg": 0,
+     "assoc": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null
+    },
+    "makerRequest": "cbc5863982334d4be595c2b45d811b5306eb5ee50595b7ad9e5d9ea6f871b615"
+   },
+   "decidedAt": "2026-10-20T14:39:12.641Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
