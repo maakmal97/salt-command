@@ -1360,13 +1360,17 @@ function keepPage() {
    control keeps its id, request and behaviour. Sign out is a tap and a tap again (the page's script, lockEl). */
 /* COUNTER BATCH C (20 Oct 2026, item 17): HELP under Account, after This device, four questions each a native details row on
    the order's own fold pattern, its summary 44px with the chevron, closed until tapped; the answers as he approved them. On every
-   customer's Account, the test accounts' included; never on Salt Admin's. */
-function helpCard() {
-  const row = (k) => '<details class="ahelp__q"><summary class="ahelp__sum">' + wt("span", 'class="ahelp__t"', "help." + k) + glyphSvg("next", 18) + "</summary>"
+   customer's Account, the test accounts' included; never on Salt Admin's Account.
+   21 Oct 2026 (Salt Admin A to C, P8): owner true draws the same four, read only, on Salt Admin's Shop > Hours, so he reads what the
+   customer is told beside the hours that answer it; the words are the same keys, nothing there edits them. */
+function helpCard(owner) {
+  const row = (k) => '<details class="ahelp__q"><summary class="ahelp__sum"' + (owner ? ' data-act="shop.help.' + k + '"' : "") + ">" + wt("span", 'class="ahelp__t"', "help." + k) + glyphSvg("next", 18) + "</summary>"
     + wt("p", 'class="ahelp__a"', "help." + k + "A") + "</details>";
-  return '<section id="aHelp" class="ahelp salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="helpH">'
-    + wt("h2", 'class="salt-eyebrow salt-eyebrow--copper" id="helpH"', "help.h")
-    + ["pay", "deliv", "coll", "change"].map(row).join("") + "</section>";
+  const head = owner ? '<h2 id="mHelpH">Help</h2><p class="lead">What a customer reads under Account, Help. Read only.</p>'
+    : wt("h2", 'class="salt-eyebrow salt-eyebrow--copper" id="helpH"', "help.h");
+  return '<section id="' + (owner ? "mHelp" : "aHelp") + '" class="ahelp' + (owner ? "" : " salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm")
+    + '" aria-labelledby="' + (owner ? "mHelpH" : "helpH") + '"' + (owner ? ' data-in="shop.hours"' : "") + ">"
+    + head + ["pay", "deliv", "coll", "change"].map(row).join("") + "</section>";
 }
 function thisDevice() {
   return '<section id="thisDevice" class="devcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="devH" hidden>'
@@ -1887,6 +1891,8 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<section data-in="shop.hours" aria-labelledby="makerPointsTitle"><h2 id="makerPointsTitle">Collection points</h2>'
         + '<p class="lead" id="makerPointsStatus">Reading.</p>'
         + '<div id="makerPoints"></div><p id="makerPointsMessage" class="msg" role="status" aria-live="polite"></p></section>'
+        /* 21 Oct 2026 (P8): the customer's Help, read only, under the hours and the points it speaks of */
+        + helpCard(true)
         + '<section data-in="shop.notice" aria-labelledby="makerBulletinTitle"><h2 id="makerBulletinTitle">Notice</h2>'
         + '<p class="lead">A line at the top of every customer account. Setting it also sends them a notification.</p>'
         + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></section>'

@@ -2603,6 +2603,10 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `need.fold.practice` | The folded line at the foot of Needs you | Opens or shuts the practice accounts' cards in place. |
 | `need.approve-row` | Needs you card for a Desk row to approve | Approves that row, or the trip it rides, asking first and sending what Orders > Approve's Approve sends. |
 | `need.copy-link` | Same card, once the link is shown | Copies that link. |
+| `shop.help.pay` | Shop > Hours, Help (read only) | Opens or shuts the answer to Paying, as a customer reads it under Account. Reads and sends nothing. |
+| `shop.help.deliv` | Shop > Hours, Help (read only) | Opens or shuts the answer to Delivery, as a customer reads it under Account. Reads and sends nothing. |
+| `shop.help.coll` | Shop > Hours, Help (read only) | Opens or shuts the answer to Collecting, as a customer reads it under Account. Reads and sends nothing. |
+| `shop.help.change` | Shop > Hours, Help (read only) | Opens or shuts the answer to Changing an order, as a customer reads it under Account. Reads and sends nothing. |
 | `need.glance.ready` | The glance at the head of Needs you | Opens Orders at Ready: the orders ready with goods still to hand over, counted on the tile. Reads nothing of its own. |
 | `need.glance.owed` | The glance at the head of Needs you | Opens Orders. The tile sums what the agreed orders still owe, goods and delivery less what is paid. Reads nothing of its own. |
 | `need.jump` | Jump to, fixed beside the kinds' sliding row | Opens or shuts the menu of every kind with its count; Escape or a tap outside shuts it, the arrow keys move between its lines. |
