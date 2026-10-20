@@ -555,7 +555,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .ohead h3{margin:0;font-family:var(--salt-font-display);font-size:var(--salt-text-xl);letter-spacing:0;line-height:1.15}
 .adm .ohead .sub2{margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .adm .ohead .oband__what{flex:1;min-width:0;font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);color:var(--salt-mist-bright)}
-.adm .osettled{color:var(--salt-verdigris);font-weight:700}
+.adm .osettled{color:var(--salt-verdigris)}
 .odue{color:var(--salt-ember)}
 /* the part of an order their reward paid: a line of its own under the part it belongs to (coverTo) */
 .pcover{display:block;margin-top:2px}
