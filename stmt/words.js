@@ -145,6 +145,7 @@ export const EN = {
   "hl.h": "Your latest order",
   "hr.h": "Your reward",
   "hr.see": "See your card",
+  "hr.hLoyal": "Your next reward",
   "hy.h": "This year",
   "hy.order1": "1 order",
   "hy.orderN": "{n} orders",

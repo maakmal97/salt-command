@@ -116,7 +116,8 @@ function fresh(now, u) {
   const was = Object.assign({}, list, { products: list.products.map((p) => p.product === "oil" ? Object.assign({}, p, { sizes: p.sizes.concat([{ q: 2, price: 78 }]) }) : p) });
   const O = [
     order(oid(0, "f1"), list, T(0, 10), { product: "salt", qty: 2.5, mode: "collect" }, []),
-    order(oid(1, "f2"), list, T(1, 10), { product: "candy", qty: 4, mode: "collect" }, [[T(1, 30), "desk", { status: "acknowledged" }], [T(0, 30), "desk", READY_AT()]]),
+    /* 21 Oct 2026: ready and still to pay, the order that brings this customer to their next loyalty unit, his Accept's word on it */
+    order(oid(1, "f2"), list, T(1, 10), { product: "salt", qty: 1, mode: "collect" }, [[T(1, 30), "desk", { status: "acknowledged", rwd: "cross" }], [T(0, 30), "desk", READY_AT()]]),
     order(oid(6, "f3"), list, T(6), { product: "salt", qty: 1, mode: "collect" }, [[T(6, 20), "desk", { status: "acknowledged" }], [T(5), "desk", READY_AT()],
       [T(5, 30), "desk", { handover: { units: 1 } }], [T(5, 31), "desk", { cash: { amount: 110 } }]]),
     order(oid(9, "f4"), list, T(9), { product: "rice", qty: 2, mode: "deliver", place: "Taman Rekaan" }, [[T(9, 20), "desk", { status: "acknowledged", delivery: 3 }],
@@ -139,11 +140,11 @@ function fresh(now, u) {
   }
   const pools = [{ id: "p" + T(1, 0).replace(/[-:.TZ]/g, "").slice(0, 14) + "-exf1", kind: "pool", at: T(1), product: "salt", q: 2.5, target: 12.5, state: "open",
     closesOn: klDay(new Date(now.getTime() + 4 * 864e5)), joins: [], seedUnits: 5 }];
-  const card = { at: now.toISOString(), products: [{ product: "salt", name: "Salt", unit: "unit", summary: { bought: 110, soldFor: 0, onward: 0, introduced: 0, referred: 0 },
-    reward: { earned: 0, taken: 0, left: 0, next: 0.9, held: false }, lines: [{ date: T(6).slice(0, 10), kind: "own", qty: 1, rm: 110 }] }] };
+  /* 21 Oct 2026 (the loyalty plan's Ask 8): a plain customer, so the card is the share of their next loyalty unit alone */
+  const card = { at: now.toISOString(), products: [{ product: "salt", loyal: { next: 0.7 } }] };
   const book = { sales, customerRefunds: [] }, paynum = { maybank: { number: "0".repeat(13) } };
   return { v: FIX_VERSION, u, state: "fresh", at: now.toISOString(), code: FIX_CODE, book, live: liveFor(book, FIX_CODE, now, U), prices: list,
-    orders: O, claims: [], refs: [], card, assoc: true, thread: null, pools, bulletin: null, look: "asked", paynum };
+    orders: O, claims: [], refs: [], card, assoc: false, thread: null, pools, bulletin: null, look: "asked", paynum };
 }
 
 /** The fixture for the moment `now`, in one state: the invented book, the orders, the claims, the links, the card and the rest. */
@@ -453,6 +454,9 @@ export const FEATURES = [
   ["paid in advance, the desk's verdict at Accept (V5b2a)", (f) => has(f, (o) => o.prepay === true)],
   ["an order that brings an associate over to the next reward (20 Oct 2026)", (f) => has(f, (o) => o.rwd === "cross" && o.status === "acknowledged"
     && !(+o.moved > 0) && (+o.total || 0) + (+o.delivery || 0) - (+o.paid || 0) > 0.004)],
+  ["a customer's progress to the next reward, a share of one unit (21 Oct 2026)", (f) => f.assoc === false && !!(f.card && f.card.products.some((p) => p.loyal && typeof p.loyal.next === "number"))],
+  ["an order that brings a customer to the next reward (21 Oct 2026)", (f) => f.assoc === false && has(f, (o) => o.rwd === "cross" && ["acknowledged", "ready"].includes(o.status)
+    && !(+o.moved > 0) && (+o.total || 0) + (+o.delivery || 0) - (+o.paid || 0) > 0.004)],
   ["a reward unit on an order's delivery (20 Oct 2026)", (f) => has(f, (o) => o.rwd === "given" && (o.product || "salt") === "salt")],
   ["the ceiling sealed with the list, for the sheet's forecast (V5b2b)", (f) => typeof f.prices.ceiling === "number"],
   ["a claim on an order waiting on him", (f) => has(f, (o) => (o.payments || []).some((p) => p.claim === "waiting"))],
@@ -561,7 +565,7 @@ export async function sealFixture(fix, rec, pass) {
   const ck = await unwrapKey(pass, rec.wrap);
   const seal = async (obj) => encryptWith(ck, JSON.stringify(obj));
   /* the statement bundle of an account minted today: no sealed issue, the live document is the statement */
-  return { v: fix.v, u: fix.u, at: fix.at, salt: rec.wrap.salt, assoc: true,
+  return { v: fix.v, u: fix.u, at: fix.at, salt: rec.wrap.salt, assoc: fix.assoc === true,
     live: fix.live ? Object.assign({ at: fix.live.at }, await seal(fix.live)) : null, orders: fix.orders.map(customerView), claims: fix.claims,
     env: await seal({ v: 1, issued: fix.at.slice(0, 10), statements: [], look: fix.look }),
     prices: Object.assign({ at: fix.prices.at, week: fix.prices.week.monday, digest: fix.prices.digest },

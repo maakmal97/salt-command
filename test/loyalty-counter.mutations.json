@@ -1,0 +1,12 @@
+[
+ {"name":"a customer goes down the associate's card","file":"stmt/page.js","find":"    if(!assoc){\n      var lp=card.products","replace":"    if(false){\n      var lp=card.products"},
+ {"name":"the meter stands empty","file":"stmt/page.js","find":"lm.style.setProperty('--salt-fill',String(lpc));","replace":"lm.style.setProperty('--salt-fill','0');"},
+ {"name":"the associate's heading","file":"stmt/page.js","find":"box.appendChild(hHead(tw('hr.hLoyal')));","replace":"box.appendChild(hHead(tw('hr.h')));"},
+ {"name":"the card is a button","file":"stmt/page.js","find":"var lc=el('div','hreward hloyal","replace":"var lc=el('button','hreward hloyal"},
+ {"name":"a card with no share draws one","file":"stmt/page.js","find":"      if(!lp) return box;\n      var lpc=","replace":"      if(!lp) lp={product:'salt',loyal:{next:0}};\n      var lpc="},
+ {"name":"the Rewards tab for everybody","file":"stmt/page.js","find":"placeHide('card',!assoc);","replace":"placeHide('card',false);"},
+ {"name":"0000-0002 stays an associate","file":"tools/testfix.mjs","find":"    orders: O, claims: [], refs: [], card, assoc: false, thread: null, pools, bulletin: null, look: \"asked\", paynum };","replace":"    orders: O, claims: [], refs: [], card, assoc: true, thread: null, pools, bulletin: null, look: \"asked\", paynum };"},
+ {"name":"the share is not the plan's","file":"tools/testfix.mjs","find":"products: [{ product: \"salt\", loyal: { next: 0.7 } }] };","replace":"products: [{ product: \"salt\", loyal: { next: 0.9 } }] };"},
+ {"name":"the seal calls every account an associate","file":"tools/testfix.mjs","find":"salt: rec.wrap.salt, assoc: fix.assoc === true,","replace":"salt: rec.wrap.salt, assoc: true,"},
+ {"name":"the Worker calls every test account an associate","file":"stmt/testfix.js","find":"{ assoc: fix.assoc === true, env: fix.env || rec.env,","replace":"{ assoc: true, env: fix.env || rec.env,"}
+]

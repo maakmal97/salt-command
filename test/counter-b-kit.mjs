@@ -30,7 +30,7 @@ export const ord = (id, status, at, extra = {}) => Object.assign({ id, status, a
 /* handed over in full: moved is the size, done */
 export const done = (id, at, extra = {}) => ord(id, "done", at, Object.assign({ moved: extra.qty || 1, movedOn: at.slice(0, 10), paid: extra.total || 100 }, extra));
 
-export async function open({ ok, pageWork, orders = [], assoc = false, late = 0, list = LIST(), poll = true, width = 0, hours = null } = {}) {
+export async function open({ ok, pageWork, orders = [], assoc = false, late = 0, list = LIST(), poll = true, width = 0, hours = null, card = null } = {}) {
   const P = await import("../stmt/page.js");
   const C = await import("../tools/stmt-crypto.mjs");
   const { JSDOM } = await import("jsdom");
@@ -40,7 +40,8 @@ export async function open({ ok, pageWork, orders = [], assoc = false, late = 0,
   const stamped = { at: ago(1), body: "<p>Live</p>", owed: late ? 50 : 0, pay, buildId: BUILD };
   const body = { ok: true, assoc, wrap: await C.wrapKey(pass, ck), session: "sess-bb-abcdefghij", liveStatus: "current",
     live: Object.assign({ at: stamped.at, buildId: BUILD }, await C.encryptWith(ck, JSON.stringify(stamped))),
-    env: await C.encryptWith(ck, JSON.stringify({ statements: [] })), prices: await C.encryptWith(ck, JSON.stringify(list)) };
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [] })), prices: await C.encryptWith(ck, JSON.stringify(list)),
+    ...(card ? { card: await C.encryptWith(ck, JSON.stringify(card)) } : {}) };
   /* refuse: the products whose Place answers as a dropped request (503), until the check lifts it */
   const st = { orders: orders.map((o) => JSON.parse(JSON.stringify(o))), posts: [], polls: [], n: 0, refuse: new Set() };
   let work;

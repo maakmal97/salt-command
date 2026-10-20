@@ -6735,7 +6735,23 @@ const CLIENT_JS = `
   /* THE NEAREST REWARD, an associate's alone, across the books that carry one: its mark, the meter to the next unit and what is theirs to
      take, in the card's own words. Never a level; never the units to go, which is a margin figure the card does not carry. A tap is Rewards. */
   function homeReward(){
-    var box=el('div'); if(!assoc||view||!card||!Array.isArray(card.products)) return box;
+    var box=el('div'); if(view||!card||!Array.isArray(card.products)) return box;
+    /* 21 Oct 2026: a customer's card carries the share of their next loyalty unit, and nothing else; it opens nothing */
+    if(!assoc){
+      var lp=card.products.filter(function(p){ return p.loyal&&typeof p.loyal.next==='number'; })[0];
+      if(!lp) return box;
+      var lpc=Math.max(0,Math.min(100,Math.round(lp.loyal.next*100)));
+      box.appendChild(hHead(tw('hr.hLoyal')));
+      var lc=el('div','hreward hloyal salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-sm');
+      var lt=el('span','hreward__top'); lt.appendChild(el('span','sr',pshape(lp.product))); lt.appendChild(psym(lp.product,28));
+      lt.appendChild(el('span','hreward__left',tw('rew.nextAria',{p:lpc}))); lc.appendChild(lt);
+      var lm=el('span','salt-meter rmeter'), ll=el('span','salt-meter__line');
+      ll.appendChild(el('span',null,tw('rew.next'))); ll.appendChild(el('b',null,lpc+'%'));
+      var lr=el('span','salt-meter__track'); lr.appendChild(el('span','salt-meter__fill'));
+      lm.style.setProperty('--salt-fill',String(lpc)); lm.appendChild(ll); lm.appendChild(lr); lc.appendChild(lm);
+      box.appendChild(lc);
+      return box;
+    }
     var list=card.products.filter(function(p){ return p.reward&&p.reward.next!=null; }).sort(function(a,b){ return b.reward.next-a.reward.next; }), p=list[0];
     if(!p) return box;
     var rw=p.reward, pc=Math.round(rw.next*100);
