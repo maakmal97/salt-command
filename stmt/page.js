@@ -918,7 +918,9 @@ body.ended>*:not(#aEnded){display:none}
 .adm .nlist{display:flex;flex-direction:column;gap:12px;margin:0 0 24px}
 .adm .nlist .glink{margin:0}
 .adm .nlist .nsev{margin:8px 0 -4px}
-.adm .nchips{margin:0 0 16px}
+.adm .nkrow{margin:0 0 16px}
+.adm .nglance{grid-template-columns:repeat(2,minmax(0,1fr));margin:0 0 16px}
+.adm .nglance[hidden]{display:none}
 .adm .nfail{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:0 0 12px}
 .adm .nfail[hidden]{display:none}
 .adm .nfail__what{margin:0;flex:1 1 12em}
@@ -1782,8 +1784,14 @@ export function landingPage(user, nonce, owner, bulletin, test) {
            names it, and the heading stays for a reader */
         + '<h1 class="sr">Needs you</h1>'
         + '<p class="lead" id="nCount">Reading what needs you.</p>'
-        + '<div class="salt-tabs nchips" role="tablist" aria-label="Show">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="salt-tabs__pill" role="tab" data-chip="' + k
+        /* 21 Oct 2026 (P7): the glance, Ready and Owed to you, read off the orders the page holds (stmt/owner.js drawGlance) */
+        + '<div id="nGlance" class="salt-glance nglance" aria-label="At a glance" hidden></div>'
+        /* 21 Oct 2026 (canvas V56): the kinds on one row that slides, each with its count, and Jump to beside it, a menu of every kind */
+        + '<div class="salt-tabs-row nkrow"><div class="salt-tabs salt-tabs--track nchips" role="tablist" aria-label="Show">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="salt-tabs__pill" role="tab" data-chip="' + k
           + '" data-act="need.kind.' + k + '" aria-selected="' + (i ? "false" : "true") + '">' + w + "</button>").join("") + "</div>"
+        + '<div class="salt-jump"><button type="button" class="salt-jump__btn" id="nJump" data-act="need.jump" aria-haspopup="menu" aria-expanded="false" aria-controls="nJumpMenu">Jump to</button>'
+        + '<div class="salt-jump__menu" id="nJumpMenu" role="menu" aria-label="Jump to" hidden>' + ADMIN_KINDS.map(([k, w]) => '<button type="button" class="salt-jump__item" role="menuitem" data-jump="' + k
+          + '" data-act="need.jump.' + k + '"><span>' + w + '</span><span class="salt-jump__count"></span></button>').join("") + "</div></div></div>"
         /* S9 fix: from 860px the list stands beside the account a card is about, as Accounts does (Phase 6) */
         + '<div class="nsplit"><div>'
         + '<div id="nlist" class="nlist"></div>'

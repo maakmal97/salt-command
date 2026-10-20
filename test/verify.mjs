@@ -50122,6 +50122,11 @@ await (async () => {
   await (await import("./admin-ac-again.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Admin A to C: the glance on Needs you, counts on the kinds, one sliding row and Jump to (21 Oct 2026)");
+await (async () => {
+  await (await import("./admin-ac-glance.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin: the claim card reads its rows on opening, draws the slip from the one unlock, and asks on a sheet");
 await (async () => {
   await (await import("./admin-claim-card.mjs")).run({ ok, pageWork });

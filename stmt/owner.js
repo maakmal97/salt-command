@@ -113,7 +113,7 @@ export const OWNER_JS = `
     var parts=PARTS[place]||[];
     if(!parts.length) part=''; else if(parts.indexOf(part)<0) part=parts[0];
     var fresh=!!o.fresh||place!==placeNow, moved2=place!==placeNow||part!==partNow;
-    if(placeNow==='needs'&&place!=='needs') needSaid={};
+    if(placeNow==='needs'&&place!=='needs'){ needSaid={}; jumpShut(false); }
     placeNow=place; partNow=part;
     /* Orders opens on the first stage that has something waiting, found when the read lands (drawMaker); a stage he chose is his */
     ordAuto=place==='orders'&&place!==prevPlace&&!asked;
@@ -6226,13 +6226,14 @@ export const OWNER_JS = `
   function drawNeeds(){
     if(!nlist) return;
     var items=needItems(), shown=items.filter(function(i){ return nKind==='all'||i.kind===nKind; });
-    drawCounts(items); drawLead(items);
+    drawCounts(items); drawLead(items); drawGlance();
     /* the chips are the kinds present, and All; one whose kind has gone leaves him on All */
     if(needsReady()){
       var have={}; items.forEach(function(i){ have[i.kind]=1; });
       [].forEach.call(document.querySelectorAll('.nchips button'), function(x){ var k=x.getAttribute('data-chip'); x.hidden=!(k==='all'||have[k]); });
       if(nKind!=='all'&&!have[nKind]){ nKind='all'; shown=items; [].forEach.call(document.querySelectorAll('.nchips button'), function(x){ x.setAttribute('aria-selected', x.getAttribute('data-chip')==='all'?'true':'false'); }); }
     }
+    drawKindCounts(items);
     nlist.textContent='';
     var practiceList=shown.filter(function(i){ return i.practice; }); shown=shown.filter(function(i){ return !i.practice; });
     if(!shown.length&&needsReady()) nlist.appendChild(el('p','rnone',nKind==='all'&&!needsBad().length?'Nothing needs you.':'Nothing here.'));
@@ -6260,6 +6261,87 @@ export const OWNER_JS = `
     drawNeedOpen(false);
   }
   function redrawLead(){ drawLead(needItems()); }
+  /* 21 Oct 2026 (canvas V56): EACH KIND'S PILL, AND ITS LINE UNDER JUMP TO, SAYS HOW MANY OF IT WAIT, practice apart, as the bars count. A kind
+     with nothing at all is no pill, and its line stands in mist and cannot be chosen; nothing is said until every read has landed. */
+  function drawKindCounts(items){
+    var n={all:0}, have={all:1}, ready=needsReady();
+    items.forEach(function(i){ have[i.kind]=1; if(i.practice) return; n.all++; n[i.kind]=(n[i.kind]||0)+1; });
+    [].forEach.call(document.querySelectorAll('.nchips button, #nJumpMenu button'), function(b){
+      var menu=b.hasAttribute('data-jump'), k=b.getAttribute(menu?'data-jump':'data-chip'), c=b.querySelector(menu?'.salt-jump__count':'.salt-tabs__count');
+      if(!c){ c=el('span','salt-tabs__count'); b.appendChild(c); }
+      c.textContent=ready?String(n[k]||0):'';
+      if(!menu) return;
+      var none=ready&&!have[k];
+      b.disabled=none; b.classList.toggle('salt-jump__item--none', none); b.setAttribute('aria-current', k===nKind?'true':'false');
+    });
+  }
+  /* 21 Oct 2026 (P7): THE GLANCE heads Needs you. Ready: the orders ready with goods still to hand over, as Orders' Ready stage holds them. Owed
+     to you: what the agreed orders still owe, their goods and delivery less what is paid, summed. Read off the orders the page holds and nothing
+     else; a practice order counts only on the practice surface. Each tile opens Orders at its stage. */
+  function drawGlance(){
+    var g=document.getElementById('nGlance'); if(!g) return;
+    if(!makerData){ g.hidden=true; return; }
+    var ready=0, owe=0, oweN=0;
+    (makerData.orders||[]).forEach(function(o){
+      if(o.test&&!TESTING) return;
+      if(orderPartsOf(o)==='orders.ready') ready++;
+      if(['acknowledged','ready','done'].indexOf(o.status)<0||o.writtenOff) return;
+      var left=(+o.total||0)+(+o.delivery||0)-(+o.paid||0);
+      if(left>0.004){ owe+=left; oweN++; }
+    });
+    var tiles=[['#orders/ready','ready','Ready',String(ready),ready?'To hand over':'Nothing to hand over'],
+      ['#orders','owed','Owed to you',rm(owe),oweN?oweN+(oweN===1?' agreed order':' agreed orders'):'Nothing owed']];
+    var sig=JSON.stringify(tiles);
+    g.hidden=false;
+    if(g.getAttribute('data-sig')===sig) return;
+    g.setAttribute('data-sig',sig); g.textContent='';
+    tiles.forEach(function(t){
+      var a=el('a','salt-glance__item'); a.href=t[0]; a.setAttribute('data-glance',t[1]); a.setAttribute('data-act','need.glance.'+t[1]);
+      a.appendChild(el('span','salt-glance__label',t[2])); a.appendChild(el('span','salt-glance__value',t[3])); a.appendChild(el('span','salt-glance__note',t[4]));
+      g.appendChild(a);
+    });
+  }
+  /* 21 Oct 2026 (canvas V56): JUMP TO opens a menu of every kind with its count; a line chooses its kind as the pill does, Escape or a tap
+     outside closes it and gives the button back its focus, and the arrow keys move between the lines that can be chosen */
+  var nJump=document.getElementById('nJump'), nJumpMenu=document.getElementById('nJumpMenu');
+  function jumpShut(back){
+    if(!nJumpMenu||nJumpMenu.hidden) return;
+    nJumpMenu.hidden=true; nJump.setAttribute('aria-expanded','false');
+    if(back) nJump.focus();
+  }
+  function jumpLines(){ return [].filter.call(nJumpMenu.querySelectorAll('button'), function(b){ return !b.disabled; }); }
+  /* a kind chosen, from its pill or its line: the pill marked and brought into view on a row that slides */
+  function nPick(k){
+    nKind=k;
+    [].forEach.call(document.querySelectorAll('.nchips button'), function(x){
+      var on=x.getAttribute('data-chip')===k; x.setAttribute('aria-selected', on?'true':'false');
+      var sp=x.parentNode; if(on&&sp.scrollWidth>sp.clientWidth) sp.scrollLeft=Math.max(0,x.offsetLeft-sp.offsetLeft-12);
+    });
+    drawNeeds();
+  }
+  if(nJump&&nJumpMenu){
+    nJump.addEventListener('click', function(){
+      if(!nJumpMenu.hidden){ jumpShut(false); return; }
+      nJumpMenu.hidden=false; nJump.setAttribute('aria-expanded','true');
+      var L=jumpLines(), cur=L.filter(function(b){ return b.getAttribute('data-jump')===nKind; })[0]||L[0];
+      if(cur) cur.focus();
+    });
+    nJumpMenu.addEventListener('click', function(ev){
+      var b=ev.target.closest('button[data-jump]'); if(!b||b.disabled) return;
+      jumpShut(true); nPick(b.getAttribute('data-jump'));
+    });
+    nJumpMenu.addEventListener('keydown', function(ev){
+      if(ev.key==='Escape'){ ev.preventDefault(); jumpShut(true); return; }
+      if(['ArrowDown','ArrowUp','Home','End'].indexOf(ev.key)<0) return;
+      ev.preventDefault();
+      var L=jumpLines(); if(!L.length) return;
+      var i=L.indexOf(document.activeElement);
+      i=ev.key==='Home'?0:ev.key==='End'?L.length-1:ev.key==='ArrowDown'?(i+1)%L.length:(i<=0?L.length-1:i-1);
+      L[i].focus();
+    });
+    nJump.addEventListener('keydown', function(ev){ if(ev.key==='Escape') jumpShut(true); });
+    document.addEventListener('click', function(ev){ if(!nJumpMenu.hidden&&!ev.target.closest('.salt-jump')) jumpShut(false); });
+  }
   /* ---- READING WHAT NEEDS YOU, on entering it and every 5 seconds while it is showing. Everything it shows is read from the sources the
      other places read, each guarding its own read: none starts while another of its kind is out, and a poll that finds the same answer
      draws nothing. The sheet and the links are read again only after the page has read them once (it does at opening). ---- */
@@ -6433,7 +6515,7 @@ export const OWNER_JS = `
     if(bk){ var way=bk.getAttribute('data-back'); if(way==='accounts') openCard(null); else if(way==='orders') closeOrder(); else if(way==='form') closeForm(); return; }
     var b=ev.target.closest('button[data-m]'); if(b){ var mm=b.getAttribute('data-m'); if(mm==='orders'&&placeNow==='orders'&&ordOpened){ closeOrder(); return; } showPlace(mm, b.getAttribute('data-p')||(mm===placeNow?partNow:''), {fresh:true,push:true}); return; }
     var k=ev.target.closest('button[data-chip]');
-    if(k){ nKind=k.getAttribute('data-chip'); [].forEach.call(document.querySelectorAll('.nchips button'), function(x){ x.setAttribute('aria-selected', x===k?'true':'false'); }); drawNeeds(); return; }
+    if(k){ nPick(k.getAttribute('data-chip')); return; }
     var t=ev.target.closest('button[data-part]'); if(t) showPlace(t.parentNode.getAttribute('data-place'), t.getAttribute('data-part'), {push:true});
   });
   /* the + orb opens Record's menu of entries */

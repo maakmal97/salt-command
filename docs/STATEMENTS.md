@@ -2603,6 +2603,15 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `need.fold.practice` | The folded line at the foot of Needs you | Opens or shuts the practice accounts' cards in place. |
 | `need.approve-row` | Needs you card for a Desk row to approve | Approves that row, or the trip it rides, asking first and sending what Orders > Approve's Approve sends. |
 | `need.copy-link` | Same card, once the link is shown | Copies that link. |
+| `need.glance.ready` | The glance at the head of Needs you | Opens Orders at Ready: the orders ready with goods still to hand over, counted on the tile. Reads nothing of its own. |
+| `need.glance.owed` | The glance at the head of Needs you | Opens Orders. The tile sums what the agreed orders still owe, goods and delivery less what is paid. Reads nothing of its own. |
+| `need.jump` | Jump to, fixed beside the kinds' sliding row | Opens or shuts the menu of every kind with its count; Escape or a tap outside shuts it, the arrow keys move between its lines. |
+| `need.jump.all` | A line of the Jump to menu, beside the kinds | Shows every card again, as the All pill does. A kind with nothing waiting stands in mist and cannot be chosen. Reads nothing. |
+| `need.jump.orders` | A line of the Jump to menu, beside the kinds | Shows only the orders, as the Orders pill does. A kind with nothing waiting stands in mist and cannot be chosen. Reads nothing. |
+| `need.jump.payments` | A line of the Jump to menu, beside the kinds | Shows only the payments they say they sent. A kind with nothing waiting stands in mist and cannot be chosen. Reads nothing. |
+| `need.jump.messages` | A line of the Jump to menu, beside the kinds | Shows only the messages asked. A kind with nothing waiting stands in mist and cannot be chosen. Reads nothing. |
+| `need.jump.rows` | A line of the Jump to menu, beside the kinds | Shows only the Desk rows and the entries not yet through. A kind with nothing waiting stands in mist and cannot be chosen. Reads nothing. |
+| `need.jump.accounts` | A line of the Jump to menu, beside the kinds | Shows only the cards about accounts and guest links. A kind with nothing waiting stands in mist and cannot be chosen. Reads nothing. |
 | `need.kind.accounts` | The chips under Needs you's title | Shows only the cards about accounts and guest links. Reads nothing. |
 | `need.kind.all` | The chips under Needs you's title | Shows every card again. Reads nothing. |
 | `need.kind.messages` | The chips under Needs you's title | Shows only the messages asked. Reads nothing. |

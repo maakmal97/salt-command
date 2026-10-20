@@ -230,8 +230,8 @@
  {
   "name": "the answer outlives Needs you",
   "file": "stmt/owner.js",
-  "find": "if(placeNow==='needs'&&place!=='needs') needSaid={};",
-  "replace": ""
+  "find": "if(placeNow==='needs'&&place!=='needs'){ needSaid={}; jumpShut(false); }",
+  "replace": "if(placeNow==='needs'&&place!=='needs'){ jumpShut(false); }"
  },
  {
   "name": "a chip filters nothing",
@@ -242,14 +242,14 @@
  {
   "name": "the chip tapped is not marked",
   "file": "stmt/owner.js",
-  "find": "x.setAttribute('aria-selected', x===k?'true':'false');",
-  "replace": "x.setAttribute('aria-selected', 'false');"
+  "find": "var on=x.getAttribute('data-chip')===k; x.setAttribute('aria-selected', on?'true':'false');",
+  "replace": "var on=x.getAttribute('data-chip')===k; x.setAttribute('aria-selected', 'false');"
  },
  {
   "name": "a chip reads",
   "file": "stmt/owner.js",
-  "find": "x.setAttribute('aria-selected', x===k?'true':'false'); }); drawNeeds(); return; }",
-  "replace": "x.setAttribute('aria-selected', x===k?'true':'false'); }); drawNeeds(); readNeeds(true); return; }"
+  "find": "if(k){ nPick(k.getAttribute('data-chip')); return; }",
+  "replace": "if(k){ nPick(k.getAttribute('data-chip')); readNeeds(true); return; }"
  },
  {
   "name": "a chip has no act",
@@ -416,8 +416,8 @@
  {
   "name": "the chip tapped is marked as a ghost's pressed, which the tabs are not drawn by",
   "file": "stmt/owner.js",
-  "find": "x.setAttribute('aria-selected', x===k?'true':'false'); }); drawNeeds(); return; }",
-  "replace": "x.setAttribute('aria-pressed', x===k?'true':'false'); }); drawNeeds(); return; }"
+  "find": "var on=x.getAttribute('data-chip')===k; x.setAttribute('aria-selected', on?'true':'false');",
+  "replace": "var on=x.getAttribute('data-chip')===k; x.setAttribute('aria-pressed', on?'true':'false');"
  },
  {
   "name": "the chips are not a tablist",
