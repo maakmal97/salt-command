@@ -1766,7 +1766,9 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div id="mHome" data-in="needs">'
         /* plan 1 (15 Oct 2026): a read that failed leads the page, with a Retry (stmt/owner.js drawFail) */
         + '<div id="nFail" class="salt-action salt-action--now nfail" role="alert" hidden></div>'
-        + "<h1>Needs you</h1>"
+        /* 20 Oct 2026 (canvas V65, his word: every page starts the same way): no title is drawn on any place; the rail's lit tab or the App bar
+           names it, and the heading stays for a reader */
+        + '<h1 class="sr">Needs you</h1>'
         + '<p class="lead" id="nCount">Reading what needs you.</p>'
         + '<div class="salt-tabs nchips" role="tablist" aria-label="Show">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="salt-tabs__pill" role="tab" data-chip="' + k
           + '" data-act="need.kind.' + k + '" aria-selected="' + (i ? "false" : "true") + '">' + w + "</button>").join("") + "</div>"
@@ -1779,7 +1781,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
            (#makerOrderList, a row an order); a row opens that order's card in #makerReview, beside the list from 860px and in its place
            below it (PHASE 1c). Order for them, opened from an account, stands at the head of the place. */
         + '<div id="oOrders" class="aplace" data-in="orders" hidden>'
-        + "<h1>Orders</h1>"
+        + '<h1 class="sr">Orders</h1>'
         + '<p class="lead">Orders from the Counter, by stage. The Desk checks each answer before it reaches the book.</p>'
         + adminParts("orders", test)
         + '<div class="abody">'
@@ -1807,7 +1809,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         /* CUSTOMERS: the people. Accounts is S9 9.2's list, one list for what Send and Review were: found by a word, narrowed by a
            filter, and a row opens the account beside the list from 860px, in its place below it on a phone. */
         + '<div id="oCustomers" class="aplace" data-in="customers" hidden>'
-        + "<h1>Customers</h1>"
+        + '<h1 class="sr">Customers</h1>'
         + '<p class="lead">The people on the site: their accounts, their messages, guest links and associates.</p>'
         + adminParts("customers", test)
         + '<div class="abody">'
@@ -1847,7 +1849,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         /* RECORD: his own entries, the forms, which the Desk checks and holds for review before they change the book. The Desk's rows waiting for
            him and the entries the server holds are Approve, under Orders (17 Oct 2026, as the Desk's Order book took it). */
         + '<div id="oRecord" class="aplace" data-in="record" hidden>'
-        + "<h1>Record</h1>"
+        + '<h1 class="sr">Record</h1>'
         + '<p class="lead">Your own entries. Each waits for your approval under Orders &gt; Approve.</p>'
         + adminParts("record", test)
         + '<div class="abody">'
@@ -1855,7 +1857,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + "</div></div>"
         /* SHOP: the counter itself. The practice accounts are the two he opens to try the customer's page. */
         + '<div id="oShop" class="aplace" data-in="shop" hidden>'
-        + "<h1>Shop</h1>"
+        + '<h1 class="sr">Shop</h1>'
         + '<p class="lead">The counter itself: its hours, the notice, the practice accounts and how this device looks.</p>'
         + adminParts("shop", test)
         + '<div class="abody">'
