@@ -173,7 +173,7 @@ async function readHours(env) {
 
 /* 20 Oct 2026 (his answer, Fable's design): WHAT CUSTOMERS WOULD SEE on a week not yet saved, from the one rule and nothing else: the
    Counter open or closed and its next change (the override in force kept), and for each of the next seven Kuala Lumpur days its open
-   stretches in words and the delivery windows it would offer with their spans. Nothing is stored. */
+   stretches in words and the delivery windows it would offer with their spans. A read (GET ?preview=), so nothing is stored. */
 export function hoursPreview(week, manual, now) {
   const cfg = { schedule: week, manual: manual || null }, status = hoursStatus(cfg, now), H = 3600000, out = [];
   const hm = (t) => new Date(t + 8 * H).toISOString().slice(11, 16);
@@ -189,6 +189,15 @@ export function hoursPreview(week, manual, now) {
 async function makerHours(request, env, method) {
   if (!env.STMT) return json({ ok: false, error: "no Counter store" }, 503);
   if (method === "GET") {
+    const asked = new URL(request.url).searchParams.get("preview");
+    if (asked !== null) {
+      let body = null;
+      try { body = JSON.parse(asked); } catch (e) { body = null; }
+      const now = Date.now(), week = validateWeeklyHours(body, now);
+      if (week.error) return json({ ok: false, error: week.error }, 400);
+      const held = await env.STMT.get(HOURS_KEY, "json");
+      return json({ ok: true, preview: hoursPreview(plainWeek(week, now), held && held.manual, now) });
+    }
     const result = await readHours(env);
     return json({ ok: true, config: result.config, status: result.status, confirm: result.confirm });
   }
@@ -209,11 +218,6 @@ async function makerHours(request, env, method) {
     const next = Object.assign({}, current.config || {}, { manual });
     await env.STMT.put(HOURS_KEY, JSON.stringify(next));
     return json({ ok: true, config: next, status: hoursStatus(next), confirm: current.confirm });
-  }
-  if (Object.keys(body).length === 1 && body.preview) {
-    const now = Date.now(), week = validateWeeklyHours(body.preview, now);
-    if (week.error) return json({ ok: false, error: week.error }, 400);
-    return json({ ok: true, preview: hoursPreview(plainWeek(week, now), current.config && current.config.manual, now) });
   }
   if (Object.keys(body).length === 1 && body.schedule) {
     const now = Date.now(), schedule = validateWeeklyHours(body.schedule, now);

@@ -2535,6 +2535,18 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `draft.approve` | Desk row card (key: data-maker-card, draft:<id>) | Approves the row, or every row of the trip. |
 | `draft.reject` | Same card | Rejects it, or the trip. |
 | `ended.sign-in` | Shown when the Access session has ended | Loads /all again, which is the Access login. |
+| `hours.copy-apply` | The opened day's Copy to (key: the weekday) | Copies its hours to the days chosen. |
+| `hours.copy-day` | Copy to, a chip a day (key: the weekday) | Chooses or leaves that day; its group is chosen at first. |
+| `hours.date` | Dates, a row a dated day (key: the date) | Opens or shuts that date's hours below its row. |
+| `hours.date-add` | Dates | Opens or shuts the date field. |
+| `hours.date-new` | Dates, the date field | Adds the date, closed, and opens it. |
+| `hours.date-pick` | Dates | The date, today to 90 days ahead. |
+| `hours.date-remove` | The opened date (key: the date) | Takes the date out; its weekday's hours stand again. |
+| `hours.day-add` | The opened day (key: the weekday or date) | Adds a span after the last, up to six. |
+| `hours.day-allday` | The opened day (key: the weekday or date) | Open all day: 00:00 to 24:00. |
+| `hours.day-remove` | A span of the opened day after the first (key: the day and its number) | Takes that span out. |
+| `hours.discard` | Operating hours, while the week differs from the saved one | Puts the saved week back. |
+| `hours.undo` | Operating hours, for a minute after Done | Sends back the week Done replaced. |
 | `hours.day` | Operating hours' week chart, a row a weekday (key: the weekday) | Opens or shuts that day's Opens and Closes below its row. |
 | `hours.day-closed` | The opened day (key: the weekday) | Closes the day, or opens a closed one at 09:00 to 17:00. |
 | `hours.day-copy` | The opened day (key: the weekday) | Copies its hours to the rest of its group: Monday to Friday, or Saturday and Sunday. |

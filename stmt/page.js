@@ -726,12 +726,17 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-day-times sup,.adm .maker-plus1{color:var(--salt-brass);font-family:var(--salt-font-mono)}
 .adm .maker-dayedit{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:var(--salt-radius-md);background:var(--salt-slate);border:1px solid var(--salt-line)}
 .adm .maker-dayedit-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.adm .maker-dayedit-times{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.adm .maker-dayedit-times{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;align-items:end;gap:12px}
 .adm .maker-dayedit-field{display:flex;flex-direction:column;gap:4px;min-width:0}
 .adm .maker-dayedit-pick{display:flex;align-items:center;gap:8px}
 .adm .maker-dayedit select{min-height:44px;width:100%;min-width:0}
 .adm .maker-dayedit-acts{display:flex;flex-wrap:wrap;gap:8px}
 .adm .maker-dayedit-acts button{min-height:44px;min-width:44px}
+.adm .maker-dayedit-times>button{min-height:44px;min-width:44px}
+.adm .maker-copy{display:flex;flex-wrap:wrap;gap:8px}
+.adm .maker-copy button{min-height:44px;min-width:44px}
+.adm .maker-dates{margin-top:16px}
+.adm .maker-dayedit-acts input[type=date]{min-height:44px;min-width:0}
 .adm .maker-facts{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm)}
 .adm .maker-row{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--salt-text-sm)}
 .adm #makerBulletinCurrent{overflow-wrap:anywhere}

@@ -476,6 +476,15 @@ export async function auditStates({ pageWork }) {
     /* 20 Oct 2026 (canvas V63): a day of the week chart opened, its pickers and quick buttons */
     await pt.click(byAct(pt.d, "hours.day", "Monday")); await pt.work.quiet();
     states.push(["a day of the hours opened", actAudit(pt.d)]);
+    /* 20 Oct 2026 (his eight answers): a second span, Copy to's chips, a date being added, then added, and Done with its Undo */
+    await pt.click(byAct(pt.d, "hours.day-add", "Monday")); await pt.click(byAct(pt.d, "hours.day-copy", "Monday")); await pt.work.quiet();
+    states.push(["a day with two spans and its Copy to chips", actAudit(pt.d)]);
+    await pt.click(byAct(pt.d, "hours.date-add")); await pt.work.quiet();
+    states.push(["a date being added", actAudit(pt.d)]);
+    await pt.click(byAct(pt.d, "hours.date-new")); await pt.work.quiet();
+    states.push(["a date added and opened", actAudit(pt.d)]);
+    await pt.click([...pt.d.querySelectorAll('[data-act="hours.save"]')][0]); await pt.work.quiet();
+    states.push(["the hours saved, Undo offered", actAudit(pt.d)]);
     await pt.click(byAct(pt.d, "nav.orders"));
     await pt.click(byAct(pt.card("ord-a1"), "order.ready-collect")); await pt.work.quiet();
     states.push(["Ready to collect asking which point", actAudit(pt.d)]);

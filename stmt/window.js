@@ -17,8 +17,9 @@
  * 00:00-02:00). A window holding two open stretches is said from the first's start to the last's end (his answer), as the
  * manual override already was. A page cached before this offers fewer windows than the Worker takes, never more; where it
  * offered one, the Worker writes its own span, which may be the wider. A day of several spans, open all day (24:00) and the dated
- * days (his answers of 20 Oct 2026) reach the windows through openParts as they reach everything else; a page cached before them
- * reads such a day as closed, so it offers fewer windows, never more. */
+ * days (his answers of 20 Oct 2026) reach the windows through openParts as they reach everything else. A page cached before them
+ * reads a day of several spans or a 24:00 close as closed, so it offers fewer windows; it does not know the dated days, so on one it
+ * offers the weekday's windows, and the Worker's slotTake, on the new rule, refuses a slot the date shuts at Place (Fable's review). */
 import { openParts } from "./hours.js";
 export const WINDOWS = [0, 4, 8, 12, 16, 20];
 export const SLOT_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}T(00|04|08|12|16|20)$/;

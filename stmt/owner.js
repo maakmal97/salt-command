@@ -5279,77 +5279,152 @@ export const OWNER_JS = `
   }
   async function loadMakerHours(){
     if(placeNow!=='shop') return;
-    try{ makerHours=await refs('/all/maker/hours'); hrsDraft=null; hrsEditing=-1; drawMakerHours(); }
+    try{ makerHours=await refs('/all/maker/hours'); hrsDraft=null; hrsEditing=null; hrsCopy=null; drawMakerHours(); hrsPreview(); }
     catch(error){ var s=document.getElementById('makerHoursStatus'); if(s) refusal(s,error); }
   }
-  var hrsDraft=null, hrsEditing=-1, HRS_ORDER=[1,2,3,4,5,6,0];
+  /* 20 Oct 2026 (his eight answers to Fable's design): THE MOST CONTROL OVER THE HOURS. The draft holds the week and the dated days, each
+     day null (closed) or a list of spans; a weekday is keyed by its number (0 is Sunday), a dated day by its date. Nothing is sent until
+     Done, which sends the whole of it; Discard changes puts the saved week back; Undo, for a minute after Done, sends the week it replaced. */
+  var hrsDraft=null, hrsSaved='', hrsEditing=null, hrsCopy=null, hrsUndo=null, hrsAdding=false, hrsPv=null, hrsPvSeq=0, HRS_ORDER=[1,2,3,4,5,6,0];
   var HRS_SHORT=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], HRS_NAMES=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var HRS_MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   function hrsMin(t){ var p=String(t||'').split(':'); return p.length===2?(+p[0])*60+(+p[1]):null; }
   function hrsHm(m){ var h=Math.floor(m/60), x=m%60; return (h<10?'0':'')+h+':'+(x<10?'0':'')+x; }
-  function hrsLate(d){ return !!d&&hrsMin(d.close)<hrsMin(d.open); }
+  function hrsLate(s){ return !!s&&hrsMin(s.close)<hrsMin(s.open); }
+  function hrsAnyLate(a){ return !!a&&a.some(hrsLate); }
   function hrsPct(m){ return (m/14.4).toFixed(2)+'%'; }
-  /* the days a day copies to: the rest of its group, said "Mon to Thu" when they run on, else "Mon, Tue and Thu" */
-  function hrsGroup(i){ return (i===0||i===6?[6,0]:[1,2,3,4,5]).filter(function(k){ return k!==i; }); }
-  function hrsList(ix){
-    var n=ix.map(function(i){ return HRS_SHORT[i]; }), run=ix.every(function(k,j){ return !j||HRS_ORDER.indexOf(k)===HRS_ORDER.indexOf(ix[j-1])+1; });
-    if(n.length===1) return n[0];
-    return run&&n.length>2?n[0]+' to '+n[n.length-1]:n.slice(0,-1).join(', ')+' and '+n[n.length-1];
+  function hrsArr(d){ return !d?null:(Array.isArray(d)?d:[d]).map(function(s){ return {open:s.open,close:s.close}; }); }
+  function hrsOut(a){ return !a?null:a.length===1?{open:a[0].open,close:a[0].close}:a.map(function(s){ return {open:s.open,close:s.close}; }); }
+  function hrsWeekOut(){
+    var w={days:hrsDraft.days.map(hrsOut)}, keys=Object.keys(hrsDraft.dates).sort();
+    if(keys.length){ w.dates={}; keys.forEach(function(k){ w.dates[k]=hrsOut(hrsDraft.dates[k]); }); }
+    return w;
   }
-  /* a quarter-hour picker; a time filed off the quarter hour stays a choice of its own, so Done never moves it unseen */
-  function hrsPick(act,key,value,label){
+  function hrsFromConfig(){
+    var s=makerHours.config&&makerHours.config.schedule, days=(s&&s.days)||[], dates=(s&&s.dates)||{}, out={days:[0,1,2,3,4,5,6].map(function(i){ return hrsArr(days[i]); }), dates:{}};
+    Object.keys(dates).forEach(function(k){ out.dates[k]=hrsArr(dates[k]); });
+    return out;
+  }
+  function hrsDirty(){ return !!hrsDraft&&JSON.stringify(hrsWeekOut())!==hrsSaved; }
+  function hrsIsDate(key){ return typeof key==='string'; }
+  function hrsDayOf(key){ return hrsIsDate(key)?hrsDraft.dates[key]:hrsDraft.days[key]; }
+  function hrsSet(key,a){ if(hrsIsDate(key)) hrsDraft.dates[key]=a; else hrsDraft.days[key]=a; }
+  function hrsWeekday(ymd){ return new Date(ymd+'T00:00:00Z').getUTCDay(); }
+  function hrsShift(ymd,n){ return new Date(Date.parse(ymd+'T00:00:00Z')+n*86400000).toISOString().slice(0,10); }
+  /* the day before a row (its tail) and the day after it (a stretch that runs on): a weekday's are weekdays, a date's are the calendar's */
+  function hrsBefore(key){ if(!hrsIsDate(key)) return hrsDraft.days[(key+6)%7]; var p=hrsShift(key,-1); return Object.prototype.hasOwnProperty.call(hrsDraft.dates,p)?hrsDraft.dates[p]:hrsDraft.days[hrsWeekday(p)]; }
+  function hrsAfter(key){ if(!hrsIsDate(key)) return hrsDraft.days[(key+1)%7]; var p=hrsShift(key,1); return Object.prototype.hasOwnProperty.call(hrsDraft.dates,p)?hrsDraft.dates[p]:hrsDraft.days[hrsWeekday(p)]; }
+  function hrsName(key){ if(!hrsIsDate(key)) return HRS_NAMES[key]; var d=new Date(key+'T00:00:00Z'); return HRS_SHORT[d.getUTCDay()]+' '+d.getUTCDate()+' '+HRS_MON[d.getUTCMonth()]; }
+  function hrsShort(key){ return hrsIsDate(key)?hrsName(key):HRS_SHORT[key]; }
+  function hrsAllDay(a){ return !!a&&a.length===1&&a[0].open==='00:00'&&a[0].close==='24:00'; }
+  function hrsSaid(a){ return !a?'Closed':hrsAllDay(a)?'Open all day':a.map(function(s){ return s.open+' to '+s.close+(hrsLate(s)?' next day':''); }).join(', '); }
+  /* the days a weekday copies to at first: the rest of its group (his answer 3), said "Mon to Thu" when they run on, else "Mon, Tue and Thu" */
+  function hrsGroup(i){ return (i===0||i===6?[6,0]:[1,2,3,4,5]).filter(function(k){ return k!==i; }); }
+  /* a quarter-hour picker, a close also offering 24:00; a time filed off the quarter hour stays a choice of its own, so Done never moves it unseen */
+  function hrsPick(act,key,value,label,close){
     var s=actOn(el('select','fld salt-field__input'),act,key), v=hrsMin(value), list=[];
     for(var m=0;m<1440;m+=15) list.push(m);
+    if(close) list.push(1440);
     if(v!==null&&v%15) list.push(v);
     list.sort(function(a,b){ return a-b; }).forEach(function(m){ var o=el('option',null,hrsHm(m)); o.value=hrsHm(m); s.appendChild(o); });
     s.value=value; s.setAttribute('aria-label',label);
     return s;
   }
-  /* a day's row: its name, the track (the day before's tail hatched from 00, its own bar to its close or to 24) and its times */
-  function hrsRow(i){
-    var d=hrsDraft[i], b4=(i+6)%7, prev=hrsDraft[b4], tail=hrsLate(prev)?hrsMin(prev.close):0;
-    var b=actOn(el('button','maker-day'),'hours.day',HRS_NAMES[i]); b.type='button';
-    b.setAttribute('aria-expanded',String(hrsEditing===i));
-    var said=d?d.open+' to '+d.close+(hrsLate(d)?' next day':''):'Closed';
-    if(tail) said+=d?', and '+HRS_SHORT[b4]+' until '+prev.close:' (open from '+HRS_SHORT[b4]+' until '+prev.close+')';
-    b.setAttribute('aria-label',HRS_SHORT[i]+': '+said+'. Change');
-    b.appendChild(el('span','maker-day-name',HRS_SHORT[i]));
+  /* a row: the name, the track (the day before's tails hatched from 00, a bar for each span to its close or to 24) and its hours */
+  function hrsRow(key){
+    var a=hrsDayOf(key), prev=hrsBefore(key), tails=(prev||[]).filter(hrsLate);
+    var b=actOn(el('button','maker-day'),hrsIsDate(key)?'hours.date':'hours.day',hrsIsDate(key)?key:HRS_NAMES[key]); b.type='button';
+    b.setAttribute('aria-expanded',String(hrsEditing===key));
+    var said=hrsSaid(a);
+    if(tails.length) said+=a?', and '+hrsShort(hrsIsDate(key)?hrsShift(key,-1):(key+6)%7)+' until '+tails[tails.length-1].close:' (open from '+hrsShort(hrsIsDate(key)?hrsShift(key,-1):(key+6)%7)+' until '+tails[tails.length-1].close+')';
+    b.setAttribute('aria-label',hrsShort(key)+': '+said+'. Change');
+    b.appendChild(el('span','maker-day-name',hrsShort(key)));
     var track=el('span','maker-track'); track.setAttribute('aria-hidden','true');
-    if(tail){ var t=el('span','maker-tail'); t.style.left='0%'; t.style.width=hrsPct(tail); track.appendChild(t); }
-    if(d){ var o=hrsMin(d.open), bar=el('span','maker-bar'); bar.style.left=hrsPct(o); bar.style.width=hrsPct((hrsLate(d)?1440:hrsMin(d.close))-o); track.appendChild(bar); }
+    tails.forEach(function(s){ var t=el('span','maker-tail'); t.style.left='0%'; t.style.width=hrsPct(hrsMin(s.close)); track.appendChild(t); });
+    (a||[]).forEach(function(s){ var o=hrsMin(s.open), bar=el('span','maker-bar'); bar.style.left=hrsPct(o); bar.style.width=hrsPct((hrsLate(s)?1440:hrsMin(s.close))-o); track.appendChild(bar); });
     b.appendChild(track);
-    var times=el('span','maker-day-times'+(d?'':' off'),d?d.open+' to '+d.close:'Closed');
-    if(hrsLate(d)) times.appendChild(el('sup',null,'+1'));
+    var times=el('span','maker-day-times'+(a?'':' off'),!a?'Closed':hrsAllDay(a)?'Open all day':a.length===1?a[0].open+' to '+a[0].close:a.length+' spans');
+    if(hrsAnyLate(a)) times.appendChild(el('sup',null,'+1'));
     b.appendChild(times);
-    b.addEventListener('click',function(){ hrsEditing=hrsEditing===i?-1:i; drawMakerHours(); hrsFocus('hours.day',HRS_NAMES[i]); });
+    b.addEventListener('click',function(){ hrsEditing=hrsEditing===key?null:key; hrsCopy=null; hrsDraw(); hrsFocus(b.getAttribute('data-act'),b.getAttribute('data-key')); });
     return b;
   }
   /* a redraw keeps the control in hand */
-  function hrsFocus(act,key){ var root=document.getElementById('makerSchedule'), n=root&&[].filter.call(root.querySelectorAll('[data-act]'),function(x){ return x.getAttribute('data-act')===act&&x.getAttribute('data-key')===key; })[0]; if(n&&n.focus) n.focus(); }
-  function hrsEdit(i){
-    var d=hrsDraft[i], name=HRS_NAMES[i], late=hrsLate(d), box=el('div','maker-dayedit'), head=el('div','maker-dayedit-head'), row=el('div','maker-dayedit-times');
-    box.setAttribute('role','group'); box.setAttribute('aria-label',name+' hours');
-    head.appendChild(el('span',null,name)); if(late) head.appendChild(chip('brass','Closes next day')); box.appendChild(head);
-    var from=hrsPick('hours.day-from',name,d?d.open:'09:00',name+' opens'), to=hrsPick('hours.day-to',name,d?d.close:'17:00',name+' closes'+(late?', next day':''));
-    from.disabled=!d; to.disabled=!d;
-    [['Opens',from,false],['Closes',to,late]].forEach(function(f){
-      var l=el('label','maker-dayedit-field'), w=el('span','maker-dayedit-pick');
-      l.appendChild(el('span','lbl',f[0])); w.appendChild(f[1]); if(f[2]) w.appendChild(el('span','maker-plus1','+1')); l.appendChild(w); row.appendChild(l);
+  function hrsFocus(act,key){ /* a key of null finds a control with none */ var root=document.getElementById('makerSchedule'), n=root&&[].filter.call(root.querySelectorAll('[data-act]'),function(x){ return x.getAttribute('data-act')===act&&x.getAttribute('data-key')===key; })[0]; if(n&&n.focus) n.focus(); }
+  function hrsDraw(){ drawMakerHours(); hrsPreview(); }
+  function hrsEdit(key){
+    var a=hrsDayOf(key), name=hrsIsDate(key)?key:HRS_NAMES[key], late=hrsAnyLate(a), box=el('div','maker-dayedit'), head=el('div','maker-dayedit-head');
+    box.setAttribute('role','group'); box.setAttribute('aria-label',hrsName(key)+' hours');
+    head.appendChild(el('span',null,hrsName(key))); if(late) head.appendChild(chip('brass','Closes next day')); box.appendChild(head);
+    var change=function(act,k){ return function(){ hrsDraw(); hrsFocus(act,k); }; };
+    (a||[{open:'09:00',close:'17:00'}]).forEach(function(s,j){
+      var k=j?name+' '+(j+1):name, row=el('div','maker-dayedit-times'), sl=hrsLate(s);
+      var from=hrsPick('hours.day-from',k,s.open,hrsName(key)+' opens'+(j?' ('+(j+1)+')':''),false), to=hrsPick('hours.day-to',k,s.close,hrsName(key)+' closes'+(j?' ('+(j+1)+')':'')+(sl?', next day':''),true);
+      from.disabled=!a; to.disabled=!a;
+      [['Opens',from,false],['Closes',to,sl]].forEach(function(f){
+        var l=el('label','maker-dayedit-field'), w=el('span','maker-dayedit-pick');
+        l.appendChild(el('span','lbl',f[0])); w.appendChild(f[1]); if(f[2]) w.appendChild(el('span','maker-plus1','+1')); l.appendChild(w); row.appendChild(l);
+      });
+      [from,to].forEach(function(p){ p.addEventListener('change',function(){ var n=hrsArr(hrsDayOf(key)); n[j]={open:from.value,close:to.value}; hrsSet(key,n); change(p.getAttribute('data-act'),k)(); }); });
+      if(a&&a.length>1){ var rm=actOn(el('button','salt-ghost','Remove'),'hours.day-remove',k); rm.type='button'; rm.setAttribute('aria-label','Remove '+s.open+' to '+s.close);
+        rm.addEventListener('click',function(){ var n=hrsArr(hrsDayOf(key)); n.splice(j,1); hrsSet(key,n); change('hours.day-from',name)(); }); row.appendChild(rm); }
+      box.appendChild(row);
     });
-    box.appendChild(row);
-    [from,to].forEach(function(s){ s.addEventListener('change',function(){ hrsDraft[i]={open:from.value,close:to.value}; drawMakerHours(); hrsFocus(s.getAttribute('data-act'),name); }); });
-    box.appendChild(el('p','msg','A close earlier than the open runs into the next day, on its own.'));
-    var acts=el('div','maker-dayedit-acts'), b4=(i+6)%7, group=hrsGroup(i);
-    var act=function(label,a,fn){ var b=actOn(el('button','salt-ghost',label),a,name); b.type='button'; b.addEventListener('click',function(){ fn(); drawMakerHours(); hrsFocus(a,name); }); acts.appendChild(b); };
-    act(d?'Closed':'Open','hours.day-closed',function(){ hrsDraft[i]=d?null:{open:'09:00',close:'17:00'}; });
-    act('Same as '+HRS_SHORT[b4],'hours.day-same',function(){ var p=hrsDraft[b4]; hrsDraft[i]=p?{open:p.open,close:p.close}:null; });
-    act('Copy to '+hrsList(group),'hours.day-copy',function(){ group.forEach(function(k){ hrsDraft[k]=d?{open:d.open,close:d.close}:null; }); });
-    makerButton(acts,['Done','hours.save',name],function(){
-      return refs('/all/maker/hours',{schedule:{days:hrsDraft.map(function(x){ return x?{open:x.open,close:x.close}:null; })}})
-        .then(function(value){ makerHours=value; hrsDraft=null; hrsEditing=-1; drawMakerHours(); hoursSaid('week','Weekly hours saved.'); })
+    /* a stretch past midnight that reaches the next day's first opening runs on as one (openParts merges it): said, never refused */
+    var next=hrsAfter(key), runs=late&&next&&a.filter(hrsLate).some(function(s){ return next.some(function(n){ return hrsMin(n.open)<=hrsMin(s.close); }); });
+    box.appendChild(el('p','msg',runs?'This runs on into the next day’s hours: one stretch.':'A close earlier than the open runs into the next day, on its own.'));
+    var acts=el('div','maker-dayedit-acts');
+    var act=function(label,ac,fn,dis){ var b=actOn(el('button','salt-ghost',label),ac,name); b.type='button'; b.disabled=!!dis; b.addEventListener('click',function(){ fn(); hrsDraw(); hrsFocus(ac,name); }); acts.appendChild(b); return b; };
+    act(a?'Closed':'Open','hours.day-closed',function(){ hrsSet(key,a?null:[{open:'09:00',close:'17:00'}]); });
+    var last=a&&a[a.length-1], room=last&&!hrsLate(last)&&hrsMin(last.close)<=1380&&a.length<6;
+    act('Add hours','hours.day-add',function(){ var o=hrsMin(last.close)+60, n=hrsArr(a); n.push({open:hrsHm(Math.min(o,1425)),close:o+240>=1440?'24:00':hrsHm(o+240)}); hrsSet(key,n); },!room);
+    act('Open all day','hours.day-allday',function(){ hrsSet(key,[{open:'00:00',close:'24:00'}]); },hrsAllDay(a));
+    if(!hrsIsDate(key)){
+      var b4=(key+6)%7;
+      act('Same as '+HRS_SHORT[b4],'hours.day-same',function(){ hrsSet(key,hrsArr(hrsDraft.days[b4])); });
+      act(hrsCopy?'Close copy':'Copy to','hours.day-copy',function(){ hrsCopy=hrsCopy?null:hrsGroup(key); });
+    } else {
+      act('Remove this date','hours.date-remove',function(){ delete hrsDraft.dates[key]; hrsEditing=null; });
+    }
+    box.appendChild(acts);
+    /* Copy to (his answer): a chip a day, its group chosen at first, then Apply */
+    if(hrsCopy&&!hrsIsDate(key)){
+      var chips=el('div','maker-copy'); chips.setAttribute('role','group'); chips.setAttribute('aria-label','Copy '+HRS_NAMES[key]+' to');
+      HRS_ORDER.forEach(function(i){ if(i===key) return; var c=actOn(el('button','salt-ghost maker-copy-day'+(hrsCopy.indexOf(i)>=0?' salt-ghost--lit':''),HRS_SHORT[i]),'hours.copy-day',HRS_NAMES[i]); c.type='button';
+        c.setAttribute('aria-pressed',String(hrsCopy.indexOf(i)>=0));
+        c.addEventListener('click',function(){ var at=hrsCopy.indexOf(i); if(at>=0) hrsCopy.splice(at,1); else hrsCopy.push(i); drawMakerHours(); hrsFocus('hours.copy-day',HRS_NAMES[i]); }); chips.appendChild(c); });
+      var ap=actOn(el('button','salt-pill salt-pill--sm','Apply'),'hours.copy-apply',name); ap.type='button'; ap.disabled=!hrsCopy.length;
+      ap.addEventListener('click',function(){ hrsCopy.forEach(function(i){ hrsDraft.days[i]=hrsArr(a); }); hrsCopy=null; hrsDraw(); hrsFocus('hours.day-copy',name); });
+      chips.appendChild(ap); box.appendChild(chips);
+    }
+    var done=el('div','maker-dayedit-acts');
+    makerButton(done,['Done','hours.save',name],function(){
+      var before=hrsSaved;
+      return refs('/all/maker/hours',{schedule:hrsWeekOut()})
+        .then(function(value){ makerHours=value; hrsDraft=null; hrsEditing=null; hrsCopy=null; hrsUndo=before?{week:JSON.parse(before),until:Date.now()+60000}:null; drawMakerHours(); hoursSaid('week','Weekly hours saved.'); hrsPreview(); })
         .catch(function(error){ hoursSaid('week',null,error); });
     },true);
-    box.appendChild(acts);
+    box.appendChild(done);
     return box;
+  }
+  /* WHAT CUSTOMERS WOULD SEE (his answer): a read of the Counter's own rule on the draft, sent as a read, never stored; said for the day
+     being changed, else today */
+  function hrsPreview(){
+    var line=document.getElementById('makerHoursPreview'); if(!line||!hrsDraft) return;
+    if(navigator.onLine===false){ line.textContent=''; return; }
+    var seq=++hrsPvSeq;
+    refs('/all/maker/hours?preview='+encodeURIComponent(JSON.stringify(hrsWeekOut()))).then(function(v){ if(seq!==hrsPvSeq) return; hrsPv=v&&v.preview||null; hrsPreviewDraw(); })
+      .catch(function(error){ if(seq!==hrsPvSeq) return; hrsPv=null; var l=document.getElementById('makerHoursPreview'); if(l) refusal(l,error); });
+  }
+  function hrsPreviewDraw(){
+    var line=document.getElementById('makerHoursPreview'); if(!line) return;
+    line.textContent=''; if(!hrsPv||!hrsPv.status||!hrsPv.week) return;
+    var st=hrsPv.status, at=st.open?st.nextChange:st.nextOpen, w=at?barWhen(at):'';
+    var day=hrsPv.week.filter(function(d){ return hrsEditing===null?false:hrsIsDate(hrsEditing)?d.date===hrsEditing:hrsWeekday(d.date)===hrsEditing; })[0]||hrsPv.week[0];
+    var wins=day.windows.map(function(x){ var a=(x.w<10?'0':'')+x.w, b=(x.w+4<10?'0':'')+(x.w+4), whole=a+':00-'+(x.w+4===24?'24':b)+':00'; return a+'-'+b+(x.span===whole?'':' as '+x.span); });
+    line.appendChild(el('b',null,'Customers would see: '));
+    line.appendChild(document.createTextNode((st.open?'Open'+(w?' until '+w:''):'Closed'+(w?', opens '+w:''))+'. '+hrsName(day.date)+': '+day.said+'. '
+      +(wins.length?'Delivery windows '+wins.join(', ')+'.':'No delivery windows that day.')));
   }
   function drawMakerHours(){
     barDraw();
@@ -5360,11 +5435,12 @@ export const OWNER_JS = `
     status.textContent=(state.open?'Open now':'Closed now. Customers can still order; you answer when you open.')
       +(state.source==='default'?' · No weekly hours set.':'');
     drawConfirm();
-    /* 20 Oct 2026 (his word, canvas V63): THE WEEK CHART. A row a day, Monday first, its open span a brass bar on a 00 to 24 track; a close
-       earlier than the open is the next day's (stmt/hours.js openParts), said "+1", and its tail is drawn hatched at the start of the next
-       day's row. A tap opens the day: Opens and Closes in quarter hours, Closed or Open, Same as the day before, Copy to the rest of its
-       group (Monday to Friday, or Saturday and Sunday; his answer 3), and Done, which saves the whole week (his answer 4). */
-    if(!hrsDraft) hrsDraft=[0,1,2,3,4,5,6].map(function(i){ var d=makerHours.config&&makerHours.config.schedule&&makerHours.config.schedule.days&&makerHours.config.schedule.days[i]; return d?{open:d.open,close:d.close}:null; });
+    /* 20 Oct 2026 (his word, canvas V63, and his eight answers to Fable's design): THE WEEK CHART. A row a day, Monday first, a brass bar
+       a span on a 00 to 24 track; a close earlier than the open is the next day's (stmt/hours.js openParts), said "+1", its tail hatched at
+       the start of the next day's row. A tap opens the day: its spans in quarter hours (up to six), Closed or Open, Add hours, Open all
+       day, Same as the day before, Copy to any days, and Done, which saves the week and its dates. Below: what customers would see, and
+       the dated days. */
+    if(!hrsDraft){ hrsDraft=hrsFromConfig(); hrsSaved=JSON.stringify(hrsWeekOut()); }
     root.appendChild(el('p','msg','Tap a day to change it.'));
     var week=el('div','maker-week'), scale=el('div','maker-week-scale'), ticks=el('span');
     week.setAttribute('role','group'); week.setAttribute('aria-label','Weekly hours'); scale.setAttribute('aria-hidden','true');
@@ -5373,6 +5449,35 @@ export const OWNER_JS = `
     HRS_ORDER.forEach(function(i){ week.appendChild(hrsRow(i)); if(hrsEditing===i) week.appendChild(hrsEdit(i)); });
     root.appendChild(week);
     var weekSaid=el('p','msg osaid'); weekSaid.id='makerHoursSaved'; weekSaid.setAttribute('role','status'); weekSaid.setAttribute('aria-live','polite'); root.appendChild(weekSaid);
+    var keep=el('div','maker-dayedit-acts');
+    if(hrsDirty()){ var dis=actOn(el('button','salt-ghost','Discard changes'),'hours.discard'); dis.type='button';
+      dis.addEventListener('click',function(){ hrsDraft=null; hrsEditing=null; hrsCopy=null; hrsDraw(); }); keep.appendChild(dis); }
+    if(hrsUndo&&Date.now()<hrsUndo.until){ var un=actOn(el('button','salt-ghost','Undo'),'hours.undo'); un.type='button';
+      un.addEventListener('click',function(){ if(un.disabled) return; un.disabled=true; var back=hrsUndo.week;
+        refs('/all/maker/hours',{schedule:back}).then(function(value){ makerHours=value; hrsDraft=null; hrsEditing=null; hrsUndo=null; drawMakerHours(); hoursSaid('week','Back to the hours before.'); hrsPreview(); })
+          .catch(function(error){ un.disabled=false; hoursSaid('week',null,error); }); });
+      keep.appendChild(un); setTimeout(function(){ if(hrsUndo&&Date.now()>=hrsUndo.until){ hrsUndo=null; drawMakerHours(); } },Math.max(0,hrsUndo.until-Date.now())+50); }
+    if(keep.children.length) root.appendChild(keep);
+    var pv=el('p','msg maker-preview'); pv.id='makerHoursPreview'; pv.setAttribute('role','status'); root.appendChild(pv); hrsPreviewDraw();
+    /* the dated days (his answer): a holiday closed or a special day's hours, today to 90 days ahead, standing in for their weekday whole */
+    var dated=el('div','maker-week maker-dates'), keys=Object.keys(hrsDraft.dates).sort();
+    dated.setAttribute('role','group'); dated.setAttribute('aria-label','Dates');
+    dated.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Dates'));
+    if(!keys.length) dated.appendChild(el('p','msg',"No dates set. A date stands in for its weekday: a holiday closed, or a special day's hours."));
+    keys.forEach(function(k){ dated.appendChild(hrsRow(k)); if(hrsEditing===k) dated.appendChild(hrsEdit(k)); });
+    var addRow=el('div','maker-dayedit-acts'), add=actOn(el('button','salt-ghost',hrsAdding?'Not now':'Add a date'),'hours.date-add'); add.type='button';
+    add.addEventListener('click',function(){ hrsAdding=!hrsAdding; drawMakerHours(); hrsFocus(hrsAdding?'hours.date-pick':'hours.date-add',null); });
+    addRow.appendChild(add);
+    if(hrsAdding){
+      var today=new Date(Date.now()+8*3600000).toISOString().slice(0,10), pick=actOn(el('input','fld salt-field__input'),'hours.date-pick');
+      pick.type='date'; pick.min=today; pick.max=hrsShift(today,90); pick.value=hrsShift(today,1); pick.setAttribute('aria-label','The date');
+      var put=actOn(el('button','salt-pill salt-pill--sm','Add'),'hours.date-new'); put.type='button';
+      put.addEventListener('click',function(){ var v=pick.value; if(!v||v<today||v>hrsShift(today,90)){ hoursSaid('week','Choose a date from today to 90 days ahead.'); return; }
+        if(!Object.prototype.hasOwnProperty.call(hrsDraft.dates,v)) hrsDraft.dates[v]=null; hrsEditing=v; hrsAdding=false; hrsDraw(); hrsFocus('hours.date',v); });
+      addRow.appendChild(pick); addRow.appendChild(put);
+    }
+    dated.appendChild(addRow);
+    root.appendChild(dated);
     /* the shop held for now is two tiles over the field that says what the one chosen does: Closed until, or Open until; Kuala Lumpur time */
     var override=el('div','maker-fields'), kind=makerTilesIn(override,['The shop, for now','hours.override-state'],[{value:'false',label:'Closed'},{value:'true',label:'Open'}]);
     var until=makerField(override,['Closed until','hours.override-until'],'datetime-local',klInputValue(makerHours.config&&makerHours.config.manual&&makerHours.config.manual.until));

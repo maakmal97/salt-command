@@ -11,7 +11,7 @@
  {"name":"a size has no act","file":"stmt/owner.js","find":"actOn(el('input','salt-option__input'),'record.house.size',size)","replace":"el('input','salt-option__input')"},
  {"name":"the sizes run in one column","file":"stmt/page.js","find":".adm .maker-sizes .salt-options__grid{grid-template-columns:repeat(auto-fill,minmax(88px,1fr))}","replace":".adm .maker-sizes .salt-options__grid{grid-template-columns:minmax(0,1fr)}"},
  {"name":"the sizes do not take the row of their form","file":"stmt/page.js","find":".adm .maker-sizes{flex:1 1 100%;min-width:0}","replace":".adm .maker-sizes{min-width:0}"},
- {"name":"the weekly hours are sent from the other end of the week","file":"stmt/owner.js","find":"{schedule:{days:hrsDraft.map(","replace":"{schedule:{days:hrsDraft.slice().reverse().map("},
+ {"name":"the weekly hours are sent from the other end of the week","file":"stmt/owner.js","find":"var w={days:hrsDraft.days.map(hrsOut)}","replace":"var w={days:hrsDraft.days.slice().reverse().map(hrsOut)}"},
  {"name":"Closed and Open send each other's value","file":"stmt/owner.js","find":"[{value:'false',label:'Closed'},{value:'true',label:'Open'}]","replace":"[{value:'true',label:'Closed'},{value:'false',label:'Open'}]"},
  {"name":"the shop's tiles are not named","file":"stmt/owner.js","find":"['The shop, for now','hours.override-state']","replace":"['For now','hours.override-state']"},
  {"name":"the shop's tiles have another act","file":"stmt/owner.js","find":"['The shop, for now','hours.override-state']","replace":"['The shop, for now','hours.override-mode']"},

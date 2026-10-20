@@ -61,5 +61,5 @@
  {"name":"the Desk bar comes back","file":"stmt/page.js","find":"    + '<header class=\"chead\">' + (owner ? \"\" : bellBox())","replace":"    + (owner ? \"\" : '<header class=\"salt-deskbar cbar\"><div class=\"salt-deskbar__name\">Salt Counter</div></header>')\n    + '<header class=\"chead\">' + (owner ? \"\" : bellBox())"},
  {"name":"the bar stands under the rail again","file":"stmt/page.js","find":"        /* 20 Oct 2026 (canvas V32): the bar heads the whole shell, the rail and the column under it, so from 1080px it spans both */\n","replace":"        + '<span hidden></span>'\n"},
  {"name":"the bar spans one column","file":"stmt/page.js","find":"  .adm .abar{grid-column:1/-1;margin-bottom:0}","replace":"  .adm .abar{margin-bottom:0}"},
- {"name":"a day of the week chart is not a button","file":"stmt/owner.js","find":"var b=actOn(el('button','maker-day'),'hours.day',HRS_NAMES[i]);","replace":"var b=actOn(el('div','maker-day'),'hours.day',HRS_NAMES[i]);"}
+ {"name":"a day of the week chart is not a button","file":"stmt/owner.js","find":"var b=actOn(el('button','maker-day'),hrsIsDate(key)","replace":"var b=actOn(el('div','maker-day'),hrsIsDate(key)"}
 ]

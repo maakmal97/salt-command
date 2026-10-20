@@ -64,7 +64,7 @@ export async function run({ ok }) {
   const kv = new Map(), puts = [];
   const env = { STMT: { get: async (k, t) => (kv.has(k) ? (t === "json" ? JSON.parse(kv.get(k)) : kv.get(k)) : null), put: async (k, v) => { puts.push(k); kv.set(k, v); } } };
   const call = async (body) => (await handleMaker(new Request("https://counter.test/all/maker/hours", { method: body ? "POST" : "GET", ...(body ? { headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : {}) }), env, "/all/maker/hours", { email: "maakmal97@icloud.com" })).json();
-  const pv = await call({ preview: { days: week([d("09:00", "13:00"), d("14:00", "18:00")]) } });
+  const pv = await (await handleMaker(new Request("https://counter.test/all/maker/hours?preview=" + encodeURIComponent(JSON.stringify({ days: week([d("09:00", "13:00"), d("14:00", "18:00")]) }))), env, "/all/maker/hours", { email: "maakmal97@icloud.com" })).json();
   ok(pv.ok && puts.length === 0 && pv.preview.week.length === 7 && pv.preview.week[0].said === "09:00 to 13:00, 14:00 to 18:00" && pv.preview.week[0].windows.some((x) => x.w === 12 && x.span === "12:00-16:00") && typeof pv.preview.status.open === "boolean",
     "a preview says what customers would see, each day's hours and windows, and stores nothing: " + JSON.stringify(pv.preview && pv.preview.week[0]));
   const today = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
