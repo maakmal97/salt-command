@@ -5279,7 +5279,7 @@ export const OWNER_JS = `
   }
   async function loadMakerHours(){
     if(placeNow!=='shop') return;
-    try{ makerHours=await refs('/all/maker/hours'); hrsDraft=null; hrsEditing=null; hrsCopy=null; drawMakerHours(); hrsPreview(); }
+    try{ makerHours=await refs('/all/maker/hours'); hrsDraft=null; hrsEditing=null; hrsCopy=null; drawMakerHours(); }
     catch(error){ var s=document.getElementById('makerHoursStatus'); if(s) refusal(s,error); }
   }
   /* 20 Oct 2026 (his eight answers to Fable's design): THE MOST CONTROL OVER THE HOURS. The draft holds the week and the dated days, each
@@ -5401,7 +5401,7 @@ export const OWNER_JS = `
     makerButton(done,['Done','hours.save',name],function(){
       var before=hrsSaved;
       return refs('/all/maker/hours',{schedule:hrsWeekOut()})
-        .then(function(value){ makerHours=value; hrsDraft=null; hrsEditing=null; hrsCopy=null; hrsUndo=before?{week:JSON.parse(before),until:Date.now()+60000}:null; drawMakerHours(); hoursSaid('week','Weekly hours saved.'); hrsPreview(); })
+        .then(function(value){ makerHours=value; hrsDraft=null; hrsEditing=null; hrsCopy=null; hrsUndo=before?{week:JSON.parse(before),until:Date.now()+60000}:null; drawMakerHours(); hoursSaid('week','Weekly hours saved.'); })
         .catch(function(error){ hoursSaid('week',null,error); });
     },true);
     box.appendChild(done);
@@ -5411,7 +5411,8 @@ export const OWNER_JS = `
      being changed, else today */
   function hrsPreview(){
     var line=document.getElementById('makerHoursPreview'); if(!line||!hrsDraft) return;
-    if(navigator.onLine===false){ line.textContent=''; return; }
+    /* read only when there is something to see: a day open or the week changed, so entering Shop reads the hours once */
+    if(navigator.onLine===false||(hrsEditing===null&&!hrsDirty())){ hrsPv=null; line.textContent=''; return; }
     var seq=++hrsPvSeq;
     refs('/all/maker/hours?preview='+encodeURIComponent(JSON.stringify(hrsWeekOut()))).then(function(v){ if(seq!==hrsPvSeq) return; hrsPv=v&&v.preview||null; hrsPreviewDraw(); })
       .catch(function(error){ if(seq!==hrsPvSeq) return; hrsPv=null; var l=document.getElementById('makerHoursPreview'); if(l) refusal(l,error); });
@@ -5454,7 +5455,7 @@ export const OWNER_JS = `
       dis.addEventListener('click',function(){ hrsDraft=null; hrsEditing=null; hrsCopy=null; hrsDraw(); }); keep.appendChild(dis); }
     if(hrsUndo&&Date.now()<hrsUndo.until){ var un=actOn(el('button','salt-ghost','Undo'),'hours.undo'); un.type='button';
       un.addEventListener('click',function(){ if(un.disabled) return; un.disabled=true; var back=hrsUndo.week;
-        refs('/all/maker/hours',{schedule:back}).then(function(value){ makerHours=value; hrsDraft=null; hrsEditing=null; hrsUndo=null; drawMakerHours(); hoursSaid('week','Back to the hours before.'); hrsPreview(); })
+        refs('/all/maker/hours',{schedule:back}).then(function(value){ makerHours=value; hrsDraft=null; hrsEditing=null; hrsUndo=null; drawMakerHours(); hoursSaid('week','Back to the hours before.'); })
           .catch(function(error){ un.disabled=false; hoursSaid('week',null,error); }); });
       keep.appendChild(un); setTimeout(function(){ if(hrsUndo&&Date.now()>=hrsUndo.until){ hrsUndo=null; drawMakerHours(); } },Math.max(0,hrsUndo.until-Date.now())+50); }
     if(keep.children.length) root.appendChild(keep);

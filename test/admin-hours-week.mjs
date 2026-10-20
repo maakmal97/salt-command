@@ -43,6 +43,8 @@ export async function run({ ok, pageWork }) {
   try {
     await p.tap("nav.shop"); await p.tap("part.shop.hours");
     /* 1 */
+    ok(!p.wire.some((r) => String(r).includes("preview=")) && p.d.getElementById("makerHoursPreview").textContent === "",
+      "entering Shop reads no preview: there is nothing changed to see yet");
     const rows = p.rows();
     ok(same(rows.map((r) => r.getAttribute("data-key")), ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]) && rows.every((r) => r.getAttribute("data-act") === "hours.day"),
       "seven rows, Monday first, each keyed by its day: " + rows.map((r) => r.getAttribute("data-key")).join());
@@ -107,7 +109,7 @@ export async function run({ ok, pageWork }) {
     /* 8 */
     ok(!!byAct(p.d, "hours.discard"), "Discard changes stands while the week differs from the saved one");
     await p.tap("hours.discard");
-    ok(p.label("Friday") === "Fri: 09:00 to 02:00 next day. Change" && p.label("Tuesday") === "Tue: 09:00 to 21:00. Change" && !byAct(p.d, "hours.discard") && !p.d.querySelector(".maker-dayedit"),
+    ok(p.label("Friday") === "Fri: 09:00 to 02:00 next day. Change" && p.label("Tuesday") === "Tue: 09:00 to 21:00. Change" && !byAct(p.d, "hours.discard") && !p.d.querySelector(".maker-dayedit") && p.d.getElementById("makerHoursPreview").textContent === "",
       "Discard changes puts the saved week back and closes the day");
     await p.tap("hours.day", "Monday"); await p.tap("hours.day-closed", "Monday");
     await p.tap("hours.save", "Monday");

@@ -4,7 +4,7 @@
  {"name":"the figure typed under Other is not put back","file":"stmt/owner.js","find":"            chip.value=k.value; chip.other=k.other;\n","replace":"            chip.value=k.value;\n"},
  {"name":"a time that failed stays ticked","file":"stmt/owner.js","find":"          if(winDraw&&win.value!==(win.kept||'')){","replace":"          if(false){"},
  {"name":"the line does not say which did not save","file":"stmt/owner.js","find":"            said.push('That charge did not save. '+","replace":"            said.push('That charge was not read. '+"},
- {"name":"Save answers under the shop-for-now controls","file":"stmt/owner.js","find":"hoursSaid('week','Weekly hours saved.'); hrsPreview(); })","replace":"hoursSaid('now','Weekly hours saved.'); hrsPreview(); })"},
+ {"name":"Save answers under the shop-for-now controls","file":"stmt/owner.js","find":"hoursSaid('week','Weekly hours saved.'); })","replace":"hoursSaid('now','Weekly hours saved.'); })"},
  {"name":"the hours answer is not brought into reach","file":"stmt/owner.js","find":"    if(mine.scrollIntoView) mine.scrollIntoView({block:'nearest'});\n","replace":""},
  {"name":"Make a link answers on the page's one line","file":"stmt/owner.js","find":"      linkSay('Made. The QR opens it.');\n","replace":"      say('Made. The QR opens it.');\n"},
  {"name":"the new link is not brought into view","file":"stmt/owner.js","find":"if(fresh&&fresh.scrollIntoView) fresh.scrollIntoView({block:'nearest'});","replace":"/* not brought into view */"},

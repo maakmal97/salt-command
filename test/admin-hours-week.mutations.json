@@ -38,5 +38,7 @@
  {"name":"a picker is under 44px","file":"stmt/page.js","find":".adm .maker-dayedit select{min-height:44px;","replace":".adm .maker-dayedit select{min-height:40px;"},
  {"name":"a button is under 44px","file":"stmt/page.js","find":".adm .maker-dayedit-acts button{min-height:44px;","replace":".adm .maker-dayedit-acts button{min-height:40px;"},
  {"name":"a chip is under 44px","file":"stmt/page.js","find":".adm .maker-copy button{min-height:44px;","replace":".adm .maker-copy button{min-height:40px;"},
- {"name":"Remove is under 44px","file":"stmt/page.js","find":".adm .maker-dayedit-times>button{min-height:44px;","replace":".adm .maker-dayedit-times>button{min-height:40px;"}
+ {"name":"Remove is under 44px","file":"stmt/page.js","find":".adm .maker-dayedit-times>button{min-height:44px;","replace":".adm .maker-dayedit-times>button{min-height:40px;"},
+ {"name":"the preview is read on entering Shop","file":"stmt/owner.js","find":"try{ makerHours=await refs('/all/maker/hours'); hrsDraft=null; hrsEditing=null; hrsCopy=null; drawMakerHours(); }","replace":"try{ makerHours=await refs('/all/maker/hours'); hrsDraft=null; hrsEditing=null; hrsCopy=null; hrsDraft=hrsFromConfig(); hrsSaved=''; drawMakerHours(); hrsPreview(); }"},
+ {"name":"the preview stays after Discard","file":"stmt/owner.js","find":"if(navigator.onLine===false||(hrsEditing===null&&!hrsDirty())){","replace":"if(navigator.onLine===false){"}
 ]
