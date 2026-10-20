@@ -1734,6 +1734,8 @@ export function draftRow(entry, book) {
 
   if (pay.note) row.note = String(pay.note);
   listStamp(row, book);
+  /* 20 Oct 2026: the step his Accept promised the reward at, on the Pending row of an order that takes them over (rewardCrossOf) */
+  if (entry && entry.rwd === "cross" && +entry.rwdStep > 0 && dir === "SELL") row.rwdStep = +(+entry.rwdStep).toFixed(2);
 
   /* v606: THE RATE AND THE MARGIN ARE BOTH STRUCK ON THE GOODS, on his ruling of 12 Sep 2026
      that the delivery charge is a pass-through at cost, neither more nor less. It is revenue
@@ -1916,7 +1918,8 @@ export async function stageDigest(stage, entry, d, pricing) {
   const pay = (entry && entry.payload) || {};
   const shown = stage === "ack"
     ? Object.assign({ stage, collection: d.collection, row: d.row, flags: d.flags || [], pricing: pricing || null },
-      entry && entry.prepay === true ? { prepay: true } : {})   /* V5b2: paid in advance is his to see; absent, the digest is as it was */
+      entry && entry.prepay === true ? { prepay: true } : {},   /* V5b2: paid in advance is his to see; absent, the digest is as it was */
+      entry && entry.rwd === "cross" ? { rwd: "cross" } : {})   /* 20 Oct 2026: the reward word, likewise only when set */
     : { stage: stage === "cash" ? "pay" : stage, kind: pay.kind || null, party: pay.party || null, orderKey: pay.orderKey || null,
         date: pay.date || null, cash: isNum(pay.cash) ? pay.cash : null, kg: isNum(pay.kg) ? pay.kg : null, fields: pay.fields || null,
         amendKind: d.amendKind || null, flags: d.flags || [] };
@@ -1933,7 +1936,7 @@ export async function offerDigest(entry, d) {
   const row = (d && d.row) || {}, figures = {};
   for (const k of Object.keys(row)) if (!OFFER_SKIP(k)) figures[k] = row[k];
   return sha(canon(Object.assign({ stage: "offer", collection: (d && d.collection) || null, row: figures, flags: (d && d.flags) || [] },
-    entry && entry.prepay === true ? { prepay: true } : {})));
+    entry && entry.prepay === true ? { prepay: true } : {}, entry && entry.rwd === "cross" ? { rwd: "cross" } : {})));
 }
 /* A LATER STAGE BEFORE ITS ROW HAS LANDED (S11 11.12) is previewed against the book as it will stand when it does:
    the pending row appended, and the open-order snapshot carrying it in the engine's own ledgerRow shape, which is

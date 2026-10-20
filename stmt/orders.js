@@ -287,7 +287,7 @@ export async function storeCompare(env) {
    F10: `rating` is theirs and travels; `rateAsk`, the moment they were asked, is the desk's and does not. */
 export const CUSTOMER_FIELDS = ["id", "u", "at", "status", "product", "qty", "unit", "mode", "place", "forFriend", "prepay", "sheet", "week",
   "total", "asked", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed", "rowOn", "rating", "wantBy", "replacement", "replaces", "pool",
-  "slot", "slotSpan", "point"];
+  "slot", "slotSpan", "point", "rwd"];   /* rwd (20 Oct 2026): "cross" or "given", one word, never a figure */
 /* COUNTER BATCH A (18 Oct 2026, his decisions): WHERE AN ORDER WAITS. The point's code travels (Details reads "Collected at Point A2"
    after); its place, the snapshot taken at Ready (pointAt), only while the order waits at it: Ready, to collect, with goods still to
    hand over. A fix undo or an amendment can set Ready on an order owing only money, and a customer who owes money is not waiting there. */
@@ -884,6 +884,8 @@ export function decideDesk(order, body, at) {
     /* 28 Sep 2026: AN ORDER FOLLOWS ITS ROW. A row moved between the associate's own code and their resale bucket takes
        its key with it and the side it books to, which the page pairs To pay now by: the desk states both (tellSite) */
     if (typeof m.forFriend === "boolean") c.forFriend = m.forFriend;
+    /* 20 Oct 2026: the reward word from the book: given, or null to clear a cross that no longer holds; nothing else */
+    if (m.rwd === "given" || m.rwd === null) c.rwd = m.rwd;
     for (const k of ["ack", "cancel", "close", "redate"]) if (m[k]) c[k] = String(m[k]).slice(0, 40);
     for (const k of ["paid", "moved"]) if (typeof m[k] === "number" && Number.isFinite(m[k])) c[k] = +m[k].toFixed(3);
     /* S6 6.5: each claim queued, by its moment, with the entry that tells the ledger of it */
@@ -1114,6 +1116,7 @@ export function decideDesk(order, body, at) {
     ev.delivery = (ev.mode || order.mode) === "deliver" ? d : 0;
     /* V5b2: the desk decides paid in advance at Accept, from the book; its verdict is the order's from then on */
     if (body && typeof body.prepay === "boolean") ev.prepay = body.prepay;
+    if (body && body.rwd === "cross") ev.rwd = "cross";   /* 20 Oct 2026: the reward word his Accept carries */
     /* 10 Oct 2026 (his Q3): the window he chose for a delivery that asked for none, its span cut to the hours by deskMove.
        Anything else is left out, never refused: the row is approved already, and the acknowledgement must not stall */
     if (body && typeof body.slot === "string" && SLOT_RE.test(body.slot) && typeof body.slotSpan === "string" && SPAN_RE.test(body.slotSpan)
@@ -1142,6 +1145,7 @@ export function applyEvent(order, ev) {
     if (ev.mode) order.mode = ev.mode;
     if (ev.delivery !== undefined) order.delivery = ev.delivery;
     if (ev.prepay === true) order.prepay = true; else if (ev.prepay === false) delete order.prepay;
+    if (ev.rwd === "cross" && order.rwd !== "given") order.rwd = "cross";
     if (ev.slot) { order.slot = ev.slot; order.slotSpan = ev.slotSpan; }
     /* Step 2: the goods at the price he set on this order, what they were quoted kept beside it as `asked` */
     if (isNum(ev.total)) { if (order.asked === undefined) order.asked = order.total; order.total = ev.total; }
@@ -1226,6 +1230,7 @@ export function applyEvent(order, ev) {
     if (m.reviewed === true) order.reviewed = true;
     if (m.ledgerKey) order.ledgerKey = m.ledgerKey;
     if (typeof m.forFriend === "boolean") order.forFriend = m.forFriend;
+    if (m.rwd === "given") order.rwd = "given"; else if (m.rwd === null && order.rwd === "cross") delete order.rwd;   /* given is terminal */
     /* WHAT THE LEDGER HAS BEEN TOLD OF THE MONEY ONLY RISES (S10 10.2): the reconcile marks what it read, and the
        return leg may have raised the order to the book's figure in the same minute; lowered, the next pass would
        queue the difference a second time. The goods are stated, not added, so their mark is set as read. */

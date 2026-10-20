@@ -37,6 +37,49 @@ export function lateHistory(book, owner, today, terms) {
   const need = typeof terms.lateResetRepeat === "number" ? terms.lateResetRepeat : 3;
   return st.late && st.run < need ? { prepay: true, run: st.run, need } : { prepay: false };
 }
+/* THE ASSOCIATE REWARD AT AN ORDER (his rules of 20 Oct 2026). His reading, for Salt Admin behind Access only: the walk's progress, the
+   step at today's landed cost, and for one order (a preview's figures, or a row by rid) its margin at landed cost and whether it takes
+   them over: on top of the walk's PAID progress alone, so other unpaid orders are never counted ahead of it, at the lesser of today's
+   step and the row's own promise (rwdStep). The unit's ringgit is its cost less what he gave under their own price since the last
+   reward, never under nought. Nothing prices from it, and no figure of it travels to a customer: they are told one word (rwdOf). */
+export function rewardReading(book, code, opts = {}) {
+  const E = POSITION_ENGINE, owner = E.ownerCode(code);
+  const acc = E.rewardAccount(book, owner);
+  if (!acc.associate) return { associate: false };
+  const walk = E.rewardWalk(book, owner);
+  if (!walk || walk.error || walk.step == null) return { associate: true, error: (walk && walk.error) || "This book states no step." };
+  const two = (n) => +(+n).toFixed(2);
+  const out = { associate: true, departed: !!acc.departed, times: walk.times, rate: walk.rate, step: walk.step, progress: walk.progress, next: walk.next,
+    given: walk.given, net: two(Math.max(0, walk.rate - walk.given)), order: null, unit: null };
+  const row = opts.rid ? (book.sales || []).find((s) => s && s.rid === opts.rid) : null;
+  const unit = row ? (book.sales || []).find((s) => s && s.rewardOf === row.rid && !s.cancelled) : null;
+  if (unit) out.unit = { rid: unit.rid, cost: two(unit.cost), given: two(+unit.given || 0), net: two(Math.max(0, +unit.cost - (+unit.given || 0))), delivered: +unit.deliveredQty > 0.009 };
+  const qty = row ? +row.qty : +opts.qty, goods = row ? E.txGoods(row) : +opts.goods;
+  if (!(qty > 0) || !Number.isFinite(goods) || (row && (row.product || "salt") !== "salt")) return out;
+  const paid = !!row && E.txDates(row).fullPaid;
+  const unitCost = row && row.cost != null && row.qty > 0 ? E.txUnitCost(row) : +opts.unitCost > 0 ? +opts.unitCost : walk.rate;
+  const margin = two(goods - qty * unitCost), step = row && +row.rwdStep > 0 ? Math.min(+row.rwdStep, walk.step) : walk.step;
+  const before = walk.progress;   /* a paid row is in it already, so its margin is not added */
+  const reaches = !paid && before + margin >= step - 0.005;
+  out.order = { rid: row ? row.rid : null, margin, paid, step, reaches, short: paid ? 0 : two(Math.max(0, step - before - margin)) };
+  return out;
+}
+/* the verdict at Accept: { cross, step }, the step it is promised at */
+export function rewardCrossOf(book, code, qty, goods, unitCost) {
+  const r = rewardReading(book, code, { qty, goods, unitCost });
+  return r.associate && !r.error && !r.departed && r.order && r.order.reaches ? { cross: true, step: r.order.step } : { cross: false };
+}
+/* THE ONE WORD THE ORDER CARRIES (CUSTOMER_FIELDS), from the book on the return leg: "given" once a reward row names the order's row (terminal),
+   null to clear a "cross" that no longer holds (another order of theirs crossed first, or a payment of theirs was undone), else nothing to say.
+   A new lot never clears it: the promise is the row's rwdStep. */
+export function rwdOf(book, row, now) {
+  if (!row || (row.product || "salt") !== "salt") return undefined;
+  if ((book.sales || []).some((s) => s && s.rewardOf === row.rid && !s.cancelled)) return now === "given" ? undefined : "given";
+  if (now !== "cross") return undefined;
+  if (POSITION_ENGINE.txDates(row).fullPaid) return null;
+  const r = rewardReading(book, row.customer, { rid: row.rid });
+  return r.order && r.order.reaches ? undefined : null;
+}
 export function advanceOf(book, o, code, delivery, ctx) {
   if (ctx.again) return { prepay: !!o.prepay, owedWith: null, ceiling: null };
   const terms = (book.state && book.state.TERMS) || {};

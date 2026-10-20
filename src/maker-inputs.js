@@ -2,6 +2,7 @@ import POSITION_ENGINE from "../engine/position.mjs";
 import PRICING_ENGINE from "../engine/pricing.mjs";
 import { costFor, cogsFor, floorFor, theirRates, recentRates, draftRow, findRow, checkCorrection, reviving, undoNotes } from "./drafter.js";
 import { cardAt, rowRoom, siteWords } from "./orders.js";
+import { rewardReading } from "../engine/stages.mjs";
 import { rowFigures, moveRow } from "./approve-figures.js";
 import { AGREED_ON_SITE } from "../engine/stages.mjs";
 
@@ -238,6 +239,14 @@ function rewardFree(book, code, product, pending) {
   return { ...account, free: +Math.max(0, (account.held || 0) - reserved).toFixed(2) };
 }
 
+/** 20 Oct 2026: the associate reward's figures for Salt Admin (engine/stages.mjs rewardReading), a read that writes nothing, for one party
+    and, by rid, one order of theirs; behind Access and the bridge key, never on a customer road. */
+export function makerRewardReading(book, code, rid) {
+  if (!ready(book)) return { error: "The Desk mirror is being seeded." };
+  if (!realCode(code, book.state.roster || []) || POSITION_ENGINE.isBucket(code)) return { error: "Choose a party on the roster." };
+  if (rid != null && !(book.sales || []).some((s) => s && s.rid === rid)) return { error: "No row on the book has that rid." };
+  return rewardReading(book, code, { rid });
+}
 export function makerCoverPlan(body, book, pending = []) {
   if (body.product !== "salt" || body.stream === "R2" || !(body.qty > 0)
     || !code(body.party, book.state.roster || [])) return null;

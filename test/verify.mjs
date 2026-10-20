@@ -50085,6 +50085,11 @@ await (async () => {
   await (await import("./assoc-reward-price.mjs")).run({ ok });
 })();
 
+section("Associate reward: Accept says when an order takes them over, the order carries one word, and his reading stays behind Access (P5, 20 Oct 2026)");
+await (async () => {
+  await (await import("./assoc-reward-verdict.mjs")).run({ ok });
+})();
+
 section("Salt Admin: the claim card reads its rows on opening, draws the slip from the one unlock, and asks on a sheet");
 await (async () => {
   await (await import("./admin-claim-card.mjs")).run({ ok, pageWork });
