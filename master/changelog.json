@@ -1,5 +1,19 @@
 [
  {
+  "v": "v1187",
+  "d": "20 Oct 2026",
+  "t": "THE ASSOCIATE REWARD STEPS WITH LANDED COST, ARRIVES WITH THE ORDER, AND A CUSTOMER REDEEMS NOTHING",
+  "n": [
+   "<b>A UNIT PER 10 UNITS' LANDED COST.</b> His rules of 20 Oct 2026, salt only: an associate earns one free unit for every 10 units of COGS (the latest purchase, RM 580 at RM 58 today) of margin on their own buying and resale, counted once an order is paid in full, at the step of the day it crosses. Introductions no longer count.",
+   "<b>THE SWITCH MOVES NOTHING.</b> Each of the ten associates opens on a stated position (REWARD_OPEN, written once by tools/reward-open.mjs): what they hold and the whole % of their next unit are the same either side.",
+   "<b>THE FOLD BOOKS THE UNIT.</b> Once a crossing order is paid, the fold raises 1 unit as its own row at that day's landed cost, settled by the reward, and hands it over with that order's delivery, or with their next salt handover where it has gone; the unit leaves the shelf in the roll. A payment undone flags it STALE and withdraws nothing.",
+   "<b>THEIR PRICE ON EVERY SALT SALE.</b> The drafter stamps each salt sale with their own card for its size, read and never priced, so Salt Admin can say what was given under their Set Price. An offer or acknowledgement outstanding at the deploy may wait under Approve, marked, as its row gains the stamp.",
+   "<b>ACCEPT SAYS SO, IN ONE WORD.</b> An order that takes them over is told, with no figure, to pay now to receive the reward with it; the promise holds the step and the rate it was made at. Once the unit is handed over the order shows Reward, 1 unit, no charge.",
+   "<b>SALT ADMIN SHOWS THE RINGGIT.</b> The order card's Associate reward card: whether the order reaches the next reward or how far short, the meter, and the unit at cost less what was given, net. Behind Access only.",
+   "<b>A CUSTOMER REDEEMS NOTHING.</b> From the switch a customer's reward is not redeemed, covered or offset on any road, and what the six customers hold stands as it is; the loyalty unit is to be theirs. Nothing prices from any of it: the Floor, the Set Price grid, the Ceiling and every card are unchanged."
+  ]
+ },
+ {
   "v": "v1186",
   "d": "20 Oct 2026",
   "t": "SALT ADMIN A TO C: THE DISTANCE ON THE BILL AND THE WAITED METER IN COUNTER HOURS",
