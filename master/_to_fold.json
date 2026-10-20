@@ -1,0 +1,70 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-20T05:43:53.766Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CM4-TO-R",
+    "qty": 3,
+    "total": 215,
+    "cost": 126,
+    "cash": 215,
+    "delivery": 15,
+    "handover": "delivered",
+    "product": "candy",
+    "date": "2026-10-19",
+    "deliveredQty": 3,
+    "deliveredOn": "2026-10-19",
+    "rev": "R2"
+   },
+   "reasoning": "Sold 3 unit of candy to CM4-TO-R for RM 215, with RM 15 of delivery beside it, RM 230 owed, RM 71.67/unit. Costed at RM 42/unit from COGS off the latest purchase p031 landed 2026-09-24: RM 630 quote plus RM 0 freight over 15 unit, so RM 89 on the goods at 41.4%. RM 215 of RM 230 paid and delivered in full on 2026-10-19. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "Booked to CM4-TO-R as R2: CM4-TO buys it to sell on.",
+    "CM4-TO has no committed candy order on the book, so there is no rate of theirs to compare this against.",
+    "This is an ADVANCE: 3 unit goes out with RM 15 unpaid. Check it against CM4-TO's credit cap."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-20T05:43:53.766Z",
+    "type": "SELL",
+    "party": "CM4-TO-R",
+    "qty": 3,
+    "total": 215,
+    "status": "partial",
+    "raw": "Sell 3 unit candy to CM4-TO-R for RM215 on 2026-10-19 plus RM15 delivery, delivered, RM215 cash, 3 unit moved → Open · Advance (R2 via CM4-TO)",
+    "payload": {
+     "mode": "new",
+     "product": "candy",
+     "direction": "SELL",
+     "party": "CM4-TO",
+     "newId": null,
+     "date": "2026-10-19",
+     "qty": 3,
+     "total": 215,
+     "delivery": 15,
+     "freight": 0,
+     "cash": 215,
+     "kg": 3,
+     "assoc": "CM4-TO",
+     "stream": "R2",
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "delivered",
+     "second": null,
+     "more": null,
+     "coverFree": null
+    },
+    "makerRequest": "4a1684944b66c19ada66c61690d0db2de164040d997f33f966d36c44c26d6dda"
+   },
+   "decidedAt": "2026-10-20T05:44:14.737Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
