@@ -766,6 +766,10 @@ body.ended>*:not(#aEnded){display:none}
 .adm .aring svg{width:22px;height:22px}
 /* 18 Oct 2026: no rail of his carries a brand; the name stands in the Desk bar, the ring and the name, the clock under it */
 .adm .abartext{display:flex;flex-direction:column;gap:6px;min-width:0;overflow:hidden}
+/* 20 Oct 2026 (canvas V26, his yes): the shop's hours in the bar are a control to Shop hours, a chip of 44px */
+.adm .abarhours{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;margin:0;border-radius:var(--salt-radius-pill);background:var(--salt-slate);border:1px solid var(--salt-line);color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit;cursor:pointer}
+.adm .abarhours[hidden]{display:none}
+.adm .abarhours svg{width:12px;height:12px;fill:none;stroke:var(--salt-brass);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .salt-rail__tab .salt-appbar__place{color:inherit}
 .adm #mFoot:empty{display:none}
 .adm .afind{display:flex;flex-direction:column;gap:12px;margin:0 0 16px}
@@ -1743,7 +1747,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         /* 18 OCT 2026, HIS WORD: THE DESK'S SHELL. The system's Desk bar heads every place, as it heads the Desk: the ring and the name, the clock
            under it. It took the rail's brand and the eyebrow each place repeated ("Salt Admin" and the clock). */
         + '<header class="salt-deskbar abar"><div class="salt-deskbar__brand"><span class="aring">' + aico("key") + '</span>'
-        + '<div class="abartext"><div class="salt-deskbar__name">Salt Admin</div><div class="salt-deskbar__meta"><span class="abarlive" id="aBarLive"></span><span class="abarhours" id="aBarHours" hidden></span><span class="clk" data-clock></span></div></div></div></header>'
+        + '<div class="abartext"><div class="salt-deskbar__name">Salt Admin</div><div class="salt-deskbar__meta"><span class="abarlive" id="aBarLive"></span><button type="button" class="abarhours" id="aBarHours" data-act="bar.hours" hidden></button><span class="clk" data-clock></span></div></div></div></header>'
         /* 12 OCT 2026 (PHASE 4c): THE UNSENT-ENTRY BANNER, over every place and shown by the owner's script only while an entry sent from this phone waits unconfirmed on it */
         + '<div id="unsentBar" hidden></div>'
         /* 11 OCT 2026: WHAT IS ON SCREEN IS DECIDED BY data-in, which names the places and the parts an element shows in

@@ -1038,9 +1038,19 @@ export const OWNER_JS = `
       var w=at?barWhen(at):'';
       txt=h.open?'Open'+(w?' until '+w:''):'Closed'+(w?', opens '+w:'');
     }
-    if(hrs.textContent!==txt) hrs.textContent=txt;
+    /* 20 Oct 2026 (canvas V26): the words and a brass chevron, named with what a tap does */
+    if(hrs.getAttribute('data-txt')!==txt){
+      hrs.setAttribute('data-txt',txt); hrs.textContent='';
+      hrs.appendChild(el('span',null,txt)); hrs.appendChild(bandIcon('M9 6 L15 12 L9 18'));
+      hrs.setAttribute('aria-label',txt+'. Tap to change');
+    }
     if(hrs.hidden===!!txt) hrs.hidden=!txt;
   }
+  /* a tap takes him to Shop hours, to the shop held for now */
+  (function(){ var hb=document.getElementById('aBarHours'); if(hb) hb.addEventListener('click',function(){
+    showPlace('shop','hours',{fresh:true,push:true});
+    try{ var t=document.querySelector('[data-act="hours.override-state"]'); if(t&&t.scrollIntoView) t.scrollIntoView({block:'center'}); }catch(e){}
+  }); })();
   window.barDraw=barDraw;
   window.addEventListener('online',function(){ barNet=true; barDraw(); });
   window.addEventListener('offline',barDraw);

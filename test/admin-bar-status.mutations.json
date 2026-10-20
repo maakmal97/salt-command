@@ -9,5 +9,8 @@
  {"name":"the bar is not drawn after the Shop read","file":"stmt/owner.js","find":"    shopReading=false;\n    barDraw();\n","replace":"    shopReading=false;\n"},
  {"name":"a passed moment is still drawn","file":"stmt/owner.js","find":"&&!(at&&Date.parse(at)<=Date.now())","replace":""},
  {"name":"a lapse leaves it Live","file":"stmt/owner.js","find":"&&!document.body.classList.contains('ended');\n    /* a tick","replace":";\n    /* a tick"},
- {"name":"the bar reads /hours itself","file":"stmt/owner.js","find":"  function barDraw(){\n","replace":"  function barDraw(){\n    fetch('/hours');\n"}
+ {"name":"the bar reads /hours itself","file":"stmt/owner.js","find":"  function barDraw(){\n","replace":"  function barDraw(){\n    fetch('/hours');\n"},
+ {"name":"the hours are words, not a control","file":"stmt/page.js","find":"<button type=\"button\" class=\"abarhours\" id=\"aBarHours\" data-act=\"bar.hours\" hidden></button>","replace":"<span class=\"abarhours\" id=\"aBarHours\" data-act=\"bar.hours\" hidden></span>"},
+ {"name":"the chip is not named with its tap","file":"stmt/owner.js","find":"      hrs.setAttribute('aria-label',txt+'. Tap to change');","replace":""},
+ {"name":"a tap on the chip goes nowhere","file":"stmt/owner.js","find":"    showPlace('shop','hours',{fresh:true,push:true});\n    try{ var t=document.querySelector('[data-act=\"hours.override-state\"]');","replace":"    try{ var t=document.querySelector('[data-act=\"hours.override-state\"]');"}
 ]

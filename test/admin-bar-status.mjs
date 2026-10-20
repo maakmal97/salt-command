@@ -34,6 +34,9 @@ export async function run({ ok }) {
       "Salt Admin's bar reads Live, the dot lit, while his reads reach the Counter: " + JSON.stringify(live && [live.className, live.textContent]));
     ok(!!hrs && !hrs.hidden && hrs.textContent === "Open until " + until,
       "and Open until the next change, off the hours his page reads: " + JSON.stringify(hrs && [hrs.hidden, hrs.textContent, until]));
+    /* 20 Oct 2026 (canvas V26, his yes): the hours are a control, named with what a tap does, and a tap goes to Shop hours */
+    ok(hrs.tagName === "BUTTON" && hrs.getAttribute("data-act") === "bar.hours" && hrs.getAttribute("aria-label") === "Open until " + until + ". Tap to change" && !!hrs.querySelector("svg"),
+      "the hours are a chip, a button named with what a tap does: " + (hrs.getAttribute("aria-label") || ""));
     ok(reads.filter((r) => r === "/hours").length === 0, "and the bar sends no read of its own: " + JSON.stringify(reads.filter((r) => r === "/hours")));
     status = { open: false, source: "schedule", nextChange: next.toISOString(), nextOpen: next.toISOString() };
     await again();
@@ -50,6 +53,10 @@ export async function run({ ok }) {
     mode = "lapsed";
     await again();
     ok(live.className === "abarlive off" && live.textContent === "Offline", "and Offline once the sign-in has ended: " + JSON.stringify([live.className, live.textContent]));
+    /* last, since it moves him to Shop: a tap on the hours chip goes there */
+    hrs.click(); await wait();
+    const cur = D.querySelector('button[data-m][aria-current="page"]');
+    ok(!!cur && cur.getAttribute("data-m") === "shop", "and a tap on the hours chip goes to Shop: " + (cur && cur.getAttribute("data-m")));
   } finally { dom.window.close(); process.off("unhandledRejection", swallow); }
   const customer = landingPage("abcd-efgh", "nbarc", null);
   ok(!/abarlive|abarhours|aBarLive|aBarHours|Offline: this device/.test(customer.replace(/<style[^>]*>[\s\S]*?<\/style>/g, "")), "and none of it reaches a customer's page, its rules apart, which sit under .adm");
