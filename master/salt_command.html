@@ -2854,6 +2854,71 @@ label.salt-field__label {
   .salt-segment::before { transition: none; }
 }
 
+/* Track (1.11.0, 21 Oct 2026, Salt Admin's Needs you, canvas V56): the pills on ONE recessed row that slides
+   sideways and never wraps, a fixed Jump to beside it opening a menu of every pill with its count. The track
+   is a well, 4px pad and gap; a pill is a 44px tap at 0.8125rem, weight 500, mist-bright, the chosen one on
+   glass with the strong line in salt; its count brass. The right edge fades, so a row that runs on says so. */
+.salt-tabs-row { display: flex; align-items: center; gap: var(--salt-space-2); min-width: 0; }
+.salt-tabs--track {
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-wrap: nowrap;
+  gap: 4px;
+  padding: 4px;
+  background: var(--salt-well);
+  border-radius: var(--salt-radius-pill);
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent);
+  mask-image: linear-gradient(90deg, #000 85%, transparent);
+}
+.salt-tabs--track::-webkit-scrollbar { display: none; }
+.salt-tabs--track .salt-tabs__pill {
+  flex: none;
+  scroll-snap-align: start;
+  min-height: var(--salt-tap);
+  padding: 0 15px;
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  white-space: nowrap;
+  color: var(--salt-mist-bright);
+  border-color: transparent;
+}
+.salt-tabs--track .salt-tabs__pill:hover { color: var(--salt-salt); border-color: transparent; background: var(--salt-glass-hover); }
+.salt-tabs--track .salt-tabs__pill[aria-selected="true"], .salt-tabs--track .salt-tabs__pill--active {
+  color: var(--salt-salt); background: var(--salt-glass); border-color: var(--salt-line-strong);
+}
+.salt-tabs--track .salt-tabs__count, .salt-jump__count { font-family: var(--salt-font-mono); color: var(--salt-brass); margin-left: 6px; }
+.salt-tabs--track .salt-tabs__pill:focus-visible { outline-offset: -2px; }
+.salt-jump { position: relative; flex: none; }
+.salt-jump__btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: var(--salt-tap); min-width: var(--salt-tap); padding: 0 14px;
+  font-family: var(--salt-font-mono); font-size: 0.8125rem; font-weight: 500; color: var(--salt-mist-bright);
+  background: var(--salt-slate); border: 1px solid var(--salt-line); border-radius: var(--salt-radius-pill); cursor: pointer;
+}
+.salt-jump__btn:hover, .salt-jump__btn[aria-expanded="true"] { color: var(--salt-salt); border-color: var(--salt-line-strong); }
+.salt-jump__btn:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
+.salt-jump__btn::after { content: ""; width: 7px; height: 7px; border: solid var(--salt-brass); border-width: 0 1.5px 1.5px 0; transform: translateY(-2px) rotate(45deg); }
+.salt-jump__menu {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; width: 220px; padding: 6px; margin: 0; list-style: none;
+  display: flex; flex-direction: column; gap: 2px;
+  background: var(--salt-pane); border: 1px solid var(--salt-line); border-radius: 14px; box-shadow: var(--salt-shadow-desk);
+  -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+}
+.salt-jump__menu[hidden] { display: none; }
+.salt-jump__item {
+  display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: var(--salt-tap); padding: 0 12px;
+  font-family: var(--salt-font-mono); font-size: 0.8125rem; font-weight: 500; color: var(--salt-mist-bright);
+  background: transparent; border: 0; border-radius: 10px; cursor: pointer; text-align: left;
+}
+.salt-jump__item:hover, .salt-jump__item:focus-visible { color: var(--salt-salt); background: var(--salt-glass-hover); outline: none; }
+.salt-jump__item[aria-current="true"] { color: var(--salt-salt); background: var(--salt-glass); }
+.salt-jump__item--none .salt-jump__count { color: var(--salt-mist); }
+.salt-jump__item[hidden] { display: none; }
+
 /* ---- Steps: where an order's GOODS are, and nothing else: Sent, Confirmed, Ready, then Collected or
    Delivered. A bar a step: done in verdigris, now in brass, ahead a well with the field's edge. The step
    now is read from aria-current="step" as well as its class. Money has its own lines and never rides
