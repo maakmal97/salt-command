@@ -24098,7 +24098,7 @@ await (async () => {
      marks and bold, so a piece of it passes when the element carries the mark. */
   const PAYN = new Set(JSON.stringify((await import("../stmt/pay.js")).PAY_ACCOUNTS).match(/"[^"]*"/g).map((x) => JSON.parse(x))
     .concat(["DuitNow Transfer", "DuitNow QR", "JomPAY", "Touch 'n Go Business"]));
-  const DATA = (t) => /^(abcd-efgh|RM [0-9.,]+|RM|[0-9:., -]+|STMT|SAIDQ|PLACEQ|LABELQ|Salt Counter|[2-9A-HJ-NP-TV-Z]{4}-[2-9A-HJ-NP-TV-Z]{3})$/.test(t) || PAYN.has(t);
+  const DATA = (t) => /^(abcd-efgh|RM [0-9.,]+|RM [0-9.]+\/[0-9.]+|RM|[0-9:., -]+|STMT|SAIDQ|PLACEQ|LABELQ|Salt Counter|[2-9A-HJ-NP-TV-Z]{4}-[2-9A-HJ-NP-TV-Z]{3})$/.test(t) || PAYN.has(t);
   const look = () => { const w = (n) => { for (const c of n.childNodes) {
     if (c.nodeType === 3) { const t = c.textContent.trim(), k = c.parentNode.closest("[data-w]");
       if (t.includes("§")) marked.add(t);
@@ -31517,10 +31517,11 @@ await (async () => {
 
     ok(open(ADV), "the delivered, unpaid order opens");
     const steps = [...scr().querySelectorAll("ol.salt-steps > li")];
-    ok(steps.map((s) => s.querySelector(".salt-steps__name").textContent).join("|") === "Placed|Confirmed|Ready|Delivered"
-      && steps.slice(0, 3).every((s) => s.classList.contains("salt-steps__step--done")) && steps[3].getAttribute("aria-current") === "step"
-      && !/pa(y|id)/i.test(part("steps").textContent),
-      "the goods are on their own track, at Delivered, with nothing about money on it: " + JSON.stringify(steps.map((s) => s.className)));
+    /* 20 Oct 2026 (his answer, reversing "nothing about money on the track"): Paid is the fourth step, not done while unpaid */
+    ok(steps.map((s) => s.querySelector(".salt-steps__name").textContent).join("|") === "Placed|Confirmed|Ready|Paid|Delivered"
+      && steps.slice(0, 3).every((s) => s.classList.contains("salt-steps__step--done")) && steps[4].getAttribute("aria-current") === "step"
+      && !steps[3].classList.contains("salt-steps__step--done"),
+      "the goods' track stands at Delivered, its Paid step not done while unpaid: " + JSON.stringify(steps.map((s) => s.className)));
     const L1 = lines();
     ok(JSON.stringify(L1) === JSON.stringify([["Goods", "RM 90.00", ""], ["Delivery", "RM 10.00", "To Taman Contoh"], ["Still to pay", "RM 100.00", "The goods are with you"]]),
       "the money has its own lines, what is still to pay among them: " + JSON.stringify(L1));
@@ -38182,7 +38183,7 @@ await (async () => {
     ok(/ Closed at 2 units of the 5 ordered, RM 200.00 for the goods\.$/.test(line), "their page says it was closed there, and at what: " + line);
     const steps = scr ? [...scr.querySelectorAll(".salt-steps__step")].map((x) => (x.querySelector(".salt-steps__name") || x).textContent + (x.getAttribute("aria-current") ? "*" : "")) : [];
     const goods = scr ? [...scr.querySelectorAll('[data-part="money"] .salt-ledger__row')].map((x) => x.textContent) : [];
-    ok(JSON.stringify(steps) === JSON.stringify(["Placed", "Confirmed", "Ready", "Collected*"]) && scr.querySelector(".state").textContent === "Collected"
+    ok(JSON.stringify(steps) === JSON.stringify(["Placed", "Confirmed", "Ready", "Paid", "Collected*"]) && scr.querySelector(".state").textContent === "Collected"
       && goods[0] === "GoodsRM 200.002 units handed over of the 5 ordered" && goods.some((g) => /^Still to payRM 200.00The goods are with you$/.test(g)),
       "its goods stand at Collected, all of what was kept being with them, and the money is billed for the 2 units, saying so: " + JSON.stringify({ steps, goods }));
     const h = [...scr.querySelectorAll('[data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
