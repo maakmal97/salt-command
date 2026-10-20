@@ -1,7 +1,8 @@
 import { allOrders, deskSeen, placeOrder, customerView, RID_RE, onBook, allPools, poolOpen, poolClose, deskBody } from "./orders.js";
 import { accountRecord, exampleAccount, examplePlace, examplePools, exampleThread, exampleDeskSay, isTest, isExample, EXAMPLE_ID, TEST_USERS, EXAMPLE_POINTS } from "./testfix.js";
 import { POINTS_KEY, readPoints, validatePoints, resolvePoint, isPointCode } from "./points.js";
-import { hoursStatus, validateManualHours, validateWeeklyHours, HOURS_KEY, windowHours, openMinutes } from "./hours.js";
+import { hoursStatus, validateManualHours, validateWeeklyHours, HOURS_KEY, windowHours, openMinutes, plainWeek, openParts } from "./hours.js";
+import { slotSpan, WINDOWS } from "./window.js";
 import { CONFIRM_KEY, confirmWithin, confirmView } from "./confirm.js";
 import { readPin } from "./pin.js";
 
@@ -164,8 +165,25 @@ async function readHours(env) {
   if (value.schedule != null) {
     const schedule = validateWeeklyHours(value.schedule);
     if (schedule.error) throw new TypeError("Stored operating hours are invalid: " + schedule.error);
+    /* 20 Oct 2026: a dated day that has passed is pruned from what is read, and from the store at the next write */
+    return { config: Object.assign({}, value, { schedule: plainWeek(schedule, Date.now()) }), status: hoursStatus(value), confirm };
   }
   return { config: value, status: hoursStatus(value), confirm };
+}
+
+/* 20 Oct 2026 (his answer, Fable's design): WHAT CUSTOMERS WOULD SEE on a week not yet saved, from the one rule and nothing else: the
+   Counter open or closed and its next change (the override in force kept), and for each of the next seven Kuala Lumpur days its open
+   stretches in words and the delivery windows it would offer with their spans. Nothing is stored. */
+export function hoursPreview(week, manual, now) {
+  const cfg = { schedule: week, manual: manual || null }, status = hoursStatus(cfg, now), H = 3600000, out = [];
+  const hm = (t) => new Date(t + 8 * H).toISOString().slice(11, 16);
+  for (let k = 0; k < 7; k++) {
+    const date = new Date(now + 8 * H + k * 24 * H).toISOString().slice(0, 10), base = Date.parse(date + "T00:00:00Z") - 8 * H;
+    const said = openParts(week.days, base, base + 24 * H, week.dates).map(([a, b]) => hm(a) + " to " + (b - base >= 24 * H ? "24:00" : hm(b))).join(", ") || "Closed";
+    const windows = WINDOWS.map((w) => { const s = slotSpan(date + "T" + String(w).padStart(2, "0"), { schedule: week, manual: null }, now); return s && { w, span: hm(base + s.from * 60000) + "-" + (s.to >= 1440 ? "24:00" : hm(base + s.to * 60000)) }; }).filter(Boolean);
+    out.push({ date, said, windows });
+  }
+  return { status, week: out };
 }
 
 async function makerHours(request, env, method) {
@@ -192,12 +210,15 @@ async function makerHours(request, env, method) {
     await env.STMT.put(HOURS_KEY, JSON.stringify(next));
     return json({ ok: true, config: next, status: hoursStatus(next), confirm: current.confirm });
   }
+  if (Object.keys(body).length === 1 && body.preview) {
+    const now = Date.now(), week = validateWeeklyHours(body.preview, now);
+    if (week.error) return json({ ok: false, error: week.error }, 400);
+    return json({ ok: true, preview: hoursPreview(plainWeek(week, now), current.config && current.config.manual, now) });
+  }
   if (Object.keys(body).length === 1 && body.schedule) {
-    const schedule = validateWeeklyHours(body.schedule);
+    const now = Date.now(), schedule = validateWeeklyHours(body.schedule, now);
     if (schedule.error) return json({ ok: false, error: schedule.error }, 400);
-    const next = Object.assign({}, current.config || {}, {
-      schedule: { days: schedule.days.map((day) => day && { open: day.open, close: day.close }) }
-    });
+    const next = Object.assign({}, current.config || {}, { schedule: plainWeek(schedule, now) });
     await env.STMT.put(HOURS_KEY, JSON.stringify(next));
     return json({ ok: true, config: next, status: hoursStatus(next), confirm: current.confirm });
   }

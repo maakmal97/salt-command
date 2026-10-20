@@ -48371,6 +48371,11 @@ section("Opening hours past midnight: one rule (openParts) for the status, the o
 await (async () => {
   await (await import("./hours-overnight.mjs")).run({ ok });
 })();
+
+section("The most control over the hours: several spans a day, open all day, overlaps merged, dated days and the preview (20 Oct 2026)");
+await (async () => {
+  await (await import("./hours-spans.mjs")).run({ ok });
+})();
 section("10 Oct 2026: a delivery's exact spot, sealed on their phone to his key, ciphertext alone on the Counter");
 await (async () => {
   await (await import("./delivery-pin.mjs")).run({ ok });
