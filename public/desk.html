@@ -87,7 +87,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="056439580d5a127b";
+var SALT_BUILD_ID="749a6bb1680c58f9";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -3697,14 +3697,11 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   flex-direction: column;
   gap: 14px;
 }
+/* Where it stands it runs to the foot of the screen, not of the page, and stops a margin short of it, the same 24px
+   as its top (his word of 20 Oct 2026, canvas V66): sized to the screen in dvh, never vh, which iOS Safari measures
+   under its toolbar, and scrolling inside itself when its parts outrun it. */
 @media (min-width: 861px), not all and (pointer: coarse) {
-  /* it runs to the foot of the screen, not of the page, and stops a margin short of it, the same 24px as its top
-     (his word of 20 Oct 2026, canvas V66): sized to the viewport, it scrolls inside itself when its parts outrun it */
-  .salt-rail {
-    width: 212px; flex: 0 0 212px; position: sticky; top: 24px;
-    height: calc(100vh - 48px); height: calc(100dvh - 48px);
-    overflow-y: auto; overscroll-behavior: contain;
-  }
+  .salt-rail { width: 212px; flex: 0 0 212px; position: sticky; top: 24px; height: calc(100dvh - 48px); overflow-y: auto; overscroll-behavior: contain; }
 }
 @media (max-width: 860px) and (pointer: coarse) {
   .salt-rail { background: var(--salt-pane); }
