@@ -14,7 +14,7 @@
  {"name":"the live order sits in the second column","file":"stmt/page.js","find":"<div id=\"hYear\"></div></div>'","replace":"<div id=\"hYear\"></div><div id=\"hLive\"></div></div>'"},
  {"name":"the foot's height is never told","file":"stmt/page.js","find":"    footSet(); glanceDraw();\n  }","replace":"    glanceDraw();\n  }"},
  {"name":"the foot's height stays when it shuts","file":"stmt/page.js","find":"(f.hidden?0:Math.ceil(f.offsetHeight||0))","replace":"Math.ceil(f.offsetHeight||0)"},
- {"name":"the reward for everybody","file":"stmt/page.js","find":"if(!assoc||view||!card||!Array.isArray(card.products)) return box;","replace":"if(view||!card||!Array.isArray(card.products)) return box;"},
+ {"name":"the reward for everybody","file":"stmt/page.js","find":"    if(!assoc){\n      var lp=card.products","replace":"    if(!assoc&&card.products.some(function(p){ return p.loyal; })){\n      var lp=card.products"},
  {"name":"the reward is the farthest","file":"stmt/page.js","find":"sort(function(a,b){ return b.reward.next-a.reward.next; })","replace":"sort(function(a,b){ return a.reward.next-b.reward.next; })"},
  {"name":"the meter is left empty","file":"stmt/page.js","find":"    mtr.style.setProperty('--salt-fill',String(pc)); mtr.appendChild(ln);","replace":"    mtr.appendChild(ln);"},
  {"name":"the reward names a level","file":"stmt/page.js","find":"tw(rw.left>0?(rw.held?'rew.held':'rew.ask'):'rew.nextAria',{left:Uq(rw.left,p.unit), p:pc})","replace":"tw(rw.left>0?(rw.held?'rew.held':'rew.ask'):'rew.nextAria',{left:Uq(rw.left,p.unit), p:pc})+' Gold'"},
