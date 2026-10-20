@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1193",
+  "d": "20 Oct 2026",
+  "t": "A SALT ORDER IS SETTLED IN FULL AND A RICE SALE IS PAID AND COLLECTED",
+  "n": [
+   "<b>TWO ROWS FOLDED, BOTH FOR CJ4-BJ.</b> A fulfilment of RM100 on 20 Oct settles salt order s244, leaving RM0 and 0 unit outstanding. A new rice sale of 10 unit for RM60 was paid and collected on the day.",
+   "<b>INVENTORY.</b> The fulfilment moves no salt. The rice sale takes 10 unit of rice out of stock. CJ4-BJ has no rice order on the book, so the rice sale has no rate of its own to be compared against."
+  ]
+ },
+ {
   "v": "v1192",
   "d": "20 Oct 2026",
   "t": "A PAYMENT SETTLES CR3-DAM'S ORDER S263 AND A NEW PENDING ORDER IS BOOKED AT THE ASK",

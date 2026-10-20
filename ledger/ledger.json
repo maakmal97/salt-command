@@ -1,6 +1,6 @@
 {
- "v": "v1192",
- "stamped": "20 Oct 2026, 23:54 KL",
+ "v": "v1193",
+ "stamped": "20 Oct 2026, 23:59 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -83,7 +83,7 @@
    "rice": {
     "qty": 0,
     "costPerKg": null,
-    "stated": 15
+    "stated": 5
    },
    "spare": {
     "qty": 0,
@@ -7068,15 +7068,32 @@
     "qty": 6.25,
     "total": 500,
     "cost": 362.5,
-    "cash": 400,
+    "cash": 500,
     "handover": "delivered",
     "coverUnits": 1.44,
     "coverRM": 80.7,
     "date": "2026-10-09",
     "deliveredQty": 6.25,
     "deliveredOn": "2026-10-09",
-    "note": "<b>SALT SELL DATED 09 OCT: 6.25 UNIT FOR RM500, DELIVERED WITH RM100 OUTSTANDING.</b> Booked to CJ4-BJ, delivered on 09 Oct with RM400 cash in. The ladder for 6.25 unit has a floor of RM362.5 and an ask of RM600, so the total is above the floor and below the ask. CJ4-BJ has a median rate of RM72 and a range of RM64 to RM100, nothing outstanding before, 0 units on credit against a cap of 1. The row carries RM362.5, COGS off the latest purchase. The drafter flagged a rate 11.1% above his usual; RM80 is inside his range, so the figures answer it. The cap check is not answered by the dossier. On the desk's word, 1.44 unit of reward covers RM80.7. Open: RM100.",
-    "rid": "s244"
+    "note": "<b>FULFILMENT OF RM100 ON 20 OCT SETTLES THIS ORDER.</b> <b>SALT SELL DATED 09 OCT: 6.25 UNIT FOR RM500, DELIVERED WITH RM100 OUTSTANDING.</b> Booked to CJ4-BJ, delivered on 09 Oct with RM400 cash in. The ladder for 6.25 unit has a floor of RM362.5 and an ask of RM600, so the total is above the floor and below the ask. CJ4-BJ has a median rate of RM72 and a range of RM64 to RM100, nothing outstanding before, 0 units on credit against a cap of 1. The row carries RM362.5, COGS off the latest purchase. The drafter flagged a rate 11.1% above his usual; RM80 is inside his range, so the figures answer it. The cap check is not answered by the dossier. On the desk's word, 1.44 unit of reward covers RM80.7. Open: RM100.",
+    "rid": "s244",
+    "amend": [
+     {
+      "date": "2026-10-09",
+      "kind": "Fulfilment",
+      "cash": 400,
+      "kg": 6.25,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-20",
+      "kind": "Fulfilment",
+      "cash": 100,
+      "kg": 0,
+      "note": "<b>FULFILMENT OF RM100 ON 20 OCT AGAINST SALT ORDER s244.</b> CJ4-BJ's order of 9 Oct was 6.25 unit for RM500, delivered with RM400 cash in. RM100 and 0 unit move today, so nothing is left outstanding. The order total of RM500 is above the floor total of RM362.5 and below the ask total of RM600. CJ4-BJ has 9 orders, a median rate of RM80, a range of RM64 to RM100, RM100 outstanding and 1.25 unit on credit before this payment. The row keeps its own cost, which this fulfilment does not touch. The drafter flagged that this settles the order in full; the figures confirm it, as RM100 meets the RM100 outstanding. Nothing remains outstanding."
+     }
+    ],
+    "paidOn": "2026-10-20"
    },
    {
     "customer": "CR3-DAM",
@@ -8274,6 +8291,21 @@
     "listRM": 75,
     "listQty": 0.5,
     "rid": "s278"
+   },
+   {
+    "customer": "CJ4-BJ",
+    "qty": 10,
+    "total": 60,
+    "cost": 34,
+    "cash": 60,
+    "handover": "collected",
+    "product": "rice",
+    "date": "2026-10-20",
+    "deliveredQty": 10,
+    "deliveredOn": "2026-10-20",
+    "paidOn": "2026-10-20",
+    "note": "<b>NEW SALE ON 20 OCT: 10 UNIT OF RICE TO CJ4-BJ, GOODS RM60.</b> Collected and paid in full on the day, RM60 cash, 10 unit moved. The goods total of RM60 equals the ask total of RM60 and is above the floor total of RM35, which is RM6 a unit against a floor of RM3.5 and an ask of RM6. CJ4-BJ's history is in salt: 9 orders, a median rate of RM80, a range of RM64 to RM100, RM100 outstanding and 1.25 unit on credit, against a cap of 1. This sale is paid in full, so it adds no credit. The row carries cost RM34, set at COGS off the latest purchase p028 at RM3.4 a unit, and the fold keeps it. The drafter flagged no committed rice order, so no rate of theirs to compare; the figures cannot answer that. Nothing is outstanding.",
+    "rid": "s279"
    }
   ],
   "contacts": [
@@ -9026,7 +9058,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-20T15:53:30.097Z",
+  "QUEUE_COMMITTED": "2026-10-20T15:58:08.737Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -9059,7 +9091,7 @@
     {
      "id": "cust:cadence:salt",
      "sev": "watch",
-     "title": "9 customers are past their own habit on salt"
+     "title": "10 customers are past their own habit on salt"
     },
     {
      "id": "cust:cadence:candy",
@@ -9094,7 +9126,7 @@
     {
      "id": "promo:revive:salt",
      "sev": "note",
-     "title": "Three messages are worth about RM 487 on salt"
+     "title": "Three messages are worth about RM 589 on salt"
     },
     {
      "id": "dup:CS6-BS-R:2026-09-16:2026-09-19:420",
@@ -9296,6 +9328,21 @@
       "small": false,
       "bigger": true,
       "loyal": true,
+      "rare": false
+     },
+     "rice": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 0,
+      "sinceLastDays": 0,
+      "perMonth": 1.01,
+      "unitsPerMonth": 10.15,
+      "smallShare": 0,
+      "bigShare": 1,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
       "rare": false
      }
     },
@@ -15323,9 +15370,9 @@
        "repl": 3.2,
        "freightRate": 0.2,
        "leak": {
-        "ratio": 0.463,
+        "ratio": 0.3906,
         "leak": 25,
-        "sold": 54,
+        "sold": 64,
         "cycles": 3,
         "from": "2026-09-24",
         "to": "2026-10-20"
@@ -15350,15 +15397,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.08333333333333333
+         "v": 0.07692307692307693
         }
        },
        "attrib": 1,
        "shrinkRate": 0.26,
        "avgDel": {
-        "n": 12,
-        "kg": 59,
-        "mean": 4.9167
+        "n": 13,
+        "kg": 69,
+        "mean": 5.3077
        }
       },
       "policy": {
@@ -16265,11 +16312,11 @@
      ]
     }
    },
-   "v": "v1192"
+   "v": "v1193"
   },
   "OPEN": {
-   "at": "2026-10-20T15:54:13.200Z",
-   "count": 9,
+   "at": "2026-10-20T15:59:02.739Z",
+   "count": 8,
    "byKey": {
     "CR3-DAM|2026-10-20|75": {
      "d": "2026-10-20",
@@ -16300,23 +16347,6 @@
      "deliveredOn": "2026-10-14",
      "handover": "collected",
      "key": "CE4-CHE|2026-10-14|400"
-    },
-    "CJ4-BJ|2026-10-09|500": {
-     "d": "2026-10-09",
-     "p": "CJ4-BJ",
-     "dir": "S",
-     "q": 6.25,
-     "t": 500,
-     "cash": 400,
-     "mv": 6.25,
-     "st": "dueMoney",
-     "oweRM": 100,
-     "rid": "s244",
-     "deliveredOn": "2026-10-09",
-     "handover": "delivered",
-     "key": "CJ4-BJ|2026-10-09|500",
-     "age": 11,
-     "exp": 0
     },
     "CN3-WM|2026-10-05|130": {
      "d": "2026-10-05",
@@ -16427,7 +16457,7 @@
      "owedOut": 1.5,
      "coverDays": 0,
      "rate": 4.53,
-     "owedToYou": 340,
+     "owedToYou": 240,
      "promised": 2,
      "short": 2
     },
@@ -16455,11 +16485,11 @@
     },
     "rice": {
      "name": "Rice",
-     "onHand": 15,
-     "free": 15,
+     "onHand": 5,
+     "free": 5,
      "owedOut": 0,
-     "coverDays": 10.3,
-     "rate": 1.71,
+     "coverDays": 2.6,
+     "rate": 2.35,
      "owedToYou": 15,
      "promised": 0,
      "short": 0
@@ -16472,7 +16502,7 @@
     "rice": "2026-10-20",
     "spare": null
    },
-   "v": "v1192"
+   "v": "v1193"
   },
   "TERMS": {
    "ceiling": 250,
@@ -16480,7 +16510,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1192"
+   "v": "v1193"
   },
   "REWARD": {
    "stated": {
@@ -16494,7 +16524,7 @@
      }
     }
    },
-   "v": "v1192"
+   "v": "v1193"
   }
  }
 }
