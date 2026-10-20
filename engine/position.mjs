@@ -109,7 +109,21 @@ function rewardWalk(book,id,today){
     rows:rows.length,counted,progress,times:scheme.times,step:now?now.step:null,rate:now?now.rate:null,
     next:now&&now.step>0?Math.max(0,Math.min(1,+(progress/now.step).toFixed(4))):null,crossings,given};
 }
-function rewardAccount(book,id,product='salt'){
+/* THE STATED OPENING (20 Oct 2026, his answer to Ask 3): what the count before the switch reads for a party, taken once and written
+   into REWARD_OPEN by tools/reward-open.mjs at the switch, and by the fold the day a customer becomes an associate. earned is the old
+   count's units (never what they hold: every unit taken stays netted at the reader), share its part of the next unit, never under
+   nought; upTo the newest sales rid the count read, on the day, and pend the party's salt rows Pending then, which the old count
+   read none of. */
+function rewardOpening(book,id,on){
+  const a=rewardAccount(book,id,'salt',{old:true});
+  if(a.error&&!a.departed)return {error:a.error};
+  const toNext=(a.earned+1)*a.hurdle-a.margin;
+  const top=Math.max(0,...(book.sales||[]).map(s=>rewardRid(s&&s.rid)));
+  const pend=(book.sales||[]).filter(s=>s&&s.rid&&(s.product||'salt')==='salt'&&ownerCode(s.customer)===id&&!s.cancelled&&!s.rewardOf
+    &&txStat(s).order==='Pending').map(s=>s.rid);
+  return {earned:a.earned,share:Math.max(0,Math.min(1,+(1-toNext/a.hurdle).toFixed(4))),upTo:'s'+top,on,...(pend.length?{pend}:{})};
+}
+function rewardAccount(book,id,product='salt',opts={}){
   const state=book.state||{},scheme=state.REWARD&&state.REWARD.stated&&state.REWARD.stated[product];
   const products=state.PRODUCTS||{},stated=Object.values(products).some(p=>p&&typeof p.reward==='boolean');
   if(stated&&!(products[product]||{}).reward||!scheme||!Number.isFinite(+scheme.margin)||+scheme.margin<=0)
@@ -136,7 +150,7 @@ function rewardAccount(book,id,product='salt'){
   let {earned}=rewardUnits(pooled,hurdle);
   /* 20 Oct 2026: from the switch an associate's units are the walk's, and a customer redeems nothing (his answer to Ask 7, kept by
      his answer to the loyalty plan's Ask 4): what they hold stays as it stands, read by no spend */
-  const switched=product==='salt'&&!!rewardScheme(book,product);
+  const switched=product==='salt'&&!!rewardScheme(book,product)&&!opts.old;
   if(switched&&associate){
     const walk=rewardWalk(book,id);
     if(walk&&walk.error)return {error:walk.error};
@@ -144,7 +158,7 @@ function rewardAccount(book,id,product='salt'){
   }
   const applied=+sales.reduce((n,s)=>ownerCode(s.customer)===id
     ?n+(s.rebate?(s.rebateKg!=null?+s.rebateKg:(+s.qty||0)):0)+Math.max(0,+s.coverUnits||0):n,0).toFixed(2);
-  const balance={earned,applied,held:+(earned-applied).toFixed(2),associate,margin:pooled};
+  const balance={earned,applied,held:+(earned-applied).toFixed(2),associate,margin:pooled,...(opts.old?{hurdle}:{})};
   return ((state.PEOPLE||{}).departed||[]).some(p=>p&&p.id===id)
     ?{...balance,departed:true,error:"A departed party's reward waits until they return."}:balance;
 }
@@ -1624,7 +1638,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
+return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,rewardOpening:rewardOpening,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,

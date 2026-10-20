@@ -1,6 +1,6 @@
 {
- "v": "v1185",
- "stamped": "20 Oct 2026, 13:51 KL",
+ "v": "v1186",
+ "stamped": "20 Oct 2026, 14:13 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -8768,6 +8768,68 @@
     "why": "Oil turnover counted at his direction: RM400 of salt plus RM100 of oil is exactly the RM500 step."
    }
   },
+  "REWARD_OPEN": {
+   "CA6-CYB": {
+    "earned": 0,
+    "share": 0.4723,
+    "upTo": "s276",
+    "on": "2026-10-20"
+   },
+   "CE4-AD": {
+    "earned": 1,
+    "share": 0.2358,
+    "upTo": "s276",
+    "on": "2026-10-20"
+   },
+   "CE5-SA": {
+    "earned": 0,
+    "share": 0.5957,
+    "upTo": "s276",
+    "on": "2026-10-20"
+   },
+   "CI4-OKR": {
+    "earned": 2,
+    "share": 0.4362,
+    "upTo": "s276",
+    "on": "2026-10-20"
+   },
+   "CJ4-OKR": {
+    "earned": 8,
+    "share": 0.1258,
+    "upTo": "s276",
+    "on": "2026-10-20"
+   },
+   "CM4-TO": {
+    "earned": 1,
+    "share": 0.439,
+    "upTo": "s276",
+    "on": "2026-10-20"
+   },
+   "CN3-WM": {
+    "earned": 2,
+    "share": 0.2877,
+    "upTo": "s276",
+    "on": "2026-10-20"
+   },
+   "CR3-DAM": {
+    "earned": 2,
+    "share": 0.116,
+    "upTo": "s276",
+    "on": "2026-10-20"
+   },
+   "CS6-BS": {
+    "earned": 7,
+    "share": 0.2741,
+    "upTo": "s276",
+    "on": "2026-10-20"
+   },
+   "CS6-PER": {
+    "earned": 3,
+    "share": 0.9826,
+    "upTo": "s276",
+    "on": "2026-10-20"
+   }
+  },
   "QUOTES": {
    "salt": {
     "supplier": "SA5-BTR",
@@ -16137,10 +16199,10 @@
      ]
     }
    },
-   "v": "v1185"
+   "v": "v1186"
   },
   "OPEN": {
-   "at": "2026-10-20T05:51:20.721Z",
+   "at": "2026-10-20T06:42:35.789Z",
    "count": 10,
    "byKey": {
     "CS6-BS-R|2026-10-15|220": {
@@ -16366,7 +16428,7 @@
     "rice": "2026-10-20",
     "spare": null
    },
-   "v": "v1185"
+   "v": "v1186"
   },
   "TERMS": {
    "ceiling": 250,
@@ -16374,7 +16436,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1185"
+   "v": "v1186"
   },
   "REWARD": {
    "stated": {
@@ -16382,11 +16444,13 @@
      "margin": 500,
      "associate": {
       "margin": 470,
-      "r3Hurdle": 1.2
+      "r3Hurdle": 1.2,
+      "times": 10,
+      "since": "2026-10-20"
      }
     }
    },
-   "v": "v1185"
+   "v": "v1186"
   }
  }
 }

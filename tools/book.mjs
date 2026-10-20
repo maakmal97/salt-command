@@ -50,6 +50,9 @@ export const LEDGER = {
   TIER_OF: "TIER_OF",
   /* v616 and v618: REWARD_OPENING and CUSTOMER_REWARD_OPENING retired; the whole-ledger recounts replaced them. */
   AWARDS: "AWARDS",
+  /* 20 Oct 2026: each associate's stated position at the switch to the step at landed cost, written once by tools/reward-open.mjs
+     and by the fold the day a customer becomes an associate; the walk counts from it */
+  REWARD_OPEN: "REWARD_OPEN",
   /* v776: ONE MAP, product to its live quote. It was supplierQuote (salt, implicitly) and
      oilQuote, two top-level keys named after their products and the one per-product thing in
      this book that was not a map, with the desk's QUOTES an accessor over the pair. QUOTES is

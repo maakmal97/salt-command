@@ -1,0 +1,12 @@
+[
+ {"name":"the share rounded to a tenth","file":"engine/position.mjs","find":"share:Math.max(0,Math.min(1,+(1-toNext/a.hurdle).toFixed(4)))","replace":"share:Math.max(0,Math.min(1,+(1-toNext/a.hurdle).toFixed(1)))"},
+ {"name":"the opening states what they hold","file":"engine/position.mjs","find":"return {earned:a.earned,share:","replace":"return {earned:a.held,share:"},
+ {"name":"a share under nought","file":"engine/position.mjs","find":"share:Math.max(0,Math.min(1,+(1-toNext/a.hurdle).toFixed(4)))","replace":"share:Math.min(1,+(1-toNext/a.hurdle).toFixed(4))"},
+ {"name":"a row Pending then forgotten","file":"engine/position.mjs","find":"    &&txStat(s).order==='Pending').map(s=>s.rid);","replace":"    &&txStat(s).order==='Nope').map(s=>s.rid);"},
+ {"name":"the opening reads one rid short","file":"engine/position.mjs","find":"upTo:'s'+top,on,","replace":"upTo:'s'+(top-1),on,"},
+ {"name":"the Desk keeps the old count","file":"master/salt_command.html","find":"    const walk=rewardWalkOf(id);\n    if(walk){","replace":"    const walk=rewardWalkOf(id);\n    if(walk&&false){"},
+ {"name":"no opening reads the walk's blank","file":"master/salt_command.html","find":"      if(walk.error||walk.step==null){earned=null;toNext=null;unit=null;}","replace":"      if(false){earned=null;toNext=null;unit=null;}"},
+ {"name":"the rule keeps the old words","file":"master/salt_command.html","find":"  if(w&&w.step!=null)return 'a free unit per '","replace":"  if(false)return 'a free unit per '"},
+ {"name":"an associate with nothing earned opens nothing","file":"tools/reward-open.mjs","find":"const a = E.rewardAccount(eb, c, \"salt\", { old: true }); return a.associate; })","replace":"const a = E.rewardAccount(eb, c, \"salt\", { old: true }); return a.associate && a.earned > 0; })"},
+ {"name":"the extract leaves the openings behind","file":"tools/book.mjs","find":"  REWARD_OPEN: \"REWARD_OPEN\",\n","replace":""}
+]

@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="aa1bdfc896a260f3";
+var SALT_BUILD_ID="29e062b89d4e0215";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -5894,7 +5894,21 @@ function rewardWalk(book,id,today){
     rows:rows.length,counted,progress,times:scheme.times,step:now?now.step:null,rate:now?now.rate:null,
     next:now&&now.step>0?Math.max(0,Math.min(1,+(progress/now.step).toFixed(4))):null,crossings,given};
 }
-function rewardAccount(book,id,product='salt'){
+/* THE STATED OPENING (20 Oct 2026, his answer to Ask 3): what the count before the switch reads for a party, taken once and written
+   into REWARD_OPEN by tools/reward-open.mjs at the switch, and by the fold the day a customer becomes an associate. earned is the old
+   count's units (never what they hold: every unit taken stays netted at the reader), share its part of the next unit, never under
+   nought; upTo the newest sales rid the count read, on the day, and pend the party's salt rows Pending then, which the old count
+   read none of. */
+function rewardOpening(book,id,on){
+  const a=rewardAccount(book,id,'salt',{old:true});
+  if(a.error&&!a.departed)return {error:a.error};
+  const toNext=(a.earned+1)*a.hurdle-a.margin;
+  const top=Math.max(0,...(book.sales||[]).map(s=>rewardRid(s&&s.rid)));
+  const pend=(book.sales||[]).filter(s=>s&&s.rid&&(s.product||'salt')==='salt'&&ownerCode(s.customer)===id&&!s.cancelled&&!s.rewardOf
+    &&txStat(s).order==='Pending').map(s=>s.rid);
+  return {earned:a.earned,share:Math.max(0,Math.min(1,+(1-toNext/a.hurdle).toFixed(4))),upTo:'s'+top,on,...(pend.length?{pend}:{})};
+}
+function rewardAccount(book,id,product='salt',opts={}){
   const state=book.state||{},scheme=state.REWARD&&state.REWARD.stated&&state.REWARD.stated[product];
   const products=state.PRODUCTS||{},stated=Object.values(products).some(p=>p&&typeof p.reward==='boolean');
   if(stated&&!(products[product]||{}).reward||!scheme||!Number.isFinite(+scheme.margin)||+scheme.margin<=0)
@@ -5921,7 +5935,7 @@ function rewardAccount(book,id,product='salt'){
   let {earned}=rewardUnits(pooled,hurdle);
   /* 20 Oct 2026: from the switch an associate's units are the walk's, and a customer redeems nothing (his answer to Ask 7, kept by
      his answer to the loyalty plan's Ask 4): what they hold stays as it stands, read by no spend */
-  const switched=product==='salt'&&!!rewardScheme(book,product);
+  const switched=product==='salt'&&!!rewardScheme(book,product)&&!opts.old;
   if(switched&&associate){
     const walk=rewardWalk(book,id);
     if(walk&&walk.error)return {error:walk.error};
@@ -5929,7 +5943,7 @@ function rewardAccount(book,id,product='salt'){
   }
   const applied=+sales.reduce((n,s)=>ownerCode(s.customer)===id
     ?n+(s.rebate?(s.rebateKg!=null?+s.rebateKg:(+s.qty||0)):0)+Math.max(0,+s.coverUnits||0):n,0).toFixed(2);
-  const balance={earned,applied,held:+(earned-applied).toFixed(2),associate,margin:pooled};
+  const balance={earned,applied,held:+(earned-applied).toFixed(2),associate,margin:pooled,...(opts.old?{hurdle}:{})};
   return ((state.PEOPLE||{}).departed||[]).some(p=>p&&p.id===id)
     ?{...balance,departed:true,error:"A departed party's reward waits until they return."}:balance;
 }
@@ -7409,7 +7423,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
+return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,rewardOpening:rewardOpening,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,
@@ -9526,6 +9540,69 @@ const COST_RULE={
   "spare": {
     "kind": "latestCogs",
     "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
+  }
+};
+/* THE SWITCH TO THE STEP AT LANDED COST, 2026-10-20 (his rules of 20 Oct 2026, his answer to Ask 3). Each associate opens on the units the count before the switch had earned and the share of the next one, so nothing they hold or see moves; from here a unit is 10 units' landed cost of margin on their own buying and resale, counted once paid in full. Written once by tools/reward-open.mjs; the fold adds one the day a customer becomes an associate. */
+const REWARD_OPEN={
+  "CA6-CYB": {
+    "earned": 0,
+    "share": 0.4723,
+    "upTo": "s276",
+    "on": "2026-10-20"
+  },
+  "CE4-AD": {
+    "earned": 1,
+    "share": 0.2358,
+    "upTo": "s276",
+    "on": "2026-10-20"
+  },
+  "CE5-SA": {
+    "earned": 0,
+    "share": 0.5957,
+    "upTo": "s276",
+    "on": "2026-10-20"
+  },
+  "CI4-OKR": {
+    "earned": 2,
+    "share": 0.4362,
+    "upTo": "s276",
+    "on": "2026-10-20"
+  },
+  "CJ4-OKR": {
+    "earned": 8,
+    "share": 0.1258,
+    "upTo": "s276",
+    "on": "2026-10-20"
+  },
+  "CM4-TO": {
+    "earned": 1,
+    "share": 0.439,
+    "upTo": "s276",
+    "on": "2026-10-20"
+  },
+  "CN3-WM": {
+    "earned": 2,
+    "share": 0.2877,
+    "upTo": "s276",
+    "on": "2026-10-20"
+  },
+  "CR3-DAM": {
+    "earned": 2,
+    "share": 0.116,
+    "upTo": "s276",
+    "on": "2026-10-20"
+  },
+  "CS6-BS": {
+    "earned": 7,
+    "share": 0.2741,
+    "upTo": "s276",
+    "on": "2026-10-20"
+  },
+  "CS6-PER": {
+    "earned": 3,
+    "share": 0.9826,
+    "upTo": "s276",
+    "on": "2026-10-20"
   }
 };
 /* ==== END BOOK ==== */
@@ -18538,7 +18615,7 @@ const REWARD={
      engine's latestCogs: RM 580 at RM 58) of margin on their own buying and resale, counted once an order is PAID IN FULL, over the
      opening stated in REWARD_OPEN (the engine's rewardWalk); margin and r3Hurdle stay as history and as the count the openings were
      taken from. A customer's figure stays as it stands and is never redeemed. */
-  stated:{salt:{margin:500, associate:{margin:470, r3Hurdle:1.2, times:10}}}
+  stated:{salt:{margin:500, associate:{margin:470, r3Hurdle:1.2, times:10, since:'2026-10-20'}}}
 };
 /* ============ THE REWARD, v616 FOR ASSOCIATES AND v618 FOR CUSTOMERS ============
      what counts   every priced order on the party's own code and -R account, R1 and R2 together because

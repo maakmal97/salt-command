@@ -29188,6 +29188,9 @@ await (async () => {
   ok(okrCost > 0.009 && Math.abs((pool("CC9-OKR") - okrWas) - okrCost) < 0.011,
     "and a LIVE gift charges its cost: dropping s176 gives CC9-OKR back RM" + (pool("CC9-OKR") - okrWas).toFixed(2)
     + ", which is s176's own RM" + okrCost);
+  /* 20 Oct 2026: from the switch an associate's figure is the walk's, which reads no row the opening read; the gift rule of the
+     count the openings were taken from is measured with the switch off (the walk's own gift charge is the associate reward's P1) */
+  w.eval("delete REWARD.stated.salt.associate.since;recompute();");
   const wmWas = net("CN3-WM"), wmCost = costOf(["s031", "s056"]);
   drop(["s031", "s056"]);
   ok(wmCost > 0.009 && Math.abs((net("CN3-WM") - wmWas) - wmCost) < 0.011,
@@ -50061,6 +50064,11 @@ await (async () => {
 section("Associate reward: the walk steps with landed cost, counts paid orders, and opens on stated positions (P1, 20 Oct 2026)");
 await (async () => {
   await (await import("./assoc-reward-walk.mjs")).run({ ok });
+})();
+
+section("Associate reward: each associate opens on a stated position at the switch, so nothing they hold or see moves (P2, 20 Oct 2026)");
+await (async () => {
+  await (await import("./assoc-reward-open.mjs")).run({ ok });
 })();
 
 section("Salt Admin: the claim card reads its rows on opening, draws the slip from the one unlock, and asks on a sheet");
