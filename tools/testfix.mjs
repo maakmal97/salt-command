@@ -188,7 +188,10 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
   /* COLLECTED and paid in cash: complete */
   O.push(order(oid(9, "05"), list, T(9), { product: "salt", qty: 1, mode: "collect" }, [
     [T(9, 20), "desk", { status: "acknowledged" }], [T(8), "desk", READY_AT()],
-    [T(8, 30), "desk", { handover: { units: 1 } }], [T(8, 31), "desk", { cash: { amount: 110 } }]]));
+    [T(8, 30), "desk", { handover: { units: 1 } }], [T(8, 31), "desk", { cash: { amount: 110 } }],
+    [T(8, 40), "desk", { mark: { rwd: "given" } }]]));   /* 20 Oct 2026: and it took them over the next reward, the unit given with it */
+  /* 20 OCT 2026: CONFIRMED AND STILL TO PAY, an order that brings the associate over to the next reward, his Accept's word on it */
+  O.push(order(oid(1, "48"), list, T(1, 35), { product: "salt", qty: 1, mode: "collect" }, [[T(1, 38), "desk", { status: "acknowledged", rwd: "cross" }]]));
   /* DELIVERED and paid by a transfer he received: complete */
   O.push(order(oid(12, "06"), list, T(12), { product: "candy", qty: 4, mode: "deliver", place: "Taman Rekaan" }, [
     [T(12, 20), "desk", { status: "acknowledged", delivery: 3 }], [T(11), "customer", pay("transfer")],
@@ -448,6 +451,9 @@ export const FEATURES = [
   ["To pay now over more than three lines, Home showing three and the rest under N more (Phase 7a, 11 Oct 2026)", (f) => !!f.live && invoiceLines(f) > 3],
   ["due at Ready", (f) => has(f, (o) => o.status === "ready" && +o.total + (+o.delivery || 0) - (+o.paid || 0) > 0.004)],
   ["paid in advance, the desk's verdict at Accept (V5b2a)", (f) => has(f, (o) => o.prepay === true)],
+  ["an order that brings an associate over to the next reward (20 Oct 2026)", (f) => has(f, (o) => o.rwd === "cross" && o.status === "acknowledged"
+    && !(+o.moved > 0) && (+o.total || 0) + (+o.delivery || 0) - (+o.paid || 0) > 0.004)],
+  ["a reward unit on an order's delivery (20 Oct 2026)", (f) => has(f, (o) => o.rwd === "given" && (o.product || "salt") === "salt")],
   ["the ceiling sealed with the list, for the sheet's forecast (V5b2b)", (f) => typeof f.prices.ceiling === "number"],
   ["a claim on an order waiting on him", (f) => has(f, (o) => (o.payments || []).some((p) => p.claim === "waiting"))],
   ["a claim against the account waiting on him", (f) => f.claims.some((c) => c.state === "waiting")],

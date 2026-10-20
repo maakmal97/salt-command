@@ -790,6 +790,8 @@ export const EN = {
   "ow.confirmed": "Confirmed on **{d}**, and being prepared.",
   "ow.payNow": "Please make your payment now.",
   "ow.payNowCredit": "Please pay now if you can.",
+  /* 20 Oct 2026: the associate reward, said with no figure */
+  "ow.rwdCross": "This order brings you over to the next reward. Pay now to receive them together with your reward.",
   "ow.closed": "Closed at {a} of the {b} ordered, {rm} for the goods.",
   "pw.WithYou": "The goods are with you",
   "pw.Part": "Part of the goods is with you",
@@ -802,6 +804,8 @@ export const EN = {
   "pw.Prepay": "Before we hand it over",
   "om.to": "To {p}",
   "om.goods": "Goods",
+  "om.rwd": "Reward \u00b7 1 unit",
+  "om.rwdFree": "No charge",
   "om.handed": "{a} handed over of the {b} ordered",
   "om.placedAt": "Set when we confirmed it. You placed it at {rm}",
   "om.set": "Set when we confirm the order",

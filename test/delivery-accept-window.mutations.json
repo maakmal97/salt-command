@@ -16,7 +16,7 @@
  {"name": "a window outside the hours is dropped", "file": "stmt/orders.js", "find": "k = t.error ? slotTake(body.slot, null, now) : t;", "replace": "k = t;"},
  {"name": "a past window rides through", "file": "stmt/orders.js", "find": "  return k.error ? b : Object.assign(b, { slot: k.slot, slotSpan: k.span });", "replace": "  return k.error ? body : Object.assign(b, { slot: k.slot, slotSpan: k.span });"},
  {"name": "the banner does not ask", "file": "stmt/words.js", "find": "\"Please pay now if you can. Payment is due when it is ready", "replace": "\"Payment is due when it is ready"},
- {"name": "the page asks the wrong way", "file": "stmt/page.js", "find": "put(o.prepay?'ow.payNow':'ow.payNowCredit'); }", "replace": "put(o.prepay?'ow.payNowCredit':'ow.payNow'); }"},
+ {"name": "the page asks the wrong way", "file": "stmt/page.js", "find": "put(o.prepay?'ow.payNow':'ow.payNowCredit');", "replace": "put(o.prepay?'ow.payNowCredit':'ow.payNow');"},
  {"name": "the page asks a placed order", "file": "stmt/page.js", "find": "    if(s==='acknowledged'&&!(mv>0)&&(+o.total||0)", "replace": "    if(!(mv>0)&&(+o.total||0)"},
  {"name": "the page asks a paid order", "file": "stmt/page.js", "find": "(+o.delivery||0)-paid-oClaimed(o)>0.004){", "replace": "(+o.delivery||0)-oClaimed(o)>0.004){"},
  {"name": "Admin offers no window as theirs", "file": "stmt/owner.js", "find": "var own=order.slot&&order.slotSpan?'Theirs, '", "replace": "var own=false?'Theirs, '"},

@@ -1,0 +1,8 @@
+[
+ {"name":"the crossing goes unsaid","file":"stmt/page.js","find":"      if(o.rwd==='cross'){ p.appendChild(document.createTextNode(' ')); put('ow.rwdCross'); } }","replace":"      }"},
+ {"name":"the crossing is said without the word","file":"stmt/page.js","find":"      if(o.rwd==='cross'){ p.appendChild(document.createTextNode(' ')); put('ow.rwdCross'); } }","replace":"      if(o.rwd!=='given'){ p.appendChild(document.createTextNode(' ')); put('ow.rwdCross'); } }"},
+ {"name":"the unit's line is not drawn","file":"stmt/page.js","find":"    if(o.rwd==='given'){ var rwr=","replace":"    if(false){ var rwr="},
+ {"name":"the unit's line on every order","file":"stmt/page.js","find":"    if(o.rwd==='given'){ var rwr=","replace":"    if(o.rwd!=='cross'){ var rwr="},
+ {"name":"the unit's line has no mark","file":"stmt/page.js","find":"rwl.insertBefore(markLead(o.product,16),rwl.firstChild); ","replace":""},
+ {"name":"the unit's line names an amount","file":"stmt/words.js","find":"  \"om.rwdFree\": \"No charge\",","replace":"  \"om.rwdFree\": \"RM 0.00\","}
+]

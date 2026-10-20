@@ -5356,7 +5356,9 @@ const CLIENT_JS = `
     else if(s==='ready') put(d?'ow.readyDeliver':'ow.readyCollect',{d:Dd(oDay,firstAt(o,'ready'))});
     else put('ow.confirmed',{d:Dd(oDay,firstAt(o,'acknowledged'))});
     /* 10 Oct 2026 (his Q4): his Accept reminds them to pay now, in words only; every term stands */
-    if(s==='acknowledged'&&!(mv>0)&&(+o.total||0)+(+o.delivery||0)-paid-oClaimed(o)>0.004){ p.appendChild(document.createTextNode(' ')); put(o.prepay?'ow.payNow':'ow.payNowCredit'); }
+    if(s==='acknowledged'&&!(mv>0)&&(+o.total||0)+(+o.delivery||0)-paid-oClaimed(o)>0.004){ p.appendChild(document.createTextNode(' ')); put(o.prepay?'ow.payNow':'ow.payNowCredit');
+      /* 20 Oct 2026: an order that takes them over to their next reward says so while it is still to pay, with no figure */
+      if(o.rwd==='cross'){ p.appendChild(document.createTextNode(' ')); put('ow.rwdCross'); } }
     /* 29 Sep 2026: the day they asked for, while it is still to come to them */
     if(o.wantBy&&!(mv>0)&&OPEN_ST.indexOf(s)>=0){ p.appendChild(document.createTextNode(' ')); put('ow.wantBy',{d:function(L){ return esch(ymdDay(o.wantBy,L)); }}); }
     /* 10 Oct 2026: the time asked for, while the goods are still to go */
@@ -5404,6 +5406,8 @@ const CLIENT_JS = `
     L.appendChild(lrow(tw('om.goods'),rm(o.total),o.closed&&o.closed.qty?tw('om.handed',{a:Uq(o.qty,oUnit(o)), b:o.closed.qty})
       :typeof o.asked==='number'&&Math.abs(o.asked-(+o.total||0))>0.004?tw('om.placedAt',{rm:rm(o.asked)}):''));
     if(d) L.appendChild(o.status==='placed'?lrow(tw('sh.delivery'),'',o.place?tw('om.setToP',{p:o.place}):tw('om.set')):lrow(tw('sh.delivery'),rm(o.delivery||0),where));
+    /* 20 Oct 2026: the reward unit that comes with this order: its mark, one unit, no charge, and no amount */
+    if(o.rwd==='given'){ var rwr=lrow(tw('om.rwd'),tw('om.rwdFree')), rwl=rwr.querySelector('.salt-ledger__label'); rwl.insertBefore(markLead(o.product,16),rwl.firstChild); rwr.classList.add('orwd'); L.appendChild(rwr); }
     /* Counter Batch A: each payment we have, with its way and its day, where they add up to what is paid; else one line */
     var conf=(o.payments||[]).filter(function(x){ return x&&(!x.claim||x.claim==='received')&&+x.amount>0; }),
         csum=conf.reduce(function(s,x){ return s+(+x.amount); },0);
