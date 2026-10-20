@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1190",
+  "d": "20 Oct 2026",
+  "t": "SALT COUNT OF 0 UNIT ON 20 OCT REPLACES THE BOOK FIGURE OF 12.89",
+  "n": [
+   "<b>ONE SALT COUNT FOLDED.</b> The count on 20 Oct found 0 unit on hand against 12.89 on the book, a difference of -12.89. The count wins, so the stated salt inventory is set to 0 and the salt count date moves from 3 Oct to 20 Oct. The drafter flagged that 1.5 unit is owed out and already paid for, so those orders cannot be met until a lot lands.",
+   "<b>INVENTORY AND FLOORS.</b> The stated stock falls from 12.89 to 0. The floors and the ask do not move: floor 1 stays RM60, floor 2 RM120 and ask 1 RM120. Only the self-use figure moves, from 88.45 to 101.34. No lot landed, so the cost basis stays."
+  ]
+ },
+ {
   "v": "v1189",
   "d": "20 Oct 2026",
   "t": "ONE UNIT OF SALT SOLD TO CM4-TO-R ABOVE THE ASK, PAID AND DELIVERED",
