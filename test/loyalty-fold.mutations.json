@@ -1,0 +1,18 @@
+[
+ { "name": "the unit booked as revenue at cost", "file": "engine/apply.mjs", "find": "qty: 1, total: 0, cost, cash: 0, goodwill: true, deliveredQty: 0, date: day, rewardOf: cr.rid, auto: true, loyal: true,", "replace": "qty: 1, total: cost, cost, cash: 0, goodwill: true, deliveredQty: 0, date: day, rewardOf: cr.rid, auto: true, loyal: true,"},
+ { "name": "the unit not a gift", "file": "engine/apply.mjs", "find": "qty: 1, total: 0, cost, cash: 0, goodwill: true, deliveredQty: 0, date: day, rewardOf: cr.rid, auto: true, loyal: true,", "replace": "qty: 1, total: 0, cost, cash: 0, goodwill: false, deliveredQty: 0, date: day, rewardOf: cr.rid, auto: true, loyal: true,"},
+ { "name": "the unit costed at the shelf's average", "file": "engine/apply.mjs", "find": "rate = lc && lc.rate > 0 ? +lc.rate : c.stockCost;", "replace": "rate = c.stockCost;"},
+ { "name": "a re-run raises again", "file": "engine/apply.mjs", "find": "    if (had >= seen[cr.rid]) continue;", "replace": "    if (false) continue;"},
+ { "name": "a cancelled loyal row is raised again", "file": "engine/apply.mjs", "find": "const had = book.sales.filter((s) => mine(s) && s.rewardOf === cr.rid).length;", "replace": "const had = book.sales.filter((s) => mine(s) && !s.cancelled && s.rewardOf === cr.rid).length;"},
+ { "name": "the loyal due counts the associate's rows", "file": "engine/apply.mjs", "find": "const mine = (s) => !!(s && s.rewardOf && s.loyal && E.ownerCode(s.customer) === code);", "replace": "const mine = (s) => !!(s && s.rewardOf && E.ownerCode(s.customer) === code);"},
+ { "name": "the associate's due counts loyal rows", "file": "engine/apply.mjs", "find": "const mine = (s) => !!(s && s.rewardOf && !s.loyal && E.ownerCode(s.customer) === code);", "replace": "const mine = (s) => !!(s && s.rewardOf && E.ownerCode(s.customer) === code);"},
+ { "name": "a customer is sent down the associate's road", "file": "engine/apply.mjs", "find": "  if (!assoc || !E.rewardIsAssociate(eb.state, eb.sales, code)) { loyalFold(book, eb, code, day, touched, c, unitMoves); return; }\n", "replace": ""},
+ { "name": "a loyal row charged against their reward", "file": "engine/position.mjs", "find": "    if(s.loyal)return;   /* 21 Oct 2026: the loyalty unit is its own gift, never charged against a reward */\n", "replace": ""},
+ { "name": "a loyal row read as a spend", "file": "engine/position.mjs", "find": "if(!row||row.loyal)return null;", "replace": "if(!row)return null;"},
+ { "name": "the loyal unit neither delivered nor flagged", "file": "engine/apply.mjs", "find": "  rewardFollow(book, code, walk.crossings, mine, touched, day, c, unitMoves, \"loyalty\");\n", "replace": ""},
+ { "name": "the unit not handed over", "file": "engine/apply.mjs", "find": "      s.deliveredQty = 1; s.deliveredOn = day;", "replace": "      s.deliveredOn = day;"},
+ { "name": "nothing flagged STALE", "file": "engine/apply.mjs", "find": "    if (held[s.rewardOf] > (per[s.rewardOf] || 0))", "replace": "    if (false)"},
+ { "name": "a departed customer gets one", "file": "engine/apply.mjs", "find": "  if (((book.PEOPLE || {}).departed || []).some((p) => p && p.id === code)) return;\n  const walk = E.loyaltyWalk", "replace": "  const walk = E.loyaltyWalk"},
+ { "name": "the fold's walk reads the default terms", "file": "engine/apply.mjs", "find": "...(scheme.terms ? { TERMS: scheme.terms } : {})", "replace": ""},
+ { "name": "one loyalty unit an order at most", "file": "engine/apply.mjs", "find": "    seen[cr.rid] = 1 + (seen[cr.rid] || 0);", "replace": "    seen[cr.rid] = 1;"}
+]

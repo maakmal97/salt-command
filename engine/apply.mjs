@@ -881,14 +881,20 @@ function stockCostOf(book) {
    - when this entry hands salt over to them, each reward row waiting whose own order is now handed over in full goes with it
      (deliveredQty 1, its day and handover), and its unit leaves the shelf through unitMoves, which applyEntry adds to the roll: a
      reward raised after its order went out rides on their next salt handover (Ask 4). */
-function rewardEngineBook(book, scheme) { return { sales: book.sales || [], purchases: book.purchases || [], state: { ...book, REWARD: scheme } }; }
+/* THE LOYALTY UNIT, RAISED BY THE SAME FOLD (his rule of 20 Oct 2026, docs/plan-loyalty-unit.html). For a customer the walk is the engine's
+   loyaltyWalk, a unit at every 20 salt units bought at or above their price, and the unit is a GIFT (goodwill, total nought, no rebate), so
+   no reader takes it for a redemption against what they hold, and it is an expense at the crossing day's landed cost, as a gift is. The
+   due, the hand-cancelled row, the STALE flag and the delivery with the order are the associate's, on rows marked loyal: each count reads
+   its own rows (rewardOf and loyal, or rewardOf and not), so neither due reads the other's. A departed customer gets none until they return. */
+function rewardEngineBook(book, scheme) { return { sales: book.sales || [], purchases: book.purchases || [], state: { ...book, REWARD: scheme, ...(scheme.terms ? { TERMS: scheme.terms } : {}) } }; }
 function rewardFold(book, it, c, unitMoves) {
   const scheme = c.reward;
-  if (!scheme || !book.REWARD_OPEN) return;
+  if (!scheme) return;
   const eb = rewardEngineBook(book, scheme);
-  if (!E.rewardScheme(eb)) return;
+  const assoc = !!book.REWARD_OPEN && !!E.rewardScheme(eb);
+  if (!assoc && !E.loyalScheme(eb)) return;
   const day = (it.pay && it.pay.date) || (c.appended && c.appended.date) || (c.src && c.src.row && c.src.row.date) || c.today || null;
-  for (const code of [...new Set((book.roster || []).filter((x) => typeof x === "string" && !E.isBucket(x)))]) {
+  if (assoc) for (const code of [...new Set((book.roster || []).filter((x) => typeof x === "string" && !E.isBucket(x)))]) {
     if (book.REWARD_OPEN[code] || !E.rewardAccount(eb, code, "salt", { old: true }).associate) continue;
     const o = E.rewardOpening(eb, code, day);
     if (o.error) continue;
@@ -897,7 +903,9 @@ function rewardFold(book, it, c, unitMoves) {
   }
   const touched = it.target && it.dir !== "BUY" ? it.target : it.append === "sales" ? c.appended : null;
   if (!touched || prodOf(touched) !== "salt") return;
-  const code = E.ownerCode(touched.customer), acc = E.rewardAccount(eb, code);
+  const code = E.ownerCode(touched.customer);
+  if (!assoc || !E.rewardIsAssociate(eb.state, eb.sales, code)) { loyalFold(book, eb, code, day, touched, c, unitMoves); return; }
+  const acc = E.rewardAccount(eb, code);
   if (acc.error || !acc.associate) return;
   const walk = E.rewardWalk(eb, code);
   if (!walk || walk.error) return;
@@ -914,14 +922,39 @@ function rewardFold(book, it, c, unitMoves) {
     book.sales.push(row);
     c.moves.push(`reward unit: ${row.rid}, 1 unit to ${code} at RM ${cost}, for ${cr.rid}`);
   }
-  /* a live reward row past what the walk earns on its order is flagged, per order */
+  rewardFollow(book, code, walk.crossings, mine, touched, day, c, unitMoves, "reward");
+}
+function loyalFold(book, eb, code, day, touched, c, unitMoves) {
+  if (((book.PEOPLE || {}).departed || []).some((p) => p && p.id === code)) return;
+  const walk = E.loyaltyWalk(eb, code, c.today || day || undefined);
+  if (!walk || !walk.walks) return;
+  const mine = (s) => !!(s && s.rewardOf && s.loyal && E.ownerCode(s.customer) === code);
+  const lots = (book.purchases || []).filter((p) => prodOf(p) === "salt"), seen = {};
+  for (const cr of walk.crossings) {
+    seen[cr.rid] = 1 + (seen[cr.rid] || 0);
+    const had = book.sales.filter((s) => mine(s) && s.rewardOf === cr.rid).length;   /* cancelled ones included */
+    if (had >= seen[cr.rid]) continue;
+    const lc = E.latestCogs(lots, cr.day), rate = lc && lc.rate > 0 ? +lc.rate : c.stockCost;
+    if (!(rate > 0)) { c.moves.push(`loyalty unit for ${cr.rid} not raised: no landed cost of salt on ${cr.day}`); continue; }
+    const cost = +(+rate).toFixed(2);
+    const row = { customer: code, product: "salt", qty: 1, total: 0, cost, cash: 0, goodwill: true, deliveredQty: 0, date: day, rewardOf: cr.rid, auto: true, loyal: true,
+      note: `<b>LOYALTY UNIT: 1 UNIT OF SALT TO ${code} AT COST, NO CHARGE.</b> Their salt bought at or above their own price, paid in full, reached ${walk.every} units with ${cr.rid} on ${cr.day}. Raised by the fold at RM ${cost}, the landed cost that day, as a gift, so it is cost and not revenue; it goes with ${cr.rid}'s delivery, or with their next salt order where that has gone.` };
+    row.rid = c.nextRid(book.sales, "s")(1);
+    book.sales.push(row);
+    c.moves.push(`loyalty unit: ${row.rid}, 1 unit to ${code} at RM ${cost}, for ${cr.rid}`);
+  }
+  rewardFollow(book, code, walk.crossings, mine, touched, day, c, unitMoves, "loyalty");
+}
+/* what both units share once raised: a live row past what its walk earns on its order is flagged STALE, per order, never withdrawn; and the
+   handover that takes salt to them delivers each unit waiting whose own order is handed over in full, its unit off the shelf through unitMoves */
+function rewardFollow(book, code, crossings, mine, touched, day, c, unitMoves, what) {
   const live = book.sales.filter((s) => mine(s) && !s.cancelled), per = {};
-  for (const x of walk.crossings) per[x.rid] = (per[x.rid] || 0) + 1;
+  for (const x of crossings) per[x.rid] = (per[x.rid] || 0) + 1;
   const held = {};
   for (const s of live) {
     held[s.rewardOf] = (held[s.rewardOf] || 0) + 1;
     if (held[s.rewardOf] > (per[s.rewardOf] || 0))
-      c.moves.push(`STALE reward on ${s.rid}: the walk no longer earns it (its payment was undone); remove the row in ledger/book.json, never cancel it`);
+      c.moves.push(`STALE ${what} on ${s.rid}: the walk no longer earns it (its payment was undone); remove the row in ledger/book.json, never cancel it`);
   }
   if ((c.entryMoves || []).some((m) => m && m.product === "salt" && +m.kg < 0 && E.ownerCode(m.who) === code))
     for (const s of book.sales.filter((x) => mine(x) && !x.cancelled && !(+x.deliveredQty > 0.009))) {
@@ -930,7 +963,7 @@ function rewardFold(book, it, c, unitMoves) {
       s.deliveredQty = 1; s.deliveredOn = day;
       if (touched.handover) s.handover = touched.handover;
       unitMoves.push({ product: "salt", kg: -1, who: code, when: day });
-      c.moves.push(`reward unit ${s.rid} handed over to ${code} with ${touched.rid || "this order"}`);
+      c.moves.push(`${what} unit ${s.rid} handed over to ${code} with ${touched.rid || "this order"}`);
     }
 }
 /* ONE PLANNED ITEM BOOKED INTO THE BOOK: the body of the fold's loop, shared by applyInto (a batch) and applyEntry (one entry). c = { src, n, notes, stockCost, nextRid, moves, renames }:

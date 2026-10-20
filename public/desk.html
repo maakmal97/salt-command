@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="1a23472de22ccf72";
+var SALT_BUILD_ID="33afaeb20e19500a";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -5869,6 +5869,7 @@ function stockCountEntry({at,product,date,qty}){
 function rewardMargin({id,refs=[],sales=[],averageCost=0}){
   const mine={margin:0,n:0},intro={margin:0,n:0};
   sales.forEach(s=>{
+    if(s.loyal)return;   /* 21 Oct 2026: the loyalty unit is its own gift, never charged against a reward */
     const st=txStat(s).order;
     if(st==='Default'||st==='Pending'||st==='Cancelled'||s.cancelled)return;
     const owner=ownerCode(s.customer),part=owner===id?mine:refs.includes(owner)?intro:null;
@@ -6112,7 +6113,7 @@ function rewardReservation(entry,book){
     return {party:ownerCode(p.party),product:p.product||'salt',units:+p.more.coverUnits};
   if(p.mode==='amend'&&p.kind==='Correction'&&p.direction!=='BUY'&&p.fields){
     const row=(book.sales||[]).find(s=>p.rid?s.rid===p.rid:ovKey(s)===p.orderKey);
-    if(!row)return null;
+    if(!row||row.loyal)return null;   /* 21 Oct 2026: a loyalty unit is never read as a spend */
     const f=p.fields;
     const attribution=attributionOf(row);
     const terms={party:attribution.stream==='R2'?(attribution.downstream||null):row.customer,

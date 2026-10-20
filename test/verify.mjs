@@ -50122,6 +50122,11 @@ await (async () => {
   await (await import("./loyalty-walk.mjs")).run({ ok });
 })();
 
+section("Loyalty unit: the fold raises the unit as a gift at cost and hands it over with its order (P2, 21 Oct 2026)");
+await (async () => {
+  await (await import("./loyalty-fold.mjs")).run({ ok });
+})();
+
 section("Salt Admin A to C: Order again's tag, kept by Place for a done and paid order of theirs and shown on his row and band (20 Oct 2026)");
 await (async () => {
   await (await import("./admin-ac-again.mjs")).run({ ok, pageWork });

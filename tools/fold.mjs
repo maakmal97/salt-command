@@ -73,7 +73,7 @@ const FOLDED = opt("--folded", resolve(dirname(MASTER), "_folded.json"));
    extract beside the book (tools/ledger.mjs writes it from the master). Unreadable, there is no scheme and a spend is refused. */
 const EXTRACT = opt("--ledger", resolve(dirname(BOOK), "ledger.json"));
 function rewardScheme() {
-  try { const r = (JSON.parse(readFileSync(EXTRACT, "utf8")).ledger || {}).REWARD; return r && r.stated ? { stated: r.stated } : null; }
+  try { const l = JSON.parse(readFileSync(EXTRACT, "utf8")).ledger || {}, r = l.REWARD; return r && r.stated ? { stated: r.stated, ...(l.TERMS ? { terms: l.TERMS } : {}) } : null; }
   catch { return null; }
 }
 /* 20 Oct 2026: and the pricing snapshot the drafter read, so a restated row takes their own price again (engine/apply.mjs) */
