@@ -1,0 +1,117 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-10-20T15:57:26.957Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "qty": 6.25,
+    "total": 500,
+    "cash": 400,
+    "date": "2026-10-09",
+    "customer": "CJ4-BJ"
+   },
+   "reasoning": "Fulfilment against CJ4-BJ's order of 6.25 unit for RM 500 agreed 2026-10-09. RM 100 and 0 unit move on 2026-10-20, against RM 100 and 0 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "s244",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-10-20T15:57:26.957Z",
+    "type": "AMEND",
+    "party": "CJ4-BJ",
+    "qty": 0,
+    "total": 100,
+    "status": "partial",
+    "raw": "Fulfilment against s244 for CJ4-BJ on 2026-10-20",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CJ4-BJ",
+     "product": "salt",
+     "rid": "s244",
+     "orderKey": "CJ4-BJ|2026-10-09|500",
+     "date": "2026-10-20",
+     "kind": "Fulfilment",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 0,
+     "total": 100,
+     "cash": 100,
+     "kg": 0
+    },
+    "makerRequest": "404d90d96f277a6280242551d2677e78df112396d661819fbac10dde0de4df8b"
+   },
+   "decidedAt": "2026-10-20T15:58:20.461Z",
+   "decidedBy": "Counter Admin"
+  },
+  {
+   "id": "2026-10-20T15:58:08.737Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CJ4-BJ",
+    "qty": 10,
+    "total": 60,
+    "cost": 34,
+    "cash": 60,
+    "handover": "collected",
+    "product": "rice",
+    "date": "2026-10-20",
+    "deliveredQty": 10,
+    "deliveredOn": "2026-10-20",
+    "paidOn": "2026-10-20"
+   },
+   "reasoning": "Sold 10 unit of rice to CJ4-BJ for RM 60, RM 6/unit. Costed at RM 3.4/unit from COGS off the latest purchase p028 landed 2026-09-21: RM 320 quote plus RM 20 freight over 100 unit, so RM 26 on the goods at 43.3%. Paid in full and delivered in full on 2026-10-20. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CJ4-BJ has no committed rice order on the book, so there is no rate of theirs to compare this against."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-20T15:58:08.737Z",
+    "type": "SELL",
+    "party": "CJ4-BJ",
+    "qty": 10,
+    "total": 60,
+    "status": "paid",
+    "raw": "Sell 10 unit rice to CJ4-BJ for RM60 on 2026-10-20, collected, RM60 cash, 10 unit moved → Completed",
+    "payload": {
+     "mode": "new",
+     "product": "rice",
+     "direction": "SELL",
+     "party": "CJ4-BJ",
+     "newId": null,
+     "date": "2026-10-20",
+     "qty": 10,
+     "total": 60,
+     "delivery": 0,
+     "freight": 0,
+     "cash": 60,
+     "kg": 10,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "collected",
+     "second": null,
+     "more": null,
+     "coverFree": null
+    },
+    "makerRequest": "d4812c24f96545cd10ff835dd13f125bb72db9aeca5c379ed50440cd3a6f7001"
+   },
+   "decidedAt": "2026-10-20T15:58:23.323Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
