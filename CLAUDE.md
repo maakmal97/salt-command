@@ -374,6 +374,8 @@ gitignored; lose its key and every account is re-issued. `stmt/page.js` `CLIENT_
 and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lone backslash, use
 `[+]` and `[/]`, and no backtick, even in a comment. Mechanism for everything below: `docs/STATEMENTS.md`.
 
+- **A change to the statements Worker covers Salt Counter and Salt Admin together** (his word of 20 Oct 2026): every
+  batch maps each item onto `stmt/owner.js` too, its look and his side of the feature, or says why it has none.
 - **The site address is never in the public desk.** No address, no QR drawn.
 - **No brand on the customer's page, and no product word either.** Nothing under `stmt/` names
   Salt Command. A product is a mark (`PSYM`) carrying a letter of his (`PLET`) in every mark, 20 px and
