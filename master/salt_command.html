@@ -8389,6 +8389,8 @@ const opening={
   "qty": 4.9,
   "costPerKg": 64
 };
+/* COUNTED AT v1191 on 2026-10-20: the oil inventory held 40 against 45 on the roll, a difference of -5. A COUNT AND NOT A ROLL, so COUNT_ON.oil moves to 2026-10-20. <b>COUNT OF OIL ON 20 OCT: 40 UNIT AGAINST 45 ON THE BOOK.</b> Counted by hand at 40 unit, so the book was over by 5. The gap sits in oil only, and the dossier gives no reason for it. The drafter flagged -5 unit unaccounted for, and that the count always wins, so it becomes the inventory and the gap books as shrinkage across every unit sold. The figures confirm the gap but do not explain it. The stated oil inventory is set to 40 and the oil count date moves to 20 Oct. Floors stay at floor1 10, floor2 20, floor125 100 and ask1 10. Self-use moves from 149 to 154. No party is involved and the row carries no cost. Nothing is left outstanding. */
+/* COUNTED AT v1191 on 2026-10-20: the candy inventory held 6 against 3 on the roll, a difference of 3. A COUNT AND NOT A ROLL, so COUNT_ON.candy moves to 2026-10-20. <b>COUNT OF CANDY ON 20 OCT: 6 UNIT AGAINST 3 ON THE BOOK.</b> Counted by hand at 6 unit, so the book was short by 3. The gap sits in candy only, and the dossier gives no reason for it. The drafter flagged +3 unit unaccounted for, and that the count always wins, so it becomes the inventory and the gap books as shrinkage across every unit sold. The figures confirm the gap but do not explain it. The stated candy inventory is set to 6 and the candy count date moves to 20 Oct. Floors stay at floor1 45, floor2 85, floor125 525 and ask1 60. Self-use moves from 6 to 3. No party is involved and the row carries no cost. Nothing is left outstanding. */
 /* ROLLED AT v1183 (candy): 3 unit to CM4-TO-R on 2026-10-19, so 6 less 3 is 3. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* COUNTED AT v1181 on 2026-10-20: the rice inventory held 15 against 24 on the roll, a difference of -9. A COUNT AND NOT A ROLL, so COUNT_ON.rice moves to 2026-10-20. <b>COUNT OF RICE ON 20 OCT: 15 UNIT AGAINST 24 ON THE BOOK.</b> The gap is -9 unit, the largest of the three. The previous count was on 6 Oct, per the drafter. Decided by Counter Admin. No money moves and the row carries no cost. The drafter flagged the -9 as unaccounted for, and the figures do not explain it: the dossier gives no cause, only that the count wins and the gap books as shrinkage. The stated rice inventory is set to 15 and COUNT_ON for rice moves to 20 Oct 2026. The floors stay at floor1 5, floor2 10, floor125 45 and ask1 8. Self-use moves from 17 to 26. Nothing is left outstanding. */
 /* COUNTED AT v1181 on 2026-10-20: the candy inventory held 6 against 11 on the roll, a difference of -5. A COUNT AND NOT A ROLL, so COUNT_ON.candy moves to 2026-10-20. <b>COUNT OF CANDY ON 20 OCT: 6 UNIT AGAINST 11 ON THE BOOK.</b> The gap is -5 unit. The previous count was on 6 Oct, per the drafter. Decided by Counter Admin. No money moves and the row carries no cost. The drafter flagged the -5 as unaccounted for, and the figures do not explain it: the dossier gives no cause, only that the count wins and the gap books as shrinkage. The stated candy inventory is set to 6 and COUNT_ON for candy moves to 20 Oct 2026. The floors stay at floor1 45, floor2 85, floor125 525 and ask1 60. Self-use moves from 1 to 6. Nothing is left outstanding. */
@@ -8445,12 +8447,12 @@ const PROD_OPENING={
   "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 45
+    "stated": 40
   },
   "candy": {
     "qty": 0,
     "costPerKg": null,
-    "stated": 3
+    "stated": 6
   },
   "rice": {
     "qty": 0,
@@ -8637,7 +8639,9 @@ const COUNTS=[
   {"product":"oil","date":"2026-10-20","qty":45,"was":50,"drift":-5},
   {"product":"candy","date":"2026-10-20","qty":6,"was":11,"drift":-5},
   {"product":"rice","date":"2026-10-20","qty":15,"was":24,"drift":-9},
-  {"product":"salt","date":"2026-10-20","qty":0,"was":12.89,"drift":-12.89}
+  {"product":"salt","date":"2026-10-20","qty":0,"was":12.89,"drift":-12.89},
+  {"product":"candy","date":"2026-10-20","qty":6,"was":3,"drift":3},
+  {"product":"oil","date":"2026-10-20","qty":40,"was":45,"drift":-5}
 ];
 const purchases=[
   {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -9384,7 +9388,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-10-20T14:38:55.581Z";
+const QUEUE_COMMITTED="2026-10-20T14:42:01.620Z";
 /* <b>BOARD SIZES CHANGED ON 19 OCT: SALT, 3.5 AND 4.5 UNIT HIDDEN.</b> Counter Admin decided this at 15:38. The entry reads "Board sizes on salt: hiding 3.5 unit, 4.5 unit" and sets 0 prices, so no rate is set against the desk's floor or ask and no party is involved. The board's own price remains the ask at every size. The drafter flagged that two sizes leave the board; that is exactly what the entry does, and both stay priceable at the counter and off a quote, they simply stop being printed. The row moves no stock, no cash and no ledger row, so it carries no cost and nothing is left outstanding. */
 /* RETIRED AT v656 on 2026-09-16, his decision of 15 Sep off the pricing workbook: the board is the ladder, so a stated price no longer decides it and oil's five are cleared rather than left unread. The stranger's ask on oil moves from his RM130, 240, 330, 400 and 450 to Bronze at RM230, 440, 650, 850 and 1,040, with 80 and 100 unit at RM1,640 and RM2,000. The old five sat a hair over break-even (the 50 unit tier read 0.93x, RM32.20 UNDER its floor) because they were typed in July against a cost that has moved since; the ladder is struck on today's COGS and moves with it. No customer's price moves with this: every named customer is quoted their own tier capped at what they pay, and a stranger has no history to cap against. The hide list is untouched and still takes a size off the board. */
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
@@ -10456,7 +10460,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1190","d":"20 Oct 2026","t":"SALT COUNT OF 0 UNIT ON 20 OCT REPLACES THE BOOK FIGURE OF 12.89","n":["<b>ONE SALT COUNT FOLDED.</b> The count on 20 Oct found 0 unit on hand against 12.89 on the book, a difference of -12.89. The count wins, so the stated salt inventory is set to 0 and the salt count date moves from 3 Oct to 20 Oct. The drafter flagged that 1.5 unit is owed out and already paid for, so those orders cannot be met until a lot lands.","<b>INVENTORY AND FLOORS.</b> The stated stock falls from 12.89 to 0. The floors and the ask do not move: floor 1 stays RM60, floor 2 RM120 and ask 1 RM120. Only the self-use figure moves, from 88.45 to 101.34. No lot landed, so the cost basis stays."]}];
+const evolution=[{"v":"v1191","d":"20 Oct 2026","t":"TWO STOCK COUNTS ON 20 OCT: CANDY UP BY 3, OIL DOWN BY 5","n":["<b>TWO COUNTS FOLDED.</b> Candy was counted at 6 unit against 3 on the book, a gain of 3. Oil was counted at 40 unit against 45 on the book, a loss of 5. Both counts are dated 20 Oct and both were decided by Counter Admin. No sale, purchase or party row moved.","<b>THE COUNT WINS.</b> Each count becomes the stated inventory for its product and moves its count date to 20 Oct. The dossier gives no reason for either gap, and none is offered here. Candy floors are unchanged, while the self-use figure moves for both products. Salt, rice and the cost basis are untouched."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -10604,7 +10608,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='20 Oct 2026, 22:39 KL';
+const LAST_UPDATED='20 Oct 2026, 22:43 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

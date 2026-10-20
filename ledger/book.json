@@ -69,12 +69,12 @@
     "oil": {
       "qty": 5,
       "costPerKg": 7.666666666666667,
-      "stated": 45
+      "stated": 40
     },
     "candy": {
       "qty": 0,
       "costPerKg": null,
-      "stated": 3
+      "stated": 6
     },
     "rice": {
       "qty": 0,
@@ -125,7 +125,9 @@
     {"product":"oil","date":"2026-10-20","qty":45,"was":50,"drift":-5},
     {"product":"candy","date":"2026-10-20","qty":6,"was":11,"drift":-5},
     {"product":"rice","date":"2026-10-20","qty":15,"was":24,"drift":-9},
-    {"product":"salt","date":"2026-10-20","qty":0,"was":12.89,"drift":-12.89}
+    {"product":"salt","date":"2026-10-20","qty":0,"was":12.89,"drift":-12.89},
+    {"product":"candy","date":"2026-10-20","qty":6,"was":3,"drift":3},
+    {"product":"oil","date":"2026-10-20","qty":40,"was":45,"drift":-5}
   ],
   "purchases": [
     {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -939,7 +941,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-10-20T14:38:55.581Z",
+  "QUEUE_COMMITTED": "2026-10-20T14:42:01.620Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -1137,6 +1139,8 @@
       "paidSplit: cash landed either side of the 28 Jul count; RM200 inside it, the rest after. Without the split the walk double-counted the RM200."
     ],
     "PROD_OPENING": [
+      "COUNTED AT v1191 on 2026-10-20: the oil inventory held 40 against 45 on the roll, a difference of -5. A COUNT AND NOT A ROLL, so COUNT_ON.oil moves to 2026-10-20. <b>COUNT OF OIL ON 20 OCT: 40 UNIT AGAINST 45 ON THE BOOK.</b> Counted by hand at 40 unit, so the book was over by 5. The gap sits in oil only, and the dossier gives no reason for it. The drafter flagged -5 unit unaccounted for, and that the count always wins, so it becomes the inventory and the gap books as shrinkage across every unit sold. The figures confirm the gap but do not explain it. The stated oil inventory is set to 40 and the oil count date moves to 20 Oct. Floors stay at floor1 10, floor2 20, floor125 100 and ask1 10. Self-use moves from 149 to 154. No party is involved and the row carries no cost. Nothing is left outstanding.",
+      "COUNTED AT v1191 on 2026-10-20: the candy inventory held 6 against 3 on the roll, a difference of 3. A COUNT AND NOT A ROLL, so COUNT_ON.candy moves to 2026-10-20. <b>COUNT OF CANDY ON 20 OCT: 6 UNIT AGAINST 3 ON THE BOOK.</b> Counted by hand at 6 unit, so the book was short by 3. The gap sits in candy only, and the dossier gives no reason for it. The drafter flagged +3 unit unaccounted for, and that the count always wins, so it becomes the inventory and the gap books as shrinkage across every unit sold. The figures confirm the gap but do not explain it. The stated candy inventory is set to 6 and the candy count date moves to 20 Oct. Floors stay at floor1 45, floor2 85, floor125 525 and ask1 60. Self-use moves from 6 to 3. No party is involved and the row carries no cost. Nothing is left outstanding.",
       "ROLLED AT v1183 (candy): 3 unit to CM4-TO-R on 2026-10-19, so 6 less 3 is 3. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "COUNTED AT v1181 on 2026-10-20: the rice inventory held 15 against 24 on the roll, a difference of -9. A COUNT AND NOT A ROLL, so COUNT_ON.rice moves to 2026-10-20. <b>COUNT OF RICE ON 20 OCT: 15 UNIT AGAINST 24 ON THE BOOK.</b> The gap is -9 unit, the largest of the three. The previous count was on 6 Oct, per the drafter. Decided by Counter Admin. No money moves and the row carries no cost. The drafter flagged the -9 as unaccounted for, and the figures do not explain it: the dossier gives no cause, only that the count wins and the gap books as shrinkage. The stated rice inventory is set to 15 and COUNT_ON for rice moves to 20 Oct 2026. The floors stay at floor1 5, floor2 10, floor125 45 and ask1 8. Self-use moves from 17 to 26. Nothing is left outstanding.",
       "COUNTED AT v1181 on 2026-10-20: the candy inventory held 6 against 11 on the roll, a difference of -5. A COUNT AND NOT A ROLL, so COUNT_ON.candy moves to 2026-10-20. <b>COUNT OF CANDY ON 20 OCT: 6 UNIT AGAINST 11 ON THE BOOK.</b> The gap is -5 unit. The previous count was on 6 Oct, per the drafter. Decided by Counter Admin. No money moves and the row carries no cost. The drafter flagged the -5 as unaccounted for, and the figures do not explain it: the dossier gives no cause, only that the count wins and the gap books as shrinkage. The stated candy inventory is set to 6 and COUNT_ON for candy moves to 20 Oct 2026. The floors stay at floor1 45, floor2 85, floor125 525 and ask1 60. Self-use moves from 1 to 6. Nothing is left outstanding.",
