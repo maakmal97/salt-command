@@ -6,6 +6,7 @@
  *      the goods are all handed over
  *   3  the receipt: each payment received with its way and its day where they add up to what is paid; Owed stands in the due row only while
  *      something is owed; Settled when nothing is
+ *   5  the Bill: headed Bill, Goods, Delivery cost, the Total of goods and delivery, then what is paid and owed
  *   4  Paid is the fourth of five steps: part paid it says how much of what, and it is done once settled, ahead of the goods if paid first
  * Drawn by the maker harness (test/maker-act.mjs). */
 import { richOwnerPage, byAct } from "./maker-act.mjs";
@@ -54,6 +55,12 @@ export async function run({ ok, pageWork }) {
     ok(!!due && /^Owed/.test(t(due)) && /RM 70/.test(t(due)) && t(A.querySelector(".ohead .oway")) === "Lirau · ASAP · +RM 10.00 delivery"
       && t(A.querySelector(".ohead .salt-band__head .salt-status")) === "To make ready",
       "something owed stands in the due row, and a delivery says where to and when, as the customer reads it: " + t(due) + " / " + t(A && A.querySelector(".oway")));
+    /* 5 (20 Oct 2026, canvas V21, V24): the Bill, headed so, Goods, Delivery cost, the Total, then what is paid and owed */
+    const bill = A.querySelector(".ordmoney"), labels = bill ? [...bill.querySelectorAll(":scope > .salt-ledger__row")].map((r) => t(r.querySelector(".salt-ledger__label"))) : [];
+    const totRow = bill && bill.querySelector("[data-total]");
+    ok(!!bill && t(bill.previousElementSibling) === "Bill" && bill.previousElementSibling.tagName === "H4"
+      && JSON.stringify(labels.map((l) => l.replace(/^(Paid|Goods).*/, "$1"))) === JSON.stringify(["Goods", "Delivery cost", "Total", "Paid", "Owed", "Handed"])
+      && /RM 110\.00/.test(t(totRow)), "the Bill: its heading, Goods, Delivery cost, the Total of goods and delivery, Paid, then Owed: " + JSON.stringify([labels, t(totRow)]));
     /* 4 (20 Oct 2026, canvas V17, V30): Paid is the fourth step; part paid it says how much of what, and done once nothing is owed */
     const paidOf = (c) => c && c.querySelector('.salt-steps [data-step="paid"]'), names = (c) => [...c.querySelectorAll(".salt-steps .salt-steps__name")].map((n) => t(n));
     const PA = paidOf(A);

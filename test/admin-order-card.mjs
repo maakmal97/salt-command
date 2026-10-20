@@ -372,8 +372,8 @@ export async function run({ ok, pageWork }) {
     const money = (c) => [...c.querySelectorAll("h4")].find((h) => h.textContent === "Money received");
     byAct(d, "nav.orders").click(); await p.work.quiet();
     await tapRow("ord-p1");
-    ok(/Goods RM 200\.00/.test(head("ord-p1")) && !/Owed/.test(head("ord-p1")) && !cardOf("ord-p1").querySelector(".rdet"),
-      "a placed order keeps Goods in its head, with no figure owed: " + head("ord-p1"));
+    ok(/^GoodsAt the list price RM 200\.00 Total RM 200\.00$/.test(head("ord-p1")) && !/Owed/.test(head("ord-p1")) && !cardOf("ord-p1").querySelector(".rdet"),
+      "a placed order's Bill is Goods at the list price and the Total, with no figure owed: " + head("ord-p1"));
     await part("ready"); await tapRow("ord-r1");
     const r1 = cardOf("ord-r1");
     ok(/Owed RM 60\.00/.test(head("ord-r1")) && /Paid RM 40\.00/.test(head("ord-r1")) && /Handed 0\.5 of 1/.test(head("ord-r1")) && /Says sent RM 20\.00/.test(head("ord-r1")) && /^Goods RM 100\.00 /.test(head("ord-r1")),

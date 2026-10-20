@@ -398,7 +398,7 @@
  {
   "name": "the main action stands below Goods and Details",
   "file": "stmt/owner.js",
-  "find": "function leadPlace(){ card.insertBefore(lead,card.querySelector(':scope > .ordmoney')); }",
+  "find": "function leadPlace(){ card.insertBefore(lead,card.querySelector(':scope > .obill')||card.querySelector(':scope > .ordmoney')); }",
   "replace": "function leadPlace(){ card.appendChild(lead); }"
  },
  {

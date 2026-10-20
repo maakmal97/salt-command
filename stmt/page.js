@@ -970,6 +970,10 @@ body.ended>*:not(#aEnded){display:none}
 .adm .oway--link{min-height:44px;color:var(--salt-brass);text-decoration:underline;text-underline-offset:3px}
 .adm .oclock__track{display:block}
 .adm .ordsteps{--salt-steps-n:5;padding:20px 12px}
+/* 20 Oct 2026: the Bill, its figures in one right column */
+.adm .obill{margin:16px 0 4px}
+.adm .ordmoney .salt-ledger__label{flex:1;min-width:0}
+.adm .ordmoney .salt-ledger__value{flex:none;min-width:6.5em;text-align:right;align-self:flex-start}
 .adm .ordsteps .salt-steps__name,.adm .ordsteps .salt-steps__time{white-space:nowrap}
 .adm .need-clock--late .oclock__min{color:var(--salt-ember)}
 .adm .need-clock{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}

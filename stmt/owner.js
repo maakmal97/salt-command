@@ -4092,6 +4092,8 @@ export const OWNER_JS = `
     r.appendChild(l); if(flag) r.appendChild(el('span','salt-ledger__flag',flag));
     return r;
   }
+  /* the Goods line's words under it: at the list price while placed (the cost part adds what it cost) */
+  function billCost(order,node){ node.textContent=order.status==='placed'?'At the list price':''; }
   /* Salt Admin A to C (20 Oct 2026), P3: HIS USUAL, the figure a customer reads (stmt/confirm.js confirmView: ten or more measured, the
      cron's figure under three hours old), and the minutes a placed order has waited. No clock on a practice order, one with a price or a
      group order, which the measure leaves out. */
@@ -4176,9 +4178,15 @@ export const OWNER_JS = `
     card.appendChild(head);
     var agreed=['acknowledged','ready','done'].indexOf(order.status)>=0, moved=Math.round((+order.moved||0)*100)/100;
     if(!order.writtenOff&&order.status!=='declined'&&order.status!=='cancelled') card.appendChild(ordSteps(order));
+    /* 20 Oct 2026 (canvas V21, V23, V24, V27, V28): THE BILL, headed so: Goods (at the list price while placed), Delivery cost, the Total they
+       owe (goods and delivery, the engine's txOwed), then what is paid and what is owed or settled; every figure in one right column */
+    card.appendChild(el('h4','salt-eyebrow salt-eyebrow--copper obill','Bill'));
     var L=el('div','ordmoney salt-ledger salt-ledger--plain'), paid=+order.paid||0, owed=Math.max(0,Number(order.total||0)+Number(order.delivery||0)-paid);
-    L.appendChild(ordLine('Goods',rm(order.total),agreed&&typeof order.asked==='number'&&Math.abs(order.asked-(+order.total||0))>0.004?'Set when you agreed it. They placed it at '+rm(order.asked):''));
-    if(order.mode==='deliver'&&(agreed||order.delivery)) L.appendChild(ordLine('Delivery',rm(order.delivery||0)));
+    var gl=ordLine('Goods',rm(order.total),agreed&&typeof order.asked==='number'&&Math.abs(order.asked-(+order.total||0))>0.004?'Set when you agreed it. They placed it at '+rm(order.asked):'');
+    var gsub=el('span','salt-ledger__sub ocost'); gsub.setAttribute('data-cost',order.id); gl.querySelector('.salt-ledger__label').appendChild(gsub); billCost(order,gsub);
+    L.appendChild(gl);
+    if(order.mode==='deliver'&&(agreed||order.delivery)) L.appendChild(ordLine('Delivery cost',rm(order.delivery||0)));
+    var tot=ordLine('Total',rm((+order.total||0)+(+order.delivery||0))); tot.classList.add('abtotal'); tot.setAttribute('data-total',''); L.appendChild(tot);
     /* Salt Admin A to C, P2: THE RECEIPT, as the customer's: each payment received with its way and its day where they add up to what is
        paid, else one line */
     var conf=(order.payments||[]).filter(function(x){ return x&&(!x.claim||x.claim==='received')&&+x.amount>0; }),
@@ -4213,7 +4221,7 @@ export const OWNER_JS = `
       var card=makerCard(root,order.id), acts=el('div','maker-foot__acts'), cashed=false; card.setAttribute('data-in',orderPartsOf(order));
       orderHead(card,order);
       /* the stage's main action stands directly under the head (its title and stage chip), above Goods and Details */
-      function leadPlace(){ card.insertBefore(lead,card.querySelector(':scope > .ordmoney')); }
+      function leadPlace(){ card.insertBefore(lead,card.querySelector(':scope > .obill')||card.querySelector(':scope > .ordmoney')); }
       /* 10 Oct 2026: the delivery time they asked for, the part of its window inside the hours, while goods are still to go */
       if(order.mode==='deliver'&&order.slot&&order.slotSpan&&!((+order.moved||0)>=(+order.qty||0)-0.004))
         card.appendChild(el('p','maker-facts','Wanted '+String(order.slotSpan).replace('-',' to ')+' on '+fmtWhen(String(order.slot).slice(0,10))+'.'));
