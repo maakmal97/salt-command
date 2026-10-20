@@ -29,5 +29,5 @@
  {"name":"a form beside its menu lies two up from 860px","file":"stmt/page.js","find":"  .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}\n","replace":"  .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}\n  .adm .maker-input{display:grid}\n"},
  {"name":"the sentence that marks where his rules begin is gone, so the check cannot tell his rules from the customer's","file":"stmt/page.js","find":"EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER PAGE'S","replace":"EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER'S PAGE"},
  {"name":"Needs you's empty pane says Tap a card","file":"stmt/page.js","find":"'</div><div id=\"nopen\" hidden></div><p class=\"rnone panenone\">Choose a card to see it in full.</p></div>'","replace":"'</div><div id=\"nopen\" hidden></div><p class=\"rnone panenone\">Tap a card</p></div>'"},
- {"name":"the week chart's times take 312px","file":"stmt/page.js","find":"grid-template-columns:40px minmax(0,1fr) 112px;","replace":"grid-template-columns:40px minmax(0,1fr) 312px;"}
+ {"name":"the week chart's times take 312px","file":"stmt/page.js","find":"grid-template-columns:40px minmax(0,1fr) 136px;","replace":"grid-template-columns:40px minmax(0,1fr) 312px;"}
 ]

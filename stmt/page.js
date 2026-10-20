@@ -713,7 +713,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
    a span past midnight's tail hatched at the start of the next day's row. A tapped day opens below its row on slate: Opens and Closes, then
    its quick buttons, every one 44px. */
 .adm .maker-week{display:flex;flex-direction:column;gap:2px;margin:8px 0}
-.adm .maker-week-scale,.adm .maker-day{display:grid;grid-template-columns:40px minmax(0,1fr) 112px;align-items:center;gap:12px;padding:0 8px}
+.adm .maker-week-scale,.adm .maker-day{display:grid;grid-template-columns:40px minmax(0,1fr) 136px;align-items:center;gap:12px;padding:0 8px}
 .adm .maker-week-scale>span:nth-child(2){display:flex;justify-content:space-between;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
 .adm .maker-day{min-height:44px;width:100%;border:0;border-radius:var(--salt-radius-md);background:none;color:var(--salt-salt);font:inherit;text-align:left;cursor:pointer}
 .adm .maker-day[aria-expanded=true]{background:var(--salt-glass)}
