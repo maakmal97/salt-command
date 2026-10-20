@@ -64,6 +64,7 @@ const NOT_LEDGER = new Set([
   "PRICE", "PRICE_ENGINE", "PRICING_ENGINE", "POSITION_ENGINE", "SNAPSHOT_ENGINE" /* S1c-ii: the cost glue, inlined the same way */, "PRICING_RULES" /* S1c-i: the rule tables module, inlined the same way; */ /* v337, v338: the engine modules inlined by tools/engine.mjs; functions, no data */,
   "QR_ENGINE" /* v564: the third inlined module, engine/qr.mjs. Functions and the format's own
      constant tables; a QR is drawn from an address, and the address is not held here. */,
+  "GEO_ENGINE" /* 20 Oct 2026: the inlined distance, engine/geo.mjs, one function; points are not held here. */,
   "PB_A4" /* v564: the page size the board sheet's PDF is written onto, in points. A measurement of
      paper, not of anything that happened. */,
   "MOD_LABEL", "MOD_RM", "MOD_UNITS" /* v748: what a corrected field is called on the page, and which

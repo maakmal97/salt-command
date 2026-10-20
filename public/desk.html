@@ -14,6 +14,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#05080a">
 <script>
+/* ==== ENGINE geo: generated from engine/geo.mjs by tools/engine.mjs. Edit the module, never this block. ==== */
+/* engine/geo.mjs: THE DISTANCE BETWEEN TWO POINTS, ONE COPY (his answer of 20 Oct 2026).
+ *
+ * The Desk measures a delivery's distance for the fee it offers (master/salt_command.html, the great-circle distance times
+ * RULES.delivery.roadFactor), and from 20 Oct 2026 Salt Admin says the same distance under Delivery cost on an order's Bill. Two
+ * copies would drift, so this is the one: inlined into the master between markers by `node tools/engine.mjs --sync`, and carried
+ * into the statements site as stmt/geo.js, byte for byte, by `node tools/geosite.mjs --sync`, each with a --check the gate runs.
+ * The points never travel: the Desk and Salt Admin each measure in the browser, after the one unlock, from points they hold. */
+const GEO_ENGINE=(function(){
+/* the great-circle distance in km between {lat, lng} points, on the mean Earth radius */
+function haversineKm(a,b){var r=function(x){return x*Math.PI/180;},dLa=r(b.lat-a.lat),dLo=r(b.lng-a.lng);
+  var h=Math.pow(Math.sin(dLa/2),2)+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.pow(Math.sin(dLo/2),2);return 2*6371.0088*Math.asin(Math.min(1,Math.sqrt(h)));}
+return {haversineKm:haversineKm};
+})();
+/* ==== END ENGINE geo ==== */
 /* TWO THEMES, NIGHT AND TIDE, CHOSEN ON EACH DEVICE (his word of 11 Oct 2026). This runs before the stylesheet, so the first paint is
    the right one: it sets data-theme on <html> from localStorage salt-look and the browser bar's colour to that theme's ground.
    Tide when nothing is stored, or the store cannot be read. saltLook() is the one place either is written; lookSet() in the
@@ -87,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="056439580d5a127b";
+var SALT_BUILD_ID="e76e5996a29386fc";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -11098,8 +11113,8 @@ const provOf=t=>t._prov||(t._buy&&t._buy._prov)||null;
    kept nowhere, else his base point in the places vault (_base); and the party's exact point in the places vault, else its
    locality. The great-circle distance times the road factor at RM a km, rounded to roundTo. No key, no third party. It needs
    the vault open on the phone; locked, or on the laptop, nothing is offered and the box stands as it was. */
-function haversineKm(a,b){const r=x=>x*Math.PI/180,dLa=r(b.lat-a.lat),dLo=r(b.lng-a.lng);
-  const h=Math.sin(dLa/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLo/2)**2;return 2*6371.0088*Math.asin(Math.min(1,Math.sqrt(h)));}
+/* 20 Oct 2026: the one distance, engine/geo.mjs, which Salt Admin reads too */
+const haversineKm=GEO_ENGINE.haversineKm;
 const feePt=p=>p&&typeof p.lat==='number'&&typeof p.lng==='number'&&isFinite(p.lat)&&isFinite(p.lng)?{lat:p.lat,lng:p.lng}:null;
 /* the offer: {fee, km, road, from, to, code} when both points stand, {why} when one does not, null when nothing may be offered */
 function feeOpen(){try{return cloudMode()&&namesShown();}catch(e){return false;}}

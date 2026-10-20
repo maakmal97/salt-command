@@ -1175,6 +1175,7 @@ export const OWNER_JS = `
   function makerVaultNotify(){
     [].forEach.call(document.querySelectorAll('[data-vault-gate]'),makerVaultDraw);
     [].forEach.call(document.querySelectorAll('[data-pin-gate]'),function(b){ if(b._draw) b._draw(); });
+    kmRepaint();
     var state=document.getElementById('vaultState'), on=document.getElementById('vaultOn'), off=document.getElementById('vaultOff');
     if(state) state.textContent=makerVault?'Open on this phone':'Locked';
     if(on) on.hidden=!!makerVault;
@@ -1455,7 +1456,7 @@ export const OWNER_JS = `
         if(generation!==makerSpotGen||!makerVault||document.hidden) return;
         var p=null; try{ p=JSON.parse(new TextDecoder().decode(b)); }catch(e){ p=null; }
         if(!p||typeof p!=='object') throw new Error('It holds nothing this page reads.');
-        makerSpotOpened[order.u+'/'+order.pin]=p;
+        makerSpotOpened[order.u+'/'+order.pin]=p; kmRepaint();
         if(box.isConnected) adSpotPaint(p);
       }catch(error){
         if(generation===makerSpotGen) said(/not kept/.test(String(error&&error.message))?'The address they shared is no longer kept.':'The address could not be opened: '+(error&&error.message||error));
@@ -2302,7 +2303,7 @@ export const OWNER_JS = `
   }
   async function makerOtherInputs(parent,catalog,refreshTradeCatalog){
     pairDrafts.length=0;
-    makerGeo.configure(catalog.placed);
+    makerGeo.configure(catalog.placed); makerPlaced=catalog.placed||{};
     var today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kuala_Lumpur'});
     var idCanStart=function(kind){return kind==='customer'||kind==='reseller'||kind==='referral';};
     var parties=(catalog.parties||[]).filter(function(code){return !code.endsWith('-R');});
@@ -4121,6 +4122,30 @@ export const OWNER_JS = `
     r.appendChild(l); if(flag) r.appendChild(el('span','salt-ledger__flag',flag));
     return r;
   }
+  /* 20 Oct 2026 (his answer, option a): THE DISTANCE under Delivery cost, as the Desk measures it for the fee: his base (the places vault's
+     _base) to their sealed spot opened here, else their filed point, else their locality (said so), the one distance (engine/geo.mjs) times
+     the Desk's road factor off the review read. Measured in this browser after the one unlock; nothing without both points. */
+  var makerPlaced={};
+  function ordKm(order){
+    var f=makerData&&makerData.roadFactor, v=makerVault&&makerVault.places;
+    if(order.mode!=='deliver'||!v||!(typeof f==='number'&&f>0)) return null;
+    var base=v._base, ok=function(p){ return !!p&&typeof p.lat==='number'&&typeof p.lng==='number'&&isFinite(p.lat)&&isFinite(p.lng); };
+    if(!ok(base)) return null;
+    var code=codeOfUser(order.u), spot=order.pin&&makerSpotOpened[order.u+'/'+order.pin], loc=makerPlaced[code], pt=null, area=false;
+    if(spot&&spot.src!=='unit'&&ok(spot)) pt=spot;
+    else if(ok(v[code])) pt=v[code];
+    else if(Array.isArray(loc)&&isFinite(loc[0])&&isFinite(loc[1])){ pt={lat:+loc[0],lng:+loc[1]}; area=true; }
+    if(!pt) return null;
+    return {km:haversineKm({lat:base.lat,lng:base.lng},{lat:pt.lat,lng:pt.lng})*f, area:area};
+  }
+  function kmPaint(node,order){
+    var k=ordKm(order);
+    node.textContent=!k?'':k.area?'Distance about '+Math.round(k.km)+' km, area':'Distance '+(Math.round(k.km*10)/10).toFixed(1)+' km';
+  }
+  function kmRepaint(){
+    var os=(makerData&&makerData.orders)||[];
+    [].forEach.call(document.querySelectorAll('[data-km]'),function(n){ var o=os.filter(function(x){ return x.id===n.getAttribute('data-km'); })[0]; if(o) kmPaint(n,o); });
+  }
   /* 20 Oct 2026 (canvas V22, V27, his rule: a figure that does not add up has no line of its own): WHAT THE GOODS COST, under Goods, "Cost RM 36,
      incl. freight": the Desk's trade reading (the engine's latestCogs, the latest purchase's quote and trip freight over its units, through the
      hop the trade form reads) a unit, times the order's units. Read once an order, held by its id; nothing when the book has no cost, or the
@@ -4157,13 +4182,14 @@ export const OWNER_JS = `
   function clockOf(order){
     if(!order||order.status!=='placed'||order.test||order.price||order.pool) return null;
     var t=Date.parse(order.at); if(!(t>0)) return null;
-    var w=Math.max(0,Math.floor((Date.now()-t)/60000)), u=confirmUsual();
+    /* 20 Oct 2026 (his answer): in Counter hours, as the usual is measured, off the review's read; the wall clock only where none is measured */
+    var w=typeof order.waitedOpen==='number'&&order.waitedOpen>=0?order.waitedOpen:Math.max(0,Math.floor((Date.now()-t)/60000)), u=confirmUsual();
     return {waited:w, usual:u, late:u!=null&&w>u};
   }
   /* 20 Oct 2026 (canvas V11): the minutes waited as the system's meter against his usual, ember past it; with no usual yet, an empty track */
   function orderClock(order){
     var k=clockOf(order); if(!k) return null;
-    var box=el('div','salt-meter oclock'+(k.late?' salt-meter--ember oclock--late':'')), line=el('div','salt-meter__line'), a=el('span',null,'Waited '), b=el('span',null,k.usual==null?'No usual yet':'Usually ');
+    var box=el('div','salt-meter oclock'+(k.late?' salt-meter--ember oclock--late':'')), line=el('div','salt-meter__line'), a=el('span',null,'Waited in hours '), b=el('span',null,k.usual==null?'No usual yet':'Usually ');
     box.setAttribute('data-clock','');
     a.appendChild(el('b',null,k.waited+' min')); if(k.usual!=null) b.appendChild(el('b',null,k.usual+' min'));
     line.appendChild(a); line.appendChild(b); box.appendChild(line);
@@ -4246,7 +4272,10 @@ export const OWNER_JS = `
     var gl=ordLine('Goods',rm(order.total),agreed&&typeof order.asked==='number'&&Math.abs(order.asked-(+order.total||0))>0.004?'Set when you agreed it. They placed it at '+rm(order.asked):'');
     var gsub=el('span','salt-ledger__sub ocost'); gsub.setAttribute('data-cost',order.id); gl.querySelector('.salt-ledger__label').appendChild(gsub); billCost(order,gsub);
     L.appendChild(gl);
-    if(order.mode==='deliver'&&(agreed||order.delivery)) L.appendChild(ordLine('Delivery cost',rm(order.delivery||0)));
+    if(order.mode==='deliver'&&(agreed||order.delivery)){
+      var dl=ordLine('Delivery cost',rm(order.delivery||0)), km=el('span','salt-ledger__sub okm'); km.setAttribute('data-km',order.id);
+      dl.querySelector('.salt-ledger__label').appendChild(km); L.appendChild(dl); kmPaint(km,order);
+    }
     var tot=ordLine('Total',rm((+order.total||0)+(+order.delivery||0))); tot.classList.add('abtotal'); tot.setAttribute('data-total',''); L.appendChild(tot);
     /* Salt Admin A to C, P2: THE RECEIPT, as the customer's: each payment received with its way and its day where they add up to what is
        paid, else one line */

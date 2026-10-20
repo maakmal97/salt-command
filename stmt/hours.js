@@ -99,6 +99,24 @@ export function windowHours(value) {
   return { schedule: days && !days.error ? { days: days.days.map((d) => d && { open: d.open, close: d.close }) } : null, manual };
 }
 
+/** 20 Oct 2026 (his answer): the minutes the Counter was open between two moments, on the weekly hours as they stand and with no manual
+ *  override, as stmt/confirm.js measures "in Counter hours"; with no weekly hours filed it is open at every moment. Salt Admin's waited
+ *  meter reads it off the review answer, so an order placed while closed counts from opening. */
+export function openMinutes(config, from, to) {
+  if (!(Number.isFinite(from) && Number.isFinite(to) && to > from)) return 0;
+  const parsed = !config || config.schedule == null ? { days: null } : validateWeeklyHours(config.schedule);
+  if (parsed.error) throw new TypeError(parsed.error);
+  if (!parsed.days) return (to - from) / 60000;
+  let open = 0;
+  for (let s = klStart(from), n = 0; s < to && n < 400; s += DAY_MS, n++) {
+    const h = parsed.days[new Date(s + KL_OFFSET_MS).getUTCDay()];
+    if (!h) continue;
+    const a = Math.max(from, s + h.start * 60000), b = Math.min(to, s + h.end * 60000);
+    if (b > a) open += b - a;
+  }
+  return open / 60000;
+}
+
 export function hoursStatus(config, at = Date.now()) {
   const parsed = !config || config.schedule == null ? { days: null } : validateWeeklyHours(config.schedule);
   if (parsed.error) throw new TypeError(parsed.error);

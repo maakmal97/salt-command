@@ -26,6 +26,7 @@ import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeRead
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerAppointmentClaim, makerOrderOnce } from "./maker-request.js";
 import { readVaultRegistrations } from "./vault-pair.js";
 import POSITION_ENGINE from "../engine/position.mjs";
+import PRICING_RULES from "../engine/rules.mjs";
 import { reservedInputs, admitInputs, admitInput, withdrawInputAdmission, finishInputAdmission, admissionDecision, hasInputAdmission,
   acquireDeviceQueueLock, releaseDeviceQueueLock, claimDeviceQueueWithdrawal, finishDeviceQueueWithdrawal,
   queueWithdrawalKey, queueOwnerKey } from "./input-admission.js";
@@ -778,6 +779,8 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
        one; a book that cannot be read is said, never read as no orders */
     let body;
     try { body = await res.json(); } catch (error) { return json({ ok: false, error: "The rows waiting could not be read." }, 503); }
+    /* 20 Oct 2026: the road factor the fee by distance is measured with, so Salt Admin says the same distance; a figure, never a point */
+    body.roadFactor = PRICING_RULES.RULES.delivery.roadFactor;
     try {
       const book = await withRefunds(env.SALT_LEDGER, await readBook(env.SALT_LEDGER));
       if (!book.version) throw new Error("the mirror is being seeded");

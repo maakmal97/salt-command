@@ -10,7 +10,7 @@
  {"name":"no clock on the card","file":"stmt/owner.js","find":"var clock=orderClock(order); if(clock) head.appendChild(clock);","replace":"var clock=null;"},
  {"name":"never late","file":"stmt/owner.js","find":"return {waited:w, usual:u, late:u!=null&&w>u};","replace":"return {waited:w, usual:u, late:false};"},
  {"name":"always late","file":"stmt/owner.js","find":"box=el('div','salt-meter oclock'+(k.late?' salt-meter--ember oclock--late':''))","replace":"box=el('div','salt-meter oclock salt-meter--ember oclock--late')"},
- {"name":"the waited minutes wrong","file":"stmt/owner.js","find":"var w=Math.max(0,Math.floor((Date.now()-t)/60000)), u=confirmUsual();","replace":"var w=Math.max(0,Math.floor((Date.now()-t)/600000)), u=confirmUsual();"},
+ {"name":"the waited minutes wrong","file":"stmt/owner.js","find":"order.waitedOpen:Math.max(0,Math.floor((Date.now()-t)/60000)), u=confirmUsual();","replace":"order.waitedOpen:Math.max(0,Math.floor((Date.now()-t)/600000)), u=confirmUsual();"},
  {"name":"the usual not said","file":"stmt/owner.js","find":"if(k.usual!=null) b.appendChild(el('b',null,k.usual+' min'));","replace":"void b;"},
  {"name":"a practice order has a clock","file":"stmt/owner.js","find":"if(!order||order.status!=='placed'||order.test||order.price||order.pool) return null;","replace":"if(!order||order.status!=='placed'||order.price||order.pool) return null;"},
  {"name":"a priced order has a clock","file":"stmt/owner.js","find":"if(!order||order.status!=='placed'||order.test||order.price||order.pool) return null;","replace":"if(!order||order.status!=='placed'||order.test||order.pool) return null;"},

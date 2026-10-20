@@ -1,0 +1,14 @@
+[
+ {"name":"the distance on a flat earth","file":"engine/geo.mjs","find":"return 2*6371.0088*Math.asin(Math.min(1,Math.sqrt(h)));}","replace":"return 2*6371.0088*Math.sqrt(h);}"},
+ {"name":"open minutes count the wall clock","file":"stmt/hours.js","find":"  if (!parsed.days) return (to - from) / 60000;\n  let open = 0;","replace":"  return (to - from) / 60000;\n  let open = 0;"},
+ {"name":"open minutes count a closed day","file":"stmt/hours.js","find":"    if (!h) continue;\n    const a = Math.max(from, s + h.start * 60000)","replace":"    if (!h) { open += Math.min(to, s + DAY_MS) - Math.max(from, s); continue; }\n    const a = Math.max(from, s + h.start * 60000)"},
+ {"name":"the waited figure on a practice order","file":"stmt/maker.js","find":"  for (const o of orders || []) if (o && o.status === \"placed\" && !o.test) {","replace":"  for (const o of orders || []) if (o && o.status === \"placed\") {"},
+ {"name":"the waited figure on every stage","file":"stmt/maker.js","find":"  for (const o of orders || []) if (o && o.status === \"placed\" && !o.test) {","replace":"  for (const o of orders || []) if (o && !o.test) {"},
+ {"name":"the distance before the unlock","file":"stmt/owner.js","find":"    if(order.mode!=='deliver'||!v||!(typeof f==='number'&&f>0)) return null;","replace":"    if(order.mode!=='deliver'||!(typeof f==='number'&&f>0)) return null; v=v||{_base:{lat:3.1,lng:101.6},'CX1-ZED':{lat:3.1,lng:101.7}};"},
+ {"name":"the distance with no factor","file":"stmt/owner.js","find":"    if(order.mode!=='deliver'||!v||!(typeof f==='number'&&f>0)) return null;","replace":"    if(order.mode!=='deliver'||!v) return null; f=f||1.3;"},
+ {"name":"the distance without the factor","file":"stmt/owner.js","find":"    return {km:haversineKm({lat:base.lat,lng:base.lng},{lat:pt.lat,lng:pt.lng})*f, area:area};","replace":"    return {km:haversineKm({lat:base.lat,lng:base.lng},{lat:pt.lat,lng:pt.lng}), area:area};"},
+ {"name":"no distance drawn","file":"stmt/owner.js","find":"dl.querySelector('.salt-ledger__label').appendChild(km); L.appendChild(dl); kmPaint(km,order);","replace":"dl.querySelector('.salt-ledger__label').appendChild(km); L.appendChild(dl);"},
+ {"name":"the unlock paints no distance","file":"stmt/owner.js","find":"    [].forEach.call(document.querySelectorAll('[data-pin-gate]'),function(b){ if(b._draw) b._draw(); });\n    kmRepaint();","replace":"    [].forEach.call(document.querySelectorAll('[data-pin-gate]'),function(b){ if(b._draw) b._draw(); });"},
+ {"name":"the meter keeps the wall clock","file":"stmt/owner.js","find":"var w=typeof order.waitedOpen==='number'&&order.waitedOpen>=0?order.waitedOpen:Math.max(0,Math.floor((Date.now()-t)/60000)), u=confirmUsual();","replace":"var w=Math.max(0,Math.floor((Date.now()-t)/60000)), u=confirmUsual();"},
+ {"name":"the meter says Waited","file":"stmt/owner.js","find":"a=el('span',null,'Waited in hours '),","replace":"a=el('span',null,'Waited '),"}
+]

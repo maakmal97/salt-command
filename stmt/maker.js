@@ -1,7 +1,7 @@
 import { allOrders, deskSeen, placeOrder, customerView, RID_RE, onBook, allPools, poolOpen, poolClose, deskBody } from "./orders.js";
 import { accountRecord, exampleAccount, examplePlace, examplePools, exampleThread, exampleDeskSay, isTest, isExample, EXAMPLE_ID, TEST_USERS, EXAMPLE_POINTS } from "./testfix.js";
 import { POINTS_KEY, readPoints, validatePoints, resolvePoint, isPointCode } from "./points.js";
-import { hoursStatus, validateManualHours, validateWeeklyHours, HOURS_KEY, windowHours } from "./hours.js";
+import { hoursStatus, validateManualHours, validateWeeklyHours, HOURS_KEY, windowHours, openMinutes } from "./hours.js";
 import { CONFIRM_KEY, confirmWithin, confirmView } from "./confirm.js";
 import { readPin } from "./pin.js";
 
@@ -651,7 +651,14 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
       /* 17 Oct 2026: every live row of the book is an order here; a row a live site order holds is drawn as that order, by its key */
       const held = new Set(orders.filter((o) => !o.test && !["declined", "cancelled"].includes(o.status) && typeof o.ledgerKey === "string").map((o) => o.ledgerKey));
       const rows = Array.isArray(drafts.rows) ? drafts.rows.filter((r) => r && !held.has(r.key)) : [];
-      return json({ ok: true, orders, drafts: drafts.drafts || [], refused: drafts.refused || [], queue: queue.entries, unreadable, trips, sameDay, rows, refunds: drafts.refunds && typeof drafts.refunds === "object" ? drafts.refunds : {},
+      /* 20 Oct 2026 (his answers): a placed order's minutes waited in Counter hours, measured at this read, and the Desk's road factor,
+         so Salt Admin says the distance the fee is measured on; the points stay in his browser */
+      const readAt = Date.now();
+      let hoursCfg = null;
+      try { hoursCfg = await env.STMT.get(HOURS_KEY, "json"); } catch (e) { hoursCfg = null; }
+      withWaited(orders, hoursCfg, readAt);
+      const roadFactor = typeof drafts.roadFactor === "number" && drafts.roadFactor > 0 ? drafts.roadFactor : null;
+      return json({ ok: true, orders, drafts: drafts.drafts || [], refused: drafts.refused || [], queue: queue.entries, unreadable, trips, sameDay, rows, roadFactor, readAt: new Date(readAt).toISOString(), refunds: drafts.refunds && typeof drafts.refunds === "object" ? drafts.refunds : {},
         ...(typeof drafts.tripsError === "string" || !Array.isArray(drafts.trips) ? { tripsError: drafts.tripsError || "Orders of several books could not be read." } : {}) });
     }
     if (op.kind === "queue") {
@@ -759,6 +766,15 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
       ...(error.restate && typeof error.restate === "object" ? { restate: error.restate } : {}) }, status);
   }
   return json({ ok: false, error: "not found" }, 404);
+}
+
+/** 20 Oct 2026 (his answer): each real placed order's minutes waited in Counter hours at a read, for Salt Admin's meter; an order the
+ *  hours cannot measure keeps the wall clock on his page. Practice orders and every other stage are left as they are. */
+export function withWaited(orders, hoursCfg, now) {
+  for (const o of orders || []) if (o && o.status === "placed" && !o.test) {
+    try { const w = openMinutes(hoursCfg, Date.parse(o.at), now); if (Number.isFinite(w)) o.waitedOpen = Math.floor(w); } catch (e) { /* the wall clock stands */ }
+  }
+  return orders;
 }
 
 export async function publicHours(env) {

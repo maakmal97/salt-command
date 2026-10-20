@@ -50053,6 +50053,11 @@ await (async () => {
   await (await import("./admin-ac-titles.mjs")).run({ ok });
 })();
 
+section("Salt Admin A to C: the distance under Delivery cost, measured after the unlock, and the waited meter in Counter hours (20 Oct 2026)");
+await (async () => {
+  await (await import("./admin-ac-km.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin: the claim card reads its rows on opening, draws the slip from the one unlock, and asks on a sheet");
 await (async () => {
   await (await import("./admin-claim-card.mjs")).run({ ok, pageWork });
