@@ -50132,6 +50132,11 @@ await (async () => {
   await (await import("./loyalty-verdict.mjs")).run({ ok });
 })();
 
+section("Loyalty unit: the customer sees the share of their next unit and nothing else (P4, 21 Oct 2026)");
+await (async () => {
+  await (await import("./loyalty-seal.mjs")).run({ ok });
+})();
+
 section("Salt Admin A to C: Order again's tag, kept by Place for a done and paid order of theirs and shown on his row and band (20 Oct 2026)");
 await (async () => {
   await (await import("./admin-ac-again.mjs")).run({ ok, pageWork });

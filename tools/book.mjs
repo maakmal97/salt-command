@@ -486,6 +486,19 @@ export function associateCard(w, code) {
   return out.length ? { at: new Date().toISOString(), products: out } : null;
 }
 
+/* ---- A CUSTOMER'S CARD (the loyalty unit, his rule of 20 Oct 2026, docs/plan-loyalty-unit.html) -----------------------------
+ * A customer sees their progress to the next loyalty unit as a share of one, salt only, at two decimals, and nothing else: no units,
+ * no step, no cost, no margin, no ringgit and no paused word (a pause shows as a share that stops rising). It is sealed as their card
+ * under the same content key, off the same window as their prices. An associate, a partner, a supplier and a -R bucket carry none:
+ * the walk does not run for them. */
+export const LOYAL_FIELDS = ["next"];
+export function customerCard(w, code) {
+  const r = reader(w)("JSON.stringify(typeof loyalWalkOf==='function'?loyalWalkOf(" + JSON.stringify(code) + "):null)");
+  const walk = r.ok && typeof r.value === "string" ? JSON.parse(r.value) : null;
+  if (!walk || !walk.walks || !Number.isFinite(+walk.next)) return null;
+  return { at: new Date().toISOString(), products: [{ product: "salt", loyal: { next: Math.max(0, Math.min(1, +(+walk.next).toFixed(2))) } }] };
+}
+
 /* One default, shared with payload.mjs by matching it, and overridable the same way. */
 export const MASTER = process.env.SALT_MASTER ||
   resolve(REPO, "master", "salt_command.html");

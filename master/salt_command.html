@@ -18691,6 +18691,15 @@ function rewardWalkOf(id){
   if(id==null){const st=POSITION_ENGINE.rewardStep(b.purchases.filter(p=>(p.product||'salt')==='salt'),null,sch.times);return {times:sch.times,since:sch.since,step:st?st.step:null};}
   return POSITION_ENGINE.rewardWalk(b,id);
 }
+/* 21 OCT 2026: THE LOYALTY UNIT'S WALK (his rule of 20 Oct 2026), read through the engine on the desk's own rows, with the partners and the
+   master's own term, lock and run the walk pauses by; null before the switch. Today is Kuala Lumpur's. */
+function loyalWalkOf(id){
+  if(!REWARD.stated.salt||!REWARD.stated.salt.loyal)return null;
+  const b=rewardBookView();
+  b.state.partners=typeof partners!=='undefined'?partners:[];
+  b.state.TERMS={holdDays:RULES.holdDays,lockDays:RULES.lockDays,lateResetRepeat:RULES.lateResetRepeat,lateWindowDays:RULES.lateWindowDays};
+  return POSITION_ENGINE.loyaltyWalk(b,id,TODAY.toISOString().slice(0,10));
+}
 function rewardMargin(id,refs){
   /* HIS DECISION OF 27 SEP 2026: A REBATE ROW COUNTS ITS PAID PART. Until then every rebate-stamped row
      was skipped whole, so where one unit of an order came from the reward and the rest was paid for, the

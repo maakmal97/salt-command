@@ -409,6 +409,15 @@ export async function main(argv = process.argv, { run = execFileSync, out = join
         }
       }
     } catch (e) { console.log("::warning::no associate cards: " + e.message); }
+    /* 21 Oct 2026: and every customer's, the share of their next loyalty unit, off the same window; one an associate card took is theirs */
+    try {
+      const { customerCard } = await import("./book.mjs");
+      for (const code of rb.ledger.roster || []) {
+        if (typeof code !== "string" || cards[code] || code.endsWith("-R")) continue;
+        const c = customerCard(rb.w, code);
+        if (c) cards[code] = c;
+      }
+    } catch (e) { console.log("::warning::no customer cards: " + e.message); }
   }
   const plan = await planPublish(root, key, new Date(), existing, storedIssue, pricing, assoc,
     { noRetire, cards, supply, issueUnread, buildId: key ? readDeskBuildId() : null });

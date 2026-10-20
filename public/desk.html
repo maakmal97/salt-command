@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="c8a9cb756ae47217";
+var SALT_BUILD_ID="2ecd17ad8cd470a2";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -18842,6 +18842,15 @@ function rewardWalkOf(id){
   const b=rewardBookView(),sch=POSITION_ENGINE.rewardScheme(b,'salt');if(!sch)return null;
   if(id==null){const st=POSITION_ENGINE.rewardStep(b.purchases.filter(p=>(p.product||'salt')==='salt'),null,sch.times);return {times:sch.times,since:sch.since,step:st?st.step:null};}
   return POSITION_ENGINE.rewardWalk(b,id);
+}
+/* 21 OCT 2026: THE LOYALTY UNIT'S WALK (his rule of 20 Oct 2026), read through the engine on the desk's own rows, with the partners and the
+   master's own term, lock and run the walk pauses by; null before the switch. Today is Kuala Lumpur's. */
+function loyalWalkOf(id){
+  if(!REWARD.stated.salt||!REWARD.stated.salt.loyal)return null;
+  const b=rewardBookView();
+  b.state.partners=typeof partners!=='undefined'?partners:[];
+  b.state.TERMS={holdDays:RULES.holdDays,lockDays:RULES.lockDays,lateResetRepeat:RULES.lateResetRepeat,lateWindowDays:RULES.lateWindowDays};
+  return POSITION_ENGINE.loyaltyWalk(b,id,TODAY.toISOString().slice(0,10));
 }
 function rewardMargin(id,refs){
   /* HIS DECISION OF 27 SEP 2026: A REBATE ROW COUNTS ITS PAID PART. Until then every rebate-stamped row
