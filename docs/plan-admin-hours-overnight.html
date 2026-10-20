@@ -1000,6 +1000,20 @@ radial-gradient(at 82% 28%,var(--counter-v) 0,transparent 55%),radial-gradient(a
 </ol>
 </section>
 
+<section class="glass">
+<h2>Round 2: the most control (his answers, 20 Oct 2026)</h2>
+<p>He asked for "most flexibility and control"; Fable designed it and he said yes to all eight answers: several spans a day (up to six), open all day as 00:00 to 24:00, overlaps merged and said in words, dated days beside the 14-day override (90 days ahead, 40 at most), no break that hides a delivery window, a preview from the Worker, Undo for a minute after Done, and Copy to any days as chips.</p>
+<div class="tablewrap"><table>
+<caption>Built</caption>
+<thead><tr><th scope="col">Part</th><th scope="col">What</th></tr></thead>
+<tbody>
+<tr><th scope="row">R1 the rule</th><td><code>openParts(days, lo, hi, dates)</code> reads span lists, 24:00 and dated days; <code>validateWeeklyHours(value, now)</code> sorts and merges a day's spans, refuses seven or a stretch over a day, checks dates only on a write.</td></tr>
+<tr><th scope="row">R2 the Worker</th><td>A save stores the week in order; a read prunes past dates; <code>GET ?preview=</code> says what customers would see and stores nothing.</td></tr>
+<tr><th scope="row">R3 the editor</th><td>Span rows with Add hours and Remove, Open all day, Copy to chips and Apply, the preview line, Discard changes, Undo, and the Dates list.</td></tr>
+</tbody></table></div>
+<p><b>Fable</b> reviewed R1 and R2: clean on all seven named risks; its one note (a page cached before today does not know dated days, and the Worker refuses the slot) is in the comment.</p>
+</section>
+
 </div>
 </div>
 </body></html>

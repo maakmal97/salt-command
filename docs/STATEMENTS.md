@@ -1920,7 +1920,10 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   book and the sizes left unticked as numbers (`hide`). **The weekly hours are a week chart** (Shop, Hours; 20 Oct 2026, canvas V63, replacing the table of 12 Oct): a 44px row a day,
   Monday first, a 00 to 24 track with the open span a brass bar, a span past midnight said "+1" and its tail hatched at the start of the next day's row; a tap
   opens the day below its row: Opens and Closes as quarter-hour pickers (a time filed off the quarter hour kept as its own choice), Closed or Open, Same as the day
-  before, Copy to the rest of its group (Monday to Friday, or Saturday and Sunday) and Done, which sends the whole week (`test/admin-hours-week.mjs`). The override that holds the shop for now is two tiles, Closed and Open (`hours.override-state`, keyed `false` and
+  before, Copy to any days (a chip a day, its group, Monday to Friday or Saturday and Sunday, chosen at first, then Apply), Add hours and
+  Remove (up to six spans, "2 spans" in the row), Open all day, and Done, which sends the week and its dates; a stretch running on into the
+  next day's opening is said as one. Below it: what customers would see for the day being changed (a read), Discard changes while the week
+  differs from the saved one, Undo for a minute after Done, and the dated days, a row each with Add a date and Remove this date (`test/admin-hours-week.mjs`). The override that holds the shop for now is two tiles, Closed and Open (`hours.override-state`, keyed `false` and
   `true`), over a field that says **Closed until**, or Open until when Open is chosen, in Kuala Lumpur time. What is sent is what it was: `{schedule: {days}}`, then
   `{manual: {open, until}}` or `{clearManual: true}`. `tools/maker-forms-geometry.mjs` measures the pane, every form's tiles, the size grid and the hours table in a
   real browser at 1280 and 375px, and proves a 20px tile red.
@@ -2241,6 +2244,17 @@ bar and the Counter's Today line), `openMinutes` (the confirm time and the waite
 read it; it is ES5 and the page carries its source beside `slotSpan`. `validateWeeklyHours` refuses the same time to open and
 close (never read as all day) and a day opening before the day before closes, Saturday into Sunday too (his answers 1 and 2);
 touching is one stretch. A window holding two stretches is said from the first's start to the last's end (his answer 5).
+
+**The most control over the hours** (his eight answers of 20 Oct 2026 to Fable's design): a day is null, one span (the object it
+always was, so a page cached before reads it as it did) or a list of up to six (a break, a split shift); open all day is 00:00 to
+24:00, a close of 24:00 the day's end; spans that touch or overlap are merged on the check and by `openParts`, no longer refused
+(the refusal of a day opening before the day before closes is retired), and a stretch longer than a day is refused. Dated days
+(`schedule.dates`, a Kuala Lumpur date to a day of the same form) stand in for their weekday whole: a holiday closed or a special
+day's hours, written from today to 90 days ahead and 40 at most, read whatever their date and pruned once past on every read and
+write. `GET /all/maker/hours?preview=<week>` answers what customers would see on a week not yet saved (`hoursPreview`: open or
+closed and the next change, and for each of the next seven days its hours in words and the windows it offers) and stores
+nothing. A page cached before these reads a list day or a 24:00 close as closed and does not know the dates; the Worker's
+`slotTake` refuses a slot a date shuts.
 
 Accounts > Order for them opens that customer's sealed current list on his device under the
 existing master wrap. It sends one priced size with the list digest and a request id to
