@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="0ac8e058b0735f6e";
+var SALT_BUILD_ID="1b472dc884bdb02e";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -5849,6 +5849,12 @@ function rewardStep(purchases,day,times){
   const lc=latestCogs(purchases,day||undefined);
   return lc&&lc.rate>0?{rate:+lc.rate,step:+(lc.rate*times).toFixed(2)}:null;
 }
+/* the switch's rid: the newest the count read when the openings were taken (the least upTo of them, a later opening being a party who became an
+   associate since); null before the switch */
+function rewardCut(book){
+  const ups=Object.values((book&&book.state||{}).REWARD_OPEN||{}).map(o=>o&&typeof o.upTo==='string'?rewardRid(o.upTo):null).filter(n=>n!=null&&n>=0);
+  return ups.length?Math.min(...ups):null;
+}
 function rewardWalk(book,id,today){
   const product='salt',state=book&&book.state||{},scheme=rewardScheme(book,product);
   if(!scheme)return null;
@@ -5929,7 +5935,9 @@ function rewardAccount(book,id,product='salt',opts={}){
   const buyUnits=lots.reduce((n,p)=>n+poRecvUnits(p),0),buyRM=lots.reduce((n,p)=>n+poRecvUnits(p)*poRate(p),0);
   const openUnits=opening.costPerKg!=null?(+opening.qty||0):0;
   const averageCost=buyUnits+openUnits>0?(buyRM+openUnits*(+opening.costPerKg||0))/(buyUnits+openUnits):0;
-  const margin=rewardMargin({id,refs:[...refs],sales,averageCost});
+  /* 20 Oct 2026 (his answer to the loyalty plan's Ask 4): from the switch a customer's count stands where it stood, read on the rows it read then */
+  const cut=!associate&&product==='salt'&&!opts.old&&rewardScheme(book,product)?rewardCut(book):null;
+  const margin=rewardMargin({id,refs:[...refs],sales:cut==null?sales:sales.filter(s=>rewardRid(s.rid)<=cut),averageCost});
   const hurdle=associate?(+((scheme.associate||{}).margin)||+scheme.margin):+scheme.margin;
   let pooled=+(associate?margin.mine.margin+margin.intro.margin/(+((scheme.associate||{}).r3Hurdle)||1):margin.mine.margin).toFixed(2);
   let {earned}=rewardUnits(pooled,hurdle);
@@ -5943,7 +5951,7 @@ function rewardAccount(book,id,product='salt',opts={}){
   }
   const applied=+sales.reduce((n,s)=>ownerCode(s.customer)===id
     ?n+(s.rebate?(s.rebateKg!=null?+s.rebateKg:(+s.qty||0)):0)+Math.max(0,+s.coverUnits||0):n,0).toFixed(2);
-  const balance={earned,applied,held:+(earned-applied).toFixed(2),associate,margin:pooled,...(opts.old?{hurdle}:{})};
+  const balance={earned,applied,held:+(earned-applied).toFixed(2),associate,margin:pooled,redeemable:associate||!switched,...(opts.old?{hurdle}:{})};
   return ((state.PEOPLE||{}).departed||[]).some(p=>p&&p.id===id)
     ?{...balance,departed:true,error:"A departed party's reward waits until they return."}:balance;
 }
@@ -5991,6 +5999,8 @@ function entryReservationFault(entry,pending,book){
   }
   const spend=rewardReservation(entry,book);
   if(spend){
+    const claim=inputResource(entry,book);   /* 20 Oct 2026: the one refusal, so a customer's spend is refused here as at admission */
+    if(claim&&claim.error)return claim.error;
     const balance=rewardAccount(book,spend.party,spend.product);
     if(balance.error)return balance.error;
     const reserved=entries.reduce((n,e)=>{
@@ -6021,6 +6031,9 @@ function inputResource(entry,book){
   const spend=rewardReservation(entry,book);
   if(!spend)return null;
   const reward=rewardAccount(book,spend.party,spend.product);
+  /* 20 Oct 2026 (his answer to Ask 7, kept by the loyalty plan's Ask 4): from the switch a customer redeems nothing, on every road: a redemption,
+     a cover, an offset and a Correction putting reward on their row are all refused here, the one place admission and the reservation read */
+  if(!reward.error&&reward.redeemable===false)return {error:"A customer's reward is not redeemed: only an associate's is."};
   return reward.error?reward:{resource:'reward:'+spend.product+':'+spend.party,amount:spend.units,available:reward.held};
 }
 function tradeEntry({at,product,direction,party,date,qty,total,cash,movedUnits,delivery=0,freight=0,
@@ -7423,7 +7436,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,rewardOpening:rewardOpening,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
+return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,rewardOpening:rewardOpening,rewardCut:rewardCut,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,
@@ -18662,7 +18675,9 @@ function rewardR3Hurdle(prod){const S=REWARD.stated[prod];return (S&&S.associate
 function rewardRuleTxt(prod,who){
   const w=who==='associate'?rewardWalkOf(null):null;
   if(w&&w.step!=null)return 'a free unit per '+w.times+' units\u2019 landed cost ('+fmt0(w.step)+' today), paid in full';
-  const m=rewardUnitMargin(prod,who);return m==null?'no reward on this book':'a free unit per '+fmt0(m)+' of margin';}
+  const m=rewardUnitMargin(prod,who);if(m==null)return 'no reward on this book';
+  if(who!=='associate'&&rewardWalkOf(null))return 'held as it stood on '+rewardWalkOf(null).since+', not redeemed';   /* 20 Oct 2026 */
+  return 'a free unit per '+fmt0(m)+' of margin';}
 /* 20 OCT 2026: THE WALK, read through the engine on the desk's own rows. null off salt or before the switch; with id null, the scheme
    and today's step alone (no opening read). The book the engine reads is the live one, as networkStats always read the live rows. */
 function rewardBookView(){
@@ -19011,8 +19026,11 @@ function customerRewards(){
   const assoc=new Set(associateIds()), ids=new Set();
   const add=s=>{const o=ownerOf(s.customer);if(!assoc.has(o)&&!isResellAcct(s.customer))ids.add(o);};
   pricedSales.forEach(add); sales.forEach(s=>{if(s.rebate)add(s);});
+  /* 20 Oct 2026: from the switch a customer's count stands where it stood, read on the rows it read then (the engine's rewardCut) */
+  const cut=rewardWalkOf(null)?POSITION_ENGINE.rewardCut(rewardBookView()):null;
   return [...ids].map(id=>{
-    const m=rewardMargin(id,[]).mine, u=rewardUnits(m.margin,unit), taken=rebateApplied(id);
+    const m=cut==null?rewardMargin(id,[]).mine:POSITION_ENGINE.rewardMargin({id,refs:[],sales:pSales(PROD).filter(s=>POSITION_ENGINE.rewardRid(s.rid)<=cut),averageCost:wavgBuy}).mine,
+      u=rewardUnits(m.margin,unit), taken=rebateApplied(id);
     return {id,n:m.n,margin:m.margin,earned:u.earned,toNext:u.toNext,taken,free:+(u.earned-taken).toFixed(2)};
   }).filter(r=>r.n>0||r.taken>0).sort((a,b)=>b.margin-a.margin);
 }
@@ -19023,6 +19041,7 @@ function customerRewards(){
    the book is not salt, the buyer holds nothing, or the sale is not under the ask. */
 function coverPlan(party,qty,goods){
   if(!rewards(PROD)||!party||!(qty>0))return null;
+  if(rewardWalkOf(null))return null;   /* 20 Oct 2026: from the switch a customer's reward covers nothing (his answers to Ask 7 and the loyalty plan's Ask 4) */
   const r=customerRewards().find(x=>x.id===party); if(!r||!(r.free>0.009))return null;
   const ask=cardQuote(party,qty);   /* v652, his decision of 16 Sep 2026: the gap is to their own card price, not the board's ask */
   const plan=POSITION_ENGINE.coverPlan({qty,free:r.free,ask,goods,cost:stockCostFor('salt')});
@@ -19099,7 +19118,7 @@ function tabConcentration(){
      against them, what is left, and the margin still to go to the next unit: the same five fields
      an associate's card carries, because it is the same rule. */
   const cr=customerRewards(), crReady=cr.filter(r=>r.free>0.009);
-  const crBody=cr.length?cr.map(r=>`<tr><td class="l salt-table__label mono">${ID(r.id)}</td><td>${fmt0(r.margin)}</td><td>${units(r.earned)}</td><td>${units(r.taken)}</td><td>${r.free>0.009?`<b style="color:var(--gold)">${units(r.free)} free</b>`:r.free<-0.009?`${units(-r.free)} drawn ahead`:'none'}</td><td class="mono" style="color:var(--dim)">${fmt0(r.toNext)}</td></tr>`).join('')
+  const crBody=cr.length?cr.map(r=>`<tr><td class="l salt-table__label mono">${ID(r.id)}</td><td>${fmt0(r.margin)}</td><td>${units(r.earned)}</td><td>${units(r.taken)}</td><td>${r.free>0.009?(rewardWalkOf(null)?`${units(r.free)} held`:`<b style="color:var(--gold)">${units(r.free)} free</b>`):r.free<-0.009?`${units(-r.free)} drawn ahead`:'none'}</td><td class="mono" style="color:var(--dim)">${fmt0(r.toNext)}</td></tr>`).join('')
     :`<tr><td class="l salt-table__label" colspan="6" style="color:var(--dim)">${rewardUnitMargin(PROD)==null?'No reward on this book.':'No customer has a priced order yet.'}</td></tr>`;
   /* v401: the sub lost "the band sets the units", which the Band pays column states per row
      and in units. NOT for width: this header measures 332px inside a 325px box at 375px, and
@@ -19108,7 +19127,7 @@ function tabConcentration(){
      every card header with a sub, so it is not fixed from this view. */
   const crCard=`<div class="card"><div class="cardh">&#127873; Customer rewards <span class="sub">${rewardRuleTxt(PROD)}, whole ledger</span>${crReady.length?`<span class="sub" style="color:var(--gold)">${crReady.map(r=>ID(r.id)).join(', ')} holding</span>`:''}</div>
     <table class="salt-table"><thead><tr><th class="l salt-table__label">Customer</th><th>Margin</th><th>Earned</th><th>Taken</th><th>Left</th><th>To next</th></tr></thead><tbody>${crBody}</tbody></table>
-    ${cr.some(r=>r.free>=1-1e-9)?'<p class="dsc" style="margin-top:9px">Redeem or offset on Salt Admin.</p>':''}</div>`;
+    ${rewardWalkOf(null)?'<p class="dsc" style="margin-top:9px">From the switch a customer redeems nothing: what they hold stands, and only an associate\u2019s reward is redeemed.</p>':cr.some(r=>r.free>=1-1e-9)?'<p class="dsc" style="margin-top:9px">Redeem or offset on Salt Admin.</p>':''}</div>`;
   /* ============ v385: DO, THEN WATCH, THEN STUDY ============
      The order was rewards, tiles, read, two charts, the approach calendar, turned-away, the
      database. The calendar is the only thing on this part that asks for an ACTION, and the

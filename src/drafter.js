@@ -1451,6 +1451,8 @@ export function draftRow(entry, book) {
     const party = pay.party || null;
     if (!party) return { skip: "a redemption names the party it is for" };
     if (isDepartedIn(book, party)) return { skip: `${party} has departed: they keep earning, but nothing is redeemed until they return, on his ruling of 13 Sep 2026` };
+    if (POSITION_ENGINE.rewardAccount(book, POSITION_ENGINE.ownerCode(party), prod).redeemable === false)
+      return { skip: `${party} is a customer, and from the switch of 20 Oct 2026 a customer's reward is not redeemed: only an associate's is` };
     const q = isNum(pay.qty) ? +pay.qty : null;
     if (q == null || !(q > 0)) return { skip: "a redemption needs the units handed over" };
     const when = pay.date || null;
@@ -1654,6 +1656,8 @@ export function draftRow(entry, book) {
     if (!(row.coverUnits > 0) || !(row.coverRM > 0)) return { skip: "a cover carries both the units of reward and the ringgit they cover" };
     if (((book.state && book.state.associates) || []).includes(POSITION_ENGINE.ownerCode(party)))
       return { skip: `${party} is an associate, whose reward is redeemed or offset on their own card rather than spent covering a sale` };
+    if (POSITION_ENGINE.rewardAccount(book, POSITION_ENGINE.ownerCode(party), product).redeemable === false)
+      return { skip: `from the switch of 20 Oct 2026 a customer's reward covers nothing: only an associate's reward is redeemed` };
     if (shelf.cost != null && Math.abs(row.coverRM - round(row.coverUnits * shelf.cost)) > 0.05)
       coverFlags.push(`The cover says RM ${round(row.coverRM)} for ${round(row.coverUnits)} unit, where the book's cost of RM ${round(shelf.cost)}/unit makes it RM ${round(row.coverUnits * shelf.cost)}.`);
     coverFlags.push(`${isNum(pay.coverFree) ? `The desk says ${party} held ${round(pay.coverFree)} unit of reward` : `The desk did not state what reward ${party} held`}, and ${round(row.coverUnits)} unit of it covers RM ${round(row.coverRM)} of this sale. Rewards are worked out on the desk, so that balance is its word.`);

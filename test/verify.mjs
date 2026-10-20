@@ -14297,7 +14297,8 @@ await (async () => {
   const rd19 = (e) => JSON.parse(String(w19.eval("JSON.stringify(" + e + ")")));
   try {
     const row19 = (o) => JSON.stringify(Object.assign({ product: "salt" }, o));
-    w19.eval("setProd('salt');['CZ9-CV','CZ9-LOW','CZ9-AV'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});associates.push('CZ9-AV');BASE_SALES.push(" + [
+    /* 20 Oct 2026: from the switch a customer's reward covers nothing; the v620 cover is measured with the switch off */
+    w19.eval("setProd('salt');delete REWARD.stated.salt.associate.since;['CZ9-CV','CZ9-LOW','CZ9-AV'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});associates.push('CZ9-AV');BASE_SALES.push(" + [
       row19({ rid: "z619a", customer: "CZ9-CV", date: "2026-07-01", qty: 2, total: 1100, cost: 100, cash: 1100, deliveredQty: 2 }),
       row19({ rid: "z619b", customer: "CZ9-LOW", date: "2026-07-01", qty: 1, total: 550, cost: 50, cash: 550, deliveredQty: 1 }),
       row19({ rid: "z619c", customer: "CZ9-LOW", date: "2026-07-02", qty: 1, total: 35.2, cost: 35.2, cash: 0, settledRM: 35.2, deliveredQty: 1, rebate: true, rebateKg: 0.8, goodwill: true }),
@@ -50098,6 +50099,11 @@ await (async () => {
 section("Associate reward on Salt Admin: the card under the Bill says whether the order reaches their next reward, and what the unit comes to (P7, 20 Oct 2026)");
 await (async () => {
   await (await import("./admin-reward-card.mjs")).run({ ok, pageWork });
+})();
+
+section("Associate reward: from the switch a customer redeems nothing, and what they hold stands (P8, 20 Oct 2026)");
+await (async () => {
+  await (await import("./assoc-reward-customer.mjs")).run({ ok });
 })();
 
 section("Salt Admin A to C: Order again's tag, kept by Place for a done and paid order of theirs and shown on his row and band (20 Oct 2026)");

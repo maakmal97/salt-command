@@ -257,7 +257,8 @@ export function makerCoverPlan(body, book, pending = []) {
     || !code(body.party, book.state.roster || [])) return null;
   const reward = rewardFree(book, body.party, body.product, pending.filter((entry) => entry.at !== body.at));
   const snapshot = book.pricing?.byProduct?.[body.product], inputs = snapshot?.inputs;
-  if (reward.error || reward.associate || !inputs || inputs.policy?.tierRule?.fixed) return null;
+  /* 20 Oct 2026: a cover is a customer's spend, so from the switch it is retired (reward.redeemable false) */
+  if (reward.error || reward.associate || reward.redeemable === false || !inputs || inputs.policy?.tierRule?.fixed) return null;
   const ask = cardAt(book.pricing, body.party, body.product, body.qty).card;
   return POSITION_ENGINE.coverPlan({ qty: body.qty, free: reward.free, ask, goods: body.total, cost: snapshot.stockCost });
 }
@@ -580,7 +581,7 @@ export function makerInputCatalog(book, hush = {}, pending = [], registrations =
     rewards: bookRoster.filter((id) => !POSITION_ENGINE.isBucket(id)).flatMap((id) => {
       const reward = rewardFree(book, id, "salt", pending);
       if (reward.earned == null || !(reward.earned || reward.applied)) return [];
-      const free = reward.associate ? reward.free : reward.free >= 1 - 1e-9 ? 1 : 0;
+      const free = reward.redeemable === false ? 0 : reward.associate ? reward.free : reward.free >= 1 - 1e-9 ? 1 : 0;   /* 20 Oct 2026: a customer's, never */
       const sale = book.sales.filter((row) => row.customer === id && (row.product || "salt") === "salt"
         && POSITION_ENGINE.txAdvance(row) > 0.009).sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"))[0];
       return [{ code: id, held: reward.held, free: reward.free, associate: reward.associate, departed: !!reward.departed,
@@ -1070,6 +1071,7 @@ export function makerLedgerInput(operation, body, book, pending = []) {
       || !date(body.date)) return { error: "A redemption carries only its timestamp, party code and date." };
     const state = rewardFree(book, body.code, "salt", pending.filter((entry) => entry.at !== body.at));
     if (state.error) return state;
+    if (state.redeemable === false) return { error: "A customer's reward is not redeemed: only an associate's is." };
     const free = state.associate ? state.free : state.free >= 1 - 1e-9 ? 1 : 0;
     if (!(free > 0.009)) return { error: state.held >= 1 - 1e-9
       ? "The reward is already spent or reserved by another input awaiting its fold."

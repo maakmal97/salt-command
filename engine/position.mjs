@@ -64,6 +64,12 @@ function rewardStep(purchases,day,times){
   const lc=latestCogs(purchases,day||undefined);
   return lc&&lc.rate>0?{rate:+lc.rate,step:+(lc.rate*times).toFixed(2)}:null;
 }
+/* the switch's rid: the newest the count read when the openings were taken (the least upTo of them, a later opening being a party who became an
+   associate since); null before the switch */
+function rewardCut(book){
+  const ups=Object.values((book&&book.state||{}).REWARD_OPEN||{}).map(o=>o&&typeof o.upTo==='string'?rewardRid(o.upTo):null).filter(n=>n!=null&&n>=0);
+  return ups.length?Math.min(...ups):null;
+}
 function rewardWalk(book,id,today){
   const product='salt',state=book&&book.state||{},scheme=rewardScheme(book,product);
   if(!scheme)return null;
@@ -144,7 +150,9 @@ function rewardAccount(book,id,product='salt',opts={}){
   const buyUnits=lots.reduce((n,p)=>n+poRecvUnits(p),0),buyRM=lots.reduce((n,p)=>n+poRecvUnits(p)*poRate(p),0);
   const openUnits=opening.costPerKg!=null?(+opening.qty||0):0;
   const averageCost=buyUnits+openUnits>0?(buyRM+openUnits*(+opening.costPerKg||0))/(buyUnits+openUnits):0;
-  const margin=rewardMargin({id,refs:[...refs],sales,averageCost});
+  /* 20 Oct 2026 (his answer to the loyalty plan's Ask 4): from the switch a customer's count stands where it stood, read on the rows it read then */
+  const cut=!associate&&product==='salt'&&!opts.old&&rewardScheme(book,product)?rewardCut(book):null;
+  const margin=rewardMargin({id,refs:[...refs],sales:cut==null?sales:sales.filter(s=>rewardRid(s.rid)<=cut),averageCost});
   const hurdle=associate?(+((scheme.associate||{}).margin)||+scheme.margin):+scheme.margin;
   let pooled=+(associate?margin.mine.margin+margin.intro.margin/(+((scheme.associate||{}).r3Hurdle)||1):margin.mine.margin).toFixed(2);
   let {earned}=rewardUnits(pooled,hurdle);
@@ -158,7 +166,7 @@ function rewardAccount(book,id,product='salt',opts={}){
   }
   const applied=+sales.reduce((n,s)=>ownerCode(s.customer)===id
     ?n+(s.rebate?(s.rebateKg!=null?+s.rebateKg:(+s.qty||0)):0)+Math.max(0,+s.coverUnits||0):n,0).toFixed(2);
-  const balance={earned,applied,held:+(earned-applied).toFixed(2),associate,margin:pooled,...(opts.old?{hurdle}:{})};
+  const balance={earned,applied,held:+(earned-applied).toFixed(2),associate,margin:pooled,redeemable:associate||!switched,...(opts.old?{hurdle}:{})};
   return ((state.PEOPLE||{}).departed||[]).some(p=>p&&p.id===id)
     ?{...balance,departed:true,error:"A departed party's reward waits until they return."}:balance;
 }
@@ -206,6 +214,8 @@ function entryReservationFault(entry,pending,book){
   }
   const spend=rewardReservation(entry,book);
   if(spend){
+    const claim=inputResource(entry,book);   /* 20 Oct 2026: the one refusal, so a customer's spend is refused here as at admission */
+    if(claim&&claim.error)return claim.error;
     const balance=rewardAccount(book,spend.party,spend.product);
     if(balance.error)return balance.error;
     const reserved=entries.reduce((n,e)=>{
@@ -236,6 +246,9 @@ function inputResource(entry,book){
   const spend=rewardReservation(entry,book);
   if(!spend)return null;
   const reward=rewardAccount(book,spend.party,spend.product);
+  /* 20 Oct 2026 (his answer to Ask 7, kept by the loyalty plan's Ask 4): from the switch a customer redeems nothing, on every road: a redemption,
+     a cover, an offset and a Correction putting reward on their row are all refused here, the one place admission and the reservation read */
+  if(!reward.error&&reward.redeemable===false)return {error:"A customer's reward is not redeemed: only an associate's is."};
   return reward.error?reward:{resource:'reward:'+spend.product+':'+spend.party,amount:spend.units,available:reward.held};
 }
 function tradeEntry({at,product,direction,party,date,qty,total,cash,movedUnits,delivery=0,freight=0,
@@ -1638,7 +1651,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,rewardOpening:rewardOpening,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
+return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,rewardOpening:rewardOpening,rewardCut:rewardCut,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,
