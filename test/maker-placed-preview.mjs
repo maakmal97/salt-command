@@ -56,7 +56,7 @@ export async function run({ ok }) {
     const button = (id, text) => card(id) && [...card(id).querySelectorAll("button")].find((b) => b.textContent === text);
     const accept = (id) => card(id) && card(id).querySelector("[data-accept]");
     const radio = (id, label) => {
-      const opt = card(id) && [...card(id).querySelectorAll(".salt-option")].find((o) => o.querySelector(".salt-option__label") && o.querySelector(".salt-option__label").textContent === label);
+      const opt = card(id) && [...card(id).querySelectorAll(".salt-option, .ofee .salt-segment__opt")].find((o) => (o.querySelector(".salt-option__label") || o).textContent === label);
       return opt && opt.querySelector('input[type="radio"]');
     };
     const total = (id) => card(id).querySelector(".maker-fields input[type=\"number\"]");
