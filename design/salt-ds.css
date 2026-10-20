@@ -2138,7 +2138,13 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   gap: 14px;
 }
 @media (min-width: 861px), not all and (pointer: coarse) {
-  .salt-rail { width: 212px; flex: 0 0 212px; position: sticky; top: 22px; }
+  /* it runs to the foot of the screen, not of the page, and stops a margin short of it, the same 24px as its top
+     (his word of 20 Oct 2026, canvas V66): sized to the viewport, it scrolls inside itself when its parts outrun it */
+  .salt-rail {
+    width: 212px; flex: 0 0 212px; position: sticky; top: 24px;
+    height: calc(100vh - 48px); height: calc(100dvh - 48px);
+    overflow-y: auto; overscroll-behavior: contain;
+  }
 }
 @media (max-width: 860px) and (pointer: coarse) {
   .salt-rail { background: var(--salt-pane); }

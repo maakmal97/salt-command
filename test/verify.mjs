@@ -13021,10 +13021,17 @@ await (async () => {
      after v371's drawer block at the same specificity, so from v472 to 11 Sep it silently held
      the phone drawer at the desk's rail width instead of min(272px,100vw - 28px). Since v684 the
      rail stands on the wide desk and on any screen that is not a touch one. */
-  ok(/@media \(min-width: 861px\), not all and \(pointer: coarse\) \{\s*\.salt-rail \{ width: \d+px; flex: 0 0 \d+px;/.test(railCss),
+  /* 20 Oct 2026: the standing rule took a comment and a block of its own, for the fill below */
+  const standing = (railCss.match(/@media \(min-width: 861px\), not all and \(pointer: coarse\) \{\s*(?:\/\*[\s\S]*?\*\/\s*)?\.salt-rail \{([^}]*)\}/) || [])[1] || "";
+  ok(/^\s*width: \d+px; flex: 0 0 \d+px;/.test(standing),
      "the rail's width is scoped to wherever it stands, never the drawer");
   const bare = rule(".salt-rail");
   ok(bare !== null && !/width:/.test(bare), "and the unscoped .rail sets no width, so the drawer keeps its own");
+  /* HIS WORD OF 20 OCT 2026 (canvas V66): the standing rail runs to the foot of the screen, not of the page, and stops
+     the margin of its top short of it, scrolling inside itself; the drawer is a phone's and keeps its own height */
+  ok(/position: sticky; top: 24px;/.test(standing) && /height: calc\(100dvh - 48px\);/.test(standing) && /overflow-y: auto;/.test(standing)
+     && bare !== null && !/height:/.test(bare),
+     "the standing rail is sized to the screen, 24px from its top and its foot, and scrolls inside itself; the drawer sets no height");
 
   /* THE DIRECTORY (his instruction, 11 Sep 2026): Position and Trading were one group, Current. v622 took the
      groups out of the rail altogether, on his instruction of 14 Sep 2026, and its own section asserts the rail now. */
