@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1194",
+  "d": "21 Oct 2026",
+  "t": "A PENDING SALT ORDER OF 0.5 UNIT IS COLLECTED UNPAID BY CR3-DAM",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> Order s278 for CR3-DAM, 0.5 unit of salt at RM75 goods, was pending since 20 Oct. The correction records that it was collected on 21 Oct: deliveredQty 0.5, deliveredOn 21 Oct, handover collected. It was preapproved. It moves no cash, so the whole RM75 stays unpaid and the order now stands as an advance.",
+   "<b>UNUSUAL:</b> the rate is RM150 a unit against a median of RM80 for CR3-DAM, the top of a range of RM80 to RM150. The dossier gives no credit cap for this party. The inventory rolls down by 0.5 unit, out to CR3-DAM, and no cost basis moves."
+  ]
+ },
+ {
   "v": "v1193",
   "d": "20 Oct 2026",
   "t": "A SALT ORDER IS SETTLED IN FULL AND A RICE SALE IS PAID AND COLLECTED",
