@@ -3876,6 +3876,18 @@ export const OWNER_JS = `
       c.textContent=String(v);
     });
   }
+  function sheetGroup(grp){
+    var os=grp.map(function(x){ return x.order; }).sort(function(a,b){ return String(a.id).localeCompare(String(b.id)); }), first=os[0];
+    var g=el('section','salt-glass-card salt-glass-card--radius-lg ordsheet'), hd=el('div','ordsheet__head');
+    g.setAttribute('data-in',grp[0].parts); g.setAttribute('data-sheet',first.sheet);
+    g.setAttribute('aria-label',os.length+' orders on one sheet from '+codeByUser(first.u));
+    hd.appendChild(el('span','salt-eyebrow salt-eyebrow--copper',os.length+' orders, one sheet')); hd.appendChild(el('span','ordsheet__age',ageOf(first.at))); g.appendChild(hd);
+    grp.forEach(function(x){ g.appendChild(orderRow(x)); });
+    var line=function(a,b){ var r=el('div','ordsheet__line'); r.appendChild(el('span',null,a)); r.appendChild(el('span','ordsheet__sum',b)); g.appendChild(r); };
+    if(first.mode==='deliver') line('Delivery, on '+orderRef(first.id),rm(+first.delivery||0));
+    line('Goods, '+os.length+' orders',rm(os.reduce(function(s,o){ return s+(+o.total||0); },0)));
+    return g;
+  }
   function markOrderRows(){
     [].forEach.call(document.querySelectorAll('#makerOrderList [data-order]'), function(r){
       if(r.getAttribute('data-order')===ordOpened) r.setAttribute('aria-current','true'); else r.removeAttribute('aria-current'); });
@@ -4029,7 +4041,16 @@ export const OWNER_JS = `
     ordEntries={}; entries.forEach(function(e){ ordEntries[e.id]=e; });
     if(status) paintOrdStatus();
     list.textContent='';
-    entries.forEach(function(e){ list.appendChild(orderRow(e)); });
+    /* Salt Admin A to C (20 Oct 2026), P5, HIS ANSWER: A SHEET IS ONE GROUP. A sheet's orders at the same stage stand in one card, each its own row
+       (and its own [data-order]) and each agreed alone; under them the sheet's delivery, on its first order, and the goods of all of them */
+    var grouped={};
+    entries.forEach(function(e){
+      if(grouped[e.id]) return;
+      var o=e.order, grp=o&&o.sheet?entries.filter(function(x){ return x.order&&x.order.u===o.u&&x.order.sheet===o.sheet&&x.parts===e.parts; }):[];
+      if(grp.length<2){ list.appendChild(orderRow(e)); return; }
+      grp.forEach(function(x){ grouped[x.id]=true; });
+      list.appendChild(sheetGroup(grp));
+    });
     /* a done or ended stage lists the orders with nothing asked of him (fifty at most) and every one that waits on him, which is never dropped; the note
        counts what the list shows against every order of the stage */
     ['done','ended'].forEach(function(st){
@@ -4206,6 +4227,15 @@ export const OWNER_JS = `
     var mo=el('span','omoment'); mo.appendChild(bandIcon(BAND_CLOCK)); mo.appendChild(el('span',null,ordMoment(order))); row.appendChild(mo);
     head.appendChild(row);
     var clock=orderClock(order); if(clock) head.appendChild(clock);
+    /* P5 (canvas V13, V19): an order of a sheet says which of it, a link to the sheet's group on Orders */
+    var shOf=sheetOf(order);
+    if(shOf.length>1){
+      var sl=actOn(el('button','osheetlink'),'order.sheet',order.id); sl.type='button';
+      sl.appendChild(el('span',null,'Sheet '+(shOf.indexOf(order)+1)+' of '+shOf.length)); sl.appendChild(bandIcon('M9 6 L15 12 L9 18'));
+      sl.addEventListener('click',function(){ var sh=order.sheet; closeOrder();
+        try{ var gr=document.querySelector('#makerOrderList [data-sheet="'+sh+'"]'); if(gr&&gr.scrollIntoView) gr.scrollIntoView({block:'nearest'}); }catch(e){} });
+      head.appendChild(sl);
+    }
     card.appendChild(head);
     var agreed=['acknowledged','ready','done'].indexOf(order.status)>=0, moved=Math.round((+order.moved||0)*100)/100;
     if(!order.writtenOff&&order.status!=='declined'&&order.status!=='cancelled') card.appendChild(ordSteps(order));
@@ -5861,7 +5891,10 @@ export const OWNER_JS = `
     needN=0;
     orders.filter(ordWaits).forEach(function(o){
       var who=codeByUser(o.u), t=!!o.test, to=orderOpener(o.id), pays=ordPays(o);
-      if(o.status==='placed') L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, head:'Agree ', rest:"'s order", mark:o.product, what:orderWhat(o), practice:t, open:to}, function(c){
+      /* P5: a sheet's placed orders are one card, the first's, saying how many; the others draw none */
+      var shP=o.sheet?orders.filter(function(x){ return x.u===o.u&&x.sheet===o.sheet&&x.status==='placed'&&ordWaits(x); }).sort(function(a,b){ return String(a.id).localeCompare(String(b.id)); }):[];
+      if(o.status==='placed'&&shP.length>1&&shP[0].id!==o.id){}
+      else if(o.status==='placed') L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, head:'Agree ', rest:shP.length>1?"'s sheet":"'s order", mark:o.product, what:shP.length>1?shP.length+' orders on one sheet':orderWhat(o), practice:t, open:to}, function(c){
         /* Agree needs the delivery charge and the window, which the full card asks for, so the button opens it */
         var k=clockOf(o);
         if(k){ var nc=el('p','need-clock'+(k.late?' need-clock--late':'')); nc.setAttribute('data-clock','');

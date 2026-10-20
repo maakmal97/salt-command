@@ -56,8 +56,8 @@
  {
   "name": "listing the orders previews each",
   "file": "stmt/owner.js",
-  "find": "    entries.forEach(function(e){ list.appendChild(orderRow(e)); });",
-  "replace": "    entries.forEach(function(e){ list.appendChild(orderRow(e)); refs('/all/maker/orders/'+encodeURIComponent(e.id)+'/preview',{}).catch(function(){}); });"
+  "find": "      if(grp.length<2){ list.appendChild(orderRow(e)); return; }",
+  "replace": "      if(grp.length<2){ list.appendChild(orderRow(e)); refs('/all/maker/orders/'+encodeURIComponent(e.id)+'/preview',{}).catch(function(){}); return; }"
  },
  {
   "name": "a closed order is not listed in any stage",

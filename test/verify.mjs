@@ -50036,6 +50036,11 @@ await (async () => {
   await (await import("./admin-ac-cost.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Admin A to C: a sheet's orders as one group, the band's Sheet link and one Needs card for the sheet (20 Oct 2026)");
+await (async () => {
+  await (await import("./admin-ac-sheet.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin: the claim card reads its rows on opening, draws the slip from the one unlock, and asks on a sheet");
 await (async () => {
   await (await import("./admin-claim-card.mjs")).run({ ok, pageWork });

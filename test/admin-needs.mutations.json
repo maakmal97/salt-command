@@ -668,8 +668,8 @@
  {
   "name": "a card's title does not lead with the verb",
   "file": "stmt/owner.js",
-  "find": "{who:who, head:'Agree ', rest:\"'s order\"",
-  "replace": "{who:who, rest:\"'s order\""
+  "find": "{who:who, head:'Agree ', rest:shP.length>1?\"'s sheet\":\"'s order\"",
+  "replace": "{who:who, rest:shP.length>1?\"'s sheet\":\"'s order\""
  },
  {
   "name": "an order's Agree on the card does nothing",

@@ -976,6 +976,13 @@ body.ended>*:not(#aEnded){display:none}
 .adm .oway--link{min-height:44px;color:var(--salt-brass);text-decoration:underline;text-underline-offset:3px}
 .adm .oclock__track{display:block}
 .adm .ordsteps{--salt-steps-n:5;padding:20px 12px}
+/* 20 Oct 2026, P5: a sheet's orders in one group card, and the band's link to it */
+.adm .ordsheet{padding:16px;display:flex;flex-direction:column;gap:10px;margin:0 0 12px}
+.adm .ordsheet__head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.adm .ordsheet__age,.adm .ordsheet__sum{font-family:var(--salt-font-mono)}
+.adm .ordsheet__line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:0 4px}
+.adm .ordsheet>.ordrow+.ordsheet__line{padding-top:8px;border-top:1px solid var(--salt-line)}
+.adm .osheetlink{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:44px;margin:0;padding:6px 0 0;border:0;border-top:1px solid var(--salt-line);background:none;color:var(--salt-brass);font:inherit;font-family:var(--salt-font-mono);cursor:pointer}
 /* 20 Oct 2026: the Bill, its figures in one right column */
 .adm .obill{margin:16px 0 4px}
 .adm .ordmoney .salt-ledger__label{flex:1;min-width:0}

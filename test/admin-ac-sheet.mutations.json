@@ -1,0 +1,11 @@
+[
+ {"name":"no group on Orders","file":"stmt/owner.js","find":"      if(grp.length<2){ list.appendChild(orderRow(e)); return; }","replace":"      if(true){ list.appendChild(orderRow(e)); return; }"},
+ {"name":"the group takes every stage","file":"stmt/owner.js","find":"x.order.sheet===o.sheet&&x.parts===e.parts; }):[];","replace":"x.order.sheet===o.sheet; }):[];"},
+ {"name":"no delivery line","file":"stmt/owner.js","find":"    if(first.mode==='deliver') line('Delivery, on '+orderRef(first.id),rm(+first.delivery||0));","replace":""},
+ {"name":"the goods of one","file":"stmt/owner.js","find":"line('Goods, '+os.length+' orders',rm(os.reduce(function(s,o){ return s+(+o.total||0); },0)));","replace":"line('Goods, '+os.length+' orders',rm(+first.total||0));"},
+ {"name":"no sheet link","file":"stmt/owner.js","find":"    if(shOf.length>1){\n      var sl=actOn(el('button','osheetlink'),'order.sheet',order.id);","replace":"    if(false){\n      var sl=actOn(el('button','osheetlink'),'order.sheet',order.id);"},
+ {"name":"the link says the wrong place","file":"stmt/owner.js","find":"'Sheet '+(shOf.indexOf(order)+1)+' of '+shOf.length","replace":"'Sheet 1 of '+shOf.length"},
+ {"name":"the link closes nothing","file":"stmt/owner.js","find":"      sl.addEventListener('click',function(){ var sh=order.sheet; closeOrder();","replace":"      sl.addEventListener('click',function(){ var sh=order.sheet;"},
+ {"name":"a Needs card for every order of a sheet","file":"stmt/owner.js","find":"      if(o.status==='placed'&&shP.length>1&&shP[0].id!==o.id){}\n      else if(o.status==='placed')","replace":"      if(o.status==='placed')"},
+ {"name":"the sheet's card says one order","file":"stmt/owner.js","find":"what:shP.length>1?shP.length+' orders on one sheet':orderWhat(o)","replace":"what:orderWhat(o)"}
+]
