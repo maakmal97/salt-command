@@ -50041,6 +50041,16 @@ await (async () => {
   await (await import("./glance-stock-snapshot.mjs")).run({ ok });
 })();
 
+section("Salt Admin's glance, stock: the Desk's route carries STOCK as the desk measured it, to the bridge alone (20 Oct 2026)");
+await (async () => {
+  await (await import("./glance-stock-desk.mjs")).run({ ok });
+})();
+
+section("Salt Admin's glance, stock: the Counter relays the Desk's figures with the day each next lot is expected (20 Oct 2026)");
+await (async () => {
+  await (await import("./glance-stock-relay.mjs")).run({ ok });
+})();
+
 section("Salt Admin: the claim card reads its rows on opening, draws the slip from the one unlock, and asks on a sheet");
 await (async () => {
   await (await import("./admin-claim-card.mjs")).run({ ok, pageWork });

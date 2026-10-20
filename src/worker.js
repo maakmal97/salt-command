@@ -22,7 +22,7 @@ import { approveFigures } from "./approve-figures.js";
 import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, TIEOUT_KEY, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades, wakeAdmin, ADMIN_ON } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault, fixtureCheck } from "./maker.js";
-import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerLedgerMini, makerUndo, makerRows, openRefunds } from "./maker-inputs.js";
+import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerLedgerMini, makerStock, makerUndo, makerRows, openRefunds } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerAppointmentClaim, makerOrderOnce } from "./maker-request.js";
 import { readVaultRegistrations } from "./vault-pair.js";
 import POSITION_ENGINE from "../engine/position.mjs";
@@ -550,6 +550,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     && p !== "/_internal/maker/vault" && p !== "/_internal/maker/vault/addr" && p !== "/_internal/maker/vault/pair"
     && p !== "/_internal/maker/geo/expand"
     && p !== "/_internal/maker/trade-cover" && p !== "/_internal/maker/trade-reading" && p !== "/_internal/maker/trip-split" && p !== "/_internal/maker/undo"
+    && p !== "/_internal/maker/stock"
     && p !== "/_internal/maker/threads" && p !== "/_internal/maker/bulletin"
     && p !== "/_internal/maker/claims" && p !== "/_internal/maker/vault/key"
     && !/^\/_internal\/maker\/slips\/[a-z0-9]{4}-[a-z0-9]{4}\/[0-9a-f]{32}$/.test(p)
@@ -754,6 +755,14 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     catch (error) { return json({ ok: false, error: String(error && error.message || error) }, 503); }
     const listed = makerOffsetOffers(book, held);
     return listed.error ? json({ ok: false, error: listed.error }, 503) : json({ ok: true, version: book.version, offers: listed.offers });
+  }
+  if (p === "/_internal/maker/stock") {
+    /* 20 Oct 2026 (canvas V62): Salt Admin's glance reads each book's stock as the desk measured it (STOCK), by GET alone; nothing here measures */
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    if (!env.SALT_LEDGER) return json({ ok: false, error: "the Desk mirror is required" }, 503);
+    const book = await readBook(env.SALT_LEDGER);
+    const stock = makerStock(book);
+    return stock.error ? json({ ok: false, error: stock.error }, 503) : json({ ok: true, version: book.version, ...stock });
   }
   if (p === "/_internal/maker/ledger") {
     /* Counter Admin's mini ledger: Open, Pending and the latest orders, read off the mirror and priced by nothing here */
