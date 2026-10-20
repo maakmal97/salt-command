@@ -56,8 +56,11 @@ export async function run({ ok }) {
   const bad = wk(); bad[3] = d("24:00", "21:00");
   ok(!v(wk()).error && v(wk()).days[5].end === 120, "a close earlier than the open is taken: " + JSON.stringify(v(wk()).days[5]));
   ok(v(same).error === "A day cannot open and close at the same time.", "the same time to open and close is refused, never read as all day: " + JSON.stringify(v(same)));
-  ok(v(early).error === "A day cannot open before the day before it closes." && v(round).error === "A day cannot open before the day before it closes.",
-    "a day opening before the day before closes is refused, Saturday into Sunday too: " + JSON.stringify([v(early), v(round)]));
+  /* 20 Oct 2026 (his answer to Fable's design): merged, no longer refused */
+  let e5, r5;
+  try { e5 = hoursStatus(cfgOf(early), kl("2026-10-17T01:00:00")); r5 = hoursStatus(cfgOf(round), kl("2026-10-18T01:30:00")); } catch (e) { e5 = r5 = { error: e.message }; }
+  ok(!v(early).error && !v(round).error && e5.nextChange === iso("2026-10-17T12:00:00") && r5.nextChange === iso("2026-10-18T05:00:00"),
+    "a day opening before the day before closes is taken and merged into one stretch, Saturday into Sunday too: " + JSON.stringify([e5, r5]));
   ok(!v(joined).error && v(bad).error === "Use valid 24-hour times.", "touching is taken; an unreadable time is refused in its own words: " + JSON.stringify([v(joined), v(bad)]));
   /* 6 */
   const fri = kl("2026-10-16T13:00:00");

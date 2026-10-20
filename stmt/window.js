@@ -16,7 +16,9 @@
  * 20 Oct 2026 (his word): a span past midnight opens the next day's early windows (Fri 09:00 to 02:00 opens Sat 00-04 as
  * 00:00-02:00). A window holding two open stretches is said from the first's start to the last's end (his answer), as the
  * manual override already was. A page cached before this offers fewer windows than the Worker takes, never more; where it
- * offered one, the Worker writes its own span, which may be the wider. */
+ * offered one, the Worker writes its own span, which may be the wider. A day of several spans, open all day (24:00) and the dated
+ * days (his answers of 20 Oct 2026) reach the windows through openParts as they reach everything else; a page cached before them
+ * reads such a day as closed, so it offers fewer windows, never more. */
 import { openParts } from "./hours.js";
 export const WINDOWS = [0, 4, 8, 12, 16, 20];
 export const SLOT_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}T(00|04|08|12|16|20)$/;
@@ -33,7 +35,7 @@ export function slotSpan(slot, cfg, at) {
   if (!(base === base)) return null;
   var a = base + (+m[2]) * H, b = a + 4 * H, parts = [];
   function spanTake(lo, hi) { if (lo < a) lo = a; if (hi > b) hi = b; if (hi > lo) parts.push([lo, hi]); }
-  var days = cfg && cfg.schedule && cfg.schedule.days, open = days && days.length === 7 ? openParts(days, a, b) : [[a, b]];
+  var days = cfg && cfg.schedule && cfg.schedule.days, open = days && days.length === 7 ? openParts(days, a, b, cfg.schedule.dates) : [[a, b]];
   var man = cfg && cfg.manual, until = man && typeof man.open === "boolean" ? Date.parse(man.until) : NaN;
   var cut = a;
   if (until === until && until > at) {

@@ -135,7 +135,11 @@ const MAPPED = [
   "Each day must be closed or have opening and closing times.",
   "Use valid 24-hour times.",
   "A day cannot open and close at the same time.",
-  "A day cannot open before the day before it closes.",
+  "A day's hours cannot run for more than 24 hours.",
+  "Each date must be closed or have opening and closing times.",
+  "Keep to 40 dates at a time.",
+  "Use a real date for each dated day.",
+  "Set dates from today to 90 days ahead.",
   "Choose whether the Counter is open or closed.",
   "Set an end time within the next 14 days.",
 ];

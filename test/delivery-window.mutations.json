@@ -1,6 +1,6 @@
 [
  {"name":"a window already begun is offered today","file":"stmt/window.js","find":"    if (start <= at) continue;","replace":"    if (start + 4 * H <= at) continue;"},
- {"name":"the hours are not read: every window open","file":"stmt/window.js","find":"open = days && days.length === 7 ? openParts(days, a, b) : [[a, b]];","replace":"open = [[a, b]];"},
+ {"name":"the hours are not read: every window open","file":"stmt/window.js","find":"open = days && days.length === 7 ? openParts(days, a, b, cfg.schedule.dates) : [[a, b]];","replace":"open = [[a, b]];"},
  {"name":"the manual override is never read","file":"stmt/window.js","find":"  if (until === until && until > at) {","replace":"  if (false) {"},
  {"name":"the span is the whole window, not the part inside the hours","file":"stmt/window.js","find":"spanTake(cut > open[j][0] ? cut : open[j][0], open[j][1]);","replace":"spanTake(cut > open[j][0] ? cut : open[j][0], b);"},
  {"name":"the Worker takes a window weeks off","file":"stmt/window.js","find":"start - at > (SLOT_DAYS + 1) * 86400000","replace":"start - at > (SLOT_DAYS + 30) * 86400000"},
@@ -8,7 +8,7 @@
  {"name":"the page's copy is not ES5","file":"stmt/window.js","find":"  var H = 3600000;\n  function nextHm(n)","replace":"  const H = 3600000;\n  function nextHm(n)"},
  {"name":"the page carries other functions","file":"stmt/page.js","find":".replace(\"/*__WINDOW__*/\", () => [slotSpan, slotNext, openParts].map(String).join(\"\\n\"))","replace":".replace(\"/*__WINDOW__*/\", () => \"function slotSpan(){return null}\\nfunction slotNext(w){return w===8?{slot:'x',span:'x'}:null}\")"},
  {"name":"a store that cannot be read closes every day","file":"stmt/hours.js","find":"catch (e) { value = null; }\n  return windowHours(value);","replace":"catch (e) { value = { schedule: { days: [null, null, null, null, null, null, null] } }; }\n  return windowHours(value);"},
- {"name":"an override that does not validate is kept","file":"stmt/hours.js","find":"d && { open: d.open, close: d.close }) } : null, manual };","replace":"d && { open: d.open, close: d.close }) } : null, manual: manual || m || null };"},
+ {"name":"an override that does not validate is kept","file":"stmt/hours.js","find":"plainWeek(days, now) : null, manual };","replace":"plainWeek(days, now) : null, manual: manual || m || null };"},
  {"name":"the span is not written on the order","file":"stmt/orders.js","find":"    slot = t.slot; span = t.span;","replace":"    slot = t.slot; span = \"\";"},
  {"name":"Place does not read the hours","file":"stmt/orders.js","find":"checkPlacement(body, open, at, !!pool, ctx && ctx.steps, ctx && ctx.hours, (ctx && ctx.mine) || []);","replace":"checkPlacement(body, open, at, !!pool, ctx && ctx.steps, null, (ctx && ctx.mine) || []);"},
  {"name":"the refusal is not in the customer's words","file":"stmt/orders.js","find":"    if (t.error) return refusal(\"slot\");","replace":"    if (t.error) return { error: \"slot\" };"},

@@ -2,12 +2,9 @@
  {"name":"a span past midnight reads as closed","file":"stmt/hours.js","find":"b = s + (c < o ? c + 1440 : c) * 60000;","replace":"b = s + c * 60000;"},
  {"name":"the walk starts on lo's own day, missing the day before's tail","file":"stmt/hours.js","find":"l.getUTCDate()) - 8 * H - D;","replace":"l.getUTCDate()) - 8 * H;"},
  {"name":"overlapping spans are kept apart","file":"stmt/hours.js","find":"if (last && parts[i][0] <= last[1])","replace":"if (false && last && parts[i][0] <= last[1])"},
- {"name":"the next open looks one day ahead","file":"stmt/hours.js","find":"openParts(schedule.days, at, at + 15 * DAY_MS)","replace":"openParts(schedule.days, at, at + DAY_MS)"},
+ {"name":"the next open looks one day ahead","file":"stmt/hours.js","find":"openParts(schedule.days, at, at + 15 * DAY_MS, schedule.dates)","replace":"openParts(schedule.days, at, at + DAY_MS, schedule.dates)"},
  {"name":"a close is never a change","file":"stmt/hours.js","find":"    if (close > at) times.push(close);\n","replace":""},
- {"name":"the same time to open and close is taken","file":"stmt/hours.js","find":"if (start === end) return","replace":"if (false && start === end) return"},
- {"name":"a day opening before the day before closes is taken","file":"stmt/hours.js","find":"if (d && next && d.end < d.start && next.start < d.end)","replace":"if (false && d && next && d.end < d.start && next.start < d.end)"},
- {"name":"Saturday's span never meets Sunday","file":"stmt/hours.js","find":"next = days[(i + 1) % 7];","replace":"next = days[i + 1];"},
- {"name":"touching spans are refused","file":"stmt/hours.js","find":"next.start < d.end)","replace":"next.start <= d.end)"},
+ {"name":"the same time to open and close is taken","file":"stmt/hours.js","find":"if (start === end || (start === 0 && end === 1440 && x.close !== \"24:00\")) return","replace":"if (false) return"},
  {"name":"an unreadable time is refused in other words","file":"stmt/hours.js","find":"return { error: \"Use valid 24-hour times.\" };","replace":"return { error: \"Each day must be closed or have opening and closing times.\" };"},
  {"name":"a window says its first stretch alone","file":"stmt/window.js","find":" if (parts[i][1] > hi) hi = parts[i][1]; }","replace":" }"}
 ]

@@ -17,7 +17,6 @@
  {"name":"a gap in the days is said as a run","file":"stmt/owner.js","find":"return run&&n.length>2?","replace":"return n.length>2?"},
  {"name":"Done sends the opens as the closes","file":"stmt/owner.js","find":"return x?{open:x.open,close:x.close}:null; })}})","replace":"return x?{open:x.open,close:x.open}:null; })}})"},
  {"name":"Done leaves the day open","file":"stmt/owner.js","find":"makerHours=value; hrsDraft=null; hrsEditing=-1; drawMakerHours();","replace":"makerHours=value; hrsDraft=null; drawMakerHours();"},
- {"name":"the overlap refusal is said in the Worker's words","file":"stmt/owner.js","find":"    'A day cannot open before the day before it closes.':'A day opens before the day before it has closed. Move one of them.',\n","replace":""},
  {"name":"a row is under 44px","file":"stmt/page.js","find":".adm .maker-day{min-height:44px;","replace":".adm .maker-day{min-height:40px;"},
  {"name":"a picker is under 44px","file":"stmt/page.js","find":".adm .maker-dayedit select{min-height:44px;","replace":".adm .maker-dayedit select{min-height:40px;"},
  {"name":"a quick button is under 44px","file":"stmt/page.js","find":".adm .maker-dayedit-acts button{min-height:44px;","replace":".adm .maker-dayedit-acts button{min-height:40px;"}
