@@ -50142,6 +50142,11 @@ await (async () => {
   await (await import("./admin-ac-railadd.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Admin A to C: from 1080px an open order fills the page, in two columns at 1180 and three at 1440 (21 Oct 2026)");
+await (async () => {
+  await (await import("./admin-ac-wide.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin: the claim card reads its rows on opening, draws the slip from the one unlock, and asks on a sheet");
 await (async () => {
   await (await import("./admin-claim-card.mjs")).run({ ok, pageWork });

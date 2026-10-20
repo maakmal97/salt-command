@@ -3907,8 +3907,9 @@ export const OWNER_JS = `
     root.textContent=''; dirty.makerReview=false;
     var e=ordOpened&&placeNow==='orders'&&ordEntries[ordOpened];
     if(e&&!ordInPart(e)) e=null;
-    /* from 860px the detail column is never an empty invitation: the first order of the part opens in it */
-    if(!e&&placeNow==='orders'&&window.matchMedia&&window.matchMedia('(min-width:860px)').matches){
+    /* from 860px to 1080px the detail column is never an empty invitation: the first order of the part opens in it. From 1080px the order
+       takes the list's place (canvas V39), so the list shows until he opens one */
+    if(!e&&placeNow==='orders'&&ordSide()){
       var first=Object.keys(ordEntries).map(function(k){ return ordEntries[k]; }).filter(function(x){ return ordInPart(x); })[0];
       if(first){ e=first; ordOpened=first.id; [first.id,first.id+':again'].forEach(function(k){ delete makerQuotes[k]; delete makerPv[k]; }); }
     }
@@ -3918,8 +3919,41 @@ export const OWNER_JS = `
     if(!e) return;
     /* 20 Oct 2026 (canvas V35): no back link; the rail or the app bar's Orders is the way back, a tap on it closing the order */
     if(e.order&&ordOpen(e.order)) orderCard(root,e.order); else if(e.row) rowCard(root,e); else if(e.trip) tripCard(root,e); else if(e.day) dayCard(root,e); else orderPlainCard(root,e);
+    ordLayout();
     focusOrderAt();
   }
+  /* where the list stands beside the card: 860 to 1080px */
+  function ordSide(){ return !!(window.matchMedia&&window.matchMedia('(min-width:860px) and (max-width:1079.98px)').matches); }
+  /* 21 Oct 2026 (canvas V39): THE OPEN ORDER IN COLUMNS. From 1180px two: the decision (the band, Agree and its row, the address, the terms, the
+     money's controls) beside the record (the steps, the Bill, the Order log) and the insight (the messages, the reward); from 1440px three. The
+     card's own parts are moved, never drawn again, so nothing typed or listened to is lost, and a change of width moves them back; below 1180 the
+     card is as it was drawn, part for part in its order. Its foot stays under the columns. */
+  var OCOL_RECORD='.ordsteps, .obill, .ordmoney, .undohist', OCOL_INSIGHT='.ordfold:not(.ordfold--rowed), .orwdcard';
+  function ordLayout(){
+    var card=document.querySelector('#makerReview > .maker-card'); if(!card) return;
+    var mm=window.matchMedia, n=mm&&mm('(min-width:1440px)').matches?3:mm&&mm('(min-width:1180px)').matches?2:1;
+    var box=card.querySelector(':scope > .ordcols');
+    if(box){
+      var back=[].concat.apply([],[].map.call(box.children,function(c){ return [].slice.call(c.children); }));
+      back.sort(function(a,b){ return (+a.getAttribute('data-ord'))-(+b.getAttribute('data-ord')); }).forEach(function(x){ card.insertBefore(x,box); });
+      box.remove();
+    }
+    var kids=[].slice.call(card.children);
+    kids.forEach(function(x,i){ x.setAttribute('data-ord',String(i)); });
+    if(n<2) return;
+    box=el('div','ordcols ordcols--'+n);
+    var cols=[0,1,2].slice(0,n).map(function(k){ var c=el('div','ordcol'); c.setAttribute('data-ocol',['decision','record','insight'][k]); box.appendChild(c); return c; });
+    var foot=card.querySelector(':scope > .maker-foot');
+    card.insertBefore(box,kids[0]||null);
+    kids.forEach(function(x){
+      if(x===foot) return;
+      var k=x.matches(OCOL_RECORD)?1:x.matches(OCOL_INSIGHT)?2:0;
+      cols[Math.min(k,n-1)].appendChild(x);
+    });
+  }
+  if(window.matchMedia) ['(min-width:1180px)','(min-width:1440px)'].forEach(function(q){
+    var m=window.matchMedia(q); if(m&&m.addEventListener) m.addEventListener('change', ordLayout);
+  });
   function openOrder(id){
     var e=ordEntries[id];
     if(!e||placeNow!=='orders'||!ordInPart(e)) return;
@@ -3931,7 +3965,7 @@ export const OWNER_JS = `
     try{
       var card=document.getElementById('makerReview');
       if(card){ if(!card.hasAttribute('tabindex')) card.setAttribute('tabindex','-1'); if(card.focus) card.focus({preventScroll:true}); }
-      if(!wide()) window.scrollTo(0,0);
+      if(!ordSide()) window.scrollTo(0,0);
       else if(card&&card.scrollIntoView) card.scrollIntoView({block:'nearest'});
     }catch(x){}
   }

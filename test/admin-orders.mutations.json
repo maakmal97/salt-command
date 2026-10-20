@@ -404,7 +404,7 @@
  {
   "name": "a row tap always takes him to the top",
   "file": "stmt/owner.js",
-  "find": "      if(!wide()) window.scrollTo(0,0);\n      else if(card&&card.scrollIntoView) card.scrollIntoView({block:'nearest'});",
+  "find": "      if(!ordSide()) window.scrollTo(0,0);\n      else if(card&&card.scrollIntoView) card.scrollIntoView({block:'nearest'});",
   "replace": "      window.scrollTo(0,0);"
  },
  {
@@ -416,8 +416,8 @@
  {
   "name": "a row tap scrolls the wrong way round",
   "file": "stmt/owner.js",
-  "find": "if(!wide()) window.scrollTo(0,0);",
-  "replace": "if(wide()) window.scrollTo(0,0);"
+  "find": "if(!ordSide()) window.scrollTo(0,0);",
+  "replace": "if(ordSide()) window.scrollTo(0,0);"
  },
  {
   "name": "the sticky card's foot goes under the App bar",

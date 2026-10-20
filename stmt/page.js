@@ -682,6 +682,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-foot__acts .btn{margin-top:0;width:auto;flex:1 1 11rem}
 .adm .maker-foot .maker-say{margin:0}
 @media (min-width:860px){.adm #makerReview .maker-foot.has{bottom:0}}
+@media (min-width:1080px){.adm #makerReview .maker-foot.has{padding-right:4px}}
 .adm .maker-queue-action{min-width:var(--salt-tap);min-height:var(--salt-tap)}
 .adm .maker-fields{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end}
 .adm .maker-field{display:flex;flex:1 1 180px;flex-direction:column;min-width:150px}
@@ -823,15 +824,24 @@ body.ended>*:not(#aEnded){display:none}
 .adm .ordlist .salt-inbox-row__title{gap:6px}
 .adm .ordlist .rnone{margin:0}
 .adm .ordlist>.salt-ghost{align-self:flex-start;margin-top:8px}
-@media (max-width:859.98px){
+/* 21 Oct 2026 (canvas V39, his answer (a)): FROM 1080PX AN OPEN ORDER TAKES THE LIST'S PLACE, as on a phone, and fills the page; the rail's
+   Orders closes it. This reverses his split of 11 Oct 2026 at that width: the list and the card stand side by side from 860 to 1080 only.
+   From 1180 the card lays out in columns, two, then three from 1440 (decision, record, insight), filled by ordLayout in stmt/owner.js. */
+@media (max-width:859.98px),(min-width:1080px){
   .adm #oSplit.open .ordlist,.adm #oSplit:not(.open) #makerReview,.adm #oSplit.open #makerReviewStatus{display:none}
 }
 @media (min-width:860px){
   .adm #oOrders{max-width:none}
-  .adm .ordgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:20px;align-items:start}
-  .adm #makerReview{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
   .adm #makerReview .aback{display:none}
 }
+@media (min-width:860px) and (max-width:1079.98px){
+  .adm .ordgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:20px;align-items:start}
+  .adm #makerReview{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
+}
+.adm .ordcols{display:grid;gap:20px;align-items:start}
+.adm .ordcols--2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.adm .ordcols--3{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) minmax(0,0.9fr)}
+.adm .ordcol{display:flex;flex-direction:column;gap:12px;min-width:0}
 @media (min-width:860px) and (max-width:1079.98px){
   /* the App bar stays fixed along the foot until 1080px, so the sticky card's foot is kept above it (it was 40px under it at 1024x768) */
   .adm #makerReview{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
