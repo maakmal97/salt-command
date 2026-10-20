@@ -3,7 +3,6 @@
  {"name":"a carried rule of the Table differs from the system's","file":"stmt/statement-css.js","find":".salt-table th, .salt-table td { padding: 8px 10px;","replace":".salt-table th, .salt-table td { padding: 8px 12px;"},
  {"name":"a note of the system's rides in with the recipes","file":"stmt/statement-css.js","find":".salt-table-wrap { overflow-x: auto; }","replace":"/* x */ .salt-table-wrap { overflow-x: auto; }"},
  {"name":"a customer's page draws a Product tag","file":"stmt/page.js","find":".psym{display:inline-block;vertical-align:-0.22em;color:var(--salt-brass)}","replace":".psym{display:inline-block;vertical-align:-0.22em;color:var(--salt-brass)}\nvar x='salt-producttag';"},
- {"name":"the hours grid restates a border radius","file":"stmt/page.js","find":".adm .maker-hours{table-layout:fixed;margin:8px 0}","replace":".adm .maker-hours{table-layout:fixed;margin:8px 0;border-radius:4px}"},
  {"name":"a ghost under .adm restates a radius","file":"stmt/page.js","find":".adm .grow .salt-ghost{flex:1}","replace":".adm .grow .salt-ghost{flex:1;border-radius:4px}"},
  {"name":"the month strip's own button rule comes back","file":"stmt/page.js","find":".mos .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}","replace":".mos .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}\n.mos button{border:1px solid var(--salt-line)}"},
  {"name":"the sheet states the danger tone beside the system's","file":"stmt/page.js","find":".ynsheet .salt-sheet__foot .salt-ghost{width:100%}","replace":".ynsheet .salt-sheet__foot .salt-ghost{width:100%}\n.ynsheet .salt-ghost--danger{--salt-ghost-tone:var(--salt-ember)}"},
@@ -22,8 +21,6 @@
  {"name":"a book's row reads differently once tagged","file":"stmt/owner.js","find":"p.appendChild(document.createTextNode(', '+rm(total))); return p;","replace":"p.appendChild(document.createTextNode(', '+rm(total)+'.')); return p;"},
  {"name":"a group order's row names its book in plain text","file":"stmt/owner.js","find":"var pline=el('p','maker-row'); pline.appendChild(bookTag(p.product));","replace":"var pline=el('p','maker-row'); pline.appendChild(document.createTextNode(p.product));"},
  {"name":"cost and margin are a line of the card's own again","file":"stmt/owner.js","find":"var row=el('div','salt-metrics salt-metrics--sm');","replace":"var row=el('div','maker-facts');"},
- {"name":"the hours are not the Table","file":"stmt/owner.js","find":"var schedule=el('table','maker-hours salt-table')","replace":"var schedule=el('table','maker-hours')"},
- {"name":"a day's cell is not the Table's label cell","file":"stmt/owner.js","find":"row.appendChild(el('td','salt-table__label')).appendChild(pick);","replace":"row.appendChild(el('td')).appendChild(pick);"},
  {"name":"Copy link is not a ghost","file":"stmt/owner.js","find":"var copy=el('button','salt-ghost','Copy link');","replace":"var copy=el('button',null,'Copy link');"},
  {"name":"Withdraw is not the danger ghost","file":"stmt/owner.js","find":"el('button','salt-ghost'+(r.revoked?'':' salt-ghost--danger'),r.revoked?'Restore':'Withdraw')","replace":"el('button','salt-ghost',r.revoked?'Restore':'Withdraw')"},
  {"name":"Decline is not the danger ghost","file":"stmt/owner.js","find":"var de=el('button','salt-ghost salt-ghost--danger','Decline');","replace":"var de=el('button','salt-ghost','Decline');"},
@@ -63,5 +60,6 @@
  {"name":"the header says it again from 1080px","file":"stmt/page.js","find":"  .chead [data-whoas]{display:none}\n","replace":""},
  {"name":"the Desk bar comes back","file":"stmt/page.js","find":"    + '<header class=\"chead\">' + (owner ? \"\" : bellBox())","replace":"    + (owner ? \"\" : '<header class=\"salt-deskbar cbar\"><div class=\"salt-deskbar__name\">Salt Counter</div></header>')\n    + '<header class=\"chead\">' + (owner ? \"\" : bellBox())"},
  {"name":"the bar stands under the rail again","file":"stmt/page.js","find":"        /* 20 Oct 2026 (canvas V32): the bar heads the whole shell, the rail and the column under it, so from 1080px it spans both */\n","replace":"        + '<span hidden></span>'\n"},
- {"name":"the bar spans one column","file":"stmt/page.js","find":"  .adm .abar{grid-column:1/-1;margin-bottom:0}","replace":"  .adm .abar{margin-bottom:0}"}
+ {"name":"the bar spans one column","file":"stmt/page.js","find":"  .adm .abar{grid-column:1/-1;margin-bottom:0}","replace":"  .adm .abar{margin-bottom:0}"},
+ {"name":"a day of the week chart is not a button","file":"stmt/owner.js","find":"var b=actOn(el('button','maker-day'),'hours.day',HRS_NAMES[i]);","replace":"var b=actOn(el('div','maker-day'),'hours.day',HRS_NAMES[i]);"}
 ]

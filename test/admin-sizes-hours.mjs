@@ -80,33 +80,13 @@ export async function run({ ok, pageWork }) {
   try {
     await p.tap("nav.shop"); await p.tap("part.shop.hours");
     const root = p.d.getElementById("makerSchedule");
-    const table = root.querySelector("table.maker-hours");
-    const heads = table ? [...table.querySelectorAll("thead th")] : [];
-    ok(!!table && same(heads.map((h) => h.textContent), ["Day", "Opens", "Closes"]) && heads.every((h) => h.getAttribute("scope") === "col"),
-      "the weekly hours are a table whose head names its three columns: " + heads.map((h) => h.textContent).join());
-    const rows = table ? [...table.querySelectorAll("tbody tr.maker-day")] : [];
-    const cells = (row) => [...row.children];
-    ok(rows.length === 7 && rows.every((r, i) => cells(r).length === 3 && cells(r).every((c) => c.tagName === "TD")
-      && cells(r)[0].textContent.trim() === DAYS[i] && cells(r)[0].querySelector("label.maker-day-pick input[type=checkbox]") && cells(r)[1].querySelector("input[type=time]") && cells(r)[2].querySelector("input[type=time]")),
-    "a row for each weekday in order, the day with its tick in the first cell (the name is the tick's label), when it opens in the second and when it closes in the third");
-    const css = [...p.d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
-    ok(table.classList.contains("salt-table") && /\.salt-table\s*\{[^}]*width:\s*100%/.test(css) && /\.adm \.maker-hours\s*\{[^}]*table-layout:\s*fixed/.test(css) && /\.adm \.maker-hours th:first-child\s*\{[^}]*width:\s*[0-9]+%/.test(css)
-      && /\.adm \.maker-day input\[type=checkbox\]\s*\{[^}]*width:\s*44px[^}]*height:\s*44px/.test(css) && !/\.adm \.maker-day\s*\{[^}]*display:\s*grid/.test(css),
-    "the table shares the width among its columns, so the head stands over them on a phone as on a desk, and a day's tick is 44px");
-    ok(rows.every((r, i) => {
-      const [tick, from, to] = [r.querySelector("input[type=checkbox]"), cells(r)[1].querySelector("input"), cells(r)[2].querySelector("input")];
-      return tick.getAttribute("data-act") === "hours.day-open" && tick.getAttribute("data-key") === DAYS[i] && from.getAttribute("data-act") === "hours.day-from" && from.getAttribute("data-key") === DAYS[i]
-        && to.getAttribute("data-act") === "hours.day-to" && to.getAttribute("data-key") === DAYS[i]
-        && tick.getAttribute("aria-label") === DAYS[i] + " is open" && from.getAttribute("aria-label") === DAYS[i] + " opens" && to.getAttribute("aria-label") === DAYS[i] + " closes";
-    }), "every control keeps its act keyed by the day, and each is named for its day and its column");
-    ok(same(rows.map((r) => cells(r)[1].querySelector("input").disabled), [true, false, true, true, true, true, true]) && cells(rows[1])[1].querySelector("input").value === "09:00" && cells(rows[1])[2].querySelector("input").value === "17:00",
-      "the day that is open shows its times and every day that is closed has them shut");
-    /* the weekly hours sent */
+    /* 20 Oct 2026 (canvas V63): the week is a chart now, its rows, pickers and quick buttons proved in test/admin-hours-week.mjs; the body it sends is the one it always sent */
     const hoursBody = (n) => p.sent("/all/maker/hours")[n];
-    p.tick(rows[2].querySelector("input[type=checkbox]"), true);
-    p.type(cells(rows[2])[1].querySelector("input"), "08:30"); p.type(cells(rows[2])[2].querySelector("input"), "12:00");
-    p.tick(rows[1].querySelector("input[type=checkbox]"), false);
-    byAct(root, "hours.save").click(); await p.work.quiet();
+    await p.tap("hours.day", "Tuesday"); await p.tap("hours.day-closed", "Tuesday");
+    for (const [act, v] of [["hours.day-from", "08:30"], ["hours.day-to", "12:00"]]) p.type(byAct(root, act, "Tuesday"), v);
+    await p.work.quiet();
+    await p.tap("hours.day", "Monday"); await p.tap("hours.day-closed", "Monday");
+    await p.tap("hours.save", "Monday");
     ok(same(hoursBody(0), { schedule: { days: [null, null, { open: "08:30", close: "12:00" }, null, null, null, null] } }),
       "the weekly hours sent are the day's times, or none for a closed day, in the week's order: " + JSON.stringify(hoursBody(0)));
     /* the override */

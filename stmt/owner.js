@@ -5232,8 +5232,77 @@ export const OWNER_JS = `
   }
   async function loadMakerHours(){
     if(placeNow!=='shop') return;
-    try{ makerHours=await refs('/all/maker/hours'); drawMakerHours(); }
+    try{ makerHours=await refs('/all/maker/hours'); hrsDraft=null; hrsEditing=-1; drawMakerHours(); }
     catch(error){ var s=document.getElementById('makerHoursStatus'); if(s) refusal(s,error); }
+  }
+  var hrsDraft=null, hrsEditing=-1, HRS_ORDER=[1,2,3,4,5,6,0];
+  var HRS_SHORT=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], HRS_NAMES=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  function hrsMin(t){ var p=String(t||'').split(':'); return p.length===2?(+p[0])*60+(+p[1]):null; }
+  function hrsHm(m){ var h=Math.floor(m/60), x=m%60; return (h<10?'0':'')+h+':'+(x<10?'0':'')+x; }
+  function hrsLate(d){ return !!d&&hrsMin(d.close)<hrsMin(d.open); }
+  function hrsPct(m){ return (m/14.4).toFixed(2)+'%'; }
+  /* the days a day copies to: the rest of its group, said "Mon to Thu" when they run on, else "Mon, Tue and Thu" */
+  function hrsGroup(i){ return (i===0||i===6?[6,0]:[1,2,3,4,5]).filter(function(k){ return k!==i; }); }
+  function hrsList(ix){
+    var n=ix.map(function(i){ return HRS_SHORT[i]; }), run=ix.every(function(k,j){ return !j||HRS_ORDER.indexOf(k)===HRS_ORDER.indexOf(ix[j-1])+1; });
+    if(n.length===1) return n[0];
+    return run&&n.length>2?n[0]+' to '+n[n.length-1]:n.slice(0,-1).join(', ')+' and '+n[n.length-1];
+  }
+  /* a quarter-hour picker; a time filed off the quarter hour stays a choice of its own, so Done never moves it unseen */
+  function hrsPick(act,key,value,label){
+    var s=actOn(el('select','fld salt-field__input'),act,key), v=hrsMin(value), list=[];
+    for(var m=0;m<1440;m+=15) list.push(m);
+    if(v!==null&&v%15) list.push(v);
+    list.sort(function(a,b){ return a-b; }).forEach(function(m){ var o=el('option',null,hrsHm(m)); o.value=hrsHm(m); s.appendChild(o); });
+    s.value=value; s.setAttribute('aria-label',label);
+    return s;
+  }
+  /* a day's row: its name, the track (the day before's tail hatched from 00, its own bar to its close or to 24) and its times */
+  function hrsRow(i){
+    var d=hrsDraft[i], b4=(i+6)%7, prev=hrsDraft[b4], tail=hrsLate(prev)?hrsMin(prev.close):0;
+    var b=actOn(el('button','maker-day'),'hours.day',HRS_NAMES[i]); b.type='button';
+    b.setAttribute('aria-expanded',String(hrsEditing===i));
+    var said=d?d.open+' to '+d.close+(hrsLate(d)?' next day':''):'Closed';
+    if(tail) said+=d?', and '+HRS_SHORT[b4]+' until '+prev.close:' (open from '+HRS_SHORT[b4]+' until '+prev.close+')';
+    b.setAttribute('aria-label',HRS_SHORT[i]+': '+said+'. Change');
+    b.appendChild(el('span','maker-day-name',HRS_SHORT[i]));
+    var track=el('span','maker-track'); track.setAttribute('aria-hidden','true');
+    if(tail){ var t=el('span','maker-tail'); t.style.left='0%'; t.style.width=hrsPct(tail); track.appendChild(t); }
+    if(d){ var o=hrsMin(d.open), bar=el('span','maker-bar'); bar.style.left=hrsPct(o); bar.style.width=hrsPct((hrsLate(d)?1440:hrsMin(d.close))-o); track.appendChild(bar); }
+    b.appendChild(track);
+    var times=el('span','maker-day-times'+(d?'':' off'),d?d.open+' to '+d.close:'Closed');
+    if(hrsLate(d)) times.appendChild(el('sup',null,'+1'));
+    b.appendChild(times);
+    b.addEventListener('click',function(){ hrsEditing=hrsEditing===i?-1:i; drawMakerHours(); hrsFocus('hours.day',HRS_NAMES[i]); });
+    return b;
+  }
+  /* a redraw keeps the control in hand */
+  function hrsFocus(act,key){ var root=document.getElementById('makerSchedule'), n=root&&[].filter.call(root.querySelectorAll('[data-act]'),function(x){ return x.getAttribute('data-act')===act&&x.getAttribute('data-key')===key; })[0]; if(n&&n.focus) n.focus(); }
+  function hrsEdit(i){
+    var d=hrsDraft[i], name=HRS_NAMES[i], late=hrsLate(d), box=el('div','maker-dayedit'), head=el('div','maker-dayedit-head'), row=el('div','maker-dayedit-times');
+    box.setAttribute('role','group'); box.setAttribute('aria-label',name+' hours');
+    head.appendChild(el('span',null,name)); if(late) head.appendChild(chip('brass','Closes next day')); box.appendChild(head);
+    var from=hrsPick('hours.day-from',name,d?d.open:'09:00',name+' opens'), to=hrsPick('hours.day-to',name,d?d.close:'17:00',name+' closes'+(late?', next day':''));
+    from.disabled=!d; to.disabled=!d;
+    [['Opens',from,false],['Closes',to,late]].forEach(function(f){
+      var l=el('label','maker-dayedit-field'), w=el('span','maker-dayedit-pick');
+      l.appendChild(el('span','lbl',f[0])); w.appendChild(f[1]); if(f[2]) w.appendChild(el('span','maker-plus1','+1')); l.appendChild(w); row.appendChild(l);
+    });
+    box.appendChild(row);
+    [from,to].forEach(function(s){ s.addEventListener('change',function(){ hrsDraft[i]={open:from.value,close:to.value}; drawMakerHours(); hrsFocus(s.getAttribute('data-act'),name); }); });
+    box.appendChild(el('p','msg','A close earlier than the open runs into the next day, on its own.'));
+    var acts=el('div','maker-dayedit-acts'), b4=(i+6)%7, group=hrsGroup(i);
+    var act=function(label,a,fn){ var b=actOn(el('button','salt-ghost',label),a,name); b.type='button'; b.addEventListener('click',function(){ fn(); drawMakerHours(); hrsFocus(a,name); }); acts.appendChild(b); };
+    act(d?'Closed':'Open','hours.day-closed',function(){ hrsDraft[i]=d?null:{open:'09:00',close:'17:00'}; });
+    act('Same as '+HRS_SHORT[b4],'hours.day-same',function(){ var p=hrsDraft[b4]; hrsDraft[i]=p?{open:p.open,close:p.close}:null; });
+    act('Copy to '+hrsList(group),'hours.day-copy',function(){ group.forEach(function(k){ hrsDraft[k]=d?{open:d.open,close:d.close}:null; }); });
+    makerButton(acts,['Done','hours.save',name],function(){
+      return refs('/all/maker/hours',{schedule:{days:hrsDraft.map(function(x){ return x?{open:x.open,close:x.close}:null; })}})
+        .then(function(value){ makerHours=value; hrsDraft=null; hrsEditing=-1; drawMakerHours(); hoursSaid('week','Weekly hours saved.'); })
+        .catch(function(error){ hoursSaid('week',null,error); });
+    },true);
+    box.appendChild(acts);
+    return box;
   }
   function drawMakerHours(){
     barDraw();
@@ -5243,30 +5312,19 @@ export const OWNER_JS = `
     var state=makerHours.status||{};
     status.textContent=(state.open?'Open now':'Closed now. Customers can still order; you answer when you open.')
       +(state.source==='default'?' · No weekly hours set.':'');
-    var names=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     drawConfirm();
-    var days=(makerHours.config&&makerHours.config.schedule&&makerHours.config.schedule.days)||[];
-    /* 12 Oct 2026 (PHASE 4a): the week is a table whose head names its three columns, the day with its tick, when it opens and when it closes; the same ticks, times, acts and body as the rows of bare controls were */
-    var schedule=el('table','maker-hours salt-table'), head=el('tr'), weekdays=el('tbody');
-    ['Day','Opens','Closes'].forEach(function(word,i){ var th=el('th',i?'':'salt-table__label',word); th.setAttribute('scope','col'); head.appendChild(th); });
-    schedule.appendChild(el('thead')).appendChild(head); schedule.appendChild(weekdays);
-    names.forEach(function(name,i){
-      var row=el('tr','maker-day'), pick=el('label','maker-day-pick'), enabled=actOn(el('input',''),'hours.day-open',name); enabled.type='checkbox'; enabled.checked=!!days[i];
-      enabled.setAttribute('aria-label',name+' is open');
-      pick.appendChild(enabled); pick.appendChild(el('span','maker-day-name',name)); row.appendChild(el('td','salt-table__label')).appendChild(pick);
-      var open=actOn(el('input','fld salt-field__input'),'hours.day-from',name); open.type='time'; open.value=days[i]?days[i].open:'09:00'; open.disabled=!enabled.checked; open.setAttribute('aria-label',name+' opens');
-      var close=actOn(el('input','fld salt-field__input'),'hours.day-to',name); close.type='time'; close.value=days[i]?days[i].close:'17:00'; close.disabled=!enabled.checked; close.setAttribute('aria-label',name+' closes');
-      enabled.addEventListener('change',function(){ open.disabled=!enabled.checked; close.disabled=!enabled.checked; });
-      row.appendChild(el('td')).appendChild(open); row.appendChild(el('td')).appendChild(close); row._hours={enabled:enabled,open:open,close:close}; weekdays.appendChild(row);
-    });
-    root.appendChild(schedule);
-    makerButton(root,['Save the weekly hours','hours.save'],function(){
-      var result={days:[]};
-      [].forEach.call(weekdays.children,function(row){ var d=row._hours; result.days.push(d.enabled.checked?{open:d.open.value,close:d.close.value}:null); });
-      return refs('/all/maker/hours',{schedule:result}).then(function(value){ makerHours=value; drawMakerHours(); hoursSaid('week','Weekly hours saved.'); })
-        .catch(function(error){ hoursSaid('week',null,error); });
-    },true);
-    /* 13 Oct 2026 (stress, Medium): the answer to Save stands under Save. It lay under the shop-for-now controls below, a screen away at 1280px. */
+    /* 20 Oct 2026 (his word, canvas V63): THE WEEK CHART. A row a day, Monday first, its open span a brass bar on a 00 to 24 track; a close
+       earlier than the open is the next day's (stmt/hours.js openParts), said "+1", and its tail is drawn hatched at the start of the next
+       day's row. A tap opens the day: Opens and Closes in quarter hours, Closed or Open, Same as the day before, Copy to the rest of its
+       group (Monday to Friday, or Saturday and Sunday; his answer 3), and Done, which saves the whole week (his answer 4). */
+    if(!hrsDraft) hrsDraft=[0,1,2,3,4,5,6].map(function(i){ var d=makerHours.config&&makerHours.config.schedule&&makerHours.config.schedule.days&&makerHours.config.schedule.days[i]; return d?{open:d.open,close:d.close}:null; });
+    root.appendChild(el('p','msg','Tap a day to change it.'));
+    var week=el('div','maker-week'), scale=el('div','maker-week-scale'), ticks=el('span');
+    week.setAttribute('role','group'); week.setAttribute('aria-label','Weekly hours'); scale.setAttribute('aria-hidden','true');
+    ['00','06','12','18','24'].forEach(function(t){ ticks.appendChild(el('span',null,t)); });
+    scale.appendChild(el('span')); scale.appendChild(ticks); scale.appendChild(el('span')); week.appendChild(scale);
+    HRS_ORDER.forEach(function(i){ week.appendChild(hrsRow(i)); if(hrsEditing===i) week.appendChild(hrsEdit(i)); });
+    root.appendChild(week);
     var weekSaid=el('p','msg osaid'); weekSaid.id='makerHoursSaved'; weekSaid.setAttribute('role','status'); weekSaid.setAttribute('aria-live','polite'); root.appendChild(weekSaid);
     /* the shop held for now is two tiles over the field that says what the one chosen does: Closed until, or Open until; Kuala Lumpur time */
     var override=el('div','maker-fields'), kind=makerTilesIn(override,['The shop, for now','hours.override-state'],[{value:'false',label:'Closed'},{value:'true',label:'Open'}]);

@@ -1,218 +1,33 @@
 [
- {
-  "name": "a rule of the 860px width is not under .adm",
-  "file": "stmt/page.js",
-  "find": "  .adm #oLinks,.adm #oCards{max-width:600px}\n",
-  "replace": "  #oLinks,#oCards{max-width:600px}\n"
- },
- {
-  "name": "the account beside Needs you stops scrolling inside itself",
-  "file": "stmt/page.js",
-  "find": "  .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}\n",
-  "replace": "  .adm #nopen,.adm #aopen{position:sticky;top:24px}\n"
- },
- {
-  "name": "the account's height forgets the App bar between 860 and 1080px",
-  "file": "stmt/page.js",
-  "find": "  .adm #nopen,.adm #aopen{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}\n",
-  "replace": ""
- },
- {
-  "name": "the two panes wait for the rail",
-  "file": "stmt/page.js",
-  "find": "@media (min-width:860px){\n  .adm #oLinks,.adm #oCards{max-width:600px}\n  .adm .nsplit,.adm .asplit{display:grid;",
-  "replace": "@media (min-width:860px){\n  .adm #oLinks,.adm #oCards{max-width:600px}\n}\n@media (min-width:1080px){\n  .adm .nsplit,.adm .asplit{display:grid;"
- },
- {
-  "name": "the invitation is drawn beside an account that is open",
-  "file": "stmt/page.js",
-  "find": "  .adm #nopen:not([hidden])~.panenone,.adm #aopen:not([hidden])~.panenone{display:none}\n",
-  "replace": ""
- },
- {
-  "name": "the invitation is drawn on a phone",
-  "file": "stmt/page.js",
-  "find": ".adm .panenone{display:none;margin:0}\n",
-  "replace": ".adm .panenone{margin:0}\n"
- },
- {
-  "name": "Customers' column does not say Tap a card",
-  "file": "stmt/page.js",
-  "find": "<div id=\"aopen\" hidden></div><p class=\"rnone panenone\">Choose a card to see it in full.</p></div>",
-  "replace": "<div id=\"aopen\" hidden></div><p class=\"rnone panenone\">Tap a card</p></div>"
- },
- {
-  "name": "the tablet dialog is a rule for every Sheet, the customer's too",
-  "file": "stmt/page.js",
-  "find": "  .adm.asheet{top:50%;right:auto;",
-  "replace": "  .salt-sheet{top:50%;right:auto;"
- },
- {
-  "name": "the drawer is 500px wide",
-  "file": "stmt/page.js",
-  "find": ".adm.asheet{top:0;left:auto;width:min(460px,100%);max-height:none;",
-  "replace": ".adm.asheet{top:0;left:auto;width:min(500px,100%);max-height:none;"
- },
- {
-  "name": "the tablet dialog paints a ground of its own",
-  "file": "stmt/page.js",
-  "find": "  .adm.asheet{top:50%;right:auto;",
-  "replace": "  .adm.asheet{background:var(--salt-obsidian);top:50%;right:auto;"
- },
- {
-  "name": "the Yes or No sheet carries no .adm or .asheet",
-  "file": "stmt/owner.js",
-  "find": "  sheetOwn=function(box){ box.classList.add('adm','asheet'); };",
-  "replace": ""
- },
- {
-  "name": "the sign-in code sheet carries neither .adm nor .asheet",
-  "file": "stmt/owner.js",
-  "find": "el('div','salt-sheet ho adm asheet')",
-  "replace": "el('div','salt-sheet ho')"
- },
- {
-  "name": "the choice sheet of Salt Admin carries neither .adm nor .asheet",
-  "file": "stmt/page.js",
-  "find": "class=\"salt-sheet' + (owner ? \" adm asheet\" : \"\") + '\" role=\"dialog\"",
-  "replace": "class=\"salt-sheet\" role=\"dialog\""
- },
- {
-  "name": "the customer's choice sheet carries .adm and .asheet",
-  "file": "stmt/page.js",
-  "find": "class=\"salt-sheet' + (owner ? \" adm asheet\" : \"\") + '\" role=\"dialog\"",
-  "replace": "class=\"salt-sheet adm asheet\" role=\"dialog\""
- },
- {
-  "name": "the portrait tablet's column is 600px",
-  "file": "stmt/page.js",
-  "find": "  .gate.adm{max-width:620px}\n",
-  "replace": "  .gate.adm{max-width:600px}\n"
- },
- {
-  "name": "a form is one column on a portrait tablet",
-  "file": "stmt/page.js",
-  "find": "  .adm .maker-input{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:14px}\n",
-  "replace": ""
- },
- {
-  "name": "a short field is not marked",
-  "file": "stmt/owner.js",
-  "find": "    if(type==='number'||type==='date'||type==='time') wrap.classList.add('maker-field--short');",
-  "replace": ""
- },
- {
-  "name": "a text field is marked short",
-  "file": "stmt/owner.js",
-  "find": "    if(type==='number'||type==='date'||type==='time') wrap.classList.add('maker-field--short');",
-  "replace": "    wrap.classList.add('maker-field--short');"
- },
- {
-  "name": "Needs you cards lie two up on a portrait tablet",
-  "file": "stmt/page.js",
-  "find": "  .adm #unsentBar{max-width:none}\n",
-  "replace": "  .adm #unsentBar{max-width:none}\n  .adm .nlist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}\n"
- },
- {
-  "name": "Shop is 600px again on a laptop",
-  "file": "stmt/page.js",
-  "find": "  .adm #oShop{max-width:760px}\n",
-  "replace": "  .adm #oShop{max-width:600px}\n"
- },
- {
-  "name": "the rows to approve are one column on a laptop",
-  "file": "stmt/page.js",
-  "find": "  .adm #makerDrafts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}\n",
-  "replace": ""
- },
- {
-  "name": "the rows to approve keep a 600px section on a laptop",
-  "file": "stmt/page.js",
-  "find": "  .adm #oOrders>.abody>#oApprove{max-width:none}\n",
-  "replace": ""
- },
- {
-  "name": "the thread does not stand beside the thread list on a laptop",
-  "file": "stmt/page.js",
-  "find": "  .adm .chatgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:0 20px;align-items:start}\n",
-  "replace": ""
- },
- {
-  "name": "the messages section is not the grid",
-  "file": "stmt/page.js",
-  "find": "<section class=\"chatgrid\" data-in=\"customers.messages\"",
-  "replace": "<section data-in=\"customers.messages\""
- },
- {
-  "name": "the open thread does not scroll inside itself",
-  "file": "stmt/page.js",
-  "find": "  .adm #makerChatOpen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}\n",
-  "replace": "  .adm #makerChatOpen{position:sticky;top:24px}\n"
- },
- {
-  "name": "a thread opens hidden",
-  "file": "stmt/owner.js",
-  "find": "var root=document.getElementById('makerChatOpen');root.hidden=false;root.textContent='';",
-  "replace": "var root=document.getElementById('makerChatOpen');root.hidden=true;root.textContent='';"
- },
- {
-  "name": "Messages opens the first thread by itself",
-  "file": "stmt/owner.js",
-  "find": "      if(makerThreadUser) drawMakerThreadLines();\n    }catch(error){ nGot('threads', error);",
-  "replace": "      if(!makerThreadUser&&makerThreads[0]) openMakerThread(makerThreads[0].u);\n      if(makerThreadUser) drawMakerThreadLines();\n    }catch(error){ nGot('threads', error);"
- },
- {
-  "name": "a form beside its menu lies two up from 860px",
-  "file": "stmt/page.js",
-  "find": "  .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}\n",
-  "replace": "  .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}\n  .adm .maker-input{display:grid}\n"
- },
- {
-  "name": "the hours table keeps the statement's 340px floor on a phone",
-  "file": "stmt/page.js",
-  "find": ".adm .maker-hours{min-width:0}",
-  "replace": ".adm .maker-hours{min-width:340px}"
- },
- {
-  "name": "the hours rule stops short of a 371px phone",
-  "file": "stmt/page.js",
-  "find": "@media (max-width:371.98px){",
-  "replace": "@media (max-width:339.98px){"
- },
- {
-  "name": "the day's column keeps 38% on a phone",
-  "file": "stmt/page.js",
-  "find": ".adm .maker-hours th:first-child{width:28%}",
-  "replace": ".adm .maker-hours th:first-child{width:38%}"
- },
- {
-  "name": "the time field keeps 8px of padding on a phone",
-  "file": "stmt/page.js",
-  "find": ".adm .maker-hours td input[type=time]{padding-inline:4px}",
-  "replace": ".adm .maker-hours td input[type=time]{padding-inline:8px}"
- },
- {
-  "name": "the tick stands beside the name on a phone",
-  "file": "stmt/page.js",
-  "find": ".adm .maker-day-pick{flex-direction:column;align-items:flex-start;gap:0}",
-  "replace": ".adm .maker-day-pick{align-items:flex-start;gap:0}"
- },
- {
-  "name": "a phone's hours rule is not under .adm",
-  "file": "stmt/page.js",
-  "find": "  .adm .maker-hours td input[type=time]{padding-inline:4px}",
-  "replace": "  .maker-hours td input[type=time]{padding-inline:4px}"
- },
- {
-  "name": "the sentence that marks where his rules begin is gone, so the check cannot tell his rules from the customer's",
-  "file": "stmt/page.js",
-  "find": "EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER PAGE'S",
-  "replace": "EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER'S PAGE"
- },
- {
-  "name": "Needs you's empty pane says Tap a card",
-  "file": "stmt/page.js",
-  "find": "'</div><div id=\"nopen\" hidden></div><p class=\"rnone panenone\">Choose a card to see it in full.</p></div>'",
-  "replace": "'</div><div id=\"nopen\" hidden></div><p class=\"rnone panenone\">Tap a card</p></div>'"
- }
+ {"name":"a rule of the 860px width is not under .adm","file":"stmt/page.js","find":"  .adm #oLinks,.adm #oCards{max-width:600px}\n","replace":"  #oLinks,#oCards{max-width:600px}\n"},
+ {"name":"the account beside Needs you stops scrolling inside itself","file":"stmt/page.js","find":"  .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}\n","replace":"  .adm #nopen,.adm #aopen{position:sticky;top:24px}\n"},
+ {"name":"the account's height forgets the App bar between 860 and 1080px","file":"stmt/page.js","find":"  .adm #nopen,.adm #aopen{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}\n","replace":""},
+ {"name":"the two panes wait for the rail","file":"stmt/page.js","find":"@media (min-width:860px){\n  .adm #oLinks,.adm #oCards{max-width:600px}\n  .adm .nsplit,.adm .asplit{display:grid;","replace":"@media (min-width:860px){\n  .adm #oLinks,.adm #oCards{max-width:600px}\n}\n@media (min-width:1080px){\n  .adm .nsplit,.adm .asplit{display:grid;"},
+ {"name":"the invitation is drawn beside an account that is open","file":"stmt/page.js","find":"  .adm #nopen:not([hidden])~.panenone,.adm #aopen:not([hidden])~.panenone{display:none}\n","replace":""},
+ {"name":"the invitation is drawn on a phone","file":"stmt/page.js","find":".adm .panenone{display:none;margin:0}\n","replace":".adm .panenone{margin:0}\n"},
+ {"name":"Customers' column does not say Tap a card","file":"stmt/page.js","find":"<div id=\"aopen\" hidden></div><p class=\"rnone panenone\">Choose a card to see it in full.</p></div>","replace":"<div id=\"aopen\" hidden></div><p class=\"rnone panenone\">Tap a card</p></div>"},
+ {"name":"the tablet dialog is a rule for every Sheet, the customer's too","file":"stmt/page.js","find":"  .adm.asheet{top:50%;right:auto;","replace":"  .salt-sheet{top:50%;right:auto;"},
+ {"name":"the drawer is 500px wide","file":"stmt/page.js","find":".adm.asheet{top:0;left:auto;width:min(460px,100%);max-height:none;","replace":".adm.asheet{top:0;left:auto;width:min(500px,100%);max-height:none;"},
+ {"name":"the tablet dialog paints a ground of its own","file":"stmt/page.js","find":"  .adm.asheet{top:50%;right:auto;","replace":"  .adm.asheet{background:var(--salt-obsidian);top:50%;right:auto;"},
+ {"name":"the Yes or No sheet carries no .adm or .asheet","file":"stmt/owner.js","find":"  sheetOwn=function(box){ box.classList.add('adm','asheet'); };","replace":""},
+ {"name":"the sign-in code sheet carries neither .adm nor .asheet","file":"stmt/owner.js","find":"el('div','salt-sheet ho adm asheet')","replace":"el('div','salt-sheet ho')"},
+ {"name":"the choice sheet of Salt Admin carries neither .adm nor .asheet","file":"stmt/page.js","find":"class=\"salt-sheet' + (owner ? \" adm asheet\" : \"\") + '\" role=\"dialog\"","replace":"class=\"salt-sheet\" role=\"dialog\""},
+ {"name":"the customer's choice sheet carries .adm and .asheet","file":"stmt/page.js","find":"class=\"salt-sheet' + (owner ? \" adm asheet\" : \"\") + '\" role=\"dialog\"","replace":"class=\"salt-sheet adm asheet\" role=\"dialog\""},
+ {"name":"the portrait tablet's column is 600px","file":"stmt/page.js","find":"  .gate.adm{max-width:620px}\n","replace":"  .gate.adm{max-width:600px}\n"},
+ {"name":"a form is one column on a portrait tablet","file":"stmt/page.js","find":"  .adm .maker-input{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:14px}\n","replace":""},
+ {"name":"a short field is not marked","file":"stmt/owner.js","find":"    if(type==='number'||type==='date'||type==='time') wrap.classList.add('maker-field--short');","replace":""},
+ {"name":"a text field is marked short","file":"stmt/owner.js","find":"    if(type==='number'||type==='date'||type==='time') wrap.classList.add('maker-field--short');","replace":"    wrap.classList.add('maker-field--short');"},
+ {"name":"Needs you cards lie two up on a portrait tablet","file":"stmt/page.js","find":"  .adm #unsentBar{max-width:none}\n","replace":"  .adm #unsentBar{max-width:none}\n  .adm .nlist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}\n"},
+ {"name":"Shop is 600px again on a laptop","file":"stmt/page.js","find":"  .adm #oShop{max-width:760px}\n","replace":"  .adm #oShop{max-width:600px}\n"},
+ {"name":"the rows to approve are one column on a laptop","file":"stmt/page.js","find":"  .adm #makerDrafts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}\n","replace":""},
+ {"name":"the rows to approve keep a 600px section on a laptop","file":"stmt/page.js","find":"  .adm #oOrders>.abody>#oApprove{max-width:none}\n","replace":""},
+ {"name":"the thread does not stand beside the thread list on a laptop","file":"stmt/page.js","find":"  .adm .chatgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:0 20px;align-items:start}\n","replace":""},
+ {"name":"the messages section is not the grid","file":"stmt/page.js","find":"<section class=\"chatgrid\" data-in=\"customers.messages\"","replace":"<section data-in=\"customers.messages\""},
+ {"name":"the open thread does not scroll inside itself","file":"stmt/page.js","find":"  .adm #makerChatOpen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}\n","replace":"  .adm #makerChatOpen{position:sticky;top:24px}\n"},
+ {"name":"a thread opens hidden","file":"stmt/owner.js","find":"var root=document.getElementById('makerChatOpen');root.hidden=false;root.textContent='';","replace":"var root=document.getElementById('makerChatOpen');root.hidden=true;root.textContent='';"},
+ {"name":"Messages opens the first thread by itself","file":"stmt/owner.js","find":"      if(makerThreadUser) drawMakerThreadLines();\n    }catch(error){ nGot('threads', error);","replace":"      if(!makerThreadUser&&makerThreads[0]) openMakerThread(makerThreads[0].u);\n      if(makerThreadUser) drawMakerThreadLines();\n    }catch(error){ nGot('threads', error);"},
+ {"name":"a form beside its menu lies two up from 860px","file":"stmt/page.js","find":"  .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}\n","replace":"  .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}\n  .adm .maker-input{display:grid}\n"},
+ {"name":"the sentence that marks where his rules begin is gone, so the check cannot tell his rules from the customer's","file":"stmt/page.js","find":"EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER PAGE'S","replace":"EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER'S PAGE"},
+ {"name":"Needs you's empty pane says Tap a card","file":"stmt/page.js","find":"'</div><div id=\"nopen\" hidden></div><p class=\"rnone panenone\">Choose a card to see it in full.</p></div>'","replace":"'</div><div id=\"nopen\" hidden></div><p class=\"rnone panenone\">Tap a card</p></div>'"},
+ {"name":"the week chart's times take 312px","file":"stmt/page.js","find":"grid-template-columns:40px minmax(0,1fr) 112px;","replace":"grid-template-columns:40px minmax(0,1fr) 312px;"}
 ]

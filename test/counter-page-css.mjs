@@ -231,12 +231,11 @@ export async function run({ ok, pageWork }) {
     ok(!!pool && pool.querySelector(".salt-producttag").classList.contains("salt-producttag--salt") && /^\[tag\], 1 unit each\. 3 of 10 units in, 1 joined\./.test(bare(pool)) && !/salt/i.test(pool.textContent),
       "a group order's row shows its book on the Product tag too, as a mark and no word: " + (pool ? bare(pool).slice(0, 60) : "no row"));
 
-    /* the hours are the Table recipe, the day's cell its label cell */
+    /* the hours are the week chart (20 Oct 2026, canvas V63), a button a day; the table is gone */
     await click(byAct(d, "nav.shop")); await click(byAct(d, "part.shop.hours")); audit();
-    const table = d.querySelector("table.maker-hours");
-    ok(!!table && table.classList.contains("salt-table") && table.querySelectorAll("thead th.salt-table__label").length === 1 && table.querySelectorAll("thead th").length === 3
-      && [...table.querySelectorAll("tbody tr")].length === 7 && [...table.querySelectorAll("tbody tr")].every((r) => r.firstElementChild.classList.contains("salt-table__label")),
-    "the weekly hours are the system's Table, the day with its tick the label cell of each row and the head's first cell the label cell of the head");
+    const week = d.querySelector("#makerSchedule .maker-week");
+    ok(!!week && !d.querySelector("table.maker-hours") && week.querySelectorAll("button.maker-day").length === 7,
+      "the weekly hours are the week chart, a button a day, and the table is gone");
 
     /* the guest links and the report card, on Customers */
     await click(byAct(d, "nav.customers")); await click(byAct(d, "part.customers.links")); audit();

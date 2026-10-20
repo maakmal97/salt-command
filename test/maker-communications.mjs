@@ -475,6 +475,8 @@ export async function run({ ok }) {
     doc.querySelector('[data-act="part.shop.hours"]').click();
     const hoursBtn = (label) => [...doc.querySelectorAll("#makerSchedule button")].find((button) => button.textContent === label);
     const holdHours = async (label, ready, saved) => {
+      /* 20 Oct 2026 (canvas V63): Done stands in an opened day */
+      if (label === "Done") { await until(() => doc.querySelector('#makerSchedule [data-act="hours.day"]')); doc.querySelector('#makerSchedule [data-act="hours.day"]').click(); }
       await until(() => hoursBtn(label));
       doc.getElementById("makerHoursMessage").textContent = ""; if (doc.getElementById("makerHoursSaved")) doc.getElementById("makerHoursSaved").textContent = "";
       if (ready) ready();
@@ -482,11 +484,11 @@ export async function run({ ok }) {
       const button = hoursBtn(label); button.click();
       const out = await until(() => hoursHeld === 1), off = button.disabled;
       release(); hoursHold = null;
-      const back = await until(() => saved.test(doc.getElementById(label === "Save the weekly hours" ? "makerHoursSaved" : "makerHoursMessage").textContent) && hoursBtn(label) && !hoursBtn(label).disabled);
+      const back = await until(() => saved.test(doc.getElementById(label === "Done" ? "makerHoursSaved" : "makerHoursMessage").textContent) && (label === "Done" ? !hoursBtn(label) : hoursBtn(label) && !hoursBtn(label).disabled));
       return { out, off, back };
     };
     for (const [label, ready, saved] of [
-      ["Save the weekly hours", () => { const day = doc.querySelector("#makerSchedule .maker-day input[type=checkbox]"); day.checked = true; day.dispatchEvent(new page.Event("change", { bubbles: true })); }, /Weekly hours saved/],
+      ["Done", null, /Weekly hours saved/],
       ["Set it", () => { doc.querySelector('#makerSchedule input[type="datetime-local"]').value = new Date(Date.now() + 3 * 86400000 + 8 * 3600000).toISOString().slice(0, 16); }, /Saved for now/],
       ["Back to the weekly hours", null, /Back on the weekly hours/]]) {
       const held = await holdHours(label, ready, saved);

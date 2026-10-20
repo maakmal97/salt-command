@@ -50118,6 +50118,11 @@ await (async () => {
   await (await import("./admin-sizes-hours.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Admin's week chart of the hours: a row a day, a span past midnight said +1 with its tail on the next day, quarter hours and the quick buttons (20 Oct 2026)");
+await (async () => {
+  await (await import("./admin-hours-week.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin: the stress run's findings: a charge that did not save is not shown as chosen, an answer stands beside its control, and For a friend is a 44px target (13 Oct 2026)");
 await (async () => {
   await (await import("./admin-stress-fixes.mjs")).run({ ok, pageWork });

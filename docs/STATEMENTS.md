@@ -2525,14 +2525,17 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `draft.approve` | Desk row card (key: data-maker-card, draft:<id>) | Approves the row, or every row of the trip. |
 | `draft.reject` | Same card | Rejects it, or the trip. |
 | `ended.sign-in` | Shown when the Access session has ended | Loads /all again, which is the Access login. |
-| `hours.day-from` | Same row | The hour it opens. |
-| `hours.day-open` | Operating hours, one a weekday (key: the weekday) | Whether that day is open. |
-| `hours.day-to` | Same row | The hour it closes. |
+| `hours.day` | Operating hours' week chart, a row a weekday (key: the weekday) | Opens or shuts that day's Opens and Closes below its row. |
+| `hours.day-closed` | The opened day (key: the weekday) | Closes the day, or opens a closed one at 09:00 to 17:00. |
+| `hours.day-copy` | The opened day (key: the weekday) | Copies its hours to the rest of its group: Monday to Friday, or Saturday and Sunday. |
+| `hours.day-from` | The opened day (key: the weekday) | The quarter hour it opens. |
+| `hours.day-same` | The opened day (key: the weekday) | Takes the day before's hours. |
+| `hours.day-to` | The opened day (key: the weekday) | The quarter hour it closes; earlier than the open is the next day. |
 | `hours.override-clear` | Operating hours | Clears it. |
 | `hours.override-set` | Operating hours | Sets the temporary override. |
 | `hours.override-state` | Operating hours (key: `false` for Closed, `true` for Open) | Whether the override holds the shop open or closed. |
 | `hours.override-until` | Operating hours | When the override ends, Kuala Lumpur time. |
-| `hours.save` | Operating hours | Saves the weekly hours. |
+| `hours.save` | The opened day, Done (key: the weekday) | Saves the whole week and shuts the day. |
 | `link.approve` | Link card of an associate's link | Approves it, which opens it. |
 | `link.open` | Link row (key: the link id) | Opens or shuts the row: its address, QR and moves. |
 | `link.copy` | Link card (key: data-link, the link id) | Copies the link. |
