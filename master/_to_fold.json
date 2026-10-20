@@ -1,0 +1,116 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-10-20T05:46:46.544Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CM4-TO",
+    "qty": 1,
+    "total": 56,
+    "cost": 56,
+    "cash": 0,
+    "settledRM": 56,
+    "rebate": true,
+    "rebateKg": 1,
+    "goodwill": true,
+    "deliveredQty": 1,
+    "deliveredOn": "2026-10-20",
+    "date": "2026-10-20"
+   },
+   "reasoning": "Redeems 1 unit of salt free to CM4-TO on 2026-10-20, settled by the reward rather than in cash. Booked as a cost and not as revenue, on his ruling of 11 Sep 2026: the row carries goodwill as well as rebate, so it stays out of revenue and its RM 56 of cost is an expense. The salt leaves the inventory and the fold rolls the stated shelf by it.",
+   "flags": [
+    "The desk says CM4-TO held 1 unit earned and unredeemed when this was pressed (1 earned, 0 already used). Rewards are worked out on the desk, not here, so that figure is the desk's word and the drafter cannot check it."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-20T05:46:46.544Z",
+    "type": "REDEEM",
+    "party": "CM4-TO",
+    "qty": 1,
+    "total": 0,
+    "status": "inkind",
+    "raw": "Redeem 1 free unit salt for CM4-TO on 2026-10-20",
+    "payload": {
+     "mode": "redeem",
+     "product": "salt",
+     "party": "CM4-TO",
+     "qty": 1,
+     "date": "2026-10-20",
+     "earned": 1,
+     "applied": 0,
+     "balance": 1
+    },
+    "makerRequest": "7aeac40554ed1d78779f80e895eb174aca941e4cb582b3f9213140ecc489f6b0"
+   },
+   "decidedAt": "2026-10-20T05:47:39.350Z",
+   "decidedBy": "Counter Admin"
+  },
+  {
+   "id": "2026-10-20T05:47:10.262Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s274",
+    "qty": 0.5,
+    "total": 45,
+    "cash": 0,
+    "date": "2026-10-19",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "settledRM",
+      "from": null,
+      "to": 45
+     },
+     {
+      "field": "rebate",
+      "from": false,
+      "to": true
+     },
+     {
+      "field": "rebateKg",
+      "from": null,
+      "to": 0.5
+     }
+    ],
+    "customer": "CS6-PER"
+   },
+   "reasoning": "Correction against CS6-PER's order of 0.5 unit for RM 45 dated 2026-10-19 (s274). Sets settledRM from unset to 45, rebate from false to true, rebateKg from unset to 0.5. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CS6-PER typically pays about RM 100/unit for salt across 16 orders; this one is RM 90, 10% below that."
+   ],
+   "amends": "s274",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-20T05:47:10.262Z",
+    "type": "AMEND",
+    "party": "CS6-PER",
+    "qty": 0,
+    "total": 0,
+    "status": "inkind",
+    "raw": "Rebate offset 0.5 unit for CS6-PER against 2026-10-19 order, RM45 settled in kind",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CS6-PER",
+     "rid": "s274",
+     "orderKey": "CS6-PER|2026-10-19|45",
+     "date": "2026-10-20",
+     "fields": {
+      "settledRM": 45,
+      "rebate": true,
+      "rebateKg": 0.5
+     }
+    },
+    "makerRequest": "06a979939611b7a299ed9a995ca5c1d39c296eebc7e2af0be3fa61753050adf9"
+   },
+   "decidedAt": "2026-10-20T05:47:42.700Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
