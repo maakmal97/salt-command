@@ -20,7 +20,7 @@
  {
   "name": "the bar loses the clock",
   "file": "stmt/page.js",
-  "find": "Salt Admin</div><div class=\"salt-deskbar__meta\"><span class=\"abarlive\" id=\"aBarLive\"></span><span class=\"abarhours\" id=\"aBarHours\" hidden></span><span class=\"clk\" data-clock></span></div>",
-  "replace": "Salt Admin</div><div class=\"salt-deskbar__meta\"><span class=\"abarlive\" id=\"aBarLive\"></span><span class=\"abarhours\" id=\"aBarHours\" hidden></span><span class=\"clk\"></span></div>"
+  "find": "Salt Admin</div><div class=\"salt-deskbar__meta\"><span class=\"abarlive\" id=\"aBarLive\"></span><button type=\"button\" class=\"abarhours\" id=\"aBarHours\" data-act=\"bar.hours\" hidden></button><span class=\"clk\" data-clock></span></div>",
+  "replace": "Salt Admin</div><div class=\"salt-deskbar__meta\"><span class=\"abarlive\" id=\"aBarLive\"></span><button type=\"button\" class=\"abarhours\" id=\"aBarHours\" data-act=\"bar.hours\" hidden></button><span class=\"clk\"></span></div>"
  }
 ]
