@@ -1,0 +1,66 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-20T05:50:15.305Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s275",
+    "qty": 3,
+    "total": 215,
+    "cash": 215,
+    "date": "2026-10-19",
+    "product": "candy",
+    "changes": [
+     {
+      "field": "delivery",
+      "from": 15,
+      "to": 0
+     }
+    ],
+    "customer": "CM4-TO-R"
+   },
+   "reasoning": "Correction against CM4-TO-R's order of 3 unit for RM 215 dated 2026-10-19 (s275). Sets delivery from 15 to 0. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [],
+   "amends": "s275",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-20T05:50:15.305Z",
+    "type": "AMEND",
+    "party": "CM4-TO-R",
+    "qty": 0,
+    "total": 0,
+    "status": "corrected",
+    "raw": "Correction against s275 for CM4-TO-R on 2026-10-20",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CM4-TO-R",
+     "product": "candy",
+     "rid": "s275",
+     "orderKey": "CM4-TO-R|2026-10-19|230|candy",
+     "date": "2026-10-20",
+     "kind": "Correction",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "sameDay": false,
+     "note": null,
+     "fields": {
+      "delivery": 0
+     },
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    },
+    "makerRequest": "29eb8f8088a3df16b31103b62391b35942b29f6136eee76df481175ff04570d6"
+   },
+   "decidedAt": "2026-10-20T05:50:35.052Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
