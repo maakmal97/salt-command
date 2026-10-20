@@ -3941,7 +3941,7 @@ export const OWNER_JS = `
     var kids=[].slice.call(card.children);
     kids.forEach(function(x,i){ x.setAttribute('data-ord',String(i)); });
     if(n<2) return;
-    box=el('div','ordcols ordcols--'+n);
+    box=el('div',n===3?'ordcols ordcols--3':'ordcols ordcols--2');
     var cols=[0,1,2].slice(0,n).map(function(k){ var c=el('div','ordcol'); c.setAttribute('data-ocol',['decision','record','insight'][k]); box.appendChild(c); return c; });
     var foot=card.querySelector(':scope > .maker-foot');
     card.insertBefore(box,kids[0]||null);
