@@ -976,6 +976,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm .oband__icon{width:16px;height:16px;flex:none;fill:none;stroke:var(--salt-brass);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .adm .oway--link{min-height:44px;color:var(--salt-brass);text-decoration:underline;text-underline-offset:3px}
 .adm .oclock__track{display:block}
+.adm .obagain{display:inline-flex;align-items:center;gap:8px}
 .adm .ordsteps{--salt-steps-n:5;padding:20px 12px}
 /* 20 Oct 2026, P5: a sheet's orders in one group card, and the band's link to it */
 .adm .ordsheet{padding:16px;display:flex;flex-direction:column;gap:10px;margin:0 0 12px}
@@ -3973,10 +3974,12 @@ const CLIENT_JS = `
     return !!P&&(q==null||priceAt(P,q)!=null); }
   /* a size the sheet may hold: priced, or past the grid's max for a price to be asked */
   function oCanPick(p,q){ var P=sold().filter(function(x){ return x.product===p; })[0]; return oSoldHas(p,q)||!!P&&overMax(P,q); }
-  function sheetOpen(product,q,opener,amend,pool){
+  function sheetOpen(product,q,opener,amend,pool,againOf){
     if(view||hold||!sold().length||!lapse.hidden) return;
     draft.amend=amend?amend.id:'';
     draft.pool=pool||'';   /* a group order is joined from the same sheet: collected, one size, its own request */
+    /* 20 Oct 2026: the order this is placed again from, for its line of that product; never an amendment's or a group order's */
+    draft.againOf=amend||pool?'':againOf&&againOf.id?againOf.id:''; draft.againProd=draft.againOf?againOf.product:'';
     if(amend){
       draft.mode=amend.mode; draft.place=amend.place||''; draft.placeWas=draft.place;
       draft.forFriend=!!amend.forFriend; draft.say=''; draft.noteOpen=false;
@@ -4595,7 +4598,7 @@ const CLIENT_JS = `
         shown:qt.total, was:null, gone:false, placed:''}; }),
       amend:draft.amend||'', sheet:draft.pool?'':draft.sheetKeep||(qs.length>1?mintRid():''), mode:draft.pool?'collect':draft.mode,
       place:draft.mode==='deliver'&&!draft.pool?String(draft.place||'').trim():'', say:draft.pool?'':String(draft.say||'').trim(), forFriend:ff,
-      pool:draft.pool||'',
+      pool:draft.pool||'', againOf:draft.amend||draft.pool?'':draft.againOf||'', againProd:draft.againProd||'',
       wantBy:draft.mode!=='deliver'&&draft.when==='day'&&wantOk(draft.wantBy)&&!draft.pool?draft.wantBy:'',
       /* 10 Oct 2026: a delivery's window, with the span it was offered at, for the check to say */
       slot:draft.mode==='deliver'&&!draft.pool?draft.slot||'':'', span:'',
@@ -4800,6 +4803,7 @@ const CLIENT_JS = `
       var l=todo[i], body={product:l.product,qty:l.q,mode:c.mode,unit:l.rate,total:l.total,place:c.place,
         forFriend:!!(assoc&&c.forFriend),note:l===c.lines[0]?c.say:'',rid:l.rid,week:week,digest:c.digest};
       if(c.sheet) body.sheet=c.sheet;
+      if(c.againOf&&l.product===c.againProd) body.againOf=c.againOf;
       if(c.wantBy) body.wantBy=c.wantBy;
       if(c.slot) body.slot=c.slot;
       if(c.pinSealed) body.pin=c.pinSealed;
@@ -4831,6 +4835,7 @@ const CLIENT_JS = `
     c.lines.forEach(function(l){ if(l.placed){ if(draft.pick) delete draft.pick[l.product]; if(draft.src==='basket') bsDrop(l.product); } });
     bsPatch();
     /* S4 4.5: Sent answers in the sheet; the Order tab behind it is drawn again with the order in it */
+    draft.againOf=''; draft.againProd='';
     draft.asked=!!ask; draft.sent=c.lines[0].placed==='placed'?'':c.lines[0].placed; draft.sheetKeep=''; draft.step='sent'; draft.check=null; draft.say=''; draft.noteOpen=false; draft.pushNote=''; draft.forFriend=null; draft.when=''; draft.wantBy='';
     sheetDraw();
     await loadOrders(); if(mine!==ticket) return;
@@ -5194,7 +5199,7 @@ const CLIENT_JS = `
   function oAgainOk(o){
     return !!o&&!view&&!hold&&!hidePrices&&movedAll(o)&&o.status!=='cancelled'&&o.status!=='declined'&&!o.pool&&oSoldHas(o.product,o.qty);
   }
-  function oAgainOf(o){ return {product:o.product, q:o.qty, mode:o.mode==='deliver'?'deliver':'collect', place:o.mode==='deliver'?String(o.place||''):'', forFriend:!!o.forFriend}; }
+  function oAgainOf(o){ return {product:o.product, q:o.qty, mode:o.mode==='deliver'?'deliver':'collect', place:o.mode==='deliver'?String(o.place||''):'', forFriend:!!o.forFriend, id:o.id}; }
   /* on the order's screen: one Pill, and today's figure off the list, never what it came to then */
   function oAgain(o){
     var w=el('div','oagain'); if(!oAgainOk(o)) return w;
@@ -6618,7 +6623,7 @@ const CLIENT_JS = `
       if(!oAgainOk(o)) return;
       var way=o.mode==='deliver'?'deliver':'collect', where=way==='deliver'?String(o.place||''):'', k=[o.product,o.qty,way,where,!!o.forFriend].join('|');
       if(seen[k]) return; seen[k]=1;
-      out.push({product:o.product, q:o.qty, mode:way, place:where, forFriend:!!o.forFriend});
+      out.push({product:o.product, q:o.qty, mode:way, place:where, forFriend:!!o.forFriend, id:o.id});
     });
     return out;
   }
@@ -6627,7 +6632,7 @@ const CLIENT_JS = `
     /* nothing of an earlier sheet rides into this one: its day, its window, its sheet id */
     draft.when='soon'; draft.wantBy=''; draft.slot=''; draft.sheetKeep='';
     if(assoc) draft.forFriend=a.forFriend;
-    sheetOpen(a.product,a.q,tile);
+    sheetOpen(a.product,a.q,tile,null,null,a);
     if(osh&&draft.step==='form'&&!formWhy()) reviewSheet();
   }
   /* COUNTER BATCH B (his answers of 18 Oct 2026): A NEW ORDER FROM HOME BY HOW IT REACHES THEM. Two tiles, I will collect and Deliver to me,

@@ -567,7 +567,7 @@ export const priceView = (p) => {
     ? { delivery: p.offer.delivery, slot: p.offer.slot || null, slotSpan: p.offer.slotSpan || null } : {});
   return v;
 };
-export function checkPlacement(body, open, at, poolOk = false, steps = null, hours = null) {
+export function checkPlacement(body, open, at, poolOk = false, steps = null, hours = null, mine = []) {
   if (!body || typeof body !== "object") return { error: "expected an order" };
   const product = String(body.product || "").trim();
   if (!/^[a-z]{1,20}$/.test(product)) return { error: "the product is not one the list carries" };
@@ -630,8 +630,11 @@ export function checkPlacement(body, open, at, poolOk = false, steps = null, hou
   if (lines.some((o) => o.product === product)) return refusal("sheetTwice");
   if (lines.length >= MAX_OPEN) return refusal("openMax", { n: openCount(open) });
   if (!lines.length && openCount(open) >= MAX_OPEN) return refusal("openMax", { n: openCount(open) });
+  /* Salt Admin A to C (20 Oct 2026), P6: ORDER AGAIN'S TAG, the order it was placed again from, kept only when it names one of the account's own
+     orders, done and owing nothing; anything else is dropped without a word, since the tag is his to read and prices nothing */
+  const againSrc = typeof body.againOf === "string" && body.againOf ? (mine || []).find((o) => o && o.id === body.againOf && o.status === "done" && dueOf(o) <= 0.004) : null;
   return { order: Object.assign({ product, qty, mode, unit: +unit.toFixed(2), total: +total.toFixed(2), week,
-    place: mode === "deliver" ? place : "", forFriend }, sheet ? { sheet } : {}, wantBy ? { wantBy } : {}, slot ? { slot, slotSpan: span } : {}, pin ? { pin } : {}, pool ? { pool } : {}), note,
+    place: mode === "deliver" ? place : "", forFriend }, sheet ? { sheet } : {}, wantBy ? { wantBy } : {}, slot ? { slot, slotSpan: span } : {}, pin ? { pin } : {}, pool ? { pool } : {}, againSrc ? { againOf: againSrc.id } : {}), note,
     ask: ask ? Object.assign({ state: "asked", at }, isNum(body.propose) ? { proposed: +body.propose.toFixed(2) } : {}) : null };
 }
 
@@ -700,7 +703,7 @@ export const PRICES_MOVED = refusal("pricesMoved").error;
    stands: the stamp is what holds a total typed at any quantity to the sealed grid. `ctx` carries the grid's steps in the
    clear (the account's record) and whether a claim of theirs waits, which Negotiate reads. */
 export function decidePlace(u, body, open, at, digest, by = "customer", pool = null, ctx = {}) {
-  const c = checkPlacement(body, open, at, !!pool, ctx && ctx.steps, ctx && ctx.hours);
+  const c = checkPlacement(body, open, at, !!pool, ctx && ctx.steps, ctx && ctx.hours, (ctx && ctx.mine) || []);
   if (c.error) return c;
   /* a stamped list is checked whatever the page sends, a Place with no stamp included; a list published with none has
      nothing to check */
@@ -1449,8 +1452,8 @@ export async function placeOrder(env, u, body, by = "customer") {
   }
   const rid = ridOf(body), again = await repeatOf(env, u, rid);
   if (again) return again;
-  const open = (await ordersOf(env, u)).filter((o) => OPEN_STATES.includes(o.status));
-  const d = decidePlace(u, body, open, new Date().toISOString(), digest, by, null, { steps, hours });
+  const all = await ordersOf(env, u), open = all.filter((o) => OPEN_STATES.includes(o.status));
+  const d = decidePlace(u, body, open, new Date().toISOString(), digest, by, null, { steps, hours, mine: all });
   if (d.error) return moved(d);
   const { order } = applyEvent(null, d.ev);
   await env.STMT.put(OKEY(u, order.id), JSON.stringify(order));
