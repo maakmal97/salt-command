@@ -2,6 +2,7 @@ import POSITION_ENGINE from "../engine/position.mjs";
 import PRICING_ENGINE from "../engine/pricing.mjs";
 import { costFor, cogsFor, floorFor, theirRates, recentRates, draftRow, findRow, checkCorrection, reviving, undoNotes } from "./drafter.js";
 import { cardAt, rowRoom, siteWords } from "./orders.js";
+import { rewardReading } from "../engine/stages.mjs";
 import { rowFigures, moveRow } from "./approve-figures.js";
 import { AGREED_ON_SITE } from "../engine/stages.mjs";
 
@@ -238,12 +239,26 @@ function rewardFree(book, code, product, pending) {
   return { ...account, free: +Math.max(0, (account.held || 0) - reserved).toFixed(2) };
 }
 
+/** 20 Oct 2026: the associate reward's figures for Salt Admin (engine/stages.mjs rewardReading), a read that writes nothing, for one order's
+    row named by its ledgerKey (the order's own, as the book keys it, ovKey); behind Access and the bridge key, never on a customer road.
+    A key two rows share names neither, as the return leg reads it. */
+export function makerRewardReading(book, key) {
+  if (!ready(book)) return { error: "The Desk mirror is being seeded." };
+  const parts = typeof key === "string" ? key.split("|") : [];
+  if (parts.length < 3 || parts.length > 4 || !/^\d{4}-\d{2}-\d{2}$/.test(parts[1])) return { error: "Name the order's row by its key." };
+  const owner = POSITION_ENGINE.ownerCode(parts[0]);
+  if (!realCode(owner, book.state.roster || [])) return { error: "Choose a party on the roster." };
+  const hits = (book.sales || []).filter((s) => s && s.rid && POSITION_ENGINE.ovKey(s) === key);
+  if (hits.length > 1) return { error: "Two rows share that key, so it names neither." };
+  return rewardReading(book, owner, { rid: hits.length ? hits[0].rid : null });
+}
 export function makerCoverPlan(body, book, pending = []) {
   if (body.product !== "salt" || body.stream === "R2" || !(body.qty > 0)
     || !code(body.party, book.state.roster || [])) return null;
   const reward = rewardFree(book, body.party, body.product, pending.filter((entry) => entry.at !== body.at));
   const snapshot = book.pricing?.byProduct?.[body.product], inputs = snapshot?.inputs;
-  if (reward.error || reward.associate || !inputs || inputs.policy?.tierRule?.fixed) return null;
+  /* 20 Oct 2026: a cover is a customer's spend, so from the switch it is retired (reward.redeemable false) */
+  if (reward.error || reward.associate || reward.redeemable === false || !inputs || inputs.policy?.tierRule?.fixed) return null;
   const ask = cardAt(book.pricing, body.party, body.product, body.qty).card;
   return POSITION_ENGINE.coverPlan({ qty: body.qty, free: reward.free, ask, goods: body.total, cost: snapshot.stockCost });
 }
@@ -566,7 +581,7 @@ export function makerInputCatalog(book, hush = {}, pending = [], registrations =
     rewards: bookRoster.filter((id) => !POSITION_ENGINE.isBucket(id)).flatMap((id) => {
       const reward = rewardFree(book, id, "salt", pending);
       if (reward.earned == null || !(reward.earned || reward.applied)) return [];
-      const free = reward.associate ? reward.free : reward.free >= 1 - 1e-9 ? 1 : 0;
+      const free = reward.redeemable === false ? 0 : reward.associate ? reward.free : reward.free >= 1 - 1e-9 ? 1 : 0;   /* 20 Oct 2026: a customer's, never */
       const sale = book.sales.filter((row) => row.customer === id && (row.product || "salt") === "salt"
         && POSITION_ENGINE.txAdvance(row) > 0.009).sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"))[0];
       return [{ code: id, held: reward.held, free: reward.free, associate: reward.associate, departed: !!reward.departed,
@@ -1073,6 +1088,7 @@ export function makerLedgerInput(operation, body, book, pending = []) {
       || !date(body.date)) return { error: "A redemption carries only its timestamp, party code and date." };
     const state = rewardFree(book, body.code, "salt", pending.filter((entry) => entry.at !== body.at));
     if (state.error) return state;
+    if (state.redeemable === false) return { error: "A customer's reward is not redeemed: only an associate's is." };
     const free = state.associate ? state.free : state.free >= 1 - 1e-9 ? 1 : 0;
     if (!(free > 0.009)) return { error: state.held >= 1 - 1e-9
       ? "The reward is already spent or reserved by another input awaiting its fold."

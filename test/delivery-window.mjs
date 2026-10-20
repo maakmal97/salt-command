@@ -33,18 +33,20 @@ export async function run({ ok }) {
     "the Worker takes a window begun but not ended, and refuses one ended, one wholly outside the hours, one past eight days, an hour not a window's, a day that is not one");
 
   /* 2. ONE RULE ON BOTH SIDES: the page carries the Worker's own source, ES5, and computes the same over a grid of times */
-  const src = [Wn.slotSpan, Wn.slotNext].map(String).join("\n");
+  const src = [Wn.slotSpan, Wn.slotNext, H.openParts].map(String).join("\n");
   ok(!/[\\`]|=>|\blet\b|\bconst\b/.test(src), "the window rule the page carries is ES5 with no backslash or backtick, so it rides in the template literal as it is");
   const { landingPage } = await import("../stmt/page.js");
   const html = landingPage("", "nw", null, null), script = html.slice(html.lastIndexOf('<script nonce="nw">') + 19, html.lastIndexOf("</script>"));
-  ok(script.includes(Wn.slotNext.toString()) && script.includes(Wn.slotSpan.toString()) && !script.includes("__WINDOW"),
-    "the page's script carries both functions as the Worker has them");
+  ok(script.includes(Wn.slotNext.toString()) && script.includes(Wn.slotSpan.toString()) && script.includes(H.openParts.toString()) && !script.includes("__WINDOW"),
+    "the page's script carries the three functions as the Worker has them, the hours' one rule (openParts) included");
   /* the functions as the page's own script holds them, never the Worker's source again: a page carrying anything else differs */
   const s0 = script.indexOf("function slotSpan("), s1 = script.indexOf("var WINS=");
   let paged = { slotNext: () => "missing" };
   try { if (s0 >= 0 && s1 > s0) paged = new Function(script.slice(s0, s1) + "\nreturn {slotNext: slotNext};")(); } catch (e) { paged = { slotNext: () => "throws" }; }
   let differ = 0, n = 0;
-  for (const cfg of [null, nine, shut, week("06:30", "10:15", [3, 6])]) for (let t = at; t < at + 9 * 24 * HR; t += 97 * 60000)
+  /* 20 Oct 2026: and two weeks with spans past midnight, one every night, one a Friday and Saturday late */
+  const late = week("09:00", "21:00", [0]); late.schedule.days[5] = { open: "09:00", close: "02:00" }; late.schedule.days[6] = { open: "10:00", close: "02:00" };
+  for (const cfg of [null, nine, shut, week("06:30", "10:15", [3, 6]), week("20:00", "03:00", [2]), late]) for (let t = at; t < at + 9 * 24 * HR; t += 97 * 60000)
     for (const w of Wn.WINDOWS) { n++; if (JSON.stringify(paged.slotNext(w, cfg, t)) !== JSON.stringify(Wn.slotNext(w, cfg, t))) differ++; }
   ok(n > 3000 && differ === 0, "the page's copy offers what the Worker's offers at every point of nine days: " + differ + " of " + n);
 

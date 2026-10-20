@@ -26,8 +26,8 @@
  {
   "name": "every entry is handed the whole plan's moves",
   "file": "engine/apply.mjs",
-  "find": "moves: movesOf(p, it) });\n    moves.push",
-  "replace": "moves: p.moves });\n    moves.push"
+  "find": "moves: movesOf(p, it), reward: ctx.reward || null, today: ctx.today || null, pricing: ctx.pricing || null });\n    moves.push",
+  "replace": "moves: p.moves, reward: ctx.reward || null, today: ctx.today || null, pricing: ctx.pricing || null });\n    moves.push"
  },
  {
   "name": "the roll note starts from the last roll's figure",

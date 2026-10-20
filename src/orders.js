@@ -27,6 +27,7 @@ import { admitInput, admitInputs } from "./input-admission.js";
 import { makerRequestFingerprint } from "./maker-request.js";
 import PRICING_ENGINE from "../engine/pricing.mjs";
 /* S1b: THE ENTRY EACH STAGE MAKES lives in engine/stages.mjs (pure); this reads, calls it, and queues. The builders stay named here for every importer. */
+import { rewardCrossOf, rewardReading, rwdOf } from "../engine/stages.mjs";
 import { rm, chargeOf, priceOf, advanceOf, acceptEntry, floorRefusal, ackRowWanted, stageAgainst, jobEntry, againEntry, keyGivenBack,
   handoverTap, receivedTap, cashTap, restateTap, pastRoom, claimRows, claimOrderFlight, claimEntry,
   stageAt, keyAfter, closedKey, ledgerKeyOf, partyOnBook, bucketFor, termsFromRow, settledFromRow, rowOut } from "../engine/stages.mjs";
@@ -290,30 +291,7 @@ export function acceptUntil(at, slot) {
   return new Date(start - t >= 3600e3 ? Math.min(start, max) : Math.min(end, max)).toISOString();
 }
 /* their card at this size: the desk's own cardQuote, carried in the pricing snapshot (tools/book.mjs), read and never worked out */
-export function cardAt(pricing, code, product, qty) {
-  const snap = pricing && pricing.byProduct && pricing.byProduct[product];
-  if (!snap || !snap.cards) return { card: null, cardNote: "the pricing snapshot carries no cards yet: the next re-seed brings them" };
-  const fixed = (snap.ladder || []).some((r) => r && r.fixed);
-  const hit = (snap.cards[code] || []).find((x) => Math.abs(x[0] - qty) < 0.009);
-  if (hit) {
-    return { card: hit[1], cardNote: fixed ? "the board, one price for everybody" : "their card at " + qty + " unit" };
-  }
-  if (!snap.cards[code]) return { card: null, cardNote: "no tier is held or proposed for them on " + product + ", so there is no card" };
-  /* 05 Oct 2026 (any quantity at an automatic price): A SIZE OFF THE BOARD is the engine's quoteAt on the snapshot's own inputs
-     and their drift, which is what their sealed grid was struck from, so the card here and the price their page quoted agree */
-  const at = quoteOff(snap, code, qty);
-  if (at != null) return { card: at, cardNote: (fixed ? "the board, one price for everybody" : "their card") + " at " + qty + " unit" };
-  return { card: null, cardNote: qty + " unit is not a size on their board, so there is no card at it" };
-}
-function quoteOff(snap, code, qty) {
-  const I = snap && snap.inputs;
-  if (!I || !I.cost || !I.policy || !(qty > 0)) return null;
-  const R = I.policy.tierRule || null;
-  const d = (snap.partners || []).includes(code) ? "partner" : R && R.drift ? (snap.lift && typeof snap.lift[code] === "number" ? snap.lift[code] : null) : 0;
-  if (d == null) return null;
-  try { const v = PRICING_ENGINE.quoteAt(qty, PRICING_ENGINE.costStack(I.cost), I.policy, d); return v != null && isFinite(v) && v > 0 ? v : null; }
-  catch (e) { return null; }
-}
+export function cardAt(pricing, code, product, qty) { return PRICING_ENGINE.cardAt(pricing, code, product, qty); }   /* the engine's, since 20 Oct 2026 */
 /* `mirror`, here and below: the invocation's one reader of the mirror (bookOnce, 06 Oct 2026); without one, a read of its own */
 async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
   if (!env.SALT_LEDGER) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" };
@@ -327,6 +305,11 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
   const fl = floorFor(book, product, qty);
   const under = floorRefusal(price, fl, qty);   /* never under the floor at this size (rule 5), engine/stages.mjs */
   if (under) return under;
+  /* 20 Oct 2026: AN ORDER THAT TAKES AN ASSOCIATE OVER THE NEXT REWARD says so at Accept, once paid: the verdict on the walk's paid progress at
+     landed cost, stamped on the entry with the step it is promised at, which the drafter puts on the Pending row and the digest names */
+  const priced0 = product === "salt" ? cogsFor(book, product, agreed.date || null) : { cost: null };
+  const rc = product === "salt" && priced0.cost != null ? rewardCrossOf(book, code, qty, goods, priced0.cost) : { cross: false };
+  if (rc.cross) { entry.rwd = "cross"; entry.rwdStep = rc.step; entry.rwdRate = rc.rate; }
   const d = draftRow(entry, book);
   if (d.skip) return { ok: false, status: 409, error: "the drafter would not draft it: " + d.skip };
   /* V5b2 (his answers of 29 Sep 2026): PAID IN ADVANCE when what they owe at once, with this order, is over the ceiling.
@@ -343,6 +326,7 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
     margin: cost && goods > 0 ? { rm: +(goods - cost.total).toFixed(2), pct: +((goods - cost.total) / goods * 100).toFixed(1) } : null,
     floor: fl ? { rm: fl.floor, at: fl.at, exact: fl.exact } : null,
     usual: usualFor(book, d.row), told: toldOf(o), pricing, prepay: adv.prepay, owedWith: adv.owedWith, ceiling: adv.ceiling, late: adv.late || null,
+    reward: product === "salt" ? rewardReading(book, code, { qty, goods, unitCost: priced0.cost }) : null, rwd: rc.cross ? "cross" : null,
     hash: await stageDigest("ack", entry, d, pricing) },
     cardAt(book.pricing, code, product, qty));
 }
@@ -413,6 +397,7 @@ export async function ackOnApproval(env, pre) {
      and its Cancellation then follows the approved row, as any withdrawal of an agreed order does */
   const r = shown.from !== "placed" ? { ok: true }
     : await moveOrder(env, pre.u, pre.order_id, Object.assign({ status: "acknowledged", delivery: +(entry.payload && entry.payload.delivery) || 0, prepay: entry.prepay === true },
+      entry.rwd === "cross" ? { rwd: "cross" } : {},   /* 20 Oct 2026: the reward word his yes covered */
       /* Step 2: the goods the row was drafted at, the site keeping what they placed it at beside it; a yes filed without a
          figure (an older entry's shape) sends none, and the order keeps its own */
       typeof entry.total === "number" && entry.total > 0 ? { total: entry.total } : {},
@@ -2027,6 +2012,15 @@ export async function tellSite(env, fixes, mirror) {
       else told++;
     }
     if (row.cancelled || row.defaulted) continue;
+    /* 20 Oct 2026: THE REWARD WORD FOLLOWS THE BOOK (rwdOf): given once a reward row names this order's row, and a cross that no longer holds cleared */
+    const want = sole ? rwdOf(book, row, o.rwd) : undefined;
+    if (want !== undefined) {
+      const w = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
+        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mark: { rwd: want } })
+      });
+      if (!w || !w.ok) failed.push({ id: o.id, why: "the site would not take its reward word" + (w ? " (http " + w.status + ")" : "") });
+      else told++;
+    }
     if (o.status === "done") {
       /* 17 Oct 2026, his yes: a settled order takes all its row states, its money and goods included, once nothing is on its way to the row */
       const s = sole && !fixWaits.has(o.id) ? settledFromRow(o, row) : null;

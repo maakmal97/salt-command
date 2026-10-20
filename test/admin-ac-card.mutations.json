@@ -15,7 +15,7 @@
  {"name":"Paid never done","file":"stmt/owner.js","find":"var pli=step(settled?' salt-steps__step--done':'',","replace":"var pli=step('',"},
  {"name":"Paid done only once the goods go","file":"stmt/owner.js","find":"var settled=agreed&&due>0&&paid>=due-0.004,","replace":"var settled=agreed&&due>0&&paid>=due-0.004&&cur>=3,"},
  {"name":"no Bill heading","file":"stmt/owner.js","find":"    card.appendChild(el('h4','salt-eyebrow salt-eyebrow--copper obill','Bill'));","replace":""},
- {"name":"the delivery row keeps its old word","file":"stmt/owner.js","find":"L.appendChild(ordLine('Delivery cost',rm(order.delivery||0)));","replace":"L.appendChild(ordLine('Delivery',rm(order.delivery||0)));"},
+ {"name":"the delivery row keeps its old word","file":"stmt/owner.js","find":"var dl=ordLine('Delivery cost',rm(order.delivery||0)), km=el('span','salt-ledger__sub okm');","replace":"var dl=ordLine('Delivery',rm(order.delivery||0)), km=el('span','salt-ledger__sub okm');"},
  {"name":"no Total","file":"stmt/owner.js","find":"tot.setAttribute('data-total',''); L.appendChild(tot);","replace":"tot.setAttribute('data-total','');"},
  {"name":"the Total leaves out the delivery","file":"stmt/owner.js","find":"var tot=ordLine('Total',rm((+order.total||0)+(+order.delivery||0)));","replace":"var tot=ordLine('Total',rm(+order.total||0));"}
 ]

@@ -161,13 +161,12 @@ export async function run({ ok, pageWork }) {
     } catch (e) { ok(false, "Messages stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
   }
 
-  /* 7. SHOP'S HOURS FIT A PHONE OF 320 TO 371px: the statement's stylesheet holds every bare table at 340px, and a column of a 372px phone is exactly 340px */
+  /* 7. SHOP'S HOURS FIT A PHONE OF 320px (20 Oct 2026, canvas V63): the week chart's row is the day's name, a track that takes what is left and the
+     times, so a 288px column holds it with room for the track; the table and its narrow-phone rules are gone */
   {
-    const q = "(max-width:371.98px)";
-    const floor = (STATEMENT_CSS.match(/table\s*\{[^}]*min-width:\s*(\d+)px/) || [])[1];
-    const t = at(q, ".adm .maker-hours"), day = at(q, ".adm .maker-hours th:first-child"), time = at(q, ".adm .maker-hours td input[type=time]"), pick = at(q, ".adm .maker-day-pick");
-    ok(floor === "340" && /min-width: 0/.test(t), "the table's own 340px floor from the statement's stylesheet gives way to the column below 372px, where the column is narrower than it (a 372px phone's is 340px): " + [floor, t].join(" | "));
-    ok(/width: 28%/.test(day) && /padding-inline: 4px/.test(time) && /flex-direction: column/.test(pick),
-      "and the day's column takes 28%, the tick stands over its name, and a time field gives up 4px of padding on each side: " + [day, time, pick].join(" | "));
+    const row = (top(".adm .maker-week-scale,.adm .maker-day").match(/grid-template-columns:([^;]*)/) || [])[1] || "";
+    const fixed = (row.replace(/minmax\([^)]*\)/, "").match(/[0-9]+px/g) || []).reduce((s, x) => s + parseInt(x, 10), 0);
+    ok(/minmax\(0(px)?, ?1fr\)/.test(row) && fixed > 0 && fixed + 2 * 12 + 16 <= 288 - 60 && !/maker-hours/.test(html),
+      "the week chart's row fits a 320px phone's column with room for its track, and the table's rules are gone: " + row);
   }
 }

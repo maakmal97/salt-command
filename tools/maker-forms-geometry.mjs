@@ -123,20 +123,19 @@ try {
       report(!f.error && f.count >= want && f.bad.length === 0 && !f.overflow, `${width}px ${title}: its ${f.count} tiles are 44px with the radio over each`, JSON.stringify(f.error ? f : { count: f.count, bad: f.bad.slice(0, 2), overflow: f.overflow }));
     }
 
-    /* the hours: a table whose head sits over its columns */
+    /* the hours: the week chart (20 Oct 2026, canvas V63), a 44px row a day and, a day opened, its pickers and quick buttons, all inside the page */
     await page.locator('[data-act="nav.shop"]:visible').last().click();
     await page.locator('[data-act="part.shop.hours"]:visible').first().click();
-    await page.waitForSelector("#makerSchedule table.maker-hours tbody tr");
+    await page.waitForSelector("#makerSchedule .maker-week button.maker-day");
+    await page.locator('#makerSchedule [data-act="hours.day"]').first().click();
+    await page.waitForSelector("#makerSchedule .maker-dayedit select");
     const table = await page.evaluate(() => {
-      const t = document.querySelector("#makerSchedule table.maker-hours"), heads = [...t.querySelectorAll("thead th")].map((h) => h.getBoundingClientRect());
-      const row = t.querySelector("tbody tr.maker-day:nth-child(2)"), cells = [...row.children].map((c) => c.getBoundingClientRect());
-      const inputs = [...row.querySelectorAll("input")].map((i) => i.getBoundingClientRect());
-      const mid = (b) => b.left + b.width / 2;
-      return { heads: heads.length, aligned: heads.every((h, i) => Math.abs(mid(h) - mid(cells[i])) < 12), inputs: inputs.map((b) => [Math.round(b.width), Math.round(b.height)]),
-        inside: inputs.every((b) => b.left >= 0 && b.right <= innerWidth), overflow: document.documentElement.scrollWidth > innerWidth, w: Math.round(t.getBoundingClientRect().width) };
+      const boxes = [...document.querySelectorAll("#makerSchedule .maker-day, #makerSchedule .maker-dayedit select, #makerSchedule .maker-dayedit-acts button:not([hidden])")].map((n) => n.getBoundingClientRect());
+      return { n: boxes.length, sizes: boxes.map((b) => [Math.round(b.width), Math.round(b.height)]), inside: boxes.every((b) => b.left >= 0 && b.right <= innerWidth),
+        overflow: document.documentElement.scrollWidth > innerWidth };
     });
-    report(table.heads === 3 && table.aligned && table.inside && !table.overflow && table.inputs.every(([w, h]) => w >= 44 && h >= 44),
-      `${width}px the hours table's head sits over its columns and its controls are 44px, inside the page`, JSON.stringify(table));
+    report(table.n >= 13 && table.inside && !table.overflow && table.sizes.every(([w, h]) => w >= 44 && h >= 44),
+      `${width}px the week chart's rows, pickers and quick buttons are 44px, inside the page`, JSON.stringify(table));
     const override = await page.evaluate(() => {
       const f = [...document.querySelectorAll("#makerSchedule fieldset.maker-tiles")][0], faces = [...f.querySelectorAll(".salt-option__face")].map((n) => Math.round(n.getBoundingClientRect().height));
       const u = document.querySelector('#makerSchedule input[type="datetime-local"]').getBoundingClientRect();

@@ -1,0 +1,5 @@
+[
+ {"name":"Orders draws its title again","file":"stmt/page.js","find":"        + '<h1 class=\"sr\">Orders</h1>'","replace":"        + \"<h1>Orders</h1>\""},
+ {"name":"Shop draws its title again","file":"stmt/page.js","find":"        + '<h1 class=\"sr\">Shop</h1>'","replace":"        + \"<h1>Shop</h1>\""},
+ {"name":"the hidden class shows","file":"stmt/page.js","find":".sr{position:absolute;width:1px;height:1px;","replace":".sr{position:static;width:auto;height:auto;"}
+]

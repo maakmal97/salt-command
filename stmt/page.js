@@ -37,6 +37,8 @@ import { PAY_SITE, PAY_ACCOUNTS, payHref } from "./pay.js";
 import { OWNER_JS } from "./owner.js";
 import { MAX_OPEN, OPEN_STATES, WANT_DAYS } from "./orders.js";
 import { slotSpan, slotNext, WINDOWS } from "./window.js";
+import { openParts } from "./hours.js";
+import GEO_ENGINE from "./geo.js";
 import { TEST_USERS, TEST_PASS } from "./testfix.js";
 import { EN, WORDS, fill, fillHtml, unitsIn } from "./words.js";
 
@@ -707,25 +709,34 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .ledgrp .salt-table td.l,.adm .ledgrp .salt-table th.l{text-align:left}
 .adm .ledgrp small{display:block;color:var(--salt-mist)}
 .adm .ledgrp .rnone{margin:0}
-/* 12 OCT 2026 (PHASE 4a, 5): THE WEEKLY HOURS ARE THE SYSTEM'S TABLE (salt-table, the day's cell its label cell). Its head names the three columns (the day with its tick, when it
-   opens, when it closes) and the rows keep the 44px of the tick and of each time. The columns share the width, so the head stands over them at 375px as at 1280. The cells hold
-   controls and not figures, so they stand left, and their gutters stay the 4px the times were fitted in. */
-.adm .maker-hours{table-layout:fixed;margin:8px 0}
-.adm .maker-hours th,.adm .maker-hours td{text-align:left;padding:2px 4px;vertical-align:middle}
-.adm .maker-hours th:first-child{width:38%}
-.adm .maker-hours td input[type=time]{width:100%;min-width:0;padding-inline:8px}
-.adm .maker-day-pick{display:flex;align-items:center;gap:4px;min-height:44px}
-.adm .maker-day input[type=checkbox]{flex:none;width:44px;height:44px;margin:0}
-.adm .maker-day-name{font-size:var(--salt-text-sm);min-width:0;overflow-wrap:anywhere}
-/* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): THE WEEKLY HOURS FIT A PHONE OF 320 TO 371px. The statement's stylesheet holds every bare table at 340px (on the statement a table sits in a box that scrolls),
-   so this one, in a column of 288px at 320, was 52px wider than its place and the page scrolled sideways. Here it takes the column's width; the day's tick stands over its name, so the day's column
-   needs the longest name's width and not the tick's and the name's together, and the two time fields keep the room their own content needs. */
-@media (max-width:371.98px){
-  .adm .maker-hours{min-width:0}
-  .adm .maker-hours th:first-child{width:28%}
-  .adm .maker-hours td input[type=time]{padding-inline:4px}
-  .adm .maker-day-pick{flex-direction:column;align-items:flex-start;gap:0}
-}
+/* 20 OCT 2026 (his word, canvas V63): THE WEEK CHART. A row a day, 44px, the name, a 00 to 24 track and the times; the open span a brass bar,
+   a span past midnight's tail hatched at the start of the next day's row. A tapped day opens below its row on slate: Opens and Closes, then
+   its quick buttons, every one 44px. */
+.adm .maker-week{display:flex;flex-direction:column;gap:2px;margin:8px 0}
+.adm .maker-week-scale,.adm .maker-day{display:grid;grid-template-columns:40px minmax(0,1fr) 136px;align-items:center;gap:12px;padding:0 8px}
+.adm .maker-week-scale>span:nth-child(2){display:flex;justify-content:space-between;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
+.adm .maker-day{min-height:44px;width:100%;border:0;border-radius:var(--salt-radius-md);background:none;color:var(--salt-salt);font:inherit;text-align:left;cursor:pointer}
+.adm .maker-day[aria-expanded=true]{background:var(--salt-glass)}
+.adm .maker-track{position:relative;display:block;height:10px;border-radius:4px;background:var(--salt-well)}
+.adm .maker-bar,.adm .maker-tail{position:absolute;top:0;bottom:0;border-radius:4px}
+.adm .maker-bar{background:var(--salt-brass)}
+.adm .maker-tail{background:repeating-linear-gradient(135deg,var(--salt-brass) 0 4px,transparent 4px 7px)}
+.adm .maker-day-times{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .maker-day-times.off{color:var(--salt-mist-bright)}
+.adm .maker-day-times sup,.adm .maker-plus1{color:var(--salt-brass);font-family:var(--salt-font-mono)}
+.adm .maker-dayedit{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:var(--salt-radius-md);background:var(--salt-slate);border:1px solid var(--salt-line)}
+.adm .maker-dayedit-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.adm .maker-dayedit-times{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;align-items:end;gap:12px}
+.adm .maker-dayedit-field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.adm .maker-dayedit-pick{display:flex;align-items:center;gap:8px}
+.adm .maker-dayedit select{min-height:44px;width:100%;min-width:0}
+.adm .maker-dayedit-acts{display:flex;flex-wrap:wrap;gap:8px}
+.adm .maker-dayedit-acts button{min-height:44px;min-width:44px}
+.adm .maker-dayedit-times>button{min-height:44px;min-width:44px}
+.adm .maker-copy{display:flex;flex-wrap:wrap;gap:8px}
+.adm .maker-copy button{min-height:44px;min-width:44px}
+.adm .maker-dates{margin-top:16px}
+.adm .maker-dayedit-acts input[type=date]{min-height:44px;min-width:0}
 .adm .maker-facts{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm)}
 .adm .maker-row{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--salt-text-sm)}
 .adm #makerBulletinCurrent{overflow-wrap:anywhere}
@@ -778,7 +789,8 @@ body.ended>*:not(#aEnded){display:none}
 .adm .alist .salt-inbox-row__title{gap:6px}
 .adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 @media (min-width:1080px){
-  .gate.adm{max-width:1180px;margin-top:0;display:flex;gap:20px;align-items:flex-start;padding-bottom:48px}
+  .gate.adm{max-width:1180px;margin-top:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:20px;align-items:start;padding-bottom:48px}
+  .adm .abar{grid-column:1/-1;margin-bottom:0}
   .adm .amain{flex:1 1 auto;min-width:0}
   .adm #oShop{max-width:760px}
 }
@@ -906,7 +918,9 @@ body.ended>*:not(#aEnded){display:none}
 .adm .nlist{display:flex;flex-direction:column;gap:12px;margin:0 0 24px}
 .adm .nlist .glink{margin:0}
 .adm .nlist .nsev{margin:8px 0 -4px}
-.adm .nchips{margin:0 0 16px}
+.adm .nkrow{margin:0 0 16px}
+.adm .nglance{grid-template-columns:repeat(2,minmax(0,1fr));margin:0 0 16px}
+.adm .nglance[hidden]{display:none}
 .adm .nfail{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:0 0 12px}
 .adm .nfail[hidden]{display:none}
 .adm .nfail__what{margin:0;flex:1 1 12em}
@@ -974,7 +988,15 @@ body.ended>*:not(#aEnded){display:none}
 .adm .oband__icon{width:16px;height:16px;flex:none;fill:none;stroke:var(--salt-brass);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .adm .oway--link{min-height:44px;color:var(--salt-brass);text-decoration:underline;text-underline-offset:3px}
 .adm .oclock__track{display:block}
+.adm .obagain{display:inline-flex;align-items:center;gap:8px}
 .adm .ordsteps{--salt-steps-n:5;padding:20px 12px}
+/* 20 Oct 2026, P5: a sheet's orders in one group card, and the band's link to it */
+.adm .ordsheet{padding:16px;display:flex;flex-direction:column;gap:10px;margin:0 0 12px}
+.adm .ordsheet__head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.adm .ordsheet__age,.adm .ordsheet__sum{font-family:var(--salt-font-mono)}
+.adm .ordsheet__line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:0 4px}
+.adm .ordsheet>.ordrow+.ordsheet__line{padding-top:8px;border-top:1px solid var(--salt-line)}
+.adm .osheetlink{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:44px;margin:0;padding:6px 0 0;border:0;border-top:1px solid var(--salt-line);background:none;color:var(--salt-brass);font:inherit;font-family:var(--salt-font-mono);cursor:pointer}
 /* 20 Oct 2026: the Bill, its figures in one right column */
 .adm .obill{margin:16px 0 4px}
 .adm .ordmoney .salt-ledger__label{flex:1;min-width:0}
@@ -1338,13 +1360,17 @@ function keepPage() {
    control keeps its id, request and behaviour. Sign out is a tap and a tap again (the page's script, lockEl). */
 /* COUNTER BATCH C (20 Oct 2026, item 17): HELP under Account, after This device, four questions each a native details row on
    the order's own fold pattern, its summary 44px with the chevron, closed until tapped; the answers as he approved them. On every
-   customer's Account, the test accounts' included; never on Salt Admin's. */
-function helpCard() {
-  const row = (k) => '<details class="ahelp__q"><summary class="ahelp__sum">' + wt("span", 'class="ahelp__t"', "help." + k) + glyphSvg("next", 18) + "</summary>"
+   customer's Account, the test accounts' included; never on Salt Admin's Account.
+   21 Oct 2026 (Salt Admin A to C, P8): owner true draws the same four, read only, on Salt Admin's Shop > Hours, so he reads what the
+   customer is told beside the hours that answer it; the words are the same keys, nothing there edits them. */
+function helpCard(owner) {
+  const row = (k) => '<details class="ahelp__q"><summary class="ahelp__sum"' + (owner ? ' data-act="shop.help.' + k + '"' : "") + ">" + wt("span", 'class="ahelp__t"', "help." + k) + glyphSvg("next", 18) + "</summary>"
     + wt("p", 'class="ahelp__a"', "help." + k + "A") + "</details>";
-  return '<section id="aHelp" class="ahelp salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="helpH">'
-    + wt("h2", 'class="salt-eyebrow salt-eyebrow--copper" id="helpH"', "help.h")
-    + ["pay", "deliv", "coll", "change"].map(row).join("") + "</section>";
+  const head = owner ? '<h2 id="mHelpH">Help</h2><p class="lead">What a customer reads under Account, Help. Read only.</p>'
+    : wt("h2", 'class="salt-eyebrow salt-eyebrow--copper" id="helpH"', "help.h");
+  return '<section id="' + (owner ? "mHelp" : "aHelp") + '" class="ahelp' + (owner ? "" : " salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm")
+    + '" aria-labelledby="' + (owner ? "mHelpH" : "helpH") + '"' + (owner ? ' data-in="shop.hours"' : "") + ">"
+    + head + ["pay", "deliv", "coll", "change"].map(row).join("") + "</section>";
 }
 function thisDevice() {
   return '<section id="thisDevice" class="devcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="devH" hidden>'
@@ -1735,6 +1761,9 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>" + AURORA
     + (owner
       ? '<div id="roster" class="gate adm">'
+        /* 20 Oct 2026 (canvas V32): the bar heads the whole shell, the rail and the column under it, so from 1080px it spans both */
+        + '<header class="salt-deskbar abar"><div class="salt-deskbar__brand"><span class="aring">' + aico("key") + '</span>'
+        + '<div class="abartext"><div class="salt-deskbar__name">Salt Admin</div><div class="salt-deskbar__meta"><span class="abarlive" id="aBarLive"></span><button type="button" class="abarhours" id="aBarHours" data-act="bar.hours" hidden></button><span class="clk" data-clock></span></div></div></div></header>'
         /* S9 9.2: HIS PLACES, the phone's App bar and, from 1080px, the Desk rail the bar gives way to (the
            system's own switch): Needs you, Orders, Customers, Record and Shop (his decision of 11 Oct 2026). A count beside a
            place is what waits there. */
@@ -1746,8 +1775,6 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div class="amain">'
         /* 18 OCT 2026, HIS WORD: THE DESK'S SHELL. The system's Desk bar heads every place, as it heads the Desk: the ring and the name, the clock
            under it. It took the rail's brand and the eyebrow each place repeated ("Salt Admin" and the clock). */
-        + '<header class="salt-deskbar abar"><div class="salt-deskbar__brand"><span class="aring">' + aico("key") + '</span>'
-        + '<div class="abartext"><div class="salt-deskbar__name">Salt Admin</div><div class="salt-deskbar__meta"><span class="abarlive" id="aBarLive"></span><button type="button" class="abarhours" id="aBarHours" data-act="bar.hours" hidden></button><span class="clk" data-clock></span></div></div></div></header>'
         /* 12 OCT 2026 (PHASE 4c): THE UNSENT-ENTRY BANNER, over every place and shown by the owner's script only while an entry sent from this phone waits unconfirmed on it */
         + '<div id="unsentBar" hidden></div>'
         /* 11 OCT 2026: WHAT IS ON SCREEN IS DECIDED BY data-in, which names the places and the parts an element shows in
@@ -1757,10 +1784,18 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div id="mHome" data-in="needs">'
         /* plan 1 (15 Oct 2026): a read that failed leads the page, with a Retry (stmt/owner.js drawFail) */
         + '<div id="nFail" class="salt-action salt-action--now nfail" role="alert" hidden></div>'
-        + "<h1>Needs you</h1>"
+        /* 20 Oct 2026 (canvas V65, his word: every page starts the same way): no title is drawn on any place; the rail's lit tab or the App bar
+           names it, and the heading stays for a reader */
+        + '<h1 class="sr">Needs you</h1>'
         + '<p class="lead" id="nCount">Reading what needs you.</p>'
-        + '<div class="salt-tabs nchips" role="tablist" aria-label="Show">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="salt-tabs__pill" role="tab" data-chip="' + k
+        /* 21 Oct 2026 (P7): the glance, Ready and Owed to you, read off the orders the page holds (stmt/owner.js drawGlance) */
+        + '<div id="nGlance" class="salt-glance nglance" aria-label="At a glance" hidden></div>'
+        /* 21 Oct 2026 (canvas V56): the kinds on one row that slides, each with its count, and Jump to beside it, a menu of every kind */
+        + '<div class="salt-tabs-row nkrow"><div class="salt-tabs salt-tabs--track nchips" role="tablist" aria-label="Show">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="salt-tabs__pill" role="tab" data-chip="' + k
           + '" data-act="need.kind.' + k + '" aria-selected="' + (i ? "false" : "true") + '">' + w + "</button>").join("") + "</div>"
+        + '<div class="salt-jump"><button type="button" class="salt-jump__btn" id="nJump" data-act="need.jump" aria-haspopup="menu" aria-expanded="false" aria-controls="nJumpMenu">Jump to</button>'
+        + '<div class="salt-jump__menu" id="nJumpMenu" role="menu" aria-label="Jump to" hidden>' + ADMIN_KINDS.map(([k, w]) => '<button type="button" class="salt-jump__item" role="menuitem" data-jump="' + k
+          + '" data-act="need.jump.' + k + '"><span>' + w + '</span><span class="salt-jump__count"></span></button>').join("") + "</div></div></div>"
         /* S9 fix: from 860px the list stands beside the account a card is about, as Accounts does (Phase 6) */
         + '<div class="nsplit"><div>'
         + '<div id="nlist" class="nlist"></div>'
@@ -1770,7 +1805,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
            (#makerOrderList, a row an order); a row opens that order's card in #makerReview, beside the list from 860px and in its place
            below it (PHASE 1c). Order for them, opened from an account, stands at the head of the place. */
         + '<div id="oOrders" class="aplace" data-in="orders" hidden>'
-        + "<h1>Orders</h1>"
+        + '<h1 class="sr">Orders</h1>'
         + '<p class="lead">Orders from the Counter, by stage. The Desk checks each answer before it reaches the book.</p>'
         + adminParts("orders", test)
         + '<div class="abody">'
@@ -1798,7 +1833,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         /* CUSTOMERS: the people. Accounts is S9 9.2's list, one list for what Send and Review were: found by a word, narrowed by a
            filter, and a row opens the account beside the list from 860px, in its place below it on a phone. */
         + '<div id="oCustomers" class="aplace" data-in="customers" hidden>'
-        + "<h1>Customers</h1>"
+        + '<h1 class="sr">Customers</h1>'
         + '<p class="lead">The people on the site: their accounts, their messages, guest links and associates.</p>'
         + adminParts("customers", test)
         + '<div class="abody">'
@@ -1838,7 +1873,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         /* RECORD: his own entries, the forms, which the Desk checks and holds for review before they change the book. The Desk's rows waiting for
            him and the entries the server holds are Approve, under Orders (17 Oct 2026, as the Desk's Order book took it). */
         + '<div id="oRecord" class="aplace" data-in="record" hidden>'
-        + "<h1>Record</h1>"
+        + '<h1 class="sr">Record</h1>'
         + '<p class="lead">Your own entries. Each waits for your approval under Orders &gt; Approve.</p>'
         + adminParts("record", test)
         + '<div class="abody">'
@@ -1846,7 +1881,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + "</div></div>"
         /* SHOP: the counter itself. The practice accounts are the two he opens to try the customer's page. */
         + '<div id="oShop" class="aplace" data-in="shop" hidden>'
-        + "<h1>Shop</h1>"
+        + '<h1 class="sr">Shop</h1>'
         + '<p class="lead">The counter itself: its hours, the notice, the practice accounts and how this device looks.</p>'
         + adminParts("shop", test)
         + '<div class="abody">'
@@ -1856,6 +1891,8 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<section data-in="shop.hours" aria-labelledby="makerPointsTitle"><h2 id="makerPointsTitle">Collection points</h2>'
         + '<p class="lead" id="makerPointsStatus">Reading.</p>'
         + '<div id="makerPoints"></div><p id="makerPointsMessage" class="msg" role="status" aria-live="polite"></p></section>'
+        /* 21 Oct 2026 (P8): the customer's Help, read only, under the hours and the points it speaks of */
+        + helpCard(true)
         + '<section data-in="shop.notice" aria-labelledby="makerBulletinTitle"><h2 id="makerBulletinTitle">Notice</h2>'
         + '<p class="lead">A line at the top of every customer account. Setting it also sends them a notification.</p>'
         + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></section>'
@@ -1979,7 +2016,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
       .replace("/*__PAYHREF__*/", () => payHref.toString())
       /* 10 Oct 2026: a delivery's time window, the Worker's own rule carried as it is (stmt/window.js), so the sheet offers
          exactly the windows the Worker takes */
-      .replace("/*__WINDOW__*/", () => [slotSpan, slotNext].map(String).join("\n")).replace("__WINDOWS__", JSON.stringify(WINDOWS))
+      .replace("/*__WINDOW__*/", () => [slotSpan, slotNext, openParts].map(String).join("\n")).replace("__WINDOWS__", JSON.stringify(WINDOWS))
       /* S4 4.6: the open-order limit the Worker refuses at, so the page can say it before the form */
       .replace("__MAX_OPEN__", String(MAX_OPEN)).replace("__WANT_DAYS__", String(WANT_DAYS)).replace("__OPEN_STATES__", JSON.stringify(OPEN_STATES)).replace("__TEST_USERS__", JSON.stringify(TEST_USERS))
       /* S7 7.1: the places, so the script names them as the markup does */
@@ -1990,7 +2027,8 @@ export function landingPage(user, nonce, owner, bulletin, test) {
       .replace("__OWNER__", () => JSON.stringify(owner || null).replace(/</g, "\\u003c"))
       /* v687: the owner's script travels only on his route. A function replacement, so nothing in
          it is read as a $ pattern. */
-      .replace("/*__OWNER_JS__*/", () => (owner ? OWNER_JS : ""))
+      /* 20 Oct 2026: and with it the one distance (stmt/geo.js, engine/geo.mjs), carried as it is, so no customer's page carries it (Fable) */
+      .replace("/*__OWNER_JS__*/", () => (owner ? String(GEO_ENGINE.haversineKm) + "\n" + OWNER_JS : ""))
       /* the test surface: the shim at the head of the script's scope, the door that signs itself in, and Salt Admin's practice mode;
          on a real page each marker is taken out, leaving the script it always was */
       .replace("/*__TS__*/", () => (test ? TEST_SHIM.replace("__TCFG__", JSON.stringify({ base: String(test.base || ""), owner: !!owner, u: test.u || "", pw: TEST_PASS })) : ""))
@@ -3960,10 +3998,12 @@ const CLIENT_JS = `
     return !!P&&(q==null||priceAt(P,q)!=null); }
   /* a size the sheet may hold: priced, or past the grid's max for a price to be asked */
   function oCanPick(p,q){ var P=sold().filter(function(x){ return x.product===p; })[0]; return oSoldHas(p,q)||!!P&&overMax(P,q); }
-  function sheetOpen(product,q,opener,amend,pool){
+  function sheetOpen(product,q,opener,amend,pool,againOf){
     if(view||hold||!sold().length||!lapse.hidden) return;
     draft.amend=amend?amend.id:'';
     draft.pool=pool||'';   /* a group order is joined from the same sheet: collected, one size, its own request */
+    /* 20 Oct 2026: the order this is placed again from, for its line of that product; never an amendment's or a group order's */
+    draft.againOf=amend||pool?'':againOf&&againOf.id?againOf.id:''; draft.againProd=draft.againOf?againOf.product:'';
     if(amend){
       draft.mode=amend.mode; draft.place=amend.place||''; draft.placeWas=draft.place;
       draft.forFriend=!!amend.forFriend; draft.say=''; draft.noteOpen=false;
@@ -4582,7 +4622,7 @@ const CLIENT_JS = `
         shown:qt.total, was:null, gone:false, placed:''}; }),
       amend:draft.amend||'', sheet:draft.pool?'':draft.sheetKeep||(qs.length>1?mintRid():''), mode:draft.pool?'collect':draft.mode,
       place:draft.mode==='deliver'&&!draft.pool?String(draft.place||'').trim():'', say:draft.pool?'':String(draft.say||'').trim(), forFriend:ff,
-      pool:draft.pool||'',
+      pool:draft.pool||'', againOf:draft.amend||draft.pool?'':draft.againOf||'', againProd:draft.againProd||'',
       wantBy:draft.mode!=='deliver'&&draft.when==='day'&&wantOk(draft.wantBy)&&!draft.pool?draft.wantBy:'',
       /* 10 Oct 2026: a delivery's window, with the span it was offered at, for the check to say */
       slot:draft.mode==='deliver'&&!draft.pool?draft.slot||'':'', span:'',
@@ -4787,6 +4827,7 @@ const CLIENT_JS = `
       var l=todo[i], body={product:l.product,qty:l.q,mode:c.mode,unit:l.rate,total:l.total,place:c.place,
         forFriend:!!(assoc&&c.forFriend),note:l===c.lines[0]?c.say:'',rid:l.rid,week:week,digest:c.digest};
       if(c.sheet) body.sheet=c.sheet;
+      if(c.againOf&&l.product===c.againProd) body.againOf=c.againOf;
       if(c.wantBy) body.wantBy=c.wantBy;
       if(c.slot) body.slot=c.slot;
       if(c.pinSealed) body.pin=c.pinSealed;
@@ -4818,6 +4859,7 @@ const CLIENT_JS = `
     c.lines.forEach(function(l){ if(l.placed){ if(draft.pick) delete draft.pick[l.product]; if(draft.src==='basket') bsDrop(l.product); } });
     bsPatch();
     /* S4 4.5: Sent answers in the sheet; the Order tab behind it is drawn again with the order in it */
+    draft.againOf=''; draft.againProd='';
     draft.asked=!!ask; draft.sent=c.lines[0].placed==='placed'?'':c.lines[0].placed; draft.sheetKeep=''; draft.step='sent'; draft.check=null; draft.say=''; draft.noteOpen=false; draft.pushNote=''; draft.forFriend=null; draft.when=''; draft.wantBy='';
     sheetDraw();
     await loadOrders(); if(mine!==ticket) return;
@@ -5181,7 +5223,7 @@ const CLIENT_JS = `
   function oAgainOk(o){
     return !!o&&!view&&!hold&&!hidePrices&&movedAll(o)&&o.status!=='cancelled'&&o.status!=='declined'&&!o.pool&&oSoldHas(o.product,o.qty);
   }
-  function oAgainOf(o){ return {product:o.product, q:o.qty, mode:o.mode==='deliver'?'deliver':'collect', place:o.mode==='deliver'?String(o.place||''):'', forFriend:!!o.forFriend}; }
+  function oAgainOf(o){ return {product:o.product, q:o.qty, mode:o.mode==='deliver'?'deliver':'collect', place:o.mode==='deliver'?String(o.place||''):'', forFriend:!!o.forFriend, id:o.id}; }
   /* on the order's screen: one Pill, and today's figure off the list, never what it came to then */
   function oAgain(o){
     var w=el('div','oagain'); if(!oAgainOk(o)) return w;
@@ -5338,7 +5380,10 @@ const CLIENT_JS = `
     else if(s==='ready') put(d?'ow.readyDeliver':'ow.readyCollect',{d:Dd(oDay,firstAt(o,'ready'))});
     else put('ow.confirmed',{d:Dd(oDay,firstAt(o,'acknowledged'))});
     /* 10 Oct 2026 (his Q4): his Accept reminds them to pay now, in words only; every term stands */
-    if(s==='acknowledged'&&!(mv>0)&&(+o.total||0)+(+o.delivery||0)-paid-oClaimed(o)>0.004){ p.appendChild(document.createTextNode(' ')); put(o.prepay?'ow.payNow':'ow.payNowCredit'); }
+    if(s==='acknowledged'&&!(mv>0)&&(+o.total||0)+(+o.delivery||0)-paid-oClaimed(o)>0.004){ p.appendChild(document.createTextNode(' ')); put(o.prepay?'ow.payNow':'ow.payNowCredit');
+    }
+    /* 20 Oct 2026: an order that takes them over to their next reward says so while it is still to pay, goods out or not, with no figure */
+    if(o.rwd==='cross'&&(s==='acknowledged'||s==='ready')&&(+o.total||0)+(+o.delivery||0)-paid-oClaimed(o)>0.004){ p.appendChild(document.createTextNode(' ')); put('ow.rwdCross'); }
     /* 29 Sep 2026: the day they asked for, while it is still to come to them */
     if(o.wantBy&&!(mv>0)&&OPEN_ST.indexOf(s)>=0){ p.appendChild(document.createTextNode(' ')); put('ow.wantBy',{d:function(L){ return esch(ymdDay(o.wantBy,L)); }}); }
     /* 10 Oct 2026: the time asked for, while the goods are still to go */
@@ -5386,6 +5431,8 @@ const CLIENT_JS = `
     L.appendChild(lrow(tw('om.goods'),rm(o.total),o.closed&&o.closed.qty?tw('om.handed',{a:Uq(o.qty,oUnit(o)), b:o.closed.qty})
       :typeof o.asked==='number'&&Math.abs(o.asked-(+o.total||0))>0.004?tw('om.placedAt',{rm:rm(o.asked)}):''));
     if(d) L.appendChild(o.status==='placed'?lrow(tw('sh.delivery'),'',o.place?tw('om.setToP',{p:o.place}):tw('om.set')):lrow(tw('sh.delivery'),rm(o.delivery||0),where));
+    /* 20 Oct 2026: the reward unit that comes with this order: its mark, one unit, no charge, and no amount */
+    if(o.rwd==='given'){ var rwr=lrow(tw('om.rwd'),tw('om.rwdFree')), rwl=rwr.querySelector('.salt-ledger__label'); rwl.insertBefore(markLead(o.product,16),rwl.firstChild); rwr.classList.add('orwd'); L.appendChild(rwr); }
     /* Counter Batch A: each payment we have, with its way and its day, where they add up to what is paid; else one line */
     var conf=(o.payments||[]).filter(function(x){ return x&&(!x.claim||x.claim==='received')&&+x.amount>0; }),
         csum=conf.reduce(function(s,x){ return s+(+x.amount); },0);
@@ -6605,7 +6652,7 @@ const CLIENT_JS = `
       if(!oAgainOk(o)) return;
       var way=o.mode==='deliver'?'deliver':'collect', where=way==='deliver'?String(o.place||''):'', k=[o.product,o.qty,way,where,!!o.forFriend].join('|');
       if(seen[k]) return; seen[k]=1;
-      out.push({product:o.product, q:o.qty, mode:way, place:where, forFriend:!!o.forFriend});
+      out.push({product:o.product, q:o.qty, mode:way, place:where, forFriend:!!o.forFriend, id:o.id});
     });
     return out;
   }
@@ -6614,7 +6661,7 @@ const CLIENT_JS = `
     /* nothing of an earlier sheet rides into this one: its day, its window, its sheet id */
     draft.when='soon'; draft.wantBy=''; draft.slot=''; draft.sheetKeep='';
     if(assoc) draft.forFriend=a.forFriend;
-    sheetOpen(a.product,a.q,tile);
+    sheetOpen(a.product,a.q,tile,null,null,a);
     if(osh&&draft.step==='form'&&!formWhy()) reviewSheet();
   }
   /* COUNTER BATCH B (his answers of 18 Oct 2026): A NEW ORDER FROM HOME BY HOW IT REACHES THEM. Two tiles, I will collect and Deliver to me,

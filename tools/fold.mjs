@@ -76,6 +76,11 @@ function rewardScheme() {
   try { const r = (JSON.parse(readFileSync(EXTRACT, "utf8")).ledger || {}).REWARD; return r && r.stated ? { stated: r.stated } : null; }
   catch { return null; }
 }
+/* 20 Oct 2026: and the pricing snapshot the drafter read, so a restated row takes their own price again (engine/apply.mjs) */
+function pricingSnapshotOf() {
+  try { const p = (JSON.parse(readFileSync(EXTRACT, "utf8")).ledger || {}).PRICING; return p && p.byProduct ? p : null; }
+  catch { return null; }
+}
 const USERS = opt("--users", resolve(REPO, "statements", "_users.json"));   // v588
 const PLACES = opt("--places", resolve(REPO, "geo", "places.json"));       // v628
 const SUITE = opt("--suite", resolve(REPO, "test", "verify.mjs"));         // v628
@@ -210,7 +215,7 @@ function skeleton(book, staged, p) {
 export const applyAmend = ENGINE_APPLY.applyAmend;
 /* S1a-ii: the plan is the engine's too; what it reads from disk and the clock comes in here, each read only when the plan asks */
 export const planCtx = { today: TODAY, pinnedInMaster,
-  get driftBooks() { return driftBooks(); }, get reward() { return rewardScheme(); } };
+  get driftBooks() { return driftBooks(); }, get reward() { return rewardScheme(); }, get pricing() { return pricingSnapshotOf(); } };
 export function plan(book, staged, notes) { return ENGINE_APPLY.planBatch(book, staged, notes, planCtx); }
 
 
@@ -234,7 +239,7 @@ export function apply(book, staged, notes, masterText) {
 
   /* the row core (the cost stamp, the rows, the rids, the counts, the renames, the roll) is the engine's, run on the caller's book in
      place as it always was (the suite holds rows by identity); a caller that wants the book left alone uses applyBatch */
-  const r = ENGINE_APPLY.applyInto(book, p, staged, notes, { nextRid, sortBook });
+  const r = ENGINE_APPLY.applyInto(book, p, staged, notes, { nextRid, sortBook, reward: planCtx.reward, today: TODAY, pricing: planCtx.pricing });
   const { folded, newest, moves, renames } = r;
 
   /* the master: the book, the version entry and the stamp; the cost basis is derived from the book (26 Sep 2026) */

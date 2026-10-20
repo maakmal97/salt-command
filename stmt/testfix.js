@@ -33,7 +33,7 @@ import { hoursConfig } from "./hours.js";
 import { TEST_USER, TEST_LOCKED, TEST_FRESH, TESTS, TEST_USERS, isTest } from "./testusers.js";
 export { TEST_USER, TEST_LOCKED, TEST_FRESH, TESTS, TEST_USERS, isTest };
 export const TEST_PASS = "0000-0000-0000-0000";
-export const FIX_VERSION = 11;   /* 11: the third account, 0000-0002, fresh with room to order (the test surface, 19 Oct 2026); 10: two orders ready at a collection point, one moved to another (Counter Batch A, 18 Oct 2026); 9: an invented account number for the pay sheet, so the publish seals the fixture afresh (Phase 7b, 11 Oct 2026); 8: the look, asked at every sign-in (11 Oct 2026); 7: his Accept for their yes, a raise and another window waiting on them, and one lapsed (10 Oct 2026) */
+export const FIX_VERSION = 13;   /* 13: the associate reward, an order that takes them over and a unit given (20 Oct 2026); 12: Order again's tag, an order naming the done one it was placed again from (20 Oct 2026) */   /* 11: the third account, 0000-0002, fresh with room to order (the test surface, 19 Oct 2026); 10: two orders ready at a collection point, one moved to another (Counter Batch A, 18 Oct 2026); 9: an invented account number for the pay sheet, so the publish seals the fixture afresh (Phase 7b, 11 Oct 2026); 8: the look, asked at every sign-in (11 Oct 2026); 7: his Accept for their yes, a raise and another window waiting on them, and one lapsed (10 Oct 2026) */
 export const fixKey = (u) => "testfix:" + u;
 
 /** The fixture for this account as read, or null: a test account's alone, and only the one it was sealed for. */

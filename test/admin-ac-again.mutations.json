@@ -1,0 +1,10 @@
+[
+ {"name":"Place keeps any tag","file":"stmt/orders.js","find":"(mine || []).find((o) => o && o.id === body.againOf && o.status === \"done\" && dueOf(o) <= 0.004) : null;","replace":"{ id: body.againOf } : null;"},
+ {"name":"Place keeps a tag of an order not done","file":"stmt/orders.js","find":"o.id === body.againOf && o.status === \"done\" && dueOf(o) <= 0.004) : null;","replace":"o.id === body.againOf && dueOf(o) <= 0.004) : null;"},
+ {"name":"Place keeps a tag of an order owing","file":"stmt/orders.js","find":"o.id === body.againOf && o.status === \"done\" && dueOf(o) <= 0.004) : null;","replace":"o.id === body.againOf && o.status === \"done\") : null;"},
+ {"name":"Place keeps no tag","file":"stmt/orders.js","find":"pool ? { pool } : {}, againSrc ? { againOf: againSrc.id } : {}), note,","replace":"pool ? { pool } : {}), note,"},
+ {"name":"decidePlace reads none of theirs","file":"stmt/orders.js","find":"ctx && ctx.hours, (ctx && ctx.mine) || []);","replace":"ctx && ctx.hours, []);"},
+ {"name":"no pill on his row","file":"stmt/owner.js","find":":(e.waits&&e.parts.indexOf('orders.placed')<0)?['copper','Waiting on you']:o.againOf?['brass','Again']:null;","replace":":(e.waits&&e.parts.indexOf('orders.placed')<0)?['copper','Waiting on you']:null;"},
+ {"name":"no source on his row","file":"stmt/owner.js","find":".concat(o.againOf?[orderRef(o.againOf)+' again']:[])","replace":""},
+ {"name":"no source in the band","file":"stmt/owner.js","find":"    if(order.againOf){ var ag=el('span','obagain');","replace":"    if(false){ var ag=el('span','obagain');"}
+]

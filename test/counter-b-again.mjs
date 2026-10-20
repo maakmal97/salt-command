@@ -68,6 +68,15 @@ export async function run({ ok, pageWork }) {
     const sb = S.st.posts[0] || {};
     ok(S.st.posts.length === 1 && !("wantBy" in sb) && sb.total === 100 && /ASAP/.test(sayDay) && !sb.note,
       "a day wanted in an earlier sheet does not ride into Order again, nor the line on the old order: " + JSON.stringify(sb));
+    /* 20 Oct 2026 (P6): Order again names the order it came from, and a sheet opened afresh after it names none */
+    ok(sb.againOf === "oC", "Order again names the order it was placed again from: " + JSON.stringify(sb.againOf));
+    const close = S.d.querySelector('#osheet [data-k="close"]'); if (close) { close.click(); await S.settle(); }
+    S.d.querySelector('button[data-t="order"]').click(); await S.settle();
+    S.d.getElementById("oNew").click(); await S.settle();
+    const go = S.d.getElementById("oGo"); if (go) { go.click(); await S.settle(); }
+    const pl2 = S.d.getElementById("oPlace"); if (pl2) { pl2.click(); await S.settle(); }
+    const sb2 = S.st.posts[1] || null;
+    ok(!!sb2 && !("againOf" in sb2), "and a sheet opened afresh after it names none: " + JSON.stringify(sb2));
 
     /* ---- 4 ---- */
     const G = await page({ orders: [C, D], late: 1 });

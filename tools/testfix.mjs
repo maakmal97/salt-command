@@ -126,6 +126,8 @@ function fresh(now, u) {
       [T(11, 45), "customer", Object.assign({ action: "pay", amount: 78 }, rail)], [T(11, 50), "desk", { verdict: { kind: "received", claim: T(11, 45), amount: 78 } }]]),
     order(oid(3, "f6"), list, T(3), { product: "rice", qty: 1, mode: "collect" }, [[T(3, 20), "customer", { action: "cancel" }]]),
     order(oid(4, "f7"), list, T(4), { product: "oil", qty: 1, mode: "collect" }, [[T(4, 30), "desk", { status: "declined", note: "None of this size this week." }]])];
+  /* 20 Oct 2026, P6: the placed salt order was placed again from the done one, as Place keeps the tag (set after the moves, as the book would) */
+  if (O[2].status === "done") O[0].againOf = O[2].id;
   const sales = [];
   for (const o of O) {
     if (!ROWED.includes(o.status)) continue;
@@ -186,7 +188,10 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
   /* COLLECTED and paid in cash: complete */
   O.push(order(oid(9, "05"), list, T(9), { product: "salt", qty: 1, mode: "collect" }, [
     [T(9, 20), "desk", { status: "acknowledged" }], [T(8), "desk", READY_AT()],
-    [T(8, 30), "desk", { handover: { units: 1 } }], [T(8, 31), "desk", { cash: { amount: 110 } }]]));
+    [T(8, 30), "desk", { handover: { units: 1 } }], [T(8, 31), "desk", { cash: { amount: 110 } }],
+    [T(8, 40), "desk", { mark: { rwd: "given" } }]]));   /* 20 Oct 2026: and it took them over the next reward, the unit given with it */
+  /* 20 OCT 2026: CONFIRMED AND STILL TO PAY, an order that brings the associate over to the next reward, his Accept's word on it */
+  O.push(order(oid(1, "48"), list, T(1, 35), { product: "salt", qty: 1, mode: "collect" }, [[T(1, 38), "desk", { status: "acknowledged", rwd: "cross" }]]));
   /* DELIVERED and paid by a transfer he received: complete */
   O.push(order(oid(12, "06"), list, T(12), { product: "candy", qty: 4, mode: "deliver", place: "Taman Rekaan" }, [
     [T(12, 20), "desk", { status: "acknowledged", delivery: 3 }], [T(11), "customer", pay("transfer")],
@@ -405,6 +410,7 @@ export const FEATURES = [
     && +o.paid < (+o.total || 0) + (+o.delivery || 0) - 0.004)],
   ["the Paid step done before the goods go, paid first (20 Oct 2026)", (f) => has(f, (o) => ["acknowledged", "ready"].includes(o.status)
     && (+o.total || 0) + (+o.delivery || 0) > 0 && +o.paid >= (+o.total || 0) + (+o.delivery || 0) - 0.004 && !(+o.moved > 0))],
+  ["an order placed again, naming the done one it came from (20 Oct 2026)", (f) => has(f, (o) => typeof o.againOf === "string" && has(f, (x) => x.id === o.againOf && x.status === "done"))],
   ["a group order open, joined (Pool)", (f) => (f.pools || []).some((p) => p.state === "open" && p.joins.some((j) => has(f, (o) => o.id === j.oid && o.pool === p.id))
     && p.closesOn >= klDay(new Date(f.at)))],
   ["a group order closed, its order confirmed (Pool)", (f) => (f.pools || []).some((p) => p.state === "closed"
@@ -445,6 +451,9 @@ export const FEATURES = [
   ["To pay now over more than three lines, Home showing three and the rest under N more (Phase 7a, 11 Oct 2026)", (f) => !!f.live && invoiceLines(f) > 3],
   ["due at Ready", (f) => has(f, (o) => o.status === "ready" && +o.total + (+o.delivery || 0) - (+o.paid || 0) > 0.004)],
   ["paid in advance, the desk's verdict at Accept (V5b2a)", (f) => has(f, (o) => o.prepay === true)],
+  ["an order that brings an associate over to the next reward (20 Oct 2026)", (f) => has(f, (o) => o.rwd === "cross" && o.status === "acknowledged"
+    && !(+o.moved > 0) && (+o.total || 0) + (+o.delivery || 0) - (+o.paid || 0) > 0.004)],
+  ["a reward unit on an order's delivery (20 Oct 2026)", (f) => has(f, (o) => o.rwd === "given" && (o.product || "salt") === "salt")],
   ["the ceiling sealed with the list, for the sheet's forecast (V5b2b)", (f) => typeof f.prices.ceiling === "number"],
   ["a claim on an order waiting on him", (f) => has(f, (o) => (o.payments || []).some((p) => p.claim === "waiting"))],
   ["a claim against the account waiting on him", (f) => f.claims.some((c) => c.state === "waiting")],

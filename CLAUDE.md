@@ -100,6 +100,15 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      `quoteGrid` with `d` of `'partner'`; the drafter's `floorFor(q).floor` and the snapshot's `floors[q]` are the same
      figure. A partner has no % to set: the Their % card names them and sets nothing, and a test that
      walks every customer leaves them out. A partner is an associate: set from the card's Make partner (a name-free `partner` entry, drafted as a `roster` row with `partner`, so no migration), which the fold files in `partners` and, if they are none yet, appoints on R2 with their -R account; `docs/DESK.md`.
+   - **AN ASSOCIATE'S REWARD STEPS WITH LANDED COST** (his rules of 20 Oct 2026, salt only): one unit per `times` (10) units' COGS of
+     margin on their own buying and resale, counted once an order is PAID IN FULL (the engine's `rewardWalk`), over the stated openings of the
+     switch (`REWARD_OPEN` in the book, written once by `tools/reward-open.mjs`; `REWARD.stated.salt.associate.since`), so nothing they held moved;
+     the step is the crossing day's, or the lesser promised at Accept (`rwdStep`). **The fold raises the unit** as its own row at that day's landed
+     cost (goodwill and rebate, `rewardOf` the order that crossed, counted cancelled or not), handed over with that order or their next salt
+     handover, its unit in the roll; a payment undone flags it STALE, never withdrawn. A customer reads one word on an order (`rwd`: "cross",
+     "given"), never a figure; the ringgit, net of what he gave under their price (`listRM`, the drafter's stamp), is his alone on Salt Admin
+     (`rewardReading`). **From the switch a customer redeems nothing** (`inputResource`, the one refusal) and what they hold stands; no basis is
+     built (his answer to the loyalty plan's Ask 4, reversing Ask 7's basis). Nothing prices from any of it. Detail: `docs/DESK.md`.
 6. **The look is the Salt design system applied as a layer.** **A design change he gives goes to `Code\salt-ds` first, then to the Desk, the
    Counter and QR Command in the same piece of work, unasked** (his word of 18 Oct 2026): salt-ds's
    `npm run propagate` and its `CLAUDE.md`; `node tools/designsync.mjs --drift` says whether `design/` is
@@ -506,7 +515,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   pay-now on an order paid in advance (`prepay`), else on credit. A record with no keys gets the payload-free wake
   and the fixed words. A tap opens that order (`#o=<id>`), and a page already open re-reads first.
 - **A delivery's window and exact spot** (his decisions of 10 Oct 2026): ASAP (his word of 20 Oct 2026) or one of six four-hour windows,
-  one rule on page and Worker (`stmt/window.js`) over Salt Admin's weekly Hours, its span the part inside; his Accept may
+  one rule on page and Worker (`stmt/window.js`) over Salt Admin's weekly Hours (a close earlier than the open is the next day's, up to six spans a day, 00:00 to 24:00 all day, overlaps merged and dated days standing in for their weekday, one rule wherever the hours are read, `stmt/hours.js` `openParts`; his word and answers of 20 Oct 2026), its span the part inside; his Accept may
   answer an as-soon-as delivery with a window, and reminds them to pay now in words only. **A raise or another window than
   theirs is never his Accept's alone** (`needsYes`): it goes to them as an offer of the whole order, their Yes the take, their
   No thanks a cancellation, a lapse or his Withdraw leaving it placed; never on a sheet (`docs/STATEMENTS.md`). The spot is
@@ -518,7 +527,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   name and floor or unit beside the point, or a unit alone (`src: 'unit'`), which the Desk shows and never files or measures. The point is filed as their place only on his tap: the card's, or File all for every customer with no point (his choice of 13 Oct 2026),
   one passphrase for the batch; never filed without one.
 - **The confirm time is measured, never promised** (Counter Batch C, his answer of 20 Oct 2026): the median of his last 30 Accepts made in
-  Counter hours, up to the quarter hour (`stmt/confirm.js`, KV `confirm:within` filed hourly), said on a placed order only while open and
+  Counter hours, the time counted in open minutes only (his answer of 20 Oct 2026, `openMinutes`), up to the quarter hour (`stmt/confirm.js`, KV `confirm:within` filed hourly), said on a placed order only while open and
   with 10 or more measured; closed, when it opens.
 - **A collection point** (Counter Batch A, his decisions of 18 Oct 2026): his points are Counter KV `maker:points`
   (`{v:1, list:[{code, lat, lng}]}`, a code one capital and one or two digits, so never a roster code's shape), kept on Salt

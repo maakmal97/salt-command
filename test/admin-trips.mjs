@@ -89,6 +89,8 @@ export async function run({ ok, pageWork }) {
 
   /* A. THE DESK'S READ */
   const r0 = await f.deskGet("/_internal/maker/drafts");
+  /* 20 Oct 2026 (his answer, option a): the Desk's read carries the road factor its fee by distance is measured with, so Salt Admin says that distance */
+  ok(r0.roadFactor === 1.3, "the Desk's read carries the road factor the fee is measured with: " + r0.roadFactor);
   const trip0 = mine(r0.trips, "CX9-ZED")[0] || {};
   ok(trip0.trip === T && trip0.owed === 271 && trip0.paid === 0 && trip0.handedLines === 0 && trip0.waiting === 0
     && J((trip0.lines || []).map((l) => [l.rid, l.product, l.qty, l.total, l.delivery, l.owed, l.left])) === J([["zt1", "salt", 1, 110, 10, 120, 1], ["zt2", "oil", 10, 116, 0, 116, 10], ["zt3", "rice", 5, 35, 0, 35, 5]]),

@@ -22,10 +22,11 @@ import { approveFigures } from "./approve-figures.js";
 import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, TIEOUT_KEY, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades, wakeAdmin, ADMIN_ON } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault, fixtureCheck } from "./maker.js";
-import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerLedgerMini, makerStock, makerUndo, makerRows, openRefunds } from "./maker-inputs.js";
+import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerLedgerMini, makerStock, makerUndo, makerRows, openRefunds, makerRewardReading } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerAppointmentClaim, makerOrderOnce } from "./maker-request.js";
 import { readVaultRegistrations } from "./vault-pair.js";
 import POSITION_ENGINE from "../engine/position.mjs";
+import PRICING_RULES from "../engine/rules.mjs";
 import { reservedInputs, admitInputs, admitInput, withdrawInputAdmission, finishInputAdmission, admissionDecision, hasInputAdmission,
   acquireDeviceQueueLock, releaseDeviceQueueLock, claimDeviceQueueWithdrawal, finishDeviceQueueWithdrawal,
   queueWithdrawalKey, queueOwnerKey } from "./input-admission.js";
@@ -562,6 +563,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     && !/^\/_internal\/maker\/queue\/[^/]+\/withdraw$/.test(p)
     && p !== "/_internal/maker/order-again" && p !== "/_internal/maker/words" && p !== "/_internal/maker/fixture-check"
     && p !== "/_internal/maker/offsets" && p !== "/_internal/maker/inputs/offset" && p !== "/_internal/maker/ledger"
+    && !/^\/_internal\/maker\/reward\/[A-Za-z0-9%._-]{3,160}$/.test(p)
     && !/^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|amend|notfound|move|restate|take)$/.test(p))
     return json({ ok: false, error: "not found" }, 404);
   if (!env.COUNTER_MAKER_KEY) return json({ ok: false, error: "Counter maker bridge is not configured" }, 503);
@@ -744,6 +746,18 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     const reading = makerTradeReading(body, await withDraftLots(env.SALT_LEDGER, book));
     return reading.error ? json({ ok: false, error: reading.error }, 400) : json({ ok: true, reading });
   }
+  const rwdAt = /^\/_internal\/maker\/reward\/([A-Za-z0-9%._-]{3,160})$/.exec(p);
+  if (rwdAt) {
+    /* 20 Oct 2026: his reading of the associate reward, for Salt Admin's order card: a read that writes nothing */
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    if (!env.SALT_LEDGER) return json({ ok: false, error: "The Desk mirror is required." }, 503);
+    const book = await readBook(env.SALT_LEDGER);
+    if (!book.version) return json({ ok: false, error: "The mirror is being seeded." }, 503);
+    let key = null;
+    try { key = decodeURIComponent(rwdAt[1]); } catch (e) { return json({ ok: false, error: "Name the order's row by its key." }, 400); }
+    const reading = makerRewardReading(book, key);
+    return reading.error && reading.associate === undefined ? json({ ok: false, error: reading.error }, 400) : json({ ok: true, reading });
+  }
   if (p === "/_internal/maker/offsets") {
     /* Counter Maker A2: what the Desk's autoOffsets would offer, derived here from the mirror and never priced (a read) */
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
@@ -787,6 +801,8 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
        one; a book that cannot be read is said, never read as no orders */
     let body;
     try { body = await res.json(); } catch (error) { return json({ ok: false, error: "The rows waiting could not be read." }, 503); }
+    /* 20 Oct 2026: the road factor the fee by distance is measured with, so Salt Admin says the same distance; a figure, never a point */
+    body.roadFactor = PRICING_RULES.RULES.delivery.roadFactor;
     try {
       const book = await withRefunds(env.SALT_LEDGER, await readBook(env.SALT_LEDGER));
       if (!book.version) throw new Error("the mirror is being seeded");

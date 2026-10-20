@@ -1,0 +1,20 @@
+[
+ {"name":"a day reads its first span alone","file":"stmt/hours.js","find":"var list = !d ? [] : Object.prototype.toString.call(d) === \"[object Array]\" ? d : [d];","replace":"var list = !d ? [] : Object.prototype.toString.call(d) === \"[object Array]\" ? [d[0]] : [d];"},
+ {"name":"24:00 is no close","file":"stmt/hours.js","find":"/^([01][0-9]|2[0-4]):([0-5][0-9])$/.exec(String(t || \"\"))","replace":"/^([01][0-9]|2[0-3]):([0-5][0-9])$/.exec(String(t || \"\"))"},
+ {"name":"24:00 is taken as an open","file":"stmt/hours.js","find":"if (o === null || c === null || c === o || o >= 1440) continue;","replace":"if (o === null || c === null || c === o) continue;"},
+ {"name":"the check reads no 24:00","file":"stmt/hours.js","find":"const closeMinutes = (value) => (String(value) === \"24:00\" ? 1440 : toMinutes(value));","replace":"const closeMinutes = (value) => toMinutes(value);"},
+ {"name":"a day's spans are not merged on the check","file":"stmt/hours.js","find":"    if (last && a <= last[1]) last[1] = Math.max(last[1], b); else merged.push([a, b]);","replace":"    merged.push([a, b]);"},
+ {"name":"one span is kept as a list","file":"stmt/hours.js","find":"return { day: out.length === 1 ? out[0] : out };","replace":"return { day: out };"},
+ {"name":"seven spans are taken","file":"stmt/hours.js","find":"list.length > SPANS_MAX ||","replace":"list.length > SPANS_MAX + 1 ||"},
+ {"name":"a stretch longer than a day is taken","file":"stmt/hours.js","find":"if (merged.some(([a, b]) => b - a > 1440 || (b - a === 1440 && a !== 0))) return","replace":"if (false) return"},
+ {"name":"a date is not read","file":"stmt/hours.js","find":"var d = dates && Object.prototype.hasOwnProperty.call(dates, ymd) ? dates[ymd] : days[k.getUTCDay()];","replace":"var d = days[k.getUTCDay()];"},
+ {"name":"the status reads no dates","file":"stmt/hours.js","find":"const schedule = parsed.days ? { days: parsed.days, dates: parsed.dates } : null;","replace":"const schedule = parsed.days ? { days: parsed.days } : null;"},
+ {"name":"a past date is taken on a write","file":"stmt/hours.js","find":"if (today && (key < today || key > last)) return","replace":"if (today && key > last) return"},
+ {"name":"41 dates are taken","file":"stmt/hours.js","find":"if (keys.length > DATES_MAX) return","replace":"if (keys.length > DATES_MAX + 1) return"},
+ {"name":"a date that does not exist is taken","file":"stmt/hours.js","find":"|| new Date(t).toISOString().slice(0, 10) !== key)","replace":")"},
+ {"name":"a reader refuses a passed date","file":"stmt/hours.js","find":"const today = Number.isFinite(now) ? new Date(now + 8 * 3600000).toISOString().slice(0, 10) : null;","replace":"const today = new Date((Number.isFinite(now) ? now : Date.now()) + 8 * 3600000).toISOString().slice(0, 10);"},
+ {"name":"a preview is stored","file":"stmt/maker.js","find":"      return json({ ok: true, preview: hoursPreview(plainWeek(week, now), held && held.manual, now) });","replace":"      await env.STMT.put(HOURS_KEY, JSON.stringify({ schedule: plainWeek(week, now) }));\n      return json({ ok: true, preview: hoursPreview(plainWeek(week, now), held && held.manual, now) });"},
+ {"name":"a preview says only the first stretch","file":"stmt/maker.js","find":".map(([a, b]) => hm(a) + \" to \" + (b - base >= 24 * H ? \"24:00\" : hm(b))).join(\", \")","replace":".slice(0, 1).map(([a, b]) => hm(a) + \" to \" + (b - base >= 24 * H ? \"24:00\" : hm(b))).join(\", \")"},
+ {"name":"a save stores the week as sent","file":"stmt/maker.js","find":"const next = Object.assign({}, current.config || {}, { schedule: plainWeek(schedule, now) });","replace":"const next = Object.assign({}, current.config || {}, { schedule: body.schedule });"},
+ {"name":"a read keeps a passed date","file":"stmt/maker.js","find":"return { config: Object.assign({}, value, { schedule: plainWeek(schedule, Date.now()) }), status: hoursStatus(value), confirm };","replace":"return { config: value, status: hoursStatus(value), confirm };"}
+]

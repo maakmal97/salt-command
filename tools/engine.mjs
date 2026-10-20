@@ -25,6 +25,8 @@ const ENGINES = [
   /* v564: the QR encoder, because the desk draws one on the board sheet he hands a customer and
      the statements build draws one from the same text. Two encoders would drift. */
   { name: "qr", file: resolve(REPO, "engine", "qr.mjs") },
+  /* 20 Oct 2026: the distance, because Salt Admin says the one the Desk measures for the fee (stmt/geo.js carries it) */
+  { name: "geo", file: resolve(REPO, "engine", "geo.mjs") },
   /* S1c-i: the pricing rule tables, so a Worker imports what the desk inlines */
   { name: "rules", file: resolve(REPO, "engine", "rules.mjs") },
   /* S1c-ii: the cost glue the pricing snapshot reads. It imports the two engines, which are globals of the same names in the

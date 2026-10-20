@@ -2918,7 +2918,7 @@ await (async () => {
   ok(/ok\s+the master's BOOK block is ledger\/book\.json/.test(chk), "tools/booksync.mjs --check: the master's book block is the file");
   const book = JSON.parse(readFileSync(LIVE_BOOK, "utf8"));   /* live: the extract must equal the file as it stands */
   const keys = Object.keys(book).filter((k) => k !== "NOTES");
-  ok(keys.length === 29, "the book holds the twenty-nine ledger keys");   // v1029 added partners; v643 added TIER_OF; v633 added PLACED; v353 added PRICE_SET; v504 added COUNTS; v549 retired SOURCING_PLAN; v553 added COST_RULE; v615 added INTRODUCTIONS; v616 retired REWARD_OPENING; v618 retired CUSTOMER_REWARD_OPENING; v776 collapsed supplierQuote and oilQuote into QUOTES
+  ok(keys.length === 30, "the book holds the thirty ledger keys");   // 20 Oct 2026 added REWARD_OPEN; v1029 added partners; v643 added TIER_OF; v633 added PLACED; v353 added PRICE_SET; v504 added COUNTS; v549 retired SOURCING_PLAN; v553 added COST_RULE; v615 added INTRODUCTIONS; v616 retired REWARD_OPENING; v618 retired CUSTOMER_REWARD_OPENING; v776 collapsed supplierQuote and oilQuote into QUOTES
   ok(Array.isArray(book.sales) && book.sales.length > 100 && Array.isArray(book.purchases), "with the rows as records");
   ok(typeof book.QUEUE_COMMITTED === "string" && typeof book.STATED_STOCK === "number", "and the singletons as values");
   ok(book.NOTES && Array.isArray(book.NOTES.STATED_STOCK) && book.NOTES.STATED_STOCK.length > 0, "the stated stock's roll history survived as NOTES");
@@ -13021,10 +13021,17 @@ await (async () => {
      after v371's drawer block at the same specificity, so from v472 to 11 Sep it silently held
      the phone drawer at the desk's rail width instead of min(272px,100vw - 28px). Since v684 the
      rail stands on the wide desk and on any screen that is not a touch one. */
-  ok(/@media \(min-width: 861px\), not all and \(pointer: coarse\) \{\s*\.salt-rail \{ width: \d+px; flex: 0 0 \d+px;/.test(railCss),
+  /* 20 Oct 2026: the standing rule took a comment and a block of its own, for the fill below */
+  const standing = (railCss.match(/@media \(min-width: 861px\), not all and \(pointer: coarse\) \{\s*(?:\/\*[\s\S]*?\*\/\s*)?\.salt-rail \{([^}]*)\}/) || [])[1] || "";
+  ok(/^\s*width: \d+px; flex: 0 0 \d+px;/.test(standing),
      "the rail's width is scoped to wherever it stands, never the drawer");
   const bare = rule(".salt-rail");
   ok(bare !== null && !/width:/.test(bare), "and the unscoped .rail sets no width, so the drawer keeps its own");
+  /* HIS WORD OF 20 OCT 2026 (canvas V66): the standing rail runs to the foot of the screen, not of the page, and stops
+     the margin of its top short of it, scrolling inside itself; the drawer is a phone's and keeps its own height */
+  ok(/position: sticky; top: 24px;/.test(standing) && /height: calc\(100dvh - 48px\);/.test(standing) && /overflow-y: auto;/.test(standing)
+     && bare !== null && !/height:/.test(bare),
+     "the standing rail is sized to the screen, 24px from its top and its foot, and scrolls inside itself; the drawer sets no height");
 
   /* THE DIRECTORY (his instruction, 11 Sep 2026): Position and Trading were one group, Current. v622 took the
      groups out of the rail altogether, on his instruction of 14 Sep 2026, and its own section asserts the rail now. */
@@ -14129,7 +14136,8 @@ await (async () => {
   const { w: w16 } = await om16();
   const rd16 = (e) => JSON.parse(String(w16.eval("JSON.stringify(" + e + ")")));
   try {
-    w16.eval("setProd('salt');");
+    /* 20 Oct 2026: the count these rulings set is the one the switch's openings were taken from; it is measured with the switch off */
+    w16.eval("setProd('salt');delete REWARD.stated.salt.associate.since;");
     /* v623: an associate's figure is RM 470 and their R3 counts at 1/1.2; the figures below follow it */
     ok(rd16("rewardUnitMargin('salt','associate')") === 470 && rd16("rewardUnitMargin('oil','associate')") === null
       && rd16("rewardRuleTxt('salt','associate')") === "a free unit per " + rd16("fmt0(470)") + " of margin" && rd16("rewardRuleTxt('oil','associate')") === "no reward on this book",
@@ -14210,7 +14218,8 @@ await (async () => {
     /* v633: AND AN ASSOCIATE STILL HERE, WITH A FREE UNIT AND AN ADVANCE OF THEIR OWN, because the live book had one at v631
        and the automatic offset rightly offered it, which turned this section red on the cloud: the queue is read for the
        departed party alone, and the other's offer shows the offset really ran */
-    w17.eval("setProd('salt');PEOPLE.departed.push(" + JSON.stringify(gone17[0]) + ");associates.push('CZ9-GONE','CZ9-LIVE');"
+    /* 20 Oct 2026: the count these rulings set is the one the switch's openings were taken from; it is measured with the switch off */
+    w17.eval("setProd('salt');delete REWARD.stated.salt.associate.since;PEOPLE.departed.push(" + JSON.stringify(gone17[0]) + ");associates.push('CZ9-GONE','CZ9-LIVE');"
       + "sales.push(" + JSON.stringify({ rid: "z617a", customer: "CZ9-GONE", date: "2026-09-01", qty: 1, total: 600, cost: 0, cash: 600, deliveredQty: 1, product: "salt" }) + "," + JSON.stringify(adv17)
       + "," + JSON.stringify({ rid: "z617l", customer: "CZ9-LIVE", date: "2026-09-01", qty: 1, total: 600, cost: 0, cash: 600, deliveredQty: 1, product: "salt" })
       + "," + JSON.stringify(Object.assign({}, adv17, { rid: "a617l", customer: "CZ9-LIVE" })) + ");recompute();"
@@ -14239,7 +14248,8 @@ await (async () => {
   const { w: w18 } = await om18();
   const rd18 = (e) => JSON.parse(String(w18.eval("JSON.stringify(" + e + ")")));
   try {
-    w18.eval("setProd('salt');");
+    /* 20 Oct 2026: the count these rulings set is the one the switch's openings were taken from; it is measured with the switch off */
+    w18.eval("setProd('salt');delete REWARD.stated.salt.associate.since;");
     ok(rd18("rewardUnitMargin('salt')") === 500 && rd18("rewardUnitMargin('oil')") === null && rd18("rewardRuleTxt('oil')") === "no reward on this book"
       && JSON.stringify(rd18("rewardUnits(1000,null)")) === '{"earned":0,"toNext":null}' && JSON.stringify(rd18("Object.keys(REWARD)")) === '["stated"]',
       "one figure is all the scheme states: RM 500 of margin on salt, nothing on oil, and no window, band or hurdle beside it");
@@ -14287,7 +14297,8 @@ await (async () => {
   const rd19 = (e) => JSON.parse(String(w19.eval("JSON.stringify(" + e + ")")));
   try {
     const row19 = (o) => JSON.stringify(Object.assign({ product: "salt" }, o));
-    w19.eval("setProd('salt');['CZ9-CV','CZ9-LOW','CZ9-AV'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});associates.push('CZ9-AV');BASE_SALES.push(" + [
+    /* 20 Oct 2026: from the switch a customer's reward covers nothing; the v620 cover is measured with the switch off */
+    w19.eval("setProd('salt');delete REWARD.stated.salt.associate.since;['CZ9-CV','CZ9-LOW','CZ9-AV'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});associates.push('CZ9-AV');BASE_SALES.push(" + [
       row19({ rid: "z619a", customer: "CZ9-CV", date: "2026-07-01", qty: 2, total: 1100, cost: 100, cash: 1100, deliveredQty: 2 }),
       row19({ rid: "z619b", customer: "CZ9-LOW", date: "2026-07-01", qty: 1, total: 550, cost: 50, cash: 550, deliveredQty: 1 }),
       row19({ rid: "z619c", customer: "CZ9-LOW", date: "2026-07-02", qty: 1, total: 35.2, cost: 35.2, cash: 0, settledRM: 35.2, deliveredQty: 1, rebate: true, rebateKg: 0.8, goodwill: true }),
@@ -14363,7 +14374,8 @@ await (async () => {
   const rd21 = (e) => JSON.parse(String(w21.eval("JSON.stringify(" + e + ")")));
   try {
     const row21 = (o) => JSON.stringify(Object.assign({ product: "salt" }, o));
-    w21.eval("setProd('salt');BASE_SALES.push(" + [
+    /* 20 Oct 2026: from the switch a customer redeems nothing; the v621 road is measured with the switch off */
+    w21.eval("setProd('salt');delete REWARD.stated.salt.associate.since;BASE_SALES.push(" + [
       row21({ rid: "z621a", customer: "CZ9-RD", date: "2026-07-01", qty: 2, total: 1100, cost: 100, cash: 1100, deliveredQty: 2 }),
       row21({ rid: "z621b", customer: "CZ9-HALF", date: "2026-07-01", qty: 1, total: 550, cost: 50, cash: 550, deliveredQty: 1 }),
       row21({ rid: "z621c", customer: "CZ9-HALF", date: "2026-07-02", qty: 1, total: 24.64, cost: 24.64, cash: 0, settledRM: 24.64, deliveredQty: 1, rebate: true, rebateKg: 0.56, goodwill: true }),
@@ -14391,7 +14403,8 @@ await (async () => {
   const { w: w23 } = await om23();
   const rd23 = (e) => JSON.parse(String(w23.eval("JSON.stringify(" + e + ")")));
   try {
-    w23.eval("setProd('salt');");
+    /* 20 Oct 2026: the count these rulings set is the one the switch's openings were taken from; it is measured with the switch off */
+    w23.eval("setProd('salt');delete REWARD.stated.salt.associate.since;");
     ok(rd23("[rewardUnitMargin('salt','associate'),rewardR3Hurdle('salt'),rewardUnitMargin('salt'),rewardR3Hurdle('oil')].join(' ')") === "470 1.2 500 1",
       "the stated figures: RM 470 and a 1.2 times R3 hurdle for an associate, RM 500 for a customer, and no R3 weighing on oil");
     const row23 = (o) => JSON.stringify(Object.assign({ product: "salt" }, o));
@@ -29181,6 +29194,9 @@ await (async () => {
   ok(okrCost > 0.009 && Math.abs((pool("CC9-OKR") - okrWas) - okrCost) < 0.011,
     "and a LIVE gift charges its cost: dropping s176 gives CC9-OKR back RM" + (pool("CC9-OKR") - okrWas).toFixed(2)
     + ", which is s176's own RM" + okrCost);
+  /* 20 Oct 2026: from the switch an associate's figure is the walk's, which reads no row the opening read; the gift rule of the
+     count the openings were taken from is measured with the switch off (the walk's own gift charge is the associate reward's P1) */
+  w.eval("delete REWARD.stated.salt.associate.since;recompute();");
   const wmWas = net("CN3-WM"), wmCost = costOf(["s031", "s056"]);
   drop(["s031", "s056"]);
   ok(wmCost > 0.009 && Math.abs((net("CN3-WM") - wmWas) - wmCost) < 0.011,
@@ -48350,6 +48366,16 @@ section("10 Oct 2026: a delivery's time window, as soon as it can or four hours 
 await (async () => {
   await (await import("./delivery-window.mjs")).run({ ok });
 })();
+
+section("Opening hours past midnight: one rule (openParts) for the status, the open minutes, the check of the week and the delivery windows (20 Oct 2026)");
+await (async () => {
+  await (await import("./hours-overnight.mjs")).run({ ok });
+})();
+
+section("The most control over the hours: several spans a day, open all day, overlaps merged, dated days and the preview (20 Oct 2026)");
+await (async () => {
+  await (await import("./hours-spans.mjs")).run({ ok });
+})();
 section("10 Oct 2026: a delivery's exact spot, sealed on their phone to his key, ciphertext alone on the Counter");
 await (async () => {
   await (await import("./delivery-pin.mjs")).run({ ok });
@@ -50036,6 +50062,76 @@ await (async () => {
   await (await import("./admin-ac-cost.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Admin A to C: a sheet's orders as one group, the band's Sheet link and one Needs card for the sheet (20 Oct 2026)");
+await (async () => {
+  await (await import("./admin-ac-sheet.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Admin A to C: no page title is drawn, each place keeps its heading for a reader (20 Oct 2026)");
+await (async () => {
+  await (await import("./admin-ac-titles.mjs")).run({ ok });
+})();
+
+section("Salt Admin A to C: the distance under Delivery cost, measured after the unlock, and the waited meter in Counter hours (20 Oct 2026)");
+await (async () => {
+  await (await import("./admin-ac-km.mjs")).run({ ok, pageWork });
+})();
+
+section("Associate reward: the walk steps with landed cost, counts paid orders, and opens on stated positions (P1, 20 Oct 2026)");
+await (async () => {
+  await (await import("./assoc-reward-walk.mjs")).run({ ok });
+})();
+
+section("Associate reward: each associate opens on a stated position at the switch, so nothing they hold or see moves (P2, 20 Oct 2026)");
+await (async () => {
+  await (await import("./assoc-reward-open.mjs")).run({ ok });
+})();
+
+section("Associate reward: the fold raises the unit once paid and hands it over with its order (P3, 20 Oct 2026)");
+await (async () => {
+  await (await import("./assoc-reward-fold.mjs")).run({ ok });
+})();
+
+section("Associate reward: a salt sale carries their own price for its size, read and never priced (P4, 20 Oct 2026)");
+await (async () => {
+  await (await import("./assoc-reward-price.mjs")).run({ ok });
+})();
+
+section("Associate reward: Accept says when an order takes them over, the order carries one word, and his reading stays behind Access (P5, 20 Oct 2026)");
+await (async () => {
+  await (await import("./assoc-reward-verdict.mjs")).run({ ok });
+})();
+
+section("Associate reward on Salt Counter: an order that takes them over says so, and the unit's line names no amount (P6, 20 Oct 2026)");
+await (async () => {
+  await (await import("./counter-reward.mjs")).run({ ok, pageWork });
+})();
+
+section("Associate reward on Salt Admin: the card under the Bill says whether the order reaches their next reward, and what the unit comes to (P7, 20 Oct 2026)");
+await (async () => {
+  await (await import("./admin-reward-card.mjs")).run({ ok, pageWork });
+})();
+
+section("Associate reward: from the switch a customer redeems nothing, and what they hold stands (P8, 20 Oct 2026)");
+await (async () => {
+  await (await import("./assoc-reward-customer.mjs")).run({ ok });
+})();
+
+section("Salt Admin A to C: Order again's tag, kept by Place for a done and paid order of theirs and shown on his row and band (20 Oct 2026)");
+await (async () => {
+  await (await import("./admin-ac-again.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Admin A to C: the glance on Needs you, counts on the kinds, one sliding row and Jump to (21 Oct 2026)");
+await (async () => {
+  await (await import("./admin-ac-glance.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Admin A to C: Help read only on Shop hours, the customer's four answers (21 Oct 2026)");
+await (async () => {
+  await (await import("./admin-ac-help.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin's glance, stock: the STOCK snapshot measured in the desk's window and carried to the mirror (20 Oct 2026)");
 await (async () => {
   await (await import("./glance-stock-snapshot.mjs")).run({ ok });
@@ -50099,6 +50195,11 @@ await (async () => {
 section("Salt Admin: the printed sizes are a grid of tiles, and the weekly hours a table with labelled columns and a Closed until field");
 await (async () => {
   await (await import("./admin-sizes-hours.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Admin's week chart of the hours: a row a day, a span past midnight said +1 with its tail on the next day, quarter hours and the quick buttons (20 Oct 2026)");
+await (async () => {
+  await (await import("./admin-hours-week.mjs")).run({ ok, pageWork });
 })();
 
 section("Salt Admin: the stress run's findings: a charge that did not save is not shown as chosen, an answer stands beside its control, and For a friend is a 44px target (13 Oct 2026)");

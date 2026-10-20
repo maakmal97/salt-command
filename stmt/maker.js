@@ -1,7 +1,8 @@
 import { allOrders, deskSeen, placeOrder, customerView, RID_RE, onBook, allPools, poolOpen, poolClose, deskBody, klDay } from "./orders.js";
 import { accountRecord, exampleAccount, examplePlace, examplePools, exampleThread, exampleDeskSay, isTest, isExample, EXAMPLE_ID, TEST_USERS, EXAMPLE_POINTS } from "./testfix.js";
 import { POINTS_KEY, readPoints, validatePoints, resolvePoint, isPointCode } from "./points.js";
-import { hoursStatus, validateManualHours, validateWeeklyHours, HOURS_KEY, windowHours } from "./hours.js";
+import { hoursStatus, validateManualHours, validateWeeklyHours, HOURS_KEY, windowHours, openMinutes, plainWeek, openParts } from "./hours.js";
+import { slotSpan, WINDOWS } from "./window.js";
 import { CONFIRM_KEY, confirmWithin, confirmView } from "./confirm.js";
 import { readPin } from "./pin.js";
 
@@ -93,6 +94,7 @@ async function deskCall(env, path, method, body) {
     || TEST_USERS.includes(path.split("/")[4]) && /^\/_internal\/maker\/fixture-claims\/[0-9]{4}-[0-9]{4}\/a[0-9]{14}-[a-z0-9]{1,8}\/preview$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/threads\/[a-z0-9]{4}-[a-z0-9]{4}$/.test(path) && method === "POST"
     || path === "/_internal/maker/offsets" && method === "GET"
+    || /^\/_internal\/maker\/reward\/[A-Za-z0-9%._-]{3,160}$/.test(path) && method === "GET"
     || path === "/_internal/maker/ledger" && ["GET", "POST"].includes(method)
     || path === "/_internal/maker/stock" && method === "GET"
     || path === "/_internal/maker/inputs/offset" && method === "POST"
@@ -164,13 +166,39 @@ async function readHours(env) {
   if (value.schedule != null) {
     const schedule = validateWeeklyHours(value.schedule);
     if (schedule.error) throw new TypeError("Stored operating hours are invalid: " + schedule.error);
+    /* 20 Oct 2026: a dated day that has passed is pruned from what is read, and from the store at the next write */
+    return { config: Object.assign({}, value, { schedule: plainWeek(schedule, Date.now()) }), status: hoursStatus(value), confirm };
   }
   return { config: value, status: hoursStatus(value), confirm };
+}
+
+/* 20 Oct 2026 (his answer, Fable's design): WHAT CUSTOMERS WOULD SEE on a week not yet saved, from the one rule and nothing else: the
+   Counter open or closed and its next change (the override in force kept), and for each of the next seven Kuala Lumpur days its open
+   stretches in words and the delivery windows it would offer with their spans. A read (GET ?preview=), so nothing is stored. */
+export function hoursPreview(week, manual, now) {
+  const cfg = { schedule: week, manual: manual || null }, status = hoursStatus(cfg, now), H = 3600000, out = [];
+  const hm = (t) => new Date(t + 8 * H).toISOString().slice(11, 16);
+  for (let k = 0; k < 7; k++) {
+    const date = new Date(now + 8 * H + k * 24 * H).toISOString().slice(0, 10), base = Date.parse(date + "T00:00:00Z") - 8 * H;
+    const said = openParts(week.days, base, base + 24 * H, week.dates).map(([a, b]) => hm(a) + " to " + (b - base >= 24 * H ? "24:00" : hm(b))).join(", ") || "Closed";
+    const windows = WINDOWS.map((w) => { const s = slotSpan(date + "T" + String(w).padStart(2, "0"), { schedule: week, manual: null }, now); return s && { w, span: hm(base + s.from * 60000) + "-" + (s.to >= 1440 ? "24:00" : hm(base + s.to * 60000)) }; }).filter(Boolean);
+    out.push({ date, said, windows });
+  }
+  return { status, week: out };
 }
 
 async function makerHours(request, env, method) {
   if (!env.STMT) return json({ ok: false, error: "no Counter store" }, 503);
   if (method === "GET") {
+    const asked = new URL(request.url).searchParams.get("preview");
+    if (asked !== null) {
+      let body = null;
+      try { body = JSON.parse(asked); } catch (e) { body = null; }
+      const now = Date.now(), week = validateWeeklyHours(body, now);
+      if (week.error) return json({ ok: false, error: week.error }, 400);
+      const held = await env.STMT.get(HOURS_KEY, "json");
+      return json({ ok: true, preview: hoursPreview(plainWeek(week, now), held && held.manual, now) });
+    }
     const result = await readHours(env);
     return json({ ok: true, config: result.config, status: result.status, confirm: result.confirm });
   }
@@ -193,11 +221,9 @@ async function makerHours(request, env, method) {
     return json({ ok: true, config: next, status: hoursStatus(next), confirm: current.confirm });
   }
   if (Object.keys(body).length === 1 && body.schedule) {
-    const schedule = validateWeeklyHours(body.schedule);
+    const now = Date.now(), schedule = validateWeeklyHours(body.schedule, now);
     if (schedule.error) return json({ ok: false, error: schedule.error }, 400);
-    const next = Object.assign({}, current.config || {}, {
-      schedule: { days: schedule.days.map((day) => day && { open: day.open, close: day.close }) }
-    });
+    const next = Object.assign({}, current.config || {}, { schedule: plainWeek(schedule, now) });
     await env.STMT.put(HOURS_KEY, JSON.stringify(next));
     return json({ ok: true, config: next, status: hoursStatus(next), confirm: current.confirm });
   }
@@ -244,7 +270,7 @@ async function digestOf(value) {
   const bytes = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(value))));
   return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
-const EXAMPLE_FIELDS = { preview: ["delivery", "total", "slot", "prepay"], accept: ["delivery", "total", "slot", "prepay", "hash", "rid"],
+const EXAMPLE_FIELDS = { preview: ["delivery", "total", "slot", "prepay"], accept: ["delivery", "total", "slot", "prepay", "rwd", "hash", "rid"],
   offer: ["delivery", "total", "slot", "hash", "rid"], withdraw: ["rid"], handed: ["qty", "close", "rid"], cash: ["amount", "rid"], received: ["amount", "claim", "rid"] };
 const OFFER_MS = 48 * 3600e3;
 async function exampleAction(env, id, action, body) {
@@ -350,6 +376,8 @@ function internalOperation(path) {
   const thread = /^\/all\/maker\/threads\/([a-z0-9]{4}-[a-z0-9]{4})$/.exec(path);
   if (thread) return { kind: "thread", u: thread[1] };
   if (path === "/all/maker/offsets") return { kind: "offsets" };
+  const rwd = /^\/all\/maker\/reward\/([A-Za-z0-9%._-]{3,160})$/.exec(path);
+  if (rwd) return { kind: "reward", key: rwd[1] };
   if (path === "/all/maker/ledger") return { kind: "ledger" };
   if (path === "/all/maker/stock") return { kind: "stock" };
   if (path === "/all/maker/inputs/offset") return { kind: "input", input: "offset" };
@@ -611,6 +639,10 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
       if (method !== "GET" && method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       return json(await deskCall(env, "/_internal/maker/ledger", method, method === "POST" ? {} : undefined));
     }
+    if (op.kind === "reward") {
+      if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+      return json(await deskCall(env, "/_internal/maker/reward/" + op.key, "GET"));
+    }
     if (op.kind === "offsets") {
       if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
       return json(await deskCall(env, "/_internal/maker/offsets", "GET"));
@@ -676,7 +708,14 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
       /* 17 Oct 2026: every live row of the book is an order here; a row a live site order holds is drawn as that order, by its key */
       const held = new Set(orders.filter((o) => !o.test && !["declined", "cancelled"].includes(o.status) && typeof o.ledgerKey === "string").map((o) => o.ledgerKey));
       const rows = Array.isArray(drafts.rows) ? drafts.rows.filter((r) => r && !held.has(r.key)) : [];
-      return json({ ok: true, orders, drafts: drafts.drafts || [], refused: drafts.refused || [], queue: queue.entries, unreadable, trips, sameDay, rows, refunds: drafts.refunds && typeof drafts.refunds === "object" ? drafts.refunds : {},
+      /* 20 Oct 2026 (his answers): a placed order's minutes waited in Counter hours, measured at this read, and the Desk's road factor,
+         so Salt Admin says the distance the fee is measured on; the points stay in his browser */
+      const readAt = Date.now();
+      let hoursCfg = null;
+      try { hoursCfg = await env.STMT.get(HOURS_KEY, "json"); } catch (e) { hoursCfg = null; }
+      withWaited(orders, hoursCfg, readAt);
+      const roadFactor = typeof drafts.roadFactor === "number" && drafts.roadFactor > 0 ? drafts.roadFactor : null;
+      return json({ ok: true, orders, drafts: drafts.drafts || [], refused: drafts.refused || [], queue: queue.entries, unreadable, trips, sameDay, rows, roadFactor, readAt: new Date(readAt).toISOString(), refunds: drafts.refunds && typeof drafts.refunds === "object" ? drafts.refunds : {},
         ...(typeof drafts.tripsError === "string" || !Array.isArray(drafts.trips) ? { tripsError: drafts.tripsError || "Orders of several books could not be read." } : {}) });
     }
     if (op.kind === "queue") {
@@ -784,6 +823,15 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
       ...(error.restate && typeof error.restate === "object" ? { restate: error.restate } : {}) }, status);
   }
   return json({ ok: false, error: "not found" }, 404);
+}
+
+/** 20 Oct 2026 (his answer): each real placed order's minutes waited in Counter hours at a read, for Salt Admin's meter; an order the
+ *  hours cannot measure keeps the wall clock on his page. Practice orders and every other stage are left as they are. */
+export function withWaited(orders, hoursCfg, now) {
+  for (const o of orders || []) if (o && o.status === "placed" && !o.test) {
+    try { const w = openMinutes(hoursCfg, Date.parse(o.at), now); if (Number.isFinite(w)) o.waitedOpen = Math.floor(w); } catch (e) { /* the wall clock stands */ }
+  }
+  return orders;
 }
 
 export async function publicHours(env) {

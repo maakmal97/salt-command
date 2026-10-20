@@ -230,8 +230,8 @@
  {
   "name": "the answer outlives Needs you",
   "file": "stmt/owner.js",
-  "find": "if(placeNow==='needs'&&place!=='needs') needSaid={};",
-  "replace": ""
+  "find": "if(placeNow==='needs'&&place!=='needs'){ needSaid={}; jumpShut(false); }",
+  "replace": "if(placeNow==='needs'&&place!=='needs'){ jumpShut(false); }"
  },
  {
   "name": "a chip filters nothing",
@@ -242,14 +242,14 @@
  {
   "name": "the chip tapped is not marked",
   "file": "stmt/owner.js",
-  "find": "x.setAttribute('aria-selected', x===k?'true':'false');",
-  "replace": "x.setAttribute('aria-selected', 'false');"
+  "find": "var on=x.getAttribute('data-chip')===k; x.setAttribute('aria-selected', on?'true':'false');",
+  "replace": "var on=x.getAttribute('data-chip')===k; x.setAttribute('aria-selected', 'false');"
  },
  {
   "name": "a chip reads",
   "file": "stmt/owner.js",
-  "find": "x.setAttribute('aria-selected', x===k?'true':'false'); }); drawNeeds(); return; }",
-  "replace": "x.setAttribute('aria-selected', x===k?'true':'false'); }); drawNeeds(); readNeeds(true); return; }"
+  "find": "if(k){ nPick(k.getAttribute('data-chip')); return; }",
+  "replace": "if(k){ nPick(k.getAttribute('data-chip')); readNeeds(true); return; }"
  },
  {
   "name": "a chip has no act",
@@ -416,8 +416,8 @@
  {
   "name": "the chip tapped is marked as a ghost's pressed, which the tabs are not drawn by",
   "file": "stmt/owner.js",
-  "find": "x.setAttribute('aria-selected', x===k?'true':'false'); }); drawNeeds(); return; }",
-  "replace": "x.setAttribute('aria-pressed', x===k?'true':'false'); }); drawNeeds(); return; }"
+  "find": "var on=x.getAttribute('data-chip')===k; x.setAttribute('aria-selected', on?'true':'false');",
+  "replace": "var on=x.getAttribute('data-chip')===k; x.setAttribute('aria-pressed', on?'true':'false');"
  },
  {
   "name": "the chips are not a tablist",
@@ -512,8 +512,8 @@
  {
   "name": "the banner stands below the title",
   "file": "stmt/page.js",
-  "find": "        + '<div id=\"nFail\" class=\"salt-action salt-action--now nfail\" role=\"alert\" hidden></div>'\n        + \"<h1>Needs you</h1>\"",
-  "replace": "        + \"<h1>Needs you</h1>\"\n        + '<div id=\"nFail\" class=\"salt-action salt-action--now nfail\" role=\"alert\" hidden></div>'"
+  "find": "        + '<div id=\"nFail\" class=\"salt-action salt-action--now nfail\" role=\"alert\" hidden></div>'\n        /* 20 Oct 2026 (canvas V65, his word: every page starts the same way): no title is drawn on any place; the rail's lit tab or the App bar\n           names it, and the heading stays for a reader */\n        + '<h1 class=\"sr\">Needs you</h1>'",
+  "replace": "        /* 20 Oct 2026 (canvas V65, his word: every page starts the same way): no title is drawn on any place; the rail's lit tab or the App bar\n           names it, and the heading stays for a reader */\n        + '<h1 class=\"sr\">Needs you</h1>'\n        + '<div id=\"nFail\" class=\"salt-action salt-action--now nfail\" role=\"alert\" hidden></div>'"
  },
  {
   "name": "one bad key blanks the review",
@@ -668,8 +668,8 @@
  {
   "name": "a card's title does not lead with the verb",
   "file": "stmt/owner.js",
-  "find": "{who:who, head:'Agree ', rest:\"'s order\"",
-  "replace": "{who:who, rest:\"'s order\""
+  "find": "{who:who, head:'Agree ', rest:shP.length>1?\"'s sheet\":\"'s order\"",
+  "replace": "{who:who, rest:shP.length>1?\"'s sheet\":\"'s order\""
  },
  {
   "name": "an order's Agree on the card does nothing",

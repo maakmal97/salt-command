@@ -1,0 +1,21 @@
+[
+ {"name":"a practice order counts on the glance","file":"stmt/owner.js","find":"      if(o.test&&!TESTING) return;\n      if(orderPartsOf","replace":"      if(orderPartsOf"},
+ {"name":"Ready counts every ready status alike","file":"stmt/owner.js","find":"if(orderPartsOf(o)==='orders.ready') ready++;","replace":"if(o.status==='ready'||o.status==='acknowledged') ready++;"},
+ {"name":"what is paid is not taken off","file":"stmt/owner.js","find":"var left=(+o.total||0)+(+o.delivery||0)-(+o.paid||0);","replace":"var left=(+o.total||0)+(+o.delivery||0);"},
+ {"name":"the delivery is left out","file":"stmt/owner.js","find":"var left=(+o.total||0)+(+o.delivery||0)-(+o.paid||0);","replace":"var left=(+o.total||0)-(+o.paid||0);"},
+ {"name":"an agreed order is left out","file":"stmt/owner.js","find":"if(['acknowledged','ready','done'].indexOf(o.status)<0||o.writtenOff) return;","replace":"if(['ready','done'].indexOf(o.status)<0||o.writtenOff) return;"},
+ {"name":"the Ready tile goes nowhere","file":"stmt/owner.js","find":"[['#orders/ready','ready'","replace":"[['#needs','ready'"},
+ {"name":"a practice card counts on its pill","file":"stmt/owner.js","find":"items.forEach(function(i){ have[i.kind]=1; if(i.practice) return; n.all++;","replace":"items.forEach(function(i){ have[i.kind]=1; n.all++;"},
+ {"name":"no track on the row","file":"stmt/page.js","find":"<div class=\"salt-tabs salt-tabs--track nchips\"","replace":"<div class=\"salt-tabs nchips\""},
+ {"name":"Jump to outside the row","file":"stmt/page.js","find":"\"</button>\").join(\"\") + \"</div>\"\n        + '<div class=\"salt-jump\">","replace":"\"</button>\").join(\"\") + \"</div></div>\"\n        + '<div><div class=\"salt-jump\">"},
+ {"name":"opening says nothing","file":"stmt/owner.js","find":"nJumpMenu.hidden=false; nJump.setAttribute('aria-expanded','true');","replace":"nJumpMenu.hidden=false;"},
+ {"name":"opening focuses nothing","file":"stmt/owner.js","find":"      if(cur) cur.focus();\n","replace":"\n"},
+ {"name":"the current line is not marked","file":"stmt/owner.js","find":"b.setAttribute('aria-current', k===nKind?'true':'false');","replace":"b.setAttribute('aria-current', 'false');"},
+ {"name":"the arrow does not move","file":"stmt/owner.js","find":"ev.key==='ArrowDown'?(i+1)%L.length:","replace":"ev.key==='ArrowDown'?i:"},
+ {"name":"Escape does nothing","file":"stmt/owner.js","find":"if(ev.key==='Escape'){ ev.preventDefault(); jumpShut(true); return; }","replace":"if(ev.key==='Escape'){ ev.preventDefault(); return; }"},
+ {"name":"the focus is not given back","file":"stmt/owner.js","find":"    if(back) nJump.focus();\n","replace":"\n"},
+ {"name":"a line chooses nothing","file":"stmt/owner.js","find":"jumpShut(true); nPick(b.getAttribute('data-jump'));","replace":"jumpShut(true);"},
+ {"name":"a tap outside leaves it open","file":"stmt/owner.js","find":"if(!nJumpMenu.hidden&&!ev.target.closest('.salt-jump')) jumpShut(false);","replace":"if(false) jumpShut(false);"},
+ {"name":"a kind with nothing can be chosen","file":"stmt/owner.js","find":"var none=ready&&!have[k];","replace":"var none=false;"},
+ {"name":"the menu counts every kind as All","file":"stmt/owner.js","find":"c.textContent=ready?String(n[k]||0):'';","replace":"c.textContent=ready?String(menu?n.all:(n[k]||0)):'';"}
+]

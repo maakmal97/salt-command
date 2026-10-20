@@ -14,8 +14,8 @@
  {
   "name": "a row does not say it waits on him",
   "file": "stmt/owner.js",
-  "find": "(e.waits&&e.parts.indexOf('orders.placed')<0)?['copper','Waiting on you']:null;",
-  "replace": "null;"
+  "find": "(e.waits&&e.parts.indexOf('orders.placed')<0)?['copper','Waiting on you']:o.againOf?['brass','Again']:null;",
+  "replace": "o.againOf?['brass','Again']:null;"
  },
  {
   "name": "a row does not say a payment is sent",
@@ -56,8 +56,8 @@
  {
   "name": "listing the orders previews each",
   "file": "stmt/owner.js",
-  "find": "    entries.forEach(function(e){ list.appendChild(orderRow(e)); });",
-  "replace": "    entries.forEach(function(e){ list.appendChild(orderRow(e)); refs('/all/maker/orders/'+encodeURIComponent(e.id)+'/preview',{}).catch(function(){}); });"
+  "find": "      if(grp.length<2){ list.appendChild(orderRow(e)); return; }",
+  "replace": "      if(grp.length<2){ list.appendChild(orderRow(e)); refs('/all/maker/orders/'+encodeURIComponent(e.id)+'/preview',{}).catch(function(){}); return; }"
  },
  {
   "name": "a closed order is not listed in any stage",

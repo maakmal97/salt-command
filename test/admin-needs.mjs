@@ -298,7 +298,7 @@ export async function run({ ok, pageWork }) {
   p = await open(state());
   try {
     const d = p.d, chips = [...d.querySelectorAll(".nchips button")];
-    ok(chips.map((b) => b.textContent).join() === "All,Orders,Payments,Messages,Rows,Accounts" && chips.every((b) => b.getAttribute("data-act") && b.classList.contains("salt-tabs__pill") && b.getAttribute("role") === "tab")
+    ok(chips.map((b) => b.firstChild.textContent).join() === "All,Orders,Payments,Messages,Rows,Accounts" && chips.every((b) => b.getAttribute("data-act") && b.classList.contains("salt-tabs__pill") && b.getAttribute("role") === "tab")
       && chips[0].getAttribute("aria-selected") === "true" && d.querySelector(".nchips").classList.contains("salt-tabs") && d.querySelector(".nchips").getAttribute("role") === "tablist",
     "the chips are All, Orders, Payments, Messages, Rows and Accounts, drawn as the parts strip is, a tablist of tabs of the system's pill, each with its act, All selected");
     p.reads.length = 0;

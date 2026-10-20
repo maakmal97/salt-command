@@ -36,7 +36,7 @@ export async function fixture() {
       roster.splice(0,roster.length,...${JSON.stringify(codes)});associates.splice(0,associates.length,'CA1-ZED');
       PEOPLE.departed=[{id:'CX3-ZED'}];PEOPLE.banned=[];
       PROD_OPENING.salt.qty=100;PROD_OPENING.salt.costPerKg=40;
-      REWARD.stated.salt.margin=1000;REWARD.stated.salt.associate.margin=1000;
+      REWARD.stated.salt.margin=1000;REWARD.stated.salt.associate.margin=1000;delete REWARD.stated.salt.associate.since;
       TIER_OF['CX1-ZED']={salt:-0.3};TIER_OF['CA1-ZED']={salt:-0.3};PROD='salt';recompute();`);
     const pricing = pricingSnapshot(source.w);
     pricing.v = wd.b.version;

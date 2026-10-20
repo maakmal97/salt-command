@@ -763,7 +763,9 @@ The suite section "Account leads with this device, and the door names the app" (
   look never keeps a finished delivery's spot past its 30 days; the opened part carries `data-maker-pin` and the lock takes it off. A
   practice order's spot is never filed, so it offers nothing. Filing it as their place stays on the Desk.
 - **The confirm time** (item 19, P3 and P4). `stmt/confirm.js` `confirmWithin`: the median, Place to his first Accept, of his last 30
-  confirmations made in Counter hours (the weekly hours as they stand, the manual switch left out), up to the next quarter hour, 15 minutes
+  confirmations made in Counter hours (the weekly hours as they stand, the manual switch left out), the time between counted in open minutes
+  alone from 20 Oct 2026 (his answer; `stmt/hours.js` `openMinutes`, so a closed night between a late Place and a morning Accept is not
+  counted, and Salt Admin's waited meter counts the same way), up to the next quarter hour, 15 minutes
   at least; an order sent as an offer, with a price, a group order or a test account's is left out, and a replacement is measured from the
   root of its chain. Filed hourly at KV `confirm:within` (`{mins, n, at}`) by the site's cron and carried on `GET /hours` as `confirm`
   while under three hours old. A placed order with no price says "Usually confirmed within **45 min**. Measured from our last 30 orders, not
@@ -1915,9 +1917,13 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   **The printed sizes are a grid of tiles** (Phase 4a, `test/admin-sizes-hours.mjs`, its mutations in `test/admin-sizes-hours.mutations.json`): a size is a tile of the
   same recipe, a checkbox in `salt-option` with its face saying the size in words, in a fieldset (`maker-sizes`, legend "Sizes to print") whose grid runs in as many
   columns of 88px or more as the pane holds, ticked while the size is printed. Each tick keeps `record.house.size`, keyed by the size, and the body is as it was: the
-  book and the sizes left unticked as numbers (`hide`). **The weekly hours are a table** (Shop, Hours): its head names three columns, Day (the tick, its label the day's
-  name), Opens and Closes, a row for each weekday in order, each control named for its day and its column, a closed day's times shut, the columns sharing the width so
-  the head stands over them at 375px as at 1280. The override that holds the shop for now is two tiles, Closed and Open (`hours.override-state`, keyed `false` and
+  book and the sizes left unticked as numbers (`hide`). **The weekly hours are a week chart** (Shop, Hours; 20 Oct 2026, canvas V63, replacing the table of 12 Oct): a 44px row a day,
+  Monday first, a 00 to 24 track with the open span a brass bar, a span past midnight said "+1" and its tail hatched at the start of the next day's row; a tap
+  opens the day below its row: Opens and Closes as quarter-hour pickers (a time filed off the quarter hour kept as its own choice), Closed or Open, Same as the day
+  before, Copy to any days (a chip a day, its group, Monday to Friday or Saturday and Sunday, chosen at first, then Apply), Add hours and
+  Remove (up to six spans, "2 spans" in the row), Open all day, and Done, which sends the week and its dates; a stretch running on into the
+  next day's opening is said as one. Below it: what customers would see for the day being changed (a read), Discard changes while the week
+  differs from the saved one, Undo for a minute after Done, and the dated days, a row each with Add a date and Remove this date (`test/admin-hours-week.mjs`). The override that holds the shop for now is two tiles, Closed and Open (`hours.override-state`, keyed `false` and
   `true`), over a field that says **Closed until**, or Open until when Open is chosen, in Kuala Lumpur time. What is sent is what it was: `{schedule: {days}}`, then
   `{manual: {open, until}}` or `{clearManual: true}`. `tools/maker-forms-geometry.mjs` measures the pane, every form's tiles, the size grid and the hours table in a
   real browser at 1280 and 375px, and proves a 20px tile red.
@@ -1926,7 +1932,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   (`#roster`), and no rule of the page frames it, the shell, the body and the root carrying no transform, filter, perspective, containment, will-change or container.
   What moves it is not a rule of its own: **a fixed bar is laid out against the layout viewport and drawn on the visible one, and a phone's layout viewport grows to hold
   anything wider than the phone**, so the bar then stands off the foot (measured: a 1200px section at 375px puts it 1,822px below the screen). The weekly hours table
-  is such a thing on a phone narrower than 356px (its columns need 340px, and the page's gutter is 16px); Record's menu and its seventeen forms are not, down to 260px.
+  was such a thing on a phone narrower than 356px until the week chart replaced it (20 Oct 2026); Record's menu and its seventeen forms are not, down to 260px.
   **In the iPhone's saved app a short document lifts it** (his screenshots, 12 Oct 2026, 393x852 pt, each page at its top, Safari never): Orders, a long page, had the bar on the
   screen's foot; Record with one short card had it 20pt above; Needs you ("Nothing here.") 55pt above, the page ground showing under it. The shorter the page, the higher the bar,
   so the fixed bar's frame there ends at the larger of the document and a layout viewport short of the screen. **So the document is the screen tall at least in the saved
@@ -2230,6 +2236,26 @@ publishes only the open/closed status and timing; it contains no account data. A
 still accepts customer orders, while the order form says acknowledgement may be delayed. Manual
 overrides expire within 14 days and may be cleared to resume the weekly schedule.
 
+**Hours past midnight** (his word of 20 Oct 2026, canvas V63): a day's close earlier than its open is the next day's (Fri
+09:00 to 02:00 is open until Sat 02:00), with no toggle and no new field, so every stored week keeps its meaning. One rule reads
+it, `stmt/hours.js` `openParts(days, lo, hi)`: the open stretches between two moments, walking from the day before `lo`, touching
+or overlapping spans merged so no minute counts twice. `openAt`, the next open and the next change (`hoursStatus`, so Salt Admin's
+bar and the Counter's Today line), `openMinutes` (the confirm time and the waited meter) and `slotSpan` (the delivery windows) all
+read it; it is ES5 and the page carries its source beside `slotSpan`. `validateWeeklyHours` refuses the same time to open and
+close (never read as all day) and a day opening before the day before closes, Saturday into Sunday too (his answers 1 and 2);
+touching is one stretch. A window holding two stretches is said from the first's start to the last's end (his answer 5).
+
+**The most control over the hours** (his eight answers of 20 Oct 2026 to Fable's design): a day is null, one span (the object it
+always was, so a page cached before reads it as it did) or a list of up to six (a break, a split shift); open all day is 00:00 to
+24:00, a close of 24:00 the day's end; spans that touch or overlap are merged on the check and by `openParts`, no longer refused
+(the refusal of a day opening before the day before closes is retired), and a stretch longer than a day is refused. Dated days
+(`schedule.dates`, a Kuala Lumpur date to a day of the same form) stand in for their weekday whole: a holiday closed or a special
+day's hours, written from today to 90 days ahead and 40 at most, read whatever their date and pruned once past on every read and
+write. `GET /all/maker/hours?preview=<week>` answers what customers would see on a week not yet saved (`hoursPreview`: open or
+closed and the next change, and for each of the next seven days its hours in words and the windows it offers) and stores
+nothing. A page cached before these reads a list day or a 24:00 close as closed and does not know the dates; the Worker's
+`slotTake` refuses a slot a date shuts.
+
 Accounts > Order for them opens that customer's sealed current list on his device under the
 existing master wrap. It sends one priced size with the list digest and a request id to
 `POST /all/maker/customers/<username>/orders`. The server requires an existing account and the
@@ -2523,14 +2549,29 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `draft.approve` | Desk row card (key: data-maker-card, draft:<id>) | Approves the row, or every row of the trip. |
 | `draft.reject` | Same card | Rejects it, or the trip. |
 | `ended.sign-in` | Shown when the Access session has ended | Loads /all again, which is the Access login. |
-| `hours.day-from` | Same row | The hour it opens. |
-| `hours.day-open` | Operating hours, one a weekday (key: the weekday) | Whether that day is open. |
-| `hours.day-to` | Same row | The hour it closes. |
+| `hours.copy-apply` | The opened day's Copy to (key: the weekday) | Copies its hours to the days chosen. |
+| `hours.copy-day` | Copy to, a chip a day (key: the weekday) | Chooses or leaves that day; its group is chosen at first. |
+| `hours.date` | Dates, a row a dated day (key: the date) | Opens or shuts that date's hours below its row. |
+| `hours.date-add` | Dates | Opens or shuts the date field. |
+| `hours.date-new` | Dates, the date field | Adds the date, closed, and opens it. |
+| `hours.date-pick` | Dates | The date, today to 90 days ahead. |
+| `hours.date-remove` | The opened date (key: the date) | Takes the date out; its weekday's hours stand again. |
+| `hours.day-add` | The opened day (key: the weekday or date) | Adds a span after the last, up to six. |
+| `hours.day-allday` | The opened day (key: the weekday or date) | Open all day: 00:00 to 24:00. |
+| `hours.day-remove` | A span of the opened day after the first (key: the day and its number) | Takes that span out. |
+| `hours.discard` | Operating hours, while the week differs from the saved one | Puts the saved week back. |
+| `hours.undo` | Operating hours, for a minute after Done | Sends back the week Done replaced. |
+| `hours.day` | Operating hours' week chart, a row a weekday (key: the weekday) | Opens or shuts that day's Opens and Closes below its row. |
+| `hours.day-closed` | The opened day (key: the weekday) | Closes the day, or opens a closed one at 09:00 to 17:00. |
+| `hours.day-copy` | The opened day (key: the weekday) | Copies its hours to the rest of its group: Monday to Friday, or Saturday and Sunday. |
+| `hours.day-from` | The opened day (key: the weekday) | The quarter hour it opens. |
+| `hours.day-same` | The opened day (key: the weekday) | Takes the day before's hours. |
+| `hours.day-to` | The opened day (key: the weekday) | The quarter hour it closes; earlier than the open is the next day. |
 | `hours.override-clear` | Operating hours | Clears it. |
 | `hours.override-set` | Operating hours | Sets the temporary override. |
 | `hours.override-state` | Operating hours (key: `false` for Closed, `true` for Open) | Whether the override holds the shop open or closed. |
 | `hours.override-until` | Operating hours | When the override ends, Kuala Lumpur time. |
-| `hours.save` | Operating hours | Saves the weekly hours. |
+| `hours.save` | The opened day, Done (key: the weekday) | Saves the whole week and shuts the day. |
 | `link.approve` | Link card of an associate's link | Approves it, which opens it. |
 | `link.open` | Link row (key: the link id) | Opens or shuts the row: its address, QR and moves. |
 | `link.copy` | Link card (key: data-link, the link id) | Copies the link. |
@@ -2562,6 +2603,19 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `need.fold.practice` | The folded line at the foot of Needs you | Opens or shuts the practice accounts' cards in place. |
 | `need.approve-row` | Needs you card for a Desk row to approve | Approves that row, or the trip it rides, asking first and sending what Orders > Approve's Approve sends. |
 | `need.copy-link` | Same card, once the link is shown | Copies that link. |
+| `shop.help.pay` | Shop > Hours, Help (read only) | Opens or shuts the answer to Paying, as a customer reads it under Account. Reads and sends nothing. |
+| `shop.help.deliv` | Shop > Hours, Help (read only) | Opens or shuts the answer to Delivery, as a customer reads it under Account. Reads and sends nothing. |
+| `shop.help.coll` | Shop > Hours, Help (read only) | Opens or shuts the answer to Collecting, as a customer reads it under Account. Reads and sends nothing. |
+| `shop.help.change` | Shop > Hours, Help (read only) | Opens or shuts the answer to Changing an order, as a customer reads it under Account. Reads and sends nothing. |
+| `need.glance.ready` | The glance at the head of Needs you | Opens Orders at Ready: the orders ready with goods still to hand over, counted on the tile. Reads nothing of its own. |
+| `need.glance.owed` | The glance at the head of Needs you | Opens Orders. The tile sums what the agreed orders still owe, goods and delivery less what is paid. Reads nothing of its own. |
+| `need.jump` | Jump to, fixed beside the kinds' sliding row | Opens or shuts the menu of every kind with its count; Escape or a tap outside shuts it, the arrow keys move between its lines. |
+| `need.jump.all` | A line of the Jump to menu, beside the kinds | Shows every card again, as the All pill does. A kind with nothing waiting stands in mist and cannot be chosen. Reads nothing. |
+| `need.jump.orders` | A line of the Jump to menu, beside the kinds | Shows only the orders, as the Orders pill does. A kind with nothing waiting stands in mist and cannot be chosen. Reads nothing. |
+| `need.jump.payments` | A line of the Jump to menu, beside the kinds | Shows only the payments they say they sent. A kind with nothing waiting stands in mist and cannot be chosen. Reads nothing. |
+| `need.jump.messages` | A line of the Jump to menu, beside the kinds | Shows only the messages asked. A kind with nothing waiting stands in mist and cannot be chosen. Reads nothing. |
+| `need.jump.rows` | A line of the Jump to menu, beside the kinds | Shows only the Desk rows and the entries not yet through. A kind with nothing waiting stands in mist and cannot be chosen. Reads nothing. |
+| `need.jump.accounts` | A line of the Jump to menu, beside the kinds | Shows only the cards about accounts and guest links. A kind with nothing waiting stands in mist and cannot be chosen. Reads nothing. |
 | `need.kind.accounts` | The chips under Needs you's title | Shows only the cards about accounts and guest links. Reads nothing. |
 | `need.kind.all` | The chips under Needs you's title | Shows every card again. Reads nothing. |
 | `need.kind.messages` | The chips under Needs you's title | Shows only the messages asked. Reads nothing. |
@@ -2901,6 +2955,16 @@ button down the card. It opens the page's Sheet (`amendOpen`, through `makerAsk`
 Price (goods) and Delivery as they stand, its one action Send the change and the other Not now. **The action sends what Send the change sent**: `POST /all/maker/orders/<id>/restate`,
 only the figures changed, the goods' price with a new size, under the request id that route minted until it lands; nothing changed says *Change a figure first.* on the card. What was typed is kept
 while the change has not landed (`amendMemo`, forgotten once it has), so a lost reply is opened again as he left it and retried as the same request. `test/maker-amend.mjs`.
+
+### The associate reward on an order (20 Oct 2026)
+
+An order carries one word of the reward, `rwd` in `CUSTOMER_FIELDS`: "cross" from his Accept (the order takes them over to their next reward;
+`decideDesk` takes it on the acknowledgement only), "given" from the book's mark on the return leg (terminal), and a mark of null clears a cross.
+The page adds "This order brings you over to the next reward. Pay now to receive them together with your reward." (`ow.rwdCross`) beside pay now
+while an acknowledged order is still to pay, and on a given order a line "Reward · 1 unit", "No charge", with the product's mark and no amount
+(`om.rwd`, `om.rwdFree`). No figure of it, `rwdStep`, `listRM` or `listQty`, travels. Salt Admin's order card draws the Associate reward card under
+the Bill (`stmt/owner.js` `rewardCard`): placed off the preview's `reward`, agreed off `GET /all/maker/reward/<ledgerKey>`. The practice accounts
+show both (`FIX_VERSION` 13: ex48 crossing, ex05 given).
 
 ## Before committing
 

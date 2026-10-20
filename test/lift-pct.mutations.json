@@ -97,9 +97,9 @@
  },
  {
   "name": "the Counter's card off the board reads the old drift map",
-  "file": "src/orders.js",
-  "find": "(snap.lift && typeof snap.lift[code] === \"number\" ? snap.lift[code] : null)",
-  "replace": "(snap.drift && typeof snap.drift[code] === \"number\" ? snap.drift[code] : null)"
+  "file": "engine/pricing.mjs",
+  "find": "(snap.lift&&typeof snap.lift[code]===\"number\"?snap.lift[code]:null)",
+  "replace": "(snap.drift&&typeof snap.drift[code]===\"number\"?snap.drift[code]:null)"
  },
  {
   "name": "the customer's sealed grid reads the old drift map",

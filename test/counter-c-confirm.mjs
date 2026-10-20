@@ -145,4 +145,8 @@ export async function run({ ok }) {
     "GET /hours carries {mins, n} and nothing else, and drops a figure over three hours old: " + J([h1.confirm, h2.confirm]));
   ok(C.confirmView({ mins: 45, n: 9, at: new Date().toISOString() }) === null && C.confirmView({ mins: 7, n: 12, at: new Date().toISOString() }) === null,
     "and nothing under ten confirmations or under a quarter hour is carried");
+  /* 20 Oct 2026 (his answer): the time between Place and Accept is counted in open minutes; placed 17:50 and agreed 09:10 the next morning
+     on 09:00 to 18:00 is 20 open minutes (30 up to the quarter hour), never the 920 on the clock */
+  const night = Array.from({ length: 10 }, (_, k) => mk(Date.parse("2026-10-12T09:50:00Z") + k * 86400000, 920));
+  ok(J(C.confirmWithin(night, cfg)) === J({ mins: 30, n: 10 }), "a night closed between Place and Accept is not counted: " + J(C.confirmWithin(night, cfg)));
 }

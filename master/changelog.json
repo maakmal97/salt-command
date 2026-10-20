@@ -1,5 +1,119 @@
 [
  {
+  "v": "v1194",
+  "d": "21 Oct 2026",
+  "t": "A PENDING SALT ORDER OF 0.5 UNIT IS COLLECTED UNPAID BY CR3-DAM",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> Order s278 for CR3-DAM, 0.5 unit of salt at RM75 goods, was pending since 20 Oct. The correction records that it was collected on 21 Oct: deliveredQty 0.5, deliveredOn 21 Oct, handover collected. It was preapproved. It moves no cash, so the whole RM75 stays unpaid and the order now stands as an advance.",
+   "<b>UNUSUAL:</b> the rate is RM150 a unit against a median of RM80 for CR3-DAM, the top of a range of RM80 to RM150. The dossier gives no credit cap for this party. The inventory rolls down by 0.5 unit, out to CR3-DAM, and no cost basis moves."
+  ]
+ },
+ {
+  "v": "v1193",
+  "d": "20 Oct 2026",
+  "t": "A SALT ORDER IS SETTLED IN FULL AND A RICE SALE IS PAID AND COLLECTED",
+  "n": [
+   "<b>TWO ROWS FOLDED, BOTH FOR CJ4-BJ.</b> A fulfilment of RM100 on 20 Oct settles salt order s244, leaving RM0 and 0 unit outstanding. A new rice sale of 10 unit for RM60 was paid and collected on the day.",
+   "<b>INVENTORY.</b> The fulfilment moves no salt. The rice sale takes 10 unit of rice out of stock. CJ4-BJ has no rice order on the book, so the rice sale has no rate of its own to be compared against."
+  ]
+ },
+ {
+  "v": "v1192",
+  "d": "20 Oct 2026",
+  "t": "A PAYMENT SETTLES CR3-DAM'S ORDER S263 AND A NEW PENDING ORDER IS BOOKED AT THE ASK",
+  "n": [
+   "<b>TWO ROWS FOLDED, NO STOCK MOVED.</b> A payment of RM65 by qr via maybank settled CR3-DAM's order s263 in full, and a new order of 0.5 unit for RM75 was booked pending, nothing paid and nothing handed over. The new order is at the desk's ask, but well above CR3-DAM's usual rate of RM80 a unit, which the drafter flagged.",
+   "<b>INVENTORY UNCHANGED.</b> The pending sale draws no stock and books no revenue until something moves. The payment moves cash only, since 0.5 unit already left on 16 Oct. Stock stays at 0 against a ledger of 101.34, all of it for self use, and the stock cost of RM56 is unchanged."
+  ]
+ },
+ {
+  "v": "v1191",
+  "d": "20 Oct 2026",
+  "t": "TWO STOCK COUNTS ON 20 OCT: CANDY UP BY 3, OIL DOWN BY 5",
+  "n": [
+   "<b>TWO COUNTS FOLDED.</b> Candy was counted at 6 unit against 3 on the book, a gain of 3. Oil was counted at 40 unit against 45 on the book, a loss of 5. Both counts are dated 20 Oct and both were decided by Counter Admin. No sale, purchase or party row moved.",
+   "<b>THE COUNT WINS.</b> Each count becomes the stated inventory for its product and moves its count date to 20 Oct. The dossier gives no reason for either gap, and none is offered here. Candy floors are unchanged, while the self-use figure moves for both products. Salt, rice and the cost basis are untouched."
+  ]
+ },
+ {
+  "v": "v1190",
+  "d": "20 Oct 2026",
+  "t": "SALT COUNT OF 0 UNIT ON 20 OCT REPLACES THE BOOK FIGURE OF 12.89",
+  "n": [
+   "<b>ONE SALT COUNT FOLDED.</b> The count on 20 Oct found 0 unit on hand against 12.89 on the book, a difference of -12.89. The count wins, so the stated salt inventory is set to 0 and the salt count date moves from 3 Oct to 20 Oct. The drafter flagged that 1.5 unit is owed out and already paid for, so those orders cannot be met until a lot lands.",
+   "<b>INVENTORY AND FLOORS.</b> The stated stock falls from 12.89 to 0. The floors and the ask do not move: floor 1 stays RM60, floor 2 RM120 and ask 1 RM120. Only the self-use figure moves, from 88.45 to 101.34. No lot landed, so the cost basis stays."
+  ]
+ },
+ {
+  "v": "v1189",
+  "d": "20 Oct 2026",
+  "t": "ONE UNIT OF SALT SOLD TO CM4-TO-R ABOVE THE ASK, PAID AND DELIVERED",
+  "n": [
+   "<b>ONE SALE FOLDED, PAID AND DELIVERED.</b> One unit of salt went to CM4-TO-R on 20 Oct for RM150 cash, booked as R2 via CM4-TO. The unusual point is the rate: RM150 a unit is above the ask of RM120, and the drafter flagged it as far above what CM4-TO usually pays. The row keeps its drafted cost of RM58. Salt stock falls by 1 unit."
+  ]
+ },
+ {
+  "v": "v1188",
+  "d": "20 Oct 2026",
+  "t": "CS6-BS-R SETTLES S267 IN FULL BY QR, NO STOCK MOVES",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED.</b> The payment of RM220 on 20 Oct 2026 against s267 for CS6-BS-R was preapproved by Counter Admin and settles the order in full. The drafter's flag that nothing is left outstanding is answered by the figures. The row's own cash and paid date are applied by the master, not recomputed here.",
+   "<b>INVENTORY UNCHANGED.</b> The 2 units of salt left on 15 Oct, so no stock moves and no cost basis changes. The salt count of 3 Oct stands, and the roll stays as the tool wrote it."
+  ]
+ },
+ {
+  "v": "v1187",
+  "d": "20 Oct 2026",
+  "t": "THE ASSOCIATE REWARD STEPS WITH LANDED COST, ARRIVES WITH THE ORDER, AND A CUSTOMER REDEEMS NOTHING",
+  "n": [
+   "<b>A UNIT PER 10 UNITS' LANDED COST.</b> His rules of 20 Oct 2026, salt only: an associate earns one free unit for every 10 units of COGS (the latest purchase, RM 580 at RM 58 today) of margin on their own buying and resale, counted once an order is paid in full, at the step of the day it crosses. Introductions no longer count.",
+   "<b>THE SWITCH MOVES NOTHING.</b> Each of the ten associates opens on a stated position (REWARD_OPEN, written once by tools/reward-open.mjs): what they hold and the whole % of their next unit are the same either side.",
+   "<b>THE FOLD BOOKS THE UNIT.</b> Once a crossing order is paid, the fold raises 1 unit as its own row at that day's landed cost, settled by the reward, and hands it over with that order's delivery, or with their next salt handover where it has gone; the unit leaves the shelf in the roll. A payment undone flags it STALE and withdraws nothing.",
+   "<b>THEIR PRICE ON EVERY SALT SALE.</b> The drafter stamps each salt sale with their own card for its size, read and never priced, so Salt Admin can say what was given under their Set Price. An offer or acknowledgement outstanding at the deploy may wait under Approve, marked, as its row gains the stamp.",
+   "<b>ACCEPT SAYS SO, IN ONE WORD.</b> An order that takes them over is told, with no figure, to pay now to receive the reward with it; the promise holds the step and the rate it was made at. Once the unit is handed over the order shows Reward, 1 unit, no charge.",
+   "<b>SALT ADMIN SHOWS THE RINGGIT.</b> The order card's Associate reward card: whether the order reaches the next reward or how far short, the meter, and the unit at cost less what was given, net. Behind Access only.",
+   "<b>A CUSTOMER REDEEMS NOTHING.</b> From the switch a customer's reward is not redeemed, covered or offset on any road, and what the six customers hold stands as it is; the loyalty unit is to be theirs. Nothing prices from any of it: the Floor, the Set Price grid, the Ceiling and every card are unchanged."
+  ]
+ },
+ {
+  "v": "v1186",
+  "d": "20 Oct 2026",
+  "t": "SALT ADMIN A TO C: THE DISTANCE ON THE BILL AND THE WAITED METER IN COUNTER HOURS",
+  "n": [
+   "<b>One distance.</b> The great-circle distance moves into engine/geo.mjs, inlined here as an engine block in place of the desk's own copy, and carried to the statements site as stmt/geo.js by tools/geosite.mjs; the gate checks both are the module. Nothing on the desk prices off it: it serves the same-point check on a filed spot.",
+   "<b>The road factor travels, never a point.</b> The Desk's read for Salt Admin carries RULES.delivery.roadFactor, and Salt Admin says a delivery's road distance under Delivery cost on its Bill, measured in his browser after the one unlock from his base to their sealed spot, else their filed point, else their locality, and nothing without both points.",
+   "<b>Waited in Counter hours.</b> stmt/hours.js openMinutes counts the weekly hours open between two moments, and the Counter's review read sets each real placed order's minutes waited on it, so an order placed while closed counts from opening.",
+   "<b>Salt Admin A to C.</b> This version also carries the order card in four lines, the Bill with its cost under Goods, the delivery address opened on Salt Admin, the five steps with Paid on both sites, the sheet group, the hours chip and the shell, which went out as statements pushes. The associate reward card is not built: its own piece of work."
+  ]
+ },
+ {
+  "v": "v1185",
+  "d": "20 Oct 2026",
+  "t": "CORRECTION TO S275: DELIVERY CHARGE SET TO ZERO",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> The correction against s275 for CM4-TO-R, a sale of 3 units of candy dated 19 Oct 2026, sets delivery from RM15 to RM0. It moves no cash and no stock; it changes only what the row says about itself, and the fold applies the patch.",
+   "<b>INVENTORY UNCHANGED.</b> No lot landed and no unit moved, so the cost basis stays as it was. The correction sets the cost itself, so none is supplied here. The RM15 delivery that stood unpaid on the row is no longer charged."
+  ]
+ },
+ {
+  "v": "v1184",
+  "d": "20 Oct 2026",
+  "t": "ONE FREE SALT REDEMPTION AND ONE REBATE CORRECTION",
+  "n": [
+   "<b>TWO ROWS FOLDED.</b> A redemption of 1 unit of salt to CM4-TO, booked as cost and not revenue on his ruling of 11 Sep 2026, and a correction on s274 for CS6-PER that marks the RM45 order as settled in kind. Both were approved by Counter Admin on 20 Oct 2026. The redemption is below the desk's floor of RM60 a unit, as expected for a free unit.",
+   "<b>INVENTORY.</b> Salt rolls out 1 unit for CM4-TO at the stock cost of RM56. The correction moves no cash and no stock. The desk's reward figure of 1 earned and unredeemed for CM4-TO is the desk's word and is not checked here."
+  ]
+ },
+ {
+  "v": "v1183",
+  "d": "20 Oct 2026",
+  "t": "ONE CANDY SALE FOLDED: R2 ADVANCE ON DELIVERY",
+  "n": [
+   "<b>ONE NEW SALE FOLDED.</b> 3 units of candy to CM4-TO-R on 19 Oct, goods RM215, delivered in full. The rate of RM71.67 a unit is above the desk's ask of RM60 but below the party's own median of RM91.4. The only unpaid sum is RM15 of delivery.",
+   "<b>INVENTORY.</b> The row's cost stands at the drafter's COGS and no lot landed, so the stock cost is unchanged. The candy count is dated 20 Oct and the 3 units went out on 19 Oct."
+  ]
+ },
+ {
   "v": "v1182",
   "d": "20 Oct 2026",
   "t": "THE COUNTER, BATCH C: SAVED SPOTS, THE CONFIRM TIME, HELP, BOLDER LABELS AND THE SLIDER",

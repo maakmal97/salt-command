@@ -292,5 +292,11 @@
   "file": "stmt/owner.js",
   "find": "te.setAttribute('data-in','orders.confirmed orders.paid orders.done orders.ended');",
   "replace": "te.setAttribute('data-in','orders.confirmed');"
+ },
+ {
+  "name": "the Desk carries no factor",
+  "file": "src/worker.js",
+  "find": "    body.roadFactor = PRICING_RULES.RULES.delivery.roadFactor;",
+  "replace": ""
  }
 ]

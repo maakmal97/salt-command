@@ -113,7 +113,7 @@ export const OWNER_JS = `
     var parts=PARTS[place]||[];
     if(!parts.length) part=''; else if(parts.indexOf(part)<0) part=parts[0];
     var fresh=!!o.fresh||place!==placeNow, moved2=place!==placeNow||part!==partNow;
-    if(placeNow==='needs'&&place!=='needs') needSaid={};
+    if(placeNow==='needs'&&place!=='needs'){ needSaid={}; jumpShut(false); }
     placeNow=place; partNow=part;
     /* Orders opens on the first stage that has something waiting, found when the read lands (drawMaker); a stage he chose is his */
     ordAuto=place==='orders'&&place!==prevPlace&&!asked;
@@ -935,7 +935,13 @@ export const OWNER_JS = `
     'Each map point must belong to a roster party and remain inside Malaysia.':'Each point must belong to a customer and sit inside Malaysia.',
     'Set hours or mark closed for each day of the week.':'Set hours, or mark closed, for each day.',
     'Each day must be closed or have opening and closing times.':'Each day is closed, or has an opening and a closing time.',
-    'Use valid 24-hour times, with closing later than opening on the same day.':'Use 24-hour times, with closing after opening.',
+    'Use valid 24-hour times.':'Use 24-hour times.',
+    'A day cannot open and close at the same time.':'Opening and closing at the same time: choose Closed, or another time.',
+    "A day's hours cannot run for more than 24 hours.":'A day holds 24 hours at most: open all day is 00:00 to 24:00.',
+    'Each date must be closed or have opening and closing times.':'Each date is closed, or has its hours.',
+    'Keep to 40 dates at a time.':'40 dates at a time at most: remove one first.',
+    'Use a real date for each dated day.':'Choose a real date.',
+    'Set dates from today to 90 days ahead.':'Choose a date from today to 90 days ahead.',
     'Choose whether the Counter is open or closed.':'Choose open or closed.',
     'Set an end time within the next 14 days.':'Choose an end time within the next 14 days.',
     'An appointment for this ID is already queued or waiting for approval.':'That customer is already waiting for the Desk or for your approval.',
@@ -1175,6 +1181,7 @@ export const OWNER_JS = `
   function makerVaultNotify(){
     [].forEach.call(document.querySelectorAll('[data-vault-gate]'),makerVaultDraw);
     [].forEach.call(document.querySelectorAll('[data-pin-gate]'),function(b){ if(b._draw) b._draw(); });
+    kmRepaint();
     var state=document.getElementById('vaultState'), on=document.getElementById('vaultOn'), off=document.getElementById('vaultOff');
     if(state) state.textContent=makerVault?'Open on this phone':'Locked';
     if(on) on.hidden=!!makerVault;
@@ -1455,7 +1462,7 @@ export const OWNER_JS = `
         if(generation!==makerSpotGen||!makerVault||document.hidden) return;
         var p=null; try{ p=JSON.parse(new TextDecoder().decode(b)); }catch(e){ p=null; }
         if(!p||typeof p!=='object') throw new Error('It holds nothing this page reads.');
-        makerSpotOpened[order.u+'/'+order.pin]=p;
+        makerSpotOpened[order.u+'/'+order.pin]=p; kmRepaint();
         if(box.isConnected) adSpotPaint(p);
       }catch(error){
         if(generation===makerSpotGen) said(/not kept/.test(String(error&&error.message))?'The address they shared is no longer kept.':'The address could not be opened: '+(error&&error.message||error));
@@ -2302,7 +2309,7 @@ export const OWNER_JS = `
   }
   async function makerOtherInputs(parent,catalog,refreshTradeCatalog){
     pairDrafts.length=0;
-    makerGeo.configure(catalog.placed);
+    makerGeo.configure(catalog.placed); makerPlaced=catalog.placed||{};
     var today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kuala_Lumpur'});
     var idCanStart=function(kind){return kind==='customer'||kind==='reseller'||kind==='referral';};
     var parties=(catalog.parties||[]).filter(function(code){return !code.endsWith('-R');});
@@ -3828,10 +3835,10 @@ export const OWNER_JS = `
       t.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));
       /* ONE PILL AT MOST, and only a state the stage does not already say: Placed always waits on him, so its rows carry no Waiting on you; on any
          other stage the pill says he is wanted there (a question, a payment they say they sent). Practice, then Cash held, then Waiting on you. */
-      var pillOf=o.test?['mist','Practice']:makerCashHeld[e.id]?['brass','Cash held']:(e.waits&&e.parts.indexOf('orders.placed')<0)?['copper','Waiting on you']:null;
+      var pillOf=o.test?['mist','Practice']:makerCashHeld[e.id]?['brass','Cash held']:(e.waits&&e.parts.indexOf('orders.placed')<0)?['copper','Waiting on you']:o.againOf?['brass','Again']:null;
       if(pillOf) t.appendChild(chip(pillOf[0],pillOf[1]));
       var why=[orderAsked(o)?'asked a question':'', ordPays(o).length?'says sent':'', o.again&&o.again.length?'send again':''].filter(Boolean);
-      main.appendChild(el('span','salt-inbox-row__what',[o.mode==='deliver'?'Deliver':o.mode==='collect'?'Collect':''].concat(e.waits?why.slice(0,1):[]).filter(Boolean).join(', ')));
+      main.appendChild(el('span','salt-inbox-row__what',[o.mode==='deliver'?'Deliver':o.mode==='collect'?'Collect':''].concat(e.waits?why.slice(0,1):[]).concat(o.againOf?[orderRef(o.againOf)+' again']:[]).filter(Boolean).join(', ')));
       side.appendChild(el('span','salt-inbox-row__age',ageOf(o.at)));
       side.appendChild(el('span','salt-inbox-row__action',rm(Number(o.total||0)+Number(o.delivery||0))));
     }else if(e.row){
@@ -3875,6 +3882,18 @@ export const OWNER_JS = `
       if(!c){ c=el('span','salt-tabs__count'); b.appendChild(c); }
       c.textContent=String(v);
     });
+  }
+  function sheetGroup(grp){
+    var os=grp.map(function(x){ return x.order; }).sort(function(a,b){ return String(a.id).localeCompare(String(b.id)); }), first=os[0];
+    var g=el('section','salt-glass-card salt-glass-card--radius-lg ordsheet'), hd=el('div','ordsheet__head');
+    g.setAttribute('data-in',grp[0].parts); g.setAttribute('data-sheet',first.sheet);
+    g.setAttribute('aria-label',os.length+' orders on one sheet from '+codeByUser(first.u));
+    hd.appendChild(el('span','salt-eyebrow salt-eyebrow--copper',os.length+' orders, one sheet')); hd.appendChild(el('span','ordsheet__age',ageOf(first.at))); g.appendChild(hd);
+    grp.forEach(function(x){ g.appendChild(orderRow(x)); });
+    var line=function(a,b){ var r=el('div','ordsheet__line'); r.appendChild(el('span',null,a)); r.appendChild(el('span','ordsheet__sum',b)); g.appendChild(r); };
+    if(first.mode==='deliver') line('Delivery, on '+orderRef(first.id),rm(+first.delivery||0));
+    line('Goods, '+os.length+' orders',rm(os.reduce(function(s,o){ return s+(+o.total||0); },0)));
+    return g;
   }
   function markOrderRows(){
     [].forEach.call(document.querySelectorAll('#makerOrderList [data-order]'), function(r){
@@ -4029,7 +4048,16 @@ export const OWNER_JS = `
     ordEntries={}; entries.forEach(function(e){ ordEntries[e.id]=e; });
     if(status) paintOrdStatus();
     list.textContent='';
-    entries.forEach(function(e){ list.appendChild(orderRow(e)); });
+    /* Salt Admin A to C (20 Oct 2026), P5, HIS ANSWER: A SHEET IS ONE GROUP. A sheet's orders at the same stage stand in one card, each its own row
+       (and its own [data-order]) and each agreed alone; under them the sheet's delivery, on its first order, and the goods of all of them */
+    var grouped={};
+    entries.forEach(function(e){
+      if(grouped[e.id]) return;
+      var o=e.order, grp=o&&o.sheet?entries.filter(function(x){ return x.order&&x.order.u===o.u&&x.order.sheet===o.sheet&&x.parts===e.parts; }):[];
+      if(grp.length<2){ list.appendChild(orderRow(e)); return; }
+      grp.forEach(function(x){ grouped[x.id]=true; });
+      list.appendChild(sheetGroup(grp));
+    });
     /* a done or ended stage lists the orders with nothing asked of him (fifty at most) and every one that waits on him, which is never dropped; the note
        counts what the list shows against every order of the stage */
     ['done','ended'].forEach(function(st){
@@ -4100,6 +4128,30 @@ export const OWNER_JS = `
     r.appendChild(l); if(flag) r.appendChild(el('span','salt-ledger__flag',flag));
     return r;
   }
+  /* 20 Oct 2026 (his answer, option a): THE ROAD DISTANCE under Delivery cost, never the cost itself (his figure): his base (the places vault's
+     _base) to their sealed spot opened here, else their filed point, else their locality (said so), the one distance (engine/geo.mjs) times
+     the Desk's road factor off the review read. Measured in this browser after the one unlock; nothing without both points. */
+  var makerPlaced={};
+  function ordKm(order){
+    var f=makerData&&makerData.roadFactor, v=makerVault&&makerVault.places;
+    if(order.mode!=='deliver'||!v||!(typeof f==='number'&&f>0)) return null;
+    var base=v._base, ok=function(p){ return !!p&&typeof p.lat==='number'&&typeof p.lng==='number'&&isFinite(p.lat)&&isFinite(p.lng); };
+    if(!ok(base)) return null;
+    var code=codeOfUser(order.u), spot=order.pin&&makerSpotOpened[order.u+'/'+order.pin], loc=makerPlaced[code], pt=null, area=false;
+    if(spot&&spot.src!=='unit'&&ok(spot)) pt=spot;
+    else if(ok(v[code])) pt=v[code];
+    else if(Array.isArray(loc)&&isFinite(loc[0])&&isFinite(loc[1])){ pt={lat:+loc[0],lng:+loc[1]}; area=true; }
+    if(!pt) return null;
+    return {km:haversineKm({lat:base.lat,lng:base.lng},{lat:pt.lat,lng:pt.lng})*f, area:area};
+  }
+  function kmPaint(node,order){
+    var k=ordKm(order);
+    node.textContent=!k?'':k.area?'Distance about '+Math.round(k.km)+' km, area':'Distance '+(Math.round(k.km*10)/10).toFixed(1)+' km';
+  }
+  function kmRepaint(){
+    var os=(makerData&&makerData.orders)||[];
+    [].forEach.call(document.querySelectorAll('[data-km]'),function(n){ var o=os.filter(function(x){ return x.id===n.getAttribute('data-km'); })[0]; if(o) kmPaint(n,o); });
+  }
   /* 20 Oct 2026 (canvas V22, V27, his rule: a figure that does not add up has no line of its own): WHAT THE GOODS COST, under Goods, "Cost RM 36,
      incl. freight": the Desk's trade reading (the engine's latestCogs, the latest purchase's quote and trip freight over its units, through the
      hop the trade form reads) a unit, times the order's units. Read once an order, held by its id; nothing when the book has no cost, or the
@@ -4136,19 +4188,61 @@ export const OWNER_JS = `
   function clockOf(order){
     if(!order||order.status!=='placed'||order.test||order.price||order.pool) return null;
     var t=Date.parse(order.at); if(!(t>0)) return null;
-    var w=Math.max(0,Math.floor((Date.now()-t)/60000)), u=confirmUsual();
+    /* 20 Oct 2026 (his answer): in Counter hours, as the usual is measured, off the review's read; the wall clock only where none is measured */
+    var w=typeof order.waitedOpen==='number'&&order.waitedOpen>=0?order.waitedOpen:Math.max(0,Math.floor((Date.now()-t)/60000)), u=confirmUsual();
     return {waited:w, usual:u, late:u!=null&&w>u};
   }
   /* 20 Oct 2026 (canvas V11): the minutes waited as the system's meter against his usual, ember past it; with no usual yet, an empty track */
   function orderClock(order){
     var k=clockOf(order); if(!k) return null;
-    var box=el('div','salt-meter oclock'+(k.late?' salt-meter--ember oclock--late':'')), line=el('div','salt-meter__line'), a=el('span',null,'Waited '), b=el('span',null,k.usual==null?'No usual yet':'Usually ');
+    var box=el('div','salt-meter oclock'+(k.late?' salt-meter--ember oclock--late':'')), line=el('div','salt-meter__line'), a=el('span',null,'Waited in hours '), b=el('span',null,k.usual==null?'No usual yet':'Usually ');
     box.setAttribute('data-clock','');
     a.appendChild(el('b',null,k.waited+' min')); if(k.usual!=null) b.appendChild(el('b',null,k.usual+' min'));
     line.appendChild(a); line.appendChild(b); box.appendChild(line);
     var track=el('div','salt-meter__track oclock__track'); track.appendChild(el('div','salt-meter__fill')); box.appendChild(track);
     box.style.setProperty('--salt-fill',String(k.usual?Math.min(100,Math.round(k.waited/k.usual*100)):0));
     return box;
+  }
+  /* 20 Oct 2026 (canvas V51, V52): THE ASSOCIATE REWARD on an associate's salt order, his page only. Placed, the figures are the preview's
+     (the Desk's previewAck reading); agreed and after, his reading by the order's ledgerKey (GET /all/maker/reward/<key>, behind Access and the
+     bridge key), read once an order and held by its id. Whether this order takes them over the next reward, the meter of what is carried and
+     what this order adds against the step, and what the unit comes to: its landed cost less what he gave under their own price since the last
+     reward, never under nought. Nothing here prices, and a customer is told one word on their page, never a figure. Hidden on oil, candy and
+     rice, on a practice order, and for anyone the Desk does not read as an associate. */
+  var rwdReads={};
+  function rewardOfOrder(order){
+    if(order.status==='placed'){ var q=makerQuotes[order.id]; return q&&q.result&&q.result.reward||null; }
+    return rwdReads[order.id]||null;
+  }
+  function rewardCard(card,order){
+    if((order.product||'salt')!=='salt'||order.test||['declined','cancelled'].indexOf(order.status)>=0) return;
+    var box=el('div','salt-glass-card salt-glass-card--pad-md orwdcard'); box.setAttribute('data-reward',order.id); card.appendChild(box);
+    rewardPaint(box,order);
+    if(order.status!=='placed'&&order.ledgerKey&&!rwdReads[order.id]){
+      rwdReads[order.id]={reading:true};
+      refs('/all/maker/reward/'+encodeURIComponent(order.ledgerKey)).then(function(j){ rwdReads[order.id]=j&&j.reading||{}; },function(){ rwdReads[order.id]={}; })
+        .then(function(){ [].forEach.call(document.querySelectorAll('[data-reward="'+order.id+'"]'),function(n){ rewardPaint(n,order); }); });
+    }
+  }
+  function rewardPaint(box,order){
+    box.textContent='';
+    var r=rewardOfOrder(order);
+    if(!r||r.reading||!r.associate||r.error||!(r.step>0)){ box.hidden=true; return; }
+    box.hidden=false;
+    box.appendChild(el('h4','salt-eyebrow salt-eyebrow--copper','Associate reward'));
+    if(r.unit){ box.appendChild(el('p','salt-insight orwdnote',r.unit.delivered?'1 reward unit on this delivery, '+rm(r.unit.net)+' net.'
+      :'1 reward unit raised: it goes with '+(+order.moved>=(+order.qty||0)-0.0004?'their next salt delivery':'this delivery')+', '+rm(r.unit.net)+' net.')); return; }
+    var o=r.order||{margin:0,reaches:false,short:Math.max(0,r.step-r.progress)}, add=o.paid?0:(+o.margin||0);
+    box.appendChild(o.reaches?chip('brass','Reaches a reward'):o.paid?chip('mist','Counted, paid'):chip('mist',rm(o.short)+' short'));
+    var m=el('div','salt-meter orwdmeter'), line=el('div','salt-meter__line'), a=el('span',null,''), b=el('span',null,'Next reward ');
+    a.appendChild(el('b',null,(order.ledgerKey?String(order.ledgerKey).split('|')[0]+' ':'')+rm(r.progress)+(add?' + '+rm(add):'')));
+    b.appendChild(el('b',null,r.times+' units’ cost'));
+    line.appendChild(a); line.appendChild(b); m.appendChild(line);
+    var track=el('div','salt-meter__track'); track.appendChild(el('div','salt-meter__fill')); m.appendChild(track);
+    m.style.setProperty('--salt-fill',String(Math.max(0,Math.min(100,Math.round((r.progress+add)/r.step*100)))));
+    box.appendChild(m);
+    box.appendChild(el('p','salt-insight orwdnote','Margin past '+r.times+' units at landed cost ('+rm(r.step)+' at '+rm(r.rate)+' today). Once paid, 1 unit joins this order at cost, one delivery: '
+      +rm(r.rate)+', less '+rm(r.given)+' given under their Set Price since the last reward, '+rm(r.net)+' net. Salt only.'));
   }
   /* Salt Admin A to C, P1, and the band of 20 Oct 2026: how the goods go, in a glance */
   function ordWay(order){
@@ -4204,8 +4298,19 @@ export const OWNER_JS = `
     }else wayNode=el('span','oway');
     wayNode.appendChild(bandIcon(BAND_PIN)); wayNode.appendChild(el('span','oway__text',ordWay(order))); row.appendChild(wayNode);
     var mo=el('span','omoment'); mo.appendChild(bandIcon(BAND_CLOCK)); mo.appendChild(el('span',null,ordMoment(order))); row.appendChild(mo);
+    /* P6: placed again from an order of theirs, which the band names by its short reference */
+    if(order.againOf){ var ag=el('span','obagain'); ag.setAttribute('data-again',''); ag.appendChild(chip('brass','Again')); ag.appendChild(el('span',null,orderRef(order.againOf)+' again')); row.appendChild(ag); }
     head.appendChild(row);
     var clock=orderClock(order); if(clock) head.appendChild(clock);
+    /* P5 (canvas V13, V19): an order of a sheet says which of it, a link to the sheet's group on Orders */
+    var shOf=sheetOf(order);
+    if(shOf.length>1){
+      var sl=actOn(el('button','osheetlink'),'order.sheet',order.id); sl.type='button';
+      sl.appendChild(el('span',null,'Sheet '+(shOf.indexOf(order)+1)+' of '+shOf.length)); sl.appendChild(bandIcon('M9 6 L15 12 L9 18'));
+      sl.addEventListener('click',function(){ var sh=order.sheet; closeOrder();
+        try{ var gr=document.querySelector('#makerOrderList [data-sheet="'+sh+'"]'); if(gr&&gr.scrollIntoView) gr.scrollIntoView({block:'nearest'}); }catch(e){} });
+      head.appendChild(sl);
+    }
     card.appendChild(head);
     var agreed=['acknowledged','ready','done'].indexOf(order.status)>=0, moved=Math.round((+order.moved||0)*100)/100;
     if(!order.writtenOff&&order.status!=='declined'&&order.status!=='cancelled') card.appendChild(ordSteps(order));
@@ -4216,7 +4321,10 @@ export const OWNER_JS = `
     var gl=ordLine('Goods',rm(order.total),agreed&&typeof order.asked==='number'&&Math.abs(order.asked-(+order.total||0))>0.004?'Set when you agreed it. They placed it at '+rm(order.asked):'');
     var gsub=el('span','salt-ledger__sub ocost'); gsub.setAttribute('data-cost',order.id); gl.querySelector('.salt-ledger__label').appendChild(gsub); billCost(order,gsub);
     L.appendChild(gl);
-    if(order.mode==='deliver'&&(agreed||order.delivery)) L.appendChild(ordLine('Delivery cost',rm(order.delivery||0)));
+    if(order.mode==='deliver'&&(agreed||order.delivery)){
+      var dl=ordLine('Delivery cost',rm(order.delivery||0)), km=el('span','salt-ledger__sub okm'); km.setAttribute('data-km',order.id);
+      dl.querySelector('.salt-ledger__label').appendChild(km); L.appendChild(dl); kmPaint(km,order);
+    }
     var tot=ordLine('Total',rm((+order.total||0)+(+order.delivery||0))); tot.classList.add('abtotal'); tot.setAttribute('data-total',''); L.appendChild(tot);
     /* Salt Admin A to C, P2: THE RECEIPT, as the customer's: each payment received with its way and its day where they add up to what is
        paid, else one line */
@@ -4232,6 +4340,7 @@ export const OWNER_JS = `
     else if(agreed||order.status==='done') L.appendChild(ordLine('Settled',rm(0),'','osettled'));
     if(agreed&&moved<(+order.qty||0)-0.0004) L.appendChild(ordLine('Handed',moved+' of '+units(order.qty)));
     card.appendChild(L);
+    rewardCard(card,order);   /* 20 Oct 2026: the associate reward, under the Bill */
     /* 17 Oct 2026: an ended order's last move is under Approve until he decides it, and the book keeps its row live until then */
     var waitN=((makerData&&makerData.drafts)||[]).filter(function(d){ return d.status==='pending'&&d.entry&&d.entry.orderId===order.id; }).length;
     if(waitN&&!ordOpen(order)) card.appendChild(el('p','salt-insight',(waitN===1?'Its move waits':'Its '+waitN+' moves wait')+' under Approve: the book keeps the row as it was until you approve.'));
@@ -4344,6 +4453,7 @@ export const OWNER_JS = `
           var wait=lead.querySelector('[data-accept-wait]'); if(wait) wait.remove();
           /* a sheet's lines take its first order's window, as they take its one delivery charge */
           var wv=makerPlacedWin(), yes=makerNeedsYes(order,q.total,wv);
+          [].forEach.call(document.querySelectorAll('[data-reward="'+order.id+'"]'),function(n){ rewardPaint(n,order); });   /* the reward's figures come with the read */
           var accept=makerButton(lead,[(yes?'Ask them, ':'Agree, ')+rm(q.result.quote)+(q.result.delivery>0?' + '+rm(q.result.delivery):''),yes?'order.send-yes':'order.accept'],function(){
             var s=makerQuotes[order.id]; if(!s||!s.hash) return;
             /* version 2: a raise or another window goes to them as an offer, for their yes; never on a sheet, which the Desk refuses */
@@ -5169,8 +5279,153 @@ export const OWNER_JS = `
   }
   async function loadMakerHours(){
     if(placeNow!=='shop') return;
-    try{ makerHours=await refs('/all/maker/hours'); drawMakerHours(); }
+    try{ makerHours=await refs('/all/maker/hours'); hrsDraft=null; hrsEditing=null; hrsCopy=null; drawMakerHours(); }
     catch(error){ var s=document.getElementById('makerHoursStatus'); if(s) refusal(s,error); }
+  }
+  /* 20 Oct 2026 (his eight answers to Fable's design): THE MOST CONTROL OVER THE HOURS. The draft holds the week and the dated days, each
+     day null (closed) or a list of spans; a weekday is keyed by its number (0 is Sunday), a dated day by its date. Nothing is sent until
+     Done, which sends the whole of it; Discard changes puts the saved week back; Undo, for a minute after Done, sends the week it replaced. */
+  var hrsDraft=null, hrsSaved='', hrsEditing=null, hrsCopy=null, hrsUndo=null, hrsAdding=false, hrsPv=null, hrsPvSeq=0, HRS_ORDER=[1,2,3,4,5,6,0];
+  var HRS_SHORT=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], HRS_NAMES=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var HRS_MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function hrsMin(t){ var p=String(t||'').split(':'); return p.length===2?(+p[0])*60+(+p[1]):null; }
+  function hrsHm(m){ var h=Math.floor(m/60), x=m%60; return (h<10?'0':'')+h+':'+(x<10?'0':'')+x; }
+  function hrsLate(s){ return !!s&&hrsMin(s.close)<hrsMin(s.open); }
+  function hrsAnyLate(a){ return !!a&&a.some(hrsLate); }
+  function hrsPct(m){ return (m/14.4).toFixed(2)+'%'; }
+  function hrsArr(d){ return !d?null:(Array.isArray(d)?d:[d]).map(function(s){ return {open:s.open,close:s.close}; }); }
+  function hrsOut(a){ return !a?null:a.length===1?{open:a[0].open,close:a[0].close}:a.map(function(s){ return {open:s.open,close:s.close}; }); }
+  function hrsWeekOut(){
+    var w={days:hrsDraft.days.map(hrsOut)}, keys=Object.keys(hrsDraft.dates).sort();
+    if(keys.length){ w.dates={}; keys.forEach(function(k){ w.dates[k]=hrsOut(hrsDraft.dates[k]); }); }
+    return w;
+  }
+  function hrsFromConfig(){
+    var s=makerHours.config&&makerHours.config.schedule, days=(s&&s.days)||[], dates=(s&&s.dates)||{}, out={days:[0,1,2,3,4,5,6].map(function(i){ return hrsArr(days[i]); }), dates:{}};
+    Object.keys(dates).forEach(function(k){ out.dates[k]=hrsArr(dates[k]); });
+    return out;
+  }
+  function hrsDirty(){ return !!hrsDraft&&JSON.stringify(hrsWeekOut())!==hrsSaved; }
+  function hrsIsDate(key){ return typeof key==='string'; }
+  function hrsDayOf(key){ return hrsIsDate(key)?hrsDraft.dates[key]:hrsDraft.days[key]; }
+  function hrsSet(key,a){ if(hrsIsDate(key)) hrsDraft.dates[key]=a; else hrsDraft.days[key]=a; }
+  function hrsWeekday(ymd){ return new Date(ymd+'T00:00:00Z').getUTCDay(); }
+  function hrsShift(ymd,n){ return new Date(Date.parse(ymd+'T00:00:00Z')+n*86400000).toISOString().slice(0,10); }
+  /* the day before a row (its tail) and the day after it (a stretch that runs on): a weekday's are weekdays, a date's are the calendar's */
+  function hrsBefore(key){ if(!hrsIsDate(key)) return hrsDraft.days[(key+6)%7]; var p=hrsShift(key,-1); return Object.prototype.hasOwnProperty.call(hrsDraft.dates,p)?hrsDraft.dates[p]:hrsDraft.days[hrsWeekday(p)]; }
+  function hrsAfter(key){ if(!hrsIsDate(key)) return hrsDraft.days[(key+1)%7]; var p=hrsShift(key,1); return Object.prototype.hasOwnProperty.call(hrsDraft.dates,p)?hrsDraft.dates[p]:hrsDraft.days[hrsWeekday(p)]; }
+  function hrsName(key){ if(!hrsIsDate(key)) return HRS_NAMES[key]; var d=new Date(key+'T00:00:00Z'); return HRS_SHORT[d.getUTCDay()]+' '+d.getUTCDate()+' '+HRS_MON[d.getUTCMonth()]; }
+  function hrsShort(key){ return hrsIsDate(key)?hrsName(key):HRS_SHORT[key]; }
+  function hrsAllDay(a){ return !!a&&a.length===1&&a[0].open==='00:00'&&a[0].close==='24:00'; }
+  function hrsSaid(a){ return !a?'Closed':hrsAllDay(a)?'Open all day':a.map(function(s){ return s.open+' to '+s.close+(hrsLate(s)?' next day':''); }).join(', '); }
+  /* the days a weekday copies to at first: the rest of its group (his answer 3), said "Mon to Thu" when they run on, else "Mon, Tue and Thu" */
+  function hrsGroup(i){ return (i===0||i===6?[6,0]:[1,2,3,4,5]).filter(function(k){ return k!==i; }); }
+  /* a quarter-hour picker, a close also offering 24:00; a time filed off the quarter hour stays a choice of its own, so Done never moves it unseen */
+  function hrsPick(act,key,value,label,close){
+    var s=actOn(el('select','fld salt-field__input'),act,key), v=hrsMin(value), list=[];
+    for(var m=0;m<1440;m+=15) list.push(m);
+    if(close) list.push(1440);
+    if(v!==null&&v%15) list.push(v);
+    list.sort(function(a,b){ return a-b; }).forEach(function(m){ var o=el('option',null,hrsHm(m)); o.value=hrsHm(m); s.appendChild(o); });
+    s.value=value; s.setAttribute('aria-label',label);
+    return s;
+  }
+  /* a row: the name, the track (the day before's tails hatched from 00, a bar for each span to its close or to 24) and its hours */
+  function hrsRow(key){
+    var a=hrsDayOf(key), prev=hrsBefore(key), tails=(prev||[]).filter(hrsLate);
+    var b=actOn(el('button','maker-day'),hrsIsDate(key)?'hours.date':'hours.day',hrsIsDate(key)?key:HRS_NAMES[key]); b.type='button';
+    b.setAttribute('aria-expanded',String(hrsEditing===key));
+    var said=hrsSaid(a);
+    if(tails.length) said+=a?', and '+hrsShort(hrsIsDate(key)?hrsShift(key,-1):(key+6)%7)+' until '+tails[tails.length-1].close:' (open from '+hrsShort(hrsIsDate(key)?hrsShift(key,-1):(key+6)%7)+' until '+tails[tails.length-1].close+')';
+    b.setAttribute('aria-label',hrsShort(key)+': '+said+'. Change');
+    b.appendChild(el('span','maker-day-name',hrsShort(key)));
+    var track=el('span','maker-track'); track.setAttribute('aria-hidden','true');
+    tails.forEach(function(s){ var t=el('span','maker-tail'); t.style.left='0%'; t.style.width=hrsPct(hrsMin(s.close)); track.appendChild(t); });
+    (a||[]).forEach(function(s){ var o=hrsMin(s.open), bar=el('span','maker-bar'); bar.style.left=hrsPct(o); bar.style.width=hrsPct((hrsLate(s)?1440:hrsMin(s.close))-o); track.appendChild(bar); });
+    b.appendChild(track);
+    var times=el('span','maker-day-times'+(a?'':' off'),!a?'Closed':hrsAllDay(a)?'Open all day':a.length===1?a[0].open+' to '+a[0].close:a.length+' spans');
+    if(hrsAnyLate(a)) times.appendChild(el('sup',null,'+1'));
+    b.appendChild(times);
+    b.addEventListener('click',function(){ hrsEditing=hrsEditing===key?null:key; hrsCopy=null; hrsDraw(); hrsFocus(b.getAttribute('data-act'),b.getAttribute('data-key')); });
+    return b;
+  }
+  /* a redraw keeps the control in hand */
+  function hrsFocus(act,key){ /* a key of null finds a control with none */ var root=document.getElementById('makerSchedule'), n=root&&[].filter.call(root.querySelectorAll('[data-act]'),function(x){ return x.getAttribute('data-act')===act&&x.getAttribute('data-key')===key; })[0]; if(n&&n.focus) n.focus(); }
+  function hrsDraw(){ drawMakerHours(); hrsPreview(); }
+  function hrsEdit(key){
+    var a=hrsDayOf(key), name=hrsIsDate(key)?key:HRS_NAMES[key], late=hrsAnyLate(a), box=el('div','maker-dayedit'), head=el('div','maker-dayedit-head');
+    box.setAttribute('role','group'); box.setAttribute('aria-label',hrsName(key)+' hours');
+    head.appendChild(el('span',null,hrsName(key))); if(late) head.appendChild(chip('brass','Closes next day')); box.appendChild(head);
+    var change=function(act,k){ return function(){ hrsDraw(); hrsFocus(act,k); }; };
+    (a||[{open:'09:00',close:'17:00'}]).forEach(function(s,j){
+      var k=j?name+' '+(j+1):name, row=el('div','maker-dayedit-times'), sl=hrsLate(s);
+      var from=hrsPick('hours.day-from',k,s.open,hrsName(key)+' opens'+(j?' ('+(j+1)+')':''),false), to=hrsPick('hours.day-to',k,s.close,hrsName(key)+' closes'+(j?' ('+(j+1)+')':'')+(sl?', next day':''),true);
+      from.disabled=!a; to.disabled=!a;
+      [['Opens',from,false],['Closes',to,sl]].forEach(function(f){
+        var l=el('label','maker-dayedit-field'), w=el('span','maker-dayedit-pick');
+        l.appendChild(el('span','lbl',f[0])); w.appendChild(f[1]); if(f[2]) w.appendChild(el('span','maker-plus1','+1')); l.appendChild(w); row.appendChild(l);
+      });
+      [from,to].forEach(function(p){ p.addEventListener('change',function(){ var n=hrsArr(hrsDayOf(key)); n[j]={open:from.value,close:to.value}; hrsSet(key,n); change(p.getAttribute('data-act'),k)(); }); });
+      if(a&&a.length>1){ var rm=actOn(el('button','salt-ghost','Remove'),'hours.day-remove',k); rm.type='button'; rm.setAttribute('aria-label','Remove '+s.open+' to '+s.close);
+        rm.addEventListener('click',function(){ var n=hrsArr(hrsDayOf(key)); n.splice(j,1); hrsSet(key,n); change('hours.day-from',name)(); }); row.appendChild(rm); }
+      box.appendChild(row);
+    });
+    /* a stretch past midnight that reaches the next day's first opening runs on as one (openParts merges it): said, never refused */
+    var next=hrsAfter(key), runs=late&&next&&a.filter(hrsLate).some(function(s){ return next.some(function(n){ return hrsMin(n.open)<=hrsMin(s.close); }); });
+    box.appendChild(el('p','msg',runs?'This runs on into the next day’s hours: one stretch.':'A close earlier than the open runs into the next day, on its own.'));
+    var acts=el('div','maker-dayedit-acts');
+    var act=function(label,ac,fn,dis){ var b=actOn(el('button','salt-ghost',label),ac,name); b.type='button'; b.disabled=!!dis; b.addEventListener('click',function(){ fn(); hrsDraw(); hrsFocus(ac,name); }); acts.appendChild(b); return b; };
+    act(a?'Closed':'Open','hours.day-closed',function(){ hrsSet(key,a?null:[{open:'09:00',close:'17:00'}]); });
+    var last=a&&a[a.length-1], room=last&&!hrsLate(last)&&hrsMin(last.close)<=1380&&a.length<6;
+    act('Add hours','hours.day-add',function(){ var o=hrsMin(last.close)+60, n=hrsArr(a); n.push({open:hrsHm(Math.min(o,1425)),close:o+240>=1440?'24:00':hrsHm(o+240)}); hrsSet(key,n); },!room);
+    act('Open all day','hours.day-allday',function(){ hrsSet(key,[{open:'00:00',close:'24:00'}]); },hrsAllDay(a));
+    if(!hrsIsDate(key)){
+      var b4=(key+6)%7;
+      act('Same as '+HRS_SHORT[b4],'hours.day-same',function(){ hrsSet(key,hrsArr(hrsDraft.days[b4])); });
+      act(hrsCopy?'Close copy':'Copy to','hours.day-copy',function(){ hrsCopy=hrsCopy?null:hrsGroup(key); });
+    } else {
+      act('Remove this date','hours.date-remove',function(){ delete hrsDraft.dates[key]; hrsEditing=null; });
+    }
+    box.appendChild(acts);
+    /* Copy to (his answer): a chip a day, its group chosen at first, then Apply */
+    if(hrsCopy&&!hrsIsDate(key)){
+      var chips=el('div','maker-copy'); chips.setAttribute('role','group'); chips.setAttribute('aria-label','Copy '+HRS_NAMES[key]+' to');
+      HRS_ORDER.forEach(function(i){ if(i===key) return; var c=actOn(el('button','salt-ghost maker-copy-day'+(hrsCopy.indexOf(i)>=0?' salt-ghost--lit':''),HRS_SHORT[i]),'hours.copy-day',HRS_NAMES[i]); c.type='button';
+        c.setAttribute('aria-pressed',String(hrsCopy.indexOf(i)>=0));
+        c.addEventListener('click',function(){ var at=hrsCopy.indexOf(i); if(at>=0) hrsCopy.splice(at,1); else hrsCopy.push(i); drawMakerHours(); hrsFocus('hours.copy-day',HRS_NAMES[i]); }); chips.appendChild(c); });
+      var ap=actOn(el('button','salt-pill salt-pill--sm','Apply'),'hours.copy-apply',name); ap.type='button'; ap.disabled=!hrsCopy.length;
+      ap.addEventListener('click',function(){ hrsCopy.forEach(function(i){ hrsDraft.days[i]=hrsArr(a); }); hrsCopy=null; hrsDraw(); hrsFocus('hours.day-copy',name); });
+      chips.appendChild(ap); box.appendChild(chips);
+    }
+    var done=el('div','maker-dayedit-acts');
+    makerButton(done,['Done','hours.save',name],function(){
+      var before=hrsSaved;
+      return refs('/all/maker/hours',{schedule:hrsWeekOut()})
+        .then(function(value){ makerHours=value; hrsDraft=null; hrsEditing=null; hrsCopy=null; hrsUndo=before?{week:JSON.parse(before),until:Date.now()+60000}:null; drawMakerHours(); hoursSaid('week','Weekly hours saved.'); })
+        .catch(function(error){ hoursSaid('week',null,error); });
+    },true);
+    box.appendChild(done);
+    return box;
+  }
+  /* WHAT CUSTOMERS WOULD SEE (his answer): a read of the Counter's own rule on the draft, sent as a read, never stored; said for the day
+     being changed, else today */
+  function hrsPreview(){
+    var line=document.getElementById('makerHoursPreview'); if(!line||!hrsDraft) return;
+    /* read only when there is something to see: a day open or the week changed, so entering Shop reads the hours once */
+    if(navigator.onLine===false||(hrsEditing===null&&!hrsDirty())){ hrsPv=null; line.textContent=''; return; }
+    var seq=++hrsPvSeq;
+    refs('/all/maker/hours?preview='+encodeURIComponent(JSON.stringify(hrsWeekOut()))).then(function(v){ if(seq!==hrsPvSeq) return; hrsPv=v&&v.preview||null; hrsPreviewDraw(); })
+      .catch(function(error){ if(seq!==hrsPvSeq) return; hrsPv=null; var l=document.getElementById('makerHoursPreview'); if(l) refusal(l,error); });
+  }
+  function hrsPreviewDraw(){
+    var line=document.getElementById('makerHoursPreview'); if(!line) return;
+    line.textContent=''; if(!hrsPv||!hrsPv.status||!hrsPv.week) return;
+    var st=hrsPv.status, at=st.open?st.nextChange:st.nextOpen, w=at?barWhen(at):'';
+    var day=hrsPv.week.filter(function(d){ return hrsEditing===null?false:hrsIsDate(hrsEditing)?d.date===hrsEditing:hrsWeekday(d.date)===hrsEditing; })[0]||hrsPv.week[0];
+    var wins=day.windows.map(function(x){ var a=(x.w<10?'0':'')+x.w, b=(x.w+4<10?'0':'')+(x.w+4), whole=a+':00-'+(x.w+4===24?'24':b)+':00'; return a+'-'+b+(x.span===whole?'':' as '+x.span); });
+    line.appendChild(el('b',null,'Customers would see: '));
+    line.appendChild(document.createTextNode((st.open?'Open'+(w?' until '+w:''):'Closed'+(w?', opens '+w:''))+'. '+hrsName(day.date)+': '+day.said+'. '
+      +(wins.length?'Delivery windows '+wins.join(', ')+'.':'No delivery windows that day.')));
   }
   function drawMakerHours(){
     barDraw();
@@ -5180,31 +5435,50 @@ export const OWNER_JS = `
     var state=makerHours.status||{};
     status.textContent=(state.open?'Open now':'Closed now. Customers can still order; you answer when you open.')
       +(state.source==='default'?' · No weekly hours set.':'');
-    var names=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     drawConfirm();
-    var days=(makerHours.config&&makerHours.config.schedule&&makerHours.config.schedule.days)||[];
-    /* 12 Oct 2026 (PHASE 4a): the week is a table whose head names its three columns, the day with its tick, when it opens and when it closes; the same ticks, times, acts and body as the rows of bare controls were */
-    var schedule=el('table','maker-hours salt-table'), head=el('tr'), weekdays=el('tbody');
-    ['Day','Opens','Closes'].forEach(function(word,i){ var th=el('th',i?'':'salt-table__label',word); th.setAttribute('scope','col'); head.appendChild(th); });
-    schedule.appendChild(el('thead')).appendChild(head); schedule.appendChild(weekdays);
-    names.forEach(function(name,i){
-      var row=el('tr','maker-day'), pick=el('label','maker-day-pick'), enabled=actOn(el('input',''),'hours.day-open',name); enabled.type='checkbox'; enabled.checked=!!days[i];
-      enabled.setAttribute('aria-label',name+' is open');
-      pick.appendChild(enabled); pick.appendChild(el('span','maker-day-name',name)); row.appendChild(el('td','salt-table__label')).appendChild(pick);
-      var open=actOn(el('input','fld salt-field__input'),'hours.day-from',name); open.type='time'; open.value=days[i]?days[i].open:'09:00'; open.disabled=!enabled.checked; open.setAttribute('aria-label',name+' opens');
-      var close=actOn(el('input','fld salt-field__input'),'hours.day-to',name); close.type='time'; close.value=days[i]?days[i].close:'17:00'; close.disabled=!enabled.checked; close.setAttribute('aria-label',name+' closes');
-      enabled.addEventListener('change',function(){ open.disabled=!enabled.checked; close.disabled=!enabled.checked; });
-      row.appendChild(el('td')).appendChild(open); row.appendChild(el('td')).appendChild(close); row._hours={enabled:enabled,open:open,close:close}; weekdays.appendChild(row);
-    });
-    root.appendChild(schedule);
-    makerButton(root,['Save the weekly hours','hours.save'],function(){
-      var result={days:[]};
-      [].forEach.call(weekdays.children,function(row){ var d=row._hours; result.days.push(d.enabled.checked?{open:d.open.value,close:d.close.value}:null); });
-      return refs('/all/maker/hours',{schedule:result}).then(function(value){ makerHours=value; drawMakerHours(); hoursSaid('week','Weekly hours saved.'); })
-        .catch(function(error){ hoursSaid('week',null,error); });
-    },true);
-    /* 13 Oct 2026 (stress, Medium): the answer to Save stands under Save. It lay under the shop-for-now controls below, a screen away at 1280px. */
+    /* 20 Oct 2026 (his word, canvas V63, and his eight answers to Fable's design): THE WEEK CHART. A row a day, Monday first, a brass bar
+       a span on a 00 to 24 track; a close earlier than the open is the next day's (stmt/hours.js openParts), said "+1", its tail hatched at
+       the start of the next day's row. A tap opens the day: its spans in quarter hours (up to six), Closed or Open, Add hours, Open all
+       day, Same as the day before, Copy to any days, and Done, which saves the week and its dates. Below: what customers would see, and
+       the dated days. */
+    if(!hrsDraft){ hrsDraft=hrsFromConfig(); hrsSaved=JSON.stringify(hrsWeekOut()); }
+    root.appendChild(el('p','msg','Tap a day to change it.'));
+    var week=el('div','maker-week'), scale=el('div','maker-week-scale'), ticks=el('span');
+    week.setAttribute('role','group'); week.setAttribute('aria-label','Weekly hours'); scale.setAttribute('aria-hidden','true');
+    ['00','06','12','18','24'].forEach(function(t){ ticks.appendChild(el('span',null,t)); });
+    scale.appendChild(el('span')); scale.appendChild(ticks); scale.appendChild(el('span')); week.appendChild(scale);
+    HRS_ORDER.forEach(function(i){ week.appendChild(hrsRow(i)); if(hrsEditing===i) week.appendChild(hrsEdit(i)); });
+    root.appendChild(week);
     var weekSaid=el('p','msg osaid'); weekSaid.id='makerHoursSaved'; weekSaid.setAttribute('role','status'); weekSaid.setAttribute('aria-live','polite'); root.appendChild(weekSaid);
+    var keep=el('div','maker-dayedit-acts');
+    if(hrsDirty()){ var dis=actOn(el('button','salt-ghost','Discard changes'),'hours.discard'); dis.type='button';
+      dis.addEventListener('click',function(){ hrsDraft=null; hrsEditing=null; hrsCopy=null; hrsDraw(); }); keep.appendChild(dis); }
+    if(hrsUndo&&Date.now()<hrsUndo.until){ var un=actOn(el('button','salt-ghost','Undo'),'hours.undo'); un.type='button';
+      un.addEventListener('click',function(){ if(un.disabled) return; un.disabled=true; var back=hrsUndo.week;
+        refs('/all/maker/hours',{schedule:back}).then(function(value){ makerHours=value; hrsDraft=null; hrsEditing=null; hrsUndo=null; drawMakerHours(); hoursSaid('week','Back to the hours before.'); })
+          .catch(function(error){ un.disabled=false; hoursSaid('week',null,error); }); });
+      keep.appendChild(un); setTimeout(function(){ if(hrsUndo&&Date.now()>=hrsUndo.until){ hrsUndo=null; drawMakerHours(); } },Math.max(0,hrsUndo.until-Date.now())+50); }
+    if(keep.children.length) root.appendChild(keep);
+    var pv=el('p','msg maker-preview'); pv.id='makerHoursPreview'; pv.setAttribute('role','status'); root.appendChild(pv); hrsPreviewDraw();
+    /* the dated days (his answer): a holiday closed or a special day's hours, today to 90 days ahead, standing in for their weekday whole */
+    var dated=el('div','maker-week maker-dates'), keys=Object.keys(hrsDraft.dates).sort();
+    dated.setAttribute('role','group'); dated.setAttribute('aria-label','Dates');
+    dated.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Dates'));
+    if(!keys.length) dated.appendChild(el('p','msg',"No dates set. A date stands in for its weekday: a holiday closed, or a special day's hours."));
+    keys.forEach(function(k){ dated.appendChild(hrsRow(k)); if(hrsEditing===k) dated.appendChild(hrsEdit(k)); });
+    var addRow=el('div','maker-dayedit-acts'), add=actOn(el('button','salt-ghost',hrsAdding?'Not now':'Add a date'),'hours.date-add'); add.type='button';
+    add.addEventListener('click',function(){ hrsAdding=!hrsAdding; drawMakerHours(); hrsFocus(hrsAdding?'hours.date-pick':'hours.date-add',null); });
+    addRow.appendChild(add);
+    if(hrsAdding){
+      var today=new Date(Date.now()+8*3600000).toISOString().slice(0,10), pick=actOn(el('input','fld salt-field__input'),'hours.date-pick');
+      pick.type='date'; pick.min=today; pick.max=hrsShift(today,90); pick.value=hrsShift(today,1); pick.setAttribute('aria-label','The date');
+      var put=actOn(el('button','salt-pill salt-pill--sm','Add'),'hours.date-new'); put.type='button';
+      put.addEventListener('click',function(){ var v=pick.value; if(!v||v<today||v>hrsShift(today,90)){ hoursSaid('week','Choose a date from today to 90 days ahead.'); return; }
+        if(!Object.prototype.hasOwnProperty.call(hrsDraft.dates,v)) hrsDraft.dates[v]=null; hrsEditing=v; hrsAdding=false; hrsDraw(); hrsFocus('hours.date',v); });
+      addRow.appendChild(pick); addRow.appendChild(put);
+    }
+    dated.appendChild(addRow);
+    root.appendChild(dated);
     /* the shop held for now is two tiles over the field that says what the one chosen does: Closed until, or Open until; Kuala Lumpur time */
     var override=el('div','maker-fields'), kind=makerTilesIn(override,['The shop, for now','hours.override-state'],[{value:'false',label:'Closed'},{value:'true',label:'Open'}]);
     var until=makerField(override,['Closed until','hours.override-until'],'datetime-local',klInputValue(makerHours.config&&makerHours.config.manual&&makerHours.config.manual.until));
@@ -5861,7 +6135,10 @@ export const OWNER_JS = `
     needN=0;
     orders.filter(ordWaits).forEach(function(o){
       var who=codeByUser(o.u), t=!!o.test, to=orderOpener(o.id), pays=ordPays(o);
-      if(o.status==='placed') L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, head:'Agree ', rest:"'s order", mark:o.product, what:orderWhat(o), practice:t, open:to}, function(c){
+      /* P5: a sheet's placed orders are one card, the first's, saying how many; the others draw none */
+      var shP=o.sheet?orders.filter(function(x){ return x.u===o.u&&x.sheet===o.sheet&&x.status==='placed'&&ordWaits(x); }).sort(function(a,b){ return String(a.id).localeCompare(String(b.id)); }):[];
+      if(o.status==='placed'&&shP.length>1&&shP[0].id!==o.id){}
+      else if(o.status==='placed') L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, head:'Agree ', rest:shP.length>1?"'s sheet":"'s order", mark:o.product, what:shP.length>1?shP.length+' orders on one sheet':orderWhat(o), practice:t, open:to}, function(c){
         /* Agree needs the delivery charge and the window, which the full card asks for, so the button opens it */
         var k=clockOf(o);
         if(k){ var nc=el('p','need-clock'+(k.late?' need-clock--late':'')); nc.setAttribute('data-clock','');
@@ -5949,13 +6226,14 @@ export const OWNER_JS = `
   function drawNeeds(){
     if(!nlist) return;
     var items=needItems(), shown=items.filter(function(i){ return nKind==='all'||i.kind===nKind; });
-    drawCounts(items); drawLead(items);
+    drawCounts(items); drawLead(items); drawGlance();
     /* the chips are the kinds present, and All; one whose kind has gone leaves him on All */
     if(needsReady()){
       var have={}; items.forEach(function(i){ have[i.kind]=1; });
       [].forEach.call(document.querySelectorAll('.nchips button'), function(x){ var k=x.getAttribute('data-chip'); x.hidden=!(k==='all'||have[k]); });
       if(nKind!=='all'&&!have[nKind]){ nKind='all'; shown=items; [].forEach.call(document.querySelectorAll('.nchips button'), function(x){ x.setAttribute('aria-selected', x.getAttribute('data-chip')==='all'?'true':'false'); }); }
     }
+    drawKindCounts(items);
     nlist.textContent='';
     var practiceList=shown.filter(function(i){ return i.practice; }); shown=shown.filter(function(i){ return !i.practice; });
     if(!shown.length&&needsReady()) nlist.appendChild(el('p','rnone',nKind==='all'&&!needsBad().length?'Nothing needs you.':'Nothing here.'));
@@ -5983,6 +6261,87 @@ export const OWNER_JS = `
     drawNeedOpen(false);
   }
   function redrawLead(){ drawLead(needItems()); }
+  /* 21 Oct 2026 (canvas V56): EACH KIND'S PILL, AND ITS LINE UNDER JUMP TO, SAYS HOW MANY OF IT WAIT, practice apart, as the bars count. A kind
+     with nothing at all is no pill, and its line stands in mist and cannot be chosen; nothing is said until every read has landed. */
+  function drawKindCounts(items){
+    var n={all:0}, have={all:1}, ready=needsReady();
+    items.forEach(function(i){ have[i.kind]=1; if(i.practice) return; n.all++; n[i.kind]=(n[i.kind]||0)+1; });
+    [].forEach.call(document.querySelectorAll('.nchips button, #nJumpMenu button'), function(b){
+      var menu=b.hasAttribute('data-jump'), k=b.getAttribute(menu?'data-jump':'data-chip'), c=b.querySelector(menu?'.salt-jump__count':'.salt-tabs__count');
+      if(!c){ c=el('span','salt-tabs__count'); b.appendChild(c); }
+      c.textContent=ready?String(n[k]||0):'';
+      if(!menu) return;
+      var none=ready&&!have[k];
+      b.disabled=none; b.classList.toggle('salt-jump__item--none', none); b.setAttribute('aria-current', k===nKind?'true':'false');
+    });
+  }
+  /* 21 Oct 2026 (P7): THE GLANCE heads Needs you. Ready: the orders ready with goods still to hand over, as Orders' Ready stage holds them. Owed
+     to you: what the agreed orders still owe, their goods and delivery less what is paid, summed. Read off the orders the page holds and nothing
+     else; a practice order counts only on the practice surface. Each tile opens Orders at its stage. */
+  function drawGlance(){
+    var g=document.getElementById('nGlance'); if(!g) return;
+    if(!makerData){ g.hidden=true; return; }
+    var ready=0, owe=0, oweN=0;
+    (makerData.orders||[]).forEach(function(o){
+      if(o.test&&!TESTING) return;
+      if(orderPartsOf(o)==='orders.ready') ready++;
+      if(['acknowledged','ready','done'].indexOf(o.status)<0||o.writtenOff) return;
+      var left=(+o.total||0)+(+o.delivery||0)-(+o.paid||0);
+      if(left>0.004){ owe+=left; oweN++; }
+    });
+    var tiles=[['#orders/ready','ready','Ready',String(ready),ready?'To hand over':'Nothing to hand over'],
+      ['#orders','owed','Owed to you',rm(owe),oweN?oweN+(oweN===1?' agreed order':' agreed orders'):'Nothing owed']];
+    var sig=JSON.stringify(tiles);
+    g.hidden=false;
+    if(g.getAttribute('data-sig')===sig) return;
+    g.setAttribute('data-sig',sig); g.textContent='';
+    tiles.forEach(function(t){
+      var a=el('a','salt-glance__item'); a.href=t[0]; a.setAttribute('data-glance',t[1]); a.setAttribute('data-act','need.glance.'+t[1]);
+      a.appendChild(el('span','salt-glance__label',t[2])); a.appendChild(el('span','salt-glance__value',t[3])); a.appendChild(el('span','salt-glance__note',t[4]));
+      g.appendChild(a);
+    });
+  }
+  /* 21 Oct 2026 (canvas V56): JUMP TO opens a menu of every kind with its count; a line chooses its kind as the pill does, Escape or a tap
+     outside closes it and gives the button back its focus, and the arrow keys move between the lines that can be chosen */
+  var nJump=document.getElementById('nJump'), nJumpMenu=document.getElementById('nJumpMenu');
+  function jumpShut(back){
+    if(!nJumpMenu||nJumpMenu.hidden) return;
+    nJumpMenu.hidden=true; nJump.setAttribute('aria-expanded','false');
+    if(back) nJump.focus();
+  }
+  function jumpLines(){ return [].filter.call(nJumpMenu.querySelectorAll('button'), function(b){ return !b.disabled; }); }
+  /* a kind chosen, from its pill or its line: the pill marked and brought into view on a row that slides */
+  function nPick(k){
+    nKind=k;
+    [].forEach.call(document.querySelectorAll('.nchips button'), function(x){
+      var on=x.getAttribute('data-chip')===k; x.setAttribute('aria-selected', on?'true':'false');
+      var sp=x.parentNode; if(on&&sp.scrollWidth>sp.clientWidth) sp.scrollLeft=Math.max(0,x.offsetLeft-sp.offsetLeft-12);
+    });
+    drawNeeds();
+  }
+  if(nJump&&nJumpMenu){
+    nJump.addEventListener('click', function(){
+      if(!nJumpMenu.hidden){ jumpShut(false); return; }
+      nJumpMenu.hidden=false; nJump.setAttribute('aria-expanded','true');
+      var L=jumpLines(), cur=L.filter(function(b){ return b.getAttribute('data-jump')===nKind; })[0]||L[0];
+      if(cur) cur.focus();
+    });
+    nJumpMenu.addEventListener('click', function(ev){
+      var b=ev.target.closest('button[data-jump]'); if(!b||b.disabled) return;
+      jumpShut(true); nPick(b.getAttribute('data-jump'));
+    });
+    nJumpMenu.addEventListener('keydown', function(ev){
+      if(ev.key==='Escape'){ ev.preventDefault(); jumpShut(true); return; }
+      if(['ArrowDown','ArrowUp','Home','End'].indexOf(ev.key)<0) return;
+      ev.preventDefault();
+      var L=jumpLines(); if(!L.length) return;
+      var i=L.indexOf(document.activeElement);
+      i=ev.key==='Home'?0:ev.key==='End'?L.length-1:ev.key==='ArrowDown'?(i+1)%L.length:(i<=0?L.length-1:i-1);
+      L[i].focus();
+    });
+    nJump.addEventListener('keydown', function(ev){ if(ev.key==='Escape') jumpShut(true); });
+    document.addEventListener('click', function(ev){ if(!nJumpMenu.hidden&&!ev.target.closest('.salt-jump')) jumpShut(false); });
+  }
   /* ---- READING WHAT NEEDS YOU, on entering it and every 5 seconds while it is showing. Everything it shows is read from the sources the
      other places read, each guarding its own read: none starts while another of its kind is out, and a poll that finds the same answer
      draws nothing. The sheet and the links are read again only after the page has read them once (it does at opening). ---- */
@@ -6156,7 +6515,7 @@ export const OWNER_JS = `
     if(bk){ var way=bk.getAttribute('data-back'); if(way==='accounts') openCard(null); else if(way==='orders') closeOrder(); else if(way==='form') closeForm(); return; }
     var b=ev.target.closest('button[data-m]'); if(b){ var mm=b.getAttribute('data-m'); if(mm==='orders'&&placeNow==='orders'&&ordOpened){ closeOrder(); return; } showPlace(mm, b.getAttribute('data-p')||(mm===placeNow?partNow:''), {fresh:true,push:true}); return; }
     var k=ev.target.closest('button[data-chip]');
-    if(k){ nKind=k.getAttribute('data-chip'); [].forEach.call(document.querySelectorAll('.nchips button'), function(x){ x.setAttribute('aria-selected', x===k?'true':'false'); }); drawNeeds(); return; }
+    if(k){ nPick(k.getAttribute('data-chip')); return; }
     var t=ev.target.closest('button[data-part]'); if(t) showPlace(t.parentNode.getAttribute('data-place'), t.getAttribute('data-part'), {push:true});
   });
   /* the + orb opens Record's menu of entries */

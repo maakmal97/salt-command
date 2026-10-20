@@ -1,44 +1,9 @@
 [
- {
-  "name": "N1 the same notice is stored and wakes every phone again",
-  "file": "stmt/worker.js",
-  "find": "    if (cur.lines.length === b.lines.length && cur.lines.every((s, i) => s === b.lines[i]))",
-  "replace": "    if (false && cur.lines.length === b.lines.length && cur.lines.every((s, i) => s === b.lines[i]))"
- },
- {
-  "name": "N2 the box keeps its text after Notice set",
-  "file": "stmt/owner.js",
-  "find": "          if(lines.length&&!result.unchanged) text.value='';\n",
-  "replace": ""
- },
- {
-  "name": "N3 an unchanged notice says Notice set",
-  "file": "stmt/owner.js",
-  "find": "(result.unchanged?'That notice is already up. Nobody was notified.':'Notice set.'+makerPushResult(result.push))",
-  "replace": "('Notice set.'+makerPushResult(result.push))"
- },
- {
-  "name": "N4 a long word in the current notice does not wrap",
-  "file": "stmt/page.js",
-  "find": "#makerBulletinCurrent{overflow-wrap:anywhere}",
-  "replace": "#makerBulletinCurrent{color:inherit}"
- },
- {
-  "name": "H1 Save weekly hours lets go at once",
-  "file": "stmt/owner.js",
-  "find": "      return refs('/all/maker/hours',{schedule:result}).then(function(value){",
-  "replace": "      refs('/all/maker/hours',{schedule:result}).then(function(value){"
- },
- {
-  "name": "H2 Set temporary override lets go at once",
-  "file": "stmt/owner.js",
-  "find": "      return refs('/all/maker/hours',{manual:{open:kind.value==='true',until:new Date(when).toISOString()}})",
-  "replace": "      refs('/all/maker/hours',{manual:{open:kind.value==='true',until:new Date(when).toISOString()}})"
- },
- {
-  "name": "H3 Clear temporary override lets go at once",
-  "file": "stmt/owner.js",
-  "find": "      return refs('/all/maker/hours',{clearManual:true}).then(function(value){",
-  "replace": "      refs('/all/maker/hours',{clearManual:true}).then(function(value){"
- }
+ {"name":"N1 the same notice is stored and wakes every phone again","file":"stmt/worker.js","find":"    if (cur.lines.length === b.lines.length && cur.lines.every((s, i) => s === b.lines[i]))","replace":"    if (false && cur.lines.length === b.lines.length && cur.lines.every((s, i) => s === b.lines[i]))"},
+ {"name":"N2 the box keeps its text after Notice set","file":"stmt/owner.js","find":"          if(lines.length&&!result.unchanged) text.value='';\n","replace":""},
+ {"name":"N3 an unchanged notice says Notice set","file":"stmt/owner.js","find":"(result.unchanged?'That notice is already up. Nobody was notified.':'Notice set.'+makerPushResult(result.push))","replace":"('Notice set.'+makerPushResult(result.push))"},
+ {"name":"N4 a long word in the current notice does not wrap","file":"stmt/page.js","find":"#makerBulletinCurrent{overflow-wrap:anywhere}","replace":"#makerBulletinCurrent{color:inherit}"},
+ {"name":"H1 Done lets go at once","file":"stmt/owner.js","find":"      return refs('/all/maker/hours',{schedule:hrsWeekOut()})","replace":"      refs('/all/maker/hours',{schedule:hrsWeekOut()})"},
+ {"name":"H2 Set temporary override lets go at once","file":"stmt/owner.js","find":"      return refs('/all/maker/hours',{manual:{open:kind.value==='true',until:new Date(when).toISOString()}})","replace":"      refs('/all/maker/hours',{manual:{open:kind.value==='true',until:new Date(when).toISOString()}})"},
+ {"name":"H3 Clear temporary override lets go at once","file":"stmt/owner.js","find":"      return refs('/all/maker/hours',{clearManual:true}).then(function(value){","replace":"      refs('/all/maker/hours',{clearManual:true}).then(function(value){"}
 ]

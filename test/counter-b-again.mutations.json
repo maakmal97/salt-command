@@ -9,5 +9,6 @@
  {"name":"an earlier day rides along","file":"stmt/page.js","find":"    draft.when='soon'; draft.wantBy=''; draft.slot=''; draft.sheetKeep='';\n","replace":"    draft.slot=''; draft.sheetKeep='';\n"},
  {"name":"a stale sheet id rides along","file":"stmt/page.js","find":"    draft.when='soon'; draft.wantBy=''; draft.slot=''; draft.sheetKeep='';\n","replace":"    draft.when='soon'; draft.wantBy=''; draft.slot=''; draft.sheetKeep='stale0sheet0id0x';\n"},
  {"name":"the ghost sits inside the card","file":"stmt/page.js","find":"    var w=el('div','oagainrow'); w.setAttribute('data-wrap',o.id); w.appendChild(c);","replace":"    var w=c; c.setAttribute('data-wrap',o.id);"},
- {"name":"focus on a ghost is lost","file":"stmt/page.js","find":"      if(fr) oRefocus(nl,fr,!!fa);\n","replace":""}
+ {"name":"focus on a ghost is lost","file":"stmt/page.js","find":"      if(fr) oRefocus(nl,fr,!!fa);\n","replace":""},
+ {"name":"Order again sends no source","file":"stmt/page.js","find":"      if(c.againOf&&l.product===c.againProd) body.againOf=c.againOf;","replace":""}
 ]
