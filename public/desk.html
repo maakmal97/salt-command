@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="446d60ec968a6163";
+var SALT_BUILD_ID="65eeeee92b3a4547";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -8128,7 +8128,32 @@ function board(sizes,C,P){
           timePerOrder:+(P.timePerOrder||0).toFixed(2)};
 }
 
-return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
+/* THEIR CARD AT A SIZE, READ OFF THE PRICING SNAPSHOT (tools/book.mjs pricingSnapshot): the desk's own cardQuote, carried and never
+   worked out; a size off the board is quoteAt on the snapshot's own inputs and their lift, which their sealed grid was struck from.
+   Moved here from src/orders.js on 20 Oct 2026 so the drafter's stamp of their price (listRM) and the fold's re-stamp on an amendment
+   read the one copy the Worker reads. */
+function cardAt(pricing,code,product,qty){
+  const snap=pricing&&pricing.byProduct&&pricing.byProduct[product];
+  if(!snap||!snap.cards)return {card:null,cardNote:"the pricing snapshot carries no cards yet: the next re-seed brings them"};
+  const fixed=(snap.ladder||[]).some(r=>r&&r.fixed);
+  const hit=(snap.cards[code]||[]).find(x=>Math.abs(x[0]-qty)<0.009);
+  if(hit)return {card:hit[1],cardNote:fixed?"the board, one price for everybody":"their card at "+qty+" unit"};
+  if(!snap.cards[code])return {card:null,cardNote:"no tier is held or proposed for them on "+product+", so there is no card"};
+  const at=quoteOff(snap,code,qty);
+  if(at!=null)return {card:at,cardNote:(fixed?"the board, one price for everybody":"their card")+" at "+qty+" unit"};
+  return {card:null,cardNote:qty+" unit is not a size on their board, so there is no card at it"};
+}
+function quoteOff(snap,code,qty){
+  const I=snap&&snap.inputs;
+  if(!I||!I.cost||!I.policy||!(qty>0))return null;
+  const R=I.policy.tierRule||null;
+  const d=(snap.partners||[]).includes(code)?"partner":R&&R.drift?(snap.lift&&typeof snap.lift[code]==="number"?snap.lift[code]:null):0;
+  if(d==null)return null;
+  try{const v=quoteAt(qty,costStack(I.cost),I.policy,d);return v!=null&&isFinite(v)&&v>0?v:null;}
+  catch(e){return null;}
+}
+
+return {cardAt:cardAt,costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         floorTotal:floorTotal,costTotal:costTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,
         setMultiple:setMultiple,driftOk:driftOk,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,suggestWhy:suggestWhy,

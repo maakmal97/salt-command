@@ -1,0 +1,12 @@
+[
+ {"name":"the stamp leaves the size off","file":"src/drafter.js","find":"if (card != null && isFinite(card) && card > 0) { row.listRM = +(+card).toFixed(2); row.listQty = +row.qty; }","replace":"if (card != null && isFinite(card) && card > 0) { row.listRM = +(+card).toFixed(2); }"},
+ {"name":"the stamp ignores the switch","file":"src/drafter.js","find":"  if (!sch || !row.date || row.date < sch.since) return row;","replace":"  if (!sch || !row.date) return row;"},
+ {"name":"an oil sale is stamped","file":"src/drafter.js","find":"  if (!row || (row.product || \"salt\") !== \"salt\" || !(+row.qty > 0)) return row;","replace":"  if (!row || !(+row.qty > 0)) return row;"},
+ {"name":"a resale reads the bucket's card","file":"src/drafter.js","find":"PRICING_ENGINE.cardAt(book && book.pricing, POSITION_ENGINE.ownerCode(row.customer), \"salt\", +row.qty)","replace":"PRICING_ENGINE.cardAt(book && book.pricing, row.customer, \"salt\", +row.qty)"},
+ {"name":"the drafter never stamps","file":"src/drafter.js","find":"  listStamp(row, book);\n","replace":""},
+ {"name":"the fold keeps the old stamp","file":"engine/apply.mjs","find":"{ it.target.listRM = +(+card).toFixed(2); it.target.listQty = +it.target.qty; }","replace":"{ }"},
+ {"name":"the fold stamps an unstamped row","file":"engine/apply.mjs","find":"&& it.target.listRM != null && c.pricing) {","replace":"&& c.pricing) {"},
+ {"name":"the batch drops the snapshot","file":"engine/apply.mjs","find":"today: ctx.today || null, pricing: ctx.pricing || null });","replace":"today: ctx.today || null });"},
+ {"name":"the fold tool drops the snapshot","file":"tools/fold.mjs","find":"today: TODAY, pricing: planCtx.pricing }","replace":"today: TODAY }"},
+ {"name":"the Worker prices its own card","file":"src/orders.js","find":"{ return PRICING_ENGINE.cardAt(pricing, code, product, qty); }","replace":"{ return { card: null, cardNote: \"\" }; }"}
+]

@@ -372,6 +372,18 @@ export function costFor(book, product) {
  * purchase and a sale of one batch are honoured in order. No leakage, no shrink, no delivery share, no trailing
  * average. `basis` names the lot so the note can state it; a book with no landed lot falls back to costFor, said so.
  * Gifts and a reward's cover stay on costFor, the desk's own shelf figure, which is what the desk values them at. */
+/* THEIR PRICE ON THE ROW (the associate reward, 20 Oct 2026, his rule 4): from the reward's switch, every salt sale carries what their own
+   card says for its size (listRM) and that size (listQty), read off the PRICING snapshot (the engine's cardAt, the figure the Accept preview
+   showed unless a % or a lot moved between the two) and never a figure carried on the entry. It prices nothing: the walk reads it as the
+   discount he gave under their price, his information only. A partner's card is the Floor. No card, no stamp. */
+export function listStamp(row, book) {
+  if (!row || (row.product || "salt") !== "salt" || !(+row.qty > 0)) return row;
+  const sch = POSITION_ENGINE.rewardScheme({ state: (book && book.state) || {} });
+  if (!sch || !row.date || row.date < sch.since) return row;
+  const card = PRICING_ENGINE.cardAt(book && book.pricing, POSITION_ENGINE.ownerCode(row.customer), "salt", +row.qty).card;
+  if (card != null && isFinite(card) && card > 0) { row.listRM = +(+card).toFixed(2); row.listQty = +row.qty; }
+  return row;
+}
 export function cogsFor(book, product, onOrBefore) {
   const p = product || "salt";
   const lots = (book.purchases || []).concat(book.draftLots || []).filter((x) => prodOf(x) === p);
@@ -1721,6 +1733,7 @@ export function draftRow(entry, book) {
   }
 
   if (pay.note) row.note = String(pay.note);
+  listStamp(row, book);
 
   /* v606: THE RATE AND THE MARGIN ARE BOTH STRUCK ON THE GOODS, on his ruling of 12 Sep 2026
      that the delivery charge is a pass-through at cost, neither more nor less. It is revenue

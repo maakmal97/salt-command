@@ -50076,6 +50076,11 @@ await (async () => {
   await (await import("./assoc-reward-fold.mjs")).run({ ok });
 })();
 
+section("Associate reward: a salt sale carries their own price for its size, read and never priced (P4, 20 Oct 2026)");
+await (async () => {
+  await (await import("./assoc-reward-price.mjs")).run({ ok });
+})();
+
 section("Salt Admin: the claim card reads its rows on opening, draws the slip from the one unlock, and asks on a sheet");
 await (async () => {
   await (await import("./admin-claim-card.mjs")).run({ ok, pageWork });

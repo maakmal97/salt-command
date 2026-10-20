@@ -290,30 +290,7 @@ export function acceptUntil(at, slot) {
   return new Date(start - t >= 3600e3 ? Math.min(start, max) : Math.min(end, max)).toISOString();
 }
 /* their card at this size: the desk's own cardQuote, carried in the pricing snapshot (tools/book.mjs), read and never worked out */
-export function cardAt(pricing, code, product, qty) {
-  const snap = pricing && pricing.byProduct && pricing.byProduct[product];
-  if (!snap || !snap.cards) return { card: null, cardNote: "the pricing snapshot carries no cards yet: the next re-seed brings them" };
-  const fixed = (snap.ladder || []).some((r) => r && r.fixed);
-  const hit = (snap.cards[code] || []).find((x) => Math.abs(x[0] - qty) < 0.009);
-  if (hit) {
-    return { card: hit[1], cardNote: fixed ? "the board, one price for everybody" : "their card at " + qty + " unit" };
-  }
-  if (!snap.cards[code]) return { card: null, cardNote: "no tier is held or proposed for them on " + product + ", so there is no card" };
-  /* 05 Oct 2026 (any quantity at an automatic price): A SIZE OFF THE BOARD is the engine's quoteAt on the snapshot's own inputs
-     and their drift, which is what their sealed grid was struck from, so the card here and the price their page quoted agree */
-  const at = quoteOff(snap, code, qty);
-  if (at != null) return { card: at, cardNote: (fixed ? "the board, one price for everybody" : "their card") + " at " + qty + " unit" };
-  return { card: null, cardNote: qty + " unit is not a size on their board, so there is no card at it" };
-}
-function quoteOff(snap, code, qty) {
-  const I = snap && snap.inputs;
-  if (!I || !I.cost || !I.policy || !(qty > 0)) return null;
-  const R = I.policy.tierRule || null;
-  const d = (snap.partners || []).includes(code) ? "partner" : R && R.drift ? (snap.lift && typeof snap.lift[code] === "number" ? snap.lift[code] : null) : 0;
-  if (d == null) return null;
-  try { const v = PRICING_ENGINE.quoteAt(qty, PRICING_ENGINE.costStack(I.cost), I.policy, d); return v != null && isFinite(v) && v > 0 ? v : null; }
-  catch (e) { return null; }
-}
+export function cardAt(pricing, code, product, qty) { return PRICING_ENGINE.cardAt(pricing, code, product, qty); }   /* the engine's, since 20 Oct 2026 */
 /* `mirror`, here and below: the invocation's one reader of the mirror (bookOnce, 06 Oct 2026); without one, a read of its own */
 async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
   if (!env.SALT_LEDGER) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" };

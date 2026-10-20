@@ -971,6 +971,14 @@ function bookItem(book, it, c) {
       { const last = it.target.amend && it.target.amend[it.target.amend.length - 1];
         if (last && (+last.kg || 0) > 0.0001 && it.target.cost != null && it.target.qty > 0) last.cost = +(E.txUnitCost(it.target) * (+last.kg)).toFixed(2); }
       if (n.rowNote) it.target.note = String(n.rowNote) + " " + (it.target.note || "");
+      /* 20 Oct 2026 (the associate reward, his rule 4): a restated size or goods takes their own price again, for the new size, off the
+         pricing snapshot the drafter read (the extract's PRICING); nothing prices from it */
+      const f = it.pay && it.pay.fields;
+      if (it.dir !== "BUY" && f && (f.qty != null || f.total != null || f.product != null || f.party != null) && it.target.listRM != null && c.pricing) {
+        const card = PRICING_ENGINE.cardAt(c.pricing, E.ownerCode(it.target.customer), prodOf(it.target), +it.target.qty).card;
+        if (prodOf(it.target) === "salt" && card != null && isFinite(card) && card > 0) { it.target.listRM = +(+card).toFixed(2); it.target.listQty = +it.target.qty; }
+        else { delete it.target.listRM; delete it.target.listQty; }
+      }
     } else if (it.append === "sales" || it.append === "purchases") {
       const row = { ...src.row };
       /* 05 OCT 2026: A NEW SALE KEEPS THE DRAFTER'S COST. The drafter costs a sale at COGS off the latest purchase on or
@@ -1051,7 +1059,7 @@ export function applyEntry(book, it, ctx) {
   const src = ctx.staged.approved.find((x) => x.id === it.id), n = (ctx.notes.rows && ctx.notes.rows[it.id]) || {};
   const moves = [], renames = [], kgMoves = [];
   const c = { src, n, notes: ctx.notes, stockCost: stockCostOf(book), nextRid: ctx.nextRid, moves, renames,
-    reward: ctx.reward || null, today: ctx.today || null, entryMoves: ctx.moves || [] };
+    reward: ctx.reward || null, today: ctx.today || null, pricing: ctx.pricing || null, entryMoves: ctx.moves || [] };
   bookItem(book, it, c);
   rewardFold(book, it, c, kgMoves);   /* 20 Oct 2026: the associate reward's unit, and its unit off the shelf with the handover */
   const entryMoves = (ctx.moves || []).concat(kgMoves), rolls = [];
@@ -1077,7 +1085,7 @@ export function applyInto(book, p, staged, notes, ctx) {
   let newest = book.QUEUE_COMMITTED || "";
   const folded = [], renames = [];
   for (const it of p.items) {
-    const r = applyEntry(book, it, { nextRid, staged, notes, moves: movesOf(p, it), reward: ctx.reward || null, today: ctx.today || null });
+    const r = applyEntry(book, it, { nextRid, staged, notes, moves: movesOf(p, it), reward: ctx.reward || null, today: ctx.today || null, pricing: ctx.pricing || null });
     moves.push(...r.moves);   /* refund words, in entry order */
     rolls.push(...r.rolls); entryMoves.push(...r.entryMoves);
     for (const rn of renames) E.renameInBook(book, rn.pairs);   /* a rename already applied carries a row booked after it under the old code, as the fold's last-of-all rename always did */
