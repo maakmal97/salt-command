@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1185",
+  "d": "20 Oct 2026",
+  "t": "CORRECTION TO S275: DELIVERY CHARGE SET TO ZERO",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> The correction against s275 for CM4-TO-R, a sale of 3 units of candy dated 19 Oct 2026, sets delivery from RM15 to RM0. It moves no cash and no stock; it changes only what the row says about itself, and the fold applies the patch.",
+   "<b>INVENTORY UNCHANGED.</b> No lot landed and no unit moved, so the cost basis stays as it was. The correction sets the cost itself, so none is supplied here. The RM15 delivery that stood unpaid on the row is no longer charged."
+  ]
+ },
+ {
   "v": "v1184",
   "d": "20 Oct 2026",
   "t": "ONE FREE SALT REDEMPTION AND ONE REBATE CORRECTION",
