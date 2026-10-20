@@ -649,11 +649,9 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .ordlead{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
 .adm .ordlead:empty{display:none}
 .adm .ordlead>.maker-field,.adm .ordlead>.salt-options{flex:1 1 100%}
-.adm .ordterms{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted);flex:1 1 12em}
-/* 20 Oct 2026: a placed order's three moves in one row, the terms line under it */
+/* 20 Oct 2026: a placed order's three moves in one row */
 .adm .ordrow3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;flex:1 1 100%}
 .adm .ordrow3>button{width:100%;min-height:44px;padding-left:8px;padding-right:8px;white-space:nowrap}
-.adm .ordrow3+.ordterms{flex:1 1 100%;text-align:center}
 .adm .ordfold--rowed>summary{display:none}
 .adm .ordfold>summary .salt-plan__title{grid-column:1 / -1}
 .adm .ordfold__body>*+*{margin-top:12px}
@@ -973,7 +971,6 @@ body.ended>*:not(#aEnded){display:none}
 .adm .oclock__track{display:block}
 .adm .ordsteps{--salt-steps-n:5;padding:20px 12px}
 .adm .ordsteps .salt-steps__name,.adm .ordsteps .salt-steps__time{white-space:nowrap}
-.adm .ordsteps .salt-steps__name{font-size:0.75rem}
 .adm .need-clock--late .oclock__min{color:var(--salt-ember)}
 .adm .need-clock{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm #makerConfirm{margin:16px 0 0}
