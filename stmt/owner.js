@@ -4092,8 +4092,27 @@ export const OWNER_JS = `
     r.appendChild(l); if(flag) r.appendChild(el('span','salt-ledger__flag',flag));
     return r;
   }
-  /* the Goods line's words under it: at the list price while placed (the cost part adds what it cost) */
-  function billCost(order,node){ node.textContent=order.status==='placed'?'At the list price':''; }
+  /* 20 Oct 2026 (canvas V22, V27, his rule: a figure that does not add up has no line of its own): WHAT THE GOODS COST, under Goods, "Cost RM 36,
+     incl. freight": the Desk's trade reading (the engine's latestCogs, the latest purchase's quote and trip freight over its units, through the
+     hop the trade form reads) a unit, times the order's units. Read once an order, held by its id; nothing when the book has no cost, or the
+     read fails. His page only: owner.js travels behind /all. */
+  var billCosts={};
+  function billCostWords(order){
+    var c=billCosts[order.id], cost=c&&c.rate!=null&&isFinite(c.rate)?'cost '+rm(c.rate*(+order.qty||0))+', incl. freight':'';
+    if(order.status==='placed') return 'At the list price'+(cost?' · '+cost:'');
+    return cost?cost.charAt(0).toUpperCase()+cost.slice(1):'';
+  }
+  function billCost(order,node){
+    node.textContent=billCostWords(order);
+    if(billCosts[order.id]||!order.product||!(+order.qty>0)) return;
+    billCosts[order.id]={rate:null, reading:true};
+    refs('/all/maker/trade-reading',{direction:'sale',product:order.product,qty:+order.qty,total:+order.total||0}).then(function(j){
+      var r=j&&j.reading&&j.reading.cogs&&j.reading.cogs.rate;
+      billCosts[order.id]={rate:typeof r==='number'&&isFinite(r)?r:null};
+    },function(){ billCosts[order.id]={rate:null}; }).then(function(){
+      var n=document.querySelector('[data-cost="'+order.id+'"]'); if(n) n.textContent=billCostWords(order);
+    });
+  }
   /* Salt Admin A to C (20 Oct 2026), P3: HIS USUAL, the figure a customer reads (stmt/confirm.js confirmView: ten or more measured, the
      cron's figure under three hours old), and the minutes a placed order has waited. No clock on a practice order, one with a price or a
      group order, which the measure leaves out. */

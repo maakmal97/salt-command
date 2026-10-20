@@ -1,0 +1,10 @@
+[
+ {"name":"no cost read","file":"stmt/owner.js","find":"    if(billCosts[order.id]||!order.product||!(+order.qty>0)) return;","replace":"    return;"},
+ {"name":"the cost a unit, not times the units","file":"stmt/owner.js","find":"'cost '+rm(c.rate*(+order.qty||0))+', incl. freight'","replace":"'cost '+rm(c.rate)+', incl. freight'"},
+ {"name":"a placed order's cost unsaid","file":"stmt/owner.js","find":"if(order.status==='placed') return 'At the list price'+(cost?' · '+cost:'');","replace":"if(order.status==='placed') return 'At the list price';"},
+ {"name":"asked as a buy","file":"stmt/owner.js","find":"refs('/all/maker/trade-reading',{direction:'sale',product:order.product,","replace":"refs('/all/maker/trade-reading',{direction:'buy',product:order.product,"},
+ {"name":"asked on every redraw","file":"stmt/owner.js","find":"    billCosts[order.id]={rate:null, reading:true};","replace":"    void 0;"},
+ {"name":"the answer never drawn","file":"stmt/owner.js","find":"      var n=document.querySelector('[data-cost=\"'+order.id+'\"]'); if(n) n.textContent=billCostWords(order);","replace":"      void 0;"},
+ {"name":"no cost read as nought","file":"stmt/owner.js","find":"billCosts[order.id]={rate:typeof r==='number'&&isFinite(r)?r:null};","replace":"billCosts[order.id]={rate:typeof r==='number'&&isFinite(r)?r:0};"},
+ {"name":"a failed read keeps a figure","file":"stmt/owner.js","find":"},function(){ billCosts[order.id]={rate:null}; }).then(function(){","replace":"},function(){ billCosts[order.id]={rate:1}; }).then(function(){"}
+]

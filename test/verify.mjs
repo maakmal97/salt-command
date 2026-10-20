@@ -50030,6 +50030,11 @@ await (async () => {
   await (await import("./admin-ac-spot.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Admin A to C: what the goods cost under Goods on the Bill, read once an order (20 Oct 2026)");
+await (async () => {
+  await (await import("./admin-ac-cost.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin: the claim card reads its rows on opening, draws the slip from the one unlock, and asks on a sheet");
 await (async () => {
   await (await import("./admin-claim-card.mjs")).run({ ok, pageWork });
