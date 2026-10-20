@@ -98,8 +98,10 @@ export async function run({ ok, pageWork }) {
     const body = own.filter(([sel, , m]) => !m && sel === "body");
     ok(body.length === 1 && /^22px\b/.test(decl(body[0][1], "padding")) && own.some(([sel, b, m]) => /min-width:\s*1080px/.test(m) && sel === ".gate.adm" && decl(b, "margin-top") === "0" && decl(b, "gap") === "20px"),
       "the page starts 22px from the top, and from 1080px Salt Admin's rail and column stand 20px apart with no margin above, as the Desk's do");
+    /* 20 Oct 2026 (canvas V32): from 1080px the bar heads the shell, spanning the rail's column and the content's */
+    ok(own.some(([sel, b, m]) => /min-width:\s*1080px/.test(m) && sel === ".adm .abar" && decl(b, "grid-column") === "1/-1"), "from 1080px Salt Admin's bar spans the rail and the column under it");
     const heads = RECIPE_HEADS.filter((h) => h.startsWith("/* ---- Desk bar"));
-    const od = new JSDOM(landingPage("", "nct", { master: "fixture-master", accounts: [] })).window.document, bar = od.querySelector(".amain > .salt-deskbar:first-child");
+    const od = new JSDOM(landingPage("", "nct", { master: "fixture-master", accounts: [] })).window.document, bar = od.querySelector("#roster > .salt-deskbar:first-child");
     ok(heads.length === 1 && SITE_RECIPES.includes(".salt-deskbar__name {") && !!bar && bar.querySelector(".salt-deskbar__brand .salt-deskbar__name").textContent === "Salt Admin"
       && bar.querySelectorAll(".salt-deskbar__meta [data-clock]").length === 1 && od.querySelectorAll("#roster [data-clock]").length === 1 && !od.querySelector("#roster .salt-rail__brand")
       && ![...od.querySelectorAll("#roster .salt-eyebrow")].some((e) => /Salt Admin/.test(e.textContent)),

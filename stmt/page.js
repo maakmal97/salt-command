@@ -778,7 +778,8 @@ body.ended>*:not(#aEnded){display:none}
 .adm .alist .salt-inbox-row__title{gap:6px}
 .adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 @media (min-width:1080px){
-  .gate.adm{max-width:1180px;margin-top:0;display:flex;gap:20px;align-items:flex-start;padding-bottom:48px}
+  .gate.adm{max-width:1180px;margin-top:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:20px;align-items:start;padding-bottom:48px}
+  .adm .abar{grid-column:1/-1;margin-bottom:0}
   .adm .amain{flex:1 1 auto;min-width:0}
   .adm #oShop{max-width:760px}
 }
@@ -1735,6 +1736,9 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>" + AURORA
     + (owner
       ? '<div id="roster" class="gate adm">'
+        /* 20 Oct 2026 (canvas V32): the bar heads the whole shell, the rail and the column under it, so from 1080px it spans both */
+        + '<header class="salt-deskbar abar"><div class="salt-deskbar__brand"><span class="aring">' + aico("key") + '</span>'
+        + '<div class="abartext"><div class="salt-deskbar__name">Salt Admin</div><div class="salt-deskbar__meta"><span class="abarlive" id="aBarLive"></span><button type="button" class="abarhours" id="aBarHours" data-act="bar.hours" hidden></button><span class="clk" data-clock></span></div></div></div></header>'
         /* S9 9.2: HIS PLACES, the phone's App bar and, from 1080px, the Desk rail the bar gives way to (the
            system's own switch): Needs you, Orders, Customers, Record and Shop (his decision of 11 Oct 2026). A count beside a
            place is what waits there. */
@@ -1746,8 +1750,6 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div class="amain">'
         /* 18 OCT 2026, HIS WORD: THE DESK'S SHELL. The system's Desk bar heads every place, as it heads the Desk: the ring and the name, the clock
            under it. It took the rail's brand and the eyebrow each place repeated ("Salt Admin" and the clock). */
-        + '<header class="salt-deskbar abar"><div class="salt-deskbar__brand"><span class="aring">' + aico("key") + '</span>'
-        + '<div class="abartext"><div class="salt-deskbar__name">Salt Admin</div><div class="salt-deskbar__meta"><span class="abarlive" id="aBarLive"></span><button type="button" class="abarhours" id="aBarHours" data-act="bar.hours" hidden></button><span class="clk" data-clock></span></div></div></div></header>'
         /* 12 OCT 2026 (PHASE 4c): THE UNSENT-ENTRY BANNER, over every place and shown by the owner's script only while an entry sent from this phone waits unconfirmed on it */
         + '<div id="unsentBar" hidden></div>'
         /* 11 OCT 2026: WHAT IS ON SCREEN IS DECIDED BY data-in, which names the places and the parts an element shows in

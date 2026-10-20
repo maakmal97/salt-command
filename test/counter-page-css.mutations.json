@@ -44,7 +44,7 @@
  {"name":"his page sets a bold of its own again","file":"stmt/page.js","find":".adm .apbang{font-weight:500}","replace":".adm .apbang{font-weight:700}"},
  {"name":"the door heading goes back to 24px","file":"stmt/page.js","find":".gate h1{font-size:1.75rem;","replace":".gate h1{font-size:var(--salt-text-xl);"},
  {"name":"the page starts 44px down again","file":"stmt/statement-css.js","find":"margin:0;padding:22px 18px 60px;","replace":"margin:0;padding:44px 20px 60px;"},
- {"name":"the rail stands 28px from the column again","file":"stmt/page.js","find":".gate.adm{max-width:1180px;margin-top:0;display:flex;gap:20px;","replace":".gate.adm{max-width:1180px;margin-top:0;display:flex;gap:28px;"},
+ {"name":"the rail stands 28px from the column again","file":"stmt/page.js","find":".gate.adm{max-width:1180px;margin-top:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:20px;","replace":".gate.adm{max-width:1180px;margin-top:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:28px;"},
  {"name":"the bar is not the system s Desk bar","file":"stmt/page.js","find":"<header class=\"salt-deskbar abar\">","replace":"<header class=\"abar\">"},
  {"name":"the bar loses the clock","file":"stmt/page.js","find":"Salt Admin</div><div class=\"salt-deskbar__meta\"><span class=\"abarlive\" id=\"aBarLive\"></span><button type=\"button\" class=\"abarhours\" id=\"aBarHours\" data-act=\"bar.hours\" hidden></button><span class=\"clk\" data-clock></span></div>","replace":"Salt Admin</div><div class=\"salt-deskbar__meta\"><span class=\"abarlive\" id=\"aBarLive\"></span><button type=\"button\" class=\"abarhours\" id=\"aBarHours\" data-act=\"bar.hours\" hidden></button><span class=\"clk\"></span></div>"},
  {"name":"the Desk bar recipe is not carried","file":"stmt/statement-css.js","find":".salt-deskbar__name {","replace":".salt-deskbar__nm {"},
@@ -61,5 +61,7 @@
  {"name":"the name over the rail is another brand","file":"stmt/page.js","find":"<p class=\"salt-title crtitle\" aria-hidden=\"true\">Salt Counter</p>","replace":"<p class=\"salt-title crtitle\" aria-hidden=\"true\">Salt Desk</p>"},
  {"name":"the brand slot says nothing of whose it is","file":"stmt/page.js","find":"wt(\"span\", 'class=\"salt-eyebrow salt-eyebrow--mist\"', \"who.rail\") + ","replace":""},
  {"name":"the header says it again from 1080px","file":"stmt/page.js","find":"  .chead [data-whoas]{display:none}\n","replace":""},
- {"name":"the Desk bar comes back","file":"stmt/page.js","find":"    + '<header class=\"chead\">' + (owner ? \"\" : bellBox())","replace":"    + (owner ? \"\" : '<header class=\"salt-deskbar cbar\"><div class=\"salt-deskbar__name\">Salt Counter</div></header>')\n    + '<header class=\"chead\">' + (owner ? \"\" : bellBox())"}
+ {"name":"the Desk bar comes back","file":"stmt/page.js","find":"    + '<header class=\"chead\">' + (owner ? \"\" : bellBox())","replace":"    + (owner ? \"\" : '<header class=\"salt-deskbar cbar\"><div class=\"salt-deskbar__name\">Salt Counter</div></header>')\n    + '<header class=\"chead\">' + (owner ? \"\" : bellBox())"},
+ {"name":"the bar stands under the rail again","file":"stmt/page.js","find":"        /* 20 Oct 2026 (canvas V32): the bar heads the whole shell, the rail and the column under it, so from 1080px it spans both */\n","replace":"        + '<span hidden></span>'\n"},
+ {"name":"the bar spans one column","file":"stmt/page.js","find":"  .adm .abar{grid-column:1/-1;margin-bottom:0}","replace":"  .adm .abar{margin-bottom:0}"}
 ]
