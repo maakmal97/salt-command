@@ -89,7 +89,7 @@ export async function run({ ok, pageWork }) {
     try {
       await own.work.quiet(); own.d.querySelector('[data-act="nav.orders"]').click(); await own.work.quiet();
       const card = own.card("ord-a1"), oref = card && card.querySelector("[data-ref]");
-      ok(!!oref && t(oref) === "· Ref " + refR, "Salt Admin's card for the same order shows the same reference, so one they quote finds it: " + (oref && t(oref)));
+      ok(!!oref && t(oref) === refR && oref.classList.contains("salt-band__ref"), "Salt Admin's card for the same order shows the same reference, so one they quote finds it: " + (oref && t(oref)));
     } finally { own.w.close(); }
 
     /* ---- 2: the band, the point and its pin ---- */

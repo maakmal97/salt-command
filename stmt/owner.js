@@ -3992,24 +3992,55 @@ export const OWNER_JS = `
     r.appendChild(l); if(flag) r.appendChild(el('span','salt-ledger__flag',flag));
     return r;
   }
+  /* Salt Admin A to C, P1: his state, said as a heading, and how the goods go, said as the customer reads it */
+  function ordHeading(order){
+    if(order.writtenOff) return 'Written off';
+    var s=order.status, dl=order.mode==='deliver';
+    if(s==='placed') return makerAccHeld(order)?'Waiting for their yes':'Waiting on your Agree';
+    if(s==='acknowledged') return 'Agreed, to make ready';
+    if(s==='ready') return dl?'Ready to go out':'Ready to collect';
+    if(s==='done') return dl?'Delivered':'Collected';
+    return {declined:'Declined',cancelled:'Cancelled'}[s]||String(s||'');
+  }
+  function ordWay(order){
+    if(order.mode==='deliver') return 'Delivery to '+(order.place||'their place')+', '
+      +(order.slot&&order.slotSpan?String(order.slotSpan).replace('-',' to ')+' on '+fmtWhen(String(order.slot).slice(0,10)):'as soon as it can');
+    return order.point?'Collect at Point '+order.point:'Collection';
+  }
   function orderHead(card,order){
     var st=order.writtenOff?['mist','Written off','cross']:ORD_STAGE[order.status]||['mist',String(order.status||'')];
-    var head=el('div','ohead lead'), t=el('h3'), side=el('div'), sub=el('p','sub2');
-    t.appendChild(mtile(order.product,order.qty)); head.appendChild(t);
-    side.appendChild(stageChip(st));
-    sub.appendChild(whoTag(el('span',null,codeByUser(order.u)),codeOfUser(order.u)));
-    sub.appendChild(document.createTextNode(' · Ordered '+fmtWhen(order.at)+', '+(order.mode==='deliver'?'to deliver':'to collect')));
+    /* Salt Admin A to C (20 Oct 2026), P1: THE HEAD IS THE COUNTER'S BAND. The buyer's code and the short reference the customer sees on top,
+       his state as the heading, when it was placed with its stage chip, then a foot with the mark, how it goes and, while it waits at one of his
+       points, the point's pin to the maps app (the Counter's own pinLink, read off the order's snapshot pointAt) */
+    var head=el('div','ohead lead salt-band'), top=el('div','salt-band__head'), eb=el('span','salt-eyebrow salt-eyebrow--copper','Order · ');
+    eb.appendChild(whoTag(el('span',null,codeByUser(order.u)),codeOfUser(order.u))); top.appendChild(eb);
     /* Counter Batch A: the reference the customer sees on their order, so one they quote finds it here */
-    var oref=el('span','mono oref',' · Ref '+orderRef(order.id)); oref.setAttribute('data-ref',''); sub.appendChild(oref);
-    side.appendChild(sub); head.appendChild(side); card.appendChild(head);
+    var oref=el('span','salt-band__ref oref',orderRef(order.id)); oref.setAttribute('data-ref',''); top.appendChild(oref);
+    head.appendChild(top);
+    head.appendChild(el('h3','ostate',ordHeading(order)));
+    var sub=el('p','sub2 salt-band__when'); sub.appendChild(stageChip(st)); sub.appendChild(document.createTextNode(' Placed '+fmtWhen(order.at)+'.')); head.appendChild(sub);
+    var foot=el('div','salt-band__foot'), col=el('span','oband__what');
+    foot.appendChild(mtile(order.product,order.qty)); col.appendChild(el('span','oway',ordWay(order))); foot.appendChild(col);
+    var waits=order.point&&order.status==='ready'&&order.mode==='collect'&&(+order.moved||0)<(+order.qty||0)-0.0004;
+    if(waits&&order.pointAt&&isFinite(order.pointAt.lat)&&isFinite(order.pointAt.lng)) foot.appendChild(pinLink(order));
+    head.appendChild(foot); card.appendChild(head);
     var agreed=['acknowledged','ready','done'].indexOf(order.status)>=0, moved=Math.round((+order.moved||0)*100)/100;
     if(!order.writtenOff&&order.status!=='declined'&&order.status!=='cancelled') card.appendChild(ordSteps(order));
     var L=el('div','ordmoney salt-ledger salt-ledger--plain'), paid=+order.paid||0, owed=Math.max(0,Number(order.total||0)+Number(order.delivery||0)-paid);
     L.appendChild(ordLine('Goods',rm(order.total),agreed&&typeof order.asked==='number'&&Math.abs(order.asked-(+order.total||0))>0.004?'Set when you agreed it. They placed it at '+rm(order.asked):''));
     if(order.mode==='deliver'&&(agreed||order.delivery)) L.appendChild(ordLine('Delivery',rm(order.delivery||0)));
-    if(agreed||paid>0) L.appendChild(ordLine('Paid',rm(paid)));
+    /* Salt Admin A to C, P2: THE RECEIPT, as the customer's: each payment received with its way and its day where they add up to what is
+       paid, else one line */
+    var conf=(order.payments||[]).filter(function(x){ return x&&(!x.claim||x.claim==='received')&&+x.amount>0; }),
+        csum=conf.reduce(function(s,x){ return s+(+x.amount); },0);
+    if(paid>0&&conf.length&&Math.abs(csum-paid)<0.005) conf.forEach(function(x){
+      var r=ordLine('Paid',rm(+x.amount)); r.querySelector('.salt-ledger__label').appendChild(el('span','salt-ledger__sub',(x.method?methodWord(x.method,x.account)+', ':'')+fmtWhen(x.at)));
+      r.setAttribute('data-pay',''); L.appendChild(r);
+    });
+    else if(agreed||paid>0) L.appendChild(ordLine('Paid',rm(paid)));
     if(+order.claimed>0) L.appendChild(ordLine('Says sent',rm(order.claimed),'Waiting for your Received'));
-    if(agreed) L.appendChild(ordLine('Owed',rm(owed),'',owed>0.004?'odue':''));
+    if(agreed&&owed>0.004){ var due=ordLine('Owed',rm(owed),'','odue'); due.classList.add('salt-ledger__row--due'); L.appendChild(due); }
+    else if(agreed||order.status==='done') L.appendChild(ordLine('Settled',rm(0),'','osettled'));
     if(agreed&&moved<(+order.qty||0)-0.0004) L.appendChild(ordLine('Handed',moved+' of '+units(order.qty)));
     card.appendChild(L);
     /* 17 Oct 2026: an ended order's last move is under Approve until he decides it, and the book keeps its row live until then */
@@ -4018,7 +4049,15 @@ export const OWNER_JS = `
     /* 17 Oct 2026: a refund the book still owes them on this order's row */
     var owes=makerData&&makerData.refunds&&order.ledgerKey&&makerData.refunds[order.ledgerKey];
     if(+owes>0.004) card.appendChild(el('p','salt-insight','You owe them a refund of '+rm(owes)+' on this order. Close it on the Desk once it is paid.'));
-    card.appendChild(detailBox('order.details',order.id,[['Reference',order.id],['Placed',fmtWhen(order.at)],['Way',order.mode==='deliver'?'Delivery':order.mode==='collect'?'Collection':'']]));
+    var sh=sheetOf(order);
+    card.appendChild(detailBox('order.details',order.id,[['Reference',order.id],['Placed',fmtWhen(order.at)],['Way',order.mode==='deliver'?'Delivery':order.mode==='collect'?'Collection':''],
+      ['Area',order.mode==='deliver'?order.place||'':order.point?'Point '+order.point:''],['Exact spot',order.mode==='deliver'&&order.pin?'Shared, sealed':''],
+      ['Sheet',sh.length>1?(sh.indexOf(order)+1)+' of '+sh.length:'']].filter(function(p){ return p[1]; })));
+  }
+  /* Salt Admin A to C: the orders one sheet of theirs placed together, in the order the Desk asks the delivery on (the first by id) */
+  function sheetOf(order){
+    if(!order||!order.sheet) return [order];
+    return ((makerData&&makerData.orders)||[]).filter(function(o){ return o.u===order.u&&o.sheet===order.sheet; }).sort(function(a,b){ return String(a.id).localeCompare(String(b.id)); });
   }
   /* the card of an open order: every control it had, on the order opened alone */
   function orderCard(root,order){
@@ -4268,7 +4307,7 @@ export const OWNER_JS = `
       }else if(order.status==='ready'&&Number(order.moved||0)<Number(order.qty)-0.0004){
         /* Counter Batch A: where it waits, and Change point while goods are still to hand over */
         if(order.mode==='collect'){
-          lead.appendChild(el('p','msg maker-point-at',order.point?'At Point '+order.point+'.':'No collection point named.'));
+          if(!order.point) lead.appendChild(el('p','msg maker-point-at','No collection point named.'));
           var moveTo=makerButton(lead,['Change point','order.point-change'],function(){ pointPick(order,moveTo,'change'); },false);
           makerAskTag(order,moveTo,'point');
         }

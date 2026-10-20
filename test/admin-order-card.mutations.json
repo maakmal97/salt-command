@@ -314,8 +314,8 @@
  {
   "name": "Details repeats the goods",
   "file": "stmt/owner.js",
-  "find": "card.appendChild(detailBox('order.details',order.id,[['Reference',order.id],['Placed',fmtWhen(order.at)],['Way',order.mode==='deliver'?'Delivery':order.mode==='collect'?'Collection':'']]));",
-  "replace": "card.appendChild(detailBox('order.details',order.id,[['Reference',order.id],['Placed',fmtWhen(order.at)],['Way',order.mode==='deliver'?'Delivery':order.mode==='collect'?'Collection':''],['Goods',rm(order.total)]]));"
+  "find": "['Sheet',sh.length>1?(sh.indexOf(order)+1)+' of '+sh.length:'']]",
+  "replace": "['Sheet',sh.length>1?(sh.indexOf(order)+1)+' of '+sh.length:''],['Goods',rm(order.total)]]"
  },
  {
   "name": "Money received has no heading",

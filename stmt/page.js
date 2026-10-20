@@ -551,10 +551,11 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .ocol__n{color:var(--salt-mist-bright)}
 .ocol__pay{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:0.12em;text-transform:uppercase;color:var(--salt-ember);white-space:nowrap}
 .oback{margin:0 0 12px}
-.adm .ohead{display:flex;align-items:center;gap:6px 14px;margin:0 0 16px}
-.adm .ohead h3{margin:0;font-family:var(--salt-font-display);font-size:var(--salt-text-xl);letter-spacing:0}
-.adm .ohead>div{min-width:0}
-.adm .ohead .sub2{margin:6px 0 0}
+.adm .ohead{margin:0 0 16px}
+.adm .ohead h3{margin:0;font-family:var(--salt-font-display);font-size:var(--salt-text-xl);letter-spacing:0;line-height:1.15}
+.adm .ohead .sub2{margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.adm .ohead .oband__what{flex:1;min-width:0;font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);color:var(--salt-mist-bright)}
+.adm .osettled{color:var(--salt-verdigris);font-weight:700}
 .odue{color:var(--salt-ember)}
 /* the part of an order their reward paid: a line of its own under the part it belongs to (coverTo) */
 .pcover{display:block;margin-top:2px}

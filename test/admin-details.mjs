@@ -42,7 +42,7 @@ export async function run({ ok, pageWork }) {
     ok(!bare(card).includes("ord-p1") && ![...card.querySelectorAll(".maker-facts")].some((f) => /^Reference/.test(f.textContent)),
       "the card itself does not read the reference out: " + bare(card).slice(0, 160));
     const deliver = detailsOf(p.card("ord-p2"), "order.details", "ord-p2");
-    ok(!!deliver && same(pairs(deliver), [["Reference", "ord-p2"], ["Way", "Delivery"]]), "an order with no moment is not given a Placed line, and a delivery says so: " + JSON.stringify(deliver && pairs(deliver)));
+    ok(!!deliver && same(pairs(deliver), [["Reference", "ord-p2"], ["Way", "Delivery"], ["Exact spot", "Shared, sealed"]]), "an order with no moment is not given a Placed line, and a delivery says so, and that its spot was shared (Salt Admin A to C): " + JSON.stringify(deliver && pairs(deliver)));
     const closed = detailsOf(p.card("ord-x1"), "order.details", "ord-x1");
     ok(!!closed && !closed.open && pairs(closed)[0][1] === "ord-x1", "an order that is closed, with a stage he rejected, has it on its card too");
     ok(!bare(p.card("ord-x1")).includes("ord-x1"), "and does not read its reference out either");
