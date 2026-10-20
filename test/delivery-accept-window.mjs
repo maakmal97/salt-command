@@ -190,7 +190,7 @@ export async function run({ ok, KV, assets }) {
     const doc = browser.window.document;
     const acard = (id) => cardOf(doc, id);
     const button = (id, text) => acard(id) && [...acard(id).querySelectorAll("button")].find((b) => b.textContent === text);
-    const radio = (id, name, label) => { const opt = acard(id) && [...acard(id).querySelectorAll('input[name="' + name + '-' + id + '"]')].find((r) => r.closest(".salt-option").textContent === label); return opt; };
+    const radio = (id, name, label) => { const opt = acard(id) && [...acard(id).querySelectorAll('input[name="' + name + '-' + id + '"]')].find((r) => r.closest("label").textContent === label); return opt; };
     const wins = (id) => acard(id) ? [...acard(id).querySelectorAll('input[name="makerWin-' + id + '"]')].map((r) => r.closest(".salt-option").textContent) : [];
     doc.querySelector('[data-act="nav.orders"]').click();
     await wait(() => doc.querySelector('[data-act="order.open"]'));

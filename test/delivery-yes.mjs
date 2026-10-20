@@ -266,7 +266,7 @@ export async function run({ ok }) {
     const doc = browser.window.document, Ev = browser.window.Event;
     const acard = (id) => cardOf(doc, id);
     const button = (id, text) => acard(id) && [...acard(id).querySelectorAll("button")].find((b) => b.textContent.indexOf(text) === 0);
-    const radio = (id, name, label) => acard(id) && [...acard(id).querySelectorAll('input[name="' + name + '-' + id + '"]')].find((r) => r.closest(".salt-option").textContent === label);
+    const radio = (id, name, label) => acard(id) && [...acard(id).querySelectorAll('input[name="' + name + '-' + id + '"]')].find((r) => r.closest("label").textContent === label);
     const pick = (id, name, label) => { const r = radio(id, name, label); r.checked = true; r.dispatchEvent(new Ev("change", { bubbles: true })); };
     doc.querySelector('[data-act="nav.orders"]').click();
     await wait(() => doc.querySelector('[data-act="order.open"]'));

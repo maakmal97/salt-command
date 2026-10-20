@@ -919,6 +919,11 @@ body.ended>*:not(#aEnded){display:none}
 .adm .nlist .glink{margin:0}
 .adm .nlist .nsev{margin:8px 0 -4px}
 .adm .nkrow{margin:0 0 16px}
+/* 21 Oct 2026 (P9): the delivery charge is the system's slider over four radios; a label lays its option out, and the thumb waits until one is ticked */
+.adm .ofee{margin-top:4px}
+.adm .ofee .salt-segment__opt{display:flex;align-items:center;justify-content:center}
+.adm .ofee .salt-segment__opt:focus-within{outline:2px solid var(--salt-brass);outline-offset:-2px}
+.adm .ofee--none::before{display:none}
 .adm .nglance{grid-template-columns:repeat(2,minmax(0,1fr));margin:0 0 16px}
 .adm .nglance[hidden]{display:none}
 .adm .nfail{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:0 0 12px}

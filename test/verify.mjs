@@ -50132,6 +50132,11 @@ await (async () => {
   await (await import("./admin-ac-help.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Admin A to C: the delivery charge is the slider over the same four radios (21 Oct 2026)");
+await (async () => {
+  await (await import("./admin-ac-fee.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin: the claim card reads its rows on opening, draws the slip from the one unlock, and asks on a sheet");
 await (async () => {
   await (await import("./admin-claim-card.mjs")).run({ ok, pageWork });

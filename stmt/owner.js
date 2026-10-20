@@ -4407,7 +4407,15 @@ export const OWNER_JS = `
         var follower=group.length>1&&group.every(function(o){ return o.status==='placed'; })&&group[0].id!==order.id;
         var deliver=order.mode==='deliver'&&!follower;
         var chip=makerFee[order.id]||(makerFee[order.id]={value:'',other:''});
-        var otherField=null, previewTurn=0, sig=JSON.stringify(order), feeRadios=[], winDraw=null;
+        var otherField=null, previewTurn=0, sig=JSON.stringify(order), feeRadios=[], feeSeg=null, winDraw=null;
+        /* the delivery slider's thumb: the columns are its four options, the thumb behind the one ticked, none drawn while none is */
+        function feeSync(){
+          if(!feeSeg) return;
+          var at=-1;
+          feeRadios.forEach(function(r,k){ r.closest('label').classList.toggle('salt-segment__opt--active',r.checked); if(r.checked) at=k; });
+          feeSeg.style.setProperty('--n',String(feeRadios.length)); feeSeg.style.setProperty('--i',String(Math.max(0,at)));
+          feeSeg.classList.toggle('ofee--none',at<0);
+        }
         /* 12 Oct 2026 (his decision 6 of 11 Oct): THE CARD READS ITS OWN PREVIEW, once, when its order is opened, and again when an input is
            changed; the Preview button is retired. A row of the list reads nothing (only the opened order draws a card), so the Desk is asked
            once for an order he opens. A redraw of the card (a read that changed, a tap) keeps the quote it has, or waits on the one in
@@ -4472,7 +4480,7 @@ export const OWNER_JS = `
           var k=chip.kept||{value:'',other:''}, said=[];
           if(chip.value!==k.value||(chip.value==='other'&&chip.other!==k.other)){
             chip.value=k.value; chip.other=k.other;
-            feeRadios.forEach(function(r){ r.checked=r.value===chip.value; });
+            feeRadios.forEach(function(r){ r.checked=r.value===chip.value; }); feeSync();
             if(otherField){ otherField.value=chip.other; otherField.closest('label').hidden=chip.value!=='other'; }
             said.push('That charge did not save. '+(chip.value===''?'No charge is chosen.':'RM '+(chip.value==='other'?chip.other:chip.value)+' is still chosen.'));
           }
@@ -4512,20 +4520,23 @@ export const OWNER_JS = `
         };
         if(deliver){
           /* S11 11.3 on the Counter: the delivery charge is chosen where the order is agreed, RM 0, 10, 15 or his own
-             figure, and NONE is chosen until he chooses, so a delivery is never agreed at a charge nobody set */
-          var fieldset=el('fieldset','salt-options'), grid=el('div','salt-options__grid salt-options__grid--2');
+             figure, and NONE is chosen until he chooses, so a delivery is never agreed at a charge nobody set.
+             21 Oct 2026 (P9): drawn as the system's slider, a radiogroup of the same four radios, names, values and acts; the thumb stands
+             behind the one chosen (feeSync) and is not drawn while none is */
+          var fieldset=el('fieldset','salt-options'), grid=el('div','salt-segment ofee');
+          grid.setAttribute('role','radiogroup'); grid.setAttribute('aria-label','Delivery charge');
           fieldset.appendChild(el('legend','salt-options__legend','Delivery'));
           [['0','RM 0'],['10','RM 10'],['15','RM 15'],['other','Other']].forEach(function(opt){
-            var label=el('label','salt-option'), radio=el('input','salt-option__input'),
-                face=el('span','salt-option__face'), text=el('span','salt-option__label',opt[1]);
+            var label=el('label','salt-segment__opt'), radio=el('input','sr');
             radio.type='radio'; radio.name='makerFee-'+order.id; radio.value=opt[0]; radio.checked=chip.value===opt[0]; actOn(radio,'order.fee-'+opt[0]); feeRadios.push(radio);
             radio.addEventListener('change',function(){
-              chip.value=opt[0];
+              chip.value=opt[0]; feeSync();
               if(otherField) otherField.closest('label').hidden=opt[0]!=='other';
               makerPlacedInvalidate(); makerPlacedRead();
             });
-            face.appendChild(text); label.appendChild(radio); label.appendChild(face); grid.appendChild(label);
+            label.appendChild(radio); label.appendChild(document.createTextNode(opt[1])); grid.appendChild(label);
           });
+          feeSeg=grid; feeSync();
           fieldset.appendChild(grid);
           otherField=makerField(fieldset,['Other, RM','order.fee-other-amount'],'number',chip.other);
           otherField.closest('label').hidden=chip.value!=='other';
