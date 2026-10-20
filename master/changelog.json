@@ -1,5 +1,32 @@
 [
  {
+  "v": "v1185",
+  "d": "20 Oct 2026",
+  "t": "CORRECTION TO S275: DELIVERY CHARGE SET TO ZERO",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> The correction against s275 for CM4-TO-R, a sale of 3 units of candy dated 19 Oct 2026, sets delivery from RM15 to RM0. It moves no cash and no stock; it changes only what the row says about itself, and the fold applies the patch.",
+   "<b>INVENTORY UNCHANGED.</b> No lot landed and no unit moved, so the cost basis stays as it was. The correction sets the cost itself, so none is supplied here. The RM15 delivery that stood unpaid on the row is no longer charged."
+  ]
+ },
+ {
+  "v": "v1184",
+  "d": "20 Oct 2026",
+  "t": "ONE FREE SALT REDEMPTION AND ONE REBATE CORRECTION",
+  "n": [
+   "<b>TWO ROWS FOLDED.</b> A redemption of 1 unit of salt to CM4-TO, booked as cost and not revenue on his ruling of 11 Sep 2026, and a correction on s274 for CS6-PER that marks the RM45 order as settled in kind. Both were approved by Counter Admin on 20 Oct 2026. The redemption is below the desk's floor of RM60 a unit, as expected for a free unit.",
+   "<b>INVENTORY.</b> Salt rolls out 1 unit for CM4-TO at the stock cost of RM56. The correction moves no cash and no stock. The desk's reward figure of 1 earned and unredeemed for CM4-TO is the desk's word and is not checked here."
+  ]
+ },
+ {
+  "v": "v1183",
+  "d": "20 Oct 2026",
+  "t": "ONE CANDY SALE FOLDED: R2 ADVANCE ON DELIVERY",
+  "n": [
+   "<b>ONE NEW SALE FOLDED.</b> 3 units of candy to CM4-TO-R on 19 Oct, goods RM215, delivered in full. The rate of RM71.67 a unit is above the desk's ask of RM60 but below the party's own median of RM91.4. The only unpaid sum is RM15 of delivery.",
+   "<b>INVENTORY.</b> The row's cost stands at the drafter's COGS and no lot landed, so the stock cost is unchanged. The candy count is dated 20 Oct and the 3 units went out on 19 Oct."
+  ]
+ },
+ {
   "v": "v1182",
   "d": "20 Oct 2026",
   "t": "THE COUNTER, BATCH C: SAVED SPOTS, THE CONFIRM TIME, HELP, BOLDER LABELS AND THE SLIDER",

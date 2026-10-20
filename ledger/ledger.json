@@ -1,6 +1,6 @@
 {
- "v": "v1181",
- "stamped": "20 Oct 2026, 04:00 KL",
+ "v": "v1185",
+ "stamped": "20 Oct 2026, 13:51 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -78,7 +78,7 @@
    "candy": {
     "qty": 0,
     "costPerKg": null,
-    "stated": 6
+    "stated": 3
    },
    "rice": {
     "qty": 0,
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 14.89,
+  "STATED_STOCK": 13.89,
   "COUNT_ON": {
    "salt": "2026-10-03",
    "oil": "2026-10-20",
@@ -8129,8 +8129,85 @@
     "date": "2026-10-19",
     "deliveredQty": 0.5,
     "deliveredOn": "2026-10-19",
-    "note": "<b>NEW ADVANCE SALE ON 19 OCT: 0.5 UNIT OF SALT TO CS6-PER, GOODS RM45.</b> Collected in full on 19 Oct with RM0 cash, so the whole RM45 is unpaid. Approved by Counter Admin. The goods total of RM45 is above the floor total of RM30 and below the ask total of RM75, at RM90 a unit against a floor of RM60 and an ask of RM150. CS6-PER has 20 orders, a median rate of RM85.52, a range of RM7 to RM116, nothing outstanding before this row and 0 units on credit before, against a cap of 2. The row carries cost RM29, the drafter's COGS at RM58 a unit off the latest purchase, and the fold keeps it. The drafter flagged the rate as below the usual and the advance against the cap. The figures answer both: the rate is above the median and the floor, and 0.5 unit on credit is well within the cap. RM45 is left outstanding.",
-    "rid": "s274"
+    "note": "<b>CORRECTION OF 20 OCT: SETTLED IN KIND.</b> <b>CORRECTION ON S274: ORDER MARKED SETTLED IN KIND, 0.5 UNIT OF SALT.</b> The correction sets settledRM to 45, rebate to true and rebateKg to 0.5 on CS6-PER's order of 19 Oct for RM45, RM90 a unit, collected the same day with RM0 cash. It moves no cash and no stock. The dossier gives no ladder for this size, so no floor or ask comparison is made. CS6-PER has 21 orders, a median rate of RM90, a range of RM7 to RM116, RM45 outstanding and 0.5 unit on credit before this fold; no cap is given. The drafter flagged a typical RM100 a unit as against RM90; the dossier median is RM90, so the rate sits on it. The cost is unchanged. The RM45 is now settled in kind; cash received stays RM0. <b>NEW ADVANCE SALE ON 19 OCT: 0.5 UNIT OF SALT TO CS6-PER, GOODS RM45.</b> Collected in full on 19 Oct with RM0 cash, so the whole RM45 is unpaid. Approved by Counter Admin. The goods total of RM45 is above the floor total of RM30 and below the ask total of RM75, at RM90 a unit against a floor of RM60 and an ask of RM150. CS6-PER has 20 orders, a median rate of RM85.52, a range of RM7 to RM116, nothing outstanding before this row and 0 units on credit before, against a cap of 2. The row carries cost RM29, the drafter's COGS at RM58 a unit off the latest purchase, and the fold keeps it. The drafter flagged the rate as below the usual and the advance against the cap. The figures answer both: the rate is above the median and the floor, and 0.5 unit on credit is well within the cap. RM45 is left outstanding.",
+    "rid": "s274",
+    "settledRM": 45,
+    "rebateKg": 0.5,
+    "rebate": true,
+    "mod": "corrected on 2026-10-20: settledRM (unset) to 45; rebateKg (unset) to 0.5; rebate (unset) to true",
+    "amend": [
+     {
+      "date": "2026-10-19",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0.5,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-20",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S274: ORDER MARKED SETTLED IN KIND, 0.5 UNIT OF SALT.</b> The correction sets settledRM to 45, rebate to true and rebateKg to 0.5 on CS6-PER's order of 19 Oct for RM45, RM90 a unit, collected the same day with RM0 cash. It moves no cash and no stock. The dossier gives no ladder for this size, so no floor or ask comparison is made. CS6-PER has 21 orders, a median rate of RM90, a range of RM7 to RM116, RM45 outstanding and 0.5 unit on credit before this fold; no cap is given. The drafter flagged a typical RM100 a unit as against RM90; the dossier median is RM90, so the rate sits on it. The cost is unchanged. The RM45 is now settled in kind; cash received stays RM0.",
+      "was": {
+       "settledRM": null,
+       "rebateKg": null,
+       "rebate": null
+      }
+     }
+    ]
+   },
+   {
+    "customer": "CM4-TO-R",
+    "qty": 3,
+    "total": 215,
+    "cost": 126,
+    "cash": 215,
+    "delivery": 0,
+    "handover": "delivered",
+    "product": "candy",
+    "date": "2026-10-19",
+    "deliveredQty": 3,
+    "deliveredOn": "2026-10-19",
+    "note": "<b>DELIVERY CORRECTED FROM RM15 TO RM0 ON 20 OCT.</b> <b>CORRECTION ON 20 OCT TO S275: DELIVERY CHANGED FROM RM15 TO RM0.</b> The order is 3 units of candy to CM4-TO-R, dated 19 Oct 2026, goods RM215, cash RM215, delivered in full. Decided by Counter Admin. The correction touches only the delivery field, so goods, cash and units moved are unchanged and no stock moves. The dossier gives no floor or ask rate for this order beyond the original row, so no new comparison is made. CM4-TO-R has 2 orders, a median rate of RM91.4, a range of RM71.67 to RM91.4, RM15 outstanding before this correction and 0 units on credit. The drafter raised no flags. The RM15 outstanding was the unpaid delivery, which the correction removes from the row. Nothing else is left outstanding. <b>NEW ADVANCE SALE ON 19 OCT: 3 UNITS OF CANDY TO CM4-TO-R, GOODS RM215.</b> Delivered in full with RM215 cash; RM15 delivery is unpaid. Approved by Counter Admin. The goods total of RM215 is above the ask total of RM180 and the floor total of RM130: RM71.67 a unit against a floor of RM43.33 and an ask of RM60. CM4-TO-R has 1 order, a median rate of RM91.4, a range of RM91.4 to RM91.4, nothing outstanding before and 0 units on credit, against a cap of 1. The row carries cost RM126, the drafter's COGS at RM42 a unit, and the fold keeps it. The drafter flagged the R2 booking, no candy rate to compare and the advance. The rate is under the party's median but over the floor and ask, and the unpaid sum is delivery only. RM15 is left outstanding.",
+    "rid": "s275",
+    "rev": "R2",
+    "mod": "corrected on 2026-10-20: delivery 15 to 0",
+    "amend": [
+     {
+      "date": "2026-10-19",
+      "kind": "Fulfilment",
+      "cash": 215,
+      "kg": 3,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-20",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON 20 OCT TO S275: DELIVERY CHANGED FROM RM15 TO RM0.</b> The order is 3 units of candy to CM4-TO-R, dated 19 Oct 2026, goods RM215, cash RM215, delivered in full. Decided by Counter Admin. The correction touches only the delivery field, so goods, cash and units moved are unchanged and no stock moves. The dossier gives no floor or ask rate for this order beyond the original row, so no new comparison is made. CM4-TO-R has 2 orders, a median rate of RM91.4, a range of RM71.67 to RM91.4, RM15 outstanding before this correction and 0 units on credit. The drafter raised no flags. The RM15 outstanding was the unpaid delivery, which the correction removes from the row. Nothing else is left outstanding.",
+      "was": {
+       "delivery": 15
+      }
+     }
+    ]
+   },
+   {
+    "customer": "CM4-TO",
+    "qty": 1,
+    "total": 56,
+    "cost": 56,
+    "cash": 0,
+    "settledRM": 56,
+    "rebate": true,
+    "rebateKg": 1,
+    "goodwill": true,
+    "deliveredQty": 1,
+    "deliveredOn": "2026-10-20",
+    "date": "2026-10-20",
+    "note": "<b>REDEMPTION ON 20 OCT: 1 UNIT OF SALT FREE TO CM4-TO, BOOKED AS COST.</b> Settled by the reward, RM0 cash, delivered the same day. On his word of 11 Sep 2026 the row carries goodwill as well as rebate, so it is an expense and not revenue. The goods of RM56 are below the floor total of RM60 and the ask total of RM120, so RM56 a unit against a floor of RM60 and an ask of RM120. CM4-TO has 5 orders, a median rate of RM52, a range of RM5 to RM65, nothing outstanding and 0 units on credit, against a cap of 2. The row carries cost RM56, the inventory's own rate, and the fold keeps it. The drafter flagged that the desk's claim of 1 unit earned and unused cannot be checked here. Nothing is left outstanding.",
+    "rid": "s276"
    }
   ],
   "contacts": [
@@ -8821,7 +8898,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-19T19:58:35.042Z",
+  "QUEUE_COMMITTED": "2026-10-20T05:50:15.305Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -9033,13 +9110,13 @@
     "CS6-PER": {
      "salt": {
       "name": "consistent mid",
-      "orders": 16,
+      "orders": 15,
       "tenureDays": 104,
-      "sinceLastDays": 1,
-      "perMonth": 4.68,
-      "unitsPerMonth": 13.61,
-      "smallShare": 0.31,
-      "bigShare": 0.31,
+      "sinceLastDays": 3,
+      "perMonth": 4.39,
+      "unitsPerMonth": 13.46,
+      "smallShare": 0.27,
+      "bigShare": 0.33,
       "frequent": true,
       "small": false,
       "bigger": false,
@@ -9184,6 +9261,21 @@
       "smallShare": 0,
       "bigShare": 1,
       "frequent": true,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false
+     },
+     "candy": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 1,
+      "sinceLastDays": 1,
+      "perMonth": 1.01,
+      "unitsPerMonth": 3.04,
+      "smallShare": 0,
+      "bigShare": 1,
+      "frequent": false,
       "small": false,
       "bigger": true,
       "loyal": false,
@@ -10119,9 +10211,9 @@
        "attrib": 1,
        "shrinkRate": 0.07533842547077063,
        "avgDel": {
-        "n": 218,
-        "kg": 557.81,
-        "mean": 2.5588
+        "n": 219,
+        "kg": 558.81,
+        "mean": 2.5516
        }
       },
       "policy": {
@@ -13871,9 +13963,9 @@
        "repl": 39.33,
        "freightRate": 0,
        "leak": {
-        "ratio": 0.1818,
+        "ratio": 0.1667,
         "leak": 6,
-        "sold": 33,
+        "sold": 36,
         "cycles": 3,
         "from": null,
         "to": "2026-10-20"
@@ -13898,15 +13990,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0
+         "v": 0.16666666666666666
         }
        },
        "attrib": 1,
        "shrinkRate": 0.13333333333333333,
        "avgDel": {
-        "n": 5,
-        "kg": 33,
-        "mean": 6.6
+        "n": 6,
+        "kg": 36,
+        "mean": 6
        }
       },
       "policy": {
@@ -16045,29 +16137,12 @@
      ]
     }
    },
-   "v": "v1181"
+   "v": "v1185"
   },
   "OPEN": {
-   "at": "2026-10-19T20:00:10.659Z",
-   "count": 11,
+   "at": "2026-10-20T05:51:20.721Z",
+   "count": 10,
    "byKey": {
-    "CS6-PER|2026-10-19|45": {
-     "d": "2026-10-19",
-     "p": "CS6-PER",
-     "dir": "S",
-     "q": 0.5,
-     "t": 45,
-     "cash": 0,
-     "mv": 0.5,
-     "st": "dueMoney",
-     "oweRM": 45,
-     "rid": "s274",
-     "deliveredOn": "2026-10-19",
-     "handover": "collected",
-     "key": "CS6-PER|2026-10-19|45",
-     "age": 1,
-     "exp": 33.75
-    },
     "CS6-BS-R|2026-10-15|220": {
      "d": "2026-10-15",
      "p": "CS6-BS-R",
@@ -16241,12 +16316,12 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 14.89,
-     "free": 13.39,
+     "onHand": 13.89,
+     "free": 12.39,
      "owedOut": 1.5,
-     "coverDays": 2.6,
-     "rate": 4.48,
-     "owedToYou": 670,
+     "coverDays": 2.4,
+     "rate": 4.46,
+     "owedToYou": 625,
      "promised": 1.5,
      "short": 0
     },
@@ -16263,11 +16338,11 @@
     },
     "candy": {
      "name": "Candy",
-     "onHand": 6,
-     "free": 6,
+     "onHand": 3,
+     "free": 3,
      "owedOut": 0,
-     "coverDays": 20.6,
-     "rate": 0.58,
+     "coverDays": 3,
+     "rate": 0.76,
      "owedToYou": 0,
      "promised": 0,
      "short": 0
@@ -16291,7 +16366,7 @@
     "rice": "2026-10-20",
     "spare": null
    },
-   "v": "v1181"
+   "v": "v1185"
   },
   "TERMS": {
    "ceiling": 250,
@@ -16299,7 +16374,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1181"
+   "v": "v1185"
   },
   "REWARD": {
    "stated": {
@@ -16311,7 +16386,7 @@
      }
     }
    },
-   "v": "v1181"
+   "v": "v1185"
   }
  }
 }
