@@ -50058,6 +50058,11 @@ await (async () => {
   await (await import("./admin-ac-km.mjs")).run({ ok, pageWork });
 })();
 
+section("Associate reward: the walk steps with landed cost, counts paid orders, and opens on stated positions (P1, 20 Oct 2026)");
+await (async () => {
+  await (await import("./assoc-reward-walk.mjs")).run({ ok });
+})();
+
 section("Salt Admin: the claim card reads its rows on opening, draws the slip from the one unlock, and asks on a sheet");
 await (async () => {
   await (await import("./admin-claim-card.mjs")).run({ ok, pageWork });
