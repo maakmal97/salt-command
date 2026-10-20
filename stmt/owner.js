@@ -121,7 +121,7 @@ export const OWNER_JS = `
     if(moved2&&(ordOpened||placeNow==='orders')){ ordOpened=null; drawOrderPane(); }
     /* so is the form open on Record: leaving the part or the place closes it; the + orb is not shown on Record, where the parts are one tap away */
     if(moved2) fOpen=null;
-    var add=document.getElementById('oAdd'); if(add) add.hidden=placeNow==='record';
+    [].forEach.call(document.querySelectorAll('#oAdd, #oAddRail'), function(add){ add.hidden=placeNow==='record'; });
     if(!inChat()) stopMakerChat();
     /* the picture is let go when Waiting on you is left; the one unlock is the page's and stays (PHASE 4b), going only with the lock */
     if(!inClaims()) makerSlipClose();
@@ -6531,7 +6531,7 @@ export const OWNER_JS = `
   });
   /* the + orb opens Record's menu of entries */
   var oAdd=document.getElementById('oAdd');
-  if(oAdd) oAdd.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); });
+  [oAdd, document.getElementById('oAddRail')].forEach(function(b){ if(b) b.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); }); });
   document.getElementById('afil').addEventListener('click', function(ev){
     var b=ev.target.closest('button[data-f]'); if(b) filterBy(b.getAttribute('data-f'));
   });

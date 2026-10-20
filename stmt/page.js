@@ -887,7 +887,9 @@ body.ended>*:not(#aEnded){display:none}
    orb's and its gap, so nothing is covered. Record's forms are rows of the system's Inbox row, one list a part. */
 .adm #oAdd{position:fixed;right:16px;bottom:calc(var(--salt-bar-h) + 16px + env(safe-area-inset-bottom,0px));z-index:40}
 @media (max-width:1079.98px){.adm .amain{padding-bottom:72px}}
-@media (min-width:1080px){.adm #oAdd{right:24px;bottom:24px}}
+/* 21 Oct 2026 (P10): from 1080px the + is the rail's own button under his places, and no orb floats over the page */
+@media (min-width:1080px){.adm #oAdd{display:none}}
+.adm .arailadd{margin-top:8px;padding-top:8px;border-top:1px solid var(--salt-line)}
 .adm .formlist{display:flex;flex-direction:column;gap:8px}
 .adm .formrow .salt-inbox-row__title{gap:6px}
 /* 14 OCT 2026 (Record): a form row is the tap, no Open word; a row to approve opens its detail by a tap on the card, its head the control; its figures stand on one grid so they align down the cards; an offset is a row of a code, its figure and one Add */
@@ -1776,6 +1778,9 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div class="salt-rail__group">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("salt-rail__tab salt-rail__tab--solo", (m, w, p) =>
           '<span class="salt-appbar__place"><span class="salt-appbar__icon">' + aico(p === "messages" ? "customers" : m) + "</span><span>" + w + "</span></span>"
           + (p ? "" : '<span class="salt-rail__count" data-count="' + m + '"></span>'))).join("") + "</div>"
+        /* 21 Oct 2026 (P10): the + as a rail button, which the orb gives way to from 1080px; none on the test surface */
+        + (test ? "" : '<div class="salt-rail__group arailadd"><button type="button" class="salt-rail__tab salt-rail__tab--solo" id="oAddRail" data-act="rail.add">'
+          + '<span class="salt-appbar__place"><span class="salt-appbar__icon">' + aico("add") + "</span><span>New entry</span></span></button></div>")
         + '<div class="salt-rail__foot" id="mFoot"></div></nav>'
         + '<div class="amain">'
         /* 18 OCT 2026, HIS WORD: THE DESK'S SHELL. The system's Desk bar heads every place, as it heads the Desk: the ring and the name, the clock

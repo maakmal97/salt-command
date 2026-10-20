@@ -1,0 +1,7 @@
+[
+ {"name":"the orb still floats wide","file":"stmt/page.js","find":"@media (min-width:1080px){.adm #oAdd{display:none}}","replace":"@media (min-width:1080px){.adm #oAdd{right:24px;bottom:24px}}"},
+ {"name":"no rail button","file":"stmt/page.js","find":"        + (test ? \"\" : '<div class=\"salt-rail__group arailadd\">","replace":"        + (true ? \"\" : '<div class=\"salt-rail__group arailadd\">"},
+ {"name":"the rail button opens nothing","file":"stmt/owner.js","find":"  [oAdd, document.getElementById('oAddRail')].forEach(","replace":"  [oAdd].forEach("},
+ {"name":"the rail button stands on Record","file":"stmt/owner.js","find":"querySelectorAll('#oAdd, #oAddRail'), function(add){","replace":"querySelectorAll('#oAdd'), function(add){"},
+ {"name":"the rail button in the places group","file":"stmt/page.js","find":"+ \"</div>\"\n        /* 21 Oct 2026 (P10)","replace":"\n        /* 21 Oct 2026 (P10)"}
+]

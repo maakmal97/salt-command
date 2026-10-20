@@ -50137,6 +50137,11 @@ await (async () => {
   await (await import("./admin-ac-fee.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Admin A to C: from 1080px the + is the rail's button, the orb the phone's (21 Oct 2026)");
+await (async () => {
+  await (await import("./admin-ac-railadd.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin: the claim card reads its rows on opening, draws the slip from the one unlock, and asks on a sheet");
 await (async () => {
   await (await import("./admin-claim-card.mjs")).run({ ok, pageWork });

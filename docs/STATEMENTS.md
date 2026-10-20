@@ -2588,7 +2588,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `look.tide` | Shop, This device, Look | Tide for Salt Admin on this device, at once, kept here. |
 | `maker.refresh` | Orders, Order review | Reads the orders again. |
 | `more.test-accounts` | Shop, Practice | Makes or deletes the three test accounts. |
-| `nav.add` | The + orb at the foot of the page, on every place but Record | Opens Record, on Entry, the menu of entries. Reads what Record reads on entering. |
+| `nav.add` | The + orb at the foot of the page, on every place but Record, below 1080px | Opens Record, on Entry, the menu of entries. Reads what Record reads on entering. |
+| `rail.add` | New entry, the rail's + under his places, from 1080px, on every place but Record | Opens Record on Entry, as the orb does. |
 | `nav.customers` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Customers, on its Accounts. |
 | `nav.needs` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Needs you. |
 | `nav.orders` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Orders, on the first stage with something waiting (Placed when none), reading the orders and the claims again. |

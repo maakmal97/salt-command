@@ -454,8 +454,8 @@ export async function run({ ok, pageWork }) {
     await p.tap("nav.shop"); await p.tap("nav.add");
     ok(p.where() === "record/entry" && p.formsOpen().length === 0 && same(p.menu(), MENU.entry), "and a form left open comes back as the menu: " + p.where() + JSON.stringify([p.formsOpen(), p.menu()]));
     const orb = top(".adm #oAdd")[0] || "", wide = at("(min-width:1080px)", ".adm #oAdd")[0] || "", room = at("(max-width:1079.98px)", ".adm .amain")[0] || "";
-    ok(/position: fixed/.test(orb) && /right: 16px/.test(orb) && /z-index: 40/.test(orb) && /bottom: calc[(]var[(]--salt-bar-h[)] [+] 16px/.test(orb) && /right: 24px/.test(wide) && /bottom: 24px/.test(wide) && /padding-bottom: 72px/.test(room),
-      "the orb stands 16px above the App bar on a phone, in the corner from 1080px, under the bar and the sheets, and the room under the last section clears it: " + [orb, wide, room].join(" "));
+    ok(/position: fixed/.test(orb) && /right: 16px/.test(orb) && /z-index: 40/.test(orb) && /bottom: calc[(]var[(]--salt-bar-h[)] [+] 16px/.test(orb) && /display: none/.test(wide) && /padding-bottom: 72px/.test(room),
+      "the orb stands 16px above the App bar on a phone, gives way to the rail's + from 1080px (P10, 21 Oct 2026), under the bar and the sheets, and the room under the last section clears it: " + [orb, wide, room].join(" "));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 8. RECORD'S FORMS ARE A MENU: a row for each form, one form at a time, the form itself moved and never drawn again */
