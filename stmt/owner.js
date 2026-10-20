@@ -1385,9 +1385,10 @@ export const OWNER_JS = `
       hk,{name:'AES-GCM',length:256},false,['decrypt']);
     return crypto.subtle.decrypt({name:'AES-GCM',iv:makerFrom64(sealed.iv)},aes,makerFrom64(sealed.ct));
   }
-  /* Salt Admin A to C (20 Oct 2026), P4, HIS ANSWER: THEIR SPOT on a delivery, opened here too after the one unlock (it was the Desk's alone). Sealed
-     while shut, with Unlock; open, the spot's name, its floor or unit and Maps from the point, each from the seal and nothing stored: the opened
-     part carries data-maker-pin, so the lock, a hidden page and makerSlipClose take it off. A unit alone has no Maps. Filing it as their place
+  /* Salt Admin A to C (20 Oct 2026), P4, HIS ANSWER: THE DELIVERY ADDRESS, their sealed spot, opened here too after the one unlock (it was the
+     Desk's alone). Sealed while shut, with Unlock; open, the Address (the spot's name), its floor or unit and Maps from the point, each from the
+     seal and nothing stored but in page memory: the opened part carries data-maker-pin, and makerVaultLock (the lock, a hidden page, a lapse)
+     takes it off and lets the held copy go. A unit alone has no Maps. Filing it as their place
      stays on the Desk. */
   function spotHref(lat,lng){
     var ua=(navigator&&navigator.userAgent)||'', ll=lat+','+lng;
