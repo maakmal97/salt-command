@@ -2466,6 +2466,37 @@ pause; it is not a vault authority switch. A maintenance refusal retains the bro
 Neither this release nor Access configuration alone proves owner acceptance or authorizes
 removing an incumbent Desk control.
 
+### Salt Admin A to C (20 and 21 Oct 2026, plan `docs/plan-counter-admin-ac.html`)
+
+Salt Admin catches up with Counter Batches A to C, his side of each (canvas Salt Admin Batches A to C; his answers of 20 Oct 2026).
+
+- **The order card is the Counter's band**: a status chip by stage (copper To agree, brass To deliver or To hand over, verdigris done) and the
+  reference; the mark, the units and the code; the goods total; the way (a delivery's place, ASAP or its window and charge, or Collect at the
+  point, which is itself the link to the point's pin); the placed time; on a placed order the waited meter, counted in Counter hours only
+  ("Waited in hours", `openMinutes`), against the usual confirm time. No page title, no Details fold, no back link (the rail or the app bar is
+  the way back). An order of a sheet says "Sheet 1 of 2", a link back to the sheet's group.
+- **Steps with Paid**, the fifth step on Admin and the Counter alike, fourth in order: Placed, Agreed, Ready, Paid, Delivered or Collected; a
+  part payment shows "RM 40/70" as its moment, and Paid may light before the goods are out.
+- **The Bill**: Goods (with what they cost, `POST /all/maker/trade-reading`, read once an order), Delivery cost (with the distance measured in
+  his browser after the one unlock, `engine/geo.mjs` `haversineKm` through `stmt/geo.js`), Total, each payment, then Owed or Settled.
+- **Delivery address**: their saved spot opened on Admin after the one unlock, nothing kept; filing it as their place stays on the Desk.
+- **The sheet group** on Orders: a sheet's orders at one stage in one card, its delivery on the first; one Needs card for a sheet's placed orders.
+- **Order again's tag** on an order placed again (`againOf`).
+- **The bar's hours chip** (`bar.hours`): the shop's status, a tap to Shop > Hours.
+- **Needs you opens on the glance** (P7): Ready, the orders ready with goods to hand over, and Owed to you, what the agreed orders still owe,
+  goods and delivery less what is paid; each tile opens Orders. Read off the orders the page holds; a practice order counts only on the test
+  surface. **The kinds are one sliding row** (canvas V56), each with its count, practice apart, beside a fixed **Jump to** opening a menu of
+  every kind with its count; a kind with nothing waiting is no pill and a line in mist that cannot be chosen; Escape or a tap outside closes it.
+- **Help on Shop > Hours** (P8): the customer's four answers, folded and read only, the same `help.*` keys.
+- **The delivery charge is the slider** (P9): the same four radios (`makerFee-<id>`, values 0, 10, 15 and other, acts `order.fee-*`) drawn as
+  the system's segment, the thumb hidden until one is chosen.
+- **From 1080px the + is the rail's New entry** (P10, `rail.add`); the orb is the phone's alone.
+- **From 1080px an open order fills the page** (canvas V39, his answer (a)): it takes the list's place, as on a phone, and the rail's Orders
+  closes it; two columns at 1180 (the decision beside the record and the insight), three at 1440 (decision, record, insight, at 1.15, 1 and 0.9),
+  the card's parts moved, never drawn again (`ordLayout`). From 860 to 1080px the list still stands beside the card. This reverses his split
+  of 11 Oct 2026 at that width.
+- **Not built in this release**: the associate reward card under an associate's order (V37, V52; its own build) and the This customer card (V38).
+
 ### Every Salt Admin control has a stable name: `data-act` (11 Oct 2026)
 
 Salt Admin is redesigned in phases, and the third rewrites its words. So that no test and no code finds a control by its
