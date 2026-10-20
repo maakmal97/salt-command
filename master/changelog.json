@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1192",
+  "d": "20 Oct 2026",
+  "t": "A PAYMENT SETTLES CR3-DAM'S ORDER S263 AND A NEW PENDING ORDER IS BOOKED AT THE ASK",
+  "n": [
+   "<b>TWO ROWS FOLDED, NO STOCK MOVED.</b> A payment of RM65 by qr via maybank settled CR3-DAM's order s263 in full, and a new order of 0.5 unit for RM75 was booked pending, nothing paid and nothing handed over. The new order is at the desk's ask, but well above CR3-DAM's usual rate of RM80 a unit, which the drafter flagged.",
+   "<b>INVENTORY UNCHANGED.</b> The pending sale draws no stock and books no revenue until something moves. The payment moves cash only, since 0.5 unit already left on 16 Oct. Stock stays at 0 against a ledger of 101.34, all of it for self use, and the stock cost of RM56 is unchanged."
+  ]
+ },
+ {
   "v": "v1191",
   "d": "20 Oct 2026",
   "t": "TWO STOCK COUNTS ON 20 OCT: CANDY UP BY 3, OIL DOWN BY 5",
