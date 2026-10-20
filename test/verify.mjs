@@ -50036,6 +50036,11 @@ await (async () => {
   await (await import("./admin-ac-cost.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Admin's glance, stock: the STOCK snapshot measured in the desk's window and carried to the mirror (20 Oct 2026)");
+await (async () => {
+  await (await import("./glance-stock-snapshot.mjs")).run({ ok });
+})();
+
 section("Salt Admin: the claim card reads its rows on opening, draws the slip from the one unlock, and asks on a sheet");
 await (async () => {
   await (await import("./admin-claim-card.mjs")).run({ ok, pageWork });

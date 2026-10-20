@@ -83,10 +83,13 @@ function applySchema(run = wrangler) {
    key in a fixed order, beside the version and LAST_UPDATED the snapshot row names. PRICING carries
    `v`, so every version bump seeds; a Worker-only push, a statements push, a re-run or a hand dispatch
    whose book did not move seeds nothing. */
+/* 20 Oct 2026: STOCK's days of cover move with the day and no row, so it stays out of the hash (it is still seeded and read back whole):
+   its other figures move only with folded rows, which move the collections the hash does read. */
+const SEED_UNDATED = new Set(["STOCK"]);
 function seedHash(body) {
   const L = body.ledger || {};
   return sha(["v:" + JSON.stringify(body.v ?? null), "stamped:" + JSON.stringify(body.stamped ?? null),
-    ...Object.keys(L).sort().map((k) => k + ":" + compareForm(k, L[k]))].join("\n"));
+    ...Object.keys(L).filter((k) => !SEED_UNDATED.has(k)).sort().map((k) => k + ":" + compareForm(k, L[k]))].join("\n"));
 }
 
 /* THE SNAPSHOT ROW GOES FIRST AND COMES BACK LAST, so on any road a mirror with no snapshot is a mirror
