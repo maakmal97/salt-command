@@ -1,0 +1,13 @@
+[
+ {"name":"a placed order ignores the preview","file":"stmt/owner.js","find":"if(order.status==='placed'){ var q=makerQuotes[order.id]; return q&&q.result&&q.result.reward||null; }","replace":"if(order.status==='placed'){ return null; }"},
+ {"name":"the read does not repaint the card","file":"stmt/owner.js","find":"          [].forEach.call(document.querySelectorAll('[data-reward=\"'+order.id+'\"]'),function(n){ rewardPaint(n,order); });   /* the reward's figures come with the read */\n","replace":""},
+ {"name":"the reading is asked by the order's id","file":"stmt/owner.js","find":"refs('/all/maker/reward/'+encodeURIComponent(order.ledgerKey))","replace":"refs('/all/maker/reward/'+encodeURIComponent(order.id))"},
+ {"name":"reaching it is not brass","file":"stmt/owner.js","find":"o.reaches?chip('brass','Reaches a reward')","replace":"o.reaches?chip('mist','Reaches a reward')"},
+ {"name":"short says no figure","file":"stmt/owner.js","find":"chip('mist',rm(o.short)+' short')","replace":"chip('mist','Short')"},
+ {"name":"a raised unit is not said","file":"stmt/owner.js","find":"    if(r.unit){ box.appendChild(","replace":"    if(false){ box.appendChild("},
+ {"name":"the card on oil","file":"stmt/owner.js","find":"    if((order.product||'salt')!=='salt'||order.test||","replace":"    if(order.test||"},
+ {"name":"the card for anyone","file":"stmt/owner.js","find":"    if(!r||r.reading||!r.associate||r.error||!(r.step>0)){ box.hidden=true; return; }","replace":"    if(!r||r.reading){ box.hidden=true; return; }"},
+ {"name":"the meter leaves this order out","file":"stmt/owner.js","find":"Math.round((r.progress+add)/r.step*100)","replace":"Math.round(r.progress/r.step*100)"},
+ {"name":"the note's net is the gross","file":"stmt/owner.js","find":"+rm(r.net)+' net. Salt only.'","replace":"+rm(r.rate)+' net. Salt only.'"},
+ {"name":"no card under the Bill","file":"stmt/owner.js","find":"    rewardCard(card,order);   /* 20 Oct 2026: the associate reward, under the Bill */\n","replace":""}
+]

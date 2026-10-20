@@ -50095,6 +50095,11 @@ await (async () => {
   await (await import("./counter-reward.mjs")).run({ ok, pageWork });
 })();
 
+section("Associate reward on Salt Admin: the card under the Bill says whether the order reaches their next reward, and what the unit comes to (P7, 20 Oct 2026)");
+await (async () => {
+  await (await import("./admin-reward-card.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin A to C: Order again's tag, kept by Place for a done and paid order of theirs and shown on his row and band (20 Oct 2026)");
 await (async () => {
   await (await import("./admin-ac-again.mjs")).run({ ok, pageWork });

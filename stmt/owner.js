@@ -4197,6 +4197,46 @@ export const OWNER_JS = `
     box.style.setProperty('--salt-fill',String(k.usual?Math.min(100,Math.round(k.waited/k.usual*100)):0));
     return box;
   }
+  /* 20 Oct 2026 (canvas V51, V52): THE ASSOCIATE REWARD on an associate's salt order, his page only. Placed, the figures are the preview's
+     (the Desk's previewAck reading); agreed and after, his reading by the order's ledgerKey (GET /all/maker/reward/<key>, behind Access and the
+     bridge key), read once an order and held by its id. Whether this order takes them over the next reward, the meter of what is carried and
+     what this order adds against the step, and what the unit comes to: its landed cost less what he gave under their own price since the last
+     reward, never under nought. Nothing here prices, and a customer is told one word on their page, never a figure. Hidden on oil, candy and
+     rice, on a practice order, and for anyone the Desk does not read as an associate. */
+  var rwdReads={};
+  function rewardOfOrder(order){
+    if(order.status==='placed'){ var q=makerQuotes[order.id]; return q&&q.result&&q.result.reward||null; }
+    return rwdReads[order.id]||null;
+  }
+  function rewardCard(card,order){
+    if((order.product||'salt')!=='salt'||order.test||['declined','cancelled'].indexOf(order.status)>=0) return;
+    var box=el('div','salt-glass-card salt-glass-card--pad-md orwdcard'); box.setAttribute('data-reward',order.id); card.appendChild(box);
+    rewardPaint(box,order);
+    if(order.status!=='placed'&&order.ledgerKey&&!rwdReads[order.id]){
+      rwdReads[order.id]={reading:true};
+      refs('/all/maker/reward/'+encodeURIComponent(order.ledgerKey)).then(function(j){ rwdReads[order.id]=j&&j.reading||{}; },function(){ rwdReads[order.id]={}; })
+        .then(function(){ [].forEach.call(document.querySelectorAll('[data-reward="'+order.id+'"]'),function(n){ rewardPaint(n,order); }); });
+    }
+  }
+  function rewardPaint(box,order){
+    box.textContent='';
+    var r=rewardOfOrder(order);
+    if(!r||r.reading||!r.associate||r.error||!(r.step>0)){ box.hidden=true; return; }
+    box.hidden=false;
+    box.appendChild(el('h4','salt-eyebrow salt-eyebrow--copper','Associate reward'));
+    if(r.unit){ box.appendChild(el('p','salt-insight orwdnote','1 reward unit on this delivery, '+rm(r.unit.net)+' net.')); return; }
+    var o=r.order||{margin:0,reaches:false,short:Math.max(0,r.step-r.progress)}, add=o.paid?0:(+o.margin||0);
+    box.appendChild(o.reaches?chip('brass','Reaches a reward'):o.paid?chip('mist','Counted, paid'):chip('mist',rm(o.short)+' short'));
+    var m=el('div','salt-meter orwdmeter'), line=el('div','salt-meter__line'), a=el('span',null,''), b=el('span',null,'Next reward ');
+    a.appendChild(el('b',null,(order.ledgerKey?String(order.ledgerKey).split('|')[0]+' ':'')+rm(r.progress)+(add?' + '+rm(add):'')));
+    b.appendChild(el('b',null,r.times+' units’ cost'));
+    line.appendChild(a); line.appendChild(b); m.appendChild(line);
+    var track=el('div','salt-meter__track'); track.appendChild(el('div','salt-meter__fill')); m.appendChild(track);
+    m.style.setProperty('--salt-fill',String(Math.max(0,Math.min(100,Math.round((r.progress+add)/r.step*100)))));
+    box.appendChild(m);
+    box.appendChild(el('p','salt-insight orwdnote','Margin past '+r.times+' units at landed cost ('+rm(r.step)+' at '+rm(r.rate)+' today). Once paid, 1 unit joins this order at cost, one delivery: '
+      +rm(r.rate)+', less '+rm(r.given)+' given under their Set Price since the last reward, '+rm(r.net)+' net. Salt only.'));
+  }
   /* Salt Admin A to C, P1, and the band of 20 Oct 2026: how the goods go, in a glance */
   function ordWay(order){
     if(order.mode==='deliver') return (order.place||'Their place')+' · '
@@ -4293,6 +4333,7 @@ export const OWNER_JS = `
     else if(agreed||order.status==='done') L.appendChild(ordLine('Settled',rm(0),'','osettled'));
     if(agreed&&moved<(+order.qty||0)-0.0004) L.appendChild(ordLine('Handed',moved+' of '+units(order.qty)));
     card.appendChild(L);
+    rewardCard(card,order);   /* 20 Oct 2026: the associate reward, under the Bill */
     /* 17 Oct 2026: an ended order's last move is under Approve until he decides it, and the book keeps its row live until then */
     var waitN=((makerData&&makerData.drafts)||[]).filter(function(d){ return d.status==='pending'&&d.entry&&d.entry.orderId===order.id; }).length;
     if(waitN&&!ordOpen(order)) card.appendChild(el('p','salt-insight',(waitN===1?'Its move waits':'Its '+waitN+' moves wait')+' under Approve: the book keeps the row as it was until you approve.'));
@@ -4405,6 +4446,7 @@ export const OWNER_JS = `
           var wait=lead.querySelector('[data-accept-wait]'); if(wait) wait.remove();
           /* a sheet's lines take its first order's window, as they take its one delivery charge */
           var wv=makerPlacedWin(), yes=makerNeedsYes(order,q.total,wv);
+          [].forEach.call(document.querySelectorAll('[data-reward="'+order.id+'"]'),function(n){ rewardPaint(n,order); });   /* the reward's figures come with the read */
           var accept=makerButton(lead,[(yes?'Ask them, ':'Agree, ')+rm(q.result.quote)+(q.result.delivery>0?' + '+rm(q.result.delivery):''),yes?'order.send-yes':'order.accept'],function(){
             var s=makerQuotes[order.id]; if(!s||!s.hash) return;
             /* version 2: a raise or another window goes to them as an offer, for their yes; never on a sheet, which the Desk refuses */
