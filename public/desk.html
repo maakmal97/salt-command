@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="9cea1ad4e24589a6";
+var SALT_BUILD_ID="9baa334b7a52fd51";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -10924,7 +10924,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1199","d":"21 Oct 2026","t":"THE DESK BAR, CRISP AND COMPLETE ON EVERY VIEW","n":["<b>HIS WORD OF 21 OCT 2026.</b> The bar beside the rail is sharp and complete, and stays on every view: it is solid now, with a hairline edge and nothing blurred (the design system's 1.12.0).","<b>Where you are</b> sits beside the name: the destination, and the page under it in brass, following every tap.","<b>What is live</b> follows: every book's Now, what waits on you and this device's alerts, each a chip that goes where its figure is; and <b>Approve</b>, its badge the rows waiting, which opens Salt Admin's Approve through the desk's own /admin, so the site's address is never in this page.","On a phone what is live takes a row of its own that slides sideways, Approve held at its right edge; under 1440px the quiet line drops the as-at date and, while live, its word, keeping the dot, the clock and the stamp."]}];
+const evolution=[{"v":"v1200","d":"21 Oct 2026","t":"THE COUNTER GOES LIVE: AN ORDER MOVE SHOWS IN A SECOND","n":["<b>SPEED WAVE 2, L2 OF THE LIVE AND FAST PLAN.</b> An open Salt Counter page and an open Salt Admin now hold a live socket to the site's order book. Every move it records (a placement, his Accept or Ready, a payment claimed or received, a line on an order or the account's thread, a group order) is told at once to that customer's open pages and to his, so the page reads it again within about a second instead of at the next 10 second poll (2 seconds for a thread, 5 for Salt Admin).","<b>KINDS AND IDS ONLY.</b> A socket is told what kind of thing moved and its id, never a figure, a name or a word; the page then reads what it always read, through its own signed-in route. A customer's socket is proved when it opens, by the same session the page already holds, and is told only its own account's moves; his is behind Access and the exact email, as every Salt Admin road. A socket's own messages only ask: nothing it sends moves the book.","<b>THE POLL STAYS AS THE NET.</b> While the socket is up the polls fall to once a minute; when it drops they return at once, and the page reconnects (1, 2, 4 seconds, then on its next return to the screen). Log out, Sign out everywhere and a device signed out close the account's sockets; a socket past its session's life is closed too."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11072,7 +11072,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='21 Oct 2026, 14:22 KL';
+const LAST_UPDATED='21 Oct 2026, 14:54 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
