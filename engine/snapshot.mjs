@@ -232,7 +232,7 @@ function driftSignals(C,prod,code){
     late:!!lt.on,lateLong:!!(lt.on&&lt.why==='long'),writtenOff:+wo.toFixed(2),
     overdueDays:open.reduce((m,x)=>Math.max(m,x.days-RU.holdDays),0)};
 }
-/* 18 OCT 2026, HIS DECISION: THE FIGURE THAT PRICES IS THE % LIFT HE HOLDS, OR NOUGHT. `d` is that figure (0 to 2) and nothing automatic reaches it:
+/* 18 OCT 2026, HIS DECISION: THE FIGURE THAT PRICES IS THE % LIFT HE HOLDS, OR NOUGHT. `d` is that figure (-0.3 to +0.3 since 21 Oct 2026) and nothing automatic reaches it:
    `auto`, `G` and `B` are the record's reading (autoDrift) kept for the card, and the suggestion is suggestOf below. */
 function driftOfNow(C,p,code){
   const R=C.R.TIER_RULE[p];if(!R||!R.drift)return null;
@@ -250,7 +250,7 @@ function suggestOf(C,p,code){
     const rows=pSales(C.B,p).filter(x=>POSITION_ENGINE.ownsCode(who,x.customer)&&pbPriced(x)&&x.date&&x.total>0&&x.qty>0)
       .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).slice(-(+S.recent||5));
     const ratios=rows.map(x=>{const set=PRICING_ENGINE.quoteAt(x.qty,K,P,0);return set>0?(POSITION_ENGINE.txGoods(x)/x.qty)/(set/x.qty):null;}).filter(v=>v!=null);
-    return PRICING_ENGINE.suggestPct(driftSignals(C,p,who),ratios,S);
+    return PRICING_ENGINE.suggestPct(driftSignals(C,p,who),ratios,S,R.auto);
   });
 }
 function tierCustomers(C){

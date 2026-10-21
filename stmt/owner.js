@@ -892,7 +892,7 @@ export const OWNER_JS = `
     'Choose a customer on the roster, not a resale account.':'Choose a customer, not a resale account.',
     'This book has no Set Price to put a % on.':'This book has no Set Price to put a % on.',
     'A supplier has no % on the Set Price.':'A supplier has no % on the Set Price.',
-    'Choose a % lift from 0 to 200% (0 to 2), or clear it.':'Choose a % from 0 to 200, or clear it.',
+    'Choose a % from -30% to +30% (-0.3 to 0.3), or clear it.':'Choose a % from -30 to +30, or clear it.',
     'Choose the sizes to hide from the board.':'Choose the sizes to leave off the printed list.',
     "A size to hide must be one of this book's board sizes.":'Choose sizes from this book printed list.',
     'Every size is unticked, so there is no board to make.':'Every size is unticked, so there is nothing to print.',
@@ -931,7 +931,7 @@ export const OWNER_JS = `
     'The map point is outside Malaysia or has invalid locality text.':'The map point must be inside Malaysia.',
     'Only a customer, reseller or referral holds a starting %.':'Only a customer, a reseller or an introducer starts with a %.',
     'A starting % must name an active book with a Set Price.':'Start a % only on a book that has a Set Price.',
-    'A starting % is a number from 0 to 2 (0% to 200%).':'A starting % is from 0 to 200.',
+    'A starting % is a number from -0.3 to 0.3 (-30% to +30%).':'A starting % is from -30 to +30.',
     'Each map point must belong to a roster party and remain inside Malaysia.':'Each point must belong to a customer and sit inside Malaysia.',
     'Set hours or mark closed for each day of the week.':'Set hours, or mark closed, for each day.',
     'Each day must be closed or have opening and closing times.':'Each day is closed, or has an opening and a closing time.',
@@ -2580,8 +2580,8 @@ export const OWNER_JS = `
         .concat(presets.map(function(preset){return {value:String(preset.value),
           label:preset.name};}))
         .concat([{value:'typed',label:'Other %'}]));
-      var typed=makerField(id,['Other %, 0 to 2','record.add-id.drift-value',item.product,item.product],'number','',0.05);
-      typed.min='0';typed.max='2';typed.step='0.05';typed.placeholder='0 to 2';typed.closest('label').hidden=true;
+      var typed=makerField(id,['Other %, -0.3 to 0.3','record.add-id.drift-value',item.product,item.product],'number','',0.05);
+      typed.min='-0.3';typed.max='0.3';typed.removeAttribute('inputmode');typed.step='0.05';typed.placeholder='-0.3 to 0.3';typed.closest('label').hidden=true;
       select.addEventListener('change',function(){typed.closest('label').hidden=select.value!=='typed';});
       return {product:item.product,select:select,typed:typed};
     });
@@ -2607,8 +2607,8 @@ export const OWNER_JS = `
           var driftItem=idDrifts[driftIndex], choice=driftItem.select.value, driftValue;
           if(choice==='typed'){
             var raw=driftItem.typed.value.trim();driftValue=Number(raw);
-            if(!raw||!Number.isFinite(driftValue)||driftValue<0||driftValue>2){
-              idStatus.textContent='Enter a % from 0 to 2 (0.2 is 20%).';idBusy=false;return;
+            if(!raw||!Number.isFinite(driftValue)||driftValue<-0.3||driftValue>0.3){
+              idStatus.textContent='Enter a % from -0.3 to 0.3 (0.2 is 20%, -0.1 is 10% off).';idBusy=false;return;
             }
           }else if(choice!=='')driftValue=Number(choice);
           else continue;
@@ -3542,7 +3542,7 @@ export const OWNER_JS = `
       direction.addEventListener('change',function(){ tradeSend.textContent='Send the '+direction.value; });
       var driftSection=makerForm('pricing');
       driftSection.appendChild(el('h3',null,'Their %'));
-      driftSection.appendChild(el('p','msg','Only on a book with a Set Price. Lifts one customer on the Set Price by a % (0 to 2, so 0.2 is 20%); 0 is the Set Price, the least anyone pays. Under about 7% moves nothing at half a unit to 1 unit. Clear sets it back to 0.'));
+      driftSection.appendChild(el('p','msg','Only on a book with a Set Price. Moves one customer off the Set Price by a % (-0.3 to 0.3, so 0.2 is 20% over and -0.1 is 10% off); 0 is the Set Price. Never under the Floor or over the Ceiling. Clear sets it back to 0.'));
       tradeSection.parentNode.insertBefore(driftSection,tradeSection.nextSibling);
       var driftCodes=catalog.driftCustomers||[], driftBooks=(catalog.products||[]).filter(function(item){ return item.drift; });
       if(!driftCodes.length||!driftBooks.length){
@@ -3552,8 +3552,8 @@ export const OWNER_JS = `
         driftCodes.forEach(function(code){ var option=el('option',null,code); option.value=code; driftCode.appendChild(option); });
         driftCodeWrap.appendChild(driftCode); driftSection.appendChild(driftCodeWrap);
         var driftProduct=makerTilesIn(driftSection,['Book','record.drift.book'],driftBooks.map(function(item){ return bookItem(item.product); }));
-        var driftValue=makerField(driftSection,['Their %, 0 to 2','record.drift.value'],'number','','0.05');
-        driftValue.min='0'; driftValue.max='2';
+        var driftValue=makerField(driftSection,['Their %, -0.3 to 0.3','record.drift.value'],'number','','0.05');
+        driftValue.min='-0.3'; driftValue.max='0.3'; driftValue.removeAttribute('inputmode');   /* 21 Oct 2026: a % may be negative, and the decimal pad has no minus key */
         var driftState=el('p','msg'); driftSection.appendChild(driftState);
         var driftAnswer=el('p','msg'); driftAnswer.setAttribute('role','status'); driftSection.appendChild(driftAnswer);
         var driftPending=false, driftAt=null, driftSignature='';
@@ -3561,10 +3561,10 @@ export const OWNER_JS = `
         function driftCardOf(){
           return (catalog.driftCards||[]).filter(function(card){ return card.code===driftCode.value&&card.product===driftProduct.value; })[0]||null;
         }
-        function driftFormat(value){ var n=Math.round(Number(value)*100); return n>0?'+'+n+'%':'0%'; }
+        function driftFormat(value){ var n=Math.round(Number(value)*100); return n>0?'+'+n+'%':n<0?n+'%':'0%'; }
         function driftRefresh(){
           var card=driftCardOf();
-          var hint=card&&typeof card.suggest==='number'?' Suggested '+driftFormat(card.suggest)+(card.suggest>0&&typeof card.why==='string'&&card.why?': '+card.why:'')+'.':'';
+          var hint=card&&typeof card.suggest==='number'?' Suggested '+driftFormat(card.suggest)+(card.suggest!==0&&typeof card.why==='string'&&card.why?': '+card.why:'')+'.':'';
           if(card&&card.held) driftState.textContent='Set by you: '+driftFormat(card.value)+'.'+hint;
           else driftState.textContent='No % set: the Set Price.'+hint;
           useSuggest.hidden=!(card&&typeof card.suggest==='number');
@@ -3575,8 +3575,8 @@ export const OWNER_JS = `
         makerButton(driftActions,['Send their %','record.drift.set'],async function(send){
           if(driftPending) return;
           var raw=driftValue.value.trim(), value=Number(raw);
-          if(!raw||!Number.isFinite(value)||value < 0||value > 2){
-            driftAnswer.textContent='Enter a % from 0 to 2 (0.2 is 20%).';
+          if(!raw||!Number.isFinite(value)||value < -0.3||value > 0.3){
+            driftAnswer.textContent='Enter a % from -0.3 to 0.3 (0.2 is 20%, -0.1 is 10% off).';
             return;
           }
           value=Number(value.toFixed(2));
@@ -4327,7 +4327,7 @@ export const OWNER_JS = `
     if(y.paused) box.appendChild(chip('mist',y.why==='writeoff'?'Paused: a write-off':'Paused: a late payment'));
     box.appendChild(el('p','salt-insight ocust__note','1 unit at cost every '+y.every+' at or above their price'+(r.cost!=null?' ('+rm(r.cost)+' to you)':'')+'. They see '
       +Math.round((+y.units||0)/(+y.every||20)*100)+'%. Paused by a late payment or a write-off.'));
-    if(!r.suggest||!(r.suggest.pct>(+r.held||0)+1e-9)) return;
+    if(!r.suggest||!(Math.abs(r.suggest.pct-(+r.held||0))>1e-9)) return;
     var s=el('div','ocust__sug');
     s.appendChild(el('p','ocust__sughead','Suggested '+custPct(r.suggest.pct)+(r.suggest.why?', '+r.suggest.why:'')));
     if(r.gain&&r.pair) s.appendChild(el('p','salt-insight ocust__gain',custPct(r.suggest.pct)+': '+rm(r.gain.pct)+' more per 20 units · the loyalty unit '+rm(r.gain.unit)+' · net '+rm(r.gain.net)));

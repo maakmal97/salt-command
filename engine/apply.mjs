@@ -369,7 +369,7 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
 }
 
 /* a held figure as words, so a refusal or a plan line never reads [object Object]: a % lift on the Set Price, or what was sent */
-const sayLift = (v) => v == null ? "not set" : typeof v === "number" ? (+(v * 100).toFixed(2)) + "% lift" : typeof v === "object" ? JSON.stringify(v) : String(v);
+const sayLift = (v) => v == null ? "not set" : typeof v === "number" ? (v < 0 ? (+(-v * 100).toFixed(2)) + "% off" : (+(v * 100).toFixed(2)) + "% lift") : typeof v === "object" ? JSON.stringify(v) : String(v);
 const APPOINTS = POSITION_ENGINE.ADDID_APPOINTS;
 export const STATEMENT_KINDS = ["customer", "reseller", "referral"];
 function describe(item) {
@@ -750,7 +750,7 @@ export function planBatch(book, staged, notes, ctx) {
       if (appoints && (book.associates || []).includes(r.code)) { out.refused.push({ id: it.id, why: `${r.code} is already an associate` }); continue; }
       const resell = POSITION_ENGINE.appointBucket(r.kind, r.code);
       const rt = r.tiers || {}, rtOff = Object.keys(rt).filter((p) => !(book.PRODUCTS || {})[p]), rtOld = Object.keys(rt).filter((p) => oldLift(it, p, rt[p])), rtBad = Object.keys(rt).filter((p) => !rtOld.includes(p) && !tierOk(p, rt[p]));   /* a % lift on a book with a Set Price, nothing on any other */   // v645, per product since v646
-      if (rtOff.length || rtBad.length) { out.refused.push({ id: it.id, why: rtOff.length ? `${rtOff.join(" and ")} is not a product on this book` : `${rtBad.map((p) => sayLift(rt[p]) + (driftBooks().includes(p) ? " is not a % from 0 to 200 (0 to 2)" : " is not held per customer on this book")).join(" and ")}` }); continue; }
+      if (rtOff.length || rtBad.length) { out.refused.push({ id: it.id, why: rtOff.length ? `${rtOff.join(" and ")} is not a product on this book` : `${rtBad.map((p) => sayLift(rt[p]) + (driftBooks().includes(p) ? " is not a % from -30 to +30 (-0.3 to 0.3)" : " is not held per customer on this book")).join(" and ")}` }); continue; }
       const rtKept = Object.fromEntries(Object.entries(rt).filter(([p]) => !rtOld.includes(p)));
       entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null, geo: r.geo || null, tiers: Object.keys(rtKept).length ? rtKept : null, partner };
       if (partner) entry.does.push(`make ${r.code} a partner: they pay the Floor, up to the next RM 5, on every book; they keep every associate property`);
@@ -798,10 +798,10 @@ export function planBatch(book, staged, notes, ctx) {
       /* v643: a customer's held figure for each product (v646), checked against the book it folds into; a null clears it */
       const codes = Object.keys(r.tiers || {}), off = codes.filter((c) => !(book.roster || []).includes(c) || E.isBucket(c));
       const pairs = codes.flatMap((c) => Object.entries((r.tiers[c] && typeof r.tiers[c] === "object") ? r.tiers[c] : {}).map(([p, v]) => [c, p, v]));
-      const noProd = codes.filter((c) => !pairs.some((x) => x[0] === c)), offP = pairs.filter((x) => !(book.PRODUCTS || {})[x[1]]), bad = pairs.filter((x) => x[2] !== null && !oldLift(it, x[1], x[2]) && !tierOk(x[1], x[2]));   /* 05 Oct 2026: a figure of his on a drift book (18 Oct 2026: a % lift, 0 to 2), held as a tier was; none on any other */
+      const noProd = codes.filter((c) => !pairs.some((x) => x[0] === c)), offP = pairs.filter((x) => !(book.PRODUCTS || {})[x[1]]), bad = pairs.filter((x) => x[2] !== null && !oldLift(it, x[1], x[2]) && !tierOk(x[1], x[2]));   /* 05 Oct 2026: a figure of his on a drift book (18 Oct 2026: a % lift; 21 Oct 2026: -0.3 to +0.3), held as a tier was; none on any other */
       if (!codes.length || off.length || noProd.length || offP.length || bad.length) {
         out.refused.push({ id: it.id, why: !codes.length ? "a % entry names no customer" : off.length ? `${off.join(" and ")} is not a customer on the roster`
-          : noProd.length ? `the % entry for ${noProd.join(" and ")} names no product` : offP.length ? `${offP.map((x) => x[1]).join(" and ")} is not a product on this book` : bad.map((x) => sayLift(x[2]) + (driftBooks().includes(x[1]) ? " is not a % from 0 to 200 (0 to 2)" : " is not held per customer on this book")).join(" and ") });
+          : noProd.length ? `the % entry for ${noProd.join(" and ")} names no product` : offP.length ? `${offP.map((x) => x[1]).join(" and ")} is not a product on this book` : bad.map((x) => sayLift(x[2]) + (driftBooks().includes(x[1]) ? " is not a % from -30 to +30 (-0.3 to 0.3)" : " is not held per customer on this book")).join(" and ") });
         continue;
       }
       const oldTs = pairs.filter((x) => oldLift(it, x[1], x[2])), keptTs = pairs.filter((x) => !oldLift(it, x[1], x[2]));

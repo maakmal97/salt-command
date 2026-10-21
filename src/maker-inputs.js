@@ -207,10 +207,10 @@ function driftCustomerCode(id) {
 
 /** The suggestion's reason crosses to Counter Admin only as the engine's own few words (suggestWhy: 'paid 10% over', 'written off', 'paid very late',
  *  'paid late', joined by a comma), so it names no one and no margin; anything else is left behind. */
-const SUGGEST_WHY = /^(paid [0-9]{1,3}% over|written off|paid very late|paid late)(, (paid [0-9]{1,3}% over|written off|paid very late|paid late))?$/;
+const SUGGEST_WHY = /^(paid [0-9]{1,3}% over|written off|paid very late|paid late|good record)(, (paid [0-9]{1,3}% over|written off|paid very late|paid late|good record))?$/;
 const suggestWhyOk = (value) => typeof value === "string" && value.length <= 40 && SUGGEST_WHY.test(value);
 
-/** The held % lift (0 to 2) or nought, and the engine's suggestion with its reason beside it, which the Desk's drift card reads; no pricing is computed here. */
+/** The held % (-0.3 to +0.3 since 21 Oct 2026) or nought, and the engine's suggestion with its reason beside it, which the Desk's drift card reads; no pricing is computed here. */
 function driftCards(book, roster, products) {
   const driftProducts = products.filter((item) => item.drift).map((item) => item.product);
   const held = object(book.state.TIER_OF) ? book.state.TIER_OF : {};
@@ -803,7 +803,7 @@ export function makerTierSet(body, book) {
   if (!rule || rule.fixed || !rule.drift) return { error: "This book has no Set Price to put a % on." };
   if (!driftCustomerCode(body.code)) return { error: "A supplier has no % on the Set Price." };
   if (body.tier !== null && !PRICING_ENGINE.driftOk(body.tier))
-    return { error: "Choose a % lift from 0 to 200% (0 to 2), or clear it." };
+    return { error: "Choose a % from -30% to +30% (-0.3 to 0.3), or clear it." };
   /* 19 Oct 2026: a figure travels with its unit. A Counter Admin page cached from before the % lift still sends 0.3 meaning 30% of the floor; it is refused here, by unit and not by time. */
   if (body.tier !== null && body.unit !== "pct") return { error: OLD_UNIT };
   return proposed(POSITION_ENGINE.tierSetEntry({
@@ -1173,7 +1173,7 @@ export function makerLedgerInput(operation, body, book, pending = []) {
       for (const [product, tier] of Object.entries(tiers)) {
         const snapshot = book.pricing?.byProduct?.[product], rule = snapshot?.inputs?.policy?.tierRule;
         if (active(product, book) && rule && rule.drift && !PRICING_ENGINE.driftOk(tier))
-          return { error: "A starting % is a number from 0 to 2 (0% to 200%)." };
+          return { error: "A starting % is a number from -0.3 to 0.3 (-30% to +30%)." };
         if (!active(product, book) || !rule || rule.fixed || !rule.drift)
           return { error: "A starting % must name an active book with a Set Price." };
       }

@@ -263,16 +263,17 @@ const LADDER_BY={
 const TIER_RULE={
   /* 18 Oct 2026, HIS DECISION: SALT'S SET PRICE IS THE MINIMUM ANY NON-PARTNER PAYS, a multiple of the Floor on his four points
      (`points`, [size, multiple]: 2.5 at half a unit, 2 at one, 1.67 at 6.25, 1.33 at 12.5), sliding in the log of size between
-     them and flat beyond the ends. A customer's figure is a % lift on it (0 to 2, held in TIER_OF), applied inside the walk
+     them and flat beyond the ends. A customer's figure is a % on it (-0.3 to +0.3 since his decision of 21 Oct 2026, held in TIER_OF), applied inside the walk
      (the engine's driftWalk); nothing automatic prices. `drift` stays as the marker that makes salt a per-customer book, and
      `auto` only feeds the record's good and bad on the card. `suggest` is the suggestion's constants (the engine's
      suggestPct): a share added for a written-off, a long late, a late; the days over which an open overdue counts as long; how
-     many of the last salt sales are read; the step it rounds to; and the settled rows below which it suggests nothing. */
+     many of the last salt sales are read; the step it rounds to; the settled rows below which it suggests nothing; and `good`, the discount a
+     perfect record earns, times the record's good score, only with nothing late, overdue or written off (21 Oct 2026). */
   salt:{drift:true, ceilingX:3,
         points:[[0.5,2.5],[1,2],[6.25,1.67],[12.5,1.33]],
-        suggest:{writtenOff:0.3, longLate:0.2, late:0.1, overdueDays:14, recent:5, step:0.05, minSettled:3},
+        suggest:{writtenOff:0.3, longLate:0.2, late:0.1, overdueDays:14, recent:5, step:0.05, minSettled:3, good:0.3},
         auto:{wP:0.35, wF:0.25, wV:0.2, wT:0.2, minSettled:3, perMonth:4, unitsPerMonth:10, orders:12, staleDays:60, overdueDays:14, U:0.5, D:0.5, cap:0.5},
-        presets:{"Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3},
+        presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3},
         rungs:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5],
         /* 05 Oct 2026, his decision: any quantity from half a unit to 25 in quarters is quoted at once on the Counter, and the
            walk runs through every point of it, so the rate never rises from one quarter to the next (the engine's walkSizes) */

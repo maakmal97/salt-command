@@ -142,7 +142,7 @@ function readStaged() {
    and a miss costs a desk that names a party the book no longer has. */
 let masterLines = null;
 /* 05 Oct 2026: the books the master prices by drift, read off its own TIER_RULE (a product whose rule opens with drift), so
-   the fold refuses by book as the drafter does: a drift book takes a % lift from 0 to 2, any other book takes no figure of his */
+   the fold refuses by book as the drafter does: a drift book takes a % from -0.3 to +0.3 (21 Oct 2026), any other book takes no figure of his */
 function driftBooks() {
   masterLines = masterLines || readFileSync(MASTER, "utf8").split("\n");
   const a = masterLines.findIndex((l) => l.startsWith("const TIER_RULE={"));

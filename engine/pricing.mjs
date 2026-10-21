@@ -477,7 +477,8 @@ function fiveTiers(sizes,C,P){
    smaller size already walked; then held between the floor and the ceiling. The quoted rate may therefore rise by under one grid step over the
    size between two quarters: the law is on the exact rate, his choice. The margin lift is path dependent, so the one walk
    answers driftAt, quoteGrid and the board alike, every grid point from the grid's least up to the size asked.
-   pct is the customer's held % lift, 0 to 2 (driftOk), applied inside the walk to the multiple at every size; 0 is the Set Price.
+   pct is the customer's held %, -0.3 to +0.3 (driftOk, LIFT_MIN to LIFT_MAX; his decision of 21 Oct 2026, which was 0 to 2), applied inside
+   the walk to the multiple at every size; 0 is the Set Price. A negative % is a discount on it, still never under the Floor.
    Nothing automatic sets it: autoDrift reads the record for the card and prices nothing, and suggestPct only suggests. */
 function setMultiple(q,R){
   const pts=(R.points||[]).map(x=>[+x[0],+x[1]]).filter(x=>x[0]>0&&isFinite(x[1])).sort((a,b)=>a[0]-b[0]);
@@ -490,12 +491,13 @@ function setMultiple(q,R){
   }
   return last[1];
 }
-/* a held % lift is a number from 0 to 2; anything else is not one */
-function driftOk(v){return typeof v==='number'&&isFinite(v)&&v>=-1e-9&&v<=2+1e-9;}
+/* a held % is a number from -0.3 to +0.3 (his decision of 21 Oct 2026); anything else is not one */
+const LIFT_MIN=-0.3, LIFT_MAX=0.3;
+function driftOk(v){return typeof v==='number'&&isFinite(v)&&v>=LIFT_MIN-1e-9&&v<=LIFT_MAX+1e-9;}
 function driftWalk(sizes,C,P,pct){
   const R=P.tierRule||{}, to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to, down=v=>Math.floor(v/to+1e-9)*to;
   const cx=+R.ceilingX>0?+R.ceilingX:3;
-  const k=driftOk(pct)?Math.max(0,Math.min(2,+pct)):0;
+  const k=driftOk(pct)?Math.max(LIFT_MIN,Math.min(LIFT_MAX,+pct)):0;
   let rS=Infinity, rP=Infinity, mS=-Infinity, mP=-Infinity;
   return sizes.map(q=>{
     const fl=floorTotal(q,C,P), ceil=+(cx*fl).toFixed(4), lo=up(fl), hi=Math.max(down(ceil),lo), m=setMultiple(q,R);
@@ -511,7 +513,7 @@ function driftWalk(sizes,C,P,pct){
     };
     const s=step(rS,mS,1);rS=s.rate;mS=s.mg;
     let p=s.p;
-    if(k>0){const x=step(rP,mP,1+k);rP=x.rate;mP=x.mg;p=x.p;}
+    if(Math.abs(k)>1e-9){const x=step(rP,mP,1+k);rP=x.rate;mP=x.mg;p=x.p;}
     return {q:q,floor:+fl.toFixed(2),ceiling:+ceil.toFixed(2),set:s.p,p:p,d:k};
   });
 }
@@ -575,25 +577,30 @@ function autoDrift(s,A){
    sig is driftSignals (late, lateLong, writtenOff, overdueDays, settled); ratios are the rate each of the customer's recent salt sales
    paid over the Set Price rate at that sale's size, oldest first; S is the rule's suggest block. paidOver is the median of the last
    S.recent ratios less one, nought if below; risk is S.writtenOff for anything written off, else S.longLate for a long late or an open
-   overdue past S.overdueDays, else S.late for a late; the suggestion is their sum to the nearest S.step, held 0 to 2, and nought for
-   a customer with fewer than S.minSettled settled rows. Good record suggests nothing. Returns {pct, paidOver, risk}. Prices nothing:
-   the desk and Counter Admin show it, and his tap sets it (a tierset), like any figure of his. */
-function suggestPct(sig,ratios,S){
+   overdue past S.overdueDays, else S.late for a late; 21 OCT 2026, HIS DECISION: A GOOD RECORD EARNS A DISCOUNT, good, S.good (0.3) times the
+   record's good score (autoDrift's G over A, the rule's auto weights), taken off only while its bad (B) is nought: nothing late, overdue or
+   written off. The suggestion is paidOver plus risk less good to the nearest S.step, held LIFT_MIN to LIFT_MAX, and nought for a customer
+   with fewer than S.minSettled settled rows. Returns {pct, paidOver, risk, good}. Prices nothing: the desk and Counter Admin show it, and
+   his tap sets it (a tierset), like any figure of his. */
+function suggestPct(sig,ratios,S,A){
   const s=S||{}, x=sig||{}, n=(k,v)=>s[k]!=null?+s[k]:v;
-  if((+x.settled||0)<n('minSettled',3))return {pct:0,paidOver:0,risk:0};
+  if((+x.settled||0)<n('minSettled',3))return {pct:0,paidOver:0,risk:0,good:0};
   const rs=(ratios||[]).filter(v=>typeof v==='number'&&isFinite(v)&&v>0).slice(-n('recent',5)).sort((a,b)=>a-b);
   const med=rs.length?(rs.length%2?rs[(rs.length-1)/2]:(rs[rs.length/2-1]+rs[rs.length/2])/2):1;
   const paidOver=Math.max(0,med-1);
   const risk=(+x.writtenOff||0)>0.009?n('writtenOff',0.3):(x.lateLong||(+x.overdueDays||0)>n('overdueDays',14))?n('longLate',0.2):x.late?n('late',0.1):0;
-  const step=n('step',0.05), pct=Math.min(2,Math.max(0,Math.round((paidOver+risk)/step+1e-9)*step));
-  return {pct:+pct.toFixed(2),paidOver:+paidOver.toFixed(4),risk:risk};
+  const rec=autoDrift(x,A), good=rec.B>0?0:+(n('good',0.3)*rec.G).toFixed(4);
+  const step=n('step',0.05), pct=Math.min(LIFT_MAX,Math.max(LIFT_MIN,Math.round((paidOver+risk-good)/step+1e-9)*step));
+  return {pct:+pct.toFixed(2)||0,paidOver:+paidOver.toFixed(4),risk:risk,good:good};
 }
-/* THE SUGGESTION'S REASON, in a few words, from what suggestPct returned: 'paid 10% over', 'written off', 'paid very late', 'paid late', joined by a comma.
+/* THE SUGGESTION'S REASON, in a few words, from what suggestPct returned: 'paid 10% over', 'written off', 'paid very late', 'paid late', or
+   'good record' (21 Oct 2026, a discount earned), joined by a comma.
    The one place the words are made: the Desk's card and Counter Admin's Their % form both show it. It names no one and no margin. */
 function suggestWhy(sg){
   const w=[],x=sg||{};
   if((+x.paidOver||0)>=0.0249)w.push('paid '+Math.round(x.paidOver*100)+'% over');
   if((+x.risk||0)>=0.3)w.push('written off');else if((+x.risk||0)>=0.2)w.push('paid very late');else if((+x.risk||0)>0)w.push('paid late');
+  else if((+x.good||0)>=0.025)w.push('good record');
   return w;
 }
 /* A card is the board's own price for the size, the same function for a stated board and the Set Price: what a customer paid before
@@ -718,7 +725,7 @@ function quoteOff(snap,code,qty){
 return {cardAt:cardAt,costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         floorTotal:floorTotal,costTotal:costTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,
-        setMultiple:setMultiple,driftOk:driftOk,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,suggestWhy:suggestWhy,
+        setMultiple:setMultiple,driftOk:driftOk,LIFT_MIN:LIFT_MIN,LIFT_MAX:LIFT_MAX,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,suggestWhy:suggestWhy,
         gridOf:gridOf,gridSizes:gridSizes,onGrid:onGrid,walkSizes:walkSizes,fixedWalk:fixedWalk,quoteAt:quoteAt,quoteGrid:quoteGrid};
 })();
 export default PRICING_ENGINE;

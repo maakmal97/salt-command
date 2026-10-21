@@ -1221,7 +1221,7 @@ export function draftRow(entry, book) {
     if (kind === "bucket" && !parent) return { skip: "a bucket sits under a party, and which party is a judgement" };
     if (pay.geo != null && !geoFiled(pay.geo)) return { skip: geoOf(pay.geo) ? "the point given for the place has no locality beside it" : "the point given for the place is not in Malaysia" };   // v633
     /* v645: the starting figure chosen at Add ID, for each product since v646, checked against the book's products: a % lift
-       from 0 to 2 on a book with a Set Price, and nothing on any other */
+       from -0.3 to +0.3 on a book with a Set Price (21 Oct 2026), and nothing on any other */
     const products = (book.state && book.state.PRODUCTS) || {};
     const tierLine = (t) => Object.keys(t).map((p) => `${(products[p] && products[p].name) || p} ${t[p]}`).join(", ");
     if (pay.tiers != null) {
@@ -1230,8 +1230,8 @@ export function draftRow(entry, book) {
       if (!ps.length) return { skip: "a starting % names no product" };
       for (const p of ps) {
         if (!products[p]) return { skip: `${p} is not a product on this book` };
-        /* a book with a Set Price starts on a figure he picks (18 Oct 2026: a % lift, 0 to 2); any other book takes none */
-        if (!(driftB(p) && PRICING_ENGINE.driftOk(pay.tiers[p]))) return { skip: driftB(p) ? `${pay.tiers[p]} is not a % from 0 to 200 (0 to 2)` : `${pay.tiers[p]} is not held per customer on this book` };
+        /* a book with a Set Price starts on a figure he picks (18 Oct 2026: a % lift; 21 Oct 2026: -0.3 to +0.3); any other book takes none */
+        if (!(driftB(p) && PRICING_ENGINE.driftOk(pay.tiers[p]))) return { skip: driftB(p) ? `${pay.tiers[p]} is not a % from -30 to +30 (-0.3 to 0.3)` : `${pay.tiers[p]} is not held per customer on this book` };
       }
       if (!["customer", "reseller", "referral"].includes(kind)) return { skip: `a ${kind} holds no starting %` };
     }
@@ -1332,7 +1332,7 @@ export function draftRow(entry, book) {
     };
   }
   /* v643, HIS DECISIONS OF 15 SEP 2026: EACH CUSTOMER'S HELD FIGURE, one customer or several, one for each product, code to
-     product to figure (18 Oct 2026: a % lift on the Set Price, 0 to 2), a null clearing a product's figure. Codes, products and
+     product to figure (18 Oct 2026: a % on the Set Price; 21 Oct 2026: -0.3 to +0.3), a null clearing a product's figure. Codes, products and
      numbers only; the book's rule says which products take one. */
   /* 09 Oct 2026, his decision: A PARTNER IS AN ASSOCIATE WHO PAYS COST. The row is a roster row for someone already on the roster: the fold
      appoints them on the R2 stream with their -R account if they are no associate yet, and files them in `partners`, which the
@@ -1364,7 +1364,7 @@ export function draftRow(entry, book) {
     const products = (book.state && book.state.PRODUCTS) || {};
     const name = (p) => (products[p] && products[p].name) || p;
     const driftB = (p) => !!(((((book.pricing || {}).byProduct || {})[p] || {}).inputs || {}).policy || {}).tierRule && !!book.pricing.byProduct[p].inputs.policy.tierRule.drift;
-    const say = (v) => v == null ? "not set" : typeof v === "number" ? (+(v * 100).toFixed(2)) + "% lift" : isObj(v) ? JSON.stringify(v) : String(v);
+    const say = (v) => v == null ? "not set" : typeof v === "number" ? (v < 0 ? (+(-v * 100).toFixed(2)) + "% off" : (+(v * 100).toFixed(2)) + "% lift") : isObj(v) ? JSON.stringify(v) : String(v);
     const row = { tiers: {} }, flags = [];
     if (pay.unit === "pct") row.unit = "pct";
     for (const c of codes) {
@@ -1376,8 +1376,8 @@ export function draftRow(entry, book) {
       for (const p of ps) {
         const t = tiers[c][p], was = isObj(held[c]) ? held[c][p] : null;
         if (!products[p]) return { skip: `${p} is not a product on this book` };
-        /* on a book with a Set Price what is held is a figure of his (18 Oct 2026: a % lift, 0 to 2); a null clears it; any other book holds none */
-        if (t !== null && !(driftB(p) && PRICING_ENGINE.driftOk(t))) return { skip: driftB(p) ? `${say(t)} is not a % from 0 to 200 (0 to 2)` : `${say(t)} is not held per customer on this book` };
+        /* on a book with a Set Price what is held is a figure of his (18 Oct 2026: a % lift; 21 Oct 2026: -0.3 to +0.3); a null clears it; any other book holds none */
+        if (t !== null && !(driftB(p) && PRICING_ENGINE.driftOk(t))) return { skip: driftB(p) ? `${say(t)} is not a % from -30 to +30 (-0.3 to 0.3)` : `${say(t)} is not held per customer on this book` };
         row.tiers[c][p] = t;
         if (t !== null && pay.unit !== "pct") flags.push(`${c}'s ${name(p)} figure carries no unit, so it is from the old form: the fold drops it and ${c} stays on the Set Price.`);
         if (was && JSON.stringify(was) !== JSON.stringify(t)) flags.push(`${c}'s ${name(p)} moves from ${say(was)} to ${say(t)}.`);
