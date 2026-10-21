@@ -12,5 +12,6 @@
  {"name":"Use it sends their own %","file":"stmt/owner.js","find":"tier:Number((+r.suggest.pct).toFixed(2)),unit:'pct',at:at}","replace":"tier:Number((+r.held).toFixed(2)),unit:'pct',at:at}"},
  {"name":"the meter stands empty","file":"stmt/owner.js","find":"m.style.setProperty('--salt-fill',String(Math.max(0,Math.min(100,Math.round((+y.units||0)/(+y.every||20)*100)))));","replace":"m.style.setProperty('--salt-fill','0');"},
  {"name":"the next order's day unsaid","file":"stmt/owner.js","find":"r.dueIn>0?'Next order due in '","replace":"r.dueIn>9?'Next order due in '"},
- {"name":"the pause unsaid","file":"stmt/owner.js","find":"    if(y.paused) box.appendChild(chip('mist',","replace":"    if(false) box.appendChild(chip('mist',"}
+ {"name":"the pause unsaid","file":"stmt/owner.js","find":"    if(y.paused) box.appendChild(chip('mist',","replace":"    if(false) box.appendChild(chip('mist',"},
+ {"name":"the card is not read again","file":"stmt/owner.js","find":"delete custReads[order.id]; loadMaker();","replace":"loadMaker();"}
 ]

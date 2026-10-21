@@ -10,6 +10,7 @@
  *   7  a departed customer gets none; an order under their price raises none
  *   9  the walk in the fold reads the terms the scheme carries (the extract's TERMS)
  *   10 two units crossed by one big order book two
+ *   11 a customer since made an associate still has their waiting loyalty unit handed over with its order; a STALE note says why
  *   8  the desk's pricing snapshot and suggestOf for every customer are byte for byte the same with a delivered loyal row on the book */
 import { pathToFileURL } from "node:url";
 import { join, resolve, dirname } from "node:path";
@@ -117,6 +118,13 @@ export async function run({ ok }) {
   const big = go(mk([order("s9001", { qty: 40, total: 4000, listRM: 4000, listQty: 40 })]), [pay(T(2, 1), "s9001", 4000, D(2))]);
   ok(big.ok && loyal(big.book).length === 2 && loyal(big.book).every((s) => s.rewardOf === "s9001"),
     "two units crossed by one big order book two: " + j(big.ok ? loyal(big.book).length : big.problems));
+  /* 11: the unit raised for s9001, then they are made an associate, then s9001 is handed over */
+  const made = JSON.parse(j(one.book)); made.associates.push("CQ1-ZUL"); made.REWARD_OPEN["CQ1-ZUL"] = { earned: 0, share: 0, upTo: "s9001", on: "2026-10-20" };   /* the opening read s9001, so no associate unit is raised on it */
+  const shelf11 = made.STATED_STOCK, after11 = go(made, [hand(T(3, 1), "s9001", 20, D(3))]);
+  const u11 = after11.ok ? loyal(after11.book)[0] : null;
+  ok(after11.ok && u11 && u11.deliveredQty === 1 && u11.deliveredOn === D(3) && after11.book.STATED_STOCK === shelf11 - 21
+    && flagged.moves.some((m) => typeof m === "string" && m.includes("(its payment was undone or the order cancelled)")),
+    "a customer made an associate still gets the waiting unit with its order, and STALE says why: " + j([u11, after11.ok && after11.book.STATED_STOCK - shelf11]));
   /* 9: handed over on 1 Jan and paid on 5 Jan, four days on: late under the master's term of a day, on time under a term of ten */
   const lateOrder = () => mk([order("s9001", { deliveredQty: 20, deliveredOn: D(1), handover: "collected" })]);
   const strict = go(lateOrder(), [pay(T(5, 1), "s9001", 2000, D(5))]);

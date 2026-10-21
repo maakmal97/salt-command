@@ -108,9 +108,10 @@ export async function run({ ok, pageWork }) {
     const before = p.posts.length, use = byAct(d, "order.customer.use", "ord-c1");
     await click(use);
     const sent = p.posts.slice(before);
+    const reads = p.wire.filter((w) => String(w.route || w.url || w).includes("/all/maker/customer-reading/" + encodeURIComponent("CQ1-ZUL|2026-10-10|100"))).length;
     ok(!!use && sent.length === 1 && sent[0].route === "/all/maker/inputs/tier-set" && sent[0].body.code === "CQ1-ZUL" && sent[0].body.product === "salt"
-      && sent[0].body.tier === 0.1 && sent[0].body.unit === "pct" && typeof sent[0].body.at === "string",
-      "Use it sends one tier-set with the suggested %: " + j(sent));
+      && sent[0].body.tier === 0.1 && sent[0].body.unit === "pct" && typeof sent[0].body.at === "string" && reads >= 2,
+      "Use it sends one tier-set with the suggested %, and the card reads again: " + j([sent, reads]));
     /* 7 */
     const c1b = card("ord-c1");
     const heavy = [...(c1b ? c1b.querySelectorAll("*") : [])].filter((n) => !n.matches("h4.salt-eyebrow")).filter((n) => { const fw = p.w.getComputedStyle(n).fontWeight; return fw && fw !== "normal" && +fw > 500 || fw === "bold"; });

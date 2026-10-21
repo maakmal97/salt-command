@@ -270,6 +270,7 @@ export function makerCustomerReading(book, key, today) {
   const loyal = loyalReading(book, owner, { rid: hits.length ? hits[0].rid : null, today });
   if (!loyal.walks) return { customer: false };
   const two = (n) => +(+n).toFixed(2);
+  /* their priced salt rows, the desk's pricedSales for them (no gift, no cancelled, nothing Pending), an Open row unpaid included as the desk's is */
   const priced = (book.sales || []).filter((s) => s && (s.product || "salt") === "salt" && POSITION_ENGINE.ownsCode(owner, s.customer) && !s.goodwill && !s.cancelled
     && s.date && +s.total > 0 && +s.qty > 0 && POSITION_ENGINE.txStat(s).order !== "Pending");
   const rates = recentRates(book, owner, "salt", 6).reverse();

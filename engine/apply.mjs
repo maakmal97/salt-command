@@ -923,6 +923,8 @@ function rewardFold(book, it, c, unitMoves) {
     c.moves.push(`reward unit: ${row.rid}, 1 unit to ${code} at RM ${cost}, for ${cr.rid}`);
   }
   rewardFollow(book, code, walk.crossings, mine, touched, day, c, unitMoves, "reward");
+  /* a loyalty unit raised while they were a customer still goes with its order (Fable's review): the delivery alone, no walk to flag it by */
+  rewardFollow(book, code, null, (s) => !!(s && s.rewardOf && s.loyal && E.ownerCode(s.customer) === code), touched, day, c, unitMoves, "loyalty");
 }
 function loyalFold(book, eb, code, day, touched, c, unitMoves) {
   if (((book.PEOPLE || {}).departed || []).some((p) => p && p.id === code)) return;
@@ -934,7 +936,7 @@ function loyalFold(book, eb, code, day, touched, c, unitMoves) {
     seen[cr.rid] = 1 + (seen[cr.rid] || 0);
     const had = book.sales.filter((s) => mine(s) && s.rewardOf === cr.rid).length;   /* cancelled ones included */
     if (had >= seen[cr.rid]) continue;
-    const lc = E.latestCogs(lots, cr.day), rate = lc && lc.rate > 0 ? +lc.rate : c.stockCost;
+    const lc = E.latestCogs(lots, cr.day), rate = lc && lc.rate > 0 ? +lc.rate : null;   /* no lot landed by then, none raised, as the associate's */
     if (!(rate > 0)) { c.moves.push(`loyalty unit for ${cr.rid} not raised: no landed cost of salt on ${cr.day}`); continue; }
     const cost = +(+rate).toFixed(2);
     const row = { customer: code, product: "salt", qty: 1, total: 0, cost, cash: 0, goodwill: true, deliveredQty: 0, date: day, rewardOf: cr.rid, auto: true, loyal: true,
@@ -943,18 +945,20 @@ function loyalFold(book, eb, code, day, touched, c, unitMoves) {
     book.sales.push(row);
     c.moves.push(`loyalty unit: ${row.rid}, 1 unit to ${code} at RM ${cost}, for ${cr.rid}`);
   }
-  rewardFollow(book, code, walk.crossings, mine, touched, day, c, unitMoves, "loyalty");
+  const why = (rid) => { const r = walk.rows.find((x) => x.rid === rid);
+    return !r ? "its payment was undone or the order cancelled" : r.why === "under" ? "the order is now under their price" : r.why ? "they were paused that day (" + r.why + ")" : "it counts once more"; };
+  rewardFollow(book, code, walk.crossings, mine, touched, day, c, unitMoves, "loyalty", why);
 }
 /* what both units share once raised: a live row past what its walk earns on its order is flagged STALE, per order, never withdrawn; and the
    handover that takes salt to them delivers each unit waiting whose own order is handed over in full, its unit off the shelf through unitMoves */
-function rewardFollow(book, code, crossings, mine, touched, day, c, unitMoves, what) {
+function rewardFollow(book, code, crossings, mine, touched, day, c, unitMoves, what, whyOf) {
   const live = book.sales.filter((s) => mine(s) && !s.cancelled), per = {};
-  for (const x of crossings) per[x.rid] = (per[x.rid] || 0) + 1;
+  if (crossings) for (const x of crossings) per[x.rid] = (per[x.rid] || 0) + 1;
   const held = {};
-  for (const s of live) {
+  if (crossings) for (const s of live) {
     held[s.rewardOf] = (held[s.rewardOf] || 0) + 1;
     if (held[s.rewardOf] > (per[s.rewardOf] || 0))
-      c.moves.push(`STALE ${what} on ${s.rid}: the walk no longer earns it (its payment was undone); remove the row in ledger/book.json, never cancel it`);
+      c.moves.push(`STALE ${what} on ${s.rid}: the walk no longer earns it (${whyOf ? whyOf(s.rewardOf) : "its payment was undone"}); remove the row in ledger/book.json, never cancel it`);
   }
   if ((c.entryMoves || []).some((m) => m && m.product === "salt" && +m.kg < 0 && E.ownerCode(m.who) === code))
     for (const s of book.sales.filter((x) => mine(x) && !x.cancelled && !(+x.deliveredQty > 0.009))) {

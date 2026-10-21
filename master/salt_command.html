@@ -5902,7 +5902,17 @@ function loyaltyWalk(book,id,today){
   const who=loyalWho(book,id);if(who)return {walks:false,why:who};
   const rules=(book.state||{}).TERMS||{},need=rules.lateResetRepeat!=null?+rules.lateResetRepeat:3,term=rules.holdDays!=null?+rules.holdDays:1;
   const mine=(book.sales||[]).filter(s=>s&&ownsCode(id,s.customer));
-  const offs=mine.filter(s=>s.defaulted).map(s=>String(s.defaultedOn||s.date||'')).filter(Boolean).sort();
+  /* the day of a write-off (Fable's review): the fold's stamp, else the newest Correction on the row from its first handover (the one that wrote it
+     off, or one after it), else the first handover plus the lock, as payDelays dates one; the order's own date only with none of those */
+  const lock=rules.lockDays!=null?+rules.lockDays:4;
+  const offDay=s=>{
+    if(s.defaultedOn)return String(s.defaultedOn);
+    const held=txHandSteps(s),first=held.length&&held[0].d?String(held[0].d):null;
+    const steps=(s.amend||[]).filter(a=>a&&!a.undone&&a.kind==='Correction'&&a.date&&(!first||String(a.date)>=first)).map(a=>String(a.date)).sort();
+    if(steps.length)return steps[steps.length-1];
+    return first?dayIso(dayNo(first)+lock):String(s.date||'');
+  };
+  const offs=mine.filter(s=>s.defaulted).map(offDay).filter(Boolean).sort();
   /* why they are paused on a day: their delays as they stood that day, one settled later read as still open on it */
   const pausedOn=day=>{
     if(offs.length&&offs[0]<=day)return 'writeoff';
@@ -5928,6 +5938,7 @@ function loyaltyWalk(book,id,today){
     let why='';
     if(!(list>0)||!(q>0))why='unstamped';
     else if(txGoods(s)<list*q/lq-0.005)why='under';
+    else if(txHandSteps(s).some(x=>!x.dated||!x.d))why='undated';   /* Fable's review: its lateness cannot be read */
     else why=pausedOn(day);   /* (c) and (d) at once: the row's own delay is among the day's, so a row paid late pauses itself */
     read.push({rid:s.rid,day,qty:q,counts:!why,why:why||null});
     if(why)return;

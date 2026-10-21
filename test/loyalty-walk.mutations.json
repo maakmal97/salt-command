@@ -22,5 +22,8 @@
  {"name":"a row before since counts","file":"engine/position.mjs","find":"if(!s.date||s.date<sch.since)return;","replace":"if(!s.date)return;"},
  {"name":"no scheme still walks","file":"engine/position.mjs","find":"const sch=loyalScheme(book);if(!sch)return null;","replace":"const sch=loyalScheme(book);if(!sch)return {walks:false};"},
  {"name":"the cadence's median off by one","file":"engine/position.mjs","find":"return {n:ds.length,med:sorted[Math.floor(sorted.length/2)],last:ds[ds.length-1],gaps:g};","replace":"return {n:ds.length,med:sorted[Math.floor((sorted.length-1)/2)],last:ds[ds.length-1],gaps:g};"},
- {"name":"the cadence merges the bucket unasked","file":"engine/position.mjs","find":"(merge?ownsCode(id,s.customer):s.customer===id)&&!s.cancelled&&s.date).map(s=>s.date))].sort();","replace":"ownsCode(id,s.customer)&&!s.cancelled&&s.date).map(s=>s.date))].sort();"}
+ {"name":"the cadence merges the bucket unasked","file":"engine/position.mjs","find":"(merge?ownsCode(id,s.customer):s.customer===id)&&!s.cancelled&&s.date).map(s=>s.date))].sort();","replace":"ownsCode(id,s.customer)&&!s.cancelled&&s.date).map(s=>s.date))].sort();"},
+ {"name":"a write-off dated by the order","file":"engine/position.mjs","find":"const offs=mine.filter(s=>s.defaulted).map(offDay)","replace":"const offs=mine.filter(s=>s.defaulted).map(s=>String(s.date||''))"},
+ {"name":"a write-off with no step dated by the order","file":"engine/position.mjs","find":"return first?dayIso(dayNo(first)+lock):String(s.date||'');","replace":"return String(s.date||'');"},
+ {"name":"an undated handover counts","file":"engine/position.mjs","find":"    else if(txHandSteps(s).some(x=>!x.dated||!x.d))why='undated';   /* Fable's review: its lateness cannot be read */\n","replace":""}
 ]

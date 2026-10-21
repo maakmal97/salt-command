@@ -13,9 +13,12 @@
  *   11 progress is kept through a pause, never reset
  *   12 an associate, the partner, a supplier and a -R bucket do not walk
  *   13 an oil row, a gift and a row before since count nothing; with no loyal scheme the walk is null
- *   14 cadenceOf is the desk's custCadence, on the real book */
+ *   14 cadenceOf is the desk's custCadence, on the frozen book
+ *   15 a sale written off by a Correction (no defaultedOn, as the real road writes it) is dated by that step, so a write-off booked later
+ *      leaves the orders before it counted; with no step, by the first handover plus the lock
+ *   16 a row whose handover has no day counts nothing (its lateness cannot be read) */
 import E from "../engine/position.mjs";
-import { readFileSync } from "node:fs";
+import { frozenBook } from "./frozen.mjs";
 
 const ID = "CQ1-ZUL";
 /* a salt order of q units at RM 100 a unit, their price RM 100 a unit, handed over on `got` and paid on `paid` */
@@ -107,7 +110,7 @@ export async function run({ ok }) {
   ok(odd.earned === 0 && odd.units === 0 && odd.rows.length === 0 && walk(book([row("s301", 20, "2026-10-22", "2026-10-22")], { since: null })) === null,
     "an oil row, a gift and a row before since count nothing, and no scheme is null: " + j([odd.earned, odd.rows]));
   /* 14: the desk's custCadence as it stood before the move, on the real book's priced salt rows, for every code */
-  const real = JSON.parse(readFileSync(new URL("../ledger/book.json", import.meta.url), "utf8"));
+  const real = frozenBook();
   const priced = real.sales.filter((s) => (s.product || "salt") === "salt" && !s.goodwill && !["Pending", "Cancelled"].includes(E.txStat(s).order));
   const old = (id, merge) => {
     const ds = [...new Set(priced.filter((s) => (merge ? E.ownsCode(id, s.customer) : s.customer === id) && !s.cancelled && s.date).map((s) => s.date))].sort();
@@ -121,4 +124,16 @@ export async function run({ ok }) {
   const any = codes.map((c) => E.cadenceOf(priced, c, true)).filter(Boolean);
   ok(codes.length > 5 && any.length > 3 && diff.length === 0 && any.some((x) => x.gaps.length > 2),
     "cadenceOf is the desk's custCadence on the real book, for every code: " + j([codes.length, any.length, diff]));
+  /* 15: s300 handed over 22 Oct, unpaid, written off by a Correction on 1 Nov; 20 units on time on 22 and 23 Oct */
+  const wo1 = { rid: "s300", customer: ID, product: "salt", date: "2026-10-22", qty: 1, total: 100, cash: 0, deliveredQty: 1, deliveredOn: "2026-10-22", defaulted: true,
+    amend: [{ date: "2026-10-22", kind: "Fulfilment", cash: 0, kg: 1, note: "as booked" }, { date: "2026-11-01", kind: "Correction", cash: 0, kg: 0, note: "written off" }] };
+  const kept15 = walk(book([wo1, row("s301", 12, "2026-10-22", "2026-10-22"), row("s302", 8, "2026-10-23", "2026-10-23"), row("s303", 5, "2026-11-02", "2026-11-02")]));
+  const noStep = walk(book([{ ...wo1, amend: [{ date: "2026-10-22", kind: "Fulfilment", cash: 0, kg: 1, note: "as booked" }] },
+    row("s301", 5, "2026-10-25", "2026-10-25"), row("s302", 5, "2026-10-27", "2026-10-27")]));
+  ok(kept15.earned === 1 && kept15.crossings[0].rid === "s302" && kept15.rows.find((r) => r.rid === "s303").why === "writeoff"
+    && noStep.rows.find((r) => r.rid === "s301").why !== "writeoff" && noStep.rows.find((r) => r.rid === "s302").why === "writeoff",
+    "a write-off is dated by its own Correction, else the first handover plus the lock: " + j([kept15.earned, kept15.rows, noStep.rows]));
+  /* 16: 20 units handed over with no day, paid on 30 Oct */
+  const undated = walk(book([row("s301", 20, "2026-10-22", "2026-10-30", { deliveredOn: undefined })]));
+  ok(undated.earned === 0 && undated.rows[0].why === "undated", "a row whose handover has no day counts nothing: " + j(undated.rows));
 }

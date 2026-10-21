@@ -133,7 +133,7 @@ export async function run({ ok }) {
     const stepper = (M, w, log) => async (tag, f) => {
       CLOCK += 60000;
       let res; try { res = await f(M, w.env, new Date()); } catch (e) { res = { threw: String(e && e.message || e) }; }
-      const kept = res && typeof res === "object" && !Array.isArray(res) ? Object.fromEntries(Object.entries(res).filter(([k]) => k !== "reward" && k !== "rwd")) : res;
+      const kept = res && typeof res === "object" && !Array.isArray(res) ? Object.fromEntries(Object.entries(res).filter(([k]) => k !== "reward" && k !== "rwd" && k !== "loyal")) : res;
       log.push({ tag, res: JSON.stringify(kept), dump: w.dump() });
     };
 

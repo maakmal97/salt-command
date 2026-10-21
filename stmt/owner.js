@@ -4335,7 +4335,7 @@ export const OWNER_JS = `
     var at=null;
     makerButton(s,['Use it','order.customer.use',order.id],async function(send){
       if(!at) at=new Date().toISOString();
-      try{ await send('/all/maker/inputs/tier-set',{code:r.code,product:'salt',tier:Number((+r.suggest.pct).toFixed(2)),unit:'pct',at:at}); answer.textContent='Sent. Their % changes once you approve it.'; loadMaker(); }
+      try{ await send('/all/maker/inputs/tier-set',{code:r.code,product:'salt',tier:Number((+r.suggest.pct).toFixed(2)),unit:'pct',at:at}); answer.textContent='Sent. Their % changes once you approve it.'; delete custReads[order.id]; loadMaker(); }
       catch(error){ refusal(answer,error); }
     },false,function(){ at=null; });
     s.appendChild(answer);
