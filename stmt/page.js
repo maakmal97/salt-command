@@ -1787,7 +1787,11 @@ export function landingPage(user, nonce, owner, bulletin, test) {
       ? '<div id="roster" class="gate adm">'
         /* 20 Oct 2026 (canvas V32): the bar heads the whole shell, the rail and the column under it, so from 1080px it spans both */
         + '<header class="salt-deskbar abar"><div class="salt-deskbar__brand"><span class="aring">' + aico("key") + '</span>'
-        + '<div class="abartext"><div class="salt-deskbar__name">Salt Admin</div><div class="salt-deskbar__meta"><span class="abarlive" id="aBarLive"></span><button type="button" class="abarhours" id="aBarHours" data-act="bar.hours" hidden></button><span class="clk" data-clock></span></div></div></div></header>'
+        + '<div class="abartext"><div class="salt-deskbar__name">Salt Admin</div><div class="salt-deskbar__meta"><span class="abarlive" id="aBarLive"></span><button type="button" class="abarhours" id="aBarHours" data-act="bar.hours" hidden></button><span class="clk" data-clock></span></div></div></div>'
+        /* 21 Oct 2026, his word: the bar was bare. Where he is, then what waits, as the Desk's bar: each a chip to its place, Approve brass
+           with its rows (barLive in stmt/owner.js) */
+        + '<div class="salt-deskbar__live"><div class="salt-deskbar__where" aria-live="polite"><span class="salt-deskbar__view" id="aWhereView"></span>'
+        + '<span class="salt-deskbar__page" id="aWherePage"></span></div><div class="salt-deskbar__chips" id="aBarChips" role="group" aria-label="Waiting"></div></div></header>'
         /* S9 9.2: HIS PLACES, the phone's App bar and, from 1080px, the Desk rail the bar gives way to (the
            system's own switch): Needs you, Orders, Customers, Record and Shop (his decision of 11 Oct 2026). A count beside a
            place is what waits there. */

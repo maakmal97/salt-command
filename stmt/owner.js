@@ -143,6 +143,7 @@ export const OWNER_JS = `
     if(PART_READ[placeNow+'.'+partNow]) PART_READ[placeNow+'.'+partNow]();
     if(o.push){ var to=addrFor(placeNow, partNow); if(location.hash!==to){ try{ history.pushState(null,'',to); }catch(e){} } }
     if(fresh){ try{ window.scrollTo(0,0); }catch(e){} }
+    barWhere();
     needsWatch();
   }
   /* Back, Forward and an address typed in: the place the address names, and nothing written back. Not while an account is viewed
@@ -6304,6 +6305,32 @@ export const OWNER_JS = `
     setCount('needs', items.filter(function(i){ return i.sev==='now'&&!i.practice; }).length);
     setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordOpen(o); }).length);
     setCount('customers', makerThreads.filter(function(t){ return !t.test&&makerThreadAsked(t); }).length+links.filter(waitingLink).length);
+    barLive(draftGroups(pendingRows()).length);
+  }
+  /* 21 OCT 2026, HIS WORD: THE BAR WAS BARE. Where he is (the place, the part under it), then the same figures the rail counts and the rows to
+     approve, each a chip that goes to its place, as the Desk's bar carries them. Written only when it differs (R4). */
+  function barWhere(){
+    var v=document.getElementById('aWhereView'), p=document.getElementById('aWherePage'); if(!v||!p) return;
+    var t=document.querySelector('.place[data-m="'+placeNow+'"]:not([data-p]) .salt-appbar__place span:last-child');
+    var b=partNow&&document.querySelector('.aparts[data-place="'+placeNow+'"] [data-part="'+partNow+'"]');
+    var vt=t?t.textContent:'', pt=b&&b.firstChild?String(b.firstChild.textContent||''):'';
+    if(v.textContent!==vt) v.textContent=vt;
+    if(p.textContent!==pt) p.textContent=pt;
+  }
+  function barLive(rows){
+    var box=document.getElementById('aBarChips'); if(!box) return;
+    /* the rail's own figures, as setCount drew them, so the bar and the rail can never differ */
+    var n={approve:rows}; ['needs','orders','customers'].forEach(function(k){ var c=document.querySelector('[data-count="'+k+'"]'); n[k]=+(c&&c.textContent)||0; });
+    var chip=function(k,tone,w,c){ return '<button type="button" class="salt-deskbar__chip salt-deskbar__chip--'+tone+(c?'':' is-zero')+'" data-act="bar.'+k+'">'+w
+      +' <span class="salt-deskbar__n">'+c+'</span></button>'; };
+    var h=chip('needs','now','Needs you',n.needs)+chip('orders','wait','Orders',n.orders)+chip('customers','wait','Customers',n.customers)
+      +'<button type="button" class="salt-deskbar__act'+(n.approve?'':' is-zero')+'" data-act="bar.approve">Approve<span class="salt-deskbar__badge">'+n.approve+'</span></button>';
+    if(box.getAttribute('data-h')===h) return;
+    box.setAttribute('data-h',h); box.innerHTML=h;
+    [].forEach.call(box.querySelectorAll('[data-act]'), function(b){ b.addEventListener('click', function(){
+      var k=b.getAttribute('data-act').slice(4);
+      showPlace(k==='approve'?'orders':k==='customers'?'customers':k, k==='approve'?'approve':k==='customers'?'messages':'', {fresh:true,push:true});
+    }); });
   }
   function needsReady(){ return NEED_SRC.every(function(s){ return nSrc[s[0]]; }); }
   function needsBad(){ return NEED_SRC.filter(function(s){ return nSrc[s[0]]&&nSrc[s[0]]!=='ok'; }).map(function(s){ return s[1]; }); }
