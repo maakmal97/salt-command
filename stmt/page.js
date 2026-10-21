@@ -7387,12 +7387,13 @@ const CLIENT_JS = `
     function stopBeat(){ if(pingT){ clearInterval(pingT); pingT=null; } if(pongT){ clearTimeout(pongT); pongT=null; } }
     function beat(){
       stopBeat();
-      pingT=setInterval(function(){
-        var s=ws; if(!s||s.readyState!==1) return;
-        try{ s.send('ping'); }catch(e){ return; }
-        if(pongT) clearTimeout(pongT);
-        pongT=setTimeout(function(){ pongT=null; try{ s.close(); }catch(e){} lost(s); },LIVE_PONG_MS);
-      },LIVE_PING_MS);
+      pingT=setInterval(probe,LIVE_PING_MS);
+    }
+    function probe(){
+      var s=ws; if(!s||s.readyState!==1) return;
+      try{ s.send('ping'); }catch(e){ return; }
+      if(pongT) clearTimeout(pongT);
+      pongT=setTimeout(function(){ pongT=null; try{ s.close(); }catch(e){} lost(s); },LIVE_PONG_MS);
     }
     function lost(s){
       if(ws!==s) return;
@@ -7418,8 +7419,10 @@ const CLIENT_JS = `
       s.onclose=function(){ lost(s); };
       s.onerror=function(){};
     }
+    /* a socket an iPhone left half open while the page was away is asked at once on the return (Fable's re-check of L2), not at the next ping */
     function wake(){
-      if(shut||ws) return;
+      if(shut) return;
+      if(ws){ if(hello) probe(); return; }
       fails=0; wait=1000;
       if(retryT){ clearTimeout(retryT); retryT=null; }
       connect();

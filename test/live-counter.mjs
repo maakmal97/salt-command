@@ -283,6 +283,9 @@ async function customerPage(ok, pageWork) {
     ok(s.sent.filter((m) => m === "ping").length === 1 && R.clock.pending(5000).length === 1, "it sends ping and waits five seconds for the answer");
     s.receive("pong");
     ok(R.clock.pending(5000).length === 0, "pong ends the wait");
+    R.w.dispatchEvent(new R.w.Event("pageshow"));
+    ok(s.sent.filter((m) => m === "ping").length === 2 && R.clock.pending(5000).length === 1, "a page shown again with its socket up asks at once, ping and the five seconds, not at the next beat");
+    s.receive("pong");
     ping.f(); R.clock.fire(R.clock.pending(5000)[0]);
     ok(s.closedByPage && R.clock.pending(1000).length === 1, "no pong in five seconds and the socket is let go, to be made again in a second: " + JSON.stringify(R.clock.touts.map((t) => [t.ms, t.off])));
     R.clock.fire(R.clock.pending(1000)[0]);

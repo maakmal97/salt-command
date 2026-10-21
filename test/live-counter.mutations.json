@@ -1,76 +1,452 @@
 [
- {"name":"the kv road serves /live","file":"stmt/worker.js","find":"async function handleLive(request, env, url) {\n  if (request.method !== \"GET\" || !onBook(env)) return notFound();","replace":"async function handleLive(request, env, url) {\n  if (request.method !== \"GET\") return notFound();"},
- {"name":"the kv road serves /all/live","file":"stmt/worker.js","find":"async function handleLiveOwner(request, env, url) {\n  if (request.method !== \"GET\" || !onBook(env)) return notFound();","replace":"async function handleLiveOwner(request, env, url) {\n  if (request.method !== \"GET\") return notFound();"},
- {"name":"the Worker lets a request that is not an upgrade through","file":"stmt/worker.js","find":"  if (String(request.headers.get(\"Upgrade\") || \"\").toLowerCase() !== \"websocket\") return plain(\"Expected a WebSocket upgrade.\", 426);\n","replace":""},
- {"name":"the Worker takes any Origin","file":"stmt/worker.js","find":"  if (request.headers.get(\"Origin\") !== url.origin) return plain(\"Not from this site.\", 403);\n","replace":""},
- {"name":"a session the store lacks is taken","file":"stmt/worker.js","find":"const u = asked[0] === \"stmt\" && asked.length === 2 ? await sessionOfToken(env, asked[1]) : \"\";","replace":"const u = asked[0] === \"stmt\" && asked.length === 2 ? asked[1] : \"\";"},
- {"name":"any first subprotocol is taken","file":"stmt/worker.js","find":"const u = asked[0] === \"stmt\" && asked.length === 2 ? await sessionOfToken(env, asked[1]) : \"\";","replace":"const u = asked.length === 2 ? await sessionOfToken(env, asked[1]) : \"\";"},
- {"name":"the owner road answers before Access is asked","file":"stmt/worker.js","find":"      if (!isAdminIdentity(who)) return json({ ok: false, error: \"Access required\" }, 401);\n      if (p === \"/all/live\") return handleLiveOwner(request, env, url);","replace":"      if (p === \"/all/live\") return handleLiveOwner(request, env, url);\n      if (!isAdminIdentity(who)) return json({ ok: false, error: \"Access required\" }, 401);"},
- {"name":"the owner road opens a customer socket","file":"stmt/worker.js","find":"liveGate(request, url) || liveConnect(env, request, \"owner\", \"\")","replace":"liveGate(request, url) || liveConnect(env, request, \"c\", \"\")"},
- {"name":"the customer road names no account","file":"stmt/worker.js","find":"return liveConnect(env, request, \"c\", u);","replace":"return liveConnect(env, request, \"c\", \"\");"},
- {"name":"Log out leaves the sockets open","file":"stmt/worker.js","find":"  await liveDrop(env, u);   /* Speed Wave 2 L2: every socket of the account closes; a live device reconnects with the session it holds now */\n","replace":""},
- {"name":"signing the devices out leaves the sockets open","file":"stmt/worker.js","find":"    await liveDrop(env, u);   /* Speed Wave 2 L2: the sockets close and a device that is still signed in re-proves itself in seconds */\n","replace":""},
- {"name":"ending one device leaves the sockets open","file":"stmt/worker.js","find":"          await liveDrop(env, u);\n          return json({ ok: true, devices: d ? 1 : 0","replace":"          return json({ ok: true, devices: d ? 1 : 0"},
- {"name":"Sign out everywhere leaves the sockets open","file":"stmt/worker.js","find":"        await liveDrop(env, u);\n        return json(Object.assign({ ok: true }, out));","replace":"        return json(Object.assign({ ok: true }, out));"},
- {"name":"the book takes what is not an upgrade","file":"stmt/orderbook.js","find":"    if (String(request.headers.get(\"Upgrade\") || \"\").toLowerCase() !== \"websocket\") return new Response(\"Expected a WebSocket upgrade.\", { status: 426 });\n","replace":""},
- {"name":"the book takes a customer's socket with no account","file":"stmt/orderbook.js","find":"    if (as === \"c\" && !u) return new Response(\"A socket names its account.\", { status: 400 });\n","replace":""},
- {"name":"the subprotocol is not echoed","file":"stmt/orderbook.js","find":"return this.upgraded(client, as === \"c\");","replace":"return this.upgraded(client, false);"},
- {"name":"no hello is sent","file":"stmt/orderbook.js","find":"    server.send(JSON.stringify({ k: \"hello\" }));\n","replace":""},
- {"name":"a socket's session ends in 0.9 seconds","file":"stmt/orderbook.js","find":"exp: born + SESSION_TTL * 1000 }","replace":"exp: born + SESSION_TTL }"},
- {"name":"a socket carries no account","file":"stmt/orderbook.js","find":"{ r: \"c\", u, born, exp: born + SESSION_TTL * 1000 }","replace":"{ r: \"c\", born, exp: born + SESSION_TTL * 1000 }"},
- {"name":"the owner's socket names an account","file":"stmt/orderbook.js","find":"as === \"owner\" ? { r: \"owner\", born }","replace":"as === \"owner\" ? { r: \"owner\", u, born }"},
- {"name":"sockets are accepted with no tag","file":"stmt/orderbook.js","find":"this.state.acceptWebSocket(server, [as]);","replace":"this.state.acceptWebSocket(server, []);"},
- {"name":"nine sockets an account","file":"stmt/orderbook.js","find":"LIVE_PER_USER = 8,","replace":"LIVE_PER_USER = 9,"},
- {"name":"five owner sockets","file":"stmt/orderbook.js","find":"LIVE_OWNER_MAX = 4,","replace":"LIVE_OWNER_MAX = 5,"},
- {"name":"the cap counts every account","file":"stmt/orderbook.js","find":".filter((x) => x.att && (as === \"owner\" || x.att.u === u))","replace":".filter((x) => x.att)"},
- {"name":"the newest is closed for a ninth","file":"stmt/orderbook.js","find":"this.shut(mine[i].ws, 1008, \"replaced by a newer page\")","replace":"this.shut(mine[mine.length - 1 - i].ws, 1008, \"replaced by a newer page\")"},
- {"name":"no total cap","file":"stmt/orderbook.js","find":"if (this.socks().length >= LIVE_MAX) return","replace":"if (this.socks().length >= LIVE_MAX + 1000) return"},
- {"name":"four strikes","file":"stmt/orderbook.js","find":"LIVE_STRIKES = 3;","replace":"LIVE_STRIKES = 4;"},
- {"name":"the ping is a strike","file":"stmt/orderbook.js","find":"if (message === \"ping\") { try { ws.send(\"pong\"); } catch (e) { /* closing */ } return; }","replace":"if (message === \"ping\") { try { ws.send(\"pong\"); } catch (e) { /* closing */ } }"},
- {"name":"a message can move the book","file":"stmt/orderbook.js","find":"    att.strikes = (att.strikes || 0) + 1;","replace":"    try { const x = JSON.parse(message); this.run(x.op, x); } catch (e) { /* not a move */ }\n    att.strikes = (att.strikes || 0) + 1;"},
- {"name":"a close from the page is answered with its own code","file":"stmt/orderbook.js","find":"this.shut(ws, code && code !== 1005 && code !== 1006 ? code : 1000, \"closed\")","replace":"this.shut(ws, code, \"closed\")"},
- {"name":"the auto response answers ping with ping","file":"stmt/orderbook.js","find":"new WebSocketRequestResponsePair(\"ping\", \"pong\")","replace":"new WebSocketRequestResponsePair(\"ping\", \"ping\")"},
- {"name":"unlive closes every account's sockets","file":"stmt/orderbook.js","find":"const att = this.att(ws); if (att && att.u === u) { this.shut(ws, 1008, \"signed out\"); n++; }","replace":"const att = this.att(ws); if (att) { this.shut(ws, 1008, \"signed out\"); n++; }"},
- {"name":"unlive takes no account","file":"stmt/orderbook.js","find":"    if (!u) return { ok: false, error: \"name the account\", status: 400 };\n    let n = 0;","replace":"    let n = 0;"},
- {"name":"a move tells every account","file":"stmt/orderbook.js","find":"if (all || att.u === u) ws.send(mine);","replace":"ws.send(mine);"},
- {"name":"a pool tells only its own account","file":"stmt/orderbook.js","find":"if (all || att.u === u) ws.send(mine);","replace":"if (att.u === u) ws.send(mine);"},
- {"name":"the owner is told nothing","file":"stmt/orderbook.js","find":"          ws.send(JSON.stringify(Object.assign({ k, u }, id ? { id } : {})));\n","replace":""},
- {"name":"the owner is not told whose","file":"stmt/orderbook.js","find":"ws.send(JSON.stringify(Object.assign({ k, u }, id ? { id } : {})));","replace":"ws.send(JSON.stringify(Object.assign({ k }, id ? { id } : {})));"},
- {"name":"a tell carries the account","file":"stmt/orderbook.js","find":"const now = Date.now(), body = (x) => JSON.stringify(Object.assign({ k: x.k }, x.id ? { id: x.id } : {}));","replace":"const now = Date.now(), body = (x) => JSON.stringify(Object.assign({ k: x.k, u }, x.id ? { id: x.id } : {}));"},
- {"name":"a retry tells again","file":"stmt/orderbook.js","find":"if (!out || !out.ok || out.again || out.none) return;","replace":"if (!out || !out.ok || out.none) return;"},
- {"name":"a move that changes nothing tells","file":"stmt/orderbook.js","find":"if (!out || !out.ok || out.again || out.none) return;","replace":"if (!out || !out.ok || out.again) return;"},
- {"name":"a refused move tells","file":"stmt/orderbook.js","find":"if (!out || !out.ok || out.again || out.none) return;","replace":"if (!out || out.again || out.none) return;"},
- {"name":"a socket past its session is sent to","file":"stmt/orderbook.js","find":"        if (att.exp <= now) { this.shut(ws, 1008, \"session ended\"); continue; }\n","replace":""},
- {"name":"the page offers no session","file":"stmt/page.js","find":"protos:function(){ return ['stmt',session]; }","replace":"protos:function(){ return ['stmt']; }"},
- {"name":"the page opens the wrong address","file":"stmt/page.js","find":"live=liveSocket({ path:'/live',","replace":"live=liveSocket({ path:'/lives',"},
- {"name":"the test surface opens a socket","file":"stmt/page.js","find":".replace(/__LIVE__/g, test ? \"false\" : \"true\")","replace":".replace(/__LIVE__/g, \"true\")"},
- {"name":"hello leaves the orders poll at ten seconds","file":"stmt/page.js","find":"up:function(){ POLL_MS=LIVE_NET_MS; TH_MS=LIVE_NET_MS; pollSet(); thSet();","replace":"up:function(){ TH_MS=LIVE_NET_MS; pollSet(); thSet();"},
- {"name":"hello leaves the thread poll at two seconds","file":"stmt/page.js","find":"up:function(){ POLL_MS=LIVE_NET_MS; TH_MS=LIVE_NET_MS; pollSet(); thSet();","replace":"up:function(){ POLL_MS=LIVE_NET_MS; pollSet(); thSet();"},
- {"name":"a lost socket leaves the orders poll at a minute","file":"stmt/page.js","find":"down:function(){ POLL_MS=POLL_BASE; TH_MS=TH_BASE; pollSet(); thSet(); }","replace":"down:function(){ TH_MS=TH_BASE; pollSet(); thSet(); }"},
- {"name":"a lost socket leaves the thread poll at a minute","file":"stmt/page.js","find":"down:function(){ POLL_MS=POLL_BASE; TH_MS=TH_BASE; pollSet(); thSet(); }","replace":"down:function(){ POLL_MS=POLL_BASE; pollSet(); thSet(); }"},
- {"name":"a reconnect does not read again","file":"stmt/page.js","find":"if(liveHad) liveRead(); liveHad=true;","replace":"liveHad=true;"},
- {"name":"every event is its own read","file":"stmt/page.js","find":"function liveRead(){ if(liveT) return; liveT=","replace":"function liveRead(){ liveT="},
- {"name":"a read is begun while one is out","file":"stmt/page.js","find":"    if(liveBusy){ liveAgain=true; return; }\n","replace":""},
- {"name":"an event while a read is out is lost","file":"stmt/page.js","find":"    if(liveAgain){ liveAgain=false; liveRead(); }\n","replace":""},
- {"name":"a thread event with the thread open reads the orders","file":"stmt/page.js","find":"if(m.k==='thread'&&thSheetEl&&!thSheetEl.hidden){ thRead(); return; }","replace":"if(m.k==='thread'&&thSheetEl&&!thSheetEl.hidden){ thRead(); }"},
- {"name":"a pool event is not read","file":"stmt/page.js","find":"if(m.k==='order'||m.k==='claim'||m.k==='pool'||m.k==='thread') liveRead();","replace":"if(m.k==='order'||m.k==='claim'||m.k==='thread') liveRead();"},
- {"name":"the ping runs every 40 seconds","file":"stmt/page.js","find":"LIVE_PING_MS=45000","replace":"LIVE_PING_MS=40000"},
- {"name":"the answer is waited for six seconds","file":"stmt/page.js","find":"LIVE_PONG_MS=5000","replace":"LIVE_PONG_MS=6000"},
- {"name":"pong does not end the wait","file":"stmt/page.js","find":"if(ev.data==='pong'){ if(pongT){ clearTimeout(pongT); pongT=null; } return; }","replace":"if(ev.data==='pong'){ return; }"},
- {"name":"no pong leaves the socket open","file":"stmt/page.js","find":"pongT=setTimeout(function(){ pongT=null; try{ s.close(); }catch(e){} lost(s); },LIVE_PONG_MS);","replace":"pongT=setTimeout(function(){ pongT=null; lost(s); },LIVE_PONG_MS);"},
- {"name":"the wait between attempts stays a second","file":"stmt/page.js","find":"wait=Math.min(wait*2,30000);","replace":"wait=Math.min(wait,30000);"},
- {"name":"attempts go on after the third","file":"stmt/page.js","find":"if(shut||fails>=3) return;","replace":"if(shut||fails>=4) return;"},
- {"name":"the page shown again does not reconnect","file":"stmt/page.js","find":"function shown(){ if(!document.hidden) wake(); }","replace":"function shown(){}"},
- {"name":"Log out leaves the socket open","file":"stmt/page.js","find":"    liveStop();   /* Speed Wave 2 L2: Log out closes the socket */\n","replace":""},
- {"name":"Salt Admin opens the wrong address","file":"stmt/owner.js","find":"liveOwner=liveSocket({ path:'/all/live',","replace":"liveOwner=liveSocket({ path:'/all/lives',"},
- {"name":"hello leaves Needs you at five seconds","file":"stmt/owner.js","find":"up:function(){ NEED_MS=LIVE_NET_MS; chatMs=LIVE_NET_MS;","replace":"up:function(){ chatMs=LIVE_NET_MS;"},
- {"name":"hello does not set the timer again","file":"stmt/owner.js","find":"function needsRetime(){ if(needsTimer!==null){ clearInterval(needsTimer); needsTimer=null; } needsWatch(); }","replace":"function needsRetime(){}"},
- {"name":"a lost socket leaves Needs you at a minute","file":"stmt/owner.js","find":"down:function(){ NEED_MS=NEED_BASE; chatMs=2000;","replace":"down:function(){ chatMs=2000;"},
- {"name":"an event is read only when the page is next shown","file":"stmt/owner.js","find":"if((placeNow==='needs'||placeNow==='orders')&&!document.hidden) tickPlace(); else liveDirty=true;","replace":"liveDirty=true;"},
- {"name":"a thread event does not read the Chat","file":"stmt/owner.js","find":"    if(m.k==='thread'&&inChat()&&!document.hidden) loadMakerThreads(true);\n","replace":""},
- {"name":"hello leaves the Chat at two seconds","file":"stmt/owner.js","find":"up:function(){ NEED_MS=LIVE_NET_MS; chatMs=LIVE_NET_MS;","replace":"up:function(){ NEED_MS=LIVE_NET_MS;"},
- {"name":"a lost socket leaves the Chat at a minute","file":"stmt/owner.js","find":"down:function(){ NEED_MS=NEED_BASE; chatMs=2000;","replace":"down:function(){ NEED_MS=NEED_BASE;"},
- {"name":"the Chat poll ignores the socket","file":"stmt/owner.js","find":"    },chatMs);","replace":"    },2000);"},
- {"name":"hello does not set the Chat timer again","file":"stmt/owner.js","find":"needsRetime(); if(makerThreadTimer!==null) startMakerChat(); if(liveOwnerHad)","replace":"needsRetime(); if(liveOwnerHad)"},
- {"name":"the practice view opens a socket","file":"stmt/owner.js","find":"  if(LIVE_ON){\n    liveOwner=liveSocket(","replace":"  if(true){\n    liveOwner=liveSocket("}
+ {
+  "name": "the kv road serves /live",
+  "file": "stmt/worker.js",
+  "find": "async function handleLive(request, env, url) {\n  if (request.method !== \"GET\" || !onBook(env)) return notFound();",
+  "replace": "async function handleLive(request, env, url) {\n  if (request.method !== \"GET\") return notFound();"
+ },
+ {
+  "name": "the kv road serves /all/live",
+  "file": "stmt/worker.js",
+  "find": "async function handleLiveOwner(request, env, url) {\n  if (request.method !== \"GET\" || !onBook(env)) return notFound();",
+  "replace": "async function handleLiveOwner(request, env, url) {\n  if (request.method !== \"GET\") return notFound();"
+ },
+ {
+  "name": "the Worker lets a request that is not an upgrade through",
+  "file": "stmt/worker.js",
+  "find": "  if (String(request.headers.get(\"Upgrade\") || \"\").toLowerCase() !== \"websocket\") return plain(\"Expected a WebSocket upgrade.\", 426);\n",
+  "replace": ""
+ },
+ {
+  "name": "the Worker takes any Origin",
+  "file": "stmt/worker.js",
+  "find": "  if (request.headers.get(\"Origin\") !== url.origin) return plain(\"Not from this site.\", 403);\n",
+  "replace": ""
+ },
+ {
+  "name": "a session the store lacks is taken",
+  "file": "stmt/worker.js",
+  "find": "const u = asked[0] === \"stmt\" && asked.length === 2 ? await sessionOfToken(env, asked[1]) : \"\";",
+  "replace": "const u = asked[0] === \"stmt\" && asked.length === 2 ? asked[1] : \"\";"
+ },
+ {
+  "name": "any first subprotocol is taken",
+  "file": "stmt/worker.js",
+  "find": "const u = asked[0] === \"stmt\" && asked.length === 2 ? await sessionOfToken(env, asked[1]) : \"\";",
+  "replace": "const u = asked.length === 2 ? await sessionOfToken(env, asked[1]) : \"\";"
+ },
+ {
+  "name": "the owner road answers before Access is asked",
+  "file": "stmt/worker.js",
+  "find": "      if (!isAdminIdentity(who)) return json({ ok: false, error: \"Access required\" }, 401);\n      if (p === \"/all/live\") return handleLiveOwner(request, env, url);",
+  "replace": "      if (p === \"/all/live\") return handleLiveOwner(request, env, url);\n      if (!isAdminIdentity(who)) return json({ ok: false, error: \"Access required\" }, 401);"
+ },
+ {
+  "name": "the owner road opens a customer socket",
+  "file": "stmt/worker.js",
+  "find": "liveGate(request, url) || liveConnect(env, request, \"owner\", \"\")",
+  "replace": "liveGate(request, url) || liveConnect(env, request, \"c\", \"\")"
+ },
+ {
+  "name": "the customer road names no account",
+  "file": "stmt/worker.js",
+  "find": "return liveConnect(env, request, \"c\", u);",
+  "replace": "return liveConnect(env, request, \"c\", \"\");"
+ },
+ {
+  "name": "Log out leaves the sockets open",
+  "file": "stmt/worker.js",
+  "find": "  await liveDrop(env, u);   /* Speed Wave 2 L2: every socket of the account closes; a live device reconnects with the session it holds now */\n",
+  "replace": ""
+ },
+ {
+  "name": "signing the devices out leaves the sockets open",
+  "file": "stmt/worker.js",
+  "find": "    await liveDrop(env, u);   /* Speed Wave 2 L2: the sockets close and a device that is still signed in re-proves itself in seconds */\n",
+  "replace": ""
+ },
+ {
+  "name": "ending one device leaves the sockets open",
+  "file": "stmt/worker.js",
+  "find": "          await liveDrop(env, u);\n          return json({ ok: true, devices: d ? 1 : 0",
+  "replace": "          return json({ ok: true, devices: d ? 1 : 0"
+ },
+ {
+  "name": "Sign out everywhere leaves the sockets open",
+  "file": "stmt/worker.js",
+  "find": "        await liveDrop(env, u);\n        return json(Object.assign({ ok: true }, out));",
+  "replace": "        return json(Object.assign({ ok: true }, out));"
+ },
+ {
+  "name": "the book takes what is not an upgrade",
+  "file": "stmt/orderbook.js",
+  "find": "    if (String(request.headers.get(\"Upgrade\") || \"\").toLowerCase() !== \"websocket\") return new Response(\"Expected a WebSocket upgrade.\", { status: 426 });\n",
+  "replace": ""
+ },
+ {
+  "name": "the book takes a customer's socket with no account",
+  "file": "stmt/orderbook.js",
+  "find": "    if (as === \"c\" && !u) return new Response(\"A socket names its account.\", { status: 400 });\n",
+  "replace": ""
+ },
+ {
+  "name": "the subprotocol is not echoed",
+  "file": "stmt/orderbook.js",
+  "find": "return this.upgraded(client, as === \"c\");",
+  "replace": "return this.upgraded(client, false);"
+ },
+ {
+  "name": "no hello is sent",
+  "file": "stmt/orderbook.js",
+  "find": "    server.send(JSON.stringify({ k: \"hello\" }));\n",
+  "replace": ""
+ },
+ {
+  "name": "a socket's session ends in 0.9 seconds",
+  "file": "stmt/orderbook.js",
+  "find": "exp: born + SESSION_TTL * 1000 }",
+  "replace": "exp: born + SESSION_TTL }"
+ },
+ {
+  "name": "a socket carries no account",
+  "file": "stmt/orderbook.js",
+  "find": "{ r: \"c\", u, born, exp: born + SESSION_TTL * 1000 }",
+  "replace": "{ r: \"c\", born, exp: born + SESSION_TTL * 1000 }"
+ },
+ {
+  "name": "the owner's socket names an account",
+  "file": "stmt/orderbook.js",
+  "find": "as === \"owner\" ? { r: \"owner\", born }",
+  "replace": "as === \"owner\" ? { r: \"owner\", u, born }"
+ },
+ {
+  "name": "sockets are accepted with no tag",
+  "file": "stmt/orderbook.js",
+  "find": "this.state.acceptWebSocket(server, [as]);",
+  "replace": "this.state.acceptWebSocket(server, []);"
+ },
+ {
+  "name": "nine sockets an account",
+  "file": "stmt/orderbook.js",
+  "find": "LIVE_PER_USER = 8,",
+  "replace": "LIVE_PER_USER = 9,"
+ },
+ {
+  "name": "five owner sockets",
+  "file": "stmt/orderbook.js",
+  "find": "LIVE_OWNER_MAX = 4,",
+  "replace": "LIVE_OWNER_MAX = 5,"
+ },
+ {
+  "name": "the cap counts every account",
+  "file": "stmt/orderbook.js",
+  "find": ".filter((x) => x.att && (as === \"owner\" || x.att.u === u))",
+  "replace": ".filter((x) => x.att)"
+ },
+ {
+  "name": "the newest is closed for a ninth",
+  "file": "stmt/orderbook.js",
+  "find": "this.shut(mine[i].ws, 1008, \"replaced by a newer page\")",
+  "replace": "this.shut(mine[mine.length - 1 - i].ws, 1008, \"replaced by a newer page\")"
+ },
+ {
+  "name": "no total cap",
+  "file": "stmt/orderbook.js",
+  "find": "if (this.socks().length >= LIVE_MAX) return",
+  "replace": "if (this.socks().length >= LIVE_MAX + 1000) return"
+ },
+ {
+  "name": "four strikes",
+  "file": "stmt/orderbook.js",
+  "find": "LIVE_STRIKES = 3;",
+  "replace": "LIVE_STRIKES = 4;"
+ },
+ {
+  "name": "the ping is a strike",
+  "file": "stmt/orderbook.js",
+  "find": "if (message === \"ping\") { try { ws.send(\"pong\"); } catch (e) { /* closing */ } return; }",
+  "replace": "if (message === \"ping\") { try { ws.send(\"pong\"); } catch (e) { /* closing */ } }"
+ },
+ {
+  "name": "a message can move the book",
+  "file": "stmt/orderbook.js",
+  "find": "    att.strikes = (att.strikes || 0) + 1;",
+  "replace": "    try { const x = JSON.parse(message); this.run(x.op, x); } catch (e) { /* not a move */ }\n    att.strikes = (att.strikes || 0) + 1;"
+ },
+ {
+  "name": "a close from the page is answered with its own code",
+  "file": "stmt/orderbook.js",
+  "find": "this.shut(ws, code && code !== 1005 && code !== 1006 ? code : 1000, \"closed\")",
+  "replace": "this.shut(ws, code, \"closed\")"
+ },
+ {
+  "name": "the auto response answers ping with ping",
+  "file": "stmt/orderbook.js",
+  "find": "new WebSocketRequestResponsePair(\"ping\", \"pong\")",
+  "replace": "new WebSocketRequestResponsePair(\"ping\", \"ping\")"
+ },
+ {
+  "name": "unlive closes every account's sockets",
+  "file": "stmt/orderbook.js",
+  "find": "const att = this.att(ws); if (att && att.u === u) { this.shut(ws, 1008, \"signed out\"); n++; }",
+  "replace": "const att = this.att(ws); if (att) { this.shut(ws, 1008, \"signed out\"); n++; }"
+ },
+ {
+  "name": "unlive takes no account",
+  "file": "stmt/orderbook.js",
+  "find": "    if (!u) return { ok: false, error: \"name the account\", status: 400 };\n    let n = 0;",
+  "replace": "    let n = 0;"
+ },
+ {
+  "name": "a move tells every account",
+  "file": "stmt/orderbook.js",
+  "find": "if (all || att.u === u) ws.send(mine);",
+  "replace": "ws.send(mine);"
+ },
+ {
+  "name": "a pool tells only its own account",
+  "file": "stmt/orderbook.js",
+  "find": "if (all || att.u === u) ws.send(mine);",
+  "replace": "if (att.u === u) ws.send(mine);"
+ },
+ {
+  "name": "the owner is told nothing",
+  "file": "stmt/orderbook.js",
+  "find": "          ws.send(JSON.stringify(Object.assign({ k, u }, id ? { id } : {})));\n",
+  "replace": ""
+ },
+ {
+  "name": "the owner is not told whose",
+  "file": "stmt/orderbook.js",
+  "find": "ws.send(JSON.stringify(Object.assign({ k, u }, id ? { id } : {})));",
+  "replace": "ws.send(JSON.stringify(Object.assign({ k }, id ? { id } : {})));"
+ },
+ {
+  "name": "a tell carries the account",
+  "file": "stmt/orderbook.js",
+  "find": "const now = Date.now(), body = (x) => JSON.stringify(Object.assign({ k: x.k }, x.id ? { id: x.id } : {}));",
+  "replace": "const now = Date.now(), body = (x) => JSON.stringify(Object.assign({ k: x.k, u }, x.id ? { id: x.id } : {}));"
+ },
+ {
+  "name": "a retry tells again",
+  "file": "stmt/orderbook.js",
+  "find": "if (!out || !out.ok || out.again || out.none) return;",
+  "replace": "if (!out || !out.ok || out.none) return;"
+ },
+ {
+  "name": "a move that changes nothing tells",
+  "file": "stmt/orderbook.js",
+  "find": "if (!out || !out.ok || out.again || out.none) return;",
+  "replace": "if (!out || !out.ok || out.again) return;"
+ },
+ {
+  "name": "a refused move tells",
+  "file": "stmt/orderbook.js",
+  "find": "if (!out || !out.ok || out.again || out.none) return;",
+  "replace": "if (!out || out.again || out.none) return;"
+ },
+ {
+  "name": "a socket past its session is sent to",
+  "file": "stmt/orderbook.js",
+  "find": "        if (att.exp <= now) { this.shut(ws, 1008, \"session ended\"); continue; }\n",
+  "replace": ""
+ },
+ {
+  "name": "the page offers no session",
+  "file": "stmt/page.js",
+  "find": "protos:function(){ return ['stmt',session]; }",
+  "replace": "protos:function(){ return ['stmt']; }"
+ },
+ {
+  "name": "the page opens the wrong address",
+  "file": "stmt/page.js",
+  "find": "live=liveSocket({ path:'/live',",
+  "replace": "live=liveSocket({ path:'/lives',"
+ },
+ {
+  "name": "the test surface opens a socket",
+  "file": "stmt/page.js",
+  "find": ".replace(/__LIVE__/g, test ? \"false\" : \"true\")",
+  "replace": ".replace(/__LIVE__/g, \"true\")"
+ },
+ {
+  "name": "hello leaves the orders poll at ten seconds",
+  "file": "stmt/page.js",
+  "find": "up:function(){ POLL_MS=LIVE_NET_MS; TH_MS=LIVE_NET_MS; pollSet(); thSet();",
+  "replace": "up:function(){ TH_MS=LIVE_NET_MS; pollSet(); thSet();"
+ },
+ {
+  "name": "hello leaves the thread poll at two seconds",
+  "file": "stmt/page.js",
+  "find": "up:function(){ POLL_MS=LIVE_NET_MS; TH_MS=LIVE_NET_MS; pollSet(); thSet();",
+  "replace": "up:function(){ POLL_MS=LIVE_NET_MS; pollSet(); thSet();"
+ },
+ {
+  "name": "a lost socket leaves the orders poll at a minute",
+  "file": "stmt/page.js",
+  "find": "down:function(){ POLL_MS=POLL_BASE; TH_MS=TH_BASE; pollSet(); thSet(); }",
+  "replace": "down:function(){ TH_MS=TH_BASE; pollSet(); thSet(); }"
+ },
+ {
+  "name": "a lost socket leaves the thread poll at a minute",
+  "file": "stmt/page.js",
+  "find": "down:function(){ POLL_MS=POLL_BASE; TH_MS=TH_BASE; pollSet(); thSet(); }",
+  "replace": "down:function(){ POLL_MS=POLL_BASE; pollSet(); thSet(); }"
+ },
+ {
+  "name": "a reconnect does not read again",
+  "file": "stmt/page.js",
+  "find": "if(liveHad) liveRead(); liveHad=true;",
+  "replace": "liveHad=true;"
+ },
+ {
+  "name": "every event is its own read",
+  "file": "stmt/page.js",
+  "find": "function liveRead(){ if(liveT) return; liveT=",
+  "replace": "function liveRead(){ liveT="
+ },
+ {
+  "name": "a read is begun while one is out",
+  "file": "stmt/page.js",
+  "find": "    if(liveBusy){ liveAgain=true; return; }\n",
+  "replace": ""
+ },
+ {
+  "name": "an event while a read is out is lost",
+  "file": "stmt/page.js",
+  "find": "    if(liveAgain){ liveAgain=false; liveRead(); }\n",
+  "replace": ""
+ },
+ {
+  "name": "a thread event with the thread open reads the orders",
+  "file": "stmt/page.js",
+  "find": "if(m.k==='thread'&&thSheetEl&&!thSheetEl.hidden){ thRead(); return; }",
+  "replace": "if(m.k==='thread'&&thSheetEl&&!thSheetEl.hidden){ thRead(); }"
+ },
+ {
+  "name": "a pool event is not read",
+  "file": "stmt/page.js",
+  "find": "if(m.k==='order'||m.k==='claim'||m.k==='pool'||m.k==='thread') liveRead();",
+  "replace": "if(m.k==='order'||m.k==='claim'||m.k==='thread') liveRead();"
+ },
+ {
+  "name": "the ping runs every 40 seconds",
+  "file": "stmt/page.js",
+  "find": "LIVE_PING_MS=45000",
+  "replace": "LIVE_PING_MS=40000"
+ },
+ {
+  "name": "the answer is waited for six seconds",
+  "file": "stmt/page.js",
+  "find": "LIVE_PONG_MS=5000",
+  "replace": "LIVE_PONG_MS=6000"
+ },
+ {
+  "name": "pong does not end the wait",
+  "file": "stmt/page.js",
+  "find": "if(ev.data==='pong'){ if(pongT){ clearTimeout(pongT); pongT=null; } return; }",
+  "replace": "if(ev.data==='pong'){ return; }"
+ },
+ {
+  "name": "no pong leaves the socket open",
+  "file": "stmt/page.js",
+  "find": "pongT=setTimeout(function(){ pongT=null; try{ s.close(); }catch(e){} lost(s); },LIVE_PONG_MS);",
+  "replace": "pongT=setTimeout(function(){ pongT=null; lost(s); },LIVE_PONG_MS);"
+ },
+ {
+  "name": "the wait between attempts stays a second",
+  "file": "stmt/page.js",
+  "find": "wait=Math.min(wait*2,30000);",
+  "replace": "wait=Math.min(wait,30000);"
+ },
+ {
+  "name": "attempts go on after the third",
+  "file": "stmt/page.js",
+  "find": "if(shut||fails>=3) return;",
+  "replace": "if(shut||fails>=4) return;"
+ },
+ {
+  "name": "the page shown again does not reconnect",
+  "file": "stmt/page.js",
+  "find": "function shown(){ if(!document.hidden) wake(); }",
+  "replace": "function shown(){}"
+ },
+ {
+  "name": "Log out leaves the socket open",
+  "file": "stmt/page.js",
+  "find": "    liveStop();   /* Speed Wave 2 L2: Log out closes the socket */\n",
+  "replace": ""
+ },
+ {
+  "name": "Salt Admin opens the wrong address",
+  "file": "stmt/owner.js",
+  "find": "liveOwner=liveSocket({ path:'/all/live',",
+  "replace": "liveOwner=liveSocket({ path:'/all/lives',"
+ },
+ {
+  "name": "hello leaves Needs you at five seconds",
+  "file": "stmt/owner.js",
+  "find": "up:function(){ NEED_MS=LIVE_NET_MS; chatMs=LIVE_NET_MS;",
+  "replace": "up:function(){ chatMs=LIVE_NET_MS;"
+ },
+ {
+  "name": "hello does not set the timer again",
+  "file": "stmt/owner.js",
+  "find": "function needsRetime(){ if(needsTimer!==null){ clearInterval(needsTimer); needsTimer=null; } needsWatch(); }",
+  "replace": "function needsRetime(){}"
+ },
+ {
+  "name": "a lost socket leaves Needs you at a minute",
+  "file": "stmt/owner.js",
+  "find": "down:function(){ NEED_MS=NEED_BASE; chatMs=2000;",
+  "replace": "down:function(){ chatMs=2000;"
+ },
+ {
+  "name": "an event is read only when the page is next shown",
+  "file": "stmt/owner.js",
+  "find": "if((placeNow==='needs'||placeNow==='orders')&&!document.hidden) tickPlace(); else liveDirty=true;",
+  "replace": "liveDirty=true;"
+ },
+ {
+  "name": "a thread event does not read the Chat",
+  "file": "stmt/owner.js",
+  "find": "    if(m.k==='thread'&&inChat()&&!document.hidden) loadMakerThreads(true);\n",
+  "replace": ""
+ },
+ {
+  "name": "hello leaves the Chat at two seconds",
+  "file": "stmt/owner.js",
+  "find": "up:function(){ NEED_MS=LIVE_NET_MS; chatMs=LIVE_NET_MS;",
+  "replace": "up:function(){ NEED_MS=LIVE_NET_MS;"
+ },
+ {
+  "name": "a lost socket leaves the Chat at a minute",
+  "file": "stmt/owner.js",
+  "find": "down:function(){ NEED_MS=NEED_BASE; chatMs=2000;",
+  "replace": "down:function(){ NEED_MS=NEED_BASE;"
+ },
+ {
+  "name": "the Chat poll ignores the socket",
+  "file": "stmt/owner.js",
+  "find": "    },chatMs);",
+  "replace": "    },2000);"
+ },
+ {
+  "name": "hello does not set the Chat timer again",
+  "file": "stmt/owner.js",
+  "find": "needsRetime(); if(makerThreadTimer!==null) startMakerChat(); if(liveOwnerHad)",
+  "replace": "needsRetime(); if(liveOwnerHad)"
+ },
+ {
+  "name": "the practice view opens a socket",
+  "file": "stmt/owner.js",
+  "find": "  if(LIVE_ON){\n    liveOwner=liveSocket(",
+  "replace": "  if(true){\n    liveOwner=liveSocket("
+ },
+ {
+  "name": "a page shown again waits for the next beat to ask",
+  "file": "stmt/page.js",
+  "find": "if(ws){ if(hello) probe(); return; }",
+  "replace": "if(ws) return;"
+ }
 ]
