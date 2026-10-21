@@ -50127,6 +50127,11 @@ await (async () => {
   await (await import("./admin-ac-glance.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Admin's glance, stock: Stock cover and Next lot beside Ready and Owed to you, for the book with the least cover (21 Oct 2026)");
+await (async () => {
+  await (await import("./admin-glance-stock.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin A to C: Help read only on Shop hours, the customer's four answers (21 Oct 2026)");
 await (async () => {
   await (await import("./admin-ac-help.mjs")).run({ ok, pageWork });

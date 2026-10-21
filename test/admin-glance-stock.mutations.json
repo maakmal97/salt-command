@@ -1,0 +1,20 @@
+[
+ {"name":"no stock tiles","file":"stmt/owner.js","find":"rm(owe),oweN?oweN+(oweN===1?' agreed order':' agreed orders'):'Nothing owed']].concat(glanceStockTiles());","replace":"rm(owe),oweN?oweN+(oweN===1?' agreed order':' agreed orders'):'Nothing owed']];"},
+ {"name":"the stock tiles are links","file":"stmt/owner.js","find":"var a=el(t[0]?'a':'div','salt-glance__item');","replace":"var a=el('a','salt-glance__item');"},
+ {"name":"no mark by the title","file":"stmt/owner.js","find":"if(t[5]){ label.appendChild(document.createTextNode(' ')); label.appendChild(bookMark(t[5],20)); }","replace":""},
+ {"name":"the product named","file":"stmt/owner.js","find":"if(t[5]){ label.appendChild(document.createTextNode(' ')); label.appendChild(bookMark(t[5],20)); }","replace":"if(t[5]){ label.appendChild(document.createTextNode(' '+t[5])); }"},
+ {"name":"least cover alone, nothing free not first","file":"stmt/owner.js","find":"var rank=function(b){ return [(+b.free||0)<=0.009?0:1, b.coverDays==null?Infinity:+b.coverDays]; };","replace":"var rank=function(b){ return [0, b.coverDays==null?Infinity:+b.coverDays]; };"},
+ {"name":"no cover figure first","file":"stmt/owner.js","find":"b.coverDays==null?Infinity:+b.coverDays]; };","replace":"b.coverDays==null?-1:+b.coverDays]; };"},
+ {"name":"nothing free reads its days","file":"stmt/owner.js","find":"var cover=free<=0.009?'0 d':b.coverDays==null?'over 4 wk':b.coverDays+' d';","replace":"var cover=b.coverDays==null?'over 4 wk':b.coverDays+' d';"},
+ {"name":"no cover figure reads 0 d","file":"stmt/owner.js","find":"b.coverDays==null?'over 4 wk':b.coverDays+' d';","replace":"b.coverDays==null?'0 d':b.coverDays+' d';"},
+ {"name":"the shelf as free","file":"stmt/owner.js","find":"'Stock cover',units(b.shelf),","replace":"'Stock cover',units(free),"},
+ {"name":"the units coming unsaid","file":"stmt/owner.js","find":"transit>0.009?units(transit)+' expected':by?","replace":"false?units(transit)+' expected':by?"},
+ {"name":"a day with none coming unsaid","file":"stmt/owner.js","find":"by?'Nothing on the way yet':'Nothing on the way'","replace":"'Nothing on the way'"},
+ {"name":"the day as ISO","file":"stmt/owner.js","find":"'Next lot',by?glanceDay(by):'–'","replace":"'Next lot',by?by:'–'"},
+ {"name":"no measured title","file":"stmt/owner.js","find":"if(t[6]) a.title=t[6];","replace":""},
+ {"name":"a read while one is out asks again","file":"stmt/owner.js","find":"if(!glanceStock&&!glanceStockOut&&Date.now()-glanceStockFailed>300000){","replace":"if(!glanceStock&&Date.now()-glanceStockFailed>300000){"},
+ {"name":"a failed read says Reading","file":"stmt/owner.js","find":"var said=glanceStockOut&&!glanceStockFailed?'Reading':'Could not be read';","replace":"var said='Reading';"},
+ {"name":"a failed read hides the glance","file":"stmt/owner.js","find":"    if(!ids.length) return none;\n","replace":"    if(!ids.length) return [];\n"},
+ {"name":"the banned word","file":"stmt/owner.js","find":"'Next lot',by?glanceDay(by)","replace":"'Next lot (restock)',by?glanceDay(by)"},
+ {"name":"one column wide","file":"stmt/page.js","find":"@media (min-width:1080px){.adm .nglance{grid-template-columns:repeat(4,minmax(0,1fr))}}\n","replace":""}
+]
