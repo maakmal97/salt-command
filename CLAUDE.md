@@ -311,7 +311,8 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
 
 ## Sync and proof
 
-- The phone polls `/rev` every ten seconds against its baked `SALT_BUILD_ID`; `/rev` is `no-store`
+- The phone polls `/rev` every ten seconds against its baked `SALT_BUILD_ID`, every sixty while the Desk's live socket is up
+  (the object `live` inside the Book class tells `rev`, `orders` and `drafts` as kinds only, owner only; `docs/DESK.md`); `/rev` is `no-store`
   and never cached by `sw.js`.
 - **`public/rev.json` id** = sha256 over the patched master, `public/sw.js` and every `src/*.js`,
   NUL-joined; written by the build only. It omits `public/_headers`, `manifest.webmanifest`,
