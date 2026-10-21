@@ -50010,6 +50010,11 @@ await (async () => {
   await (await import("./live-counter.mjs")).run({ ok, pageWork });
 })();
 
+section("Desk live socket: an open Desk is told the kind of thing that moved and reads it, the poll stays as the net, owner only (Speed Wave 2 L1, 21 Oct 2026)");
+await (async () => {
+  await (await import("./live-desk.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin: Orders open by stage, a list beside the order, and Record a menu");
 await (async () => {
   await (await import("./admin-orders.mjs")).run({ ok, pageWork });
@@ -51558,7 +51563,7 @@ await (async () => {
   ok(W.Book === Book && cfg.durable_objects.bindings.some((x) => x.name === "BOOK" && x.class_name === "Book")
     && cfg.migrations.length === 1 && cfg.migrations[0].tag === "book-v1" && (cfg.migrations[0].new_sqlite_classes || []).join() === "Book",
     "the Desk Worker exports Book and binds it as BOOK under one SQLite migration tag");
-  /* S2c: the recovery routes (handleBookPitr) and the object's own allowlist (isTest) are the only other places that name it */
+  /* S2c: the recovery routes (handleBookPitr) and the object's own allowlist (isTest) are the only other places that name it; L1 (21 Oct 2026) adds the Desk's live socket and its tells (handleLive, which also holds liveTell), and the live object's allowlist (isLive), none of which reads the book */
   const readers = [], strays = [];
   for (const f of readdirSync(join(REPO, "src")).filter((x) => x.endsWith(".js"))) {
     let fn = "";
@@ -51567,7 +51572,7 @@ await (async () => {
       if (head) fn = head[1] || head[2];
       if (/env\.BOOK\b/.test(l) && !/^\s*(\/\/|\*|\/\*)/.test(l)) {
         readers.push(f + ":" + (i + 1));
-        if (!(f === "worker.js" && (fn === "handleBookLoad" || fn === "handleBookPitr")) && !(f === "book.js" && fn === "isTest")) strays.push(f + ":" + (i + 1) + " in " + fn);
+        if (!(f === "worker.js" && (fn === "handleBookLoad" || fn === "handleBookPitr" || fn === "handleLive")) && !(f === "book.js" && (fn === "isTest" || fn === "isLive"))) strays.push(f + ":" + (i + 1) + " in " + fn);
       }
     });
   }
