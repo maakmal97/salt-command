@@ -644,7 +644,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
    bar and the slivers outside its top corners are covered, up to a 96px inset. A shadow is not layout: the
    first cut was a pseudo-element reaching into the gutter, and it made the phone's page 2px wide. */
 body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 var(--salt-obsidian),0 -72px 0 0 var(--salt-obsidian),
-  0 -96px 0 0 var(--salt-obsidian),var(--salt-shadow-desk),inset 0 1px 0 var(--salt-highlight);}
+  0 -96px 0 0 var(--salt-obsidian),var(--salt-shadow-desk);}   /* crisp since 21 Oct 2026: no inner glow */
 .dhbrand .mark{width:30px;height:30px;flex:0 0 auto;display:block;}
 .dhtext{display:flex;flex-direction:column;gap:6px;min-width:0;overflow:hidden;}
 .deskbar .meta{display:block;margin:0;min-width:0;}
@@ -656,11 +656,11 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .dhclock{font-variant-numeric:tabular-nums;}
 .deskbar .dbtools{order:2;}
 /* the version is the system's .salt-version, bare (22 Sep 2026) */
-.deskbar>#provBar{order:3;flex:1 0 100%;}
+.deskbar>#provBar{order:5;flex:1 0 100%;}   /* under what is live, which takes a row of its own under 860px */
 .deskbar>#provBar:empty{display:none;}
 .deskbar .provbar{margin-top:0;}
 /* the phone's menu opens under the bar rather than over it */
-@media(max-width:860px) and (pointer:coarse){.rail{top:calc(var(--safetop) + var(--dbtop) + 72px);}}
+@media(max-width:860px) and (pointer:coarse){.rail{top:calc(var(--safetop) + var(--dbtop) + var(--dbh,72px) + 8px);}}
 @media(max-width:560px){
   .deskbar{padding:7px 6px 7px 12px;gap:8px;}
   .dhbrand{gap:10px;}
