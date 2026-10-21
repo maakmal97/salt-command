@@ -51,7 +51,7 @@
 - Live as v1187 (`b9006c59`, 20 Oct 2026; Cloud commit `39395156043`: chain and three suite parts green, live /rev `832779203aef614c`): the switch is `REWARD.stated.salt.associate` `{times: 10, since: "2026-10-20"}`; `REWARD_OPEN` states ten associates at `upTo` s276. No customer basis (his yes to the loyalty plan's Ask 4); the six customers hold about 6.4 units, unspent. The loyalty unit (`docs/plan-loyalty-unit.html`, branch `claude/bold-booth-4df727`) builds next. Owner acceptance not yet given.
 
 ## Loyalty unit
-- Built 21 Oct 2026 on branch `claude/musing-swanson-67b061` from `docs/plan-loyalty-unit.html` (his yes typed 21 Oct 2026): `REWARD.stated.salt.loyal`
+- Live as v1197 (`9668fe2d`, 21 Oct 2026; Cloud commit `39524393383`: chain and three suite parts green, live /rev `2f68fa9b8b036ef5`), from `docs/plan-loyalty-unit.html` (his yes typed 21 Oct 2026): `REWARD.stated.salt.loyal`
   `{every: 20, since: "2026-10-21"}`; everyone at nought. 0000-0002 is a plain customer (FIX_VERSION 14). Owner acceptance not yet given.
 
 ## Notifications
