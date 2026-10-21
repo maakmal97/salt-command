@@ -2023,6 +2023,8 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     + "</div>" + placesBar() + "</div>"
     + '<script nonce="' + nonce + '">'
     + CLIENT_JS.replace(/__POLL__/g, String(test ? TEST_POLL_MS : POLL_MS)).replace(/__THPOLL__/g, String(THREAD_POLL_MS))
+      /* Speed Wave 2 L2: the live socket is the real site's; the test surface keeps its two-second poll and opens none */
+      .replace(/__LIVE__/g, test ? "false" : "true")
       /* the notice as the page was served, so the card is drawn with no request; the poll reads it again. A function
          replacement, as every splice carrying typed words: a $' or $` in the notice was read as a pattern and pasted the
          page into the script, which then did not run (S7-R2 of the stage 7 review) */
@@ -3032,6 +3034,7 @@ const CLIENT_JS = `
   function lock(){
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
+    liveStop();   /* Speed Wave 2 L2: Log out closes the socket */
     thClose(); thPut(null); thOut=[]; thSig=''; thWhy='';
     bundle=null; session=''; view=false; prices=null; orders=[]; pools=[]; claims=[]; ordersFailed=false; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
     hold=false; hidePrices=false; locked=false; payDue=null; liveAt='';
@@ -7263,7 +7266,7 @@ const CLIENT_JS = `
     if(stale()) return false;
     enter(body.u, body, b, x, ck, keep);
     /* a reopen hands the session back to the request that met the lapse, which repeats itself; the poll resumes */
-    if(keep){ if(!poll) poll=setInterval(refresh, POLL_MS); return true; }
+    if(keep){ if(!poll) poll=setInterval(refresh, POLL_MS); liveStart(); return true; }
     if(!(await follow(stale))) return true;
     askPush();
     return true;
@@ -7341,7 +7344,7 @@ const CLIENT_JS = `
     var same=!!keep&&u===user&&!!bundle, t=tab, sy=window.scrollY||0, mf=mfPick;
     prices=x.prices; assoc=x.assoc; card=x.card; curCk=ck||null;
     user=u; session=body.session||'';
-    if(!same){ orders=[]; pools=[]; claims=[]; draft={}; closePay(true); payDue=null; liveAt=''; ordersFailed=false; readAt=0; thClose(); thPut(null); thOut=[]; thSig=''; thWhy=''; }
+    if(!same){ liveStop(); orders=[]; pools=[]; claims=[]; draft={}; closePay(true); payDue=null; liveAt=''; ordersFailed=false; readAt=0; thClose(); thPut(null); thOut=[]; thSig=''; thWhy=''; }
     view=!!(OWNER&&body.byMaster);
     if(linkBox) linkBox.hidden=true;
     if(opening) opening.hidden=true;
@@ -7363,12 +7366,103 @@ const CLIENT_JS = `
     }
   }
   async function follow(stale){
-    if(session){ await loadOrders(); await loadCounterHours(); if(stale()) return false; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); if(TESTS.indexOf(user)>=0) bullRead(); }
+    if(session){ await loadOrders(); await loadCounterHours(); if(stale()) return false; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); liveStart(); if(TESTS.indexOf(user)>=0) bullRead(); }
     else if(view){ await loadView(user); if(stale()) return false; }   /* stmt/owner.js: his route alone carries it */
     setHold(); drawOrder(); drawPayHead();   /* S6 6.5 and 6.7: the claims come with the orders, and may lift the hold */
     payNumLoad();   /* Phase 7b: the numbers the pay sheet shows, ready before it opens; asked on a session alone */
     if(session) payqBack();   /* S6 fix: a question the last open left unanswered */
     return true;
+  }
+
+  /* ---- SPEED WAVE 2 L2 (21 Oct 2026): THE LIVE SOCKET. An open page holds one WebSocket to the order book, which tells it WHAT KIND of thing
+     moved (an order, a claim, a pool, the thread) and its id, never a figure or a word; the page reads what it always read. The customer's
+     proof is the handshake itself: the subprotocols are "stmt" and the session, so no token sits in an address or a message. While the socket
+     is up the polls fall to a minute and stay as the net; on its loss they return to ten seconds and two, and the socket reconnects after 1, 2,
+     4 ... 30 seconds. Three attempts in a row that never reach hello stop until the page is shown again. A ping every 45 seconds must be
+     answered within 5 or the socket is let go and made again. Stmt/owner.js opens its own on /all/live through the same function. ---- */
+  var LIVE_ON=__LIVE__, LIVE_NET_MS=60000, LIVE_PING_MS=45000, LIVE_PONG_MS=5000;
+  function liveSocket(cfg){
+    var ws=null, hello=false, fails=0, wait=1000, retryT=null, pingT=null, pongT=null, shut=false;
+    function url(){ return (location.protocol==='https:'?'wss://':'ws://')+location.host+cfg.path; }
+    function stopBeat(){ if(pingT){ clearInterval(pingT); pingT=null; } if(pongT){ clearTimeout(pongT); pongT=null; } }
+    function beat(){
+      stopBeat();
+      pingT=setInterval(function(){
+        var s=ws; if(!s||s.readyState!==1) return;
+        try{ s.send('ping'); }catch(e){ return; }
+        if(pongT) clearTimeout(pongT);
+        pongT=setTimeout(function(){ pongT=null; try{ s.close(); }catch(e){} lost(s); },LIVE_PONG_MS);
+      },LIVE_PING_MS);
+    }
+    function lost(s){
+      if(ws!==s) return;
+      ws=null; stopBeat();
+      var was=hello; hello=false;
+      if(was) cfg.down(); else fails++;
+      if(shut||fails>=3) return;
+      retryT=setTimeout(function(){ retryT=null; connect(); },wait); wait=Math.min(wait*2,30000);
+    }
+    function connect(){
+      if(shut||ws||typeof WebSocket!=='function') return;
+      var s;
+      try{ s=cfg.protos?new WebSocket(url(),cfg.protos()):new WebSocket(url()); }catch(e){ fails++; return; }
+      ws=s; hello=false;
+      s.onmessage=function(ev){
+        if(ws!==s) return;
+        if(ev.data==='pong'){ if(pongT){ clearTimeout(pongT); pongT=null; } return; }
+        var m=null; try{ m=JSON.parse(ev.data); }catch(e){ return; }
+        if(!m||typeof m.k!=='string') return;
+        if(m.k==='hello'){ if(hello) return; hello=true; fails=0; wait=1000; beat(); cfg.up(); return; }
+        if(hello) cfg.event(m);
+      };
+      s.onclose=function(){ lost(s); };
+      s.onerror=function(){};
+    }
+    function wake(){
+      if(shut||ws) return;
+      fails=0; wait=1000;
+      if(retryT){ clearTimeout(retryT); retryT=null; }
+      connect();
+    }
+    function shown(){ if(!document.hidden) wake(); }
+    document.addEventListener('visibilitychange',shown);
+    window.addEventListener('pageshow',wake);
+    connect();
+    return { wake:wake, close:function(){
+      shut=true; if(retryT){ clearTimeout(retryT); retryT=null; } stopBeat();
+      document.removeEventListener('visibilitychange',shown); window.removeEventListener('pageshow',wake);
+      var s=ws, was=hello; ws=null; hello=false;
+      if(s){ try{ s.close(); }catch(e){} }
+      if(was) cfg.down();
+    } };
+  }
+  var live=null, liveT=null, liveBusy=false, liveAgain=false, liveHad=false, POLL_BASE=POLL_MS, TH_BASE=TH_MS;
+  function pollSet(){ if(poll){ clearInterval(poll); poll=setInterval(refresh, POLL_MS); } }
+  function thSet(){ if(thTimer){ clearInterval(thTimer); thTimer=setInterval(thRead,TH_MS); } }
+  /* one re-read a burst of events, never two at once: what arrives while one is out runs again after it */
+  function liveRead(){ if(liveT) return; liveT=setTimeout(function(){ liveT=null; liveRun(); },250); }
+  async function liveRun(){
+    if(liveBusy){ liveAgain=true; return; }
+    liveBusy=true;
+    try{ await refresh(); }catch(e){ /* the next event or the poll reads again */ }
+    liveBusy=false;
+    if(liveAgain){ liveAgain=false; liveRead(); }
+  }
+  function liveStart(){
+    if(!LIVE_ON||OWNER||!session) return;
+    if(live){ live.wake(); return; }
+    live=liveSocket({ path:'/live', protos:function(){ return ['stmt',session]; },
+      up:function(){ POLL_MS=LIVE_NET_MS; TH_MS=LIVE_NET_MS; pollSet(); thSet(); if(liveHad) liveRead(); liveHad=true; },
+      down:function(){ POLL_MS=POLL_BASE; TH_MS=TH_BASE; pollSet(); thSet(); },
+      event:function(m){
+        if(m.k==='thread'&&thSheetEl&&!thSheetEl.hidden){ thRead(); return; }
+        if(m.k==='order'||m.k==='claim'||m.k==='pool'||m.k==='thread') liveRead();
+      } });
+  }
+  function liveStop(){
+    if(liveT){ clearTimeout(liveT); liveT=null; }
+    liveAgain=false; liveHad=false;
+    if(live){ var l=live; live=null; l.close(); }
   }
 
   /* ---- THE ONE-TIME LINK (v710; S3 3.3 and 3.4, 24 Sep 2026) -------------------------------------------
