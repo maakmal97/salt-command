@@ -242,7 +242,6 @@ async function handleLive(request, env, url) {
 export function liveTell(env, ctx, k, id) {
   const job = (async () => {
     try {
-      if (!env || !env.BOOK) return;
       const rev = k === "rev";
       await env.BOOK.get(env.BOOK.idFromName(LIVE_NAME)).fetch(new Request("https://book/" + (rev ? "rev" : "tell"),
         { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(rev ? { id } : { k }) }));
@@ -1787,7 +1786,7 @@ export async function recoverVaultInputs(env, id, gateHeld = false) {
         .bind(row.id, new Date().toISOString()).run();
       await consumeVaultOutbox(env.SALT_LEDGER, row.id, async (entry) => {
       await queueSale(env, entry, true);
-      await draftedTold(env, undefined, await runDrafter(env));
+      await runDrafter(env);
       const draft = await env.SALT_LEDGER.prepare("SELECT status FROM draft WHERE id=?1").bind(entry.at).first();
       if (!draft) throw new Error("The filed vault input has not reached its draft. It remains pending recovery.");
       return { ok: true };
@@ -2365,7 +2364,6 @@ async function handleDraftDecide(request, env, ctx, id, decision) {
   let moved = [];
   if (decision === "approved") moved = await afterApproval(env, ctx, [id].concat(trip));
   await liveTell(env, ctx, "drafts");
-  if (moved.length) await liveTell(env, ctx, "orders");
   let dropped = 0;
   if (decision === "rejected") {
     try { dropped = await dropQueued(env, [id].concat(trip)); } catch (e) { /* the decision stands; the POST filter catches a re-post */ }
