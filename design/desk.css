@@ -661,6 +661,8 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .deskbar .provbar{margin-top:0;}
 /* the phone's menu opens under the bar rather than over it */
 @media(max-width:860px) and (pointer:coarse){.rail{top:calc(var(--safetop) + var(--dbtop) + var(--dbh,72px) + 8px);}}
+/* 21 Oct 2026: under 1440px the bar keeps what is live on its row by dropping the as-at date and, while live, the status word, as the phone always has; the dot and the clock stay */
+@media(max-width:1440px){.dhasat,.dhrole.live .dhword{display:none;}.dhclock::before{content:none;}}
 @media(max-width:560px){
   .deskbar{padding:7px 6px 7px 12px;gap:8px;}
   .dhbrand{gap:10px;}
