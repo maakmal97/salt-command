@@ -72,7 +72,7 @@
 - v1201 (21 Oct 2026; Cloud commit `39560565587`: chain and three suite parts green, /rev `1e15f67b09f8bf6a`): his word, the Desk bar back in the
   rail's glass with v1199's features kept (salt-ds 1.12.1, #23; stacks by its own width); Salt Admin's bar says where he is, then Needs you,
   Orders, Customers and Approve (`bar.*` acts); Salt Counter's header is the bar again (`cBar`, reversing Batch A's no bar): To pay now,
-  the orders that need them, Messages while unread. Not yet seen by him.
+  the orders that need them, Messages while unread. Accepted 21 Oct 2026 on phone and laptop.
 
 ## Notifications
 - Live as v1167 (`e35ee35b`, 19 Oct 2026; Cloud commit `39223032636`: chain, three suite parts and CI green): Salt Admin (was Salt Account) has its own worker `/all/sw.js` and `opush:` subscriptions; the Desk rings orders and approvals only while no Salt Admin send goes through (KV `admin:on`). He has not yet re-added Salt Admin to the home screen or turned its bell on (Shop > This device), so the Desk still rings for now. The stock-light banner has its Desk side only: nothing posts `{"tag":"stock"}` yet (it needs `tools/stmt-publish.mjs` to compare lights).
