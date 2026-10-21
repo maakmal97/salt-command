@@ -10,6 +10,7 @@ import { readFileSync } from "node:fs";
 import { landingPage, PSHAPE } from "../stmt/page.js";
 import * as C from "../tools/stmt-crypto.mjs";
 import { slipSeal } from "../tools/seed-vault.mjs";
+import { installSockets } from "./live-fakes.mjs";
 
 /* ONE SLIP KEY, as the vault holds it (12 Oct 2026, Phase 2b): an ECDH P-256 pair whose private half is sealed under an invented passphrase exactly as the vault seals
    it (PBKDF2 150,000 rounds, AES-GCM), and a four-byte JPEG sealed to its public half by the laptop's own slipSeal. Made once and kept, since the key takes a moment. */
@@ -198,7 +199,7 @@ const links = () => [
    that fail to be reached; refuse[route] = "the server's words" answers that route as a refusal (409, ok false, those words), as the Counter does; lapse(true) answers every read 401, as Access does when his
    sign-in has ended. probe: true leaves window.__owner(code) in the page, which evaluates code inside the page script's own scope (a test seam, the page is otherwise as served). assocAnswer changes the associates' report card, and inputsAnswer what Record's forms are told (the books, the customers, the rows, the tips), as the others change theirs. */
 export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null, claims = null, claimPreview = null, slip = false, threads = null, hours = null, bulletin = null, sheetAnswer = null, linksAnswer = null, failRoutes = [], probe = false, assocAnswer = null, inputsAnswer = null, retained = [], cryptoImpl = webcrypto, noKey = false, bare = false, extra = null, before = null }) {
-  const posts = [], timers = [], store = new Map(), intervals = [], gates = new Map(), fail = new Set(failRoutes), reads = [], refuse = {}, wire = [];
+  const sockets = [], posts = [], timers = [], store = new Map(), intervals = [], gates = new Map(), fail = new Set(failRoutes), reads = [], refuse = {}, wire = [];
   /* slip: true gives the page the vault's slip key (the passphrase is p.slipPass) and a sealed picture for any slip asked; the blob: URLs it draws are counted in p.urls; noKey: true files the names and places but no slip key; retained is extra [key, value] pairs kept in localStorage; cryptoImpl is the page's crypto; p.wire is every request that left the page */
   const fix = slip ? await slipFixture() : null, urls = { made: [], revoked: [] };
   const hold = (route) => { let release; gates.set(route, new Promise((r) => { release = r; })); return () => release(); };
@@ -267,6 +268,7 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
       w.localStorage.setItem("saltQuickReplies", JSON.stringify(["On my way", "Thank you"]));
       retained.forEach(([k, v]) => w.localStorage.setItem(k, v));
       /* before(w): a test's own stubs on the window (a service worker, a Notification) in place before the page's script runs */
+      installSockets(w, sockets);   /* Speed Wave 2 L2: the owner's live socket connects to nothing; a test opens it by hand */
       if (before) before(w);
       w.fetch = async (path, init) => {
         const route = String(path);
@@ -294,7 +296,7 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
   const snaps = [], snap = (name) => { snaps.push([name, actAudit(d)]); };
   const click = async (control) => { control.click(); await work.quiet(); };
   const type = (control, value) => { control.value = value; control.dispatchEvent(new w.Event("input", { bubbles: true })); control.dispatchEvent(new w.Event("change", { bubbles: true })); };
-  return { dom, w, d, work, posts, wire, timers, intervals, hold, fail, refuse, reads, card, snaps, snap, click, type, urls, slipPass: fix && fix.pass, failCash: (v) => { failCash = v; }, lapse: (v) => { lapsed = v; } };
+  return { dom, w, d, work, sockets, posts, wire, timers, intervals, hold, fail, refuse, reads, card, snaps, snap, click, type, urls, slipPass: fix && fix.pass, failCash: (v) => { failCash = v; }, lapse: (v) => { lapsed = v; } };
 }
 
 /* every stage, every card and every form drawn once: the page a person would have in front of them on the busiest day */

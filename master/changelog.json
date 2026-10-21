@@ -1,5 +1,15 @@
 [
  {
+  "v": "v1200",
+  "d": "21 Oct 2026",
+  "t": "THE COUNTER GOES LIVE: AN ORDER MOVE SHOWS IN A SECOND",
+  "n": [
+   "<b>SPEED WAVE 2, L2 OF THE LIVE AND FAST PLAN.</b> An open Salt Counter page and an open Salt Admin now hold a live socket to the site's order book. Every move it records (a placement, his Accept or Ready, a payment claimed or received, a line on an order or the account's thread, a group order) is told at once to that customer's open pages and to his, so the page reads it again within about a second instead of at the next 10 second poll (2 seconds for a thread, 5 for Salt Admin).",
+   "<b>KINDS AND IDS ONLY.</b> A socket is told what kind of thing moved and its id, never a figure, a name or a word; the page then reads what it always read, through its own signed-in route. A customer's socket is proved when it opens, by the same session the page already holds, and is told only its own account's moves; his is behind Access and the exact email, as every Salt Admin road. A socket's own messages only ask: nothing it sends moves the book.",
+   "<b>THE POLL STAYS AS THE NET.</b> While the socket is up the polls fall to once a minute; when it drops they return at once, and the page reconnects (1, 2, 4 seconds, then on its next return to the screen). Log out, Sign out everywhere and a device signed out close the account's sockets; a socket past its session's life is closed too."
+  ]
+ },
+ {
   "v": "v1199",
   "d": "21 Oct 2026",
   "t": "THE DESK BAR, CRISP AND COMPLETE ON EVERY VIEW",
