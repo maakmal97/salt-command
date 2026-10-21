@@ -5,8 +5,8 @@
   "replace": "lbl:'Pricing drift', q:'margin moving under prices that are not'"
  },
  {
-  "name": "the % card's note about under 7% is gone",
-  "find": " Under about 7% moves nothing at half a unit to 1 unit.</div></div>`;",
+  "name": "the % card's note on the -30 to +30 range is gone",
+  "find": " A % runs from -30 to +30, never under the Floor or over the Ceiling.</div></div>`;",
   "replace": "</div></div>`;"
  },
  {
@@ -21,8 +21,8 @@
  },
  {
   "name": "a % of 5 reads 0.05 on the card",
-  "find": "return n>0?'+'+n+'%':'0%';}",
-  "replace": "return n>0?String(d):'0%';}"
+  "find": "return n>0?'+'+n+'%':n<0?n+'%':'0%';}",
+  "replace": "return n>0?String(d):n<0?n+'%':'0%';}"
  },
  {
   "name": "the Network card heading is Price drift",

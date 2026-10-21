@@ -29,14 +29,15 @@ export async function run({ ok }) {
     for (const id of codes) R.rungs.forEach((q, i) => { n1++; const a = E.quoteAt(q, C, P, drift[id]); if (cards[id][i] == null || Math.abs(a - cards[id][i]) > 0.004) diff++; }); }
   ok(n1 > 100 && diff === 0, "the desk's card at every rung of every book is the engine's quoteAt, for every account: " + diff + " of " + n1 + " differ");
 
-  /* 2. A SALT RUNG IS NEVER UNDER THE SET PRICE NOR OVER THE CEILING (18 Oct 2026: the Set Price is the least any customer but a partner pays,
-     and a customer's % only lifts it), and a stated board's rung is his typed price exactly */
+  /* 2. A SALT RUNG IS NEVER UNDER THE FLOOR NOR OVER THE CEILING, and under the Set Price only on a negative % (21 Oct 2026, his decision: a %
+     runs -30% to +30%, a negative one a discount; it was 18 Oct 2026's lift only), and a stated board's rung is his typed price exactly */
   const { R: RS, P: PS, C: CS, codes: cs, drift: ds } = ctx.salt;
-  let under = 0, overCeil = 0, same = 0;
+  let under = 0, overCeil = 0, same = 0, disc = 0;
   const setRow = E.driftWalk(E.walkSizes(RS, RS.rungs), CS, PS, 0);
   for (const id of cs) for (const q of RS.rungs) { const a = E.quoteAt(q, CS, PS, ds[id]), r = setRow.find((x) => Math.abs(x.q - q) < 0.009);
-    if (a < r.set - 0.004) under++; else if (a > r.ceiling + 0.004) overCeil++; else same++; }
-  ok(under === 0 && overCeil === 0 && same > 100, "a salt rung is never under the Set Price nor over the ceiling, for every account: " + JSON.stringify({ under, overCeil, same }));
+    const neg = typeof ds[id] === "number" && ds[id] < 0;
+    if (a < Math.ceil(r.floor / 5 - 1e-9) * 5 - 0.004 || (!neg && a < r.set - 0.004)) under++; else if (a > r.ceiling + 0.004) overCeil++; else { same++; if (a < r.set - 0.004) disc++; } }
+  ok(under === 0 && overCeil === 0 && same > 100 && disc > 0, "a salt rung is never under the Floor nor over the ceiling, and under the Set Price only on a negative %, for every account: " + JSON.stringify({ under, overCeil, same, disc }));
   let typedOff = 0;
   for (const p of ["oil", "candy", "rice"]) { const { R, P, C } = ctx[p]; for (const q of R.rungs) if (E.quoteAt(q, C, P, 0) !== +R.fixed[String(q)]) typedOff++; }
   ok(typedOff === 0, "every rung of a stated board quotes his typed price exactly: " + typedOff + " differ");
