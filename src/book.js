@@ -180,11 +180,9 @@ export class Book {
     return id.equals(ns.idFromName(PITR_NAME));
   }
 
-  /* L1: only the live object answers a socket route. The same allowlist on its id as isTest, failing closed. */
+  /* L1: only the live object answers a socket route. The same allowlist on its id as isTest, failing closed on any missing piece. */
   isLive() {
-    const ns = this.env && this.env.BOOK, id = this.state.id;
-    if (!ns || typeof ns.idFromName !== "function" || !id || typeof id.equals !== "function") return false;
-    return id.equals(ns.idFromName(LIVE_NAME));
+    try { return this.state.id.equals(this.env.BOOK.idFromName(LIVE_NAME)) === true; } catch (e) { return false; }
   }
 
   /* the 101 answer, as one seam: Node's Response refuses that status, so the suite replaces this one method */
