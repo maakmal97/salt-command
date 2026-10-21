@@ -1100,7 +1100,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
         if (error.status !== 409 && error.status !== 503) throw error;
         return json({ ok: false, error: error.message }, error.status);
       }
-      await draftedTold(env, undefined, await runDrafter(env, { mirror }));
+      await draftedTold(env, ctx, await runDrafter(env, { mirror }));
       const drafts = [];
       for (const item of entries) {
         const draft = await env.SALT_LEDGER.prepare("SELECT status,entry FROM draft WHERE id=?1").bind(item.at).first();
@@ -1176,7 +1176,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       if (admission.newSource) await withdrawInputAdmission(env.SALT_LEDGER, entry.at, "orders");
       return json({ ok: false, error: error.message }, error.status);
     }
-    await draftedTold(env, undefined, await runDrafter(env, { mirror }));
+    await draftedTold(env, ctx, await runDrafter(env, { mirror }));
     const draft = await env.SALT_LEDGER.prepare("SELECT status FROM draft WHERE id=?1").bind(entry.at).first();
     const response = { ok: true, queued, draft: entry.at, status: draft ? draft.status : "queued" };
     await makerRequestFinish(env.SALT_LEDGER, body.at, fingerprint, { ...response, queued: false });
