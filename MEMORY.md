@@ -64,6 +64,11 @@
   (`LIFT_MIN`, `LIFT_MAX`), a negative one a discount held at or over the Floor; Add ID's presets mirror both ways; a good record suggests up to -30%
   (`suggest.good` 0.3 times `autoDrift`'s G, only with B nought). Nobody holds a %; once filled, about 18 of 41 customers would be suggested -30%. Accepted 21 Oct 2026.
 
+## Desk bar
+- Live as v1199 (`61541316`, 21 Oct 2026; Cloud commit `39555095710`: chain and three suite parts green, live /rev `9cea1ad4e24589a6`), with
+  salt-ds 1.12.0 (#22): the bar is solid with a hairline, says where you are, and carries Now, Waiting, Alerts and Approve on every view.
+  Approve opens `/admin`, a 302 to `ADMIN_URL` (wrangler.jsonc vars) `#orders/approve`; he tapped it live and it opens Salt Admin's Approve; accepted 21 Oct 2026.
+
 ## Notifications
 - Live as v1167 (`e35ee35b`, 19 Oct 2026; Cloud commit `39223032636`: chain, three suite parts and CI green): Salt Admin (was Salt Account) has its own worker `/all/sw.js` and `opush:` subscriptions; the Desk rings orders and approvals only while no Salt Admin send goes through (KV `admin:on`). He has not yet re-added Salt Admin to the home screen or turned its bell on (Shop > This device), so the Desk still rings for now. The stock-light banner has its Desk side only: nothing posts `{"tag":"stock"}` yet (it needs `tools/stmt-publish.mjs` to compare lights).
 
