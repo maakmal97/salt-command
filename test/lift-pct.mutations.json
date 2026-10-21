@@ -42,12 +42,6 @@
   "replace": "const rate=fl*m*lift/q;"
  },
  {
-  "name": "the Ceiling's own rate no longer holds the next size: a high % is quoted more a unit on more units",
-  "file": "engine/pricing.mjs",
-  "find": "return {rate:capped?Math.min(rate,hi/q):rate,",
-  "replace": "return {rate:rate,"
- },
- {
   "name": "the Ceiling no longer holds a price",
   "file": "engine/pricing.mjs",
   "find": "p=Math.min(Math.max(p,lo),hi);\n      /* where the Ceiling",
@@ -72,16 +66,16 @@
   "replace": "else if(R.drift)ps=qs.map(q=>{const w=driftWalk([q],C,P,d);return +cardPrice(null,floorTotal(q,C,P),w[0].p).toFixed(2);});"
  },
  {
-  "name": "a % may be negative again (the old drift's range)",
+  "name": "a % may be as low as -1 (the old drift's range)",
   "file": "engine/pricing.mjs",
-  "find": "v>=-1e-9&&v<=2+1e-9;}",
-  "replace": "v>=-1-1e-9&&v<=2+1e-9;}"
+  "find": "v>=LIFT_MIN-1e-9&&v<=LIFT_MAX+1e-9;}",
+  "replace": "v>=-1-1e-9&&v<=LIFT_MAX+1e-9;}"
  },
  {
   "name": "a % may be up to 3",
   "file": "engine/pricing.mjs",
-  "find": "v>=-1e-9&&v<=2+1e-9;}",
-  "replace": "v>=-1e-9&&v<=3;}"
+  "find": "v>=LIFT_MIN-1e-9&&v<=LIFT_MAX+1e-9;}",
+  "replace": "v>=LIFT_MIN-1e-9&&v<=3;}"
  },
  {
   "name": "the automatic drift prices again: a customer with none held is quoted what the record reads",
@@ -128,8 +122,8 @@
  {
   "name": "the suggestion is made on one settled row, not three",
   "file": "engine/rules.mjs",
-  "find": "step:0.05, minSettled:3}",
-  "replace": "step:0.05, minSettled:1}"
+  "find": "step:0.05, minSettled:3, good:0.3}",
+  "replace": "step:0.05, minSettled:1, good:0.3}"
  },
  {
   "name": "a late payer's risk is 15%",
@@ -226,5 +220,35 @@
   "file": "engine/snapshot.mjs",
   "find": "suggest[id]={pct:g.pct,why:PRICING_ENGINE.suggestWhy(g).join(', ')};",
   "replace": "suggest[id]={pct:g.pct,why:''};"
+ },
+ {
+  "name": "the lowest % is nought again: a discount is refused by driftOk and clamped to the Set Price",
+  "file": "engine/pricing.mjs",
+  "find": "const LIFT_MIN=-0.3, LIFT_MAX=0.3;",
+  "replace": "const LIFT_MIN=0, LIFT_MAX=0.3;"
+ },
+ {
+  "name": "the walk applies a % only when it is above nought: a negative % quotes the Set Price",
+  "file": "engine/pricing.mjs",
+  "find": "if(Math.abs(k)>1e-9)",
+  "replace": "if(k>0)"
+ },
+ {
+  "name": "the good record's discount is taken even with a late or a write-off on the record",
+  "file": "engine/pricing.mjs",
+  "find": "good=rec.B>0?0:+(n('good',0.3)*rec.G).toFixed(4)",
+  "replace": "good=+(n('good',0.3)*rec.G).toFixed(4)"
+ },
+ {
+  "name": "the presets lose -30%",
+  "file": "engine/rules.mjs",
+  "find": "presets:{\"-30%\":-0.3, ",
+  "replace": "presets:{"
+ },
+ {
+  "name": "a good record earns no discount (good weight nought)",
+  "file": "engine/rules.mjs",
+  "find": "minSettled:3, good:0.3},",
+  "replace": "minSettled:3, good:0},"
  }
 ]

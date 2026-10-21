@@ -294,9 +294,9 @@
   "replace": ".adm .maker-marks .salt-option__face{justify-content:flex-start}"
  },
  {
-  "name": "the % lift field loses the decimal pad",
+  "name": "the % field gets the decimal pad back, which has no minus key on an iPhone",
   "file": "stmt/owner.js",
-  "find": "driftValue.min='0'; driftValue.max='2';",
-  "replace": "driftValue.min='0'; driftValue.max='2'; driftValue.removeAttribute('inputmode');"
+  "find": "driftValue.removeAttribute('inputmode');",
+  "replace": "driftValue.inputMode='decimal';"
  }
 ]

@@ -37,12 +37,12 @@ export async function run({ ok }) {
     }
     ok(drawn > 48 && found.length === 0, "no part of the Desk, on any book, draws a level name, a tier number or the word drift: " + drawn + " parts read " + JSON.stringify(found.slice(0, 4)));
 
-    /* the % card: named Their %, the note under about 7% once, the suggestion as a % with its reason, the partner on the Floor */
+    /* the % card: named Their %, the range note once (21 Oct 2026: -30 to +30, which replaced the 7% note), the suggestion as a % with its reason, the partner on the Floor */
     w.eval("setProd('salt');recompute();");
     const card = String(w.eval("driftCard()")).replace(/<[^>]+>/g, " ").replace(/&middot;/g, "·").replace(/\s+/g, " ");
-    ok(/Each customer's % on the Set Price/.test(card) && (card.match(/Under about 7% moves nothing at half a unit to 1 unit/g) || []).length === 1
+    ok(/Each customer's % on the Set Price/.test(card) && (card.match(/A % runs from -30 to \+30, never under the Floor or over the Ceiling/g) || []).length === 1 && !/Under about 7%/.test(card)
       && /Their %, and what it quotes/.test(card) && !/\bSuggested 0\b/.test(card) && !FORBID.test(card),
-      "the % card reads Their %, carries the one note that under about 7% moves nothing at half a unit to 1 unit, and names no level or drift: " + card.slice(0, 200));
+      "the % card reads Their %, carries the one note that a % runs from -30 to +30 inside the Floor and the Ceiling, and names no level or drift: " + card.slice(0, 200));
     /* cards the parts draw only on a condition are read by their own function */
     const pb = String(w.eval("pbCard()")).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
     ok(/Set Price lifted by their %, set on Clients/.test(pb) && !FORBID.test(pb) && !/drift/i.test(pb), "and the printed board's card says the Set Price lifted by their %: " + pb.slice(200, 420));

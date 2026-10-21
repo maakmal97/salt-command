@@ -16,7 +16,7 @@ export async function run({ ok }) {
     tierNames: [],
     byProduct: {
       salt: { stockCost: 40, inputs: { policy: { tierRule: {
-        drift: true, presets: { "Set Price": 0, "+5%": 0.05, "+10%": 0.1, "+15%": 0.15, "+20%": 0.2, "+30%": 0.3 }
+        drift: true, presets: { "-30%": -0.3, "-20%": -0.2, "-15%": -0.15, "-10%": -0.1, "-5%": -0.05, "Set Price": 0, "+5%": 0.05, "+10%": 0.1, "+15%": 0.15, "+20%": 0.2, "+30%": 0.3, "+40%": 0.4, "-40%": -0.4 }
       } } } }
     }
   };
@@ -25,9 +25,9 @@ export async function run({ ok }) {
       PROD_OPENING: { salt: { qty: 0, costPerKg: null } }, PEOPLE: { departed: [] } } };
   const catalog = makerInputCatalog(mirror);
   check(JSON.stringify(catalog.products.find((item) => item.product === "salt").driftPresets)
-    === JSON.stringify([{ name: "Set Price", value: 0 }, { name: "+5%", value: 0.05 }, { name: "+10%", value: 0.1 }, { name: "+15%", value: 0.15 },
+    === JSON.stringify([{ name: "-30%", value: -0.3 }, { name: "-20%", value: -0.2 }, { name: "-15%", value: -0.15 }, { name: "-10%", value: -0.1 }, { name: "-5%", value: -0.05 }, { name: "Set Price", value: 0 }, { name: "+5%", value: 0.05 }, { name: "+10%", value: 0.1 }, { name: "+15%", value: 0.15 },
       { name: "+20%", value: 0.2 }, { name: "+30%", value: 0.3 }]),
-  "Add ID catalog takes the % presets, in 5% steps, from the active book rule");
+  "Add ID catalog takes the % presets, -30% to +30% in 5% steps, from the active book rule, and drops a preset outside that range (+40%, -40%)");
 
   const sqlite = new DatabaseSync(":memory:");
   for (const file of readdirSync(new URL("../migrations/", import.meta.url))
@@ -146,9 +146,9 @@ export async function run({ ok }) {
     check(await waitFor(() => /open on this phone/.test(section.textContent)) && doc.getElementById("vaultPass").value === "",
       "the one unlock opens the page for Add ID, which has no password field of its own");
     check(!!driftSelect && !!typed && driftSelect.value === "" && typed.closest("label").hidden
-      && [...driftSelect.querySelectorAll("input")].map((option) => option.value).join() === ",0,0.05,0.1,0.15,0.2,0.3,typed"
-      && typed.min === "0" && typed.max === "2" && typed.step === "0.05",
-    "generated Add ID offers none by default, the rule presets, and a typed % bounded 0 to 2: "
+      && [...driftSelect.querySelectorAll("input")].map((option) => option.value).join() === ",-0.3,-0.2,-0.15,-0.1,-0.05,0,0.05,0.1,0.15,0.2,0.3,typed"
+      && typed.min === "-0.3" && typed.max === "0.3" && typed.step === "0.05" && typed.getAttribute("inputmode") === null,
+    "generated Add ID offers none by default, the rule presets, and a typed % bounded -0.3 to 0.3 with no decimal pad (it has no minus key): "
       + [...section.querySelectorAll("fieldset.maker-tiles legend")].map((legend) => legend.textContent).join("|"));
     if (!driftSelect || !typed) throw new Error("Add ID did not render the starting drift controls.");
     pick("typed");
@@ -165,8 +165,10 @@ export async function run({ ok }) {
       { name: "Bert", choice: "0.05", expected: { salt: 0.05 } },
       { name: "Cora", choice: "0", expected: { salt: 0 } },
       { name: "Dara", choice: "0.3", expected: { salt: 0.3 } },
+      { name: "Hana", choice: "-0.3", expected: { salt: -0.3 } },
+      { name: "Ivor", choice: "-0.05", expected: { salt: -0.05 } },
       { name: "Eli", choice: "typed", value: "0", expected: { salt: 0 } },
-      { name: "Faye", choice: "typed", value: "2", expected: { salt: 2 } },
+      { name: "Faye", choice: "typed", value: "-0.3", expected: { salt: -0.3 } },
       { name: "Gail", choice: "typed", value: "0.125", expected: { salt: 0.125 } }
     ];
     for (const outcome of outcomes) {
@@ -197,19 +199,19 @@ export async function run({ ok }) {
 
     fields[0].value = "Gopal"; fields[1].value = "";
     pick("typed");
-    typed.value = "3";
+    typed.value = "0.31";
     const beforeInvalid = bridged.length, revisionBeforeInvalid = pair.revision;
     submit.click();
     await waitFor(() => !submit.disabled);
     check(bridged.length === beforeInvalid && pair.revision === revisionBeforeInvalid
-      && status.textContent === "Enter a % from 0 to 2 (0.2 is 20%).",
-    "a typed % of 3 is refused before encryption, pair mutation or the Add ID route");
-    typed.value = "-0.1";
+      && status.textContent === "Enter a % from -0.3 to 0.3 (0.2 is 20%, -0.1 is 10% off).",
+    "a typed % of 0.31 is refused before encryption, pair mutation or the Add ID route");
+    typed.value = "-0.31";
     submit.click();
     await waitFor(() => !submit.disabled);
     check(bridged.length === beforeInvalid && pair.revision === revisionBeforeInvalid
-      && status.textContent === "Enter a % from 0 to 2 (0.2 is 20%).",
-    "and a negative one");
+      && status.textContent === "Enter a % from -0.3 to 0.3 (0.2 is 20%, -0.1 is 10% off).",
+    "and one of -0.31, past the discount");
   } finally {
     dom.window.close();
   }

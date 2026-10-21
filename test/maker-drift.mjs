@@ -1,4 +1,4 @@
-/* Salt Admin: a salt customer's % lift (0 to 2) set/clear through the existing tier-set road, a held zero distinct from none held, and the
+/* Salt Admin: a salt customer's % (-0.3 to 0.3, his decision of 21 Oct 2026; it was 0 to 2) set/clear through the existing tier-set road, a held zero distinct from none held, and the
    engine's suggestion beside it (18 Oct 2026: nothing automatic prices). */
 import { makerInputCatalog, makerTierSet } from "../src/maker-inputs.js";
 import { handleMaker } from "../stmt/maker.js";
@@ -50,7 +50,7 @@ export async function run({ ok } = {}) {
   "the suggestion carries its reason, the engine's few words, and a reason that is anything else (a name, a figure) is left behind: " + JSON.stringify(catalog.driftCards.map((item) => [item.code, item.suggest, item.why])));
 
   const set = (tier, unit = "pct") => makerTierSet({ at, code: "CX2-ZED", product: "salt", tier, unit }, mirror);
-  for (const value of [0, 0.05, 0.35, 1, 2]) {
+  for (const value of [-0.3, -0.05, 0, 0.05, 0.25, 0.3]) {
     const result = set(value);
     check(result.entry?.type === "TIER" && result.entry.payload.mode === "tierset"
       && result.draft?.collection === "tierset" && result.draft.row.tiers["CX2-ZED"].salt === value,
@@ -59,9 +59,9 @@ export async function run({ ok } = {}) {
   const cleared = set(null);
   check(cleared.entry?.payload.mode === "tierset" && cleared.draft?.row.tiers["CX2-ZED"].salt === null,
     "null uses the existing tierset draft to clear the held override");
-  check([-1, -0.01, 2.01, 3, "0", "Gold", undefined].every((value) => !!set(value).error)
+  check([-1, -0.31, 0.31, 2.01, 3, "0", "Gold", undefined].every((value) => !!set(value).error)
     && !!makerTierSet({ at, code: "CX2-ZED", product: "oil", tier: 0.25 }, mirror).error,
-  "out-of-range (a negative, or past 2), nonnumeric, level, missing and fixed-book inputs are refused");
+  "out-of-range (under -0.3 or past 0.3), nonnumeric, level, missing and fixed-book inputs are refused");
   /* 19 Oct 2026: the unit is the gate. A Salt Admin page cached from before the % lift sends the old field's 0.3 with no unit, and it is refused here by unit, not by time. */
   const unitless = makerTierSet({ at, code: "CX2-ZED", product: "salt", tier: 0.3 }, mirror), oldUnit = set(0.3, "drift");
   check(/Reload Salt Admin/.test(unitless.error || "") && !unitless.entry && !!oldUnit.error && !oldUnit.entry && !set(null, undefined).error
@@ -70,8 +70,8 @@ export async function run({ ok } = {}) {
   "a salt figure with no unit pct is refused with a plain message to reload Salt Admin, a clear needs no unit, and a figure sent with it carries unit pct in the entry: " + JSON.stringify([unitless.error, oldUnit.error]));
   check(!!makerTierSet({ at, code: "SP1-ZED", product: "salt", tier: 0.25 }, mirror).error,
     "supplier codes cannot receive customer drift");
-  check(set(2.01).error === "Choose a % lift from 0 to 200% (0 to 2), or clear it." && !set(2).error && !set(0).error,
-    "the Maker validates the % lift bounds, 0 to 2, with the shared pricing engine before constructing an entry");
+  check(set(0.31).error === "Choose a % from -30% to +30% (-0.3 to 0.3), or clear it." && set(-0.31).error === set(0.31).error && !set(0.3).error && !set(-0.3).error && !set(0).error,
+    "the Maker validates the % bounds, -0.3 to 0.3, with the shared pricing engine before constructing an entry");
   /* 18 Oct 2026: the levels are gone, so a book with neither a Set Price nor a fixed board takes no figure of his at all */
   const tierBook = book();
   tierBook.pricing.byProduct.salt.inputs.policy.tierRule = { multiples: [1, 2] };
@@ -159,8 +159,8 @@ export async function run({ ok } = {}) {
       "the Counter drift selector uses the customer-only catalog and excludes suppliers");
     check(selects.length === 1 && tileValues(drift, "Book").join() === "salt",
       "the UI offers salt and omits fixed books from its drift tiles");
-    check(value.min === "0" && value.max === "2" && value.step === "0.05",
-      "the UI bounds the numeric input to the % lift range, 0 to 2");
+    check(value.min === "-0.3" && value.max === "0.3" && value.step === "0.05" && value.getAttribute("inputmode") === null,
+      "the UI bounds the numeric input to the % range, -0.3 to 0.3, with no decimal pad (it has no minus key on an iPhone)");
     check(drift.textContent.includes("Set by you: 0%."),
       "the UI labels a held zero as set by him");
     selects[0].value = "CX2-ZED"; selects[0].dispatchEvent(new dom.window.Event("change", { bubbles: true }));
@@ -170,12 +170,12 @@ export async function run({ ok } = {}) {
     check(value.value === "0.25" && calls.length === 0,
       "Use the suggestion fills the box with the suggested % and sends nothing");
     selects[0].value = "CX1-ZED"; selects[0].dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-    value.value = "2.01"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
-    check(drift.textContent.includes("Enter a % from 0 to 2 (0.2 is 20%).") && calls.length === 0,
-      "the Counter rejects a % past 2 before sending an input");
-    value.value = "-0.1"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
-    check(drift.textContent.includes("Enter a % from 0 to 2 (0.2 is 20%).") && calls.length === 0,
-      "and a negative one");
+    value.value = "0.31"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
+    check(drift.textContent.includes("Enter a % from -0.3 to 0.3 (0.2 is 20%, -0.1 is 10% off).") && calls.length === 0,
+      "the Counter rejects a % past 0.3 before sending an input");
+    value.value = "-0.31"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
+    check(drift.textContent.includes("Enter a % from -0.3 to 0.3 (0.2 is 20%, -0.1 is 10% off).") && calls.length === 0,
+      "and one under -0.3");
     await waitFor(() => !setButton.disabled);
     value.value = "0"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
     const retained = await waitFor(() => calls.length === 1 && !setButton.disabled && !clearButton.disabled);
@@ -184,7 +184,7 @@ export async function run({ ok } = {}) {
       "a zero override is retained unchanged when its first send is not confirmed: " + JSON.stringify({
         retained, pending, keys: Object.keys(dom.window.localStorage), answer: drift.textContent, disabled: [setButton.disabled, clearButton.disabled]
       }));
-    value.value = "0.75"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
+    value.value = "0.15"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
     const retried = await waitFor(() => calls.length === 2 && !setButton.disabled && !clearButton.disabled);
     check(retried && JSON.stringify(calls[0].body) === JSON.stringify(calls[1].body),
       "an uncertain retry sends its entire retained drift request unchanged even if the form is edited");

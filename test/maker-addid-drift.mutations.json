@@ -10,5 +10,11 @@
   "file": "src/maker-inputs.js",
   "find": "geo: body.geo || null, tiers, unit: tiers != null ? \"pct\" : null });",
   "replace": "geo: body.geo || null, tiers });"
+ },
+ {
+  "name": "the typed starting % gets the decimal pad back, which has no minus key on an iPhone",
+  "file": "stmt/owner.js",
+  "find": "typed.removeAttribute('inputmode');",
+  "replace": "typed.inputMode='decimal';"
  }
 ]

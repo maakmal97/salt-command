@@ -120,8 +120,9 @@ export async function run({ ok, pageWork }) {
       && radios.filter((r) => r.closest(".maker-marks")).every((r) => r.nextElementSibling.querySelector("svg.psym")),
     "a group of marks alone is laid compact (maker-marks), never two wide boxes across with a mark in a corner, and only marks are: " + markGrids.size + " groups");
     const driftField = byAct(p.d, "record.drift.value");
-    ok(driftField && driftField.min === "0" && driftField.max === "2" && driftField.getAttribute("inputmode") === "decimal",
-      "the % lift field takes 0 to 2, and a decimal pad (nothing in it is negative, so no minus key is wanted)");
+    ok(driftField && driftField.min === "-0.3" && driftField.max === "0.3" && driftField.getAttribute("inputmode") === null
+      && [...p.d.querySelectorAll("#makerInputs input[type=number]")].filter((f) => f !== driftField && f.min === "0").every((f) => f.getAttribute("inputmode") === "decimal"),
+      "the % field takes -0.3 to 0.3 and no decimal pad (a negative needs the minus key, which a decimal pad lacks on an iPhone); the other number fields keep the decimal pad");
     const css = [...p.d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
     ok(/\.salt-option__face\s*\{[^}]*min-height:\s*var\(--salt-tap\)/.test(css) && /--salt-tap:\s*44px/.test(css)
       && /\.salt-option__input\s*\{[^}]*position:\s*absolute;[^}]*inset:\s*0;[^}]*width:\s*100%;[^}]*height:\s*100%/.test(css),

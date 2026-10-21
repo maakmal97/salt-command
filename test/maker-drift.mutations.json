@@ -14,7 +14,7 @@
  {
   "name": "the form shows the % without its reason",
   "file": "stmt/owner.js",
-  "find": "+(card.suggest>0&&typeof card.why==='string'&&card.why?': '+card.why:'')",
+  "find": "+(card.suggest!==0&&typeof card.why==='string'&&card.why?': '+card.why:'')",
   "replace": "+''"
  },
  {
@@ -28,5 +28,11 @@
   "file": "stmt/owner.js",
   "find": "tier:value,unit:'pct'}",
   "replace": "tier:value}"
+ },
+ {
+  "name": "the Their % field gets the decimal pad back, which has no minus key on an iPhone",
+  "file": "stmt/owner.js",
+  "find": "driftValue.removeAttribute('inputmode');",
+  "replace": "driftValue.inputMode='decimal';"
  }
 ]

@@ -4,12 +4,15 @@
       Set Price is RM 75, 120, 605 and 980 at 0.5, 1, 6.25 and 12.5 and 1,540 and 1,925 at 20 and 25, the 12.5 unit price lifted from 960
       by the ringgit margin that 11.5 unit had reached.
    2. Over the grid, for every % in use and several costs: the margin in ringgit never falls, no price is under the Floor or over the Ceiling, a
-      % is never under the Set Price, the quoted rate never rises by a grid step or more, a % lifts the points it should.
+      % of nought or more is never under the Set Price and a negative one never over it, the quoted rate never rises by a grid step or more, a % lifts the points it should.
    3. THE MARGIN LIFT IS PATH DEPENDENT, so quoteGrid and quoteAt must walk one path: quoteGrid(...).p[i] is quoteAt(min + i*step) for every %
       and every grid point, on a made-up cost and on the desk's own, and a partner is floorTotal at every one.
-   4. A % is 0 to 2 (driftOk), and nothing automatic prices: customers with a long late, a write-off or a perfect record are quoted the Set
-      Price, an old held drift (-0.7) is read as none, and the snapshot carries the map as \`lift\`, never \`drift\`, with the suggestion beside it.
-   5. The suggestion: paid over the Set Price on the last five sales plus the risk, to the nearest 5%, nothing under three settled rows.
+   4. A % is -0.3 to +0.3 (driftOk, LIFT_MIN and LIFT_MAX; his decision of 21 Oct 2026, it was 0 to 2), and nothing automatic prices: customers
+      with a long late, a write-off or a perfect record are quoted the Set Price, an old held drift (-0.7) is read as none, and the snapshot
+      carries the map as \`lift\`, never \`drift\`, with the suggestion beside it. A negative % quotes under the Set Price, never under the
+      Floor, and the ringgit margin still never falls across sizes: -30% at RM 58 is 50, 80, 425, 785, 1,220 and 1,510. The presets mirror the range.
+   5. The suggestion: paid over the Set Price on the last five sales plus the risk, less a good record's discount (up to 30%, only while nothing
+      is late, overdue or written off), to the nearest 5%, held to -30% to +30%, nothing under three settled rows.
    6. The fold DROPS a salt figure stamped before the switch moment (old unit), a tierset and an Add ID alike, with a note and no refusal: the customer
       books on the Set Price at 0%, a tierset of nothing else is a no-op, and one stamped after it is filed as a %.
       Since 19 Oct 2026 the unit is the first gate: a salt figure with no unit "pct" on its row (a page cached from before the deploy, its own clock
@@ -33,7 +36,7 @@ export async function run({ ok }) {
   const P = { LADDER: RULES_MOD.LADDER, floorTo: RULES_MOD.RULES.floorTo, minPerUnit: 0, timePerOrder: 0, lotFloor: {}, tierRule: R };
   const Cof = (c) => ({ eff: c, effEx: c, landed: c });
   const qs = E.gridSizes(E.gridOf(R));
-  const PCTS = [0, 0.05, 0.1, 0.2, 0.3, 1, 2];
+  const PCTS = [-0.3, -0.2, -0.1, -0.05, 0, 0.05, 0.1, 0.2, 0.3];
   const down5 = (v) => Math.floor(v / 5 + 1e-9) * 5;
 
   /* 1. THE FOUR POINTS AND THE WALK, on RM 58 a unit */
@@ -49,8 +52,12 @@ export async function run({ ok }) {
   const lifted = at.map((q) => E.quoteAt(q, Cof(58), P, 0.2));
   ok(lifted.join() === "90,140,730,1155,1850,2310", "and 20% on the Set Price reads 90, 140, 730, 1,155, 1,850 and 2,310 at the same sizes, applied inside the walk: " + JSON.stringify(lifted));
 
+  const off30 = at.map((q) => E.quoteAt(q, Cof(58), P, -0.3));
+  ok(off30.join() === "50,80,425,785,1220,1510",
+    "and -30% on the Set Price reads 50, 80, 425, 785, 1,220 and 1,510 at the same sizes, a discount inside the walk and above the Floor (30, 60, 365 at 0.5, 1, 6.25): " + JSON.stringify(off30));
+
   /* 2. OVER THE GRID, for every % and several costs */
-  const bad = { margin: 0, floor: 0, ceiling: 0, five: 0, belowSet: 0, rate: 0, notLifted: 0, notMonotone: 0 };
+  const bad = { margin: 0, floor: 0, ceiling: 0, five: 0, belowSet: 0, aboveSet: 0, rate: 0, notLifted: 0, notMonotone: 0 };
   let n2 = 0;
   for (const c of [31.37, 40, 58, 59, 64, 73.37, 120]) {
     const C = Cof(c);
@@ -66,17 +73,19 @@ export async function run({ ok }) {
         if (r.p < r.floor - 1e-9) bad.floor++;
         if (r.p > down5(3 * r.floor) + 1e-9) bad.ceiling++;
         if (Math.abs(r.p / 5 - Math.round(r.p / 5)) > 1e-9) bad.five++;
-        if (r.p < r.set - 1e-9) bad.belowSet++;
+        if (pct >= 0 && r.p < r.set - 1e-9) bad.belowSet++;
+        if (pct < 0 && r.p > r.set + 1e-9) bad.aboveSet++;
         if (i && r.p / r.q - w[i - 1].p / w[i - 1].q > to / r.q + 1e-9) bad.rate++;
         if (prev && r.p < prev[i].p - 1e-9) bad.notMonotone++;
       });
       if (pct === 0 && w.some((r) => r.p !== r.set)) bad.notLifted++;
       if (pct === 0.2 && !w.some((r) => r.p > r.set)) bad.notLifted++;
+      if (pct === -0.3 && !w.some((r) => r.p < r.set)) bad.notLifted++;
       prev = w;
     }
   }
-  ok(n2 === 7 * 7 * 99 && Object.values(bad).every((v) => v === 0),
-    "over the whole grid, on seven costs and every % in use: the ringgit margin never falls, no price is under the Floor or over the Ceiling, all sit on the five, a % is never under the Set Price nor under a smaller %, and the quoted rate never rises by a step: " + JSON.stringify({ n2, ...bad }));
+  ok(n2 === 7 * 9 * 99 && Object.values(bad).every((v) => v === 0),
+    "over the whole grid, on seven costs and every % in use: the ringgit margin never falls, no price is under the Floor or over the Ceiling, all sit on the five, a % of nought or more is never under the Set Price, a negative one never over it, none is under a smaller %, and the quoted rate never rises by a step: " + JSON.stringify({ n2, ...bad }));
   const rise = (() => { const w = E.driftWalk(qs, Cof(58), P, 0); let mx = 0; w.forEach((r, i) => { if (i) mx = Math.max(mx, (r.p / r.q - w[i - 1].p / w[i - 1].q) * r.q); }); return mx; })();
   ok(rise > 0 && rise < to, "and the rate does rise between some quarters, by under one step of the grid over the size (the law is on the exact rate): " + rise.toFixed(3));
 
@@ -92,12 +101,15 @@ export async function run({ ok }) {
     const gp = E.quoteGrid(C, PX, "partner");
     gp.p.forEach((x, i) => { const q = gp.min + i * gp.step; if (x !== E.floorTotal(q, C, PX) || E.quoteAt(q, C, PX, "partner") !== x) partnerOff++; });
   }
-  ok(pts === 4 * 7 * 99 && disagree === 0 && partnerOff === 0,
-    "quoteGrid(...).p[i] is quoteAt at that size for every % in {0, 5, 10, 20, 30, 100, 200} and all 99 grid points, on made-up costs and the desk's own, and a partner is floorTotal at every one: " + JSON.stringify({ pts, disagree, partnerOff }));
+  ok(pts === 4 * 9 * 99 && disagree === 0 && partnerOff === 0,
+    "quoteGrid(...).p[i] is quoteAt at that size for every % in {-30, -20, -10, -5, 0, 5, 10, 20, 30} and all 99 grid points, on made-up costs and the desk's own, and a partner is floorTotal at every one: " + JSON.stringify({ pts, disagree, partnerOff }));
 
-  /* 4. A % IS 0 TO 2, AND NOTHING AUTOMATIC PRICES */
-  ok([-0.1, -1, 2.1, 3, "0.2", NaN, null, undefined].every((v) => !E.driftOk(v)) && [0, 0.05, 1, 2].every((v) => E.driftOk(v)),
-    "a % is a number from 0 to 2: -0.1, -1, 2.1, 3, a string, NaN, null and nothing are refused, 0, 0.05, 1 and 2 are taken");
+  /* 4. A % IS -0.3 TO +0.3, AND NOTHING AUTOMATIC PRICES */
+  ok([-0.31, -1, 0.31, 1, 2, 3, "0.2", NaN, null, undefined].every((v) => !E.driftOk(v)) && [-0.3, -0.05, 0, 0.05, 0.3].every((v) => E.driftOk(v)) && E.LIFT_MIN === -0.3 && E.LIFT_MAX === 0.3,
+    "a % is a number from -0.3 to 0.3: -0.31, -1, 0.31, 1, 2, 3, a string, NaN, null and nothing are refused, -0.3, -0.05, 0, 0.05 and 0.3 are taken, and LIFT_MIN and LIFT_MAX say so");
+  ok(JSON.stringify(R.presets) === JSON.stringify({ "-30%": -0.3, "-20%": -0.2, "-15%": -0.15, "-10%": -0.1, "-5%": -0.05, "Set Price": 0, "+5%": 0.05, "+10%": 0.1, "+15%": 0.15, "+20%": 0.2, "+30%": 0.3 })
+    && Object.values(R.presets).every((v) => E.driftOk(v)),
+  "Add ID's presets run -30% to +30% with the Set Price at 0, each a valid %: " + JSON.stringify(R.presets));
   /* the book's synthetic customers: the same sales at different records, built on the desk's own book */
   const jj = (e) => JSON.parse(String(w.eval("JSON.stringify(" + e + ")")));
   w.eval("PROD='salt';recompute();");
@@ -133,28 +145,34 @@ export async function run({ ok }) {
   "an old held drift of -0.7 reads as none and quotes the Set Price, and a held 20% quotes the Set Price lifted 20%, size for size: " + JSON.stringify([(old.lift || {})["CZ9-ON"], (h20.lift || {})["CZ9-ON"]]));
 
   /* 5. THE SUGGESTION */
-  const sug = (sig, ratios) => E.suggestPct(sig, ratios, R.suggest).pct;
+  const sug = (sig, ratios) => E.suggestPct(sig, ratios, R.suggest, R.auto).pct;
   const rs = (v) => [v, v, v, v, v];
   const ok3 = { settled: 5 };
   ok(sug(ok3, rs(1)) === 0 && sug(ok3, rs(1.1)) === 0.1 && sug(ok3, [1, 1.2, 1.3, 1, 1.4]) === 0.2 && sug(ok3, rs(0.9)) === 0
-    && sug({ settled: 2 }, rs(1.5)) === 0 && sug({ settled: 3 }, rs(1.5)) === 0.5 && sug(ok3, []) === 0,
-  "paid over the Set Price is the median of the last five less one, never under nought, and nothing is suggested under three settled rows");
+    && sug({ settled: 2 }, rs(1.5)) === 0 && sug({ settled: 3 }, rs(1.5)) === 0.3 && sug(ok3, []) === 0,
+  "paid over the Set Price is the median of the last five less one, never under nought, and nothing is suggested under three settled rows (50% over is held to +30%)");
   ok(sug({ ...ok3, writtenOff: 120 }, rs(1)) === 0.3 && sug({ ...ok3, lateLong: true, late: true }, rs(1)) === 0.2 && sug({ ...ok3, overdueDays: 15 }, rs(1)) === 0.2
     && sug({ ...ok3, overdueDays: 14 }, rs(1)) === 0 && sug({ ...ok3, late: true }, rs(1)) === 0.1 && sug({ ...ok3, writtenOff: 120, lateLong: true, late: true }, rs(1)) === 0.3
     && sug({ ...ok3, writtenOff: 120 }, rs(0.9)) === 0.3,
   "risk is 30% for a write-off, else 20% for a long late or an open overdue past 14 days, else 10% for a late, and the largest alone");
-  ok(sug({ ...ok3, late: true }, rs(1.12)) === 0.2 && sug({ ...ok3, late: true }, rs(1.13)) === 0.25 && sug({ ...ok3, writtenOff: 1 }, rs(3)) === 2
-    && sug({ ...ok3, onTime: 5, perMonth: 9, unitsPerMonth: 30, orders: 30 }, rs(1)) === 0,
-  "the sum rounds to the nearest 5% (22% to 20%, 23% to 25%), is held to 200%, and a good record suggests nothing");
+  ok(sug({ ...ok3, late: true }, rs(1.12)) === 0.2 && sug({ ...ok3, late: true }, rs(1.13)) === 0.25 && sug({ ...ok3, writtenOff: 1 }, rs(3)) === 0.3,
+  "the sum rounds to the nearest 5% (22% to 20%, 23% to 25%) and is held to +30%");
+  /* 21 Oct 2026: a good record earns a discount, only while nothing is late, overdue or written off */
+  const perfect = { settled: 10, onTime: 10, perMonth: 4, unitsPerMonth: 10, orders: 12, sinceLastDays: 5 };
+  const sgP = E.suggestPct(perfect, rs(1), R.suggest, R.auto);
+  ok(sgP.pct === -0.3 && sgP.good === 0.3 && E.suggestWhy(sgP).join() === "good record" && sug(perfect, rs(1.1)) === -0.2
+    && sug({ ...perfect, late: true }, rs(1)) === 0.1 && sug({ ...perfect, writtenOff: 120 }, rs(1)) === 0.3 && sug({ ...perfect, overdueDays: 15 }, rs(1)) === 0.2
+    && E.suggestPct({ ...perfect, late: true }, rs(1), R.suggest, R.auto).good === 0 && sug({ ...perfect, settled: 2 }, rs(1)) === 0 && sug({ settled: 5 }, rs(1)) === 0,
+  "a perfect record suggests -30% with the reason 'good record', paying 10% over with it -20%, any late, overdue or write-off gives no discount, a middling record and under three settled rows nothing: " + JSON.stringify(sgP));
   /* and read off the record by the desk's own readers */
   const sg = withPeople.suggest || {};
   const pc = (id) => sg[id] && sg[id].pct;
-  ok(pc("CZ9-ON") === 0 && pc("CZ9-PO") === 0.2 && pc("CZ9-LA") === 0.2 && pc("CZ9-LP") === 0.4 && pc("CZ9-FW") === 0 && pc("CZ9-LO") === 0 && pc("CZ9-GD") === 0,
-    "off the record: on time at the Set Price 0, 20% over 20%, ten days late 20%, both 40%, two orders only 0, under the Set Price 0, twelve on time 0: " + JSON.stringify(sg["CZ9-ON"] === undefined ? sg : Object.keys(people).map((id) => [id, sg[id]])));
+  ok(pc("CZ9-ON") === -0.2 && pc("CZ9-PO") === -0.05 && pc("CZ9-LA") === 0.2 && pc("CZ9-LP") === 0.3 && pc("CZ9-FW") === 0 && pc("CZ9-LO") === -0.2 && pc("CZ9-GD") === -0.3,
+    "off the record: five on time at the Set Price -20% (a good record), 20% over -5% (20% less the discount), ten days late 20%, both 30% (held), two orders only 0, under the Set Price -20%, twelve on time -30%: " + JSON.stringify(sg["CZ9-ON"] === undefined ? sg : Object.keys(people).map((id) => [id, sg[id]])));
   /* and each carries its reason, the engine's few words (suggestWhy), which Salt Admin shows beside the % */
-  ok(sg["CZ9-ON"].why === "" && sg["CZ9-PO"].why === "paid 20% over" && sg["CZ9-LA"].why === "paid very late" && /^paid 20% over, paid (very )?late$/.test(sg["CZ9-LP"].why) && sg["CZ9-GD"].why === ""
+  ok(sg["CZ9-ON"].why === "good record" && sg["CZ9-PO"].why === "paid 20% over, good record" && sg["CZ9-LA"].why === "paid very late" && /^paid 20% over, paid (very )?late$/.test(sg["CZ9-LP"].why) && sg["CZ9-FW"].why === ""
     && E.suggestWhy({ pct: 0.3, paidOver: 0, risk: 0.3 }).join() === "written off" && E.suggestWhy({ pct: 0.1, paidOver: 0.01, risk: 0.1 }).join() === "paid late",
-    "the snapshot's suggestion is {pct, why}: no reason for none, 'paid 20% over', 'paid very late', both together, and 'written off' for a write-off: " + JSON.stringify(Object.keys(people).map((id) => [id, sg[id]])));
+    "the snapshot's suggestion is {pct, why}: no reason for none, 'good record', 'paid 20% over' less the discount, 'paid very late', both together, and 'written off' for a write-off: " + JSON.stringify(Object.keys(people).map((id) => [id, sg[id]])));
   ok((base.partners || []).length > 0 && (base.partners || []).every((id) => (withPeople.lift || {})[id] === "partner" && sg[id] === undefined),
     "a partner is 'partner' in the lift and has no suggestion");
 
@@ -213,7 +231,8 @@ export async function run({ ok }) {
   "a salt % stamped after " + since + " is filed as it stands, a clear passes, and a figure on oil, a fixed board, is still refused before or after: " + fl([why(ts(before, "Gold", "oil")), why(ts(before, 0.2, "oil"))]));
   ok(Date.parse(since) > Date.parse("2026-10-17T00:00:00Z") && Date.parse(since) < Date.now() + 2 * 86400e3,
     "the switch moment is an instant at the start of this work, not a date in the future: " + since);
-  ok(/not a % from 0 to 200/.test(why(ts(after, -0.4))) && /not a % from 0 to 200/.test(why(ts(after, 2.5))) && why(ts(after, 2)) === "" && why(ts(after, 0)) === "" && /not a % from 0 to 200/.test(why(ad(after, -0.3))),
-    "and after it a salt tier entry takes 0 to 2 and refuses -0.4 and 2.5, at a tier entry and at Add ID: " + JSON.stringify([why(ts(after, -0.4)), why(ts(after, 2.5)), why(ad(after, -0.3))]));
+  ok(/not a % from -30 to \+30/.test(why(ts(after, -0.4))) && /not a % from -30 to \+30/.test(why(ts(after, 2.5))) && /not a % from -30 to \+30/.test(why(ts(after, 0.4))) && why(ts(after, 0.3)) === "" && why(ts(after, -0.3)) === "" && why(ts(after, 0)) === ""
+    && /not a % from -30 to \+30/.test(why(ad(after, 2))) && why(ad(after, -0.3)) === "",
+    "and after it a salt tier entry takes -0.3 to 0.3 and refuses -0.4, 0.4 and 2.5, at a tier entry and at Add ID (-0.3 is a valid Add ID figure): " + JSON.stringify([why(ts(after, -0.4)), why(ts(after, 0.4)), why(ts(after, 2.5)), why(ad(after, 2))]));
   try { w.close(); } catch (e) { /* best effort */ }
 }
