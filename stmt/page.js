@@ -6182,7 +6182,8 @@ const CLIENT_JS = `
   function drawPayHead(){
     [['payHead',payHeadNode],['homeFoot',payFootNode]].forEach(function(p){
       var was=document.getElementById(p[0]), n=p[1](); if(was&&was.outerHTML!==n.outerHTML) was.replaceWith(n); });
-    footSet(); glanceDraw(); cBar();
+    cBar();
+    footSet(); glanceDraw();
   }
   /* Counter Batch A: the live pill sticks above the pay foot, so the foot's height is the pill's offset; again on a resize */
   function footSet(){ var f=document.getElementById('homeFoot'), h=document.getElementById('pHome'); if(f&&h) h.style.setProperty('--hfoot',(f.hidden?0:Math.ceil(f.offsetHeight||0))+'px'); }
