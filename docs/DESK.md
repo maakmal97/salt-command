@@ -24,9 +24,9 @@
   `f1`, the floor-per-unit chart). `ceilingX` is 3 on every book (oil and candy were 2, rice 2.5). A stated board
   (`fixed`: oil, candy and rice, his typed rungs, unchanged) is held between the Floor and the Ceiling, capped down to the
   book's grid. The price grid's `LADDER.round.to` is 5, so a RM 35 Floor is not re-rounded to RM 40.
-- **Salt is the Set Price and their %** (his decisions of 05 and 18 Oct 2026). `TIER_RULE.salt` carries `drift` (the
-  flag that marks a book with a Set Price), `points`, `ceilingX`, `auto`, `suggest` and `presets`. **The Set Price is the
-  least any customer but a partner pays** and what a stranger is quoted. The multiple of the Floor is 2.5 at half a unit,
+- **Salt is the Set Price and their %** (his decisions of 05, 18 and 21 Oct 2026). `TIER_RULE.salt` carries `drift` (the
+  flag that marks a book with a Set Price), `points`, `ceilingX`, `auto`, `suggest` and `presets`. **The Set Price is what a
+  stranger is quoted**; since 21 Oct 2026 a customer on a negative % of his pays less, never under the Floor. The multiple of the Floor is 2.5 at half a unit,
   2 at 1, 1.67 at 6.25 and 1.33 at 12.5, sliding in the log of size between points and flat above 12.5. The engine's
   `driftWalk` walks the grid (half a unit to 25 in quarters) smallest first: the rate is the lesser of the last size's and
   `Floor * multiple * (1 + %) / q`, on the exact rate and never compounded; the price is that rate times the size, down
@@ -35,17 +35,19 @@
   unit between quarters: the rate law is on the exact rate. `quoteAt` and `quoteGrid` are the one rule at any size, so
   for every % in use and every grid point `quoteGrid(...).p[i]` is `quoteAt(min + i * step, ...)`, and a
   partner's `quoteAt` is the `floorTotal`, the snapshot's `floors[q]` and the drafter's `floorFor(q).floor`.
-- **Their %** (`TIER_OF[code].salt`, 0 to 2, held until he changes it; `cardQuote` reads it through `driftOf`). It is the
-  lift on the Set Price, applied inside the walk and the same at every size, and nought is the Set Price. **Everyone
+- **Their %** (`TIER_OF[code].salt`, -0.3 to +0.3 since his decision of 21 Oct 2026, `LIFT_MIN` and `LIFT_MAX` in the engine,
+  held until he changes it; `cardQuote` reads it through `driftOf`). It is the move on the Set Price, a negative one a discount, applied inside the walk and the same at every size, and nought is the Set Price. **Everyone
   starts at 0%** (the held figures were removed in the 18 Oct 2026 version, and the fold drops a `tierset` or an Add ID
   figure stamped before `RULES.liftSince`, which was in the old unit, with a note, and refuses nothing for it). He sets it on the Their % card (Network), Counter
-  Admin's Their % form or Add ID (presets Set Price, +5%, +10%, +15%, +20% and +30%, or another %); it is queued,
+  Admin's Their % form or Add ID (presets -30%, -20%, -15%, -10%, -5%, Set Price, +5%, +10%, +15%, +20% and +30%, or another % from -0.3 to 0.3; the field
+  drops the decimal pad so an iPhone shows a minus key); it is queued,
   folded as `tierset`, and a null clears it. Under about 7% a % moves nothing at half a unit to 1 unit, which the card says
   once. **Nothing automatic prices.** `autoDrift` over `driftSignals` fills the card's good and bad only. The card's
   suggestion is `suggestOf` (the engine's `suggestPct`): the median over their last five salt sales of the rate paid
   over the Set Price rate at that size, less one and not under nought, plus a share for a write-off (30%), a long late
-  or 14 days overdue (20%) or a late (10%), to the nearest 5%, and nought under `minSettled` settled rows; good signals
-  suggest nothing. The Desk's card says it as "Suggested +10%: paid late"; Salt Admin's Use the suggestion fills the
+  or 14 days overdue (20%) or a late (10%), less, with nothing late, overdue or written off, a good record's discount (`suggest.good`, 0.3, times `autoDrift`'s good
+  score `G`; his answer of 21 Oct 2026), to the nearest 5%, held -30% to +30%, and nought under `minSettled` settled rows;
+  `suggestWhy` says "good record". The Desk's card says it as "Suggested +10%: paid late"; Salt Admin's Use the suggestion fills the
   box. The snapshot carries each customer's quotes as `cards`, their % as `lift` and the suggestion as `suggest`, which
   the price list reads (`basis: "card"`); an older reader that looks for the former map finds nothing and falls back to the board.
 - **A partner pays the Floor** (his decisions of 06 and 18 Oct 2026). Quoted `floorTotal` at every size on every book,
@@ -56,7 +58,7 @@
   keeps every associate property. The desk shows the standing at once and the card reads waiting under Approve.
   `test/partner-control.mjs`.
 - **NRV is the Set Price on a book that has one, the stated price on a board** (IAS 2.6): the least a customer but a
-  partner is quoted, so the IAS 2.9 test can bind; the Ceiling is never the basis.
+  partner is quoted at 0%, so the IAS 2.9 test can bind; the Ceiling is never the basis, nor a customer's discount (21 Oct 2026).
 - **There are no price levels** (removed 18 Oct 2026). `TIER_NAMES`, the `fiveTiers` multiples branch, `levelAt`,
   `levelShapeOk`, `tier1Anchors`, `tier1Walk`, `tier1Ask`, the proposals (`tierProposal`, `ruleProposal`) and the
   guest boards per level are gone, and so is the legacy Tier I to III badge. The identifiers `TIER_RULE`, `fiveTiers`,

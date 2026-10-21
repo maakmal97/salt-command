@@ -27,7 +27,7 @@ Three things name the set of products, and everything else derives from them.
 
 **True `{product: value}` maps.** A new product is a data entry and nothing else:
 `PRODUCTS`, `PROD_OPENING`, `COUNT_ON`, `PRICE_SET`, `COST_RULE`, and `TIER_OF`, which is
-nested customer to product to their % (salt alone, 0 to 2).
+nested customer to product to their % (salt alone, -0.3 to +0.3 since 21 Oct 2026).
 
 **Rows that carry a `product` field:** `sales`, `purchases`, `loans`, `COUNTS`, `selfUseLog`,
 `lostDemand`. The field is optional; see section 6.

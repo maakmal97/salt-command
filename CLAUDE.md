@@ -60,8 +60,8 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      2026); the Floor holds, the board is never repriced, `rowRoom` and `payFault` apply, the site order and the
      ack digest follow the amended row, and a retry carries an immutable rid. **A trip of several
      books shares `trip` and its one delivery sits on ONE row** (`tripFault`; one tap approves the trip).
-   - **SALT'S PRICE IS THE SET PRICE AND THEIR %** (his decisions of 05 and 18 Oct 2026). **The Set Price is the
-     least any customer but a partner pays**, and what a stranger is quoted: per size the Floor times a
+   - **SALT'S PRICE IS THE SET PRICE AND THEIR %** (his decisions of 05, 18 and 21 Oct 2026). **The Set Price is what a
+     stranger is quoted**, and a customer pays less only on a negative % of his: per size the Floor times a
      multiple (2.5 at half a unit, 2 at 1, 1.67 at 6.25, 1.33 at 12.5, sliding in the log of size, flat
      above 12.5; `TIER_RULE.salt.points`). The grid runs half a unit to 25 in quarters and is walked smallest
      first (the engine's `driftWalk`, read through `driftAt`, `quoteAt` and `quoteGrid`): the rate is the
@@ -72,24 +72,26 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      `[0]`; the code stays `T2`); choose a row by code, never by index. `PRICE_SET` is cleared and the drafter
      refuses a new one; the one figure he sets at Accept, on one order, is that row's total, which `PRICE_SET`
      never records.
-   - **THEIR % is his and nothing else's** (`TIER_OF[code].salt`, a number from 0 to 2, 0% to 200%, and 0 is the Set
-     Price). It lifts the multiple by `1 + %` inside the walk, the same at every size, held under the Ceiling;
-     under about 7% it moves nothing at half a unit to 1 unit. **Everyone starts at 0%**. He sets it on the Desk's
-     Their % card or on Salt Admin, or at Add ID from the presets Set Price, +5%, +10%, +15%,
-     +20% and +30%; it is queued, folded as `tierset`, and a null clears it. **Nothing automatic prices**: the
+   - **THEIR % is his and nothing else's** (`TIER_OF[code].salt`, a number from -0.3 to +0.3, -30% to +30%, the
+     engine's `LIFT_MIN` and `LIFT_MAX` read by `driftOk`, his decision of 21 Oct 2026; 0 is the Set Price). It moves the
+     multiple by `1 + %` inside the walk, the same at every size, held between the Floor and the Ceiling, so a discount
+     reaches the Floor at the large sizes first. **Everyone starts at 0%**. He sets it on Salt Admin, or at Add ID
+     from the presets -30%, -20%, -15%, -10%, -5%, Set Price, +5%, +10%, +15%, +20% and +30%; it is queued, folded as `tierset`, and a null clears it. **Nothing automatic prices**: the
      engine's `autoDrift` over `driftSignals` fills the card's good and bad only, and `suggestOf` (the engine's
      `suggestPct`) SUGGESTS a % he may take with Use the suggestion: what they paid over the Set Price on their
      last five salt sales plus a share for a write-off (30%), a long late or 14 days overdue (20%) or a late
-     (10%), to the nearest 5%, and nought under `minSettled` settled rows. The fold refuses a `tierset` or Add ID
+     (10%), LESS a good record's discount (`suggest.good`, 30%, times `autoDrift`'s good score, only with nothing late,
+     overdue or written off; his answer of 21 Oct 2026), to the nearest 5%, held -30% to +30%, and nought under
+     `minSettled` settled rows. The fold refuses a `tierset` or Add ID
      figure stamped before `RULES.liftSince`, which was in the old drift unit.
    - **Oil, candy and rice are `fixed` boards**, one price for everybody, his typed rungs held between the Floor
      and the Ceiling: a % belongs to salt alone, and `tieredBooks` keeps the Their % card, Add ID's starting %
      and Salt Admin's % off them. **There are no price levels** (removed 18 Oct 2026): no `TIER_NAMES`,
      `levelAt` or proposal, and no standing guest link per level. `TIER_RULE`, `fiveTiers`, `TIER_OF`, the
      `tierset` collection and the `T2` row code stay as identifiers. **NRV on a book with a Set Price is the Set
-     Price**, the least a customer but a partner is quoted, never the Ceiling. A cheap book put on a derived
+     Price**, what a stranger is quoted, never the Ceiling nor a customer's discount. A cheap book put on a derived
      ladder inverts under the RM 5 rounding: check the rate law first.
-   - **A customer's price is the Set Price lifted by their %, or the price he sets on one order when he acknowledges
+   - **A customer's price is the Set Price moved by their %, or the price he sets on one order when he acknowledges
      it, never under the Floor; the board is never repriced by it** (`total` on the preview and Accept, the
      site keeping `asked`). What they paid before never lowers it (the cap retired on his decision of
      27 Sep 2026). **A product with neither a Set Price nor a board is not priced.** One rule, the engine's
