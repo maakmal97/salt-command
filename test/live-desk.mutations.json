@@ -562,5 +562,11 @@
   "file": "tools/build.mjs",
   "find": "var dayAt=klDay(),",
   "replace": "var dayAt=0,"
+ },
+ {
+  "name": "a new day returns before the queue is posted",
+  "file": "tools/build.mjs",
+  "find": "\"    try{if(typeof queue!=='undefined'&&queue&&queue.length&&typeof qSyncState!=='undefined'&&qSyncState==='server'&&typeof qPost==='function'&&unsent())qPost();}catch(e){}\",\n  \"    if(klDay()!==dayAt){if(idle())saltFresh(); else offer(null,'New day');return;}\"",
+  "replace": "\"    if(klDay()!==dayAt){if(idle())saltFresh(); else offer(null,'New day');return;}\",\n  \"    try{if(typeof queue!=='undefined'&&queue&&queue.length&&typeof qSyncState!=='undefined'&&qSyncState==='server'&&typeof qPost==='function'&&unsent())qPost();}catch(e){}\""
  }
 ]

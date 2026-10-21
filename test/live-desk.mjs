@@ -343,7 +343,7 @@ async function thePage(ok) {
   if (!tickSrc) return;
   const flush = async () => { for (let i = 0; i < 10; i++) await Promise.resolve(); };
   const rig = (opts = {}) => {
-    const t = { now: Date.parse("2026-10-21T04:00:00Z"), fresh: 0, chips: 0, reads: [], ap: 0, ord: 0, vis: "visible", active: null, listeners: {}, wlisteners: {}, socks: [], dead: false };
+    const t = { now: Date.parse("2026-10-21T04:00:00Z"), fresh: 0, chips: 0, reads: [], ap: 0, ord: 0, vis: "visible", active: null, listeners: {}, wlisteners: {}, socks: [], dead: false, posts: 0 };
     const win = { SALT_CLOUD: true, getComputedStyle: (e) => e.style, setInterval: () => 0, clearInterval() {}, setTimeout: () => 0, clearTimeout() {},
       addEventListener: (type, fn) => { (t.wlisteners[type] = t.wlisteners[type] || []).push(fn); } };
     if (!opts.noSocket) installSockets(win, t.socks);
@@ -356,7 +356,7 @@ async function thePage(ok) {
     new Function("window", "document", "fetch", "setInterval", "clearInterval", "setTimeout", "clearTimeout", "location", "navigator", "Date", "SALT_REV_MS", "SALT_BUILD_ID", "saltFresh",
       "queue", "qSyncState", "qPost", "qNewestAt", "qSentThrough", "qDirty", "saltWriteKey", "apLoad", "apBusy", "ordLoad", "ordBusy", tickSrc)(
       win, doc, fetchStub, win.setInterval, win.clearInterval, win.setTimeout, win.clearTimeout, { protocol: opts.proto || "https:", host: "desk.fixture.test" }, {}, FakeDate, 10000, "OLDID", () => { t.fresh++; },
-      [], "server", () => {}, () => "", "", false, () => "k-fixture", () => { t.ap++; }, undefined, () => { t.ord++; }, undefined);
+      opts.queue || [], "server", () => { t.posts++; }, () => "", "", !!opts.dirty, () => "k-fixture", () => { t.ap++; }, undefined, () => { t.ord++; }, undefined);
     t.start = async () => { (t.wlisteners.load || []).forEach((f) => f({})); await flush(); };
     t.revReads = () => t.reads.filter((p) => p === "rev").length;
     t.fire = (type) => (t.listeners[type] || []).forEach((f) => f({}));
@@ -479,6 +479,9 @@ async function thePage(ok) {
     const busy = rig(); await busy.start(); busy.active = { tagName: "INPUT" };
     busy.now = Date.parse("2026-10-21T16:01:00Z"); busy.every(10000);
     ok(busy.fresh === 0 && busy.chips === 1, "a busy desk is offered the chip, not reloaded over: " + JSON.stringify([busy.fresh, busy.chips]));
+    const owed = rig({ queue: [{ at: "2026-10-21T15:00:00Z" }], dirty: true }); await owed.start(); owed.active = { tagName: "INPUT" };
+    owed.now = Date.parse("2026-10-21T16:01:00Z"); const p0 = owed.posts; owed.every(10000);
+    ok(owed.posts === p0 + 1 && owed.chips === 1, "and a busy desk left past midnight still sends its unsent queue on the tick (Fable, L1): " + JSON.stringify([owed.posts - p0, owed.chips]));
     const hidden = rig(); await hidden.start(); hidden.vis = "hidden"; hidden.now = Date.parse("2026-10-21T16:01:00Z"); hidden.every(10000);
     ok(hidden.fresh === 0 && hidden.chips === 0, "and a desk that is not on screen waits until it is: " + JSON.stringify([hidden.fresh, hidden.chips]));
     const late = rig(); await late.start(); late.now = Date.parse("2026-10-21T15:59:00Z");

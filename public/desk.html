@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="1ff63a7251d77ed2";
+var SALT_BUILD_ID="df5ad35cdb10b410";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -207,8 +207,8 @@ var SALT_WAKE_MS=3000;
   }
   function tick(){
     if(!window.SALT_CLOUD||document.visibilityState!=='visible')return;
-    if(klDay()!==dayAt){if(idle())saltFresh(); else offer(null,'New day');return;}
     try{if(typeof queue!=='undefined'&&queue&&queue.length&&typeof qSyncState!=='undefined'&&qSyncState==='server'&&typeof qPost==='function'&&unsent())qPost();}catch(e){}
+    if(klDay()!==dayAt){if(idle())saltFresh(); else offer(null,'New day');return;}
     fetch('rev',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(j){
       if(!j||!j.id||j.id===SALT_BUILD_ID)return;
       if(idle())saltFresh(); else offer(j.v);
