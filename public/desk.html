@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="9baa334b7a52fd51";
+var SALT_BUILD_ID="5b52d9b9c7813f1c";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -110,6 +110,57 @@ var SALT_REV_MS=10000;
 var SALT_WAKE_MS=3000;
 (function(){
   var chip=null,timer=null;
+  var dayAt=klDay(),sock=null,sockUp=false,sockTries=0,sockRe=false,sockT=null,pingT=null,pongT=null,burstT=null;
+  function klDay(){return new Date(Date.now()+8*3600000).toISOString().slice(0,10);}
+  function pace(ms){
+    if(SALT_REV_MS===ms)return;
+    SALT_REV_MS=ms;
+    if(timer){clearInterval(timer);timer=setInterval(tick,SALT_REV_MS);}
+  }
+  function ping(){
+    var s=sock;
+    if(!s||!sockUp)return;
+    try{s.send('ping');}catch(e){}
+    clearTimeout(pongT);
+    pongT=setTimeout(function(){drop(s);try{s.close();}catch(e){}},5000);
+  }
+  function drop(s){
+    if(sock!==s)return;
+    var was=sockUp;
+    sock=null;sockUp=false;
+    clearInterval(pingT);pingT=null;clearTimeout(pongT);pongT=null;
+    pace(10000);
+    if(was){sockTries=0;sockRe=true;}else sockTries++;
+    if(sockTries<=3){clearTimeout(sockT);sockT=setTimeout(connect,1000*Math.pow(2,Math.max(0,sockTries-1)));}
+  }
+  function connect(){
+    sockT=null;
+    try{
+      if(!window.SALT_CLOUD||typeof window.WebSocket!=='function'||sock)return;
+      var s=new window.WebSocket((location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/live');
+      sock=s;
+      s.onmessage=function(e){
+        if(sock!==s)return;
+        if(e.data==='pong'){clearTimeout(pongT);pongT=null;return;}
+        var m=null;try{m=JSON.parse(e.data);}catch(x){return;}
+        if(!m)return;
+        if(m.k==='hello'){
+          sockUp=true;sockTries=0;pace(60000);
+          clearInterval(pingT);pingT=setInterval(ping,45000);
+          if(sockRe){sockRe=false;tick();}
+        }else if(m.k==='rev')tick();
+        else if((m.k==='drafts'||m.k==='orders')&&!burstT)burstT=setTimeout(function(){burstT=null;wake();},300);
+      };
+      s.onclose=function(){drop(s);};
+      s.onerror=function(){};
+    }catch(e){sock=null;}
+  }
+  function shown(){
+    try{
+      if(sock&&sockUp){ping();return;}
+      if(!sock){sockTries=0;clearTimeout(sockT);connect();}
+    }catch(e){}
+  }
   function idle(){try{
     var a=document.activeElement;
     if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return false;
@@ -157,13 +208,15 @@ var SALT_WAKE_MS=3000;
   }
   function tick(){
     if(!window.SALT_CLOUD||document.visibilityState!=='visible')return;
+    if(klDay()!==dayAt){if(idle())saltFresh(); else offer(null,'New day');return;}
     try{if(typeof queue!=='undefined'&&queue&&queue.length&&typeof qSyncState!=='undefined'&&qSyncState==='server'&&typeof qPost==='function'&&unsent())qPost();}catch(e){}
     fetch('rev',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(j){
       if(!j||!j.id||j.id===SALT_BUILD_ID)return;
       if(idle())saltFresh(); else offer(j.v);
     }).catch(function(){});
   }
-  window.addEventListener('load',function(){if(!timer){timer=setInterval(tick,SALT_REV_MS);tick();}});
+  window.addEventListener('load',function(){if(!timer){timer=setInterval(tick,SALT_REV_MS);tick();}connect();});
+  window.addEventListener('pageshow',shown);
   /* The wake reads what the load and the pollers read: the build first, then Approve's drafts and the site's orders,
    which the rail's counts need with neither part on screen. Under the pollers' own guards: never into a hidden page
    (the wake is kept for its return), never over a decision in flight, never over a field being typed on Site orders,
@@ -187,7 +240,7 @@ var SALT_WAKE_MS=3000;
     if(!e||!e.data||e.data.salt!=='wake'||wakeT)return;
     wakeT=setTimeout(wake,SALT_WAKE_MS);
   });}catch(e){}
-  document.addEventListener('visibilitychange',function(){if(document.visibilityState!=='visible')return;if(wakeOwed&&!wakeT)wake();else tick();});
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState!=='visible')return;shown();if(wakeOwed&&!wakeT)wake();else tick();});
 })();
 </script>
 <!-- END cloud/PWA -->
