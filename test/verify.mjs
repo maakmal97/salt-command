@@ -9,7 +9,7 @@ import { FROZEN_BOOK, FROZEN_MASTER, LIVE_BOOK, LIVE_MASTER, liveEnv } from "./f
 import { execFileSync, spawnSync } from "node:child_process";
 import { DATA_DIR, PROJECT_DIR, prodOrder } from "../tools/book.mjs";
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync, lstatSync, unlinkSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync, lstatSync, unlinkSync, appendFileSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import worker from "../src/worker.js";
@@ -128,9 +128,23 @@ let sections = 0;
    theirs, and a window left open is held by its own pending timers. Those timers do not fire between sections:
    most sections never yield to the event loop, so a timer waits for the next one that does file or crypto work,
    and a close put on a timer would wait with them. So the close is immediate. */
+/* WHERE A SECTION'S TIME GOES (21 Oct 2026, the suite's speed). With SALT_SECTION_LOG naming a file, each section appends one
+   line, {t, wall, idle, active, cpu} in ms: idle is the event loop waiting (a timer, a poll that runs to its cap), cpu this
+   process's own work, and wall less both is a synchronous wait (a spawnSync child). Shards inherit it, so `npm test` and
+   `npm run test:serial` both write it. Off unless set, and it changes nothing a section sees. */
+const sectionLog = { title: null, at: 0, loop: null, cpu: null };
+const sectionLogFlush = () => {
+  if (!process.env.SALT_SECTION_LOG || !sectionLog.title) return;
+  const d = performance.eventLoopUtilization(sectionLog.loop), c = process.cpuUsage(sectionLog.cpu);
+  appendFileSync(process.env.SALT_SECTION_LOG, JSON.stringify({ t: sectionLog.title, wall: Math.round(performance.now() - sectionLog.at),
+    idle: Math.round(d.idle), active: Math.round(d.active), cpu: Math.round((c.user + c.system) / 1000) }) + "\n");
+};
+process.on("exit", sectionLogFlush);
 const section = (s) => {
   for (const w of opened) { try { w.close(); } catch (e) { /* closed already */ } }
   opened.clear();
+  sectionLogFlush();
+  Object.assign(sectionLog, { title: s, at: performance.now(), loop: performance.eventLoopUtilization(), cpu: process.cpuUsage() });
   sections++; console.log("\n" + s);
 };
 
