@@ -1528,6 +1528,7 @@ export const OWNER_JS = `
     makerSlipDraw();
   }
   var makerThreads=[], makerThreadUser=null, makerThreadTimer=null, makerThreadsReading=false, makerChatDrafts={};
+  var chatMs=2000;   /* Speed Wave 2 L2: a minute while the live socket is up */
   function stopMakerChat(){
     if(makerThreadTimer!==null) clearInterval(makerThreadTimer);
     makerThreadTimer=null;
@@ -1538,7 +1539,7 @@ export const OWNER_JS = `
     makerThreadTimer=setInterval(function(){
       if(!makerThreadUser||!inChat()||document.hidden){ stopMakerChat(); return; }
       loadMakerThreads(true);
-    },2000);
+    },chatMs);
   }
   document.addEventListener('visibilitychange',function(){
     if(document.hidden) stopMakerChat();
@@ -6511,6 +6512,7 @@ export const OWNER_JS = `
     var on=!document.hidden&&!document.body.classList.contains('ended')&&(placeNow==='needs'||placeNow==='orders');
     if(on&&needsTimer===null) needsTimer=setInterval(tickPlace, NEED_MS);
     else if(!on&&needsTimer!==null){ clearInterval(needsTimer); needsTimer=null; }
+    if(on&&liveDirty){ liveDirty=false; tickPlace(); }   /* an event that came while another place showed is read now */
   }
   function tickPlace(){
     if(document.hidden||(placeNow!=='needs'&&placeNow!=='orders')){ needsWatch(); return; }
@@ -6520,6 +6522,21 @@ export const OWNER_JS = `
     else { loadMaker(true); loadMakerClaims(true); }
   }
   document.addEventListener('visibilitychange', function(){ needsWatch(); if(!document.hidden&&needsTimer!==null) tickPlace(); });
+  /* ---- SPEED WAVE 2 L2 (21 Oct 2026): THE LIVE SOCKET, on /all/live past Access (the page's liveSocket, stmt/page.js). Each event is a kind, the
+     account and an id, nothing more: Needs you and Orders are read at once when one shows (else the next time it is shown), and Chat re-reads
+     when it is open. While the socket is up the two polls fall to a minute and stay as the net; on its loss they return to 5 and 2 seconds. ---- */
+  var liveDirty=false, liveOwner=null, liveOwnerHad=false, NEED_BASE=NEED_MS;
+  function needsRetime(){ if(needsTimer!==null){ clearInterval(needsTimer); needsTimer=null; } needsWatch(); }
+  function ownerLiveEvent(m){
+    if(m.k==='thread'&&inChat()&&!document.hidden) loadMakerThreads(true);
+    if((placeNow==='needs'||placeNow==='orders')&&!document.hidden) tickPlace(); else liveDirty=true;
+  }
+  if(LIVE_ON){
+    liveOwner=liveSocket({ path:'/all/live',
+      up:function(){ NEED_MS=LIVE_NET_MS; chatMs=LIVE_NET_MS; needsRetime(); if(makerThreadTimer!==null) startMakerChat(); if(liveOwnerHad) ownerLiveEvent({k:'order'}); liveOwnerHad=true; },
+      down:function(){ NEED_MS=NEED_BASE; chatMs=2000; needsRetime(); if(makerThreadTimer!==null) startMakerChat(); },
+      event:ownerLiveEvent });
+  }
   document.getElementById('gmake').addEventListener('click', async function(){
     var b=this, intro=document.getElementById('gintro').value,
         label=document.getElementById('glabel').value;
