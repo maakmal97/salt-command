@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="abc6ef3e5aa2eab7";
+var SALT_BUILD_ID="612b38baae37d881";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -20303,7 +20303,7 @@ function thrItem(t){return Object.assign({},t,{id:'t:'+t.u,kind:'thread'});}
 /* the banner opens desk#orders/newest (public/sw.js); the orders are Salt Admin's, so it lands on the desk's Money */
 function ordWakeAddr(h){return h==='orders/newest'?'orders':h;}
 /* the rail's Today count includes what is waiting on the site, so it is recounted when THAT changes, not on every read */
-function waitRecount(){try{deskLiveDraw();}catch(e){}warmSoon();const n=ordActs().map(a=>a.kind+':'+(a.o&&a.o.id)).join(',');if(n!==ordWaitWas){ordWaitWas=n;try{navCounts();}catch(e){}}}
+function waitRecount(){warmSoon();const n=ordActs().map(a=>a.kind+':'+(a.o&&a.o.id)).join(',');if(n!==ordWaitWas){ordWaitWas=n;try{navCounts();}catch(e){}}try{deskLiveDraw();}catch(e){}}
 /* ====== WHAT AN Add ID TAP WILL ACTUALLY DO (v570) ======================================
    THREE PLACES ON THIS PAGE ASK and they must not answer differently: the preview, which
    decides whether Record is even enabled; the Record handler, which refuses on its own line;
