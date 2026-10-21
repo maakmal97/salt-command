@@ -152,6 +152,26 @@
 - **Customers** (P8): `rewardAccount` reads `redeemable` false for a non-associate from the switch and `inputResource` refuses every spend; their
   count stands on the rows it read at the switch (`rewardCut`). No basis (the loyalty plan's Ask 4).
 
+## The customer loyalty unit (his rule of 20 Oct 2026, docs/plan-loyalty-unit.html)
+
+- **The walk** (`engine/position.mjs` `loyaltyWalk`, `REWARD.stated.salt.loyal` `{every, since}` in the master): a customer's own salt rows from
+  `since`, in `pOn` then rid order, each counting its final qty once paid in full, at or above their price (goods against `listRM` over `listQty`;
+  no stamp, nothing), with every handover dated, and not paused that day. Paused is a write-off dated on or before the day (`defaultedOn`, else
+  the row's newest Correction from its first handover, else that handover plus the lock) or V5b2c's late rule over the delays as they stood that
+  day. A gift, a redemption, a reward or loyal row and a written-off row count nothing; an associate, a partner, a supplier and a bucket do not
+  walk. `cadenceOf` is the desk's `custCadence`, moved into the engine.
+- **The fold's unit** (`engine/apply.mjs` `loyalFold`, beside the associate's): due is the walk's crossings less their `rewardOf` and `loyal`
+  rows, cancelled included; each is `{qty: 1, total: 0, cost, cash: 0, goodwill, deliveredQty: 0, rewardOf, auto, loyal}` at the crossing day's
+  `latestCogs` (none with no lot landed). `rewardFollow` hands it over with its order and flags STALE with the walk's reason; one raised before
+  they were made an associate is still handed over. A loyal row is out of a customer's reward margin and every spend. The fold reads the
+  extract's `TERMS` beside the scheme.
+- **Accept and the word** (`engine/stages.mjs` `loyalReading`, `rewardCrossOf`, `rwdOf(book, row, now, today)`): previewAck stamps `rwd` "cross"
+  and `rwdLoyal` when this order at or above their card takes their paid units to the next `every`, not while paused today; the drafter puts
+  `rwdLoyal` on the Pending row, so both digests name it as part of the row. The site carries the same one word as the associate's.
+- **What they see and he reads**: `tools/book.mjs` `customerCard` (over the master's `loyalWalkOf`) seals `{products: [{product: "salt", loyal:
+  {next}}]}` for every roster customer at publish; the Desk's Customer rewards card names the rule and a Loyalty column. Salt Admin's This
+  customer card reads `GET /all/maker/customer-reading/<ledgerKey>` (the Desk's `makerCustomerReading`, a read behind Access and the bridge key).
+
 ## The desk
 
 - **Counter maker bridge**: the owner works in Salt Admin's Orders, Customers, Record and Shop places (one Maker place until 11 Oct 2026). `/all/maker/*` is

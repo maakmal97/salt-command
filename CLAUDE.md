@@ -109,6 +109,13 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      "given"), never a figure; the ringgit, net of what he gave under their price (`listRM`, the drafter's stamp), is his alone on Salt Admin
      (`rewardReading`). **From the switch a customer redeems nothing** (`inputResource`, the one refusal) and what they hold stands; no basis is
      built (his answer to the loyalty plan's Ask 4, reversing Ask 7's basis). Nothing prices from any of it. Detail: `docs/DESK.md`.
+   - **A CUSTOMER'S LOYALTY UNIT COUNTS UNITS AT THEIR PRICE** (his rule of 20 Oct 2026, salt only): one unit at cost per `every` (20) salt units
+     bought at or above their own price (`listRM` over `listQty`), counted once PAID IN FULL, from `REWARD.stated.salt.loyal.since`, everyone at nought
+     (the engine's `loyaltyWalk`). **A late payment pauses it** until three payments on time in a row, **a write-off for good** (dated by its own
+     Correction), progress kept. The fold raises the unit as a GIFT row (`loyal`, goodwill, total 0, `rewardOf` the order that reached it) at that
+     day's landed cost, handed over with that order or their next salt handover; Accept says `cross` and marks the row `rwdLoyal`. A customer sees
+     the share of one alone (`card.products[].loyal.next`, `customerCard`); Salt Admin's This customer card pairs it with the suggested %, which
+     stays his tap (Use it sends tier-set for Approve). An associate, a partner, a supplier and a bucket do not walk. Nothing prices from it.
 6. **The look is the Salt design system applied as a layer.** **A design change he gives goes to `Code\salt-ds` first, then to the Desk, the
    Counter and QR Command in the same piece of work, unasked** (his word of 18 Oct 2026): salt-ds's
    `npm run propagate` and its `CLAUDE.md`; `node tools/designsync.mjs --drift` says whether `design/` is

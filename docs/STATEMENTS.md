@@ -2495,7 +2495,7 @@ Salt Admin catches up with Counter Batches A to C, his side of each (canvas Salt
   closes it; two columns at 1180 (the decision beside the record and the insight), three at 1440 (decision, record, insight, at 1.15, 1 and 0.9),
   the card's parts moved, never drawn again (`ordLayout`). From 860 to 1080px the list still stands beside the card. This reverses his split
   of 11 Oct 2026 at that width.
-- **Not built in this release**: the associate reward card under an associate's order (V37, V52; its own build) and the This customer card (V38).
+- **Not built in this release**: the associate reward card under an associate's order (V37, V52; its own build) and the This customer card (V38); both have since landed, the second with the loyalty unit (21 Oct 2026).
 
 ### Every Salt Admin control has a stable name: `data-act` (11 Oct 2026)
 
@@ -2998,6 +2998,17 @@ while an acknowledged order is still to pay, and on a given order a line "Reward
 (`om.rwd`, `om.rwdFree`). No figure of it, `rwdStep`, `listRM` or `listQty`, travels. Salt Admin's order card draws the Associate reward card under
 the Bill (`stmt/owner.js` `rewardCard`): placed off the preview's `reward`, agreed off `GET /all/maker/reward/<ledgerKey>`. The practice accounts
 show both (`FIX_VERSION` 13: ex48 crossing, ex05 given).
+
+### The loyalty unit, for a customer (21 Oct 2026)
+
+A customer's card (`card.products[].loyal.next`, sealed at publish by `customerCard`) is a share of one unit and nothing else. Home draws
+"Your next reward" (`hr.hLoyal`) for a customer whose card carries it: the mark, "70% of the way to your next unit", the meter, nothing to tap
+and no Rewards tab, which stays an associate's. An order that takes them to the next unit carries the same "cross" and "given" as the
+associate's (`ow.rwdCross`, `om.rwd`); `rwdLoyal` stays on the book's row. Salt Admin's order card draws This customer under the Bill
+(`stmt/owner.js` `customerCard`, in the insight column): the last six rates as a line, a unit now, the highest, how often they order and when the
+next is due, the loyalty meter, the note, and the suggested % with its two halves at their median size for 20 units, said only when they are not
+paused and on cadence; Use it (`order.customer.use`) sends the suggestion as tier-set for Approve. 0000-0002 is a plain customer with a share of
+0.7 and a ready salt order carrying cross (`FIX_VERSION` 14); `accountRecord` and `sealFixture` read the fixture's own `assoc`.
 
 ## Before committing
 
