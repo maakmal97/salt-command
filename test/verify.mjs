@@ -21941,8 +21941,12 @@ await (async () => {
         for (let i = 0; i < 100 && D.getElementById("linkGo").disabled; i++) await new Promise((r) => setTimeout(r, 30));
         D.getElementById("linkGo").dispatchEvent(new W.Event("click", { bubbles: true }));
       }
-      for (let i = 0; i < 200 && !D.querySelector("#pOrder .pane") && !errs.length && !D.getElementById("msg").textContent.includes("could not"); i++) await new Promise((r) => setTimeout(r, 50));
-      await new Promise((r) => setTimeout(r, 50));
+      /* 21 Oct 2026, the suite's speed: it waited for "#pOrder .pane", which the Order page no longer draws, so every road ran
+         to the cap, 10 s each. It waits now for what is read below, the empty state, Prices and the form, then half a second
+         more, so a late error is still caught */
+      const drawn = () => D.querySelector("#pPrices .szrow") && D.getElementById("oNew") && /Nothing on your account yet/.test(D.getElementById("out").textContent);
+      for (let i = 0; i < 200 && !drawn() && !errs.length && !D.getElementById("msg").textContent.includes("could not"); i++) await new Promise((r) => setTimeout(r, 50));
+      await new Promise((r) => setTimeout(r, 500));
       return { errs: errs.slice(), out: D.getElementById("out").textContent, gate: D.getElementById("gate").hidden, msg: D.getElementById("msg").textContent,
         prices: !!D.querySelector("#pPrices .szrow"), review: !!D.getElementById("oNew") };
     } finally { try { W.close(); } catch (e) { /* best effort */ } }
