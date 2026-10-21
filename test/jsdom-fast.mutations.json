@@ -1,0 +1,7 @@
+[
+ {"name":"an attached named element never clears the map","file":"tools/jsdom-fast.mjs","find":"props.elementAttached = (el) => { if (named(el) && el._ownerDocument) clear.call(el._ownerDocument); return attached(el); };","replace":"props.elementAttached = (el) => attached(el);"},
+ {"name":"a detached named element never clears the map","file":"tools/jsdom-fast.mjs","find":"props.elementDetached = (el) => { if (named(el) && el._ownerDocument) clear.call(el._ownerDocument); return detached(el); };","replace":"props.elementDetached = (el) => detached(el);"},
+ {"name":"img is not counted as named","file":"tools/jsdom-fast.mjs","find":"const NAMED = new Set([\"embed\", \"form\", \"iframe\", \"img\", \"object\"]);","replace":"const NAMED = new Set([\"embed\", \"form\", \"iframe\", \"object\"]);"},
+ {"name":"object is not counted as named","file":"tools/jsdom-fast.mjs","find":"const NAMED = new Set([\"embed\", \"form\", \"iframe\", \"img\", \"object\"]);","replace":"const NAMED = new Set([\"embed\", \"form\", \"iframe\", \"img\"]);"},
+ {"name":"the patch is never applied","file":"tools/payload.mjs","find":"export const JSDOM_MODE = fastNamedProperties();","replace":"export const JSDOM_MODE = \"stock\";"}
+]

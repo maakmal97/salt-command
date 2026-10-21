@@ -26,6 +26,10 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { JSDOM } from "jsdom";
+import { fastNamedProperties } from "./jsdom-fast.mjs";
+
+/* one jsdom cost a browser never pays, taken out with its meaning kept, for every window in this process (tools/jsdom-fast.mjs) */
+export const JSDOM_MODE = fastNamedProperties();
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");

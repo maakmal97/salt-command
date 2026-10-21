@@ -9,7 +9,7 @@ import { FROZEN_BOOK, FROZEN_MASTER, LIVE_BOOK, LIVE_MASTER, liveEnv } from "./f
 import { execFileSync, spawnSync } from "node:child_process";
 import { DATA_DIR, PROJECT_DIR, prodOrder } from "../tools/book.mjs";
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync, lstatSync, unlinkSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync, lstatSync, unlinkSync, appendFileSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import worker from "../src/worker.js";
@@ -128,9 +128,23 @@ let sections = 0;
    theirs, and a window left open is held by its own pending timers. Those timers do not fire between sections:
    most sections never yield to the event loop, so a timer waits for the next one that does file or crypto work,
    and a close put on a timer would wait with them. So the close is immediate. */
+/* WHERE A SECTION'S TIME GOES (21 Oct 2026, the suite's speed). With SALT_SECTION_LOG naming a file, each section appends one
+   line, {t, wall, idle, active, cpu} in ms: idle is the event loop waiting (a timer, a poll that runs to its cap), cpu this
+   process's own work, and wall less both is a synchronous wait (a spawnSync child). Shards inherit it, so `npm test` and
+   `npm run test:serial` both write it. Off unless set, and it changes nothing a section sees. */
+const sectionLog = { title: null, at: 0, loop: null, cpu: null };
+const sectionLogFlush = () => {
+  if (!process.env.SALT_SECTION_LOG || !sectionLog.title) return;
+  const d = performance.eventLoopUtilization(sectionLog.loop), c = process.cpuUsage(sectionLog.cpu);
+  appendFileSync(process.env.SALT_SECTION_LOG, JSON.stringify({ t: sectionLog.title, wall: Math.round(performance.now() - sectionLog.at),
+    idle: Math.round(d.idle), active: Math.round(d.active), cpu: Math.round((c.user + c.system) / 1000) }) + "\n");
+};
+process.on("exit", sectionLogFlush);
 const section = (s) => {
   for (const w of opened) { try { w.close(); } catch (e) { /* closed already */ } }
   opened.clear();
+  sectionLogFlush();
+  Object.assign(sectionLog, { title: s, at: performance.now(), loop: performance.eventLoopUtilization(), cpu: process.cpuUsage() });
   sections++; console.log("\n" + s);
 };
 
@@ -21930,8 +21944,12 @@ await (async () => {
         for (let i = 0; i < 100 && D.getElementById("linkGo").disabled; i++) await new Promise((r) => setTimeout(r, 30));
         D.getElementById("linkGo").dispatchEvent(new W.Event("click", { bubbles: true }));
       }
-      for (let i = 0; i < 200 && !D.querySelector("#pOrder .pane") && !errs.length && !D.getElementById("msg").textContent.includes("could not"); i++) await new Promise((r) => setTimeout(r, 50));
-      await new Promise((r) => setTimeout(r, 50));
+      /* 21 Oct 2026, the suite's speed: it waited for "#pOrder .pane", which the Order page no longer draws, so every road ran
+         to the cap, 10 s each. It waits now for what is read below, the empty state, Prices and the form, then half a second
+         more, so a late error is still caught */
+      const drawn = () => D.querySelector("#pPrices .szrow") && D.getElementById("oNew") && /Nothing on your account yet/.test(D.getElementById("out").textContent);
+      for (let i = 0; i < 200 && !drawn() && !errs.length && !D.getElementById("msg").textContent.includes("could not"); i++) await new Promise((r) => setTimeout(r, 50));
+      await new Promise((r) => setTimeout(r, 500));
       return { errs: errs.slice(), out: D.getElementById("out").textContent, gate: D.getElementById("gate").hidden, msg: D.getElementById("msg").textContent,
         prices: !!D.querySelector("#pPrices .szrow"), review: !!D.getElementById("oNew") };
     } finally { try { W.close(); } catch (e) { /* best effort */ } }
@@ -34057,8 +34075,11 @@ await (async () => {
     try {
       D.getElementById("pw").value = pass;
       D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
-      const want = permission === "granted" ? /Notifications\s*On\./ : /Notifications\s*Off\./;
+      /* 21 Oct 2026, the suite's speed: it waited for "Notifications On.", which the row no longer says, so both roads ran to the
+         cap, 5 s each. It waits now for the sentence read below, then a third of a second more */
+      const want = permission === "granted" ? /On\. This computer is told/ : /Off\. Nothing is sent to this computer/;
       for (let i = 0; i < 200 && !want.test(pane().textContent); i++) await new Promise((r) => setTimeout(r, 25));
+      await new Promise((r) => setTimeout(r, 300));
       return pane().textContent;
     } finally { try { W.close(); } catch (e) { /* best effort */ } }
   };
@@ -51936,6 +51957,11 @@ await (async () => {
     ok(timers.length === 0 && rd("typeof apTimer") === "undefined" && rd("typeof ordTimer") === "undefined" && rd("typeof CARD_POLL") === "undefined",
       "apLoad and ordLoad read once and set no interval, and the pollers they had are gone: " + JSON.stringify({ timers, apTimer: rd("typeof apTimer"), ordTimer: rd("typeof ordTimer") }));
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
+})();
+
+section("21 Oct 2026: the suite's jsdom keeps the document's named elements through every insertion and removal (tools/jsdom-fast.mjs)");
+await (async () => {
+  await (await import("./jsdom-fast.mjs")).run({ ok });
 })();
 
 section("19 Oct 2026: the Desk opens once, taps light, and a chip loads itself when the desk goes idle (F1, F2, R2)");

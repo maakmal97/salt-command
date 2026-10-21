@@ -1,0 +1,5 @@
+[
+ {"name":"no size rows on Prices","file":"stmt/page.js","find":"var row=el(tapTo?'button':'div','salt-ledger__row szrow')","replace":"var row=el(tapTo?'button':'div','salt-ledger__row')"},
+ {"name":"no New order button","file":"stmt/page.js","find":"nb.type='button'; nb.id='oNew';","replace":"nb.type='button'; nb.id='oNewX';"},
+ {"name":"no empty-state line","file":"stmt/words.js","find":"Nothing on your account yet. Your orders will show here.","replace":"Nothing here yet."}
+]
