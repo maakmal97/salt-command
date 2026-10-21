@@ -1,5 +1,15 @@
 [
  {
+  "v": "v1201",
+  "d": "21 Oct 2026",
+  "t": "ONE BAR ON EVERY SURFACE: THE DESK'S GLASS BACK, SALT ADMIN AND SALT COUNTER FILLED",
+  "n": [
+   "<b>HIS WORD OF 21 OCT 2026.</b> The Desk's bar keeps v1199's features in its earlier look: the rail's glass, sheen and soft edge again (the design system's 1.12.1). What is live stacks by the bar's own width, so a bar in a narrow column stacks as a phone's does.",
+   "<b>Salt Admin's bar</b> was bare. It now says where he is (the place, the part under it), then Needs you, Orders and Customers with the rail's own figures, and Approve brass with the rows to approve; each a tap to its place.",
+   "<b>Salt Counter's header is the bar again</b>, reversing Batch A's no bar of 18 Oct: the customer's place, then only what waits on them, To pay now with its figure, the orders that need them and their messages while ours is unread, each a tap to where it is. The name stays over the rail; nothing is drawn when nothing waits."
+  ]
+ },
+ {
   "v": "v1200",
   "d": "21 Oct 2026",
   "t": "THE COUNTER GOES LIVE: AN ORDER MOVE SHOWS IN A SECOND",

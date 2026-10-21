@@ -107,14 +107,16 @@ export async function run({ ok, pageWork }) {
       && ![...od.querySelectorAll("#roster .salt-eyebrow")].some((e) => /Salt Admin/.test(e.textContent)),
       "Salt Admin is headed by the system's Desk bar, carried whole: its name, the one clock under it, and no brand in the rail nor a name repeated over each place");
     /* the customer's page (Counter Batch A, his decisions of 18 Oct 2026): from 1080px the app's name stands over the rail as the one brand, and the
-       rail's brand slot says whose account it is, which the header then leaves to it; the Desk bar of 18 Oct is gone; a section head at the system's
+       rail's brand slot says whose account it is, which the header then leaves to it; the Desk bar of 18 Oct went, and came back as the header on 21 Oct; a section head at the system's
        500, not the browser's bold; and Orders' list the whole width while no order stands open beside it */
     const cd = new JSDOM(landingPage("abcd-efgh", "nct", null)).window.document, rail = cd.querySelector(".cshell .salt-rail");
     const wide = (sel, prop, v) => own.some(([s, b, m]) => /min-width:\s*1080px/.test(m) && s === sel && decl(b, prop) === v);
     const title = rail && rail.querySelector(".crtitle"), brand = rail && rail.querySelector(".salt-rail__brand");
-    ok(!cd.querySelector(".cshell .salt-deskbar") && !own.some(([s]) => s === ".cbar") && !!title && title.classList.contains("salt-title") && title.textContent === "Salt Counter"
-      && rail.firstElementChild === title && wide(".chead .cclock", "display", "none"),
-      "the customer's page has no Desk bar: from 1080px the app's name, Salt Counter, stands over the rail in the system's title, the header's clock left to the phone");
+    /* 21 Oct 2026, his word: the header is the bar again, the place and what waits on them, and still no name on it */
+    const cbar = cd.querySelectorAll(".cshell .salt-deskbar");
+    ok(cbar.length === 1 && cbar[0].tagName === "HEADER" && cbar[0].classList.contains("chead") && !cbar[0].querySelector(".salt-deskbar__name") && !/Salt Counter/.test(cbar[0].textContent)
+      && !!title && title.classList.contains("salt-title") && title.textContent === "Salt Counter" && rail.firstElementChild === title && wide(".chead .cclock", "display", "none"),
+      "the customer's header is the one Desk bar and names no app: from 1080px the app's name, Salt Counter, stands over the rail in the system's title, the header's clock left to the phone");
     ok(!!brand && /^Signed in as$/.test((brand.querySelector(".salt-eyebrow") || {}).textContent || "") && brand.querySelectorAll("[data-whorail]").length === 1 && brand.hasAttribute("data-wholine")
       && !rail.querySelector(".salt-rail__foot") && cd.querySelectorAll(".chead [data-whoas]").length === 1 && wide(".chead [data-whoas]", "display", "none"),
       "the rail's brand slot says Signed in as over the username, and from 1080px the header leaves it to the rail, so it stands once at each width");

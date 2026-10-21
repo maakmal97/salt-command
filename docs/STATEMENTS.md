@@ -2483,6 +2483,8 @@ Salt Admin catches up with Counter Batches A to C, his side of each (canvas Salt
 - **The sheet group** on Orders: a sheet's orders at one stage in one card, its delivery on the first; one Needs card for a sheet's placed orders.
 - **Order again's tag** on an order placed again (`againOf`).
 - **The bar's hours chip** (`bar.hours`): the shop's status, a tap to Shop > Hours.
+- **The bar says where he is and what waits** (21 Oct 2026): the place and the part under it, then Needs you, Orders and Customers with the rail's figures, and Approve with the rows to approve, each a tap to its place.
+- **The Counter's header is the bar again** (21 Oct 2026, his word, reversing Batch A's no bar): the customer's place, then only what waits on them, To pay now with its figure, the orders that need them (the rail's count) and their messages while ours is unread, each a chip to where it is (`cBar` in `stmt/page.js`); never on his view of an account.
 - **Needs you opens on the glance** (P7): Ready, the orders ready with goods to hand over, and Owed to you, what the agreed orders still owe,
   goods and delivery less what is paid; each tile opens Orders. Read off the orders the page holds; a practice order counts only on the test
   surface. **The kinds are one sliding row** (canvas V56), each with its count, practice apart, beside a fixed **Jump to** opening a menu of
@@ -2668,6 +2670,10 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `need.retry` | The banner over Needs you's title when a read failed | Reads every source again, the ones that failed among them; the banner goes once all get through. |
 | `need.link-decline` | Same card | Declines the link, which stays shut. |
 | `bar.hours` | The bar heading every place, its shop hours chip | Goes to Shop hours, at the shop held for now (20 Oct 2026, his yes: no toggle in the bar). |
+| `bar.needs` | The bar heading every place, its Needs you chip (21 Oct 2026) | Goes to Needs you; its figure is the rail's. |
+| `bar.orders` | Same bar, its Orders chip | Goes to Orders; its figure is the rail's, the orders still open. |
+| `bar.customers` | Same bar, its Customers chip | Goes to Customers > Messages; its figure is the rail's. |
+| `bar.approve` | Same bar, Approve, brass with the rows to approve | Goes to Orders > Approve; its badge counts the rows as their cards do, a trip's as one. |
 | `need.open` | Every Needs you card (key: the card's key) | Goes to the detail of what the card is about: Orders, the order's stage, with that order's card open, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Orders > Approve, Record on the part an unsent entry belongs to, Shop. |
 | `need.fold.soon` | Needs you, the Soon heading | Opens or folds the Soon cards; folded when drawn, and once opened it stays open across redraws (14 Oct 2026). |
 | `need.fold.watch` | Needs you, the Watch heading | Opens or folds the Watch cards, the same way. |

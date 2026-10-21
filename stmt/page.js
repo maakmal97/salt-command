@@ -274,6 +274,15 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .cclock{margin:0 0 4px;font-variant-numeric:tabular-nums}
 .cclock:empty{display:none}
 .cwho{margin:6px 0 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+/* 21 Oct 2026, his word: THE HEADER IS THE BAR, on every place, in the Desk's glass: the time, the place and whose account on the left, what
+   waits on them (cBarChips) and the bell beside; under 820px of bar what waits takes its own row, as the Desk's does */
+.cbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:0;align-items:center;top:calc(env(safe-area-inset-top) + 8px)}
+.cbar>.cclock,.cbar>h1,.cbar>.cwho{grid-column:1}
+.cbar>h1{font-size:1.375rem}
+.cbar>.cbell{grid-column:3;grid-row:1/span 3;float:none;margin:0 0 0 12px}
+.cbar>.salt-deskbar__live{grid-column:1/-1;grid-row:4}
+.cbar>.salt-deskbar__live:not(:has(.salt-deskbar__chip)){display:none}
+@container salt-deskbar (min-width:820px){.cbar>.salt-deskbar__live{grid-column:2;grid-row:1/span 3;margin-left:14px}}
 /* a username is a credential, so the rail's capitals never reach it */
 .home{max-width:620px;margin:0 auto}
 .home .hcol>div{margin:0 0 24px}
@@ -1737,7 +1746,8 @@ const PLACE_ICONS = {
 const placeAttrs = (t, id) => (id ? ' id="t' + t.charAt(0).toUpperCase() + t.slice(1) + '"' : "") + ' data-t="' + t + '"' + (t === "home" ? ' aria-current="page"' : "") + (t === "card" ? " hidden" : "");
 /* COUNTER BATCH A (his decisions of 18 Oct 2026): FROM 1080PX THE APP'S NAME STANDS OVER THE RAIL, the one brand on the page, and the rail's
    brand slot says whose account it is: Signed in as, then the username (never a roster code), which the header then leaves to the rail. The
-   Desk bar that stood across the top from 18 Oct 2026 is gone with it: the mockup he chose has the name over the rail and no bar. */
+   Desk bar that stood across the top from 18 Oct 2026 went with it, and came back on 21 Oct 2026 (his word) as the header itself, the place
+   and what waits on them (cBar); the name stays over the rail. */
 function placesRail() {
   return '<nav class="salt-rail salt-appbar__rail" aria-label="Salt Counter">'
     + '<p class="salt-title crtitle" aria-hidden="true">Salt Counter</p>'
@@ -1787,7 +1797,11 @@ export function landingPage(user, nonce, owner, bulletin, test) {
       ? '<div id="roster" class="gate adm">'
         /* 20 Oct 2026 (canvas V32): the bar heads the whole shell, the rail and the column under it, so from 1080px it spans both */
         + '<header class="salt-deskbar abar"><div class="salt-deskbar__brand"><span class="aring">' + aico("key") + '</span>'
-        + '<div class="abartext"><div class="salt-deskbar__name">Salt Admin</div><div class="salt-deskbar__meta"><span class="abarlive" id="aBarLive"></span><button type="button" class="abarhours" id="aBarHours" data-act="bar.hours" hidden></button><span class="clk" data-clock></span></div></div></div></header>'
+        + '<div class="abartext"><div class="salt-deskbar__name">Salt Admin</div><div class="salt-deskbar__meta"><span class="abarlive" id="aBarLive"></span><button type="button" class="abarhours" id="aBarHours" data-act="bar.hours" hidden></button><span class="clk" data-clock></span></div></div></div>'
+        /* 21 Oct 2026, his word: the bar was bare. Where he is, then what waits, as the Desk's bar: each a chip to its place, Approve brass
+           with its rows (barLive in stmt/owner.js) */
+        + '<div class="salt-deskbar__live"><div class="salt-deskbar__where" aria-live="polite"><span class="salt-deskbar__view" id="aWhereView"></span>'
+        + '<span class="salt-deskbar__page" id="aWherePage"></span></div><div class="salt-deskbar__chips" id="aBarChips" role="group" aria-label="Waiting"></div></div></header>'
         /* S9 9.2: HIS PLACES, the phone's App bar and, from 1080px, the Desk rail the bar gives way to (the
            system's own switch): Needs you, Orders, Customers, Record and Shop (his decision of 11 Oct 2026). A count beside a
            place is what waits there. */
@@ -1994,8 +2008,10 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     + "</div></div>"
     /* the header names the place and whose account it is, so every customer knows their username; Step 1b: the bell
        sits in it, on every view of the saved app */
-    + '<header class="chead">' + (owner ? "" : bellBox()) + '<p class="salt-eyebrow cclock" data-clock></p>' + wt("h1", 'id="placeT"', "place.home")
-    + '<p class="cwho" data-wholine>' + whoAs() + '<span id="cstay"></span></p></header>'
+    + '<header class="chead' + (owner ? "" : " salt-deskbar cbar") + '">' + (owner ? "" : bellBox()) + '<p class="salt-eyebrow cclock" data-clock></p>' + wt("h1", 'id="placeT"', "place.home")
+    + '<p class="cwho" data-wholine>' + whoAs() + '<span id="cstay"></span></p>'
+    /* 21 Oct 2026, his word: the Counter's header is the bar again, on every place: where they are, then what waits on them (cBar) */
+    + (owner ? "" : '<div class="salt-deskbar__live"><div class="salt-deskbar__chips" id="cBarChips" role="group"' + wl("place.bar") + '></div></div>') + '</header>'
     /* HOME: what they owe, what needs them and what they order again; the notice first (S7 7.5). What they owe is
        stage 6's To pay now (S6 6.2), its one filled Pay opening the pay sheet. Two columns from 1080px (S7 7.2) */
     + '<div id="pHome" class="home"><div class="hcol">' + noticeCard(bulletin)
@@ -6169,6 +6185,7 @@ const CLIENT_JS = `
   function drawPayHead(){
     [['payHead',payHeadNode],['homeFoot',payFootNode]].forEach(function(p){
       var was=document.getElementById(p[0]), n=p[1](); if(was&&was.outerHTML!==n.outerHTML) was.replaceWith(n); });
+    cBar();
     footSet(); glanceDraw();
   }
   /* Counter Batch A: the live pill sticks above the pay foot, so the foot's height is the pill's offset; again on a resize */
@@ -6842,6 +6859,24 @@ const CLIENT_JS = `
   function placeCounts(){
     var n=orders.filter(oNeeds).length;
     [].forEach.call(tabs.querySelectorAll('[data-n]'),function(c){ c.textContent=c.getAttribute('data-n')==='order'&&n?String(n):''; });
+    cBar();
+  }
+  /* 21 OCT 2026, HIS WORD: THE BAR SAYS WHAT WAITS ON THEM, on every place: To pay now and its figure, the orders that need them (the
+     rail's own count) and their messages when ours is unread; each a chip to where it is. Only what waits is drawn. Written only when it differs. */
+  function cBar(){
+    var box=document.getElementById('cBarChips'); if(!box||OWNER) return;
+    var lines=bundle?nowOf():[], tot=invTotal(lines), n=orders.filter(oNeeds).length, th=thWaiting(), parts=[];
+    if(tot>0.004) parts.push(['pay','now',tw('pay.now'),rm(tot)]);
+    if(n) parts.push(['order','wait',tw('place.order'),String(n)]);
+    if(th) parts.push(['thread','wait',tw('th.title'),'']);
+    var key=JSON.stringify(parts); if(box.getAttribute('data-k')===key) return;
+    box.setAttribute('data-k',key); box.textContent='';
+    parts.forEach(function(x){
+      var b=el('button','salt-deskbar__chip salt-deskbar__chip--'+x[1]); b.type='button'; b.setAttribute('data-act','bar.'+x[0]); b.setAttribute('data-go',x[0]);
+      b.appendChild(document.createTextNode(x[2])); if(x[3]){ b.appendChild(document.createTextNode(' ')); b.appendChild(el('span','salt-deskbar__n',x[3])); }
+      b.addEventListener('click',function(){ if(x[0]==='thread') thOpen(b); else placeShow(x[0]==='pay'?'home':'order',true); });
+      box.appendChild(b);
+    });
   }
   async function loadOrders(){
     if(!session) return;
@@ -6962,7 +6997,7 @@ const CLIENT_JS = `
   }
   function homeThread(){ var box=el('div'); if(!session||view) return box; box.appendChild(hHead(tw('th.h'))); box.appendChild(thRow()); return box; }
   /* Home's card and Account's row alone, as drawHome draws them, for a change to the thread and nothing else */
-  function thHome(){ var was=document.getElementById('hThread'); if(was){ var n=homeThread(); n.id='hThread'; grey(n,locked); if(was.outerHTML!==n.outerHTML) was.replaceWith(n); } thDraw(); }
+  function thHome(){ var was=document.getElementById('hThread'); if(was){ var n=homeThread(); n.id='hThread'; grey(n,locked); if(was.outerHTML!==n.outerHTML) was.replaceWith(n); } thDraw(); cBar(); }
   /* COUNTER BATCH A (his decision of 18 Oct 2026): THE GLANCE at the head of Account. To pay now, the same figure Home's tile shows, with when
      it is due and a link to the order it is for; the thread, with a reply waiting said; the statement, up to date as at its moment. Nothing in it
      names a code: the account is theirs by its username alone. Drawn with Home and with To pay now, replaced only when it reads differently. */

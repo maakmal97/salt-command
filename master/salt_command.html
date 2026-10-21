@@ -3721,13 +3721,13 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
 .salt-rail__foot { border-top: 1px solid var(--salt-line-faint); padding-top: 10px; font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); letter-spacing: 0.12em; text-transform: uppercase; color: var(--salt-mist); }
 @media (max-width: 560px) { .salt-rail__tab { font-size: 0.84375rem; } }
 
-/* ---- Desk bar (synced to the desk 22 Sep 2026; crisp since 21 Oct 2026, his word: "very sharp and complete, and
-   persists in all views, to the right of the navigation pane"): one frame across the top of the page column, on the
-   bar's solid ground with a hairline edge and nothing blurred, so its type and figures read sharp over anything that
-   scrolls under it. The wordmark and one quiet mono line, then what is live (__live): where you are first (__where:
+/* ---- Desk bar (synced to the desk 22 Sep 2026; complete since 21 Oct 2026, his word: "very sharp and complete, and
+   persists in all views, to the right of the navigation pane", in the rail's own material, which he kept over a solid
+   bar the same day): one frame across the top of the page column, glass with the hairline at the rail's offset, so the
+   two read as one. The wordmark and one quiet mono line, then what is live (__live): where you are first (__where:
    the destination, the page under it), then one chip a count (__chips, __chip) and the one action (__act, with its
    badge), then the version and the controls at the right. Where it sits is the page's: --salt-bar-top, which the desk
-   binds to its safe area. Under 860px what is live takes a row of its own and slides sideways rather than wrap, the
+   binds to its safe area. In a bar under 820px wide what is live takes a row of its own and slides sideways rather than wrap, the
    action held at its right edge so it is never slid out of reach. ---- */
 
 .salt-deskbar {
@@ -3740,12 +3740,14 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   justify-content: space-between;
   gap: 8px 14px;
   margin: 0 0 18px;
-  padding: 8px 8px 8px 16px;
-  background: var(--salt-deskbar-solid);
+  padding: 9px 8px 9px 16px;
+  background: var(--salt-deskbar-sheen), var(--salt-deskbar-fill);
   border: 1px solid var(--salt-line);
-  border-bottom-color: var(--salt-line-strong);
-  border-radius: var(--salt-radius-sm);
-  box-shadow: var(--salt-shadow-desk);
+  border-radius: var(--salt-radius-md);
+  box-shadow: var(--salt-shadow-desk), inset 0 1px 0 var(--salt-highlight);
+  -webkit-backdrop-filter: blur(24px) saturate(1.25);
+  backdrop-filter: blur(24px) saturate(1.25);
+  container: salt-deskbar / inline-size;
 }
 /* the brand takes what is left, from nothing, so what is live stays on the bar's one row and the quiet line ends in an ellipsis */
 .salt-deskbar__brand { display: flex; align-items: center; gap: 12px; flex: 1 1 0; min-width: 150px; }
@@ -3890,7 +3892,8 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
 .salt-deskbar__act.is-zero .salt-deskbar__badge { display: none; }
 .salt-deskbar__tools { display: flex; align-items: center; gap: 4px; flex: none; }
 @media (max-width: 1440px) { .salt-deskbar__chip { padding: 0 8px; letter-spacing: 0.08em; } }
-@media (max-width: 860px) {
+/* by the bar's own width, so a bar in a narrow column (Salt Admin's 600px) stacks as a phone's does */
+@container salt-deskbar (max-width: 820px) {
   .salt-deskbar__live {
     order: 4;
     flex: 1 0 100%;
@@ -3919,6 +3922,8 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   .salt-deskbar__live { margin-left: -6px; padding-left: 12px; }
 }
 .salt-deskbar .salt-orb { box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .salt-deskbar { background: var(--salt-deskbar-solid); } }
+@media (prefers-reduced-transparency: reduce) { .salt-deskbar { background: var(--salt-deskbar-solid); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 .salt-version {
   font-family: var(--salt-font-mono);
   font-size: var(--salt-text-xs);
@@ -4859,7 +4864,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
    bar and the slivers outside its top corners are covered, up to a 96px inset. A shadow is not layout: the
    first cut was a pseudo-element reaching into the gutter, and it made the phone's page 2px wide. */
 body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 var(--salt-obsidian),0 -72px 0 0 var(--salt-obsidian),
-  0 -96px 0 0 var(--salt-obsidian),var(--salt-shadow-desk);}   /* crisp since 21 Oct 2026: no inner glow */
+  0 -96px 0 0 var(--salt-obsidian),var(--salt-shadow-desk),inset 0 1px 0 var(--salt-highlight);}
 .dhbrand .mark{width:30px;height:30px;flex:0 0 auto;display:block;}
 .dhtext{display:flex;flex-direction:column;gap:6px;min-width:0;overflow:hidden;}
 .deskbar .meta{display:block;margin:0;min-width:0;}
@@ -10772,7 +10777,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1200","d":"21 Oct 2026","t":"THE COUNTER GOES LIVE: AN ORDER MOVE SHOWS IN A SECOND","n":["<b>SPEED WAVE 2, L2 OF THE LIVE AND FAST PLAN.</b> An open Salt Counter page and an open Salt Admin now hold a live socket to the site's order book. Every move it records (a placement, his Accept or Ready, a payment claimed or received, a line on an order or the account's thread, a group order) is told at once to that customer's open pages and to his, so the page reads it again within about a second instead of at the next 10 second poll (2 seconds for a thread, 5 for Salt Admin).","<b>KINDS AND IDS ONLY.</b> A socket is told what kind of thing moved and its id, never a figure, a name or a word; the page then reads what it always read, through its own signed-in route. A customer's socket is proved when it opens, by the same session the page already holds, and is told only its own account's moves; his is behind Access and the exact email, as every Salt Admin road. A socket's own messages only ask: nothing it sends moves the book.","<b>THE POLL STAYS AS THE NET.</b> While the socket is up the polls fall to once a minute; when it drops they return at once, and the page reconnects (1, 2, 4 seconds, then on its next return to the screen). Log out, Sign out everywhere and a device signed out close the account's sockets; a socket past its session's life is closed too."]}];
+const evolution=[{"v":"v1201","d":"21 Oct 2026","t":"ONE BAR ON EVERY SURFACE: THE DESK'S GLASS BACK, SALT ADMIN AND SALT COUNTER FILLED","n":["<b>HIS WORD OF 21 OCT 2026.</b> The Desk's bar keeps v1199's features in its earlier look: the rail's glass, sheen and soft edge again (the design system's 1.12.1). What is live stacks by the bar's own width, so a bar in a narrow column stacks as a phone's does.","<b>Salt Admin's bar</b> was bare. It now says where he is (the place, the part under it), then Needs you, Orders and Customers with the rail's own figures, and Approve brass with the rows to approve; each a tap to its place.","<b>Salt Counter's header is the bar again</b>, reversing Batch A's no bar of 18 Oct: the customer's place, then only what waits on them, To pay now with its figure, the orders that need them and their messages while ours is unread, each a tap to where it is. The name stays over the rail; nothing is drawn when nothing waits."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -10920,7 +10925,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='21 Oct 2026, 14:54 KL';
+const LAST_UPDATED='21 Oct 2026, 15:13 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

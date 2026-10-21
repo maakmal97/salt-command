@@ -1,0 +1,56 @@
+[
+{
+"name": "the bar has no chips",
+"file": "stmt/page.js",
+"find": "<div class=\"salt-deskbar__chips\" id=\"aBarChips\"",
+"replace": "<div class=\"salt-deskbar__chips\" id=\"aBarChipsGone\""
+},
+{
+"name": "the counts never reach the bar",
+"file": "stmt/owner.js",
+"find": "    barLive(draftGroups(pendingRows()).length);\n",
+"replace": ""
+},
+{
+"name": "Needs you is one off",
+"file": "stmt/owner.js",
+"find": "chip('needs','now','Needs you',n.needs)",
+"replace": "chip('needs','now','Needs you',n.needs+1)"
+},
+{
+"name": "Approve counts rows, not groups",
+"file": "stmt/owner.js",
+"find": "barLive(draftGroups(pendingRows()).length)",
+"replace": "barLive(pendingRows().length)"
+},
+{
+"name": "Approve never goes quiet or loud",
+"file": "stmt/owner.js",
+"find": "'<button type=\"button\" class=\"salt-deskbar__act'+(n.approve?'':' is-zero')",
+"replace": "'<button type=\"button\" class=\"salt-deskbar__act is-zero'"
+},
+{
+"name": "Approve opens Orders' first part",
+"file": "stmt/owner.js",
+"find": "k==='approve'?'approve':k==='customers'?'messages':''",
+"replace": "k==='customers'?'messages':''"
+},
+{
+"name": "a place change leaves the bar",
+"file": "stmt/owner.js",
+"find": "    barWhere();\n    needsWatch();",
+"replace": "    needsWatch();"
+},
+{
+"name": "the bar names no part",
+"file": "stmt/owner.js",
+"find": "    if(p.textContent!==pt) p.textContent=pt;",
+"replace": ""
+},
+{
+"name": "the bar reads another place's count",
+"file": "stmt/owner.js",
+"find": "['needs','orders','customers'].forEach(function(k){ var c=document.querySelector('[data-count=\"'+k+'\"]');",
+"replace": "['needs','orders','customers'].forEach(function(k){ var c=document.querySelector('[data-count=\"needs\"]');"
+}
+]
