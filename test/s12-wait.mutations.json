@@ -1,0 +1,4 @@
+[
+ {"name":"the on sentence drops the payment hours","file":"stmt/words.js","find":"and while goods you have received are unpaid: every hour for three days, then three times a day.","replace":"and while goods you have received are unpaid."},
+ {"name":"the off sentence says phone","file":"stmt/words.js","find":"\"push.devOff\": \"Off. Nothing is sent to this {dev}.\"","replace":"\"push.devOff\": \"Off. Nothing is sent to this phone.\""}
+]

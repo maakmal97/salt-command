@@ -34072,8 +34072,11 @@ await (async () => {
     try {
       D.getElementById("pw").value = pass;
       D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
-      const want = permission === "granted" ? /Notifications\s*On\./ : /Notifications\s*Off\./;
+      /* 21 Oct 2026, the suite's speed: it waited for "Notifications On.", which the row no longer says, so both roads ran to the
+         cap, 5 s each. It waits now for the sentence read below, then a third of a second more */
+      const want = permission === "granted" ? /On\. This computer is told/ : /Off\. Nothing is sent to this computer/;
       for (let i = 0; i < 200 && !want.test(pane().textContent); i++) await new Promise((r) => setTimeout(r, 25));
+      await new Promise((r) => setTimeout(r, 300));
       return pane().textContent;
     } finally { try { W.close(); } catch (e) { /* best effort */ } }
   };
