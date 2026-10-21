@@ -2484,6 +2484,7 @@ Salt Admin catches up with Counter Batches A to C, his side of each (canvas Salt
 - **Order again's tag** on an order placed again (`againOf`).
 - **The bar's hours chip** (`bar.hours`): the shop's status, a tap to Shop > Hours.
 - **The bar says where he is and what waits** (21 Oct 2026): the place and the part under it, then Needs you, Orders and Customers with the rail's figures, and Approve with the rows to approve, each a tap to its place.
+- **The Counter's header is the bar again** (21 Oct 2026, his word, reversing Batch A's no bar): the customer's place, then only what waits on them, To pay now with its figure, the orders that need them (the rail's count) and their messages while ours is unread, each a chip to where it is (`cBar` in `stmt/page.js`); never on his view of an account.
 - **Needs you opens on the glance** (P7): Ready, the orders ready with goods to hand over, and Owed to you, what the agreed orders still owe,
   goods and delivery less what is paid; each tile opens Orders. Read off the orders the page holds; a practice order counts only on the test
   surface. **The kinds are one sliding row** (canvas V56), each with its count, practice apart, beside a fixed **Jump to** opening a menu of
