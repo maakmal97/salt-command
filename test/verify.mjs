@@ -50147,6 +50147,11 @@ await (async () => {
   await (await import("./loyalty-desk.mjs")).run({ ok });
 })();
 
+section("Loyalty unit on Salt Admin: This customer on a customer's salt order, the meter and the suggested % in two halves, Use it his tap (P6, 21 Oct 2026)");
+await (async () => {
+  await (await import("./loyalty-admin.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin A to C: Order again's tag, kept by Place for a done and paid order of theirs and shown on his row and band (20 Oct 2026)");
 await (async () => {
   await (await import("./admin-ac-again.mjs")).run({ ok, pageWork });

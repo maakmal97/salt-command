@@ -2678,6 +2678,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.accept-again` | Same card, once its figures are read | Accepts again at the order's own price. |
 | `order.accept-wait` | Order card, placed, until its figures are read | Stands in for Agree and sends nothing: asks for the delivery charge (and opens Change terms), or says the figures are being read. |
 | `order.answer` | Order card | Opens or shuts the folded reply, Answer them. |
+| `order.customer.use` | Order card (key: the order id), This customer, a customer's salt order with a suggested % over theirs | Sends the suggested % as their % (tier-set), for review under Approve. |
 | `order.terms` | Order card, placed | Opens or shuts the folded Change terms: the goods' price, the delivery charge and the time. From 20 Oct 2026 a button in the row of three (Agree, Change terms, Decline). |
 | `order.terms-fold` | Order card, placed | The Change terms fold's own summary, hidden behind the row's Change terms button (20 Oct 2026). |
 | `order.again-amend` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected amendment again. |

@@ -1,0 +1,16 @@
+[
+ {"name":"the suggestion read as their %","file":"src/maker-inputs.js","find":"const suggest = sug ? { pct: sug.pct, why:","replace":"const suggest = sug ? { pct: held, why:"},
+ {"name":"the % half for 10 units","file":"src/maker-inputs.js","find":"const pct = two(20 * (up - now) / med);","replace":"const pct = two(10 * (up - now) / med);"},
+ {"name":"the net not less the unit","file":"src/maker-inputs.js","find":"gain = { pct, unit: cost, net: two(pct - cost), size: med };","replace":"gain = { pct, unit: cost, net: pct, size: med };"},
+ {"name":"halves under their %","file":"src/maker-inputs.js","find":"if (suggest && suggest.pct > held + 1e-9 && med","replace":"if (suggest && med"},
+ {"name":"an associate read as a customer","file":"src/maker-inputs.js","find":"  if (!loyal.walks) return { customer: false };\n","replace":""},
+ {"name":"the next order's day not from the last","file":"src/maker-inputs.js","find":"const dueIn = cad && today ? dayNo(cad.last) + cad.med - dayNo(today) : null;","replace":"const dueIn = cad && today ? cad.med : null;"},
+ {"name":"the Desk route not let through","file":"src/worker.js","find":"    && !/^\\/_internal\\/maker\\/customer-reading\\/[A-Za-z0-9%._-]{3,160}$/.test(p)\n","replace":""},
+ {"name":"a card on oil","file":"stmt/owner.js","find":"if(order.test||(order.product||'salt')!=='salt'||!order.ledgerKey||['declined','cancelled'].indexOf(order.status)>=0) return;\n    var box=el('div','salt-glass-card salt-glass-card--pad-md ocustcard');","replace":"if(order.test||!order.ledgerKey||['declined','cancelled'].indexOf(order.status)>=0) return;\n    var box=el('div','salt-glass-card salt-glass-card--pad-md ocustcard');"},
+ {"name":"a card for no customer","file":"stmt/owner.js","find":"if(!r||r.reading||!r.customer||r.error){ box.hidden=true; return; }","replace":"if(!r||r.reading||r.error){ box.hidden=true; return; }"},
+ {"name":"the halves unpaired","file":"stmt/owner.js","find":"if(r.gain&&r.pair) s.appendChild(","replace":"if(r.gain) s.appendChild("},
+ {"name":"Use it sends their own %","file":"stmt/owner.js","find":"tier:Number((+r.suggest.pct).toFixed(2)),unit:'pct',at:at}","replace":"tier:Number((+r.held).toFixed(2)),unit:'pct',at:at}"},
+ {"name":"the meter stands empty","file":"stmt/owner.js","find":"m.style.setProperty('--salt-fill',String(Math.max(0,Math.min(100,Math.round((+y.units||0)/(+y.every||20)*100)))));","replace":"m.style.setProperty('--salt-fill','0');"},
+ {"name":"the next order's day unsaid","file":"stmt/owner.js","find":"r.dueIn>0?'Next order due in '","replace":"r.dueIn>9?'Next order due in '"},
+ {"name":"the pause unsaid","file":"stmt/owner.js","find":"    if(y.paused) box.appendChild(chip('mist',","replace":"    if(false) box.appendChild(chip('mist',"}
+]

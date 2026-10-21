@@ -2,7 +2,7 @@ import POSITION_ENGINE from "../engine/position.mjs";
 import PRICING_ENGINE from "../engine/pricing.mjs";
 import { costFor, cogsFor, floorFor, theirRates, recentRates, draftRow, findRow, checkCorrection, reviving, undoNotes } from "./drafter.js";
 import { cardAt, rowRoom, siteWords } from "./orders.js";
-import { rewardReading } from "../engine/stages.mjs";
+import { rewardReading, loyalReading } from "../engine/stages.mjs";
 import { rowFigures, moveRow } from "./approve-figures.js";
 import { AGREED_ON_SITE } from "../engine/stages.mjs";
 
@@ -251,6 +251,52 @@ export function makerRewardReading(book, key) {
   const hits = (book.sales || []).filter((s) => s && s.rid && POSITION_ENGINE.ovKey(s) === key);
   if (hits.length > 1) return { error: "Two rows share that key, so it names neither." };
   return rewardReading(book, owner, { rid: hits.length ? hits[0].rid : null });
+}
+/** 21 Oct 2026: THIS CUSTOMER, for Salt Admin's order card (the loyalty plan's This customer card, canvas V55), a read that writes nothing, for
+    one order's row named by its ledgerKey as the reward reading is: their last six paid salt rates (recentRates), their card at their median
+    size a unit, the highest, their cadence (the engine's cadenceOf), the days to their next order, the loyalty walk (units, step, paused and
+    why, and whether this order takes them to the next unit), the unit's landed cost today, the suggested % exactly as the pricing snapshot
+    carries the desk's suggestOf, and the gain in two halves at their median size scaled to 20 units: the % on his tap, and the unit's cost.
+    The halves are null when the suggestion is at or under their %, and the pairing (pair) is said only when they are not paused and reorder
+    on cadence. An associate, a partner or a supplier is no customer here. Nothing prices from it; the % stays his tap through tier-set. */
+export function makerCustomerReading(book, key, today) {
+  if (!ready(book)) return { error: "The Desk mirror is being seeded." };
+  const parts = typeof key === "string" ? key.split("|") : [];
+  if (parts.length < 3 || parts.length > 4 || !/^\d{4}-\d{2}-\d{2}$/.test(parts[1])) return { error: "Name the order's row by its key." };
+  const owner = POSITION_ENGINE.ownerCode(parts[0]);
+  if (!realCode(owner, book.state.roster || [])) return { error: "Choose a party on the roster." };
+  const hits = (book.sales || []).filter((s) => s && s.rid && POSITION_ENGINE.ovKey(s) === key);
+  if (hits.length > 1) return { error: "Two rows share that key, so it names neither." };
+  const loyal = loyalReading(book, owner, { rid: hits.length ? hits[0].rid : null, today });
+  if (!loyal.walks) return { customer: false };
+  const two = (n) => +(+n).toFixed(2);
+  const priced = (book.sales || []).filter((s) => s && (s.product || "salt") === "salt" && POSITION_ENGINE.ownsCode(owner, s.customer) && !s.goodwill && !s.cancelled
+    && s.date && +s.total > 0 && +s.qty > 0 && POSITION_ENGINE.txStat(s).order !== "Pending");
+  const rates = recentRates(book, owner, "salt", 6).reverse();
+  const qs = priced.map((s) => +s.qty).sort((a, b) => a - b), med = qs.length ? qs[Math.floor(qs.length / 2)] : null;
+  const card = med ? cardAt(book.pricing, owner, "salt", med).card : null;
+  const cad = POSITION_ENGINE.cadenceOf(priced, owner, true);
+  const dayNo = (d) => Math.round(Date.parse(String(d).slice(0, 10) + "T00:00:00Z") / 864e5);
+  const dueIn = cad && today ? dayNo(cad.last) + cad.med - dayNo(today) : null;
+  const lots = (book.purchases || []).filter((p) => (p.product || "salt") === "salt"), lc = POSITION_ENGINE.latestCogs(lots, today || undefined);
+  const cost = lc && lc.rate > 0 ? two(lc.rate) : null;
+  const snap = book.pricing && book.pricing.byProduct && book.pricing.byProduct.salt;
+  const sug = snap && object(snap.suggest) && object(snap.suggest[owner]) && PRICING_ENGINE.driftOk(snap.suggest[owner].pct) ? snap.suggest[owner] : null;
+  const held = snap && object(snap.lift) && PRICING_ENGINE.driftOk(snap.lift[owner]) ? snap.lift[owner] : 0;
+  const suggest = sug ? { pct: sug.pct, why: suggestWhyOk(sug.why) ? sug.why : "" } : null;
+  let gain = null;
+  if (suggest && suggest.pct > held + 1e-9 && med && snap.inputs && snap.inputs.cost && snap.inputs.policy && cost != null) {
+    try {
+      const K = PRICING_ENGINE.costStack(snap.inputs.cost), at = (d) => PRICING_ENGINE.quoteAt(med, K, snap.inputs.policy, d);
+      const now = at(held), up = at(suggest.pct);
+      if (now > 0 && up > 0) { const pct = two(20 * (up - now) / med); gain = { pct, unit: cost, net: two(pct - cost), size: med }; }
+    } catch (e) { gain = null; }
+  }
+  const onCadence = !!cad && dueIn != null && dueIn >= -cad.med;
+  return { customer: true, code: owner, rates, unitNow: card && med ? two(card / med) : null, highest: rates.length ? Math.max(...rates.map((r) => r.rate)) : null,
+    cadence: cad ? { every: cad.med, orders: cad.n, last: cad.last } : null, dueIn,
+    loyal: { units: loyal.units, every: loyal.every, earned: loyal.earned, paused: loyal.paused, why: loyal.why, order: loyal.order, unit: loyal.unit },
+    cost, held, suggest, gain, pair: !!gain && !loyal.paused && onCadence };
 }
 export function makerCoverPlan(body, book, pending = []) {
   if (body.product !== "salt" || body.stream === "R2" || !(body.qty > 0)

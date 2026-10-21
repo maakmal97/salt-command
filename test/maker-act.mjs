@@ -148,7 +148,7 @@ const orders = () => [
   { ...placed, id: "ord-p4", status: "placed", mode: "collect", qty: 1, total: 100, price: { from: "accept", state: "offered", offer: { total: 110, delivery: 0, until: LATER } } },
   { ...placed, id: "ord-a1", status: "acknowledged", mode: "collect", qty: 2, total: 200, payments: [
     { claim: "waiting", amount: 30, at: "2026-10-10T01:00:00.000Z" }, { claim: "waiting", amount: 500, at: "2026-10-10T02:00:00.000Z" }] },
-  { ...placed, id: "ord-a2", status: "acknowledged", mode: "collect", qty: 1, total: 100, again: ["ack", "pay", "cash", "move", "cancel", "amend"] },
+  { ...placed, id: "ord-a2", status: "acknowledged", mode: "collect", qty: 1, total: 100, ledgerKey: "CX1-ZED|2026-10-10|100", again: ["ack", "pay", "cash", "move", "cancel", "amend"] },
   { ...placed, id: "ord-r1", status: "ready", mode: "collect", qty: 1, total: 100 },
   { ...placed, id: "ord-r2", status: "ready", mode: "collect", qty: 1, total: 100 },
   { ...placed, id: "ord-r3", status: "ready", mode: "collect", qty: 1, total: 100 },
@@ -231,6 +231,10 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
     if (route.endsWith("/preview")) return { ok: true, hash: "a".repeat(64), offerHash: "b".repeat(64), quote: 200, delivery: 10, card: 200,
       floor: 150, margin: { rm: 50, pct: 25 }, cost: { total: 150 }, usual: { rate: 100 }, flags: [], row: { qty: 2, total: 200 } };
     if (route === "/all/maker/inputs") return via(inputsAnswer)({ ok: true, products: ["salt", "oil"], catalog: catalog() });
+    /* 21 Oct 2026: This customer, with a suggestion over their %, so Use it is drawn */
+    if (route.startsWith("/all/maker/customer-reading/")) return { ok: true, reading: { customer: true, code: "CX1-ZED", rates: [{ date: "2026-10-01", rate: 100 }, { date: "2026-10-08", rate: 110 }],
+      unitNow: 110, highest: 110, cadence: { every: 7, orders: 2, last: "2026-10-08" }, dueIn: 1, loyal: { units: 3, every: 20, earned: 0, paused: false, why: null, order: null, unit: null },
+      cost: 58, held: 0, suggest: { pct: 0.1, why: "" }, gain: null, pair: false } };
     if (route === "/all/maker/ledger") return { ok: true, version: 1, orders: 0, open: [], pending: [], recent: [] };
     if (route === "/all/maker/offsets") return { ok: true, offers: [{ code: "AX1-ZED", units: 1, rm: 100, saleDate: "2026-10-01", rid: "off-1" }] };
     if (route === "/all/maker/claims") return via(claims)({ ok: true, claims: [{ id: "c-1", u: U1, amount: 50, state: "waiting", slip: "s-1" },

@@ -3928,7 +3928,7 @@ export const OWNER_JS = `
      money's controls) beside the record (the steps, the Bill, the Order log) and the insight (the messages, the reward); from 1440px three. The
      card's own parts are moved, never drawn again, so nothing typed or listened to is lost, and a change of width moves them back; below 1180 the
      card is as it was drawn, part for part in its order. Its foot stays under the columns. */
-  var OCOL_RECORD='.ordsteps, .obill, .ordmoney, .undohist', OCOL_INSIGHT='.ordfold:not(.ordfold--rowed), .orwdcard';
+  var OCOL_RECORD='.ordsteps, .obill, .ordmoney, .undohist', OCOL_INSIGHT='.ordfold:not(.ordfold--rowed), .orwdcard, .ocustcard';
   function ordLayout(){
     var card=document.querySelector('#makerReview > .maker-card'); if(!card) return;
     var mm=window.matchMedia, n=mm&&mm('(min-width:1440px)').matches?3:mm&&mm('(min-width:1180px)').matches?2:1;
@@ -4278,6 +4278,69 @@ export const OWNER_JS = `
     box.appendChild(el('p','salt-insight orwdnote','Margin past '+r.times+' units at landed cost ('+rm(r.step)+' at '+rm(r.rate)+' today). Once paid, 1 unit joins this order at cost, one delivery: '
       +rm(r.rate)+', less '+rm(r.given)+' given under their Set Price since the last reward, '+rm(r.net)+' net. Salt only.'));
   }
+  /* 21 Oct 2026 (the loyalty plan's This customer card, canvas V55): ON A CUSTOMER'S SALT ORDER, his page only, read once an order by its ledgerKey
+     (GET /all/maker/customer-reading/<key>, behind Access and the bridge key) and held by its id: their last six rates as a line, a unit now at their
+     card, the highest, how often they order and when the next is due, the loyalty meter, and the suggested % with its two halves, the % on his tap
+     and the unit's cost. Use it sends that % as tier-set, for review under Approve, as Their % does; nothing here prices. Hidden on oil, candy and
+     rice, on a practice order, on a declined or cancelled one, and for an associate, a partner or a supplier. */
+  var custReads={};
+  function customerCard(card,order){
+    if(order.test||(order.product||'salt')!=='salt'||!order.ledgerKey||['declined','cancelled'].indexOf(order.status)>=0) return;
+    var box=el('div','salt-glass-card salt-glass-card--pad-md ocustcard'); box.setAttribute('data-customer',order.id); card.appendChild(box);
+    customerPaint(box,order);
+    if(!custReads[order.id]){
+      custReads[order.id]={reading:true};
+      refs('/all/maker/customer-reading/'+encodeURIComponent(order.ledgerKey)).then(function(j){ custReads[order.id]=j&&j.reading||{}; },function(){ custReads[order.id]={}; })
+        .then(function(){ [].forEach.call(document.querySelectorAll('[data-customer="'+order.id+'"]'),function(n){ customerPaint(n,order); }); });
+    }
+  }
+  function custPct(v){ var n=Math.round(Number(v)*100); return (n>0?'+':'')+n+'%'; }
+  function customerPaint(box,order){
+    box.textContent='';
+    var r=custReads[order.id];
+    if(!r||r.reading||!r.customer||r.error){ box.hidden=true; return; }
+    box.hidden=false;
+    box.appendChild(el('h4','salt-eyebrow salt-eyebrow--copper','This customer'));
+    if(r.rates&&r.rates.length>1){
+      box.appendChild(el('p','ocust__lab','Last '+r.rates.length+' orders'));
+      var lo=Math.min.apply(null,r.rates.map(function(x){ return x.rate; })), hi=Math.max.apply(null,r.rates.map(function(x){ return x.rate; })), span=hi-lo||1;
+      var NS='http://www.w3.org/2000/svg', svg=document.createElementNS(NS,'svg'); svg.setAttribute('viewBox','0 0 100 24'); svg.setAttribute('class','ocust__spark');
+      svg.setAttribute('role','img'); svg.setAttribute('aria-label','Their price a unit, '+r.rates.map(function(x){ return rm(x.rate); }).join(', '));
+      var pl=document.createElementNS(NS,'polyline'); pl.setAttribute('fill','none'); pl.setAttribute('stroke','currentColor'); pl.setAttribute('stroke-width','1.5');
+      pl.setAttribute('points',r.rates.map(function(x,i){ return (i*100/(r.rates.length-1)).toFixed(1)+','+(21-(x.rate-lo)/span*18).toFixed(1); }).join(' '));
+      svg.appendChild(pl); box.appendChild(svg);
+    }
+    var L=el('div','salt-ledger ocust__figs');
+    if(r.unitNow!=null) L.appendChild(ordLine('A unit now',rm(r.unitNow)));
+    if(r.highest!=null) L.appendChild(ordLine('Highest',rm(r.highest)));
+    if(r.cadence) L.appendChild(ordLine('Orders every',r.cadence.every+' days'));
+    box.appendChild(L);
+    var y=r.loyal||{}, m=el('div','salt-meter ocust__meter'), line=el('div','salt-meter__line'), a=el('span',null,'Loyalty '), b=el('span',null,'');
+    a.appendChild(el('b',null,(+y.units)+' of '+y.every+' units'));
+    if(r.dueIn!=null) b.appendChild(el('b',null,r.dueIn>0?'Next order due in '+r.dueIn+(r.dueIn===1?' day':' days'):r.dueIn===0?'Next order due today':'Next order '+(-r.dueIn)+(r.dueIn===-1?' day':' days')+' past due'));
+    line.appendChild(a); line.appendChild(b); m.appendChild(line);
+    var tr=el('div','salt-meter__track'); tr.appendChild(el('div','salt-meter__fill')); m.appendChild(tr);
+    m.style.setProperty('--salt-fill',String(Math.max(0,Math.min(100,Math.round((+y.units||0)/(+y.every||20)*100)))));
+    box.appendChild(m);
+    if(y.unit) box.appendChild(chip('verdigris',y.unit.delivered?'Loyalty unit on this delivery':'Loyalty unit raised, goes with this order'));
+    else if(y.order&&y.order.reaches) box.appendChild(chip('brass','Brings the next unit'));
+    if(y.paused) box.appendChild(chip('mist',y.why==='writeoff'?'Paused: a write-off':'Paused: a late payment'));
+    box.appendChild(el('p','salt-insight ocust__note','1 unit at cost every '+y.every+' at or above their price'+(r.cost!=null?' ('+rm(r.cost)+' to you)':'')+'. They see '
+      +Math.round((+y.units||0)/(+y.every||20)*100)+'%. Paused by a late payment or a write-off.'));
+    if(!r.suggest||!(r.suggest.pct>(+r.held||0)+1e-9)) return;
+    var s=el('div','ocust__sug');
+    s.appendChild(el('p','ocust__sughead','Suggested '+custPct(r.suggest.pct)+(r.suggest.why?', '+r.suggest.why:'')));
+    if(r.gain&&r.pair) s.appendChild(el('p','salt-insight ocust__gain',custPct(r.suggest.pct)+': '+rm(r.gain.pct)+' more per 20 units · the loyalty unit '+rm(r.gain.unit)+' · net '+rm(r.gain.net)));
+    var answer=el('p','ocust__answer'); answer.setAttribute('role','status');
+    var at=null;
+    makerButton(s,['Use it','order.customer.use',order.id],async function(send){
+      if(!at) at=new Date().toISOString();
+      try{ await send('/all/maker/inputs/tier-set',{code:r.code,product:'salt',tier:Number((+r.suggest.pct).toFixed(2)),unit:'pct',at:at}); answer.textContent='Sent. Their % changes once you approve it.'; loadMaker(); }
+      catch(error){ refusal(answer,error); }
+    },false,function(){ at=null; });
+    s.appendChild(answer);
+    box.appendChild(s);
+  }
   /* Salt Admin A to C, P1, and the band of 20 Oct 2026: how the goods go, in a glance */
   function ordWay(order){
     if(order.mode==='deliver') return (order.place||'Their place')+' · '
@@ -4375,6 +4438,7 @@ export const OWNER_JS = `
     if(agreed&&moved<(+order.qty||0)-0.0004) L.appendChild(ordLine('Handed',moved+' of '+units(order.qty)));
     card.appendChild(L);
     rewardCard(card,order);   /* 20 Oct 2026: the associate reward, under the Bill */
+    customerCard(card,order);   /* 21 Oct 2026: and This customer, the loyalty unit and the suggested %, for a customer */
     /* 17 Oct 2026: an ended order's last move is under Approve until he decides it, and the book keeps its row live until then */
     var waitN=((makerData&&makerData.drafts)||[]).filter(function(d){ return d.status==='pending'&&d.entry&&d.entry.orderId===order.id; }).length;
     if(waitN&&!ordOpen(order)) card.appendChild(el('p','salt-insight',(waitN===1?'Its move waits':'Its '+waitN+' moves wait')+' under Approve: the book keeps the row as it was until you approve.'));
