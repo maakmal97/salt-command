@@ -51931,6 +51931,11 @@ await (async () => {
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
 })();
 
+section("21 Oct 2026: the suite's jsdom keeps the document's named elements through every insertion and removal (tools/jsdom-fast.mjs)");
+await (async () => {
+  await (await import("./jsdom-fast.mjs")).run({ ok });
+})();
+
 section("19 Oct 2026: the Desk opens once, taps light, and a chip loads itself when the desk goes idle (F1, F2, R2)");
 await (async () => {
   await (await import("./desk-wave1.mjs")).run({ ok });
