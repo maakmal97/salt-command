@@ -196,6 +196,9 @@ const clockPast = async (moment) => { while (new Date().toISOString() <= String(
    loop: the page has finished, however long that took. A minute without that is a hang, and quiet() says so by
    returning false. A timer the page sets is not counted; the Counter's flows set none. */
 const pageWork = (win) => {
+  /* SPEED WAVE 2 L2: a page that signs in opens a live socket; where a section has not put its own on the window (test/live-fakes.mjs), it gets one that
+     connects to nothing, so no section reaches for a network it is not about */
+  if (!win.__liveFake) win.WebSocket = class { constructor(url, protocols) { this.url = String(url); this.protocols = protocols; this.readyState = 0; } send() {} close() { this.readyState = 3; } };
   let n = 0;
   const track = (p) => { n++; return Promise.resolve(p).finally(() => { n--; }); };
   const reads = (r) => {
@@ -49995,6 +49998,11 @@ await (async () => {
 section("Salt Admin: Needs you and Orders are read every 5 seconds, and a tick that finds the same answer draws nothing, a failure said once (R4, 19 Oct 2026)");
 await (async () => {
   await (await import("./admin-needs-5s.mjs")).run({ ok, pageWork });
+})();
+
+section("Counter live sockets: an open page is told what moved and reads it, the poll stays as the net, proof at the handshake (Speed Wave 2 L2, 21 Oct 2026)");
+await (async () => {
+  await (await import("./live-counter.mjs")).run({ ok, pageWork });
 })();
 
 section("Salt Admin: Orders open by stage, a list beside the order, and Record a menu");
