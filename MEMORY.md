@@ -74,6 +74,15 @@
   Orders, Customers and Approve (`bar.*` acts); Salt Counter's header is the bar again (`cBar`, reversing Batch A's no bar): To pay now,
   the orders that need them, Messages while unread. Accepted 21 Oct 2026 on phone and laptop.
 
+## Live sockets (Speed Wave 2)
+- L2 live as v1200 (`93fb843d`, 21 Oct 2026; Cloud commit `39558436127`: chain and three suite parts green, live /rev `9baa334b7a52fd51`): the Counter's `OrderBook` holds
+  hibernating sockets, `/live` (session proved at the handshake as subprotocol `["stmt", session]`) and `/all/live` (Access); kinds and ids only; polls 60 s while up;
+  `unlive` on Log out and both sign-outs. Proved on local workerd (101, echo, hello, pong, strikes, logout close); not yet on a real phone.
+- L1 live as v1202 (`1f39efcf`, 21 Oct 2026; Cloud commit `39565305778`: chain and three suite parts green, live /rev `0845037c6f0c005f`): the Book class's object
+  `live` (D9); Desk `/live` owner only whatever REQUIRE_ACCESS says; tells `drafts`, `orders` and `rev` (the minute cron); /rev poll 60 s while up; a new KL day
+  reloads an idle desk. Not yet opened on his saved iOS app (the plan's one test of `connect-src 'self'`).
+- Not yet accepted by him.
+
 ## Notifications
 - Live as v1167 (`e35ee35b`, 19 Oct 2026; Cloud commit `39223032636`: chain, three suite parts and CI green): Salt Admin (was Salt Account) has its own worker `/all/sw.js` and `opush:` subscriptions; the Desk rings orders and approvals only while no Salt Admin send goes through (KV `admin:on`). He has not yet re-added Salt Admin to the home screen or turned its bell on (Shop > This device), so the Desk still rings for now. The stock-light banner has its Desk side only: nothing posts `{"tag":"stock"}` yet (it needs `tools/stmt-publish.mjs` to compare lights).
 
