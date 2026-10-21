@@ -64,6 +64,25 @@
   (`LIFT_MIN`, `LIFT_MAX`), a negative one a discount held at or over the Floor; Add ID's presets mirror both ways; a good record suggests up to -30%
   (`suggest.good` 0.3 times `autoDrift`'s G, only with B nought). Nobody holds a %; once filled, about 18 of 41 customers would be suggested -30%. Accepted 21 Oct 2026.
 
+## Desk bar
+- Live as v1199 (`61541316`, 21 Oct 2026; Cloud commit `39555095710`: chain and three suite parts green, live /rev `9cea1ad4e24589a6`), with
+  salt-ds 1.12.0 (#22): the bar is solid with a hairline, says where you are, and carries Now, Waiting, Alerts and Approve on every view.
+  Approve opens `/admin`, a 302 to `ADMIN_URL` (wrangler.jsonc vars) `#orders/approve`; he tapped it live and it opens Salt Admin's Approve; accepted 21 Oct 2026.
+
+- v1201 (21 Oct 2026; Cloud commit `39560565587`: chain and three suite parts green, /rev `1e15f67b09f8bf6a`): his word, the Desk bar back in the
+  rail's glass with v1199's features kept (salt-ds 1.12.1, #23; stacks by its own width); Salt Admin's bar says where he is, then Needs you,
+  Orders, Customers and Approve (`bar.*` acts); Salt Counter's header is the bar again (`cBar`, reversing Batch A's no bar): To pay now,
+  the orders that need them, Messages while unread. Accepted 21 Oct 2026 on phone and laptop.
+
+## Live sockets (Speed Wave 2)
+- L2 live as v1200 (`93fb843d`, 21 Oct 2026; Cloud commit `39558436127`: chain and three suite parts green, live /rev `9baa334b7a52fd51`): the Counter's `OrderBook` holds
+  hibernating sockets, `/live` (session proved at the handshake as subprotocol `["stmt", session]`) and `/all/live` (Access); kinds and ids only; polls 60 s while up;
+  `unlive` on Log out and both sign-outs. Proved on local workerd (101, echo, hello, pong, strikes, logout close); not yet on a real phone.
+- L1 live as v1202 (`1f39efcf`, 21 Oct 2026; Cloud commit `39565305778`: chain and three suite parts green, live /rev `0845037c6f0c005f`): the Book class's object
+  `live` (D9); Desk `/live` owner only whatever REQUIRE_ACCESS says; tells `drafts`, `orders` and `rev` (the minute cron); /rev poll 60 s while up; a new KL day
+  reloads an idle desk. Not yet opened on his saved iOS app (the plan's one test of `connect-src 'self'`).
+- Accepted 21 Oct 2026 (his word: a move shows on the other screens within about a second).
+
 ## Notifications
 - Live as v1167 (`e35ee35b`, 19 Oct 2026; Cloud commit `39223032636`: chain, three suite parts and CI green): Salt Admin (was Salt Account) has its own worker `/all/sw.js` and `opush:` subscriptions; the Desk rings orders and approvals only while no Salt Admin send goes through (KV `admin:on`). He has not yet re-added Salt Admin to the home screen or turned its bell on (Shop > This device), so the Desk still rings for now. The stock-light banner has its Desk side only: nothing posts `{"tag":"stock"}` yet (it needs `tools/stmt-publish.mjs` to compare lights).
 

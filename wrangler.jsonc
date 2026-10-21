@@ -119,7 +119,9 @@
 		// subscription without it and it authorises nothing. The private half is the
 		// VAPID_PRIVATE_JWK secret, set by tools/vapid.mjs and never printed.
 		"VAPID_PUBLIC_KEY": "BB7ReK5C7NBB6KMo7tNGmd43SKePl8qQi_DnbGnEmsrLevWIM8sn4zJ7ICp5Hs_nnz1A4ZH9TtSJij4Z71HFC0k",
-		"VAPID_SUBJECT": "mailto:maakmal97@icloud.com"
+		"VAPID_SUBJECT": "mailto:maakmal97@icloud.com",
+		// 21 Oct 2026: Salt Admin, where the desk bar's Approve goes (GET /admin, a 302). Here, never in the public desk.
+		"ADMIN_URL": "https://k7m3p2.qyts8mh72kyg.workers.dev/all"
 	},
 	// WHAT THE PLATFORM KEEPS OF EACH REQUEST (10 Sep 2026). The top-level `enabled` is the old
 	// single switch and stays on; the two blocks below say what it means per signal, and the API

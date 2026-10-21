@@ -64,7 +64,7 @@ import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord,
    wrangler.stmt.jsonc looks for its class */
 export { OrderBook } from "./orderbook.js";
 import { readPoints, resolvePoint } from "./points.js";
-import { mintSession, dropSession, sessionUser, SESSION_TTL, customerView, deskOrderView, allOrders, ordersOwing, placeOrder, replaceOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, chaseDue, markChased, chaseSlot, toRate, markRateAsk, readsBoth, checkStores, storeCompare, claimAccount, claimView, allClaims, deskClaim, CLAIM_ID_RE,
+import { mintSession, dropSession, sessionUser, sessionOfToken, onBook, liveConnect, liveDrop, SESSION_TTL, customerView, deskOrderView, allOrders, ordersOwing, placeOrder, replaceOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, chaseDue, markChased, chaseSlot, toRate, markRateAsk, readsBoth, checkStores, storeCompare, claimAccount, claimView, allClaims, deskClaim, CLAIM_ID_RE,
   threadOf, threadView, sayThread, allThreads, deskThread, expectedSet, poolsOf, poolJoin, poolView, accountBook } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
@@ -468,6 +468,7 @@ async function handleCustomer(request, env, p, m, ctx) {
     let devices = 0, phones = 0;
     for (const d of devs) if (!isHere(d)) { phones += await endDevice(env, u, d); devices++; }
     const ep = typeof b.endpoint === "string" && /^https:\/\//.test(b.endpoint) ? await endpointId(b.endpoint) : null;
+    await liveDrop(env, u);   /* Speed Wave 2 L2: the sockets close and a device that is still signed in re-proves itself in seconds */
     return json({ ok: true, devices, phones: phones + await dropPhones(env, u, ep) });
   }
   if (p === "/orders") {
@@ -583,11 +584,39 @@ async function logOut(request, env, m, su) {
   const stok = String(request.headers.get("X-Stmt-Session") || "");
   if (su && stok) await unpoint(env, su, await sessKey(stok));
   const u = su || (rec && rec.u) || "";
+  await liveDrop(env, u);   /* Speed Wave 2 L2: every socket of the account closes; a live device reconnects with the session it holds now */
   const ep = b && typeof b.endpoint === "string" && /^https:\/\//.test(b.endpoint) ? b.endpoint : null;
   if (u && ep) await env.STMT.delete("push:" + u + ":" + await endpointId(ep));
   /* S3 fix: and the hand-overs this page minted, ten at most */
   for (const k of (b && Array.isArray(b.handover) ? b.handover.slice(0, 10) : [])) await dropHandover(env, k);
   return json({ ok: true });
+}
+
+/* ---- THE LIVE SOCKETS (Speed Wave 2 L2, 21 Oct 2026) ----------------------------------------------------------
+   An open page holds one WebSocket to the order book, which tells it WHAT KIND of thing moved (stmt/orderbook.js); the page then reads what it
+   always read, and its poll stays as the net. Both roads answer 404 on the kv road, which keeps its poll. A WebSocket skips CORS, so the
+   cross-site check is the Origin, which must be this site's own. THE CUSTOMER'S PROOF IS AT THE HANDSHAKE: the page offers the subprotocols
+   ["stmt", <session>], the Worker reads that session as every route does (sessionOfToken), and the object is given only the username. The
+   owner's is past Access, as every /all road. Each answers with the object's own 101 (the subprotocol echoed). */
+const plain = (text, status) => new Response(text, { status, headers: Object.assign({ "content-type": "text/plain; charset=utf-8" }, HEADERS) });
+function liveGate(request, url) {
+  if (String(request.headers.get("Upgrade") || "").toLowerCase() !== "websocket") return plain("Expected a WebSocket upgrade.", 426);
+  if (request.headers.get("Origin") !== url.origin) return plain("Not from this site.", 403);
+  return null;
+}
+async function handleLive(request, env, url) {
+  if (request.method !== "GET" || !onBook(env)) return notFound();
+  const no = liveGate(request, url);
+  if (no) return no;
+  if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
+  const asked = String(request.headers.get("Sec-WebSocket-Protocol") || "").split(",").map((x) => x.trim());
+  const u = asked[0] === "stmt" && asked.length === 2 ? await sessionOfToken(env, asked[1]) : "";
+  if (!u) return plain("Sign in again.", 401);
+  return liveConnect(env, request, "c", u);
+}
+async function handleLiveOwner(request, env, url) {
+  if (request.method !== "GET" || !onBook(env)) return notFound();
+  return liveGate(request, url) || liveConnect(env, request, "owner", "");
 }
 
 /* ---- AN ASSOCIATE'S OWN LINKS (v709, his instruction of 18 Sep 2026) --------------------------
@@ -1720,6 +1749,7 @@ const worker = {
       }
       if (!isAdminIdentity(who)) return json({ ok: false, error: "Access required" }, 401);
       if (p.startsWith("/all/maker/")) return handleMaker(request, env, p, who);
+      if (p === "/all/live") return handleLiveOwner(request, env, url);
       /* THE TEST SURFACE (his answers of 18 Oct 2026): his alone, inside this gate, so both locks hold every road under it. Counter
          Admin's moves on the example orders, the customer's own routes on a test account's session, and Reset. */
       if (p.startsWith("/all/test/maker/")) return handleMaker(request, env, "/all/maker/" + p.slice("/all/test/maker/".length), who, { test: true });
@@ -1884,10 +1914,13 @@ const worker = {
         if (b.id != null) {
           const d = devicesIn(await pointersOf(env, u)).find((x) => x.id === String(b.id));
           const phones = d ? await endDevice(env, u, d) : 0;
+          await liveDrop(env, u);
           return json({ ok: true, devices: d ? 1 : 0, links: 0, phones, ended: (d ? 1 : 0) + phones });
         }
         const keep = typeof b.keep === "string" && /^[0-9a-f]{64}$/.test(b.keep) ? b.keep : "";
-        return json(Object.assign({ ok: true }, await signOutEverywhere(env, u, keep)));
+        const out = await signOutEverywhere(env, u, keep);
+        await liveDrop(env, u);
+        return json(Object.assign({ ok: true }, out));
       }
       /* THE TEST SURFACE'S SHELL (his answers of 18 Oct 2026): the frame around the two views, and where each test account stands: not
          made (no record), made and waiting for the publish (no sealed fixture yet), or ready */
@@ -2001,6 +2034,7 @@ const worker = {
     }
     /* S3 3.9: the hand-over, minted on a session and opened by its key or its code */
     if (p === "/handover" || p === "/handover/open") return handleHandover(request, env, p, m);
+    if (p === "/live") return handleLive(request, env, url);
     if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout" || p === "/account" || p === "/account/stamp"
       || p === "/account/claim" || p === "/claims" || p === "/slip/key" || p === "/pay/accounts" || p === "/devices" || p === "/devices/signout" || p === "/push/unsubscribe"
       || p === "/passkey/new" || p === "/passkey/save" || p === "/passkey/link" || p === "/passkey/wrap" || p === "/passkey/remove"

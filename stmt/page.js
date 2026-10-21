@@ -274,6 +274,15 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .cclock{margin:0 0 4px;font-variant-numeric:tabular-nums}
 .cclock:empty{display:none}
 .cwho{margin:6px 0 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+/* 21 Oct 2026, his word: THE HEADER IS THE BAR, on every place, in the Desk's glass: the time, the place and whose account on the left, what
+   waits on them (cBarChips) and the bell beside; under 820px of bar what waits takes its own row, as the Desk's does */
+.cbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:0;align-items:center;top:calc(env(safe-area-inset-top) + 8px)}
+.cbar>.cclock,.cbar>h1,.cbar>.cwho{grid-column:1}
+.cbar>h1{font-size:1.375rem}
+.cbar>.cbell{grid-column:3;grid-row:1/span 3;float:none;margin:0 0 0 12px}
+.cbar>.salt-deskbar__live{grid-column:1/-1;grid-row:4}
+.cbar>.salt-deskbar__live:not(:has(.salt-deskbar__chip)){display:none}
+@container salt-deskbar (min-width:820px){.cbar>.salt-deskbar__live{grid-column:2;grid-row:1/span 3;margin-left:14px}}
 /* a username is a credential, so the rail's capitals never reach it */
 .home{max-width:620px;margin:0 auto}
 .home .hcol>div{margin:0 0 24px}
@@ -1737,7 +1746,8 @@ const PLACE_ICONS = {
 const placeAttrs = (t, id) => (id ? ' id="t' + t.charAt(0).toUpperCase() + t.slice(1) + '"' : "") + ' data-t="' + t + '"' + (t === "home" ? ' aria-current="page"' : "") + (t === "card" ? " hidden" : "");
 /* COUNTER BATCH A (his decisions of 18 Oct 2026): FROM 1080PX THE APP'S NAME STANDS OVER THE RAIL, the one brand on the page, and the rail's
    brand slot says whose account it is: Signed in as, then the username (never a roster code), which the header then leaves to the rail. The
-   Desk bar that stood across the top from 18 Oct 2026 is gone with it: the mockup he chose has the name over the rail and no bar. */
+   Desk bar that stood across the top from 18 Oct 2026 went with it, and came back on 21 Oct 2026 (his word) as the header itself, the place
+   and what waits on them (cBar); the name stays over the rail. */
 function placesRail() {
   return '<nav class="salt-rail salt-appbar__rail" aria-label="Salt Counter">'
     + '<p class="salt-title crtitle" aria-hidden="true">Salt Counter</p>'
@@ -1787,7 +1797,11 @@ export function landingPage(user, nonce, owner, bulletin, test) {
       ? '<div id="roster" class="gate adm">'
         /* 20 Oct 2026 (canvas V32): the bar heads the whole shell, the rail and the column under it, so from 1080px it spans both */
         + '<header class="salt-deskbar abar"><div class="salt-deskbar__brand"><span class="aring">' + aico("key") + '</span>'
-        + '<div class="abartext"><div class="salt-deskbar__name">Salt Admin</div><div class="salt-deskbar__meta"><span class="abarlive" id="aBarLive"></span><button type="button" class="abarhours" id="aBarHours" data-act="bar.hours" hidden></button><span class="clk" data-clock></span></div></div></div></header>'
+        + '<div class="abartext"><div class="salt-deskbar__name">Salt Admin</div><div class="salt-deskbar__meta"><span class="abarlive" id="aBarLive"></span><button type="button" class="abarhours" id="aBarHours" data-act="bar.hours" hidden></button><span class="clk" data-clock></span></div></div></div>'
+        /* 21 Oct 2026, his word: the bar was bare. Where he is, then what waits, as the Desk's bar: each a chip to its place, Approve brass
+           with its rows (barLive in stmt/owner.js) */
+        + '<div class="salt-deskbar__live"><div class="salt-deskbar__where" aria-live="polite"><span class="salt-deskbar__view" id="aWhereView"></span>'
+        + '<span class="salt-deskbar__page" id="aWherePage"></span></div><div class="salt-deskbar__chips" id="aBarChips" role="group" aria-label="Waiting"></div></div></header>'
         /* S9 9.2: HIS PLACES, the phone's App bar and, from 1080px, the Desk rail the bar gives way to (the
            system's own switch): Needs you, Orders, Customers, Record and Shop (his decision of 11 Oct 2026). A count beside a
            place is what waits there. */
@@ -1994,8 +2008,10 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     + "</div></div>"
     /* the header names the place and whose account it is, so every customer knows their username; Step 1b: the bell
        sits in it, on every view of the saved app */
-    + '<header class="chead">' + (owner ? "" : bellBox()) + '<p class="salt-eyebrow cclock" data-clock></p>' + wt("h1", 'id="placeT"', "place.home")
-    + '<p class="cwho" data-wholine>' + whoAs() + '<span id="cstay"></span></p></header>'
+    + '<header class="chead' + (owner ? "" : " salt-deskbar cbar") + '">' + (owner ? "" : bellBox()) + '<p class="salt-eyebrow cclock" data-clock></p>' + wt("h1", 'id="placeT"', "place.home")
+    + '<p class="cwho" data-wholine>' + whoAs() + '<span id="cstay"></span></p>'
+    /* 21 Oct 2026, his word: the Counter's header is the bar again, on every place: where they are, then what waits on them (cBar) */
+    + (owner ? "" : '<div class="salt-deskbar__live"><div class="salt-deskbar__chips" id="cBarChips" role="group"' + wl("place.bar") + '></div></div>') + '</header>'
     /* HOME: what they owe, what needs them and what they order again; the notice first (S7 7.5). What they owe is
        stage 6's To pay now (S6 6.2), its one filled Pay opening the pay sheet. Two columns from 1080px (S7 7.2) */
     + '<div id="pHome" class="home"><div class="hcol">' + noticeCard(bulletin)
@@ -2023,6 +2039,8 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     + "</div>" + placesBar() + "</div>"
     + '<script nonce="' + nonce + '">'
     + CLIENT_JS.replace(/__POLL__/g, String(test ? TEST_POLL_MS : POLL_MS)).replace(/__THPOLL__/g, String(THREAD_POLL_MS))
+      /* Speed Wave 2 L2: the live socket is the real site's; the test surface keeps its two-second poll and opens none */
+      .replace(/__LIVE__/g, test ? "false" : "true")
       /* the notice as the page was served, so the card is drawn with no request; the poll reads it again. A function
          replacement, as every splice carrying typed words: a $' or $` in the notice was read as a pattern and pasted the
          page into the script, which then did not run (S7-R2 of the stage 7 review) */
@@ -3032,6 +3050,7 @@ const CLIENT_JS = `
   function lock(){
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
+    liveStop();   /* Speed Wave 2 L2: Log out closes the socket */
     thClose(); thPut(null); thOut=[]; thSig=''; thWhy='';
     bundle=null; session=''; view=false; prices=null; orders=[]; pools=[]; claims=[]; ordersFailed=false; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
     hold=false; hidePrices=false; locked=false; payDue=null; liveAt='';
@@ -6166,6 +6185,7 @@ const CLIENT_JS = `
   function drawPayHead(){
     [['payHead',payHeadNode],['homeFoot',payFootNode]].forEach(function(p){
       var was=document.getElementById(p[0]), n=p[1](); if(was&&was.outerHTML!==n.outerHTML) was.replaceWith(n); });
+    cBar();
     footSet(); glanceDraw();
   }
   /* Counter Batch A: the live pill sticks above the pay foot, so the foot's height is the pill's offset; again on a resize */
@@ -6839,6 +6859,24 @@ const CLIENT_JS = `
   function placeCounts(){
     var n=orders.filter(oNeeds).length;
     [].forEach.call(tabs.querySelectorAll('[data-n]'),function(c){ c.textContent=c.getAttribute('data-n')==='order'&&n?String(n):''; });
+    cBar();
+  }
+  /* 21 OCT 2026, HIS WORD: THE BAR SAYS WHAT WAITS ON THEM, on every place: To pay now and its figure, the orders that need them (the
+     rail's own count) and their messages when ours is unread; each a chip to where it is. Only what waits is drawn. Written only when it differs. */
+  function cBar(){
+    var box=document.getElementById('cBarChips'); if(!box||OWNER) return;
+    var lines=bundle?nowOf():[], tot=invTotal(lines), n=orders.filter(oNeeds).length, th=thWaiting(), parts=[];
+    if(tot>0.004) parts.push(['pay','now',tw('pay.now'),rm(tot)]);
+    if(n) parts.push(['order','wait',tw('place.order'),String(n)]);
+    if(th) parts.push(['thread','wait',tw('th.title'),'']);
+    var key=JSON.stringify(parts); if(box.getAttribute('data-k')===key) return;
+    box.setAttribute('data-k',key); box.textContent='';
+    parts.forEach(function(x){
+      var b=el('button','salt-deskbar__chip salt-deskbar__chip--'+x[1]); b.type='button'; b.setAttribute('data-act','bar.'+x[0]); b.setAttribute('data-go',x[0]);
+      b.appendChild(document.createTextNode(x[2])); if(x[3]){ b.appendChild(document.createTextNode(' ')); b.appendChild(el('span','salt-deskbar__n',x[3])); }
+      b.addEventListener('click',function(){ if(x[0]==='thread') thOpen(b); else placeShow(x[0]==='pay'?'home':'order',true); });
+      box.appendChild(b);
+    });
   }
   async function loadOrders(){
     if(!session) return;
@@ -6959,7 +6997,7 @@ const CLIENT_JS = `
   }
   function homeThread(){ var box=el('div'); if(!session||view) return box; box.appendChild(hHead(tw('th.h'))); box.appendChild(thRow()); return box; }
   /* Home's card and Account's row alone, as drawHome draws them, for a change to the thread and nothing else */
-  function thHome(){ var was=document.getElementById('hThread'); if(was){ var n=homeThread(); n.id='hThread'; grey(n,locked); if(was.outerHTML!==n.outerHTML) was.replaceWith(n); } thDraw(); }
+  function thHome(){ var was=document.getElementById('hThread'); if(was){ var n=homeThread(); n.id='hThread'; grey(n,locked); if(was.outerHTML!==n.outerHTML) was.replaceWith(n); } thDraw(); cBar(); }
   /* COUNTER BATCH A (his decision of 18 Oct 2026): THE GLANCE at the head of Account. To pay now, the same figure Home's tile shows, with when
      it is due and a link to the order it is for; the thread, with a reply waiting said; the statement, up to date as at its moment. Nothing in it
      names a code: the account is theirs by its username alone. Drawn with Home and with To pay now, replaced only when it reads differently. */
@@ -7263,7 +7301,7 @@ const CLIENT_JS = `
     if(stale()) return false;
     enter(body.u, body, b, x, ck, keep);
     /* a reopen hands the session back to the request that met the lapse, which repeats itself; the poll resumes */
-    if(keep){ if(!poll) poll=setInterval(refresh, POLL_MS); return true; }
+    if(keep){ if(!poll) poll=setInterval(refresh, POLL_MS); liveStart(); return true; }
     if(!(await follow(stale))) return true;
     askPush();
     return true;
@@ -7341,7 +7379,7 @@ const CLIENT_JS = `
     var same=!!keep&&u===user&&!!bundle, t=tab, sy=window.scrollY||0, mf=mfPick;
     prices=x.prices; assoc=x.assoc; card=x.card; curCk=ck||null;
     user=u; session=body.session||'';
-    if(!same){ orders=[]; pools=[]; claims=[]; draft={}; closePay(true); payDue=null; liveAt=''; ordersFailed=false; readAt=0; thClose(); thPut(null); thOut=[]; thSig=''; thWhy=''; }
+    if(!same){ liveStop(); orders=[]; pools=[]; claims=[]; draft={}; closePay(true); payDue=null; liveAt=''; ordersFailed=false; readAt=0; thClose(); thPut(null); thOut=[]; thSig=''; thWhy=''; }
     view=!!(OWNER&&body.byMaster);
     if(linkBox) linkBox.hidden=true;
     if(opening) opening.hidden=true;
@@ -7363,12 +7401,106 @@ const CLIENT_JS = `
     }
   }
   async function follow(stale){
-    if(session){ await loadOrders(); await loadCounterHours(); if(stale()) return false; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); if(TESTS.indexOf(user)>=0) bullRead(); }
+    if(session){ await loadOrders(); await loadCounterHours(); if(stale()) return false; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); liveStart(); if(TESTS.indexOf(user)>=0) bullRead(); }
     else if(view){ await loadView(user); if(stale()) return false; }   /* stmt/owner.js: his route alone carries it */
     setHold(); drawOrder(); drawPayHead();   /* S6 6.5 and 6.7: the claims come with the orders, and may lift the hold */
     payNumLoad();   /* Phase 7b: the numbers the pay sheet shows, ready before it opens; asked on a session alone */
     if(session) payqBack();   /* S6 fix: a question the last open left unanswered */
     return true;
+  }
+
+  /* ---- SPEED WAVE 2 L2 (21 Oct 2026): THE LIVE SOCKET. An open page holds one WebSocket to the order book, which tells it WHAT KIND of thing
+     moved (an order, a claim, a pool, the thread) and its id, never a figure or a word; the page reads what it always read. The customer's
+     proof is the handshake itself: the subprotocols are "stmt" and the session, so no token sits in an address or a message. While the socket
+     is up the polls fall to a minute and stay as the net; on its loss they return to ten seconds and two, and the socket reconnects after 1, 2,
+     4 ... 30 seconds. Three attempts in a row that never reach hello stop until the page is shown again. A ping every 45 seconds must be
+     answered within 5 or the socket is let go and made again. The owner's page opens its own through the same function. ---- */
+  var LIVE_ON=__LIVE__, LIVE_NET_MS=60000, LIVE_PING_MS=45000, LIVE_PONG_MS=5000;
+  function liveSocket(cfg){
+    var ws=null, hello=false, fails=0, wait=1000, retryT=null, pingT=null, pongT=null, shut=false;
+    function addr(){ return (location.protocol==='https:'?'wss://':'ws://')+location.host+cfg.path; }
+    function stopBeat(){ if(pingT){ clearInterval(pingT); pingT=null; } if(pongT){ clearTimeout(pongT); pongT=null; } }
+    function beat(){
+      stopBeat();
+      pingT=setInterval(probe,LIVE_PING_MS);
+    }
+    function probe(){
+      var s=ws; if(!s||s.readyState!==1) return;
+      try{ s.send('ping'); }catch(e){ return; }
+      if(pongT) clearTimeout(pongT);
+      pongT=setTimeout(function(){ pongT=null; try{ s.close(); }catch(e){} lost(s); },LIVE_PONG_MS);
+    }
+    function lost(s){
+      if(ws!==s) return;
+      ws=null; stopBeat();
+      var was=hello; hello=false;
+      if(was) cfg.down(); else fails++;
+      if(shut||fails>=3) return;
+      retryT=setTimeout(function(){ retryT=null; connect(); },wait); wait=Math.min(wait*2,30000);
+    }
+    function connect(){
+      if(shut||ws||typeof WebSocket!=='function') return;
+      var s;
+      try{ s=cfg.protos?new WebSocket(addr(),cfg.protos()):new WebSocket(addr()); }catch(e){ fails++; return; }
+      ws=s; hello=false;
+      s.onmessage=function(ev){
+        if(ws!==s) return;
+        if(ev.data==='pong'){ if(pongT){ clearTimeout(pongT); pongT=null; } return; }
+        var m=null; try{ m=JSON.parse(ev.data); }catch(e){ return; }
+        if(!m||typeof m.k!=='string') return;
+        if(m.k==='hello'){ if(hello) return; hello=true; fails=0; wait=1000; beat(); cfg.up(); return; }
+        if(hello) cfg.event(m);
+      };
+      s.onclose=function(){ lost(s); };
+      s.onerror=function(){};
+    }
+    /* a socket an iPhone left half open while the page was away is asked at once on the return (Fable's re-check of L2), not at the next ping */
+    function wake(){
+      if(shut) return;
+      if(ws){ if(hello) probe(); return; }
+      fails=0; wait=1000;
+      if(retryT){ clearTimeout(retryT); retryT=null; }
+      connect();
+    }
+    function shown(){ if(!document.hidden) wake(); }
+    document.addEventListener('visibilitychange',shown);
+    window.addEventListener('pageshow',wake);
+    connect();
+    return { wake:wake, close:function(){
+      shut=true; if(retryT){ clearTimeout(retryT); retryT=null; } stopBeat();
+      document.removeEventListener('visibilitychange',shown); window.removeEventListener('pageshow',wake);
+      var s=ws, was=hello; ws=null; hello=false;
+      if(s){ try{ s.close(); }catch(e){} }
+      if(was) cfg.down();
+    } };
+  }
+  var live=null, liveT=null, liveBusy=false, liveAgain=false, liveHad=false, POLL_BASE=POLL_MS, TH_BASE=TH_MS;
+  function pollSet(){ if(poll){ clearInterval(poll); poll=setInterval(refresh, POLL_MS); } }
+  function thSet(){ if(thTimer){ clearInterval(thTimer); thTimer=setInterval(thRead,TH_MS); } }
+  /* one re-read a burst of events, never two at once: what arrives while one is out runs again after it */
+  function liveRead(){ if(liveT) return; liveT=setTimeout(function(){ liveT=null; liveRun(); },250); }
+  async function liveRun(){
+    if(liveBusy){ liveAgain=true; return; }
+    liveBusy=true;
+    try{ await refresh(); }catch(e){ /* the next event or the poll reads again */ }
+    liveBusy=false;
+    if(liveAgain){ liveAgain=false; liveRead(); }
+  }
+  function liveStart(){
+    if(!LIVE_ON||OWNER||!session) return;
+    if(live){ live.wake(); return; }
+    live=liveSocket({ path:'/live', protos:function(){ return ['stmt',session]; },
+      up:function(){ POLL_MS=LIVE_NET_MS; TH_MS=LIVE_NET_MS; pollSet(); thSet(); if(liveHad) liveRead(); liveHad=true; },
+      down:function(){ POLL_MS=POLL_BASE; TH_MS=TH_BASE; pollSet(); thSet(); },
+      event:function(m){
+        if(m.k==='thread'&&thSheetEl&&!thSheetEl.hidden){ thRead(); return; }
+        if(m.k==='order'||m.k==='claim'||m.k==='pool'||m.k==='thread') liveRead();
+      } });
+  }
+  function liveStop(){
+    if(liveT){ clearTimeout(liveT); liveT=null; }
+    liveAgain=false; liveHad=false;
+    if(live){ var l=live; live=null; l.close(); }
   }
 
   /* ---- THE ONE-TIME LINK (v710; S3 3.3 and 3.4, 24 Sep 2026) -------------------------------------------

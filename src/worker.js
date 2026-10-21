@@ -34,7 +34,7 @@ import { reservedInputs, admitInputs, admitInput, withdrawInputAdmission, finish
 import { ciAccess, ownerAccess } from "./access.js";
 /* S2a (18 Oct 2026): the shadow Book is a Durable Object exported from the main module, where the BOOK binding looks for its class */
 export { Book } from "./book.js";
-import { BOOK_NAME, PITR_NAME, MAX_LOAD_BYTES } from "./book.js";
+import { BOOK_NAME, PITR_NAME, LIVE_NAME, MAX_LOAD_BYTES } from "./book.js";
 import { maintenance } from "./maintenance.js";
 import { readVaultPair, commitVaultPair, consumeVaultOutbox } from "./vault-pair.js";
 import { officialVaultPoint } from "./vault-locality.js";
@@ -74,6 +74,13 @@ const LOCKED_HTML = '<!doctype html><html lang="en"><meta charset="utf-8">'
   + '<h1 style="font-size:1.1em;margin:.5em 0">Salt Command is locked</h1>'
   + '<p style="color:#8b98a9;margin:0">This deployment expects Cloudflare Access in front of it, and this request arrived without it. Re-enable Access for salt-command in Zero Trust, then reload.</p>'
   + '</div></body></html>';
+/* the bar's Approve: Salt Admin's Approve (Orders, then Approve), an https address only */
+export function adminRedirect(env) {
+  let to = null;
+  try { const u = new URL(String(env.ADMIN_URL || "")); if (u.protocol === "https:") { u.hash = "orders/approve"; to = u.href; } } catch (e) { to = null; }
+  if (!to) return json({ ok: false, error: "Salt Admin's address is not set" }, 404);
+  return new Response(null, { status: 302, headers: { location: to, "cache-control": "no-store" } });
+}
 const locked = () => new Response(LOCKED_HTML, {
   status: 401,
   headers: {
@@ -218,6 +225,37 @@ async function handleBookLoad(request, env, m) {
   return env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)).fetch(new Request("https://book/load", { method: "POST", body: text }));
 }
 
+/* 21 Oct 2026, Speed Wave 2 L1: THE DESK'S LIVE SOCKET. GET /live sits after the Access gate AND asks ownerAccess itself, whatever
+   REQUIRE_ACCESS says, because a socket that holds the Desk open is the owner's alone and the CI token never reaches it (not in
+   CI_ROUTES). An upgrade only, from the Desk's own origin (a WebSocket skips CORS, so Origin is the cross-site check). The Worker
+   forwards to the object named LIVE_NAME; nothing of the caller's address reaches it. */
+async function handleLive(request, env, url) {
+  if (!await ownerAccess(request, env)) return json({ ok: false, error: "not authenticated" }, 401);
+  if (String(request.headers.get("Upgrade") || "").toLowerCase() !== "websocket") return json({ ok: false, error: "a WebSocket upgrade is required" }, 426);
+  if (request.headers.get("Origin") !== url.origin) return json({ ok: false, error: "foreign origin" }, 403);
+  if (!env.BOOK) return json({ ok: false, error: "the Book is not bound" }, 503);
+  return env.BOOK.get(env.BOOK.idFromName(LIVE_NAME)).fetch(new Request("https://book/live", request));
+}
+
+/* THE TELLS. One small helper: the kind "orders" or "drafts" (POST /tell) or "rev" with the build id (POST /rev) to the live object, under
+   ctx.waitUntil where a ctx exists, else awaited, and every error swallowed: a tell is a nudge to open pages, the poll is the net. */
+export function liveTell(env, ctx, k, id) {
+  const job = (async () => {
+    try {
+      const rev = k === "rev";
+      await env.BOOK.get(env.BOOK.idFromName(LIVE_NAME)).fetch(new Request("https://book/" + (rev ? "rev" : "tell"),
+        { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(rev ? { id } : { k }) }));
+    } catch (e) { /* the poll stands */ }
+  })();
+  if (ctx && typeof ctx.waitUntil === "function") { ctx.waitUntil(job); return undefined; }
+  return job;
+}
+/* a drafter pass that drafted or decided anything tells the open pages (drafts), and returns the pass untouched */
+async function draftedTold(env, ctx, d) {
+  try { if (d && (d.drafted > 0 || (d.approved && d.approved.length))) await liveTell(env, ctx, "drafts"); } catch (e) { /* the poll stands */ }
+  return d;
+}
+
 async function readQueuePost(request) {
   const body = await request.json();
   if (!body || typeof body !== "object") throw new Error("expected an object");
@@ -300,7 +338,8 @@ function reconcileOnTap(env, ctx, mirror) {
       /* S11: and what the desk queues itself (cash taken at the counter), in the same tail */
       const dp = await deskPass(env, new Date(), mirror);
       await afterApproval(env, ctx, dp.approved);
-      if ((rc.queued || dp.queued) && env.SALT_LEDGER) { const d = await runDrafter(env, { mirror }); console.log("drafter (on the tap): " + JSON.stringify(d)); await afterApproval(env, ctx, d.approved); }
+      if (rc.queued || dp.queued) await liveTell(env, ctx, "orders");
+      if ((rc.queued || dp.queued) && env.SALT_LEDGER) { const d = await draftedTold(env, ctx, await runDrafter(env, { mirror })); console.log("drafter (on the tap): " + JSON.stringify(d)); await afterApproval(env, ctx, d.approved); }
     } catch (e) { console.log("orders reconcile (on the tap) FAILED: " + String((e && e.stack) || e)); }
   })());
 }
@@ -309,7 +348,7 @@ function draftOnArrival(env, ctx, mirror) {
   if (!ctx || typeof ctx.waitUntil !== "function" || !env.SALT_LEDGER) return;
   ctx.waitUntil((async () => {
     try {
-      const r = await runDrafter(env, { mirror });
+      const r = await draftedTold(env, ctx, await runDrafter(env, { mirror }));
       console.log("drafter (on arrival): " + JSON.stringify(r));
       await afterApproval(env, ctx, r.approved);
       /* v759: AND NO BANNER. This road is a tap on the phone in his hand, and the desk draws the
@@ -1061,7 +1100,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
         if (error.status !== 409 && error.status !== 503) throw error;
         return json({ ok: false, error: error.message }, error.status);
       }
-      await runDrafter(env, { mirror });
+      await draftedTold(env, ctx, await runDrafter(env, { mirror }));
       const drafts = [];
       for (const item of entries) {
         const draft = await env.SALT_LEDGER.prepare("SELECT status,entry FROM draft WHERE id=?1").bind(item.at).first();
@@ -1137,7 +1176,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       if (admission.newSource) await withdrawInputAdmission(env.SALT_LEDGER, entry.at, "orders");
       return json({ ok: false, error: error.message }, error.status);
     }
-    await runDrafter(env, { mirror });
+    await draftedTold(env, ctx, await runDrafter(env, { mirror }));
     const draft = await env.SALT_LEDGER.prepare("SELECT status FROM draft WHERE id=?1").bind(entry.at).first();
     const response = { ok: true, queued, draft: entry.at, status: draft ? draft.status : "queued" };
     await makerRequestFinish(env.SALT_LEDGER, body.at, fingerprint, { ...response, queued: false });
@@ -2324,6 +2363,7 @@ async function handleDraftDecide(request, env, ctx, id, decision) {
   /* S11: an approval sets going what any approval does; a rejection spends any yes that was waiting on this row */
   let moved = [];
   if (decision === "approved") moved = await afterApproval(env, ctx, [id].concat(trip));
+  await liveTell(env, ctx, "drafts");
   let dropped = 0;
   if (decision === "rejected") {
     try { dropped = await dropQueued(env, [id].concat(trip)); } catch (e) { /* the decision stands; the POST filter catches a re-post */ }
@@ -2441,6 +2481,13 @@ export default {
           if (worth) await sendPush(env, { tag: "salt", urgency: "normal" });
           return;
         }
+        /* 21 Oct 2026, Speed Wave 2 L1: the build this Worker serves, told to the live object once a minute; it tells the open
+           desks only when the id differs from the last it was given (the first ever is kept, nothing sent) */
+        try {
+          const res = await env.ASSETS.fetch(new Request("https://assets.invalid/rev.json", { method: "GET" }));
+          const rv = res && res.ok ? await res.json() : null;
+          if (rv && typeof rv.id === "string" && /^[0-9a-f]{16}$/.test(rv.id)) await liveTell(env, ctx, "rev", rv.id);
+        } catch (e) { /* the page's own poll stands */ }
         /* 06 Oct 2026: THE MINUTE'S ONE READ OF THE MIRROR (bookOnce), read on the first step that needs it and never on a
            quiet minute, shared by the return leg, the reconcile, the desk pass and both drafter passes */
         const mirror = env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null;
@@ -2494,7 +2541,8 @@ export default {
           const dp = await deskPass(env, new Date(event.scheduledTime || Date.now()), mirror);
           if (dp.queued || dp.dropped || dp.approved) console.log("orders desk pass: " + JSON.stringify(dp));
           await afterApproval(env, ctx, dp.approved);
-          if (rc.queued || dp.queued) { const d = await runDrafter(env, { mirror }); console.log("drafter (orders): " + JSON.stringify(d)); await pushIfDrafted(env, d); await afterApproval(env, ctx, d.approved); }
+          if (rc.queued || rc.dropped || dp.queued || dp.dropped) await liveTell(env, ctx, "orders");
+          if (rc.queued || dp.queued) { const d = await draftedTold(env, ctx, await runDrafter(env, { mirror })); console.log("drafter (orders): " + JSON.stringify(d)); await pushIfDrafted(env, d); await afterApproval(env, ctx, d.approved); }
         } catch (e) { console.log("orders reconcile FAILED: " + String((e && e.stack) || e)); }
         /* fold 3.3: an approval still uncommitted is rung again on the ladder; one line a try, none after the last */
         try {
@@ -2510,7 +2558,7 @@ export default {
         } catch (e) { console.log("publish dispatch FAILED: " + String((e && e.stack) || e)); }
         /* the drafter's net still runs on the quarter-hour, as it did when this schedule ran every fifteen minutes */
         if (new Date(event.scheduledTime || Date.now()).getUTCMinutes() % 15 === 0) {
-          const r = await runDrafter(env, { mirror });
+          const r = await draftedTold(env, ctx, await runDrafter(env, { mirror }));
           console.log("drafter: " + JSON.stringify(r));
           await pushIfDrafted(env, r);
           await afterApproval(env, ctx, r.approved);
@@ -2545,11 +2593,13 @@ export default {
     if (!await accessOk(request, env, p, m)) {
       if (p === "/queue" || /^\/queue\/[^/]+\/withdraw$/.test(p) || p === "/queue/ping" || p === "/vault" || p === "/bio" || p === "/bye"
         || p === "/vault/addr" || p === "/vault/pair" || p === "/vault/maintenance" || p === "/vault/key" || p === "/geo/expand" || p.startsWith("/slips/") || p.startsWith("/pins/")
-        || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/") || p === "/book/load" || p === "/book/pitr" || p === "/book/window"
+        || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/") || p === "/book/load" || p === "/book/pitr" || p === "/book/window" || p === "/live"
         || p === "/drafts" || p.startsWith("/drafts/"))
         return json({ ok: false, error: "not authenticated" }, 401);
       return locked();
     }
+    /* 21 Oct 2026, Speed Wave 2 L1: the Desk's live socket, after the gate above and owner-only by its own check */
+    if (p === "/live" && m === "GET") return handleLive(request, env, url);
 
     /* --- READS THAT CARRY THE BOOK ARE KEYED TOO (20 Aug 2026) ---------------------
      * The posture used to be "reads open, writes gated", and the gap in it was found by
@@ -2640,6 +2690,11 @@ export default {
       if (res && (res.ok || res.status === 304)) return res;
       return json({ ok: false, error: "the desk is not built" }, 404);
     }
+
+    /* 21 Oct 2026: THE BAR'S APPROVE. The desk's bar opens Salt Admin's Approve through here, so the site's address is in the
+     * Worker's config (ADMIN_URL, Salt Admin's /all) and never in the public desk. Behind the same Access gate as the desk;
+     * unset, it answers 404 rather than guess an address. */
+    if (p === "/admin" && (m === "GET" || m === "HEAD")) return adminRedirect(env);
 
     /* What build is live. The phone polls this every ten seconds and reloads when the id
      * differs from the one baked into the page it is running, which is how a deploy from
@@ -2785,6 +2840,7 @@ export default {
       let r;
       try { r = nf[1] === "orders" ? await notFoundOrder(env, decodeURIComponent(nf[2]), b) : await notFoundClaim(env, decodeURIComponent(nf[2]), b); }
       catch (e) { r = { ok: false, status: 500, error: String((e && e.message) || e) }; }
+      if (r.ok) await liveTell(env, ctx, "orders");   /* 21 Oct 2026, Speed Wave 2 L1: an order tap the Desk relays tells the open desks */
       return json(r, r.ok ? 200 : (r.status || 502));
     }
     /* S6 11.15: a claim against the account, drawn row by row and received in one tap */
@@ -2802,6 +2858,7 @@ export default {
           if (r.approved && r.approved.length) await afterApproval(env, ctx, r.approved);
         }
       } catch (e) { r = { ok: false, status: 500, error: String((e && e.message) || e) }; }
+      if (r.ok && cc[2] === "received") await liveTell(env, ctx, "orders");
       return json(r, r.ok ? 200 : (r.status || 502));
     }
     const cm = /^\/orders\/([^/]+)\/(preview|accept|handed|cash|received|again|restate|offer|withdraw)$/.exec(p);
@@ -2833,6 +2890,7 @@ export default {
           if (r.ok) reconcileOnTap(env, ctx, mirror);
         }
       } catch (e) { r = { ok: false, status: 500, error: String((e && e.message) || e) }; }
+      if (r.ok && cm[2] !== "preview") await liveTell(env, ctx, "orders");
       return json(r, r.ok ? 200 : (r.status || 502));
     }
     const om = /^\/orders\/([^/]+)\/([^/]+)$/.exec(p);
@@ -2852,7 +2910,7 @@ export default {
       /* v762: and the ledger hears about it now. ONLY A MOVE: a mark is the reconcile's own
          bookkeeping written back, and answering it with another reconcile would be the desk
          talking to itself; a line on the thread moves no goods and no money. */
-      if (b && (b.status || b.handover)) reconcileOnTap(env, ctx);
+      if (b && (b.status || b.handover)) { reconcileOnTap(env, ctx); await liveTell(env, ctx, "orders"); }
       return json(r);
     }
     /* Run the drafter on demand rather than waiting for the cron: needed to prove it from
@@ -2961,7 +3019,7 @@ export default {
       if (!writeOk(request, env)) return needsKey();
       try {
         if (url.searchParams.get("dry") === "1") return json(await dryRunDrafter(env));
-        const r = await runDrafter(env);
+        const r = await draftedTold(env, ctx, await runDrafter(env));
         await afterApproval(env, ctx, r.approved);   /* S11: a row his yes approved sets going what any approval does */
         return json(r);
       } catch (e) {

@@ -311,7 +311,8 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
 
 ## Sync and proof
 
-- The phone polls `/rev` every ten seconds against its baked `SALT_BUILD_ID`; `/rev` is `no-store`
+- The phone polls `/rev` every ten seconds against its baked `SALT_BUILD_ID`, every sixty while the Desk's live socket is up
+  (the object `live` inside the Book class tells `rev`, `orders` and `drafts` as kinds only, owner only; `docs/DESK.md`); `/rev` is `no-store`
   and never cached by `sw.js`.
 - **`public/rev.json` id** = sha256 over the patched master, `public/sw.js` and every `src/*.js`,
   NUL-joined; written by the build only. It omits `public/_headers`, `manifest.webmanifest`,
@@ -396,6 +397,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   batch maps each item onto `stmt/owner.js` too, its look and his side of the feature, or says why it has none.
 - **From 1080px an open order on Salt Admin fills the page** (his answer of 20 Oct 2026, canvas V39), reversing his split of 11 Oct 2026 at that
   width: it takes the list's place and the rail's Orders closes it; two columns at 1180, three at 1440. From 860 to 1080px the list stands beside it.
+- **Live sockets are a hint, never the record** (Speed Wave 2 L2, 21 Oct 2026): `/live` and `/all/live` upgrade to the order book's WebSocket, proof at the handshake (the subprotocol carries the session; the book is given the username and reads no KV), kinds and ids only (no figure, name or word), a socket message never moves the book, and the polls stay as the net at a minute. Log out, device sign out and Sign out everywhere close the account's sockets (`unlive`). Mechanism: `docs/STATEMENTS.md`.
 - **The site address is never in the public desk.** No address, no QR drawn.
 - **No brand on the customer's page, and no product word either.** Nothing under `stmt/` names
   Salt Command. A product is a mark (`PSYM`) carrying a letter of his (`PLET`) in every mark, 20 px and

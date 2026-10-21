@@ -668,3 +668,25 @@ an undo bookmark, so a restore can itself be undone. Recovery is per object: one
   its restart. Deploy, call the two, read the Book back with the next `node tools/book-load.mjs`
   (its parity against git at that fold), then remove the verb in the next version. Until S5 git is the source, so the simpler
   repair is the load itself: the next fold, or `tools/book-load.mjs` from a checkout, puts the live Book level with git.
+
+## The Desk's live object (L1, Speed Wave 2, 21 Oct 2026)
+
+- **What it is.** A third object of the Book class, named `live` (`LIVE_NAME` in `src/book.js`), holding no book: it accepts the Desk
+  page's WebSocket (hibernating, tag `desk`, at most 16, the oldest closed for a seventeenth) and tells every one the KIND of thing that
+  moved, `{"k":"orders"}`, `{"k":"drafts"}` or `{"k":"rev"}`, and nothing else: no id, row, name or figure. On it `/load`, `/pitr` and
+  `/window` answer 404, and on the Book and the recovery test object `/live`, `/tell` and `/rev` do. A message from a socket only asks:
+  the ping is answered by the platform, the third other message closes it 1008, and none reaches a load or a recovery verb.
+- **The road.** `GET /live` sits after the Access gate and asks `ownerAccess` itself, whatever `REQUIRE_ACCESS` says (401 otherwise); it is
+  not in `CI_ROUTES`, so the service token never reaches it. It wants `Upgrade: websocket` (426) and an `Origin` equal to the Desk's own
+  (403, the cross-site check, since a WebSocket skips CORS and rides his Access cookie), and a bound Book (503). CSP stays
+  `connect-src 'self'`; a same-host `wss` matches it.
+- **The tells**, each through `liveTell` (`ctx.waitUntil` where a ctx exists, errors swallowed, the poll being the net): `drafts` after any
+  drafter pass that drafted or decided a row (`draftedTold`) and after an approve or reject; `orders` after a reconcile that queued or
+  dropped a stage and after an order tap the Desk relays (a status or a handover; a line on the thread moves nothing); `rev` once a minute
+  from the cron with the build id the Worker serves, which the object tells only when it differs from the last it was given.
+- **The page** (`tools/build.mjs`, the freshness block, so the build id covers it). With `SALT_CLOUD` it opens `wss://<host>/live`. On hello the
+  `/rev` poll falls from 10 s to 60 s and a ping runs every 45 s with a 5 s pong deadline; on close the poll is 10 s again. `rev` reads
+  `/rev` at once; `drafts` and `orders` run the existing wake 300 ms later, once a burst. A close is retried after 1, 2 and 4 s, then not
+  until the page is shown (`visibilitychange`, `pageshow`), which also pings a socket that is up. A reconnect that reaches hello reads
+  `/rev` once. TODAY is a live read: each tick compares the Kuala Lumpur day the page was drawn on with now, and a new day loads an idle
+  desk fresh or offers the chip "New day". Proof: `test/live-desk.mjs`, with `test/live-desk.mutations.json`.

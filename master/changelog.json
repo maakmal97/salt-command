@@ -1,5 +1,47 @@
 [
  {
+  "v": "v1202",
+  "d": "21 Oct 2026",
+  "t": "THE DESK GOES LIVE: A NEW BUILD, AN ORDER OR A DRAFT SHOWS IN A SECOND",
+  "n": [
+   "<b>SPEED WAVE 2, L1 OF THE LIVE AND FAST PLAN</b> (his D9: inside the Book class, as its own object <b>live</b>). An open Desk now holds a live socket. The Worker tells it when a draft is made or decided, when an order moves or the reconcile queues one, and when the build it serves changes, so the Desk reads it again within about a second instead of at its next 10 second /rev read or the next open.",
+   "<b>YOURS ALONE, AND KINDS ONLY.</b> The socket opens only for you, past Access and the exact email, whatever the Access switch says, and never for the CI token. It is told only what kind of thing moved (orders, drafts, the build), never a figure or a name; the Desk then reads what it always read, with its write key. Nothing a socket sends moves anything.",
+   "<b>THE POLL STAYS AS THE NET.</b> While the socket is up the /rev read falls to once a minute; when it drops it is back at 10 seconds, and the Desk reconnects (1, 2, 4 seconds, then on its next return to the screen). A deploy that closes the socket is itself the signal: the reconnect reads /rev at once.",
+   "<b>TODAY IS LIVE.</b> A Desk left open past midnight in Kuala Lumpur loads the new day by itself when idle, and offers the chip when you are busy, after sending any unsent entry first."
+  ]
+ },
+ {
+  "v": "v1201",
+  "d": "21 Oct 2026",
+  "t": "ONE BAR ON EVERY SURFACE: THE DESK'S GLASS BACK, SALT ADMIN AND SALT COUNTER FILLED",
+  "n": [
+   "<b>HIS WORD OF 21 OCT 2026.</b> The Desk's bar keeps v1199's features in its earlier look: the rail's glass, sheen and soft edge again (the design system's 1.12.1). What is live stacks by the bar's own width, so a bar in a narrow column stacks as a phone's does.",
+   "<b>Salt Admin's bar</b> was bare. It now says where he is (the place, the part under it), then Needs you, Orders and Customers with the rail's own figures, and Approve brass with the rows to approve; each a tap to its place.",
+   "<b>Salt Counter's header is the bar again</b>, reversing Batch A's no bar of 18 Oct: the customer's place, then only what waits on them, To pay now with its figure, the orders that need them and their messages while ours is unread, each a tap to where it is. The name stays over the rail; nothing is drawn when nothing waits."
+  ]
+ },
+ {
+  "v": "v1200",
+  "d": "21 Oct 2026",
+  "t": "THE COUNTER GOES LIVE: AN ORDER MOVE SHOWS IN A SECOND",
+  "n": [
+   "<b>SPEED WAVE 2, L2 OF THE LIVE AND FAST PLAN.</b> An open Salt Counter page and an open Salt Admin now hold a live socket to the site's order book. Every move it records (a placement, his Accept or Ready, a payment claimed or received, a line on an order or the account's thread, a group order) is told at once to that customer's open pages and to his, so the page reads it again within about a second instead of at the next 10 second poll (2 seconds for a thread, 5 for Salt Admin).",
+   "<b>KINDS AND IDS ONLY.</b> A socket is told what kind of thing moved and its id, never a figure, a name or a word; the page then reads what it always read, through its own signed-in route. A customer's socket is proved when it opens, by the same session the page already holds, and is told only its own account's moves; his is behind Access and the exact email, as every Salt Admin road. A socket's own messages only ask: nothing it sends moves the book.",
+   "<b>THE POLL STAYS AS THE NET.</b> While the socket is up the polls fall to once a minute; when it drops they return at once, and the page reconnects (1, 2, 4 seconds, then on its next return to the screen). Log out, Sign out everywhere and a device signed out close the account's sockets; a socket past its session's life is closed too."
+  ]
+ },
+ {
+  "v": "v1199",
+  "d": "21 Oct 2026",
+  "t": "THE DESK BAR, CRISP AND COMPLETE ON EVERY VIEW",
+  "n": [
+   "<b>HIS WORD OF 21 OCT 2026.</b> The bar beside the rail is sharp and complete, and stays on every view: it is solid now, with a hairline edge and nothing blurred (the design system's 1.12.0).",
+   "<b>Where you are</b> sits beside the name: the destination, and the page under it in brass, following every tap.",
+   "<b>What is live</b> follows: every book's Now, what waits on you and this device's alerts, each a chip that goes where its figure is; and <b>Approve</b>, its badge the rows waiting, which opens Salt Admin's Approve through the desk's own /admin, so the site's address is never in this page.",
+   "On a phone what is live takes a row of its own that slides sideways, Approve held at its right edge; under 1440px the quiet line drops the as-at date and, while live, its word, keeping the dot, the clock and the stamp."
+  ]
+ },
+ {
   "v": "v1198",
   "d": "21 Oct 2026",
   "t": "THEIR % RUNS FROM -30% TO +30% ON THE SET PRICE",

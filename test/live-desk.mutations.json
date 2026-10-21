@@ -1,0 +1,572 @@
+[
+ {
+  "name": "the live object serves /load, /pitr and /window",
+  "file": "src/book.js",
+  "find": "    if (this.isLive()) return this.liveFetch(request, url);\n",
+  "replace": ""
+ },
+ {
+  "name": "every object serves the live routes and none the load",
+  "file": "src/book.js",
+  "find": "    if (this.isLive()) return this.liveFetch(request, url);\n",
+  "replace": "    return this.liveFetch(request, url);\n"
+ },
+ {
+  "name": "a hello is not sent on accept",
+  "file": "src/book.js",
+  "find": "      server.send(JSON.stringify({ k: \"hello\" }));\n",
+  "replace": ""
+ },
+ {
+  "name": "a desk socket is accepted with no tag",
+  "file": "src/book.js",
+  "find": "this.state.acceptWebSocket(server, [\"desk\"]);",
+  "replace": "this.state.acceptWebSocket(server, []);"
+ },
+ {
+  "name": "the live object takes a request that is not an upgrade",
+  "file": "src/book.js",
+  "find": "      if (String(request.headers.get(\"Upgrade\") || \"\").toLowerCase() !== \"websocket\") return new Response(\"Expected a WebSocket upgrade.\", { status: 426 });\n",
+  "replace": ""
+ },
+ {
+  "name": "the live object does not ask for the ping to be answered",
+  "file": "src/book.js",
+  "find": "state.setWebSocketAutoResponse(new WebSocketRequestResponsePair(\"ping\", \"pong\"));",
+  "replace": "void 0;"
+ },
+ {
+  "name": "every object asks for the ping to be answered",
+  "file": "src/book.js",
+  "find": "    if (this.isLive() && typeof state.setWebSocketAutoResponse",
+  "replace": "    if (typeof state.setWebSocketAutoResponse"
+ },
+ {
+  "name": "the cap is seventeen",
+  "file": "src/book.js",
+  "find": "LIVE_MAX = 16,",
+  "replace": "LIVE_MAX = 17,"
+ },
+ {
+  "name": "a seventeenth closes nobody",
+  "file": "src/book.js",
+  "find": "this.shut(mine[i].ws, 1008, \"replaced by a newer page\");",
+  "replace": "void 0;"
+ },
+ {
+  "name": "a seventeenth closes the newest",
+  "file": "src/book.js",
+  "find": "((x.att && x.att.born) || 0) - ((y.att && y.att.born) || 0)",
+  "replace": "((y.att && y.att.born) || 0) - ((x.att && x.att.born) || 0)"
+ },
+ {
+  "name": "a ping is not answered",
+  "file": "src/book.js",
+  "find": "try { ws.send(\"pong\"); }",
+  "replace": "try { void 0; }"
+ },
+ {
+  "name": "a ping is a strike",
+  "file": "src/book.js",
+  "find": "if (message === \"ping\") {",
+  "replace": "if (false) {"
+ },
+ {
+  "name": "a message is never counted",
+  "file": "src/book.js",
+  "find": "att.strikes = (att.strikes || 0) + 1;",
+  "replace": "att.strikes = 0;"
+ },
+ {
+  "name": "a fourth message is the one that closes",
+  "file": "src/book.js",
+  "find": "if (att.strikes >= LIVE_STRIKES)",
+  "replace": "if (att.strikes > LIVE_STRIKES)"
+ },
+ {
+  "name": "a second message closes",
+  "file": "src/book.js",
+  "find": "LIVE_STRIKES = 3,",
+  "replace": "LIVE_STRIKES = 2,"
+ },
+ {
+  "name": "a tell reaches one socket",
+  "file": "src/book.js",
+  "find": "for (const ws of this.socks()) { try { ws.send(msg); n++; }",
+  "replace": "for (const ws of this.socks().slice(0, 1)) { try { ws.send(msg); n++; }"
+ },
+ {
+  "name": "a tell sends the whole body",
+  "file": "src/book.js",
+  "find": "this.tellAll(JSON.stringify({ k: body.k }))",
+  "replace": "this.tellAll(JSON.stringify(body))"
+ },
+ {
+  "name": "drafts is not a kind",
+  "file": "src/book.js",
+  "find": "LIVE_KINDS = [\"orders\", \"drafts\"]",
+  "replace": "LIVE_KINDS = [\"orders\"]"
+ },
+ {
+  "name": "any word is a kind",
+  "file": "src/book.js",
+  "find": "if (!body || !LIVE_KINDS.includes(body.k))",
+  "replace": "if (!body || typeof body.k !== \"string\")"
+ },
+ {
+  "name": "a socket that cannot be sent to stops the tell",
+  "file": "src/book.js",
+  "find": "try { ws.send(msg); n++; } catch (e) { /* closing */ }",
+  "replace": "ws.send(msg); n++;"
+ },
+ {
+  "name": "the first build id tells",
+  "file": "src/book.js",
+  "find": "const changed = !!was && was.id !== body.id;",
+  "replace": "const changed = !was || was.id !== body.id;"
+ },
+ {
+  "name": "the same build id tells",
+  "file": "src/book.js",
+  "find": "const changed = !!was && was.id !== body.id;",
+  "replace": "const changed = !!was;"
+ },
+ {
+  "name": "a changed build id tells nobody",
+  "file": "src/book.js",
+  "find": "sent: changed ? this.tellAll(JSON.stringify({ k: \"rev\" })) : 0",
+  "replace": "sent: 0"
+ },
+ {
+  "name": "a build id is not kept",
+  "file": "src/book.js",
+  "find": "sql.exec(\"INSERT OR REPLACE INTO live_rev (one, id) VALUES (1, ?)\", body.id);",
+  "replace": "void 0;"
+ },
+ {
+  "name": "a build id may be upper case",
+  "file": "src/book.js",
+  "find": "const REV_RE = /^[0-9a-f]{16}$/;",
+  "replace": "const REV_RE = /^[0-9a-fA-F]{16}$/;"
+ },
+ {
+  "name": "the live road takes anyone",
+  "file": "src/worker.js",
+  "find": "  if (!await ownerAccess(request, env)) return json({ ok: false, error: \"not authenticated\" }, 401);\n  if (String(request.headers.get(\"Upgrade\")",
+  "replace": "  if (String(request.headers.get(\"Upgrade\")"
+ },
+ {
+  "name": "the live road takes the CI service token",
+  "file": "src/worker.js",
+  "find": "  if (!await ownerAccess(request, env)) return json({ ok: false, error: \"not authenticated\" }, 401);\n  if (String(request.headers.get(\"Upgrade\")",
+  "replace": "  if (!await ownerAccess(request, env) && !await ciAccess(request, env)) return json({ ok: false, error: \"not authenticated\" }, 401);\n  if (String(request.headers.get(\"Upgrade\")"
+ },
+ {
+  "name": "the owner check takes any email",
+  "file": "src/access.js",
+  "find": " && claims.email.trim().toLowerCase() === ADMIN_EMAIL;",
+  "replace": ";"
+ },
+ {
+  "name": "the live road forwards a request that is not an upgrade",
+  "file": "src/worker.js",
+  "find": "  if (String(request.headers.get(\"Upgrade\") || \"\").toLowerCase() !== \"websocket\") return json({ ok: false, error: \"a WebSocket upgrade is required\" }, 426);\n",
+  "replace": ""
+ },
+ {
+  "name": "the live road takes any Origin",
+  "file": "src/worker.js",
+  "find": "  if (request.headers.get(\"Origin\") !== url.origin) return json({ ok: false, error: \"foreign origin\" }, 403);\n",
+  "replace": ""
+ },
+ {
+  "name": "the live road takes a request with no Origin",
+  "file": "src/worker.js",
+  "find": "if (request.headers.get(\"Origin\") !== url.origin)",
+  "replace": "if ((request.headers.get(\"Origin\") || url.origin) !== url.origin)"
+ },
+ {
+  "name": "the live road does not look for the Book",
+  "file": "src/worker.js",
+  "find": "  if (!env.BOOK) return json({ ok: false, error: \"the Book is not bound\" }, 503);\n  return env.BOOK.get(env.BOOK.idFromName(LIVE_NAME))",
+  "replace": "  return env.BOOK.get(env.BOOK.idFromName(LIVE_NAME))"
+ },
+ {
+  "name": "the live road asks the Book's own object",
+  "file": "src/worker.js",
+  "find": "return env.BOOK.get(env.BOOK.idFromName(LIVE_NAME)).fetch(new Request(\"https://book/live\", request));",
+  "replace": "return env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)).fetch(new Request(\"https://book/live\", request));"
+ },
+ {
+  "name": "a POST opens the live socket",
+  "file": "src/worker.js",
+  "find": "if (p === \"/live\" && m === \"GET\") return handleLive(request, env, url);",
+  "replace": "if (p === \"/live\") return handleLive(request, env, url);"
+ },
+ {
+  "name": "an unauthenticated /live is not told 401",
+  "file": "src/worker.js",
+  "find": " || p === \"/book/window\" || p === \"/live\"\n",
+  "replace": " || p === \"/book/window\"\n"
+ },
+ {
+  "name": "a drafter pass tells nobody",
+  "file": "src/worker.js",
+  "find": "if (d && (d.drafted > 0 || (d.approved && d.approved.length))) await liveTell(env, ctx, \"drafts\");",
+  "replace": "void 0;"
+ },
+ {
+  "name": "a drafter pass that drafted nothing tells",
+  "file": "src/worker.js",
+  "find": "if (d && (d.drafted > 0 || (d.approved && d.approved.length))) await liveTell",
+  "replace": "if (d) await liveTell"
+ },
+ {
+  "name": "a decided draft tells nobody",
+  "file": "src/worker.js",
+  "find": "  await liveTell(env, ctx, \"drafts\");\n  let dropped = 0;",
+  "replace": "  let dropped = 0;"
+ },
+ {
+  "name": "the manual drafter run tells nobody",
+  "file": "src/worker.js",
+  "find": "const r = await draftedTold(env, ctx, await runDrafter(env));\n        await afterApproval",
+  "replace": "const r = await runDrafter(env);\n        await afterApproval"
+ },
+ {
+  "name": "the quarter-hour net tells nobody",
+  "file": "src/worker.js",
+  "find": "const r = await draftedTold(env, ctx, await runDrafter(env, { mirror }));\n          console.log(\"drafter: \"",
+  "replace": "const r = await runDrafter(env, { mirror });\n          console.log(\"drafter: \""
+ },
+ {
+  "name": "a drafter pass on arrival tells nobody",
+  "file": "src/worker.js",
+  "find": "const r = await draftedTold(env, ctx, await runDrafter(env, { mirror }));\n      console.log(\"drafter (on arrival): \"",
+  "replace": "const r = await runDrafter(env, { mirror });\n      console.log(\"drafter (on arrival): \""
+ },
+ {
+  "name": "the minute's drafter pass for orders tells nobody",
+  "file": "src/worker.js",
+  "find": "const d = await draftedTold(env, ctx, await runDrafter(env, { mirror })); console.log(\"drafter (orders): \"",
+  "replace": "const d = await runDrafter(env, { mirror }); console.log(\"drafter (orders): \""
+ },
+ {
+  "name": "the tap's drafter pass tells nobody",
+  "file": "src/worker.js",
+  "find": "const d = await draftedTold(env, ctx, await runDrafter(env, { mirror })); console.log(\"drafter (on the tap): \"",
+  "replace": "const d = await runDrafter(env, { mirror }); console.log(\"drafter (on the tap): \""
+ },
+ {
+  "name": "the maker input's drafter pass tells nobody",
+  "file": "src/worker.js",
+  "find": "    await draftedTold(env, ctx, await runDrafter(env, { mirror }));\n    const draft = await",
+  "replace": "    await runDrafter(env, { mirror });\n    const draft = await"
+ },
+ {
+  "name": "the maker's immutable input drafter pass tells nobody",
+  "file": "src/worker.js",
+  "find": "      await draftedTold(env, ctx, await runDrafter(env, { mirror }));\n      const drafts = [];",
+  "replace": "      await runDrafter(env, { mirror });\n      const drafts = [];"
+ },
+ {
+  "name": "the minute's reconcile tells nobody",
+  "file": "src/worker.js",
+  "find": "          if (rc.queued || rc.dropped || dp.queued || dp.dropped) await liveTell(env, ctx, \"orders\");\n",
+  "replace": ""
+ },
+ {
+  "name": "the tap's reconcile tells nobody",
+  "file": "src/worker.js",
+  "find": "      if (rc.queued || dp.queued) await liveTell(env, ctx, \"orders\");\n",
+  "replace": ""
+ },
+ {
+  "name": "a relayed status tells nobody",
+  "file": "src/worker.js",
+  "find": "if (b && (b.status || b.handover)) { reconcileOnTap(env, ctx); await liveTell(env, ctx, \"orders\"); }",
+  "replace": "if (b && (b.status || b.handover)) { reconcileOnTap(env, ctx); }"
+ },
+ {
+  "name": "a line on a thread tells orders",
+  "file": "src/worker.js",
+  "find": "if (b && (b.status || b.handover)) { reconcileOnTap(env, ctx); await liveTell(env, ctx, \"orders\"); }",
+  "replace": "if (b) { if (b.status || b.handover) reconcileOnTap(env, ctx); await liveTell(env, ctx, \"orders\"); }"
+ },
+ {
+  "name": "the minute does not tell the build",
+  "file": "src/worker.js",
+  "find": "if (rv && typeof rv.id === \"string\" && /^[0-9a-f]{16}$/.test(rv.id)) await liveTell(env, ctx, \"rev\", rv.id);",
+  "replace": "void 0;"
+ },
+ {
+  "name": "the minute tells the build on the wrong route",
+  "file": "src/worker.js",
+  "find": "\"https://book/\" + (rev ? \"rev\" : \"tell\")",
+  "replace": "\"https://book/tell\""
+ },
+ {
+  "name": "a failing Book fails the tap",
+  "file": "src/worker.js",
+  "find": "    } catch (e) { /* the poll stands */ }\n  })();",
+  "replace": "    } finally { /* none */ }\n  })();"
+ },
+ {
+  "name": "the page opens a socket on another path",
+  "file": "tools/build.mjs",
+  "find": "'//'+location.host+'/live');",
+  "replace": "'//'+location.host+'/liv');"
+ },
+ {
+  "name": "the page opens wss on an http page",
+  "file": "tools/build.mjs",
+  "find": "(location.protocol==='https:'?'wss:':'ws:')",
+  "replace": "'wss:'"
+ },
+ {
+  "name": "a failed socket opening escapes the load",
+  "file": "tools/build.mjs",
+  "find": "    }catch(e){sock=null;}",
+  "replace": "    }finally{}"
+ },
+ {
+  "name": "the poll falls to a minute before hello",
+  "file": "tools/build.mjs",
+  "find": "      sock=s;',",
+  "replace": "      sock=s;pace(60000);',"
+ },
+ {
+  "name": "the poll stays at ten seconds on hello",
+  "file": "tools/build.mjs",
+  "find": "sockUp=true;pace(60000);",
+  "replace": "sockUp=true;"
+ },
+ {
+  "name": "no ping starts on hello",
+  "file": "tools/build.mjs",
+  "find": "pingT=setInterval(ping,45000);",
+  "replace": "pingT=0;"
+ },
+ {
+  "name": "the 45 second timer pings nothing",
+  "file": "tools/build.mjs",
+  "find": "pingT=setInterval(ping,45000);",
+  "replace": "pingT=setInterval(function(){},45000);"
+ },
+ {
+  "name": "the first hello reads /rev",
+  "file": "tools/build.mjs",
+  "find": "if(sockRe){sockRe=false;tick();}",
+  "replace": "tick();"
+ },
+ {
+  "name": "a reconnect that says hello reads /rev more than once",
+  "file": "tools/build.mjs",
+  "find": "if(sockRe){sockRe=false;tick();}",
+  "replace": "if(sockRe){tick();}"
+ },
+ {
+  "name": "a reconnect that says hello reads nothing",
+  "file": "tools/build.mjs",
+  "find": "if(sockRe){sockRe=false;tick();}",
+  "replace": "if(sockRe){sockRe=false;}"
+ },
+ {
+  "name": "the poll stays at a minute after the close",
+  "file": "tools/build.mjs",
+  "find": "'    pace(10000);',",
+  "replace": "'    ',"
+ },
+ {
+  "name": "the ping goes on after the close",
+  "file": "tools/build.mjs",
+  "find": "'    clearInterval(pingT);pingT=null;clearTimeout(pongT);pongT=null;',",
+  "replace": "'    clearTimeout(pongT);pongT=null;',"
+ },
+ {
+  "name": "rev reads nothing",
+  "file": "tools/build.mjs",
+  "find": "}else if(m.k==='rev')tick();",
+  "replace": "}"
+ },
+ {
+  "name": "any kind starts a wake",
+  "file": "tools/build.mjs",
+  "find": "else if((m.k==='drafts'||m.k==='orders')&&!burstT)",
+  "replace": "else if(!burstT)"
+ },
+ {
+  "name": "noise from the socket is read",
+  "file": "tools/build.mjs",
+  "find": "'        if(!m)return;',",
+  "replace": "'',"
+ },
+ {
+  "name": "a socket the page let go is still heard",
+  "file": "tools/build.mjs",
+  "find": "'        if(sock!==s)return;',",
+  "replace": "'',"
+ },
+ {
+  "name": "every event starts a wake",
+  "file": "tools/build.mjs",
+  "find": "&&!burstT)burstT=setTimeout",
+  "replace": "&&true)burstT=setTimeout"
+ },
+ {
+  "name": "a burst waits three seconds",
+  "file": "tools/build.mjs",
+  "find": "burstT=null;wake();},300);",
+  "replace": "burstT=null;wake();},3000);"
+ },
+ {
+  "name": "a burst timer is never let go",
+  "file": "tools/build.mjs",
+  "find": "burstT=setTimeout(function(){burstT=null;wake();},300);",
+  "replace": "burstT=setTimeout(function(){wake();},300);"
+ },
+ {
+  "name": "an event reads the build only",
+  "file": "tools/build.mjs",
+  "find": "burstT=null;wake();},300);",
+  "replace": "burstT=null;tick();},300);"
+ },
+ {
+  "name": "the retry waits a second every time",
+  "file": "tools/build.mjs",
+  "find": "1000*Math.pow(2,sockTries++)",
+  "replace": "1000*(sockTries++,1)"
+ },
+ {
+  "name": "it tries four times",
+  "file": "tools/build.mjs",
+  "find": "if(sockTries<3){clearTimeout(sockT)",
+  "replace": "if(sockTries<4){clearTimeout(sockT)"
+ },
+ {
+  "name": "it tries twice",
+  "file": "tools/build.mjs",
+  "find": "if(sockTries<3){clearTimeout(sockT)",
+  "replace": "if(sockTries<2){clearTimeout(sockT)"
+ },
+ {
+  "name": "being shown does not reconnect",
+  "file": "tools/build.mjs",
+  "find": "if(!sock){sockTries=0;clearTimeout(sockT);connect();}",
+  "replace": "if(!sock){sockTries=0;clearTimeout(sockT);}"
+ },
+ {
+  "name": "being shown does not give back the tries",
+  "file": "tools/build.mjs",
+  "find": "if(!sock){sockTries=0;clearTimeout(sockT);connect();}",
+  "replace": "if(!sock){clearTimeout(sockT);connect();}"
+ },
+ {
+  "name": "a hello does not give back the tries",
+  "file": "tools/build.mjs",
+  "find": "if(was){sockTries=0;sockRe=true;}",
+  "replace": "if(was){sockRe=true;}"
+ },
+ {
+  "name": "the visibility change does not look at the socket",
+  "file": "tools/build.mjs",
+  "find": "if(document.visibilityState!=='visible')return;shown();if(wakeOwed",
+  "replace": "if(document.visibilityState!=='visible')return;if(wakeOwed"
+ },
+ {
+  "name": "pageshow does not look at the socket",
+  "file": "tools/build.mjs",
+  "find": "\"  window.addEventListener('pageshow',shown);\",",
+  "replace": ""
+ },
+ {
+  "name": "being shown does not ping",
+  "file": "tools/build.mjs",
+  "find": "if(sock&&sockUp){ping();return;}",
+  "replace": "if(sock&&sockUp){return;}"
+ },
+ {
+  "name": "being shown pings a socket that has not said hello",
+  "file": "tools/build.mjs",
+  "find": "if(sock&&sockUp){ping();return;}",
+  "replace": "if(sock){ping();return;}"
+ },
+ {
+  "name": "the pong is waited for fifty seconds",
+  "file": "tools/build.mjs",
+  "find": "try{s.close();}catch(e){}},5000);",
+  "replace": "try{s.close();}catch(e){}},50000);"
+ },
+ {
+  "name": "a missing pong does not let the socket go",
+  "file": "tools/build.mjs",
+  "find": "pongT=setTimeout(function(){drop(s);try{s.close();}catch(e){}},5000);",
+  "replace": "pongT=setTimeout(function(){try{s.close();}catch(e){}},5000);"
+ },
+ {
+  "name": "a missing pong does not close the socket",
+  "file": "tools/build.mjs",
+  "find": "pongT=setTimeout(function(){drop(s);try{s.close();}catch(e){}},5000);",
+  "replace": "pongT=setTimeout(function(){drop(s);},5000);"
+ },
+ {
+  "name": "a pong does not stand the deadline down",
+  "file": "tools/build.mjs",
+  "find": "if(e.data==='pong'){clearTimeout(pongT);pongT=null;return;}",
+  "replace": "if(e.data==='pong'){return;}"
+ },
+ {
+  "name": "the ping sends nothing",
+  "file": "tools/build.mjs",
+  "find": "try{s.send('ping');}catch(e){}",
+  "replace": ""
+ },
+ {
+  "name": "a new day is not looked for",
+  "file": "tools/build.mjs",
+  "find": "if(klDay()!==dayAt){",
+  "replace": "if(false){"
+ },
+ {
+  "name": "a new day reloads a busy desk",
+  "file": "tools/build.mjs",
+  "find": "if(idle())saltFresh(); else offer(null,'New day');return;}",
+  "replace": "saltFresh();return;}"
+ },
+ {
+  "name": "a new day reads /rev as well",
+  "file": "tools/build.mjs",
+  "find": "offer(null,'New day');return;}",
+  "replace": "offer(null,'New day');}"
+ },
+ {
+  "name": "the day is the UTC day",
+  "file": "tools/build.mjs",
+  "find": "new Date(Date.now()+8*3600000)",
+  "replace": "new Date(Date.now()+0)"
+ },
+ {
+  "name": "the day turns at one in the morning",
+  "file": "tools/build.mjs",
+  "find": "new Date(Date.now()+8*3600000)",
+  "replace": "new Date(Date.now()+9*3600000)"
+ },
+ {
+  "name": "a hidden desk reloads on a new day",
+  "file": "tools/build.mjs",
+  "find": "\"    if(!window.SALT_CLOUD||document.visibilityState!=='visible')return;\",",
+  "replace": "\"    if(!window.SALT_CLOUD)return;\","
+ },
+ {
+  "name": "the page's day is never set",
+  "file": "tools/build.mjs",
+  "find": "var dayAt=klDay(),",
+  "replace": "var dayAt=0,"
+ },
+ {
+  "name": "a new day returns before the queue is posted",
+  "file": "tools/build.mjs",
+  "find": "\"    try{if(typeof queue!=='undefined'&&queue&&queue.length&&typeof qSyncState!=='undefined'&&qSyncState==='server'&&typeof qPost==='function'&&unsent())qPost();}catch(e){}\",\n  \"    if(klDay()!==dayAt){if(idle())saltFresh(); else offer(null,'New day');return;}\"",
+  "replace": "\"    if(klDay()!==dayAt){if(idle())saltFresh(); else offer(null,'New day');return;}\",\n  \"    try{if(typeof queue!=='undefined'&&queue&&queue.length&&typeof qSyncState!=='undefined'&&qSyncState==='server'&&typeof qPost==='function'&&unsent())qPost();}catch(e){}\""
+ }
+]

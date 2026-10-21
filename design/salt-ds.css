@@ -2299,10 +2299,14 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
 .salt-rail__foot { border-top: 1px solid var(--salt-line-faint); padding-top: 10px; font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); letter-spacing: 0.12em; text-transform: uppercase; color: var(--salt-mist); }
 @media (max-width: 560px) { .salt-rail__tab { font-size: 0.84375rem; } }
 
-/* ---- Desk bar (synced to the desk 22 Sep 2026): one frame across the top in the rail's own
-   material, glass with the hairline at the rail's offset, so the two read as one; the wordmark in
-   the display face, one quiet mono line under it, the version and the controls at the right. Where
-   it sits is the page's: --salt-bar-top, which the desk binds to its safe area. ---- */
+/* ---- Desk bar (synced to the desk 22 Sep 2026; complete since 21 Oct 2026, his word: "very sharp and complete, and
+   persists in all views, to the right of the navigation pane", in the rail's own material, which he kept over a solid
+   bar the same day): one frame across the top of the page column, glass with the hairline at the rail's offset, so the
+   two read as one. The wordmark and one quiet mono line, then what is live (__live): where you are first (__where:
+   the destination, the page under it), then one chip a count (__chips, __chip) and the one action (__act, with its
+   badge), then the version and the controls at the right. Where it sits is the page's: --salt-bar-top, which the desk
+   binds to its safe area. In a bar under 820px wide what is live takes a row of its own and slides sideways rather than wrap, the
+   action held at its right edge so it is never slid out of reach. ---- */
 
 .salt-deskbar {
   position: sticky;
@@ -2312,7 +2316,7 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 10px 12px;
+  gap: 8px 14px;
   margin: 0 0 18px;
   padding: 9px 8px 9px 16px;
   background: var(--salt-deskbar-sheen), var(--salt-deskbar-fill);
@@ -2321,8 +2325,10 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   box-shadow: var(--salt-shadow-desk), inset 0 1px 0 var(--salt-highlight);
   -webkit-backdrop-filter: blur(24px) saturate(1.25);
   backdrop-filter: blur(24px) saturate(1.25);
+  container: salt-deskbar / inline-size;
 }
-.salt-deskbar__brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+/* the brand takes what is left, from nothing, so what is live stays on the bar's one row and the quiet line ends in an ellipsis */
+.salt-deskbar__brand { display: flex; align-items: center; gap: 12px; flex: 1 1 0; min-width: 150px; }
 .salt-deskbar__name {
   align-self: flex-start;
   font-family: var(--salt-font-display);
@@ -2351,9 +2357,148 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   text-transform: uppercase;
   line-height: 1.2;
   color: var(--salt-mist);
+  text-overflow: ellipsis;
 }
-.salt-deskbar__tools { display: flex; align-items: center; gap: 4px; margin-left: auto; }
-@media (max-width: 560px) { .salt-deskbar__meta { letter-spacing: 0.1em; } }
+.salt-deskbar__where {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 44px;
+  padding-left: 14px;
+  border-left: 1px solid var(--salt-line);
+}
+.salt-deskbar__view {
+  font-family: var(--salt-font-display);
+  font-weight: 400;
+  font-size: 1.125rem;
+  line-height: 1;
+  color: var(--salt-salt);
+  white-space: nowrap;
+}
+.salt-deskbar__page {
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-xs);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: var(--salt-brass);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.salt-deskbar__page:empty { display: none; }
+.salt-deskbar__live { display: flex; align-items: center; gap: 14px; flex: none; min-width: 0; }
+.salt-deskbar__chips { display: flex; align-items: center; gap: 6px; flex: none; }
+.salt-deskbar__chip {
+  --salt-status-tone: var(--salt-mist);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 10px;
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-xs);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--salt-mist);
+  background: transparent;
+  border: 1px solid var(--salt-line);
+  border-radius: var(--salt-radius-sm);
+  cursor: pointer;
+  text-decoration: none;
+}
+.salt-deskbar__chip::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--salt-status-tone);
+  flex: none;
+}
+.salt-deskbar__n { color: var(--salt-salt); font-variant-numeric: tabular-nums; letter-spacing: 0.04em; }
+.salt-deskbar__chip:hover, .salt-deskbar__chip:focus-visible { border-color: var(--salt-line-strong); color: var(--salt-salt); }
+.salt-deskbar__chip--now { --salt-status-tone: var(--salt-alarm); }
+.salt-deskbar__chip--wait { --salt-status-tone: var(--salt-brass); }
+.salt-deskbar__chip--on { --salt-status-tone: var(--salt-verdigris); }
+.salt-deskbar__chip--off { --salt-status-tone: var(--salt-ember); }
+.salt-deskbar__chip.is-zero { --salt-status-tone: var(--salt-line-strong); }
+.salt-deskbar__chip.is-zero .salt-deskbar__n { color: var(--salt-mist); }
+.salt-deskbar__act {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 8px 0 14px;
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--salt-brass);
+  background: transparent;
+  border: 1px solid var(--salt-brass);
+  border-radius: var(--salt-radius-sm);
+  cursor: pointer;
+  text-decoration: none;
+}
+.salt-deskbar__act:hover, .salt-deskbar__act:focus-visible { background: var(--salt-brass); color: var(--salt-ink-on-accent); }
+.salt-deskbar__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 6px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: var(--salt-ink-on-accent);
+  background: var(--salt-brass);
+}
+.salt-deskbar__act:hover .salt-deskbar__badge, .salt-deskbar__act:focus-visible .salt-deskbar__badge { color: var(--salt-brass); background: var(--salt-ink-on-accent); }
+.salt-deskbar__act.is-zero { color: var(--salt-mist); border-color: var(--salt-line); padding-right: 14px; }
+.salt-deskbar__act.is-zero .salt-deskbar__badge { display: none; }
+.salt-deskbar__tools { display: flex; align-items: center; gap: 4px; flex: none; }
+@media (max-width: 1440px) { .salt-deskbar__chip { padding: 0 8px; letter-spacing: 0.08em; } }
+/* by the bar's own width, so a bar in a narrow column (Salt Admin's 600px) stacks as a phone's does */
+@container salt-deskbar (max-width: 820px) {
+  .salt-deskbar__live {
+    order: 4;
+    flex: 1 0 100%;
+    max-width: none;
+    margin: 0 -8px 0 -16px;
+    padding: 8px 8px 0 16px;
+    border-top: 1px solid var(--salt-line);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .salt-deskbar__live::-webkit-scrollbar { display: none; }
+  .salt-deskbar__where { padding: 0 14px 0 0; border-left: 0; border-right: 1px solid var(--salt-line); }
+  .salt-deskbar__chips { flex: 1 0 auto; }
+  .salt-deskbar__act {
+    position: sticky;
+    right: 0;
+    margin-left: auto;
+    background: var(--salt-deskbar-solid);
+    box-shadow: -14px 0 10px -4px var(--salt-deskbar-solid), 10px 0 0 0 var(--salt-deskbar-solid);
+  }
+}
+@media (max-width: 560px) {
+  .salt-deskbar__meta { letter-spacing: 0.1em; }
+  .salt-deskbar__where { padding-right: 10px; }
+  .salt-deskbar__view { font-size: 1rem; }
+  .salt-deskbar__live { margin-left: -6px; padding-left: 12px; }
+}
 .salt-deskbar .salt-orb { box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .salt-deskbar { background: var(--salt-deskbar-solid); } }
 @media (prefers-reduced-transparency: reduce) { .salt-deskbar { background: var(--salt-deskbar-solid); -webkit-backdrop-filter: none; backdrop-filter: none; } }

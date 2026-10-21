@@ -210,6 +210,9 @@ const clockPast = async (moment) => { while (new Date().toISOString() <= String(
    loop: the page has finished, however long that took. A minute without that is a hang, and quiet() says so by
    returning false. A timer the page sets is not counted; the Counter's flows set none. */
 const pageWork = (win) => {
+  /* SPEED WAVE 2 L2: a page that signs in opens a live socket; where a section has not put its own on the window (test/live-fakes.mjs), it gets one that
+     connects to nothing, so no section reaches for a network it is not about */
+  if (!win.__liveFake) win.WebSocket = class { constructor(url, protocols) { this.url = String(url); this.protocols = protocols; this.readyState = 0; } send() {} close() { this.readyState = 3; } };
   let n = 0;
   const track = (p) => { n++; return Promise.resolve(p).finally(() => { n--; }); };
   const reads = (r) => {
@@ -48593,6 +48596,21 @@ await (async () => {
   await (await import("./counter-clock.mjs")).run({ ok });
 })();
 
+section("21 Oct 2026: the Desk's bar says where you are and what is live, on every view");
+await (async () => {
+  await (await import("./desk-bar-live.mjs")).run({ ok });
+})();
+
+section("21 Oct 2026: the Counter's header is the bar, with what waits on them");
+await (async () => {
+  await (await import("./counter-bar-live.mjs")).run({ ok, pageWork });
+})();
+
+section("21 Oct 2026: Salt Admin's bar says where he is and what waits");
+await (async () => {
+  await (await import("./admin-bar-live.mjs")).run({ ok, pageWork });
+})();
+
 section("19 Oct 2026: Salt Admin's bar says Live or Offline and Open or Closed");
 await (async () => {
   await (await import("./admin-bar-status.mjs")).run({ ok });
@@ -50016,6 +50034,16 @@ await (async () => {
 section("Salt Admin: Needs you and Orders are read every 5 seconds, and a tick that finds the same answer draws nothing, a failure said once (R4, 19 Oct 2026)");
 await (async () => {
   await (await import("./admin-needs-5s.mjs")).run({ ok, pageWork });
+})();
+
+section("Counter live sockets: an open page is told what moved and reads it, the poll stays as the net, proof at the handshake (Speed Wave 2 L2, 21 Oct 2026)");
+await (async () => {
+  await (await import("./live-counter.mjs")).run({ ok, pageWork });
+})();
+
+section("Desk live socket: an open Desk is told the kind of thing that moved and reads it, the poll stays as the net, owner only (Speed Wave 2 L1, 21 Oct 2026)");
+await (async () => {
+  await (await import("./live-desk.mjs")).run({ ok, pageWork });
 })();
 
 section("Salt Admin: Orders open by stage, a list beside the order, and Record a menu");
@@ -51566,7 +51594,7 @@ await (async () => {
   ok(W.Book === Book && cfg.durable_objects.bindings.some((x) => x.name === "BOOK" && x.class_name === "Book")
     && cfg.migrations.length === 1 && cfg.migrations[0].tag === "book-v1" && (cfg.migrations[0].new_sqlite_classes || []).join() === "Book",
     "the Desk Worker exports Book and binds it as BOOK under one SQLite migration tag");
-  /* S2c: the recovery routes (handleBookPitr) and the object's own allowlist (isTest) are the only other places that name it */
+  /* S2c: the recovery routes (handleBookPitr) and the object's own allowlist (isTest) are the only other places that name it; L1 (21 Oct 2026) adds the Desk's live socket and its tells (handleLive, which also holds liveTell), and the live object's allowlist (isLive), none of which reads the book */
   const readers = [], strays = [];
   for (const f of readdirSync(join(REPO, "src")).filter((x) => x.endsWith(".js"))) {
     let fn = "";
@@ -51575,7 +51603,7 @@ await (async () => {
       if (head) fn = head[1] || head[2];
       if (/env\.BOOK\b/.test(l) && !/^\s*(\/\/|\*|\/\*)/.test(l)) {
         readers.push(f + ":" + (i + 1));
-        if (!(f === "worker.js" && (fn === "handleBookLoad" || fn === "handleBookPitr")) && !(f === "book.js" && fn === "isTest")) strays.push(f + ":" + (i + 1) + " in " + fn);
+        if (!(f === "worker.js" && (fn === "handleBookLoad" || fn === "handleBookPitr" || fn === "handleLive")) && !(f === "book.js" && (fn === "isTest" || fn === "isLive"))) strays.push(f + ":" + (i + 1) + " in " + fn);
       }
     });
   }

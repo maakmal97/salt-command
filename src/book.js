@@ -39,10 +39,20 @@
  * reach, and each load answers its exact bookmark, which the fold's log keeps, so a restore by hand lands on a fold and not near
  * one. Restoring the live Book has no route: docs/DESK.md, "The Book: recovery", is the hand step, his yes first.
  *
+ * THE DESK'S LIVE OBJECT (Speed Wave 2 L1, 21 Oct 2026). The object named LIVE_NAME is this same class holding no book: it accepts the
+ * Desk page's WebSocket (hibernating, tag "desk", at most 16, the oldest closed) and tells every one the KIND of thing that moved:
+ * "orders", "drafts", or "rev" when the build the Worker serves is not the build it last told of. Nothing else crosses: no id, no
+ * row, no figure. On that object /load, /pitr and /window answer 404, and on every other name /live, /tell and /rev do; a socket
+ * message only asks (the ping is answered, a third other message closes it) and never reaches a load or a recovery verb.
+ *
  * A PLAIN CLASS WITH fetch(), like stmt/orderbook.js: nothing here imports from stmt/ and the suite drives it over node:sqlite.
  */
 export const BOOK_NAME = "book";
 export const PITR_NAME = "book-pitr-test";
+/* 21 Oct 2026, Speed Wave 2 L1: a THIRD object of this class holds the Desk's live sockets and nothing else (see the header's last paragraph) */
+export const LIVE_NAME = "live";
+export const LIVE_MAX = 16, LIVE_STRIKES = 3, LIVE_KINDS = ["orders", "drafts"];
+const REV_RE = /^[0-9a-f]{16}$/;
 /* the platform's bookmarks are "mostly alphanumeric" with dashes, about 61 characters */
 export const BOOKMARK_RE = /^[0-9a-zA-Z-]{16,128}$/;
 const DAY = 86400000;
@@ -92,6 +102,9 @@ export class Book {
     this.env = env;
     this.clock = () => new Date().toISOString();
     this.schema();
+    /* the page's ping is answered by the platform without waking this object; Node has neither name, so each is looked for first */
+    if (this.isLive() && typeof state.setWebSocketAutoResponse === "function" && typeof WebSocketRequestResponsePair === "function")
+      state.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
   }
 
   /* the three tables; again after the test's deleteAll, which drops the whole database, tables included */
@@ -167,6 +180,60 @@ export class Book {
     return id.equals(ns.idFromName(PITR_NAME));
   }
 
+  /* L1: only the live object answers a socket route. The same allowlist on its id as isTest, failing closed on any missing piece. */
+  isLive() {
+    try { return this.state.id.equals(this.env.BOOK.idFromName(LIVE_NAME)) === true; } catch (e) { return false; }
+  }
+
+  /* the 101 answer, as one seam: Node's Response refuses that status, so the suite replaces this one method */
+  upgraded(client) { return new Response(null, { status: 101, webSocket: client }); }
+  socks() { return typeof this.state.getWebSockets === "function" ? this.state.getWebSockets("desk") : []; }
+  att(ws) { try { return ws.deserializeAttachment() || null; } catch (e) { return null; } }
+  shut(ws, code, why) { try { ws.close(code, why); } catch (e) { /* already closed */ } }
+  tellAll(msg) { let n = 0; for (const ws of this.socks()) { try { ws.send(msg); n++; } catch (e) { /* closing */ } } return n; }
+
+  /* L1: THE LIVE OBJECT'S THREE ROUTES. The Worker has proved the owner before it forwards (ownerAccess, whatever REQUIRE_ACCESS says). */
+  async liveFetch(request, url) {
+    const path = url.pathname, no = () => Response.json({ ok: false, error: "not found" }, { status: 404 });
+    if (path === "/live" && request.method === "GET") {
+      if (String(request.headers.get("Upgrade") || "").toLowerCase() !== "websocket") return new Response("Expected a WebSocket upgrade.", { status: 426 });
+      if (typeof this.state.acceptWebSocket !== "function" || typeof WebSocketPair !== "function") return new Response("No sockets here.", { status: 501 });
+      const mine = this.socks().map((ws) => ({ ws, att: this.att(ws) })).sort((x, y) => ((x.att && x.att.born) || 0) - ((y.att && y.att.born) || 0));
+      for (let i = 0; i <= mine.length - LIVE_MAX; i++) this.shut(mine[i].ws, 1008, "replaced by a newer page");
+      const [client, server] = Object.values(new WebSocketPair());
+      this.state.acceptWebSocket(server, ["desk"]);
+      server.serializeAttachment({ born: Date.now() });
+      server.send(JSON.stringify({ k: "hello" }));
+      return this.upgraded(client);
+    }
+    if (request.method !== "POST" || (path !== "/tell" && path !== "/rev")) return no();
+    let body = null;
+    try { body = await request.json(); } catch (e) { body = null; }
+    if (path === "/tell") {
+      if (!body || !LIVE_KINDS.includes(body.k)) return Response.json({ ok: false, error: "a tell is orders or drafts" }, { status: 400 });
+      return Response.json({ ok: true, sent: this.tellAll(JSON.stringify({ k: body.k })) });
+    }
+    if (!body || typeof body.id !== "string" || !REV_RE.test(body.id)) return Response.json({ ok: false, error: "a build id is 16 hex characters" }, { status: 400 });
+    const sql = this.state.storage.sql;
+    sql.exec("CREATE TABLE IF NOT EXISTS live_rev (one INTEGER PRIMARY KEY CHECK (one = 1), id TEXT NOT NULL)");
+    const was = sql.exec("SELECT id FROM live_rev WHERE one = 1").toArray()[0];
+    if (!was || was.id !== body.id) sql.exec("INSERT OR REPLACE INTO live_rev (one, id) VALUES (1, ?)", body.id);
+    const changed = !!was && was.id !== body.id;
+    return Response.json({ ok: true, changed, sent: changed ? this.tellAll(JSON.stringify({ k: "rev" })) : 0 });
+  }
+
+  /* A SOCKET ONLY ASKS. The ping is answered by the platform; any other message is a strike, and the third closes the socket. */
+  webSocketMessage(ws, message) {
+    if (message === "ping") { try { ws.send("pong"); } catch (e) { /* closing */ } return; }
+    const att = this.att(ws);
+    if (!att) { this.shut(ws, 1008, "unknown socket"); return; }
+    att.strikes = (att.strikes || 0) + 1;
+    if (att.strikes >= LIVE_STRIKES) { this.shut(ws, 1008, "this socket only listens"); return; }
+    try { ws.serializeAttachment(att); } catch (e) { /* closing */ }
+  }
+  webSocketClose(ws, code) { this.shut(ws, code && code !== 1005 && code !== 1006 ? code : 1000, "closed"); }
+  webSocketError(ws) { this.shut(ws, 1011, "error"); }
+
   /* S2c, READ ONLY on any object: whether the first load is still inside the platform's 30 days (29, to keep off the edge).
      Counts, two times and a verdict; nothing is armed. A load's `at` is taken a moment before its commit, and the platform refuses
      a time before the database existed ("Requested time is before this database existed", live, 20 Oct 2026), so the first load
@@ -215,6 +282,7 @@ export class Book {
   /* The routes. Cost is in the request, never in the answer: counts, digests and bookmarks only. */
   async fetch(request) {
     const url = new URL(request.url);
+    if (this.isLive()) return this.liveFetch(request, url);
     if (url.pathname === "/window" && request.method === "GET") return Response.json(await this.window());
     const isLoad = url.pathname === "/load" && request.method === "POST", isPitr = url.pathname === "/pitr" && request.method === "POST";
     if (!isLoad && !isPitr) return Response.json({ ok: false, error: "not found" }, { status: 404 });
