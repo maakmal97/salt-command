@@ -48577,6 +48577,11 @@ await (async () => {
   await (await import("./desk-bar-live.mjs")).run({ ok });
 })();
 
+section("21 Oct 2026: the Counter's header is the bar, with what waits on them");
+await (async () => {
+  await (await import("./counter-bar-live.mjs")).run({ ok, pageWork });
+})();
+
 section("21 Oct 2026: Salt Admin's bar says where he is and what waits");
 await (async () => {
   await (await import("./admin-bar-live.mjs")).run({ ok, pageWork });

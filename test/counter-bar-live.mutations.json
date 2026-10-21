@@ -1,0 +1,12 @@
+[
+ {"name":"the header is not the bar","file":"stmt/page.js","find":"(owner ? \"\" : \" salt-deskbar cbar\")","replace":"\"\""},
+ {"name":"no chips in the header","file":"stmt/page.js","find":"<div class=\"salt-deskbar__chips\" id=\"cBarChips\"","replace":"<div class=\"salt-deskbar__chips\" id=\"cBarChipsGone\""},
+ {"name":"Orders counts every order","file":"stmt/page.js","find":"tot=invTotal(lines), n=orders.filter(oNeeds).length,","replace":"tot=invTotal(lines), n=orders.length+1,"},
+ {"name":"To pay now has no figure","file":"stmt/page.js","find":"parts.push(['pay','now',tw('pay.now'),rm(tot)]);","replace":"parts.push(['pay','now',tw('pay.now'),'']);"},
+ {"name":"To pay now never drawn","file":"stmt/page.js","find":"if(tot>0.004) parts.push(['pay'","replace":"if(false) parts.push(['pay'"},
+ {"name":"a chip has no act","file":"stmt/page.js","find":"b.setAttribute('data-act','bar.'+x[0]); ","replace":""},
+ {"name":"a chip goes nowhere","file":"stmt/page.js","find":"else placeShow(x[0]==='pay'?'home':'order',true); });","replace":"});"},
+ {"name":"Pay opens Orders","file":"stmt/page.js","find":"placeShow(x[0]==='pay'?'home':'order',true)","replace":"placeShow('order',true)"},
+ {"name":"nothing waiting still draws","file":"stmt/page.js","find":"    if(n) parts.push(['order'","replace":"    parts.push(['order'"},
+ {"name":"his view gets the customer bar","file":"stmt/page.js","find":"    + (owner ? \"\" : '<div class=\"salt-deskbar__live\"><div class=\"salt-deskbar__chips\"","replace":"    + ('<div class=\"salt-deskbar__live\"><div class=\"salt-deskbar__chips\""}
+]
