@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1202",
+  "d": "21 Oct 2026",
+  "t": "THE DESK GOES LIVE: A NEW BUILD, AN ORDER OR A DRAFT SHOWS IN A SECOND",
+  "n": [
+   "<b>SPEED WAVE 2, L1 OF THE LIVE AND FAST PLAN</b> (his D9: inside the Book class, as its own object <b>live</b>). An open Desk now holds a live socket. The Worker tells it when a draft is made or decided, when an order moves or the reconcile queues one, and when the build it serves changes, so the Desk reads it again within about a second instead of at its next 10 second /rev read or the next open.",
+   "<b>YOURS ALONE, AND KINDS ONLY.</b> The socket opens only for you, past Access and the exact email, whatever the Access switch says, and never for the CI token. It is told only what kind of thing moved (orders, drafts, the build), never a figure or a name; the Desk then reads what it always read, with its write key. Nothing a socket sends moves anything.",
+   "<b>THE POLL STAYS AS THE NET.</b> While the socket is up the /rev read falls to once a minute; when it drops it is back at 10 seconds, and the Desk reconnects (1, 2, 4 seconds, then on its next return to the screen). A deploy that closes the socket is itself the signal: the reconnect reads /rev at once.",
+   "<b>TODAY IS LIVE.</b> A Desk left open past midnight in Kuala Lumpur loads the new day by itself when idle, and offers the chip when you are busy, after sending any unsent entry first."
+  ]
+ },
+ {
   "v": "v1201",
   "d": "21 Oct 2026",
   "t": "ONE BAR ON EVERY SURFACE: THE DESK'S GLASS BACK, SALT ADMIN AND SALT COUNTER FILLED",
