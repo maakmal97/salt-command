@@ -28,7 +28,7 @@
 
 ## Hours past midnight
 - Live 20 Oct 2026 (41aada8f, width fix 87719939; Cloud commits 39392733014 and 39393655894: chain, three suite parts and the statements deploy green): a close earlier than the
-  open is the next day's, one rule `stmt/hours.js` `openParts`; Salt Admin's Shop hours is a week chart (canvas V63). Owner acceptance not yet given.
+  open is the next day's, one rule `stmt/hours.js` `openParts`; Salt Admin's Shop hours is a week chart (canvas V63). Accepted 21 Oct 2026.
 - Round 2, his eight answers to Fable's design (20 Oct 2026): up to six spans a day, 00:00 to 24:00, overlaps merged, dated days
   (`schedule.dates`, 90 days ahead, 40 at most), the preview read `GET /all/maker/hours?preview=`, Copy to chips, Discard and Undo.
 
@@ -36,8 +36,13 @@
 - Live 21 Oct 2026 on the statements Worker (P7 d950fbf9 to the render fix a8c5a810; Cloud commits 39497610426, 39513766456, 39516060966 and
   39516640502: chain and three suite parts green), with salt-ds 1.11.0 (#21, the pill track and Jump to): Needs you's glance and sliding kinds,
   Help on Shop hours, the charge slider, the rail's New entry, and from 1080px an open order filling the page in columns (reversing the 11 Oct
-  split at that width). The suite's S1 fold replay fails on origin/master too (two staged batches not byte-equal): not this work's. Owner
-  acceptance not yet given; the reward card (V37, V52) and This customer (V38) are not built.
+  split at that width). The suite's S1 fold replay fails on origin/master too (two staged batches not byte-equal): not this work's. Accepted
+  21 Oct 2026; the reward card (V37, V52) and This customer (V38) are not built.
+
+## Stock on Salt Admin's glance
+- Live as v1196 (`f1002767`, 21 Oct 2026; Cloud commit `39521537039`: chain and three suite parts green), render fixes `dfe732a5` and `4d7c3bc2`
+  (Cloud commit `39523361015` green): Stock cover and Next lot on Needs you (canvas V62), off the state key `STOCK` seeded at each version
+  (`docs/plan-admin-glance-stock.html`). Accepted 21 Oct 2026.
 
 ## Counter Batch C
 - Live as v1182 (`19b226d7`, 20 Oct 2026; Cloud commit `39318980626`: chain and three suite parts green, live /rev `1a05919acb1d3a29`): saved spots, the sealed name and
@@ -48,11 +53,11 @@
 - Live as v1166 (`2e876db5`, 19 Oct 2026): `/all/test` behind `/all`'s two locks; Cloud commit `39195289245` deployed both Workers, proved live `/rev` at `0bd585f1e036adde` and passed all three suite parts. `0000-0002` has no fixture until he taps Make the practice accounts on Salt Account and a publish runs. Owner acceptance not yet given.
 
 ## Associate reward
-- Live as v1187 (`b9006c59`, 20 Oct 2026; Cloud commit `39395156043`: chain and three suite parts green, live /rev `832779203aef614c`): the switch is `REWARD.stated.salt.associate` `{times: 10, since: "2026-10-20"}`; `REWARD_OPEN` states ten associates at `upTo` s276. No customer basis (his yes to the loyalty plan's Ask 4); the six customers hold about 6.4 units, unspent. The loyalty unit (`docs/plan-loyalty-unit.html`, branch `claude/bold-booth-4df727`) builds next. Owner acceptance not yet given.
+- Live as v1187 (`b9006c59`, 20 Oct 2026; Cloud commit `39395156043`: chain and three suite parts green, live /rev `832779203aef614c`): the switch is `REWARD.stated.salt.associate` `{times: 10, since: "2026-10-20"}`; `REWARD_OPEN` states ten associates at `upTo` s276. No customer basis (his yes to the loyalty plan's Ask 4); the six customers hold about 6.4 units, unspent. The loyalty unit (`docs/plan-loyalty-unit.html`, branch `claude/bold-booth-4df727`) builds next. Accepted 21 Oct 2026.
 
 ## Loyalty unit
 - Live as v1197 (`9668fe2d`, 21 Oct 2026; Cloud commit `39524393383`: chain and three suite parts green, live /rev `2f68fa9b8b036ef5`), from `docs/plan-loyalty-unit.html` (his yes typed 21 Oct 2026): `REWARD.stated.salt.loyal`
-  `{every: 20, since: "2026-10-21"}`; everyone at nought. 0000-0002 is a plain customer (FIX_VERSION 14). Owner acceptance not yet given.
+  `{every: 20, since: "2026-10-21"}`; everyone at nought. 0000-0002 is a plain customer (FIX_VERSION 14). Accepted 21 Oct 2026.
 
 ## Notifications
 - Live as v1167 (`e35ee35b`, 19 Oct 2026; Cloud commit `39223032636`: chain, three suite parts and CI green): Salt Admin (was Salt Account) has its own worker `/all/sw.js` and `opush:` subscriptions; the Desk rings orders and approvals only while no Salt Admin send goes through (KV `admin:on`). He has not yet re-added Salt Admin to the home screen or turned its bell on (Shop > This device), so the Desk still rings for now. The stock-light banner has its Desk side only: nothing posts `{"tag":"stock"}` yet (it needs `tools/stmt-publish.mjs` to compare lights).
