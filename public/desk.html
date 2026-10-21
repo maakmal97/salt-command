@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="9cea1ad4e24589a6";
+var SALT_BUILD_ID="7a53b0153203fcb3";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -3873,13 +3873,13 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
 .salt-rail__foot { border-top: 1px solid var(--salt-line-faint); padding-top: 10px; font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); letter-spacing: 0.12em; text-transform: uppercase; color: var(--salt-mist); }
 @media (max-width: 560px) { .salt-rail__tab { font-size: 0.84375rem; } }
 
-/* ---- Desk bar (synced to the desk 22 Sep 2026; crisp since 21 Oct 2026, his word: "very sharp and complete, and
-   persists in all views, to the right of the navigation pane"): one frame across the top of the page column, on the
-   bar's solid ground with a hairline edge and nothing blurred, so its type and figures read sharp over anything that
-   scrolls under it. The wordmark and one quiet mono line, then what is live (__live): where you are first (__where:
+/* ---- Desk bar (synced to the desk 22 Sep 2026; complete since 21 Oct 2026, his word: "very sharp and complete, and
+   persists in all views, to the right of the navigation pane", in the rail's own material, which he kept over a solid
+   bar the same day): one frame across the top of the page column, glass with the hairline at the rail's offset, so the
+   two read as one. The wordmark and one quiet mono line, then what is live (__live): where you are first (__where:
    the destination, the page under it), then one chip a count (__chips, __chip) and the one action (__act, with its
    badge), then the version and the controls at the right. Where it sits is the page's: --salt-bar-top, which the desk
-   binds to its safe area. Under 860px what is live takes a row of its own and slides sideways rather than wrap, the
+   binds to its safe area. In a bar under 820px wide what is live takes a row of its own and slides sideways rather than wrap, the
    action held at its right edge so it is never slid out of reach. ---- */
 
 .salt-deskbar {
@@ -3892,12 +3892,14 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   justify-content: space-between;
   gap: 8px 14px;
   margin: 0 0 18px;
-  padding: 8px 8px 8px 16px;
-  background: var(--salt-deskbar-solid);
+  padding: 9px 8px 9px 16px;
+  background: var(--salt-deskbar-sheen), var(--salt-deskbar-fill);
   border: 1px solid var(--salt-line);
-  border-bottom-color: var(--salt-line-strong);
-  border-radius: var(--salt-radius-sm);
-  box-shadow: var(--salt-shadow-desk);
+  border-radius: var(--salt-radius-md);
+  box-shadow: var(--salt-shadow-desk), inset 0 1px 0 var(--salt-highlight);
+  -webkit-backdrop-filter: blur(24px) saturate(1.25);
+  backdrop-filter: blur(24px) saturate(1.25);
+  container: salt-deskbar / inline-size;
 }
 /* the brand takes what is left, from nothing, so what is live stays on the bar's one row and the quiet line ends in an ellipsis */
 .salt-deskbar__brand { display: flex; align-items: center; gap: 12px; flex: 1 1 0; min-width: 150px; }
@@ -4042,7 +4044,8 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
 .salt-deskbar__act.is-zero .salt-deskbar__badge { display: none; }
 .salt-deskbar__tools { display: flex; align-items: center; gap: 4px; flex: none; }
 @media (max-width: 1440px) { .salt-deskbar__chip { padding: 0 8px; letter-spacing: 0.08em; } }
-@media (max-width: 860px) {
+/* by the bar's own width, so a bar in a narrow column (Salt Admin's 600px) stacks as a phone's does */
+@container salt-deskbar (max-width: 820px) {
   .salt-deskbar__live {
     order: 4;
     flex: 1 0 100%;
@@ -4071,6 +4074,8 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   .salt-deskbar__live { margin-left: -6px; padding-left: 12px; }
 }
 .salt-deskbar .salt-orb { box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .salt-deskbar { background: var(--salt-deskbar-solid); } }
+@media (prefers-reduced-transparency: reduce) { .salt-deskbar { background: var(--salt-deskbar-solid); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 .salt-version {
   font-family: var(--salt-font-mono);
   font-size: var(--salt-text-xs);
@@ -5011,7 +5016,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
    bar and the slivers outside its top corners are covered, up to a 96px inset. A shadow is not layout: the
    first cut was a pseudo-element reaching into the gutter, and it made the phone's page 2px wide. */
 body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 var(--salt-obsidian),0 -72px 0 0 var(--salt-obsidian),
-  0 -96px 0 0 var(--salt-obsidian),var(--salt-shadow-desk);}   /* crisp since 21 Oct 2026: no inner glow */
+  0 -96px 0 0 var(--salt-obsidian),var(--salt-shadow-desk),inset 0 1px 0 var(--salt-highlight);}
 .dhbrand .mark{width:30px;height:30px;flex:0 0 auto;display:block;}
 .dhtext{display:flex;flex-direction:column;gap:6px;min-width:0;overflow:hidden;}
 .deskbar .meta{display:block;margin:0;min-width:0;}
