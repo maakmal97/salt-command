@@ -211,12 +211,30 @@ export async function mintSession(env, u) {
   return tok;
 }
 
-/** The username a request's session names, or "". */
-export async function sessionUser(request, env) {
-  const tok = String(request.headers.get("X-Stmt-Session") || "");
+/** The username a session token names, or "". One read for the header (sessionUser) and for the socket's subprotocol (Speed Wave 2 L2). */
+export async function sessionOfToken(env, token) {
+  const tok = String(token || "");
   if (!/^[A-Za-z0-9_-]{20,64}$/.test(tok)) return "";
   const s = await env.STMT.get(await sessKey(tok), "json");
   return (s && typeof s.u === "string") ? s.u : "";
+}
+/** The username a request's session names, or "". */
+export async function sessionUser(request, env) {
+  return sessionOfToken(env, request.headers.get("X-Stmt-Session"));
+}
+
+/* SPEED WAVE 2 L2 (21 Oct 2026), THE LIVE SOCKET'S TWO ROADS INTO THE BOOK. The Worker has proved who is asking (a session at the
+   handshake, or the owner past Access) and builds the object's address itself, so nothing in the page's own address reaches `as` or `u`.
+   The upgrade is forwarded with its own headers, which carry the upgrade. */
+export function liveConnect(env, request, as, u) {
+  const stub = env.ORDERBOOK.get(env.ORDERBOOK.idFromName(BOOK_NAME));
+  return stub.fetch(new Request("https://orderbook/live?as=" + as + (u ? "&u=" + encodeURIComponent(u) : ""), request));
+}
+/** A Log out or Sign out everywhere closes the account's sockets. Never throws: the sign-out has happened either way. */
+export async function liveDrop(env, u) {
+  if (!u || !onBook(env)) return false;
+  try { const r = await book(env, "unlive", { u }); return !!(r && r.ok); }
+  catch (e) { console.log("orders: the live sockets were not closed: " + String((e && e.message) || e)); return false; }
 }
 
 async function listOrders(env, prefix) {
