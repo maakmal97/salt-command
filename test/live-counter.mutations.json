@@ -38,8 +38,8 @@
  {
   "name": "the owner road answers before Access is asked",
   "file": "stmt/worker.js",
-  "find": "      if (!isAdminIdentity(who)) return json({ ok: false, error: \"Access required\" }, 401);\n      if (p === \"/all/live\") return handleLiveOwner(request, env, url);",
-  "replace": "      if (p === \"/all/live\") return handleLiveOwner(request, env, url);\n      if (!isAdminIdentity(who)) return json({ ok: false, error: \"Access required\" }, 401);"
+  "find": "      if (!isAdminIdentity(who)) return json({ ok: false, error: \"Access required\" }, 401);\n      if (p.startsWith(\"/all/maker/\")) return handleMaker(request, env, p, who);\n      if (p === \"/all/live\") return handleLiveOwner(request, env, url);",
+  "replace": "      if (p === \"/all/live\") return handleLiveOwner(request, env, url);\n      if (!isAdminIdentity(who)) return json({ ok: false, error: \"Access required\" }, 401);\n      if (p.startsWith(\"/all/maker/\")) return handleMaker(request, env, p, who);"
  },
  {
   "name": "the owner road opens a customer socket",

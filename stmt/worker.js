@@ -1748,8 +1748,8 @@ const worker = {
         return pageResponse("", { master: String(env.STMT_MASTER || ""), accounts: await roster(env) });
       }
       if (!isAdminIdentity(who)) return json({ ok: false, error: "Access required" }, 401);
-      if (p === "/all/live") return handleLiveOwner(request, env, url);
       if (p.startsWith("/all/maker/")) return handleMaker(request, env, p, who);
+      if (p === "/all/live") return handleLiveOwner(request, env, url);
       /* THE TEST SURFACE (his answers of 18 Oct 2026): his alone, inside this gate, so both locks hold every road under it. Counter
          Admin's moves on the example orders, the customer's own routes on a test account's session, and Reset. */
       if (p.startsWith("/all/test/maker/")) return handleMaker(request, env, "/all/maker/" + p.slice("/all/test/maker/".length), who, { test: true });

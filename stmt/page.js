@@ -7379,11 +7379,11 @@ const CLIENT_JS = `
      proof is the handshake itself: the subprotocols are "stmt" and the session, so no token sits in an address or a message. While the socket
      is up the polls fall to a minute and stay as the net; on its loss they return to ten seconds and two, and the socket reconnects after 1, 2,
      4 ... 30 seconds. Three attempts in a row that never reach hello stop until the page is shown again. A ping every 45 seconds must be
-     answered within 5 or the socket is let go and made again. Stmt/owner.js opens its own on /all/live through the same function. ---- */
+     answered within 5 or the socket is let go and made again. Salt Admin opens its own past Access through the same function. ---- */
   var LIVE_ON=__LIVE__, LIVE_NET_MS=60000, LIVE_PING_MS=45000, LIVE_PONG_MS=5000;
   function liveSocket(cfg){
     var ws=null, hello=false, fails=0, wait=1000, retryT=null, pingT=null, pongT=null, shut=false;
-    function url(){ return (location.protocol==='https:'?'wss://':'ws://')+location.host+cfg.path; }
+    function addr(){ return (location.protocol==='https:'?'wss://':'ws://')+location.host+cfg.path; }
     function stopBeat(){ if(pingT){ clearInterval(pingT); pingT=null; } if(pongT){ clearTimeout(pongT); pongT=null; } }
     function beat(){
       stopBeat();
@@ -7406,7 +7406,7 @@ const CLIENT_JS = `
     function connect(){
       if(shut||ws||typeof WebSocket!=='function') return;
       var s;
-      try{ s=cfg.protos?new WebSocket(url(),cfg.protos()):new WebSocket(url()); }catch(e){ fails++; return; }
+      try{ s=cfg.protos?new WebSocket(addr(),cfg.protos()):new WebSocket(addr()); }catch(e){ fails++; return; }
       ws=s; hello=false;
       s.onmessage=function(ev){
         if(ws!==s) return;
