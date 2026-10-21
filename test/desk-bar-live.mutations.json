@@ -1,0 +1,69 @@
+[
+{
+"name": "the bar names no view",
+"find": "if(a)a.textContent=V.name;",
+"replace": ""
+},
+{
+"name": "the bar names no page",
+"find": "if(b)b.textContent=V.parts.length?(TAB_LABEL[p]||p):'';",
+"replace": ""
+},
+{
+"name": "Now carries no figure",
+"find": "let h=chip('now','now','Now',rc.today||0,",
+"replace": "let h=chip('now','now','Now',0,"
+},
+{
+"name": "Approve shows off the cloud",
+"find": "  if(cloud){\n    h+=chip('wait'",
+"replace": "  if(true){\n    h+=chip('wait'"
+},
+{
+"name": "Approve goes elsewhere",
+"find": "href=\"admin\" target=\"_blank\"",
+"replace": "href=\"#approve\" target=\"_blank\""
+},
+{
+"name": "Approve counts nothing",
+"find": "rows=cloud?AP_DRAFTS.length:0",
+"replace": "rows=0"
+},
+{
+"name": "Approve never goes quiet",
+"find": "'<a class=\"dlact salt-deskbar__act'+(rows?'':' is-zero')",
+"replace": "'<a class=\"dlact salt-deskbar__act'"
+},
+{
+"name": "no alerts on the bar",
+"find": "    if(al)h+=chip('alerts'",
+"replace": "    if(false)h+=chip('alerts'"
+},
+{
+"name": "a chip goes nowhere",
+"find": "      else switchTab('today');};});}",
+"replace": "      };});}"
+},
+{
+"name": "where you are is not in the bar",
+"find": "<div class=\"dhwhere salt-deskbar__where\" id=\"deskWhere\"",
+"replace": "<div class=\"dhwhere salt-deskbar__where\" id=\"deskWhereGone\""
+},
+{
+"name": "/admin goes to Salt Admin's front",
+"file": "src/worker.js",
+"find": "u.hash = \"orders/approve\"; ",
+"replace": ""
+},
+{
+"name": "/admin takes http",
+"file": "src/worker.js",
+"find": "if (u.protocol === \"https:\") {",
+"replace": "if (u.protocol) {"
+},
+{
+"name": "the rail's render leaves the bar",
+"find": "function railSubs(){\n  try{deskWhereDraw();}catch(e){}\n",
+"replace": "function railSubs(){\n"
+}
+]
