@@ -682,6 +682,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-foot__acts .btn{margin-top:0;width:auto;flex:1 1 11rem}
 .adm .maker-foot .maker-say{margin:0}
 @media (min-width:860px){.adm #makerReview .maker-foot.has{bottom:0}}
+@media (min-width:1080px){.adm #makerReview .maker-foot.has{padding-right:4px}}
 .adm .maker-queue-action{min-width:var(--salt-tap);min-height:var(--salt-tap)}
 .adm .maker-fields{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end}
 .adm .maker-field{display:flex;flex:1 1 180px;flex-direction:column;min-width:150px}
@@ -823,15 +824,29 @@ body.ended>*:not(#aEnded){display:none}
 .adm .ordlist .salt-inbox-row__title{gap:6px}
 .adm .ordlist .rnone{margin:0}
 .adm .ordlist>.salt-ghost{align-self:flex-start;margin-top:8px}
-@media (max-width:859.98px){
+/* 21 Oct 2026 (canvas V39, his answer (a)): FROM 1080PX AN OPEN ORDER TAKES THE LIST'S PLACE, as on a phone, and fills the page; the rail's
+   Orders closes it. This reverses his split of 11 Oct 2026 at that width: the list and the card stand side by side from 860 to 1080 only.
+   From 1180 the card lays out in columns, two, then three from 1440 (decision, record, insight), filled by ordLayout in stmt/owner.js. */
+@media (max-width:859.98px),(min-width:1080px){
   .adm #oSplit.open .ordlist,.adm #oSplit:not(.open) #makerReview,.adm #oSplit.open #makerReviewStatus{display:none}
 }
 @media (min-width:860px){
   .adm #oOrders{max-width:none}
-  .adm .ordgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:20px;align-items:start}
-  .adm #makerReview{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
   .adm #makerReview .aback{display:none}
 }
+@media (min-width:860px) and (max-width:1079.98px){
+  .adm .ordgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:20px;align-items:start}
+  .adm #makerReview{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
+}
+.adm .ordcols{display:grid;gap:20px;align-items:start}
+.adm .ordcols--2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.adm .ordcols--3{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) minmax(0,0.9fr)}
+.adm .ordcol{display:flex;flex-direction:column;gap:12px;min-width:0}
+/* in a column the row of three is Agree on its own line over Change terms and Decline, and three columns across, the band's goods total stands under the units */
+.adm .ordcol .ordrow3{grid-template-columns:repeat(2,minmax(0,1fr))}
+.adm .ordcol .ordrow3>:first-child{grid-column:1/-1}
+.adm .ordcols--3 .ogoods{flex-wrap:wrap}
+.adm .ordcols--3 .ogoods__sum{flex:1 1 100%;align-items:flex-start}
 @media (min-width:860px) and (max-width:1079.98px){
   /* the App bar stays fixed along the foot until 1080px, so the sticky card's foot is kept above it (it was 40px under it at 1024x768) */
   .adm #makerReview{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
@@ -887,7 +902,9 @@ body.ended>*:not(#aEnded){display:none}
    orb's and its gap, so nothing is covered. Record's forms are rows of the system's Inbox row, one list a part. */
 .adm #oAdd{position:fixed;right:16px;bottom:calc(var(--salt-bar-h) + 16px + env(safe-area-inset-bottom,0px));z-index:40}
 @media (max-width:1079.98px){.adm .amain{padding-bottom:72px}}
-@media (min-width:1080px){.adm #oAdd{right:24px;bottom:24px}}
+/* 21 Oct 2026 (P10): from 1080px the + is the rail's own button under his places, and no orb floats over the page */
+@media (min-width:1080px){.adm #oAdd{display:none}}
+.adm .arailadd{margin-top:8px;padding-top:8px;border-top:1px solid var(--salt-line)}
 .adm .formlist{display:flex;flex-direction:column;gap:8px}
 .adm .formrow .salt-inbox-row__title{gap:6px}
 /* 14 OCT 2026 (Record): a form row is the tap, no Open word; a row to approve opens its detail by a tap on the card, its head the control; its figures stand on one grid so they align down the cards; an offset is a row of a code, its figure and one Add */
@@ -919,6 +936,11 @@ body.ended>*:not(#aEnded){display:none}
 .adm .nlist .glink{margin:0}
 .adm .nlist .nsev{margin:8px 0 -4px}
 .adm .nkrow{margin:0 0 16px}
+/* 21 Oct 2026 (P9): the delivery charge is the system's slider over four radios; a label lays its option out, and the thumb waits until one is ticked */
+.adm .ofee{margin-top:4px}
+.adm .ofee .salt-segment__opt{display:flex;align-items:center;justify-content:center}
+.adm .ofee .salt-segment__opt:focus-within{outline:2px solid var(--salt-brass);outline-offset:-2px}
+.adm .ofee--none::before{display:none}
 .adm .nglance{grid-template-columns:repeat(2,minmax(0,1fr));margin:0 0 16px}
 .adm .nglance[hidden]{display:none}
 @media (min-width:1080px){.adm .nglance{grid-template-columns:repeat(4,minmax(0,1fr))}}
@@ -1772,6 +1794,9 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div class="salt-rail__group">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("salt-rail__tab salt-rail__tab--solo", (m, w, p) =>
           '<span class="salt-appbar__place"><span class="salt-appbar__icon">' + aico(p === "messages" ? "customers" : m) + "</span><span>" + w + "</span></span>"
           + (p ? "" : '<span class="salt-rail__count" data-count="' + m + '"></span>'))).join("") + "</div>"
+        /* 21 Oct 2026 (P10): the + as a rail button, which the orb gives way to from 1080px; none on the test surface */
+        + (test ? "" : '<div class="salt-rail__group arailadd"><button type="button" class="salt-rail__tab salt-rail__tab--solo" id="oAddRail" data-act="rail.add">'
+          + '<span class="salt-appbar__place"><span class="salt-appbar__icon">' + aico("add") + "</span><span>New entry</span></span></button></div>")
         + '<div class="salt-rail__foot" id="mFoot"></div></nav>'
         + '<div class="amain">'
         /* 18 OCT 2026, HIS WORD: THE DESK'S SHELL. The system's Desk bar heads every place, as it heads the Desk: the ring and the name, the clock

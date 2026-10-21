@@ -1,0 +1,18 @@
+[
+ {"name":"the first order opens itself at any width","file":"stmt/owner.js","find":"    if(!e&&placeNow==='orders'&&ordSide()){","replace":"    if(!e&&placeNow==='orders'&&window.matchMedia('(min-width:860px)').matches){"},
+ {"name":"the split kept from 1080","file":"stmt/page.js","find":"@media (max-width:859.98px),(min-width:1080px){\n  .adm #oSplit.open .ordlist","replace":"@media (max-width:859.98px){\n  .adm #oSplit.open .ordlist"},
+ {"name":"the side grid kept from 1080","file":"stmt/page.js","find":"@media (min-width:860px) and (max-width:1079.98px){\n  .adm .ordgrid{display:grid","replace":"@media (min-width:860px){\n  .adm .ordgrid{display:grid"},
+ {"name":"no columns drawn","file":"stmt/owner.js","find":"    ordLayout();\n    focusOrderAt();","replace":"    focusOrderAt();"},
+ {"name":"two columns at 1440","file":"stmt/owner.js","find":"n=mm&&mm('(min-width:1440px)').matches?3:","replace":"n=mm&&mm('(min-width:1440px)').matches?2:"},
+ {"name":"the record left in the decision","file":"stmt/owner.js","find":"var k=x.matches(OCOL_RECORD)?1:x.matches(OCOL_INSIGHT)?2:0;","replace":"var k=x.matches(OCOL_INSIGHT)?2:0;"},
+ {"name":"the insight left in the decision","file":"stmt/owner.js","find":"var k=x.matches(OCOL_RECORD)?1:x.matches(OCOL_INSIGHT)?2:0;","replace":"var k=x.matches(OCOL_RECORD)?1:0;"},
+ {"name":"the foot in a column","file":"stmt/owner.js","find":"      if(x===foot) return;\n","replace":"\n"},
+ {"name":"the widths his three columns take","file":"stmt/page.js","find":".adm .ordcols--3{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) minmax(0,0.9fr)}","replace":".adm .ordcols--3{grid-template-columns:repeat(3,minmax(0,1fr))}"},
+ {"name":"a change of width moves nothing","file":"stmt/owner.js","find":"var m=window.matchMedia(q); if(m&&m.addEventListener) m.addEventListener('change', ordLayout);","replace":"var m=window.matchMedia(q);"},
+ {"name":"a change of width draws the card again","file":"stmt/owner.js","find":"var m=window.matchMedia(q); if(m&&m.addEventListener) m.addEventListener('change', ordLayout);","replace":"var m=window.matchMedia(q); if(m&&m.addEventListener) m.addEventListener('change', drawOrderPane);"},
+ {"name":"the parts come back out of order","file":"stmt/owner.js","find":"back.sort(function(a,b){ return (+a.getAttribute('data-ord'))-(+b.getAttribute('data-ord')); }).forEach(","replace":"back.forEach("},
+ {"name":"the rail Orders keeps it open","file":"stmt/owner.js","find":"if(mm==='orders'&&placeNow==='orders'&&ordOpened){ closeOrder(); return; }","replace":"if(false){ closeOrder(); return; }"},
+ {"name":"the row of three kept three across in a column","file":"stmt/page.js","find":".adm .ordcol .ordrow3{grid-template-columns:repeat(2,minmax(0,1fr))}\n","replace":""},
+ {"name":"Agree shares its line","file":"stmt/page.js","find":".adm .ordcol .ordrow3>:first-child{grid-column:1/-1}\n","replace":""},
+ {"name":"the band total kept beside the units","file":"stmt/page.js","find":".adm .ordcols--3 .ogoods{flex-wrap:wrap}\n","replace":""}
+]

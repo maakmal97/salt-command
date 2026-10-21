@@ -121,7 +121,7 @@ export const OWNER_JS = `
     if(moved2&&(ordOpened||placeNow==='orders')){ ordOpened=null; drawOrderPane(); }
     /* so is the form open on Record: leaving the part or the place closes it; the + orb is not shown on Record, where the parts are one tap away */
     if(moved2) fOpen=null;
-    var add=document.getElementById('oAdd'); if(add) add.hidden=placeNow==='record';
+    [].forEach.call(document.querySelectorAll('#oAdd, #oAddRail'), function(add){ add.hidden=placeNow==='record'; });
     if(!inChat()) stopMakerChat();
     /* the picture is let go when Waiting on you is left; the one unlock is the page's and stays (PHASE 4b), going only with the lock */
     if(!inClaims()) makerSlipClose();
@@ -3907,8 +3907,9 @@ export const OWNER_JS = `
     root.textContent=''; dirty.makerReview=false;
     var e=ordOpened&&placeNow==='orders'&&ordEntries[ordOpened];
     if(e&&!ordInPart(e)) e=null;
-    /* from 860px the detail column is never an empty invitation: the first order of the part opens in it */
-    if(!e&&placeNow==='orders'&&window.matchMedia&&window.matchMedia('(min-width:860px)').matches){
+    /* from 860px to 1080px the detail column is never an empty invitation: the first order of the part opens in it. From 1080px the order
+       takes the list's place (canvas V39), so the list shows until he opens one */
+    if(!e&&placeNow==='orders'&&ordSide()){
       var first=Object.keys(ordEntries).map(function(k){ return ordEntries[k]; }).filter(function(x){ return ordInPart(x); })[0];
       if(first){ e=first; ordOpened=first.id; [first.id,first.id+':again'].forEach(function(k){ delete makerQuotes[k]; delete makerPv[k]; }); }
     }
@@ -3918,8 +3919,41 @@ export const OWNER_JS = `
     if(!e) return;
     /* 20 Oct 2026 (canvas V35): no back link; the rail or the app bar's Orders is the way back, a tap on it closing the order */
     if(e.order&&ordOpen(e.order)) orderCard(root,e.order); else if(e.row) rowCard(root,e); else if(e.trip) tripCard(root,e); else if(e.day) dayCard(root,e); else orderPlainCard(root,e);
+    ordLayout();
     focusOrderAt();
   }
+  /* where the list stands beside the card: 860 to 1080px */
+  function ordSide(){ return !!(window.matchMedia&&window.matchMedia('(min-width:860px) and (max-width:1079.98px)').matches); }
+  /* 21 Oct 2026 (canvas V39): THE OPEN ORDER IN COLUMNS. From 1180px two: the decision (the band, Agree and its row, the address, the terms, the
+     money's controls) beside the record (the steps, the Bill, the Order log) and the insight (the messages, the reward); from 1440px three. The
+     card's own parts are moved, never drawn again, so nothing typed or listened to is lost, and a change of width moves them back; below 1180 the
+     card is as it was drawn, part for part in its order. Its foot stays under the columns. */
+  var OCOL_RECORD='.ordsteps, .obill, .ordmoney, .undohist', OCOL_INSIGHT='.ordfold:not(.ordfold--rowed), .orwdcard';
+  function ordLayout(){
+    var card=document.querySelector('#makerReview > .maker-card'); if(!card) return;
+    var mm=window.matchMedia, n=mm&&mm('(min-width:1440px)').matches?3:mm&&mm('(min-width:1180px)').matches?2:1;
+    var box=card.querySelector(':scope > .ordcols');
+    if(box){
+      var back=[].concat.apply([],[].map.call(box.children,function(c){ return [].slice.call(c.children); }));
+      back.sort(function(a,b){ return (+a.getAttribute('data-ord'))-(+b.getAttribute('data-ord')); }).forEach(function(x){ card.insertBefore(x,box); });
+      box.remove();
+    }
+    var kids=[].slice.call(card.children);
+    kids.forEach(function(x,i){ x.setAttribute('data-ord',String(i)); });
+    if(n<2) return;
+    box=el('div',n===3?'ordcols ordcols--3':'ordcols ordcols--2');
+    var cols=[0,1,2].slice(0,n).map(function(k){ var c=el('div','ordcol'); c.setAttribute('data-ocol',['decision','record','insight'][k]); box.appendChild(c); return c; });
+    var foot=card.querySelector(':scope > .maker-foot');
+    card.insertBefore(box,kids[0]||null);
+    kids.forEach(function(x){
+      if(x===foot) return;
+      var k=x.matches(OCOL_RECORD)?1:x.matches(OCOL_INSIGHT)?2:0;
+      cols[Math.min(k,n-1)].appendChild(x);
+    });
+  }
+  if(window.matchMedia) ['(min-width:1180px)','(min-width:1440px)'].forEach(function(q){
+    var m=window.matchMedia(q); if(m&&m.addEventListener) m.addEventListener('change', ordLayout);
+  });
   function openOrder(id){
     var e=ordEntries[id];
     if(!e||placeNow!=='orders'||!ordInPart(e)) return;
@@ -3931,7 +3965,7 @@ export const OWNER_JS = `
     try{
       var card=document.getElementById('makerReview');
       if(card){ if(!card.hasAttribute('tabindex')) card.setAttribute('tabindex','-1'); if(card.focus) card.focus({preventScroll:true}); }
-      if(!wide()) window.scrollTo(0,0);
+      if(!ordSide()) window.scrollTo(0,0);
       else if(card&&card.scrollIntoView) card.scrollIntoView({block:'nearest'});
     }catch(x){}
   }
@@ -4407,7 +4441,15 @@ export const OWNER_JS = `
         var follower=group.length>1&&group.every(function(o){ return o.status==='placed'; })&&group[0].id!==order.id;
         var deliver=order.mode==='deliver'&&!follower;
         var chip=makerFee[order.id]||(makerFee[order.id]={value:'',other:''});
-        var otherField=null, previewTurn=0, sig=JSON.stringify(order), feeRadios=[], winDraw=null;
+        var otherField=null, previewTurn=0, sig=JSON.stringify(order), feeRadios=[], feeSeg=null, winDraw=null;
+        /* the delivery slider's thumb: the columns are its four options, the thumb behind the one ticked, none drawn while none is */
+        function feeSync(){
+          if(!feeSeg) return;
+          var at=-1;
+          feeRadios.forEach(function(r,k){ r.closest('label').classList.toggle('salt-segment__opt--active',r.checked); if(r.checked) at=k; });
+          feeSeg.style.setProperty('--n',String(feeRadios.length)); feeSeg.style.setProperty('--i',String(Math.max(0,at)));
+          feeSeg.classList.toggle('ofee--none',at<0);
+        }
         /* 12 Oct 2026 (his decision 6 of 11 Oct): THE CARD READS ITS OWN PREVIEW, once, when its order is opened, and again when an input is
            changed; the Preview button is retired. A row of the list reads nothing (only the opened order draws a card), so the Desk is asked
            once for an order he opens. A redraw of the card (a read that changed, a tap) keeps the quote it has, or waits on the one in
@@ -4472,7 +4514,7 @@ export const OWNER_JS = `
           var k=chip.kept||{value:'',other:''}, said=[];
           if(chip.value!==k.value||(chip.value==='other'&&chip.other!==k.other)){
             chip.value=k.value; chip.other=k.other;
-            feeRadios.forEach(function(r){ r.checked=r.value===chip.value; });
+            feeRadios.forEach(function(r){ r.checked=r.value===chip.value; }); feeSync();
             if(otherField){ otherField.value=chip.other; otherField.closest('label').hidden=chip.value!=='other'; }
             said.push('That charge did not save. '+(chip.value===''?'No charge is chosen.':'RM '+(chip.value==='other'?chip.other:chip.value)+' is still chosen.'));
           }
@@ -4512,20 +4554,23 @@ export const OWNER_JS = `
         };
         if(deliver){
           /* S11 11.3 on the Counter: the delivery charge is chosen where the order is agreed, RM 0, 10, 15 or his own
-             figure, and NONE is chosen until he chooses, so a delivery is never agreed at a charge nobody set */
-          var fieldset=el('fieldset','salt-options'), grid=el('div','salt-options__grid salt-options__grid--2');
+             figure, and NONE is chosen until he chooses, so a delivery is never agreed at a charge nobody set.
+             21 Oct 2026 (P9): drawn as the system's slider, a radiogroup of the same four radios, names, values and acts; the thumb stands
+             behind the one chosen (feeSync) and is not drawn while none is */
+          var fieldset=el('fieldset','salt-options'), grid=el('div','salt-segment ofee');
+          grid.setAttribute('role','radiogroup'); grid.setAttribute('aria-label','Delivery charge');
           fieldset.appendChild(el('legend','salt-options__legend','Delivery'));
           [['0','RM 0'],['10','RM 10'],['15','RM 15'],['other','Other']].forEach(function(opt){
-            var label=el('label','salt-option'), radio=el('input','salt-option__input'),
-                face=el('span','salt-option__face'), text=el('span','salt-option__label',opt[1]);
+            var label=el('label','salt-segment__opt'), radio=el('input','sr');
             radio.type='radio'; radio.name='makerFee-'+order.id; radio.value=opt[0]; radio.checked=chip.value===opt[0]; actOn(radio,'order.fee-'+opt[0]); feeRadios.push(radio);
             radio.addEventListener('change',function(){
-              chip.value=opt[0];
+              chip.value=opt[0]; feeSync();
               if(otherField) otherField.closest('label').hidden=opt[0]!=='other';
               makerPlacedInvalidate(); makerPlacedRead();
             });
-            face.appendChild(text); label.appendChild(radio); label.appendChild(face); grid.appendChild(label);
+            label.appendChild(radio); label.appendChild(document.createTextNode(opt[1])); grid.appendChild(label);
           });
+          feeSeg=grid; feeSync();
           fieldset.appendChild(grid);
           otherField=makerField(fieldset,['Other, RM','order.fee-other-amount'],'number',chip.other);
           otherField.closest('label').hidden=chip.value!=='other';
@@ -6548,7 +6593,7 @@ export const OWNER_JS = `
   });
   /* the + orb opens Record's menu of entries */
   var oAdd=document.getElementById('oAdd');
-  if(oAdd) oAdd.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); });
+  [oAdd, document.getElementById('oAddRail')].forEach(function(b){ if(b) b.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); }); });
   document.getElementById('afil').addEventListener('click', function(ev){
     var b=ev.target.closest('button[data-f]'); if(b) filterBy(b.getAttribute('data-f'));
   });
