@@ -22,5 +22,6 @@
  {"name":"a real username signs in as the test view","file":"stmt/worker.js","find":"{ base: \"/all/test/c\", u: isTest(tu) ? tu : \"\" }","replace":"{ base: \"/all/test/c\", u: tu }"},
  {"name":"the test admin carries the master","file":"stmt/worker.js","find":"pageResponse(\"\", { master: \"\", accounts: [] }, { base: \"/all/test\" })","replace":"pageResponse(\"\", { master: String(env.STMT_MASTER || \"\"), accounts: [] }, { base: \"/all/test\" })"},
  {"name":"the test views refuse every frame","file":"stmt/worker.js","find":"(test ? \"'self'\" : \"'none'\")","replace":"\"'none'\""},
- {"name":"a real page carries the test door","file":"stmt/page.js","find":"() => (test ? TEST_DOOR : \"\")","replace":"() => (true ? TEST_DOOR : \"\")"}
+ {"name":"a real page carries the test door","file":"stmt/page.js","find":"() => (test ? TEST_DOOR : \"\")","replace":"() => (true ? TEST_DOOR : \"\")"},
+ {"name":"the glance reads a real route in test","file":"stmt/owner.js","find":"refs('/all/maker/stock')","replace":"refs('/all/maker/ledger')"}
 ]

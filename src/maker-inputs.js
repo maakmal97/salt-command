@@ -753,6 +753,23 @@ export function makerLedgerMini(book, recent = 20) {
     recent: rows.slice(0, recent), orders: rows.length };
 }
 
+/** 20 Oct 2026 (canvas V62): Salt Admin's glance, the stock of each book as the desk measured it (STOCK, tools/book.mjs stockSnapshot),
+ *  carried as it is and computed by nothing here: five figures a book, each a number or null, the books in the PRICING snapshot's order,
+ *  and the desk's day. No lot, supplier or customer travels. */
+export function makerStock(book) {
+  if (!ready(book)) return { error: "The Desk mirror is being seeded." };
+  const S = book.state.STOCK;
+  if (!object(S) || !object(S.books)) return { error: "The stock is not measured on this mirror yet." };
+  const n = (x) => (typeof x === "number" && Number.isFinite(x) ? +x.toFixed(2) : null);
+  const order = book.pricing && object(book.pricing.byProduct) ? Object.keys(book.pricing.byProduct) : Object.keys(S.books);
+  const books = {};
+  for (const p of order) {
+    const b = S.books[p];
+    if (object(b)) books[p] = { shelf: n(b.shelf), free: n(b.free), commit: n(b.commit), coverDays: n(b.coverDays), transit: n(b.transit) };
+  }
+  return { today: typeof S.today === "string" && /^\d{4}-\d{2}-\d{2}$/.test(S.today) ? S.today : null, books };
+}
+
 /** One owner tap on one offer. The figures are the mirror's, never the request's: the body names only the holder, the row and a date. */
 export function makerOffset(body, book, held) {
   if (!exact(body, ["at", "code", "rid", "date"]) || !timestamp(body.at) || !date(body.date)

@@ -1,0 +1,14 @@
+[
+ {"name":"the book read carries no STOCK","file":"tools/book.mjs","find":"  ledger.STOCK = { ...stockSnapshot(w), v: version };\n","replace":""},
+ {"name":"free is the shelf","file":"tools/book.mjs","find":"free:two(currentStock-defUnits)","replace":"free:two(currentStock)"},
+ {"name":"no days of cover","file":"tools/book.mjs","find":"coverDays:rs&&!rs.empty&&rs.coverDays!=null?+rs.coverDays:null","replace":"coverDays:null"},
+ {"name":"commit left at nought","file":"tools/book.mjs","find":"commit:two(POSITION_ENGINE.commitments(pSales(p),currentStock).commitUnits)","replace":"commit:0"},
+ {"name":"the desk left on the last book","file":"tools/book.mjs","find":"transit:two(t)};});}finally{PROD=keep;recompute();}","replace":"transit:two(t)};});}finally{recompute();}"},
+ {"name":"a pending lot dropped","file":"tools/book.mjs","find":"return !x.cancelled&&!x.defaulted;}).reduce(","replace":"return poLive(x);}).reduce("},
+ {"name":"a cancelled lot counted","file":"tools/book.mjs","find":"return !x.cancelled&&!x.defaulted;}).reduce(","replace":"return !x.defaulted;}).reduce("},
+ {"name":"a written-off lot counted","file":"tools/book.mjs","find":"return !x.cancelled&&!x.defaulted;}).reduce(","replace":"return !x.cancelled;}).reduce("},
+ {"name":"a part-received lot counted whole","file":"tools/book.mjs","find":"Math.max(0,(+x.qty||0)-poRecvUnits(x))","replace":"Math.max(0,(+x.qty||0)-(x.pending?0:0))"},
+ {"name":"STOCK in the seed hash","file":"tools/d1.mjs","find":"const SEED_UNDATED = new Set([\"STOCK\"]);","replace":"const SEED_UNDATED = new Set([]);"},
+ {"name":"the hash drops every key","file":"tools/d1.mjs","find":"...Object.keys(L).filter((k) => !SEED_UNDATED.has(k)).sort()","replace":"...Object.keys(L).filter((k) => !SEED_UNDATED.has(k) && k === 'sales').sort()"},
+ {"name":"the day not carried","file":"tools/book.mjs","find":"return JSON.stringify({today:TODAY.toISOString().slice(0,10),books:o});","replace":"return JSON.stringify({books:o});"}
+]

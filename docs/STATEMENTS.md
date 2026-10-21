@@ -2487,6 +2487,14 @@ Salt Admin catches up with Counter Batches A to C, his side of each (canvas Salt
   goods and delivery less what is paid; each tile opens Orders. Read off the orders the page holds; a practice order counts only on the test
   surface. **The kinds are one sliding row** (canvas V56), each with its count, practice apart, beside a fixed **Jump to** opening a menu of
   every kind with its count; a kind with nothing waiting is no pill and a line in mist that cannot be chosen; Escape or a tap outside closes it.
+- **Stock cover and Next lot** (canvas V62, his word of 20 Oct 2026) follow Ready and Owed to you, four across from 1080px and two by two below,
+  for the book with the least cover, one with nothing free first, its mark by the title. Stock cover: the shelf, then what is free (the shelf less
+  what is owed out) and the days of cover, "0 d" with nothing free, "over 4 wk" with no cover figure. Next lot: the day he set on the Desk's Stock
+  (Counter KV `expected`, today or later in Kuala Lumpur), then the units bought and not yet in, or "Nothing on the way yet". Not links. The
+  figures are measured in the master's window at each version as the state key `STOCK` (`tools/book.mjs stockSnapshot`, seeded to the mirror
+  and left out of the seed hash, `tools/d1.mjs SEED_UNDATED`), served by the Desk's keyed `GET /_internal/maker/stock` and relayed by
+  `GET /all/maker/stock` (`stockWithDates`); nothing on either Worker measures. The day measured is the tile's title. Read once a page open; a
+  failed read draws a dash; `/all/test` answers a fixed example. Never the word the plan bans.
 - **Help on Shop > Hours** (P8): the customer's four answers, folded and read only, the same `help.*` keys.
 - **The delivery charge is the slider** (P9): the same four radios (`makerFee-<id>`, values 0, 10, 15 and other, acts `order.fee-*`) drawn as
   the system's segment, the thumb hidden until one is chosen.

@@ -142,8 +142,8 @@ export async function run({ ok, pageWork }) {
     ad.querySelector('nav.salt-rail .place[data-p="messages"]').click(); await tick();
     ad.querySelector('nav.salt-rail .place[data-m="orders"]:not([data-p])').click(); await tick();
     const reads = [...new Set(calls.map((c) => c[0]))];
-    ok(reads.length >= 3 && reads.every((p) => /^\/all\/test\/maker\/(review|claims|threads)$/.test(p)) && JSON.stringify(onPay) === '["payments"]' && ad.getElementById("nFail").hidden,
-      "Salt Admin in test reads only the examples' orders, payments and chats under /all/test/maker, and Payments opens its part: " + JSON.stringify([reads, onPay]));
+    ok(reads.length >= 3 && reads.every((p) => /^\/all\/test\/maker\/(review|claims|threads|stock)$/.test(p)) && JSON.stringify(onPay) === '["payments"]' && ad.getElementById("nFail").hidden,
+      "Salt Admin in test reads only the examples' orders, payments, chats and stock (the glance's fixed example, 21 Oct 2026) under /all/test/maker, and Payments opens its part: " + JSON.stringify([reads, onPay]));
 
     ad.querySelector("#makerOrderList .ordrow").click(); await until(() => !!ad.querySelector('[data-act="order.pay-first"]'), 40);
     const first = ad.querySelector('[data-act="order.pay-first"]');

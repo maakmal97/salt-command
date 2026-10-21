@@ -30,9 +30,10 @@ export async function run({ ok, pageWork }) {
     await click(byAct(d, "nav.needs"));
     /* 1 */
     const g = d.getElementById("nGlance"), tiles = g ? [...g.querySelectorAll(".salt-glance__item")] : [];
-    const read = tiles.map((a) => [a.getAttribute("data-glance"), t(a.querySelector(".salt-glance__label")), t(a.querySelector(".salt-glance__value")), t(a.querySelector(".salt-glance__note")), a.getAttribute("href")]);
+    /* 21 Oct 2026: Stock cover and Next lot follow, the glance stock's own (test/admin-glance-stock.mjs); these two are the links */
+    const read = tiles.filter((a) => a.tagName === "A").map((a) => [a.getAttribute("data-glance"), t(a.querySelector(".salt-glance__label")), t(a.querySelector(".salt-glance__value")), t(a.querySelector(".salt-glance__note")), a.getAttribute("href")]);
     ok(!!g && !g.hidden && g.classList.contains("salt-glance") && J(read) === J([["ready", "Ready", "4", "To hand over", "#orders/ready"], ["owed", "Owed to you", "RM 670.00", "6 agreed orders", "#orders"]])
-      && tiles.every((a) => a.tagName === "A"),
+      && tiles.slice(0, 2).every((a) => a.tagName === "A"),
       "the glance reads Ready 4 (three ready and one part paid, the practice order apart) and Owed to you RM 670.00 over six agreed orders, goods and delivery less what is paid, each tile a link to Orders: " + J(read));
     w.location.hash = "#orders/ready"; await new Promise((r) => setTimeout(r, 20)); await p.work.quiet();
     const lit = d.querySelector('.aparts button[data-part="ready"][aria-selected="true"]');

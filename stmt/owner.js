@@ -6399,16 +6399,44 @@ export const OWNER_JS = `
       if(left>0.004){ owe+=left; oweN++; }
     });
     var tiles=[['#orders/ready','ready','Ready',String(ready),ready?'To hand over':'Nothing to hand over'],
-      ['#orders','owed','Owed to you',rm(owe),oweN?oweN+(oweN===1?' agreed order':' agreed orders'):'Nothing owed']];
+      ['#orders','owed','Owed to you',rm(owe),oweN?oweN+(oweN===1?' agreed order':' agreed orders'):'Nothing owed']].concat(glanceStockTiles());
     var sig=JSON.stringify(tiles);
     g.hidden=false;
     if(g.getAttribute('data-sig')===sig) return;
     g.setAttribute('data-sig',sig); g.textContent='';
     tiles.forEach(function(t){
-      var a=el('a','salt-glance__item'); a.href=t[0]; a.setAttribute('data-glance',t[1]); a.setAttribute('data-act','need.glance.'+t[1]);
-      a.appendChild(el('span','salt-glance__label',t[2])); a.appendChild(el('span','salt-glance__value',t[3])); a.appendChild(el('span','salt-glance__note',t[4]));
+      var a=el(t[0]?'a':'div','salt-glance__item'); a.setAttribute('data-glance',t[1]);
+      if(t[0]){ a.href=t[0]; a.setAttribute('data-act','need.glance.'+t[1]); }
+      if(t[6]) a.title=t[6];
+      var label=el('span','salt-glance__label',t[2]); if(t[5]) label.appendChild(bookMark(t[5],20));
+      a.appendChild(label); a.appendChild(el('span','salt-glance__value',t[3])); a.appendChild(el('span','salt-glance__note',t[4]));
       g.appendChild(a);
     });
+  }
+  /* 21 Oct 2026 (canvas V62, his word "stock count, stock expected dates should be here"): STOCK COVER AND NEXT LOT, beside Ready and Owed to
+     you, for the book with the least cover, a book with nothing free first, its mark by the title. The figures are the Desk's (the master
+     measures them at each version, GET /all/maker/stock), the day the next lot is expected his own from Stock. Read once a page open; a failed
+     read says so with a dash and is asked again five minutes on. The day they were measured is the tile's title, never called today. Not tap
+     targets. */
+  var glanceStock=null, glanceStockOut=false, glanceStockFailed=0;
+  function glanceDay(iso){ return new Date(iso+'T04:00:00Z').toLocaleDateString('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'short'}); }
+  function glanceStockTiles(){
+    if(!glanceStock&&!glanceStockOut&&Date.now()-glanceStockFailed>300000){
+      glanceStockOut=true;
+      refs('/all/maker/stock').then(function(j){ glanceStock=j; glanceStockFailed=0; },function(){ glanceStockFailed=Date.now(); })
+        .then(function(){ glanceStockOut=false; drawGlance(); });
+    }
+    var said=glanceStockOut&&!glanceStockFailed?'Reading':'Could not be read';
+    var none=[[null,'stock','Stock cover','–',said],[null,'lot','Next lot','–',said]];
+    var books=glanceStock&&glanceStock.books, ids=books?Object.keys(books).filter(function(p){ return books[p]&&typeof books[p].shelf==='number'; }):[];
+    if(!ids.length) return none;
+    var rank=function(b){ return [(+b.free||0)<=0.009?0:1, b.coverDays==null?Infinity:+b.coverDays]; };
+    var p=ids.slice().sort(function(x,y){ var a=rank(books[x]), c=rank(books[y]); return a[0]-c[0]||a[1]-c[1]; })[0], b=books[p];
+    var free=+b.free||0, by=glanceStock.by&&glanceStock.by[p], transit=+b.transit||0;
+    var cover=(free<=0.009?'0 d':b.coverDays==null?'over 4 wk':b.coverDays+' d').replace(/ /g,' ');
+    var measured=glanceStock.today?'As measured on '+glanceDay(glanceStock.today):'';
+    return [[null,'stock','Stock cover',units(b.shelf),units(free)+' free · '+cover,p,measured],
+      [null,'lot','Next lot',by?glanceDay(by):'–',transit>0.009?units(transit)+' expected':by?'Nothing on the way yet':'Nothing on the way',p,measured]];
   }
   /* 21 Oct 2026 (canvas V56): JUMP TO opens a menu of every kind with its count; a line chooses its kind as the pill does, Escape or a tap
      outside closes it and gives the button back its focus, and the arrow keys move between the lines that can be chosen */

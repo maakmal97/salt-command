@@ -50162,6 +50162,11 @@ await (async () => {
   await (await import("./admin-ac-glance.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Admin's glance, stock: Stock cover and Next lot beside Ready and Owed to you, for the book with the least cover (21 Oct 2026)");
+await (async () => {
+  await (await import("./admin-glance-stock.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin A to C: Help read only on Shop hours, the customer's four answers (21 Oct 2026)");
 await (async () => {
   await (await import("./admin-ac-help.mjs")).run({ ok, pageWork });
@@ -50180,6 +50185,21 @@ await (async () => {
 section("Salt Admin A to C: from 1080px an open order fills the page, in two columns at 1180 and three at 1440 (21 Oct 2026)");
 await (async () => {
   await (await import("./admin-ac-wide.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Admin's glance, stock: the STOCK snapshot measured in the desk's window and carried to the mirror (20 Oct 2026)");
+await (async () => {
+  await (await import("./glance-stock-snapshot.mjs")).run({ ok });
+})();
+
+section("Salt Admin's glance, stock: the Desk's route carries STOCK as the desk measured it, to the bridge alone (20 Oct 2026)");
+await (async () => {
+  await (await import("./glance-stock-desk.mjs")).run({ ok });
+})();
+
+section("Salt Admin's glance, stock: the Counter relays the Desk's figures with the day each next lot is expected (20 Oct 2026)");
+await (async () => {
+  await (await import("./glance-stock-relay.mjs")).run({ ok });
 })();
 
 section("Salt Admin: the claim card reads its rows on opening, draws the slip from the one unlock, and asks on a sheet");

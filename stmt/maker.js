@@ -1,4 +1,4 @@
-import { allOrders, deskSeen, placeOrder, customerView, RID_RE, onBook, allPools, poolOpen, poolClose, deskBody } from "./orders.js";
+import { allOrders, deskSeen, placeOrder, customerView, RID_RE, onBook, allPools, poolOpen, poolClose, deskBody, klDay } from "./orders.js";
 import { accountRecord, exampleAccount, examplePlace, examplePools, exampleThread, exampleDeskSay, isTest, isExample, EXAMPLE_ID, TEST_USERS, EXAMPLE_POINTS } from "./testfix.js";
 import { POINTS_KEY, readPoints, validatePoints, resolvePoint, isPointCode } from "./points.js";
 import { hoursStatus, validateManualHours, validateWeeklyHours, HOURS_KEY, windowHours, openMinutes, plainWeek, openParts } from "./hours.js";
@@ -97,6 +97,7 @@ async function deskCall(env, path, method, body) {
     || /^\/_internal\/maker\/reward\/[A-Za-z0-9%._-]{3,160}$/.test(path) && method === "GET"
     || /^\/_internal\/maker\/customer-reading\/[A-Za-z0-9%._-]{3,160}$/.test(path) && method === "GET"
     || path === "/_internal/maker/ledger" && ["GET", "POST"].includes(method)
+    || path === "/_internal/maker/stock" && method === "GET"
     || path === "/_internal/maker/inputs/offset" && method === "POST"
     || path === "/_internal/maker/inputs/stock-count" && method === "POST"
     || /^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|partner|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend|trip-pay|trip-join)$/.test(path) && method === "POST"
@@ -115,8 +116,8 @@ async function deskCall(env, path, method, body) {
   }));
   let result;
   try { result = await response.json(); } catch (e) { throw new Error("The Desk maker route returned an unreadable response."); }
-  /* the test surface's two Desk reads on a Desk that has not shipped them: said plainly, never a 404 of the Counter's own */
-  if (response.status === 404 && result && result.error === "not found" && /^\/_internal\/maker\/fixture-(check|claims)/.test(path))
+  /* the test surface's two Desk reads, and the glance's stock (20 Oct 2026), on a Desk that has not shipped them: said plainly, never a 404 of the Counter's own */
+  if (response.status === 404 && result && result.error === "not found" && /^\/_internal\/maker\/(fixture-(check|claims)|stock$)/.test(path))
     throw Object.assign(new Error("The Desk is not updated yet."), { status: 503 });
   if (!response.ok || !result || result.ok !== true)
     throw Object.assign(new Error(result && result.error || "The Desk maker operation failed."),
@@ -381,6 +382,7 @@ function internalOperation(path) {
   const cust = /^\/all\/maker\/customer-reading\/([A-Za-z0-9%._-]{3,160})$/.exec(path);
   if (cust) return { kind: "customer-reading", key: cust[1] };
   if (path === "/all/maker/ledger") return { kind: "ledger" };
+  if (path === "/all/maker/stock") return { kind: "stock" };
   if (path === "/all/maker/inputs/offset") return { kind: "input", input: "offset" };
   if (path === "/all/maker/inputs/stock-count") return { kind: "stock-count" };
   const input = /^\/all\/maker\/inputs\/(sale|purchase|tier-set|partner|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend|trip-pay|trip-join)$/.exec(path);
@@ -397,11 +399,25 @@ function internalOperation(path) {
   return null;
 }
 
+/* 20 Oct 2026 (canvas V62): THE GLANCE'S STOCK, the Desk's STOCK figures a book as they came (the desk measured them; nothing here does),
+   and beside each the day he expects its next lot from this site's own KV `expected` (F4, set from the Desk's Stock), kept only while it is
+   today or later in Kuala Lumpur: expectedSet drops a passed day only when the next one is set. */
+const EXAMPLE_STOCK = { ok: true, today: null, books: { salt: { shelf: 12, free: 9, commit: 5, coverDays: 6, transit: 20 } } };
+function stockWithDates(desk, expected, test) {
+  const today = klDay(new Date().toISOString()), books = {}, by = {};
+  for (const [p, b] of Object.entries(desk && desk.books && typeof desk.books === "object" ? desk.books : {})) {
+    books[p] = { shelf: b && b.shelf, free: b && b.free, commit: b && b.commit, coverDays: b && b.coverDays, transit: b && b.transit };   /* the five figures and nothing else, on this side too */
+    const v = expected && typeof expected === "object" ? expected[p] : null;
+    by[p] = typeof v === "string" && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(v) && v >= today ? v : null;
+  }
+  return { ok: true, ...(test ? { test: true } : {}), today: desk && desk.today || null, books, by };
+}
+
 /* THE TEST SURFACE (his answers of 18 Oct 2026): what Salt Admin may do under /all/test, on the example orders and the test accounts
    alone. Every other kind, every real order and every real username answers 404; the reads come from the fixtures and call no Desk route;
    a reply on a test account's thread is written in-process and wakes nobody (Fable's review). */
 const TEST_KINDS = { review: ["GET"], "order-action": ["POST"], "order-move": ["POST"], claim: ["POST"], claims: ["GET"], thread: ["POST"],
-  threads: ["GET"], pools: ["GET"], hours: ["GET"], points: ["GET"] };
+  threads: ["GET"], pools: ["GET"], hours: ["GET"], points: ["GET"], stock: ["GET"] };
 async function testMaker(request, env, op) {
   const method = request.method;
   if (!Object.hasOwn(TEST_KINDS, op.kind) || !TEST_KINDS[op.kind].includes(method)) return json({ ok: false, error: "not found" }, 404);
@@ -420,6 +436,8 @@ async function testMaker(request, env, op) {
     const orders = await fixtures((u, f) => f.orders.map((o) => ({ ...o, u: o.u || u, test: true })));
     return json({ ok: true, test: true, orders, drafts: [], refused: [], queue: [], unreadable: [], trips: [], sameDay: [], rows: [], refunds: {} });
   }
+  /* the glance's stock: one fixed example book and a day three days on, nothing real read and no Desk called */
+  if (op.kind === "stock") return json(stockWithDates(EXAMPLE_STOCK, { salt: klDay(new Date(Date.now() + 3 * 864e5).toISOString()) }, true));
   if (op.kind === "claims") return json({ ok: true, test: true, claims: await fixtures((u, f) => f.account.claims.map((c) => ({ ...c, test: true }))) });
   if (op.kind === "pools") {
     const pools = [];
@@ -612,6 +630,13 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
       if (Object.keys(parsed.body).length !== 1 || typeof parsed.body.url !== "string")
         return json({ ok: false, error: "Send only the short map link." }, 400);
       return json(await deskCall(env, "/_internal/maker/geo/expand", "POST", parsed.body));
+    }
+    if (op.kind === "stock") {
+      if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+      const desk = await deskCall(env, "/_internal/maker/stock", "GET");
+      let expected = {};
+      try { expected = (await env.STMT.get("expected", "json")) || {}; } catch (e) { expected = {}; }   /* a failed read drops the dates, never the figures */
+      return json(stockWithDates(desk, expected, false));
     }
     if (op.kind === "ledger") {
       if (method !== "GET" && method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);

@@ -17,5 +17,6 @@
  {"name":"a line chooses nothing","file":"stmt/owner.js","find":"jumpShut(true); nPick(b.getAttribute('data-jump'));","replace":"jumpShut(true);"},
  {"name":"a tap outside leaves it open","file":"stmt/owner.js","find":"if(!nJumpMenu.hidden&&!ev.target.closest('.salt-jump')) jumpShut(false);","replace":"if(false) jumpShut(false);"},
  {"name":"a kind with nothing can be chosen","file":"stmt/owner.js","find":"var none=ready&&!have[k];","replace":"var none=false;"},
- {"name":"the menu counts every kind as All","file":"stmt/owner.js","find":"c.textContent=ready?String(n[k]||0):'';","replace":"c.textContent=ready?String(menu?n.all:(n[k]||0)):'';"}
+ {"name":"the menu counts every kind as All","file":"stmt/owner.js","find":"c.textContent=ready?String(n[k]||0):'';","replace":"c.textContent=ready?String(menu?n.all:(n[k]||0)):'';"},
+ {"name":"Ready's tile no link (P7 re-aimed)","file":"stmt/owner.js","find":"      if(t[0]){ a.href=t[0]; a.setAttribute('data-act','need.glance.'+t[1]); }","replace":"      if(t[0]&&t[1]!=='ready'){ a.href=t[0]; a.setAttribute('data-act','need.glance.'+t[1]); }"}
 ]

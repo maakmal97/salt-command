@@ -247,6 +247,22 @@ export function supplySnapshot(w) {
   return r.ok && typeof r.value === "string" ? JSON.parse(r.value) : null;
 }
 
+/* 20 Oct 2026 (canvas V62, his word "stock count, stock expected dates should be here"): THE STOCK SALT ADMIN'S GLANCE READS, per book,
+   measured here in the desk's own window and carried to the mirror as STOCK, so the Desk Worker and the Counter compute nothing (rule 1).
+   shelf is the units held; free the On hand "Free to sell", the shelf less what is owed out; commit the engine's commitments; coverDays
+   restockFor's own, null on a book with no demand; transit every lot not cancelled or written off less the engine's poRecvUnits, so a
+   pending lot counts whole. No moment is minted: `today` is the desk's day and the seed hash leaves STOCK out (tools/d1.mjs SEED_UNDATED),
+   since only folded rows move these figures and they move the collections too. Supply's window: set, read, put back. */
+export function stockSnapshot(w) {
+  const r = reader(w)("(function(){var o={},keep=PROD,two=function(n){return +(+n||0).toFixed(2);};try{PROD_IDS.forEach(function(p){PROD=p;recompute();var rs=restockFor(p),"
+    + "t=pPurch(p).filter(function(x){return !x.cancelled&&!x.defaulted;}).reduce(function(a,x){return a+Math.max(0,(+x.qty||0)-poRecvUnits(x));},0);"
+    + "o[p]={shelf:two(currentStock),free:two(currentStock-defUnits),commit:two(POSITION_ENGINE.commitments(pSales(p),currentStock).commitUnits),"
+    + "coverDays:rs&&!rs.empty&&rs.coverDays!=null?+rs.coverDays:null,transit:two(t)};});}finally{PROD=keep;recompute();}"
+    + "return JSON.stringify({today:TODAY.toISOString().slice(0,10),books:o});})()");
+  if (!r.ok || typeof r.value !== "string") throw new Error("the stock did not read: " + (r.why || "no value"));
+  return JSON.parse(r.value);
+}
+
 /* 05 Oct 2026 (Counter Maker A2): THE REWARD SCHEME the desk Worker spends a reward by. REWARD is a rule, so it is not a ledger
    key and the mirror carried none: engine rewardAccount answered "no configured reward" to every Worker road that spends one
    (the Maker redemption and offset, the queue's and the fold's reservation checks). A state key of its own, read out of the
@@ -525,6 +541,7 @@ export async function readBook(masterPath = MASTER) {
   ledger.OPEN = { ...openSnapshot(w), v: version };
   ledger.TERMS = { ...termsSnapshot(w), v: version };
   ledger.REWARD = { ...rewardSnapshot(w), v: version };
+  ledger.STOCK = { ...stockSnapshot(w), v: version };
   return { dom, w, read, ledger, meta, missing, version, stamped: meta.LAST_UPDATED || null,
     src: readFileSync(masterPath, "utf8") };
 }
