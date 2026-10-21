@@ -6344,7 +6344,7 @@ export const OWNER_JS = `
       var a=el(t[0]?'a':'div','salt-glance__item'); a.setAttribute('data-glance',t[1]);
       if(t[0]){ a.href=t[0]; a.setAttribute('data-act','need.glance.'+t[1]); }
       if(t[6]) a.title=t[6];
-      var label=el('span','salt-glance__label',t[2]); if(t[5]){ label.appendChild(document.createTextNode(' ')); label.appendChild(bookMark(t[5],20)); }
+      var label=el('span','salt-glance__label',t[2]); if(t[5]) label.appendChild(bookMark(t[5],20));
       a.appendChild(label); a.appendChild(el('span','salt-glance__value',t[3])); a.appendChild(el('span','salt-glance__note',t[4]));
       g.appendChild(a);
     });
@@ -6369,7 +6369,7 @@ export const OWNER_JS = `
     var rank=function(b){ return [(+b.free||0)<=0.009?0:1, b.coverDays==null?Infinity:+b.coverDays]; };
     var p=ids.slice().sort(function(x,y){ var a=rank(books[x]), c=rank(books[y]); return a[0]-c[0]||a[1]-c[1]; })[0], b=books[p];
     var free=+b.free||0, by=glanceStock.by&&glanceStock.by[p], transit=+b.transit||0;
-    var cover=free<=0.009?'0 d':b.coverDays==null?'over 4 wk':b.coverDays+' d';
+    var cover=(free<=0.009?'0 d':b.coverDays==null?'over 4 wk':b.coverDays+' d').replace(/ /g,' ');
     var measured=glanceStock.today?'As measured on '+glanceDay(glanceStock.today):'';
     return [[null,'stock','Stock cover',units(b.shelf),units(free)+' free · '+cover,p,measured],
       [null,'lot','Next lot',by?glanceDay(by):'–',transit>0.009?units(transit)+' expected':by?'Nothing on the way yet':'Nothing on the way',p,measured]];

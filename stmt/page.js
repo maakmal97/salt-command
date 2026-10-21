@@ -944,6 +944,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm .nglance{grid-template-columns:repeat(2,minmax(0,1fr));margin:0 0 16px}
 .adm .nglance[hidden]{display:none}
 @media (min-width:1080px){.adm .nglance{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.adm .nglance .salt-glance__label .pwith{vertical-align:middle;margin:-6px 0 -6px 6px}
 .adm .nfail{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:0 0 12px}
 .adm .nfail[hidden]{display:none}
 .adm .nfail__what{margin:0;flex:1 1 12em}

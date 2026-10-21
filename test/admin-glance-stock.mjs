@@ -10,7 +10,7 @@
  * Drawn by the maker harness (test/maker-act.mjs). */
 import { richOwnerPage, byAct } from "./maker-act.mjs";
 
-const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
+const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");   /* a no-break space reads as a space here: \s holds it */
 const J = JSON.stringify;
 const book = (shelf, free, coverDays, transit) => ({ shelf, free, commit: 0, coverDays, transit });
 
@@ -57,6 +57,8 @@ export async function run({ ok, pageWork }) {
     ok(J(B.read.slice(2)) === J([["stock", t(B.stock.querySelector(".salt-glance__label")), "14.89 units", "13.39 units free · 2.6 d"],
       ["lot", t(B.lot.querySelector(".salt-glance__label")), "25 Oct", "8 units expected"]]),
     "the least cover is shown, a book with no cover figure last; its shelf, what is free and its days, the day expected and the units coming: " + J(B.read.slice(2)));
+    const raw = B.stock.querySelector(".salt-glance__note").textContent;
+    ok(raw.endsWith("2.6 d") && !/2\.6 d/.test(raw), "the days never break from their figure on a narrow tile (a no-break space): " + J(raw));
   } finally { B.p.w.close(); }
   const C = await page(pageWork, { ok: true, today: "2026-10-20", books: { rice: book(9, 9, null, 0) }, by: {} });
   try {
