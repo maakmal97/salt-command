@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="8e0e42d9cd016419";
+var SALT_BUILD_ID="3ba00e72e4dec3f6";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -10683,7 +10683,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1195","d":"21 Oct 2026","t":"A 12.5 UNIT SALT BUY FROM SA5-BTR LANDS AT HIS QUOTED RATE","n":["<b>ONE BUY FOLDED, NOTHING UNUSUAL.</b> The row is a purchase of 12.5 unit of salt from SA5-BTR for RM700, dated 20 Oct, with RM50 freight beside it. It was paid in full and received in full on the day, and it matches his quote of 23 Sep. The drafter raised no flags and the row is appended to purchases with its note.","<b>INVENTORY.</b> The 12.5 unit is booked as landed on 20 Oct, so salt stock rises by that lot. The stock cost stays at RM56 a unit, because the lot came in at the same rate."]}];
+const evolution=[{"v":"v1196","d":"21 Oct 2026","t":"STOCK COVER AND NEXT LOT ON SALT ADMIN'S GLANCE","n":["<b>TWO TILES BESIDE READY AND OWED TO YOU.</b> Needs you's glance now shows Stock cover (the units on the shelf, then what is free and the days of cover) and Next lot (the day he set on Stock, then the units bought and not yet in), four across from 1080px and two by two on the phone. They show the book with the least cover, one with nothing free first, by its mark.","<b>MEASURED HERE, CARRIED ONLY.</b> The figures are measured in this desk's own window at each version as the state key STOCK and seeded to the mirror, left out of the seed hash because the days of cover move with the day. The Desk's keyed GET /_internal/maker/stock serves them and the Counter's /all/maker/stock adds the expected day from its own store; neither Worker measures anything. No lot, supplier or customer travels."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -10831,7 +10831,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='21 Oct 2026, 08:05 KL';
+const LAST_UPDATED='21 Oct 2026, 08:27 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
