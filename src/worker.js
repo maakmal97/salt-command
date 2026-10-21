@@ -74,6 +74,13 @@ const LOCKED_HTML = '<!doctype html><html lang="en"><meta charset="utf-8">'
   + '<h1 style="font-size:1.1em;margin:.5em 0">Salt Command is locked</h1>'
   + '<p style="color:#8b98a9;margin:0">This deployment expects Cloudflare Access in front of it, and this request arrived without it. Re-enable Access for salt-command in Zero Trust, then reload.</p>'
   + '</div></body></html>';
+/* the bar's Approve: Salt Admin's Approve (Orders, then Approve), an https address only */
+export function adminRedirect(env) {
+  let to = null;
+  try { const u = new URL(String(env.ADMIN_URL || "")); if (u.protocol === "https:") { u.hash = "orders/approve"; to = u.href; } } catch (e) { to = null; }
+  if (!to) return json({ ok: false, error: "Salt Admin's address is not set" }, 404);
+  return new Response(null, { status: 302, headers: { location: to, "cache-control": "no-store" } });
+}
 const locked = () => new Response(LOCKED_HTML, {
   status: 401,
   headers: {
@@ -2640,6 +2647,11 @@ export default {
       if (res && (res.ok || res.status === 304)) return res;
       return json({ ok: false, error: "the desk is not built" }, 404);
     }
+
+    /* 21 Oct 2026: THE BAR'S APPROVE. The desk's bar opens Salt Admin's Approve through here, so the site's address is in the
+     * Worker's config (ADMIN_URL, Salt Admin's /all) and never in the public desk. Behind the same Access gate as the desk;
+     * unset, it answers 404 rather than guess an address. */
+    if (p === "/admin" && (m === "GET" || m === "HEAD")) return adminRedirect(env);
 
     /* What build is live. The phone polls this every ten seconds and reloads when the id
      * differs from the one baked into the page it is running, which is how a deploy from

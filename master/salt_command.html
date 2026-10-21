@@ -112,8 +112,7 @@ h1{margin:2px 0 0;font-size:28px;}
    and both controls have to be reachable mid-scroll. */
 .deskbar{position:sticky;top:var(--safetop);z-index:60;display:flex;align-items:center;justify-content:space-between;
   gap:12px;margin:calc(var(--safetop)*-1) -6px 8px;padding:calc(9px + var(--safetop)) 6px 8px;
-  background:linear-gradient(180deg,var(--bg0) 72%,transparent);
-  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);}
+  }
 .dbtools{display:flex;align-items:center;gap:8px;flex:0 0 auto;margin-left:auto;}
 /* v392: 34px WAS THE SIZE THAT PUT THEM OUT OF REACH TWICE OVER. They sat in the strip under
    the status bar AND were ten points under the least a finger may be asked to hit. The glyph
@@ -3722,10 +3721,14 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
 .salt-rail__foot { border-top: 1px solid var(--salt-line-faint); padding-top: 10px; font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); letter-spacing: 0.12em; text-transform: uppercase; color: var(--salt-mist); }
 @media (max-width: 560px) { .salt-rail__tab { font-size: 0.84375rem; } }
 
-/* ---- Desk bar (synced to the desk 22 Sep 2026): one frame across the top in the rail's own
-   material, glass with the hairline at the rail's offset, so the two read as one; the wordmark in
-   the display face, one quiet mono line under it, the version and the controls at the right. Where
-   it sits is the page's: --salt-bar-top, which the desk binds to its safe area. ---- */
+/* ---- Desk bar (synced to the desk 22 Sep 2026; crisp since 21 Oct 2026, his word: "very sharp and complete, and
+   persists in all views, to the right of the navigation pane"): one frame across the top of the page column, on the
+   bar's solid ground with a hairline edge and nothing blurred, so its type and figures read sharp over anything that
+   scrolls under it. The wordmark and one quiet mono line, then what is live (__live): where you are first (__where:
+   the destination, the page under it), then one chip a count (__chips, __chip) and the one action (__act, with its
+   badge), then the version and the controls at the right. Where it sits is the page's: --salt-bar-top, which the desk
+   binds to its safe area. Under 860px what is live takes a row of its own and slides sideways rather than wrap, the
+   action held at its right edge so it is never slid out of reach. ---- */
 
 .salt-deskbar {
   position: sticky;
@@ -3735,17 +3738,17 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 10px 12px;
+  gap: 8px 14px;
   margin: 0 0 18px;
-  padding: 9px 8px 9px 16px;
-  background: var(--salt-deskbar-sheen), var(--salt-deskbar-fill);
+  padding: 8px 8px 8px 16px;
+  background: var(--salt-deskbar-solid);
   border: 1px solid var(--salt-line);
-  border-radius: var(--salt-radius-md);
-  box-shadow: var(--salt-shadow-desk), inset 0 1px 0 var(--salt-highlight);
-  -webkit-backdrop-filter: blur(24px) saturate(1.25);
-  backdrop-filter: blur(24px) saturate(1.25);
+  border-bottom-color: var(--salt-line-strong);
+  border-radius: var(--salt-radius-sm);
+  box-shadow: var(--salt-shadow-desk);
 }
-.salt-deskbar__brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+/* the brand takes what is left, from nothing, so what is live stays on the bar's one row and the quiet line ends in an ellipsis */
+.salt-deskbar__brand { display: flex; align-items: center; gap: 12px; flex: 1 1 0; min-width: 150px; }
 .salt-deskbar__name {
   align-self: flex-start;
   font-family: var(--salt-font-display);
@@ -3774,12 +3777,148 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   text-transform: uppercase;
   line-height: 1.2;
   color: var(--salt-mist);
+  text-overflow: ellipsis;
 }
-.salt-deskbar__tools { display: flex; align-items: center; gap: 4px; margin-left: auto; }
-@media (max-width: 560px) { .salt-deskbar__meta { letter-spacing: 0.1em; } }
+.salt-deskbar__where {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 44px;
+  padding-left: 14px;
+  border-left: 1px solid var(--salt-line);
+}
+.salt-deskbar__view {
+  font-family: var(--salt-font-display);
+  font-weight: 400;
+  font-size: 1.125rem;
+  line-height: 1;
+  color: var(--salt-salt);
+  white-space: nowrap;
+}
+.salt-deskbar__page {
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-xs);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: var(--salt-brass);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.salt-deskbar__page:empty { display: none; }
+.salt-deskbar__live { display: flex; align-items: center; gap: 14px; flex: none; min-width: 0; }
+.salt-deskbar__chips { display: flex; align-items: center; gap: 6px; flex: none; }
+.salt-deskbar__chip {
+  --salt-status-tone: var(--salt-mist);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 10px;
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-xs);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--salt-mist);
+  background: transparent;
+  border: 1px solid var(--salt-line);
+  border-radius: var(--salt-radius-sm);
+  cursor: pointer;
+  text-decoration: none;
+}
+.salt-deskbar__chip::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--salt-status-tone);
+  flex: none;
+}
+.salt-deskbar__n { color: var(--salt-salt); font-variant-numeric: tabular-nums; letter-spacing: 0.04em; }
+.salt-deskbar__chip:hover, .salt-deskbar__chip:focus-visible { border-color: var(--salt-line-strong); color: var(--salt-salt); }
+.salt-deskbar__chip--now { --salt-status-tone: var(--salt-alarm); }
+.salt-deskbar__chip--wait { --salt-status-tone: var(--salt-brass); }
+.salt-deskbar__chip--on { --salt-status-tone: var(--salt-verdigris); }
+.salt-deskbar__chip--off { --salt-status-tone: var(--salt-ember); }
+.salt-deskbar__chip.is-zero { --salt-status-tone: var(--salt-line-strong); }
+.salt-deskbar__chip.is-zero .salt-deskbar__n { color: var(--salt-mist); }
+.salt-deskbar__act {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 8px 0 14px;
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--salt-brass);
+  background: transparent;
+  border: 1px solid var(--salt-brass);
+  border-radius: var(--salt-radius-sm);
+  cursor: pointer;
+  text-decoration: none;
+}
+.salt-deskbar__act:hover, .salt-deskbar__act:focus-visible { background: var(--salt-brass); color: var(--salt-ink-on-accent); }
+.salt-deskbar__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 6px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: var(--salt-ink-on-accent);
+  background: var(--salt-brass);
+}
+.salt-deskbar__act:hover .salt-deskbar__badge, .salt-deskbar__act:focus-visible .salt-deskbar__badge { color: var(--salt-brass); background: var(--salt-ink-on-accent); }
+.salt-deskbar__act.is-zero { color: var(--salt-mist); border-color: var(--salt-line); padding-right: 14px; }
+.salt-deskbar__act.is-zero .salt-deskbar__badge { display: none; }
+.salt-deskbar__tools { display: flex; align-items: center; gap: 4px; flex: none; }
+@media (max-width: 1440px) { .salt-deskbar__chip { padding: 0 8px; letter-spacing: 0.08em; } }
+@media (max-width: 860px) {
+  .salt-deskbar__live {
+    order: 4;
+    flex: 1 0 100%;
+    max-width: none;
+    margin: 0 -8px 0 -16px;
+    padding: 8px 8px 0 16px;
+    border-top: 1px solid var(--salt-line);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .salt-deskbar__live::-webkit-scrollbar { display: none; }
+  .salt-deskbar__where { padding: 0 14px 0 0; border-left: 0; border-right: 1px solid var(--salt-line); }
+  .salt-deskbar__chips { flex: 1 0 auto; }
+  .salt-deskbar__act {
+    position: sticky;
+    right: 0;
+    margin-left: auto;
+    background: var(--salt-deskbar-solid);
+    box-shadow: -14px 0 10px -4px var(--salt-deskbar-solid), 10px 0 0 0 var(--salt-deskbar-solid);
+  }
+}
+@media (max-width: 560px) {
+  .salt-deskbar__meta { letter-spacing: 0.1em; }
+  .salt-deskbar__where { padding-right: 10px; }
+  .salt-deskbar__view { font-size: 1rem; }
+  .salt-deskbar__live { margin-left: -6px; padding-left: 12px; }
+}
 .salt-deskbar .salt-orb { box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .salt-deskbar { background: var(--salt-deskbar-solid); } }
-@media (prefers-reduced-transparency: reduce) { .salt-deskbar { background: var(--salt-deskbar-solid); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 .salt-version {
   font-family: var(--salt-font-mono);
   font-size: var(--salt-text-xs);
@@ -4720,7 +4859,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
    bar and the slivers outside its top corners are covered, up to a 96px inset. A shadow is not layout: the
    first cut was a pseudo-element reaching into the gutter, and it made the phone's page 2px wide. */
 body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 var(--salt-obsidian),0 -72px 0 0 var(--salt-obsidian),
-  0 -96px 0 0 var(--salt-obsidian),var(--salt-shadow-desk),inset 0 1px 0 var(--salt-highlight);}
+  0 -96px 0 0 var(--salt-obsidian),var(--salt-shadow-desk);}   /* crisp since 21 Oct 2026: no inner glow */
 .dhbrand .mark{width:30px;height:30px;flex:0 0 auto;display:block;}
 .dhtext{display:flex;flex-direction:column;gap:6px;min-width:0;overflow:hidden;}
 .deskbar .meta{display:block;margin:0;min-width:0;}
@@ -4732,11 +4871,13 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .dhclock{font-variant-numeric:tabular-nums;}
 .deskbar .dbtools{order:2;}
 /* the version is the system's .salt-version, bare (22 Sep 2026) */
-.deskbar>#provBar{order:3;flex:1 0 100%;}
+.deskbar>#provBar{order:5;flex:1 0 100%;}   /* under what is live, which takes a row of its own under 860px */
 .deskbar>#provBar:empty{display:none;}
 .deskbar .provbar{margin-top:0;}
 /* the phone's menu opens under the bar rather than over it */
-@media(max-width:860px) and (pointer:coarse){.rail{top:calc(var(--safetop) + var(--dbtop) + 72px);}}
+@media(max-width:860px) and (pointer:coarse){.rail{top:calc(var(--safetop) + var(--dbtop) + var(--dbh,72px) + 8px);}}
+/* 21 Oct 2026: under 1440px the bar keeps what is live on its row by dropping the as-at date and, while live, the status word, as the phone always has; the dot and the clock stay */
+@media(max-width:1440px){.dhasat,.dhrole.live .dhword{display:none;}.dhclock::before{content:none;}}
 @media(max-width:560px){
   .deskbar{padding:7px 6px 7px 12px;gap:8px;}
   .dhbrand{gap:10px;}
@@ -4882,6 +5023,9 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
   <main class="main">
     <div class="deskbar salt-deskbar" id="deskbar">
       <div class="dhbrand salt-deskbar__brand"><svg class="mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Salt crystal"><defs><linearGradient id="saltCrystalBar" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c5a059"/><stop offset="100%" stop-color="#b87333"/></linearGradient></defs><polygon points="50,5 95,28 95,72 50,95 5,72 5,28" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,5 50,50 95,28" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,50 5,28" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,50 50,95" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polygon points="50,28 72,39 50,50 28,39" fill="url(#saltCrystalBar)" opacity="0.85"/></svg><div class="dhtext"><div class="dhname salt-deskbar__name">Salt Command</div><div class="meta" id="meta"></div></div></div>
+      <!-- 21 Oct 2026, his word: the bar says where you are and what is live, on every view (deskWhereDraw, deskLiveDraw) -->
+      <div class="dhlive salt-deskbar__live"><div class="dhwhere salt-deskbar__where" id="deskWhere" aria-live="polite"><span class="salt-deskbar__view" id="dwView">Today</span><span class="salt-deskbar__page" id="dwPage"></span></div>
+        <div class="dhchips salt-deskbar__chips" id="deskLive" role="group" aria-label="Live"></div></div>
       <div class="dbtools salt-deskbar__tools"><span class="salt-version" id="verChip"></span><span id="revealCtrl"></span>
         <button class="fabtn navbtn salt-orb salt-orb--raised" id="navbtn" type="button" aria-controls="tabs" aria-expanded="false"
           aria-label="Sections"><span class="nbars"><span class="nb1"></span><span class="nb2"></span><span class="nb3"></span></span></button></div>
@@ -10628,7 +10772,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1198","d":"21 Oct 2026","t":"THEIR % RUNS FROM -30% TO +30% ON THE SET PRICE","n":["<b>HIS DECISION OF 21 OCT 2026, SALT ONLY.</b> A customer's % now runs from -30% to +30% of the Set Price (it was 0% to 200%). A negative % is a discount: their price comes down from the Set Price, never under the Floor and never over the Ceiling, the same walk at every size, so a discount reaches the Floor at the large sizes first. At RM 58 a unit, -30% quotes RM 80 at 1 unit against the Set Price RM 120 and the Floor RM 60. Everyone still starts at 0%, and nobody holds a % today.","<b>ADD ID'S PICKS GO BOTH WAYS.</b> The starting % offers -30%, -20%, -15%, -10%, -5%, Set Price, +5%, +10%, +15%, +20% and +30%, or another figure from -0.3 to 0.3. Salt Admin's Their % form takes the same range, and both fields now show a minus key on an iPhone. A refusal reads \"not a % from -30 to +30\", and a negative figure is said as \"10% off\".","<b>A GOOD RECORD SUGGESTS A DISCOUNT.</b> His answer of 21 Oct 2026: the suggestion now takes 30% times the record's good score (paid on time, how often, how much, how many orders) off what they paid over the Set Price, only with nothing late, overdue or written off; to the nearest 5%, held -30% to +30%, and nought under three settled rows. Its reason reads \"good record\". It still only suggests: his tap sets it, through Approve.","<b>WHAT IT LEAVES ALONE.</b> NRV stays the Set Price, a stranger's quote; the Floor, the Ceiling, the partner's Floor and the fixed boards of oil, candy and rice are unchanged, and the loyalty unit still counts units bought at or above their own price."]}];
+const evolution=[{"v":"v1199","d":"21 Oct 2026","t":"THE DESK BAR, CRISP AND COMPLETE ON EVERY VIEW","n":["<b>HIS WORD OF 21 OCT 2026.</b> The bar beside the rail is sharp and complete, and stays on every view: it is solid now, with a hairline edge and nothing blurred (the design system's 1.12.0).","<b>Where you are</b> sits beside the name: the destination, and the page under it in brass, following every tap.","<b>What is live</b> follows: every book's Now, what waits on you and this device's alerts, each a chip that goes where its figure is; and <b>Approve</b>, its badge the rows waiting, which opens Salt Admin's Approve through the desk's own /admin, so the site's address is never in this page.","On a phone what is live takes a row of its own that slides sideways, Approve held at its right edge; under 1440px the quiet line drops the as-at date and, while live, its word, keeping the dot, the clock and the stamp."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -10776,7 +10920,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='21 Oct 2026, 13:17 KL';
+const LAST_UPDATED='21 Oct 2026, 14:22 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -19763,14 +19907,14 @@ function ordKeyToSw(k){return new Promise(res=>{let r;try{r=indexedDB.open('salt
   r.onsuccess=()=>{try{const tx=r.result.transaction('kv','readwrite');tx.objectStore('kv').put(k,'writeKey');tx.oncomplete=()=>res(true);tx.onerror=()=>res(false);}catch(e){res(false);}};});}
 async function ordAlertDraw(note){
   const box=document.getElementById('ordAlert');if(!box)return;box.dataset.drawn='1';
-  const say=(t,btns)=>{box.innerHTML='<span>'+t+(note?' '+note:'')+'</span>'+(btns||'');
+  const say=(t,btns,st)=>{box.dataset.state=st||'';try{deskLiveDraw();}catch(e){}box.innerHTML='<span>'+t+(note?' '+note:'')+'</span>'+(btns||'');
     box.querySelectorAll('button[data-alert]').forEach(b=>{b.onclick=()=>ordAlertAct(b.dataset.alert);});};
   if(!('serviceWorker' in navigator)||!('PushManager' in window)||typeof Notification==='undefined')
     return say('This browser cannot take alerts. On an iPhone, open the desk from the Home Screen: Share, then Add to Home Screen.');
   if(Notification.permission==='denied')return say('Alerts are blocked for this site in the browser settings.');
   let sub=null;try{sub=await (await navigator.serviceWorker.ready).pushManager.getSubscription();}catch(e){}
-  if(sub){ordKeyToSw(saltWriteKey());ordTopicsSync(sub);return say('<b>Alerts on</b> for this device: a customer\'s order, a row waiting for your approval, and the morning round.','<button type="button" class="salt-ghost" data-alert="test">Send a test</button><button type="button" class="salt-ghost" data-alert="off">Turn off</button>');}
-  say('Alerts are off on this device.','<button type="button" class="salt-ghost" data-alert="on">Alert me</button>');
+  if(sub){ordKeyToSw(saltWriteKey());ordTopicsSync(sub);return say('<b>Alerts on</b> for this device: a customer\'s order, a row waiting for your approval, and the morning round.','<button type="button" class="salt-ghost" data-alert="test">Send a test</button><button type="button" class="salt-ghost" data-alert="off">Turn off</button>','on');}
+  say('Alerts are off on this device.','<button type="button" class="salt-ghost" data-alert="on">Alert me</button>','off');
 }
 /* v759: the one-a-load upgrade. It is fire and forget: a subscription that is already wide enough is
    written back identical, and a failure changes nothing that was not already true. */
@@ -20007,7 +20151,7 @@ function thrItem(t){return Object.assign({},t,{id:'t:'+t.u,kind:'thread'});}
 /* the banner opens desk#orders/newest (public/sw.js); the orders are Salt Admin's, so it lands on the desk's Money */
 function ordWakeAddr(h){return h==='orders/newest'?'orders':h;}
 /* the rail's Today count includes what is waiting on the site, so it is recounted when THAT changes, not on every read */
-function waitRecount(){warmSoon();const n=ordActs().map(a=>a.kind+':'+(a.o&&a.o.id)).join(',');if(n!==ordWaitWas){ordWaitWas=n;try{navCounts();}catch(e){}}}
+function waitRecount(){warmSoon();const n=ordActs().map(a=>a.kind+':'+(a.o&&a.o.id)).join(',');if(n!==ordWaitWas){ordWaitWas=n;try{navCounts();}catch(e){}}try{deskLiveDraw();}catch(e){}}
 /* ====== WHAT AN Add ID TAP WILL ACTUALLY DO (v570) ======================================
    THREE PLACES ON THIS PAGE ASK and they must not answer differently: the preview, which
    decides whether Record is even enabled; the Record handler, which refuses on its own line;
@@ -22236,13 +22380,44 @@ function navCounts(){
      The badge is the NOW list the page shows, which already carries every breach. One predicate,
      the page's own, so the number on the rail is the number of things a visit finds. */
   put('today',rc.today);   /* v794: every book's Now, as Today lists them; fold 5: kept against every input (railCounts) */
+  try{deskLiveDraw();}catch(e){}
 }
 const VIEW_PART={};   /* v343: the part each view is showing; its lead until a part is chosen */
 function partOf(view){const V=VIEWS.find(v=>v.id===view);if(!V)return 'today';
   const p=VIEW_PART[view];return (p&&[V.lead].concat(V.parts).includes(p))?p:V.lead;}
 /* the rail lists the active view's parts beneath it, built from VIEWS so the rail and the strip
    cannot disagree; hidden on a narrow screen, where the strip does the job */
+/* 21 OCT 2026, HIS WORD: THE BAR IS COMPLETE. Where you are (the destination, the page under it) and what is live: every book's
+   Now, what waits on you, the rows to approve, which open Salt Admin's Approve through the Worker's /admin (its address is never in
+   this page), and this device's alerts. Each chip goes where its figure is; the bar persists over every view. */
+function deskWhereDraw(){
+  const V=VIEWS.find(v=>v.id===curTab)||VIEWS[0],p=partOf(V.id),a=document.getElementById('dwView'),b=document.getElementById('dwPage');
+  if(a)a.textContent=V.name;if(b)b.textContent=V.parts.length?(TAB_LABEL[p]||p):'';
+}
+function deskLiveDraw(){
+  const box=document.getElementById('deskLive');if(!box)return;
+  const cloud=cloudMode(),rc=railCounts(),wait=cloud?ordActs().length:0,rows=cloud?AP_DRAFTS.length:0;
+  const al=(document.getElementById('ordAlert')||{dataset:{}}).dataset.state||'';
+  const chip=(k,tone,label,n,title)=>'<button type="button" class="dlchip salt-deskbar__chip salt-deskbar__chip--'+tone+(n?'':' is-zero')
+    +'" data-dl="'+k+'" title="'+esc(title)+'">'+label+(n===null?'':' <span class="salt-deskbar__n">'+n+'</span>')+'</button>';
+  let h=chip('now','now','Now',rc.today||0,'Every book\'s Now, on To do');
+  if(cloud){
+    h+=chip('wait','wait','Waiting',wait,'Waiting on you, on To do');
+    if(al)h+=chip('alerts',al==='on'?'on':'off',al==='on'?'Alerts on':'Alerts off',null,'This device\'s alerts, in the rail');
+    h+='<a class="dlact salt-deskbar__act'+(rows?'':' is-zero')+'" href="admin" target="_blank" rel="noopener" title="Approve, on Salt Admin">Approve<span class="salt-deskbar__badge">'+rows+'</span></a>';
+  }
+  if(box.innerHTML!==h){box.innerHTML=h;
+    box.querySelectorAll('[data-dl]').forEach(b=>{b.onclick=()=>{const k=b.dataset.dl;
+      if(k==='alerts'){const nb=document.getElementById('navbtn');if(nb&&getComputedStyle(nb).display!=='none'&&!document.body.classList.contains('navopen'))nb.click();
+        const t=document.getElementById('ordAlert');if(t){t.scrollIntoView({block:'nearest'});const f=t.querySelector('button');if(f)f.focus();}}
+      else switchTab('today');};});}
+  deskBarHeight();
+}
+/* the phone's menu opens under the bar, which is taller when what is live has a row of its own */
+function deskBarHeight(){const b=document.getElementById('deskbar');if(b)document.documentElement.style.setProperty('--dbh',b.offsetHeight+'px');}
+try{window.addEventListener('resize',()=>{try{deskBarHeight();}catch(e){}});}catch(e){}
 function railSubs(){
+  try{deskWhereDraw();}catch(e){}
   VIEWS.forEach(V=>{const t=document.querySelector('.rail .tab[data-s="'+V.id+'"]');if(!t)return;
     let d=t.nextElementSibling;
     /* v622: a destination with one page lists nothing under itself, which would be the second level

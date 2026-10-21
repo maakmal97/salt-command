@@ -48575,6 +48575,11 @@ await (async () => {
   await (await import("./counter-clock.mjs")).run({ ok });
 })();
 
+section("21 Oct 2026: the Desk's bar says where you are and what is live, on every view");
+await (async () => {
+  await (await import("./desk-bar-live.mjs")).run({ ok });
+})();
+
 section("19 Oct 2026: Salt Admin's bar says Live or Offline and Open or Closed");
 await (async () => {
   await (await import("./admin-bar-status.mjs")).run({ ok });
