@@ -260,13 +260,13 @@
  {
   "name": "the maker input's drafter pass tells nobody",
   "file": "src/worker.js",
-  "find": "    await draftedTold(env, undefined, await runDrafter(env, { mirror }));\n    const draft = await",
+  "find": "    await draftedTold(env, ctx, await runDrafter(env, { mirror }));\n    const draft = await",
   "replace": "    await runDrafter(env, { mirror });\n    const draft = await"
  },
  {
   "name": "the maker's immutable input drafter pass tells nobody",
   "file": "src/worker.js",
-  "find": "      await draftedTold(env, undefined, await runDrafter(env, { mirror }));\n      const drafts = [];",
+  "find": "      await draftedTold(env, ctx, await runDrafter(env, { mirror }));\n      const drafts = [];",
   "replace": "      await runDrafter(env, { mirror });\n      const drafts = [];"
  },
  {

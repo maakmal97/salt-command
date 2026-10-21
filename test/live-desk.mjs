@@ -23,7 +23,7 @@ import { installSockets, clockOf } from "./live-fakes.mjs";
 
 const REPO = join(import.meta.dirname, "..");
 const HERE = "https://desk.fixture.test";
-const REV1 = "0123456789abcdef", REV2 = "fedcba9876543210";
+const REV1 = "0a1b2c3d4e5f6a7b", REV2 = "f7e6d5c4b3a2f1e0";
 const idOf = (name) => ({ name, equals: (o) => !!o && o.name === name });
 
 /* the Book's namespace: one object a name, made on first ask, each with the 101 seam and its sockets recorded */
