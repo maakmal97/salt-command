@@ -60,13 +60,21 @@
  * and it writes nothing itself: a record KV holds behind the book is named for the write behind. While the
  * book is moving in the check stands down, because KV is then the old code's and the end pass still to read.
  *
+ * THE LIVE SOCKETS (Speed Wave 2 L2, 21 Oct 2026). An open page holds a WebSocket to this object (the hibernation API: the object sleeps
+ * between messages and the platform keeps the sockets), and every move it commits tells the sockets of the account it touched, and the
+ * owner's, WHAT KIND of thing moved and its id, never a figure, a name or a word: the page then reads what it always read. The poll
+ * stays as the net, at a minute. PROOF IS AT THE HANDSHAKE: the Worker has already read the session behind the page's subprotocol and
+ * forwards `u`, so this object accepts proved sockets only and never reads KV for one. A socket past its session's life is closed at the
+ * next tell, a Log out or Sign out everywhere closes every socket of the account (`unlive`), and a message from a socket only asks:
+ * nothing it sends reaches run, append or moveIn, and the third message that is not the ping closes it.
+ *
  * A PLAIN CLASS WITH fetch(), not an RPC class: that would extend `cloudflare:workers`, which is not a
  * sibling file, and nothing under stmt/ imports anything else (the suite checks). It is also what lets the
  * suite drive it in Node, over node:sqlite, whose statements run synchronously exactly as the object's do.
  */
 import { BOOK_NAME, OPEN_STATES, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, FROZEN, ROAD_KEY, decidePlace, decideReplace, decideCustomer, decideDesk,
   applyEvent, marksOf, wakes, isClaimId, decideAccountClaim, decideClaimDesk, rateAskable, THREAD_ID, isThreadId, decideThread, RID_RE,
-  isPoolId, decidePoolOpen, decidePoolJoin, decidePoolClose, joinLive, poolUnits, POOL_SHOWN_DAYS, claimWaits, isAdvance, graceOver } from "./orders.js";
+  isPoolId, decidePoolOpen, decidePoolJoin, decidePoolClose, joinLive, poolUnits, POOL_SHOWN_DAYS, claimWaits, isAdvance, graceOver, SESSION_TTL } from "./orders.js";
 import { TEST_USERS, TEST_FRESH } from "./testusers.js";
 
 export { BOOK_NAME };
@@ -88,6 +96,9 @@ const ROAD_YOUNG_MS = 15 * 60000;
 const ROAD_OLD_MS = 15 * 60000;
 /* a write behind waits past KV's one write a second per key */
 export const BEHIND_MS = 1100;
+/* the live sockets' caps, and the strikes a socket has before it is closed (Speed Wave 2 L2): 400 in all, 8 an account (the oldest closed
+   for a ninth), 4 for the owner, and three messages that are not the ping */
+export const LIVE_MAX = 400, LIVE_PER_USER = 8, LIVE_OWNER_MAX = 4, LIVE_STRIKES = 3;
 /* a KV record as this book would write it, or null */
 const norm = (raw) => { try { const o = JSON.parse(raw); return o && typeof o === "object" ? JSON.stringify(o) : null; } catch (e) { return null; } };
 /* what writes: refused while the book is moving in. Not "drop": his test account unmade is gone from KV first,
@@ -114,19 +125,110 @@ export class OrderBook {
     sql.exec("CREATE TABLE IF NOT EXISTS pool (u TEXT NOT NULL, oid TEXT NOT NULL, at TEXT NOT NULL, doc TEXT NOT NULL, PRIMARY KEY (u, oid))");
     sql.exec("CREATE TABLE IF NOT EXISTS fixture_thread(u TEXT PRIMARY KEY, generation TEXT NOT NULL, doc TEXT NOT NULL, receipts TEXT NOT NULL)");
     sql.exec("CREATE TABLE IF NOT EXISTS fixture_account (u TEXT PRIMARY KEY, generation TEXT NOT NULL, doc TEXT NOT NULL, receipts TEXT NOT NULL)");
+    /* the page's ping is answered by the platform without waking this object; Node has neither name, so each is looked for first */
+    if (typeof state.setWebSocketAutoResponse === "function" && typeof WebSocketRequestResponsePair === "function")
+      state.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
   }
 
   async fetch(request) {
-    const op = new URL(request.url).pathname.slice(1);
+    const url = new URL(request.url), op = url.pathname.slice(1);
+    /* a socket is taken before the body is read and before any move-in: it holds no move and waits on none */
+    if (op === "live") return this.live(request, url);
     let a = null;
     try { a = await request.json(); } catch (e) { a = null; }
-    if (op !== "drop" && op !== "fixture-thread" && op !== "fixture-account" && op !== "fixture-reset") await this.moveIn(true);
+    if (op !== "drop" && op !== "unlive" && op !== "fixture-thread" && op !== "fixture-account" && op !== "fixture-reset") await this.moveIn(true);
     if (op === "check") return Response.json(await this.check());
     if (op === "compare") return Response.json(await this.compare());
     const out = this.run(op, a && typeof a === "object" ? a : {});
+    this.tell(op, a && typeof a === "object" ? a : {}, out);
     if (op !== "fixture-account" && op !== "fixture-reset" && out.ok && out.order && !out.again && !out.none && !isPoolId(out.order.id) && this.writesKv()) await this.arm();
     return Response.json(out);
   }
+  /* ---- the live sockets (Speed Wave 2 L2, 21 Oct 2026) ---- */
+  /* the 101 answer, as one seam: Node's Response refuses that status, so the suite replaces this one method. `echo` answers the
+     subprotocol the customer's page offered; a browser fails the handshake when none is echoed */
+  upgraded(client, echo) {
+    return new Response(null, { status: 101, webSocket: client, headers: echo ? { "Sec-WebSocket-Protocol": "stmt" } : {} });
+  }
+  socks(tag) { return typeof this.state.getWebSockets === "function" ? this.state.getWebSockets(tag) : []; }
+  att(ws) { try { return ws.deserializeAttachment() || null; } catch (e) { return null; } }
+  shut(ws, code, why) { try { ws.close(code, why); } catch (e) { /* already closed */ } }
+  /* The Worker has proved the session at the handshake and names `u` here (as=c); the owner's is `as=owner`, past Access. Nothing in a
+     customer's address reaches `as`: the Worker builds this address itself. */
+  live(request, url) {
+    if (String(request.headers.get("Upgrade") || "").toLowerCase() !== "websocket") return new Response("Expected a WebSocket upgrade.", { status: 426 });
+    if (typeof this.state.acceptWebSocket !== "function" || typeof WebSocketPair !== "function") return new Response("No sockets here.", { status: 501 });
+    const as = url.searchParams.get("as") === "owner" ? "owner" : "c", u = String(url.searchParams.get("u") || "");
+    if (as === "c" && !u) return new Response("A socket names its account.", { status: 400 });
+    if (this.socks().length >= LIVE_MAX) return new Response("Too many open pages.", { status: 503 });
+    const born = Date.now(), cap = as === "owner" ? LIVE_OWNER_MAX : LIVE_PER_USER;
+    const mine = this.socks(as).map((ws) => ({ ws, att: this.att(ws) })).filter((x) => x.att && (as === "owner" || x.att.u === u)).sort((x, y) => x.att.born - y.att.born);
+    for (let i = 0; i <= mine.length - cap; i++) this.shut(mine[i].ws, 1008, "replaced by a newer page");
+    const [client, server] = Object.values(new WebSocketPair());
+    this.state.acceptWebSocket(server, [as]);
+    server.serializeAttachment(as === "owner" ? { r: "owner", born } : { r: "c", u, born, exp: born + SESSION_TTL * 1000 });
+    server.send(JSON.stringify({ k: "hello" }));
+    return this.upgraded(client, as === "c");
+  }
+  /* A SOCKET ONLY ASKS. The ping is answered by the platform; any other message is a strike, and the third closes the socket. Nothing
+     here reaches run, append or moveIn, and nothing is read from KV. */
+  webSocketMessage(ws, message) {
+    if (message === "ping") { try { ws.send("pong"); } catch (e) { /* closing */ } return; }
+    const att = this.att(ws);
+    if (!att) { this.shut(ws, 1008, "unknown socket"); return; }
+    att.strikes = (att.strikes || 0) + 1;
+    if (att.strikes >= LIVE_STRIKES) { this.shut(ws, 1008, "this socket only listens"); return; }
+    try { ws.serializeAttachment(att); } catch (e) { /* closing */ }
+  }
+  webSocketClose(ws, code) { this.shut(ws, code && code !== 1005 && code !== 1006 ? code : 1000, "closed"); }
+  webSocketError(ws) { this.shut(ws, 1011, "error"); }
+  /* what a committed move tells, KINDS AND IDS ONLY (amendment A5: by the answer's own account where it carries one, else the request's).
+     Sent in the request that wrote it, after the transaction, one try a socket. A retry (`again`) and a move that changed nothing (`none`)
+     tell nothing; a socket past its session's life is closed here instead of sent to. */
+  tell(op, a, out) {
+    try {
+      if (!out || !out.ok || out.again || out.none) return;
+      const idOf = (o) => (o && typeof o.id === "string" ? o.id : undefined), accountOf = (o) => (o && typeof o.u === "string" && o.u ? o.u : String(a.u || ""));
+      let k, id, u = "", all = false, pool = null;
+      if (op === "place" || op === "replace" || op === "customer" || op === "desk" || op === "rateask") { if (!out.order) return; k = "order"; id = idOf(out.order); u = accountOf(out.order); }
+      else if (op === "pjoin") { k = "order"; id = idOf(out.order); u = accountOf(out.order); pool = idOf(out.pool); }
+      else if (op === "aclaim" || op === "adesk") { if (!out.order) return; k = "claim"; id = idOf(out.order); u = accountOf(out.order); }
+      else if (op === "tsay" || op === "tdesk") { k = "thread"; u = String(a.u || ""); }
+      else if (op === "popen" || op === "pclose") { if (!out.order) return; k = "pool"; id = idOf(out.order); all = true; }
+      else if (op === "fixture-account") {
+        if (!["customer", "desk", "order", "replace", "deskorder", "pjoin", "place"].includes(a.actor)) return;
+        k = a.actor === "customer" || a.actor === "desk" ? "claim" : "order"; u = String(a.u || "");
+      }
+      else if (op === "fixture-thread") { if (a.actor !== "customer" && a.actor !== "desk") return; k = "thread"; u = String(a.u || ""); }
+      else return;
+      const now = Date.now(), body = (x) => JSON.stringify(Object.assign({ k: x.k }, x.id ? { id: x.id } : {}));
+      const mine = body({ k, id }), poolMsg = pool ? body({ k: "pool", id: pool }) : null;
+      for (const ws of this.socks("c")) {
+        const att = this.att(ws);
+        if (!att) continue;
+        if (att.exp <= now) { this.shut(ws, 1008, "session ended"); continue; }
+        try {
+          if (all || att.u === u) ws.send(mine);
+          if (poolMsg) ws.send(poolMsg);
+        } catch (e) { /* a socket closing */ }
+      }
+      for (const ws of this.socks("owner")) {
+        try {
+          ws.send(JSON.stringify(Object.assign({ k, u }, id ? { id } : {})));
+          if (pool) ws.send(JSON.stringify({ k: "pool", u, id: pool }));
+        } catch (e) { /* a socket closing */ }
+      }
+    } catch (e) { console.log("orderbook: a tell failed: " + String((e && e.message) || e)); }
+  }
+  /* A Log out or a Sign out everywhere: every socket of the account closes, and a live device reconnects with the session it holds now */
+  unlive(a) {
+    const u = String(a.u || "");
+    if (!u) return { ok: false, error: "name the account", status: 400 };
+    let n = 0;
+    for (const ws of this.socks("c")) { const att = this.att(ws); if (att && att.u === u) { this.shut(ws, 1008, "signed out"); n++; } }
+    return { ok: true, closed: n };
+  }
+
   /* the end of the minute, with or without a request to notice it; once moved in, the writes behind */
   async alarm() {
     await this.moveIn(false);
@@ -340,6 +442,7 @@ export class OrderBook {
   /* every answer is { ok, ... } or { ok: false, error, status }, and nothing here awaits */
   run(op, a) {
     const at = new Date().toISOString();
+    if (op === "unlive") return this.unlive(a);
     if (op === "fixture-account") {
       if (!TEST_USERS.includes(a.u) || typeof a.generation !== "string"
         || a.generation.length > 1024 || !["read", "customer", "desk", "receipt", "orderreceipt", "order", "replace", "deskorder", "pjoin", "place"].includes(a.actor))
