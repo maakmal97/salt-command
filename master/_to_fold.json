@@ -1,0 +1,99 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-10-22T00:40:20.562Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "qty": 10,
+    "total": 130,
+    "cash": 0,
+    "date": "2026-10-22",
+    "customer": "CS6-PER",
+    "product": "oil"
+   },
+   "reasoning": "Cancellation against CS6-PER's order of 10 unit for RM 130 agreed 2026-10-22. The order is withdrawn and counts nowhere. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [],
+   "amends": "s281",
+   "amendKind": "Cancellation",
+   "entry": {
+    "at": "2026-10-22T00:40:20.562Z",
+    "type": "SELL",
+    "party": "CS6-PER",
+    "qty": 0,
+    "total": 0,
+    "status": "Cancellation",
+    "raw": "Cancellation on CS6-PER, order 20261021142102-mp3e2g, recorded 2026-10-22",
+    "payload": {
+     "mode": "amend",
+     "kind": "Cancellation",
+     "direction": "SELL",
+     "party": "CS6-PER",
+     "rid": null,
+     "orderKey": "CS6-PER|2026-10-22|130|oil",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-22",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "note": "Withdrawn on the statements site by the desk, order 20261021142102-mp3e2g."
+    },
+    "orderId": "20261021142102-mp3e2g"
+   },
+   "decidedAt": "2026-10-22T00:42:28.281Z",
+   "decidedBy": "Counter Admin"
+  },
+  {
+   "id": "2026-10-22T00:41:56.524Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "qty": 1,
+    "total": 120,
+    "cash": 0,
+    "date": "2026-10-22",
+    "customer": "CS6-PER"
+   },
+   "reasoning": "Cancellation against CS6-PER's order of 1 unit for RM 120 agreed 2026-10-22. The order is withdrawn and counts nowhere. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [],
+   "amends": "s280",
+   "amendKind": "Cancellation",
+   "entry": {
+    "at": "2026-10-22T00:41:56.524Z",
+    "type": "SELL",
+    "party": "CS6-PER",
+    "qty": 0,
+    "total": 0,
+    "status": "Cancellation",
+    "raw": "Cancellation on CS6-PER, order 20261021142101-hli47a, recorded 2026-10-22",
+    "payload": {
+     "mode": "amend",
+     "kind": "Cancellation",
+     "direction": "SELL",
+     "party": "CS6-PER",
+     "rid": null,
+     "orderKey": "CS6-PER|2026-10-22|120",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-22",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "note": "Withdrawn on the statements site by the desk, order 20261021142101-hli47a."
+    },
+    "orderId": "20261021142101-hli47a"
+   },
+   "decidedAt": "2026-10-22T00:42:26.497Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
