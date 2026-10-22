@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1217",
+  "d": "23 Oct 2026",
+  "t": "PAYMENT OF RM200 FROM CZ5-TM ON S287, UNITS STILL TO COLLECT",
+  "n": [
+   "<b>ONE PAYMENT FOLDED:</b> CZ5-TM paid RM200 on 23 Oct by transfer via maybank against order s287 (2 units, RM200), preapproved by Counter Admin. The drafter flagged nothing. The row is not recomputed here, as the master applies fulfilment itself.",
+   "<b>INVENTORY UNCHANGED:</b> no units moved, so stock stays at 11 and the cost basis at RM56 a unit. The 2 units remain owed out to CZ5-TM until collected."
+  ]
+ },
+ {
   "v": "v1216",
   "d": "23 Oct 2026",
   "t": "CZ5-TM ORDER S287 CORRECTED TO 2 UNITS FOR RM200",
