@@ -54,6 +54,14 @@ export function world() {
 const button = (root, label) => [...root.querySelectorAll("button")].find((e) => e.textContent === label);
 const field = (root, label) => [...root.querySelectorAll("label")]
   .find((e) => e.firstChild.textContent === label)?.querySelector("input,select");
+/* 22 Oct 2026 (multi-tick Approve): a card's Approve chooses; the bar's Confirm asks on the sheet, and its go sends the batch */
+async function decide(doc, work, approve) {
+  approve.click(); await work.quiet();
+  const confirm = doc.querySelector('[data-act="approve.confirm"]');
+  if (confirm) { confirm.click(); await work.quiet(); }
+  const go = doc.getElementById("ynGo");
+  if (go) { go.click(); await work.quiet(); }
+}
 export async function ownerTrade(wd, pageWork, cover) {
   const sent = [];
   let work, loseAnswer = false, tick = Date.parse(AT);
@@ -234,7 +242,7 @@ export async function run({ ok, pageWork }) {
     const approve = button(dom.window.document, "Approve both");
     ok(approve && /Two books, one trip/.test(dom.window.document.body.textContent) && /one tap/.test(section.textContent),
       "multi-book owner review: the actual page labels the trip decision and shows the waiting siblings");
-    if (approve) { approve.click(); await work.quiet(); }
+    if (approve) await decide(dom.window.document, work, approve);
     ok(!!approve && deviceWorld.drafts().length === 2 && deviceWorld.drafts().every((r) => r.status === "approved"),
       "multi-book owner tap: the generated Approve trip button decides both actual drafts");
     button(section, "Remove")?.click();
@@ -264,7 +272,7 @@ export async function run({ ok, pageWork }) {
     await receiptPage.send();
     const original = receiptPage.sent.find((s) => s.path.endsWith("/sale"));
     const approve = button(receiptPage.dom.window.document, "Approve both");
-    if (approve) { approve.click(); await receiptPage.work.quiet(); }
+    if (approve) await decide(receiptPage.dom.window.document, receiptPage.work, approve);
     for (const [i, row] of foldRows(receiptWorld).items.entries())
       receiptWorld.sqlite.prepare("INSERT INTO entry(collection,seq,hash,doc) VALUES ('sales',?,?,?)")
         .run(i, "confirmed-" + i, JSON.stringify(row.row));
@@ -316,7 +324,7 @@ export async function run({ ok, pageWork }) {
         "multi-book attributed UI route: " + stream + " owner controls reach real bridge/Worker/native drafts " + String(buyer) +
           JSON.stringify({ request, rows: rows.map((r) => r.row), answer: page.section.textContent }));
       const approve = button(page.dom.window.document, "Approve both");
-      if (approve) { approve.click(); await page.work.quiet(); }
+      if (approve) await decide(page.dom.window.document, page.work, approve);
       const folded = foldRows(attributed), sales = folded.items.map((item) => item.row);
       ok(approve && attributed.drafts().every((r) => r.status === "approved")
         && folded.refused.length === 0 && sales.length === 2

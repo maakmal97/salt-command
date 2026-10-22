@@ -2587,8 +2587,11 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `alerts.off` | Shop, This device, Notifications, once on | Tells the site to stop ringing this phone (`POST /all/push/subscribe`'s counterpart, `/all/push/unsubscribe`) and drops the phone's own subscription. |
 | `alerts.on` | Shop, This device, Notifications | Asks the browser for notifications, registers Salt Admin's own worker (`/all/sw.js`, scope `/all`) and files the subscription at `opush:` through `/all/push/subscribe`. |
 | `approve.to-payment` | Desk row card of a customer's claim (key: the draft id) | Opens that claim's payment card on Orders > Payments; sends nothing. The row's own Approve stays shut. |
-| `draft.approve` | Desk row card (key: data-maker-card, draft:<id>) | Approves the row, or every row of the trip. |
-| `draft.reject` | Same card | Rejects it, or the trip. |
+| `draft.approve` | Desk row card (key: data-maker-card, draft:<id>) | Chooses Approve for the card (the row, or every row of the trip or order); a second tap lets it go. Nothing is sent until Confirm. |
+| `draft.reject` | Same card | Chooses Reject for the card; a second tap lets it go. |
+| `approve.all` | Head of Orders > Approve | Chooses Approve on every card that can go (not a refused one, never a claim). |
+| `approve.clear` | The bar under the cards | Lets every choice go and hides the bar. |
+| `approve.confirm` | The bar under the cards | Asks once on the sheet, listing every card to approve and to reject; its yes sends one decide-many. |
 | `ended.sign-in` | Shown when the Access session has ended | Loads /all again, which is the Access login. |
 | `hours.copy-apply` | The opened day's Copy to (key: the weekday) | Copies its hours to the days chosen. |
 | `hours.copy-day` | Copy to, a chip a day (key: the weekday) | Chooses or leaves that day; its group is chosen at first. |
@@ -2643,7 +2646,6 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `need.ask-yes` | The ask on a Needs you payment card | Sends the answer once; both buttons are off while it is out. |
 | `need.ask-no` | The ask on a Needs you payment card | Cancels the ask and sends nothing. |
 | `need.fold.practice` | The folded line at the foot of Needs you | Opens or shuts the practice accounts' cards in place. |
-| `need.approve-row` | Needs you card for a Desk row to approve | Approves that row, or the trip it rides, asking first and sending what Orders > Approve's Approve sends. |
 | `need.copy-link` | Same card, once the link is shown | Copies that link. |
 | `shop.help.pay` | Shop > Hours, Help (read only) | Opens or shuts the answer to Paying, as a customer reads it under Account. Reads and sends nothing. |
 | `shop.help.deliv` | Shop > Hours, Help (read only) | Opens or shuts the answer to Delivery, as a customer reads it under Account. Reads and sends nothing. |
@@ -2651,6 +2653,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `shop.help.change` | Shop > Hours, Help (read only) | Opens or shuts the answer to Changing an order, as a customer reads it under Account. Reads and sends nothing. |
 | `need.glance.ready` | The glance at the head of Needs you | Opens Orders at Ready: the orders ready with goods still to hand over, counted on the tile. Reads nothing of its own. |
 | `need.glance.owed` | The glance at the head of Needs you | Opens Orders. The tile sums what the agreed orders still owe, goods and delivery less what is paid. Reads nothing of its own. |
+| `need.glance.approve` | The glance at the head of Needs you | Opens Orders > Approve. The tile counts the cards waiting there (a trip or an order's moves one card). Reads nothing of its own. |
 | `need.jump` | Jump to, fixed beside the kinds' sliding row | Opens or shuts the menu of every kind with its count; Escape or a tap outside shuts it, the arrow keys move between its lines. |
 | `need.jump.all` | A line of the Jump to menu, beside the kinds | Shows every card again, as the All pill does. A kind with nothing waiting stands in mist and cannot be chosen. Reads nothing. |
 | `need.jump.orders` | A line of the Jump to menu, beside the kinds | Shows only the orders, as the Orders pill does. A kind with nothing waiting stands in mist and cannot be chosen. Reads nothing. |

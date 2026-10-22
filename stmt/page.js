@@ -960,7 +960,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm .nglance[hidden]{display:none}
 @media (min-width:1080px){.adm .nglance{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .adm .nglance .pwith{vertical-align:middle;margin:-6px 0 -6px 6px}
-/* 22 Oct 2026: the multi-tick Approve (canvas Salt Admin Approve): a card's choice lights its edge, Reject in ember; the bar sticks above the app bar */
+/* 22 Oct 2026: the multi-tick Approve: a card's choice lights its edge, Reject in ember; the bar sticks above the app bar */
 .adm .aphead{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .adm .aphead .salt-ghost,.adm .apticks button,.adm .apbar button,.adm .apmore{min-height:44px}
 .adm .apticks{display:flex;gap:8px}.adm .apticks button{flex:1 1 0;padding:0 12px}

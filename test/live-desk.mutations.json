@@ -224,7 +224,7 @@
  {
   "name": "a decided draft tells nobody",
   "file": "src/worker.js",
-  "find": "  await liveTell(env, ctx, \"drafts\");\n  let dropped = 0;",
+  "find": "  if (!hold) await liveTell(env, ctx, \"drafts\");\n  let dropped = 0;",
   "replace": "  let dropped = 0;"
  },
  {
