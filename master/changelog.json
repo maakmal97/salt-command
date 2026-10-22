@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1219",
+  "d": "23 Oct 2026",
+  "t": "ONE SALT SALE TO CE4-CHE, PAID AND COLLECTED",
+  "n": [
+   "<b>FOLDED: ONE NEW SALE.</b> A sale of 1.5 units of salt to CE4-CHE for RM230, paid in full and collected on 23 Oct, approved by Counter Admin. The drafter flagged the rate against the party's median, and the note answers it. Nothing else was in the batch, and no purchase landed.",
+   "<b>INVENTORY.</b> Salt falls by 1.5 units on the sale. The cost basis is unchanged at RM56 a unit, and the replacement cost stays at RM60 a unit."
+  ]
+ },
+ {
   "v": "v1218",
   "d": "23 Oct 2026",
   "t": "ONE CANCELLATION AND TWO FULFILMENTS SETTLE THE OPEN ORDERS",

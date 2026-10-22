@@ -1,6 +1,6 @@
 {
- "v": "v1218",
- "stamped": "23 Oct 2026, 00:48 KL",
+ "v": "v1219",
+ "stamped": "23 Oct 2026, 00:51 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 8.5,
+  "STATED_STOCK": 7,
   "COUNT_ON": {
    "salt": "2026-10-20",
    "oil": "2026-10-20",
@@ -8674,6 +8674,22 @@
      }
     ],
     "paidOn": "2026-10-23"
+   },
+   {
+    "customer": "CE4-CHE",
+    "qty": 1.5,
+    "total": 230,
+    "cost": 90,
+    "cash": 230,
+    "handover": "collected",
+    "date": "2026-10-23",
+    "deliveredQty": 1.5,
+    "deliveredOn": "2026-10-23",
+    "paidOn": "2026-10-23",
+    "listRM": 170,
+    "listQty": 1.5,
+    "note": "<b>NEW SALE: 1.5 UNITS OF SALT TO CE4-CHE FOR RM230, PAID AND COLLECTED ON 23 OCT.</b> RM230 cash in, 1.5 units handed over, no delivery charge, so nothing is outstanding. The rate is RM153.33 a unit. The goods total of RM230 is above the ask total of RM170 and the floor total of RM90; per unit it is above the ask of RM113.33 and the floor of RM60. The party's median is RM92 a unit, range RM6 to RM107.5, across 19 orders. Outstanding before was nil, no units on credit, nothing defaulted, and the credit cap given is 1. The row carries cost of RM90, costed at RM60 a unit off the latest purchase, which is the inventory's own rate. The drafter flagged the rate as 66.7% above the party's usual RM92; the figures confirm it is well above both the median and the ask. Still outstanding: nothing.",
+    "rid": "s288"
    }
   ],
   "contacts": [
@@ -9429,7 +9445,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-22T16:47:06.083Z",
+  "QUEUE_COMMITTED": "2026-10-22T16:50:34.737Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -9462,7 +9478,7 @@
     {
      "id": "cust:cadence:salt",
      "sev": "watch",
-     "title": "11 customers are past their own habit on salt"
+     "title": "10 customers are past their own habit on salt"
     },
     {
      "id": "cust:cadence:oil",
@@ -9497,7 +9513,7 @@
     {
      "id": "rhythm:restock:salt",
      "sev": "watch",
-     "title": "Buy about 8% less than the desk's rate implies"
+     "title": "Buy about 9% less than the desk's rate implies"
     },
     {
      "id": "promo:revive:salt",
@@ -9720,13 +9736,13 @@
     "CE4-CHE": {
      "salt": {
       "name": "consistent mid",
-      "orders": 13,
+      "orders": 14,
       "tenureDays": 95,
-      "sinceLastDays": 9,
-      "perMonth": 4.17,
-      "unitsPerMonth": 12.1,
+      "sinceLastDays": 0,
+      "perMonth": 4.49,
+      "unitsPerMonth": 12.58,
       "smallShare": 0,
-      "bigShare": 0.23,
+      "bigShare": 0.21,
       "frequent": true,
       "small": false,
       "bigger": false,
@@ -10751,15 +10767,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.29245283018867924
+         "v": 0.2897196261682243
         }
        },
        "attrib": 1,
        "shrinkRate": 0.09307503896682254,
        "avgDel": {
-        "n": 222,
-        "kg": 562.81,
-        "mean": 2.5352
+        "n": 223,
+        "kg": 564.31,
+        "mean": 2.5305
        }
       },
       "policy": {
@@ -16918,10 +16934,10 @@
      ]
     }
    },
-   "v": "v1218"
+   "v": "v1219"
   },
   "OPEN": {
-   "at": "2026-10-22T16:48:24.633Z",
+   "at": "2026-10-22T16:51:47.794Z",
    "count": 8,
    "byKey": {
     "CZ5-TM|2026-10-22|200": {
@@ -17059,11 +17075,11 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 8.5,
-     "free": 6.5,
+     "onHand": 7,
+     "free": 5,
      "owedOut": 2,
-     "coverDays": 2,
-     "rate": 4.04,
+     "coverDays": 1.3,
+     "rate": 4.11,
      "owedToYou": 315,
      "promised": 2,
      "short": 0
@@ -17109,7 +17125,7 @@
     "rice": "2026-10-20",
     "spare": null
    },
-   "v": "v1218"
+   "v": "v1219"
   },
   "TERMS": {
    "ceiling": 250,
@@ -17117,7 +17133,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1218"
+   "v": "v1219"
   },
   "REWARD": {
    "stated": {
@@ -17135,17 +17151,17 @@
      }
     }
    },
-   "v": "v1218"
+   "v": "v1219"
   },
   "STOCK": {
    "today": "2026-10-23",
    "books": {
     "salt": {
-     "shelf": 8.5,
-     "free": 6.5,
+     "shelf": 7,
+     "free": 5,
      "commit": 2,
      "light": "green",
-     "coverDays": 2,
+     "coverDays": 1.3,
      "transit": 0
     },
     "oil": {
@@ -17173,7 +17189,7 @@
      "transit": 0
     }
    },
-   "v": "v1218"
+   "v": "v1219"
   }
  }
 }
