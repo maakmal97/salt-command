@@ -361,6 +361,7 @@ export async function run({ ok, pageWork }) {
     byAct(d, "nav.orders").click(); await work.quiet();
     byAct(d, "part.orders.approve").click(); await work.quiet();
     byAct(d.querySelector('#makerDrafts [data-maker-card="draft:d-2"]'), "draft.approve").click(); await work.quiet();
+    byAct(d, "approve.confirm").click(); await work.quiet();
     const sheet = [...d.querySelectorAll(".salt-sheet .mtile")].map((t) => [t.querySelector(".mq")?.textContent, (t.querySelector(".sr")?.textContent || "").split(" ")[0]]);
     ok(sheet.length === 2 && sheet.every((s) => s[0] === "1 unit" && SHAPES.includes(s[1])) && new Set(sheet.map((s) => s[1])).size === 2,
       "the sheet that asks on a trip draws each of its rows as a mark with 1 unit beneath, and a reader hears a different shape for each: " + JSON.stringify(sheet));
@@ -395,13 +396,13 @@ export async function run({ ok, pageWork }) {
     const shaped = seenWords.filter(([t, hidden]) => !hidden && SHAPE_WORD.test(t)).map(([t]) => t.slice(0, 80));
     ok(seenWords.length > 400 && named.length === 0,
       "no book is named anywhere on Salt Admin, drawn text, aria names and titles included (" + BOOK_NAMES.join(", ") + "): " + seenWords.length + " words read; " + JSON.stringify(named.slice(0, 5)));
-    /* the Sheets that ask restate a row with its book's tile, and they go when they are answered, so each is read while it is open: an order's Cancel and a trip's Approve */
+    /* the Sheets that ask restate a row with its book's tile, and they go when they are answered, so each is read while it is open: an order's Cancel and a trip's Confirm */
     const sheets = [];
     const asked = async (open, keep) => { open(); await all.work.quiet(); const sh = all.d.getElementById("ynSheet"); sheets.push([sh.querySelectorAll(".mtile").length, drawnWords(sh)]); byAct(all.d, keep).click(); await all.work.quiet(); };
     byAct(all.d, "nav.orders").click(); await all.work.quiet();
     await asked(() => byAct(cardOf(all.d, "ord-r1"), "order.cancel").click(), "order.ask-keep");
     byAct(all.d, "nav.orders").click(); byAct(all.d, "part.orders.approve").click(); await all.work.quiet();
-    await asked(() => byAct(all.d.querySelector('#makerDrafts [data-maker-card="draft:d-2"]'), "draft.approve").click(), "ask.keep");
+    await asked(() => { byAct(all.d.querySelector('#makerDrafts [data-maker-card="draft:d-2"]'), "draft.approve").click(); byAct(all.d, "approve.confirm").click(); }, "ask.keep");
     ok(sheets.length === 2 && sheets.every(([tiles, said]) => tiles >= 1 && said.length > 3 && !said.some(([t]) => BOOK_NAMED.test(t))) && !sheets.flatMap(([, said]) => said).some(([t, hidden]) => !hidden && SHAPE_WORD.test(t)),
       "the Sheets that ask draw a tile for the order or the rows they restate, and name no book and draw no shape word while they are open: " + JSON.stringify(sheets.map(([tiles, said]) => [tiles, said.length])));
     const noBook = all.w.__owner("noBook");

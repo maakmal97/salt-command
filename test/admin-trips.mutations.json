@@ -298,5 +298,17 @@
   "file": "src/worker.js",
   "find": "    body.roadFactor = PRICING_RULES.RULES.delivery.roadFactor;",
   "replace": ""
+ },
+ {
+  "name": "Confirm sends only the lead of a card",
+  "file": "stmt/owner.js",
+  "find": "gs.map(function(g){ return g.drafts.map(function(d){ return d.id; }); })); };",
+  "replace": "gs.map(function(g){ return [g.lead.id]; })); };"
+ },
+ {
+  "name": "a chosen Approve is not marked pressed",
+  "file": "stmt/owner.js",
+  "find": "approve.setAttribute('aria-pressed',String(pick==='a'));",
+  "replace": "approve.setAttribute('aria-pressed','false');"
  }
 ]

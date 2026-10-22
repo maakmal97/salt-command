@@ -113,7 +113,7 @@ export const OWNER_JS = `
     var parts=PARTS[place]||[];
     if(!parts.length) part=''; else if(parts.indexOf(part)<0) part=parts[0];
     var fresh=!!o.fresh||place!==placeNow, moved2=place!==placeNow||part!==partNow;
-    if(placeNow==='needs'&&place!=='needs'){ needSaid={}; jumpShut(false); }
+    if(placeNow==='needs'&&place!=='needs'){ jumpShut(false); }
     placeNow=place; partNow=part;
     /* Orders opens on the first stage that has something waiting, found when the read lands (drawMaker); a stage he chose is his */
     ordAuto=place==='orders'&&place!==prevPlace&&!asked;
@@ -5826,7 +5826,7 @@ export const OWNER_JS = `
   var SEVS=[['now','Now'],['soon','Soon'],['watch','Watch']], SEVC={now:'copper',soon:'brass',watch:'mist'}, NEED_MS=5000;   /* R4, his yes of 19 Oct 2026 (D12): was 30000; a tick that finds the same answer draws nothing */
   var NEED_SRC=[['sheet','accounts'],['links','links'],['review','orders and rows'],['claims','payments'],['threads','messages'],['hours','hours'],['notice','the notice'],['book','what is owed']];
   var nlist=document.getElementById('nlist'), nCount=document.getElementById('nCount'), linksRead=false, linksBusy=false;
-  var nFoldOpen={soon:true}, nKind='all', needSaid={}, nSrc={}, nSeen={}, needN=0, needsAt=0, needsReading=false, needsTimer=null, makerNotice=null, shopReading=false;
+  var nFoldOpen={soon:true}, nKind='all', nSrc={}, nSeen={}, needN=0, needsAt=0, needsReading=false, needsTimer=null, makerNotice=null, shopReading=false;
   /* each source says it was read, or why it was not, so a read that failed is never taken for an empty inbox */
   function nGot(name, err){ nSrc[name]=err?String(err.message||err):'ok'; if(!err) delete nSeen[name+'!']; }
   /* R4: a poll that fails again with the same words draws nothing; a new failure does, and a read that gets through forgets it (nGot) */

@@ -131,9 +131,11 @@ export async function run({ ok, pageWork }) {
       "a payment they say they sent, on an order (the sum, the oldest) or against the account, says Payment: " + JSON.stringify([pay, claim]));
     ok(msg.kind === "Message" && msg.who === "CX1-ZED" && msg.what === "Hello" && msg.age === "4 h" && lock.kind === "Locked" && /^Locked out until \d\d:\d\d$/.test(lock.what) && lock.age === "5 min",
       "a message asked carries their words, a locked account the addresses refused and its age: " + JSON.stringify([msg, lock]));
-    const row = p.words(p.card("d:" + ago(6))), link = p.words(p.card("l:w1"));
-    ok(row.kind === "Row" && row.who === "CX1-ZED" && row.what === "Sale, 1 unit, RM 100.00" && /^(Cube|Droplet|Lozenge|Capsule|Ring)$/.test(row.mark) && row.age === "6 h" && link.kind === "Link" && MADE_20H.test(link.what) && link.age === "20 h",
-      "a Desk row to approve is Soon, with its party, what and age, and so is a guest link: " + JSON.stringify([row, link]));
+    const link = p.words(p.card("l:w1"));
+    ok(link.kind === "Link" && MADE_20H.test(link.what) && link.age === "20 h", "a guest link is Soon, with its kind, when it was made and its age: " + JSON.stringify(link));
+    /* 22 Oct 2026 (multi-tick Approve, his answer "no overlaps"): a Desk row to approve is no card here; Orders > Approve decides it, and the glance counts it */
+    ok(p.cards().every((c) => !/^d:/.test(c.getAttribute("data-need"))) && !d.querySelector("#nlist [data-act='need.approve-row']"),
+      "a Desk row waiting to be approved is no card in Needs you, and has no Approve pill there");
     ok(p.card("x:0") && p.card("q:q-2") && p.card("q:q-1") === null && p.card("x:0").getAttribute("data-sev") === "soon" && /Refused for the fixture/.test(p.card("x:0").textContent)
       && p.card("q:q-2").getAttribute("data-kind") === "rows" && p.card("a:ord-a2") && p.card("a:ord-a2").getAttribute("data-sev") === "soon",
     "an entry that did not get through (the drafter's refusal, a refused server entry, not a held one) and a stage he rejected are Soon");
@@ -154,7 +156,7 @@ export async function run({ ok, pageWork }) {
     ok(order2.every((s, i) => i === 0 || sevOrder.indexOf(order2[i - 1]) <= sevOrder.indexOf(s)),
       "Now comes before Soon and Soon before Watch: " + JSON.stringify(order2));
     ok(same(p.keys("now"), NOW_KEYS), "within Now the oldest comes first: " + JSON.stringify(p.keys("now")));
-    ok(same(p.keys("soon"), ["$:CX1-ZED", "g:row-1", "s", UNSENT, "l:w1", "d:" + ago(6), "d:" + ago(3), "d:" + ago(0.5), "a:ord-a2", "a:ord-x1", "x:0", "q:q-2", "n:" + U2]),
+    ok(same(p.keys("soon"), ["$:CX1-ZED", "g:row-1", "s", UNSENT, "l:w1", "a:ord-a2", "a:ord-x1", "x:0", "q:q-2", "n:" + U2]),
       "within Soon the oldest first, and what has no age after what has one: " + JSON.stringify(p.keys("soon")));
     ok([...d.querySelectorAll("#nlist .nsev")].map((h) => h.textContent.replace(/(:| .) \d+$/, "")).join() === "Now,Soon,Watch,Practice", "each severity is headed by its word, and the practice line stands last");
 
@@ -196,7 +198,7 @@ export async function run({ ok, pageWork }) {
       await open1("o:ord-p1", "orders/placed"), await open1("p:ord-a1", "orders/confirmed"), await open1("c:" + U1 + ":c-1", "orders/payments"),
       await open1("m:" + U1, "customers/messages", () => (shown(d.getElementById("makerChatOpen")) && d.getElementById("makerChatOpen").getAttribute("data-key") === U1 ? "" : "the thread was not opened")),
       await open1("k:" + U3, "customers/accounts", () => (shown(d.getElementById("aopen")) && /CX3-ZED/.test(d.getElementById("aopen").textContent) ? "" : "the account was not opened")),
-      await open1("d:" + ago(6), "orders/approve"), await open1("x:0", "orders/approve"), await open1("l:w1", "customers/links"),
+      await open1("x:0", "orders/approve"), await open1("l:w1", "customers/links"),
       await open1("s", "customers/accounts", () => (byAct(d, "filter.unsent") || d.querySelector('#afil [data-f="unsent"]')).getAttribute("aria-pressed") === "true" ? "" : "the Not sent filter was not set"),
       await open1("w:hours", "shop/hours"), await open1("w:notice", "shop/notice")
     ].filter(Boolean);
@@ -225,7 +227,7 @@ export async function run({ ok, pageWork }) {
       "an order has Agree, a message Reply, a payment against the account Received, and an order with several payments Review, on the card: " + JSON.stringify([pills(p.card("o:ord-p1")), pills(p.card("m:" + U1)), pills(p.card("p:ord-a1"))]));
     /* 10. THE VERB FIRST, AND THE BUTTON ON THE CARD (17 Oct 2026, part 2) */
     const TITLES = [["o:ord-p1", "Agree CX1-ZED's order", "2 units · RM 200.00"], ["p:ord-a1", "Confirm CX1-ZED's RM 530.00", "Says they paid"], ["c:" + U1 + ":c-1", "Confirm CX1-ZED's RM 50.00", "Says they paid"],
-      ["m:" + U1, "Reply to CX1-ZED", "Hello"], ["d:" + ago(6), "Approve CX1-ZED's row", null], ["k:" + U3, "Send CX3-ZED a sign-in link", null], ["a:ord-a2", "Send CX1-ZED's order again", null],
+      ["m:" + U1, "Reply to CX1-ZED", "Hello"], ["k:" + U3, "Send CX3-ZED a sign-in link", null], ["a:ord-a2", "Send CX1-ZED's order again", null],
       ["$:CX1-ZED", "Collect RM 150.00 from CX1-ZED", "Past term"], ["g:row-1", "Hand over to CX2-ZED", null]];
     const got = TITLES.map(([k]) => (p.card(k) ? p.title(p.card(k)) : null)), want = TITLES.map(([, t]) => t);
     ok(got.every((t, i) => t === want[i]),
@@ -234,9 +236,6 @@ export async function run({ ok, pageWork }) {
       "and the figure stands under it, with the book as a mark and no level or tier word: " + p.words(p.card("o:ord-p1")).what);
     ok(!p.cards().some((c) => p.buttons(c).some((t) => /Accept|Cash/.test(t))) && p.cards().filter(owedCard).every((c) => c.querySelectorAll(".salt-pill").length === 0),
       "and no card carries Accept or Cash; an owed card's one way is a ghost that opens, never a filled pill");
-    ok(same(pills(p.card("d:" + ago(6))), ["Approve the sale"]) && same(pills(p.card("d:" + ago(3))), ["Approve both"]) && !p.card("d:" + ago(1)) && pills(p.card("d:" + ago(0.5))).length === 0
-      && /Answer this through the payment card/.test(p.card("d:" + ago(0.5)).textContent),
-    "a Desk row has its Approve, saying the result (a trip one card, Approve both), and a customer's claim row none, as on Orders > Approve");
     ok(same(pills(p.card("l:w1")), ["Approve"]) && same(pills(p.card("k:" + U3)), ["Send a sign-in link"]) && same(pills(p.card("s")), ["Send sign-in links one by one"]),
       "the guest link, the refused account and the accounts not sent keep the one filled action they had");
     ok(p.cards().every((c) => pills(c).length <= 1), "no card has more than one filled pill");
@@ -254,44 +253,6 @@ export async function run({ ok, pageWork }) {
     "Soon opens unfolded, Watch and practice are folded behind a heading with their count, Now stands open: " + JSON.stringify(folds.map((f) => [f.open, f.querySelector("summary").textContent])));
     folds[0].open = false; folds[0].dispatchEvent(new p.w.Event("toggle")); folds[1].open = true; folds[1].dispatchEvent(new p.w.Event("toggle")); await p.tap("need.kind.all");
     ok(!d.querySelector('#nlist > details[data-sev="soon"]').open && d.querySelector('#nlist > details[data-sev="watch"]').open, "a fold he closed or opened stays so through a redraw");
-  } finally { p.w.close(); }
-
-  /* 6b. THE PILL IS THE RECORD BUTTON'S, THE SAME QUESTION AND THE SAME REQUEST */
-  const st = state();
-  p = await open(st);
-  try {
-    /* 12 Oct 2026 (Phase 2c, his decision 4 of 11 Oct): the question is the page's Sheet, not a native confirm, and it is the same Sheet from either control */
-    const d = p.d, id = ago(6), sheet = () => d.getElementById("ynSheet");
-    const question = () => (sheet() ? sheet().querySelector(".salt-sheet__title").textContent + " | " + [...sheet().querySelectorAll(".salt-sheet__body > *")].map((e) => e.textContent).join(" | ") : null);
-    byAct(p.card("d:" + id), "need.approve-row").click(); await p.work.quiet();
-    const needAsked = question();
-    ok(!!needAsked && /^Approve this row?/.test(needAsked) && p.posts.filter((x) => /approve$/.test(x.route)).length === 0, "he is asked first, on the page's Sheet, and nothing is sent as it opens: " + needAsked);
-    byAct(sheet(), "ask.keep").click(); await p.work.quiet();
-    ok(!sheet() && p.posts.filter((x) => /approve$/.test(x.route)).length === 0, "declining sends nothing");
-    byAct(d, "nav.orders").click(); await p.work.quiet(); byAct(d, "part.orders.approve").click(); await p.work.quiet();
-    const recordButton = [...d.querySelectorAll('#makerDrafts [data-maker-card="draft:' + id + '"] [data-act="draft.approve"]')][0];
-    recordButton.click(); await p.work.quiet();
-    ok(!!needAsked && same(needAsked, question()), "Orders > Approve asks the very same question: " + JSON.stringify([needAsked, question()]));
-    byAct(sheet(), "ask.keep").click(); await p.work.quiet();
-    byAct(d, "nav.needs").click(); await p.work.quiet();
-    const release = p.hold("/all/maker/drafts/" + encodeURIComponent(id) + "/approve");
-    byAct(p.card("d:" + id), "need.approve-row").click(); await p.work.quiet();
-    byAct(sheet(), "ask.go").click();
-    for (let i = 0; i < 100 && !p.work.inFlight(); i++) await new Promise((r) => setTimeout(r, 5));
-    ok(p.posts.filter((x) => /approve$/.test(x.route)).length === 1 && p.posts.find((x) => /approve$/.test(x.route)).route === "/all/maker/drafts/" + encodeURIComponent(id) + "/approve"
-      && same(p.posts.find((x) => /approve$/.test(x.route)).body, {}), "his yes sends the one request Orders > Approve sends: the same route and an empty body");
-    ok(byAct(p.card("d:" + id), "need.approve-row").disabled, "while it is out the pill is off");
-    byAct(p.card("d:" + id), "need.approve-row").click();
-    ok(p.posts.filter((x) => /approve$/.test(x.route)).length === 1, "and a second tap sends nothing");
-    st.approved.add(id); release(); await p.work.quiet();
-    const done = p.card("d:" + id);
-    ok(done && /Row approved[.]/.test(done.textContent) && !done.querySelector(".salt-pill") && done.getAttribute("data-sev") === "soon",
-      "the answer stays on the card he tapped, though the row is no longer there: " + (done && done.textContent));
-    ok(/^9 to do now · 12 soon$/.test(d.getElementById("nCount").textContent) && p.counts(".salt-rail").record === "",
-      "and the row is no longer counted, and Record carries no badge: " + d.getElementById("nCount").textContent);
-    byAct(d, "nav.customers").click(); await p.work.quiet();
-    byAct(d, "nav.needs").click(); await p.work.quiet();
-    ok(!p.card("d:" + id), "the answer goes when he leaves Needs you");
   } finally { p.w.close(); }
 
   /* 7. THE KIND CHIPS */
@@ -319,7 +280,7 @@ export async function run({ ok, pageWork }) {
     ok(SITE_RECIPES.includes(SELECTED + " {") && same([...d.querySelectorAll(".nchips button")].filter((b) => b.matches(SELECTED)).map((b) => b.getAttribute("data-chip")), ["rows"]),
       "and it alone matches the selector the system's tabs are drawn selected by, so it looks different from the other five");
     await p.tap("need.kind.all");
-    ok(p.cards().length === 12 + 13 + 2, "All shows every card again, Watch among them: " + p.cards().length);
+    ok(p.cards().length === 12 + 10 + 2, "All shows every card again, Watch among them: " + p.cards().length);
     await p.tap("need.kind.orders");
     ok(!p.cards().some((c) => c.getAttribute("data-sev") === "watch") && same(p.counts(".salt-rail").needs, "9"), "Watch shows under All only, and a filter changes no count");
   } finally { p.w.close(); }

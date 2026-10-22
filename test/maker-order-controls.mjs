@@ -245,7 +245,7 @@ export async function run({ ok }) {
   } finally { globalThis.fetch = originalFetch; }
 
   /* ---- the owner page's own controls, in the actual owner script ---- */
-  const posts = [], scrolls = [];
+  const posts = [], scrolls = [], many = [];
   let failNext = 0;
   const orderOf = (id, status, patch = {}) => ({ id, u: "abcd-efgh", product: "salt", qty: 3, total: 285, status, mode: "collect", history: [], ...patch });
   const draftId = "2026-10-03T09:00:00.000Z";
@@ -269,6 +269,10 @@ export async function run({ ok }) {
           posts.push({ path: String(path), body: JSON.parse(init.body) });
           if (failNext > 0) { failNext--; return Response.json({ ok: false, error: "The Desk did not answer." }, { status: 503 }); }
           return Response.json({ ok: true });
+        }
+        if (init && init.method === "POST" && path === "/all/maker/drafts/decide-many") {
+          many.push(JSON.parse(init.body));
+          return Response.json({ ok: true, decided: [{ id: draftId, decision: "approved" }], refused: [] });
         }
         if (path === "/all/maker/review") return Response.json(reviewBody);
         if (path === "/all/maker/claims") return Response.json({ ok: true, claims: [] });
@@ -334,7 +338,7 @@ export async function run({ ok }) {
     ok(handed().textContent === "Finish at 2 of 3 units", "Two of three units with That is all chosen turns the one button into the finish: " + handed().textContent);
     handed().click(); sheetGo(); await settle(2);
     await until(() => /did not answer/.test(say("20261003090002-rdy")?.textContent || ""));
-    ok(say("20261003090002-rdy")?.firstChild.textContent === "The Counter could not do that. Try again." && say("20261003090002-rdy").querySelector(".rraw")?.textContent === "The Desk did not answer." && !/did not answer/.test(list())
+    ok(say("20261003090002-rdy")?.firstChild?.textContent === "The Counter could not do that. Try again." && say("20261003090002-rdy")?.querySelector(".rraw")?.textContent === "The Desk did not answer." && !/did not answer/.test(list())
       && !say("20261003090001-ack")?.textContent.includes("did not answer"),
       "A refused action says so in the foot of its own card, beside the buttons it was tapped on, and not on the list's line");
     await until(() => handed());
@@ -387,10 +391,18 @@ export async function run({ ok }) {
       "An answer whose card has gone, the order having left the open list, falls to the list's own line and is not lost: " + list());
     const approveRow = () => card(draftId) && card(draftId).querySelector('button[data-act="draft.approve"]');
     await until(() => approveRow());
-    approveRow().click(); sheetGo();   /* the row asks on the page's Sheet (Phase 2c), and his yes is its one action */
-    await until(() => say(draftId)?.textContent);
-    ok(say(draftId)?.textContent === "Row approved." && !/Row approved/.test(list()),
-      "A Desk row's answer lands on the row's own card too: " + JSON.stringify({ card: say(draftId)?.textContent, list: list() }));
+    /* multi-tick Approve (22 Oct 2026): Approve is a choice that sends nothing; the bar's Confirm asks on the page's Sheet and sends one decide-many */
+    approveRow().click();
+    const barGo = () => doc.querySelector('#apBar [data-act="approve.confirm"]');
+    await until(() => barGo() && !doc.getElementById("apBar").hidden);
+    ok(many.length === 0 && card(draftId).classList.contains("ap--a") && approveRow().getAttribute("aria-pressed") === "true",
+      "Approve on a Desk row's card only chooses it: the card lights, aria-pressed is set and nothing is sent");
+    ok(!!barGo(), "Choosing Approve shows the bar's Confirm");
+    barGo()?.click(); await until(() => doc.getElementById("ynGo"));
+    ok(many.length === 0, "Confirm asks on the page's Sheet and sends nothing until its action is tapped");
+    doc.getElementById("ynGo")?.click(); await until(() => many.length === 1);
+    ok(JSON.stringify(many[0]) === JSON.stringify({ approve: [draftId], reject: [] }),
+      "A Desk row's yes is one decide-many request carrying the row's id: " + JSON.stringify(many));
     await until(() => field("20261003090001-ack", "Answer them"));
     button("20261003090001-ack", "Change the order").click(); sheetGo();   /* the Change the order Sheet, its figures untouched */
     ok(say("20261003090001-ack")?.textContent === "Change a figure first." && !/Change a figure/.test(list()),
@@ -415,7 +427,7 @@ export async function run({ ok }) {
       "A quick reply is offered on every card once kept, and picking it fills the reply box.");
     button("20261003090002-rdy", "Forget it").click();
     ok(JSON.parse(window.localStorage.getItem("saltQuickReplies")).length === 0, "Forget this quick reply drops it from the device.");
-    /* Approve's own confirm (approveDraft) is not the order card's, and is as it was */
+    /* Approve's Confirm is the Sheet's too; only an unrelated native confirm would show here */
     const asked = (browser.window.__asked || []).filter((said) => !/^Approve /.test(said));
     ok(asked.length === 0, "no native confirm was asked on the order card: it asks on the page's Sheet (his decision 4 of 11 Oct 2026): " + JSON.stringify(asked));
   } finally { browser.window.close(); }

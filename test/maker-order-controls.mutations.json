@@ -36,15 +36,33 @@
     "replace": "say.setAttribute('role','status');"
   },
   {
-    "name": "a Desk row's answer is not keyed to its own card",
-    "file": "stmt/owner.js",
-    "find": "'Row approved.','draft:'+g.lead.id);",
-    "replace": "'Row approved.');"
-  },
-  {
     "name": "a foot below the screen is not scrolled to",
     "file": "stmt/owner.js",
-    "find": "else line.textContent=text;\n    if(line.scrollIntoView) line.scrollIntoView({block:'nearest'});",
-    "replace": "else line.textContent=text;"
+    "find": "if(line){ line.textContent=text; withDetails(line,error); if(line.scrollIntoView) line.scrollIntoView({block:'nearest'}); }",
+    "replace": "if(line){ line.textContent=text; withDetails(line,error); }"
+  },
+  {
+    "name": "a Desk row's Confirm sends no approve ids",
+    "file": "stmt/owner.js",
+    "find": "{approve:ids(A), reject:ids(R)}",
+    "replace": "{approve:[], reject:ids(R)}"
+  },
+  {
+    "name": "a chosen Approve does not light its card",
+    "file": "stmt/owner.js",
+    "find": "if(pick) card.classList.add(pick==='a'?'ap--a':'ap--r');",
+    "replace": "if(pick&&0) card.classList.add(pick==='a'?'ap--a':'ap--r');"
+  },
+  {
+    "name": "a chosen Approve is not aria-pressed",
+    "file": "stmt/owner.js",
+    "find": "approve.setAttribute('aria-pressed',String(pick==='a'));",
+    "replace": "approve.setAttribute('aria-pressed','false');"
+  },
+  {
+    "name": "the Confirm button is not the bar's",
+    "file": "stmt/owner.js",
+    "find": "'approve.confirm'); go.type='button';",
+    "replace": "'approve.confirmx'); go.type='button';"
   }
 ]

@@ -108,12 +108,6 @@
   "replace": "new Date(held).toISOString()"
  },
  {
-  "name": "a Desk row has no age",
-  "file": "stmt/owner.js",
-  "find": "return item('soon','rows','Row','d:'+d.id, isoAt(d.id),",
-  "replace": "return item('soon','rows','Row','d:'+d.id, '',"
- },
- {
   "name": "a practice item is not labelled",
   "file": "stmt/owner.js",
   "find": "if(o.practice) title.appendChild(chip('mist','Practice'));",
@@ -174,12 +168,6 @@
   "replace": "open:goPlace('customers','accounts'), counts:"
  },
  {
-  "name": "a row opens Orders",
-  "file": "stmt/owner.js",
-  "find": "open:goPlace('orders','approve')}, function(c){\n      if(!claim){",
-  "replace": "open:goPlace('orders','waiting')}, function(c){\n      if(!claim){"
- },
- {
   "name": "the accounts not sent open every account",
   "file": "stmt/owner.js",
   "find": "filterBy('unsent'); }}, function(c){\n      var go=pill(",
@@ -196,42 +184,6 @@
   "file": "stmt/owner.js",
   "find": "function(card){ claimPayButton(card,c); }));",
   "replace": "function(card){}));"
- },
- {
-  "name": "a customer's claim row can be approved",
-  "file": "stmt/owner.js",
-  "find": "if(!claim){\n        var ap=pill(",
-  "replace": "if(true){\n        var ap=pill("
- },
- {
-  "name": "the pill skips the question",
-  "file": "stmt/owner.js",
-  "find": "approveDraft(d,ap,'need:draft:'+d.id+':approve',function(){ said=true; ap.disabled=true; }).then(function(ok){",
-  "replace": "(said=true,ap.disabled=true,makerAction('/all/maker/drafts/'+encodeURIComponent(d.id)+'/approve',{},'Row approved.','draft:'+d.id)).then(function(ok){"
- },
- {
-  "name": "Approve row sends on a no",
-  "file": "stmt/owner.js",
-  "find": "keep:'Not yet'}).then(function(yes){\n      if(!yes) return;\n      if(going) going();",
-  "replace": "keep:'Not yet'}).then(function(yes){\n      if(going) going();"
- },
- {
-  "name": "the pill stays on while it is out",
-  "file": "stmt/owner.js",
-  "find": "function(){ said=true; ap.disabled=true; }",
-  "replace": "function(){ said=true; }"
- },
- {
-  "name": "the answer is not kept on the card",
-  "file": "stmt/owner.js",
-  "find": "needSaid['d:'+d.id]={t:makerSaid['draft:'+d.id]||(ok?'Row approved.':'Not approved.'), bad:!ok, who:who};",
-  "replace": ""
- },
- {
-  "name": "the answer outlives Needs you",
-  "file": "stmt/owner.js",
-  "find": "if(placeNow==='needs'&&place!=='needs'){ needSaid={}; jumpShut(false); }",
-  "replace": "if(placeNow==='needs'&&place!=='needs'){ jumpShut(false); }"
  },
  {
   "name": "a chip filters nothing",
@@ -494,8 +446,8 @@
  {
   "name": "the count reads as whole with a read failed",
   "file": "stmt/owner.js",
-  "find": ".filter(Boolean).join(' · ')",
-  "replace": ".filter(Boolean).join(' · ')+(bad.length?' in what could be read.':'')"
+  "find": "soon?soon+' soon':''].filter(Boolean).join(' · ')",
+  "replace": "soon?soon+' soon':''].filter(Boolean).join(' · ')+(bad.length?' in what could be read.':'')"
  },
  {
   "name": "Retry reads nothing",
@@ -736,5 +688,11 @@
   "file": "stmt/owner.js",
   "find": "  var nFoldOpen={soon:true}, nKind",
   "replace": "  var nFoldOpen={}, nKind"
+ },
+ {
+  "name": "a Desk row to approve is a card in Needs you again",
+  "file": "stmt/owner.js",
+  "find": "    if(makerNotice&&makerNotice.length) L.push(noticeNeed(makerNotice));",
+  "replace": "    L.push(item('soon','rows','Row','d:2026-10-10T00:00:00.000Z','',{who:'CX1-ZED', what:'Sale'}));\n    if(makerNotice&&makerNotice.length) L.push(noticeNeed(makerNotice));"
  }
 ]

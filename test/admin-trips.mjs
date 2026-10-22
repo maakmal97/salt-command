@@ -203,6 +203,7 @@ export async function run({ ok, pageWork }) {
   const open = async (opts = {}) => {
     const p = await richOwnerPage({ pageWork, bare: true, review: (j) => ({ ...j, orders: [], drafts: opts.drafts || [], queue: [], trips: [TRIP], sameDay: [DAY], ...(opts.review || {}) }),
       extra: (route, body) => route === "/all/maker/trip-split" ? { ok: true, split: SPLIT }
+        : route === "/all/maker/drafts/decide-many" ? { ok: true, decided: body.approve.map((id) => ({ id, decision: "approved" })).concat(body.reject.map((id) => ({ id, decision: "rejected" }))), refused: [] }
         : route === "/all/maker/inputs/ledger-amend" && opts.refuse && body.rid === opts.refuse ? { refuse: "only 2 unit is on the shelf" }
           : /^\/all\/maker\/inputs\/(ledger-amend|trip-pay|trip-join)$/.test(route) ? { ok: true, draft: body.at, status: "pending" } : undefined });
     await p.work.quiet();
@@ -321,14 +322,19 @@ export async function run({ ok, pageWork }) {
   try {
     await p.tap("nav.orders"); await p.tap("part.orders.approve");
     const cards = [...p.d.querySelectorAll("#makerDrafts [data-maker-card]")];
-    const c1 = cards[0], c2 = cards[1], btn = (c) => byAct(c, "draft.approve").textContent;
+    const c1 = cards[0], c2 = cards[1], btn = (c) => c.querySelector('[data-act="draft.approve"]').textContent;
     ok(cards.length === 2 && ds.every((d) => d.figures) && ds.slice(0, 3).every((d) => d.figures.trip === T)
       && c1.querySelector(".apverb").textContent === "Handover" && btn(c1) === "Approve: handover on 3 lines" && c1.querySelectorAll(".apnow").length === 3
       && c2.querySelector(".apverb").textContent === "These are one order" && btn(c2) === "Approve: one order of 2 lines",
     "the handovers of an order's three lines land as one card with one Approve, each line's Now and After, and a join as one card: "
       + J(cards.map((c) => [c.querySelector(".apverb").textContent, btn(c), c.querySelectorAll(".apnow").length])));
-    byAct(c1, "draft.approve").click(); await p.work.quiet(); p.d.getElementById("ynGo").click(); await p.work.quiet();
-    ok(J(p.posts.filter((x) => /\/approve$/.test(x.route)).map((x) => decodeURIComponent(x.route.split("/")[4]))) === J(ds.slice(0, 3).map((d) => d.id)),
-      "his one yes approves each line's handover in the order entered: " + J(p.posts.map((x) => x.route)));
+    /* 22 Oct 2026 (multi-tick Approve): the card's Approve is a choice, and one Confirm sends one decide-many request carrying every line's draft, in the order entered */
+    c1.querySelector('[data-act="draft.approve"]').click(); await p.work.quiet();
+    const first = p.d.querySelector('#makerDrafts [data-maker-card] [data-act="draft.approve"]');
+    ok(p.posts.length === 0 && first.getAttribute("aria-pressed") === "true", "choosing Approve on the card sends nothing and marks it pressed: " + J(p.posts));
+    byAct(p.d, "approve.confirm").click(); await p.work.quiet(); p.d.getElementById("ynGo").click(); await p.work.quiet();
+    const many = p.posts.filter((x) => x.route === "/all/maker/drafts/decide-many");
+    ok(many.length === 1 && p.posts.filter((x) => /\/approve$/.test(x.route)).length === 0 && J(many[0].body) === J({ approve: ds.slice(0, 3).map((d) => d.id), reject: [] }),
+      "his one yes approves each line's handover in the order entered, in one request: " + J(p.posts.map((x) => [x.route, x.body])));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
 }
