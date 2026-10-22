@@ -960,7 +960,8 @@ body.ended>*:not(#aEnded){display:none}
 .adm #mHome .salt-eyebrow{margin:0 0 6px}
 .adm .nlist{display:flex;flex-direction:column;gap:12px;margin:0 0 24px}
 .adm .nlist .glink{margin:0}
-.adm .nlist .nsev{margin:8px 0 -4px}
+.adm .ngroup{display:flex;flex-direction:column;gap:10px}
+.adm .nlist .nsev{margin:0;line-height:1.4}
 /* 22 Oct 2026 (canvas Needs you): the kinds' tab row, the Nav bar's link laid out as equal 48px tabs, the count in brass beside the word */
 .adm .nkinds{margin:0 0 16px;padding:0;gap:0}
 .adm .nkinds .nchips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 16px}

@@ -1,0 +1,19 @@
+[
+ {"name":"the groups keep their old names","file":"stmt/owner.js","find":"var SEVS=[['now','To do'],['soon','Pending'],['watch','FYI']]","replace":"var SEVS=[['now','Now'],['soon','Soon'],['watch','Watch']]"},
+ {"name":"a group heading carries its count","file":"stmt/owner.js","find":"var h=el('h2','salt-eyebrow salt-eyebrow--'+SEVC[s[0]]+' nsev', s[1]);","replace":"var h=el('h2','salt-eyebrow salt-eyebrow--'+SEVC[s[0]]+' nsev', s[1]+' · '+group.length);"},
+ {"name":"Pending folds again","file":"stmt/owner.js","find":"var box=el('section','ngroup');","replace":"var box=el(s[0]==='now'?'section':'details','ngroup');"},
+ {"name":"a link to approve is Pending","file":"stmt/owner.js","find":"return item('now','accounts','Link','l:'+r.id, r.made,","replace":"return item('soon','accounts','Link','l:'+r.id, r.made,"},
+ {"name":"an entry that did not get through is Pending","file":"stmt/owner.js","find":"return item('now','rows','Entry',key, isoAt(r.at||r.seenAt||r.id),","replace":"return item('soon','rows','Entry',key, isoAt(r.at||r.seenAt||r.id),"},
+ {"name":"goods to hand over are Pending","file":"stmt/owner.js","find":"return item('now','orders','To hand over','g:'+r.rid, r.date||'',","replace":"return item('soon','orders','To hand over','g:'+r.rid, r.date||'',"},
+ {"name":"a step to send again is Pending","file":"stmt/owner.js","find":"if(o.again&&o.again.length) L.push(item('now','orders','Order','a:'+o.id, o.at,","replace":"if(o.again&&o.again.length) L.push(item('soon','orders','Order','a:'+o.id, o.at,"},
+ {"name":"an account to send is Pending","file":"stmt/owner.js","find":"return item('now','accounts','Account','s', first,","replace":"return item('soon','accounts','Account','s', first,"},
+ {"name":"an ID with no account is Pending","file":"stmt/owner.js","find":"return item('now','accounts','Account','n:'+a.username, '',","replace":"return item('soon','accounts','Account','n:'+a.username, '',"},
+ {"name":"money owed is To do","file":"stmt/owner.js","find":"return item('soon','payments','Owed','$:'+m.party, m.since,","replace":"return item('now','payments','Owed','$:'+m.party, m.since,"},
+ {"name":"money comes after the oldest","file":"stmt/owner.js","find":"if(ma!==mb) return ma?-1:1;","replace":"if(ma!==mb) return 0;"},
+ {"name":"the smaller sum first","file":"stmt/owner.js","find":"if(ma&&Math.abs(a.rm-b.rm)>0.004) return b.rm-a.rm;","replace":"if(ma&&Math.abs(a.rm-b.rm)>0.004) return a.rm-b.rm;"},
+ {"name":"a sheet's money is its first order's","file":"stmt/owner.js","find":"rm:shP.length>1?shP.reduce(function(s,x){ return s+(+x.total||0); },0):+o.total||0, tap:'agree'}","replace":"rm:0, tap:'agree'}"},
+ {"name":"an offer still draws its Agree card","file":"stmt/owner.js","find":"      else if(held){}\n","replace":"      else if(false){}\n"},
+ {"name":"an offer is To do","file":"stmt/owner.js","find":"else if(held&&o.price.state==='offered') L.push(item('soon','orders','Offer',","replace":"else if(held&&o.price.state==='offered') L.push(item('now','orders','Offer',"},
+ {"name":"Withdraw sends at once","file":"stmt/owner.js","find":"if(!needAsk[key]) mainButton(c,'Withdraw','need.withdraw',key, function(){ delete needNote[key]; needAsk[key]=true; drawNeeds(); });","replace":"if(!needAsk[key]) mainButton(c,'Withdraw','need.withdraw',key, function(){ makerTap(o,'withdraw',{},''); });"},
+ {"name":"Withdraw sends without its request id","file":"stmt/owner.js","find":"makerTap(o,'withdraw',{},'Offer withdrawn. The order stands as they placed it.')","replace":"makerAction('/all/maker/orders/'+encodeURIComponent(o.id)+'/withdraw',{},'Offer withdrawn.',o.id)"}
+]

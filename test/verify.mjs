@@ -50218,6 +50218,11 @@ await (async () => {
   await (await import("./admin-ac-glance.mjs")).run({ ok, pageWork });
 })();
 
+section("22 Oct 2026: Salt Admin's Needs you stands in three groups, To do, Pending and FYI, money first");
+await (async () => {
+  await (await import("./admin-needs-groups.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin's glance, stock: Stock cover and Next lot beside Ready and Owed to you, for the book with the least cover (21 Oct 2026)");
 await (async () => {
   await (await import("./admin-glance-stock.mjs")).run({ ok, pageWork });

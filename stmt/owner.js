@@ -5829,10 +5829,12 @@ export const OWNER_JS = `
      A MONEY TAP ASKS ONCE ON THE CARD, then calls the order or claim card's own send (orderReceived, sendClaimAnswer); Agree, which needs the delivery and the window, and Cash
      open the full card in Orders. Read off what the places read anyway (/all/sheet, /all/refs, the
      review, the claims, the threads, the hours and the notice). A tap is answered on its own card. */
-  var SEVS=[['now','Now'],['soon','Soon'],['watch','Watch']], SEVC={now:'copper',soon:'brass',watch:'mist'}, NEED_MS=5000;   /* R4, his yes of 19 Oct 2026 (D12): was 30000; a tick that finds the same answer draws nothing */
+  /* 22 Oct 2026, his names: TO DO is his to act, PENDING the customer's (money they owe past its term, an offer of his waiting on their yes), FYI
+     nothing to do (an override in force, a notice set). The ids stay now, soon and watch. Each group always open, with no count and no fold. */
+  var SEVS=[['now','To do'],['soon','Pending'],['watch','FYI']], SEVC={now:'copper',soon:'brass',watch:'mist'}, NEED_MS=5000;   /* R4, his yes of 19 Oct 2026 (D12): was 30000; a tick that finds the same answer draws nothing */
   var NEED_SRC=[['sheet','accounts'],['links','links'],['review','orders and rows'],['claims','payments'],['threads','messages'],['hours','hours'],['notice','the notice'],['book','what is owed']];
   var nlist=document.getElementById('nlist'), nCount=document.getElementById('nCount'), linksRead=false, linksBusy=false;
-  var nFoldOpen={soon:true}, nKind='all', nSrc={}, nSeen={}, needN=0, needsAt=0, needsReading=false, needsTimer=null, makerNotice=null, shopReading=false;
+  var nFoldOpen={}, nKind='all', nSrc={}, nSeen={}, needN=0, needsAt=0, needsReading=false, needsTimer=null, makerNotice=null, shopReading=false;
   /* each source says it was read, or why it was not, so a read that failed is never taken for an empty inbox */
   function nGot(name, err){ nSrc[name]=err?String(err.message||err):'ok'; if(!err) delete nSeen[name+'!']; }
   /* R4: a poll that fails again with the same words draws nothing; a new failure does, and a read that gets through forgets it (nGot) */
@@ -6024,7 +6026,7 @@ export const OWNER_JS = `
   }
   function linkNeed(r){
     var who=codeByUser(r.by), done=moved&&moved.id===r.id;
-    return item('soon','accounts','Link','l:'+r.id, r.made, {who:who, head:'Approve ', rest:"'s guest link", what:'Made '+when(r.made),
+    return item('now','accounts','Link','l:'+r.id, r.made, {who:who, head:'Approve ', rest:"'s guest link", what:'Made '+when(r.made),
       why:'A link for a friend. It opens nothing until you approve it.', open:goPlace('customers','links'), counts:waitingLink(r)&&!done}, function(c){
       if(done){ noteOf(c).textContent=moved.t; return; }
       var ap=pill(['Approve','need.link-approve']), de=ghost(['Decline','need.link-decline']);
@@ -6050,7 +6052,7 @@ export const OWNER_JS = `
     });
   }
   function bareNeed(a){
-    return item('soon','accounts','Account','n:'+a.username, '', {who:a.code||a.username, u:a.username, head:'Set up ', rest:"'s account", what:'No account yet', why:waitLine(),
+    return item('now','accounts','Account','n:'+a.username, '', {who:a.code||a.username, u:a.username, head:'Set up ', rest:"'s account", what:'No account yet', why:waitLine(),
       open:function(){ openNeed(a.username); }}, function(c){
       var sh=pill(['Show the guest price list','need.show-link']);
       c._add(sh);
@@ -6076,7 +6078,7 @@ export const OWNER_JS = `
   function sendNeed(rows){
     var codes=rows.map(function(a){ return a.code||a.username; }), first=sendAt(rows);
     var named=codes.length>6?codes.slice(0,5).concat([(codes.length-5)+' more']):codes;
-    return item('soon','accounts','Account','s', first, {who:rows.length+(rows.length===1?' account has':' accounts have')+' not been sent their sign-in link', what:first?'ready since '+dayMon(first):'',
+    return item('now','accounts','Account','s', first, {who:rows.length+(rows.length===1?' account has':' accounts have')+' not been sent their sign-in link', what:first?'ready since '+dayMon(first):'',
       why:andList(named)+'.', open:function(){ showPlace('customers','accounts',{fresh:true,push:true}); filterBy('unsent'); }}, function(c){
       var go=pill(['Send sign-in links one by one','need.send-turn']);
       go.addEventListener('click', function(){ turn={rows:rows.slice(), i:0, sent:[], j:null, why:''}; turnStep(); });
@@ -6098,17 +6100,17 @@ export const OWNER_JS = `
   function unreadableKeys(){ return (makerData&&makerData.unreadable||[]).filter(function(k){ return typeof k==='string'; }); }
   function unreadableLine(keys){ return keys.length+(keys.length===1?' queue entry':' queue entries')+' unreadable: '+keys.join(', '); }
   function unreadableNeed(keys){
-    return item('soon','rows','Entry','qx', '', {who:'Desk queue', what:unreadableLine(keys),
+    return item('now','rows','Entry','qx', '', {who:'Desk queue', what:unreadableLine(keys),
       why:'Every other entry is read as usual. No entry is withdrawn until that key is mended.', open:goPlace('orders','approve')});
   }
   function entryNeed(r, key){
-    return item('soon','rows','Entry',key, isoAt(r.at||r.seenAt||r.id), {who:r.party||'Desk', head:'Check ', rest:"'s entry", what:'Did not get through',
+    return item('now','rows','Entry',key, isoAt(r.at||r.seenAt||r.id), {who:r.party||'Desk', head:'Check ', rest:"'s entry", what:'Did not get through',
       why:noBook(r.why||'The Desk could not take this entry.'), open:goPlace('orders','approve')});
   }
   /* an entry kept on this phone and not confirmed (Phase 4c): Soon, his own work; its Open is Record, on the entry's own section, where Send again, Update and send and Discard are */
   function unsentNeed(u){
     var w=unsentWord(u);
-    return item('soon','rows','Unsent','u:'+u.path, u.at, {who:u.who||'This phone', what:w.charAt(0).toUpperCase()+w.slice(1),
+    return item('now','rows','Unsent','u:'+u.path, u.at, {who:u.who||'This phone', what:w.charAt(0).toUpperCase()+w.slice(1),
       why:unsentSaid(u)+' Open it to send it again, update it or discard it.', open:function(){ unsentOpen(u); }});
   }
   function threadNeed(t){
@@ -6176,7 +6178,7 @@ export const OWNER_JS = `
     });
   }
   function goodsNeed(r){
-    return item('soon','orders','To hand over','g:'+r.rid, r.date||'', {who:r.party, head:'Hand over to ', mark:r.product, what:units(r.units)+' paid, not handed over',
+    return item('now','orders','To hand over','g:'+r.rid, r.date||'', {who:r.party, head:'Hand over to ', mark:r.product, what:units(r.units)+' paid, not handed over',
       why:r.date?'Ordered '+fmtWhen(r.date)+'.':'', open:function(){ owedGo(r,'[data-act="order.handed-units"]'); }}, function(c){
       var b=ghost(['Handover','need.owed-hand',r.rid]); b.addEventListener('click', function(){ owedGo(r,'[data-act="order.handed-units"]'); }); c._add(b);
     });
@@ -6232,7 +6234,7 @@ export const OWNER_JS = `
   function turnCard(counts){
     var t=turn, n=t.rows.length, fin=t.i>=n, a=t.rows[t.i];
     var did=t.rows.filter(function(x){ return t.sent.indexOf(x.username)>=0; }).length;
-    return item('soon','accounts','Account','s', sendAt(t.rows), {who:fin?'All done':(t.i+1)+' of '+n, what:did+' of '+n+' sent', counts:counts,
+    return item('now','accounts','Account','s', sendAt(t.rows), {who:fin?'All done':(t.i+1)+' of '+n, what:did+' of '+n+' sent', counts:counts,
       why:fin?(did===n?'Each has their link, and each is ticked sent.':'The ones not ticked are still on Accounts, under Not sent.')
         :(a.code||a.username)+(t.copied?': their message is copied.':t.j?': their link is made. Share it and it is ticked sent.':': making their link.'),
       open:function(){ showPlace('customers','accounts',{fresh:true,push:true}); filterBy('unsent'); }}, function(c){
@@ -6261,6 +6263,20 @@ export const OWNER_JS = `
       orderReceived(o,pp).then(function(done){
         delete needBusy[key];
         if(done) delete needAsk[key]; else needNote[key]=done===undefined?'Busy, try again.':makerSaid[o.id]||'Not confirmed. Try again.';
+        drawNeeds();
+      });
+    });
+    needSays(c,key);
+  }
+  /* 22 Oct 2026: WITHDRAW AN OFFER asks once on the card, then sends what the order card's Take back the offer sends (makerTap withdraw, one request id) */
+  function offerButton(c, o, apf){
+    var key='f:'+o.id;
+    if(!needAsk[key]) mainButton(c,'Withdraw','need.withdraw',key, function(){ delete needNote[key]; needAsk[key]=true; drawNeeds(); });
+    else askBox(c,key,'Take back your offer of '+rm((+apf.total||0)+(+apf.delivery||0))+' to '+codeByUser(o.u)+'?', function(){
+      needBusy[key]=true; drawNeeds();
+      makerTap(o,'withdraw',{},'Offer withdrawn. The order stands as they placed it.').then(function(done){
+        delete needBusy[key];
+        if(done) delete needAsk[key]; else needNote[key]=done===undefined?'Busy, try again.':makerSaid[o.id]||'Not withdrawn. Try again.';
         drawNeeds();
       });
     });
@@ -6299,7 +6315,13 @@ export const OWNER_JS = `
       var who=codeByUser(o.u), t=!!o.test, to=orderOpener(o.id), pays=ordPays(o);
       /* P5: a sheet's placed orders are one card, the first's, saying how many; the others draw none */
       var shP=o.sheet?orders.filter(function(x){ return x.u===o.u&&x.sheet===o.sheet&&x.status==='placed'&&ordWaits(x); }).sort(function(a,b){ return String(a.id).localeCompare(String(b.id)); }):[];
+      var held=o.status==='placed'&&makerAccHeld(o), apf=held&&o.price.offer||{};
       if(o.status==='placed'&&shP.length>1&&shP[0].id!==o.id){}
+      /* 22 Oct 2026 (canvas Needs you): his Accept sent for their yes is theirs to answer, so Pending, its one tap Withdraw, asked once on the card;
+         one they said yes to waits on its row under Approve, which the glance counts, so it draws no card here */
+      else if(held&&o.price.state==='offered') L.push(item('soon','orders','Offer','f:'+o.id, o.price.offeredAt||o.at, {who:who, head:'Offer to ', mark:o.product,
+        what:'Waits on their yes until '+fmtWhen(apf.until), practice:t, open:to, rm:(+apf.total||0)+(+apf.delivery||0)}, function(c){ offerButton(c,o,apf); }));
+      else if(held){}
       else if(o.status==='placed') L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, head:'Agree ', rest:shP.length>1?"'s sheet":"'s order", mark:o.product, what:shP.length>1?shP.length+' orders on one sheet':orderWhat(o), practice:t, open:to,
         rm:shP.length>1?shP.reduce(function(s,x){ return s+(+x.total||0); },0):+o.total||0, tap:'agree'}, function(c){
         /* Agree needs the delivery charge and the window, which the full card asks for, so the button opens it */
@@ -6320,7 +6342,7 @@ export const OWNER_JS = `
         var sum=pays.reduce(function(s,p){ return s+(+p.amount||0); },0), first=pays.map(function(p){ return p.at||''; }).filter(Boolean).sort()[0]||'';
         L.push(item('now','payments','Payment','p:'+o.id, first, {who:who, head:'Confirm ', rest:"'s "+rm(sum), what:'Says they paid', practice:t, open:to, rm:sum, tap:'confirm'}, function(c){ orderPayButton(c,o,pays); }));
       }
-      if(o.again&&o.again.length) L.push(item('soon','orders','Order','a:'+o.id, o.at, {who:who, head:'Send ', rest:"'s order again", mark:o.product, what:orderWhat(o),
+      if(o.again&&o.again.length) L.push(item('now','orders','Order','a:'+o.id, o.at, {who:who, head:'Send ', rest:"'s order again", mark:o.product, what:orderWhat(o),
         why:'A step you rejected waits to be sent again.', practice:t, open:to}, function(c){ mainButton(c,'Review','need.review','a:'+o.id, to); }));
     });
     waitingClaims().forEach(function(c){
@@ -6345,8 +6367,12 @@ export const OWNER_JS = `
     var manual=makerHours&&makerHours.status&&makerHours.status.source==='manual'&&makerHours.config&&makerHours.config.manual;
     if(manual) L.push(hoursNeed(manual));
     if(makerNotice&&makerNotice.length) L.push(noticeNeed(makerNotice));
-    /* within a severity (drawNeeds heads them Now, Soon, Watch, practice apart under its own line): the oldest, then as built */
+    /* within a group (drawNeeds heads them To do, Pending, FYI, practice apart under its own line): 22 Oct 2026, his word, MONEY FIRST, the largest
+       sum first; then the cards with no sum, the oldest first, those with no age last; then as built */
     return L.sort(function(a, b){
+      var ma=a.rm>0.004, mb=b.rm>0.004;
+      if(ma!==mb) return ma?-1:1;
+      if(ma&&Math.abs(a.rm-b.rm)>0.004) return b.rm-a.rm;
       var ta=Date.parse(a.at), tb=Date.parse(b.at);
       if(isFinite(ta)!==isFinite(tb)) return isFinite(ta)?-1:1;
       return (isFinite(ta)&&ta!==tb)?ta-tb:a.n-b.n;
@@ -6442,15 +6468,10 @@ export const OWNER_JS = `
     SEVS.forEach(function(s){
       var group=shown.filter(function(i){ return i.sev===s[0]; });
       if(!group.length) return;
-      /* Now stands open; Soon and Watch fold behind their heading and a count, kept as he leaves them across a redraw. Soon opens unfolded (his word of 19 Oct 2026) */
-      var h=el(s[0]==='now'?'p':'summary','salt-eyebrow salt-eyebrow--'+SEVC[s[0]]+' nsev', s[1]+(s[0]==='now'?'':' · '+group.length)); h.setAttribute('data-sev', s[0]); if(s[0]!=='now') h.setAttribute('data-act','need.fold.'+s[0]);
-      var box=nlist;
-      if(s[0]!=='now'){
-        box=el('details','nfold'); box.setAttribute('data-sev', s[0]); if(nFoldOpen[s[0]]) box.open=true;
-        box.addEventListener('toggle', function(){ nFoldOpen[s[0]]=box.open; });
-        nlist.appendChild(box);
-      }
-      box.appendChild(h);
+      /* 22 Oct 2026 (his comment, "doesn't have to be collapsible"): every group stands open under its one word, with no count */
+      var box=el('section','ngroup'); box.setAttribute('data-sev', s[0]); box.setAttribute('aria-label', s[1]);
+      var h=el('h2','salt-eyebrow salt-eyebrow--'+SEVC[s[0]]+' nsev', s[1]); h.setAttribute('data-sev', s[0]);
+      box.appendChild(h); nlist.appendChild(box);
       group.forEach(function(i){ box.appendChild(i.make()); });
     });
     /* 17 Oct 2026: practice accounts leave Now, Soon and Watch for one folded line at the foot, which opens them in place */
