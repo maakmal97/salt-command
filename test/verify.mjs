@@ -50248,6 +50248,11 @@ await (async () => {
   await (await import("./decide-many-desk.mjs")).run({ ok });
 })();
 
+section("Multi-tick Approve, P2: the Counter relays his Confirm to the Desk, owner only, the body checked (22 Oct 2026)");
+await (async () => {
+  await (await import("./decide-many-relay.mjs")).run({ ok });
+})();
+
 section("Salt Admin A to C: Help read only on Shop hours, the customer's four answers (21 Oct 2026)");
 await (async () => {
   await (await import("./admin-ac-help.mjs")).run({ ok, pageWork });

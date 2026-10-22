@@ -1,0 +1,11 @@
+[
+ {"name":"no path","file":"stmt/maker.js","find":"  if (path === \"/all/maker/drafts/decide-many\") return { kind: \"decide-many\" };\n","replace":""},
+ {"name":"the Desk road closed","file":"stmt/maker.js","find":"    || path === \"/_internal/maker/drafts/decide-many\" && method === \"POST\"\n","replace":""},
+ {"name":"any method","file":"stmt/maker.js","find":"    if (op.kind === \"decide-many\") {\n      if (method !== \"POST\") return json({ ok: false, error: \"method not allowed\" }, 405);","replace":"    if (op.kind === \"decide-many\") {"},
+ {"name":"the lists swapped","file":"stmt/maker.js","find":"\"POST\", { approve: a, reject: r }));","replace":"\"POST\", { approve: r, reject: a }));"},
+ {"name":"extra keys carried","file":"stmt/maker.js","find":"      if (Object.keys(b).some((k) => k !== \"approve\" && k !== \"reject\") || !Array.isArray(a) || !Array.isArray(r))","replace":"      if (!Array.isArray(a) || !Array.isArray(r))"},
+ {"name":"no cap","file":"stmt/maker.js","find":"      if (!all.length || all.length > 50 || !all.every(stamp)","replace":"      if (!all.length || !all.every(stamp)"},
+ {"name":"twice allowed","file":"stmt/maker.js","find":" || new Set(all).size !== all.length)\n        return json({ ok: false, error: \"Between 1 and 50 cards, each once.\" }, 400);","replace":")\n        return json({ ok: false, error: \"Between 1 and 50 cards, each once.\" }, 400);"},
+ {"name":"any id","file":"stmt/maker.js","find":"      if (!all.length || all.length > 50 || !all.every(stamp)","replace":"      if (!all.length || all.length > 50"},
+ {"name":"empty allowed","file":"stmt/maker.js","find":"      if (!all.length || all.length > 50","replace":"      if (all.length > 50"}
+]

@@ -103,6 +103,7 @@ async function deskCall(env, path, method, body) {
     || path === "/_internal/maker/inputs/stock-count" && method === "POST"
     || /^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|partner|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend|trip-pay|trip-join)$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(path) && method === "POST"
+    || path === "/_internal/maker/drafts/decide-many" && method === "POST"
     || /^\/_internal\/maker\/queue\/[^/]+\/withdraw$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|notfound|move|restate)$/.test(path) && method === "POST"
     || (path === "/_internal/maker/order-again" || path === "/_internal/maker/words" || path === "/_internal/maker/fixture-check") && method === "POST";
@@ -393,6 +394,7 @@ function internalOperation(path) {
   const customer = /^\/all\/maker\/customers\/([a-z0-9]{4}-[a-z0-9]{4})\/orders$/.exec(path);
   if (customer) return { kind: "place", u: customer[1] };
   if (/^\/all\/maker\/drafts$/.test(path)) return { kind: "drafts" };
+  if (path === "/all/maker/drafts/decide-many") return { kind: "decide-many" };
   const dm = /^\/all\/maker\/drafts\/([^/]+)\/(approve|reject)$/.exec(path);
   if (dm) return { kind: "draft-decision", id: dm[1], decision: dm[2] };
   const om = /^\/all\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(preview|accept|offer|withdraw|handed|cash|received|again)$/.exec(path);
@@ -753,6 +755,21 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
     if (op.kind === "drafts") {
       if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
       return json(await deskCall(env, "/_internal/maker/drafts", "GET"));
+    }
+    /* 22 Oct 2026 (his multi-tick Approve): every card he ticked, one Confirm. The body is checked here as the Desk checks it
+       (lists of stamped draft ids, 1 to 50 in all, none twice, nothing else) and carried as it came; the Desk decides. */
+    if (op.kind === "decide-many") {
+      if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      const parsed = await bodyOf(request);
+      if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
+      const b = parsed.body, a = b.approve === undefined ? [] : b.approve, r = b.reject === undefined ? [] : b.reject;
+      const stamp = (id) => typeof id === "string" && Number.isFinite(Date.parse(id)) && new Date(id).toISOString() === id;
+      if (Object.keys(b).some((k) => k !== "approve" && k !== "reject") || !Array.isArray(a) || !Array.isArray(r))
+        return json({ ok: false, error: "Send the cards to approve and to reject." }, 400);
+      const all = a.concat(r);
+      if (!all.length || all.length > 50 || !all.every(stamp) || new Set(all).size !== all.length)
+        return json({ ok: false, error: "Between 1 and 50 cards, each once." }, 400);
+      return json(await deskCall(env, "/_internal/maker/drafts/decide-many", "POST", { approve: a, reject: r }));
     }
     if (op.kind === "draft-decision") {
       if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
