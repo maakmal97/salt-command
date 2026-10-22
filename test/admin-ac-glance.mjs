@@ -5,10 +5,11 @@
  *      owe, goods and delivery less what is paid, with a meter of what is paid of what they come to; a practice order counts in none; each opens Orders.
  *      Stock cover and Next lot have left it. The tiles are one line, the value with no top margin; from 860px one row of three, 56px tall
  *   1b the lead is one Insight: what waits on his tap in money (payments to confirm, orders to agree), then the books that need stock off STOCK's lights
- *   2  each kind's pill says how many of it wait, practice apart, the same number its filter then shows
- *   3  the kinds are one row that slides: the system's track, never wrapping, beside a fixed Jump to, each a 44px target
- *   4  Jump to opens a menu of every kind with its count, the current one marked; a kind with nothing cannot be chosen; a line chooses its kind as
- *      the pill does; Escape and a tap outside close it, the focus going back to the button; the arrow keys move between the lines
+ *   2  each kind's tab says how many of it wait, practice apart, the same number its filter then shows
+ *   3  22 Oct 2026 (canvas Needs you): the kinds are a text tab row on the system's Nav bar, six tabs three across on a phone and six wide, each
+ *      48px tall with its count beside the word; Jump to is gone
+ *   4  a tab chooses its kind: it alone is selected, on glass with a brass underline, and only its cards show; a kind with nothing waiting is
+ *      dimmed and cannot be chosen
  * Drawn by the maker harness (test/maker-act.mjs). */
 import { richOwnerPage, byAct } from "./maker-act.mjs";
 import { SITE_RECIPES } from "../stmt/statement-css.js";
@@ -61,62 +62,47 @@ export async function run({ ok, pageWork }) {
     ok(!!lit && !d.getElementById("oOrders").hidden, "and Ready's tile lands on Orders at the Ready stage");
     w.location.hash = "#needs"; await new Promise((r) => setTimeout(r, 20)); await p.work.quiet();
     /* 2 */
-    const pills = [...d.querySelectorAll(".nchips button")].filter((b) => !b.hidden);
+    const pills = [...d.querySelectorAll(".nchips button")].filter((b) => !b.disabled);
     const counts = {}, shown = {};
     for (const b of pills) {
       const k = b.getAttribute("data-chip");
-      counts[k] = t(b.querySelector(".salt-tabs__count"));
+      counts[k] = t(b.querySelector(".nktab__n"));
       await click(b);
       shown[k] = String([...d.querySelectorAll("#nlist [data-need]")].filter((c) => !c.closest('details[data-sev="practice"]')).length);
     }
     await click(byAct(d, "need.kind.all"));
     const practice = d.querySelectorAll('#nlist details[data-sev="practice"] [data-need]').length;
     ok(pills.length >= 3 && J(counts) === J(shown) && +counts.all > 0 && practice >= 1,
-      "each kind's pill says how many of it wait, the number its filter then shows, practice cards apart (" + practice + " practice): " + J([counts, shown]));
+      "each kind's tab says how many of it wait, the number its filter then shows, practice cards apart (" + practice + " practice): " + J([counts, shown]));
     /* 3 */
-    const strip = d.querySelector(".nchips"), row = strip && strip.parentElement, jump = d.getElementById("nJump");
-    const track = rule(".salt-tabs--track");
-    ok(!!row && row.classList.contains("salt-tabs-row") && strip.classList.contains("salt-tabs--track") && !!jump && jump.closest(".salt-jump").parentElement === row
-      && /flex-wrap: nowrap/.test(track) && /overflow-x: auto/.test(track) && /scroll-snap-type: x proximity/.test(track) && /mask-image: linear-gradient\(90deg, #000 85%, transparent\)/.test(track),
-      "the kinds are one row of the system's track, which never wraps, slides, snaps and fades at its right edge, beside a fixed Jump to: " + track.slice(0, 120));
-    const tap = (s) => /min-height: var\(--salt-tap\)/.test(rule(s));
-    ok(tap(".salt-jump__btn") && /min-width: var\(--salt-tap\)/.test(rule(".salt-jump__btn")) && tap(".salt-jump__item") && tap(".salt-tabs--track .salt-tabs__pill")
-      && !/font-weight: [6-9]00/.test(rule(".salt-tabs--track .salt-tabs__pill")) && /font-weight: 500/.test(rule(".salt-tabs__pill")),
-      "Jump to, its lines and the pills are each 44px, the pills at weight 500");
+    const nav = d.querySelector("nav.nkinds"), strip = d.querySelector(".nchips"), tabs = strip ? [...strip.children] : [];
+    ok(!!nav && nav.classList.contains("salt-nav") && strip.parentElement === nav && strip.classList.contains("salt-nav__links") && strip.getAttribute("role") === "tablist"
+      && tabs.length === 6 && tabs.every((b) => b.classList.contains("salt-nav__link") && b.classList.contains("nktab") && b.getAttribute("role") === "tab" && b.lastElementChild.className === "nktab__n" && b.firstChild.nodeType === 3)
+      && /font-family: var\(--salt-font-mono\)/.test(rule(".salt-nav__link")) && !d.getElementById("nJump") && !d.querySelector(".salt-jump, .salt-tabs--track"),
+      "the kinds are one text tab row on the system's Nav bar, six tabs, each its word with the count beside it, and no Jump to: " + tabs.map(t).join(" | "));
+    ok(/\.adm \.nkinds \.nchips\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/.test(css) && /@media \(min-width:860px\)\{\.adm \.nkinds \.nchips\{grid-template-columns:repeat\(6,minmax\(0,1fr\)\)\}\}/.test(css)
+      && /\.adm \.nktab\{display:flex;align-items:center;justify-content:center;gap:8px;min-width:0;min-height:48px;[^}]*white-space:nowrap/.test(css),
+      "three tabs across on a phone and six wide, each 48px tall, its words on one line");
     /* 4 */
-    const menu = d.getElementById("nJumpMenu");
-    ok(menu.hidden && jump.getAttribute("aria-expanded") === "false" && jump.getAttribute("aria-haspopup") === "menu", "Jump to starts shut");
-    await click(jump);
-    const lines = [...menu.querySelectorAll("button[data-jump]")], lc = {};
-    lines.forEach((b) => { lc[b.getAttribute("data-jump")] = t(b.querySelector(".salt-jump__count")); });
-    const pc = {}; [...d.querySelectorAll(".nchips button")].forEach((b) => { pc[b.getAttribute("data-chip")] = t(b.querySelector(".salt-tabs__count")); });
-    ok(!menu.hidden && jump.getAttribute("aria-expanded") === "true" && lines.length === 6 && J(lc) === J(pc) && d.activeElement === lines[0] && lines[0].getAttribute("aria-current") === "true",
-      "Jump to opens a menu of all six kinds, each with the count its pill carries, the current kind marked and focused: " + J(lc));
-    menu.dispatchEvent(new w.KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
-    const second = d.activeElement;
-    ok(second === lines.find((b) => !b.disabled && b !== lines[0]), "the down arrow moves to the next line that can be chosen: " + (second && second.getAttribute("data-jump")));
-    menu.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-    ok(menu.hidden && jump.getAttribute("aria-expanded") === "false" && d.activeElement === jump, "Escape shuts it and gives Jump to back its focus");
-    await click(jump);
-    await click(byAct(d, "need.jump.payments"));
-    const sel = [...d.querySelectorAll(".nchips button")].filter((b) => b.getAttribute("aria-selected") === "true").map((b) => b.getAttribute("data-chip"));
+    await click(byAct(d, "need.kind.payments"));
+    const sel = tabs.filter((b) => b.getAttribute("aria-selected") === "true").map((b) => b.getAttribute("data-chip"));
+    const act = tabs.filter((b) => b.classList.contains("salt-nav__link--active")).map((b) => b.getAttribute("data-chip"));
     const kinds = [...new Set([...d.querySelectorAll("#nlist [data-need]")].map((c) => c.getAttribute("data-kind")))];
-    ok(menu.hidden && J(sel) === J(["payments"]) && J(kinds) === J(["payments"]) && d.activeElement === jump,
-      "a line chooses its kind as the pill does, and the menu shuts: " + J([sel, kinds]));
-    await click(jump);
-    await click(d.getElementById("nCount"));
-    ok(menu.hidden && jump.getAttribute("aria-expanded") === "false", "a tap outside shuts it");
+    ok(J(sel) === J(["payments"]) && J(act) === J(["payments"]) && J(kinds) === J(["payments"])
+      && /\.adm \.nktab\[aria-selected="true"\]\{border-bottom-color:var\(--salt-brass\);background:var\(--salt-glass\)\}/.test(css),
+      "a tab chooses its kind: it alone is selected, the Nav bar's active link on glass with a brass underline, and only its cards show: " + J([sel, act, kinds]));
     await click(byAct(d, "need.kind.all"));
   } finally { p.w.close(); }
 
-  /* 4b: a kind with nothing waiting cannot be chosen from the menu */
+  /* 4b: a kind with nothing waiting is dimmed and cannot be chosen */
   const q = await richOwnerPage({ pageWork, threads: (j) => ({ ...j, threads: [] }) });
   try {
     await q.work.quiet();
     const d = q.d;
     byAct(d, "nav.needs").click(); await q.work.quiet();
-    const m = d.querySelector('#nJumpMenu button[data-jump="messages"]'), o = d.querySelector('#nJumpMenu button[data-jump="orders"]');
-    ok(!!m && m.disabled && m.classList.contains("salt-jump__item--none") && t(m.querySelector(".salt-jump__count")) === "0" && !o.disabled && !o.classList.contains("salt-jump__item--none"),
-      "with no message waiting the Messages line stands in mist at 0 and cannot be chosen, while Orders can");
+    const m = d.querySelector('.nchips button[data-chip="messages"]'), o = d.querySelector('.nchips button[data-chip="orders"]');
+    const css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
+    ok(!!m && m.disabled && !m.hidden && t(m.querySelector(".nktab__n")) === "0" && !o.disabled && /\.adm \.nktab:disabled\{opacity:\.5;cursor:default\}/.test(css),
+      "with no message waiting the Messages tab stays in its place at 0, dimmed, and cannot be chosen, while Orders can");
   } finally { q.w.close(); }
 }

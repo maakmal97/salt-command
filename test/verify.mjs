@@ -50213,7 +50213,7 @@ await (async () => {
   await (await import("./admin-ac-again.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Admin A to C: the glance on Needs you, counts on the kinds, one sliding row and Jump to (21 Oct 2026)");
+section("Salt Admin Needs you: the Insight, the glance of three tiles and the kinds as a tab row with their counts (21 and 22 Oct 2026)");
 await (async () => {
   await (await import("./admin-ac-glance.mjs")).run({ ok, pageWork });
 })();

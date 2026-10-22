@@ -113,7 +113,6 @@ export const OWNER_JS = `
     var parts=PARTS[place]||[];
     if(!parts.length) part=''; else if(parts.indexOf(part)<0) part=parts[0];
     var fresh=!!o.fresh||place!==placeNow, moved2=place!==placeNow||part!==partNow;
-    if(placeNow==='needs'&&place!=='needs'){ jumpShut(false); }
     placeNow=place; partNow=part;
     /* Orders opens on the first stage that has something waiting, found when the read lands (drawMaker); a stage he chose is his */
     ordAuto=place==='orders'&&place!==prevPlace&&!asked;
@@ -6431,11 +6430,10 @@ export const OWNER_JS = `
     if(!nlist) return;
     var items=needItems(), shown=items.filter(function(i){ return nKind==='all'||i.kind===nKind; });
     drawCounts(items); drawLead(items); drawGlanceAll();
-    /* the chips are the kinds present, and All; one whose kind has gone leaves him on All */
+    /* a kind whose cards have gone leaves him on All (drawKindCounts dims it) */
     if(needsReady()){
       var have={}; items.forEach(function(i){ have[i.kind]=1; });
-      [].forEach.call(document.querySelectorAll('.nchips button'), function(x){ var k=x.getAttribute('data-chip'); x.hidden=!(k==='all'||have[k]); });
-      if(nKind!=='all'&&!have[nKind]){ nKind='all'; shown=items; [].forEach.call(document.querySelectorAll('.nchips button'), function(x){ x.setAttribute('aria-selected', x.getAttribute('data-chip')==='all'?'true':'false'); }); }
+      if(nKind!=='all'&&!have[nKind]){ nKind='all'; shown=items; kindMark(); }
     }
     drawKindCounts(items);
     nlist.textContent='';
@@ -6465,18 +6463,24 @@ export const OWNER_JS = `
     drawNeedOpen(false);
   }
   function redrawLead(){ drawLead(needItems()); }
-  /* 21 Oct 2026 (canvas V56): EACH KIND'S PILL, AND ITS LINE UNDER JUMP TO, SAYS HOW MANY OF IT WAIT, practice apart, as the bars count. A kind
-     with nothing at all is no pill, and its line stands in mist and cannot be chosen; nothing is said until every read has landed. */
+  /* 21 Oct 2026 (canvas V56): EACH KIND SAYS HOW MANY OF IT WAIT, practice apart, as the bars count; nothing is said until every read has landed.
+     22 Oct 2026 (canvas Needs you): the count stands beside the word on its tab, and a kind with nothing at all is dimmed and cannot be chosen. */
   function drawKindCounts(items){
     var n={all:0}, have={all:1}, ready=needsReady();
     items.forEach(function(i){ have[i.kind]=1; if(i.practice) return; n.all++; n[i.kind]=(n[i.kind]||0)+1; });
-    [].forEach.call(document.querySelectorAll('.nchips button, #nJumpMenu button'), function(b){
-      var menu=b.hasAttribute('data-jump'), k=b.getAttribute(menu?'data-jump':'data-chip'), c=b.querySelector(menu?'.salt-jump__count':'.salt-tabs__count');
-      if(!c){ c=el('span','salt-tabs__count'); b.appendChild(c); }
-      c.textContent=ready?String(n[k]||0):'';
-      if(!menu) return;
+    [].forEach.call(document.querySelectorAll('.nchips button'), function(b){
+      var k=b.getAttribute('data-chip'), c=b.querySelector('.nktab__n');
+      if(!c){ c=el('span','nktab__n'); b.appendChild(c); }
+      var said=ready?String(n[k]||0):'';
+      if(c.textContent!==said) c.textContent=said;
       var none=ready&&!have[k];
-      b.disabled=none; b.classList.toggle('salt-jump__item--none', none); b.setAttribute('aria-current', k===nKind?'true':'false');
+      if(b.disabled!==none) b.disabled=none;
+    });
+  }
+  /* the chosen kind's tab: selected, and the Nav bar's active link */
+  function kindMark(){
+    [].forEach.call(document.querySelectorAll('.nchips button'), function(x){
+      var on=x.getAttribute('data-chip')===nKind; x.setAttribute('aria-selected', on?'true':'false'); x.classList.toggle('salt-nav__link--active', on);
     });
   }
   /* 21 Oct 2026 (P7): THE GLANCE heads Needs you. 22 Oct 2026 (canvas Needs you): three single-line KPI tiles, each a link to Orders. Ready (brass): the
@@ -6557,47 +6561,8 @@ export const OWNER_JS = `
       s.appendChild(r);
     });
   }
-  /* 21 Oct 2026 (canvas V56): JUMP TO opens a menu of every kind with its count; a line chooses its kind as the pill does, Escape or a tap
-     outside closes it and gives the button back its focus, and the arrow keys move between the lines that can be chosen */
-  var nJump=document.getElementById('nJump'), nJumpMenu=document.getElementById('nJumpMenu');
-  function jumpShut(back){
-    if(!nJumpMenu||nJumpMenu.hidden) return;
-    nJumpMenu.hidden=true; nJump.setAttribute('aria-expanded','false');
-    if(back) nJump.focus();
-  }
-  function jumpLines(){ return [].filter.call(nJumpMenu.querySelectorAll('button'), function(b){ return !b.disabled; }); }
-  /* a kind chosen, from its pill or its line: the pill marked and brought into view on a row that slides */
-  function nPick(k){
-    nKind=k;
-    [].forEach.call(document.querySelectorAll('.nchips button'), function(x){
-      var on=x.getAttribute('data-chip')===k; x.setAttribute('aria-selected', on?'true':'false');
-      var sp=x.parentNode; if(on&&sp.scrollWidth>sp.clientWidth) sp.scrollLeft=Math.max(0,x.offsetLeft-sp.offsetLeft-12);
-    });
-    drawNeeds();
-  }
-  if(nJump&&nJumpMenu){
-    nJump.addEventListener('click', function(){
-      if(!nJumpMenu.hidden){ jumpShut(false); return; }
-      nJumpMenu.hidden=false; nJump.setAttribute('aria-expanded','true');
-      var L=jumpLines(), cur=L.filter(function(b){ return b.getAttribute('data-jump')===nKind; })[0]||L[0];
-      if(cur) cur.focus();
-    });
-    nJumpMenu.addEventListener('click', function(ev){
-      var b=ev.target.closest('button[data-jump]'); if(!b||b.disabled) return;
-      jumpShut(true); nPick(b.getAttribute('data-jump'));
-    });
-    nJumpMenu.addEventListener('keydown', function(ev){
-      if(ev.key==='Escape'){ ev.preventDefault(); jumpShut(true); return; }
-      if(['ArrowDown','ArrowUp','Home','End'].indexOf(ev.key)<0) return;
-      ev.preventDefault();
-      var L=jumpLines(); if(!L.length) return;
-      var i=L.indexOf(document.activeElement);
-      i=ev.key==='Home'?0:ev.key==='End'?L.length-1:ev.key==='ArrowDown'?(i+1)%L.length:(i<=0?L.length-1:i-1);
-      L[i].focus();
-    });
-    nJump.addEventListener('keydown', function(ev){ if(ev.key==='Escape') jumpShut(true); });
-    document.addEventListener('click', function(ev){ if(!nJumpMenu.hidden&&!ev.target.closest('.salt-jump')) jumpShut(false); });
-  }
+  /* a kind chosen from its tab (22 Oct 2026: Jump to is gone, every kind is in view) */
+  function nPick(k){ nKind=k; kindMark(); drawNeeds(); }
   /* ---- READING WHAT NEEDS YOU, on entering it and every 5 seconds while it is showing. Everything it shows is read from the sources the
      other places read, each guarding its own read: none starts while another of its kind is out, and a poll that finds the same answer
      draws nothing. The sheet and the links are read again only after the page has read them once (it does at opening). ---- */

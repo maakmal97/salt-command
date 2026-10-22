@@ -961,7 +961,15 @@ body.ended>*:not(#aEnded){display:none}
 .adm .nlist{display:flex;flex-direction:column;gap:12px;margin:0 0 24px}
 .adm .nlist .glink{margin:0}
 .adm .nlist .nsev{margin:8px 0 -4px}
-.adm .nkrow{margin:0 0 16px}
+/* 22 Oct 2026 (canvas Needs you): the kinds' tab row, the Nav bar's link laid out as equal 48px tabs, the count in brass beside the word */
+.adm .nkinds{margin:0 0 16px;padding:0;gap:0}
+.adm .nkinds .nchips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 16px}
+@media (min-width:860px){.adm .nkinds .nchips{grid-template-columns:repeat(6,minmax(0,1fr))}}
+.adm .nktab{display:flex;align-items:center;justify-content:center;gap:8px;min-width:0;min-height:48px;margin:0;padding:0 12px;background:none;border:0;border-bottom:2px solid transparent;border-radius:10px 10px 0 0;cursor:pointer;white-space:nowrap;overflow:hidden}
+.adm .nktab__n{color:var(--salt-brass)}
+.adm .nktab:hover:not(:disabled),.adm .nktab:focus-visible{background:var(--salt-glass-hover);color:var(--salt-salt)}
+.adm .nktab[aria-selected="true"]{border-bottom-color:var(--salt-brass);background:var(--salt-glass)}
+.adm .nktab:disabled{opacity:.5;cursor:default}
 /* 21 Oct 2026 (P9): the delivery charge is the system's slider over four radios; a label lays its option out, and the thumb waits until one is ticked */
 .adm .ofee{margin-top:4px}
 .adm .ofee .salt-segment__opt{display:flex;align-items:center;justify-content:center}
@@ -1008,7 +1016,6 @@ body.ended>*:not(#aEnded){display:none}
 .adm .nfail{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:0 0 12px}
 .adm .nfail[hidden]{display:none}
 .adm .nfail__what{margin:0;flex:1 1 12em}
-.adm .nchips .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
 .adm .need .salt-action__title{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}
 .adm .need .need-what{font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm .need .salt-action__body>*+*{margin-top:8px}
@@ -1031,7 +1038,6 @@ body.ended>*:not(#aEnded){display:none}
 .adm .nfold>summary.nsev::before{content:"+";display:inline-block;width:1.2em}
 .adm .nfold[open]>summary.nsev::before{content:"-"}
 .adm .nfold>summary.nsev:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px}
-.adm .nchips .salt-tabs__pill[hidden]{display:none}
 /* 14 OCT 2026: ORDERS ARE ROWS OF ONE GRID: the mark in a fixed column, the code and at most one pill over what it is, the age over the figure in a fixed column on the
    right, every row the same height. The system's Inbox row keeps its class; the grid is this page's own container class. */
 .adm .ordrow{display:grid;grid-template-columns:84px minmax(0,1fr) 88px;align-items:center;gap:0 12px;min-height:76px}
@@ -1886,12 +1892,11 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<section id="nGlance" class="nglance" aria-label="At a glance" hidden></section>'
         /* 22 Oct 2026 (his word, the restock light made plain): every book's light and figures (stmt/owner.js drawStockBooks) */
         + '<section id="nStock" class="nstock" aria-label="Stock by book" hidden></section>'
-        /* 21 Oct 2026 (canvas V56): the kinds on one row that slides, each with its count, and Jump to beside it, a menu of every kind */
-        + '<div class="salt-tabs-row nkrow"><div class="salt-tabs salt-tabs--track nchips" role="tablist" aria-label="Show">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="salt-tabs__pill" role="tab" data-chip="' + k
-          + '" data-act="need.kind.' + k + '" aria-selected="' + (i ? "false" : "true") + '">' + w + "</button>").join("") + "</div>"
-        + '<div class="salt-jump"><button type="button" class="salt-jump__btn" id="nJump" data-act="need.jump" aria-haspopup="menu" aria-expanded="false" aria-controls="nJumpMenu">Jump to</button>'
-        + '<div class="salt-jump__menu" id="nJumpMenu" role="menu" aria-label="Jump to" hidden>' + ADMIN_KINDS.map(([k, w]) => '<button type="button" class="salt-jump__item" role="menuitem" data-jump="' + k
-          + '" data-act="need.jump.' + k + '"><span>' + w + '</span><span class="salt-jump__count"></span></button>').join("") + "</div></div></div>"
+        /* 22 Oct 2026 (canvas Needs you, his "something else that is not just pill styles"): the kinds are a text tab row on the system's Nav bar, the count
+           beside each word, the chosen one on glass with a brass underline, an empty one dimmed; three across on a phone, six wide. Jump to is gone */
+        + '<nav class="salt-nav nkinds" aria-label="Show"><div class="salt-nav__links nchips" role="tablist">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="salt-nav__link nktab'
+          + (i ? "" : " salt-nav__link--active") + '" role="tab" data-chip="' + k + '" data-act="need.kind.' + k + '" aria-selected="' + (i ? "false" : "true") + '">' + w
+          + '<span class="nktab__n"></span></button>').join("") + "</div></nav>"
         /* S9 fix: from 860px the list stands beside the account a card is about, as Accounts does (Phase 6) */
         + '<div class="nsplit"><div>'
         + '<div id="nlist" class="nlist"></div>'

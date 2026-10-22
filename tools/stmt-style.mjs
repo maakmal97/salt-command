@@ -114,6 +114,8 @@ export const RECIPE_HEADS = [
   "/* ---- Ledger list, receipt:", "/* ---- Band:", "/* ---- Empty state:", "/* ---- Glass card, link:", "/* ---- Pin:", "/* ---- Glance:",
   /* COUNTER BATCH C (20 Oct 2026, salt-ds 1.9): the slider, his pick of three, for a choice of two to six that fits a phone */
   "/* ---- Segment (",
+  /* SALT ADMIN NEEDS YOU (22 Oct 2026, his canvas): the kinds are a text tab row on the system's Nav bar, so its link is carried */
+  "/* ---- Nav bar ---- */",
 ];
 export function siteRecipes() {
   const css = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");
