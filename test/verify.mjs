@@ -50243,6 +50243,11 @@ await (async () => {
   await (await import("./admin-reward-label.mjs")).run({ ok, pageWork });
 })();
 
+section("Multi-tick Approve, P1: the Desk decides many cards in one call, refusals with a fix, one dispatch (22 Oct 2026)");
+await (async () => {
+  await (await import("./decide-many-desk.mjs")).run({ ok });
+})();
+
 section("Salt Admin A to C: Help read only on Shop hours, the customer's four answers (21 Oct 2026)");
 await (async () => {
   await (await import("./admin-ac-help.mjs")).run({ ok, pageWork });

@@ -302,9 +302,10 @@ export async function pushIfDrafted(env, result) {
    under Approve. The stage is rung once, as a tap rings it; and a pending row an Accept queued moves its order on
    the site now (ackOnApproval), which is the moment D6 lets the customer be told. A fault is logged and the
    approval stands: the order is moved again by the next Accept, which finds the row approved. */
-async function afterApproval(env, ctx, ids) {
+async function afterApproval(env, ctx, ids, hold = false) {
   if (!ids || !ids.length) return [];
-  stageOnApproval(env, ctx);
+  /* 22 Oct 2026: a batch of decisions (decide-many) holds the dispatch and sends one after its last row */
+  if (!hold) stageOnApproval(env, ctx);
   const moved = [];
   for (const id of ids) {
     try {
@@ -599,7 +600,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     && !/^\/_internal\/maker\/claims\/[a-z0-9]{4}-[a-z0-9]{4}\/a[0-9]{14}-[a-z0-9]{1,8}\/(preview|received|notfound)$/.test(p)
     && !/^\/_internal\/maker\/threads\/[a-z0-9]{4}-[a-z0-9]{4}$/.test(p)
     && !/^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|partner|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend|trip-pay|trip-join)$/.test(p)
-    && !/^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(p)
+    && !/^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(p) && p !== "/_internal/maker/drafts/decide-many"
     && !/^\/_internal\/maker\/queue\/[^/]+\/withdraw$/.test(p)
     && p !== "/_internal/maker/order-again" && p !== "/_internal/maker/words" && p !== "/_internal/maker/fixture-check"
     && p !== "/_internal/maker/offsets" && p !== "/_internal/maker/inputs/offset" && p !== "/_internal/maker/ledger"
@@ -1256,6 +1257,18 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       }
     } catch (e) { result = { ok: false, status: 500, error: String((e && e.message) || e) }; }
     return json(result, result.ok ? 200 : (result.status || 502));
+  }
+  /* 22 Oct 2026 (his multi-tick Approve, docs/plan-approve-many.html): MANY CARDS, ONE CONFIRM. Each card is the one tap's own
+     decision, in the order entered, its trip with it; a card the Desk refuses is answered with why and how to fix it and the rest
+     still go; one dispatch and one live tell follow the last. */
+  if (p === "/_internal/maker/drafts/decide-many") {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    if (!env.SALT_LEDGER) return json({ ok: false, error: "no ledger binding" }, 503);
+    let body;
+    try { body = await request.json(); } catch (e) { return json({ ok: false, error: "send JSON" }, 400); }
+    const fault = decideManyFault(body);
+    if (fault) return json({ ok: false, error: fault }, 400);
+    return json(await decideMany(env, ctx, body));
   }
   const match = /^\/_internal\/maker\/drafts\/([^/]+)\/(approve|reject)$/.exec(p);
   let id;
@@ -2333,12 +2346,19 @@ async function handleDraftDecide(request, env, ctx, id, decision) {
   if (!writeOk(request, env)) return needsKey();
   let by = "phone";
   try { const b = await request.json(); if (b && typeof b.by === "string" && b.by.trim()) by = b.by.trim(); } catch (e) { /* body is optional */ }
+  const r = await decideDraft(env, ctx, id, decision, by, false);
+  return json(r.body, r.status);
+}
+/* ONE DECISION ON ONE DRAFT, its trip with it: what a tap does, answered as {status, body}. handleDraftDecide answers one tap
+   with it; decide-many (22 Oct 2026, his multi-tick Approve) runs it for each card in turn with `hold`, which keeps back the
+   fold's dispatch and the live tell, so the batch sends each once after its last row. Nothing else differs. */
+async function decideDraft(env, ctx, id, decision, by, hold) {
   const cur = await env.SALT_LEDGER.prepare("SELECT id,status,collection,entry,row FROM draft WHERE id=?1").bind(id).first();
-  if (!cur) return json({ ok: false, error: "no such draft" }, 404);
+  if (!cur) return { status: 404, body: { ok: false, error: "no such draft" } };
   /* Only a pending draft may be decided. Deciding twice is reported rather than applied, so a
      double tap on a phone cannot flip an approval into a rejection. */
   if (cur.status !== "pending") {
-    return json({ ok: false, error: "already " + cur.status, status: cur.status }, 409);
+    return { status: 409, body: { ok: false, error: "already " + cur.status, status: cur.status } };
   }
   /* S6 6.5 (D7): A CLAIM'S OWN ENTRY IS HIS CHECK, answered on its order's card, never here: approved here it would book
      money he has not confirmed, rejected here the claim would wait for ever. Once his Received has been given for it (a
@@ -2348,11 +2368,11 @@ async function handleDraftDecide(request, env, ctx, id, decision) {
   if (claim) {
     let yes = null;
     try { yes = await env.SALT_LEDGER.prepare("SELECT id FROM preapproval WHERE draft_id=?1").bind(id).first(); } catch (e) { yes = null; }
-    if (!yes) return json({ ok: false, error: "a payment they say they sent is answered on its order's card, Received or Not found" }, 409);
+    if (!yes) return { status: 409, body: { ok: false, error: "a payment they say they sent is answered on its order's card, Received or Not found" } };
   }
   if (decision === "approved") {
     const dependency = await makerRegistrationApprovalFault(env, cur);
-    if (dependency) return json({ ok: false, error: dependency.error }, dependency.status);
+    if (dependency) return { status: dependency.status, body: { ok: false, error: dependency.error } };
   }
   const decide = env.SALT_LEDGER.prepare(
     "UPDATE draft SET status=?1, decided_at=?2, decided_by=?3 WHERE id=?4 AND status='pending'"
@@ -2371,12 +2391,12 @@ async function handleDraftDecide(request, env, ctx, id, decision) {
      decision in the body, and ring the stage for an approval that was in fact a rejection. */
   if (upd && upd.meta && upd.meta.changes === 0) {
     const now = await env.SALT_LEDGER.prepare("SELECT status FROM draft WHERE id=?1").bind(id).first();
-    return json({ ok: false, error: "already " + ((now && now.status) || "decided"), status: now && now.status }, 409);
+    return { status: 409, body: { ok: false, error: "already " + ((now && now.status) || "decided"), status: now && now.status } };
   }
   /* S11: an approval sets going what any approval does; a rejection spends any yes that was waiting on this row */
   let moved = [];
-  if (decision === "approved") moved = await afterApproval(env, ctx, [id].concat(trip));
-  await liveTell(env, ctx, "drafts");
+  if (decision === "approved") moved = await afterApproval(env, ctx, [id].concat(trip), hold);
+  if (!hold) await liveTell(env, ctx, "drafts");
   let dropped = 0;
   if (decision === "rejected") {
     try { dropped = await dropQueued(env, [id].concat(trip)); } catch (e) { /* the decision stands; the POST filter catches a re-post */ }
@@ -2391,7 +2411,53 @@ async function handleDraftDecide(request, env, ctx, id, decision) {
   if (decision === "rejected" && d && d.entry && d.entry.orderId) {
     try { order = await rejectedOnOrder(env, d.entry, new Date().toISOString()); } catch (e) { order = false; }
   }
-  return json(Object.assign({ ok: true, draft: d, dropped }, order === undefined ? {} : { order }, moved.length ? { moved } : {}, trip.length ? { trip } : {}));
+  return { status: 200, body: Object.assign({ ok: true, draft: d, dropped }, order === undefined ? {} : { order }, moved.length ? { moved } : {}, trip.length ? { trip } : {}) };
+}
+export const DECIDE_MANY_MAX = 50;
+/** decide-many's body: {approve: [ids], reject: [ids]}, draft ids as stamped, at most 50 in all, none twice, nothing else */
+export function decideManyFault(body) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return "send {approve, reject}";
+  if (Object.keys(body).some((k) => k !== "approve" && k !== "reject")) return "only approve and reject";
+  const a = body.approve === undefined ? [] : body.approve, r = body.reject === undefined ? [] : body.reject;
+  if (!Array.isArray(a) || !Array.isArray(r)) return "approve and reject are lists";
+  const all = a.concat(r);
+  if (!all.length) return "nothing to decide";
+  if (all.length > DECIDE_MANY_MAX) return "at most " + DECIDE_MANY_MAX + " cards a tap";
+  for (const id of all) if (typeof id !== "string" || !Number.isFinite(Date.parse(id)) || new Date(id).toISOString() !== id) return "invalid draft timestamp";
+  if (new Set(all).size !== all.length) return "a card is named twice";
+  return null;
+}
+/** what he does about a card the Desk would not decide, in his words, off the refusal it gave */
+export function refusalFix(error, status) {
+  const e = String(error || "");
+  if (/^already /.test(e)) return "It was decided on another screen. Nothing to do.";
+  if (status === 404 || /no such draft/.test(e)) return "It is no longer waiting. Nothing to do.";
+  if (/answered on its order/.test(e)) return "Answer it on its order, with Received or Not found.";
+  if (/Add ID/.test(e)) return "Approve the new customer's Add ID first, then this card.";
+  return "Decide it on its own card; if it is refused again, this reason says what to change.";
+}
+async function decideMany(env, ctx, body) {
+  const by = "Counter Admin";
+  const want = (body.approve || []).map((id) => [id, "approved"]).concat((body.reject || []).map((id) => [id, "rejected"]))
+    .sort((x, y) => (x[0] < y[0] ? -1 : x[0] > y[0] ? 1 : 0));
+  const decided = [], refused = [], swept = new Map();
+  for (const [id, decision] of want) {
+    /* a row its trip already decided in this batch, the same way, is decided; the other way is a refusal like any other */
+    if (swept.get(id) === decision) { decided.push({ id, decision, withTrip: true }); continue; }
+    let r;
+    try { r = await decideDraft(env, ctx, id, decision, by, true); } catch (e) { r = { status: 500, body: { ok: false, error: String((e && e.message) || e) } }; }
+    if (r.status === 200 && r.body && r.body.ok) {
+      const trip = r.body.trip || [];
+      trip.forEach((t) => swept.set(t, decision));
+      decided.push(Object.assign({ id, decision }, trip.length ? { trip } : {}));
+    } else {
+      const error = (r.body && r.body.error) || "not decided";
+      refused.push({ id, decision, error, fix: refusalFix(error, r.status) });
+    }
+  }
+  if (decided.some((d) => d.decision === "approved")) stageOnApproval(env, ctx);
+  if (decided.length) await liveTell(env, ctx, "drafts");
+  return { ok: true, decided, refused };
 }
 /* The rows of a trip decided with the one tapped: pending, uncommitted sales of the same trip, neither a claim nor made by
    a site order. Returns the statements to run in the tapped row's batch, and where each row's UPDATE sits in them. */
