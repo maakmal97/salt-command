@@ -1,0 +1,44 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-22T01:03:39.542Z",
+   "status": "approved",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CS6-BS": {
+      "salt": -0.2
+     }
+    },
+    "unit": "pct"
+   },
+   "reasoning": "Sets their % for 1 customer: CS6-BS Salt 20% off. It moves no cash and no stock; a % lift moves that customer's own price and never the board.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-22T01:03:39.542Z",
+    "type": "TIER",
+    "party": "CS6-BS",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CS6-BS: salt -20% lift",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CS6-BS": {
+       "salt": -0.2
+      }
+     },
+     "unit": "pct"
+    },
+    "makerRequest": "e9d6fceb2022f66d9202a54724a81b7c62fc03699e00a759ee2e090f4fdec1aa"
+   },
+   "decidedAt": "2026-10-22T01:03:45.607Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
