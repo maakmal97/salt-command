@@ -1,6 +1,6 @@
 {
- "v": "v1209",
- "stamped": "22 Oct 2026, 11:18 KL",
+ "v": "v1211",
+ "stamped": "22 Oct 2026, 16:31 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -73,7 +73,7 @@
    "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 39
+    "stated": 30
    },
    "candy": {
     "qty": 0,
@@ -8353,16 +8353,16 @@
     "qty": 1,
     "total": 120,
     "cost": 60,
-    "cash": 145,
-    "delivery": 25,
-    "handover": "delivered",
+    "cash": 120,
+    "delivery": 0,
+    "handover": "collected",
     "trip": "t1792637872213",
     "date": "2026-10-21",
     "deliveredQty": 1,
     "deliveredOn": "2026-10-21",
     "listRM": 120,
     "listQty": 1,
-    "note": "<b>NEW SALE ON 21 OCT: 1 UNIT OF SALT TO CS6-PER, GOODS RM120, DELIVERED, ADVANCE.</b> RM120 cash paid, plus RM25 delivery left unpaid, and 1 unit delivered on 21 Oct. The goods total of RM120 equals the ask total of RM120 and is above the floor total of RM60, so RM120 a unit against a floor of RM60 and an ask of RM120. CS6-PER's history: 23 orders, a median rate of RM85.52, a range of RM7 to RM116, nothing outstanding before this and no units on credit, against a cap of 2. The row carries cost of RM60 a unit, COGS off the latest purchase p042, and the fold keeps it. The drafter flagged the rate as 20% above their usual RM100 and the advance against the cap; the figures answer the first, since it is the ask. The RM25 delivery is outstanding.",
+    "note": "His word of 22 Oct 2026: one order, collected, no delivery, paid in full on 21 Oct",
     "rid": "s282",
     "amend": [
      {
@@ -8378,39 +8378,79 @@
       "cash": 25,
       "kg": 0,
       "note": "<b>FULFILMENT ON S282 ON 22 OCT: RM25 DELIVERY CHARGE PAID BY CS6-PER.</b> The order of 21 Oct was 1 unit of salt, goods RM120 paid in cash, with RM25 delivery left unpaid and RM145 owed in all. This fulfilment brings in the RM25 and moves no unit, as the salt was delivered on 21 Oct. It settles the order in full. That clears the RM25 CS6-PER had outstanding before this fold. The history stands at a median rate of RM100 and a range of RM7 to RM120, with 26 orders. The drafter flagged that it settles the order in full; the figures answer that, since RM25 against RM25 leaves nothing owing."
+     },
+     {
+      "date": "2026-10-22",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S282: SALT, 1 UNIT TO CS6-PER, NOW COLLECTED AND PAID IN FULL.</b> On his word, delivery goes from RM25 to 0, cash from RM145 to RM120, handover from delivered to collected, and paidOn from 2026-10-22 to 2026-10-21. Goods stay at RM120 a unit against a floor of RM60 and an ask of RM120, so the rate is the ask. CS6-PER's history: median RM100, range RM7 to RM120, nothing outstanding, no units on credit. The row keeps its cost of RM60 a unit. The drafter flagged the rate as 20% above their usual RM100, which the ask answers, and a trail of 2 steps that will no longer add up to the figure. Nothing is outstanding.",
+      "was": {
+       "cash": 145,
+       "delivery": 25,
+       "paidOn": "2026-10-22",
+       "note": "<b>NEW SALE ON 21 OCT: 1 UNIT OF SALT TO CS6-PER, GOODS RM120, DELIVERED, ADVANCE.</b> RM120 cash paid, plus RM25 delivery left unpaid, and 1 unit delivered on 21 Oct. The goods total of RM120 equals the ask total of RM120 and is above the floor total of RM60, so RM120 a unit against a floor of RM60 and an ask of RM120. CS6-PER's history: 23 orders, a median rate of RM85.52, a range of RM7 to RM116, nothing outstanding before this and no units on credit, against a cap of 2. The row carries cost of RM60 a unit, COGS off the latest purchase p042, and the fold keeps it. The drafter flagged the rate as 20% above their usual RM100 and the advance against the cap; the figures answer the first, since it is the ask. The RM25 delivery is outstanding.",
+       "handover": "delivered"
+      }
      }
     ],
-    "paidOn": "2026-10-22"
+    "paidOn": "2026-10-21",
+    "mod": "corrected on 2026-10-22: cash 145 to 120; delivery 25 to 0; paidOn 2026-10-22 to 2026-10-21; note <b>NEW SALE ON 21 OCT: 1 UNIT OF SALT TO CS6-PER, GOODS RM120, DELIVERED, ADVANCE.</b> RM120 cash paid, plus RM25 delivery left unpaid, and 1 unit delivered on 21 Oct. The goods total of RM120 equals the ask total of RM120 and is above the floor total of RM60, so RM120 a unit against a floor of RM60 and an ask of RM120. CS6-PER's history: 23 orders, a median rate of RM85.52, a range of RM7 to RM116, nothing outstanding before this and no units on credit, against a cap of 2. The row carries cost of RM60 a unit, COGS off the latest purchase p042, and the fold keeps it. The drafter flagged the rate as 20% above their usual RM100 and the advance against the cap; the figures answer the first, since it is the ask. The RM25 delivery is outstanding. to His word of 22 Oct 2026: one order, collected, no delivery, paid in full on 21 Oct; handover delivered to collected"
    },
    {
     "customer": "CS6-PER",
-    "qty": 1,
+    "qty": 10,
     "total": 120,
-    "cost": 7.86,
+    "cost": 78.6,
     "cash": 120,
-    "handover": "delivered",
+    "handover": "collected",
     "trip": "t1792637872213",
     "product": "oil",
     "date": "2026-10-21",
-    "deliveredQty": 1,
+    "deliveredQty": 10,
     "deliveredOn": "2026-10-21",
     "paidOn": "2026-10-21",
-    "note": "<b>NEW SALE ON 21 OCT: 1 UNIT OF OIL TO CS6-PER, GOODS RM120, PAID AND DELIVERED.</b> RM120 cash received and 1 unit delivered on 21 Oct, with no delivery charge, as it sits on the salt row. The goods total of RM120 is far above the ask total of RM10 and the ceiling total of RM30, against a floor total of RM10. CS6-PER's history: 23 orders, a range of RM7 to RM116, nothing outstanding, against a cap of 20. The row carries cost of RM7.86 a unit, COGS off the latest purchase p041, which is the inventory's own rate. The drafter flagged the rate as more than double the highest oil rate the book has carried (RM13) and about 990.9% above their usual RM11. The figures do not answer that flag. Nothing is outstanding.",
-    "rid": "s283"
+    "note": "His word of 22 Oct 2026: 10 unit of oil for RM120, collected, paid in full",
+    "rid": "s283",
+    "mod": "corrected on 2026-10-22: qty 1 to 10; deliveredQty 1 to 10; cost 7.86 to 78.6; note <b>NEW SALE ON 21 OCT: 1 UNIT OF OIL TO CS6-PER, GOODS RM120, PAID AND DELIVERED.</b> RM120 cash received and 1 unit delivered on 21 Oct, with no delivery charge, as it sits on the salt row. The goods total of RM120 is far above the ask total of RM10 and the ceiling total of RM30, against a floor total of RM10. CS6-PER's history: 23 orders, a range of RM7 to RM116, nothing outstanding, against a cap of 20. The row carries cost of RM7.86 a unit, COGS off the latest purchase p041, which is the inventory's own rate. The drafter flagged the rate as more than double the highest oil rate the book has carried (RM13) and about 990.9% above their usual RM11. The figures do not answer that flag. Nothing is outstanding. to His word of 22 Oct 2026: 10 unit of oil for RM120, collected, paid in full; handover delivered to collected",
+    "amend": [
+     {
+      "date": "2026-10-21",
+      "kind": "Fulfilment",
+      "cash": 120,
+      "kg": 1,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-22",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 9,
+      "note": "<b>CORRECTION ON S283: OIL, QUANTITY RAISED FROM 1 UNIT TO 10 UNITS, COLLECTED AND PAID.</b> On his word, qty and deliveredQty go to 10, handover to collected, and cost from RM7.86 to RM78.60 for the order. Goods stay at RM120 for 10 units. The shelf rolls by 9 units out to CS6-PER. The drafter flagged that a typed cost overrides the inventory's own and becomes the basis of every margin. The dossier gives no reason for the quantity change. CS6-PER has nothing outstanding and no units on credit. Nothing is outstanding.",
+      "was": {
+       "qty": 1,
+       "deliveredQty": 1,
+       "cost": 7.86,
+       "note": "<b>NEW SALE ON 21 OCT: 1 UNIT OF OIL TO CS6-PER, GOODS RM120, PAID AND DELIVERED.</b> RM120 cash received and 1 unit delivered on 21 Oct, with no delivery charge, as it sits on the salt row. The goods total of RM120 is far above the ask total of RM10 and the ceiling total of RM30, against a floor total of RM10. CS6-PER's history: 23 orders, a range of RM7 to RM116, nothing outstanding, against a cap of 20. The row carries cost of RM7.86 a unit, COGS off the latest purchase p041, which is the inventory's own rate. The drafter flagged the rate as more than double the highest oil rate the book has carried (RM13) and about 990.9% above their usual RM11. The figures do not answer that flag. Nothing is outstanding.",
+       "handover": "delivered"
+      },
+      "cost": 70.74
+     }
+    ]
    },
    {
     "customer": "CS6-PER",
     "qty": 5,
-    "total": 35,
+    "total": 30,
     "cost": 17,
-    "cash": 35,
-    "handover": "delivered",
+    "cash": 30,
+    "handover": "collected",
     "trip": "t1792637872213",
     "product": "rice",
     "date": "2026-10-21",
     "deliveredQty": 5,
     "paidOn": "2026-10-21",
-    "note": "<b>NEW SALE ON 21 OCT: 5 UNIT OF RICE TO CS6-PER, GOODS RM35, PAID, NOT YET HANDED OVER.</b> RM35 cash received on 21 Oct. The row is marked delivered but records 0 of 5 unit moved. The goods total of RM35 equals the ask total of RM35 and is above the floor total of RM20, which is RM7 a unit against a floor of RM4 and an ask of RM7. CS6-PER's history: 23 orders, a median rate of RM85.52, a range of RM7 to RM116, nothing outstanding, against a cap of 2. The row carries cost of RM17, COGS off the latest purchase p028 at RM3.4 a unit, which is the inventory's own rate. The drafter raised no flag. Handing over the 5 unit is outstanding.",
+    "note": "His word of 22 Oct 2026: 5 unit of rice for RM30, collected on 21 Oct, paid in full",
     "rid": "s284",
     "amend": [
      {
@@ -8427,9 +8467,24 @@
       "kg": 5,
       "cost": 17,
       "note": "<b>FULFILMENT ON S284 ON 22 OCT: 5 UNIT OF RICE HANDED OVER TO CS6-PER.</b> The order of 21 Oct was RM35, paid in cash that day, but the row was marked delivered with 0 of 5 unit moved. This fulfilment moves the 5 unit with RM0 further to pay, so the order is settled in full and nothing is left outstanding. The goods total of RM35 was recorded on 21 Oct at the ask, so this entry sets no new price. CS6-PER's history: 26 orders, a median rate of RM100, a range of RM7 to RM120, RM25 outstanding before this fold and no units on credit. The row keeps its own cost and the fold sets none. The drafter flagged that it settles the order in full; the figures answer that, since 5 unit of 5 are now moved."
+     },
+     {
+      "date": "2026-10-22",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S284: RICE, 5 UNITS TO CS6-PER, NOW RM30, COLLECTED ON 21 OCT.</b> On his word, total and cash go from RM35 to RM30, handover from delivered to collected, and deliveredOn from 2026-10-22 to 2026-10-21. That is RM6 a unit, against an earlier RM7 a unit, which was the ask. The drafter flagged it as 14.3% below their usual RM7 and noted a trail of 2 steps that will no longer add up. The row's cost of RM17 stays, at RM3.4 a unit, the inventory's own rate. Nothing is outstanding.",
+      "was": {
+       "total": 35,
+       "cash": 35,
+       "deliveredOn": "2026-10-22",
+       "note": "<b>NEW SALE ON 21 OCT: 5 UNIT OF RICE TO CS6-PER, GOODS RM35, PAID, NOT YET HANDED OVER.</b> RM35 cash received on 21 Oct. The row is marked delivered but records 0 of 5 unit moved. The goods total of RM35 equals the ask total of RM35 and is above the floor total of RM20, which is RM7 a unit against a floor of RM4 and an ask of RM7. CS6-PER's history: 23 orders, a median rate of RM85.52, a range of RM7 to RM116, nothing outstanding, against a cap of 2. The row carries cost of RM17, COGS off the latest purchase p028 at RM3.4 a unit, which is the inventory's own rate. The drafter raised no flag. Handing over the 5 unit is outstanding.",
+       "handover": "delivered"
+      }
      }
     ],
-    "deliveredOn": "2026-10-22"
+    "deliveredOn": "2026-10-21",
+    "mod": "corrected on 2026-10-22: total 35 to 30; cash 35 to 30; deliveredOn 2026-10-22 to 2026-10-21; note <b>NEW SALE ON 21 OCT: 5 UNIT OF RICE TO CS6-PER, GOODS RM35, PAID, NOT YET HANDED OVER.</b> RM35 cash received on 21 Oct. The row is marked delivered but records 0 of 5 unit moved. The goods total of RM35 equals the ask total of RM35 and is above the floor total of RM20, which is RM7 a unit against a floor of RM4 and an ask of RM7. CS6-PER's history: 23 orders, a median rate of RM85.52, a range of RM7 to RM116, nothing outstanding, against a cap of 2. The row carries cost of RM17, COGS off the latest purchase p028 at RM3.4 a unit, which is the inventory's own rate. The drafter raised no flag. Handing over the 5 unit is outstanding. to His word of 22 Oct 2026: 5 unit of rice for RM30, collected on 21 Oct, paid in full; handover delivered to collected"
    },
    {
     "customer": "CS6-PER",
@@ -9265,7 +9320,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-22T03:08:14.947Z",
+  "QUEUE_COMMITTED": "2026-10-22T05:00:02.000Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -9496,9 +9551,9 @@
       "tenureDays": 76,
       "sinceLastDays": 1,
       "perMonth": 2,
-      "unitsPerMonth": 16.42,
-      "smallShare": 0.2,
-      "bigShare": 0.8,
+      "unitsPerMonth": 20.03,
+      "smallShare": 0,
+      "bigShare": 1,
       "frequent": true,
       "small": false,
       "bigger": true,
@@ -10587,7 +10642,7 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.3018867924528302
+         "v": 0.29245283018867924
         }
        },
        "attrib": 1,
@@ -13156,15 +13211,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.4166666666666667
+         "v": 0.3333333333333333
         }
        },
        "attrib": 1,
        "shrinkRate": 0.27268817204301077,
        "avgDel": {
         "n": 19,
-        "kg": 272,
-        "mean": 14.3158
+        "kg": 281,
+        "mean": 14.7895
        }
       },
       "policy": {
@@ -15766,7 +15821,7 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.14285714285714285
+         "v": 0.07142857142857142
         }
        },
        "attrib": 1,
@@ -16754,10 +16809,10 @@
      ]
     }
    },
-   "v": "v1209"
+   "v": "v1211"
   },
   "OPEN": {
-   "at": "2026-10-22T03:18:32.934Z",
+   "at": "2026-10-22T08:31:52.337Z",
    "count": 9,
    "byKey": {
     "CS6-PER|2026-10-22|60": {
@@ -16926,11 +16981,11 @@
     },
     "oil": {
      "name": "Oil",
-     "onHand": 39,
-     "free": 39,
+     "onHand": 30,
+     "free": 30,
      "owedOut": 0,
-     "coverDays": 16,
-     "rate": 2.99,
+     "coverDays": 10.9,
+     "rate": 3.42,
      "owedToYou": 0,
      "promised": 0,
      "short": 0
@@ -16965,7 +17020,7 @@
     "rice": "2026-10-20",
     "spare": null
    },
-   "v": "v1209"
+   "v": "v1211"
   },
   "TERMS": {
    "ceiling": 250,
@@ -16973,7 +17028,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1209"
+   "v": "v1211"
   },
   "REWARD": {
    "stated": {
@@ -16991,7 +17046,7 @@
      }
     }
    },
-   "v": "v1209"
+   "v": "v1211"
   },
   "STOCK": {
    "today": "2026-10-22",
@@ -17000,20 +17055,23 @@
      "shelf": 11,
      "free": 8.5,
      "commit": 2.5,
+     "light": "green",
      "coverDays": 1.8,
      "transit": 0
     },
     "oil": {
-     "shelf": 39,
-     "free": 39,
+     "shelf": 30,
+     "free": 30,
      "commit": 0,
-     "coverDays": 16,
+     "light": "green",
+     "coverDays": 10.9,
      "transit": 0
     },
     "candy": {
      "shelf": 6,
      "free": 6,
      "commit": 0,
+     "light": "green",
      "coverDays": 17,
      "transit": 0
     },
@@ -17021,11 +17079,12 @@
      "shelf": 0,
      "free": 0,
      "commit": 0,
+     "light": "red",
      "coverDays": 0,
      "transit": 0
     }
    },
-   "v": "v1209"
+   "v": "v1211"
   }
  }
 }
