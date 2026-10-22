@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="b9e41e0a34346624";
+var SALT_BUILD_ID="25eb01c5edfed7f6";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -5524,8 +5524,11 @@ const TIER_RULE={
      suggestPct): a share added for a written-off, a long late, a late; the days over which an open overdue counts as long; how
      many of the last salt sales are read; the step it rounds to; the settled rows below which it suggests nothing; and `good`, the discount a
      perfect record earns, times the record's good score, only with nothing late, overdue or written off (21 Oct 2026). */
+  /* 22 OCT 2026, HIS DECISION: THEIR % RUNS ON HIS CURVE. `ends` are the Floor multiples at -30% (low) and +30% (high), at the first
+     point and the last, each curve the Set Price's own shape, and a % an equal share of the way at every size (the engine's driftMultiple). */
   salt:{drift:true, ceilingX:3,
         points:[[0.5,2.5],[1,2],[6.25,1.67],[12.5,1.33]],
+        ends:{low:[2,1.2], high:[3,1.45]},
         suggest:{writtenOff:0.3, longLate:0.2, late:0.1, overdueDays:14, recent:5, step:0.05, minSettled:3, good:0.3},
         auto:{wP:0.35, wF:0.25, wV:0.2, wT:0.2, minSettled:3, perMonth:4, unitsPerMonth:10, orders:12, staleDays:60, overdueDays:14, U:0.5, D:0.5, cap:0.5},
         presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3},
@@ -5542,16 +5545,19 @@ const TIER_RULE={
   /* 15 OCT 2026, HIS WORD: oil is ordered in tens, its smallest unit step. The grid's step IS the order step (the Worker's onStep reads
      it), and oil's prices do not move when it goes from 1 to 10: the five points are the five typed rungs. Salt stays at a quarter
      and a coarser step there would raise most of its prices, the walk running through every point (docs/PRODUCTS.md section 9). */
-  oil:{fixed:{"10":130,"20":240,"30":330,"40":400,"50":450}, rungs:[10,20,30,40,50], ceilingX:3, grid:{min:10, step:10, max:50}},
+  /* 22 OCT 2026, HIS DECISION: THEIR % ON EVERY BOOK. A stated board carries `pct`, and `shares` are what -30% (low) and +30% (high)
+     make of his typed board at the smallest rung and the largest, sliding in the log of size (the engine's shareAt); salt's proportions
+     to start, his answer that day, so 0% is still his board for everybody. */
+  oil:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"10":130,"20":240,"30":330,"40":400,"50":450}, rungs:[10,20,30,40,50], ceilingX:3, grid:{min:10, step:10, max:50}},
   /* 23 SEP 2026, HIS INSTRUCTION: candy and rice are single tier too, stated a unit. Candy RM60 a unit under 10,
      RM55 from 10 to 29 (his answer that day), RM50 from 30. Rice RM8 a unit, RM7 from 5, RM6 from 10. A size
      between rungs is its rung's rate times the size, which is what a rate a unit means; both books round to the
      ringgit (LADDER_BY) so a rate of RM8 is not rounded to a ten. */
-  candy:{fixed:{"1":60,"10":550,"30":1500}, rungs:[1,10,30], ceilingX:3, grid:{min:1, step:1, max:30}},
+  candy:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":60,"10":550,"30":1500}, rungs:[1,10,30], ceilingX:3, grid:{min:1, step:1, max:30}},
   /* 05 OCT 2026, HIS DECISION: each stated board is held between its floor, COGS times the size, and a ceiling of
      `ceilingX` times that floor, capped down to the book's grid. Three times the floor on every book (18 Oct 2026, his decision;
      oil and candy were twice, rice two and a half). A typed price inside the band does not move. */
-  rice:{fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:3, grid:{min:1, step:1, max:10}}
+  rice:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:3, grid:{min:1, step:1, max:10}}
 };
 
 const SHRINK_ATTRIB=1;
@@ -8302,15 +8308,43 @@ function setMultiple(q,R){
 /* a held % is a number from -0.3 to +0.3 (his decision of 21 Oct 2026); anything else is not one */
 const LIFT_MIN=-0.3, LIFT_MAX=0.3;
 function driftOk(v){return typeof v==='number'&&isFinite(v)&&v>=LIFT_MIN-1e-9&&v<=LIFT_MAX+1e-9;}
+/* ============ 22 OCT 2026, HIS DECISION: THEIR % RUNS ON HIS CURVE, ON EVERY BOOK ============
+   A book takes Their % when its rule is a Set Price (`drift`) or carries `pct` (a stated board, oil, candy and rice): pctBook.
+   On a Set Price, `ends` {low:[at the first point, at the last], high:[...]} are the multiples of the Floor he set for -30% and
+   +30%; each end curve keeps the Set Price's own shape (the share s of the way the Set Price sits between its first and last
+   multiples, the same share between the end's two), and a % is that share of the way from the Set Price to its end, so every
+   5% step is an equal step at every size. A rule with no `ends` keeps the multiple times (1 + %).
+   On a stated board, `shares` {low:[at the smallest rung, at the largest], high:[...]} are what -30% and +30% make of his typed
+   board, sliding in the log of size between the two rungs and flat beyond them, and a % is that share of the way from the board. */
+function pctBook(R){return !!(R&&(R.drift||R.pct));}
+function pctPos(pct){const k=driftOk(pct)?Math.max(LIFT_MIN,Math.min(LIFT_MAX,+pct)):0;return {k:k,t:k<0?k/LIFT_MIN:k>0?k/LIFT_MAX:0};}
+function endPair(e){return Array.isArray(e)&&e.length===2&&e.every(v=>typeof v==='number'&&isFinite(v)&&v>0)?e:null;}
+function driftMultiple(q,R,pct){
+  const m=setMultiple(q,R),x=pctPos(pct);
+  if(!R||!R.ends)return m*(1+x.k);
+  if(!x.t)return m;
+  const end=endPair(x.k<0?R.ends.low:R.ends.high);if(!end)return m;
+  const pts=(R.points||[]).map(v=>[+v[0],+v[1]]).filter(v=>v[0]>0&&isFinite(v[1])).sort((a,b)=>a[0]-b[0]);
+  const mA=pts.length?pts[0][1]:m,mB=pts.length?pts[pts.length-1][1]:m,s=Math.abs(mA-mB)<1e-9?0:(m-mB)/(mA-mB);
+  return m+x.t*(end[1]+s*(end[0]-end[1])-m);
+}
+function shareAt(q,R,pct){
+  const x=pctPos(pct);if(!x.t||!R||!R.shares||!(q>0))return 1;
+  const end=endPair(x.k<0?R.shares.low:R.shares.high);if(!end)return 1;
+  const rungs=(R.rungs||[]).map(Number).filter(v=>v>0).sort((a,b)=>a-b);if(!rungs.length)return 1;
+  const a=rungs[0],b=rungs[rungs.length-1],u=q<=a||b<=a?0:q>=b?1:Math.log(q/a)/Math.log(b/a);
+  return 1+x.t*(end[0]+(end[1]-end[0])*u-1);
+}
 function driftWalk(sizes,C,P,pct){
   const R=P.tierRule||{}, to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to, down=v=>Math.floor(v/to+1e-9)*to;
   const cx=+R.ceilingX>0?+R.ceilingX:3;
-  const k=driftOk(pct)?Math.max(LIFT_MIN,Math.min(LIFT_MAX,+pct)):0;
+  const k=pctPos(pct).k;
   let rS=Infinity, rP=Infinity, mS=-Infinity, mP=-Infinity;
   return sizes.map(q=>{
     const fl=floorTotal(q,C,P), ceil=+(cx*fl).toFixed(4), lo=up(fl), hi=Math.max(down(ceil),lo), m=setMultiple(q,R);
-    const step=(r,mg,lift)=>{
-      const rate=Math.min(r,fl*m*lift/q);
+    /* top is the floor times the multiple at this %: on his ends the engine's driftMultiple, else fl*m*(1+k) in that order, as it always was */
+    const step=(r,mg,top)=>{
+      const rate=Math.min(r,top/q);
       let p=down(rate*q);
       if(mg>-Infinity)p=Math.max(p,up(+(fl+mg).toFixed(2)));
       const capped=p>hi+1e-9;
@@ -8319,9 +8353,9 @@ function driftWalk(sizes,C,P,pct){
          Ceiling's rate rises with the Floor's round-up (3 times a step), and without this a high % could be quoted more a unit on more units */
       return {rate:capped?Math.min(rate,hi/q):rate,p:p,mg:Math.max(mg,p-fl)};
     };
-    const s=step(rS,mS,1);rS=s.rate;mS=s.mg;
+    const s=step(rS,mS,fl*m*1);rS=s.rate;mS=s.mg;
     let p=s.p;
-    if(Math.abs(k)>1e-9){const x=step(rP,mP,1+k);rP=x.rate;mP=x.mg;p=x.p;}
+    if(Math.abs(k)>1e-9){const x=step(rP,mP,R.ends?fl*driftMultiple(q,R,k):fl*m*(1+k));rP=x.rate;mP=x.mg;p=x.p;}
     return {q:q,floor:+fl.toFixed(2),ceiling:+ceil.toFixed(2),set:s.p,p:p,d:k};
   });
 }
@@ -8435,10 +8469,11 @@ function fiveTierAt(q,C,P){
    RM160, 14 unit RM180), and walking that flat pushed the band under his next typed rung. The floor's ten and the ceiling
    hold it as fiveTiers holds a rung, and a typed rung is his price, never moved. A rate that still rises (a floor lift) steps
    down to the ringgit that holds it, never under the floor's ten. */
-function fixedWalk(sizes,C,P){
-  const R=P.tierRule, to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to;
+function fixedWalk(sizes,C,P,d){
+  const R=P.tierRule, to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to, down=v=>Math.floor(v/to+1e-9)*to;
   const rungs=R.rungs.map(Number).sort((a,b)=>a-b);
-  let prev=Infinity;
+  const k=R.pct&&typeof d==='number'?pctPos(d).k:0;
+  let prev=Infinity, prevD=Infinity;
   return fiveTiers(sizes,C,P).map(r=>{
     let p=r.prices&&r.prices.length?r.prices[r.prices.length-1]:null;
     const typed=R.fixed[String(r.q)]!=null, base=+R.fixed[String(rungs[r.rung])], lift=up(r.floor);
@@ -8449,6 +8484,15 @@ function fixedWalk(sizes,C,P){
       if(prev<Infinity&&p/r.q>prev+1e-9){const st=Math.floor(prev*r.q+1e-9);p=st>=lift-0.009?st:Math.min(p,lift);}
     }
     if(p!=null&&isFinite(p)&&r.q>0)prev=Math.min(prev,p/r.q);
+    /* 22 Oct 2026: Their % on a stated board, his share of the board at this size, down to the book's step, held between the Floor and
+       the Ceiling, and walked so the rate never rises with size, as the board's own is */
+    if(k&&p!=null&&isFinite(p)&&r.q>0){
+      let x=down(p*shareAt(r.q,R,k)), lo=up(r.floor);
+      if(x<lo)x=lo;
+      if(r.ceiling!=null&&x>r.ceiling+0.009)x=Math.max(lo,down(r.ceiling));
+      if(prevD<Infinity&&x/r.q>prevD+1e-9)x=Math.max(lo,Math.min(x,down(prevD*r.q)));
+      prevD=Math.min(prevD,x/r.q);p=x;
+    }
     return {q:r.q,p:p};
   });
 }
@@ -8460,7 +8504,7 @@ function quoteAt(q,C,P,d){
   const R=P.tierRule;if(!R||!(q>0))return null;
   const F=floorTotal(q,C,P);
   if(d==='partner')return +F.toFixed(2);
-  if(R.fixed){const w=fixedWalk(walkSizes(R,[q]),C,P),x=w.find(r=>Math.abs(r.q-q)<0.009),t=x?x.p:null;
+  if(R.fixed){const w=fixedWalk(walkSizes(R,[q]),C,P,d),x=w.find(r=>Math.abs(r.q-q)<0.009),t=x?x.p:null;
     return t==null||!isFinite(t)?null:+cardPrice(null,F,t,true).toFixed(2);}
   if(R.drift){const x=driftAt(q,C,P,d);return x&&isFinite(x.p)?+cardPrice(null,F,x.p).toFixed(2):null;}
   return null;
@@ -8473,7 +8517,7 @@ function quoteGrid(C,P,d){
   const read=(w,fixed)=>qs.map(q=>{const x=w.find(r=>Math.abs(r.q-q)<0.009);return x&&x.p!=null&&isFinite(x.p)?+cardPrice(null,floorTotal(q,C,P),x.p,fixed).toFixed(2):null;});
   if(d==='partner')ps=qs.map(q=>quoteAt(q,C,P,d));
   else if(R.drift)ps=read(driftWalk(walkSizes(R,qs),C,P,d),false);
-  else if(R.fixed)ps=read(fixedWalk(walkSizes(R,qs),C,P),true);
+  else if(R.fixed)ps=read(fixedWalk(walkSizes(R,qs),C,P,d),true);
   else ps=qs.map(q=>quoteAt(q,C,P,d));
   if(!ps.length||ps.some(p=>p==null||!isFinite(p)||!(p>0)))return null;
   return {min:G.min,step:G.step,max:G.max,p:ps};
@@ -8512,19 +8556,20 @@ function board(sizes,C,P){
 function cardAt(pricing,code,product,qty){
   const snap=pricing&&pricing.byProduct&&pricing.byProduct[product];
   if(!snap||!snap.cards)return {card:null,cardNote:"the pricing snapshot carries no cards yet: the next re-seed brings them"};
-  const fixed=(snap.ladder||[]).some(r=>r&&r.fixed);
   const hit=(snap.cards[code]||[]).find(x=>Math.abs(x[0]-qty)<0.009);
-  if(hit)return {card:hit[1],cardNote:fixed?"the board, one price for everybody":"their card at "+qty+" unit"};
+  /* 22 Oct 2026, his word: every customer is separate, so the note names their price and never describes it */
+  if(hit)return {card:hit[1],cardNote:"their price at "+qty+" unit"};
   if(!snap.cards[code])return {card:null,cardNote:"no tier is held or proposed for them on "+product+", so there is no card"};
   const at=quoteOff(snap,code,qty);
-  if(at!=null)return {card:at,cardNote:(fixed?"the board, one price for everybody":"their card")+" at "+qty+" unit"};
+  if(at!=null)return {card:at,cardNote:"their price at "+qty+" unit"};
   return {card:null,cardNote:qty+" unit is not a size on their board, so there is no card at it"};
 }
 function quoteOff(snap,code,qty){
   const I=snap&&snap.inputs;
   if(!I||!I.cost||!I.policy||!(qty>0))return null;
   const R=I.policy.tierRule||null;
-  const d=(snap.partners||[]).includes(code)?"partner":R&&R.drift?(snap.lift&&typeof snap.lift[code]==="number"?snap.lift[code]:null):0;
+  const held=snap.lift&&typeof snap.lift[code]==="number"?snap.lift[code]:null;
+  const d=(snap.partners||[]).includes(code)?"partner":R&&R.drift?held:R&&R.pct&&held!=null?held:0;
   if(d==null)return null;
   try{const v=quoteAt(qty,costStack(I.cost),I.policy,d);return v!=null&&isFinite(v)&&v>0?v:null;}
   catch(e){return null;}
@@ -8533,7 +8578,7 @@ function quoteOff(snap,code,qty){
 return {cardAt:cardAt,costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         floorTotal:floorTotal,costTotal:costTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,
-        setMultiple:setMultiple,driftOk:driftOk,LIFT_MIN:LIFT_MIN,LIFT_MAX:LIFT_MAX,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,suggestWhy:suggestWhy,
+        setMultiple:setMultiple,driftOk:driftOk,pctBook:pctBook,driftMultiple:driftMultiple,shareAt:shareAt,LIFT_MIN:LIFT_MIN,LIFT_MAX:LIFT_MAX,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,suggestWhy:suggestWhy,
         gridOf:gridOf,gridSizes:gridSizes,onGrid:onGrid,walkSizes:walkSizes,fixedWalk:fixedWalk,quoteAt:quoteAt,quoteGrid:quoteGrid};
 })();
 /* ==== END ENGINE pricing ==== */
@@ -8760,6 +8805,8 @@ function buyerProfile(C,prod,code){
     frequent,small,bigger,loyal,rare};
 }
 function driftBook(C,p){const R=C.R.TIER_RULE[p];return !!(R&&R.drift);}
+/* 22 Oct 2026: a book that takes Their %, a Set Price or a stated board carrying `pct` (the engine's pctBook) */
+function pctBook(C,p){return PRICING_ENGINE.pctBook(C.R.TIER_RULE[p]);}
 function driftSignals(C,prod,code){
   const who=ownerOf(code)||code,pf=profileS(C,prod,who),RU=C.R.RULES;
   const dl=POSITION_ENGINE.payDelays(C.B.sales,who,todayISO(C),RU),settled=dl.filter(x=>!x.open),open=dl.filter(x=>x.open);
@@ -8773,7 +8820,7 @@ function driftSignals(C,prod,code){
 /* 18 OCT 2026, HIS DECISION: THE FIGURE THAT PRICES IS THE % LIFT HE HOLDS, OR NOUGHT. `d` is that figure (-0.3 to +0.3 since 21 Oct 2026) and nothing automatic reaches it:
    `auto`, `G` and `B` are the record's reading (autoDrift) kept for the card, and the suggestion is suggestOf below. */
 function driftOfNow(C,p,code){
-  const R=C.R.TIER_RULE[p];if(!R||!R.drift)return null;
+  const R=C.R.TIER_RULE[p];if(!PRICING_ENGINE.pctBook(R))return null;
   const who=ownerOf(code)||code,h=(C.B.tierOf[who]||{})[p],hand=PRICING_ENGINE.driftOk(h)?+h:null;
   const sig=driftSignals(C,p,who),a=PRICING_ENGINE.autoDrift(sig,R.auto);
   return Object.assign({},a,{auto:a.d,hand:hand,d:hand!=null?hand:0,sig:sig});
@@ -8805,7 +8852,7 @@ function cardQuote(C,p,code,q){
   const o=C.over||{cost:null,shrink:null},K=cost(C,p),P=Object.assign({},policy(C,p),{tierRule:C.R.TIER_RULE[p]});
   if(isPartner(C,code))return PRICING_ENGINE.quoteAt(q,K,P,'partner');   // 06 Oct 2026, his decision: a partner pays cost; 18 Oct 2026, the Floor, rounded up to the next RM 5
   const row=viaMemo(C,'tierAt|'+p+'|'+q+'|'+o.cost+'|'+o.shrink,()=>PRICING_ENGINE.fiveTierAt(q,K,P));
-  if(row&&row.fixed)return PRICING_ENGINE.quoteAt(q,K,P,0);
+  if(row&&row.fixed){const dr=pctBook(C,p)?driftS(C,p,code):null;return PRICING_ENGINE.quoteAt(q,K,P,dr?dr.d:0);}
   if(row&&row.drift){const dr=driftS(C,p,code);return PRICING_ENGINE.quoteAt(q,K,P,dr?dr.d:0);}
   return null;}
 
@@ -8832,7 +8879,7 @@ function pricing(B,R,today,over=null){
     const cards={};
     ids.forEach(id=>{const r=[];shownSizes(C,p).forEach(q=>{const x=cardQuote(C,p,id,q);if(x!=null&&isFinite(x))r.push([q,x]);});if(r.length)cards[id]=r;});
     let lift=null,suggest=null;
-    if(driftBook(C,p)){lift={};suggest={};ids.forEach(id=>{if(isPartner(C,id)){lift[id]='partner';return;}const d=driftOf(C,p,id);if(d&&typeof d.d==='number'&&isFinite(d.d))lift[id]=d.d;const g=suggestOf(C,p,id);if(g)suggest[id]={pct:g.pct,why:PRICING_ENGINE.suggestWhy(g).join(', ')};});}
+    if(pctBook(C,p)){lift={};suggest=driftBook(C,p)?{}:null;ids.forEach(id=>{if(isPartner(C,id)){lift[id]='partner';return;}const d=driftOf(C,p,id);if(d&&typeof d.d==='number'&&isFinite(d.d))lift[id]=d.d;const g=suggestOf(C,p,id);if(g&&suggest)suggest[id]={pct:g.pct,why:PRICING_ENGINE.suggestWhy(g).join(', ')};});}
     out[p]=Object.assign({stockCost:r4(f.stockCost), replCost:r4(f.replCost), floors, inputs:f.inputs, sizes:f.sizes, rungs:f.rungs,
       ladder:(f.ladder||[]).map(r=>Object.assign({q:r.q,prices:r.prices,fixed:!!r.fixed},r.drift?{drift:true}:{})), cards, partners:B.partners.slice()},
       lift?{lift,suggest}:{});
@@ -8843,7 +8890,7 @@ function pricing(B,R,today,over=null){
 return {pSales,pPurch,openingFor,countedFor,posInputs,stockCost,hiddenFor,setPricesFor,sizesFor,shownSizes,shSizes,ladderFor,
   latestLot,meanLotQty,priceLockState,delShare,avgDelivery,replRate,replCost,quoteRate,freightRate,leakCharge,shrinkRate,
   inputs,policy,fiveTiers,figures,
-  ownerOf,isResellAcct,isPerson,pbPriced,isPartner,lateOf,buyerProfile,driftBook,driftSignals,driftOfNow,driftOf,suggestOf,tierCustomers,cost,cardQuote,pricing};
+  ownerOf,isResellAcct,isPerson,pbPriced,isPartner,lateOf,buyerProfile,driftBook,pctBook,driftSignals,driftOfNow,driftOf,suggestOf,tierCustomers,cost,cardQuote,pricing};
 })();
 
 /* ==== END ENGINE snapshot ==== */
@@ -10986,7 +11033,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1205","d":"22 Oct 2026","t":"CS6-BS SALT SET 20% OFF THE SET PRICE","n":["<b>ONE PRICE SETTING FOLDED.</b> CS6-BS now has its salt figure at 20% off the set price, entered as a percentage lift of -20%. It moves no cash, no stock and no board price, since a percentage lift changes only that customer's own price. The drafter raised no flags, so nothing unusual needed answering.","<b>INVENTORY UNCHANGED.</b> Stock stays at 12 with a cost basis of RM56 a unit. The ledger, self-use, replacement cost, reorder level and units owed out all stand as before, and nothing is promised or on loan."]}];
+const evolution=[{"v":"v1206","d":"22 Oct 2026","t":"THEIR % ON HIS CURVE, ON EVERY BOOK, AND SHOWN LIVE BEFORE APPROVE","n":["<b>HIS DECISIONS OF 22 OCT 2026.</b> Their % runs on his curve: on salt -30% is 2.00 times the Floor at half a unit and 1.20 at 12.5, +30% is 3.00 and 1.45, the Set Price between; each end keeps the Set Price's shape, and every 5% step is the same share of the way at every size. It was the multiple times (1 + %), which took a large lot to the Floor at -30%.","<b>EVERY BOOK TAKES A %.</b> Oil, candy and rice keep his typed board at 0%; -30% is 80% of it at the smallest size and 90% at the largest, +30% 120% and 109%, held between the Floor and the Ceiling, the rate never rising with size. The suggestion, the reward and the loyalty unit stay salt's.","<b>SALT ADMIN SHOWS IT LIVE.</b> The Their % form takes a whole % in steps of 5, and as he types it shows that customer's price now and at the % typed, the change, the margin over the Floor and the Floor, at the printed sizes and their usual size, read off the Desk. Nothing is sent until Send their %, and Approve is unchanged.","<b>WHO MOVES.</b> CS6-BS holds -20%, so their salt price rises on the new curve, about 17% at 12.5 units; nobody else holds a % other than nought. Each customer is separate: a note names their price and never describes it."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11134,7 +11181,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='22 Oct 2026, 09:04 KL';
+const LAST_UPDATED='22 Oct 2026, 10:30 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -18108,6 +18155,7 @@ function lateOf(code){return SNAPSHOT_ENGINE.lateOf(snapCtx(),code);}
    autoDrift over the record (buyerProfile, payDelays, lateOf, txWrittenOff) only fills the card's good and bad, and suggestOf is its
    suggestion, from what they paid over the Set Price on their last salt sales and how they pay (suggestPct). */
 function driftBook(p){return SNAPSHOT_ENGINE.driftBook(snapCtx(),p||PROD);}
+function pctBook(p){return SNAPSHOT_ENGINE.pctBook(snapCtx(),p||PROD);}   /* 22 Oct 2026: a book that takes Their %, every book with a rule */
 function driftSignals(code,prod){return SNAPSHOT_ENGINE.driftSignals(snapCtx(),prod||PROD,code);}
 /* the Drift card and the price lists ask each customer's drift about four times a render: kept for the render, by customer and book */
 function driftOf(code,prod){return SNAPSHOT_ENGINE.driftOf(snapCtx(),prod||PROD,code);}
@@ -18142,23 +18190,25 @@ function partnerNote(id){
   if(partners.indexOf(id)>=0||isBucket(id))return '';
   return partnerQueued(id)?'<span class="iref">Waiting under Approve: partner, pays the Floor</span>':'';
 }
+/* the three sizes the card quotes: salt's 1, 3 and 12.5; a stated board's smallest, middle and largest rung (22 Oct 2026) */
+function atSizes(p){const R=TIER_RULE[p]||{};if(R.drift)return [1,3,12.5];const r=(R.rungs||[]).map(Number).sort((a,b)=>a-b);return r.length?[...new Set([r[0],r[Math.floor(r.length/2)],r[r.length-1]])]:[];}
 function driftCard(){
-  const ids=tierCustomers(),books=tieredBooks().filter(driftBook);if(!ids.length||!books.length)return '';
+  const ids=tierCustomers(),books=PROD_IDS.filter(p=>pctBook(p));if(!ids.length||!books.length)return '';
   const keep=PROD,waiting=tierQueued();let hand=0,up=0,down=0;const rows=[];
   try{books.forEach(p=>{PROD=p;recompute();
     ids.forEach(id=>{
       if(isPartner(id)){   /* 06 Oct 2026, his decision: a partner pays cost, so no drift moves their price and none is set here */
-        const atP=[1,3,12.5].map(q=>{const x=cardQuote(id,q);return x!=null?units(q)+' '+fmt0(x):null;}).filter(Boolean).join(' &middot; ');
+        const atP=atSizes(p).map(q=>{const x=cardQuote(id,q);return x!=null?units(q)+' '+fmt0(x):null;}).filter(Boolean).join(' &middot; ');
         rows.push(`<tr><td class="l salt-table__label mono">${ID(id)}</td><td class="l salt-table__label"><div style="line-height:1.3">${PRODUCTS[p].name} <b>Partner</b>${partnerQueued(id)?' &middot; waiting under Approve':''}<br><span class="iref">pays the Floor; no % applies</span><br><span class="iref">${atP}</span></div></td></tr>`);return;}
       const dr=driftOf(id,p),w=!!waiting[id]&&p in waiting[id],wv=w?waiting[id][p]:undefined;
       if(dr.hand!=null)hand++;if(dr.d>0.0001)up++;if(dr.d<-0.0001)down++;
-      const at=[1,3,12.5].map(q=>{const x=cardQuote(id,q);return x!=null?units(q)+' '+fmt0(x):null;}).filter(Boolean).join(' &middot; ');
+      const at=atSizes(p).map(q=>{const x=cardQuote(id,q);return x!=null?units(q)+' '+fmt0(x):null;}).filter(Boolean).join(' &middot; ');
       const sg=suggestOf(id,p)||{pct:0,paidOver:0,risk:0};
       const state=(w?'waiting '+(wv==null?'to clear':driftSay(wv))+' &middot; ':'')+(dr.hand!=null?'set by you &middot; ':'')+suggestSay(sg);
       rows.push(`<tr><td class="l salt-table__label mono">${ID(id)}</td><td class="l salt-table__label"><div style="line-height:1.3">${PRODUCTS[p].name} <b>${Math.abs(dr.d)>0.0001?driftSay(dr.d):'Set Price'}</b><br><span class="iref">${state}</span><br><span class="iref">${at}</span></div>${partnerNote(id)}</td></tr>`);
     });});}
   finally{PROD=keep;recompute();}
-  return `<div class="card"><div class="cardh">Each customer's % on the Set Price <span class="sub">yours to set; the suggestion is the engine's</span></div>
+  return `<div class="card"><div class="cardh">Each customer's % on the Set Price or the board <span class="sub">yours to set; the suggestion is the engine's</span></div>
     <div class="tscroll"><table class="salt-table tiertab"><thead><tr><th class="l salt-table__label">Customer</th><th class="l salt-table__label">Their %, and what it quotes</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>
     <div class="insight salt-insight">${hand} of ${rows.length} are set by you, ${up} sit above the Set Price and ${down} below it. A % runs from -30 to +30, never under the Floor or over the Ceiling.</div></div>`;
 }
