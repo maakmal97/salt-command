@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1224",
+  "d": "23 Oct 2026",
+  "t": "SALT COUNT OF 3.45 UNITS SETS THE STOCK",
+  "n": [
+   "<b>ONE COUNT FOLDED.</b> Salt was counted at 3.45 units on 23 Oct 2026 against 5 on the book, a gap of -1.55 units. The count wins over the ledger, so the stated salt stock becomes 3.45 and the count date moves from 20 Oct to 23 Oct. No sale, purchase or loan moved, and no lot landed.",
+   "<b>FLOORS.</b> The floors do not move: floor1 stays RM60, floor2 RM120, floor125 RM750 and ask1 RM120. Only the self-use rate moves, from RM101.34 to RM102.89 a unit. Stock cost stays RM56 a unit, replacement cost RM60. The 3.45 units sit below the reorder point of 34.5."
+  ]
+ },
+ {
   "v": "v1223",
   "d": "23 Oct 2026",
   "t": "CS6-PER SALT SET AT 5% OFF",

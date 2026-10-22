@@ -87,9 +87,9 @@
       "stated": null
     }
   },
-  "STATED_STOCK": 5,
+  "STATED_STOCK": 3.45,
   "COUNT_ON": {
-    "salt": "2026-10-20",
+    "salt": "2026-10-23",
     "oil": "2026-10-20",
     "candy": "2026-10-20",
     "rice": "2026-10-20",
@@ -127,7 +127,8 @@
     {"product":"rice","date":"2026-10-20","qty":15,"was":24,"drift":-9},
     {"product":"salt","date":"2026-10-20","qty":0,"was":12.89,"drift":-12.89},
     {"product":"candy","date":"2026-10-20","qty":6,"was":3,"drift":3},
-    {"product":"oil","date":"2026-10-20","qty":40,"was":45,"drift":-5}
+    {"product":"oil","date":"2026-10-20","qty":40,"was":45,"drift":-5},
+    {"product":"salt","date":"2026-10-23","qty":3.45,"was":5,"drift":-1.55}
   ],
   "purchases": [
     {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -962,7 +963,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-10-22T17:37:36.816Z",
+  "QUEUE_COMMITTED": "2026-10-22T20:53:09.525Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -1020,6 +1021,7 @@
       "RETIRED AT v549 on 2026-09-09, his instruction. The key held one hand-typed lot: 50 unit by 2026-08-28, stated on the 24th. He read it on 9 September with the date twelve days gone and four lots landed since (25 unit on 26 Aug, 25 on 31 Aug, 25 on 03 Sep and 50 on 08 Sep), and said he generally has no information on when he purchases. The Sourcing section is now about the CURRENT lot, and the cadence is measured off the book rather than typed. One standing fact from the retired basis is kept here because it is not a plan: the purchase ceiling of RM4,500 resets on the 28th of each month and anything beyond it comes out of rolling cash. The rest was the 24 Aug reasoning, that the 100 unit tier was the recommendation and he took the 50, at a landed RM45.20 a unit against RM43.60."
     ],
     "STATED_STOCK": [
+      "COUNTED AT v1224 on 2026-10-23: the salt inventory held 3.45 against 5 on the roll, a difference of -1.55. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-10-23. <b>STOCK COUNT: SALT COUNTED AT 3.45 UNITS ON 23 OCT 2026, BOOK SAID 5.</b> The count is 1.55 units short of the book, a difference of -1.55. The dossier gives no reason for the gap and none is assumed. The last count was on 20 Oct. The drafter flagged that a count always wins, so the 3.45 becomes the inventory and the gap books as shrinkage across every unit sold; the figures agree, as the stated stock is reset to 3.45. The floors stay at floor1 RM60, floor2 RM120, floor125 RM750 and ask1 RM120. Self-use moves from RM101.34 to RM102.89. The row carries no cost of its own. Still outstanding: nothing.",
       "ROLLED AT v1220: 2 unit to CZ5-TM on 2026-10-23, so 7 less 2 is 5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 2 units collected by CZ5-TM leave the shelf on this correction.",
       "ROLLED AT v1219: 1.5 unit to CE4-CHE on 2026-10-23, so 8.5 less 1.5 is 7. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Salt falls by 1.5 units on this sale.",
       "ROLLED AT v1218: 1 unit to CS6-PER on 2026-10-23, 1.5 unit to CE4-CHE on 2026-10-23, so 11 less 2.5 is 8.5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Salt falls by 2.5 units on 23 Oct, 1 to CS6-PER and 1.5 to CE4-CHE; the cancellation moves none.",

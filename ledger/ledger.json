@@ -1,6 +1,6 @@
 {
- "v": "v1223",
- "stamped": "23 Oct 2026, 01:38 KL",
+ "v": "v1224",
+ "stamped": "23 Oct 2026, 04:53 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,9 +91,9 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 5,
+  "STATED_STOCK": 3.45,
   "COUNT_ON": {
-   "salt": "2026-10-20",
+   "salt": "2026-10-23",
    "oil": "2026-10-20",
    "candy": "2026-10-20",
    "rice": "2026-10-20",
@@ -330,6 +330,13 @@
     "qty": 40,
     "was": 45,
     "drift": -5
+   },
+   {
+    "product": "salt",
+    "date": "2026-10-23",
+    "qty": 3.45,
+    "was": 5,
+    "drift": -1.55
    }
   ],
   "purchases": [
@@ -9467,7 +9474,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-22T17:37:36.816Z",
+  "QUEUE_COMMITTED": "2026-10-22T20:53:09.525Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -10762,12 +10769,12 @@
        "repl": 56,
        "freightRate": 2.5,
        "leak": {
-        "ratio": 0.1604,
-        "leak": 17.14,
-        "sold": 106.86,
+        "ratio": 0.1607,
+        "leak": 16.69,
+        "sold": 103.86,
         "cycles": 3,
-        "from": "2026-09-27",
-        "to": "2026-10-20"
+        "from": "2026-09-29",
+        "to": "2026-10-23"
        },
        "costRule": {
         "kind": "latestCogs",
@@ -10793,7 +10800,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.09307503896682254,
+       "shrinkRate": 0.09537593705930379,
        "avgDel": {
         "n": 224,
         "kg": 566.31,
@@ -16956,10 +16963,10 @@
      ]
     }
    },
-   "v": "v1223"
+   "v": "v1224"
   },
   "OPEN": {
-   "at": "2026-10-22T17:38:28.183Z",
+   "at": "2026-10-22T20:53:57.601Z",
    "count": 7,
    "byKey": {
     "CR3-DAM|2026-10-20|75": {
@@ -17083,10 +17090,10 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 5,
-     "free": 5,
+     "onHand": 3.45,
+     "free": 3.45,
      "owedOut": 0,
-     "coverDays": 1.3,
+     "coverDays": 0.8,
      "rate": 4.11,
      "owedToYou": 315,
      "promised": 0,
@@ -17127,13 +17134,13 @@
     }
    },
    "countedOn": {
-    "salt": "2026-10-20",
+    "salt": "2026-10-23",
     "oil": "2026-10-20",
     "candy": "2026-10-20",
     "rice": "2026-10-20",
     "spare": null
    },
-   "v": "v1223"
+   "v": "v1224"
   },
   "TERMS": {
    "ceiling": 250,
@@ -17141,7 +17148,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1223"
+   "v": "v1224"
   },
   "REWARD": {
    "stated": {
@@ -17159,17 +17166,17 @@
      }
     }
    },
-   "v": "v1223"
+   "v": "v1224"
   },
   "STOCK": {
    "today": "2026-10-23",
    "books": {
     "salt": {
-     "shelf": 5,
-     "free": 5,
+     "shelf": 3.45,
+     "free": 3.45,
      "commit": 0,
      "light": "green",
-     "coverDays": 1.3,
+     "coverDays": 0.8,
      "transit": 0
     },
     "oil": {
@@ -17197,7 +17204,7 @@
      "transit": 0
     }
    },
-   "v": "v1223"
+   "v": "v1224"
   }
  }
 }
