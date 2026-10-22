@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="bc9d4da131454483";
+var SALT_BUILD_ID="b9e41e0a34346624";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -9786,6 +9786,9 @@ const PLACED={
 const TIER_OF={
   "CJ5-CHE": {
     "salt": 0
+  },
+  "CS6-BS": {
+    "salt": -0.2
   }
 };
 const PEOPLE={
@@ -9911,7 +9914,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-10-22T00:41:56.524Z";
+const QUEUE_COMMITTED="2026-10-22T01:03:39.542Z";
 /* <b>BOARD SIZES CHANGED ON 19 OCT: SALT, 3.5 AND 4.5 UNIT HIDDEN.</b> Counter Admin decided this at 15:38. The entry reads "Board sizes on salt: hiding 3.5 unit, 4.5 unit" and sets 0 prices, so no rate is set against the desk's floor or ask and no party is involved. The board's own price remains the ask at every size. The drafter flagged that two sizes leave the board; that is exactly what the entry does, and both stay priceable at the counter and off a quote, they simply stop being printed. The row moves no stock, no cash and no ledger row, so it carries no cost and nothing is left outstanding. */
 /* RETIRED AT v656 on 2026-09-16, his decision of 15 Sep off the pricing workbook: the board is the ladder, so a stated price no longer decides it and oil's five are cleared rather than left unread. The stranger's ask on oil moves from his RM130, 240, 330, 400 and 450 to Bronze at RM230, 440, 650, 850 and 1,040, with 80 and 100 unit at RM1,640 and RM2,000. The old five sat a hair over break-even (the 50 unit tier read 0.93x, RM32.20 UNDER its floor) because they were typed in July against a cost that has moved since; the ladder is struck on today's COGS and moves with it. No customer's price moves with this: every named customer is quoted their own tier capped at what they pay, and a stranger has no history to cap against. The hide list is untouched and still takes a size off the board. */
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
@@ -10983,7 +10986,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1204","d":"22 Oct 2026","t":"TWO PENDING ORDERS FROM CS6-PER WITHDRAWN","n":["<b>TWO CANCELLATIONS FOLDED.</b> Both withdraw pending orders placed by CS6-PER on 22 Oct on the statements site: s280 (1 unit of salt, RM120) and s281 (10 unit of oil, RM130). Both were recorded on 22 Oct and decided by Counter Admin. The drafter raised no flags on either.","<b>NO STOCK MOVED.</b> Neither order had been paid or handed over, so no stock was drawn, no revenue had been booked and no cost is carried. The inventory stays at 12, with no lot landed and no change to the cost basis."]}];
+const evolution=[{"v":"v1205","d":"22 Oct 2026","t":"CS6-BS SALT SET 20% OFF THE SET PRICE","n":["<b>ONE PRICE SETTING FOLDED.</b> CS6-BS now has its salt figure at 20% off the set price, entered as a percentage lift of -20%. It moves no cash, no stock and no board price, since a percentage lift changes only that customer's own price. The drafter raised no flags, so nothing unusual needed answering.","<b>INVENTORY UNCHANGED.</b> Stock stays at 12 with a cost basis of RM56 a unit. The ledger, self-use, replacement cost, reorder level and units owed out all stand as before, and nothing is promised or on loan."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11131,7 +11134,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='22 Oct 2026, 08:42 KL';
+const LAST_UPDATED='22 Oct 2026, 09:04 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
