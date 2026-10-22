@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="de9032c855dd21d1";
+var SALT_BUILD_ID="810653ce36d7fa5b";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -11044,7 +11044,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1211","d":"22 Oct 2026","t":"THREE CORRECTIONS ON CS6-PER, ON HIS WORD","n":["<b>THREE CORRECTIONS FOLDED.</b> s282 (salt), s283 (oil) and s284 (rice), all for CS6-PER and all on his word of 22 Oct 2026. s282 and s284 move no cash and no stock; they restate handover, dates and figures. s283 raises the oil quantity from 1 unit to 10 units and moves the cost to RM78.60 for the order.","<b>UNUSUAL.</b> The s283 correction sets its own cost, which overrides the inventory's rate of RM7.86 a unit, and the drafter's flag on the oil rate is not answered by the figures. The dossier gives no reason for the change. The oil shelf rolls by 9 units out to CS6-PER, and no lot landed."]}];
+const evolution=[{"v":"v1212","d":"22 Oct 2026","t":"A REWARD UNIT SAYS WHICH IT IS ON SALT ADMIN","n":["<b>HIS WORD OF 22 OCT 2026.</b> A unit the fold raises was a plain salt row on Orders. It now carries a label: Associate reward for an associate's reward unit, Loyalty unit for a customer's, on its row and on its card, with a line naming the order it came of, at cost and free to them, going with that order or their next salt handover. CS6-PER's unit of 22 Oct (s285, for s282) is the first. Nothing prices, books or folds differently."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11192,7 +11192,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='22 Oct 2026, 16:31 KL';
+const LAST_UPDATED='22 Oct 2026, 08:39 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
