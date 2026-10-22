@@ -1632,8 +1632,8 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   detail by `showPlace`: an order, a payment on an order or a question on an order to Orders, the stage it stands at (payments they say they sent to Payments), with that order's card open, a message to Customers > Messages with that thread open, an
   account beside the list on a desktop and on Accounts on a phone, a link to Customers > Links, a row or an entry to Orders > Approve, the
   hours and the notice to Shop; the Desk's line has none. **One filled pill, only where the page already has that exact action as a single
-  tap**: Approve (Approve both or Approve all on a trip) on a Desk row is Orders > Approve's own function (`approveDraft`: the same question, on the page's Sheet, the same request,
-  the same answer line; a customer's claim row has none, it is answered through Received on its order), and the guest link, the refused
+  tap**: (a Desk row to approve was listed here with its own Approve until 22 Oct 2026; since his multi-tick Approve, "no overlaps", it is on
+  Orders > Approve alone and the glance's **To approve** tile counts the cards, linking there), and the guest link, the refused
   account and the accounts not sent keep the action they had. **A card is titled by what to do, verb first, then who, with the figure under it** (17 Oct 2026, "Agree CQ5-HAR's order", "Confirm CW4-FEL's RM 500.00", "Reply to CX7-LUM"); the kind word is a small eyebrow. **Its main button is on the card and reaches the same function the full card's button calls**, never a new road: Reply and Agree (which needs the delivery charge and the window) open the full card; a money tap asks once on the card, "Confirm RM 500.00 received from CW4-FEL?" with Yes and Cancel, and Yes calls `orderReceived` (an order with one payment waiting; several open the full card) or `sendClaimAnswer` (a payment against the account, after its rows are read as the card does; rows needing a look open the full card), under the one request id and busy flag the full card uses, so a second tap sends nothing. Practice accounts leave Now, Soon and Watch for one folded line at the foot, "Practice: N", which opens them in place, and are counted nowhere. The line under the title is "12 to do now · 11 soon", or "Nothing needs you"; **a failed read is named by its own banner**
   ("Couldn't read orders and rows and messages"), so a failed read is never taken for nothing waiting; the chips under it (All, Orders, Payments,
   Messages, Rows, Accounts) filter the one list and read nothing; they are drawn as the parts strip is (a `tablist` of `tab` pills, the one in
@@ -3050,3 +3050,18 @@ it.
 - **Never send anything.** He sends these himself, so they must be right before they are sent.
 - **Never regenerate a past month** to match a later code scheme.
 - **Never change a line in `_users.json`.** A username is an address a customer keeps.
+
+## Multi-tick Approve (22 Oct 2026, his suggestion and answers; `docs/plan-approve-many.html`, canvas Salt Admin Approve)
+
+- **A card is ticked, not decided.** On Orders > Approve each card's Approve and Reject choose (one or the other, the card whole: a trip's rows,
+  or every move on one order); **Approve all** chooses Approve on every card that can go; the bar counts both ways with **Clear** and **Confirm**.
+  A payment they say they sent is never ticked: it is answered on its order. A pick is kept by the card's first draft and let go when it leaves.
+- **Confirm asks once** (the page's Sheet, "Decide N cards?", the rows under "to approve" and "to reject") and its yes sends ONE
+  `POST /all/maker/drafts/decide-many` `{approve, reject}` (every draft id of each card, 1 to 50 in all, none twice), relayed to the Desk's
+  `/_internal/maker/drafts/decide-many`, which runs each card's own one-tap decision (`decideDraft`) in the order entered with the dispatch and the
+  live tell held, carries on past a refusal, and answers `{decided, refused: [{id, error, fix}]}`; one dispatch follows if anything was approved
+  (also on doubt, when a card threw after its write), so the batch folds as one version. A trip's row ticked the other way is refused as its trip's.
+- **After it**, the list heads with what was decided, and a refused card stays with **Refused**, why, and how to fix it (`refusalFix`).
+- **No overlaps**: Needs you no longer lists rows to approve; the glance's fifth tile, **To approve**, counts the cards and opens Approve.
+- The Desk's one-tap `/drafts/<id>/approve|reject` and the bridge's `/_internal/maker/drafts/<id>/approve|reject` stand unchanged; Salt Admin no
+  longer calls the second.
