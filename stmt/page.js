@@ -698,6 +698,14 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 @media (min-width:1080px){.adm #makerReview .maker-foot.has{padding-right:4px}}
 .adm .maker-queue-action{min-width:var(--salt-tap);min-height:var(--salt-tap)}
 .adm .maker-fields{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end}
+/* 22 Oct 2026 (canvas Needs you): the Agree inputs two by two, Goods and Delivery, then When and Other across both */
+.adm .maker-fields.oagree{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:end}
+.adm .oagree>.maker-field{min-width:0}
+.adm .oagree>.oagree__wide{grid-column:1/-1}
+.adm .oagree>[hidden]{display:none}
+.adm .oagree .salt-field__input{width:100%;min-width:0;box-sizing:border-box}
+.adm .oagree>.salt-insight{margin:0}
+.adm .ordrow3--two{grid-template-columns:repeat(2,minmax(0,1fr))}
 .adm .maker-field{display:flex;flex:1 1 180px;flex-direction:column;min-width:150px}
 .adm .maker-field .lbl{margin-top:0}
 /* 12 OCT 2026 (PHASE 4a): the few, fixed choices of a form are the system's Option tiles (stmt/owner.js, makerTiles), a fieldset whose legend is the field's label.
@@ -820,6 +828,7 @@ body.ended>*:not(#aEnded){display:none}
   .adm .amain{flex:1 1 auto;min-width:0}
   .adm #oShop{max-width:760px}
 }
+@media (min-width:1440px){.gate.adm{max-width:1376px}.adm .nsplit{grid-template-columns:minmax(0,1fr) 420px}}
 @media (max-width:1079.98px){
   /* the phone frame (28 Sep 2026): his shell starts at the body's 16px and clears the App bar by the same 16px; here,
      after the shell's own rule, or that rule would win */
@@ -830,6 +839,16 @@ body.ended>*:not(#aEnded){display:none}
    column says Choose a card to see it in full (.panenone, drawn only beside the list, and never beside an account that is open). Below 860px an account opened takes the list's place
    (Customers) or is not drawn (Needs you, whose Open then goes to Customers) */
 .adm .panenone{display:none;margin:0}
+/* 22 Oct 2026 (canvas Needs you): the open card beside the list is one glass, starting level with the first card (under the group's heading), 360px wide
+   and 420px from 1440px, where the shell widens to 1376px as the canvas draws it */
+.adm .npane{display:flex;flex-direction:column;gap:12px}
+.adm .npane__title{margin:0;font-size:1.375rem;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .npane__what{display:flex;align-items:center;gap:8px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .npane__why{margin:0}
+.adm .npane__body:empty{display:none}
+.adm .npane__go{display:flex;gap:10px}
+.adm .npane__go .nbtn{flex:1 1 0;min-width:0;height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .npane-x:empty{display:none}
 @media (max-width:859.98px){
   .adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount{display:none}
   .adm #nopen{display:none}
@@ -839,6 +858,9 @@ body.ended>*:not(#aEnded){display:none}
   .adm .nsplit,.adm .asplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:20px;align-items:start}
   .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
   .adm #aopen .aback{display:none}
+  .adm .nsplit{grid-template-columns:minmax(0,1fr) 360px}
+  .adm #nopen{margin-top:calc(0.75rem * 1.4 + 10px);padding:20px;display:flex;flex-direction:column;gap:14px;box-sizing:border-box}
+  .adm #nopen[hidden]{display:none}
   .adm .panenone{display:block}
   .adm #nopen:not([hidden])~.panenone,.adm #aopen:not([hidden])~.panenone{display:none}
 }
@@ -961,7 +983,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm .nlist{display:flex;flex-direction:column;gap:12px;margin:0 0 24px}
 .adm .nlist .glink{margin:0}
 .adm .ngroup{display:flex;flex-direction:column;gap:10px}
-.adm .nlist .nsev{margin:0;line-height:1.4}
+.adm #mHome .nlist .nsev{margin:0;line-height:1.4}
 /* 22 Oct 2026 (canvas Needs you): the kinds' tab row, the Nav bar's link laid out as equal 48px tabs, the count in brass beside the word */
 .adm .nkinds{margin:0 0 16px;padding:0;gap:0}
 .adm .nkinds .nchips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 16px}
@@ -971,11 +993,6 @@ body.ended>*:not(#aEnded){display:none}
 .adm .nktab:hover:not(:disabled),.adm .nktab:focus-visible{background:var(--salt-glass-hover);color:var(--salt-salt)}
 .adm .nktab[aria-selected="true"]{border-bottom-color:var(--salt-brass);background:var(--salt-glass)}
 .adm .nktab:disabled{opacity:.5;cursor:default}
-/* 21 Oct 2026 (P9): the delivery charge is the system's slider over four radios; a label lays its option out, and the thumb waits until one is ticked */
-.adm .ofee{margin-top:4px}
-.adm .ofee .salt-segment__opt{display:flex;align-items:center;justify-content:center}
-.adm .ofee .salt-segment__opt:focus-within{outline:2px solid var(--salt-brass);outline-offset:-2px}
-.adm .ofee--none::before{display:none}
 /* 22 Oct 2026 (canvas Needs you, his "some of these cards are using unnecessary space"): THE GLANCE IS SINGLE-LINE KPI TILES, the label at the left and the
    figure at the right, no note, the value with no top margin so the row centres: Ready and To approve side by side, Receivables under them with the
    meter of what is paid of what is agreed between its label and its figure; from 860px one row of three, 56px tall. The Insight leads them. */
@@ -1027,7 +1044,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm .ncard>.nkind{grid-column:1;grid-row:1;padding-top:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .adm .ncard>.salt-action__body{grid-column:1;grid-row:2;min-width:0}
 .adm .ncard>.salt-action__go{grid-column:2;grid-row:1/3;display:flex;align-items:center;margin:0}
-.adm .ncard>.nfig{grid-column:3;grid-row:1/3;display:flex;align-items:center;justify-content:flex-end;height:48px;padding:0;line-height:1;white-space:nowrap;overflow:hidden}
+.adm .ncard>.salt-action__money.nfig{grid-column:3;grid-row:1/3;display:flex;align-items:center;justify-content:flex-end;width:auto;height:48px;padding:0;line-height:1;white-space:nowrap;overflow:hidden}
 .adm .ncard .salt-action__title{flex-wrap:nowrap;gap:8px;min-width:0}
 .adm .ncard .need-tap{flex-wrap:nowrap;min-height:0}
 .adm .ncard .need-who{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1076,8 +1093,8 @@ body.ended>*:not(#aEnded){display:none}
 .adm .abarlive i{width:6px;height:6px;border-radius:50%;background:currentColor;flex:0 0 auto}
 .adm .abarlive.on{color:var(--salt-verdigris)}
 .adm .abarlive.off{color:var(--salt-brass)}
-/* on a phone the word goes while live, as on the Desk: the dot says so; Offline keeps its word */
-@media (max-width:560px){.adm .abarlive.on span{display:none}.adm .abarlive{margin-right:8px}.adm .clk:not(:empty)::before{margin:0 6px}}
+/* 22 Oct 2026 (canvas Needs you): the quiet line keeps Live and the clock on a phone too */
+@media (max-width:560px){.adm .abarlive{margin-right:8px}.adm .clk:not(:empty)::before{margin:0 6px}}
 /* 12 OCT 2026 (PHASE 4c): THE UNSENT-ENTRY BANNER is the same recipe at Soon, over every place, in the column the places keep */
 .adm #unsentBar{max-width:600px;margin:0 0 16px}
 @media (min-width:861px){.adm .need--act .salt-action__go{grid-column:2 / -1}}
@@ -1921,7 +1938,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         /* S9 fix: from 860px the list stands beside the account a card is about, as Accounts does (Phase 6) */
         + '<div class="nsplit"><div>'
         + '<div id="nlist" class="nlist"></div>'
-        + '</div><div id="nopen" hidden></div><p class="rnone panenone">Choose a card to see it in full.</p></div>'
+        + '</div><div id="nopen" class="salt-glass-card salt-glass-card--radius-lg" aria-label="The open card" hidden></div><p class="rnone panenone">Choose a card to see it in full.</p></div>'
         + "</div>"
         /* ORDERS: the Counter's orders by stage, the payments customers say they sent, and the group orders. The stages filter one list
            (#makerOrderList, a row an order); a row opens that order's card in #makerReview, beside the list from 860px and in its place

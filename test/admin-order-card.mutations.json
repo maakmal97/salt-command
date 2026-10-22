@@ -116,8 +116,8 @@
  {
   "name": "cash held leaves the foot live",
   "file": "stmt/owner.js",
-  "find": "    if(cashed&&(makerCashHeld[key]||makerCashStorageError)) [].forEach",
-  "replace": "    if(false&&(makerCashHeld[key]||makerCashStorageError)) [].forEach"
+  "find": "[].forEach.call(card.querySelectorAll('button,input,select'),function(n){\n        if(!n.hasAttribute('data-maker-cash-undo')",
+  "replace": "[].forEach.call(card.querySelectorAll('.ordlead button,.ordlead input,.ordlead select'),function(n){\n        if(!n.hasAttribute('data-maker-cash-undo')"
  },
  {
   "name": "the foot does not stick",
@@ -362,8 +362,8 @@
  {
   "name": "the stand-in does not open Change terms",
   "file": "stmt/owner.js",
-  "find": "function(){ tf.open=true; var r=",
-  "replace": "function(){ var r="
+  "find": "function(){ tf.open=true; if(feeSel&&feeSel.focus)",
+  "replace": "function(){ if(feeSel&&feeSel.focus)"
  },
  {
   "name": "a fold opens by itself",
@@ -409,9 +409,9 @@
  },
  {
   "name": "the track never reaches Ready",
-  "file": "stmt/page.js",
-  "find": "    var cur=o.status==='done'?4:movedAll(o)?3:(o.status==='ready'||(+o.moved||0)>0)?2:o.status==='acknowledged'?1:0;",
-  "replace": "    var cur=o.status==='done'?4:movedAll(o)?3:o.status==='acknowledged'?1:0;"
+  "file": "stmt/owner.js",
+  "find": "cur=order.status==='done'?4:movedAll(order)?3:(order.status==='ready'||(+order.moved||0)>0)?2:order.status==='acknowledged'?1:0;",
+  "replace": "cur=order.status==='done'?4:movedAll(order)?3:order.status==='acknowledged'?1:0;"
  },
  {
   "name": "Salt Admin's chip draws no glyph",
@@ -422,8 +422,8 @@
  {
   "name": "Salt Admin's placed order takes a tick",
   "file": "stmt/owner.js",
-  "find": "placed:['copper','Waiting on you','dot']",
-  "replace": "placed:['copper','Waiting on you','tick']"
+  "find": "['copper','To agree','dot']",
+  "replace": "['copper','To agree','tick']"
  },
  {
   "name": "Salt Admin's glyph is read aloud",

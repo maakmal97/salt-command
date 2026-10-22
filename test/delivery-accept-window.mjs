@@ -2,7 +2,7 @@
  * delivery asked for as soon as it can may be answered at Accept with one of the six windows (Q3), needing no yes of theirs;
  * a window they chose stands and is never changed this version (Q2). The yes carries the window in what he was shown, and the
  * Counter cuts it to its hours as it moves the order, his choice standing whole when the hours leave none of it; one already
- * past is left off rather than stall an approved row. Salt Admin offers the six windows, a sheet's
+ * past is left off rather than stall an approved row. Salt Admin offers the six windows as one When choice, a sheet's
  * lines taking its first order's. The acknowledgement's words remind them to pay now, words only (Q4). Every code, name and
  * place is invented. Every assertion was proved red by its own mutation. */
 import { readFileSync, readdirSync } from "node:fs";
@@ -190,12 +190,13 @@ export async function run({ ok, KV, assets }) {
     const doc = browser.window.document;
     const acard = (id) => cardOf(doc, id);
     const button = (id, text) => acard(id) && [...acard(id).querySelectorAll("button")].find((b) => b.textContent === text);
-    const radio = (id, name, label) => { const opt = acard(id) && [...acard(id).querySelectorAll('input[name="' + name + '-' + id + '"]')].find((r) => r.closest("label").textContent === label); return opt; };
-    const wins = (id) => acard(id) ? [...acard(id).querySelectorAll('input[name="makerWin-' + id + '"]')].map((r) => r.closest(".salt-option").textContent) : [];
+    /* 22 Oct 2026 (his canvas): the charge and the time are each ONE select in the Agree grid, the time (data-when) listing ASAP or theirs, then every window ahead */
+    const whenOf = (id) => acard(id) ? acard(id).querySelector("select[data-when]") : null;
+    const wins = (id) => whenOf(id) ? [...whenOf(id).options].map((o) => [o.value, o.textContent]) : [];
+    const feeOf = (id) => acard(id).querySelector('select[data-act="order.fee"]');
+    const choose = (sel, v) => { sel.value = v; sel.dispatchEvent(new browser.window.Event("change", { bubbles: true })); };
     doc.querySelector('[data-act="nav.orders"]').click();
     await wait(() => doc.querySelector('[data-act="order.open"]'));
-    const dayOpts = (id) => acard(id) ? [...acard(id).querySelectorAll("select[data-winday] option")].map((x) => x.value) : [];
-    const pick = (id, name, label) => { const r = radio(id, name, label); r.checked = true; r.dispatchEvent(new browser.window.Event("change", { bubbles: true })); };
     /* an Accept reloads the review, so each card is found again once the reload has settled */
     const acceptOf = async (id) => { await new Promise((r) => setTimeout(r, 250)); await wait(() => acard(id).querySelector("[data-accept]")); acard(id).querySelector("[data-accept]").click();
       await wait(() => posts.some((p) => p.kind === "accept" && p.path.includes(id))); return posts.filter((p) => p.kind === "accept" && p.path.includes(id)).pop().body; };
@@ -205,14 +206,15 @@ export async function run({ ok, KV, assets }) {
     const t0 = Date.now(), dayN = (i) => new Date(t0 + 8 * HR + i * 864e5).toISOString().slice(0, 10), dayName = (d) => (+d.slice(8)) + " " + MON[+d.slice(5, 7) - 1];
     const winsOn = (day) => Wn.WINDOWS.filter((h) => Date.parse(day + "T00:00:00Z") + (h - 8) * HR > t0).map((h) => [day + "T" + p2(h), p2(h) + ":00 to " + p2(h + 4) + ":00"]);
     const days = [0, 1, 2, 3, 4, 5, 6, 7].map(dayN).filter((d) => winsOn(d).length), tDay = s12w().slice(0, 10);
-    ok(Wn.WINDOWS.length === 6 && days.length >= 7 && JSON.stringify(wins(A)) === JSON.stringify(["ASAP"].concat(winsOn(days[0]).map((x) => x[1])))
-      && JSON.stringify(dayOpts(A)) === JSON.stringify(days) && wins(B).length === 0
-      && JSON.stringify(wins(T)) === JSON.stringify(["Theirs, 12:00 to 16:00 on " + dayName(tDay)].concat(winsOn(tDay).filter((x) => x[0] !== s12w()).map((x) => x[1]))),
-      "Salt Admin offers the coming week's days and a day's windows still to start, none on a sheet's other lines, and theirs first on an order with its own: "
-      + JSON.stringify({ a: wins(A), b: wins(B), t: wins(T), days }));
+    const WKD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], dayLabel = (d) => d === dayN(0) ? "Today" : d === dayN(1) ? "Tomorrow" : WKD[new Date(d + "T00:00:00Z").getUTCDay()] + " " + dayName(d);
+    const listed = (skip) => days.flatMap((d) => winsOn(d).filter((x) => x[0] !== skip).map((x) => [x[0], dayLabel(d) + ", " + x[1]]));
+    ok(Wn.WINDOWS.length === 6 && days.length >= 7 && JSON.stringify(wins(A)) === JSON.stringify([["", "ASAP"]].concat(listed()))
+      && !whenOf(B) && JSON.stringify(wins(T)) === JSON.stringify([["", "Theirs, 12:00 to 16:00 on " + dayName(tDay)]].concat(listed(s12w()))),
+      "Salt Admin offers one When: ASAP, then every window still to start on each of the coming week's days, each saying its day, none on a sheet's other lines, and theirs first on an order with its own: "
+      + JSON.stringify({ a: wins(A).slice(0, 4), b: wins(B), t: wins(T).slice(0, 3), days }));
     const first = winsOn(days[0])[0];
-    pick(A, "makerFee", "RM 10"); pick(A, "makerWin", first[1]);
-    pick(T, "makerFee", "RM 0");
+    choose(feeOf(A), "10"); choose(whenOf(A), first[0]);
+    choose(feeOf(T), "0");
     const bA = await acceptOf(A), bB = await acceptOf(B), bT = await acceptOf(T);
     ok(bA.slot === first[0] && bB.slot === first[0] && !("slot" in bT) && bA.delivery === 10 && bB.delivery === 0,
       "Salt Admin's Accept sends the window he picked, its sheet's other line the same, and an order with its own time none: " + JSON.stringify([bA, bB, bT]));

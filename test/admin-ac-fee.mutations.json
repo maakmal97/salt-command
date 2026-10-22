@@ -1,13 +1,12 @@
 [
- {"name":"the old grid kept","file":"stmt/owner.js","find":"grid=el('div','salt-segment ofee');","replace":"grid=el('div','salt-options__grid salt-options__grid--2 ofee');"},
- {"name":"no radiogroup","file":"stmt/owner.js","find":"grid.setAttribute('role','radiogroup'); ","replace":""},
- {"name":"no sync on choosing","file":"stmt/owner.js","find":"chip.value=opt[0]; feeSync();","replace":"chip.value=opt[0];"},
- {"name":"the thumb drawn while none is chosen","file":"stmt/owner.js","find":"feeSeg.classList.toggle('ofee--none',at<0);","replace":""},
- {"name":"the thumb stays at the start","file":"stmt/owner.js","find":"feeSeg.style.setProperty('--i',String(Math.max(0,at)));","replace":"feeSeg.style.setProperty('--i','0');"},
- {"name":"every option lit","file":"stmt/owner.js","find":"r.closest('label').classList.toggle('salt-segment__opt--active',r.checked);","replace":"r.closest('label').classList.toggle('salt-segment__opt--active',true);"},
- {"name":"Other never opens its field","file":"stmt/owner.js","find":"if(otherField) otherField.closest('label').hidden=opt[0]!=='other';\n              makerPlacedInvalidate(); makerPlacedRead();","replace":"makerPlacedInvalidate(); makerPlacedRead();"},
- {"name":"the radio left on show","file":"stmt/owner.js","find":"radio=el('input','sr');","replace":"radio=el('input','');"},
- {"name":"an option left inline","file":"stmt/page.js","find":".adm .ofee .salt-segment__opt{display:flex;align-items:center;justify-content:center}\n","replace":""},
- {"name":"the waiting thumb shown","file":"stmt/page.js","find":".adm .ofee--none::before{display:none}\n","replace":""},
- {"name":"no focus on the option","file":"stmt/page.js","find":".adm .ofee .salt-segment__opt:focus-within{outline:2px solid var(--salt-brass);outline-offset:-2px}\n","replace":""}
+ {"name":"the select's first line preset to RM 0","file":"stmt/owner.js","find":"[['','Choose'],['0','0'],['10','10'],['15','15'],['other','Other']]","replace":"[['0','0'],['','Choose'],['10','10'],['15','15'],['other','Other']]"},
+ {"name":"no charge chosen is read as nothing","file":"stmt/owner.js","find":"dsel.value=chip.value;\n","replace":"dsel.value='0';\n"},
+ {"name":"no sync on choosing","file":"stmt/owner.js","find":"chip.value=dsel.value;\n","replace":""},
+ {"name":"Other never opens its field","file":"stmt/owner.js","find":"if(otherField) otherField.closest('label').hidden=chip.value!=='other';\n            makerPlacedInvalidate(); makerPlacedRead();","replace":"makerPlacedInvalidate(); makerPlacedRead();"},
+ {"name":"Other's field open from the start","file":"stmt/owner.js","find":"otherField.closest('label').hidden=chip.value!=='other';\n          otherField.addEventListener","replace":"otherField.closest('label').hidden=false;\n          otherField.addEventListener"},
+ {"name":"the select without its act","file":"stmt/owner.js","find":"actOn(dsel,'order.fee');","replace":""},
+ {"name":"the select's label changed","file":"stmt/owner.js","find":"'Delivery, RM'","replace":"'Delivery'"},
+ {"name":"the select outside the Agree grid","file":"stmt/owner.js","find":"dl.appendChild(dsel); form.appendChild(dl); feeSel=dsel;","replace":"dl.appendChild(dsel); card.appendChild(dl); feeSel=dsel;"},
+ {"name":"the select drawn bare","file":"stmt/owner.js","find":"dsel=el('select','fld salt-field__input salt-field__input--mono salt-field__select')","replace":"dsel=el('select','fld')"},
+ {"name":"the grid's width rule gone","file":"stmt/page.js","find":".adm .oagree .salt-field__input{width:100%;min-width:0;box-sizing:border-box}\n","replace":""}
 ]

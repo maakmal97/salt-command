@@ -48,7 +48,7 @@ export async function run({ ok, pageWork }) {
     const btns = (k) => [...card(k).querySelectorAll(".salt-action__go button")];
     const one = ["l:w1", "k:tvwx-yz23", "$:CX1-ZED", "p:ord-a1", "o:ord-p1", "w:notice", "x:0", "$:CX7-ZED"].map((k) => [k, btns(k).length, btns(k).every((b) => b.classList.contains("salt-pill") && b.classList.contains("salt-pill--sm") && b.classList.contains("nbtn") && !b.classList.contains("salt-ghost"))]);
     ok(one.every((x) => x[1] === 1 && x[2]) && t(btns("l:w1")[0]) === "Approve" && t(btns("k:tvwx-yz23")[0]) === "Send" && btns("k:tvwx-yz23")[0].getAttribute("aria-label") === "Send a sign-in link"
-      && t(btns("$:CX1-ZED")[0]) === "Message" && t(btns("w:notice")[0]) === "Change" && t(btns("$:CX7-ZED")[0]) === "Record payment",
+      && t(btns("$:CX1-ZED")[0]) === "Message" && t(btns("w:notice")[0]) === "Change" && t(btns("$:CX7-ZED")[0]) === "Record" && btns("$:CX7-ZED")[0].getAttribute("aria-label") === "Record payment",
       "a resting card shows one filled pill of one size, its second choice (Decline, Show a code, Record payment) left to the opened card, and a card whose one way was a ghost (Record payment, for a customer with no account to message) shows it filled: " + J(one));
     await click(btns("c:abcd-efgh:c-1")[0]);
     const asking = card("c:abcd-efgh:c-1");

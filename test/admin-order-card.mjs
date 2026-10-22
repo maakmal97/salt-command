@@ -165,10 +165,11 @@ export async function run({ ok, pageWork }) {
     ok(!!fold("ord-p2", "terms") && !fold("ord-p2", "terms").open && !!fold("ord-p2", "answer") && !fold("ord-p2", "answer").open, "Change terms and Answer them are folded, shut by default");
     const postsBefore = p.posts.length; wait().click(); await p.work.quiet();
     ok(fold("ord-p2", "terms").open && p.posts.length === postsBefore, "and the stand-in opens Change terms for the charge, and sends nothing");
-    byAct(d, "order.fee-10", "ord-p2").click(); await p.work.quiet();
+    const pickFee = async (v) => { const sel = byAct(d, "order.fee", "ord-p2"); sel.value = v; sel.dispatchEvent(new d.defaultView.Event("change", { bubbles: true })); await p.work.quiet(); };
+    await pickFee("10");
     ok(same(moves(), []) && rowOf("ord-p2").firstElementChild === byAct(d, "order.accept") && !wait(), "and Agree takes its place at the top once the charge is chosen and the figures are read: " + JSON.stringify(moves()));
-    byAct(d, "order.fee-15", "ord-p2").click(); await p.work.quiet();
-    byAct(d, "order.fee-10", "ord-p2").click(); await p.work.quiet();
+    await pickFee("15");
+    await pickFee("10");
     await p.tapRow("ord-p4");
     ok(same(moves(), ["order.withdraw-offer"]) && same(tail("ord-p4"), ["order.decline"]), "an order with an offer out has Withdraw the offer in its foot, Decline at the card's end, and no Accept: " + JSON.stringify([moves(), tail("ord-p4")]));
     await part("confirmed");
@@ -178,8 +179,8 @@ export async function run({ ok, pageWork }) {
     ok(!foot().contains(byAct(d, "order.received")) && !foot().contains(byAct(d, "order.amend")) && !foot().contains(byAct(d, "order.claim-received")),
       "while its claims, Received and Amend stay in the body of the card");
     await p.tapRow("ord-a2");
-    ok(moves()[0] === "order.accept-again" && moves().includes("order.again-pay") && moves().includes("order.again-drop-cancel") && moves().includes("order.again-drop-move") && moves().includes("order.again-drop-amend") && !moves().includes("order.again-drop") && !moves().includes("order.again-drop-pay") && tail("ord-a2").includes("order.cancel") && !moves().includes("order.ready-collect"),
-      "an order with a rejected pending row has Accept again first in its foot, with the stages he rejected offered again: " + JSON.stringify(moves()));
+    ok(moves()[0] === "order.accept-again" && moves().includes("order.again-pay") && moves().includes("order.again-drop-cancel") && moves().includes("order.again-drop-move") && moves().includes("order.again-drop-amend") && !moves().includes("order.again-drop") && !moves().includes("order.again-drop-pay") && tail("ord-a2").includes("order.cancel") && !moves().includes("order.ready-collect") && foot().classList.contains("has"),
+      "an order with a rejected pending row has Accept again first in its foot, which stands along the card, with the stages he rejected offered again: " + JSON.stringify(moves()));
     await part("ready");
     await p.tapRow("ord-r1");
     ok(same(moves(), []) && same(tail("ord-r1"), ["order.cancel"]) && [byAct(d, "order.handed"), byAct(d, "order.handed-units"), byAct(d, "order.handed-rest")].every((e) => !!e && leadOf("ord-r1").contains(e)),

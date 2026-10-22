@@ -1078,6 +1078,11 @@ export const OWNER_JS = `
   var MW_MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   function mwPad(n){ return (n<10?'0':'')+n; }
   function mwDayLabel(d){ return (+d.slice(8))+' '+MW_MON[+d.slice(5,7)-1]; }
+  /* 22 Oct 2026: a window's day in the one When choice: Today and Tomorrow in Kuala Lumpur, then the weekday and the day (Fri 24 Oct) */
+  function makerWinDay(d,now){
+    var today=new Date(now+8*3600000).toISOString().slice(0,10), next=new Date(now+8*3600000+86400000).toISOString().slice(0,10);
+    return d===today?'Today':d===next?'Tomorrow':day3('en')[new Date(d+'T00:00:00Z').getUTCDay()]+' '+mwDayLabel(d);
+  }
   function makerWinOn(day,now){
     return [0,4,8,12,16,20].map(function(w){ return [day+'T'+mwPad(w),mwPad(w)+':00 to '+mwPad(w+4)+':00',Date.parse(day+'T00:00:00Z')+(w-8)*3600000]; })
       .filter(function(x){ return x[2]>now; });
@@ -2802,7 +2807,7 @@ export const OWNER_JS = `
   function makerSay(key,text,error){
     makerSaid[key]=text;
     var line=null, list=document.getElementById(String(key).indexOf('draft:')===0?'makerDraftStatus':'makerReviewStatus');
-    [].forEach.call(document.querySelectorAll('#makerReview [data-maker-say], #makerDrafts [data-maker-say]'),function(node){ if(node.getAttribute('data-maker-say')===key) line=node; });
+    [].forEach.call(document.querySelectorAll('#makerReview [data-maker-say], #makerDrafts [data-maker-say], #nopen [data-maker-say]'),function(node){ if(node.getAttribute('data-maker-say')===key) line=node; });
     /* 13 Oct 2026 (stress, Medium): a card that has gone (the order moved on, the row was decided) hands its answer to the list's line at the head of the
        part, which the page may be scrolled well below: it is brought into reach, as a card's own line is */
     if(line){ line.textContent=text; withDetails(line,error); if(line.scrollIntoView) line.scrollIntoView({block:'nearest'}); }
@@ -4125,6 +4130,8 @@ export const OWNER_JS = `
     drawDeskRows(draftRoot,queueRoot,pendingRows);
     apBarDraw();
     sweep();
+    /* the order's card beside Needs you follows a redraw of the orders (a cash held, a tap answered) */
+    if(placeNow==='needs') drawNeedOpen(false);
   }
   /* an order's head, as every card of an order says it: who by code, what and for how much; its stage as a chip, the four money words, and its reference small */
   /* 18 Oct 2026 (his word: the customer's order card is the design): THE HEAD IS THE CUSTOMER'S. The book's tile with its size, the stage and who and when beside
@@ -4456,8 +4463,8 @@ export const OWNER_JS = `
     return ((makerData&&makerData.orders)||[]).filter(function(o){ return o.u===order.u&&o.sheet===order.sheet; }).sort(function(a,b){ return String(a.id).localeCompare(String(b.id)); });
   }
   /* the card of an open order: every control it had, on the order opened alone */
-  function orderCard(root,order){
-    var open=makerOpenOrders;
+  function orderCard(root,order,opts){
+    var open=makerOpenOrders, inline=!!(opts&&opts.inline);
     {
       var card=makerCard(root,order.id), acts=el('div','maker-foot__acts'), cashed=false; card.setAttribute('data-in',orderPartsOf(order));
       orderHead(card,order);
@@ -4485,8 +4492,10 @@ export const OWNER_JS = `
           +(ap.state==='taken'?'. The row waits under Approve.':', until '+fmtWhen(apf.until)+'.')));
         if(ap.state!=='taken') makerButton(acts,['Take back the offer','order.withdraw-offer'],function(){ makerTap(order,'withdraw',{},'Offer withdrawn. The order stands as they placed it.'); },false).setAttribute('data-withdraw','');
       }else if(order.status==='placed'){
-        var quote=makerQuotes[order.id]||(makerPv[order.id]&&makerPv[order.id].payload)||{}, form=el('div','maker-fields');
-        var total=makerField(form,['Price (goods)','order.total'],'number',quote.total==null?order.total:quote.total);
+        /* 22 Oct 2026 (canvas Needs you, his word): THE AGREE INPUTS TWO BY TWO, Goods and Delivery side by side, then When across both: the goods' price, the
+           delivery charge (none chosen until he chooses) and the one choice of when, ASAP needing no day and each window carrying its own */
+        var quote=makerQuotes[order.id]||(makerPv[order.id]&&makerPv[order.id].payload)||{}, form=el('div','maker-fields oagree');
+        var total=makerField(form,['Goods, RM','order.total'],'number',quote.total==null?order.total:quote.total);
         /* 18 Oct 2026 (Salt Admin clarity, part 3): THE CARD LEADS WITH THE ANSWER. Agree is the filled pill at the top, the terms it will send written beside
            it in one line and kept in step with the choices; the price, the delivery charge and the time are folded under Change terms, shut until a tap.
            Until the figures are read the pill is a stand-in, never a send: it asks for the charge (and opens it) or says it is reading. */
@@ -4494,13 +4503,18 @@ export const OWNER_JS = `
         /* 20 Oct 2026 (his canvas comment): AGREE, CHANGE TERMS AND DECLINE IN ONE ROW OF THREE, the terms line under it. Change terms is a button
            opening the fold below the row (its own summary hidden), and Decline is drawn into the row by makerOrderMoves. */
         var row3=el('div','ordrow3'); lead.appendChild(row3);
-        var tf=ordFold(card,'Change terms','order.terms',order.id,'terms',false);
-        tf.classList.add('ordfold--rowed'); actOn(tf.querySelector('summary'),'order.terms-fold',order.id);
-        var tb=actOn(el('button','salt-ghost ordrow3__terms','Change terms'),'order.terms',order.id); tb.type='button';
-        tb.setAttribute('aria-expanded',tf.open?'true':'false');
-        tb.addEventListener('click',function(){ tf.open=!tf.open; ordFolds[order.id+'|terms']=tf.open; tb.setAttribute('aria-expanded',tf.open?'true':'false'); });
-        tf.addEventListener('toggle',function(){ tb.setAttribute('aria-expanded',tf.open?'true':'false'); });
-        row3.appendChild(tb);
+        /* beside Needs you the terms stand in view, as the canvas draws the open card (22 Oct 2026); on Orders they fold under Change terms */
+        var tf;
+        if(inline){ tf={body:el('div','oterms'), open:true}; card.appendChild(tf.body); row3.classList.add('ordrow3--two'); }
+        else {
+          tf=ordFold(card,'Change terms','order.terms',order.id,'terms',false);
+          tf.classList.add('ordfold--rowed'); actOn(tf.querySelector('summary'),'order.terms-fold',order.id);
+          var tb=actOn(el('button','salt-ghost ordrow3__terms','Change terms'),'order.terms',order.id); tb.type='button';
+          tb.setAttribute('aria-expanded',tf.open?'true':'false');
+          tb.addEventListener('click',function(){ tf.open=!tf.open; ordFolds[order.id+'|terms']=tf.open; tb.setAttribute('aria-expanded',tf.open?'true':'false'); });
+          tf.addEventListener('toggle',function(){ tb.setAttribute('aria-expanded',tf.open?'true':'false'); });
+          row3.appendChild(tb);
+        }
         tf.body.appendChild(form);
         /* a sheet of several placed orders asks for the delivery charge once, on its first order (the Desk's ordPvDelivery):
            the others hide the chips and send nought */
@@ -4508,15 +4522,7 @@ export const OWNER_JS = `
         var follower=group.length>1&&group.every(function(o){ return o.status==='placed'; })&&group[0].id!==order.id;
         var deliver=order.mode==='deliver'&&!follower;
         var chip=makerFee[order.id]||(makerFee[order.id]={value:'',other:''});
-        var otherField=null, previewTurn=0, sig=JSON.stringify(order), feeRadios=[], feeSeg=null, winDraw=null;
-        /* the delivery slider's thumb: the columns are its four options, the thumb behind the one ticked, none drawn while none is */
-        function feeSync(){
-          if(!feeSeg) return;
-          var at=-1;
-          feeRadios.forEach(function(r,k){ r.closest('label').classList.toggle('salt-segment__opt--active',r.checked); if(r.checked) at=k; });
-          feeSeg.style.setProperty('--n',String(feeRadios.length)); feeSeg.style.setProperty('--i',String(Math.max(0,at)));
-          feeSeg.classList.toggle('ofee--none',at<0);
-        }
+        var otherField=null, previewTurn=0, sig=JSON.stringify(order), feeSel=null, winDraw=null;
         /* 12 Oct 2026 (his decision 6 of 11 Oct): THE CARD READS ITS OWN PREVIEW, once, when its order is opened, and again when an input is
            changed; the Preview button is retired. A row of the list reads nothing (only the opened order draws a card), so the Desk is asked
            once for an order he opens. A redraw of the card (a read that changed, a tap) keeps the quote it has, or waits on the one in
@@ -4533,7 +4539,7 @@ export const OWNER_JS = `
           var pick=makerPlacedDelivery()==null&&!follower&&order.mode==='deliver';
           var b=el('button','btn salt-pill salt-pill--md',pick?'Choose the delivery charge':bad?'Figures not read':'Reading the figures'); b.type='button';
           b.setAttribute('data-accept-wait',''); actOn(b,'order.accept-wait');
-          if(pick) b.addEventListener('click',function(){ tf.open=true; var r=tf.querySelector('input[type=radio]'); if(r&&r.focus) r.focus(); }); else b.disabled=true;
+          if(pick) b.addEventListener('click',function(){ tf.open=true; if(feeSel&&feeSel.focus) feeSel.focus(); }); else b.disabled=true;
           row3.insertBefore(b,row3.firstChild);
         }
         /* any failed or in-flight preview, and any changed input, clears the usable quote/hash and takes Accept away:
@@ -4581,7 +4587,7 @@ export const OWNER_JS = `
           var k=chip.kept||{value:'',other:''}, said=[];
           if(chip.value!==k.value||(chip.value==='other'&&chip.other!==k.other)){
             chip.value=k.value; chip.other=k.other;
-            feeRadios.forEach(function(r){ r.checked=r.value===chip.value; }); feeSync();
+            if(feeSel) feeSel.value=chip.value;
             if(otherField){ otherField.value=chip.other; otherField.closest('label').hidden=chip.value!=='other'; }
             said.push('That charge did not save. '+(chip.value===''?'No charge is chosen.':'RM '+(chip.value==='other'?chip.other:chip.value)+' is still chosen.'));
           }
@@ -4622,28 +4628,23 @@ export const OWNER_JS = `
         if(deliver){
           /* S11 11.3 on the Counter: the delivery charge is chosen where the order is agreed, RM 0, 10, 15 or his own
              figure, and NONE is chosen until he chooses, so a delivery is never agreed at a charge nobody set.
-             21 Oct 2026 (P9): drawn as the system's slider, a radiogroup of the same four radios, names, values and acts; the thumb stands
-             behind the one chosen (feeSync) and is not drawn while none is */
-          var fieldset=el('fieldset','salt-options'), grid=el('div','salt-segment ofee');
-          grid.setAttribute('role','radiogroup'); grid.setAttribute('aria-label','Delivery charge');
-          fieldset.appendChild(el('legend','salt-options__legend','Delivery'));
-          [['0','RM 0'],['10','RM 10'],['15','RM 15'],['other','Other']].forEach(function(opt){
-            var label=el('label','salt-segment__opt'), radio=el('input','sr');
-            radio.type='radio'; radio.name='makerFee-'+order.id; radio.value=opt[0]; radio.checked=chip.value===opt[0]; actOn(radio,'order.fee-'+opt[0]); feeRadios.push(radio);
-            radio.addEventListener('change',function(){
-              chip.value=opt[0]; feeSync();
-              if(otherField) otherField.closest('label').hidden=opt[0]!=='other';
-              makerPlacedInvalidate(); makerPlacedRead();
-            });
-            label.appendChild(radio); label.appendChild(document.createTextNode(opt[1])); grid.appendChild(label);
+             22 Oct 2026 (canvas Needs you): one select beside Goods, its first line Choose, which sends nothing; Other opens his own figure under them */
+          var dl=el('label','maker-field oagree__fee'), dsel=el('select','fld salt-field__input salt-field__input--mono salt-field__select');
+          dl.appendChild(el('span','lbl salt-field__label','Delivery, RM')); actOn(dsel,'order.fee');
+          [['','Choose'],['0','0'],['10','10'],['15','15'],['other','Other']].forEach(function(opt){
+            var op=el('option','',opt[1]); op.value=opt[0]; op.selected=chip.value===opt[0]; dsel.appendChild(op);
           });
-          feeSeg=grid; feeSync();
-          fieldset.appendChild(grid);
-          otherField=makerField(fieldset,['Other, RM','order.fee-other-amount'],'number',chip.other);
-          otherField.closest('label').hidden=chip.value!=='other';
+          dsel.value=chip.value;
+          dsel.addEventListener('change',function(){
+            chip.value=dsel.value;
+            if(otherField) otherField.closest('label').hidden=chip.value!=='other';
+            makerPlacedInvalidate(); makerPlacedRead();
+          });
+          dl.appendChild(dsel); form.appendChild(dl); feeSel=dsel;
+          otherField=makerField(form,['Other, RM','order.fee-other-amount'],'number',chip.other);
+          otherField.closest('label').classList.add('oagree__wide'); otherField.closest('label').hidden=chip.value!=='other';
           otherField.addEventListener('input',function(){ chip.other=otherField.value; makerPlacedInvalidate(); });
           otherField.addEventListener('change',makerPlacedRead);
-          tf.body.appendChild(fieldset);
         }
         /* 13 Oct 2026 (stress, Medium): THE FIGURES STAND UNDER THE CHARGE, above the time. They were drawn after the whole Delivery time fieldset, 1,270px down a phone's
            card, so a charge pressed there had its answer a screen away (the status line of a read, its figures, its failure). The time still re-reads them, and is a
@@ -4663,32 +4664,24 @@ export const OWNER_JS = `
         /* 10 Oct 2026 (his Q3): a delivery that asked for no time may be answered with a window, sent with Accept; theirs stands */
         var win=makerWin[order.id]||(makerWin[order.id]={value:'',day:''});
         if(deliver&&!order.wantBy){
+          /* 22 Oct 2026 (canvas Needs you): ONE WHEN, across Goods and Delivery: theirs first (ASAP, which needs no day, or the window they chose), then every
+             window still ahead on the days the Counter offers, each saying its own day (Today, Tomorrow, Fri 24 Oct). Its values are the slots the radios sent */
           var now=Date.now(), days=makerWinDays(now), theirs=order.slot?String(order.slot).slice(0,10):'';
-          if(days.indexOf(win.day)<0) win.day=days.indexOf(theirs)>=0?theirs:(days[0]||'');
-          var wset=el('fieldset','salt-options'), wgrid=el('div','salt-options__grid salt-options__grid--2');
-          wset.appendChild(el('legend','salt-options__legend','Delivery time'));
-          var dl=el('label','salt-field'), ds=el('select','salt-field__input salt-field__select');
-          dl.appendChild(el('span','salt-field__label','Day')); ds.setAttribute('data-winday',''); actOn(ds,'order.window-day');
-          days.forEach(function(d){ var op=el('option','',mwDayLabel(d)); op.value=d; op.selected=d===win.day; ds.appendChild(op); });
-          dl.appendChild(ds); wset.appendChild(dl);
+          var wl=el('label','maker-field oagree__wide'), ws=el('select','fld salt-field__input salt-field__select');
+          wl.appendChild(el('span','lbl salt-field__label','When')); actOn(ws,'order.window'); ws.setAttribute('data-when','');
           var own=order.slot&&order.slotSpan?'Theirs, '+String(order.slotSpan).replace('-',' to ')+' on '+mwDayLabel(theirs):'ASAP';
-          function makerWinDraw(){
-            wgrid.textContent='';
-            [['',own]].concat(makerWinOn(win.day,Date.now()).filter(function(x){ return x[0]!==order.slot; })).forEach(function(opt){
-              var label=el('label','salt-option'), radio=el('input','salt-option__input'),
-                  face=el('span','salt-option__face'), text=el('span','salt-option__label',opt[1]);
-              radio.type='radio'; radio.name='makerWin-'+order.id; radio.value=opt[0]; radio.checked=win.value===opt[0]; actOn(radio,opt[0]===''?'order.window-own':'order.window-'+opt[0].slice(11));
-              /* a window decides whether Accept goes to them for their yes, so a change reads the figures again */
-              radio.addEventListener('change',function(){ win.value=opt[0]; makerPlacedInvalidate(); makerPlacedRead(); });
-              face.appendChild(text); label.appendChild(radio); label.appendChild(face); wgrid.appendChild(label);
-            });
-          }
-          ds.addEventListener('change',function(){ win.day=ds.value; makerWinDraw(); });
-          makerWinDraw(); winDraw=function(){ if(win.value) win.day=win.value.slice(0,10); ds.value=win.day; makerWinDraw(); };
-          wset.appendChild(wgrid);
-          wset.appendChild(el('p','salt-insight',order.slot?'They chose '+String(order.slotSpan||'').replace('-',' to ')+'. Choose another and they will be asked.'
+          var wopts=[['',own]];
+          days.forEach(function(d){ makerWinOn(d,now).filter(function(x){ return x[0]!==order.slot; }).forEach(function(x){ wopts.push([x[0], makerWinDay(d,now)+', '+x[1]]); }); });
+          if(win.value&&!wopts.some(function(x){ return x[0]===win.value; })) win.value='';
+          if(win.kept&&!wopts.some(function(x){ return x[0]===win.kept; })) win.kept='';   /* Fable's review: a passed window is never put back */
+          wopts.forEach(function(opt){ var op=el('option','',opt[1]); op.value=opt[0]; op.selected=win.value===opt[0]; ws.appendChild(op); });
+          ws.value=win.value;
+          /* a window decides whether Accept goes to them for their yes, so a change reads the figures again */
+          ws.addEventListener('change',function(){ win.value=ws.value; if(win.value) win.day=win.value.slice(0,10); makerPlacedInvalidate(); makerPlacedRead(); });
+          winDraw=function(){ ws.value=win.value; };
+          wl.appendChild(ws); form.appendChild(wl);
+          form.appendChild(el('p','salt-insight oagree__wide',order.slot?'They chose '+String(order.slotSpan||'').replace('-',' to ')+'. Choose another and they will be asked.'
             :'They want it ASAP; choose a window and it goes with Agree.'));
-          tf.body.appendChild(wset);
         }
         function makerPlacedDelivery(){
           if(!deliver) return 0;
@@ -5908,10 +5901,24 @@ export const OWNER_JS = `
      in, which settles a tie. counts false is a card on screen that no longer waits on him. */
   function item(sev, kind, word, key, at, o, tweak){
     /* 22 Oct 2026: rm, the money the card is about (its figure), and tap, the money tap it waits on (confirm or agree), which the Insight sums */
-    return {sev:sev, kind:kind, key:key, at:at||'', practice:!!o.practice, counts:o.counts!==false, n:needN++, rm:+o.rm>0?+o.rm:0, tap:o.tap||'', make:function(){
-      var c=needCard(Object.assign({sev:sev, kind:kind, word:word, key:key, at:at||''}, o));
+    var full=function(){ return Object.assign({sev:sev, kind:kind, word:word, key:key, at:at||''}, o); };
+    return {sev:sev, kind:kind, key:key, at:at||'', practice:!!o.practice, counts:o.counts!==false, n:needN++, rm:+o.rm>0?+o.rm:0, tap:o.tap||'', order:o.order||'', make:function(){
+      var c=needCard(full());
       if(tweak) tweak(c);
       return c;
+    }, pane:function(){
+      /* 22 Oct 2026: the opened card, the same ways as the card's (tweak), every one of them */
+      var c=needPane(full());
+      if(tweak) tweak(c);
+      return c;
+    }, below:function(box){
+      /* under it, the order's own card (its figures and its Agree inputs) or the account's */
+      var ord=o.order&&(makerData&&makerData.orders||[]).filter(function(x){ return x.id===o.order; })[0], acc=o.u&&sheet&&sheet[o.u];
+      if(ord&&ordOpen(ord)) orderCard(box, ord, {inline:true}); else if(acc) acctPane(box, acc);
+    }, belowSig:function(){
+      var ord=o.order&&(makerData&&makerData.orders||[]).filter(function(x){ return x.id===o.order; })[0], acc=o.u&&sheet&&sheet[o.u];
+      /* and the cash held on it, so its countdown, Undo and Retry are drawn as Orders draws them */
+      return JSON.stringify([key, ord||null, acc||null, ord?[makerCashHeld[ord.id]||null, makerCashSaid[ord.id]||null]:null]);
     }};
   }
   /* the Action recipe's own parts: the kind word, the body (who and what, then why), the age in the money's place, the way there. Since 22 Oct 2026 this is
@@ -5986,8 +5993,30 @@ export const OWNER_JS = `
     };
     return c;
   }
-  /* a card tapped: from 860px an account opens beside the list; anything else goes to its place */
-  function needOpen(o){ if(o.u&&wide()){ openNeed(o.u); return; } o.open(); }
+  /* 22 OCT 2026 (canvas Needs you): A CARD TAPPED OPENS BESIDE THE LIST FROM 860PX, every kind of it; below 860px it goes to its place, as before */
+  function needOpen(o){ if(wide()){ nOpenKey=o.key; drawNeedOpen(true); return; } o.open(); }
+  /* THE OPENED CARD, the card in full: its kind and age, the title in words, verb first, what and why with the book's typed tag, the clock of an order, and
+     every way of its row, the second choice (Decline, Show a code, Record payment) among them, the first filled and the rest ghosts. An order's or an
+     account's card stands under it (item.below), where its own ways are, so the head of an order draws none of its own. */
+  function needPane(o){
+    var c=el('section','npane'), body=el('div','npane__body'), go=el('div','npane__go'), age=o.age!=null?o.age:ageOf(o.at), tt=o.title||o.who||'';
+    c.setAttribute('data-pane', o.key); c.setAttribute('aria-label', 'The open card');
+    var k=el('span','salt-eyebrow salt-eyebrow--'+SEVC[o.sev]+' npane__kind', o.word);
+    if(age){ k.appendChild(document.createTextNode(' · ')); k.appendChild(el('span','nage'+(o.late?' nage--late':''),age)); }
+    c.appendChild(k);
+    var h=el('h2','salt-title npane__title');
+    if(o.head||o.rest){ if(o.head) h.appendChild(document.createTextNode(o.head)); h.appendChild(whoTag(el('span','need-who'+(CODE_RE.test(o.who)?' need-who--code':''),o.who),o.who)); if(o.rest) h.appendChild(document.createTextNode(o.rest)); }
+    else h.appendChild(whoTag(el('span','need-who'+(CODE_RE.test(tt)?' need-who--code':''),tt),tt));
+    c.appendChild(h);
+    if(o.what||o.mark){ var w=el('p','salt-action__why npane__what'); if(o.mark) w.appendChild(productTag(o.mark)); if(o.what) w.appendChild(el('span',null,o.what)); c.appendChild(w); }
+    if(o.why) c.appendChild(el('p','salt-action__why npane__why',o.why));
+    /* an order's head draws no ways (its card under it has them) and so no ask, which the list's card holds; the Offer's keeps its ask-once Withdraw */
+    var own=!o.order||!!o.ways;
+    if(own){ c.appendChild(body); c.appendChild(go); }
+    c._body=body; c._full=true; c._grow=function(){};
+    c._add=function(b){ if(!own) return; b.classList.remove('salt-pill--md'); if(b.classList.contains('salt-pill')) b.classList.add('salt-pill--sm'); b.classList.add('nbtn'); go.appendChild(b); };
+    return c;
+  }
   /* a card's main button, on the card: it opens the full card where that action has inputs the card asks for, or asks in place where it is money */
   var needAsk={}, needBusy={}, needNote={};
   function mainButton(c,label,act,key,fn){ var b=pill([label,act,key]); b.addEventListener('click', fn); c._add(b); return b; }
@@ -6003,24 +6032,37 @@ export const OWNER_JS = `
     c._add(y); c._add(n);
   }
   function noteOf(c){ var m=el('p','nnote'); m.setAttribute('role','status'); c._body.appendChild(m); return m; }
-  /* S9 fix: FROM 860PX NEEDS YOU STANDS BESIDE AN ACCOUNT (the plan's f13w, his decision 9 of 11 Oct 2026), as Customers does: the one he
-     opened from a card, and NOTHING OPENS BY ITSELF (the column says Choose a card until he taps, and only the card he tapped is marked
-     current). The pane is drawn again only when its account changes or the sheet is read again, so a redraw of the list never takes
-     a tap in flight off the open card. wide() is the
-     two panes' width, which the page's CSS shares at 860px; the rail's 1080px is the system's own switch and nothing here reads it. */
-  var nopen=document.getElementById('nopen'), nOpen=null;
+  /* S9 fix: FROM 860PX NEEDS YOU STANDS BESIDE WHAT A CARD IS ABOUT (the plan's f13w, his decision 9 of 11 Oct 2026), as Customers does, and NOTHING
+     OPENS BY ITSELF: the column says Choose a card until he taps, and only the card he tapped is marked current. 22 Oct 2026 (canvas Needs you): every card
+     opens there, level with the first card, as the card in full (needPane) over the order's or the account's own card. The head is drawn with every
+     redraw of the list, as the cards are; the card under it only when what it stands on changes, and never while a field of it is in use, so a redraw never
+     takes a tap or a figure he is typing off it. A card gone from the list closes it. wide() is the two panes' width, which the page's CSS shares at 860px. */
+  var nopen=document.getElementById('nopen'), nOpenKey=null, needLast=[];
   function wide(){ return !!(window.matchMedia&&window.matchMedia('(min-width:860px)').matches); }
-  function openNeed(u){
-    if(!wide()){ showPlace('customers','accounts',{fresh:true,push:true}); openCard(u); return; }
-    nOpen=u; drawNeedOpen(true);
-  }
+  /* an account's Open on a phone goes to its card on Customers */
+  function openNeed(u){ showPlace('customers','accounts',{fresh:true,push:true}); openCard(u); }
+  /* 22 Oct 2026 (Fable's review): a field with the focus holds the card; a tap does not, or the card would never follow what the tap did */
+  function nopenInUse(){ var a=document.activeElement; return !!(a&&nopen.contains(a)&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)); }
   function drawNeedOpen(force){
-    var a=nOpen&&sheet&&sheet[nOpen];
-    [].slice.call(nlist.querySelectorAll('[data-u]')).forEach(function(c){
-      if(c.getAttribute('data-u')===nOpen) c.setAttribute('aria-current','true'); else c.removeAttribute('aria-current'); });
-    if(!force&&nopen.getAttribute('data-u')===(a?nOpen:'')) return;
-    mHome.classList.toggle('open', !!a); nopen.hidden=!a; nopen.textContent=''; nopen.setAttribute('data-u', a?nOpen:'');
-    if(a) acctPane(nopen, a);
+    var it=nOpenKey&&needLast.filter(function(i){ return i.key===nOpenKey; })[0];
+    [].slice.call(nlist.querySelectorAll('[data-need]')).forEach(function(c){
+      if(it&&c.getAttribute('data-need')===nOpenKey) c.setAttribute('aria-current','true'); else c.removeAttribute('aria-current'); });
+    if(!it){
+      /* Fable's review: a tap that moved its order on takes the card off the list, so the pane keeps that order's answer in view until his next tap */
+      var was=nopen.getAttribute('data-order'), said=was&&makerSaid[was];
+      nOpenKey=null;
+      if(said){ if(nopen.getAttribute('data-said')!==said){ nopen.textContent=''; nopen.removeAttribute('data-key'); nopen.setAttribute('data-said',said); nopen.hidden=false;
+        var sl=el('p','salt-insight npane__said',said); sl.setAttribute('role','status'); nopen.appendChild(sl); } return; }
+      if(nopen.firstChild||!nopen.hidden){ nopen.hidden=true; nopen.textContent=''; nopen.removeAttribute('data-key'); nopen.removeAttribute('data-order'); mHome.classList.remove('open'); }
+      return;
+    }
+    if(nopen.getAttribute('data-key')!==it.key){ nopen.textContent=''; nopen.setAttribute('data-key', it.key); nopen.setAttribute('data-order', it.order); nopen.removeAttribute('data-said'); force=true; }
+    mHome.classList.add('open'); nopen.hidden=false;
+    var head=nopen.querySelector(':scope > .npane'), low=nopen.querySelector(':scope > .npane-x'), nh=it.pane();
+    if(head) nopen.replaceChild(nh, head); else nopen.insertBefore(nh, nopen.firstChild);
+    if(!low){ low=el('div','npane-x'); nopen.appendChild(low); }
+    var sig=it.belowSig();
+    if(force||(low.getAttribute('data-sig')!==sig&&!nopenInUse())){ low.textContent=''; low.setAttribute('data-sig', sig); it.below(low); }
   }
   /* the standing link for strangers is what an ID with no account is shown */
   function strangerLink(){
@@ -6220,7 +6262,7 @@ export const OWNER_JS = `
       why:'Handed over '+fmtWhen(m.since)+', due '+fmtWhen(m.due)+'.'+(m.rows.length>1?' '+m.rows.length+' orders; the oldest opens.':''),
       open:function(){ owedGo(first,'[data-sect="money"]'); }}, function(c){
       if(acc){ var ms=pill(['Message','need.owed-message',m.party]); ms.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(acc.username); }); c._add(ms); }
-      var b=ghost(['Record payment','need.owed-pay',m.party]); b.addEventListener('click', function(){ owedGo(first,'[data-sect="money"]'); }); c._add(b);
+      var b=ghost(['Record','need.owed-pay',m.party]); b.setAttribute('aria-label','Record payment'); b.addEventListener('click', function(){ owedGo(first,'[data-sect="money"]'); }); c._add(b);
     });
   }
   function goodsNeed(r){
@@ -6345,6 +6387,7 @@ export const OWNER_JS = `
     }
     if(!ask){
       mainButton(c,'Received','need.received',key, function(){ delete needNote[key]; if(makerClaimRequests[ck]){ full(); return; } needAsk[key]={}; drawNeeds(); });
+      if(c._full){ var oc=ghost(['Open the claim','need.claim-open',key]); oc.addEventListener('click', full); c._add(oc); }
     }else askBox(c,key,'Confirm '+rm(claim.amount)+' received from '+who+'?', function(){
       /* Yes reads the rows first, as the card's own Received does; rows that need a look open the full card instead of sending */
       needBusy[key]=true; drawNeeds();
@@ -6368,10 +6411,10 @@ export const OWNER_JS = `
       if(o.status==='placed'&&shP.length>1&&shP[0].id!==o.id){}
       /* 22 Oct 2026 (canvas Needs you): his Accept sent for their yes is theirs to answer, so Pending, its one tap Withdraw, asked once on the card;
          one they said yes to waits on its row under Approve, which the glance counts, so it draws no card here */
-      else if(held&&o.price.state==='offered') L.push(item('soon','orders','Offer','f:'+o.id, o.price.offeredAt||o.at, {who:who, head:'Offer to ', mark:o.product,
-        what:'Waits on their yes until '+fmtWhen(apf.until), practice:t, open:to, rm:(+apf.total||0)+(+apf.delivery||0)}, function(c){ offerButton(c,o,apf); }));
+      else if(held&&o.price.state==='offered') L.push(item('soon','orders','Offer','f:'+o.id, o.price.offeredAt||o.at, {who:who, head:'Offer to ', mark:o.product, order:o.id,
+        what:'Waits on their yes until '+fmtWhen(apf.until), practice:t, open:to, rm:(+apf.total||0)+(+apf.delivery||0), ways:true}, function(c){ offerButton(c,o,apf); }));
       else if(held){}
-      else if(o.status==='placed') L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, head:'Agree ', rest:shP.length>1?"'s sheet":"'s order", mark:o.product, what:shP.length>1?shP.length+' orders on one sheet':orderWhat(o), practice:t, open:to,
+      else if(o.status==='placed') L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, head:'Agree ', rest:shP.length>1?"'s sheet":"'s order", mark:o.product, what:shP.length>1?shP.length+' orders on one sheet':orderWhat(o), practice:t, open:to, order:o.id,
         rm:shP.length>1?shP.reduce(function(s,x){ return s+(+x.total||0); },0):+o.total||0, tap:'agree', late:!!(clockOf(o)||{}).late}, function(c){
         /* Agree needs the delivery charge and the window, which the full card asks for, so the button opens it; the clock stands in the opened card */
         var k=c._full&&clockOf(o);
@@ -6383,16 +6426,16 @@ export const OWNER_JS = `
       /* a question of theirs on the order that he has not answered (the Worker's awaitingAnswer), as an account's thread is Now when asked */
       if(orderAsked(o)){
         var last=o.msgs[o.msgs.length-1];
-        L.push(item('now','messages','Message','om:'+o.id, last.at, {who:who, head:'Reply to ', what:cut(last.text), why:'On their order.', practice:t, open:to}, function(c){
+        L.push(item('now','messages','Message','om:'+o.id, last.at, {who:who, head:'Reply to ', what:cut(last.text), why:'On their order.', practice:t, open:to, order:o.id}, function(c){
           mainButton(c,'Reply','need.reply','om:'+o.id, to);
         }));
       }
       if(pays.length){
         var sum=pays.reduce(function(s,p){ return s+(+p.amount||0); },0), first=pays.map(function(p){ return p.at||''; }).filter(Boolean).sort()[0]||'';
-        L.push(item('now','payments','Payment','p:'+o.id, first, {who:who, head:'Confirm ', rest:"'s "+rm(sum), what:'Says they paid', practice:t, open:to, rm:sum, tap:'confirm'}, function(c){ orderPayButton(c,o,pays); }));
+        L.push(item('now','payments','Payment','p:'+o.id, first, {who:who, head:'Confirm ', rest:"'s "+rm(sum), what:'Says they paid', practice:t, open:to, rm:sum, tap:'confirm', order:o.id}, function(c){ orderPayButton(c,o,pays); }));
       }
       if(o.again&&o.again.length) L.push(item('now','orders','Order','a:'+o.id, o.at, {who:who, head:'Send ', rest:"'s order again", mark:o.product, what:orderWhat(o),
-        why:'A step you rejected waits to be sent again.', practice:t, open:to}, function(c){ mainButton(c,'Review','need.review','a:'+o.id, to); }));
+        why:'A step you rejected waits to be sent again.', practice:t, open:to, order:o.id}, function(c){ mainButton(c,'Review','need.review','a:'+o.id, to); }));
     });
     waitingClaims().forEach(function(c){
       L.push(item('now','payments','Payment','c:'+c.u+':'+c.id, c.at, {who:codeByUser(c.u), head:'Confirm ', rest:"'s "+rm(c.amount), what:'Says they paid',
@@ -6511,6 +6554,7 @@ export const OWNER_JS = `
       if(nKind!=='all'&&!have[nKind]){ nKind='all'; shown=items; kindMark(); }
     }
     drawKindCounts(items);
+    needLast=items;
     nlist.textContent='';
     var practiceList=shown.filter(function(i){ return i.practice; }); shown=shown.filter(function(i){ return !i.practice; });
     if(!shown.length&&needsReady()) nlist.appendChild(el('p','rnone',nKind==='all'&&!needsBad().length?'Nothing needs you.':'Nothing here.'));

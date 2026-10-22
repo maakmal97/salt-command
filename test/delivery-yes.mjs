@@ -266,8 +266,9 @@ export async function run({ ok }) {
     const doc = browser.window.document, Ev = browser.window.Event;
     const acard = (id) => cardOf(doc, id);
     const button = (id, text) => acard(id) && [...acard(id).querySelectorAll("button")].find((b) => b.textContent.indexOf(text) === 0);
-    const radio = (id, name, label) => acard(id) && [...acard(id).querySelectorAll('input[name="' + name + '-' + id + '"]')].find((r) => r.closest("label").textContent === label);
-    const pick = (id, name, label) => { const r = radio(id, name, label); r.checked = true; r.dispatchEvent(new Ev("change", { bubbles: true })); };
+    /* 22 Oct 2026 (his canvas): the charge and the time are each one select in the Agree grid; a choice is its value and a change */
+    const feeSel = (id) => acard(id) && acard(id).querySelector('select[data-act="order.fee"]'), whenSel = (id) => acard(id) && acard(id).querySelector("select[data-when]");
+    const choose = (sel, v) => { sel.value = v; sel.dispatchEvent(new Ev("change", { bubbles: true })); };
     doc.querySelector('[data-act="nav.orders"]').click();
     await wait(() => doc.querySelector('[data-act="order.open"]'));
     ok(/Waiting for their yes to RM ?120\.00 \+ RM ?10\.00, until /.test(acard(K).textContent) && !acard(K).querySelector("[data-accept]") && !posts.some((p) => p.kind === "preview" && p.path.includes(K)) && !!button(K, "Take back the offer"),
@@ -275,7 +276,7 @@ export async function run({ ok }) {
     button(K, "Take back the offer").click();
     ok(await wait(() => posts.some((p) => p.kind === "withdraw")) && /^[A-Za-z0-9_-]{16,64}$/.test(posts.find((p) => p.kind === "withdraw").body.rid), "Withdraw posts under its tap's own id");
     await new Promise((r) => setTimeout(r, 250));
-    pick(A, "makerFee", "RM 10");
+    choose(feeSel(A), "10");
     const tot = acard(A).querySelector('.maker-fields input[type="number"]'); tot.value = "125"; tot.dispatchEvent(new Ev("input", { bubbles: true })); tot.dispatchEvent(new Ev("change", { bubbles: true }));
     await wait(() => button(A, "Ask them"));
     ok(!!button(A, "Ask them, RM 125.00"), "a raise previewed is sent for their yes, never accepted");
@@ -284,9 +285,9 @@ export async function run({ ok }) {
     const oA = posts.find((p) => p.kind === "offer" && p.path.includes(A));
     ok(oA && oA.body.total === 125 && oA.body.delivery === 10 && oA.body.hash === "b".repeat(64) && !("slot" in oA.body), "its offer carries the goods, his charge and the offer's digest: " + JSON.stringify(oA && oA.body));
     await new Promise((r) => setTimeout(r, 250));
-    pick(T, "makerFee", "RM 0");
-    const other = [...acard(T).querySelectorAll('input[name="makerWin-' + T + '"]')].find((r) => r.value && r.value !== s12);
-    other.checked = true; other.dispatchEvent(new Ev("change", { bubbles: true }));
+    choose(feeSel(T), "0");
+    const other = [...whenSel(T).options].find((o) => o.value && o.value !== s12);
+    choose(whenSel(T), other.value);
     await wait(() => button(T, "Ask them"));
     button(T, "Ask them").click();
     await wait(() => posts.some((p) => p.kind === "offer" && p.path.includes(T)));

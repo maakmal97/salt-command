@@ -1,6 +1,6 @@
 /* test/maker-placed-preview.mjs: Salt Admin's placed-order preview, driven in the actual owner script. THE CARD READS ITS OWN PREVIEW
    (his decision 6 of 11 Oct 2026): opening the order reads it once, a changed input reads it again, a row of the list reads nothing, and
-   there is no Preview button. A delivery order chooses none of RM 0, 10, 15 or Other by default and reads nothing until he chooses one; a
+   there is no Preview button. A delivery order chooses none of RM 0, 10, 15 or Other by default (its select stands on Choose) and reads nothing until he chooses one; a
    successful read shows the native card/margin/floor/usual comparison, not raw row JSON, and Accept is labelled with the server's quote and
    delivery; any failed or in-flight read, or any changed input, clears the usable quote and takes Accept away; a redraw keeps what was read
    and asks the Desk nothing more; and a retried Accept, unchanged since its read, sends the same body twice over. */
@@ -55,10 +55,9 @@ export async function run({ ok }) {
     const card = (id) => cardOf(doc, id);
     const button = (id, text) => card(id) && [...card(id).querySelectorAll("button")].find((b) => b.textContent === text);
     const accept = (id) => card(id) && card(id).querySelector("[data-accept]");
-    const radio = (id, label) => {
-      const opt = card(id) && [...card(id).querySelectorAll(".salt-option, .ofee .salt-segment__opt")].find((o) => (o.querySelector(".salt-option__label") || o).textContent === label);
-      return opt && opt.querySelector('input[type="radio"]');
-    };
+    /* 22 Oct 2026 (his canvas): the delivery charge is one select, Choose, 0, 10, 15 and Other; a choice is its value, set with a change */
+    const feeSel = (id) => card(id) && card(id).querySelector('select[data-act="order.fee"]');
+    const choose = (id, v) => { const sel = feeSel(id); sel.value = v; sel.dispatchEvent(new browser.window.Event("change", { bubbles: true })); };
     const total = (id) => card(id).querySelector(".maker-fields input[type=\"number\"]");
     const tile = (id, label) => [...card(id).querySelectorAll(".salt-kpi")].find((k) => k.querySelector(".salt-kpi__label") && k.querySelector(".salt-kpi__label").textContent === label);
     const previews = (id) => posts.filter((p) => p.kind === "preview" && (!id || p.path.includes(id)));
@@ -72,12 +71,10 @@ export async function run({ ok }) {
     ok(card(id) && !button(id, "Preview") && !card(id).querySelector('[data-act="order.preview"]'), "An order's card has no Preview button.");
 
     /* no default delivery approval: none of RM 0, 10, 15 or Other is chosen, and nothing is read until he chooses one */
-    ok(!radio(id, "RM 0").checked && !radio(id, "RM 10").checked && !radio(id, "RM 15").checked && !radio(id, "Other").checked
-      && !accept(id) && previews().length === 0 && /Choose the delivery charge/.test(card(id).textContent),
+    ok(feeSel(id).value === "" && feeSel(id).selectedOptions[0].textContent === "Choose" && !accept(id) && previews().length === 0 && /Choose the delivery charge/.test(card(id).textContent),
       "A delivery order chooses none of RM 0, 10, 15 or Other by default, reads no figures until he chooses one, and says so: " + card(id).textContent);
 
-    radio(id, "RM 10").checked = true;
-    fire(radio(id, "RM 10"), "change");
+    choose(id, "10");
     await until(() => accept(id));
     ok(previews(id).length === 1 && previews(id)[0].body.delivery === 10 && previews(id)[0].body.total === 200,
       "Choosing a delivery charge reads the figures by itself, once, at that charge: " + JSON.stringify(previews(id)));
@@ -107,12 +104,11 @@ export async function run({ ok }) {
     ok(!accept(id) && previews().length === seen, "Editing the goods total takes Accept away at once, and reads nothing until he finishes.");
     fire(total(id), "change");
     await until(() => accept(id));
-    ok(previews().length === seen + 1 && previews()[seen].body.total === 250 && accept(id).textContent === "Ask them, RM 250.00 + RM 10.00",
-      "Finishing the edit reads the figures again at the new total, and a raise goes for their yes: " + JSON.stringify(previews().slice(seen)) + accept(id).textContent);
+    ok(previews().length === seen + 1 && previews()[seen].body.total === 250 && !!accept(id) && accept(id).textContent === "Ask them, RM 250.00 + RM 10.00",
+      "Finishing the edit reads the figures again at the new total, and a raise goes for their yes: " + JSON.stringify(previews().slice(seen)) + (accept(id) || {}).textContent);
     total(id).value = "200"; fire(total(id), "input"); fire(total(id), "change");
     await until(() => accept(id) && accept(id).textContent === "Agree, RM 200.00 + RM 10.00");
-    radio(id, "RM 15").checked = true;
-    fire(radio(id, "RM 15"), "change");
+    choose(id, "15");
     ok(!accept(id), "Choosing a different delivery charge takes Accept away at once.");
     await until(() => accept(id));
     ok(/\+ RM 15\.00/.test(accept(id).textContent), "and reads the figures again at the new charge: " + accept(id).textContent);
@@ -120,8 +116,7 @@ export async function run({ ok }) {
     /* success -> failed refresh: a later preview failing clears what the earlier success left usable, at once */
     previewFail = 1;
     const beforeFail = previews().length;
-    radio(id, "RM 10").checked = true;
-    fire(radio(id, "RM 10"), "change");
+    choose(id, "10");
     ok(!accept(id), "A preview on its way leaves no Accept, not only once the failure is confirmed.");
     await until(() => previews().length > beforeFail);
     await until(() => /The Desk did not answer/.test(card(id).textContent));
@@ -146,7 +141,7 @@ export async function run({ ok }) {
     /* a sheet asks for the delivery charge once, on its first order: the second hides the chips, reads at nought on opening and sends nought */
     const later = "20261007090002-dlv";
     const beforeLater = previews().length;
-    ok(!!card(later) && !radio(later, "RM 10") && !button(later, "Preview"), "Only the sheet's first order asks for a delivery charge; the others show no chips and no Preview.");
+    ok(!!card(later) && !feeSel(later) && !button(later, "Preview"), "Only the sheet's first order asks for a delivery charge; the others show no chips and no Preview.");
     await until(() => previews(later).length > 0);
     ok(previews().length === beforeLater + 1 && previews(later)[0].body.delivery === 0 && previews(later)[0].body.total === 200,
       "A later order on a sheet reads its figures on opening, at delivery 0, and the Desk is asked once: " + JSON.stringify(previews(later)));

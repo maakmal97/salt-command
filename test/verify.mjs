@@ -50228,10 +50228,11 @@ await (async () => {
   await (await import("./admin-needs-cards.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Admin's glance, stock: Stock cover and Next lot beside Ready and Owed to you, for the book with the least cover (21 Oct 2026)");
+section("22 Oct 2026: from 860px a Needs you card opens beside the list, the card in full over the order's or the account's own");
 await (async () => {
-  await (await import("./admin-glance-stock.mjs")).run({ ok, pageWork });
+  await (await import("./admin-needs-pane.mjs")).run({ ok, pageWork });
 })();
+
 
 section("The restock light made plain, P1: each book's light in STOCK, carried by the Desk and the Counter's relay (22 Oct 2026)");
 await (async () => {
@@ -50241,6 +50242,11 @@ await (async () => {
 section("The restock light made plain, P2: Availability on Counter Home and the light's word on Prices (22 Oct 2026)");
 await (async () => {
   await (await import("./counter-supply-home.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Admin's glance, stock: Stock cover and Next lot beside Ready and Owed to you, for the book with the least cover (21 Oct 2026)");
+await (async () => {
+  await (await import("./admin-glance-stock.mjs")).run({ ok, pageWork });
 })();
 
 section("The restock light made plain, P3: Stock by book on Salt Admin's Needs you, every book's light and figures (22 Oct 2026)");
