@@ -18,5 +18,11 @@
  {"name":"a tap outside leaves it open","file":"stmt/owner.js","find":"if(!nJumpMenu.hidden&&!ev.target.closest('.salt-jump')) jumpShut(false);","replace":"if(false) jumpShut(false);"},
  {"name":"a kind with nothing can be chosen","file":"stmt/owner.js","find":"var none=ready&&!have[k];","replace":"var none=false;"},
  {"name":"the menu counts every kind as All","file":"stmt/owner.js","find":"c.textContent=ready?String(n[k]||0):'';","replace":"c.textContent=ready?String(menu?n.all:(n[k]||0)):'';"},
- {"name":"Ready's tile no link (P7 re-aimed)","file":"stmt/owner.js","find":"      if(t[0]){ a.href=t[0]; a.setAttribute('data-act','need.glance.'+t[1]); }","replace":"      if(t[0]&&t[1]!=='ready'){ a.href=t[0]; a.setAttribute('data-act','need.glance.'+t[1]); }"}
+ {"name":"Ready's tile no link (P7 re-aimed)","file":"stmt/owner.js","find":"      if(t[0]){ a.href=t[0]; a.setAttribute('data-act','need.glance.'+t[1]); }","replace":"      if(t[0]&&t[1]!=='ready'){ a.href=t[0]; a.setAttribute('data-act','need.glance.'+t[1]); }"},
+ {"name":"To approve is not last","file":"stmt/owner.js","find":"['#orders','owed','Owed to you',rm(owe),oweN?oweN+(oweN===1?' agreed order':' agreed orders'):'Nothing owed']].concat(glanceStockTiles())\n      .concat([['#orders/approve','approve','To approve',String(draftGroups(pendingRows()).length),'On Orders']]);","replace":"['#orders','owed','Owed to you',rm(owe),oweN?oweN+(oweN===1?' agreed order':' agreed orders'):'Nothing owed']].concat([['#orders/approve','approve','To approve',String(draftGroups(pendingRows()).length),'On Orders']])\n      .concat(glanceStockTiles());"},
+ {"name":"To approve counts rows not cards","file":"stmt/owner.js","find":"String(draftGroups(pendingRows()).length),'On Orders'","replace":"String(pendingRows().length),'On Orders'"},
+ {"name":"To approve has another label","file":"stmt/owner.js","find":"'approve','To approve',String(","replace":"'approve','Approve',String("},
+ {"name":"To approve has another note","file":"stmt/owner.js","find":"draftGroups(pendingRows()).length),'On Orders'","replace":"draftGroups(pendingRows()).length),'Waiting'"},
+ {"name":"To approve links to Orders","file":"stmt/owner.js","find":"[['#orders/approve','approve','To approve'","replace":"[['#orders','approve','To approve'"},
+ {"name":"To approve is not a link","file":"stmt/owner.js","find":"['#orders/approve','approve','To approve'","replace":"['','approve','To approve'"}
 ]

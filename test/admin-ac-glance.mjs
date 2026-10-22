@@ -2,6 +2,7 @@
  * check red under its own mutation (test/admin-ac-glance.mutations.json):
  *   1  the glance heads Needs you: Ready, the orders ready with goods still to hand over, and Owed to you, what the agreed orders still owe,
  *      goods and delivery less what is paid, summed; a practice order counts in neither; each tile opens Orders
+ *   1b the glance's fifth and last tile, To approve: the cards waiting under Approve, On Orders, linking to #orders/approve
  *   2  each kind's pill says how many of it wait, practice apart, the same number its filter then shows
  *   3  the kinds are one row that slides: the system's track, never wrapping, beside a fixed Jump to, each a 44px target
  *   4  Jump to opens a menu of every kind with its count, the current one marked; a kind with nothing cannot be chosen; a line chooses its kind as
@@ -30,11 +31,19 @@ export async function run({ ok, pageWork }) {
     await click(byAct(d, "nav.needs"));
     /* 1 */
     const g = d.getElementById("nGlance"), tiles = g ? [...g.querySelectorAll(".salt-glance__item")] : [];
-    /* 21 Oct 2026: Stock cover and Next lot follow, the glance stock's own (test/admin-glance-stock.mjs); these two are the links */
-    const read = tiles.filter((a) => a.tagName === "A").map((a) => [a.getAttribute("data-glance"), t(a.querySelector(".salt-glance__label")), t(a.querySelector(".salt-glance__value")), t(a.querySelector(".salt-glance__note")), a.getAttribute("href")]);
+    /* 21 Oct 2026: Stock cover and Next lot follow, the glance stock's own (test/admin-glance-stock.mjs); these two lead the links, To approve ends them (check 1b) */
+    const row5 = (a) => [a.getAttribute("data-glance"), t(a.querySelector(".salt-glance__label")), t(a.querySelector(".salt-glance__value")), t(a.querySelector(".salt-glance__note")), a.getAttribute("href")];
+    const read = tiles.slice(0, 2).map((a) => [a.getAttribute("data-glance"), t(a.querySelector(".salt-glance__label")), t(a.querySelector(".salt-glance__value")), t(a.querySelector(".salt-glance__note")), a.getAttribute("href")]);
     ok(!!g && !g.hidden && g.classList.contains("salt-glance") && J(read) === J([["ready", "Ready", "4", "To hand over", "#orders/ready"], ["owed", "Owed to you", "RM 670.00", "6 agreed orders", "#orders"]])
       && tiles.slice(0, 2).every((a) => a.tagName === "A"),
       "the glance reads Ready 4 (three ready and one part paid, the practice order apart) and Owed to you RM 670.00 over six agreed orders, goods and delivery less what is paid, each tile a link to Orders: " + J(read));
+    /* 1b: 22 Oct 2026 (multi-tick Approve, his "no overlaps"): a fifth tile, last, To approve, the cards waiting under Approve, a link to them */
+    const last = tiles[tiles.length - 1], tile = last ? row5(last) : [];
+    w.location.hash = "#orders/approve"; await new Promise((r) => setTimeout(r, 20)); await p.work.quiet();
+    const waiting = d.querySelectorAll("#makerDrafts .apcard").length;
+    ok(tiles.length === 5 && last.tagName === "A" && tiles.filter((a) => a.getAttribute("data-glance") === "approve").length === 1 && waiting > 0
+      && J(tile) === J(["approve", "To approve", String(waiting), "On Orders", "#orders/approve"]),
+      "the glance ends with To approve, last, its value the " + waiting + " cards waiting under Approve, noted On Orders, a link to #orders/approve: " + J(tile));
     w.location.hash = "#orders/ready"; await new Promise((r) => setTimeout(r, 20)); await p.work.quiet();
     const lit = d.querySelector('.aparts button[data-part="ready"][aria-selected="true"]');
     ok(!!lit && !d.getElementById("oOrders").hidden, "and Ready's tile lands on Orders at the Ready stage");

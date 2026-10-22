@@ -18,9 +18,10 @@ async function page(pageWork, answer) {
   const p = await richOwnerPage({ pageWork, extra: (route) => (route === "/all/maker/stock" ? answer : undefined) });
   await p.work.quiet();
   byAct(p.d, "nav.needs").click(); await p.work.quiet();
-  const tiles = [...p.d.querySelectorAll("#nGlance .salt-glance__item")];
+  /* the fifth tile, To approve, is admin-ac-glance's (22 Oct 2026); the stock tiles are read as the four before it */
+  const all = [...p.d.querySelectorAll("#nGlance .salt-glance__item")], tiles = all.filter((a) => a.getAttribute("data-glance") !== "approve");
   const read = tiles.map((a) => [a.getAttribute("data-glance"), t(a.querySelector(".salt-glance__label")), t(a.querySelector(".salt-glance__value")), t(a.querySelector(".salt-glance__note"))]);
-  return { p, tiles, read, stock: tiles.find((a) => a.getAttribute("data-glance") === "stock"), lot: tiles.find((a) => a.getAttribute("data-glance") === "lot") };
+  return { p, tiles, endsApprove: all.length === tiles.length + 1 && all[all.length - 1].getAttribute("data-glance") === "approve", read, stock: tiles.find((a) => a.getAttribute("data-glance") === "stock"), lot: tiles.find((a) => a.getAttribute("data-glance") === "lot") };
 }
 const mark = (a) => { const s = a && a.querySelector(".salt-glance__label .pwith .sr"); return s ? t(s) : null; };
 
@@ -31,8 +32,8 @@ export async function run({ ok, pageWork }) {
   try {
     const css = [...A.p.d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
     ok(J(A.read.map((r) => r[0])) === J(["ready", "owed", "stock", "lot"]) && A.stock.tagName === "DIV" && A.lot.tagName === "DIV"
-      && !A.stock.hasAttribute("data-act") && !A.stock.hasAttribute("href") && A.read[0][1] === "Ready",
-      "Stock cover and Next lot stand after Ready and Owed to you, and are not links: " + J(A.read));
+      && !A.stock.hasAttribute("data-act") && !A.stock.hasAttribute("href") && A.read[0][1] === "Ready" && A.endsApprove,
+      "Stock cover and Next lot stand after Ready and Owed to you and before the last tile, To approve, and are not links: " + J(A.read));
     ok(/\.adm \.nglance\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/.test(css) && /@media \(min-width:1080px\)\{\.adm \.nglance\{grid-template-columns:repeat\(4,minmax\(0,1fr\)\)\}\}/.test(css),
       "four across from 1080px, two by two below");
     const words = t(A.p.d.getElementById("nGlance")).replace(/ /g, " ");
