@@ -6403,7 +6403,7 @@ export const OWNER_JS = `
   function drawNeeds(){
     if(!nlist) return;
     var items=needItems(), shown=items.filter(function(i){ return nKind==='all'||i.kind===nKind; });
-    drawCounts(items); drawLead(items); drawGlance();
+    drawCounts(items); drawLead(items); drawGlanceAll();
     /* the chips are the kinds present, and All; one whose kind has gone leaves him on All */
     if(needsReady()){
       var have={}; items.forEach(function(i){ have[i.kind]=1; });
@@ -6481,6 +6481,7 @@ export const OWNER_JS = `
       g.appendChild(a);
     });
   }
+  function drawGlanceAll(){ drawGlance(); drawStockBooks(); }
   /* 21 Oct 2026 (canvas V62, his word "stock count, stock expected dates should be here"): STOCK COVER AND NEXT LOT, beside Ready and Owed to
      you, for the book with the least cover, a book with nothing free first, its mark by the title. The figures are the Desk's (the master
      measures them at each version, GET /all/maker/stock), the day the next lot is expected his own from Stock. Read once a page open; a failed
@@ -6492,7 +6493,7 @@ export const OWNER_JS = `
     if(!glanceStock&&!glanceStockOut&&Date.now()-glanceStockFailed>300000){
       glanceStockOut=true;
       refs('/all/maker/stock').then(function(j){ glanceStock=j; glanceStockFailed=0; },function(){ glanceStockFailed=Date.now(); })
-        .then(function(){ glanceStockOut=false; drawGlance(); });
+        .then(function(){ glanceStockOut=false; drawGlanceAll(); });
     }
     var said=glanceStockOut&&!glanceStockFailed?'Reading':'Could not be read';
     var none=[[null,'stock','Stock cover','–',said],[null,'lot','Next lot','–',said]];
@@ -6505,6 +6506,37 @@ export const OWNER_JS = `
     var measured=glanceStock.today?'As measured on '+glanceDay(glanceStock.today):'';
     return [[null,'stock','Stock cover',units(b.shelf),units(free)+' free · '+cover,p,measured],
       [null,'lot','Next lot',by?glanceDay(by):'–',transit>0.009?units(transit)+' expected':by?'Nothing on the way yet':'Nothing on the way',p,measured]];
+  }
+  /* 22 OCT 2026 (his word, the restock light made plain): STOCK BY BOOK under the glance, every book, the worst light first and then the least
+     cover: its mark, the light in the Counter's own words and colour, then the Desk's figures, the shelf, what is agreed, what is free, the days of
+     cover, and the next lot's units and day. The light is the Desk's (restockLight, measured into STOCK with the figures); nothing here works one
+     out. Read with the tiles and again on each tick of the Needs you poll, so a re-seed shows within the poll; a failed read leaves the tiles to say so. */
+  var STOCK_WORD={green:'Available',yellow:'Limited',red:'Out of stock'}, STOCK_RANK={red:0,yellow:1,green:2};
+  function drawStockBooks(){
+    var s=document.getElementById('nStock'); if(!s) return;
+    var books=glanceStock&&glanceStock.books, ids=books?Object.keys(books).filter(function(p){ return books[p]&&typeof books[p].shelf==='number'; }):[];
+    if(!ids.length){ if(!s.hidden){ s.hidden=true; s.textContent=''; s.removeAttribute('data-sig'); } return; }   /* a tick that finds nothing again draws nothing */
+    var rank=function(b){ return [b.light in STOCK_RANK?STOCK_RANK[b.light]:3, b.coverDays==null?Infinity:+b.coverDays]; };
+    ids.sort(function(x,y){ var a=rank(books[x]), c=rank(books[y]); return a[0]-c[0]||a[1]-c[1]; });
+    var nb=function(t){ return t.replace(/ /g,' '); };
+    var lines=ids.map(function(p){
+      var b=books[p], free=+b.free||0, transit=+b.transit||0, by=glanceStock.by&&glanceStock.by[p];
+      var cover=free<=0.009?'0 d':b.coverDays==null?'over 4 wk':b.coverDays+' d';
+      var lot=transit>0.009?units(transit)+(by?', '+glanceDay(by):''):by?'nothing on the way yet, '+glanceDay(by):'nothing on the way';
+      return [p, b.light in STOCK_RANK?b.light:'', nb('Shelf '+units(b.shelf))+' · '+nb('agreed '+units(b.commit))+' · '+nb(units(free)+' free')+' · '+nb(cover+' cover')+' · Next lot '+lot];
+    });
+    var sig=JSON.stringify([glanceStock.today,lines]);
+    if(s.hidden) s.hidden=false;
+    if(s.getAttribute('data-sig')===sig) return;
+    s.setAttribute('data-sig',sig); s.textContent='';
+    var h=el('h2','salt-eyebrow salt-eyebrow--copper','Stock by book'); if(glanceStock.today) h.title='As measured on '+glanceDay(glanceStock.today);
+    s.appendChild(h);
+    lines.forEach(function(l){
+      var r=el('div','nstock__row'); r.appendChild(bookMark(l[0],20));
+      if(l[1]) r.appendChild(el('span','salt-status supst sup-'+l[1],STOCK_WORD[l[1]]));
+      r.appendChild(el('p','nstock__fig',l[2]));
+      s.appendChild(r);
+    });
   }
   /* 21 Oct 2026 (canvas V56): JUMP TO opens a menu of every kind with its count; a line chooses its kind as the pill does, Escape or a tap
      outside closes it and gives the button back its focus, and the arrow keys move between the lines that can be chosen */
@@ -6559,6 +6591,8 @@ export const OWNER_JS = `
     /* the sheet and the links are read again once read, or once their read has failed, so a Retry reaches every read that did */
     if((sheet||nSrc.sheet)&&!sheetBusy) jobs.push(loadSheet(true));
     if((linksRead||nSrc.links)&&!linksBusy) jobs.push(loadLinks(true));
+    /* 22 Oct 2026: the poll's tick reads the stock again (Stock by book), a failure keeping what was read */
+    if(tick&&glanceStock&&!glanceStockOut) jobs.push(refs('/all/maker/stock').then(function(j){ glanceStock=j; drawGlanceAll(); },function(){}));
     Promise.all(jobs).then(function(){ needsAt=Date.now(); }, function(){}).then(function(){ needsReading=false; if(!tick||needSig()!==sig0) redrawLead(); });
   }
   /* what Watch shows: the hours with an override in force, and the notice */

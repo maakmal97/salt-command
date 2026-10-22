@@ -959,6 +959,11 @@ body.ended>*:not(#aEnded){display:none}
 .adm .nglance[hidden]{display:none}
 @media (min-width:1080px){.adm .nglance{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .adm .nglance .pwith{vertical-align:middle;margin:-6px 0 -6px 6px}
+/* 22 Oct 2026: Stock by book under the glance, a row a book, its mark and light in words, then its figures in the mono face */
+.adm .nstock{margin:0 0 16px}
+.adm .nstock[hidden]{display:none}
+.adm .nstock__row{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:10px 0;border-top:1px solid var(--salt-line)}
+.adm .nstock__fig{flex-basis:100%;margin:0;font-family:var(--salt-font-mono);font-variant-numeric:tabular-nums}
 .adm .nfail{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:0 0 12px}
 .adm .nfail[hidden]{display:none}
 .adm .nfail__what{margin:0;flex:1 1 12em}
@@ -1836,6 +1841,8 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<p class="lead" id="nCount">Reading what needs you.</p>'
         /* 21 Oct 2026 (P7): the glance, Ready and Owed to you, read off the orders the page holds (stmt/owner.js drawGlance) */
         + '<div id="nGlance" class="salt-glance nglance" aria-label="At a glance" hidden></div>'
+        /* 22 Oct 2026 (his word, the restock light made plain): every book's light and figures (stmt/owner.js drawStockBooks) */
+        + '<section id="nStock" class="nstock" aria-label="Stock by book" hidden></section>'
         /* 21 Oct 2026 (canvas V56): the kinds on one row that slides, each with its count, and Jump to beside it, a menu of every kind */
         + '<div class="salt-tabs-row nkrow"><div class="salt-tabs salt-tabs--track nchips" role="tablist" aria-label="Show">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="salt-tabs__pill" role="tab" data-chip="' + k
           + '" data-act="need.kind.' + k + '" aria-selected="' + (i ? "false" : "true") + '">' + w + "</button>").join("") + "</div>"

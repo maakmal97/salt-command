@@ -440,8 +440,8 @@ export async function run({ ok, pageWork }) {
     ok(p.live().length === 1, "Needs you sets one read every 5 seconds: " + JSON.stringify(p.intervals.map((i) => i.ms)));
     p.reads.length = 0;
     await p.tick();
-    ok(same([...p.reads].sort(), [ROUTES.review, ROUTES.claims, ROUTES.threads, ROUTES.hours, ROUTES.bulletin, ROUTES.sheet, ROUTES.links, ROUTES.inputs].sort()),
-      "a tick on Needs you reads the orders and rows, the claims, the threads, the hours, the notice, the accounts, the links and what is owed, each once: " + JSON.stringify(p.reads));
+    ok(same([...p.reads].sort(), [ROUTES.review, ROUTES.claims, ROUTES.threads, ROUTES.hours, ROUTES.bulletin, ROUTES.sheet, ROUTES.links, ROUTES.inputs, "/all/maker/stock"].sort()),
+      "a tick on Needs you reads the orders and rows, the claims, the threads, the hours, the notice, the accounts, the links, what is owed and (22 Oct 2026, Stock by book) the stock, each once: " + JSON.stringify(p.reads));
 
     /* nothing drawn when nothing changed */
     const kept = { c: p.card("o:ord-p1"), s: p.card("l:w1"), r: d.querySelector("#makerOrderList .ordrow"), status: d.getElementById("makerReviewStatus").textContent };

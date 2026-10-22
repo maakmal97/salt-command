@@ -1,0 +1,20 @@
+[
+ {"name": "no card in the markup", "file": "stmt/page.js", "find": "        + '<section id=\"nStock\" class=\"nstock\" aria-label=\"Stock by book\" hidden></section>'\n", "replace": ""},
+ {"name": "the card never drawn", "file": "stmt/owner.js", "find": "  function drawGlanceAll(){ drawGlance(); drawStockBooks(); }", "replace": "  function drawGlanceAll(){ drawGlance(); }"},
+ {"name": "no heading", "file": "stmt/owner.js", "find": "    s.appendChild(h);\n    lines.forEach(", "replace": "    lines.forEach("},
+ {"name": "no measured day", "file": "stmt/owner.js", "find": "if(glanceStock.today) h.title='As measured on '+glanceDay(glanceStock.today);", "replace": ""},
+ {"name": "least cover first, light ignored", "file": "stmt/owner.js", "find": "return [b.light in STOCK_RANK?STOCK_RANK[b.light]:3, b.coverDays", "replace": "return [0, b.coverDays"},
+ {"name": "the light's order reversed", "file": "stmt/owner.js", "find": "STOCK_RANK={red:0,yellow:1,green:2};", "replace": "STOCK_RANK={red:2,yellow:1,green:0};"},
+ {"name": "cover ignored within a light", "file": "stmt/owner.js", "find": "return a[0]-c[0]||a[1]-c[1]; });\n    var nb=", "replace": "return a[0]-c[0]; });\n    var nb="},
+ {"name": "the old word for red", "file": "stmt/owner.js", "find": "red:'Out of stock'}", "replace": "red:'Out for now'}"},
+ {"name": "no colour on the word", "file": "stmt/owner.js", "find": "r.appendChild(el('span','salt-status supst sup-'+l[1],STOCK_WORD[l[1]]));", "replace": "r.appendChild(el('span','salt-status',STOCK_WORD[l[1]]));"},
+ {"name": "a word with no light", "file": "stmt/owner.js", "find": "      if(l[1]) r.appendChild(el('span','salt-status supst", "replace": "      r.appendChild(el('span','salt-status supst"},
+ {"name": "no mark", "file": "stmt/owner.js", "find": "var r=el('div','nstock__row'); r.appendChild(bookMark(l[0],20));", "replace": "var r=el('div','nstock__row');"},
+ {"name": "agreed dropped", "file": "stmt/owner.js", "find": "+' · '+nb('agreed '+units(b.commit))", "replace": ""},
+ {"name": "free read as the shelf", "file": "stmt/owner.js", "find": "var b=books[p], free=+b.free||0,", "replace": "var b=books[p], free=+b.shelf||0,"},
+ {"name": "cover with nothing free", "file": "stmt/owner.js", "find": "var cover=free<=0.009?'0 d':b.coverDays==null?'over 4 wk':b.coverDays+' d';", "replace": "var cover=b.coverDays==null?'over 4 wk':b.coverDays+' d';"},
+ {"name": "the lot's day dropped", "file": "stmt/owner.js", "find": "units(transit)+(by?', '+glanceDay(by):'')", "replace": "units(transit)"},
+ {"name": "no tick read", "file": "stmt/owner.js", "find": "    if(tick&&glanceStock&&!glanceStockOut) jobs.push(", "replace": "    if(0) jobs.push("},
+ {"name": "a failed tick clears the card", "file": "stmt/owner.js", "find": "jobs.push(refs('/all/maker/stock').then(function(j){ glanceStock=j; drawGlanceAll(); },function(){}));", "replace": "jobs.push(refs('/all/maker/stock').then(function(j){ glanceStock=j; drawGlanceAll(); },function(){ glanceStock=null; drawGlanceAll(); }));"},
+ {"name": "shown when no book is read", "file": "stmt/owner.js", "find": "if(!ids.length){ if(!s.hidden){ s.hidden=true; s.textContent='';", "replace": "if(!ids.length){ if(!s.hidden){ s.textContent='';"}
+]
