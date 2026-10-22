@@ -12,7 +12,7 @@
  {"name":"a claim has no second way","file":"stmt/owner.js","find":"      if(c._full){ var oc=ghost(['Open the claim','need.claim-open',key]); oc.addEventListener('click', full); c._add(oc); }\n","replace":""},
  {"name":"a field in use is redrawn","file":"stmt/owner.js","find":"    if(force||(low.getAttribute('data-sig')!==sig&&!nopenInUse())){","replace":"    if(force||low.getAttribute('data-sig')!==sig){"},
  {"name":"a changed order is never redrawn","file":"stmt/owner.js","find":"    if(force||(low.getAttribute('data-sig')!==sig&&!nopenInUse())){","replace":"    if(force){"},
- {"name":"a gone card leaves the pane open","file":"stmt/owner.js","find":"    if(!it){ nOpenKey=null; if(nopen.firstChild||!nopen.hidden){ nopen.hidden=true; nopen.textContent=''; nopen.removeAttribute('data-key'); mHome.classList.remove('open'); } return; }","replace":"    if(!it){ return; }"},
+ {"name":"a gone card leaves the pane open","file":"stmt/owner.js","find":"    if(!it){\n      /* Fable","replace":"    if(!it){ return;\n      /* Fable"},
  {"name":"the pane is the old 440px","file":"stmt/page.js","find":"  .adm .nsplit{grid-template-columns:minmax(0,1fr) 360px}","replace":"  .adm .nsplit{grid-template-columns:minmax(0,1fr) minmax(0,440px)}"},
  {"name":"the shell stays 1180px at 1440","file":"stmt/page.js","find":"@media (min-width:1440px){.gate.adm{max-width:1376px}.adm .nsplit","replace":"@media (min-width:1440px){.gate.adm{max-width:1180px}.adm .nsplit"},
  {"name":"the pane starts at the top","file":"stmt/page.js","find":"  .adm #nopen{margin-top:calc(0.75rem * 1.4 + 10px);","replace":"  .adm #nopen{margin-top:0;"},

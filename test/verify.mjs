@@ -264,7 +264,12 @@ const assets = {
 const mkEnv = (kv, requireAccess = "0") => ({ SALT_QUEUE: kv, ASSETS: assets, REQUIRE_ACCESS: requireAccess });
 const req = (path, opts = {}) => new Request("https://salt-command.example" + path, opts);
 /* PHASE 1b: Needs you's cards are the Action recipe; their words are the body's, the kind word and the age being the recipe's */
-const needText = (c) => (c.querySelector(".salt-action__body") || c).textContent;
+/* 22 Oct 2026 (Needs you on the canvas): a card holds its kind, age, code and one pill; its words and every way of its row stand in the open card beside the
+   list from 860px. wideNeeds(w) in beforeParse makes a page wide; needFull(D, key) opens that card beside the list and returns the open card (#nopen). */
+const wideNeeds = (w) => { w.matchMedia = (q) => ({ matches: /min-width:\s*860px/.test(q) && !/max-width/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {} }); };
+const needFull = (D, key) => { const c = D.querySelector('#nlist [data-need="' + key + '"]'), n = D.getElementById("nopen"); if (c && n.getAttribute("data-key") !== key) c.querySelector(".need-tap").click(); return n; };
+/* 22 Oct 2026 (Needs you on the canvas): a card's title is its code, and a reader hears the whole of it, its kind first; the older checks read that whole */
+const needText = (c) => { const t = c.querySelector(".need-tap[aria-label]"); return t ? t.getAttribute("aria-label").replace(/^[^:]+: /, "") + " " + (c.querySelector(".salt-action__body") || c).textContent : (c.querySelector(".salt-action__body") || c).textContent; };
 const postQ = (body, extraHeaders = {}) => req("/queue", {
   method: "POST", headers: { "content-type": "application/json", ...extraHeaders }, body: JSON.stringify(body)
 });
@@ -17931,55 +17936,58 @@ await (async () => {
       if (!w.TextDecoder) w.TextDecoder = TextDecoder;
       Object.defineProperty(w.navigator, "share", { value: async (d) => { shared.push(d.text); }, configurable: true });
       w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+      wideNeeds(w);   /* 22 Oct 2026: wide, so a card's words and its second choice are read in the open card beside the list */
     } }).window;
     const D = win.document;
     const cards = () => [...D.querySelectorAll("#nlist [data-need]")];
+    const todo = () => (D.querySelector('[data-count="needs"]') || {}).textContent;
     const card = (key) => D.querySelector('#nlist [data-need="' + key + '"]');
-    const btn = (c, t) => c && [...c.querySelectorAll("button")].find((b) => b.textContent === t);
+    const btn = (c, t) => c && [...c.querySelectorAll("button")].find((b) => b.textContent === t || b.getAttribute("aria-label") === t);
     ok(D.getElementById("mHome").hidden === false && /Needs you/.test(D.querySelector("#mHome h1").textContent),
       "his page opens on Needs you");
     /* this fixture has no Desk, so the maker reads fail and the line counts what could be read (plan 1) */
-    ok(await until(() => /^1 to do now . 3 soon$/.test(D.getElementById("nCount").textContent)),
-      "one waits now and three soon, and the line says so: " + D.getElementById("nCount").textContent);
-    ok(cards().map((x) => x.getAttribute("data-need")).join(",") === ["k:" + uL, "s", "l:" + lid, "n:" + uN].join(","),
-      "a card each, Now before Soon and the oldest first: the locked account, then to send, the link, no account: " + JSON.stringify(cards().map((x) => x.getAttribute("data-need"))));
+    /* 22 Oct 2026 (his names): all four are his to act, To do, and the lead counts them */
+    ok(await until(() => D.getElementById("nCount").textContent === "4 things wait on your tap now." && todo() === "4"),
+      "four wait on his tap, To do, and the lead and the rail say so: " + D.getElementById("nCount").textContent);
+    ok(cards().map((x) => x.getAttribute("data-need")).join(",") === ["s", "l:" + lid, "k:" + uL, "n:" + uN].join(",") && cards().every((x) => x.getAttribute("data-sev") === "now"),
+      "a card each, all To do and the oldest first: to send, the link, the locked account, no account: " + JSON.stringify(cards().map((x) => x.getAttribute("data-need"))));
     ok(cards().every((x) => x.classList.contains("salt-action") && x.querySelector(".salt-action__kind") && x.querySelector(".need-who")),
       "each drawn on the system's Action recipe, with its kind word and who");
 
     /* the waiting link: Approve on the card moves it, and the card says so where he tapped */
     const lc = card("l:" + lid);
-    ok(/CX1-AS/.test(lc.textContent) && !lc.querySelector("select") && btn(lc, "Approve") && btn(lc, "Decline"),
-      "the link's card names the associate by code, offers no price level to pick, and carries Approve and Decline");
+    ok(/CX1-AS/.test(lc.textContent) && !lc.querySelector("select") && btn(lc, "Approve") && !btn(lc, "Decline") && btn(needFull(D, "l:" + lid), "Approve") && btn(needFull(D, "l:" + lid), "Decline"),
+      "the link's card names the associate by code, offers no price level to pick, and carries Approve, its Decline in the open card beside it");
     btn(lc, "Approve").click();
     ok(await until(async () => JSON.parse(await kv.get("g:" + lid)).approved === true) && await until(() => /Approved[.] It opens now/.test((card("l:" + lid) || {}).textContent || ""))
-      && await until(() => /^1 to do now . 2 soon/.test(D.getElementById("nCount").textContent)),
-      "Approve on the card opens the link, the card says so and the count drops: " + JSON.stringify([(card("l:" + lid) || {}).textContent, D.getElementById("nCount").textContent]));
+      && await until(() => todo() === "3" && D.getElementById("nCount").textContent === "3 things wait on your tap now."),
+      "Approve on the card opens the link, the card says so and the count drops: " + JSON.stringify([(card("l:" + lid) || {}).textContent, D.getElementById("nCount").textContent, todo()]));
 
     /* the account refused at an address: why, and a link in two taps, so the share never waits on the making */
-    const kc = card("k:" + uL);
-    ok(/Locked out until \d\d:\d\d/.test(kc.querySelector(".need-what").textContent)
-      && /Too many wrong passwords[.] If it was them, send a sign-in link[.] Last signed in by link, 02 Sep 2026[.]/.test(kc.textContent),
-      "the card says the customer is locked out and until when, with why and how they last signed in: " + kc.textContent);
+    const kc = card("k:" + uL), ko = needFull(D, "k:" + uL);
+    ok(/Locked out until \d\d:\d\d/.test(ko.querySelector(".npane__what").textContent)
+      && /Too many wrong passwords[.] If it was them, send a sign-in link[.] Last signed in by link, 02 Sep 2026[.]/.test(ko.querySelector(".npane__why").textContent),
+      "the open card says the customer is locked out and until when, with why and how they last signed in: " + ko.querySelector(".npane").textContent);
     const sl = btn(kc, "Send a sign-in link");
     sl.click();
-    ok(await until(() => sl.textContent === "Share the link") && shared.length === 0 && (await kv.list({ prefix: "ot:" })).keys.length === 1,
+    ok(await until(() => sl.getAttribute("aria-label") === "Share the link" && sl.textContent === "Share") && shared.length === 0 && (await kv.list({ prefix: "ot:" })).keys.length === 1,
       "the first tap makes the link and shares nothing: " + JSON.stringify({ label: sl.textContent, shared: shared.length }));
     sl.click();
     ok(await until(() => shared.length === 1) && /[/]s[/]/.test(shared[0]) && /Sent/.test(kc.textContent),
       "the second tap shares it, and the card says it went: " + JSON.stringify(shared));
     /* and stage 3's Show a code, in person: its Sheet mints a hand-over for this account and shows the code */
-    const hc = btn(card("k:" + uL), "Show a code");
+    const hc = btn(needFull(D, "k:" + uL), "Show a code");
     if (hc) hc.click();
     ok(!!hc && await until(() => D.getElementById("hoC") && D.getElementById("hoC").value.length === 9)
       && /For /.test((D.querySelector(".salt-sheet .ho-for") || {}).textContent || "") && D.querySelector(".salt-sheet .ho-for").textContent.includes(uL),
-      "the refused card carries Show a code, whose Sheet shows a code for that account: " + JSON.stringify(D.getElementById("hoC") && D.getElementById("hoC").value));
+      "the refused card's open card carries Show a code, whose Sheet shows a code for that account: " + JSON.stringify(D.getElementById("hoC") && D.getElementById("hoC").value));
     const hx = D.querySelector(".salt-sheet__close");
     if (hx) hx.click();
 
     /* the code with no account: Send is off, and the stranger's link is there to show */
     const nc = card("n:" + uN);
-    ok(/Their account comes with the next update[.] Show them the guest price list meanwhile[.]/.test(nc.textContent) && !btn(nc, "Send, after the update"),
-      "an ID with no account says when it is made, offers the guest price list and has no Send at all");
+    ok(/Their account comes with the next update[.] Show them the guest price list meanwhile[.]/.test(needFull(D, "n:" + uN).querySelector(".npane__why").textContent) && !btn(nc, "Send, after the update"),
+      "an ID with no account says when it is made (in its open card), offers the guest price list and has no Send at all");
     btn(nc, "Show the guest price list").click();
     const standingRec = JSON.parse((await kv.list({ prefix: "g:" })).keys.map((k) => kv.m.get(k.name)).find((v) => /"standing":true/.test(v)));
     ok(await until(() => nc.querySelector(".glink .gu") && nc.querySelector(".glink .gu").textContent.endsWith("/g/" + standingRec.id)),
@@ -17987,7 +17995,9 @@ await (async () => {
 
     /* the accounts nobody has been sent */
     const sc = card("s");
-    ok(/^1 account has not been sent their sign-in link/.test(needText(sc)) && /CX2-FR[.]/.test(sc.textContent) && !/CX1-AS|CX0-LK/.test(sc.textContent),
+    const so = needFull(D, "s");
+    ok(/^1 account has not been sent their sign-in link/.test(needText(sc)) && sc.querySelector(".need-who").textContent === "CX2-FR" && /CX2-FR[.]/.test(so.querySelector(".npane__why").textContent)
+      && !/CX1-AS|CX0-LK/.test(sc.textContent + so.querySelector(".npane").textContent),
       "the to-send card names only the account with no tick and no open: " + sc.textContent);
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
@@ -18212,7 +18222,7 @@ await (async () => {
     } }).window;
     const D = win.document;
     const card = () => D.querySelector('#nlist [data-need="s"]');
-    const btn = (t) => card() && [...card().querySelectorAll("button")].find((b) => b.textContent === t);
+    const btn = (t) => card() && [...card().querySelectorAll("button")].find((b) => b.textContent === t || b.getAttribute("aria-label") === t);
     const ticked = async (u) => !!(await kv.get("sent:2026-09-01:" + u));
     const minted = async () => (await kv.list({ prefix: "ot:" })).keys.length;
     ok(await until(() => btn("Send sign-in links one by one")) && /^3 accounts have not been sent their sign-in link/.test(needText(card())), "three accounts wait to be sent, and the card offers Send them in turn");
@@ -18238,8 +18248,9 @@ await (async () => {
       "the last is shared and ticked, the skipped one is not, and the card says so: " + card().textContent.slice(0, 160));
     ok((D.getElementById("scount") || {}).textContent === "2 of 3 sent", "Accounts counts the ticks as they land: " + (D.getElementById("scount") || {}).textContent);
     btn("Done").click();
-    ok(await until(() => /^1 account has not been sent their sign-in link/.test(needText(card())) && /CX1-B2[.]/.test(needText(card()))),
-      "and Done leaves the skipped one waiting on Needs you");
+    /* 22 Oct 2026: one account left to send is titled by its code */
+    ok(await until(() => /^1 account has not been sent their sign-in link/.test(needText(card())) && card().querySelector(".need-who").textContent === "CX1-B2"),
+      "and Done leaves the skipped one waiting on Needs you, the card titled by its code");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
 section("S9 9.7: Salt Admin has its own icon, the ring with a keyhole, and an ended Access session gives way to Sign in again");
@@ -18524,7 +18535,7 @@ await (async () => {
     } }).window;
     const D = win.document;
     const card = () => D.querySelector('#nlist [data-need="s"]');
-    const btn = (t) => card() && [...card().querySelectorAll("button")].find((b) => b.textContent === t);
+    const btn = (t) => card() && [...card().querySelectorAll("button")].find((b) => b.textContent === t || b.getAttribute("aria-label") === t);
     const ticked = async (u) => !!(await kv.get("sent:2026-09-01:" + u));
     ok(await until(() => btn("Send sign-in links one by one")), "three accounts wait to be sent");
     btn("Send sign-in links one by one").click();
@@ -18597,7 +18608,7 @@ await (async () => {
     } }).window;
     const D = win.document;
     const card = () => D.querySelector('#nlist [data-need="s"]');
-    const btn = (t) => card() && [...card().querySelectorAll("button")].find((b) => b.textContent === t);
+    const btn = (t) => card() && [...card().querySelectorAll("button")].find((b) => b.textContent === t || b.getAttribute("aria-label") === t);
     ok(await until(() => btn("Send sign-in links one by one")), "two accounts wait to be sent");
     btn("Send sign-in links one by one").click();
     ok(await until(() => btn("Share") && !btn("Share").disabled), "the first turn opens with its link made");
@@ -18657,7 +18668,7 @@ await (async () => {
     } }).window;
     const D = win.document;
     const card = () => D.querySelector('#nlist [data-need="s"]');
-    const btn = (t) => card() && [...card().querySelectorAll("button")].find((b) => b.textContent === t);
+    const btn = (t) => card() && [...card().querySelectorAll("button")].find((b) => b.textContent === t || b.getAttribute("aria-label") === t);
     const ticked = async (u) => !!(await kv.get("sent:2026-09-01:" + u));
     ok(typeof win.navigator.share === "undefined" && await until(() => btn("Send sign-in links one by one")), "a page with no share sheet, and two accounts to send");
     btn("Send sign-in links one by one").click();
@@ -18725,7 +18736,7 @@ await (async () => {
     } }).window;
     const D = win.document;
     const card = (key) => D.querySelector('#nlist [data-need="' + key + '"]');
-    const btn = (key, t) => card(key) && [...card(key).querySelectorAll("button")].find((b) => b.textContent === t);
+    const btn = (key, t) => card(key) && [...card(key).querySelectorAll("button")].find((b) => b.textContent === t || b.getAttribute("aria-label") === t);
     const ots = async () => (await kv.list({ prefix: "ot:" })).keys.length;
     ok(await until(() => btn("k:" + uL, "Send a sign-in link") && btn("l:" + lid, "Approve") && btn("n:" + uN, "Show the guest price list")),
       "Needs you carries the locked card, the link card and the card with no account");
@@ -18796,15 +18807,15 @@ await (async () => {
     } }).window;
     const D = win.document;
     const card = () => D.querySelector('#nlist [data-need="l:' + lid + '"]');
-    const btn = (c, t) => c && [...c.querySelectorAll("button")].find((b) => b.textContent === t);
+    const btn = (c, t) => c && [...c.querySelectorAll("button")].find((b) => b.textContent === t || b.getAttribute("aria-label") === t);
     const note = (c) => ((c && c.querySelector(".nnote")) || {}).textContent || "";
     ok(await until(() => btn(card(), "Approve")), "the associate's link waits on Needs you");
     cut.on = true;
     btn(card(), "Approve").click();
     ok(await until(() => /Not sent[.] Check the connection and try again[.]/.test(note(card())))
-      && card().querySelector(".nnote").classList.contains("bad") && !!btn(card(), "Approve") && !!btn(card(), "Decline")
+      && card().querySelector(".nnote").classList.contains("bad") && !!btn(card(), "Approve")
       && !JSON.parse(await kv.get("g:" + lid)).approved,
-      "Approve that never went out says so on the card, which keeps its buttons: " + JSON.stringify(note(card())));
+      "Approve that never went out says so on the card, which keeps its Approve (its Decline stands in the open card, 22 Oct 2026): " + JSON.stringify(note(card())));
     cut.on = false;
     ok(!card().querySelector("select"), "and the card offers no price level to pin");
     /* the same in Links */
@@ -18865,20 +18876,22 @@ await (async () => {
         hits.push(key);
         if (hold.key === key) { hold.held++; await hold.p; }
         return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+      wideNeeds(w);   /* 22 Oct 2026: Decline stands in the open card beside the list */
     } }).window;
     const D = win.document;
     const card = () => D.querySelector('#nlist [data-need="l:' + lid + '"]');
     const lcard = () => D.querySelector('#glist [data-link="' + lid + '"]');
-    const btn = (c, t) => c && [...c.querySelectorAll("button")].find((b) => b.textContent === t);
+    const pane = () => card() && needFull(D, "l:" + lid);
+    const btn = (c, t) => c && [...c.querySelectorAll("button")].find((b) => b.textContent === t || b.getAttribute("aria-label") === t);
     const sent = (verb) => hits.filter((x) => x === "POST /all/refs/" + lid + "/" + verb).length;
-    ok(await until(() => btn(card(), "Approve") && btn(card(), "Decline")), "the associate's link waits on Needs you");
+    ok(await until(() => btn(card(), "Approve") && btn(pane(), "Decline")), "the associate's link waits on Needs you, its Decline in the open card");
 
     /* ---- Needs you: Approve held in flight ---- */
     holdNext("POST /all/refs/" + lid + "/approve");
     const first = btn(card(), "Approve");
     first.click();
-    ok(await until(() => hold.held === 1) && first.disabled && btn(card(), "Decline").disabled,
-      "while Approve is out, the card's Approve and Decline are off: " + JSON.stringify([first.disabled, btn(card(), "Decline").disabled]));
+    ok(await until(() => hold.held === 1) && first.disabled && btn(pane(), "Decline").disabled,
+      "while Approve is out, the card's Approve and Decline are off: " + JSON.stringify([first.disabled, btn(pane(), "Decline").disabled]));
     /* a redraw puts fresh buttons in their place; a tap on the new Approve while the first move is out sends nothing */
     D.querySelector('.salt-appbar button[data-m="needs"]').click();
     const again = btn(card(), "Approve");
@@ -18954,8 +18967,11 @@ await (async () => {
     } }).window;
     const D = win.document;
     const kc = () => D.querySelector('#nlist [data-need="k:' + us[1] + '"]');
-    ok(await until(() => kc() && /Last signed in by code, 03 Sep 2026[.]/.test(kc().textContent)),
-      "a customer who last got in by typing a code reads so on their Needs you card: " + (kc() || {}).textContent);
+    /* 22 Oct 2026: the card's why stands in its open card beside the list from 860px */
+    const ko = () => kc() && (wideNeeds(win), needFull(D, "k:" + us[1]).querySelector(".npane__why"));
+    ok(await until(() => ko() && /Last signed in by code, 03 Sep 2026[.]/.test(ko().textContent)),
+      "a customer who last got in by typing a code reads so on their Needs you card, opened: " + (ko() || {}).textContent);
+    delete win.matchMedia;
     D.querySelector('.salt-appbar button[data-m="customers"]').click();
     const chips = (u) => { const r = D.querySelector('#rlist [data-u="' + u + '"]'); return r ? [...r.querySelectorAll(".salt-status, .salt-inbox-row__what")].flatMap((x) => (x.classList.contains("salt-status") ? [x.textContent] : x.textContent.split(" · "))) : []; };
     ok(await until(() => chips(us[0]).includes("Opened 03 Sep 2026 by code")) && chips(us[1]).includes("Opened 03 Sep 2026 by code"),
@@ -19224,9 +19240,12 @@ await (async () => {
     } }).window;
     const D = win.document;
     const nc = () => D.querySelector('#nlist [data-need="n:' + uN + '"]');
-    ok(await until(() => nc() && /Their account comes with the next update[.] Show them the guest price list meanwhile[.]/.test(nc().textContent)
-      && [...nc().querySelectorAll("button")].some((b) => b.textContent === "Show the guest price list")),
+    /* 22 Oct 2026: the why stands in the open card beside the list from 860px, and the card's pill says Show, its reader name the whole */
+    const no = () => nc() && (wideNeeds(win), needFull(D, "n:" + uN).querySelector(".npane__why"));
+    ok(await until(() => no() && /Their account comes with the next update[.] Show them the guest price list meanwhile[.]/.test(no().textContent)
+      && [...nc().querySelectorAll("button")].some((b) => b.getAttribute("aria-label") === "Show the guest price list")),
       "Needs you offers the guest price list with only the sheet read: " + (nc() || {}).textContent);
+    delete win.matchMedia;
     D.querySelector('.salt-appbar button[data-m="customers"]').click();
     const row = (u) => D.querySelector('#rlist [data-u="' + u + '"]');
     ok(await until(() => row(uN) && row(uN).textContent.startsWith("CX3-NO")
@@ -19681,7 +19700,7 @@ await (async () => {
     ok(rows().some((t) => /^Notifications/.test(t)) && rows().some((t) => /^Windows computer, EdgeThis oneKept signed in since/.test(t))
       && rows().some((t) => /^iPhone, SafariSigned in .*, for that visit[.]$/.test(t)) && !body().includes("Mozilla"),
       "it lists notifications, this computer marked This one and kept signed in, and the iPhone for that visit: " + JSON.stringify(rows()));
-    const btn = (t) => [...card.querySelectorAll("button")].find((b) => b.textContent === t);
+    const btn = (t) => [...card.querySelectorAll("button")].find((b) => b.textContent === t || b.getAttribute("aria-label") === t);
 
     /* ---- Sign in another device: the code is made as the Sheet opens, and Copy is a tap of its own ---- */
     btn("Sign in another device").click();
@@ -19839,7 +19858,7 @@ await (async () => {
     /* ---- Needs you's Share the link, on the locked account's card ---- */
     D.querySelector('.salt-appbar button[data-m="needs"]').click();
     const need = () => D.querySelector('#nlist [data-need="k:' + uL + '"]');
-    const nbtn = (t) => need() && [...need().querySelectorAll("button")].find((b) => b.textContent === t);
+    const nbtn = (t) => need() && [...need().querySelectorAll("button")].find((b) => b.textContent === t || b.getAttribute("aria-label") === t);
     ok(await until(() => nbtn("Send a sign-in link")), "Needs you carries the refused account's card");
     nbtn("Send a sign-in link").click();
     ok(await until(() => nbtn("Share the link")), "its first tap makes the link");
@@ -20299,7 +20318,7 @@ await (async () => {
     D.getElementById("pw").value = pw;
     D.getElementById("f").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
     const card = D.getElementById("thisDevice");
-    const btn = (t) => [...card.querySelectorAll("button")].find((b) => b.textContent === t);
+    const btn = (t) => [...card.querySelectorAll("button")].find((b) => b.textContent === t || b.getAttribute("aria-label") === t);
     ok(await until(() => !card.hidden && !!btn("Turn on")), "signed in with the question dismissed, This device offers Turn on");
     st.answer = "denied";
     btn("Turn on").click();
@@ -20344,7 +20363,7 @@ await (async () => {
     D.getElementById("pw").value = pw;
     D.getElementById("f").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
     const card = D.getElementById("thisDevice");
-    const btn = (t) => [...card.querySelectorAll("button")].find((b) => b.textContent === t);
+    const btn = (t) => [...card.querySelectorAll("button")].find((b) => b.textContent === t || b.getAttribute("aria-label") === t);
     ok(await until(() => !card.hidden && /Windows computer, Edge/.test(card.textContent) && !!btn("Sign in another device")) && !/iPhone, Safari/.test(card.textContent),   /* the device line, not the notifications row, which says "An iPhone needs iOS 16.4" */
       "This device lists this computer alone: " + JSON.stringify(card.textContent));
     btn("Sign in another device").click();

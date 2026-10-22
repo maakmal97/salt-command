@@ -11,7 +11,7 @@
  {"name":"money owed is To do","file":"stmt/owner.js","find":"return item('soon','payments','Owed','$:'+m.party, m.since,","replace":"return item('now','payments','Owed','$:'+m.party, m.since,"},
  {"name":"money comes after the oldest","file":"stmt/owner.js","find":"if(ma!==mb) return ma?-1:1;","replace":"if(ma!==mb) return 0;"},
  {"name":"the smaller sum first","file":"stmt/owner.js","find":"if(ma&&Math.abs(a.rm-b.rm)>0.004) return b.rm-a.rm;","replace":"if(ma&&Math.abs(a.rm-b.rm)>0.004) return a.rm-b.rm;"},
- {"name":"a sheet's money is its first order's","file":"stmt/owner.js","find":"rm:shP.length>1?shP.reduce(function(s,x){ return s+(+x.total||0); },0):+o.total||0, tap:'agree'}","replace":"rm:0, tap:'agree'}"},
+ {"name":"a sheet's money is its first order's","file":"stmt/owner.js","find":"rm:shP.length>1?shP.reduce(function(s,x){ return s+(+x.total||0); },0):+o.total||0, tap:'agree',","replace":"rm:0, tap:'agree',"},
  {"name":"an offer still draws its Agree card","file":"stmt/owner.js","find":"      else if(held){}\n","replace":"      else if(false){}\n"},
  {"name":"an offer is To do","file":"stmt/owner.js","find":"else if(held&&o.price.state==='offered') L.push(item('soon','orders','Offer',","replace":"else if(held&&o.price.state==='offered') L.push(item('now','orders','Offer',"},
  {"name":"Withdraw sends at once","file":"stmt/owner.js","find":"if(!needAsk[key]) mainButton(c,'Withdraw','need.withdraw',key, function(){ delete needNote[key]; needAsk[key]=true; drawNeeds(); });","replace":"if(!needAsk[key]) mainButton(c,'Withdraw','need.withdraw',key, function(){ makerTap(o,'withdraw',{},''); });"},

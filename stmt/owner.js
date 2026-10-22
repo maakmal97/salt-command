@@ -5788,7 +5788,7 @@ export const OWNER_JS = `
      and a second tap, on a button a redraw put in their place, sends nothing. */
   var moving={};
   function moveLock(id, on){
-    [].forEach.call(document.querySelectorAll('[data-link="'+id+'"] button[data-move], [data-need="l:'+id+'"] button[data-move]'), function(b){ b.disabled=on; });
+    [].forEach.call(document.querySelectorAll('[data-link="'+id+'"] button[data-move], [data-need="l:'+id+'"] button[data-move], [data-pane="l:'+id+'"] button[data-move]'), function(b){ b.disabled=on; });
   }
   async function moveLink(r, how){
     if(moving[r.id]) return;
@@ -6006,7 +6006,7 @@ export const OWNER_JS = `
     c.appendChild(k);
     var h=el('h2','salt-title npane__title');
     if(o.head||o.rest){ if(o.head) h.appendChild(document.createTextNode(o.head)); h.appendChild(whoTag(el('span','need-who'+(CODE_RE.test(o.who)?' need-who--code':''),o.who),o.who)); if(o.rest) h.appendChild(document.createTextNode(o.rest)); }
-    else h.appendChild(whoTag(el('span','need-who'+(CODE_RE.test(tt)?' need-who--code':''),tt),tt));
+    else { var pt=o.say||tt; h.appendChild(whoTag(el('span','need-who'+(CODE_RE.test(pt)?' need-who--code':''),pt),pt)); }
     c.appendChild(h);
     if(o.what||o.mark){ var w=el('p','salt-action__why npane__what'); if(o.mark) w.appendChild(productTag(o.mark)); if(o.what) w.appendChild(el('span',null,o.what)); c.appendChild(w); }
     if(o.why) c.appendChild(el('p','salt-action__why npane__why',o.why));
@@ -6116,6 +6116,8 @@ export const OWNER_JS = `
       if(done){ noteOf(c).textContent=moved.t; return; }
       var ap=pill(['Approve','need.link-approve']), de=ghost(['Decline','need.link-decline']);
       ap.setAttribute('data-move',''); de.setAttribute('data-move','');
+      /* a card drawn while a move on its link is out (the open card beside the list) is off with the rest */
+      ap.disabled=de.disabled=!!moving[r.id];
       ap.addEventListener('click', function(){ moveLink(r,'approve'); });
       de.addEventListener('click', function(){ moveLink(r,'decline'); });
       c._add(ap); c._add(de);
@@ -6163,7 +6165,7 @@ export const OWNER_JS = `
   function sendNeed(rows){
     var codes=rows.map(function(a){ return a.code||a.username; }), first=sendAt(rows);
     var named=codes.length>6?codes.slice(0,5).concat([(codes.length-5)+' more']):codes;
-    return item('now','accounts','Account','s', first, {who:rows.length+(rows.length===1?' account has':' accounts have')+' not been sent their sign-in link', title:rows.length===1?codes[0]:rows.length+' accounts', what:first?'ready since '+dayMon(first):'',
+    return item('now','accounts','Account','s', first, {who:rows.length+(rows.length===1?' account has':' accounts have')+' not been sent their sign-in link', title:rows.length===1?codes[0]:rows.length+' accounts', say:rows.length+(rows.length===1?' account has':' accounts have')+' not been sent their sign-in link', what:first?'ready since '+dayMon(first):'',
       why:andList(named)+'.', open:function(){ showPlace('customers','accounts',{fresh:true,push:true}); filterBy('unsent'); }}, function(c){
       var go=pill(['Send','need.send-turn']); go.setAttribute('aria-label','Send sign-in links one by one');
       go.addEventListener('click', function(){ turn={rows:rows.slice(), i:0, sent:[], j:null, why:''}; turnStep(); });
@@ -6329,6 +6331,9 @@ export const OWNER_JS = `
         :(a.code||a.username)+(t.copied?': their message is copied.':t.j?': their link is made. Share it and it is ticked sent.':': making their link.'),
       open:function(){ showPlace('customers','accounts',{fresh:true,push:true}); filterBy('unsent'); }}, function(c){
       if(c._grow) c._grow();
+      if(!c._full){ var tw=fin?(did===n?'Each has their link, and each is ticked sent.':'The ones not ticked are still on Accounts, under Not sent.')
+        :(a.code||a.username)+(t.copied?': their message is copied.':t.j?': their link is made. Share it and it is ticked sent.':': making their link.');
+        c._body.appendChild(el('p','salt-action__why',did+' of '+n+' sent. '+tw)); }
       var ticks=el('div','achips');
       t.rows.forEach(function(x, k){ var did=t.sent.indexOf(x.username)>=0;
         ticks.appendChild(chip(did?'verdigris':(k===t.i?'brass':'mist'), (x.code||x.username)+(did?', sent':''))); });
@@ -6472,7 +6477,7 @@ export const OWNER_JS = `
   }
   /* the count on each item of the bars: Needs you counts what waits on him; Orders counts the orders still open (not ended or completed); Customers what asks him. Record and Shop have none. A practice item is never counted. */
   function drawCounts(items){
-    setCount('needs', items.filter(function(i){ return i.sev==='now'&&!i.practice; }).length);
+    setCount('needs', items.filter(function(i){ return i.sev==='now'&&!i.practice&&i.counts; }).length);
     setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordOpen(o); }).length);
     setCount('customers', makerThreads.filter(function(t){ return !t.test&&makerThreadAsked(t); }).length+links.filter(waitingLink).length);
     barLive(draftGroups(pendingRows()).length);

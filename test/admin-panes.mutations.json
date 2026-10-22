@@ -1,20 +1,5 @@
 [
- {
-  "name": "Needs you opens the first card's account by itself on a desk",
-  "file": "stmt/owner.js",
-  "find": "    var a=nOpen&&sheet&&sheet[nOpen];\n",
-  "replace": "    if(!nOpen&&wide()){ var first=nlist.querySelector('[data-u]'); nOpen=first?first.getAttribute('data-u'):null; }\n    var a=nOpen&&sheet&&sheet[nOpen];\n"
- },
- {
-  "name": "every account card in Needs you is marked current",
-  "file": "stmt/owner.js",
-  "find": "      if(c.getAttribute('data-u')===nOpen) c.setAttribute('aria-current','true'); else c.removeAttribute('aria-current'); });",
-  "replace": "      c.setAttribute('aria-current','true'); });"
- },
- {
-  "name": "the column beside Needs you does not say Tap a card",
-  "file": "stmt/page.js",
-  "find": "<div id=\"nopen\" hidden></div><p class=\"rnone panenone\">Choose a card to see it in full.</p></div>'",
-  "replace": "<div id=\"nopen\" hidden></div></div>'"
- }
+ {"name":"Needs you opens the first card's account by itself on a desk","file":"stmt/owner.js","find":"    var it=nOpenKey&&needLast.filter(function(i){ return i.key===nOpenKey; })[0];\n","replace":"    if(!nOpenKey&&wide()&&needLast[0]) nOpenKey=needLast[0].key;\n    var it=nOpenKey&&needLast.filter(function(i){ return i.key===nOpenKey; })[0];\n"},
+ {"name":"every account card in Needs you is marked current","file":"stmt/owner.js","find":"if(it&&c.getAttribute('data-need')===nOpenKey) c.setAttribute('aria-current','true'); else c.removeAttribute('aria-current'); });","replace":"c.setAttribute('aria-current','true'); });"},
+ {"name":"the column beside Needs you does not say Tap a card","file":"stmt/page.js","find":"<div id=\"nopen\" class=\"salt-glass-card salt-glass-card--radius-lg\" aria-label=\"The open card\" hidden></div><p class=\"rnone panenone\">Choose a card to see it in full.</p></div>'","replace":"<div id=\"nopen\" class=\"salt-glass-card salt-glass-card--radius-lg\" aria-label=\"The open card\" hidden></div></div>'"}
 ]

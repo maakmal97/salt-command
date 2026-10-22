@@ -426,6 +426,22 @@ export async function auditStates({ pageWork }) {
     await o.work.quiet();
     states.push(["a day with money and goods owed", actAudit(o.d)]);
   } finally { o.w.close(); }
+  /* 22 Oct 2026 (canvas Needs you): from 860px a card opens beside the list with every way of its row, the second choice among them; a queue key the
+     Desk could not read and an override of the hours are cards of their own */
+  const until = new Date(Date.now() + 6 * 3600e3).toISOString();
+  const v = await richOwnerPage({ pageWork,
+    before: (win) => { win.matchMedia = (mq) => ({ matches: /min-width:\s*860px/.test(mq) && !/max-width/.test(mq), media: mq, addEventListener() {}, removeEventListener() {}, addListener() {} }); },
+    review: (j) => ({ ...j, unreadable: ["q:not-a-device"] }),
+    hours: (j) => ({ ...j, status: { open: false, source: "manual", nextChange: until, nextOpen: until }, config: { ...j.config, manual: { open: false, until } } }),
+    inputsAnswer: (j) => { Object.assign(j.catalog, { owedMoney: [{ party: "CX7-ZED", rm: 40, since: "2026-09-20", due: "2026-09-21", rows: [{ rid: "row-7", key: "CX7-ZED|2026-09-01|40", product: "salt", rm: 40, since: "2026-09-20", due: "2026-09-21" }] }], owedGoods: [] }); return j; } });
+  try {
+    await v.work.quiet();
+    await v.click(byAct(v.d, "nav.needs"));
+    for (const key of ["l:w1", "k:tvwx-yz23", "c:abcd-efgh:c-1", "$:CX7-ZED"]) {
+      const c = v.d.querySelector('#nlist [data-need="' + key + '"] .need-tap');
+      if (c) { await v.click(c); states.push(["the open card beside Needs you, " + key, actAudit(v.d)]); }
+    }
+  } finally { v.w.close(); }
   /* 17 Oct 2026 (Salt Admin clarity, part 2): a payment on the card asking once, and a practice account folded at the foot */
   const k = await richOwnerPage({ pageWork, review: (j) => { const a = j.orders.find((x) => x.id === "ord-a1"); a.payments = a.payments.filter((x) => x.claim === "waiting").slice(0, 1); return j; },
     claims: (j) => { j.claims.push({ id: "c-x", u: "u-practice", amount: 10, state: "waiting", test: true, at: new Date().toISOString() }); return j; } });
