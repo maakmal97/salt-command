@@ -12572,7 +12572,10 @@ await (async () => {
       const pct = st.recentShare.toFixed(0) + "%";
       /* every place the concentration percentage is drawn, with the colour it is drawn in */
       const sites = [];
-      const kpi = new RegExp('Top supplier share</div><div class="v" style="([^"]*)">' + pct.replace("%", "%")).exec(html);
+      /* v1211: the KPI took the recipe's class (`v salt-kpi__value`) and this match, written for a bare
+         `class="v"`, went silent on every book; salt and oil still counted two through the cell and the
+         sentence, so nothing showed until rice's one lot passed 30 days and its sentence stood down */
+      const kpi = new RegExp('Top supplier share</div><div class="v[^"]*" style="([^"]*)">' + pct).exec(html);
       if (kpi) sites.push(["the KPI", (/color:(var\(--\w+\))/.exec(kpi[1]) || [])[1] || null]);
       const cell = new RegExp('<td style="color:(var\\(--\\w+\\))"><b>' + pct + "</b>").exec(html);
       if (cell) sites.push(["the table cell", cell[1] === "var(--ink)" ? null : cell[1]]);
