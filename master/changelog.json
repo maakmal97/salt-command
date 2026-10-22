@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1203",
+  "d": "22 Oct 2026",
+  "t": "TWO PENDING ORDERS FOR CS6-PER, NOTHING MOVED",
+  "n": [
+   "<b>TWO NEW SALES FOLDED, BOTH PENDING.</b> CS6-PER ordered 1 unit of salt for RM120 and 10 unit of oil for RM130 on the statements site, both to collect, with nothing paid and nothing handed over. Both were preapproved by Counter Admin. Each rate sits at its own ask for that size, and each row keeps the cost the drafter set at COGS off the latest purchase.",
+   "<b>INVENTORY UNCHANGED.</b> Pending rows draw no stock and book no revenue until something moves, so stock stays at 12 and the cost basis is untouched."
+  ]
+ },
+ {
   "v": "v1202",
   "d": "21 Oct 2026",
   "t": "THE DESK GOES LIVE: A NEW BUILD, AN ORDER OR A DRAFT SHOWS IN A SECOND",
