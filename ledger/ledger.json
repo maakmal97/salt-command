@@ -1,6 +1,6 @@
 {
- "v": "v1211",
- "stamped": "22 Oct 2026, 16:31 KL",
+ "v": "v1214",
+ "stamped": "22 Oct 2026, 21:10 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -8565,6 +8565,19 @@
     "given": 0,
     "note": "<b>REWARD UNIT: 1 UNIT OF SALT TO CS6-PER AT COST, NO CHARGE.</b> Their margin on their own buying and resale reached the step of RM 600 (10 units at RM 60 landed on 2026-10-22) with s282, paid in full. Raised by the fold at RM 60 and settled by the reward, so it is cost and not revenue; it goes with s282's delivery, or with their next salt order where that has gone. RM 0 was given under their own price since the last reward (his information only).",
     "rid": "s285"
+   },
+   {
+    "customer": "CM4-MK",
+    "qty": 1.5,
+    "total": 170,
+    "cash": 0,
+    "delivery": 10,
+    "date": "2026-10-22",
+    "deliveredQty": 0,
+    "note": "<b>PENDING SALE: 1.5 UNIT OF SALT TO CM4-MK, RM170 GOODS PLUS RM10 DELIVERY, NOTHING PAID OR MOVED.</b> Order 20261022130941-vjdm1a, acknowledged, to be delivered, dated 22 Oct. The goods total of RM170 equals the ask total of RM170 for 1.5 unit and is above the floor total of RM90; the rate of RM113.33 a unit is against a floor of RM60 and an ask of RM113.33. The party's median is RM101 a unit, range RM80 to RM113.33, so the drafter's flag of 12.2% above the median is answered: it is the same rate as s225. Outstanding before was RM0, with no units on credit, against a credit cap of 1. The row carries the COGS of RM60 a unit off the latest purchase, which is the inventory's own rate. Still outstanding: RM180 payment and the delivery of 1.5 unit.",
+    "listRM": 170,
+    "listQty": 1.5,
+    "rid": "s286"
    }
   ],
   "contacts": [
@@ -9320,7 +9333,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-22T05:00:02.000Z",
+  "QUEUE_COMMITTED": "2026-10-22T13:10:01.484Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -16809,11 +16822,11 @@
      ]
     }
    },
-   "v": "v1211"
+   "v": "v1214"
   },
   "OPEN": {
-   "at": "2026-10-22T08:31:52.337Z",
-   "count": 9,
+   "at": "2026-10-22T13:10:42.664Z",
+   "count": 10,
    "byKey": {
     "CS6-PER|2026-10-22|60": {
      "d": "2026-10-22",
@@ -16832,6 +16845,21 @@
      "settledRM": 60,
      "rebateKg": 1,
      "key": "CS6-PER|2026-10-22|60"
+    },
+    "CM4-MK|2026-10-22|180": {
+     "d": "2026-10-22",
+     "p": "CM4-MK",
+     "dir": "S",
+     "q": 1.5,
+     "t": 170,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 180,
+     "oweUnits": 1.5,
+     "dv": 10,
+     "rid": "s286",
+     "key": "CM4-MK|2026-10-22|180"
     },
     "CR3-DAM|2026-10-20|75": {
      "d": "2026-10-20",
@@ -16974,9 +17002,9 @@
      "free": 8.5,
      "owedOut": 2.5,
      "coverDays": 1.8,
-     "rate": 4.15,
+     "rate": 4.22,
      "owedToYou": 315,
-     "promised": 2.5,
+     "promised": 4,
      "short": 0
     },
     "oil": {
@@ -17020,7 +17048,7 @@
     "rice": "2026-10-20",
     "spare": null
    },
-   "v": "v1211"
+   "v": "v1214"
   },
   "TERMS": {
    "ceiling": 250,
@@ -17028,7 +17056,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1211"
+   "v": "v1214"
   },
   "REWARD": {
    "stated": {
@@ -17046,7 +17074,7 @@
      }
     }
    },
-   "v": "v1211"
+   "v": "v1214"
   },
   "STOCK": {
    "today": "2026-10-22",
@@ -17054,7 +17082,7 @@
     "salt": {
      "shelf": 11,
      "free": 8.5,
-     "commit": 2.5,
+     "commit": 4,
      "light": "green",
      "coverDays": 1.8,
      "transit": 0
@@ -17084,7 +17112,7 @@
      "transit": 0
     }
    },
-   "v": "v1211"
+   "v": "v1214"
   }
  }
 }

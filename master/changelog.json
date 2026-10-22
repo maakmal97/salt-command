@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1214",
+  "d": "22 Oct 2026",
+  "t": "PENDING SALT ORDER FOR CM4-MK, NOTHING MOVED",
+  "n": [
+   "<b>ONE PENDING SALE FOLDED.</b> CM4-MK ordered 1.5 unit of salt for RM170 goods plus RM10 delivery, on the statements site, preapproved by Counter Admin. Nothing was paid and nothing handed over, so the row is pending: it draws no stock and books no revenue until something moves.",
+   "<b>INVENTORY UNCHANGED.</b> The salt roll stays as it was, with 11 in stock. The rate of RM113.33 a unit sits on the ask and the party's top recorded rate, which is the one flag the drafter raised."
+  ]
+ },
+ {
   "v": "v1213",
   "d": "22 Oct 2026",
   "t": "MULTI-TICK APPROVE: TICK SEVERAL CARDS, CONFIRM ONCE, ONE FOLD",
