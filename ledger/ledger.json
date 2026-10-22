@@ -1,6 +1,6 @@
 {
- "v": "v1219",
- "stamped": "23 Oct 2026, 00:51 KL",
+ "v": "v1220",
+ "stamped": "23 Oct 2026, 01:14 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 7,
+  "STATED_STOCK": 5,
   "COUNT_ON": {
    "salt": "2026-10-20",
    "oil": "2026-10-20",
@@ -8638,13 +8638,13 @@
     "total": 200,
     "cash": 200,
     "date": "2026-10-22",
-    "deliveredQty": 0,
-    "note": "<b>CORRECTION ON S287, 23 OCT: SIZE 1 TO 2 UNITS, GOODS TOTAL RM120 TO RM200, DELIVERY SET TO 0.</b> Order 20261022150231-ntznxw, amended after acceptance and preapproved. The row was pending with nothing paid or moved, and still is. The dossier gives no floor or ask for 2 units, so the new total of RM200 cannot be set against the desk's ladder. The party's median is RM110 a unit, range RM95 to RM120, across 7 orders. Outstanding before was RM120, with no units on credit and nothing defaulted; no credit cap is given. The drafter flagged nothing. Still outstanding: RM200 payment and collection of 2 units. <b>PENDING SALE: 1 UNIT OF SALT TO CZ5-TM AT RM120, TO COLLECT, NOTHING PAID OR MOVED.</b> Order 20261022150231-ntznxw, acknowledged, dated 22 Oct, no delivery charge. The goods total of RM120 equals the ask total of RM120 and is above the floor total of RM60; the rate of RM120 a unit is against a floor of RM60 and an ask of RM120. The party's median is RM110 a unit, range RM95 to RM110, across 6 orders. Outstanding before was RM0, with no units on credit, against a credit cap of 1. The row carries the COGS of RM60 a unit off the latest purchase, which is the inventory's own rate. The drafter flagged nothing. Still outstanding: RM120 payment and the collection of 1 unit.",
+    "deliveredQty": 2,
+    "note": "<b>CORRECTION ON S287: 2 UNITS OF SALT COLLECTED BY CZ5-TM ON 23 OCT.</b> Delivered quantity moves from 0 to 2, delivered on is set to 23 Oct and handover to collected, for the order of 2 units at RM200 dated 22 Oct. It moves no cash, RM200 being already in, and the 2 units leave the shelf. The rate is RM100 a unit. The dossier gives no floor or ask for this size, so I make no comparison. The party's median is RM110 a unit, range RM95 to RM110, across 7 orders. Outstanding before was nil, no units on credit, nothing defaulted. The row carries no cost of its own. The drafter flagged that the 3-step trail will not add up to the figure; the correction is recorded beside it saying so. Still outstanding: nothing. <b>CORRECTION ON S287, 23 OCT: SIZE 1 TO 2 UNITS, GOODS TOTAL RM120 TO RM200, DELIVERY SET TO 0.</b> Order 20261022150231-ntznxw, amended after acceptance and preapproved. The row was pending with nothing paid or moved, and still is. The dossier gives no floor or ask for 2 units, so the new total of RM200 cannot be set against the desk's ladder. The party's median is RM110 a unit, range RM95 to RM120, across 7 orders. Outstanding before was RM120, with no units on credit and nothing defaulted; no credit cap is given. The drafter flagged nothing. Still outstanding: RM200 payment and collection of 2 units. <b>PENDING SALE: 1 UNIT OF SALT TO CZ5-TM AT RM120, TO COLLECT, NOTHING PAID OR MOVED.</b> Order 20261022150231-ntznxw, acknowledged, dated 22 Oct, no delivery charge. The goods total of RM120 equals the ask total of RM120 and is above the floor total of RM60; the rate of RM120 a unit is against a floor of RM60 and an ask of RM120. The party's median is RM110 a unit, range RM95 to RM110, across 6 orders. Outstanding before was RM0, with no units on credit, against a credit cap of 1. The row carries the COGS of RM60 a unit off the latest purchase, which is the inventory's own rate. The drafter flagged nothing. Still outstanding: RM120 payment and the collection of 1 unit.",
     "listRM": 225,
     "listQty": 2,
     "rid": "s287",
     "delivery": 0,
-    "mod": "corrected on 2026-10-23: qty 1 to 2; total 120 to 200; delivery (unset) to 0",
+    "mod": "corrected on 2026-10-23: qty 1 to 2; total 120 to 200; delivery (unset) to 0, then corrected on 2026-10-23: deliveredQty 0 to 2; deliveredOn (unset) to 2026-10-23; handover (unset) to collected",
     "amend": [
      {
       "date": "2026-10-22",
@@ -8671,9 +8671,25 @@
       "cash": 200,
       "kg": 0,
       "note": "<b>PAYMENT ON S287, 23 OCT: RM200 RECEIVED FROM CZ5-TM, 2 UNITS STILL TO COLLECT.</b> Order 20261022150231-ntznxw, 2 units for RM200, paid by transfer via maybank and preapproved by Counter Admin. Cash moves from 0 to RM200 and no units move. The dossier gives no floor or ask for 2 units, so the RM200 total cannot be set against the ladder. The party's median is RM110 a unit, range RM95 to RM110, across 7 orders. Outstanding before was RM200, with no units on credit and nothing defaulted; no credit cap is given. The row carries the draft's cost, which is the inventory's own. The drafter flagged nothing. Still outstanding: collection of 2 units."
+     },
+     {
+      "date": "2026-10-23",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 2,
+      "note": "<b>CORRECTION ON S287: 2 UNITS OF SALT COLLECTED BY CZ5-TM ON 23 OCT.</b> Delivered quantity moves from 0 to 2, delivered on is set to 23 Oct and handover to collected, for the order of 2 units at RM200 dated 22 Oct. It moves no cash, RM200 being already in, and the 2 units leave the shelf. The rate is RM100 a unit. The dossier gives no floor or ask for this size, so I make no comparison. The party's median is RM110 a unit, range RM95 to RM110, across 7 orders. Outstanding before was nil, no units on credit, nothing defaulted. The row carries no cost of its own. The drafter flagged that the 3-step trail will not add up to the figure; the correction is recorded beside it saying so. Still outstanding: nothing.",
+      "was": {
+       "deliveredQty": 0,
+       "deliveredOn": null,
+       "handover": null
+      },
+      "cost": 120
      }
     ],
-    "paidOn": "2026-10-23"
+    "paidOn": "2026-10-23",
+    "deliveredOn": "2026-10-23",
+    "handover": "collected",
+    "cost": 120
    },
    {
     "customer": "CE4-CHE",
@@ -9445,7 +9461,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-22T16:50:34.737Z",
+  "QUEUE_COMMITTED": "2026-10-22T17:13:33.224Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -9498,7 +9514,7 @@
     {
      "id": "int:nocost",
      "sev": "watch",
-     "title": "4 priced sales carry no cost of their own"
+     "title": "3 priced sales carry no cost of their own"
     },
     {
      "id": "int:underfloor",
@@ -10767,15 +10783,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.2897196261682243
+         "v": 0.28703703703703703
         }
        },
        "attrib": 1,
        "shrinkRate": 0.09307503896682254,
        "avgDel": {
-        "n": 223,
-        "kg": 564.31,
-        "mean": 2.5305
+        "n": 224,
+        "kg": 566.31,
+        "mean": 2.5282
        }
       },
       "policy": {
@@ -16934,26 +16950,12 @@
      ]
     }
    },
-   "v": "v1219"
+   "v": "v1220"
   },
   "OPEN": {
-   "at": "2026-10-22T16:51:47.794Z",
-   "count": 8,
+   "at": "2026-10-22T17:14:14.378Z",
+   "count": 7,
    "byKey": {
-    "CZ5-TM|2026-10-22|200": {
-     "d": "2026-10-22",
-     "p": "CZ5-TM",
-     "dir": "S",
-     "q": 2,
-     "t": 200,
-     "cash": 200,
-     "mv": 0,
-     "st": "oweStock",
-     "oweUnits": 2,
-     "rid": "s287",
-     "paidOn": "2026-10-23",
-     "key": "CZ5-TM|2026-10-22|200"
-    },
     "CR3-DAM|2026-10-20|75": {
      "d": "2026-10-20",
      "p": "CR3-DAM",
@@ -17075,13 +17077,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 7,
+     "onHand": 5,
      "free": 5,
-     "owedOut": 2,
+     "owedOut": 0,
      "coverDays": 1.3,
      "rate": 4.11,
      "owedToYou": 315,
-     "promised": 2,
+     "promised": 0,
      "short": 0
     },
     "oil": {
@@ -17125,7 +17127,7 @@
     "rice": "2026-10-20",
     "spare": null
    },
-   "v": "v1219"
+   "v": "v1220"
   },
   "TERMS": {
    "ceiling": 250,
@@ -17133,7 +17135,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1219"
+   "v": "v1220"
   },
   "REWARD": {
    "stated": {
@@ -17151,15 +17153,15 @@
      }
     }
    },
-   "v": "v1219"
+   "v": "v1220"
   },
   "STOCK": {
    "today": "2026-10-23",
    "books": {
     "salt": {
-     "shelf": 7,
+     "shelf": 5,
      "free": 5,
-     "commit": 2,
+     "commit": 0,
      "light": "green",
      "coverDays": 1.3,
      "transit": 0
@@ -17189,7 +17191,7 @@
      "transit": 0
     }
    },
-   "v": "v1219"
+   "v": "v1220"
   }
  }
 }
