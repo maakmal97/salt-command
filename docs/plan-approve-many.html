@@ -909,14 +909,14 @@ radial-gradient(at 82% 28%,var(--counter-v) 0,transparent 55%),radial-gradient(a
 <div class="hs salt-root lg" data-direction="studio" data-palette="Sorbet" data-tuning="Sorbet" data-density="comfortable" data-scheme="light+dark">
 <div class="wrap">
 <header class="hero">
-<p class="eyebrow">Salt Admin · Orders · Approve · 22 Oct 2026, plan, not built</p>
+<p class="eyebrow">Salt Admin · Orders · Approve · 22 Oct 2026, answered, canvas next</p>
 <h1>Multi-tick Approve: plan</h1>
 <p>Your suggestion of 22 Oct 2026: tick several cards under Approve, press Approve once, and have them fold together in one Cloud commit. What each approval does stays the same. Only how many you can decide in one tap changes, and with it the number of fold runs.</p>
 <div class="grid">
 <div class="stat"><span class="label">Parts</span><span class="fig">4</span><span class="meta">one version</span></div>
 <div class="stat"><span class="label">Dispatches a tap</span><span class="fig">1</span><span class="meta">was one per card</span></div>
 <div class="stat"><span class="label">Fable review</span><span class="fig">P1</span><span class="meta">it decides money rows</span></div>
-<div class="stat"><span class="label">Asks</span><span class="fig">7</span><span class="meta">one line each</span></div>
+<div class="stat"><span class="label">Answered</span><span class="fig">7</span><span class="meta">22 Oct 2026</span></div>
 </div>
 </header>
 
@@ -930,23 +930,25 @@ radial-gradient(at 82% 28%,var(--counter-v) 0,transparent 55%),radial-gradient(a
 </section>
 
 <section class="glass">
-<h2>What you will see</h2>
+<h2>What you will see (your answers of 22 Oct 2026)</h2>
 <ol>
-<li>Every card under Approve gets a tick box on its left, 44px. A card is ticked whole: a trip's rows, or every move on one order, go together.</li>
-<li>Once one is ticked, a bar stands at the foot of the list: <b>Approve 3</b>, <b>Tick all</b> and <b>Clear</b>.</li>
-<li><b>Approve 3</b> opens one sheet listing every row it decides, each with its cost, margin and flags, as each card's own sheet does now. Your yes decides exactly those.</li>
-<li>They are approved in the order they were entered. If the Desk refuses one, for example because it was already decided on another screen, the ones after it stay ticked and waiting, and the sheet's answer names it.</li>
-<li>One dispatch follows, so everything approved folds in the next run, as one version and one commit. The only exception: a fold already running at that moment finishes first, and your batch folds in the run after it.</li>
+<li><b>Two ticks on every card</b> under Approve: Approve and Reject, 44px each. A card takes one or the other, never both, and is ticked whole (a trip's rows, or every move on one order).</li>
+<li><b>A bar at the foot of the list</b> once anything is ticked: how many are set to approve and to reject, <b>Confirm</b>, and <b>Clear</b>.</li>
+<li><b>Approve all</b>, a button at the head of the list, sets every card that can be approved to Approve, and you then press Confirm.</li>
+<li><b>Confirm</b> opens one sheet listing every card it decides, grouped Approve then Reject, each row with its cost, margin and flags. Your yes decides exactly those.</li>
+<li><b>Every one that can go, goes.</b> A card the Desk refuses stays on the list with the reason and how to fix it (for example: decided on another screen, read again; a payment it waits for, answer it on its order first). The rest are decided and fold.</li>
+<li><b>One fold.</b> One dispatch follows, so everything approved folds as one version and one commit, unless a fold is already running, which finishes first.</li>
+<li><b>No overlaps.</b> A row waiting for you appears in one place only: Orders &gt; Approve. Needs you stops listing each row with its own Approve and shows one line, the count of rows to approve, which opens Approve. The bar's Approve count is the same figure.</li>
 </ol>
-<p>Each card keeps its own Approve and Reject as now. A payment the customer says they sent cannot be ticked: it is still answered on its order with Received or Not found.</p>
+<p>A payment the customer says they sent cannot be ticked: it is still answered on its order with Received or Not found.</p>
 </section>
 
 <section class="glass">
 <h2>Data path</h2>
 <ol>
-<li><b>Desk</b>: a new route <code>POST /_internal/maker/drafts/approve-many</code> with <code>{ids: [...]}</code>, at most 50, over the bridge key alone. For each id in entered order it runs the same decision as one tap (the 409 on a decided row, the claim refusal, the trip decided whole, the preapproval spent), with the dispatch held back. After the last one it sends one dispatch and one live <code>drafts</code> tell. It answers <code>{approved: [...], stopped: {id, error} | null}</code>. <code>handleDraftDecide</code> is split so both roads share one decision, and one approval behaves exactly as now.</li>
-<li><b>Counter relay</b>: <code>POST /all/maker/drafts/approve-many</code> in <code>stmt/maker.js</code>, behind Access and the owner email, the body checked (ids are draft timestamps, at most 50, no repeats).</li>
-<li><b>Salt Admin</b>: the tick boxes, the bar and the one sheet in <code>stmt/owner.js</code>, using the design system's check and action-bar recipes and the existing <code>ownerAsk</code> sheet. Each tick follows the card's group (<code>draftGroups</code>). A tick on a card that leaves (folded, decided elsewhere) drops on the next poll.</li>
+<li><b>Desk</b>: a new route <code>POST /_internal/maker/drafts/decide-many</code> with <code>{approve: [...], reject: [...]}</code>, at most 50 in all, over the bridge key alone. For each id in entered order it runs the same decision as one tap (the 409 on a decided row, the claim refusal, the trip decided whole, the preapproval spent, a rejection dropping its queued entry), with the dispatch held back, and carries on past a refusal. After the last one it sends one dispatch, if anything was approved, and one live <code>drafts</code> tell. It answers <code>{decided: [...], refused: [{id, error, fix}]}</code>. <code>handleDraftDecide</code> is split so both roads share one decision, and one approval behaves exactly as now.</li>
+<li><b>Counter relay</b>: <code>POST /all/maker/drafts/decide-many</code> in <code>stmt/maker.js</code>, behind Access and the owner email, the body checked (ids are draft timestamps, at most 50, no repeats, none in both lists).</li>
+<li><b>Salt Admin</b>: the two ticks, Approve all, the bar, the one sheet and the refusals left on their cards, and Needs you's one line in place of each row, in <code>stmt/owner.js</code>, using the design system's check and action-bar recipes and the existing <code>ownerAsk</code> sheet. Each tick follows the card's group (<code>draftGroups</code>). A tick on a card that leaves (folded, decided elsewhere) drops on the next poll.</li>
 </ol>
 </section>
 
@@ -956,23 +958,23 @@ radial-gradient(at 82% 28%,var(--counter-v) 0,transparent 55%),radial-gradient(a
 <caption>One version, one commit per part</caption>
 <thead><tr><th scope="col">Part</th><th scope="col">Files</th><th scope="col">Checks (own file, each proved red)</th><th scope="col">Road</th></tr></thead>
 <tbody>
-<tr><th scope="row">P1 Desk route</th><td><code>src/worker.js</code></td><td><code>test/approve-many-desk.mjs</code>: entered order; one dispatch for many; stop at the first refusal, the rest pending; a trip whole; a claim refused; a decided row 409s and stops; over 50 refused; one approval unchanged (dispatch once, same answer)</td><td>full suite, Fable reviews</td></tr>
-<tr><th scope="row">P2 Counter relay</th><td><code>stmt/maker.js</code></td><td><code>test/approve-many-relay.mjs</code>: owner only, POST only, the body's checks, the answer carried</td><td>full suite</td></tr>
-<tr><th scope="row">P3 Salt Admin</th><td><code>stmt/owner.js</code>, <code>stmt/page.js</code> CSS</td><td><code>test/admin-approve-many.mjs</code>: tick, bar, Tick all, Clear, one sheet listing every row, one request, the refusal named, claims not tickable, 44px boxes</td><td>display plus the route call</td></tr>
+<tr><th scope="row">P1 Desk route</th><td><code>src/worker.js</code></td><td><code>test/decide-many-desk.mjs</code>: entered order; approvals and rejections in one call; one dispatch for many and none for rejections alone; a refusal skipped with its reason and fix, the rest decided; a trip whole; a claim refused; a decided row 409s and stops; over 50 refused; one approval unchanged (dispatch once, same answer)</td><td>full suite, Fable reviews</td></tr>
+<tr><th scope="row">P2 Counter relay</th><td><code>stmt/maker.js</code></td><td><code>test/decide-many-relay.mjs</code>: owner only, POST only, the body's checks, the answer carried</td><td>full suite</td></tr>
+<tr><th scope="row">P3 Salt Admin</th><td><code>stmt/owner.js</code>, <code>stmt/page.js</code> CSS</td><td><code>test/admin-decide-many.mjs</code>: two ticks, one per card, Approve all, Confirm and Clear, one sheet in two groups, one request, refusals left with reason and fix, claims not tickable, 44px; Needs you shows one line, no row twice</td><td>display plus the route call</td></tr>
 <tr><th scope="row">P4 Docs, version</th><td><code>CLAUDE.md</code> (the chain's Approve line), <code>docs/STATEMENTS.md</code></td><td>gate, full suite once</td><td>version</td></tr>
 </tbody></table></div>
 </section>
 
 <section class="glass">
-<h2>Asks</h2>
+<h2>Your answers, 22 Oct 2026</h2>
 <ol>
-<li><b>Approve only</b>: ticks approve; Reject stays one card at a time. Yes, or Reject by ticks too?</li>
-<li><b>Tick all</b> on the bar. Yes?</li>
-<li><b>Where</b>: Orders &gt; Approve only, not Needs you's rows. Yes?</li>
-<li><b>A refusal stops the rest</b>, which stay ticked and waiting for another tap. Or skip it and carry on with the others?</li>
-<li><b>Payment claims stay out</b> of the ticks, answered on their order. Yes?</li>
-<li><b>Draw it first</b>: given your note on Salt Admin's look, a quick canvas board of the tick boxes and the bar, reviewed, before the build. Yes, or build straight from this plan?</li>
-<li><b>Up to 50</b> rows a tap. Yes?</li>
+<li>Approve and Reject both by tick; the bar's button says Confirm.</li>
+<li>Approve all is a button, not Tick all.</li>
+<li>No overlaps: one place for each row waiting (Orders &gt; Approve); Needs you shows the count.</li>
+<li>Those not refused are decided and fold; those refused stay, with the reason and how to fix it.</li>
+<li>Payment claims stay out of the ticks.</li>
+<li>Drawn first on the canvas and reviewed, before the build.</li>
+<li>Up to 50 a tap.</li>
 </ol>
 </section>
 
