@@ -50253,6 +50253,11 @@ await (async () => {
   await (await import("./decide-many-relay.mjs")).run({ ok });
 })();
 
+section("Multi-tick Approve, P3: Salt Admin's two choices a card, Approve all, the bar, one Confirm, refusals with a fix (22 Oct 2026)");
+await (async () => {
+  await (await import("./admin-decide-many.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin A to C: Help read only on Shop hours, the customer's four answers (21 Oct 2026)");
 await (async () => {
   await (await import("./admin-ac-help.mjs")).run({ ok, pageWork });

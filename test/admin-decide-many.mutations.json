@@ -1,0 +1,22 @@
+[
+ {"name":"a tap sends at once","file":"stmt/owner.js","find":"  function apChose(g,v){ apPick[g.lead.id]=apPick[g.lead.id]===v?null:v; apDone=null; drawMaker(); }","replace":"  function apChose(g,v){ apPick[g.lead.id]=apPick[g.lead.id]===v?null:v; apDone=null; refs('/all/maker/drafts/'+encodeURIComponent(g.lead.id)+'/approve',{}); drawMaker(); }"},
+ {"name":"a second tap does not clear","file":"stmt/owner.js","find":"apPick[g.lead.id]=apPick[g.lead.id]===v?null:v;","replace":"apPick[g.lead.id]=v;"},
+ {"name":"not pressed","file":"stmt/owner.js","find":"approve.type='button'; approve.setAttribute('aria-pressed',String(pick==='a'));","replace":"approve.type='button';"},
+ {"name":"the card not lit","file":"stmt/owner.js","find":"        if(pick) card.classList.add(pick==='a'?'ap--a':'ap--r'); else if(gone) card.classList.add('ap--r');","replace":""},
+ {"name":"a claim ticked","file":"stmt/owner.js","find":"      if(!claim){\n        var pick=apPick[draft.id]","replace":"      if(1){\n        var pick=apPick[draft.id]"},
+ {"name":"the head counts every card","file":"stmt/owner.js","find":"    var ticks=live.filter(apTickable);","replace":"    var ticks=live;"},
+ {"name":"Approve all misses one","file":"stmt/owner.js","find":"ticks.forEach(function(g){ if(!apRefused[g.lead.id]) apPick[g.lead.id]='a'; });","replace":"ticks.slice(1).forEach(function(g){ if(!apRefused[g.lead.id]) apPick[g.lead.id]='a'; });"},
+ {"name":"the bar counts one way","file":"stmt/owner.js","find":"[A.length?A.length+' approve':'',R.length?R.length+' reject':'']","replace":"[(A.length+R.length)+' approve']"},
+ {"name":"Clear keeps the picks","file":"stmt/owner.js","find":"clear.addEventListener('click',function(){ apPick={}; drawMaker(); });","replace":"clear.addEventListener('click',function(){ drawMaker(); });"},
+ {"name":"no bar","file":"stmt/owner.js","find":"    drawDeskRows(draftRoot,queueRoot,pendingRows);\n    apBarDraw();","replace":"    drawDeskRows(draftRoot,queueRoot,pendingRows);"},
+ {"name":"sent before the yes","file":"stmt/owner.js","find":"    var n=A.length+R.length, extra=[];","replace":"    var n=A.length+R.length, extra=[]; refs('/all/maker/drafts/decide-many',{approve:[],reject:[]});"},
+ {"name":"the rejections not listed","file":"stmt/owner.js","find":"    if(R.length){ extra.push(el('p','salt-eyebrow apsheet apsheet--r',R.length+' to reject'));","replace":"    if(0){ extra.push(el('p','salt-eyebrow apsheet apsheet--r',R.length+' to reject'));"},
+ {"name":"the lead alone sent","file":"stmt/owner.js","find":"return [].concat.apply([],gs.map(function(g){ return g.drafts.map(function(d){ return d.id; }); }));","replace":"return gs.map(function(g){ return g.lead.id; });"},
+ {"name":"the lists swapped","file":"stmt/owner.js","find":"{approve:ids(A), reject:ids(R)}","replace":"{approve:ids(R), reject:ids(A)}"},
+ {"name":"no refusal kept","file":"stmt/owner.js","find":"hit[k]=1; apRefused[k]={why:noBook(r.error||''), fix:r.fix||''};","replace":"hit[k]=1;"},
+ {"name":"no fix shown","file":"stmt/owner.js","find":"fx.appendChild(el('b',null,'To fix: ')); fx.appendChild(document.createTextNode(gone.fix)); rb.appendChild(fx);","replace":""},
+ {"name":"no done line","file":"stmt/owner.js","find":"      draftRoot.appendChild(dn);\n","replace":"\n"},
+ {"name":"a refused card counted decided","file":"stmt/owner.js","find":"var a=A.filter(function(g){ return !hit[g.lead.id]&&went[g.lead.id]==='approved'; }).length, rj=R.filter(function(g){ return !hit[g.lead.id]&&went[g.lead.id]==='rejected'; }).length;","replace":"var a=A.length, rj=R.length;"},
+ {"name":"targets under 44px","file":"stmt/page.js","find":".adm .aphead .salt-ghost,.adm .apticks button,.adm .apbar button,.adm .apmore{min-height:44px}","replace":".adm .aphead .salt-ghost,.adm .apticks button,.adm .apbar button,.adm .apmore{min-height:32px}"},
+ {"name":"Reject not ember","file":"stmt/page.js","find":".adm .apreject--on{color:var(--salt-ember);border-color:var(--salt-ember)}","replace":".adm .apreject--on{color:var(--salt-brass)}"}
+]
