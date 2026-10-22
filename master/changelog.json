@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1220",
+  "d": "23 Oct 2026",
+  "t": "CZ5-TM ORDER S287 COLLECTED, 2 UNITS OF SALT OUT",
+  "n": [
+   "<b>FOLDED: ONE CORRECTION ON S287 FOR CZ5-TM.</b> It sets deliveredQty to 2, deliveredOn to 23 Oct and handover to collected, against an order of 2 units for RM200 dated 22 Oct. Preapproved by Counter Admin. The drafter warned that the row's 3-step trail will no longer add up to the figure set directly; the correction is recorded beside it saying so.",
+   "<b>INVENTORY: SALT SHELF ROLLS OUT BY 2 UNITS.</b> The correction moves no cash, since RM200 is already in. The stock cost basis is unchanged and no lot landed."
+  ]
+ },
+ {
   "v": "v1219",
   "d": "23 Oct 2026",
   "t": "ONE SALT SALE TO CE4-CHE, PAID AND COLLECTED",
