@@ -1,260 +1,48 @@
 [
- {
-  "name": "an old word comes back in the hours",
-  "file": "stmt/owner.js",
-  "find": "{value:'false',label:'Closed'}",
-  "replace": "{value:'false',label:'Set temporary override'}"
- },
- {
-  "name": "an old word comes back on the weekly hours",
-  "file": "stmt/owner.js",
-  "find": "'Back to the weekly hours'",
-  "replace": "'Clear temporary override'"
- },
- {
-  "name": "an old section title comes back on the page",
-  "file": "stmt/page.js",
-  "find": "<h2 id=\"makerClaimsTitle\">Payments they say they sent</h2>",
-  "replace": "<h2 id=\"makerClaimsTitle\">No account claims waiting.</h2>"
- },
- {
-  "name": "fmtWhen prints a day as ISO",
-  "file": "stmt/owner.js",
-  "find": "return dmyOf({day:s.slice(8), month:s.slice(5,7), year:s.slice(0,4)}, 'en');",
-  "replace": "return s;"
- },
- {
-  "name": "fmtWhen prints a moment as ISO",
-  "file": "stmt/owner.js",
-  "find": "return stamp(s, 'en');\n  }",
-  "replace": "return s;\n  }"
- },
- {
-  "name": "units always says units",
-  "file": "stmt/owner.js",
-  "find": "function units(n){ return unitsOf(Number(n)||0); }",
-  "replace": "function units(n){ return String(Number(n)||0)+' units'; }"
- },
- {
-  "name": "rm drops its separators",
-  "file": "stmt/page.js",
-  "find": "Number(n||0).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2}); }",
-  "replace": "Number(n||0).toFixed(2); }"
- },
- {
-  "name": "the same-sale sentence changes",
-  "file": "stmt/owner.js",
-  "find": "':'The same sale is already on the book.',",
-  "replace": "':'The sale is booked.',"
- },
- {
-  "name": "an unmapped message shows the server's words",
-  "file": "stmt/owner.js",
-  "find": "    return REFUSAL_GENERAL;\n  }",
-  "replace": "    return s;\n  }"
- },
- {
-  "name": "a mapped message is lost",
-  "file": "stmt/owner.js",
-  "find": "    'Units must be above zero.':'Units must be above zero.',\n",
-  "replace": ""
- },
- {
-  "name": "a mapped sentence speaks in jargon",
-  "file": "stmt/owner.js",
-  "find": "':'Choose each extra book once.',",
-  "replace": "':'Choose each extra book on the roster once.',"
- },
- {
-  "name": "the figure sentence loses its figure",
-  "file": "stmt/owner.js",
-  "find": "'This row can only take RM '+left[1]+' more.'",
-  "replace": "'This row can take RM.'"
- },
- {
-  "name": "the money sentence is not read",
-  "file": "stmt/owner.js",
-  "find": "if(s.indexOf('Money is already on its way to this row.')===0)",
-  "replace": "if(s.indexOf('Money is on its way')===0)"
- },
- {
-  "name": "a refusal loses its status",
-  "file": "stmt/owner.js",
-  "find": "failure.detail=answer; failure.status=status;",
-  "replace": "failure.detail=answer;"
- },
- {
-  "name": "a refusal loses its answer",
-  "file": "stmt/owner.js",
-  "find": "failure.detail=answer; failure.status=status;",
-  "replace": "failure.detail=null; failure.status=status;"
- },
- {
-  "name": "Details is never drawn",
-  "file": "stmt/owner.js",
-  "find": "if(!node||!error||!error.raw||!node.appendChild) return node;",
-  "replace": "return node;"
- },
- {
-  "name": "Details has no act",
-  "file": "stmt/owner.js",
-  "find": "summary=actOn(el('summary','salt-ghost','Details'),'refusal.details');",
-  "replace": "summary=el('summary','salt-ghost','Details');"
- },
- {
-  "name": "Details opens by itself",
-  "file": "stmt/owner.js",
-  "find": "detail=el('details','rdet');",
-  "replace": "detail=el('details','rdet'); detail.open=true;"
- },
- {
-  "name": "the lead and the tail are dropped",
-  "file": "stmt/owner.js",
-  "find": "node.textContent=(lead||'')+error.message+(tail||'');",
-  "replace": "node.textContent=error.message;"
- },
- {
-  "name": "no reason gives no words",
-  "file": "stmt/owner.js",
-  "find": "'The Counter answered '+status+' and gave no reason.'",
-  "replace": "''"
- },
- {
-  "name": "an empty reason counts as a reason",
-  "file": "stmt/owner.js",
-  "find": "String(raw==null||raw===''?",
-  "replace": "String(raw==null?"
- },
- {
-  "name": "a lost connection gets Details",
-  "file": "stmt/owner.js",
-  "find": "throw new Error('Not sent. Check the connection and try again.');",
-  "replace": "var offline=new Error('Not sent. Check the connection and try again.'); offline.raw='offline'; throw offline;"
- },
- {
-  "name": "the order card drops Details",
-  "file": "stmt/owner.js",
-  "find": "makerPlacedSay(back+error.message,true,error);",
-  "replace": "makerPlacedSay(back+error.message,true);"
- },
- {
-  "name": "refs raises the server's words",
-  "file": "stmt/owner.js",
-  "find": "if(!r.ok||!j.ok) throw refused(j.error, j, r.status);",
-  "replace": "if(!r.ok||!j.ok){ var failure=new Error(j.error||'that did not work'); failure.detail=j; failure.status=r.status; throw failure; }"
- },
- {
-  "name": "the order list names the book beside its tile",
-  "file": "stmt/owner.js",
-  "find": "      b.appendChild(tile);\n      t.appendChild(whoTag(",
-  "replace": "      b.appendChild(tile); b.appendChild(document.createTextNode(o.product));\n      t.appendChild(whoTag("
- },
- {
-  "name": "the order sheet names the book beside its tile",
-  "file": "stmt/owner.js",
-  "find": "lab.appendChild(bookTile(order.product,order.qty)); lab.appendChild(el('span',null,codeByUser(order.u)));",
-  "replace": "lab.appendChild(bookTile(order.product,order.qty)); lab.appendChild(el('span',null,order.product+' '+codeByUser(order.u)));"
- },
- {
-  "name": "the Approve sheet's row loses its tile",
-  "file": "stmt/owner.js",
-  "find": "!item.amends?bookTile(item.product,item.qty):null);",
-  "replace": "!item.amends?el('span',null,item.product):null);"
- },
- {
-  "name": "the tile caption says the shape",
-  "file": "stmt/page.js",
-  "find": "var f=el('span','mq',words); f.setAttribute('aria-hidden','true');",
-  "replace": "var f=el('span','mq',pshape(product)+', '+words); f.setAttribute('aria-hidden','true');"
- },
- {
-  "name": "the tile tells a reader nothing of its shape",
-  "file": "stmt/page.js",
-  "find": "w.appendChild(el('span','sr',pshape(product)+' '+words));",
-  "replace": "w.appendChild(el('span','sr',words));"
- },
- {
-  "name": "the tile loses its mark",
-  "file": "stmt/page.js",
-  "find": "w.appendChild(psym(product,px||28));\n    var f=el('span','mq',words);",
-  "replace": "var f=el('span','mq',words);"
- },
- {
-  "name": "a mark tells a reader the book's name",
-  "file": "stmt/owner.js",
-  "find": "w.appendChild(el('span','sr',pshape(product))); return w; }\n  function bookTile",
-  "replace": "w.appendChild(el('span','sr',product)); return w; }\n  function bookTile"
- },
- {
-  "name": "a legend names its book",
-  "file": "stmt/owner.js",
-  "find": "legend.appendChild(bookMark(L[3])); }",
-  "replace": "legend.appendChild(document.createTextNode(L[3])); }"
- },
- {
-  "name": "an option names its book",
-  "file": "stmt/owner.js",
-  "find": "return l?'['+l+'] ':''; }",
-  "replace": "return l?'['+l+'] '+product+' ':''; }"
- },
- {
-  "name": "the report card heading says the book",
-  "file": "stmt/owner.js",
-  "find": "wrap.appendChild(pmarkHead('h2',p.product));",
-  "replace": "wrap.appendChild(el('h2',null,p.name||p.product));"
- },
- {
-  "name": "the report card heading says the shape",
-  "file": "stmt/page.js",
-  "find": "h.setAttribute('aria-label',pshape(product)); h.appendChild(psym(product,28));",
-  "replace": "h.setAttribute('aria-label',pshape(product)); h.appendChild(psym(product,28)); h.appendChild(el('span','pshape',pshape(product)));"
- },
- {
-  "name": "the report card heading tells a reader nothing",
-  "file": "stmt/page.js",
-  "find": "h.setAttribute('aria-label',pshape(product)); h.appendChild(psym(product,28));",
-  "replace": "h.appendChild(psym(product,28));"
- },
- {
-  "name": "the Desk's sentence keeps its book",
-  "file": "stmt/owner.js",
-  "find": ".replace(BOOKS,function(w,k,at,all){",
-  "replace": ".replace(/(?!x)x/g,function(w,k,at,all){"
- },
- {
-  "name": "the Desk's sentence loses its capital",
-  "file": "stmt/owner.js",
-  "find": "?'The book':'the book'; });",
-  "replace": "?'the book':'the book'; });"
- },
- {
-  "name": "the Desk's sentence doubles an article",
-  "file": "stmt/owner.js",
-  "find": ".test(before)?'book':/(^|[.!?]",
-  "replace": ".test(before)?'the book':/(^|[.!?]"
- },
- {
-  "name": "the Desk's sentence takes the app's own name",
-  "file": "stmt/owner.js",
-  "find": "(?:account|admin|counter|command|desk)",
-  "replace": "(?:nothing)"
- },
- {
-  "name": "a note held in state is drawn without its Details",
-  "file": "stmt/owner.js",
-  "find": "b.note.className='anote'+(m.bad?' bad':''); withDetails(b.note,m.err); }",
-  "replace": "b.note.className='anote'+(m.bad?' bad':''); }"
- },
- {
-  "name": "a link that could not be made keeps no error behind its note",
-  "file": "stmt/owner.js",
-  "find": "m.note='Could not make a link: '+e.message; m.err=e; linkMoved(u); });",
-  "replace": "m.note='Could not make a link: '+e.message; linkMoved(u); });"
- },
- {
-  "name": "a retried link keeps the old Details",
-  "file": "stmt/owner.js",
-  "find": "if(m.fail){ m.fail=false; m.bad=false; m.note=''; m.err=null; }",
-  "replace": "if(m.fail){ m.fail=false; m.bad=false; m.note=''; }"
- }
+ {"name":"an old word comes back in the hours","file":"stmt/owner.js","find":"{value:'false',label:'Closed'}","replace":"{value:'false',label:'Set temporary override'}"},
+ {"name":"an old word comes back on the weekly hours","file":"stmt/owner.js","find":"'Back to the weekly hours'","replace":"'Clear temporary override'"},
+ {"name":"an old section title comes back on the page","file":"stmt/page.js","find":"<h2 id=\"makerClaimsTitle\">Payments they say they sent</h2>","replace":"<h2 id=\"makerClaimsTitle\">No account claims waiting.</h2>"},
+ {"name":"fmtWhen prints a day as ISO","file":"stmt/owner.js","find":"return dmyOf({day:s.slice(8), month:s.slice(5,7), year:s.slice(0,4)}, 'en');","replace":"return s;"},
+ {"name":"fmtWhen prints a moment as ISO","file":"stmt/owner.js","find":"return stamp(s, 'en');\n  }","replace":"return s;\n  }"},
+ {"name":"units always says units","file":"stmt/owner.js","find":"function units(n){ return unitsOf(Number(n)||0); }","replace":"function units(n){ return String(Number(n)||0)+' units'; }"},
+ {"name":"rm drops its separators","file":"stmt/page.js","find":"Number(n||0).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2}); }","replace":"Number(n||0).toFixed(2); }"},
+ {"name":"the same-sale sentence changes","file":"stmt/owner.js","find":"':'The same sale is already on the book.',","replace":"':'The sale is booked.',"},
+ {"name":"an unmapped message shows the server's words","file":"stmt/owner.js","find":"    return REFUSAL_GENERAL;\n  }","replace":"    return s;\n  }"},
+ {"name":"a mapped message is lost","file":"stmt/owner.js","find":"    'Units must be above zero.':'Units must be above zero.',\n","replace":""},
+ {"name":"a mapped sentence speaks in jargon","file":"stmt/owner.js","find":"':'Choose each extra book once.',","replace":"':'Choose each extra book on the roster once.',"},
+ {"name":"the figure sentence loses its figure","file":"stmt/owner.js","find":"'This row can only take RM '+left[1]+' more.'","replace":"'This row can take RM.'"},
+ {"name":"the money sentence is not read","file":"stmt/owner.js","find":"if(s.indexOf('Money is already on its way to this row.')===0)","replace":"if(s.indexOf('Money is on its way')===0)"},
+ {"name":"a refusal loses its status","file":"stmt/owner.js","find":"failure.detail=answer; failure.status=status;","replace":"failure.detail=answer;"},
+ {"name":"a refusal loses its answer","file":"stmt/owner.js","find":"failure.detail=answer; failure.status=status;","replace":"failure.detail=null; failure.status=status;"},
+ {"name":"Details is never drawn","file":"stmt/owner.js","find":"if(!node||!error||!error.raw||!node.appendChild) return node;","replace":"return node;"},
+ {"name":"Details has no act","file":"stmt/owner.js","find":"summary=actOn(el('summary','salt-ghost','Details'),'refusal.details');","replace":"summary=el('summary','salt-ghost','Details');"},
+ {"name":"Details opens by itself","file":"stmt/owner.js","find":"detail=el('details','rdet');","replace":"detail=el('details','rdet'); detail.open=true;"},
+ {"name":"the lead and the tail are dropped","file":"stmt/owner.js","find":"node.textContent=(lead||'')+error.message+(tail||'');","replace":"node.textContent=error.message;"},
+ {"name":"no reason gives no words","file":"stmt/owner.js","find":"'The Counter answered '+status+' and gave no reason.'","replace":"''"},
+ {"name":"an empty reason counts as a reason","file":"stmt/owner.js","find":"String(raw==null||raw===''?","replace":"String(raw==null?"},
+ {"name":"a lost connection gets Details","file":"stmt/owner.js","find":"throw new Error('Not sent. Check the connection and try again.');","replace":"var offline=new Error('Not sent. Check the connection and try again.'); offline.raw='offline'; throw offline;"},
+ {"name":"the order card drops Details","file":"stmt/owner.js","find":"makerPlacedSay(back+error.message,true,error);","replace":"makerPlacedSay(back+error.message,true);"},
+ {"name":"refs raises the server's words","file":"stmt/owner.js","find":"if(!r.ok||!j.ok) throw refused(j.error, j, r.status);","replace":"if(!r.ok||!j.ok){ var failure=new Error(j.error||'that did not work'); failure.detail=j; failure.status=r.status; throw failure; }"},
+ {"name":"the order list names the book beside its tile","file":"stmt/owner.js","find":"      b.appendChild(tile);\n      t.appendChild(whoTag(","replace":"      b.appendChild(tile); b.appendChild(document.createTextNode(o.product));\n      t.appendChild(whoTag("},
+ {"name":"the order sheet names the book beside its tile","file":"stmt/owner.js","find":"lab.appendChild(bookTile(order.product,order.qty)); lab.appendChild(el('span',null,codeByUser(order.u)));","replace":"lab.appendChild(bookTile(order.product,order.qty)); lab.appendChild(el('span',null,order.product+' '+codeByUser(order.u)));"},
+ {"name":"the Approve sheet's row loses its tile","file":"stmt/owner.js","find":"!item.amends?bookTile(item.product,item.qty):null);","replace":"!item.amends?el('span',null,item.product):null);"},
+ {"name":"the tile caption says the shape","file":"stmt/page.js","find":"var f=el('span','mq',words); f.setAttribute('aria-hidden','true');","replace":"var f=el('span','mq',pshape(product)+', '+words); f.setAttribute('aria-hidden','true');"},
+ {"name":"the tile tells a reader nothing of its shape","file":"stmt/page.js","find":"w.appendChild(el('span','sr',pshape(product)+' '+words));","replace":"w.appendChild(el('span','sr',words));"},
+ {"name":"the tile loses its mark","file":"stmt/page.js","find":"w.appendChild(psym(product,px||28));\n    var f=el('span','mq',words);","replace":"var f=el('span','mq',words);"},
+ {"name":"a mark tells a reader the book's name","file":"stmt/owner.js","find":"w.appendChild(el('span','sr',pshape(product))); return w; }\n  function bookTile","replace":"w.appendChild(el('span','sr',product)); return w; }\n  function bookTile"},
+ {"name":"a legend names its book","file":"stmt/owner.js","find":"legend.appendChild(bookMark(L[3])); }","replace":"legend.appendChild(document.createTextNode(L[3])); }"},
+ {"name":"an option names its book","file":"stmt/owner.js","find":"return l?'['+l+'] ':''; }","replace":"return l?'['+l+'] '+product+' ':''; }"},
+ {"name":"the report card heading says the book","file":"stmt/owner.js","find":"wrap.appendChild(pmarkHead('h2',p.product));","replace":"wrap.appendChild(el('h2',null,p.name||p.product));"},
+ {"name":"the report card heading says the shape","file":"stmt/page.js","find":"h.setAttribute('aria-label',pshape(product)); h.appendChild(psym(product,28));","replace":"h.setAttribute('aria-label',pshape(product)); h.appendChild(psym(product,28)); h.appendChild(el('span','pshape',pshape(product)));"},
+ {"name":"the report card heading tells a reader nothing","file":"stmt/page.js","find":"h.setAttribute('aria-label',pshape(product)); h.appendChild(psym(product,28));","replace":"h.appendChild(psym(product,28));"},
+ {"name":"the Desk's sentence keeps its book","file":"stmt/owner.js","find":".replace(BOOKS,function(w,k,at,all){","replace":".replace(/(?!x)x/g,function(w,k,at,all){"},
+ {"name":"the Desk's sentence loses its capital","file":"stmt/owner.js","find":"?'The book':'the book'; });","replace":"?'the book':'the book'; });"},
+ {"name":"the Desk's sentence doubles an article","file":"stmt/owner.js","find":".test(before)?'book':/(^|[.!?]","replace":".test(before)?'the book':/(^|[.!?]"},
+ {"name":"the Desk's sentence takes the app's own name","file":"stmt/owner.js","find":"(?:account|admin|counter|command|desk)","replace":"(?:nothing)"},
+ {"name":"a note held in state is drawn without its Details","file":"stmt/owner.js","find":"b.note.className='anote'+(m.bad?' bad':''); withDetails(b.note,m.err); }","replace":"b.note.className='anote'+(m.bad?' bad':''); }"},
+ {"name":"a link that could not be made keeps no error behind its note","file":"stmt/owner.js","find":"m.note='Could not make a link: '+e.message; m.err=e; linkMoved(u); });","replace":"m.note='Could not make a link: '+e.message; linkMoved(u); });"},
+ {"name":"a retried link keeps the old Details","file":"stmt/owner.js","find":"if(m.fail){ m.fail=false; m.bad=false; m.note=''; m.err=null; }","replace":"if(m.fail){ m.fail=false; m.bad=false; m.note=''; }"},
+ {"name":"a typed name escapes its tag","file":"stmt/owner.js","find":"    if(o.mark) title.appendChild(productTag(o.mark));\n","replace":"    if(o.mark){ title.appendChild(productTag(o.mark)); title.appendChild(document.createTextNode(o.mark)); }\n"},
+ {"name":"the tag names another book","file":"stmt/owner.js","find":"t.appendChild(document.createTextNode(k.charAt(0).toUpperCase()+k.slice(1))); return t;","replace":"t.appendChild(document.createTextNode('Rice')); return t;"},
+ {"name":"Needs you draws the mark in its tag","file":"stmt/owner.js","find":"    if(o.mark) title.appendChild(productTag(o.mark));\n","replace":"    if(o.mark) title.appendChild(bookTag(o.mark));\n"}
 ]

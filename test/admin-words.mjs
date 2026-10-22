@@ -9,8 +9,10 @@
  *      person cannot act on, with the server's own words behind Details and the words of the Desk and the Counter beside a figure read as they are composed
  *   4  an unmapped message, and an answer with no reason, still say a sentence and carry Details; a failure of the connection or a sign-in that ended carry none
  *   5  end to end: a read the Desk refused, drawn by the page's own order card, shows the sentence and a Details control that opens the words
- *   6  a tile, a sheet row and a report card heading are the book's mark with a size at most, the shape told to a reader and no word for the book drawn
- *   7  the whole page drawn: no book of ledger/book.json PRODUCTS is named in any word, aria name or title, and no shape word is drawn
+ *   6  a tile, a sheet row and a report card heading are the book's mark with a size at most, the shape told to a reader and no word for the book drawn;
+ *      22 Oct 2026 (his answer on the Needs you canvas, reversing his word of 12 Oct for Salt Admin alone): Needs you names a book by its typed Product
+ *      tag, its name in its hue, in place of the mark; the Counter keeps its marks
+ *   7  the whole page drawn: no book of ledger/book.json PRODUCTS is named in any word, aria name or title but its typed Product tag, and no shape word is drawn
  * Drawn by the maker harness (test/maker-act.mjs), whose refuse[route] answers a route as the Counter refuses and whose probe: true leaves window.__owner(code),
  * a test seam that evaluates inside the page script's own scope, so the helpers are called as the page calls them. */
 import { FROZEN_BOOK } from "./frozen.mjs";
@@ -372,6 +374,12 @@ export async function run({ ok, pageWork }) {
     ok(heads.length === 2 && heads.every((h) => h[0] === "pmark" && h[1] && h[2] === "mark" && h[3].replace(/[^a-z]/gi, "").length <= 1 && h[4] === "")
       && new Set([...d.querySelectorAll("#clist h2")].map((h) => h.getAttribute("aria-label"))).size === 2,
     "the report card's book headings are the mark alone, named by their shape to a reader and by no word for the book: " + JSON.stringify(heads));
+    /* 22 Oct 2026: on Needs you a book is its typed Product tag, the name in its hue with its dot, and no drawn mark */
+    byAct(d, "nav.needs").click(); await work.quiet();
+    const tags = [...d.querySelectorAll("#nlist section .salt-producttag")].map((x) => [x.className, x.textContent, !!x.querySelector(".salt-producttag__dot")]);
+    ok(tags.length >= 3 && tags.every(([c, w, dot]) => dot && new RegExp("^salt-producttag salt-producttag--([a-z]+)$").test(c) && w.toLowerCase() === c.split("--")[1] && /^[A-Z][a-z]+$/.test(w))
+      && !d.querySelector("#nlist section svg.psym"),
+      "Needs you names a book by its typed Product tag, Salt in its own hue, and draws no mark: " + JSON.stringify(tags.slice(0, 3)));
   } finally { b.w.close(); }
 
   /* 7. THE WHOLE PAGE, DRAWN: NO BOOK NAME IN ANY WORD, ARIA NAME OR TITLE, AND NO SHAPE WORD DRAWN (his word of 12 Oct 2026). The names are read off the book (ledger/book.json PRODUCTS),
@@ -381,7 +389,8 @@ export async function run({ ok, pageWork }) {
   const BOOK_NAMED = new RegExp("\\b(" + BOOK_NAMES.join("|") + ")\\b(?!\\s+(?:account|admin|counter|command|desk)\\b)", "i");
   const drawnWords = (root) => {
     const out = [], walk = root.ownerDocument.createTreeWalker(root, 4);
-    while (walk.nextNode()) { const n = walk.currentNode, par = n.parentElement; if (par && !/^(SCRIPT|STYLE)$/.test(par.nodeName) && !par.closest("svg") && n.nodeValue.trim()) out.push([n.nodeValue.trim(), !!par.closest(".sr")]); }
+    /* 22 Oct 2026: a book's typed Product tag is the one place its name is drawn on Salt Admin (his answer on the Needs you canvas), so its words are read apart */
+    while (walk.nextNode()) { const n = walk.currentNode, par = n.parentElement; if (par && !/^(SCRIPT|STYLE)$/.test(par.nodeName) && !par.closest("svg") && !(par.closest(".salt-producttag") && !par.closest(".salt-producttag").querySelector("svg")) && n.nodeValue.trim()) out.push([n.nodeValue.trim(), !!par.closest(".sr")]); }
     root.querySelectorAll("[aria-label],[title],[placeholder],[alt]").forEach((e) => ["aria-label", "title", "placeholder", "alt"].forEach((a) => { if (e.getAttribute(a)) out.push([e.getAttribute(a), a === "aria-label"]); }));
     return out;
   };
@@ -394,8 +403,10 @@ export async function run({ ok, pageWork }) {
     const seenWords = drawnWords(all.d.body);
     const named = seenWords.filter(([t]) => BOOK_NAMED.test(t)).map(([t]) => t.slice(0, 80));
     const shaped = seenWords.filter(([t, hidden]) => !hidden && SHAPE_WORD.test(t)).map(([t]) => t.slice(0, 80));
-    ok(seenWords.length > 400 && named.length === 0,
-      "no book is named anywhere on Salt Admin, drawn text, aria names and titles included (" + BOOK_NAMES.join(", ") + "): " + seenWords.length + " words read; " + JSON.stringify(named.slice(0, 5)));
+    const typed = [...all.d.body.querySelectorAll(".salt-producttag")].filter((x) => !x.querySelector("svg") && x.textContent.trim()).map((x) => [x.className.split("--")[1], x.textContent.trim()]);
+    ok(seenWords.length > 400 && named.length === 0 && typed.length > 0 && typed.every(([k, w]) => k === w.toLowerCase() && BOOK_NAMES.includes(k)),
+      "no book is named anywhere on Salt Admin, drawn text, aria names and titles included (" + BOOK_NAMES.join(", ") + "), but in its typed Product tag, which names its own book: "
+      + seenWords.length + " words read; " + JSON.stringify(named.slice(0, 5)) + "; " + typed.length + " tags");
     /* the Sheets that ask restate a row with its book's tile, and they go when they are answered, so each is read while it is open: an order's Cancel and a trip's Confirm */
     const sheets = [];
     const asked = async (open, keep) => { open(); await all.work.quiet(); const sh = all.d.getElementById("ynSheet"); sheets.push([sh.querySelectorAll(".mtile").length, drawnWords(sh)]); byAct(all.d, keep).click(); await all.work.quiet(); };

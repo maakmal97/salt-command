@@ -2070,7 +2070,7 @@ export const OWNER_JS = `
           var list=unsentList(), n=list.length;
           bar.textContent=''; bar.hidden=!n;
           if(!n) return;
-          var one=n===1, c=needCard({sev:'soon', kind:'rows', word:'Unsent', key:'unsent', at:list[0].at, act:'unsent.open', who:n+' unsent '+(one?'entry':'entries'), what:'on this phone',
+          var one=n===1, c=bannerCard({sev:'soon', kind:'rows', word:'Unsent', key:'unsent', at:list[0].at, act:'unsent.open', who:n+' unsent '+(one?'entry':'entries'), what:'on this phone',
             why:one?unsentSaid(list[0])+' Open it to send it again, update it or discard it.':'They were sent from this phone and not confirmed. Open them to send them again, update them or discard them.',
             open:function(){ unsentOpen(list[0]); }, keepOpen:true});
           c.removeAttribute('data-need'); c.removeAttribute('data-kind');
@@ -5914,9 +5914,9 @@ export const OWNER_JS = `
       return c;
     }};
   }
-  /* the Action recipe's own parts: the kind word, the body (who and what, then why), the age in the money's place, the way there. A card
-     about an account carries data-u, which the pane beside the list is drawn from. c._add puts an action before Open. */
-  function needCard(o){
+  /* the Action recipe's own parts: the kind word, the body (who and what, then why), the age in the money's place, the way there. Since 22 Oct 2026 this is
+     the unsent banner's alone (it keeps its Open over every place); a card of the list is needCard below. c._add puts an action before Open. */
+  function bannerCard(o){
     /* 14 Oct 2026: THE WHOLE CARD IS THE TAP. The title is the one real button (data-act need.open, keyboard and screen reader), its ::after
        stretched over the card; a card's own actions stand above that. No Open button: a card with no way of its own has no go row. */
     var tap=!!o.open&&!o.keepOpen;
@@ -5948,12 +5948,53 @@ export const OWNER_JS = `
     c._body=body; c._add=function(b){ if(!go.parentNode) c.appendChild(go); c.classList.add('need--act'); go.insertBefore(b, op); };
     return c;
   }
+  /* 22 OCT 2026 (canvas Needs you, his comments on the card): ONE SHAPE AND ONE HEIGHT, 76px on a phone and 80px wide. Line one is the kind and the age, the
+     age in ember when late; line two the title, the code in the mono face (the verb is the button), a book's typed Product tag before it (on Salt Admin a
+     book is its name, his answer of 22 Oct 2026, reversing his word of 12 Oct for this page alone; the Counter keeps its marks). The one action is a filled
+     pill of one size, the figure large in the last column. No why line and no chip: the why, the clock and any second choice stand in the opened card. The
+     whole card is still the tap, the title its button stretched over it, read in full to a reader. c._add takes the first action alone, and every action of
+     the row once the card has grown (it asks once, or runs a turn), when the row stands under the body. */
+  var CODE_RE=/^[A-Z]+[0-9]+-[A-Z0-9-]+$/;
+  function productTag(product){
+    var k=String(product||'').toLowerCase().replace(/[^a-z]/g,''), t=el('span','salt-producttag salt-producttag--'+k), dot=el('span','salt-producttag__dot');
+    dot.setAttribute('aria-hidden','true'); t.appendChild(dot); t.appendChild(document.createTextNode(k.charAt(0).toUpperCase()+k.slice(1))); return t;
+  }
+  function needCard(o){
+    var tap=!!o.open, c=el('article','salt-action salt-action--'+o.sev+' need ncard'), body=el('div','salt-action__body'), go=el('div','salt-action__go');
+    var title=el(tap?'button':'div','salt-action__title'+(tap?' need-tap':'')), age=o.age!=null?o.age:ageOf(o.at), tt=o.title||o.who||'';
+    if(tap){ title.type='button'; actOn(title,o.act||'need.open',o.key); title.addEventListener('click', function(){ needOpen(o); }); }
+    c.setAttribute('data-need', o.key); c.setAttribute('data-kind', o.kind); c.setAttribute('data-sev', o.sev);
+    if(o.u) c.setAttribute('data-u', o.u);
+    if(o.practice) c.setAttribute('data-practice','');
+    var kd=el('span','salt-action__kind nkind',o.word);
+    if(age){ kd.appendChild(document.createTextNode(' · ')); kd.appendChild(el('span','nage'+(o.late?' nage--late':''),age)); }
+    c.appendChild(kd);
+    if(o.mark) title.appendChild(productTag(o.mark));
+    title.appendChild(whoTag(el('span','need-who'+(CODE_RE.test(tt)?' need-who--code':''),tt),tt));
+    if(tap) title.setAttribute('aria-label', o.word+': '+[(o.head||'')+(o.who||'')+(o.rest||''), o.what].filter(Boolean).join(', '));
+    body.appendChild(title); c.appendChild(body); c.appendChild(go);
+    c.appendChild(el('span','salt-action__money nfig',+o.rm>0.004?rmShort(o.rm):''));
+    c._body=body;
+    c._grow=function(){ c.classList.add('need--grow'); };
+    c._add=function(b){
+      var grown=c.classList.contains('need--grow');
+      if(go.children.length&&!grown) return;
+      b.classList.remove('salt-pill--md'); b.classList.add('nbtn');
+      if(!grown&&b.classList.contains('salt-ghost')){ b.classList.remove('salt-ghost','salt-ghost--lit'); b.classList.add('salt-pill'); }
+      if(b.classList.contains('salt-pill')) b.classList.add('salt-pill--sm');
+      go.appendChild(b);
+    };
+    return c;
+  }
+  /* a card tapped: from 860px an account opens beside the list; anything else goes to its place */
+  function needOpen(o){ if(o.u&&wide()){ openNeed(o.u); return; } o.open(); }
   /* a card's main button, on the card: it opens the full card where that action has inputs the card asks for, or asks in place where it is money */
   var needAsk={}, needBusy={}, needNote={};
   function mainButton(c,label,act,key,fn){ var b=pill([label,act,key]); b.addEventListener('click', fn); c._add(b); return b; }
   function needSays(c,key){ if(needNote[key]){ var n=noteOf(c); n.textContent=needNote[key]; n.className+=' bad'; } }
   /* a money tap asks once, on the card, before any request: Yes sends, Cancel sends nothing, and while a send is out both are off */
   function askBox(c,key,question,yes){
+    if(c._grow) c._grow();
     var q=el('p','nask',question); q.setAttribute('role','group'); c._body.appendChild(q);
     var y=pill([needBusy[key]?'Sending.':'Yes','need.ask-yes',key]), n=ghost(['Cancel','need.ask-no',key]);
     y.disabled=n.disabled=!!needBusy[key];
@@ -6002,7 +6043,9 @@ export const OWNER_JS = `
     var u=a.username, b=pill(['','need.signin-link']);
     function paint(){
       var m=madeLink[u]||{};
-      b.disabled=!!m.busy; b.textContent=m.busy?'Making it...':m.j?'Share the link':'Send a sign-in link'; note.textContent=m.note||''; withDetails(note,m.err);
+      /* 22 Oct 2026: the card's button is one size, so it says Send and Share, and a reader hears the whole */
+      b.disabled=!!m.busy; b.textContent=m.busy?'Making':m.j?'Share':'Send'; b.setAttribute('aria-label',m.busy?'Making it...':m.j?'Share the link':'Send a sign-in link');
+      note.textContent=m.note||''; withDetails(note,m.err);
     }
     /* answered on this button, or on the one a redraw put in its place */
     function after(){ paintPills(u); if(b.isConnected) paint(); else drawNeeds(); }
@@ -6054,7 +6097,7 @@ export const OWNER_JS = `
   function bareNeed(a){
     return item('now','accounts','Account','n:'+a.username, '', {who:a.code||a.username, u:a.username, head:'Set up ', rest:"'s account", what:'No account yet', why:waitLine(),
       open:function(){ openNeed(a.username); }}, function(c){
-      var sh=pill(['Show the guest price list','need.show-link']);
+      var sh=pill(['Show','need.show-link']); sh.setAttribute('aria-label','Show the guest price list');
       c._add(sh);
       var note=noteOf(c);
       function openSilver(){
@@ -6068,7 +6111,7 @@ export const OWNER_JS = `
           try{ await navigator.clipboard.writeText(r.url); note.textContent='Copied.'; }catch(e){ note.textContent='Copy failed.'; }
         });
         box.appendChild(cp);
-        c._body.insertBefore(box, note); sh.disabled=true;
+        if(c._grow) c._grow(); c._body.insertBefore(box, note); sh.disabled=true;
       }
       sh.addEventListener('click', openSilver);
       if(silverOpen[a.username]) openSilver();
@@ -6078,9 +6121,9 @@ export const OWNER_JS = `
   function sendNeed(rows){
     var codes=rows.map(function(a){ return a.code||a.username; }), first=sendAt(rows);
     var named=codes.length>6?codes.slice(0,5).concat([(codes.length-5)+' more']):codes;
-    return item('now','accounts','Account','s', first, {who:rows.length+(rows.length===1?' account has':' accounts have')+' not been sent their sign-in link', what:first?'ready since '+dayMon(first):'',
+    return item('now','accounts','Account','s', first, {who:rows.length+(rows.length===1?' account has':' accounts have')+' not been sent their sign-in link', title:rows.length===1?codes[0]:rows.length+' accounts', what:first?'ready since '+dayMon(first):'',
       why:andList(named)+'.', open:function(){ showPlace('customers','accounts',{fresh:true,push:true}); filterBy('unsent'); }}, function(c){
-      var go=pill(['Send sign-in links one by one','need.send-turn']);
+      var go=pill(['Send','need.send-turn']); go.setAttribute('aria-label','Send sign-in links one by one');
       go.addEventListener('click', function(){ turn={rows:rows.slice(), i:0, sent:[], j:null, why:''}; turnStep(); });
       c._add(go);
     });
@@ -6101,17 +6144,17 @@ export const OWNER_JS = `
   function unreadableLine(keys){ return keys.length+(keys.length===1?' queue entry':' queue entries')+' unreadable: '+keys.join(', '); }
   function unreadableNeed(keys){
     return item('now','rows','Entry','qx', '', {who:'Desk queue', what:unreadableLine(keys),
-      why:'Every other entry is read as usual. No entry is withdrawn until that key is mended.', open:goPlace('orders','approve')});
+      why:'Every other entry is read as usual. No entry is withdrawn until that key is mended.', open:goPlace('orders','approve')}, function(c){ mainButton(c,'Check','need.check','qx', goPlace('orders','approve')); });
   }
   function entryNeed(r, key){
-    return item('now','rows','Entry',key, isoAt(r.at||r.seenAt||r.id), {who:r.party||'Desk', head:'Check ', rest:"'s entry", what:'Did not get through',
-      why:noBook(r.why||'The Desk could not take this entry.'), open:goPlace('orders','approve')});
+    return item('now','rows','Entry',key, isoAt(r.at||r.seenAt||r.id), {who:r.party||'Desk', head:'Fix ', rest:"'s entry", what:'Did not get through',
+      why:noBook(r.why||'The Desk could not take this entry.'), open:goPlace('orders','approve')}, function(c){ mainButton(c,'Fix','need.fix',key, goPlace('orders','approve')); });
   }
   /* an entry kept on this phone and not confirmed (Phase 4c): Soon, his own work; its Open is Record, on the entry's own section, where Send again, Update and send and Discard are */
   function unsentNeed(u){
     var w=unsentWord(u);
     return item('now','rows','Unsent','u:'+u.path, u.at, {who:u.who||'This phone', what:w.charAt(0).toUpperCase()+w.slice(1),
-      why:unsentSaid(u)+' Open it to send it again, update it or discard it.', open:function(){ unsentOpen(u); }});
+      why:unsentSaid(u)+' Open it to send it again, update it or discard it.', open:function(){ unsentOpen(u); }}, function(c){ mainButton(c,'Open','need.unsent','u:'+u.path, function(){ unsentOpen(u); }); });
   }
   function threadNeed(t){
     var last=t.msgs[t.msgs.length-1];
@@ -6171,16 +6214,19 @@ export const OWNER_JS = `
   }
   function moneyNeed(m){
     var first=m.rows[0];
-    return item('soon','payments','Owed','$:'+m.party, m.since, {who:m.party, head:'Collect '+rm(m.rm)+' from ', what:'Past term', rm:+m.rm||0, rm:+m.rm||0,
+    /* 22 Oct 2026 (canvas Needs you): its age is how late it is, in ember; its one tap is Message, their thread, and Record payment stands in the opened card */
+    var acc=OWNER.accounts.filter(function(x){ return x.code===m.party&&x.username; })[0], late=ageOf(m.due);
+    return item('soon','payments','Owed','$:'+m.party, m.since, {who:m.party, head:'Collect '+rm(m.rm)+' from ', what:'Past term', rm:+m.rm||0, age:late?late+' late':'', late:!!late,
       why:'Handed over '+fmtWhen(m.since)+', due '+fmtWhen(m.due)+'.'+(m.rows.length>1?' '+m.rows.length+' orders; the oldest opens.':''),
       open:function(){ owedGo(first,'[data-sect="money"]'); }}, function(c){
+      if(acc){ var ms=pill(['Message','need.owed-message',m.party]); ms.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(acc.username); }); c._add(ms); }
       var b=ghost(['Record payment','need.owed-pay',m.party]); b.addEventListener('click', function(){ owedGo(first,'[data-sect="money"]'); }); c._add(b);
     });
   }
   function goodsNeed(r){
     return item('now','orders','To hand over','g:'+r.rid, r.date||'', {who:r.party, head:'Hand over to ', mark:r.product, what:units(r.units)+' paid, not handed over',
       why:r.date?'Ordered '+fmtWhen(r.date)+'.':'', open:function(){ owedGo(r,'[data-act="order.handed-units"]'); }}, function(c){
-      var b=ghost(['Handover','need.owed-hand',r.rid]); b.addEventListener('click', function(){ owedGo(r,'[data-act="order.handed-units"]'); }); c._add(b);
+      var b=pill(['Handover','need.owed-hand',r.rid]); b.addEventListener('click', function(){ owedGo(r,'[data-act="order.handed-units"]'); }); c._add(b);
     });
   }
   /* the Watch cards: an override in force, a notice set. 15 Oct 2026 (plan 1, part 5): THE DESK'S OWN COUNT IS NO CARD. "The Desk shows 4 for you" named
@@ -6188,11 +6234,13 @@ export const OWNER_JS = `
      to record on goods handed over) is a card of its own here: Order, Message, Payment, and Owed once past its term. */
   function hoursNeed(m){
     var wd=day3('en')[new Date(Date.parse(m.until)+28800000).getUTCDay()];
-    return item('watch','watch','Hours','w:hours', '', {who:'Shop', what:(m.open?'Open':'Closed')+' until '+wd+' '+hm(m.until),
-      why:'The weekly hours are overridden for now.', open:goPlace('shop','hours')});
+    var said=(m.open?'Open':'Paused')+' until '+wd+' '+hm(m.until);
+    return item('watch','watch','Hours','w:hours', '', {who:'Shop', title:said, what:said, age:'today',
+      why:'The weekly hours are overridden for now.', open:goPlace('shop','hours')}, function(c){ mainButton(c,'Change','need.hours','w:hours', goPlace('shop','hours')); });
   }
   function noticeNeed(lines){
-    return item('watch','watch','Notice','w:notice', '', {who:'Shop', what:cut(lines.join(' · ')), why:'This line is at the top of every customer account.', open:goPlace('shop','notice')});
+    return item('watch','watch','Notice','w:notice', '', {who:'Shop', title:cut(lines.join(' · ')), what:cut(lines.join(' · ')), why:'This line is at the top of every customer account.', open:goPlace('shop','notice')},
+      function(c){ mainButton(c,'Change','need.notice','w:notice', goPlace('shop','notice')); });
   }
   /* ---- SEND THEM IN TURN (S9 9.6) --------------------------------------------------------------
      One account at a time, in the card's own order: its sign-in link is made as its turn opens, Share is a tap
@@ -6238,6 +6286,7 @@ export const OWNER_JS = `
       why:fin?(did===n?'Each has their link, and each is ticked sent.':'The ones not ticked are still on Accounts, under Not sent.')
         :(a.code||a.username)+(t.copied?': their message is copied.':t.j?': their link is made. Share it and it is ticked sent.':': making their link.'),
       open:function(){ showPlace('customers','accounts',{fresh:true,push:true}); filterBy('unsent'); }}, function(c){
+      if(c._grow) c._grow();
       var ticks=el('div','achips');
       t.rows.forEach(function(x, k){ var did=t.sent.indexOf(x.username)>=0;
         ticks.appendChild(chip(did?'verdigris':(k===t.i?'brass':'mist'), (x.code||x.username)+(did?', sent':''))); });
@@ -6257,7 +6306,7 @@ export const OWNER_JS = `
     var key='p:'+o.id, who=codeByUser(o.u);
     if(pays.length!==1){ mainButton(c,'Review','need.review',key, orderOpener(o.id)); needSays(c,key); return; }
     var pp=pays[0], onBook=payOnBook(o,pp);
-    if(!needAsk[key]) mainButton(c,onBook?'Already recorded':'Received','need.received',key, function(){ delete needNote[key]; needAsk[key]=true; drawNeeds(); });
+    if(!needAsk[key]){ var rb=mainButton(c,onBook?'Recorded':'Received','need.received',key, function(){ delete needNote[key]; needAsk[key]=true; drawNeeds(); }); if(onBook) rb.setAttribute('aria-label','Already recorded'); }
     else askBox(c,key,onBook?'Already recorded, '+rm(pp.amount)+'?':'Confirm '+rm(pp.amount)+' received from '+who+'?', function(){
       needBusy[key]=true; drawNeeds();
       orderReceived(o,pp).then(function(done){
@@ -6323,9 +6372,9 @@ export const OWNER_JS = `
         what:'Waits on their yes until '+fmtWhen(apf.until), practice:t, open:to, rm:(+apf.total||0)+(+apf.delivery||0)}, function(c){ offerButton(c,o,apf); }));
       else if(held){}
       else if(o.status==='placed') L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, head:'Agree ', rest:shP.length>1?"'s sheet":"'s order", mark:o.product, what:shP.length>1?shP.length+' orders on one sheet':orderWhat(o), practice:t, open:to,
-        rm:shP.length>1?shP.reduce(function(s,x){ return s+(+x.total||0); },0):+o.total||0, tap:'agree'}, function(c){
-        /* Agree needs the delivery charge and the window, which the full card asks for, so the button opens it */
-        var k=clockOf(o);
+        rm:shP.length>1?shP.reduce(function(s,x){ return s+(+x.total||0); },0):+o.total||0, tap:'agree', late:!!(clockOf(o)||{}).late}, function(c){
+        /* Agree needs the delivery charge and the window, which the full card asks for, so the button opens it; the clock stands in the opened card */
+        var k=c._full&&clockOf(o);
         if(k){ var nc=el('p','need-clock'+(k.late?' need-clock--late':'')); nc.setAttribute('data-clock','');
           nc.appendChild(el('strong','oclock__min',k.waited+' min')); nc.appendChild(document.createTextNode(' waiting'+(k.usual!=null?', usually '+k.usual:'')));
           c._body.appendChild(nc); }

@@ -1021,6 +1021,26 @@ body.ended>*:not(#aEnded){display:none}
 .adm .need .need-what{font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm .need .salt-action__body>*+*{margin-top:8px}
 .adm .need .salt-action__go{display:flex;flex-wrap:wrap;gap:8px}
+/* 22 OCT 2026 (canvas Needs you): THE CARD IS ONE SHAPE ON FIXED COLUMNS, the kind and age over the title in the first, the one pill in the second, the figure
+   in the last, every card one height; nothing wraps, a long title ends in an ellipsis. A card that asks once, or runs a turn, grows and stands its row under the body. */
+.adm .ncard{grid-template-columns:minmax(0,1fr) 72px 88px;gap:6px 8px;padding:12px;align-items:center;box-sizing:border-box;height:76px}
+.adm .ncard>.nkind{grid-column:1;grid-row:1;padding-top:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.adm .ncard>.salt-action__body{grid-column:1;grid-row:2;min-width:0}
+.adm .ncard>.salt-action__go{grid-column:2;grid-row:1/3;display:flex;align-items:center;margin:0}
+.adm .ncard>.nfig{grid-column:3;grid-row:1/3;display:flex;align-items:center;justify-content:flex-end;height:48px;padding:0;line-height:1;white-space:nowrap;overflow:hidden}
+.adm .ncard .salt-action__title{flex-wrap:nowrap;gap:8px;min-width:0}
+.adm .ncard .need-tap{flex-wrap:nowrap;min-height:0}
+.adm .ncard .need-who{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adm .ncard .need-who--code{font-family:var(--salt-font-mono)}
+.adm .ncard .salt-producttag{flex:none}
+.adm .nage--late{color:var(--salt-ember)}
+.adm .ncard .nbtn{box-sizing:border-box;width:72px;min-width:72px;max-width:72px;height:48px;min-height:48px;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .ncard.need--grow,.adm .ncard:has(.nnote:not(:empty)){height:auto}
+.adm .ncard.need--grow>.salt-action__go{grid-column:1/-1;grid-row:3;flex-wrap:wrap}
+@media (min-width:860px){
+  .adm .ncard{grid-template-columns:minmax(0,1fr) 120px 116px;gap:4px 12px;padding:13px 16px;height:80px}
+  .adm .ncard .nbtn{width:120px;min-width:120px;max-width:120px;padding:0 8px}
+}
 /* 14 OCT 2026: THE CARD IS THE TAP. The title is the one button, stretched over the card; the card's own actions sit above it. The age is the money column, a fixed width,
    right-aligned and level with the kind word on every card; Soon and Watch fold behind a 44px heading. */
 .adm .ncard{position:relative}

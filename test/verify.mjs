@@ -50223,6 +50223,11 @@ await (async () => {
   await (await import("./admin-needs-groups.mjs")).run({ ok, pageWork });
 })();
 
+section("22 Oct 2026: a Needs you card is one shape and one height, its code and typed book, one pill and the figure last");
+await (async () => {
+  await (await import("./admin-needs-cards.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin's glance, stock: Stock cover and Next lot beside Ready and Owed to you, for the book with the least cover (21 Oct 2026)");
 await (async () => {
   await (await import("./admin-glance-stock.mjs")).run({ ok, pageWork });
