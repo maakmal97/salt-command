@@ -5293,6 +5293,8 @@ export const OWNER_JS = `
      sent is never ticked: it is answered on its order. A pick is kept by the card's first draft and let go when the card leaves. */
   var apPick={}, apRefused={}, apDone=null;
   function apTickable(g){ return !g.drafts.some(draftClaim); }
+  /* a refusal is kept by every draft of its card, so a card whose first move went and whose lead has changed still says it */
+  function apGone(g){ for(var i=0;i<g.drafts.length;i++){ if(apRefused[g.drafts[i].id]) return apRefused[g.drafts[i].id]; } return null; }
   function apGroups(){ return draftGroups(pendingRows()).filter(apTickable); }
   function apChose(g,v){ apPick[g.lead.id]=apPick[g.lead.id]===v?null:v; apDone=null; drawMaker(); }
   function apBarDraw(){
@@ -5317,11 +5319,12 @@ export const OWNER_JS = `
       if(!yes||makerBusy) return;
       makerBusy=true;
       var ids=function(gs){ return [].concat.apply([],gs.map(function(g){ return g.drafts.map(function(d){ return d.id; }); })); };
-      var lead={}; A.concat(R).forEach(function(g){ g.drafts.forEach(function(d){ lead[d.id]=g.lead.id; }); });
+      var lead={}, grp={}; A.concat(R).forEach(function(g){ g.drafts.forEach(function(d){ lead[d.id]=g.lead.id; grp[d.id]=g; }); });
       return refs('/all/maker/drafts/decide-many',{approve:ids(A), reject:ids(R)}).then(function(j){
         var went={}, refused=j.refused||[], hit={};
         (j.decided||[]).forEach(function(d){ went[lead[d.id]||d.id]=d.decision; });
-        refused.forEach(function(r){ var k=lead[r.id]||r.id; hit[k]=1; apRefused[k]={why:noBook(r.error||''), fix:r.fix||''}; });
+        refused.forEach(function(r){ var k=lead[r.id]||r.id, said={why:noBook(r.error||''), fix:r.fix||''}; hit[k]=1;
+          (grp[r.id]?grp[r.id].drafts:[{id:r.id}]).forEach(function(d){ apRefused[d.id]=said; }); });
         var a=A.filter(function(g){ return !hit[g.lead.id]&&went[g.lead.id]==='approved'; }).length, rj=R.filter(function(g){ return !hit[g.lead.id]&&went[g.lead.id]==='rejected'; }).length;
         apDone={a:a, r:rj, refused:Object.keys(hit).length};
         apPick={};
@@ -5329,10 +5332,10 @@ export const OWNER_JS = `
     });
   }
   function drawDeskRows(draftRoot,queueRoot,pendingRows){
-    var live=draftGroups(pendingRows), liveIds={};
-    live.forEach(function(g){ liveIds[g.lead.id]=1; });
+    var live=draftGroups(pendingRows), liveIds={}, liveDrafts={};
+    live.forEach(function(g){ liveIds[g.lead.id]=1; g.drafts.forEach(function(d){ liveDrafts[d.id]=1; }); });
     Object.keys(apPick).forEach(function(k){ if(!liveIds[k]) delete apPick[k]; });
-    Object.keys(apRefused).forEach(function(k){ if(!liveIds[k]) delete apRefused[k]; });
+    Object.keys(apRefused).forEach(function(k){ if(!liveDrafts[k]) delete apRefused[k]; });
     if(apDone){
       var dn=el('div','salt-glass-card salt-glass-card--radius-lg apdone'); dn.setAttribute('role','status');
       if(apDone.error) dn.appendChild(el('p','msg bad',apDone.error));
@@ -5347,7 +5350,7 @@ export const OWNER_JS = `
     if(ticks.length){
       var hr=el('div','aphead'); hr.appendChild(el('span','aphead__n',ticks.length+' to decide'));
       var all=actOn(el('button','salt-ghost','Approve all'),'approve.all'); all.type='button';
-      all.addEventListener('click',function(){ ticks.forEach(function(g){ if(!apRefused[g.lead.id]) apPick[g.lead.id]='a'; }); apDone=null; drawMaker(); });
+      all.addEventListener('click',function(){ ticks.forEach(function(g){ if(!apGone(g)) apPick[g.lead.id]='a'; }); apDone=null; drawMaker(); });
       hr.appendChild(all); draftRoot.appendChild(hr);
     }
     live.forEach(function(g){
@@ -5384,7 +5387,7 @@ export const OWNER_JS = `
       var more=actOn(el('button','salt-ghost salt-ghost--sm apmore','Details'),'row.proposed'); more.type='button'; more.setAttribute('aria-expanded','false');
       more.addEventListener('click',function(){ var open=more.getAttribute('aria-expanded')!=='true'; more.setAttribute('aria-expanded',String(open)); panel.hidden=!open; });
       head.appendChild(more);
-      var gone=apRefused[draft.id];
+      var gone=apGone(g);
       if(gone){
         var rb=el('div','aprefused'); rb.appendChild(el('span','salt-status salt-status--ember','Refused'));
         var w=el('p','aprefused__why'); w.appendChild(el('b',null,'Why: ')); w.appendChild(document.createTextNode(gone.why)); rb.appendChild(w);
