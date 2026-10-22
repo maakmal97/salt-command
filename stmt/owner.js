@@ -6012,8 +6012,8 @@ export const OWNER_JS = `
     if(o.why) c.appendChild(el('p','salt-action__why npane__why',o.why));
     /* an order's head draws no ways (its card under it has them) and so no ask, which the list's card holds; the Offer's keeps its ask-once Withdraw */
     var own=!o.order||!!o.ways;
-    if(own){ c.appendChild(body); c.appendChild(go); }
-    c._body=body; c._full=true; c._grow=function(){};
+    c.appendChild(body); if(own) c.appendChild(go);
+    c._body=body; c._full=true; c._grow=function(){}; c._noWays=!own;
     c._add=function(b){ if(!own) return; b.classList.remove('salt-pill--md'); if(b.classList.contains('salt-pill')) b.classList.add('salt-pill--sm'); b.classList.add('nbtn'); go.appendChild(b); };
     return c;
   }
@@ -6023,6 +6023,7 @@ export const OWNER_JS = `
   function needSays(c,key){ if(needNote[key]){ var n=noteOf(c); n.textContent=needNote[key]; n.className+=' bad'; } }
   /* a money tap asks once, on the card, before any request: Yes sends, Cancel sends nothing, and while a send is out both are off */
   function askBox(c,key,question,yes){
+    if(c._noWays) return;   /* an order's head beside the list asks nothing; the list's card asks */
     if(c._grow) c._grow();
     var q=el('p','nask',question); q.setAttribute('role','group'); c._body.appendChild(q);
     var y=pill([needBusy[key]?'Sending.':'Yes','need.ask-yes',key]), n=ghost(['Cancel','need.ask-no',key]);
@@ -6507,15 +6508,15 @@ export const OWNER_JS = `
   var nFail=document.getElementById('nFail'), nRetry=null;
   function drawFail(bad){
     if(!nFail) return;
-    nFail.hidden=!bad.length;
+    if(nFail.hidden!==!bad.length) nFail.hidden=!bad.length;   /* R4: written only when it differs, as the stock's tick redraws the lead */
     if(!bad.length) return;
     if(!nRetry){
       nFail.textContent=''; nFail.appendChild(el('p','nfail__what'));
       nRetry=pill(['Retry','need.retry']); nRetry.addEventListener('click', function(){ nRetry.disabled=true; nRetry.textContent='Reading.'; readNeeds(true); });
       nFail.appendChild(nRetry);
     }
-    nFail.firstChild.textContent='Couldn\\'t read '+andList(bad)+'.';
-    if(!needsReading){ nRetry.disabled=false; nRetry.textContent='Retry'; }
+    var fw='Couldn\\'t read '+andList(bad)+'.'; if(nFail.firstChild.textContent!==fw) nFail.firstChild.textContent=fw;
+    if(!needsReading){ if(nRetry.disabled) nRetry.disabled=false; if(nRetry.textContent!=='Retry') nRetry.textContent='Retry'; }
   }
   /* 22 OCT 2026 (canvas Needs you): THE LEAD IS ONE INSIGHT. What waits on his tap in money, summed off the cards that wait on a money tap of his (a payment
      they say they sent, to confirm; an order placed, to agree), then the books that need stock off STOCK's lights (red out, yellow promised past the shelf,

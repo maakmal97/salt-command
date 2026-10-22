@@ -12,5 +12,7 @@
  {"name":"the same failed notice read is drawn again","file":"stmt/owner.js","find":"nGot('notice', error); if(failNew('notice', error)) apply=true;","replace":"nGot('notice', error); apply=true;"},
  {"name":"the same failed owed read is drawn again","file":"stmt/owner.js","find":"nGot('book', error); apply=failNew('book', error);","replace":"nGot('book', error); apply=true;"},
  {"name":"every tick rewrites the bar","file":"stmt/owner.js","find":"if(live.getAttribute('data-on')!==String(on)){","replace":"if(true){"},
- {"name":"every tick rewrites the hours","file":"stmt/owner.js","find":"    if(hrs.getAttribute('data-txt')!==txt+tone){","replace":"    if(true){"}
+ {"name":"every tick rewrites the hours","file":"stmt/owner.js","find":"    if(hrs.getAttribute('data-txt')!==txt+tone){","replace":"    if(true){"},
+ {"name":"a quiet tick sets the banner again","file":"stmt/owner.js","find":"    if(nFail.hidden!==!bad.length) nFail.hidden=!bad.length;","replace":"    nFail.hidden=!bad.length;"},
+ {"name":"the same failure writes its words again","file":"stmt/owner.js","find":"if(nFail.firstChild.textContent!==fw) nFail.firstChild.textContent=fw;","replace":"nFail.firstChild.textContent=fw;"}
 ]

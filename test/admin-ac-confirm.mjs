@@ -36,9 +36,15 @@ export async function run({ ok, pageWork }) {
     const d = p.d, click = async (act, key) => { byAct(d, act, key).click(); await p.work.quiet(); };
     /* 5 */
     await click("nav.needs");
-    const nl = d.querySelector('#nlist [data-need="o:ord-late"] [data-clock]'), ns = d.querySelector('#nlist [data-need="o:ord-soon"] [data-clock]');
-    ok(!!nl && /^5[23] min waiting, usually 45$/.test(t(nl)) && nl.classList.contains("need-clock--late") && !!ns && !ns.classList.contains("need-clock--late"),
-      "a placed order's Needs card says the minutes waiting and his usual, marked late past it: " + t(nl) + " / " + t(ns));
+    /* 22 Oct 2026 (canvas Needs you): the card marks its age in ember once late; the minutes and his usual stand in the open card beside the list from 860px */
+    const ageOf = (k) => d.querySelector('#nlist [data-need="' + k + '"] .nage');
+    p.w.matchMedia = (q) => ({ matches: /min-width:s*860px/.test(q) && !/max-width/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {} });
+    const clockIn = async (k) => { d.querySelector('#nlist [data-need="' + k + '"] .need-tap').click(); await p.work.quiet(); return d.querySelector("#nopen .npane [data-clock]"); };
+    const nl = await clockIn("o:ord-late"), ns = await clockIn("o:ord-soon");
+    delete p.w.matchMedia;
+    ok(!!nl && /^5[23] min waiting, usually 45$/.test(t(nl)) && nl.classList.contains("need-clock--late") && !!ns && !ns.classList.contains("need-clock--late")
+      && ageOf("o:ord-late").classList.contains("nage--late") && !ageOf("o:ord-soon").classList.contains("nage--late"),
+      "a placed order's card marks its age late past his usual, and its open card says the minutes waiting and his usual: " + t(nl) + " / " + t(ns));
     /* 3 */
     await click("nav.orders"); await click("part.orders.placed");
     const open = async (id) => { await click("order.open", id); return p.card(id); };

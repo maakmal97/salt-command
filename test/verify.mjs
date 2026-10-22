@@ -18056,8 +18056,8 @@ await (async () => {
       "five places, Needs you, Orders, Customers, Record and Shop (Maker is retired on screen), in the App bar and Desk rail: " + JSON.stringify([places(".salt-appbar"), places(".salt-rail")]));
     const current = () => [...new Set([...D.querySelectorAll(".place[aria-current='page']")].map((b) => b.getAttribute("data-m")))].join(",");
     ok(current() === "needs", "Needs you is the place he opens on: " + current());
-    ok(await until(() => [...D.querySelectorAll('[data-count="needs"]')].every((x) => x.textContent === "1")),
-      "and it carries the count of what is Now there on both bars, the refused account (the ID with no account and the account not sent are Soon): " + JSON.stringify([...D.querySelectorAll('[data-count="needs"]')].map((x) => x.textContent)));
+    ok(await until(() => [...D.querySelectorAll('[data-count="needs"]')].every((x) => x.textContent === "3")),
+      "and it carries the count of what is To do there on both bars, the refused account, the ID with no account and the account not sent (all his to act since 22 Oct 2026): " + JSON.stringify([...D.querySelectorAll('[data-count="needs"]')].map((x) => x.textContent)));
 
     D.querySelector('.salt-appbar button[data-m="customers"]').click();
     const rows = () => [...D.querySelectorAll("#rlist [data-u]")];
