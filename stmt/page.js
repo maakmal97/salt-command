@@ -1026,11 +1026,25 @@ body.ended>*:not(#aEnded){display:none}
 .adm .apbar[hidden]{display:none}
 .adm .apbar__line{flex:1 1 auto;min-width:0}
 @media (min-width:1080px){.adm .apbar{bottom:16px}}
-/* 22 Oct 2026: Stock by book under the glance, a row a book, its mark and light in words, then its figures in the mono face */
-.adm .nstock{margin:0 0 16px}
+/* 22 Oct 2026 (canvas Needs you): STOCK BY BOOK UNDER THE CARDS. On a phone one row a book on one glass: its typed tag and its light, Cover at the right;
+   the meter of what is agreed of the shelf, ember once promised past it; Next lot alone on its line. From 860px a plain table on one glass, the columns
+   in proportion and no sideways scroll. Nothing wraps. */
+.adm .nstock{display:flex;flex-direction:column;gap:8px;margin:0 0 16px}
 .adm .nstock[hidden]{display:none}
-.adm .nstock__row{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:10px 0;border-top:1px solid var(--salt-line)}
-.adm .nstock__fig{flex-basis:100%;margin:0;font-family:var(--salt-font-mono);font-variant-numeric:tabular-nums}
+.adm .nstock__head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.adm .nstock__head .salt-eyebrow{margin:0}
+.adm .nstock__list{padding:0 16px}
+.adm .nstock__row{display:flex;flex-direction:column;gap:8px;padding:14px 0;min-width:0}
+.adm .nstock__row+.nstock__row{border-top:1px solid var(--salt-line-faint)}
+.adm .nstock__top{display:flex;align-items:center;justify-content:space-between;gap:12px;white-space:nowrap}
+.adm .nstock__who{display:inline-flex;align-items:center;gap:8px;min-width:0}
+.adm .nstock__cover,.adm .nstock__lot{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .nstock__cover b,.adm .nstock__lot b{color:var(--salt-salt);font-weight:500}
+.adm .nstock .salt-meter__line{white-space:nowrap}
+.adm .nstock .salt-meter__track{display:block}
+.adm .nstock__table{display:none;padding:4px 6px;overflow:hidden}
+.adm .nfree--neg{color:var(--salt-ember)}
+@media (min-width:860px){.adm .nstock__list{display:none}.adm .nstock__table{display:block}}
 .adm .nfail{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:0 0 12px}
 .adm .nfail[hidden]{display:none}
 .adm .nfail__what{margin:0;flex:1 1 12em}
@@ -1928,8 +1942,6 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<p class="salt-insight salt-insight--copper nlead" id="nCount">Reading what needs you.</p>'
         /* the glance: Ready, To approve and Receivables, single-line KPI tiles read off the orders the page holds (stmt/owner.js drawGlance) */
         + '<section id="nGlance" class="nglance" aria-label="At a glance" hidden></section>'
-        /* 22 Oct 2026 (his word, the restock light made plain): every book's light and figures (stmt/owner.js drawStockBooks) */
-        + '<section id="nStock" class="nstock" aria-label="Stock by book" hidden></section>'
         /* 22 Oct 2026 (canvas Needs you, his "something else that is not just pill styles"): the kinds are a text tab row on the system's Nav bar, the count
            beside each word, the chosen one on glass with a brass underline, an empty one dimmed; three across on a phone, six wide. Jump to is gone */
         + '<nav class="salt-nav nkinds" aria-label="Show"><div class="salt-nav__links nchips" role="tablist">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="salt-nav__link nktab'
@@ -1939,6 +1951,8 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div class="nsplit"><div>'
         + '<div id="nlist" class="nlist"></div>'
         + '</div><div id="nopen" class="salt-glass-card salt-glass-card--radius-lg" aria-label="The open card" hidden></div><p class="rnone panenone">Choose a card to see it in full.</p></div>'
+        /* 22 Oct 2026 (his word, the restock light made plain; canvas Needs you): every book's light and figures, under the cards (stmt/owner.js drawStockBooks) */
+        + '<section id="nStock" class="nstock" aria-label="Stock by book" hidden></section>'
         + "</div>"
         /* ORDERS: the Counter's orders by stage, the payments customers say they sent, and the group orders. The stages filter one list
            (#makerOrderList, a row an order); a row opens that order's card in #makerReview, beside the list from 860px and in its place

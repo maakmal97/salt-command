@@ -6648,32 +6648,65 @@ export const OWNER_JS = `
      cover: its mark, the light in the Counter's own words and colour, then the Desk's figures, the shelf, what is agreed, what is free, the days of
      cover, and the next lot's units and day. The light is the Desk's (restockLight, measured into STOCK with the figures); nothing here works one
      out. Read with the tiles and again on each tick of the Needs you poll, so a re-seed shows within the poll; a failed read leaves the tiles to say so. */
-  var STOCK_WORD={green:'Available',yellow:'Limited',red:'Out of stock'}, STOCK_RANK={red:0,yellow:1,green:2};
+  var STOCK_WORD={green:'Available',yellow:'Limited',red:'Out of stock'}, STOCK_RANK={red:0,yellow:1,green:2}, STOCK_TONE={green:'verdigris',yellow:'brass',red:'ember'};
+  /* a figure of the table: up to two places, a minus sign under nought, no unit (the head says Units) */
+  function stockFig(n){ var v=Math.round((+n||0)*100)/100; return (v<0?'\u2212':'')+Math.abs(v).toLocaleString('en-MY',{maximumFractionDigits:2}); }
   function drawStockBooks(){
     var s=document.getElementById('nStock'); if(!s) return;
     var books=glanceStock&&glanceStock.books, ids=books?Object.keys(books).filter(function(p){ return books[p]&&typeof books[p].shelf==='number'; }):[];
     if(!ids.length){ if(!s.hidden){ s.hidden=true; s.textContent=''; s.removeAttribute('data-sig'); } return; }   /* a tick that finds nothing again draws nothing */
     var rank=function(b){ return [b.light in STOCK_RANK?STOCK_RANK[b.light]:3, b.coverDays==null?Infinity:+b.coverDays]; };
     ids.sort(function(x,y){ var a=rank(books[x]), c=rank(books[y]); return a[0]-c[0]||a[1]-c[1]; });
-    var nb=function(t){ return t.replace(/ /g,' '); };
-    var lines=ids.map(function(p){
-      var b=books[p], free=+b.free||0, transit=+b.transit||0, by=glanceStock.by&&glanceStock.by[p];
-      var cover=free<=0.009?'0 d':b.coverDays==null?'over 4 wk':b.coverDays+' d';
-      var lot=transit>0.009?units(transit)+(by?', '+glanceDay(by):''):by?'nothing on the way yet, '+glanceDay(by):'nothing on the way';
-      return [p, b.light in STOCK_RANK?b.light:'', nb('Shelf '+units(b.shelf))+' · '+nb('agreed '+units(b.commit))+' · '+nb(units(free)+' free')+' · '+nb(cover+' cover')+' · Next lot '+lot];
+    /* 22 Oct 2026 (canvas Needs you): each book's figures: the shelf, what is agreed and what is free, the meter of what is agreed of the shelf (full,
+       and ember, once promised past it or with nothing on it), the days of cover (4 wk+ past four weeks), and the next lot's units and day */
+    var rows=ids.map(function(p){
+      var b=books[p], shelf=+b.shelf||0, commit=+b.commit||0, free=+b.free||0, transit=+b.transit||0, by=glanceStock.by&&glanceStock.by[p], light=b.light in STOCK_RANK?b.light:'';
+      return {p:p, light:light, shelf:stockFig(shelf), agreed:stockFig(commit), free:stockFig(free), neg:free<-0.009,
+        fill:shelf>0.009?Math.min(100,Math.round(commit/shelf*100)):commit>0.009?100:0, ember:light==='red'||light==='yellow'||commit>shelf+0.009,
+        cover:free<=0.009?'0 d':b.coverDays==null?'4 wk+':b.coverDays+' d',
+        lot:transit>0.009?units(transit)+(by?' · '+glanceDay(by):''):by?'None yet · '+glanceDay(by):'None'};
     });
-    var sig=JSON.stringify([glanceStock.today,lines]);
+    var sig=JSON.stringify([glanceStock.today,rows]);
     if(s.hidden) s.hidden=false;
     if(s.getAttribute('data-sig')===sig) return;
     s.setAttribute('data-sig',sig); s.textContent='';
-    var h=el('h2','salt-eyebrow salt-eyebrow--copper','Stock by book'); if(glanceStock.today) h.title='As measured on '+glanceDay(glanceStock.today);
-    s.appendChild(h);
-    lines.forEach(function(l){
-      var r=el('div','nstock__row'); r.appendChild(bookMark(l[0],20));
-      if(l[1]) r.appendChild(el('span','salt-status supst sup-'+l[1],STOCK_WORD[l[1]]));
-      r.appendChild(el('p','nstock__fig',l[2]));
-      s.appendChild(r);
+    var head=el('div','nstock__head'), h=el('h2','salt-eyebrow salt-eyebrow--copper','Stock by book');
+    if(glanceStock.today) h.title='As measured on '+glanceDay(glanceStock.today);
+    head.appendChild(h); head.appendChild(el('span','salt-status salt-status--mist','Units'+(glanceStock.today?' · measured '+glanceDay(glanceStock.today):'')));
+    s.appendChild(head);
+    var chipOf=function(r){ return r.light?el('span','salt-status salt-status--'+STOCK_TONE[r.light],STOCK_WORD[r.light]):null; };
+    var meterOf=function(r,line){
+      var m=el('div','salt-meter'+(r.ember?' salt-meter--ember':'')), tr=el('div','salt-meter__track'), f=el('div','salt-meter__fill');
+      if(line){ var ln=el('div','salt-meter__line'), a=el('span',null,'Agreed '), b=el('span',null,'Free ');
+        a.appendChild(el('b',null,r.agreed)); a.appendChild(document.createTextNode(' of '+r.shelf)); b.appendChild(el('b',null,r.free)); ln.appendChild(a); ln.appendChild(b); m.appendChild(ln); }
+      else m.setAttribute('aria-hidden','true');
+      f.style.setProperty('--salt-fill',String(r.fill)); tr.appendChild(f); m.appendChild(tr); return m;
+    };
+    /* a phone: a row a book */
+    var list=el('div','salt-glass-card salt-glass-card--radius-lg nstock__list');
+    rows.forEach(function(r){
+      var row=el('div','nstock__row'), top=el('div','nstock__top'), who=el('span','nstock__who'), cv=el('span','nstock__cover','Cover '), lot=el('div','nstock__lot','Next lot ');
+      row.setAttribute('data-book',r.p); who.appendChild(productTag(r.p)); var c=chipOf(r); if(c) who.appendChild(c);
+      cv.appendChild(el('b',null,r.cover)); top.appendChild(who); top.appendChild(cv); row.appendChild(top);
+      row.appendChild(meterOf(r,true)); lot.appendChild(el('b',null,r.lot)); row.appendChild(lot);
+      list.appendChild(row);
     });
+    s.appendChild(list);
+    /* from 860px: the plain table */
+    var wrap=el('div','salt-glass-card salt-glass-card--radius-lg nstock__table'), tb=el('table','salt-table salt-table--plain'), cg=el('colgroup'), th=el('thead'), hr=el('tr'), bd=el('tbody');
+    tb.appendChild(el('caption','sr','Stock by book, worst first'));
+    [12,17,9,10,10,11,9,22].forEach(function(w){ var c=el('col'); c.style.setProperty('width',w+'%'); cg.appendChild(c); }); tb.appendChild(cg);
+    [['Book',1],['Light',1],['Shelf'],['Agreed'],['Free'],['Of shelf',1],['Cover'],['Next lot',1]].forEach(function(x){ var c=el('th',x[1]?'salt-table__left':null,x[0]); c.setAttribute('scope','col'); hr.appendChild(c); });
+    th.appendChild(hr); tb.appendChild(th);
+    rows.forEach(function(r){
+      var tr=el('tr'), b=el('th','salt-table__left'); tr.setAttribute('data-book',r.p); b.setAttribute('scope','row'); b.appendChild(productTag(r.p)); tr.appendChild(b);
+      var lc=el('td','salt-table__left'), c=chipOf(r); if(c) lc.appendChild(c); tr.appendChild(lc);
+      tr.appendChild(el('td',null,r.shelf)); tr.appendChild(el('td',null,r.agreed)); tr.appendChild(el('td',r.neg?'nfree--neg':null,r.free));
+      var mc=el('td','salt-table__left'); mc.appendChild(meterOf(r,false)); tr.appendChild(mc);
+      tr.appendChild(el('td',null,r.cover)); tr.appendChild(el('td','salt-table__left',r.lot));
+      bd.appendChild(tr);
+    });
+    tb.appendChild(bd); wrap.appendChild(tb); s.appendChild(wrap);
   }
   /* a kind chosen from its tab (22 Oct 2026: Jump to is gone, every kind is in view) */
   function nPick(k){ nKind=k; kindMark(); drawNeeds(); }
