@@ -1,5 +1,50 @@
 [
  {
+  "v": "v1219",
+  "d": "23 Oct 2026",
+  "t": "ONE SALT SALE TO CE4-CHE, PAID AND COLLECTED",
+  "n": [
+   "<b>FOLDED: ONE NEW SALE.</b> A sale of 1.5 units of salt to CE4-CHE for RM230, paid in full and collected on 23 Oct, approved by Counter Admin. The drafter flagged the rate against the party's median, and the note answers it. Nothing else was in the batch, and no purchase landed.",
+   "<b>INVENTORY.</b> Salt falls by 1.5 units on the sale. The cost basis is unchanged at RM56 a unit, and the replacement cost stays at RM60 a unit."
+  ]
+ },
+ {
+  "v": "v1218",
+  "d": "23 Oct 2026",
+  "t": "ONE CANCELLATION AND TWO FULFILMENTS SETTLE THE OPEN ORDERS",
+  "n": [
+   "<b>THREE AMENDMENTS FOLDED, DATED 23 OCT.</b> One cancellation (s286, CM4-MK, 1.5 units, RM170 goods plus RM10 delivery) and two fulfilments that each settle their order in full: s285 (CS6-PER, 1 unit) and s261 (CE4-CHE, 1.5 units). The drafter flagged nothing on the cancellation. The two fulfilments carry the flag that nothing is left outstanding.",
+   "<b>INVENTORY:</b> Salt falls by 2.5 units in all, 1 to CS6-PER and 1.5 to CE4-CHE. The cancelled order moved nothing. Stock stands at 11 units on the stated count, with 4.5 owed out and 1.5 promised."
+  ]
+ },
+ {
+  "v": "v1217",
+  "d": "23 Oct 2026",
+  "t": "PAYMENT OF RM200 FROM CZ5-TM ON S287, UNITS STILL TO COLLECT",
+  "n": [
+   "<b>ONE PAYMENT FOLDED:</b> CZ5-TM paid RM200 on 23 Oct by transfer via maybank against order s287 (2 units, RM200), preapproved by Counter Admin. The drafter flagged nothing. The row is not recomputed here, as the master applies fulfilment itself.",
+   "<b>INVENTORY UNCHANGED:</b> no units moved, so stock stays at 11 and the cost basis at RM56 a unit. The 2 units remain owed out to CZ5-TM until collected."
+  ]
+ },
+ {
+  "v": "v1216",
+  "d": "23 Oct 2026",
+  "t": "CZ5-TM ORDER S287 CORRECTED TO 2 UNITS FOR RM200",
+  "n": [
+   "<b>CORRECTION FOLDED:</b> order s287 for CZ5-TM, dated 22 Oct, moves from 1 unit at RM120 to 2 units at RM200, with delivery set to 0. It was preapproved and the drafter flagged nothing. The fold applies the patch to the row itself, so the correction entry moves no cash and no stock.",
+   "<b>INVENTORY UNCHANGED:</b> the sale is still pending, with nothing paid or collected, so no unit has left the shelf. The roll and the cost basis stay as they were. The dossier gives no floor or ask for a size of 2, so that comparison is left open."
+  ]
+ },
+ {
+  "v": "v1215",
+  "d": "22 Oct 2026",
+  "t": "ONE PENDING SALE OF SALT TO CZ5-TM AT RM120",
+  "n": [
+   "<b>FOLDED: ONE PENDING SALE, NOTHING PAID OR MOVED.</b> Order 20261022150231-ntznxw, 1 unit of salt to CZ5-TM at RM120, to collect, was preapproved by Counter Admin and appended to sales with its note. The drafter raised no flags. The rate is the ask for the size, and above the party's median of RM110.",
+   "<b>INVENTORY UNCHANGED.</b> The row is pending, so it draws no stock and books no revenue until something moves. Stock stays at 11 unit, cost RM60 a unit, with 1.5 unit promised and 2.5 owed out as before."
+  ]
+ },
+ {
   "v": "v1214",
   "d": "22 Oct 2026",
   "t": "PENDING SALT ORDER FOR CM4-MK, NOTHING MOVED",
