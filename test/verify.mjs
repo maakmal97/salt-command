@@ -17949,8 +17949,10 @@ await (async () => {
     /* 22 Oct 2026 (his names): all four are his to act, To do, and the lead counts them */
     ok(await until(() => D.getElementById("nCount").textContent === "4 things wait on your tap now." && todo() === "4"),
       "four wait on his tap, To do, and the lead and the rail say so: " + D.getElementById("nCount").textContent);
-    ok(cards().map((x) => x.getAttribute("data-need")).join(",") === ["s", "l:" + lid, "k:" + uL, "n:" + uN].join(",") && cards().every((x) => x.getAttribute("data-sev") === "now"),
-      "a card each, all To do and the oldest first: to send, the link, the locked account, no account: " + JSON.stringify(cards().map((x) => x.getAttribute("data-need"))));
+    /* the link and the lock are made within milliseconds of each other, so only their pair is fixed between the oldest and the one with no age */
+    const order = cards().map((x) => x.getAttribute("data-need"));
+    ok(order.length === 4 && order[0] === "s" && order[3] === "n:" + uN && order.slice(1, 3).sort().join(",") === ["k:" + uL, "l:" + lid].sort().join(",") && cards().every((x) => x.getAttribute("data-sev") === "now"),
+      "a card each, all To do and the oldest first: to send, then the link and the locked account, no account last: " + JSON.stringify(cards().map((x) => x.getAttribute("data-need"))));
     ok(cards().every((x) => x.classList.contains("salt-action") && x.querySelector(".salt-action__kind") && x.querySelector(".need-who")),
       "each drawn on the system's Action recipe, with its kind word and who");
 
