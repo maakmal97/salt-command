@@ -967,10 +967,24 @@ body.ended>*:not(#aEnded){display:none}
 .adm .ofee .salt-segment__opt{display:flex;align-items:center;justify-content:center}
 .adm .ofee .salt-segment__opt:focus-within{outline:2px solid var(--salt-brass);outline-offset:-2px}
 .adm .ofee--none::before{display:none}
-.adm .nglance{grid-template-columns:repeat(2,minmax(0,1fr));margin:0 0 16px}
+/* 22 Oct 2026 (canvas Needs you, his "some of these cards are using unnecessary space"): THE GLANCE IS SINGLE-LINE KPI TILES, the label at the left and the
+   figure at the right, no note, the value with no top margin so the row centres: Ready and To approve side by side, Receivables under them with the
+   meter of what is paid of what is agreed between its label and its figure; from 860px one row of three, 56px tall. The Insight leads them. */
+.adm .nlead{margin:0 0 12px}
+.adm .nglance{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 16px}
 .adm .nglance[hidden]{display:none}
-@media (min-width:1080px){.adm .nglance{grid-template-columns:repeat(4,minmax(0,1fr))}}
-.adm .nglance .pwith{vertical-align:middle;margin:-6px 0 -6px 6px}
+.adm .nkpi{display:flex;align-items:center;justify-content:space-between;gap:12px;box-sizing:border-box;min-height:var(--salt-tap);padding:6px 14px 6px 16px;text-decoration:none;color:inherit}
+.adm .nkpi:hover,.adm .nkpi:focus-visible{border-color:var(--salt-line-strong)}
+.adm .nkpi .salt-kpi__label,.adm .nkpi .salt-kpi__value{margin:0;line-height:1;white-space:nowrap}
+.adm .nkpi .salt-kpi__value{font-size:1.25rem;overflow:hidden;text-overflow:ellipsis}
+.adm .nkpi--owed{grid-column:1/-1;gap:16px}
+.adm .nkpi .salt-meter{flex:1 1 auto;min-width:40px}
+.adm .nkpi .salt-meter__track{display:block}
+@media (min-width:860px){
+  .adm .nglance{grid-template-columns:1fr 1fr 2.4fr;gap:12px}
+  .adm .nkpi{min-height:56px;padding:8px 16px 8px 18px}
+  .adm .nkpi--owed{grid-column:auto}
+}
 /* 22 Oct 2026: the multi-tick Approve: a card's choice lights its edge, Reject in ember; the bar sticks above the app bar */
 .adm .aphead{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .adm .aphead .salt-ghost,.adm .apticks button,.adm .apbar button,.adm .apmore{min-height:44px}
@@ -1866,9 +1880,10 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         /* 20 Oct 2026 (canvas V65, his word: every page starts the same way): no title is drawn on any place; the rail's lit tab or the App bar
            names it, and the heading stays for a reader */
         + '<h1 class="sr">Needs you</h1>'
-        + '<p class="lead" id="nCount">Reading what needs you.</p>'
-        /* 21 Oct 2026 (P7): the glance, Ready and Owed to you, read off the orders the page holds (stmt/owner.js drawGlance) */
-        + '<div id="nGlance" class="salt-glance nglance" aria-label="At a glance" hidden></div>'
+        /* 22 Oct 2026 (canvas Needs you): the lead is one Insight, what waits on his tap in money and the books that need stock (stmt/owner.js drawLead) */
+        + '<p class="salt-insight salt-insight--copper nlead" id="nCount">Reading what needs you.</p>'
+        /* the glance: Ready, To approve and Receivables, single-line KPI tiles read off the orders the page holds (stmt/owner.js drawGlance) */
+        + '<section id="nGlance" class="nglance" aria-label="At a glance" hidden></section>'
         /* 22 Oct 2026 (his word, the restock light made plain): every book's light and figures (stmt/owner.js drawStockBooks) */
         + '<section id="nStock" class="nstock" aria-label="Stock by book" hidden></section>'
         /* 21 Oct 2026 (canvas V56): the kinds on one row that slides, each with its count, and Jump to beside it, a menu of every kind */

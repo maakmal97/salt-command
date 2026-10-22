@@ -5906,7 +5906,8 @@ export const OWNER_JS = `
   /* a card before it is drawn: where it ranks (sev, then age), the chip it answers to (kind), and how it is built. n is the order it was found
      in, which settles a tie. counts false is a card on screen that no longer waits on him. */
   function item(sev, kind, word, key, at, o, tweak){
-    return {sev:sev, kind:kind, key:key, at:at||'', practice:!!o.practice, counts:o.counts!==false, n:needN++, make:function(){
+    /* 22 Oct 2026: rm, the money the card is about (its figure), and tap, the money tap it waits on (confirm or agree), which the Insight sums */
+    return {sev:sev, kind:kind, key:key, at:at||'', practice:!!o.practice, counts:o.counts!==false, n:needN++, rm:+o.rm>0?+o.rm:0, tap:o.tap||'', make:function(){
       var c=needCard(Object.assign({sev:sev, kind:kind, word:word, key:key, at:at||''}, o));
       if(tweak) tweak(c);
       return c;
@@ -6169,7 +6170,7 @@ export const OWNER_JS = `
   }
   function moneyNeed(m){
     var first=m.rows[0];
-    return item('soon','payments','Owed','$:'+m.party, m.since, {who:m.party, head:'Collect '+rm(m.rm)+' from ', what:'Past term',
+    return item('soon','payments','Owed','$:'+m.party, m.since, {who:m.party, head:'Collect '+rm(m.rm)+' from ', what:'Past term', rm:+m.rm||0, rm:+m.rm||0,
       why:'Handed over '+fmtWhen(m.since)+', due '+fmtWhen(m.due)+'.'+(m.rows.length>1?' '+m.rows.length+' orders; the oldest opens.':''),
       open:function(){ owedGo(first,'[data-sect="money"]'); }}, function(c){
       var b=ghost(['Record payment','need.owed-pay',m.party]); b.addEventListener('click', function(){ owedGo(first,'[data-sect="money"]'); }); c._add(b);
@@ -6300,7 +6301,8 @@ export const OWNER_JS = `
       /* P5: a sheet's placed orders are one card, the first's, saying how many; the others draw none */
       var shP=o.sheet?orders.filter(function(x){ return x.u===o.u&&x.sheet===o.sheet&&x.status==='placed'&&ordWaits(x); }).sort(function(a,b){ return String(a.id).localeCompare(String(b.id)); }):[];
       if(o.status==='placed'&&shP.length>1&&shP[0].id!==o.id){}
-      else if(o.status==='placed') L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, head:'Agree ', rest:shP.length>1?"'s sheet":"'s order", mark:o.product, what:shP.length>1?shP.length+' orders on one sheet':orderWhat(o), practice:t, open:to}, function(c){
+      else if(o.status==='placed') L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, head:'Agree ', rest:shP.length>1?"'s sheet":"'s order", mark:o.product, what:shP.length>1?shP.length+' orders on one sheet':orderWhat(o), practice:t, open:to,
+        rm:shP.length>1?shP.reduce(function(s,x){ return s+(+x.total||0); },0):+o.total||0, tap:'agree'}, function(c){
         /* Agree needs the delivery charge and the window, which the full card asks for, so the button opens it */
         var k=clockOf(o);
         if(k){ var nc=el('p','need-clock'+(k.late?' need-clock--late':'')); nc.setAttribute('data-clock','');
@@ -6317,14 +6319,14 @@ export const OWNER_JS = `
       }
       if(pays.length){
         var sum=pays.reduce(function(s,p){ return s+(+p.amount||0); },0), first=pays.map(function(p){ return p.at||''; }).filter(Boolean).sort()[0]||'';
-        L.push(item('now','payments','Payment','p:'+o.id, first, {who:who, head:'Confirm ', rest:"'s "+rm(sum), what:'Says they paid', practice:t, open:to}, function(c){ orderPayButton(c,o,pays); }));
+        L.push(item('now','payments','Payment','p:'+o.id, first, {who:who, head:'Confirm ', rest:"'s "+rm(sum), what:'Says they paid', practice:t, open:to, rm:sum, tap:'confirm'}, function(c){ orderPayButton(c,o,pays); }));
       }
       if(o.again&&o.again.length) L.push(item('soon','orders','Order','a:'+o.id, o.at, {who:who, head:'Send ', rest:"'s order again", mark:o.product, what:orderWhat(o),
         why:'A step you rejected waits to be sent again.', practice:t, open:to}, function(c){ mainButton(c,'Review','need.review','a:'+o.id, to); }));
     });
     waitingClaims().forEach(function(c){
       L.push(item('now','payments','Payment','c:'+c.u+':'+c.id, c.at, {who:codeByUser(c.u), head:'Confirm ', rest:"'s "+rm(c.amount), what:'Says they paid',
-        practice:!!c.test, open:goPlace('orders','payments')}, function(card){ claimPayButton(card,c); }));
+        practice:!!c.test, open:goPlace('orders','payments'), rm:+c.amount||0, tap:'confirm'}, function(card){ claimPayButton(card,c); }));
     });
     makerThreads.filter(makerThreadAsked).forEach(function(t){ L.push(threadNeed(t)); });
     real.filter(function(a){ return a.account&&a.locked; }).forEach(function(a){ L.push(lockNeed(a)); });
@@ -6393,14 +6395,37 @@ export const OWNER_JS = `
     nFail.firstChild.textContent='Couldn\\'t read '+andList(bad)+'.';
     if(!needsReading){ nRetry.disabled=false; nRetry.textContent='Retry'; }
   }
-  /* the line under the title: Now and Soon as counted, as at the time of drawing; with a read failed it never says nothing needs him */
+  /* 22 OCT 2026 (canvas Needs you): THE LEAD IS ONE INSIGHT. What waits on his tap in money, summed off the cards that wait on a money tap of his (a payment
+     they say they sent, to confirm; an order placed, to agree), then the books that need stock off STOCK's lights (red out, yellow promised past the shelf,
+     by what is agreed over it). With nothing in money it counts what waits on him; with a read failed it never says nothing needs him. Written only when it differs. */
+  function rmShort(n){ var v=Math.round((+n||0)*100)/100; return 'RM '+v.toLocaleString('en-MY',{minimumFractionDigits:v%1?2:0,maximumFractionDigits:2}); }
+  var SAY_N=['no','one','two','three','four','five','six','seven','eight','nine'];
+  function sayN(n){ return SAY_N[n]||String(n); }
+  function stockNeeds(){
+    var books=glanceStock&&glanceStock.books, out=0, past=[];
+    if(books) Object.keys(books).forEach(function(p){ var b=books[p]; if(!b||typeof b.shelf!=='number') return;
+      if(b.light==='red') out++; else if(b.light==='yellow') past.push(Math.max(0,(+b.commit||0)-(+b.shelf||0))); });
+    return {out:out, past:past};
+  }
   function drawLead(items){
     var bad=needsBad(); drawFail(bad);
-    if(!needsReady()){ nCount.textContent='Reading what needs you.'; return; }
-    var now=0, soon=0;
-    items.forEach(function(i){ if(i.practice||!i.counts) return; if(i.sev==='now') now++; else if(i.sev==='soon') soon++; });
-    nCount.textContent=now||soon?[now?now+' to do now':'', soon?soon+' soon':''].filter(Boolean).join(' · ')
-      :bad.length?'Nothing in what could be read.':'Nothing needs you.';
+    var parts=[];
+    if(!needsReady()) parts.push(['','Reading what needs you.']);
+    else {
+      var conf=0, agree=0, todo=0;
+      items.forEach(function(i){ if(i.practice||!i.counts||i.sev!=='now') return; todo++; if(i.tap==='confirm') conf+=i.rm; else if(i.tap==='agree') agree+=i.rm; });
+      var says=[conf>0.004?rmShort(conf)+' to confirm':'', agree>0.004?rmShort(agree)+' to agree':''].filter(Boolean);
+      if(says.length) parts.push([rmShort(conf+agree),' waits on your tap now: '+says.join(', ')+'.']);
+      else if(todo) parts.push([String(todo),todo===1?' thing waits on your tap now.':' things wait on your tap now.']);
+      else parts.push(['',bad.length?'Nothing in what could be read.':'Nothing needs you.']);
+      var s=stockNeeds(), n=s.out+s.past.length;
+      if(n) parts.push([n+(n===1?' book':' books'),(n===1?' needs':' need')+' stock: '+[s.out?sayN(s.out)+(s.out===1?' is out':' are out'):'',
+        s.past.length===1?'one is promised '+units(s.past[0])+' past its shelf':s.past.length?sayN(s.past.length)+' are promised past their shelf':''].filter(Boolean).join(', ')+'.']);
+    }
+    var sig=JSON.stringify(parts);
+    if(nCount.getAttribute('data-sig')===sig) return;
+    nCount.setAttribute('data-sig',sig); nCount.textContent='';
+    parts.forEach(function(p,k){ if(k) nCount.appendChild(document.createTextNode(' ')); if(p[0]) nCount.appendChild(el('b',null,p[0])); nCount.appendChild(document.createTextNode(p[1])); });
   }
   function drawNeeds(){
     if(!nlist) return;
@@ -6454,61 +6479,52 @@ export const OWNER_JS = `
       b.disabled=none; b.classList.toggle('salt-jump__item--none', none); b.setAttribute('aria-current', k===nKind?'true':'false');
     });
   }
-  /* 21 Oct 2026 (P7): THE GLANCE heads Needs you. Ready: the orders ready with goods still to hand over, as Orders' Ready stage holds them. Owed
-     to you: what the agreed orders still owe, their goods and delivery less what is paid, summed. Read off the orders the page holds and nothing
-     else; a practice order counts only on the practice surface. Each tile opens Orders at its stage. */
+  /* 21 Oct 2026 (P7): THE GLANCE heads Needs you. 22 Oct 2026 (canvas Needs you): three single-line KPI tiles, each a link to Orders. Ready (brass): the
+     orders ready with goods still to hand over, as Orders' Ready stage holds them. To approve (copper): the cards waiting under Approve. Receivables
+     (verdigris, his word, was Owed to you): what the agreed orders still owe, their goods and delivery less what is paid, summed, with a meter of what
+     they have paid of what they come to. Read off the orders the page holds and nothing else; a practice order counts only on the practice surface. */
   function drawGlance(){
     var g=document.getElementById('nGlance'); if(!g) return;
+    stockRead();
     if(!makerData){ g.hidden=true; return; }
-    var ready=0, owe=0, oweN=0;
+    var ready=0, owe=0, due=0;
     (makerData.orders||[]).forEach(function(o){
       if(o.test&&!TESTING) return;
       if(orderPartsOf(o)==='orders.ready') ready++;
       if(['acknowledged','ready','done'].indexOf(o.status)<0||o.writtenOff) return;
-      var left=(+o.total||0)+(+o.delivery||0)-(+o.paid||0);
-      if(left>0.004){ owe+=left; oweN++; }
+      var comes=(+o.total||0)+(+o.delivery||0), left=comes-(+o.paid||0);
+      due+=comes; if(left>0.004) owe+=left;
     });
-    var tiles=[['#orders/ready','ready','Ready',String(ready),ready?'To hand over':'Nothing to hand over'],
-      ['#orders','owed','Owed to you',rm(owe),oweN?oweN+(oweN===1?' agreed order':' agreed orders'):'Nothing owed']].concat(glanceStockTiles())
-      .concat([['#orders/approve','approve','To approve',String(draftGroups(pendingRows()).length),'On Orders']]);
+    var paid=Math.max(0,due-owe), fill=due>0.004?Math.round(paid/due*100):0;
+    var tiles=[['#orders/ready','ready','Ready',String(ready),'brass'],['#orders/approve','approve','To approve',String(draftGroups(pendingRows()).length),'copper'],
+      ['#orders','owed','Receivables',rmShort(owe),'verdigris',fill,rmShort(paid),rmShort(due)]];
     var sig=JSON.stringify(tiles);
     g.hidden=false;
     if(g.getAttribute('data-sig')===sig) return;
     g.setAttribute('data-sig',sig); g.textContent='';
     tiles.forEach(function(t){
-      var a=el(t[0]?'a':'div','salt-glance__item'); a.setAttribute('data-glance',t[1]);
-      if(t[0]){ a.href=t[0]; a.setAttribute('data-act','need.glance.'+t[1]); }
-      if(t[6]) a.title=t[6];
-      var label=el('span','salt-glance__label',t[2]); if(t[5]) label.appendChild(bookMark(t[5],20));
-      a.appendChild(label); a.appendChild(el('span','salt-glance__value',t[3])); a.appendChild(el('span','salt-glance__note',t[4]));
+      var a=el('a','salt-kpi salt-kpi--'+t[4]+' nkpi'); a.href=t[0]; a.setAttribute('data-glance',t[1]); a.setAttribute('data-act','need.glance.'+t[1]);
+      a.appendChild(el('span','salt-kpi__label',t[2]));
+      if(t[5]!=null){
+        a.classList.add('nkpi--owed'); a.setAttribute('aria-label',t[2]+', '+t[3]+': '+t[6]+' paid of '+t[7]+' agreed');
+        var m=el('span','salt-meter salt-meter--verdigris'), tr=el('span','salt-meter__track'), f=el('span','salt-meter__fill');
+        m.setAttribute('aria-hidden','true'); f.style.setProperty('--salt-fill',String(t[5])); tr.appendChild(f); m.appendChild(tr); a.appendChild(m);
+      }
+      a.appendChild(el('span','salt-kpi__value',t[3]));
       g.appendChild(a);
     });
   }
   function drawGlanceAll(){ drawGlance(); drawStockBooks(); }
-  /* 21 Oct 2026 (canvas V62, his word "stock count, stock expected dates should be here"): STOCK COVER AND NEXT LOT, beside Ready and Owed to
-     you, for the book with the least cover, a book with nothing free first, its mark by the title. The figures are the Desk's (the master
-     measures them at each version, GET /all/maker/stock), the day the next lot is expected his own from Stock. Read once a page open; a failed
-     read says so with a dash and is asked again five minutes on. The day they were measured is the tile's title, never called today. Not tap
-     targets. */
+  /* 21 Oct 2026 (canvas V62, his word "stock count, stock expected dates should be here"): THE STOCK, the Desk's figures (the master measures them at each
+     version, GET /all/maker/stock), the day the next lot is expected his own from Stock. Read once a page open; a failed read is asked again five minutes on.
+     22 Oct 2026 (canvas Needs you): Stock cover and Next lot left the glance; Stock by book carries both for every book, and the Insight says which need stock. */
   var glanceStock=null, glanceStockOut=false, glanceStockFailed=0;
   function glanceDay(iso){ return new Date(iso+'T04:00:00Z').toLocaleDateString('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'short'}); }
-  function glanceStockTiles(){
-    if(!glanceStock&&!glanceStockOut&&Date.now()-glanceStockFailed>300000){
-      glanceStockOut=true;
-      refs('/all/maker/stock').then(function(j){ glanceStock=j; glanceStockFailed=0; },function(){ glanceStockFailed=Date.now(); })
-        .then(function(){ glanceStockOut=false; drawGlanceAll(); });
-    }
-    var said=glanceStockOut&&!glanceStockFailed?'Reading':'Could not be read';
-    var none=[[null,'stock','Stock cover','–',said],[null,'lot','Next lot','–',said]];
-    var books=glanceStock&&glanceStock.books, ids=books?Object.keys(books).filter(function(p){ return books[p]&&typeof books[p].shelf==='number'; }):[];
-    if(!ids.length) return none;
-    var rank=function(b){ return [(+b.free||0)<=0.009?0:1, b.coverDays==null?Infinity:+b.coverDays]; };
-    var p=ids.slice().sort(function(x,y){ var a=rank(books[x]), c=rank(books[y]); return a[0]-c[0]||a[1]-c[1]; })[0], b=books[p];
-    var free=+b.free||0, by=glanceStock.by&&glanceStock.by[p], transit=+b.transit||0;
-    var cover=(free<=0.009?'0 d':b.coverDays==null?'over 4 wk':b.coverDays+' d').replace(/ /g,' ');
-    var measured=glanceStock.today?'As measured on '+glanceDay(glanceStock.today):'';
-    return [[null,'stock','Stock cover',units(b.shelf),units(free)+' free · '+cover,p,measured],
-      [null,'lot','Next lot',by?glanceDay(by):'–',transit>0.009?units(transit)+' expected':by?'Nothing on the way yet':'Nothing on the way',p,measured]];
+  function stockRead(){
+    if(glanceStock||glanceStockOut||Date.now()-glanceStockFailed<=300000) return;
+    glanceStockOut=true;
+    refs('/all/maker/stock').then(function(j){ glanceStock=j; glanceStockFailed=0; },function(){ glanceStockFailed=Date.now(); })
+      .then(function(){ glanceStockOut=false; drawGlanceAll(); redrawLead(); });
   }
   /* 22 OCT 2026 (his word, the restock light made plain): STOCK BY BOOK under the glance, every book, the worst light first and then the least
      cover: its mark, the light in the Counter's own words and colour, then the Desk's figures, the shelf, what is agreed, what is free, the days of
@@ -6595,7 +6611,7 @@ export const OWNER_JS = `
     if((sheet||nSrc.sheet)&&!sheetBusy) jobs.push(loadSheet(true));
     if((linksRead||nSrc.links)&&!linksBusy) jobs.push(loadLinks(true));
     /* 22 Oct 2026: the poll's tick reads the stock again (Stock by book), a failure keeping what was read */
-    if(tick&&glanceStock&&!glanceStockOut) jobs.push(refs('/all/maker/stock').then(function(j){ glanceStock=j; drawGlanceAll(); },function(){}));
+    if(tick&&glanceStock&&!glanceStockOut) jobs.push(refs('/all/maker/stock').then(function(j){ glanceStock=j; drawGlanceAll(); redrawLead(); },function(){}));
     Promise.all(jobs).then(function(){ needsAt=Date.now(); }, function(){}).then(function(){ needsReading=false; if(!tick||needSig()!==sig0) redrawLead(); });
   }
   /* what Watch shows: the hours with an override in force, and the notice */
