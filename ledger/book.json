@@ -840,6 +840,9 @@
     },
     "CZ5-TM": {
       "salt": -0.2
+    },
+    "CS6-PER": {
+      "salt": -0.05
     }
   },
   "PEOPLE": {
@@ -959,7 +962,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-10-22T17:34:52.926Z",
+  "QUEUE_COMMITTED": "2026-10-22T17:37:36.816Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},

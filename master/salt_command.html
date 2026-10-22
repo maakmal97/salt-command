@@ -9679,6 +9679,9 @@ const TIER_OF={
   },
   "CZ5-TM": {
     "salt": -0.2
+  },
+  "CS6-PER": {
+    "salt": -0.05
   }
 };
 const PEOPLE={
@@ -9804,7 +9807,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-10-22T17:34:52.926Z";
+const QUEUE_COMMITTED="2026-10-22T17:37:36.816Z";
 /* <b>BOARD SIZES CHANGED ON 19 OCT: SALT, 3.5 AND 4.5 UNIT HIDDEN.</b> Counter Admin decided this at 15:38. The entry reads "Board sizes on salt: hiding 3.5 unit, 4.5 unit" and sets 0 prices, so no rate is set against the desk's floor or ask and no party is involved. The board's own price remains the ask at every size. The drafter flagged that two sizes leave the board; that is exactly what the entry does, and both stay priceable at the counter and off a quote, they simply stop being printed. The row moves no stock, no cash and no ledger row, so it carries no cost and nothing is left outstanding. */
 /* RETIRED AT v656 on 2026-09-16, his decision of 15 Sep off the pricing workbook: the board is the ladder, so a stated price no longer decides it and oil's five are cleared rather than left unread. The stranger's ask on oil moves from his RM130, 240, 330, 400 and 450 to Bronze at RM230, 440, 650, 850 and 1,040, with 80 and 100 unit at RM1,640 and RM2,000. The old five sat a hair over break-even (the 50 unit tier read 0.93x, RM32.20 UNDER its floor) because they were typed in July against a cost that has moved since; the ladder is struck on today's COGS and moves with it. No customer's price moves with this: every named customer is quoted their own tier capped at what they pay, and a stranger has no history to cap against. The hide list is untouched and still takes a size off the board. */
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
@@ -10876,7 +10879,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1222","d":"23 Oct 2026","t":"CZ5-TM SALT SET 20% OFF THE BOARD PRICE","n":["<b>ONE TIER SET FOLDED.</b> CZ5-TM's salt figure now stands at 20% off, set on 22 Oct and decided by Counter Admin. It moves no cash and no stock, and it changes that party's own price only, never the board.","<b>INVENTORY UNCHANGED.</b> Stock stays at 5 units against a ledger of 106.34, of which 101.34 is self use. Stock cost stays at RM56 a unit, replacement cost RM60, nothing owed out and nothing promised."]}];
+const evolution=[{"v":"v1223","d":"23 Oct 2026","t":"CS6-PER SALT SET AT 5% OFF","n":["<b>ONE TIER SETTING FOLDED.</b> The batch holds a single row: CS6-PER's salt figure is now 5% off the set price. It moves no cash and no stock, and the board price is untouched, because a percentage lift changes only that party's own price. Nothing unusual came up, and the drafter raised no flags.","<b>INVENTORY UNCHANGED.</b> Stock stays at 5 units against a ledger of 106.34, of which 101.34 is self-use. Stock cost stays at RM56 a unit and replacement cost at RM60. Nothing is owed out or promised, and no loans are open."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11024,7 +11027,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='23 Oct 2026, 01:35 KL';
+const LAST_UPDATED='23 Oct 2026, 01:38 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
