@@ -1,0 +1,44 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-22T17:34:52.926Z",
+   "status": "approved",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CZ5-TM": {
+      "salt": -0.2
+     }
+    },
+    "unit": "pct"
+   },
+   "reasoning": "Sets their % for 1 customer: CZ5-TM Salt 20% off. It moves no cash and no stock; a % lift moves that customer's own price and never the board.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-22T17:34:52.926Z",
+    "type": "TIER",
+    "party": "CZ5-TM",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CZ5-TM: salt -20% lift",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CZ5-TM": {
+       "salt": -0.2
+      }
+     },
+     "unit": "pct"
+    },
+    "makerRequest": "8784bb4183d1597ef86a83a6eb0518f162b232a2a9e9bb4894ebe5c757a744a7"
+   },
+   "decidedAt": "2026-10-22T17:35:05.809Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
