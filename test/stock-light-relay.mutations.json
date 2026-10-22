@@ -1,0 +1,12 @@
+[
+ {"name":"no light in the snapshot","file":"tools/book.mjs","find":"light:POSITION_ENGINE.restockLight(currentStock,cu),","replace":""},
+ {"name":"the light always green","file":"tools/book.mjs","find":"light:POSITION_ENGINE.restockLight(currentStock,cu),","replace":"light:'green',"},
+ {"name":"the light asked the wrong way round","file":"tools/book.mjs","find":"light:POSITION_ENGINE.restockLight(currentStock,cu),","replace":"light:POSITION_ENGINE.restockLight(cu,currentStock),"},
+ {"name":"the light asked of the free units","file":"tools/book.mjs","find":"light:POSITION_ENGINE.restockLight(currentStock,cu),","replace":"light:POSITION_ENGINE.restockLight(currentStock-defUnits,cu),"},
+ {"name":"the Desk drops the light","file":"src/maker-inputs.js","find":"transit: n(b.transit), ...light(b.light) };","replace":"transit: n(b.transit) };"},
+ {"name":"the Desk carries any word","file":"src/maker-inputs.js","find":"const light = (l) => (l === \"green\" || l === \"yellow\" || l === \"red\" ? { light: l } : {});","replace":"const light = (l) => (l ? { light: l } : {});"},
+ {"name":"the Desk drops red","file":"src/maker-inputs.js","find":"const light = (l) => (l === \"green\" || l === \"yellow\" || l === \"red\" ? { light: l } : {});","replace":"const light = (l) => (l === \"green\" || l === \"yellow\" ? { light: l } : {});"},
+ {"name":"the relay drops the light","file":"stmt/maker.js","find":"      ...(b && (b.light === \"green\" || b.light === \"yellow\" || b.light === \"red\") ? { light: b.light } : {}) };","replace":"    };"},
+ {"name":"the relay carries any word","file":"stmt/maker.js","find":"      ...(b && (b.light === \"green\" || b.light === \"yellow\" || b.light === \"red\") ? { light: b.light } : {}) };","replace":"      ...(b && b.light ? { light: b.light } : {}) };"},
+ {"name":"the example has no light","file":"stmt/maker.js","find":"transit: 20, light: \"green\" } } };","replace":"transit: 20 } } };"}
+]

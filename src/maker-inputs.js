@@ -788,7 +788,9 @@ export function makerLedgerMini(book, recent = 20) {
 
 /** 20 Oct 2026 (canvas V62): Salt Admin's glance, the stock of each book as the desk measured it (STOCK, tools/book.mjs stockSnapshot),
  *  carried as it is and computed by nothing here: five figures a book, each a number or null, the books in the PRICING snapshot's order,
- *  and the desk's day. No lot, supplier or customer travels. */
+ *  and the desk's day. No lot, supplier or customer travels. 22 Oct 2026: and the light (restockLight, measured with them) when it is one
+ *  of the three; a STOCK seeded before it carries none. */
+const light = (l) => (l === "green" || l === "yellow" || l === "red" ? { light: l } : {});
 export function makerStock(book) {
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
   const S = book.state.STOCK;
@@ -798,7 +800,7 @@ export function makerStock(book) {
   const books = {};
   for (const p of order) {
     const b = S.books[p];
-    if (object(b)) books[p] = { shelf: n(b.shelf), free: n(b.free), commit: n(b.commit), coverDays: n(b.coverDays), transit: n(b.transit) };
+    if (object(b)) books[p] = { shelf: n(b.shelf), free: n(b.free), commit: n(b.commit), coverDays: n(b.coverDays), transit: n(b.transit), ...light(b.light) };
   }
   return { today: typeof S.today === "string" && /^\d{4}-\d{2}-\d{2}$/.test(S.today) ? S.today : null, books };
 }

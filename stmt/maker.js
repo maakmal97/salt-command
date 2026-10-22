@@ -405,11 +405,12 @@ function internalOperation(path) {
 /* 20 Oct 2026 (canvas V62): THE GLANCE'S STOCK, the Desk's STOCK figures a book as they came (the desk measured them; nothing here does),
    and beside each the day he expects its next lot from this site's own KV `expected` (F4, set from the Desk's Stock), kept only while it is
    today or later in Kuala Lumpur: expectedSet drops a passed day only when the next one is set. */
-const EXAMPLE_STOCK = { ok: true, today: null, books: { salt: { shelf: 12, free: 9, commit: 5, coverDays: 6, transit: 20 } } };
+const EXAMPLE_STOCK = { ok: true, today: null, books: { salt: { shelf: 12, free: 9, commit: 5, coverDays: 6, transit: 20, light: "green" } } };
 function stockWithDates(desk, expected, test) {
   const today = klDay(new Date().toISOString()), books = {}, by = {};
   for (const [p, b] of Object.entries(desk && desk.books && typeof desk.books === "object" ? desk.books : {})) {
-    books[p] = { shelf: b && b.shelf, free: b && b.free, commit: b && b.commit, coverDays: b && b.coverDays, transit: b && b.transit };   /* the five figures and nothing else, on this side too */
+    books[p] = { shelf: b && b.shelf, free: b && b.free, commit: b && b.commit, coverDays: b && b.coverDays, transit: b && b.transit,
+      ...(b && (b.light === "green" || b.light === "yellow" || b.light === "red") ? { light: b.light } : {}) };   /* the five figures and the light (22 Oct 2026), nothing else */
     const v = expected && typeof expected === "object" ? expected[p] : null;
     by[p] = typeof v === "string" && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(v) && v >= today ? v : null;
   }

@@ -50220,6 +50220,11 @@ await (async () => {
   await (await import("./admin-glance-stock.mjs")).run({ ok, pageWork });
 })();
 
+section("The restock light made plain, P1: each book's light in STOCK, carried by the Desk and the Counter's relay (22 Oct 2026)");
+await (async () => {
+  await (await import("./stock-light-relay.mjs")).run({ ok });
+})();
+
 section("Salt Admin A to C: Help read only on Shop hours, the customer's four answers (21 Oct 2026)");
 await (async () => {
   await (await import("./admin-ac-help.mjs")).run({ ok, pageWork });
