@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="89aff809fddd601a";
+var SALT_BUILD_ID="180a61bdaea6b2d7";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -11043,7 +11043,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1209","d":"22 Oct 2026","t":"TWO FULFILMENTS FOR CS6-PER SETTLE S284 AND S282","n":["<b>TWO FULFILMENTS FOLDED.</b> Both amend CS6-PER's orders of 21 Oct: s284 (5 unit of rice, RM35, already paid) is handed over and s282 (salt, RM25 delivery charge) is paid. Each settles its order in full, with nothing left outstanding on either.","<b>UNUSUAL.</b> s284 was marked delivered with 0 of 5 unit moved, so this fulfilment is what actually moves the rice. The inventory draws 5 unit of rice and nothing else moves. Salt stock stays as it was, because s282 is a payment only."]}];
+const evolution=[{"v":"v1210","d":"22 Oct 2026","t":"THE RESTOCK LIGHT MADE PLAIN: AVAILABILITY ON HOME, STOCK BY BOOK ON SALT ADMIN","n":["<b>HIS WORD OF 22 OCT 2026.</b> The coloured outline round a product's mark was too easy to miss. Salt Counter's Home now carries Availability above New order: a row for each book, its mark in the light's border and the light in words, Available, Limited or Out of stock, with More by DD Mon under Limited or Out of stock when a day is set. No figure. A row opens Prices at that book.","<b>PRICES SAYS IT TOO.</b> The border is 3px and the same word stands under the mark. The word stock may now appear on the Counter (his answer, reversing the ban of 05 Oct 2026).","<b>SALT ADMIN, STOCK BY BOOK.</b> Under Needs you's glance, every book, the worst light first and then the least cover, with its light and the Desk's figures: the shelf, what is agreed, what is free, the days of cover and the next lot's units and day. The light is measured with those figures at each version, by the same rule the Counter reads, and the card is read again on each tick of the Needs you poll. Ordering is never refused, and nothing prices from it."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11191,7 +11191,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='22 Oct 2026, 11:18 KL';
+const LAST_UPDATED='22 Oct 2026, 03:29 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
