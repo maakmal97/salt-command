@@ -48613,7 +48613,7 @@ await (async () => {
   await (await import("./counter-bar-live.mjs")).run({ ok, pageWork });
 })();
 
-section("21 Oct 2026: Salt Admin's bar says where he is and what waits");
+section("21 Oct 2026: Salt Admin's bar says what waits, and since 22 Oct 2026 not where he is");
 await (async () => {
   await (await import("./admin-bar-live.mjs")).run({ ok, pageWork });
 })();

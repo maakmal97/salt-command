@@ -143,7 +143,6 @@ export const OWNER_JS = `
     if(PART_READ[placeNow+'.'+partNow]) PART_READ[placeNow+'.'+partNow]();
     if(o.push){ var to=addrFor(placeNow, partNow); if(location.hash!==to){ try{ history.pushState(null,'',to); }catch(e){} } }
     if(fresh){ try{ window.scrollTo(0,0); }catch(e){} }
-    barWhere();
     needsWatch();
   }
   /* Back, Forward and an address typed in: the place the address names, and nothing written back. Not while an account is viewed
@@ -1026,9 +1025,11 @@ export const OWNER_JS = `
   /* Live follows the hours read alone, so a tick where some reads fail and others get through does not flip it back and forth */
   var barNet=navigator.onLine!==false, BAR_READ='/all/maker/hours';
   function barWhen(iso){
-    var f=function(d){ var p={}; new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short',hourCycle:'h23'})
+    var f=function(d){ var p={}; new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short',weekday:'short',hourCycle:'h23'})
       .formatToParts(d).forEach(function(x){ p[x.type]=x.value; }); return p; };
-    try{ var a=f(new Date(iso)), n=f(new Date()); return a.day===n.day&&a.month===n.month?a.hour+':'+a.minute:a.day+' '+a.month; }catch(e){ return ''; }
+    /* 22 Oct 2026: today its time, within six days the weekday and the time (Thu 09:00), further off the day */
+    try{ var t=new Date(iso), a=f(t), n=f(new Date()), hm=a.hour+':'+a.minute;
+      return a.day===n.day&&a.month===n.month?hm:t.getTime()-Date.now()<6*86400000?a.weekday+' '+hm:a.day+' '+a.month; }catch(e){ return ''; }
   }
   function barDraw(){
     var live=document.getElementById('aBarLive'), hrs=document.getElementById('aBarHours'); if(!live||!hrs) return;
@@ -1040,15 +1041,18 @@ export const OWNER_JS = `
       live.title=on?'Online: the Counter answered his last read.':'Offline: this device cannot reach the Counter just now.';
       live.innerHTML='<i></i><span>'+(on?'Live':'Offline')+'</span>';
     }
-    var h=makerHours&&makerHours.status, at=h&&(h.open?h.nextChange:h.nextOpen), txt='';
+    var h=makerHours&&makerHours.status, at=h&&(h.open?h.nextChange:h.nextOpen), txt='', tone='';
     if(h&&typeof h.open==='boolean'&&!(at&&Date.parse(at)<=Date.now())){
-      var w=at?barWhen(at):'';
-      txt=h.open?'Open'+(w?' until '+w:''):'Closed'+(w?', opens '+w:'');
+      /* 22 Oct 2026 (canvas Needs you): Open, Closed, or Paused for a shop shut by his override for now, each to its next change */
+      var w=at?barWhen(at):'', paused=!h.open&&h.source==='manual';
+      tone=h.open?'':paused?' ashop--paused':' ashop--closed';
+      txt=(h.open?'Open':paused?'Paused':'Closed')+(w?' to '+w:'');
     }
-    /* 20 Oct 2026 (canvas V26): the words and a brass chevron, named with what a tap does */
-    if(hrs.getAttribute('data-txt')!==txt){
-      hrs.setAttribute('data-txt',txt); hrs.textContent='';
-      hrs.appendChild(el('span',null,txt)); hrs.appendChild(bandIcon('M9 6 L15 12 L9 18'));
+    /* the glowing dot and the words, named with what a tap does */
+    if(hrs.getAttribute('data-txt')!==txt+tone){
+      hrs.setAttribute('data-txt',txt+tone); hrs.className='salt-status ashop'+tone;
+      hrs.innerHTML='<svg class="salt-status__glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"></circle></svg>';
+      hrs.appendChild(el('span',null,txt));
       hrs.setAttribute('aria-label',txt+'. Tap to change');
     }
     if(hrs.hidden===!!txt) hrs.hidden=!txt;
@@ -6354,16 +6358,8 @@ export const OWNER_JS = `
     setCount('customers', makerThreads.filter(function(t){ return !t.test&&makerThreadAsked(t); }).length+links.filter(waitingLink).length);
     barLive(draftGroups(pendingRows()).length);
   }
-  /* 21 OCT 2026, HIS WORD: THE BAR WAS BARE. Where he is (the place, the part under it), then the same figures the rail counts and the rows to
-     approve, each a chip that goes to its place, as the Desk's bar carries them. Written only when it differs (R4). */
-  function barWhere(){
-    var v=document.getElementById('aWhereView'), p=document.getElementById('aWherePage'); if(!v||!p) return;
-    var t=document.querySelector('.place[data-m="'+placeNow+'"]:not([data-p]) .salt-appbar__place span:last-child');
-    var b=partNow&&document.querySelector('.aparts[data-place="'+placeNow+'"] [data-part="'+partNow+'"]');
-    var vt=t?t.textContent:'', pt=b&&b.firstChild?String(b.firstChild.textContent||''):'';
-    if(v.textContent!==vt) v.textContent=vt;
-    if(p.textContent!==pt) p.textContent=pt;
-  }
+  /* 21 OCT 2026, HIS WORD: THE BAR WAS BARE. The same figures the rail counts and the rows to approve, each a chip that goes to its place, as the
+     Desk's bar carries them. Written only when it differs (R4). 22 Oct 2026, his comment: where he is is not said on Salt Admin ("not required"). */
   function barLive(rows){
     var box=document.getElementById('aBarChips'); if(!box) return;
     /* the rail's own figures, as setCount drew them, so the bar and the rail can never differ */

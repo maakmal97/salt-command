@@ -792,10 +792,21 @@ body.ended>*:not(#aEnded){display:none}
 .adm .aring svg{width:22px;height:22px}
 /* 18 Oct 2026: no rail of his carries a brand; the name stands in the Desk bar, the ring and the name, the clock under it */
 .adm .abartext{display:flex;flex-direction:column;gap:6px;min-width:0;overflow:hidden}
-/* 20 Oct 2026 (canvas V26, his yes): the shop's hours in the bar are a control to Shop hours, a chip of 44px */
-.adm .abarhours{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;margin:0;border-radius:var(--salt-radius-pill);background:var(--salt-slate);border:1px solid var(--salt-line);color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit;cursor:pointer}
-.adm .abarhours[hidden]{display:none}
-.adm .abarhours svg{width:12px;height:12px;fill:none;stroke:var(--salt-brass);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* 22 Oct 2026 (canvas Needs you, his words "a status with colour at the top end", "more vibrant glowing"): THE HOURS ARE A GLOWING STATUS CHIP at the
+   bar's top right, a 44px button to Shop hours: verdigris Open, ember Closed, brass Paused (an override for now). Its dot breathes, and stands still
+   under reduced motion. The bar is 12px all round, and under 820px what waits takes its row inside that padding. */
+.adm .abar{padding:12px}
+.adm .abar .salt-deskbar__brand{flex-wrap:nowrap;min-width:0}
+.adm .abar .salt-deskbar__name{white-space:nowrap}
+@container salt-deskbar (max-width:820px){.adm .abar .salt-deskbar__live{margin:0;padding:12px 0 0}}
+.adm .ashop{--salt-status-tone:var(--salt-verdigris);flex:none;align-self:flex-start;margin:0 0 0 auto;display:inline-flex;align-items:center;min-height:var(--salt-tap);padding:0 12px;white-space:nowrap;cursor:pointer;
+  background:color-mix(in srgb,var(--salt-status-tone) 16%,transparent);box-shadow:0 0 14px color-mix(in srgb,var(--salt-status-tone) 50%,transparent),inset 0 0 8px color-mix(in srgb,var(--salt-status-tone) 22%,transparent)}
+.adm .ashop[hidden]{display:none}
+.adm .ashop--closed{--salt-status-tone:var(--salt-ember)}
+.adm .ashop--paused{--salt-status-tone:var(--salt-brass)}
+.adm .ashop svg{fill:currentColor;filter:drop-shadow(0 0 4px var(--salt-status-tone));animation:ashopglow 2.4s ease-in-out infinite}
+@keyframes ashopglow{50%{opacity:.45}}
+@media (prefers-reduced-motion:reduce){.adm .ashop svg{animation:none}}
 .salt-rail__tab .salt-appbar__place{color:inherit}
 .adm #mFoot:empty{display:none}
 .adm .afind{display:flex;flex-direction:column;gap:12px;margin:0 0 16px}
@@ -1823,11 +1834,12 @@ export function landingPage(user, nonce, owner, bulletin, test) {
       ? '<div id="roster" class="gate adm">'
         /* 20 Oct 2026 (canvas V32): the bar heads the whole shell, the rail and the column under it, so from 1080px it spans both */
         + '<header class="salt-deskbar abar"><div class="salt-deskbar__brand"><span class="aring">' + aico("key") + '</span>'
-        + '<div class="abartext"><div class="salt-deskbar__name">Salt Admin</div><div class="salt-deskbar__meta"><span class="abarlive" id="aBarLive"></span><button type="button" class="abarhours" id="aBarHours" data-act="bar.hours" hidden></button><span class="clk" data-clock></span></div></div></div>'
-        /* 21 Oct 2026, his word: the bar was bare. Where he is, then what waits, as the Desk's bar: each a chip to its place, Approve brass
-           with its rows (barLive in stmt/owner.js) */
-        + '<div class="salt-deskbar__live"><div class="salt-deskbar__where" aria-live="polite"><span class="salt-deskbar__view" id="aWhereView"></span>'
-        + '<span class="salt-deskbar__page" id="aWherePage"></span></div><div class="salt-deskbar__chips" id="aBarChips" role="group" aria-label="Waiting"></div></div></header>'
+        + '<div class="abartext"><div class="salt-deskbar__name">Salt Admin</div><div class="salt-deskbar__meta"><span class="abarlive" id="aBarLive"></span><span class="clk" data-clock></span></div></div>'
+        /* 22 Oct 2026 (canvas Needs you): the hours are a glowing status chip at the bar's top right, a 44px button to Shop hours (barDraw in stmt/owner.js) */
+        + '<button type="button" class="salt-status ashop" id="aBarHours" data-act="bar.hours" hidden></button></div>'
+        /* 21 Oct 2026, his word: the bar was bare. What waits, as the Desk's bar: each a chip to its place, Approve brass with its rows (barLive in
+           stmt/owner.js). 22 Oct 2026, his comment: no where-you-are on Salt Admin, "not required"; the rail and the App bar say it */
+        + '<div class="salt-deskbar__live"><div class="salt-deskbar__chips" id="aBarChips" role="group" aria-label="Waiting"></div></div></header>'
         /* S9 9.2: HIS PLACES, the phone's App bar and, from 1080px, the Desk rail the bar gives way to (the
            system's own switch): Needs you, Orders, Customers, Record and Shop (his decision of 11 Oct 2026). A count beside a
            place is what waits there. */

@@ -10,9 +10,10 @@ export async function run({ ok }) {
   process.on("unhandledRejection", swallow);
   /* an hour on, unless that crosses midnight in Kuala Lumpur, when the until line says the day instead */
   const soon = new Date(Date.now() + 60 * 60 * 1000), sameDay = kl(soon, { day: "2-digit" }).day === kl(new Date(), { day: "2-digit" }).day;
-  const t = kl(soon, { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" });
-  const until = sameDay ? t.hour + ":" + t.minute : t.day + " " + t.month;
-  const next = new Date(Date.now() + 36 * 60 * 60 * 1000), n = kl(next, { day: "2-digit", month: "short" });
+  /* 22 Oct 2026 (canvas Needs you): today its time; within six days the weekday and the time */
+  const t = kl(soon, { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short", weekday: "short" });
+  const until = sameDay ? t.hour + ":" + t.minute : t.weekday + " " + t.hour + ":" + t.minute;
+  const next = new Date(Date.now() + 36 * 60 * 60 * 1000), n = kl(next, { hour: "2-digit", minute: "2-digit", weekday: "short" });
   let status = { open: true, source: "schedule", nextChange: soon.toISOString(), nextOpen: null }, mode = "ok";
   const reads = [];
   const answer = (body, code = 200) => ({ ok: code === 200, status: code, type: "basic", json: async () => body, text: async () => JSON.stringify(body) });
@@ -32,15 +33,27 @@ export async function run({ ok }) {
     const D = dom.window.document, live = D.getElementById("aBarLive"), hrs = D.getElementById("aBarHours");
     ok(!!live && live.className === "abarlive on" && live.textContent === "Live",
       "Salt Admin's bar reads Live, the dot lit, while his reads reach the Counter: " + JSON.stringify(live && [live.className, live.textContent]));
-    ok(!!hrs && !hrs.hidden && hrs.textContent === "Open until " + until,
-      "and Open until the next change, off the hours his page reads: " + JSON.stringify(hrs && [hrs.hidden, hrs.textContent, until]));
-    /* 20 Oct 2026 (canvas V26, his yes): the hours are a control, named with what a tap does, and a tap goes to Shop hours */
-    ok(hrs.tagName === "BUTTON" && hrs.getAttribute("data-act") === "bar.hours" && hrs.getAttribute("aria-label") === "Open until " + until + ". Tap to change" && !!hrs.querySelector("svg"),
+    ok(!!hrs && !hrs.hidden && hrs.textContent === "Open to " + until && hrs.className === "salt-status ashop",
+      "and Open to the next change, off the hours his page reads, in verdigris: " + JSON.stringify(hrs && [hrs.hidden, hrs.textContent, hrs.className, until]));
+    /* 20 Oct 2026 (canvas V26, his yes): the hours are a control, named with what a tap does, and a tap goes to Shop hours. 22 Oct 2026 (canvas Needs you):
+       a glowing status chip at the bar's top right, its dot the system's glyph */
+    ok(hrs.tagName === "BUTTON" && hrs.getAttribute("data-act") === "bar.hours" && hrs.getAttribute("aria-label") === "Open to " + until + ". Tap to change" && !!hrs.querySelector("svg.salt-status__glyph"),
       "the hours are a chip, a button named with what a tap does: " + (hrs.getAttribute("aria-label") || ""));
+    ok(!!hrs.parentElement && hrs.parentElement.classList.contains("salt-deskbar__brand") && hrs.parentElement.lastElementChild === hrs && !hrs.closest(".salt-deskbar__meta"),
+      "the chip stands at the right end of the bar's brand row, out of the quiet line, which keeps Live and the clock: " + (hrs.parentElement && hrs.parentElement.className));
+    const css = [...D.querySelectorAll("style")].map((s) => s.textContent).join("\n");
+    ok(/\.adm \.ashop\{[^}]*min-height:var\(--salt-tap\)/.test(css) && /\.adm \.ashop svg\{[^}]*animation:ashopglow/.test(css)
+      && /@media \(prefers-reduced-motion:reduce\)\{\.adm \.ashop svg\{animation:none\}\}/.test(css) && /\.adm \.abar\{padding:12px\}/.test(css),
+      "the chip is 44px tall, its dot breathes and stands still under reduced motion, and the bar is 12px all round");
     ok(reads.filter((r) => r === "/hours").length === 0, "and the bar sends no read of its own: " + JSON.stringify(reads.filter((r) => r === "/hours")));
     status = { open: false, source: "schedule", nextChange: next.toISOString(), nextOpen: next.toISOString() };
     await again();
-    ok(hrs.textContent === "Closed, opens " + n.day + " " + n.month, "Closed, with the day it opens, when the shop is shut: " + JSON.stringify(hrs.textContent));
+    ok(hrs.textContent === "Closed to " + n.weekday + " " + n.hour + ":" + n.minute && hrs.classList.contains("ashop--closed") && !hrs.classList.contains("ashop--paused"),
+      "Closed, in ember, to the day and time it opens, when the shop is shut by its hours: " + JSON.stringify([hrs.textContent, hrs.className]));
+    status = { open: false, source: "manual", nextChange: soon.toISOString(), nextOpen: soon.toISOString() };
+    await again();
+    ok(hrs.textContent === "Paused to " + until && hrs.classList.contains("ashop--paused") && !hrs.classList.contains("ashop--closed"),
+      "Paused, in brass, to the moment his override ends, when he has shut the shop for now: " + JSON.stringify([hrs.textContent, hrs.className]));
     mode = "down";
     await again();
     ok(live.className === "abarlive off" && live.textContent === "Offline", "Offline, the dot brass, once his read cannot reach the Counter: " + JSON.stringify([live.className, live.textContent]));
