@@ -37,7 +37,7 @@
 {"name": "Fable 3: same-day rows drawn twice", "file": "src/worker.js", "find": ".concat(cards.sameDay.flatMap((d) => d.rids))", "replace": ""},
 {"name": "Fable A: the book's lines reach the customer", "file": "stmt/orders.js", "find": "  if (Array.isArray(v.history)) v.history = v.history.filter((h) => !(h && h.inner));\n", "replace": ""},
 {"name": "Fable A: a book cancel carries a note", "file": "stmt/orders.js", "find": "{ cancel: \"book\" }); h.book = true; }", "replace": "{ cancel: \"book\" }); h.note = \"cancelled on the book\"; }"},
-{"name": "V7: no refund on a row", "file": "src/maker-inputs.js", "find": "...(refunds[s.rid] ? { refund: refunds[s.rid] } : {}), ", "replace": ""},
+{"name": "V7: no refund on a row", "file": "src/maker-inputs.js", "find": "...(refunds[s.rid] ? { refund: refunds[s.rid] } : {}),\n", "replace": "\n"},
 {"name": "V7: a paid refund still counts", "file": "src/maker-inputs.js", "find": "if (r && r.rid && !r.paidOn && +r.amount > 0.004)", "replace": "if (r && r.rid && +r.amount > 0.004)"},
 {"name": "V7: no refunds for orders", "file": "stmt/maker.js", "find": "refunds: drafts.refunds && typeof drafts.refunds === \"object\" ? drafts.refunds : {},", "replace": "refunds: {},"},
 {"name": "V7: an order's card says no refund", "file": "stmt/owner.js", "find": "    if(+owes>0.004) card.appendChild(", "replace": "    if(false) card.appendChild("},
