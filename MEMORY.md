@@ -64,6 +64,12 @@
   (`LIFT_MIN`, `LIFT_MAX`), a negative one a discount held at or over the Floor; Add ID's presets mirror both ways; a good record suggests up to -30%
   (`suggest.good` 0.3 times `autoDrift`'s G, only with B nought). Nobody holds a %; once filled, about 18 of 41 customers would be suggested -30%. Accepted 21 Oct 2026.
 
+## Their % on his curve, every book
+- Live as v1206 (`1e765218`, 22 Oct 2026; Cloud commit `39711829680`: chain green, suite parts 2 and 3 green, part 1 red only on the v557 rice
+  check that was red on master before): salt `ends` {low:[2,1.2], high:[3,1.45]}; oil, candy and rice `pct` with `shares` {low:[0.8,0.9],
+  high:[1.2,1.09]}; Salt Admin's live preview `/all/maker/drift-preview/<code>/<book>/<whole %>`. CS6-BS holds -20% and pays more on the curve.
+  Not yet opened by him on Salt Admin. S1 fold replay fails locally on batch 9f3bd62d (the old fold's "drift" wording), not this work.
+
 ## Desk bar
 - Live as v1199 (`61541316`, 21 Oct 2026; Cloud commit `39555095710`: chain and three suite parts green, live /rev `9cea1ad4e24589a6`), with
   salt-ds 1.12.0 (#22): the bar is solid with a hairline, says where you are, and carries Now, Waiting, Alerts and Approve on every view.
