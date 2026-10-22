@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="25eb01c5edfed7f6";
+var SALT_BUILD_ID="4a2e40e6e6a2ee3f";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -3969,11 +3969,14 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   color: transparent;
   -webkit-text-fill-color: transparent;
 }
+/* 22 Oct 2026, his review ("UP" left of "updated 09:04"): an ellipsis never reaches a flex row's parts, so a part that does not fit was
+   cut mid-word. The quiet line now wraps onto a second line its own height hides: a part shows whole or not at all, from the end. */
 .salt-deskbar__meta {
   display: flex;
   align-items: center;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 0;
+  height: 1.2em;
   overflow: hidden;
   white-space: nowrap;
   font-family: var(--salt-font-mono);
@@ -3983,8 +3986,8 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   text-transform: uppercase;
   line-height: 1.2;
   color: var(--salt-mist);
-  text-overflow: ellipsis;
 }
+.salt-deskbar__meta > * { flex: none; }
 .salt-deskbar__where {
   flex: none;
   display: flex;
@@ -11033,7 +11036,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1206","d":"22 Oct 2026","t":"THEIR % ON HIS CURVE, ON EVERY BOOK, AND SHOWN LIVE BEFORE APPROVE","n":["<b>HIS DECISIONS OF 22 OCT 2026.</b> Their % runs on his curve: on salt -30% is 2.00 times the Floor at half a unit and 1.20 at 12.5, +30% is 3.00 and 1.45, the Set Price between; each end keeps the Set Price's shape, and every 5% step is the same share of the way at every size. It was the multiple times (1 + %), which took a large lot to the Floor at -30%.","<b>EVERY BOOK TAKES A %.</b> Oil, candy and rice keep his typed board at 0%; -30% is 80% of it at the smallest size and 90% at the largest, +30% 120% and 109%, held between the Floor and the Ceiling, the rate never rising with size. The suggestion, the reward and the loyalty unit stay salt's.","<b>SALT ADMIN SHOWS IT LIVE.</b> The Their % form takes a whole % in steps of 5, and as he types it shows that customer's price now and at the % typed, the change, the margin over the Floor and the Floor, at the printed sizes and their usual size, read off the Desk. Nothing is sent until Send their %, and Approve is unchanged.","<b>WHO MOVES.</b> CS6-BS holds -20%, so their salt price rises on the new curve, about 17% at 12.5 units; nobody else holds a % other than nought. Each customer is separate: a note names their price and never describes it."]}];
+const evolution=[{"v":"v1207","d":"22 Oct 2026","t":"THE BAR'S QUIET LINE SHOWS A PART WHOLE OR NOT AT ALL","n":["<b>HIS REVIEW OF 22 OCT 2026.</b> The line under Salt Command read CLOUD, the date, the clock and then UP: the stamp updated 09:04 cut mid-word, because an ellipsis never reaches a row of parts. The design system's 1.12.2 lets the line wrap onto a second line its own height hides, so as the bar narrows the stamp goes first, then the clock, then the date, each whole; the status dot always stays."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11181,7 +11184,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='22 Oct 2026, 10:30 KL';
+const LAST_UPDATED='22 Oct 2026, 10:50 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
