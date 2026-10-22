@@ -604,6 +604,38 @@ export function makerUndo(book, rid, ctx = {}) {
   return out;
 }
 
+/** 22 Oct 2026, HIS WORD: THEIR % SHOWN LIVE before it goes to Approve. Salt Admin's Their % form asks this as he types, a read that writes
+    nothing: one customer's price on one book at the board's printed sizes and their usual size (the median of their priced rows there), now
+    (their held %, or nought) and at the % typed, beside the Floor and the Ceiling, every figure the engine's quoteAt and floorTotal over the
+    pricing snapshot, which the drafter and the price list read. A partner pays the Floor and has no %; a supplier and a bucket have none. */
+export function makerDriftPreview(book, who, product, pct) {
+  if (!ready(book)) return { error: "The Desk mirror is being seeded." };
+  if (!active(product, book)) return { error: "Choose an active product." };
+  if (!code(who, book.state.roster || []) || POSITION_ENGINE.isBucket(who) || !driftCustomerCode(who))
+    return { error: "Choose a customer on the roster." };
+  if ((book.state.partners || []).includes(who)) return { error: "A partner pays the Floor and has no %." };
+  const snap = book.pricing?.byProduct?.[product], I = snap?.inputs, rule = I?.policy?.tierRule;
+  if (!PRICING_ENGINE.pctBook(rule) || !I.cost) return { error: "This book takes no %." };
+  if (!PRICING_ENGINE.driftOk(pct)) return { error: "Choose a % from -30% to +30%." };
+  const held = object(snap.lift) && PRICING_ENGINE.driftOk(snap.lift[who]) ? snap.lift[who] : 0;
+  const qs = (book.sales || []).filter((s) => s && (s.product || "salt") === product && POSITION_ENGINE.ownsCode(who, s.customer) && !s.goodwill
+    && !s.cancelled && +s.total > 0 && +s.qty > 0).map((s) => +s.qty).sort((a, b) => a - b);
+  const usual = qs.length ? qs[Math.floor(qs.length / 2)] : null;
+  const sizes = houseRungs(book, product).concat(usual ? [usual] : []).sort((a, b) => a - b).filter((n, i, a) => !i || n - a[i - 1] > 0.009);
+  const K = PRICING_ENGINE.costStack(I.cost), cx = +rule.ceilingX > 0 ? +rule.ceilingX : 3, two = (n) => +(+n).toFixed(2);
+  const rows = [];
+  for (const q of sizes) {
+    let now = null, at = null, floor = null;
+    try { now = PRICING_ENGINE.quoteAt(q, K, I.policy, held); at = PRICING_ENGINE.quoteAt(q, K, I.policy, pct); floor = PRICING_ENGINE.floorTotal(q, K, I.policy); }
+    catch (e) { continue; }
+    if (!(now > 0) || !(at > 0) || !(floor > 0)) continue;
+    const ceiling = two(cx * floor);
+    rows.push({ q, now: two(now), at: two(at), floor: two(floor), ceiling, usual: usual != null && Math.abs(q - usual) < 0.009,
+      edge: at <= floor + 0.009 ? "floor" : at >= ceiling - (+I.policy.LADDER?.round?.to || 5) + 0.009 ? "ceiling" : null });
+  }
+  return { code: who, product, held, pct, rows };
+}
+
 export function makerInputCatalog(book, hush = {}, pending = [], registrations = [], today = mytDay(new Date().toISOString())) {
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
   const bookRoster = (book.state.roster || []).filter((value) => code(value, book.state.roster || []));
@@ -616,12 +648,13 @@ export function makerInputCatalog(book, hush = {}, pending = [], registrations =
     const snapshot = book.pricing && book.pricing.byProduct && book.pricing.byProduct[product];
     const rule = snapshot && snapshot.inputs && snapshot.inputs.policy && snapshot.inputs.policy.tierRule;
     const cost = costFor(book, product).cost;
-    const driftPresets = rule && rule.drift && object(rule.presets)
+    const driftPresets = PRICING_ENGINE.pctBook(rule) && object(rule.presets)
       ? Object.entries(rule.presets).filter(([name, value]) => typeof name === "string" && name
         && PRICING_ENGINE.driftOk(value)).map(([name, value]) => ({ name, value }))
       : [];
-    return { product, fixed: !!(rule && rule.fixed), drift: !!(rule && rule.drift),
-      ...(rule && rule.drift ? { driftPresets } : {}), saleReady: cost > 0, purchaseReady: cost !== null };
+    /* 22 Oct 2026: `drift` says the book takes Their %, a Set Price or a stated board carrying `pct` */
+    return { product, fixed: !!(rule && rule.fixed), drift: PRICING_ENGINE.pctBook(rule),
+      ...(PRICING_ENGINE.pctBook(rule) ? { driftPresets } : {}), saleReady: cost > 0, purchaseReady: cost !== null };
   });
   return {
     version: book.version, products, parties, ...owedBothWays(book, today),
@@ -800,7 +833,7 @@ export function makerTierSet(body, book) {
     return { error: "Choose a customer on the roster, not a resale account." };
   const snapshot = book.pricing && book.pricing.byProduct && book.pricing.byProduct[body.product];
   const rule = snapshot && snapshot.inputs && snapshot.inputs.policy && snapshot.inputs.policy.tierRule;
-  if (!rule || rule.fixed || !rule.drift) return { error: "This book has no Set Price to put a % on." };
+  if (!PRICING_ENGINE.pctBook(rule)) return { error: "This book takes no %." };
   if (!driftCustomerCode(body.code)) return { error: "A supplier has no % on the Set Price." };
   if (body.tier !== null && !PRICING_ENGINE.driftOk(body.tier))
     return { error: "Choose a % from -30% to +30% (-0.3 to 0.3), or clear it." };
@@ -1172,10 +1205,10 @@ export function makerLedgerInput(operation, body, book, pending = []) {
       if (body.unit !== "pct") return { error: OLD_UNIT };
       for (const [product, tier] of Object.entries(tiers)) {
         const snapshot = book.pricing?.byProduct?.[product], rule = snapshot?.inputs?.policy?.tierRule;
-        if (active(product, book) && rule && rule.drift && !PRICING_ENGINE.driftOk(tier))
+        if (active(product, book) && PRICING_ENGINE.pctBook(rule) && !PRICING_ENGINE.driftOk(tier))
           return { error: "A starting % is a number from -0.3 to 0.3 (-30% to +30%)." };
-        if (!active(product, book) || !rule || rule.fixed || !rule.drift)
-          return { error: "A starting % must name an active book with a Set Price." };
+        if (!active(product, book) || !PRICING_ENGINE.pctBook(rule))
+          return { error: "A starting % must name an active book that takes a %." };
       }
     }
     entry = POSITION_ENGINE.addIdEntry({ at: body.at, code: body.code, kind: body.kind,

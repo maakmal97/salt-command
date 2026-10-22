@@ -710,6 +710,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-cover-row button{flex:none;min-width:var(--salt-tap);min-height:var(--salt-tap)}
 .adm .maker-drift-actions{display:flex;flex-wrap:wrap;gap:8px}
 .adm .maker-drift-actions button{min-width:var(--salt-tap);min-height:var(--salt-tap)}
+.adm .maker-pct-preview{margin-top:8px;min-width:0}
 /* 16 OCT 2026: THE MINI LEDGER'S TABLES are the system's table in its scrolling wrap, so nine columns scroll inside their box on a phone and the page never does; a figure stands right, a word left. */
 .adm #oLedger{display:flex;flex-direction:column;gap:24px}
 .adm #oLedger .lead{margin:0}

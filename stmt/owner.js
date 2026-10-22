@@ -3544,7 +3544,7 @@ export const OWNER_JS = `
       direction.addEventListener('change',function(){ tradeSend.textContent='Send the '+direction.value; });
       var driftSection=makerForm('pricing');
       driftSection.appendChild(el('h3',null,'Their %'));
-      driftSection.appendChild(el('p','msg','Only on a book with a Set Price. Moves one customer off the Set Price by a % (-0.3 to 0.3, so 0.2 is 20% over and -0.1 is 10% off); 0 is the Set Price. Never under the Floor or over the Ceiling. Clear sets it back to 0.'));
+      driftSection.appendChild(el('p','msg','Every book. Moves one customer off the Set Price, or off a typed board, by a whole % from -30 to +30 in steps of 5 (20 is 20% over, -10 is 10% off); 0 is the Set Price. Never under the Floor or over the Ceiling. The table shows their prices as you type, before anything goes to Approve. Clear sets it back to 0.'));
       tradeSection.parentNode.insertBefore(driftSection,tradeSection.nextSibling);
       var driftCodes=catalog.driftCustomers||[], driftBooks=(catalog.products||[]).filter(function(item){ return item.drift; });
       if(!driftCodes.length||!driftBooks.length){
@@ -3554,9 +3554,11 @@ export const OWNER_JS = `
         driftCodes.forEach(function(code){ var option=el('option',null,code); option.value=code; driftCode.appendChild(option); });
         driftCodeWrap.appendChild(driftCode); driftSection.appendChild(driftCodeWrap);
         var driftProduct=makerTilesIn(driftSection,['Book','record.drift.book'],driftBooks.map(function(item){ return bookItem(item.product); }));
-        var driftValue=makerField(driftSection,['Their %, -0.3 to 0.3','record.drift.value'],'number','','0.05');
-        driftValue.min='-0.3'; driftValue.max='0.3'; driftValue.removeAttribute('inputmode');   /* 21 Oct 2026: a % may be negative, and the decimal pad has no minus key */
+        /* 22 Oct 2026, his answer: a whole % in steps of 5, -30 to +30; the body still carries the fraction (0.2) the drafter and the fold read */
+        var driftValue=makerField(driftSection,['Their %, -30 to +30 in steps of 5','record.drift.value'],'number','','5');
+        driftValue.min='-30'; driftValue.max='30'; driftValue.removeAttribute('inputmode');   /* 21 Oct 2026: a % may be negative, and the decimal pad has no minus key */
         var driftState=el('p','msg'); driftSection.appendChild(driftState);
+        var driftPreview=el('div','maker-pct-preview salt-table-wrap'); driftPreview.hidden=true; driftSection.appendChild(driftPreview);
         var driftAnswer=el('p','msg'); driftAnswer.setAttribute('role','status'); driftSection.appendChild(driftAnswer);
         var driftPending=false, driftAt=null, driftSignature='';
         function driftReceiptComplete(){ driftAt=null; driftSignature=''; }
@@ -3564,6 +3566,44 @@ export const OWNER_JS = `
           return (catalog.driftCards||[]).filter(function(card){ return card.code===driftCode.value&&card.product===driftProduct.value; })[0]||null;
         }
         function driftFormat(value){ var n=Math.round(Number(value)*100); return n>0?'+'+n+'%':n<0?n+'%':'0%'; }
+        /* a whole % in steps of 5 from -30 to +30, as typed, or null */
+        function driftWhole(){ var raw=driftValue.value.trim(), n=Number(raw); return raw&&Number.isInteger(n)&&n%5===0&&n>=-30&&n<=30?n:null; }
+        /* 22 Oct 2026, HIS WORD: THEIR % SHOWN LIVE. Each figure he types is read off the Desk (GET /all/maker/drift-preview, the engine over the
+           pricing snapshot, nothing worked out here), 300 ms after he stops, kept by key, and a reply that lands after a newer ask is dropped */
+        var driftReads={}, driftTimer=null, driftAsk=0;
+        function driftDraw(j){
+          driftPreview.textContent='';
+          if(!j||!j.rows||!j.rows.length){ driftPreview.hidden=true; return; }
+          var say=driftFormat(j.pct), table=el('table','salt-table'), head=el('tr'), body=el('tbody');
+          table.appendChild(el('caption',null,j.code+': now '+driftFormat(j.held)+', at '+say));
+          ['Units','Now','At '+say,'Change','Over Floor','Floor'].forEach(function(c,i){ var th=el('th',i?'':'l salt-table__label',c); th.setAttribute('scope','col'); head.appendChild(th); });
+          table.appendChild(el('thead')).appendChild(head); table.appendChild(body);
+          j.rows.forEach(function(r){
+            var tr=el('tr'), d=+(r.at-r.now).toFixed(2), th=el('th','l salt-table__label',units(r.q)+(r.usual?', their usual':'')); th.setAttribute('scope','row'); tr.appendChild(th);
+            tr.appendChild(el('td','',rm(r.now)));
+            tr.appendChild(el('td','',rm(r.at)+(r.edge==='floor'?' at Floor':r.edge==='ceiling'?' at Ceiling':'')));
+            tr.appendChild(el('td','',d>0.004?'+'+rm(d):d<-0.004?'-'+rm(-d):'nil'));
+            tr.appendChild(el('td','',rm(+(r.at-r.floor).toFixed(2))));
+            tr.appendChild(el('td','',rm(r.floor)));
+            body.appendChild(tr);
+          });
+          driftPreview.appendChild(table); driftPreview.hidden=false;
+        }
+        function driftLive(){
+          clearTimeout(driftTimer);
+          var whole=driftWhole();
+          if(whole===null){ driftPreview.hidden=true; driftAnswer.textContent=driftValue.value.trim()?'Enter a whole % from -30 to +30 in steps of 5 (20 is 20%, -10 is 10% off).':''; return; }
+          driftAnswer.textContent='';
+          var key=driftCode.value+'/'+driftProduct.value+'/'+whole;
+          if(driftReads[key]){ driftDraw(driftReads[key]); return; }
+          var ask=++driftAsk;
+          driftTimer=setTimeout(function(){
+            refs('/all/maker/drift-preview/'+key).then(function(j){
+              driftReads[key]=j.preview; if(ask===driftAsk) driftDraw(j.preview);
+            },function(error){ if(ask===driftAsk){ driftPreview.hidden=true; refusal(driftAnswer,error); } });
+          },300);
+        }
+        driftValue.addEventListener('input',driftLive);
         function driftRefresh(){
           var card=driftCardOf();
           var hint=card&&typeof card.suggest==='number'?' Suggested '+driftFormat(card.suggest)+(card.suggest!==0&&typeof card.why==='string'&&card.why?': '+card.why:'')+'.':'';
@@ -3572,16 +3612,16 @@ export const OWNER_JS = `
           useSuggest.hidden=!(card&&typeof card.suggest==='number');
           clearDrift.hidden=!(card&&card.held);
         }
-        driftCode.addEventListener('change',driftRefresh); driftProduct.addEventListener('change',driftRefresh);
+        driftCode.addEventListener('change',function(){ driftRefresh(); driftLive(); }); driftProduct.addEventListener('change',function(){ driftRefresh(); driftLive(); });
         var driftActions=el('div','maker-drift-actions'); driftSection.appendChild(driftActions);
         makerButton(driftActions,['Send their %','record.drift.set'],async function(send){
           if(driftPending) return;
-          var raw=driftValue.value.trim(), value=Number(raw);
-          if(!raw||!Number.isFinite(value)||value < -0.3||value > 0.3){
-            driftAnswer.textContent='Enter a % from -0.3 to 0.3 (0.2 is 20%, -0.1 is 10% off).';
+          var whole=driftWhole();
+          if(whole===null){
+            driftAnswer.textContent='Enter a whole % from -30 to +30 in steps of 5 (20 is 20%, -10 is 10% off).';
             return;
           }
-          value=Number(value.toFixed(2));
+          var value=Number((whole/100).toFixed(2));
           var body={code:driftCode.value,product:driftProduct.value,tier:value,unit:'pct'};
           var check=JSON.stringify(body); if(check!==driftSignature){ driftSignature=check; driftAt=new Date().toISOString(); }
           body.at=driftAt; driftPending=true;
@@ -3592,7 +3632,7 @@ export const OWNER_JS = `
         var useSuggest=actOn(el('button','salt-ghost','Use the suggestion'),'record.drift.suggest'); useSuggest.type='button'; driftActions.appendChild(useSuggest);
         useSuggest.onclick=function(){
           var card=driftCardOf();
-          if(card&&typeof card.suggest==='number') driftValue.value=String(card.suggest);
+          if(card&&typeof card.suggest==='number'){ driftValue.value=String(Math.round(card.suggest*100)); driftLive(); }
         };
         var clearDrift=makerButton(driftActions,['Set back to 0','record.drift.clear'],async function(send){
           if(driftPending) return;

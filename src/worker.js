@@ -23,7 +23,7 @@ import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, TIEOUT_KEY, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades, wakeAdmin, ADMIN_ON } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault, fixtureCheck } from "./maker.js";
 import { makerCustomerReading } from "./maker-inputs.js";
-import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerLedgerMini, makerStock, makerUndo, makerRows, openRefunds, makerRewardReading } from "./maker-inputs.js";
+import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerLedgerMini, makerStock, makerUndo, makerRows, openRefunds, makerRewardReading, makerDriftPreview } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerAppointmentClaim, makerOrderOnce } from "./maker-request.js";
 import { readVaultRegistrations } from "./vault-pair.js";
 import POSITION_ENGINE from "../engine/position.mjs";
@@ -605,6 +605,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     && p !== "/_internal/maker/offsets" && p !== "/_internal/maker/inputs/offset" && p !== "/_internal/maker/ledger"
     && !/^\/_internal\/maker\/reward\/[A-Za-z0-9%._-]{3,160}$/.test(p)
     && !/^\/_internal\/maker\/customer-reading\/[A-Za-z0-9%._-]{3,160}$/.test(p)
+    && !/^\/_internal\/maker\/drift-preview\/[A-Z][A-Z0-9-]{2,24}\/[a-z]{2,12}\/-?[0-9]{1,2}$/.test(p)
     && !/^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|amend|notfound|move|restate|take)$/.test(p))
     return json({ ok: false, error: "not found" }, 404);
   if (!env.COUNTER_MAKER_KEY) return json({ ok: false, error: "Counter maker bridge is not configured" }, 503);
@@ -810,6 +811,18 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     try { key = decodeURIComponent(custAt[1]); } catch (e) { return json({ ok: false, error: "Name the order's row by its key." }, 400); }
     const reading = makerCustomerReading(book, key, new Date(Date.now() + 8 * 36e5).toISOString().slice(0, 10));
     return reading.error ? json({ ok: false, error: reading.error }, 400) : json({ ok: true, reading });
+  }
+  const prevAt = /^\/_internal\/maker\/drift-preview\/([A-Z][A-Z0-9-]{2,24})\/([a-z]{2,12})\/(-?[0-9]{1,2})$/.exec(p);
+  if (prevAt) {
+    /* 22 Oct 2026: Their % shown live on Salt Admin before it goes to Approve, a whole % in steps of 5; a read that writes nothing */
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    const whole = +prevAt[3];
+    if (whole % 5 !== 0 || whole < -30 || whole > 30) return json({ ok: false, error: "Choose a % from -30 to +30 in steps of 5." }, 400);
+    if (!env.SALT_LEDGER) return json({ ok: false, error: "The Desk mirror is required." }, 503);
+    const book = await readBook(env.SALT_LEDGER);
+    if (!book.version) return json({ ok: false, error: "The mirror is being seeded." }, 503);
+    const preview = makerDriftPreview(book, prevAt[1], prevAt[2], whole / 100);
+    return preview.error ? json({ ok: false, error: preview.error }, 400) : json({ ok: true, preview });
   }
   if (p === "/_internal/maker/offsets") {
     /* Counter Maker A2: what the Desk's autoOffsets would offer, derived here from the mirror and never priced (a read) */
