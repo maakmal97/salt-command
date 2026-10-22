@@ -26,8 +26,8 @@
  {
   "name": "a customer's % is ignored in the walk: every price is the Set Price",
   "file": "engine/pricing.mjs",
-  "find": "const x=step(rP,mP,1+k);",
-  "replace": "const x=step(rP,mP,1);"
+  "find": "const x=step(rP,mP,R.ends?fl*driftMultiple(q,R,k):fl*m*(1+k));",
+  "replace": "const x=step(rP,mP,fl*m);"
  },
  {
   "name": "the price rounds to the nearest five, not down",
@@ -38,8 +38,8 @@
  {
   "name": "the running rate is the target each time: nothing keeps it from rising",
   "file": "engine/pricing.mjs",
-  "find": "const rate=Math.min(r,fl*m*lift/q);",
-  "replace": "const rate=fl*m*lift/q;"
+  "find": "const rate=Math.min(r,top/q);",
+  "replace": "const rate=top/q;"
  },
  {
   "name": "the Ceiling no longer holds a price",
@@ -92,8 +92,8 @@
  {
   "name": "the Counter's card off the board reads the old drift map",
   "file": "engine/pricing.mjs",
-  "find": "(snap.lift&&typeof snap.lift[code]===\"number\"?snap.lift[code]:null)",
-  "replace": "(snap.drift&&typeof snap.drift[code]===\"number\"?snap.drift[code]:null)"
+  "find": "const held=snap.lift&&typeof snap.lift[code]===\"number\"?snap.lift[code]:null;",
+  "replace": "const held=snap.drift&&typeof snap.drift[code]===\"number\"?snap.drift[code]:null;"
  },
  {
   "name": "the customer's sealed grid reads the old drift map",
@@ -160,12 +160,6 @@
   "file": "engine/apply.mjs",
   "find": "!(driftBooks().includes(p) && v !== null && v !== undefined) ? null",
   "replace": "!(driftBooks().includes(p)) ? null"
- },
- {
-  "name": "the dated gate reaches every book, oil's levels included",
-  "file": "engine/apply.mjs",
-  "find": "!(driftBooks().includes(p) && v !== null && v !== undefined) ? null",
-  "replace": "!(v !== null && v !== undefined) ? null"
  },
  {
   "name": "the switch moment is set far in the future, so a figure stamped after it is dropped as well",
@@ -242,8 +236,8 @@
  {
   "name": "the presets lose -30%",
   "file": "engine/rules.mjs",
-  "find": "presets:{\"-30%\":-0.3, ",
-  "replace": "presets:{"
+  "find": "        presets:{\"-30%\":-0.3, ",
+  "replace": "        presets:{"
  },
  {
   "name": "a good record earns no discount (good weight nought)",

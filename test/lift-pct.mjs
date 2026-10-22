@@ -10,7 +10,7 @@
    4. A % is -0.3 to +0.3 (driftOk, LIFT_MIN and LIFT_MAX; his decision of 21 Oct 2026, it was 0 to 2), and nothing automatic prices: customers
       with a long late, a write-off or a perfect record are quoted the Set Price, an old held drift (-0.7) is read as none, and the snapshot
       carries the map as \`lift\`, never \`drift\`, with the suggestion beside it. A negative % quotes under the Set Price, never under the
-      Floor, and the ringgit margin still never falls across sizes: -30% at RM 58 is 50, 80, 425, 785, 1,220 and 1,510. The presets mirror the range.
+      Floor, and the ringgit margin still never falls across sizes: -30% at RM 58 is 60, 95, 520, 885, 1,390 and 1,740 on his curve (22 Oct 2026). The presets mirror the range.
    5. The suggestion: paid over the Set Price on the last five sales plus the risk, less a good record's discount (up to 30%, only while nothing
       is late, overdue or written off), to the nearest 5%, held to -30% to +30%, nothing under three settled rows.
    6. The fold DROPS a salt figure stamped before the switch moment (old unit), a tierset and an Add ID alike, with a note and no refusal: the customer
@@ -50,11 +50,16 @@ export async function run({ ok }) {
   ok(pure.join() === "75,120,605,960,1540,1925" && set58.join() === "75,120,605,980,1540,1925",
     "from RM 58 a unit the floor times the multiple, down to the five, is 75, 120, 605, 960, 1,540 and 1,925, and the Set Price lifts 12.5 unit to 980 by the margin 11.5 unit reached: " + JSON.stringify({ pure, set58 }));
   const lifted = at.map((q) => E.quoteAt(q, Cof(58), P, 0.2));
-  ok(lifted.join() === "90,140,730,1155,1850,2310", "and 20% on the Set Price reads 90, 140, 730, 1,155, 1,850 and 2,310 at the same sizes, applied inside the walk: " + JSON.stringify(lifted));
+  ok(lifted.join() === "85,130,665,1040,1635,2040", "and 20% on the Set Price reads 85, 130, 665, 1,040, 1,635 and 2,040 at the same sizes, two thirds of the way to his +30% curve (22 Oct 2026), inside the walk: " + JSON.stringify(lifted));
 
   const off30 = at.map((q) => E.quoteAt(q, Cof(58), P, -0.3));
-  ok(off30.join() === "50,80,425,785,1220,1510",
-    "and -30% on the Set Price reads 50, 80, 425, 785, 1,220 and 1,510 at the same sizes, a discount inside the walk and above the Floor (30, 60, 365 at 0.5, 1, 6.25): " + JSON.stringify(off30));
+  ok(off30.join() === "60,95,520,885,1390,1740",
+    "and -30% on the Set Price reads 60, 95, 520, 885, 1,390 and 1,740 at the same sizes, his -30% curve (2.00 at 0.5, 1.20 at 12.5; 22 Oct 2026) inside the walk and above the Floor (30, 60, 365 at 0.5, 1, 6.25): " + JSON.stringify(off30));
+
+  /* 22 Oct 2026: his +30% curve reaches 3.00 at half a unit, the Ceiling itself, so the Ceiling is proved on a rule held at 2.8 times the Floor */
+  const P28 = { ...P, tierRule: { ...R, ceilingX: 2.8 } };
+  ok(E.quoteAt(0.5, Cof(58), P28, 0.3) === 80 && E.quoteAt(0.5, Cof(58), P, 0.3) === 90,
+    "the Ceiling holds a price: +30% at half a unit on RM 58 is 90 (3.00 times the Floor of 30), held to 80 under a Ceiling of 2.8 times it: " + [E.quoteAt(0.5, Cof(58), P28, 0.3), E.quoteAt(0.5, Cof(58), P, 0.3)].join(", "));
 
   /* 2. OVER THE GRID, for every % and several costs */
   const bad = { margin: 0, floor: 0, ceiling: 0, five: 0, belowSet: 0, aboveSet: 0, rate: 0, notLifted: 0, notMonotone: 0 };
@@ -223,12 +228,12 @@ export async function run({ ok }) {
   ok(apNuTs.ok && !(apNuTs.book.TIER_OF || {})["CZ9-DA"] && apNuAd.ok && apNuAd.book.roster.includes("CZ9-DB") && !(apNuAd.book.TIER_OF || {})["CZ9-DB"]
     && apPct.ok && fl((apPct.book.TIER_OF || {})["CZ9-DA"]) === fl({ salt: 0.3 }),
   "and folded into the book it holds nothing (no 30% lift), where the same figure with unit pct is held as 0.3: " + fl([apNuTs.problems, (apNuTs.book || {}).TIER_OF && apNuTs.book.TIER_OF["CZ9-DA"], (apPct.book || {}).TIER_OF && apPct.book.TIER_OF["CZ9-DA"]]));
-  ok(plan(noUnit(ts(after, null))).refused.length === 0 && fl(plan(noUnit(ts(after, null))).items[0].tiers) === fl({ "CZ9-DA": { salt: null } }) && /not held per customer/.test(why(noUnit(ts(after, 0.2, "oil")))),
-  "a clear needs no unit, and a figure on oil is still refused by book: " + fl(plan(noUnit(ts(after, null))).items[0] && plan(noUnit(ts(after, null))).items[0].tiers));
+  ok(plan(noUnit(ts(after, null))).refused.length === 0 && fl(plan(noUnit(ts(after, null))).items[0].tiers) === fl({ "CZ9-DA": { salt: null } }) && !why(ts(after, 0.2, "oil")),
+  "a clear needs no unit, and a % on oil is filed since 22 Oct 2026 (every book takes Their %): " + fl(plan(noUnit(ts(after, null))).items[0] && plan(noUnit(ts(after, null))).items[0].tiers));
   const pNew = plan(ts(after, 0.3));
   ok(pNew.refused.length === 0 && fl(pNew.items[0].tiers) === fl({ "CZ9-DA": { salt: 0.3 } }) && plan(ts(before, null)).refused.length === 0 && fl(plan(ts(before, null)).items[0].tiers) === fl({ "CZ9-DA": { salt: null } })
-    && /not held per customer/.test(why(ts(before, "Gold", "oil"))) && /not held per customer/.test(why(ts(before, 0.2, "oil"))),
-  "a salt % stamped after " + since + " is filed as it stands, a clear passes, and a figure on oil, a fixed board, is still refused before or after: " + fl([why(ts(before, "Gold", "oil")), why(ts(before, 0.2, "oil"))]));
+    && /not a %/.test(why(ts(after, "Gold", "oil"))),
+  "a salt % stamped after " + since + " is filed as it stands, a clear passes, and a level word on oil is refused as no %: " + fl([why(ts(after, "Gold", "oil")), why(ts(after, 0.2, "oil"))]));
   ok(Date.parse(since) > Date.parse("2026-10-17T00:00:00Z") && Date.parse(since) < Date.now() + 2 * 86400e3,
     "the switch moment is an instant at the start of this work, not a date in the future: " + since);
   ok(/not a % from -30 to \+30/.test(why(ts(after, -0.4))) && /not a % from -30 to \+30/.test(why(ts(after, 2.5))) && /not a % from -30 to \+30/.test(why(ts(after, 0.4))) && why(ts(after, 0.3)) === "" && why(ts(after, -0.3)) === "" && why(ts(after, 0)) === ""

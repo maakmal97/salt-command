@@ -159,23 +159,23 @@ export async function run({ ok } = {}) {
       "the Counter drift selector uses the customer-only catalog and excludes suppliers");
     check(selects.length === 1 && tileValues(drift, "Book").join() === "salt",
       "the UI offers salt and omits fixed books from its drift tiles");
-    check(value.min === "-0.3" && value.max === "0.3" && value.step === "0.05" && value.getAttribute("inputmode") === null,
-      "the UI bounds the numeric input to the % range, -0.3 to 0.3, with no decimal pad (it has no minus key on an iPhone)");
+    check(value.min === "-30" && value.max === "30" && value.step === "5" && value.getAttribute("inputmode") === null,
+      "the UI bounds the numeric input to a whole %, -30 to +30 in steps of 5 (22 Oct 2026), with no decimal pad (it has no minus key on an iPhone)");
     check(drift.textContent.includes("Set by you: 0%."),
       "the UI labels a held zero as set by him");
     selects[0].value = "CX2-ZED"; selects[0].dispatchEvent(new dom.window.Event("change", { bubbles: true }));
     check(drift.textContent.includes("No % set: the Set Price. Suggested +25%: paid late.") && clearButton.hidden && !useButton.hidden,
       "none held reads as the Set Price with the suggestion beside it, and Clear is unavailable when nothing is held");
     useButton.click();
-    check(value.value === "0.25" && calls.length === 0,
+    check(value.value === "25" && calls.length === 0,
       "Use the suggestion fills the box with the suggested % and sends nothing");
     selects[0].value = "CX1-ZED"; selects[0].dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-    value.value = "0.31"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
-    check(drift.textContent.includes("Enter a % from -0.3 to 0.3 (0.2 is 20%, -0.1 is 10% off).") && calls.length === 0,
-      "the Counter rejects a % past 0.3 before sending an input");
-    value.value = "-0.31"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
-    check(drift.textContent.includes("Enter a % from -0.3 to 0.3 (0.2 is 20%, -0.1 is 10% off).") && calls.length === 0,
-      "and one under -0.3");
+    value.value = "35"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
+    check(drift.textContent.includes("Enter a whole % from -30 to +30 in steps of 5 (20 is 20%, -10 is 10% off).") && calls.length === 0,
+      "the Counter rejects a % past +30 before sending an input");
+    value.value = "-35"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
+    check(drift.textContent.includes("Enter a whole % from -30 to +30 in steps of 5 (20 is 20%, -10 is 10% off).") && calls.length === 0,
+      "and one under -30");
     await waitFor(() => !setButton.disabled);
     value.value = "0"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
     const retained = await waitFor(() => calls.length === 1 && !setButton.disabled && !clearButton.disabled);
@@ -184,7 +184,7 @@ export async function run({ ok } = {}) {
       "a zero override is retained unchanged when its first send is not confirmed: " + JSON.stringify({
         retained, pending, keys: Object.keys(dom.window.localStorage), answer: drift.textContent, disabled: [setButton.disabled, clearButton.disabled]
       }));
-    value.value = "0.15"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
+    value.value = "15"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
     const retried = await waitFor(() => calls.length === 2 && !setButton.disabled && !clearButton.disabled);
     check(retried && JSON.stringify(calls[0].body) === JSON.stringify(calls[1].body),
       "an uncertain retry sends its entire retained drift request unchanged even if the form is edited");
@@ -194,10 +194,10 @@ export async function run({ ok } = {}) {
     const repeated = await waitFor(() => calls.length === 3 && !setButton.disabled);
     check(repeated && calls[2].body.tier === 0 && calls[2].body.at !== confirmedAt,
       "a successful same-value Set gets a fresh request timestamp on the next intentional tap");
-    value.value = "0.125"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
+    value.value = "-15"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
     const rounded = await waitFor(() => calls.length === 4 && !setButton.disabled);
-    check(rounded && calls[3].body.tier === 0.13 && calls.slice(0, 4).every((call) => call.body.unit === "pct"),
-      "Counter drift rounds to two decimals exactly like the incumbent Desk driftSet, and every figure it sends carries unit pct");
+    check(rounded && calls[3].body.tier === -0.15 && calls.slice(0, 4).every((call) => call.body.unit === "pct"),
+      "a whole % is sent as its fraction to two decimals (-15 as -0.15), and every figure it sends carries unit pct: " + JSON.stringify(calls.map((c) => c.body.tier)));
     clearButton.click();
     const clearSent = await waitFor(() => calls.length === 5);
     check(clearSent && calls[4].body.tier === null && calls[4].body.product === "salt",

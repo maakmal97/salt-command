@@ -25,7 +25,7 @@ const cases = [
     } },
   { label: "Send their %", path: "tier-set",
     body: { code: "CX1-ZED", product: "salt", tier: 0.2, unit: "pct" },
-    edit(root, changed) { const field = root.querySelector('input[type="number"]'); field.value = changed ? "0.3" : "0.2"; return field; } },
+    edit(root, changed) { const field = root.querySelector('input[type="number"]'); field.value = changed ? "30" : "20"; return field; } },   // 22 Oct 2026: a whole %
   { label: "Send the sizes", path: "house-sizes",
     body: { product: "salt", hide: [0.5] },
     edit(root, changed) { const field = root.querySelector('input[type="checkbox"]'); field.checked = changed; return field; } },

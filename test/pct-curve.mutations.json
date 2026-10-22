@@ -1,0 +1,128 @@
+[
+ {
+  "name": "the low end at 12.5 moves from 1.20 to 1.25",
+  "file": "engine/rules.mjs",
+  "find": "ends:{low:[2,1.2], high:[3,1.45]}",
+  "replace": "ends:{low:[2,1.25], high:[3,1.45]}"
+ },
+ {
+  "name": "the step is no longer an equal share: the position is squared",
+  "file": "engine/pricing.mjs",
+  "find": "return m+x.t*(end[1]+s*(end[0]-end[1])-m);",
+  "replace": "return m+x.t*x.t*(end[1]+s*(end[0]-end[1])-m);"
+ },
+ {
+  "name": "the end curves lose the Set Price's shape (s held at one half)",
+  "file": "engine/pricing.mjs",
+  "find": "s=Math.abs(mA-mB)<1e-9?0:(m-mB)/(mA-mB);",
+  "replace": "s=0.5;"
+ },
+ {
+  "name": "the walk reads the old law, the multiple times (1 + %)",
+  "file": "engine/pricing.mjs",
+  "find": "const x=step(rP,mP,R.ends?fl*driftMultiple(q,R,k):fl*m*(1+k));",
+  "replace": "const x=step(rP,mP,fl*m*(1+k));"
+ },
+ {
+  "name": "the stated board's share is not taken",
+  "file": "engine/pricing.mjs",
+  "find": "let x=down(p*shareAt(r.q,R,k)), lo=up(r.floor);",
+  "replace": "let x=down(p), lo=up(r.floor);"
+ },
+ {
+  "name": "the stated board's walk lets the rate rise with size",
+  "file": "engine/pricing.mjs",
+  "find": "if(prevD<Infinity&&x/r.q>prevD+1e-9)x=Math.max(lo,Math.min(x,down(prevD*r.q)));",
+  "replace": ""
+ },
+ {
+  "name": "quoteGrid on a stated board ignores the %",
+  "file": "engine/pricing.mjs",
+  "find": "else if(R.fixed)ps=read(fixedWalk(walkSizes(R,qs),C,P,d),true);",
+  "replace": "else if(R.fixed)ps=read(fixedWalk(walkSizes(R,qs),C,P,0),true);"
+ },
+ {
+  "name": "oil loses pct",
+  "file": "engine/rules.mjs",
+  "find": "  oil:{pct:true, ",
+  "replace": "  oil:{"
+ },
+ {
+  "name": "pctBook names only a Set Price",
+  "file": "engine/pricing.mjs",
+  "find": "function pctBook(R){return !!(R&&(R.drift||R.pct));}",
+  "replace": "function pctBook(R){return !!(R&&R.drift);}"
+ },
+ {
+  "name": "the price list keeps the board for a held %",
+  "file": "tools/pricelist.mjs",
+  "find": "      if (heldF) return { q, price: PRICING_ENGINE.quoteAt(q, C, P, heldF) };   // 22 Oct 2026: their % on his board\n",
+  "replace": ""
+ },
+ {
+  "name": "the preview prices at nought instead of the typed %",
+  "file": "src/maker-inputs.js",
+  "find": "at = PRICING_ENGINE.quoteAt(q, K, I.policy, pct);",
+  "replace": "at = PRICING_ENGINE.quoteAt(q, K, I.policy, 0);"
+ },
+ {
+  "name": "the preview reads now at nought, not their held %",
+  "file": "src/maker-inputs.js",
+  "find": "now = PRICING_ENGINE.quoteAt(q, K, I.policy, held);",
+  "replace": "now = PRICING_ENGINE.quoteAt(q, K, I.policy, 0);"
+ },
+ {
+  "name": "the preview takes a partner",
+  "file": "src/maker-inputs.js",
+  "find": "  if ((book.state.partners || []).includes(who)) return { error: \"A partner pays the Floor and has no %.\" };\n",
+  "replace": ""
+ },
+ {
+  "name": "the preview takes 35%",
+  "file": "src/maker-inputs.js",
+  "find": "  if (!PRICING_ENGINE.driftOk(pct)) return { error: \"Choose a % from -30% to +30%.\" };\n",
+  "replace": ""
+ },
+ {
+  "name": "the Desk route takes any whole %",
+  "file": "src/worker.js",
+  "find": "    if (whole % 5 !== 0 || whole < -30 || whole > 30) return json({ ok: false, error: \"Choose a % from -30 to +30 in steps of 5.\" }, 400);\n",
+  "replace": ""
+ },
+ {
+  "name": "the relay forwards to the wrong Desk path",
+  "file": "stmt/maker.js",
+  "find": "deskCall(env, \"/_internal/maker/drift-preview/\" + op.code",
+  "replace": "deskCall(env, \"/_internal/maker/preview/\" + op.code"
+ },
+ {
+  "name": "the form keeps a late reply",
+  "file": "stmt/owner.js",
+  "find": "driftReads[key]=j.preview; if(ask===driftAsk) driftDraw(j.preview);",
+  "replace": "driftReads[key]=j.preview; driftDraw(j.preview);"
+ },
+ {
+  "name": "the form takes any whole %",
+  "file": "stmt/owner.js",
+  "find": "Number.isInteger(n)&&n%5===0&&n>=-30",
+  "replace": "Number.isInteger(n)&&n>=-30"
+ },
+ {
+  "name": "the form sends the whole % instead of the fraction",
+  "file": "stmt/owner.js",
+  "find": "var value=Number((whole/100).toFixed(2));",
+  "replace": "var value=whole;"
+ },
+ {
+  "name": "the form forgets what it read",
+  "file": "stmt/owner.js",
+  "find": "if(driftReads[key]){ driftDraw(driftReads[key]); return; }",
+  "replace": ""
+ },
+ {
+  "name": "the note describes the price again",
+  "file": "engine/pricing.mjs",
+  "find": "if(hit)return {card:hit[1],cardNote:\"their price at \"+qty+\" unit\"};",
+  "replace": "if(hit)return {card:hit[1],cardNote:\"the board, one price for everybody\"};"
+ }
+]

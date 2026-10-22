@@ -277,7 +277,9 @@ export async function run({ ok }) {
       for (let j = 0; j < Math.max(a.log.length, b.log.length); j++) {
         steps++;
         const x = a.log[j], y = b.log[j];
-        if (x && y && x.tag === y.tag && x.res === y.res && x.dump === y.dump) equal++;
+        /* 22 Oct 2026, his word: every customer is separate, so the card's note names their price and no longer describes it; set aside here and only here */
+        const note = (t) => typeof t === "string" ? t.replace(/their (?:card|price) at [0-9.]+ unit|the board, one price for everybody(?: at [0-9.]+ unit)?/g, "NOTE") : t;
+        if (x && y && x.tag === y.tag && note(x.res) === note(y.res) && note(x.dump) === note(y.dump)) equal++;
         else if (bad.length < 5) bad.push(a.name + " / " + (x && x.tag));
       }
     }

@@ -15303,8 +15303,8 @@ await (async () => {
     const res45 = F45.apply(book45, { ok: true, count: 1, approved: [it45(1, "roster", { code: "CZ9-NEWT", kind: "customer", parent: null, note: null, tiers: { salt: 0.25 }, unit: "pct" })] },
       { version: "v9998", date: "01 Jan 2099", title: "FIXTURE", notes: ["fixture"], rows: {} }, master45);
     ok(res45.ok && book45.roster.includes("CZ9-NEWT") && JSON.stringify(book45.TIER_OF["CZ9-NEWT"]) === '{"salt":0.25}', "the fold registers the customer and files the starting % lift on the book: " + (res45.ok ? JSON.stringify(book45.TIER_OF) : res45.problems));
-    const ref45 = F45.plan(book45, { ok: true, count: 1, approved: [it45(2, "roster", { code: "CZ9-NEWU", kind: "customer", parent: null, note: null, tiers: { oil: "Diamond" } })] }, null).refused.map((x) => x.why).join(" ");
-    ok(/Diamond is not held per customer/.test(ref45), "and refuses a registration carrying a level word on a book that holds none per customer: " + ref45);
+    const ref45 = F45.plan(book45, { ok: true, count: 1, approved: [it45(2, "roster", { code: "CZ9-NEWU", kind: "customer", parent: null, note: null, tiers: { oil: "Diamond" }, unit: "pct" })] }, null).refused.map((x) => x.why).join(" ");
+    ok(/Diamond is not a %/.test(ref45), "and refuses a registration carrying a level word, which is no % (22 Oct 2026: oil takes a %): " + ref45);
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w45.close(); } catch (e) { /* best effort */ } }
 })();
 
@@ -34514,7 +34514,7 @@ await (async () => {
     "the cost, the margin on the goods and the floor, as the drafter reads them: " + JSON.stringify({ cost: j.cost, margin: j.margin, floor: j.floor }));
   ok(j.usual && j.usual.rate === 100 && j.usual.orders === 3 && j.usual.dir === "below" && j.usual.off === -20 && j.usual.far === true,
     "their usual, with which way this order sits from it and whether it is as far as the flag's line: " + JSON.stringify(j.usual));
-  ok(j.card === 190 && /^their card at 2 unit$/.test(j.cardNote),
+  ok(j.card === 190 && /^their price at 2 unit$/.test(j.cardNote),
     "their card at this size, the desk's own cardQuote carried in the snapshot, beside the RM 160 their page quoted: " + JSON.stringify({ card: j.card, note: j.cardNote }));
   ok(j.told === "They see Placed: Waiting for us to confirm." && j.pricing && j.pricing.v === "v900" && /^[0-9a-f]{16}$/.test(j.pricing.digest)
     && /^[0-9a-f]{64}$/.test(j.hash) && !("entry" in j),
@@ -48352,6 +48352,10 @@ section("18 Oct 2026: salt's Set Price is the minimum on his four points, his % 
 await (async () => {
   await (await import("./lift-pct.mjs")).run({ ok });
 })();
+section("22 Oct 2026: Their % runs on his curve on every book, and Salt Admin shows it live before Approve");
+await (async () => {
+  await (await import("./pct-curve.mjs")).run({ ok });
+})();
 
 section("18 Oct 2026: the five price levels are gone from the engine, the Desk, the drafter and the fold");
 await (async () => {
@@ -51063,8 +51067,9 @@ await (async () => {
   /* 3. THE % LIFT at 12.5 unit on RM 64: floor 800, Set 1,080, ceiling 2,400. A % scales the multiple inside the walk, so -30% reads 865, -10% 1,000, 10% 1,175,
      20% 1,275 and 30% 1,380, each on the whole grid beneath */
   const at125 = [-0.3, -0.1, 0, 0.1, 0.2, 0.3].map((d) => E.driftAt(12.5, Cof(64), P, d).p);
-  ok(JSON.stringify(at125) === "[865,1000,1080,1175,1275,1380]",
-    "at 12.5 unit on RM 64 a % of -30, -10, 0, 10, 20 and 30 reads 865, 1,000, 1,080, 1,175, 1,275 and 1,380 on the five grid, walked over it: " + JSON.stringify(at125));
+  /* 22 Oct 2026, his curve: -30% is 1.20 times the Floor at 12.5 (960) and +30% 1.45 (1,160), each held up by the margin a smaller size reached */
+  ok(JSON.stringify(at125) === "[980,1045,1080,1115,1150,1180]",
+    "at 12.5 unit on RM 64 a % of -30, -10, 0, 10, 20 and 30 reads 980, 1,045, 1,080, 1,115, 1,150 and 1,180 on his curve, walked over the five grid: " + JSON.stringify(at125));
   /* 4. EVERY DRIFT STAYS IN THE BOX, on the ten, on its side of the Set Price, and never rises in rate with size where a ten
      down would still clear the floor */
   const bad4 = [];
@@ -51169,9 +51174,10 @@ await (async () => {
   const itA = (n, p, v) => ({ id: "2099-01-01T00:00:00.02" + n + "Z", collection: "roster", row: { code: "CZ9-DB" + n, kind: "customer", tiers: { [p]: v }, unit: "pct" }, entry: { at: "2099-01-01T00:00:00.02" + n + "Z", payload: {} } });
   const why = (x) => (F.plan(bkF, { ok: true, count: 1, approved: [x] }, null).refused[0] || {}).why || "";
   const byBook = [why(itP(1, "salt", "Gold")), why(itP(2, "oil", 0.4)), why(itP(3, "oil", "Gold")), why(itA(4, "salt", "Gold")), why(itA(5, "oil", 0.3)), why(itA(6, "salt", 0.3))];
-  ok(/Gold is not a % from -30 to \+30/.test(byBook[0]) && /40% lift is not held per customer/.test(byBook[1]) && /Gold is not held per customer/.test(byBook[2])
-    && /Gold is not a % from -30 to \+30/.test(byBook[3]) && /30% lift is not held per customer/.test(byBook[4]) && byBook[5] === "",
-    "the fold refuses by book: a level on salt is refused, and a level or a % on oil, a fixed board, is refused; a % on salt is filed, at a tier entry and at Add ID: " + JSON.stringify(byBook));
+  /* 22 Oct 2026: every book takes Their %, so oil refuses only what is not a % */
+  ok(/Gold is not a % from -30 to \+30/.test(byBook[0]) && /40% lift is not a % from -30 to \+30/.test(byBook[1]) && /Gold is not a % from -30 to \+30/.test(byBook[2])
+    && /Gold is not a % from -30 to \+30/.test(byBook[3]) && byBook[4] === "" && byBook[5] === "",
+    "the fold refuses what is not a %: a level on salt or oil and 40% are refused; a % on salt or oil is filed, at a tier entry and at Add ID: " + JSON.stringify(byBook));
   /* 15. A LOT PARTLY LANDED IS COSTED OVER THE UNITS RECEIVED; one with nothing received is passed over (review, 05 Oct 2026) */
   const PE = (await import("../engine/position.mjs")).default;
   const lots15 = [{ rid: "pA", date: "2026-09-01", qty: 10, total: 500, freight: 20 },
