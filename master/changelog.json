@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1204",
+  "d": "22 Oct 2026",
+  "t": "TWO PENDING ORDERS FROM CS6-PER WITHDRAWN",
+  "n": [
+   "<b>TWO CANCELLATIONS FOLDED.</b> Both withdraw pending orders placed by CS6-PER on 22 Oct on the statements site: s280 (1 unit of salt, RM120) and s281 (10 unit of oil, RM130). Both were recorded on 22 Oct and decided by Counter Admin. The drafter raised no flags on either.",
+   "<b>NO STOCK MOVED.</b> Neither order had been paid or handed over, so no stock was drawn, no revenue had been booked and no cost is carried. The inventory stays at 12, with no lot landed and no change to the cost basis."
+  ]
+ },
+ {
   "v": "v1203",
   "d": "22 Oct 2026",
   "t": "TWO PENDING ORDERS FOR CS6-PER, NOTHING MOVED",

@@ -1,6 +1,6 @@
 {
-  "v": "v1203",
-  "derivedFrom": "b6c9474d0f10f6f1",
+  "v": "v1204",
+  "derivedFrom": "57a57674bcf0c48c",
   "tables": {
     "sales": {
       "rows": 280,
@@ -14,7 +14,7 @@
           ]
         },
         "amend": {
-          "present": 152,
+          "present": 154,
           "of": 280,
           "optional": true,
           "types": [
@@ -22,7 +22,7 @@
           ]
         },
         "cancelled": {
-          "present": 20,
+          "present": 22,
           "of": 280,
           "optional": true,
           "types": [
@@ -30,7 +30,7 @@
           ]
         },
         "cancelledOn": {
-          "present": 16,
+          "present": 18,
           "of": 280,
           "optional": true,
           "types": [

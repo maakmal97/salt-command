@@ -1,6 +1,6 @@
 {
- "v": "v1203",
- "stamped": "22 Oct 2026, 08:20 KL",
+ "v": "v1204",
+ "stamped": "22 Oct 2026, 08:42 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -8360,7 +8360,25 @@
     "listQty": 1,
     "rwdStep": 600,
     "rwdRate": 60,
-    "rid": "s280"
+    "rid": "s280",
+    "amend": [
+     {
+      "date": "2026-10-22",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-22",
+      "kind": "Cancellation",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CANCELLATION ON S280, 22 OCT: 1 UNIT OF SALT FOR CS6-PER, GOODS RM120, WITHDRAWN.</b> The desk withdrew the order on the statements site, order 20261021142101-hli47a. It was pending, with RM0 paid and nothing handed over, so no stock is drawn back and no revenue is reversed. It now counts nowhere. CS6-PER's history: 23 orders, a median rate of RM85.52, a range of RM7 to RM120, RM250 outstanding before this, no units on credit and nothing defaulted. This row does not add to that balance. The drafter flagged nothing. No cost is carried, as nothing was drawn. Nothing is left outstanding on this order."
+     }
+    ],
+    "cancelled": true,
+    "cancelledOn": "2026-10-22"
    },
    {
     "customer": "CS6-PER",
@@ -8371,7 +8389,25 @@
     "date": "2026-10-22",
     "deliveredQty": 0,
     "note": "<b>NEW SALE ON 22 OCT: 10 UNIT OF OIL TO CS6-PER, GOODS RM130, PENDING.</b> Ordered on the statements site, order 20261021142102-mp3e2g, to collect. Nothing paid and nothing handed over, so no stock is drawn and no revenue booked yet. The goods total of RM130 equals the ask total of RM130 and is above the floor total of RM80, which is RM13 a unit against a floor of RM8 and an ask of RM13. CS6-PER's history: 21 orders, a median rate of RM85.52, a range of RM7 to RM116, nothing outstanding and no units on credit, against a cap of 20. The row carries cost at COGS off the latest purchase p041, and the fold keeps it. The drafter flagged the rate as 18.2% above their usual RM11 a unit for oil; the figures answer that, since it is the ask. Payment and collection are outstanding.",
-    "rid": "s281"
+    "rid": "s281",
+    "amend": [
+     {
+      "date": "2026-10-22",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-22",
+      "kind": "Cancellation",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CANCELLATION ON S281, 22 OCT: 10 UNIT OF OIL FOR CS6-PER, GOODS RM130, WITHDRAWN.</b> The desk withdrew the order on the statements site, order 20261021142102-mp3e2g. It was pending, with RM0 paid and nothing handed over, so no stock is drawn back and no revenue is reversed. It now counts nowhere. CS6-PER's history: 23 orders, a median rate of RM85.52, a range of RM7 to RM120, RM250 outstanding before this, no units on credit and nothing defaulted. This row does not add to that balance. The drafter flagged nothing. No cost is carried, as nothing was drawn. Nothing is left outstanding on this order."
+     }
+    ],
+    "cancelled": true,
+    "cancelledOn": "2026-10-22"
    }
   ],
   "contacts": [
@@ -9124,7 +9160,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-22T00:20:09.541Z",
+  "QUEUE_COMMITTED": "2026-10-22T00:41:56.524Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -16384,41 +16420,12 @@
      ]
     }
    },
-   "v": "v1203"
+   "v": "v1204"
   },
   "OPEN": {
-   "at": "2026-10-22T00:20:39.458Z",
-   "count": 10,
+   "at": "2026-10-22T00:43:01.317Z",
+   "count": 8,
    "byKey": {
-    "CS6-PER|2026-10-22|120": {
-     "d": "2026-10-22",
-     "p": "CS6-PER",
-     "dir": "S",
-     "q": 1,
-     "t": 120,
-     "cash": 0,
-     "mv": 0,
-     "st": "part",
-     "oweRM": 120,
-     "oweUnits": 1,
-     "rid": "s280",
-     "key": "CS6-PER|2026-10-22|120"
-    },
-    "CS6-PER|2026-10-22|130|oil": {
-     "d": "2026-10-22",
-     "p": "CS6-PER",
-     "dir": "S",
-     "q": 10,
-     "t": 130,
-     "cash": 0,
-     "mv": 0,
-     "st": "part",
-     "oweRM": 130,
-     "oweUnits": 10,
-     "pr": "oil",
-     "rid": "s281",
-     "key": "CS6-PER|2026-10-22|130|oil"
-    },
     "CR3-DAM|2026-10-20|75": {
      "d": "2026-10-20",
      "p": "CR3-DAM",
@@ -16559,10 +16566,10 @@
      "onHand": 12,
      "free": 10.5,
      "owedOut": 1.5,
-     "coverDays": 2.5,
-     "rate": 4.15,
+     "coverDays": 2.6,
+     "rate": 4.1,
      "owedToYou": 315,
-     "promised": 2.5,
+     "promised": 1.5,
      "short": 0
     },
     "oil": {
@@ -16570,10 +16577,10 @@
      "onHand": 40,
      "free": 40,
      "owedOut": 0,
-     "coverDays": 14.2,
-     "rate": 3.44,
+     "coverDays": 16.2,
+     "rate": 2.95,
      "owedToYou": 0,
-     "promised": 10,
+     "promised": 0,
      "short": 0
     },
     "candy": {
@@ -16606,7 +16613,7 @@
     "rice": "2026-10-20",
     "spare": null
    },
-   "v": "v1203"
+   "v": "v1204"
   },
   "TERMS": {
    "ceiling": 250,
@@ -16614,7 +16621,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1203"
+   "v": "v1204"
   },
   "REWARD": {
    "stated": {
@@ -16632,7 +16639,7 @@
      }
     }
    },
-   "v": "v1203"
+   "v": "v1204"
   },
   "STOCK": {
    "today": "2026-10-22",
@@ -16640,15 +16647,15 @@
     "salt": {
      "shelf": 12,
      "free": 10.5,
-     "commit": 2.5,
-     "coverDays": 2.5,
+     "commit": 1.5,
+     "coverDays": 2.6,
      "transit": 0
     },
     "oil": {
      "shelf": 40,
      "free": 40,
-     "commit": 10,
-     "coverDays": 14.2,
+     "commit": 0,
+     "coverDays": 16.2,
      "transit": 0
     },
     "candy": {
@@ -16666,7 +16673,7 @@
      "transit": 0
     }
    },
-   "v": "v1203"
+   "v": "v1204"
   }
  }
 }
