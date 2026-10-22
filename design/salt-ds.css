@@ -2343,11 +2343,14 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   color: transparent;
   -webkit-text-fill-color: transparent;
 }
+/* 22 Oct 2026, his review ("UP" left of "updated 09:04"): an ellipsis never reaches a flex row's parts, so a part that does not fit was
+   cut mid-word. The quiet line now wraps onto a second line its own height hides: a part shows whole or not at all, from the end. */
 .salt-deskbar__meta {
   display: flex;
   align-items: center;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 0;
+  height: 1.2em;
   overflow: hidden;
   white-space: nowrap;
   font-family: var(--salt-font-mono);
@@ -2357,8 +2360,8 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   text-transform: uppercase;
   line-height: 1.2;
   color: var(--salt-mist);
-  text-overflow: ellipsis;
 }
+.salt-deskbar__meta > * { flex: none; }
 .salt-deskbar__where {
   flex: none;
   display: flex;
