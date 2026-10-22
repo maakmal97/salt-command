@@ -380,14 +380,14 @@
  {
   "name": "the glance has no To approve tile",
   "file": "stmt/owner.js",
-  "find": ".concat([['#orders/approve','approve','To approve',String(draftGroups(pendingRows()).length),'On Orders']]);",
-  "replace": ";"
+  "find": "['#orders/approve','approve','To approve',String(draftGroups(pendingRows()).length),'copper'],",
+  "replace": ""
  },
  {
   "name": "the glance counts rows, not cards",
   "file": "stmt/owner.js",
-  "find": "String(draftGroups(pendingRows()).length),'On Orders'",
-  "replace": "String(pendingRows().length),'On Orders'"
+  "find": "String(draftGroups(pendingRows()).length),'copper'",
+  "replace": "String(pendingRows().length),'copper'"
  },
  {
   "name": "Needs you lists a row to approve again",

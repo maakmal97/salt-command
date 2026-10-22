@@ -108,12 +108,6 @@
   "replace": "    root.appendChild(actOn(el('button','aback','Orders'),'order.back'));"
  },
  {
-  "name": "Back does nothing",
-  "file": "stmt/owner.js",
-  "find": "else if(way==='orders') closeOrder(); else",
-  "replace": "else if(way==='orders'){} else"
- },
- {
   "name": "Back leaves him nowhere",
   "file": "stmt/owner.js",
   "find": "[data-order=\"'+was+'\"]'); if(row&&row.focus) row.focus(); }catch(x){}",
@@ -162,13 +156,13 @@
   "replace": "<div class=\"ordgrid\"><div id=\"makerReview\" class=\"ordopen\"></div><div id=\"makerOrderList\" class=\"ordlist\"></div></div>"
  },
  {
-  "name": "a question on an order is only Soon",
+  "name": "a question on an order is only FYI",
   "file": "stmt/owner.js",
-  "find": "L.push(item('now','messages','Message','om:'+o.id, last.at, {who:who, head:'Reply to ', what:cut(last.text), why:'On their order.', practice:t, open:to}, function(c){",
-  "replace": "L.push(item('soon','messages','Message','om:'+o.id, last.at, {who:who, head:'Reply to ', what:cut(last.text), why:'On their order.', practice:t, open:to}, function(c){"
+  "find": "L.push(item('now','messages','Message','om:'+o.id, last.at, {who:who, head:'Reply to ', what:cut(last.text), why:'On their order.', practice:t, open:to, order:o.id}, function(c){",
+  "replace": "L.push(item('watch','messages','Message','om:'+o.id, last.at, {who:who, head:'Reply to ', what:cut(last.text), why:'On their order.', practice:t, open:to, order:o.id}, function(c){"
  },
  {
-  "name": "a question on an order is Soon, not Now",
+  "name": "a question on an order is Pending, not To do",
   "file": "stmt/owner.js",
   "find": "L.push(item('now','messages','Message','om:'",
   "replace": "L.push(item('soon','messages','Message','om:'"
@@ -328,12 +322,6 @@
   "file": "stmt/owner.js",
   "find": "section.setAttribute('data-key',path.split('/').pop());section.setAttribute('data-formmenu','');",
   "replace": "section.setAttribute('data-key',path.split('/').pop());"
- },
- {
-  "name": "the retained input stands below the menu",
-  "file": "stmt/owner.js",
-  "find": "    [].slice.call(box.children).forEach(function(n){ if(n.hasAttribute('data-formmenu')) anchor=n; });\n",
-  "replace": ""
  },
  {
   "name": "a row opens the wrong form",

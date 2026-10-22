@@ -1,19 +1,19 @@
-/* test/admin-needs.mjs: NEEDS YOU, THE RANKED INBOX (11 Oct 2026, Phase 1b; docs/STATEMENTS.md "His places").
+/* test/admin-needs.mjs: NEEDS YOU, THE RANKED INBOX (11 Oct 2026, Phase 1b; docs/STATEMENTS.md "His places"; re-aimed 22 Oct 2026 to the redesigned page, his canvas Needs you).
  *
- * Every thing that waits on him is a card on the system's Action recipe, ranked Now, Soon, Watch and oldest first in each, read again every 30
- * seconds while it is showing. What is proved here, each check red under its own mutation (test/admin-needs.mutations.json):
- *   1  the cards: which kind of thing is in which severity, with its kind word, who, what, age and Open
- *   2  the ranking: Now before Soon before Watch, the oldest first; practice items apart, under their own line
- *   3  practice items: labelled, and counted nowhere, in the line under the title and on both bars
- *   4  the counts on every bar item, on the rail and on the app bar alike
+ * Every thing that waits on him is one card of the system's Action recipe, in a group under one word (To do, Pending, FYI; never folded, no count), money first and then
+ * the oldest, read again every 5 seconds while it is showing. What is proved here, each check red under its own mutation (test/admin-needs.mutations.json):
+ *   1  the cards: which kind of thing is in which group (his own work is To do; Pending is money owed past term and an offer waiting on their yes; FYI the hours and the
+ *      notice), with its kind word and age, who by code, the book's typed tag, the figure and the one pill; what the card says in full is its title's aria-label
+ *   2  the ranking: To do before Pending before FYI, the cards with money first and the largest sum first, then the rest oldest first and no age last; practice items apart
+ *   3  practice items: one folded line "Practice: N", no chip on the card, counted nowhere, in the lead and on both bars; the lead is one Insight of what waits on his tap
+ *   4  the counts on every bar item, on the rail and on the app bar alike: Needs you counts the To do cards
  *   5  Open: each kind goes to its own place and part, and opens the thing it is about
- *   6  the one filled pill: only where the page already has that exact action as one tap, through the same function and the same question;
- *      no card in Needs you books money
- *   7  the kind chips: filters only, reading nothing
+ *   6  the one filled pill: only where the page already has that exact action as one tap, through the same function and the same question; no card in Needs you books
+ *      money; a second choice (Record payment) stands in the opened card from 860px, not on the resting card
+ *   7  the kind tabs: filters only, reading nothing, a kind with nothing disabled and never hidden, each with its count
  *   8  a read that failed is said, never taken for nothing waiting
- *  10  (17 Oct 2026, Salt Admin clarity part 2) the verb first: each card's title says what to do, then who and the figure under it; the card's main
- *      button is on the card and reaches the same function as the full card's; a money tap asks once on the card and Cancel sends nothing; practice
- *      accounts are one folded line at the foot, "Practice: N"; the summary reads "12 to do now · 11 soon"
+ *  10  the verb first: each card's title says what to do, then who, in full to a reader; the card's main button is on the card and reaches the same function as the
+ *      full card's; a money tap asks once on the card and Cancel sends nothing; practice accounts are one folded line at the foot, "Practice: N"
  *   9  the 5-second read: only while Needs you or Orders shows and the page is visible, no read twice at once, nothing drawn when nothing
  *      changed, a part he has begun on left alone, a tap in flight kept
  * Drawn by the maker harness (test/maker-act.mjs), whose hooks change what each read answers. */
@@ -75,12 +75,18 @@ function busyDay(state) {
 const OWED = { owedMoney: [{ party: "CX1-ZED", rm: 150, since: "2026-09-20", due: "2026-09-21",
   rows: [{ rid: "row-1", key: "CX1-ZED|2026-09-01|200", product: "salt", rm: 150, since: "2026-09-20", due: "2026-09-21" }] }],
 owedGoods: [{ party: "CX2-ZED", rid: "row-1", key: "CX2-ZED|2026-10-05|99|oil", product: "oil", units: 1.5, date: "2026-10-05" }] };
-const NOW_KEYS = ["o:ord-p3", "p:ord-a1", "c:" + U1 + ":c-1", "o:ord-p1", "m:" + U1, "o:ord-p4", "c:" + U1 + ":c-2", "o:ord-p2", "k:" + U3,
-];
+/* To do (22 Oct 2026, his own work now among it): the cards with money first, the largest sum first (an order's total, a payment's sum; the two RM 100 orders by age), then the rest
+   oldest first, the cards with no age last in the order they are built */
+const NOW_KEYS = ["p:ord-a1", "o:ord-p1", "o:ord-p3", "o:ord-p2", "c:" + U1 + ":c-1", "c:" + U1 + ":c-2", "g:row-1", "s", "u:/all/maker/inputs/loan", "l:w1", "m:" + U1, "k:" + U3,
+  "a:ord-a2", "a:ord-x1", "x:0", "q:q-2", "n:" + U2];
+/* Pending: money owed past term (RM 150) and his offer waiting on their yes (RM 110) */
+const SOON_KEYS = ["$:CX1-ZED", "f:ord-p4"];
 const PRACTICE_KEYS = ["m:" + PRACTICE, "c:" + PRACTICE + ":c-x", "o:ex-1"];
 const WATCH_KEYS = ["w:hours", "w:notice"];
-/* the loan the harness keeps unsent on this phone is a Soon card too (Phase 4c), between the accounts not sent and the guest link by its age */
+/* the loan the harness keeps unsent on this phone is a To do card too (Phase 4c), among those with an age */
 const UNSENT = "u:/all/maker/inputs/loan";
+/* from 860px the tests stub matchMedia as the page asks it, so a tap opens the card beside the list */
+const wide = (w) => { w.matchMedia = (q) => ({ matches: /min-width:\s*860px/.test(q) && !/max-width/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {} }); };
 
 const shown = (el) => { for (let e = el; e && e.id !== "roster"; e = e.parentElement) if (e.hidden) return false; return !!el; };
 
@@ -92,13 +98,12 @@ export async function run({ ok, pageWork }) {
     p.cards = () => [...d.querySelectorAll("#nlist [data-need]")];
     p.card = (k) => d.querySelector('#nlist [data-need="' + k + '"]');
     p.keys = (sev) => p.cards().filter((c) => c.getAttribute("data-sev") === sev && !c.hasAttribute("data-practice")).map((c) => c.getAttribute("data-need"));
-    /* what a card says is the words after its book's mark (the mark is a .pwith: the drawing, and the shape told to a reader), so the book is read as the mark it draws and never as a word */
-    p.title = (c) => (c.querySelector(".need-head") || { textContent: "" }).textContent;
-    p.words = (c) => { const w = c.querySelector(".need-what"), rest = w ? w.cloneNode(true) : null, mark = w ? w.querySelector(".pwith") : null;
-      if (rest) rest.querySelectorAll(".pwith").forEach((m) => m.remove());
-      return { kind: c.querySelector(".salt-action__kind").textContent, who: c.querySelector(".need-who").textContent, what: rest ? rest.textContent.trim() : "",
-        mark: mark && mark.querySelector("svg.psym") ? (mark.querySelector(".sr") || { textContent: "" }).textContent : "", age: c.querySelector(".salt-action__money").textContent }; };
+    /* a card since 22 Oct 2026: the kind word (then its age), who, the book's typed tag, the figure last, and what it says in full to a reader (its title's aria-label) */
+    p.said = (c) => { const b = c && c.querySelector(".need-tap"); return b ? b.getAttribute("aria-label") : ""; };
+    p.words = (c) => ({ kind: c.querySelector(".nkind").firstChild.textContent, who: c.querySelector(".need-who").textContent, said: p.said(c), age: (c.querySelector(".nage") || { textContent: "" }).textContent,
+      fig: c.querySelector(".nfig").textContent, tag: (c.querySelector(".ntag") || { textContent: "" }).textContent });
     p.buttons = (c) => [...c.querySelectorAll("button:not(.need-tap)")].map((b) => b.textContent);
+    p.todo = () => p.cards().filter((c) => c.getAttribute("data-sev") === "now" && !c.hasAttribute("data-practice")).length;
     p.counts = (bar) => Object.fromEntries([...d.querySelectorAll(bar + " [data-count]")].map((e) => [e.getAttribute("data-count"), e.textContent]));
     p.tap = async (act, key) => { const c = byAct(d, act, key); if (c) c.click(); await p.work.quiet(); return !!c; };
     p.where = () => {
@@ -113,77 +118,103 @@ export async function run({ ok, pageWork }) {
     return p;
   };
   const state = () => ({ approved: new Set(), newOrder: null });
+  const pills = (c) => [...c.querySelectorAll(".salt-pill")].map((b) => b.textContent);
 
   /* 1. THE CARDS */
   let p = await open(state());
   try {
     const d = p.d;
-    ok(same(p.keys("now"), NOW_KEYS) && same(p.keys("soon").slice(0, 5), ["$:CX1-ZED", "g:row-1", "s", UNSENT, "l:w1"]) && same(p.keys("watch"), WATCH_KEYS),
-      "an order placed, a payment they say they sent, a message asked and a locked account are Now, the guest link and the accounts not sent Soon, and the Desk's line, "
-      + "an override and a notice Watch: " + JSON.stringify([p.keys("now"), p.keys("soon"), p.keys("watch")]));
-    ok(p.cards().every((c) => c.classList.contains("salt-action") && c.classList.contains("salt-action--" + c.getAttribute("data-sev"))
-      && c.querySelector(".salt-action__kind") && c.querySelector(".need-who") && c.querySelector(".salt-action__money")),
-    "every card is the system's Action recipe, coloured by its severity, with its kind word, who and age");
+    ok(same(p.keys("now"), NOW_KEYS) && same(p.keys("soon"), SOON_KEYS) && same(p.keys("watch"), WATCH_KEYS),
+      "an order placed, a payment they say they sent, a message asked, a locked account and (his own work) the guest link, an ID with no account, the accounts not sent, a refused or unsent entry, "
+      + "goods paid and not handed over and a step to send again are To do; money owed past term and his offer waiting on their yes are Pending; the override and the notice are FYI: "
+      + JSON.stringify([p.keys("now"), p.keys("soon"), p.keys("watch")]));
+    const SHAPE = ["salt-action__kind", "salt-action__body", "salt-action__go", "salt-action__money"];
+    ok(p.cards().every((c) => c.classList.contains("salt-action") && c.classList.contains("salt-action--" + c.getAttribute("data-sev")) && c.classList.contains("ncard")
+      && same([...c.children].map((x) => x.classList[0]), SHAPE) && c.querySelector(".nkind") && c.querySelector(".need-who") && c.querySelector(".nfig.salt-action__money--lg")
+      && !c.querySelector(".salt-action__why, .need-what, .need-clock")),
+    "every card is the system's Action recipe, coloured by its severity, of one shape: kind and age, the body, the go row and the figure, with no why line, no what line and no clock");
     const order = p.words(p.card("o:ord-p3")), pay = p.words(p.card("p:ord-a1")), claim = p.words(p.card("c:" + U1 + ":c-1")), msg = p.words(p.card("m:" + U1)), lock = p.words(p.card("k:" + U3));
-    ok(order.kind === "Order" && order.who === "CX1-ZED" && order.what === "1 unit · RM 100.00" && /^(Cube|Droplet|Lozenge|Capsule|Ring)$/.test(order.mark) && order.age === "26 h",
-      "a placed order says Order, who by code, what (the book's mark, units, RM, and no word for the book) and its age in hours: " + JSON.stringify(order));
-    ok(pay.kind === "Payment" && pay.what === "Says they paid" && p.title(p.card("p:ord-a1")) === "Confirm CX1-ZED's RM 530.00" && pay.age === "9 h" && claim.kind === "Payment" && p.title(p.card("c:" + U1 + ":c-1")) === "Confirm CX1-ZED's RM 50.00" && claim.age === "7 h",
-      "a payment they say they sent, on an order (the sum, the oldest) or against the account, says Payment: " + JSON.stringify([pay, claim]));
-    ok(msg.kind === "Message" && msg.who === "CX1-ZED" && msg.what === "Hello" && msg.age === "4 h" && lock.kind === "Locked" && /^Locked out until \d\d:\d\d$/.test(lock.what) && lock.age === "5 min",
-      "a message asked carries their words, a locked account the addresses refused and its age: " + JSON.stringify([msg, lock]));
+    ok(order.kind === "Order" && order.who === "CX1-ZED" && order.said === "Order: Agree CX1-ZED's order, 1 unit · RM 100.00" && order.tag === "Salt" && order.fig === "RM 100" && order.age === "26 h",
+      "a placed order says Order and its age in hours, who by code, the book as its typed tag, the figure last, and its sentence in full to a reader: " + JSON.stringify(order));
+    ok(pay.kind === "Payment" && pay.said === "Payment: Confirm CX1-ZED's RM 530.00, Says they paid" && pay.age === "9 h" && pay.fig === "RM 530"
+      && claim.kind === "Payment" && claim.said === "Payment: Confirm CX1-ZED's RM 50.00, Says they paid" && claim.age === "7 h" && claim.fig === "RM 50",
+    "a payment they say they sent, on an order (the sum, the oldest) or against the account, says Payment, its sum as the figure: " + JSON.stringify([pay, claim]));
+    ok(msg.kind === "Message" && msg.who === "CX1-ZED" && msg.said === "Message: Reply to CX1-ZED, Hello" && msg.age === "4 h" && msg.fig === ""
+      && lock.kind === "Locked" && /^Locked: Send CX3-ZED a sign-in link, Locked out until \d\d:\d\d$/.test(lock.said) && lock.age === "5 min",
+    "a message asked carries their words, a locked account the addresses refused and its age, neither a figure: " + JSON.stringify([msg, lock]));
     const link = p.words(p.card("l:w1"));
-    ok(link.kind === "Link" && MADE_20H.test(link.what) && link.age === "20 h", "a guest link is Soon, with its kind, when it was made and its age: " + JSON.stringify(link));
+    ok(link.kind === "Link" && MADE_20H.test(link.said.replace(/^.*, (Made [^,]*)$/, "$1")) && link.age === "20 h" && p.card("l:w1").getAttribute("data-sev") === "now",
+      "a guest link is To do, with its kind, when it was made and its age: " + JSON.stringify(link));
     /* 22 Oct 2026 (multi-tick Approve, his answer "no overlaps"): a Desk row to approve is no card here; Orders > Approve decides it, and the glance counts it */
     ok(p.cards().every((c) => !/^d:/.test(c.getAttribute("data-need"))) && !d.querySelector("#nlist [data-act='need.approve-row']"),
       "a Desk row waiting to be approved is no card in Needs you, and has no Approve pill there");
-    ok(p.card("x:0") && p.card("q:q-2") && p.card("q:q-1") === null && p.card("x:0").getAttribute("data-sev") === "soon" && /Refused for the fixture/.test(p.card("x:0").textContent)
-      && p.card("q:q-2").getAttribute("data-kind") === "rows" && p.card("a:ord-a2") && p.card("a:ord-a2").getAttribute("data-sev") === "soon",
-    "an entry that did not get through (the drafter's refusal, a refused server entry, not a held one) and a stage he rejected are Soon");
-    ok(!p.card("w:desk") && !/The Desk shows/.test(d.getElementById("nlist").textContent) && /Closed until Fri 18:00/.test(p.card("w:hours").textContent) && /Open late/.test(p.card("w:notice").textContent),
-      "Watch says \"Closed until Fri 18:00\" for the override in force and the notice set, and no card says only what the Desk counts (plan 1, part 5)");
+    ok(p.card("x:0") && p.card("q:q-2") && p.card("q:q-1") === null && p.card("x:0").getAttribute("data-sev") === "now" && p.card("q:q-2").getAttribute("data-sev") === "now"
+      && p.words(p.card("x:0")).said === "Entry: Fix Desk's entry, Did not get through" && p.card("q:q-2").getAttribute("data-kind") === "rows"
+      && p.card("a:ord-a2") && p.card("a:ord-a2").getAttribute("data-sev") === "now" && p.card("a:ord-a2").getAttribute("data-kind") === "orders",
+    "an entry that did not get through (the drafter's refusal, a refused server entry, not a held one) and a stage he rejected are To do, his own work");
+    ok(!p.card("w:desk") && !/The Desk shows/.test(d.getElementById("nlist").textContent) && p.words(p.card("w:hours")).said === "Hours: Shop, Paused until Fri 18:00" && p.words(p.card("w:notice")).said === "Notice: Shop, Open late"
+      && p.card("w:hours").getAttribute("data-sev") === "watch",
+    "FYI says \"Paused until Fri 18:00\" for the override in force and the notice set, and no card says only what the Desk counts (plan 1, part 5)");
     /* 1b. WHAT IS OWED, BOTH WAYS (plan 1, parts 3 and 4) */
     const owedM = p.words(p.card("$:CX1-ZED")), owedG = p.words(p.card("g:row-1"));
     ok(p.card("$:CX1-ZED").getAttribute("data-sev") === "soon" && p.card("$:CX1-ZED").getAttribute("data-kind") === "payments" && owedM.kind === "Owed" && owedM.who === "CX1-ZED"
-      && owedM.what === "Past term" && p.title(p.card("$:CX1-ZED")) === "Collect RM 150.00 from CX1-ZED" && /Handed over 20 Sep 2026, due 21 Sep 2026[.]/.test(p.card("$:CX1-ZED").textContent) && same(p.buttons(p.card("$:CX1-ZED")), ["Record payment"]),
-    "money owed past term is a Soon card: who, the Desk's figure, when it was handed over and due, and Record payment: " + JSON.stringify(owedM));
-    ok(p.card("g:row-1").getAttribute("data-sev") === "soon" && p.card("g:row-1").getAttribute("data-kind") === "orders" && owedG.kind === "To hand over" && owedG.who === "CX2-ZED"
-      && owedG.what === "1.5 units paid, not handed over" && /^(Cube|Droplet|Lozenge|Capsule|Ring)$/.test(owedG.mark) && same(p.buttons(p.card("g:row-1")), ["Handover"]),
-    "goods paid for and not handed over are a Soon card: who, the book's mark, the units, and Handover: " + JSON.stringify(owedG));
+      && owedM.said === "Owed: Collect RM 150.00 from CX1-ZED, Past term" && owedM.fig === "RM 150" && owedM.age === "31 d late" && !!p.card("$:CX1-ZED").querySelector(".nage--late") && same(p.buttons(p.card("$:CX1-ZED")), ["Message"]),
+    "money owed past term is a Pending card: who, the Desk's figure as the figure, how late in ember, and one way, Message (their thread; Record payment stands in the opened card): " + JSON.stringify(owedM));
+    ok(p.card("g:row-1").getAttribute("data-sev") === "now" && p.card("g:row-1").getAttribute("data-kind") === "orders" && owedG.kind === "To hand over" && owedG.who === "CX2-ZED"
+      && owedG.said === "To hand over: Hand over to CX2-ZED, 1.5 units paid, not handed over" && owedG.tag === "Oil" && same(p.buttons(p.card("g:row-1")), ["Handover"]),
+    "goods paid for and not handed over are a To do card: who, the book's typed tag, the units, and Handover: " + JSON.stringify(owedG));
+    const offer = p.words(p.card("f:ord-p4"));
+    ok(p.card("f:ord-p4").getAttribute("data-sev") === "soon" && p.card("f:ord-p4").getAttribute("data-kind") === "orders" && offer.kind === "Offer" && offer.tag === "Salt" && offer.fig === "RM 110"
+      && /^Offer: Offer to CX1-ZED, Waits on their yes until /.test(offer.said) && same(p.buttons(p.card("f:ord-p4")), ["Withdraw"]) && !p.card("o:ord-p4"),
+    "his offer waiting on their yes is a Pending card, kind Offer, the offer's sum as the figure, and its one button Withdraw, the order drawn no second time as an order to agree: " + JSON.stringify(offer));
+    p.posts.length = 0;
+    await p.tap("need.withdraw", "f:ord-p4");
+    const wc = p.card("f:ord-p4");
+    ok(!!wc && !!byAct(wc, "need.ask-yes", "f:ord-p4") && !!byAct(wc, "need.ask-no", "f:ord-p4") && !!wc.querySelector("p.nask") && wc.classList.contains("need--grow") && p.posts.length === 0,
+      "Withdraw asks once on the card (Yes and Cancel, the card grown) and sends nothing: " + p.posts.length);
+    await p.tap("need.ask-no", "f:ord-p4");
+    ok(p.posts.length === 0 && !p.card("f:ord-p4").querySelector("p.nask") && !p.card("f:ord-p4").classList.contains("need--grow"), "and Cancel puts the card back, sending nothing");
 
     /* 2. THE RANKING */
     const order2 = p.cards().filter((c) => !c.hasAttribute("data-practice")).map((c) => c.getAttribute("data-sev"));
     const sevOrder = ["now", "soon", "watch"];
     ok(order2.every((s, i) => i === 0 || sevOrder.indexOf(order2[i - 1]) <= sevOrder.indexOf(s)),
-      "Now comes before Soon and Soon before Watch: " + JSON.stringify(order2));
-    ok(same(p.keys("now"), NOW_KEYS), "within Now the oldest comes first: " + JSON.stringify(p.keys("now")));
-    ok(same(p.keys("soon"), ["$:CX1-ZED", "g:row-1", "s", UNSENT, "l:w1", "a:ord-a2", "a:ord-x1", "x:0", "q:q-2", "n:" + U2]),
-      "within Soon the oldest first, and what has no age after what has one: " + JSON.stringify(p.keys("soon")));
-    ok([...d.querySelectorAll("#nlist .nsev")].map((h) => h.textContent.replace(/(:| .) \d+$/, "")).join() === "Now,Soon,Watch,Practice", "each severity is headed by its word, and the practice line stands last");
+      "To do comes before Pending and Pending before FYI: " + JSON.stringify(order2));
+    ok(same(p.keys("now"), NOW_KEYS), "within To do the cards with money come first, the largest sum first (the two RM 100 orders by age), then the rest oldest first, none with no age before one with: " + JSON.stringify(p.keys("now")));
+    ok(same(p.keys("soon"), SOON_KEYS), "within Pending the larger sum first: " + JSON.stringify(p.keys("soon")));
+    const heads = [...d.querySelectorAll("#nlist .nsev")];
+    ok(heads.map((h) => h.textContent).join() === "To do,Pending,FYI,Practice: 3" && heads.slice(0, 3).every((h) => h.tagName === "H2" && !/[0-9]/.test(h.textContent) && h.getAttribute("data-sev"))
+      && same([...d.querySelectorAll("#nlist > section.ngroup")].map((g) => [g.getAttribute("data-sev"), g.getAttribute("aria-label"), g.firstElementChild === g.querySelector("h2.nsev")]), [["now", "To do", true], ["soon", "Pending", true], ["watch", "FYI", true]])
+      && same([...d.querySelectorAll("#nlist > details")].map((x) => x.getAttribute("data-sev")), ["practice"]) && !d.querySelector("#nlist [data-act='need.fold.soon'], #nlist [data-act='need.fold.watch']"),
+    "each group is a section headed by its one word, To do, Pending, FYI, with no count and never folded, and the practice line stands last: " + heads.map((h) => h.textContent).join());
 
-    /* 3. PRACTICE (the summary reads plainly: "12 to do now · 11 soon", and says nothing of what could be read) */
+    /* 3. PRACTICE (the lead is one Insight of what waits on his tap, and says nothing of practice) */
     const practice = p.cards().filter((c) => c.hasAttribute("data-practice"));
     ok(same(practice.map((c) => c.getAttribute("data-need")).sort(), PRACTICE_KEYS.slice().sort())
-      && practice.every((c) => /Practice/.test(c.querySelector(".need-who").parentElement.parentElement.textContent)) && !p.card("o:ord-p1").hasAttribute("data-practice"),
-    "an item of a practice account is drawn, labelled Practice, and no other is");
-    /* part 2: practice accounts leave Now, Soon and Watch for one folded line at the foot, which opens them in place */
+      && practice.every((c) => !/Practice/.test(c.textContent)) && !p.card("o:ord-p1").hasAttribute("data-practice"),
+    "an item of a practice account is drawn, with no Practice chip on the card (the fold is its label), and no other is");
+    /* part 2: practice accounts leave To do, Pending and FYI for one folded line at the foot, which opens them in place */
     const pfold = d.querySelector('#nlist > details.nfold[data-sev="practice"]');
     ok(!!pfold && !pfold.open && pfold === d.getElementById("nlist").lastElementChild && pfold.querySelector("summary").textContent === "Practice: 3"
       && practice.every((c) => pfold.contains(c)) && d.querySelectorAll("#nlist > details.nfold:not([data-sev=practice]) [data-practice]").length === 0,
-    "practice accounts are one folded line at the foot, \"Practice: 3\", and no practice card stands among Now, Soon or Watch: " + (pfold && pfold.querySelector("summary").textContent));
+    "practice accounts are one folded line at the foot, \"Practice: 3\", and no practice card stands among To do, Pending or FYI: " + (pfold && pfold.querySelector("summary").textContent));
     pfold.open = true; pfold.dispatchEvent(new p.w.Event("toggle")); await p.tap("need.kind.all");
     ok(d.querySelector('#nlist > details[data-sev="practice"]').open && d.querySelector("#nlist > details[data-sev=practice]").querySelectorAll("[data-need]").length === 3,
       "and the line opens them in place, and stays open through a redraw");
     d.querySelector('#nlist > details[data-sev="practice"]').open = false; d.querySelector('#nlist > details[data-sev="practice"]').dispatchEvent(new p.w.Event("toggle"));
-    const real = p.cards().filter((c) => !c.hasAttribute("data-practice"));
-    const nowReal = real.filter((c) => c.getAttribute("data-sev") === "now").length, soonReal = real.filter((c) => c.getAttribute("data-sev") === "soon").length;
-    ok(nowReal === 9 && d.getElementById("nCount").textContent === nowReal + " to do now · " + soonReal + " soon",
-      "the line under the title counts the real Now and Soon and no practice item: " + d.getElementById("nCount").textContent);
+    const lead = d.getElementById("nCount");
+    ok(p.todo() === 17 && lead.classList.contains("salt-insight") && lead.classList.contains("salt-insight--copper") && lead.classList.contains("nlead")
+      && lead.textContent.startsWith("RM 1,000 waits on your tap now: RM 600 to confirm, RM 400 to agree.") && !/to do now|soon/.test(lead.textContent),
+    "the lead is one Insight of the money that waits on his tap now, summed off the payment and the placed-order cards of To do (RM 530 + 50 + 20 to confirm, RM 200 + 100 + 100 to agree), no practice item in it: " + lead.textContent);
 
     /* 4. THE COUNTS ON THE BARS */
     const rail = p.counts(".salt-rail"), bar = p.counts(".salt-appbar");
-    ok(same(rail, { needs: "9", orders: "9", customers: "2", record: "", shop: "" }) && same(rail, bar),
-      "Needs you counts what is Now, Orders the open orders (not ended or completed), Customers the threads asked and the links waiting, "
+    ok(same(rail, { needs: "17", orders: "9", customers: "2", record: "", shop: "" }) && same(rail, bar) && +rail.needs === p.todo(),
+      "Needs you counts the To do cards (his own work among them), Orders the open orders (not ended or completed), Customers the threads asked and the links waiting, "
       + "Record and Shop none, the same on the rail and on the bar, and no practice item in any: " + JSON.stringify([rail, bar]));
+    ok(same([...d.querySelectorAll("#nGlance .nkpi")].map((k) => [k.getAttribute("data-glance"), k.querySelector(".salt-kpi__label").textContent]), [["ready", "Ready"], ["approve", "To approve"], ["owed", "Receivables"]])
+      && [...d.querySelectorAll("#nGlance a.salt-kpi.salt-kpi--line")].length === 3 && d.querySelector('[data-glance="owed"] .salt-kpi__value').textContent === "RM 600" && !d.querySelector("#nGlance .salt-kpi__note, #nGlance [data-glance=stock], #nGlance [data-glance=lot]"),
+    "the glance is three one-line tiles, Ready, To approve (the second) and Receivables, with no note and no stock tile");
 
     /* 5. OPEN */
     const open1 = async (key, where, then) => {
@@ -205,66 +236,81 @@ export async function run({ ok, pageWork }) {
     ok(opens.length === 0, "Open goes to the place and part of its kind, and opens the thing it is about: " + JSON.stringify(opens));
     byAct(d, "nav.needs").click(); await p.work.quiet();
     ok(p.cards().filter((c) => !byAct(c, "need.open")).length === 0, "every card has an Open");
-    /* plan 1: Record payment opens the site order's card at Money received; Handover, on a row with no site order, Record's Correct a row on that row */
+    /* plan 1: Handover, on a row with no site order, opens Record's Correct a row on that row, as goods or cash moved */
     p.posts.length = 0;
-    byAct(p.card("$:CX1-ZED"), "need.owed-pay", "CX1-ZED").click(); await p.work.quiet();
-    const moneyHead = d.querySelector('#makerReview [data-sect="money"]');
-    ok(p.where() === "orders/ready" && !!d.querySelector('#makerOrderList [data-order="ord-r1"][aria-current="true"]') && moneyHead && moneyHead.textContent === "Money received" && d.activeElement === moneyHead,
-      "Record payment opens the order the row is, on Money received: " + p.where() + " " + (d.activeElement && d.activeElement.textContent));
-    byAct(d, "nav.needs").click(); await p.work.quiet();
     byAct(p.card("g:row-1"), "need.owed-hand", "row-1").click(); await p.work.quiet();
     const form = d.querySelector('#makerInputs [data-form="correct-a-row"]'), pick = form && form.querySelector('[data-act="record.amend.row"]'), kind = form && form.querySelector("input:checked[value=Fulfilment]");
     const pickSend = form && form.querySelector('[data-act="record.amend.send"]');
     ok(p.where() === "record/entry" && form && !form.hidden && pick && pick.value === "row-1" && !!kind && pickSend && pickSend.disabled === false,
       "Handover on a row with no site order opens Correct a row on that row, as goods or cash moved, its Send ready: " + JSON.stringify([p.where(), form && form.hidden, pick && pick.value, !!kind, pickSend && pickSend.disabled]));
-    ok(p.posts.length === 0, "and neither books anything: " + JSON.stringify(p.posts.map((x) => x.route)));
+    ok(p.posts.length === 0, "and it books nothing: " + JSON.stringify(p.posts.map((x) => x.route)));
+    /* the card's one way on money owed is Message: it opens their thread and sends nothing */
+    byAct(d, "nav.needs").click(); await p.work.quiet();
+    byAct(p.card("$:CX1-ZED"), "need.owed-message", "CX1-ZED").click(); await p.work.quiet();
+    ok(p.where() === "customers/messages" && shown(d.getElementById("makerChatOpen")) && p.posts.length === 0, "and Message on money owed opens their thread, sending nothing: " + p.where());
 
     /* 6. THE ONE FILLED PILL */
-    const pills = (c) => [...c.querySelectorAll(".salt-pill")].map((b) => b.textContent);
-    const money = /Agree|Accept|Received|Cash|Yes received|Pay/i;
-    const owedCard = (c) => /^[$g]:/.test(c.getAttribute("data-need"));
+    byAct(d, "nav.needs").click(); await p.work.quiet();
     ok(same(pills(p.card("o:ord-p1")), ["Agree"]) && same(pills(p.card("m:" + U1)), ["Reply"]) && same(pills(p.card("p:ord-a1")), ["Review"]) && same(pills(p.card("c:" + U1 + ":c-1")), ["Received"]),
       "an order has Agree, a message Reply, a payment against the account Received, and an order with several payments Review, on the card: " + JSON.stringify([pills(p.card("o:ord-p1")), pills(p.card("m:" + U1)), pills(p.card("p:ord-a1"))]));
-    /* 10. THE VERB FIRST, AND THE BUTTON ON THE CARD (17 Oct 2026, part 2) */
-    const TITLES = [["o:ord-p1", "Agree CX1-ZED's order", "2 units · RM 200.00"], ["p:ord-a1", "Confirm CX1-ZED's RM 530.00", "Says they paid"], ["c:" + U1 + ":c-1", "Confirm CX1-ZED's RM 50.00", "Says they paid"],
-      ["m:" + U1, "Reply to CX1-ZED", "Hello"], ["k:" + U3, "Send CX3-ZED a sign-in link", null], ["a:ord-a2", "Send CX1-ZED's order again", null],
-      ["$:CX1-ZED", "Collect RM 150.00 from CX1-ZED", "Past term"], ["g:row-1", "Hand over to CX2-ZED", null]];
-    const got = TITLES.map(([k]) => (p.card(k) ? p.title(p.card(k)) : null)), want = TITLES.map(([, t]) => t);
-    ok(got.every((t, i) => t === want[i]),
-      "each card's title says what to do, verb first, then who: " + JSON.stringify(got));
-    ok(p.words(p.card("o:ord-p1")).what === "2 units · RM 200.00" && !/\b(now|tiers?|levels?)\b/i.test(p.card("o:ord-p1").innerHTML.replace(/<[^>]*>/g, " ")),   /* 19 Oct 2026: whole words, spaced at every tag */
-      "and the figure stands under it, with the book as a mark and no level or tier word: " + p.words(p.card("o:ord-p1")).what);
-    ok(!p.cards().some((c) => p.buttons(c).some((t) => /Accept|Cash/.test(t))) && p.cards().filter(owedCard).every((c) => c.querySelectorAll(".salt-pill").length === 0),
-      "and no card carries Accept or Cash; an owed card's one way is a ghost that opens, never a filled pill");
-    ok(same(pills(p.card("l:w1")), ["Approve"]) && same(pills(p.card("k:" + U3)), ["Send a sign-in link"]) && same(pills(p.card("s")), ["Send sign-in links one by one"]),
-      "the guest link, the refused account and the accounts not sent keep the one filled action they had");
+    /* 10. THE VERB FIRST, AND THE BUTTON ON THE CARD (17 Oct 2026, part 2; the sentence is the title's aria-label since 22 Oct 2026) */
+    const TITLES = [["o:ord-p1", "Order: Agree CX1-ZED's order, 2 units · RM 200.00"], ["p:ord-a1", "Payment: Confirm CX1-ZED's RM 530.00, Says they paid"], ["c:" + U1 + ":c-1", "Payment: Confirm CX1-ZED's RM 50.00, Says they paid"],
+      ["m:" + U1, "Message: Reply to CX1-ZED, Hello"], ["k:" + U3, "Locked: Send CX3-ZED a sign-in link, Locked out until "], ["a:ord-a2", "Order: Send CX1-ZED's order again, 1 unit · RM 100.00"],
+      ["$:CX1-ZED", "Owed: Collect RM 150.00 from CX1-ZED, Past term"], ["g:row-1", "To hand over: Hand over to CX2-ZED, 1.5 units paid, not handed over"]];
+    const got = TITLES.map(([k]) => (p.card(k) ? p.said(p.card(k)) : null));
+    ok(got.every((t, i) => t !== null && t.startsWith(TITLES[i][1]) && (TITLES[i][1].endsWith(" ") || t === TITLES[i][1])),
+      "each card's title says what to do, verb first, then who, in full to a reader: " + JSON.stringify(got));
+    ok(p.words(p.card("o:ord-p1")).fig === "RM 200" && p.words(p.card("o:ord-p1")).tag === "Salt" && !/\b(now|tiers?|levels?)\b/i.test(p.card("o:ord-p1").innerHTML.replace(/<[^>]*>/g, " ")),   /* 19 Oct 2026: whole words, spaced at every tag */
+      "and the figure is the card's last column, the book is its typed tag, and no level or tier word shows: " + JSON.stringify(p.words(p.card("o:ord-p1"))));
+    ok(!p.cards().some((c) => p.buttons(c).some((t) => /Accept|Cash/.test(t))) && same(pills(p.card("g:row-1")), ["Handover"]) && same(pills(p.card("$:CX1-ZED")), ["Message"]),
+      "no card carries Accept or Cash; goods owed has Handover filled and money owed Message, never Record payment on a card that has Message");
+    ok(same(pills(p.card("l:w1")), ["Approve"]) && same(pills(p.card("k:" + U3)), ["Send"]) && same(pills(p.card("s")), ["Send"]) && same(pills(p.card("n:" + U2)), ["Show"])
+      && byAct(p.card("k:" + U3), "need.signin-link").getAttribute("aria-label") === "Send a sign-in link" && byAct(p.card("s"), "need.send-turn").getAttribute("aria-label") === "Send sign-in links one by one"
+      && byAct(p.card("n:" + U2), "need.show-link").getAttribute("aria-label") === "Show the guest price list",
+    "the guest link, the refused account, the accounts not sent and the ID with no account keep the one filled action they had, shortened to Approve, Send, Send and Show, the long form kept for a reader");
     ok(p.cards().every((c) => pills(c).length <= 1), "no card has more than one filled pill");
-    ok(p.cards().every((c) => c.classList.contains("need--act") === (p.buttons(c).length > 0)),
-      "a card with an action of its own sets its ways on a row under the body (need--act), and one with none has no go row");
-    /* 14 Oct 2026: THE CARD IS THE TAP, Soon and Watch are folded, the chips are the kinds present */
-    ok(p.cards().every((c) => !p.buttons(c).includes("Open") && !c.querySelector(".salt-action__go .salt-ghost--open")) && !d.querySelector("#nlist button[data-act='need.open']:not(.need-tap)")
+    ok(p.cards().every((c) => c.querySelectorAll(".salt-action__go .nbtn").length === 1 && c.querySelector(".salt-action__go .nbtn").classList.contains("salt-pill--sm") && !c.classList.contains("need--act")),
+      "a resting card has exactly one action, a small filled pill in its go row, the second choice (Decline, Show a code, Record payment) kept for the opened card");
+    ok(p.cards().every((c) => !p.buttons(c).includes("Open") || c.getAttribute("data-need").startsWith("u:")) && !d.querySelector("#nlist button[data-act='need.open']:not(.need-tap)")
       && p.cards().filter((c) => byAct(c, "need.open")).every((c) => c.querySelector("button.need-tap.salt-action__title") && c.querySelector(".need-tap .need-who")),
-    "a card has no Open button: its title is the one tap (data-act need.open), and the card's own actions stay beside it");
-    const folds = [...d.querySelectorAll("#nlist > details.nfold")];
-    /* 19 Oct 2026 (his word): Soon opens unfolded; Watch and practice stay folded */
-    ok(same(folds.map((f) => f.getAttribute("data-sev")), ["soon", "watch", "practice"]) && same(folds.map((f) => f.open), [true, false, false])
-      && folds.every((f) => f.querySelector("summary.nsev") && /^\w+(:| .) \d+$/.test(f.querySelector("summary").textContent))
-      && same(folds.map((f) => f.querySelectorAll("[data-need]").length), [p.keys("soon").length, p.keys("watch").length, 3]) && !d.querySelector("#nlist > [data-need]:not([data-sev=now])"),
-    "Soon opens unfolded, Watch and practice are folded behind a heading with their count, Now stands open: " + JSON.stringify(folds.map((f) => [f.open, f.querySelector("summary").textContent])));
-    folds[0].open = false; folds[0].dispatchEvent(new p.w.Event("toggle")); folds[1].open = true; folds[1].dispatchEvent(new p.w.Event("toggle")); await p.tap("need.kind.all");
-    ok(!d.querySelector('#nlist > details[data-sev="soon"]').open && d.querySelector('#nlist > details[data-sev="watch"]').open, "a fold he closed or opened stays so through a redraw");
+    "a card has no Open button of its own (the unsent entry's pill is named Open, its act need.unsent): its title is the one tap (data-act need.open), and the card's own action stays beside it");
+    ok(!d.querySelector("#nlist details[data-sev=soon], #nlist details[data-sev=watch]") && !d.querySelector("#nlist h2.nsev[data-act]"),
+      "Pending and FYI are never folded, and no group heading has a tap");
+  } finally { p.w.close(); }
+
+  /* 1c. THE SECOND CHOICE AND THE WHY STAND IN THE OPENED CARD, from 860px: a tap opens it beside the list */
+  p = await open(state(), { before: wide });
+  try {
+    const d = p.d, pane = () => d.querySelector("#nopen .npane");
+    await p.tap("need.open", "$:CX1-ZED");
+    const goes = () => [...d.querySelectorAll("#nopen .npane__go button")].map((b) => b.textContent + "/" + (b.getAttribute("aria-label") || ""));
+    ok(!!pane() && /Handed over 20 Sep 2026, due 21 Sep 2026[.]/.test(pane().textContent) && same(goes(), ["Message/", "Record/Record payment"]) && same(p.buttons(p.card("$:CX1-ZED")), ["Message"]),
+      "the opened card of money owed has the why (handed over, due) and both ways, Message and Record payment, while the resting card keeps Message alone: " + JSON.stringify(goes()));
+    p.posts.length = 0;
+    byAct(d, "need.owed-pay", "CX1-ZED").click(); await p.work.quiet();
+    const moneyHead = d.querySelector('#makerReview [data-sect="money"]');
+    ok(p.where() === "orders/ready" && !!d.querySelector('#makerOrderList [data-order="ord-r1"][aria-current="true"]') && moneyHead && moneyHead.textContent === "Money received" && d.activeElement === moneyHead && p.posts.length === 0,
+      "Record payment opens the order the row is, on Money received, and books nothing: " + p.where() + " " + (d.activeElement && d.activeElement.textContent));
+    byAct(d, "nav.needs").click(); await p.work.quiet();
+    await p.tap("need.open", "x:0");
+    ok(/Refused for the fixture/.test((pane() || { textContent: "" }).textContent) && !/Refused for the fixture/.test(p.card("x:0").textContent),
+      "an entry's reason it did not get through stands in the opened card, and not on the resting card");
+    await p.tap("need.open", "w:hours");
+    ok(!!pane() && /Paused until Fri 18:00/.test(pane().querySelector(".npane__title").textContent) && /overridden for now/.test(pane().textContent), "the hours card opens its title in words and its why");
   } finally { p.w.close(); }
 
   /* 7. THE KIND CHIPS */
   p = await open(state());
   try {
     const d = p.d, chips = [...d.querySelectorAll(".nchips button")];
-    ok(chips.map((b) => b.firstChild.textContent).join() === "All,Orders,Payments,Messages,Rows,Accounts" && chips.every((b) => b.getAttribute("data-act") && b.classList.contains("salt-tabs__pill") && b.getAttribute("role") === "tab")
-      && chips[0].getAttribute("aria-selected") === "true" && d.querySelector(".nchips").classList.contains("salt-tabs") && d.querySelector(".nchips").getAttribute("role") === "tablist",
-    "the chips are All, Orders, Payments, Messages, Rows and Accounts, drawn as the parts strip is, a tablist of tabs of the system's pill, each with its act, All selected");
+    ok(chips.map((b) => b.firstChild.textContent).join() === "All,Orders,Payments,Messages,Rows,Accounts" && chips.every((b) => /^need[.]kind[.]/.test(b.getAttribute("data-act")) && b.classList.contains("salt-nav__link") && b.classList.contains("nktab") && b.getAttribute("role") === "tab")
+      && chips[0].getAttribute("aria-selected") === "true" && chips[0].classList.contains("salt-nav__link--active") && d.querySelector("nav.salt-nav.nkinds > .salt-nav__links.nchips").getAttribute("role") === "tablist" && !d.getElementById("nJump") && !d.getElementById("nJumpMenu") && !d.querySelector("[data-act^='need.jump']"),
+    "the kinds are All, Orders, Payments, Messages, Rows and Accounts, a tablist of the system's Nav links, each with its act, All selected, and no Jump to beside them");
+    ok(same(chips.map((b) => b.querySelector(".nktab__n").textContent), ["21", "7", "4", "1", "3", "4"]) && !chips.some((b) => b.querySelector(".salt-tabs__count")),
+      "each kind carries its count of cards, practice apart (21 in all: 17 To do, 2 Pending, 2 FYI): " + chips.map((b) => b.textContent).join());
     p.reads.length = 0;
-    const KO = ["all", "orders", "payments", "messages", "rows", "accounts"], visible = (dd) => [...dd.querySelectorAll(".nchips button")].filter((b) => !b.hidden).map((b) => b.getAttribute("data-chip"));
-    ok(same(visible(d), KO), "with a card of every kind, every chip is drawn: " + visible(d));
+    const KO = ["all", "orders", "payments", "messages", "rows", "accounts"], visible = (dd) => [...dd.querySelectorAll(".nchips button")].filter((b) => !b.disabled).map((b) => b.getAttribute("data-chip"));
+    ok(same(visible(d), KO), "with a card of every kind, every kind is on: " + visible(d));
     const kinds = {};
     for (const k of ["orders", "payments", "messages", "rows", "accounts"]) {
       await p.tap("need.kind." + k);
@@ -274,25 +320,27 @@ export async function run({ ok, pageWork }) {
     ok(Object.values(kinds).every((v) => !v.startsWith("BAD")), "each chip shows its own kind of card and no other: " + JSON.stringify(kinds));
     ok(p.reads.length === 0 && p.posts.length === 0, "and filtering reads and sends nothing: " + JSON.stringify(p.reads));
     await p.tap("need.kind.rows");
-    ok([...d.querySelectorAll(".nchips button")].map((b) => b.getAttribute("aria-selected")).join() === "false,false,false,false,true,false", "the chip he tapped is the one marked");
-    /* the recipe draws a selected pill from aria-selected alone (aria-pressed is a ghost's), so the mark is only as good as that selector */
-    const SELECTED = '.salt-tabs__pill[aria-selected="true"]';
-    ok(SITE_RECIPES.includes(SELECTED + " {") && same([...d.querySelectorAll(".nchips button")].filter((b) => b.matches(SELECTED)).map((b) => b.getAttribute("data-chip")), ["rows"]),
-      "and it alone matches the selector the system's tabs are drawn selected by, so it looks different from the other five");
+    ok([...d.querySelectorAll(".nchips button")].map((b) => b.getAttribute("aria-selected")).join() === "false,false,false,false,true,false", "the kind he tapped is the one marked");
+    /* the recipe draws the chosen Nav link from its --active class (the page sets it with aria-selected), so the mark is only as good as that selector */
+    const SELECTED = ".salt-nav__link--active";
+    ok(SITE_RECIPES.includes(SELECTED) && same([...d.querySelectorAll(".nchips button")].filter((b) => b.matches(SELECTED + '[aria-selected="true"]')).map((b) => b.getAttribute("data-chip")), ["rows"]),
+      "and it alone is the one the system's Nav draws as the chosen link, so it looks different from the other five");
     await p.tap("need.kind.all");
     ok(p.cards().length === 12 + 10 + 2, "All shows every card again, Watch among them: " + p.cards().length);
     await p.tap("need.kind.orders");
-    ok(!p.cards().some((c) => c.getAttribute("data-sev") === "watch") && same(p.counts(".salt-rail").needs, "9"), "Watch shows under All only, and a filter changes no count");
+    ok(!p.cards().some((c) => c.getAttribute("data-sev") === "watch") && same(p.counts(".salt-rail").needs, "17"), "FYI shows under All only, and a filter changes no count");
   } finally { p.w.close(); }
 
-  /* 7b. A CHIP IS DRAWN ONLY FOR A KIND THAT IS PRESENT */
+  /* 7b. A KIND WITH NOTHING IN IT IS OFF, NEVER HIDDEN */
   p = await open(state(), { threads: (j) => { j.threads = []; return j; } });
   try {
     const d = p.d, kinds = new Set(p.cards().map((c) => c.getAttribute("data-kind")));
-    ok(!kinds.has("messages") && same(visible2(d), ["all", ...["orders", "payments", "messages", "rows", "accounts"].filter((k) => kinds.has(k))]) && !visible2(d).includes("messages"),
-      "with no message waiting there is no Messages chip, and each other kind present keeps its own: " + visible2(d));
+    const tabs = [...d.querySelectorAll(".nchips button")];
+    ok(!kinds.has("messages") && same(visible2(d), ["all", ...["orders", "payments", "messages", "rows", "accounts"].filter((k) => kinds.has(k))]) && !visible2(d).includes("messages")
+      && tabs.length === 6 && tabs.every((b) => !b.hidden) && tabs.find((b) => b.getAttribute("data-chip") === "messages").disabled,
+    "with no message waiting the Messages tab is disabled and still drawn, and each other kind present stays on: " + visible2(d));
   } finally { p.w.close(); }
-  function visible2(dd) { return [...dd.querySelectorAll(".nchips button")].filter((b) => !b.hidden).map((b) => b.getAttribute("data-chip")); }
+  function visible2(dd) { return [...dd.querySelectorAll(".nchips button")].filter((b) => !b.disabled).map((b) => b.getAttribute("data-chip")); }
 
   /* 8. A READ THAT FAILED IS SAID */
   p = await open(state(), { failRoutes: [ROUTES.review, ROUTES.threads] });
@@ -303,7 +351,7 @@ export async function run({ ok, pageWork }) {
     ok(fail && !fail.hidden && lead === fail && fail.getAttribute("role") === "alert" && /^Couldn't read orders and rows and messages[.]/.test(fail.textContent)
       && byAct(fail, "need.retry") && byAct(fail, "need.retry").textContent === "Retry" && !p.card("o:ord-p1") && !p.card("m:" + U1) && p.card("c:" + U1 + ":c-1") && p.card("k:" + U3),
     "a failed read is the first thing on the page, \"Couldn't read orders and rows and messages.\" with a Retry, and the cards of what could be read stand: " + (fail && fail.textContent) + " | " + line);
-    ok(!/Nothing needs you/.test(line) && !/could be read/.test(line) && /^\d+ to do now/.test(line), "and the line under the title never says nothing needs him, and does not repeat what the banner says: " + line);
+    ok(!/Nothing needs you/.test(line) && !/could be read/.test(line) && /on your tap now/.test(line), "and the lead never says nothing needs him, and does not repeat what the banner says: " + line);
     p.fail.clear();
     p.reads.length = 0;
     byAct(fail, "need.retry").click(); await p.work.quiet();
@@ -387,8 +435,8 @@ export async function run({ ok, pageWork }) {
   p = await open(state(), { review: (j) => { j.unreadable = ["q:laptop-x"]; return j; } });
   try {
     const d = p.d, c = p.card("qx");
-    ok(c && c.getAttribute("data-sev") === "soon" && /1 queue entry unreadable: q:laptop-x/.test(c.textContent) && p.card("o:ord-p1") && p.card("q:q-2"),
-      "Needs you says \"1 queue entry unreadable: q:laptop-x\" as a Soon card, and every other card stands: " + (c && c.textContent));
+    ok(c && c.getAttribute("data-sev") === "now" && /1 queue entry unreadable: q:laptop-x/.test(p.said(c)) && p.card("o:ord-p1") && p.card("q:q-2"),
+      "Needs you says \"1 queue entry unreadable: q:laptop-x\" as a To do card, and every other card stands: " + (c && c.textContent));
     byAct(d, "nav.orders").click(); await p.work.quiet(); byAct(d, "part.orders.approve").click(); await p.work.quiet();
     const line = d.querySelector("#makerQueueReview [data-unreadable]");
     ok(line && line.textContent === "1 queue entry unreadable: q:laptop-x", "and Orders > Approve's queue names it too: " + (line && line.textContent));
@@ -422,11 +470,12 @@ export async function run({ ok, pageWork }) {
     const s2 = state();
     p.w.close();
     p = await open(s2);
-    ok(!p.card("o:ord-new") && p.counts(".salt-rail").needs === "9", "(a day without the order)");
+    ok(!p.card("o:ord-new") && p.counts(".salt-rail").needs === "17", "(a day without the order)");
     s2.newOrder = { id: "ord-new", u: U1, status: "placed", mode: "collect", qty: 3, total: 300, product: "salt", delivery: 0, paid: 0, msgs: [], payments: [], history: [], at: ago(0.1) };
     await p.tick();
-    ok(p.card("o:ord-new") && p.card("o:ord-new").getAttribute("data-sev") === "now" && p.counts(".salt-rail").needs === "10" && p.counts(".salt-appbar").orders === "10"
-      && /^10 to do now/.test(p.d.getElementById("nCount").textContent), "an order placed since the last read is drawn at the next tick, and counted on both bars");
+    ok(p.card("o:ord-new") && p.card("o:ord-new").getAttribute("data-sev") === "now" && p.counts(".salt-rail").needs === "18" && p.counts(".salt-appbar").needs === "18" && p.counts(".salt-appbar").orders === "10"
+      && p.todo() === 18 && p.d.getElementById("nCount").textContent.startsWith("RM 1,300 waits on your tap now: RM 600 to confirm, RM 700 to agree."),
+    "an order placed since the last read is drawn at the next tick, counted on both bars and in the lead: " + p.d.getElementById("nCount").textContent);
 
     /* only while it shows, and the page is visible */
     byAct(p.d, "nav.customers").click(); await p.work.quiet();

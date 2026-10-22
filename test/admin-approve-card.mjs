@@ -9,7 +9,7 @@
  *   D  Now and After as the Desk sent them, only what changes marked
  *   E  at most two lines, in sentence case, and only those asking a decision; every flag, the note and the row in Details
  *   F  one card per order, its Approve each draft's own approval in the order entered, stopping at the first refusal and saying which; a half-approved order said
- *   G  the button says the result, and Needs you holds the same one card per order
+ *   G  the button says the result, and the glance's To approve tile counts the same one card per order
  * Drawn by the maker harness (test/maker-act.mjs), the drafts shaped as the live store held s267 and s262 on 15 Oct 2026. */
 import { richOwnerPage, byAct } from "./maker-act.mjs";
 import { approveFigures, moveRow, rowFigures } from "../src/approve-figures.js";
@@ -172,7 +172,7 @@ export async function run({ ok, pageWork }) {
     ok(btn(s267) === "Approve: s267 owes RM 220.00" && btn(s262) === "Approve: s262 closed" && btn(over) === "Approve: s270 handed over" && btn(fl) === "Approve the sale",
       "the button says the result: " + J([btn(s267), btn(s262), btn(over), btn(fl)]));
     const tile = d.querySelector('[data-glance="approve"]');
-    ok(!d.querySelector('#nlist [data-need^="d:"]') && !d.querySelector('[data-act="need.approve-row"]') && !!tile && tile.querySelector(".salt-glance__value").textContent === "5" && tile.querySelector(".salt-glance__label").textContent === "To approve",
+    ok(!d.querySelector('#nlist [data-need^="d:"]') && !d.querySelector('[data-act="need.approve-row"]') && !!tile && tile.querySelector(".salt-kpi__value").textContent === "5" && tile.querySelector(".salt-kpi__label").textContent === "To approve" && tile.classList.contains("salt-kpi--line"),
       "Needs you lists no row to approve, and the glance counts one card per order, the claim's included: " + (tile && tile.textContent));
     ok(d.querySelectorAll("#makerDrafts [data-maker-card] [data-act='draft.approve']").length === 4 && d.querySelector("#makerDrafts > .aphead").textContent.startsWith("5 to decide") === false,
       "four of the five cards can be chosen (the claim's cannot), and the head counts the four it can decide: " + d.querySelector("#makerDrafts > .aphead").textContent);

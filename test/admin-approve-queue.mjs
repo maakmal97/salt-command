@@ -1,12 +1,12 @@
 /* test/admin-approve-queue.mjs: THE ROWS TO APPROVE, THE QUEUE, AND NO NATIVE CONFIRM (Phase 2c of the Salt Admin redesign, 12 Oct 2026; docs/STATEMENTS.md "The rows to approve").
  *
- * A Desk row waiting for him is a card on Orders > Approve (and a pill on Needs you). His decisions of 11 Oct 2026 shape it: 4, a Sheet replaces every native confirm, and the phone leads a
+ * A Desk row waiting for him is a card on Orders > Approve. His decisions of 11 Oct 2026 shape it: 4, a Sheet replaces every native confirm, and the phone leads a
  * draft with the cost and margin read off the draft and computes nothing, its flags frozen at drafting. What is proved here, each check red under its own mutation
  * (test/admin-approve-queue.mutations.json):
  *   1  the row to approve wears the system's Approve recipe: its markup carries the recipe's classes, the page restates none of the recipe's rules, the figures lead the flags, the flags are chips,
  *      Approve is the one filled pill and Reject the danger ghost, and a trip's rows stand in one card
  *   2  the queue is the system's Plan fold, shut, titled and counted, opened by a tap, and left as he set it by a redraw
- *   3  Approve, Reject, the trip's Approve, the Needs you pill, Withdraw server-held entry, Close the group order and Set and Clear the notice each ask on the page's Sheet: nothing is sent as it
+ *   3  Approve, Reject, the trip's Approve, Withdraw server-held entry, Close the group order and Set and Clear the notice each ask on the page's Sheet: nothing is sent as it
  *      opens, the four ways out send nothing and give focus back, the one action sends the request the confirm let through (the same route and body), and a second tap sends nothing
  *   4  no native confirm is left in the owner's script, and none is asked on any road above
  *   5  a lapse takes a Sheet left open down with the page
@@ -298,15 +298,15 @@ export async function run({ ok, pageWork }) {
     ok(bar().hidden && !p.row("d-1").classList.contains("ap--a"), "Approve all passes over a card the Desk refused");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
-  /* Needs you no longer lists a row to approve (his answer, no overlaps); the glance counts the cards in a tile that opens Approve */
+  /* Needs you no longer lists a row to approve (his answer, no overlaps); the glance counts the cards in a tile that opens Approve (its second tile since 22 Oct 2026) */
   p = await open();
   try {
     const d = p.d;
     const tile = d.querySelector('[data-glance="approve"]');
     ok(!d.querySelector('#nlist [data-need^="d:"]') && !d.querySelector('[data-act="need.approve-row"]'), "Needs you lists no row to approve and has no Approve pill");
-    ok(!!tile && tile.querySelector(".salt-glance__label").textContent === "To approve" && tile.querySelector(".salt-glance__value").textContent === "2" && tile.querySelector(".salt-glance__note").textContent === "On Orders"
-      && tile.getAttribute("href") === "#orders/approve" && tile.parentElement.lastElementChild === tile,
-    "the glance's last tile reads To approve with the number of cards waiting, and opens Orders > Approve: " + (tile && tile.textContent));
+    ok(!!tile && tile.querySelector(".salt-kpi__label").textContent === "To approve" && tile.querySelector(".salt-kpi__value").textContent === "2" && !tile.querySelector(".salt-kpi__note")
+      && tile.getAttribute("href") === "#orders/approve" && tile.previousElementSibling.getAttribute("data-glance") === "ready" && tile.nextElementSibling.getAttribute("data-glance") === "owed",
+    "the glance's second tile (between Ready and Receivables) reads To approve with the number of cards waiting, and opens Orders > Approve: " + (tile && tile.textContent));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* Withdraw server-held entry asks on the Sheet, and Finish server withdrawal, which asked nothing, still asks nothing */

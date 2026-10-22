@@ -6,6 +6,7 @@
  {"name":"no sheet link","file":"stmt/owner.js","find":"    if(shOf.length>1){\n      var sl=actOn(el('button','osheetlink'),'order.sheet',order.id);","replace":"    if(false){\n      var sl=actOn(el('button','osheetlink'),'order.sheet',order.id);"},
  {"name":"the link says the wrong place","file":"stmt/owner.js","find":"'Sheet '+(shOf.indexOf(order)+1)+' of '+shOf.length","replace":"'Sheet 1 of '+shOf.length"},
  {"name":"the link closes nothing","file":"stmt/owner.js","find":"      sl.addEventListener('click',function(){ var sh=order.sheet; closeOrder();","replace":"      sl.addEventListener('click',function(){ var sh=order.sheet;"},
- {"name":"a Needs card for every order of a sheet","file":"stmt/owner.js","find":"      if(o.status==='placed'&&shP.length>1&&shP[0].id!==o.id){}\n      else if(o.status==='placed')","replace":"      if(o.status==='placed')"},
- {"name":"the sheet's card says one order","file":"stmt/owner.js","find":"what:shP.length>1?shP.length+' orders on one sheet':orderWhat(o)","replace":"what:orderWhat(o)"}
+ {"name":"a Needs card for every order of a sheet","file":"stmt/owner.js","find":"if(o.status==='placed'&&shP.length>1&&shP[0].id!==o.id){}","replace":"if(false){}"},
+ {"name":"the sheet's card says one order","file":"stmt/owner.js","find":"what:shP.length>1?shP.length+' orders on one sheet':orderWhat(o)","replace":"what:orderWhat(o)"},
+ {"name":"the sheet's card draws one order's sum","file":"stmt/owner.js","find":"rm:shP.length>1?shP.reduce(function(s,x){ return s+(+x.total||0); },0):+o.total||0, tap:'agree'","replace":"rm:+o.total||0, tap:'agree'"}
 ]

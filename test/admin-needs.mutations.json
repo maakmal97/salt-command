@@ -74,26 +74,26 @@
  {
   "name": "a stage he rejected is not shown",
   "file": "stmt/owner.js",
-  "find": "if(o.again&&o.again.length) L.push(item('soon'",
-  "replace": "if(false) L.push(item('soon'"
+  "find": "if(o.again&&o.again.length) L.push(item('now'",
+  "replace": "if(false) L.push(item('now'"
  },
  {
   "name": "a card is not the Action recipe",
   "file": "stmt/owner.js",
-  "find": "var c=el('article','salt-action salt-action--'+o.sev+' need'+(tap?' ncard':''))",
-  "replace": "var c=el('article','salt-approve need'+(tap?' ncard':''))"
+  "find": "c=el('article','salt-action salt-action--'+o.sev+' need ncard')",
+  "replace": "c=el('article','salt-approve need ncard')"
  },
  {
   "name": "a card is not coloured by its severity",
   "file": "stmt/owner.js",
-  "find": "var c=el('article','salt-action salt-action--'+o.sev+' need'+(tap?' ncard':''))",
-  "replace": "var c=el('article','salt-action need'+(tap?' ncard':''))"
+  "find": "c=el('article','salt-action salt-action--'+o.sev+' need ncard')",
+  "replace": "c=el('article','salt-action need ncard')"
  },
  {
   "name": "a card has no kind word",
   "file": "stmt/owner.js",
-  "find": "c.appendChild(el('span','salt-action__kind',o.word));",
-  "replace": "c.appendChild(el('span','x',o.word));"
+  "find": "var kd=el('span','salt-action__kind nkind',o.word);",
+  "replace": "var kd=el('span','x nkind',o.word);"
  },
  {
   "name": "an age is counted in minutes",
@@ -108,16 +108,16 @@
   "replace": "new Date(held).toISOString()"
  },
  {
-  "name": "a practice item is not labelled",
+  "name": "the practice fold is not labelled",
   "file": "stmt/owner.js",
-  "find": "if(o.practice) title.appendChild(chip('mist','Practice'));",
-  "replace": ""
+  "find": "var ph=el('summary','salt-eyebrow salt-eyebrow--mist nsev','Practice: '+practiceList.length);",
+  "replace": "var ph=el('summary','salt-eyebrow salt-eyebrow--mist nsev','Other: '+practiceList.length);"
  },
  {
   "name": "a practice item is counted in Needs you",
   "file": "stmt/owner.js",
-  "find": "setCount('needs', items.filter(function(i){ return i.sev==='now'&&!i.practice; }).length);",
-  "replace": "setCount('needs', items.filter(function(i){ return i.sev==='now'; }).length);"
+  "find": "setCount('needs', items.filter(function(i){ return i.sev==='now'&&!i.practice&&i.counts; }).length);",
+  "replace": "setCount('needs', items.filter(function(i){ return i.sev==='now'&&i.counts; }).length);"
  },
  {
   "name": "a practice order is counted in Orders",
@@ -144,10 +144,10 @@
   "replace": "    setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordOpen(o); }).length);\n    setCount('record', pendingRows().length);"
  },
  {
-  "name": "the line counts a practice item",
+  "name": "the lead counts a practice item",
   "file": "stmt/owner.js",
-  "find": "if(i.practice||!i.counts) return;",
-  "replace": "if(!i.counts) return;"
+  "find": "if(i.practice||!i.counts||i.sev!=='now') return; todo++;",
+  "replace": "if(!i.counts||i.sev!=='now') return; todo++;"
  },
  {
   "name": "an order opens the Desk rows",
@@ -194,8 +194,8 @@
  {
   "name": "the chip tapped is not marked",
   "file": "stmt/owner.js",
-  "find": "var on=x.getAttribute('data-chip')===k; x.setAttribute('aria-selected', on?'true':'false');",
-  "replace": "var on=x.getAttribute('data-chip')===k; x.setAttribute('aria-selected', 'false');"
+  "find": "var on=x.getAttribute('data-chip')===nKind; x.setAttribute('aria-selected', on?'true':'false');",
+  "replace": "var on=x.getAttribute('data-chip')===nKind; x.setAttribute('aria-selected', 'false');"
  },
  {
   "name": "a chip reads",
@@ -354,34 +354,34 @@
   "replace": "}, true);"
  },
  {
-  "name": "a card with an action keeps it beside the body",
+  "name": "a card's action is not the small pill",
   "file": "stmt/owner.js",
-  "find": "c.classList.add('need--act'); ",
-  "replace": ""
+  "find": "      if(b.classList.contains('salt-pill')) b.classList.add('salt-pill--sm');\n      go.appendChild(b);",
+  "replace": "      go.appendChild(b);"
  },
  {
-  "name": "a card with only Open sets its ways under the body",
+  "name": "a card carries the old need--act class",
   "file": "stmt/owner.js",
-  "find": "if(o.practice) c.setAttribute('data-practice','');",
-  "replace": "if(o.practice) c.setAttribute('data-practice',''); c.classList.add('need--act');"
+  "find": "if(o.practice) c.setAttribute('data-practice','');\n    var kd=el('span','salt-action__kind nkind',o.word);",
+  "replace": "if(o.practice) c.setAttribute('data-practice',''); c.classList.add('need--act');\n    var kd=el('span','salt-action__kind nkind',o.word);"
  },
  {
-  "name": "the chip tapped is marked as a ghost's pressed, which the tabs are not drawn by",
+  "name": "the kind tapped is not drawn as the Nav's chosen link",
   "file": "stmt/owner.js",
-  "find": "var on=x.getAttribute('data-chip')===k; x.setAttribute('aria-selected', on?'true':'false');",
-  "replace": "var on=x.getAttribute('data-chip')===k; x.setAttribute('aria-pressed', on?'true':'false');"
+  "find": "x.classList.toggle('salt-nav__link--active', on);",
+  "replace": "x.classList.toggle('salt-nav__link--active', false);"
  },
  {
   "name": "the chips are not a tablist",
   "file": "stmt/page.js",
-  "find": "role=\"tablist\" aria-label=\"Show\"",
-  "replace": "role=\"group\" aria-label=\"Show\""
+  "find": "class=\"salt-nav__links nchips\" role=\"tablist\"",
+  "replace": "class=\"salt-nav__links nchips\" role=\"group\""
  },
  {
   "name": "a chip is not a tab",
   "file": "stmt/page.js",
-  "find": "class=\"salt-tabs__pill\" role=\"tab\" data-chip=\"",
-  "replace": "class=\"salt-tabs__pill\" data-chip=\""
+  "find": "role=\"tab\" data-chip=\"",
+  "replace": "data-chip=\""
  },
  {
   "name": "All is not selected at first",
@@ -408,46 +408,46 @@
   "replace": "function orderWhat(o){ return units(o.qty)+' '+o.product+' · '+rm(o.total); }"
  },
  {
-  "name": "an order card loses its book's mark",
+  "name": "an order card loses its book's tag",
   "file": "stmt/owner.js",
-  "find": "if(o.mark) what.appendChild(bookMark(o.mark));",
+  "find": "if(o.mark) title.appendChild(productTag(o.mark));",
   "replace": ""
  },
  {
-  "name": "a card has an Open button again",
+  "name": "a card's title is not its tap",
   "file": "stmt/owner.js",
-  "find": "if(o.open&&o.keepOpen){",
-  "replace": "if(o.open){"
+  "find": "var title=el(tap?'button':'div','salt-action__title'+(tap?' need-tap':'')), age=",
+  "replace": "var title=el('div','salt-action__title'), age="
  },
  {
-  "name": "Soon and Watch stand open",
+  "name": "a group heading carries a count",
   "file": "stmt/owner.js",
-  "find": "if(nFoldOpen[s[0]]) box.open=true;",
-  "replace": "box.open=true;"
+  "find": "var h=el('h2','salt-eyebrow salt-eyebrow--'+SEVC[s[0]]+' nsev', s[1]);",
+  "replace": "var h=el('h2','salt-eyebrow salt-eyebrow--'+SEVC[s[0]]+' nsev', s[1]+': '+group.length);"
  },
  {
-  "name": "a fold he opened shuts on a redraw",
+  "name": "the practice fold he opened shuts on a redraw",
   "file": "stmt/owner.js",
-  "find": "nFoldOpen[s[0]]=box.open;",
-  "replace": "0;"
+  "find": "pb.addEventListener('toggle', function(){ nFoldOpen.practice=pb.open; });",
+  "replace": ""
  },
  {
-  "name": "every kind chip is drawn",
+  "name": "a kind with nothing is hidden, not disabled",
   "file": "stmt/owner.js",
-  "find": "x.hidden=!(k==='all'||have[k]);",
-  "replace": "x.hidden=false;"
+  "find": "if(b.disabled!==none) b.disabled=none;",
+  "replace": "b.hidden=none;"
  },
  {
   "name": "the all-clear is said with a read failed",
   "file": "stmt/owner.js",
-  "find": ":bad.length?'Nothing in what could be read.':'Nothing needs you.';",
-  "replace": ":'Nothing needs you.';"
+  "find": "['',bad.length?'Nothing in what could be read.':'Nothing needs you.']",
+  "replace": "['','Nothing needs you.']"
  },
  {
-  "name": "the count reads as whole with a read failed",
+  "name": "the lead never leaves Reading",
   "file": "stmt/owner.js",
-  "find": "soon?soon+' soon':''].filter(Boolean).join(' · ')",
-  "replace": "soon?soon+' soon':''].filter(Boolean).join(' · ')+(bad.length?' in what could be read.':'')"
+  "find": "if(!needsReady()) parts.push(['','Reading what needs you.']);",
+  "replace": "if(true) parts.push(['','Reading what needs you.']);"
  },
  {
   "name": "Retry reads nothing",
@@ -552,10 +552,10 @@
   "replace": "return item('now','payments','Owed',"
  },
  {
-  "name": "goods owed are Now",
+  "name": "goods owed are Pending",
   "file": "stmt/owner.js",
-  "find": "return item('soon','orders','To hand over',",
-  "replace": "return item('now','orders','To hand over',"
+  "find": "return item('now','orders','To hand over',",
+  "replace": "return item('soon','orders','To hand over',"
  },
  {
   "name": "a site order's money opens Correct a row",
@@ -654,10 +654,10 @@
   "replace": "var practiceList=[];"
  },
  {
-  "name": "the summary drops its words",
+  "name": "the lead leaves out what is to agree",
   "file": "stmt/owner.js",
-  "find": "now?now+' to do now':''",
-  "replace": "now?now+' now':''"
+  "find": "agree>0.004?rmShort(agree)+' to agree':''",
+  "replace": "''"
  },
  {
   "name": "a claim answered from the card keeps its request apart from the full card",
@@ -684,15 +684,99 @@
   "replace": "head:'Unlock ', what:'Locked out'"
  },
  {
-  "name": "Soon opens folded",
+  "name": "the practice fold opens by itself",
   "file": "stmt/owner.js",
-  "find": "  var nFoldOpen={soon:true}, nKind",
-  "replace": "  var nFoldOpen={}, nKind"
+  "find": "if(nFoldOpen.practice) pb.open=true;",
+  "replace": "pb.open=true;"
  },
  {
   "name": "a Desk row to approve is a card in Needs you again",
   "file": "stmt/owner.js",
   "find": "    if(makerNotice&&makerNotice.length) L.push(noticeNeed(makerNotice));",
   "replace": "    L.push(item('soon','rows','Row','d:2026-10-10T00:00:00.000Z','',{who:'CX1-ZED', what:'Sale'}));\n    if(makerNotice&&makerNotice.length) L.push(noticeNeed(makerNotice));"
+ },
+ {
+  "name": "a kind with nothing is not disabled",
+  "file": "stmt/owner.js",
+  "find": "if(b.disabled!==none) b.disabled=none;",
+  "replace": "if(b.disabled) b.disabled=false;"
+ },
+ {
+  "name": "money does not rank first",
+  "file": "stmt/owner.js",
+  "find": "      if(ma!==mb) return ma?-1:1;\n",
+  "replace": ""
+ },
+ {
+  "name": "the larger sum does not rank first",
+  "file": "stmt/owner.js",
+  "find": "if(ma&&Math.abs(a.rm-b.rm)>0.004) return b.rm-a.rm;",
+  "replace": "if(ma&&Math.abs(a.rm-b.rm)>0.004) return a.rm-b.rm;"
+ },
+ {
+  "name": "his offer is To do, not Pending",
+  "file": "stmt/owner.js",
+  "find": "L.push(item('soon','orders','Offer'",
+  "replace": "L.push(item('now','orders','Offer'"
+ },
+ {
+  "name": "money owed is To do, not Pending",
+  "file": "stmt/owner.js",
+  "find": "return item('soon','payments','Owed'",
+  "replace": "return item('now','payments','Owed'"
+ },
+ {
+  "name": "his guest link is Pending",
+  "file": "stmt/owner.js",
+  "find": "return item('now','accounts','Link','l:'",
+  "replace": "return item('soon','accounts','Link','l:'"
+ },
+ {
+  "name": "the hours override is To do",
+  "file": "stmt/owner.js",
+  "find": "return item('watch','watch','Hours'",
+  "replace": "return item('now','watch','Hours'"
+ },
+ {
+  "name": "the lead leaves out what is to confirm",
+  "file": "stmt/owner.js",
+  "find": "if(i.tap==='confirm') conf+=i.rm;",
+  "replace": "if(i.tap==='confirm') conf+=0;"
+ },
+ {
+  "name": "the glance names Receivables as it did",
+  "file": "stmt/owner.js",
+  "find": "'Receivables',rmShort(owe)",
+  "replace": "'Owed to you',rmShort(owe)"
+ },
+ {
+  "name": "a card draws a why line",
+  "file": "stmt/owner.js",
+  "find": "body.appendChild(title); c.appendChild(body); c.appendChild(go);",
+  "replace": "body.appendChild(title); if(o.why) body.appendChild(el('p','salt-action__why',o.why)); c.appendChild(body); c.appendChild(go);"
+ },
+ {
+  "name": "a resting card carries every way of its row",
+  "file": "stmt/owner.js",
+  "find": "      if(go.children.length&&!grown) return;\n",
+  "replace": ""
+ },
+ {
+  "name": "Withdraw sends without asking",
+  "file": "stmt/owner.js",
+  "find": "if(!needAsk[key]) mainButton(c,'Withdraw','need.withdraw',key, function(){ delete needNote[key]; needAsk[key]=true; drawNeeds(); });",
+  "replace": "if(!needAsk[key]) mainButton(c,'Withdraw','need.withdraw',key, function(){ makerTap(o,'withdraw',{},'Offer withdrawn.'); });"
+ },
+ {
+  "name": "a card draws no figure",
+  "file": "stmt/owner.js",
+  "find": "+o.rm>0.004?rmShort(o.rm):''",
+  "replace": "''"
+ },
+ {
+  "name": "a practice item is counted on the rail",
+  "file": "stmt/owner.js",
+  "find": "setCount('needs', items.filter(function(i){ return i.sev==='now'&&!i.practice&&i.counts; }).length);",
+  "replace": "setCount('needs', items.filter(function(i){ return !i.practice&&i.counts; }).length);"
  }
 ]

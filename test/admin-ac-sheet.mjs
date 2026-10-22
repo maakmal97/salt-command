@@ -3,7 +3,8 @@
  *   1  on Orders a sheet's orders at one stage stand in one group card, each its own row, under them the sheet's delivery on its first order and
  *      the goods of all of them; an order alone stands alone
  *   2  an order of a sheet says which of it in its band ("Sheet 2 of 2"), a link that closes the order and goes back to the sheet's group
- *   3  Needs you shows one card for a sheet's placed orders, saying how many, and none for the others
+ *   3  Needs you shows one card for a sheet's placed orders, saying how many (in the title's full sentence, a reader's; the card draws no why or what line since
+ *      22 Oct 2026) and drawing the sum of all of them as its figure, and none for the others
  * Drawn by the maker harness (test/maker-act.mjs). */
 import { richOwnerPage, byAct } from "./maker-act.mjs";
 
@@ -26,8 +27,9 @@ export async function run({ ok, pageWork }) {
     /* 3 */
     await click(byAct(d, "nav.needs"));
     const n1 = d.querySelector('#nlist [data-need="o:ord-s1"]');
-    ok(!!n1 && /2 orders on one sheet/.test(t(n1)) && !d.querySelector('#nlist [data-need="o:ord-s2"]') && !!d.querySelector('#nlist [data-need="o:ord-s3"]'),
-      "Needs you shows one card for the sheet, saying how many, none for its second order, and the lone order its own: " + t(n1));
+    const said = n1 && n1.querySelector(".need-tap") ? n1.querySelector(".need-tap").getAttribute("aria-label") : "", fig = n1 ? t(n1.querySelector(".nfig")) : "";
+    ok(!!n1 && /2 orders on one sheet/.test(said) && fig === "RM 150" && !d.querySelector('#nlist [data-need="o:ord-s2"]') && !!d.querySelector('#nlist [data-need="o:ord-s3"]'),
+      "Needs you shows one card for the sheet, saying how many and the sum of both orders, none for its second order, and the lone order its own: " + said + " | " + fig);
     /* 1 */
     await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.placed"));
     const g = d.querySelector('#makerOrderList .ordsheet[data-sheet="sh-9"]'), rows = g ? [...g.querySelectorAll("[data-order]")].map((r) => r.getAttribute("data-order")) : [];

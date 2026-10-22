@@ -2,19 +2,23 @@
  * the plan's retained-send words; docs/STATEMENTS.md "Unsent entries").
  *
  * An entry sent from this phone that the Desk has not confirmed is kept whole on the phone (saltMakerPending:<route>) until it is sent again, updated or discarded. It was
- * found only by opening Record. Now one banner over every place says how many and opens them, and each is a Soon card on Needs you; both read the phone's own storage and
+ * found only by opening Record. Now one banner over every place says how many and opens them, and each is a To do card on Needs you (his own work, since 22 Oct 2026, so it is
+ * counted among the To do cards, which the rail and the lead count); both read the phone's own storage and
  * send nothing, and Send again, Update and send and Discard stay on the entry's own section in Record, in the plan's words. Each check is red under its own mutation
  * (test/admin-unsent.mutations.json, run with tools/section.mjs). What is proved here:
  *   A  the banner: one entry says "1 unsent entry" in the plan's sentence, on every place, on the Action recipe at Soon, with one Open; sending and reading nothing
  *   B  several: it counts them, and Open goes to Record on the part of the oldest, where that entry's section stands; a record that will not read is still one
  *   C  Discard from Record lowers the count and, with the last, takes the banner away, at once
- *   D  the Soon cards: a card for each, oldest first, under the Rows chip, counted among the Soon in the line under the title, each Open going to its own part
+ *   D  the To do cards: a card for each, oldest first, under the Rows chip, counted among the To do cards, each Open going to its own part; the card is the one shape (kind,
+ *      who by code, the full sentence to a reader) and the plan's sentence stands in the opened card beside the list from 860px
  *   E  the words: the section in Record says the same sentence, and nothing says retained, immutable, vault or drafter
  * Drawn by the maker harness (test/maker-act.mjs), which keeps one loan unsent on the phone. */
 import { richOwnerPage, byAct, slipFixture, answerSheets } from "./maker-act.mjs";
 
 const AT_LOAN = "2026-10-10T08:00:00.000Z", AT_PLACE = "2026-10-08T03:30:00.000Z", AT_COUNT = "2026-10-09T05:00:00.000Z";
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
+const wide = (w) => { w.matchMedia = (q) => ({ matches: /min-width:\s*860px/.test(q) && !/max-width/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {} }); };
 const shown = (el) => { for (let e = el; e && e.id !== "roster"; e = e.parentElement) if (e.hidden) return false; return !!el; };
 
 export async function run({ ok, pageWork }) {
@@ -24,8 +28,8 @@ export async function run({ ok, pageWork }) {
   const place = { path: "/all/maker/inputs/place", body: { at: AT_PLACE, places: { "CX1-ZED": [3.1, 101.7, "Pudu"] }, addrVault: fix.places } };
   const count = { path: "/all/maker/inputs/stock-count", body: { at: AT_COUNT, product: "salt", date: "2026-10-09", qty: 12 } };
   const more = [[KEEP + place.path, JSON.stringify(place)], [KEEP + count.path, JSON.stringify(count)]];
-  const open = async (retained = []) => {
-    const p = await richOwnerPage({ pageWork, slip: true, retained });
+  const open = async (retained = [], before) => {
+    const p = await richOwnerPage({ pageWork, slip: true, retained, before });
     await p.work.quiet();
     const d = p.d;
     p.tap = async (act, key) => { const c = byAct(d, act, key); if (c) c.click(); await p.work.quiet(); return !!c; };
@@ -100,34 +104,49 @@ export async function run({ ok, pageWork }) {
     ok(p.cards().length === 0 && p.bar().hidden, "Needs you has no unsent card left: " + p.cards().length);
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
-  /* D. THE SOON CARDS */
+  /* D. THE TO DO CARDS */
+  const todo = (p) => [...p.d.querySelectorAll('#nlist section[data-sev="now"] [data-need]')].filter((c) => !c.hasAttribute("data-practice")).length;
   p = await open();
-  const base = +(/([0-9]+) soon/.exec(p.d.getElementById("nCount").textContent) || [])[1];
+  const base = todo(p);
   p.w.close();
   p = await open(more);
   try {
     const d = p.d, keys = p.cards().map((c) => c.getAttribute("data-need"));
     ok(same(keys, ["u:" + place.path, "u:" + count.path, "u:/all/maker/inputs/loan"]),
-      "each kept entry is a Soon card, the oldest first (the placement, the count, the loan), in the order of the day it was sent: " + JSON.stringify(keys));
-    const words = (c) => ({ sev: c.getAttribute("data-sev"), kind: c.getAttribute("data-kind"), word: c.querySelector(".salt-action__kind").textContent, who: c.querySelector(".need-who").textContent,
-      what: (c.querySelector(".need-what") || {}).textContent, why: c.querySelector(".salt-action__why").textContent });
+      "each kept entry is a To do card, the oldest first (the placement, the count, the loan), in the order of the day it was sent: " + JSON.stringify(keys));
+    const words = (c) => ({ sev: c.getAttribute("data-sev"), kind: c.getAttribute("data-kind"), group: (c.closest("section.ngroup") || { getAttribute: () => "" }).getAttribute("data-sev"),
+      word: c.querySelector(".nkind").firstChild.textContent, who: t(c.querySelector(".need-who")), code: c.querySelector(".need-who").classList.contains("need-who--code"),
+      said: (c.querySelector(".need-tap") || { getAttribute: () => "" }).getAttribute("aria-label"), go: [...c.querySelectorAll(".salt-action__go button")].map(t).join(), why: !!c.querySelector(".salt-action__why, .need-what") });
     const w = p.cards().map(words);
-    ok(w.every((x) => x.sev === "soon" && x.kind === "rows" && x.word === "Unsent")
-      && w[0].who === "This phone" && w[0].what === "Map placement" && /^A map placement you sent on 08 Oct 2026, 11:30 was not confirmed[.] Open it to send it again, update it or discard it[.]$/.test(w[0].why)
-      && w[1].who === "This phone" && w[1].what === "Stock count" && /^A stock count you sent on 09 Oct 2026, 13:00 was not confirmed[.]/.test(w[1].why)
-      && w[2].who === "CX1-ZED" && w[2].what === "Loan" && /^A loan you sent on 10 Oct 2026, 16:00 was not confirmed[.]/.test(w[2].why),
-    "a card is Soon, under Rows, the kind Unsent, who by code when the entry names one, what it is and the plan's sentence: " + JSON.stringify(w));
-    const soon = +(/([0-9]+) soon/.exec(d.getElementById("nCount").textContent) || [])[1];
-    ok(soon === base + 2, "the line under the title counts them among the Soon (two more than with the loan alone): " + base + " then " + soon);
+    ok(w.every((x) => x.sev === "now" && x.group === "now" && x.kind === "rows" && x.word === "Unsent" && x.go === "Open" && !x.why)
+      && w[0].who === "This phone" && !w[0].code && w[0].said === "Unsent: This phone, Map placement"
+      && w[1].who === "This phone" && w[1].said === "Unsent: This phone, Stock count"
+      && w[2].who === "CX1-ZED" && w[2].code && w[2].said === "Unsent: CX1-ZED, Loan",
+    "a card is To do, under Rows, the kind Unsent, who by code when the entry names one, what it is read in full to a reader, one Open and no why line: " + JSON.stringify(w));
+    const now = todo(p);
+    ok(now === base + 2, "they are counted among the To do cards (two more than with the loan alone): " + base + " then " + now);
+    ok(+t(d.querySelector('[data-count="needs"]')) === now, "and the rail counts the same: " + t(d.querySelector('[data-count="needs"]')) + " " + now);
     await p.tap("need.kind.orders");
     const underOrders = p.cards().length;
     await p.tap("need.kind.rows");
     ok(underOrders === 0 && p.cards().length === 3, "the Orders chip shows none of them and the Rows chip all three: " + underOrders + " " + p.cards().length);
     await p.tap("need.open", "u:" + place.path);
-    ok(p.where() === "record/customers" && same(p.sections(), ["place"]), "a card's Open goes to Record, on its own entry's part: " + p.where() + " " + JSON.stringify(p.sections()));
+    ok(p.where() === "record/customers" && same(p.sections(), ["place"]), "a card's tap goes to Record, on its own entry's part: " + p.where() + " " + JSON.stringify(p.sections()));
     await p.tap("nav.needs");
+    await p.tap("need.unsent", "u:" + count.path);
+    ok(p.where() === "record/entry" && p.sections().includes("stock-count") && p.posts.length === 0, "and the count's Open goes to Entry, sending nothing: " + p.where() + " " + JSON.stringify(p.sections()));
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
+  /* D2. from 860px the plan's sentence stands in the opened card, the card itself carrying none */
+  p = await open(more, wide);
+  try {
+    const d = p.d;
+    await p.tap("need.open", "u:" + place.path);
+    const head = d.querySelector("#nopen .npane");
+    ok(!!head && /^A map placement you sent on 08 Oct 2026, 11:30 was not confirmed[.] Open it to send it again, update it or discard it[.]$/.test(t(head.querySelector(".npane__why")))
+      && t(head.querySelector(".npane__title")) === "This phone" && !!byAct(head, "need.unsent", "u:" + place.path) && p.where() !== "record/customers" && p.posts.length === 0,
+    "from 860px a tap opens the card beside the list with the plan's sentence and its Open, going nowhere and sending nothing: " + t(head));
     await p.tap("need.open", "u:" + count.path);
-    ok(p.where() === "record/entry" && p.sections().includes("stock-count"), "and the count's to Entry: " + p.where() + " " + JSON.stringify(p.sections()));
+    ok(/^A stock count you sent on 09 Oct 2026, 13:00 was not confirmed[.]/.test(t(d.querySelector("#nopen .npane__why"))), "each card's own sentence: " + t(d.querySelector("#nopen .npane__why")));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* E. THE WORDS */
@@ -146,10 +165,12 @@ export async function run({ ok, pageWork }) {
 
   /* F. AN ENTRY WHOSE NAME STARTS WITH A VOWEL IS 'An', and one that names nobody is read to this phone */
   const offset = { path: "/all/maker/inputs/offset", body: { at: "2026-10-11T01:00:00.000Z", note: "x" } };
-  p = await open([[KEEP + offset.path, JSON.stringify(offset)]]);
+  p = await open([[KEEP + offset.path, JSON.stringify(offset)]], wide);
   try {
     const c = p.d.querySelector('#nlist [data-need="u:' + offset.path + '"]');
-    ok(!!c && /^An offset you sent on 11 Oct 2026, 09:00 was not confirmed[.]/.test(c.querySelector(".salt-action__why").textContent) && c.querySelector(".need-who").textContent === "This phone",
-      "'An' before a word that starts with a vowel, and 'This phone' for an entry that names nobody: " + (c && c.textContent));
+    if (c) c.querySelector(".need-tap").click(); await p.work.quiet();
+    const why = t(p.d.querySelector("#nopen .npane__why"));
+    ok(!!c && /^An offset you sent on 11 Oct 2026, 09:00 was not confirmed[.]/.test(why) && t(c.querySelector(".need-who")) === "This phone",
+      "'An' before a word that starts with a vowel, and 'This phone' for an entry that names nobody: " + (c && t(c)) + " | " + why);
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 }

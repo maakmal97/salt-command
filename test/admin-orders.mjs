@@ -1,14 +1,15 @@
 /* test/admin-orders.mjs: ORDERS ARE A LIST AND A DETAIL, AND RECORD IS A MENU (11 Oct 2026, Phase 1c; docs/STATEMENTS.md "His places").
  *
  * Every part of Orders is a list of rows (the system's Inbox row), a row opens that order's card, today's card with every control and
- * request it had, beside the list from 860px and in its place below it; a customer's question on an order is a Now card on Needs you;
+ * request it had, beside the list from 860px and in its place below it; a customer's question on an order is a To do card on Needs you;
  * the 5-second read is silent while an account is viewed as them; one orb opens Record's menu of entries, and Record's forms are a menu of
  * named rows with one form shown at a time. What is proved here, each check red under its own mutation (test/admin-orders.mutations.json):
  *   1  the rows: which orders in which part, each row the mark, who by code, the units, the figure and the age, and nothing read for them
  *   2  a row opens its card: one card, for that order alone, with the controls and the request it had, and a way back
  *   3  back, leaving the part and leaving the place close the card; an order that leaves the part closes it too
  *   4  the split: the list beside the card from 860px, the card in the list's place below it
- *   5  a customer's question on an order is a Now card, counted, opening that order's card, and a closed one has its reply alone
+ *   5  a customer's question on an order is a To do card (the Message kind, who by code, the age; their words in the title's full sentence), counted, opening that
+ *      order's card, and a closed one has its reply alone
  *   6  the 5-second read is silent while an account is viewed as them
  * Drawn by the maker harness (test/maker-act.mjs), whose hooks change what each read answers. */
 import { readFileSync } from "node:fs";
@@ -313,6 +314,7 @@ export async function run({ ok, pageWork }) {
     const { html, media, at } = ownerCss();
     /* 21 Oct 2026 (canvas V39, his answer (a)): side by side from 860 to 1080px only; from 1080 an open order takes the list's place, as below 860 */
     const split = at("(min-width:860px)and(max-width:1079.98px)", ".adm .ordgrid")[0] || "";
+    ok(/max-width: none/.test(at("(min-width:860px)", ".adm #oOrders")[0] || ""), "from 860px Orders takes the page's whole width, so the list and the card have room: " + at("(min-width:860px)", ".adm #oOrders")[0]);
     const phone = at("(max-width:859.98px)", ".adm #oSplit.open .ordlist,.adm #oSplit:not(.open) #makerReview,.adm #oSplit.open #makerReviewStatus")[0] || "";
     const phoneAny = media.filter((m) => m.q === "(max-width:859.98px),(min-width:1080px)").flatMap((m) => m.rules).join(" ");
     ok(/display: grid/.test(split) && /grid-template-columns: minmax\(280px,360px\) minmax\(0,1fr\)/.test(split),
@@ -358,31 +360,37 @@ export async function run({ ok, pageWork }) {
       && !!list.querySelector("#makerMenu") && !!list.querySelector("section[data-formmenu]") && pane.querySelectorAll("section.maker-input[data-form]").length === 17
       && !list.querySelector("section[data-form]") && !!pane.querySelector(".recnone"),
     "the menu and the retained input stand in one column and the 17 forms in the pane beside it, with an invitation to choose one: " + (grid && [...grid.children].map((c) => c.className).join()));
+    /* a sweep (every move to a place or a part) puts the menu back whatever hid it */
+    const menu0 = p.d.getElementById("makerMenu"); menu0.hidden = true;
+    await p.tap("nav.shop"); await p.tap("nav.record");
+    ok(menu0.hidden === false, "a menu hidden by anything is drawn again the next time Record is entered");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
-  /* 5. A CUSTOMER'S QUESTION ON AN ORDER is a Now card on Needs you, counted as an account thread's is */
+  /* 5. A CUSTOMER'S QUESTION ON AN ORDER is a To do card on Needs you, counted as an account thread's is */
   const base = await open(state());
   const baseCount = { needs: +base.counts().needs, orders: +base.counts().orders, customers: base.counts().customers };
-  const baseLine = base.d.getElementById("nCount").textContent;
+  /* the To do cards on the page (the count since 22 Oct 2026: the cards themselves, the lead no longer counting), practice apart */
+  const nowOf = (d) => [...d.querySelectorAll('#nlist section[data-sev="now"] [data-need]')].filter((c) => !c.hasAttribute("data-practice")).length;
+  const baseNow = nowOf(base.d);
   base.w.close();
-  const nowOf = (line) => +(/^([0-9]+) to do now/.exec(line) || [])[1];
   st = state(); st.asked = true;
   p = await open(st);
   try {
-    const d = p.d, card = (k) => d.querySelector('#nlist [data-need="' + k + '"]');
+    const d = p.d, card = (k) => d.querySelector('#nlist [data-need="' + k + '"]'), said = (c) => { const b = c && c.querySelector(".need-tap"); return b ? b.getAttribute("aria-label") : ""; };
     const c1 = card("om:ord-r1"), c9 = card("om:ord-c9"), ex = card("om:ex-2");
-    ok(!!c1 && c1.getAttribute("data-sev") === "now" && c1.getAttribute("data-kind") === "messages" && c1.querySelector(".salt-action__kind").textContent === "Message"
-      && c1.querySelector(".need-who").textContent === "CX1-ZED" && c1.querySelector(".need-what").textContent === "Can it be before three?"
-      && /^On their order[.]$/.test(c1.querySelector(".salt-action__why").textContent) && c1.querySelector(".salt-action__money").textContent === "2 h",
-    "a question of theirs on an order, unanswered, is a Now card: the Message kind, who by code, their words, which order and how long: " + (c1 && c1.textContent));
-    ok(!!c9 && c9.getAttribute("data-sev") === "now" && c9.querySelector(".need-what").textContent === "Why was it declined?" && c9.querySelector(".salt-action__money").textContent === "1 h",
+    ok(!!c1 && c1.getAttribute("data-sev") === "now" && c1.getAttribute("data-kind") === "messages" && c1.querySelector(".nkind").firstChild.textContent === "Message"
+      && c1.querySelector(".need-who").textContent === "CX1-ZED" && said(c1) === "Message: Reply to CX1-ZED, Can it be before three?"
+      && !!c1.closest('section.ngroup[data-sev="now"]') && c1.querySelector(".nage").textContent === "2 h" && !c1.querySelector(".salt-action__why, .need-what"),
+    "a question of theirs on an order, unanswered, is a To do card: the Message kind and how long, who by code, their words in the title's full sentence, no why line: " + (c1 && c1.textContent));
+    ok(!!c9 && c9.getAttribute("data-sev") === "now" && /Why was it declined[?]/.test(said(c9)) && c9.querySelector(".nage").textContent === "1 h",
       "and so is one on an order that is closed: " + (c9 && c9.textContent));
-    ok(!!ex && ex.hasAttribute("data-practice") && /Practice/.test(ex.textContent),
-      "and a practice account's is drawn and labelled Practice");
+    ok(!!ex && ex.hasAttribute("data-practice") && !!ex.closest('details[data-sev="practice"]') && /^Practice: [0-9]+$/.test(ex.closest("details").querySelector("summary").textContent.trim()),
+      "and a practice account's is drawn under the Practice fold, not among To do");
     const now = p.counts();
     ok(+now.needs === baseCount.needs + 2 && +now.orders === baseCount.orders && now.customers === baseCount.customers,
       "it is counted on Needs you, the two real ones and not the practice one; Orders counts open orders, so a question on an order changes nothing there; Customers (the threads) is as it was: " + JSON.stringify([baseCount, now]));
-    ok(nowOf(d.getElementById("nCount").textContent) === nowOf(baseLine) + 2, "the line under the title counts it: " + d.getElementById("nCount").textContent);
+    ok(nowOf(d) === baseNow + 2 && /on your tap now/.test(d.getElementById("nCount").textContent),
+      "the To do cards count it (two more, the practice one apart) and the lead still says what waits on his tap: " + baseNow + " then " + nowOf(d) + " " + d.getElementById("nCount").textContent);
     await p.tap("need.kind.messages");
     ok(["om:ord-r1", "om:ord-c9", "om:ex-2"].every((k) => !!card(k)) && p.needs().every((k) => /^(m|om):/.test(k)), "the Messages chip shows it beside the account threads: " + p.needs().join());
     await p.tap("need.kind.all");
