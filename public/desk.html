@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="522aa8b270b80aa9";
+var SALT_BUILD_ID="49e3b2770d26bd85";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -3501,6 +3501,14 @@ label.salt-field__label {
   line-height: 1.45;
   color: var(--salt-mist-bright);
 }
+/* 1.14.0 (his word of 22 Oct 2026 on Salt Admin's glance, "some of these cards are using unnecessary space"): THE ONE-LINE TILE. The label at the
+   left and the figure at the right on one centred line, no note and no top margin, 44px tall and 56px from 860px; nothing wraps, a long figure ends
+   in an ellipsis. A meter may stand between them (the page gives it the room). */
+.salt-kpi--line { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: var(--salt-tap); padding: 6px 14px 6px 16px; }
+.salt-kpi--line .salt-kpi__label, .salt-kpi--line .salt-kpi__value { margin: 0; line-height: 1; white-space: nowrap; }
+.salt-kpi--line .salt-kpi__value { font-size: 1.25rem; overflow: hidden; text-overflow: ellipsis; }
+.salt-kpi--line .salt-kpi__note { display: none; }
+@media (min-width: 860px) { .salt-kpi--line { min-height: 56px; padding: 8px 16px 8px 18px; } }
 
 /* ---- Action: something to do, with the money at stake. Kind, title, why, money, the way there (__go),
    and its share of the money as a bar. Severity is one variable, --salt-sev, which the modifiers set
@@ -3549,6 +3557,8 @@ label.salt-field__label {
   padding-top: 2px;
 }
 .salt-action__money--nil { color: var(--salt-mist); font-weight: 400; font-size: var(--salt-text-sm); }
+/* 1.14.0 (his canvas of 22 Oct 2026, Salt Admin's cards): the figure large in its column, from 860px where the card is wide */
+@media (min-width: 860px) { .salt-action__money--lg { font-size: 1.25rem; } }
 .salt-action__body { min-width: 0; }
 .salt-action__go { align-self: center; }
 .salt-action__chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; grid-column: 2 / 3; }
