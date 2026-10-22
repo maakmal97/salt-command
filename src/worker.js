@@ -2441,11 +2441,17 @@ async function decideMany(env, ctx, body) {
   const want = (body.approve || []).map((id) => [id, "approved"]).concat((body.reject || []).map((id) => [id, "rejected"]))
     .sort((x, y) => (x[0] < y[0] ? -1 : x[0] > y[0] ? 1 : 0));
   const decided = [], refused = [], swept = new Map();
+  let thrown = false;
   for (const [id, decision] of want) {
     /* a row its trip already decided in this batch, the same way, is decided; the other way is a refusal like any other */
+    if (swept.has(id) && swept.get(id) !== decision) {
+      refused.push({ id, decision, error: "its trip was " + swept.get(id) + " in this batch", fix: "A trip goes one way: tick its rows the same way, or none." });
+      continue;
+    }
     if (swept.get(id) === decision) { decided.push({ id, decision, withTrip: true }); continue; }
     let r;
-    try { r = await decideDraft(env, ctx, id, decision, by, true); } catch (e) { r = { status: 500, body: { ok: false, error: String((e && e.message) || e) } }; }
+    /* a throw after the row's write may leave it decided: the batch then dispatches and tells on doubt (an extra run stands down) */
+    try { r = await decideDraft(env, ctx, id, decision, by, true); } catch (e) { thrown = true; r = { status: 500, body: { ok: false, error: String((e && e.message) || e) } }; }
     if (r.status === 200 && r.body && r.body.ok) {
       const trip = r.body.trip || [];
       trip.forEach((t) => swept.set(t, decision));
@@ -2455,8 +2461,8 @@ async function decideMany(env, ctx, body) {
       refused.push({ id, decision, error, fix: refusalFix(error, r.status) });
     }
   }
-  if (decided.some((d) => d.decision === "approved")) stageOnApproval(env, ctx);
-  if (decided.length) await liveTell(env, ctx, "drafts");
+  if (decided.some((d) => d.decision === "approved") || thrown) stageOnApproval(env, ctx);
+  if (decided.length || thrown) await liveTell(env, ctx, "drafts");
   return { ok: true, decided, refused };
 }
 /* The rows of a trip decided with the one tapped: pending, uncommitted sales of the same trip, neither a claim nor made by

@@ -77,6 +77,14 @@ export async function run({ ok }) {
       ok(r.body.refused.length === 0 && r.body.decided.length === 2 && J(r.body.decided[0].trip) === J([ids[1]]) && r.body.decided[1].withTrip === true
         && status()[ids[1]] === "approved", "a trip's rows go with the card that names one, counted decided, never refused: " + J(r.body));
     }
+    {
+      const { wd, ids, status, many } = await setup(2);
+      wd.sqlite.prepare("UPDATE draft SET row=json_set(row,'$.trip','t4098') WHERE id IN (?,?)").run(ids[0], ids[1]);
+      const r = await many({ approve: [ids[0]], reject: [ids[1]] });
+      const ref = r.body.refused[0] || {};
+      ok(ref.id === ids[1] && /its trip was approved in this batch/.test(ref.error) && /one way/.test(ref.fix) && status()[ids[1]] === "approved",
+        "a trip's row ticked the other way is refused as its trip's, with the fix: " + J(r.body));
+    }
     /* 5 */
     {
       const { wd, ids, status, many } = await setup(2);
