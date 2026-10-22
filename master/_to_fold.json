@@ -1,0 +1,152 @@
+{
+ "ok": true,
+ "count": 3,
+ "approved": [
+  {
+   "id": "2026-10-22T16:43:31.104Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "qty": 1.5,
+    "total": 170,
+    "cash": 0,
+    "date": "2026-10-22",
+    "customer": "CM4-MK"
+   },
+   "reasoning": "Cancellation against CM4-MK's order of 1.5 unit for RM 170 with RM 10 delivery, RM 180 owed agreed 2026-10-22. The order is withdrawn and counts nowhere. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [],
+   "amends": "s286",
+   "amendKind": "Cancellation",
+   "entry": {
+    "at": "2026-10-22T16:43:31.104Z",
+    "type": "SELL",
+    "party": "CM4-MK",
+    "qty": 0,
+    "total": 0,
+    "status": "Cancellation",
+    "raw": "Cancellation on CM4-MK, order 20261022130941-vjdm1a, recorded 2026-10-23",
+    "payload": {
+     "mode": "amend",
+     "kind": "Cancellation",
+     "direction": "SELL",
+     "party": "CM4-MK",
+     "rid": null,
+     "orderKey": "CM4-MK|2026-10-22|180",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-23",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "note": "Withdrawn on the statements site by the desk, order 20261022130941-vjdm1a."
+    },
+    "orderId": "20261022130941-vjdm1a"
+   },
+   "decidedAt": "2026-10-22T16:47:48.450Z",
+   "decidedBy": "Counter Admin"
+  },
+  {
+   "id": "2026-10-22T16:46:49.988Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "qty": 1,
+    "total": 60,
+    "cash": 60,
+    "date": "2026-10-22",
+    "customer": "CS6-PER"
+   },
+   "reasoning": "Fulfilment against CS6-PER's order of 1 unit for RM 60 agreed 2026-10-22. RM 0 and 1 unit move on 2026-10-23, against RM 0 and 1 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "s285",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-10-22T16:46:49.988Z",
+    "type": "AMEND",
+    "party": "CS6-PER",
+    "qty": 1,
+    "total": 0,
+    "status": "partial",
+    "raw": "Fulfilment against s285 for CS6-PER on 2026-10-23",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CS6-PER",
+     "product": "salt",
+     "rid": "s285",
+     "orderKey": "CS6-PER|2026-10-22|60",
+     "date": "2026-10-23",
+     "kind": "Fulfilment",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 1,
+     "total": 0,
+     "cash": 0,
+     "kg": 1
+    },
+    "makerRequest": "865835f95b72b7308af018f07c71e42d83f9538efdc378a65cec8dfdd7f4275b"
+   },
+   "decidedAt": "2026-10-22T16:47:48.508Z",
+   "decidedBy": "Counter Admin"
+  },
+  {
+   "id": "2026-10-22T16:47:06.083Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "qty": 4.5,
+    "total": 400,
+    "cash": 400,
+    "date": "2026-10-14",
+    "customer": "CE4-CHE"
+   },
+   "reasoning": "Fulfilment against CE4-CHE's order of 4.5 unit for RM 400 agreed 2026-10-14. RM 0 and 1.5 unit move on 2026-10-23, against RM 0 and 1.5 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "s261",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-10-22T16:47:06.083Z",
+    "type": "AMEND",
+    "party": "CE4-CHE",
+    "qty": 1.5,
+    "total": 0,
+    "status": "partial",
+    "raw": "Fulfilment against s261 for CE4-CHE on 2026-10-23",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CE4-CHE",
+     "product": "salt",
+     "rid": "s261",
+     "orderKey": "CE4-CHE|2026-10-14|400",
+     "date": "2026-10-23",
+     "kind": "Fulfilment",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 1.5,
+     "total": 0,
+     "cash": 0,
+     "kg": 1.5
+    },
+    "makerRequest": "9330997e83bc35f7f2f4e1c87d9c6372a8c98c52fe76a2e97a3f80e5f7ea4a09"
+   },
+   "decidedAt": "2026-10-22T16:47:48.568Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
