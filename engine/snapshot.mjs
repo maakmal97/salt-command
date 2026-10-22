@@ -222,6 +222,8 @@ function buyerProfile(C,prod,code){
     frequent,small,bigger,loyal,rare};
 }
 function driftBook(C,p){const R=C.R.TIER_RULE[p];return !!(R&&R.drift);}
+/* 22 Oct 2026: a book that takes Their %, a Set Price or a stated board carrying `pct` (the engine's pctBook) */
+function pctBook(C,p){return PRICING_ENGINE.pctBook(C.R.TIER_RULE[p]);}
 function driftSignals(C,prod,code){
   const who=ownerOf(code)||code,pf=profileS(C,prod,who),RU=C.R.RULES;
   const dl=POSITION_ENGINE.payDelays(C.B.sales,who,todayISO(C),RU),settled=dl.filter(x=>!x.open),open=dl.filter(x=>x.open);
@@ -235,7 +237,7 @@ function driftSignals(C,prod,code){
 /* 18 OCT 2026, HIS DECISION: THE FIGURE THAT PRICES IS THE % LIFT HE HOLDS, OR NOUGHT. `d` is that figure (-0.3 to +0.3 since 21 Oct 2026) and nothing automatic reaches it:
    `auto`, `G` and `B` are the record's reading (autoDrift) kept for the card, and the suggestion is suggestOf below. */
 function driftOfNow(C,p,code){
-  const R=C.R.TIER_RULE[p];if(!R||!R.drift)return null;
+  const R=C.R.TIER_RULE[p];if(!PRICING_ENGINE.pctBook(R))return null;
   const who=ownerOf(code)||code,h=(C.B.tierOf[who]||{})[p],hand=PRICING_ENGINE.driftOk(h)?+h:null;
   const sig=driftSignals(C,p,who),a=PRICING_ENGINE.autoDrift(sig,R.auto);
   return Object.assign({},a,{auto:a.d,hand:hand,d:hand!=null?hand:0,sig:sig});
@@ -267,7 +269,7 @@ function cardQuote(C,p,code,q){
   const o=C.over||{cost:null,shrink:null},K=cost(C,p),P=Object.assign({},policy(C,p),{tierRule:C.R.TIER_RULE[p]});
   if(isPartner(C,code))return PRICING_ENGINE.quoteAt(q,K,P,'partner');   // 06 Oct 2026, his decision: a partner pays cost; 18 Oct 2026, the Floor, rounded up to the next RM 5
   const row=viaMemo(C,'tierAt|'+p+'|'+q+'|'+o.cost+'|'+o.shrink,()=>PRICING_ENGINE.fiveTierAt(q,K,P));
-  if(row&&row.fixed)return PRICING_ENGINE.quoteAt(q,K,P,0);
+  if(row&&row.fixed){const dr=pctBook(C,p)?driftS(C,p,code):null;return PRICING_ENGINE.quoteAt(q,K,P,dr?dr.d:0);}
   if(row&&row.drift){const dr=driftS(C,p,code);return PRICING_ENGINE.quoteAt(q,K,P,dr?dr.d:0);}
   return null;}
 
@@ -294,7 +296,7 @@ function pricing(B,R,today,over=null){
     const cards={};
     ids.forEach(id=>{const r=[];shownSizes(C,p).forEach(q=>{const x=cardQuote(C,p,id,q);if(x!=null&&isFinite(x))r.push([q,x]);});if(r.length)cards[id]=r;});
     let lift=null,suggest=null;
-    if(driftBook(C,p)){lift={};suggest={};ids.forEach(id=>{if(isPartner(C,id)){lift[id]='partner';return;}const d=driftOf(C,p,id);if(d&&typeof d.d==='number'&&isFinite(d.d))lift[id]=d.d;const g=suggestOf(C,p,id);if(g)suggest[id]={pct:g.pct,why:PRICING_ENGINE.suggestWhy(g).join(', ')};});}
+    if(pctBook(C,p)){lift={};suggest=driftBook(C,p)?{}:null;ids.forEach(id=>{if(isPartner(C,id)){lift[id]='partner';return;}const d=driftOf(C,p,id);if(d&&typeof d.d==='number'&&isFinite(d.d))lift[id]=d.d;const g=suggestOf(C,p,id);if(g&&suggest)suggest[id]={pct:g.pct,why:PRICING_ENGINE.suggestWhy(g).join(', ')};});}
     out[p]=Object.assign({stockCost:r4(f.stockCost), replCost:r4(f.replCost), floors, inputs:f.inputs, sizes:f.sizes, rungs:f.rungs,
       ladder:(f.ladder||[]).map(r=>Object.assign({q:r.q,prices:r.prices,fixed:!!r.fixed},r.drift?{drift:true}:{})), cards, partners:B.partners.slice()},
       lift?{lift,suggest}:{});
@@ -305,7 +307,7 @@ function pricing(B,R,today,over=null){
 return {pSales,pPurch,openingFor,countedFor,posInputs,stockCost,hiddenFor,setPricesFor,sizesFor,shownSizes,shSizes,ladderFor,
   latestLot,meanLotQty,priceLockState,delShare,avgDelivery,replRate,replCost,quoteRate,freightRate,leakCharge,shrinkRate,
   inputs,policy,fiveTiers,figures,
-  ownerOf,isResellAcct,isPerson,pbPriced,isPartner,lateOf,buyerProfile,driftBook,driftSignals,driftOfNow,driftOf,suggestOf,tierCustomers,cost,cardQuote,pricing};
+  ownerOf,isResellAcct,isPerson,pbPriced,isPartner,lateOf,buyerProfile,driftBook,pctBook,driftSignals,driftOfNow,driftOf,suggestOf,tierCustomers,cost,cardQuote,pricing};
 })();
 
 export default SNAPSHOT_ENGINE;

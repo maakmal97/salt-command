@@ -324,7 +324,7 @@ export function pricingSnapshot(w) {
          cards above were struck on. The rule travels in the policy (pxPolicy carries TIER_RULE, its grid with it). */
       /* 18 Oct 2026: the map is `lift` now (a held % lift, 0 to 2, or 0; a partner 'partner'), so an old reader finds nothing and falls back to the board;
          `suggest` is the engine's suggested % for each customer with its short reason, {pct, why}, and prices nothing. */
-      lift = call("(function(){if(typeof driftBook!=='function'||!driftBook(PROD)||typeof tierCustomers!=='function')return null;var o={};tierCustomers().forEach(function(id){if(isPartner(id)){o[id]='partner';return;}var d=driftOf(id,PROD);if(d&&typeof d.d==='number'&&isFinite(d.d))o[id]=d.d;});return o;})()");
+      lift = call("(function(){var pb=typeof pctBook==='function'?pctBook(PROD):typeof driftBook==='function'&&driftBook(PROD);if(!pb||typeof tierCustomers!=='function')return null;var o={};tierCustomers().forEach(function(id){if(isPartner(id)){o[id]='partner';return;}var d=driftOf(id,PROD);if(d&&typeof d.d==='number'&&isFinite(d.d))o[id]=d.d;});return o;})()");
       suggest = call("(function(){if(typeof driftBook!=='function'||!driftBook(PROD)||typeof tierCustomers!=='function')return null;var o={};tierCustomers().forEach(function(id){if(isPartner(id))return;var g=suggestOf(id,PROD);if(g&&typeof g.pct==='number'&&isFinite(g.pct))o[id]={pct:g.pct,why:PRICING_ENGINE.suggestWhy(g).join(', ')};});return o;})()");
       floors = {};
       for (const q of sizesHere) {

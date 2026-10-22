@@ -269,8 +269,11 @@ const TIER_RULE={
      suggestPct): a share added for a written-off, a long late, a late; the days over which an open overdue counts as long; how
      many of the last salt sales are read; the step it rounds to; the settled rows below which it suggests nothing; and `good`, the discount a
      perfect record earns, times the record's good score, only with nothing late, overdue or written off (21 Oct 2026). */
+  /* 22 OCT 2026, HIS DECISION: THEIR % RUNS ON HIS CURVE. `ends` are the Floor multiples at -30% (low) and +30% (high), at the first
+     point and the last, each curve the Set Price's own shape, and a % an equal share of the way at every size (the engine's driftMultiple). */
   salt:{drift:true, ceilingX:3,
         points:[[0.5,2.5],[1,2],[6.25,1.67],[12.5,1.33]],
+        ends:{low:[2,1.2], high:[3,1.45]},
         suggest:{writtenOff:0.3, longLate:0.2, late:0.1, overdueDays:14, recent:5, step:0.05, minSettled:3, good:0.3},
         auto:{wP:0.35, wF:0.25, wV:0.2, wT:0.2, minSettled:3, perMonth:4, unitsPerMonth:10, orders:12, staleDays:60, overdueDays:14, U:0.5, D:0.5, cap:0.5},
         presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3},
@@ -287,16 +290,19 @@ const TIER_RULE={
   /* 15 OCT 2026, HIS WORD: oil is ordered in tens, its smallest unit step. The grid's step IS the order step (the Worker's onStep reads
      it), and oil's prices do not move when it goes from 1 to 10: the five points are the five typed rungs. Salt stays at a quarter
      and a coarser step there would raise most of its prices, the walk running through every point (docs/PRODUCTS.md section 9). */
-  oil:{fixed:{"10":130,"20":240,"30":330,"40":400,"50":450}, rungs:[10,20,30,40,50], ceilingX:3, grid:{min:10, step:10, max:50}},
+  /* 22 OCT 2026, HIS DECISION: THEIR % ON EVERY BOOK. A stated board carries `pct`, and `shares` are what -30% (low) and +30% (high)
+     make of his typed board at the smallest rung and the largest, sliding in the log of size (the engine's shareAt); salt's proportions
+     to start, his answer that day, so 0% is still his board for everybody. */
+  oil:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"10":130,"20":240,"30":330,"40":400,"50":450}, rungs:[10,20,30,40,50], ceilingX:3, grid:{min:10, step:10, max:50}},
   /* 23 SEP 2026, HIS INSTRUCTION: candy and rice are single tier too, stated a unit. Candy RM60 a unit under 10,
      RM55 from 10 to 29 (his answer that day), RM50 from 30. Rice RM8 a unit, RM7 from 5, RM6 from 10. A size
      between rungs is its rung's rate times the size, which is what a rate a unit means; both books round to the
      ringgit (LADDER_BY) so a rate of RM8 is not rounded to a ten. */
-  candy:{fixed:{"1":60,"10":550,"30":1500}, rungs:[1,10,30], ceilingX:3, grid:{min:1, step:1, max:30}},
+  candy:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":60,"10":550,"30":1500}, rungs:[1,10,30], ceilingX:3, grid:{min:1, step:1, max:30}},
   /* 05 OCT 2026, HIS DECISION: each stated board is held between its floor, COGS times the size, and a ceiling of
      `ceilingX` times that floor, capped down to the book's grid. Three times the floor on every book (18 Oct 2026, his decision;
      oil and candy were twice, rice two and a half). A typed price inside the band does not move. */
-  rice:{fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:3, grid:{min:1, step:1, max:10}}
+  rice:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:3, grid:{min:1, step:1, max:10}}
 };
 
 const SHRINK_ATTRIB=1;

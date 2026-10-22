@@ -494,15 +494,43 @@ function setMultiple(q,R){
 /* a held % is a number from -0.3 to +0.3 (his decision of 21 Oct 2026); anything else is not one */
 const LIFT_MIN=-0.3, LIFT_MAX=0.3;
 function driftOk(v){return typeof v==='number'&&isFinite(v)&&v>=LIFT_MIN-1e-9&&v<=LIFT_MAX+1e-9;}
+/* ============ 22 OCT 2026, HIS DECISION: THEIR % RUNS ON HIS CURVE, ON EVERY BOOK ============
+   A book takes Their % when its rule is a Set Price (`drift`) or carries `pct` (a stated board, oil, candy and rice): pctBook.
+   On a Set Price, `ends` {low:[at the first point, at the last], high:[...]} are the multiples of the Floor he set for -30% and
+   +30%; each end curve keeps the Set Price's own shape (the share s of the way the Set Price sits between its first and last
+   multiples, the same share between the end's two), and a % is that share of the way from the Set Price to its end, so every
+   5% step is an equal step at every size. A rule with no `ends` keeps the multiple times (1 + %).
+   On a stated board, `shares` {low:[at the smallest rung, at the largest], high:[...]} are what -30% and +30% make of his typed
+   board, sliding in the log of size between the two rungs and flat beyond them, and a % is that share of the way from the board. */
+function pctBook(R){return !!(R&&(R.drift||R.pct));}
+function pctPos(pct){const k=driftOk(pct)?Math.max(LIFT_MIN,Math.min(LIFT_MAX,+pct)):0;return {k:k,t:k<0?k/LIFT_MIN:k>0?k/LIFT_MAX:0};}
+function endPair(e){return Array.isArray(e)&&e.length===2&&e.every(v=>typeof v==='number'&&isFinite(v)&&v>0)?e:null;}
+function driftMultiple(q,R,pct){
+  const m=setMultiple(q,R),x=pctPos(pct);
+  if(!R||!R.ends)return m*(1+x.k);
+  if(!x.t)return m;
+  const end=endPair(x.k<0?R.ends.low:R.ends.high);if(!end)return m;
+  const pts=(R.points||[]).map(v=>[+v[0],+v[1]]).filter(v=>v[0]>0&&isFinite(v[1])).sort((a,b)=>a[0]-b[0]);
+  const mA=pts.length?pts[0][1]:m,mB=pts.length?pts[pts.length-1][1]:m,s=Math.abs(mA-mB)<1e-9?0:(m-mB)/(mA-mB);
+  return m+x.t*(end[1]+s*(end[0]-end[1])-m);
+}
+function shareAt(q,R,pct){
+  const x=pctPos(pct);if(!x.t||!R||!R.shares||!(q>0))return 1;
+  const end=endPair(x.k<0?R.shares.low:R.shares.high);if(!end)return 1;
+  const rungs=(R.rungs||[]).map(Number).filter(v=>v>0).sort((a,b)=>a-b);if(!rungs.length)return 1;
+  const a=rungs[0],b=rungs[rungs.length-1],u=q<=a||b<=a?0:q>=b?1:Math.log(q/a)/Math.log(b/a);
+  return 1+x.t*(end[0]+(end[1]-end[0])*u-1);
+}
 function driftWalk(sizes,C,P,pct){
   const R=P.tierRule||{}, to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to, down=v=>Math.floor(v/to+1e-9)*to;
   const cx=+R.ceilingX>0?+R.ceilingX:3;
-  const k=driftOk(pct)?Math.max(LIFT_MIN,Math.min(LIFT_MAX,+pct)):0;
+  const k=pctPos(pct).k;
   let rS=Infinity, rP=Infinity, mS=-Infinity, mP=-Infinity;
   return sizes.map(q=>{
     const fl=floorTotal(q,C,P), ceil=+(cx*fl).toFixed(4), lo=up(fl), hi=Math.max(down(ceil),lo), m=setMultiple(q,R);
-    const step=(r,mg,lift)=>{
-      const rate=Math.min(r,fl*m*lift/q);
+    /* top is the floor times the multiple at this %: on his ends the engine's driftMultiple, else fl*m*(1+k) in that order, as it always was */
+    const step=(r,mg,top)=>{
+      const rate=Math.min(r,top/q);
       let p=down(rate*q);
       if(mg>-Infinity)p=Math.max(p,up(+(fl+mg).toFixed(2)));
       const capped=p>hi+1e-9;
@@ -511,9 +539,9 @@ function driftWalk(sizes,C,P,pct){
          Ceiling's rate rises with the Floor's round-up (3 times a step), and without this a high % could be quoted more a unit on more units */
       return {rate:capped?Math.min(rate,hi/q):rate,p:p,mg:Math.max(mg,p-fl)};
     };
-    const s=step(rS,mS,1);rS=s.rate;mS=s.mg;
+    const s=step(rS,mS,fl*m*1);rS=s.rate;mS=s.mg;
     let p=s.p;
-    if(Math.abs(k)>1e-9){const x=step(rP,mP,1+k);rP=x.rate;mP=x.mg;p=x.p;}
+    if(Math.abs(k)>1e-9){const x=step(rP,mP,R.ends?fl*driftMultiple(q,R,k):fl*m*(1+k));rP=x.rate;mP=x.mg;p=x.p;}
     return {q:q,floor:+fl.toFixed(2),ceiling:+ceil.toFixed(2),set:s.p,p:p,d:k};
   });
 }
@@ -627,10 +655,11 @@ function fiveTierAt(q,C,P){
    RM160, 14 unit RM180), and walking that flat pushed the band under his next typed rung. The floor's ten and the ceiling
    hold it as fiveTiers holds a rung, and a typed rung is his price, never moved. A rate that still rises (a floor lift) steps
    down to the ringgit that holds it, never under the floor's ten. */
-function fixedWalk(sizes,C,P){
-  const R=P.tierRule, to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to;
+function fixedWalk(sizes,C,P,d){
+  const R=P.tierRule, to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to, down=v=>Math.floor(v/to+1e-9)*to;
   const rungs=R.rungs.map(Number).sort((a,b)=>a-b);
-  let prev=Infinity;
+  const k=R.pct&&typeof d==='number'?pctPos(d).k:0;
+  let prev=Infinity, prevD=Infinity;
   return fiveTiers(sizes,C,P).map(r=>{
     let p=r.prices&&r.prices.length?r.prices[r.prices.length-1]:null;
     const typed=R.fixed[String(r.q)]!=null, base=+R.fixed[String(rungs[r.rung])], lift=up(r.floor);
@@ -641,6 +670,15 @@ function fixedWalk(sizes,C,P){
       if(prev<Infinity&&p/r.q>prev+1e-9){const st=Math.floor(prev*r.q+1e-9);p=st>=lift-0.009?st:Math.min(p,lift);}
     }
     if(p!=null&&isFinite(p)&&r.q>0)prev=Math.min(prev,p/r.q);
+    /* 22 Oct 2026: Their % on a stated board, his share of the board at this size, down to the book's step, held between the Floor and
+       the Ceiling, and walked so the rate never rises with size, as the board's own is */
+    if(k&&p!=null&&isFinite(p)&&r.q>0){
+      let x=down(p*shareAt(r.q,R,k)), lo=up(r.floor);
+      if(x<lo)x=lo;
+      if(r.ceiling!=null&&x>r.ceiling+0.009)x=Math.max(lo,down(r.ceiling));
+      if(prevD<Infinity&&x/r.q>prevD+1e-9)x=Math.max(lo,Math.min(x,down(prevD*r.q)));
+      prevD=Math.min(prevD,x/r.q);p=x;
+    }
     return {q:r.q,p:p};
   });
 }
@@ -652,7 +690,7 @@ function quoteAt(q,C,P,d){
   const R=P.tierRule;if(!R||!(q>0))return null;
   const F=floorTotal(q,C,P);
   if(d==='partner')return +F.toFixed(2);
-  if(R.fixed){const w=fixedWalk(walkSizes(R,[q]),C,P),x=w.find(r=>Math.abs(r.q-q)<0.009),t=x?x.p:null;
+  if(R.fixed){const w=fixedWalk(walkSizes(R,[q]),C,P,d),x=w.find(r=>Math.abs(r.q-q)<0.009),t=x?x.p:null;
     return t==null||!isFinite(t)?null:+cardPrice(null,F,t,true).toFixed(2);}
   if(R.drift){const x=driftAt(q,C,P,d);return x&&isFinite(x.p)?+cardPrice(null,F,x.p).toFixed(2):null;}
   return null;
@@ -665,7 +703,7 @@ function quoteGrid(C,P,d){
   const read=(w,fixed)=>qs.map(q=>{const x=w.find(r=>Math.abs(r.q-q)<0.009);return x&&x.p!=null&&isFinite(x.p)?+cardPrice(null,floorTotal(q,C,P),x.p,fixed).toFixed(2):null;});
   if(d==='partner')ps=qs.map(q=>quoteAt(q,C,P,d));
   else if(R.drift)ps=read(driftWalk(walkSizes(R,qs),C,P,d),false);
-  else if(R.fixed)ps=read(fixedWalk(walkSizes(R,qs),C,P),true);
+  else if(R.fixed)ps=read(fixedWalk(walkSizes(R,qs),C,P,d),true);
   else ps=qs.map(q=>quoteAt(q,C,P,d));
   if(!ps.length||ps.some(p=>p==null||!isFinite(p)||!(p>0)))return null;
   return {min:G.min,step:G.step,max:G.max,p:ps};
@@ -704,19 +742,20 @@ function board(sizes,C,P){
 function cardAt(pricing,code,product,qty){
   const snap=pricing&&pricing.byProduct&&pricing.byProduct[product];
   if(!snap||!snap.cards)return {card:null,cardNote:"the pricing snapshot carries no cards yet: the next re-seed brings them"};
-  const fixed=(snap.ladder||[]).some(r=>r&&r.fixed);
   const hit=(snap.cards[code]||[]).find(x=>Math.abs(x[0]-qty)<0.009);
-  if(hit)return {card:hit[1],cardNote:fixed?"the board, one price for everybody":"their card at "+qty+" unit"};
+  /* 22 Oct 2026, his word: every customer is separate, so the note names their price and never describes it */
+  if(hit)return {card:hit[1],cardNote:"their price at "+qty+" unit"};
   if(!snap.cards[code])return {card:null,cardNote:"no tier is held or proposed for them on "+product+", so there is no card"};
   const at=quoteOff(snap,code,qty);
-  if(at!=null)return {card:at,cardNote:(fixed?"the board, one price for everybody":"their card")+" at "+qty+" unit"};
+  if(at!=null)return {card:at,cardNote:"their price at "+qty+" unit"};
   return {card:null,cardNote:qty+" unit is not a size on their board, so there is no card at it"};
 }
 function quoteOff(snap,code,qty){
   const I=snap&&snap.inputs;
   if(!I||!I.cost||!I.policy||!(qty>0))return null;
   const R=I.policy.tierRule||null;
-  const d=(snap.partners||[]).includes(code)?"partner":R&&R.drift?(snap.lift&&typeof snap.lift[code]==="number"?snap.lift[code]:null):0;
+  const held=snap.lift&&typeof snap.lift[code]==="number"?snap.lift[code]:null;
+  const d=(snap.partners||[]).includes(code)?"partner":R&&R.drift?held:R&&R.pct&&held!=null?held:0;
   if(d==null)return null;
   try{const v=quoteAt(qty,costStack(I.cost),I.policy,d);return v!=null&&isFinite(v)&&v>0?v:null;}
   catch(e){return null;}
@@ -725,7 +764,7 @@ function quoteOff(snap,code,qty){
 return {cardAt:cardAt,costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         floorTotal:floorTotal,costTotal:costTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,
-        setMultiple:setMultiple,driftOk:driftOk,LIFT_MIN:LIFT_MIN,LIFT_MAX:LIFT_MAX,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,suggestWhy:suggestWhy,
+        setMultiple:setMultiple,driftOk:driftOk,pctBook:pctBook,driftMultiple:driftMultiple,shareAt:shareAt,LIFT_MIN:LIFT_MIN,LIFT_MAX:LIFT_MAX,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,suggestWhy:suggestWhy,
         gridOf:gridOf,gridSizes:gridSizes,onGrid:onGrid,walkSizes:walkSizes,fixedWalk:fixedWalk,quoteAt:quoteAt,quoteGrid:quoteGrid};
 })();
 export default PRICING_ENGINE;

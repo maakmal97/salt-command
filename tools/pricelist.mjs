@@ -146,12 +146,17 @@ export function priceList(code, book, pricing, now, supply) {
     }
     /* 18 Oct 2026: the five levels are gone, so a book with neither a Set Price nor a stated board is not priced */
     if (!fixedBoard) { out.soon.push({ product: p, name }); continue; }
+    /* 22 Oct 2026, HIS DECISION: THEIR % ON EVERY BOOK. A customer holding a % other than nought on a stated board is quoted his board moved by
+       it, the engine's quoteAt over the same walk the grid takes, and the list says card; at nought it is the board, the same for everybody. */
+    const liftF = snap.lift && Object.prototype.hasOwnProperty.call(snap.lift, code) ? snap.lift[code] : null;
+    const heldF = !partner && typeof liftF === "number" && Math.abs(liftF) > 1e-9 && PRICING_ENGINE.pctBook(P.tierRule) ? liftF : 0;
     const rows = sizesHere.slice().sort((a, b) => a - b).map((q) => {
       const rung = snap.ladder.find((r) => Math.abs(r.q - q) < 0.009);
       /* a size the ladder does not carry is not priced rather than crashing: it happened the day oil
          lost its 80 and 100 rungs while the printed size list still named them */
       if (!rung || !rung.prices || !rung.prices.length) return null;
       if (partner) return { q, price: PRICING_ENGINE.quoteAt(q, C, P, "partner") };
+      if (heldF) return { q, price: PRICING_ENGINE.quoteAt(q, C, P, heldF) };   // 22 Oct 2026: their % on his board
       const board = rung.prices[rung.prices.length - 1];
       return { q, price: +PRICING_ENGINE.cardPrice(null, PRICING_ENGINE.floorTotal(q, C, P), board, true).toFixed(2) };
     }).filter(Boolean);
@@ -160,13 +165,13 @@ export function priceList(code, book, pricing, now, supply) {
        to set up the order form, so the Order tab went blank, orders and Notifications with it. */
     if (!rows.length) { out.soon.push({ product: p, name }); continue; }
     /* 05 Oct 2026: a stated board's grid, the same for everybody, the engine's quoteGrid; a level-priced book has none */
-    const gridF = PRICING_ENGINE.quoteGrid(C, P, partner ? "partner" : 0);
+    const gridF = PRICING_ENGINE.quoteGrid(C, P, partner ? "partner" : heldF);
     out.products.push(Object.assign({
       product: p,
       name,
       unit: (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].unit) || "unit",
       /* a stated board is the same for everybody, so it is neither their rate nor a level (27 Sep 2026: "yours" went with the cap) */
-      basis: "board",
+      basis: heldF ? "card" : "board",
       sizes: rows
     }, gridF ? { grid: gridF } : {}, (supply && supply[p]) ? { supply: { light: supply[p].light, by: supply[p].by || null } } : {}));
   }

@@ -149,7 +149,7 @@ function driftBooks() {
   if (a < 0) return [];
   const out = [];
   for (let i = a + 1; i < masterLines.length && !/^\};/.test(masterLines[i]); i++) {
-    const m = /^\s+([a-z0-9_]+):\{drift:/.exec(masterLines[i]);
+    const m = /^\s+([a-z0-9_]+):\{(?:drift|pct):/.exec(masterLines[i]);   // 22 Oct 2026: a stated board carrying `pct` takes a % too
     if (m) out.push(m[1]);
   }
   return out;

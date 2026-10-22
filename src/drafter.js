@@ -1225,7 +1225,7 @@ export function draftRow(entry, book) {
     const products = (book.state && book.state.PRODUCTS) || {};
     const tierLine = (t) => Object.keys(t).map((p) => `${(products[p] && products[p].name) || p} ${t[p]}`).join(", ");
     if (pay.tiers != null) {
-      const driftB = (p) => !!(((((book.pricing || {}).byProduct || {})[p] || {}).inputs || {}).policy || {}).tierRule && !!book.pricing.byProduct[p].inputs.policy.tierRule.drift;
+      const driftB = (p) => !!(((((book.pricing || {}).byProduct || {})[p] || {}).inputs || {}).policy || {}).tierRule && PRICING_ENGINE.pctBook(book.pricing.byProduct[p].inputs.policy.tierRule);
       const ps = (typeof pay.tiers === "object" && !Array.isArray(pay.tiers)) ? Object.keys(pay.tiers) : [];
       if (!ps.length) return { skip: "a starting % names no product" };
       for (const p of ps) {
@@ -1363,7 +1363,7 @@ export function draftRow(entry, book) {
     const roster = (book.state && book.state.roster) || [], held = (book.state && book.state.TIER_OF) || {};
     const products = (book.state && book.state.PRODUCTS) || {};
     const name = (p) => (products[p] && products[p].name) || p;
-    const driftB = (p) => !!(((((book.pricing || {}).byProduct || {})[p] || {}).inputs || {}).policy || {}).tierRule && !!book.pricing.byProduct[p].inputs.policy.tierRule.drift;
+    const driftB = (p) => !!(((((book.pricing || {}).byProduct || {})[p] || {}).inputs || {}).policy || {}).tierRule && PRICING_ENGINE.pctBook(book.pricing.byProduct[p].inputs.policy.tierRule);
     const say = (v) => v == null ? "not set" : typeof v === "number" ? (v < 0 ? (+(-v * 100).toFixed(2)) + "% off" : (+(v * 100).toFixed(2)) + "% lift") : isObj(v) ? JSON.stringify(v) : String(v);
     const row = { tiers: {} }, flags = [];
     if (pay.unit === "pct") row.unit = "pct";
