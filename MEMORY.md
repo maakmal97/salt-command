@@ -89,6 +89,16 @@
   the word under the mark on Prices, Salt Admin's Stock by book on Needs you (STOCK carries `light`, re-read each poll tick). The word stock is allowed
   on the Counter (his word). Counter Home accepted 22 Oct 2026; Salt Admin's Stock by book not yet confirmed.
 
+## Multi-tick Approve
+- Live as v1213 (`4009e464`, 22 Oct 2026; Cloud commit `39760310831`: chain and three suite parts green), from `docs/plan-approve-many.html`
+  and canvas Salt Admin Approve (https://claude.ai/artifact/VdP2V6wGgpZhuLicWTpQwq): a card's Approve and Reject choose; Approve all; the bar's
+  Confirm sends one `decide-many` (Desk `/_internal/maker/drafts/decide-many`, Counter `/all/maker/drafts/decide-many`, 1 to 50 drafts); refusals
+  stay with why and a fix (`refusalFix`); one dispatch a batch; Needs you lists no row to approve, the glance's To approve tile counts the cards.
+  Fable reviewed the Desk route (two low findings applied). Not yet tried by him. Unverified: a full batch of 50 is about 500 to 700 subrequests,
+  under Workers Paid's 1,000 (plan not checked).
+- v1211 (22 Oct 2026): s282, s283, s284 corrected on his word (CS6-PER's 21 Oct order: 1 salt RM120, 10 oil RM120, 5 rice RM30, collected, paid,
+  no delivery). v1212: Salt Admin labels a fold-raised unit Associate reward or Loyalty unit (`makerRows` `reward`).
+
 ## Live sockets (Speed Wave 2)
 - L2 live as v1200 (`93fb843d`, 21 Oct 2026; Cloud commit `39558436127`: chain and three suite parts green, live /rev `9baa334b7a52fd51`): the Counter's `OrderBook` holds
   hibernating sockets, `/live` (session proved at the handshake as subprotocol `["stmt", session]`) and `/all/live` (Access); kinds and ids only; polls 60 s while up;
