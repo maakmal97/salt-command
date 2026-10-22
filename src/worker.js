@@ -2443,7 +2443,7 @@ async function decideMany(env, ctx, body) {
   const decided = [], refused = [], swept = new Map();
   let thrown = false;
   for (const [id, decision] of want) {
-    /* a row its trip already decided in this batch, the same way, is decided; the other way is a refusal like any other */
+    /* a row its trip already decided in this batch is decided the same way; ticked the other way it is refused as its trip's */
     if (swept.has(id) && swept.get(id) !== decision) {
       refused.push({ id, decision, error: "its trip was " + swept.get(id) + " in this batch", fix: "A trip goes one way: tick its rows the same way, or none." });
       continue;

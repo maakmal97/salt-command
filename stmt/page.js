@@ -906,6 +906,7 @@ body.ended>*:not(#aEnded){display:none}
   .adm #makerDrafts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
   .adm #makerDrafts>.maker-card{margin:0}
   .adm #makerDrafts>.rnone{grid-column:1/-1}
+  .adm #makerDrafts>.aphead,.adm #makerDrafts>.apdone{grid-column:1/-1}
   .adm .chatgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:0 20px;align-items:start}
   .adm .chatgrid>h2,.adm .chatgrid>#makerChatStatus{grid-column:1/-1}
   .adm #makerChatList{display:flex;flex-direction:column;gap:8px}
@@ -959,6 +960,21 @@ body.ended>*:not(#aEnded){display:none}
 .adm .nglance[hidden]{display:none}
 @media (min-width:1080px){.adm .nglance{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .adm .nglance .pwith{vertical-align:middle;margin:-6px 0 -6px 6px}
+/* 22 Oct 2026: the multi-tick Approve (canvas Salt Admin Approve): a card's choice lights its edge, Reject in ember; the bar sticks above the app bar */
+.adm .aphead{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.adm .aphead .salt-ghost,.adm .apticks button,.adm .apbar button,.adm .apmore{min-height:44px}
+.adm .apticks{display:flex;gap:8px}.adm .apticks button{flex:1 1 0;padding:0 12px}
+.adm .ap--a{border-color:var(--salt-verdigris)}.adm .ap--r{border-color:var(--salt-ember)}
+.adm .apreject--on{color:var(--salt-ember);border-color:var(--salt-ember)}
+.adm .aprefused{padding:12px;border-radius:12px;background:var(--salt-slate);border:1px solid var(--salt-ember);display:flex;flex-direction:column;gap:4px}
+.adm .aprefused p{margin:0}
+.adm .apdone{padding:16px;display:flex;flex-direction:column;gap:6px;border:1px solid var(--salt-verdigris)}
+.adm .apdone__head{color:var(--salt-verdigris)}
+.adm .apsheet--a{color:var(--salt-verdigris)}.adm .apsheet--r{color:var(--salt-ember)}
+.adm .apbar{position:sticky;bottom:92px;z-index:5;margin-top:16px;padding:10px 12px;display:flex;align-items:center;gap:10px;border:1px solid var(--salt-line-strong)}
+.adm .apbar[hidden]{display:none}
+.adm .apbar__line{flex:1 1 auto;min-width:0}
+@media (min-width:1080px){.adm .apbar{bottom:16px}}
 /* 22 Oct 2026: Stock by book under the glance, a row a book, its mark and light in words, then its figures in the mono face */
 .adm .nstock{margin:0 0 16px}
 .adm .nstock[hidden]{display:none}
@@ -1869,6 +1885,8 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<section id="oApprove" data-in="orders.approve" aria-label="Rows to approve">'
         + '<p class="lead" id="makerDraftStatus">Reading.</p>'
         + '<div id="makerDrafts"></div>'
+        /* 22 Oct 2026: the multi-tick Approve's bar, drawn by stmt/owner.js apBarDraw once a card is chosen */
+        + '<div id="apBar" class="apbar salt-glass-card salt-glass-card--radius-lg" hidden></div>'
         /* 12 Oct 2026 (Phase 2c): the queue is the system's Plan fold, SHUT, titled and counted (the count is the entries the server holds, drawn with them) and opened by a tap */
         + '<details id="makerQueue" class="salt-plan"><summary data-act="record.queue-toggle"><span class="salt-plan__id" id="makerQueueCount">0</span><span class="salt-plan__title" id="makerQueueTitle">sent, waiting for the drafter</span></summary>'
         + '<div class="salt-plan__body">'

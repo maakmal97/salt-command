@@ -4036,50 +4036,6 @@ export const OWNER_JS = `
   /* a row's Approve and Reject, and a trip's: Approve, or Approve both for two books and Approve all for more */
   function approveWord(n){ return n?(n===2?'Approve both':'Approve all'):'Approve'; }
   function rejectWord(n){ return n?(n===2?'Reject both':'Reject all'):'Reject'; }
-  /* THE ONE APPROVE of a Desk row, Orders > Approve's button and Needs you's pill alike: the same question, the same request, the same
-     answer line. It resolves true when the row was approved, false when it was not, and nothing when it was not asked (he declined, or a
-     tap is already out). opener is the control that asked and key what it asks (its data-yn); going is told when he says yes, before the request goes. */
-  /* PLAN 2 (16 Oct 2026): ONE CARD, ONE APPROVE. The Sheet lists every draft the card holds, as it stood when he tapped; his yes decides exactly those. A trip is one
-     request (the Desk decides its rows in one batch); moves on one row are each draft's own approval, sent in the order they were entered, stopping at the first the
-     Desk refuses, which the answer names. What one approval does is unchanged. */
-  function approveDraft(draft,opener,key,going){
-    var g=groupOf(draft), many=g.drafts.length>1;
-    return ownerAsk(opener,key,{title:g.trip?'Approve every row of this trip?':many?'Approve every move on this order?':'Approve this row?', extra:g.drafts.map(deskAskRow), plain:true,
-      say:[g.trip?'Every row of the trip is approved as drafted, with the cost, margin and flags shown. This tap decides them all.'
-        :many?'Each move is approved as drafted, in the order it was entered. If the Desk refuses one, the moves after it wait and you are told which.'
-        :'The row is approved as drafted, with the cost, margin and flags shown.'],
-      go:approveLabel(g), keep:'Not yet'}).then(function(yes){
-      if(!yes) return;
-      if(going) going();
-      if(g.trip||!many) return makerAction('/all/maker/drafts/'+encodeURIComponent(g.lead.id)+'/approve',{},'Row approved.','draft:'+g.lead.id);
-      return decideInOrder(g,'approve');
-    });
-  }
-  function rejectDraft(draft,opener,key){
-    var g=groupOf(draft), many=g.drafts.length>1;
-    return ownerAsk(opener,key,{title:g.trip?'Reject every row of this trip?':many?'Reject every move on this order?':'Reject this row?', extra:g.drafts.map(deskAskRow),
-      say:[g.trip?'Every row of the trip is rejected and none is recorded.':many?'Each move is rejected and none is recorded.':'The row is rejected and nothing is recorded.'],
-      go:g.trip?rejectWord(g.drafts.length):many?'Reject all':'Reject', keep:'Keep it'}).then(function(yes){
-      if(!yes) return;
-      if(g.trip||!many) return makerAction('/all/maker/drafts/'+encodeURIComponent(g.lead.id)+'/reject',{},'Row rejected.','draft:'+g.lead.id);
-      return decideInOrder(g,'reject');
-    });
-  }
-  /* each draft of the card in turn, the next only once the last was taken; the first refusal stops the rest and is named, with how many went before it */
-  function decideInOrder(g,verb){
-    if(makerBusy) return Promise.resolve();
-    makerBusy=true;
-    var key='draft:'+g.lead.id, n=g.drafts.length, done=0, word=verb==='approve'?'approved':'rejected';
-    function next(){
-      if(done>=n) return Promise.resolve();
-      return refs('/all/maker/drafts/'+encodeURIComponent(g.drafts[done].id)+'/'+verb,{}).then(function(){ done++; return next(); });
-    }
-    function settle(said,error,ok){ makerBusy=false; return loadMaker().then(function(){ makerSay(key,said,error); return ok; },function(){ makerSay(key,said,error); return ok; }); }
-    return next().then(function(){ return settle(n===2?'Both moves '+word+'.':'All '+n+' moves '+word+'.',null,true); },function(error){
-      var d=g.drafts[done];
-      return settle((done?done+' of '+n+' '+word+'. ':'')+'Move '+(done+1)+', '+moveWord(d).toLowerCase()+', was not '+word+': '+error.message+(done<n-1?' The moves after it wait under Approve.':''),error,false);
-    });
-  }
   function drawMaker(){
     var root=document.getElementById('makerReview'), list=document.getElementById('makerOrderList'), status=document.getElementById('makerReviewStatus');
     var queueRoot=document.getElementById('makerQueueReview'), draftRoot=document.getElementById('makerDrafts')||root, draftStatus=document.getElementById('makerDraftStatus');
@@ -4164,6 +4120,7 @@ export const OWNER_JS = `
     paintOrdCounts();
     drawOrderPane();
     drawDeskRows(draftRoot,queueRoot,pendingRows);
+    apBarDraw();
     sweep();
   }
   /* an order's head, as every card of an order says it: who by code, what and for how much; its stage as a chip, the four money words, and its reference small */
@@ -5329,8 +5286,71 @@ export const OWNER_JS = `
   }
   /* an entry waiting for the Desk, by its moment when it has one: Entry of 09 Oct 2026, 14:11 */
   function entryLine(entry){ var at=isoAt(entry.id)||entry.date||''; return 'Entry'+(at?' of '+fmtWhen(at):''); }
+  /* 22 OCT 2026 (his multi-tick Approve, canvas Salt Admin Approve, docs/plan-approve-many.html): EVERY CARD IS TICKED, NOT DECIDED. Its Approve
+     and Reject choose (one or the other, the card whole: a trip's rows, or every move on one order); Approve all chooses Approve on every card that
+     can go; the bar counts both ways with Clear and Confirm, and Confirm asks once, listing every card, then sends them all in one request
+     (decide-many), so they fold together. A card the Desk would not decide stays, with why and how to fix it; the rest go. A payment they say they
+     sent is never ticked: it is answered on its order. A pick is kept by the card's first draft and let go when the card leaves. */
+  var apPick={}, apRefused={}, apDone=null;
+  function apTickable(g){ return !g.drafts.some(draftClaim); }
+  function apGroups(){ return draftGroups(pendingRows()).filter(apTickable); }
+  function apChose(g,v){ apPick[g.lead.id]=apPick[g.lead.id]===v?null:v; apDone=null; drawMaker(); }
+  function apBarDraw(){
+    var bar=document.getElementById('apBar'); if(!bar) return;
+    var gs=apGroups(), A=gs.filter(function(g){ return apPick[g.lead.id]==='a'; }), R=gs.filter(function(g){ return apPick[g.lead.id]==='r'; });
+    bar.textContent=''; bar.hidden=!(A.length+R.length);
+    if(bar.hidden) return;
+    bar.appendChild(el('span','apbar__line',[A.length?A.length+' approve':'',R.length?R.length+' reject':''].filter(Boolean).join(' · ')));
+    var clear=actOn(el('button','salt-ghost','Clear'),'approve.clear'); clear.type='button';
+    clear.addEventListener('click',function(){ apPick={}; drawMaker(); });
+    var go=actOn(el('button','salt-pill salt-pill--sm','Confirm'),'approve.confirm'); go.type='button'; ynTag(go,'approve:confirm');
+    go.addEventListener('click',function(){ apConfirm(go,A,R); });
+    bar.appendChild(clear); bar.appendChild(go);
+  }
+  function apConfirm(go,A,R){
+    var n=A.length+R.length, extra=[];
+    if(A.length){ extra.push(el('p','salt-eyebrow apsheet apsheet--a',A.length+' to approve')); A.forEach(function(g){ g.drafts.forEach(function(d){ extra.push(deskAskRow(d)); }); }); }
+    if(R.length){ extra.push(el('p','salt-eyebrow apsheet apsheet--r',R.length+' to reject')); R.forEach(function(g){ g.drafts.forEach(function(d){ extra.push(deskAskRow(d)); }); }); }
+    return ownerAsk(go,'approve:confirm',{title:'Decide '+n+(n===1?' card?':' cards?'), extra:extra, plain:true,
+      say:['Each is decided as drafted. One that cannot go stays here with why and how to fix it; the rest go.'],
+      go:'Confirm '+n, keep:'Not yet'}).then(function(yes){
+      if(!yes||makerBusy) return;
+      makerBusy=true;
+      var ids=function(gs){ return [].concat.apply([],gs.map(function(g){ return g.drafts.map(function(d){ return d.id; }); })); };
+      var lead={}; A.concat(R).forEach(function(g){ g.drafts.forEach(function(d){ lead[d.id]=g.lead.id; }); });
+      return refs('/all/maker/drafts/decide-many',{approve:ids(A), reject:ids(R)}).then(function(j){
+        var went={}, refused=j.refused||[], hit={};
+        (j.decided||[]).forEach(function(d){ went[lead[d.id]||d.id]=d.decision; });
+        refused.forEach(function(r){ var k=lead[r.id]||r.id; hit[k]=1; apRefused[k]={why:noBook(r.error||''), fix:r.fix||''}; });
+        var a=A.filter(function(g){ return !hit[g.lead.id]&&went[g.lead.id]==='approved'; }).length, rj=R.filter(function(g){ return !hit[g.lead.id]&&went[g.lead.id]==='rejected'; }).length;
+        apDone={a:a, r:rj, refused:Object.keys(hit).length};
+        apPick={};
+      },function(error){ apDone={error:error.message}; }).then(function(){ makerBusy=false; return loadMaker(); });
+    });
+  }
   function drawDeskRows(draftRoot,queueRoot,pendingRows){
-    draftGroups(pendingRows).forEach(function(g){
+    var live=draftGroups(pendingRows), liveIds={};
+    live.forEach(function(g){ liveIds[g.lead.id]=1; });
+    Object.keys(apPick).forEach(function(k){ if(!liveIds[k]) delete apPick[k]; });
+    Object.keys(apRefused).forEach(function(k){ if(!liveIds[k]) delete apRefused[k]; });
+    if(apDone){
+      var dn=el('div','salt-glass-card salt-glass-card--radius-lg apdone'); dn.setAttribute('role','status');
+      if(apDone.error) dn.appendChild(el('p','msg bad',apDone.error));
+      else {
+        dn.appendChild(el('span','salt-eyebrow apdone__head',(apDone.a+apDone.r)+' decided'+(apDone.refused?', '+apDone.refused+' refused':'')));
+        var parts=[apDone.a?apDone.a+' approved':'',apDone.r?apDone.r+' rejected':''].filter(Boolean);
+        dn.appendChild(el('span','apdone__line',parts.length?parts.join(' and ')+(apDone.a?'. They fold together, one version.':'.'):'Nothing went. The refused cards say why below.'));
+      }
+      draftRoot.appendChild(dn);
+    }
+    var ticks=live.filter(apTickable);
+    if(ticks.length){
+      var hr=el('div','aphead'); hr.appendChild(el('span','aphead__n',ticks.length+' to decide'));
+      var all=actOn(el('button','salt-ghost','Approve all'),'approve.all'); all.type='button';
+      all.addEventListener('click',function(){ ticks.forEach(function(g){ if(!apRefused[g.lead.id]) apPick[g.lead.id]='a'; }); apDone=null; drawMaker(); });
+      hr.appendChild(all); draftRoot.appendChild(hr);
+    }
+    live.forEach(function(g){
       var draft=g.lead, card=makerCard(draftRoot,'draft:'+draft.id,'salt-approve apcard'), head=el('div','salt-approve__head apphead');
       var rid=g.tripMoves?'':draftRid(draft), from=draftFrom(draft), when=fmtWhen(isoAt(draft.id)||draft.date||(draft.entry||{}).date||''), party=el('span','salt-approve__party');
       /* the head: the customer's code and the book's mark */
@@ -5360,13 +5380,25 @@ export const OWNER_JS = `
         to.addEventListener('click', function(){ var c=claimOf(draft); if(c) makerClaimOpen=c.u+':'+c.id; goPlace('orders','payments')(); });
         card.appendChild(to);
       }
-      var panel=apDetails(g,[from?'from '+from:'',when].filter(Boolean).join(', ')), acts=el('div','salt-approve__actions'); card.appendChild(acts);
-      var approve=makerButton(acts,[approveLabel(g),'draft.approve'],function(){ approveDraft(draft,approve,'draft:'+draft.id+':approve'); },true);
-      approve.disabled=!!claim; ynTag(approve,'draft:'+draft.id+':approve');
-      var reject=makerButton(acts,[g.trip?rejectWord(g.drafts.length):g.drafts.length>1?'Reject all':'Reject','draft.reject'],function(){ rejectDraft(draft,reject,'draft:'+draft.id+':reject'); },false);
-      reject.classList.add('salt-ghost--danger'); ynTag(reject,'draft:'+draft.id+':reject');
-      var more=makerButton(acts,['Details','row.proposed'],function(){ var open=more.getAttribute('aria-expanded')!=='true'; more.setAttribute('aria-expanded',String(open)); panel.hidden=!open; },false);
-      more.setAttribute('aria-expanded','false');
+      var panel=apDetails(g,[from?'from '+from:'',when].filter(Boolean).join(', '));
+      var more=actOn(el('button','salt-ghost salt-ghost--sm apmore','Details'),'row.proposed'); more.type='button'; more.setAttribute('aria-expanded','false');
+      more.addEventListener('click',function(){ var open=more.getAttribute('aria-expanded')!=='true'; more.setAttribute('aria-expanded',String(open)); panel.hidden=!open; });
+      head.appendChild(more);
+      var gone=apRefused[draft.id];
+      if(gone){
+        var rb=el('div','aprefused'); rb.appendChild(el('span','salt-status salt-status--ember','Refused'));
+        var w=el('p','aprefused__why'); w.appendChild(el('b',null,'Why: ')); w.appendChild(document.createTextNode(gone.why)); rb.appendChild(w);
+        var fx=el('p','aprefused__fix'); fx.appendChild(el('b',null,'To fix: ')); fx.appendChild(document.createTextNode(gone.fix)); rb.appendChild(fx);
+        card.appendChild(rb);
+      }
+      if(!claim){
+        var pick=apPick[draft.id], acts=el('div','salt-approve__actions apticks'); acts.setAttribute('role','group'); acts.setAttribute('aria-label','Decide this card'); card.appendChild(acts);
+        var approve=actOn(el('button',pick==='a'?'salt-pill salt-pill--sm':'salt-ghost',approveLabel(g)),'draft.approve'); approve.type='button'; approve.setAttribute('aria-pressed',String(pick==='a'));
+        var reject=actOn(el('button','salt-ghost'+(pick==='r'?' apreject--on':''),g.trip?rejectWord(g.drafts.length):g.drafts.length>1?'Reject all':'Reject'),'draft.reject'); reject.type='button'; reject.setAttribute('aria-pressed',String(pick==='r'));
+        approve.addEventListener('click',function(){ apChose(g,'a'); }); reject.addEventListener('click',function(){ apChose(g,'r'); });
+        acts.appendChild(approve); acts.appendChild(reject);
+        if(pick) card.classList.add(pick==='a'?'ap--a':'ap--r'); else if(gone) card.classList.add('ap--r');
+      }
       card.appendChild(panel);
       makerFoot(card,'draft:'+draft.id);
     });
@@ -6054,38 +6086,6 @@ export const OWNER_JS = `
   function orderWhat(o){ return units(o.qty)+' · '+rm(o.total); }
   function waitingClaims(){ return makerClaims.filter(function(c){ return c.state==='waiting'; }); }
   function pendingRows(){ return (makerData&&makerData.drafts||[]).filter(function(d){ return d.status==='pending'; }); }
-  /* a Desk row to approve: the same tap, the same question and the same request as Approve row on Orders > Approve (approveDraft). A row
-     that is a customer's claim is answered through Received on its order, so it has no pill. The answer stays on the card, which is drawn
-     from the live row, and outlives it once the row is decided. */
-  function rowNeed(d){
-    var g=groupOf(d), claim=g.drafts.some(draftClaim), sibs=g.trip?g.drafts:[], said=needSaid['d:'+d.id], who=draftParty(d)||'no code';
-    return item('soon','rows','Row','d:'+d.id, isoAt(d.id), {who:who, head:'Approve ', rest:"'s row",
-      mark:d.qty==null||g.tripMoves?'':d.product, what:g.tripMoves?moveWord(d)+', '+tripMoveRows(g).length+' books, one order'
-        :d.amends?[draftRid(d),moveWord(d)].filter(Boolean).join(', ')+(g.drafts.length>1&&!g.trip?', '+g.drafts.length+' moves':''):rowWhat(d),
-      why:claim?'Answer this through the payment card.'
-        :sibs.length?(sibs.length===2?'Two books, one trip. Approve decides both.':sibs.length+' books, one trip. Approve decides all of them.'):'',
-      open:goPlace('orders','approve')}, function(c){
-      if(!claim){
-        var ap=pill([approveLabel(g),'need.approve-row']);
-        ap.disabled=!!makerBusy; ynTag(ap,'need:draft:'+d.id+':approve');
-        ap.addEventListener('click', function(){
-          /* asked on the page's Sheet, with nothing shut until he says yes: a no leaves the pill and the card as they were */
-          var said=false;
-          approveDraft(d,ap,'need:draft:'+d.id+':approve',function(){ said=true; ap.disabled=true; }).then(function(ok){
-            if(!said) return;
-            if(ok!==undefined) needSaid['d:'+d.id]={t:makerSaid['draft:'+d.id]||(ok?'Row approved.':'Not approved.'), bad:!ok, who:who};
-            drawNeeds();
-          });
-        });
-        c._add(ap);
-      }
-      if(said) { var n=noteOf(c); n.textContent=said.t; if(said.bad) n.className+=' bad'; }
-    });
-  }
-  /* a row he has just approved stays where he tapped it, saying what happened, and no longer waits on him */
-  function decidedNeed(k, said){
-    return item('soon','rows','Row',k, '', {who:said.who, what:'', why:said.t, counts:false, open:goPlace('orders','approve')});
-  }
   /* 15 Oct 2026 (plan 1, part 2): a device's queue key the Desk could not read (malformed, or with no matching device), named so he can mend it;
      every other entry is read beside it */
   function unreadableKeys(){ return (makerData&&makerData.unreadable||[]).filter(function(k){ return typeof k==='string'; }); }
@@ -6322,8 +6322,7 @@ export const OWNER_JS = `
     makerThreads.filter(makerThreadAsked).forEach(function(t){ L.push(threadNeed(t)); });
     real.filter(function(a){ return a.account&&a.locked; }).forEach(function(a){ L.push(lockNeed(a)); });
     var rows=pendingRows();
-    draftGroups(rows).forEach(function(g){ L.push(rowNeed(g.lead)); });
-    Object.keys(needSaid).filter(function(k){ return !rows.some(function(d){ return 'd:'+d.id===k; }); }).forEach(function(k){ L.push(decidedNeed(k, needSaid[k])); });
+    /* 22 Oct 2026 (his answer, no overlaps): a row to approve is on Orders > Approve alone; the glance counts them (To approve) */
     (makerData&&makerData.refused||[]).forEach(function(r, i){ L.push(entryNeed(r, 'x:'+i)); });
     (makerData&&makerData.queue||[]).filter(function(e){ return e.state==='refused'; }).forEach(function(e){ L.push(entryNeed(e, 'q:'+e.id)); });
     if(unreadableKeys().length) L.push(unreadableNeed(unreadableKeys()));
@@ -6471,7 +6470,8 @@ export const OWNER_JS = `
       if(left>0.004){ owe+=left; oweN++; }
     });
     var tiles=[['#orders/ready','ready','Ready',String(ready),ready?'To hand over':'Nothing to hand over'],
-      ['#orders','owed','Owed to you',rm(owe),oweN?oweN+(oweN===1?' agreed order':' agreed orders'):'Nothing owed']].concat(glanceStockTiles());
+      ['#orders','owed','Owed to you',rm(owe),oweN?oweN+(oweN===1?' agreed order':' agreed orders'):'Nothing owed']].concat(glanceStockTiles())
+      .concat([['#orders/approve','approve','To approve',String(draftGroups(pendingRows()).length),'On Orders']]);
     var sig=JSON.stringify(tiles);
     g.hidden=false;
     if(g.getAttribute('data-sig')===sig) return;
