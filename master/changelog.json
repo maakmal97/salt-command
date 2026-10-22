@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1215",
+  "d": "22 Oct 2026",
+  "t": "ONE PENDING SALE OF SALT TO CZ5-TM AT RM120",
+  "n": [
+   "<b>FOLDED: ONE PENDING SALE, NOTHING PAID OR MOVED.</b> Order 20261022150231-ntznxw, 1 unit of salt to CZ5-TM at RM120, to collect, was preapproved by Counter Admin and appended to sales with its note. The drafter raised no flags. The rate is the ask for the size, and above the party's median of RM110.",
+   "<b>INVENTORY UNCHANGED.</b> The row is pending, so it draws no stock and books no revenue until something moves. Stock stays at 11 unit, cost RM60 a unit, with 1.5 unit promised and 2.5 owed out as before."
+  ]
+ },
+ {
   "v": "v1214",
   "d": "22 Oct 2026",
   "t": "PENDING SALT ORDER FOR CM4-MK, NOTHING MOVED",
