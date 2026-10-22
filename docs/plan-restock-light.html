@@ -909,7 +909,7 @@ radial-gradient(at 82% 28%,var(--counter-v) 0,transparent 55%),radial-gradient(a
 <div class="hs salt-root lg" data-direction="studio" data-palette="Sorbet" data-tuning="Sorbet" data-density="comfortable" data-scheme="light+dark">
 <div class="wrap">
 <header class="hero">
-<p class="eyebrow">Salt Counter · Salt Admin · the restock light · 22 Oct 2026, plan, not built</p>
+<p class="eyebrow">Salt Counter · Salt Admin · the restock light · 22 Oct 2026, answered, waiting for the go</p>
 <h1>The restock light, easy to see: plan</h1>
 <p>Your word of 22 Oct 2026: the coloured outline round a product's mark is too easy to miss. Customers get a plain line per book on Home, with no figures. You get the same light on Needs you with the real units. Ordering is never refused, and nothing prices from any of it.</p>
 <div class="grid">
@@ -937,13 +937,13 @@ radial-gradient(at 82% 28%,var(--counter-v) 0,transparent 55%),radial-gradient(a
 <caption>The words (all in <code>stmt/words.js</code>, English only)</caption>
 <thead><tr><th scope="col">Light</th><th scope="col">Line</th><th scope="col">Under it, when you set a day on Stock</th></tr></thead>
 <tbody>
-<tr><th scope="row">Green</th><td>Ready now</td><td>nothing</td></tr>
-<tr><th scope="row">Yellow</th><td>Running low</td><td>More by 28 Oct</td></tr>
-<tr><th scope="row">Red</th><td>Out for now</td><td>More by 28 Oct</td></tr>
+<tr><th scope="row">Green</th><td>Available</td><td>nothing</td></tr>
+<tr><th scope="row">Yellow</th><td>Limited</td><td>More by 28 Oct</td></tr>
+<tr><th scope="row">Red</th><td>Out of stock</td><td>More by 28 Oct</td></tr>
 </tbody></table></div>
 <ul>
 <li>The line is the design system's status recipe (<code>salt-status--verdigris</code>, <code>--brass</code>, <code>--ember</code>), so it is colour and words, never colour alone.</li>
-<li>No figure, no unit count and never the banned word. The mark names the book by shape, as everywhere on the Counter.</li>
+<li>No figure and no unit count. Your answer of 22 Oct 2026 lets the word stock in, for red alone (it was Out for now); the Counter rule's line is amended to match. The mark names the book by shape, as everywhere on the Counter.</li>
 <li>Each row is a 44px tap that opens Prices at that book.</li>
 <li>Prices keeps its border, made 3px, and shows the same line under the mark, so the two places say the same thing.</li>
 <li>Greyed with the rest of Home when the account is locked; drawn on your read-only view too.</li>
@@ -957,14 +957,14 @@ radial-gradient(at 82% 28%,var(--counter-v) 0,transparent 55%),radial-gradient(a
 <caption>Illustration only, not live figures</caption>
 <thead><tr><th scope="col">Book</th><th scope="col">Light</th><th scope="col">Shelf</th><th scope="col">Agreed</th><th scope="col">Free</th><th scope="col">Cover</th><th scope="col">Next lot</th></tr></thead>
 <tbody>
-<tr><th scope="row">mark</th><td>Out</td><td>0</td><td>2</td><td>0</td><td>0 d</td><td>20 units, 28 Oct</td></tr>
-<tr><th scope="row">mark</th><td>Running low</td><td>14.89</td><td>16</td><td>13.39</td><td>2.6 d</td><td>8 units, 25 Oct</td></tr>
-<tr><th scope="row">mark</th><td>Ready</td><td>45</td><td>3</td><td>45</td><td>15.1 d</td><td>Nothing on the way</td></tr>
+<tr><th scope="row">mark</th><td>Out of stock</td><td>0</td><td>2</td><td>0</td><td>0 d</td><td>20 units, 28 Oct</td></tr>
+<tr><th scope="row">mark</th><td>Limited</td><td>14.89</td><td>16</td><td>13.39</td><td>2.6 d</td><td>8 units, 25 Oct</td></tr>
+<tr><th scope="row">mark</th><td>Available</td><td>45</td><td>3</td><td>45</td><td>15.1 d</td><td>Nothing on the way</td></tr>
 </tbody></table></div>
 <ul>
 <li>All six figures already travel: shelf, agreed (<code>commit</code>), free, cover days and units on the way from <code>STOCK</code> via <code>GET /all/maker/stock</code>; the day from KV <code>expected</code> (<code>stockWithDates</code>).</li>
 <li>The light itself is added to <code>STOCK</code> by the master's own <code>restockLight</code> when the snapshot is taken, so the Counter and Admin read one rule and nothing on Admin works it out.</li>
-<li>"As measured on DD Mon" heads the card, as on the tiles. A row taps nowhere (it is information, like the tiles). At phone width the table becomes one line per book.</li>
+<li>Re-read on every Needs you poll (every 5 seconds, or each minute while the live socket is up), where the tiles read once a page open. "As measured on DD Mon" heads the card, as on the tiles. A row taps nowhere (it is information, like the tiles). At phone width the table becomes one line per book.</li>
 </ul>
 </section>
 
@@ -983,16 +983,16 @@ radial-gradient(at 82% 28%,var(--counter-v) 0,transparent 55%),radial-gradient(a
 </section>
 
 <section class="glass">
-<h2>Asks</h2>
+<h2>Your answers, 22 Oct 2026</h2>
 <ol>
-<li><b>Words</b>: Ready now, Running low, Out for now, and the same three replace Available and Limited on Prices. Yes?</li>
-<li><b>Card name on Home</b>: "Availability". Yes, or another?</li>
-<li><b>Which books</b>: every book on their list, green included (so the good news shows too). Or only yellow and red?</li>
-<li><b>Place on Home</b>: just above New order, so it is read before ordering. Yes?</li>
-<li><b>Keep "More by DD Mon"</b> under yellow and red when you have set a day. Yes?</li>
-<li><b>Prices</b>: border to 3px plus the line under the mark. Yes?</li>
-<li><b>Admin card</b>: Stock by book, every book, worst first, the six figures as above, under the glance tiles. Yes?</li>
-<li><b>Two clocks</b>: the customer's light moves at each publish and Admin's at each version, so for a few minutes after a fold they can differ; the card says when it was measured. Accept?</li>
+<li><b>Words</b>: Available, Limited, Out of stock, on Home and on Prices.</li>
+<li><b>Card name</b>: Availability.</li>
+<li><b>Which books</b>: all, green included.</li>
+<li><b>Place</b>: above New order. Yes.</li>
+<li><b>More by DD Mon</b>: kept. Yes.</li>
+<li><b>Prices</b>: 3px border and the line. Yes.</li>
+<li><b>Admin card</b>: as drawn. Yes.</li>
+<li><b>Two clocks</b>, your question: both pages poll (the Counter every 10 seconds, Needs you every 5), but a poll re-reads what is stored, and the light is stored by the Cloud commit run, not by the poll. After a fold, one run re-seeds Admin's figures and then publishes the customers' lists, so they differ only for the minutes between those two steps. Admin's card will re-read on its poll, so it shows the new figures within 5 seconds of the re-seed.</li>
 </ol>
 </section>
 
