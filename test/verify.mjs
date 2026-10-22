@@ -50225,6 +50225,11 @@ await (async () => {
   await (await import("./stock-light-relay.mjs")).run({ ok });
 })();
 
+section("The restock light made plain, P2: Availability on Counter Home and the light's word on Prices (22 Oct 2026)");
+await (async () => {
+  await (await import("./counter-supply-home.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin A to C: Help read only on Shop hours, the customer's four answers (21 Oct 2026)");
 await (async () => {
   await (await import("./admin-ac-help.mjs")).run({ ok, pageWork });
@@ -50945,7 +50950,7 @@ await (async () => {
     for (let i = 0; i < 80 && !d.querySelector("#pPrices .pmark"); i++) await new Promise((r) => setTimeout(r, 50));
     const panes = [...d.querySelectorAll("#pPrices .pane")].map((p) => ({ cls: p.querySelector(".pmark").className, aria: p.querySelector(".pmark").getAttribute("aria-label"), text: p.textContent }));
     ok(/sup-yellow/.test(panes[0].cls) && /Limited/.test(panes[0].aria) && /More by 14 Oct/.test(panes[0].text), "yellow: a yellow border, Limited in its name, More by 14 Oct under it: " + JSON.stringify(panes[0]));
-    ok(/sup-red/.test(panes[1].cls) && /Out for now/.test(panes[1].aria) && !/More by/.test(panes[1].text), "red with no day: a red border and no More by");
+    ok(/sup-red/.test(panes[1].cls) && /Out of stock/.test(panes[1].aria) && !/More by/.test(panes[1].text), "red with no day: a red border and no More by");
     ok(/sup-green/.test(panes[2].cls) && /Available/.test(panes[2].aria) && !/More by/.test(panes[2].text), "green: a green border, and no day even when one is sealed");
     ok(!/sup/.test(panes[3].cls) && panes[3].aria === d.querySelectorAll("#pPrices .pmark")[3].getAttribute("aria-label") && !/More by|Limited|Available/.test(panes[3].text), "a list sealed with no light draws the mark as it was");
     ok(!/\bstock\b|\bsalt\b|\boil\b|Salt Command/i.test(panes.map((p) => p.aria + p.text.replace(/RM[^A-Za-z]*/g, "")).join(" ")), "no customer sentence names stock, a product or the desk");

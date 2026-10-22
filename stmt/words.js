@@ -471,7 +471,8 @@ export const EN = {
      the shelf is out; yellow and red carry the day he expects the next lot, once he sets one. Ordering is never refused. */
   "sup.green": "Available",
   "sup.yellow": "Limited",
-  "sup.red": "Out for now",
+  "sup.red": "Out of stock",
+  "av.h": "Availability",
   "sup.by": "More by {d}",
   "ord.opensSet": "Ordering opens once your prices are set.",
   "ord.opensList": "Ordering opens once your price list is written, with the next update.",

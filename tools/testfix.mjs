@@ -485,6 +485,8 @@ export const FEATURES = [
   ["the nearest reward on Home, its meter to the next unit (Counter Batch A)", (f) => !!(f.card && f.card.products.some((p) => p.reward && p.reward.next != null))],
   ["the restock light: green, yellow with its day, red (F4)", (f) => { const s = ((f.prices && f.prices.products) || []).map((p) => p.supply).filter(Boolean);
     return ["green", "red"].every((l) => s.some((x) => x.light === l)) && s.some((x) => x.light === "yellow" && /^\d{4}-\d{2}-\d{2}$/.test(x.by || "")); }],
+  ["Availability on Home: a row a book, Available, Limited with More by, Out of stock (22 Oct 2026)", (f) => { const s = ((f.prices && f.prices.products) || []).filter((p) => p.sizes && p.sizes.length).map((p) => p.supply).filter(Boolean);
+    return ["green", "yellow", "red"].every((l) => s.some((x) => x.light === l)) && s.some((x) => x.light !== "green" && /^\d{4}-\d{2}-\d{2}$/.test(x.by || "")); }],
   ["order at 6.75 units, any amount off the grid (05 Oct 2026)", (f) => has(f, (o) => Math.abs(+o.qty - 6.75) < 1e-9 && !o.price && o.status !== "placed" && o.total > 0)
     && f.prices.products.some((p) => p.grid && p.grid.step > 0 && p.grid.p.length > 1)],
   ["price asked (Negotiate)", (f) => has(f, (o) => o.status === "placed" && o.price && o.price.state === "asked")],

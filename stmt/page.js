@@ -123,7 +123,11 @@ select.fld{letter-spacing:0;appearance:none;-webkit-appearance:none;color-scheme
 .psym .plet{font-family:var(--salt-font-mono);font-weight:500;letter-spacing:0}
 h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 /* F4: the light is a coloured border round the mark; the three colours are the system's own tokens (yellow is --salt-amber, the warning; brass is the mark's own colour and the focus ring) */
-.pmark.sup{display:inline-block;padding:5px;border:2px solid var(--sup);border-radius:8px}
+.pmark.sup{display:inline-block;padding:5px;border:3px solid var(--sup);border-radius:8px}
+/* 22 Oct 2026 (his word, the outline alone was missed): the light in words is the system's status, in the light's own token */
+.salt-status.supst{--salt-status-tone:var(--sup)}
+.hsup{min-height:44px;align-items:center}
+.hsup .pmark.sup{margin:0}
 .sup-green{--sup:var(--salt-verdigris)}
 .sup-yellow{--sup:var(--salt-amber)}
 .sup-red{--sup:var(--salt-ember)}
@@ -2016,7 +2020,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     /* HOME: what they owe, what needs them and what they order again; the notice first (S7 7.5). What they owe is
        stage 6's To pay now (S6 6.2), its one filled Pay opening the pay sheet. Two columns from 1080px (S7 7.2) */
     + '<div id="pHome" class="home"><div class="hcol">' + noticeCard(bulletin)
-    + '<div id="payHead" class="payhead" hidden></div><div id="hNeeds"></div><div id="hRate"></div><div id="hThread"></div><div id="hStart"></div></div>'
+    + '<div id="payHead" class="payhead" hidden></div><div id="hNeeds"></div><div id="hRate"></div><div id="hThread"></div><div id="hSupply"></div><div id="hStart"></div></div>'
     + '<div class="hcol"><div id="hPool"></div><div id="hComing"></div><div id="hAgain"></div><div id="hReward"></div><div id="hYear"></div></div>'
     /* Counter Batch A: their latest open order, a pill over the App bar and the pay foot on a phone and a banner under To pay now from
        1080px: one element, so the two are never both shown */
@@ -3758,10 +3762,14 @@ const CLIENT_JS = `
   /* F4: THE LIGHT, a coloured border round the book's mark, its words in the heading's name and, on yellow or red with a day
      set, "More by DD Mon" under it. Sealed with the list, so it is as fresh as the last publish; nothing refuses an order. */
   function dmShort(s,L){ var m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(String(s||'')); return m?m[3]+' '+mon3(L)[+m[2]-1]:''; }
+  function supLit(p){ var s=p&&p.supply; return s&&(s.light==='green'||s.light==='yellow'||s.light==='red')?s:null; }
+  function supWord(l){ return el('span','salt-status supst sup-'+l,tw('sup.'+l)); }
+  /* 22 Oct 2026 (his word, the outline alone was missed): the light's word stands under the mark too, the status in the light's colour */
   function supplyMark(h,pane,p){
-    var s=p.supply; if(!s||!(s.light==='green'||s.light==='yellow'||s.light==='red')) return;
+    var s=supLit(p); if(!s) return;
     h.className+=' sup sup-'+s.light;
     h.setAttribute('aria-label',pshape(p.product)+', '+tw('sup.'+s.light));
+    var ln=pane.appendChild(el('p','supline')); ln.setAttribute('aria-hidden','true'); ln.appendChild(supWord(s.light));   /* the heading says it once */
     if(s.light!=='green'&&dmShort(s.by,'en')) pane.appendChild(el('p','sub2',tw('sup.by',{d:Dd(dmShort,s.by)})));
   }
   function drawPrices(){
@@ -3776,7 +3784,7 @@ const CLIENT_JS = `
     /* S4 4.8: THE STAMP SAYS WHEN THE LIST WAS WRITTEN, "Prices as at Thu 24 Sep, 11:59" in Kuala Lumpur, where "for the week
        of" stayed on an open page for good; a list sealed before it carried a time keeps its week. Every size is a tap. */
     var tapTo=!view&&!hold;
-    bsRows=[]; bsPanes=[];
+    bsRows=[]; bsPanes=[]; supPanes={};
     pPrices.appendChild(el('p','lead',tw((prices.at&&pricesAt(prices.at)?'pr.asAt':'pr.week')+(tapTo?'Tap':''),
       {d:Dd(pricesAt,prices.at), w:prices.week&&prices.week.label||''})));
     pPrices.appendChild(el('p','lead',tw('pr.goods',{deliv:Wk('deliv')})));
@@ -3792,7 +3800,7 @@ const CLIENT_JS = `
       /* S4 4.10, D11 (his "all recommended" of 24 Sep 2026): THE LEVEL LEAVES PRICES. v659 drew a symbol and a colour
          for it beside each product, never named; a customer now sees no level at all, in words or in a mark. The name
          still travels inside the sealed list, and nothing here reads it. 27 Sep 2026: a pane is its mark and its sizes. */
-      pane.appendChild(h3); supplyMark(h3,pane,p);
+      pane.appendChild(h3); supplyMark(h3,pane,p); supPanes[p.product]=pane;
       /* S4 4.8: a size is a row of the plain ledger, and each row is one tap that opens the order sheet at that size */
       var L=el('div','salt-ledger salt-ledger--plain');
       p.sizes.forEach(function(r){
@@ -3840,7 +3848,7 @@ const CLIENT_JS = `
      up to the line), lost on a reload and at sign-out. A + greys where the sum has no price (past the grid, off a board) and, with five
      orders open, every + greys and the limit is said: a basket is one sheet and counts once. Minus never refuses. A tap patches the controls,
      the line and the bar where they stand, so focus stays. The page prices nothing: every figure is priceAt over the sealed list. */
-  var bsRows=[], bsPanes=[];
+  var bsRows=[], bsPanes=[], supPanes={};
   function bsOf(p){ var b=draft.bk||{}; return Object.prototype.hasOwnProperty.call(b,p)?+b[p]:0; }
   function bsTapsOf(p){ var t=(draft.bkTaps||{})[p]||{}, s=0, k=Object.keys(t); k.forEach(function(q){ s+=(+q)*t[q]; }); return k.length&&Math.abs(s-bsOf(p))<1e-6?t:null; }
   function bsSet(p,amt){ draft.bk=draft.bk||{}; if(amt>1e-9) draft.bk[p]=String(+amt.toFixed(6)); else { delete draft.bk[p]; if(draft.bkTaps) delete draft.bkTaps[p]; } }
@@ -6590,7 +6598,7 @@ const CLIENT_JS = `
      where it reads differently, so a poll moves nothing that has not changed. A row opens its order in Orders. */
   function drawHome(){
     /* V5 (his answer of 29 Sep 2026): a locked account still sees Home, greyed out; only To pay now is live */
-    var parts={hNeeds:homeNeeds(), hRate:homeRate(), hThread:homeThread(), hStart:homeStart(), hPool:homePool(), hComing:homeComing(), hAgain:homeAgain(),
+    var parts={hNeeds:homeNeeds(), hRate:homeRate(), hThread:homeThread(), hSupply:homeSupply(), hStart:homeStart(), hPool:homePool(), hComing:homeComing(), hAgain:homeAgain(),
       hReward:homeReward(), hYear:homeYear(), hLive:homeLive()};
     Object.keys(parts).forEach(function(id){ var was=document.getElementById(id), n=parts[id]; n.id=id; grey(n,locked); if(was.outerHTML!==n.outerHTML) was.replaceWith(n); });
     thDraw();
@@ -6726,6 +6734,23 @@ const CLIENT_JS = `
       g.appendChild(b);
     });
     box.appendChild(g); return box;
+  }
+  /* 22 OCT 2026 (his word, the restock light made plain): AVAILABILITY, one row a book on their list, its mark in the light's border and
+     the light in words (Available, Limited, Out of stock), More by DD Mon under a yellow or red with his day; no figure. A row opens Prices at
+     that book. Sealed with the list, so it is as fresh as the last publish, and nothing here refuses an order. */
+  function homeSupply(){
+    var box=el('div'), list=sold().filter(supLit); if(!bundle||!list.length) return box;
+    box.appendChild(hHead(tw('av.h')));
+    list.forEach(function(p){
+      var s=supLit(p), b=el('button','salt-inbox-row hsup'); b.type='button';
+      var m=el('span','pmark sup sup-'+s.light); m.appendChild(psym(p.product,28)); m.appendChild(el('span','sr',pshape(p.product))); b.appendChild(m);
+      var main=el('span','salt-inbox-row__main'); main.appendChild(supWord(s.light));
+      if(s.light!=='green'&&dmShort(s.by,'en')) main.appendChild(el('span','salt-inbox-row__what',tw('sup.by',{d:Dd(dmShort,s.by)})));
+      b.appendChild(main);
+      b.addEventListener('click',function(){ placeShow('prices',true); var pn=supPanes[p.product]; if(pn&&pn.scrollIntoView) pn.scrollIntoView({block:'start'}); });
+      box.appendChild(b);
+    });
+    return box;
   }
   function homeAgain(){
     var box=el('div'); if(!bundle||view||hold||!sold().length) return box;

@@ -1,0 +1,20 @@
+[
+ {"name": "no card on Home", "file": "stmt/page.js", "find": "hSupply:homeSupply(), hStart:homeStart()", "replace": "hSupply:el('div'), hStart:homeStart()"},
+ {"name": "the card below New order", "file": "stmt/page.js", "find": "<div id=\"hSupply\"></div><div id=\"hStart\"></div></div>", "replace": "<div id=\"hStart\"></div><div id=\"hSupply\"></div></div>"},
+ {"name": "no heading", "file": "stmt/page.js", "find": "    box.appendChild(hHead(tw('av.h')));\n", "replace": ""},
+ {"name": "the heading's word", "file": "stmt/words.js", "find": "  \"av.h\": \"Availability\",", "replace": "  \"av.h\": \"Supply\","},
+ {"name": "red's old words", "file": "stmt/words.js", "find": "  \"sup.red\": \"Out of stock\",", "replace": "  \"sup.red\": \"Out for now\","},
+ {"name": "the mark without its border", "file": "stmt/page.js", "find": "var m=el('span','pmark sup sup-'+s.light);", "replace": "var m=el('span','pmark');"},
+ {"name": "the word without its colour", "file": "stmt/page.js", "find": "  function supWord(l){ return el('span','salt-status supst sup-'+l,tw('sup.'+l)); }", "replace": "  function supWord(l){ return el('span','salt-status',tw('sup.'+l)); }"},
+ {"name": "More by under green too", "file": "stmt/page.js", "find": "      if(s.light!=='green'&&dmShort(s.by,'en')) main.appendChild(", "replace": "      if(dmShort(s.by,'en')) main.appendChild("},
+ {"name": "no More by on Home", "file": "stmt/page.js", "find": "      if(s.light!=='green'&&dmShort(s.by,'en')) main.appendChild(el('span','salt-inbox-row__what',tw('sup.by',{d:Dd(dmShort,s.by)})));\n", "replace": ""},
+ {"name": "a row opens Prices at the top", "file": "stmt/page.js", "find": "var pn=supPanes[p.product]; if(pn&&pn.scrollIntoView) pn.scrollIntoView({block:'start'});", "replace": ""},
+ {"name": "a row opens nothing", "file": "stmt/page.js", "find": "      b.addEventListener('click',function(){ placeShow('prices',true); var pn", "replace": "      b.addEventListener('click',function(){ return; var pn"},
+ {"name": "the panes not kept", "file": "stmt/page.js", "find": "supplyMark(h3,pane,p); supPanes[p.product]=pane;", "replace": "supplyMark(h3,pane,p);"},
+ {"name": "no word on Prices", "file": "stmt/page.js", "find": "ln.setAttribute('aria-hidden','true'); ln.appendChild(supWord(s.light));", "replace": "ln.setAttribute('aria-hidden','true');"},
+ {"name": "the word on Prices said twice", "file": "stmt/page.js", "find": "ln.setAttribute('aria-hidden','true'); ln.appendChild", "replace": "ln.appendChild"},
+ {"name": "the border at 2px", "file": "stmt/page.js", "find": ".pmark.sup{display:inline-block;padding:5px;border:3px solid var(--sup);", "replace": ".pmark.sup{display:inline-block;padding:5px;border:2px solid var(--sup);"},
+ {"name": "the status in brass", "file": "stmt/page.js", "find": ".salt-status.supst{--salt-status-tone:var(--sup)}\n", "replace": ""},
+ {"name": "a row under 44px", "file": "stmt/page.js", "find": ".hsup{min-height:44px;align-items:center}", "replace": ".hsup{align-items:center}"},
+ {"name": "a book with no light drawn", "file": "stmt/page.js", "find": "list=sold().filter(supLit);", "replace": "list=sold().filter(function(p){ return supLit(p)||(p.supply={light:'green'}); });"}
+]

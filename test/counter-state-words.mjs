@@ -238,7 +238,7 @@ export async function run({ ok }) {
     /* ---- 6: supply */
     tab(S, "prices");
     const panes = [...S.d.querySelectorAll("#pPrices .pane")].map((p) => ({ aria: p.querySelector(".pmark").getAttribute("aria-label"), by: t(p.querySelector("p.sub2")) }));
-    ok(panes[0].aria === "Cube, Limited" && panes[0].by === "More by 20 Oct" && panes[1].aria === "Droplet, Out for now" && panes[1].by === "" && panes[2].aria === "Lozenge, Available" && panes[2].by === "" && !/Expected by/.test(priceText),
+    ok(panes[0].aria === "Cube, Limited" && panes[0].by === "More by 20 Oct" && panes[1].aria === "Droplet, Out of stock" && panes[1].by === "" && panes[2].aria === "Lozenge, Available" && panes[2].by === "" && !/Expected by/.test(priceText),
       "yellow with a day reads More by 20 Oct, red with none and green with one read nothing under the mark, and it never reads Expected by: " + JSON.stringify(panes));
 
     /* ---- 7: a mark stands alone (his word of 12 Oct 2026): no shape word is drawn, and the reader is still told the shape */
