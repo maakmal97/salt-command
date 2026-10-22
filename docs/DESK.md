@@ -35,6 +35,18 @@
   unit between quarters: the rate law is on the exact rate. `quoteAt` and `quoteGrid` are the one rule at any size, so
   for every % in use and every grid point `quoteGrid(...).p[i]` is `quoteAt(min + i * step, ...)`, and a
   partner's `quoteAt` is the `floorTotal`, the snapshot's `floors[q]` and the drafter's `floorFor(q).floor`.
+- **Their % on his curve, on every book** (22 Oct 2026). Salt's `TIER_RULE.ends` are his Floor multiples for -30% (2.00 at 0.5 unit,
+  1.20 at 12.5) and +30% (3.00, 1.45); `driftMultiple(q, R, pct)` puts each end on the Set Price's own shape (the share s the Set Price
+  sits between its first and last multiples) and a % at t = pct / 0.3 of the way from the Set Price to its end, so each 5% step is equal
+  at every size; the walk reads it in place of the multiple times (1 + %), which a rule without `ends` keeps. Oil, candy and rice carry
+  `pct` and `shares` (-30% 0.8 of the board at the smallest rung and 0.9 at the largest, +30% 1.2 and 1.09, salt's proportions, his
+  answer that day): `shareAt` slides in the log of size, and `fixedWalk(sizes, C, P, d)` takes it off the board, down to the book's step,
+  between the Floor and the Ceiling, the rate never rising with size. `pctBook(R)` (drift or pct) is the one gate: the snapshot's `lift`,
+  `cardQuote`, `cardAt`'s `quoteOff`, the drafter, the fold's `driftBooks()` (a TIER_RULE line opening `drift:` or `pct:`), the catalog,
+  `makerTierSet`, Add ID and the price list (a held non-zero % on a board is their card). The suggestion stays on a Set Price book.
+  **Salt Admin shows it live**: the form takes a whole % in steps of 5 and asks `GET /all/maker/drift-preview/<code>/<book>/<whole %>`
+  (relayed to the Desk's keyed `/_internal/maker/drift-preview/...`, `makerDriftPreview`, a read that writes nothing) 300 ms after he stops
+  typing: now and at the typed % at the board's sizes and their usual size, beside the Floor, every figure `quoteAt` on the snapshot.
 - **Their %** (`TIER_OF[code].salt`, -0.3 to +0.3 since his decision of 21 Oct 2026, `LIFT_MIN` and `LIFT_MAX` in the engine,
   held until he changes it; `cardQuote` reads it through `driftOf`). It is the move on the Set Price, a negative one a discount, applied inside the walk and the same at every size, and nought is the Set Price. **Everyone
   starts at 0%** (the held figures were removed in the 18 Oct 2026 version, and the fold drops a `tierset` or an Add ID

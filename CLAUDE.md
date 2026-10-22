@@ -72,10 +72,13 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      `[0]`; the code stays `T2`); choose a row by code, never by index. `PRICE_SET` is cleared and the drafter
      refuses a new one; the one figure he sets at Accept, on one order, is that row's total, which `PRICE_SET`
      never records.
-   - **THEIR % is his and nothing else's** (`TIER_OF[code].salt`, a number from -0.3 to +0.3, -30% to +30%, the
-     engine's `LIFT_MIN` and `LIFT_MAX` read by `driftOk`, his decision of 21 Oct 2026; 0 is the Set Price). It moves the
-     multiple by `1 + %` inside the walk, the same at every size, held between the Floor and the Ceiling, so a discount
-     reaches the Floor at the large sizes first. **Everyone starts at 0%**. He sets it on Salt Admin, or at Add ID
+   - **THEIR % is his and nothing else's, ON EVERY BOOK** (`TIER_OF[code][book]`, a number from -0.3 to +0.3, -30% to +30%,
+     the engine's `LIFT_MIN` and `LIFT_MAX` read by `driftOk`, his decisions of 21 and 22 Oct 2026; 0 is the Set Price or
+     the board). **It runs on his curve** (22 Oct 2026, the engine's `driftMultiple`): salt's `ends` are the Floor multiples
+     at -30% (2.00 at 0.5 unit, 1.20 at 12.5) and +30% (3.00, 1.45), each end the Set Price's own shape, and a % is that
+     share of the way from the Set Price, so every 5% step is equal at every size, inside the walk, held between the Floor
+     and the Ceiling. **Everyone starts at 0%**. He types it on Salt Admin as a whole % in steps of 5, its prices shown
+     live off the Desk before it goes to Approve (`makerDriftPreview`), or picks at Add ID
      from the presets -30%, -20%, -15%, -10%, -5%, Set Price, +5%, +10%, +15%, +20% and +30%; it is queued, folded as `tierset`, and a null clears it. **Nothing automatic prices**: the
      engine's `autoDrift` over `driftSignals` fills the card's good and bad only, and `suggestOf` (the engine's
      `suggestPct`) SUGGESTS a % he may take with Use the suggestion: what they paid over the Set Price on their
@@ -84,9 +87,11 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      overdue or written off; his answer of 21 Oct 2026), to the nearest 5%, held -30% to +30%, and nought under
      `minSettled` settled rows. The fold refuses a `tierset` or Add ID
      figure stamped before `RULES.liftSince`, which was in the old drift unit.
-   - **Oil, candy and rice are `fixed` boards**, one price for everybody, his typed rungs held between the Floor
-     and the Ceiling: a % belongs to salt alone, and `tieredBooks` keeps the Their % card, Add ID's starting %
-     and Salt Admin's % off them. **There are no price levels** (removed 18 Oct 2026): no `TIER_NAMES`,
+   - **Oil, candy and rice are `fixed` boards**, his typed rungs held between the Floor and the Ceiling, the price for
+     everybody at 0%; each carries `pct`, so it takes Their % (`pctBook`): `shares` are what -30% (80% of the board at
+     the smallest rung, 90% at the largest) and +30% (120%, 109%) make of it, sliding in the log of size (the engine's
+     `shareAt`, salt's proportions until he sets others). The suggestion, the reward and the loyalty unit stay salt's,
+     and `tieredBooks` still names salt alone. **There are no price levels** (removed 18 Oct 2026): no `TIER_NAMES`,
      `levelAt` or proposal, and no standing guest link per level. `TIER_RULE`, `fiveTiers`, `TIER_OF`, the
      `tierset` collection and the `T2` row code stay as identifiers. **NRV on a book with a Set Price is the Set
      Price**, what a stranger is quoted, never the Ceiling nor a customer's discount. A cheap book put on a derived
