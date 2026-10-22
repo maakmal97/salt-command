@@ -80,6 +80,9 @@
   Orders, Customers and Approve (`bar.*` acts); Salt Counter's header is the bar again (`cBar`, reversing Batch A's no bar): To pay now,
   the orders that need them, Messages while unread. Accepted 21 Oct 2026 on phone and laptop.
 
+- v1207 (22 Oct 2026; Cloud commit `39713624270`: chain, suite parts 2 and 3 green, part 1 only the old v557 rice check): salt-ds 1.12.2 (#24), the
+  bar's quiet line wraps onto a hidden second line, so the stamp, then the clock, then the date drop whole; his review had "· UP" cut mid-word.
+
 ## Live sockets (Speed Wave 2)
 - L2 live as v1200 (`93fb843d`, 21 Oct 2026; Cloud commit `39558436127`: chain and three suite parts green, live /rev `9baa334b7a52fd51`): the Counter's `OrderBook` holds
   hibernating sockets, `/live` (session proved at the handshake as subprotocol `["stmt", session]`) and `/all/live` (Access); kinds and ids only; polls 60 s while up;
