@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1216",
+  "d": "23 Oct 2026",
+  "t": "CZ5-TM ORDER S287 CORRECTED TO 2 UNITS FOR RM200",
+  "n": [
+   "<b>CORRECTION FOLDED:</b> order s287 for CZ5-TM, dated 22 Oct, moves from 1 unit at RM120 to 2 units at RM200, with delivery set to 0. It was preapproved and the drafter flagged nothing. The fold applies the patch to the row itself, so the correction entry moves no cash and no stock.",
+   "<b>INVENTORY UNCHANGED:</b> the sale is still pending, with nothing paid or collected, so no unit has left the shelf. The roll and the cost basis stay as they were. The dossier gives no floor or ask for a size of 2, so that comparison is left open."
+  ]
+ },
+ {
   "v": "v1215",
   "d": "22 Oct 2026",
   "t": "ONE PENDING SALE OF SALT TO CZ5-TM AT RM120",
