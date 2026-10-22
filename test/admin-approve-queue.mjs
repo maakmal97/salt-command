@@ -23,6 +23,7 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const J = JSON.stringify;
 const route = (verb, id) => "/all/maker/drafts/" + id + "/" + verb;
+const MANY = "/all/maker/drafts/decide-many";
 
 /* the page's own stylesheet as rules, the recipes carried ahead of it cut away */
 function pageRules() {
@@ -38,11 +39,21 @@ function pageRules() {
 export async function run({ ok, pageWork }) {
   const holder = {};
   /* a row decided leaves the review's answer, as the Desk would have it */
-  const decided = (j) => ({ ...j, drafts: j.drafts.filter((x) => !((holder.p && holder.p.posts) || []).some((q) => q.route === route("approve", x.id) || q.route === route("reject", x.id))) });
+  /* 22 Oct 2026: a card is decided by Confirm, one decide-many request; the Desk's answer names each draft decided or refused (holder.refuse[id] = the fix) */
+  const sentIds = () => ((holder.p && holder.p.posts) || []).filter((q) => q.route === MANY).flatMap((q) => [...q.body.approve, ...q.body.reject]);
+  const decided = (j) => ({ ...j, drafts: j.drafts.filter((x) => !sentIds().includes(x.id) || (holder.refuse || {})[x.id]) });
+  const manyAnswer = (path, body) => {
+    if (path !== MANY || !body) return undefined;
+    const refuse = holder.refuse || {};
+    const mk = (id, decision) => refuse[id] ? { id, decision, error: "The Desk would not do it for " + id, fix: refuse[id] } : null;
+    return { ok: true, decided: [...body.approve.map((id) => [id, "approved"]), ...body.reject.map((id) => [id, "rejected"])].filter(([id]) => !refuse[id]).map(([id, decision]) => ({ id, decision })),
+      refused: [...body.approve.map((id) => mk(id, "approve")), ...body.reject.map((id) => mk(id, "reject"))].filter(Boolean) };
+  };
   const open = async (extra = {}) => {
     const { review: more, ...rest } = extra;
+    holder.refuse = {};
     holder.p = null;   /* the page before this one has posts of its own, which the new page's first reads must not see */
-    const p = await richOwnerPage({ pageWork, review: (j) => decided(more ? more(j) : j), ...rest });
+    const p = await richOwnerPage({ pageWork, review: (j) => decided(more ? more(j) : j), extra: manyAnswer, ...rest });
     holder.p = p;
     await p.work.quiet();
     const d = p.d, w = p.w;
@@ -106,11 +117,25 @@ export async function run({ ok, pageWork }) {
     const cells2 = [...d.querySelectorAll("#makerDrafts .apfigs")];
     ok(cells2.length >= 2 && cells2.every((f) => f.classList.contains("salt-metrics")), "every new row's cost and margin stand in one figures row of their own class, so the page can align them as columns");
     const acts = c.querySelector(":scope > .salt-approve__actions"), approve = byAct(c, "draft.approve"), reject = byAct(c, "draft.reject");
-    ok(!!acts && acts.contains(approve) && acts.contains(reject) && acts.contains(more) && approve.textContent === "Approve the sale" && reject.textContent === "Reject"
-      && approve.classList.contains("salt-pill") && !approve.classList.contains("salt-ghost") && reject.classList.contains("salt-ghost") && reject.classList.contains("salt-ghost--danger")
-      && [...acts.children].filter((x) => !x.hidden)[0] === approve,
-    "its moves stand in the recipe's actions: Approve the one filled pill, first, Reject the danger ghost, and Details: " + (acts && acts.textContent));
-    ok(!byAct(c, "draft.approve").disabled && !byAct(c, "draft.reject").disabled, "and neither is shut on a row that is not a claim's");
+    ok(!!acts && acts.contains(approve) && acts.contains(reject) && head.contains(more) && !acts.contains(more) && approve.textContent === "Approve the sale" && reject.textContent === "Reject"
+      && [...acts.children][0] === approve && approve.getAttribute("aria-pressed") === "false" && reject.getAttribute("aria-pressed") === "false" && !approve.classList.contains("salt-pill"),
+    "its two choices stand in the recipe's actions, Approve first and Reject, neither chosen to begin with, and Details has moved up into the head: " + (acts && acts.textContent));
+    ok(!approve.disabled && !reject.disabled, "and neither is shut on a row that is not a claim's");
+    /* 22 Oct 2026: a tap CHOOSES; nothing opens and nothing is sent */
+    const bar0 = d.getElementById("apBar"), sentNone = () => p.posts.filter((x) => /\/drafts\//.test(x.route)).length === 0;
+    ok(bar0.hidden, "the bar is hidden until a card is chosen");
+    approve.click(); await p.work.quiet();
+    const ca = p.row("d-1"), pa = byAct(ca, "draft.approve");
+    ok(pa.getAttribute("aria-pressed") === "true" && pa.classList.contains("salt-pill") && ca.classList.contains("ap--a") && byAct(ca, "draft.reject").getAttribute("aria-pressed") === "false"
+      && !bar0.hidden && bar0.querySelector(".apbar__line").textContent === "1 approve" && !p.sheet() && sentNone() && p.confirms.length === 0,
+    "a tap on Approve chooses it: pressed, the filled pill, the card lit, the bar says 1 approve, no Sheet opens and nothing is sent: " + bar0.textContent);
+    byAct(ca, "draft.reject").click(); await p.work.quiet();
+    const cr = p.row("d-1");
+    ok(byAct(cr, "draft.reject").getAttribute("aria-pressed") === "true" && byAct(cr, "draft.approve").getAttribute("aria-pressed") === "false" && cr.classList.contains("ap--r") && !cr.classList.contains("ap--a")
+      && bar0.querySelector(".apbar__line").textContent === "1 reject" && sentNone(),
+    "Reject swaps the choice, a card being one or the other: " + bar0.textContent);
+    byAct(cr, "draft.reject").click(); await p.work.quiet();
+    ok(byAct(p.row("d-1"), "draft.reject").getAttribute("aria-pressed") === "false" && !p.row("d-1").classList.contains("ap--r") && bar0.hidden, "a second tap on the same choice clears it, and the bar goes");
     const t2 = p.row("d-2"), t3 = p.row("d-3");
     ok(!t3 && [...d.querySelectorAll("#makerDrafts [data-maker-card]")].filter((x) => /one trip/.test(x.textContent)).length === 1 && t2.querySelectorAll(".rdet--row h4").length === 2, "a trip is drawn once, in one card holding both its rows, and never again for its other row: " + d.querySelectorAll("#makerDrafts [data-maker-card]").length);
     ok(!!t2 && /Two books, one trip\. Approve decides both\./.test(t2.textContent) && byAct(t2, "draft.approve").textContent === "Approve both" && byAct(t2, "draft.reject").textContent === "Reject both"
@@ -178,96 +203,110 @@ export async function run({ ok, pageWork }) {
       "a held copy of an entry already committed or approved is not counted or listed as waiting for the Desk: " + p.d.getElementById("makerQueueReview").textContent.slice(0, 120));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
-  /* 3. APPROVE AND REJECT ASK ON THE SHEET */
+  /* 3. CONFIRM ASKS ON THE SHEET (22 Oct 2026: Approve and Reject only choose; the bar's Confirm asks once for every chosen card and sends one decide-many) */
+  const pickRow = (p, id, act) => byAct(p.row(id), act);
   p = await open();
   try {
     const d = p.d;
     await enterRecord(p);
-    const approve = () => byAct(p.row("d-1"), "draft.approve"), approves = () => p.posted(route("approve", "d-1")).length;
-    approve().click(); await p.work.quiet();
+    const bar = () => d.getElementById("apBar"), confirm = () => byAct(bar(), "approve.confirm"), many = () => p.posted(MANY), oldRoads = () => p.posts.filter((x) => /\/drafts\/(?!decide-many)/.test(x.route)).length;
+    pickRow(p, "d-1", "draft.approve").click(); await p.work.quiet();
+    confirm().click(); await p.work.quiet();
     const sh = p.sheet();
-    ok(!!sh && sh.getAttribute("role") === "dialog" && sh.getAttribute("aria-modal") === "true" && sh.classList.contains("salt-sheet") && approves() === 0 && p.confirms.length === 0,
-      "Approve row opens the page's Sheet, a modal dialog, and sends nothing as it opens, with no native confirm asked");
-    ok(p.title() === "Approve this row?" && /CX1-ZED/.test(sh.textContent) && /RM 100\.00/.test(sh.textContent) && /New sale, 1 unit/.test(sh.textContent) && /as drafted/.test(sh.textContent)
-      && sh.querySelectorAll(".salt-ledger__row").length === 1,
-    "the Sheet restates the row by its code, its size, its kind and its figure, and says it is approved as drafted: " + sh.textContent);
-    ok(!!p.inSheet("ask.go", "draft:d-1:approve") && !!p.inSheet("ask.keep", "draft:d-1:approve") && !!p.inSheet("ask.close", "draft:d-1:approve")
-      && !p.inSheet("ask.go").classList.contains("salt-ghost--danger") && sh.querySelector(".salt-sheet__foot").contains(p.inSheet("ask.go")) && p.inSheet("ask.go").textContent === "Approve the sale",
-    "its controls carry their acts and the row's key, and Approve is not a danger action");
-    const bad = await p.ways(() => approve().click(), approve, approves);
-    ok(bad.length === 0, "the ghost, the close control, the scrim and Escape each close it, send nothing and give focus back to Approve row: " + bad.join(" | "));
+    ok(!!sh && sh.getAttribute("role") === "dialog" && sh.getAttribute("aria-modal") === "true" && sh.classList.contains("salt-sheet") && many().length === 0 && p.confirms.length === 0,
+      "Confirm opens the page's Sheet, a modal dialog, and sends nothing as it opens, with no native confirm asked");
+    ok(p.title() === "Decide 1 card?" && /1 to approve/.test(sh.textContent) && !/to reject/.test(sh.textContent) && /CX1-ZED/.test(sh.textContent) && /RM 100\.00/.test(sh.textContent) && /New sale, 1 unit/.test(sh.textContent)
+      && /Each is decided as drafted\. One that cannot go stays here with why and how to fix it; the rest go\./.test(sh.textContent) && sh.querySelectorAll(".salt-ledger__row").length === 1,
+    "the Sheet is titled for the cards, lists those to approve by code, size, kind and figure, and says each is decided as drafted: " + sh.textContent);
+    ok(!!p.inSheet("ask.go", "approve:confirm") && !!p.inSheet("ask.keep", "approve:confirm") && !!p.inSheet("ask.close", "approve:confirm") && !p.inSheet("ask.go").classList.contains("salt-ghost--danger")
+      && sh.querySelector(".salt-sheet__foot").contains(p.inSheet("ask.go")) && p.inSheet("ask.go").textContent === "Confirm 1" && p.inSheet("ask.keep").textContent === "Not yet",
+    "its controls carry their acts and the Confirm key, the action reads Confirm 1 and the way out Not yet");
+    const bad = await p.ways(() => confirm().click(), confirm, () => many().length);
+    ok(bad.length === 0 && !bar().hidden, "the ghost, the close control, the scrim and Escape each close it, send nothing, give focus back to Confirm and leave the choice standing: " + bad.join(" | "));
     /* a redraw behind the Sheet takes the control that asked: focus goes to the one drawn in its place, found by what it asks (its data-yn) */
-    const old = approve();
+    const old = confirm();
     old.click(); await p.work.quiet();
     byAct(d, "maker.refresh").click(); await p.work.quiet();
-    const fresh = approve();
-    ok(!!p.sheet() && !!fresh && fresh !== old && !old.isConnected && fresh.getAttribute("data-yn") === "draft:d-1:approve", "the list is read again while the Sheet is up and Approve row is a new control");
+    const fresh = confirm();
+    ok(!!p.sheet() && !!fresh && fresh !== old && !old.isConnected && fresh.getAttribute("data-yn") === "approve:confirm", "the list is read again while the Sheet is up and Confirm is a new control");
     p.inSheet("ask.keep").click(); await p.work.quiet();
-    ok(!p.sheet() && d.activeElement === fresh && approves() === 0, "and a no gives focus to the control drawn in its place, sending nothing");
-    approve().click(); await p.work.quiet();
+    ok(!p.sheet() && d.activeElement === fresh && many().length === 0, "and a no gives focus to the control drawn in its place, sending nothing");
+    confirm().click(); await p.work.quiet();
     const go = p.inSheet("ask.go");
     go.click(); await p.work.quiet();
     go.click(); await p.work.quiet();
-    const sent = p.posted(route("approve", "d-1"));
-    ok(sent.length === 1 && same(sent[0].body, {}) && !p.sheet(), "the one action sends the row's approval, the same route and the same empty body as the confirm let through, and a second tap on it sends nothing: " + J(sent));
-    ok(!p.row("d-1") && /Row approved\./.test(d.getElementById("makerDraftStatus").textContent), "the row leaves the list and the answer stands on the list's line: " + d.getElementById("makerDraftStatus").textContent);
+    ok(many().length === 1 && same(many()[0].body, { approve: ["d-1"], reject: [] }) && !p.sheet() && oldRoads() === 0,
+      "the one action sends ONE decide-many with the card's draft in approve, and a second tap on it sends nothing; no card road is used: " + J(many()));
+    const done = d.querySelector("#makerDrafts .apdone");
+    ok(!p.row("d-1") && !!done && /^1 decided/.test(done.textContent) && /1 approved\. They fold together, one version\./.test(done.textContent) && !done.textContent.includes("refused") && bar().hidden,
+      "the card leaves the list, the status card heads it, and the bar goes: " + (done && done.textContent));
 
-    /* a trip: one Sheet for the card, every row of it listed, one request */
-    byAct(p.row("d-2"), "draft.approve").click(); await p.work.quiet();
-    ok(p.title() === "Approve every row of this trip?" && p.sheet().querySelectorAll(".salt-ledger__row").length === 2 && (p.sheet().textContent.match(/RM 100\.00/g) || []).length === 2
-      && p.inSheet("ask.go").textContent === "Approve both" && p.posted(route("approve", "d-2")).length === 0,
-    "a trip's Approve asks once for the card and lists every row it decides: " + p.sheet().textContent);
+    /* a trip: one card, one choice, every row of it in the one request */
+    pickRow(p, "d-2", "draft.approve").click(); await p.work.quiet();
+    ok(pickRow(p, "d-2", "draft.approve").textContent === "Approve both" && byAct(p.row("d-2"), "draft.reject").textContent === "Reject both", "a trip's choices keep their words, Approve both and Reject both");
+    confirm().click(); await p.work.quiet();
+    ok(p.title() === "Decide 1 card?" && p.sheet().querySelectorAll(".salt-ledger__row").length === 2 && (p.sheet().textContent.match(/RM 100\.00/g) || []).length === 2 && many().length === 1,
+      "a trip is one card to decide and the Sheet lists every row it decides: " + p.sheet().textContent);
     p.inSheet("ask.go").click(); await p.work.quiet();
-    ok(p.posted(route("approve", "d-2")).length === 1 && same(p.posted(route("approve", "d-2"))[0].body, {}) && p.posted(route("approve", "d-3")).length === 0,
-      "and sends the one request for the trip, under the row it was tapped on");
-    ok(p.confirms.length === 0, "and no native confirm was asked on the way");
+    ok(many().length === 2 && same(many()[1].body, { approve: ["d-2", "d-3"], reject: [] }), "and the one request carries every row of the trip: " + J(many()[1]));
+    ok(p.confirms.length === 0 && oldRoads() === 0, "and no native confirm was asked on the way");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   p = await open();
   try {
     const d = p.d;
     await enterRecord(p);
-    const reject = () => byAct(p.row("d-1"), "draft.reject"), rejects = () => p.posted(route("reject", "d-1")).length;
-    reject().click(); await p.work.quiet();
-    ok(p.title() === "Reject this row?" && p.inSheet("ask.go").classList.contains("salt-ghost--danger") && p.inSheet("ask.go").textContent === "Reject" && /CX1-ZED/.test(p.sheet().textContent)
-      && rejects() === 0 && p.confirms.length === 0 && !!p.inSheet("ask.go", "draft:d-1:reject"),
-    "Reject row asks on the Sheet, a danger action naming the row, and sends nothing as it opens: " + (p.sheet() && p.sheet().textContent));
-    const bad = await p.ways(() => reject().click(), reject, rejects);
-    ok(bad.length === 0, "the four ways out send nothing and give focus back to Reject row: " + bad.join(" | "));
-    reject().click(); await p.work.quiet();
-    const go = p.inSheet("ask.go");
-    go.click(); go.click(); await p.work.quiet();
-    ok(rejects() === 1 && same(p.posted(route("reject", "d-1"))[0].body, {}) && !p.sheet() && !p.row("d-1") && /Row rejected\./.test(d.getElementById("makerDraftStatus").textContent),
-      "its one action sends the rejection, the same route and empty body, once however often it is tapped: " + J(p.posted(route("reject", "d-1"))));
-    byAct(p.row("d-2"), "draft.reject").click(); await p.work.quiet();
-    ok(p.title() === "Reject every row of this trip?" && p.sheet().querySelectorAll(".salt-ledger__row").length === 2 && p.inSheet("ask.go").textContent === "Reject both",
-      "a trip's Reject asks once for the card and lists every row: " + p.title());
-    p.inSheet("ask.keep").click(); await p.work.quiet();
-    ok(p.posted(route("reject", "d-2")).length === 0 && p.confirms.length === 0, "and keeping it sends nothing");
+    const bar = () => d.getElementById("apBar"), confirm = () => byAct(bar(), "approve.confirm"), many = () => p.posted(MANY);
+    pickRow(p, "d-1", "draft.reject").click(); await p.work.quiet();
+    confirm().click(); await p.work.quiet();
+    ok(p.title() === "Decide 1 card?" && /1 to reject/.test(p.sheet().textContent) && !/to approve/.test(p.sheet().textContent) && /CX1-ZED/.test(p.sheet().textContent) && p.inSheet("ask.go").textContent === "Confirm 1" && many().length === 0,
+      "a rejected card is listed under 1 to reject, and nothing is sent as the Sheet opens: " + (p.sheet() && p.sheet().textContent));
+    p.inSheet("ask.go").click(); await p.work.quiet();
+    ok(many().length === 1 && same(many()[0].body, { approve: [], reject: ["d-1"] }) && !p.sheet() && !p.row("d-1") && /1 rejected\./.test(d.querySelector("#makerDrafts .apdone").textContent)
+      && !/fold together/.test(d.querySelector("#makerDrafts .apdone").textContent),
+    "its yes sends the card in reject, and the status says 1 rejected with no fold promised: " + J(many()));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
-  /* the Needs you pill asks the same question on the same Sheet, and a no leaves the card as it was */
+  /* the head of the list: Approve all, Clear, a mixed Confirm, and a refusal left on its card with why and how to fix it */
   p = await open();
   try {
     const d = p.d;
-    const card = () => d.querySelector('#nlist [data-need="d:d-1"]'), pill = () => byAct(card(), "need.approve-row");
-    ok(!!card() && !!pill(), "Needs you has the row's card and its Approve pill");
-    const before = pill();
-    pill().click(); await p.work.quiet();
-    ok(p.title() === "Approve this row?" && p.inSheet("ask.go").textContent === "Approve the sale" && !!p.inSheet("ask.go", "need:draft:d-1:approve") && p.posted(route("approve", "d-1")).length === 0 && p.confirms.length === 0,
-      "the pill opens the very Sheet Orders > Approve asks on, and sends nothing as it opens");
-    p.inSheet("ask.keep").click(); await p.work.quiet();
-    ok(!p.sheet() && pill() === before && !pill().disabled && d.activeElement === pill() && p.posted(route("approve", "d-1")).length === 0,
-      "a no leaves the pill on, the card undrawn and the focus on the pill");
-    const release = p.hold(route("approve", "d-1"));
-    pill().click(); await p.work.quiet();
-    p.inSheet("ask.go").click();
-    for (let i = 0; i < 100 && !p.work.inFlight(); i++) await sleep(5);
-    ok(p.posted(route("approve", "d-1")).length === 1 && same(p.posted(route("approve", "d-1"))[0].body, {}) && pill().disabled, "his yes sends the one request and the pill is off while it is out");
-    pill().click();   /* a tap on a pill that is off opens nothing, at once: a Sheet would be up this instant */
-    ok(p.posted(route("approve", "d-1")).length === 1 && !p.sheet(), "and a second tap on it sends nothing, nor opens a Sheet");
-    release(); await p.work.quiet();
-    ok(/Row approved\./.test(card() ? card().textContent : "") && p.confirms.length === 0, "the answer stays on the card he tapped: " + (card() && card().textContent.slice(0, 120)));
+    await enterRecord(p);
+    const bar = () => d.getElementById("apBar"), confirm = () => byAct(bar(), "approve.confirm"), many = () => p.posted(MANY), head = () => d.querySelector("#makerDrafts > .aphead");
+    ok(!!head() && /^2 to decide/.test(head().textContent) && !!byAct(head(), "approve.all"), "the list heads with how many cards wait and Approve all: " + (head() && head().textContent));
+    byAct(head(), "approve.all").click(); await p.work.quiet();
+    ok(bar().querySelector(".apbar__line").textContent === "2 approve" && ["d-1", "d-2"].every((id) => p.row(id).classList.contains("ap--a")) && many().length === 0,
+      "Approve all chooses Approve on every card and sends nothing: " + bar().textContent);
+    byAct(bar(), "approve.clear").click(); await p.work.quiet();
+    ok(bar().hidden && !p.row("d-1").classList.contains("ap--a"), "Clear lets every choice go");
+    pickRow(p, "d-1", "draft.approve").click(); await p.work.quiet();
+    pickRow(p, "d-2", "draft.reject").click(); await p.work.quiet();
+    ok(bar().querySelector(".apbar__line").textContent === "1 approve · 1 reject", "the bar counts both ways: " + bar().textContent);
+    confirm().click(); await p.work.quiet();
+    ok(p.title() === "Decide 2 cards?" && /1 to approve/.test(p.sheet().textContent) && /1 to reject/.test(p.sheet().textContent) && p.inSheet("ask.go").textContent === "Confirm 2"
+      && p.sheet().querySelectorAll(".salt-ledger__row").length === 3, "the Sheet lists the cards to approve, then those to reject, every row of each: " + p.sheet().textContent);
+    holder.refuse["d-1"] = "Add the date";
+    p.inSheet("ask.go").click(); await p.work.quiet();
+    ok(many().length === 1 && same(many()[0].body, { approve: ["d-1"], reject: ["d-2", "d-3"] }), "and one request carries both lists: " + J(many()));
+    const done = d.querySelector("#makerDrafts .apdone"), left = p.row("d-1");
+    ok(!!done && /^1 decided, 1 refused/.test(done.textContent) && /1 rejected\./.test(done.textContent) && !p.row("d-2") && !!left,
+      "the status card counts what went and what was refused, the refused card stays and the rest leave: " + (done && done.textContent));
+    const why = left && left.querySelector(".aprefused");
+    ok(!!why && /Refused/.test(why.textContent) && /Why: /.test(why.textContent) && /To fix: Add the date/.test(why.textContent) && left.classList.contains("ap--r"),
+      "a refused card keeps its place with Refused, why, and how to fix it: " + (why && why.textContent));
+    byAct(head(), "approve.all").click(); await p.work.quiet();
+    ok(bar().hidden && !p.row("d-1").classList.contains("ap--a"), "Approve all passes over a card the Desk refused");
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
+
+  /* Needs you no longer lists a row to approve (his answer, no overlaps); the glance counts the cards in a tile that opens Approve */
+  p = await open();
+  try {
+    const d = p.d;
+    const tile = d.querySelector('[data-glance="approve"]');
+    ok(!d.querySelector('#nlist [data-need^="d:"]') && !d.querySelector('[data-act="need.approve-row"]'), "Needs you lists no row to approve and has no Approve pill");
+    ok(!!tile && tile.querySelector(".salt-glance__label").textContent === "To approve" && tile.querySelector(".salt-glance__value").textContent === "2" && tile.querySelector(".salt-glance__note").textContent === "On Orders"
+      && tile.getAttribute("href") === "#orders/approve" && tile.parentElement.lastElementChild === tile,
+    "the glance's last tile reads To approve with the number of cards waiting, and opens Orders > Approve: " + (tile && tile.textContent));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* Withdraw server-held entry asks on the Sheet, and Finish server withdrawal, which asked nothing, still asks nothing */
@@ -399,14 +438,15 @@ export async function run({ ok, pageWork }) {
   p = await open();
   try {
     const d = p.d;
-    const pill = byAct(d.querySelector('#nlist [data-need="d:d-1"]'), "need.approve-row");
-    pill.click(); await p.work.quiet();
-    ok(!!p.sheet() && !d.body.classList.contains("ended"), "a Sheet is open over Needs you, and the page has not lapsed");
+    await enterRecord(p);
+    byAct(p.row("d-1"), "draft.approve").click(); await p.work.quiet();
+    byAct(d, "approve.confirm").click(); await p.work.quiet();
+    ok(!!p.sheet() && !d.body.classList.contains("ended"), "Confirm's Sheet is open over Orders, and the page has not lapsed");
     p.lapse(true);
     const tick = p.intervals.filter((i) => i.ms === 5000 && !i.off)[0];
     if (tick) tick.f();
     await p.work.quiet();
-    ok(!!tick && d.body.classList.contains("ended") && !d.getElementById("aEnded").hidden && !p.sheet() && !d.getElementById("ynWrap") && p.posted(route("approve", "d-1")).length === 0,
+    ok(!!tick && d.body.classList.contains("ended") && !d.getElementById("aEnded").hidden && !p.sheet() && !d.getElementById("ynWrap") && p.posted(MANY).length === 0,
       "when his Access sign-in ends the page gives way to Sign in again and the Sheet goes with it, sending nothing, never left over the lapse screen");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 }

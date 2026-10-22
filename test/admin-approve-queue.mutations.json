@@ -36,24 +36,6 @@
   "replace": "var panel=el('div','rdet rdet--row'); panel.hidden=false;"
  },
  {
-  "name": "Approve is a ghost, not the filled pill",
-  "file": "stmt/owner.js",
-  "find": "approveDraft(draft,approve,'draft:'+draft.id+':approve'); },true);",
-  "replace": "approveDraft(draft,approve,'draft:'+draft.id+':approve'); },false);"
- },
- {
-  "name": "Reject is no danger ghost",
-  "file": "stmt/owner.js",
-  "find": "      reject.classList.add('salt-ghost--danger'); ynTag(reject,'draft:'+draft.id+':reject');",
-  "replace": "      ynTag(reject,'draft:'+draft.id+':reject');"
- },
- {
-  "name": "the moves stand outside the recipe's actions",
-  "file": "stmt/owner.js",
-  "find": "acts=el('div','salt-approve__actions'); card.appendChild(acts);",
-  "replace": "acts=el('div','maker-acts'); card.appendChild(acts);"
- },
- {
   "name": "a trip's card lists none of the other rows",
   "file": "stmt/owner.js",
   "find": "g.drafts.forEach(function(d){ card.appendChild(bookLine(d.qty",
@@ -100,42 +82,6 @@
   "file": "stmt/owner.js",
   "find": "if(!held.length&&!bad.length) queueRoot.appendChild(el('p','rnone','Nothing is waiting for the Desk.'));",
   "replace": "if(!held.length&&!bad.length){ queueRoot.appendChild(el('p','rnone','Nothing is waiting for the Desk.')); queueRoot.parentNode.parentNode.open=true; }"
- },
- {
-  "name": "Approve sends on a no",
-  "file": "stmt/owner.js",
-  "find": "keep:'Not yet'}).then(function(yes){\n      if(!yes) return;\n      if(going) going();",
-  "replace": "keep:'Not yet'}).then(function(yes){\n      if(going) going();"
- },
- {
-  "name": "Reject sends on a no",
-  "file": "stmt/owner.js",
-  "find": "      go:g.trip?rejectWord(g.drafts.length):many?'Reject all':'Reject', keep:'Keep it'}).then(function(yes){\n      if(!yes) return;\n",
-  "replace": "      go:g.trip?rejectWord(g.drafts.length):many?'Reject all':'Reject', keep:'Keep it'}).then(function(yes){\n"
- },
- {
-  "name": "Approve sends a body",
-  "file": "stmt/owner.js",
-  "find": "+'/approve',{},'Row approved.'",
-  "replace": "+'/approve',{x:1},'Row approved.'"
- },
- {
-  "name": "Reject sends a body",
-  "file": "stmt/owner.js",
-  "find": "+'/reject',{},'Row rejected.'",
-  "replace": "+'/reject',{x:1},'Row rejected.'"
- },
- {
-  "name": "the Approve Sheet restates no row",
-  "file": "stmt/owner.js",
-  "find": "extra:g.drafts.map(deskAskRow), plain:true,",
-  "replace": "extra:[], plain:true,"
- },
- {
-  "name": "a trip's Sheet lists the one row",
-  "file": "stmt/owner.js",
-  "find": "extra:g.drafts.map(deskAskRow), plain:true,",
-  "replace": "extra:[g.lead].map(deskAskRow), plain:true,"
  },
  {
   "name": "Approve is a danger action",
@@ -276,34 +222,10 @@
   "replace": "function ynTag(btn,key){ if(false) window.confirm('x'); if(btn&&btn.setAttribute)"
  },
  {
-  "name": "a native confirm is asked before Approve",
-  "file": "stmt/owner.js",
-  "find": "    var g=groupOf(draft), many=g.drafts.length>1;\n    return ownerAsk(opener,key,{title:g.trip?'Approve every row",
-  "replace": "    var g=groupOf(draft), many=g.drafts.length>1;\n    if(!window.confirm('Approve this row?')) return Promise.resolve();\n    return ownerAsk(opener,key,{title:g.trip?'Approve every row"
- },
- {
-  "name": "the Needs pill is off before his yes",
-  "file": "stmt/owner.js",
-  "find": "var said=false;\n          approveDraft(",
-  "replace": "var said=false; ap.disabled=true;\n          approveDraft("
- },
- {
-  "name": "the Needs pill stays on after his yes",
-  "file": "stmt/owner.js",
-  "find": "function(){ said=true; ap.disabled=true; }",
-  "replace": "function(){ said=true; }"
- },
- {
   "name": "a trip is drawn again for each of its rows",
   "file": "stmt/owner.js",
   "find": "var t=tripOf(d), mt=moveTrip(d), k=t&&tripRows(d).length?'trip:'+t:",
   "replace": "var t=tripOf(d), mt=moveTrip(d), k=false?'trip:'+t:"
- },
- {
-  "name": "a tap on the card's body opens its detail",
-  "file": "stmt/owner.js",
-  "find": "      more.setAttribute('aria-expanded','false');\n",
-  "replace": "      more.setAttribute('aria-expanded','false'); card.addEventListener('click',function(ev){ if(!ev.target.closest('button')) more.click(); });\n"
  },
  {
   "name": "the head is a control again",
@@ -328,5 +250,155 @@
   "file": "stmt/page.js",
   "find": ">sent, waiting for the drafter</span>",
   "replace": ">Sent, not yet drafted</span>"
+ },
+ {
+  "name": "Approve is a ghost when chosen, not the filled pill",
+  "file": "stmt/owner.js",
+  "find": "el('button',pick==='a'?'salt-pill salt-pill--sm':'salt-ghost',approveLabel(g))",
+  "replace": "el('button','salt-ghost',approveLabel(g))"
+ },
+ {
+  "name": "a chosen Reject lights no card",
+  "file": "stmt/owner.js",
+  "find": "if(pick) card.classList.add(pick==='a'?'ap--a':'ap--r');",
+  "replace": "if(pick) card.classList.add('ap--a');"
+ },
+ {
+  "name": "Approve is not pressed when chosen",
+  "file": "stmt/owner.js",
+  "find": "approve.setAttribute('aria-pressed',String(pick==='a'));",
+  "replace": "approve.setAttribute('aria-pressed','false');"
+ },
+ {
+  "name": "the choices stand outside the recipe's actions",
+  "file": "stmt/owner.js",
+  "find": "acts=el('div','salt-approve__actions apticks')",
+  "replace": "acts=el('div','apticks')"
+ },
+ {
+  "name": "Details leaves the head",
+  "file": "stmt/owner.js",
+  "find": "head.appendChild(more);",
+  "replace": "card.appendChild(more);"
+ },
+ {
+  "name": "a tap on the card's body opens its detail",
+  "file": "stmt/owner.js",
+  "find": "head.appendChild(more);",
+  "replace": "card.addEventListener('click',function(){ panel.hidden=false; }); head.appendChild(more);"
+ },
+ {
+  "name": "Confirm sends on a no",
+  "file": "stmt/owner.js",
+  "find": "if(!yes||makerBusy) return;",
+  "replace": "if(makerBusy) return;"
+ },
+ {
+  "name": "Confirm sends rejects in approve",
+  "file": "stmt/owner.js",
+  "find": "{approve:ids(A), reject:ids(R)}",
+  "replace": "{approve:ids(A).concat(ids(R)), reject:[]}"
+ },
+ {
+  "name": "the Sheet lists no card to reject",
+  "file": "stmt/owner.js",
+  "find": "if(R.length){ extra.push(",
+  "replace": "if(false){ extra.push("
+ },
+ {
+  "name": "the Sheet's title does not count the cards",
+  "file": "stmt/owner.js",
+  "find": "'Decide '+n+(n===1?' card?':' cards?')",
+  "replace": "'Decide cards?'"
+ },
+ {
+  "name": "the Sheet's action does not count the cards",
+  "file": "stmt/owner.js",
+  "find": "go:'Confirm '+n, keep:'Not yet'",
+  "replace": "go:'Confirm', keep:'Not yet'"
+ },
+ {
+  "name": "a native confirm is asked before Confirm",
+  "file": "stmt/owner.js",
+  "find": "var n=A.length+R.length, extra=[];",
+  "replace": "var n=A.length+R.length, extra=[]; if(!window.confirm('Decide?')) return;"
+ },
+ {
+  "name": "the bar counts rejects as approves",
+  "file": "stmt/owner.js",
+  "find": "R.length?R.length+' reject':''",
+  "replace": "R.length?R.length+' approve':''"
+ },
+ {
+  "name": "Clear lets nothing go",
+  "file": "stmt/owner.js",
+  "find": "clear.addEventListener('click',function(){ apPick={}; drawMaker(); });",
+  "replace": "clear.addEventListener('click',function(){ drawMaker(); });"
+ },
+ {
+  "name": "Approve all chooses nothing",
+  "file": "stmt/owner.js",
+  "find": "if(!apGone(g)) apPick[g.lead.id]='a';",
+  "replace": "if(false) apPick[g.lead.id]='a';"
+ },
+ {
+  "name": "Approve all chooses a refused card too",
+  "file": "stmt/owner.js",
+  "find": "if(!apGone(g)) apPick[g.lead.id]='a';",
+  "replace": "apPick[g.lead.id]='a';"
+ },
+ {
+  "name": "a refused card does not say how to fix it",
+  "file": "stmt/owner.js",
+  "find": "fx.appendChild(document.createTextNode(gone.fix));",
+  "replace": "fx.appendChild(document.createTextNode(''));"
+ },
+ {
+  "name": "a refused card is not marked refused",
+  "file": "stmt/owner.js",
+  "find": "fix:r.fix||''}; hit[k]=1;",
+  "replace": "fix:r.fix||''};"
+ },
+ {
+  "name": "the status leaves out what was refused",
+  "file": "stmt/owner.js",
+  "find": "' decided'+(apDone.refused?', '+apDone.refused+' refused':'')",
+  "replace": "' decided'"
+ },
+ {
+  "name": "a rejection is said to fold",
+  "file": "stmt/owner.js",
+  "find": "(apDone.a?'. They fold together, one version.':'.')",
+  "replace": "'. They fold together, one version.'"
+ },
+ {
+  "name": "the choices stay after Confirm",
+  "file": "stmt/owner.js",
+  "find": "apPick={};\n      },function(error){",
+  "replace": "},function(error){"
+ },
+ {
+  "name": "the glance has no To approve tile",
+  "file": "stmt/owner.js",
+  "find": ".concat([['#orders/approve','approve','To approve',String(draftGroups(pendingRows()).length),'On Orders']]);",
+  "replace": ";"
+ },
+ {
+  "name": "the glance counts rows, not cards",
+  "file": "stmt/owner.js",
+  "find": "String(draftGroups(pendingRows()).length),'On Orders'",
+  "replace": "String(pendingRows().length),'On Orders'"
+ },
+ {
+  "name": "Needs you lists a row to approve again",
+  "file": "stmt/owner.js",
+  "find": "    /* 22 Oct 2026 (his answer, no overlaps): a row to approve is on Orders > Approve alone; the glance counts them (To approve) */",
+  "replace": "    draftGroups(rows).forEach(function(g){ L.push(item('soon','rows','Row','d:'+g.lead.id,isoAt(g.lead.id),{who:'x',what:'',why:'',open:goPlace('orders','approve')})); });"
+ },
+ {
+  "name": "Confirm sends the card's lead draft alone",
+  "file": "stmt/owner.js",
+  "find": "return g.drafts.map(function(d){ return d.id; }); })); };",
+  "replace": "return g.drafts.slice(0,1).map(function(d){ return d.id; }); })); };"
  }
 ]

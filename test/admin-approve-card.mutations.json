@@ -144,24 +144,6 @@
   "replace": "rows.slice().forEach(function(d){"
  },
  {
-  "name": "the merged Approve carries on past a refusal",
-  "file": "stmt/owner.js",
-  "find": ".then(function(){ done++; return next(); });",
-  "replace": ".then(function(){ done++; return next(); },function(){ done++; return next(); });"
- },
- {
-  "name": "the merged Approve sends only the first draft's approval",
-  "file": "stmt/owner.js",
-  "find": "if(g.trip||!many) return makerAction('/all/maker/drafts/'+encodeURIComponent(g.lead.id)+'/approve'",
-  "replace": "if(true) return makerAction('/all/maker/drafts/'+encodeURIComponent(g.lead.id)+'/approve'"
- },
- {
-  "name": "a refusal does not say which move",
-  "file": "stmt/owner.js",
-  "find": "+'Move '+(done+1)+', '+moveWord(d).toLowerCase()+', was not '+word+': '",
-  "replace": "+'Not '+word+': '"
- },
- {
   "name": "a half-approved order is not said",
   "file": "stmt/owner.js",
   "find": "if(fg&&fg.approvedBefore) card.appendChild(",
@@ -178,12 +160,6 @@
   "file": "stmt/owner.js",
   "find": "if(k==='pay'||k==='unpay'||k==='undopay') return 'Approve: '+rid+(paid?' paid':' owes '+rm(a.owed));",
   "replace": "if(k==='pay'||k==='unpay'||k==='undopay') return 'Approve';"
- },
- {
-  "name": "Needs you draws a card per draft again",
-  "file": "stmt/owner.js",
-  "find": "draftGroups(rows).forEach(function(g){ L.push(rowNeed(g.lead)); });",
-  "replace": "rows.forEach(function(d){ L.push(rowNeed(d)); });"
  },
  {
   "name": "a claim joins his moves on the same row",
@@ -208,5 +184,47 @@
   "file": "stmt/owner.js",
   "find": "if(c) makerClaimOpen=c.u+':'+c.id; goPlace",
   "replace": "goPlace"
+ },
+ {
+  "name": "Confirm sends the card's lead draft alone",
+  "file": "stmt/owner.js",
+  "find": "return g.drafts.map(function(d){ return d.id; }); })); };",
+  "replace": "return g.drafts.slice(0,1).map(function(d){ return d.id; }); })); };"
+ },
+ {
+  "name": "a claim card can be chosen",
+  "file": "stmt/owner.js",
+  "find": "function apTickable(g){ return !g.drafts.some(draftClaim); }",
+  "replace": "function apTickable(g){ return true; }"
+ },
+ {
+  "name": "a claim card has Approve and Reject",
+  "file": "stmt/owner.js",
+  "find": "      if(!claim){\n        var pick=apPick[draft.id]",
+  "replace": "      if(true){\n        var pick=apPick[draft.id]"
+ },
+ {
+  "name": "the glance counts rows, not cards",
+  "file": "stmt/owner.js",
+  "find": "String(draftGroups(pendingRows()).length),'On Orders'",
+  "replace": "String(pendingRows().length),'On Orders'"
+ },
+ {
+  "name": "Needs you lists a row to approve again",
+  "file": "stmt/owner.js",
+  "find": "    /* 22 Oct 2026 (his answer, no overlaps): a row to approve is on Orders > Approve alone; the glance counts them (To approve) */",
+  "replace": "    draftGroups(rows).forEach(function(g){ L.push(item('soon','rows','Row','d:'+g.lead.id,isoAt(g.lead.id),{who:'x',what:'',why:'',open:goPlace('orders','approve')})); });"
+ },
+ {
+  "name": "Confirm sends nothing for the card",
+  "file": "stmt/owner.js",
+  "find": "if(!yes||makerBusy) return;",
+  "replace": "if(true) return;"
+ },
+ {
+  "name": "a refusal is kept under the lead draft alone",
+  "file": "stmt/owner.js",
+  "find": "(grp[r.id]?grp[r.id].drafts:[{id:r.id}]).forEach(function(d){ apRefused[d.id]=said; });",
+  "replace": "apRefused[lead[r.id]]=said;"
  }
 ]

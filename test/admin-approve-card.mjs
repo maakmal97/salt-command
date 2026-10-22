@@ -16,7 +16,7 @@ import { approveFigures, moveRow, rowFigures } from "../src/approve-figures.js";
 import POSITION_ENGINE from "../engine/position.mjs";
 
 const J = JSON.stringify;
-const route = (verb, id) => "/all/maker/drafts/" + encodeURIComponent(id) + "/" + verb;
+const MANY = "/all/maker/drafts/decide-many";
 const DAY = "2026-10-15";
 /* the mirror as it stood: s267 paid and handed over, s262 agreed and untouched, CS6-BS owing RM 20 on a row of its own */
 const book = () => ({ sales: [
@@ -91,22 +91,33 @@ export async function run({ ok, pageWork }) {
   const CLAIM = () => ({ ...CASH(), id: "2026-10-15T12:50:00.000Z", party: "CS6-BS-R", amends: "s267", entry: { at: "2026-10-15T12:50:00.000Z", type: "SELL", orderId: "20261014233900-iqpmgg", claim: { id: "c-9" },
     payload: { mode: "amend", kind: "Fulfilment", cash: 220, kg: 0 } }, row: { qty: 2, total: 220, cash: 0, customer: "CS6-BS-R" } });
   const make = () => { const b = book(), drafts = [CASH(), TAKE_BACK(), CLAIM(), CLOSE(), FLAGGED(), OVER()]; approveFigures(b, drafts.filter((x) => !x.figures), []); return drafts; };
-  const holder = {};
-  const decided = (j) => ({ ...j, drafts: j.drafts.filter((x) => !((holder.p && holder.p.posts) || []).some((q) => q.route === route("approve", x.id) || q.route === route("reject", x.id))) });
+  const holder = { refuse: {} };
+  /* 22 Oct 2026: a card is decided by Confirm, one decide-many request; the Desk's answer names each draft decided or refused (holder.refuse[id] = the fix) */
+  const sentMany = () => ((holder.p && holder.p.posts) || []).filter((q) => q.route === MANY);
+  const decided = (j) => ({ ...j, drafts: j.drafts.filter((x) => !sentMany().some((q) => [...q.body.approve, ...q.body.reject].includes(x.id)) || holder.refuse[x.id]) });
+  const manyAnswer = (path, body) => {
+    if (path !== MANY || !body) return undefined;
+    const mk = (id, decision) => holder.refuse[id] ? { id, decision, error: "The Desk would not do it for " + id, fix: holder.refuse[id] } : null;
+    return { ok: true, decided: [...body.approve.map((id) => [id, "approved"]), ...body.reject.map((id) => [id, "rejected"])].filter(([id]) => !holder.refuse[id]).map(([id, decision]) => ({ id, decision })),
+      refused: [...body.approve.map((id) => mk(id, "approve")), ...body.reject.map((id) => mk(id, "reject"))].filter(Boolean) };
+  };
   const open = async (drafts) => {
+    holder.refuse = {};
     holder.p = null;
-    const p = await richOwnerPage({ pageWork, review: (j) => decided({ ...j, drafts: drafts(), queue: [] }) });
+    const p = await richOwnerPage({ pageWork, extra: manyAnswer, review: (j) => decided({ ...j, drafts: drafts(), queue: [] }) });
     holder.p = p;
     await p.work.quiet();
     p.tap = async (act, key) => { const e = byAct(p.d, act, key); if (e) e.click(); await p.work.quiet(); return !!e; };
     p.card = (id) => p.d.querySelector('#makerDrafts [data-maker-card="draft:' + id + '"]');
     p.sheet = () => p.d.getElementById("ynSheet");
     p.go = async () => { p.d.getElementById("ynGo").click(); await p.work.quiet(); };
-    p.approves = () => p.posts.filter((x) => /\/approve$/.test(x.route)).map((x) => decodeURIComponent(x.route.split("/")[4]));
+    p.approves = () => sentMany().flatMap((x) => x.body.approve);
+    p.confirm = async () => { const b = p.d.getElementById("apBar"); byAct(b, "approve.confirm").click(); await p.work.quiet(); };
+    p.pick = async (id, act) => { byAct(p.card(id), act).click(); await p.work.quiet(); };
     return p;
   };
   const markless = (n) => { const c = n.cloneNode(true); c.querySelectorAll(".pwith").forEach((x) => x.replaceWith("[mark]")); return c.textContent; };
-  const said = (p, key) => (p.d.querySelector('[data-maker-say="' + key + '"]') || {}).textContent || p.d.getElementById("makerDraftStatus").textContent;
+  const done = (p) => (p.d.querySelector("#makerDrafts .apdone") || {}).textContent || "";
 
   let p = await open(make);
   try {
@@ -121,8 +132,8 @@ export async function run({ ok, pageWork }) {
     ok(!/s267/.test(head.textContent) && /s267/.test(s267.querySelector(".rdet--row").textContent) && !/r-fixture|2026-10-15T12/.test(head.textContent),
       "the row's id is no part of the head; it stands in Details with the source: " + head.textContent);
     const claimCard = p.card("2026-10-15T12:50:00.000Z");
-    ok(!!claimCard && byAct(claimCard, "draft.approve").disabled && !byAct(s267, "draft.approve").disabled && s267.querySelectorAll(".rdet--row .salt-approve__reason").length === 1,
-      "a customer's claim on the same row stands on a card of its own, shut, and his take-back on that row stays his to approve");
+    ok(!!claimCard && !byAct(claimCard, "draft.approve") && !byAct(claimCard, "draft.reject") && !!byAct(s267, "draft.approve") && !!byAct(s267, "draft.reject") && s267.querySelectorAll(".rdet--row .salt-approve__reason").length === 1,
+      "a customer's claim on the same row stands on a card of its own with no Approve or Reject, and his take-back on that row stays his to decide");
     const heads = [...d.querySelectorAll("#makerDrafts .salt-approve__entry")].map((x) => x.textContent.replace(/, .*/, ""));
     ok(J(heads) === J(["from laptop", "from the site", "from laptop", "from Salt Admin", "from the site"]), "each card says where its entry came from: laptop, Salt Admin, the site: " + J(heads));
     /* C. one verb */
@@ -160,45 +171,43 @@ export async function run({ ok, pageWork }) {
     const btn = (card) => byAct(card, "draft.approve").textContent;
     ok(btn(s267) === "Approve: s267 owes RM 220.00" && btn(s262) === "Approve: s262 closed" && btn(over) === "Approve: s270 handed over" && btn(fl) === "Approve the sale",
       "the button says the result: " + J([btn(s267), btn(s262), btn(over), btn(fl)]));
-    const needs = [...d.querySelectorAll('#nlist [data-need^="d:"]')];
-    ok(needs.length === 5 && needs.some((n) => byAct(n, "need.approve-row") && byAct(n, "need.approve-row").textContent === "Approve: s262 closed"),
-      "Needs you holds the same one card per order, its pill the same result: " + needs.map((n) => n.getAttribute("data-need")).join(" "));
-    byAct(s262, "draft.approve").click(); await p.work.quiet();
-    ok(p.sheet() && p.sheet().querySelector(".salt-sheet__title").textContent === "Approve every move on this order?" && p.sheet().querySelectorAll(".salt-ledger__row").length === 2
-      && p.approves().length === 0, "the merged Approve asks once, listing both moves, and sends nothing as it opens");
+    const tile = d.querySelector('[data-glance="approve"]');
+    ok(!d.querySelector('#nlist [data-need^="d:"]') && !d.querySelector('[data-act="need.approve-row"]') && !!tile && tile.querySelector(".salt-glance__value").textContent === "5" && tile.querySelector(".salt-glance__label").textContent === "To approve",
+      "Needs you lists no row to approve, and the glance counts one card per order, the claim's included: " + (tile && tile.textContent));
+    ok(d.querySelectorAll("#makerDrafts [data-maker-card] [data-act='draft.approve']").length === 4 && d.querySelector("#makerDrafts > .aphead").textContent.startsWith("5 to decide") === false,
+      "four of the five cards can be chosen (the claim's cannot), and the head counts the four it can decide: " + d.querySelector("#makerDrafts > .aphead").textContent);
+    await p.pick("2026-10-15T12:52:26.992Z", "draft.approve");
+    await p.confirm();
+    ok(p.sheet() && p.sheet().querySelector(".salt-sheet__title").textContent === "Decide 1 card?" && p.sheet().querySelectorAll(".salt-ledger__row").length === 2
+      && p.approves().length === 0 && sentMany().length === 0, "Confirm asks once for the merged card, listing both moves, and sends nothing as it opens");
     await p.go();
-    ok(J(p.approves()) === J(["2026-10-15T12:52:26.992Z", "2026-10-15T12:52:27.992Z"]) && p.posts.filter((x) => /\/approve$/.test(x.route)).every((x) => J(x.body) === "{}"),
-      "his yes sends each draft's own approval, the same route and empty body, in the order entered: " + J(p.approves()));
-    ok(/Both moves approved\./.test(said(p, "draft:2026-10-15T12:52:26.992Z")) && !p.card("2026-10-15T12:52:26.992Z"), "and says both were approved: " + said(p, "draft:2026-10-15T12:52:26.992Z"));
+    ok(sentMany().length === 1 && J(p.approves()) === J(["2026-10-15T12:52:26.992Z", "2026-10-15T12:52:27.992Z"]) && J(sentMany()[0].body.reject) === "[]" && !p.posts.some((x) => /\/drafts\/(?!decide-many)/.test(x.route)),
+      "his yes sends ONE request carrying each draft of the card, in the order entered: " + J(p.approves()));
+    ok(/^1 decided/.test(done(p)) && /1 approved\./.test(done(p)) && !p.card("2026-10-15T12:52:26.992Z"), "and says it was decided: " + done(p));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
 
-  /* the first refusal stops the rest, and says which */
-  p = await open(make);
-  try {
-    p.refuse[route("approve", "2026-10-15T12:52:27.992Z")] = "already approved";
-    await p.tap("nav.orders"); await p.tap("part.orders.approve");
-    byAct(p.card("2026-10-15T12:52:26.992Z"), "draft.approve").click(); await p.work.quiet(); await p.go();
-    ok(J(p.approves()) === J(["2026-10-15T12:52:26.992Z", "2026-10-15T12:52:27.992Z"]) && /^1 of 2 approved\. Move 2, payment received, was not approved: The Counter could not do that\. Try again\.Details/.test(said(p, "draft:2026-10-15T12:52:26.992Z")) && /already approved/.test(said(p, "draft:2026-10-15T12:52:26.992Z")),
-      "a refusal of the second move is named, with the first approved: " + said(p, "draft:2026-10-15T12:52:26.992Z"));
-  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
-  p = await open(make);
-  try {
-    p.refuse[route("approve", "2026-10-15T12:52:26.992Z")] = "the row moved";
-    await p.tap("nav.orders"); await p.tap("part.orders.approve");
-    byAct(p.card("2026-10-15T12:52:26.992Z"), "draft.approve").click(); await p.work.quiet(); await p.go();
-    ok(J(p.approves()) === J(["2026-10-15T12:52:26.992Z"]) && /^Move 1, close the order, was not approved: The Counter could not do that\. Try again\. The moves after it wait under Approve\./.test(said(p, "draft:2026-10-15T12:52:26.992Z")) && /the row moved/.test(said(p, "draft:2026-10-15T12:52:26.992Z")),
-      "a refusal of the first move sends nothing after it, and says the rest wait: " + J(p.approves()) + " " + said(p, "draft:2026-10-15T12:52:26.992Z"));
-  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+  /* a refusal leaves the card where it was, saying why and how to fix it */
+  for (const [which, id] of [["the first move", "2026-10-15T12:52:26.992Z"], ["the second move, the first having gone", "2026-10-15T12:52:27.992Z"]]) {
+    p = await open(make);
+    try {
+      holder.refuse[id] = "Take the payment first";
+      await p.tap("nav.orders"); await p.tap("part.orders.approve");
+      await p.pick("2026-10-15T12:52:26.992Z", "draft.approve"); await p.confirm(); await p.go();
+      const stays = p.card("2026-10-15T12:52:26.992Z") || p.card("2026-10-15T12:52:27.992Z"), why = stays && stays.querySelector(".aprefused");
+      ok(J(p.approves()) === J(["2026-10-15T12:52:26.992Z", "2026-10-15T12:52:27.992Z"]) && /^1 decided, 1 refused|^0 decided, 1 refused/.test(done(p)) && !!why && /Refused/.test(why.textContent) && /Why: /.test(why.textContent) && /To fix: Take the payment first/.test(why.textContent),
+        "a refusal of " + which + " leaves its card standing with Refused, why and how to fix it: " + done(p) + " / " + (why && why.textContent));
+    } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+  }
   /* 18 Oct 2026 (clarity part 4): a claim's row says what to do, and the button opens that payment's card on Orders > Payments */
   p = await open(() => [{ ...CLAIM(), entry: { ...CLAIM().entry, claim: { id: "c-2" } } }]);
   try {
     await p.tap("nav.orders"); await p.tap("part.orders.approve");
     const c = p.card(CLAIM().id), go = c && byAct(c, "approve.to-payment", CLAIM().id);
-    ok(!!go && go.tagName === "BUTTON" && go.textContent === "Answer through the payment card" && !/Answer this/.test(c.textContent) && byAct(c, "draft.approve").disabled,
-      "a claim's row offers Answer through the payment card, a button with its act, and keeps its Approve shut: " + (c && c.textContent.slice(0, 200)));
+    ok(!!go && go.tagName === "BUTTON" && go.textContent === "Answer through the payment card" && !/Answer this/.test(c.textContent) && !byAct(c, "draft.approve") && !byAct(c, "draft.reject"),
+      "a claim's row offers Answer through the payment card, a button with its act, and has no Approve or Reject to choose: " + (c && c.textContent.slice(0, 200)));
     go.click(); await p.work.quiet();
     const row = byAct(p.d, "claim.open", "abcd-efgh:c-2");
-    ok(!!row && row.getAttribute("aria-current") === "true" && p.approves().length === 0 && !p.posts.some((x) => /\/(approve|reject|received)$/.test(x.route)),
+    ok(!!row && row.getAttribute("aria-current") === "true" && p.approves().length === 0 && !p.posts.some((x) => /\/(approve|reject|received)$|decide-many/.test(x.route)),
       "and it opens the payment card of that claim, c-2, on Orders > Payments, sending nothing");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
   /* a half-approved order: the move left reads from the one approved, and says so */
