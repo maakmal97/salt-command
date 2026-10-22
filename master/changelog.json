@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1225",
+  "d": "23 Oct 2026",
+  "t": "SALT COUNT OF 23 OCT SETS STOCK TO 3.35 UNITS",
+  "n": [
+   "<b>ONE COUNT FOLDED.</b> A hand count of salt on 23 Oct found 3.35 units against 5 on the book, a gap of -1.65 units. The count wins over the ledger, so the stated salt inventory is now 3.35 units and the salt count date moves to 23 Oct 2026. The dossier gives no reason for the gap.",
+   "<b>NO SALES, PURCHASES OR LOANS.</b> Nothing else moved in this batch and no lot landed, so the cost basis stays at RM56 a unit. Stock of 3.35 units is below the reorder level of 34.5. The floors are unchanged apart from self-use, which moves from 102.89 to 102.99."
+  ]
+ },
+ {
   "v": "v1224",
   "d": "23 Oct 2026",
   "t": "SALT COUNT OF 3.45 UNITS SETS THE STOCK",
