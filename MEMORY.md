@@ -164,4 +164,4 @@
   https://claude.ai/artifact/LG8PTbuT2EGpqSqsUkG6ie and `docs/plan-admin-needs-you.html`, with salt-ds 1.13.0 (#25: bar chips two by two under 820px,
   `salt-table--plain`) and 1.14.0 (#26: `salt-kpi--line`, `salt-action__money--lg`). To do / Pending / FYI, money first; one-shape cards with typed book
   tags (Admin only); the open card beside the list from 860px with the Agree inputs two by two (one Delivery select from Choose, one When). Fable reviewed
-  the Agree inputs, the sort and Withdraw (four findings applied, re-checked). Rendered live at 390, 1180 and 1440. Not yet opened by him.
+  the Agree inputs, the sort and Withdraw (four findings applied, re-checked). Rendered live at 390, 1180 and 1440. Accepted 23 Oct 2026.
