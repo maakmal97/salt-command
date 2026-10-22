@@ -943,7 +943,7 @@ radial-gradient(at 82% 28%,var(--counter-v) 0,transparent 55%),radial-gradient(a
 <section class="glass">
 <h2>What the canvas draws</h2>
 <ol>
-<li><b>The bar</b> is the system's desk bar (<code>salt-deskbar</code>), as live since v1201: where you are, then Needs you, Orders, Customers and Approve as chips. Unchanged in substance; drawn so the boards read as the app.</li>
+<li><b>The bar</b> is the system's desk bar (<code>salt-deskbar</code>), as live since v1201, less where you are (your comment of 22 Oct 2026, "not required"): Salt Admin, then Needs you, Orders, Customers and Approve as chips. Assumed for every Admin place, so the build drops <code>barWhere</code> from Admin's bar; the Desk keeps its own.</li>
 <li><b>The lead is an Insight</b> (<code>salt-insight</code>): the count to do now, the oldest wait, and how many books are out of stock or promised past their shelf. Every figure in it is read today (the needs list and <code>STOCK</code>'s light).</li>
 <li><b>The glance is KPI tiles</b> (<code>salt-kpi</code>, a tone on each rule): Ready (brass), To approve (copper), Owed to you (verdigris) with a <b>Meter</b> of what the agreed orders have paid against what they come to (RM 855 of RM 1,240), read off the same orders <code>drawGlance</code> reads (<code>total</code>, <code>delivery</code>, <code>paid</code>).</li>
 <li><b>The kinds</b>: the pill track and Jump to, unchanged, now on a current system.</li>
@@ -955,6 +955,13 @@ radial-gradient(at 82% 28%,var(--counter-v) 0,transparent 55%),radial-gradient(a
 <section class="glass">
 <h2>Review</h2>
 <p>One fresh Fable pass on the phone board: eight findings, re-checked by the same reviewer, two small residuals fixed. Applied: Stock by book below the cards (Now was off the first screen); a meter line that fits at 390px; the bar's quiet line given its dots; the card title no longer a 22px link; no Orders said twice on the bar; figures said once (Now's heading, the late chip, the account card); no inline style restating a recipe. Declined: an Overdue tile in place of To approve, because To approve is your answer of 22 Oct and Admin reads no overdue figure.</p>
+</section>
+
+<section class="glass">
+<h2>Your comments on the canvas</h2>
+<ol>
+<li>22 Oct 2026, the bar's "Needs you": "Remove this. Not required." Removed on all three boards; replied and resolved.</li>
+</ol>
 </section>
 
 <section class="glass">
