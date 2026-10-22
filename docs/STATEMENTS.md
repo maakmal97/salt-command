@@ -2483,8 +2483,9 @@ Salt Admin catches up with Counter Batches A to C, his side of each (canvas Salt
 - **The sheet group** on Orders: a sheet's orders at one stage in one card, its delivery on the first; one Needs card for a sheet's placed orders.
 - **Order again's tag** on an order placed again (`againOf`).
 - **The bar's hours chip** (`bar.hours`): the shop's status, a tap to Shop > Hours.
-- **The bar says where he is and what waits** (21 Oct 2026): the place and the part under it, then Needs you, Orders and Customers with the rail's figures, and Approve with the rows to approve, each a tap to its place.
+- **The bar says what waits** (21 Oct 2026): Needs you, Orders and Customers with the rail's figures, and Approve with the rows to approve, each a tap to its place. **Since 22 Oct 2026 it says no where-you-are on Salt Admin** (his comment, "not required"; the rail and the App bar name the place), it is 12px all round, under 820px its chips sit two by two (salt-ds 1.13.0), and the shop's hours are a glowing status chip at its top right, a 44px button to Shop hours: verdigris Open, ember Closed, brass Paused (his override for now), each to its next change, its dot still under reduced motion. The quiet line keeps Live and the clock.
 - **The Counter's header is the bar again** (21 Oct 2026, his word, reversing Batch A's no bar): the customer's place, then only what waits on them, To pay now with its figure, the orders that need them (the rail's count) and their messages while ours is unread, each a chip to where it is (`cBar` in `stmt/page.js`); never on his view of an account.
+- **Needs you on the Salt Commodities system** (22 Oct 2026, his canvas Needs you, built as one version): **the lead is one Insight**, the money waiting on his tap (payments to confirm, orders to agree, off the cards), then the books that need stock off STOCK's lights; **the glance** is three one-line KPI tiles (`salt-kpi--line`): Ready, To approve and **Receivables** (was Owed to you, with the meter of what the agreed orders have paid of what they come to); **the kinds** are a text tab row on the Nav bar, the count beside the word, an empty kind dimmed, Jump to gone; **the groups** are **To do** (his to act), **Pending** (the customer's: money owed past its term, an offer waiting on their yes, whose Withdraw asks once on the card) and **FYI**, always open, no count, money first (the largest sum) and then the oldest; **a card** is one shape and one height (76px, 80px from 860px): the kind and age (ember when late), the code with a book's typed Product tag, one filled pill of one size, the figure last; its why, its clock and its second choice stand in **the open card**, which from 860px opens beside the list on a tap, level with the first card, over the order's own card (its terms in view, the Agree inputs two by two: Goods and Delivery, Choose until he chooses, then one When) or the account's; **Stock by book** stands under the cards, meter rows on a phone and a plain table (`salt-table--plain`) wide. Nothing wraps; an ellipsis at most. The paragraphs below are the record of what came before.
 - **Needs you opens on the glance** (P7): Ready, the orders ready with goods to hand over, and Owed to you, what the agreed orders still owe,
   goods and delivery less what is paid; each tile opens Orders. Read off the orders the page holds; a practice order counts only on the test
   surface. **The kinds are one sliding row** (canvas V56), each with its count, practice apart, beside a fixed **Jump to** opening a menu of
@@ -2645,6 +2646,14 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `need.received` | Needs you card for a payment they say they sent (key: the order, or the user and claim) | Asks once on the card; the Yes (`need.ask-yes`) sends what the full card's Received sends, the same request id. |
 | `need.ask-yes` | The ask on a Needs you payment card | Sends the answer once; both buttons are off while it is out. |
 | `need.ask-no` | The ask on a Needs you payment card | Cancels the ask and sends nothing. |
+| `need.withdraw` | Needs you's Pending card for an offer of his waiting on their yes (key: f:<order>) | Asks once on the card; Yes sends the order card's own withdraw with its request id (22 Oct 2026). |
+| `need.fix` | Needs you card for an entry that did not get through | Opens Orders > Approve, where it is mended. Sends nothing. |
+| `need.check` | Needs you card for queue keys the Desk could not read | Opens Orders > Approve. Sends nothing. |
+| `need.unsent` | Needs you card for an entry kept on this phone and not confirmed | Opens it on Record, to send again, update or discard. |
+| `need.hours` | Needs you's FYI card for an override of the hours | Opens Shop > Hours. |
+| `need.notice` | Needs you's FYI card for the notice set | Opens Shop > Notice. |
+| `need.owed-message` | Needs you's Pending card for money owed past term, the party having an account | Opens their thread under Customers > Messages. Sends nothing. |
+| `need.claim-open` | The open card beside Needs you, for a payment against the account | Opens that claim on Orders > Payments, where Not found is asked. |
 | `need.fold.practice` | The folded line at the foot of Needs you | Opens or shuts the practice accounts' cards in place. |
 | `need.copy-link` | Same card, once the link is shown | Copies that link. |
 | `shop.help.pay` | Shop > Hours, Help (read only) | Opens or shuts the answer to Paying, as a customer reads it under Account. Reads and sends nothing. |
@@ -2654,13 +2663,6 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `need.glance.ready` | The glance at the head of Needs you | Opens Orders at Ready: the orders ready with goods still to hand over, counted on the tile. Reads nothing of its own. |
 | `need.glance.owed` | The glance at the head of Needs you | Opens Orders. The tile sums what the agreed orders still owe, goods and delivery less what is paid. Reads nothing of its own. |
 | `need.glance.approve` | The glance at the head of Needs you | Opens Orders > Approve. The tile counts the cards waiting there (a trip or an order's moves one card). Reads nothing of its own. |
-| `need.jump` | Jump to, fixed beside the kinds' sliding row | Opens or shuts the menu of every kind with its count; Escape or a tap outside shuts it, the arrow keys move between its lines. |
-| `need.jump.all` | A line of the Jump to menu, beside the kinds | Shows every card again, as the All pill does. A kind with nothing waiting stands in mist and cannot be chosen. Reads nothing. |
-| `need.jump.orders` | A line of the Jump to menu, beside the kinds | Shows only the orders, as the Orders pill does. A kind with nothing waiting stands in mist and cannot be chosen. Reads nothing. |
-| `need.jump.payments` | A line of the Jump to menu, beside the kinds | Shows only the payments they say they sent. A kind with nothing waiting stands in mist and cannot be chosen. Reads nothing. |
-| `need.jump.messages` | A line of the Jump to menu, beside the kinds | Shows only the messages asked. A kind with nothing waiting stands in mist and cannot be chosen. Reads nothing. |
-| `need.jump.rows` | A line of the Jump to menu, beside the kinds | Shows only the Desk rows and the entries not yet through. A kind with nothing waiting stands in mist and cannot be chosen. Reads nothing. |
-| `need.jump.accounts` | A line of the Jump to menu, beside the kinds | Shows only the cards about accounts and guest links. A kind with nothing waiting stands in mist and cannot be chosen. Reads nothing. |
 | `need.kind.accounts` | The chips under Needs you's title | Shows only the cards about accounts and guest links. Reads nothing. |
 | `need.kind.all` | The chips under Needs you's title | Shows every card again. Reads nothing. |
 | `need.kind.messages` | The chips under Needs you's title | Shows only the messages asked. Reads nothing. |
@@ -2678,8 +2680,6 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `bar.customers` | Same bar, its Customers chip | Goes to Customers > Messages; its figure is the rail's. |
 | `bar.approve` | Same bar, Approve, brass with the rows to approve | Goes to Orders > Approve; its badge counts the rows as their cards do, a trip's as one. |
 | `need.open` | Every Needs you card (key: the card's key) | Goes to the detail of what the card is about: Orders, the order's stage, with that order's card open, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Orders > Approve, Record on the part an unsent entry belongs to, Shop. |
-| `need.fold.soon` | Needs you, the Soon heading | Opens or folds the Soon cards; folded when drawn, and once opened it stays open across redraws (14 Oct 2026). |
-| `need.fold.watch` | Needs you, the Watch heading | Opens or folds the Watch cards, the same way. |
 | `need.send-turn` | Needs you card for accounts nobody has been sent | Starts sending them their links one account at a time. |
 | `need.show-code` | Same card | Shows a sign-in code for them in person. |
 | `need.show-link` | Needs you card for an ID with no account yet | Shows the guest price list (the stranger's standing guest link) and its QR until the account is made. |
@@ -2721,11 +2721,9 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.claim-received` | Order card (key: the order id), one for each claim waiting (key: the claim's moment) | Asks, on the Sheet, whether to confirm the money they say they sent. |
 | `order.decline` | Order card (key: the order id), placed | Asks on a sheet, with a reason, then declines the order. |
 | `order.cancel-rest` | An agreed or ready order with goods out and some left | Asks, then closes the order at what was handed over, as Finish at fewer units does; anything paid above it opens as a refund. |
-| `order.fee-0` | Order card (key: the order id), placed for delivery | Chooses a delivery charge of RM 0. |
-| `order.fee-10` | Order card (key: the order id), placed for delivery | Chooses a delivery charge of RM 10. |
-| `order.fee-15` | Order card (key: the order id), placed for delivery | Chooses a delivery charge of RM 15. |
-| `order.fee-other` | Order card (key: the order id), placed for delivery | Chooses a delivery charge of his own figure. |
-| `order.fee-other-amount` | Order card (key: the order id), placed for delivery | His own delivery charge, in RM. |
+| `order.fee` | Order card (key: the order id), placed for delivery | The delivery charge, one select beside Goods (22 Oct 2026): Choose (nothing chosen, nothing sent), 0, 10, 15 or Other. A choice reads the figures again. |
+| `order.fee-other-amount` | Order card (key: the order id), placed for delivery | His own delivery charge, in RM, shown once Other is chosen. |
+| `order.window` | Order card (key: the order id), placed for delivery with no time asked | When, one select across both columns (22 Oct 2026): theirs first (ASAP, needing no day, or the window they chose), then every window ahead, each with its own day; a choice other than theirs goes to them for their yes. |
 | `order.handed` | Order card (key: the order id), ready | Records the handover. |
 | `order.handed-units` | Order card (key: the order id), ready | The units handed over. |
 | `order.handed-rest` | Same card, fewer units typed than ordered (key: more or all) | More to come (a part handover) or That is all (the close at the units typed, asked on a sheet); Handed over says which. |
@@ -2749,9 +2747,6 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.reread` | Order card (key: the order id), placed or with a rejected pending row, after a read that failed, and on a placed order from the moment its total or charge is edited until the figures are read | Reads the figures again. |
 | `order.send-yes` | Order card (key: the order id), once its figures are read, when they raise the price or change the window | Sends it to them for their yes instead. |
 | `order.total` | Order card (key: the order id), placed | The order total, in RM; finishing a change reads the figures again. |
-| `order.window-<hh>` | Same card, one for each window ahead (named by its starting hour) | Offers that four-hour window. |
-| `order.window-day` | Order card (key: the order id), placed for delivery with no time asked | The day of the delivery window he offers. |
-| `order.window-own` | Same card | Keeps their window, or ASAP. |
 | `order.withdraw-offer` | Order card (key: the order id), with an offer out | Withdraws the offer. |
 | `orderfor.friend` | Order for a customer, an associate's | Whether it is for a friend. |
 | `orderfor.mode` | Order for a customer | Collected or delivered. |

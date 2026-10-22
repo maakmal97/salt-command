@@ -403,6 +403,9 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 - **From 1080px an open order on Salt Admin fills the page** (his answer of 20 Oct 2026, canvas V39), reversing his split of 11 Oct 2026 at that
   width: it takes the list's place and the rail's Orders closes it; two columns at 1180, three at 1440. From 860 to 1080px the list stands beside it.
 - **Live sockets are a hint, never the record** (Speed Wave 2 L2, 21 Oct 2026): `/live` and `/all/live` upgrade to the order book's WebSocket, proof at the handshake (the subprotocol carries the session; the book is given the username and reads no KV), kinds and ids only (no figure, name or word), a socket message never moves the book, and the polls stay as the net at a minute. Log out, device sign out and Sign out everywhere close the account's sockets (`unlive`). Mechanism: `docs/STATEMENTS.md`.
+- **On Salt Admin a book is its typed Product tag**, its name in its hue (his answer of 22 Oct 2026, reversing his word of 12 Oct for Salt Admin alone);
+  the Counter keeps its marks and no product word. Needs you groups are **To do, Pending and FYI**, money first; a card is one shape with one pill, its
+  why and second choice in the open card beside the list from 860px; **no text wraps on Salt Admin's Needs you** (an ellipsis at most).
 - **The site address is never in the public desk.** No address, no QR drawn.
 - **No brand on the customer's page, and no product word either.** Nothing under `stmt/` names
   Salt Command. A product is a mark (`PSYM`) carrying a letter of his (`PLET`) in every mark, 20 px and

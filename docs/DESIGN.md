@@ -496,3 +496,5 @@ figures only, never a mass symbol, in every asset.
 - **A `DeskRail` rendered from `VIEWS`.** The rail is hand-written markup; the design system
   now has the component that describes it. Not worth a React runtime on the desk; worth
   keeping the two in the same shape.
+
+- **Salt Admin's Needs you on the system** (22 Oct 2026, salt-ds 1.13.0 and 1.14.0): the desk bar's chips two by two under 820px, `salt-table--plain` for a table that does not scroll, `salt-kpi--line` for a one-line tile and `salt-action__money--lg` for a card's figure, used by class; the page keeps placement only. The hours chip's glowing dot is still under `prefers-reduced-motion`. On Salt Admin a book is its typed Product tag (`salt-producttag` with its name), the Counter keeping its marks.
