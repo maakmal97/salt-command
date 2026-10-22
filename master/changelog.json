@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1209",
+  "d": "22 Oct 2026",
+  "t": "TWO FULFILMENTS FOR CS6-PER SETTLE S284 AND S282",
+  "n": [
+   "<b>TWO FULFILMENTS FOLDED.</b> Both amend CS6-PER's orders of 21 Oct: s284 (5 unit of rice, RM35, already paid) is handed over and s282 (salt, RM25 delivery charge) is paid. Each settles its order in full, with nothing left outstanding on either.",
+   "<b>UNUSUAL.</b> s284 was marked delivered with 0 of 5 unit moved, so this fulfilment is what actually moves the rice. The inventory draws 5 unit of rice and nothing else moves. Salt stock stays as it was, because s282 is a payment only."
+  ]
+ },
+ {
   "v": "v1208",
   "d": "22 Oct 2026",
   "t": "TRIP OF THREE SALES TO CS6-PER, OIL AT TWELVE TIMES THE ASK",
