@@ -485,7 +485,9 @@ export function makerRows(book, held = [], onTrips = []) {
       const closeAt = !ended && line.handed > 0.0005 && line.left > 0.0005 ? { closeAt: r2(E.closeGoods(st.row.total, +st.row.qty, line.handed)) } : {};
       return { ...line, ...closeAt, party: s.customer, date: s.date || null, key: E.ovKey(s), ...(s.trip ? { trip: s.trip } : {}),
         ...(st.row.cancelled ? { cancelled: true } : {}), ...(st.row.defaulted ? { writtenOff: true } : {}),
-        ...(s.goodwill ? { gift: true } : {}), ...(refunds[s.rid] ? { refund: refunds[s.rid] } : {}), stage: flowStage({ ...line, ended }) };
+        ...(s.goodwill ? { gift: true } : {}), ...(refunds[s.rid] ? { refund: refunds[s.rid] } : {}),
+        /* 22 Oct 2026 (his word): a unit the fold raised is labelled, an associate's reward or a customer's loyalty unit, with the order it came of */
+        ...(s.rewardOf ? { reward: s.loyal ? "loyal" : "associate", rewardOf: String(s.rewardOf) } : {}), stage: flowStage({ ...line, ended }) };
     })
     .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")) || b.rid.localeCompare(a.rid, "en", { numeric: true }));
 }

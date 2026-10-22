@@ -3888,6 +3888,7 @@ export const OWNER_JS = `
       var r=e.row;
       b.appendChild(bookTile(r.product,r.qty));
       t.appendChild(whoTag(el('span',null,r.party),r.party));
+      if(r.reward) t.appendChild(chip('verdigris',REWARD_WORD[r.reward]));
       main.appendChild(el('span','salt-inbox-row__what',[r.rid, r.cancelled?'cancelled':r.writtenOff?'written off':r.owed>0.004?'owes '+rm(r.owed):'', r.waiting>0?'waits under Approve':''].filter(Boolean).join(', ')));
       side.appendChild(el('span','salt-inbox-row__age',r.date?fmtWhen(r.date):'Undated'));
       side.appendChild(el('span','salt-inbox-row__action',rm(Number(r.total||0)+Number(r.delivery||0))));
@@ -4868,6 +4869,8 @@ export const OWNER_JS = `
   /* 17 Oct 2026, HIS FLOW: A ROW OF THE BOOK WITH NO SITE ORDER IS AN ORDER HERE TOO, at the stage its figures put it (the Desk's flowStage). Its moves
      are Record's own (ledger-amend), each under Approve: a handover or a payment a Fulfilment, a change of units, price or delivery a Correction, a
      cancel a Cancellation; History and Undo are the row's. Every figure is the Desk's, as the row will stand once the moves waiting fold. */
+  /* 22 Oct 2026 (his word): a unit the fold raised says which it is, on the row and its card */
+  var REWARD_WORD={associate:'Associate reward', loyal:'Loyalty unit'};
   var ROW_STAGE={confirmed:['brass','Agreed','tick'], paid:['verdigris','Delivered or paid','ticks'], done:['mist','Completed','ticks'], ended:['mist','Ended','cross']};
   function rowCard(root,e){
     var r=e.row, key=e.id, card=makerCard(root,key), acts=el('div','maker-foot__acts'), live=!r.cancelled&&!r.writtenOff;
@@ -4877,7 +4880,8 @@ export const OWNER_JS = `
     title.appendChild(document.createTextNode(' '+units(r.qty)+', '+rm(r.total)+(r.delivery>0.004?' + '+rm(r.delivery):'')));
     card.appendChild(title);
     var st=r.cancelled?['mist','Cancelled','cross']:r.writtenOff?['mist','Written off','cross']:ROW_STAGE[r.stage]||['mist',String(r.stage)], head=el('p','lead');
-    head.appendChild(stageChip(st)); card.appendChild(head);
+    head.appendChild(stageChip(st)); if(r.reward){ head.appendChild(document.createTextNode(' ')); head.appendChild(chip('verdigris',REWARD_WORD[r.reward])); } card.appendChild(head);
+    if(r.reward) card.appendChild(el('p','salt-insight',REWARD_WORD[r.reward]+' for '+r.rewardOf+', at cost and free to them: it goes with that order or their next salt handover.'));
     card.appendChild(metrics([['Owed',rm(r.owed)],['Paid',rm(r.paid)],['Handed',String(+(+r.handed||0).toFixed(3))+' of '+units(r.qty)]]));
     if(r.waiting>0) card.appendChild(el('p','salt-insight','As it will stand once '+(r.waiting===1?'the move':'the '+r.waiting+' moves')+' waiting under Approve '+(r.waiting===1?'is':'are')+' approved.'));
     if(+r.refund>0.004) card.appendChild(el('p','salt-insight','You owe them a refund of '+rm(r.refund)+' on this order. Close it on the Desk once it is paid.'));

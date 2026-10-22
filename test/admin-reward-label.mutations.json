@@ -1,0 +1,9 @@
+[
+ {"name":"no label carried","file":"src/maker-inputs.js","find":"        ...(s.rewardOf ? { reward: s.loyal ? \"loyal\" : \"associate\", rewardOf: String(s.rewardOf) } : {}), stage:","replace":"        stage:"},
+ {"name":"a loyalty unit called an associate's","file":"src/maker-inputs.js","find":"reward: s.loyal ? \"loyal\" : \"associate\",","replace":"reward: \"associate\","},
+ {"name":"every gift labelled","file":"src/maker-inputs.js","find":"...(s.rewardOf ? { reward:","replace":"...(s.rewardOf || s.goodwill ? { reward:"},
+ {"name":"no label on the row","file":"stmt/owner.js","find":"      if(r.reward) t.appendChild(chip('verdigris',REWARD_WORD[r.reward]));\n","replace":""},
+ {"name":"the wrong word","file":"stmt/owner.js","find":"var REWARD_WORD={associate:'Associate reward', loyal:'Loyalty unit'};","replace":"var REWARD_WORD={associate:'Reward', loyal:'Reward'};"},
+ {"name":"no label on the card","file":"stmt/owner.js","find":"if(r.reward){ head.appendChild(document.createTextNode(' ')); head.appendChild(chip('verdigris',REWARD_WORD[r.reward])); }","replace":""},
+ {"name":"no line on the card","file":"stmt/owner.js","find":"    if(r.reward) card.appendChild(el('p','salt-insight',REWARD_WORD[r.reward]+' for '+r.rewardOf+","replace":"    if(0) card.appendChild(el('p','salt-insight',REWARD_WORD[r.reward]+' for '+r.rewardOf+"}
+]

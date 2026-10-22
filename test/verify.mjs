@@ -50238,6 +50238,11 @@ await (async () => {
   await (await import("./admin-stock-light.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Admin: a unit the fold raised says which it is, Associate reward or Loyalty unit, on its row and card (22 Oct 2026)");
+await (async () => {
+  await (await import("./admin-reward-label.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin A to C: Help read only on Shop hours, the customer's four answers (21 Oct 2026)");
 await (async () => {
   await (await import("./admin-ac-help.mjs")).run({ ok, pageWork });
