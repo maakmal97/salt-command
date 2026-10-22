@@ -1240,6 +1240,18 @@ label.salt-field__label {
 .salt-table tbody tr:hover td:not(.salt-table__label) { background: var(--salt-glass); }
 /* a phone: the gutters close up, as the desk draws them (7px 8px) */
 @media (max-width: 560px) { .salt-table th, .salt-table td { padding: 7px 8px; } }
+/* 1.13.0 (his word of 22 Oct 2026, "table design has always been an issue, across everywhere"): THE PLAIN TABLE, for every table that does
+   not scroll under a sticky head. The head and the label column take no opaque panel, so the card's one glass shows through every cell;
+   the columns are fixed (the page's colgroup sets their shares), rows are 52px and centred, headers stand over their own column, hairlines
+   between rows, and no cell wraps: a long value ends in an ellipsis. __left sets a column of words to the left. */
+.salt-table--plain { table-layout: fixed; width: 100%; min-width: 0; }
+.salt-table--plain thead th, .salt-table--plain .salt-table__label { background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.salt-table--plain th, .salt-table--plain td { height: 52px; padding: 0 10px; vertical-align: middle; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.salt-table--plain thead th { height: 40px; border-bottom: 1px solid var(--salt-line); }
+.salt-table--plain tbody th { color: var(--salt-salt); font-weight: 400; border-bottom: 1px solid var(--salt-line-faint); }
+.salt-table--plain tbody tr:last-child th, .salt-table--plain tbody tr:last-child td { border-bottom: 0; }
+.salt-table--plain tbody tr:hover td, .salt-table--plain tbody tr:hover th { background: var(--salt-glass); }
+.salt-table--plain .salt-table__left { text-align: left; }
 
 /* ---- Logo ---- */
 
@@ -2305,8 +2317,9 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
    two read as one. The wordmark and one quiet mono line, then what is live (__live): where you are first (__where:
    the destination, the page under it), then one chip a count (__chips, __chip) and the one action (__act, with its
    badge), then the version and the controls at the right. Where it sits is the page's: --salt-bar-top, which the desk
-   binds to its safe area. In a bar under 820px wide what is live takes a row of its own and slides sideways rather than wrap, the
-   action held at its right edge so it is never slid out of reach. ---- */
+   binds to its safe area. In a bar under 820px wide what is live takes a row of its own, where you are on a line of its own and the chips
+   two by two under it (1.13.0, his word of 22 Oct 2026: "not scrollable"), four equal 44px boxes, the label at the left and every count in
+   one 24px slot at the right, so nothing slides out of reach. ---- */
 
 .salt-deskbar {
   position: sticky;
@@ -2478,27 +2491,31 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   .salt-deskbar__live {
     order: 4;
     flex: 1 0 100%;
+    flex-wrap: wrap;
+    gap: 8px;
     max-width: none;
     margin: 0 -8px 0 -16px;
     padding: 8px 8px 0 16px;
     border-top: 1px solid var(--salt-line);
-    overflow-x: auto;
-    scrollbar-width: none;
   }
-  .salt-deskbar__live::-webkit-scrollbar { display: none; }
-  .salt-deskbar__where { padding: 0 14px 0 0; border-left: 0; border-right: 1px solid var(--salt-line); }
-  .salt-deskbar__chips { flex: 1 0 auto; }
-  .salt-deskbar__act {
-    position: sticky;
-    right: 0;
+  .salt-deskbar__where { flex: 1 1 100%; min-height: 0; padding: 0; border-left: 0; }
+  .salt-deskbar__chips { flex: 1 1 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; min-width: 0; }
+  .salt-deskbar__chip, .salt-deskbar__act { justify-content: flex-start; gap: 8px; min-width: 0; margin: 0; padding: 0 12px; overflow: hidden; }
+  .salt-deskbar__n, .salt-deskbar__badge {
     margin-left: auto;
-    background: var(--salt-deskbar-solid);
-    box-shadow: -14px 0 10px -4px var(--salt-deskbar-solid), 10px 0 0 0 var(--salt-deskbar-solid);
+    flex: none;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
   }
+  .salt-deskbar__act.is-zero { padding-right: 12px; }
 }
 @media (max-width: 560px) {
   .salt-deskbar__meta { letter-spacing: 0.1em; }
-  .salt-deskbar__where { padding-right: 10px; }
   .salt-deskbar__view { font-size: 1rem; }
   .salt-deskbar__live { margin-left: -6px; padding-left: 12px; }
 }
