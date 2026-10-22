@@ -369,7 +369,8 @@ export async function drawEverything(p) {
   /* an order placed, a delivery with its charge, one raised for their yes, one offered again, one waiting on an offer, one with claims, a closed one */
   /* a card reads its own preview when its order is opened, and again when an input is changed (his decision 6 of 11 Oct 2026) */
   card("ord-p1"); await work.quiet(); p.snap("a placed order, previewed");
-  await click(byAct(card("ord-p2"), "order.fee-10")); p.snap("a delivery, previewed");
+  /* 22 Oct 2026: the delivery charge is one select (the Agree inputs two by two) */
+  { const fee = byAct(card("ord-p2"), "order.fee"); fee.value = "10"; fee.dispatchEvent(new p.w.Event("change", { bubbles: true })); await work.quiet(); } p.snap("a delivery, previewed");
   await click(byAct(card("ord-p2"), "order.decline")); p.snap("a Decline, asking on the sheet with its reason tiles"); await click(byAct(d, "order.ask-keep"));
   p.fail.add("/all/maker/orders/ord-p3/preview");
   type(byAct(card("ord-p3"), "order.total"), "150"); await work.quiet(); p.snap("a read that could not be made");

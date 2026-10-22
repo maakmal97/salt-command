@@ -37,8 +37,8 @@ export async function run({ ok, pageWork }) {
     /* 1 */
     const g = d.getElementById("nGlance"), tiles = g ? [...g.children] : [];
     const read = tiles.map((a) => [a.getAttribute("data-glance"), a.className, t(a.querySelector(".salt-kpi__label")), t(a.querySelector(".salt-kpi__value")), a.getAttribute("href")]);
-    ok(!!g && !g.hidden && J(read) === J([["ready", "salt-kpi salt-kpi--brass nkpi", "Ready", "4", "#orders/ready"], ["approve", "salt-kpi salt-kpi--copper nkpi", "To approve", "2", "#orders/approve"],
-      ["owed", "salt-kpi salt-kpi--verdigris nkpi nkpi--owed", "Receivables", "RM 670", "#orders"]]) && tiles.every((a) => a.tagName === "A" && !a.querySelector(".salt-kpi__note")),
+    ok(!!g && !g.hidden && J(read) === J([["ready", "salt-kpi salt-kpi--line salt-kpi--brass nkpi", "Ready", "4", "#orders/ready"], ["approve", "salt-kpi salt-kpi--line salt-kpi--copper nkpi", "To approve", "2", "#orders/approve"],
+      ["owed", "salt-kpi salt-kpi--line salt-kpi--verdigris nkpi nkpi--owed", "Receivables", "RM 670", "#orders"]]) && tiles.every((a) => a.tagName === "A" && !a.querySelector(".salt-kpi__note")),
       "the glance is Ready 4 (three ready and one part paid, the practice order apart), To approve 2 (a trip's two rows one card) and Receivables RM 670, goods and delivery less what is paid, three KPI tiles each a link to Orders and no note: " + J(read));
     const own = tiles[2], fill = own && own.querySelector(".salt-meter .salt-meter__fill");
     ok(!!fill && own.querySelector(".salt-meter").getAttribute("aria-hidden") === "true" && fill.style.getPropertyValue("--salt-fill") === "6"
@@ -46,14 +46,16 @@ export async function run({ ok, pageWork }) {
       "Receivables carries the meter of what the agreed orders have paid of what they come to, RM 40 of RM 710, between its label and its figure, and says so to a reader: " + (own && own.getAttribute("aria-label")));
     ok(!d.querySelector('#nGlance [data-glance="stock"], #nGlance [data-glance="lot"]'), "Stock cover and Next lot have left the glance (Stock by book carries them)");
     const css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
-    ok(/\.adm \.nkpi \.salt-kpi__label,\.adm \.nkpi \.salt-kpi__value\{margin:0;line-height:1;white-space:nowrap\}/.test(css) && /\.adm \.nkpi\{display:flex;align-items:center;justify-content:space-between/.test(css)
-      && /@media \(min-width:860px\)\{\s*\.adm \.nglance\{grid-template-columns:1fr 1fr 2\.4fr;gap:12px\}\s*\.adm \.nkpi\{min-height:56px/.test(css),
+    const line = (sel) => { const i = css.indexOf(sel + " {"); return i < 0 ? "" : css.slice(i, css.indexOf("}", i)); };
+    ok(/display: flex/.test(line(".salt-kpi--line")) && /justify-content: space-between/.test(line(".salt-kpi--line")) && /white-space: nowrap/.test(line(".salt-kpi--line .salt-kpi__label, .salt-kpi--line .salt-kpi__value"))
+      && /margin: 0/.test(line(".salt-kpi--line .salt-kpi__label, .salt-kpi--line .salt-kpi__value")) && /min-height: 56px/.test(css.slice(css.indexOf("@media (min-width: 860px) { .salt-kpi--line")))
+      && /@media \(min-width:860px\)\{\s*\.adm \.nglance\{grid-template-columns:1fr 1fr 2\.4fr;gap:12px\}/.test(css) && !/\.adm \.nkpi[^{]*\{[^}]*(font-size|min-height|padding)/.test(css),
       "each tile is one centred line, the value with no top margin and nothing wrapping, and from 860px the three stand in one row, 56px tall");
     /* 1b */
     const lead = d.getElementById("nCount"), bs = lead ? [...lead.querySelectorAll("b")].map(t) : [];
-    ok(!!lead && lead.className === "salt-insight salt-insight--copper nlead" && J(bs) === J(["RM 1,100", "2 books"])
-      && t(lead) === "RM 1,100 waits on your tap now: RM 600 to confirm, RM 500 to agree. 2 books need stock: one is out, one is promised 2 units past its shelf.",
-      "the lead is one Insight: RM 1,100 waits on his tap, RM 600 of payments to confirm and RM 500 of orders to agree, and two books need stock, one out and one promised 2 units past its shelf: " + t(lead));
+    ok(!!lead && lead.className === "salt-insight salt-insight--copper nlead" && J(bs) === J(["RM 1,000", "2 books"])
+      && t(lead) === "RM 1,000 waits on your tap now: RM 600 to confirm, RM 400 to agree. 2 books need stock: one is out, one is promised 2 units past its shelf.",
+      "the lead is one Insight: RM 1,000 waits on his tap, RM 600 of payments to confirm and RM 400 of orders to agree (the offer waiting on their yes is theirs), and two books need stock, one out and one promised 2 units past its shelf: " + t(lead));
     w.location.hash = "#orders/approve"; await new Promise((r) => setTimeout(r, 20)); await p.work.quiet();
     const waiting = d.querySelectorAll("#makerDrafts .apcard").length;
     ok(waiting === 2, "To approve's 2 is the cards waiting under Approve: " + waiting);

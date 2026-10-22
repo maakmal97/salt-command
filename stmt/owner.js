@@ -5963,7 +5963,7 @@ export const OWNER_JS = `
      the row once the card has grown (it asks once, or runs a turn), when the row stands under the body. */
   var CODE_RE=/^[A-Z]+[0-9]+-[A-Z0-9-]+$/;
   function productTag(product){
-    var k=String(product||'').toLowerCase().replace(/[^a-z]/g,''), t=el('span','salt-producttag salt-producttag--'+k), dot=el('span','salt-producttag__dot');
+    var k=String(product||'').toLowerCase().replace(/[^a-z]/g,''), t=el('span','salt-producttag salt-producttag--'+k+' ntag'), dot=el('span','salt-producttag__dot');
     dot.setAttribute('aria-hidden','true'); t.appendChild(dot); t.appendChild(document.createTextNode(k.charAt(0).toUpperCase()+k.slice(1))); return t;
   }
   function needCard(o){
@@ -5980,7 +5980,7 @@ export const OWNER_JS = `
     title.appendChild(whoTag(el('span','need-who'+(CODE_RE.test(tt)?' need-who--code':''),tt),tt));
     if(tap) title.setAttribute('aria-label', o.word+': '+[(o.head||'')+(o.who||'')+(o.rest||''), o.what].filter(Boolean).join(', '));
     body.appendChild(title); c.appendChild(body); c.appendChild(go);
-    c.appendChild(el('span','salt-action__money nfig',+o.rm>0.004?rmShort(o.rm):''));
+    c.appendChild(el('span','salt-action__money salt-action__money--lg nfig',+o.rm>0.004?rmShort(o.rm):''));
     c._body=body;
     c._grow=function(){ c.classList.add('need--grow'); };
     c._add=function(b){
@@ -6621,7 +6621,7 @@ export const OWNER_JS = `
     if(g.getAttribute('data-sig')===sig) return;
     g.setAttribute('data-sig',sig); g.textContent='';
     tiles.forEach(function(t){
-      var a=el('a','salt-kpi salt-kpi--'+t[4]+' nkpi'); a.href=t[0]; a.setAttribute('data-glance',t[1]); a.setAttribute('data-act','need.glance.'+t[1]);
+      var a=el('a','salt-kpi salt-kpi--line salt-kpi--'+t[4]+' nkpi'); a.href=t[0]; a.setAttribute('data-glance',t[1]); a.setAttribute('data-act','need.glance.'+t[1]);
       a.appendChild(el('span','salt-kpi__label',t[2]));
       if(t[5]!=null){
         a.classList.add('nkpi--owed'); a.setAttribute('aria-label',t[2]+', '+t[3]+': '+t[6]+' paid of '+t[7]+' agreed');

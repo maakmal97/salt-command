@@ -999,16 +999,14 @@ body.ended>*:not(#aEnded){display:none}
 .adm .nlead{margin:0 0 12px}
 .adm .nglance{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 16px}
 .adm .nglance[hidden]{display:none}
-.adm .nkpi{display:flex;align-items:center;justify-content:space-between;gap:12px;box-sizing:border-box;min-height:var(--salt-tap);padding:6px 14px 6px 16px;text-decoration:none;color:inherit}
+/* the tile is the system's one-line KPI tile (salt-kpi--line, 1.14.0); the page sets only that it is a link and where Receivables and its meter stand */
+.adm .nkpi{box-sizing:border-box;text-decoration:none;color:inherit}
 .adm .nkpi:hover,.adm .nkpi:focus-visible{border-color:var(--salt-line-strong)}
-.adm .nkpi .salt-kpi__label,.adm .nkpi .salt-kpi__value{margin:0;line-height:1;white-space:nowrap}
-.adm .nkpi .salt-kpi__value{font-size:1.25rem;overflow:hidden;text-overflow:ellipsis}
 .adm .nkpi--owed{grid-column:1/-1;gap:16px}
 .adm .nkpi .salt-meter{flex:1 1 auto;min-width:40px}
 .adm .nkpi .salt-meter__track{display:block}
 @media (min-width:860px){
   .adm .nglance{grid-template-columns:1fr 1fr 2.4fr;gap:12px}
-  .adm .nkpi{min-height:56px;padding:8px 16px 8px 18px}
   .adm .nkpi--owed{grid-column:auto}
 }
 /* 22 Oct 2026: the multi-tick Approve: a card's choice lights its edge, Reject in ember; the bar sticks above the app bar */
@@ -1063,7 +1061,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm .ncard .need-tap{flex-wrap:nowrap;min-height:0}
 .adm .ncard .need-who{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .adm .ncard .need-who--code{font-family:var(--salt-font-mono)}
-.adm .ncard .salt-producttag{flex:none}
+.adm .ncard .ntag{flex:none}
 .adm .nage--late{color:var(--salt-ember)}
 .adm .ncard .nbtn{box-sizing:border-box;width:72px;min-width:72px;max-width:72px;height:48px;min-height:48px;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .ncard.need--grow,.adm .ncard:has(.nnote:not(:empty)){height:auto}
