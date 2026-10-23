@@ -83,6 +83,11 @@
 - v1207 (22 Oct 2026; Cloud commit `39713624270`: chain, suite parts 2 and 3 green, part 1 only the old v557 rice check): salt-ds 1.12.2 (#24), the
   bar's quiet line wraps onto a hidden second line, so the stamp, then the clock, then the date drop whole; his review had "· UP" cut mid-word.
 
+- v1230 (`e66d50fd`, 23 Oct 2026; Cloud commit `39934524935`: chain and three suite parts green), his word: the Desk's bar no longer says where
+  you are (`#deskWhere`, `#dwView`, `#dwPage` and `deskWhereDraw` gone; the rail says it), and salt-ds 1.15.0 (#27) drops `__where`, `__view` and
+  `__page` from the recipe, synced to the Desk and the Counter; QR Command did not move. Not yet seen by him. In a claude.ai cloud container the
+  section "Desk live socket: an open Desk is told the kind of" fails two checks on master too, while CI passes it: the container, not the code.
+
 ## Restock light made plain
 - Live as v1210 (`dafc0ee0`, 22 Oct 2026; Cloud commit `39717174220`: chain, suite parts 2 and 3 green; part 1 red only on v557's rice concentration check,
   which fails on origin's master before it too), from `docs/plan-restock-light.html`: Counter Home's Availability (Available, Limited, Out of stock, More by),
