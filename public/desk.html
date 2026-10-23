@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="6bd868fc71a6e6d6";
+var SALT_BUILD_ID="94f1b1b833af8c61";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -11056,7 +11056,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1229","d":"23 Oct 2026","t":"S290 CORRECTED TO 0.5 UNIT FOR RM70","n":["<b>ONE CORRECTION FOLDED.</b> s290 for CA3-KP, dated 23 Oct 2026, had its quantity changed from 1 unit to 0.5 unit and its total from RM140 to RM70. The drafter raised no flags. The correction moves no cash and no stock, so the inventory is unchanged at 1.85 units against a ledger of 104.84."]}];
+const evolution=[{"v":"v1230","d":"23 Oct 2026","t":"THE DESK BAR SAYS NO PLACE","n":["<b>HIS WORD OF 23 OCT 2026.</b> The Desk's bar no longer says where you are: the destination and the page under it left the bar, as they left Salt Admin's on 22 Oct. The rail still marks both. The bar keeps the wordmark and its quiet line, Now, Waiting, Alerts, Approve, the version, Names and IDs, and Sections.","<b>SALT-DS 1.15.0.</b> The bar recipe drops the three classes no surface draws any more (salt-ds#27), synced to the Desk and the Counter; QR Command carries the tokens only and does not move. Nothing that prices, books or folds is touched."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11204,7 +11204,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='23 Oct 2026, 17:02 KL';
+const LAST_UPDATED='23 Oct 2026, 17:48 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

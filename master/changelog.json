@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1230",
+  "d": "23 Oct 2026",
+  "t": "THE DESK BAR SAYS NO PLACE",
+  "n": [
+   "<b>HIS WORD OF 23 OCT 2026.</b> The Desk's bar no longer says where you are: the destination and the page under it left the bar, as they left Salt Admin's on 22 Oct. The rail still marks both. The bar keeps the wordmark and its quiet line, Now, Waiting, Alerts, Approve, the version, Names and IDs, and Sections.",
+   "<b>SALT-DS 1.15.0.</b> The bar recipe drops the three classes no surface draws any more (salt-ds#27), synced to the Desk and the Counter; QR Command carries the tokens only and does not move. Nothing that prices, books or folds is touched."
+  ]
+ },
+ {
   "v": "v1229",
   "d": "23 Oct 2026",
   "t": "S290 CORRECTED TO 0.5 UNIT FOR RM70",
