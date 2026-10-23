@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="bbc765fad283e066";
+var SALT_BUILD_ID="6bd868fc71a6e6d6";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -3950,11 +3950,11 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
 /* ---- Desk bar (synced to the desk 22 Sep 2026; complete since 21 Oct 2026, his word: "very sharp and complete, and
    persists in all views, to the right of the navigation pane", in the rail's own material, which he kept over a solid
    bar the same day): one frame across the top of the page column, glass with the hairline at the rail's offset, so the
-   two read as one. The wordmark and one quiet mono line, then what is live (__live): where you are first (__where:
-   the destination, the page under it), then one chip a count (__chips, __chip) and the one action (__act, with its
-   badge), then the version and the controls at the right. Where it sits is the page's: --salt-bar-top, which the desk
-   binds to its safe area. In a bar under 820px wide what is live takes a row of its own, where you are on a line of its own and the chips
-   two by two under it (1.13.0, his word of 22 Oct 2026: "not scrollable"), four equal 44px boxes, the label at the left and every count in
+   two read as one. The wordmark and one quiet mono line, then what is live (__live): one chip a count (__chips, __chip)
+   and the one action (__act, with its badge), then the version and the controls at the right. Where you are (__where,
+   __view, __page) left the recipe in 1.15.0, his word of 23 Oct 2026: neither the Desk nor Salt Admin says it, the rail
+   does. Where it sits is the page's: --salt-bar-top, which the desk binds to its safe area. In a bar under 820px wide
+   what is live takes a row of its own, the chips two by two (1.13.0, his word of 22 Oct 2026: "not scrollable"), four equal 44px boxes, the label at the left and every count in
    one 24px slot at the right, so nothing slides out of reach. ---- */
 
 .salt-deskbar {
@@ -4011,38 +4011,6 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   color: var(--salt-mist);
 }
 .salt-deskbar__meta > * { flex: none; }
-.salt-deskbar__where {
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 5px;
-  min-width: 0;
-  min-height: 44px;
-  padding-left: 14px;
-  border-left: 1px solid var(--salt-line);
-}
-.salt-deskbar__view {
-  font-family: var(--salt-font-display);
-  font-weight: 400;
-  font-size: 1.125rem;
-  line-height: 1;
-  color: var(--salt-salt);
-  white-space: nowrap;
-}
-.salt-deskbar__page {
-  font-family: var(--salt-font-mono);
-  font-size: var(--salt-text-xs);
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  line-height: 1.2;
-  color: var(--salt-brass);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.salt-deskbar__page:empty { display: none; }
 .salt-deskbar__live { display: flex; align-items: center; gap: 14px; flex: none; min-width: 0; }
 .salt-deskbar__chips { display: flex; align-items: center; gap: 6px; flex: none; }
 .salt-deskbar__chip {
@@ -4134,7 +4102,6 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
     padding: 8px 8px 0 16px;
     border-top: 1px solid var(--salt-line);
   }
-  .salt-deskbar__where { flex: 1 1 100%; min-height: 0; padding: 0; border-left: 0; }
   .salt-deskbar__chips { flex: 1 1 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; min-width: 0; }
   .salt-deskbar__chip, .salt-deskbar__act { justify-content: flex-start; gap: 8px; min-width: 0; margin: 0; padding: 0 12px; overflow: hidden; }
   .salt-deskbar__n, .salt-deskbar__badge {
@@ -4152,7 +4119,6 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
 }
 @media (max-width: 560px) {
   .salt-deskbar__meta { letter-spacing: 0.1em; }
-  .salt-deskbar__view { font-size: 1rem; }
   .salt-deskbar__live { margin-left: -6px; padding-left: 12px; }
 }
 .salt-deskbar .salt-orb { box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
