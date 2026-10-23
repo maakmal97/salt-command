@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1234",
+  "d": "24 Oct 2026",
+  "t": "TWO FULFILMENTS ON S290 FOR CA3-KP: 1 UNIT AND RM148",
+  "n": [
+   "<b>TWO FULFILMENTS FOLDED.</b> Both amend s290, CA3-KP's order of 1 unit of salt at RM140 with RM8 delivery, RM148 owed, agreed 23 Oct 2026. One moves the 1 unit on 24 Oct, the other receives RM148 cash on the same day. Neither carries a drafter flag, and together they settle the order.",
+   "<b>INVENTORY.</b> The unit delivery takes salt down by 1. The cash fulfilment moves no units. No lot landed, so the cost basis stands."
+  ]
+ },
+ {
   "v": "v1233",
   "d": "23 Oct 2026",
   "t": "CA6-SET SALT % LIFT TO 30%, SALT COUNT SETS STOCK AT 1 UNIT",
