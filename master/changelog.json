@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1233",
+  "d": "23 Oct 2026",
+  "t": "CA6-SET SALT % LIFT TO 30%, SALT COUNT SETS STOCK AT 1 UNIT",
+  "n": [
+   "<b>FOLDED:</b> two rows, a change to CA6-SET's salt percentage and a salt stock count on 23 Oct 2026. The percentage moves that party's own price only and never the board. The count found 1 unit against 0.85 on the book, so the count wins.",
+   "<b>INVENTORY:</b> stated salt stock is now 1 unit, with the salt count date moved to 23 Oct 2026. Self-use falls from RM102.99 to RM102.84. The floors and the ask are unchanged. No lot landed, so the cost basis stays as it was."
+  ]
+ },
+ {
   "v": "v1232",
   "d": "23 Oct 2026",
   "t": "ONE UNIT OF SALT SOLD TO CA6-SET AT RM140",
