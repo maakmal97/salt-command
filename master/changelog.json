@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1231",
+  "d": "23 Oct 2026",
+  "t": "S290 CORRECTED TO 1 UNIT FOR RM140; CA6-SET REGISTERED",
+  "n": [
+   "<b>TWO ROWS FOLDED.</b> A correction on s290 for CA3-KP restores the quantity to 1 unit and the total to RM140, and CA6-SET joins the roster as a customer at salt 0.15. The correction moves no cash and no stock. The roster entry touches no figure, and the directory is not touched.",
+   "<b>INVENTORY UNCHANGED.</b> Salt stands at 1.85 units, counted on 23 Oct 2026, with 0.5 unit promised. Nothing landed, so the cost basis stays at RM56 a unit."
+  ]
+ },
+ {
   "v": "v1230",
   "d": "23 Oct 2026",
   "t": "THE DESK BAR SAYS NO PLACE",
