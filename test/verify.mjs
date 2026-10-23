@@ -48624,7 +48624,7 @@ await (async () => {
   await (await import("./counter-clock.mjs")).run({ ok });
 })();
 
-section("21 Oct 2026: the Desk's bar says where you are and what is live, on every view");
+section("21 Oct 2026: the Desk's bar says what is live, on every view, and not where you are");
 await (async () => {
   await (await import("./desk-bar-live.mjs")).run({ ok });
 })();

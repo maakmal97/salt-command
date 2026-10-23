@@ -5058,8 +5058,8 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
   <main class="main">
     <div class="deskbar salt-deskbar" id="deskbar">
       <div class="dhbrand salt-deskbar__brand"><svg class="mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Salt crystal"><defs><linearGradient id="saltCrystalBar" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c5a059"/><stop offset="100%" stop-color="#b87333"/></linearGradient></defs><polygon points="50,5 95,28 95,72 50,95 5,72 5,28" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,5 50,50 95,28" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,50 5,28" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,50 50,95" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polygon points="50,28 72,39 50,50 28,39" fill="url(#saltCrystalBar)" opacity="0.85"/></svg><div class="dhtext"><div class="dhname salt-deskbar__name">Salt Command</div><div class="meta" id="meta"></div></div></div>
-      <!-- 21 Oct 2026, his word: the bar says where you are and what is live, on every view (deskWhereDraw, deskLiveDraw) -->
-      <div class="dhlive salt-deskbar__live"><div class="dhwhere salt-deskbar__where" id="deskWhere" aria-live="polite"><span class="salt-deskbar__view" id="dwView">Today</span><span class="salt-deskbar__page" id="dwPage"></span></div>
+      <!-- 21 Oct 2026, his word: the bar says what is live, on every view (deskLiveDraw); 23 Oct 2026, his word: it no longer says where you are -->
+      <div class="dhlive salt-deskbar__live">
         <div class="dhchips salt-deskbar__chips" id="deskLive" role="group" aria-label="Live"></div></div>
       <div class="dbtools salt-deskbar__tools"><span class="salt-version" id="verChip"></span><span id="revealCtrl"></span>
         <button class="fabtn navbtn salt-orb salt-orb--raised" id="navbtn" type="button" aria-controls="tabs" aria-expanded="false"
@@ -22504,13 +22504,9 @@ function partOf(view){const V=VIEWS.find(v=>v.id===view);if(!V)return 'today';
   const p=VIEW_PART[view];return (p&&[V.lead].concat(V.parts).includes(p))?p:V.lead;}
 /* the rail lists the active view's parts beneath it, built from VIEWS so the rail and the strip
    cannot disagree; hidden on a narrow screen, where the strip does the job */
-/* 21 OCT 2026, HIS WORD: THE BAR IS COMPLETE. Where you are (the destination, the page under it) and what is live: every book's
-   Now, what waits on you, the rows to approve, which open Salt Admin's Approve through the Worker's /admin (its address is never in
-   this page), and this device's alerts. Each chip goes where its figure is; the bar persists over every view. */
-function deskWhereDraw(){
-  const V=VIEWS.find(v=>v.id===curTab)||VIEWS[0],p=partOf(V.id),a=document.getElementById('dwView'),b=document.getElementById('dwPage');
-  if(a)a.textContent=V.name;if(b)b.textContent=V.parts.length?(TAB_LABEL[p]||p):'';
-}
+/* 21 OCT 2026, HIS WORD: THE BAR IS COMPLETE. What is live: every book's Now, what waits on you, the rows to approve, which open
+   Salt Admin's Approve through the Worker's /admin (its address is never in this page), and this device's alerts. Each chip goes
+   where its figure is; the bar persists over every view. 23 Oct 2026, his word: the bar no longer says where you are (the rail does). */
 function deskLiveDraw(){
   const box=document.getElementById('deskLive');if(!box)return;
   const cloud=cloudMode(),rc=railCounts(),wait=cloud?ordActs().length:0,rows=cloud?AP_DRAFTS.length:0;
@@ -22534,7 +22530,6 @@ function deskLiveDraw(){
 function deskBarHeight(){const b=document.getElementById('deskbar');if(b)document.documentElement.style.setProperty('--dbh',b.offsetHeight+'px');}
 try{window.addEventListener('resize',()=>{try{deskBarHeight();}catch(e){}});}catch(e){}
 function railSubs(){
-  try{deskWhereDraw();}catch(e){}
   VIEWS.forEach(V=>{const t=document.querySelector('.rail .tab[data-s="'+V.id+'"]');if(!t)return;
     let d=t.nextElementSibling;
     /* v622: a destination with one page lists nothing under itself, which would be the second level
