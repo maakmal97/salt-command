@@ -1,0 +1,65 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-23T01:50:41.784Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CS6-PER-R",
+    "qty": 1.5,
+    "total": 165,
+    "cash": 0,
+    "date": "2026-10-23",
+    "deliveredQty": 0,
+    "rev": "R2",
+    "note": "Ordered on the statements site, order 20261022231538-9oycug, acknowledged, on behalf of a friend, to collect. Nothing paid and nothing handed over yet.",
+    "listRM": 165,
+    "listQty": 1.5
+   },
+   "reasoning": "Sold 1.5 unit of salt to CS6-PER-R for RM 165, RM 110/unit. Costed at RM 60/unit from COGS off the latest purchase p042 landed 2026-10-20: RM 700 quote plus RM 50 freight over 12.5 unit, so RM 75 on the goods at 45.5%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-10-23 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "Booked to CS6-PER-R as R2: CS6-PER buys it to sell on.",
+    "CS6-PER typically pays about RM 100/unit for salt across 17 orders; this one is RM 110, 10% above that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-23T01:50:41.784Z",
+    "type": "SELL",
+    "party": "CS6-PER-R",
+    "qty": 1.5,
+    "total": 165,
+    "status": "Pending",
+    "raw": "SELL CS6-PER-R 1.5 salt RM 165, nothing paid, nothing moved (order 20261022231538-9oycug)",
+    "orderKey": "CS6-PER-R|2026-10-23|165",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CS6-PER",
+     "newId": null,
+     "date": "2026-10-23",
+     "qty": 1.5,
+     "total": 165,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": "CS6-PER",
+     "stream": "R2",
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261022231538-9oycug, acknowledged, on behalf of a friend, to collect. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261022231538-9oycug"
+   },
+   "decidedAt": "2026-10-23T01:50:43.358Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
