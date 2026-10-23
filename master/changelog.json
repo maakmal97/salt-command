@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1227",
+  "d": "23 Oct 2026",
+  "t": "S289 PAID IN FULL AND COLLECTED, SHELF DOWN 1.5 UNITS",
+  "n": [
+   "<b>PAYMENT AND COLLECTION FOLDED.</b> Two amendments on s289, CS6-PER-R, 1.5 units of salt for RM165. The first records RM165 paid by transfer on 23 Oct 2026, clearing the balance. The second records collection of the 1.5 units the same day. Both were preapproved by Counter Admin. Nothing is left outstanding on the order.",
+   "<b>INVENTORY.</b> Salt was counted on 23 Oct 2026 and stands at 3.35 units. The collection is the only move, 1.5 units out. The drafter flagged the advance against the credit cap; the payment answers it, as the goods left with nothing owing at the end."
+  ]
+ },
+ {
   "v": "v1226",
   "d": "23 Oct 2026",
   "t": "ONE PENDING SALE OF SALT TO CS6-PER-R, NOTHING MOVED",
