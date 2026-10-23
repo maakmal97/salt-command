@@ -1,0 +1,93 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-10-23T12:53:23.358Z",
+   "status": "approved",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CA6-SET": {
+      "salt": 0.3
+     }
+    },
+    "unit": "pct"
+   },
+   "reasoning": "Sets their % for 1 customer: CA6-SET Salt 30% lift. It moves no cash and no stock; a % lift moves that customer's own price and never the board.",
+   "flags": [
+    "CA6-SET's Salt moves from 15% lift to 30% lift."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-23T12:53:23.358Z",
+    "type": "TIER",
+    "party": "CA6-SET",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CA6-SET: salt 30% lift",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CA6-SET": {
+       "salt": 0.3
+      }
+     },
+     "unit": "pct"
+    },
+    "makerRequest": "a844f958cecc09f73ff61249e9b57c1b489be3785a15d57c1e54a9b0cf118b6d"
+   },
+   "decidedAt": "2026-10-23T12:54:29.293Z",
+   "decidedBy": "Counter Admin"
+  },
+  {
+   "id": "2026-10-23T12:54:17.727Z",
+   "status": "approved",
+   "collection": "count",
+   "row": {
+    "product": "salt",
+    "qty": 1,
+    "date": "2026-10-23",
+    "was": 0.85,
+    "drift": 0.15
+   },
+   "reasoning": "Counted 1 unit of salt by hand on 2026-10-23, against 0.85 on the book: a difference of +0.15. The last count was 2026-10-23. A count wins over the ledger, and the fold sets the stated stock and moves COUNT_ON to this date.",
+   "flags": [
+    "The book says 0.85 and you counted 1: +0.15 unit unaccounted for. A COUNT ALWAYS WINS, so this becomes the inventory and the gap books as shrinkage across every unit sold."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-23T12:54:17.727Z",
+    "type": "COUNT",
+    "party": "stock count",
+    "qty": 1,
+    "total": null,
+    "status": "count",
+    "raw": "Stock count: 1 unit salt on hand on 2026-10-23",
+    "payload": {
+     "mode": "count",
+     "product": "salt",
+     "direction": null,
+     "party": null,
+     "date": "2026-10-23",
+     "qty": 1,
+     "total": null,
+     "cash": null,
+     "kg": 1,
+     "assoc": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null
+    },
+    "makerRequest": "148aee584b1c14966058fb682333a2f518bea9e38b358b355019875291520f26"
+   },
+   "decidedAt": "2026-10-23T12:54:29.347Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
