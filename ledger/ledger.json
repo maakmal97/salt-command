@@ -1,6 +1,6 @@
 {
- "v": "v1231",
- "stamped": "23 Oct 2026, 20:44 KL",
+ "v": "v1232",
+ "stamped": "23 Oct 2026, 20:50 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 1.85,
+  "STATED_STOCK": 0.85,
   "COUNT_ON": {
    "salt": "2026-10-23",
    "oil": "2026-10-20",
@@ -8813,6 +8813,25 @@
       }
      }
     ]
+   },
+   {
+    "customer": "CA6-SET",
+    "qty": 1,
+    "total": 140,
+    "cost": 60,
+    "cash": 170,
+    "delivery": 30,
+    "handover": "delivered",
+    "date": "2026-10-23",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-10-23",
+    "paidOn": "2026-10-23",
+    "ref": "CN3-WM",
+    "refKg": 1,
+    "listRM": 130,
+    "listQty": 1,
+    "note": "<b>NEW SALE: 1 UNIT OF SALT TO CA6-SET, 23 OCT 2026.</b> The goods come to RM140 at RM140 a unit, with RM30 delivery, RM170 cash received, delivered in full and paid on the same day. Against the desk's ladder for 1 unit, the goods total of RM140 sits above the ask total of RM120 and the floor total of RM60, and below the ceiling of RM180. The party has no committed salt order, so there is no median, range or history; outstanding before was RM0, no units were on credit and nothing has defaulted, against a credit cap of 1. The row carries a cost of RM60 a unit, set as COGS off the latest purchase and the inventory's own rate. The drafter flagged the missing history, and the figures cannot answer that. Referred by CN3-WM. Nothing is left outstanding.",
+    "rid": "s291"
    }
   ],
   "contacts": [
@@ -9583,7 +9602,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-23T12:43:51.617Z",
+  "QUEUE_COMMITTED": "2026-10-23T12:45:28.378Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -9611,7 +9630,7 @@
     {
      "id": "upkeep:shrink:salt",
      "sev": "act",
-     "title": "The unexplained plug runs at 16.4% of everything handled"
+     "title": "The unexplained plug runs at 16.2% of everything handled"
     },
     {
      "id": "cust:cadence:salt",
@@ -9651,7 +9670,7 @@
     {
      "id": "rhythm:restock:salt",
      "sev": "watch",
-     "title": "Buy about 9% less than the desk's rate implies"
+     "title": "Buy about 10% less than the desk's rate implies"
     },
     {
      "id": "promo:revive:salt",
@@ -9731,7 +9750,7 @@
     {
      "id": "cust:oneanddone",
      "sev": "note",
-     "title": "14 of 48 customers have bought exactly once"
+     "title": "15 of 49 customers have bought exactly once"
     },
     {
      "id": "cust:noreply",
@@ -10689,6 +10708,23 @@
       "rare": true
      }
     },
+    "CA6-SET": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 0,
+      "sinceLastDays": 0,
+      "perMonth": 1.01,
+      "unitsPerMonth": 1.01,
+      "smallShare": 1,
+      "bigShare": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": false
+     }
+    },
     "CR3-PUD": {
      "salt": {
       "name": "one-off",
@@ -10878,9 +10914,9 @@
        "repl": 56,
        "freightRate": 2.5,
        "leak": {
-        "ratio": 0.196,
+        "ratio": 0.1936,
         "leak": 16.09,
-        "sold": 82.11,
+        "sold": 83.11,
         "cycles": 3,
         "from": "2026-10-03",
         "to": "2026-10-23"
@@ -10905,15 +10941,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.28440366972477066
+         "v": 0.2909090909090909
         }
        },
        "attrib": 1,
        "shrinkRate": 0.09552438209752838,
        "avgDel": {
-        "n": 225,
-        "kg": 567.81,
-        "mean": 2.5236
+        "n": 226,
+        "kg": 568.81,
+        "mean": 2.5169
        }
       },
       "policy": {
@@ -12784,6 +12820,48 @@
         1015
        ]
       ],
+      "CA6-SET": [
+       [
+        0.5,
+        80
+       ],
+       [
+        1,
+        130
+       ],
+       [
+        1.5,
+        185
+       ],
+       [
+        2,
+        240
+       ],
+       [
+        2.5,
+        295
+       ],
+       [
+        3,
+        345
+       ],
+       [
+        4,
+        450
+       ],
+       [
+        5,
+        545
+       ],
+       [
+        6.25,
+        665
+       ],
+       [
+        12.5,
+        1060
+       ]
+      ],
       "CR3-PUD": [
        [
         0.5,
@@ -13119,48 +13197,6 @@
         12.5,
         1015
        ]
-      ],
-      "CA6-SET": [
-       [
-        0.5,
-        80
-       ],
-       [
-        1,
-        130
-       ],
-       [
-        1.5,
-        185
-       ],
-       [
-        2,
-        240
-       ],
-       [
-        2.5,
-        295
-       ],
-       [
-        3,
-        345
-       ],
-       [
-        4,
-        450
-       ],
-       [
-        5,
-        545
-       ],
-       [
-        6.25,
-        665
-       ],
-       [
-        12.5,
-        1060
-       ]
       ]
      },
      "partners": [
@@ -13205,6 +13241,7 @@
       "CN5-TAI": 0,
       "CH5-KLC": 0,
       "CD4-CS": 0,
+      "CA6-SET": 0.15,
       "CR3-PUD": 0,
       "CD7-SEG": 0,
       "CB7-BJ": 0,
@@ -13212,8 +13249,7 @@
       "CI5-PER": 0,
       "CN4-MC": 0,
       "CA4-P1": 0,
-      "CJ5-CHE": 0,
-      "CA6-SET": 0.15
+      "CJ5-CHE": 0
      },
      "suggest": {
       "CS6-BS": {
@@ -13364,6 +13400,10 @@
        "pct": 0,
        "why": ""
       },
+      "CA6-SET": {
+       "pct": 0,
+       "why": ""
+      },
       "CR3-PUD": {
        "pct": 0,
        "why": ""
@@ -13393,10 +13433,6 @@
        "why": ""
       },
       "CJ5-CHE": {
-       "pct": 0,
-       "why": ""
-      },
-      "CA6-SET": {
        "pct": 0,
        "why": ""
       }
@@ -14517,6 +14553,28 @@
         450
        ]
       ],
+      "CA6-SET": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
       "CR3-PUD": [
        [
         10,
@@ -14692,28 +14750,6 @@
         50,
         450
        ]
-      ],
-      "CA6-SET": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
       ]
      },
      "partners": [
@@ -14758,6 +14794,7 @@
       "CN5-TAI": 0,
       "CH5-KLC": 0,
       "CD4-CS": 0,
+      "CA6-SET": 0,
       "CR3-PUD": 0,
       "CD7-SEG": 0,
       "CB7-BJ": 0,
@@ -14765,8 +14802,7 @@
       "CI5-PER": 0,
       "CN4-MC": 0,
       "CA4-P1": 0,
-      "CJ5-CHE": 0,
-      "CA6-SET": 0
+      "CJ5-CHE": 0
      },
      "suggest": null
     },
@@ -15851,6 +15887,28 @@
         1500
        ]
       ],
+      "CA6-SET": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
       "CR3-PUD": [
        [
         1,
@@ -16026,28 +16084,6 @@
         30,
         1500
        ]
-      ],
-      "CA6-SET": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
       ]
      },
      "partners": [
@@ -16092,6 +16128,7 @@
       "CN5-TAI": 0,
       "CH5-KLC": 0,
       "CD4-CS": 0,
+      "CA6-SET": 0,
       "CR3-PUD": 0,
       "CD7-SEG": 0,
       "CB7-BJ": 0,
@@ -16099,8 +16136,7 @@
       "CI5-PER": 0,
       "CN4-MC": 0,
       "CA4-P1": 0,
-      "CJ5-CHE": 0,
-      "CA6-SET": 0
+      "CJ5-CHE": 0
      },
      "suggest": null
     },
@@ -16838,6 +16874,20 @@
         60
        ]
       ],
+      "CA6-SET": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        60
+       ]
+      ],
       "CR3-PUD": [
        [
         1,
@@ -16949,20 +16999,6 @@
         10,
         60
        ]
-      ],
-      "CA6-SET": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        60
-       ]
       ]
      },
      "partners": [
@@ -17007,6 +17043,7 @@
       "CN5-TAI": 0,
       "CH5-KLC": 0,
       "CD4-CS": 0,
+      "CA6-SET": 0,
       "CR3-PUD": 0,
       "CD7-SEG": 0,
       "CB7-BJ": 0,
@@ -17014,8 +17051,7 @@
       "CI5-PER": 0,
       "CN4-MC": 0,
       "CA4-P1": 0,
-      "CJ5-CHE": 0,
-      "CA6-SET": 0
+      "CJ5-CHE": 0
      },
      "suggest": null
     },
@@ -17180,10 +17216,10 @@
      ]
     }
    },
-   "v": "v1231"
+   "v": "v1232"
   },
   "OPEN": {
-   "at": "2026-10-23T12:44:44.227Z",
+   "at": "2026-10-23T12:50:40.404Z",
    "count": 8,
    "byKey": {
     "CA3-KP|2026-10-23|148": {
@@ -17323,14 +17359,14 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 1.85,
-     "free": 1.85,
+     "onHand": 0.85,
+     "free": 0.85,
      "owedOut": 0,
-     "coverDays": 0.4,
-     "rate": 4.24,
+     "coverDays": 0.2,
+     "rate": 4.28,
      "owedToYou": 315,
      "promised": 1,
-     "short": 0
+     "short": 0.15
     },
     "oil": {
      "name": "Oil",
@@ -17373,7 +17409,7 @@
     "rice": "2026-10-20",
     "spare": null
    },
-   "v": "v1231"
+   "v": "v1232"
   },
   "TERMS": {
    "ceiling": 250,
@@ -17381,7 +17417,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1231"
+   "v": "v1232"
   },
   "REWARD": {
    "stated": {
@@ -17399,17 +17435,17 @@
      }
     }
    },
-   "v": "v1231"
+   "v": "v1232"
   },
   "STOCK": {
    "today": "2026-10-23",
    "books": {
     "salt": {
-     "shelf": 1.85,
-     "free": 1.85,
+     "shelf": 0.85,
+     "free": 0.85,
      "commit": 1,
-     "light": "green",
-     "coverDays": 0.4,
+     "light": "yellow",
+     "coverDays": 0.2,
      "transit": 0
     },
     "oil": {
@@ -17437,7 +17473,7 @@
      "transit": 0
     }
    },
-   "v": "v1231"
+   "v": "v1232"
   }
  }
 }
