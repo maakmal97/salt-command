@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1226",
+  "d": "23 Oct 2026",
+  "t": "ONE PENDING SALE OF SALT TO CS6-PER-R, NOTHING MOVED",
+  "n": [
+   "<b>FOLDED: ONE NEW SALE, PENDING.</b> 1.5 units of salt to CS6-PER-R for RM165, ordered on the statements site and preapproved by Counter Admin. Nothing has been paid or handed over, so no revenue is booked and no stock is drawn.",
+   "<b>INVENTORY UNCHANGED.</b> Stock stays at 3.35 units, below the reorder point of 34.5. The cost basis holds at RM56 a unit, with replacement at RM60."
+  ]
+ },
+ {
   "v": "v1225",
   "d": "23 Oct 2026",
   "t": "SALT COUNT OF 23 OCT SETS STOCK TO 3.35 UNITS",
