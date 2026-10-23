@@ -1,0 +1,71 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-23T12:45:28.378Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CA6-SET",
+    "qty": 1,
+    "total": 140,
+    "cost": 60,
+    "cash": 170,
+    "delivery": 30,
+    "handover": "delivered",
+    "date": "2026-10-23",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-10-23",
+    "paidOn": "2026-10-23",
+    "ref": "CN3-WM",
+    "refKg": 1,
+    "listRM": 130,
+    "listQty": 1
+   },
+   "reasoning": "Sold 1 unit of salt to CA6-SET for RM 140, with RM 30 of delivery beside it, RM 170 owed, RM 140/unit. Costed at RM 60/unit from COGS off the latest purchase p042 landed 2026-10-20: RM 700 quote plus RM 50 freight over 12.5 unit, so RM 80 on the goods at 57.1%. Paid in full and delivered in full on 2026-10-23. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CA6-SET has no committed salt order on the book, so there is no rate of theirs to compare this against."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-23T12:45:28.378Z",
+    "type": "SELL",
+    "party": "CA6-SET",
+    "qty": 1,
+    "total": 140,
+    "status": "paid",
+    "raw": "Sell 1 unit salt to CA6-SET for RM140 on 2026-10-23 plus RM30 delivery, delivered, RM170 cash, 1 unit moved → Completed (R3 referred by CN3-WM)",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CA6-SET",
+     "newId": null,
+     "date": "2026-10-23",
+     "qty": 1,
+     "total": 140,
+     "delivery": 30,
+     "freight": 0,
+     "cash": 170,
+     "kg": 1,
+     "assoc": "CN3-WM",
+     "stream": "R3",
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "delivered",
+     "second": null,
+     "more": null,
+     "coverFree": null
+    },
+    "makerRequest": "4b0ca881727d4c3eb82fa677716995b8cfbb6ec5b2f5c27f2c457917a8b1814b"
+   },
+   "decidedAt": "2026-10-23T12:50:01.539Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
