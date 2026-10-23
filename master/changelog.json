@@ -1,5 +1,13 @@
 [
  {
+  "v": "v1229",
+  "d": "23 Oct 2026",
+  "t": "S290 CORRECTED TO 0.5 UNIT FOR RM70",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> s290 for CA3-KP, dated 23 Oct 2026, had its quantity changed from 1 unit to 0.5 unit and its total from RM140 to RM70. The drafter raised no flags. The correction moves no cash and no stock, so the inventory is unchanged at 1.85 units against a ledger of 104.84."
+  ]
+ },
+ {
   "v": "v1228",
   "d": "23 Oct 2026",
   "t": "ONE PENDING SALE OF SALT TO CA3-KP AT RM140",

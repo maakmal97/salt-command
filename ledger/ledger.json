@@ -1,6 +1,6 @@
 {
- "v": "v1228",
- "stamped": "23 Oct 2026, 16:00 KL",
+ "v": "v1229",
+ "stamped": "23 Oct 2026, 17:02 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -8770,17 +8770,38 @@
    },
    {
     "customer": "CA3-KP",
-    "qty": 1,
-    "total": 140,
+    "qty": 0.5,
+    "total": 70,
     "cash": 0,
     "delivery": 8,
     "handover": "delivered",
     "date": "2026-10-23",
     "deliveredQty": 0,
-    "listRM": 120,
-    "listQty": 1,
-    "note": "<b>NEW SALE: 1 UNIT OF SALT TO CA3-KP FOR RM140, PENDING, TO DELIVER.</b> Dated 23 Oct 2026, with RM8 delivery charged beside it. Nothing paid and nothing handed over, so RM148 is owed. The rate is RM140 a unit. The goods total of RM140 is above the ask total of RM120 and well above the floor total of RM60, and below the ceiling of RM180. The party's median is RM140 a unit, range RM140 to RM140, across 1 order, with nothing outstanding before and nothing defaulted. The earlier row s271 was 0.5 unit for RM70, paid and collected. The credit cap is 1 unit, and this order uses all of it. The row carries cost at RM60 a unit, set off the latest purchase p042. The drafter raised no flags. Left outstanding: RM148 and the delivery.",
-    "rid": "s290"
+    "listRM": 75,
+    "listQty": 0.5,
+    "note": "<b>CORRECTION ON S290, 23 OCT 2026: QUANTITY AND TOTAL HALVED FOR CA3-KP.</b> Two fields change on the same day: qty from 1 to 0.5 unit and total from RM140 to RM70. The rate stays at RM140 a unit, which is the party's median, with a range of RM140 to RM140. The dossier gives no ladder figures for this size, so no comparison with the floor or ask is made here. The delivery charge of RM8 is untouched. The earlier row s271 was 0.5 unit for RM70, paid and collected, and nothing has defaulted. Outstanding before was RM148, and it is not restated in the dossier after the change. The drafter raised no flags. It moves no cash and no stock, and the cost is left as the fold keeps it. Left outstanding: the order's balance and the delivery. <b>NEW SALE: 1 UNIT OF SALT TO CA3-KP FOR RM140, PENDING, TO DELIVER.</b> Dated 23 Oct 2026, with RM8 delivery charged beside it. Nothing paid and nothing handed over, so RM148 is owed. The rate is RM140 a unit. The goods total of RM140 is above the ask total of RM120 and well above the floor total of RM60, and below the ceiling of RM180. The party's median is RM140 a unit, range RM140 to RM140, across 1 order, with nothing outstanding before and nothing defaulted. The earlier row s271 was 0.5 unit for RM70, paid and collected. The credit cap is 1 unit, and this order uses all of it. The row carries cost at RM60 a unit, set off the latest purchase p042. The drafter raised no flags. Left outstanding: RM148 and the delivery.",
+    "rid": "s290",
+    "mod": "corrected on 2026-10-23: qty 1 to 0.5; total 140 to 70",
+    "amend": [
+     {
+      "date": "2026-10-23",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-23",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S290, 23 OCT 2026: QUANTITY AND TOTAL HALVED FOR CA3-KP.</b> Two fields change on the same day: qty from 1 to 0.5 unit and total from RM140 to RM70. The rate stays at RM140 a unit, which is the party's median, with a range of RM140 to RM140. The dossier gives no ladder figures for this size, so no comparison with the floor or ask is made here. The delivery charge of RM8 is untouched. The earlier row s271 was 0.5 unit for RM70, paid and collected, and nothing has defaulted. Outstanding before was RM148, and it is not restated in the dossier after the change. The drafter raised no flags. It moves no cash and no stock, and the cost is left as the fold keeps it. Left outstanding: the order's balance and the delivery.",
+      "was": {
+       "qty": 1,
+       "total": 140
+      }
+     }
+    ]
    }
   ],
   "contacts": [
@@ -9542,7 +9563,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-23T07:59:15.661Z",
+  "QUEUE_COMMITTED": "2026-10-23T09:01:15.322Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -10580,23 +10601,6 @@
       "rare": true
      }
     },
-    "CA3-KP": {
-     "salt": {
-      "name": "one-off",
-      "orders": 1,
-      "tenureDays": 5,
-      "sinceLastDays": 5,
-      "perMonth": 1.01,
-      "unitsPerMonth": 0.51,
-      "smallShare": 1,
-      "bigShare": 0,
-      "frequent": false,
-      "small": true,
-      "bigger": false,
-      "loyal": false,
-      "rare": false
-     }
-    },
     "CN5-TAI": {
      "salt": {
       "name": "one-off",
@@ -10646,6 +10650,23 @@
       "bigger": false,
       "loyal": false,
       "rare": true
+     }
+    },
+    "CA3-KP": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 5,
+      "sinceLastDays": 5,
+      "perMonth": 1.01,
+      "unitsPerMonth": 0.51,
+      "smallShare": 1,
+      "bigShare": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": false
      }
     },
     "CR3-PUD": {
@@ -12575,48 +12596,6 @@
         1015
        ]
       ],
-      "CA3-KP": [
-       [
-        0.5,
-        75
-       ],
-       [
-        1,
-        120
-       ],
-       [
-        1.5,
-        170
-       ],
-       [
-        2,
-        225
-       ],
-       [
-        2.5,
-        275
-       ],
-       [
-        3,
-        320
-       ],
-       [
-        4,
-        420
-       ],
-       [
-        5,
-        510
-       ],
-       [
-        6.25,
-        625
-       ],
-       [
-        12.5,
-        1015
-       ]
-      ],
       "CN5-TAI": [
        [
         0.5,
@@ -12702,6 +12681,48 @@
        ]
       ],
       "CD4-CS": [
+       [
+        0.5,
+        75
+       ],
+       [
+        1,
+        120
+       ],
+       [
+        1.5,
+        170
+       ],
+       [
+        2,
+        225
+       ],
+       [
+        2.5,
+        275
+       ],
+       [
+        3,
+        320
+       ],
+       [
+        4,
+        420
+       ],
+       [
+        5,
+        510
+       ],
+       [
+        6.25,
+        625
+       ],
+       [
+        12.5,
+        1015
+       ]
+      ],
+      "CA3-KP": [
        [
         0.5,
         75
@@ -13118,10 +13139,10 @@
       "CA5-SEN": 0,
       "CJ4-OKR": 0,
       "CH4-MAL": 0,
-      "CA3-KP": 0,
       "CN5-TAI": 0,
       "CH5-KLC": 0,
       "CD4-CS": 0,
+      "CA3-KP": 0,
       "CR3-PUD": 0,
       "CD7-SEG": 0,
       "CB7-BJ": 0,
@@ -13264,10 +13285,6 @@
        "pct": -0.1,
        "why": "good record"
       },
-      "CA3-KP": {
-       "pct": 0,
-       "why": ""
-      },
       "CN5-TAI": {
        "pct": 0,
        "why": ""
@@ -13277,6 +13294,10 @@
        "why": ""
       },
       "CD4-CS": {
+       "pct": 0,
+       "why": ""
+      },
+      "CA3-KP": {
        "pct": 0,
        "why": ""
       },
@@ -14341,28 +14362,6 @@
         450
        ]
       ],
-      "CA3-KP": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
       "CN5-TAI": [
        [
         10,
@@ -14408,6 +14407,28 @@
        ]
       ],
       "CD4-CS": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
+      "CA3-KP": [
        [
         10,
         130
@@ -14644,10 +14665,10 @@
       "CA5-SEN": 0,
       "CJ4-OKR": 0,
       "CH4-MAL": 0,
-      "CA3-KP": 0,
       "CN5-TAI": 0,
       "CH5-KLC": 0,
       "CD4-CS": 0,
+      "CA3-KP": 0,
       "CR3-PUD": 0,
       "CD7-SEG": 0,
       "CB7-BJ": 0,
@@ -15652,28 +15673,6 @@
         1500
        ]
       ],
-      "CA3-KP": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
-      ],
       "CN5-TAI": [
        [
         1,
@@ -15719,6 +15718,28 @@
        ]
       ],
       "CD4-CS": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
+      "CA3-KP": [
        [
         1,
         60
@@ -15955,10 +15976,10 @@
       "CA5-SEN": 0,
       "CJ4-OKR": 0,
       "CH4-MAL": 0,
-      "CA3-KP": 0,
       "CN5-TAI": 0,
       "CH5-KLC": 0,
       "CD4-CS": 0,
+      "CA3-KP": 0,
       "CR3-PUD": 0,
       "CD7-SEG": 0,
       "CB7-BJ": 0,
@@ -16648,20 +16669,6 @@
         60
        ]
       ],
-      "CA3-KP": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        60
-       ]
-      ],
       "CN5-TAI": [
        [
         1,
@@ -16691,6 +16698,20 @@
        ]
       ],
       "CD4-CS": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        60
+       ]
+      ],
+      "CA3-KP": [
        [
         1,
         8
@@ -16855,10 +16876,10 @@
       "CA5-SEN": 0,
       "CJ4-OKR": 0,
       "CH4-MAL": 0,
-      "CA3-KP": 0,
       "CN5-TAI": 0,
       "CH5-KLC": 0,
       "CD4-CS": 0,
+      "CA3-KP": 0,
       "CR3-PUD": 0,
       "CD7-SEG": 0,
       "CB7-BJ": 0,
@@ -17031,27 +17052,27 @@
      ]
     }
    },
-   "v": "v1228"
+   "v": "v1229"
   },
   "OPEN": {
-   "at": "2026-10-23T08:00:11.727Z",
+   "at": "2026-10-23T09:02:07.507Z",
    "count": 8,
    "byKey": {
-    "CA3-KP|2026-10-23|148": {
+    "CA3-KP|2026-10-23|78": {
      "d": "2026-10-23",
      "p": "CA3-KP",
      "dir": "S",
-     "q": 1,
-     "t": 140,
+     "q": 0.5,
+     "t": 70,
      "cash": 0,
      "mv": 0,
      "st": "part",
-     "oweRM": 148,
-     "oweUnits": 1,
+     "oweRM": 78,
+     "oweUnits": 0.5,
      "dv": 8,
      "rid": "s290",
      "handover": "delivered",
-     "key": "CA3-KP|2026-10-23|148"
+     "key": "CA3-KP|2026-10-23|78"
     },
     "CR3-DAM|2026-10-20|75": {
      "d": "2026-10-20",
@@ -17178,9 +17199,9 @@
      "free": 1.85,
      "owedOut": 0,
      "coverDays": 0.4,
-     "rate": 4.24,
+     "rate": 4.21,
      "owedToYou": 315,
-     "promised": 1,
+     "promised": 0.5,
      "short": 0
     },
     "oil": {
@@ -17224,7 +17245,7 @@
     "rice": "2026-10-20",
     "spare": null
    },
-   "v": "v1228"
+   "v": "v1229"
   },
   "TERMS": {
    "ceiling": 250,
@@ -17232,7 +17253,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1228"
+   "v": "v1229"
   },
   "REWARD": {
    "stated": {
@@ -17250,7 +17271,7 @@
      }
     }
    },
-   "v": "v1228"
+   "v": "v1229"
   },
   "STOCK": {
    "today": "2026-10-23",
@@ -17258,7 +17279,7 @@
     "salt": {
      "shelf": 1.85,
      "free": 1.85,
-     "commit": 1,
+     "commit": 0.5,
      "light": "green",
      "coverDays": 0.4,
      "transit": 0
@@ -17288,7 +17309,7 @@
      "transit": 0
     }
    },
-   "v": "v1228"
+   "v": "v1229"
   }
  }
 }
