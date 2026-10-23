@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1228",
+  "d": "23 Oct 2026",
+  "t": "ONE PENDING SALE OF SALT TO CA3-KP AT RM140",
+  "n": [
+   "<b>FOLDED: ONE NEW SALE, PENDING.</b> 1 unit of salt to CA3-KP for RM140 plus RM8 delivery, approved by Counter Admin. Nothing was paid and nothing handed over, so the row books no revenue and draws no stock. The rate sits above the ask of RM120 for one unit.",
+   "<b>INVENTORY: NO MOVEMENT.</b> Stock stays at 1.85 units, which is below the reorder point of 34.5. Cost basis stays at RM56 a unit; replacement cost is RM60."
+  ]
+ },
+ {
   "v": "v1227",
   "d": "23 Oct 2026",
   "t": "S289 PAID IN FULL AND COLLECTED, SHELF DOWN 1.5 UNITS",
