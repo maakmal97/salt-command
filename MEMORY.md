@@ -19,6 +19,12 @@
 - `0017_preapproval_amend.sql` rebuilds `preapproval` with `amend` in its stage CHECK (restateOrder's yes), keeping rows and both indexes. Live D1 carried 0011's narrow CHECK, so every amend tap answered 500; 0017 applied alone on 06 Oct 2026, schema, both indexes and the 71 rows by stage and status read back after.
 - `0013_maker_requests.sql`, `0014_input_admission.sql`, `0015_vault_pair.sql` and `0016_vault_write_gate.sql` applied individually on 03 Oct 2026, with schema readback after each. Both `0012` indexes remain. Pair bootstrap/readback is revision 1; write gate reopened with zero active writers and pending outbox.
 
+## Known red in the suite
+- S1 fold replay (`test/fold-replay.mjs`), re-run 25 Oct 2026 on master 1d3b7c27: 18 of 20 staged batches replay byte-equal; 7de3edad and 580680a7 do not. Both carry a Their % row (`tierset`).
+  The old fold (43fc5b0a) words it "TIER ... drift -0.2", the working fold "THEIR % ... 20% off": that wording is the whole difference in 580680a7. 7de3edad also differs in a Correction's
+  `listRM` (315 old, 280 now; estimate: the 22 Oct curve). Not a booking-law regression: the test's moving 20-batch window has reached rows the fixed old fold cannot match. It stays
+  red until the test normalises the wording and leaves out repriced batches.
+
 ## Counter Batch A
 - Built on branch `claude/counter-batch-a-build-b9ddad` (19 Oct 2026), P0 salt-ds#13 (1.7.0) merged; collection points live in Counter KV `maker:points` once the version ships; his list is empty until he fills it on Salt Admin, and a collect Ready is refused without one.
 
@@ -36,7 +42,7 @@
 - Live 21 Oct 2026 on the statements Worker (P7 d950fbf9 to the render fix a8c5a810; Cloud commits 39497610426, 39513766456, 39516060966 and
   39516640502: chain and three suite parts green), with salt-ds 1.11.0 (#21, the pill track and Jump to): Needs you's glance and sliding kinds,
   Help on Shop hours, the charge slider, the rail's New entry, and from 1080px an open order filling the page in columns (reversing the 11 Oct
-  split at that width). The suite's S1 fold replay fails on origin/master too (two staged batches not byte-equal): not this work's. Accepted
+  split at that width). Accepted
   21 Oct 2026; the reward card (V37, V52) is not built.
 
 ## Stock on Salt Admin's glance
@@ -68,7 +74,7 @@
 - Live as v1206 (`1e765218`, 22 Oct 2026; Cloud commit `39711829680`: chain green, suite parts 2 and 3 green, part 1 red only on the v557 rice
   check that was red on master before): salt `ends` {low:[2,1.2], high:[3,1.45]}; oil, candy and rice `pct` with `shares` {low:[0.8,0.9],
   high:[1.2,1.09]}; Salt Admin's live preview `/all/maker/drift-preview/<code>/<book>/<whole %>`. CS6-BS holds -20% and pays more on the curve.
-  Not yet opened by him on Salt Admin. S1 fold replay fails locally on batch 9f3bd62d (the old fold's "drift" wording), not this work.
+  Not yet opened by him on Salt Admin.
 
 ## Desk bar
 - Live as v1199 (`61541316`, 21 Oct 2026; Cloud commit `39555095710`: chain and three suite parts green, live /rev `9cea1ad4e24589a6`), with
