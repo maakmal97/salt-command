@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1247",
+  "d": "25 Oct 2026",
+  "t": "COLLECTION OF 3 UNITS OF SALT RECORDED FOR CK4-SEN",
+  "n": [
+   "<b>ONE CORRECTION FOLDED, S292.</b> It records that CK4-SEN collected the 3 units of salt on 25 Oct, preapproved by Counter Admin. It sets deliveredQty to 3, deliveredOn to 25 Oct and handover to collected. It moves no cash. The goods total stays at RM280, so the order is now both paid and handed over.",
+   "<b>UNUSUAL:</b> the row's trail of 4 steps no longer adds up to the figure set directly, and the rate of RM93.33 a unit is 12.7% above the party's usual. The shelf rolls by 3 units out. No lot landed, so the cost basis does not move."
+  ]
+ },
+ {
   "v": "v1246",
   "d": "25 Oct 2026",
   "t": "CASH RM280 RECEIVED ON S292, GOODS STILL TO HAND OVER",
