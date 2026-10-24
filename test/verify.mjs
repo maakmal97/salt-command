@@ -52106,5 +52106,10 @@ await (async () => {
   await (await import("./desk-wave1.mjs")).run({ ok });
 })();
 
+section("S0b: the nightly backup of D1's decisions is sealed to a public key, read back, kept for 30 nights and heard of when it stops");
+await (async () => {
+  await (await import("./backup.mjs")).run({ ok });
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
