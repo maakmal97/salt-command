@@ -1,8 +1,8 @@
 # The nightly backup of D1's decisions (S0b)
 
-Built 25 Oct 2026 (`src/backup.js`, `tools/backup-key.mjs`, `tools/backup-open.mjs`, tests `backup*.mjs`). **Not live until the bucket,
-the key and the cron are set up below; each is his yes.** Until then the code is inert: with no bucket or no public key bound the job
-does nothing, and `wrangler.jsonc` does not mention it.
+**Live since v1251 (25 Oct 2026)**: `src/backup.js`, `tools/backup-key.mjs`, `tools/backup-open.mjs`, tests `backup*.mjs`. The bucket `salt-d1-backup`, the key
+and the cron below were set up that day, each on his yes; the first backup was filed by hand that morning and the cron's first night is 02:30 on 26 Oct.
+With no bucket or no public key bound the job does nothing, which is also how a rebuild on a fresh account starts.
 
 ## What it does
 
@@ -17,7 +17,7 @@ The object is read back for its size before the night counts. The result, good o
 and the 09:00 digest pushes when the last backup failed, never ran, or is more than 36 hours old. It stays silent until a bucket is
 bound.
 
-## Turning it on (his terminal, in this order)
+## How it was turned on (his terminal, in this order; the same for a rebuild)
 
 1. The bucket. `npx wrangler r2 bucket create salt-d1-backup`. If R2 is not enabled on the account, wrangler says so first.
 2. The key. `node tools/backup-key.mjs` asks for the vault passphrase (hidden, twice), writes `10_Data\salt_backupkey.json` and prints

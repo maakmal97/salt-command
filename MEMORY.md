@@ -126,11 +126,13 @@
 ## Partner
 - `partners` in `ledger/book.json` = CM4-TO since v1029 (06 Oct 2026): pays the Floor, the order total up to the next RM 5, on every book (since 18 Oct 2026; it was cost to the sen). The CBDO role stays unheld, his answer. The Their % card's Make partner sets one (09 Oct 2026) and a partner is always an associate with a -R account; CM4-TO was made one by hand in the same version.
 
-## S0b backup (built, not live)
-- Built 25 Oct 2026, his word "start on S0b backup", on branch `claude/s0b-backup` (no version number yet): `src/backup.js`, the backup cron and the
-  morning alarm in `src/worker.js`, `tools/backup-key.mjs` and `tools/backup-open.mjs`, `docs/BACKUP.md`. Three suite sections (`backup`, `backup-cron`,
-  `backup-tools`; 29, 13 and 16 mutations) and the restore drill are green. Inert: no bucket, key or cron is bound, and `wrangler.jsonc` does not mention it.
-  To go live he says yes to three things on his ask-first list, in his terminal: the R2 bucket, the key (his passphrase) and the cron; the steps are in `docs/BACKUP.md`.
+## S0b backup (live)
+- Live as v1251 (`0f46fefe`, 25 Oct 2026; CI `40137142246` and Cloud commit `40137142222` green; the chain proved the phone serving `454e5dac1b323727`), his word "start on S0b backup", then his yes to the
+  bucket, the key and the cron: `src/backup.js`, the backup cron and the morning alarm in `src/worker.js`, `tools/backup-key.mjs` and `tools/backup-open.mjs`, `docs/BACKUP.md`. The deploy log shows
+  `BACKUP` on R2 bucket `salt-d1-backup`, `BACKUP_PUBLIC_JWK` and the schedule `30 18 * * *` (02:30 in Kuala Lumpur). The key is `10_Data\salt_backupkey.json`, minted 25 Oct 2026; a copy off that disk is his to keep.
+- The first backup was filed by hand through wrangler on 25 Oct 2026 at 06:15 MYT: `backup/2026-10-25.json`, 1,761,163 bytes read back equal (604 drafts, 151 pre-approvals, 118 maker requests, 9 input admissions, the vault pair),
+  with `backup:last` ok. The cron's own first night is 02:30 on 26 Oct. Three suite sections (`backup`, `backup-cron`, `backup-tools`; 29, 13 and 16 mutations) hold the restore drill.
+  Open: opening the real object with his key (`node tools/backup-open.mjs <file>`, which prints counts only), and a copy of the key off the laptop's disk.
 
 ## Disabled automation
 - `Salt fold (manual backup)` = `trig_01UrnjQMWA3f6GXN5R6Dzi4S`, disabled.

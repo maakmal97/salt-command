@@ -92,7 +92,7 @@ The nightly export covers the Book AND the D1 decision tables (`draft`, `preappr
 - Confirm no reader still uses Desk KV `vault`/`vault-addr` outside recovery.
 
 ## His answers, 14 Oct 2026
-D1 in place, step by step. D2: S0 now; S0b waited until 25 Oct 2026, when he said to start it: built on `claude/s0b-backup`, live only after the bucket, the key and the cron each get his yes (`docs/BACKUP.md`). D8: when S0b runs, R2, encrypted (bucket and nightly job each still need his yes). D5: a daily export to git after S5.
+D1 in place, step by step. D2: S0 now; S0b waited until 25 Oct 2026, when he said to start it; it is live as v1251, with the bucket, the key and the cron each on his yes (`docs/BACKUP.md`). D8: when S0b runs, R2, encrypted (bucket and nightly job each still need his yes). D5: a daily export to git after S5.
 D3, D4, D6, D7 not yet asked; the recommendations stand until he says otherwise (none affects S0 to S2).
 
 ## His answers, 16 Oct 2026 (S1d)
