@@ -137,7 +137,7 @@ export async function usersMap(env) {
 }
 
 /** Every open order (or all with `all`), each with the desk code the username maps to; with `links`, how many
- *  associate links wait in Salt Account as well (S9 9.8), a count the desk's page shows and nothing more. */
+ *  associate links wait in Salt Admin as well (S9 9.8), a count the desk's page shows and nothing more. */
 export async function listOrders(env, all, links) {
   const q = [all ? "all=1" : "", links ? "links=1" : ""].filter(Boolean).join("&");
   const r = await site(env, "/desk/orders" + (q ? "?" + q : ""));
@@ -2286,7 +2286,7 @@ export async function ordersWaiting(env, since) {
    it has read both it sends that figure here (POST /orders/waiting), which this relays to the site's desk-waiting mark.
    One reading, the desk's: this Worker's own recount every minute (placed, or their line last) missed cash and payments
    and ignored his No reply needed, so the two apps disagreed. The trade, stated: the figure is as fresh as the desk's
-   last read of its orders, and the mark carries its moment, which Salt Account shows. S9 fix: the page sends how old its
+   last read of its orders, and the mark carries its moment, which Salt Admin shows. S9 fix: the page sends how old its
    reading is (`age`, whole seconds), passed through, and the site stamps the moment from it. */
 /* 19 Oct 2026, THE SPLIT: Salt Admin is woken for what waits on his decision, Salt Desk only for what informs. One event, one
    surface. This asks the Counter to wake Salt Admin ({k, o?, t?}, k one of order, pay, cancel, said, rate, take, pass, approve)

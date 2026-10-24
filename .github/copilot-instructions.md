@@ -38,4 +38,5 @@ project, and the owner's word in the conversation wins over both.
 
 ## What cannot run from GitHub
 - The names vault, `10_Data` and account minting are on the owner's laptop only, by design (rule 2). Hand those steps to him.
-- `tools/update.mjs` and laptop queue entries run on the laptop.
+- `tools/update.mjs` and laptop queue entries run on the laptop. So do `tools/backup-key.mjs` and `tools/backup-open.mjs`: they ask for his
+  passphrase, which no agent ever receives.

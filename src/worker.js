@@ -11,8 +11,8 @@
  * password, and auto-hide them, while the server only ever holds ciphertext. A POST that
  * is not that envelope shape is rejected, so a stray plaintext name cannot land here.
  *
- * Access is controlled by REQUIRE_ACCESS and defaults off in the committed deployment config
- * until its application is provisioned. When enabled, every request must carry a valid Access
+ * Access is controlled by REQUIRE_ACCESS, "1" in the committed deployment config since 06 Oct 2026 (unset, the code's own
+ * default is off). When enabled, every request must carry a valid Access
  * JWT for the configured team and audience and the owner's exact email; a header alone is not
  * trusted. See CLAUDE.md and docs/DESK.md before changing the deployment setting.
  */
@@ -1312,7 +1312,7 @@ const canonicalQueueAt = (value) => typeof value === "string" && Number.isFinite
 
 /* 15 Oct 2026 (plan 1, part 2): ONE BAD QUEUE KEY NEVER BLANKS THE REVIEW. A road that acts (a withdrawal, an owner record)
    reads strictly and refuses on any doubtful key; the review alone passes { skip }, which collects the malformed key's name
-   and reads on, so Salt Account can say which key it could not read and still show every other entry. */
+   and reads on, so Salt Admin can say which key it could not read and still show every other entry. */
 async function deviceQueueRecords(env, skip = null) {
   if (!env.SALT_QUEUE) throw new Error("The Desk queue is unavailable.");
   const records = [];
@@ -2873,7 +2873,7 @@ export default {
       /* THE SITE'S THREE READS GO TOGETHER (16 Oct 2026): orders, claims and threads are separate questions of the statements
          site and none waits on another, so the page spends one trip's time, not three. */
       const every = url.searchParams.get("all") === "1";
-      /* S9 9.8: the page's own read carries the count of associate links waiting in Salt Account */
+      /* S9 9.8: the page's own read carries the count of associate links waiting in Salt Admin */
       const [r, c, t] = await Promise.all([listOrders(env, every, true), listClaims(env, every), listThreads(env)]);
       /* S6 6.6: and the claims against accounts beside them, each on a card of its own; a site that cannot say leaves none */
       if (r.ok) { r.claims = c.ok ? c.claims : []; if (!c.ok) r.claimsUnread = c.error; }
@@ -2916,7 +2916,7 @@ export default {
       const r = await threadRelay(env, decodeURIComponent(tm[1]), b);
       return json(r, r.ok ? 200 : (r.status || 502));
     }
-    /* S9 9.8 FIX: the desk's page tells Salt Account what waits here, its own Waiting on you count (tellWaiting) */
+    /* S9 9.8 FIX: the desk's page tells Salt Admin what waits here, its own Waiting on you count (tellWaiting) */
     if (p === "/orders/waiting") {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       let b = {};
