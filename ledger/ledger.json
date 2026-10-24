@@ -1,6 +1,6 @@
 {
- "v": "v1235",
- "stamped": "24 Oct 2026, 22:44 KL",
+ "v": "v1236",
+ "stamped": "24 Oct 2026, 23:01 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -1052,7 +1052,25 @@
     "pending": true,
     "date": "2026-10-24",
     "note": "<b>NEW BUY, PENDING: 12.5 UNIT OF SALT FROM SA5-BTR FOR RM750, 24 OCT 2026.</b> Nothing is paid and nothing has moved, so the row is pending and draws no stock. The rate is RM60 a unit, above his quote of 23 Sep (RM56 a unit, multiples of 12.5 unit at RM700 each) and above the party median of RM56, within the range of RM44 to RM64. Outstanding before was RM0 and nothing has defaulted. The row carries no cost of its own until something lands. The drafter raised no flags. The RM750 for the lot is outstanding, and so is the receipt of the 12.5 unit.",
-    "rid": "p043"
+    "rid": "p043",
+    "amend": [
+     {
+      "date": "2026-10-24",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-24",
+      "kind": "Cancellation",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CANCELLATION: P043, 12.5 UNIT OF SALT FROM SA5-BTR FOR RM750, 24 OCT 2026.</b> The buy was booked the same day as pending, with RM0 cash and nothing moved, and is now withdrawn. Its rate was RM60 a unit, above his quote of RM56 and the party's median of RM56, within a range of RM44 to RM64. No ladder floor or ask is given for this row, so it cannot be set against the desk's own figures. Outstanding before was RM700; no units were on credit and RM0 has defaulted. The row never drew stock, so the inventory's rate of RM56 a unit is untouched. The drafter raised no flags. Nothing is left outstanding on p043."
+     }
+    ],
+    "cancelled": true,
+    "cancelledOn": "2026-10-24"
    }
   ],
   "sales": [
@@ -9659,7 +9677,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-24T14:42:03.011Z",
+  "QUEUE_COMMITTED": "2026-10-24T15:00:55.466Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -17278,27 +17296,12 @@
      ]
     }
    },
-   "v": "v1235"
+   "v": "v1236"
   },
   "OPEN": {
-   "at": "2026-10-24T14:44:07.966Z",
-   "count": 9,
+   "at": "2026-10-24T15:01:44.619Z",
+   "count": 8,
    "byKey": {
-    "SA5-BTR|2026-10-24|750": {
-     "d": "2026-10-24",
-     "p": "SA5-BTR",
-     "dir": "B",
-     "q": 12.5,
-     "t": 750,
-     "cash": 0,
-     "mv": 0,
-     "st": "pend",
-     "oweRM": 750,
-     "oweUnits": 12.5,
-     "rid": "p043",
-     "pending": true,
-     "key": "SA5-BTR|2026-10-24|750"
-    },
     "CR3-DAM|2026-10-20|75": {
      "d": "2026-10-20",
      "p": "CR3-DAM",
@@ -17488,7 +17491,7 @@
     "rice": "2026-10-20",
     "spare": null
    },
-   "v": "v1235"
+   "v": "v1236"
   },
   "TERMS": {
    "ceiling": 250,
@@ -17496,7 +17499,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1235"
+   "v": "v1236"
   },
   "REWARD": {
    "stated": {
@@ -17514,7 +17517,7 @@
      }
     }
    },
-   "v": "v1235"
+   "v": "v1236"
   },
   "STOCK": {
    "today": "2026-10-24",
@@ -17525,7 +17528,7 @@
      "commit": 0,
      "light": "red",
      "coverDays": 0,
-     "transit": 25
+     "transit": 12.5
     },
     "oil": {
      "shelf": 30,
@@ -17552,7 +17555,7 @@
      "transit": 0
     }
    },
-   "v": "v1235"
+   "v": "v1236"
   }
  }
 }

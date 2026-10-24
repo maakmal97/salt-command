@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1236",
+  "d": "24 Oct 2026",
+  "t": "CANCELLATION OF PENDING BUY P043 FROM SA5-BTR",
+  "n": [
+   "<b>ONE CANCELLATION FOLDED.</b> The pending buy p043 from SA5-BTR, 12.5 unit for RM750 dated 24 Oct 2026, is withdrawn on the day it was booked. It was unusual only in its rate of RM60 a unit against his quote of RM56. Nothing had been paid or moved, so the row counts nowhere.",
+   "<b>INVENTORY UNCHANGED.</b> The row was pending and drew no stock, so stock stays at 0 and the cost basis stays at RM56 a unit."
+  ]
+ },
+ {
   "v": "v1235",
   "d": "24 Oct 2026",
   "t": "PENDING BUY FROM SA5-BTR AND A QUANTITY CORRECTION ON P042",
