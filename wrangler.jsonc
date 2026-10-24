@@ -96,11 +96,18 @@
 	"migrations": [
 		{ "tag": "book-v1", "new_sqlite_classes": ["Book"] }
 	],
+	// THE NIGHTLY BACKUP'S BUCKET (S0b, 25 Oct 2026, docs/BACKUP.md). The Desk Worker seals the night's D1 decisions to BACKUP_PUBLIC_JWK
+	// and files them here as backup/<date>.json (src/backup.js). Bound to this Worker alone: the Counter and QR Command have no road to it.
+	// The cron below and this binding arrive together (a test pins it). A wrangler.jsonc change does not move rev.json: deploy this BY HAND too.
+	"r2_buckets": [
+		{ "binding": "BACKUP", "bucket_name": "salt-d1-backup" }
+	],
 	"triggers": {
 		// Every minute: the customer order nudge, and on the quarter-hour the drafter's safety net.
 		// 0 1 is 09:00 in Kuala Lumpur: the morning nudge, which pushes ONLY when something is
-		// actually waiting. See scheduled() in src/worker.js.
-		"crons": ["* * * * *", "0 1 * * *"]
+		// actually waiting. See scheduled() in src/worker.js. 18:30 UTC is 02:30 in Kuala Lumpur: the nightly
+		// backup (src/backup.js), which runs nothing else.
+		"crons": ["* * * * *", "0 1 * * *", "30 18 * * *"]
 	},
 	"vars": {
 		// Maintenance guard (src/maintenance.js): an ISO UTC time here turns it on and it lifts itself; empty is off.
@@ -120,6 +127,9 @@
 		// VAPID_PRIVATE_JWK secret, set by tools/vapid.mjs and never printed.
 		"VAPID_PUBLIC_KEY": "BB7ReK5C7NBB6KMo7tNGmd43SKePl8qQi_DnbGnEmsrLevWIM8sn4zJ7ICp5Hs_nnz1A4ZH9TtSJij4Z71HFC0k",
 		"VAPID_SUBJECT": "mailto:maakmal97@icloud.com",
+		// The nightly backup's PUBLIC key (S0b, 25 Oct 2026, minted by tools/backup-key.mjs): public by definition, it can only seal. The private
+		// half is on his laptop, sealed under the vault passphrase.
+		"BACKUP_PUBLIC_JWK": "{\"kty\":\"EC\",\"crv\":\"P-256\",\"x\":\"5gfIXXCVD0Y-_acWYvkrXp1Ky4Hkf0ysxUdnj3rf-NM\",\"y\":\"-8pjp5LkHZ-qcvCTfGW53ftgkKgXejrmZ_4oPDoWjZk\"}",
 		// 21 Oct 2026: Salt Admin, where the desk bar's Approve goes (GET /admin, a 302). Here, never in the public desk.
 		"ADMIN_URL": "https://k7m3p2.qyts8mh72kyg.workers.dev/all"
 	},
