@@ -1010,12 +1010,35 @@ await (async () => {
     const html = readFileSync(join(REPO, "public", "desk.html"), "utf8");
     ok(html.includes("BEGIN cloud/PWA"), "PWA head block injected");
     const browserIcons = html.match(/<link\b[^>]*\brel="icon"[^>]*>/g) || [];
-    const browserIcon = readFileSync(join(REPO, "public", "icon-192.png"));
+    const browserIcon = readFileSync(join(REPO, "public", "icon-tab.png"));
+    /* his word of 24 Oct 2026: the tab icon has no dark ground. A 128px PNG with an alpha channel (colour type 6), read back
+       through a real unfilter (an encoder may pick any of the five row filters), its corners clear and no dark pixel in it */
+    const tabPx = await (async () => {
+      const parts = []; let at = 8;
+      while (at < browserIcon.length) { const len = browserIcon.readUInt32BE(at); if (browserIcon.toString("ascii", at + 4, at + 8) === "IDAT") parts.push(browserIcon.subarray(at + 8, at + 8 + len)); at += 12 + len; }
+      const raw = (await import("node:zlib")).inflateSync(Buffer.concat(parts)), W = 128, H = 128, bpp = 4, out = Buffer.alloc(W * H * bpp);
+      for (let y = 0; y < H; y++) {
+        const f = raw[y * (W * bpp + 1)], src = y * (W * bpp + 1) + 1, dst = y * W * bpp;
+        for (let i = 0; i < W * bpp; i++) {
+          const a = i >= bpp ? out[dst + i - bpp] : 0, b = y ? out[dst - W * bpp + i] : 0, c = i >= bpp && y ? out[dst - W * bpp + i - bpp] : 0;
+          const pa = Math.abs(b - c), pb = Math.abs(a - c), pc = Math.abs(a + b - 2 * c);
+          const pred = f === 0 ? 0 : f === 1 ? a : f === 2 ? b : f === 3 ? (a + b) >> 1 : (pa <= pb && pa <= pc ? a : pb <= pc ? b : c);
+          out[dst + i] = (raw[src + i] + pred) & 255;
+        }
+      }
+      return (x, y) => [...out.subarray((y * W + x) * bpp, (y * W + x) * bpp + bpp)];
+    })();
+    const tabAll = []; for (let y = 0; y < 128; y++) for (let x = 0; x < 128; x++) tabAll.push(tabPx(x, y));
     ok(browserIcons.length === 1
-      && browserIcons[0] === '<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">'
+      && browserIcons[0] === '<link rel="icon" type="image/png" sizes="128x128" href="/icon-tab.png">'
       && browserIcon.subarray(0, 8).toString("hex") === "89504e470d0a1a0a"
-      && browserIcon.readUInt32BE(16) === 192 && browserIcon.readUInt32BE(20) === 192,
-    "the browser tab links the same-origin 192px PNG favicon, and that asset is a valid 192px PNG");
+      && browserIcon.readUInt32BE(16) === 128 && browserIcon.readUInt32BE(20) === 128,
+    "the browser tab links the same-origin 128px PNG favicon, and that asset is a valid 128px PNG");
+    ok(browserIcon[24] === 8 && browserIcon[25] === 6, "the tab icon is 8-bit truecolour with an alpha channel (colour type 6)");
+    ok([[0, 0], [127, 0], [0, 127], [127, 127]].every(([x, y]) => tabPx(x, y)[3] === 0),
+      "the tab icon has a clear ground: every corner is fully transparent, with no dark tile or glow behind the crystal");
+    ok(tabAll.filter((q) => q[3] > 0).every((q) => Math.max(q[0], q[1], q[2]) > 150) && tabAll.some((q) => q[3] === 255),
+      "and no pixel with any cover is dark: the crystal's faces are all light, so it reads on a dark tab and a light one");
     /* SALT DESK (his Q6 of 28 Sep 2026): the desk installs as Salt Desk, the head's name for an iPhone and the manifest's
        name and short_name, while its tab keeps Salt Command, the anchor the head block is put after. The manifest is served
        cache first and sits outside the build id, so the shell cache moved with it, or no installed desk would read it */
@@ -8317,7 +8340,7 @@ await (async () => {
   /* the mark */
   ok((m472.match(/aria-label="Salt crystal"/g) || []).length === 3, "the crystal is drawn in the rail, in the bar and on the printed board (v537)");
   ok(!m472.includes('class="logo">&#9670;') && !m472.includes('class="logo sm">&#9670;'), "and the diamond glyph is gone");
-  ok(/<link rel="icon" type="image\/png" sizes="192x192" href="\/icon-192\.png">/.test(m472), "the browser favicon uses the 192px Salt icon");
+  ok(/<link rel="icon" type="image\/png" sizes="128x128" href="\/icon-tab\.png">/.test(m472), "the browser favicon is the crystal on a clear ground");
   /* the books' hues come from the identity, through the book, which is where the extract reads them */
   const bk472 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   ok(bk472.PRODUCTS.salt.accent === "var(--salt-product-salt)" && bk472.PRODUCTS.oil.accent === "var(--salt-product-oil)", "salt is the pale book and oil the golden one, declared in ledger/book.json");
@@ -18332,8 +18355,33 @@ await (async () => {
     const ownHtml = await (await site("/all", acc)).text(), custHtml = await (await site("/")).text();
     ok(/<link rel="apple-touch-icon" href="[/]icon-key[.]png">/.test(ownHtml) && /<link rel="apple-touch-icon" href="[/]icon[.]png">/.test(custHtml) && !custHtml.includes("icon-key"),
       "his page's iPhone icon is his, and the customer's page keeps the Counter's and never names his");
-    ok(/<link rel="icon" type="image[/]png" sizes="512x512" href="[/]icon-key[.]png">/.test(ownHtml) && /<link rel="icon" type="image[/]png" sizes="512x512" href="[/]icon[.]png">/.test(custHtml) && (custHtml.match(/<link rel="icon"/g) || []).length === 1,
-      "his browser tab links his ring as its icon, and the customer's tab links the Counter's own once");
+    ok(/<link rel="icon" type="image[/]png" sizes="128x128" href="[/]icon-key-tab[.]png">/.test(ownHtml) && /<link rel="icon" type="image[/]png" sizes="128x128" href="[/]icon-tab[.]png">/.test(custHtml) && (custHtml.match(/<link rel="icon"/g) || []).length === 1 && !custHtml.includes("icon-key"),
+      "his browser tab links his ring as its icon, and the customer's tab links the Counter's own once, never his");
+    /* his word of 24 Oct 2026: a tab icon has no black ground. 8-bit RGBA, the corner clear, the centre solid, and the edge soft */
+    const tabK = await site("/icon-key-tab.png"), tabC = await site("/icon-tab.png");
+    ok(tabK.status === 200 && tabC.status === 200 && /image[/]png/.test(tabK.headers.get("content-type")) && /image[/]png/.test(tabC.headers.get("content-type")),
+      "both tab icons are served as PNGs with no Access needed, as a tab fetches them");
+    /* the same read for colour type 6: four bytes a pixel, rows unfiltered as the generator writes them */
+    const pngA = (buf) => {
+      const w = buf.readUInt32BE(16), h = buf.readUInt32BE(20);
+      let at = 8; const idat = [];
+      while (at < buf.length) { const len = buf.readUInt32BE(at), type = buf.toString("ascii", at + 4, at + 8);
+        if (type === "IDAT") idat.push(buf.subarray(at + 8, at + 8 + len)); at += 12 + len; }
+      const raw = inflateSync(Buffer.concat(idat)), row = w * 4 + 1;
+      const px = (x, y) => [0, 1, 2, 3].map((i) => raw[y * row + 1 + x * 4 + i]);
+      const all = []; for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) all.push(px(x, y));
+      return { w, h, depth: buf[24], kind: buf[25], flat: [...Array(h).keys()].every((y) => raw[y * row] === 0), px, all };
+    };
+    const TK = pngA(Buffer.from(await tabK.arrayBuffer())), TC = pngA(Buffer.from(await tabC.arrayBuffer()));
+    for (const [name, T] of [["Salt Admin's", TK], ["the Counter's", TC]]) {
+      ok(T.w === 128 && T.h === 128 && T.depth === 8 && T.kind === 6 && T.flat, name + " tab icon is a 128 px 8-bit truecolour PNG with an alpha channel, which the opaque tile (colour type 2) is not");
+      ok(T.px(0, 0)[3] === 0 && T.px(127, 0)[3] === 0 && T.px(0, 127)[3] === 0 && T.px(127, 127)[3] === 0,
+        name + " tab icon has a clear ground: every corner is fully transparent, not the tile's 5,8,10");
+      ok(T.all.filter((q) => q[3] > 0).every((q) => q[0] > 150), name + " tab icon draws no dark pixel anywhere: every pixel with any cover is brass or copper");
+      ok(T.all.some((q) => q[3] === 255) && T.all.some((q) => q[3] > 0 && q[3] < 255), name + " tab icon is solid inside the ring and soft at its edge");
+    }
+    ok(TK.px(64, 80)[3] === 255 && TC.px(64, 64)[3] === 255 && TC.px(64, 80)[3] === 0,
+      "Salt Admin's tab icon carries the keyhole's stem where the Counter's has only its dot");
 
     /* ---- an ended Access session ---- */
     /* what a browser does with Access's redirect to its login: followed, a cross-origin page a fetch cannot read,

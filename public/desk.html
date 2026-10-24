@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="7c590d91cf6e8e81";
+var SALT_BUILD_ID="df4bc8dca7e5c2c5";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -243,7 +243,7 @@ var SALT_WAKE_MS=3000;
 })();
 </script>
 <!-- END cloud/PWA -->
-<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="icon" type="image/png" sizes="128x128" href="/icon-tab.png">
 <!-- Chart.js is NOT loaded here (v176). It used to sit in the head as a BLOCKING request
      to a CDN, so every open waited on the internet before the desk could run, and on a
      bad connection or none at all that wait was the whole delay. A vendored copy already
@@ -11086,7 +11086,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1247","d":"25 Oct 2026","t":"COLLECTION OF 3 UNITS OF SALT RECORDED FOR CK4-SEN","n":["<b>ONE CORRECTION FOLDED, S292.</b> It records that CK4-SEN collected the 3 units of salt on 25 Oct, preapproved by Counter Admin. It sets deliveredQty to 3, deliveredOn to 25 Oct and handover to collected. It moves no cash. The goods total stays at RM280, so the order is now both paid and handed over.","<b>UNUSUAL:</b> the row's trail of 4 steps no longer adds up to the figure set directly, and the rate of RM93.33 a unit is 12.7% above the party's usual. The shelf rolls by 3 units out. No lot landed, so the cost basis does not move."]}];
+const evolution=[{"v":"v1248","d":"25 Oct 2026","t":"THE BROWSER TAB ICONS LOSE THEIR DARK GROUND ON THE DESK, THE COUNTER AND ADMIN","n":["<b>TAB ICONS ON A CLEAR GROUND, HIS WORD.</b> The desk's tab linked the 192 px home-screen icon, whose rounded dark tile and violet glow showed as a dark square on a tab; it now links <code>icon-tab.png</code>, the crystal alone on a transparent 128 px canvas. The shell cache moves to v9 so an installed desk reads it.","<b>COUNTER AND ADMIN.</b> Salt Counter and Salt Admin each gain a clear-ground tab icon (<code>/icon-tab.png</code> and <code>/icon-key-tab.png</code>), the tile's ring and dot and Salt Admin's keyhole, antialiased to soft alpha edges. The opaque tiles stay for the home screen, which draws any clear corner black."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11234,7 +11234,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='25 Oct 2026, 01:08 KL';
+const LAST_UPDATED='25 Oct 2026, 01:27 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
