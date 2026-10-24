@@ -3,7 +3,8 @@
  * The desk's own "Save" writes plaintext names to salt_bio.json; the encrypted vault
  * (salt_vault.json) is legacy and stale. So this reads the current directory, encrypts
  * it with your passphrase into the exact envelope the desk's vaultDecrypt expects, and
- * pushes ONLY that ciphertext to the cloud (KV key "vault"). The phone then decrypts it
+ * pushes ONLY that ciphertext to the cloud (the versioned vault pair in D1 while the Worker's
+ * authority is the pair, as it is since v992; else KV key "vault"). The phone then decrypts it
  * with the same passphrase; the plaintext never leaves this machine.
  *
  * The crypto matches the desk byte for byte: PBKDF2-SHA256 x150000 over a random 16-byte

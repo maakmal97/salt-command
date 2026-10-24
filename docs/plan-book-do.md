@@ -104,4 +104,4 @@ S1d split: S1d-i applyEntry beside applyInto, no behaviour change; S1d-ii applyI
 
 ## Where S1 stands, 16 Oct 2026
 S0 done (#176, #177). S1a-i #178, S1a-ii #179, S1b #180 (v1126), S1c-i #181 (v1127), S1c-ii #182 (v1128), S1c-iii #183 (v1129) landed.
-S1d-i (applyEntry in `engine/apply.mjs`, beside applyInto) landed as #184 (957eb986). Next: S1d-ii, the fold switched to applyEntry in event order.
+S1d-i (applyEntry in `engine/apply.mjs`, beside applyInto) landed as #184 (957eb986). S1d-ii, the fold switched to applyEntry in event order, landed as #191 (ab972554, 18 Oct 2026).

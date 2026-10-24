@@ -12,7 +12,7 @@
 # by accident, and the deploy already has an owner.
 name: CI
 
-# MINUTES (09 Oct 2026): the repo is private and billed. A newer push to the same branch or pull
+# MINUTES (09 Oct 2026): while the repo is private its minutes are billed; public, they are free. A newer push to the same branch or pull
 # request cancels the run still going on it; master is never cancelled, and its group carries the
 # run id so a queued master run is not replaced by a newer one either. paths-ignore holds only
 # what no check reads: the suite scans CLAUDE.md, MEMORY.md and every docs/*.md for the banned
@@ -133,7 +133,7 @@ jobs:
           echo "cloud-commit tests this push: $covered"
 
       # THE COMMITTED BUILD MATCHES THE MASTER, JUDGED BY THE ID AND NOT BY THE BYTES.
-      # public/desk.html, public/data.json and public/rev.json are committed on purpose so the
+      # public/desk.html and public/rev.json are committed on purpose so the
       # data lives in the repo, and that is only worth anything if they correspond to the
       # master beside them.
       #
@@ -163,7 +163,7 @@ jobs:
           echo "public/ matches the master at $after."
 
   # ONE PART A RUNNER (05 Oct 2026, his instruction), as cloud-commit's job suite. The repo went
-  # private on 01 Oct and its runners have two cores since, so three shards in one job ran as two
+  # private on 01 Oct and its runners have two cores while it is private, so three shards in one job ran as two
   # fighting over them (up to 11.3 min). Three runners each run a third, cut the same way by
   # tools/suite-split.mjs --part and packed by test/suite-costs.json. It stands down only when the
   # guard in verify says cloud-commit is testing this push; a red check in verify still runs it.
