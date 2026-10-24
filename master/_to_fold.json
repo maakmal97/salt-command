@@ -1,0 +1,69 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-24T16:23:08.850Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CM4-TO",
+    "qty": 12.5,
+    "total": 750,
+    "cost": 725,
+    "cash": 750,
+    "handover": "collected",
+    "date": "2026-10-24",
+    "deliveredQty": 12.6,
+    "deliveredOn": "2026-10-24",
+    "paidOn": "2026-10-24",
+    "listRM": 725,
+    "listQty": 12.5
+   },
+   "reasoning": "Sold 12.5 unit of salt to CM4-TO for RM 750, RM 60/unit. Costed at RM 58/unit from COGS off the latest purchase p044 landed 2026-10-24: RM 1400 quote plus RM 50 freight over 25 unit, so RM 25 on the goods at 3.3%. Paid in full and delivered in full on 2026-10-24. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "This is an ADVANCE: 12.6 unit goes out with RM 6 unpaid. Check it against CM4-TO's credit cap.",
+    "12.6 unit goes out on an order of 12.5 unit. Check the figures."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-24T16:23:08.850Z",
+    "type": "SELL",
+    "party": "CM4-TO",
+    "qty": 12.5,
+    "total": 750,
+    "status": "paid",
+    "raw": "Sell 12.5 unit salt to CM4-TO for RM750 on 2026-10-24, collected, RM750 cash, 12.6 unit moved → Completed",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CM4-TO",
+     "newId": null,
+     "date": "2026-10-24",
+     "qty": 12.5,
+     "total": 750,
+     "delivery": 0,
+     "freight": 0,
+     "cash": 750,
+     "kg": 12.6,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "collected",
+     "second": null,
+     "more": null,
+     "coverFree": null
+    },
+    "makerRequest": "baf411a3f3314489bbe7e3964551c884dba05e7d12dfc4210c33cc4dd64436a0"
+   },
+   "decidedAt": "2026-10-24T16:23:34.948Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
