@@ -1,6 +1,6 @@
 {
- "v": "v1241",
- "stamped": "25 Oct 2026, 00:21 KL",
+ "v": "v1242",
+ "stamped": "25 Oct 2026, 00:24 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 25,
+  "STATED_STOCK": 12.4,
   "COUNT_ON": {
    "salt": "2026-10-24",
    "oil": "2026-10-20",
@@ -8943,6 +8943,22 @@
     "rid": "s291"
    },
    {
+    "customer": "CM4-TO",
+    "qty": 12.5,
+    "total": 750,
+    "cost": 725,
+    "cash": 750,
+    "handover": "collected",
+    "date": "2026-10-24",
+    "deliveredQty": 12.6,
+    "deliveredOn": "2026-10-24",
+    "paidOn": "2026-10-24",
+    "listRM": 725,
+    "listQty": 12.5,
+    "note": "<b>SALE OF 12.5 UNITS OF SALT TO CM4-TO, 24 OCT 2026, COLLECTED AND PAID IN FULL.</b> The terms are RM750 at RM60 a unit, RM750 cash, 12.6 units moved. For 12.5 units the ladder gives a floor total of RM725 and an ask total of RM980, so RM750 sits above the floor and below the ask. The party's median rate is RM52, range RM5 to RM65; outstanding before was RM0, with no units on credit and RM0 defaulted, against a credit cap of 2. The row carries cost RM725, RM58 a unit from purchase p044, not the inventory's own stock cost of RM56. The drafter flagged an advance of RM6 unpaid; cash equals the total, so that is not borne out. The 0.1 unit over the order is unexplained. Nothing is outstanding.",
+    "rid": "s293"
+   },
+   {
     "customer": "CK4-SEN",
     "qty": 3,
     "total": 280,
@@ -9758,7 +9774,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-24T16:20:27.934Z",
+  "QUEUE_COMMITTED": "2026-10-24T16:23:08.850Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -9782,11 +9798,6 @@
      "id": "px:headroom:salt",
      "sev": "act",
      "title": "The buying rate can rise RM -1 a unit, -1.8%, before a card breaches"
-    },
-    {
-     "id": "upkeep:shrink:salt",
-     "sev": "act",
-     "title": "The unexplained plug runs at 12% of everything handled"
     },
     {
      "id": "cust:cadence:salt",
@@ -9831,7 +9842,7 @@
     {
      "id": "rhythm:restock:salt",
      "sev": "watch",
-     "title": "Buy about 12% less than the desk's rate implies"
+     "title": "Buy about 10% less than the desk's rate implies"
     },
     {
      "id": "promo:revive:salt",
@@ -9937,6 +9948,11 @@
      "id": "rhythm:payday:salt",
      "sev": "note",
      "title": "The pay window runs behind mid-month"
+    },
+    {
+     "id": "upkeep:shrink:salt",
+     "sev": "note",
+     "title": "The unexplained plug runs at 6% of everything handled"
     }
    ],
    "profileOf": {
@@ -10113,33 +10129,16 @@
       "rare": false
      }
     },
-    "CM4-MK": {
-     "salt": {
-      "name": "consistent mid",
-      "orders": 13,
-      "tenureDays": 94,
-      "sinceLastDays": 16,
-      "perMonth": 4.21,
-      "unitsPerMonth": 10.91,
-      "smallShare": 0.08,
-      "bigShare": 0.38,
-      "frequent": true,
-      "small": false,
-      "bigger": false,
-      "loyal": true,
-      "rare": false
-     }
-    },
     "CM4-TO": {
      "salt": {
       "name": "large and regular",
-      "orders": 6,
+      "orders": 7,
       "tenureDays": 71,
-      "sinceLastDays": 5,
-      "perMonth": 2.57,
-      "unitsPerMonth": 20.36,
-      "smallShare": 0.17,
-      "bigShare": 0.83,
+      "sinceLastDays": 1,
+      "perMonth": 3,
+      "unitsPerMonth": 25.72,
+      "smallShare": 0.14,
+      "bigShare": 0.86,
       "frequent": true,
       "small": false,
       "bigger": true,
@@ -10175,6 +10174,23 @@
       "bigger": true,
       "loyal": false,
       "rare": true
+     }
+    },
+    "CM4-MK": {
+     "salt": {
+      "name": "consistent mid",
+      "orders": 13,
+      "tenureDays": 94,
+      "sinceLastDays": 16,
+      "perMonth": 4.21,
+      "unitsPerMonth": 10.91,
+      "smallShare": 0.08,
+      "bigShare": 0.38,
+      "frequent": true,
+      "small": false,
+      "bigger": false,
+      "loyal": true,
+      "rare": false
      }
     },
     "CK4-SEN": {
@@ -11075,9 +11091,9 @@
        "repl": 56,
        "freightRate": 2,
        "leak": {
-        "ratio": 0.1364,
+        "ratio": 0.0636,
         "leak": 1.5,
-        "sold": 11,
+        "sold": 23.6,
         "cycles": 3,
         "from": "2026-10-20",
         "to": "2026-10-24"
@@ -11102,15 +11118,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.2972972972972973
+         "v": 0.29464285714285715
         }
        },
        "attrib": 1,
        "shrinkRate": 0.0918915050454448,
        "avgDel": {
-        "n": 227,
-        "kg": 569.81,
-        "mean": 2.5102
+        "n": 228,
+        "kg": 582.41,
+        "mean": 2.5544
        }
       },
       "policy": {
@@ -11553,48 +11569,6 @@
         980
        ]
       ],
-      "CM4-MK": [
-       [
-        0.5,
-        75
-       ],
-       [
-        1,
-        120
-       ],
-       [
-        1.5,
-        170
-       ],
-       [
-        2,
-        225
-       ],
-       [
-        2.5,
-        265
-       ],
-       [
-        3,
-        315
-       ],
-       [
-        4,
-        410
-       ],
-       [
-        5,
-        495
-       ],
-       [
-        6.25,
-        605
-       ],
-       [
-        12.5,
-        980
-       ]
-      ],
       "CM4-TO": [
        [
         0.5,
@@ -11635,6 +11609,48 @@
        [
         12.5,
         725
+       ]
+      ],
+      "CM4-MK": [
+       [
+        0.5,
+        75
+       ],
+       [
+        1,
+        120
+       ],
+       [
+        1.5,
+        170
+       ],
+       [
+        2,
+        225
+       ],
+       [
+        2.5,
+        265
+       ],
+       [
+        3,
+        315
+       ],
+       [
+        4,
+        410
+       ],
+       [
+        5,
+        495
+       ],
+       [
+        6.25,
+        605
+       ],
+       [
+        12.5,
+        980
        ]
       ],
       "CK4-SEN": [
@@ -13368,8 +13384,8 @@
       "CS6-PER": -0.05,
       "CJ4-BJ": 0,
       "CE4-CHE": 0,
-      "CM4-MK": 0,
       "CM4-TO": "partner",
+      "CM4-MK": 0,
       "CK4-SEN": -0.2,
       "CR3-DAM": 0,
       "CN3-WM": 0,
@@ -13966,28 +13982,6 @@
         450
        ]
       ],
-      "CM4-MK": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
       "CM4-TO": [
        [
         10,
@@ -14008,6 +14002,28 @@
        [
         50,
         395
+       ]
+      ],
+      "CM4-MK": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
        ]
       ],
       "CK4-SEN": [
@@ -14921,8 +14937,8 @@
       "CS6-PER": 0,
       "CJ4-BJ": 0,
       "CE4-CHE": 0,
-      "CM4-MK": 0,
       "CM4-TO": "partner",
+      "CM4-MK": 0,
       "CK4-SEN": 0,
       "CR3-DAM": 0,
       "CN3-WM": 0,
@@ -15300,28 +15316,6 @@
         1500
        ]
       ],
-      "CM4-MK": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
-      ],
       "CM4-TO": [
        [
         1,
@@ -15342,6 +15336,28 @@
        [
         30,
         1260
+       ]
+      ],
+      "CM4-MK": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
        ]
       ],
       "CK4-SEN": [
@@ -16255,8 +16271,8 @@
       "CS6-PER": 0,
       "CJ4-BJ": 0,
       "CE4-CHE": 0,
-      "CM4-MK": 0,
       "CM4-TO": "partner",
+      "CM4-MK": 0,
       "CK4-SEN": 0,
       "CR3-DAM": 0,
       "CN3-WM": 0,
@@ -16559,20 +16575,6 @@
         60
        ]
       ],
-      "CM4-MK": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        60
-       ]
-      ],
       "CM4-TO": [
        [
         1,
@@ -16585,6 +16587,20 @@
        [
         10,
         35
+       ]
+      ],
+      "CM4-MK": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        60
        ]
       ],
       "CK4-SEN": [
@@ -17170,8 +17186,8 @@
       "CS6-PER": 0,
       "CJ4-BJ": 0,
       "CE4-CHE": 0,
-      "CM4-MK": 0,
       "CM4-TO": "partner",
+      "CM4-MK": 0,
       "CK4-SEN": 0,
       "CR3-DAM": 0,
       "CN3-WM": 0,
@@ -17377,10 +17393,10 @@
      ]
     }
    },
-   "v": "v1241"
+   "v": "v1242"
   },
   "OPEN": {
-   "at": "2026-10-24T16:21:06.826Z",
+   "at": "2026-10-24T16:24:19.805Z",
    "count": 8,
    "byKey": {
     "CK4-SEN|2026-10-25|280": {
@@ -17518,12 +17534,12 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 25,
-     "free": 25,
+     "onHand": 12.4,
+     "free": 12.4,
      "owedOut": 0,
-     "coverDays": 6.8,
-     "rate": 4.02,
-     "owedToYou": 315,
+     "coverDays": 2.8,
+     "rate": 4.6,
+     "owedToYou": 321,
      "promised": 3,
      "short": 0
     },
@@ -17568,7 +17584,7 @@
     "rice": "2026-10-20",
     "spare": null
    },
-   "v": "v1241"
+   "v": "v1242"
   },
   "TERMS": {
    "ceiling": 250,
@@ -17576,7 +17592,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1241"
+   "v": "v1242"
   },
   "REWARD": {
    "stated": {
@@ -17594,17 +17610,17 @@
      }
     }
    },
-   "v": "v1241"
+   "v": "v1242"
   },
   "STOCK": {
    "today": "2026-10-25",
    "books": {
     "salt": {
-     "shelf": 25,
-     "free": 25,
+     "shelf": 12.4,
+     "free": 12.4,
      "commit": 3,
      "light": "green",
-     "coverDays": 6.8,
+     "coverDays": 2.8,
      "transit": 0
     },
     "oil": {
@@ -17632,7 +17648,7 @@
      "transit": 0
     }
    },
-   "v": "v1241"
+   "v": "v1242"
   }
  }
 }
