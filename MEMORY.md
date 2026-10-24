@@ -20,7 +20,8 @@
 - `0013_maker_requests.sql`, `0014_input_admission.sql`, `0015_vault_pair.sql` and `0016_vault_write_gate.sql` applied individually on 03 Oct 2026, with schema readback after each. Both `0012` indexes remain. Pair bootstrap/readback is revision 1; write gate reopened with zero active writers and pending outbox.
 
 ## Known red in the suite
-- S1 fold replay (`test/fold-replay.mjs`), re-run 25 Oct 2026 on master 1d3b7c27: 18 of 20 staged batches replay byte-equal; 7de3edad and 580680a7 do not. Both carry a Their % row (`tierset`).
+- S1 fold replay (`test/fold-replay.mjs`), re-run 25 Oct 2026 on master 1d3b7c27: run alone, 18 of 20 staged batches replay byte-equal and 7de3edad and 580680a7 do not;
+  in the full suite, with the same tree, it is 15 of 20 (also 9716cfe9, 61c21a89, 1867d416), six failed checks on master and on a branch with 57 more passes, so the section depends on what ran before it. Both of the first two carry a Their % row (`tierset`).
   The old fold (43fc5b0a) words it "TIER ... drift -0.2", the working fold "THEIR % ... 20% off": that wording is the whole difference in 580680a7. 7de3edad also differs in a Correction's
   `listRM` (315 old, 280 now; estimate: the 22 Oct curve). Not a booking-law regression: the test's moving 20-batch window has reached rows the fixed old fold cannot match. It stays
   red until the test normalises the wording and leaves out repriced batches.
