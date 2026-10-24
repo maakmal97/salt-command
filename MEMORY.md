@@ -75,7 +75,7 @@
 - Live as v1206 (`1e765218`, 22 Oct 2026; Cloud commit `39711829680`: chain green, suite parts 2 and 3 green, part 1 red only on the v557 rice
   check that was red on master before): salt `ends` {low:[2,1.2], high:[3,1.45]}; oil, candy and rice `pct` with `shares` {low:[0.8,0.9],
   high:[1.2,1.09]}; Salt Admin's live preview `/all/maker/drift-preview/<code>/<book>/<whole %>`. CS6-BS holds -20% and pays more on the curve.
-  Not yet opened by him on Salt Admin.
+  Accepted 25 Oct 2026 (his word).
 
 ## Desk bar
 - Live as v1199 (`61541316`, 21 Oct 2026; Cloud commit `39555095710`: chain and three suite parts green, live /rev `9cea1ad4e24589a6`), with
@@ -92,14 +92,14 @@
 
 - v1230 (`e66d50fd`, 23 Oct 2026; Cloud commit `39934524935`: chain and three suite parts green), his word: the Desk's bar no longer says where
   you are (`#deskWhere`, `#dwView`, `#dwPage` and `deskWhereDraw` gone; the rail says it), and salt-ds 1.15.0 (#27) drops `__where`, `__view` and
-  `__page` from the recipe, synced to the Desk and the Counter; QR Command did not move. Not yet seen by him. In a claude.ai cloud container the
+  `__page` from the recipe, synced to the Desk and the Counter; QR Command did not move. Accepted 25 Oct 2026 (his word). In a claude.ai cloud container the
   section "Desk live socket: an open Desk is told the kind of" fails two checks on master too, while CI passes it: the container, not the code.
 
 ## Restock light made plain
 - Live as v1210 (`dafc0ee0`, 22 Oct 2026; Cloud commit `39717174220`: chain, suite parts 2 and 3 green; part 1 red only on v557's rice concentration check,
   which fails on origin's master before it too), from `docs/plan-restock-light.html`: Counter Home's Availability (Available, Limited, Out of stock, More by),
   the word under the mark on Prices, Salt Admin's Stock by book on Needs you (STOCK carries `light`, re-read each poll tick). The word stock is allowed
-  on the Counter (his word). Counter Home accepted 22 Oct 2026; Salt Admin's Stock by book not yet confirmed.
+  on the Counter (his word). Counter Home accepted 22 Oct 2026; Salt Admin's Stock by book accepted 25 Oct 2026 (his word).
 
 ## Multi-tick Approve
 - Live as v1213 (`4009e464`, 22 Oct 2026; Cloud commit `39760310831`: chain and three suite parts green), from `docs/plan-approve-many.html`
@@ -132,7 +132,7 @@
   `BACKUP` on R2 bucket `salt-d1-backup`, `BACKUP_PUBLIC_JWK` and the schedule `30 18 * * *` (02:30 in Kuala Lumpur). The key is `10_Data\salt_backupkey.json`, minted 25 Oct 2026; a copy off that disk is his to keep.
 - The first backup was filed by hand through wrangler on 25 Oct 2026 at 06:15 MYT: `backup/2026-10-25.json`, 1,761,163 bytes read back equal (604 drafts, 151 pre-approvals, 118 maker requests, 9 input admissions, the vault pair),
   with `backup:last` ok. The cron's own first night is 02:30 on 26 Oct. Three suite sections (`backup`, `backup-cron`, `backup-tools`; 29, 13 and 16 mutations) hold the restore drill.
-  Open: opening the real object with his key (`node tools/backup-open.mjs <file>`, which prints counts only), and a copy of the key off the laptop's disk.
+  The real object was opened with his key on 25 Oct 2026 (`node tools/backup-open.mjs`, counts only) and the counts matched exactly (his word). Open: a copy of the key off the laptop's disk.
 
 ## Disabled automation
 - `Salt fold (manual backup)` = `trig_01UrnjQMWA3f6GXN5R6Dzi4S`, disabled.
