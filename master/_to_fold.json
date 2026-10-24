@@ -1,0 +1,66 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-24T16:33:42.262Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s293",
+    "qty": 12.5,
+    "total": 750,
+    "cash": 750,
+    "date": "2026-10-24",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 12.6,
+      "to": 12.5
+     }
+    ],
+    "customer": "CM4-TO"
+   },
+   "reasoning": "Correction against CM4-TO's order of 12.5 unit for RM 750 dated 2026-10-24 (s293). Sets deliveredQty from 12.6 to 12.5. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [],
+   "amends": "s293",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-24T16:33:42.262Z",
+    "type": "AMEND",
+    "party": "CM4-TO",
+    "qty": 0,
+    "total": 0,
+    "status": "corrected",
+    "raw": "Correction against s293 for CM4-TO on 2026-10-25",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CM4-TO",
+     "product": "salt",
+     "rid": "s293",
+     "orderKey": "CM4-TO|2026-10-24|750",
+     "date": "2026-10-25",
+     "kind": "Correction",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "sameDay": false,
+     "note": null,
+     "fields": {
+      "deliveredQty": 12.5
+     },
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    },
+    "makerRequest": "6fe9b2d0928524245eff76bb7c59250dec6ae433af0ef4ddaa87660221acde3c"
+   },
+   "decidedAt": "2026-10-24T16:33:54.373Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
