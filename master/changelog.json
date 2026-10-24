@@ -1,5 +1,24 @@
 [
  {
+  "v": "v1238",
+  "d": "24 Oct 2026",
+  "t": "SALT COUNT OF 25 UNIT ON 24 OCT",
+  "n": [
+   "<b>ONE COUNT FOLDED:</b> salt, 25 unit on hand on 24 Oct 2026, against 25 on the roll after v1237's buy. The gap is nil.",
+   "<b>INVENTORY:</b> the salt shelf stands at 25 and the count date moves to 24 Oct. The floors do not move."
+  ]
+ },
+ {
+  "v": "v1237",
+  "d": "24 Oct 2026",
+  "t": "P042 BACK TO 12.5 UNIT FOR RM700 AND A 25 UNIT BUY FROM SA5-BTR",
+  "n": [
+   "<b>TWO ROWS FOLDED:</b> p042 corrected back to 12.5 unit for RM700 with RM25 freight, and a new buy of 25 unit of salt from SA5-BTR for RM1400 with RM50 freight, paid and received on 24 Oct, both on his word.",
+   "<b>COST:</b> the latest lot was costed at RM116 a unit since v1235 because p042 held RM1400 over the 12.5 unit received. With p042 at RM700 and the new buy landed at RM58 a unit, the Floor for 1 unit returns to RM60.",
+   "<b>INVENTORY:</b> the 25 unit buy lands on 24 Oct, so the salt roll rises from 0 to 25. The count of 25 unit follows as its own version."
+  ]
+ },
+ {
   "v": "v1236",
   "d": "24 Oct 2026",
   "t": "CANCELLATION OF PENDING BUY P043 FROM SA5-BTR",
