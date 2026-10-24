@@ -52111,5 +52111,10 @@ await (async () => {
   await (await import("./backup.mjs")).run({ ok });
 })();
 
+section("S0b: the Desk's schedule runs the backup alone on its own cron, and the morning digest hears of one that failed or stopped");
+await (async () => {
+  await (await import("./backup-cron.mjs")).run({ ok });
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

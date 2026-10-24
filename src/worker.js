@@ -18,6 +18,7 @@
  */
 
 import { runDrafter, dryRunDrafter, readBook, bookOnce, withDraftLots, withRefunds, draftRow, tripCheck } from "./drafter.js";
+import { runBackup, backupAlarm, BACKUP_CRON } from "./backup.js";
 import { approveFigures } from "./approve-figures.js";
 import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, TIEOUT_KEY, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades, wakeAdmin, ADMIN_ON } from "./orders.js";
@@ -2547,6 +2548,12 @@ export default {
           try { await recoverVaultInputs(env); }
           catch (error) { console.error("vault recovery batch unavailable; incumbent cron continues"); }
         }
+        /* S0b (25 Oct 2026): THE NIGHTLY BACKUP of D1's decisions has a schedule of its own and runs nothing else. With no bucket bound it only says so. */
+        if (event && event.cron === BACKUP_CRON) {
+          const b = await runBackup(env, new Date(event.scheduledTime || Date.now()));
+          console.log("backup: " + JSON.stringify(b.ok ? { ok: true, key: b.key, bytes: b.bytes, pruned: b.pruned } : b));
+          return;
+        }
         if (daily) {
           let worth = false;
           try {
@@ -2561,6 +2568,9 @@ export default {
                neither can be keyed on. The row itself says whether it is paid. */
             const rf = await env.SALT_LEDGER.prepare("SELECT doc FROM entry WHERE collection='customerRefunds'").all();
             if ((rf.results || []).some((r) => { try { return !JSON.parse(r.doc).paidOn; } catch (e) { return false; } })) worth = true;
+            /* S0b: a backup that failed or stopped is worth a morning banner; silent until a bucket is bound */
+            const bk = await backupAlarm(env, new Date(event.scheduledTime || Date.now()));
+            if (bk) { worth = true; console.log("backup alarm: " + bk); }
           } catch (e) { console.log("nudge check failed: " + String(e)); }
           console.log("morning nudge: " + (worth ? "sending" : "nothing worth saying"));
           if (worth) await sendPush(env, { tag: "salt", urgency: "normal" });
