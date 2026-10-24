@@ -1,6 +1,6 @@
 {
- "v": "v1243",
- "stamped": "25 Oct 2026, 00:27 KL",
+ "v": "v1244",
+ "stamped": "25 Oct 2026, 00:32 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 10.9,
+  "STATED_STOCK": 9.4,
   "COUNT_ON": {
    "salt": "2026-10-24",
    "oil": "2026-10-20",
@@ -9023,11 +9023,30 @@
     "total": 180,
     "cash": 0,
     "date": "2026-10-25",
-    "deliveredQty": 0,
+    "deliveredQty": 1.5,
     "listRM": 170,
     "listQty": 1.5,
     "note": "<b>PENDING SALE OF 1.5 UNITS OF SALT TO CM4-MK, GOODS RM180, 25 OCT 2026.</b> Agreed on 25 Oct, approved by Counter Admin. Nothing is paid and nothing handed over, so no stock is drawn and no revenue is booked. For 1.5 units the ladder gives a floor total of RM90 and an ask total of RM170, so RM180 is above the ask. That is RM120 a unit against an ask of RM113.33. The party's median rate is RM101, range RM80 to RM113.33; outstanding before was RM0, no units on credit against a cap of 1. The cost is RM58 a unit, costed off the latest purchase, against the inventory's own RM56. The drafter flagged the rate as 18.8% above the usual RM101; the figures confirm it and do not explain it. RM180 and all 1.5 units remain outstanding.",
-    "rid": "s295"
+    "rid": "s295",
+    "amend": [
+     {
+      "date": "2026-10-25",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-25",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 1.5,
+      "note": "<b>FULFILMENT OF 1.5 UNITS OF SALT TO CM4-MK AGAINST S295, 25 OCT 2026, RM0 PAID.</b> The order of RM180 was agreed on 25 Oct and the fulfilment was approved by Counter Admin on 24 Oct. All 1.5 units move today and no cash comes in. The goods total of RM180 is above the ask total of RM170 for 1.5 units, which is RM120 a unit against an ask of RM113.33. The party's median rate is RM103.33, range RM80 to RM120. Outstanding before was RM180 and no units on credit, against a cap of 1. With 1.5 units now handed over unpaid, the cap is exceeded. The draft cost is RM58 a unit, the latest purchase, not the inventory's own RM56, so the cost is restated. The drafter flagged nothing. RM180 remains outstanding and no units.",
+      "cost": 84
+     }
+    ],
+    "deliveredOn": "2026-10-25",
+    "cost": 84
    }
   ],
   "contacts": [
@@ -9801,7 +9820,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-24T16:26:02.391Z",
+  "QUEUE_COMMITTED": "2026-10-24T16:31:18.551Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -9829,7 +9848,7 @@
     {
      "id": "cust:cadence:salt",
      "sev": "watch",
-     "title": "12 customers are past their own habit on salt"
+     "title": "11 customers are past their own habit on salt"
     },
     {
      "id": "cust:cadence:oil",
@@ -10206,13 +10225,13 @@
     "CM4-MK": {
      "salt": {
       "name": "consistent mid",
-      "orders": 13,
+      "orders": 14,
       "tenureDays": 94,
-      "sinceLastDays": 16,
-      "perMonth": 4.21,
-      "unitsPerMonth": 10.91,
-      "smallShare": 0.08,
-      "bigShare": 0.38,
+      "sinceLastDays": 0,
+      "perMonth": 4.53,
+      "unitsPerMonth": 11.4,
+      "smallShare": 0.07,
+      "bigShare": 0.36,
       "frequent": true,
       "small": false,
       "bigger": false,
@@ -11151,9 +11170,9 @@
        "attrib": 1,
        "shrinkRate": 0.0918915050454448,
        "avgDel": {
-        "n": 229,
-        "kg": 583.91,
-        "mean": 2.5498
+        "n": 230,
+        "kg": 585.41,
+        "mean": 2.5453
        }
       },
       "policy": {
@@ -17420,10 +17439,10 @@
      ]
     }
    },
-   "v": "v1243"
+   "v": "v1244"
   },
   "OPEN": {
-   "at": "2026-10-24T16:27:09.939Z",
+   "at": "2026-10-24T16:32:26.327Z",
    "count": 9,
    "byKey": {
     "CK4-SEN|2026-10-25|280": {
@@ -17447,12 +17466,14 @@
      "q": 1.5,
      "t": 180,
      "cash": 0,
-     "mv": 0,
-     "st": "part",
+     "mv": 1.5,
+     "st": "dueMoney",
      "oweRM": 180,
-     "oweUnits": 1.5,
      "rid": "s295",
-     "key": "CM4-MK|2026-10-25|180"
+     "deliveredOn": "2026-10-25",
+     "key": "CM4-MK|2026-10-25|180",
+     "age": 0,
+     "exp": 180
     },
     "CR3-DAM|2026-10-20|75": {
      "d": "2026-10-20",
@@ -17575,13 +17596,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 10.9,
-     "free": 10.9,
+     "onHand": 9.4,
+     "free": 9.4,
      "owedOut": 0,
-     "coverDays": 2.4,
+     "coverDays": 2,
      "rate": 4.74,
-     "owedToYou": 321,
-     "promised": 4.5,
+     "owedToYou": 501,
+     "promised": 3,
      "short": 0
     },
     "oil": {
@@ -17625,7 +17646,7 @@
     "rice": "2026-10-20",
     "spare": null
    },
-   "v": "v1243"
+   "v": "v1244"
   },
   "TERMS": {
    "ceiling": 250,
@@ -17633,7 +17654,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1243"
+   "v": "v1244"
   },
   "REWARD": {
    "stated": {
@@ -17651,17 +17672,17 @@
      }
     }
    },
-   "v": "v1243"
+   "v": "v1244"
   },
   "STOCK": {
    "today": "2026-10-25",
    "books": {
     "salt": {
-     "shelf": 10.9,
-     "free": 10.9,
-     "commit": 4.5,
+     "shelf": 9.4,
+     "free": 9.4,
+     "commit": 3,
      "light": "green",
-     "coverDays": 2.4,
+     "coverDays": 2,
      "transit": 0
     },
     "oil": {
@@ -17689,7 +17710,7 @@
      "transit": 0
     }
    },
-   "v": "v1243"
+   "v": "v1244"
   }
  }
 }
