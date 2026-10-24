@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1235",
+  "d": "24 Oct 2026",
+  "t": "PENDING BUY FROM SA5-BTR AND A QUANTITY CORRECTION ON P042",
+  "n": [
+   "<b>TWO ROWS FOLDED:</b> a pending buy of 12.5 unit of salt from SA5-BTR for RM750, and a correction to p042 raising it from 12.5 unit for RM700 to 25 unit for RM1400 with freight of RM50. The buy is dated 24 Oct and is unpaid with nothing moved. The pending buy is RM60 a unit against a median of RM56 and his quote of RM56.",
+   "<b>INVENTORY:</b> the pending buy draws no stock and the correction moves no cash or stock, as the fold treats it as a change to what the row says about itself. No lot has landed, so the cost basis stays at RM56 a unit."
+  ]
+ },
+ {
   "v": "v1234",
   "d": "24 Oct 2026",
   "t": "TWO FULFILMENTS ON S290 FOR CA3-KP: 1 UNIT AND RM148",

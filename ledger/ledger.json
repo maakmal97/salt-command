@@ -1,6 +1,6 @@
 {
- "v": "v1234",
- "stamped": "24 Oct 2026, 01:53 KL",
+ "v": "v1235",
+ "stamped": "24 Oct 2026, 22:44 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -1008,19 +1008,51 @@
     "rid": "p041"
    },
    {
-    "qty": 12.5,
-    "total": 700,
+    "qty": 25,
+    "total": 1400,
     "cash": 700,
     "handover": "collected",
     "supplier": "SA5-BTR",
     "freight": 50,
-    "status": "paid",
+    "status": "partial",
     "date": "2026-10-20",
     "receivedOn": "2026-10-20",
     "receivedQty": 12.5,
     "paidOn": "2026-10-20",
-    "note": "<b>NEW BUY ON 20 OCT: 12.5 UNIT OF SALT FROM SA5-BTR FOR RM700.</b> Collected, RM700 cash out and paid in full on the day, with RM50 freight beside it, and all 12.5 unit received on 20 Oct. The rate is RM56 a unit, which matches his quote of 23 Sep: RM700 for each lot of 12.5 unit. The desk's floor and ask apply to sales, so none is compared here. SA5-BTR's history: 26 orders, a median rate of RM56, a range of RM44 to RM64, nothing outstanding and no credit. The row carries the purchase cost of RM700, which is the inventory's own. The drafter flagged nothing, so there is nothing for the figures to answer. Nothing is outstanding.",
-    "rid": "p042"
+    "note": "<b>CORRECTED ON 24 OCT 2026: QTY AND TOTAL.</b> <b>CORRECTION ON P042, DECIDED 24 OCT 2026.</b> The buy dated 20 Oct from SA5-BTR moves from 12.5 unit for RM700 to 25 unit for RM1400, with freight set to RM50. The rate stays at RM56 a unit, which matches his quote of 23 Sep and the party median of RM56. The original was paid RM700 in cash and received in full. The correction moves no cash and no stock, so the extra 12.5 unit and the extra RM700 are not paid or received by this row. The drafter raised no flags. Outstanding before was RM0, and nothing has defaulted. The balance of the lot is left to be settled separately. <b>NEW BUY ON 20 OCT: 12.5 UNIT OF SALT FROM SA5-BTR FOR RM700.</b> Collected, RM700 cash out and paid in full on the day, with RM50 freight beside it, and all 12.5 unit received on 20 Oct. The rate is RM56 a unit, which matches his quote of 23 Sep: RM700 for each lot of 12.5 unit. The desk's floor and ask apply to sales, so none is compared here. SA5-BTR's history: 26 orders, a median rate of RM56, a range of RM44 to RM64, nothing outstanding and no credit. The row carries the purchase cost of RM700, which is the inventory's own. The drafter flagged nothing, so there is nothing for the figures to answer. Nothing is outstanding.",
+    "rid": "p042",
+    "mod": "corrected on 2026-10-24: qty 12.5 to 25; total 700 to 1400",
+    "amend": [
+     {
+      "date": "2026-10-20",
+      "kind": "Fulfilment",
+      "cash": 700,
+      "kg": 12.5,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-24",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON P042, DECIDED 24 OCT 2026.</b> The buy dated 20 Oct from SA5-BTR moves from 12.5 unit for RM700 to 25 unit for RM1400, with freight set to RM50. The rate stays at RM56 a unit, which matches his quote of 23 Sep and the party median of RM56. The original was paid RM700 in cash and received in full. The correction moves no cash and no stock, so the extra 12.5 unit and the extra RM700 are not paid or received by this row. The drafter raised no flags. Outstanding before was RM0, and nothing has defaulted. The balance of the lot is left to be settled separately.",
+      "was": {
+       "qty": 12.5,
+       "total": 700
+      }
+     }
+    ]
+   },
+   {
+    "qty": 12.5,
+    "total": 750,
+    "cash": 0,
+    "supplier": "SA5-BTR",
+    "status": "unpaid",
+    "pending": true,
+    "date": "2026-10-24",
+    "note": "<b>NEW BUY, PENDING: 12.5 UNIT OF SALT FROM SA5-BTR FOR RM750, 24 OCT 2026.</b> Nothing is paid and nothing has moved, so the row is pending and draws no stock. The rate is RM60 a unit, above his quote of 23 Sep (RM56 a unit, multiples of 12.5 unit at RM700 each) and above the party median of RM56, within the range of RM44 to RM64. Outstanding before was RM0 and nothing has defaulted. The row carries no cost of its own until something lands. The drafter raised no flags. The RM750 for the lot is outstanding, and so is the receipt of the 12.5 unit.",
+    "rid": "p043"
    }
   ],
   "sales": [
@@ -9627,7 +9659,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-23T17:52:11.576Z",
+  "QUEUE_COMMITTED": "2026-10-24T14:42:03.011Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -9650,7 +9682,7 @@
     {
      "id": "px:headroom:salt",
      "sev": "act",
-     "title": "The buying rate can rise RM -1 a unit, -1.8%, before a card breaches"
+     "title": "The buying rate can rise RM -1 a unit, -0.9%, before a card breaches"
     },
     {
      "id": "upkeep:shrink:salt",
@@ -9685,7 +9717,7 @@
     {
      "id": "int:underfloor",
      "sev": "watch",
-     "title": "1 recent sale sits under the ladder's floor at today's cost"
+     "title": "76 recent sales sit under the ladder's floor at today's cost"
     },
     {
      "id": "rhythm:weekend:salt",
@@ -9700,7 +9732,7 @@
     {
      "id": "promo:revive:salt",
      "sev": "note",
-     "title": "Three messages are worth about RM 710 on salt"
+     "title": "Three messages are worth about RM 1,380 on salt"
     },
     {
      "id": "dup:CS6-BS-R:2026-09-16:2026-09-19:420",
@@ -10839,37 +10871,37 @@
    "byProduct": {
     "salt": {
      "stockCost": 56,
-     "replCost": 60,
+     "replCost": 116,
      "floors": {
       "1": {
-       "floor": 60
-      },
-      "2": {
        "floor": 120
       },
+      "2": {
+       "floor": 235
+      },
       "3": {
-       "floor": 180
+       "floor": 350
       },
       "4": {
-       "floor": 240
+       "floor": 465
       },
       "5": {
-       "floor": 300
+       "floor": 580
       },
       "0.5": {
-       "floor": 30
+       "floor": 60
       },
       "1.5": {
-       "floor": 90
+       "floor": 175
       },
       "2.5": {
-       "floor": 150
+       "floor": 290
       },
       "6.25": {
-       "floor": 375
+       "floor": 725
       },
       "12.5": {
-       "floor": 750
+       "floor": 1450
       }
      },
      "inputs": {
@@ -10899,8 +10931,8 @@
          "why": "RE-LOCKED v244 on the same 28 Jul lot, at the 06 Aug count. The lot has not changed; what changed is the leak behind it and the attribution in front of it. The 33.14 count took the observed rate from 16.19% to 18.87%, and SHRINK_ATTRIB went to 1, so the whole leak is now carried in the price and nothing is absorbed. Effective cost RM53.19 to RM60.01. These numbers are the unlocked path’s own output, captured rather than hand-computed: the lock was deleted, pxCost() run fresh at attrib 1, and the result written back here. Absorbed is 0 by definition at full attribution."
         },
         "cur": {
-         "qty": 12.5,
-         "total": 700,
+         "qty": 25,
+         "total": 1400,
          "rate": 56,
          "date": "2026-10-20",
          "sup": "SA5-BTR"
@@ -10933,16 +10965,16 @@
         "shrink": null
        },
        "lot": {
-        "qty": 12.5,
-        "total": 700,
+        "qty": 25,
+        "total": 1400,
         "rate": 56,
         "date": "2026-10-20",
         "sup": "SA5-BTR"
        },
-       "meanLot": 23.060344827586206,
+       "meanLot": 23.49137931034483,
        "quoteRate": 56,
        "repl": 56,
-       "freightRate": 2.5,
+       "freightRate": 2,
        "leak": {
         "ratio": 0.305,
         "leak": 3.05,
@@ -10958,10 +10990,10 @@
        "latest": {
         "rid": "p042",
         "date": "2026-10-20",
-        "quote": 700,
+        "quote": 1400,
         "freight": 50,
         "units": 12.5,
-        "rate": 60
+        "rate": 116
        },
        "costBasis": {
         "freightPerTrip": {
@@ -11147,8 +11179,8 @@
       {
        "q": 0.5,
        "prices": [
-        30,
-        75
+        60,
+        150
        ],
        "fixed": false,
        "drift": true
@@ -11156,8 +11188,8 @@
       {
        "q": 1,
        "prices": [
-        60,
-        120
+        120,
+        240
        ],
        "fixed": false,
        "drift": true
@@ -11165,8 +11197,8 @@
       {
        "q": 1.5,
        "prices": [
-        90,
-        170
+        175,
+        335
        ],
        "fixed": false,
        "drift": true
@@ -11174,8 +11206,8 @@
       {
        "q": 2,
        "prices": [
-        120,
-        225
+        235,
+        440
        ],
        "fixed": false,
        "drift": true
@@ -11183,8 +11215,8 @@
       {
        "q": 2.5,
        "prices": [
-        150,
-        275
+        290,
+        530
        ],
        "fixed": false,
        "drift": true
@@ -11192,8 +11224,8 @@
       {
        "q": 3,
        "prices": [
-        180,
-        320
+        350,
+        630
        ],
        "fixed": false,
        "drift": true
@@ -11201,8 +11233,8 @@
       {
        "q": 3.5,
        "prices": [
-        210,
-        370
+        410,
+        725
        ],
        "fixed": false,
        "drift": true
@@ -11210,8 +11242,8 @@
       {
        "q": 4,
        "prices": [
-        240,
-        420
+        465,
+        810
        ],
        "fixed": false,
        "drift": true
@@ -11219,8 +11251,8 @@
       {
        "q": 4.5,
        "prices": [
-        270,
-        465
+        525,
+        905
        ],
        "fixed": false,
        "drift": true
@@ -11228,8 +11260,8 @@
       {
        "q": 5,
        "prices": [
-        300,
-        510
+        580,
+        990
        ],
        "fixed": false,
        "drift": true
@@ -11237,8 +11269,8 @@
       {
        "q": 6.25,
        "prices": [
-        375,
-        625
+        725,
+        1210
        ],
        "fixed": false,
        "drift": true
@@ -11246,8 +11278,8 @@
       {
        "q": 12.5,
        "prices": [
-        750,
-        1015
+        1450,
+        1960
        ],
        "fixed": false,
        "drift": true
@@ -11257,1975 +11289,1975 @@
       "CS6-BS": [
        [
         0.5,
-        65
+        130
        ],
        [
         1,
-        105
+        210
        ],
        [
         1.5,
-        150
+        300
        ],
        [
         2,
-        200
+        390
        ],
        [
         2.5,
-        245
+        475
        ],
        [
         3,
-        290
-       ],
-       [
-        4,
-        375
-       ],
-       [
-        5,
-        460
-       ],
-       [
-        6.25,
         565
        ],
        [
+        4,
+        730
+       ],
+       [
+        5,
+        895
+       ],
+       [
+        6.25,
+        1095
+       ],
+       [
         12.5,
-        950
+        1835
        ]
       ],
       "CS6-PER": [
        [
         0.5,
-        70
+        145
        ],
        [
         1,
-        115
+        230
        ],
        [
         1.5,
-        165
+        325
        ],
        [
         2,
-        215
+        425
        ],
        [
         2.5,
-        265
+        515
        ],
        [
         3,
-        315
-       ],
-       [
-        4,
-        405
-       ],
-       [
-        5,
-        500
-       ],
-       [
-        6.25,
         610
        ],
        [
+        4,
+        790
+       ],
+       [
+        5,
+        965
+       ],
+       [
+        6.25,
+        1180
+       ],
+       [
         12.5,
-        995
+        1930
        ]
       ],
       "CJ4-BJ": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CE4-CHE": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CM4-MK": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CM4-TO": [
        [
         0.5,
-        30
-       ],
-       [
-        1,
         60
        ],
        [
-        1.5,
-        90
-       ],
-       [
-        2,
+        1,
         120
        ],
        [
+        1.5,
+        175
+       ],
+       [
+        2,
+        235
+       ],
+       [
         2.5,
-        150
+        290
        ],
        [
         3,
-        180
+        350
        ],
        [
         4,
-        240
+        465
        ],
        [
         5,
-        300
+        580
        ],
        [
         6.25,
-        375
+        725
        ],
        [
         12.5,
-        750
+        1450
        ]
       ],
       "CR3-DAM": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CK4-SEN": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CN3-WM": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CZ4-MK": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CC9-OKR": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CE4-AD": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CM6-HCM": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CA4-DAM": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CA7-AMP": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CI4-OKR": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CA5-BAN": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CA2-SEN": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CH4-KS": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CR4-PJ": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CM4-SK": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CZ5-TM": [
        [
         0.5,
-        65
+        130
        ],
        [
         1,
-        105
+        210
        ],
        [
         1.5,
-        150
+        300
        ],
        [
         2,
-        200
+        390
        ],
        [
         2.5,
-        245
+        475
        ],
        [
         3,
-        290
-       ],
-       [
-        4,
-        375
-       ],
-       [
-        5,
-        460
-       ],
-       [
-        6.25,
         565
        ],
        [
+        4,
+        730
+       ],
+       [
+        5,
+        895
+       ],
+       [
+        6.25,
+        1095
+       ],
+       [
         12.5,
-        950
+        1835
        ]
       ],
       "CJ2-KUC": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CM6-PJ": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CG5-SB": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CY2-NIL": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CH6-SET": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CE5-SA": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CF5-WM": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CA6-CYB": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CZ6-WM": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CA5-SEN": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CJ4-OKR": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CH4-MAL": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CA3-KP": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CN5-TAI": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CH5-KLC": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CD4-CS": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CA6-SET": [
        [
         0.5,
-        90
+        180
        ],
        [
         1,
-        140
+        280
        ],
        [
         1.5,
-        200
+        390
        ],
        [
         2,
-        260
+        510
        ],
        [
         2.5,
-        315
+        610
        ],
        [
         3,
-        370
+        725
        ],
        [
         4,
-        480
+        930
        ],
        [
         5,
-        585
+        1130
        ],
        [
         6.25,
-        710
+        1375
        ],
        [
         12.5,
-        1105
+        2140
        ]
       ],
       "CR3-PUD": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CD7-SEG": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CB7-BJ": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CS6-DAM": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CI5-PER": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CN4-MC": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CA4-P1": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ],
       "CJ5-CHE": [
        [
         0.5,
-        75
+        150
        ],
        [
         1,
-        120
+        240
        ],
        [
         1.5,
-        170
+        335
        ],
        [
         2,
-        225
+        440
        ],
        [
         2.5,
-        275
+        530
        ],
        [
         3,
-        320
+        630
        ],
        [
         4,
-        420
+        810
        ],
        [
         5,
-        510
+        990
        ],
        [
         6.25,
-        625
+        1210
        ],
        [
         12.5,
-        1015
+        1960
        ]
       ]
      },
@@ -13335,8 +13367,8 @@
        "why": "written off"
       },
       "CA7-AMP": {
-       "pct": 0,
-       "why": "paid 13% over, good record"
+       "pct": -0.1,
+       "why": "good record"
       },
       "CI4-OKR": {
        "pct": -0.15,
@@ -17246,12 +17278,27 @@
      ]
     }
    },
-   "v": "v1234"
+   "v": "v1235"
   },
   "OPEN": {
-   "at": "2026-10-23T17:53:05.954Z",
-   "count": 7,
+   "at": "2026-10-24T14:44:07.966Z",
+   "count": 9,
    "byKey": {
+    "SA5-BTR|2026-10-24|750": {
+     "d": "2026-10-24",
+     "p": "SA5-BTR",
+     "dir": "B",
+     "q": 12.5,
+     "t": 750,
+     "cash": 0,
+     "mv": 0,
+     "st": "pend",
+     "oweRM": 750,
+     "oweUnits": 12.5,
+     "rid": "p043",
+     "pending": true,
+     "key": "SA5-BTR|2026-10-24|750"
+    },
     "CR3-DAM|2026-10-20|75": {
      "d": "2026-10-20",
      "p": "CR3-DAM",
@@ -17268,6 +17315,24 @@
      "key": "CR3-DAM|2026-10-20|75",
      "age": 3,
      "exp": 18.75
+    },
+    "SA5-BTR|2026-10-20|1400": {
+     "d": "2026-10-20",
+     "p": "SA5-BTR",
+     "dir": "B",
+     "q": 25,
+     "t": 1400,
+     "cash": 700,
+     "mv": 12.5,
+     "st": "part",
+     "oweRM": 700,
+     "oweUnits": 12.5,
+     "rid": "p042",
+     "paidOn": "2026-10-20",
+     "receivedOn": "2026-10-20",
+     "handover": "collected",
+     "receivedQty": 12.5,
+     "key": "SA5-BTR|2026-10-20|1400"
     },
     "CN3-WM|2026-10-05|130": {
      "d": "2026-10-05",
@@ -17423,7 +17488,7 @@
     "rice": "2026-10-20",
     "spare": null
    },
-   "v": "v1234"
+   "v": "v1235"
   },
   "TERMS": {
    "ceiling": 250,
@@ -17431,7 +17496,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1234"
+   "v": "v1235"
   },
   "REWARD": {
    "stated": {
@@ -17449,7 +17514,7 @@
      }
     }
    },
-   "v": "v1234"
+   "v": "v1235"
   },
   "STOCK": {
    "today": "2026-10-24",
@@ -17460,7 +17525,7 @@
      "commit": 0,
      "light": "red",
      "coverDays": 0,
-     "transit": 0
+     "transit": 25
     },
     "oil": {
      "shelf": 30,
@@ -17487,7 +17552,7 @@
      "transit": 0
     }
    },
-   "v": "v1234"
+   "v": "v1235"
   }
  }
 }

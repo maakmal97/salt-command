@@ -1,6 +1,6 @@
 {
-  "v": "v1234",
-  "derivedFrom": "5510d049cce9c6c9",
+  "v": "v1235",
+  "derivedFrom": "54f463b871d29bd1",
   "tables": {
     "sales": {
       "rows": 290,
@@ -344,19 +344,19 @@
       }
     },
     "purchases": {
-      "rows": 42,
+      "rows": 43,
       "fields": {
         "amend": {
-          "present": 7,
-          "of": 42,
+          "present": 8,
+          "of": 43,
           "optional": true,
           "types": [
             "array"
           ]
         },
         "cash": {
-          "present": 37,
-          "of": 42,
+          "present": 38,
+          "of": 43,
           "optional": true,
           "types": [
             "number"
@@ -364,15 +364,15 @@
         },
         "cost": {
           "present": 1,
-          "of": 42,
+          "of": 43,
           "optional": true,
           "types": [
             "number"
           ]
         },
         "date": {
-          "present": 42,
-          "of": 42,
+          "present": 43,
+          "of": 43,
           "optional": false,
           "types": [
             "string"
@@ -380,7 +380,7 @@
         },
         "defaulted": {
           "present": 1,
-          "of": 42,
+          "of": 43,
           "optional": true,
           "types": [
             "boolean"
@@ -388,7 +388,7 @@
         },
         "freight": {
           "present": 17,
-          "of": 42,
+          "of": 43,
           "optional": true,
           "types": [
             "number"
@@ -396,23 +396,23 @@
         },
         "handover": {
           "present": 12,
-          "of": 42,
+          "of": 43,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "mod": {
-          "present": 3,
-          "of": 42,
+          "present": 4,
+          "of": 43,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "note": {
-          "present": 28,
-          "of": 42,
+          "present": 29,
+          "of": 43,
           "optional": true,
           "types": [
             "string"
@@ -420,23 +420,31 @@
         },
         "paidOn": {
           "present": 32,
-          "of": 42,
+          "of": 43,
           "optional": true,
           "types": [
             "string"
           ]
         },
+        "pending": {
+          "present": 1,
+          "of": 43,
+          "optional": true,
+          "types": [
+            "boolean"
+          ]
+        },
         "product": {
           "present": 12,
-          "of": 42,
+          "of": 43,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "qty": {
-          "present": 42,
-          "of": 42,
+          "present": 43,
+          "of": 43,
           "optional": false,
           "types": [
             "number"
@@ -444,7 +452,7 @@
         },
         "receivedOn": {
           "present": 38,
-          "of": 42,
+          "of": 43,
           "optional": true,
           "types": [
             "string"
@@ -452,39 +460,39 @@
         },
         "receivedQty": {
           "present": 32,
-          "of": 42,
+          "of": 43,
           "optional": true,
           "types": [
             "number"
           ]
         },
         "rid": {
-          "present": 42,
-          "of": 42,
+          "present": 43,
+          "of": 43,
           "optional": false,
           "types": [
             "string"
           ]
         },
         "status": {
-          "present": 42,
-          "of": 42,
+          "present": 43,
+          "of": 43,
           "optional": false,
           "types": [
             "string"
           ]
         },
         "supplier": {
-          "present": 42,
-          "of": 42,
+          "present": 43,
+          "of": 43,
           "optional": false,
           "types": [
             "string"
           ]
         },
         "total": {
-          "present": 42,
-          "of": 42,
+          "present": 43,
+          "of": 43,
           "optional": false,
           "types": [
             "number"
