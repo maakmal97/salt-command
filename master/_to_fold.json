@@ -1,0 +1,64 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-24T16:14:50.090Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CK4-SEN",
+    "qty": 3,
+    "total": 315,
+    "cash": 0,
+    "date": "2026-10-25",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261024145755-txkfdg, acknowledged, to collect, priced at RM 315 on this order, placed at RM 630. Nothing paid and nothing handed over yet.",
+    "listRM": 315,
+    "listQty": 3
+   },
+   "reasoning": "Sold 3 unit of salt to CK4-SEN for RM 315, RM 105/unit. Costed at RM 58/unit from COGS off the latest purchase p044 landed 2026-10-24: RM 1400 quote plus RM 50 freight over 25 unit, so RM 141 on the goods at 44.8%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-10-25 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CK4-SEN typically pays about RM 80.8/unit for salt across 5 orders; this one is RM 105, 30% above that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-24T16:14:50.090Z",
+    "type": "SELL",
+    "party": "CK4-SEN",
+    "qty": 3,
+    "total": 315,
+    "status": "Pending",
+    "raw": "SELL CK4-SEN 3 salt RM 315, nothing paid, nothing moved (order 20261024145755-txkfdg)",
+    "orderKey": "CK4-SEN|2026-10-25|315",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CK4-SEN",
+     "newId": null,
+     "date": "2026-10-25",
+     "qty": 3,
+     "total": 315,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261024145755-txkfdg, acknowledged, to collect, priced at RM 315 on this order, placed at RM 630. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261024145755-txkfdg",
+    "prepay": true
+   },
+   "decidedAt": "2026-10-24T16:14:51.641Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
