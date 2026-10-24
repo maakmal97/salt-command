@@ -52116,5 +52116,10 @@ await (async () => {
   await (await import("./backup-cron.mjs")).run({ ok });
 })();
 
+section("S0b: the laptop mints the key that opens a backup and turns one back into rows, and the restore drill brings every table back");
+await (async () => {
+  await (await import("./backup-tools.mjs")).run({ ok });
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

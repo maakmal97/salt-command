@@ -1,0 +1,98 @@
+[
+ {
+  "name": "the private half rides in the public field",
+  "file": "tools/backup-key.mjs",
+  "find": "return { v: 1, updated: e.updated, pub: e.pub, vault: e.vault };",
+  "replace": "return { v: 1, updated: e.updated, pub: { ...e.pub, d: \"leak\" }, vault: e.vault };"
+ },
+ {
+  "name": "a missing pair file is not refused",
+  "file": "tools/backup-key.mjs",
+  "find": "if (!existsSync(pairFile)) return [",
+  "replace": "if (false) return ["
+ },
+ {
+  "name": "the passphrase is not checked against the names vault",
+  "file": "tools/backup-key.mjs",
+  "find": "try { await vaultDecrypt(pass, names); } catch (e) {",
+  "replace": "try { } catch (e) {"
+ },
+ {
+  "name": "an existing key is replaced unasked",
+  "file": "tools/backup-key.mjs",
+  "find": "if (existsSync(join(dir, KEY_FILE)) && !force)",
+  "replace": "if (false)"
+ },
+ {
+  "name": "--force does not go past the refusal",
+  "file": "tools/backup-key.mjs",
+  "find": "if (existsSync(join(dir, KEY_FILE)) && !force)",
+  "replace": "if (existsSync(join(dir, KEY_FILE)))"
+ },
+ {
+  "name": "a foreign object is opened",
+  "file": "tools/backup-open.mjs",
+  "find": "envelope.app !== \"salt-backup\" || ",
+  "replace": ""
+ },
+ {
+  "name": "a version 2 object is opened",
+  "file": "tools/backup-open.mjs",
+  "find": " || envelope.v !== 1)",
+  "replace": ")"
+ },
+ {
+  "name": "a backup that lacks a table is accepted",
+  "file": "tools/backup-open.mjs",
+  "find": "if (!Array.isArray(plain.tables[t])) throw new Error(\"the backup holds no table \" + t);",
+  "replace": ""
+ },
+ {
+  "name": "a quote is not doubled",
+  "file": "tools/backup-open.mjs",
+  "find": "v.replace(/'/g, \"''\")",
+  "replace": "v.replace(/'/g, \"'\")"
+ },
+ {
+  "name": "a null is written as an empty string",
+  "file": "tools/backup-open.mjs",
+  "find": "return \"NULL\";",
+  "replace": "return \"''\";"
+ },
+ {
+  "name": "a non-finite number is written",
+  "file": "tools/backup-open.mjs",
+  "find": "if (!Number.isFinite(v)) throw new Error(\"a non-finite number cannot be restored\"); ",
+  "replace": ""
+ },
+ {
+  "name": "an object is written as text",
+  "file": "tools/backup-open.mjs",
+  "find": "throw new Error(\"a \" + typeof v + \" cannot be restored\");",
+  "replace": "return \"'\" + String(v) + \"'\";"
+ },
+ {
+  "name": "the replace deletes parents first",
+  "file": "tools/backup-open.mjs",
+  "find": "[...BACKUP_TABLES].reverse()",
+  "replace": "[...BACKUP_TABLES]"
+ },
+ {
+  "name": "the replace flag is ignored",
+  "file": "tools/backup-open.mjs",
+  "find": "if (replace) { for (",
+  "replace": "if (false) { for ("
+ },
+ {
+  "name": "the rows are inserted children first",
+  "file": "tools/backup-open.mjs",
+  "find": "  for (const t of BACKUP_TABLES)\n    for (const row of dump.tables[t]) {",
+  "replace": "  for (const t of [...BACKUP_TABLES].reverse())\n    for (const row of dump.tables[t]) {"
+ },
+ {
+  "name": "the dump's night is not carried",
+  "file": "tools/backup-open.mjs",
+  "find": "\"-- salt-backup restore script for the night of \" + dump.at + ",
+  "replace": "\"-- salt-backup restore script\" + "
+ }
+]

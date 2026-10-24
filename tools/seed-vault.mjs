@@ -492,7 +492,7 @@ async function slipPub() {
 /* Ask for the passphrase at the terminal without echoing it. Raw mode, so nothing lands in
    shell history, the screen or a transcript; the string lives only in this process. Returns
    null when there is no terminal to ask, and the env-var road below still stands for that. */
-function promptHidden(question) {
+export function promptHidden(question) {
   if (!process.stdin.isTTY || !process.stdout.isTTY) return Promise.resolve(null);
   return new Promise((res) => {
     process.stdout.write(question);
