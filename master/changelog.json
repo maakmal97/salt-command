@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1246",
+  "d": "25 Oct 2026",
+  "t": "CASH RM280 RECEIVED ON S292, GOODS STILL TO HAND OVER",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED.</b> Cash of RM280 from CK4-SEN is recorded against order s292 for 3 units of salt, dated 25 Oct and entered on 24 Oct, preapproved by Counter Admin. It settles the money side only: the amount owed falls from RM280 to RM0. The master applies the amendment itself, so the fold does not recompute the row.",
+   "<b>UNUSUAL, AND THE INVENTORY.</b> The item label reads cash 0, while the entry and the raw text record RM280, and the fold follows the entry. No units moved, so stock stays at 9.5, the 3 units stay promised and the stock cost of RM56 a unit is unchanged."
+  ]
+ },
+ {
   "v": "v1245",
   "d": "25 Oct 2026",
   "t": "CORRECTION TO S293 PUTS 0.1 UNIT BACK ON THE SHELF",

@@ -1,6 +1,6 @@
 {
- "v": "v1245",
- "stamped": "25 Oct 2026, 00:34 KL",
+ "v": "v1246",
+ "stamped": "25 Oct 2026, 00:44 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -8997,7 +8997,7 @@
     "customer": "CK4-SEN",
     "qty": 3,
     "total": 280,
-    "cash": 0,
+    "cash": 280,
     "date": "2026-10-25",
     "deliveredQty": 0,
     "note": "<b>AMENDED 24 OCT 2026: TOTAL NOW RM280.</b> <b>CORRECTION ON S292, 24 OCT 2026: GOODS TOTAL FROM RM290 TO RM280.</b> CK4-SEN's salt order of 3 units dated 25 Oct stays pending, with nothing paid and nothing handed over. Preapproved by Counter Admin. For 3 units the desk's ladder gives a floor total of RM175 and an ask total of RM315, so RM280 sits above the floor and below the ask. The party's median rate is RM80, range RM8 to RM96.67; outstanding before was RM290, with no units on credit and RM0 defaulted. The correction sets no cost; the inventory's own stock cost is RM56. The drafter flagged RM93.33 a unit as 15.5% above the usual RM80.8; the lower total narrows the gap but does not close it. RM280 and all 3 units remain outstanding. <b>AMENDED 24 OCT 2026: TOTAL NOW RM290.</b> <b>CORRECTION ON S292, 24 OCT 2026: GOODS TOTAL FROM RM315 TO RM290, DELIVERY TO RM0.</b> CK4-SEN's salt order of 3 units dated 25 Oct stays pending, with nothing paid and nothing handed over. Preapproved by Counter Admin. For 3 units the desk's ladder gives a floor total of RM175 and an ask total of RM315, so RM290 sits above the floor and below the ask. The party's median rate is RM80, with a range of RM8 to RM105; outstanding before was RM315, with no units on credit and RM0 defaulted. The correction sets no cost, and the inventory's own stock cost is RM56. The drafter flagged RM96.67 a unit as 19.6% above the party's usual RM80.8; the lower total narrows the gap but does not close it. RM290 and all 3 units are now outstanding. <b>NEW SALE: 3 UNITS OF SALT TO CK4-SEN, 25 OCT 2026, PENDING.</b> The goods come to RM315 at RM105 a unit, with no delivery charge, nothing paid and nothing handed over. Against the desk's ladder for 3 units, the goods total of RM315 meets the ask total of RM315, sits above the floor total of RM175 and below the ceiling total of RM525. The party's median rate is RM80, with a range of RM8 to RM94; outstanding before was RM0, no units were on credit and nothing has defaulted, against a credit cap of 1. The row carries RM58 a unit, set as COGS off the latest purchase, p044; the inventory's own stock cost is RM56. The drafter flagged the rate as 30% above the party's usual RM80.8; the ask price explains it but does not make it lower. All RM315 and all 3 units are outstanding.",
@@ -9034,8 +9034,16 @@
       "was": {
        "total": 290
       }
+     },
+     {
+      "date": "2026-10-25",
+      "kind": "Fulfilment",
+      "cash": 280,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON S292: RM280 CASH RECEIVED FROM CK4-SEN, 25 OCT 2026.</b> Preapproved by Counter Admin on 24 Oct. The entry records RM280 paid in cash at the counter and no units handed over, though the item label reads cash 0. The order is 3 units of salt for RM280, after the goods total was corrected from RM290. The dossier gives no ladder figures, so no comparison with floor or ask is made. The party's median rate is RM80, range RM8 to RM94; outstanding before was RM280, no units on credit, nothing defaulted. The row carries no cost. The drafter raised no flag. RM0 is now owed; all 3 units remain to hand over."
      }
-    ]
+    ],
+    "paidOn": "2026-10-25"
    },
    {
     "customer": "CM4-MK",
@@ -9840,7 +9848,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-24T16:33:42.262Z",
+  "QUEUE_COMMITTED": "2026-10-24T16:44:03.341Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -9868,7 +9876,7 @@
     {
      "id": "cust:cadence:salt",
      "sev": "watch",
-     "title": "11 customers are past their own habit on salt"
+     "title": "10 customers are past their own habit on salt"
     },
     {
      "id": "cust:cadence:oil",
@@ -9888,7 +9896,7 @@
     {
      "id": "int:nocost",
      "sev": "watch",
-     "title": "3 priced sales carry no cost of their own"
+     "title": "4 priced sales carry no cost of their own"
     },
     {
      "id": "int:underfloor",
@@ -9913,7 +9921,7 @@
     {
      "id": "promo:revive:salt",
      "sev": "note",
-     "title": "Three messages are worth about RM 635 on salt"
+     "title": "Three messages are worth about RM 589 on salt"
     },
     {
      "id": "dup:CS6-BS-R:2026-09-16:2026-09-19:420",
@@ -10262,17 +10270,17 @@
     "CK4-SEN": {
      "salt": {
       "name": "large and regular",
-      "orders": 5,
+      "orders": 6,
       "tenureDays": 55,
-      "sinceLastDays": 14,
-      "perMonth": 2.77,
-      "unitsPerMonth": 16.47,
+      "sinceLastDays": 0,
+      "perMonth": 3.32,
+      "unitsPerMonth": 18.13,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": true,
       "small": false,
       "bigger": true,
-      "loyal": false,
+      "loyal": true,
       "rare": false
      },
      "rice": {
@@ -17459,10 +17467,10 @@
      ]
     }
    },
-   "v": "v1245"
+   "v": "v1246"
   },
   "OPEN": {
-   "at": "2026-10-24T16:34:27.654Z",
+   "at": "2026-10-24T16:44:42.531Z",
    "count": 9,
    "byKey": {
     "CK4-SEN|2026-10-25|280": {
@@ -17471,12 +17479,12 @@
      "dir": "S",
      "q": 3,
      "t": 280,
-     "cash": 0,
+     "cash": 280,
      "mv": 0,
-     "st": "part",
-     "oweRM": 280,
+     "st": "oweStock",
      "oweUnits": 3,
      "rid": "s292",
+     "paidOn": "2026-10-25",
      "key": "CK4-SEN|2026-10-25|280"
     },
     "CM4-MK|2026-10-25|180": {
@@ -17617,9 +17625,9 @@
     "salt": {
      "name": "Salt",
      "onHand": 9.5,
-     "free": 9.5,
-     "owedOut": 0,
-     "coverDays": 2.1,
+     "free": 6.5,
+     "owedOut": 3,
+     "coverDays": 1.4,
      "rate": 4.74,
      "owedToYou": 495,
      "promised": 3,
@@ -17666,7 +17674,7 @@
     "rice": "2026-10-20",
     "spare": null
    },
-   "v": "v1245"
+   "v": "v1246"
   },
   "TERMS": {
    "ceiling": 250,
@@ -17674,7 +17682,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1245"
+   "v": "v1246"
   },
   "REWARD": {
    "stated": {
@@ -17692,17 +17700,17 @@
      }
     }
    },
-   "v": "v1245"
+   "v": "v1246"
   },
   "STOCK": {
    "today": "2026-10-25",
    "books": {
     "salt": {
      "shelf": 9.5,
-     "free": 9.5,
+     "free": 6.5,
      "commit": 3,
      "light": "green",
-     "coverDays": 2.1,
+     "coverDays": 1.4,
      "transit": 0
     },
     "oil": {
@@ -17730,7 +17738,7 @@
      "transit": 0
     }
    },
-   "v": "v1245"
+   "v": "v1246"
   }
  }
 }
