@@ -49,7 +49,7 @@ import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStandin
 import { SIGNIN_RE, SIGNIN_TTL, mintSignin, burnSignin, peekSignin, idOf, pointAt, unpoint, devPrefix, mintHandover, burnHandover, dropHandover, sessKey, deviceOf } from "./signin.js";
 import { endpointId, pushKeys, wakeCustomer, wakeEveryone, wakeOwner, OWNER_KINDS, OWNER_ORDER_RE } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
-import { ICON_PNG_B64, ICON_SIZE, ADMIN_ICON_PNG_B64 } from "./icons.js";
+import { ICON_PNG_B64, ICON_SIZE, ADMIN_ICON_PNG_B64, TAB_ICON_PNG_B64, ADMIN_TAB_ICON_PNG_B64 } from "./icons.js";
 import { FONTS } from "./fonts.js";
 import { refusal, clip } from "./words.js";
 import { PK_TTL, PK_ALGS, PK_ID_RE, PKT_RE, pkKey, pkdPrefix, pkdKey, b64u, unb64, mintChallenge, spendChallenge, clientOk, authOk, sigOk, wrapShape, handleOf } from "./passkey.js";
@@ -1993,6 +1993,14 @@ const worker = {
     if (p === "/icon.png" || p === "/icon-key.png") {
       if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
       const bytes = bytesOf(p, p === "/icon.png" ? ICON_PNG_B64 : ADMIN_ICON_PNG_B64);
+      return new Response(bytes, { headers: Object.assign({}, HEADERS, {
+        "content-type": "image/png", "cache-control": "public, max-age=86400" }) });
+    }
+    /* 24 Oct 2026, his word: the browser tab's icons, the same two rings on a CLEAR ground. The two above are opaque tiles for a
+       home screen, which draws a clear corner black; a tab has no such rule. Outside /all for the reason above. */
+    if (p === "/icon-tab.png" || p === "/icon-key-tab.png") {
+      if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
+      const bytes = bytesOf(p, p === "/icon-tab.png" ? TAB_ICON_PNG_B64 : ADMIN_TAB_ICON_PNG_B64);
       return new Response(bytes, { headers: Object.assign({}, HEADERS, {
         "content-type": "image/png", "cache-control": "public, max-age=86400" }) });
     }

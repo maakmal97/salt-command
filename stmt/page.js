@@ -1892,7 +1892,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
        his route alone; the customer's manifest is public and its link is left as it was. */
     + (test ? "" : owner ? '<link rel="manifest" href="/all/manifest.webmanifest" crossorigin="use-credentials">'
       : '<link rel="manifest" href="/manifest.webmanifest">')
-    + '<link rel="icon" type="image/png" sizes="512x512" href="' + (owner ? "/icon-key.png" : "/icon.png") + '">'   /* 24 Oct 2026: the browser tab had no icon link, so neither page drew one; the same tile as the home screen's */
+    + '<link rel="icon" type="image/png" sizes="128x128" href="' + (owner ? "/icon-key-tab.png" : "/icon-tab.png") + '">'   /* 24 Oct 2026: the browser tab had no icon link; and his word, on a clear ground, so the tab carries the ring and not the home screen's black tile */
     + '<link rel="apple-touch-icon" href="' + (owner ? "/icon-key.png" : "/icon.png") + '">'
     + '<meta name="apple-mobile-web-app-capable" content="yes">'
     + '<meta name="mobile-web-app-capable" content="yes">'

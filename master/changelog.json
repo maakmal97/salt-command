@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1248",
+  "d": "25 Oct 2026",
+  "t": "THE BROWSER TAB ICONS LOSE THEIR DARK GROUND ON THE DESK, THE COUNTER AND ADMIN",
+  "n": [
+   "<b>TAB ICONS ON A CLEAR GROUND, HIS WORD.</b> The desk's tab linked the 192 px home-screen icon, whose rounded dark tile and violet glow showed as a dark square on a tab; it now links <code>icon-tab.png</code>, the crystal alone on a transparent 128 px canvas. The shell cache moves to v9 so an installed desk reads it.",
+   "<b>COUNTER AND ADMIN.</b> Salt Counter and Salt Admin each gain a clear-ground tab icon (<code>/icon-tab.png</code> and <code>/icon-key-tab.png</code>), the tile's ring and dot and Salt Admin's keyhole, antialiased to soft alpha edges. The opaque tiles stay for the home screen, which draws any clear corner black."
+  ]
+ },
+ {
   "v": "v1247",
   "d": "25 Oct 2026",
   "t": "COLLECTION OF 3 UNITS OF SALT RECORDED FOR CK4-SEN",
