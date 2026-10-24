@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1239",
+  "d": "25 Oct 2026",
+  "t": "ONE PENDING SALE OF 3 UNITS OF SALT AT THE ASK",
+  "n": [
+   "<b>FOLDED: ONE NEW SALT SALE, PENDING.</b> CK4-SEN ordered 3 units for RM315 on the statements site, dated 25 Oct 2026, with nothing paid and nothing handed over. The rate of RM105 a unit is the ask, and higher than the party's median of RM80. The drafter's flag on that rate is noted on the row.",
+   "<b>INVENTORY: NO MOVEMENT.</b> The row is pending, so it draws no stock and books no revenue until something moves. Stock stays at 25 units and the cost basis is unchanged."
+  ]
+ },
+ {
   "v": "v1238",
   "d": "24 Oct 2026",
   "t": "SALT COUNT OF 25 UNIT ON 24 OCT",
