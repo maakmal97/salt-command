@@ -67,7 +67,7 @@ const vaultWriteResponse = async (env, action) => {
  * not a fetch failure), so Access being off is loud on the phone, never silent. */
 const LOCKED_HTML = '<!doctype html><html lang="en"><meta charset="utf-8">'
   + '<meta name="viewport" content="width=device-width,initial-scale=1">'
-  + '<title>Salt Command locked</title>'
+  + '<title>Salt Desk locked</title>'
   + '<body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#0b0f14;color:#dbe4ee;font:15px/1.6 system-ui,sans-serif">'
   + '<div style="max-width:26em;padding:2em;text-align:center">'
   + '<div style="font-size:2em">&#128274;</div>'

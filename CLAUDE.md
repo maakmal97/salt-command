@@ -192,8 +192,9 @@ ids remain addresses through `VIEW_ALIAS` (`/desk#enter`, `#orders`, `#approve` 
 most.** **One product in view for the whole desk**: `PROD`, set only through `setProdView`. A
 feature folded out of sight reads to him as missing: name every part where the eye lands.
 Everything the desk shows, cost and margin included, is served at the desk's URL, behind the Access login. **It installs as
-Salt Desk** (the build's `apple-mobile-web-app-title`, the manifest's `name` and `short_name`); its
-`<title>` stays Salt Command, the build's anchor.
+Salt Desk** (the build's `apple-mobile-web-app-title`, the manifest's `name` and `short_name`), and its
+`<title>` is Salt Desk too (his word of 24 Oct 2026; it was Salt Command), the build's anchor. The Counter's tab is
+Salt Counter, Salt Admin's is Salt Admin and QR Command's is QR.
 
 **Notifications: one event, one surface** (his answers of 19 Oct 2026, `docs/plan-notifications.html`). Salt Admin
 wakes him for what waits on his decision (a new order, a customer's line, a claim, a cancellation, their answer to an
