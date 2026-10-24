@@ -1046,8 +1046,8 @@ await (async () => {
     const cacheD = +((/const CACHE = "salt-shell-v(\d+)";/.exec(readFileSync(join(REPO, "public", "sw.js"), "utf8")) || [])[1] || 0);
     const namesD = { apple: (/<meta name="apple-mobile-web-app-title" content="([^"]*)">/.exec(html) || [])[1], name: mfD.name, short: mfD.short_name,
       title: (/<title>([^<]*)<\/title>/.exec(html) || [])[1], cache: cacheD };
-    ok(namesD.apple === "Salt Desk" && namesD.name === "Salt Desk" && namesD.short === "Salt Desk" && namesD.title === "Salt Command" && cacheD >= 6,
-      "the desk installs as Salt Desk on an iPhone and from its manifest, its tab still Salt Command, and the shell cache moved with the manifest: " + JSON.stringify(namesD));
+    ok(namesD.apple === "Salt Desk" && namesD.name === "Salt Desk" && namesD.short === "Salt Desk" && namesD.title === "Salt Desk" && cacheD >= 6,
+      "the desk installs as Salt Desk on an iPhone and from its manifest, its tab titled Salt Desk too (his word of 24 Oct 2026), and the shell cache moved with the manifest: " + JSON.stringify(namesD));
     ok(html.includes('<link rel="manifest"'), "manifest linked");
     ok(html.includes("serviceWorker") && html.includes("register('sw.js')"), "service worker registered");
     ok(html.includes("function saltDeviceId"), "device id helper present");
@@ -1142,7 +1142,7 @@ await (async () => {
     ok(html.includes("fetch('rev',{cache:'no-store'})"), "the poll bypasses the HTTP cache");
     /* 05 Oct 2026: sw.js answers an open from the cache, so a reload the page asks for must reach the network */
     ok(html.includes("if(idle())saltFresh(); else offer(j.v);") && html.includes("chip.onclick=saltFresh;")
-      && html.includes("location.replace(location.pathname+'?fresh=1'+location.hash)") && !/location\.reload\(\)/.test(html.split("<!-- END cloud/PWA -->")[0].split("<title>Salt Command</title>")[1] || "x"),
+      && html.includes("location.replace(location.pathname+'?fresh=1'+location.hash)") && !/location\.reload\(\)/.test(html.split("<!-- END cloud/PWA -->")[0].split("<title>Salt Desk</title>")[1] || "x"),
       "a new build id, the chip and a new service worker all load the desk fresh, never a plain reload the cache would answer");
     ok(html.includes("if(!window.SALT_CLOUD||document.visibilityState!=='visible')return"),
       "the poll is cloud-only and pauses when the app is not on screen");
@@ -18357,6 +18357,8 @@ await (async () => {
       "his page's iPhone icon is his, and the customer's page keeps the Counter's and never names his");
     ok(/<link rel="icon" type="image[/]png" sizes="128x128" href="[/]icon-key-tab[.]png">/.test(ownHtml) && /<link rel="icon" type="image[/]png" sizes="128x128" href="[/]icon-tab[.]png">/.test(custHtml) && (custHtml.match(/<link rel="icon"/g) || []).length === 1 && !custHtml.includes("icon-key"),
       "his browser tab links his ring as its icon, and the customer's tab links the Counter's own once, never his");
+    ok(ownHtml.includes("<title>Salt Admin</title>") && custHtml.includes("<title>Salt Counter</title>"),
+      "the tabs are titled Salt Admin and Salt Counter (his word of 24 Oct 2026, with Salt Desk and QR)");
     /* his word of 24 Oct 2026: a tab icon has no black ground. 8-bit RGBA, the corner clear, the centre solid, and the edge soft */
     const tabK = await site("/icon-key-tab.png"), tabC = await site("/icon-tab.png");
     ok(tabK.status === 200 && tabC.status === 200 && /image[/]png/.test(tabK.headers.get("content-type")) && /image[/]png/.test(tabC.headers.get("content-type")),
