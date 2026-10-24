@@ -1,0 +1,110 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-10-24T16:24:01.813Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CS6-PER",
+    "qty": 1.5,
+    "total": 84,
+    "cost": 84,
+    "cash": 0,
+    "settledRM": 84,
+    "goodwill": true,
+    "deliveredQty": 1.5,
+    "deliveredOn": "2026-10-24",
+    "date": "2026-10-24",
+    "handover": "collected"
+   },
+   "reasoning": "Gives 1.5 unit of salt free to CS6-PER on 2026-10-24, at the inventory's own RM 56/unit from the desk's own inventory cost. Booked as a cost and not as revenue, on his ruling of 11 Sep 2026, and charged against their reward on his decision of 19 Sep 2026: RM 84 of margin they would otherwise have earned on. Nothing is owed and nothing is paid; the salt leaves the inventory and the fold rolls the stated shelf by it.",
+   "flags": [
+    "A gift, not a redemption: it carries goodwill without rebate, so it is booked out of revenue AND comes off CS6-PER's reward by its RM 84 of cost. A unit they earned is redeemed through Redeem instead, which nets at the reader."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-24T16:24:01.813Z",
+    "type": "GIFT",
+    "party": "CS6-PER",
+    "qty": 1.5,
+    "total": 0,
+    "status": "inkind",
+    "raw": "Give 1.5 unit salt free to CS6-PER on 2026-10-24",
+    "payload": {
+     "mode": "gift",
+     "product": "salt",
+     "party": "CS6-PER",
+     "qty": 1.5,
+     "date": "2026-10-24",
+     "kg": 1.5,
+     "handover": "collected",
+     "note": null
+    },
+    "makerRequest": "441a9619a6aeaa1456326d56f6dfbb2b9e60c3fd6c30627d6cf15cb83f391e81"
+   },
+   "decidedAt": "2026-10-24T16:26:23.660Z",
+   "decidedBy": "Counter Admin"
+  },
+  {
+   "id": "2026-10-24T16:26:02.391Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CM4-MK",
+    "qty": 1.5,
+    "total": 180,
+    "cash": 0,
+    "date": "2026-10-25",
+    "deliveredQty": 0,
+    "listRM": 170,
+    "listQty": 1.5
+   },
+   "reasoning": "Sold 1.5 unit of salt to CM4-MK for RM 180, RM 120/unit. Costed at RM 58/unit from COGS off the latest purchase p044 landed 2026-10-24: RM 1400 quote plus RM 50 freight over 25 unit, so RM 93 on the goods at 51.7%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-10-25 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CM4-MK typically pays about RM 101/unit for salt across 13 orders; this one is RM 120, 18.8% above that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-24T16:26:02.391Z",
+    "type": "SELL",
+    "party": "CM4-MK",
+    "qty": 1.5,
+    "total": 180,
+    "status": "unpaid",
+    "raw": "Sell 1.5 unit salt to CM4-MK for RM180 on 2026-10-25, RM0 cash, 0 unit moved → Pending",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CM4-MK",
+     "newId": null,
+     "date": "2026-10-25",
+     "qty": 1.5,
+     "total": 180,
+     "delivery": 0,
+     "freight": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": null,
+     "second": null,
+     "more": null,
+     "coverFree": null
+    },
+    "makerRequest": "8605531e3261c3cc355630f7650024004bda65ab74a439a4daed15b10591fd67"
+   },
+   "decidedAt": "2026-10-24T16:26:24.203Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
