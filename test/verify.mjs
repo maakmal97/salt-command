@@ -16600,8 +16600,8 @@ await (async () => {
   ok(at8.length === 0, "and the next minute sends nothing for the same order");
   ok(at15.some((h) => h.url.endsWith("orders-only")) && (await dkv.get("orders:nudged")) === o2.at && logs15.some((l) => /^drafter:/.test(l)),
     "on the quarter-hour the next order is pushed and the drafter's net runs as before: " + JSON.stringify(logs15));
-  ok(/"crons"\s*:\s*\[\s*"\* \* \* \* \*"\s*,\s*"0 1 \* \* \*"\s*\]/.test(readFileSync(join(REPO, "wrangler.jsonc"), "utf8")),
-    "wrangler.jsonc schedules every minute and the 09:00 KL morning nudge");
+  ok(/"crons"\s*:\s*\[\s*"\* \* \* \* \*"\s*,\s*"0 1 \* \* \*"\s*(,\s*"30 18 \* \* \*"\s*)?\]/.test(readFileSync(join(REPO, "wrangler.jsonc"), "utf8")),
+    "wrangler.jsonc schedules every minute and the 09:00 KL morning nudge, and since S0b the 02:30 KL backup, and nothing else");
 
   /* THE BANNER, from public/sw.js run as it is, with the summary it reads stubbed */
   const vm = await import("node:vm");

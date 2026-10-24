@@ -66,15 +66,15 @@
   "replace": "export const BACKUP_CRON = \"0 1 * * *\";"
  },
  {
-  "name": "the cron is listed without the bucket",
+  "name": "the cron is dropped but the bucket stays",
   "file": "wrangler.jsonc",
-  "find": "\"crons\": [\"* * * * *\", \"0 1 * * *\"]",
-  "replace": "\"crons\": [\"* * * * *\", \"0 1 * * *\", \"30 18 * * *\"]"
+  "find": "\"crons\": [\"* * * * *\", \"0 1 * * *\", \"30 18 * * *\"]",
+  "replace": "\"crons\": [\"* * * * *\", \"0 1 * * *\"]"
  },
  {
-  "name": "a bucket is bound without the cron",
+  "name": "the bucket is dropped but the cron stays",
   "file": "wrangler.jsonc",
-  "find": "\"durable_objects\": {",
-  "replace": "\"r2_buckets\": [{ \"binding\": \"BACKUP\", \"bucket_name\": \"x\" }],\n\t\"durable_objects\": {"
+  "find": "\t\"r2_buckets\": [\n\t\t{ \"binding\": \"BACKUP\", \"bucket_name\": \"salt-d1-backup\" }\n\t],\n",
+  "replace": ""
  }
 ]
