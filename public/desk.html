@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="a0fe5a99a7895059";
+var SALT_BUILD_ID="454e5dac1b323727";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -11089,7 +11089,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1250","d":"25 Oct 2026","t":"CA5-SEN SALT SET AT A 30% LIFT","n":["<b>ONE PRICING ROW FOLDED.</b> The ledger sets CA5-SEN's salt figure to a 30% lift on the set price, decided by Counter Admin on 24 Oct 2026. It is a pricing setting only: no cash, no sale and no stock moved, and the board is untouched.","<b>INVENTORY UNCHANGED.</b> Salt stays at 6.5 units against a ledger of 109.34 and self-use of 102.84, counted on 24 Oct 2026. Stock cost stays at RM56 a unit, replacement cost RM58, with nothing owed out and nothing promised."]}];
+const evolution=[{"v":"v1251","d":"25 Oct 2026","t":"THE NIGHTLY BACKUP OF D1'S DECISIONS, SEALED TO A PUBLIC KEY AND FILED IN R2","n":["<b>THE NIGHTLY BACKUP, HIS WORD OF 25 OCT 2026 (S0B OF THE BOOK PLAN).</b> At 02:30 in Kuala Lumpur the Desk Worker reads the drafts, pre-approvals, refusals, maker requests, input admissions and the names and places vault pair in one batch, seals them to a public key and files the ciphertext in the R2 bucket salt-d1-backup as backup/DATE.json, keeping the newest 30. The private half of the key is on his laptop, sealed under the vault passphrase, so nothing on Cloudflare can open a backup. Each object is read back for its size, the result is kept in KV <code>backup:last</code>, and the 09:00 digest pushes when a backup failed, never ran or is more than 36 hours old.","<b>THE LAPTOP'S HALF.</b> <code>tools/backup-key.mjs</code> minted the key on 25 Oct 2026; <code>tools/backup-open.mjs</code> opens a night and writes a restore script, and the suite restores a filled database into an empty one and compares every table. The runbook is <code>docs/BACKUP.md</code>.","<b>NOTHING ELSE MOVES.</b> No price, order, ledger row or stock figure changed. Six comments in the Worker's source now say Salt Admin, and its note on the Access gate says it is on."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11237,7 +11237,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='25 Oct 2026, 05:45 KL';
+const LAST_UPDATED='25 Oct 2026, 05:57 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
