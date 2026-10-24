@@ -18323,8 +18323,8 @@ await (async () => {
     const ownHtml = await (await site("/all", acc)).text(), custHtml = await (await site("/")).text();
     ok(/<link rel="apple-touch-icon" href="[/]icon-key[.]png">/.test(ownHtml) && /<link rel="apple-touch-icon" href="[/]icon[.]png">/.test(custHtml) && !custHtml.includes("icon-key"),
       "his page's iPhone icon is his, and the customer's page keeps the Counter's and never names his");
-    ok(/<link rel="icon" type="image[/]png" sizes="512x512" href="[/]icon-key[.]png">/.test(ownHtml) && !/<link rel="icon"/.test(custHtml),
-      "his browser tab links his ring as its icon, and the customer's page links none");
+    ok(/<link rel="icon" type="image[/]png" sizes="512x512" href="[/]icon-key[.]png">/.test(ownHtml) && /<link rel="icon" type="image[/]png" sizes="512x512" href="[/]icon[.]png">/.test(custHtml) && (custHtml.match(/<link rel="icon"/g) || []).length === 1,
+      "his browser tab links his ring as its icon, and the customer's tab links the Counter's own once");
 
     /* ---- an ended Access session ---- */
     /* what a browser does with Access's redirect to its login: followed, a cross-origin page a fetch cannot read,
