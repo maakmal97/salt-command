@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="9051b48c5bc99c9a";
+var SALT_BUILD_ID="df4bc8dca7e5c2c5";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -13601,7 +13601,7 @@ function fwdToggle(k){if(k==='plans')fwdPlans=!fwdPlans;if(k==='buy')fwdBuy=!fwd
 /* the scenario the Forward tab is currently drawing: the agreed buy, the planned
    drawing, or neither. Both are intentions and both are off until asked for. */
 function fwdOpts(){
-  const p=pPurch(PROD).filter(x=>x.pending);   /* v275: scoped */
+  const p=pPurch(PROD).filter(x=>x.pending&&!x.cancelled);   /* v275: scoped */
   const buy=(fwdBuy&&p.length)?{qty:p.reduce((a,x)=>a+x.qty,0),
     rate:+(p.reduce((a,x)=>a+x.total,0)/p.reduce((a,x)=>a+x.qty,0)).toFixed(2),
     onDay:0,payDay:0,who:p[0].supplier}:null;
@@ -13613,7 +13613,7 @@ function fwdOpts(){
    (a refund, the supplier default) going in once, and forecast() walks that list through its own day loop, so there is
    still one walk and not a second copy of it. A book's own event carries its tag. */
 function fwdAll(){
-  const per=eachBook(()=>({f:forecast(Object.assign({},fwdOpts(),{plans:false})),buys:pPurch(PROD).filter(x=>x.pending)}));
+  const per=eachBook(()=>({f:forecast(Object.assign({},fwdOpts(),{plans:false})),buys:pPurch(PROD).filter(x=>x.pending&&!x.cancelled)}));
   const ids=Object.keys(per);
   const merge=k=>{const keys=p=>per[p].f[k].map(x=>JSON.stringify(x));
     const common=keys(ids[0]).filter(key=>ids.every(p=>keys(p).includes(key)));
@@ -13850,7 +13850,7 @@ function supplierStats(){
   _B.forEach(p=>{const id=p.supplier;
     if(!m[id])m[id]={id,lots:0,kg:0,rm:0,recvUnits:0,defaults:0,defaultRM:0,pending:0,pendingUnits:0,first:p.date,last:p.date,rates:[]};
     const o=m[id];
-    if(p.pending){o.pending++;o.pendingUnits+=p.qty;return;}          // agreed only: not a lot, not a rate
+    if(p.pending){if(!p.cancelled){o.pending++;o.pendingUnits+=p.qty;}return;}          // agreed only: not a lot, not a rate
     o.lots++;o.kg+=p.qty;o.rm+=p.total;o.recvUnits+=poRecvUnits(p);
     o.rates.push({r:+(p.total/p.qty).toFixed(2),d:p.date,kg:p.qty});
     if(p.defaulted){o.defaults++;o.defaultRM+=p.total;}
@@ -13897,7 +13897,7 @@ function tabSourcing(){
      desk is trying to get to. What was missing is any word telling the reader that the two
      percentages on his screen are different measurements rather than a contradiction. */
   const SL=shrinkLevel('expected');
-  const pend=pPurch(PROD).filter(p=>p.pending);
+  const pend=pPurch(PROD).filter(p=>p.pending&&!p.cancelled);
   const conc=ss.length?ss[0]:null;
   return `<div class="kpis k5">
     <div class="kpi salt-kpi"><div class="l salt-kpi__label">Bought to date</div><div class="v salt-kpi__value">${units(buyUnits)}</div><div class="n salt-kpi__note">${fmt0(buyRM)} at ${fmt(wavgBuy)}/unit weighted</div></div>
@@ -16574,7 +16574,7 @@ function tabReceivables(){
      book while the comment at the head claimed all of them were scoped, so an agreed-but-unmoved
      oil buy would have printed under Salt and again under Oil. Latent only because nothing is
      pending today, which is exactly how the v272 duplicates survived as long as they did. */
-  const sPen=_B.filter(p=>p.pending&&!p.defaulted)
+  const sPen=_B.filter(p=>p.pending&&!p.defaulted&&!p.cancelled)
     .map(p=>({id:p.supplier,date:p.date,k:p.qty,rm:p.total})).sort(oldest);
   const sPenBody=sPen.map(p=>`<tr><td class="l salt-table__label mono">${ID(p.id)}</td><td class="l salt-table__label">${p.date||'not dated'}</td><td>${units(p.k)}</td><td>${fmt0(p.rm)}</td></tr>`).join('');
   const sPenUnits=+sPen.reduce((a,p)=>a+p.k,0).toFixed(2);
@@ -16663,7 +16663,7 @@ function tabReceivables(){
     `<table class="salt-table"><thead><tr><th class="l salt-table__label">Supplier</th><th>Age</th><th>Gross</th><th>Prov.</th><th>Net</th></tr></thead><tbody>${sRefBody}</tbody></table><div class="dsc" id="recvRefNote" style="margin-top:8px">Paid 08 Jul for a lot that never arrived; recoverable pending the settlement meeting.</div>`)}
   ${sec('Pending orders','agreed to buy, nothing paid or received',sPen.length,
     `<table class="salt-table"><thead><tr><th class="l salt-table__label">Supplier</th><th class="l salt-table__label">Since</th><th>Unit</th><th>Value</th></tr></thead><tbody>${sPenBody}
-     <tr class="tot"><td class="l salt-table__label">Total</td><td></td><td>${units(sPenUnits)}</td><td>${fmt0(sPenRM)}</td></tr></tbody></table>`)}`:nothingOpen('all lots paid, nothing in transit and nothing agreed')}`;
+     <tr class="tot"><td class="l salt-table__label" colspan="2">Total</td><td>${units(sPenUnits)}</td><td>${fmt0(sPenRM)}</td></tr></tbody></table>`)}`:nothingOpen('all lots paid, nothing in transit and nothing agreed')}`;
 }
 
 /* ============ THE OBSERVATION ENGINE (v273) ============
@@ -22440,7 +22440,7 @@ function consoOrderBlock(){
   const wo=sales.filter(s=>txWrittenOff(s)>0.009), woG=+wo.reduce((a,s)=>a+txWrittenOff(s),0).toFixed(2);   // v634
   const g=+cl.reduce((a,r)=>a+r.g,0).toFixed(2), n=+cl.reduce((a,r)=>a+r.n,0).toFixed(2);
   const pend=+sales.reduce((a,s)=>a+txPendRM(s),0).toFixed(2);
-  const pendB=+purchases.filter(x=>x.pending&&!x.defaulted).reduce((a,x)=>a+(+x.total||0),0).toFixed(2);
+  const pendB=+purchases.filter(x=>x.pending&&!x.defaulted&&!x.cancelled).reduce((a,x)=>a+(+x.total||0),0).toFixed(2);
   const cell=(cls,l,v,note)=>`<div class="kpi salt-kpi ${cls}"><div class="l salt-kpi__label">${l}</div><div class="v salt-kpi__value">${v}</div><div class="n salt-kpi__note">${note}</div></div>`;
   return `<h1>Receivables</h1>`+consoHd('Every book')   /* v622: the page's own name, which the Money destination opens on */
     +`<div class="conso"><div class="kpis k4">`

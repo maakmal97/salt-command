@@ -3703,6 +3703,15 @@ await (async () => {
         `${pr}: ${which} either lists what is open or says in one line that nothing is`);
     });
   }
+  /* A WITHDRAWN PENDING BUY IS NOT PENDING (25 Oct 2026). p043 was cancelled in v1236 and still printed under Suppliers > Pending orders: the filter read
+     `pending` and never `cancelled`. A cancelled, pending buy is put on the book here and must change nothing the part draws. */
+  w.eval(`PROD='salt';recompute();`);
+  const before = html("tabReceivables()");
+  w.eval(`purchases.push({rid:'ptest',supplier:'SA9-ZZZ',product:'salt',qty:3,total:150,cash:0,status:'unpaid',pending:true,cancelled:true,date:'2026-10-24'});recompute();`);
+  const withCancelled = html("tabReceivables()");
+  w.eval(`purchases.splice(purchases.findIndex(p=>p.rid==='ptest'),1);recompute();`);
+  ok(read("purchases.some(p=>p.rid==='ptest')") === false && before === withCancelled && !/SA9-ZZZ/.test(withCancelled),
+    "a cancelled pending buy is not listed among the orders a supplier still holds, and changes nothing the part draws");
   w.eval(`PROD=${JSON.stringify(keep)};recompute();`);
   ok(!/>\s*(undefined|NaN|Infinity)/.test(rec + fin), "neither part renders an undefined, a NaN or an infinity");
   try { w.close(); } catch (e) { }
