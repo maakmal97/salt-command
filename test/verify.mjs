@@ -1913,7 +1913,7 @@ await (async () => {
     && mirrorBook.purchases[0].rid === "purchases" && mirrorBook.pricing.v === "v302",
     "parallel reads preserve the complete book shape and pricing state");
 
-  /* 30 Sep 2026: a money tap's room (rowRoom, through cashOrder) reads the payments on their way beside the book, not after it */
+  /* 30 Sep 2026 read them beside the book; S3 (25 Oct 2026, Fable) reads the book FIRST: the payments on their way are those its own bound leaves out */
   {
     const { cashOrder } = await import("../src/orders.js");
     const ev = [];
@@ -1925,7 +1925,7 @@ await (async () => {
     } };
     const r = await cashOrder({ SALT_LEDGER: d1 }, "o1", { amount: 10 }, "desk", new Date());
     const pays = ev.indexOf("pays:start"), stateEnd = ev.indexOf("state:end");
-    ok(!r.ok && pays >= 0 && stateEnd >= 0 && pays < stateEnd, "a money tap reads the payments on their way while the book is still being read");
+    ok(!r.ok && pays >= 0 && stateEnd >= 0 && pays > stateEnd, "a money tap reads the book first and the payments on their way after it, by that book's own bound (S3, 25 Oct 2026)");
   }
   /* 30 Sep 2026: the pass reads its q: keys six at a time, never more, and still takes every entry */
   {
@@ -51654,7 +51654,7 @@ await (async () => {
   const count = (os, q) => os.db.prepare(q).get().c;
   const arrays = Object.keys(frozen).filter((k) => Array.isArray(frozen[k]));
   const rowTotal = arrays.reduce((n, k) => n + frozen[k].length, 0);
-  const stateTotal = Object.keys(frozen).length - arrays.length + 1;
+  const stateTotal = Object.keys(frozen).length - arrays.length + 2;   /* PRICING, and S3's __arrays (the length of every list) */
 
   const { os, b } = fresh();
   const r1 = await load(b, frozen);
@@ -51700,7 +51700,7 @@ await (async () => {
     "a row the book no longer carries is marked gone, not deleted");
   const r6 = await load(b, edit);
   const back = os.db.prepare("SELECT booked_at, gone_at FROM rows WHERE key = 'r:s9999'").get();
-  ok(r6.returned === 1 && r6.revised === 0 && back.gone_at === null && back.booked_at === "2026-10-18T00:00:12Z",
+  ok(r6.returned === 1 && r6.revised === 1 /* the __arrays document: sales is one longer */ && back.gone_at === null && back.booked_at === "2026-10-18T00:00:12Z",
     "a row that returns is live again with its first booked_at");
 
   const dup = structuredClone(frozen);
@@ -51745,9 +51745,9 @@ await (async () => {
     readFileSync(join(REPO, "src", f), "utf8").split("\n").forEach((l, i) => {
       const head = /^(?:async )?function (\w+)|^  (?:async )?(\w+)\([^)]*\) \{$/.exec(l);
       if (head) fn = head[1] || head[2];
-      if (/env\.BOOK\b/.test(l) && !/^\s*(\/\/|\*|\/\*)/.test(l)) {
+      if (/env\.BOOK\b/.test(l) && !/^\s*(\/\/|\*|\/\*)/.test(l) && !/^\s*if \(env\.SALT_LEDGER && env\.BOOK\) bindBook\(env\.SALT_LEDGER, env\.BOOK\);/.test(l)) {
         readers.push(f + ":" + (i + 1));
-        if (!(f === "worker.js" && (fn === "handleBookLoad" || fn === "handleBookPitr" || fn === "handleLive")) && !(f === "book.js" && (fn === "isTest" || fn === "isLive"))) strays.push(f + ":" + (i + 1) + " in " + fn);
+        if (!(f === "worker.js" && (fn === "handleBookLoad" || fn === "handleBookPitr" || fn === "handleLive" || fn === "handleBookReadcheck")) && !(f === "book.js" && (fn === "isTest" || fn === "isLive"))) strays.push(f + ":" + (i + 1) + " in " + fn);
       }
     });
   }
@@ -51770,7 +51770,7 @@ await (async () => {
   ok(!nokey.ok && calls === 0 && /SALT_BOOK_KEY/.test(nokey.error), "with no key it says so and sends nothing");
   const wf = readFileSync(join(REPO, ".github", "workflows", "cloud-commit.yml"), "utf8");
   const at = wf.indexOf("- name: Load the shadow Book");
-  const stepText = wf.slice(at, wf.indexOf("\n      # ----", at));
+  const stepText = wf.slice(at, Math.min(wf.indexOf("\n      # ----", at), wf.indexOf("\n      - name:", at + 10)));   /* S3: the readcheck step follows, with its own continue-on-error */
   ok(at > wf.indexOf("- name: Re-seed the mirror") && at < wf.indexOf("- name: Deploy the statements site")
     && /continue-on-error: true/.test(stepText) && /steps\.plan\.outputs\.deploy == '1'/.test(stepText) && /node tools\/book-load\.mjs/.test(stepText),
     "the chain loads the Book after the D1 re-seed, only on a deploy, and a failed load never blocks the fold");
@@ -51789,7 +51789,7 @@ await (async () => {
   const loadVia = async (b, book, pr = pricing) => (await b.fetch(new Request("https://book/load", { method: "POST", body: JSON.stringify({ rev: "r", book, pricing: pr }) }))).json();
   const par = (book, res, pr = pricing) => BL.compare(BL.expected(book, pr), res.readback);
   const arrays = Object.keys(frozen).filter((k) => Array.isArray(frozen[k]) && frozen[k].length);
-  const docsTotal = Object.keys(frozen).filter((k) => !Array.isArray(frozen[k])).length + 1;
+  const docsTotal = Object.keys(frozen).filter((k) => !Array.isArray(frozen[k])).length + 2;   /* PRICING, and S3's __arrays */
 
   const A = fresh();
   const r1 = await loadVia(A.b, frozen);
@@ -51807,7 +51807,7 @@ await (async () => {
   const leaves = [];
   for (const [k, v] of Object.entries(r1.readback.rows)) leaves.push([k, v.n, v.digest]);
   for (const [k, v] of Object.entries(r1.readback.state)) leaves.push([k, 0, v]);
-  const names = new Set([...Object.keys(frozen), "PRICING"]);
+  const names = new Set([...Object.keys(frozen), "PRICING", "__arrays"]);
   const text = JSON.stringify(r1);
   ok(leaves.length && leaves.every(([k, n, d]) => names.has(k) && Number.isInteger(n) && /^[0-9a-f]{16}$/.test(d))
     && Object.keys(r1.readback).join() === "rows,state" && !text.includes(frozen.sales[0].rid) && !text.includes("cost"),
@@ -52009,6 +52009,11 @@ await (async () => {
   const wf = readFileSync(".github/workflows/book-pitr.yml", "utf8");
   ok(/^on:\n  workflow_dispatch:/m.test(wf) && !/^\s+(push|schedule|pull_request):/m.test(wf) && /node tools\/book-pitr\.mjs/.test(wf),
     "the recovery test runs on a hand dispatch only, never on a push or a clock");
+})();
+
+section("Book S3: the readers read the Book (flag in D1), on its way is the Book's own bound, and the readcheck names a Book that differs (25 Oct 2026)");
+await (async () => {
+  await (await import("./book-read.mjs")).run({ ok });
 })();
 
 section("18 Oct 2026: the lean Desk: six views, the three parts gone, alerts in the rail, spots on Coverage, Noticed under To do");

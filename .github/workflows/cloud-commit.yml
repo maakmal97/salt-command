@@ -550,6 +550,19 @@ jobs:
           CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: node tools/book-load.mjs
 
+      # DO THE READERS AGREE? (S3, 25 Oct 2026): the Desk Worker reads the D1 mirror's book and the Book's side by side and answers by names
+      # whether they agree (never a row or a value). A difference is a red step and never blocks or rolls back the fold: the flag in D1
+      # (migrations/0018) decides which of the two the readers use, and the Book that trails the mirror is not read at all.
+      # A CHANGE HERE NEVER TESTS ITSELF (not on its own push paths): dispatch a run by hand and read the step list.
+      - name: Check the readers agree
+        if: steps.plan.outputs.deploy == '1'
+        continue-on-error: true
+        env:
+          SALT_BOOK_KEY: ${{ secrets.SALT_BOOK_KEY }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: node tools/book-readcheck.mjs
+
       # ---- THE STATEMENTS SITE, after everything the ledger needs ------------------------
       # A second Worker on its own address with its own KV store (docs/STATEMENTS.md). Both
       # steps stand down while the store has not been created yet.
