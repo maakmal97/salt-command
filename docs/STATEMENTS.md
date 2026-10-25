@@ -2651,7 +2651,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `hours.day-from` | The opened day (key: the weekday) | The quarter hour it opens. |
 | `hours.day-same` | The opened day (key: the weekday) | Takes the day before's hours. |
 | `hours.day-to` | The opened day (key: the weekday) | The quarter hour it closes; earlier than the open is the next day. |
-| `hours.override-clear` | Operating hours | Clears it. |
+| `hours.hold` | Operating hours, For now | Opens the form that holds the shop closed or open until a time; Not now folds it. |
+| `hours.override-clear` | Operating hours, For now, while an override is filed | Clears it (it reads Weekly hours, named Back to the weekly hours). |
 | `hours.override-set` | Operating hours | Sets the temporary override. |
 | `hours.override-state` | Operating hours (key: `false` for Closed, `true` for Open) | Whether the override holds the shop open or closed. |
 | `hours.override-until` | Operating hours | When the override ends, Kuala Lumpur time. |
@@ -2674,7 +2675,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `look.sheet-tide` | Same Sheet | Chooses Tide, keeps it and closes the Sheet. |
 | `look.tide` | Shop, This device, Look | Tide for Salt Admin on this device, at once, kept here. |
 | `maker.refresh` | Orders, Order review | Reads the orders again. |
-| `more.test-accounts` | Shop, Practice | Makes or deletes the three test accounts. |
+| `more.test-accounts` | Shop, Practice | Makes the three test accounts, or deletes them once its Sheet is answered Remove. |
+| `more.test-page` | Shop, Practice, while all three are open | Opens the test surface, `/all/test`. |
 | `nav.add` | The + orb at the foot of the page, on every place but Record, below 1080px | Opens Record, on Entry, the menu of entries. Reads what Record reads on entering. |
 | `rail.add` | New entry, the rail's + under his places, from 1080px, on every place but Record | Opens Record on Entry, as the orb does. |
 | `nav.customers` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Customers, on its Accounts. |

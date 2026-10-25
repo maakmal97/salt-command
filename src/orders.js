@@ -21,6 +21,8 @@
  * means on this book.
  */
 import { sendPush } from "./push.js";
+import { boundOf, onItsWay, landedBy } from "./way.js";
+import { wayBound } from "./book-read.js";
 import { readBook, bookOnce, draftRow, cogsFor, floorFor, usualFor, pricingOf, stageDigest, runDrafter, settlePre, withPending, noteQueued, offerDigest, isOfferPre } from "./drafter.js";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { admitInput, admitInputs } from "./input-admission.js";
@@ -816,7 +818,7 @@ export async function receivedOrder(env, id, body, by, now, mirror) {
   const rej = await rejectedOf(env.SALT_LEDGER, id, "pay");
   /* their payment may be drafted already (the reconcile queues it within the minute once the row is on the book),
      and then that draft's own entry is the one his yes answers */
-  let queued = [], shut = new Set(), onRows = {}, way = null;
+  let queued = [], shut = new Set(), onRows = {}, way = null, hold = null;
   if (env.SALT_LEDGER) {
     const rs = await env.SALT_LEDGER.prepare("SELECT id,entry FROM draft WHERE status='pending' AND entry LIKE ?1 ORDER BY id DESC").bind('%"orderId":"' + id + '"%').all();
     queued = (rs.results || []).map((r) => { try { return JSON.parse(r.entry); } catch (e) { return null; } })
@@ -824,10 +826,14 @@ export async function receivedOrder(env, id, body, by, now, mirror) {
     /* S6 11.14: a claim's entry filed not found never lands, so that claim is not received after it */
     const rj = await env.SALT_LEDGER.prepare("SELECT id FROM draft WHERE status='rejected' AND decided_by='notfound' AND entry LIKE ?1").bind('%"orderId":"' + id + '"%').all();
     shut = new Set((rj.results || []).map((r) => r.id));
-    way = await paysOnWay(env.SALT_LEDGER);   /* read once: the claims' rows and the room both take it */
+    /* S3: the book first, and the payments on their way are those ITS bound leaves out; the room reads the same book */
+    hold = mirror || bookOnce(env.SALT_LEDGER);
+    const b0 = await hold().catch(() => null);
+    /* a book that could not be read leaves the bound to be looked up (undefined), as before S3 */
+    way = await paysOnWay(env.SALT_LEDGER, "SELL", b0 ? boundOf(b0) : undefined);   /* read once: the claims' rows and the room both take it */
     onRows = await acctInFlight(env.SALT_LEDGER, null, way);
   }
-  const room = env.SALT_LEDGER ? await rowRoom(env.SALT_LEDGER, "SELL", way, mirror) : null;
+  const room = env.SALT_LEDGER ? await rowRoom(env.SALT_LEDGER, "SELL", way, hold || mirror) : null;
   return stageTap(env, id, body, by, now, "pay", (o, at) => receivedTap(o, at, body, { queued, shut, onRows, rej, room }), mirror);
 }
 
@@ -909,10 +915,12 @@ const hex = async (s) => [...new Uint8Array(await crypto.subtle.digest("SHA-256"
 /* 28 Sep 2026, s210: ON ITS WAY UNTIL THE MIRROR HAS IT. The chain marks a row committed before it re-seeds the mirror,
    with a push between (cloud-commit.yml), so for those seconds a folded row was neither on its way by committed_at nor on
    the mirror, and a tap in them saw neither. A row committed after the mirror was seeded (snapshot.at) is still on its way. */
-const ON_ITS_WAY = "(status='pending' OR (status='approved' AND (committed_at IS NULL OR committed_at > (SELECT at FROM snapshot WHERE one=1))))";
-/* every payment on its way to a sale's row: a Fulfilment carrying cash, pending, or approved and not yet on the mirror */
-async function paysOnWay(db, direction = "SELL") {
-  const rs = await db.prepare("SELECT entry FROM draft WHERE " + ON_ITS_WAY + " AND (entry LIKE ?1 OR entry LIKE ?2 OR entry LIKE ?3)")
+/* S3 (25 Oct 2026): the clause is src/way.js onItsWay. `at` is the bound of the book the caller read (boundOf), null for the mirror's own form,
+   and left out it is looked up (the Book's latest load in 'book' mode, else null). */
+/* every payment on its way to a sale's row: a Fulfilment carrying cash, pending, or approved and not yet in the book read */
+async function paysOnWay(db, direction = "SELL", at) {
+  if (at === undefined) at = await wayBound(db);
+  const rs = await db.prepare("SELECT entry FROM draft WHERE " + onItsWay(at) + " AND (entry LIKE ?1 OR entry LIKE ?2 OR entry LIKE ?3)")
     .bind('%"kind":"Fulfilment"%', '%"kind":"Correction"%', '%"kind":"Payment"%').all();
   const out = [];
   for (const r of rs.results || []) {
@@ -947,7 +955,9 @@ async function acctInFlight(db, except, way) {
    rule measures. */
 export async function rowRoom(db, direction = "SELL", onWay, mirror) {
   /* 30 Sep 2026: the book and the payments on their way are two reads that wait on nothing of each other, so both go at once */
-  const [book, way] = await Promise.all([(mirror ? mirror() : readBook(db)).catch(() => null), onWay || paysOnWay(db, direction)]);
+  /* S3: the book first, then the payments on their way by ITS bound: a tap whose two reads straddle a load counts a payment once */
+  const book = await (mirror ? mirror() : readBook(db)).catch(() => null);
+  const way = onWay || await paysOnWay(db, direction, boundOf(book));
   const isSale = direction !== "BUY";
   const sales = ((book && book[isSale ? "sales" : "purchases"]) || []).filter((s) => s && !s.cancelled);
   const keyOf = rowKeyer(sales), byRid = new Map(sales.filter((s) => s.rid).map((s) => [s.rid, s]));
@@ -1002,7 +1012,7 @@ async function draftedOf(db, ids) {
   }
   return out;
 }
-async function inFlight(env, db, c, sales) {
+async function inFlight(env, db, c, sales, at) {
   const all = await listOrders(env, true);
   if (!all.ok) return null;
   const by = {}, keyOf = rowKeyer(sales);
@@ -1011,7 +1021,7 @@ async function inFlight(env, db, c, sales) {
   /* a claim against the account's own rows are its own; an open order's own moves are read off the site below, which knows
      them at once; the rest (other claims against the account, a payment typed on the desk, a done order's own drafts) are
      on their way to the rows they name */
-  for (const e of await paysOnWay(db)) {
+  for (const e of await paysOnWay(db, "SELL", at)) {
     if ((e.claimId && e.claimId === c.id) || (e.orderId && !done.has(e.orderId))) continue;
     add(keyOf(e.payload), e.payload.cash);
   }
@@ -1079,7 +1089,7 @@ export async function claimPreview(env, id, mirror) {
   const booked = await claimBooked(db, c.id);
   if (booked) return { ok: true, claim: c, rows: booked, left: 0, booked: true, own: [] };
   const book = await (mirror ? mirror() : readBook(db));
-  const fl = await inFlight(env, db, c, book.sales || []);
+  const fl = await inFlight(env, db, c, book.sales || [], boundOf(book));
   if (!fl) return { ok: false, status: 503, error: "the site's orders could not be read, so the rows it settles cannot be drawn" };
   const { alloc, entries } = claimRows(book, c, fl);
   const rows = [], own = [];
@@ -1797,19 +1807,28 @@ export async function rejectedOnOrder(env, entry, at) {
  * orders want, is followed by neither. The side is marked first and alone, and the key only once the site's answer
  * carries the side, so a Counter that does not know the side yet moves nothing. */
 /* what became of the row an entry made: landed on the mirror, rejected, or (null, or neither) still on its way */
-const FATE = "SELECT status, committed_at IS NOT NULL AND committed_at <= (SELECT at FROM snapshot WHERE one=1) AS landed FROM draft WHERE id=?1";
-const fate = async (env, id) => { try { return id ? await env.SALT_LEDGER.prepare(FATE).bind(id).first() : null; } catch (e) { return null; } };
+const siteMemo = new WeakMap();
+async function siteAt(db) {
+  const m = siteMemo.get(db), now = Date.now();
+  if (m && now - m.t < 2000) return m.at;
+  const at = await wayBound(db);
+  siteMemo.set(db, { t: now, at });
+  return at;
+}
+const FATE = (at) => "SELECT status, " + landedBy(at) + " AS landed FROM draft WHERE id=?1";
+const fate = async (env, id, at) => { try { return id ? await env.SALT_LEDGER.prepare(FATE(at === undefined ? await siteAt(env.SALT_LEDGER) : at)).bind(id).first() : null; } catch (e) { return null; } };
 /* a close names the row as the close will leave it (closedKey) before its Correction folds, and so does a close rejected
    and offered again (againOrder), whose first draft queued.close still names: so the ORDER'S NEWEST Close draft is read,
    and one offered again that is not drafted yet is on its way too. A read that fails is read as on its way. */
-const NEWEST_CLOSE = "SELECT status, committed_at IS NOT NULL AND committed_at <= (SELECT at FROM snapshot WHERE one=1) AS landed FROM draft WHERE entry LIKE ?1 AND entry LIKE '%\"status\":\"Close\"%' ORDER BY id DESC LIMIT 1";
-const NEWEST_REDATE = "SELECT status, committed_at IS NOT NULL AND committed_at <= (SELECT at FROM snapshot WHERE one=1) AS landed FROM draft WHERE entry LIKE ?1 AND entry LIKE '%\"redate\":true%' ORDER BY id DESC LIMIT 1";
-async function closeOnItsWay(env, o) {
+const NEWEST_CLOSE = (at) => "SELECT status, " + landedBy(at) + " AS landed FROM draft WHERE entry LIKE ?1 AND entry LIKE '%\"status\":\"Close\"%' ORDER BY id DESC LIMIT 1";
+const NEWEST_REDATE = (at) => "SELECT status, " + landedBy(at) + " AS landed FROM draft WHERE entry LIKE ?1 AND entry LIKE '%\"redate\":true%' ORDER BY id DESC LIMIT 1";
+/* `at`: the bound of the book the caller holds (boundOf), threaded so the flight checks and the rows they follow come from one read; left out, the Book's latest load by a short memo */
+async function closeOnItsWay(env, o, at) {
   const q = o.queued || {};
   for (const [on, sql, like] of [[q.close, NEWEST_CLOSE, '%"status":"Close"%'], [q.redate, NEWEST_REDATE, '%"redate":true%']]) {
     if (!on) continue;
     try {
-      const d = await env.SALT_LEDGER.prepare(sql).bind('%"orderId":"' + o.id + '"%').first();
+      const d = await env.SALT_LEDGER.prepare(sql(at === undefined ? await siteAt(env.SALT_LEDGER) : at)).bind('%"orderId":"' + o.id + '"%').first();
       if (!d) return true;
       if (d.status !== "rejected") { if (!d.landed) return true; continue; }
       if (await env.SALT_LEDGER.prepare("SELECT 1 FROM preapproval WHERE order_id=?1 AND stage='move' AND status IN ('waiting','differs') AND entry LIKE ?2").bind(o.id, like).first()) return true;
@@ -1818,8 +1837,8 @@ async function closeOnItsWay(env, o) {
   return false;
 }
 const AMENDS = "SELECT amends, json_extract(entry,'$.orderId') AS oid FROM draft WHERE status='approved' AND amends IS NOT NULL AND entry LIKE ?1";
-async function rowOf(env, o, k, idx, amended) {
-  if (await closeOnItsWay(env, o)) return null;
+async function rowOf(env, o, k, idx, amended, at) {
+  if (await closeOnItsWay(env, o, at)) return null;
   const rids = amended.get(o.id), product = o.product || "salt";
   if (rids) { const hit = [...rids].map((r) => idx.byRid.get(r)).filter((r) => r && (r.product || "salt") === product); return hit.length === 1 ? hit[0] : null; }
   const day = k.split("|").slice(1), hits = [o.code, bucketFor(o.code)].map((p) => [p].concat(day).join("|")).filter((c) => c !== k && idx.rows.get(c) === 1);
@@ -1827,7 +1846,7 @@ async function rowOf(env, o, k, idx, amended) {
   const ours = row && +row.qty === +o.qty && (row.product || "salt") === product && /\bstream [^;,]* to /.test(row.mod || "");
   const found = ours ? row : ["cancelled", "declined"].includes(o.status) ? null : strayRow(o, k, idx, product);   /* a cancelled order has no row to follow */
   if (!found) return null;
-  const ack = await fate(env, o.queued && o.queued.ack);
+  const ack = await fate(env, o.queued && o.queued.ack, at);
   return ack && ack.landed ? found : null;
 }
 /* Two more ways a key names no row (his two live orders, 05 Oct 2026), each taking ONE row and nothing on a doubt. (a) Amend ID
@@ -1887,7 +1906,7 @@ function sharedOk(os, k, orders, idx) {
   const nk = PE.ovKey(hits[0]);
   return orders.some((o) => ledgerKeyOf(o) === nk) ? null : nk;
 }
-async function followRows(env, orders, idx) {
+async function followRows(env, orders, idx, at) {
   const plan = [], failed = [], amended = new Map(), miss = new Set();
   for (const o of orders) if (o.code && ledgerKeyOf(o) && !idx.rows.get(ledgerKeyOf(o))) miss.add(o.id);
   try {
@@ -1909,14 +1928,14 @@ async function followRows(env, orders, idx) {
     if (os.length < 2 || !sharedOk(os, k, orders, idx)) continue;
     const nk = sharedOk(os, k, orders, idx), row = idx.byKey.get(nk);
     let landed = true;
-    for (const o of os) { const a = await orderInFlight(env, o) ? null : await fate(env, o.queued && o.queued.ack); if (!a || !(a.landed || a.status === "rejected")) { landed = false; break; } }   /* landed, or rejected: no row of its own is to come (s218's pair) */
+    for (const o of os) { const a = await orderInFlight(env, o, at) ? null : await fate(env, o.queued && o.queued.ack, at); if (!a || !(a.landed || a.status === "rejected")) { landed = false; break; } }   /* landed, or rejected: no row of its own is to come (s218's pair) */
     if (!landed) continue;
     for (const o of os) { sharing.add(o.id); plan.push({ o, k, nk, friend: false, party: row.customer, shared: true }); }
   }
   for (const o of orders) {
     const k = ledgerKeyOf(o);
     if (!k || !o.code || sharing.has(o.id)) continue;
-    const row = idx.rows.get(k) ? idx.byKey.get(k) : await rowOf(env, o, k, idx, amended);
+    const row = idx.rows.get(k) ? idx.byKey.get(k) : await rowOf(env, o, k, idx, amended, at);
     if (!row || POSITION_ENGINE.ownerCode(row.customer) !== o.code) continue;
     const nk = POSITION_ENGINE.ovKey(row), friend = POSITION_ENGINE.isBucket(row.customer);
     if (nk !== k || !!o.forFriend !== friend) plan.push({ o, k, nk, friend, party: row.customer });
@@ -1953,26 +1972,26 @@ async function followRows(env, orders, idx) {
 /* an Amendment of the order not on the book yet (drafted and undecided, approved and not on the mirror: marked committed before the re-seed reads
    as on its way, as a close's landing does, or his yes waiting to be drafted), or a close
    or redate on its way: the order already says what the row will. A read that fails is read as on its way. */
-const AMEND_FLIGHT = "SELECT 1 FROM draft WHERE entry LIKE ?1 AND entry LIKE '%\"status\":\"Amendment\"%' AND (status='pending' OR (status='approved' AND (committed_at IS NULL OR committed_at > (SELECT at FROM snapshot WHERE one=1)))) LIMIT 1";
+const AMEND_FLIGHT = (at) => "SELECT 1 FROM draft WHERE entry LIKE ?1 AND entry LIKE '%\"status\":\"Amendment\"%' AND " + onItsWay(at) + " LIMIT 1";
 /* 17 Oct 2026 (Fable's review): A SETTLED ORDER IS RESTATED ONLY WHEN NOTHING OF ITS OWN IS ON ITS WAY TO THE ROW: any draft naming it undecided or
    not on the mirror yet (a Received, cash, a handover, as well as an amendment), any yes of his waiting in any stage, or a close or redate */
-const ORDER_FLIGHT = "SELECT 1 FROM draft WHERE entry LIKE ?1 AND (status='pending' OR (status='approved' AND (committed_at IS NULL OR committed_at > (SELECT at FROM snapshot WHERE one=1)))) LIMIT 1";
+const ORDER_FLIGHT = (at) => "SELECT 1 FROM draft WHERE entry LIKE ?1 AND " + onItsWay(at) + " LIMIT 1";
 /* 17 Oct 2026 (the first live tie-out): his yes waiting on a row the site is to make is on its way for a day. Such a yes is spent within minutes
    of the tap; ones waiting since 02 and 12 Oct named moves the book took by a Correction, and held their orders as on their way for good. Older,
    it holds nothing, and the tie-out names it. A yes whose own entry is queued (entry_at) waits for the drafter however long that takes. */
 const YES_FRESH_MS = 24 * 3600000;
 const yesFresh = (now = Date.now()) => new Date(now - YES_FRESH_MS).toISOString();
-export async function orderInFlight(env, o) {
-  if (await closeOnItsWay(env, o)) return true;
+export async function orderInFlight(env, o, at) {
+  if (await closeOnItsWay(env, o, at)) return true;
   try {
-    if (await env.SALT_LEDGER.prepare(ORDER_FLIGHT).bind('%"orderId":"' + o.id + '"%').first()) return true;
+    if (await env.SALT_LEDGER.prepare(ORDER_FLIGHT(at === undefined ? await siteAt(env.SALT_LEDGER) : at)).bind('%"orderId":"' + o.id + '"%').first()) return true;
     return !!(await env.SALT_LEDGER.prepare("SELECT 1 FROM preapproval WHERE order_id=?1 AND status='waiting' AND (entry_at IS NOT NULL OR at > ?2) LIMIT 1").bind(o.id, yesFresh()).first());
   } catch (e) { return true; }
 }
-export async function termsInFlight(env, o) {
-  if (await closeOnItsWay(env, o)) return true;
+export async function termsInFlight(env, o, at) {
+  if (await closeOnItsWay(env, o, at)) return true;
   try {
-    if (await env.SALT_LEDGER.prepare(AMEND_FLIGHT).bind('%"orderId":"' + o.id + '"%').first()) return true;
+    if (await env.SALT_LEDGER.prepare(AMEND_FLIGHT(at === undefined ? await siteAt(env.SALT_LEDGER) : at)).bind('%"orderId":"' + o.id + '"%').first()) return true;
     return !!(await env.SALT_LEDGER.prepare("SELECT 1 FROM preapproval WHERE order_id=?1 AND stage='amend' AND status='waiting' AND (entry_at IS NOT NULL OR at > ?2) LIMIT 1").bind(o.id, yesFresh()).first());
   } catch (e) { return true; }
 }
@@ -1990,7 +2009,8 @@ export async function tellSite(env, fixes, mirror) {
   if (!sales.length) return { ok: true, told: 0, v };
   const byKey = new Map(), rows = new Map(), byRid = new Map();
   for (const s of sales) { const k = POSITION_ENGINE.ovKey(s); byKey.set(k, s); rows.set(k, (rows.get(k) || 0) + 1); if (s.rid) byRid.set(s.rid, s); }
-  const { followed, failed } = await followRows(env, r.orders, { byKey, rows, byRid });
+  const at = boundOf(book);   /* the flight checks take the bound of THIS book */
+  const { followed, failed } = await followRows(env, r.orders, { byKey, rows, byRid }, at);
   /* a fix not yet sent to an order (an undo on its row) is the one road for what it takes back: a settled order waits for it (Fable's review) */
   const allFixes = (fixes || SITE_FIXES).concat(undoFixes(r.orders, byKey, rows));
   const fixedDone = (await env.SALT_QUEUE.get(FIXED_MARK, "json").catch(() => null)) || {};
@@ -2009,7 +2029,7 @@ export async function tellSite(env, fixes, mirror) {
     /* a cancel of a row with goods out (a hand fold) is not the order's: the site would refuse it for good, so it is never sent (Fable's review) */
     const out = POSITION_ENGINE.txEffDeliv(row) > 0.0004 || (+o.moved || 0) > 0.0004;
     const end = row.cancelled ? (out ? null : "cancelled") : !!row.defaulted !== !!o.writtenOff ? (row.defaulted ? "writtenOff" : "restored") : null;
-    if (end && sole && !fixWaits.has(o.id) && !(await orderInFlight(env, o))) {
+    if (end && sole && !fixWaits.has(o.id) && !(await orderInFlight(env, o, at))) {
       const b = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
         method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ bookEnd: end })
       });
@@ -2029,7 +2049,7 @@ export async function tellSite(env, fixes, mirror) {
     if (o.status === "done") {
       /* 17 Oct 2026, his yes: a settled order takes all its row states, its money and goods included, once nothing is on its way to the row */
       const s = sole && !fixWaits.has(o.id) ? settledFromRow(o, row) : null;
-      if (!s || await orderInFlight(env, o)) continue;
+      if (!s || await orderInFlight(env, o, at)) continue;
       const d = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
         method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ restate: Object.assign({}, s, { book: true }) })
       });
@@ -2043,7 +2063,7 @@ export async function tellSite(env, fixes, mirror) {
        book's figures whole, once nothing of the order's own is on its way and the site holds no move the book has not heard */
     if (sole && !fixWaits.has(o.id) && (paid < (+o.paid || 0) - 0.004 || moved < (+o.moved || 0) - 0.0004)) {
       const s = settledFromRow(Object.assign({}, o, { status: "done" }), row);
-      if (s && !(await orderInFlight(env, o))) {
+      if (s && !(await orderInFlight(env, o, at))) {
         const d = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
           method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ restate: { ...s, book: true } })
         });
@@ -2066,7 +2086,7 @@ export async function tellSite(env, fixes, mirror) {
        the book alone, so the order kept its old figure (CR3-DAM's s263: RM65 on the book, RM80 on the order). The row wins, except
        while a change of the order's own is on its way to the row: his Amend and a close tell the order at the tap, before it folds. */
     const terms = sole ? termsFromRow(o, row, ledger.moved) : null;
-    if (!terms || await termsInFlight(env, o)) continue;
+    if (!terms || await termsInFlight(env, o, at)) continue;
     const t = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
       method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ restate: terms })
     });
@@ -2120,6 +2140,7 @@ export async function tieOut(env, mirror, now = new Date()) {
   if (!r.ok) return { at, v, ok: false, error: "the site's orders could not be read: " + (r.error || "") };
   const book = await (mirror ? mirror() : readBook(env.SALT_LEDGER)).catch(() => null);
   if (!book || !book.sales) return { at, v, ok: false, error: "the book could not be read" };
+  const bound = boundOf(book);   /* the flight checks take the bound of THIS book */
   const byKey = new Map(), n = new Map();
   for (const s of book.sales) { const k = POSITION_ENGINE.ovKey(s); byKey.set(k, s); n.set(k, (n.get(k) || 0) + 1); }
   const f2 = (x) => +(+x || 0).toFixed(2), f3 = (x) => +(+x || 0).toFixed(3), named = namedKeys(r.orders);
@@ -2160,9 +2181,9 @@ export async function tieOut(env, mirror, now = new Date()) {
     const item = { order: o.id, ...(row && row.rid ? { rid: row.rid } : {}), what: diff };
     /* a claim of theirs waiting holds the order on purpose: his Received or Not found is owed, so it is waiting, said so (Fable's review) */
     if ((o.payments || []).some((p) => p && p.claim === "waiting")) waiting.push({ ...item, what: diff.concat(["a payment they say they sent waits on your Received or Not found"]) });
-    else if (await orderInFlight(env, o)) waiting.push(item);
+    else if (await orderInFlight(env, o, bound)) waiting.push(item);
     else if (!row) {
-      const ack = await fate(env, o.queued && o.queued.ack);
+      const ack = await fate(env, o.queued && o.queued.ack, bound);
       /* its pending row rejected under Approve is no row to come: the re-offer is owed */
       if (ack && ack.status === "rejected") faults.push({ ...item, what: diff.concat(["its pending row was rejected under Approve: tap Accept again or cancel the order"]) });
       else if (!ack || !ack.landed) waiting.push(item); else faults.push(item);

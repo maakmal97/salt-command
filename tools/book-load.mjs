@@ -29,11 +29,17 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
+/* S3 (25 Oct 2026): the derived documents the readers need beside the book (what the D1 mirror holds in `state` besides book.json's own keys),
+   and the version they are for. OPEN, TERMS, REWARD and STOCK are all of ledger.json's `ledger` that book.json and PRICING are not. */
+export const DERIVED = ["OPEN", "TERMS", "REWARD", "STOCK"];
 export function payload(bookFile, ledgerFile, rev) {
   const book = JSON.parse(readFileSync(bookFile, "utf8"));
-  const pricing = JSON.parse(readFileSync(ledgerFile, "utf8")).ledger.PRICING;
+  const ext = JSON.parse(readFileSync(ledgerFile, "utf8"));
+  const pricing = ext.ledger.PRICING;
   if (!pricing) throw new Error("ledger/ledger.json carries no PRICING");
-  return JSON.stringify({ rev, book, pricing });
+  const derived = {};
+  for (const k of DERIVED) if (ext.ledger[k] !== undefined) derived[k] = ext.ledger[k];
+  return JSON.stringify({ rev, book, pricing, derived, v: ext.v, stamped: ext.stamped });
 }
 
 /* git's side of the parity, by its own hand: the same JSON with every object's keys in order, hashed with node:crypto */
@@ -46,15 +52,20 @@ const h256 = (text) => createHash("sha256").update(text, "utf8").digest("hex");
 
 /* What the Book should read back for this book and PRICING: {rows: {coll: {n, digest}}, state: {k: digest}}. An empty
    collection books no row, so it is not listed (the Book cannot list what it holds none of). */
-export function expected(book, pricing) {
-  const rows = {}, state = {};
+export function expected(book, pricing, derived) {
+  const rows = {}, state = {}, arrays = {};
   for (const k of Object.keys(book)) {
     const v = book[k];
     if (!Array.isArray(v)) { state[k] = h256(canonical(v)).slice(0, 16); continue; }
+    arrays[k] = v.length;
     if (!v.length) continue;
-    rows[k] = { n: v.length, digest: h256(v.map((r) => h256(canonical(r))).sort().join("\n")).slice(0, 16) };
+    const hs = v.map((r) => h256(canonical(r)));
+    rows[k] = { n: v.length, digest: h256(hs.slice().sort().join("\n")).slice(0, 16), order: h256(hs.join("\n")).slice(0, 16) };
   }
+  /* S3: the length of every list (so an empty one is a fact), and the documents derived from the book */
+  state.__arrays = h256(canonical(arrays)).slice(0, 16);
   if (pricing !== undefined && pricing !== null) state.PRICING = h256(canonical(pricing)).slice(0, 16);
+  for (const k of DERIVED) if (derived && derived[k] !== undefined && derived[k] !== null) state[k] = h256(canonical(derived[k])).slice(0, 16);
   return { rows, state };
 }
 
@@ -68,6 +79,7 @@ export function compare(want, got) {
     else if (!b) differ.push(k + " (not in the Book, git " + a.n + " rows)");
     else if (a.n !== b.n) differ.push(k + " (git " + a.n + " rows, Book " + b.n + ")");
     else if (a.digest !== b.digest) differ.push(k + " (" + a.n + " rows, other content)");
+    else if (a.order !== b.order) differ.push(k + " (" + a.n + " rows, other order)");
   }
   for (const k of [...new Set([...Object.keys(want.state), ...Object.keys(gs)])].sort()) {
     if (!(k in want.state)) differ.push(k + " (only in the Book)");
@@ -122,7 +134,7 @@ if (isMain) {
   try {
     const body = payload(resolve(REPO, "ledger", "book.json"), resolve(REPO, "ledger", "ledger.json"), process.env.GITHUB_SHA || null);
     r = await post(base, body, process.env);
-    if (r.ok && r.readback) { const sent = JSON.parse(body); par = compare(expected(sent.book, sent.pricing), r.readback); }
+    if (r.ok && r.readback) { const sent = JSON.parse(body); par = compare(expected(sent.book, sent.pricing, sent.derived), r.readback); }
   } catch (e) { r = { ok: false, error: String((e && e.message) || e) }; }
   const said = line(r, par), good = passed(r, par);
   console.log(good ? said : "::error::" + said);

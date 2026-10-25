@@ -1913,7 +1913,7 @@ await (async () => {
     && mirrorBook.purchases[0].rid === "purchases" && mirrorBook.pricing.v === "v302",
     "parallel reads preserve the complete book shape and pricing state");
 
-  /* 30 Sep 2026: a money tap's room (rowRoom, through cashOrder) reads the payments on their way beside the book, not after it */
+  /* 30 Sep 2026 read them beside the book; S3 (25 Oct 2026, Fable) reads the book FIRST: the payments on their way are those its own bound leaves out */
   {
     const { cashOrder } = await import("../src/orders.js");
     const ev = [];
@@ -1925,7 +1925,7 @@ await (async () => {
     } };
     const r = await cashOrder({ SALT_LEDGER: d1 }, "o1", { amount: 10 }, "desk", new Date());
     const pays = ev.indexOf("pays:start"), stateEnd = ev.indexOf("state:end");
-    ok(!r.ok && pays >= 0 && stateEnd >= 0 && pays < stateEnd, "a money tap reads the payments on their way while the book is still being read");
+    ok(!r.ok && pays >= 0 && stateEnd >= 0 && pays > stateEnd, "a money tap reads the book first and the payments on their way after it, by that book's own bound (S3, 25 Oct 2026)");
   }
   /* 30 Sep 2026: the pass reads its q: keys six at a time, never more, and still takes every entry */
   {
@@ -21282,12 +21282,13 @@ await (async () => {
       } });
     wins27.push(domB27.window);
     const DB27 = domB27.window.document, btnB27 = (t) => [...DB27.querySelectorAll("#mTest button")].find((b) => b.textContent === t);
-    await until27(() => btnB27("Make the practice accounts"));
-    const leadB27 = (DB27.querySelector("#mTest .lead") || {}).textContent || "";
-    if (btnB27("Make the practice accounts")) btnB27("Make the practice accounts").dispatchEvent(new domB27.window.Event("click", { bubbles: true }));
+    /* 25 Oct 2026 (Shop on the Salt system): the head counts the open, the line says what one tap makes, and the pill names the missing */
+    await until27(() => btnB27("Make 0000-0001"));
+    const leadB27 = ((DB27.querySelector("#mTest [data-test-state]") || {}).textContent || "") + " " + ((DB27.querySelector("#mTest .atest-lead") || {}).textContent || "");
+    if (btnB27("Make 0000-0001")) btnB27("Make 0000-0001").dispatchEvent(new domB27.window.Event("click", { bubbles: true }));
     await until27(() => btnB27("Remove the practice accounts"));
     const recB27 = await kv27.get("u:" + TU27, "json");
-    ok(/Practice accounts 0000-0000 and 0000-0002 are open[.] One tap makes 0000-0001[.]/.test(leadB27) && postedB27.map((b) => b.u).join() === "0000-0001"
+    ok(/^2 of 3 open One tap makes 0000-0001[.]$/.test(leadB27) && postedB27.map((b) => b.u).join() === "0000-0001"
       && !!(await kv27.get("u:0000-0001", "json")) && JSON.stringify(recB27.wrap) === JSON.stringify(rec27.wrap),
       "with only one of the pair live, his page says so and one tap makes the one missing, the other untouched: " + JSON.stringify([leadB27, postedB27.map((b) => b.u)]));
 
@@ -43571,7 +43572,8 @@ await (async () => {
   const pcssY = pgY.slice(pgY.indexOf("const PAGE_CSS = " + String.fromCharCode(96)), pgY.indexOf(String.fromCharCode(96) + ";", pgY.indexOf("const PAGE_CSS = ")));
   ok(!/\.btn\{[^}]*background/.test(pcssY) && !/\.tabs button\.on\{/.test(pcssY) && !/\n\.state\{/.test(pcssY) && !/\n\.fld\{[^}]*background/.test(pcssY) && /\.btn\{margin-top:18px;width:100%\}/.test(pcssY),
     "the page's own layer keeps geometry and states no look the recipe owns");
-  ok(/el\('button','btn quiet salt-ghost'/.test(readFileSync(join(REPO, "stmt", "owner.js"), "utf8")),
+  /* 25 Oct 2026 (Shop on the Salt system): Practice's Remove is the system's ghost, its Make the pill */
+  ok(/el\('button',on\?'salt-ghost':'salt-pill salt-pill--sm'/.test(readFileSync(join(REPO, "stmt", "owner.js"), "utf8")),
     "and the master page's quiet button is the system's ghost");
 })();
 
@@ -50456,6 +50458,11 @@ await (async () => {
   await (await import("./admin-sizes-hours.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Admin's Shop on the Salt system: For now first, the glance, the day beside its preview, the points, the notice, the practice accounts and this device (25 Oct 2026)");
+await (async () => {
+  await (await import("./admin-shop.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin's week chart of the hours: a row a day, a span past midnight said +1 with its tail on the next day, quarter hours and the quick buttons (20 Oct 2026)");
 await (async () => {
   await (await import("./admin-hours-week.mjs")).run({ ok, pageWork });
@@ -51707,7 +51714,7 @@ await (async () => {
   const count = (os, q) => os.db.prepare(q).get().c;
   const arrays = Object.keys(frozen).filter((k) => Array.isArray(frozen[k]));
   const rowTotal = arrays.reduce((n, k) => n + frozen[k].length, 0);
-  const stateTotal = Object.keys(frozen).length - arrays.length + 1;
+  const stateTotal = Object.keys(frozen).length - arrays.length + 2;   /* PRICING, and S3's __arrays (the length of every list) */
 
   const { os, b } = fresh();
   const r1 = await load(b, frozen);
@@ -51753,7 +51760,7 @@ await (async () => {
     "a row the book no longer carries is marked gone, not deleted");
   const r6 = await load(b, edit);
   const back = os.db.prepare("SELECT booked_at, gone_at FROM rows WHERE key = 'r:s9999'").get();
-  ok(r6.returned === 1 && r6.revised === 0 && back.gone_at === null && back.booked_at === "2026-10-18T00:00:12Z",
+  ok(r6.returned === 1 && r6.revised === 1 /* the __arrays document: sales is one longer */ && back.gone_at === null && back.booked_at === "2026-10-18T00:00:12Z",
     "a row that returns is live again with its first booked_at");
 
   const dup = structuredClone(frozen);
@@ -51798,9 +51805,9 @@ await (async () => {
     readFileSync(join(REPO, "src", f), "utf8").split("\n").forEach((l, i) => {
       const head = /^(?:async )?function (\w+)|^  (?:async )?(\w+)\([^)]*\) \{$/.exec(l);
       if (head) fn = head[1] || head[2];
-      if (/env\.BOOK\b/.test(l) && !/^\s*(\/\/|\*|\/\*)/.test(l)) {
+      if (/env\.BOOK\b/.test(l) && !/^\s*(\/\/|\*|\/\*)/.test(l) && !/^\s*if \(env\.SALT_LEDGER && env\.BOOK\) bindBook\(env\.SALT_LEDGER, env\.BOOK\);/.test(l)) {
         readers.push(f + ":" + (i + 1));
-        if (!(f === "worker.js" && (fn === "handleBookLoad" || fn === "handleBookPitr" || fn === "handleLive")) && !(f === "book.js" && (fn === "isTest" || fn === "isLive"))) strays.push(f + ":" + (i + 1) + " in " + fn);
+        if (!(f === "worker.js" && (fn === "handleBookLoad" || fn === "handleBookPitr" || fn === "handleLive" || fn === "handleBookReadcheck")) && !(f === "book.js" && (fn === "isTest" || fn === "isLive"))) strays.push(f + ":" + (i + 1) + " in " + fn);
       }
     });
   }
@@ -51823,7 +51830,7 @@ await (async () => {
   ok(!nokey.ok && calls === 0 && /SALT_BOOK_KEY/.test(nokey.error), "with no key it says so and sends nothing");
   const wf = readFileSync(join(REPO, ".github", "workflows", "cloud-commit.yml"), "utf8");
   const at = wf.indexOf("- name: Load the shadow Book");
-  const stepText = wf.slice(at, wf.indexOf("\n      # ----", at));
+  const stepText = wf.slice(at, Math.min(wf.indexOf("\n      # ----", at), wf.indexOf("\n      - name:", at + 10)));   /* S3: the readcheck step follows, with its own continue-on-error */
   ok(at > wf.indexOf("- name: Re-seed the mirror") && at < wf.indexOf("- name: Deploy the statements site")
     && /continue-on-error: true/.test(stepText) && /steps\.plan\.outputs\.deploy == '1'/.test(stepText) && /node tools\/book-load\.mjs/.test(stepText),
     "the chain loads the Book after the D1 re-seed, only on a deploy, and a failed load never blocks the fold");
@@ -51842,7 +51849,7 @@ await (async () => {
   const loadVia = async (b, book, pr = pricing) => (await b.fetch(new Request("https://book/load", { method: "POST", body: JSON.stringify({ rev: "r", book, pricing: pr }) }))).json();
   const par = (book, res, pr = pricing) => BL.compare(BL.expected(book, pr), res.readback);
   const arrays = Object.keys(frozen).filter((k) => Array.isArray(frozen[k]) && frozen[k].length);
-  const docsTotal = Object.keys(frozen).filter((k) => !Array.isArray(frozen[k])).length + 1;
+  const docsTotal = Object.keys(frozen).filter((k) => !Array.isArray(frozen[k])).length + 2;   /* PRICING, and S3's __arrays */
 
   const A = fresh();
   const r1 = await loadVia(A.b, frozen);
@@ -51860,7 +51867,7 @@ await (async () => {
   const leaves = [];
   for (const [k, v] of Object.entries(r1.readback.rows)) leaves.push([k, v.n, v.digest]);
   for (const [k, v] of Object.entries(r1.readback.state)) leaves.push([k, 0, v]);
-  const names = new Set([...Object.keys(frozen), "PRICING"]);
+  const names = new Set([...Object.keys(frozen), "PRICING", "__arrays"]);
   const text = JSON.stringify(r1);
   ok(leaves.length && leaves.every(([k, n, d]) => names.has(k) && Number.isInteger(n) && /^[0-9a-f]{16}$/.test(d))
     && Object.keys(r1.readback).join() === "rows,state" && !text.includes(frozen.sales[0].rid) && !text.includes("cost"),
@@ -52062,6 +52069,11 @@ await (async () => {
   const wf = readFileSync(".github/workflows/book-pitr.yml", "utf8");
   ok(/^on:\n  workflow_dispatch:/m.test(wf) && !/^\s+(push|schedule|pull_request):/m.test(wf) && /node tools\/book-pitr\.mjs/.test(wf),
     "the recovery test runs on a hand dispatch only, never on a push or a clock");
+})();
+
+section("Book S3: the readers read the Book (flag in D1), on its way is the Book's own bound, and the readcheck names a Book that differs (25 Oct 2026)");
+await (async () => {
+  await (await import("./book-read.mjs")).run({ ok });
 })();
 
 section("18 Oct 2026: the lean Desk: six views, the three parts gone, alerts in the rail, spots on Coverage, Noticed under To do");

@@ -494,8 +494,10 @@ export async function auditStates({ pageWork }) {
     await t.click(byAct(cl.d, "nav.orders")); await t.click(byAct(cl.d, "part.orders.approve"));
     states.push(["a claim's row to approve", actAudit(cl.d)]);
   } finally { cl.w.close(); }
-  /* Counter Batch A: his collection points, a list with one, and the Sheet Ready to collect asks on */
-  const pt = await richOwnerPage({ pageWork, extra: (route) => route === "/all/maker/points"
+  /* Counter Batch A: his collection points, a list with one, and the Sheet Ready to collect asks on. 25 Oct 2026 (Salt Admin Shop): an override
+     filed, so For now draws its way back to the weekly hours */
+  const pt = await richOwnerPage({ pageWork, hours: (j) => { j.config.manual = { open: false, until: "2099-01-01T00:00:00.000Z" }; j.status = { open: false, source: "manual" }; return j; },
+    extra: (route) => route === "/all/maker/points"
     ? { ok: true, points: { v: 1, list: [{ code: "A2", lat: 3.11111, lng: 101.22222 }] }, examples: [] } : undefined });
   try {
     await pt.work.quiet();
@@ -517,6 +519,13 @@ export async function auditStates({ pageWork }) {
     await pt.click(byAct(pt.card("ord-a1"), "order.ready-collect")); await pt.work.quiet();
     states.push(["Ready to collect asking which point", actAudit(pt.d)]);
   } finally { pt.w.close(); }
+  /* 25 Oct 2026 (Salt Admin Shop): the three practice accounts open, so Practice draws Open the test page */
+  const tp = await richOwnerPage({ pageWork, sheetAnswer: (j) => ({ ...j, accounts: j.accounts.concat(["0000-0001", "0000-0002"].map((u) => ({ username: u, code: "", account: true, test: true, state: "open", seen: { opens: 0 } }))) }) });
+  try {
+    await tp.work.quiet();
+    await tp.click(byAct(tp.d, "nav.shop")); await tp.click(byAct(tp.d, "part.shop.practice")); await tp.work.quiet();
+    states.push(["the practice accounts, all three open", actAudit(tp.d)]);
+  } finally { tp.w.close(); }
   return states;
 }
 

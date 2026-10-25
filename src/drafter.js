@@ -52,11 +52,20 @@ const rewardBook = (book, p) => {
 /* ---- reading the book out of the mirror ------------------------------------------- */
 /* Keep state ahead of the snapshot as before. The snapshot stays ahead of collection reads: a
  * seed deletes it before replacing rows and writes it last. The collections can then be read together. */
+import { boundOf, unfolded } from "./way.js";
+import { fromBook, bindBook, wayBound, bookOf } from "./book-read.js";
+export { bindBook, wayBound };
 import PRICING_ENGINE from "../engine/pricing.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { admitInput, checkInputAdmission, finishInputAdmission, queueWithdrawalKey } from "./input-admission.js";
 
 export async function readBook(db) {
+  const res = await fromBook(db, "read");
+  if (res) return bookOf(res);
+  return readMirror(db);
+}
+/* the D1 mirror, whatever the flag says: the way back, and the check the Book is read against */
+export async function readMirror(db) {
   const rows = async (c) => {
     const rs = await db.prepare("SELECT doc FROM entry WHERE collection=?1 ORDER BY seq").bind(c).all();
     return (rs.results || []).map((r) => { try { return JSON.parse(r.doc); } catch (e) { return null; } }).filter(Boolean);
@@ -80,6 +89,7 @@ export async function readBook(db) {
 }
 /* plan 4 (16 Oct 2026): THE REFUNDS, a collection of `entry` the book read leaves out, read only for an undo, which says one it would strand */
 export async function withRefunds(db, book) {
+  if (Array.isArray(book.customerRefunds)) return { ...book, customerRefunds: book.customerRefunds.slice() };
   const rs = await db.prepare("SELECT doc FROM entry WHERE collection=?1 ORDER BY seq").bind("customerRefunds").all();
   return { ...book, customerRefunds: (rs.results || []).map((r) => { try { return JSON.parse(r.doc); } catch (e) { return null; } }).filter(Boolean) };
 }
@@ -104,12 +114,12 @@ export function bookOnce(db) {
    Read by the drafting passes alone, once, just before their first draft (readBook's callers are timed against its
    reads); a store that cannot answer gives none, and the book stands as it was. */
 export async function withDraftLots(db, book) {
-  if (!book.draftLots) book.draftLots = await draftLotsOf(db);
+  if (!book.draftLots) book.draftLots = await draftLotsOf(db, boundOf(book));
   return book;
 }
-async function draftLotsOf(db) {
+async function draftLotsOf(db, at) {
   try {
-    const rs = await db.prepare("SELECT id,row FROM draft WHERE collection='purchases' AND committed_at IS NULL AND status IN ('pending','approved') AND amends IS NULL ORDER BY id").all();
+    const rs = await db.prepare("SELECT id,row FROM draft WHERE " + unfolded(at) + " AND collection='purchases' AND status IN ('pending','approved') AND amends IS NULL ORDER BY id").all();
     return ((rs && rs.results) || []).map((r) => {
       try { const row = JSON.parse(r.row); return row && typeof row === "object" && r.id ? Object.assign(row, { _draft: String(r.id) }) : null; } catch (e) { return null; }
     }).filter(Boolean);
@@ -1853,7 +1863,7 @@ export async function draftedOf(db, ats) {
 export async function tripCheck(db, book, row, extra, flags) {
   if (!row || !row.trip) return null;
   const rs = await db.prepare(
-    "SELECT row FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved') AND collection='sales' AND json_extract(row,'$.trip')=?1"
+    "SELECT row FROM draft WHERE " + unfolded(boundOf(book)) + " AND status IN ('pending','approved') AND collection='sales' AND json_extract(row,'$.trip')=?1"
   ).bind(row.trip).all();
   const sibs = (book.sales || []).filter((s) => s && s.trip === row.trip)
     .concat((rs.results || []).map((r) => JSON.parse(r.row)), (extra || []).filter((r) => r && r.trip === row.trip));
@@ -1875,7 +1885,7 @@ export async function dryRunDrafter(env) {
   const already = await draftedOf(env.SALT_LEDGER, [...byAt.keys()]);
   const out = { ok: true, dry: true, mirror: book.version, pricingAt: book.pricing && book.pricing.v, would: [], skipped: [], already: 0, committed: 0 };
   const reservations = [...byAt.values()].some(POSITION_ENGINE.inputConsumesResource) ? await env.SALT_LEDGER.prepare(
-    "SELECT entry FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved')"
+    "SELECT entry FROM draft WHERE " + unfolded(boundOf(book)) + " AND status IN ('pending','approved')"
   ).all() : { results: [] };
   const reservedEntries = (reservations.results || []).map((row) => JSON.parse(row.entry));
   for (const at of [...byAt.keys()].sort()) {
@@ -2052,7 +2062,7 @@ export async function runDrafter(env, { now = () => new Date().toISOString(), mi
   const mark = book.state && book.state.QUEUE_COMMITTED;
   const already = await draftedOf(env.SALT_LEDGER, [...byAt.keys()]);
   const reservations = [...byAt.values()].some(POSITION_ENGINE.inputConsumesResource) ? await env.SALT_LEDGER.prepare(
-    "SELECT entry FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved')"
+    "SELECT entry FROM draft WHERE " + unfolded(boundOf(book)) + " AND status IN ('pending','approved')"
   ).all() : { results: [] };
   const reservedEntries = (reservations.results || []).map((row) => JSON.parse(row.entry));
 

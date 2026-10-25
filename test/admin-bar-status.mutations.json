@@ -11,7 +11,7 @@
  {"name":"the bar reads /hours itself","file":"stmt/owner.js","find":"  function barDraw(){\n","replace":"  function barDraw(){\n    fetch('/hours');\n"},
  {"name":"the hours are words, not a control","file":"stmt/page.js","find":"+ '<button type=\"button\" class=\"salt-status ashop\" id=\"aBarHours\" data-act=\"bar.hours\" hidden></button></div>'","replace":"+ '<span class=\"salt-status ashop\" id=\"aBarHours\" data-act=\"bar.hours\" hidden></span></div>'"},
  {"name":"the chip is not named with its tap","file":"stmt/owner.js","find":"      hrs.setAttribute('aria-label',txt+'. Tap to change');","replace":""},
- {"name":"a tap on the chip goes nowhere","file":"stmt/owner.js","find":"    showPlace('shop','hours',{fresh:true,push:true});\n    try{ var t=document.querySelector('[data-act=\"hours.override-state\"]');","replace":"    try{ var t=document.querySelector('[data-act=\"hours.override-state\"]');"},
+ {"name":"a tap on the chip goes nowhere","file":"stmt/owner.js","find":"    showPlace('shop','hours',{fresh:true,push:true});\n    try{ var t=document.getElementById('makerNowCard');","replace":"    try{ var t=document.getElementById('makerNowCard');"},
  {"name":"the chip says until","file":"stmt/owner.js","find":"txt=(h.open?'Open':paused?'Paused':'Closed')+(w?' to '+w:'');","replace":"txt=(h.open?'Open':paused?'Paused':'Closed')+(w?' until '+w:'');"},
  {"name":"an override is never Paused","file":"stmt/owner.js","find":"paused=!h.open&&h.source==='manual';","replace":"paused=false;"},
  {"name":"the chip takes no tone","file":"stmt/owner.js","find":"tone=h.open?'':paused?' ashop--paused':' ashop--closed';","replace":"tone='';"},

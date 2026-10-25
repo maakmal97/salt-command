@@ -128,8 +128,9 @@ export async function run({ ok, pageWork }) {
     ok(!!said && said.id === "makerHoursSaved" && /Not sent/.test(said.textContent) && at(p, "makerHoursMessage").textContent === "",
       "a Done that cannot be sent says so on the same line, under the week chart: " + JSON.stringify(said && said.textContent));
     p.fail.delete("/all/maker/hours");
-    byAct(root, "hours.override-set").click(); await p.work.quiet();
-    ok(/Choose an end time/.test(at(p, "makerHoursMessage").textContent) && beside(root) === at(p, "makerHoursMessage") && at(p, "makerHoursSaved").textContent === "",
+    /* 25 Oct 2026 (Salt Admin Shop): the shop held for now is For now's form, and its line closes For now's card */
+    byAct(p.d, "hours.override-set").click(); await p.work.quiet();
+    ok(/Choose an end time/.test(at(p, "makerHoursMessage").textContent) && beside(at(p, "makerNow")) === at(p, "makerHoursMessage") && at(p, "makerHoursSaved").textContent === "",
       "the shop held for now answers on its own line, right below Set it and Back, and the Save line is cleared so one answer is on screen: " + JSON.stringify([at(p, "makerHoursMessage").textContent, at(p, "makerHoursSaved").textContent]));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
