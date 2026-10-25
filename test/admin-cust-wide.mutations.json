@@ -1,0 +1,56 @@
+[
+  {
+    "name": "1 a table a group",
+    "file": "stmt/owner.js",
+    "find": "      box.appendChild(acctTable(group));",
+    "replace": ""
+  },
+  {
+    "name": "1 the state's word",
+    "file": "stmt/owner.js",
+    "find": "sd.appendChild(chip(s.sev==='now'?'copper':s.sev==='soon'?'brass':'mist', s.word));",
+    "replace": "sd.appendChild(chip('mist', ''));"
+  },
+  {
+    "name": "1 what is owed",
+    "file": "stmt/owner.js",
+    "find": "tr.appendChild(el('td','atfig'+(s.mine?' nfig--mine':''),+s.rm>0.004?rmShort(s.rm):''));",
+    "replace": "tr.appendChild(el('td','atfig',''));"
+  },
+  {
+    "name": "2 the code opens the account",
+    "file": "stmt/owner.js",
+    "find": "b.addEventListener('click', function(){ openCard(a.username); }); th.appendChild(b);",
+    "replace": "th.appendChild(b);"
+  },
+  {
+    "name": "2 Message opens the thread",
+    "file": "stmt/owner.js",
+    "find": "w=pill(['Message','acct.message-row',a.username]); w.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(a.username); });",
+    "replace": "w=pill(['Message','acct.message-row',a.username]);"
+  },
+  {
+    "name": "3 the table from 1080px",
+    "file": "stmt/page.js",
+    "find": "  .adm .alist .ngroup>.ncard{display:none}\n  .adm .atable2{display:block}",
+    "replace": "  .adm .alist .ngroup>.ncard{display:none}"
+  },
+  {
+    "name": "3 the account in columns",
+    "file": "stmt/page.js",
+    "find": "  .adm #aopen .oacct{display:block;column-count:2;column-gap:20px}",
+    "replace": "  .adm #aopen .oacct{display:block;column-gap:20px}"
+  },
+  {
+    "name": "3 three from 1440px",
+    "file": "stmt/page.js",
+    "find": "@media (min-width:1440px){.adm #aopen .oacct{column-count:3}}",
+    "replace": ""
+  },
+  {
+    "name": "3 its way back",
+    "file": "stmt/page.js",
+    "find": "  .adm #oAccts.open #aopen .aback{display:inline-flex}",
+    "replace": ""
+  }
+]

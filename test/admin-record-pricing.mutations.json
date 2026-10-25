@@ -1,3 +1,3 @@
 [
- {"name":"Pricing keeps the order the forms were drawn in","file":"stmt/owner.js","find":"  var PRICING_ORDER=['their','partner','printed-sizes','desk-reminders'];","replace":"  var PRICING_ORDER=[];"}
+ {"name":"Pricing keeps the order the forms were drawn in","file":"stmt/owner.js","find":"  var PRICING_ORDER=['printed-sizes','desk-reminders'];","replace":"  var PRICING_ORDER=[];"}
 ]

@@ -96,6 +96,7 @@ async function deskCall(env, path, method, body) {
     || path === "/_internal/maker/offsets" && method === "GET"
     || /^\/_internal\/maker\/reward\/[A-Za-z0-9%._-]{3,160}$/.test(path) && method === "GET"
     || /^\/_internal\/maker\/customer-reading\/[A-Za-z0-9%._-]{3,160}$/.test(path) && method === "GET"
+    || /^\/_internal\/maker\/(reward-of|customer-of)\/[A-Z][A-Z0-9-]{2,24}$/.test(path) && method === "GET"
     || /^\/_internal\/maker\/drift-preview\/[A-Z][A-Z0-9-]{2,24}\/[a-z]{2,12}\/-?[0-9]{1,2}$/.test(path) && method === "GET"
     || path === "/_internal/maker/ledger" && ["GET", "POST"].includes(method)
     || path === "/_internal/maker/stock" && method === "GET"
@@ -383,6 +384,8 @@ function internalOperation(path) {
   if (rwd) return { kind: "reward", key: rwd[1] };
   const cust = /^\/all\/maker\/customer-reading\/([A-Za-z0-9%._-]{3,160})$/.exec(path);
   if (cust) return { kind: "customer-reading", key: cust[1] };
+  const of = /^\/all\/maker\/(reward-of|customer-of)\/([A-Z][A-Z0-9-]{2,24})$/.exec(path);
+  if (of) return { kind: "reading-of", which: of[1], code: of[2] };
   const prev = /^\/all\/maker\/drift-preview\/([A-Z][A-Z0-9-]{2,24})\/([a-z]{2,12})\/(-?[0-9]{1,2})$/.exec(path);
   if (prev) return { kind: "drift-preview", code: prev[1], product: prev[2], pct: prev[3] };
   if (path === "/all/maker/ledger") return { kind: "ledger" };
@@ -651,6 +654,10 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
     if (op.kind === "reward") {
       if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
       return json(await deskCall(env, "/_internal/maker/reward/" + op.key, "GET"));
+    }
+    if (op.kind === "reading-of") {   /* 26 Oct 2026 (Customers P4): an account's reward and This customer by its code, reads that write nothing */
+      if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+      return json(await deskCall(env, "/_internal/maker/" + op.which + "/" + op.code, "GET"));
     }
     if (op.kind === "customer-reading") {   /* 21 Oct 2026: This customer, a read that writes nothing */
       if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);

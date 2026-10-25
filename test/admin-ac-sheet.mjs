@@ -33,11 +33,12 @@ export async function run({ ok, pageWork }) {
     /* 1 */
     await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.placed"));
     const g = d.querySelector('#makerOrderList .ordsheet[data-sheet="sh-9"]'), rows = g ? [...g.querySelectorAll("[data-order]")].map((r) => r.getAttribute("data-order")) : [];
-    const lines = g ? [...g.querySelectorAll(".ordsheet__line")].map((l) => [...l.children].map(t).join(" ")) : [];
-    ok(!!g && JSON.stringify(rows.sort()) === JSON.stringify(["ord-s1", "ord-s2"]) && /^2 orders, one sheet/.test(t(g.querySelector(".ordsheet__head")))
-      && /^Delivery, on [A-Z0-9]{4}-[A-Z0-9]{3} RM 10\.00$/.test(lines[0] || "") && lines[1] === "Goods, 2 orders RM 150.00"
+    const lines = g ? [t(g.querySelector(".ordsheet__ref")), t(g.querySelector(".ordsheet__sum"))] : [];
+    /* 25 Oct 2026 (Ask I): the sheet is headed by its first order's reference, the delivery charge on the right; each order its own card */
+    ok(!!g && JSON.stringify(rows.sort()) === JSON.stringify(["ord-s1", "ord-s2"]) && /^Sheet [A-Z0-9]{4}-[A-Z0-9]{3}$/.test(lines[0] || "") && lines[1] === "RM 10 delivery"
+      && g.querySelectorAll(":scope > .ordcard").length === 2
       && !d.querySelector('#makerOrderList [data-order="ord-s3"]').closest(".ordsheet") && !d.querySelector('#makerOrderList [data-order="ord-s4"]').closest(".ordsheet"),
-      "a sheet's orders stand in one group, each its own row, with the sheet's delivery on its first and the goods of both; a lone order, or one whose sheet has moved on, stands alone: " + JSON.stringify([rows, lines]));
+      "a sheet's orders stand in one group under its reference, each its own card, the sheet's delivery on the right; a lone order, or one whose sheet has moved on, stands alone: " + JSON.stringify([rows, lines]));
     /* 2 */
     await click(byAct(d, "order.open", "ord-s2"));
     const link = byAct(d, "order.sheet", "ord-s2");

@@ -155,12 +155,7 @@
   "find": "['Handed',t.handedLines+' of '+t.lines.length+' lines']",
   "replace": "['Handed',t.handedLines+' lines']"
  },
- {
-  "name": "a line names its book in words",
-  "file": "stmt/owner.js",
-  "find": "      p.appendChild(bookMark(l.product));\n      p.appendChild(document.createTextNode(' '+units(l.qty)",
-  "replace": "      p.appendChild(document.createTextNode(l.product));\n      p.appendChild(document.createTextNode(' '+units(l.qty)"
- },
+ {"name": "a line names its book in words", "file": "stmt/owner.js", "find": "      p.appendChild(productTag(l.product));\n      p.appendChild(document.createTextNode(' '+units(l.qty)", "replace": "      p.appendChild(document.createTextNode(l.product));\n      p.appendChild(document.createTextNode(' '+units(l.qty)"},
  {
   "name": "every line of Handover all is sent under one moment",
   "file": "stmt/owner.js",
@@ -233,17 +228,12 @@
   "find": "g.tripMoves=g.key.indexOf('moves:')===0&&tripMoveRows(g).length>1;",
   "replace": "g.tripMoves=false;"
  },
- {
-  "name": "an order of several books draws its marks in the line, not the tile column",
-  "file": "stmt/owner.js",
-  "find": "      g.lines.forEach(function(l){ tile.appendChild(bookMark(l.product)); });\n      b.appendChild(tile);\n",
-  "replace": "      g.lines.forEach(function(l){ what.appendChild(bookMark(l.product)); });\n"
- },
+ {"name": "an order of several books draws its tags in the kind line", "file": "stmt/owner.js", "find": "      g.lines.forEach(function(l){ tag.appendChild(productTag(l.product)); });", "replace": "      g.lines.forEach(function(l){ way.appendChild(productTag(l.product)); });"},
  {
   "name": "the line over the list counts every stage's cards",
   "file": "stmt/owner.js",
-  "find": "return ordEntries[k].parts==='orders.'+partNow; }).length;",
-  "replace": "return ordEntries[k].parts.indexOf('orders.')===0; }).length;"
+  "find": ".filter(function(e){ return e.parts==='orders.'+partNow; });",
+  "replace": ".filter(function(e){ return e.parts.indexOf('orders.')===0; });"
  },
  {
   "name": "the line over the list stays put when the stage changes",
@@ -284,8 +274,8 @@
  {
   "name": "the line over the list counts no trip",
   "file": "stmt/owner.js",
-  "find": "return ordEntries[k].parts==='orders.'+partNow; }",
-  "replace": "return ordEntries[k].parts==='orders.'+partNow&&!ordEntries[k].trip; }"
+  "find": "status.textContent=list.length?ordLead(partNow,list):'';",
+  "replace": "status.textContent=list.length?ordLead(partNow,list.filter(function(e){ return !e.trip; })):'';"
  },
  {
   "name": "a trips read that failed is said under Agreed alone",

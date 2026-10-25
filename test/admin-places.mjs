@@ -19,7 +19,7 @@ import { richOwnerPage, byAct } from "./maker-act.mjs";
 const PLACES = ["needs", "orders", "customers", "record", "shop"];
 const LABELS = ["Needs you", "Orders", "Customers", "Record", "Shop"];
 const PARTS = {
-  orders: [["placed", "Received"], ["confirmed", "Agreed"], ["ready", "Ready"], ["paid", "Delivered or paid"], ["done", "Completed"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments"], ["group", "Group"], ["ledger", "Ledger"]],
+  orders: [["placed", "Placed"], ["confirmed", "Agreed"], ["ready", "Ready"], ["paid", "Out or paid"], ["done", "Done"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments"], ["group", "Group"], ["ledger", "Ledger"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
   record: [["entry", "Entry"], ["customers", "Customers"], ["pricing", "Pricing"]],
   shop: [["hours", "Hours"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
@@ -42,8 +42,7 @@ const SHOWS = {
 const FORMS = {
   entry: ["Unsent entry", "Sale or purchase", "Repayment", "Stock count", "Gift", "Loan", "Rewards", "Offsets", "Correct a row", "Reopen a cancelled order"],
   customers: ["New customer", "Make an associate", "Change a name or place", "Place on the map"],
-  pricing: ["Their %", "Partner", "Printed sizes", "Desk reminders"]   /* his Ask G, 25 Oct 2026 (Record redesign P8) */
-};
+  pricing: ["Printed sizes", "Desk reminders"]   /* Their % and Partner on the account card since 26 Oct 2026; his Ask G orders the rest */\n};
 /* what each entry reads, by route: the place on tapping its item, the part on tapping its tab */
 const ROUTES = { review: "/all/maker/review", claims: "/all/maker/claims", pools: "/all/maker/pools", inputs: "/all/maker/inputs", offsets: "/all/maker/offsets",
   hours: "/all/maker/hours", points: "/all/maker/points", ledger: "/all/maker/ledger", bulletin: "/all/maker/bulletin", threads: "/all/maker/threads", assoc: "/all/assoc" };
@@ -94,13 +93,7 @@ export async function run({ ok, pageWork }) {
     const wantParts = (place) => PARTS[place].map(([k, t]) => k + ":" + t + ":part." + place + "." + k);
     ok(strips.length === 5 && ["orders", "customers", "record", "shop"].every((m) => same(form(m), wantParts(m))),
       "Orders, Customers, Record and Shop each have their parts in order, each tab with its act: " + JSON.stringify(["orders", "customers", "record", "shop"].map(form)));
-    /* 25 Oct 2026 (Record redesign P1, his Ask A): Record's three are the Nav bar's text tab row (it was the slider, Counter Batch C), the rest its tab pills */
-    const recipe = (s) => (s.getAttribute("data-place") === "record" ? ["salt-nav__links", "nktab"] : ["salt-tabs", "salt-tabs__pill"]);
-    ok(strips.every((s) => s.classList.contains(recipe(s)[0]) && s.getAttribute("role") === "tablist" && s.getAttribute("aria-label")
-      && [...s.querySelectorAll("button")].every((b) => b.classList.contains(recipe(s)[1]) && b.getAttribute("role") === "tab"))
-      && !d.querySelector("#mHome .aparts"),
-    "a strip is the system's tabs or, for Record, its Nav bar's text tabs, a tablist of tabs, and Needs you has none");
-
+    /* 20 Oct 2026 (Counter Batch C): Customers' parts are the system's slider (26 Oct 2026, the tight one); Record's three left it on 25 Oct 2026 (his Ask A) */\n    /* 25 Oct 2026 (Salt Admin Shop, Orders and Record): Shop's four, Orders' two rows and Record's three are the Nav bar's text tabs, as Needs you's kinds */\n    const recipe = (s) => (["customers"].includes(s.getAttribute("data-place")) ? ["salt-segment", "salt-segment__opt"] : ["shop", "orders", "record"].includes(s.getAttribute("data-place")) ? ["salt-nav__links", "salt-nav__link"] : ["salt-tabs", "salt-tabs__pill"]);\n    ok(strips.every((s) => s.classList.contains(recipe(s)[0]) && s.getAttribute("role") === "tablist" && s.getAttribute("aria-label")\n      && [...s.querySelectorAll("button")].every((b) => b.classList.contains(recipe(s)[1]) && b.getAttribute("role") === "tab"))\n      && !d.querySelector("#mHome .aparts"),\n    "a strip is the system's tabs, or Customers' slider, or Shop's, Orders' and Record's Nav bar tabs, a tablist of tabs, and Needs you has none");\n
     /* 3. THE TABS FOLLOW HIM */
     ok(p.where() === "needs", "the page opens on Needs you: " + p.where());
     await p.tap("nav.orders");
@@ -154,7 +147,7 @@ export async function run({ ok, pageWork }) {
       }
       await empty.tap("part.orders.approve");
       none.rows = [...empty.d.querySelectorAll("#makerDrafts .rnone")].filter(shown).map((e) => e.textContent).join();
-      ok(none.placed === "No orders received." && none.confirmed === "No agreed orders." && none.ready === "No orders ready." && none.paid === "No orders delivered or paid." && none.done === "No completed orders." && none.ended === "No ended orders."
+      ok(none.placed === "No orders placed." && none.confirmed === "No agreed orders." && none.ready === "No orders ready." && none.paid === "No orders out or paid." && none.done === "No done orders." && none.ended === "No ended orders."
         && none.rows === "Nothing waits for your approval.",
       "a part with nothing in it says so, and a part with something says nothing: " + JSON.stringify(none));
     } finally { empty.w.close(); }
@@ -252,7 +245,7 @@ export async function run({ ok, pageWork }) {
     const OUTSIDE = ["vbar", "quote", "ended", "aEnded"];
     const his = rules.flatMap(split).filter((sel) => tokens(sel).some((t) => t !== "adm" && !OUTSIDE.includes(t) && ownerOnly(t)));
     const loose = his.filter((sel) => !/^[.]adm[\s.#:\[>+~]|^[.]adm$/.test(sel));
-    ok(rules.length > 100 && his.length > 40 && loose.length === 0 && /\bclass="[^"]*\badm\b/.test(body(ownerHtml)),
+    ok(rules.length > 100 && his.length > 40 && loose.length === 0 && /id="roster" class="[^"]*\badm\b/.test(body(ownerHtml)),
       "every rule of PAGE_CSS that styles something only his page draws sits under .adm, so the customer's page and a guest's are drawn as they were ("
         + his.length + " of " + rules.length + " rules)" + (loose.length ? ", and these do not: " + JSON.stringify(loose) : ""));
     /* and the other way (Phase 1b, the reviewer's instrument): a rule under .adm that names nothing only his page draws is a shared rule moved under it, and the

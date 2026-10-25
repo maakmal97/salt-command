@@ -1,0 +1,92 @@
+[
+  {
+    "name": "1 Their % on the account",
+    "file": "stmt/owner.js",
+    "find": "if(books.length&&(cat.driftCustomers||[]).indexOf(code)>=0) box.appendChild(pctSection(a, cat, books, partner));",
+    "replace": ""
+  },
+  {
+    "name": "1 the suggestion's why",
+    "file": "stmt/owner.js",
+    "find": "if(sug!=null&&card.why) sr.appendChild(",
+    "replace": "if(false) sr.appendChild("
+  },
+  {
+    "name": "1 Send off while unchanged",
+    "file": "stmt/owner.js",
+    "find": "sendB.textContent='Send '+pctWord(whole); sendB.disabled=whole===held;",
+    "replace": "sendB.textContent='Send '+pctWord(whole); sendB.disabled=false;"
+  },
+  {
+    "name": "2 a step is 5",
+    "file": "stmt/owner.js",
+    "find": "down.addEventListener('click', function(){ st.pct[st.book]=Math.max(-30, st.pct[st.book]-5); pctPaint(); });",
+    "replace": "down.addEventListener('click', function(){ st.pct[st.book]=Math.max(-30, st.pct[st.book]-10); pctPaint(); });"
+  },
+  {
+    "name": "2 stops at -30",
+    "file": "stmt/owner.js",
+    "find": "down.disabled=whole<=-30;",
+    "replace": "down.disabled=false;"
+  },
+  {
+    "name": "2 the preview at the new %",
+    "file": "stmt/owner.js",
+    "find": "var key=code+'/'+st.book+'/'+whole;",
+    "replace": "var key=code+'/'+st.book+'/'+held;"
+  },
+  {
+    "name": "3 the % as a fraction",
+    "file": "stmt/owner.js",
+    "find": "tier:Number((whole/100).toFixed(2)),unit:'pct'}, check=JSON.stringify(body);",
+    "replace": "tier:whole,unit:'pct'}, check=JSON.stringify(body);"
+  },
+  {
+    "name": "3 Use the suggestion fills it",
+    "file": "stmt/owner.js",
+    "find": "use.addEventListener('click', function(){ if(sug!=null){ st.pct[st.book]=sug; pctPaint(); } });",
+    "replace": ""
+  },
+  {
+    "name": "3 Set back to 0 sends a null",
+    "file": "stmt/owner.js",
+    "find": "var body={code:code,product:st.book,tier:null,unit:'pct'}, check=JSON.stringify(body);",
+    "replace": "var body={code:code,product:st.book,tier:0,unit:'pct'}, check=JSON.stringify(body);"
+  },
+  {
+    "name": "4 no Set back to 0 with nothing set",
+    "file": "stmt/owner.js",
+    "find": "    if(card.held){\n      clr=makerButton(",
+    "replace": "    if(true){\n      clr=makerButton("
+  },
+  {
+    "name": "5 This customer by code",
+    "file": "stmt/owner.js",
+    "find": "readingOf('customer-of', code, function(r){ paintCust(cust, r); });",
+    "replace": ""
+  },
+  {
+    "name": "5 the loyalty meter",
+    "file": "stmt/owner.js",
+    "find": "var tr=el('div','salt-meter__track'); tr.appendChild(el('div','salt-meter__fill')); m.appendChild(tr); m.style.setProperty('--salt-fill',String(share));",
+    "replace": "var tr=el('div','salt-meter__track'); tr.appendChild(el('div','salt-meter__fill')); m.appendChild(tr);"
+  },
+  {
+    "name": "5 the reward by code",
+    "file": "stmt/owner.js",
+    "find": "readingOf('reward-of', code, function(r){ paintRwd(rwd, r); });",
+    "replace": ""
+  },
+  {
+    "name": "6 Make partner asks once",
+    "file": "stmt/owner.js",
+    "find": "if(!armed){ b.textContent='Tap again: send to Approve';",
+    "replace": "if(false){ b.textContent='Tap again: send to Approve';"
+  },
+  {
+    "name": "1 the account carries what prices it",
+    "file": "stmt/owner.js",
+    "find": "if(!none&&!a.test&&a.code){ var more=el('div','amore'); c.appendChild(more); acctMore(more, a); }",
+    "replace": ""
+  }
+]

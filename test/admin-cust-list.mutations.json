@@ -1,0 +1,98 @@
+[
+  {
+    "name": "1 the username beside the code",
+    "file": "stmt/owner.js",
+    "find": "title.appendChild(el('span','need-u',",
+    "replace": "title.appendChild(el('span','need-x',"
+  },
+  {
+    "name": "2 not opened is Pending",
+    "file": "stmt/owner.js",
+    "find": "return {sev:'soon', word:'Not opened'",
+    "replace": "return {sev:'now', word:'Not opened'"
+  },
+  {
+    "name": "2 the largest sum first",
+    "file": "stmt/owner.js",
+    "find": ".sort(function(x, y){ return (rm(y[0])-rm(x[0]))||(x[1]-y[1]); })",
+    "replace": ".sort(function(x, y){ return (x[1]-y[1]); })"
+  },
+  {
+    "name": "3 a refund in ember",
+    "file": "stmt/owner.js",
+    "find": "if(s.mine) c.querySelector('.nfig').classList.add('nfig--mine');",
+    "replace": ""
+  },
+  {
+    "name": "4 Message for money owed",
+    "file": "stmt/owner.js",
+    "find": "if(s.act==='message'&&a.username){",
+    "replace": "if(s.act==='messagex'&&a.username){"
+  },
+  {
+    "name": "4 Show for no account",
+    "file": "stmt/owner.js",
+    "find": "else if(s.act==='show') silverOn(a, c, 'acct');",
+    "replace": ""
+  },
+  {
+    "name": "5 the card's way does not open it",
+    "file": "stmt/owner.js",
+    "find": "c.addEventListener('click', function(ev){ if(ev.target===c) openCard(a.username); });",
+    "replace": "c.addEventListener('click', function(ev){ openCard(a.username); });"
+  },
+  {
+    "name": "5 the card opens",
+    "file": "stmt/owner.js",
+    "find": "c.addEventListener('click', function(ev){ if(ev.target===c) openCard(a.username); });",
+    "replace": ""
+  },
+  {
+    "name": "6 No account",
+    "file": "stmt/page.js",
+    "find": "[\"none\", \"No account\"]];",
+    "replace": "[\"none\", \"No account yet\"]];"
+  },
+  {
+    "name": "6 a count beside each",
+    "file": "stmt/owner.js",
+    "find": "if(c) c.textContent=sheet?String(n):'';",
+    "replace": "if(c) c.textContent='';"
+  },
+  {
+    "name": "6 an empty filter dimmed",
+    "file": "stmt/owner.js",
+    "find": "x.disabled=k!=='all'&&!n; });",
+    "replace": "x.disabled=false; });"
+  },
+  {
+    "name": "6 the chosen one selected",
+    "file": "stmt/owner.js",
+    "find": "x.setAttribute('aria-selected', on?'true':'false'); x.classList.toggle('salt-nav__link--active', on); });",
+    "replace": "x.classList.toggle('salt-nav__link--active', on); });"
+  },
+  {
+    "name": "7 past its term",
+    "file": "stmt/owner.js",
+    "find": "if(s.late) lateRM+=+t.owed||0;",
+    "replace": ""
+  },
+  {
+    "name": "7 the lead shows",
+    "file": "stmt/owner.js",
+    "find": "    box.hidden=!sheet;\n  }",
+    "replace": "    box.hidden=true;\n  }"
+  },
+  {
+    "name": "1 the parts are the tight slider",
+    "file": "stmt/page.js",
+    "find": "(seg && p === \"customers\" ? \" salt-segment--tight\" : \"\")",
+    "replace": "\"\""
+  },
+  {
+    "name": "1 Customers is a slider",
+    "file": "stmt/page.js",
+    "find": "const ADMIN_SLIDERS = [\"customers\"];",
+    "replace": "const ADMIN_SLIDERS = [];"
+  }
+]

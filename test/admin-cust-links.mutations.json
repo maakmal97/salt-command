@@ -1,0 +1,50 @@
+[
+  {
+    "name": "1 waiting first",
+    "file": "stmt/owner.js",
+    "find": "if(waiting.length){ heads[seq.length]='Waiting on you'; seq=seq.concat(waiting); }\n    if(standing.length){ heads[seq.length]='Standing link'; seq=seq.concat(standing); }",
+    "replace": "if(standing.length){ heads[seq.length]='Standing link'; seq=seq.concat(standing); }\n    if(waiting.length){ heads[seq.length]='Waiting on you'; seq=seq.concat(waiting); }"
+  },
+  {
+    "name": "2 Via once approved",
+    "file": "stmt/owner.js",
+    "find": "isAssoc(r)?(shut?'Made by ':'Via '):''",
+    "replace": "isAssoc(r)?'Made by ':''"
+  },
+  {
+    "name": "2 opens under Opens",
+    "file": "stmt/owner.js",
+    "find": "fig.appendChild(el('span','salt-eyebrow salt-eyebrow--mist nfig__k','Opens'));",
+    "replace": ""
+  },
+  {
+    "name": "2 nothing for a shut link",
+    "file": "stmt/owner.js",
+    "find": "      if(!shut){ fig.classList.add('nfig--opens');",
+    "replace": "      if(true){ fig.classList.add('nfig--opens');"
+  },
+  {
+    "name": "2 the last open's day",
+    "file": "stmt/owner.js",
+    "find": "var age=pending?ageOf(r.made):r.opens?stampDay(r.last):stampDay(r.made);",
+    "replace": "var age=pending?ageOf(r.made):stampDay(r.made);"
+  },
+  {
+    "name": "3 Restore once withdrawn",
+    "file": "stmt/owner.js",
+    "find": "else if(r.revoked){ go=pill(['Restore','link.restore-card',r.id]);",
+    "replace": "else if(false){ go=pill(['Restore','link.restore-card',r.id]);"
+  },
+  {
+    "name": "3 Approve moves the link",
+    "file": "stmt/owner.js",
+    "find": "if(pending){ go=pill(['Approve','link.approve-card',r.id]); go.addEventListener('click', function(){ moveLink(r,'approve'); }); }",
+    "replace": "if(pending){ go=pill(['Approve','link.approve-card',r.id]); }"
+  },
+  {
+    "name": "4 a tap opens it",
+    "file": "stmt/owner.js",
+    "find": "open:true, onTap:function(){ card.open=!card.open; card.hidden=!card.open;",
+    "replace": "open:true, onTap:function(){ card.open=!card.open;"
+  }
+]

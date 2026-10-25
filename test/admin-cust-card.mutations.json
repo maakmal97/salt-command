@@ -1,0 +1,86 @@
+[
+  {
+    "name": "1 the state and its age in the head",
+    "file": "stmt/owner.js",
+    "find": "if(s.age){ kd.appendChild(document.createTextNode(' · ')); kd.appendChild(el('span','nage'+(s.late?' nage--late':''),s.age)); }\n    who.appendChild(kd);",
+    "replace": "who.appendChild(kd);"
+  },
+  {
+    "name": "1 the figure in ember when late",
+    "file": "stmt/owner.js",
+    "find": "return {word:'They owe', fig:rmShort(t.owed), hot:!!s.late};",
+    "replace": "return {word:'They owe', fig:rmShort(t.owed), hot:false};"
+  },
+  {
+    "name": "1 a refund he owes is hot",
+    "file": "stmt/owner.js",
+    "find": "return {word:'You owe them', fig:rmShort(t.refund), hot:true};",
+    "replace": "return {word:'You owe them', fig:rmShort(t.refund), hot:false};"
+  },
+  {
+    "name": "2 opened and how",
+    "file": "stmt/owner.js",
+    "find": "acctLine(st,'Opened',a.seen&&a.seen.opens?dayMon(a.seen.last)+(howOf(a.seen)?' '+howOf(a.seen):''):'Not yet');",
+    "replace": "acctLine(st,'Opened',a.seen&&a.seen.opens?dayMon(a.seen.last):'Not yet');"
+  },
+  {
+    "name": "2 locked first and hot",
+    "file": "stmt/owner.js",
+    "find": "lk.classList.add('astand--hot'); lk.querySelector('.salt-ledger__value').classList.add('nage--late');",
+    "replace": ""
+  },
+  {
+    "name": "2 notifications",
+    "file": "stmt/owner.js",
+    "find": "if(a.alerts) acctLine(st,'Notifications','On');",
+    "replace": ""
+  },
+  {
+    "name": "3 their waiting line",
+    "file": "stmt/owner.js",
+    "find": "x.u===u&&!x.test&&makerThreadAsked(x); })[0];",
+    "replace": "x.u===u&&!x.test&&!makerThreadAsked(x); })[0];"
+  },
+  {
+    "name": "3 Reply opens the thread",
+    "file": "stmt/owner.js",
+    "find": "rp.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(u); });",
+    "replace": "rp.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); });"
+  },
+  {
+    "name": "4 Sign out everywhere last and wide",
+    "file": "stmt/owner.js",
+    "find": "grid.insertBefore(mark, sob);",
+    "replace": "grid.appendChild(mark);"
+  },
+  {
+    "name": "4 Show a code",
+    "file": "stmt/owner.js",
+    "find": "var hob=ghost(['Show a code','acct.show-code'])",
+    "replace": "var hob=ghost(['Show a code, in person','acct.show-code'])"
+  },
+  {
+    "name": "5 Mark as sent hidden once sent",
+    "file": "stmt/owner.js",
+    "find": "    mark.hidden=!!a.sent||none||!!a.test;\n    mark.addEventListener",
+    "replace": "    mark.hidden=none||!!a.test;\n    mark.addEventListener"
+  },
+  {
+    "name": "5 Mark as sent marks it",
+    "file": "stmt/owner.js",
+    "find": "var j=await refs('/all/sent/'+u, {issue:sheetIssue, sent:true});\n        a.sent=j.sent; stand();",
+    "replace": "var j={sent:a.sent};\n        a.sent=j.sent; stand();"
+  },
+  {
+    "name": "6 no account says so",
+    "file": "stmt/owner.js",
+    "find": "if(none){ acctLine(st,'Account','Next update'); return; }",
+    "replace": ""
+  },
+  {
+    "name": "7 the code never wraps",
+    "file": "stmt/page.js",
+    "find": "line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}",
+    "replace": "line-height:1.2;overflow:hidden;overflow-wrap:normal}"
+  }
+]

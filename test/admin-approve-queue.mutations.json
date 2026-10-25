@@ -400,5 +400,6 @@
   "file": "stmt/owner.js",
   "find": "return g.drafts.map(function(d){ return d.id; }); })); };",
   "replace": "return g.drafts.slice(0,1).map(function(d){ return d.id; }); })); };"
- }
+ },
+{"name": "a book on Orders is its mark again", "file": "stmt/owner.js", "find": "function bookTag(product){ return productTag(product); }", "replace": "function bookTag(product){ return bookMark(product,20); }"}
 ]

@@ -128,7 +128,10 @@ export async function run({ ok, KV, worker, REPO } = {}) {
   const context = { ok: true, products: ["salt"], catalog: { products: [{ product: "salt", drift: true }],
     parties: ["CX1-ZED", "CX3-ZED", "AX1-ZED", "SP1-ZED"], tierCustomers: [], driftCustomers: ["CX1-ZED", "CX3-ZED", "AX1-ZED"],
     driftCards: [], tierNames: [], partners: ["CX3-ZED"], partnerWaiting: [] } };
-  const dom = new JSDOM(landingPage("", "maker-partner-nonce", { master: "fixture-master", accounts: [] }), {
+  /* 26 Oct 2026: Make partner stands on the customer's own card under Customers, so the page knows the accounts */
+  const accts = [{ username: "aaaa-bbbb", code: "CX1-ZED" }, { username: "cccc-dddd", code: "CX3-ZED" }, { username: "eeee-ffff", code: "AX1-ZED" }];
+  const sheetRow = (a) => ({ ...a, account: true, t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear", seen: { opens: 1, last: "2026-10-10T08:00:00.000Z", how: "link" }, sent: "2026-10-10T08:00:00.000Z" });
+  const dom = new JSDOM(landingPage("", "maker-partner-nonce", { master: "fixture-master", accounts: accts }), {
     url: "https://site.test/all", runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(win) {
       Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true });
@@ -142,30 +145,35 @@ export async function run({ ok, KV, worker, REPO } = {}) {
         const data = route === "/open" ? adminOpen : route === "/all/maker/inputs" ? context
           : route === "/all/maker/review" ? { ok: true, orders: [], drafts: [] }
             : route === "/all/maker/hours" ? { ok: true, config: null, status: { open: true, source: "default" } }
-              : route === "/all/sheet" ? { ok: true, accounts: [] } : { ok: true, accounts: [], orders: [], drafts: [], refs: [], tiers: [] };
+              : route === "/all/sheet" ? { ok: true, accounts: accts.map(sheetRow) } : route.startsWith("/all/maker/drift-preview/") ? { ok: true, preview: { rows: [] } }
+                : { ok: true, accounts: [], orders: [], drafts: [], refs: [], tiers: [] };
         return { ok: true, status: 200, json: async () => data };
       };
     } });
   const waitFor = async (p) => { for (let i = 0; i < 100 && !p(); i++) await new Promise((r) => setTimeout(r, 10)); return p(); };
   try {
     const doc = dom.window.document;
-    doc.querySelector('button[data-act="nav.record"]').click();
-    check(await waitFor(() => [...doc.querySelectorAll("#makerInputs .maker-input h3")].some((h) => h.textContent === "Partner")),
-      "the owner page renders the Partner control");
-    const section = [...doc.querySelectorAll("#makerInputs .maker-input")].find((s) => s.querySelector("h3")?.textContent === "Partner");
-    const select = section.querySelector("select"), button = [...section.querySelectorAll("button")].find((b) => b.textContent === "Make partner");
-    check([...select.options].map((o) => o.value).join() === "CX1-ZED" && section.textContent.includes("Partner now: CX3-ZED."),
-      "a partner shows as one and is not offered again; only customers are listed");
-    button.click();
+    doc.querySelector('[data-act="nav.customers"]').click(); doc.querySelector('[data-act="part.customers.accounts"]').click();
+    const open = async (code) => { await waitFor(() => [...doc.querySelectorAll("#rlist [data-u]")].some((c) => c.querySelector(".need-who")?.textContent === code));
+      [...doc.querySelectorAll("#rlist [data-u]")].find((c) => c.querySelector(".need-who").textContent === code).click();
+      await waitFor(() => doc.querySelector("#aopen .apart, #aopen .amore .apct")); return doc.querySelector("#aopen .oacct"); };
+    const three = await open("CX3-ZED"), three2 = three && three.querySelector(".apart");
+    const assoc = await open("AX1-ZED"), assocPart = !!(assoc && assoc.querySelector('[data-act="acct.partner"]'));
+    const one = await open("CX1-ZED"), section = one && one.querySelector(".apart"), button = section && section.querySelector('[data-act="acct.partner"]');
+    check(!!button && button.textContent === "Make partner", "the owner page renders the Partner control on the customer's card");
+    check(!!three2 && /Partner/.test(three2.querySelector(".salt-status").textContent) && !three2.querySelector('[data-act="acct.partner"]') && !assocPart,
+      "a partner shows as one and is not offered again; only customers are offered it");
+    const tap = async () => { button.click(); await new Promise((r) => setTimeout(r, 0)); button.click(); };
+    await tap();
     await waitFor(() => calls.length === 1 && !button.disabled);
-    check(calls.length === 1, "the first tap is sent");
+    check(calls.length === 1, "the first tap asks, the second is sent");
     const kept = dom.window.localStorage.getItem("saltMakerPending:/all/maker/inputs/partner");
     check(kept && JSON.parse(kept).body.code === "CX1-ZED", "an unconfirmed send is retained whole on the phone");
-    button.click();
+    await tap();
     check(await waitFor(() => calls.length === 2 && !button.disabled) && JSON.stringify(calls[0].body) === JSON.stringify(calls[1].body)
       && !dom.window.localStorage.getItem("saltMakerPending:/all/maker/inputs/partner"),
     "the retry sends the retained request unchanged, once, and clears it on confirmation");
-    button.click();
+    await tap();
     check(await waitFor(() => calls.length === 3) && calls[2].body.at !== calls[1].body.at, "a later intentional tap is a fresh request");
   } finally { dom.window.close(); }
 }

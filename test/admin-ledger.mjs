@@ -53,8 +53,9 @@ export async function run({ ok, pageWork }) {
     "a row shows its id, date, code, units, total, owed, handed over of ordered and stage: " + JSON.stringify(first && cells(first)));
     ok(!!sec && cells(sec)[7] === "0 of 4" && cells(sec)[6] === "RM 0.00" && cells(sec)[8] === "Open · Deferred" && !!undated && cells(undated)[1] === "Undated",
       "a paid order owes RM 0.00 and has handed over none, and a row with no date says Undated: " + JSON.stringify([sec && cells(sec), undated && cells(undated)]));
-    ok(!!first && first.querySelector(".salt-producttag .pwith svg") && !!sec.querySelector(".salt-producttag .pwith svg") && first.children[3].querySelector(".salt-producttag--oil") !== null,
-      "a book is drawn as its mark, in the book's own tag");
+    /* 25 Oct 2026 (canvas Salt Admin Orders): a book is its typed Product tag, its name in its hue, as on Needs you, and no mark */
+    ok(!!first && !!first.children[3].querySelector(".salt-producttag--oil") && first.children[3].textContent.trim() === "Oil" && !first.querySelector("svg.psym") && !!sec.querySelector(".salt-producttag") && !sec.querySelector("svg.psym"),
+      "a book is its typed Product tag, its name in its hue, and no mark: " + (first && first.children[3].textContent));
     /* 4 */
     const small = first && first.children[6].querySelector("small");
     ok(!!small && small.textContent === "goods out, RM 5.00" && !sec.children[6].querySelector("small"), "what is out unpaid is said beside what is owed, and only where goods are out: " + (small && small.textContent));

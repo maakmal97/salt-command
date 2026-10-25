@@ -9,9 +9,7 @@
  *   1  the recipe is carried in SITE_RECIPES, with its 44px option, its reduced-motion rule and its greyed option
  *   2  the customer's Look row is a slider of two, Night chosen and marked, the thumb at it, Tide greyed and inert
  *   3  the Orders tabs are a slider of four with their counts, and a tap moves the thumb and aria-selected together
- *   4  Salt Admin's Record strip is the Nav bar's tabs, never the slider, the part entered selected
- *   5  the strips that do not fit stay pills: Customers, Shop, the stages, Orders' second strip, the kinds, the months
- *   6  no rule of the page lowers a slider's option under 44px */
+ *   4  Salt Admin's Record strip is the Nav bar's tabs, never the slider, the part entered selected; Customers' is the tight slider, its thumb following each part entered, a hidden option taking no column\n *   5  the strips that do not fit stay pills: the stages' arrows, Orders' second strip, the months; the kinds, Shop's and Orders' parts are the Nav bar's text tabs\n *   6  no rule of the page lowers a slider's option under 44px */
 import { JSDOM, VirtualConsole } from "jsdom";
 import { webcrypto } from "node:crypto";
 import { open, ord, ago } from "./counter-b-kit.mjs";
@@ -76,13 +74,23 @@ export async function run({ ok, pageWork }) {
     await go("#record/customers");
     const g2 = picked();
     ok(g1 === "001" && g2 === "010", "and the part entered is the tab selected, Pricing then Customers: " + J([g1, g2]));
-    /* a hidden option took no column on Record's slider alone; no slider hides an option now (segSync still skips one) */
-    const pills = ['.aparts[data-place="customers"]', '.aparts[data-place="shop"]', ".aparts--stages", ".aparts--minor"].map((s) => {
-      const g = d.querySelector(s); return [s, !!g && g.classList.contains("salt-tabs") && !g.classList.contains("salt-segment") && [...g.querySelectorAll("button")].every((b) => b.classList.contains("salt-tabs__pill"))]; });
+    /* 25 Oct 2026 (canvas Salt Admin Customers): Customers' parts are the slider, the tight one; its thumb follows a part, and a hidden option takes no column */
+    const cu = d.querySelector('.aparts[data-place="customers"]');
+    ok(!!cu && cu.classList.contains("salt-segment") && cu.classList.contains("salt-segment--tight") && !cu.classList.contains("salt-tabs")
+      && Number(seg(cu).n) >= 2 && [...cu.querySelectorAll("button")].every((b) => b.classList.contains("salt-segment__opt")),
+      "Salt Admin's Customers strip is a tight slider: " + J(cu && seg(cu)));
+    const firstPart = cu.querySelector("button[data-part]");
+    firstPart.hidden = true;
+    await go("#customers/links");
+    const g3 = seg(cu), shown = [...cu.querySelectorAll("button")].filter((b) => !b.hidden).length;
+    ok(g3.n === String(shown) && g3.i === "1", "an option hidden leaves the columns: the thumb on Links, the second shown: " + J(g3));
+    firstPart.hidden = false;
     /* 22 Oct 2026 (canvas Needs you): Needs you's kinds left the pills for the Nav bar's text tabs (test/admin-ac-glance.mjs), so they are neither pills nor the slider */
-    const kinds = d.querySelector(".nchips");
-    ok(pills.every((x) => x[1]) && !!kinds && !kinds.classList.contains("salt-segment") && [...kinds.querySelectorAll("button")].every((b) => b.classList.contains("salt-nav__link")),
-      "Customers, Shop, the stages and Orders' second strip stay strips of pills, and the kinds are the Nav bar's tabs, never the slider: " + J(pills));
+    /* 25 Oct 2026 (Salt Admin Shop and Orders): Shop's parts and Orders' two rows left the pills for the Nav bar's text tabs too */
+    const kinds = d.querySelector(".nchips"), navs = ['.aparts[data-place="shop"]', ".oparts--stages .aparts", ".oparts--minor .aparts"].map((s) => [s, d.querySelector(s)]);
+    const navOk = navs.map(([s, g]) => [s, !!g && !g.classList.contains("salt-segment") && [...g.querySelectorAll("button")].every((b) => b.classList.contains("salt-nav__link"))]);
+    ok(!!kinds && !kinds.classList.contains("salt-segment") && [...kinds.querySelectorAll("button")].every((b) => b.classList.contains("salt-nav__link")) && navOk.every((x) => x[1]),
+      "the kinds, Shop's parts and Orders' two rows are the Nav bar's tabs, never the slider: " + J(navOk));
     const al = d.querySelector("#lookRow .lookset");
     ok(al && al.classList.contains("salt-segment") && seg(al).n === "2" && seg(al).on === "10", "Salt Admin's Look row is the same slider: " + J(seg(al)));
     ok(errs.length === 0, "and his page drew without an error: " + J(errs.slice(0, 2)));

@@ -223,17 +223,18 @@ export async function run({ ok, pageWork }) {
     const bare = (x) => { const g = x.cloneNode(true); g.querySelectorAll(".salt-producttag").forEach((t) => t.replaceWith("[tag]")); return g.textContent.trim(); };
     const line = [...d.querySelectorAll("#makerDrafts .maker-facts")].find((x) => x.querySelector(".salt-producttag--oil"));
     const tag = line && line.querySelector(".salt-producttag");
-    ok(!!tag && tag.classList.contains("salt-producttag--oil") && !!tag.querySelector("svg.psym") && /^(Cube|Droplet|Lozenge|Capsule|Ring)$/.test(tag.querySelector(".sr").textContent) && !/oil/i.test(tag.textContent)
+    /* 25 Oct 2026 (canvas Salt Admin Orders): on Orders the tag is typed, the book's name in its hue as on Needs you, and no mark */
+    ok(!!tag && tag.classList.contains("salt-producttag--oil") && !tag.querySelector("svg.psym") && tag.textContent.trim() === "Oil"
       && /^1 unit \[tag\], RM 100\.00$/.test(bare(line))
       && !!tag.querySelector(".salt-producttag__dot[aria-hidden='true']") && !tag.hasAttribute("style") && !tag.querySelector("[style]"),
-    "a book on a row to approve wears the Product tag with its dot and its mark, told to a reader by its shape and by no word for the book: " + (line ? line.textContent : "no line"));
+    "a book on a row to approve wears the typed Product tag with its dot, its name in its hue and no mark: " + (line ? line.textContent : "no line"));
     const figs = d.querySelector("#makerDrafts article.salt-approve > .salt-metrics.salt-metrics--sm");
     ok(!!figs && [...figs.children].every((c) => c.querySelector(".salt-metrics__label") && c.querySelector(".salt-metrics__value")) && figs.children.length === 2,
       "and the cost and margin under it are the Metric row, a label over its figure");
     await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.group"));
     const pool = [...d.querySelectorAll("#makerPools .maker-row")].find((x) => x.querySelector(".salt-producttag"));
-    ok(!!pool && pool.querySelector(".salt-producttag").classList.contains("salt-producttag--salt") && /^\[tag\], 1 unit each\. 3 of 10 units in, 1 joined\./.test(bare(pool)) && !/salt/i.test(pool.textContent),
-      "a group order's row shows its book on the Product tag too, as a mark and no word: " + (pool ? bare(pool).slice(0, 60) : "no row"));
+    ok(!!pool && pool.querySelector(".salt-producttag").classList.contains("salt-producttag--salt") && /^\[tag\], 1 unit each\. 3 of 10 units in, 1 joined\./.test(bare(pool)) && !/salt/i.test(bare(pool)) && pool.querySelector(".salt-producttag").textContent.trim() === "Salt",
+      "a group order's row shows its book on the typed Product tag too, and no word for it beside the tag: " + (pool ? bare(pool).slice(0, 60) : "no row"));
 
     /* the hours are the week chart (20 Oct 2026, canvas V63), a button a day; the table is gone */
     await click(byAct(d, "nav.shop")); await click(byAct(d, "part.shop.hours")); audit();
@@ -243,20 +244,20 @@ export async function run({ ok, pageWork }) {
 
     /* the guest links and the report card, on Customers */
     await click(byAct(d, "nav.customers")); await click(byAct(d, "part.customers.links")); audit();
-    const links = [...d.querySelectorAll(".glink")];
+    const links = [...d.querySelectorAll("#glist .glink")];   /* 26 Oct 2026: a link is Needs you's card; its panel (the .glink) holds the address, QR and moves */
     const moves = links.flatMap((l) => [...l.querySelectorAll(".grow > button")]);
-    ok(links.length >= 2 && links.every((l) => l.classList.contains("salt-glass-card") && l.classList.contains("salt-glass-card--radius-md") && l.querySelector(".gt.salt-field__label"))
+    ok(links.length >= 2 && links.every((l) => l.classList.contains("salt-glass-card") && l.classList.contains("salt-glass-card--radius-md") && l.querySelector("h4.gwho"))
       && ["link.copy", "link.withdraw", "link.restore", "link.approve", "link.decline"].every((a) => moves.some((b) => b.getAttribute("data-act") === a))
       && moves.every((b) => b.classList.contains("salt-ghost")) && moves.filter((b) => /^link\.(withdraw|decline)$/.test(b.getAttribute("data-act"))).every((b) => b.classList.contains("salt-ghost--danger"))
       && moves.filter((b) => /^link\.(copy|restore|approve)$/.test(b.getAttribute("data-act"))).every((b) => !b.classList.contains("salt-ghost--danger")),
-    `a guest link is the system's glass card, its label the Field label and its moves ghosts, Withdraw and Decline the danger ghost (${links.length} links, ${moves.length} moves)`);
-    const heads = [...d.querySelectorAll("#oLinks .ghead")], picks = [...d.querySelectorAll(".glink select")];
-    ok(heads.length >= 1 && heads.every((h) => h.classList.contains("salt-eyebrow") && h.classList.contains("salt-eyebrow--copper")) && picks.length === 0,
-      `the heads over the links are the system's copper eyebrow (${heads.length}) and no level picker is drawn (${picks.length})`);
+    `a guest link's panel is the system's glass card, its heading its own line, and its moves ghosts, Withdraw and Decline the danger ghost (${links.length} links, ${moves.length} moves)`);
+    const heads = [...d.querySelectorAll("#glist .ghead")], picks = [...d.querySelectorAll(".glink select")];
+    ok(heads.length >= 1 && heads.every((h) => h.classList.contains("salt-eyebrow") && /(^| )salt-eyebrow--(copper|brass|mist)( |$)/.test(h.className)) && picks.length === 0,
+      `the heads over the links are the system's eyebrow in the group's severity colour (${heads.length}) and no level picker is drawn (${picks.length})`);
     await click(byAct(d, "part.customers.associates"));
     const card = d.querySelector("#clist .acard"), cells = card ? [...card.querySelectorAll(".agrid > .acell")] : [];
     ok(!!card && card.classList.contains("salt-glass-card") && card.querySelector(".agrid").classList.contains("salt-metrics") && card.querySelector(".agrid").classList.contains("salt-metrics--sm")
-      && JSON.stringify(cells.map((c) => [c.querySelector(".salt-metrics__label").textContent, c.querySelector(".salt-metrics__value").textContent])) === JSON.stringify([["Bought from you", "RM 100.00"], ["Sold for you", "RM 50.00"], ["Introduced", "RM 20.00"]]),
+      && JSON.stringify(cells.map((c) => [c.querySelector(".salt-metrics__label").textContent, c.querySelector(".salt-metrics__value").textContent])) === JSON.stringify([["Bought", "RM 100.00"], ["Sold", "RM 50.00"], ["Introduced", "RM 20.00"]]),
     "the report card is the system's glass card and its three figures its Metric row, label over figure");
   } finally { p.w.close(); }
 }

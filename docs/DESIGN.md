@@ -336,6 +336,12 @@ picker stay retired (the suite fails if any returns): nothing keys on a clock, t
 - **The open order from 1180px** is a grid of columns (`.ordcols--2`, `.ordcols--3`: minmax(0,1.15fr) minmax(0,1fr) minmax(0,0.9fr), gap
   20px), page geometry only. From 1080px the order takes the list's place, reversing the split of 11 Oct 2026 at that width.
 
+## 26 Oct 2026: Salt Admin's Customers, the tight slider (salt-ds 1.16.0)
+
+`salt-segment--tight` halves the slider's tracking and thins its option padding so four places whose longest word is ten letters fit at 390px; Salt Admin's
+Customers parts use it. Every other part of the page is a recipe already in use: Needs you's card for an account, a thread and a link, `salt-table--plain`
+for the wide accounts and associates, `salt-ledger` for the standing, Thread and Bubble for a conversation, Meter for the loyalty unit and the reward.
+
 ## 20 Oct 2026: Counter Batch C, the slider and bolder labels (salt-ds 1.9.0 to 1.9.2)
 
 - **Labels at 600** (item 20): `.salt-eyebrow`, `.salt-field__label` (0.18em) and `.salt-options__legend--label` (0.18em) in salt-ds; the

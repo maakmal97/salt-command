@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="ebe7b7abda3a54ba";
+var SALT_BUILD_ID="bc69bd8338333eba";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -2124,6 +2124,10 @@ details.obs>summary{min-height:var(--tap);}
 }
 .salt-pill--md { padding: 16px 40px; font-size: 0.875rem; }
 .salt-pill--sm { padding: 10px 20px; font-size: 0.71875rem; }
+/* 1.17.0 (canvas Salt Admin Orders, 25 Oct 2026): THE DANGER PILL, a refusal chosen and filled, as a ticked Reject beside a ticked Approve: the ember
+   under the ink on accent, so the two decided states carry one weight; the danger ghost stays the refusal at rest (npm run contrast measures the ink) */
+.salt-pill--danger { background: var(--salt-ember); box-shadow: 0 8px 24px color-mix(in srgb, var(--salt-ember) 30%, transparent); }
+.salt-pill--danger:hover { box-shadow: 0 12px 32px color-mix(in srgb, var(--salt-ember) 40%, transparent); }
 .salt-pill:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(var(--salt-copper-rgb, 184, 115, 51), 0.4); }
 .salt-pill:active { transform: translateY(0); box-shadow: 0 8px 24px rgba(var(--salt-copper-rgb, 184, 115, 51), 0.3); }
 .salt-pill:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 3px; }
@@ -3065,6 +3069,9 @@ label.salt-field__label {
 /* an option that cannot be chosen now (Tide while it is off) greys as a ghost does, and takes no hover */
 .salt-segment__opt:disabled, .salt-segment__opt:disabled:hover { color: var(--salt-mist); opacity: 0.45; cursor: not-allowed; }
 .salt-segment__count { color: var(--salt-brass); margin-left: 6px; }   /* copper is 4.47:1 on Night's thumb */
+/* The tight slider (1.16.0, Salt Admin Customers, 25 Oct 2026): four places whose longest word is ten letters fit whole at 390px, the tracking
+   halved and the option's own padding thinned; nothing else about the recipe moves. */
+.salt-segment--tight .salt-segment__opt { letter-spacing: 0.06em; padding: 0 2px; }
 @media (prefers-reduced-motion: reduce) {
   .salt-segment::before { transition: none; }
 }
@@ -11091,7 +11098,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1252","d":"25 Oct 2026","t":"RICE PURCHASE FROM SM4-KEP LANDED, SALT UNTOUCHED","n":["<b>ONE PURCHASE FOLDED.</b> 100 unit of rice from SM4-KEP, goods RM320 plus RM10 freight, RM330 cash, collected and paid on 25 Oct. The rate matches his word of RM3.20 a unit. The drafter's flag on RM330 against RM320 is answered by the freight.","<b>INVENTORY.</b> The lot is rice, so salt stays at 6.5 units and the salt cost of RM56 does not move."]}];
+const evolution=[{"v":"v1256","d":"26 Oct 2026","t":"SALT ADMIN'S ORDERS ON THE SALT SYSTEM","n":["<b>ORDERS ON THE SALT SYSTEM (HIS YES OF 25 OCT 2026 TO EVERY ASK OF THE ORDERS CANVAS).</b> The parts are two text tab rows: Placed, Agreed, Ready, Out or paid, Done and Ended, each with the orders there waiting on him, then Payments, Group and Ledger; Approve is the bar's. The line over the list is the stage's money first.","An order is Needs you's card: the way and the age, or why it waits in copper, the book's typed tag and the code, the stage's move as one pill and the figure; from 1080px a plain table. Withdraw, Ready to deliver, Handed and one Received ask once under the row and send what the order card sends; Agree, a collection's Ready, two payments and Message open the order.","The open order's band names its book by its tag, the Agree inputs stand in view over Agree and Decline, and Agree says the one sum it sends. Approve, Payments, Group and the Ledger name every book by its tag, and a ticked Reject is the danger pill (salt-ds 1.17.0).","Nothing prices, books, folds or routes differently: every send is the order card's own, under its own request id."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11239,7 +11246,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='25 Oct 2026, 21:38 KL';
+const LAST_UPDATED='26 Oct 2026, 03:53 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

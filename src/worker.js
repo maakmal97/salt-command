@@ -17,13 +17,15 @@
  * trusted. See CLAUDE.md and docs/DESK.md before changing the deployment setting.
  */
 
-import { runDrafter, dryRunDrafter, readBook, bookOnce, withDraftLots, withRefunds, draftRow, tripCheck } from "./drafter.js";
+import { runDrafter, dryRunDrafter, readBook, readMirror, bookOnce, withDraftLots, withRefunds, draftRow, tripCheck, bindBook, wayBound } from "./drafter.js";
+import { bookDirect, compareReads, readMode } from "./book-read.js";
+import { boundOf, unfolded } from "./way.js";
 import { runBackup, backupAlarm, BACKUP_CRON } from "./backup.js";
 import { approveFigures } from "./approve-figures.js";
 import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, TIEOUT_KEY, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades, wakeAdmin, ADMIN_ON } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault, fixtureCheck } from "./maker.js";
-import { makerCustomerReading } from "./maker-inputs.js";
+import { makerCustomerReading, makerRewardReadingOf, makerCustomerReadingOf } from "./maker-inputs.js";
 import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerLedgerMini, makerStock, makerUndo, makerRows, openRefunds, makerRewardReading, makerDriftPreview } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerAppointmentClaim, makerOrderOnce } from "./maker-request.js";
 import { readVaultRegistrations } from "./vault-pair.js";
@@ -113,7 +115,7 @@ async function accessOk(request, env, p, m) {
 }
 /* 19 Oct 2026: the pushes that INFORM the Desk (POST /push/send tags), each kept as KV inform:last for the banner */
 const INFORM_TAGS = new Set(["folded", "fold-refused", "suite-red", "stock"]);
-const CI_ROUTES = new Set(["GET /rev", "POST /push/send", "POST /book/load", "POST /book/pitr", "GET /book/window"]);
+const CI_ROUTES = new Set(["GET /rev", "POST /push/send", "POST /book/load", "POST /book/pitr", "GET /book/window", "GET /book/readcheck"]);
 
 /* THE WRITE GATE (12 Aug 2026). Reads stay open, by the owner's standing decision; writes
  * do not have to. A caller must present X-Salt-Key matching the SALT_WRITE_KEY secret, and
@@ -215,6 +217,21 @@ async function handleBookPitr(request, env, m, p) {
     if (verb === "restart") return json({ ok: true, restarted: true });
     return json({ ok: false, error: "the test object did not answer" }, 502);
   }
+}
+
+/* S3 (25 Oct 2026): THE READCHECK. The mirror's book against the Book's, read side by side, whatever the flag says: it answers whether the two
+   agree (names of what differs, counts, the versions and the flag; never a row or a value, since the Actions log is public). The chain asks it
+   after each load and goes red on a difference, so "the readers agree" is proved at every fold. The same two locks as the load. */
+async function handleBookReadcheck(request, env, m) {
+  if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+  if (!bookKeyOk(request, env)) return needsKey();
+  if (!env.BOOK || !env.SALT_LEDGER) return json({ ok: false, error: "the Book or the ledger is not bound" }, 503);
+  bindBook(env.SALT_LEDGER, env.BOOK);
+  try {
+    const mirror = await withRefunds(env.SALT_LEDGER, await readMirror(env.SALT_LEDGER)), res = await bookDirect(env.SALT_LEDGER);
+    const r = compareReads(mirror, res);
+    return json({ ok: r.ok, differ: r.differ, rows: r.rows || 0, version: mirror.version, bookVersion: res ? res.v : null, mode: await readMode(env.SALT_LEDGER) });
+  } catch (e) { return json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }, 500); }
 }
 
 async function handleBookLoad(request, env, m) {
@@ -427,7 +444,7 @@ async function handleQueuePost(request, env, ctx, gateHeld = false) {
     if (!env.SALT_LEDGER) return json({ ok: false, error: "The ledger is required to check pending reward and loan inputs." }, 503);
     book = await mirror();
     if (!book.version) return json({ ok: false, error: "The mirror is being seeded. Keep the input and retry." }, 503);
-    const drafts = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved')").all();
+    const drafts = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE " + unfolded(boundOf(book)) + " AND status IN ('pending','approved')").all();
     waiting = (drafts.results || []).map((row) => JSON.parse(row.entry));
   }
   for (const entry of kept) {
@@ -507,8 +524,9 @@ async function makerAppointmentEntries(env) {
   if (!queueResponse.ok || queueResult.ok !== true || !Array.isArray(queueResult.queue))
     throw new Error("The Desk queue could not be verified.");
   const pending = queueResult.queue.slice();
+  const at = await wayBound(env.SALT_LEDGER);   /* S3: on its way to the book the readers read */
   const drafts = await env.SALT_LEDGER.prepare(
-    "SELECT entry FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved')").all();
+    "SELECT entry FROM draft WHERE " + unfolded(at) + " AND status IN ('pending','approved')").all();
   if (!Array.isArray(drafts.results)) throw new Error("The Desk drafts could not be verified.");
   for (const row of drafts.results) {
     const entry = JSON.parse(row.entry);
@@ -518,7 +536,7 @@ async function makerAppointmentEntries(env) {
   }
   const requests = await env.SALT_LEDGER.prepare(`SELECT r.entry FROM maker_request r LEFT JOIN draft d ON d.id=r.id
     WHERE r.operation='appoint-existing' AND r.entry IS NOT NULL
-      AND (d.id IS NULL OR d.committed_at IS NULL AND d.status IN ('pending','approved'))`).all();
+      AND (d.id IS NULL OR ${unfolded(at, 'd.')} AND d.status IN ('pending','approved'))`).all();
   if (!Array.isArray(requests.results)) throw new Error("The appointment receipts could not be verified.");
   for (const row of requests.results) {
     const entry = JSON.parse(row.entry);
@@ -555,8 +573,8 @@ function makerAppointmentCandidates(book, parties, pending) {
 }
 /* 16 Oct 2026 (plan 3): the moves on their way to the book's sales, for an order of several books read as it will stand: every entry drafted and
    waiting (pending, or approved and not folded), then every amendment still in the queue that no draft holds yet, read by its own id. Once each. */
-async function makerHeldMoves(env) {
-  const waiting = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved')").all();
+async function makerHeldMoves(env, at) {
+  const waiting = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE " + unfolded(at === undefined ? await wayBound(env.SALT_LEDGER) : at) + " AND status IN ('pending','approved')").all();
   const out = (waiting.results || []).map((row) => { try { return JSON.parse(row.entry); } catch (e) { return null; } }).filter(Boolean);
   const seen = new Set(out.map((e) => e.at));
   for (const e of (await (await handleQueueGet(env, true)).json()).queue || []) {
@@ -570,7 +588,7 @@ async function makerHeldMoves(env) {
    the money on its way to the row (rowRoom's `on`), and the site order whose row it is, any but a declined or cancelled one, by its key.
    A site that cannot be read is said, and nothing is undone meanwhile. */
 async function undoContext(env, book, rid) {
-  const held = await makerHeldMoves(env);
+  const held = await makerHeldMoves(env, boundOf(book));
   const found = (book.sales || []).find((s) => s && s.rid === rid);
   let onWay = 0, order = null, siteError = false;
   if (found) {
@@ -607,6 +625,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     && p !== "/_internal/maker/offsets" && p !== "/_internal/maker/inputs/offset" && p !== "/_internal/maker/ledger"
     && !/^\/_internal\/maker\/reward\/[A-Za-z0-9%._-]{3,160}$/.test(p)
     && !/^\/_internal\/maker\/customer-reading\/[A-Za-z0-9%._-]{3,160}$/.test(p)
+    && !/^\/_internal\/maker\/(reward-of|customer-of)\/[A-Z][A-Z0-9-]{2,24}$/.test(p)
     && !/^\/_internal\/maker\/drift-preview\/[A-Z][A-Z0-9-]{2,24}\/[a-z]{2,12}\/-?[0-9]{1,2}$/.test(p)
     && !/^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|amend|notfound|move|restate|take)$/.test(p))
     return json({ ok: false, error: "not found" }, 404);
@@ -814,6 +833,17 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     const reading = makerCustomerReading(book, key, new Date(Date.now() + 8 * 36e5).toISOString().slice(0, 10));
     return reading.error ? json({ ok: false, error: reading.error }, 400) : json({ ok: true, reading });
   }
+  const ofAt = /^\/_internal\/maker\/(reward-of|customer-of)\/([A-Z][A-Z0-9-]{2,24})$/.exec(p);
+  if (ofAt) {
+    /* 26 Oct 2026 (Salt Admin Customers, P4): the associate reward and This customer for an account's card, named by its roster code: reads that write nothing */
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    if (!env.SALT_LEDGER) return json({ ok: false, error: "The Desk mirror is required." }, 503);
+    const book = await readBook(env.SALT_LEDGER);
+    if (!book.version) return json({ ok: false, error: "The mirror is being seeded." }, 503);
+    const reading = ofAt[1] === "reward-of" ? makerRewardReadingOf(book, ofAt[2])
+      : makerCustomerReadingOf(book, ofAt[2], new Date(Date.now() + 8 * 36e5).toISOString().slice(0, 10));
+    return reading.error && reading.associate === undefined && reading.customer === undefined ? json({ ok: false, error: reading.error }, 400) : json({ ok: true, reading });
+  }
   const prevAt = /^\/_internal\/maker\/drift-preview\/([A-Z][A-Z0-9-]{2,24})\/([a-z]{2,12})\/(-?[0-9]{1,2})$/.exec(p);
   if (prevAt) {
     /* 22 Oct 2026: Their % shown live on Salt Admin before it goes to Approve, a whole % in steps of 5; a read that writes nothing */
@@ -874,7 +904,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     try {
       const book = await withRefunds(env.SALT_LEDGER, await readBook(env.SALT_LEDGER));
       if (!book.version) throw new Error("the mirror is being seeded");
-      const held = await makerHeldMoves(env), cards = makerTrips(book, held), refunds = openRefunds(book);
+      const held = await makerHeldMoves(env, boundOf(book)), cards = makerTrips(book, held), refunds = openRefunds(book);
       /* an open refund by the key of its row, for a site order's card */
       body.refunds = Object.fromEntries(book.sales.filter((s) => s && refunds[s.rid]).map((s) => [POSITION_ENGINE.ovKey(s), refunds[s.rid]]));
       Object.assign(body, cards, { rows: makerRows(book, held, cards.trips.flatMap((t) => t.lines.map((l) => l.rid)).concat(cards.sameDay.flatMap((d) => d.rids))) });
@@ -889,7 +919,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     catch { return json({ ok: false, error: "send JSON" }, 400); }
     const book = await readBook(env.SALT_LEDGER);
     if (!book.version) return json({ ok: false, error: "The mirror is being seeded." }, 503);
-    const split = makerTripSplit(body, book, await makerHeldMoves(env));
+    const split = makerTripSplit(body, book, await makerHeldMoves(env, boundOf(book)));
     return split.error ? json({ ok: false, error: split.error }, 400) : json({ ok: true, split });
   }
   if (p === "/_internal/maker/undo") {
@@ -1018,7 +1048,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       try { registrations = await readVaultRegistrations(env.SALT_LEDGER); }
       catch (error) { return json({ ok: false, error: "Confirmed Add IDs could not be verified against the vault receipts and outbox." }, 503); }
     }
-    const tripHeld = operation === "trip-pay" ? await makerHeldMoves(env) : [];
+    const tripHeld = operation === "trip-pay" ? await makerHeldMoves(env, boundOf(book)) : [];
     /* plan 4: an undo answers to what is waiting on its row and to the site order, read again as it is sent */
     /* and so does a Correction of a sale's units, price or delivery: the site order its row belongs to takes it instead (16 Oct 2026) */
     const termsTouched = body.kind === "Correction" && body.fields && typeof body.fields === "object" && ["qty", "total", "delivery"].some((k) => k in body.fields);
@@ -1044,7 +1074,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       const entries = built.entries;
       entries.forEach((entry) => { entry.makerRequest = fingerprint; });
       const queued = (await (await handleQueueGet(env, true)).json()).queue;
-      const waiting = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved')").all();
+      const waiting = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE " + unfolded(boundOf(book)) + " AND status IN ('pending','approved')").all();
       const held = queued.concat((waiting.results || []).map((row) => JSON.parse(row.entry)))
         .filter((item) => !entries.some((entry) => entry.at === item.at));
       if (operation === "trip-join") {
@@ -1070,7 +1100,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       const entries = built.entries;
       entries.forEach((entry) => { entry.makerRequest = fingerprint; });
       const queued = (await (await handleQueueGet(env, true)).json()).queue;
-      const waiting = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved')").all();
+      const waiting = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE " + unfolded(boundOf(book)) + " AND status IN ('pending','approved')").all();
       const held = queued.concat((waiting.results || []).map((row) => JSON.parse(row.entry)));
       for (const [i, entry] of entries.entries()) {
         const stored = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE id=?1").bind(entry.at).first();
@@ -1148,7 +1178,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       const checked = makerQueuedTradeCheck(entry, queuedEntries.concat((pending.results || []).map((row) => JSON.parse(row.entry))));
       if (checked.error) return json({ ok: false, ...checked }, 409);
     }
-    const reservations = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved')").all();
+    const reservations = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE " + unfolded(boundOf(book)) + " AND status IN ('pending','approved')").all();
     const waitingEntries = queuedEntries.concat((reservations.results || []).map((row) => JSON.parse(row.entry)));
     /* a loan or a gift already queued or waiting under Approve is not queued twice: a double tap, or a second device */
     const twinned = operation === "loan" ? makerQueuedLoanCheck(entry, waitingEntries)
@@ -2045,10 +2075,9 @@ async function handleDraftsGet(env, url) {
      it needs, the approved amendments and the book, are asked together. */
   if (extras && drafts.some((d) => d.status === "pending" && d.collection === "sales")) {
     try {
-      const [wr, book] = await Promise.all([
-        db.prepare(`SELECT ${DRAFT_COLS} FROM draft WHERE status='approved' AND committed_at IS NULL AND collection='sales' AND amends IS NOT NULL ORDER BY id`).all(),
-        readBook(db)
-      ]);
+      /* S3: the book first, so the amendments on their way are those its own bound leaves out (one read, no straddle) */
+      const book = await readBook(db);
+      const wr = await db.prepare(`SELECT ${DRAFT_COLS} FROM draft WHERE status='approved' AND ${unfolded(boundOf(book))} AND collection='sales' AND amends IS NOT NULL ORDER BY id`).all();
       approveFigures(book, drafts, (wr.results || []).map(draftOut));
     } catch (e) { for (const d of drafts) delete d.figures; }
   }
@@ -2535,6 +2564,7 @@ export default {
    * INSERT OR IGNORE keyed on the entry's own `at`, so a re-run is harmless, and the next
    * tick is a better retry than a loop. */
   async scheduled(event, env, ctx) {
+    if (env.SALT_LEDGER && env.BOOK) bindBook(env.SALT_LEDGER, env.BOOK);   /* S3: the readers may read the Book (the flag in D1 decides) */
     /* TWO SCHEDULES, AND THEY DO DIFFERENT JOBS. The every-minute one nudges on a new customer
        order and, on the quarter-hour, runs the drafter's safety net, which pushes only when it
        actually wrote a row. The daily one at 01:00 UTC,
@@ -2665,6 +2695,7 @@ export default {
   },
 
   async fetch(request, env, ctx) {
+    if (env.SALT_LEDGER && env.BOOK) bindBook(env.SALT_LEDGER, env.BOOK);   /* S3: the readers may read the Book (the flag in D1 decides) */
     const held = maintenance(request, env);
     if (held) return held;
     const url = new URL(request.url);
@@ -2689,7 +2720,7 @@ export default {
       if (p === "/queue" || /^\/queue\/[^/]+\/withdraw$/.test(p) || p === "/queue/ping" || p === "/vault" || p === "/bio" || p === "/bye"
         || p === "/vault/addr" || p === "/vault/pair" || p === "/vault/maintenance" || p === "/vault/key" || p === "/geo/expand" || p.startsWith("/slips/") || p.startsWith("/pins/")
         || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/") || p === "/book/load" || p === "/book/pitr" || p === "/book/window" || p === "/live"
-        || p === "/drafts" || p.startsWith("/drafts/"))
+        || p === "/drafts" || p.startsWith("/drafts/") || p === "/book/readcheck")
         return json({ ok: false, error: "not authenticated" }, 401);
       return locked();
     }
@@ -2735,6 +2766,7 @@ export default {
        when its secret is set, so an unset secret opens nothing; the dormant write-key branch of writeOk is NOT used here.
        The answer carries counts and a digest, never a row. Nothing reads the Book. */
     if (p === "/book/load") return handleBookLoad(request, env, m);
+    if (p === "/book/readcheck") return handleBookReadcheck(request, env, m);   /* S3: the Book against the mirror, names only */
     if (p === "/book/pitr" || p === "/book/window") return handleBookPitr(request, env, m, p);   /* S2c: the recovery test, the same two locks */
 
     // --- the desk's HTTP contract -------------------------------------------------

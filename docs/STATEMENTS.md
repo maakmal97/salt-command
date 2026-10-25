@@ -1685,6 +1685,18 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   screen. The system's App bar on a phone and its Desk rail from 1080px, a count beside a place that has something waiting
   (Needs you, Orders and Customers; Record and Shop have none; see Needs you above). Each place but Needs you has its parts as the system's tab strip, the first
   open with the place: **Orders**, drawn from 18 Oct 2026 as two strips of one list of parts: the six stages first, in the order an order moves (Received, Agreed, Ready, Delivered or paid, Completed, Ended, each with its count of what waits on him), then a smaller strip beneath for Approve, Payments, Group and Ledger; every part keeps its id, act, address and read, and `PARTS` is both strips together. A row is one line, the code, the mark with the size written once, the total, Deliver or Collect and the age. An order's card leads with the answer: at Received, **Agree** is the filled pill at the top with the terms it will send beside it in one line (`Delivery RM 10.00 · ASAP`, kept in step with the card's choices); until the figures are read it is a stand-in that sends nothing (`order.accept-wait`: it asks for the delivery charge and opens Change terms, else says it is reading). **Change terms** (the goods' price, the delivery charge and the time) and **Answer them** (the reply) are folded sections, shut until a tap (`order.terms`, `order.answer`; a question of theirs opens the reply); Decline stands apart at the card's end, in the flow and never sticky, as a ghost danger button (from 20 Oct 2026, on a placed order, Agree, Change terms and Decline stand in one row of three with the terms line under it, his canvas comment); the main action stands directly under the card's head, above Goods and Details, and each Orders strip is one row that scrolls sideways. The later stages lead the same way: Ready to collect or deliver, Handed over with its units and tiles, and their claim's Received and Not found stand at the top, Cancel at the foot. Nothing any button sends changed. The parts are (Placed, Confirmed, Ready, Done, Ended, Approve, Payments, Group, Ledger; Approve, from 17 Oct 2026 as the Desk's Order book holds it, is the Desk's rows waiting for him and the entries the server holds, and the old address `#record/approve` lands on it: the order review filtered by the customer's stages, an order in exactly one, and what waits on him a pill on its row and a count on its stage; opens on the first stage with something waiting; from 860px the first order of the stage opens in the detail column; the account
+  **25 Oct 2026, on the Salt Commodities system (canvas Salt Admin Orders, his yes to Asks A to M):** the parts are two text tab rows on the Nav
+  recipe, as Needs you's kinds: the stages **Placed, Agreed, Ready, Out or paid, Done, Ended** (was Received, Delivered or paid, Completed), each with the
+  count of its orders waiting on him beside the word, then Payments, Group and Ledger; Approve's tab stays, hidden, the bar's Approve its road and
+  `#orders/approve` its address. The line over the list is one Insight, the stage's money first (`ordLead`). An order is Needs you's card, 76px (80 from
+  860): the way and the age, or why it waits in copper (asked, says sent, send again, their yes), the book's typed Product tag and the code, the stage's
+  move as one filled pill (`order.move`: Agree, Withdraw, Ready, Handed, Received, Message; Withdraw, Ready to deliver, Handed and one Received ask once
+  under the row and send what the order card sends, Agree, a collection's Ready, two payments and Message open the order) and the figure; the row is still
+  the one button (`order.open`). From 1080px the list is a plain table, Book, Code, Way, Units, Waiting and Total under their names. A sheet's orders
+  stand together under "Sheet" and the first order's reference, its delivery on the right. The open order's band names the book by its tag; on a
+  placed order the terms stand in view (no Change terms, no fold), Agree and Decline in one row of two under them, Agree saying the one sum it sends;
+  the reply's fold is **Answer**, its field Your line. Every book on Approve, Payments, Group and the Ledger is its typed tag (`bookTag`). What is below
+  is the history of the earlier drawings; where it says otherwise, this paragraph is the page.
   claims under Payments, the group orders under Group, Order for them at the head of the place), **Customers** (Accounts,
   Messages, Links, Associates: the list and the card, the chat, the guest links, the report card), **Record** (Entry,
   Customers, Pricing: the forms by the part they belong to; each waits for his approval under Orders > Approve) and
@@ -2477,6 +2489,29 @@ pause; it is not a vault authority switch. A maintenance refusal retains the bro
 Neither this release nor Access configuration alone proves owner acceptance or authorizes
 removing an incumbent Desk control.
 
+### Salt Admin's Customers on the system (25 and 26 Oct 2026, plan `docs/plan-admin-customers.html`)
+
+His yes to Asks A to J (relayed by the moderator, 25 Oct 2026), canvas Salt Admin Customers. Owner only; the customer's page is untouched.
+
+- **The parts** (Accounts, Messages, Links, Associates) are the slider, `salt-segment--tight` (salt-ds 1.16.0) so Associates fits at 390px.
+- **Accounts**: an Insight leads (owed to him and how much is past its term, what he owes back, the sign-ins waiting); the filters are Needs you's text
+  tab row with counts, No account in place of No account yet, an empty one dimmed; each account is Needs you's card (`needCard`) under To do, Pending and
+  FYI, the largest sum first: the state and its age, the code and username, one way (Message, Send, Show, Open) and what is owed, a refund he owes in
+  ember. A tap on the card opens the account. From 1080px each group is one plain table (`acctTable`), the cards hidden.
+- **An account** leads with where it stands: the state, the code, the figure, a ledger of the standing (locked out, opened and how, marked sent,
+  notifications) and their waiting line with Reply. Sign-in is its own card. **The Sent tick is gone** (Ask F): Mark as sent while it is not, a Marked sent
+  line once it is; there is no unticking. From 1080px an open account fills the page in columns, two and three from 1440px, with its way back.
+- **Their % and Make partner moved from Record > Pricing onto the account** (Ask A): a book a tab, the suggestion and why, a stepper in whole steps of 5
+  from -30% to +30% (Ask G), their prices off `/all/maker/drift-preview`, Send at that % only once it differs, Use the suggestion, Set back to 0; Make
+  partner asks once. Both send the same tier-set and partner inputs, for Approve. Record > Pricing keeps Printed sizes.
+- **This customer and the associate reward on the account** (Ask B), read by the account's roster code: `GET /all/maker/customer-of/<code>` and
+  `/all/maker/reward-of/<code>` (the Counter relays to the Desk's `/_internal/maker/customer-of|reward-of/<code>`, behind Access and the bridge key, GET
+  only; `makerCustomerReadingOf`, `makerRewardReadingOf`). A code is one dash, so a bucket (-R) and a username are refused. Nothing prices from either.
+- **Messages**: a thread is Needs you's card, Waiting under To do and Answered under FYI; the open thread is the system's Thread and Bubble.
+- **Links**: a link is Needs you's card under Waiting on you, Standing link, Made by associates and Older links, Opens in the figure's place; its address,
+  QR and moves open under it.
+- **Associates**: a book is its typed tag and how many; cards on a phone, one plain table from 860px; the reward the system's Meter; the code opens the account.
+
 ### Salt Admin A to C (20 and 21 Oct 2026, plan `docs/plan-counter-admin-ac.html`)
 
 Salt Admin catches up with Counter Batches A to C, his side of each (canvas Salt Admin Batches A to C; his answers of 20 Oct 2026).
@@ -2556,6 +2591,9 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | Act | Where | What it does |
 |---|---|---|
 | `acct.back` | Accounts, an open card on a phone | Takes the card back to the list. |
+| `assoc.open` | Associates, the code (key: the code) | Opens that associate's account under Accounts. |
+| `assoc.open-row` | Associates table from 860px, the code (key: the code) | Opens that associate's account under Accounts. |
+| `acct.copy-link` | Accounts card for an ID with no account, once the link is shown | Copies the guest price list's link. |
 | `acct.device-signout` | Account card, Phones and computers (key: the device id) | Signs that one device out. |
 | `acct.filter-all` | Accounts, the filter bar | Shows every account. |
 | `acct.filter-locked` | Accounts, the filter bar | Shows accounts with an address refused. |
@@ -2564,11 +2602,25 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `acct.filter-unopened` | Accounts, the filter bar | Shows accounts never opened. |
 | `acct.filter-unsent` | Accounts, the filter bar | Shows accounts not yet sent a sign-in. |
 | `acct.find` | Accounts | Finds an account by a code or a username. |
-| `acct.open` | Accounts list, one row each (key: the username) | Opens that account's card. |
+| `acct.message` | Accounts card for money owed (key: the username) | Opens their thread under Messages. |
+| `acct.open` | Accounts list, one card each (key: the username) | Opens that account's card. |
+| `acct.message-row` | Accounts table from 1080px, money owed (key: the username) | Opens their thread under Messages. |
+| `acct.open-card` | Accounts card with nothing to do but look (key: the username) | Opens that account's card, as a tap on the card does. |
+| `acct.open-row` | Accounts table from 1080px, the code (key: the username) | Opens that account's card. |
+| `acct.open-row-way` | Accounts table from 1080px, the way (key: the username) | Opens that account's card, where its Send or Show is. |
+| `acct.partner` | Account card, Partner (key: the code) | Makes them a partner on a second tap within four seconds: a name-free partner entry for review; a partner pays the Floor. |
+| `acct.pct.book` | Account card, Their % (key: the book) | Shows that book's %. |
+| `acct.pct.clear` | Account card, Their % (key: the code) | Sends their % back to 0, the Set Price, for review. |
+| `acct.pct.down` | Account card, Their % | Lowers the % by 5, to -30% at most; their prices show at it. |
+| `acct.pct.send` | Account card, Their % (key: the code) | Sends their % at the stepper's figure for review; off while it is what is set. |
+| `acct.pct.suggest` | Account card, Their % | Sets the stepper to the engine's suggested %; it sends nothing. |
+| `acct.pct.up` | Account card, Their % | Raises the % by 5, to +30% at most; their prices show at it. |
 | `acct.repay` | Account card, Loans (key: the loan rid) | Opens Record's Repayment form with that loan chosen. |
 | `acct.order-for` | Account card | Opens an order for them, at the head of Orders. |
 | `acct.password` | Account card | Opens their sealed password straight to the clipboard, never into the page. |
-| `acct.sent` | Account card | Ticks the account as sent. |
+| `acct.reply` | Account card, their waiting line (key: the username) | Opens their thread under Messages. |
+| `acct.sent` | Account card | Mark as sent: marks the account sent, while it is not. |
+| `acct.show-link` | Accounts card for an ID with no account (key: the username) | Shows the guest price list and its QR until the account is made. |
 | `acct.show-code` | Account card | Opens the sheet that shows a code for them in person. |
 | `acct.signin-link` | Account card (key: data-acct, the username) | First tap makes their one-time sign-in link, the next shares it. |
 | `acct.signout-all` | Account card | Signs them out everywhere, on a second tap within four seconds. |
@@ -2580,6 +2632,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `chat.close` | Open thread | Closes the thread. |
 | `chat.no-reply` | Open thread | Records that no reply is needed. |
 | `chat.open` | Chat, one per account (key: the username) | Opens that account's thread. |
+| `chat.reply-open` | Messages, a thread's card (key: the username) | Opens that thread: Reply while a line of theirs waits, Open once answered. |
 | `chat.open-retained` | Open thread | Opens the reply kept encrypted on this device. |
 | `chat.reply` | Open thread (key: the username) | The reply to send. |
 | `chat.send` | Open thread | Sends the reply, or sends the same one again. |
@@ -2623,12 +2676,15 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `hours.day-from` | The opened day (key: the weekday) | The quarter hour it opens. |
 | `hours.day-same` | The opened day (key: the weekday) | Takes the day before's hours. |
 | `hours.day-to` | The opened day (key: the weekday) | The quarter hour it closes; earlier than the open is the next day. |
-| `hours.override-clear` | Operating hours | Clears it. |
+| `hours.hold` | Operating hours, For now | Opens the form that holds the shop closed or open until a time; Not now folds it. |
+| `hours.override-clear` | Operating hours, For now, while an override is filed | Clears it (it reads Weekly hours, named Back to the weekly hours). |
 | `hours.override-set` | Operating hours | Sets the temporary override. |
 | `hours.override-state` | Operating hours (key: `false` for Closed, `true` for Open) | Whether the override holds the shop open or closed. |
 | `hours.override-until` | Operating hours | When the override ends, Kuala Lumpur time. |
 | `hours.save` | The opened day, Done (key: the weekday) | Saves the whole week and shuts the day. |
 | `link.approve` | Link card of an associate's link | Approves it, which opens it. |
+| `link.approve-card` | Links, a waiting link's card (key: the link id) | Approves it, which opens it. |
+| `link.copy-card` | Links, a link's card (key: the link id) | Copies the link. |
 | `link.open` | Link row (key: the link id) | Opens or shuts the row: its address, QR and moves. |
 | `link.copy` | Link card (key: data-link, the link id) | Copies the link. |
 | `link.decline` | Same card | Declines it, which keeps it shut. |
@@ -2636,6 +2692,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `link.label` | Links | Who the link is for. |
 | `link.make` | Links | Makes a guest link. |
 | `link.restore` | Link card of a withdrawn link | Restores the link. |
+| `link.restore-card` | Links, a withdrawn link's card (key: the link id) | Restores the link. |
 | `link.withdraw` | Link card | Withdraws the link. |
 | `look.night` | Shop, This device, Look | Night for Salt Admin on this device, at once, kept here. |
 | `look.sheet-close` | Look Sheet, on a first open | Closes it with Tide kept and nothing stored. |
@@ -2643,7 +2700,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `look.sheet-tide` | Same Sheet | Chooses Tide, keeps it and closes the Sheet. |
 | `look.tide` | Shop, This device, Look | Tide for Salt Admin on this device, at once, kept here. |
 | `maker.refresh` | Orders, Order review | Reads the orders again. |
-| `more.test-accounts` | Shop, Practice | Makes or deletes the three test accounts. |
+| `more.test-accounts` | Shop, Practice | Makes the three test accounts, or deletes them once its Sheet is answered Remove. |
+| `more.test-page` | Shop, Practice, while all three are open | Opens the test surface, `/all/test`. |
 | `nav.add` | The + orb at the foot of the page, on every place but Record, below 1080px | Opens Record, on Entry, the menu of entries. Reads what Record reads on entering. |
 | `rail.add` | New entry, the rail's + under his places, from 1080px, on every place but Record | Opens Record on Entry, as the orb does. |
 | `nav.customers` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Customers, on its Accounts. |
@@ -2704,11 +2762,9 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `notice.text` | Notice | The notice, one line a sentence. |
 | `order.accept` | Order card (key: the order id), once its figures are read | Accepts the order at the price read. |
 | `order.accept-again` | Same card, once its figures are read | Accepts again at the order's own price. |
-| `order.accept-wait` | Order card, placed, until its figures are read | Stands in for Agree and sends nothing: asks for the delivery charge (and opens Change terms), or says the figures are being read. |
+| `order.accept-wait` | Order card, placed, until its figures are read | Stands in for Agree and sends nothing: asks for the delivery charge (and takes him to it; the terms stand in view since 25 Oct 2026), or says the figures are being read. |
 | `order.answer` | Order card | Opens or shuts the folded reply, Answer them. |
 | `order.customer.use` | Order card (key: the order id), This customer, a customer's salt order with a suggested % over theirs | Sends the suggested % as their % (tier-set), for review under Approve. |
-| `order.terms` | Order card, placed | Opens or shuts the folded Change terms: the goods' price, the delivery charge and the time. From 20 Oct 2026 a button in the row of three (Agree, Change terms, Decline). |
-| `order.terms-fold` | Order card, placed | The Change terms fold's own summary, hidden behind the row's Change terms button (20 Oct 2026). |
 | `order.again-amend` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected amendment again. |
 | `order.again-cancel` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected cancellation again. |
 | `order.again-cash` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected cash again. |
@@ -2740,6 +2796,9 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.handed-rest` | Same card, fewer units typed than ordered (key: more or all) | More to come (a part handover) or That is all (the close at the units typed, asked on a sheet); Handed over says which. |
 | `order.no-reply` | Same card | Records that no reply is needed. |
 | `order.open` | A row of the list in Orders (key: the order id) | Opens that order's card beside the list from 860px, in its place below it. Reads nothing. |
+| `order.move` | The pill on a row of the list in Orders (key: the order id), 25 Oct 2026 | The stage's move. Withdraw, Ready (to deliver), Handed (the order's units) and Received (one payment) ask once under the row; Agree, a collection's Ready, two payments and Message (its Answer open) open the order. |
+| `order.move-yes` | Under a row that asks (key: the order id) | Sends what the order card sends for that move: withdraw, move to ready by delivery, handed, received, each under its own request id. |
+| `order.move-no` | Under a row that asks (key: the order id) | Not now: takes the ask away and sends nothing. |
 | `order.pay` | Order card (key: the order id), acknowledged or ready | Records the amount by the road chosen: Bank as the order's received, Cash held ten seconds with its Undo, then recorded; it says the figure and the road once both are there. |
 | `order.pay-amount` | Same card | The amount received, in RM, one field for the bank and the cash. |
 | `order.pay-by` | Same card (key: bank or cash) | Bank or Cash; Cash is offered on a ready order alone, and none is chosen there until he chooses. |
@@ -2769,13 +2828,13 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `part.customers.messages` | The strip under Customers (tab: Messages) | Shows the account conversations, reading the threads. |
 | `part.customers.links` | The strip under Customers (tab: Links) | Shows the guest links, reading them once. |
 | `part.customers.associates` | The strip under Customers (tab: Associates) | Shows the associates' report card, reading it once. |
-| `part.orders.placed` | The strip under Orders (tab: Received) | Shows the orders placed and not yet agreed, reading them. |
+| `part.orders.placed` | The tab row under Orders (tab: Placed) | Shows the orders placed and not yet agreed, reading them. |
 | `part.orders.confirmed` | The strip under Orders (tab: Agreed) | Shows the agreed orders, and every row of the book with nothing paid or handed over in full. |
 | `part.orders.ready` | The strip under Orders (tab: Ready) | Shows the orders marked ready. |
-| `part.orders.paid` | The strip under Orders (tab: Delivered or paid) | Shows the orders handed over in full or paid in full, not yet both. |
-| `part.orders.done` | The strip under Orders (tab: Completed) | Shows the orders handed over and closed. |
+| `part.orders.paid` | The tab row under Orders (tab: Out or paid) | Shows the orders handed over in full or paid in full, not yet both. |
+| `part.orders.done` | The tab row under Orders (tab: Done) | Shows the orders handed over and closed. |
 | `part.orders.ended` | The strip under Orders (tab: Ended) | Shows the declined and cancelled orders. |
-| `part.orders.approve` | The strip under Orders (tab: Approve) | Shows the Desk's rows waiting for him and the entries the server holds, reading them. |
+| `part.orders.approve` | Under Orders, reached by the bar's Approve (its tab hidden since 25 Oct 2026) | Shows the Desk's rows waiting for him and the entries the server holds, reading them. |
 | `part.orders.payments` | The strip under Orders (tab: Payments) | Shows the payments they say they sent. |
 | `part.orders.group` | The strip under Orders (tab: Group) | Shows the group orders, reading them. |
 | `part.orders.ledger` | The strip under Orders (tab: Ledger) | Shows the mini ledger, reading the folded book: Open orders, Pending orders and the latest 20 orders. |
@@ -2829,14 +2888,6 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.count.date` | Record, stock count | The day counted. |
 | `record.count.send` | Record, stock count | Records the count. |
 | `record.count.units` | Record, stock count | The units counted. |
-| `record.drift.book` | Record, Their % | The book. |
-| `record.drift.clear` | Record, Their % | Sets it back to 0, the Set Price. |
-| `record.drift.customer` | Record, Their % | The customer. |
-| `record.drift.set` | Record, Their % | Sends their % for review. |
-| `record.drift.suggest` | Record, Their % | Fills the box with the engine's suggested %; it sends nothing. |
-| `record.drift.value` | Record, Their % | Their %, from 0 to 2 (0.2 is 20%). |
-| `record.partner.customer` | Record, partner | The customer to make a partner. |
-| `record.partner.make` | Record, partner | Queues a name-free partner entry for review, as the Desk's Make partner does; a partner pays the Floor. Books with a Set Price only. |
 | `record.form` | Record, the menu of Entry, Customers and Pricing (key: the form's name as a slug) | Opens that form alone, in the pane beside the menu from 860px and in the menu's place below it, with a way back. Reads and sends nothing. |
 | `record.form-back` | The head of an open Record form | Closes the form and returns to the menu, to the row it came from. Nothing typed is lost. |
 | `record.gift.book` | Record, gift | The book. |
@@ -2918,7 +2969,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `row.change` | A row of the book as an order (key: the row) | Sends what changed as one Correction for approval. |
 | `row.cancel` | A row of the book as an order, nothing handed over (key: the row) | Asks, then sends a Cancellation for approval; anything paid opens as a refund. |
 | `ledger.tieout` | Orders > Ledger, under Order and book | Check now: asks the Desk to tie every site order to its row again, and shows what it found. |
-| `orders.more` | Under Completed or Ended, past fifty orders (key: the stage) | Shows fifty more. |
+| `orders.more` | Under Done or Ended, past fifty orders (key: the stage) | Shows fifty more. |
 | `trip.details` | An order of several books, or a buyer's same-day rows, under Orders (key: trip:<id> or day:<rows>) | Opens the order's id, day and rows. |
 | `trip.hand-units` | An order of several books (key: the row) | The units of that line to hand over; full by default, fewer for a part. |
 | `trip.handover` | An order of several books (key: the trip) | Sends one handover a line through Record's own input, each line its own request; a line the Desk refuses holds only itself. |
@@ -2974,16 +3025,16 @@ the same thing, this table is the word; a new card takes its word from here, and
 
 | Thing | Desk | Salt Admin |
 |---|---|---|
-| An order placed, not yet answered | Pending | Received (stage) |
+| An order placed, not yet answered | Pending | Placed (stage, since 25 Oct 2026) |
 | His yes to an order | Accept | Agree (button), Agreed (stage) |
 | Goods ready | Ready to deliver, Ready to collect | Ready |
 | Goods out | Handed over | Handed over |
-| Money in | Received | Received (button), Delivered or paid (stage) |
+| Money in | Received | Received (button), Out or paid (stage) |
 | A drafted row his to decide | Approve, under Order book | Approve, under Orders |
 | What waits on him | Waiting on you | Needs you |
 
-**Open, his to decide:** *Received* names an order's first stage here and money in on both surfaces, so one card can show the stage *Received* and the
-button *Received*; and his yes is *Accept* on the Desk, *Agree* here.
+**Settled 25 Oct 2026 (his yes to Ask A of the Orders canvas):** the first stage is *Placed*, so *Received* is money in alone on both surfaces.
+Still open: his yes is *Accept* on the Desk, *Agree* here.
 
 ### Unsent entries say so, and every id and row keeps its detail behind Details (Phase 4c, 12 Oct 2026)
 

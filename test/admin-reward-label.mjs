@@ -32,7 +32,7 @@ export async function run({ ok, pageWork }) {
     await p.work.quiet();
     byAct(p.d, "nav.orders").click(); await p.work.quiet();
     const rowOf = (k) => p.d.querySelector('[data-act="order.open"][data-key="' + k + '"]');
-    const lab = (k) => [...(rowOf(k) || { querySelectorAll: () => [] }).querySelectorAll(".salt-status")].map(text);
+    const lab = (k) => [...(rowOf(k) || { querySelectorAll: () => [] }).querySelectorAll(".onote")].map(text);
     ok(lab("row:fr1").includes("Associate reward") && lab("row:fl1").includes("Loyalty unit") && !lab("row:fa1").some((t) => /reward|Loyalty/i.test(t)),
       "the Orders row carries Associate reward or Loyalty unit, an ordinary row neither: " + J([lab("row:fr1"), lab("row:fl1"), lab("row:fa1")]));
     byAct(p.d, "order.open", "row:fr1").click(); await p.work.quiet();

@@ -267,7 +267,29 @@ export function makerCustomerReading(book, key, today) {
   if (!realCode(owner, book.state.roster || [])) return { error: "Choose a party on the roster." };
   const hits = (book.sales || []).filter((s) => s && s.rid && POSITION_ENGINE.ovKey(s) === key);
   if (hits.length > 1) return { error: "Two rows share that key, so it names neither." };
-  const loyal = loyalReading(book, owner, { rid: hits.length ? hits[0].rid : null, today });
+  return customerReadingFor(book, owner, hits.length ? hits[0].rid : null, today);
+}
+/** 26 Oct 2026 (Salt Admin Customers, P4; his yes to Ask B): THE SAME TWO READINGS FOR AN ACCOUNT, named by its roster code with no order, for the
+    account's card on Customers: This customer and the associate reward as the order card reads them, less what only an order knows (whether this
+    order reaches a unit). A code is the roster's own, never a bucket (-R) or a username; nothing prices from either, and both write nothing. */
+/* one dash only: every bucket (-R, the roster holds them) has two, so none passes, and neither does a username (lower case) */
+const ACCOUNT_CODE = /^[A-Z]+[0-9]+-[A-Z0-9]+$/;
+function accountOwner(book, code) {
+  if (!ready(book)) return { error: "The Desk mirror is being seeded." };
+  if (typeof code !== "string" || !ACCOUNT_CODE.test(code)) return { error: "Name the account by its code." };
+  if (!realCode(code, book.state.roster || [])) return { error: "Choose a party on the roster." };
+  return { owner: code };
+}
+export function makerRewardReadingOf(book, code) {
+  const a = accountOwner(book, code);
+  return a.error ? a : rewardReading(book, a.owner, { rid: null });
+}
+export function makerCustomerReadingOf(book, code, today) {
+  const a = accountOwner(book, code);
+  return a.error ? a : customerReadingFor(book, a.owner, null, today);
+}
+function customerReadingFor(book, owner, rid, today) {
+  const loyal = loyalReading(book, owner, { rid, today });
   if (!loyal.walks) return { customer: false };
   const two = (n) => +(+n).toFixed(2);
   /* their priced salt rows, the desk's pricedSales for them (no gift, no cancelled, nothing Pending), an Open row unpaid included as the desk's is */

@@ -38,13 +38,13 @@
  {
   "name": "C1 an act is renamed in the page and not in the table",
   "file": "stmt/owner.js",
-  "find": "var box=actOn(document.createElement('input'),'acct.sent');",
-  "replace": "var box=actOn(document.createElement('input'),'acct.ticked');"
+  "find": "ghost(['Mark as sent','acct.sent'])",
+  "replace": "ghost(['Mark as sent','acct.ticked'])"
  },
  {
   "name": "C2 the table loses a row for an act the page draws",
   "file": "docs/STATEMENTS.md",
-  "find": "| `acct.sent` | Account card | Ticks the account as sent. |\n",
+  "find": "| `acct.sent` | Account card | Mark as sent: marks the account sent, while it is not. |\n",
   "replace": ""
  }
 ]

@@ -1,0 +1,13 @@
+[
+{"name": "a move sends without asking", "file": "stmt/owner.js", "find": "    ordAsk[e.id]=main; ordRowRedraw(e);\n  }", "replace": "    ordMoveSend(Object.assign({},e),main); ordAsk[e.id]=main;\n  }"},
+{"name": "Not now sends the move", "file": "stmt/owner.js", "find": "no.addEventListener('click', function(){ delete ordAsk[e.id]; ordRowRedraw(e); });", "replace": "no.addEventListener('click', function(){ ordMoveSend(e,ordAsk[e.id]); });"},
+{"name": "Withdraw sends without its request id", "file": "stmt/owner.js", "find": "var done=main==='Withdraw'?makerTap(o,'withdraw',{},'Offer withdrawn; the order stands as they placed it.')", "replace": "var done=main==='Withdraw'?makerAction('/all/maker/orders/'+encodeURIComponent(o.id)+'/withdraw',{},'Offer withdrawn.',o.id)"},
+{"name": "Ready goes to collect", "file": "stmt/owner.js", "find": ":main==='Ready'?makerMove(o,{status:'ready',mode:'deliver'},'Order marked ready to deliver.')", "replace": ":main==='Ready'?makerMove(o,{status:'ready',mode:'collect'},'Order marked ready to deliver.')"},
+{"name": "Handed sends one unit", "file": "stmt/owner.js", "find": ":main==='Handed'?makerTap(o,'handed',{qty:Number(o.qty)},'Handover sent to the Desk.')", "replace": ":main==='Handed'?makerTap(o,'handed',{qty:1,close:true},'Handover sent to the Desk.')"},
+{"name": "Received leaves the claim out", "file": "stmt/owner.js", "find": ":main==='Received'?orderReceived(o,ordPays(o)[0]):Promise.resolve(false);", "replace": ":main==='Received'?makerTap(o,'received',{amount:ordPays(o)[0].amount},''):Promise.resolve(false);"},
+{"name": "a collection's Ready asks on the row", "file": "stmt/owner.js", "find": "if(main==='Agree'||(main==='Ready'&&o.mode!=='deliver')||(main==='Received'&&ordPays(o).length!==1)){ openOrder(e.id); return; }", "replace": "if(main==='Agree'||(main==='Received'&&ordPays(o).length!==1)){ openOrder(e.id); return; }"},
+{"name": "two payments ask on the row", "file": "stmt/owner.js", "find": "if(main==='Agree'||(main==='Ready'&&o.mode!=='deliver')||(main==='Received'&&ordPays(o).length!==1)){ openOrder(e.id); return; }", "replace": "if(main==='Agree'||(main==='Ready'&&o.mode!=='deliver')){ openOrder(e.id); return; }"},
+{"name": "Agree asks on the row", "file": "stmt/owner.js", "find": "if(main==='Agree'||(main==='Ready'&&o.mode!=='deliver')||", "replace": "if((main==='Ready'&&o.mode!=='deliver')||"},
+{"name": "Message opens the order with Answer shut", "file": "stmt/owner.js", "find": "if(main==='Message'){ ordFolds[o.id+'|answer']=true; openOrder(e.id); return; }", "replace": "if(main==='Message'){ openOrder(e.id); return; }"},
+{"name": "the ask keeps the pill", "file": "stmt/owner.js", "find": "      if(ordAsk[e.id]||ordBusy[e.id]) pill.hidden=true;\n", "replace": ""}
+]

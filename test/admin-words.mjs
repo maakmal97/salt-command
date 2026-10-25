@@ -328,7 +328,7 @@ export async function run({ ok, pageWork }) {
     byAct(d, "acct.open", "abcd-efgh").click(); await work.quiet();
     s.refuse["/all/signin/abcd-efgh"] = "the link maker would not start";
     byAct(aopen(), "acct.signin-link").click(); await work.quiet();
-    const made = aopen().querySelector(".anote");
+    const made = aopen().querySelector(".anote:not(.athread__v)");   /* 26 Oct 2026: the card's thread line "Waiting 15 d for your reply" is an .anote too */
     ok(!!made && made.firstChild.textContent === "Could not make a link: " + GENERAL_SENTENCE && made.querySelectorAll("details > .rraw").length === 1
       && made.querySelector(".rraw").textContent === "the link maker would not start",
     "a link that could not be made says so in a plain sentence on the account card, the server's words under Details: " + (made ? made.textContent : "nothing drawn"));
@@ -358,8 +358,10 @@ export async function run({ ok, pageWork }) {
     const rowTile = (t) => !!t.closest(".ordrow"), SHAPE_ONLY = new RegExp("^(" + SHAPES.join("|") + ")$");
     const wrong = tiles.filter((t) => !SIZE.test(t.querySelector(".mq")?.textContent || "") || !(rowTile(t) ? SHAPE_ONLY : SHAPE_SIZE).test(t.querySelector(".sr")?.textContent || "") || !t.querySelector("svg.psym")
       || t.querySelector(".mq")?.getAttribute("aria-hidden") !== (rowTile(t) ? null : "true") || SHAPE_WORD.test(seen(t)) || /[a-z]{3,}/i.test(seen(t).replace(/units?/g, ""))).map((t) => t.textContent);
-    ok(tiles.length >= 4 && wrong.length === 0,
-      "each order tile on Orders is the book's mark with its size beneath, 2 units, no word for the book and no shape word, and a reader is told the shape and the size: " + tiles.length + " tiles; " + JSON.stringify(wrong.slice(0, 2)));
+    /* 25 Oct 2026 (canvas Salt Admin Orders): an order on Orders names its book by its typed tag, as Needs you does, and draws no mark; a mark still drawn keeps the rule */
+    const orows = [...d.querySelectorAll("#makerOrderList .ordrow")];
+    ok(orows.length >= 4 && orows.every((r) => !!r.querySelector(".otag .salt-producttag") && !r.querySelector(".mtile, svg.psym")) && wrong.length === 0,
+      "each order on Orders names its book by its typed tag and draws no mark, and a mark still drawn says its size beneath, no word for the book and no shape word, a reader told the shape and the size: " + orows.length + " rows; " + tiles.length + " tiles; " + JSON.stringify(wrong.slice(0, 2)));
     byAct(d, "nav.orders").click(); await work.quiet();
     byAct(d, "part.orders.approve").click(); await work.quiet();
     byAct(d.querySelector('#makerDrafts [data-maker-card="draft:d-2"]'), "draft.approve").click(); await work.quiet();
@@ -370,10 +372,10 @@ export async function run({ ok, pageWork }) {
     byAct(d, "ask.keep").click(); await work.quiet();
     byAct(d, "nav.customers").click(); await work.quiet();
     byAct(d, "part.customers.associates").click(); await work.quiet();
-    const heads = [...d.querySelectorAll("#clist h2")].map((h) => [h.className, SHAPES.includes(h.getAttribute("aria-label")), h.querySelector("svg.psym") ? "mark" : "", h.textContent, h.querySelector(".pshape") ? "word" : ""]);
-    ok(heads.length === 2 && heads.every((h) => h[0] === "pmark" && h[1] && h[2] === "mark" && h[3].replace(/[^a-z]/gi, "").length <= 1 && h[4] === "")
-      && new Set([...d.querySelectorAll("#clist h2")].map((h) => h.getAttribute("aria-label"))).size === 2,
-    "the report card's book headings are the mark alone, named by their shape to a reader and by no word for the book: " + JSON.stringify(heads));
+    /* 26 Oct 2026: the report card's book heading is an h2 holding the typed Product tag (his rule of 22 Oct 2026 for Salt Admin), its name in its hue with its dot, and no drawn mark */
+    const heads = [...d.querySelectorAll("#clist h2.aprodtag")].map((h) => [h.className, h.querySelector("svg.psym") ? "mark" : "", h.textContent, h.querySelector(".salt-producttag__dot") ? "dot" : "", (h.querySelector(".salt-producttag") || { className: "" }).className.replace(/^salt-producttag salt-producttag--([a-z]+) ntag$/, "$1")]);
+    ok(heads.length === 2 && heads.every((h) => h[0] === "aprodtag" && h[1] === "" && h[3] === "dot" && /^[a-z]+$/.test(h[4]) && h[2].toLowerCase() === h[4]) && new Set(heads.map((h) => h[4])).size === 2,
+    "the report card's book headings are the typed Product tag, the name in its hue with its dot, and no drawn mark: " + JSON.stringify(heads));
     /* 22 Oct 2026: on Needs you a book is its typed Product tag, the name in its hue with its dot, and no drawn mark */
     byAct(d, "nav.needs").click(); await work.quiet();
     const tags = [...d.querySelectorAll("#nlist section .salt-producttag")].map((x) => [x.className, x.textContent, !!x.querySelector(".salt-producttag__dot")]);
@@ -421,7 +423,7 @@ export async function run({ ok, pageWork }) {
       && noBook("Check the rice and the OIL rows") === "Check the book and the book rows" && noBook("Salt Admin and the Salt Counter") === "Salt Admin and the Salt Counter" && noBook("price, spared, ricer") === "price, spared, ricer"
       && seenWords.some(([t]) => / old product[.] The book costs RM 46[/]unit, quoted[.]$/.test(t)) && seenWords.some(([t]) => /^A sale of the book, priced like the book[.]$/.test(t)),
     "a sentence the Desk wrote names its book as 'the book', whole words only, the apps' own names left alone, and the Approve card draws it so: " + JSON.stringify(seenWords.map(([t]) => t).filter((t) => /book/.test(t) && /cost|sale of|cheaper/.test(t)).slice(0, 4)));
-    ok(shaped.length === 0 && all.d.querySelectorAll(".mtile").length > 0 && seenWords.some(([t, hidden]) => hidden && SHAPE_WORD.test(t)),
+    ok(shaped.length === 0 && [...all.d.querySelectorAll(".mtile")].every((t) => SHAPE_WORD.test(t.querySelector(".sr")?.textContent || "")) && seenWords.some(([t, hidden]) => hidden && SHAPE_WORD.test(t)),
       "no shape word is drawn on Salt Admin, while a reader is still told the shape: " + JSON.stringify(shaped.slice(0, 5)));
     ok(BOOK_NAMES.length >= 5 && BOOK_NAMED.test("Candy, 2 units") && BOOK_NAMED.test("the rice") && !BOOK_NAMED.test("Salt Admin") && !BOOK_NAMED.test("a price of 5"),
       "the scan itself reads the book's names as whole words and lets the apps' own names through: " + BOOK_NAMES.join(", "));

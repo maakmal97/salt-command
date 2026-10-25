@@ -1,3 +1,5 @@
+import { unfolded } from "./way.js";
+import { wayBound } from "./book-read.js";
 function canonical(value) {
   if (Array.isArray(value)) return value.map(canonical);
   if (value && typeof value === "object")
@@ -34,6 +36,7 @@ export async function makerRequestClaim(db, id, operation, fingerprint, entry = 
 }
 
 export async function makerAppointmentClaim(db, id, fingerprint, entry, code) {
+  const at = await wayBound(db);   /* S3: on its way to the book the readers read (src/way.js) */
   const result = await db.prepare(`INSERT OR IGNORE INTO maker_request(id,operation,fingerprint,entry)
     SELECT ?1,'appoint-existing',?2,?3
     WHERE NOT EXISTS (
@@ -42,11 +45,11 @@ export async function makerAppointmentClaim(db, id, fingerprint, entry, code) {
         AND json_extract(r.entry,'$.payload.mode')='addid'
         AND json_extract(r.entry,'$.payload.code')=?4
         AND json_extract(r.entry,'$.payload.kind') IN ('reseller','referral')
-        AND (d.id IS NULL OR d.committed_at IS NULL AND d.status IN ('pending','approved'))
+        AND (d.id IS NULL OR ${unfolded(at, 'd.')} AND d.status IN ('pending','approved'))
     )
     AND NOT EXISTS (
       SELECT 1 FROM draft d
-      WHERE d.id<>?1 AND d.committed_at IS NULL AND d.status IN ('pending','approved')
+      WHERE d.id<>?1 AND ${unfolded(at, 'd.')} AND d.status IN ('pending','approved')
         AND json_valid(d.entry) AND json_extract(d.entry,'$.payload.mode')='addid'
         AND json_extract(d.entry,'$.payload.code')=?4
         AND json_extract(d.entry,'$.payload.kind') IN ('reseller','referral')

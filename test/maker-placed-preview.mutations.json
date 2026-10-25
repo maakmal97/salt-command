@@ -8,7 +8,7 @@
  {"name":"a failed or in-flight read leaves Accept","file":"stmt/owner.js","find":"          var accept=card.querySelector('[data-accept]'); if(accept) accept.remove();\n          waitDraw(bad);","replace":"          waitDraw(bad);"},
  {"name":"a failed read offers no second read","file":"stmt/owner.js","find":"            if(makerPlacedDelivery()!=null) makerButton(qfigs,['Read the figures again','order.reread'],makerPlacedRead,false);\n","replace":"\n"},
  {"name":"a raise is accepted","file":"stmt/owner.js","find":"(yes?'Ask them, ':'Agree, ')","replace":"('Agree, ')"},
- {"name":"Accept is not labelled with the delivery","file":"stmt/owner.js","find":"(q.result.delivery>0?' + '+rm(q.result.delivery):'')","replace":"''"},
+ {"name": "Accept is not labelled with the delivery", "file": "stmt/owner.js", "find": "rmShort((+q.result.quote||0)+(+q.result.delivery||0))", "replace": "rmShort(+q.result.quote||0)"},
  {"name":"a sheet's later order asks for a charge","file":"stmt/owner.js","find":"var deliver=order.mode==='deliver'&&!follower;","replace":"var deliver=order.mode==='deliver';"},
  {"name":"a retried Accept sends another body","file":"stmt/owner.js","find":"            var body={total:s.total,delivery:s.delivery,hash:s.hash};","replace":"            var body={total:s.total,delivery:s.delivery,hash:s.hash,again:Math.random()};"}
 ]

@@ -53,12 +53,7 @@
   "find": "if(src) panel.appendChild(el('p','maker-facts salt-approve__entry',src));",
   "replace": ""
  },
- {
-  "name": "the head loses the book's mark",
-  "file": "stmt/owner.js",
-  "find": "party.appendChild(document.createTextNode(' · ')); party.appendChild(bookMark(draft.product)); }",
-  "replace": "}"
- },
+ {"name": "the head loses the book's tag", "file": "stmt/owner.js", "find": "party.appendChild(document.createTextNode(' ')); party.appendChild(productTag(draft.product)); }", "replace": "}"},
  {
   "name": "taking cash back reads as a payment",
   "file": "stmt/owner.js",

@@ -279,7 +279,7 @@ export async function run({ ok }) {
     choose(feeSel(A), "10");
     const tot = acard(A).querySelector('.maker-fields input[type="number"]'); tot.value = "125"; tot.dispatchEvent(new Ev("input", { bubbles: true })); tot.dispatchEvent(new Ev("change", { bubbles: true }));
     await wait(() => button(A, "Ask them"));
-    ok(!!button(A, "Ask them, RM 125.00"), "a raise previewed is sent for their yes, never accepted");
+    ok(!!button(A, "Ask them, RM 135"), "a raise previewed is sent for their yes, never accepted, its pill saying the goods and the delivery together");
     button(A, "Ask them").click();
     await wait(() => posts.some((p) => p.kind === "offer" && p.path.includes(A)));
     const oA = posts.find((p) => p.kind === "offer" && p.path.includes(A));

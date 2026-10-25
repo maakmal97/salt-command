@@ -1,0 +1,254 @@
+[
+ {
+  "name": "the read answers a list in the order it was first booked, not the book's",
+  "file": "src/book.js",
+  "find": "for (const r of sql.exec(\"SELECT coll, doc FROM rows WHERE gone_at IS NULL ORDER BY coll, seq\").toArray()) {\n      if (!by.has(r.coll)) by.set(r.coll, []);\n      by.get(r.coll).push(r.doc);",
+  "replace": "for (const r of sql.exec(\"SELECT coll, doc FROM rows WHERE gone_at IS NULL ORDER BY coll, booked_at\").toArray()) {\n      if (!by.has(r.coll)) by.set(r.coll, []);\n      by.get(r.coll).push(r.doc);"
+ },
+ {
+  "name": "the mirror's __collections is not rebuilt",
+  "file": "src/book.js",
+  "find": "state.__collections = COLLECTIONS.filter((c) => c in arrays);",
+  "replace": "state.__collections = [];"
+ },
+ {
+  "name": "NOTES reaches the readers",
+  "file": "src/book.js",
+  "find": "if (k !== ARRAYS && !NOT_MIRRORED.includes(k) && !COLLECTIONS.includes(k)) state[k] = doc;",
+  "replace": "if (k !== ARRAYS && !COLLECTIONS.includes(k)) state[k] = doc;"
+ },
+ {
+  "name": "an empty list vanishes from the read",
+  "file": "src/book.js",
+  "find": "for (const k of Object.keys(arrays)) if (!COLLECTIONS.includes(k) && !NOT_MIRRORED.includes(k)) state[k] = rows[k] || [];",
+  "replace": "for (const k of Object.keys(arrays)) if (!COLLECTIONS.includes(k) && !NOT_MIRRORED.includes(k) && rows[k]) state[k] = rows[k];"
+ },
+ {
+  "name": "an older version is loaded over a newer one",
+  "file": "src/book.js",
+  "find": "if (a !== null && b !== null && b < a) return",
+  "replace": "if (false) return"
+ },
+ {
+  "name": "a refused load is answered 200",
+  "file": "src/book.js",
+  "find": "return Response.json(r, { status: r.ok ? 200 : 409 });",
+  "replace": "return Response.json(r);"
+ },
+ {
+  "name": "the snapshot is not written by the load",
+  "file": "src/book.js",
+  "find": "if (p.snap) sql.exec(\"INSERT OR REPLACE INTO snap",
+  "replace": "if (false) sql.exec(\"INSERT OR REPLACE INTO snap"
+ },
+ {
+  "name": "a row's place is not updated when the list reorders",
+  "file": "src/book.js",
+  "find": "if (was.seq !== r.seq) sql.exec(",
+  "replace": "if (false) sql.exec("
+ },
+ {
+  "name": "the derived documents are not carried",
+  "file": "src/book.js",
+  "find": "if (snap && meta.derived && typeof meta.derived === \"object\")",
+  "replace": "if (false)"
+ },
+ {
+  "name": "the test object answers a read",
+  "file": "src/book.js",
+  "find": "if (this.isTest()) return Response.json({ ok: false, error: \"not found\" }, { status: 404 });\n      const out",
+  "replace": "const out"
+ },
+ {
+  "name": "the order digest is dropped from the read-back",
+  "file": "src/book.js",
+  "find": ", order: (await sha(hs.join(\"\\n\"))).slice(0, 16) };",
+  "replace": " };"
+ },
+ {
+  "name": "the collections drift from the tools'",
+  "file": "src/book.js",
+  "find": "export const COLLECTIONS = [\"sales\", \"purchases\", \"loans\",",
+  "replace": "export const COLLECTIONS = [\"sales\", \"purchases\","
+ },
+ {
+  "name": "the flag ships at book",
+  "file": "migrations/0018_book_read.sql",
+  "find": "VALUES (1, 'd1')",
+  "replace": "VALUES (1, 'book')"
+ },
+ {
+  "name": "the flag is ignored",
+  "file": "src/book-read.js",
+  "find": "if (!ns || await readMode(db) !== \"book\") return null;",
+  "replace": "if (!ns) return null;"
+ },
+ {
+  "name": "a Book that trails the mirror is read",
+  "file": "src/book-read.js",
+  "find": "if (a !== null && b !== null ? a < b : res.v !== head.v) return null;",
+  "replace": ""
+ },
+ {
+  "name": "the readcheck ignores the order of a list",
+  "file": "src/book-read.js",
+  "find": "    if (same(x, y)) return;\n",
+  "replace": "    if (same(x, y) || (x || []).map((r) => canon(r)).sort().join(\"|\") === (y || []).map((r) => canon(r)).sort().join(\"|\")) return;\n"
+ },
+ {
+  "name": "the readcheck puts a value in the log",
+  "file": "src/book-read.js",
+  "find": "if (!same(strip(k, x), strip(k, y))) differ.push(\"state.\" + k);",
+  "replace": "if (!same(strip(k, x), strip(k, y))) differ.push(\"state.\" + k + \" \" + JSON.stringify(y));"
+ },
+ {
+  "name": "the readcheck skips the derived documents",
+  "file": "src/book-read.js",
+  "find": "    if (k === \"STOCK\") continue;",
+  "replace": "    if (k === \"STOCK\" || k === \"TERMS\" || k === \"OPEN\") continue;"
+ },
+ {
+  "name": "a bound is spliced without being a time",
+  "file": "src/way.js",
+  "find": "export const boundOk = (at) => (typeof at === \"string\" && ISO.test(at) ? at : null);",
+  "replace": "export const boundOk = (at) => (typeof at === \"string\" && at ? at : null);"
+ },
+ {
+  "name": "unfolded ignores the table alias",
+  "file": "src/way.js",
+  "find": "\"(\" + a + \"committed_at IS NULL OR \" + a + \"committed_at > '\" + at + \"')\"",
+  "replace": "\"(committed_at IS NULL OR committed_at > '\" + at + \"')\""
+ },
+ {
+  "name": "on its way takes the wrong side of the bound",
+  "file": "src/way.js",
+  "find": "  ? \"(status='pending' OR (status='approved' AND (committed_at IS NULL OR committed_at > '\" + at + \"')))\"",
+  "replace": "  ? \"(status='pending' OR (status='approved' AND (committed_at IS NULL OR committed_at < '\" + at + \"')))\""
+ },
+ {
+  "name": "landed takes the wrong side of the bound",
+  "file": "src/way.js",
+  "find": "? \"committed_at IS NOT NULL AND committed_at <= '\" + at + \"'\"",
+  "replace": "? \"committed_at IS NOT NULL AND committed_at > '\" + at + \"'\""
+ },
+ {
+  "name": "the mirror's form of on its way changes",
+  "file": "src/way.js",
+  "find": "committed_at > (SELECT at FROM snapshot WHERE one=1))))\");",
+  "replace": "committed_at >= (SELECT at FROM snapshot WHERE one=1))))\");"
+ },
+ {
+  "name": "the money tap reads the payments beside the book again",
+  "file": "src/orders.js",
+  "find": "  const book = await (mirror ? mirror() : readBook(db)).catch(() => null);\n  const way = onWay || await paysOnWay(db, direction, boundOf(book));",
+  "replace": "  const [book, way] = await Promise.all([(mirror ? mirror() : readBook(db)).catch(() => null), onWay || paysOnWay(db, direction, null)]);"
+ },
+ {
+  "name": "the lots drafted and not folded ignore the book's bound",
+  "file": "src/drafter.js",
+  "find": "if (!book.draftLots) book.draftLots = await draftLotsOf(db, boundOf(book));",
+  "replace": "if (!book.draftLots) book.draftLots = await draftLotsOf(db, null);"
+ },
+ {
+  "name": "the trip's siblings ignore the book's bound",
+  "file": "src/drafter.js",
+  "find": "\"SELECT row FROM draft WHERE \" + unfolded(boundOf(book)) + \" AND status",
+  "replace": "\"SELECT row FROM draft WHERE committed_at IS NULL AND status"
+ },
+ {
+  "name": "a draft's own bound is not asked of the Book when no book is in hand",
+  "file": "src/book-read.js",
+  "find": "  const r = await fromBook(db, \"at\");\n  return r ? boundOf(r) : null;",
+  "replace": "  return null;"
+ },
+ {
+  "name": "the Book's refunds are not carried",
+  "file": "src/book-read.js",
+  "find": "at: b.at, customerRefunds: b.rows.customerRefunds };",
+  "replace": "at: b.at };"
+ },
+ {
+  "name": "a loan list is not filled from the rows",
+  "file": "src/book-read.js",
+  "find": "if (!Array.isArray(state.loans)) state.loans = b.rows.loans;",
+  "replace": ""
+ },
+ {
+  "name": "the readcheck is open to any caller",
+  "file": "src/worker.js",
+  "find": "  if (m !== \"GET\") return json({ ok: false, error: \"method not allowed\" }, 405);\n  if (!bookKeyOk(request, env)) return needsKey();\n  if (!env.BOOK || !env.SALT_LEDGER)",
+  "replace": "  if (m !== \"GET\") return json({ ok: false, error: \"method not allowed\" }, 405);\n  if (!env.BOOK || !env.SALT_LEDGER)"
+ },
+ {
+  "name": "the readcheck is not a CI route",
+  "file": "src/worker.js",
+  "find": "\"GET /book/window\", \"GET /book/readcheck\"]);",
+  "replace": "\"GET /book/window\"]);"
+ },
+ {
+  "name": "the fetch entry does not bind the Book",
+  "file": "src/worker.js",
+  "find": "  async fetch(request, env, ctx) {\n    if (env.SALT_LEDGER && env.BOOK) bindBook(env.SALT_LEDGER, env.BOOK);",
+  "replace": "  async fetch(request, env, ctx) {"
+ },
+ {
+  "name": "the readers get a /read route",
+  "file": "src/worker.js",
+  "find": "    if (p === \"/book/load\") return handleBookLoad(request, env, m);",
+  "replace": "    if (p === \"/book/load\") return handleBookLoad(request, env, m);\n    if (p === \"/book/read\") return env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)).fetch(new Request(\"https://book/read\"));"
+ },
+ {
+  "name": "a red readcheck blocks the fold",
+  "file": ".github/workflows/cloud-commit.yml",
+  "find": "      - name: Check the readers agree\n        if: steps.plan.outputs.deploy == '1'\n        continue-on-error: true",
+  "replace": "      - name: Check the readers agree\n        if: steps.plan.outputs.deploy == '1'"
+ },
+ {
+  "name": "the load tool sends no derived documents",
+  "file": "tools/book-load.mjs",
+  "find": "return JSON.stringify({ rev, book, pricing, derived, v: ext.v, stamped: ext.stamped });",
+  "replace": "return JSON.stringify({ rev, book, pricing });"
+ },
+ {
+  "name": "the tool's order digest is dropped",
+  "file": "tools/book-load.mjs",
+  "find": ", order: h256(hs.join(\"\\n\")).slice(0, 16) };",
+  "replace": " };"
+ },
+ {
+  "name": "a 4xx is retried by the readcheck tool",
+  "file": "tools/book-readcheck.mjs",
+  "find": "if (r.status < 500) return { error: last };",
+  "replace": ""
+ },
+ {
+  "name": "a missing key still asks",
+  "file": "tools/book-readcheck.mjs",
+  "find": "  if (!key) return { error: \"SALT_BOOK_KEY is not set, so the readers were not checked\" };\n",
+  "replace": ""
+ },
+ {
+  "name": "a draft clause outside the fold's and admission's appears",
+  "file": "src/orders.js",
+  "find": "async function paysOnWay(db, direction = \"SELL\", at) {\n  if (at === undefined) at = await wayBound(db);",
+  "replace": "async function paysOnWay(db, direction = \"SELL\", at) {\n  const stray = \"committed_at IS NULL\";\n  if (at === undefined) at = await wayBound(db);"
+ },
+ {
+  "name": "an order's flight check ignores the bound it is handed",
+  "file": "src/orders.js",
+  "find": "prepare(ORDER_FLIGHT(at === undefined ? await siteAt(env.SALT_LEDGER) : at))",
+  "replace": "prepare(ORDER_FLIGHT(await siteAt(env.SALT_LEDGER)))"
+ },
+ {
+  "name": "a terms flight check ignores the bound it is handed",
+  "file": "src/orders.js",
+  "find": "prepare(AMEND_FLIGHT(at === undefined ? await siteAt(env.SALT_LEDGER) : at))",
+  "replace": "prepare(AMEND_FLIGHT(await siteAt(env.SALT_LEDGER)))"
+ },
+ {
+  "name": "the maker's held moves look the bound up again",
+  "file": "src/worker.js",
+  "find": "const tripHeld = operation === \"trip-pay\" ? await makerHeldMoves(env, boundOf(book)) : [];",
+  "replace": "const tripHeld = operation === \"trip-pay\" ? await makerHeldMoves(env) : [];"
+ }
+]
