@@ -1685,6 +1685,17 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   screen. The system's App bar on a phone and its Desk rail from 1080px, a count beside a place that has something waiting
   (Needs you, Orders and Customers; Record and Shop have none; see Needs you above). Each place but Needs you has its parts as the system's tab strip, the first
   open with the place: **Orders**, drawn from 18 Oct 2026 as two strips of one list of parts: the six stages first, in the order an order moves (Received, Agreed, Ready, Delivered or paid, Completed, Ended, each with its count of what waits on him), then a smaller strip beneath for Approve, Payments, Group and Ledger; every part keeps its id, act, address and read, and `PARTS` is both strips together. A row is one line, the code, the mark with the size written once, the total, Deliver or Collect and the age. An order's card leads with the answer: at Received, **Agree** is the filled pill at the top with the terms it will send beside it in one line (`Delivery RM 10.00 · ASAP`, kept in step with the card's choices); until the figures are read it is a stand-in that sends nothing (`order.accept-wait`: it asks for the delivery charge and opens Change terms, else says it is reading). **Change terms** (the goods' price, the delivery charge and the time) and **Answer them** (the reply) are folded sections, shut until a tap (`order.terms`, `order.answer`; a question of theirs opens the reply); Decline stands apart at the card's end, in the flow and never sticky, as a ghost danger button (from 20 Oct 2026, on a placed order, Agree, Change terms and Decline stand in one row of three with the terms line under it, his canvas comment); the main action stands directly under the card's head, above Goods and Details, and each Orders strip is one row that scrolls sideways. The later stages lead the same way: Ready to collect or deliver, Handed over with its units and tiles, and their claim's Received and Not found stand at the top, Cancel at the foot. Nothing any button sends changed. The parts are (Placed, Confirmed, Ready, Done, Ended, Approve, Payments, Group, Ledger; Approve, from 17 Oct 2026 as the Desk's Order book holds it, is the Desk's rows waiting for him and the entries the server holds, and the old address `#record/approve` lands on it: the order review filtered by the customer's stages, an order in exactly one, and what waits on him a pill on its row and a count on its stage; opens on the first stage with something waiting; from 860px the first order of the stage opens in the detail column; the account
+  **25 Oct 2026, on the Salt Commodities system (canvas Salt Admin Orders, his yes to Asks A to M):** the parts are two text tab rows on the Nav
+  recipe, as Needs you's kinds: the stages **Placed, Agreed, Ready, Out or paid, Done, Ended** (was Received, Delivered or paid, Completed), each with the
+  count of its orders waiting on him beside the word, then Payments, Group and Ledger; Approve's tab stays, hidden, the bar's Approve its road and
+  `#orders/approve` its address. The line over the list is one Insight, the stage's money first (`ordLead`). An order is Needs you's card, 76px (80 from
+  860): the way and the age, or why it waits in copper (asked, says sent, send again, their yes), the book's typed Product tag and the code, the stage's
+  move as one filled pill (`order.move`: Agree, Withdraw, Ready, Handed, Received, Message; for now it opens the order) and the figure; the row is still
+  the one button (`order.open`). From 1080px the list is a plain table, Book, Code, Way, Units, Waiting and Total under their names. A sheet's orders
+  stand together under "Sheet" and the first order's reference, its delivery on the right. The open order's band names the book by its tag; on a
+  placed order the terms stand in view (no Change terms, no fold), Agree and Decline in one row of two under them, Agree saying the one sum it sends;
+  the reply's fold is **Answer**, its field Your line. Every book on Approve, Payments, Group and the Ledger is its typed tag (`bookTag`). What is below
+  is the history of the earlier drawings; where it says otherwise, this paragraph is the page.
   claims under Payments, the group orders under Group, Order for them at the head of the place), **Customers** (Accounts,
   Messages, Links, Associates: the list and the card, the chat, the guest links, the report card), **Record** (Entry,
   Customers, Pricing: the forms by the part they belong to; each waits for his approval under Orders > Approve) and
@@ -2691,11 +2702,11 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `notice.text` | Notice | The notice, one line a sentence. |
 | `order.accept` | Order card (key: the order id), once its figures are read | Accepts the order at the price read. |
 | `order.accept-again` | Same card, once its figures are read | Accepts again at the order's own price. |
-| `order.accept-wait` | Order card, placed, until its figures are read | Stands in for Agree and sends nothing: asks for the delivery charge (and opens Change terms), or says the figures are being read. |
+| `order.accept-wait` | Order card, placed, until its figures are read | Stands in for Agree and sends nothing: asks for the delivery charge (and takes him to it; the terms stand in view since 25 Oct 2026), or says the figures are being read. |
 | `order.answer` | Order card | Opens or shuts the folded reply, Answer them. |
 | `order.customer.use` | Order card (key: the order id), This customer, a customer's salt order with a suggested % over theirs | Sends the suggested % as their % (tier-set), for review under Approve. |
-| `order.terms` | Order card, placed | Opens or shuts the folded Change terms: the goods' price, the delivery charge and the time. From 20 Oct 2026 a button in the row of three (Agree, Change terms, Decline). |
-| `order.terms-fold` | Order card, placed | The Change terms fold's own summary, hidden behind the row's Change terms button (20 Oct 2026). |
+| `order.terms` | Retired 25 Oct 2026 | Opened or shut the folded Change terms; the terms now stand in view on the card. |
+| `order.terms-fold` | Retired 25 Oct 2026 | The Change terms fold's own summary. |
 | `order.again-amend` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected amendment again. |
 | `order.again-cancel` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected cancellation again. |
 | `order.again-cash` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected cash again. |
@@ -2727,6 +2738,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.handed-rest` | Same card, fewer units typed than ordered (key: more or all) | More to come (a part handover) or That is all (the close at the units typed, asked on a sheet); Handed over says which. |
 | `order.no-reply` | Same card | Records that no reply is needed. |
 | `order.open` | A row of the list in Orders (key: the order id) | Opens that order's card beside the list from 860px, in its place below it. Reads nothing. |
+| `order.move` | The pill on a row of the list in Orders (key: the order id), 25 Oct 2026 | Says the stage's move (Agree, Withdraw, Ready, Handed, Received, Message); opens that order, as the row does. |
 | `order.pay` | Order card (key: the order id), acknowledged or ready | Records the amount by the road chosen: Bank as the order's received, Cash held ten seconds with its Undo, then recorded; it says the figure and the road once both are there. |
 | `order.pay-amount` | Same card | The amount received, in RM, one field for the bank and the cash. |
 | `order.pay-by` | Same card (key: bank or cash) | Bank or Cash; Cash is offered on a ready order alone, and none is chosen there until he chooses. |
@@ -2756,13 +2768,13 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `part.customers.messages` | The strip under Customers (tab: Messages) | Shows the account conversations, reading the threads. |
 | `part.customers.links` | The strip under Customers (tab: Links) | Shows the guest links, reading them once. |
 | `part.customers.associates` | The strip under Customers (tab: Associates) | Shows the associates' report card, reading it once. |
-| `part.orders.placed` | The strip under Orders (tab: Received) | Shows the orders placed and not yet agreed, reading them. |
+| `part.orders.placed` | The tab row under Orders (tab: Placed) | Shows the orders placed and not yet agreed, reading them. |
 | `part.orders.confirmed` | The strip under Orders (tab: Agreed) | Shows the agreed orders, and every row of the book with nothing paid or handed over in full. |
 | `part.orders.ready` | The strip under Orders (tab: Ready) | Shows the orders marked ready. |
-| `part.orders.paid` | The strip under Orders (tab: Delivered or paid) | Shows the orders handed over in full or paid in full, not yet both. |
-| `part.orders.done` | The strip under Orders (tab: Completed) | Shows the orders handed over and closed. |
+| `part.orders.paid` | The tab row under Orders (tab: Out or paid) | Shows the orders handed over in full or paid in full, not yet both. |
+| `part.orders.done` | The tab row under Orders (tab: Done) | Shows the orders handed over and closed. |
 | `part.orders.ended` | The strip under Orders (tab: Ended) | Shows the declined and cancelled orders. |
-| `part.orders.approve` | The strip under Orders (tab: Approve) | Shows the Desk's rows waiting for him and the entries the server holds, reading them. |
+| `part.orders.approve` | Under Orders, reached by the bar's Approve (its tab hidden since 25 Oct 2026) | Shows the Desk's rows waiting for him and the entries the server holds, reading them. |
 | `part.orders.payments` | The strip under Orders (tab: Payments) | Shows the payments they say they sent. |
 | `part.orders.group` | The strip under Orders (tab: Group) | Shows the group orders, reading them. |
 | `part.orders.ledger` | The strip under Orders (tab: Ledger) | Shows the mini ledger, reading the folded book: Open orders, Pending orders and the latest 20 orders. |
@@ -2905,7 +2917,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `row.change` | A row of the book as an order (key: the row) | Sends what changed as one Correction for approval. |
 | `row.cancel` | A row of the book as an order, nothing handed over (key: the row) | Asks, then sends a Cancellation for approval; anything paid opens as a refund. |
 | `ledger.tieout` | Orders > Ledger, under Order and book | Check now: asks the Desk to tie every site order to its row again, and shows what it found. |
-| `orders.more` | Under Completed or Ended, past fifty orders (key: the stage) | Shows fifty more. |
+| `orders.more` | Under Done or Ended, past fifty orders (key: the stage) | Shows fifty more. |
 | `trip.details` | An order of several books, or a buyer's same-day rows, under Orders (key: trip:<id> or day:<rows>) | Opens the order's id, day and rows. |
 | `trip.hand-units` | An order of several books (key: the row) | The units of that line to hand over; full by default, fewer for a part. |
 | `trip.handover` | An order of several books (key: the trip) | Sends one handover a line through Record's own input, each line its own request; a line the Desk refuses holds only itself. |
@@ -2961,16 +2973,16 @@ the same thing, this table is the word; a new card takes its word from here, and
 
 | Thing | Desk | Salt Admin |
 |---|---|---|
-| An order placed, not yet answered | Pending | Received (stage) |
+| An order placed, not yet answered | Pending | Placed (stage, since 25 Oct 2026) |
 | His yes to an order | Accept | Agree (button), Agreed (stage) |
 | Goods ready | Ready to deliver, Ready to collect | Ready |
 | Goods out | Handed over | Handed over |
-| Money in | Received | Received (button), Delivered or paid (stage) |
+| Money in | Received | Received (button), Out or paid (stage) |
 | A drafted row his to decide | Approve, under Order book | Approve, under Orders |
 | What waits on him | Waiting on you | Needs you |
 
-**Open, his to decide:** *Received* names an order's first stage here and money in on both surfaces, so one card can show the stage *Received* and the
-button *Received*; and his yes is *Accept* on the Desk, *Agree* here.
+**Settled 25 Oct 2026 (his yes to Ask A of the Orders canvas):** the first stage is *Placed*, so *Received* is money in alone on both surfaces.
+Still open: his yes is *Accept* on the Desk, *Agree* here.
 
 ### Unsent entries say so, and every id and row keeps its detail behind Details (Phase 4c, 12 Oct 2026)
 
