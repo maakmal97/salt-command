@@ -1192,6 +1192,13 @@ body.ended>*:not(#aEnded){display:none}
 .adm .ordrow .ofig{grid-column:3;grid-row:1/3;display:flex;align-items:center;justify-content:flex-end;margin:0;padding:0;line-height:1;white-space:nowrap;overflow:hidden;font-variant-numeric:tabular-nums}
 .adm .ordcard>.ogo{position:absolute;top:0;bottom:0;right:106px;width:72px;display:flex;align-items:center;margin:0}
 .adm .ordcard .nbtn{box-sizing:border-box;width:72px;min-width:72px;max-width:72px;height:48px;min-height:48px;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 25 Oct 2026 (Ask D): a move that sends asks once under its row; the card grows to hold the ask, its row keeping its height */
+.adm .ordcard--ask{height:auto}
+.adm .ordcard--ask>.ordrow{height:76px}
+.adm .ordcard--ask>.ogo{bottom:auto;height:76px}
+.adm .oask{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:0 10px 10px}
+.adm .oask__q{flex:1 1 100%;font-size:var(--salt-text-sm);color:var(--salt-prose)}
+.adm .oask .nbtn{width:auto;min-width:96px;max-width:none;padding:0 14px}
 .adm .ohead-row{display:none}
 @media (min-width:860px){
   .adm .ordcard{height:80px}

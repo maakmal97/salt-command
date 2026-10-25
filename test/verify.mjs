@@ -50177,6 +50177,11 @@ await (async () => {
   await (await import("./live-desk.mjs")).run({ ok, pageWork });
 })();
 
+section("25 Oct 2026: Salt Admin's Orders, a row's move asks once and sends what the order card sends");
+await (async () => {
+  await (await import("./admin-orders-moves.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin: Orders open by stage, a list beside the order, and Record a menu");
 await (async () => {
   await (await import("./admin-orders.mjs")).run({ ok, pageWork });

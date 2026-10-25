@@ -1690,7 +1690,8 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   count of its orders waiting on him beside the word, then Payments, Group and Ledger; Approve's tab stays, hidden, the bar's Approve its road and
   `#orders/approve` its address. The line over the list is one Insight, the stage's money first (`ordLead`). An order is Needs you's card, 76px (80 from
   860): the way and the age, or why it waits in copper (asked, says sent, send again, their yes), the book's typed Product tag and the code, the stage's
-  move as one filled pill (`order.move`: Agree, Withdraw, Ready, Handed, Received, Message; for now it opens the order) and the figure; the row is still
+  move as one filled pill (`order.move`: Agree, Withdraw, Ready, Handed, Received, Message; Withdraw, Ready to deliver, Handed and one Received ask once
+  under the row and send what the order card sends, Agree, a collection's Ready, two payments and Message open the order) and the figure; the row is still
   the one button (`order.open`). From 1080px the list is a plain table, Book, Code, Way, Units, Waiting and Total under their names. A sheet's orders
   stand together under "Sheet" and the first order's reference, its delivery on the right. The open order's band names the book by its tag; on a
   placed order the terms stand in view (no Change terms, no fold), Agree and Decline in one row of two under them, Agree saying the one sum it sends;
@@ -2784,7 +2785,9 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.handed-rest` | Same card, fewer units typed than ordered (key: more or all) | More to come (a part handover) or That is all (the close at the units typed, asked on a sheet); Handed over says which. |
 | `order.no-reply` | Same card | Records that no reply is needed. |
 | `order.open` | A row of the list in Orders (key: the order id) | Opens that order's card beside the list from 860px, in its place below it. Reads nothing. |
-| `order.move` | The pill on a row of the list in Orders (key: the order id), 25 Oct 2026 | Says the stage's move (Agree, Withdraw, Ready, Handed, Received, Message); opens that order, as the row does. |
+| `order.move` | The pill on a row of the list in Orders (key: the order id), 25 Oct 2026 | The stage's move. Withdraw, Ready (to deliver), Handed (the order's units) and Received (one payment) ask once under the row; Agree, a collection's Ready, two payments and Message (its Answer open) open the order. |
+| `order.move-yes` | Under a row that asks (key: the order id) | Sends what the order card sends for that move: withdraw, move to ready by delivery, handed, received, each under its own request id. |
+| `order.move-no` | Under a row that asks (key: the order id) | Not now: takes the ask away and sends nothing. |
 | `order.pay` | Order card (key: the order id), acknowledged or ready | Records the amount by the road chosen: Bank as the order's received, Cash held ten seconds with its Undo, then recorded; it says the figure and the road once both are there. |
 | `order.pay-amount` | Same card | The amount received, in RM, one field for the bank and the cash. |
 | `order.pay-by` | Same card (key: bank or cash) | Bank or Cash; Cash is offered on a ready order alone, and none is chosen there until he chooses. |

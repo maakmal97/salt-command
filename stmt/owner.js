@@ -4137,13 +4137,63 @@ export const OWNER_JS = `
     card.appendChild(b);
     var go=el('div','salt-action__go ogo');
     if(main){
-      /* P2 draws the move; its tap opens the order at it until the move itself is wired (Ask D) */
       var pill=actOn(el('button','salt-pill salt-pill--sm nbtn',main),'order.move',e.id); pill.type='button';
-      pill.addEventListener('click', function(){ openOrder(e.id); });
+      pill.addEventListener('click', function(){ ordMoveTap(e,main); });
+      if(ordAsk[e.id]||ordBusy[e.id]) pill.hidden=true;
       go.appendChild(pill);
     }
     card.appendChild(go);
+    /* 25 Oct 2026 (his yes to Ask D): a move that sends asks once on the row, as Needs you's cards do; its answer stands under the row */
+    if(o&&(ordAsk[e.id]||ordBusy[e.id]||ordNote[e.id])){
+      card.classList.add('ordcard--ask');
+      var ask=el('div','oask'); ask.setAttribute('role','status');
+      if(ordAsk[e.id]||ordBusy[e.id]){
+        ask.appendChild(el('span','oask__q',ordAskWords(o,ordAsk[e.id]||ordBusy[e.id])));
+        var yes=actOn(el('button','salt-pill salt-pill--sm nbtn','Yes'),'order.move-yes',e.id), no=actOn(el('button','salt-ghost nbtn','Not now'),'order.move-no',e.id);
+        yes.type='button'; no.type='button';
+        if(ordBusy[e.id]){ yes.disabled=true; no.disabled=true; yes.textContent='Sending'; }
+        yes.addEventListener('click', function(){ ordMoveSend(e,ordAsk[e.id]); });
+        no.addEventListener('click', function(){ delete ordAsk[e.id]; ordRowRedraw(e); });
+        ask.appendChild(yes); ask.appendChild(no);
+      }else ask.appendChild(el('span','oask__q',ordNote[e.id]));
+      card.appendChild(ask);
+    }
     return card;
+  }
+  var ordAsk={}, ordBusy={}, ordNote={};
+  function ordRowRedraw(e){
+    var old=document.querySelector('#makerOrderList .ordcard > [data-order="'+e.id+'"]'); old=old&&old.parentNode;
+    if(old&&old.parentNode){ var n=orderRow(e); old.parentNode.replaceChild(n,old); sweep(); var f=n.querySelector('[data-act="order.move-yes"]:not([disabled])'); if(f&&f.focus) f.focus(); }
+  }
+  /* what each move asks, in the words the order card and Needs you use */
+  function ordAskWords(o,main){
+    var who=codeByUser(o.u), pp=ordPays(o)[0];
+    if(main==='Withdraw'){ var f=(o.price&&o.price.offer)||{}; return 'Take back your offer of '+rm((+f.total||0)+(+f.delivery||0))+' to '+who+'?'; }
+    if(main==='Ready') return 'Mark '+who+"'s order ready to deliver?";
+    if(main==='Handed') return 'Hand over '+units(o.qty)+' to '+who+'?';
+    if(main==='Received') return 'Confirm '+rm(pp?pp.amount:0)+' received from '+who+'?';
+    return '';
+  }
+  function ordMoveTap(e,main){
+    var o=e.order; delete ordNote[e.id];
+    if(!o){ openOrder(e.id); return; }
+    if(main==='Message'){ ordFolds[o.id+'|answer']=true; openOrder(e.id); return; }
+    /* Agree reads its figures on the card; a collection is made ready at one of his points, chosen on the card's Sheet; two payments are read on the card */
+    if(main==='Agree'||(main==='Ready'&&o.mode!=='deliver')||(main==='Received'&&ordPays(o).length!==1)){ openOrder(e.id); return; }
+    ordAsk[e.id]=main; ordRowRedraw(e);
+  }
+  function ordMoveSend(e,main){
+    var o=e.order; if(!o||!main||ordBusy[e.id]) return;
+    delete ordAsk[e.id]; ordBusy[e.id]=main; ordRowRedraw(e);
+    var done=main==='Withdraw'?makerTap(o,'withdraw',{},'Offer withdrawn. The order stands as they placed it.')
+      :main==='Ready'?makerMove(o,{status:'ready',mode:'deliver'},'Order marked ready to deliver.')
+      :main==='Handed'?makerTap(o,'handed',{qty:Number(o.qty)},'Handover sent to the Desk.')
+      :main==='Received'?orderReceived(o,ordPays(o)[0]):Promise.resolve(false);
+    Promise.resolve(done).then(function(ok){
+      delete ordBusy[e.id];
+      ordNote[e.id]=ok===false?(makerSaid[o.id]||'Not sent. Try again.'):ok===undefined&&main!=='Ready'?'Busy, try again.':({Withdraw:'Offer withdrawn.',Ready:'Marked ready to deliver.',Handed:'Handover sent to the Desk.',Received:'Sent to the Desk.'})[main];
+      var now=ordEntries[e.id]; if(now&&document.querySelector('#makerOrderList [data-order="'+e.id+'"]')) ordRowRedraw(now);
+    });
   }
   /* 18 Oct 2026: the line over the list counts the stage in view, every card it holds (a book row and an order of several books too), never
      the site's open orders across every stage, which read "2 open orders" over one card */
