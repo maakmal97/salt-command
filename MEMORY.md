@@ -192,6 +192,9 @@
   https://claude.ai/artifact/TrC768miLDPZb7U5wWciBQ and `docs/plan-admin-shop.html` (his yes to every Ask, Ask H both halves): For now first and folded, the glance tiles,
   the open day with its preview (a pane beside the week from 860px), points as a plain table, Notice as customers read it, Practice with Open the test page
   and Remove asking once, This device rows, Shop's parts as text tabs. Section "Salt Admin's Shop on the Salt system". Accepted 26 Oct 2026.
+- v1258 (`4054c52f`, 26 Oct 2026; Cloud commit `40232565847`: chain and three suite parts green, live /rev `028280eedf4fc3ff`), his word: This device is a list of settings on
+  salt-ds 1.18.0 (#30, the Switch and Settings recipes): Tide theme and Notifications switches, Names a password in its row with Unlock. Not yet opened by him.
+  Next (his yes of 26 Oct 2026): Salt Counter's own This device the same.
 
 ## Salt Admin Needs you redesign
 - Live as v1221 (`b8916ca2`, 23 Oct 2026; Cloud commit `39821813897`: chain and three suite parts green, live /rev `1e1013dcc935d44b`), from his canvas
