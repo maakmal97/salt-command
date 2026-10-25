@@ -2368,6 +2368,16 @@ export const OWNER_JS = `
         return send(path,Object.assign({},body,{at:new Date().toISOString(),second:twin}));
       }
     };
+    /* 25 Oct 2026 (Record redesign P6): a reward held or an offset offered is Needs you's card, its kind, the code, one short pill (its full words spoken)
+       and its figure; a refusal stands under the code and the card grows to hold it */
+    var listCard=function(cls,kind,code,fig){
+      var c=el('article','salt-action salt-action--soon ncard '+cls), body=el('div','salt-action__body'), go=el('div','salt-action__go');
+      c.appendChild(el('span','salt-action__kind nkind',kind));
+      var who=el('span','salt-action__title'); who.appendChild(whoTag(el('span','need-who need-who--code',code),code)); body.appendChild(who);
+      c.appendChild(body); c.appendChild(go); c.appendChild(el('span','salt-action__money salt-action__money--lg nfig',fig));
+      c._body=body; c._go=go; return c;
+    };
+    var cardPill=function(b,said){ b.classList.remove('btn','salt-pill--md'); b.classList.add('salt-pill--sm','nbtn'); if(said) b.setAttribute('aria-label',said); return b; };
     var partyItems=parties.map(function(code){return {value:code,label:code};});
     var productItems=books.map(function(item){return bookItem(item.product);});
     var loan=makerForm('entry');loan.appendChild(el('h3',null,'Loan'));
@@ -2410,6 +2420,12 @@ export const OWNER_JS = `
       return {value:item.rid,label:item.direction==='in'?'You owe '+item.party+' '+left+(on?' (borrowed '+on+')':''):item.party+' owes '+left+(on?' (lent '+on+')':'')};});
     var repayLoan=addSelect(repay,['Which loan','record.repay.loan'],loanItems), repayDate=makerField(repay,['Date','record.repay.date'],'date',today),
       repayAmount=makerField(repay,['Amount','record.repay.amount'],'number','1'), repayStatus=makerStatus(repay);
+    /* 25 Oct 2026 (Record redesign P6): what is left on the loan chosen, as a ledger line with its figure, under the choice */
+    var repayLeft=el('div','salt-ledger repay-left'); repay.insertBefore(repayLeft,repayDate.closest('label'));
+    var drawLeft=function(){ repayLeft.textContent=''; var item=(catalog.loans||[]).find(function(x){return x.rid===repayLoan.value;}); repayLeft.hidden=!item; if(!item) return;
+      var row=el('div','salt-ledger__row'), line=el('div','salt-ledger__line'); line.appendChild(el('span','salt-ledger__label','Left on this loan'));
+      line.appendChild(el('span','salt-ledger__value',item.form==='cash'?rm(item.remaining):units(item.remaining))); row.appendChild(line); repayLeft.appendChild(row); };
+    repayLoan.addEventListener('change',drawLeft); drawLeft();
     makerButton(repay,['Send the repayment','record.repay.send'],async function(send){
       repayStatus.textContent='Sending.';
       try{await send('/all/maker/inputs/repay',{at:new Date().toISOString(),loan:repayLoan.value,
@@ -2427,19 +2443,19 @@ export const OWNER_JS = `
       redeemList.textContent='';
       if(!rewards.length)redeemList.appendChild(el('p','msg','No rewards held.'));
       rewards.forEach(function(offer){
-        var row=el('div','maker-reward');row.setAttribute('data-reward-holder',offer.code);
-        row.appendChild(el('p','maker-facts',offer.code+', '+units(offer.held)+' held'
-          +(offer.departed?' while away':offer.free<offer.held?' ('+units(offer.free)+' free)':'')));
+        var row=listCard('maker-reward',(offer.associate?'Associate · held':'Held')+(offer.departed?' · away':offer.free<offer.held?' · '+units(offer.free)+' free':''),offer.code,units(offer.held));
+        row.setAttribute('data-reward-holder',offer.code);
         if(offer.action){
-          var status=makerStatus(row);
-          makerButton(row,[offer.action==='Redeem'?(offer.associate?'Give '+offer.code+' their reward':'Give '+offer.code+' 1 unit'):'Take 1 unit off what '+offer.code+' owes','record.redeem.send'],async function(send){
+          var status=makerStatus(row._body); status.classList.add('nnote');
+          var said=offer.action==='Redeem'?(offer.associate?'Give '+offer.code+' their reward':'Give '+offer.code+' 1 unit'):'Take 1 unit off what '+offer.code+' owes';
+          cardPill(makerButton(row._go,[offer.action==='Redeem'?'Give':'Take off','record.redeem.send'],async function(send){
             status.textContent='Checking.';
             try{
               await send('/all/maker/inputs/redeem',{at:new Date().toISOString(),code:offer.code,date:redeemDate.value});
               redeemStatus.textContent='Sent. It waits under Approve.';
               var read=await refs('/all/maker/inputs');drawMakerRewards(read.catalog.rewards||[]);loadMaker();
             }catch(error){refusal(status,error);}
-          },true);
+          },true),said);
         }
         redeemList.appendChild(row);
       });
@@ -2464,11 +2480,9 @@ export const OWNER_JS = `
         offerLists.customer.textContent=''; offerLists.reward.textContent='';
         offerStatus.textContent='';
         read.offers.forEach(function(offer){
-          var row=el('div','maker-offer'), kind=offer.associate===false?'customer':'reward'; row.setAttribute('data-key',offer.rid);
-          var facts=el('span','maker-offer__what'); facts.appendChild(el('span','maker-offer__code',offer.code));
-          facts.appendChild(el('span','maker-offer__fig',units(offer.units)+' ('+rm(offer.rm)+') off the order of '+(fmtWhen(offer.saleDate)||'an undated day')));
-          row.appendChild(facts);
-          makerButton(row,['Add','record.offset.send'],async function(send){
+          var kind=offer.associate===false?'customer':'reward', row=listCard('maker-offer',units(offer.units)+' off · order of '+(fmtWhen(offer.saleDate)||'an undated day'),offer.code,rmShort(offer.rm));
+          row.setAttribute('data-key',offer.rid);
+          cardPill(makerButton(row._go,['Add','record.offset.send'],async function(send){
             offerStatus.textContent='Sending.';
             try{
               await send('/all/maker/inputs/offset',{at:new Date().toISOString(),code:offer.code,rid:offer.rid,date:offerDate.value});
@@ -2476,7 +2490,7 @@ export const OWNER_JS = `
               offerStatus.textContent='Sent. It waits under Approve.';
               loadMaker();
             }catch(error){refusal(offerStatus,error);}
-          },true);
+          },true),'Add '+units(offer.units)+' off the order of '+(fmtWhen(offer.saleDate)||'an undated day')+' for '+offer.code);
           offerLists[kind].appendChild(row);
         });
         ['customer','reward'].forEach(function(k){ if(!offerLists[k].childElementCount) offerLists[k].appendChild(el('p','rnone','None to offer.')); });

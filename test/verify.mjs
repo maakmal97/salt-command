@@ -50341,6 +50341,11 @@ await (async () => {
   await (await import("./admin-record-correct.mjs")).run({ ok, pageWork });
 })();
 
+section("25 Oct 2026: Salt Admin Record, P6: a reward held and an offset offered are cards with one pill, Repayment says what is left");
+await (async () => {
+  await (await import("./admin-record-lists.mjs")).run({ ok, pageWork });
+})();
+
 
 section("The restock light made plain, P1: each book's light in STOCK, carried by the Desk and the Counter's relay (22 Oct 2026)");
 await (async () => {

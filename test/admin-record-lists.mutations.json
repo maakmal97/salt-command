@@ -1,0 +1,12 @@
+[
+ {"name":"a reward is a line of words again","file":"stmt/owner.js","find":"        var row=listCard('maker-reward',(offer.associate?'Associate · held':'Held')+(offer.departed?' · away':offer.free<offer.held?' · '+units(offer.free)+' free':''),offer.code,units(offer.held));","replace":"        var row=el('div','maker-reward'); row._body=row; row._go=row; row.appendChild(el('p','maker-facts',offer.code+', '+units(offer.held)+' held'));"},
+ {"name":"an away reward is not said","file":"stmt/owner.js","find":"(offer.departed?' · away':offer.free<offer.held","replace":"(false?' · away':offer.free<offer.held"},
+ {"name":"the reward's pill shows its whole sentence","file":"stmt/owner.js","find":"cardPill(makerButton(row._go,[offer.action==='Redeem'?'Give':'Take off','record.redeem.send']","replace":"cardPill(makerButton(row._go,[said,'record.redeem.send']"},
+ {"name":"a short pill speaks only its word","file":"stmt/owner.js","find":"if(said) b.setAttribute('aria-label',said); return b; };","replace":"return b; };"},
+ {"name":"the pill keeps the form's size","file":"stmt/owner.js","find":"b.classList.remove('btn','salt-pill--md'); b.classList.add('salt-pill--sm','nbtn');","replace":""},
+ {"name":"an offset's figure is left off","file":"stmt/owner.js","find":"offer.code,rmShort(offer.rm));\n          row.setAttribute('data-key',offer.rid);","replace":"offer.code,'');\n          row.setAttribute('data-key',offer.rid);"},
+ {"name":"an offset's day is left off its kind","file":"stmt/owner.js","find":"listCard('maker-offer',units(offer.units)+' off · order of '+(fmtWhen(offer.saleDate)||'an undated day')","replace":"listCard('maker-offer',units(offer.units)+' off'"},
+ {"name":"nothing is said of what is left on the loan","file":"stmt/owner.js","find":"    repayLoan.addEventListener('change',drawLeft); drawLeft();","replace":""},
+ {"name":"what is left does not follow the choice","file":"stmt/owner.js","find":"    repayLoan.addEventListener('change',drawLeft); drawLeft();","replace":"    drawLeft();"},
+ {"name":"the cards touch","file":"stmt/page.js","find":".adm .maker-rewards,.adm .maker-offers{display:flex;flex-direction:column;gap:10px}","replace":".adm .maker-rewards,.adm .maker-offers{display:flex;flex-direction:column}"}
+]

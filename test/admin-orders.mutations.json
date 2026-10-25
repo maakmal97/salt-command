@@ -650,8 +650,8 @@
  {
   "name": "the offset button says Send the offset again",
   "file": "stmt/owner.js",
-  "find": "makerButton(row,['Add','record.offset.send']",
-  "replace": "makerButton(row,['Send the offset','record.offset.send']"
+  "find": "makerButton(row._go,['Add','record.offset.send']",
+  "replace": "makerButton(row._go,['Send the offset','record.offset.send']"
  },
  {
   "name": "Orders counts what waits on him, not the orders open",

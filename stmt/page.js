@@ -730,6 +730,12 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
    right; the changes made ready a ledger; a move of its History one line, its Undo at the right */
 .adm .rowcard{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center;box-sizing:border-box;height:76px;padding:12px 14px;margin:12px 0 0}
 .adm .rowcard[hidden]{display:none}
+/* 25 Oct 2026 (Record redesign P6): a reward held or an offset offered stacks as cards; what is left on a loan one ledger line, its figure at the right */
+.adm .maker-rewards,.adm .maker-offers{display:flex;flex-direction:column;gap:10px}
+.adm .maker-reward .salt-action__go,.adm .maker-offer .salt-action__go{flex-direction:column;align-items:stretch;gap:6px}
+.adm .repay-left{grid-column:1/-1}
+.adm .repay-left[hidden]{display:none}
+.adm .repay-left .salt-ledger__value{white-space:nowrap}
 .adm .rowcard__kind{grid-column:1;grid-row:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);color:var(--salt-mist-bright)}
 .adm .rowcard__rid{color:var(--salt-brass)}
 .adm .rowcard__who{grid-column:1;grid-row:2;display:flex;align-items:center;gap:8px;min-width:0}
@@ -1027,11 +1033,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm .apcard .rdet--row{margin:0}
 .adm .maker-offers__head{margin:16px 0 4px}
 .adm .maker-offers{display:flex;flex-direction:column}
-.adm .maker-offer{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 12px;padding:8px 0;border-top:1px solid var(--salt-line)}
-.adm .maker-offer__what{display:flex;flex-direction:column;gap:2px;min-width:0}
-.adm .maker-offer__code{font-family:var(--salt-font-mono);font-weight:500;color:var(--salt-salt)}
-.adm .maker-offer__fig{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);font-variant-numeric:tabular-nums}
-.adm .maker-offer>.salt-ghost[hidden]{display:none}
+.adm .maker-offer .salt-ghost[hidden],.adm .maker-reward .salt-ghost[hidden]{display:none}
 /* 11 OCT 2026 (PHASE 1b): NEEDS YOU IS THE SYSTEM'S ACTION RECIPE, ranked Now, Soon, Watch. The recipe sets the card, its kind word and its
    colour (--salt-sev); this page decides only the title's parts, the actions beside each other, the gaps between cards, and the line a
    tap is answered on, which sits on the card it answers */
