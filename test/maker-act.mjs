@@ -57,9 +57,12 @@ export function tileGroup(root, label) { return [...root.querySelectorAll("field
 /* A LEGEND ABOUT A BOOK ENDS IN THE BOOK'S MARK AND NO WORD (his word of 12 Oct 2026). legendLabel is the legend's words, then ", " and the code of the book that its mark stands for (read off the shape the
    mark tells a reader), so a test names a group "Starting level, salt" as it always did while the page draws the mark alone. A legend with no mark is just its words. */
 export function legendLabel(legend) {
-  const g = legend.cloneNode(true), mark = g.querySelector(".pwith"), shape = mark ? (mark.querySelector(".sr") || { textContent: "" }).textContent : "";
+  /* 25 Oct 2026 (Record redesign P3): on Salt Admin the legend ends in the book's typed tag, read off its class, as a mark was read off its shape */
+  const g = legend.cloneNode(true), mark = g.querySelector(".pwith"), shape = mark ? (mark.querySelector(".sr") || { textContent: "" }).textContent : "", tag = g.querySelector(".salt-producttag");
   if (mark) mark.remove();
-  const book = shape && Object.keys(PSHAPE).find((k) => k !== "_" && PSHAPE[k] === shape);
+  const typed = tag && ([...tag.classList].find((c) => /^salt-producttag--/.test(c)) || "").replace("salt-producttag--", "");
+  if (tag) tag.remove();
+  const book = typed || shape && Object.keys(PSHAPE).find((k) => k !== "_" && PSHAPE[k] === shape);
   return g.textContent.trim() + (book ? ", " + book : "");
 }
 export function tileValues(root, label) { const g = tileGroup(root, label); return g ? [...g.querySelectorAll("input")].map((r) => r.value) : null; }

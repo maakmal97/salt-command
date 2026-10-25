@@ -222,7 +222,7 @@ export async function run({ ok }) {
       const hasRecovery = await retryPage.waitFor(() => !!sectionOf(retryPage.dom.window.document, "Unsent entry"));
       const recovery = sectionOf(retryPage.dom.window.document, "Unsent entry");
       check(retryPage.loaded && hasRecovery && !!recovery, "a lost appointment answer reloads as a retained input");
-      const retry = button(recovery, "Send again");
+      const retry = button(recovery, "Resend");   /* Send again until 25 Oct 2026 (Record redesign P2) */
       retry.click();
       await retryPage.waitFor(() => !sectionOf(retryPage.dom.window.document, "Unsent entry"));
       const attempts = retryPage.requests.filter((request) => request.path === "/all/maker/inputs/appoint-existing");

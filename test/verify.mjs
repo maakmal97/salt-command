@@ -50325,6 +50325,11 @@ await (async () => {
   await (await import("./admin-record-unsent.mjs")).run({ ok, pageWork });
 })();
 
+section("25 Oct 2026: Salt Admin Record, P3: every form two columns, its books typed tags, its figures mono and right, its one pill across the foot");
+await (async () => {
+  await (await import("./admin-record-fields.mjs")).run({ ok, pageWork });
+})();
+
 
 section("The restock light made plain, P1: each book's light in STOCK, carried by the Desk and the Counter's relay (22 Oct 2026)");
 await (async () => {

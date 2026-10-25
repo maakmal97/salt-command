@@ -2167,7 +2167,7 @@ export const OWNER_JS = `
   var tileSeq=0, menuOffers=null;
   function makerTiles(label,items,none){
     var L=labOf(label), set=el('fieldset','salt-options maker-tiles'), grid=el('div','salt-options__grid'), name='tiles'+(++tileSeq), legend=el('legend','salt-options__legend salt-options__legend--label lbl',L[0]);
-    if(L[3]){ legend.appendChild(document.createTextNode(' ')); legend.appendChild(bookMark(L[3])); }   /* a legend about a book ends in its mark: [words, act, key, book] */
+    if(L[3]){ legend.appendChild(document.createTextNode(' ')); legend.appendChild(productTag(L[3])); }   /* a legend about a book ends in its typed tag: [words, act, key, book] (25 Oct 2026) */
     set.appendChild(legend); set.appendChild(grid);
     Object.defineProperty(set,'value',{
       get:function(){ var on=set.querySelector('input:checked'); return on?on.value:''; },
@@ -2177,14 +2177,16 @@ export const OWNER_JS = `
       var on=set.querySelector('input:checked'), kept=on?on.value:null, offered=list.some(function(item){ return String(item.value)===kept; });
       grid.textContent='';
       /* tiles that are marks alone (the books) sit compact and centred, never a wide box with a mark in its corner */
+      /* 25 Oct 2026 (Record redesign P3): two or three short choices lie on one row, as the canvas draws them; the books, typed tags, four up */
+      var brief=list.every(function(item){ return String(item.label).length<=14; });
       grid.className='salt-options__grid'+(list.length&&list.every(function(item){ return item.mark; })?' maker-marks'
-        :list.length!==3&&list.every(function(item){ return String(item.label).length<=14; })?' salt-options__grid--2':'');
+        :list.length===3&&brief?' maker-row maker-row--3':list.length!==3&&brief?' salt-options__grid--2':'');
       list.forEach(function(item,i){
         var lab=el('label','salt-option'), radio=el('input','salt-option__input'), face=el('span','salt-option__face');
         radio.type='radio'; radio.name=name; radio.value=String(item.value);
         actOn(radio,L[1],(L[2]?L[2]+'-':'')+(String(item.value)===''?'none':item.value));
         radio.checked=offered?String(item.value)===kept:(!none&&i===0);
-        if(item.mark) face.appendChild(bookMark(item.mark,28)); else face.appendChild(el('span','salt-option__label',item.label));   /* a book's tile is its mark alone, named by its shape for a reader */
+        if(item.mark) face.appendChild(productTag(item.mark)); else face.appendChild(el('span','salt-option__label',item.label));   /* a book's tile is its typed tag on Salt Admin (his decision of 22 Oct 2026; Record from 25 Oct) */
         lab.appendChild(radio); lab.appendChild(face); grid.appendChild(lab);
       });
     };
@@ -2193,9 +2195,9 @@ export const OWNER_JS = `
   function makerTilesIn(root,label,items,none){ var set=makerTiles(label,items,none); root.appendChild(set); return set; }
   function makerField(parent, label, type, value, step){
     var L=labOf(label), wrap=el('label','maker-field'), title=el('span','lbl salt-field__label',L[0]), input=actOn(el('input','fld salt-field__input'),L[1],L[2]);
-    if(L[3]){ title.appendChild(document.createTextNode(' ')); title.appendChild(bookMark(L[3])); }   /* a field about a book ends in its mark: [words, act, key, book] */
+    if(L[3]){ title.appendChild(document.createTextNode(' ')); title.appendChild(productTag(L[3])); }   /* a field about a book ends in its typed tag: [words, act, key, book] */
     input.type=type; input.value=value==null?'':String(value);
-    if(type==='number'){ input.step=step||'0.01'; input.min='0'; input.inputMode='decimal'; }
+    if(type==='number'){ input.step=step||'0.01'; input.min='0'; input.inputMode='decimal'; input.classList.add('salt-field__input--mono'); }   /* a figure in mono, set right (25 Oct 2026) */
     if(type==='number'||type==='date'||type==='time') wrap.classList.add('maker-field--short');   /* a short field lies beside another on a portrait tablet (the page's CSS, 768 to 859px) */
     wrap.appendChild(title); wrap.appendChild(input); parent.appendChild(wrap); return input;
   }
@@ -3390,7 +3392,7 @@ export const OWNER_JS = `
       box.appendChild(tradeSection);
       var direction=makerTilesIn(tradeSection,['Sale or purchase','record.trade.direction'],[{value:'sale',label:'Sale'},{value:'purchase',label:'Purchase'}]);
       var tradeProduct=makerTilesIn(tradeSection,['Book','record.trade.book'],[]), tradeParty=actOn(el('select','fld salt-field__input salt-field__select'),'record.trade.party');
-      var partyLabel=el('label','maker-field','Who');
+      var partyLabel=el('label','maker-field maker-field--short','Who');   /* Who beside Date, as the canvas pairs them (25 Oct 2026) */
       partyLabel.appendChild(tradeParty);
       tradeSection.appendChild(partyLabel);
       var tradeDate=makerField(tradeSection,['Date','record.trade.date'],'date',''), tradeQty=makerField(tradeSection,['Units','record.trade.units'],'number','1','0.01');

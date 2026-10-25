@@ -128,8 +128,10 @@ export async function run({ ok, pageWork }) {
       }
       const kind = (f) => (f.querySelector("input,select") || { type: "" }).type, SHORT = ["number", "date", "time"];
       const marked = fields.filter((f) => f.classList.contains("maker-field--short")), others = fields.filter((f) => !f.classList.contains("maker-field--short"));
-      ok(marked.length >= 5 && marked.every((f) => SHORT.includes(kind(f))) && others.some((f) => kind(f) === "text") && others.every((f) => !SHORT.includes(kind(f))),
-        "the sale and new customer forms mark the short fields, a number, a date or a time, and no text or select field: " + JSON.stringify(fields.map((f) => [kind(f), f.classList.contains("maker-field--short")])));
+      /* 25 Oct 2026 (Record redesign P3): and the sale's Who, which stands beside its Date as the canvas pairs them */
+      const who = (f) => kind(f) === "select-one" && f.firstChild.textContent === "Who" && !!f.querySelector('[data-act="record.trade.party"]');
+      ok(marked.length >= 5 && marked.every((f) => SHORT.includes(kind(f)) || who(f)) && marked.filter(who).length === 1 && others.some((f) => kind(f) === "text") && others.every((f) => !SHORT.includes(kind(f))),
+        "the sale and new customer forms mark the short fields, a number, a date or a time, and the sale's Who beside its Date, and no other text or select field: " + JSON.stringify(fields.map((f) => [kind(f), f.classList.contains("maker-field--short")])));
     } catch (e) { ok(false, "the form stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
   }
 

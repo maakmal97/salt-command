@@ -711,7 +711,10 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 /* 12 OCT 2026 (PHASE 4a): the few, fixed choices of a form are the system's Option tiles (stmt/owner.js, makerTiles), a fieldset whose legend is the field's label.
    The recipe sets the tile, its 44px and its chosen edge; the page only gives the group the row to itself in a row of fields. */
 .adm .maker-tiles{flex:1 1 100%;min-width:0}
-.adm .maker-marks{grid-template-columns:repeat(auto-fill,minmax(88px,1fr))}
+.adm .maker-marks{grid-template-columns:repeat(auto-fill,minmax(72px,1fr))}
+.adm .maker-row--3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.adm .maker-row .salt-option__face{justify-content:center;padding-inline:8px}
+.adm .maker-row .salt-option__label,.adm .maker-tiles .salt-options__grid--2 .salt-option__label{flex-wrap:nowrap;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .adm .maker-marks .salt-option__face{justify-content:center}
 .adm .maker-sizes{flex:1 1 100%;min-width:0}
 .adm .maker-sizes .salt-options__grid{grid-template-columns:repeat(auto-fill,minmax(88px,1fr))}
@@ -972,6 +975,15 @@ body.ended>*:not(#aEnded){display:none}
    second choices two up under it */
 .adm .reclist .ncard{grid-template-columns:minmax(0,1fr) 72px 88px;gap:6px 8px;padding:12px;height:76px}
 .adm .reclist .ncard .nbtn{width:72px;min-width:72px;max-width:72px;padding:0 4px}
+/* 25 Oct 2026 (Record redesign P3): A FORM IS TWO COLUMNS AT EVERY WIDTH, a short field (a number, a date, a time, and the sale's Who) beside the next, all else across;
+   a label one line, a figure in mono set right, and the form's one pill across the foot on a phone, 240px at its right edge beside the menu */
+.adm .maker-input{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:12px;align-items:start}
+.adm .maker-input>*{grid-column:1/-1;min-width:0}
+.adm .maker-input>.maker-field--short{grid-column:auto;min-width:0}
+.adm .maker-field>.lbl{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .maker-input input[type=number]{text-align:right}
+.adm .maker-input>.btn.salt-pill{width:100%;height:48px;margin-top:16px}
+@media (min-width:860px){.adm .maker-input>.btn.salt-pill{width:240px;justify-self:end}}
 .adm .maker-input.unsent{display:flex;flex-direction:column;gap:10px;margin:0 0 10px}
 .adm .unsent-open{display:flex;flex-direction:column;gap:10px}
 .adm .unsent-open[hidden]{display:none}

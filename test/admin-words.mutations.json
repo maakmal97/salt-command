@@ -30,7 +30,7 @@
  {"name":"the tile tells a reader nothing of its shape","file":"stmt/page.js","find":"w.appendChild(el('span','sr',pshape(product)+' '+words));","replace":"w.appendChild(el('span','sr',words));"},
  {"name":"the tile loses its mark","file":"stmt/page.js","find":"w.appendChild(psym(product,px||28));\n    var f=el('span','mq',words);","replace":"var f=el('span','mq',words);"},
  {"name":"a mark tells a reader the book's name","file":"stmt/owner.js","find":"w.appendChild(el('span','sr',pshape(product))); return w; }\n  function bookTile","replace":"w.appendChild(el('span','sr',product)); return w; }\n  function bookTile"},
- {"name":"a legend names its book","file":"stmt/owner.js","find":"legend.appendChild(bookMark(L[3])); }","replace":"legend.appendChild(document.createTextNode(L[3])); }"},
+ {"name":"a legend names its book","file":"stmt/owner.js","find":"legend.appendChild(productTag(L[3])); }","replace":"legend.appendChild(document.createTextNode(L[3])); }"},
  {"name":"an option names its book","file":"stmt/owner.js","find":"return l?'['+l+'] ':''; }","replace":"return l?'['+l+'] '+product+' ':''; }"},
  {"name":"the report card heading says the book","file":"stmt/owner.js","find":"wrap.appendChild(pmarkHead('h2',p.product));","replace":"wrap.appendChild(el('h2',null,p.name||p.product));"},
  {"name":"the report card heading says the shape","file":"stmt/page.js","find":"h.setAttribute('aria-label',pshape(product)); h.appendChild(psym(product,28));","replace":"h.setAttribute('aria-label',pshape(product)); h.appendChild(psym(product,28)); h.appendChild(el('span','pshape',pshape(product)));"},
