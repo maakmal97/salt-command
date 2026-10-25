@@ -2665,6 +2665,15 @@ export const OWNER_JS = `
       select.addEventListener('change',function(){typed.closest('label').hidden=select.value!=='typed';});
       return {product:item.product,select:select,typed:typed};
     });
+    /* 25 Oct 2026 (Record redesign P7, his Ask J): the code they will get, worked out as Add the customer works it out, shown as the name and place are typed;
+       nothing is shown until there is a code to show */
+    var codeLine=function(form,label){ var box=el('div','salt-ledger codeline'), row=el('div','salt-ledger__row'), line=el('div','salt-ledger__line'), v=el('span','salt-ledger__value codeline__code');
+      line.appendChild(el('span','salt-ledger__label',label)); line.appendChild(v); row.appendChild(line); box.appendChild(row); box.hidden=true; form.appendChild(box);
+      return function(text){ v.textContent=text||''; box.hidden=!text; }; };
+    var idCode=codeLine(id,'Their code');
+    var drawIdCode=function(){ var kind=idKind.value, parentCode=(kind==='bucket'||kind==='downstream')?idParent.value:null;
+      idCode(kind==='bucket'?(parentCode?parentCode+'-R':''):makerDerivedCode(idName.value.trim(),idPlace.value.trim(),kind,catalog.parties||[],null,parentCode)); };
+    id.addEventListener('input',drawIdCode); id.addEventListener('change',drawIdCode);
     var idStatus=makerStatus(id), idBusy=false;
     idKind.addEventListener('change',function(){
       var bucket=idKind.value==='bucket', needsParent=bucket||idKind.value==='downstream';
@@ -2761,6 +2770,11 @@ export const OWNER_JS = `
       amendPlace=makerLocalityField(amend,'record.amend-id.place'), amendGate=makerVaultGate(amend),
       amendStatus=makerStatus(amend), amendBusy=false;
     var amendLink=makerField(amend,['Maps or Waze link','record.amend-id.link'],'text','');
+    /* the code after the change, as Save the change works it out (25 Oct 2026, his Ask J): unchanged where the name and place keep it */
+    var amendCode=codeLine(amend,'Code after');
+    var drawAmendCode=function(){ var from=amendParty.value, to=amendName.value.trim()&&amendPlace.value.trim()?makerDerivedCode(amendName.value.trim(),amendPlace.value.trim(),from.charAt(0)==='S'?'supplier':'customer',catalog.parties||[],from):null;
+      amendCode(to?(to===from?from+', unchanged':to):''); };
+    amend.addEventListener('input',drawAmendCode); amend.addEventListener('change',drawAmendCode);
     var amendDraft=null;
     pairDrafts.push({draft:function(){return amendDraft;},clear:function(){amendDraft=null;}});
     amend.addEventListener('input',function(){amendDraft=null;});

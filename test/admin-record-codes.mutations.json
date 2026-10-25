@@ -1,0 +1,9 @@
+[
+ {"name":"New customer shows no code","file":"stmt/owner.js","find":"    id.addEventListener('input',drawIdCode); id.addEventListener('change',drawIdCode);","replace":""},
+ {"name":"the code shown ignores the role","file":"stmt/owner.js","find":"makerDerivedCode(idName.value.trim(),idPlace.value.trim(),kind,catalog.parties||[],null,parentCode)); };","replace":"makerDerivedCode(idName.value.trim(),idPlace.value.trim(),'customer',catalog.parties||[],null,parentCode)); };"},
+ {"name":"a resale account shows no code","file":"stmt/owner.js","find":"idCode(kind==='bucket'?(parentCode?parentCode+'-R':''):","replace":"idCode(kind==='bucket'?'':"},
+ {"name":"an empty code is drawn","file":"stmt/owner.js","find":"v.textContent=text||''; box.hidden=!text; };","replace":"v.textContent=text||''; box.hidden=false; };"},
+ {"name":"the code after is not shown","file":"stmt/owner.js","find":"    amend.addEventListener('input',drawAmendCode); amend.addEventListener('change',drawAmendCode);","replace":""},
+ {"name":"a kept code is not said unchanged","file":"stmt/owner.js","find":"amendCode(to?(to===from?from+', unchanged':to):''); };","replace":"amendCode(to||''); };"},
+ {"name":"the code is not in mono","file":"stmt/page.js","find":".adm .codeline .codeline__code{font-family:var(--salt-font-mono)}","replace":""}
+]

@@ -735,6 +735,11 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-reward .salt-action__go,.adm .maker-offer .salt-action__go{flex-direction:column;align-items:stretch;gap:6px}
 .adm .repay-left{grid-column:1/-1}
 .adm .repay-left[hidden]{display:none}
+/* 25 Oct 2026 (Record redesign P7): the code a new customer gets, and a changed one's code after, one ledger line, the code in mono at the right */
+.adm .codeline{grid-column:1/-1;margin:8px 0 0}
+.adm .codeline[hidden]{display:none}
+.adm .codeline .salt-ledger__value{white-space:nowrap}
+.adm .codeline .codeline__code{font-family:var(--salt-font-mono)}
 .adm .repay-left .salt-ledger__value{white-space:nowrap}
 .adm .rowcard__kind{grid-column:1;grid-row:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);color:var(--salt-mist-bright)}
 .adm .rowcard__rid{color:var(--salt-brass)}
