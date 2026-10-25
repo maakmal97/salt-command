@@ -762,6 +762,18 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .ashop-two>[data-act="hours.day-copy"]{grid-column:1/-1}
 .adm .ashop-pv{padding:12px 14px}
 .adm .ashop-pv .maker-preview{margin:0}
+/* 25 Oct 2026 (Salt Admin Shop): the points, a plain table; the code and place fields side by side, Add beside a line, Save across */
+.adm .apoints-card{padding:4px 8px;margin:0 0 12px}
+.adm .apoints{table-layout:fixed;width:100%;border-collapse:collapse}
+.adm .apoints th,.adm .apoints td{height:52px;padding:0 8px;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .apoints thead th{height:36px}
+.adm .apoints .apoints-code{width:64px;font-family:var(--salt-font-mono)}
+.adm .apoints .apoints-place{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
+.adm .apoints .apoints-x{width:60px;text-align:right}
+.adm .apoints .apoints-x .salt-ghost{width:44px;height:44px;min-width:44px;padding:0}
+.adm .apoints-add{display:grid;grid-template-columns:88px minmax(0,1fr);gap:8px;margin:0 0 8px}
+.adm .apoints-save{display:flex;margin:8px 0 0}
+.adm .apoints-save>.salt-pill{flex:1 1 auto;box-sizing:border-box;height:48px;min-height:48px;padding:0 16px}
 .adm .maker-dayedit-times>button{min-height:44px;min-width:44px}
 .adm .maker-copy{display:flex;flex-wrap:wrap;gap:8px}
 .adm .maker-copy button{min-height:44px;min-width:44px}

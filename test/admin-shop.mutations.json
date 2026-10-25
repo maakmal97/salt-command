@@ -21,5 +21,14 @@
  {"name":"Discard changes stands outside the pair","file":"stmt/owner.js","find":"hrsDraw(); }); done.appendChild(dis);","replace":"hrsDraw(); }); box.appendChild(dis);"},
  {"name":"Discard changes stands under the week with a day open","file":"stmt/owner.js","find":"if(hrsDirty()&&hrsEditing===null){","replace":"if(hrsDirty()){"},
  {"name":"the dates share the weekday's column","file":"stmt/page.js","find":".adm .maker-dates .maker-day{grid-template-columns:84px minmax(0,1fr) 128px}","replace":".adm .maker-dates .maker-day{grid-template-columns:40px minmax(0,1fr) 128px}"},
- {"name":"the tail is hatched","file":"stmt/page.js","find":".adm .maker-tail{background:color-mix(in srgb,var(--salt-brass) 45%,transparent)}","replace":".adm .maker-tail{background:repeating-linear-gradient(135deg,var(--salt-brass) 0 4px,transparent 4px 7px)}"}
+ {"name":"the tail is hatched","file":"stmt/page.js","find":".adm .maker-tail{background:color-mix(in srgb,var(--salt-brass) 45%,transparent)}","replace":".adm .maker-tail{background:repeating-linear-gradient(135deg,var(--salt-brass) 0 4px,transparent 4px 7px)}"},
+ {"name":"the points are no plain table","file":"stmt/owner.js","find":"var tbl=el('table','salt-table salt-table--plain apoints')","replace":"var tbl=el('table','salt-table apoints')"},
+ {"name":"the table stands in no card","file":"stmt/owner.js","find":"var wrap=el('div','salt-glass-card salt-glass-card--radius-lg apoints-card');","replace":"var wrap=el('div','apoints-card');"},
+ {"name":"a row's place is not drawn","file":"stmt/owner.js","find":"tr.appendChild(el('td','apoints-place',p.lat.toFixed(5)+', '+p.lng.toFixed(5)));","replace":"tr.appendChild(el('td','apoints-place',''));"},
+ {"name":"the cross is not named by its point","file":"stmt/owner.js","find":"x.setAttribute('aria-label','Remove point '+p.code);","replace":"x.setAttribute('aria-label','Remove');"},
+ {"name":"the cross takes nothing off","file":"stmt/owner.js","find":"x.addEventListener('click',function(){ list.splice(i,1); makerPointsDraft=list; drawMakerPoints(); });","replace":"x.addEventListener('click',function(){ makerPointsDraft=list; drawMakerPoints(); });"},
+ {"name":"an empty list still draws a table","file":"stmt/owner.js","find":"    if(list.length){\n      var tbl=","replace":"    if(true){\n      var tbl="},
+ {"name":"the place has no example","file":"stmt/owner.js","find":"    where.placeholder='3.15214, 101.70312';\n","replace":""},
+ {"name":"Add stands alone","file":"stmt/owner.js","find":"var addRow=el('div','apair'); addRow.appendChild(el('p','msg','Or paste a Maps link.')); root.appendChild(addRow);","replace":"var addRow=el('div','apoints-row'); root.appendChild(addRow);"},
+ {"name":"Save is not in its own row","file":"stmt/owner.js","find":"var saveRow=el('div','apoints-save'); root.appendChild(saveRow);","replace":"var saveRow=root;"}
 ]

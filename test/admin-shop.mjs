@@ -84,5 +84,28 @@ export async function run({ ok, pageWork }) {
     const css = [...p.d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
     ok(css.includes(".adm .maker-dates .maker-day{grid-template-columns:84px minmax(0,1fr) 128px}") && css.includes(".adm .maker-tail{background:color-mix(in srgb,var(--salt-brass) 45%,transparent)}"),
       "the dates keep an 84px name column, and the next day's tail is a solid bar at 45% brass");
+    /* P3.1 */
+    const pts = p.d.getElementById("makerPoints"), tbl = pts.querySelector("table.salt-table--plain");
+    const cols = tbl ? [...tbl.querySelectorAll("thead th")].map(t) : [];
+    const rowsP = tbl ? [...tbl.querySelectorAll("tbody tr")] : [];
+    const x = byAct(pts, "points.remove", "A2");
+    ok(!!tbl && !!tbl.closest(".salt-glass-card") && JSON.stringify(cols) === JSON.stringify(["Point", "Place", "Remove"])
+      && JSON.stringify(rowsP.map((r) => t(r.querySelector("th[data-point]")) + " " + t(r.querySelector(".apoints-place")))) === JSON.stringify(["A2 3.11111, 101.22222", "B7 3.07381, 101.51846", "C3 3.20000, 101.60000"]),
+      "the points are a plain table in a card, a code and its place a row: " + rowsP.map(t).join(" | "));
+    ok(!!x && x.classList.contains("salt-ghost") && x.getAttribute("aria-label") === "Remove point A2" && t(x) === "" && !!x.querySelector("svg"),
+      "each row's remove is a cross, named by its point");
+    /* P3.2 */
+    const sentBefore = p.posts.filter((y) => y.route === "/all/maker/points").length;
+    x.click(); await p.work.quiet();
+    ok([...p.d.querySelectorAll("#makerPoints tbody th[data-point]")].map(t).join() === "B7,C3" && p.posts.filter((y) => y.route === "/all/maker/points").length === sentBefore,
+      "the cross takes the point off the draft and sends nothing until Save");
+    for (const k of ["B7", "C3"]) { byAct(p.d, "points.remove", k).click(); await p.work.quiet(); }
+    ok(!p.d.querySelector("#makerPoints table"), "with no points left there is no table");
+    /* P3.3 */
+    const addRow = byAct(pts, "points.add"), save = byAct(pts, "points.save");
+    ok(!!byAct(pts, "points.code").closest(".apoints-add") && byAct(pts, "points.place").closest(".apoints-add") === byAct(pts, "points.code").closest(".apoints-add")
+      && byAct(pts, "points.place").placeholder === "3.15214, 101.70312" && addRow.closest(".apair") && addRow.classList.contains("salt-ghost") && t(addRow.closest(".apair").querySelector(".msg")) === "Or paste a Maps link."
+      && save.classList.contains("salt-pill") && !!save.closest(".apoints-save"),
+      "the code and the place stand side by side, Add a ghost beside its line, and Save the points a pill across");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 }

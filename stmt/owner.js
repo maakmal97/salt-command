@@ -5772,18 +5772,28 @@ export const OWNER_JS = `
     root.textContent='';
     var list=makerPointsDraft||((makerPoints.points&&makerPoints.points.list)||[]).slice();
     status.textContent=list.length?list.length+(list.length===1?' point':' points')+'. Ready to collect asks which one.':'No points yet. Ready to collect needs one.';
-    var rows=el('ul','maker-points');
-    list.forEach(function(p,i){
-      var li=el('li','maker-row'); li.appendChild(el('span','maker-point-code','Point '+p.code));
-      li.appendChild(el('span','msg',p.lat.toFixed(5)+', '+p.lng.toFixed(5)));
-      makerButton(li,['Remove','points.remove',p.code],function(){ list.splice(i,1); makerPointsDraft=list; drawMakerPoints(); },false);
-      rows.appendChild(li);
-    });
-    root.appendChild(rows);
-    var add=el('div','maker-fields'), code=makerField(add,['Code','points.code'],'text',''), where=makerField(add,['Place, as two figures or a Maps link','points.place'],'text','');
-    code.setAttribute('maxlength','3'); code.setAttribute('autocapitalize','characters'); code.setAttribute('spellcheck','false');
+    /* 25 Oct 2026 (Salt Admin Shop): the points are a plain table, a code, its place, and a 44px cross that takes it off the draft */
+    if(list.length){
+      var tbl=el('table','salt-table salt-table--plain apoints'), head=el('tr'), body=el('tbody'), thead=el('thead');
+      [['Point','apoints-code'],['Place',''],['','apoints-x']].forEach(function(h){ var th=el('th',h[1]||null,h[0]); th.scope='col'; if(!h[0]) th.appendChild(el('span','sr','Remove')); head.appendChild(th); });
+      thead.appendChild(head); tbl.appendChild(thead);
+      list.forEach(function(p,i){
+        var tr=el('tr'), th=el('th','apoints-code',p.code); th.scope='row'; th.setAttribute('data-point',p.code); tr.appendChild(th);
+        tr.appendChild(el('td','apoints-place',p.lat.toFixed(5)+', '+p.lng.toFixed(5)));
+        var cell=el('td','apoints-x'), x=actOn(el('button','salt-ghost'),'points.remove',p.code); x.type='button'; x.setAttribute('aria-label','Remove point '+p.code);
+        x.innerHTML='<svg aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6 L18 18 M18 6 L6 18"></path></svg>';
+        x.addEventListener('click',function(){ list.splice(i,1); makerPointsDraft=list; drawMakerPoints(); });
+        cell.appendChild(x); tr.appendChild(cell); body.appendChild(tr);
+      });
+      tbl.appendChild(body);
+      var wrap=el('div','salt-glass-card salt-glass-card--radius-lg apoints-card'); wrap.appendChild(tbl); root.appendChild(wrap);
+    }
+    var add=el('div','apoints-add'), code=makerField(add,['Code','points.code'],'text',''), where=makerField(add,['Place','points.place'],'text','');
+    code.setAttribute('maxlength','3'); code.setAttribute('autocapitalize','characters'); code.setAttribute('spellcheck','false'); code.placeholder='A3';
+    where.placeholder='3.15214, 101.70312';
     root.appendChild(add);
-    makerButton(root,['Add','points.add'],function(){
+    var addRow=el('div','apair'); addRow.appendChild(el('p','msg','Or paste a Maps link.')); root.appendChild(addRow);
+    makerButton(addRow,['Add','points.add'],function(){
       var c=String(code.value||'').trim().toUpperCase(), place=pointPlace(where.value);
       if(!/^[A-Z][0-9]{1,2}$/.test(c)){ pointsSaid('A code is one capital letter and one or two digits, such as A2.'); return; }
       if(!place){ pointsSaid('Give the place as two figures, latitude then longitude, or paste a Maps link with a point.'); return; }
@@ -5791,7 +5801,8 @@ export const OWNER_JS = `
       if(list.length>=20){ pointsSaid('Twenty points at most.'); return; }
       list.push({code:c,lat:place.lat,lng:place.lng}); makerPointsDraft=list; drawMakerPoints(); pointsSaid('Point '+c+' added. Save to keep it.');
     },false);
-    makerButton(root,['Save the points','points.save'],function(){
+    var saveRow=el('div','apoints-save'); root.appendChild(saveRow);
+    makerButton(saveRow,['Save the points','points.save'],function(){
       return refs('/all/maker/points',{list:list}).then(function(value){ makerPoints=value; makerPointsDraft=null; drawMakerPoints(); pointsSaid('Points saved.'); })
         .catch(function(error){ pointsSaid(null,error); });
     },true);

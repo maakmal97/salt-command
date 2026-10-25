@@ -2610,7 +2610,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `hours.day-from` | The opened day (key: the weekday) | The quarter hour it opens. |
 | `hours.day-same` | The opened day (key: the weekday) | Takes the day before's hours. |
 | `hours.day-to` | The opened day (key: the weekday) | The quarter hour it closes; earlier than the open is the next day. |
-| `hours.override-clear` | Operating hours | Clears it. |
+| `hours.hold` | Operating hours, For now | Opens the form that holds the shop closed or open until a time; Not now folds it. |
+| `hours.override-clear` | Operating hours, For now, while an override is filed | Clears it (it reads Weekly hours, named Back to the weekly hours). |
 | `hours.override-set` | Operating hours | Sets the temporary override. |
 | `hours.override-state` | Operating hours (key: `false` for Closed, `true` for Open) | Whether the override holds the shop open or closed. |
 | `hours.override-until` | Operating hours | When the override ends, Kuala Lumpur time. |
