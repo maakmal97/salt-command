@@ -126,35 +126,43 @@ export async function run({ ok, pageWork }) {
     for (const part of ["approve", "payments", "group", "ledger", "ended", "paid", "placed"]) { await p.tap("part.orders." + part); const w = p.where(); if (w !== "orders/" + part) reach.push(part + ">" + w); }
     ok(reach.length === 0 && [...strips[1].querySelectorAll("button")].every((b) => /^part[.]orders[.]/.test(b.getAttribute("data-act"))), "and every part is still reached at its own act and address, in either strip: " + JSON.stringify(reach));
     await byAct(d, "part.orders.placed").click(); await p.work.quiet();
+    /* 25 Oct 2026 (canvas Salt Admin Orders, Asks D, F, G): AN ORDER IS NEEDS YOU'S CARD. The row's button (its act, its data-in) fills the card: the way and the
+       age, or why it waits in copper, the book's typed tag and the code, the units (a column from 1080px), the figure; the stage's move a pill beside it */
+    const cardOf = (id) => { const r = byAct(d, "order.open", id); return r && r.closest(".ordcard"); };
+    const part = (id, cls) => { const r = byAct(d, "order.open", id), x = r && r.querySelector("." + cls); return x ? x.textContent : null; };
+    const pillOf = (id) => { const c = cardOf(id), b = c && c.querySelector(':scope > .ogo [data-act="order.move"]'); return b ? b.textContent : ""; };
     const sizeRow = byAct(d, "order.open", "ord-p3"), sizeWords = (sizeRow.textContent.match(/units?/g) || []).length;
-    ok(sizeWords === 1 && !/to decide/.test(sizeRow.textContent) && (sizeRow.querySelector(".mtile .sr") || {}).textContent.length > 0 && !/unit/.test(sizeRow.querySelector(".mtile .sr").textContent),
-      "a row says the size once, in the tile caption, and no to decide the stage already says: " + sizeRow.textContent + sizeWords + sizeRow.querySelector(".mtile .sr").textContent);
-    const row = byAct(d, "order.open", "ord-p3"), mark = row && row.querySelector(".mtile"), main = row && row.querySelector(".salt-inbox-row__main");
-    ok(row && row.tagName === "BUTTON" && row.classList.contains("salt-inbox-row") && !!mark && !!mark.querySelector("svg.psym") && /^CX1-ZED/.test(main.querySelector(".salt-inbox-row__title").textContent)
-      && /1 unit/.test(mark.textContent) && row.querySelector(".salt-inbox-row__action").textContent === "RM 100.00"
-      && (row.querySelector(".salt-inbox-row__age") || {}).textContent === "26 h",
-    "a row is the system's Inbox row: the mark, who by code, the stage, the units, the figure and the age: " + (row && row.textContent));
-    const p2 = byAct(d, "order.open", "ord-p2");
-    ok(p2.querySelector(".salt-inbox-row__action").textContent === "RM 110.00" && /Deliver/.test(p2.querySelector(".salt-inbox-row__what").textContent) && (p2.querySelector(".salt-inbox-row__age") || {}).textContent === "1 h",
-      "and the figure is the goods and the delivery, the units say how it goes: " + p2.textContent);
-    const chips = (id) => [...byAct(d, "order.open", id).querySelectorAll(".salt-status")].map((c) => c.textContent).join();
-    ok(chips("ord-p3") === "" && chips("ex-1") === "Practice" && !p.rowsShown().some((id) => /Waiting on you/.test(byAct(d, "order.open", id).textContent)),
-      "a Placed row carries no Waiting on you (Placed always waits on him), and Practice marks a practice order: " + JSON.stringify(["ord-p3", "ex-1"].map(chips)));
-    /* 14 Oct 2026: every row is the one grid, mark, main (code and at most one pill, then what it is), side (age over the figure) */
-    const shape = (id) => { const r = byAct(d, "order.open", id); return [...r.children].map((c) => c.className.split(" ").filter((x) => /mtile|inbox-row__(main|side)/.test(x)).join("")).join() + "|"
-      + [...r.querySelector(".salt-inbox-row__side").children].map((c) => c.className).join() + "|" + [...r.querySelector(".salt-inbox-row__main").children].map((c) => c.className.split(" ")[0]).join() + "|" + r.querySelectorAll(".salt-status").length; };
+    ok(sizeWords === 1 && part("ord-p3", "ounits") === "1 unit" && !/to decide/i.test(sizeRow.textContent),
+      "a row says the size once, in its units, and no to decide the stage already says: " + sizeRow.textContent);
+    const row = byAct(d, "order.open", "ord-p3"), c3 = cardOf("ord-p3");
+    ok(row && row.tagName === "BUTTON" && row.classList.contains("ordrow") && !!c3 && c3.classList.contains("salt-action") && c3.classList.contains("salt-action--now")
+      && !!row.querySelector(".otag .salt-producttag--salt") && part("ord-p3", "otag") === "Salt" && !row.querySelector("svg.psym, .mtile")
+      && /^CX1-ZED/.test(part("ord-p3", "ocode")) && part("ord-p3", "ofig") === "RM 100" && part("ord-p3", "onote") === "26 h" && pillOf("ord-p3") === "Agree",
+    "a row is Needs you's card: the book's typed tag, who by code, the units, the figure and the age, Agree its pill, the card copper while it waits on him: " + (row && row.textContent) + " " + pillOf("ord-p3"));
+    ok(part("ord-p2", "ofig") === "RM 110" && part("ord-p2", "oway") === "Deliver" && part("ord-p2", "onote") === "1 h",
+      "and the figure is the goods and the delivery, the way says how it goes: " + byAct(d, "order.open", "ord-p2").textContent);
+    ok(part("ex-1", "onote") === "practice" && pillOf("ex-1") === "" && !p.rowsShown().some((id) => /Waiting on you/.test(byAct(d, "order.open", id).textContent)),
+      "a Placed row carries no Waiting on you (Placed always waits on him), and a practice order says practice and carries no move: " + JSON.stringify(["ord-p3", "ex-1"].map((id) => [part(id, "onote"), pillOf(id)])));
+    /* every row is the one card: the row's button, then the move's place; in the button the kind line, the title, the units, the figure */
+    const shape = (id) => { const c = cardOf(id), r = byAct(d, "order.open", id); return [...c.children].map((x) => x.tagName + "." + x.className.split(" ").filter((k) => /^(ordrow|ogo)$/.test(k)).join("")).join() + "|"
+      + [...r.children].map((x) => x.className.split(" ").filter((k) => /^o(kind|title|units|fig)$/.test(k)).join("")).join(); };
     const shapes = p.rowsShown().map(shape);
-    ok(shapes.length === 5 && shapes.every((x) => /^mtile,salt-inbox-row__main,salt-inbox-row__side[|]salt-inbox-row__age,salt-inbox-row__action[|]salt-inbox-row__title,salt-inbox-row__what[|][01]$/.test(x)),
-      "every row has the same parts in the same order, the age above the figure, and at most one pill: " + JSON.stringify(shapes));
-    const css = ownerCss(), grid = css.top(".adm .ordrow").join(), side = css.top(".adm .ordrow .salt-inbox-row__side").join();
-    ok(/grid-template-columns:\s*84px minmax\(0,\s*1fr\)\s*88px/.test(grid) && /display:\s*grid/.test(grid) && /align-items:\s*flex-end/.test(side) && /text-align:\s*right/.test(side),
-      "the rows' columns are fixed (an 84px mark, the main, an 88px side) and the side is right-aligned, so no unit box moves the rest: " + grid);
+    ok(shapes.length === 5 && shapes.every((x) => x === "BUTTON.ordrow,DIV.ogo|okind,otitle,ounits,ofig"),
+      "every row has the same parts in the same order: " + JSON.stringify(shapes));
+    const css = ownerCss(), grid = css.top(".adm .ordrow").join(), fig = css.top(".adm .ordrow .ofig").join(), card = css.top(".adm .ordcard").join();
+    ok(/grid-template-columns:\s*minmax\(0,\s*1fr\)\s*72px\s*88px/.test(grid) && /display:\s*grid/.test(grid) && /justify-content:\s*flex-end/.test(fig) && /height:\s*76px/.test(card),
+      "the rows' columns are fixed (the words, a 72px pill, an 88px figure set right) and the card is one height, so no unit box moves the rest: " + grid + " " + card);
+    const wide = css.at("(min-width:1080px)", ".adm .ordrow,.adm .ohead-row").join();
+    ok(/grid-template-columns:\s*96px 120px minmax\(0,\s*1fr\) 88px 176px 132px 136px/.test(wide) && !!d.querySelector("#makerOrderList > .ohead-row")
+      && [...d.querySelectorAll("#makerOrderList > .ohead-row > span")].map((x) => x.textContent).join() === "Book,Code,Way,Units,Waiting,Total",
+      "from 1080px the list is a plain table, its columns Book, Code, Way, Units, Waiting and Total under their names: " + wide);
     await byAct(d, "part.orders.confirmed").click(); await p.work.quiet();
-    const chipsC = (id) => [...byAct(d, "order.open", id).querySelectorAll(".salt-status")].map((c) => c.textContent).join();
-    ok(chipsC("ord-a1") === "Waiting on you" && chipsC("ord-a2") === "Waiting on you" && /says sent/.test(byAct(d, "order.open", "ord-a1").textContent) && /send again/.test(byAct(d, "order.open", "ord-a2").textContent),
-      "a payment they say they sent and a stage he rejected mark the row Waiting on you and say which in its line: " + JSON.stringify(["ord-a1", "ord-a2"].map(chipsC)));
+    const why = (id) => { const n = byAct(d, "order.open", id).querySelector(".onote"); return n.textContent + (n.classList.contains("onote--why") ? " (copper)" : ""); };
+    ok(why("ord-a1") === "says sent (copper)" && why("ord-a2") === "send again (copper)" && cardOf("ord-a1").classList.contains("salt-action--now") && cardOf("ord-a2").classList.contains("salt-action--now") && pillOf("ord-a1") === "Received",
+      "a payment they say they sent and a stage he rejected say which in copper on a copper card, and a payment's move is Received: " + JSON.stringify(["ord-a1", "ord-a2"].map((id) => [why(id), pillOf(id)])));
     await byAct(d, "part.orders.ready").click(); await p.work.quiet();
-    ok(chipsC("ord-r2") === "" && chipsC("ord-r3") === "", "and an order that waits on nothing carries no pill: " + JSON.stringify(["ord-r2", "ord-r3"].map(chipsC)));
+    ok(["ord-r2", "ord-r3"].every((id) => cardOf(id).classList.contains("salt-action--watch") && !byAct(d, "order.open", id).querySelector(".onote--why") && ["Handed", "Message", ""].includes(pillOf(id))),
+      "and an order that waits on nothing is a quiet card, its move the goods' next step: " + JSON.stringify(["ord-r2", "ord-r3"].map((id) => [why(id), pillOf(id)])));
     await byAct(d, "part.orders.placed").click(); await p.work.quiet();
     ok(p.posts.length === 0 && !p.reads.some((r) => /preview/.test(r)),
       "listing the orders sends nothing and previews nothing: a row has no preview, which costs a read: " + JSON.stringify(p.posts));
@@ -402,10 +410,10 @@ export async function run({ ok, pageWork }) {
     ok(p.where() === "orders/ready" && same(p.cardsIn(), ["ord-r1"]) && byAct(d, "order.open", "ord-r1").getAttribute("aria-current") === "true" && d.getElementById("oSplit").classList.contains("open"),
       "its Open goes to Orders, the stage it stands at, with that order's card open and its row marked: " + p.where() + " " + JSON.stringify(p.cardsIn()));
     ok(p.rowsShown().includes("ord-r1") && p.rowsShown().includes("ex-2")
-      && /Waiting on you/.test(byAct(d, "order.open", "ord-r1").textContent) && /asked a question/.test(byAct(d, "order.open", "ord-r1").textContent) && /Practice/.test(byAct(d, "order.open", "ex-2").textContent),
-    "Ready lists the order with its question, marked Waiting on you, and the practice one marked Practice: " + p.rowsShown().join());
+      && byAct(d, "order.open", "ord-r1").closest(".ordcard").classList.contains("salt-action--now") && byAct(d, "order.open", "ord-r1").querySelector(".onote").textContent === "asked" && byAct(d, "order.open", "ex-2").querySelector(".onote").textContent === "practice",
+    "Ready lists the order with its question, its card copper and saying asked, and the practice one saying practice: " + p.rowsShown().join());
     await p.tap("part.orders.ended");
-    ok(p.rowsShown().includes("ord-c9") && /Waiting on you/.test(byAct(d, "order.open", "ord-c9").textContent), "and Ended lists the declined one with its question, marked as well: " + p.rowsShown().join());
+    ok(p.rowsShown().includes("ord-c9") && byAct(d, "order.open", "ord-c9").closest(".ordcard").classList.contains("salt-action--now") && byAct(d, "order.open", "ord-c9").querySelector(".onote").textContent === "asked", "and Ended lists the declined one with its question, marked as well: " + p.rowsShown().join());
     await p.tap("nav.needs");
     await p.tap("need.open", "om:ord-c9");
     const reply = p.acts("ord-c9");

@@ -194,7 +194,7 @@ export async function run({ ok, pageWork }) {
   try {
     await p.tap("nav.orders");
     const rowOf = (k) => p.d.querySelector('[data-act="order.open"][data-key="' + k + '"]');
-    ok(/orders\.confirmed/.test((rowOf("row:fa1") || { getAttribute: () => "" }).getAttribute("data-in")) && /RM 110\.00/.test(text(rowOf("row:fa1")))
+    ok(/orders\.confirmed/.test((rowOf("row:fa1") || { getAttribute: () => "" }).getAttribute("data-in")) && /RM 110$/.test(text(rowOf("row:fa1").querySelector(".ofig")))
       && /orders\.paid/.test((rowOf("row:fp1") || { getAttribute: () => "" }).getAttribute("data-in")),
     "a row of the book is a row under its stage, Agreed or Delivered or paid, with its figure: " + text(rowOf("row:fa1")));
     const seen = (n) => { for (let e = n; e; e = e.parentElement) if (e.hidden) return false; return !!n; };

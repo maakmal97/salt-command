@@ -3873,48 +3873,76 @@ export const OWNER_JS = `
     s.appendChild(d); c.appendChild(s); c.appendChild(document.createTextNode(st[1])); return c;
   }
   function ordInPart(e){ return e.parts.split(' ').indexOf('orders.'+partNow)>=0; }
+  /* 25 Oct 2026 (canvas Salt Admin Orders, his yes to Asks F, G and I): AN ORDER IS NEEDS YOU'S CARD. One shape and one height: the way and the age, or why it
+     waits on him in copper (asked, says sent, send again, their yes), then the book's typed tag and the code, the stage's move as one filled pill and the figure
+     last, large. The row is still the one button that opens the order (its act, its data-in, its aria-current), the pill standing beside it; from 1080px the
+     same parts stand as a plain table's columns, Book, Code, Way, Units, Waiting and Total, under a head of their names (#makerOrderList .ohead). */
+  function ordWayWord(o,st){
+    if(o.status==='declined') return 'Declined';
+    if(o.status==='cancelled') return 'Cancelled';
+    var d=o.mode==='deliver', out=(+o.qty||0)>0&&(+o.moved||0)>=(+o.qty||0)-0.0005;
+    if(st==='done') return d?'Delivered':'Collected';
+    if(st==='paid'&&out) return 'Out';
+    return d?'Deliver':o.mode==='collect'?(o.point?'Collect at '+o.point:'Collect'):'';
+  }
+  /* the stage's move, said on the pill: the next step of the goods, or of the money once the goods are out */
+  function ordMove(o){
+    if(o.test) return '';
+    var owed=(+o.total||0)+(+o.delivery||0)-(+o.paid||0), out=(+o.qty||0)>0&&(+o.moved||0)>=(+o.qty||0)-0.0005;
+    if(o.status==='placed') return makerAccHeld(o)&&o.price.state==='offered'?'Withdraw':makerAccHeld(o)?'':'Agree';
+    if(o.status!=='acknowledged'&&o.status!=='ready') return '';
+    if(ordPays(o).length) return 'Received';
+    if(!out) return o.status==='acknowledged'?'Ready':'Handed';
+    return owed>0.004?'Message':'';
+  }
   function orderRow(e){
-    var o=e.order, b=el('button','salt-inbox-row ordrow'); b.type='button'; b.setAttribute('data-in',e.parts); b.setAttribute('data-order',e.id); actOn(b,'order.open',e.id);
-    if(ordOpened===e.id) b.setAttribute('aria-current','true');
-    var main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title'), side=el('span','salt-inbox-row__side');
+    var o=e.order, card=el('div','salt-action ordcard'), b=el('button','ordrow'); b.type='button';
+    [card,b].forEach(function(n){ n.setAttribute('data-in',e.parts); });
+    b.setAttribute('data-order',e.id); actOn(b,'order.open',e.id);
+    if(ordOpened===e.id){ b.setAttribute('aria-current','true'); card.setAttribute('aria-current','true'); }
+    var kind=el('span','salt-action__kind okind'), title=el('span','salt-action__title otitle'), way=el('span','oway'), un=el('span','ounits'), note=el('span','onote'), fig=el('span','salt-action__money salt-action__money--lg ofig');
+    var tag=el('span','otag'), code=el('span','ocode'), sev='watch', main='', why='';
+    kind.appendChild(way); kind.appendChild(note); title.appendChild(tag); title.appendChild(code);
     if(o){
-      /* the stage is the part he is in, so the row carries one pill, Waiting on you, and says why in its line */
-      /* 18 Oct 2026 (part 3): the size is said once. The tile's reader line holds the shape alone and its caption is the one place the units are written */
-      var tile=bookTile(o.product,o.qty), tsr=tile.querySelector('.sr'), tq=tile.querySelector('.mq');
-      if(tsr) tsr.textContent=pshape(o.product); if(tq) tq.removeAttribute('aria-hidden');
-      b.appendChild(tile);
-      t.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));
-      /* ONE PILL AT MOST, and only a state the stage does not already say: Placed always waits on him, so its rows carry no Waiting on you; on any
-         other stage the pill says he is wanted there (a question, a payment they say they sent). Practice, then Cash held, then Waiting on you. */
-      var pillOf=o.test?['mist','Practice']:makerCashHeld[e.id]?['brass','Cash held']:(e.waits&&e.parts.indexOf('orders.placed')<0)?['copper','Waiting on you']:o.againOf?['brass','Again']:null;
-      if(pillOf) t.appendChild(chip(pillOf[0],pillOf[1]));
-      var why=[orderAsked(o)?'asked a question':'', ordPays(o).length?'says sent':'', o.again&&o.again.length?'send again':''].filter(Boolean);
-      main.appendChild(el('span','salt-inbox-row__what',[o.mode==='deliver'?'Deliver':o.mode==='collect'?'Collect':''].concat(e.waits?why.slice(0,1):[]).concat(o.againOf?[orderRef(o.againOf)+' again']:[]).filter(Boolean).join(', ')));
-      side.appendChild(el('span','salt-inbox-row__age',ageOf(o.at)));
-      side.appendChild(el('span','salt-inbox-row__action',rm(Number(o.total||0)+Number(o.delivery||0))));
+      var st=e.parts.replace('orders.',''), held=makerAccHeld(o)&&o.price.state==='offered';
+      tag.appendChild(productTag(o.product)); code.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));
+      way.textContent=ordWayWord(o,st); un.textContent=units(o.qty);
+      why=o.test?'practice':makerCashHeld[e.id]?'cash held':held?'their yes':orderAsked(o)?'asked':ordPays(o).length?'says sent':o.again&&o.again.length?'send again':o.againOf?orderRef(o.againOf)+' again':'';
+      sev=o.test?'watch':e.waits?'now':held?'soon':'watch';
+      main=ordMove(o);
+      fig.textContent=rmShort(Number(o.total||0)+Number(o.delivery||0));
     }else if(e.row){
-      /* a row of the book: the buyer's code, the mark and its units, and what it owes, the Desk's figure */
+      /* a row of the book: the buyer's code, its book and units, what it owes, the Desk's figure */
       var r=e.row;
-      b.appendChild(bookTile(r.product,r.qty));
-      t.appendChild(whoTag(el('span',null,r.party),r.party));
-      if(r.reward) t.appendChild(chip('verdigris',REWARD_WORD[r.reward]));
-      main.appendChild(el('span','salt-inbox-row__what',[r.rid, r.cancelled?'cancelled':r.writtenOff?'written off':r.owed>0.004?'owes '+rm(r.owed):'', r.waiting>0?'waits under Approve':''].filter(Boolean).join(', ')));
-      side.appendChild(el('span','salt-inbox-row__age',r.date?fmtWhen(r.date):'Undated'));
-      side.appendChild(el('span','salt-inbox-row__action',rm(Number(r.total||0)+Number(r.delivery||0))));
+      tag.appendChild(productTag(r.product)); code.appendChild(whoTag(el('span',null,r.party),r.party));
+      way.textContent=r.rid; un.textContent=units(r.qty);
+      why=r.cancelled?'cancelled':r.writtenOff?'written off':r.waiting>0?'waits under Approve':r.owed>0.004?'owes '+rmShort(r.owed):r.reward?REWARD_WORD[r.reward]:'';
+      fig.textContent=rmShort(Number(r.total||0)+Number(r.delivery||0));
+      if(!why) note.textContent=r.date?fmtWhen(r.date):'Undated';
     }else if(e.trip||e.day){
-      /* an order of several books: the buyer's code, a mark a line, and what the order owes, the Desk's figure */
-      /* 18 Oct 2026: the marks stand in the tile column, as one book's tile does, so the line and the figure keep their own columns */
-      var g=e.trip||e.day, what=el('span','salt-inbox-row__what'), tile=el('span','mtile');
-      t.appendChild(whoTag(el('span',null,g.party),g.party));
-      g.lines.forEach(function(l){ tile.appendChild(bookMark(l.product)); });
-      b.appendChild(tile);
-      what.appendChild(document.createTextNode(e.trip?'one order':'same day, not one order'));
-      main.appendChild(what);
-      side.appendChild(el('span','salt-inbox-row__action',rm(g.owed)));
-    }else{ t.appendChild(el('span',null,e.id)); if(e.waits) t.appendChild(chip('copper','Waiting on you')); }
-    main.insertBefore(t,main.firstChild); b.appendChild(main); b.appendChild(side);
+      /* an order of several books: a tag a line, and what the order owes, the Desk's figure */
+      var g=e.trip||e.day;
+      g.lines.forEach(function(l){ tag.appendChild(productTag(l.product)); });
+      code.appendChild(whoTag(el('span',null,g.party),g.party));
+      way.textContent=e.trip?'One order':'Same day'; why=e.trip?'':'not one order';
+      fig.textContent=rmShort(g.owed);
+    }else{ code.textContent=e.id; if(e.waits){ why='waiting on you'; sev='now'; } }
+    if(why){ note.textContent=why; note.classList.add('onote--why'); }
+    else if(o&&!note.textContent){ var ag=ageOf(o.at); note.textContent=ag||''; if(e.waits&&o.status==='placed') note.classList.add('onote--late'); }
+    card.classList.add('salt-action--'+sev);
+    b.appendChild(kind); b.appendChild(title); b.appendChild(un); b.appendChild(fig);
+    b.setAttribute('aria-label',[code.textContent,way.textContent,un.textContent,note.textContent,fig.textContent].filter(Boolean).join(', '));
     b.addEventListener('click', function(){ openOrder(e.id); });
-    return b;
+    card.appendChild(b);
+    var go=el('div','salt-action__go ogo');
+    if(main){
+      /* P2 draws the move; its tap opens the order at it until the move itself is wired (Ask D) */
+      var pill=actOn(el('button','salt-pill salt-pill--sm nbtn',main),'order.move',e.id); pill.type='button';
+      pill.addEventListener('click', function(){ openOrder(e.id); });
+      go.appendChild(pill);
+    }
+    card.appendChild(go);
+    return card;
   }
   /* 18 Oct 2026: the line over the list counts the stage in view, every card it holds (a book row and an order of several books too), never
      the site's open orders across every stage, which read "2 open orders" over one card */
@@ -3927,17 +3955,17 @@ export const OWNER_JS = `
     var owed=function(e){ var o=e.order, r=e.row, g=e.trip||e.day; return o?Math.max(0,(+o.total||0)+(+o.delivery||0)-(+o.paid||0)):r?+r.owed||0:g?+g.owed||0:0; };
     if(st==='placed'){
       var held=list.filter(function(e){ return e.order&&makerAccHeld(e.order)&&e.order.price.state==='offered'; }), agree=list.filter(function(e){ return held.indexOf(e)<0; });
-      return [agree.length?rm(sum(agree,function(e){ return e.order?+e.order.total||0:0; }))+' waits on your Agree, across '+plural(agree.length,'order')+'.':'',
-        held.length?rm(sum(held,function(e){ var f=e.order.price.offer||{}; return (+f.total||0)+(+f.delivery||0); }))+' is offered and waits on their yes.':''].filter(Boolean).join(' ');
+      return [agree.length?rmShort(sum(agree,function(e){ return e.order?+e.order.total||0:0; }))+' waits on your Agree, across '+plural(agree.length,'order')+'.':'',
+        held.length?rmShort(sum(held,function(e){ var f=e.order.price.offer||{}; return (+f.total||0)+(+f.delivery||0); }))+' is offered and waits on their yes.':''].filter(Boolean).join(' ');
     }
-    if(st==='done') return rm(sum(list,due))+' settled on '+plural(n,'done order')+' shown, the newest first.';
+    if(st==='done') return rmShort(sum(list,due))+' settled on '+plural(n,'done order')+' shown, the newest first.';
     if(st==='ended'){
       var dec=list.filter(function(e){ return e.order&&e.order.status==='declined'; }).length, can=list.filter(function(e){ return e.order&&e.order.status==='cancelled'; }).length;
       return plural(n,'order')+' ended'+(dec||can?': '+[dec?dec+' declined':'',can?can+' cancelled':''].filter(Boolean).join(', '):'')+'.';
     }
     var sent=sum(list,function(e){ return e.order?+e.order.claimed||0:0; }), asked=list.filter(function(e){ return e.order&&orderAsked(e.order); }).length;
     var word=({confirmed:['agreed order','agreed orders'],ready:['order ready','orders ready'],paid:['order out or paid','orders out or paid']}[st]||['order','orders'])[n===1?0:1];
-    return rm(sum(list,owed))+' owed on '+n+' '+word+(sent>0.004?': '+rm(sent)+' they say they sent waits on your Received.':'.')
+    return rmShort(sum(list,owed))+' owed on '+n+' '+word+(sent>0.004?': '+rmShort(sent)+' they say they sent waits on your Received.':'.')
       +(asked?' '+(asked===1?'One':asked)+' asked a question.':'');
   }
   function paintOrdStatus(){
@@ -3958,16 +3986,17 @@ export const OWNER_JS = `
       if(c.textContent!==(v?String(v):'')) c.textContent=v?String(v):'';
     });
   }
+  /* 25 Oct 2026 (canvas Salt Admin Orders, Ask I): A SHEET IS ITS ORDERS TOGETHER under "Sheet" and its reference, the delivery charge on the right, each order
+     its own card and agreed alone (his P5 of 20 Oct 2026) */
   function sheetGroup(grp){
     var os=grp.map(function(x){ return x.order; }).sort(function(a,b){ return String(a.id).localeCompare(String(b.id)); }), first=os[0];
-    var g=el('section','salt-glass-card salt-glass-card--radius-lg ordsheet'), hd=el('div','ordsheet__head');
+    var g=el('section','ordsheet'), hd=el('div','ordsheet__head');
     g.setAttribute('data-in',grp[0].parts); g.setAttribute('data-sheet',first.sheet);
     g.setAttribute('aria-label',os.length+' orders on one sheet from '+codeByUser(first.u));
-    hd.appendChild(el('span','salt-eyebrow salt-eyebrow--copper',os.length+' orders, one sheet')); hd.appendChild(el('span','ordsheet__age',ageOf(first.at))); g.appendChild(hd);
+    hd.appendChild(el('span','salt-eyebrow salt-eyebrow--copper ordsheet__ref','Sheet '+orderRef(first.id)));
+    hd.appendChild(el('span','ordsheet__sum',first.mode==='deliver'?rmShort(+first.delivery||0)+' delivery':rmShort(os.reduce(function(s,o){ return s+(+o.total||0); },0))+' goods'));
+    g.appendChild(hd);
     grp.forEach(function(x){ g.appendChild(orderRow(x)); });
-    var line=function(a,b){ var r=el('div','ordsheet__line'); r.appendChild(el('span',null,a)); r.appendChild(el('span','ordsheet__sum',b)); g.appendChild(r); };
-    if(first.mode==='deliver') line('Delivery, on '+orderRef(first.id),rm(+first.delivery||0));
-    line('Goods, '+os.length+' orders',rm(os.reduce(function(s,o){ return s+(+o.total||0); },0)));
     return g;
   }
   function markOrderRows(){
@@ -4113,6 +4142,9 @@ export const OWNER_JS = `
     ordEntries={}; entries.forEach(function(e){ ordEntries[e.id]=e; });
     if(status) paintOrdStatus();
     list.textContent='';
+    /* from 1080px the list is a plain table: its columns' names stand over it, shown there alone */
+    var ohead=el('div','ohead-row'); ohead.setAttribute('aria-hidden','true'); ohead.setAttribute('data-in','orders.placed orders.confirmed orders.ready orders.paid orders.done orders.ended');
+    ['Book','Code','Way','Units','Waiting','Total'].forEach(function(w){ ohead.appendChild(el('span',null,w)); }); list.appendChild(ohead);
     /* Salt Admin A to C (20 Oct 2026), P5, HIS ANSWER: A SHEET IS ONE GROUP. A sheet's orders at the same stage stand in one card, each its own row
        (and its own [data-order]) and each agreed alone; under them the sheet's delivery, on its first order, and the goods of all of them */
     var grouped={};

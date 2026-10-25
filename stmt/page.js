@@ -869,7 +869,6 @@ body.ended>*:not(#aEnded){display:none}
    card in #makerReview. From 860px they stand side by side, the card sticky and scrolling inside itself; below it the card takes the list's place
    and has its way back. From 860px up to the rail's 1080 the page widens for Orders alone, the other places keeping their 600px column. */
 .adm .ordlist{display:flex;flex-direction:column;gap:8px}
-.adm .ordlist .salt-inbox-row__title{gap:6px}
 .adm .ordlist .rnone{margin:0}
 .adm .ordlist>.salt-ghost{align-self:flex-start;margin-top:8px}
 /* 21 Oct 2026 (canvas V39, his answer (a)): FROM 1080PX AN OPEN ORDER TAKES THE LIST'S PLACE, as on a phone, and fills the page; the rail's
@@ -1091,13 +1090,54 @@ body.ended>*:not(#aEnded){display:none}
 .adm .nfold>summary.nsev:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px}
 /* 14 OCT 2026: ORDERS ARE ROWS OF ONE GRID: the mark in a fixed column, the code and at most one pill over what it is, the age over the figure in a fixed column on the
    right, every row the same height. The system's Inbox row keeps its class; the grid is this page's own container class. */
-.adm .ordrow{display:grid;grid-template-columns:84px minmax(0,1fr) 88px;align-items:center;gap:0 12px;min-height:76px}
-.adm .ordrow>.mtile{width:84px;padding-left:6px;padding-right:6px;box-sizing:border-box;align-self:center}
-.adm .ordrow .salt-inbox-row__main{flex:none}
-.adm .ordrow .salt-inbox-row__title{flex-wrap:nowrap}
-.adm .ordrow .salt-inbox-row__what{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .ordrow .salt-inbox-row__side{margin:0;align-items:flex-end;justify-content:center;text-align:right;gap:4px}
-.adm .ordrow .salt-inbox-row__action{margin-top:0;font-variant-numeric:tabular-nums}
+/* 25 Oct 2026 (canvas Salt Admin Orders): AN ORDER IS NEEDS YOU'S CARD, 76px on a phone and 80 from 860; the row's button fills it and the pill stands in its
+   column above it; from 1080px the parts are a plain table's columns under .ohead-row */
+.adm .ordcard{position:relative;display:block;height:76px;padding:0;box-sizing:border-box}
+.adm .ordcard:hover{background:var(--salt-glass-hover)}
+.adm .ordcard[aria-current="true"]{box-shadow:inset 2px 0 0 var(--salt-brass)}
+.adm .ordrow{all:unset;box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) 72px 88px;grid-template-rows:auto auto;align-content:center;gap:6px 8px;width:100%;height:100%;padding:0 10px;cursor:pointer;font:inherit;color:inherit}
+.adm .ordrow:focus-visible{outline:2px solid var(--salt-brass);outline-offset:-2px;border-radius:inherit}
+.adm .ordrow .okind{grid-column:1;grid-row:1;display:flex;gap:0;min-width:0;padding-top:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .ordrow .okind>span{white-space:nowrap}
+.adm .ordrow .onote:not(:empty)::before{content:" · "}
+.adm .ordrow .onote{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.adm .ordrow .onote--why{color:var(--salt-copper)}
+.adm .ordrow .onote--late{color:var(--salt-ember)}
+.adm .ordrow .otitle{grid-column:1;grid-row:2;display:flex;flex-wrap:nowrap;align-items:center;gap:6px;min-width:0}
+.adm .ordrow .otag{display:flex;gap:4px;flex:none}
+.adm .ordrow .ocode{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--salt-font-mono)}
+.adm .ordrow .ounits{display:none}
+.adm .ordrow .ofig{grid-column:3;grid-row:1/3;display:flex;align-items:center;justify-content:flex-end;margin:0;padding:0;line-height:1;white-space:nowrap;overflow:hidden;font-variant-numeric:tabular-nums}
+.adm .ordcard>.ogo{position:absolute;top:0;bottom:0;right:106px;width:72px;display:flex;align-items:center;margin:0}
+.adm .ordcard .nbtn{box-sizing:border-box;width:72px;min-width:72px;max-width:72px;height:48px;min-height:48px;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .ohead-row{display:none}
+@media (min-width:860px){
+  .adm .ordcard{height:80px}
+  .adm .ordrow{grid-template-columns:minmax(0,1fr) 120px 116px;gap:4px 12px;padding:0 16px}
+  .adm .ordcard>.ogo{right:144px;width:120px}
+  .adm .ordcard .nbtn{width:120px;min-width:120px;max-width:120px;padding:0 8px}
+}
+@media (min-width:1080px){
+  .adm .ordlist{gap:0;padding:4px 6px;border:1px solid var(--salt-line);border-radius:var(--salt-radius-lg);background:var(--salt-glass)}
+  .adm .ordcard{height:56px;border-radius:0;border-width:0 0 1px;background:transparent;box-shadow:none}
+  .adm .ordcard[aria-current="true"]{box-shadow:inset 2px 0 0 var(--salt-brass)}
+  .adm .ordrow,.adm .ohead-row{grid-template-columns:96px 120px minmax(0,1fr) 88px 176px 132px 136px;grid-template-rows:auto;gap:0 10px;padding:0 10px}
+  .adm .ordrow .okind,.adm .ordrow .otitle{display:contents}
+  .adm .ordrow .otag{grid-column:1;grid-row:1}
+  .adm .ordrow .ocode{grid-column:2;grid-row:1}
+  .adm .ordrow .oway{grid-column:3;grid-row:1;overflow:hidden;text-overflow:ellipsis;color:var(--salt-prose)}
+  .adm .ordrow .ounits{display:block;grid-column:4;grid-row:1;text-align:right;font-family:var(--salt-font-mono)}
+  .adm .ordrow .onote{grid-column:5;grid-row:1;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
+  .adm .ordrow .onote:not(:empty)::before{content:none}
+  .adm .ordrow .okind>span{text-transform:none;letter-spacing:0}
+  .adm .ordrow .onote--why{color:var(--salt-copper)}
+  .adm .ordrow .onote--late{color:var(--salt-ember)}
+  .adm .ordrow .ofig{grid-column:6;grid-row:1}
+  .adm .ordcard>.ogo{right:10px;width:120px}
+  .adm .ordrow>*{align-self:center}
+  .adm .ohead-row{display:grid;height:40px;align-items:center;border-bottom:1px solid var(--salt-line);font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:0.1em;text-transform:uppercase;color:var(--salt-mist-bright)}
+  .adm .ohead-row>:nth-child(4),.adm .ohead-row>:nth-child(6){text-align:right}
+}
 /* 14 Oct 2026: the live clock beside his page's name */
 .adm .clk{font-variant-numeric:tabular-nums}
 .adm .clk:not(:empty)::before{content:"\\00b7";margin:0 8px}
@@ -1132,11 +1172,11 @@ body.ended>*:not(#aEnded){display:none}
 .adm .obagain{display:inline-flex;align-items:center;gap:8px}
 .adm .ordsteps{--salt-steps-n:5;padding:20px 12px}
 /* 20 Oct 2026, P5: a sheet's orders in one group card, and the band's link to it */
-.adm .ordsheet{padding:16px;display:flex;flex-direction:column;gap:10px;margin:0 0 12px}
-.adm .ordsheet__head{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.adm .ordsheet__age,.adm .ordsheet__sum{font-family:var(--salt-font-mono)}
-.adm .ordsheet__line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:0 4px}
-.adm .ordsheet>.ordrow+.ordsheet__line{padding-top:8px;border-top:1px solid var(--salt-line)}
+.adm .ordsheet{display:flex;flex-direction:column;gap:6px;margin:0}
+.adm .ordsheet__head{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:24px;padding:0 10px}
+.adm .ordsheet__ref{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adm .ordsheet__sum{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright);white-space:nowrap}
+@media (min-width:1080px){.adm .ordsheet{gap:0}.adm .ordsheet__head{min-height:40px;border-bottom:1px solid var(--salt-line-faint)}}
 .adm .osheetlink{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:44px;margin:0;padding:6px 0 0;border:0;border-top:1px solid var(--salt-line);background:none;color:var(--salt-brass);font:inherit;font-family:var(--salt-font-mono);cursor:pointer}
 /* 20 Oct 2026: the Bill, its figures in one right column */
 .adm .obill{margin:16px 0 4px}

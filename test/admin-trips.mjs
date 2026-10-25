@@ -216,12 +216,12 @@ export async function run({ ok, pageWork }) {
     await p.tap("nav.orders");
     const card = p.card("trip:" + T), rowEl = p.d.querySelector('[data-act="order.open"][data-key="trip:' + T + '"]');
     const text = (n) => (n && n.textContent || "").replace(/\s+/g, " ").trim();
-    ok(!!rowEl && /orders\.confirmed/.test(rowEl.getAttribute("data-in")) && rowEl.querySelectorAll("svg.psym").length === 3 && /RM 271\.00/.test(text(rowEl)),
-      "the order of several books is one row under Agreed, a mark a line and what it owes: " + text(rowEl));
+    ok(!!rowEl && /orders\.confirmed/.test(rowEl.getAttribute("data-in")) && rowEl.querySelectorAll(".otag .salt-producttag").length === 3 && text(rowEl.querySelector(".ofig")) === "RM 271",
+      "the order of several books is one row under Agreed, a typed tag a line and what it owes: " + text(rowEl));
     /* 18 Oct 2026, his screenshot: the marks stand in the tile column, so the line is not squeezed into 84px and the figure keeps the right */
-    const tile = rowEl && rowEl.firstElementChild, what = rowEl && rowEl.querySelector(".salt-inbox-row__what");
-    ok(!!tile && tile.classList.contains("mtile") && tile.querySelectorAll("svg.psym").length === 3 && !!what && !what.querySelector("svg.psym") && text(what) === "one order",
-      "and its marks are the row's tile, its line the words alone: " + text(what));
+    const tags = rowEl && rowEl.querySelector(".otag"), what = rowEl && rowEl.querySelector(".okind");
+    ok(!!tags && tags.closest(".otitle") && !!what && !what.querySelector(".salt-producttag") && text(what) === "One order",
+      "and its tags stand in the title before the code, its kind line the words alone: " + text(what));
     ok(!!card && text(card.querySelector("h3")) === "CX9-ZED, 3 books, 14 Oct 2026" && text(card.querySelector(".salt-metrics")) === "Owed RM 271.00 Paid RM 0.00 Handed 0 of 3 lines",
       "its card's head reads owed, paid and the lines handed over across every line: " + text(card && card.querySelector(".salt-metrics")));
     const ls = card ? [...card.querySelectorAll(".tripline")] : [];
