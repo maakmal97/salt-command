@@ -199,3 +199,9 @@
   `salt-table--plain`) and 1.14.0 (#26: `salt-kpi--line`, `salt-action__money--lg`). To do / Pending / FYI, money first; one-shape cards with typed book
   tags (Admin only); the open card beside the list from 860px with the Agree inputs two by two (one Delivery select from Choose, one When). Fable reviewed
   the Agree inputs, the sort and Withdraw (four findings applied, re-checked). Rendered live at 390, 1180 and 1440. Accepted 23 Oct 2026.
+
+## Salt Admin Record redesign
+- Live as v1257 (`d3cc7739`, 26 Oct 2026; Cloud commit `40231375606`: chain and three suite parts green, CI `40231375639` green, build id `45f4c179b5a3db7c`), from his canvas
+  https://claude.ai/artifact/6gHaEnSUVXzVDVBdwsJX6s and `docs/plan-admin-record.html` (every Ask as recommended, K declined: New customer's Other % stays a fraction).
+  Parts a text tab row with unsent counts; form rows with their line and count; unsent entries as Needs you cards (Resend); every form two columns, typed tags,
+  mono figures; the sale's reading a ledger; Correct a row's row card; Rewards and Offsets as cards; New customer's code shown as typed. Not yet opened by him.
