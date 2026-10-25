@@ -17108,9 +17108,9 @@ await (async () => {
     /* ---- his side: the rendered Decline ---- */
     const A = pageAt(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), "/all", { "cf-access-jwt-assertion": tok });
     const DA = A.document;
+    /* 26 Oct 2026: a link is a card with its panel (address, QR, moves) under it; its group is the heading of the section it sits in */
     const cardOf = (id) => [...DA.querySelectorAll("#glist .glink")].find((x) => x.textContent.includes(id));
-    /* the group a card sits in is the last heading before it */
-    const groupOf = (id) => { let g = null; for (const n of DA.getElementById("glist").children) { if (n.classList.contains("ghead")) g = n.textContent; if (n === cardOf(id)) return g; } return null; };
+    const groupOf = (id) => { const c = cardOf(id), g = c && c.closest(".ngroup"); return g ? g.querySelector(".nsev").textContent : null; };
     DA.querySelector('button[data-m="customers"]').click(); DA.querySelector('[data-act="part.customers.links"]').click();
     ok(await until(() => cardOf(keep) && cardOf(drop)) && groupOf(keep) === "Waiting on you" && groupOf(drop) === "Waiting on you",
       "both links wait on him before he decides: " + JSON.stringify([groupOf(keep), groupOf(drop)]));
@@ -17120,7 +17120,8 @@ await (async () => {
       && (await site("/g/" + drop)).status === 404 && (await site("/g/" + third)).status === 404,
       "a tap on Decline marks it declined, and the door answers the same 404 it gives a pending or unknown id");
     ok(await until(() => groupOf(drop) !== "Waiting on you") && groupOf(keep) === "Waiting on you"
-      && /Not approved/.test(cardOf(drop).textContent) && ![...cardOf(drop).querySelectorAll("button")].some((b) => b.textContent === "Decline"),
+      && /not approved/.test(cardOf(drop).textContent) && /^Declined/.test(cardOf(drop).previousElementSibling.querySelector(".nkind").textContent)
+      && ![...cardOf(drop).querySelectorAll("button")].some((b) => b.textContent === "Decline"),
       "the declined link leaves Waiting on you and says Not approved, while the pending one still waits there: " + JSON.stringify([groupOf(keep), groupOf(drop)]));
 
     /* ---- the associate's side: their own panel ---- */

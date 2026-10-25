@@ -347,7 +347,7 @@ export async function run({ ok }) {
     doc.querySelector('[data-act="nav.customers"]').click(); doc.querySelector('[data-act="part.customers.messages"]').click();
     await until(() => doc.querySelector('[data-thread="' + user + '"]'));
     doc.querySelector('[data-thread="' + user + '"]').click();
-    ok(/^1 waiting/.test(doc.getElementById("makerChatStatus").textContent),
+    ok(/^1 waits for your reply/.test(doc.getElementById("makerChatStatus").textContent),
       "The owner waiting count excludes an acceptance-account question.");
     let textarea = doc.querySelector('[data-thread-reply="' + user + '"]');
     textarea.value = "Kept typed reply."; textarea.dispatchEvent(new page.Event("input", { bubbles: true }));
