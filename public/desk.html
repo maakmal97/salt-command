@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="ebe7b7abda3a54ba";
+var SALT_BUILD_ID="6dfd8d75fcd42cba";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -3065,6 +3065,9 @@ label.salt-field__label {
 /* an option that cannot be chosen now (Tide while it is off) greys as a ghost does, and takes no hover */
 .salt-segment__opt:disabled, .salt-segment__opt:disabled:hover { color: var(--salt-mist); opacity: 0.45; cursor: not-allowed; }
 .salt-segment__count { color: var(--salt-brass); margin-left: 6px; }   /* copper is 4.47:1 on Night's thumb */
+/* The tight slider (1.16.0, Salt Admin Customers, 25 Oct 2026): four places whose longest word is ten letters fit whole at 390px, the tracking
+   halved and the option's own padding thinned; nothing else about the recipe moves. */
+.salt-segment--tight .salt-segment__opt { letter-spacing: 0.06em; padding: 0 2px; }
 @media (prefers-reduced-motion: reduce) {
   .salt-segment::before { transition: none; }
 }
