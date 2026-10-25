@@ -1204,6 +1204,27 @@ body.ended>*:not(#aEnded){display:none}
 .adm .athread .salt-pill{flex:none;width:120px;min-height:48px}
 .adm .asign .agrid .salt-ghost,.adm .asign .apill,.adm .asign .asignout{min-height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .asign .asignout{grid-column:1/-1}
+/* 26 Oct 2026 (the Customers canvas, P3 and P4): Their %, This customer, the reward and Partner, each a glass card: a book a tab, the stepper's figure large
+   between two 48px buttons, their prices a plain table, the actions two by two; nothing wraps */
+.adm .amore{display:flex;flex-direction:column;gap:12px}
+.adm .amore[hidden],.adm .amore .asec[hidden]{display:none}
+.adm .apct__head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.adm .apct__head .salt-eyebrow{margin:0}
+.adm .apct__books{margin:0}
+.adm .apct__tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 4px}
+.adm .apct__tabs .nktab{padding:0 2px}
+.adm .apct__step{display:flex;align-items:center;gap:8px}
+.adm .apct__btn{flex:none;width:48px;min-width:48px;height:48px;padding:0;font-size:1.25rem;letter-spacing:0}
+.adm .apct__val{flex:1 1 auto;min-width:0;text-align:center;font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);font-weight:600;color:var(--salt-salt);white-space:nowrap}
+.adm .apct__table{padding:0 6px;overflow:hidden}
+.adm .apct__at{font-weight:600;color:var(--salt-salt)}
+.adm .apct__floor{color:var(--salt-mist-bright)}
+.adm .apct__acts .salt-pill,.adm .apct__acts .salt-ghost,.adm .apart .salt-ghost{min-height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
+.adm .apct__acts .apct__clear,.adm .apct__acts>[role="status"]{grid-column:1/-1}
+.adm .acust__line{display:flex;align-items:center;justify-content:space-between;gap:12px;white-space:nowrap}
+.adm .acust__spark{display:block;width:100%;height:36px;color:var(--salt-brass)}
+.adm .amore .salt-meter__line{white-space:nowrap}
+.adm .amore .salt-meter__track{display:block}
 .adm .oacct .ahead h2{margin:0;font-size:var(--salt-text-2xl);line-height:1.15;overflow-wrap:anywhere}
 .adm .oacct .ahead .un{display:block;margin-top:4px;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);
   letter-spacing:.06em;color:var(--salt-text-muted)}

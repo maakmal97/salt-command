@@ -544,12 +544,185 @@ export const OWNER_JS = `
     grid.insertBefore(mark, sob);
     sign.appendChild(grid); sign.appendChild(gn);
     c.appendChild(sign);
+    if(!none&&!a.test&&a.code){ var more=el('div','amore'); c.appendChild(more); acctMore(more, a); }
     /* 14 OCT 2026 (his decision): everything related to a customer is on their card, so their loans and their reward stand here, read from the Desk's catalogue */
     var books=el('div','asec abooks salt-glass-card salt-glass-card--radius-lg'); books.setAttribute('data-loans', u);
     if(!none&&!a.test&&a.code){ c.appendChild(books); drawBooks(books, a); }
     var sty=el('div','asec astory salt-glass-card salt-glass-card--radius-lg'); sty.setAttribute('data-story', u);
     if(!none){ c.appendChild(sty); drawStory(sty, a); loadStory(a); }
     return c;
+  }
+  /* 26 OCT 2026 (canvas Salt Admin Customers, P3 and P4; his yes to Asks A, B and G): WHAT PRICES A CUSTOMER STANDS ON THEIR CARD. Their % moved here from
+     Record: a book a tab, the suggestion and why, a stepper in whole steps of 5 from -30% to +30% (his alone; nothing sets it but his Send, and it goes to
+     Approve), their prices at that % off the Desk (drift-preview) against the Floor, Send at that % only once it differs from what is set, Use the
+     suggestion, Set back to 0. Then This customer (salt) and the associate reward, read by the account's code (customer-of, reward-of), and Partner, which
+     asks once. Nothing on the card prices: every figure is the Desk's. */
+  var pctOn={}, pctReads={}, ofReads={};
+  function pctWord(n){ return n>0?'+'+n+'%':n<0?'−'+(-n)+'%':'0%'; }
+  function acctMore(box, a){
+    readParty().then(function(cat){ if(box.isConnected) drawMore(box, a, cat||{}); }, function(){ if(box.isConnected){ box.textContent=''; box.appendChild(el('p','anote bad','Their prices could not be read.')); } });
+  }
+  function drawMore(box, a, cat){
+    box.textContent='';
+    var code=a.code, partner=(cat.partners||[]).indexOf(code)>=0, waiting=(cat.partnerWaiting||[]).indexOf(code)>=0;
+    var books=(cat.products||[]).filter(function(x){ return x.drift; }).map(function(x){ return x.product; });
+    if(books.length&&(cat.driftCustomers||[]).indexOf(code)>=0) box.appendChild(pctSection(a, cat, books, partner));
+    var cust=el('div','asec acust salt-glass-card salt-glass-card--radius-lg'), rwd=el('div','asec arwd salt-glass-card salt-glass-card--radius-lg');
+    cust.hidden=rwd.hidden=true; box.appendChild(cust); box.appendChild(rwd);
+    readingOf('customer-of', code, function(r){ paintCust(cust, r); });
+    readingOf('reward-of', code, function(r){ paintRwd(rwd, r); });
+    if(books.length&&(partner||waiting||(cat.driftCustomers||[]).indexOf(code)>=0&&/^C/.test(code)&&!/-Gen$/.test(code))) box.appendChild(partnerSection(a, partner, waiting));
+  }
+  function readingOf(kind, code, paint){
+    var k=kind+'/'+code;
+    if(ofReads[k]&&!ofReads[k].reading){ paint(ofReads[k]); return; }
+    if(ofReads[k]) return;
+    ofReads[k]={reading:true};
+    refs('/all/maker/'+kind+'/'+encodeURIComponent(code)).then(function(j){ ofReads[k]=j&&j.reading||{}; }, function(){ ofReads[k]={}; })
+      .then(function(){ paint(ofReads[k]); delete ofReads[k].reading; setTimeout(function(){ delete ofReads[k]; }, 60000); });
+  }
+  function pctSection(a, cat, books, partner){
+    var s=el('div','asec apct salt-glass-card salt-glass-card--radius-lg'), head=el('div','apct__head');
+    head.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Their %')); head.appendChild(el('span','salt-status salt-status--mist','Yours alone'));
+    s.appendChild(head);
+    if(partner){ s.appendChild(el('p','anote','A partner pays the Floor on every book: no % to set.')); return s; }
+    var code=a.code, st=pctOn[code]||(pctOn[code]={book:books[0], pct:{}});
+    if(books.indexOf(st.book)<0) st.book=books[0];
+    var tabs=el('nav','salt-nav nkinds apct__books'), row=el('div','salt-nav__links apct__tabs'); tabs.setAttribute('aria-label','Book'); row.setAttribute('role','tablist');
+    books.forEach(function(b){
+      var t=actOn(el('button','salt-nav__link nktab'+(b===st.book?' salt-nav__link--active':'')),'acct.pct.book',b); t.type='button'; t.setAttribute('role','tab'); t.setAttribute('aria-selected', b===st.book?'true':'false');
+      t.appendChild(productTag(b)); t.addEventListener('click', function(){ st.book=b; s.replaceWith(pctSection(a, cat, books, partner)); }); row.appendChild(t);
+    });
+    tabs.appendChild(row); s.appendChild(tabs);
+    var card=(cat.driftCards||[]).filter(function(x){ return x.code===code&&x.product===st.book; })[0]||{};
+    var held=card.held?Math.round(+card.value*100):0, sug=typeof card.suggest==='number'?Math.round(card.suggest*100):null;
+    if(st.pct[st.book]==null) st.pct[st.book]=held;
+    var L=el('div','salt-ledger salt-ledger--plain'), sr=acctLine(L,'Suggested',sug==null?'None':pctWord(sug));
+    if(sug!=null&&card.why) sr.appendChild(el('span','salt-ledger__flag',card.why.charAt(0).toUpperCase()+card.why.slice(1)));
+    s.appendChild(L);
+    var step=el('div','apct__step'), down=actOn(el('button','salt-ghost apct__btn','−'),'acct.pct.down'), up=actOn(el('button','salt-ghost apct__btn','+'),'acct.pct.up'), out=el('output','apct__val');
+    down.type=up.type='button'; down.setAttribute('aria-label','5% lower'); up.setAttribute('aria-label','5% higher'); out.setAttribute('aria-live','polite');
+    step.appendChild(down); step.appendChild(out); step.appendChild(up); s.appendChild(step);
+    var prev=el('div','apct__prev'); s.appendChild(prev);
+    var acts=el('div','agrid apct__acts'), answer=el('p','anote'); answer.setAttribute('role','status');
+    var at=null, sig='';
+    var sendB=makerButton(acts,['Send','acct.pct.send',code],async function(send){
+      var whole=st.pct[st.book]; if(whole===held) return;
+      var body={code:code,product:st.book,tier:Number((whole/100).toFixed(2)),unit:'pct'}, check=JSON.stringify(body);
+      if(check!==sig){ sig=check; at=new Date().toISOString(); }
+      body.at=at;
+      try{ await send('/all/maker/inputs/tier-set',body); answer.textContent='Sent. Their % changes once you approve it.'; loadMaker(); }
+      catch(error){ refusal(answer,error); }
+    },true,function(){ at=null; sig=''; });
+    var use=actOn(el('button','salt-ghost',sug==null?'No suggestion':'Use '+pctWord(sug)),'acct.pct.suggest'); use.type='button'; use.disabled=sug==null;
+    use.addEventListener('click', function(){ if(sug!=null){ st.pct[st.book]=sug; paint(); } });
+    acts.appendChild(use);
+    var clr=null;
+    if(card.held){
+      clr=makerButton(acts,['Set back to 0','acct.pct.clear',code],async function(send){
+        var body={code:code,product:st.book,tier:null,unit:'pct'}, check=JSON.stringify(body);
+        if(check!==sig){ sig=check; at=new Date().toISOString(); }
+        body.at=at;
+        try{ await send('/all/maker/inputs/tier-set',body); answer.textContent='Sent. Their % goes back to 0 once you approve it.'; loadMaker(); }
+        catch(error){ refusal(answer,error); }
+      },false,function(){ at=null; sig=''; });
+      clr.classList.add('apct__clear');
+    }
+    /* the answer stands inside the buttons' own box, where makerButton looks for it, so a refused retry is said on the card, never let go */
+    acts.appendChild(answer); s.appendChild(acts);
+    function draw(j){
+      prev.textContent='';
+      if(!j||!j.rows||!j.rows.length) return;
+      var say=pctWord(st.pct[st.book]), wrap=el('div','salt-glass-card apct__table'), table=el('table','salt-table salt-table--plain'), hr=el('tr'), body=el('tbody');
+      table.appendChild(el('caption','sr',code+' at '+say+': their prices before anything goes to Approve'));
+      ['Units','Now','At '+say,'Floor'].forEach(function(t, i){ var th=el('th',i?null:'l',t); th.setAttribute('scope','col'); hr.appendChild(th); });
+      table.appendChild(el('thead')).appendChild(hr); table.appendChild(body);
+      j.rows.forEach(function(r){
+        var tr=el('tr'), th=el('th','l',units(r.q)); th.setAttribute('scope','row'); tr.appendChild(th);
+        tr.appendChild(el('td',null,rmShort(r.now))); tr.appendChild(el('td','apct__at',rmShort(r.at))); tr.appendChild(el('td','apct__floor',rmShort(r.floor)));
+        body.appendChild(tr);
+      });
+      wrap.appendChild(table); prev.appendChild(wrap);
+      var usual=j.rows.filter(function(r){ return r.usual; })[0];
+      if(usual) prev.appendChild(el('p','anote','Their usual is '+units(usual.q)+'. It goes to Approve first.'));
+    }
+    function paint(){
+      var whole=st.pct[st.book];
+      out.textContent=pctWord(whole); down.disabled=whole<=-30; up.disabled=whole>=30;
+      sendB.textContent='Send '+pctWord(whole); sendB.disabled=whole===held;
+      var key=code+'/'+st.book+'/'+whole;
+      if(pctReads[key]){ draw(pctReads[key]); return; }
+      refs('/all/maker/drift-preview/'+key).then(function(j){ pctReads[key]=j.preview; if(st.pct[st.book]===whole&&s.isConnected) draw(j.preview); }, function(error){ if(st.pct[st.book]===whole) refusal(answer,error); });
+    }
+    down.addEventListener('click', function(){ st.pct[st.book]=Math.max(-30, st.pct[st.book]-5); paint(); });
+    up.addEventListener('click', function(){ st.pct[st.book]=Math.min(30, st.pct[st.book]+5); paint(); });
+    paint();
+    return s;
+  }
+  function paintCust(box, r){
+    box.textContent='';
+    if(!r||r.reading||!r.customer||r.error){ box.hidden=true; return; }
+    box.hidden=false;
+    var head=el('div','apct__head'); head.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','This customer')); head.appendChild(productTag('salt')); box.appendChild(head);
+    if(r.rates&&r.rates.length>1){
+      var lo=Math.min.apply(null,r.rates.map(function(x){ return x.rate; })), hi=Math.max.apply(null,r.rates.map(function(x){ return x.rate; })), span=hi-lo||1;
+      var line=el('div','acust__line'); line.appendChild(el('span','salt-eyebrow salt-eyebrow--mist','Last '+r.rates.length+', a unit')); line.appendChild(el('span','anote',rmShort(lo)+' to '+rmShort(hi))); box.appendChild(line);
+      var NS='http://www.w3.org/2000/svg', svg=document.createElementNS(NS,'svg'); svg.setAttribute('viewBox','0 0 100 24'); svg.setAttribute('preserveAspectRatio','none'); svg.setAttribute('class','ocust__spark acust__spark');
+      svg.setAttribute('role','img'); svg.setAttribute('aria-label','Their price a unit, '+r.rates.map(function(x){ return rmShort(x.rate); }).join(', '));
+      var pl=document.createElementNS(NS,'polyline'); pl.setAttribute('fill','none'); pl.setAttribute('stroke','currentColor'); pl.setAttribute('stroke-width','1.5'); pl.setAttribute('vector-effect','non-scaling-stroke');
+      pl.setAttribute('points',r.rates.map(function(x,i){ return (i*100/(r.rates.length-1)).toFixed(1)+','+(21-(x.rate-lo)/span*18).toFixed(1); }).join(' '));
+      svg.appendChild(pl); box.appendChild(svg);
+    }
+    var L=el('div','salt-ledger salt-ledger--plain');
+    if(r.unitNow!=null) acctLine(L,'A unit now',rmShort(r.unitNow));
+    if(r.highest!=null) acctLine(L,'Highest',rmShort(r.highest));
+    if(r.cadence) acctLine(L,'Orders every',r.cadence.every+' days');
+    if(r.dueIn!=null) acctLine(L,'Next order due',r.dueIn>0?'in '+r.dueIn+(r.dueIn===1?' day':' days'):r.dueIn===0?'today':(-r.dueIn)+(r.dueIn===-1?' day':' days')+' late');
+    box.appendChild(L);
+    var y=r.loyal||{}, m=el('div','salt-meter salt-meter--verdigris'), ml=el('div','salt-meter__line'), a1=el('span',null,'Loyalty '), a2=el('span',null,'They see ');
+    var share=Math.max(0,Math.min(100,Math.round((+y.units||0)/(+y.every||20)*100)));
+    a1.appendChild(el('b',null,(+y.units||0)+' of '+(y.every||20)+' units')); a2.appendChild(el('b',null,share+'%'));
+    ml.appendChild(a1); ml.appendChild(a2); m.appendChild(ml);
+    var tr=el('div','salt-meter__track'); tr.appendChild(el('div','salt-meter__fill')); m.appendChild(tr); m.style.setProperty('--salt-fill',String(share));
+    box.appendChild(m);
+    if(y.paused) box.appendChild(chip('mist',y.why==='writeoff'?'Paused: a write-off':'Paused: a late payment'));
+    box.appendChild(el('p','anote','1 unit at cost every '+(y.every||20)+(r.cost!=null?' ('+rmShort(r.cost)+' to you)':'')+'.'));
+  }
+  function paintRwd(box, r){
+    box.textContent='';
+    if(!r||r.reading||!r.associate||r.error||!(r.step>0)){ box.hidden=true; return; }
+    box.hidden=false;
+    var head=el('div','apct__head'); head.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Associate reward')); head.appendChild(productTag('salt')); box.appendChild(head);
+    var m=el('div','salt-meter'), ml=el('div','salt-meter__line'), a1=el('span',null,'Margin '), a2=el('span',null,'Next unit ');
+    a1.appendChild(el('b',null,rmShort(r.progress))); a2.appendChild(el('b',null,rmShort(r.step)));
+    ml.appendChild(a1); ml.appendChild(a2); m.appendChild(ml);
+    var tr=el('div','salt-meter__track'); tr.appendChild(el('div','salt-meter__fill')); m.appendChild(tr);
+    m.style.setProperty('--salt-fill',String(Math.max(0,Math.min(100,Math.round(r.progress/r.step*100))))); box.appendChild(m);
+    var L=el('div','salt-ledger salt-ledger--plain');
+    acctLine(L,'Step, '+r.times+' units\u2019 cost',rmShort(r.step)); acctLine(L,'Given under Set Price',rmShort(r.given)); acctLine(L,'A unit, net to you',rmShort(r.net));
+    box.appendChild(L);
+    box.appendChild(el('p','anote','Counted once paid. They see no figure.'));
+  }
+  function partnerSection(a, partner, waiting){
+    var s=el('div','asec apart salt-glass-card salt-glass-card--radius-lg'), head=el('div','apct__head');
+    head.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Partner'));
+    head.appendChild(el('span','salt-status salt-status--mist',partner?'Partner':waiting?'Waiting under Approve':'Not a partner'));
+    s.appendChild(head);
+    s.appendChild(el('p','anote','Pays the Floor on every book.'));
+    if(partner||waiting) return s;
+    var answer=el('p','anote'); answer.setAttribute('role','status');
+    var armed=null, at=null, sig='', b=makerButton(s,['Make partner','acct.partner',a.code],async function(send){
+      if(!armed){ b.textContent='Tap again: send to Approve'; armed=setTimeout(function(){ armed=null; b.textContent='Make partner'; }, 4000); return; }
+      clearTimeout(armed); armed=null; b.textContent='Make partner';
+      var body={code:a.code}, check=JSON.stringify(body);
+      if(check!==sig){ sig=check; at=new Date().toISOString(); }
+      body.at=at;
+      try{ await send('/all/maker/inputs/partner',body); answer.textContent='Sent. They pay the Floor once you approve it.'; loadMaker(); }
+      catch(error){ refusal(answer,error); }
+    },false,function(){ at=null; sig=''; });
+    b.classList.add('apart__go');
+    s.appendChild(answer);
+    return s;
   }
   /* the loans with this customer and their reward: the Desk's catalogue, the same read as Record's Repayment form, asked once a minute at most */
   var partyRead=null, partyAt=0;
@@ -685,7 +858,7 @@ export const OWNER_JS = `
   function rowOf(a){
     var s=acctState(a), who=a.test?testName(a):(a.code||a.username);
     var c=needCard({sev:s.sev, kind:'accounts', word:s.word, key:'a:'+a.username, at:'', age:s.age, late:s.late, who:who, title:who, u:a.username, rm:s.rm, practice:!!a.test,
-      act:'acct.open', open:true, tap:function(){ openCard(a.username); }});
+      act:'acct.open', open:true, onTap:function(){ openCard(a.username); }});
     var title=c.querySelector('.salt-action__title');
     title.appendChild(el('span','need-u',a.username));
     title.setAttribute('aria-label', s.word+(s.age?', '+s.age:'')+': '+who+(s.rm?', '+rmShort(s.rm):''));
@@ -3621,140 +3794,7 @@ export const OWNER_JS = `
         tradeAt=null;tradeSignature='';coverChoices.forEach(function(choice){choice.read();});
       });
       direction.addEventListener('change',function(){ tradeSend.textContent='Send the '+direction.value; });
-      var driftSection=makerForm('pricing');
-      driftSection.appendChild(el('h3',null,'Their %'));
-      driftSection.appendChild(el('p','msg','Every book. Moves one customer off the Set Price, or off a typed board, by a whole % from -30 to +30 in steps of 5 (20 is 20% over, -10 is 10% off); 0 is the Set Price. Never under the Floor or over the Ceiling. The table shows their prices as you type, before anything goes to Approve. Clear sets it back to 0.'));
-      tradeSection.parentNode.insertBefore(driftSection,tradeSection.nextSibling);
-      var driftCodes=catalog.driftCustomers||[], driftBooks=(catalog.products||[]).filter(function(item){ return item.drift; });
-      if(!driftCodes.length||!driftBooks.length){
-        driftSection.appendChild(el('p','msg','No customer to set a % for.'));
-      }else{
-        var driftCode=actOn(el('select','fld salt-field__input salt-field__select'),'record.drift.customer'), driftCodeWrap=el('label','maker-field','Customer');
-        driftCodes.forEach(function(code){ var option=el('option',null,code); option.value=code; driftCode.appendChild(option); });
-        driftCodeWrap.appendChild(driftCode); driftSection.appendChild(driftCodeWrap);
-        var driftProduct=makerTilesIn(driftSection,['Book','record.drift.book'],driftBooks.map(function(item){ return bookItem(item.product); }));
-        /* 22 Oct 2026, his answer: a whole % in steps of 5, -30 to +30; the body still carries the fraction (0.2) the drafter and the fold read */
-        var driftValue=makerField(driftSection,['Their %, -30 to +30 in steps of 5','record.drift.value'],'number','','5');
-        driftValue.min='-30'; driftValue.max='30'; driftValue.removeAttribute('inputmode');   /* 21 Oct 2026: a % may be negative, and the decimal pad has no minus key */
-        var driftState=el('p','msg'); driftSection.appendChild(driftState);
-        var driftPreview=el('div','maker-pct-preview salt-table-wrap'); driftPreview.hidden=true; driftSection.appendChild(driftPreview);
-        var driftAnswer=el('p','msg'); driftAnswer.setAttribute('role','status'); driftSection.appendChild(driftAnswer);
-        var driftPending=false, driftAt=null, driftSignature='';
-        function driftReceiptComplete(){ driftAt=null; driftSignature=''; }
-        function driftCardOf(){
-          return (catalog.driftCards||[]).filter(function(card){ return card.code===driftCode.value&&card.product===driftProduct.value; })[0]||null;
-        }
-        function driftFormat(value){ var n=Math.round(Number(value)*100); return n>0?'+'+n+'%':n<0?n+'%':'0%'; }
-        /* a whole % in steps of 5 from -30 to +30, as typed, or null */
-        function driftWhole(){ var raw=driftValue.value.trim(), n=Number(raw); return raw&&Number.isInteger(n)&&n%5===0&&n>=-30&&n<=30?n:null; }
-        /* 22 Oct 2026, HIS WORD: THEIR % SHOWN LIVE. Each figure he types is read off the Desk (GET /all/maker/drift-preview, the engine over the
-           pricing snapshot, nothing worked out here), 300 ms after he stops, kept by key, and a reply that lands after a newer ask is dropped */
-        var driftReads={}, driftTimer=null, driftAsk=0;
-        function driftDraw(j){
-          driftPreview.textContent='';
-          if(!j||!j.rows||!j.rows.length){ driftPreview.hidden=true; return; }
-          var say=driftFormat(j.pct), table=el('table','salt-table'), head=el('tr'), body=el('tbody');
-          table.appendChild(el('caption',null,j.code+': now '+driftFormat(j.held)+', at '+say));
-          ['Units','Now','At '+say,'Change','Over Floor','Floor'].forEach(function(c,i){ var th=el('th',i?'':'l salt-table__label',c); th.setAttribute('scope','col'); head.appendChild(th); });
-          table.appendChild(el('thead')).appendChild(head); table.appendChild(body);
-          j.rows.forEach(function(r){
-            var tr=el('tr'), d=+(r.at-r.now).toFixed(2), th=el('th','l salt-table__label',units(r.q)+(r.usual?', their usual':'')); th.setAttribute('scope','row'); tr.appendChild(th);
-            tr.appendChild(el('td','',rm(r.now)));
-            tr.appendChild(el('td','',rm(r.at)+(r.edge==='floor'?' at Floor':r.edge==='ceiling'?' at Ceiling':'')));
-            tr.appendChild(el('td','',d>0.004?'+'+rm(d):d<-0.004?'-'+rm(-d):'nil'));
-            tr.appendChild(el('td','',rm(+(r.at-r.floor).toFixed(2))));
-            tr.appendChild(el('td','',rm(r.floor)));
-            body.appendChild(tr);
-          });
-          driftPreview.appendChild(table); driftPreview.hidden=false;
-        }
-        function driftLive(){
-          clearTimeout(driftTimer);
-          var whole=driftWhole();
-          if(whole===null){ driftPreview.hidden=true; driftAnswer.textContent=driftValue.value.trim()?'Enter a whole % from -30 to +30 in steps of 5 (20 is 20%, -10 is 10% off).':''; return; }
-          driftAnswer.textContent='';
-          var key=driftCode.value+'/'+driftProduct.value+'/'+whole;
-          if(driftReads[key]){ driftDraw(driftReads[key]); return; }
-          var ask=++driftAsk;
-          driftTimer=setTimeout(function(){
-            refs('/all/maker/drift-preview/'+key).then(function(j){
-              driftReads[key]=j.preview; if(ask===driftAsk) driftDraw(j.preview);
-            },function(error){ if(ask===driftAsk){ driftPreview.hidden=true; refusal(driftAnswer,error); } });
-          },300);
-        }
-        driftValue.addEventListener('input',driftLive);
-        function driftRefresh(){
-          var card=driftCardOf();
-          var hint=card&&typeof card.suggest==='number'?' Suggested '+driftFormat(card.suggest)+(card.suggest!==0&&typeof card.why==='string'&&card.why?': '+card.why:'')+'.':'';
-          if(card&&card.held) driftState.textContent='Set by you: '+driftFormat(card.value)+'.'+hint;
-          else driftState.textContent='No % set: the Set Price.'+hint;
-          useSuggest.hidden=!(card&&typeof card.suggest==='number');
-          clearDrift.hidden=!(card&&card.held);
-        }
-        driftCode.addEventListener('change',function(){ driftRefresh(); driftLive(); }); driftProduct.addEventListener('change',function(){ driftRefresh(); driftLive(); });
-        var driftActions=el('div','maker-drift-actions'); driftSection.appendChild(driftActions);
-        makerButton(driftActions,['Send their %','record.drift.set'],async function(send){
-          if(driftPending) return;
-          var whole=driftWhole();
-          if(whole===null){
-            driftAnswer.textContent='Enter a whole % from -30 to +30 in steps of 5 (20 is 20%, -10 is 10% off).';
-            return;
-          }
-          var value=Number((whole/100).toFixed(2));
-          var body={code:driftCode.value,product:driftProduct.value,tier:value,unit:'pct'};
-          var check=JSON.stringify(body); if(check!==driftSignature){ driftSignature=check; driftAt=new Date().toISOString(); }
-          body.at=driftAt; driftPending=true;
-          try{ await send('/all/maker/inputs/tier-set',body); driftAnswer.textContent='Sent. Their % changes once you approve it.'; loadMaker(); }
-          catch(error){ refusal(driftAnswer,error); }
-          driftPending=false;
-        },true,driftReceiptComplete);
-        var useSuggest=actOn(el('button','salt-ghost','Use the suggestion'),'record.drift.suggest'); useSuggest.type='button'; driftActions.appendChild(useSuggest);
-        useSuggest.onclick=function(){
-          var card=driftCardOf();
-          if(card&&typeof card.suggest==='number'){ driftValue.value=String(Math.round(card.suggest*100)); driftLive(); }
-        };
-        var clearDrift=makerButton(driftActions,['Set back to 0','record.drift.clear'],async function(send){
-          if(driftPending) return;
-          var body={code:driftCode.value,product:driftProduct.value,tier:null,unit:'pct'};
-          var check=JSON.stringify(body); if(check!==driftSignature){ driftSignature=check; driftAt=new Date().toISOString(); }
-          body.at=driftAt; driftPending=true;
-          try{ await send('/all/maker/inputs/tier-set',body); driftAnswer.textContent='Sent. Their % goes back to 0 once you approve it.'; loadMaker(); }
-          catch(error){ refusal(driftAnswer,error); }
-          driftPending=false;
-        },false,driftReceiptComplete);
-        driftRefresh();
-      }
-      /* B2 of #62: the Desk's Make partner. A partner pays cost; Approve is the confirmation, and a name never travels. Drift books only. */
-      var partnerSection=makerForm('pricing');
-      partnerSection.appendChild(el('h3',null,'Partner'));
-      partnerSection.appendChild(el('p','msg','A partner pays the Floor on every book and is an associate. Only on a book with a Set Price.'));
-      driftSection.parentNode.insertBefore(partnerSection,driftSection.nextSibling);
-      var partnerHeld=catalog.partners||[], partnerWait=catalog.partnerWaiting||[];
-      var partnerCodes=(catalog.driftCustomers||[]).filter(function(c){ return /^C/.test(c)&&!/-Gen$/.test(c)&&partnerHeld.indexOf(c)<0&&partnerWait.indexOf(c)<0; });
-      if(!(catalog.products||[]).some(function(item){ return item.drift; })){
-        partnerSection.appendChild(el('p','msg','No book has a Set Price.'));
-      }else{
-        if(partnerHeld.length) partnerSection.appendChild(el('p','msg','Partner now: '+partnerHeld.join(', ')+'.'));
-        if(partnerWait.length) partnerSection.appendChild(el('p','msg','Waiting under Approve: '+partnerWait.join(', ')+'.'));
-        if(!partnerCodes.length){
-          partnerSection.appendChild(el('p','msg','No customer is left to make a partner.'));
-        }else{
-          var partnerCode=actOn(el('select','fld salt-field__input salt-field__select'),'record.partner.customer'), partnerCodeWrap=el('label','maker-field','Customer');
-          partnerCodes.forEach(function(c){ var option=el('option',null,c); option.value=c; partnerCode.appendChild(option); });
-          partnerCodeWrap.appendChild(partnerCode); partnerSection.appendChild(partnerCodeWrap);
-          var partnerAnswer=el('p','msg'); partnerAnswer.setAttribute('role','status'); partnerSection.appendChild(partnerAnswer);
-          var partnerPending=false, partnerAt=null, partnerSignature='';
-          makerButton(partnerSection,['Make partner','record.partner.make'],async function(send){
-            if(partnerPending) return;
-            var body={code:partnerCode.value};
-            var check=JSON.stringify(body); if(check!==partnerSignature){ partnerSignature=check; partnerAt=new Date().toISOString(); }
-            body.at=partnerAt; partnerPending=true;
-            try{ await send('/all/maker/inputs/partner',body); partnerAnswer.textContent='Sent. They pay the Floor once you approve it.'; loadMaker(); }
-            catch(error){ refusal(partnerAnswer,error); }
-            partnerPending=false;
-          },true,function(){ partnerAt=null; partnerSignature=''; });
-        }
-      }
+      /* 26 Oct 2026 (Salt Admin Customers, P3; his yes to Ask A): Their % and Make partner left Record for the customer's own card on Customers */
       /* A6: the Desk's Make it the house board. Which sizes the board prints, never a price: the ask is the ladder's. */
       var houseSection=makerForm('pricing');
       houseSection.appendChild(el('h3',null,'Printed sizes'));
@@ -6040,7 +6080,7 @@ export const OWNER_JS = `
   function needCard(o){
     var tap=!!o.open, c=el('article','salt-action salt-action--'+o.sev+' need ncard'), body=el('div','salt-action__body'), go=el('div','salt-action__go');
     var title=el(tap?'button':'div','salt-action__title'+(tap?' need-tap':'')), age=o.age!=null?o.age:ageOf(o.at), tt=o.title||o.who||'';
-    if(tap){ title.type='button'; actOn(title,o.act||'need.open',o.key); title.addEventListener('click', function(){ if(o.tap) o.tap(); else needOpen(o); }); }
+    if(tap){ title.type='button'; actOn(title,o.act||'need.open',o.key); title.addEventListener('click', function(){ if(typeof o.onTap==='function') o.onTap(); else needOpen(o); }); }
     c.setAttribute('data-need', o.key); c.setAttribute('data-kind', o.kind); c.setAttribute('data-sev', o.sev);
     if(o.u) c.setAttribute('data-u', o.u);
     if(o.practice) c.setAttribute('data-practice','');

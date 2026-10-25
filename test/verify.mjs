@@ -50511,6 +50511,16 @@ await (async () => {
   await (await import("./admin-cust-card.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Admin Customers P3 and P4: Their %, This customer, the reward and Partner on the account; Record keeps Printed sizes (26 Oct 2026)");
+await (async () => {
+  await (await import("./admin-cust-pct.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Admin Customers P4: This customer and the associate reward by the account's code, behind both locks (26 Oct 2026)");
+await (async () => {
+  await (await import("./admin-cust-reads.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");
 await (async () => {
   await (await import("./maker-queue-withdrawal.mjs")).run({ ok, worker, handleMaker });

@@ -1,0 +1,38 @@
+[
+  {
+    "name": "1 by code is the reading by key",
+    "file": "src/maker-inputs.js",
+    "find": "  return a.error ? a : customerReadingFor(book, a.owner, null, today);",
+    "replace": "  return a.error ? a : customerReadingFor(book, a.owner, null, null);"
+  },
+  {
+    "name": "2 the reward by code",
+    "file": "src/maker-inputs.js",
+    "find": "  return a.error ? a : rewardReading(book, a.owner, { rid: null });",
+    "replace": "  return a.error ? a : { associate: false };"
+  },
+  {
+    "name": "3 a roster code, never a bucket",
+    "file": "src/maker-inputs.js",
+    "find": "const ACCOUNT_CODE = /^[A-Z]+[0-9]+-[A-Z0-9]+$/;",
+    "replace": "const ACCOUNT_CODE = /^[A-Z]+[0-9]+-[A-Z0-9-]+$/;"
+  },
+  {
+    "name": "3 on the roster",
+    "file": "src/maker-inputs.js",
+    "find": "  if (!realCode(code, book.state.roster || [])) return { error: \"Choose a party on the roster.\" };\n  return { owner: code };",
+    "replace": "  return { owner: code };"
+  },
+  {
+    "name": "4 only a GET at the Desk",
+    "file": "src/worker.js",
+    "find": "  if (ofAt) {\n    /* 26 Oct 2026 (Salt Admin Customers, P4): the associate reward and This customer for an account's card, named by its roster code: reads that write nothing */\n    if (m !== \"GET\") return json({ ok: false, error: \"method not allowed\" }, 405);",
+    "replace": "  if (ofAt) {\n    /* 26 Oct 2026 (Salt Admin Customers, P4): the associate reward and This customer for an account's card, named by its roster code: reads that write nothing */"
+  },
+  {
+    "name": "4 a username is no route",
+    "file": "src/worker.js",
+    "find": "    && !/^\\/_internal\\/maker\\/(reward-of|customer-of)\\/[A-Z][A-Z0-9-]{2,24}$/.test(p)",
+    "replace": "    && !/^\\/_internal\\/maker\\/(reward-of|customer-of)\\/[A-Za-z0-9-]{2,24}$/.test(p)"
+  }
+]

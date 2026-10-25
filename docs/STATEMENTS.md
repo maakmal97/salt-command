@@ -2543,6 +2543,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | Act | Where | What it does |
 |---|---|---|
 | `acct.back` | Accounts, an open card on a phone | Takes the card back to the list. |
+| `acct.copy-link` | Accounts card for an ID with no account, once the link is shown | Copies the guest price list's link. |
 | `acct.device-signout` | Account card, Phones and computers (key: the device id) | Signs that one device out. |
 | `acct.filter-all` | Accounts, the filter bar | Shows every account. |
 | `acct.filter-locked` | Accounts, the filter bar | Shows accounts with an address refused. |
@@ -2551,11 +2552,22 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `acct.filter-unopened` | Accounts, the filter bar | Shows accounts never opened. |
 | `acct.filter-unsent` | Accounts, the filter bar | Shows accounts not yet sent a sign-in. |
 | `acct.find` | Accounts | Finds an account by a code or a username. |
-| `acct.open` | Accounts list, one row each (key: the username) | Opens that account's card. |
+| `acct.message` | Accounts card for money owed (key: the username) | Opens their thread under Messages. |
+| `acct.open` | Accounts list, one card each (key: the username) | Opens that account's card. |
+| `acct.open-card` | Accounts card with nothing to do but look (key: the username) | Opens that account's card, as a tap on the card does. |
+| `acct.partner` | Account card, Partner (key: the code) | Makes them a partner on a second tap within four seconds: a name-free partner entry for review; a partner pays the Floor. |
+| `acct.pct.book` | Account card, Their % (key: the book) | Shows that book's %. |
+| `acct.pct.clear` | Account card, Their % (key: the code) | Sends their % back to 0, the Set Price, for review. |
+| `acct.pct.down` | Account card, Their % | Lowers the % by 5, to -30% at most; their prices show at it. |
+| `acct.pct.send` | Account card, Their % (key: the code) | Sends their % at the stepper's figure for review; off while it is what is set. |
+| `acct.pct.suggest` | Account card, Their % | Sets the stepper to the engine's suggested %; it sends nothing. |
+| `acct.pct.up` | Account card, Their % | Raises the % by 5, to +30% at most; their prices show at it. |
 | `acct.repay` | Account card, Loans (key: the loan rid) | Opens Record's Repayment form with that loan chosen. |
 | `acct.order-for` | Account card | Opens an order for them, at the head of Orders. |
 | `acct.password` | Account card | Opens their sealed password straight to the clipboard, never into the page. |
-| `acct.sent` | Account card | Ticks the account as sent. |
+| `acct.reply` | Account card, their waiting line (key: the username) | Opens their thread under Messages. |
+| `acct.sent` | Account card | Mark as sent: marks the account sent, while it is not. |
+| `acct.show-link` | Accounts card for an ID with no account (key: the username) | Shows the guest price list and its QR until the account is made. |
 | `acct.show-code` | Account card | Opens the sheet that shows a code for them in person. |
 | `acct.signin-link` | Account card (key: data-acct, the username) | First tap makes their one-time sign-in link, the next shares it. |
 | `acct.signout-all` | Account card | Signs them out everywhere, on a second tap within four seconds. |
@@ -2816,14 +2828,6 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.count.date` | Record, stock count | The day counted. |
 | `record.count.send` | Record, stock count | Records the count. |
 | `record.count.units` | Record, stock count | The units counted. |
-| `record.drift.book` | Record, Their % | The book. |
-| `record.drift.clear` | Record, Their % | Sets it back to 0, the Set Price. |
-| `record.drift.customer` | Record, Their % | The customer. |
-| `record.drift.set` | Record, Their % | Sends their % for review. |
-| `record.drift.suggest` | Record, Their % | Fills the box with the engine's suggested %; it sends nothing. |
-| `record.drift.value` | Record, Their % | Their %, from 0 to 2 (0.2 is 20%). |
-| `record.partner.customer` | Record, partner | The customer to make a partner. |
-| `record.partner.make` | Record, partner | Queues a name-free partner entry for review, as the Desk's Make partner does; a partner pays the Floor. Books with a Set Price only. |
 | `record.form` | Record, the menu of Entry, Customers and Pricing (key: the form's name as a slug) | Opens that form alone, in the pane beside the menu from 860px and in the menu's place below it, with a way back. Reads and sends nothing. |
 | `record.form-back` | The head of an open Record form | Closes the form and returns to the menu, to the row it came from. Nothing typed is lost. |
 | `record.gift.book` | Record, gift | The book. |

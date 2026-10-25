@@ -44,7 +44,6 @@ const GROUPS = [
   ["New customer", "Role", "record.add-id.role", ["customer", "supplier", "reseller", "referral", "downstream", "bucket"], "customer"],
   ["New customer", "Starting %, salt", "record.add-id.drift", ["", "0.25", "typed"], ""],
   ["Make an associate", "As", "record.appoint.role", ["reseller", "referral"], null],
-  ["Their %", "Book", "record.drift.book", ["salt"], "salt"],
   ["Printed sizes", "Book", "record.house.book", ["salt"], "salt"],
   ["Desk reminders", "Hide for", "record.tip.for", ["7", "30", ""], "7"]
 ];
@@ -91,7 +90,7 @@ export async function run({ ok, pageWork }) {
     ok(same([...keyed].map((r) => r.getAttribute("data-key")), ["salt-none", "salt-0.25", "salt-typed"]),
       "a group drawn once for each book keys its tiles by the book first, the empty value 'none': " + [...keyed].map((r) => r.getAttribute("data-key")).join());
     const parties = ["record.trade.party", "record.trade.associate", "record.trade.end-customer", "record.loan.party", "record.gift.party", "record.repay.loan", "record.amend.row",
-      "record.amend.field", "record.revive.row", "record.add-id.parent", "record.appoint.customer", "record.amend-id.party", "record.place.party", "record.drift.customer", "record.tip.tip"];
+      "record.amend.field", "record.revive.row", "record.add-id.parent", "record.appoint.customer", "record.amend-id.party", "record.place.party", "record.tip.tip"];
     const stay = parties.filter((act) => { const c = byAct(p.d, act); return !c || c.tagName !== "SELECT"; });
     ok(stay.length === 0, "a party, a row, a loan, a field or a reminder, a list as long as the book, stays a select: " + JSON.stringify(stay));
     const legends = found.map((g) => g.querySelector("legend")).filter(Boolean);
@@ -119,10 +118,11 @@ export async function run({ ok, pageWork }) {
     ok([...markGrids].every((g) => g.classList.contains("maker-marks") && !g.classList.contains("salt-options__grid--2"))
       && radios.filter((r) => r.closest(".maker-marks")).every((r) => r.nextElementSibling.querySelector("svg.psym")),
     "a group of marks alone is laid compact (maker-marks), never two wide boxes across with a mark in a corner, and only marks are: " + markGrids.size + " groups");
-    const driftField = byAct(p.d, "record.drift.value");
-    ok(driftField && driftField.min === "-30" && driftField.max === "30" && driftField.getAttribute("inputmode") === null
+    /* Their % left Record on 26 Oct 2026 (a stepper on the account card): Record draws no form for it, and the one typed % field left, Add ID's, still takes a negative with no decimal pad */
+    const driftField = byAct(p.d, "record.add-id.drift-value");
+    ok(!p.d.querySelector('[data-act^="record.drift"]') && driftField && driftField.min === "-0.3" && driftField.max === "0.3" && driftField.getAttribute("inputmode") === null
       && [...p.d.querySelectorAll("#makerInputs input[type=number]")].filter((f) => f !== driftField && f.min === "0").every((f) => f.getAttribute("inputmode") === "decimal"),
-      "the % field takes a whole -30 to +30 (22 Oct 2026) and no decimal pad (a negative needs the minus key, which a decimal pad lacks on an iPhone); the other number fields keep the decimal pad");
+      "Record draws no Their % form, the typed starting % takes a negative and no decimal pad (a negative needs the minus key, which a decimal pad lacks on an iPhone); the other number fields keep the decimal pad");
     const css = [...p.d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
     ok(/\.salt-option__face\s*\{[^}]*min-height:\s*var\(--salt-tap\)/.test(css) && /--salt-tap:\s*44px/.test(css)
       && /\.salt-option__input\s*\{[^}]*position:\s*absolute;[^}]*inset:\s*0;[^}]*width:\s*100%;[^}]*height:\s*100%/.test(css),

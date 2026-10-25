@@ -98,25 +98,25 @@
  {
   "name": "the form keeps a late reply",
   "file": "stmt/owner.js",
-  "find": "driftReads[key]=j.preview; if(ask===driftAsk) driftDraw(j.preview);",
-  "replace": "driftReads[key]=j.preview; driftDraw(j.preview);"
+  "find": "pctReads[key]=j.preview; if(st.pct[st.book]===whole&&s.isConnected) draw(j.preview);",
+  "replace": "pctReads[key]=j.preview; draw(j.preview);"
  },
  {
-  "name": "the form takes any whole %",
+  "name": "the stepper moves by something other than a share of 5",
   "file": "stmt/owner.js",
-  "find": "Number.isInteger(n)&&n%5===0&&n>=-30",
-  "replace": "Number.isInteger(n)&&n>=-30"
+  "find": "st.pct[st.book]=Math.min(30, st.pct[st.book]+5);",
+  "replace": "st.pct[st.book]=Math.min(30, st.pct[st.book]+7);"
  },
  {
   "name": "the form sends the whole % instead of the fraction",
   "file": "stmt/owner.js",
-  "find": "var value=Number((whole/100).toFixed(2));",
-  "replace": "var value=whole;"
+  "find": "tier:Number((whole/100).toFixed(2)),unit:'pct'}, check=JSON.stringify(body);",
+  "replace": "tier:whole,unit:'pct'}, check=JSON.stringify(body);"
  },
  {
   "name": "the form forgets what it read",
   "file": "stmt/owner.js",
-  "find": "if(driftReads[key]){ driftDraw(driftReads[key]); return; }",
+  "find": "if(pctReads[key]){ draw(pctReads[key]); return; }",
   "replace": ""
  },
  {
