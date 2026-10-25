@@ -321,7 +321,7 @@ background:var(--menu);border:1px solid var(--brd-2);border-radius:var(--r-sm);b
 .hs th.c-short{width:12em}
 .hs table.set td{overflow-wrap:anywhere}
 @media (max-width:760px){.hs table.set{table-layout:auto}.hs table.set td{overflow-wrap:normal}.hs th.state,.hs td.state,.hs th.c-short{width:auto}}
-.hs .steps.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr));gap:10px}
+.hs .steps.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,var(--min,170px)),1fr));gap:10px}
 .hs .steps.cards>li{display:block;position:relative;padding:12px 14px 12px 50px;background:var(--fill-1);border:1px solid var(--brd);border-radius:var(--r-sm);
 font-weight:400;color:var(--ink);line-height:1.4;font-size:.94em}
 .hs .steps.cards>li::before{position:absolute;left:12px;top:11px;width:26px;height:26px;border-radius:50%;background:var(--lead-v);color:var(--on-lead);border:0;font-size:12px;font-weight:800}
@@ -926,7 +926,7 @@ radial-gradient(at 82% 28%,var(--counter-v) 0,transparent 55%),radial-gradient(a
 <ul>
 <li>Canvas: <a href="https://claude.ai/artifact/1EpTNLjdU1M3dirwrtDD3F">Salt Admin Customers</a>, four pages (Accounts, Messages, Links, Associates), each phone, tablet landscape 1180 and laptop 1440. Tweaks on each board: Long text; on an account, Case (customer or associate) and, wide, Account open; on the phone Messages, Thread open.</li>
 <li>The model it copies: <a href="https://claude.ai/artifact/LG8PTbuT2EGpqSqsUkG6ie">Salt Admin Needs You</a> and <code>docs/plan-admin-needs-you.html</code>.</li>
-<li>Design system: <a href="https://claude.ai/artifact/WZnXJgD8hczfe5hNjHcUZy">Salt Commodities</a>, installed at version 1792677866-20f0.</li>
+<li>Design system: <a href="https://claude.ai/artifact/WZnXJgD8hczfe5hNjHcUZy">Salt Commodities</a>, installed from its live version on 23 Oct 2026.</li>
 </ul>
 </section>
 
@@ -1223,6 +1223,26 @@ radial-gradient(at 82% 28%,var(--counter-v) 0,transparent 55%),radial-gradient(a
   const wire=()=>{const h=window.HS;if(!h)return;h.sheet=sheet;h.notice=notice;h.code=code;
     if(!h._saltBoot){h._saltBoot=1;const b=h.boot;h.boot=function(){if(b)b();init();};}};
   wire();document.addEventListener('DOMContentLoaded',wire);
+})();
+
+/* HS.fan, 25 Oct 2026: a range ahead of a history, drawn through HS.chart (Chart.js). One line for the history, a dashed median
+   and a shaded low-to-high band from the last observation onward.
+   HS.fan(canvasOrId,{labels,history,median,lo,hi,unit,name,medianName,bandName,lowTip,highTip})
+   labels = history dates then forecast dates (ISO); history = n values; median, lo, hi = m values after the last observation. */
+(function(){
+  const fan=(el,o)=>{const H=window.HS;if(!H||!H.chart||!window.Chart)return null;
+    const n=o.history.length,m=o.hi.length,pad=Array(n-1).fill(null),last=o.history[n-1],unit=o.unit||'',
+      fmt=v=>(unit?unit+' ':'')+Math.round(v).toLocaleString('en-GB'),
+      day=s=>new Date(s+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'2-digit'}),
+      tint=()=>'color-mix(in srgb, '+H.css('--s2')+' 20%, transparent)';
+    return H.chart(el,{type:'line',data:{labels:o.labels.map(day),datasets:[
+      {label:o.name||'History',data:[...o.history,...Array(m).fill(null)]},
+      {label:o.medianName||'Median',data:[...pad,last,...o.median]},
+      {label:o.lowTip||'Low',_tip:o.lowTip,data:[...pad,last,...o.lo],borderColor:'transparent',backgroundColor:'transparent',borderWidth:0,borderDash:[],fill:false},
+      {label:o.bandName||'Range',_tip:o.highTip,data:[...pad,last,...o.hi],borderColor:'transparent',backgroundColor:tint,borderWidth:0,borderDash:[],fill:'-1'}]},
+      options:{scales:{y:{ticks:{callback:fmt}}},plugins:{legend:{labels:{filter:i=>i.datasetIndex!==2}},
+        tooltip:{filter:i=>i.raw!==null,callbacks:{label:c=>(c.dataset._tip||c.dataset.label)+': '+fmt(c.parsed.y)}}}}});};
+  const wire=()=>{if(window.HS)window.HS.fan=fan;};wire();document.addEventListener('DOMContentLoaded',wire);
 })();
 </script>
 </body></html>

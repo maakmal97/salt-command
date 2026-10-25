@@ -98,8 +98,8 @@
  {
   "name": "the form keeps a late reply",
   "file": "stmt/owner.js",
-  "find": "pctReads[key]=j.preview; if(st.pct[st.book]===whole&&s.isConnected) draw(j.preview);",
-  "replace": "pctReads[key]=j.preview; draw(j.preview);"
+  "find": "pctReads[key]=j.preview; if(st.pct[st.book]===whole&&s.isConnected) pctDraw(j.preview);",
+  "replace": "pctReads[key]=j.preview; pctDraw(j.preview);"
  },
  {
   "name": "the stepper moves by something other than a share of 5",
@@ -116,7 +116,7 @@
  {
   "name": "the form forgets what it read",
   "file": "stmt/owner.js",
-  "find": "if(pctReads[key]){ draw(pctReads[key]); return; }",
+  "find": "if(pctReads[key]){ pctDraw(pctReads[key]); return; }",
   "replace": ""
  },
  {

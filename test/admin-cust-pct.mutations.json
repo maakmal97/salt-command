@@ -20,8 +20,8 @@
   {
     "name": "2 a step is 5",
     "file": "stmt/owner.js",
-    "find": "down.addEventListener('click', function(){ st.pct[st.book]=Math.max(-30, st.pct[st.book]-5); paint(); });",
-    "replace": "down.addEventListener('click', function(){ st.pct[st.book]=Math.max(-30, st.pct[st.book]-10); paint(); });"
+    "find": "down.addEventListener('click', function(){ st.pct[st.book]=Math.max(-30, st.pct[st.book]-5); pctPaint(); });",
+    "replace": "down.addEventListener('click', function(){ st.pct[st.book]=Math.max(-30, st.pct[st.book]-10); pctPaint(); });"
   },
   {
     "name": "2 stops at -30",
@@ -44,7 +44,7 @@
   {
     "name": "3 Use the suggestion fills it",
     "file": "stmt/owner.js",
-    "find": "use.addEventListener('click', function(){ if(sug!=null){ st.pct[st.book]=sug; paint(); } });",
+    "find": "use.addEventListener('click', function(){ if(sug!=null){ st.pct[st.book]=sug; pctPaint(); } });",
     "replace": ""
   },
   {

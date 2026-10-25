@@ -615,7 +615,7 @@ export const OWNER_JS = `
       catch(error){ refusal(answer,error); }
     },true,function(){ at=null; sig=''; });
     var use=actOn(el('button','salt-ghost',sug==null?'No suggestion':'Use '+pctWord(sug)),'acct.pct.suggest'); use.type='button'; use.disabled=sug==null;
-    use.addEventListener('click', function(){ if(sug!=null){ st.pct[st.book]=sug; paint(); } });
+    use.addEventListener('click', function(){ if(sug!=null){ st.pct[st.book]=sug; pctPaint(); } });
     acts.appendChild(use);
     var clr=null;
     if(card.held){
@@ -630,7 +630,7 @@ export const OWNER_JS = `
     }
     /* the answer stands inside the buttons' own box, where makerButton looks for it, so a refused retry is said on the card, never let go */
     acts.appendChild(answer); s.appendChild(acts);
-    function draw(j){
+    function pctDraw(j){
       prev.textContent='';
       if(!j||!j.rows||!j.rows.length) return;
       var say=pctWord(st.pct[st.book]), wrap=el('div','salt-glass-card apct__table'), table=el('table','salt-table salt-table--plain'), hr=el('tr'), body=el('tbody');
@@ -646,17 +646,17 @@ export const OWNER_JS = `
       var usual=j.rows.filter(function(r){ return r.usual; })[0];
       if(usual) prev.appendChild(el('p','anote','Their usual is '+units(usual.q)+'. It goes to Approve first.'));
     }
-    function paint(){
+    function pctPaint(){
       var whole=st.pct[st.book];
       out.textContent=pctWord(whole); down.disabled=whole<=-30; up.disabled=whole>=30;
       sendB.textContent='Send '+pctWord(whole); sendB.disabled=whole===held;
       var key=code+'/'+st.book+'/'+whole;
-      if(pctReads[key]){ draw(pctReads[key]); return; }
-      refs('/all/maker/drift-preview/'+key).then(function(j){ pctReads[key]=j.preview; if(st.pct[st.book]===whole&&s.isConnected) draw(j.preview); }, function(error){ if(st.pct[st.book]===whole) refusal(answer,error); });
+      if(pctReads[key]){ pctDraw(pctReads[key]); return; }
+      refs('/all/maker/drift-preview/'+key).then(function(j){ pctReads[key]=j.preview; if(st.pct[st.book]===whole&&s.isConnected) pctDraw(j.preview); }, function(error){ if(st.pct[st.book]===whole) refusal(answer,error); });
     }
-    down.addEventListener('click', function(){ st.pct[st.book]=Math.max(-30, st.pct[st.book]-5); paint(); });
-    up.addEventListener('click', function(){ st.pct[st.book]=Math.min(30, st.pct[st.book]+5); paint(); });
-    paint();
+    down.addEventListener('click', function(){ st.pct[st.book]=Math.max(-30, st.pct[st.book]-5); pctPaint(); });
+    up.addEventListener('click', function(){ st.pct[st.book]=Math.min(30, st.pct[st.book]+5); pctPaint(); });
+    pctPaint();
     return s;
   }
   function paintCust(box, r){
