@@ -192,8 +192,9 @@ ids remain addresses through `VIEW_ALIAS` (`/desk#enter`, `#orders`, `#approve` 
 most.** **One product in view for the whole desk**: `PROD`, set only through `setProdView`. A
 feature folded out of sight reads to him as missing: name every part where the eye lands.
 Everything the desk shows, cost and margin included, is served at the desk's URL, behind the Access login. **It installs as
-Salt Desk** (the build's `apple-mobile-web-app-title`, the manifest's `name` and `short_name`); its
-`<title>` stays Salt Command, the build's anchor.
+Salt Desk** (the build's `apple-mobile-web-app-title`, the manifest's `name` and `short_name`), and its
+`<title>` is Salt Desk too (his word of 24 Oct 2026; it was Salt Command), the build's anchor. The Counter's tab is
+Salt Counter, Salt Admin's is Salt Admin and QR Command's is QR.
 
 **Notifications: one event, one surface** (his answers of 19 Oct 2026, `docs/plan-notifications.html`). Salt Admin
 wakes him for what waits on his decision (a new order, a customer's line, a claim, a cancellation, their answer to an
@@ -203,7 +204,7 @@ a refund held, the morning digest); it rings an order banner itself only while n
 (KV `admin:on`). Salt Counter's customer wakes are unchanged. A new event goes to one of the three, never two.
 
 **Add ID**, **Amend ID** and **Approve** are Salt Admin's; the Desk reads them. A code is derived from the
-name and place (`deriveCode`), never typed or picked, and changes only when they change; Amend ID
+name and place (`makerDerivedCode`), never typed or picked, and changes only when they change; Amend ID
 re-keys it wherever the book holds it, prose and history keeping the old. The fold refuses a code
 the master's own logic quotes (CJ4-OKR, SA5-BTR, SP7-PUD, CM6-HCM): those are hand folds.
 
@@ -256,7 +257,7 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
 
 - **Every task starts level with GitHub.** Before any task: `git fetch` and fast-forward to
   `origin/master`; wait out any Actions run in progress or queued (`gh run list`) and any approved
-  row not yet folded (`node tools/drafts.mjs --approved`); fetch again. Check `list_sessions` for
+  row not yet folded (`node tools/drafts.mjs --approved`); fetch again. Check `ListAgents` (CLI) or `list_sessions` (desktop app) for
   another session on this checkout and work in a worktree (`docs/WORKING.md`). Uncommitted files
   may be his or a peer's: ask, never sweep them; stage explicit paths, never `git add -A`.
 - **A version asks about the queue first.** Before any bump: `node tools/drain.mjs --status`,
@@ -346,9 +347,9 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
 ## Names
 
 Codes by default; names only after a password. `tools/seed-vault.mjs` encrypts `salt_bio.json`
-with `$env:SALT_VAULT_PASS` (never a file) and pushes the ciphertext to KV; the desk auto-locks on
+with `$env:SALT_VAULT_PASS` (never a file) and pushes the ciphertext to the versioned vault pair in D1 (KV only while the Worker's authority is not the pair); the desk auto-locks on
 `visibilitychange`. **The vault is three envelopes under one passphrase; an address or an exact point
-lives only in the second**: names in KV `vault`, places in `vault-addr` (`{<code>: {addr, lat, lng,
+lives only in the second**: names and places, both in the D1 vault pair (KV `vault` and `vault-addr` are recovery material only; a place is `{<code>: {addr, lat, lng,
 src, at}, _base}`), filed at Add ID and Amend ID from a Maps or Waze link read on the device, while
 `PLACED` keeps the locality to 0.01 degrees; and the slip key in `vault-key`, the private half of an
 ECDH P-256 pair every slip is sealed to, its public half in the clear beside it and on the Counter's
@@ -552,7 +553,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   with 10 or more measured; closed, when it opens.
 - **A collection point** (Counter Batch A, his decisions of 18 Oct 2026): his points are Counter KV `maker:points`
   (`{v:1, list:[{code, lat, lng}]}`, a code one capital and one or two digits, so never a roster code's shape), kept on Salt
-  Account under Shop > Hours. **A collect Ready names one and is refused without**; the order keeps the point as a snapshot
+  Admin under Shop > Hours. **A collect Ready names one and is refused without**; the order keeps the point as a snapshot
   (`pointAt`), so editing the list moves no order, and Change point moves one on purpose (a `point` event, its wake
   `point-moved`). The customer reads `pointAt` only while the order waits ready to collect with goods still owed
   (`customerView`); `deskOrderView` strips it on every Desk road. Their pin opens Apple Maps, the phone's `geo:` or Google Maps.

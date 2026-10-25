@@ -92,7 +92,7 @@ The nightly export covers the Book AND the D1 decision tables (`draft`, `preappr
 - Confirm no reader still uses Desk KV `vault`/`vault-addr` outside recovery.
 
 ## His answers, 14 Oct 2026
-D1 in place, step by step. D2: S0 now; S0b waits. D8: when S0b runs, R2, encrypted (bucket and nightly job each still need his yes). D5: a daily export to git after S5.
+D1 in place, step by step. D2: S0 now; S0b waited until 25 Oct 2026, when he said to start it; it is live as v1251, with the bucket, the key and the cron each on his yes (`docs/BACKUP.md`). D8: when S0b runs, R2, encrypted (bucket and nightly job each still need his yes). D5: a daily export to git after S5.
 D3, D4, D6, D7 not yet asked; the recommendations stand until he says otherwise (none affects S0 to S2).
 
 ## His answers, 16 Oct 2026 (S1d)
@@ -104,4 +104,4 @@ S1d split: S1d-i applyEntry beside applyInto, no behaviour change; S1d-ii applyI
 
 ## Where S1 stands, 16 Oct 2026
 S0 done (#176, #177). S1a-i #178, S1a-ii #179, S1b #180 (v1126), S1c-i #181 (v1127), S1c-ii #182 (v1128), S1c-iii #183 (v1129) landed.
-S1d-i (applyEntry in `engine/apply.mjs`, beside applyInto) landed as #184 (957eb986). Next: S1d-ii, the fold switched to applyEntry in event order.
+S1d-i (applyEntry in `engine/apply.mjs`, beside applyInto) landed as #184 (957eb986). S1d-ii, the fold switched to applyEntry in event order, landed as #191 (ab972554, 18 Oct 2026).

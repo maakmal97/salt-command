@@ -654,7 +654,7 @@ jobs:
     if: needs.chain.result == 'success' && needs.chain.outputs.deploy == '1' && needs.chain.outputs.proved == ''
     runs-on: ubuntu-latest
     # ONE PART A RUNNER (05 Oct 2026, his instruction). The repo went private on 01 Oct and its runners
-    # have two cores since, so three shards ran as two fighting over them: the suite went from about
+    # have two cores while it is private, so three shards ran as two fighting over them: the suite went from about
     # 5 min (29 Sep to 01 Oct) to 6 to 11 (02 to 05 Oct). Three runners, a third of the suite each,
     # cut the same way by tools/suite-split.mjs --part; a part failing never cancels the others.
     strategy:

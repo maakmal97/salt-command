@@ -5,12 +5,12 @@
 	// COMPATIBILITY DATE, raised from 2026-08-08 on his instruction of 22 Sep 2026. Checked
 	// before moving it: not one JavaScript flag defaults on between those two dates, the only
 	// entry in the window being python_workers_314 on 2026-09-08, so this changes no
-	// behaviour today. It is the newest date this workerd (1.20260921.1) supports, so local
-	// dev and the edge agree. rev.json's id does not cover this file, so a change here is
+	// behaviour today. It was the newest date the workerd of 22 Sep 2026 (1.20260921.1) supported, so
+	// local dev and the edge agreed. rev.json's id does not cover this file, so a change here is
 	// deployed BY HAND.
 	"compatibility_date": "2026-09-21",
 	// NO PREVIEW URLS. A version's own <version>-salt-command URL would sit outside the Access
-	// application that will cover the Desk, so it stays off. Nothing reads one: the desk, the
+	// application that covers the Desk (since 06 Oct 2026), so it stays off. Nothing reads one: the desk, the
 	// workflows and the tools all use the workers.dev address; Workers Builds' branch uploads
 	// still upload, serving no preview address.
 	"preview_urls": false,
@@ -27,8 +27,6 @@
 	// The cloud queue. One key per device (q:<deviceId>) holding that device's
 	// current queue, so an entry added on the phone reaches the daily commit run.
 	// Names are NEVER stored here: /vault and /bio are accepted and dropped.
-	// Create with:  npx wrangler kv namespace create salt_queue
-	// then paste the printed id below (and delete this line).
 	"kv_namespaces":
 	[
 		{
@@ -42,9 +40,9 @@
 	// not KV on purpose: KV rewrites a whole blob and last write wins, so two devices
 	// posting at once silently lose a row, which a ledger must never do.
 	//
-	// IT IS A MIRROR, NOT THE SOURCE. The Cow-Crm01 master is still authoritative and
-	// remains so until the store is proven to reproduce its figures exactly. Seed it
-	// with `node tools/d1.mjs --seed`; nothing writes to it from the Worker yet.
+	// THE BOOK'S SOURCE IS master/ AND ledger/book.json IN THIS REPO; D1 holds a mirror of it,
+	// re-seeded by the chain job (`node tools/d1.mjs --seed` by hand). The Worker also writes
+	// the drafter's `draft` and `preapproval` rows and the names and places vault pair here.
 	"d1_databases":
 	[
 		{
@@ -71,21 +69,14 @@
 	// ON since 06 Oct 2026: the owner's Access application covers this host and the Counter's
 	// /all under one audience. Setting "0" again reopens the Desk to whoever passes the edge;
 	// a wrangler.jsonc change does not move rev.json, so deploy it by hand.
-	// THE CLOUD DRAFTER (v303). Every fifteen minutes it reads the queue from KV, reads the
-	// book from the D1 mirror, and writes a proposed ROW into `draft` for anything new. It
-	// drafts and stops: the phone approves, and only approved rows reach the master.
-	//
-	// FIFTEEN MINUTES IS CHOSEN, not a default. An entry is queued from the phone at the point
-	// of sale and the row is worth reading while the trade is still in mind; anything slower
-	// and the drafter is no better than the daily run it replaces. It is cheap because it is
-	// idempotent by construction (the draft id IS the entry's `at`, and the insert is INSERT OR
-	// IGNORE), so a tick with nothing to do costs one KV list and one D1 read.
-	//
-	// A CRON EDIT IS NOT SHIPPED BY THE AUTO-SYNC LEG, same as every other wrangler.jsonc
-	// change: it does not move rev.json's id, so update.mjs compares equal and skips the
-	// deploy. Deploy this by hand.
+	// THE CLOUD DRAFTER (v303). A queued entry is drafted on arrival: it reads the queue from KV,
+	// reads the book from the D1 mirror, and writes a proposed ROW into `draft` for anything new.
+	// It drafts and stops: the phone approves, and only approved rows reach the master. The
+	// minute cron runs its safety net on the quarter-hour; it is idempotent by construction (the
+	// draft id IS the entry's `at`, and the insert is INSERT OR IGNORE), so a tick with nothing
+	// to do costs one KV list and one D1 read.
 	// THE SHADOW BOOK (S2a of the Book plan, 18 Oct 2026): a SQLite Durable Object, loaded from the folded book by the
-	// chain job and read by nothing. WAY BACK: add a second migration { "tag": "book-v2", "deleted_classes": ["Book"] },
+	// chain job; it also carries the Desk's live socket (D9) and the recovery test (S2c). WAY BACK: add a second migration { "tag": "book-v2", "deleted_classes": ["Book"] },
 	// remove this binding and the export in src/worker.js, and deploy by hand. A revert alone does not undo a migration.
 	// Never edit a tag already applied. A wrangler.jsonc change does not move rev.json: deploy this BY HAND too.
 	"durable_objects": {
@@ -96,11 +87,18 @@
 	"migrations": [
 		{ "tag": "book-v1", "new_sqlite_classes": ["Book"] }
 	],
+	// THE NIGHTLY BACKUP'S BUCKET (S0b, 25 Oct 2026, docs/BACKUP.md). The Desk Worker seals the night's D1 decisions to BACKUP_PUBLIC_JWK
+	// and files them here as backup/<date>.json (src/backup.js). Bound to this Worker alone: the Counter and QR Command have no road to it.
+	// The cron below and this binding arrive together (a test pins it). A wrangler.jsonc change does not move rev.json: deploy this BY HAND too.
+	"r2_buckets": [
+		{ "binding": "BACKUP", "bucket_name": "salt-d1-backup" }
+	],
 	"triggers": {
 		// Every minute: the customer order nudge, and on the quarter-hour the drafter's safety net.
 		// 0 1 is 09:00 in Kuala Lumpur: the morning nudge, which pushes ONLY when something is
-		// actually waiting. See scheduled() in src/worker.js.
-		"crons": ["* * * * *", "0 1 * * *"]
+		// actually waiting. See scheduled() in src/worker.js. 18:30 UTC is 02:30 in Kuala Lumpur: the nightly
+		// backup (src/backup.js), which runs nothing else.
+		"crons": ["* * * * *", "0 1 * * *", "30 18 * * *"]
 	},
 	"vars": {
 		// Maintenance guard (src/maintenance.js): an ISO UTC time here turns it on and it lifts itself; empty is off.
@@ -111,7 +109,8 @@
 		"REQUIRE_ACCESS": "1",
 		"ACCESS_TEAM": "maakmal",
 		"ACCESS_AUD": "14a921e2b5c1ba14ca75026b930208093644ef349993a4fc66015f689060fecf",
-		// The Access service token's client id that may read GET /rev and send POST /push/send,
+		// The Access service token's client id that may read GET /rev, send POST /push/send, load and read
+		// back the shadow Book (POST /book/load) and run its recovery test (POST /book/pitr, GET /book/window),
 		// and nothing else. The token salt-desk-ci; its id is public (a header, the JWT's common_name),
 		// its secret only in the GitHub secret CF_ACCESS_CLIENT_SECRET.
 		"ACCESS_CI_CLIENT_ID": "3b0a6377905109d224fbe53b595b4574.access",
@@ -120,6 +119,9 @@
 		// VAPID_PRIVATE_JWK secret, set by tools/vapid.mjs and never printed.
 		"VAPID_PUBLIC_KEY": "BB7ReK5C7NBB6KMo7tNGmd43SKePl8qQi_DnbGnEmsrLevWIM8sn4zJ7ICp5Hs_nnz1A4ZH9TtSJij4Z71HFC0k",
 		"VAPID_SUBJECT": "mailto:maakmal97@icloud.com",
+		// The nightly backup's PUBLIC key (S0b, 25 Oct 2026, minted by tools/backup-key.mjs): public by definition, it can only seal. The private
+		// half is on his laptop, sealed under the vault passphrase.
+		"BACKUP_PUBLIC_JWK": "{\"kty\":\"EC\",\"crv\":\"P-256\",\"x\":\"5gfIXXCVD0Y-_acWYvkrXp1Ky4Hkf0ysxUdnj3rf-NM\",\"y\":\"-8pjp5LkHZ-qcvCTfGW53ftgkKgXejrmZ_4oPDoWjZk\"}",
 		// 21 Oct 2026: Salt Admin, where the desk bar's Approve goes (GET /admin, a 302). Here, never in the public desk.
 		"ADMIN_URL": "https://k7m3p2.qyts8mh72kyg.workers.dev/all"
 	},

@@ -11,16 +11,16 @@ Cloudflare Worker with a KV-backed queue so a transaction added on the phone rea
   three-surface model, the queue loop and the deploy runbook.
 - The desk is **not edited in `public/`.** The only editable source is
   [`master/salt_command.html`](master/salt_command.html), which moved into this repo from
-  `Per-Crm01\30_Published\` on 20 Aug 2026 so the daily commit no longer needs the
+  `Per-Crm01\30_Published\` on 20 Aug 2026 so the cloud fold no longer needs the
   laptop; `public/desk.html` is built from it by `npm run build`.
-- Names never reach the cloud: the phone shows codes only.
+- Plaintext names never reach the cloud: the phone shows codes, and names only after a password, from an encrypted vault.
 
 ## Quick start
 
 ```
 npm install
 npm run build      # master -> public/desk.html
-npm test           # smoke suite, no network
+npm test           # the full suite, split across processes, 5 to 12 minutes, no network
 npm run deploy     # build, then wrangler deploy
 ```
 

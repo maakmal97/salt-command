@@ -1010,12 +1010,35 @@ await (async () => {
     const html = readFileSync(join(REPO, "public", "desk.html"), "utf8");
     ok(html.includes("BEGIN cloud/PWA"), "PWA head block injected");
     const browserIcons = html.match(/<link\b[^>]*\brel="icon"[^>]*>/g) || [];
-    const browserIcon = readFileSync(join(REPO, "public", "icon-192.png"));
+    const browserIcon = readFileSync(join(REPO, "public", "icon-tab.png"));
+    /* his word of 24 Oct 2026: the tab icon has no dark ground. A 128px PNG with an alpha channel (colour type 6), read back
+       through a real unfilter (an encoder may pick any of the five row filters), its corners clear and no dark pixel in it */
+    const tabPx = await (async () => {
+      const parts = []; let at = 8;
+      while (at < browserIcon.length) { const len = browserIcon.readUInt32BE(at); if (browserIcon.toString("ascii", at + 4, at + 8) === "IDAT") parts.push(browserIcon.subarray(at + 8, at + 8 + len)); at += 12 + len; }
+      const raw = (await import("node:zlib")).inflateSync(Buffer.concat(parts)), W = 128, H = 128, bpp = 4, out = Buffer.alloc(W * H * bpp);
+      for (let y = 0; y < H; y++) {
+        const f = raw[y * (W * bpp + 1)], src = y * (W * bpp + 1) + 1, dst = y * W * bpp;
+        for (let i = 0; i < W * bpp; i++) {
+          const a = i >= bpp ? out[dst + i - bpp] : 0, b = y ? out[dst - W * bpp + i] : 0, c = i >= bpp && y ? out[dst - W * bpp + i - bpp] : 0;
+          const pa = Math.abs(b - c), pb = Math.abs(a - c), pc = Math.abs(a + b - 2 * c);
+          const pred = f === 0 ? 0 : f === 1 ? a : f === 2 ? b : f === 3 ? (a + b) >> 1 : (pa <= pb && pa <= pc ? a : pb <= pc ? b : c);
+          out[dst + i] = (raw[src + i] + pred) & 255;
+        }
+      }
+      return (x, y) => [...out.subarray((y * W + x) * bpp, (y * W + x) * bpp + bpp)];
+    })();
+    const tabAll = []; for (let y = 0; y < 128; y++) for (let x = 0; x < 128; x++) tabAll.push(tabPx(x, y));
     ok(browserIcons.length === 1
-      && browserIcons[0] === '<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">'
+      && browserIcons[0] === '<link rel="icon" type="image/png" sizes="128x128" href="/icon-tab.png">'
       && browserIcon.subarray(0, 8).toString("hex") === "89504e470d0a1a0a"
-      && browserIcon.readUInt32BE(16) === 192 && browserIcon.readUInt32BE(20) === 192,
-    "the browser tab links the same-origin 192px PNG favicon, and that asset is a valid 192px PNG");
+      && browserIcon.readUInt32BE(16) === 128 && browserIcon.readUInt32BE(20) === 128,
+    "the browser tab links the same-origin 128px PNG favicon, and that asset is a valid 128px PNG");
+    ok(browserIcon[24] === 8 && browserIcon[25] === 6, "the tab icon is 8-bit truecolour with an alpha channel (colour type 6)");
+    ok([[0, 0], [127, 0], [0, 127], [127, 127]].every(([x, y]) => tabPx(x, y)[3] === 0),
+      "the tab icon has a clear ground: every corner is fully transparent, with no dark tile or glow behind the crystal");
+    ok(tabAll.filter((q) => q[3] > 0).every((q) => Math.max(q[0], q[1], q[2]) > 150) && tabAll.some((q) => q[3] === 255),
+      "and no pixel with any cover is dark: the crystal's faces are all light, so it reads on a dark tab and a light one");
     /* SALT DESK (his Q6 of 28 Sep 2026): the desk installs as Salt Desk, the head's name for an iPhone and the manifest's
        name and short_name, while its tab keeps Salt Command, the anchor the head block is put after. The manifest is served
        cache first and sits outside the build id, so the shell cache moved with it, or no installed desk would read it */
@@ -1023,8 +1046,8 @@ await (async () => {
     const cacheD = +((/const CACHE = "salt-shell-v(\d+)";/.exec(readFileSync(join(REPO, "public", "sw.js"), "utf8")) || [])[1] || 0);
     const namesD = { apple: (/<meta name="apple-mobile-web-app-title" content="([^"]*)">/.exec(html) || [])[1], name: mfD.name, short: mfD.short_name,
       title: (/<title>([^<]*)<\/title>/.exec(html) || [])[1], cache: cacheD };
-    ok(namesD.apple === "Salt Desk" && namesD.name === "Salt Desk" && namesD.short === "Salt Desk" && namesD.title === "Salt Command" && cacheD >= 6,
-      "the desk installs as Salt Desk on an iPhone and from its manifest, its tab still Salt Command, and the shell cache moved with the manifest: " + JSON.stringify(namesD));
+    ok(namesD.apple === "Salt Desk" && namesD.name === "Salt Desk" && namesD.short === "Salt Desk" && namesD.title === "Salt Desk" && cacheD >= 6,
+      "the desk installs as Salt Desk on an iPhone and from its manifest, its tab titled Salt Desk too (his word of 24 Oct 2026), and the shell cache moved with the manifest: " + JSON.stringify(namesD));
     ok(html.includes('<link rel="manifest"'), "manifest linked");
     ok(html.includes("serviceWorker") && html.includes("register('sw.js')"), "service worker registered");
     ok(html.includes("function saltDeviceId"), "device id helper present");
@@ -1119,7 +1142,7 @@ await (async () => {
     ok(html.includes("fetch('rev',{cache:'no-store'})"), "the poll bypasses the HTTP cache");
     /* 05 Oct 2026: sw.js answers an open from the cache, so a reload the page asks for must reach the network */
     ok(html.includes("if(idle())saltFresh(); else offer(j.v);") && html.includes("chip.onclick=saltFresh;")
-      && html.includes("location.replace(location.pathname+'?fresh=1'+location.hash)") && !/location\.reload\(\)/.test(html.split("<!-- END cloud/PWA -->")[0].split("<title>Salt Command</title>")[1] || "x"),
+      && html.includes("location.replace(location.pathname+'?fresh=1'+location.hash)") && !/location\.reload\(\)/.test(html.split("<!-- END cloud/PWA -->")[0].split("<title>Salt Desk</title>")[1] || "x"),
       "a new build id, the chip and a new service worker all load the desk fresh, never a plain reload the cache would answer");
     ok(html.includes("if(!window.SALT_CLOUD||document.visibilityState!=='visible')return"),
       "the poll is cloud-only and pauses when the app is not on screen");
@@ -3680,6 +3703,15 @@ await (async () => {
         `${pr}: ${which} either lists what is open or says in one line that nothing is`);
     });
   }
+  /* A WITHDRAWN PENDING BUY IS NOT PENDING (25 Oct 2026). p043 was cancelled in v1236 and still printed under Suppliers > Pending orders: the filter read
+     `pending` and never `cancelled`. A cancelled, pending buy is put on the book here and must change nothing the part draws. */
+  w.eval(`PROD='salt';recompute();`);
+  const before = html("tabReceivables()");
+  w.eval(`purchases.push({rid:'ptest',supplier:'SA9-ZZZ',product:'salt',qty:3,total:150,cash:0,status:'unpaid',pending:true,cancelled:true,date:'2026-10-24'});recompute();`);
+  const withCancelled = html("tabReceivables()");
+  w.eval(`purchases.splice(purchases.findIndex(p=>p.rid==='ptest'),1);recompute();`);
+  ok(read("purchases.some(p=>p.rid==='ptest')") === false && before === withCancelled && !/SA9-ZZZ/.test(withCancelled),
+    "a cancelled pending buy is not listed among the orders a supplier still holds, and changes nothing the part draws");
   w.eval(`PROD=${JSON.stringify(keep)};recompute();`);
   ok(!/>\s*(undefined|NaN|Infinity)/.test(rec + fin), "neither part renders an undefined, a NaN or an infinity");
   try { w.close(); } catch (e) { }
@@ -8308,7 +8340,7 @@ await (async () => {
   /* the mark */
   ok((m472.match(/aria-label="Salt crystal"/g) || []).length === 3, "the crystal is drawn in the rail, in the bar and on the printed board (v537)");
   ok(!m472.includes('class="logo">&#9670;') && !m472.includes('class="logo sm">&#9670;'), "and the diamond glyph is gone");
-  ok(/<link rel="icon" type="image\/png" sizes="192x192" href="\/icon-192\.png">/.test(m472), "the browser favicon uses the 192px Salt icon");
+  ok(/<link rel="icon" type="image\/png" sizes="128x128" href="\/icon-tab\.png">/.test(m472), "the browser favicon is the crystal on a clear ground");
   /* the books' hues come from the identity, through the book, which is where the extract reads them */
   const bk472 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   ok(bk472.PRODUCTS.salt.accent === "var(--salt-product-salt)" && bk472.PRODUCTS.oil.accent === "var(--salt-product-oil)", "salt is the pale book and oil the golden one, declared in ledger/book.json");
@@ -16568,8 +16600,8 @@ await (async () => {
   ok(at8.length === 0, "and the next minute sends nothing for the same order");
   ok(at15.some((h) => h.url.endsWith("orders-only")) && (await dkv.get("orders:nudged")) === o2.at && logs15.some((l) => /^drafter:/.test(l)),
     "on the quarter-hour the next order is pushed and the drafter's net runs as before: " + JSON.stringify(logs15));
-  ok(/"crons"\s*:\s*\[\s*"\* \* \* \* \*"\s*,\s*"0 1 \* \* \*"\s*\]/.test(readFileSync(join(REPO, "wrangler.jsonc"), "utf8")),
-    "wrangler.jsonc schedules every minute and the 09:00 KL morning nudge");
+  ok(/"crons"\s*:\s*\[\s*"\* \* \* \* \*"\s*,\s*"0 1 \* \* \*"\s*(,\s*"30 18 \* \* \*"\s*)?\]/.test(readFileSync(join(REPO, "wrangler.jsonc"), "utf8")),
+    "wrangler.jsonc schedules every minute and the 09:00 KL morning nudge, and since S0b the 02:30 KL backup, and nothing else");
 
   /* THE BANNER, from public/sw.js run as it is, with the summary it reads stubbed */
   const vm = await import("node:vm");
@@ -18323,6 +18355,35 @@ await (async () => {
     const ownHtml = await (await site("/all", acc)).text(), custHtml = await (await site("/")).text();
     ok(/<link rel="apple-touch-icon" href="[/]icon-key[.]png">/.test(ownHtml) && /<link rel="apple-touch-icon" href="[/]icon[.]png">/.test(custHtml) && !custHtml.includes("icon-key"),
       "his page's iPhone icon is his, and the customer's page keeps the Counter's and never names his");
+    ok(/<link rel="icon" type="image[/]png" sizes="128x128" href="[/]icon-key-tab[.]png">/.test(ownHtml) && /<link rel="icon" type="image[/]png" sizes="128x128" href="[/]icon-tab[.]png">/.test(custHtml) && (custHtml.match(/<link rel="icon"/g) || []).length === 1 && !custHtml.includes("icon-key"),
+      "his browser tab links his ring as its icon, and the customer's tab links the Counter's own once, never his");
+    ok(ownHtml.includes("<title>Salt Admin</title>") && custHtml.includes("<title>Salt Counter</title>"),
+      "the tabs are titled Salt Admin and Salt Counter (his word of 24 Oct 2026, with Salt Desk and QR)");
+    /* his word of 24 Oct 2026: a tab icon has no black ground. 8-bit RGBA, the corner clear, the centre solid, and the edge soft */
+    const tabK = await site("/icon-key-tab.png"), tabC = await site("/icon-tab.png");
+    ok(tabK.status === 200 && tabC.status === 200 && /image[/]png/.test(tabK.headers.get("content-type")) && /image[/]png/.test(tabC.headers.get("content-type")),
+      "both tab icons are served as PNGs with no Access needed, as a tab fetches them");
+    /* the same read for colour type 6: four bytes a pixel, rows unfiltered as the generator writes them */
+    const pngA = (buf) => {
+      const w = buf.readUInt32BE(16), h = buf.readUInt32BE(20);
+      let at = 8; const idat = [];
+      while (at < buf.length) { const len = buf.readUInt32BE(at), type = buf.toString("ascii", at + 4, at + 8);
+        if (type === "IDAT") idat.push(buf.subarray(at + 8, at + 8 + len)); at += 12 + len; }
+      const raw = inflateSync(Buffer.concat(idat)), row = w * 4 + 1;
+      const px = (x, y) => [0, 1, 2, 3].map((i) => raw[y * row + 1 + x * 4 + i]);
+      const all = []; for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) all.push(px(x, y));
+      return { w, h, depth: buf[24], kind: buf[25], flat: [...Array(h).keys()].every((y) => raw[y * row] === 0), px, all };
+    };
+    const TK = pngA(Buffer.from(await tabK.arrayBuffer())), TC = pngA(Buffer.from(await tabC.arrayBuffer()));
+    for (const [name, T] of [["Salt Admin's", TK], ["the Counter's", TC]]) {
+      ok(T.w === 128 && T.h === 128 && T.depth === 8 && T.kind === 6 && T.flat, name + " tab icon is a 128 px 8-bit truecolour PNG with an alpha channel, which the opaque tile (colour type 2) is not");
+      ok(T.px(0, 0)[3] === 0 && T.px(127, 0)[3] === 0 && T.px(0, 127)[3] === 0 && T.px(127, 127)[3] === 0,
+        name + " tab icon has a clear ground: every corner is fully transparent, not the tile's 5,8,10");
+      ok(T.all.filter((q) => q[3] > 0).every((q) => q[0] > 150), name + " tab icon draws no dark pixel anywhere: every pixel with any cover is brass or copper");
+      ok(T.all.some((q) => q[3] === 255) && T.all.some((q) => q[3] > 0 && q[3] < 255), name + " tab icon is solid inside the ring and soft at its edge");
+    }
+    ok(TK.px(64, 80)[3] === 255 && TC.px(64, 64)[3] === 255 && TC.px(64, 80)[3] === 0,
+      "Salt Admin's tab icon carries the keyhole's stem where the Counter's has only its dot");
 
     /* ---- an ended Access session ---- */
     /* what a browser does with Access's redirect to its login: followed, a cross-origin page a fetch cannot read,
@@ -48624,7 +48685,7 @@ await (async () => {
   await (await import("./counter-clock.mjs")).run({ ok });
 })();
 
-section("21 Oct 2026: the Desk's bar says where you are and what is live, on every view");
+section("21 Oct 2026: the Desk's bar says what is live, on every view, and not where you are");
 await (async () => {
   await (await import("./desk-bar-live.mjs")).run({ ok });
 })();
@@ -52043,6 +52104,21 @@ await (async () => {
 section("19 Oct 2026: the Desk opens once, taps light, and a chip loads itself when the desk goes idle (F1, F2, R2)");
 await (async () => {
   await (await import("./desk-wave1.mjs")).run({ ok });
+})();
+
+section("S0b: the nightly backup of D1's decisions is sealed to a public key, read back, kept for 30 nights and heard of when it stops");
+await (async () => {
+  await (await import("./backup.mjs")).run({ ok });
+})();
+
+section("S0b: the Desk's schedule runs the backup alone on its own cron, and the morning digest hears of one that failed or stopped");
+await (async () => {
+  await (await import("./backup-cron.mjs")).run({ ok });
+})();
+
+section("S0b: the laptop mints the key that opens a backup and turns one back into rows, and the restore drill brings every table back");
+await (async () => {
+  await (await import("./backup-tools.mjs")).run({ ok });
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

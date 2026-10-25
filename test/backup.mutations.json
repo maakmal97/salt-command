@@ -1,0 +1,176 @@
+[
+ {
+  "name": "a table is dropped from the list",
+  "file": "src/backup.js",
+  "find": "\"vault_pair\", \"vault_receipt\", \"vault_outbox\"];",
+  "replace": "\"vault_pair\", \"vault_receipt\"];"
+ },
+ {
+  "name": "the git mirror is added to the list",
+  "file": "src/backup.js",
+  "find": "\"vault_pair\", \"vault_receipt\", \"vault_outbox\"];",
+  "replace": "\"vault_pair\", \"vault_receipt\", \"vault_outbox\", \"entry\"];"
+ },
+ {
+  "name": "the dump reads a table at a time, not in one batch",
+  "file": "src/backup.js",
+  "find": "const out = await db.batch(BACKUP_TABLES.map((t) => db.prepare(\"SELECT * FROM \" + t)));",
+  "replace": "const out = await Promise.all(BACKUP_TABLES.map((t) => db.prepare(\"SELECT * FROM \" + t).all()));"
+ },
+ {
+  "name": "the object is filed under the UTC date",
+  "file": "src/backup.js",
+  "find": "new Date(now.getTime() + 8 * 3600000).toISOString().slice(0, 10)",
+  "replace": "now.toISOString().slice(0, 10)"
+ },
+ {
+  "name": "the row counts are zero",
+  "file": "src/backup.js",
+  "find": "const rows = Object.fromEntries(BACKUP_TABLES.map((t) => [t, tables[t].length]));",
+  "replace": "const rows = Object.fromEntries(BACKUP_TABLES.map((t) => [t, 0]));"
+ },
+ {
+  "name": "only the first table is sealed",
+  "file": "src/backup.js",
+  "find": "JSON.stringify({ v: 1, at, tables })",
+  "replace": "JSON.stringify({ v: 1, at, tables: { draft: tables.draft } })"
+ },
+ {
+  "name": "the plaintext rides along in the object",
+  "file": "src/backup.js",
+  "find": "tables: BACKUP_TABLES, rows, ...sealed });",
+  "replace": "tables: BACKUP_TABLES, rows, plain: tables, ...sealed });"
+ },
+ {
+  "name": "the clear header drops the app tag",
+  "file": "src/backup.js",
+  "find": "app: \"salt-backup\", ",
+  "replace": ""
+ },
+ {
+  "name": "the iv is 16 bytes",
+  "file": "src/backup.js",
+  "find": "const iv = wc.getRandomValues(new Uint8Array(12));",
+  "replace": "const iv = wc.getRandomValues(new Uint8Array(16));"
+ },
+ {
+  "name": "the HKDF label is the slip's",
+  "file": "src/backup.js",
+  "find": "const INFO = \"salt-backup v1\";",
+  "replace": "const INFO = \"salt-slip v1\";"
+ },
+ {
+  "name": "the guard for a missing bucket is gone",
+  "file": "src/backup.js",
+  "find": "if (!env.BACKUP || !env.BACKUP_PUBLIC_JWK || !env.SALT_LEDGER) return {",
+  "replace": "if (false) return {"
+ },
+ {
+  "name": "the guard for a missing public key is gone",
+  "file": "src/backup.js",
+  "find": "!env.BACKUP || !env.BACKUP_PUBLIC_JWK || !env.SALT_LEDGER",
+  "replace": "!env.BACKUP || !env.SALT_LEDGER"
+ },
+ {
+  "name": "a private key is accepted as the public one",
+  "file": "src/backup.js",
+  "find": " || \"d\" in k",
+  "replace": ""
+ },
+ {
+  "name": "a table that did not succeed is ignored",
+  "file": "src/backup.js",
+  "find": "if (!r || r.success === false || !Array.isArray(r.results)) throw",
+  "replace": "if (!r || !Array.isArray(r.results)) throw"
+ },
+ {
+  "name": "the read-back size check is gone",
+  "file": "src/backup.js",
+  "find": "if (!head || head.size !== bytes) throw new Error(",
+  "replace": "if (false) throw new Error("
+ },
+ {
+  "name": "the prune runs before the write",
+  "file": "src/backup.js",
+  "find": "await env.BACKUP.put(key, body, { httpMetadata: { contentType: \"application/json\" }, customMetadata: { at } });",
+  "replace": "await prune(env.BACKUP, key); await env.BACKUP.put(key, body, { httpMetadata: { contentType: \"application/json\" }, customMetadata: { at } });"
+ },
+ {
+  "name": "a failed night is not recorded",
+  "file": "src/backup.js",
+  "find": "try { if (env.SALT_QUEUE) await env.SALT_QUEUE.put(BACKUP_LAST, JSON.stringify(last)); } catch (ignored)",
+  "replace": "try { } catch (ignored)"
+ },
+ {
+  "name": "the error keeps its line breaks",
+  "file": "src/backup.js",
+  "find": ".replace(/\\s+/g, \" \").slice(0, 200)",
+  "replace": ".slice(0, 200)"
+ },
+ {
+  "name": "the error is not cut to 200",
+  "file": "src/backup.js",
+  "find": ".replace(/\\s+/g, \" \").slice(0, 200)",
+  "replace": ".replace(/\\s+/g, \" \")"
+ },
+ {
+  "name": "the error carries the stack",
+  "file": "src/backup.js",
+  "find": "(e && e.message) || e",
+  "replace": "(e && e.stack) || e"
+ },
+ {
+  "name": "the listing stops after its first page",
+  "file": "src/backup.js",
+  "find": "if (!page.truncated) break;",
+  "replace": "break;"
+ },
+ {
+  "name": "29 nights are kept",
+  "file": "src/backup.js",
+  "find": "export const BACKUP_KEEP = 30;",
+  "replace": "export const BACKUP_KEEP = 29;"
+ },
+ {
+  "name": "the night's key carries the hour",
+  "file": "src/backup.js",
+  "find": ".toISOString().slice(0, 10) + \".json\";",
+  "replace": ".toISOString().slice(0, 13) + \".json\";"
+ },
+ {
+  "name": "the success record leaves out the byte count",
+  "file": "src/backup.js",
+  "find": "const last = { ok: true, at, key, bytes, rows, pruned };",
+  "replace": "const last = { ok: true, at, key, rows, pruned };"
+ },
+ {
+  "name": "a day and a half is ten days and a half",
+  "file": "src/backup.js",
+  "find": "export const BACKUP_STALE_MS = 36 * 3600000;",
+  "replace": "export const BACKUP_STALE_MS = 360 * 3600000;"
+ },
+ {
+  "name": "a day is stale",
+  "file": "src/backup.js",
+  "find": "export const BACKUP_STALE_MS = 36 * 3600000;",
+  "replace": "export const BACKUP_STALE_MS = 24 * 3600000;"
+ },
+ {
+  "name": "a failed last night is not said",
+  "file": "src/backup.js",
+  "find": "if (!last.ok) return \"the last backup failed: \" + last.error;",
+  "replace": ""
+ },
+ {
+  "name": "a backup that never ran is not said",
+  "file": "src/backup.js",
+  "find": "if (!last) return \"the backup has never run\";",
+  "replace": "if (!last) return null;"
+ },
+ {
+  "name": "the alarm speaks with no bucket bound",
+  "file": "src/backup.js",
+  "find": "if (!env.BACKUP || !env.SALT_QUEUE) return null;",
+  "replace": "if (!env.SALT_QUEUE) return null;"
+ }
+]

@@ -4,10 +4,11 @@ node_modules/
 .DS_Store
 *.log
 
-# public/index.html IS committed on purpose: the ledger data is meant to live in this
-# repo ("the data lives here, at github"). It is a BUILD OUTPUT of the Cow-Crm01 master
-# (see CLAUDE.md), so never hand-edit it; `npm run build` regenerates it and the daily
-# run rebuilds and commits it. This repo is PRIVATE because that data is real.
+# public/desk.html IS committed on purpose: the ledger data is meant to live in this repo.
+# It is a BUILD OUTPUT of master/salt_command.html, so never hand-edit it; `npm run build`
+# regenerates it and every version rebuilds and commits it. This repo is both private and
+# public: private while Pro's Actions minutes last, public when they run out. Treat
+# everything committed here as public.
 
 # Never commit real names. The desk ships codes only; the plaintext directory and the
 # encrypted vault live on the laptop, never here. These are a safety net.
@@ -19,13 +20,13 @@ salt_vault.json
 
 # THE STATEMENT PASSWORDS. One per customer, plaintext, in this one file and nowhere else, so
 # he can read one back to a customer who has lost it, and so a retry of the same issue reuses
-# them rather than invalidating every password already sent. They are credentials: this repo is private, but a
-# credential committed is a credential in the history for ever, and these are re-issued monthly
-# precisely so nothing has to live that long. The Worker never sees them either; it holds only
+# them rather than invalidating every password already sent. They are credentials: this repo is both private and public, so a
+# credential committed is a credential in the history for ever, and these now stay live rather than being
+# re-issued monthly, so one that leaked would stay good until changed. The Worker never sees them either; it holds only
 # a PBKDF2 verifier. The encrypted statements beside them (statements/*/_kv/) ARE committed on
 # purpose: that is ciphertext, and it is what the deploy uploads to KV.
 statements/*/_passwords.json
-# THE SEND SHEET, for the same reason. It is the monthly send in one page, one card per customer
+# THE SEND SHEET, for the same reason. It is the send in one page, one card per customer
 # with the message on a Share button and the password on a second, so it carries every password in
 # the issue with a nice face on it. It also puts every account beside every other, which is the one
 # thing a statement must never do. It is written beside the statements, read on the laptop, and
@@ -62,13 +63,9 @@ test/.*
 # Local Claude Code settings, personal to this machine
 .claude/settings.local.json
 migrations/.seed.generated.sql
-migrations/.query.sql
 
 # Scratch: scoping notes and drafts, never part of the deploy.
 .scratch/
-
-# zero-byte leftovers from the ledger extract tooling
-.scratch_v*.mjs
 
 # THE FOLD'S OWN SCRATCH INPUT, and it must never be committed. master/_to_fold.json and
 # master/_folded.json ARE tracked, because they are the handoff between the stage job, the
