@@ -1,266 +1,46 @@
 [
- {
-  "name": "This device is drawn after the statement",
-  "file": "stmt/page.js",
-  "find": "+ (owner ? \"\" : thisDevice() + helpCard())\n    + '<div class=\"acct__main\">'\n    + '<div id=\"mfil\" class=\"salt-tabs mfil\" role=\"group\"' + wl(\"acct.months\") + ' hidden></div><p class=\"mfnote\" id=\"mfnote\" role=\"status\"></p>'\n    + '<div id=\"out\"></div>'\n    + '</div>'",
-  "replace": "+ '<div class=\"acct__main\">'\n    + '<div id=\"mfil\" class=\"salt-tabs mfil\" role=\"group\"' + wl(\"acct.months\") + ' hidden></div><p class=\"mfnote\" id=\"mfnote\" role=\"status\"></p>'\n    + '<div id=\"out\"></div>'\n    + '</div>'\n    + (owner ? \"\" : thisDevice() + helpCard())"
- },
- {
-  "name": "Messages falls under This device",
-  "file": "stmt/page.js",
-  "find": "<div id=\"aGlance\"></div><div id=\"aThread\"></div>'\n    + (owner ? \"\" : thisDevice() + helpCard())",
-  "replace": "<div id=\"aGlance\"></div>'\n    + (owner ? \"\" : thisDevice() + helpCard())\n    + '<div id=\"aThread\"></div>'"
- },
- {
-  "name": "Sign out falls to the foot of the card",
-  "file": "stmt/page.js",
-  "find": "+ wt(\"button\", 'type=\"button\" class=\"salt-ghost devout\" id=\"lock\" aria-live=\"polite\"', \"dev.out\")\n    + '<div id=\"devSlot\"></div>' + keepPage()",
-  "replace": "+ '<div id=\"devSlot\"></div>' + keepPage()\n    + wt(\"button\", 'type=\"button\" class=\"salt-ghost devout\" id=\"lock\" aria-live=\"polite\"', \"dev.out\")"
- },
- {
-  "name": "The install guide comes before the other devices",
-  "file": "stmt/page.js",
-  "find": "+ '<div id=\"devSlot\"></div>' + keepPage()",
-  "replace": "+ keepPage() + '<div id=\"devSlot\"></div>'"
- },
- {
-  "name": "The Look comes before the notifications",
-  "file": "stmt/page.js",
-  "find": "+ '<div id=\"devRows\" class=\"salt-ledger salt-ledger--plain\"></div>'\n    + lookRow()",
-  "replace": "+ lookRow()\n    + '<div id=\"devRows\" class=\"salt-ledger salt-ledger--plain\"></div>'"
- },
- {
-  "name": "The parts of Account have no gap",
-  "file": "stmt/page.js",
-  "find": ".acct{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:28px}",
-  "replace": ".acct{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:0}"
- },
- {
-  "name": "A margin stands in for the gap",
-  "file": "stmt/page.js",
-  "find": ".acct{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:28px}",
-  "replace": ".acct{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:0}\n.acct__main{margin-top:28px}"
- },
- {
-  "name": "Account is not a column",
-  "file": "stmt/page.js",
-  "find": ".acct{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:28px}",
-  "replace": ".acct{max-width:620px;margin:0 auto;display:block;gap:28px}"
- },
- {
-  "name": "The install guide's heading is a page's first level again",
-  "file": "stmt/page.js",
-  "find": "wt(\"h3\", 'id=\"keepHead\"', \"keep.h\")",
-  "replace": "wt(\"h1\", 'id=\"keepHead\"', \"keep.h\")"
- },
- {
-  "name": "Sign out signs out on the first tap",
-  "file": "stmt/page.js",
-  "find": "if(lockArm){ lockRest(); logOut(); return; }",
-  "replace": "if(true){ lockRest(); logOut(); return; }"
- },
- {
-  "name": "A second tap does not sign out",
-  "file": "stmt/page.js",
-  "find": "if(lockArm){ lockRest(); logOut(); return; }",
-  "replace": "if(lockArm){ lockRest(); return; }"
- },
- {
-  "name": "The arm never lets go",
-  "file": "stmt/page.js",
-  "find": "lockArm=setTimeout(lockRest, LOCK_MS);",
-  "replace": "lockArm=1;"
- },
- {
-  "name": "The arm lets go but the words stay",
-  "file": "stmt/page.js",
-  "find": "if(!OWNER) setW(lockEl,'dev.out'); }",
-  "replace": " }"
- },
- {
-  "name": "The first tap says nothing",
-  "file": "stmt/page.js",
-  "find": "setW(lockEl,'dev.outAsk'); lockArm=",
-  "replace": "lockArm="
- },
- {
-  "name": "The words are not announced",
-  "file": "stmt/page.js",
-  "find": " id=\"lock\" aria-live=\"polite\"",
-  "replace": " id=\"lock\""
- },
- {
-  "name": "Sign out asks the browser first",
-  "file": "stmt/page.js",
-  "find": "setW(lockEl,'dev.outAsk'); lockArm=setTimeout(lockRest, LOCK_MS);",
-  "replace": "try{ confirm('x'); }catch(e){} setW(lockEl,'dev.outAsk'); lockArm=setTimeout(lockRest, LOCK_MS);"
- },
- {
-  "name": "His Back to accounts is armed like Sign out",
-  "file": "stmt/page.js",
-  "find": "if(OWNER){ logOut(); return; }",
-  "replace": ""
- },
- {
-  "name": "The door names nothing",
-  "file": "stmt/page.js",
-  "find": "+ (owner ? \"\" : '<span class=\"appmark\">' + glyphSvg(\"ring\", 40) + \"</span>\" + wt(\"p\", 'class=\"salt-eyebrow salt-eyebrow--copper\"', \"door.app\"))",
-  "replace": "+ \"\""
- },
- {
-  "name": "The name comes after Sign in",
-  "file": "stmt/page.js",
-  "find": "+ (owner ? \"\" : '<span class=\"appmark\">' + glyphSvg(\"ring\", 40) + \"</span>\" + wt(\"p\", 'class=\"salt-eyebrow salt-eyebrow--copper\"', \"door.app\"))\n    + wt(\"h1\", \"\", \"door.h\")",
-  "replace": "+ wt(\"h1\", \"\", \"door.h\")\n    + (owner ? \"\" : '<span class=\"appmark\">' + glyphSvg(\"ring\", 40) + \"</span>\" + wt(\"p\", 'class=\"salt-eyebrow salt-eyebrow--copper\"', \"door.app\"))"
- },
- {
-  "name": "The name is a heading",
-  "file": "stmt/page.js",
-  "find": "wt(\"p\", 'class=\"salt-eyebrow salt-eyebrow--copper\"', \"door.app\")",
-  "replace": "wt(\"h2\", 'class=\"salt-eyebrow salt-eyebrow--copper\"', \"door.app\")"
- },
- {
-  "name": "The door names the desk instead",
-  "file": "stmt/words.js",
-  "find": "\"door.app\": \"Salt Counter\"",
-  "replace": "\"door.app\": \"Salt Command\""
- },
- {
-  "name": "His own page carries the door name",
-  "file": "stmt/page.js",
-  "find": "+ (owner ? \"\" : '<span class=\"appmark\">'",
-  "replace": "+ (false ? \"\" : '<span class=\"appmark\">'"
- },
- {
-  "name": "The help line is bold and brass again",
-  "file": "stmt/words.js",
-  "find": "Ask us for a new sign-in link. It works straight away.\",",
-  "replace": "Ask us for a **new sign-in link**. It works straight away.\","
- },
- {
-  "name": "The help line is a link",
-  "file": "stmt/page.js",
-  "find": "+ wt(\"p\", 'class=\"salt-insight\"', \"door.help\")",
-  "replace": "+ '<p class=\"salt-insight\"><a href=\"/ask\">' + wd(\"door.help\") + \"</a></p>\""
- },
- {
-  "name": "The danger action has no guard",
-  "file": "stmt/page.js",
-  "find": "if(!yn||yn.wrap!==wrap) return; ynShut(); q.yes();",
-  "replace": "ynShut(); q.yes();"
- },
- {
-  "name": "The danger action guards only on a Sheet being open",
-  "file": "stmt/page.js",
-  "find": "if(!yn||yn.wrap!==wrap) return; ynShut(); q.yes();",
-  "replace": "if(!yn) return; ynShut(); q.yes();"
- },
- {
-  "name": "A Sheet leaves the page open",
-  "file": "stmt/page.js",
-  "find": "if(open.length&&keep.indexOf(c)<0){ c.setAttribute('inert',''); c.setAttribute('data-behind',''); }",
-  "replace": "if(false&&keep.indexOf(c)<0){ c.setAttribute('inert',''); c.setAttribute('data-behind',''); }"
- },
- {
-  "name": "The page stays shut after a close",
-  "file": "stmt/page.js",
-  "find": "else if(c.hasAttribute('data-behind')){ c.removeAttribute('inert'); c.removeAttribute('data-behind'); }",
-  "replace": "else if(false){ c.removeAttribute('inert'); c.removeAttribute('data-behind'); }"
- },
- {
-  "name": "A drawn Sheet is shut itself",
-  "file": "stmt/page.js",
-  "find": "keep.push(d);\n      var s=d.previousElementSibling; if(s&&s.classList.contains('salt-sheet-scrim')) keep.push(s);",
-  "replace": "var s=d.previousElementSibling; if(s&&s.classList.contains('salt-sheet-scrim')) keep.push(s);"
- },
- {
-  "name": "A drawn Sheet's scrim is shut",
-  "file": "stmt/page.js",
-  "find": "if(s&&s.classList.contains('salt-sheet-scrim')) keep.push(s);",
-  "replace": ""
- },
- {
-  "name": "A built Sheet's wrapper is shut",
-  "file": "stmt/page.js",
-  "find": "if(d.parentNode!==document.body){ keep.push(d.parentNode); return; }",
-  "replace": "if(d.parentNode!==document.body){ return; }"
- },
- {
-  "name": "A yes or no leaves the order sheet open",
-  "file": "stmt/page.js",
-  "find": "(ask&&!ask.hidden?[ask]:open).forEach(",
-  "replace": "open.forEach("
- },
- {
-  "name": "His page is shut too",
-  "file": "stmt/page.js",
-  "find": "if(OWNER) return;\n    var open=",
-  "replace": "var open="
- },
- {
-  "name": "The look Sheet opens and the page stays open",
-  "file": "stmt/page.js",
-  "find": "lookScrim.hidden=false; lookSheetEl.hidden=false; behind();",
-  "replace": "lookScrim.hidden=false; lookSheetEl.hidden=false;"
- },
- {
-  "name": "The look Sheet closes and the page stays shut",
-  "file": "stmt/page.js",
-  "find": "lookSheetEl.hidden=true; lookScrim.hidden=true; behind();",
-  "replace": "lookSheetEl.hidden=true; lookScrim.hidden=true;"
- },
- {
-  "name": "The yes or no opens and the page stays open",
-  "file": "stmt/page.js",
-  "find": "behind();\n    document.addEventListener('keydown',ynKeys,true);",
-  "replace": "document.addEventListener('keydown',ynKeys,true);"
- },
- {
-  "name": "The yes or no closes and the page stays shut",
-  "file": "stmt/page.js",
-  "find": "q.wrap.parentNode.removeChild(q.wrap);\n    behind();\n    if(quiet) return;",
-  "replace": "q.wrap.parentNode.removeChild(q.wrap);\n    if(quiet) return;"
- },
- {
-  "name": "The signed-out Sheet opens and the page stays open",
-  "file": "stmt/page.js",
-  "find": "outScrim.hidden=false; outSheet.hidden=false; behind();",
-  "replace": "outScrim.hidden=false; outSheet.hidden=false;"
- },
- {
-  "name": "The signed-out Sheet closes and the page stays shut",
-  "file": "stmt/page.js",
-  "find": "outSheet.hidden=true; outScrim.hidden=true; behind();",
-  "replace": "outSheet.hidden=true; outScrim.hidden=true;"
- },
- {
-  "name": "The order sheet opens and the page stays open",
-  "file": "stmt/page.js",
-  "find": "foot:foot, opener:opener||document.activeElement};\n      behind();",
-  "replace": "foot:foot, opener:opener||document.activeElement};"
- },
- {
-  "name": "The order sheet closes and the page stays shut",
-  "file": "stmt/page.js",
-  "find": "s.wrap.parentNode.removeChild(s.wrap);\n    behind();",
-  "replace": "s.wrap.parentNode.removeChild(s.wrap);"
- },
- {
-  "name": "The pay Sheet opens and the page stays open",
-  "file": "stmt/page.js",
-  "find": "payNumLoad();\n    payScr.hidden=false; paySh.hidden=false; behind(); drawPay();",
-  "replace": "payNumLoad();\n    payScr.hidden=false; paySh.hidden=false; drawPay();"
- },
- {
-  "name": "The pay Sheet closes and the page stays shut",
-  "file": "stmt/page.js",
-  "find": "paySh.hidden=true; payScr.hidden=true; behind(); PS=null;",
-  "replace": "paySh.hidden=true; payScr.hidden=true; PS=null;"
- },
- {
-  "name": "A return from the bank opens the pay Sheet and the page stays open",
-  "file": "stmt/page.js",
-  "find": "payScr.hidden=false; paySh.hidden=false; behind(); drawPay();\n    try{ paySh.focus(); }catch(e){}\n  }\n  function payGone",
-  "replace": "payScr.hidden=false; paySh.hidden=false; drawPay();\n    try{ paySh.focus(); }catch(e){}\n  }\n  function payGone"
- }
+ {"name":"This device is drawn after the statement","file":"stmt/page.js","find":"+ (owner ? \"\" : thisDevice() + helpCard())\n    + '<div class=\"acct__main\">'\n    + '<div id=\"mfil\" class=\"salt-tabs mfil\" role=\"group\"' + wl(\"acct.months\") + ' hidden></div><p class=\"mfnote\" id=\"mfnote\" role=\"status\"></p>'\n    + '<div id=\"out\"></div>'\n    + '</div>'","replace":"+ '<div class=\"acct__main\">'\n    + '<div id=\"mfil\" class=\"salt-tabs mfil\" role=\"group\"' + wl(\"acct.months\") + ' hidden></div><p class=\"mfnote\" id=\"mfnote\" role=\"status\"></p>'\n    + '<div id=\"out\"></div>'\n    + '</div>'\n    + (owner ? \"\" : thisDevice() + helpCard())"},
+ {"name":"Messages falls under This device","file":"stmt/page.js","find":"<div id=\"aGlance\"></div><div id=\"aThread\"></div>'\n    + (owner ? \"\" : thisDevice() + helpCard())","replace":"<div id=\"aGlance\"></div>'\n    + (owner ? \"\" : thisDevice() + helpCard())\n    + '<div id=\"aThread\"></div>'"},
+ {"name":"Sign out falls to the foot of the card","file":"stmt/page.js","find":"+ wt(\"button\", 'type=\"button\" class=\"salt-ghost devout\" id=\"lock\" aria-live=\"polite\"', \"dev.out\")\n    + '<div id=\"devSlot\"></div>' + keepPage()","replace":"+ '<div id=\"devSlot\"></div>' + keepPage()\n    + wt(\"button\", 'type=\"button\" class=\"salt-ghost devout\" id=\"lock\" aria-live=\"polite\"', \"dev.out\")"},
+ {"name":"The install guide comes before the other devices","file":"stmt/page.js","find":"+ '<div id=\"devSlot\"></div>' + keepPage()","replace":"+ keepPage() + '<div id=\"devSlot\"></div>'"},
+ {"name":"The Look comes before the notifications","file":"stmt/page.js","find":"+ '<div class=\"salt-settings devlist\"><div id=\"devRows\" class=\"devrows\"></div>' + lookRow() + \"</div>\"","replace":"+ '<div class=\"salt-settings devlist\">' + lookRow() + '<div id=\"devRows\" class=\"devrows\"></div>' + \"</div>\""},
+ {"name":"The parts of Account have no gap","file":"stmt/page.js","find":".acct{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:28px}","replace":".acct{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:0}"},
+ {"name":"A margin stands in for the gap","file":"stmt/page.js","find":".acct{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:28px}","replace":".acct{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:0}\n.acct__main{margin-top:28px}"},
+ {"name":"Account is not a column","file":"stmt/page.js","find":".acct{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:28px}","replace":".acct{max-width:620px;margin:0 auto;display:block;gap:28px}"},
+ {"name":"The install guide's heading is a page's first level again","file":"stmt/page.js","find":"wt(\"h3\", 'id=\"keepHead\"', \"keep.h\")","replace":"wt(\"h1\", 'id=\"keepHead\"', \"keep.h\")"},
+ {"name":"Sign out signs out on the first tap","file":"stmt/page.js","find":"if(lockArm){ lockRest(); logOut(); return; }","replace":"if(true){ lockRest(); logOut(); return; }"},
+ {"name":"A second tap does not sign out","file":"stmt/page.js","find":"if(lockArm){ lockRest(); logOut(); return; }","replace":"if(lockArm){ lockRest(); return; }"},
+ {"name":"The arm never lets go","file":"stmt/page.js","find":"lockArm=setTimeout(lockRest, LOCK_MS);","replace":"lockArm=1;"},
+ {"name":"The arm lets go but the words stay","file":"stmt/page.js","find":"if(!OWNER) setW(lockEl,'dev.out'); }","replace":" }"},
+ {"name":"The first tap says nothing","file":"stmt/page.js","find":"setW(lockEl,'dev.outAsk'); lockArm=","replace":"lockArm="},
+ {"name":"The words are not announced","file":"stmt/page.js","find":" id=\"lock\" aria-live=\"polite\"","replace":" id=\"lock\""},
+ {"name":"Sign out asks the browser first","file":"stmt/page.js","find":"setW(lockEl,'dev.outAsk'); lockArm=setTimeout(lockRest, LOCK_MS);","replace":"try{ confirm('x'); }catch(e){} setW(lockEl,'dev.outAsk'); lockArm=setTimeout(lockRest, LOCK_MS);"},
+ {"name":"His Back to accounts is armed like Sign out","file":"stmt/page.js","find":"if(OWNER){ logOut(); return; }","replace":""},
+ {"name":"The door names nothing","file":"stmt/page.js","find":"+ (owner ? \"\" : '<span class=\"appmark\">' + glyphSvg(\"ring\", 40) + \"</span>\" + wt(\"p\", 'class=\"salt-eyebrow salt-eyebrow--copper\"', \"door.app\"))","replace":"+ \"\""},
+ {"name":"The name comes after Sign in","file":"stmt/page.js","find":"+ (owner ? \"\" : '<span class=\"appmark\">' + glyphSvg(\"ring\", 40) + \"</span>\" + wt(\"p\", 'class=\"salt-eyebrow salt-eyebrow--copper\"', \"door.app\"))\n    + wt(\"h1\", \"\", \"door.h\")","replace":"+ wt(\"h1\", \"\", \"door.h\")\n    + (owner ? \"\" : '<span class=\"appmark\">' + glyphSvg(\"ring\", 40) + \"</span>\" + wt(\"p\", 'class=\"salt-eyebrow salt-eyebrow--copper\"', \"door.app\"))"},
+ {"name":"The name is a heading","file":"stmt/page.js","find":"wt(\"p\", 'class=\"salt-eyebrow salt-eyebrow--copper\"', \"door.app\")","replace":"wt(\"h2\", 'class=\"salt-eyebrow salt-eyebrow--copper\"', \"door.app\")"},
+ {"name":"The door names the desk instead","file":"stmt/words.js","find":"\"door.app\": \"Salt Counter\"","replace":"\"door.app\": \"Salt Command\""},
+ {"name":"His own page carries the door name","file":"stmt/page.js","find":"+ (owner ? \"\" : '<span class=\"appmark\">'","replace":"+ (false ? \"\" : '<span class=\"appmark\">'"},
+ {"name":"The help line is bold and brass again","file":"stmt/words.js","find":"Ask us for a new sign-in link. It works straight away.\",","replace":"Ask us for a **new sign-in link**. It works straight away.\","},
+ {"name":"The help line is a link","file":"stmt/page.js","find":"+ wt(\"p\", 'class=\"salt-insight\"', \"door.help\")","replace":"+ '<p class=\"salt-insight\"><a href=\"/ask\">' + wd(\"door.help\") + \"</a></p>\""},
+ {"name":"The danger action has no guard","file":"stmt/page.js","find":"if(!yn||yn.wrap!==wrap) return; ynShut(); q.yes();","replace":"ynShut(); q.yes();"},
+ {"name":"The danger action guards only on a Sheet being open","file":"stmt/page.js","find":"if(!yn||yn.wrap!==wrap) return; ynShut(); q.yes();","replace":"if(!yn) return; ynShut(); q.yes();"},
+ {"name":"A Sheet leaves the page open","file":"stmt/page.js","find":"if(open.length&&keep.indexOf(c)<0){ c.setAttribute('inert',''); c.setAttribute('data-behind',''); }","replace":"if(false&&keep.indexOf(c)<0){ c.setAttribute('inert',''); c.setAttribute('data-behind',''); }"},
+ {"name":"The page stays shut after a close","file":"stmt/page.js","find":"else if(c.hasAttribute('data-behind')){ c.removeAttribute('inert'); c.removeAttribute('data-behind'); }","replace":"else if(false){ c.removeAttribute('inert'); c.removeAttribute('data-behind'); }"},
+ {"name":"A drawn Sheet is shut itself","file":"stmt/page.js","find":"keep.push(d);\n      var s=d.previousElementSibling; if(s&&s.classList.contains('salt-sheet-scrim')) keep.push(s);","replace":"var s=d.previousElementSibling; if(s&&s.classList.contains('salt-sheet-scrim')) keep.push(s);"},
+ {"name":"A drawn Sheet's scrim is shut","file":"stmt/page.js","find":"if(s&&s.classList.contains('salt-sheet-scrim')) keep.push(s);","replace":""},
+ {"name":"A built Sheet's wrapper is shut","file":"stmt/page.js","find":"if(d.parentNode!==document.body){ keep.push(d.parentNode); return; }","replace":"if(d.parentNode!==document.body){ return; }"},
+ {"name":"A yes or no leaves the order sheet open","file":"stmt/page.js","find":"(ask&&!ask.hidden?[ask]:open).forEach(","replace":"open.forEach("},
+ {"name":"His page is shut too","file":"stmt/page.js","find":"if(OWNER) return;\n    var open=","replace":"var open="},
+ {"name":"The look Sheet opens and the page stays open","file":"stmt/page.js","find":"lookScrim.hidden=false; lookSheetEl.hidden=false; behind();","replace":"lookScrim.hidden=false; lookSheetEl.hidden=false;"},
+ {"name":"The look Sheet closes and the page stays shut","file":"stmt/page.js","find":"lookSheetEl.hidden=true; lookScrim.hidden=true; behind();","replace":"lookSheetEl.hidden=true; lookScrim.hidden=true;"},
+ {"name":"The yes or no opens and the page stays open","file":"stmt/page.js","find":"behind();\n    document.addEventListener('keydown',ynKeys,true);","replace":"document.addEventListener('keydown',ynKeys,true);"},
+ {"name":"The yes or no closes and the page stays shut","file":"stmt/page.js","find":"q.wrap.parentNode.removeChild(q.wrap);\n    behind();\n    if(quiet) return;","replace":"q.wrap.parentNode.removeChild(q.wrap);\n    if(quiet) return;"},
+ {"name":"The signed-out Sheet opens and the page stays open","file":"stmt/page.js","find":"outScrim.hidden=false; outSheet.hidden=false; behind();","replace":"outScrim.hidden=false; outSheet.hidden=false;"},
+ {"name":"The signed-out Sheet closes and the page stays shut","file":"stmt/page.js","find":"outSheet.hidden=true; outScrim.hidden=true; behind();","replace":"outSheet.hidden=true; outScrim.hidden=true;"},
+ {"name":"The order sheet opens and the page stays open","file":"stmt/page.js","find":"foot:foot, opener:opener||document.activeElement};\n      behind();","replace":"foot:foot, opener:opener||document.activeElement};"},
+ {"name":"The order sheet closes and the page stays shut","file":"stmt/page.js","find":"s.wrap.parentNode.removeChild(s.wrap);\n    behind();","replace":"s.wrap.parentNode.removeChild(s.wrap);"},
+ {"name":"The pay Sheet opens and the page stays open","file":"stmt/page.js","find":"payNumLoad();\n    payScr.hidden=false; paySh.hidden=false; behind(); drawPay();","replace":"payNumLoad();\n    payScr.hidden=false; paySh.hidden=false; drawPay();"},
+ {"name":"The pay Sheet closes and the page stays shut","file":"stmt/page.js","find":"paySh.hidden=true; payScr.hidden=true; behind(); PS=null;","replace":"paySh.hidden=true; payScr.hidden=true; PS=null;"},
+ {"name":"A return from the bank opens the pay Sheet and the page stays open","file":"stmt/page.js","find":"payScr.hidden=false; paySh.hidden=false; behind(); drawPay();\n    try{ paySh.focus(); }catch(e){}\n  }\n  function payGone","replace":"payScr.hidden=false; paySh.hidden=false; drawPay();\n    try{ paySh.focus(); }catch(e){}\n  }\n  function payGone"}
 ]

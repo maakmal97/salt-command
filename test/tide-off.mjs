@@ -58,7 +58,8 @@ export async function run({ ok, master }) {
     ok(d.documentElement.getAttribute("data-theme") === "night" && d.querySelector('meta[name="theme-color"]').getAttribute("content") === NIGHT_BAR,
       `the Counter opens Night with Night's bar on a device that kept ${tag} (read ${d.documentElement.getAttribute("data-theme")})`);
     ok(!d.getElementById("tabs").hidden && sh && sh.hidden, `and no choice Sheet opens once signed in (${tag})`);
-    ok(tide && tide.disabled && night && !night.disabled && night.getAttribute("aria-pressed") === "true", `and This device's Tide button is greyed, Night held (${tag})`);
+    /* 26 Oct 2026, his word: the Look is one Switch; off is Night, and it is greyed while Tide is off */
+    ok(tide && tide.disabled && tide.getAttribute("role") === "switch" && tide.getAttribute("aria-checked") === "false" && !night, `and This device's Tide switch is greyed, off, Night held (${tag})`);
     if (tide) { tide.disabled = false; tide.click(); }
     ok(d.documentElement.getAttribute("data-theme") === "night" && w.localStorage.getItem("salt-look") === (store["salt-look"] || null),
       `and a forced tap on Tide changes nothing, the stored choice left as it was (${tag})`);

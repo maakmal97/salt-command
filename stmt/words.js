@@ -243,6 +243,7 @@ export const EN = {
   "look.sheetH": "Choose your look",
   "look.night": "Night",
   "look.tide": "Tide",
+  "look.switch": "Tide theme",
   "look.note": "You can change this under Account.",
   "dev.out": "Sign out of this {dev}",
   "dev.outAsk": "Tap again to sign out of this {dev}",
@@ -385,6 +386,8 @@ export const EN = {
   "push.offFail": "They could not be turned off just now. Try again.",
   "dev.saved": "Saved as an app",
   "dev.inIt": "You are in it now.",
+  "dev.yes": "Yes",
+  "push.notHere": "Not here",
   /* ---- REWARDS, an associate's card ---- */
   "rew.later": "Your card is written with the next update.",
   "rew.h": "Your card",

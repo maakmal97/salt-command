@@ -33,11 +33,19 @@ export async function run({ ok, pageWork }) {
     /* ---- 2 and 3: the customer's page ---- */
     const A = await open({ pageWork, orders: [ord("c1", "done", ago(300), { paid: 100, moved: 1 }), ord("c2", "placed", ago(100)), ord("c3", "acknowledged", ago(50))] });
     wins.push(A);
-    const look = A.d.querySelector("#lookRow .lookset"), tide = A.d.querySelector('#lookRow [data-look="tide"]');
-    ok(look && look.classList.contains("salt-segment") && J(seg(look)) === J({ cls: look.className, n: "2", i: "0", on: "10" }) && tide.disabled && tide.classList.contains("salt-segment__opt"),
-      "the Look row is a slider of two, Night chosen and marked, the thumb at it, Tide greyed: " + J(seg(look)));
+    /* 26 Oct 2026, his word ("like settings on an iPhone"): the customer's Look is one Switch, Tide off and greyed while Tide is off */
+    const tide = A.d.querySelector('#lookRow [data-look="tide"]');
+    ok(!!tide && tide.classList.contains("salt-switch") && tide.getAttribute("role") === "switch" && tide.getAttribute("aria-checked") === "false" && tide.disabled && !A.d.querySelector("#lookRow .lookset"),
+      "the Look row is a switch, Tide off and greyed");
     tide.disabled = false; tide.click(); await A.settle();
-    ok(A.d.documentElement.getAttribute("data-theme") === "night" && seg(look).i === "0", "and a forced tap on Tide moves nothing: " + J(seg(look)));
+    ok(A.d.documentElement.getAttribute("data-theme") === "night" && tide.getAttribute("aria-checked") === "false", "and a forced tap on Tide moves nothing");
+    /* 26 Oct 2026, his word: the customer's This device is a list of settings too; a browser that cannot take notifications says Not here in
+       its row and why on the one line under the list */
+    const devList = A.d.querySelector("#thisDevice .salt-settings"), devLabels = devList ? [...devList.querySelectorAll(".salt-settings__label")].map((n) => n.textContent) : [];
+    const pushRow = devList && [...devList.querySelectorAll(".salt-settings__row")].find((r) => r.querySelector(".salt-settings__label").textContent === "Notifications");
+    ok(!!devList && J(devLabels) === J(["Notifications", "Tide theme"]) && !!pushRow && (pushRow.querySelector(".salt-settings__value") || {}).textContent === "Not here"
+      && /cannot receive notifications/.test(A.d.getElementById("devNote").textContent),
+      "This device is a list of settings, Notifications and Tide theme; with none on this browser its row says Not here and the line under the list says why: " + J(devLabels));
     const row = () => A.d.querySelector("#pOrder .otabs");
     const r1 = seg(row());
     ok(row() && row().classList.contains("salt-segment") && r1.n === "4" && r1.i === "0" && r1.on === "1000" && row().querySelectorAll(".salt-segment__count").length === 4

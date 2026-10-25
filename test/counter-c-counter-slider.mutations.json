@@ -15,5 +15,8 @@
  {"name":"the sync counts hidden options","file":"stmt/page.js","find":"return x.tagName==='BUTTON'&&!x.hidden; }), at=0;","replace":"return x.tagName==='BUTTON'; }), at=0;"},
  {"name":"a page rule lowers the Orders tab","file":"stmt/page.js","find":".otabs{margin:0 0 16px}","replace":".otabs{margin:0 0 16px}\n.otabs .salt-segment__opt{min-height:36px}"},
  {"name":"the months become a slider","file":"stmt/page.js","find":"'<div id=\"mfil\" class=\"salt-tabs mfil\"","replace":"'<div id=\"mfil\" class=\"salt-segment mfil\""},
-{"name": "Orders' rows become the slider", "file": "stmt/page.js", "find": "\"><div class=\"salt-nav__links aparts\" role=\"tablist\"", "replace": "\"><div class=\"salt-segment aparts\" role=\"tablist\""}
+ {"name":"Orders' rows become the slider","file":"stmt/page.js","find":"\"><div class=\"salt-nav__links aparts\" role=\"tablist\"","replace":"\"><div class=\"salt-segment aparts\" role=\"tablist\""},
+ {"name":"This device is no settings list","file":"stmt/page.js","find":"+ '<div class=\"salt-settings devlist\"><div id=\"devRows\" class=\"devrows\"></div>'","replace":"+ '<div class=\"devlist\"><div id=\"devRows\" class=\"devrows\"></div>'"},
+ {"name":"no short value where notifications cannot come","file":"stmt/page.js","find":"devRows.appendChild(devRow(tw('push.h'),why,devValue(tw('push.notHere'))));","replace":"devRows.appendChild(devRow(tw('push.h'),why));"},
+ {"name":"the line under the list says nothing","file":"stmt/page.js","find":"    if(note) note.textContent=why||said||'';\n","replace":""}
 ]

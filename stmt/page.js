@@ -384,6 +384,11 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .mfil .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
 
 .devcard{margin:0}
+.devcard .devlist{margin-top:8px}
+.devcard .devrows{display:contents}
+.devcard .devrows>.salt-settings__row:first-child{border-top:0}
+.devcard .devnote{margin:8px 4px 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.devcard .devnote:empty{display:none}
 .devcard .salt-ledger{margin-top:6px}
 .devcard .salt-ledger__row:last-child{border-bottom:0}
 .devcard .salt-ledger__label{flex:1 1 auto}
@@ -1809,8 +1814,8 @@ function helpCard(owner) {
 function thisDevice() {
   return '<section id="thisDevice" class="devcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="devH" hidden>'
     + wt("h2", 'class="salt-eyebrow salt-eyebrow--copper" id="devH"', "dev.h")
-    + '<div id="devRows" class="salt-ledger salt-ledger--plain"></div>'
-    + lookRow()
+    + '<div class="salt-settings devlist"><div id="devRows" class="devrows"></div>' + lookRow() + "</div>"
+    + '<p class="msg devnote" id="devNote" role="status"></p>'
     + wt("button", 'type="button" class="salt-ghost devout" id="lock" aria-live="polite"', "dev.out")
     + '<div id="devSlot"></div>' + keepPage()
     + "</section>";
@@ -1818,9 +1823,10 @@ function thisDevice() {
 /* 11 Oct 2026, HIS WORD: THE LOOK. Under Account, in This device, a customer changes Night or Tide for this device: two ghosts, the
    held one aria-pressed, applied at once with no reload. The page opens Tide until a device chooses (LOOK_HEAD). */
 function lookRow(owner) {
-  /* 26 Oct 2026, his word on This device ("like settings on an iPhone"): on his page the look is one Switch, Tide on or off, greyed while Tide is off */
-  if (owner) return '<div id="lookRow" class="salt-settings__row"><span class="salt-settings__label" id="lookH">Tide theme</span>'
-    + '<button type="button" class="salt-switch" role="switch" aria-checked="false" aria-labelledby="lookH" data-look="tide" disabled data-act="look.tide"></button></div>';
+  /* 26 Oct 2026, his word on This device ("like settings on an iPhone"), on his page and then the customer's: the look is one Switch, Tide on
+     or off, greyed while Tide is off; the acts on his page alone */
+  return '<div id="lookRow" class="salt-settings__row">' + wt("span", 'class="salt-settings__label" id="lookH"', "look.switch")
+    + '<button type="button" class="salt-switch" role="switch" aria-checked="false" aria-labelledby="lookH" data-look="tide" disabled' + (owner ? ' data-act="look.tide"' : "") + "></button></div>";
   /* 11 Oct 2026: Salt Admin draws the same row in Shop, This device, and its controls carry the acts the owner's page names every
      control by (docs/STATEMENTS.md); the customer's row is drawn as it was, with none */
   const act = (a) => (owner ? ' data-act="' + a + '"' : "");
@@ -3789,13 +3795,14 @@ const CLIENT_JS = `
   function pushOff(){ try{ return localStorage.getItem(PUSH_OFF)==='1'; }catch(e){ return false; } }
   function pushOffSet(on){ try{ if(on) localStorage.setItem(PUSH_OFF,'1'); else localStorage.removeItem(PUSH_OFF); }catch(e){ /* for this visit only */ } }
   function pushCan(){ return ('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window); }
+  /* 26 Oct 2026, his word ("like settings on an iPhone", fewer words): a row of This device's list is its name and its control; what it
+     holds is said to a reader, never drawn, and the control is a Switch or a short value */
   function devRow(label,flag,btn){
-    var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line');
-    l.appendChild(el('span','salt-ledger__label',label));
-    if(btn){ var v=el('span','salt-ledger__value'); v.appendChild(btn); l.appendChild(v); }
-    r.appendChild(l);
-    var f=el('span','salt-ledger__flag'); if(typeof flag==='string') f.textContent=flag; else f.appendChild(flag);
+    var r=el('div','salt-settings__row');
+    r.appendChild(el('span','salt-settings__label',label));
+    var f=el('span','sr'); if(typeof flag==='string') f.textContent=flag; else f.appendChild(flag);
     f.setAttribute('role','status'); r.appendChild(f);
+    if(btn) r.appendChild(btn);
     return r;
   }
   /* ---- THE BELL (Step 1b, his Q3 of 28 Sep 2026; his sentences 3.1 and 3.3) ------------------------------------------
@@ -3847,6 +3854,9 @@ const CLIENT_JS = `
     document.addEventListener('keydown', function(ev){ if(ev.key==='Escape') closeBell(); });
   }
   function devBtn(t,go){ var b=el('button','salt-ghost',t); b.type='button'; b.disabled=devBusy===ticket; b.addEventListener('click',go); return b; }
+  /* the Switch: on or off, its name the row's, free unless a tap for this account is still in flight */
+  function devSwitch(on,label,go){ var b=el('button','salt-switch'); b.type='button'; b.setAttribute('role','switch'); b.setAttribute('aria-checked',String(!!on)); b.setAttribute('aria-label',label); b.disabled=devBusy===ticket; b.addEventListener('click',go); return b; }
+  function devValue(t){ return el('span','salt-settings__value',t); }
   function drawDevice(){
     drawBell();
     if(!devEl) return;
@@ -3854,11 +3864,14 @@ const CLIENT_JS = `
     if(devEl.hidden) return;
     devRows.textContent='';
     var on=!!draft.pushed||(pushCan()&&Notification.permission==='granted'&&!!draft.pushDone), said=devNote||noteSaid(draft.pushNote);
-    if(!pushCan()) devRows.appendChild(devRow(tw('push.h'),tw(IOS&&!STANDALONE?'push.devIos':'push.devNo')));
-    else if(on) devRows.appendChild(devRow(tw('push.h'),said||tw('push.devOn'),devBtn(tw('push.off'),devPushOff)));
-    else devRows.appendChild(devRow(tw('push.h'),said||tw('push.devOff'),devBtn(tw('push.on'),devPushOn)));
+    var note=document.getElementById('devNote'), why='';
+    if(!pushCan()){ why=tw(IOS&&!STANDALONE?'push.devIos':'push.devNo'); devRows.appendChild(devRow(tw('push.h'),why,devValue(tw('push.notHere')))); }
+    else if(on) devRows.appendChild(devRow(tw('push.h'),said||tw('push.devOn'),devSwitch(true,tw('push.h'),devPushOff)));
+    else devRows.appendChild(devRow(tw('push.h'),said||tw('push.devOff'),devSwitch(false,tw('push.h'),devPushOn)));
+    /* the line under the list: why there are none on this browser, or what a tap was answered */
+    if(note) note.textContent=why||said||'';
     /* Saving the app is optional; the install guide sits with this device's settings. */
-    if(STANDALONE) devRows.appendChild(devRow(tw('dev.saved'),tw('dev.inIt')));
+    if(STANDALONE) devRows.appendChild(devRow(tw('dev.saved'),tw('dev.inIt'),devValue(tw('dev.yes'))));
   }
   async function devPushOn(){
     var mine=ticket;

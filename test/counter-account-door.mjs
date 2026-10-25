@@ -123,9 +123,10 @@ export async function run({ ok }) {
     const seq = ["devH", "devRows", "lookRow", "lock", "devSlot", "keepCard"].map((id) => d.getElementById(id));
     ok(seq.every((x) => !!x && card.contains(x)) && seq.every((x, i) => i === 0 || before(seq[i - 1], x)),
       "This device reads notifications, the Look, Sign out, then the other devices and the install guide, each control with its id");
-    ok(!!d.querySelector('#lookRow [data-look="night"]') && !!d.querySelector('#lookRow [data-look="tide"]') && t(d.getElementById("lock")) === W.fill(W.EN["dev.out"], { dev: "computer" }, "en")
+    /* 26 Oct 2026, his word: the Look is one Switch, Tide on or off */
+    ok(!!d.querySelector('#lookRow .salt-switch[data-look="tide"]') && !d.querySelector('#lookRow [data-look="night"]') && t(d.getElementById("lock")) === W.fill(W.EN["dev.out"], { dev: "computer" }, "en")
       && d.getElementById("keepHead").tagName === "H3" && d.querySelectorAll("#pStmt h1").length === 0,
-      "the Look keeps its two taps, Sign out its words, and the install guide's heading is the card's third level, so Account carries no second page heading of its own: "
+      "the Look is one switch, Sign out keeps its words, and the install guide's heading is the card's third level, so Account carries no second page heading of its own: "
       + JSON.stringify({ lock: t(d.getElementById("lock")), keep: d.getElementById("keepHead").tagName }));
 
     /* ---- 3: Sign out, a tap and a tap again */

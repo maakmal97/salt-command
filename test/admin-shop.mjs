@@ -258,5 +258,5 @@ export async function run({ ok, pageWork }) {
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { tb.w.close(); }
   /* P6.4: the customer's own Look row is drawn as it was */
   const cust = landingPage("0000-0000", "n", null, null);
-  ok(cust.includes('<div id="lookRow" class="salt-ledger salt-ledger--plain">') && !cust.includes('class="salt-switch"'), "the customer's Look row is drawn as it was, the slider, with no switch");
+  ok(cust.includes('<div id="lookRow" class="salt-settings__row">') && /data-look="tide" disabled><\/button>/.test(cust) && !/data-act="look\./.test(cust), "the customer's Look row is the same switch, with no act of his page");
 }

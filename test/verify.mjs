@@ -20529,8 +20529,9 @@ await (async () => {
     a = await open(true);
     const { D, win } = a, dev = D.getElementById("thisDevice"), keep = D.getElementById("keepCard"), body = D.getElementById("devSlot");
     ok(await until(() => !dev.hidden && /Saved as an app/.test(dev.textContent)), "signed in in the saved app, This device shows, with its Saved as an app row: " + JSON.stringify(dev.textContent.slice(0, 160)));
-    const row = [...dev.querySelectorAll(".salt-ledger__row")].find((r) => /Saved as an app/.test(r.textContent));
-    ok(!!row && /You are in it now[.]/.test(row.textContent) && row.querySelector(".salt-ledger__label").textContent === "Saved as an app"
+    /* 26 Oct 2026, his word: This device is a list of settings; the row says Yes and tells a reader the rest */
+    const row = [...dev.querySelectorAll(".salt-settings__row")].find((r) => /Saved as an app/.test(r.textContent));
+    ok(!!row && /You are in it now[.]/.test(row.querySelector(".sr").textContent) && row.querySelector(".salt-settings__label").textContent === "Saved as an app" && row.querySelector(".salt-settings__value").textContent === "Yes"
       && !!(row.compareDocumentPosition(body) & win.Node.DOCUMENT_POSITION_FOLLOWING) && keep.hidden && dev.contains(keep),
       "and saving as an app is a row of the card, above the other devices, with the optional install guide under This device: " + JSON.stringify(dev.textContent.slice(0, 160)));
     ok(D.getElementById("pStmt").firstElementChild !== keep && dev.contains(keep), "the install guide sits under This device, not at the head of the statement");
@@ -40559,7 +40560,7 @@ await (async () => {
   } });
   const W = dom.window, D = W.document;
   const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return !!f(); };
-  const btn = () => { const r = [...D.querySelectorAll("#devRows .salt-ledger__row")].find((x) => x.querySelector(".salt-ledger__label").textContent === "Notifications");
+  const btn = () => { const r = [...D.querySelectorAll("#devRows .salt-settings__row")].find((x) => x.querySelector(".salt-settings__label").textContent === "Notifications");
     return r && r.querySelector("button"); };
   const signIn = async () => {
     D.getElementById("un").value = u; D.getElementById("pw").value = pass;
@@ -40567,7 +40568,7 @@ await (async () => {
     return until(() => !D.getElementById("barw").hidden && !!btn());
   };
   try {
-    ok(await signIn() && await until(() => btn() && btn().textContent === "Turn off"), "signed in, This device offers Turn off");
+    ok(await signIn() && await until(() => btn() && btn().getAttribute("aria-checked") === "true"), "signed in, This device offers Turn off");
     btn().click();
     ok(await until(() => st.unsub === 1) && btn().disabled, "Turn off shuts the buttons while the phone unsubscribes");
     signOutTap(D);
@@ -40607,17 +40608,17 @@ await (async () => {
   } });
   const W = dom.window, D = W.document;
   const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return !!f(); };
-  const btn = () => { const r = [...D.querySelectorAll("#thisDevice .salt-ledger__row")].find((x) => x.querySelector(".salt-ledger__label").textContent === "Notifications");
+  const btn = () => { const r = [...D.querySelectorAll("#thisDevice .salt-settings__row")].find((x) => x.querySelector(".salt-settings__label").textContent === "Notifications");
     return r && r.querySelector("button"); };
   try {
     D.getElementById("un").value = u; D.getElementById("pw").value = pass;
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
-    ok(await until(() => btn() && btn().textContent === "Turn off"), "signed in, This device offers Turn off");
+    ok(await until(() => btn() && btn().getAttribute("aria-checked") === "true"), "signed in, This device offers Turn off");
     btn().click();
-    ok(await until(() => btn() && btn().textContent === "Turn on") && st.unsub === 1
+    ok(await until(() => btn() && btn().getAttribute("aria-checked") === "false") && st.unsub === 1
       && st.told.length === 1 && st.told[0].session === "sess-s7m1" && st.told[0].body.endpoint === "https://push.test/s7m1"
       && W.localStorage.getItem("salt-push-off") === "1"
-      && [...D.querySelectorAll("#thisDevice .salt-ledger__label")].filter((l) => l.textContent === "Notifications").length === 1,
+      && [...D.querySelectorAll("#thisDevice .salt-settings__label")].filter((l) => l.textContent === "Notifications").length === 1,
       "Turn off drops the subscription, tells the site which phone on its session, keeps off on the device, and This device has one Notifications row: " + JSON.stringify([st.unsub, st.told]));
   } finally { await new Promise((r) => setTimeout(r, 50)); W.close(); }
 })();
