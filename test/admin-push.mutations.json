@@ -1,332 +1,58 @@
 [
- {
-  "name": "desk key not checked",
-  "file": "stmt/worker.js",
-  "find": "if (!deskOk(request, env)) return json({ ok: false, error: \"desk key required\" }, 401);",
-  "replace": "if (false) return json({ ok: false, error: \"desk key required\" }, 401);"
- },
- {
-  "name": "owner-wake answers GET",
-  "file": "stmt/worker.js",
-  "find": "if (p === \"/desk/owner-wake\") {\n    if (m !== \"POST\")",
-  "replace": "if (p === \"/desk/owner-wake\") {\n    if (false)"
- },
- {
-  "name": "owner-wake takes any kind",
-  "file": "stmt/worker.js",
-  "find": "!OWNER_KINDS.includes(b.k) || (b.o",
-  "replace": "false || (b.o"
- },
- {
-  "name": "owner-wake takes any order id",
-  "file": "stmt/worker.js",
-  "find": "(b.o !== undefined && !(typeof b.o === \"string\" && OWNER_ORDER_RE.test(b.o)))",
-  "replace": "false"
- },
- {
-  "name": "owner-wake route not listed",
-  "file": "stmt/worker.js",
-  "find": "p === \"/desk/bulletin\" || p === \"/desk/owner-wake\" ||",
-  "replace": "p === \"/desk/bulletin\" ||"
- },
- {
-  "name": "none answers one device",
-  "file": "stmt/push.js",
-  "find": "const none = { ok: true, devices: 0, sent: 0, failed: 0 };",
-  "replace": "const none = { ok: true, devices: 1, sent: 0, failed: 0 };"
- },
- {
-  "name": "subscribe outside the gate",
-  "file": "stmt/worker.js",
-  "find": "      if (!isAdminIdentity(who)) return json({ ok: false, error: \"Access required\" }, 401);\n      if (p.startsWith(\"/all/maker/\")) return handleMaker(request, env, p, who);",
-  "replace": "      if (p === \"/all/push/subscribe\" && m === \"POST\") { await env.STMT.put(\"opush:x\", \"{}\"); return json({ ok: true }); }\n      if (!isAdminIdentity(who)) return json({ ok: false, error: \"Access required\" }, 401);\n      if (p.startsWith(\"/all/maker/\")) return handleMaker(request, env, p, who);"
- },
- {
-  "name": "subscribe takes http",
-  "file": "stmt/worker.js",
-  "find": "!/^https:\\/\\/\\S+$/.test(ep)",
-  "replace": "!/^https?:\\/\\/\\S+$/.test(ep)"
- },
- {
-  "name": "subscribe takes any length",
-  "file": "stmt/worker.js",
-  "find": "ep.length > 1000 || ",
-  "replace": ""
- },
- {
-  "name": "subscribe takes no keys",
-  "file": "stmt/worker.js",
-  "find": "if (!keys) return json({ ok: false, error: \"send the subscription's two keys\" }, 400);",
-  "replace": "if (false) return json({ ok: false, error: \"send the subscription's two keys\" }, 400);"
- },
- {
-  "name": "subscribe answers GET",
-  "file": "stmt/worker.js",
-  "find": "if (p === \"/all/push/subscribe\" || p === \"/all/push/unsubscribe\") {\n        if (m !== \"POST\")",
-  "replace": "if (p === \"/all/push/subscribe\" || p === \"/all/push/unsubscribe\") {\n        if (false)"
- },
- {
-  "name": "record drops the keys",
-  "file": "stmt/worker.js",
-  "find": "JSON.stringify({ endpoint: ep, keys, at: new Date().toISOString() })",
-  "replace": "JSON.stringify({ endpoint: ep, at: new Date().toISOString() })"
- },
- {
-  "name": "filed under push:",
-  "file": "stmt/worker.js",
-  "find": "await env.STMT.put(\"opush:\" + id,",
-  "replace": "await env.STMT.put(\"push:admin:\" + id,"
- },
- {
-  "name": "sent never counted",
-  "file": "stmt/push.js",
-  "find": "devices--; }\n      else if (r.ok || r.status === 201) sent++;",
-  "replace": "devices--; }\n      else if (false) sent++;"
- },
- {
-  "name": "payload carries a name",
-  "file": "stmt/push.js",
-  "find": "const text = JSON.stringify(o ? { k, o } : { k });",
-  "replace": "const text = JSON.stringify({ k, o, name: \"Zed Tester\" });"
- },
- {
-  "name": "topic is the whole hash",
-  "file": "stmt/push.js",
-  "find": "(o ? \"-\" + (await endpointId(o)).slice(0, 16) : \"\")",
-  "replace": "(o ? \"-\" + (await endpointId(o)) : \"\")"
- },
- {
-  "name": "bare topic carries a hash",
-  "file": "stmt/push.js",
-  "find": "(o ? \"-\" + (await endpointId(o)).slice(0, 16) : \"\")",
-  "replace": "(\"-\" + (await endpointId(o)).slice(0, 16))"
- },
- {
-  "name": "vapid key not sent",
-  "file": "stmt/push.js",
-  "find": "Authorization: `vapid t=${tokens.get(origin)}, k=${pub}` };\n      if (body) Object.assign(headers, { \"Content-Encoding\"",
-  "replace": "Authorization: `vapid t=${tokens.get(origin)}, k=x` };\n      if (body) Object.assign(headers, { \"Content-Encoding\""
- },
- {
-  "name": "gone endpoint kept",
-  "file": "stmt/push.js",
-  "find": "if (r.status === 404 || r.status === 410) { await env.STMT.delete(s.key); devices--; }",
-  "replace": "if (false) { await env.STMT.delete(s.key); devices--; }"
- },
- {
-  "name": "failed endpoint deleted",
-  "file": "stmt/push.js",
-  "find": "if (r.status === 404 || r.status === 410) { await env.STMT.delete(s.key); devices--; }",
-  "replace": "if (r.status >= 400) { await env.STMT.delete(s.key); devices--; }"
- },
- {
-  "name": "failure counted as sent",
-  "file": "stmt/push.js",
-  "find": "else failed++;\n    }\n    return { ok: true, devices, sent, failed };",
-  "replace": "else sent++;\n    }\n    return { ok: true, devices, sent, failed };"
- },
- {
-  "name": "customer listing reads every key",
-  "file": "stmt/push.js",
-  "find": "u ? \"push:\" + u + \":\" : \"push:\"",
-  "replace": "u ? \"push:\" + u + \":\" : \"\""
- },
- {
-  "name": "notice wakes Admin too",
-  "file": "stmt/push.js",
-  "find": "return wake(env, null, \"salt-notice\");",
-  "replace": "return wake(env, null, \"salt-notice\") && wakeOwner(env, { k: \"order\" });"
- },
- {
-  "name": "alerts count reads every key",
-  "file": "stmt/worker.js",
-  "find": "const page = await env.STMT.list({ prefix: \"push:\", cursor });",
-  "replace": "const page = await env.STMT.list({ prefix: \"\", cursor });"
- },
- {
-  "name": "unsubscribe keeps the record",
-  "file": "stmt/worker.js",
-  "find": "await env.STMT.delete(\"opush:\" + id); return json({ ok: true });",
-  "replace": "return json({ ok: true });"
- },
- {
-  "name": "a fixture move wakes Admin",
-  "file": "stmt/worker.js",
-  "find": "const r = isTest(u) ? await exampleSay(env, u, b) : await sayThread(env, u, b);",
-  "replace": "await wakeOwner(env, { k: \"said\" });\n    const r = isTest(u) ? await exampleSay(env, u, b) : await sayThread(env, u, b);"
- },
- {
-  "name": "sw outside the gate",
-  "file": "stmt/worker.js",
-  "find": "      if (!isAdminIdentity(who)) return json({ ok: false, error: \"Access required\" }, 401);\n      if (p.startsWith(\"/all/maker/\")) return handleMaker(request, env, p, who);",
-  "replace": "      if (p === \"/all/sw.js\") return new Response(ADMIN_SW_JS, { headers: { \"content-type\": \"text/javascript\", \"Service-Worker-Allowed\": \"/all\" } });\n      if (!isAdminIdentity(who)) return json({ ok: false, error: \"Access required\" }, 401);\n      if (p.startsWith(\"/all/maker/\")) return handleMaker(request, env, p, who);"
- },
- {
-  "name": "sw scope header wrong",
-  "file": "stmt/worker.js",
-  "find": "\"Service-Worker-Allowed\": \"/all\"",
-  "replace": "\"Service-Worker-Allowed\": \"/\""
- },
- {
-  "name": "sw served as application/javascript",
-  "file": "stmt/worker.js",
-  "find": "\"content-type\": \"text/javascript; charset=utf-8\"",
-  "replace": "\"content-type\": \"application/javascript; charset=utf-8\""
- },
- {
-  "name": "sw cached",
-  "file": "stmt/worker.js",
-  "find": "\"cache-control\": \"no-store\", \"Service-Worker-Allowed\"",
-  "replace": "\"cache-control\": \"public, max-age=3600\", \"Service-Worker-Allowed\""
- },
- {
-  "name": "sw answers POST",
-  "file": "stmt/worker.js",
-  "find": "if (m !== \"GET\" && m !== \"HEAD\") return json({ ok: false, error: \"method not allowed\" }, 405);\n        return new Response(ADMIN_SW_JS",
-  "replace": "if (false) return json({ ok: false, error: \"method not allowed\" }, 405);\n        return new Response(ADMIN_SW_JS"
- },
- {
-  "name": "a title changed",
-  "file": "stmt/admin-sw.js",
-  "find": "order: [\"New order\",",
-  "replace": "order: [\"New orders\","
- },
- {
-  "name": "banner does not renotify",
-  "file": "stmt/admin-sw.js",
-  "find": "renotify: true,",
-  "replace": "renotify: false,"
- },
- {
-  "name": "tag drops the order",
-  "file": "stmt/admin-sw.js",
-  "find": "(o ? '-' + o : '')",
-  "replace": "''"
- },
- {
-  "name": "tag is one for all",
-  "file": "stmt/admin-sw.js",
-  "find": "tag: k ? 'admin-' + k + (o ? '-' + o : '') : 'admin-update'",
-  "replace": "tag: 'admin-update'"
- },
- {
-  "name": "unknown kind has no words",
-  "file": "stmt/admin-sw.js",
-  "find": "Object.prototype.hasOwnProperty.call(NEWS, n.k) ? n.k : ''",
-  "replace": "n && typeof n.k === 'string' ? n.k : ''"
- },
- {
-  "name": "fallback words changed",
-  "file": "stmt/admin-sw.js",
-  "find": "export const ADMIN_FALLBACK = [\"Something needs you\",",
-  "replace": "export const ADMIN_FALLBACK = [\"Something needs you now\","
- },
- {
-  "name": "name rides in the body",
-  "file": "stmt/admin-sw.js",
-  "find": "body: w[1],",
-  "replace": "body: w[1] + (n && n.name || ''),"
- },
- {
-  "name": "payments tap lands on Orders",
-  "file": "stmt/admin-sw.js",
-  "find": "\"Check it arrived, then press Received or Not found.\", \"#orders/payments\"]",
-  "replace": "\"Check it arrived, then press Received or Not found.\", \"#orders\"]"
- },
- {
-  "name": "tap focuses the test surface",
-  "file": "stmt/admin-sw.js",
-  "find": "(path === '/all' || path === '/all/')",
-  "replace": "path.indexOf('/all') === 0"
- },
- {
-  "name": "tap does not say where",
-  "file": "stmt/admin-sw.js",
-  "find": "c.postMessage({ salt: 'admin', hash: hash })",
-  "replace": "c.postMessage({ salt: 'admin', hash: '' })"
- },
- {
-  "name": "tap opens /all bare",
-  "file": "stmt/admin-sw.js",
-  "find": "openWindow('/all' + hash)",
-  "replace": "openWindow('/all')"
- },
- {
-  "name": "bell asks on opening",
-  "file": "stmt/owner.js",
-  "find": "    alertRead();\n    try{",
-  "replace": "    alertRead(); alertTurnOn();\n    try{"
- },
- {
-  "name": "bell act renamed",
-  "file": "stmt/page.js",
-  "find": "data-act=\"alerts.on\">Turn on",
-  "replace": "data-act=\"alerts.start\">Turn on"
- },
- {
-  "name": "worker registered at no scope",
-  "file": "stmt/owner.js",
-  "find": "register('/all/sw.js',{scope:'/all'})",
-  "replace": "register('/all/sw.js')"
- },
- {
-  "name": "subscribes not user visible",
-  "file": "stmt/owner.js",
-  "find": "userVisibleOnly:true,",
-  "replace": "userVisibleOnly:false,"
- },
- {
-  "name": "files no auth key",
-  "file": "stmt/owner.js",
-  "find": "keys:{p256dh:j.keys.p256dh, auth:j.keys.auth}",
-  "replace": "keys:{p256dh:j.keys.p256dh}"
- },
- {
-  "name": "bell never says On",
-  "file": "stmt/owner.js",
-  "find": "alertPaint(true,'Salt Admin rings this phone for what waits on your decision.');",
-  "replace": "alertPaint(false,'Salt Admin rings this phone for what waits on your decision.');"
- },
- {
-  "name": "turn off keeps the subscription",
-  "file": "stmt/owner.js",
-  "find": "await refs('/all/push/unsubscribe',{endpoint:sub.endpoint}); await sub.unsubscribe();",
-  "replace": "await refs('/all/push/unsubscribe',{endpoint:sub.endpoint});"
- },
- {
-  "name": "denied still registers",
-  "file": "stmt/owner.js",
-  "find": "if(perm!=='granted'){",
-  "replace": "if(false){"
- },
- {
-  "name": "opening never says On",
-  "file": "stmt/owner.js",
-  "find": "await alertFile(sub);\n      alertPaint(true);",
-  "replace": "await alertFile(sub);"
- },
- {
-  "name": "root registration taken for Admin",
-  "file": "stmt/owner.js",
-  "find": "return !!reg&&new URL(reg.scope).pathname==='/all';",
-  "replace": "return !!reg;"
- },
- {
-  "name": "banner message opens nothing",
-  "file": "stmt/owner.js",
-  "find": "if(at) showPlace(at.place, at.part, {fresh:true, push:true});",
-  "replace": "if(at){}"
- },
- {
-  "name": "unknown address opens Needs you",
-  "file": "stmt/owner.js",
-  "find": "var at=addrOf(d.hash);\n        if(at) showPlace",
-  "replace": "var at=addrOf(d.hash)||{place:'needs',part:''};\n        if(at) showPlace"
- },
- {
-  "name": "bell drawn on the test surface",
-  "file": "stmt/page.js",
-  "find": "(test ? \"\" : alertRow())",
-  "replace": "alertRow()"
- }
+ {"name":"desk key not checked","file":"stmt/worker.js","find":"if (!deskOk(request, env)) return json({ ok: false, error: \"desk key required\" }, 401);","replace":"if (false) return json({ ok: false, error: \"desk key required\" }, 401);"},
+ {"name":"owner-wake answers GET","file":"stmt/worker.js","find":"if (p === \"/desk/owner-wake\") {\n    if (m !== \"POST\")","replace":"if (p === \"/desk/owner-wake\") {\n    if (false)"},
+ {"name":"owner-wake takes any kind","file":"stmt/worker.js","find":"!OWNER_KINDS.includes(b.k) || (b.o","replace":"false || (b.o"},
+ {"name":"owner-wake takes any order id","file":"stmt/worker.js","find":"(b.o !== undefined && !(typeof b.o === \"string\" && OWNER_ORDER_RE.test(b.o)))","replace":"false"},
+ {"name":"owner-wake route not listed","file":"stmt/worker.js","find":"p === \"/desk/bulletin\" || p === \"/desk/owner-wake\" ||","replace":"p === \"/desk/bulletin\" ||"},
+ {"name":"none answers one device","file":"stmt/push.js","find":"const none = { ok: true, devices: 0, sent: 0, failed: 0 };","replace":"const none = { ok: true, devices: 1, sent: 0, failed: 0 };"},
+ {"name":"subscribe outside the gate","file":"stmt/worker.js","find":"      if (!isAdminIdentity(who)) return json({ ok: false, error: \"Access required\" }, 401);\n      if (p.startsWith(\"/all/maker/\")) return handleMaker(request, env, p, who);","replace":"      if (p === \"/all/push/subscribe\" && m === \"POST\") { await env.STMT.put(\"opush:x\", \"{}\"); return json({ ok: true }); }\n      if (!isAdminIdentity(who)) return json({ ok: false, error: \"Access required\" }, 401);\n      if (p.startsWith(\"/all/maker/\")) return handleMaker(request, env, p, who);"},
+ {"name":"subscribe takes http","file":"stmt/worker.js","find":"!/^https:\\/\\/\\S+$/.test(ep)","replace":"!/^https?:\\/\\/\\S+$/.test(ep)"},
+ {"name":"subscribe takes any length","file":"stmt/worker.js","find":"ep.length > 1000 || ","replace":""},
+ {"name":"subscribe takes no keys","file":"stmt/worker.js","find":"if (!keys) return json({ ok: false, error: \"send the subscription's two keys\" }, 400);","replace":"if (false) return json({ ok: false, error: \"send the subscription's two keys\" }, 400);"},
+ {"name":"subscribe answers GET","file":"stmt/worker.js","find":"if (p === \"/all/push/subscribe\" || p === \"/all/push/unsubscribe\") {\n        if (m !== \"POST\")","replace":"if (p === \"/all/push/subscribe\" || p === \"/all/push/unsubscribe\") {\n        if (false)"},
+ {"name":"record drops the keys","file":"stmt/worker.js","find":"JSON.stringify({ endpoint: ep, keys, at: new Date().toISOString() })","replace":"JSON.stringify({ endpoint: ep, at: new Date().toISOString() })"},
+ {"name":"filed under push:","file":"stmt/worker.js","find":"await env.STMT.put(\"opush:\" + id,","replace":"await env.STMT.put(\"push:admin:\" + id,"},
+ {"name":"sent never counted","file":"stmt/push.js","find":"devices--; }\n      else if (r.ok || r.status === 201) sent++;","replace":"devices--; }\n      else if (false) sent++;"},
+ {"name":"payload carries a name","file":"stmt/push.js","find":"const text = JSON.stringify(o ? { k, o } : { k });","replace":"const text = JSON.stringify({ k, o, name: \"Zed Tester\" });"},
+ {"name":"topic is the whole hash","file":"stmt/push.js","find":"(o ? \"-\" + (await endpointId(o)).slice(0, 16) : \"\")","replace":"(o ? \"-\" + (await endpointId(o)) : \"\")"},
+ {"name":"bare topic carries a hash","file":"stmt/push.js","find":"(o ? \"-\" + (await endpointId(o)).slice(0, 16) : \"\")","replace":"(\"-\" + (await endpointId(o)).slice(0, 16))"},
+ {"name":"vapid key not sent","file":"stmt/push.js","find":"Authorization: `vapid t=${tokens.get(origin)}, k=${pub}` };\n      if (body) Object.assign(headers, { \"Content-Encoding\"","replace":"Authorization: `vapid t=${tokens.get(origin)}, k=x` };\n      if (body) Object.assign(headers, { \"Content-Encoding\""},
+ {"name":"gone endpoint kept","file":"stmt/push.js","find":"if (r.status === 404 || r.status === 410) { await env.STMT.delete(s.key); devices--; }","replace":"if (false) { await env.STMT.delete(s.key); devices--; }"},
+ {"name":"failed endpoint deleted","file":"stmt/push.js","find":"if (r.status === 404 || r.status === 410) { await env.STMT.delete(s.key); devices--; }","replace":"if (r.status >= 400) { await env.STMT.delete(s.key); devices--; }"},
+ {"name":"failure counted as sent","file":"stmt/push.js","find":"else failed++;\n    }\n    return { ok: true, devices, sent, failed };","replace":"else sent++;\n    }\n    return { ok: true, devices, sent, failed };"},
+ {"name":"customer listing reads every key","file":"stmt/push.js","find":"u ? \"push:\" + u + \":\" : \"push:\"","replace":"u ? \"push:\" + u + \":\" : \"\""},
+ {"name":"notice wakes Admin too","file":"stmt/push.js","find":"return wake(env, null, \"salt-notice\");","replace":"return wake(env, null, \"salt-notice\") && wakeOwner(env, { k: \"order\" });"},
+ {"name":"alerts count reads every key","file":"stmt/worker.js","find":"const page = await env.STMT.list({ prefix: \"push:\", cursor });","replace":"const page = await env.STMT.list({ prefix: \"\", cursor });"},
+ {"name":"unsubscribe keeps the record","file":"stmt/worker.js","find":"await env.STMT.delete(\"opush:\" + id); return json({ ok: true });","replace":"return json({ ok: true });"},
+ {"name":"a fixture move wakes Admin","file":"stmt/worker.js","find":"const r = isTest(u) ? await exampleSay(env, u, b) : await sayThread(env, u, b);","replace":"await wakeOwner(env, { k: \"said\" });\n    const r = isTest(u) ? await exampleSay(env, u, b) : await sayThread(env, u, b);"},
+ {"name":"sw outside the gate","file":"stmt/worker.js","find":"      if (!isAdminIdentity(who)) return json({ ok: false, error: \"Access required\" }, 401);\n      if (p.startsWith(\"/all/maker/\")) return handleMaker(request, env, p, who);","replace":"      if (p === \"/all/sw.js\") return new Response(ADMIN_SW_JS, { headers: { \"content-type\": \"text/javascript\", \"Service-Worker-Allowed\": \"/all\" } });\n      if (!isAdminIdentity(who)) return json({ ok: false, error: \"Access required\" }, 401);\n      if (p.startsWith(\"/all/maker/\")) return handleMaker(request, env, p, who);"},
+ {"name":"sw scope header wrong","file":"stmt/worker.js","find":"\"Service-Worker-Allowed\": \"/all\"","replace":"\"Service-Worker-Allowed\": \"/\""},
+ {"name":"sw served as application/javascript","file":"stmt/worker.js","find":"\"content-type\": \"text/javascript; charset=utf-8\"","replace":"\"content-type\": \"application/javascript; charset=utf-8\""},
+ {"name":"sw cached","file":"stmt/worker.js","find":"\"cache-control\": \"no-store\", \"Service-Worker-Allowed\"","replace":"\"cache-control\": \"public, max-age=3600\", \"Service-Worker-Allowed\""},
+ {"name":"sw answers POST","file":"stmt/worker.js","find":"if (m !== \"GET\" && m !== \"HEAD\") return json({ ok: false, error: \"method not allowed\" }, 405);\n        return new Response(ADMIN_SW_JS","replace":"if (false) return json({ ok: false, error: \"method not allowed\" }, 405);\n        return new Response(ADMIN_SW_JS"},
+ {"name":"a title changed","file":"stmt/admin-sw.js","find":"order: [\"New order\",","replace":"order: [\"New orders\","},
+ {"name":"banner does not renotify","file":"stmt/admin-sw.js","find":"renotify: true,","replace":"renotify: false,"},
+ {"name":"tag drops the order","file":"stmt/admin-sw.js","find":"(o ? '-' + o : '')","replace":"''"},
+ {"name":"tag is one for all","file":"stmt/admin-sw.js","find":"tag: k ? 'admin-' + k + (o ? '-' + o : '') : 'admin-update'","replace":"tag: 'admin-update'"},
+ {"name":"unknown kind has no words","file":"stmt/admin-sw.js","find":"Object.prototype.hasOwnProperty.call(NEWS, n.k) ? n.k : ''","replace":"n && typeof n.k === 'string' ? n.k : ''"},
+ {"name":"fallback words changed","file":"stmt/admin-sw.js","find":"export const ADMIN_FALLBACK = [\"Something needs you\",","replace":"export const ADMIN_FALLBACK = [\"Something needs you now\","},
+ {"name":"name rides in the body","file":"stmt/admin-sw.js","find":"body: w[1],","replace":"body: w[1] + (n && n.name || ''),"},
+ {"name":"payments tap lands on Orders","file":"stmt/admin-sw.js","find":"\"Check it arrived, then press Received or Not found.\", \"#orders/payments\"]","replace":"\"Check it arrived, then press Received or Not found.\", \"#orders\"]"},
+ {"name":"tap focuses the test surface","file":"stmt/admin-sw.js","find":"(path === '/all' || path === '/all/')","replace":"path.indexOf('/all') === 0"},
+ {"name":"tap does not say where","file":"stmt/admin-sw.js","find":"c.postMessage({ salt: 'admin', hash: hash })","replace":"c.postMessage({ salt: 'admin', hash: '' })"},
+ {"name":"tap opens /all bare","file":"stmt/admin-sw.js","find":"openWindow('/all' + hash)","replace":"openWindow('/all')"},
+ {"name":"bell asks on opening","file":"stmt/owner.js","find":"    alertRead();\n    try{","replace":"    alertRead(); alertTurnOn();\n    try{"},
+ {"name":"bell act renamed","file":"stmt/page.js","find":"data-act=\"alerts.on\" hidden>Turn on","replace":"data-act=\"alerts.start\" hidden>Turn on"},
+ {"name":"worker registered at no scope","file":"stmt/owner.js","find":"register('/all/sw.js',{scope:'/all'})","replace":"register('/all/sw.js')"},
+ {"name":"subscribes not user visible","file":"stmt/owner.js","find":"userVisibleOnly:true,","replace":"userVisibleOnly:false,"},
+ {"name":"files no auth key","file":"stmt/owner.js","find":"keys:{p256dh:j.keys.p256dh, auth:j.keys.auth}","replace":"keys:{p256dh:j.keys.p256dh}"},
+ {"name":"bell never says On","file":"stmt/owner.js","find":"alertPaint(true,'Salt Admin rings this phone for what waits on your decision.');","replace":"alertPaint(false,'Salt Admin rings this phone for what waits on your decision.');"},
+ {"name":"turn off keeps the subscription","file":"stmt/owner.js","find":"await refs('/all/push/unsubscribe',{endpoint:sub.endpoint}); await sub.unsubscribe();","replace":"await refs('/all/push/unsubscribe',{endpoint:sub.endpoint});"},
+ {"name":"denied still registers","file":"stmt/owner.js","find":"if(perm!=='granted'){","replace":"if(false){"},
+ {"name":"opening never says On","file":"stmt/owner.js","find":"await alertFile(sub);\n      alertPaint(true);","replace":"await alertFile(sub);"},
+ {"name":"root registration taken for Admin","file":"stmt/owner.js","find":"return !!reg&&new URL(reg.scope).pathname==='/all';","replace":"return !!reg;"},
+ {"name":"banner message opens nothing","file":"stmt/owner.js","find":"if(at) showPlace(at.place, at.part, {fresh:true, push:true});","replace":"if(at){}"},
+ {"name":"unknown address opens Needs you","file":"stmt/owner.js","find":"var at=addrOf(d.hash);\n        if(at) showPlace","replace":"var at=addrOf(d.hash)||{place:'needs',part:''};\n        if(at) showPlace"},
+ {"name":"bell drawn on the test surface","file":"stmt/page.js","find":"(test ? \"\" : alertRow())","replace":"alertRow()"},
+ {"name":"the switch only ever turns them on","file":"stmt/owner.js","find":"(alertSw.getAttribute('aria-checked')==='true'?alertTurnOff:alertTurnOn)();","replace":"alertTurnOn();"}
 ]

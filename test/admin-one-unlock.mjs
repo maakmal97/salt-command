@@ -72,7 +72,7 @@ export async function run({ ok, pageWork }) {
     p.claim = () => p.d.querySelector('[data-maker-card="claim:' + CLAIM + '"]');
     p.send = async (form, act) => { byAct(form, act).click(); await p.work.quiet(); };
     p.unlockFrom = async (button, pass) => { button.click(); byAct(p.d, "vault.passphrase").value = pass; byAct(p.d, "vault.open").click(); return p.work.quiet(); };
-    p.ask = (root) => (root ? byAct(root, "vault.unlock") : null) || p.d.getElementById("vaultOn");
+    p.ask = (root) => (root ? byAct(root, "vault.unlock") : null) || [...p.d.querySelectorAll('[data-act="vault.unlock"]')].find((b) => b.id !== "vaultOn");
     p.names = () => [...p.d.querySelectorAll(".maker-name")];
     p.nameless = (code) => [...p.d.querySelectorAll('[data-who="' + code + '"]')];
     p.gates = () => [...p.d.querySelectorAll("[data-vault-gate]")];
@@ -80,7 +80,8 @@ export async function run({ ok, pageWork }) {
     return p;
   };
   /* a field that asks for a password, other than the Sheet's one: a password input, or any control whose act says passphrase */
-  const ownFields = (d) => [...d.querySelectorAll("input")].filter((i) => (i.type === "password" && i.id !== "pw" && i.id !== "vaultPass")
+  /* 26 Oct 2026, his word: This device's row takes the password too (vaultInline), as a settings app does; no form does */
+  const ownFields = (d) => [...d.querySelectorAll("input")].filter((i) => (i.type === "password" && i.id !== "pw" && i.id !== "vaultPass" && i.id !== "vaultInline")
     || (/passphrase/.test(i.getAttribute("data-act") || "") && i.getAttribute("data-act") !== "vault.passphrase"));
 
   /* ---- ONE PAGE, FROM LOCKED TO SENT: the crypto, the storage and the wire watched throughout ---- */
@@ -99,7 +100,7 @@ export async function run({ ok, pageWork }) {
     "locked, a claim's slip says Locked and offers the one Unlock, with no field of its own, and asks the Counter for neither the key nor the slip: " + (card && card.textContent.slice(-120)));
   await p.tap("nav.record"); await p.tap("part.record.customers");
   const forms = { "Add ID": p.form("New customer"), "Amend ID": p.form("Change a name or place"), "Place on the map": p.form("Place on the map"), "An unsent entry": p.unsent() };
-  ok(ownFields(d).length === 0 && [...d.querySelectorAll("#roster input[type=password]")].length === 0 && d.querySelectorAll("#vaultSheet input[type=password]").length === 1
+  ok(ownFields(d).length === 0 && [...d.querySelectorAll("#roster input[type=password]")].filter((i) => i.id !== "vaultInline").length === 0 && d.querySelectorAll("#vaultSheet input[type=password]").length === 1
     && [...d.querySelectorAll('[data-act$=".passphrase"]')].map((c) => c.getAttribute("data-act")).join() === "vault.passphrase",
     "no form on the page asks for a passphrase of its own: the Sheet's is the only password field, and the only control whose act says passphrase");
   for (const [title, form] of Object.entries(forms)) {
@@ -289,15 +290,16 @@ export async function run({ ok, pageWork }) {
   await locked("a lapse", async (q) => { q.w.__owner("lapsed()"); });
   await locked("Lock", async (q) => { q.d.getElementById("vaultOff").click(); });
 
-  /* a lock closes a Sheet with a half-typed password in it, and clears the field */
+  /* a lock closes a Sheet with a half-typed password in it, and clears the field; This device's row is cleared the same way (26 Oct 2026) */
   const h = await open();
-  h.d.getElementById("vaultOn").click();
-  byAct(h.d, "vault.passphrase").value = "half-typed";
+  h.w.__owner("vaultAsk(null)");
+  byAct(h.d, "vault.passphrase").value = "half-typed"; h.d.getElementById("vaultInline").value = "half-typed";
   const sheetOpen = !h.d.getElementById("vaultSheet").hidden;
   Object.defineProperty(h.d, "hidden", { configurable: true, get: () => true });
   h.d.dispatchEvent(new h.w.Event("visibilitychange"));
-  ok(sheetOpen && h.d.getElementById("vaultSheet").hidden && h.d.getElementById("vaultScrim").hidden && h.d.getElementById("vaultPass").value === "" && h.d.getElementById("vaultSay").textContent === "",
-    "a page hidden while the Sheet is open closes it and clears the half-typed password");
+  ok(sheetOpen && h.d.getElementById("vaultSheet").hidden && h.d.getElementById("vaultScrim").hidden && h.d.getElementById("vaultPass").value === "" && h.d.getElementById("vaultSay").textContent === ""
+    && h.d.getElementById("vaultInline").value === "",
+    "a page hidden while the Sheet is open closes it and clears the half-typed password, and This device's row is cleared too");
   h.w.close();
 
   /* a vault with names and places but no slip key filed: the same unlock opens what there is, and the card says so */

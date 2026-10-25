@@ -92,8 +92,9 @@ export async function run({ ok, pageWork }) {
     ok(pills.every((x) => x[1]) && !!kinds && !kinds.classList.contains("salt-segment") && [...kinds.querySelectorAll("button")].every((b) => b.classList.contains("salt-nav__link"))
       && !!shopTabs && !shopTabs.classList.contains("salt-segment") && [...shopTabs.querySelectorAll("button")].every((b) => b.classList.contains("salt-nav__link")),
       "the stages and Orders' second strip stay strips of pills, and the kinds and Shop's parts are the Nav bar's tabs, never the slider: " + J(pills));
-    const al = d.querySelector("#lookRow .lookset");
-    ok(al && al.classList.contains("salt-segment") && seg(al).n === "2" && seg(al).on === "10", "Salt Admin's Look row is the same slider: " + J(seg(al)));
+    /* 26 Oct 2026, his word: Salt Admin's look is one Switch now, Tide on or off */
+    const al = d.querySelector("#lookRow .salt-switch");
+    ok(!!al && al.getAttribute("role") === "switch" && !d.querySelector("#lookRow .lookset"), "Salt Admin's Look row is a switch, not the slider");
     ok(errs.length === 0, "and his page drew without an error: " + J(errs.slice(0, 2)));
 
     /* ---- 6 ---- */

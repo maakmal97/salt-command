@@ -75,9 +75,10 @@ export function tile(root, label, value) {
    a form that used to take its own password field is now driven by calling this once, before it. */
 export async function unlockPage(win, work, pass) {
   const doc = win.document;
-  byAct(doc, "vault.unlock").click();
-  byAct(doc, "vault.passphrase").value = pass;
-  byAct(doc, "vault.open").click();
+  /* 26 Oct 2026: This device's Unlock reads the password typed in its own row; every other Unlock opens the Sheet */
+  const gate = [...doc.querySelectorAll('[data-act="vault.unlock"]')].find((b) => b.id !== "vaultOn");
+  if (gate) { gate.click(); byAct(doc, "vault.passphrase").value = pass; byAct(doc, "vault.open").click(); }
+  else { doc.getElementById("vaultInline").value = pass; doc.getElementById("vaultOn").click(); }
   return work.quiet();
 }
 

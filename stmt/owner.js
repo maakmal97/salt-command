@@ -1473,6 +1473,7 @@ export const OWNER_JS = `
     if(state) state.textContent=makerVault?'Open on this phone':'Locked';
     if(on) on.hidden=!!makerVault;
     if(off) off.hidden=!makerVault;
+    var inl=document.getElementById('vaultInline'); if(inl){ inl.hidden=!!makerVault; inl.value=''; }
     makerVaultPaint();
   }
   /* a name beside its code, wherever a code is drawn with data-who, until the lock; a code the vault has no name for shows alone. A redraw of the page is
@@ -1520,7 +1521,21 @@ export const OWNER_JS = `
       else if(!ev.shiftKey&&i===f.length-1){ ev.preventDefault(); f[0].focus(); }
     });
     /* Shop > This device holds the control that is always in reach: Unlock while shut, Lock while open */
-    document.getElementById('vaultOn').addEventListener('click',function(){ vaultAsk(this); });
+    /* 26 Oct 2026, his word: This device's Unlock reads the password typed in its own row; with nothing typed it puts the cursor there */
+    (function(){
+      var inl=document.getElementById('vaultInline'), go=document.getElementById('vaultOn'), note=document.getElementById('vaultNote');
+      var send=async function(){
+        if(vaultBusy) return;
+        var secret=inl?inl.value:''; if(inl) inl.value='';
+        if(!secret){ if(note) note.textContent='Enter the password.'; try{ inl.focus({preventScroll:true}); }catch(x){} return; }
+        vaultBusy=true; go.disabled=true; if(note) note.textContent='Opening.';
+        try{ if(await makerVaultUnlock(secret)&&note) note.textContent=''; }
+        catch(error){ if(note) refusal(note,error); }
+        finally{ secret=''; vaultBusy=false; go.disabled=false; }
+      };
+      go.addEventListener('click',send);
+      if(inl) inl.addEventListener('keydown',function(ev){ if(ev.key==='Enter'){ ev.preventDefault(); send(); } });
+    })();
     document.getElementById('vaultOff').addEventListener('click',function(){ makerVaultLock(); });
   }
   function makerClaimButton(parent,label,action,primary){
@@ -7236,7 +7251,9 @@ export const OWNER_JS = `
   function alertPaint(on, note){
     var st=document.getElementById('alertState'), a=document.getElementById('alertOn'), b=document.getElementById('alertOff'), n=document.getElementById('alertNote');
     if(!st||!a||!b) return;
-    st.textContent=on?'On':'Off'; a.hidden=on; b.hidden=!on; a.disabled=false; b.disabled=false;
+    st.textContent=on?'On':'Off'; a.hidden=true; b.hidden=true; a.disabled=false; b.disabled=false;
+    /* 26 Oct 2026, his word: the Switch shows it, coloured when on, and is free again once the answer is in */
+    var sw=document.getElementById('alertSwitch'); if(sw){ sw.setAttribute('aria-checked',String(!!on)); sw.disabled=false; }
     if(note&&n) n.textContent=note;
   }
   function alertKey(k){ var raw=atob(k.replace(/-/g,'+').replace(/_/g,'/')), out=new Uint8Array(raw.length); for(var i=0;i<raw.length;i++) out[i]=raw.charCodeAt(i); return out; }
@@ -7288,6 +7305,8 @@ export const OWNER_JS = `
   if(!TESTING&&document.getElementById('alertOn')){
     document.getElementById('alertOn').addEventListener('click', alertTurnOn);
     document.getElementById('alertOff').addEventListener('click', alertTurnOff);
+    var alertSw=document.getElementById('alertSwitch');
+    if(alertSw) alertSw.addEventListener('click', function(){ if(alertSw.disabled) return; alertSw.disabled=true; (alertSw.getAttribute('aria-checked')==='true'?alertTurnOff:alertTurnOn)(); });
     alertRead();
     try{
       if('serviceWorker' in navigator&&navigator.serviceWorker.addEventListener) navigator.serviceWorker.addEventListener('message', function(ev){

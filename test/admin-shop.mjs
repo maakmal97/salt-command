@@ -18,9 +18,9 @@
  *   P5.1  the practice accounts are a plain table, a username, what it shows and Open or None a row; the head counts the open
  *   P5.2  the password once; Open the test page, a pill to /all/test, only while all three are open; Make names the missing
  *   P5.3  Remove asks once on the Sheet: Keep them sends nothing, Remove sends the one removal
- *   P6.1  This device is a row each: the label, the state word leading its line, the control at the right
- *   P6.2  each row is a grid of the words and a 132px control, 48px tall
- *   P6.3  the notifications note stands on its own line under the rows
+ *   P6.1  This device is one list of settings: Tide theme and Notifications switches (Tide greyed while off), Names a password and Unlock
+ *   P6.2  Unlock with nothing typed asks in the row, opens no Sheet and reads nothing
+ *   P6.3  the Notifications switch takes the old road to turn them on; refused, it stays off and free, the line saying why
  *   P6.4  the customer's own Look row is drawn as it was
  *   P7.1  from 860px the open day stands in the pane beside the week, "No day open" until a tap, and none under its row
  *   P7.2  from 860px Shop takes the whole column, the pane 380px (420px from 1440px), the points beside Help, Notice in two columns
@@ -189,25 +189,33 @@ export async function run({ ok, pageWork }) {
     ok(sent() === 1 && JSON.stringify(all.posts.filter((x) => x.route === "/all/test")[0].body) === JSON.stringify({ make: false }), "Remove sends the one removal");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { all.w.close(); }
 
-  /* P6: this device */
+  /* P6: this device, a list of settings (his word of 26 Oct 2026: "like settings on an iPhone") */
   const dv = await open();
   try {
     await dv.tap("nav.shop"); await dv.tap("part.shop.device");
-    const sec = dv.d.getElementById("oLook"), rowsD = [...sec.querySelectorAll(".salt-ledger__row")];
-    const read = (r) => t(r.querySelector(".salt-ledger__label")) + " | " + t(r.querySelector(".adev-line")) + " | " + [...r.querySelectorAll(".salt-ledger__value > button")].filter((b) => !b.hidden).map((b) => t(b) + ":" + (b.classList.contains("salt-pill") ? "pill" : "ghost")).join();
+    const sec = dv.d.getElementById("oLook"), list = sec.querySelector(".salt-settings"), rows = list ? [...list.querySelectorAll(".salt-settings__row")] : [];
     /* P6.1 */
-    ok(JSON.stringify(rowsD.map(read)) === JSON.stringify(["Look | Night. Tide is off for now. | Night:ghost,Tide:ghost", "Names and places | Locked. One password opens them. | Unlock:pill", "Notifications | Off. Rings for your decisions. | Turn on:pill"])
-      && dv.d.getElementById("oLookTitle").classList.contains("sr"),
-      "a row each, the label, the state word leading its line, the control at the right, Unlock and Turn on pills: " + rowsD.map(read).join(" / "));
+    ok(rows.length === 3 && JSON.stringify(rows.map((r) => t(r.querySelector(".salt-settings__label")))) === JSON.stringify(["Tide theme", "Names", "Notifications"]) && !sec.querySelector(".lead"),
+      "This device is one list of settings, Tide theme, Names and Notifications, with no lead: " + rows.map((r) => t(r.querySelector(".salt-settings__label"))).join());
+    const tide = rows[0].querySelector(".salt-switch"), bell = rows[2].querySelector(".salt-switch");
+    ok(!!tide && tide.getAttribute("role") === "switch" && tide.getAttribute("aria-checked") === "false" && tide.disabled
+      && !!bell && bell.getAttribute("role") === "switch" && bell.getAttribute("aria-checked") === "false" && !bell.disabled,
+      "Tide theme and Notifications are switches, off; Tide greyed while it is off");
+    const pw = rows[1].querySelector("input"), go = byAct(rows[1], "vault.unlock");
+    ok(!!pw && pw.type === "password" && pw.getAttribute("autocomplete") === "off" && pw.id === "vaultInline" && !!go && go.classList.contains("salt-pill") && t(go) === "Unlock" && byAct(rows[1], "vault.lock").hidden,
+      "Names is a password typed in its own row and Unlock beside it");
+    ok(dv.d.getElementById("alertNote").textContent === "" && dv.d.getElementById("vaultNote").textContent === "", "and no line of words stands under the list until there is something to say");
     /* P6.2 */
-    const css = [...dv.d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
-    ok(css.includes(".adm #oLook .salt-ledger__row{display:grid;grid-template-columns:minmax(0,1fr) 132px;") && css.includes(".adm #oLook .salt-ledger__line{display:contents}")
-      && css.includes(".adm #oLook .salt-ledger__value>button{box-sizing:border-box;width:132px;height:48px;"),
-      "each row is a grid of the words and a 132px control, 48px tall");
+    const reads = dv.wire.filter((w) => String(w).startsWith("/all/maker/vault")).length;
+    go.click(); await dv.work.quiet();
+    ok(t(dv.d.getElementById("vaultNote")) === "Enter the password." && dv.d.getElementById("vaultSheet").hidden && dv.wire.filter((w) => String(w).startsWith("/all/maker/vault")).length === reads,
+      "Unlock with nothing typed asks for the password in the row, opens no Sheet and reads nothing");
     /* P6.3 */
-    const note = dv.d.getElementById("alertNote");
-    ok(!!note && !note.closest(".salt-ledger__row") && note.getAttribute("role") === "status" && t(note) === "Asked only when you tap.", "the notifications note stands on its own line under the rows, so a long answer reads whole");
+    bell.click(); await dv.work.quiet();
+    ok(/cannot take notifications/.test(t(dv.d.getElementById("alertNote"))) && bell.getAttribute("aria-checked") === "false" && !bell.disabled,
+      "the Notifications switch turns them on by the same road as before; refused, it stays off, free, and the line says why");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { dv.w.close(); }
+
   /* P7: from 860px, the open day beside the week (the page's width read as Needs you's pane reads it) */
   const wideMq = (win) => { win.matchMedia = (mq) => ({ matches: /min-width:\s*860px/.test(mq) && !/max-width/.test(mq), media: mq, addEventListener() {}, removeEventListener() {}, addListener() {} }); };
   const wd = await open({ before: wideMq });
@@ -250,5 +258,5 @@ export async function run({ ok, pageWork }) {
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { tb.w.close(); }
   /* P6.4: the customer's own Look row is drawn as it was */
   const cust = landingPage("0000-0000", "n", null, null);
-  ok(/<div id="lookRow"/.test(cust) && !cust.includes("salt-ledger__flag adev-line"), "the customer's Look row carries none of Salt Admin's line");
+  ok(cust.includes('<div id="lookRow" class="salt-ledger salt-ledger--plain">') && !cust.includes('class="salt-switch"'), "the customer's Look row is drawn as it was, the slider, with no switch");
 }

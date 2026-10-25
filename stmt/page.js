@@ -788,16 +788,12 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .atest-pwv{font-family:var(--salt-font-mono)}
 .adm .atest-acts{display:flex;flex-direction:column;gap:8px;margin:8px 0 0}
 .adm .atest-acts>a,.adm .atest-acts>button{box-sizing:border-box;width:100%;height:48px;min-height:48px;padding:0 16px;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-/* 25 Oct 2026 (his Shop canvas): This device, a row each of one height: the label, the state word leading its line, the control at the right */
-.adm #oLook .salt-ledger__row{display:grid;grid-template-columns:minmax(0,1fr) 132px;grid-template-rows:auto auto;column-gap:12px;row-gap:6px;align-items:center;min-height:80px;box-sizing:border-box;padding:12px 0}
-.adm #oLook .salt-ledger__line{display:contents}
-.adm #oLook .salt-ledger__label{grid-column:1;grid-row:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.adm #oLook .salt-ledger__value{grid-column:2;grid-row:1/3;display:flex;justify-content:flex-end;margin:0}
-.adm #oLook .salt-ledger__value>button{box-sizing:border-box;width:132px;height:48px;min-height:48px;padding:0 8px;white-space:nowrap}
-.adm #oLook .salt-ledger__value.salt-segment{width:132px;box-sizing:border-box}
-.adm #oLook .adev-line{grid-column:1;grid-row:2;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.adm #oLook .adev-line b{color:var(--salt-salt)}
-.adm #oLook .adev-note{margin:4px 0 0}
+/* 26 Oct 2026, his word: This device is the system's Settings list; the row's field and its one button */
+.adm #vaultInline{flex:1 1 140px;min-width:0;max-width:200px;min-height:44px;box-sizing:border-box}
+.adm #vaultH{flex:none}
+.adm #oLook .adev-go{flex:none;width:96px;height:44px;min-height:44px;padding:0 8px;box-sizing:border-box;white-space:nowrap}
+.adm #oLook .adev-note{margin:8px 4px 0}
+.adm #oLook .adev-note:empty{display:none}
 /* 25 Oct 2026 (his Shop canvas): WIDE. Below 860px one column as drawn; from 860px Shop takes the whole column: the glance in one row, the open
    day in a pane beside the week (380px, 420px from 1440px), the points beside Help, Notice's two parts and Practice's actions a column each */
 .adm .hpane{display:none}
@@ -1707,6 +1703,9 @@ function thisDevice() {
 /* 11 Oct 2026, HIS WORD: THE LOOK. Under Account, in This device, a customer changes Night or Tide for this device: two ghosts, the
    held one aria-pressed, applied at once with no reload. The page opens Tide until a device chooses (LOOK_HEAD). */
 function lookRow(owner) {
+  /* 26 Oct 2026, his word on This device ("like settings on an iPhone"): on his page the look is one Switch, Tide on or off, greyed while Tide is off */
+  if (owner) return '<div id="lookRow" class="salt-settings__row"><span class="salt-settings__label" id="lookH">Tide theme</span>'
+    + '<button type="button" class="salt-switch" role="switch" aria-checked="false" aria-labelledby="lookH" data-look="tide" disabled data-act="look.tide"></button></div>';
   /* 11 Oct 2026: Salt Admin draws the same row in Shop, This device, and its controls carry the acts the owner's page names every
      control by (docs/STATEMENTS.md); the customer's row is drawn as it was, with none */
   const act = (a) => (owner ? ' data-act="' + a + '"' : "");
@@ -1720,24 +1719,23 @@ function lookRow(owner) {
 /* 12 Oct 2026 (PHASE 4b, his decision 3 of 11 Oct): THE ONE UNLOCK of Salt Admin, owner only. Shop > This device holds its state and its Unlock or Lock; the Sheet is
    the one field (stmt/owner.js, makerVaultUnlock), opened from here and from every place that says Locked. The field is never in a form and never remembered. */
 function vaultRow() {
-  /* 25 Oct 2026 (his Shop canvas): the label, then the state word leading its line, the control at the right */
-  return '<div id="vaultRow" class="salt-ledger salt-ledger--plain"><div class="salt-ledger__row"><div class="salt-ledger__line">'
-    + '<span class="salt-ledger__label" id="vaultH">Names and places</span>'
-    + '<span class="salt-ledger__value lookset" role="group" aria-labelledby="vaultH">'
-    + '<button type="button" class="salt-pill salt-pill--sm" id="vaultOn" data-act="vault.unlock">Unlock</button>'
-    + '<button type="button" class="salt-ghost" id="vaultOff" data-act="vault.lock" hidden>Lock</button></span></div>'
-    + '<span class="salt-ledger__flag adev-line"><b id="vaultState" role="status">Locked</b>. One password opens them.</span></div></div>';
+  /* 26 Oct 2026, his word on This device: the password typed in the row itself and Unlock beside it, as a settings app has it; once open, Lock.
+     The field is in no form and never remembered, and is emptied on every tap; elsewhere on his page Unlock still opens the one Sheet */
+  return '<div id="vaultRow" class="salt-settings__row"><span class="salt-settings__label" id="vaultH">Names</span>'
+    + '<span id="vaultState" class="sr" role="status">Locked</span>'
+    + '<input type="password" class="fld salt-field__input" id="vaultInline" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Password" aria-labelledby="vaultH" data-act="vault.password">'
+    + '<button type="button" class="salt-pill salt-pill--sm adev-go" id="vaultOn" data-act="vault.unlock">Unlock</button>'
+    + '<button type="button" class="salt-ghost adev-go" id="vaultOff" data-act="vault.lock" hidden>Lock</button></div>';
 }
 /* 19 Oct 2026 (docs/plan-notifications.html section 3): SALT ADMIN'S OWN NOTIFICATIONS, owner only, Shop > This device. A tap turns them on (the
    browser's question is asked from that tap alone) and a second control turns them off; the state is what this phone holds. Never on the test surface. */
 function alertRow() {
-  return '<div id="alertRow" class="salt-ledger salt-ledger--plain"><div class="salt-ledger__row"><div class="salt-ledger__line">'
-    + '<span class="salt-ledger__label" id="alertH">Notifications</span>'
-    + '<span class="salt-ledger__value lookset" role="group" aria-labelledby="alertH">'
-    + '<button type="button" class="salt-pill salt-pill--sm" id="alertOn" data-act="alerts.on">Turn on</button>'
-    + '<button type="button" class="salt-ghost" id="alertOff" data-act="alerts.off" hidden>Turn off</button></span></div>'
-    + '<span class="salt-ledger__flag adev-line"><b id="alertState" role="status">Off</b>. Rings for your decisions.</span></div></div>'
-    + '<p class="msg adev-note" id="alertNote" role="status">Asked only when you tap.</p>';
+  /* 26 Oct 2026, his word: one Switch, coloured when on; Turn on and Turn off stay, hidden, and the Switch presses the one that applies */
+  return '<div id="alertRow" class="salt-settings__row"><span class="salt-settings__label" id="alertH">Notifications</span>'
+    + '<span id="alertState" class="sr" role="status">Off</span>'
+    + '<button type="button" class="salt-switch" role="switch" aria-checked="false" aria-labelledby="alertH" id="alertSwitch" data-act="alerts.switch"></button>'
+    + '<button type="button" id="alertOn" data-act="alerts.on" hidden>Turn on</button>'
+    + '<button type="button" id="alertOff" data-act="alerts.off" hidden>Turn off</button></div>';
 }
 function vaultSheet() {
   return '<div id="vaultScrim" class="salt-sheet-scrim" hidden></div>'
@@ -2250,8 +2248,8 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         /* 11 Oct 2026, his word: Salt Admin has its own Night or Tide, chosen on this device (the Counter origin's localStorage salt-look,
            shared with the Counter's pages on this device and apart from the Desk's), the same row the customer has under Account > This device. The first-open Sheet is below, beside #aEnded. */
         + '<section id="oLook" data-in="shop.device" aria-labelledby="oLookTitle"><h2 id="oLookTitle" class="sr">This device</h2>'
-        + '<p class="lead">Night or Tide for Salt Admin on this device. Kept on this device; the Desk keeps its own.</p>'
-        + lookRow(true) + vaultRow() + (test ? "" : alertRow()) + "</section>"
+        + '<div class="salt-settings adevice">' + lookRow(true) + vaultRow() + (test ? "" : alertRow()) + "</div>"
+        + '<p class="msg adev-note" id="vaultNote" role="status"></p>' + (test ? "" : '<p class="msg adev-note" id="alertNote" role="status"></p>') + "</section>"
         + "</div></div>"
         + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div>'
         + '<nav class="salt-appbar" aria-label="Salt Admin">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("salt-appbar__item", (m, w, p) =>
@@ -3772,7 +3770,7 @@ const CLIENT_JS = `
   function lookStore(){ try{ var v=localStorage.getItem(LOOK_KEY); return v==='night'||v==='tide'?v:''; }catch(e){ return null; } }   /* '' nothing chosen, null unreadable */
   function lookMark(){
     if(!lookRow) return;
-    [].forEach.call(lookRow.querySelectorAll('[data-look]'),function(b){ b.setAttribute('aria-pressed',String(b.getAttribute('data-look')===lookNow())); });
+    [].forEach.call(lookRow.querySelectorAll('[data-look]'),function(b){ if(b.getAttribute('role')==='switch'){ b.setAttribute('aria-checked',String(lookNow()==='tide')); return; } b.setAttribute('aria-pressed',String(b.getAttribute('data-look')===lookNow())); });
     segSync(lookRow.querySelector('.lookset'));
   }
   function lookSet(t){
@@ -3795,7 +3793,7 @@ const CLIENT_JS = `
     lookScrim.hidden=false; lookSheetEl.hidden=false; behind();
     try{ lookSheetEl.focus(); }catch(e){}
   }
-  if(lookRow) lookRow.addEventListener('click',function(ev){ var t=ev.target.closest('[data-look]'); if(t) lookSet(t.getAttribute('data-look')); });
+  if(lookRow) lookRow.addEventListener('click',function(ev){ var t=ev.target.closest('[data-look]'); if(t) lookSet(t.getAttribute('role')==='switch'?(t.getAttribute('aria-checked')==='true'?'night':'tide'):t.getAttribute('data-look')); });
   if(lookSheetEl){
     lookSheetEl.addEventListener('click',function(ev){ var t=ev.target.closest('[data-look]'); if(t){ lookSet(t.getAttribute('data-look')); lookShut(); } });
     document.getElementById('lookX').addEventListener('click',lookShut);
