@@ -1210,6 +1210,14 @@ body.ended>*:not(#aEnded){display:none}
 /* 26 Oct 2026 (the Customers canvas, P5): the threads are Needs you's cards, their last line quiet beside the code; the open thread the system's Thread, its head
    the code and what they owe */
 .adm #makerChatList{display:flex;flex-direction:column;gap:16px}
+/* 26 Oct 2026 (the Customers canvas, P6): a link is Needs you's card, Opens over its count in the figure's place; its address, QR and moves under it */
+.adm #glist{display:flex;flex-direction:column;gap:16px}
+.adm .glinks{gap:10px}
+.adm .glinks .glink[hidden]{display:none}
+.adm .ncard .need-lead{flex:none;font-family:var(--salt-font-display)}
+.adm .ncard .nfig--opens{flex-direction:column;align-items:flex-end;justify-content:center;gap:4px}
+.adm .nfig__k{margin:0;line-height:1}
+.adm .ncard.off{opacity:.7}
 .adm #makerChatList .ngroup{gap:10px}
 .adm .ncard .need-line{font-family:var(--salt-font-display);font-size:var(--salt-text-sm)}
 .adm .chathead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-width:0}

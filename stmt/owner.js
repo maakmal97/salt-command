@@ -996,23 +996,34 @@ export const OWNER_JS = `
     if(standing.length){ heads[seq.length]='Standing link'; seq=seq.concat(standing); }
     if(assoc.length){ heads[seq.length]='Made by associates'; seq=seq.concat(assoc); }
     if(older.length){ heads[seq.length]='Older links'; seq=seq.concat(older); }
+    /* 26 OCT 2026 (canvas Salt Admin Customers, P6): A LINK IS NEEDS YOU'S CARD under Waiting on you, Standing link, Made by associates and Older links: its state
+       and its age (Waiting, Standing, Opened, Never opened, Declined, Withdrawn), who it is for in words (Made by or Via a code, the note alone), its one way
+       (Approve while it waits, Restore once withdrawn, else Copy) and how often it was opened, in the figure's place, left empty on a shut link. A tap on the
+       card opens its address, QR and every move under it; it stays open across a redraw, and opens at once for the answer to a move made on it. */
+    var group=null, gname=null, SEVOF={'Waiting on you':['now','copper'],'Standing link':['soon','brass'],'Made by associates':['soon','brass'],'Older links':['watch','mist']};
     seq.forEach(function(r,i){
-      if(heads[i]) glist.appendChild(el('p','ghead salt-eyebrow salt-eyebrow--copper',heads[i]));
-      var card=el('details','glink salt-glass-card salt-glass-card--radius-md'+(r.revoked?' off':'')); card.setAttribute('data-link',r.id);
-      /* 14 OCT 2026 (the layout rework): A LINK IS ONE ROW, who it is for and what it has done, its state a pill only when it is one worth seeing; the address, its
-         QR and the moves open from the row. A row stays open across a redraw once it has been opened, and opens at once for the answer to a move made on it. */
-      card.open=!!(openLinks[r.id]||(moved&&moved.id===r.id)||(linkSaid&&linkSaid.id===r.id));
-      card.addEventListener('toggle', function(){ if(card.open) openLinks[r.id]=true; else delete openLinks[r.id]; });
-      var declined=r.declined===true, pending=r.approved===false&&!declined;
-      var sum=el('summary','gsum'); actOn(sum,'link.open',r.id);
-      var top=el('span','gtop');
-      top.appendChild(el('span','gt salt-field__label',r.standing?'Standing link':(declined?'Not approved':(pending?'Waiting on you':(isAssoc(r)?'Follows '+codeByUser(r.by):(r.label||'Link'))))));
-      if(r.revoked) top.appendChild(chip('mist','Withdrawn'));
-      sum.appendChild(top);
-      sum.appendChild(el('span','gs', (r.opens
-        ? 'Opened '+r.opens+' time'+(r.opens===1?'':'s')+', last '+stampDay(r.last)
-        : 'Never opened, made '+stampDay(r.made))));
-      card.appendChild(sum);
+      if(heads[i]){ gname=heads[i]; group=el('section','ngroup glinks'); group.setAttribute('aria-label',heads[i]); group.appendChild(el('h2','salt-eyebrow salt-eyebrow--'+SEVOF[heads[i]][1]+' nsev ghead',heads[i])); glist.appendChild(group); }
+      var sev=SEVOF[gname][0];
+      var declined=r.declined===true, pending=r.approved===false&&!declined, shut=pending||declined;
+      var word=pending?'Waiting':declined?'Declined':r.revoked?'Withdrawn':r.standing?'Standing':r.opens?'Opened':'Never opened';
+      var age=pending?ageOf(r.made):r.opens?stampDay(r.last):stampDay(r.made);
+      var lead=r.standing?'':isAssoc(r)?(shut?'Made by ':'Via '):'', who=r.standing?'Set Price list':isAssoc(r)?codeByUser(r.by):(r.label||'Link');
+      var card=el('div','glink salt-glass-card salt-glass-card--radius-md'+(r.revoked?' off':'')); card.setAttribute('data-link',r.id);
+      card.open=!!(openLinks[r.id]||(moved&&moved.id===r.id)||(linkSaid&&linkSaid.id===r.id)); card.hidden=!card.open;
+      var c=needCard({sev:sev, kind:'links', word:word, key:'g:'+r.id, at:'', age:age, late:pending, who:who, title:who, rm:0, act:'link.open',
+        open:true, onTap:function(){ card.open=!card.open; card.hidden=!card.open; if(card.open) openLinks[r.id]=true; else delete openLinks[r.id]; c.setAttribute('aria-expanded',card.open?'true':'false'); }});
+      c.setAttribute('data-glink', r.id); c.setAttribute('aria-expanded',card.open?'true':'false');
+      var tw=c.querySelector('.need-who'); if(lead) tw.parentNode.insertBefore(el('span','need-lead',lead.trim()), tw);
+      if(r.revoked) c.classList.add('off');
+      var fig=c.querySelector('.nfig'); fig.textContent='';
+      if(!shut){ fig.classList.add('nfig--opens'); fig.appendChild(el('span','salt-eyebrow salt-eyebrow--mist nfig__k','Opens')); fig.appendChild(el('span','nfig__v',String(r.opens||0))); }
+      var go;
+      if(pending){ go=pill(['Approve','link.approve-card',r.id]); go.addEventListener('click', function(){ moveLink(r,'approve'); }); }
+      else if(r.revoked){ go=pill(['Restore','link.restore-card',r.id]); go.addEventListener('click', function(){ moveLink(r,'restore'); }); }
+      else { go=pill(['Copy','link.copy-card',r.id]); go.addEventListener('click', async function(){ try{ await navigator.clipboard.writeText(r.url); go.textContent='Copied'; }catch(e){ go.textContent='Not copied'; } setTimeout(function(){ go.textContent='Copy'; }, 1500); }); }
+      c._add(go);
+      c.addEventListener('click', function(ev){ if(ev.target===c) c.querySelector('.need-tap').click(); });
+      group.appendChild(c);
       card.appendChild(el('h4','gwho',r.standing?'For strangers, opens the Set Price list'
         :declined?('Made by '+(r.by?codeByUser(r.by):'an associate')+', not approved, so it stays shut')
         :(pending?('Made by '+(r.by?codeByUser(r.by):'an associate')+', shut until you approve it')
@@ -1051,7 +1062,7 @@ export const OWNER_JS = `
       card.appendChild(row);
       if(moved&&moved.id===r.id){ var mv=el('p','msg',moved.t); mv.setAttribute('role','status'); card.appendChild(mv); }
       if(linkSaid&&linkSaid.id===r.id){ var ls=el('p','msg'); ls.setAttribute('role','status'); saidOn(r, ls); card.appendChild(ls); }
-      glist.appendChild(card);
+      group.appendChild(card);
     });
   }
   /* S9 9.7, HIS D13: WHEN ACCESS LAPSES, SAY SO. A request under /all after the Access session has ended is

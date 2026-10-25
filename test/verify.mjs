@@ -50526,6 +50526,11 @@ await (async () => {
   await (await import("./admin-cust-chat.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Admin Customers P6: a guest link is Needs you's card, its QR and moves under it (26 Oct 2026)");
+await (async () => {
+  await (await import("./admin-cust-links.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");
 await (async () => {
   await (await import("./maker-queue-withdrawal.mjs")).run({ ok, worker, handleMaker });
