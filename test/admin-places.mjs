@@ -95,11 +95,12 @@ export async function run({ ok, pageWork }) {
     ok(strips.length === 5 && ["orders", "customers", "record", "shop"].every((m) => same(form(m), wantParts(m))),
       "Orders, Customers, Record and Shop each have their parts in order, each tab with its act: " + JSON.stringify(["orders", "customers", "record", "shop"].map(form)));
     /* 20 Oct 2026 (Counter Batch C): Record's three are the system's slider, the rest its tab pills */
-    const recipe = (s) => (s.getAttribute("data-place") === "record" ? ["salt-segment", "salt-segment__opt"] : ["salt-tabs", "salt-tabs__pill"]);
+    /* 25 Oct 2026 (Salt Admin Shop): Shop's four are the Nav bar's text tabs, as Needs you's kinds */
+    const recipe = (s) => (s.getAttribute("data-place") === "record" ? ["salt-segment", "salt-segment__opt"] : s.getAttribute("data-place") === "shop" ? ["salt-nav__links", "salt-nav__link"] : ["salt-tabs", "salt-tabs__pill"]);
     ok(strips.every((s) => s.classList.contains(recipe(s)[0]) && s.getAttribute("role") === "tablist" && s.getAttribute("aria-label")
       && [...s.querySelectorAll("button")].every((b) => b.classList.contains(recipe(s)[1]) && b.getAttribute("role") === "tab"))
       && !d.querySelector("#mHome .aparts"),
-    "a strip is the system's tabs or, for Record, its slider, a tablist of tabs, and Needs you has none");
+    "a strip is the system's tabs, or Record's slider, or Shop's Nav bar tabs, a tablist of tabs, and Needs you has none");
 
     /* 3. THE TABS FOLLOW HIM */
     ok(p.where() === "needs", "the page opens on Needs you: " + p.where());

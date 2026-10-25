@@ -22,6 +22,10 @@
  *   P6.2  each row is a grid of the words and a 132px control, 48px tall
  *   P6.3  the notifications note stands on its own line under the rows
  *   P6.4  the customer's own Look row is drawn as it was
+ *   P7.1  from 860px the open day stands in the pane beside the week, "No day open" until a tap, and none under its row
+ *   P7.2  from 860px Shop takes the whole column, the pane 380px (420px from 1440px), the points beside Help, Notice in two columns
+ *   P7.3  Up now and New notice each stand in a column of their own
+ *   P7.4  Shop's four parts are the Nav bar's text tabs; Collection points and Help head as the other sections
  * Drawn by the maker harness (test/maker-act.mjs). */
 import { richOwnerPage, byAct } from "./maker-act.mjs";
 import { landingPage } from "../stmt/page.js";
@@ -192,7 +196,7 @@ export async function run({ ok, pageWork }) {
     const sec = dv.d.getElementById("oLook"), rowsD = [...sec.querySelectorAll(".salt-ledger__row")];
     const read = (r) => t(r.querySelector(".salt-ledger__label")) + " | " + t(r.querySelector(".adev-line")) + " | " + [...r.querySelectorAll(".salt-ledger__value > button")].filter((b) => !b.hidden).map((b) => t(b) + ":" + (b.classList.contains("salt-pill") ? "pill" : "ghost")).join();
     /* P6.1 */
-    ok(JSON.stringify(rowsD.map(read)) === JSON.stringify(["Look | Night. Tide is off for now. | Night:ghost,Tide:ghost", "Names and places | Locked. One password; locks when hidden. | Unlock:pill", "Notifications | Off. Rings this phone for your decisions. | Turn on:pill"])
+    ok(JSON.stringify(rowsD.map(read)) === JSON.stringify(["Look | Night. Tide is off for now. | Night:ghost,Tide:ghost", "Names and places | Locked. One password opens them. | Unlock:pill", "Notifications | Off. Rings for your decisions. | Turn on:pill"])
       && dv.d.getElementById("oLookTitle").classList.contains("sr"),
       "a row each, the label, the state word leading its line, the control at the right, Unlock and Turn on pills: " + rowsD.map(read).join(" / "));
     /* P6.2 */
@@ -204,6 +208,46 @@ export async function run({ ok, pageWork }) {
     const note = dv.d.getElementById("alertNote");
     ok(!!note && !note.closest(".salt-ledger__row") && note.getAttribute("role") === "status" && t(note) === "Asked only when you tap.", "the notifications note stands on its own line under the rows, so a long answer reads whole");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { dv.w.close(); }
+  /* P7: from 860px, the open day beside the week (the page's width read as Needs you's pane reads it) */
+  const wideMq = (win) => { win.matchMedia = (mq) => ({ matches: /min-width:\s*860px/.test(mq) && !/max-width/.test(mq), media: mq, addEventListener() {}, removeEventListener() {}, addListener() {} }); };
+  const wd = await open({ before: wideMq });
+  try {
+    await wd.tap("nav.shop"); await wd.tap("part.shop.hours");
+    const pane = wd.d.getElementById("makerDayPane");
+    /* P7.1 */
+    ok(!!pane && !!pane.closest(".hsplit") && t(pane.querySelector("h3")) === "No day open" && !pane.querySelector(".maker-dayedit"), "wide, the pane beside the week says no day is open until one is tapped");
+    await wd.tap("hours.day", "Monday");
+    const box = pane.querySelector(".maker-dayedit");
+    ok(!!box && !wd.d.querySelector("#makerSchedule .maker-dayedit") && !!box.querySelector("#makerHoursPreview") && !!byAct(box, "hours.save", "Monday") && byAct(wd.d, "hours.day", "Monday").getAttribute("aria-expanded") === "true",
+      "a tapped day opens in the pane, its preview and Done with it, and none under its row");
+    await wd.tap("hours.day", "Monday");
+    ok(!pane.querySelector(".maker-dayedit") && t(pane.querySelector("h3")) === "No day open", "a second tap closes it again");
+    /* P7.2 */
+    const css = [...wd.d.querySelectorAll("style")].map((s) => s.textContent).join("\n"), at860 = css.slice(css.indexOf("/* 25 Oct 2026 (Salt Admin Shop): WIDE."));
+    ok(/@media \(min-width:860px\)\{[^@]*\.adm \.amain>#oShop\{max-width:none\}[^@]*\.adm \.hsplit\{display:grid;grid-template-columns:minmax\(0,1fr\) 380px/.test(at860)
+      && /\.adm \.hpair\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)/.test(at860) && /\.adm #makerBulletin\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)/.test(at860)
+      && /@media \(min-width:1440px\)\{\.adm \.hsplit\{grid-template-columns:minmax\(0,1fr\) 420px\}\}/.test(at860) && /\.adm \.hpane\{display:none\}/.test(at860),
+      "from 860px Shop takes the whole column, the day's pane 380px (420px from 1440px), the points beside Help and Notice in two columns; below it no pane");
+    const pair = wd.d.querySelector(".hpair");
+    ok(!!pair && !!pair.querySelector("#makerPoints") && !!pair.querySelector("#mHelp"), "the points and Help share one row");
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { wd.w.close(); }
+  /* P7.3: the notice's two parts, a column each */
+  const nb = await open({ before: wideMq });
+  try {
+    await nb.tap("nav.shop"); await nb.tap("part.shop.notice");
+    const cols = [...nb.d.querySelectorAll("#makerBulletin > .anotice-col")];
+    ok(cols.length === 2 && [...cols[0].querySelectorAll("h3")].map(t).join() === "Up now" && [...cols[1].querySelectorAll("h3")].map(t).join() === "New notice" && !!cols[0].querySelector("#makerBulletinUp") && !!byAct(cols[1], "notice.text") && !!byAct(cols[1], "notice.set"), "Up now and New notice each stand in a column of their own");
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { nb.w.close(); }
+  /* P7.4: Shop's parts are a text tab row, and every part's sections head as one */
+  const tb = await open();
+  try {
+    await tb.tap("nav.shop"); await tb.tap("part.shop.hours");
+    const strip = tb.d.querySelector('.aparts[data-place="shop"]'), tabs = strip ? [...strip.querySelectorAll("button")] : [];
+    ok(!!strip && strip.classList.contains("salt-nav__links") && !!strip.closest("nav.salt-nav") && tabs.length === 4 && tabs.every((b) => b.classList.contains("salt-nav__link") && b.classList.contains("nktab") && !b.classList.contains("salt-tabs__pill"))
+      && JSON.stringify(tabs.map((b) => t(b) + ":" + b.getAttribute("aria-selected"))) === JSON.stringify(["Hours:true", "Notice:false", "Practice:false", "This device:false"]),
+      "Shop's four parts are the Nav bar's text tabs, Hours chosen: " + tabs.map((b) => t(b) + ":" + b.getAttribute("aria-selected")).join());
+    ok(["makerPointsTitle", "mHelpH"].every((id) => tb.d.getElementById(id).classList.contains("salt-eyebrow")), "Collection points and Help head their sections as the others do");
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { tb.w.close(); }
   /* P6.4: the customer's own Look row is drawn as it was */
   const cust = landingPage("0000-0000", "n", null, null);
   ok(/<div id="lookRow"/.test(cust) && !cust.includes("salt-ledger__flag adev-line"), "the customer's Look row carries none of Salt Admin's line");

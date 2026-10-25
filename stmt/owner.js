@@ -1819,23 +1819,24 @@ export const OWNER_JS = `
     if(!text){
       /* 25 Oct 2026 (Salt Admin Shop): UP NOW, the notice as customers read it on the Counter's Notice recipe and every line numbered,
          then NEW NOTICE, the box, Set the notice across and Clear it beside Read it again; Set and Clear still ask on the Sheet */
+      var colA=el('div','anotice-col'), colB=el('div','anotice-col'); root.appendChild(colA); root.appendChild(colB);
       var upHead=el('div','anow-head'); upHead.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Up now'));
-      var upCount=chip('mist','None'); upCount.id='makerBulletinCount'; upHead.appendChild(upCount); root.appendChild(upHead);
+      var upCount=chip('mist','None'); upCount.id='makerBulletinCount'; upHead.appendChild(upCount); colA.appendChild(upHead);
       var upCard=el('div','salt-glass-card salt-glass-card--radius-lg anotice'); upCard.id='makerBulletinUp';
       var rec=el('div','salt-notice'), rhead=el('div','salt-notice__head'), dots=el('span','salt-notice__dots');
       rhead.appendChild(el('span','salt-eyebrow salt-eyebrow--brass','Notice')); dots.setAttribute('aria-hidden','true'); rhead.appendChild(dots); rec.appendChild(rhead);
       var lines=el('div','salt-notice__lines'); rec.appendChild(lines); upCard.appendChild(rec);
-      var current=el('ol','anotice-list');current.id='makerBulletinCurrent';current.setAttribute('aria-label','Every line');upCard.appendChild(current);root.appendChild(upCard);
-      var none=el('p','msg','No notice. Customers see none.'); none.id='makerBulletinNone'; root.appendChild(none);
-      var newHead=el('div','anow-head'); newHead.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','New notice')); newHead.appendChild(chip('brass','Notifies everyone')); root.appendChild(newHead);
+      var current=el('ol','anotice-list');current.id='makerBulletinCurrent';current.setAttribute('aria-label','Every line');upCard.appendChild(current);colA.appendChild(upCard);
+      var none=el('p','msg','No notice. Customers see none.'); none.id='makerBulletinNone'; colA.appendChild(none);
+      var newHead=el('div','anow-head'); newHead.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','New notice')); newHead.appendChild(chip('brass','Notifies everyone')); colB.appendChild(newHead);
       var label=el('label','maker-field');label.appendChild(el('span','lbl salt-field__label','One line each'));
       text=actOn(el('textarea','fld salt-field__input'),'notice.text');text.rows=4;label.appendChild(text);
-      label.appendChild(el('span','salt-field__hint','The lines show one at a time, in turn.'));root.appendChild(label);
-      var retained=el('div','');retained.hidden=true;root.appendChild(retained);
+      label.appendChild(el('span','salt-field__hint','The lines show one at a time, in turn.'));colB.appendChild(label);
+      var retained=el('div','');retained.hidden=true;colB.appendChild(retained);
       var set=el('button','btn salt-pill salt-pill--md anotice-set','Set the notice'), clear=el('button','salt-ghost','Clear it'),
         refresh=el('button','salt-ghost','Read it again'), busy=false, needsRead=false, intended=null, pair=el('div','ashop-two');
       [set,clear,refresh].forEach(function(button){button.type='button';});
-      root.appendChild(set); pair.appendChild(clear); pair.appendChild(refresh); root.appendChild(pair);
+      colB.appendChild(set); pair.appendChild(clear); pair.appendChild(refresh); colB.appendChild(pair);
       actOn(set,'notice.set');actOn(clear,'notice.clear');actOn(refresh,'notice.read');ynTag(set,'notice:set');ynTag(clear,'notice:clear');
       function state(){set.disabled=busy||needsRead;clear.disabled=busy||needsRead;refresh.disabled=busy;text.disabled=busy;}
       root.addEventListener('maker-notice-read',function(event){
@@ -5562,6 +5563,7 @@ export const OWNER_JS = `
   /* a redraw keeps the control in hand */
   function hrsFocus(act,key){ /* a key of null finds a control with none */ var root=document.getElementById('makerSchedule'), n=root&&[].filter.call(root.querySelectorAll('[data-act]'),function(x){ return x.getAttribute('data-act')===act&&x.getAttribute('data-key')===key; })[0]; if(n&&n.focus) n.focus(); }
   function hrsDraw(){ drawMakerHours(); hrsPreview(); }
+  try{ var hrsMq=window.matchMedia&&window.matchMedia('(min-width:860px)'); if(hrsMq&&hrsMq.addEventListener) hrsMq.addEventListener('change',function(){ if(makerHours&&placeNow==='shop') hrsDraw(); }); }catch(e){}
   function hrsEdit(key){
     var a=hrsDayOf(key), name=hrsIsDate(key)?key:HRS_NAMES[key], late=hrsAnyLate(a), box=el('div','maker-dayedit'), head=el('div','maker-dayedit-head');
     box.setAttribute('role','group'); box.setAttribute('aria-label',hrsName(key)+' hours');
@@ -5661,7 +5663,10 @@ export const OWNER_JS = `
     week.setAttribute('role','group'); week.setAttribute('aria-label','Weekly hours'); scale.setAttribute('aria-hidden','true');
     ['00','06','12','18','24'].forEach(function(t){ ticks.appendChild(el('span',null,t)); });
     scale.appendChild(el('span')); scale.appendChild(ticks); scale.appendChild(el('span')); week.appendChild(scale);
-    HRS_ORDER.forEach(function(i){ week.appendChild(hrsRow(i)); if(hrsEditing===i) week.appendChild(hrsEdit(i)); });
+    /* 25 Oct 2026 (Salt Admin Shop): from 860px the open day stands in the pane beside the week, as Needs you's open card does; the same editor */
+    var pane=document.getElementById('makerDayPane'), side=wide()&&!!pane, put=function(list,key){ var box=hrsEdit(key); if(side){ pane.appendChild(box); } else list.appendChild(box); };
+    if(pane){ pane.textContent=''; }
+    HRS_ORDER.forEach(function(i){ week.appendChild(hrsRow(i)); if(hrsEditing===i) put(week,i); });
     root.appendChild(week);
     var weekSaid=el('p','msg osaid'); weekSaid.id='makerHoursSaved'; weekSaid.setAttribute('role','status'); weekSaid.setAttribute('aria-live','polite'); root.appendChild(weekSaid);
     var keep=el('div','maker-dayedit-acts');
@@ -5679,7 +5684,8 @@ export const OWNER_JS = `
     dated.setAttribute('role','group'); dated.setAttribute('aria-label','Dates');
     var dhead=el('div','anow-head'); dhead.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Dates')); dhead.appendChild(chip('mist','Stand in for the weekday')); dated.appendChild(dhead);
     if(!keys.length) dated.appendChild(el('p','msg',"No dates set. A date stands in for its weekday: a holiday closed, or a special day's hours."));
-    keys.forEach(function(k){ dated.appendChild(hrsRow(k)); if(hrsEditing===k) dated.appendChild(hrsEdit(k)); });
+    keys.forEach(function(k){ dated.appendChild(hrsRow(k)); if(hrsEditing===k) put(dated,k); });
+    if(pane&&!pane.children.length){ pane.appendChild(el('h3','salt-eyebrow salt-eyebrow--mist','No day open')); pane.appendChild(el('p','msg','Tap a day or a date to change its hours.')); }
     var addRow=el('div','maker-dayedit-acts'), add=actOn(el('button','salt-ghost',hrsAdding?'Not now':'Add a date'),'hours.date-add'); add.type='button';
     add.addEventListener('click',function(){ hrsAdding=!hrsAdding; drawMakerHours(); hrsFocus(hrsAdding?'hours.date-pick':'hours.date-add',null); });
     addRow.appendChild(add);

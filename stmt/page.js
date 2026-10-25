@@ -762,16 +762,22 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .ashop-two>[data-act="hours.day-copy"]{grid-column:1/-1}
 .adm .ashop-pv{padding:12px 14px}
 .adm .ashop-pv .maker-preview{margin:0}
+.adm .ashop-pv:has(.maker-preview:empty){display:none}
+.adm .aparts--nav{display:grid;grid-template-columns:auto auto auto auto;justify-content:space-between;gap:0 4px;margin:0}
+.adm .aparts--nav .nktab{padding:0 8px;white-space:nowrap}
+@media (min-width:860px){.adm .aparts--nav{grid-template-columns:repeat(4,minmax(0,1fr));gap:0 16px}}
 /* 25 Oct 2026 (Salt Admin Shop): the points, a plain table; the code and place fields side by side, Add beside a line, Save across */
 .adm .apoints-card{padding:4px 8px;margin:0 0 12px}
 .adm .apoints{table-layout:fixed;width:100%;border-collapse:collapse}
-.adm .apoints th,.adm .apoints td{height:52px;padding:0 8px;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .apoints th,.adm .apoints td{height:52px;padding:0 8px;vertical-align:middle;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .apoints thead th{height:36px}
 .adm .apoints .apoints-code{width:64px;font-family:var(--salt-font-mono)}
 .adm .apoints .apoints-place{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
 .adm .apoints .apoints-x{width:60px;text-align:right}
 .adm .apoints .apoints-x .salt-ghost{width:44px;height:44px;min-width:44px;padding:0}
 .adm .apoints-add{display:grid;grid-template-columns:88px minmax(0,1fr);gap:8px;margin:0 0 8px}
+.adm .apoints-add>label{min-width:0}
+.adm .apoints-add input{box-sizing:border-box;width:100%;min-width:0}
 .adm .apoints-save{display:flex;margin:8px 0 0}
 /* 25 Oct 2026 (Salt Admin Shop): Practice, its table, the password once, the actions across */
 .adm #mTest{display:flex;flex-direction:column;gap:8px}
@@ -793,8 +799,30 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm #oLook .salt-ledger__value>button{box-sizing:border-box;width:132px;height:48px;min-height:48px;padding:0 8px;white-space:nowrap}
 .adm #oLook .salt-ledger__value.salt-segment{width:132px;box-sizing:border-box}
 .adm #oLook .adev-line{grid-column:1;grid-row:2;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.adm #oLook .adev-line b{color:var(--salt-salt);font-weight:600}
+.adm #oLook .adev-line b{color:var(--salt-salt)}
 .adm #oLook .adev-note{margin:4px 0 0}
+/* 25 Oct 2026 (Salt Admin Shop): WIDE. Below 860px one column as drawn; from 860px Shop takes the whole column: the glance in one row, the open
+   day in a pane beside the week (380px, 420px from 1440px), the points beside Help, Notice's two parts and Practice's actions a column each */
+.adm .hpane{display:none}
+.adm .anotice-col{display:flex;flex-direction:column;gap:12px;min-width:0}
+@media (min-width:860px){
+  .adm .amain>#oShop{max-width:none}
+  .adm #makerConfirm.shglance{grid-template-columns:1fr 1fr 3fr;gap:12px}
+  .adm #makerConfirm .shconfirm{grid-column:auto}
+  .adm #makerNow>.apair{display:flex;justify-content:flex-end;gap:8px}
+  .adm #makerNow>.apair>button{width:132px;flex:none}
+  .adm .hsplit{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:20px;align-items:start}
+  .adm .hpane{display:flex;flex-direction:column;gap:14px;position:sticky;top:24px;padding:20px;box-sizing:border-box;margin-top:calc(0.75rem * 1.4 + 10px)}
+  .adm .hpane .maker-dayedit{padding:0;background:none;border:0}
+  .adm .hpair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+  .adm .hpair>section{margin:0}
+  .adm #makerBulletin{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
+  .adm #mTest{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);column-gap:24px;row-gap:8px;align-items:start}
+  .adm #mTest>*{grid-column:1}
+  .adm #mTest>.atest-acts{grid-column:2;grid-row:1/span 5;margin:0}
+  .adm #oLook{max-width:560px}
+}
+@media (min-width:1440px){.adm .hsplit{grid-template-columns:minmax(0,1fr) 420px}}
 .adm .apoints-save>.salt-pill{flex:1 1 auto;box-sizing:border-box;height:48px;min-height:48px;padding:0 16px}
 .adm .maker-dayedit-times>button{min-height:44px;min-width:44px}
 .adm .maker-copy{display:flex;flex-wrap:wrap;gap:8px}
@@ -1567,7 +1595,7 @@ function keepPage() {
 function helpCard(owner) {
   const row = (k) => '<details class="ahelp__q"><summary class="ahelp__sum"' + (owner ? ' data-act="shop.help.' + k + '"' : "") + ">" + wt("span", 'class="ahelp__t"', "help." + k) + glyphSvg("next", 18) + "</summary>"
     + wt("p", 'class="ahelp__a"', "help." + k + "A") + "</details>";
-  const head = owner ? '<h2 id="mHelpH">Help</h2><p class="lead">What a customer reads under Account, Help. Read only.</p>'
+  const head = owner ? '<h2 id="mHelpH" class="salt-eyebrow salt-eyebrow--copper">Help</h2><p class="msg">What a customer reads under Account, Help. Read only.</p>'
     : wt("h2", 'class="salt-eyebrow salt-eyebrow--copper" id="helpH"', "help.h");
   return '<section id="' + (owner ? "mHelp" : "aHelp") + '" class="ahelp' + (owner ? "" : " salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm")
     + '" aria-labelledby="' + (owner ? "mHelpH" : "helpH") + '"' + (owner ? ' data-in="shop.hours"' : "") + ">"
@@ -1604,7 +1632,7 @@ function vaultRow() {
     + '<span class="salt-ledger__value lookset" role="group" aria-labelledby="vaultH">'
     + '<button type="button" class="salt-pill salt-pill--sm" id="vaultOn" data-act="vault.unlock">Unlock</button>'
     + '<button type="button" class="salt-ghost" id="vaultOff" data-act="vault.lock" hidden>Lock</button></span></div>'
-    + '<span class="salt-ledger__flag adev-line"><b id="vaultState" role="status">Locked</b>. One password; locks when hidden.</span></div></div>';
+    + '<span class="salt-ledger__flag adev-line"><b id="vaultState" role="status">Locked</b>. One password opens them.</span></div></div>';
 }
 /* 19 Oct 2026 (docs/plan-notifications.html section 3): SALT ADMIN'S OWN NOTIFICATIONS, owner only, Shop > This device. A tap turns them on (the
    browser's question is asked from that tap alone) and a second control turns them off; the state is what this phone holds. Never on the test surface. */
@@ -1614,7 +1642,7 @@ function alertRow() {
     + '<span class="salt-ledger__value lookset" role="group" aria-labelledby="alertH">'
     + '<button type="button" class="salt-pill salt-pill--sm" id="alertOn" data-act="alerts.on">Turn on</button>'
     + '<button type="button" class="salt-ghost" id="alertOff" data-act="alerts.off" hidden>Turn off</button></span></div>'
-    + '<span class="salt-ledger__flag adev-line"><b id="alertState" role="status">Off</b>. Rings this phone for your decisions.</span></div></div>'
+    + '<span class="salt-ledger__flag adev-line"><b id="alertState" role="status">Off</b>. Rings for your decisions.</span></div></div>'
     + '<p class="msg adev-note" id="alertNote" role="status">Asked only when you tap.</p>';
 }
 function vaultSheet() {
@@ -1884,6 +1912,11 @@ const adminParts = (p, test) => test && !TEST_PARTS[p] ? ""
   : p === "orders"
   ? adminStrip(p, ADMIN_PARTS[p].filter(([k]) => ADMIN_ORDER_STAGES.includes(k)), " salt-tabs--arrows aparts--stages", "Order stages")
     + adminStrip(p, ADMIN_PARTS[p].filter(([k]) => !ADMIN_ORDER_STAGES.includes(k) && (!test || TEST_PARTS[p].includes(k))), " aparts--minor", "Other orders")
+  /* 25 Oct 2026 (Salt Admin Shop): Shop's four parts are a text tab row on the nav recipe, as Needs you's kinds; the acts, ids and aria-selected as every strip's */
+  : p === "shop"
+  ? '<nav class="salt-nav nkinds" aria-label="Shop"><div class="salt-nav__links aparts aparts--nav" role="tablist" aria-label="Shop" data-place="shop">'
+    + ADMIN_PARTS[p].filter(([k]) => !test || TEST_PARTS[p].includes(k)).map(([k, w]) => '<button type="button" class="salt-nav__link nktab" role="tab" data-part="' + k + '" data-act="part.' + p + "." + k
+    + '" aria-selected="' + (k === ADMIN_PARTS[p][0][0] ? "true" : "false") + '">' + w + "</button>").join("") + "</div></nav>"
   : adminStrip(p, ADMIN_PARTS[p].filter(([k]) => !test || TEST_PARTS[p].includes(k)), "", ADMIN_PLACES.filter((x) => x[0] === p)[0][1]);
 /* PHASE 1b: Needs you's kind chips. They filter the one list and read nothing; each is a control with an act of its own, need.kind.<kind> */
 const ADMIN_KINDS = [["all", "All"], ["orders", "Orders"], ["payments", "Payments"], ["messages", "Messages"], ["rows", "Rows"], ["accounts", "Accounts"]];
@@ -2099,7 +2132,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         /* SHOP: the counter itself. The practice accounts are the two he opens to try the customer's page. */
         + '<div id="oShop" class="aplace" data-in="shop" hidden>'
         + '<h1 class="sr">Shop</h1>'
-        + '<p class="lead">The counter itself: its hours, the notice, the practice accounts and how this device looks.</p>'
+        + '<p class="sr">The counter itself: its hours, the notice, the practice accounts and how this device looks.</p>'
         + adminParts("shop", test)
         + '<div class="abody">'
         + '<section data-in="shop.hours" aria-labelledby="makerHoursTitle"><h2 id="makerHoursTitle" class="sr">Shop hours</h2>'
@@ -2107,12 +2140,12 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<section id="makerNowCard" class="salt-glass-card salt-glass-card--radius-lg anow" aria-label="For now"><div id="makerNow"><p class="lead" id="makerHoursStatus">Reading.</p></div>'
         + '<p id="makerHoursMessage" class="msg" role="status" aria-live="polite"></p></section>'
         + '<div id="makerConfirm" class="shglance" role="group" aria-label="At a glance"></div>'
-        + '<div id="makerSchedule"></div></section>'
-        + '<section data-in="shop.hours" aria-labelledby="makerPointsTitle"><h2 id="makerPointsTitle">Collection points</h2>'
-        + '<p class="lead" id="makerPointsStatus">Reading.</p>'
+        + '<div class="hsplit"><div id="makerSchedule"></div><aside id="makerDayPane" class="salt-glass-card salt-glass-card--radius-lg hpane" aria-label="The open day"></aside></div></section>'
+        + '<div class="hpair" data-in="shop.hours"><section data-in="shop.hours" aria-labelledby="makerPointsTitle"><h2 id="makerPointsTitle" class="salt-eyebrow salt-eyebrow--copper">Collection points</h2>'
+        + '<p class="msg" id="makerPointsStatus">Reading.</p>'
         + '<div id="makerPoints"></div><p id="makerPointsMessage" class="msg" role="status" aria-live="polite"></p></section>'
         /* 21 Oct 2026 (P8): the customer's Help, read only, under the hours and the points it speaks of */
-        + helpCard(true)
+        + helpCard(true) + '</div>'
         + '<section data-in="shop.notice" aria-labelledby="makerBulletinTitle"><h2 id="makerBulletinTitle" class="sr">Notice</h2>'
         + '<p class="lead">A line at the top of every customer account. Setting it also sends them a notification.</p>'
         + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></section>'
