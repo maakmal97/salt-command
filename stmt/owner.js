@@ -2071,6 +2071,7 @@ export const OWNER_JS = `
       function unsentOpen(u){ showPlace('record', retainedPart(u.path), {fresh:true, push:true}); }
       function unsentPaint(){
         try{
+          unsentParts();
           var bar=document.getElementById('unsentBar'); if(!bar) return;
           var list=unsentList(), n=list.length;
           bar.textContent=''; bar.hidden=!n;
@@ -2141,7 +2142,7 @@ export const OWNER_JS = `
      select it replaces did: .value is the tile chosen ('' when none is), .disabled is the fieldset's own and shuts every tile, the radios' change bubbles to it,
      and fill(items) draws the tiles again, keeping the choice while it is still offered, else the first tile (or none, when none is true). Each radio keeps the
      select's act, keyed by its value ('none' for the empty one) and, for a group drawn once for each book, by that book first. What a form sends is the value. */
-  var tileSeq=0;
+  var tileSeq=0, menuOffers=null;
   function makerTiles(label,items,none){
     var L=labOf(label), set=el('fieldset','salt-options maker-tiles'), grid=el('div','salt-options__grid'), name='tiles'+(++tileSeq), legend=el('legend','salt-options__legend salt-options__legend--label lbl',L[0]);
     if(L[3]){ legend.appendChild(document.createTextNode(' ')); legend.appendChild(bookMark(L[3])); }   /* a legend about a book ends in its mark: [words, act, key, book] */
@@ -2450,6 +2451,7 @@ export const OWNER_JS = `
           offerLists[kind].appendChild(row);
         });
         ['customer','reward'].forEach(function(k){ if(!offerLists[k].childElementCount) offerLists[k].appendChild(el('p','rnone','None to offer.')); });
+        menuOffers=read.offers.length; menuCount('offsets',menuOffers);
       }catch(error){refusal(offerStatus,error);}
     };
     offerLoad();
@@ -3247,7 +3249,19 @@ export const OWNER_JS = `
      stays on the menu, above the rows. */
   function formSlug(name){ return String(name).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
   var ENTRY_GROUPS=[['Everyday',['sale-or-purchase','repayment','stock-count']],['Now and then',['gift','loan','rewards','offsets']],['Fixing',['correct-a-row','reopen-a-cancelled-order']]];
-  function recordMenu(box,note){
+  /* 25 Oct 2026 (Record redesign P1, his canvas Salt Admin Record): a form's row says what the form is for in one line, and counts what it holds where the read that
+     drew it has the figure (the loans to repay, the rewards held, the cancelled orders that can come back; the offsets once their own read lands); a row with none is bare */
+  var FORM_WHAT={'sale-or-purchase':'Goods and delivery are entered separately.','repayment':'Part or all of a loan, paid back.','stock-count':'Units on the shelf, by book.',
+    'gift':'A gift leaves stock at cost.','loan':'Cash or goods lent or borrowed.','rewards':'Settles what they owe first, else goods.','offsets':'Units off an order they already have.',
+    'correct-a-row':'Restate, record what moved, or cancel.','reopen-a-cancelled-order':'Only if nothing was paid or handed over.',
+    'new-customer':'Name and place locked on this phone first.','make-an-associate':'Their name and place stay as they are.','change-a-name-or-place':'The code changes only with them.',
+    'place-on-the-map':'Keep the filed point, or file a new link.','their':'One customer off the Set Price, every book.','partner':'Pays the Floor on every book.',
+    'printed-sizes':'Sizes on the printed price list.','desk-reminders':'Hide a reminder for a while.'};
+  function menuCount(slug,n){
+    var row=document.querySelector('#makerMenu [data-act="record.form"][data-key="'+slug+'"] .mfig');
+    if(row) row.textContent=n>0?String(n):'';
+  }
+  function recordMenu(box,note,catalog){
     fOpen=null;
     var back=el('button','aback','← Entry'); back.type='button'; back.id='makerFormBack'; back.setAttribute('data-back','form'); back.setAttribute('data-formback','');
     back.setAttribute('data-in','record.entry record.customers record.pricing'); actOn(back,'record.form-back');
@@ -3263,10 +3277,15 @@ export const OWNER_JS = `
       if(form.hasAttribute('data-formmenu')) return;
       var name=form.querySelector('h3').textContent, slug=formSlug(name), part=form.getAttribute('data-in').replace('record.','');
       form.setAttribute('data-form',slug);
-      var row=el('button','salt-inbox-row formrow'), main=el('span','salt-inbox-row__main'), title=el('span','salt-inbox-row__title');
+      var row=el('button','salt-inbox-row formrow'), main=el('span','salt-inbox-row__main'), title=el('span','salt-inbox-row__title'), side=el('span','salt-inbox-row__side');
       row.type='button'; actOn(row,'record.form',slug);
       title.appendChild(el('span',null,name)); main.appendChild(title);
-      row.appendChild(main);
+      if(FORM_WHAT[slug]) main.appendChild(el('span','salt-inbox-row__what',FORM_WHAT[slug]));
+      side.appendChild(el('span','mfig'));
+      var go=document.createElementNS('http://www.w3.org/2000/svg','svg'); go.setAttribute('class','mgo'); go.setAttribute('viewBox','0 0 24 24'); go.setAttribute('aria-hidden','true');
+      go.setAttribute('fill','none'); go.setAttribute('stroke','currentColor'); go.setAttribute('stroke-width','2'); go.setAttribute('stroke-linecap','round'); go.setAttribute('stroke-linejoin','round');
+      var path=document.createElementNS('http://www.w3.org/2000/svg','path'); path.setAttribute('d','M9 6 L15 12 L9 18'); go.appendChild(path); side.appendChild(go);
+      row.appendChild(main); row.appendChild(side);
       row.addEventListener('click', function(){ openForm(slug); });
       if(part==='entry') entryRows[slug]=row; else lists[part].appendChild(row);
     });
@@ -3287,6 +3306,19 @@ export const OWNER_JS = `
       if(n.hasAttribute('data-formmenu')) list.appendChild(n); else if(n.hasAttribute('data-form')) pane.appendChild(n);
     });
     applyRepay(); applyAmend();
+    catalog=catalog||{};
+    menuCount('repayment',(catalog.loans||[]).length);
+    menuCount('rewards',(catalog.rewards||[]).filter(function(offer){ return offer.action; }).length);
+    menuCount('reopen-a-cancelled-order',(catalog.revivable||[]).filter(function(row){return !(row.paid>0.009)&&!(row.movedUnits>0.009);}).length);
+    if(menuOffers!=null) menuCount('offsets',menuOffers);
+    unsentParts();
+  }
+  /* the count beside a part's word is what waits unsent on this phone in that part */
+  function unsentParts(){
+    var n={};
+    try{ unsentList().forEach(function(u){ var p=retainedPart(u.path); n[p]=(n[p]||0)+1; }); }catch(e){}
+    [].forEach.call(document.querySelectorAll('.aparts[data-place="record"] [data-part]'),function(b){
+      var c=b.querySelector('.nktab__n'); if(c) c.textContent=n[b.getAttribute('data-part')]?String(n[b.getAttribute('data-part')]):''; });
   }
   function openForm(slug){
     var form=document.querySelector('#makerInputs [data-form="'+slug+'"]');
@@ -3296,7 +3328,7 @@ export const OWNER_JS = `
        page's scroll and the form stands beside it, so a tap on a low row only brings the pane into view */
     try{
       var back=document.getElementById('makerFormBack'), tab=document.querySelector('.aparts[data-place="record"] [data-part="'+partNow+'"]');
-      back.textContent='← '+(tab?tab.textContent:'Back'); back.focus();
+      back.textContent='← '+(tab?tab.firstChild.textContent:'Back'); back.focus();
       if(window.getComputedStyle(back).display!=='none') window.scrollTo(0,0);
       else { var pane=form.parentNode; if(pane&&pane.scrollIntoView) pane.scrollIntoView({block:'nearest'}); }
     }catch(x){}
@@ -3745,7 +3777,7 @@ export const OWNER_JS = `
         },true,function(){ tipAt=null; tipSignature=''; });
       }
       makerOtherInputs(box,catalog,refreshMakerTradeCatalog);
-      recordMenu(box,note);
+      recordMenu(box,note,catalog);
     }catch(error){ refusal(note,error); note.dataset.retry='true';
       makerButton(box,['Try again','record.retry'],function(){ while(box.children.length>1) box.lastChild.remove(); loadMakerInputs(); }); }
     finally{ sweep(); }

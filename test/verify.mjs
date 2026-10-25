@@ -48368,7 +48368,7 @@ await (async () => {
   await (await import("./counter-c-desk-slider.mjs")).run({ ok, master: process.env.SALT_MASTER || FROZEN_MASTER });
 })();
 
-section("Counter Batch C: the Counter's Look row, Orders tabs and Salt Admin's Record strip are the slider; the strips that do not fit a phone stay pills (P11)");
+section("Counter Batch C: the Counter's Look row and Orders tabs are the slider, Salt Admin's Record strip the Nav bar's tabs; the strips that do not fit a phone stay pills (P11)");
 await (async () => {
   await (await import("./counter-c-counter-slider.mjs")).run({ ok, pageWork });
 })();
@@ -50313,6 +50313,11 @@ await (async () => {
 section("22 Oct 2026: from 860px a Needs you card opens beside the list, the card in full over the order's or the account's own");
 await (async () => {
   await (await import("./admin-needs-pane.mjs")).run({ ok, pageWork });
+})();
+
+section("25 Oct 2026: Salt Admin Record, P1: the parts a text tab row with what waits unsent, each form a row with its line and its count");
+await (async () => {
+  await (await import("./admin-record-menu.mjs")).run({ ok, pageWork });
 })();
 
 

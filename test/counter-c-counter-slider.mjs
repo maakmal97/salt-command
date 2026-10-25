@@ -1,7 +1,7 @@
 /* test/counter-c-counter-slider.mjs: THE SLIDER ON THE COUNTER (Counter Batch C, P11, item 21; his word of 20 Oct 2026).
  *
  * The Counter's choices of two to six that fit a phone are the system's slider, .salt-segment: the Look row (the customer's and Salt
- * Admin's), the Orders tabs and Salt Admin's Record strip. Measured in Chromium at 358px, Customers' and Shop's four, the six kinds of
+ * Admin's) and the Orders tabs; Salt Admin's Record strip was one until 25 Oct 2026, when it became the Nav bar's text tabs (his Ask A). Measured in Chromium at 358px, Customers' and Shop's four, the six kinds of
  * Needs you and the months stay strips of pills, as do the stage arrows and Orders' second strip, which can stand with none chosen.
  * The page's style-src refuses a style attribute, so segSync sets --n and --i from the script in each handler that moves a choice.
  * Every check observes the page in jsdom or the stylesheet it carries; each was proved red by its own mutation
@@ -9,7 +9,7 @@
  *   1  the recipe is carried in SITE_RECIPES, with its 44px option, its reduced-motion rule and its greyed option
  *   2  the customer's Look row is a slider of two, Night chosen and marked, the thumb at it, Tide greyed and inert
  *   3  the Orders tabs are a slider of four with their counts, and a tap moves the thumb and aria-selected together
- *   4  Salt Admin's Record strip is a slider of three, the thumb following each part entered; a hidden option takes no column
+ *   4  Salt Admin's Record strip is the Nav bar's tabs, never the slider, the part entered selected
  *   5  the strips that do not fit stay pills: Customers, Shop, the stages, Orders' second strip, the kinds, the months
  *   6  no rule of the page lowers a slider's option under 44px */
 import { JSDOM, VirtualConsole } from "jsdom";
@@ -65,20 +65,18 @@ export async function run({ ok, pageWork }) {
     wins.push({ close: () => dom.window.close() });
     const d = dom.window.document;
     await work.quiet();
+    /* 25 Oct 2026 (Record redesign P1, his Ask A): Record's three left the slider for the Nav bar's text tabs (test/admin-record-menu.mjs) */
     const rec = d.querySelector('.aparts[data-place="record"]');
-    ok(rec && rec.classList.contains("salt-segment") && seg(rec).n === "3" && [...rec.querySelectorAll("button")].every((b) => b.classList.contains("salt-segment__opt")),
-      "Salt Admin's Record strip is a slider of three: " + J(seg(rec)));
+    const picked = () => [...rec.querySelectorAll("button")].map((b) => (b.getAttribute("aria-selected") === "true" ? 1 : 0)).join("");
+    ok(rec && !rec.classList.contains("salt-segment") && !rec.classList.contains("salt-tabs") && [...rec.querySelectorAll("button")].every((b) => b.classList.contains("salt-nav__link") && !b.classList.contains("salt-segment__opt")),
+      "Salt Admin's Record strip is the Nav bar's tabs, never the slider or pills: " + (rec && rec.className));
     const go = async (h) => { dom.window.location.hash = h; dom.window.dispatchEvent(new dom.window.HashChangeEvent("hashchange")); await work.quiet(); };
     await go("#record/pricing");
-    const g1 = seg(rec);
+    const g1 = picked();
     await go("#record/customers");
-    const g2 = seg(rec);
-    ok(g1.i === "2" && g1.on === "001" && g2.i === "1" && g2.on === "010", "and its thumb follows each part entered, Pricing then Customers: " + J([g1, g2]));
-    rec.querySelector('[data-part="entry"]').hidden = true;
-    await go("#record/pricing");
-    const g3 = seg(rec);
-    ok(g3.n === "2" && g3.i === "1", "an option hidden leaves the columns: two shown, the thumb on the second: " + J(g3));
-    rec.querySelector('[data-part="entry"]').hidden = false;
+    const g2 = picked();
+    ok(g1 === "001" && g2 === "010", "and the part entered is the tab selected, Pricing then Customers: " + J([g1, g2]));
+    /* a hidden option took no column on Record's slider alone; no slider hides an option now (segSync still skips one) */
     const pills = ['.aparts[data-place="customers"]', '.aparts[data-place="shop"]', ".aparts--stages", ".aparts--minor"].map((s) => {
       const g = d.querySelector(s); return [s, !!g && g.classList.contains("salt-tabs") && !g.classList.contains("salt-segment") && [...g.querySelectorAll("button")].every((b) => b.classList.contains("salt-tabs__pill"))]; });
     /* 22 Oct 2026 (canvas Needs you): Needs you's kinds left the pills for the Nav bar's text tabs (test/admin-ac-glance.mjs), so they are neither pills nor the slider */

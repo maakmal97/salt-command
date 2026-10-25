@@ -374,13 +374,13 @@
  {
   "name": "an open form does not take the focus",
   "file": "stmt/owner.js",
-  "find": "(tab?tab.textContent:'Back'); back.focus();",
-  "replace": "(tab?tab.textContent:'Back');"
+  "find": "(tab?tab.firstChild.textContent:'Back'); back.focus();",
+  "replace": "(tab?tab.firstChild.textContent:'Back');"
  },
  {
   "name": "the way back is not named for the part",
   "file": "stmt/owner.js",
-  "find": "back.textContent='← '+(tab?tab.textContent:'Back');",
+  "find": "back.textContent='← '+(tab?tab.firstChild.textContent:'Back');",
   "replace": "back.textContent='← Entry';"
  },
  {

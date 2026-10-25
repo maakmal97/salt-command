@@ -957,6 +957,17 @@ body.ended>*:not(#aEnded){display:none}
 .adm .formrow .salt-inbox-row__title{gap:6px}
 /* 14 OCT 2026 (Record): a form row is the tap, no Open word; a row to approve opens its detail by a tap on the card, its head the control; its figures stand on one grid so they align down the cards; an offset is a row of a code, its figure and one Add */
 .adm .formrow{min-height:44px}
+/* 25 Oct 2026 (Record redesign P1): the parts a text tab row of three, and a form's row one shape and one height: its name and one line in the display face, a count of
+   what it holds at the right where its read has one, then the way in; nothing on it wraps */
+.adm .rparts{margin:0 0 20px;padding:0;gap:0}
+.adm .rparts>.aparts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 16px;margin:0;flex:1 1 auto}
+.adm .formrow{box-sizing:border-box;height:68px;flex-wrap:nowrap;align-items:center}
+.adm .formrow .salt-inbox-row__main{flex:1 1 auto;min-width:0}
+.adm .formrow .salt-inbox-row__title>span,.adm .formrow .salt-inbox-row__what{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adm .formrow .salt-inbox-row__side{flex:none;flex-direction:row;align-items:center;gap:10px}
+.adm .formrow .mfig{font-family:var(--salt-font-mono);font-size:1.25rem;font-weight:500;font-variant-numeric:tabular-nums;color:var(--salt-salt)}
+.adm .formrow .mfig:empty{display:none}
+.adm .formrow .mgo{width:16px;height:16px;color:var(--salt-mist)}
 .adm .apphead{min-height:44px;align-items:center}
 .adm .aplink{min-height:44px;background:none;border:0;padding:0 4px;text-decoration:underline;color:var(--salt-brass)}
 .adm .apverb{margin:0}
@@ -1809,10 +1820,14 @@ const ADMIN_PARTS = {
 /* 20 Oct 2026 (Counter Batch C, item 21): a place whose parts fit a phone's slider draws them as one, measured in Chromium at 358px:
    Record's three. Customers' and Shop's four (Associates, This device) and the six kinds of Needs you do not fit equal columns there,
    and Orders' second strip shares its choice with the stages, so it can stand with none chosen; those stay a strip of pills. */
-const ADMIN_SLIDERS = ["record"];
-const adminStrip = (p, list, cls, label, seg = !cls && ADMIN_SLIDERS.includes(p)) => '<div class="' + (seg ? "salt-segment" : "salt-tabs") + ' aparts' + cls + '" role="tablist" aria-label="' + label + '" data-place="' + p + '">'
-  + list.map(([k, w]) => '<button type="button" class="' + (seg ? "salt-segment__opt" : "salt-tabs__pill") + '" role="tab" data-part="' + k + '" data-act="part.' + p + "." + k
-    + '" aria-selected="' + (k === ADMIN_PARTS[p][0][0] ? "true" : "false") + '">' + w + "</button>").join("") + "</div>";
+const ADMIN_SLIDERS = [];
+/* 25 Oct 2026 (Record redesign P1, his Ask A): Record's three parts are the system's Nav bar, a text tab row as Needs you's kinds, the part open underlined in
+   brass and the count of what waits unsent on this phone beside its word; no slider and no pills for what only filters the page */
+const ADMIN_NAVS = ["record"];
+const adminStrip = (p, list, cls, label, seg = !cls && ADMIN_SLIDERS.includes(p), nav = !cls && ADMIN_NAVS.includes(p)) => (nav ? '<nav class="salt-nav rparts" aria-label="' + label + '">' : "")
+  + '<div class="' + (nav ? "salt-nav__links" : seg ? "salt-segment" : "salt-tabs") + ' aparts' + cls + '" role="tablist" aria-label="' + label + '" data-place="' + p + '">'
+  + list.map(([k, w]) => '<button type="button" class="' + (nav ? "salt-nav__link nktab" : seg ? "salt-segment__opt" : "salt-tabs__pill") + '" role="tab" data-part="' + k + '" data-act="part.' + p + "." + k
+    + '" aria-selected="' + (k === ADMIN_PARTS[p][0][0] ? "true" : "false") + '">' + w + (nav ? '<span class="nktab__n"></span>' : "") + "</button>").join("") + "</div>" + (nav ? "</nav>" : "");
 /* 18 Oct 2026 (Salt Admin clarity, part 3): Orders draws its parts as two strips of one list. The six stages come first, in the order an order moves (a tab strip
    with each stage's count, since the Steps recipe is a drawing and not a row of controls); Approve, Payments, Group and Ledger stand apart beneath, smaller. Every part keeps
    its id, its act and its address, and PARTS is both strips together (stmt/owner.js), so only the drawing is split. */
