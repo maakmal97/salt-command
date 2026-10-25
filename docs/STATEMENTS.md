@@ -2921,6 +2921,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.repay.loan` | Record, repayment | The open loan. |
 | `record.repay.send` | Record, repayment | Sends the repayment for review. |
 | `record.retained.cancel` | Record, retained input | Cancels the retained request on this device. |
+| `record.retained.open` | Record, an unsent entry's card (key: its route's last word) | Opens or shuts the card: the sentence, the one unlock where it holds a name or place, Update and send and Discard. Sends nothing. |
 | `record.retained.retry` | Record, retained input | Sends the retained request unchanged. |
 | `record.retained.review` | Record, retained input | Starts a new request on the vault as it stands. |
 | `record.retry` | Record, when the Desk could not be read | Reads the inputs again. |

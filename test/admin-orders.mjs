@@ -27,7 +27,8 @@ const ROUTES = { review: "/all/maker/review", claims: "/all/maker/claims", threa
 const MENU = {
   entry: ["Sale or purchase", "Repayment", "Stock count", "Gift", "Loan", "Rewards", "Offsets", "Correct a row", "Reopen a cancelled order"],
   customers: ["New customer", "Make an associate", "Change a name or place", "Place on the map"],
-  pricing: ["Printed sizes", "Desk reminders"]   /* 26 Oct 2026: Their % and Partner moved to the account card; his Ask G orders the rest (25 Oct 2026) */\n};
+  pricing: ["Printed sizes", "Desk reminders"]   /* 26 Oct 2026: Their % and Partner moved to the account card; his Ask G orders the rest (25 Oct 2026) */
+};
 const order = (id, status, patch = {}) => ({ id, u: U1, product: "salt", delivery: 0, paid: 0, msgs: [], payments: [], history: [], mode: "collect", qty: 1, total: 100, status, ...patch });
 
 /* the busy day, with an age on each order, a practice order, a question on an agreed-and-ready order and one on a closed order */

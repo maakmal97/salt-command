@@ -42,7 +42,8 @@ const SHOWS = {
 const FORMS = {
   entry: ["Unsent entry", "Sale or purchase", "Repayment", "Stock count", "Gift", "Loan", "Rewards", "Offsets", "Correct a row", "Reopen a cancelled order"],
   customers: ["New customer", "Make an associate", "Change a name or place", "Place on the map"],
-  pricing: ["Printed sizes", "Desk reminders"]   /* Their % and Partner on the account card since 26 Oct 2026; his Ask G orders the rest */\n};
+  pricing: ["Printed sizes", "Desk reminders"]   /* Their % and Partner on the account card since 26 Oct 2026; his Ask G orders the rest */
+};
 /* what each entry reads, by route: the place on tapping its item, the part on tapping its tab */
 const ROUTES = { review: "/all/maker/review", claims: "/all/maker/claims", pools: "/all/maker/pools", inputs: "/all/maker/inputs", offsets: "/all/maker/offsets",
   hours: "/all/maker/hours", points: "/all/maker/points", ledger: "/all/maker/ledger", bulletin: "/all/maker/bulletin", threads: "/all/maker/threads", assoc: "/all/assoc" };
@@ -93,7 +94,14 @@ export async function run({ ok, pageWork }) {
     const wantParts = (place) => PARTS[place].map(([k, t]) => k + ":" + t + ":part." + place + "." + k);
     ok(strips.length === 5 && ["orders", "customers", "record", "shop"].every((m) => same(form(m), wantParts(m))),
       "Orders, Customers, Record and Shop each have their parts in order, each tab with its act: " + JSON.stringify(["orders", "customers", "record", "shop"].map(form)));
-    /* 20 Oct 2026 (Counter Batch C): Customers' parts are the system's slider (26 Oct 2026, the tight one); Record's three left it on 25 Oct 2026 (his Ask A) */\n    /* 25 Oct 2026 (Salt Admin Shop, Orders and Record): Shop's four, Orders' two rows and Record's three are the Nav bar's text tabs, as Needs you's kinds */\n    const recipe = (s) => (["customers"].includes(s.getAttribute("data-place")) ? ["salt-segment", "salt-segment__opt"] : ["shop", "orders", "record"].includes(s.getAttribute("data-place")) ? ["salt-nav__links", "salt-nav__link"] : ["salt-tabs", "salt-tabs__pill"]);\n    ok(strips.every((s) => s.classList.contains(recipe(s)[0]) && s.getAttribute("role") === "tablist" && s.getAttribute("aria-label")\n      && [...s.querySelectorAll("button")].every((b) => b.classList.contains(recipe(s)[1]) && b.getAttribute("role") === "tab"))\n      && !d.querySelector("#mHome .aparts"),\n    "a strip is the system's tabs, or Customers' slider, or Shop's, Orders' and Record's Nav bar tabs, a tablist of tabs, and Needs you has none");\n
+    /* 20 Oct 2026 (Counter Batch C): Customers' parts are the system's slider (26 Oct 2026, the tight one); Record's three left it on 25 Oct 2026 (his Ask A) */
+    /* 25 Oct 2026 (Salt Admin Shop, Orders and Record): Shop's four, Orders' two rows and Record's three are the Nav bar's text tabs, as Needs you's kinds */
+    const recipe = (s) => (["customers"].includes(s.getAttribute("data-place")) ? ["salt-segment", "salt-segment__opt"] : ["shop", "orders", "record"].includes(s.getAttribute("data-place")) ? ["salt-nav__links", "salt-nav__link"] : ["salt-tabs", "salt-tabs__pill"]);
+    ok(strips.every((s) => s.classList.contains(recipe(s)[0]) && s.getAttribute("role") === "tablist" && s.getAttribute("aria-label")
+      && [...s.querySelectorAll("button")].every((b) => b.classList.contains(recipe(s)[1]) && b.getAttribute("role") === "tab"))
+      && !d.querySelector("#mHome .aparts"),
+    "a strip is the system's tabs, or Customers' slider, or Shop's, Orders' and Record's Nav bar tabs, a tablist of tabs, and Needs you has none");
+
     /* 3. THE TABS FOLLOW HIM */
     ok(p.where() === "needs", "the page opens on Needs you: " + p.where());
     await p.tap("nav.orders");
