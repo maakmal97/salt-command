@@ -79,12 +79,14 @@ export async function run({ ok, pageWork }) {
     const g3 = seg(rec);
     ok(g3.n === "2" && g3.i === "1", "an option hidden leaves the columns: two shown, the thumb on the second: " + J(g3));
     rec.querySelector('[data-part="entry"]').hidden = false;
-    const pills = ['.aparts[data-place="customers"]', '.aparts[data-place="shop"]', ".aparts--stages", ".aparts--minor"].map((s) => {
+    const pills = ['.aparts[data-place="customers"]', '.aparts[data-place="shop"]'].map((s) => {
       const g = d.querySelector(s); return [s, !!g && g.classList.contains("salt-tabs") && !g.classList.contains("salt-segment") && [...g.querySelectorAll("button")].every((b) => b.classList.contains("salt-tabs__pill"))]; });
     /* 22 Oct 2026 (canvas Needs you): Needs you's kinds left the pills for the Nav bar's text tabs (test/admin-ac-glance.mjs), so they are neither pills nor the slider */
-    const kinds = d.querySelector(".nchips");
-    ok(pills.every((x) => x[1]) && !!kinds && !kinds.classList.contains("salt-segment") && [...kinds.querySelectorAll("button")].every((b) => b.classList.contains("salt-nav__link")),
-      "Customers, Shop, the stages and Orders' second strip stay strips of pills, and the kinds are the Nav bar's tabs, never the slider: " + J(pills));
+    /* 25 Oct 2026 (canvas Salt Admin Orders): Orders' stages and its second row are the Nav bar's text tabs too, never the slider */
+    const kinds = d.querySelector(".nchips"), orows = [".oparts--stages .aparts", ".oparts--minor .aparts"].map((s) => d.querySelector(s));
+    ok(pills.every((x) => x[1]) && !!kinds && !kinds.classList.contains("salt-segment") && [...kinds.querySelectorAll("button")].every((b) => b.classList.contains("salt-nav__link"))
+      && orows.every((g) => !!g && !g.classList.contains("salt-segment") && [...g.querySelectorAll("button")].every((b) => b.classList.contains("salt-nav__link"))),
+      "Customers and Shop stay strips of pills, and the kinds and Orders' two rows are the Nav bar's tabs, never the slider: " + J(pills));
     const al = d.querySelector("#lookRow .lookset");
     ok(al && al.classList.contains("salt-segment") && seg(al).n === "2" && seg(al).on === "10", "Salt Admin's Look row is the same slider: " + J(seg(al)));
     ok(errs.length === 0, "and his page drew without an error: " + J(errs.slice(0, 2)));

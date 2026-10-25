@@ -12,5 +12,6 @@
  {"name":"every place a slider","file":"stmt/page.js","find":"seg = !cls && ADMIN_SLIDERS.includes(p)) =>","replace":"seg = !cls) =>"},
  {"name":"the thumb does not follow a part","file":"stmt/owner.js","find":"    [].forEach.call(document.querySelectorAll('.aparts.salt-segment'),segSync);\n","replace":""},
  {"name":"a page rule lowers the Orders tab","file":"stmt/page.js","find":".otabs{margin:0 0 16px}","replace":".otabs{margin:0 0 16px}\n.otabs .salt-segment__opt{min-height:36px}"},
- {"name":"the months become a slider","file":"stmt/page.js","find":"'<div id=\"mfil\" class=\"salt-tabs mfil\"","replace":"'<div id=\"mfil\" class=\"salt-segment mfil\""}
+ {"name":"the months become a slider","file":"stmt/page.js","find":"'<div id=\"mfil\" class=\"salt-tabs mfil\"","replace":"'<div id=\"mfil\" class=\"salt-segment mfil\""},
+{"name": "Orders' rows become the slider", "file": "stmt/page.js", "find": "\"><div class=\"salt-nav__links aparts\" role=\"tablist\"", "replace": "\"><div class=\"salt-segment aparts\" role=\"tablist\""}
 ]
