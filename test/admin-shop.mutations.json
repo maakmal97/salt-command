@@ -30,5 +30,14 @@
  {"name":"an empty list still draws a table","file":"stmt/owner.js","find":"    if(list.length){\n      var tbl=","replace":"    if(true){\n      var tbl="},
  {"name":"the place has no example","file":"stmt/owner.js","find":"    where.placeholder='3.15214, 101.70312';\n","replace":""},
  {"name":"Add stands alone","file":"stmt/owner.js","find":"var addRow=el('div','apair'); addRow.appendChild(el('p','msg','Or paste a Maps link.')); root.appendChild(addRow);","replace":"var addRow=el('div','apoints-row'); root.appendChild(addRow);"},
- {"name":"Save is not in its own row","file":"stmt/owner.js","find":"var saveRow=el('div','apoints-save'); root.appendChild(saveRow);","replace":"var saveRow=root;"}
+ {"name":"Save is not in its own row","file":"stmt/owner.js","find":"var saveRow=el('div','apoints-save'); root.appendChild(saveRow);","replace":"var saveRow=root;"},
+ {"name":"Up now has no count","file":"stmt/owner.js","find":"if(n){ n.textContent=list.length?list.length+(list.length===1?' line':' lines')+' · every 6 s':'None'; }","replace":""},
+ {"name":"New notice does not say it notifies","file":"stmt/owner.js","find":"newHead.appendChild(chip('brass','Notifies everyone'));","replace":""},
+ {"name":"the recipe draws every line on","file":"stmt/owner.js","find":"lines.appendChild(el('p','salt-notice__line'+(i?'':' salt-notice__line--on'),l));","replace":"lines.appendChild(el('p','salt-notice__line salt-notice__line--on',l));"},
+ {"name":"no dot a line","file":"stmt/owner.js","find":"dots.appendChild(el('span','salt-notice__dot'+(i?'':' salt-notice__dot--on')));","replace":""},
+ {"name":"the lines are not listed","file":"stmt/owner.js","find":"cur.textContent=''; list.forEach(function(l){ cur.appendChild(el('li',null,l)); });","replace":"cur.textContent='';"},
+ {"name":"the card stays with nothing up","file":"stmt/owner.js","find":"card.hidden=!list.length; if(none) none.hidden=!!list.length;","replace":"card.hidden=false; if(none) none.hidden=true;"},
+ {"name":"Clear keeps its old words","file":"stmt/owner.js","find":"clear=el('button','salt-ghost','Clear it'),","replace":"clear=el('button','salt-ghost','Clear the notice'),"},
+ {"name":"Clear does not stand beside Read it again","file":"stmt/owner.js","find":"root.appendChild(set); pair.appendChild(clear); pair.appendChild(refresh); root.appendChild(pair);","replace":"root.appendChild(set); root.appendChild(clear); pair.appendChild(refresh); root.appendChild(pair);"},
+ {"name":"the box keeps its old label","file":"stmt/owner.js","find":"label.appendChild(el('span','lbl salt-field__label','One line each'));","replace":"label.appendChild(el('span','lbl salt-field__label','Notice (one line each)'));"}
 ]

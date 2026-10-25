@@ -782,6 +782,13 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-facts{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm)}
 .adm .maker-row{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--salt-text-sm)}
 .adm #makerBulletinCurrent{overflow-wrap:anywhere}
+/* 25 Oct 2026 (Salt Admin Shop): Up now, the Counter's Notice recipe and the numbered lines; New notice, Set across, the two ghosts beside */
+.adm #makerBulletin{display:flex;flex-direction:column;gap:12px}
+.adm .anotice{padding:16px;display:flex;flex-direction:column;gap:8px}
+.adm .anotice-list{margin:0;padding:0;list-style:none;counter-reset:nline}
+.adm .anotice-list li{counter-increment:nline;display:grid;grid-template-columns:28px minmax(0,1fr);align-items:baseline;padding:10px 0;border-top:1px solid var(--salt-line-faint)}
+.adm .anotice-list li::before{content:counter(nline);font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);color:var(--salt-brass)}
+.adm .anotice-set{box-sizing:border-box;width:100%;height:48px;min-height:48px;padding:0 16px}
 .adm .maker-slip{display:block;max-width:100%;height:auto}
 /* 12 OCT 2026 (PHASE 2b): THE CLAIM CARD. A waiting claim is a row of the system's Inbox row and the one opened is its card under it. Its slip is a thumbnail
    that is itself the control (44px at least both ways), enlarged in place by a tap and shrunk by the next */
@@ -2082,7 +2089,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div id="makerPoints"></div><p id="makerPointsMessage" class="msg" role="status" aria-live="polite"></p></section>'
         /* 21 Oct 2026 (P8): the customer's Help, read only, under the hours and the points it speaks of */
         + helpCard(true)
-        + '<section data-in="shop.notice" aria-labelledby="makerBulletinTitle"><h2 id="makerBulletinTitle">Notice</h2>'
+        + '<section data-in="shop.notice" aria-labelledby="makerBulletinTitle"><h2 id="makerBulletinTitle" class="sr">Notice</h2>'
         + '<p class="lead">A line at the top of every customer account. Setting it also sends them a notification.</p>'
         + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></section>'
         + '<div id="mTest" class="mtest" data-in="shop.practice"></div>'

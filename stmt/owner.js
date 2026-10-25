@@ -1800,18 +1800,42 @@ export const OWNER_JS = `
       root.appendChild(card);
     });
   }
+  /* Up now: the first line on the recipe, a dot a line, every line in the list, the count in the chip; none, a line says so */
+  function drawNoticeUp(list){
+    list=list||[];
+    var cur=document.getElementById('makerBulletinCurrent'), card=document.getElementById('makerBulletinUp'), none=document.getElementById('makerBulletinNone'), n=document.getElementById('makerBulletinCount');
+    if(!cur||!card) return;
+    cur.textContent=''; list.forEach(function(l){ cur.appendChild(el('li',null,l)); });
+    var lines=card.querySelector('.salt-notice__lines'), dots=card.querySelector('.salt-notice__dots');
+    lines.textContent=''; dots.textContent='';
+    list.forEach(function(l,i){ lines.appendChild(el('p','salt-notice__line'+(i?'':' salt-notice__line--on'),l)); dots.appendChild(el('span','salt-notice__dot'+(i?'':' salt-notice__dot--on'))); });
+    card.hidden=!list.length; if(none) none.hidden=!!list.length;
+    if(n){ n.textContent=list.length?list.length+(list.length===1?' line':' lines')+' · every 6 s':'None'; }
+  }
   async function loadMakerBulletin(){
     var root=document.getElementById('makerBulletin'), status=document.getElementById('makerBulletinStatus');
     if(!root) return;
     var text=root.querySelector('textarea');
     if(!text){
-      var label=el('label','maker-field');label.appendChild(el('span','lbl salt-field__label','Notice (one line each)'));
-      text=actOn(el('textarea','fld salt-field__input'),'notice.text');text.rows=4;label.appendChild(text);root.appendChild(label);
-      var current=el('div','');current.id='makerBulletinCurrent';root.appendChild(current);
+      /* 25 Oct 2026 (Salt Admin Shop): UP NOW, the notice as customers read it on the Counter's Notice recipe and every line numbered,
+         then NEW NOTICE, the box, Set the notice across and Clear it beside Read it again; Set and Clear still ask on the Sheet */
+      var upHead=el('div','anow-head'); upHead.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Up now'));
+      var upCount=chip('mist','None'); upCount.id='makerBulletinCount'; upHead.appendChild(upCount); root.appendChild(upHead);
+      var upCard=el('div','salt-glass-card salt-glass-card--radius-lg anotice'); upCard.id='makerBulletinUp';
+      var rec=el('div','salt-notice'), rhead=el('div','salt-notice__head'), dots=el('span','salt-notice__dots');
+      rhead.appendChild(el('span','salt-eyebrow salt-eyebrow--brass','Notice')); dots.setAttribute('aria-hidden','true'); rhead.appendChild(dots); rec.appendChild(rhead);
+      var lines=el('div','salt-notice__lines'); rec.appendChild(lines); upCard.appendChild(rec);
+      var current=el('ol','anotice-list');current.id='makerBulletinCurrent';current.setAttribute('aria-label','Every line');upCard.appendChild(current);root.appendChild(upCard);
+      var none=el('p','msg','No notice. Customers see none.'); none.id='makerBulletinNone'; root.appendChild(none);
+      var newHead=el('div','anow-head'); newHead.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','New notice')); newHead.appendChild(chip('brass','Notifies everyone')); root.appendChild(newHead);
+      var label=el('label','maker-field');label.appendChild(el('span','lbl salt-field__label','One line each'));
+      text=actOn(el('textarea','fld salt-field__input'),'notice.text');text.rows=4;label.appendChild(text);
+      label.appendChild(el('span','salt-field__hint','The lines show one at a time, in turn.'));root.appendChild(label);
       var retained=el('div','');retained.hidden=true;root.appendChild(retained);
-      var set=el('button','btn salt-pill salt-pill--md','Set the notice'), clear=el('button','salt-ghost','Clear the notice'),
-        refresh=el('button','salt-ghost','Read it again'), busy=false, needsRead=false, intended=null;
-      [set,clear,refresh].forEach(function(button){button.type='button';root.appendChild(button);});
+      var set=el('button','btn salt-pill salt-pill--md anotice-set','Set the notice'), clear=el('button','salt-ghost','Clear it'),
+        refresh=el('button','salt-ghost','Read it again'), busy=false, needsRead=false, intended=null, pair=el('div','ashop-two');
+      [set,clear,refresh].forEach(function(button){button.type='button';});
+      root.appendChild(set); pair.appendChild(clear); pair.appendChild(refresh); root.appendChild(pair);
       actOn(set,'notice.set');actOn(clear,'notice.clear');actOn(refresh,'notice.read');ynTag(set,'notice:set');ynTag(clear,'notice:clear');
       function state(){set.disabled=busy||needsRead;clear.disabled=busy||needsRead;refresh.disabled=busy;text.disabled=busy;}
       root.addEventListener('maker-notice-read',function(event){
@@ -1834,7 +1858,7 @@ export const OWNER_JS = `
         busy=true;state();
         try{
           var result=await refs('/all/maker/bulletin',{lines:lines,confirmed:true});
-          current.textContent=(result.lines||[]).join(' · ')||'No notice.'; makerNotice=result.lines||[];
+          drawNoticeUp(result.lines); makerNotice=result.lines||[];
           intended=null;retained.hidden=true;
           /* 11 Oct 2026: a notice set empties its box, so a second tap has nothing to send, and the same one set again says so */
           if(lines.length&&!result.unchanged) text.value='';
@@ -1859,7 +1883,7 @@ export const OWNER_JS = `
     }
     async function read(){
       var result=await refs('/all/maker/bulletin'); makerNotice=result.lines||[];
-      document.getElementById('makerBulletinCurrent').textContent=(result.lines||[]).join(' · ')||'No notice.';
+      drawNoticeUp(result.lines);
       status.textContent='Notice read. Customers are notified only when you set one.';
       root.dispatchEvent(new CustomEvent('maker-notice-read',{detail:result}));
     }

@@ -9,6 +9,12 @@
  *   P2.2  a tapped day holds, in order, its second choices two by two, what customers would see, then Discard changes beside Done; a tapped date too
  *   P2.3  Discard changes stands under the week only while it differs and no day is open
  *   P2.4  the dates keep their own wider name column, and the next day's tail is a solid bar, not a hatch
+ *   P3.1  the collection points are a plain table in a card, a code and its place a row, a cross named by its point
+ *   P3.2  the cross takes a point off the draft and sends nothing; with none left there is no table
+ *   P3.3  the code and place fields side by side, Add a ghost beside its line, Save the points a pill across
+ *   P4.1  Up now and New notice head the notice; Up now is the Counter's Notice recipe, the first line on, and every line numbered
+ *   P4.2  the box is One line each, Set the notice a pill across, Clear it beside Read it again
+ *   P4.3  with no notice up, the card goes and a line says customers see none
  * Drawn by the maker harness (test/maker-act.mjs). */
 import { richOwnerPage, byAct } from "./maker-act.mjs";
 
@@ -108,4 +114,33 @@ export async function run({ ok, pageWork }) {
       && save.classList.contains("salt-pill") && !!save.closest(".apoints-save"),
       "the code and the place stand side by side, Add a ghost beside its line, and Save the points a pill across");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
+
+  /* P4: the notice, two lines up */
+  const n = await open({ bulletin: (j) => ({ ...j, lines: ["Closed Fri 31 Oct for the stock count.", "Rice lands Saturday. Order ahead."] }) });
+  try {
+    await n.tap("nav.shop"); await n.tap("part.shop.notice");
+    const root = n.d.getElementById("makerBulletin"), heads = [...root.querySelectorAll(".anow-head")];
+    const up = n.d.getElementById("makerBulletinUp"), rec = up && up.querySelector(".salt-notice");
+    /* P4.1 */
+    ok(heads.length === 2 && JSON.stringify(heads.map((h) => t(h.querySelector("h3")) + "/" + t(h.querySelector(".salt-status")))) === JSON.stringify(["Up now/2 lines · every 6 s", "New notice/Notifies everyone"]),
+      "Up now and New notice head their parts, the count of lines and that setting one notifies everyone: " + heads.map(t).join(" | "));
+    ok(!!rec && !up.hidden && up.classList.contains("salt-glass-card") && t(rec.querySelector(".salt-notice__line--on")) === "Closed Fri 31 Oct for the stock count."
+      && rec.querySelectorAll(".salt-notice__line").length === 2 && rec.querySelectorAll(".salt-notice__line--on").length === 1 && rec.querySelectorAll(".salt-notice__dot").length === 2,
+      "Up now draws the notice on the Counter's Notice recipe, the first line on, a dot a line");
+    ok(JSON.stringify([...n.d.querySelectorAll("#makerBulletinCurrent li")].map(t)) === JSON.stringify(["Closed Fri 31 Oct for the stock count.", "Rice lands Saturday. Order ahead."]) && n.d.getElementById("makerBulletinNone").hidden,
+      "and every line numbered under it");
+    /* P4.2 */
+    const set = byAct(root, "notice.set"), clear = byAct(root, "notice.clear"), again = byAct(root, "notice.read");
+    ok(set.classList.contains("salt-pill") && t(clear) === "Clear it" && clear.parentElement === again.parentElement && clear.parentElement.classList.contains("ashop-two")
+      && t(byAct(root, "notice.text").closest("label").querySelector(".salt-field__label")) === "One line each",
+      "the box is One line each, Set the notice a pill across, Clear it beside Read it again");
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { n.w.close(); }
+
+  /* P4.3: no notice up */
+  const z = await open({ bulletin: (j) => ({ ...j, lines: [] }) });
+  try {
+    await z.tap("nav.shop"); await z.tap("part.shop.notice");
+    ok(z.d.getElementById("makerBulletinUp").hidden && !z.d.getElementById("makerBulletinNone").hidden && t(z.d.getElementById("makerBulletinCount")) === "None",
+      "with no notice up, the card goes and a line says customers see none");
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { z.w.close(); }
 }
