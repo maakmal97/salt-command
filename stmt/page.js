@@ -785,6 +785,16 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .atest-pwv{font-family:var(--salt-font-mono)}
 .adm .atest-acts{display:flex;flex-direction:column;gap:8px;margin:8px 0 0}
 .adm .atest-acts>a,.adm .atest-acts>button{box-sizing:border-box;width:100%;height:48px;min-height:48px;padding:0 16px;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 25 Oct 2026 (Salt Admin Shop): This device, a row each of one height: the label, the state word leading its line, the control at the right */
+.adm #oLook .salt-ledger__row{display:grid;grid-template-columns:minmax(0,1fr) 132px;grid-template-rows:auto auto;column-gap:12px;row-gap:6px;align-items:center;min-height:80px;box-sizing:border-box;padding:12px 0}
+.adm #oLook .salt-ledger__line{display:contents}
+.adm #oLook .salt-ledger__label{grid-column:1;grid-row:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.adm #oLook .salt-ledger__value{grid-column:2;grid-row:1/3;display:flex;justify-content:flex-end;margin:0}
+.adm #oLook .salt-ledger__value>button{box-sizing:border-box;width:132px;height:48px;min-height:48px;padding:0 8px;white-space:nowrap}
+.adm #oLook .salt-ledger__value.salt-segment{width:132px;box-sizing:border-box}
+.adm #oLook .adev-line{grid-column:1;grid-row:2;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.adm #oLook .adev-line b{color:var(--salt-salt);font-weight:600}
+.adm #oLook .adev-note{margin:4px 0 0}
 .adm .apoints-save>.salt-pill{flex:1 1 auto;box-sizing:border-box;height:48px;min-height:48px;padding:0 16px}
 .adm .maker-dayedit-times>button{min-height:44px;min-width:44px}
 .adm .maker-copy{display:flex;flex-wrap:wrap;gap:8px}
@@ -1583,27 +1593,29 @@ function lookRow(owner) {
     + '<span class="salt-ledger__value lookset salt-segment" role="group" aria-labelledby="lookH">'
     + wt("button", 'type="button" class="salt-segment__opt salt-segment__opt--active" data-look="night" aria-pressed="true"' + act("look.night"), "look.night")
     + wt("button", 'type="button" class="salt-segment__opt" data-look="tide" aria-pressed="false" disabled' + act("look.tide"), "look.tide")
-    + "</span></div></div></div>";
+    + "</span></div>" + (owner ? '<span class="salt-ledger__flag adev-line"><b>Night.</b> Tide is off for now.</span>' : "") + "</div></div>";
 }
 /* 12 Oct 2026 (PHASE 4b, his decision 3 of 11 Oct): THE ONE UNLOCK of Salt Admin, owner only. Shop > This device holds its state and its Unlock or Lock; the Sheet is
    the one field (stmt/owner.js, makerVaultUnlock), opened from here and from every place that says Locked. The field is never in a form and never remembered. */
 function vaultRow() {
+  /* 25 Oct 2026 (Salt Admin Shop): the label, then the state word leading its line, the control at the right */
   return '<div id="vaultRow" class="salt-ledger salt-ledger--plain"><div class="salt-ledger__row"><div class="salt-ledger__line">'
     + '<span class="salt-ledger__label" id="vaultH">Names and places</span>'
-    + '<span class="salt-ledger__value lookset" role="group" aria-labelledby="vaultH"><span id="vaultState" role="status">Locked</span>'
-    + '<button type="button" class="salt-ghost" id="vaultOn" data-act="vault.unlock">Unlock</button>'
-    + '<button type="button" class="salt-ghost" id="vaultOff" data-act="vault.lock" hidden>Lock</button></span></div></div>'
-    + '<span class="salt-ledger__flag">One password opens names, places and slips. Seen on this phone only; they lock again when the page is hidden.</span></div>';
+    + '<span class="salt-ledger__value lookset" role="group" aria-labelledby="vaultH">'
+    + '<button type="button" class="salt-pill salt-pill--sm" id="vaultOn" data-act="vault.unlock">Unlock</button>'
+    + '<button type="button" class="salt-ghost" id="vaultOff" data-act="vault.lock" hidden>Lock</button></span></div>'
+    + '<span class="salt-ledger__flag adev-line"><b id="vaultState" role="status">Locked</b>. One password; locks when hidden.</span></div></div>';
 }
 /* 19 Oct 2026 (docs/plan-notifications.html section 3): SALT ADMIN'S OWN NOTIFICATIONS, owner only, Shop > This device. A tap turns them on (the
    browser's question is asked from that tap alone) and a second control turns them off; the state is what this phone holds. Never on the test surface. */
 function alertRow() {
   return '<div id="alertRow" class="salt-ledger salt-ledger--plain"><div class="salt-ledger__row"><div class="salt-ledger__line">'
     + '<span class="salt-ledger__label" id="alertH">Notifications</span>'
-    + '<span class="salt-ledger__value lookset" role="group" aria-labelledby="alertH"><span id="alertState" role="status">Off</span>'
-    + '<button type="button" class="salt-ghost" id="alertOn" data-act="alerts.on">Turn on</button>'
-    + '<button type="button" class="salt-ghost" id="alertOff" data-act="alerts.off" hidden>Turn off</button></span></div></div>'
-    + '<span class="salt-ledger__flag" id="alertNote">Salt Admin rings this phone for what waits on your decision. Asked only when you tap.</span></div>';
+    + '<span class="salt-ledger__value lookset" role="group" aria-labelledby="alertH">'
+    + '<button type="button" class="salt-pill salt-pill--sm" id="alertOn" data-act="alerts.on">Turn on</button>'
+    + '<button type="button" class="salt-ghost" id="alertOff" data-act="alerts.off" hidden>Turn off</button></span></div>'
+    + '<span class="salt-ledger__flag adev-line"><b id="alertState" role="status">Off</b>. Rings this phone for your decisions.</span></div></div>'
+    + '<p class="msg adev-note" id="alertNote" role="status">Asked only when you tap.</p>';
 }
 function vaultSheet() {
   return '<div id="vaultScrim" class="salt-sheet-scrim" hidden></div>'
@@ -2107,7 +2119,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div id="mTest" class="mtest" data-in="shop.practice"></div>'
         /* 11 Oct 2026, his word: Salt Admin has its own Night or Tide, chosen on this device (the Counter origin's localStorage salt-look,
            shared with the Counter's pages on this device and apart from the Desk's), the same row the customer has under Account > This device. The first-open Sheet is below, beside #aEnded. */
-        + '<section id="oLook" data-in="shop.device" aria-labelledby="oLookTitle"><h2 id="oLookTitle">This device</h2>'
+        + '<section id="oLook" data-in="shop.device" aria-labelledby="oLookTitle"><h2 id="oLookTitle" class="sr">This device</h2>'
         + '<p class="lead">Night or Tide for Salt Admin on this device. Kept on this device; the Desk keeps its own.</p>'
         + lookRow(true) + vaultRow() + (test ? "" : alertRow()) + "</section>"
         + "</div></div>"

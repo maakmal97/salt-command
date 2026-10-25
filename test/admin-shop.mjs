@@ -15,8 +15,16 @@
  *   P4.1  Up now and New notice head the notice; Up now is the Counter's Notice recipe, the first line on, and every line numbered
  *   P4.2  the box is One line each, Set the notice a pill across, Clear it beside Read it again
  *   P4.3  with no notice up, the card goes and a line says customers see none
+ *   P5.1  the practice accounts are a plain table, a username, what it shows and Open or None a row; the head counts the open
+ *   P5.2  the password once; Open the test page, a pill to /all/test, only while all three are open; Make names the missing
+ *   P5.3  Remove asks once on the Sheet: Keep them sends nothing, Remove sends the one removal
+ *   P6.1  This device is a row each: the label, the state word leading its line, the control at the right
+ *   P6.2  each row is a grid of the words and a 132px control, 48px tall
+ *   P6.3  the notifications note stands on its own line under the rows
+ *   P6.4  the customer's own Look row is drawn as it was
  * Drawn by the maker harness (test/maker-act.mjs). */
 import { richOwnerPage, byAct } from "./maker-act.mjs";
+import { landingPage } from "../stmt/page.js";
 
 const t = (n) => (n ? n.textContent.replace(/\s+/g, " ").trim() : "");
 const p0 = { slow: false };
@@ -176,4 +184,27 @@ export async function run({ ok, pageWork }) {
     byAct(sheet(), "ask.go", "test:remove").click(); await all.work.quiet();
     ok(sent() === 1 && JSON.stringify(all.posts.filter((x) => x.route === "/all/test")[0].body) === JSON.stringify({ make: false }), "Remove sends the one removal");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { all.w.close(); }
+
+  /* P6: this device */
+  const dv = await open();
+  try {
+    await dv.tap("nav.shop"); await dv.tap("part.shop.device");
+    const sec = dv.d.getElementById("oLook"), rowsD = [...sec.querySelectorAll(".salt-ledger__row")];
+    const read = (r) => t(r.querySelector(".salt-ledger__label")) + " | " + t(r.querySelector(".adev-line")) + " | " + [...r.querySelectorAll(".salt-ledger__value > button")].filter((b) => !b.hidden).map((b) => t(b) + ":" + (b.classList.contains("salt-pill") ? "pill" : "ghost")).join();
+    /* P6.1 */
+    ok(JSON.stringify(rowsD.map(read)) === JSON.stringify(["Look | Night. Tide is off for now. | Night:ghost,Tide:ghost", "Names and places | Locked. One password; locks when hidden. | Unlock:pill", "Notifications | Off. Rings this phone for your decisions. | Turn on:pill"])
+      && dv.d.getElementById("oLookTitle").classList.contains("sr"),
+      "a row each, the label, the state word leading its line, the control at the right, Unlock and Turn on pills: " + rowsD.map(read).join(" / "));
+    /* P6.2 */
+    const css = [...dv.d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
+    ok(css.includes(".adm #oLook .salt-ledger__row{display:grid;grid-template-columns:minmax(0,1fr) 132px;") && css.includes(".adm #oLook .salt-ledger__line{display:contents}")
+      && css.includes(".adm #oLook .salt-ledger__value>button{box-sizing:border-box;width:132px;height:48px;"),
+      "each row is a grid of the words and a 132px control, 48px tall");
+    /* P6.3 */
+    const note = dv.d.getElementById("alertNote");
+    ok(!!note && !note.closest(".salt-ledger__row") && note.getAttribute("role") === "status" && t(note) === "Asked only when you tap.", "the notifications note stands on its own line under the rows, so a long answer reads whole");
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { dv.w.close(); }
+  /* P6.4: the customer's own Look row is drawn as it was */
+  const cust = landingPage("0000-0000", "n", null, null);
+  ok(/<div id="lookRow"/.test(cust) && !cust.includes("salt-ledger__flag adev-line"), "the customer's Look row carries none of Salt Admin's line");
 }
