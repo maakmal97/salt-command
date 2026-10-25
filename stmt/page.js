@@ -1207,6 +1207,17 @@ body.ended>*:not(#aEnded){display:none}
 /* 26 Oct 2026 (the Customers canvas, P3 and P4): Their %, This customer, the reward and Partner, each a glass card: a book a tab, the stepper's figure large
    between two 48px buttons, their prices a plain table, the actions two by two; nothing wraps */
 .adm .amore{display:flex;flex-direction:column;gap:12px}
+/* 26 Oct 2026 (the Customers canvas, P5): the threads are Needs you's cards, their last line quiet beside the code; the open thread the system's Thread, its head
+   the code and what they owe */
+.adm #makerChatList{display:flex;flex-direction:column;gap:16px}
+.adm #makerChatList .ngroup{gap:10px}
+.adm .ncard .need-line{font-family:var(--salt-font-display);font-size:var(--salt-text-sm)}
+.adm .chathead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-width:0}
+.adm .chathead__who{display:flex;flex-direction:column;gap:4px;min-width:0}
+.adm .chathead__who .salt-eyebrow{margin:0}
+.adm .chathead__code{margin:0;font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm #makerChatOpen{display:flex;flex-direction:column;gap:12px}
+.adm #makerChatOpen>button{min-height:48px}
 .adm .amore[hidden],.adm .amore .asec[hidden]{display:none}
 .adm .apct__head{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .adm .apct__head .salt-eyebrow{margin:0}

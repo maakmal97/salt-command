@@ -1,0 +1,56 @@
+[
+  {
+    "name": "1 waiting under To do",
+    "file": "stmt/owner.js",
+    "find": "return (makerThreadAsked(x[0])&&!x[0].test?'now':'watch')===g[0];",
+    "replace": "return 'watch'===g[0];"
+  },
+  {
+    "name": "1 their last line",
+    "file": "stmt/owner.js",
+    "find": "title.appendChild(el('span','need-u need-line',(last.by==='desk'?'You: ':'')+cut(last.text||'')));",
+    "replace": ""
+  },
+  {
+    "name": "1 what they owe",
+    "file": "stmt/owner.js",
+    "find": "key:'t:'+th.u, at:last.at||'', late:asked, who:who, title:who, u:th.u, rm:owe,",
+    "replace": "key:'t:'+th.u, at:last.at||'', late:asked, who:who, title:who, u:th.u, rm:0,"
+  },
+  {
+    "name": "2 Reply for one waiting",
+    "file": "stmt/owner.js",
+    "find": "var b=asked?pill(['Reply','chat.reply-open',th.u]):ghost(['Open','chat.reply-open',th.u]);",
+    "replace": "var b=ghost(['Open','chat.reply-open',th.u]);"
+  },
+  {
+    "name": "2 a tap opens it",
+    "file": "stmt/owner.js",
+    "find": "c.addEventListener('click', function(ev){ if(ev.target===c) openMakerThread(th.u); });",
+    "replace": ""
+  },
+  {
+    "name": "3 his lines right",
+    "file": "stmt/owner.js",
+    "find": "b=el('div','salt-bubble salt-bubble--'+(mine?'mine':'theirs'))",
+    "replace": "b=el('div','salt-bubble salt-bubble--theirs')"
+  },
+  {
+    "name": "3 who and when",
+    "file": "stmt/owner.js",
+    "find": "meta.appendChild(el('span','maker-facts',(mine?'You':codeByUser(makerThreadUser))+', '+stampDay(line.at)));",
+    "replace": "meta.appendChild(el('span','maker-facts',stampDay(line.at)));"
+  },
+  {
+    "name": "4 what they owe in the head",
+    "file": "stmt/owner.js",
+    "find": "    if(owe>0.004){ var af=el('div','ahead__fig');",
+    "replace": "    if(false){ var af=el('div','ahead__fig');"
+  },
+  {
+    "name": "4 the Insight",
+    "file": "stmt/owner.js",
+    "find": "status.className='msg salt-insight salt-insight--copper';",
+    "replace": ""
+  }
+]

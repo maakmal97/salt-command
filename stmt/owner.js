@@ -1811,18 +1811,42 @@ export const OWNER_JS = `
       makerThreads=result.threads||[]; nGot('threads');
       if(!changed('threads', makerThreads)&&quiet===true) return;
       apply=true;
-      var list=document.getElementById('makerChatList'); list.textContent='';
-      makerThreads.forEach(function(thread){
-        var button=el('button','salt-ghost');
-        button.appendChild(whoTag(el('span',null,codeByUser(thread.u)),codeOfUser(thread.u)));
-        button.appendChild(document.createTextNode((thread.test?' · Practice':'')+(makerThreadAsked(thread)?', waiting for your reply':'')));
-        button.type='button';button.setAttribute('data-thread',thread.u);actOn(button,'chat.open',thread.u);
-        button.onclick=function(){ openMakerThread(thread.u); };list.appendChild(button);
-      });
-      status.textContent=makerThreads.length?makerThreads.filter(function(thread){return !thread.test&&makerThreadAsked(thread);}).length+' waiting for your reply.':'No messages yet.';
+      drawThreadList();
+      var waiting=makerThreads.filter(function(thread){return !thread.test&&makerThreadAsked(thread);});
+      status.textContent=makerThreads.length?waiting.length+(waiting.length===1?' waits':' wait')+' for your reply.':'No messages yet.';
+      status.className='msg salt-insight salt-insight--copper';
       if(makerThreadUser) drawMakerThreadLines();
     }catch(error){ nGot('threads', error); apply=failNew('threads', error)||quiet!==true; if(apply) refusal(status,error); }
     finally{ makerThreadsReading=false; if(apply) drawNeeds(); }
+  }
+  /* 26 OCT 2026 (canvas Salt Admin Customers, P5): A THREAD IS NEEDS YOU'S CARD. Waiting (theirs last) under To do, Answered under FYI; within each what they
+     owe first, then the oldest; the kind and its age, the code and their last line, Reply (or Open) and what they owe. The open thread is the system's
+     Thread: their lines left, his right, each with who and when. */
+  function drawThreadList(){
+    var list=document.getElementById('makerChatList'); if(!list) return;
+    list.textContent='';
+    var acc=function(u){ return sheet&&sheet[u]||null; }, owedOn=function(u){ var a=acc(u); return a&&a.flag==='owes'&&a.t?+a.t.owed||0:0; };
+    var groups=[['now','To do'],['watch','FYI']];
+    groups.forEach(function(g){
+      var rows=makerThreads.map(function(th, i){ return [th, i]; }).filter(function(x){ return (makerThreadAsked(x[0])&&!x[0].test?'now':'watch')===g[0]; })
+        .sort(function(x, y){ return (owedOn(y[0].u)-owedOn(x[0].u))||(x[1]-y[1]); }).map(function(x){ return x[0]; });
+      if(!rows.length) return;
+      var box=el('section','ngroup'), h=el('h2','salt-eyebrow salt-eyebrow--'+SEVC[g[0]]+' nsev', g[1]);
+      box.setAttribute('data-sev', g[0]); box.setAttribute('aria-label', g[1]); h.setAttribute('data-sev', g[0]); box.appendChild(h); list.appendChild(box);
+      rows.forEach(function(th){
+        var ms=th.msgs||[], last=ms[ms.length-1]||{}, asked=g[0]==='now', who=th.test?'Practice':codeByUser(th.u), owe=owedOn(th.u);
+        var c=needCard({sev:g[0], kind:'messages', word:asked?'Waiting':'Answered', key:'t:'+th.u, at:last.at||'', late:asked, who:who, title:who, u:th.u, rm:owe, practice:!!th.test,
+          act:'chat.open', open:true, onTap:function(){ openMakerThread(th.u); }});
+        c.setAttribute('data-thread', th.u);
+        var title=c.querySelector('.salt-action__title');
+        title.appendChild(el('span','need-u need-line',(last.by==='desk'?'You: ':'')+cut(last.text||'')));
+        title.setAttribute('aria-label',(asked?'Waiting':'Answered')+': '+who+(last.text?', '+cut(last.text):''));
+        var b=asked?pill(['Reply','chat.reply-open',th.u]):ghost(['Open','chat.reply-open',th.u]);
+        b.addEventListener('click', function(){ openMakerThread(th.u); }); c._add(b);
+        c.addEventListener('click', function(ev){ if(ev.target===c) openMakerThread(th.u); });
+        box.appendChild(c);
+      });
+    });
   }
   function drawMakerThreadLines(){
     var root=document.getElementById('makerChatLines');
@@ -1830,15 +1854,21 @@ export const OWNER_JS = `
     root.textContent='';
     var thread=makerThreads.filter(function(value){ return value.u===makerThreadUser; })[0];
     (thread&&thread.msgs||[]).forEach(function(line){
-      root.appendChild(el('p','maker-facts',(line.by==='desk'?'You':'Customer')+' · '+stampDay(line.at)));
-      root.appendChild(el('p','maker-row',line.text));
+      var mine=line.by==='desk', b=el('div','salt-bubble salt-bubble--'+(mine?'mine':'theirs')), meta=el('p','salt-bubble__meta');
+      b.appendChild(el('p','salt-bubble__text maker-row',line.text));
+      meta.appendChild(el('span','maker-facts',(mine?'You':codeByUser(makerThreadUser))+', '+stampDay(line.at))); b.appendChild(meta);
+      root.appendChild(b);
     });
   }
   function openMakerThread(user){
     makerThreadUser=user;
     var root=document.getElementById('makerChatOpen');root.hidden=false;root.textContent='';
-    root.setAttribute('data-key',user);root.appendChild(whoTag(el('h3','',codeByUser(user)),codeOfUser(user)));
-    var lines=el('div','');lines.id='makerChatLines';root.appendChild(lines);
+    root.setAttribute('data-key',user);
+    var ah=el('div','chathead'), aw=el('div','chathead__who'), ac=sheet&&sheet[user], owe=ac&&ac.flag==='owes'&&ac.t?+ac.t.owed||0:0;
+    aw.appendChild(el('span','salt-eyebrow salt-eyebrow--copper','Messages')); aw.appendChild(whoTag(el('h3','chathead__code',codeByUser(user)),codeOfUser(user))); ah.appendChild(aw);
+    if(owe>0.004){ var af=el('div','ahead__fig'); af.appendChild(el('span','salt-eyebrow salt-eyebrow--mist','They owe')); af.appendChild(el('span','ahead__rm',rmShort(owe))); ah.appendChild(af); }
+    root.appendChild(ah);
+    var lines=el('div','salt-thread__lines');lines.id='makerChatLines';lines.setAttribute('role','log');lines.setAttribute('aria-label','The thread with '+codeByUser(user));root.appendChild(lines);
     var draft=makerChatDrafts[user], savedPrefix='saltMakerChat:'+user+':';
     if(!draft){
       draft=makerChatDrafts[user]={text:'',pending:null,saved:null};

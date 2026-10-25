@@ -50521,6 +50521,11 @@ await (async () => {
   await (await import("./admin-cust-reads.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Admin Customers P5: a thread is Needs you's card, the open thread the system's Thread (26 Oct 2026)");
+await (async () => {
+  await (await import("./admin-cust-chat.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");
 await (async () => {
   await (await import("./maker-queue-withdrawal.mjs")).run({ ok, worker, handleMaker });

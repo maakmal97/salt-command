@@ -2579,6 +2579,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `chat.close` | Open thread | Closes the thread. |
 | `chat.no-reply` | Open thread | Records that no reply is needed. |
 | `chat.open` | Chat, one per account (key: the username) | Opens that account's thread. |
+| `chat.reply-open` | Messages, a thread's card (key: the username) | Opens that thread: Reply while a line of theirs waits, Open once answered. |
 | `chat.open-retained` | Open thread | Opens the reply kept encrypted on this device. |
 | `chat.reply` | Open thread (key: the username) | The reply to send. |
 | `chat.send` | Open thread | Sends the reply, or sends the same one again. |
@@ -2628,6 +2629,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `hours.override-until` | Operating hours | When the override ends, Kuala Lumpur time. |
 | `hours.save` | The opened day, Done (key: the weekday) | Saves the whole week and shuts the day. |
 | `link.approve` | Link card of an associate's link | Approves it, which opens it. |
+| `link.approve-card` | Links, a waiting link's card (key: the link id) | Approves it, which opens it. |
+| `link.copy-card` | Links, a link's card (key: the link id) | Copies the link. |
 | `link.open` | Link row (key: the link id) | Opens or shuts the row: its address, QR and moves. |
 | `link.copy` | Link card (key: data-link, the link id) | Copies the link. |
 | `link.decline` | Same card | Declines it, which keeps it shut. |
@@ -2635,6 +2638,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `link.label` | Links | Who the link is for. |
 | `link.make` | Links | Makes a guest link. |
 | `link.restore` | Link card of a withdrawn link | Restores the link. |
+| `link.restore-card` | Links, a withdrawn link's card (key: the link id) | Restores the link. |
 | `link.withdraw` | Link card | Withdraws the link. |
 | `look.night` | Shop, This device, Look | Night for Salt Admin on this device, at once, kept here. |
 | `look.sheet-close` | Look Sheet, on a first open | Closes it with Tide kept and nothing stored. |
