@@ -177,7 +177,7 @@
 - Live as v1254 (`7eb0e296`, 26 Oct 2026; Cloud commit `40214884137`: chain and three suite parts green, live /rev `88e6f50b08fc1cc3`), from his Shop canvas
   https://claude.ai/artifact/TrC768miLDPZb7U5wWciBQ and `docs/plan-admin-shop.html` (his yes to every Ask, Ask H both halves): For now first and folded, the glance tiles,
   the open day with its preview (a pane beside the week from 860px), points as a plain table, Notice as customers read it, Practice with Open the test page
-  and Remove asking once, This device rows, Shop's parts as text tabs. Section "Salt Admin's Shop on the Salt system". Not yet opened by him.
+  and Remove asking once, This device rows, Shop's parts as text tabs. Section "Salt Admin's Shop on the Salt system". Accepted 26 Oct 2026.
 
 ## Salt Admin Needs you redesign
 - Live as v1221 (`b8916ca2`, 23 Oct 2026; Cloud commit `39821813897`: chain and three suite parts green, live /rev `1e1013dcc935d44b`), from his canvas
