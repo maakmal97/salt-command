@@ -1,0 +1,68 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-25T13:37:19.636Z",
+   "status": "approved",
+   "collection": "purchases",
+   "row": {
+    "qty": 100,
+    "total": 320,
+    "cash": 330,
+    "handover": "collected",
+    "supplier": "SM4-KEP",
+    "freight": 10,
+    "status": "paid",
+    "product": "rice",
+    "date": "2026-10-25",
+    "receivedOn": "2026-10-25",
+    "receivedQty": 100,
+    "paidOn": "2026-10-25"
+   },
+   "reasoning": "Bought 100 unit of rice from SM4-KEP for RM 320, with RM 10 of freight beside it, RM 3.2/unit. Paid in full and delivered in full on 2026-10-25. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "RM 330 is paid on an order of RM 320: RM 10 more than it is worth. Check the figures."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-25T13:37:19.636Z",
+    "type": "BUY",
+    "party": "SM4-KEP",
+    "qty": 100,
+    "total": 320,
+    "status": "paid",
+    "raw": "Buy 100 unit rice from SM4-KEP for RM320 on 2026-10-25 plus RM10 freight, collected, RM330 cash, 100 unit moved → Completed",
+    "payload": {
+     "mode": "new",
+     "product": "rice",
+     "direction": "BUY",
+     "party": "SM4-KEP",
+     "newId": null,
+     "date": "2026-10-25",
+     "qty": 100,
+     "total": 320,
+     "delivery": 0,
+     "freight": 10,
+     "cash": 330,
+     "kg": 100,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "collected",
+     "second": null,
+     "more": null,
+     "coverFree": null
+    },
+    "makerRequest": "8450bec3c022fd76110a005aed0044c1e97484bd14ba96815fc77c117ac4d707"
+   },
+   "decidedAt": "2026-10-25T13:37:36.084Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
