@@ -75,8 +75,9 @@ export async function run({ ok, pageWork }) {
     ok(oilBody && oilBody.product === "oil" && same(oilBody.hide, [1]), "and sends them: " + JSON.stringify(oilBody));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
-  /* 3 AND 4. THE HOURS */
-  p = await open();
+  /* 3 AND 4. THE HOURS. 25 Oct 2026 (Salt Admin Shop): the Weekly hours ghost stands only while an override is filed, so the hours read back the one sent */
+  let filed = null;
+  p = await open({ hours: (j) => { if (filed) { j.config.manual = filed; j.status = { open: filed.open, source: "manual" }; } return j; } });
   try {
     await p.tap("nav.shop"); await p.tap("part.shop.hours");
     const root = p.d.getElementById("makerSchedule");
@@ -92,8 +93,10 @@ export async function run({ ok, pageWork }) {
     /* the override */
     /* a save draws the hours again, so the controls are found afresh each time */
     const ui = () => {
-      const state = [...root.querySelectorAll("fieldset.maker-tiles")].find((f) => f.querySelector("legend").textContent === "The shop, for now");
-      const until = root.querySelector('input[type="datetime-local"]');
+      /* 25 Oct 2026 (Salt Admin Shop): the override is For now's form, first on Hours, opened by Hold the shop */
+      const now = p.d.getElementById("makerNowCard");
+      const state = [...now.querySelectorAll("fieldset.maker-tiles")].find((f) => f.querySelector("legend").textContent === "Hold the shop");
+      const until = now.querySelector('input[type="datetime-local"]');
       return { radios: state ? [...state.querySelectorAll("input")] : [], until, label: until ? until.closest("label").querySelector(".lbl").textContent : "no field" };
     };
     const choose = (value) => { const r = ui().radios.find((x) => x.value === value); r.checked = true; r.dispatchEvent(new p.w.Event("change", { bubbles: true })); };
@@ -106,14 +109,19 @@ export async function run({ ok, pageWork }) {
     choose("false");
     ok(openLabel === "Open until" && ui().label === "Closed until", "the field names what the tile chosen does: " + openLabel + " then " + ui().label);
     const before = p.sent("/all/maker/hours").length;
-    byAct(root, "hours.override-set").click(); await p.work.quiet();
+    byAct(p.d, "hours.override-set").click(); await p.work.quiet();
     ok(p.sent("/all/maker/hours").length === before && /Choose an end time/.test(p.d.getElementById("makerHoursMessage").textContent), "with no end time chosen it says so and sends nothing");
     const stamp = new Date(Date.now() + 3 * 86400000 + 8 * 3600000).toISOString().slice(0, 16);
     p.type(ui().until, stamp);
-    byAct(root, "hours.override-set").click(); await p.work.quiet();
+    ok(!byAct(p.d, "hours.override-clear"), "with no override filed there is no way back to the weekly hours to offer");
+    filed = { open: false, until: new Date(Date.parse(stamp + ":00+08:00")).toISOString() };
+    byAct(p.d, "hours.override-set").click(); await p.work.quiet();
+    ok(!!byAct(p.d, "hours.override-clear") && byAct(p.d, "hours.override-clear").getAttribute("aria-label") === "Back to the weekly hours" && byAct(p.d, "hours.hold").textContent === "Change",
+      "once one is filed, Weekly hours stands beside Change, named Back to the weekly hours");
+    byAct(p.d, "hours.hold").click(); await p.work.quiet();
     choose("true"); p.type(ui().until, stamp);
-    byAct(root, "hours.override-set").click(); await p.work.quiet();
-    byAct(root, "hours.override-clear").click(); await p.work.quiet();
+    byAct(p.d, "hours.override-set").click(); await p.work.quiet();
+    byAct(p.d, "hours.override-clear").click(); await p.work.quiet();
     const iso = new Date(Date.parse(stamp + ":00+08:00")).toISOString();
     const sent = p.sent("/all/maker/hours");
     ok(same(sent.slice(1), [{ manual: { open: false, until: iso } }, { manual: { open: true, until: iso } }, { clearManual: true }]),

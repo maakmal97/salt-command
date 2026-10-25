@@ -1144,9 +1144,22 @@ body.ended>*:not(#aEnded){display:none}
 .adm .ordsteps .salt-steps__name,.adm .ordsteps .salt-steps__time{white-space:nowrap}
 .adm .need-clock--late .oclock__min{color:var(--salt-ember)}
 .adm .need-clock{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
-.adm #makerConfirm{margin:16px 0 0}
-.adm .cfig{margin:0;display:flex;align-items:baseline;gap:8px;font-family:var(--salt-font-mono)}
-.adm .cfig b{font-size:2.25rem;font-weight:500;line-height:1}
+/* 25 Oct 2026 (canvas Salt Admin Shop): FOR NOW, first on Hours, folded behind one pill; the form opens on that tap. A row action is 132px and the
+   form's ask two halves (.apair); the glance is the system's one-line KPI tiles */
+.adm .anow{display:flex;flex-direction:column;gap:14px;padding:16px;margin:0 0 16px}
+.adm #makerNow{display:flex;flex-direction:column;gap:14px;min-width:0}
+.adm .anow-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.adm .anow-head>*{margin:0;white-space:nowrap}
+.adm .anow-title{margin:0;font-family:var(--salt-font-display);font-size:1.5rem;line-height:1.2;color:var(--salt-salt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .anow-sub{margin:4px 0 0;font-size:var(--salt-text-sm);color:var(--salt-prose);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .apair{display:grid;grid-template-columns:minmax(0,1fr) 132px;gap:8px;align-items:center}
+.adm .apair>button,.adm .apair>a{box-sizing:border-box;width:100%;min-width:0;height:48px;min-height:48px;padding:0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .apair>.msg{margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm #makerHold{display:flex;flex-direction:column;gap:14px}
+.adm #makerNowCard>.msg:empty{display:none}
+.adm .shglance{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 16px}
+.adm .shglance .shconfirm{grid-column:1/-1}
+.adm .shglance-note{grid-column:1/-1;margin:0 4px;font-size:var(--salt-text-sm);color:var(--salt-prose);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .nnote.bad{color:var(--salt-ember)}
 /* THE ASSOCIATES REPORT CARD (v691): three figures across, then what they have earned in units
    with a bar for the part-unit. The bar is the only chart on this site and it is a rule and a
@@ -2039,9 +2052,12 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<p class="lead">The counter itself: its hours, the notice, the practice accounts and how this device looks.</p>'
         + adminParts("shop", test)
         + '<div class="abody">'
-        + '<section data-in="shop.hours" aria-labelledby="makerHoursTitle"><h2 id="makerHoursTitle">Shop hours</h2>'
-        + '<p class="lead" id="makerHoursStatus">Reading.</p>'
-        + '<div id="makerSchedule"></div><p id="makerHoursMessage" class="msg" role="status" aria-live="polite"></p><div id="makerConfirm"></div></section>'
+        + '<section data-in="shop.hours" aria-labelledby="makerHoursTitle"><h2 id="makerHoursTitle" class="sr">Shop hours</h2>'
+        /* 25 Oct 2026 (canvas Salt Admin Shop, his yes): FOR NOW FIRST, where the bar's hours chip lands, then the glance, then the week */
+        + '<section id="makerNowCard" class="salt-glass-card salt-glass-card--radius-lg anow" aria-label="For now"><div id="makerNow"><p class="lead" id="makerHoursStatus">Reading.</p></div>'
+        + '<p id="makerHoursMessage" class="msg" role="status" aria-live="polite"></p></section>'
+        + '<div id="makerConfirm" class="shglance" role="group" aria-label="At a glance"></div>'
+        + '<div id="makerSchedule"></div></section>'
         + '<section data-in="shop.hours" aria-labelledby="makerPointsTitle"><h2 id="makerPointsTitle">Collection points</h2>'
         + '<p class="lead" id="makerPointsStatus">Reading.</p>'
         + '<div id="makerPoints"></div><p id="makerPointsMessage" class="msg" role="status" aria-live="polite"></p></section>'

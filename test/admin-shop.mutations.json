@@ -1,0 +1,17 @@
+[
+ {"name":"For now is not first: the week stands before it","file":"stmt/page.js","find":"+ '<div id=\"makerConfirm\" class=\"shglance\" role=\"group\" aria-label=\"At a glance\"></div>'","replace":"+ '<div id=\"makerSchedule\"></div><div id=\"makerConfirm\" class=\"shglance\" role=\"group\" aria-label=\"At a glance\"></div>'"},
+ {"name":"For now is no glass card","file":"stmt/page.js","find":"<section id=\"makerNowCard\" class=\"salt-glass-card salt-glass-card--radius-lg anow\"","replace":"<section id=\"makerNowCard\" class=\"anow\""},
+ {"name":"the title does not carry the state","file":"stmt/owner.js","find":"title.setAttribute('data-now', st.open?'open':held?'paused':'closed');","replace":"title.setAttribute('data-now', 'closed');"},
+ {"name":"the chip does not name the source","file":"stmt/owner.js","find":":st.source==='default'?'No weekly hours':'Weekly hours'));","replace":":st.source==='default'?'No weekly hours':'Hours'));"},
+ {"name":"no line says what open means","file":"stmt/owner.js","find":"st.open?'Customers can order and you answer now.'","replace":"st.open?''"},
+ {"name":"the form is not folded","file":"stmt/owner.js","find":"form.id='makerHold'; form.hidden=!hrsHold;","replace":"form.id='makerHold'; form.hidden=false;"},
+ {"name":"the pill is not Hold the shop","file":"stmt/owner.js","find":"hrsHold?'Not now':man?'Change':'Hold the shop'),'hours.hold')","replace":"hrsHold?'Not now':man?'Change':'Hold'),'hours.hold')"},
+ {"name":"the way back is offered with nothing filed","file":"stmt/owner.js","find":"    if(man) makerButton(acts,['Weekly hours','hours.override-clear']","replace":"    if(true) makerButton(acts,['Weekly hours','hours.override-clear']"},
+ {"name":"Not now stands outside the form","file":"stmt/owner.js","find":"    if(hrsHold) go.appendChild(hold);","replace":"    if(hrsHold) acts.appendChild(hold);"},
+ {"name":"Not now does not fold it","file":"stmt/owner.js","find":"hold.addEventListener('click',function(){ hrsHold=!hrsHold;","replace":"hold.addEventListener('click',function(){ hrsHold=true;"},
+ {"name":"the second tile is not Dates","file":"stmt/owner.js","find":"tile('steel','Dates',","replace":"tile('steel','Days',"},
+ {"name":"the tiles are not one-line","file":"stmt/owner.js","find":"el('div','salt-kpi salt-kpi--line salt-kpi--'+tone+","replace":"el('div','salt-kpi salt-kpi--'+tone+"},
+ {"name":"the points are miscounted","file":"stmt/owner.js","find":"pts?String(pts.length):'·'","replace":"pts?String(pts.length+1):'·'"},
+ {"name":"the points read leaves the glance as it was","file":"stmt/owner.js","find":"makerPointsDraft=null; drawMakerPoints(); drawConfirm(); }","replace":"makerPointsDraft=null; drawMakerPoints(); }"},
+ {"name":"no line under the tiles","file":"stmt/owner.js","find":":'Not measured yet · the hourly measure files it'));","replace":":''));"}
+]

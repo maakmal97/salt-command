@@ -1059,7 +1059,7 @@ export const OWNER_JS = `
   /* a tap takes him to Shop hours, to the shop held for now */
   (function(){ var hb=document.getElementById('aBarHours'); if(hb) hb.addEventListener('click',function(){
     showPlace('shop','hours',{fresh:true,push:true});
-    try{ var t=document.querySelector('[data-act="hours.override-state"]'); if(t&&t.scrollIntoView) t.scrollIntoView({block:'center'}); }catch(e){}
+    try{ var t=document.getElementById('makerNowCard'); if(t&&t.scrollIntoView) t.scrollIntoView({block:'start'}); }catch(e){}
   }); })();
   window.barDraw=barDraw;
   window.addEventListener('online',function(){ barNet=true; barDraw(); });
@@ -5615,12 +5615,10 @@ export const OWNER_JS = `
   }
   function drawMakerHours(){
     barDraw();
-    var root=document.getElementById('makerSchedule'), status=document.getElementById('makerHoursStatus');
+    var root=document.getElementById('makerSchedule');
     if(!root||!makerHours) return;
     root.textContent='';
-    var state=makerHours.status||{};
-    status.textContent=(state.open?'Open now':'Closed now. Customers can still order; you answer when you open.')
-      +(state.source==='default'?' · No weekly hours set.':'');
+    drawMakerNow();
     drawConfirm();
     /* 20 Oct 2026 (his word, canvas V63, and his eight answers to Fable's design): THE WEEK CHART. A row a day, Monday first, a brass bar
        a span on a 00 to 24 track; a close earlier than the open is the next day's (stmt/hours.js openParts), said "+1", its tail hatched at
@@ -5665,48 +5663,75 @@ export const OWNER_JS = `
     }
     dated.appendChild(addRow);
     root.appendChild(dated);
-    /* the shop held for now is two tiles over the field that says what the one chosen does: Closed until, or Open until; Kuala Lumpur time */
-    var override=el('div','maker-fields'), kind=makerTilesIn(override,['The shop, for now','hours.override-state'],[{value:'false',label:'Closed'},{value:'true',label:'Open'}]);
-    var until=makerField(override,['Closed until','hours.override-until'],'datetime-local',klInputValue(makerHours.config&&makerHours.config.manual&&makerHours.config.manual.until));
+  }
+  /* 25 Oct 2026 (canvas Salt Admin Shop, his yes): FOR NOW, first on Hours, where the bar's hours chip lands. The state is the title (Open until 22:00,
+     Paused until 14:00, Closed, opens 09:00), one line under it, and one pill, Hold the shop (Change while his override stands), beside a Weekly hours
+     ghost while one is filed. The pill opens the form: Closed or Open, the until time in Kuala Lumpur, Not now and Set it. Bodies as before. */
+  var hrsHold=false;
+  function drawMakerNow(){
+    var box=document.getElementById('makerNow'); if(!box||!makerHours) return;
+    var st=makerHours.status||{}, man=makerHours.config&&makerHours.config.manual, held=!!man&&st.source==='manual';
+    var at=st.open?st.nextChange:st.nextOpen, w=at&&!(Date.parse(at)<=Date.now())?barWhen(at):'';
+    box.textContent='';
+    var head=el('div','anow-head');
+    head.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','For now'));
+    head.appendChild(chip(held?'brass':st.open?'verdigris':'ember', held?'Held by you':st.source==='default'?'No weekly hours':'Weekly hours'));
+    box.appendChild(head);
+    var words=el('div'), title=el('p','anow-title', st.open?'Open'+(w?' until '+w:''):held?'Paused'+(w?' until '+w:''):'Closed'+(w?', opens '+w:''));
+    title.setAttribute('data-now', st.open?'open':held?'paused':'closed');
+    words.appendChild(title);
+    var sub=el('p','anow-sub', held?'Your weekly hours take over'+(w?' at '+w:'')+'.':st.open?'Customers can order and you answer now.'
+      :st.source==='default'?'No weekly hours set. Customers can still order.':'Customers can still order; you answer when you open.');
+    sub.id='makerHoursStatus'; words.appendChild(sub); box.appendChild(words);
+    var acts=el('div','apair');
+    if(man) makerButton(acts,['Weekly hours','hours.override-clear'],function(){
+      return refs('/all/maker/hours',{clearManual:true}).then(function(value){ makerHours=value; hrsHold=false; drawMakerHours(); hoursSaid('now','Back on the weekly hours.'); })
+        .catch(function(error){ hoursSaid('now',null,error); });
+    },false);
+    else acts.appendChild(el('span'));
+    var back=acts.querySelector('[data-act="hours.override-clear"]'); if(back) back.setAttribute('aria-label','Back to the weekly hours');
+    var hold=actOn(el('button','salt-pill salt-pill--sm',hrsHold?'Not now':man?'Change':'Hold the shop'),'hours.hold'); hold.type='button';
+    hold.setAttribute('aria-expanded',String(hrsHold)); hold.setAttribute('aria-controls','makerHold');
+    hold.addEventListener('click',function(){ hrsHold=!hrsHold; drawMakerNow(); var f=document.querySelector(hrsHold?'[data-act="hours.override-state"] input':'[data-act="hours.hold"]'); if(f&&f.focus) f.focus(); });
+    if(!hrsHold) acts.appendChild(hold);
+    box.appendChild(acts);
+    /* the form, under its pill: the shop held for now is two tiles over the field that says what the one chosen does */
+    var form=el('div'); form.id='makerHold'; form.hidden=!hrsHold;
+    var kind=makerTilesIn(form,['Hold the shop','hours.override-state'],[{value:'false',label:'Closed'},{value:'true',label:'Open'}]);
+    var until=makerField(form,['Closed until','hours.override-until'],'datetime-local',klInputValue(man&&man.until));
     var untilWord=until.parentNode.querySelector('.lbl');
     until.parentNode.appendChild(el('span','msg','Kuala Lumpur time'));
     kind.addEventListener('change',function(){ untilWord.textContent=kind.value==='true'?'Open until':'Closed until'; });
-    root.appendChild(override);
-    makerButton(root,['Set it','hours.override-set'],function(){
+    var go=el('div','apair');
+    if(hrsHold) go.appendChild(hold);
+    makerButton(go,['Set it','hours.override-set'],function(){
       var when=Date.parse(until.value+'+08:00');
       if(!Number.isFinite(when)){ hoursSaid('now','Choose an end time.'); return; }
       return refs('/all/maker/hours',{manual:{open:kind.value==='true',until:new Date(when).toISOString()}})
-        .then(function(value){ makerHours=value; drawMakerHours(); hoursSaid('now','Saved for now.'); })
+        .then(function(value){ makerHours=value; hrsHold=false; drawMakerHours(); hoursSaid('now','Saved for now.'); })
         .catch(function(error){ hoursSaid('now',null,error); });
-    },false);
-    makerButton(root,['Back to the weekly hours','hours.override-clear'],function(){
-      return refs('/all/maker/hours',{clearManual:true}).then(function(value){ makerHours=value; drawMakerHours(); hoursSaid('now','Back on the weekly hours.'); })
-        .catch(function(error){ hoursSaid('now',null,error); });
-    },false);
+    },true);
+    form.appendChild(go);
+    box.appendChild(form);
   }
   /* Salt Admin A to C (20 Oct 2026), P3: THE CONFIRM TIME, as the hourly cron filed it: the figure and what customers read, or how far it is
      from the ten it needs, or that none is filed yet. Old (over three hours) is said, since customers then see nothing. */
+  /* 25 Oct 2026 (canvas Salt Admin Shop): the band became the glance, the system's one-line KPI tiles, Points, Dates and Confirm time, and the
+     confirm time's state in one line under them; the figure keeps data-confirm */
   function drawConfirm(){
     var root=document.getElementById('makerConfirm'); if(!root) return;
     root.textContent='';
-    var c=makerHours&&makerHours.confirm, u=confirmUsual(), at=c&&Date.parse(c.at);
-    var band=el('section','salt-band'), top=el('div','salt-band__head');
-    band.setAttribute('aria-label','Confirm time');
-    top.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Confirm time'));
-    var open=makerHours&&makerHours.status&&makerHours.status.open;
-    top.appendChild(chip(open?'verdigris':'mist',open?'Open now':'Closed now'));
-    band.appendChild(top);
-    if(u!=null){
-      var fig=el('p','cfig'); fig.setAttribute('data-confirm',String(u)); fig.appendChild(el('b',null,String(u))); fig.appendChild(el('span',null,'minutes')); band.appendChild(fig);
-      band.appendChild(el('p','salt-band__when','Customers read "Usually confirmed within '+u+' minutes" on a placed order while you are open; closed, nothing until you open.'));
-      band.appendChild(el('div','salt-band__foot',c.n+' measured. The median from Place to Agree over your last '+c.n+' agrees made in Counter hours, up to the quarter hour. Refreshed hourly.'));
-    }else if(c&&at>0&&Date.now()-at>3*3600e3){
-      band.appendChild(el('p','salt-band__when','The last figure was filed '+fmtWhen(c.at)+', over three hours ago, so customers see none until the hourly measure runs again.'));
-    }else if(c&&at>0){
-      band.appendChild(el('p','cfig','Under 10 measured'));
-      band.appendChild(el('p','salt-band__when','Customers see a figure once 10 agrees made in Counter hours are measured, and only while you are open.'));
-    }else band.appendChild(el('p','salt-band__when','Not measured yet. The hourly measure files it.'));
-    root.appendChild(band);
+    var c=makerHours&&makerHours.confirm, u=confirmUsual(), at=c&&Date.parse(c.at), stale=u==null&&c&&at>0&&Date.now()-at>3*3600e3;
+    var tile=function(tone,label,value,cls){ var t=el('div','salt-kpi salt-kpi--line salt-kpi--'+tone+(cls?' '+cls:'')); t.appendChild(el('span','salt-kpi__label',label)); var v=el('span','salt-kpi__value',value); t.appendChild(v); root.appendChild(t); return v; };
+    var pts=makerPoints&&makerPoints.points&&makerPoints.points.list, dates=makerHours&&makerHours.config&&makerHours.config.schedule&&makerHours.config.schedule.dates;
+    tile('brass','Points',pts?String(pts.length):'·').setAttribute('data-glance','points');
+    tile('steel','Dates',makerHours?String(Object.keys(dates||{}).length):'·').setAttribute('data-glance','dates');
+    var fig=tile('copper','Confirm time',u!=null?u+' min':stale?'Old':c&&at>0?'Not yet':'None','shconfirm');
+    fig.setAttribute('data-glance','confirm'); if(u!=null) fig.setAttribute('data-confirm',String(u));
+    root.appendChild(el('p','shglance-note', u!=null?c.n+' measured · customers read it while you are open'
+      :stale?'Filed '+fmtWhen(c.at)+' · customers see none until it runs again'
+      :c&&at>0?(c.n!=null?c.n+' measured · ':'')+'customers see a figure from 10'
+      :'Not measured yet · the hourly measure files it'));
   }
   /* an answer on Shop's hours stands under the control that asked: the weekly save under Save, the shop held for now under Set it and Back to the weekly
      hours (#makerHoursMessage, which sits right below them); the other line is cleared, so one answer is on screen, and it is scrolled into reach */
@@ -5724,7 +5749,7 @@ export const OWNER_JS = `
   var makerPoints=null, makerPointsDraft=null;
   async function loadMakerPoints(){
     if(placeNow!=='shop') return;
-    try{ makerPoints=await refs('/all/maker/points'); makerPointsDraft=null; drawMakerPoints(); }
+    try{ makerPoints=await refs('/all/maker/points'); makerPointsDraft=null; drawMakerPoints(); drawConfirm(); }
     catch(error){ var s=document.getElementById('makerPointsStatus'); if(s) refusal(s,error); }
   }
   function pointPlace(text){
