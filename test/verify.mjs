@@ -21264,12 +21264,13 @@ await (async () => {
       } });
     wins27.push(domB27.window);
     const DB27 = domB27.window.document, btnB27 = (t) => [...DB27.querySelectorAll("#mTest button")].find((b) => b.textContent === t);
-    await until27(() => btnB27("Make the practice accounts"));
-    const leadB27 = (DB27.querySelector("#mTest .lead") || {}).textContent || "";
-    if (btnB27("Make the practice accounts")) btnB27("Make the practice accounts").dispatchEvent(new domB27.window.Event("click", { bubbles: true }));
+    /* 25 Oct 2026 (Shop on the Salt system): the head counts the open, the line says what one tap makes, and the pill names the missing */
+    await until27(() => btnB27("Make 0000-0001"));
+    const leadB27 = ((DB27.querySelector("#mTest [data-test-state]") || {}).textContent || "") + " " + ((DB27.querySelector("#mTest .atest-lead") || {}).textContent || "");
+    if (btnB27("Make 0000-0001")) btnB27("Make 0000-0001").dispatchEvent(new domB27.window.Event("click", { bubbles: true }));
     await until27(() => btnB27("Remove the practice accounts"));
     const recB27 = await kv27.get("u:" + TU27, "json");
-    ok(/Practice accounts 0000-0000 and 0000-0002 are open[.] One tap makes 0000-0001[.]/.test(leadB27) && postedB27.map((b) => b.u).join() === "0000-0001"
+    ok(/^2 of 3 open One tap makes 0000-0001[.]$/.test(leadB27) && postedB27.map((b) => b.u).join() === "0000-0001"
       && !!(await kv27.get("u:0000-0001", "json")) && JSON.stringify(recB27.wrap) === JSON.stringify(rec27.wrap),
       "with only one of the pair live, his page says so and one tap makes the one missing, the other untouched: " + JSON.stringify([leadB27, postedB27.map((b) => b.u)]));
 
@@ -43551,7 +43552,8 @@ await (async () => {
   const pcssY = pgY.slice(pgY.indexOf("const PAGE_CSS = " + String.fromCharCode(96)), pgY.indexOf(String.fromCharCode(96) + ";", pgY.indexOf("const PAGE_CSS = ")));
   ok(!/\.btn\{[^}]*background/.test(pcssY) && !/\.tabs button\.on\{/.test(pcssY) && !/\n\.state\{/.test(pcssY) && !/\n\.fld\{[^}]*background/.test(pcssY) && /\.btn\{margin-top:18px;width:100%\}/.test(pcssY),
     "the page's own layer keeps geometry and states no look the recipe owns");
-  ok(/el\('button','btn quiet salt-ghost'/.test(readFileSync(join(REPO, "stmt", "owner.js"), "utf8")),
+  /* 25 Oct 2026 (Shop on the Salt system): Practice's Remove is the system's ghost, its Make the pill */
+  ok(/el\('button',on\?'salt-ghost':'salt-pill salt-pill--sm'/.test(readFileSync(join(REPO, "stmt", "owner.js"), "utf8")),
     "and the master page's quiet button is the system's ghost");
 })();
 

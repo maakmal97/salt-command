@@ -223,7 +223,7 @@ export async function run({ ok, pageWork }) {
     await wd.tap("hours.day", "Monday");
     ok(!pane.querySelector(".maker-dayedit") && t(pane.querySelector("h3")) === "No day open", "a second tap closes it again");
     /* P7.2 */
-    const css = [...wd.d.querySelectorAll("style")].map((s) => s.textContent).join("\n"), at860 = css.slice(css.indexOf("/* 25 Oct 2026 (Salt Admin Shop): WIDE."));
+    const css = [...wd.d.querySelectorAll("style")].map((s) => s.textContent).join("\n"), at860 = css.slice(css.indexOf("/* 25 Oct 2026 (his Shop canvas): WIDE."));
     ok(/@media \(min-width:860px\)\{[^@]*\.adm \.amain>#oShop\{max-width:none\}[^@]*\.adm \.hsplit\{display:grid;grid-template-columns:minmax\(0,1fr\) 380px/.test(at860)
       && /\.adm \.hpair\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)/.test(at860) && /\.adm #makerBulletin\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)/.test(at860)
       && /@media \(min-width:1440px\)\{\.adm \.hsplit\{grid-template-columns:minmax\(0,1fr\) 420px\}\}/.test(at860) && /\.adm \.hpane\{display:none\}/.test(at860),

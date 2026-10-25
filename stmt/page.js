@@ -737,7 +737,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
    its quick buttons, every one 44px. */
 .adm .maker-week{display:flex;flex-direction:column;gap:2px;margin:8px 0}
 .adm .maker-week-scale,.adm .maker-day{display:grid;grid-template-columns:40px minmax(0,1fr) 128px;align-items:center;gap:12px;padding:0 8px}
-/* 25 Oct 2026 (Salt Admin Shop): a date's name is wider than a weekday's, so the dates keep their own column */
+/* 25 Oct 2026 (his Shop canvas): a date's name is wider than a weekday's, so the dates keep their own column */
 .adm .maker-dates .maker-day{grid-template-columns:84px minmax(0,1fr) 128px}
 .adm .maker-week-scale>span:nth-child(2){display:flex;justify-content:space-between;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
 .adm .maker-day{min-height:44px;width:100%;border:0;border-radius:var(--salt-radius-md);background:none;color:var(--salt-salt);font:inherit;text-align:left;cursor:pointer}
@@ -766,7 +766,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .aparts--nav{display:grid;grid-template-columns:auto auto auto auto;justify-content:space-between;gap:0 4px;margin:0}
 .adm .aparts--nav .nktab{padding:0 8px;white-space:nowrap}
 @media (min-width:860px){.adm .aparts--nav{grid-template-columns:repeat(4,minmax(0,1fr));gap:0 16px}}
-/* 25 Oct 2026 (Salt Admin Shop): the points, a plain table; the code and place fields side by side, Add beside a line, Save across */
+/* 25 Oct 2026 (his Shop canvas): the points, a plain table; the code and place fields side by side, Add beside a line, Save across */
 .adm .apoints-card{padding:4px 8px;margin:0 0 12px}
 .adm .apoints{table-layout:fixed;width:100%;border-collapse:collapse}
 .adm .apoints th,.adm .apoints td{height:52px;padding:0 8px;vertical-align:middle;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -779,7 +779,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .apoints-add>label{min-width:0}
 .adm .apoints-add input{box-sizing:border-box;width:100%;min-width:0}
 .adm .apoints-save{display:flex;margin:8px 0 0}
-/* 25 Oct 2026 (Salt Admin Shop): Practice, its table, the password once, the actions across */
+/* 25 Oct 2026 (his Shop canvas): Practice, its table, the password once, the actions across */
 .adm #mTest{display:flex;flex-direction:column;gap:8px}
 .adm .atest-head{justify-content:flex-end}
 .adm .atest-lead{margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -791,7 +791,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .atest-pwv{font-family:var(--salt-font-mono)}
 .adm .atest-acts{display:flex;flex-direction:column;gap:8px;margin:8px 0 0}
 .adm .atest-acts>a,.adm .atest-acts>button{box-sizing:border-box;width:100%;height:48px;min-height:48px;padding:0 16px;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-/* 25 Oct 2026 (Salt Admin Shop): This device, a row each of one height: the label, the state word leading its line, the control at the right */
+/* 25 Oct 2026 (his Shop canvas): This device, a row each of one height: the label, the state word leading its line, the control at the right */
 .adm #oLook .salt-ledger__row{display:grid;grid-template-columns:minmax(0,1fr) 132px;grid-template-rows:auto auto;column-gap:12px;row-gap:6px;align-items:center;min-height:80px;box-sizing:border-box;padding:12px 0}
 .adm #oLook .salt-ledger__line{display:contents}
 .adm #oLook .salt-ledger__label{grid-column:1;grid-row:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
@@ -801,7 +801,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm #oLook .adev-line{grid-column:1;grid-row:2;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .adm #oLook .adev-line b{color:var(--salt-salt)}
 .adm #oLook .adev-note{margin:4px 0 0}
-/* 25 Oct 2026 (Salt Admin Shop): WIDE. Below 860px one column as drawn; from 860px Shop takes the whole column: the glance in one row, the open
+/* 25 Oct 2026 (his Shop canvas): WIDE. Below 860px one column as drawn; from 860px Shop takes the whole column: the glance in one row, the open
    day in a pane beside the week (380px, 420px from 1440px), the points beside Help, Notice's two parts and Practice's actions a column each */
 .adm .hpane{display:none}
 .adm .anotice-col{display:flex;flex-direction:column;gap:12px;min-width:0}
@@ -832,7 +832,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-facts{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm)}
 .adm .maker-row{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--salt-text-sm)}
 .adm #makerBulletinCurrent{overflow-wrap:anywhere}
-/* 25 Oct 2026 (Salt Admin Shop): Up now, the Counter's Notice recipe and the numbered lines; New notice, Set across, the two ghosts beside */
+/* 25 Oct 2026 (his Shop canvas): Up now, the Counter's Notice recipe and the numbered lines; New notice, Set across, the two ghosts beside */
 .adm #makerBulletin{display:flex;flex-direction:column;gap:12px}
 .adm .anotice{padding:16px;display:flex;flex-direction:column;gap:8px}
 .adm .anotice-list{margin:0;padding:0;list-style:none;counter-reset:nline}
@@ -1220,7 +1220,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm .ordsteps .salt-steps__name,.adm .ordsteps .salt-steps__time{white-space:nowrap}
 .adm .need-clock--late .oclock__min{color:var(--salt-ember)}
 .adm .need-clock{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
-/* 25 Oct 2026 (canvas Salt Admin Shop): FOR NOW, first on Hours, folded behind one pill; the form opens on that tap. A row action is 132px and the
+/* 25 Oct 2026 (his Shop canvas): FOR NOW, first on Hours, folded behind one pill; the form opens on that tap. A row action is 132px and the
    form's ask two halves (.apair); the glance is the system's one-line KPI tiles */
 .adm .anow{display:flex;flex-direction:column;gap:14px;padding:16px;margin:0 0 16px}
 .adm #makerNow{display:flex;flex-direction:column;gap:14px;min-width:0}
@@ -1626,7 +1626,7 @@ function lookRow(owner) {
 /* 12 Oct 2026 (PHASE 4b, his decision 3 of 11 Oct): THE ONE UNLOCK of Salt Admin, owner only. Shop > This device holds its state and its Unlock or Lock; the Sheet is
    the one field (stmt/owner.js, makerVaultUnlock), opened from here and from every place that says Locked. The field is never in a form and never remembered. */
 function vaultRow() {
-  /* 25 Oct 2026 (Salt Admin Shop): the label, then the state word leading its line, the control at the right */
+  /* 25 Oct 2026 (his Shop canvas): the label, then the state word leading its line, the control at the right */
   return '<div id="vaultRow" class="salt-ledger salt-ledger--plain"><div class="salt-ledger__row"><div class="salt-ledger__line">'
     + '<span class="salt-ledger__label" id="vaultH">Names and places</span>'
     + '<span class="salt-ledger__value lookset" role="group" aria-labelledby="vaultH">'
@@ -1912,7 +1912,7 @@ const adminParts = (p, test) => test && !TEST_PARTS[p] ? ""
   : p === "orders"
   ? adminStrip(p, ADMIN_PARTS[p].filter(([k]) => ADMIN_ORDER_STAGES.includes(k)), " salt-tabs--arrows aparts--stages", "Order stages")
     + adminStrip(p, ADMIN_PARTS[p].filter(([k]) => !ADMIN_ORDER_STAGES.includes(k) && (!test || TEST_PARTS[p].includes(k))), " aparts--minor", "Other orders")
-  /* 25 Oct 2026 (Salt Admin Shop): Shop's four parts are a text tab row on the nav recipe, as Needs you's kinds; the acts, ids and aria-selected as every strip's */
+  /* 25 Oct 2026 (his Shop canvas): Shop's four parts are a text tab row on the nav recipe, as Needs you's kinds; the acts, ids and aria-selected as every strip's */
   : p === "shop"
   ? '<nav class="salt-nav nkinds" aria-label="Shop"><div class="salt-nav__links aparts aparts--nav" role="tablist" aria-label="Shop" data-place="shop">'
     + ADMIN_PARTS[p].filter(([k]) => !test || TEST_PARTS[p].includes(k)).map(([k, w]) => '<button type="button" class="salt-nav__link nktab" role="tab" data-part="' + k + '" data-act="part.' + p + "." + k
@@ -2136,7 +2136,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + adminParts("shop", test)
         + '<div class="abody">'
         + '<section data-in="shop.hours" aria-labelledby="makerHoursTitle"><h2 id="makerHoursTitle" class="sr">Shop hours</h2>'
-        /* 25 Oct 2026 (canvas Salt Admin Shop, his yes): FOR NOW FIRST, where the bar's hours chip lands, then the glance, then the week */
+        /* 25 Oct 2026 (his Shop canvas, his yes): FOR NOW FIRST, where the bar's hours chip lands, then the glance, then the week */
         + '<section id="makerNowCard" class="salt-glass-card salt-glass-card--radius-lg anow" aria-label="For now"><div id="makerNow"><p class="lead" id="makerHoursStatus">Reading.</p></div>'
         + '<p id="makerHoursMessage" class="msg" role="status" aria-live="polite"></p></section>'
         + '<div id="makerConfirm" class="shglance" role="group" aria-label="At a glance"></div>'
