@@ -143,4 +143,37 @@ export async function run({ ok, pageWork }) {
     ok(z.d.getElementById("makerBulletinUp").hidden && !z.d.getElementById("makerBulletinNone").hidden && t(z.d.getElementById("makerBulletinCount")) === "None",
       "with no notice up, the card goes and a line says customers see none");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { z.w.close(); }
+
+  /* P5: the practice accounts, one open (the harness's own), then all three */
+  const tests = (u) => ({ username: u, code: "", account: true, test: true, state: "open", seen: { opens: 0 } });
+  const one = await open();
+  try {
+    await one.tap("nav.shop"); await one.tap("part.shop.practice");
+    const box = one.d.getElementById("mTest"), make = byAct(box, "more.test-accounts");
+    /* P5.1 */
+    const rowsT = [...box.querySelectorAll("table.salt-table--plain tbody tr")].map((r) => t(r.querySelector("th[data-test]")) + " " + t(r.querySelector(".atest-shows")) + " " + t(r.querySelector(".salt-status")));
+    ok(JSON.stringify(rowsT) === JSON.stringify(["0000-0000 Every case Open", "0000-0001 Locked, to pay None", "0000-0002 Fresh, to order None"]) && t(box.querySelector("[data-test-state]")) === "1 of 3 open",
+      "the practice accounts are a plain table, a username, what it shows and Open or None a row, and the head counts the open: " + rowsT.join(" | "));
+    /* P5.2 */
+    ok(t(box.querySelector(".atest-pw .salt-kpi__label")) === "Password" && t(box.querySelector(".atest-pwv")) === "0000-0000-0000-0000" && !byAct(box, "more.test-page") && make.classList.contains("salt-pill") && t(make) === "Make 0000-0001 and 0000-0002",
+      "with one open: the password once, no test page yet, and one pill making the two missing: " + JSON.stringify([t(box.querySelector(".atest-pw")), !!byAct(box, "more.test-page"), make.className, t(make)]));
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { one.w.close(); }
+  const all = await open({ sheetAnswer: (j) => ({ ...j, accounts: j.accounts.concat(["0000-0001", "0000-0002"].map(tests)) }) });
+  try {
+    await all.tap("nav.shop"); await all.tap("part.shop.practice");
+    const box = all.d.getElementById("mTest"), go = byAct(box, "more.test-page"), rm = byAct(box, "more.test-accounts");
+    ok(!!go && go.tagName === "A" && go.getAttribute("href") === "/all/test" && go.classList.contains("salt-pill") && t(go) === "Open the test page" && rm.classList.contains("salt-ghost") && t(rm) === "Remove the practice accounts"
+      && t(box.querySelector("[data-test-state]")) === "3 of 3 open",
+      "with all three open: Open the test page, a pill to /all/test, and Remove the practice accounts a ghost");
+    /* P5.3 */
+    const sent = () => all.posts.filter((x) => x.route === "/all/test").length, sheet = () => all.d.getElementById("ynSheet");
+    rm.click(); await all.work.quiet();
+    ok(!!sheet() && !sheet().hidden && t(sheet().querySelector(".salt-sheet__title")) === "Remove all three?" && /Everything they wrote goes with them/.test(t(sheet())) && sent() === 0,
+      "Remove asks once on the Sheet and sends nothing yet");
+    byAct(sheet(), "ask.keep", "test:remove").click(); await all.work.quiet();
+    ok(sent() === 0, "Keep them sends nothing");
+    byAct(all.d.getElementById("mTest"), "more.test-accounts").click(); await all.work.quiet();
+    byAct(sheet(), "ask.go", "test:remove").click(); await all.work.quiet();
+    ok(sent() === 1 && JSON.stringify(all.posts.filter((x) => x.route === "/all/test")[0].body) === JSON.stringify({ make: false }), "Remove sends the one removal");
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { all.w.close(); }
 }

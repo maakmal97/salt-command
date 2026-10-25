@@ -773,6 +773,18 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .apoints .apoints-x .salt-ghost{width:44px;height:44px;min-width:44px;padding:0}
 .adm .apoints-add{display:grid;grid-template-columns:88px minmax(0,1fr);gap:8px;margin:0 0 8px}
 .adm .apoints-save{display:flex;margin:8px 0 0}
+/* 25 Oct 2026 (Salt Admin Shop): Practice, its table, the password once, the actions across */
+.adm #mTest{display:flex;flex-direction:column;gap:8px}
+.adm .atest-head{justify-content:flex-end}
+.adm .atest-lead{margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .atest .atest-u{width:112px;font-family:var(--salt-font-mono)}
+.adm .atest .atest-shows{font-size:var(--salt-text-sm)}
+.adm .atest .atest-st{width:72px;text-align:right}
+.adm .atest-pw{display:flex;align-items:center;justify-content:space-between;gap:12px;height:56px;box-sizing:border-box;padding:0 16px}
+.adm .atest-pw>*{white-space:nowrap}
+.adm .atest-pwv{font-family:var(--salt-font-mono)}
+.adm .atest-acts{display:flex;flex-direction:column;gap:8px;margin:8px 0 0}
+.adm .atest-acts>a,.adm .atest-acts>button{box-sizing:border-box;width:100%;height:48px;min-height:48px;padding:0 16px;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .apoints-save>.salt-pill{flex:1 1 auto;box-sizing:border-box;height:48px;min-height:48px;padding:0 16px}
 .adm .maker-dayedit-times>button{min-height:44px;min-width:44px}
 .adm .maker-copy{display:flex;flex-wrap:wrap;gap:8px}

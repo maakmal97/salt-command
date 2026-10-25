@@ -6944,18 +6944,36 @@ export const OWNER_JS = `
      all three; the names are stmt/testusers.js's list. */
   var TEST_ALL=${JSON.stringify(TEST_USERS)};
   var TEST_LINE='Password 0000-0000-0000-0000 for all three. Username 0000-0000 shows every case; 0000-0001 is locked, for paying only; 0000-0002 is fresh, with room to order.';
+  var TEST_SHOWS=['Every case','Locked, to pay','Fresh, to order'];
   function drawTest(){
     var box=document.getElementById('mTest'); if(!box) return;
     /* a pair made by halves (a tap cut off between its two sends) keeps Make, for the one missing (Fable's review) */
     var have=sheetRows.filter(function(a){ return a.test; }).map(function(a){ return a.username; });
     var need=TEST_ALL.filter(function(u){ return have.indexOf(u)<0; }), on=!need.length;
     box.textContent='';
-    box.appendChild(el('p','lead', on
-      ? 'Three practice accounts are open. '+TEST_LINE+' Nothing they do is recorded.'
-      : have.length ? 'Practice account'+(have.length>1?'s ':' ')+have.join(' and ')+(have.length>1?' are':' is')+' open. One tap makes '+need.join(' and ')+'.'
-      : 'No practice accounts. One tap makes three you can open anywhere: one with every case, one locked, one fresh. Nothing they do is recorded.'));
-    var b=el('button','btn quiet salt-ghost', on?'Remove the practice accounts':'Make the practice accounts'); b.type='button'; actOn(b,'more.test-accounts');
+    /* 25 Oct 2026 (Salt Admin Shop, his yes to both halves of Ask H): the accounts as a plain table (username, what it shows, Open or None),
+       the password once, Open the test page while all three are open, and Remove asking once on the Sheet */
+    box.appendChild(el('h2','sr','Practice accounts'));
+    var head=el('div','anow-head atest-head'), state=chip(on?'verdigris':have.length?'brass':'mist', have.length+' of '+TEST_ALL.length+' open');
+    state.setAttribute('data-test-state',String(have.length)); head.appendChild(state); box.appendChild(head);
+    box.appendChild(el('p','msg atest-lead', on?'Open them anywhere. Nothing they do is recorded.'
+      : have.length?'One tap makes '+need.join(' and ')+'.':'One tap makes three you can open anywhere.'));
+    var tbl=el('table','salt-table salt-table--plain apoints atest'), thead=el('thead'), hr=el('tr'), body=el('tbody');
+    [['Username','atest-u'],['Shows',''],['State','atest-st']].forEach(function(h){ var th=el('th',h[1]||null,h[0]); th.scope='col'; hr.appendChild(th); });
+    thead.appendChild(hr); tbl.appendChild(thead);
+    TEST_ALL.forEach(function(u,i){
+      var made=have.indexOf(u)>=0, tr=el('tr'), th=el('th','atest-u',u), st=el('td','atest-st'); th.scope='row'; th.setAttribute('data-test',u);
+      tr.appendChild(th); tr.appendChild(el('td','atest-shows',TEST_SHOWS[i]||'')); st.appendChild(chip(made?'verdigris':'mist',made?'Open':'None')); tr.appendChild(st); body.appendChild(tr);
+    });
+    tbl.appendChild(body);
+    var card=el('div','salt-glass-card salt-glass-card--radius-lg apoints-card'); card.appendChild(tbl); box.appendChild(card);
+    if(have.length){ var pw=el('div','salt-glass-card salt-glass-card--radius-lg atest-pw'); pw.appendChild(el('span','salt-kpi__label','Password')); pw.appendChild(el('span','atest-pwv','0000-0000-0000-0000')); box.appendChild(pw); }
+    var acts=el('div','atest-acts');
+    if(on){ var go=actOn(el('a','salt-pill salt-pill--sm','Open the test page'),'more.test-page'); go.href='/all/test'; acts.appendChild(go); }
+    var b=el('button',on?'salt-ghost':'salt-pill salt-pill--sm', on?'Remove the practice accounts':need.length===TEST_ALL.length?'Make the practice accounts':'Make '+need.join(' and ')); b.type='button'; actOn(b,'more.test-accounts');
+    if(on) ynTag(b,'test:remove');
     b.addEventListener('click', async function(){
+      if(on&&!(await ownerAsk(b,'test:remove',{title:'Remove all three?', say:['Everything they wrote goes with them.'], go:'Remove', keep:'Keep them'}))) return;
       b.disabled=true; say(on?'Removing...':'Making...','wait');
       try{
         if(on) await refs('/all/test',{make:false});
@@ -6965,7 +6983,7 @@ export const OWNER_JS = `
       }catch(e){ sayFail(e); }
       b.disabled=false; drawTest();
     });
-    box.appendChild(b);
+    acts.appendChild(b); box.appendChild(acts);
   }
   /* a place, an item on More, or a way back: one listener for the whole of his page */
   roster.addEventListener('click', function(ev){

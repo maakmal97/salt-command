@@ -39,5 +39,15 @@
  {"name":"the card stays with nothing up","file":"stmt/owner.js","find":"card.hidden=!list.length; if(none) none.hidden=!!list.length;","replace":"card.hidden=false; if(none) none.hidden=true;"},
  {"name":"Clear keeps its old words","file":"stmt/owner.js","find":"clear=el('button','salt-ghost','Clear it'),","replace":"clear=el('button','salt-ghost','Clear the notice'),"},
  {"name":"Clear does not stand beside Read it again","file":"stmt/owner.js","find":"root.appendChild(set); pair.appendChild(clear); pair.appendChild(refresh); root.appendChild(pair);","replace":"root.appendChild(set); root.appendChild(clear); pair.appendChild(refresh); root.appendChild(pair);"},
- {"name":"the box keeps its old label","file":"stmt/owner.js","find":"label.appendChild(el('span','lbl salt-field__label','One line each'));","replace":"label.appendChild(el('span','lbl salt-field__label','Notice (one line each)'));"}
+ {"name":"the box keeps its old label","file":"stmt/owner.js","find":"label.appendChild(el('span','lbl salt-field__label','One line each'));","replace":"label.appendChild(el('span','lbl salt-field__label','Notice (one line each)'));"},
+ {"name":"the practice accounts are no plain table","file":"stmt/owner.js","find":"var tbl=el('table','salt-table salt-table--plain apoints atest')","replace":"var tbl=el('table','salt-table apoints atest')"},
+ {"name":"a row does not say what it shows","file":"stmt/owner.js","find":"tr.appendChild(el('td','atest-shows',TEST_SHOWS[i]||''));","replace":"tr.appendChild(el('td','atest-shows',''));"},
+ {"name":"a missing account reads Open","file":"stmt/owner.js","find":"st.appendChild(chip(made?'verdigris':'mist',made?'Open':'None'));","replace":"st.appendChild(chip('verdigris','Open'));"},
+ {"name":"the head does not count the open","file":"stmt/owner.js","find":"have.length+' of '+TEST_ALL.length+' open');","replace":"'Open');"},
+ {"name":"no password","file":"stmt/owner.js","find":"pw.appendChild(el('span','atest-pwv','0000-0000-0000-0000'));","replace":""},
+ {"name":"the test page shows with one open","file":"stmt/owner.js","find":"    if(on){ var go=actOn(el('a','salt-pill salt-pill--sm','Open the test page'),'more.test-page');","replace":"    if(true){ var go=actOn(el('a','salt-pill salt-pill--sm','Open the test page'),'more.test-page');"},
+ {"name":"the test page goes elsewhere","file":"stmt/owner.js","find":"go.href='/all/test';","replace":"go.href='/all';"},
+ {"name":"Make names no missing account","file":"stmt/owner.js","find":"need.length===TEST_ALL.length?'Make the practice accounts':'Make '+need.join(' and ')","replace":"'Make the practice accounts'"},
+ {"name":"Remove does not ask","file":"stmt/owner.js","find":"      if(on&&!(await ownerAsk(b,'test:remove',{title:'Remove all three?', say:['Everything they wrote goes with them.'], go:'Remove', keep:'Keep them'}))) return;\n","replace":""},
+ {"name":"Keep them still removes","file":"stmt/owner.js","find":"keep:'Keep them'}))) return;","replace":"keep:'Keep them'}))&&false) return;"}
 ]

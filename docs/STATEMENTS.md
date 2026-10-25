@@ -2631,7 +2631,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `look.sheet-tide` | Same Sheet | Chooses Tide, keeps it and closes the Sheet. |
 | `look.tide` | Shop, This device, Look | Tide for Salt Admin on this device, at once, kept here. |
 | `maker.refresh` | Orders, Order review | Reads the orders again. |
-| `more.test-accounts` | Shop, Practice | Makes or deletes the three test accounts. |
+| `more.test-accounts` | Shop, Practice | Makes the three test accounts, or deletes them once its Sheet is answered Remove. |
+| `more.test-page` | Shop, Practice, while all three are open | Opens the test surface, `/all/test`. |
 | `nav.add` | The + orb at the foot of the page, on every place but Record, below 1080px | Opens Record, on Entry, the menu of entries. Reads what Record reads on entering. |
 | `rail.add` | New entry, the rail's + under his places, from 1080px, on every place but Record | Opens Record on Entry, as the orb does. |
 | `nav.customers` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Customers, on its Accounts. |

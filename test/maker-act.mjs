@@ -518,6 +518,13 @@ export async function auditStates({ pageWork }) {
     await pt.click(byAct(pt.card("ord-a1"), "order.ready-collect")); await pt.work.quiet();
     states.push(["Ready to collect asking which point", actAudit(pt.d)]);
   } finally { pt.w.close(); }
+  /* 25 Oct 2026 (Salt Admin Shop): the three practice accounts open, so Practice draws Open the test page */
+  const tp = await richOwnerPage({ pageWork, sheetAnswer: (j) => ({ ...j, accounts: j.accounts.concat(["0000-0001", "0000-0002"].map((u) => ({ username: u, code: "", account: true, test: true, state: "open", seen: { opens: 0 } }))) }) });
+  try {
+    await tp.work.quiet();
+    await tp.click(byAct(tp.d, "nav.shop")); await tp.click(byAct(tp.d, "part.shop.practice")); await tp.work.quiet();
+    states.push(["the practice accounts, all three open", actAudit(tp.d)]);
+  } finally { tp.w.close(); }
   return states;
 }
 
