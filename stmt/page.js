@@ -656,7 +656,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .aparts.salt-segment{max-width:30rem}
 .adm .aparts .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
 /* 18 OCT 2026 (clarity, part 3): Orders' stages are the first strip, the rest a smaller one beneath it; an order's card leads with its answer and folds the rest */
-/* 25 Oct 2026 (canvas Salt Admin Orders): the parts are Needs you's text tab row (.nktab), two rows; the stages two across on a phone, the rest three */
+/* 25 Oct 2026 (the Orders canvas): the parts are Needs you's text tab row (.nktab), two rows; the stages two across on a phone, the rest three */
 .adm .oparts{padding:0;gap:0}
 .adm .oparts .aparts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px;margin:0;width:100%}
 .adm .oparts--minor{margin:0 0 16px}
@@ -1172,7 +1172,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm .nfold>summary.nsev:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px}
 /* 14 OCT 2026: ORDERS ARE ROWS OF ONE GRID: the mark in a fixed column, the code and at most one pill over what it is, the age over the figure in a fixed column on the
    right, every row the same height. The system's Inbox row keeps its class; the grid is this page's own container class. */
-/* 25 Oct 2026 (canvas Salt Admin Orders): AN ORDER IS NEEDS YOU'S CARD, 76px on a phone and 80 from 860; the row's button fills it and the pill stands in its
+/* 25 Oct 2026 (the Orders canvas): AN ORDER IS NEEDS YOU'S CARD, 76px on a phone and 80 from 860; the row's button fills it and the pill stands in its
    column above it; from 1080px the parts are a plain table's columns under .ohead-row */
 .adm .ordcard{position:relative;display:block;height:76px;padding:0;box-sizing:border-box}
 .adm .ordcard:hover{background:var(--salt-glass-hover)}
@@ -2049,7 +2049,7 @@ const adminStrip = (p, list, cls, label, seg = !cls && ADMIN_SLIDERS.includes(p)
    with each stage's count, since the Steps recipe is a drawing and not a row of controls); Approve, Payments, Group and Ledger stand apart beneath, smaller. Every part keeps
    its id, its act and its address, and PARTS is both strips together (stmt/owner.js), so only the drawing is split. */
 const ADMIN_ORDER_STAGES = ["placed", "confirmed", "ready", "paid", "done", "ended"];
-/* 25 Oct 2026 (canvas Salt Admin Orders, his yes to Asks A to C): THE PARTS ARE TWO TEXT TAB ROWS ON THE NAV RECIPE, as Needs you's kinds: the six
+/* 25 Oct 2026 (the Orders canvas, his yes to Asks A to C): THE PARTS ARE TWO TEXT TAB ROWS ON THE NAV RECIPE, as Needs you's kinds: the six
    stages in the words of the order's steps (Placed, Agreed, Ready, Out or paid, Done, Ended), each with the count of its orders waiting on him, then
    Payments, Group and Ledger under a hairline. Approve leaves the rows, reached by the bar's Approve; its tab stays, hidden, so its part and its
    address (#orders/approve) are as they were. Two stages across on a phone and three of the rest, six across from 860px. */

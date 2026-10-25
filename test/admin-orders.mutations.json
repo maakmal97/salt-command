@@ -643,7 +643,7 @@
   "replace": ""
  },
 {"name": "a part is a pill again", "file": "stmt/page.js", "find": "role=\"tab\" class=\"salt-nav__link nktab'", "replace": "role=\"tab\" class=\"salt-tabs__pill'"},
-{"name": "the move is not drawn", "file": "stmt/owner.js", "find": "    if(main){\n      /* P2 draws the move;", "replace": "    if(false){\n      /* P2 draws the move;"},
+{"name": "the move is not drawn", "file": "stmt/owner.js", "find": "    if(main){\n      var pill=actOn(el('button','salt-pill salt-pill--sm nbtn',main),'order.move',e.id);", "replace": "    if(false){\n      var pill=actOn(el('button','salt-pill salt-pill--sm nbtn',main),'order.move',e.id);"},
 {"name": "a payment's move is Ready", "file": "stmt/owner.js", "find": "    if(ordPays(o).length) return 'Received';\n", "replace": ""},
 {"name": "the card is any height", "file": "stmt/page.js", "find": ".adm .ordcard{position:relative;display:block;height:76px;", "replace": ".adm .ordcard{position:relative;display:block;"},
 {"name": "the wide list is no table", "file": "stmt/page.js", "find": "  .adm .ordrow,.adm .ohead-row{grid-template-columns:96px 120px minmax(0,1fr) 88px 176px 132px 136px;", "replace": "  .adm .ordrow,.adm .ohead-row{"},

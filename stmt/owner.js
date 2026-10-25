@@ -4185,7 +4185,7 @@ export const OWNER_JS = `
   function ordMoveSend(e,main){
     var o=e.order; if(!o||!main||ordBusy[e.id]) return;
     delete ordAsk[e.id]; ordBusy[e.id]=main; ordRowRedraw(e);
-    var done=main==='Withdraw'?makerTap(o,'withdraw',{},'Offer withdrawn. The order stands as they placed it.')
+    var done=main==='Withdraw'?makerTap(o,'withdraw',{},'Offer withdrawn; the order stands as they placed it.')
       :main==='Ready'?makerMove(o,{status:'ready',mode:'deliver'},'Order marked ready to deliver.')
       :main==='Handed'?makerTap(o,'handed',{qty:Number(o.qty)},'Handover sent to the Desk.')
       :main==='Received'?orderReceived(o,ordPays(o)[0]):Promise.resolve(false);

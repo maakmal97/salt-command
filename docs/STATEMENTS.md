@@ -2752,8 +2752,6 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.accept-wait` | Order card, placed, until its figures are read | Stands in for Agree and sends nothing: asks for the delivery charge (and takes him to it; the terms stand in view since 25 Oct 2026), or says the figures are being read. |
 | `order.answer` | Order card | Opens or shuts the folded reply, Answer them. |
 | `order.customer.use` | Order card (key: the order id), This customer, a customer's salt order with a suggested % over theirs | Sends the suggested % as their % (tier-set), for review under Approve. |
-| `order.terms` | Retired 25 Oct 2026 | Opened or shut the folded Change terms; the terms now stand in view on the card. |
-| `order.terms-fold` | Retired 25 Oct 2026 | The Change terms fold's own summary. |
 | `order.again-amend` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected amendment again. |
 | `order.again-cancel` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected cancellation again. |
 | `order.again-cash` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected cash again. |

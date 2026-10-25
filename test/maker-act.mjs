@@ -526,6 +526,13 @@ export async function auditStates({ pageWork }) {
     await tp.click(byAct(tp.d, "nav.shop")); await tp.click(byAct(tp.d, "part.shop.practice")); await tp.work.quiet();
     states.push(["the practice accounts, all three open", actAudit(tp.d)]);
   } finally { tp.w.close(); }
+  /* 25 Oct 2026 (Salt Admin Orders, Ask D): a row's move asking once draws its Yes and Not now */
+  const ra = await richOwnerPage({ pageWork });
+  try {
+    await ra.work.quiet();
+    await ra.click(byAct(ra.d, "nav.orders")); await ra.click(byAct(ra.d, "part.orders.placed")); await ra.click(byAct(ra.d, "order.move", "ord-p4")); await ra.work.quiet();
+    states.push(["a row's move asking once", actAudit(ra.d)]);
+  } finally { ra.w.close(); }
   return states;
 }
 
