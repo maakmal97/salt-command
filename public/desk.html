@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="225b66f3f4724953";
+var SALT_BUILD_ID="88e6f50b08fc1cc3";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -11091,7 +11091,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1253","d":"26 Oct 2026","t":"S3 OF THE BOOK PLAN: THE READERS CAN READ THE BOOK, SHIPPED OFF","n":["<b>THE READERS MAY READ THE BOOK (S3 OF THE BOOK PLAN, HIS WORD OF 25 OCT 2026).</b> Behind a one-row flag in D1 (migrations/0018, applied to the live D1 first and shipped at 'd1', so nothing reads differently until it is set) the Desk's book reads come from the Book Durable Object instead of the D1 mirror: every list in the book's own order, the derived documents the readers need, the version and the moment of the Book's latest load. A Book that trails the mirror (a load that failed) is never read. The way back is one D1 statement and no deploy (docs/DESK.md, The Book: read). Orders and the book stay two objects, his answer of 25 Oct 2026.","<b>ON ITS WAY IS THE BOOK'S OWN BOUND.</b> A payment or lot drafted and not yet in the book a reader read is now judged against the moment of that very book's load (src/way.js), and the money taps, the drafter's reservations, the maker's held moves, the claim flow and the site-follow checks read the book first and the drafts by its bound, so a tap whose reads straddle a load counts nothing twice and misses nothing. Read from the mirror, every clause is byte for byte what it was. Awaiting-the-fold questions and input admission stay on committed_at.","<b>CHECKS.</b> A load of an older version is refused (409). GET /book/readcheck, asked by the chain after every load, names what differs between the Book and the mirror (by name, never a row or a value) and goes red without blocking the fold. Fable reviewed the data path before the build and the diff after; its findings are applied and re-checked. No price, order, ledger row or stock figure moves."]}];
+const evolution=[{"v":"v1254","d":"26 Oct 2026","t":"SALT ADMIN'S SHOP ON THE SALT SYSTEM","n":["<b>SHOP ON THE SALT SYSTEM (HIS YES OF 25 OCT 2026 TO EVERY ASK OF THE SHOP CANVAS).</b> Salt Admin's Shop opens Hours on For now, the shop's state as its title and one pill, Hold the shop, that opens the override; Weekly hours stands only while one is filed. Points, Dates and Confirm time are one-line tiles. A tapped day or date holds what customers would see, then Discard changes beside Done; the dates keep their own column and a close past midnight draws a solid tail.","<b>THE OTHER PARTS.</b> Collection points are a plain table with a cross to take one off; Notice shows the lines up now as customers read them, every line numbered, then New notice; Practice lists the three accounts, offers Open the test page while all three are open, and Remove asks once; This device is a row each, the state word leading its line. Shop's parts are the Nav bar's text tabs, and from 860px the open day stands in a pane beside the week.","<b>CHECKS.</b> One new suite section of 43 checks, each proved red by its own mutation; the older Shop sections re-aimed where the page moved. No route, request body or stored shape changes. No price, order, ledger row or stock figure moves."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11239,7 +11239,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='26 Oct 2026, 00:52 KL';
+const LAST_UPDATED='26 Oct 2026, 01:06 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
