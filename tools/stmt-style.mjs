@@ -114,6 +114,9 @@ export const RECIPE_HEADS = [
   "/* ---- Ledger list, receipt:", "/* ---- Band:", "/* ---- Empty state:", "/* ---- Glass card, link:", "/* ---- Pin:", "/* ---- Glance:",
   /* COUNTER BATCH C (20 Oct 2026, salt-ds 1.9): the slider, his pick of three, for a choice of two to six that fits a phone */
   "/* ---- Segment (",
+  /* 26 Oct 2026 (his word on Salt Admin's This device): one thing on or off, and the plain list of settings that holds it */
+  "/* ---- Switch (",
+  "/* ---- Settings (",
   /* SALT ADMIN NEEDS YOU (22 Oct 2026, his canvas): the kinds are a text tab row on the system's Nav bar, so its link is carried */
   "/* ---- Nav bar ---- */",
 ];

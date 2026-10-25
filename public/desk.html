@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="1adb9e8f44b96dde";
+var SALT_BUILD_ID="f9f554c591e41692";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -2124,6 +2124,10 @@ details.obs>summary{min-height:var(--tap);}
 }
 .salt-pill--md { padding: 16px 40px; font-size: 0.875rem; }
 .salt-pill--sm { padding: 10px 20px; font-size: 0.71875rem; }
+/* 1.17.0 (canvas Salt Admin Orders, 25 Oct 2026): THE DANGER PILL, a refusal chosen and filled, as a ticked Reject beside a ticked Approve: the ember
+   under the ink on accent, so the two decided states carry one weight; the danger ghost stays the refusal at rest (npm run contrast measures the ink) */
+.salt-pill--danger { background: var(--salt-ember); box-shadow: 0 8px 24px color-mix(in srgb, var(--salt-ember) 30%, transparent); }
+.salt-pill--danger:hover { box-shadow: 0 12px 32px color-mix(in srgb, var(--salt-ember) 40%, transparent); }
 .salt-pill:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(var(--salt-copper-rgb, 184, 115, 51), 0.4); }
 .salt-pill:active { transform: translateY(0); box-shadow: 0 8px 24px rgba(var(--salt-copper-rgb, 184, 115, 51), 0.3); }
 .salt-pill:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 3px; }
@@ -3068,6 +3072,98 @@ label.salt-field__label {
 /* The tight slider (1.16.0, Salt Admin Customers, 25 Oct 2026): four places whose longest word is ten letters fit whole at 390px, the tracking
    halved and the option's own padding thinned; nothing else about the recipe moves. */
 .salt-segment--tight .salt-segment__opt { letter-spacing: 0.06em; padding: 0 2px; }
+
+/* ---- Switch (1.18.0, 26 Oct 2026, his word on Salt Admin's This device: "like settings on an iPhone"): one thing on or off.
+   A <button role="switch" aria-checked>, 52 by 44 for the tap, drawing a 48 by 28 track and a 22px knob. Off is the well
+   with a mist knob and no colour; on, the track fills verdigris and the knob, salt, slides right, 0.2s, not at all under
+   reduced motion. Disabled greys as a ghost does. A choice of three or more is a select (salt-field__select), never this. ---- */
+.salt-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 52px;
+  min-height: var(--salt-tap);
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.salt-switch::before {
+  content: "";
+  display: block;
+  box-sizing: border-box;
+  width: 48px;
+  height: 28px;
+  border-radius: var(--salt-radius-pill);
+  background: var(--salt-well);
+  border: 1px solid var(--salt-edge-field);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.salt-switch::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 5px;
+  width: 22px;
+  height: 22px;
+  margin-top: -11px;
+  border-radius: 50%;
+  background: var(--salt-mist-light);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+.salt-switch[aria-checked="true"]::before { background: var(--salt-verdigris); border-color: var(--salt-verdigris); }
+.salt-switch[aria-checked="true"]::after { transform: translateX(20px); background: var(--salt-salt); }
+.salt-switch:focus-visible { outline: none; }
+.salt-switch:focus-visible::before { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
+.salt-switch:disabled { opacity: 0.45; cursor: not-allowed; }
+@media (prefers-reduced-motion: reduce) {
+  .salt-switch::before, .salt-switch::after { transition: none; }
+}
+
+/* ---- Settings (1.18.0, 26 Oct 2026, the same word): a plain list of settings, one row each, the name at the left and
+   its control at the right (a Switch, a select, a short field and its pill), 56px rows on glass with hairlines between.
+   Few words: the name, and a value only where the control does not say it. ---- */
+.salt-settings {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 0 16px;
+  border-radius: var(--salt-radius-lg);
+  background: var(--salt-glass);
+  border: 1px solid var(--salt-line-faint);
+}
+.salt-settings__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 6px 0;
+  border-top: 1px solid var(--salt-line-faint);
+}
+.salt-settings__row:first-child { border-top: 0; }
+.salt-settings__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--salt-font-display);
+  font-size: var(--salt-text-lg);
+  color: var(--salt-salt);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.salt-settings__value {
+  flex: none;
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-sm);
+  color: var(--salt-mist-bright);
+  white-space: nowrap;
+}
+.salt-settings__row > .salt-field__input { flex: 0 1 200px; min-width: 0; box-sizing: border-box; }
 @media (prefers-reduced-motion: reduce) {
   .salt-segment::before { transition: none; }
 }
