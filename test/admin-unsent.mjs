@@ -156,8 +156,8 @@ export async function run({ ok, pageWork }) {
     await p.tap("nav.record");
     const loan = d.querySelector('#makerInputs section[data-key="loan"]');
     ok(!!loan && loan.querySelector("h3").textContent === "Unsent entry" && /^A loan you sent on 10 Oct 2026, 16:00 was not confirmed[.] Send it again, or update it first[.]/.test(loan.querySelector("p").textContent)
-      && ["record.retained.retry", "record.retained.review", "record.retained.cancel"].map((a) => byAct(loan, a).textContent).join() === "Send again,Update and send,Discard",
-    "the entry's own section says the same sentence and keeps Send again, Update and send and Discard: " + (loan && loan.textContent));
+      && ["record.retained.retry", "record.retained.review", "record.retained.cancel"].map((a) => byAct(loan, a).textContent).join() === "Resend,Update and send,Discard" && byAct(loan, "record.retained.retry").getAttribute("aria-label") === "Send again",
+    "the entry's own section says the same sentence and keeps Resend (spoken Send again, 25 Oct 2026), Update and send and Discard: " + (loan && loan.textContent));
     await p.tap("nav.needs");
     const text = bar.textContent + p.cards().map((c) => c.textContent).join(" ");
     ok(text.length > 40 && !/retain|immutable|vault|drafter|canonical|envelope|ciphertext|Worker/i.test(text), "and the banner and the card use none of the page's inner words: " + text);

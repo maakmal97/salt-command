@@ -48409,7 +48409,7 @@ await (async () => {
   await (await import("./counter-c-desk-slider.mjs")).run({ ok, master: process.env.SALT_MASTER || FROZEN_MASTER });
 })();
 
-section("Counter Batch C: the Counter's Look row, Orders tabs and Salt Admin's Record strip are the slider; the strips that do not fit a phone stay pills (P11)");
+section("Counter Batch C: the Counter's Look row and Orders tabs are the slider, Salt Admin's Record strip the Nav bar's tabs; the strips that do not fit a phone stay pills (P11)");
 await (async () => {
   await (await import("./counter-c-counter-slider.mjs")).run({ ok, pageWork });
 })();
@@ -49903,17 +49903,18 @@ await (async () => {
     ok(!doc.querySelector("[data-accept]"), "a preview returning after a field edit cannot restore a stale Accept");
     const tradeSection = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Sale or purchase");
     /* the few, fixed choices (sale or purchase, the book, the handover) are tiles, tapped; the select left is the party, then the figures in the order they stand */
-    const tradeControls = tradeSection.querySelectorAll("select, input:not([type=radio])");
+    /* 25 Oct 2026 (Record redesign P4): found by their acts, since the resale choice now stands before Who */
+    const tradeControl = (act) => tradeSection.querySelector('[data-act="record.trade.' + act + '"]');
     tile(tradeSection, "Sale or purchase", "sale");
     tile(tradeSection, "Book", "salt");
-    tradeControls[0].value = "CX1-AB";
-    tradeControls[1].value = "2026-10-01";
-    tradeControls[2].value = "1";
-    tradeControls[3].value = "100";
-    tradeControls[4].value = "0";
-    tradeControls[5].value = "0";
+    tradeControl("party").value = "CX1-AB";
+    tradeControl("date").value = "2026-10-01";
+    tradeControl("units").value = "1";
+    tradeControl("total").value = "100";
+    tradeControl("cash").value = "0";
+    tradeControl("moved").value = "0";
     tile(tradeSection, "Handover", "");
-    tradeControls[6].value = "0";
+    tradeControl("delivery").value = "0";
     [...tradeSection.querySelectorAll("button")].find((button) => button.textContent === "Send the sale").click();
     for (let i = 0; i < 100 && !adminCalls.some((call) => call.route === "/all/maker/inputs/sale"); i++)
       await new Promise((resolve) => setTimeout(resolve, 10));
@@ -50177,6 +50178,11 @@ await (async () => {
   await (await import("./live-desk.mjs")).run({ ok, pageWork });
 })();
 
+section("25 Oct 2026: Salt Admin's Orders, a row's move asks once and sends what the order card sends");
+await (async () => {
+  await (await import("./admin-orders-moves.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin: Orders open by stage, a list beside the order, and Record a menu");
 await (async () => {
   await (await import("./admin-orders.mjs")).run({ ok, pageWork });
@@ -50355,6 +50361,46 @@ await (async () => {
 section("22 Oct 2026: from 860px a Needs you card opens beside the list, the card in full over the order's or the account's own");
 await (async () => {
   await (await import("./admin-needs-pane.mjs")).run({ ok, pageWork });
+})();
+
+section("25 Oct 2026: Salt Admin Record, P1: the parts a text tab row with what waits unsent, each form a row with its line and its count");
+await (async () => {
+  await (await import("./admin-record-menu.mjs")).run({ ok, pageWork });
+})();
+
+section("25 Oct 2026: Salt Admin Record, P2: an entry unsent on this phone is Needs you's card, Resend its one pill, its second choices in the card opened");
+await (async () => {
+  await (await import("./admin-record-unsent.mjs")).run({ ok, pageWork });
+})();
+
+section("25 Oct 2026: Salt Admin Record, P3: every form two columns, its books typed tags, its figures mono and right, its one pill across the foot");
+await (async () => {
+  await (await import("./admin-record-fields.mjs")).run({ ok, pageWork });
+})();
+
+section("25 Oct 2026: Salt Admin Record, P4: the sale's resale choice before Who, its reading a ledger, its reward cover one row");
+await (async () => {
+  await (await import("./admin-record-trade.mjs")).run({ ok, pageWork });
+})();
+
+section("25 Oct 2026: Salt Admin Record, P5: the row chosen a card, What to do tiles with their notes, the changes a ledger, Reopen alike");
+await (async () => {
+  await (await import("./admin-record-correct.mjs")).run({ ok, pageWork });
+})();
+
+section("25 Oct 2026: Salt Admin Record, P6: a reward held and an offset offered are cards with one pill, Repayment says what is left");
+await (async () => {
+  await (await import("./admin-record-lists.mjs")).run({ ok, pageWork });
+})();
+
+section("25 Oct 2026: Salt Admin Record, P7: New customer shows the code it will get, and Change a name or place the code after");
+await (async () => {
+  await (await import("./admin-record-codes.mjs")).run({ ok, pageWork });
+})();
+
+section("25 Oct 2026: Salt Admin Record, P8: Pricing in his order, Printed sizes then Desk reminders");
+await (async () => {
+  await (await import("./admin-record-pricing.mjs")).run({ ok, pageWork });
 })();
 
 

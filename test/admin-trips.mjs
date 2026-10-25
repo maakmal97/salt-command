@@ -216,18 +216,19 @@ export async function run({ ok, pageWork }) {
     await p.tap("nav.orders");
     const card = p.card("trip:" + T), rowEl = p.d.querySelector('[data-act="order.open"][data-key="trip:' + T + '"]');
     const text = (n) => (n && n.textContent || "").replace(/\s+/g, " ").trim();
-    ok(!!rowEl && /orders\.confirmed/.test(rowEl.getAttribute("data-in")) && rowEl.querySelectorAll("svg.psym").length === 3 && /RM 271\.00/.test(text(rowEl)),
-      "the order of several books is one row under Agreed, a mark a line and what it owes: " + text(rowEl));
+    ok(!!rowEl && /orders\.confirmed/.test(rowEl.getAttribute("data-in")) && rowEl.querySelectorAll(".otag .salt-producttag").length === 3 && text(rowEl.querySelector(".ofig")) === "RM 271",
+      "the order of several books is one row under Agreed, a typed tag a line and what it owes: " + text(rowEl));
     /* 18 Oct 2026, his screenshot: the marks stand in the tile column, so the line is not squeezed into 84px and the figure keeps the right */
-    const tile = rowEl && rowEl.firstElementChild, what = rowEl && rowEl.querySelector(".salt-inbox-row__what");
-    ok(!!tile && tile.classList.contains("mtile") && tile.querySelectorAll("svg.psym").length === 3 && !!what && !what.querySelector("svg.psym") && text(what) === "one order",
-      "and its marks are the row's tile, its line the words alone: " + text(what));
+    const tags = rowEl && rowEl.querySelector(".otag"), what = rowEl && rowEl.querySelector(".okind");
+    ok(!!tags && tags.closest(".otitle") && !!what && !what.querySelector(".salt-producttag") && text(what) === "One order",
+      "and its tags stand in the title before the code, its kind line the words alone: " + text(what));
     ok(!!card && text(card.querySelector("h3")) === "CX9-ZED, 3 books, 14 Oct 2026" && text(card.querySelector(".salt-metrics")) === "Owed RM 271.00 Paid RM 0.00 Handed 0 of 3 lines",
       "its card's head reads owed, paid and the lines handed over across every line: " + text(card && card.querySelector(".salt-metrics")));
     const ls = card ? [...card.querySelectorAll(".tripline")] : [];
-    ok(ls.length === 3 && ls.every((l) => l.querySelector("svg.psym")) && text(ls[0].querySelector(".maker-facts")).endsWith("1 unit, RM 110.00 + RM 10.00 delivery, handed 0 of 1 unit")
-      && !/\b(salt|oil|rice)\b/i.test([...card.querySelectorAll(":scope > :not(.rdet)")].map(text).join(" ")),
-    "then one line a book, its mark, units, total and handed, and no word for a book: " + ls.map((l) => text(l.querySelector(".maker-facts"))).join(" | "));
+    const untagged = (n) => { const g = n.cloneNode(true); g.querySelectorAll(".salt-producttag").forEach((x) => x.remove()); return text(g); };
+    ok(ls.length === 3 && ls.every((l) => l.querySelector(".maker-facts .salt-producttag") && !l.querySelector(".maker-facts svg.psym")) && text(ls[0].querySelector(".maker-facts")).endsWith("1 unit, RM 110.00 + RM 10.00 delivery, handed 0 of 1 unit")
+      && !/\b(salt|oil|rice)\b/i.test([...card.querySelectorAll(":scope > :not(.rdet)")].map(untagged).join(" ")),
+    "then one line a book, its typed tag, units, total and handed, and no word for a book but in its tag: " + ls.map((l) => text(l.querySelector(".maker-facts"))).join(" | "));
     await p.tap("trip.handover", T);
     const hands = p.sent("/all/maker/inputs/ledger-amend");
     ok(J(hands.map((b) => [b.rid, b.kind, b.cash, b.movedUnits])) === J([["zt1", "Fulfilment", 0, 1], ["zt2", "Fulfilment", 0, 10], ["zt3", "Fulfilment", 0, 5]])
@@ -239,8 +240,9 @@ export async function run({ ok, pageWork }) {
     const nAgreed = shown("confirmed"), atAgreed = line();
     await p.tap("part.orders.placed");
     const nPlaced = shown("placed"), atPlaced = line();
-    ok(nAgreed >= 2 && atAgreed === nAgreed + " orders" && atPlaced === nPlaced + (nPlaced === 1 ? " order" : " orders") && nPlaced !== nAgreed,
-      "the line over the list counts the stage in view, and moves with the stage: " + J({ atAgreed, nAgreed, atPlaced, nPlaced }));
+    /* 25 Oct 2026 (Ask H): the line is the stage's money first, and the count it names is the stage in view */
+    ok(nAgreed >= 2 && new RegExp(" owed on " + nAgreed + " agreed orders[.:]").test(atAgreed) && (nPlaced ? /^RM [0-9,.]+ /.test(atPlaced) : atPlaced === "") && atPlaced !== atAgreed && nPlaced !== nAgreed,
+      "the line over the list counts the stage in view, money first, and moves with the stage: " + J({ atAgreed, nAgreed, atPlaced, nPlaced }));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
   p = await open({ refuse: "zt3" });
   try {
@@ -295,7 +297,7 @@ export async function run({ ok, pageWork }) {
     ok(inOf("day:yd1+yd2") === "orders.paid", "a same-day group is listed at its stage too: " + inOf("day:yd1+yd2"));
     await p.tap("part.orders.done");
     const doneN = [...p.d.querySelectorAll("#makerOrderList .ordrow")].filter((r) => r.getAttribute("data-in") === "orders.done").length;
-    ok(text0(p.d.getElementById("makerReviewStatus")) === doneN + (doneN === 1 ? " order" : " orders") && doneN >= 1,
+    ok(new RegExp("^RM [0-9,.]+ settled on " + doneN + " done orders? shown, the newest first[.]$").test(text0(p.d.getElementById("makerReviewStatus"))) && doneN >= 1,
       "the line over Done counts the trip filed there: " + text0(p.d.getElementById("makerReviewStatus")));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
   p = await open({ review: { trips: [], sameDay: [], tripsError: "Orders of several books could not be read." } });

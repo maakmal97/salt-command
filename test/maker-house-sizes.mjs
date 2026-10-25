@@ -85,7 +85,7 @@ export async function run({ ok, KV, worker, handleMaker, REPO }) {
     && owner_js.includes("if(error.status===400&&path==='/all/maker/inputs/house-sizes'){makerClear(path);pending=null;cancel.hidden=true;}"),
     "the Salt Admin carries a Printed board sizes control whose retained request is a valid record and clears on a 400");
   ok(!/[\\`]/.test(owner_js.slice(owner_js.indexOf("A6: the Desk's Make it the house board"),
-    owner_js.indexOf("makerOtherInputs(box,catalog,refreshMakerTradeCatalog);\n      recordMenu(box,note);\n    }catch"))),
+    owner_js.indexOf("makerOtherInputs(box,catalog,refreshMakerTradeCatalog);\n      recordMenu(box,note,catalog);\n    }catch"))),
     "the control's source holds no backtick and no backslash, as a template literal needs");
 
   /* 5. the route: owner, bridge, Desk, a real queue and drafter */

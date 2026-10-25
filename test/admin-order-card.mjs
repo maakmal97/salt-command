@@ -129,23 +129,25 @@ export async function run({ ok, pageWork }) {
     ok(!!chipP1 && chipP1.textContent === "To agree" && gP1.length === 1 && chipP1.firstChild === gP1[0] && gP1[0].getAttribute("aria-hidden") === "true"
       && gP1[0].getAttribute("data-g") === "dot" && gP1[0].classList.contains("salt-status__glyph"),
       "a placed order's chip on Salt Admin leads with the dot, aria-hidden, its word unchanged: " + (chipP1 ? chipP1.outerHTML.slice(0, 160) : "none"));
+    /* 25 Oct 2026 (canvas Salt Admin Orders): the band names the book by its typed tag beside the code and draws no mark; the reply's fold says Answer */
+    const bandP1 = p.cardOf("ord-p1").querySelector(".ohead"), ansP1 = p.cardOf("ord-p1").querySelector('details[data-fold="answer"] > summary');
+    ok(!!bandP1.querySelector(".ogoods__line .salt-producttag--salt") && !bandP1.querySelector(".ogoods__tile, svg.psym") && /CX1-ZED/.test(bandP1.querySelector(".ogoods__line").textContent)
+      && !!ansP1 && /^Answer$/.test(ansP1.textContent.replace(/[0-9·]/g, "").trim()),
+      "the band names the book by its typed tag beside the code, no mark, and the reply's fold says Answer: " + (ansP1 ? ansP1.textContent : "none"));
     /* 18 Oct 2026 (clarity, part 3): the answer leads the card, Agree at the top with its terms beside it; the foot keeps Decline alone, a ghost danger button */
     const leadOf = (id) => p.cardOf(id).querySelector(".ordlead"), termsOf = (id) => (leadOf(id).querySelector(".ordterms") || { textContent: "" }).textContent;
     const tail = (id) => [...p.cardOf(id).querySelectorAll(".ordend [data-act]")].map((e) => e.getAttribute("data-act")).filter((a) => !/[.]cancel-retained$/.test(a));
-    /* 20 Oct 2026 (his canvas comment): a placed order's Agree, Change terms and Decline stand in one row of three, the terms line under it */
+    /* 25 Oct 2026 (canvas Salt Admin Orders, his yes to Ask E): the terms stand in view under the track, as beside Needs you, then Agree and Decline in one row of two */
     const rowOf = (id) => p.cardOf(id).querySelector(".ordlead .ordrow3"), rowActs = (id) => rowOf(id) ? [...rowOf(id).children].filter((e) => !e.hidden).map((e) => e.getAttribute("data-act")) : [];
-    ok(same(moves(), []) && !foot().classList.contains("has") && same(rowActs("ord-p1"), ["order.accept", "order.terms", "order.decline"]) && byAct(d, "order.decline", "ord-p1").classList.contains("salt-ghost--danger")
+    ok(same(moves(), []) && !foot().classList.contains("has") && same(rowActs("ord-p1"), ["order.accept", "order.decline"]) && rowOf("ord-p1").classList.contains("ordrow3--two") && byAct(d, "order.decline", "ord-p1").classList.contains("salt-ghost--danger")
       && !byAct(d, "order.decline", "ord-p1").closest(".maker-foot") && !p.cardOf("ord-p1").querySelector(".ordend") && !leadOf("ord-p1").querySelector(".ordterms"),
-      "a placed order's Agree, Change terms and Decline stand in one row of three, Decline a ghost danger button, never in a sticky foot, and no terms line restates the band: " + JSON.stringify([moves(), rowActs("ord-p1")]));
-    const tb = byAct(d, "order.terms", "ord-p1"), tfold = p.cardOf("ord-p1").querySelector('details[data-fold="terms"]');
-    ok(!!tb && tb.tagName === "BUTTON" && tb.getAttribute("aria-expanded") === "false" && !tfold.open, "Change terms in the row is a button, its fold shut");
-    tb.click(); await p.work.quiet();
-    ok(p.cardOf("ord-p1").querySelector('details[data-fold="terms"]').open && byAct(d, "order.terms", "ord-p1").getAttribute("aria-expanded") === "true",
-      "and a tap on it opens the terms under the row");
-    byAct(d, "order.terms", "ord-p1").click(); await p.work.quiet();
-    ok(!!(p.cardOf("ord-p1").querySelector(".ordlead").compareDocumentPosition(p.cardOf("ord-p1").querySelector(".ordmoney")) & 4) && p.cardOf("ord-p1").querySelector(".ordlead").previousElementSibling.classList.contains("salt-steps")
-      && p.cardOf("ord-p1").querySelector(".salt-steps").previousElementSibling.classList.contains("ohead"),
-      "and the main action stands directly under the card's head and its track, ahead of Goods and Details");
+      "a placed order's Agree and Decline stand in one row of two, Decline a ghost danger button, never in a sticky foot, and no terms line restates the band: " + JSON.stringify([moves(), rowActs("ord-p1")]));
+    const terms = p.cardOf("ord-p1").querySelector(":scope > .oterms");
+    ok(!byAct(d, "order.terms", "ord-p1") && !p.cardOf("ord-p1").querySelector('details[data-fold="terms"]') && !!terms && !!terms.querySelector('[data-act="order.total"]'),
+      "and the terms are in view, no Change terms and no fold: the goods' price stands in the card");
+    ok(!!(p.cardOf("ord-p1").querySelector(".ordlead").compareDocumentPosition(p.cardOf("ord-p1").querySelector(".ordmoney")) & 4) && p.cardOf("ord-p1").querySelector(".ordlead").previousElementSibling === terms
+      && terms.previousElementSibling.classList.contains("salt-steps") && p.cardOf("ord-p1").querySelector(".salt-steps").previousElementSibling.classList.contains("ohead"),
+      "and the terms stand under the card's head and its track, Agree under them, ahead of the Bill");
     /* 19 Oct 2026 (his word): the track is the Counter's marked steps, a drawn mark on each of the four, Next on the step to come */
     const trackP1 = p.cardOf("ord-p1").querySelector("ol.salt-steps"), stepsP1 = trackP1 ? [...trackP1.children] : [];
     /* 20 Oct 2026 (canvas V17, V30): his five, Paid fourth */
@@ -155,17 +157,17 @@ export async function run({ ok, pageWork }) {
       && stepsP1[0].classList.contains("salt-steps__step--now") && stepsP1[1].classList.contains("salt-steps__step--next") && /Next/.test(stepsP1[1].querySelector(".salt-steps__time").textContent),
       "the card's track is the marked steps, five with Paid fourth, Placed now and Next on Agreed: " + (trackP1 ? trackP1.className + " | " + trackP1.textContent : "none"));
     ok(!foot().contains(byAct(d, "order.accept")) && leadOf("ord-p1").contains(byAct(d, "order.accept")) && rowOf("ord-p1").firstElementChild === byAct(d, "order.accept") && byAct(d, "order.accept").classList.contains("salt-pill")
-      && !!(leadOf("ord-p1").compareDocumentPosition(p.cardOf("ord-p1").querySelector(".maker-fields")) & 4),
-      "Agree is the filled pill at the top of the card, ahead of every field, and not in the foot");
+      && !!(leadOf("ord-p1").compareDocumentPosition(p.cardOf("ord-p1").querySelector(".maker-fields")) & 2),
+      "Agree is the filled pill first in its row, under the fields it sends, and not in the foot");
     await p.tapRow("ord-p2");
     ok(same(moves(), []) && rowActs("ord-p2").includes("order.decline") && !byAct(d, "order.accept"), "a delivery with no charge chosen has Decline in the row and no Agree: " + JSON.stringify([moves(), rowActs("ord-p2")]));
     const wait = () => leadOf("ord-p2").querySelector("[data-accept-wait]");
     ok(!!wait() && wait().textContent === "Choose the delivery charge" && !wait().disabled && leadOf("ord-p2").parentNode === p.cardOf("ord-p2"),
       "and the lead says Choose the delivery charge, as a button that sends nothing, never a half-filled Agree: " + (wait() || {}).textContent);
     const fold = (id, k) => p.cardOf(id).querySelector('details[data-fold="' + k + '"]');
-    ok(!!fold("ord-p2", "terms") && !fold("ord-p2", "terms").open && !!fold("ord-p2", "answer") && !fold("ord-p2", "answer").open, "Change terms and Answer them are folded, shut by default");
+    ok(!fold("ord-p2", "terms") && !!fold("ord-p2", "answer") && !fold("ord-p2", "answer").open, "Answer is folded, shut by default, and the terms are in view, never folded");
     const postsBefore = p.posts.length; wait().click(); await p.work.quiet();
-    ok(fold("ord-p2", "terms").open && p.posts.length === postsBefore, "and the stand-in opens Change terms for the charge, and sends nothing");
+    ok(d.activeElement === byAct(d, "order.fee", "ord-p2") && p.posts.length === postsBefore, "and the stand-in takes him to the charge, and sends nothing");
     const pickFee = async (v) => { const sel = byAct(d, "order.fee", "ord-p2"); sel.value = v; sel.dispatchEvent(new d.defaultView.Event("change", { bubbles: true })); await p.work.quiet(); };
     await pickFee("10");
     ok(same(moves(), []) && rowOf("ord-p2").firstElementChild === byAct(d, "order.accept") && !wait(), "and Agree takes its place at the top once the charge is chosen and the figures are read: " + JSON.stringify(moves()));

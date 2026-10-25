@@ -194,7 +194,7 @@ export async function run({ ok, pageWork }) {
   try {
     await p.tap("nav.orders");
     const rowOf = (k) => p.d.querySelector('[data-act="order.open"][data-key="' + k + '"]');
-    ok(/orders\.confirmed/.test((rowOf("row:fa1") || { getAttribute: () => "" }).getAttribute("data-in")) && /RM 110\.00/.test(text(rowOf("row:fa1")))
+    ok(/orders\.confirmed/.test((rowOf("row:fa1") || { getAttribute: () => "" }).getAttribute("data-in")) && /RM 110$/.test(text(rowOf("row:fa1").querySelector(".ofig")))
       && /orders\.paid/.test((rowOf("row:fp1") || { getAttribute: () => "" }).getAttribute("data-in")),
     "a row of the book is a row under its stage, Agreed or Delivered or paid, with its figure: " + text(rowOf("row:fa1")));
     const seen = (n) => { for (let e = n; e; e = e.parentElement) if (e.hidden) return false; return !!n; };
@@ -204,8 +204,8 @@ export async function run({ ok, pageWork }) {
     await p.tap("part.orders.confirmed");
     ok(/orders\.paid/.test((rowOf("o-pay") || { getAttribute: () => "" }).getAttribute("data-in")),
       "a site order paid in full and not handed over is under Delivered or paid: " + ((rowOf("o-pay") || { getAttribute: () => "" }).getAttribute("data-in")));
-    ok(!!p.d.querySelector('[data-part="paid"]') && /Delivered or paid/.test(text(p.d.querySelector('[data-part="paid"]'))) && /Received/.test(text(p.d.querySelector('[data-part="placed"]'))),
-      "the stages read Received, Agreed, Ready, Delivered or paid, Completed and Ended");
+    ok(!!p.d.querySelector('[data-part="paid"]') && /^Out or paid/.test(text(p.d.querySelector('[data-part="paid"]'))) && /^Placed/.test(text(p.d.querySelector('[data-part="placed"]'))) && /^Done/.test(text(p.d.querySelector('[data-part="done"]'))),
+      "the stages read Placed, Agreed, Ready, Out or paid, Done and Ended (his yes of 25 Oct 2026)");
     const done = () => [...p.d.querySelectorAll('[data-act="order.open"]')].filter((b) => /orders\.done/.test(b.getAttribute("data-in"))).length;
     const n0 = done();
     await p.tap("orders.more", "done");

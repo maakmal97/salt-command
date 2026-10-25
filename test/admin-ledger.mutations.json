@@ -154,5 +154,6 @@
   "file": "stmt/owner.js",
   "find": "try{ j=await refs('/all/maker/ledger'); }catch(error){ refusal(status,error); return; }",
   "replace": "try{ j=await refs('/all/maker/ledger'); }catch(error){ return; }"
- }
+ },
+{"name": "a book on Orders is its mark again", "file": "stmt/owner.js", "find": "function bookTag(product){ return productTag(product); }", "replace": "function bookTag(product){ return bookMark(product,20); }"}
 ]

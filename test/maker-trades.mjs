@@ -412,7 +412,7 @@ export async function runCoverRead({ ok, pageWork }) {
     const check = page.section.querySelector("[data-reward-cover]"), label = check.parentNode;
     const note = () => label.parentNode.nextElementSibling.firstChild?.textContent ?? "", raw = () => label.parentNode.nextElementSibling.querySelector(".rraw")?.textContent;
     page.change("Price (goods)", "130"); await page.work.quiet();
-    ok(!label.hidden && !check.disabled && !check.checked && /Use 0[.]75 unit of their reward: RM 30[.]00 off/.test(label.textContent) && reads.length === 1,
+    ok(!label.hidden && !check.disabled && !check.checked && /Use 0[.]75 unit of their reward.*RM 30[.]00 off/.test(label.textContent) && reads.length === 1,
       "cover read: the first answer offers an unticked cover, and the read asked for the typed figures " + JSON.stringify(reads));
     check.checked = true;
     let release; gate = { promise: new Promise((resolve) => { release = resolve; }) };

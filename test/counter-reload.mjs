@@ -31,7 +31,7 @@ export async function run({ ok, html, record, transport, pageWork }) {
     ok(!!recovery&&!saved.includes("Zora")&&!saved.includes("name-pass"),
       "a fresh Counter page restores a ciphertext-only retained input without opened names or passphrase");
     if(!recovery)return;
-    const retry=[...recovery.querySelectorAll("button")].find(button=>button.textContent==="Send again");
+    const retry=recovery.querySelector('button[data-act="record.retained.retry"]');   /* Resend since 25 Oct 2026 (Record redesign P2), its spoken name Send again */
     retry.click();await work.quiet();
     ok(calls.length===0&&dom.window.localStorage.getItem("saltMakerPending:"+record.path)===saved,
       "Counter reload refuses a locked retry and retains its exact ciphertext and timestamp");

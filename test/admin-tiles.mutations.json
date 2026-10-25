@@ -152,14 +152,14 @@
  {
   "name": "a resale sends another stream",
   "file": "stmt/owner.js",
-  "find": "[{value:'',label:'No'},{value:'R2',label:'They resell'}",
-  "replace": "[{value:'',label:'No'},{value:'R2x',label:'They resell'}"
+  "find": "[{value:'',label:'No'},{value:'R2',label:'Resells',aria:'They resell'}",
+  "replace": "[{value:'',label:'No'},{value:'R2x',label:'Resells',aria:'They resell'}"
  },
  {
   "name": "an introduction sends another stream",
   "file": "stmt/owner.js",
-  "find": "{value:'R3',label:'They introduced the buyer'}]);\n      var tradeAssoc",
-  "replace": "{value:'R3x',label:'They introduced the buyer'}]);\n      var tradeAssoc"
+  "find": "{value:'R3',label:'Introduced',aria:'They introduced the buyer'}]);\n      var tradeAssoc",
+  "replace": "{value:'R3x',label:'Introduced',aria:'They introduced the buyer'}]);\n      var tradeAssoc"
  },
  {
   "name": "a loan in goods sends another word",
@@ -258,16 +258,16 @@
   "replace": ".adm .maker-tiles{min-width:0}"
  },
  {
-  "name": "a book's tile names its book",
+  "name": "a book's tile is the drawn mark again",
   "file": "stmt/owner.js",
-  "find": "if(item.mark) face.appendChild(bookMark(item.mark,28)); else",
-  "replace": "if(item.mark){ face.appendChild(bookMark(item.mark,28)); face.appendChild(el('span','salt-option__label',item.value)); } else"
+  "find": "if(item.mark) face.appendChild(productTag(item.mark));\n        else if(item.detail)",
+  "replace": "if(item.mark) face.appendChild(bookMark(item.mark,28));\n        else if(item.detail)"
  },
  {
-  "name": "a book's tile loses its mark",
+  "name": "a book's tile loses its tag",
   "file": "stmt/owner.js",
-  "find": "if(item.mark) face.appendChild(bookMark(item.mark,28)); else face.appendChild(el('span','salt-option__label',item.label));",
-  "replace": "face.appendChild(el('span','salt-option__label',item.label));"
+  "find": "        if(item.mark) face.appendChild(productTag(item.mark));\n        else if(item.detail)",
+  "replace": "        if(item.mark) face.appendChild(el('span','salt-option__label',item.label));\n        else if(item.detail)"
  },
  {
   "name": "a group of marks is two wide boxes across",
@@ -278,7 +278,7 @@
  {
   "name": "a group of marks has no compact grid",
   "file": "stmt/page.js",
-  "find": ".adm .maker-marks{grid-template-columns:repeat(auto-fill,minmax(88px,1fr))}",
+  "find": ".adm .maker-marks{grid-template-columns:repeat(auto-fill,minmax(72px,1fr))}",
   "replace": ".adm .maker-marks{grid-template-columns:repeat(2,minmax(0,1fr))}"
  },
  {

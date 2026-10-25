@@ -27,8 +27,9 @@ export async function run({ ok, pageWork }) {
     const d = p.d, click = async (e) => { if (e) e.click(); await p.work.quiet(); };
     await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.placed"));
     const row = d.querySelector('#makerOrderList [data-order="ord-g1"]'), plain = d.querySelector('#makerOrderList [data-order="ord-g2"]');
-    ok(!!row && /Again/.test(t(row.querySelector(".salt-status"))) && /[A-Z0-9]{4}-[A-Z0-9]{3} again/.test(t(row)) && !!plain && !/again/i.test(t(plain)),
-      "his Orders row carries the Again pill and the source's reference, and an order placed afresh neither: " + t(row));
+    const note = (r) => r && r.querySelector(".onote");
+    ok(!!row && /^[A-Z0-9]{4}-[A-Z0-9]{3} again$/.test(t(note(row))) && note(row).classList.contains("onote--why") && !!plain && !/again/i.test(t(plain)),
+      "his Orders row says the source's reference and again, in copper, and an order placed afresh neither: " + t(row));
     await click(byAct(d, "order.open", "ord-g1"));
     const ag = p.card("ord-g1") && p.card("ord-g1").querySelector(".ohead [data-again]");
     ok(!!ag && /^Again ?[A-Z0-9]{4}-[A-Z0-9]{3} again$/.test(t(ag)), "and its band names the order it was placed again from: " + t(ag));

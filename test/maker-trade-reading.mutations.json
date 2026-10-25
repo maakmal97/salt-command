@@ -62,8 +62,8 @@
   {
     "name": "the under-floor line is drawn as a plain note",
     "file": "stmt/owner.js",
-    "find": "if(got.floor.warn)readingLine(got.floor.warn,true);",
-    "replace": "if(got.floor.warn)readingLine(got.floor.warn,false);"
+    "find": "readingLine(got.floor.warn,true);",
+    "replace": "readingLine(got.floor.warn,false);"
   },
   {
     "name": "a purchase on the form shows the sale's margin lines",

@@ -2,16 +2,18 @@
  {"name":"the recipe not carried","file":"stmt/statement-css.js","find":".salt-segment {\\n  --n: 2;","replace":".salt-segmentx {\\n  --n: 2;"},
  {"name":"the Look row stays two ghosts","file":"stmt/page.js","find":"'<span class=\"salt-ledger__value lookset salt-segment\" role=\"group\"","replace":"'<span class=\"salt-ledger__value lookset\" role=\"group\""},
  {"name":"no sync of the Look row","file":"stmt/page.js","find":"    segSync(lookRow.querySelector('.lookset'));\n","replace":""},
- {"name":"the sync counts hidden options","file":"stmt/page.js","find":"return x.tagName==='BUTTON'&&!x.hidden; }), at=0;","replace":"return x.tagName==='BUTTON'; }), at=0;"},
  {"name":"the sync ignores aria-selected","file":"stmt/page.js","find":"var on=x.getAttribute('aria-selected')==='true'||x.getAttribute('aria-pressed')==='true';","replace":"var on=x.getAttribute('aria-pressed')==='true';"},
  {"name":"the sync leaves the active class","file":"stmt/page.js","find":"x.classList.toggle('salt-segment__opt--active',on); if(on) at=k;","replace":"if(on) at=k;"},
  {"name":"the Orders tabs stay pills","file":"stmt/page.js","find":"row=el('div','salt-segment otabs');","replace":"row=el('div','salt-tabs otabs');"},
  {"name":"the Orders tabs never synced","file":"stmt/page.js","find":"    segSync(row);\n    return row;","replace":"    return row;"},
  {"name":"the counts lose their class","file":"stmt/page.js","find":"b.appendChild(el('span','salt-segment__count',String(oOf(t[0]).length)));","replace":"b.appendChild(el('span','',String(oOf(t[0]).length)));"},
- {"name":"Record stays pills","file":"stmt/page.js","find":"const ADMIN_SLIDERS = [\"record\", \"customers\"];","replace":"const ADMIN_SLIDERS = [\"customers\"];"},
- {"name":"Customers stays pills","file":"stmt/page.js","find":"const ADMIN_SLIDERS = [\"record\", \"customers\"];","replace":"const ADMIN_SLIDERS = [\"record\"];"},
- {"name":"every place a slider","file":"stmt/page.js","find":"seg = !cls && ADMIN_SLIDERS.includes(p)) =>","replace":"seg = !cls) =>"},
+ {"name":"Record falls back to pills","file":"stmt/page.js","find":"const ADMIN_NAVS = [\"record\"];","replace":"const ADMIN_NAVS = [];"},
+ {"name":"Customers stays pills","file":"stmt/page.js","find":"const ADMIN_SLIDERS = [\"customers\"];","replace":"const ADMIN_SLIDERS = [];"},
+ {"name":"every place a slider","file":"stmt/page.js","find":"seg = !cls && ADMIN_SLIDERS.includes(p), nav","replace":"seg = !cls, nav"},
+ {"name":"the part entered is not selected","file":"stmt/owner.js","find":"      b.setAttribute('aria-selected', on?'true':'false');","replace":"      b.setAttribute('aria-selected', 'false');"},
  {"name":"the thumb does not follow a part","file":"stmt/owner.js","find":"    [].forEach.call(document.querySelectorAll('.aparts.salt-segment'),segSync);\n","replace":""},
+ {"name":"the sync counts hidden options","file":"stmt/page.js","find":"return x.tagName==='BUTTON'&&!x.hidden; }), at=0;","replace":"return x.tagName==='BUTTON'; }), at=0;"},
  {"name":"a page rule lowers the Orders tab","file":"stmt/page.js","find":".otabs{margin:0 0 16px}","replace":".otabs{margin:0 0 16px}\n.otabs .salt-segment__opt{min-height:36px}"},
- {"name":"the months become a slider","file":"stmt/page.js","find":"'<div id=\"mfil\" class=\"salt-tabs mfil\"","replace":"'<div id=\"mfil\" class=\"salt-segment mfil\""}
+ {"name":"the months become a slider","file":"stmt/page.js","find":"'<div id=\"mfil\" class=\"salt-tabs mfil\"","replace":"'<div id=\"mfil\" class=\"salt-segment mfil\""},
+{"name": "Orders' rows become the slider", "file": "stmt/page.js", "find": "\"><div class=\"salt-nav__links aparts\" role=\"tablist\"", "replace": "\"><div class=\"salt-segment aparts\" role=\"tablist\""}
 ]

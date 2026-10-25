@@ -1,58 +1,23 @@
 [
  {
-  "name": "a row has no mark",
+  "name": "a row has no book tag",
   "file": "stmt/owner.js",
-  "find": "      b.appendChild(tile);\n      t.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));",
-  "replace": "      t.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));"
+  "find": "tag.appendChild(productTag(o.product)); code.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));",
+  "replace": "code.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));"
  },
+ {"name": "a row names no one", "file": "stmt/owner.js", "find": "code.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));", "replace": ""},
  {
-  "name": "a row names no one",
+  "name": "a waiting row is a quiet card",
   "file": "stmt/owner.js",
-  "find": "      t.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));\n      /* ONE PILL AT MOST",
-  "replace": "      /* ONE PILL AT MOST"
+  "find": "sev=o.test?'watch':e.waits?'now':held?'soon':'watch';",
+  "replace": "sev=o.test?'watch':held?'soon':'watch';"
  },
- {
-  "name": "a row does not say it waits on him",
-  "file": "stmt/owner.js",
-  "find": "(e.waits&&e.parts.indexOf('orders.placed')<0)?['copper','Waiting on you']:o.againOf?['brass','Again']:null;",
-  "replace": "o.againOf?['brass','Again']:null;"
- },
- {
-  "name": "a row does not say a payment is sent",
-  "file": "stmt/owner.js",
-  "find": "ordPays(o).length?'says sent':''",
-  "replace": "''"
- },
- {
-  "name": "a row does not say a stage is rejected",
-  "file": "stmt/owner.js",
-  "find": "o.again&&o.again.length?'send again':''",
-  "replace": "''"
- },
- {
-  "name": "a practice order is not marked",
-  "file": "stmt/owner.js",
-  "find": "var pillOf=o.test?['mist','Practice']:makerCashHeld",
-  "replace": "var pillOf=makerCashHeld"
- },
- {
-  "name": "a row shows no age",
-  "file": "stmt/owner.js",
-  "find": "      side.appendChild(el('span','salt-inbox-row__age',ageOf(o.at)));",
-  "replace": ""
- },
- {
-  "name": "a row's figure leaves out the delivery",
-  "file": "stmt/owner.js",
-  "find": "'salt-inbox-row__action',rm(Number(o.total||0)+Number(o.delivery||0))",
-  "replace": "'salt-inbox-row__action',rm(Number(o.total||0))"
- },
- {
-  "name": "a row says nothing of the units",
-  "file": "stmt/owner.js",
-  "find": "var tile=bookTile(o.product,o.qty), tsr=",
-  "replace": "var tile=bookTile(o.product,0), tsr="
- },
+ {"name": "a row does not say a payment is sent", "file": "stmt/owner.js", "find": ":ordPays(o).length?'says sent':", "replace": ":"},
+ {"name": "a row does not say a stage is rejected", "file": "stmt/owner.js", "find": ":o.again&&o.again.length?'send again':", "replace": ":"},
+ {"name": "a practice order is not marked", "file": "stmt/owner.js", "find": "why=o.test?'practice':makerCashHeld", "replace": "why=makerCashHeld"},
+ {"name": "a row shows no age", "file": "stmt/owner.js", "find": "var ag=ageOf(o.at); note.textContent=ag||'';", "replace": "var ag='';"},
+ {"name": "a row's figure leaves out the delivery", "file": "stmt/owner.js", "find": "fig.textContent=rmShort(Number(o.total||0)+Number(o.delivery||0));", "replace": "fig.textContent=rmShort(Number(o.total||0));"},
+ {"name": "a row says nothing of the units", "file": "stmt/owner.js", "find": "way.textContent=ordWayWord(o,st); un.textContent=units(o.qty);", "replace": "way.textContent=ordWayWord(o,st);"},
  {
   "name": "listing the orders previews each",
   "file": "stmt/owner.js",
@@ -374,13 +339,13 @@
  {
   "name": "an open form does not take the focus",
   "file": "stmt/owner.js",
-  "find": "(tab?tab.textContent:'Back'); back.focus();",
-  "replace": "(tab?tab.textContent:'Back');"
+  "find": "(tab?tab.firstChild.textContent:'Back'); back.focus();",
+  "replace": "(tab?tab.firstChild.textContent:'Back');"
  },
  {
   "name": "the way back is not named for the part",
   "file": "stmt/owner.js",
-  "find": "back.textContent='← '+(tab?tab.textContent:'Back');",
+  "find": "back.textContent='← '+(tab?tab.firstChild.textContent:'Back');",
   "replace": "back.textContent='← Entry';"
  },
  {
@@ -554,8 +519,8 @@
  {
   "name": "no count is drawn on a stage pill",
   "file": "stmt/owner.js",
-  "find": "      c.textContent=String(v);",
-  "replace": "      c.textContent='';"
+  "find": "      if(c.textContent!==(v?String(v):'')) c.textContent=v?String(v):'';",
+  "replace": ""
  },
  {
   "name": "Payments is not counted",
@@ -599,35 +564,15 @@
   "find": "(order.payments||[]).some(function(p){ return p.claim==='waiting'; })",
   "replace": "false"
  },
- {
-  "name": "a Placed row says Waiting on you",
-  "file": "stmt/owner.js",
-  "find": "e.parts.indexOf('orders.placed')<0)?['copper'",
-  "replace": "true)?['copper'"
- },
- {
-  "name": "a practice order has no pill",
-  "file": "stmt/owner.js",
-  "find": "var pillOf=o.test?['mist','Practice']:",
-  "replace": "var pillOf="
- },
- {
-  "name": "the rows' columns follow their content",
-  "file": "stmt/page.js",
-  "find": "grid-template-columns:84px minmax(0,1fr) 88px",
-  "replace": "grid-template-columns:auto minmax(0,1fr) auto"
- },
- {
-  "name": "the side is not right-aligned",
-  "file": "stmt/page.js",
-  "find": "justify-content:center;text-align:right;gap:4px",
-  "replace": "justify-content:center;gap:4px"
- },
+ {"name": "why is not drawn in copper", "file": "stmt/owner.js", "find": "if(why){ note.textContent=why; note.classList.add('onote--why'); }", "replace": "if(why){ note.textContent=why; }"},
+ {"name": "a practice order carries a move", "file": "stmt/owner.js", "find": "    if(o.test) return '';\n", "replace": ""},
+ {"name": "the rows' columns follow their content", "file": "stmt/page.js", "find": ".adm .ordrow{all:unset;box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) 72px 88px;", "replace": ".adm .ordrow{all:unset;box-sizing:border-box;display:grid;grid-template-columns:auto auto auto;"},
+ {"name": "the figure is not set right", "file": "stmt/page.js", "find": ".adm .ordrow .ofig{grid-column:3;grid-row:1/3;display:flex;align-items:center;justify-content:flex-end;", "replace": ".adm .ordrow .ofig{grid-column:3;grid-row:1/3;display:flex;align-items:center;justify-content:flex-start;"},
  {
   "name": "every Entry row says Open again",
   "file": "stmt/owner.js",
-  "find": "title.appendChild(el('span',null,name)); main.appendChild(title);\n      row.appendChild(main);",
-  "replace": "title.appendChild(el('span',null,name)); main.appendChild(title); main.appendChild(el('span','salt-inbox-row__action','Open'));\n      row.appendChild(main);"
+  "find": "title.appendChild(el('span',null,name)); main.appendChild(title);\n      if(FORM_WHAT[slug])",
+  "replace": "title.appendChild(el('span',null,name)); main.appendChild(title); main.appendChild(el('span','salt-inbox-row__action','Open'));\n      if(FORM_WHAT[slug])"
  },
  {
   "name": "a reward offset is listed as a customer's",
@@ -650,8 +595,8 @@
  {
   "name": "the offset button says Send the offset again",
   "file": "stmt/owner.js",
-  "find": "makerButton(row,['Add','record.offset.send']",
-  "replace": "makerButton(row,['Send the offset','record.offset.send']"
+  "find": "makerButton(row._go,['Add','record.offset.send']",
+  "replace": "makerButton(row._go,['Send the offset','record.offset.send']"
  },
  {
   "name": "Orders counts what waits on him, not the orders open",
@@ -660,10 +605,10 @@
   "replace": "    setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordWaits(o); }).length+waitingClaims().filter(function(c){ return !c.test; }).length);"
  },
  {
-  "name": "the stages have no strip of their own",
+  "name": "the rest share the stages' row",
   "file": "stmt/page.js",
-  "find": "    + adminStrip(p, ADMIN_PARTS[p].filter(([k]) => !ADMIN_ORDER_STAGES.includes(k) && (!test || TEST_PARTS[p].includes(k))), \" aparts--minor\", \"Other orders\")",
-  "replace": "    + \"\""
+  "find": "+ ordTabs(ADMIN_PARTS[p].filter(([k]) => !ADMIN_ORDER_STAGES.includes(k)",
+  "replace": "+ ordTabs(ADMIN_PARTS[p].filter(([k]) => false && !ADMIN_ORDER_STAGES.includes(k)"
  },
  {
   "name": "Delivered or paid is drawn with the rest",
@@ -671,18 +616,8 @@
   "find": "const ADMIN_ORDER_STAGES = [\"placed\", \"confirmed\", \"ready\", \"paid\", \"done\", \"ended\"];",
   "replace": "const ADMIN_ORDER_STAGES = [\"placed\", \"confirmed\", \"ready\", \"done\", \"ended\"];"
  },
- {
-  "name": "a row says the size twice",
-  "file": "stmt/owner.js",
-  "find": "if(tsr) tsr.textContent=pshape(o.product); if(tq) tq.removeAttribute('aria-hidden');",
-  "replace": ""
- },
- {
-  "name": "a placed row says to decide",
-  "file": "stmt/owner.js",
-  "find": "o.again&&o.again.length?'send again':''].filter(Boolean);",
-  "replace": "o.again&&o.again.length?'send again':'', o.status==='placed'?'to decide':''].filter(Boolean);"
- },
+ {"name": "a row says the size twice", "file": "stmt/owner.js", "find": "    b.appendChild(kind); b.appendChild(title); b.appendChild(un); b.appendChild(fig);", "replace": "    kind.appendChild(el('span',null,un.textContent)); b.appendChild(kind); b.appendChild(title); b.appendChild(un); b.appendChild(fig);"},
+ {"name": "a placed row says to decide", "file": "stmt/owner.js", "find": "    return d?'Deliver':o.mode==='collect'?", "replace": "    return o.status==='placed'?'To decide':d?'Deliver':o.mode==='collect'?"},
  {
   "name": "Entry's forms are not grouped in his order",
   "file": "stmt/owner.js",
@@ -690,21 +625,27 @@
   "replace": "['Everyday',['repayment','sale-or-purchase','stock-count']]"
  },
  {
-  "name": "a strip wraps",
+  "name": "the stages stand three across on a phone",
   "file": "stmt/page.js",
-  "find": "{flex-wrap:nowrap;overflow-x:auto;scroll-snap-type",
-  "replace": "{overflow-x:auto;scroll-snap-type"
+  "find": ".adm .oparts .aparts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))",
+  "replace": ".adm .oparts .aparts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))"
  },
  {
-  "name": "a strip does not scroll",
+  "name": "Approve's tab shows",
   "file": "stmt/page.js",
-  "find": "overflow-x:auto;scroll-snap-type:x proximity;",
-  "replace": "scroll-snap-type:x proximity;"
+  "find": "ordTab(k, w, k === \"approve\")",
+  "replace": "ordTab(k, w, false)"
  },
  {
   "name": "a tap on Orders keeps the card open",
   "file": "stmt/owner.js",
   "find": "if(mm==='orders'&&placeNow==='orders'&&ordOpened){ closeOrder(); return; } ",
   "replace": ""
- }
+ },
+{"name": "a part is a pill again", "file": "stmt/page.js", "find": "role=\"tab\" class=\"salt-nav__link nktab'", "replace": "role=\"tab\" class=\"salt-tabs__pill'"},
+{"name": "the move is not drawn", "file": "stmt/owner.js", "find": "    if(main){\n      var pill=actOn(el('button','salt-pill salt-pill--sm nbtn',main),'order.move',e.id);", "replace": "    if(false){\n      var pill=actOn(el('button','salt-pill salt-pill--sm nbtn',main),'order.move',e.id);"},
+{"name": "a payment's move is Ready", "file": "stmt/owner.js", "find": "    if(ordPays(o).length) return 'Received';\n", "replace": ""},
+{"name": "the card is any height", "file": "stmt/page.js", "find": ".adm .ordcard{position:relative;display:block;height:76px;", "replace": ".adm .ordcard{position:relative;display:block;"},
+{"name": "the wide list is no table", "file": "stmt/page.js", "find": "  .adm .ordrow,.adm .ohead-row{grid-template-columns:96px 120px minmax(0,1fr) 88px 176px 132px 136px;", "replace": "  .adm .ordrow,.adm .ohead-row{"},
+{"name": "the table has no head", "file": "stmt/owner.js", "find": "['Book','Code','Way','Units','Waiting','Total'].forEach(", "replace": "[].forEach("}
 ]

@@ -316,7 +316,7 @@ export async function run({ ok }) {
     await until(() => say("20261003090001-ack")?.textContent);
     ok(say("20261003090001-ack")?.textContent === "Order marked ready to deliver."
       && say("20261003090001-ack").getAttribute("role") === "status" && say("20261003090001-ack").getAttribute("aria-live") === "polite"
-      && !/ready to deliver/.test(list()) && /^\d+ orders?$/.test(list()) && !say("20261003090002-rdy")?.textContent
+      && !/ready to deliver/.test(list()) && /^RM [0-9,.]+ owed on \d+ (agreed )?orders?/.test(list()) && !say("20261003090002-rdy")?.textContent
       && scrolls.some((s) => s.id === "20261003090001-ack" && s.options && s.options.block === "nearest"),
       "An order's answer lands in the foot of the card tapped, a polite status line, not on the list's line and not on another card: "
       + JSON.stringify({ card: say("20261003090001-ack")?.textContent, other: say("20261003090002-rdy")?.textContent, list: list() }));
@@ -403,12 +403,12 @@ export async function run({ ok }) {
     doc.getElementById("ynGo")?.click(); await until(() => many.length === 1);
     ok(JSON.stringify(many[0]) === JSON.stringify({ approve: [draftId], reject: [] }),
       "A Desk row's yes is one decide-many request carrying the row's id: " + JSON.stringify(many));
-    await until(() => field("20261003090001-ack", "Answer them"));
+    await until(() => field("20261003090001-ack", "Your line"));
     button("20261003090001-ack", "Change the order").click(); sheetGo();   /* the Change the order Sheet, its figures untouched */
     ok(say("20261003090001-ack")?.textContent === "Change a figure first." && !/Change a figure/.test(list()),
       "Amend with no figure changed says so on its own card");
     await until(() => !button("20261003090001-ack", "Save this line").disabled);   /* the card's controls come back once the tap has run */
-    const reply = field("20261003090001-ack", "Answer them");
+    const reply = field("20261003090001-ack", "Your line");
     reply.value = "Ready after five."; reply.dispatchEvent(new window.Event("input", { bubbles: true }));
     button("20261003090001-ack", "Save this line").click();
     await new Promise((resolve) => setTimeout(resolve, 20));
@@ -423,7 +423,7 @@ export async function run({ ok }) {
       "Send reply answers on the card replied on, after the redraw that follows it");
     await until(() => button("20261003090002-rdy", "Ready after five."));
     button("20261003090002-rdy", "Ready after five.").click(); await new Promise((resolve) => setTimeout(resolve, 20));
-    ok(field("20261003090002-rdy", "Answer them").value === "Ready after five.",
+    ok(field("20261003090002-rdy", "Your line").value === "Ready after five.",
       "A quick reply is offered on every card once kept, and picking it fills the reply box.");
     button("20261003090002-rdy", "Forget it").click();
     ok(JSON.parse(window.localStorage.getItem("saltQuickReplies")).length === 0, "Forget this quick reply drops it from the device.");

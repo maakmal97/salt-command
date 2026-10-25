@@ -17,7 +17,8 @@ const seal = (text) => ({ v: 1, salt: Buffer.alloc(16, 1).toString("base64"),
 const master = () => readFileSync(process.env.SALT_MASTER || new URL("../master/salt_command.html", import.meta.url), "utf8");
 const section = (doc, title) => [...doc.querySelectorAll("#makerInputs .maker-input")]
   .find((node) => node.querySelector("h3")?.textContent === title);
-const button = (root, text) => [...root.querySelectorAll("button")].find((node) => node.textContent === text);
+/* a reward card's pill says Give or Take off and speaks its full words (25 Oct 2026, Record redesign P6), so a button is found by either */
+const button = (root, text) => [...root.querySelectorAll("button")].find((node) => node.textContent === text || node.getAttribute("aria-label") === text);
 const field = (root, text) => [...root.querySelectorAll("label")]
   .find((node) => (node.querySelector(".lbl")?.textContent || node.firstChild.textContent) === text)?.querySelector("input,select");
 
@@ -106,9 +107,9 @@ export async function run({ ok, pageWork }) {
     const rewards = () => section(ui.doc, "Rewards");
     const holder = (code) => rewards().querySelector('[data-reward-holder="' + code + '"]');
     ok(button(holder("CX1-ZED"), "Give CX1-ZED 1 unit") && !holder("CX2-ZED").querySelector("button")
-      && /0.44 unit held/.test(holder("CX2-ZED").textContent),
+      && /^Held/.test(holder("CX2-ZED").querySelector(".nkind").textContent) && holder("CX2-ZED").querySelector(".nfig").textContent === "0.44 unit",   /* the held figure at the right since 25 Oct 2026 (Record redesign P6) */
     "generated owner offers one whole customer unit at two, and no action at .44");
-    ok(/2 units held while away/.test(holder("CX3-ZED").textContent) && !holder("CX3-ZED").querySelector("button"),
+    ok(/^Held · away$/.test(holder("CX3-ZED").querySelector(".nkind").textContent) && holder("CX3-ZED").querySelector(".nfig").textContent === "2 units" && !holder("CX3-ZED").querySelector("button"),
       "generated owner keeps departed earnings visible and offers no spend");
     ok(button(holder("CX4-ZED"), "Take 1 unit off what CX4-ZED owes"),
       "generated owner names Offset for the customer holding an advance");
@@ -152,7 +153,7 @@ export async function run({ ok, pageWork }) {
     await ui.work.quiet();
     const cover = () => trade.querySelector("[data-reward-cover]");
     ok(cover() && !cover().parentNode.hidden && !cover().checked
-      && trade.textContent.includes("Use 0.75 unit of their reward: RM 30.00 off")
+      && /Use 0[.]75 unit of their reward.*RM 30[.]00 off/.test(trade.textContent)
       && wd.nativeCover.kg === 0.75 && wd.nativeCover.rm === 30,
     "generated cover is unticked and matches the native own-card gap at cost, delivery excluded");
     ui.set(trade, "Price (goods)", String(wd.ask)); await ui.work.quiet();
@@ -254,7 +255,7 @@ export async function runExtra({ ok, pageWork }) {
     extraUi.set(extra, "Price (goods)", String(extraCase.ask - 30));extraUi.set(extra, "Units handed over", "1");
     await extraUi.work.quiet();
     const check = extra.querySelector("[data-reward-cover]");
-    ok(!check.parentNode.hidden && !check.checked && /Use 0.75 unit of their reward: RM 30.00 off/.test(extra.textContent),
+    ok(!check.parentNode.hidden && !check.checked && /Use 0[.]75 unit of their reward.*RM 30[.]00 off/.test(extra.textContent),
       "the generated extra-book control offers native unticked cover when salt is not the trip carrier");
     check.checked = true;button(trade, "Send the sale").click();await extraUi.work.quiet();
     const drafts = extraCase.drafts();

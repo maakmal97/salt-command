@@ -108,16 +108,18 @@ export async function run({ ok, pageWork }) {
     ok(radios.length > 30 && [...names.values()].every((gs) => gs.size === 1) && radios.every((r) => !!r.name && /^tiles[0-9]+$/.test(r.name)),
       "every group is one radio group of its own, so it is one tab stop and the arrows move the choice: " + radios.length + " tiles in " + names.size + " groups");
     ok(radios.every((r) => !r.disabled && r.getAttribute("tabindex") === null && r.closest("label.salt-option") && r.nextElementSibling && r.nextElementSibling.classList.contains("salt-option__face")
-      && (r.nextElementSibling.querySelector(".salt-option__label") || { textContent: "" }).textContent.length + (r.nextElementSibling.querySelector("svg.psym") ? (r.nextElementSibling.querySelector(".sr") || { textContent: "" }).textContent.length : 0) > 0),
-    "each tile is a radio in the recipe's own label, followed by its face (its words, or for a book its mark, told to a reader by its shape), in the tab order and not disabled");
-    const books = radios.filter((r) => r.nextElementSibling.querySelector("svg.psym"));
-    ok(books.length >= 8 && books.every((r) => !r.nextElementSibling.querySelector(".salt-option__label") && /^(Cube|Droplet|Lozenge|Capsule|Ring)$/.test(r.nextElementSibling.querySelector(".sr").textContent)
-      && r.nextElementSibling.textContent.replace(r.nextElementSibling.querySelector(".sr").textContent, "").replace(/[A-Z]/g, "").trim() === ""),
-    "a book's tile is its mark alone: no label, no word for the book, the shape told to a reader (" + books.length + " tiles)");
+      && (r.nextElementSibling.querySelector(".salt-option__label, .salt-producttag") || { textContent: "" }).textContent.length > 0),
+    "each tile is a radio in the recipe's own label, followed by its face (its words, or for a book its typed tag), in the tab order and not disabled");
+    /* 25 Oct 2026 (Record redesign P3): on Salt Admin a book's tile is its typed Product tag (his decision of 22 Oct 2026, Needs you first), never the drawn mark */
+    const books = radios.filter((r) => r.nextElementSibling.querySelector(".salt-producttag"));
+    ok(books.length >= 8 && books.every((r) => { const face = r.nextElementSibling, tag = face.querySelector(".salt-producttag");
+      return !face.querySelector(".salt-option__label") && !face.querySelector("svg.psym") && tag.classList.contains("salt-producttag--" + r.value) && !!tag.querySelector(".salt-producttag__dot")
+        && tag.textContent.trim() === r.value.charAt(0).toUpperCase() + r.value.slice(1) && face.textContent.trim() === tag.textContent.trim(); }),
+    "a book's tile is its typed tag alone, its name in its hue with the dot, no label and no drawn mark (" + books.length + " tiles)");
     const markGrids = new Set(books.map((r) => r.closest(".salt-options__grid")));
     ok([...markGrids].every((g) => g.classList.contains("maker-marks") && !g.classList.contains("salt-options__grid--2"))
-      && radios.filter((r) => r.closest(".maker-marks")).every((r) => r.nextElementSibling.querySelector("svg.psym")),
-    "a group of marks alone is laid compact (maker-marks), never two wide boxes across with a mark in a corner, and only marks are: " + markGrids.size + " groups");
+      && radios.filter((r) => r.closest(".maker-marks")).every((r) => r.nextElementSibling.querySelector(".salt-producttag")),
+    "a group of books is laid compact (maker-marks), never two wide boxes across, and only books are: " + markGrids.size + " groups");
     /* Their % left Record on 26 Oct 2026 (a stepper on the account card): Record draws no form for it, and the one typed % field left, Add ID's, still takes a negative with no decimal pad */
     const driftField = byAct(p.d, "record.add-id.drift-value");
     ok(!p.d.querySelector('[data-act^="record.drift"]') && driftField && driftField.min === "-0.3" && driftField.max === "0.3" && driftField.getAttribute("inputmode") === null
@@ -127,8 +129,8 @@ export async function run({ ok, pageWork }) {
     ok(/\.salt-option__face\s*\{[^}]*min-height:\s*var\(--salt-tap\)/.test(css) && /--salt-tap:\s*44px/.test(css)
       && /\.salt-option__input\s*\{[^}]*position:\s*absolute;[^}]*inset:\s*0;[^}]*width:\s*100%;[^}]*height:\s*100%/.test(css),
     "the recipe makes the face 44px high and lays the radio over the whole tile, so a tile is 44px in both dimensions and the tile is the hit area");
-    ok(/\.adm \.maker-marks\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fill,\s*minmax\(88px,\s*1fr\)\)/.test(css) && /\.adm \.maker-marks \.salt-option__face\s*\{[^}]*justify-content:\s*center/.test(css),
-      "a group of marks lays tiles 88px and over, as many as fit, each mark centred in its tile");
+    ok(/\.adm \.maker-marks\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fill,\s*minmax\(72px,\s*1fr\)\)/.test(css) && /\.adm \.maker-marks \.salt-option__face\s*\{[^}]*justify-content:\s*center/.test(css),
+      "a group of books lays tiles 72px and over, as many as fit (the four on one row of a phone), each tag centred in its tile");
     ok(/\.adm \.maker-tiles\s*\{[^}]*flex:\s*1 1 100%[^}]*min-width:\s*0/.test(css),
       "a group fills the row of its form's flex layout and may shrink, so its tiles wrap inside a narrow pane instead of widening it");
     const group = tileGroup(p.form("Sale or purchase"), "Handover");

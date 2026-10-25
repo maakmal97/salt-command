@@ -1,0 +1,12 @@
+[
+ {"name":"three short choices stand one under another","file":"stmt/owner.js","find":":list.length===3&&brief?' maker-row maker-row--3'","replace":":list.length===3&&brief?''"},
+ {"name":"the books are drawn marks again","file":"stmt/owner.js","find":"if(item.mark) face.appendChild(productTag(item.mark));\n","replace":"if(item.mark) face.appendChild(bookMark(item.mark,28));\n"},
+ {"name":"a legend ends in the drawn mark","file":"stmt/owner.js","find":"legend.appendChild(productTag(L[3])); }","replace":"legend.appendChild(bookMark(L[3])); }"},
+ {"name":"the sale's Who stands alone","file":"stmt/owner.js","find":"var partyLabel=el('label','maker-field maker-field--short','Who');","replace":"var partyLabel=el('label','maker-field','Who');"},
+ {"name":"a form is one column on a phone","file":"stmt/page.js","find":".adm .maker-input{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:12px;align-items:start}","replace":".adm .maker-input{display:block}"},
+ {"name":"a label may wrap","file":"stmt/page.js","find":".adm .maker-field>.lbl{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}","replace":".adm .maker-field>.lbl{display:block}"},
+ {"name":"a figure is not in mono","file":"stmt/owner.js","find":"input.inputMode='decimal'; input.classList.add('salt-field__input--mono'); }","replace":"input.inputMode='decimal'; }"},
+ {"name":"a figure is set left","file":"stmt/page.js","find":".adm .maker-input input[type=number]{text-align:right}","replace":""},
+ {"name":"the pill keeps the browser's width","file":"stmt/page.js","find":".adm .maker-input>.btn.salt-pill{width:100%;height:48px;margin-top:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}","replace":""},
+ {"name":"the pill crosses the pane too","file":"stmt/page.js","find":"@media (min-width:860px){.adm .maker-input>.btn.salt-pill{width:auto;min-width:240px;max-width:100%;justify-self:end}}","replace":""}
+]

@@ -126,9 +126,9 @@ export async function run({ ok, pageWork }) {
     const s267 = p.card("2026-10-15T12:48:33.817Z"), s262 = p.card("2026-10-15T12:52:26.992Z");
     /* B. the head */
     const head = s267 && s267.querySelector(".salt-approve__head");
-    ok(!!head && markless(head.querySelector(".salt-approve__party")) === "CS6-BS-R · [mark]" && head.querySelector(".salt-approve__party svg.psym")
+    ok(!!head && head.querySelector(".salt-approve__party").textContent === "CS6-BS-R Salt" && !!head.querySelector(".salt-approve__party .salt-producttag--salt") && !head.querySelector(".salt-approve__party svg.psym")
       && !head.querySelector(".salt-approve__entry") && s267.querySelector(".rdet--row .salt-approve__entry").textContent === "from laptop, 15 Oct 2026, 20:48" && !/no code/.test(d.getElementById("makerDrafts").textContent),
-    "the head is the customer's code read off the draft (no \"no code\" for a correction) and the book's mark; the row and where and when it came from are in Details: " + (head && head.textContent));
+    "the head is the customer's code read off the draft (no \"no code\" for a correction) and the book's typed tag; the row and where and when it came from are in Details: " + (head && head.textContent));
     ok(!/s267/.test(head.textContent) && /s267/.test(s267.querySelector(".rdet--row").textContent) && !/r-fixture|2026-10-15T12/.test(head.textContent),
       "the row's id is no part of the head; it stands in Details with the source: " + head.textContent);
     const claimCard = p.card("2026-10-15T12:50:00.000Z");

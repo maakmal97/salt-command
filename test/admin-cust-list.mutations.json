@@ -92,7 +92,7 @@
   {
     "name": "1 Customers is a slider",
     "file": "stmt/page.js",
-    "find": "const ADMIN_SLIDERS = [\"record\", \"customers\"];",
-    "replace": "const ADMIN_SLIDERS = [\"record\"];"
+    "find": "const ADMIN_SLIDERS = [\"customers\"];",
+    "replace": "const ADMIN_SLIDERS = [];"
   }
 ]

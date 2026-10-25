@@ -14,8 +14,8 @@
  {
   "name": "Orders loses its Ended part",
   "file": "stmt/page.js",
-  "find": "[\"done\", \"Completed\"], [\"ended\", \"Ended\"], [\"approve\", \"Approve\"], [\"payments\", \"Payments\"]",
-  "replace": "[\"done\", \"Completed\"], [\"approve\", \"Approve\"], [\"payments\", \"Payments\"]"
+  "find": "[\"done\", \"Done\"], [\"ended\", \"Ended\"], [\"approve\", \"Approve\"], [\"payments\", \"Payments\"]",
+  "replace": "[\"done\", \"Done\"], [\"approve\", \"Approve\"], [\"payments\", \"Payments\"]"
  },
  {
   "name": "Shop loses its Practice part",
@@ -38,7 +38,7 @@
  {
   "name": "a strip is no longer the system's tabs",
   "file": "stmt/page.js",
-  "find": "'<div class=\"' + (seg ? \"salt-segment\" : \"salt-tabs\") + (seg && p",
+  "find": "'<div class=\"' + (nav ? \"salt-nav__links\" : seg ? \"salt-segment\" : \"salt-tabs\") + (seg && p",
   "replace": "'<div class=\"' + (seg && p"
  },
  {
@@ -56,8 +56,8 @@
  {
   "name": "a part's tab loses its act",
   "file": "stmt/page.js",
-  "find": "(seg ? \"salt-segment__opt\" : \"salt-tabs__pill\") + '\" role=\"tab\" data-part=\"' + k + '\" data-act=\"part.' + p + \".\" + k",
-  "replace": "(seg ? \"salt-segment__opt\" : \"salt-tabs__pill\") + '\" role=\"tab\" data-part=\"' + k + '\" data-act=\"nav.' + p + \".\" + k"
+  "find": "(nav ? \"salt-nav__link nktab\" : seg ? \"salt-segment__opt\" : \"salt-tabs__pill\") + '\" role=\"tab\" data-part=\"' + k + '\" data-act=\"part.' + p + \".\" + k",
+  "replace": "(nav ? \"salt-nav__link nktab\" : seg ? \"salt-segment__opt\" : \"salt-tabs__pill\") + '\" role=\"tab\" data-part=\"' + k + '\" data-act=\"nav.' + p + \".\" + k"
  },
  {
   "name": "every tab of the place is marked",
@@ -376,5 +376,6 @@
   "file": "stmt/owner.js",
   "find": "    'orders.approve':function(){ loadMaker(); },\n",
   "replace": ""
- }
+ },
+{"name": "an Orders part is no tab", "file": "stmt/page.js", "find": "'<button type=\"button\" role=\"tab\" class=\"salt-nav__link nktab'", "replace": "'<button type=\"button\" class=\"salt-nav__link nktab'"}
 ]

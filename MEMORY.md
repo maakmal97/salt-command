@@ -180,6 +180,13 @@
   new reads `/all/maker/customer-of|reward-of/<code>` (Fable reviewed: one low finding stated, one withdrawn). Full suite on the merged tree: 10,638 passed,
   7 red (the S1 fold replay). Not yet opened by him.
 
+## Salt Admin Orders redesign
+- Live as v1256 (`c4d677a6`, 26 Oct 2026; Cloud commit `40228185174`: chain and three suite parts green, CI `40228185236` green, live /rev `bc69bd8338333eba`), from his
+  canvas https://claude.ai/artifact/VNtoVjEo111nKYDbBzc487 and `docs/plan-admin-orders.html` (his yes to Asks A to M): the stages Placed, Agreed, Ready, Out or paid, Done,
+  Ended as text tabs; the row is Needs you's card, a plain table from 1080px; the row's move asks once and sends the order card's own request (section "a row's move
+  asks once"); the band's tag, terms in view; typed tags on Approve, Payments, Group and Ledger; a ticked Reject the danger pill (salt-ds#29, 1.17.0). Kept: Approve's
+  card with cost and margin (hard rule), "Change the order" (Ready has two ways), marks on form fields (Record's). Not yet opened by him.
+
 ## Salt Admin Shop redesign
 - Live as v1254 (`7eb0e296`, 26 Oct 2026; Cloud commit `40214884137`: chain and three suite parts green, live /rev `88e6f50b08fc1cc3`), from his Shop canvas
   https://claude.ai/artifact/TrC768miLDPZb7U5wWciBQ and `docs/plan-admin-shop.html` (his yes to every Ask, Ask H both halves): For now first and folded, the glance tiles,
@@ -192,3 +199,9 @@
   `salt-table--plain`) and 1.14.0 (#26: `salt-kpi--line`, `salt-action__money--lg`). To do / Pending / FYI, money first; one-shape cards with typed book
   tags (Admin only); the open card beside the list from 860px with the Agree inputs two by two (one Delivery select from Choose, one When). Fable reviewed
   the Agree inputs, the sort and Withdraw (four findings applied, re-checked). Rendered live at 390, 1180 and 1440. Accepted 23 Oct 2026.
+
+## Salt Admin Record redesign
+- Live as v1257 (`d3cc7739`, 26 Oct 2026; Cloud commit `40231375606`: chain and three suite parts green, CI `40231375639` green, build id `45f4c179b5a3db7c`), from his canvas
+  https://claude.ai/artifact/6gHaEnSUVXzVDVBdwsJX6s and `docs/plan-admin-record.html` (every Ask as recommended, K declined: New customer's Other % stays a fraction).
+  Parts a text tab row with unsent counts; form rows with their line and count; unsent entries as Needs you cards (Resend); every form two columns, typed tags,
+  mono figures; the sale's reading a ledger; Correct a row's row card; Rewards and Offsets as cards; New customer's code shown as typed. Not yet opened by him.

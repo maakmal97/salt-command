@@ -359,12 +359,7 @@
   "find": "pick?'Choose the delivery charge':bad?",
   "replace": "pick?'Reading the figures':bad?"
  },
- {
-  "name": "the stand-in does not open Change terms",
-  "file": "stmt/owner.js",
-  "find": "function(){ tf.open=true; if(feeSel&&feeSel.focus)",
-  "replace": "function(){ if(feeSel&&feeSel.focus)"
- },
+ {"name": "the stand-in does not take him to the charge", "file": "stmt/owner.js", "find": "function(){ tf.open=true; if(feeSel&&feeSel.focus) feeSel.focus(); }", "replace": "function(){ tf.open=true; }"},
  {
   "name": "a fold opens by itself",
   "file": "stmt/owner.js",
@@ -438,8 +433,10 @@
   "replace": "    var ol=el('ol','salt-steps'); ol.setAttribute('aria-label','Where the goods are'); ['Placed','Confirmed','Ready','Collected'].forEach(function(n,i){ ol.appendChild(el('li','salt-steps__step'+(i===0?' salt-steps__step--now':''),n)); });"
  },
 {"name":"Decline goes back to the card's end","file":"stmt/owner.js","find":"var dec=makerButton(card.querySelector('.ordrow3')||tail,['Decline','order.decline'],function(){","replace":"var dec=makerButton(tail,['Decline','order.decline'],function(){"},
- {"name":"no Change terms in the row","file":"stmt/owner.js","find":"        row3.appendChild(tb);","replace":"        void tb;"},
- {"name":"Change terms opens nothing","file":"stmt/owner.js","find":"tb.addEventListener('click',function(){ tf.open=!tf.open;","replace":"tb.addEventListener('click',function(){ tf.open=tf.open;"},
+ {"name": "the terms fold again", "file": "stmt/owner.js", "find": "        var tf={body:el('div','oterms'), open:true};\n        if(inline) card.appendChild(tf.body); else card.insertBefore(tf.body,lead);", "replace": "        var tf=inline?{body:el('div','oterms'), open:true}:ordFold(card,'Change terms','order.terms',order.id,'terms',false);\n        if(inline) card.appendChild(tf.body);"},
+ {"name": "the terms stand under Agree", "file": "stmt/owner.js", "find": "else card.insertBefore(tf.body,lead);", "replace": "else card.appendChild(tf.body);"},
  {"name":"Agree outside the row","file":"stmt/owner.js","find":"accept.setAttribute('data-accept',''); row3.insertBefore(accept,row3.firstChild);","replace":"accept.setAttribute('data-accept',''); lead.insertBefore(accept,lead.firstChild);"},
- {"name":"the terms line above the row","file":"stmt/owner.js","find":"var row3=el('div','ordrow3'); lead.appendChild(row3);\n","replace":"var row3=el('div','ordrow3');\n"}
+ {"name":"the terms line above the row","file":"stmt/owner.js","find":"var row3=el('div','ordrow3'); lead.appendChild(row3);\n","replace":"var row3=el('div','ordrow3');\n"},
+{"name": "the band draws the mark again", "file": "stmt/owner.js", "find": "var whoRow=el('span','ogoods__line'); whoRow.appendChild(productTag(order.product));", "replace": "var whoRow=el('span','ogoods__line'); whoRow.appendChild(bookMark(order.product,28));"},
+{"name": "the reply's fold says Answer them", "file": "stmt/owner.js", "find": "ordFold(card,'Answer','order.answer'", "replace": "ordFold(card,'Answer them','order.answer'"}
 ]

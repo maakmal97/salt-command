@@ -19,7 +19,7 @@ import { richOwnerPage, byAct } from "./maker-act.mjs";
 const PLACES = ["needs", "orders", "customers", "record", "shop"];
 const LABELS = ["Needs you", "Orders", "Customers", "Record", "Shop"];
 const PARTS = {
-  orders: [["placed", "Received"], ["confirmed", "Agreed"], ["ready", "Ready"], ["paid", "Delivered or paid"], ["done", "Completed"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments"], ["group", "Group"], ["ledger", "Ledger"]],
+  orders: [["placed", "Placed"], ["confirmed", "Agreed"], ["ready", "Ready"], ["paid", "Out or paid"], ["done", "Done"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments"], ["group", "Group"], ["ledger", "Ledger"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
   record: [["entry", "Entry"], ["customers", "Customers"], ["pricing", "Pricing"]],
   shop: [["hours", "Hours"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
@@ -42,7 +42,7 @@ const SHOWS = {
 const FORMS = {
   entry: ["Unsent entry", "Sale or purchase", "Repayment", "Stock count", "Gift", "Loan", "Rewards", "Offsets", "Correct a row", "Reopen a cancelled order"],
   customers: ["New customer", "Make an associate", "Change a name or place", "Place on the map"],
-  pricing: ["Desk reminders", "Printed sizes"]
+  pricing: ["Printed sizes", "Desk reminders"]   /* Their % and Partner on the account card since 26 Oct 2026; his Ask G orders the rest */
 };
 /* what each entry reads, by route: the place on tapping its item, the part on tapping its tab */
 const ROUTES = { review: "/all/maker/review", claims: "/all/maker/claims", pools: "/all/maker/pools", inputs: "/all/maker/inputs", offsets: "/all/maker/offsets",
@@ -94,13 +94,13 @@ export async function run({ ok, pageWork }) {
     const wantParts = (place) => PARTS[place].map(([k, t]) => k + ":" + t + ":part." + place + "." + k);
     ok(strips.length === 5 && ["orders", "customers", "record", "shop"].every((m) => same(form(m), wantParts(m))),
       "Orders, Customers, Record and Shop each have their parts in order, each tab with its act: " + JSON.stringify(["orders", "customers", "record", "shop"].map(form)));
-    /* 20 Oct 2026 (Counter Batch C): Record's three are the system's slider, and Customers' parts too (26 Oct 2026, the tight one) */
-    /* 25 Oct 2026 (Salt Admin Shop): Shop's four are the Nav bar's text tabs, as Needs you's kinds */
-    const recipe = (s) => (["record", "customers"].includes(s.getAttribute("data-place")) ? ["salt-segment", "salt-segment__opt"] : s.getAttribute("data-place") === "shop" ? ["salt-nav__links", "salt-nav__link"] : ["salt-tabs", "salt-tabs__pill"]);
+    /* 20 Oct 2026 (Counter Batch C): Customers' parts are the system's slider (26 Oct 2026, the tight one); Record's three left it on 25 Oct 2026 (his Ask A) */
+    /* 25 Oct 2026 (Salt Admin Shop, Orders and Record): Shop's four, Orders' two rows and Record's three are the Nav bar's text tabs, as Needs you's kinds */
+    const recipe = (s) => (["customers"].includes(s.getAttribute("data-place")) ? ["salt-segment", "salt-segment__opt"] : ["shop", "orders", "record"].includes(s.getAttribute("data-place")) ? ["salt-nav__links", "salt-nav__link"] : ["salt-tabs", "salt-tabs__pill"]);
     ok(strips.every((s) => s.classList.contains(recipe(s)[0]) && s.getAttribute("role") === "tablist" && s.getAttribute("aria-label")
       && [...s.querySelectorAll("button")].every((b) => b.classList.contains(recipe(s)[1]) && b.getAttribute("role") === "tab"))
       && !d.querySelector("#mHome .aparts"),
-    "a strip is the system's tabs, or Record's and Customers' slider, or Shop's Nav bar tabs, a tablist of tabs, and Needs you has none");
+    "a strip is the system's tabs, or Customers' slider, or Shop's, Orders' and Record's Nav bar tabs, a tablist of tabs, and Needs you has none");
 
     /* 3. THE TABS FOLLOW HIM */
     ok(p.where() === "needs", "the page opens on Needs you: " + p.where());
@@ -155,7 +155,7 @@ export async function run({ ok, pageWork }) {
       }
       await empty.tap("part.orders.approve");
       none.rows = [...empty.d.querySelectorAll("#makerDrafts .rnone")].filter(shown).map((e) => e.textContent).join();
-      ok(none.placed === "No orders received." && none.confirmed === "No agreed orders." && none.ready === "No orders ready." && none.paid === "No orders delivered or paid." && none.done === "No completed orders." && none.ended === "No ended orders."
+      ok(none.placed === "No orders placed." && none.confirmed === "No agreed orders." && none.ready === "No orders ready." && none.paid === "No orders out or paid." && none.done === "No done orders." && none.ended === "No ended orders."
         && none.rows === "Nothing waits for your approval.",
       "a part with nothing in it says so, and a part with something says nothing: " + JSON.stringify(none));
     } finally { empty.w.close(); }

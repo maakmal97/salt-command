@@ -34,7 +34,7 @@ export async function run({ ok, pageWork }) {
     /* 20 Oct 2026 (canvas V11): the action as a chip by the reference, the units as the heading over the buyer's code, the goods' total beside */
     ok(!!head && head.classList.contains("salt-band") && t(head.querySelector(".salt-band__head .salt-status")) === "To hand over"
       && /^[A-Z0-9]{4}-[A-Z0-9]{3}$/.test(t(head.querySelector(".salt-band__ref[data-ref]"))) && t(head.querySelector("h3.ostate")) === "2 units"
-      && t(head.querySelector(".ogoods__who")) === "CX1-ZED" && t(head.querySelector(".ogoods__total")) === "RM 100.00",
+      && t(head.querySelector(".ogoods__who")) === "CX1-ZED" && t(head.querySelector(".ogoods__total")) === "RM 100",
       "his order's head is the band: the action as a chip by the short reference, the units as the heading over the buyer, the goods' total: " + t(head));
     ok(t(head.querySelector(".oway")) === "Collect at Z9", "a collection says where: " + t(head && head.querySelector(".oway")));
     /* 2 */

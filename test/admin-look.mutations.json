@@ -1,6 +1,6 @@
 [
  {"name":"Shop loses its This device part","file":"stmt/page.js","find":"[\"practice\", \"Practice\"], [\"device\", \"This device\"]]","replace":"[\"practice\", \"Practice\"]]"},
- {"name":"a part's tab loses its act","file":"stmt/page.js","find":"(seg ? \"salt-segment__opt\" : \"salt-tabs__pill\") + '\" role=\"tab\" data-part=\"' + k + '\" data-act=\"part.' + p + \".\" + k","replace":"(seg ? \"salt-segment__opt\" : \"salt-tabs__pill\") + '\" role=\"tab\" data-part=\"' + k + '\" data-act=\"nav.' + p + \".\" + k"},
+ {"name":"a part's tab loses its act","file":"stmt/page.js","find":"(nav ? \"salt-nav__link nktab\" : seg ? \"salt-segment__opt\" : \"salt-tabs__pill\") + '\" role=\"tab\" data-part=\"' + k + '\" data-act=\"part.' + p + \".\" + k","replace":"(nav ? \"salt-nav__link nktab\" : seg ? \"salt-segment__opt\" : \"salt-tabs__pill\") + '\" role=\"tab\" data-part=\"' + k + '\" data-act=\"nav.' + p + \".\" + k"},
  {"name":"the Look row is left out of This device","file":"stmt/page.js","find":"+ '<div class=\"salt-settings adevice\">' + lookRow(true) + vaultRow()","replace":"+ '<div class=\"salt-settings adevice\">' + vaultRow()"},
  {"name":"the Look section shows under Hours","file":"stmt/page.js","find":"<section id=\"oLook\" data-in=\"shop.device\"","replace":"<section id=\"oLook\" data-in=\"shop.hours\""},
  {"name":"the Look section shows in every part of Shop","file":"stmt/page.js","find":"<section id=\"oLook\" data-in=\"shop.device\" aria-labelledby","replace":"<section id=\"oLook\" aria-labelledby"},

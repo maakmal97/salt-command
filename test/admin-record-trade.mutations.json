@@ -1,0 +1,15 @@
+[
+ {"name":"the resale choice stays after the figures","file":"stmt/owner.js","find":"      tradeSection.insertBefore(attribution,partyLabel);","replace":"      tradeSection.appendChild(attribution);"},
+ {"name":"the resale tiles keep their long words","file":"stmt/owner.js","find":"{value:'R2',label:'Resells',aria:'They resell'},{value:'R3',label:'Introduced',aria:'They introduced the buyer'}]);\n      var tradeAssoc","replace":"{value:'R2',label:'They resell'},{value:'R3',label:'They introduced the buyer'}]);\n      var tradeAssoc"},
+ {"name":"a short tile does not speak its full words","file":"stmt/owner.js","find":" if(item.aria) radio.setAttribute('aria-label',item.aria);","replace":""},
+ {"name":"the reading is sentences again","file":"stmt/owner.js","find":"else readingRow('Cost a unit',rm(c.rate),'From '+c.source+'.');","replace":"else readingLine('Cost a unit '+rm(c.rate)+', from '+c.source+'.');"},
+ {"name":"the reading has no eyebrow","file":"stmt/owner.js","find":"readingBox.appendChild(el('h4','salt-eyebrow salt-eyebrow--copper reading-head','Reading')); ","replace":""},
+ {"name":"a loss is not in ember","file":"stmt/owner.js","find":"line.appendChild(el('span','salt-ledger__value'+(bad?' reading-bad':''),value));","replace":"line.appendChild(el('span','salt-ledger__value',value));"},
+ {"name":"the margin leaves its percentage","file":"stmt/owner.js","find":"rm(got.margin.rm)+(got.margin.pct==null?'':' · '+Math.round(got.margin.pct)+'%')","replace":"rm(got.margin.rm)"},
+ {"name":"their usual says nothing behind it","file":"stmt/owner.js","find":"if(h)readingRow('Their usual a unit',rm(h.median),h.count+","replace":"if(h)readingRow('Their usual a unit',rm(h.median),'',0,h.count+"},
+ {"name":"the cover's figure is in its sentence","file":"stmt/owner.js","find":"words.textContent='Use '+units(result.cover.units)+' of their reward'; fig.textContent=rm(result.cover.rm)+' off';","replace":"words.textContent='Use '+units(result.cover.units)+' of their reward: '+rm(result.cover.rm)+' off'; fig.textContent='';"},
+ {"name":"the cover does not say what they hold","file":"stmt/owner.js","find":" held.textContent='They hold '+units(result.cover.free);","replace":""},
+ {"name":"a reading's figure may be cut","file":"stmt/page.js","find":".adm .reading-rows .salt-ledger__value{flex:none;white-space:nowrap;text-align:right}","replace":".adm .reading-rows .salt-ledger__value{text-align:right}"},
+ {"name":"the cover row cannot shrink below its words","file":"stmt/page.js","find":".adm .maker-cover-row .maker-cover{flex:1 1 auto;min-width:0}","replace":".adm .maker-cover-row .maker-cover{flex:1 1 auto}"},
+ {"name":"the cover's words may wrap","file":"stmt/page.js","find":".adm .maker-cover__words,.adm .maker-cover__held{display:block;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}","replace":".adm .maker-cover__words,.adm .maker-cover__held{display:block;min-width:0}"}
+]
