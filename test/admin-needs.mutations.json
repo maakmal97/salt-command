@@ -2,8 +2,8 @@
  {
   "name": "Soon comes before Now",
   "file": "stmt/owner.js",
-  "find": "SEVS.forEach(function(s){",
-  "replace": "SEVS.slice().reverse().forEach(function(s){"
+  "find": "SEVS.forEach(function(s){\n      var group=shown.filter(",
+  "replace": "SEVS.slice().reverse().forEach(function(s){\n      var group=shown.filter("
  },
  {
   "name": "the newest comes first",
@@ -368,8 +368,8 @@
  {
   "name": "the kind tapped is not drawn as the Nav's chosen link",
   "file": "stmt/owner.js",
-  "find": "x.classList.toggle('salt-nav__link--active', on);",
-  "replace": "x.classList.toggle('salt-nav__link--active', false);"
+  "find": "x.getAttribute('data-chip')===nKind; x.setAttribute('aria-selected', on?'true':'false'); x.classList.toggle('salt-nav__link--active', on);",
+  "replace": "x.getAttribute('data-chip')===nKind; x.setAttribute('aria-selected', on?'true':'false'); x.classList.toggle('salt-nav__link--active', false);"
  },
  {
   "name": "the chips are not a tablist",

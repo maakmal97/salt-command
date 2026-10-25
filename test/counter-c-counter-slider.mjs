@@ -10,7 +10,7 @@
  *   2  the customer's Look row is a slider of two, Night chosen and marked, the thumb at it, Tide greyed and inert
  *   3  the Orders tabs are a slider of four with their counts, and a tap moves the thumb and aria-selected together
  *   4  Salt Admin's Record strip is a slider of three, the thumb following each part entered; a hidden option takes no column
- *   5  the strips that do not fit stay pills: Customers, Shop, the stages, Orders' second strip, the kinds, the months
+ *   5  the strips that do not fit stay pills: Customers, the stages, Orders' second strip, the months; the kinds and Shop's parts are the Nav bar's text tabs
  *   6  no rule of the page lowers a slider's option under 44px */
 import { JSDOM, VirtualConsole } from "jsdom";
 import { webcrypto } from "node:crypto";
@@ -79,14 +79,17 @@ export async function run({ ok, pageWork }) {
     const g3 = seg(rec);
     ok(g3.n === "2" && g3.i === "1", "an option hidden leaves the columns: two shown, the thumb on the second: " + J(g3));
     rec.querySelector('[data-part="entry"]').hidden = false;
-    const pills = ['.aparts[data-place="customers"]', '.aparts[data-place="shop"]'].map((s) => {
-      const g = d.querySelector(s); return [s, !!g && g.classList.contains("salt-tabs") && !g.classList.contains("salt-segment") && [...g.querySelectorAll("button")].every((b) => b.classList.contains("salt-tabs__pill"))]; });
+    /* 25 Oct 2026 (canvas Salt Admin Customers): Customers' parts are the slider too, the tight one, like Record's */
+    const cu = d.querySelector('.aparts[data-place="customers"]');
+    ok(!!cu && cu.classList.contains("salt-segment") && cu.classList.contains("salt-segment--tight") && !cu.classList.contains("salt-tabs")
+      && Number(seg(cu).n) >= 2 && [...cu.querySelectorAll("button")].every((b) => b.classList.contains("salt-segment__opt")),
+      "Salt Admin's Customers strip is a tight slider: " + J(cu && seg(cu)));
     /* 22 Oct 2026 (canvas Needs you): Needs you's kinds left the pills for the Nav bar's text tabs (test/admin-ac-glance.mjs), so they are neither pills nor the slider */
-    /* 25 Oct 2026 (canvas Salt Admin Orders): Orders' stages and its second row are the Nav bar's text tabs too, never the slider */
-    const kinds = d.querySelector(".nchips"), orows = [".oparts--stages .aparts", ".oparts--minor .aparts"].map((s) => d.querySelector(s));
-    ok(pills.every((x) => x[1]) && !!kinds && !kinds.classList.contains("salt-segment") && [...kinds.querySelectorAll("button")].every((b) => b.classList.contains("salt-nav__link"))
-      && orows.every((g) => !!g && !g.classList.contains("salt-segment") && [...g.querySelectorAll("button")].every((b) => b.classList.contains("salt-nav__link"))),
-      "Customers and Shop stay strips of pills, and the kinds and Orders' two rows are the Nav bar's tabs, never the slider: " + J(pills));
+    /* 25 Oct 2026 (Salt Admin Shop and Orders): Shop's parts and Orders' two rows left the pills for the Nav bar's text tabs too */
+    const kinds = d.querySelector(".nchips"), navs = ['.aparts[data-place="shop"]', ".oparts--stages .aparts", ".oparts--minor .aparts"].map((s) => [s, d.querySelector(s)]);
+    const navOk = navs.map(([s, g]) => [s, !!g && !g.classList.contains("salt-segment") && [...g.querySelectorAll("button")].every((b) => b.classList.contains("salt-nav__link"))]);
+    ok(!!kinds && !kinds.classList.contains("salt-segment") && [...kinds.querySelectorAll("button")].every((b) => b.classList.contains("salt-nav__link")) && navOk.every((x) => x[1]),
+      "the kinds, Shop's parts and Orders' two rows are the Nav bar's tabs, never the slider: " + J(navOk));
     const al = d.querySelector("#lookRow .lookset");
     ok(al && al.classList.contains("salt-segment") && seg(al).n === "2" && seg(al).on === "10", "Salt Admin's Look row is the same slider: " + J(seg(al)));
     ok(errs.length === 0, "and his page drew without an error: " + J(errs.slice(0, 2)));

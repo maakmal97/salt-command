@@ -2475,6 +2475,29 @@ pause; it is not a vault authority switch. A maintenance refusal retains the bro
 Neither this release nor Access configuration alone proves owner acceptance or authorizes
 removing an incumbent Desk control.
 
+### Salt Admin's Customers on the system (25 and 26 Oct 2026, plan `docs/plan-admin-customers.html`)
+
+His yes to Asks A to J (relayed by the moderator, 25 Oct 2026), canvas Salt Admin Customers. Owner only; the customer's page is untouched.
+
+- **The parts** (Accounts, Messages, Links, Associates) are the slider, `salt-segment--tight` (salt-ds 1.16.0) so Associates fits at 390px.
+- **Accounts**: an Insight leads (owed to him and how much is past its term, what he owes back, the sign-ins waiting); the filters are Needs you's text
+  tab row with counts, No account in place of No account yet, an empty one dimmed; each account is Needs you's card (`needCard`) under To do, Pending and
+  FYI, the largest sum first: the state and its age, the code and username, one way (Message, Send, Show, Open) and what is owed, a refund he owes in
+  ember. A tap on the card opens the account. From 1080px each group is one plain table (`acctTable`), the cards hidden.
+- **An account** leads with where it stands: the state, the code, the figure, a ledger of the standing (locked out, opened and how, marked sent,
+  notifications) and their waiting line with Reply. Sign-in is its own card. **The Sent tick is gone** (Ask F): Mark as sent while it is not, a Marked sent
+  line once it is; there is no unticking. From 1080px an open account fills the page in columns, two and three from 1440px, with its way back.
+- **Their % and Make partner moved from Record > Pricing onto the account** (Ask A): a book a tab, the suggestion and why, a stepper in whole steps of 5
+  from -30% to +30% (Ask G), their prices off `/all/maker/drift-preview`, Send at that % only once it differs, Use the suggestion, Set back to 0; Make
+  partner asks once. Both send the same tier-set and partner inputs, for Approve. Record > Pricing keeps Printed sizes.
+- **This customer and the associate reward on the account** (Ask B), read by the account's roster code: `GET /all/maker/customer-of/<code>` and
+  `/all/maker/reward-of/<code>` (the Counter relays to the Desk's `/_internal/maker/customer-of|reward-of/<code>`, behind Access and the bridge key, GET
+  only; `makerCustomerReadingOf`, `makerRewardReadingOf`). A code is one dash, so a bucket (-R) and a username are refused. Nothing prices from either.
+- **Messages**: a thread is Needs you's card, Waiting under To do and Answered under FYI; the open thread is the system's Thread and Bubble.
+- **Links**: a link is Needs you's card under Waiting on you, Standing link, Made by associates and Older links, Opens in the figure's place; its address,
+  QR and moves open under it.
+- **Associates**: a book is its typed tag and how many; cards on a phone, one plain table from 860px; the reward the system's Meter; the code opens the account.
+
 ### Salt Admin A to C (20 and 21 Oct 2026, plan `docs/plan-counter-admin-ac.html`)
 
 Salt Admin catches up with Counter Batches A to C, his side of each (canvas Salt Admin Batches A to C; his answers of 20 Oct 2026).
@@ -2554,6 +2577,9 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | Act | Where | What it does |
 |---|---|---|
 | `acct.back` | Accounts, an open card on a phone | Takes the card back to the list. |
+| `assoc.open` | Associates, the code (key: the code) | Opens that associate's account under Accounts. |
+| `assoc.open-row` | Associates table from 860px, the code (key: the code) | Opens that associate's account under Accounts. |
+| `acct.copy-link` | Accounts card for an ID with no account, once the link is shown | Copies the guest price list's link. |
 | `acct.device-signout` | Account card, Phones and computers (key: the device id) | Signs that one device out. |
 | `acct.filter-all` | Accounts, the filter bar | Shows every account. |
 | `acct.filter-locked` | Accounts, the filter bar | Shows accounts with an address refused. |
@@ -2562,11 +2588,25 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `acct.filter-unopened` | Accounts, the filter bar | Shows accounts never opened. |
 | `acct.filter-unsent` | Accounts, the filter bar | Shows accounts not yet sent a sign-in. |
 | `acct.find` | Accounts | Finds an account by a code or a username. |
-| `acct.open` | Accounts list, one row each (key: the username) | Opens that account's card. |
+| `acct.message` | Accounts card for money owed (key: the username) | Opens their thread under Messages. |
+| `acct.open` | Accounts list, one card each (key: the username) | Opens that account's card. |
+| `acct.message-row` | Accounts table from 1080px, money owed (key: the username) | Opens their thread under Messages. |
+| `acct.open-card` | Accounts card with nothing to do but look (key: the username) | Opens that account's card, as a tap on the card does. |
+| `acct.open-row` | Accounts table from 1080px, the code (key: the username) | Opens that account's card. |
+| `acct.open-row-way` | Accounts table from 1080px, the way (key: the username) | Opens that account's card, where its Send or Show is. |
+| `acct.partner` | Account card, Partner (key: the code) | Makes them a partner on a second tap within four seconds: a name-free partner entry for review; a partner pays the Floor. |
+| `acct.pct.book` | Account card, Their % (key: the book) | Shows that book's %. |
+| `acct.pct.clear` | Account card, Their % (key: the code) | Sends their % back to 0, the Set Price, for review. |
+| `acct.pct.down` | Account card, Their % | Lowers the % by 5, to -30% at most; their prices show at it. |
+| `acct.pct.send` | Account card, Their % (key: the code) | Sends their % at the stepper's figure for review; off while it is what is set. |
+| `acct.pct.suggest` | Account card, Their % | Sets the stepper to the engine's suggested %; it sends nothing. |
+| `acct.pct.up` | Account card, Their % | Raises the % by 5, to +30% at most; their prices show at it. |
 | `acct.repay` | Account card, Loans (key: the loan rid) | Opens Record's Repayment form with that loan chosen. |
 | `acct.order-for` | Account card | Opens an order for them, at the head of Orders. |
 | `acct.password` | Account card | Opens their sealed password straight to the clipboard, never into the page. |
-| `acct.sent` | Account card | Ticks the account as sent. |
+| `acct.reply` | Account card, their waiting line (key: the username) | Opens their thread under Messages. |
+| `acct.sent` | Account card | Mark as sent: marks the account sent, while it is not. |
+| `acct.show-link` | Accounts card for an ID with no account (key: the username) | Shows the guest price list and its QR until the account is made. |
 | `acct.show-code` | Account card | Opens the sheet that shows a code for them in person. |
 | `acct.signin-link` | Account card (key: data-acct, the username) | First tap makes their one-time sign-in link, the next shares it. |
 | `acct.signout-all` | Account card | Signs them out everywhere, on a second tap within four seconds. |
@@ -2578,6 +2618,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `chat.close` | Open thread | Closes the thread. |
 | `chat.no-reply` | Open thread | Records that no reply is needed. |
 | `chat.open` | Chat, one per account (key: the username) | Opens that account's thread. |
+| `chat.reply-open` | Messages, a thread's card (key: the username) | Opens that thread: Reply while a line of theirs waits, Open once answered. |
 | `chat.open-retained` | Open thread | Opens the reply kept encrypted on this device. |
 | `chat.reply` | Open thread (key: the username) | The reply to send. |
 | `chat.send` | Open thread | Sends the reply, or sends the same one again. |
@@ -2621,12 +2662,15 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `hours.day-from` | The opened day (key: the weekday) | The quarter hour it opens. |
 | `hours.day-same` | The opened day (key: the weekday) | Takes the day before's hours. |
 | `hours.day-to` | The opened day (key: the weekday) | The quarter hour it closes; earlier than the open is the next day. |
-| `hours.override-clear` | Operating hours | Clears it. |
+| `hours.hold` | Operating hours, For now | Opens the form that holds the shop closed or open until a time; Not now folds it. |
+| `hours.override-clear` | Operating hours, For now, while an override is filed | Clears it (it reads Weekly hours, named Back to the weekly hours). |
 | `hours.override-set` | Operating hours | Sets the temporary override. |
 | `hours.override-state` | Operating hours (key: `false` for Closed, `true` for Open) | Whether the override holds the shop open or closed. |
 | `hours.override-until` | Operating hours | When the override ends, Kuala Lumpur time. |
 | `hours.save` | The opened day, Done (key: the weekday) | Saves the whole week and shuts the day. |
 | `link.approve` | Link card of an associate's link | Approves it, which opens it. |
+| `link.approve-card` | Links, a waiting link's card (key: the link id) | Approves it, which opens it. |
+| `link.copy-card` | Links, a link's card (key: the link id) | Copies the link. |
 | `link.open` | Link row (key: the link id) | Opens or shuts the row: its address, QR and moves. |
 | `link.copy` | Link card (key: data-link, the link id) | Copies the link. |
 | `link.decline` | Same card | Declines it, which keeps it shut. |
@@ -2634,6 +2678,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `link.label` | Links | Who the link is for. |
 | `link.make` | Links | Makes a guest link. |
 | `link.restore` | Link card of a withdrawn link | Restores the link. |
+| `link.restore-card` | Links, a withdrawn link's card (key: the link id) | Restores the link. |
 | `link.withdraw` | Link card | Withdraws the link. |
 | `look.night` | Shop, This device, Look | Night for Salt Admin on this device, at once, kept here. |
 | `look.sheet-close` | Look Sheet, on a first open | Closes it with Tide kept and nothing stored. |
@@ -2641,7 +2686,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `look.sheet-tide` | Same Sheet | Chooses Tide, keeps it and closes the Sheet. |
 | `look.tide` | Shop, This device, Look | Tide for Salt Admin on this device, at once, kept here. |
 | `maker.refresh` | Orders, Order review | Reads the orders again. |
-| `more.test-accounts` | Shop, Practice | Makes or deletes the three test accounts. |
+| `more.test-accounts` | Shop, Practice | Makes the three test accounts, or deletes them once its Sheet is answered Remove. |
+| `more.test-page` | Shop, Practice, while all three are open | Opens the test surface, `/all/test`. |
 | `nav.add` | The + orb at the foot of the page, on every place but Record, below 1080px | Opens Record, on Entry, the menu of entries. Reads what Record reads on entering. |
 | `rail.add` | New entry, the rail's + under his places, from 1080px, on every place but Record | Opens Record on Entry, as the orb does. |
 | `nav.customers` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Customers, on its Accounts. |
@@ -2828,14 +2874,6 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.count.date` | Record, stock count | The day counted. |
 | `record.count.send` | Record, stock count | Records the count. |
 | `record.count.units` | Record, stock count | The units counted. |
-| `record.drift.book` | Record, Their % | The book. |
-| `record.drift.clear` | Record, Their % | Sets it back to 0, the Set Price. |
-| `record.drift.customer` | Record, Their % | The customer. |
-| `record.drift.set` | Record, Their % | Sends their % for review. |
-| `record.drift.suggest` | Record, Their % | Fills the box with the engine's suggested %; it sends nothing. |
-| `record.drift.value` | Record, Their % | Their %, from 0 to 2 (0.2 is 20%). |
-| `record.partner.customer` | Record, partner | The customer to make a partner. |
-| `record.partner.make` | Record, partner | Queues a name-free partner entry for review, as the Desk's Make partner does; a partner pays the Floor. Books with a Set Price only. |
 | `record.form` | Record, the menu of Entry, Customers and Pricing (key: the form's name as a slug) | Opens that form alone, in the pane beside the menu from 860px and in the menu's place below it, with a way back. Reads and sends nothing. |
 | `record.form-back` | The head of an open Record form | Closes the form and returns to the menu, to the row it came from. Nothing typed is lost. |
 | `record.gift.book` | Record, gift | The book. |

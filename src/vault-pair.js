@@ -1,5 +1,7 @@
 import { makerRequestFingerprint } from "./maker-request.js";
 import POSITION_ENGINE from "../engine/position.mjs";
+import { unfolded } from "./way.js";
+import { wayBound } from "./book-read.js";
 
 const object = (value) => value && typeof value === "object" && !Array.isArray(value);
 const canonical = (value) => Array.isArray(value) ? value.map(canonical)
@@ -127,6 +129,7 @@ export function verifiedVaultRegistration(draft, receipt, outbox) {
 
 export async function readVaultRegistrations(db) {
   if (!db) throw new Error("The versioned vault registration store is unavailable.");
+  const at = await wayBound(db);   /* S3: on its way to the book the readers read (src/way.js) */
   const rows = (await db.prepare(`SELECT d.id,d.status,d.collection,d.entry,d.row,
       r.id AS receipt_id,r.fingerprint AS receipt_fingerprint,r.request_fingerprint,r.revision AS receipt_revision,
       r.operation AS receipt_operation,o.id AS outbox_id,o.entry AS outbox_entry,o.state AS outbox_state,
@@ -134,7 +137,7 @@ export async function readVaultRegistrations(db) {
     FROM draft d
     JOIN vault_receipt r ON r.id=d.id
     LEFT JOIN vault_outbox o ON o.id=d.id
-    WHERE d.collection='roster' AND d.committed_at IS NULL AND d.status IN ('pending','approved')`).all()).results || [];
+    WHERE d.collection='roster' AND ${unfolded(at, 'd.')} AND d.status IN ('pending','approved')`).all()).results || [];
   const verified = rows.flatMap((row) => {
     const registration = verifiedVaultRegistration(row, {
       id: row.receipt_id, fingerprint: row.receipt_fingerprint, request_fingerprint: row.request_fingerprint,

@@ -4,7 +4,7 @@ import { makerInputCatalog, makerTierSet } from "../src/maker-inputs.js";
 import { handleMaker } from "../stmt/maker.js";
 import { landingPage } from "../stmt/page.js";
 import { JSDOM } from "jsdom";
-import { tileValues } from "./maker-act.mjs";
+import { byAct, enter } from "./maker-act.mjs";
 import { webcrypto } from "node:crypto";
 import { contentKey, wrapKey } from "../tools/stmt-crypto.mjs";
 
@@ -101,21 +101,25 @@ export async function run({ ok } = {}) {
     "the authenticated Counter route preserves " + (tier === null ? "the clear" : "held zero") + " on the named Desk bridge");
   }
 
+  /* 26 Oct 2026: Their % is set from the customer's own account card (Customers > Accounts): a stepper in whole steps of 5 between -30 and +30, Send, Use the suggestion, Set back to 0 */
   const content = await contentKey("4".repeat(64), "maker-drift");
   const adminOpen = { ok: true, byMaster: true, session: "", wrapMaster: await wrapKey("fixture-master", content) };
   const calls = []; let failDriftOnce = true;
+  const stamp = "2026-10-01T08:00:00.000Z";
+  const account = (username, code) => ({ username, code, account: true, t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear", seen: { opens: 1, last: stamp, how: "link" }, sent: stamp, issued: "2026-10-01" });
+  const accounts = [account("1111-0001", "CX1-ZED"), account("1111-0002", "CX2-ZED"), account("1111-0003", "SP1-ZED")];
   const context = {
     ok: true, products: ["salt", "oil"],
     catalog: {
       products: [{ product: "salt", drift: true, tiered: false }, { product: "oil", fixed: true, drift: false, tiered: false }],
       parties: ["CX1-ZED", "CX2-ZED", "SP1-ZED"],
       tierCustomers: ["CX1-ZED", "CX2-ZED", "SP1-ZED"],
-      driftCustomers: ["CX1-ZED", "CX2-ZED"],
+      driftCustomers: ["CX1-ZED", "CX2-ZED"], partners: [], partnerWaiting: [],
       driftCards: [{ code: "CX1-ZED", product: "salt", held: true, value: 0, current: 0, suggest: 0, why: "" },
         { code: "CX2-ZED", product: "salt", held: false, value: null, current: 0, suggest: 0.25, why: "paid late" }]
     }
   };
-  const dom = new JSDOM(landingPage("", "maker-drift-nonce", { master: "fixture-master", accounts: [] }), {
+  const dom = new JSDOM(landingPage("", "maker-drift-nonce", { master: "fixture-master", accounts }), {
     url: "https://site.test/all", runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(win) {
       Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true });
@@ -123,8 +127,8 @@ export async function run({ ok } = {}) {
       win.fetch = async (path, init) => {
         const route = String(path), body = init?.body ? JSON.parse(init.body) : null;
         if (route === "/all/maker/inputs/tier-set") {
-          calls.push({ route, body });
-          if (failDriftOnce && body.tier === 0) {
+          calls.push({ route, body, bytes: init.body });
+          if (failDriftOnce) {
             failDriftOnce = false;
             return { ok: false, status: 503, json: async () => ({ ok: false, error: "Retry this retained input." }) };
           }
@@ -133,7 +137,7 @@ export async function run({ ok } = {}) {
           : route === "/all/maker/inputs" ? context
             : route === "/all/maker/review" ? { ok: true, orders: [], drafts: [] }
               : route === "/all/maker/hours" ? { ok: true, config: null, status: { open: true, source: "default" } }
-                : route === "/all/sheet" ? { ok: true, accounts: [] }
+                : route === "/all/sheet" ? { ok: true, at: stamp, issue: "2026-10-01", accounts, desk: { n: 2, at: stamp, moved: false }, stranger: "Silver" }
                   : { ok: true, accounts: [], orders: [], drafts: [], refs: [], tiers: [] };
         return { ok: true, status: 200, json: async () => data };
       };
@@ -144,69 +148,68 @@ export async function run({ ok } = {}) {
     return predicate();
   };
   try {
-    const doc = dom.window.document;
-    doc.querySelector('button[data-act="nav.record"]').click();
-    const loaded = await waitFor(() => [...doc.querySelectorAll("#makerInputs .maker-input h3")]
-      .some((heading) => heading.textContent === "Their %"));
-    check(loaded, "the owner page renders the Counter customer drift controls");
-    const drift = [...doc.querySelectorAll("#makerInputs .maker-input")]
-      .find((section) => section.querySelector("h3")?.textContent === "Their %");
-    const selects = drift.querySelectorAll("select"), value = drift.querySelector('input[type="number"]');
-    const setButton = [...drift.querySelectorAll("button")].find((button) => button.textContent === "Send their %");
-    const clearButton = [...drift.querySelectorAll("button")].find((button) => button.textContent === "Set back to 0");
-    const useButton = [...drift.querySelectorAll("button")].find((button) => button.textContent === "Use the suggestion");
-    check([...selects[0].options].map((option) => option.value).join() === "CX1-ZED,CX2-ZED",
-      "the Counter drift selector uses the customer-only catalog and excludes suppliers");
-    check(selects.length === 1 && tileValues(drift, "Book").join() === "salt",
-      "the UI offers salt and omits fixed books from its drift tiles");
-    check(value.min === "-30" && value.max === "30" && value.step === "5" && value.getAttribute("inputmode") === null,
-      "the UI bounds the numeric input to a whole %, -30 to +30 in steps of 5 (22 Oct 2026), with no decimal pad (it has no minus key on an iPhone)");
-    check(drift.textContent.includes("Set by you: 0%."),
-      "the UI labels a held zero as set by him");
-    selects[0].value = "CX2-ZED"; selects[0].dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-    check(drift.textContent.includes("No % set: the Set Price. Suggested +25%: paid late.") && clearButton.hidden && !useButton.hidden,
-      "none held reads as the Set Price with the suggestion beside it, and Clear is unavailable when nothing is held");
-    useButton.click();
-    check(value.value === "25" && calls.length === 0,
-      "Use the suggestion fills the box with the suggested % and sends nothing");
-    selects[0].value = "CX1-ZED"; selects[0].dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-    value.value = "35"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
-    check(drift.textContent.includes("Enter a whole % from -30 to +30 in steps of 5 (20 is 20%, -10 is 10% off).") && calls.length === 0,
-      "the Counter rejects a % past +30 before sending an input");
-    value.value = "-35"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
-    check(drift.textContent.includes("Enter a whole % from -30 to +30 in steps of 5 (20 is 20%, -10 is 10% off).") && calls.length === 0,
-      "and one under -30");
-    await waitFor(() => !setButton.disabled);
-    value.value = "0"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
-    const retained = await waitFor(() => calls.length === 1 && !setButton.disabled && !clearButton.disabled);
+    const doc = dom.window.document, text = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
+    enter(doc, "customers", "accounts");
+    const open = async (code) => {
+      await waitFor(() => [...doc.querySelectorAll("#rlist [data-u]")].some((c) => text(c.querySelector(".need-who")) === code));
+      [...doc.querySelectorAll("#rlist [data-u]")].find((c) => text(c.querySelector(".need-who")) === code).click();
+      return waitFor(() => !!doc.querySelector("#aopen .acust") && doc.querySelector("#aopen .need-who, #aopen h2, #aopen .oacct") !== null);
+    };
+    const pct = () => doc.querySelector("#aopen .apct"), act = (name, key) => byAct(pct(), name, key);
+    const val = () => text(pct().querySelector(".apct__val"));
+    const steps = async (name, n) => { for (let i = 0; i < n; i++) act(name).click(); await new Promise((resolve) => setTimeout(resolve, 5)); };
+    const send = async () => {
+      const before = calls.length, b = act("acct.pct.send", "CX1-ZED");
+      b.click();
+      await waitFor(() => calls.length === before + 1 && !b.disabled);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    };
+    check(await open("CX1-ZED") && !!(await waitFor(() => !!pct())), "the owner page renders the Counter customer drift controls on the customer's account card");
+    const tabs = [...pct().querySelectorAll('[data-act="acct.pct.book"]')];
+    check(tabs.length === 1 && tabs[0].getAttribute("data-key") === "salt" && !pct().querySelector("select"),
+      "the UI offers salt and omits fixed books from its drift tabs, and has no customer selector");
+    check(!pct().querySelector("input") && val() === "0%" && !!act("acct.pct.clear", "CX1-ZED") && act("acct.pct.send", "CX1-ZED").disabled,
+      "the account card has no typed % field, a stepper at the held zero, Send off while nothing changes and Set back to 0 for the held zero");
+    await steps("acct.pct.up", 7);
+    check(val() === "+30%" && act("acct.pct.up").disabled && !act("acct.pct.down").disabled, "the stepper moves a whole 5 at a time and stops at +30: " + val());
+    await steps("acct.pct.down", 13);
+    check(val() === "−30%" && act("acct.pct.down").disabled, "and stops at -30: " + val());
+    await steps("acct.pct.up", 6);
+    check(val() === "0%" && calls.length === 0, "and sends nothing while it moves");
+    await open("SP1-ZED");
+    check(!doc.querySelector("#aopen .apct") && !doc.querySelector("#aopen .apart"), "a supplier's account, outside the drift customers, has no Their % and no Make partner");
+    await open("CX2-ZED");
+    check(!!pct() && text(pct().querySelector(".salt-ledger__row")) === "Suggested+25%Paid late" && !act("acct.pct.clear", "CX2-ZED") && !act("acct.pct.suggest").disabled && text(act("acct.pct.suggest")) === "Use +25%",
+      "none held reads as the Set Price with the suggestion and its reason beside it, and Set back to 0 is unavailable when nothing is held: " + text(pct() && pct().querySelector(".salt-ledger__row")));
+    act("acct.pct.suggest").click();
+    check(val() === "+25%" && calls.length === 0, "Use the suggestion fills the stepper with the suggested % and sends nothing");
+    await open("CX1-ZED");
+    await steps("acct.pct.up", 3);
+    await send();
     const pending = dom.window.localStorage.getItem("saltMakerPending:/all/maker/inputs/tier-set");
-    check(retained && pending && JSON.parse(pending).body.tier === 0,
-      "a zero override is retained unchanged when its first send is not confirmed: " + JSON.stringify({
-        retained, pending, keys: Object.keys(dom.window.localStorage), answer: drift.textContent, disabled: [setButton.disabled, clearButton.disabled]
-      }));
-    value.value = "15"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
-    const retried = await waitFor(() => calls.length === 2 && !setButton.disabled && !clearButton.disabled);
-    check(retried && JSON.stringify(calls[0].body) === JSON.stringify(calls[1].body),
-      "an uncertain retry sends its entire retained drift request unchanged even if the form is edited");
-    const confirmedAt = calls[1].body.at;
-    value.value = "0"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
-    setButton.click();
-    const repeated = await waitFor(() => calls.length === 3 && !setButton.disabled);
-    check(repeated && calls[2].body.tier === 0 && calls[2].body.at !== confirmedAt,
-      "a successful same-value Set gets a fresh request timestamp on the next intentional tap");
-    value.value = "-15"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
-    const rounded = await waitFor(() => calls.length === 4 && !setButton.disabled);
-    check(rounded && calls[3].body.tier === -0.15 && calls.slice(0, 4).every((call) => call.body.unit === "pct"),
+    check(calls.length === 1 && pending && JSON.parse(pending).body.tier === 0.15,
+      "a % is retained unchanged when its first send is not confirmed: " + JSON.stringify({ pending, calls: calls.length }));
+    await steps("acct.pct.up", 1);
+    await send();
+    check(calls.length === 2 && calls[0].bytes === calls[1].bytes,
+      "an uncertain retry sends its entire retained drift request unchanged even if the stepper is moved");
+    await send();
+    check(calls.length === 3 && calls[2].body.tier === 0.2 && calls[2].body.at !== calls[1].body.at,
+      "after a confirmed send, the stepper's own value goes with a fresh request timestamp");
+    await send();
+    check(calls.length === 4 && calls[3].body.tier === 0.2 && calls[3].body.at !== calls[2].body.at,
+      "a successful same-value Send gets a fresh request timestamp on the next intentional tap");
+    await steps("acct.pct.down", 7);
+    await send();
+    check(calls.length === 5 && calls[4].body.tier === -0.15 && calls.slice(0, 5).every((call) => call.body.unit === "pct" && call.body.product === "salt" && call.body.code === "CX1-ZED"),
       "a whole % is sent as its fraction to two decimals (-15 as -0.15), and every figure it sends carries unit pct: " + JSON.stringify(calls.map((c) => c.body.tier)));
-    clearButton.click();
-    const clearSent = await waitFor(() => calls.length === 5);
-    check(clearSent && calls[4].body.tier === null && calls[4].body.product === "salt",
-      "Clear sends null through the same endpoint so the record resumes");
+    act("acct.pct.clear", "CX1-ZED").click();
+    const clearSent = await waitFor(() => calls.length === 6);
+    check(clearSent && calls[5].body.tier === null && calls[5].body.product === "salt",
+      "Set back to 0 sends null through the same endpoint so the record resumes");
     const css = [...doc.querySelectorAll("style")].map((style) => style.textContent).join("\n");
-    check(/\.maker-drift-actions button\{[^}]*min-width:var\(--salt-tap\)/.test(css),
-      "both drift actions keep a 44px minimum width under the shared tap token on desktop and phone");
-    check(/\.maker-drift-actions button\{[^}]*min-height:var\(--salt-tap\)/.test(css),
-      "both drift actions keep a 44px minimum height under the shared tap token on desktop and phone");
+    check(/\.adm \.apct__btn\{[^}]*min-width:48px[^}]*height:48px/.test(css) && /\.adm \.apct__acts \.salt-pill,[^{]*\{[^}]*min-height:48px/.test(css),
+      "the stepper's buttons and the actions keep a 48px minimum under the 44px tap size on desktop and phone");
     check(/--salt-tap:\s*44px/.test(css),
       "the shared tap token resolves to the hard 44px minimum");
   } finally {

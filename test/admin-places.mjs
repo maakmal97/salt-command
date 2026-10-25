@@ -42,7 +42,7 @@ const SHOWS = {
 const FORMS = {
   entry: ["Unsent entry", "Sale or purchase", "Repayment", "Stock count", "Gift", "Loan", "Rewards", "Offsets", "Correct a row", "Reopen a cancelled order"],
   customers: ["New customer", "Make an associate", "Change a name or place", "Place on the map"],
-  pricing: ["Desk reminders", "Their %", "Partner", "Printed sizes"]
+  pricing: ["Desk reminders", "Printed sizes"]
 };
 /* what each entry reads, by route: the place on tapping its item, the part on tapping its tab */
 const ROUTES = { review: "/all/maker/review", claims: "/all/maker/claims", pools: "/all/maker/pools", inputs: "/all/maker/inputs", offsets: "/all/maker/offsets",
@@ -94,12 +94,13 @@ export async function run({ ok, pageWork }) {
     const wantParts = (place) => PARTS[place].map(([k, t]) => k + ":" + t + ":part." + place + "." + k);
     ok(strips.length === 5 && ["orders", "customers", "record", "shop"].every((m) => same(form(m), wantParts(m))),
       "Orders, Customers, Record and Shop each have their parts in order, each tab with its act: " + JSON.stringify(["orders", "customers", "record", "shop"].map(form)));
-    /* 20 Oct 2026 (Counter Batch C): Record's three are the system's slider, the rest its tab pills; 25 Oct 2026, Orders' are the Nav recipe's text tabs */
-    const recipe = (s) => (s.getAttribute("data-place") === "record" ? ["salt-segment", "salt-segment__opt"] : s.getAttribute("data-place") === "orders" ? ["salt-nav__links", "nktab"] : ["salt-tabs", "salt-tabs__pill"]);
+    /* 20 Oct 2026 (Counter Batch C): Record's three are the system's slider, and Customers' parts too (26 Oct 2026, the tight one) */
+    /* 25 Oct 2026 (Salt Admin Shop and Orders): Shop's four and Orders' two rows are the Nav bar's text tabs, as Needs you's kinds */
+    const recipe = (s) => (["record", "customers"].includes(s.getAttribute("data-place")) ? ["salt-segment", "salt-segment__opt"] : ["shop", "orders"].includes(s.getAttribute("data-place")) ? ["salt-nav__links", "salt-nav__link"] : ["salt-tabs", "salt-tabs__pill"]);
     ok(strips.every((s) => s.classList.contains(recipe(s)[0]) && s.getAttribute("role") === "tablist" && s.getAttribute("aria-label")
       && [...s.querySelectorAll("button")].every((b) => b.classList.contains(recipe(s)[1]) && b.getAttribute("role") === "tab"))
       && !d.querySelector("#mHome .aparts"),
-    "a strip is the system's tabs, for Record its slider and for Orders the Nav recipe's text tabs, a tablist of tabs, and Needs you has none");
+    "a strip is the system's tabs, or Record's and Customers' slider, or Shop's and Orders' Nav bar tabs, a tablist of tabs, and Needs you has none");
 
     /* 3. THE TABS FOLLOW HIM */
     ok(p.where() === "needs", "the page opens on Needs you: " + p.where());
@@ -252,7 +253,7 @@ export async function run({ ok, pageWork }) {
     const OUTSIDE = ["vbar", "quote", "ended", "aEnded"];
     const his = rules.flatMap(split).filter((sel) => tokens(sel).some((t) => t !== "adm" && !OUTSIDE.includes(t) && ownerOnly(t)));
     const loose = his.filter((sel) => !/^[.]adm[\s.#:\[>+~]|^[.]adm$/.test(sel));
-    ok(rules.length > 100 && his.length > 40 && loose.length === 0 && /\bclass="[^"]*\badm\b/.test(body(ownerHtml)),
+    ok(rules.length > 100 && his.length > 40 && loose.length === 0 && /id="roster" class="[^"]*\badm\b/.test(body(ownerHtml)),
       "every rule of PAGE_CSS that styles something only his page draws sits under .adm, so the customer's page and a guest's are drawn as they were ("
         + his.length + " of " + rules.length + " rules)" + (loose.length ? ", and these do not: " + JSON.stringify(loose) : ""));
     /* and the other way (Phase 1b, the reviewer's instrument): a rule under .adm that names nothing only his page draws is a shared rule moved under it, and the

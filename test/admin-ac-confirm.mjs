@@ -62,8 +62,9 @@ export async function run({ ok, pageWork }) {
     ok(!!P && !!Q && !P.querySelector("[data-clock]") && !Q.querySelector("[data-clock]"), "no clock on a practice order or one with a price");
     /* 2 */
     await click("nav.shop"); await click("part.shop.hours");
-    const band = d.querySelector("#makerConfirm .salt-band");
-    ok(!!band && (band.querySelector("[data-confirm]") || {}).getAttribute?.("data-confirm") === "45" && /30 measured/.test(t(band)),
+    /* 25 Oct 2026 (Salt Admin Shop): the band became a one-line KPI tile on the glance, its state in one line under the tiles */
+    const band = d.getElementById("makerConfirm"), fig = band && band.querySelector('[data-glance="confirm"]');
+    ok(!!fig && fig.getAttribute("data-confirm") === "45" && t(fig) === "45 min" && /^30 measured/.test(t(band.querySelector(".shglance-note"))),
       "Shop hours draws his confirm time and how many are measured: " + t(band));
   } finally { p.w.close(); }
 
@@ -71,7 +72,8 @@ export async function run({ ok, pageWork }) {
   try {
     await q.work.quiet();
     byAct(q.d, "nav.shop").click(); await q.work.quiet(); byAct(q.d, "part.shop.hours").click(); await q.work.quiet();
-    const band = q.d.querySelector("#makerConfirm .salt-band");
-    ok(!!band && /Under 10 measured/.test(t(band)) && !band.querySelector("[data-confirm]"), "under ten measured, it says so and draws no figure: " + t(band));
+    const band = q.d.getElementById("makerConfirm"), fig = band && band.querySelector('[data-glance="confirm"]');
+    ok(!!fig && t(fig) === "Not yet" && /^7 measured · customers see a figure from 10$/.test(t(band.querySelector(".shglance-note"))) && !band.querySelector("[data-confirm]"),
+      "under ten measured, it says so and draws no figure: " + t(band));
   } finally { q.w.close(); }
 }

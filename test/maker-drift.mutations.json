@@ -14,8 +14,8 @@
  {
   "name": "the form shows the % without its reason",
   "file": "stmt/owner.js",
-  "find": "+(card.suggest!==0&&typeof card.why==='string'&&card.why?': '+card.why:'')",
-  "replace": "+''"
+  "find": "if(sug!=null&&card.why) sr.appendChild",
+  "replace": "if(false) sr.appendChild"
  },
  {
   "name": "the maker input takes a salt figure with no unit: a page cached from before the % lift can queue 0.3 as 30%",
@@ -26,13 +26,31 @@
  {
   "name": "Their % form sends its figure with no unit",
   "file": "stmt/owner.js",
-  "find": "tier:value,unit:'pct'}",
-  "replace": "tier:value}"
+  "find": "tier:Number((whole/100).toFixed(2)),unit:'pct'}",
+  "replace": "tier:Number((whole/100).toFixed(2))}"
  },
  {
-  "name": "the Their % field gets the decimal pad back, which has no minus key on an iPhone",
+  "name": "the stepper steps by 10, not a whole 5",
   "file": "stmt/owner.js",
-  "find": "driftValue.removeAttribute('inputmode');",
-  "replace": "driftValue.inputMode='decimal';"
+  "find": "st.pct[st.book]=Math.max(-30, st.pct[st.book]-5);",
+  "replace": "st.pct[st.book]=Math.max(-30, st.pct[st.book]-10);"
+ },
+ {
+  "name": "the stepper runs past +30",
+  "file": "stmt/owner.js",
+  "find": "up.disabled=whole>=30;",
+  "replace": "up.disabled=whole>=35;"
+ },
+ {
+  "name": "the account card gets a typed % field back, which has no minus key on a decimal pad",
+  "file": "stmt/owner.js",
+  "find": "step.appendChild(down); step.appendChild(out); step.appendChild(up); s.appendChild(step);",
+  "replace": "var nf=el('input'); nf.type='number'; step.appendChild(nf); step.appendChild(down); step.appendChild(out); step.appendChild(up); s.appendChild(step);"
+ },
+ {
+  "name": "the stepper's buttons shrink under the tap size",
+  "file": "stmt/page.js",
+  "find": ".adm .apct__btn{flex:none;width:48px;min-width:48px;height:48px;",
+  "replace": ".adm .apct__btn{flex:none;width:30px;min-width:30px;height:30px;"
  }
 ]

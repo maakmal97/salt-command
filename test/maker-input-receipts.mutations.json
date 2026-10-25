@@ -8,7 +8,7 @@
   {
     "name": "their % confirmed cache not released",
     "file": "stmt/owner.js",
-    "find": "},true,driftReceiptComplete);",
+    "find": "},true,function(){ at=null; sig=''; });",
     "replace": "},true,function(){});"
   },
   {
@@ -38,8 +38,20 @@
   {
     "name": "their % wrong generated body",
     "file": "stmt/owner.js",
-    "find": "var body={code:driftCode.value,product:driftProduct.value,tier:value,unit:'pct'};",
-    "replace": "var body={code:'CX2-ZED',product:driftProduct.value,tier:value,unit:'pct'};"
+    "find": "var body={code:code,product:st.book,tier:Number((whole/100).toFixed(2)),unit:'pct'}, check=JSON.stringify(body);",
+    "replace": "var body={code:'CX2-ZED',product:st.book,tier:Number((whole/100).toFixed(2)),unit:'pct'}, check=JSON.stringify(body);"
+  },
+  {
+    "name": "partner confirmed cache not released",
+    "file": "stmt/owner.js",
+    "find": "},false,function(){ at=null; sig=''; });\n    b.classList.add('apart__go');",
+    "replace": "},false,function(){});\n    b.classList.add('apart__go');"
+  },
+  {
+    "name": "partner wrong generated body",
+    "file": "stmt/owner.js",
+    "find": "var body={code:a.code}, check=JSON.stringify(body);",
+    "replace": "var body={code:'CX2-ZED'}, check=JSON.stringify(body);"
   },
   {
     "name": "house wrong generated body",
@@ -109,5 +121,11 @@
     "name": "generated hush accepts invalid tip id",
     "find": "||key==='id'&&TIP_ID.test(v)",
     "replace": "||key==='id'"
+  },
+  {
+    "name": "the refusal is said on the card",
+    "file": "stmt/owner.js",
+    "find": "    acts.appendChild(answer); s.appendChild(acts);",
+    "replace": "    s.appendChild(acts); s.appendChild(answer);"
   }
 ]

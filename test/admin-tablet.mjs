@@ -59,8 +59,12 @@ export async function run({ ok, pageWork }) {
     const back = at("(min-width:860px)", ".adm #aopen .aback"), phone = at("(max-width:859.98px)", ".adm #nopen"), shut = at("(max-width:859.98px)", ".adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount");
     ok(/display: none/.test(back) && /display: none/.test(phone) && /display: none/.test(shut),
       "from 860px the way back is not drawn; below it Needs you draws no pane and an account open takes the list's place: " + [back, phone, shut].join(" | "));
+    /* 26 Oct 2026 (his yes to the Customers plan's Ask C): from 1080px an OPEN account fills the page in columns, as an open order does; Needs you's pane still waits for
+       nothing, and every Customers rule at 1080px is the open account's (#oAccts.open, or the account's own sections inside #aopen) */
     const rail = media.filter((m) => /1080px|1079[.]98px/.test(m.q) && !/860px/.test(m.q)).flatMap((m) => m.rules.map((r) => r.sel)).filter((s) => /nopen|aopen|nsplit|asplit|oAccts/.test(s));
-    ok(!rail.length, "none of it waits for the rail's 1080px: " + (rail.join(" | ") || "no rule of the rail's names them"));
+    const needs = rail.filter((s) => /nopen|nsplit/.test(s)), loose = rail.filter((s) => !/nopen|nsplit/.test(s)).filter((s) => s.split(",").some((x) => !/#oAccts[.]open|#aopen [.]oacct/.test(x)));
+    ok(!needs.length && !loose.length && rail.some((s) => /#oAccts[.]open/.test(s)),
+      "Needs you's pane waits for nothing at 1080px, and every Customers rule there is the open account's: " + (needs.concat(loose).join(" | ") || "none astray"));
   }
 
   /* 3. NOTHING OPENS BY ITSELF: TAP A CARD */

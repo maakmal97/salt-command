@@ -1,9 +1,9 @@
 [
- {"name":"no Help on his page","file":"stmt/page.js","find":"        + helpCard(true)\n","replace":"\n"},
+ {"name":"no Help on his page","file":"stmt/page.js","find":"        + helpCard(true) + '</div>'","replace":"        + '</div>'"},
  {"name":"the answers left out","file":"stmt/page.js","find":"    + wt(\"p\", 'class=\"ahelp__a\"', \"help.\" + k + \"A\") + \"</details>\";","replace":"    + \"</details>\";"},
  {"name":"a question missing","file":"stmt/page.js","find":"    + head + [\"pay\", \"deliv\", \"coll\", \"change\"].map(row).join(\"\") + \"</section>\";","replace":"    + head + [\"pay\", \"deliv\", \"coll\"].map(row).join(\"\") + \"</section>\";"},
  {"name":"the folds open","file":"stmt/page.js","find":"  const row = (k) => '<details class=\"ahelp__q\"><summary","replace":"  const row = (k) => '<details class=\"ahelp__q\" open><summary"},
- {"name":"an Edit button","file":"stmt/page.js","find":"'<h2 id=\"mHelpH\">Help</h2><p class=\"lead\">What a customer reads under Account, Help. Read only.</p>'","replace":"'<h2 id=\"mHelpH\">Help</h2><p class=\"lead\">What a customer reads under Account, Help. Read only.</p><button type=\"button\">Edit</button>'"},
+ {"name":"an Edit button","file":"stmt/page.js","find":"'<h2 id=\"mHelpH\" class=\"salt-eyebrow salt-eyebrow--copper\">Help</h2><p class=\"msg\">What a customer reads under Account, Help. Read only.</p>'","replace":"'<h2 id=\"mHelpH\" class=\"salt-eyebrow salt-eyebrow--copper\">Help</h2><p class=\"msg\">What a customer reads under Account, Help. Read only.</p><button type=\"button\">Edit</button>'"},
  {"name":"on every Shop part","file":"stmt/page.js","find":"(owner ? ' data-in=\"shop.hours\"' : \"\")","replace":"(owner ? ' data-in=\"shop\"' : \"\")"},
  {"name":"his copy takes the customer id","file":"stmt/page.js","find":"'<section id=\"' + (owner ? \"mHelp\" : \"aHelp\")","replace":"'<section id=\"' + (owner ? \"aHelp\" : \"aHelp\")"}
 ]

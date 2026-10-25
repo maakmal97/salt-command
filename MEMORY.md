@@ -13,10 +13,11 @@
 - The maintenance guard exists in both Workers and QR Command (`MAINTENANCE_UNTIL`, an ISO UTC time; empty = off, the current value).
 
 ## Migrations
-- Newest rebuild of `draft`: `migrations/0010`; of `preapproval`: `migrations/0017`.
+- Newest rebuild of `draft`: `migrations/0010`; of `preapproval`: `migrations/0017`. Newest file: `0018` (a new table, no rebuild).
 - `0011` adds `preapproval` (applied alone, the same way as 0010).
 - `0012` indexes `draft` on `committed_at` and on `(status, committed_at)`.
 - `0017_preapproval_amend.sql` rebuilds `preapproval` with `amend` in its stage CHECK (restateOrder's yes), keeping rows and both indexes. Live D1 carried 0011's narrow CHECK, so every amend tap answered 500; 0017 applied alone on 06 Oct 2026, schema, both indexes and the 71 rows by stage and status read back after.
+- `0018_book_read.sql` (25 Oct 2026, a new table, applied alone to the live D1 before the deploy and read back): `book_read`, one row `'d1'` or `'book'`, shipped `'d1'`. The flag for S3 (see "S3: read from the Book").
 - `0013_maker_requests.sql`, `0014_input_admission.sql`, `0015_vault_pair.sql` and `0016_vault_write_gate.sql` applied individually on 03 Oct 2026, with schema readback after each. Both `0012` indexes remain. Pair bootstrap/readback is revision 1; write gate reopened with zero active writers and pending outbox.
 
 ## Known red in the suite
@@ -134,6 +135,12 @@
   with `backup:last` ok. The cron's own first night is 02:30 on 26 Oct. Three suite sections (`backup`, `backup-cron`, `backup-tools`; 29, 13 and 16 mutations) hold the restore drill.
   The real object was opened with his key on 25 Oct 2026 (`node tools/backup-open.mjs`, counts only) and the counts matched exactly (his word). Open: a copy of the key off the laptop's disk.
 
+## S3: read from the Book
+- Live as v1253 (`7f916991`, 26 Oct 2026; Cloud commit `40213833917`: chain and three suite parts green; the first load at v1253 logged "parity: the Book agrees with git over 474 rows in 13 collections and 23 documents" and the new readcheck step "the Book and the mirror agree over 339 sales and purchases"), his word to start and his answer of 25 Oct 2026 that orders and the book stay TWO objects.
+  The readers' flag is the D1 row `book_read` (migrations/0018), **shipped at `'d1'`**, so nothing reads differently yet. `'book'` makes `readBook` read the Book (`src/book-read.js`), unless the Book trails the mirror (then the mirror, for the whole read). Way back, no deploy: `npx wrangler d1 execute salt_ledger --remote --command "UPDATE book_read SET mode='d1' WHERE one=1"`. **Turning it on is his call**, after the readcheck is green over a fold or two (`docs/DESK.md`, "The Book: read").
+- "On its way" is now the bound of the book a reader read: a book from the Book carries `at` (its latest load) and a draft marked committed after `at` is on its way (`src/way.js`); a book from the mirror carries none and every clause is byte for byte as before. Fable (design review, diff review, re-check): D1 `booked_at` dropped for the Book's own load time, an older load refused (409), input-admission, `tellSite` and `tieOut` stay on the mirror's snapshot.
+- `GET /book/readcheck` (CI route, the Book's key) and the chain's "Check the readers agree" step name what differs between the Book and the mirror, never a row. Known: an equal-version replay moves `at` harmlessly; a draft marked committed outside a deploy stays on its way until the next load; `tools/update.mjs` does not load the Book, so a hand fold leaves it behind and the readers fall back to the mirror.
+
 ## Disabled automation
 - `Salt fold (manual backup)` = `trig_01UrnjQMWA3f6GXN5R6Dzi4S`, disabled.
 
@@ -141,6 +148,7 @@
 - The phone app `public/index.html`, `public/data.json`, and the claude.ai mirror.
 
 ## Endpoints
+- `GET /book/readcheck` (S3: the Book against the mirror, names only; CI token routes: `/rev`, `/push/send`, `/book/load`, `/book/pitr`, `/book/window`, `/book/readcheck`)
 - `GET /drafts?status=…`
 - `POST /drafts/<id>/approve|reject|committed`
 - `GET|POST /vault/addr` (the places envelope, KV `vault-addr`, ciphertext only) and `POST /geo/expand` (a `maps.app.goo.gl` link followed one redirect, nothing kept), both keyed
@@ -164,6 +172,17 @@
 - A confirmed Add ID can be named by a Counter trade (08 Oct 2026, #86); the fold applies the Add ID first and refuses the batch without it.
 - Accepted: six Counter Admin controls (10 Oct 2026); #62 complete, the Desk only reads since v1104, accepted on phone and laptop (14 Oct 2026).
 - Open, ask him: positive owner-keyed places and service acceptance.
+
+## Salt Admin Customers redesign
+- Built 26 Oct 2026 on branch `claude/peaceful-mclean-ddc05c` (P0 salt-ds#28 1.16.0 merged; P1 to P8), not landed: the moderator holds the landing turn
+  (order Shop, Orders, Customers, Record). Their % and Make partner moved from Record > Pricing to the account card; new reads
+  `/all/maker/customer-of|reward-of/<code>` (Fable reviewed, two low findings: one stated, one withdrawn).
+
+## Salt Admin Shop redesign
+- Live as v1254 (`7eb0e296`, 26 Oct 2026; Cloud commit `40214884137`: chain and three suite parts green, live /rev `88e6f50b08fc1cc3`), from his Shop canvas
+  https://claude.ai/artifact/TrC768miLDPZb7U5wWciBQ and `docs/plan-admin-shop.html` (his yes to every Ask, Ask H both halves): For now first and folded, the glance tiles,
+  the open day with its preview (a pane beside the week from 860px), points as a plain table, Notice as customers read it, Practice with Open the test page
+  and Remove asking once, This device rows, Shop's parts as text tabs. Section "Salt Admin's Shop on the Salt system". Accepted 26 Oct 2026.
 
 ## Salt Admin Needs you redesign
 - Live as v1221 (`b8916ca2`, 23 Oct 2026; Cloud commit `39821813897`: chain and three suite parts green, live /rev `1e1013dcc935d44b`), from his canvas

@@ -720,9 +720,6 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-cover-row{display:flex;align-items:center;gap:10px}
 .adm .maker-cover-row .maker-cover{flex:1 1 auto}
 .adm .maker-cover-row button{flex:none;min-width:var(--salt-tap);min-height:var(--salt-tap)}
-.adm .maker-drift-actions{display:flex;flex-wrap:wrap;gap:8px}
-.adm .maker-drift-actions button{min-width:var(--salt-tap);min-height:var(--salt-tap)}
-.adm .maker-pct-preview{margin-top:8px;min-width:0}
 /* 16 OCT 2026: THE MINI LEDGER'S TABLES are the system's table in its scrolling wrap, so nine columns scroll inside their box on a phone and the page never does; a figure stands right, a word left. */
 .adm #oLedger{display:flex;flex-direction:column;gap:24px}
 .adm #oLedger .lead{margin:0}
@@ -736,14 +733,16 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
    a span past midnight's tail hatched at the start of the next day's row. A tapped day opens below its row on slate: Opens and Closes, then
    its quick buttons, every one 44px. */
 .adm .maker-week{display:flex;flex-direction:column;gap:2px;margin:8px 0}
-.adm .maker-week-scale,.adm .maker-day{display:grid;grid-template-columns:40px minmax(0,1fr) 136px;align-items:center;gap:12px;padding:0 8px}
+.adm .maker-week-scale,.adm .maker-day{display:grid;grid-template-columns:40px minmax(0,1fr) 128px;align-items:center;gap:12px;padding:0 8px}
+/* 25 Oct 2026 (his Shop canvas): a date's name is wider than a weekday's, so the dates keep their own column */
+.adm .maker-dates .maker-day{grid-template-columns:84px minmax(0,1fr) 128px}
 .adm .maker-week-scale>span:nth-child(2){display:flex;justify-content:space-between;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
 .adm .maker-day{min-height:44px;width:100%;border:0;border-radius:var(--salt-radius-md);background:none;color:var(--salt-salt);font:inherit;text-align:left;cursor:pointer}
 .adm .maker-day[aria-expanded=true]{background:var(--salt-glass)}
 .adm .maker-track{position:relative;display:block;height:10px;border-radius:4px;background:var(--salt-well)}
 .adm .maker-bar,.adm .maker-tail{position:absolute;top:0;bottom:0;border-radius:4px}
 .adm .maker-bar{background:var(--salt-brass)}
-.adm .maker-tail{background:repeating-linear-gradient(135deg,var(--salt-brass) 0 4px,transparent 4px 7px)}
+.adm .maker-tail{background:color-mix(in srgb,var(--salt-brass) 45%,transparent)}
 .adm .maker-day-times{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .maker-day-times.off{color:var(--salt-mist-bright)}
 .adm .maker-day-times sup,.adm .maker-plus1{color:var(--salt-brass);font-family:var(--salt-font-mono)}
@@ -755,6 +754,73 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-dayedit select{min-height:44px;width:100%;min-width:0}
 .adm .maker-dayedit-acts{display:flex;flex-wrap:wrap;gap:8px}
 .adm .maker-dayedit-acts button{min-height:44px;min-width:44px}
+.adm .ashop-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.adm .ashop-two>button{box-sizing:border-box;width:100%;height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .ashop-two>[data-act="hours.day-copy"]{grid-column:1/-1}
+.adm .ashop-pv{padding:12px 14px}
+.adm .ashop-pv .maker-preview{margin:0}
+.adm .ashop-pv:has(.maker-preview:empty){display:none}
+.adm .aparts--nav{display:grid;grid-template-columns:auto auto auto auto;justify-content:space-between;gap:0 4px;margin:0}
+.adm .aparts--nav .nktab{padding:0 8px;white-space:nowrap}
+@media (min-width:860px){.adm .aparts--nav{grid-template-columns:repeat(4,minmax(0,1fr));gap:0 16px}}
+/* 25 Oct 2026 (his Shop canvas): the points, a plain table; the code and place fields side by side, Add beside a line, Save across */
+.adm .apoints-card{padding:4px 8px;margin:0 0 12px}
+.adm .apoints{table-layout:fixed;width:100%;border-collapse:collapse}
+.adm .apoints th,.adm .apoints td{height:52px;padding:0 8px;vertical-align:middle;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .apoints thead th{height:36px}
+.adm .apoints .apoints-code{width:64px;font-family:var(--salt-font-mono)}
+.adm .apoints .apoints-place{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
+.adm .apoints .apoints-x{width:60px;text-align:right}
+.adm .apoints .apoints-x .salt-ghost{width:44px;height:44px;min-width:44px;padding:0}
+.adm .apoints-add{display:grid;grid-template-columns:88px minmax(0,1fr);gap:8px;margin:0 0 8px}
+.adm .apoints-add>label{min-width:0}
+.adm .apoints-add input{box-sizing:border-box;width:100%;min-width:0}
+.adm .apoints-save{display:flex;margin:8px 0 0}
+/* 25 Oct 2026 (his Shop canvas): Practice, its table, the password once, the actions across */
+.adm #mTest{display:flex;flex-direction:column;gap:8px}
+.adm .atest-head{justify-content:flex-end}
+.adm .atest-lead{margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .atest .atest-u{width:112px;font-family:var(--salt-font-mono)}
+.adm .atest .atest-shows{font-size:var(--salt-text-sm)}
+.adm .atest .atest-st{width:72px;text-align:right}
+.adm .atest-pw{display:flex;align-items:center;justify-content:space-between;gap:12px;height:56px;box-sizing:border-box;padding:0 16px}
+.adm .atest-pw>*{white-space:nowrap}
+.adm .atest-pwv{font-family:var(--salt-font-mono)}
+.adm .atest-acts{display:flex;flex-direction:column;gap:8px;margin:8px 0 0}
+.adm .atest-acts>a,.adm .atest-acts>button{box-sizing:border-box;width:100%;height:48px;min-height:48px;padding:0 16px;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 25 Oct 2026 (his Shop canvas): This device, a row each of one height: the label, the state word leading its line, the control at the right */
+.adm #oLook .salt-ledger__row{display:grid;grid-template-columns:minmax(0,1fr) 132px;grid-template-rows:auto auto;column-gap:12px;row-gap:6px;align-items:center;min-height:80px;box-sizing:border-box;padding:12px 0}
+.adm #oLook .salt-ledger__line{display:contents}
+.adm #oLook .salt-ledger__label{grid-column:1;grid-row:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.adm #oLook .salt-ledger__value{grid-column:2;grid-row:1/3;display:flex;justify-content:flex-end;margin:0}
+.adm #oLook .salt-ledger__value>button{box-sizing:border-box;width:132px;height:48px;min-height:48px;padding:0 8px;white-space:nowrap}
+.adm #oLook .salt-ledger__value.salt-segment{width:132px;box-sizing:border-box}
+.adm #oLook .adev-line{grid-column:1;grid-row:2;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.adm #oLook .adev-line b{color:var(--salt-salt)}
+.adm #oLook .adev-note{margin:4px 0 0}
+/* 25 Oct 2026 (his Shop canvas): WIDE. Below 860px one column as drawn; from 860px Shop takes the whole column: the glance in one row, the open
+   day in a pane beside the week (380px, 420px from 1440px), the points beside Help, Notice's two parts and Practice's actions a column each */
+.adm .hpane{display:none}
+.adm .anotice-col{display:flex;flex-direction:column;gap:12px;min-width:0}
+@media (min-width:860px){
+  .adm .amain>#oShop{max-width:none}
+  .adm #makerConfirm.shglance{grid-template-columns:1fr 1fr 3fr;gap:12px}
+  .adm #makerConfirm .shconfirm{grid-column:auto}
+  .adm #makerNow>.apair{display:flex;justify-content:flex-end;gap:8px}
+  .adm #makerNow>.apair>button{width:132px;flex:none}
+  .adm .hsplit{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:20px;align-items:start}
+  .adm .hpane{display:flex;flex-direction:column;gap:14px;position:sticky;top:24px;padding:20px;box-sizing:border-box;margin-top:calc(0.75rem * 1.4 + 10px)}
+  .adm .hpane .maker-dayedit{padding:0;background:none;border:0}
+  .adm .hpair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+  .adm .hpair>section{margin:0}
+  .adm #makerBulletin{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
+  .adm #mTest{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);column-gap:24px;row-gap:8px;align-items:start}
+  .adm #mTest>*{grid-column:1}
+  .adm #mTest>.atest-acts{grid-column:2;grid-row:1/span 5;margin:0}
+  .adm #oLook{max-width:560px}
+}
+@media (min-width:1440px){.adm .hsplit{grid-template-columns:minmax(0,1fr) 420px}}
+.adm .apoints-save>.salt-pill{flex:1 1 auto;box-sizing:border-box;height:48px;min-height:48px;padding:0 16px}
 .adm .maker-dayedit-times>button{min-height:44px;min-width:44px}
 .adm .maker-copy{display:flex;flex-wrap:wrap;gap:8px}
 .adm .maker-copy button{min-height:44px;min-width:44px}
@@ -763,6 +829,13 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-facts{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm)}
 .adm .maker-row{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--salt-text-sm)}
 .adm #makerBulletinCurrent{overflow-wrap:anywhere}
+/* 25 Oct 2026 (his Shop canvas): Up now, the Counter's Notice recipe and the numbered lines; New notice, Set across, the two ghosts beside */
+.adm #makerBulletin{display:flex;flex-direction:column;gap:12px}
+.adm .anotice{padding:16px;display:flex;flex-direction:column;gap:8px}
+.adm .anotice-list{margin:0;padding:0;list-style:none;counter-reset:nline}
+.adm .anotice-list li{counter-increment:nline;display:grid;grid-template-columns:28px minmax(0,1fr);align-items:baseline;padding:10px 0;border-top:1px solid var(--salt-line-faint)}
+.adm .anotice-list li::before{content:counter(nline);font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);color:var(--salt-brass)}
+.adm .anotice-set{box-sizing:border-box;width:100%;height:48px;min-height:48px;padding:0 16px}
 .adm .maker-slip{display:block;max-width:100%;height:auto}
 /* 12 OCT 2026 (PHASE 2b): THE CLAIM CARD. A waiting claim is a row of the system's Inbox row and the one opened is its card under it. Its slip is a thumbnail
    that is itself the control (44px at least both ways), enlarged in place by a tap and shrunk by the next */
@@ -818,8 +891,19 @@ body.ended>*:not(#aEnded){display:none}
 .salt-rail__tab .salt-appbar__place{color:inherit}
 .adm #mFoot:empty{display:none}
 .adm .afind{display:flex;flex-direction:column;gap:12px;margin:0 0 16px}
-.adm .afil{display:flex;flex-wrap:wrap;gap:8px}
-.adm .alist{display:flex;flex-direction:column;gap:8px}
+/* 25 Oct 2026 (the Customers canvas, P1): the filters are Needs you's tab row, three across on a phone and six wide; the accounts are Needs you's
+   cards under To do, Pending and FYI, the username quiet beside the code, a sum he owes back in ember */
+.adm .afilnav{margin:0}
+.adm .afil{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 4px}
+.adm .afil .nktab{padding:0 4px;gap:6px;text-overflow:ellipsis}
+@media (min-width:860px){.adm .afil{grid-template-columns:repeat(6,minmax(0,1fr));gap:0 12px}}
+.adm .alead{margin:0 0 4px}
+.adm .alead[hidden]{display:none}
+.adm .alist{display:flex;flex-direction:column;gap:16px}
+.adm .alist .ngroup{gap:10px}
+.adm .ncard .need-u{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
+.adm .ncard .need-who--code{flex:none}
+.adm .nfig--mine{color:var(--salt-ember)}
 .adm .alist .salt-inbox-row__title{gap:6px}
 .adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 @media (min-width:1080px){
@@ -1184,9 +1268,22 @@ body.ended>*:not(#aEnded){display:none}
 .adm .ordsteps .salt-steps__name,.adm .ordsteps .salt-steps__time{white-space:nowrap}
 .adm .need-clock--late .oclock__min{color:var(--salt-ember)}
 .adm .need-clock{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
-.adm #makerConfirm{margin:16px 0 0}
-.adm .cfig{margin:0;display:flex;align-items:baseline;gap:8px;font-family:var(--salt-font-mono)}
-.adm .cfig b{font-size:2.25rem;font-weight:500;line-height:1}
+/* 25 Oct 2026 (his Shop canvas): FOR NOW, first on Hours, folded behind one pill; the form opens on that tap. A row action is 132px and the
+   form's ask two halves (.apair); the glance is the system's one-line KPI tiles */
+.adm .anow{display:flex;flex-direction:column;gap:14px;padding:16px;margin:0 0 16px}
+.adm #makerNow{display:flex;flex-direction:column;gap:14px;min-width:0}
+.adm .anow-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.adm .anow-head>*{margin:0;white-space:nowrap}
+.adm .anow-title{margin:0;font-family:var(--salt-font-display);font-size:1.5rem;line-height:1.2;color:var(--salt-salt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .anow-sub{margin:4px 0 0;font-size:var(--salt-text-sm);color:var(--salt-prose);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .apair{display:grid;grid-template-columns:minmax(0,1fr) 132px;gap:8px;align-items:center}
+.adm .apair>button,.adm .apair>a{box-sizing:border-box;width:100%;min-width:0;height:48px;min-height:48px;padding:0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .apair>.msg{margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm #makerHold{display:flex;flex-direction:column;gap:14px}
+.adm #makerNowCard>.msg:empty{display:none}
+.adm .shglance{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 16px}
+.adm .shglance .shconfirm{grid-column:1/-1}
+.adm .shglance-note{grid-column:1/-1;margin:0 4px;font-size:var(--salt-text-sm);color:var(--salt-prose);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .nnote.bad{color:var(--salt-ember)}
 /* THE ASSOCIATES REPORT CARD (v691): three figures across, then what they have earned in units
    with a bar for the part-unit. The bar is the only chart on this site and it is a rule and a
@@ -1197,9 +1294,6 @@ body.ended>*:not(#aEnded){display:none}
 .lockd{opacity:.45;pointer-events:none;user-select:none}
 .adm .acard .agrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
 .adm .acard .acell{min-width:0}
-.adm .pbar{height:6px;margin:10px 0 6px;border:1px solid var(--salt-line);border-radius:999px;overflow:hidden;
-  background:var(--salt-well)}
-.adm .pbar i{display:block;height:100%;background:var(--salt-gradient)}
 .adm #oCards h2{margin:22px 0 0;font-size:var(--salt-text-md)}
 /* v696: the five stand above anything minted against a customer, each under its own line */
 .adm .ghead{margin:18px 0 6px}
@@ -1215,6 +1309,102 @@ body.ended>*:not(#aEnded){display:none}
    S7 polish: its own name, .oacct. The customer's Account is .acct (S7 7.3), and this block's single column, coming
    after it, took that Account's two columns from 1080px when the stages were merged */
 .adm .oacct{display:flex;flex-direction:column;gap:12px}
+/* 25 Oct 2026 (the Customers canvas, P2): an account is glass cards, its head first: the state and age, the code and username, the figure large at the
+   right; a ledger of the standing; their waiting line with Reply. Sign-in two by two, Sign out everywhere the width of the card. Nothing wraps. */
+.adm .oacct .asec{display:flex;flex-direction:column;gap:12px;padding:16px;margin:0;box-sizing:border-box;min-width:0}
+.adm .oacct .asec>h3{margin:0}
+.adm .ahead__top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-width:0}
+.adm .ahead__who{display:flex;flex-direction:column;gap:4px;min-width:0}
+.adm .ahead__kind,.adm .ahead__fig .salt-eyebrow{margin:0;white-space:nowrap}
+.adm .oacct .ahead h2.ahead__code{font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}
+.adm .ahead__fig{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
+.adm .ahead__rm{font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);font-weight:500;line-height:1.2;white-space:nowrap;color:var(--salt-salt)}
+.adm .ahead__rm--hot{color:var(--salt-ember)}
+.adm .astand .salt-ledger__label,.adm .astand .salt-ledger__value{white-space:nowrap}
+.adm .athread{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
+.adm .athread__txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.adm .athread__k,.adm .athread__v{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .athread .salt-pill{flex:none;width:120px;min-height:48px}
+.adm .asign .agrid .salt-ghost,.adm .asign .apill,.adm .asign .asignout{min-height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .asign .asignout{grid-column:1/-1}
+/* 26 Oct 2026 (the Customers canvas, P3 and P4): Their %, This customer, the reward and Partner, each a glass card: a book a tab, the stepper's figure large
+   between two 48px buttons, their prices a plain table, the actions two by two; nothing wraps */
+.adm .amore{display:flex;flex-direction:column;gap:12px}
+/* 26 Oct 2026 (the Customers canvas, P5): the threads are Needs you's cards, their last line quiet beside the code; the open thread the system's Thread, its head
+   the code and what they owe */
+.adm #makerChatList{display:flex;flex-direction:column;gap:16px}
+/* 26 Oct 2026 (the Customers canvas, P6): a link is Needs you's card, Opens over its count in the figure's place; its address, QR and moves under it */
+.adm #glist{display:flex;flex-direction:column;gap:16px}
+/* 26 Oct 2026 (the Customers canvas, P7): a book's typed tag and how many; the associates cards on a phone and one plain table from 860px; the reward a Meter */
+.adm .aprodhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:16px 0 8px}
+.adm .aprodtag{margin:0;font-size:inherit}
+.adm .aclist{display:flex;flex-direction:column;gap:0}
+.adm .acard .agrid .acell{align-items:flex-end;text-align:right}
+.adm .acard .salt-metrics__label,.adm .acard .salt-metrics__value{white-space:nowrap}
+.adm .acard .srow{flex-wrap:nowrap}
+.adm .acard .srow .un{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.adm .apick{min-height:44px;padding:0;background:none;border:0;color:inherit;font:inherit;font-weight:500;cursor:pointer;text-align:left}
+.adm .apick:hover{color:var(--salt-brass)}
+.adm .ameter{margin-top:10px}
+.adm .ameter .salt-meter__line{white-space:nowrap}
+.adm .ameter .salt-meter__track{display:block}
+.adm .atable{display:none;padding:4px 6px;overflow:hidden}
+.adm .atable .ameter{margin:0}
+.adm .atable td,.adm .atable th{white-space:nowrap}
+@media (min-width:860px){.adm .aclist{display:none}.adm .atable{display:block}}
+/* 26 Oct 2026 (the Customers canvas, P8; his yes to Asks C and D): from 1080px a group of accounts is one plain table, the cards hidden; an account opened fills
+   the page in columns, two and three from 1440px, as an open order does, the list and its way back as on a phone; Links and Associates use the width */
+.adm .atable2{display:none;padding:4px 6px;overflow:hidden}
+.adm .atable2 td,.adm .atable2 th{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .atable2 .atu{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
+.adm .atable2 .atfig{font-family:var(--salt-font-mono);font-size:var(--salt-text-lg);font-weight:500}
+.adm .atable2 .atgo{width:136px}
+.adm .atable2 .nbtn{width:120px;height:48px;min-height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (min-width:1080px){
+  .adm .alist .ngroup>.ncard{display:none}
+  .adm .atable2{display:block}
+  .adm #oLinks,.adm #oCards{max-width:none}
+  .adm #oAccts.open .asplit{grid-template-columns:minmax(0,1fr)}
+  .adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount,.adm #oAccts.open .alead{display:none}
+  .adm #oAccts.open #aopen{position:static;max-height:none;overflow:visible}
+  .adm #oAccts.open #aopen .aback{display:inline-flex}
+  .adm #aopen .oacct{display:block;column-count:2;column-gap:20px}
+  .adm #aopen .oacct .amore{display:contents}
+  .adm #aopen .oacct .asec{break-inside:avoid;margin:0 0 20px}
+}
+@media (min-width:1440px){.adm #aopen .oacct{column-count:3}}
+.adm .glinks{gap:10px}
+.adm .glinks .glink[hidden]{display:none}
+.adm .ncard .need-lead{flex:none;font-family:var(--salt-font-display)}
+.adm .ncard .nfig--opens{flex-direction:column;align-items:flex-end;justify-content:center;gap:4px}
+.adm .nfig__k{margin:0;line-height:1}
+.adm .ncard.off{opacity:.7}
+.adm #makerChatList .ngroup{gap:10px}
+.adm .ncard .need-line{font-family:var(--salt-font-display);font-size:var(--salt-text-sm)}
+.adm .chathead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-width:0}
+.adm .chathead__who{display:flex;flex-direction:column;gap:4px;min-width:0}
+.adm .chathead__who .salt-eyebrow{margin:0}
+.adm .chathead__code{margin:0;font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm #makerChatOpen{display:flex;flex-direction:column;gap:12px}
+.adm #makerChatOpen>button{min-height:48px}
+.adm .amore[hidden],.adm .amore .asec[hidden]{display:none}
+.adm .apct__head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.adm .apct__head .salt-eyebrow{margin:0}
+.adm .apct__books{margin:0}
+.adm .apct__tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 4px}
+.adm .apct__tabs .nktab{padding:0 2px}
+.adm .apct__step{display:flex;align-items:center;gap:8px}
+.adm .apct__btn{flex:none;width:48px;min-width:48px;height:48px;padding:0;font-size:1.25rem;letter-spacing:0}
+.adm .apct__val{flex:1 1 auto;min-width:0;text-align:center;font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);font-weight:500;color:var(--salt-salt);white-space:nowrap}
+.adm .apct__table{padding:0 6px;overflow:hidden}
+.adm .apct__at{font-weight:500;color:var(--salt-salt)}
+.adm .apct__floor{color:var(--salt-mist-bright)}
+.adm .apct__acts .salt-pill,.adm .apct__acts .salt-ghost,.adm .apart__go{min-height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
+.adm .apct__acts .apct__clear,.adm .apct__acts>[role="status"]{grid-column:1/-1}
+.adm .acust__line{display:flex;align-items:center;justify-content:space-between;gap:12px;white-space:nowrap}
+.adm .acust__spark{display:block;width:100%;height:36px;color:var(--salt-brass)}
+.adm .amore .salt-meter__line{white-space:nowrap}
+.adm .amore .salt-meter__track{display:block}
 .adm .oacct .ahead h2{margin:0;font-size:var(--salt-text-2xl);line-height:1.15;overflow-wrap:anywhere}
 .adm .oacct .ahead .un{display:block;margin-top:4px;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);
   letter-spacing:.06em;color:var(--salt-text-muted)}
@@ -1268,14 +1458,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm #glist .glink>.gu{margin-top:0}
 .adm #glist .glink>.gwho{margin-top:0;margin-bottom:0;font-size:var(--salt-text-sm);font-weight:400;color:var(--salt-text-muted)}
 .adm #glist .glink img{width:150px;height:150px}
-.adm .gsum{display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:var(--salt-tap);padding:8px 16px;cursor:pointer;list-style:none}
-.adm .gsum::-webkit-details-marker{display:none}
-.adm .gsum::after{content:"";position:absolute;right:16px;width:7px;height:7px;border:solid var(--salt-text-muted);border-width:0 2px 2px 0;transform:rotate(45deg);top:20px}
 .adm #glist .glink{position:relative}
-.adm #glist .glink[open]>.gsum::after{transform:rotate(-135deg);top:24px}
-.adm .gsum .gtop{display:flex;align-items:center;gap:8px;padding-right:20px}
-.adm .gsum .gt{margin:0}
-.adm .gsum .gs{margin:0;font-size:var(--salt-text-xs);color:var(--salt-text-muted);font-family:var(--salt-font-mono);letter-spacing:.04em}
 .adm #glist .grow{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .adm #glist select{margin-top:12px}
 .adm .alist .arow .salt-inbox-row__title{display:flex;align-items:center;gap:8px}
@@ -1546,7 +1729,7 @@ function keepPage() {
 function helpCard(owner) {
   const row = (k) => '<details class="ahelp__q"><summary class="ahelp__sum"' + (owner ? ' data-act="shop.help.' + k + '"' : "") + ">" + wt("span", 'class="ahelp__t"', "help." + k) + glyphSvg("next", 18) + "</summary>"
     + wt("p", 'class="ahelp__a"', "help." + k + "A") + "</details>";
-  const head = owner ? '<h2 id="mHelpH">Help</h2><p class="lead">What a customer reads under Account, Help. Read only.</p>'
+  const head = owner ? '<h2 id="mHelpH" class="salt-eyebrow salt-eyebrow--copper">Help</h2><p class="msg">What a customer reads under Account, Help. Read only.</p>'
     : wt("h2", 'class="salt-eyebrow salt-eyebrow--copper" id="helpH"', "help.h");
   return '<section id="' + (owner ? "mHelp" : "aHelp") + '" class="ahelp' + (owner ? "" : " salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm")
     + '" aria-labelledby="' + (owner ? "mHelpH" : "helpH") + '"' + (owner ? ' data-in="shop.hours"' : "") + ">"
@@ -1572,27 +1755,29 @@ function lookRow(owner) {
     + '<span class="salt-ledger__value lookset salt-segment" role="group" aria-labelledby="lookH">'
     + wt("button", 'type="button" class="salt-segment__opt salt-segment__opt--active" data-look="night" aria-pressed="true"' + act("look.night"), "look.night")
     + wt("button", 'type="button" class="salt-segment__opt" data-look="tide" aria-pressed="false" disabled' + act("look.tide"), "look.tide")
-    + "</span></div></div></div>";
+    + "</span></div>" + (owner ? '<span class="salt-ledger__flag adev-line"><b>Night.</b> Tide is off for now.</span>' : "") + "</div></div>";
 }
 /* 12 Oct 2026 (PHASE 4b, his decision 3 of 11 Oct): THE ONE UNLOCK of Salt Admin, owner only. Shop > This device holds its state and its Unlock or Lock; the Sheet is
    the one field (stmt/owner.js, makerVaultUnlock), opened from here and from every place that says Locked. The field is never in a form and never remembered. */
 function vaultRow() {
+  /* 25 Oct 2026 (his Shop canvas): the label, then the state word leading its line, the control at the right */
   return '<div id="vaultRow" class="salt-ledger salt-ledger--plain"><div class="salt-ledger__row"><div class="salt-ledger__line">'
     + '<span class="salt-ledger__label" id="vaultH">Names and places</span>'
-    + '<span class="salt-ledger__value lookset" role="group" aria-labelledby="vaultH"><span id="vaultState" role="status">Locked</span>'
-    + '<button type="button" class="salt-ghost" id="vaultOn" data-act="vault.unlock">Unlock</button>'
-    + '<button type="button" class="salt-ghost" id="vaultOff" data-act="vault.lock" hidden>Lock</button></span></div></div>'
-    + '<span class="salt-ledger__flag">One password opens names, places and slips. Seen on this phone only; they lock again when the page is hidden.</span></div>';
+    + '<span class="salt-ledger__value lookset" role="group" aria-labelledby="vaultH">'
+    + '<button type="button" class="salt-pill salt-pill--sm" id="vaultOn" data-act="vault.unlock">Unlock</button>'
+    + '<button type="button" class="salt-ghost" id="vaultOff" data-act="vault.lock" hidden>Lock</button></span></div>'
+    + '<span class="salt-ledger__flag adev-line"><b id="vaultState" role="status">Locked</b>. One password opens them.</span></div></div>';
 }
 /* 19 Oct 2026 (docs/plan-notifications.html section 3): SALT ADMIN'S OWN NOTIFICATIONS, owner only, Shop > This device. A tap turns them on (the
    browser's question is asked from that tap alone) and a second control turns them off; the state is what this phone holds. Never on the test surface. */
 function alertRow() {
   return '<div id="alertRow" class="salt-ledger salt-ledger--plain"><div class="salt-ledger__row"><div class="salt-ledger__line">'
     + '<span class="salt-ledger__label" id="alertH">Notifications</span>'
-    + '<span class="salt-ledger__value lookset" role="group" aria-labelledby="alertH"><span id="alertState" role="status">Off</span>'
-    + '<button type="button" class="salt-ghost" id="alertOn" data-act="alerts.on">Turn on</button>'
-    + '<button type="button" class="salt-ghost" id="alertOff" data-act="alerts.off" hidden>Turn off</button></span></div></div>'
-    + '<span class="salt-ledger__flag" id="alertNote">Salt Admin rings this phone for what waits on your decision. Asked only when you tap.</span></div>';
+    + '<span class="salt-ledger__value lookset" role="group" aria-labelledby="alertH">'
+    + '<button type="button" class="salt-pill salt-pill--sm" id="alertOn" data-act="alerts.on">Turn on</button>'
+    + '<button type="button" class="salt-ghost" id="alertOff" data-act="alerts.off" hidden>Turn off</button></span></div>'
+    + '<span class="salt-ledger__flag adev-line"><b id="alertState" role="status">Off</b>. Rings for your decisions.</span></div></div>'
+    + '<p class="msg adev-note" id="alertNote" role="status">Asked only when you tap.</p>';
 }
 function vaultSheet() {
   return '<div id="vaultScrim" class="salt-sheet-scrim" hidden></div>'
@@ -1849,8 +2034,8 @@ const ADMIN_PARTS = {
 /* 20 Oct 2026 (Counter Batch C, item 21): a place whose parts fit a phone's slider draws them as one, measured in Chromium at 358px:
    Record's three. Customers' and Shop's four (Associates, This device) and the six kinds of Needs you do not fit equal columns there,
    and Orders' second strip shares its choice with the stages, so it can stand with none chosen; those stay a strip of pills. */
-const ADMIN_SLIDERS = ["record"];
-const adminStrip = (p, list, cls, label, seg = !cls && ADMIN_SLIDERS.includes(p)) => '<div class="' + (seg ? "salt-segment" : "salt-tabs") + ' aparts' + cls + '" role="tablist" aria-label="' + label + '" data-place="' + p + '">'
+const ADMIN_SLIDERS = ["record", "customers"];
+const adminStrip = (p, list, cls, label, seg = !cls && ADMIN_SLIDERS.includes(p)) => '<div class="' + (seg ? "salt-segment" : "salt-tabs") + (seg && p === "customers" ? " salt-segment--tight" : "") + ' aparts' + cls + '" role="tablist" aria-label="' + label + '" data-place="' + p + '">'
   + list.map(([k, w]) => '<button type="button" class="' + (seg ? "salt-segment__opt" : "salt-tabs__pill") + '" role="tab" data-part="' + k + '" data-act="part.' + p + "." + k
     + '" aria-selected="' + (k === ADMIN_PARTS[p][0][0] ? "true" : "false") + '">' + w + "</button>").join("") + "</div>";
 /* 18 Oct 2026 (Salt Admin clarity, part 3): Orders draws its parts as two strips of one list. The six stages come first, in the order an order moves (a tab strip
@@ -1869,10 +2054,15 @@ const adminParts = (p, test) => test && !TEST_PARTS[p] ? ""
   : p === "orders"
   ? ordTabs(ADMIN_PARTS[p].filter(([k]) => ADMIN_ORDER_STAGES.includes(k)), "oparts--stages", "Order stages")
     + ordTabs(ADMIN_PARTS[p].filter(([k]) => !ADMIN_ORDER_STAGES.includes(k) && (!test || TEST_PARTS[p].includes(k))), "oparts--minor", "Other orders")
+  /* 25 Oct 2026 (his Shop canvas): Shop's four parts are a text tab row on the nav recipe, as Needs you's kinds; the acts, ids and aria-selected as every strip's */
+  : p === "shop"
+  ? '<nav class="salt-nav nkinds" aria-label="Shop"><div class="salt-nav__links aparts aparts--nav" role="tablist" aria-label="Shop" data-place="shop">'
+    + ADMIN_PARTS[p].filter(([k]) => !test || TEST_PARTS[p].includes(k)).map(([k, w]) => '<button type="button" class="salt-nav__link nktab" role="tab" data-part="' + k + '" data-act="part.' + p + "." + k
+    + '" aria-selected="' + (k === ADMIN_PARTS[p][0][0] ? "true" : "false") + '">' + w + "</button>").join("") + "</div></nav>"
   : adminStrip(p, ADMIN_PARTS[p].filter(([k]) => !test || TEST_PARTS[p].includes(k)), "", ADMIN_PLACES.filter((x) => x[0] === p)[0][1]);
 /* PHASE 1b: Needs you's kind chips. They filter the one list and read nothing; each is a control with an act of its own, need.kind.<kind> */
 const ADMIN_KINDS = [["all", "All"], ["orders", "Orders"], ["payments", "Payments"], ["messages", "Messages"], ["rows", "Rows"], ["accounts", "Accounts"]];
-const ADMIN_FILTERS = [["all", "All"], ["unsent", "Not sent"], ["unopened", "Not opened"], ["owes", "They owe"], ["locked", "Locked out"], ["none", "No account yet"]];
+const ADMIN_FILTERS = [["all", "All"], ["unsent", "Not sent"], ["unopened", "Not opened"], ["owes", "They owe"], ["locked", "Locked out"], ["none", "No account"]];
 const ADMIN_ICONS = {
   needs: '<path d="M3.8 13 L6.5 5 H17.5 L20.2 13 V19.5 H3.8 Z M3.8 13 H8.6 L9.9 15.6 H14.1 L15.4 13 H20.2"/>',
   orders: '<path d="M5 4.5 H19 V19.5 H5 Z M8 8 H16 M8 11.5 H16 M8 15 H13"/>',
@@ -2039,12 +2229,15 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + adminParts("customers", test)
         + '<div class="abody">'
         + '<div id="oAccts" data-in="customers.accounts">'
-        + '<p class="lead" id="scount"></p>'
+        /* 25 Oct 2026 (the Customers canvas, P1): an Insight leads, money first, then the find field and the filters as Needs you's text tab row */
+        + '<p class="salt-insight salt-insight--copper alead" id="alead" hidden></p>'
         + '<div class="afind">'
         + '<input class="fld salt-field__input salt-field__input--mono" id="rq" type="search" autocapitalize="none" autocorrect="off" '
         + 'spellcheck="false" placeholder="A code or a username" aria-label="Find an account" data-act="acct.find">'
-        + '<div class="afil" id="afil" role="group" aria-label="Show only">' + ADMIN_FILTERS.map(([f, w], k) =>
-          '<button type="button" class="salt-ghost" data-f="' + f + '" data-act="acct.filter-' + f + '" aria-pressed="' + (k ? "false" : "true") + '">' + w + "</button>").join("") + "</div>"
+        + '<nav class="salt-nav nkinds afilnav" aria-label="Show only"><div class="salt-nav__links afil" id="afil" role="tablist">' + ADMIN_FILTERS.map(([f, w], k) =>
+          '<button type="button" class="salt-nav__link nktab' + (k ? "" : " salt-nav__link--active") + '" role="tab" data-f="' + f + '" data-act="acct.filter-' + f + '" aria-selected="' + (k ? "false" : "true") + '">' + w
+          + '<span class="nktab__n"></span></button>').join("") + "</div></nav>"
+        + '<p class="lead" id="scount"></p>'
         + "</div>"
         + '<div class="asplit"><div id="rlist" class="alist"></div><div id="aopen" hidden></div><p class="rnone panenone">Choose a card to see it in full.</p></div>'
         + "</div>"
@@ -2083,24 +2276,27 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         /* SHOP: the counter itself. The practice accounts are the two he opens to try the customer's page. */
         + '<div id="oShop" class="aplace" data-in="shop" hidden>'
         + '<h1 class="sr">Shop</h1>'
-        + '<p class="lead">The counter itself: its hours, the notice, the practice accounts and how this device looks.</p>'
+        + '<p class="sr">The counter itself: its hours, the notice, the practice accounts and how this device looks.</p>'
         + adminParts("shop", test)
         + '<div class="abody">'
-        + '<section data-in="shop.hours" aria-labelledby="makerHoursTitle"><h2 id="makerHoursTitle">Shop hours</h2>'
-        + '<p class="lead" id="makerHoursStatus">Reading.</p>'
-        + '<div id="makerSchedule"></div><p id="makerHoursMessage" class="msg" role="status" aria-live="polite"></p><div id="makerConfirm"></div></section>'
-        + '<section data-in="shop.hours" aria-labelledby="makerPointsTitle"><h2 id="makerPointsTitle">Collection points</h2>'
-        + '<p class="lead" id="makerPointsStatus">Reading.</p>'
+        + '<section data-in="shop.hours" aria-labelledby="makerHoursTitle"><h2 id="makerHoursTitle" class="sr">Shop hours</h2>'
+        /* 25 Oct 2026 (his Shop canvas, his yes): FOR NOW FIRST, where the bar's hours chip lands, then the glance, then the week */
+        + '<section id="makerNowCard" class="salt-glass-card salt-glass-card--radius-lg anow" aria-label="For now"><div id="makerNow"><p class="lead" id="makerHoursStatus">Reading.</p></div>'
+        + '<p id="makerHoursMessage" class="msg" role="status" aria-live="polite"></p></section>'
+        + '<div id="makerConfirm" class="shglance" role="group" aria-label="At a glance"></div>'
+        + '<div class="hsplit"><div id="makerSchedule"></div><aside id="makerDayPane" class="salt-glass-card salt-glass-card--radius-lg hpane" aria-label="The open day"></aside></div></section>'
+        + '<div class="hpair" data-in="shop.hours"><section data-in="shop.hours" aria-labelledby="makerPointsTitle"><h2 id="makerPointsTitle" class="salt-eyebrow salt-eyebrow--copper">Collection points</h2>'
+        + '<p class="msg" id="makerPointsStatus">Reading.</p>'
         + '<div id="makerPoints"></div><p id="makerPointsMessage" class="msg" role="status" aria-live="polite"></p></section>'
         /* 21 Oct 2026 (P8): the customer's Help, read only, under the hours and the points it speaks of */
-        + helpCard(true)
-        + '<section data-in="shop.notice" aria-labelledby="makerBulletinTitle"><h2 id="makerBulletinTitle">Notice</h2>'
+        + helpCard(true) + '</div>'
+        + '<section data-in="shop.notice" aria-labelledby="makerBulletinTitle"><h2 id="makerBulletinTitle" class="sr">Notice</h2>'
         + '<p class="lead">A line at the top of every customer account. Setting it also sends them a notification.</p>'
         + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></section>'
         + '<div id="mTest" class="mtest" data-in="shop.practice"></div>'
         /* 11 Oct 2026, his word: Salt Admin has its own Night or Tide, chosen on this device (the Counter origin's localStorage salt-look,
            shared with the Counter's pages on this device and apart from the Desk's), the same row the customer has under Account > This device. The first-open Sheet is below, beside #aEnded. */
-        + '<section id="oLook" data-in="shop.device" aria-labelledby="oLookTitle"><h2 id="oLookTitle">This device</h2>'
+        + '<section id="oLook" data-in="shop.device" aria-labelledby="oLookTitle"><h2 id="oLookTitle" class="sr">This device</h2>'
         + '<p class="lead">Night or Tide for Salt Admin on this device. Kept on this device; the Desk keeps its own.</p>'
         + lookRow(true) + vaultRow() + (test ? "" : alertRow()) + "</section>"
         + "</div></div>"

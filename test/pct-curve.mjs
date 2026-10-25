@@ -17,6 +17,7 @@ import RULES_MOD from "../engine/rules.mjs";
 import { JSDOM } from "jsdom";
 import { webcrypto } from "node:crypto";
 import { contentKey, wrapKey } from "../tools/stmt-crypto.mjs";
+import { byAct, enter } from "./maker-act.mjs";
 
 export async function run({ ok }) {
   const check = ok || ((c, m) => { if (!c) throw new Error(m); });
@@ -151,17 +152,19 @@ export async function run({ ok }) {
   check(relay.status === 200 && forwarded[0] === "/_internal/maker/drift-preview/CX1-ZED/oil/-20" && post.status === 405 && stranger.status === 403 && forwarded.length === 1,
     "the Counter relays the preview to the Desk unchanged, GET only, and only for the owner: " + JSON.stringify([relay.status, forwarded, post.status, stranger.status]));
 
-  /* the Salt Admin form */
+  /* the Salt Admin form: since 26 Oct 2026 a stepper on the customer's own account card (Customers > Accounts) */
   const content = await contentKey("4".repeat(64), "pct-curve");
   const adminOpen = { ok: true, byMaster: true, session: "", wrapMaster: await wrapKey("fixture-master", content) };
   const calls = [], reads = []; let slow = null;
   const context = { ok: true, products: ["salt", "oil"], catalog: {
     products: [{ product: "salt", drift: true }, { product: "oil", fixed: true, drift: true }],
-    parties: ["CX1-ZED"], tierCustomers: ["CX1-ZED"], driftCustomers: ["CX1-ZED"],
+    parties: ["CX1-ZED"], tierCustomers: ["CX1-ZED"], driftCustomers: ["CX1-ZED"], partners: [], partnerWaiting: [],
     driftCards: [{ code: "CX1-ZED", product: "salt", held: false, value: null, current: 0, suggest: -0.15, why: "good record" }] } };
   const answer = (key) => { const pct = +key.split("/").pop(); return { ok: true, preview: { code: "CX1-ZED", product: key.split("/")[1], held: 0, pct: pct / 100,
     rows: [{ q: 1, now: 120, at: 120 + pct, floor: 60, ceiling: 180, usual: false, edge: null }, { q: 6.25, now: 605, at: 605 + pct, floor: 365, ceiling: 1095, usual: true, edge: null }] } }; };
-  const dom = new JSDOM(landingPage("", "pct-curve-nonce", { master: "fixture-master", accounts: [] }), {
+  const stamp = "2026-10-01T08:00:00.000Z";
+  const accounts = [{ username: "1111-0001", code: "CX1-ZED", account: true, t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear", seen: { opens: 1, last: stamp, how: "link" }, sent: stamp, issued: "2026-10-01" }];
+  const dom = new JSDOM(landingPage("", "pct-curve-nonce", { master: "fixture-master", accounts }), {
     url: "https://site.test/all", runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(win) {
       Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true });
@@ -177,6 +180,7 @@ export async function run({ ok }) {
         const data = route === "/open" ? adminOpen : route === "/all/maker/inputs" ? context
           : route === "/all/maker/review" ? { ok: true, orders: [], drafts: [] }
             : route === "/all/maker/hours" ? { ok: true, config: null, status: { open: true, source: "default" } }
+              : route === "/all/sheet" ? { ok: true, at: stamp, issue: "2026-10-01", accounts, desk: { n: 2, at: stamp, moved: false }, stranger: "Silver" }
               : { ok: true, accounts: [], orders: [], drafts: [], refs: [], tiers: [] };
         return { ok: true, status: 200, json: async () => data };
       };
@@ -184,32 +188,32 @@ export async function run({ ok }) {
   });
   const waitFor = async (pred, n = 150) => { for (let i = 0; i < n && !pred(); i++) await new Promise((r) => setTimeout(r, 10)); return pred(); };
   try {
-    const doc = dom.window.document;
-    doc.querySelector('button[data-act="nav.record"]').click();
-    await waitFor(() => [...doc.querySelectorAll("#makerInputs .maker-input h3")].some((h) => h.textContent === "Their %"));
-    const form = [...doc.querySelectorAll("#makerInputs .maker-input")].find((s) => s.querySelector("h3")?.textContent === "Their %");
-    const value = form.querySelector('input[type="number"]'), table = () => form.querySelector(".maker-pct-preview");
-    const type = (v) => { value.value = v; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); };
-    check(value.min === "-30" && value.max === "30" && value.step === "5", "the field takes a whole % from -30 to +30 in steps of 5");
-    type("-10");
-    const drawn = await waitFor(() => !table().hidden && table().querySelectorAll("tbody tr").length === 2);
-    const cells = drawn ? [...table().querySelectorAll("tbody tr")[1].children].map((c) => c.textContent) : [];
-    check(drawn && reads.at(-1) === "CX1-ZED/salt/-10" && cells[1].includes("605") && cells[2].includes("595") && cells[3].includes("-") && cells[3].includes("10")
-      && cells[4].includes("230") && cells[5].includes("365") && cells[0].includes("their usual") && calls.length === 0,
-    "typing -10 draws now, at -10%, the change, the margin over the Floor and the Floor off the Desk's read, and sends nothing: " + JSON.stringify([reads, cells]));
-    type("7");
-    check(table().hidden && form.textContent.includes("Enter a whole % from -30 to +30 in steps of 5"), "7 is not a step of 5: no table, and the form says so");
+    const doc = dom.window.document, text = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
+    enter(doc, "customers", "accounts");
+    await waitFor(() => [...doc.querySelectorAll("#rlist [data-u]")].some((c) => text(c.querySelector(".need-who")) === "CX1-ZED"));
+    [...doc.querySelectorAll("#rlist [data-u]")].find((c) => text(c.querySelector(".need-who")) === "CX1-ZED").click();
+    await waitFor(() => !!doc.querySelector("#aopen .apct .apct__table"));
+    const form = () => doc.querySelector("#aopen .apct"), act = (name, key) => byAct(form(), name, key), table = () => form().querySelector(".apct__table");
+    const val = () => text(form().querySelector(".apct__val")), step = async (name, n) => { for (let i = 0; i < n; i++) act(name).click(); await new Promise((r) => setTimeout(r, 5)); };
+    check(!form().querySelector("input") && val() === "0%" && [...form().querySelectorAll('[data-act="acct.pct.book"]')].map((b) => b.getAttribute("data-key")).join() === "salt,oil",
+      "the account card takes a whole % by a stepper (no typed field), on every book that takes a % (salt and oil)");
+    await step("acct.pct.down", 2);
+    const drawn = await waitFor(() => !!table() && val() === "\u221210%" && reads.at(-1) === "CX1-ZED/salt/-10" && table().querySelectorAll("tbody tr").length === 2);
+    const cells = drawn ? [...table().querySelectorAll("tbody tr")[1].children].map(text) : [];
+    check(drawn && cells[1].includes("605") && cells[2].includes("595") && cells[3].includes("365") && form().textContent.includes("Their usual is") && calls.length === 0,
+      "two steps down draw now, at -10% and the Floor off the Desk's read, name their usual, and send nothing: " + JSON.stringify([reads, cells]));
+    check(text(table().querySelector("thead")).includes("At \u221210%"), "the table's heading names the % it prices at");
     let release; slow = { key: "CX1-ZED/salt/-20", wait: new Promise((r) => { release = r; }) };
-    type("-20"); await waitFor(() => reads.includes("CX1-ZED/salt/-20"));
-    type("15"); await waitFor(() => !table().hidden && table().textContent.includes("+15%"));
+    await step("acct.pct.down", 2); await waitFor(() => reads.includes("CX1-ZED/salt/-20"));
+    await step("acct.pct.up", 7); await waitFor(() => val() === "+15%" && !!table() && table().textContent.includes("+15%"));
     release(); await new Promise((r) => setTimeout(r, 50));
-    check(table().textContent.includes("+15%") && !table().textContent.includes("-20%"), "a reply that lands after a newer ask is dropped");
-    const n = reads.length; type("-10"); await new Promise((r) => setTimeout(r, 400));
-    check(reads.length === n && table().textContent.includes("-10%"), "going back to a figure already read draws it again with no new read");
-    const use = [...form.querySelectorAll("button")].find((b) => b.textContent === "Use the suggestion");
-    use.click();
-    check(value.value === "-15", "Use the suggestion fills the whole %: -15");
-    [...form.querySelectorAll("button")].find((b) => b.textContent === "Send their %").click();
+    check(table().textContent.includes("+15%") && !table().textContent.includes("−20%") && text(table().querySelectorAll("tbody tr")[1].children[2]).includes("620"),
+      "a reply that lands after a newer ask is dropped: the rows stay the +15% read (RM 620 at 6.25 units), not the late -20% one (RM 585)");
+    const n = reads.length; await step("acct.pct.down", 5); await new Promise((r) => setTimeout(r, 400));
+    check(reads.length === n && val() === "\u221210%" && table().textContent.includes("\u221210%"), "going back to a figure already read draws it again with no new read");
+    act("acct.pct.suggest").click();
+    check(val() === "\u221215%", "Use the suggestion fills the whole %: -15");
+    act("acct.pct.send", "CX1-ZED").click();
     await waitFor(() => calls.length === 1);
     check(calls.length === 1 && calls[0].tier === -0.15 && calls[0].unit === "pct", "Send carries the fraction the drafter reads, -0.15: " + JSON.stringify(calls));
   } finally { dom.window.close(); }

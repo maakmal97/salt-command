@@ -180,12 +180,6 @@
   "replace": "var productItems=books.map(function(item){var b=bookItem(item.product); b.value=item.product+'x'; return b;});"
  },
  {
-  "name": "the drift's book sends another word",
-  "file": "stmt/owner.js",
-  "find": "var driftProduct=makerTilesIn(driftSection,['Book','record.drift.book'],driftBooks.map(function(item){ return bookItem(item.product); }));",
-  "replace": "var driftProduct=makerTilesIn(driftSection,['Book','record.drift.book'],driftBooks.map(function(item){ var b=bookItem(item.product); b.value=item.product+'x'; return b; }));"
- },
- {
   "name": "the printed sizes' book sends another word",
   "file": "stmt/owner.js",
   "find": "houseBooks.map(function(item){ return bookItem(item.product); })), houseBoxes",
@@ -294,9 +288,9 @@
   "replace": ".adm .maker-marks .salt-option__face{justify-content:flex-start}"
  },
  {
-  "name": "the % field gets the decimal pad back, which has no minus key on an iPhone",
+  "name": "the typed starting % gets the decimal pad back, which has no minus key on an iPhone",
   "file": "stmt/owner.js",
-  "find": "driftValue.removeAttribute('inputmode');",
-  "replace": "driftValue.inputMode='decimal';"
+  "find": "typed.min='-0.3';typed.max='0.3';typed.removeAttribute('inputmode');",
+  "replace": "typed.min='-0.3';typed.max='0.3';typed.inputMode='decimal';"
  }
 ]

@@ -1,5 +1,35 @@
 [
  {
+  "v": "v1255",
+  "d": "26 Oct 2026",
+  "t": "SALT ADMIN'S CUSTOMERS ON THE SALT SYSTEM",
+  "n": [
+   "<b>CUSTOMERS ON THE SALT SYSTEM (HIS YES OF 25 OCT 2026 TO EVERY ASK OF THE CUSTOMERS CANVAS).</b> Accounts are Needs you's cards under To do, Pending and FYI, money first: the state and its age, the code and username, one way and what is owed, a refund he owes in ember; an Insight over them; the filters a text tab row with counts; from 1080px one plain table a group. The parts are the tight slider (salt-ds 1.16.0).",
+   "<b>AN ACCOUNT.</b> It leads with where it stands and their waiting line with Reply; Sign-in is its own card and Mark as sent replaces the tick. Their % and Make partner moved from Record onto the customer's card: a stepper in 5% steps, their prices off the Desk, Send only once it differs. This customer and the associate reward read by the account's code through two new reads that write nothing. From 1080px an open account fills the page in columns.",
+   "<b>MESSAGES, LINKS, ASSOCIATES.</b> A thread and a guest link are Needs you's cards, the open thread the system's Thread; the associates report card is a typed tag a book, cards on a phone and a plain table wide, the reward a Meter. No price, order, ledger row or stock figure moves; Record keeps Printed sizes."
+  ]
+ },
+ {
+  "v": "v1254",
+  "d": "26 Oct 2026",
+  "t": "SALT ADMIN'S SHOP ON THE SALT SYSTEM",
+  "n": [
+   "<b>SHOP ON THE SALT SYSTEM (HIS YES OF 25 OCT 2026 TO EVERY ASK OF THE SHOP CANVAS).</b> Salt Admin's Shop opens Hours on For now, the shop's state as its title and one pill, Hold the shop, that opens the override; Weekly hours stands only while one is filed. Points, Dates and Confirm time are one-line tiles. A tapped day or date holds what customers would see, then Discard changes beside Done; the dates keep their own column and a close past midnight draws a solid tail.",
+   "<b>THE OTHER PARTS.</b> Collection points are a plain table with a cross to take one off; Notice shows the lines up now as customers read them, every line numbered, then New notice; Practice lists the three accounts, offers Open the test page while all three are open, and Remove asks once; This device is a row each, the state word leading its line. Shop's parts are the Nav bar's text tabs, and from 860px the open day stands in a pane beside the week.",
+   "<b>CHECKS.</b> One new suite section of 43 checks, each proved red by its own mutation; the older Shop sections re-aimed where the page moved. No route, request body or stored shape changes. No price, order, ledger row or stock figure moves."
+  ]
+ },
+ {
+  "v": "v1253",
+  "d": "26 Oct 2026",
+  "t": "S3 OF THE BOOK PLAN: THE READERS CAN READ THE BOOK, SHIPPED OFF",
+  "n": [
+   "<b>THE READERS MAY READ THE BOOK (S3 OF THE BOOK PLAN, HIS WORD OF 25 OCT 2026).</b> Behind a one-row flag in D1 (migrations/0018, applied to the live D1 first and shipped at 'd1', so nothing reads differently until it is set) the Desk's book reads come from the Book Durable Object instead of the D1 mirror: every list in the book's own order, the derived documents the readers need, the version and the moment of the Book's latest load. A Book that trails the mirror (a load that failed) is never read. The way back is one D1 statement and no deploy (docs/DESK.md, The Book: read). Orders and the book stay two objects, his answer of 25 Oct 2026.",
+   "<b>ON ITS WAY IS THE BOOK'S OWN BOUND.</b> A payment or lot drafted and not yet in the book a reader read is now judged against the moment of that very book's load (src/way.js), and the money taps, the drafter's reservations, the maker's held moves, the claim flow and the site-follow checks read the book first and the drafts by its bound, so a tap whose reads straddle a load counts nothing twice and misses nothing. Read from the mirror, every clause is byte for byte what it was. Awaiting-the-fold questions and input admission stay on committed_at.",
+   "<b>CHECKS.</b> A load of an older version is refused (409). GET /book/readcheck, asked by the chain after every load, names what differs between the Book and the mirror (by name, never a row or a value) and goes red without blocking the fold. Fable reviewed the data path before the build and the diff after; its findings are applied and re-checked. No price, order, ledger row or stock figure moves."
+  ]
+ },
+ {
   "v": "v1252",
   "d": "25 Oct 2026",
   "t": "RICE PURCHASE FROM SM4-KEP LANDED, SALT UNTOUCHED",

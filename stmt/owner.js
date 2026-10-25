@@ -447,26 +447,62 @@ export const OWNER_JS = `
     story[u]=j?{log:j.log||[], devices:j.devices||[]}:{err:err};
     [].slice.call(document.querySelectorAll('[data-story]')).forEach(function(b){ if(b.getAttribute('data-story')===u) drawStory(b, a); });
   }
+  /* 25 OCT 2026 (canvas Salt Admin Customers, P2; his yes to Asks A to J): AN ACCOUNT LEADS WITH WHERE IT STANDS. The head: the state and its age, as its
+     card on the list says them, the code and the username, and what is owed, large at the right (ember when late or when he owes it back); under it a
+     ledger of the standing (locked out, opened and how, marked sent, notifications) and, when a line of theirs waits, the way to it. Then Sign-in, the
+     ways in on one card: Send a sign-in link filled, Show a code, View as them, Order for them and Copy password two by two, Sign out everywhere asking
+     once. The Sent tick goes (his yes to Ask F): Mark as sent while it is not, and Marked sent in the ledger once it is. */
+  function acctFig(a){
+    var t=a.t||{}, s=acctState(a);
+    if(a.test||a.account===false) return null;
+    if(a.flag==='owes') return {word:'They owe', fig:rmShort(t.owed), hot:!!s.late};
+    if(a.flag==='refund') return {word:'You owe them', fig:rmShort(t.refund), hot:true};
+    if(a.flag==='goods') return {word:'You owe them', fig:units(Math.round((+t.toGet||0)*100)/100), hot:false};
+    if(a.flag==='pend') return {word:'Agreed', fig:rmShort(t.pend), hot:false};
+    return {word:'Owed', fig:'Nil', hot:false};
+  }
+  function acctLine(L, k, v){ var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'); l.appendChild(el('span','salt-ledger__label',k)); l.appendChild(el('span','salt-ledger__value',v)); r.appendChild(l); r.setAttribute('data-line',k); L.appendChild(r); return r; }
   function acctCard(a){
     var u=a.username, none=a.account===false, why='No account yet';
     var c=el('section','oacct scard'); c.setAttribute('data-acct', u);
-    var h=el('div','ahead srow');
-    h.appendChild(whoTag(el('h2',null,a.test?testName(a):(a.code||u)),a.test?'':a.code));
-    h.appendChild(el('span','un',u));
-    c.appendChild(h);
-    var cs=el('div','achips');
-    function chips(){ cs.textContent=''; if(sheet) chipsOf(a).forEach(function(x){ cs.appendChild(x); }); }
-    chips(); c.appendChild(cs);
-    if(a.test) c.appendChild(el('p','atot','A practice account. Nothing it does is recorded.'));
-    else if(none) c.appendChild(el('p','atot',waitLine()));
-    else if(a.tot) c.appendChild(el('p','atot',a.tot));
-    var box=actOn(document.createElement('input'),'acct.sent');
+    var head=el('div','asec ahead salt-glass-card salt-glass-card--radius-lg'), top=el('div','ahead__top'), who=el('div','ahead__who'), s=acctState(a), f=acctFig(a);
+    var kd=el('span','salt-eyebrow salt-eyebrow--'+SEVC[s.sev]+' ahead__kind', s.word);
+    if(s.age){ kd.appendChild(document.createTextNode(' · ')); kd.appendChild(el('span','nage'+(s.late?' nage--late':''),s.age)); }
+    who.appendChild(kd);
+    who.appendChild(whoTag(el('h2',a.test?null:'ahead__code',a.test?testName(a):(a.code||u)),a.test?'':a.code));
+    who.appendChild(el('span','un',u));
+    top.appendChild(who);
+    if(f){ var fb=el('div','ahead__fig'); fb.appendChild(el('span','salt-eyebrow salt-eyebrow--mist',f.word)); fb.appendChild(el('span','ahead__rm'+(f.hot?' ahead__rm--hot':''),f.fig)); top.appendChild(fb); }
+    head.appendChild(top);
+    var st=el('div','salt-ledger salt-ledger--plain astand');
+    function stand(){
+      st.textContent='';
+      if(a.test){ acctLine(st,'Practice','Nothing recorded'); return; }
+      if(none){ acctLine(st,'Account','Next update'); return; }
+      if(a.locked){ var lk=acctLine(st,'Locked out',a.locked.until?'until '+hm(a.locked.until):'now'); lk.classList.add('astand--hot'); lk.querySelector('.salt-ledger__value').classList.add('nage--late'); }
+      acctLine(st,'Opened',a.seen&&a.seen.opens?dayMon(a.seen.last)+(howOf(a.seen)?' '+howOf(a.seen):''):'Not yet');
+      if(a.sent) acctLine(st,'Marked sent',dayMon(a.sent));
+      if(a.alerts) acctLine(st,'Notifications','On');
+    }
+    stand(); head.appendChild(st);
+    if(a.test) head.appendChild(el('p','atot','A practice account. Nothing it does is recorded.'));
+    else if(none) head.appendChild(el('p','atot',waitLine()));
+    var th=(makerThreads||[]).filter(function(x){ return x.u===u&&!x.test&&makerThreadAsked(x); })[0];
+    if(th){
+      var last=th.msgs[th.msgs.length-1], tr=el('div','athread'), tx=el('div','athread__txt'), rp=pill(['Reply','acct.reply',u]);
+      tx.appendChild(el('span','athread__k','Their messages')); tx.appendChild(el('span','anote athread__v','Waiting '+ageOf(last.at)+' for your reply'));
+      tr.appendChild(tx); rp.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(u); }); tr.appendChild(rp); head.appendChild(tr);
+    }
+    c.appendChild(head);
+    var sign=el('div','asec asign salt-glass-card salt-glass-card--radius-lg');
+    sign.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Sign-in'));
+    var mark=ghost(['Mark as sent','acct.sent']);
     var pn=el('p','anote'); pn.setAttribute('role','status');
-    c.appendChild(sendPill(a, pn, function(){ box.checked=!!a.sent; chips(); }));
-    c.appendChild(pn);
+    sign.appendChild(sendPill(a, pn, function(){ stand(); mark.hidden=!!a.sent||none||!!a.test; }));
+    sign.appendChild(pn);
     var grid=el('div','agrid'), gn=el('p','anote'); gn.setAttribute('role','status');
-    var hob=ghost(['Show a code, in person','acct.show-code']), open=ghost(['View as them','acct.view-as']), pwb=ghost(['Copy password','acct.password']), sob=ghost(['Sign out everywhere','acct.signout-all']), orderFor=ghost(['Order for them','acct.order-for']);
-    pwb.classList.add('salt-ghost--danger'); sob.classList.add('salt-ghost--danger');
+    var hob=ghost(['Show a code','acct.show-code']), open=ghost(['View as them','acct.view-as']), pwb=ghost(['Copy password','acct.password']), sob=ghost(['Sign out everywhere','acct.signout-all']), orderFor=ghost(['Order for them','acct.order-for']);
+    pwb.classList.add('salt-ghost--danger'); sob.classList.add('salt-ghost--danger','asignout');
     [hob, open, orderFor, pwb, sob].forEach(function(b){ if(none){ b.disabled=true; b.title=why; } grid.appendChild(b); });
     if(!none&&!a.pwMaster){ pwb.disabled=true; pwb.title='Password not stored yet.'; }
     hob.addEventListener('click', function(){ if(!none) showHandover(a, hob); });
@@ -497,25 +533,197 @@ export const OWNER_JS = `
       sob.textContent='Sign out everywhere'; sob.disabled=false;
       loadStory(a);
     });
-    c.appendChild(grid); c.appendChild(gn);
-    var tick=el('label','tick atick');
-    box.type='checkbox'; box.checked=!!a.sent; box.disabled=none;
-    box.addEventListener('change', async function(){
-      var want=box.checked;
+    mark.hidden=!!a.sent||none||!!a.test;
+    mark.addEventListener('click', async function(){
+      mark.disabled=true;
       try{
-        var j=await refs('/all/sent/'+u, {issue:sheetIssue, sent:want});
-        a.sent=j.sent; chips(); say(''); countSent(); drawRoster(); drawNeeds();
-      }catch(e){ box.checked=!want; sayFail(e); }
+        var j=await refs('/all/sent/'+u, {issue:sheetIssue, sent:true});
+        a.sent=j.sent; stand(); mark.hidden=!!a.sent; say(''); countSent(); drawRoster(); drawNeeds();
+      }catch(e){ sayFail(e); }
+      mark.disabled=false;
     });
-    /* 12 Oct 2026 (Phase 2a): the input is the 44px target, laid unseen over the box drawn beside it, so the control measures what the label did */
-    tick.appendChild(box); tick.appendChild(el('span','tickbox')); tick.appendChild(el('span',null,'Sent'));
-    c.appendChild(tick);
+    grid.insertBefore(mark, sob);
+    sign.appendChild(grid); sign.appendChild(gn);
+    c.appendChild(sign);
+    if(!none&&!a.test&&a.code){ var more=el('div','amore'); c.appendChild(more); acctMore(more, a); }
     /* 14 OCT 2026 (his decision): everything related to a customer is on their card, so their loans and their reward stand here, read from the Desk's catalogue */
-    var books=el('div','abooks'); books.setAttribute('data-loans', u);
+    var books=el('div','asec abooks salt-glass-card salt-glass-card--radius-lg'); books.setAttribute('data-loans', u);
     if(!none&&!a.test&&a.code){ c.appendChild(books); drawBooks(books, a); }
-    var st=el('div','astory'); st.setAttribute('data-story', u);
-    if(!none){ c.appendChild(st); drawStory(st, a); loadStory(a); }
+    var sty=el('div','asec astory salt-glass-card salt-glass-card--radius-lg'); sty.setAttribute('data-story', u);
+    if(!none){ c.appendChild(sty); drawStory(sty, a); loadStory(a); }
     return c;
+  }
+  /* 26 OCT 2026 (canvas Salt Admin Customers, P3 and P4; his yes to Asks A, B and G): WHAT PRICES A CUSTOMER STANDS ON THEIR CARD. Their % moved here from
+     Record: a book a tab, the suggestion and why, a stepper in whole steps of 5 from -30% to +30% (his alone; nothing sets it but his Send, and it goes to
+     Approve), their prices at that % off the Desk (drift-preview) against the Floor, Send at that % only once it differs from what is set, Use the
+     suggestion, Set back to 0. Then This customer (salt) and the associate reward, read by the account's code (customer-of, reward-of), and Partner, which
+     asks once. Nothing on the card prices: every figure is the Desk's. */
+  var pctOn={}, pctReads={}, ofReads={};
+  function pctWord(n){ return n>0?'+'+n+'%':n<0?'−'+(-n)+'%':'0%'; }
+  function acctMore(box, a){
+    readParty().then(function(cat){ if(box.isConnected) drawMore(box, a, cat||{}); }, function(){ if(box.isConnected){ box.textContent=''; box.appendChild(el('p','anote bad','Their prices could not be read.')); } });
+  }
+  function drawMore(box, a, cat){
+    box.textContent='';
+    var code=a.code, partner=(cat.partners||[]).indexOf(code)>=0, waiting=(cat.partnerWaiting||[]).indexOf(code)>=0;
+    var books=(cat.products||[]).filter(function(x){ return x.drift; }).map(function(x){ return x.product; });
+    if(books.length&&(cat.driftCustomers||[]).indexOf(code)>=0) box.appendChild(pctSection(a, cat, books, partner));
+    var cust=el('div','asec acust salt-glass-card salt-glass-card--radius-lg'), rwd=el('div','asec arwd salt-glass-card salt-glass-card--radius-lg');
+    cust.hidden=rwd.hidden=true; box.appendChild(cust); box.appendChild(rwd);
+    readingOf('customer-of', code, function(r){ paintCust(cust, r); });
+    readingOf('reward-of', code, function(r){ paintRwd(rwd, r); });
+    if(books.length&&(partner||waiting||(cat.driftCustomers||[]).indexOf(code)>=0&&/^C/.test(code)&&!/-Gen$/.test(code))) box.appendChild(partnerSection(a, partner, waiting));
+  }
+  function readingOf(kind, code, paint){
+    var k=kind+'/'+code;
+    if(ofReads[k]&&!ofReads[k].reading){ paint(ofReads[k]); return; }
+    if(ofReads[k]) return;
+    ofReads[k]={reading:true};
+    refs('/all/maker/'+kind+'/'+encodeURIComponent(code)).then(function(j){ ofReads[k]=j&&j.reading||{}; }, function(){ ofReads[k]={}; })
+      .then(function(){ paint(ofReads[k]); delete ofReads[k].reading; setTimeout(function(){ delete ofReads[k]; }, 60000); });
+  }
+  function pctSection(a, cat, books, partner){
+    var s=el('div','asec apct salt-glass-card salt-glass-card--radius-lg'), head=el('div','apct__head');
+    head.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Their %')); head.appendChild(el('span','salt-status salt-status--mist','Yours alone'));
+    s.appendChild(head);
+    if(partner){ s.appendChild(el('p','anote','A partner pays the Floor on every book: no % to set.')); return s; }
+    var code=a.code, st=pctOn[code]||(pctOn[code]={book:books[0], pct:{}});
+    if(books.indexOf(st.book)<0) st.book=books[0];
+    var tabs=el('nav','salt-nav nkinds apct__books'), row=el('div','salt-nav__links apct__tabs'); tabs.setAttribute('aria-label','Book'); row.setAttribute('role','tablist');
+    books.forEach(function(b){
+      var t=actOn(el('button','salt-nav__link nktab'+(b===st.book?' salt-nav__link--active':'')),'acct.pct.book',b); t.type='button'; t.setAttribute('role','tab'); t.setAttribute('aria-selected', b===st.book?'true':'false');
+      t.appendChild(productTag(b)); t.addEventListener('click', function(){ st.book=b; s.replaceWith(pctSection(a, cat, books, partner)); }); row.appendChild(t);
+    });
+    tabs.appendChild(row); s.appendChild(tabs);
+    var card=(cat.driftCards||[]).filter(function(x){ return x.code===code&&x.product===st.book; })[0]||{};
+    var held=card.held?Math.round(+card.value*100):0, sug=typeof card.suggest==='number'?Math.round(card.suggest*100):null;
+    if(st.pct[st.book]==null) st.pct[st.book]=held;
+    var L=el('div','salt-ledger salt-ledger--plain'), sr=acctLine(L,'Suggested',sug==null?'None':pctWord(sug));
+    if(sug!=null&&card.why) sr.appendChild(el('span','salt-ledger__flag',card.why.charAt(0).toUpperCase()+card.why.slice(1)));
+    s.appendChild(L);
+    var step=el('div','apct__step'), down=actOn(el('button','salt-ghost apct__btn','−'),'acct.pct.down'), up=actOn(el('button','salt-ghost apct__btn','+'),'acct.pct.up'), out=el('output','apct__val');
+    down.type=up.type='button'; down.setAttribute('aria-label','5% lower'); up.setAttribute('aria-label','5% higher'); out.setAttribute('aria-live','polite');
+    step.appendChild(down); step.appendChild(out); step.appendChild(up); s.appendChild(step);
+    var prev=el('div','apct__prev'); s.appendChild(prev);
+    var acts=el('div','agrid apct__acts'), answer=el('p','anote'); answer.setAttribute('role','status');
+    var at=null, sig='';
+    var sendB=makerButton(acts,['Send','acct.pct.send',code],async function(send){
+      var whole=st.pct[st.book]; if(whole===held) return;
+      var body={code:code,product:st.book,tier:Number((whole/100).toFixed(2)),unit:'pct'}, check=JSON.stringify(body);
+      if(check!==sig){ sig=check; at=new Date().toISOString(); }
+      body.at=at;
+      try{ await send('/all/maker/inputs/tier-set',body); answer.textContent='Sent. Their % changes once you approve it.'; loadMaker(); }
+      catch(error){ refusal(answer,error); }
+    },true,function(){ at=null; sig=''; });
+    var use=actOn(el('button','salt-ghost',sug==null?'No suggestion':'Use '+pctWord(sug)),'acct.pct.suggest'); use.type='button'; use.disabled=sug==null;
+    use.addEventListener('click', function(){ if(sug!=null){ st.pct[st.book]=sug; pctPaint(); } });
+    acts.appendChild(use);
+    var clr=null;
+    if(card.held){
+      clr=makerButton(acts,['Set back to 0','acct.pct.clear',code],async function(send){
+        var body={code:code,product:st.book,tier:null,unit:'pct'}, check=JSON.stringify(body);
+        if(check!==sig){ sig=check; at=new Date().toISOString(); }
+        body.at=at;
+        try{ await send('/all/maker/inputs/tier-set',body); answer.textContent='Sent. Their % goes back to 0 once you approve it.'; loadMaker(); }
+        catch(error){ refusal(answer,error); }
+      },false,function(){ at=null; sig=''; });
+      clr.classList.add('apct__clear');
+    }
+    /* the answer stands inside the buttons' own box, where makerButton looks for it, so a refused retry is said on the card, never let go */
+    acts.appendChild(answer); s.appendChild(acts);
+    function pctDraw(j){
+      prev.textContent='';
+      if(!j||!j.rows||!j.rows.length) return;
+      var say=pctWord(st.pct[st.book]), wrap=el('div','salt-glass-card apct__table'), table=el('table','salt-table salt-table--plain'), hr=el('tr'), body=el('tbody');
+      table.appendChild(el('caption','sr',code+' at '+say+': their prices before anything goes to Approve'));
+      ['Units','Now','At '+say,'Floor'].forEach(function(t, i){ var th=el('th',i?null:'l',t); th.setAttribute('scope','col'); hr.appendChild(th); });
+      table.appendChild(el('thead')).appendChild(hr); table.appendChild(body);
+      j.rows.forEach(function(r){
+        var tr=el('tr'), th=el('th','l',units(r.q)); th.setAttribute('scope','row'); tr.appendChild(th);
+        tr.appendChild(el('td',null,rmShort(r.now))); tr.appendChild(el('td','apct__at',rmShort(r.at))); tr.appendChild(el('td','apct__floor',rmShort(r.floor)));
+        body.appendChild(tr);
+      });
+      wrap.appendChild(table); prev.appendChild(wrap);
+      var usual=j.rows.filter(function(r){ return r.usual; })[0];
+      if(usual) prev.appendChild(el('p','anote','Their usual is '+units(usual.q)+'. It goes to Approve first.'));
+    }
+    function pctPaint(){
+      var whole=st.pct[st.book];
+      out.textContent=pctWord(whole); down.disabled=whole<=-30; up.disabled=whole>=30;
+      sendB.textContent='Send '+pctWord(whole); sendB.disabled=whole===held;
+      var key=code+'/'+st.book+'/'+whole;
+      if(pctReads[key]){ pctDraw(pctReads[key]); return; }
+      refs('/all/maker/drift-preview/'+key).then(function(j){ pctReads[key]=j.preview; if(st.pct[st.book]===whole&&s.isConnected) pctDraw(j.preview); }, function(error){ if(st.pct[st.book]===whole) refusal(answer,error); });
+    }
+    down.addEventListener('click', function(){ st.pct[st.book]=Math.max(-30, st.pct[st.book]-5); pctPaint(); });
+    up.addEventListener('click', function(){ st.pct[st.book]=Math.min(30, st.pct[st.book]+5); pctPaint(); });
+    pctPaint();
+    return s;
+  }
+  function paintCust(box, r){
+    box.textContent='';
+    if(!r||r.reading||!r.customer||r.error){ box.hidden=true; return; }
+    box.hidden=false;
+    var head=el('div','apct__head'); head.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','This customer')); head.appendChild(productTag('salt')); box.appendChild(head);
+    if(r.rates&&r.rates.length>1){
+      var lo=Math.min.apply(null,r.rates.map(function(x){ return x.rate; })), hi=Math.max.apply(null,r.rates.map(function(x){ return x.rate; })), span=hi-lo||1;
+      var line=el('div','acust__line'); line.appendChild(el('span','salt-eyebrow salt-eyebrow--mist','Last '+r.rates.length+', a unit')); line.appendChild(el('span','anote',rmShort(lo)+' to '+rmShort(hi))); box.appendChild(line);
+      var NS='http://www.w3.org/2000/svg', svg=document.createElementNS(NS,'svg'); svg.setAttribute('viewBox','0 0 100 24'); svg.setAttribute('preserveAspectRatio','none'); svg.setAttribute('class','ocust__spark acust__spark');
+      svg.setAttribute('role','img'); svg.setAttribute('aria-label','Their price a unit, '+r.rates.map(function(x){ return rmShort(x.rate); }).join(', '));
+      var pl=document.createElementNS(NS,'polyline'); pl.setAttribute('fill','none'); pl.setAttribute('stroke','currentColor'); pl.setAttribute('stroke-width','1.5'); pl.setAttribute('vector-effect','non-scaling-stroke');
+      pl.setAttribute('points',r.rates.map(function(x,i){ return (i*100/(r.rates.length-1)).toFixed(1)+','+(21-(x.rate-lo)/span*18).toFixed(1); }).join(' '));
+      svg.appendChild(pl); box.appendChild(svg);
+    }
+    var L=el('div','salt-ledger salt-ledger--plain');
+    if(r.unitNow!=null) acctLine(L,'A unit now',rmShort(r.unitNow));
+    if(r.highest!=null) acctLine(L,'Highest',rmShort(r.highest));
+    if(r.cadence) acctLine(L,'Orders every',r.cadence.every+' days');
+    if(r.dueIn!=null) acctLine(L,'Next order due',r.dueIn>0?'in '+r.dueIn+(r.dueIn===1?' day':' days'):r.dueIn===0?'today':(-r.dueIn)+(r.dueIn===-1?' day':' days')+' late');
+    box.appendChild(L);
+    var y=r.loyal||{}, m=el('div','salt-meter salt-meter--verdigris'), ml=el('div','salt-meter__line'), a1=el('span',null,'Loyalty '), a2=el('span',null,'They see ');
+    var share=Math.max(0,Math.min(100,Math.round((+y.units||0)/(+y.every||20)*100)));
+    a1.appendChild(el('b',null,(+y.units||0)+' of '+(y.every||20)+' units')); a2.appendChild(el('b',null,share+'%'));
+    ml.appendChild(a1); ml.appendChild(a2); m.appendChild(ml);
+    var tr=el('div','salt-meter__track'); tr.appendChild(el('div','salt-meter__fill')); m.appendChild(tr); m.style.setProperty('--salt-fill',String(share));
+    box.appendChild(m);
+    if(y.paused) box.appendChild(chip('mist',y.why==='writeoff'?'Paused: a write-off':'Paused: a late payment'));
+    box.appendChild(el('p','anote','1 unit at cost every '+(y.every||20)+(r.cost!=null?' ('+rmShort(r.cost)+' to you)':'')+'.'));
+  }
+  function paintRwd(box, r){
+    box.textContent='';
+    if(!r||r.reading||!r.associate||r.error||!(r.step>0)){ box.hidden=true; return; }
+    box.hidden=false;
+    var head=el('div','apct__head'); head.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Associate reward')); head.appendChild(productTag('salt')); box.appendChild(head);
+    var m=el('div','salt-meter'), ml=el('div','salt-meter__line'), a1=el('span',null,'Margin '), a2=el('span',null,'Next unit ');
+    a1.appendChild(el('b',null,rmShort(r.progress))); a2.appendChild(el('b',null,rmShort(r.step)));
+    ml.appendChild(a1); ml.appendChild(a2); m.appendChild(ml);
+    var tr=el('div','salt-meter__track'); tr.appendChild(el('div','salt-meter__fill')); m.appendChild(tr);
+    m.style.setProperty('--salt-fill',String(Math.max(0,Math.min(100,Math.round(r.progress/r.step*100))))); box.appendChild(m);
+    var L=el('div','salt-ledger salt-ledger--plain');
+    acctLine(L,'Step, '+r.times+' units\u2019 cost',rmShort(r.step)); acctLine(L,'Given under Set Price',rmShort(r.given)); acctLine(L,'A unit, net to you',rmShort(r.net));
+    box.appendChild(L);
+    box.appendChild(el('p','anote','Counted once paid. They see no figure.'));
+  }
+  function partnerSection(a, partner, waiting){
+    var s=el('div','asec apart salt-glass-card salt-glass-card--radius-lg'), head=el('div','apct__head');
+    head.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Partner'));
+    head.appendChild(el('span','salt-status salt-status--mist',partner?'Partner':waiting?'Waiting under Approve':'Not a partner'));
+    s.appendChild(head);
+    s.appendChild(el('p','anote','Pays the Floor on every book.'));
+    if(partner||waiting) return s;
+    var answer=el('p','anote'); answer.setAttribute('role','status');
+    var armed=null, at=null, sig='', b=makerButton(s,['Make partner','acct.partner',a.code],async function(send){
+      if(!armed){ b.textContent='Tap again: send to Approve'; armed=setTimeout(function(){ armed=null; b.textContent='Make partner'; }, 4000); return; }
+      clearTimeout(armed); armed=null; b.textContent='Make partner';
+      var body={code:a.code}, check=JSON.stringify(body);
+      if(check!==sig){ sig=check; at=new Date().toISOString(); }
+      body.at=at;
+      try{ await send('/all/maker/inputs/partner',body); answer.textContent='Sent. They pay the Floor once you approve it.'; loadMaker(); }
+      catch(error){ refusal(answer,error); }
+    },false,function(){ at=null; sig=''; });
+    b.classList.add('apart__go');
+    s.appendChild(answer);
+    return s;
   }
   /* the loans with this customer and their reward: the Desk's catalogue, the same read as Record's Repayment form, asked once a minute at most */
   var partyRead=null, partyAt=0;
@@ -532,7 +740,7 @@ export const OWNER_JS = `
   }
   function drawBooks(box, a){
     box.textContent='';
-    box.appendChild(el('p','salt-eyebrow salt-eyebrow--copper','Loans and reward'));
+    box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Loan'));
     var body=el('div','aloans'); box.appendChild(body); body.appendChild(el('p','anote','Reading.'));
     readParty().then(function(cat){
       if(!box.isConnected) return;
@@ -630,67 +838,126 @@ export const OWNER_JS = `
   /* the two test accounts, told apart by the state each stands in (his answer of 29 Sep 2026) */
   function testName(a){ return a.state==='locked'?'Practice account, locked':'Practice account, open'; }
   function chip(tone, t){ return el('span','salt-status salt-status--'+tone, t); }
-  function chipsOf(a){
-    if(a.test) return [chip('mist','Practice')];
-    if(a.account===false) return [chip('alarm','No account yet')];
-    var out=[];
-    if(a.locked) out.push(chip('alarm','Locked out'+(a.locked.until?' until '+hm(a.locked.until):'')));
-    if(a.flag&&a.flag!=='clear') out.push(chip({owes:'ember', goods:'steel', refund:'brass', pend:'copper'}[a.flag]||'mist', flagLine(a)));
-    out.push(a.seen&&a.seen.opens?chip('mist','Opened '+dayMon(a.seen.last)+(howOf(a.seen)?' '+howOf(a.seen):'')):chip('steel','Not opened'));
-    if(a.alerts) out.push(chip('verdigris','Notifications on'));
-    if(a.sent) out.push(chip('verdigris','Sent '+dayMon(a.sent)));
-    return out;
-  }
-  /* 14 OCT 2026 (the layout rework): A ROW SHOWS ONE STATE, the most important, and the rest as one quiet line; the whole row is the tap. The order of
-     importance is no account, practice, locked out, then what they owe or are owed; Opened, Sent and Notifications stay on the card's chips. */
-  function stateOf(a){
-    if(a.test) return chip('mist','Practice');
-    if(a.account===false) return chip('alarm','No account yet');
-    if(a.locked) return chip('alarm','Locked out'+(a.locked.until?' until '+hm(a.locked.until):''));
-    if(a.flag&&a.flag!=='clear') return chip({owes:'ember', goods:'steel', refund:'brass', pend:'copper'}[a.flag]||'mist', flagLine(a));
-    return null;
-  }
-  function quietOf(a){
-    var bits=[a.username];
-    if(a.account===false) bits.push(waitLine());
-    else if(a.tot&&!a.test) bits.push(a.tot);
-    if(a.account!==false&&!a.test) bits.push(a.seen&&a.seen.opens?'Opened '+dayMon(a.seen.last)+(howOf(a.seen)?' '+howOf(a.seen):''):'Not opened');
-    if(a.sent) bits.push('Sent '+dayMon(a.sent));
-        return bits.join(' \u00b7 ');
+  /* 25 OCT 2026 (canvas Salt Admin Customers, P1; his yes to Asks A to J): AN ACCOUNT IS NEEDS YOU'S CARD. Where it stands, in a word and an age (Owed and
+     how late, Refund, Locked to HH:MM, Not sent, No account, Not opened, Opened, Practice), the code and the username, its one way and the sum: what they
+     owe, or what he owes back in ember. To do is his to act on (owed past its term, a refund, locked out, not sent, no account), Pending theirs (owed
+     within term, not opened), FYI the rest; within each the largest sum first. A tap anywhere but its way opens the account. */
+  function owedOf(a){ var m=owed&&owed.money&&a.code?owed.money.filter(function(x){ return x.party===a.code; })[0]:null; return m||null; }
+  function acctState(a){
+    var t=a.t||{}, m=owedOf(a), late=m&&Date.parse(m.due)<Date.now()?ageOf(m.due):'';
+    if(a.test) return {sev:'watch', word:'Practice', age:a.state==='locked'?'locked':'open', act:'open'};
+    if(a.account===false) return {sev:'now', word:'No account', age:'', act:'show'};
+    if(a.flag==='owes') return {sev:late?'now':'soon', word:'Owed', age:late?late+' late':m&&m.due?'due '+dayMon(m.due):'', late:!!late, rm:+t.owed||0, act:'message'};
+    if(a.flag==='refund') return {sev:'now', word:'Refund', age:'', rm:+t.refund||0, mine:true, act:'open'};
+    if(a.flag==='goods') return {sev:'now', word:'Goods', age:units(Math.round((+t.toGet||0)*100)/100), act:'open'};
+    if(a.locked) return {sev:'now', word:'Locked', age:a.locked.until?'to '+hm(a.locked.until):'', act:'send'};
+    if(!a.sent) return {sev:'now', word:'Not sent', age:a.issued?ageOf(a.issued):'', act:'send'};
+    if(!(a.seen&&a.seen.opens)) return {sev:'soon', word:'Not opened', age:ageOf(a.sent), act:'send'};
+    if(a.flag==='pend') return {sev:'soon', word:'Agreed', age:dayMon(a.seen.last), rm:+t.pend||0, act:'open'};
+    return {sev:'watch', word:'Opened', age:dayMon(a.seen.last), act:'open'};
   }
   function rowOf(a){
-    var b=el('button','salt-inbox-row arow'); b.type='button'; b.setAttribute('data-u', a.username); actOn(b,'acct.open',a.username);
-    if(aOpen===a.username) b.setAttribute('aria-current','true');
-    var main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title');
-    t.appendChild(whoTag(el('span','acode',a.test?testName(a):(a.code||a.username)),a.test?'':a.code));
-    var st=sheet?stateOf(a):null; if(st){ st.className+=' astate'; t.appendChild(st); }
-    main.appendChild(t);
-    main.appendChild(el('span','salt-inbox-row__what',quietOf(a)));
-    b.appendChild(main);
-    b.addEventListener('click', function(){ openCard(a.username); });
-    return b;
+    var s=acctState(a), who=a.test?testName(a):(a.code||a.username);
+    var c=needCard({sev:s.sev, kind:'accounts', word:s.word, key:'a:'+a.username, at:'', age:s.age, late:s.late, who:who, title:who, u:a.username, rm:s.rm, practice:!!a.test,
+      act:'acct.open', open:true, onTap:function(){ openCard(a.username); }});
+    var title=c.querySelector('.salt-action__title');
+    title.appendChild(el('span','need-u',a.username));
+    title.setAttribute('aria-label', s.word+(s.age?', '+s.age:'')+': '+who+(s.rm?', '+rmShort(s.rm):''));
+    if(s.mine) c.querySelector('.nfig').classList.add('nfig--mine');
+    if(aOpen===a.username) c.setAttribute('aria-current','true');
+    if(s.act==='message'&&a.username){ var ms=pill(['Message','acct.message',a.username]); ms.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(a.username); }); c._add(ms); }
+    else if(s.act==='send') c._add(linkButton(a, noteOf(c)));
+    else if(s.act==='show') silverOn(a, c, 'acct');
+    else { var op=ghost(['Open','acct.open-card',a.username]); op.addEventListener('click', function(){ openCard(a.username); }); c._add(op); }
+    /* the older ways in click the card itself: anywhere but its way opens the account */
+    c.addEventListener('click', function(ev){ if(ev.target===c) openCard(a.username); });
+    return c;
+  }
+  /* the Insight over the list: what is owed to him and how much of it is late, what he owes back, the sign-ins waiting */
+  function drawALead(pool){
+    var box=document.getElementById('alead'); if(!box) return;
+    var real=pool.filter(function(a){ return !a.test; }), owedRM=0, lateRM=0, back=0, unsent=0, locked=0;
+    real.forEach(function(a){
+      var t=a.t||{}, s=acctState(a);
+      if(a.flag==='owes'){ owedRM+=+t.owed||0; if(s.late) lateRM+=+t.owed||0; }
+      if(a.flag==='refund') back+=+t.refund||0;
+      if(a.account!==false&&!a.sent) unsent++;
+      if(a.locked) locked++;
+    });
+    box.textContent='';
+    var bits=[];
+    function b(t){ return el('b',null,t); }
+    function join(nodes){ var span=document.createDocumentFragment(); nodes.forEach(function(n){ span.appendChild(typeof n==='string'?document.createTextNode(n):n); }); return span; }
+    if(owedRM>0.004) bits.push(join([b(rmShort(owedRM)),' is owed to you'+(lateRM>0.004?', '+rmShort(lateRM)+' of it past its term':'')]));
+    if(back>0.004) bits.push(join(['you owe ',b(rmShort(back)),' back']));
+    bits.forEach(function(n, i){ if(i) box.appendChild(document.createTextNode('; ')); box.appendChild(n); });
+    if(bits.length) box.appendChild(document.createTextNode('. '));
+    if(unsent+locked){
+      var w=[]; if(unsent) w.push(unsent+' not sent'); if(locked) w.push(locked+' locked out');
+      box.appendChild(b((unsent+locked)+((unsent+locked)===1?' account':' accounts')));
+      box.appendChild(document.createTextNode(' '+((unsent+locked)===1?'waits':'wait')+' on a sign-in: '+w.join(', ')+'.'));
+    }
+    if(!box.childNodes.length) box.textContent='Nothing is owed either way, and every account has its sign-in.';
+    box.hidden=!sheet;
   }
   function drawRoster(){
     if(!OWNER) return;
     var q=(rq.value||'').toLowerCase().replace(/\\s+/g,''), f=FILTER[aFilter]||FILTER.all;
     rlist.textContent='';
     var pool=sheet?sheetRows:OWNER.accounts;
-    /* a filter shows only while some account is in the state it names (the layout rework); the one in use is let go when none is */
+    /* 25 Oct 2026: each filter counts its accounts beside its word, as Needs you's kinds do, and one with none is dimmed and cannot be chosen; the one in
+       use is let go when none is left in it */
     [].slice.call(document.querySelectorAll('#afil button[data-f]')).forEach(function(x){
-      var k=x.getAttribute('data-f'); x.hidden=k!=='all'&&!pool.some(FILTER[k]); });
-    if(aFilter!=='all'&&!pool.some(FILTER[aFilter])){ aFilter='all'; f=FILTER.all;
-      [].slice.call(document.querySelectorAll('#afil button[data-f]')).forEach(function(x){ x.setAttribute('aria-pressed', x.getAttribute('data-f')==='all'?'true':'false'); }); }
+      var k=x.getAttribute('data-f'), n=pool.filter(FILTER[k]||FILTER.all).length, c=x.querySelector('.nktab__n');
+      if(c) c.textContent=sheet?String(n):'';
+      x.disabled=k!=='all'&&!n; });
+    if(aFilter!=='all'&&!pool.some(FILTER[aFilter])){ aFilter='all'; f=FILTER.all; filterMark(); }
     var hits=pool.filter(function(a){
       return f(a)&&(!q||((a.code||'')+' '+a.username).toLowerCase().replace(/\\s+/g,'').indexOf(q)>=0);
     });
-    countSent();
+    countSent(); drawALead(pool);
     if(!hits.length){ rlist.appendChild(el('p','rnone','Nothing matches that.')); return; }
-    hits.forEach(function(a){ rlist.appendChild(rowOf(a)); });
+    var rm=function(a){ var s=acctState(a); return +s.rm||0; };
+    SEVS.forEach(function(s){
+      var group=hits.map(function(a, i){ return [a, i]; }).filter(function(x){ return acctState(x[0]).sev===s[0]; })
+        .sort(function(x, y){ return (rm(y[0])-rm(x[0]))||(x[1]-y[1]); }).map(function(x){ return x[0]; });
+      if(!group.length) return;
+      var box=el('section','ngroup'), h=el('h2','salt-eyebrow salt-eyebrow--'+SEVC[s[0]]+' nsev', s[1]);
+      box.setAttribute('data-sev', s[0]); box.setAttribute('aria-label', s[1]); h.setAttribute('data-sev', s[0]);
+      box.appendChild(h); rlist.appendChild(box);
+      group.forEach(function(a){ box.appendChild(rowOf(a)); });
+      box.appendChild(acctTable(group));
+    });
+  }
+  /* 26 OCT 2026 (canvas Salt Admin Customers, P8; his yes to Ask D): FROM 1080PX A GROUP IS ONE PLAIN TABLE, the cards hidden: the code (its tap opens the account),
+     the username, the state as its word, since when, what is owed at the right and the one way, as the card's */
+  function acctTable(group){
+    var wrap=el('div','salt-glass-card salt-glass-card--radius-lg atable2'), table=el('table','salt-table salt-table--plain'), hr=el('tr'), body=el('tbody');
+    table.appendChild(el('caption','sr','The accounts in this group, money first'));
+    ['Account','Username','State','Since','Owed',''].forEach(function(h, i){ var th=el('th',i<4?'l':null,h); th.setAttribute('scope','col'); hr.appendChild(th); });
+    table.appendChild(el('thead')).appendChild(hr); table.appendChild(body);
+    group.forEach(function(a){
+      var s=acctState(a), who=a.test?testName(a):(a.code||a.username), tr=el('tr'), th=el('th','l'); th.setAttribute('scope','row'); tr.setAttribute('data-row-u', a.username);
+      var b=actOn(el('button','acode apick',who),'acct.open-row',a.username); b.type='button'; b.addEventListener('click', function(){ openCard(a.username); }); th.appendChild(b); tr.appendChild(th);
+      tr.appendChild(el('td','l atu',a.username));
+      var sd=el('td','l'); sd.appendChild(chip(s.sev==='now'?'copper':s.sev==='soon'?'brass':'mist', s.word)); tr.appendChild(sd);
+      tr.appendChild(el('td','l'+(s.late?' nage--late':''),s.age||''));
+      tr.appendChild(el('td','atfig'+(s.mine?' nfig--mine':''),+s.rm>0.004?rmShort(s.rm):''));
+      var go=el('td','atgo'), w;
+      if(s.act==='message'){ w=pill(['Message','acct.message-row',a.username]); w.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(a.username); }); }
+      else { w=pill([s.act==='send'?'Send':s.act==='show'?'Show':'Open','acct.open-row-way',a.username]); w.addEventListener('click', function(){ openCard(a.username); }); }
+      w.classList.remove('salt-pill--md'); w.classList.add('salt-pill--sm','nbtn'); go.appendChild(w); tr.appendChild(go);
+      body.appendChild(tr);
+    });
+    wrap.appendChild(table); return wrap;
+  }
+  function filterMark(){
+    [].slice.call(document.querySelectorAll('#afil button[data-f]')).forEach(function(x){
+      var on=x.getAttribute('data-f')===aFilter; x.setAttribute('aria-selected', on?'true':'false'); x.classList.toggle('salt-nav__link--active', on); });
   }
   function filterBy(f){
     aFilter=FILTER[f]?f:'all';
-    [].slice.call(document.querySelectorAll('#afil button[data-f]')).forEach(function(x){
-      x.setAttribute('aria-pressed', x.getAttribute('data-f')===aFilter?'true':'false'); });
+    filterMark();
     drawRoster();
   }
   /* the open account: its chips, then Send's card, and on a phone the way back to the list above it */
@@ -753,23 +1020,34 @@ export const OWNER_JS = `
     if(standing.length){ heads[seq.length]='Standing link'; seq=seq.concat(standing); }
     if(assoc.length){ heads[seq.length]='Made by associates'; seq=seq.concat(assoc); }
     if(older.length){ heads[seq.length]='Older links'; seq=seq.concat(older); }
+    /* 26 OCT 2026 (canvas Salt Admin Customers, P6): A LINK IS NEEDS YOU'S CARD under Waiting on you, Standing link, Made by associates and Older links: its state
+       and its age (Waiting, Standing, Opened, Never opened, Declined, Withdrawn), who it is for in words (Made by or Via a code, the note alone), its one way
+       (Approve while it waits, Restore once withdrawn, else Copy) and how often it was opened, in the figure's place, left empty on a shut link. A tap on the
+       card opens its address, QR and every move under it; it stays open across a redraw, and opens at once for the answer to a move made on it. */
+    var group=null, gname=null, SEVOF={'Waiting on you':['now','copper'],'Standing link':['soon','brass'],'Made by associates':['soon','brass'],'Older links':['watch','mist']};
     seq.forEach(function(r,i){
-      if(heads[i]) glist.appendChild(el('p','ghead salt-eyebrow salt-eyebrow--copper',heads[i]));
-      var card=el('details','glink salt-glass-card salt-glass-card--radius-md'+(r.revoked?' off':'')); card.setAttribute('data-link',r.id);
-      /* 14 OCT 2026 (the layout rework): A LINK IS ONE ROW, who it is for and what it has done, its state a pill only when it is one worth seeing; the address, its
-         QR and the moves open from the row. A row stays open across a redraw once it has been opened, and opens at once for the answer to a move made on it. */
-      card.open=!!(openLinks[r.id]||(moved&&moved.id===r.id)||(linkSaid&&linkSaid.id===r.id));
-      card.addEventListener('toggle', function(){ if(card.open) openLinks[r.id]=true; else delete openLinks[r.id]; });
-      var declined=r.declined===true, pending=r.approved===false&&!declined;
-      var sum=el('summary','gsum'); actOn(sum,'link.open',r.id);
-      var top=el('span','gtop');
-      top.appendChild(el('span','gt salt-field__label',r.standing?'Standing link':(declined?'Not approved':(pending?'Waiting on you':(isAssoc(r)?'Follows '+codeByUser(r.by):(r.label||'Link'))))));
-      if(r.revoked) top.appendChild(chip('mist','Withdrawn'));
-      sum.appendChild(top);
-      sum.appendChild(el('span','gs', (r.opens
-        ? 'Opened '+r.opens+' time'+(r.opens===1?'':'s')+', last '+stampDay(r.last)
-        : 'Never opened, made '+stampDay(r.made))));
-      card.appendChild(sum);
+      if(heads[i]){ gname=heads[i]; group=el('section','ngroup glinks'); group.setAttribute('aria-label',heads[i]); group.appendChild(el('h2','salt-eyebrow salt-eyebrow--'+SEVOF[heads[i]][1]+' nsev ghead',heads[i])); glist.appendChild(group); }
+      var sev=SEVOF[gname][0];
+      var declined=r.declined===true, pending=r.approved===false&&!declined, shut=pending||declined;
+      var word=pending?'Waiting':declined?'Declined':r.revoked?'Withdrawn':r.standing?'Standing':r.opens?'Opened':'Never opened';
+      var age=pending?ageOf(r.made):r.opens?stampDay(r.last):stampDay(r.made);
+      var lead=r.standing?'':isAssoc(r)?(shut?'Made by ':'Via '):'', who=r.standing?'Set Price list':isAssoc(r)?codeByUser(r.by):(r.label||'Link');
+      var card=el('div','glink salt-glass-card salt-glass-card--radius-md'+(r.revoked?' off':'')); card.setAttribute('data-link',r.id);
+      card.open=!!(openLinks[r.id]||(moved&&moved.id===r.id)||(linkSaid&&linkSaid.id===r.id)); card.hidden=!card.open;
+      var c=needCard({sev:sev, kind:'links', word:word, key:'g:'+r.id, at:'', age:age, late:pending, who:who, title:who, rm:0, act:'link.open',
+        open:true, onTap:function(){ card.open=!card.open; card.hidden=!card.open; if(card.open) openLinks[r.id]=true; else delete openLinks[r.id]; c.setAttribute('aria-expanded',card.open?'true':'false'); }});
+      c.setAttribute('data-glink', r.id); c.setAttribute('aria-expanded',card.open?'true':'false');
+      var tw=c.querySelector('.need-who'); if(lead) tw.parentNode.insertBefore(el('span','need-lead',lead.trim()), tw);
+      if(r.revoked) c.classList.add('off');
+      var fig=c.querySelector('.nfig'); fig.textContent='';
+      if(!shut){ fig.classList.add('nfig--opens'); fig.appendChild(el('span','salt-eyebrow salt-eyebrow--mist nfig__k','Opens')); fig.appendChild(el('span','nfig__v',String(r.opens||0))); }
+      var go;
+      if(pending){ go=pill(['Approve','link.approve-card',r.id]); go.addEventListener('click', function(){ moveLink(r,'approve'); }); }
+      else if(r.revoked){ go=pill(['Restore','link.restore-card',r.id]); go.addEventListener('click', function(){ moveLink(r,'restore'); }); }
+      else { go=pill(['Copy','link.copy-card',r.id]); go.addEventListener('click', async function(){ try{ await navigator.clipboard.writeText(r.url); go.textContent='Copied'; }catch(e){ go.textContent='Not copied'; } setTimeout(function(){ go.textContent='Copy'; }, 1500); }); }
+      c._add(go);
+      c.addEventListener('click', function(ev){ if(ev.target===c) c.querySelector('.need-tap').click(); });
+      group.appendChild(c);
       card.appendChild(el('h4','gwho',r.standing?'For strangers, opens the Set Price list'
         :declined?('Made by '+(r.by?codeByUser(r.by):'an associate')+', not approved, so it stays shut')
         :(pending?('Made by '+(r.by?codeByUser(r.by):'an associate')+', shut until you approve it')
@@ -808,7 +1086,7 @@ export const OWNER_JS = `
       card.appendChild(row);
       if(moved&&moved.id===r.id){ var mv=el('p','msg',moved.t); mv.setAttribute('role','status'); card.appendChild(mv); }
       if(linkSaid&&linkSaid.id===r.id){ var ls=el('p','msg'); ls.setAttribute('role','status'); saidOn(r, ls); card.appendChild(ls); }
-      glist.appendChild(card);
+      group.appendChild(card);
     });
   }
   /* S9 9.7, HIS D13: WHEN ACCESS LAPSES, SAY SO. A request under /all after the Access session has ended is
@@ -1060,7 +1338,7 @@ export const OWNER_JS = `
   /* a tap takes him to Shop hours, to the shop held for now */
   (function(){ var hb=document.getElementById('aBarHours'); if(hb) hb.addEventListener('click',function(){
     showPlace('shop','hours',{fresh:true,push:true});
-    try{ var t=document.querySelector('[data-act="hours.override-state"]'); if(t&&t.scrollIntoView) t.scrollIntoView({block:'center'}); }catch(e){}
+    try{ var t=document.getElementById('makerNowCard'); if(t&&t.scrollIntoView) t.scrollIntoView({block:'start'}); }catch(e){}
   }); })();
   window.barDraw=barDraw;
   window.addEventListener('online',function(){ barNet=true; barDraw(); });
@@ -1568,18 +1846,42 @@ export const OWNER_JS = `
       makerThreads=result.threads||[]; nGot('threads');
       if(!changed('threads', makerThreads)&&quiet===true) return;
       apply=true;
-      var list=document.getElementById('makerChatList'); list.textContent='';
-      makerThreads.forEach(function(thread){
-        var button=el('button','salt-ghost');
-        button.appendChild(whoTag(el('span',null,codeByUser(thread.u)),codeOfUser(thread.u)));
-        button.appendChild(document.createTextNode((thread.test?' · Practice':'')+(makerThreadAsked(thread)?', waiting for your reply':'')));
-        button.type='button';button.setAttribute('data-thread',thread.u);actOn(button,'chat.open',thread.u);
-        button.onclick=function(){ openMakerThread(thread.u); };list.appendChild(button);
-      });
-      status.textContent=makerThreads.length?makerThreads.filter(function(thread){return !thread.test&&makerThreadAsked(thread);}).length+' waiting for your reply.':'No messages yet.';
+      drawThreadList();
+      var waiting=makerThreads.filter(function(thread){return !thread.test&&makerThreadAsked(thread);});
+      status.textContent=makerThreads.length?waiting.length+(waiting.length===1?' waits':' wait')+' for your reply.':'No messages yet.';
+      status.className='msg salt-insight salt-insight--copper';
       if(makerThreadUser) drawMakerThreadLines();
     }catch(error){ nGot('threads', error); apply=failNew('threads', error)||quiet!==true; if(apply) refusal(status,error); }
     finally{ makerThreadsReading=false; if(apply) drawNeeds(); }
+  }
+  /* 26 OCT 2026 (canvas Salt Admin Customers, P5): A THREAD IS NEEDS YOU'S CARD. Waiting (theirs last) under To do, Answered under FYI; within each what they
+     owe first, then the oldest; the kind and its age, the code and their last line, Reply (or Open) and what they owe. The open thread is the system's
+     Thread: their lines left, his right, each with who and when. */
+  function drawThreadList(){
+    var list=document.getElementById('makerChatList'); if(!list) return;
+    list.textContent='';
+    var acc=function(u){ return sheet&&sheet[u]||null; }, owedOn=function(u){ var a=acc(u); return a&&a.flag==='owes'&&a.t?+a.t.owed||0:0; };
+    var groups=[['now','To do'],['watch','FYI']];
+    groups.forEach(function(g){
+      var rows=makerThreads.map(function(th, i){ return [th, i]; }).filter(function(x){ return (makerThreadAsked(x[0])&&!x[0].test?'now':'watch')===g[0]; })
+        .sort(function(x, y){ return (owedOn(y[0].u)-owedOn(x[0].u))||(x[1]-y[1]); }).map(function(x){ return x[0]; });
+      if(!rows.length) return;
+      var box=el('section','ngroup'), h=el('h2','salt-eyebrow salt-eyebrow--'+SEVC[g[0]]+' nsev', g[1]);
+      box.setAttribute('data-sev', g[0]); box.setAttribute('aria-label', g[1]); h.setAttribute('data-sev', g[0]); box.appendChild(h); list.appendChild(box);
+      rows.forEach(function(th){
+        var ms=th.msgs||[], last=ms[ms.length-1]||{}, asked=g[0]==='now', who=th.test?'Practice':codeByUser(th.u), owe=owedOn(th.u);
+        var c=needCard({sev:g[0], kind:'messages', word:asked?'Waiting':'Answered', key:'t:'+th.u, at:last.at||'', late:asked, who:who, title:who, u:th.u, rm:owe, practice:!!th.test,
+          act:'chat.open', open:true, onTap:function(){ openMakerThread(th.u); }});
+        c.setAttribute('data-thread', th.u);
+        var title=c.querySelector('.salt-action__title');
+        title.appendChild(el('span','need-u need-line',(last.by==='desk'?'You: ':'')+cut(last.text||'')));
+        title.setAttribute('aria-label',(asked?'Waiting':'Answered')+': '+who+(last.text?', '+cut(last.text):''));
+        var b=asked?pill(['Reply','chat.reply-open',th.u]):ghost(['Open','chat.reply-open',th.u]);
+        b.addEventListener('click', function(){ openMakerThread(th.u); }); c._add(b);
+        c.addEventListener('click', function(ev){ if(ev.target===c) openMakerThread(th.u); });
+        box.appendChild(c);
+      });
+    });
   }
   function drawMakerThreadLines(){
     var root=document.getElementById('makerChatLines');
@@ -1587,15 +1889,21 @@ export const OWNER_JS = `
     root.textContent='';
     var thread=makerThreads.filter(function(value){ return value.u===makerThreadUser; })[0];
     (thread&&thread.msgs||[]).forEach(function(line){
-      root.appendChild(el('p','maker-facts',(line.by==='desk'?'You':'Customer')+' · '+stampDay(line.at)));
-      root.appendChild(el('p','maker-row',line.text));
+      var mine=line.by==='desk', b=el('div','salt-bubble salt-bubble--'+(mine?'mine':'theirs')), meta=el('p','salt-bubble__meta');
+      b.appendChild(el('p','salt-bubble__text maker-row',line.text));
+      meta.appendChild(el('span','maker-facts',(mine?'You':codeByUser(makerThreadUser))+', '+stampDay(line.at))); b.appendChild(meta);
+      root.appendChild(b);
     });
   }
   function openMakerThread(user){
     makerThreadUser=user;
     var root=document.getElementById('makerChatOpen');root.hidden=false;root.textContent='';
-    root.setAttribute('data-key',user);root.appendChild(whoTag(el('h3','',codeByUser(user)),codeOfUser(user)));
-    var lines=el('div','');lines.id='makerChatLines';root.appendChild(lines);
+    root.setAttribute('data-key',user);
+    var ah=el('div','chathead'), aw=el('div','chathead__who'), ac=sheet&&sheet[user], owe=ac&&ac.flag==='owes'&&ac.t?+ac.t.owed||0:0;
+    aw.appendChild(el('span','salt-eyebrow salt-eyebrow--copper','Messages')); aw.appendChild(whoTag(el('h3','chathead__code',codeByUser(user)),codeOfUser(user))); ah.appendChild(aw);
+    if(owe>0.004){ var af=el('div','ahead__fig'); af.appendChild(el('span','salt-eyebrow salt-eyebrow--mist','They owe')); af.appendChild(el('span','ahead__rm',rmShort(owe))); ah.appendChild(af); }
+    root.appendChild(ah);
+    var lines=el('div','salt-thread__lines');lines.id='makerChatLines';lines.setAttribute('role','log');lines.setAttribute('aria-label','The thread with '+codeByUser(user));root.appendChild(lines);
     var draft=makerChatDrafts[user], savedPrefix='saltMakerChat:'+user+':';
     if(!draft){
       draft=makerChatDrafts[user]={text:'',pending:null,saved:null};
@@ -1801,18 +2109,43 @@ export const OWNER_JS = `
       root.appendChild(card);
     });
   }
+  /* Up now: the first line on the recipe, a dot a line, every line in the list, the count in the chip; none, a line says so */
+  function drawNoticeUp(list){
+    list=list||[];
+    var cur=document.getElementById('makerBulletinCurrent'), card=document.getElementById('makerBulletinUp'), none=document.getElementById('makerBulletinNone'), n=document.getElementById('makerBulletinCount');
+    if(!cur||!card) return;
+    cur.textContent=''; list.forEach(function(l){ cur.appendChild(el('li',null,l)); });
+    var lines=card.querySelector('.salt-notice__lines'), dots=card.querySelector('.salt-notice__dots');
+    lines.textContent=''; dots.textContent='';
+    list.forEach(function(l,i){ lines.appendChild(el('p','salt-notice__line'+(i?'':' salt-notice__line--on'),l)); dots.appendChild(el('span','salt-notice__dot'+(i?'':' salt-notice__dot--on'))); });
+    card.hidden=!list.length; if(none) none.hidden=!!list.length;
+    if(n){ n.textContent=list.length?list.length+(list.length===1?' line':' lines')+' · every 6 s':'None'; }
+  }
   async function loadMakerBulletin(){
     var root=document.getElementById('makerBulletin'), status=document.getElementById('makerBulletinStatus');
     if(!root) return;
     var text=root.querySelector('textarea');
     if(!text){
-      var label=el('label','maker-field');label.appendChild(el('span','lbl salt-field__label','Notice (one line each)'));
-      text=actOn(el('textarea','fld salt-field__input'),'notice.text');text.rows=4;label.appendChild(text);root.appendChild(label);
-      var current=el('div','');current.id='makerBulletinCurrent';root.appendChild(current);
-      var retained=el('div','');retained.hidden=true;root.appendChild(retained);
-      var set=el('button','btn salt-pill salt-pill--md','Set the notice'), clear=el('button','salt-ghost','Clear the notice'),
-        refresh=el('button','salt-ghost','Read it again'), busy=false, needsRead=false, intended=null;
-      [set,clear,refresh].forEach(function(button){button.type='button';root.appendChild(button);});
+      /* 25 Oct 2026 (Salt Admin Shop): UP NOW, the notice as customers read it on the Counter's Notice recipe and every line numbered,
+         then NEW NOTICE, the box, Set the notice across and Clear it beside Read it again; Set and Clear still ask on the Sheet */
+      var colA=el('div','anotice-col'), colB=el('div','anotice-col'); root.appendChild(colA); root.appendChild(colB);
+      var upHead=el('div','anow-head'); upHead.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Up now'));
+      var upCount=chip('mist','None'); upCount.id='makerBulletinCount'; upHead.appendChild(upCount); colA.appendChild(upHead);
+      var upCard=el('div','salt-glass-card salt-glass-card--radius-lg anotice'); upCard.id='makerBulletinUp';
+      var rec=el('div','salt-notice'), rhead=el('div','salt-notice__head'), dots=el('span','salt-notice__dots');
+      rhead.appendChild(el('span','salt-eyebrow salt-eyebrow--brass','Notice')); dots.setAttribute('aria-hidden','true'); rhead.appendChild(dots); rec.appendChild(rhead);
+      var lines=el('div','salt-notice__lines'); rec.appendChild(lines); upCard.appendChild(rec);
+      var current=el('ol','anotice-list');current.id='makerBulletinCurrent';current.setAttribute('aria-label','Every line');upCard.appendChild(current);colA.appendChild(upCard);
+      var none=el('p','msg','No notice. Customers see none.'); none.id='makerBulletinNone'; colA.appendChild(none);
+      var newHead=el('div','anow-head'); newHead.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','New notice')); newHead.appendChild(chip('brass','Notifies everyone')); colB.appendChild(newHead);
+      var label=el('label','maker-field');label.appendChild(el('span','lbl salt-field__label','One line each'));
+      text=actOn(el('textarea','fld salt-field__input'),'notice.text');text.rows=4;label.appendChild(text);
+      label.appendChild(el('span','salt-field__hint','The lines show one at a time, in turn.'));colB.appendChild(label);
+      var retained=el('div','');retained.hidden=true;colB.appendChild(retained);
+      var set=el('button','btn salt-pill salt-pill--md anotice-set','Set the notice'), clear=el('button','salt-ghost','Clear it'),
+        refresh=el('button','salt-ghost','Read it again'), busy=false, needsRead=false, intended=null, pair=el('div','ashop-two');
+      [set,clear,refresh].forEach(function(button){button.type='button';});
+      colB.appendChild(set); pair.appendChild(clear); pair.appendChild(refresh); colB.appendChild(pair);
       actOn(set,'notice.set');actOn(clear,'notice.clear');actOn(refresh,'notice.read');ynTag(set,'notice:set');ynTag(clear,'notice:clear');
       function state(){set.disabled=busy||needsRead;clear.disabled=busy||needsRead;refresh.disabled=busy;text.disabled=busy;}
       root.addEventListener('maker-notice-read',function(event){
@@ -1835,7 +2168,7 @@ export const OWNER_JS = `
         busy=true;state();
         try{
           var result=await refs('/all/maker/bulletin',{lines:lines,confirmed:true});
-          current.textContent=(result.lines||[]).join(' · ')||'No notice.'; makerNotice=result.lines||[];
+          drawNoticeUp(result.lines); makerNotice=result.lines||[];
           intended=null;retained.hidden=true;
           /* 11 Oct 2026: a notice set empties its box, so a second tap has nothing to send, and the same one set again says so */
           if(lines.length&&!result.unchanged) text.value='';
@@ -1860,7 +2193,7 @@ export const OWNER_JS = `
     }
     async function read(){
       var result=await refs('/all/maker/bulletin'); makerNotice=result.lines||[];
-      document.getElementById('makerBulletinCurrent').textContent=(result.lines||[]).join(' · ')||'No notice.';
+      drawNoticeUp(result.lines);
       status.textContent='Notice read. Customers are notified only when you set one.';
       root.dispatchEvent(new CustomEvent('maker-notice-read',{detail:result}));
     }
@@ -3552,140 +3885,7 @@ export const OWNER_JS = `
         tradeAt=null;tradeSignature='';coverChoices.forEach(function(choice){choice.read();});
       });
       direction.addEventListener('change',function(){ tradeSend.textContent='Send the '+direction.value; });
-      var driftSection=makerForm('pricing');
-      driftSection.appendChild(el('h3',null,'Their %'));
-      driftSection.appendChild(el('p','msg','Every book. Moves one customer off the Set Price, or off a typed board, by a whole % from -30 to +30 in steps of 5 (20 is 20% over, -10 is 10% off); 0 is the Set Price. Never under the Floor or over the Ceiling. The table shows their prices as you type, before anything goes to Approve. Clear sets it back to 0.'));
-      tradeSection.parentNode.insertBefore(driftSection,tradeSection.nextSibling);
-      var driftCodes=catalog.driftCustomers||[], driftBooks=(catalog.products||[]).filter(function(item){ return item.drift; });
-      if(!driftCodes.length||!driftBooks.length){
-        driftSection.appendChild(el('p','msg','No customer to set a % for.'));
-      }else{
-        var driftCode=actOn(el('select','fld salt-field__input salt-field__select'),'record.drift.customer'), driftCodeWrap=el('label','maker-field','Customer');
-        driftCodes.forEach(function(code){ var option=el('option',null,code); option.value=code; driftCode.appendChild(option); });
-        driftCodeWrap.appendChild(driftCode); driftSection.appendChild(driftCodeWrap);
-        var driftProduct=makerTilesIn(driftSection,['Book','record.drift.book'],driftBooks.map(function(item){ return bookItem(item.product); }));
-        /* 22 Oct 2026, his answer: a whole % in steps of 5, -30 to +30; the body still carries the fraction (0.2) the drafter and the fold read */
-        var driftValue=makerField(driftSection,['Their %, -30 to +30 in steps of 5','record.drift.value'],'number','','5');
-        driftValue.min='-30'; driftValue.max='30'; driftValue.removeAttribute('inputmode');   /* 21 Oct 2026: a % may be negative, and the decimal pad has no minus key */
-        var driftState=el('p','msg'); driftSection.appendChild(driftState);
-        var driftPreview=el('div','maker-pct-preview salt-table-wrap'); driftPreview.hidden=true; driftSection.appendChild(driftPreview);
-        var driftAnswer=el('p','msg'); driftAnswer.setAttribute('role','status'); driftSection.appendChild(driftAnswer);
-        var driftPending=false, driftAt=null, driftSignature='';
-        function driftReceiptComplete(){ driftAt=null; driftSignature=''; }
-        function driftCardOf(){
-          return (catalog.driftCards||[]).filter(function(card){ return card.code===driftCode.value&&card.product===driftProduct.value; })[0]||null;
-        }
-        function driftFormat(value){ var n=Math.round(Number(value)*100); return n>0?'+'+n+'%':n<0?n+'%':'0%'; }
-        /* a whole % in steps of 5 from -30 to +30, as typed, or null */
-        function driftWhole(){ var raw=driftValue.value.trim(), n=Number(raw); return raw&&Number.isInteger(n)&&n%5===0&&n>=-30&&n<=30?n:null; }
-        /* 22 Oct 2026, HIS WORD: THEIR % SHOWN LIVE. Each figure he types is read off the Desk (GET /all/maker/drift-preview, the engine over the
-           pricing snapshot, nothing worked out here), 300 ms after he stops, kept by key, and a reply that lands after a newer ask is dropped */
-        var driftReads={}, driftTimer=null, driftAsk=0;
-        function driftDraw(j){
-          driftPreview.textContent='';
-          if(!j||!j.rows||!j.rows.length){ driftPreview.hidden=true; return; }
-          var say=driftFormat(j.pct), table=el('table','salt-table'), head=el('tr'), body=el('tbody');
-          table.appendChild(el('caption',null,j.code+': now '+driftFormat(j.held)+', at '+say));
-          ['Units','Now','At '+say,'Change','Over Floor','Floor'].forEach(function(c,i){ var th=el('th',i?'':'l salt-table__label',c); th.setAttribute('scope','col'); head.appendChild(th); });
-          table.appendChild(el('thead')).appendChild(head); table.appendChild(body);
-          j.rows.forEach(function(r){
-            var tr=el('tr'), d=+(r.at-r.now).toFixed(2), th=el('th','l salt-table__label',units(r.q)+(r.usual?', their usual':'')); th.setAttribute('scope','row'); tr.appendChild(th);
-            tr.appendChild(el('td','',rm(r.now)));
-            tr.appendChild(el('td','',rm(r.at)+(r.edge==='floor'?' at Floor':r.edge==='ceiling'?' at Ceiling':'')));
-            tr.appendChild(el('td','',d>0.004?'+'+rm(d):d<-0.004?'-'+rm(-d):'nil'));
-            tr.appendChild(el('td','',rm(+(r.at-r.floor).toFixed(2))));
-            tr.appendChild(el('td','',rm(r.floor)));
-            body.appendChild(tr);
-          });
-          driftPreview.appendChild(table); driftPreview.hidden=false;
-        }
-        function driftLive(){
-          clearTimeout(driftTimer);
-          var whole=driftWhole();
-          if(whole===null){ driftPreview.hidden=true; driftAnswer.textContent=driftValue.value.trim()?'Enter a whole % from -30 to +30 in steps of 5 (20 is 20%, -10 is 10% off).':''; return; }
-          driftAnswer.textContent='';
-          var key=driftCode.value+'/'+driftProduct.value+'/'+whole;
-          if(driftReads[key]){ driftDraw(driftReads[key]); return; }
-          var ask=++driftAsk;
-          driftTimer=setTimeout(function(){
-            refs('/all/maker/drift-preview/'+key).then(function(j){
-              driftReads[key]=j.preview; if(ask===driftAsk) driftDraw(j.preview);
-            },function(error){ if(ask===driftAsk){ driftPreview.hidden=true; refusal(driftAnswer,error); } });
-          },300);
-        }
-        driftValue.addEventListener('input',driftLive);
-        function driftRefresh(){
-          var card=driftCardOf();
-          var hint=card&&typeof card.suggest==='number'?' Suggested '+driftFormat(card.suggest)+(card.suggest!==0&&typeof card.why==='string'&&card.why?': '+card.why:'')+'.':'';
-          if(card&&card.held) driftState.textContent='Set by you: '+driftFormat(card.value)+'.'+hint;
-          else driftState.textContent='No % set: the Set Price.'+hint;
-          useSuggest.hidden=!(card&&typeof card.suggest==='number');
-          clearDrift.hidden=!(card&&card.held);
-        }
-        driftCode.addEventListener('change',function(){ driftRefresh(); driftLive(); }); driftProduct.addEventListener('change',function(){ driftRefresh(); driftLive(); });
-        var driftActions=el('div','maker-drift-actions'); driftSection.appendChild(driftActions);
-        makerButton(driftActions,['Send their %','record.drift.set'],async function(send){
-          if(driftPending) return;
-          var whole=driftWhole();
-          if(whole===null){
-            driftAnswer.textContent='Enter a whole % from -30 to +30 in steps of 5 (20 is 20%, -10 is 10% off).';
-            return;
-          }
-          var value=Number((whole/100).toFixed(2));
-          var body={code:driftCode.value,product:driftProduct.value,tier:value,unit:'pct'};
-          var check=JSON.stringify(body); if(check!==driftSignature){ driftSignature=check; driftAt=new Date().toISOString(); }
-          body.at=driftAt; driftPending=true;
-          try{ await send('/all/maker/inputs/tier-set',body); driftAnswer.textContent='Sent. Their % changes once you approve it.'; loadMaker(); }
-          catch(error){ refusal(driftAnswer,error); }
-          driftPending=false;
-        },true,driftReceiptComplete);
-        var useSuggest=actOn(el('button','salt-ghost','Use the suggestion'),'record.drift.suggest'); useSuggest.type='button'; driftActions.appendChild(useSuggest);
-        useSuggest.onclick=function(){
-          var card=driftCardOf();
-          if(card&&typeof card.suggest==='number'){ driftValue.value=String(Math.round(card.suggest*100)); driftLive(); }
-        };
-        var clearDrift=makerButton(driftActions,['Set back to 0','record.drift.clear'],async function(send){
-          if(driftPending) return;
-          var body={code:driftCode.value,product:driftProduct.value,tier:null,unit:'pct'};
-          var check=JSON.stringify(body); if(check!==driftSignature){ driftSignature=check; driftAt=new Date().toISOString(); }
-          body.at=driftAt; driftPending=true;
-          try{ await send('/all/maker/inputs/tier-set',body); driftAnswer.textContent='Sent. Their % goes back to 0 once you approve it.'; loadMaker(); }
-          catch(error){ refusal(driftAnswer,error); }
-          driftPending=false;
-        },false,driftReceiptComplete);
-        driftRefresh();
-      }
-      /* B2 of #62: the Desk's Make partner. A partner pays cost; Approve is the confirmation, and a name never travels. Drift books only. */
-      var partnerSection=makerForm('pricing');
-      partnerSection.appendChild(el('h3',null,'Partner'));
-      partnerSection.appendChild(el('p','msg','A partner pays the Floor on every book and is an associate. Only on a book with a Set Price.'));
-      driftSection.parentNode.insertBefore(partnerSection,driftSection.nextSibling);
-      var partnerHeld=catalog.partners||[], partnerWait=catalog.partnerWaiting||[];
-      var partnerCodes=(catalog.driftCustomers||[]).filter(function(c){ return /^C/.test(c)&&!/-Gen$/.test(c)&&partnerHeld.indexOf(c)<0&&partnerWait.indexOf(c)<0; });
-      if(!(catalog.products||[]).some(function(item){ return item.drift; })){
-        partnerSection.appendChild(el('p','msg','No book has a Set Price.'));
-      }else{
-        if(partnerHeld.length) partnerSection.appendChild(el('p','msg','Partner now: '+partnerHeld.join(', ')+'.'));
-        if(partnerWait.length) partnerSection.appendChild(el('p','msg','Waiting under Approve: '+partnerWait.join(', ')+'.'));
-        if(!partnerCodes.length){
-          partnerSection.appendChild(el('p','msg','No customer is left to make a partner.'));
-        }else{
-          var partnerCode=actOn(el('select','fld salt-field__input salt-field__select'),'record.partner.customer'), partnerCodeWrap=el('label','maker-field','Customer');
-          partnerCodes.forEach(function(c){ var option=el('option',null,c); option.value=c; partnerCode.appendChild(option); });
-          partnerCodeWrap.appendChild(partnerCode); partnerSection.appendChild(partnerCodeWrap);
-          var partnerAnswer=el('p','msg'); partnerAnswer.setAttribute('role','status'); partnerSection.appendChild(partnerAnswer);
-          var partnerPending=false, partnerAt=null, partnerSignature='';
-          makerButton(partnerSection,['Make partner','record.partner.make'],async function(send){
-            if(partnerPending) return;
-            var body={code:partnerCode.value};
-            var check=JSON.stringify(body); if(check!==partnerSignature){ partnerSignature=check; partnerAt=new Date().toISOString(); }
-            body.at=partnerAt; partnerPending=true;
-            try{ await send('/all/maker/inputs/partner',body); partnerAnswer.textContent='Sent. They pay the Floor once you approve it.'; loadMaker(); }
-            catch(error){ refusal(partnerAnswer,error); }
-            partnerPending=false;
-          },true,function(){ partnerAt=null; partnerSignature=''; });
-        }
-      }
+      /* 26 Oct 2026 (Salt Admin Customers, P3; his yes to Ask A): Their % and Make partner left Record for the customer's own card on Customers */
       /* A6: the Desk's Make it the house board. Which sizes the board prints, never a price: the ask is the ladder's. */
       var houseSection=makerForm('pricing');
       houseSection.appendChild(el('h3',null,'Printed sizes'));
@@ -5592,6 +5792,7 @@ export const OWNER_JS = `
   /* a redraw keeps the control in hand */
   function hrsFocus(act,key){ /* a key of null finds a control with none */ var root=document.getElementById('makerSchedule'), n=root&&[].filter.call(root.querySelectorAll('[data-act]'),function(x){ return x.getAttribute('data-act')===act&&x.getAttribute('data-key')===key; })[0]; if(n&&n.focus) n.focus(); }
   function hrsDraw(){ drawMakerHours(); hrsPreview(); }
+  try{ var hrsMq=window.matchMedia&&window.matchMedia('(min-width:860px)'); if(hrsMq&&hrsMq.addEventListener) hrsMq.addEventListener('change',function(){ if(makerHours&&placeNow==='shop') hrsDraw(); }); }catch(e){}
   function hrsEdit(key){
     var a=hrsDayOf(key), name=hrsIsDate(key)?key:HRS_NAMES[key], late=hrsAnyLate(a), box=el('div','maker-dayedit'), head=el('div','maker-dayedit-head');
     box.setAttribute('role','group'); box.setAttribute('aria-label',hrsName(key)+' hours');
@@ -5613,7 +5814,7 @@ export const OWNER_JS = `
     /* a stretch past midnight that reaches the next day's first opening runs on as one (openParts merges it): said, never refused */
     var next=hrsAfter(key), runs=late&&next&&a.filter(hrsLate).some(function(s){ return next.some(function(n){ return hrsMin(n.open)<=hrsMin(s.close); }); });
     box.appendChild(el('p','msg',runs?'This runs on into the next day’s hours: one stretch.':'A close earlier than the open runs into the next day, on its own.'));
-    var acts=el('div','maker-dayedit-acts');
+    var acts=el('div','maker-dayedit-acts ashop-two');
     var act=function(label,ac,fn,dis){ var b=actOn(el('button','salt-ghost',label),ac,name); b.type='button'; b.disabled=!!dis; b.addEventListener('click',function(){ fn(); hrsDraw(); hrsFocus(ac,name); }); acts.appendChild(b); return b; };
     act(a?'Closed':'Open','hours.day-closed',function(){ hrsSet(key,a?null:[{open:'09:00',close:'17:00'}]); });
     var last=a&&a[a.length-1], room=last&&!hrsLate(last)&&hrsMin(last.close)<=1380&&a.length<6;
@@ -5637,7 +5838,12 @@ export const OWNER_JS = `
       ap.addEventListener('click',function(){ hrsCopy.forEach(function(i){ hrsDraft.days[i]=hrsArr(a); }); hrsCopy=null; hrsDraw(); hrsFocus('hours.day-copy',name); });
       chips.appendChild(ap); box.appendChild(chips);
     }
-    var done=el('div','maker-dayedit-acts');
+    /* 25 Oct 2026 (Salt Admin Shop): what customers would see stands inside the open day, then Discard changes beside Done */
+    var band=el('section','salt-band ashop-pv'), pv=el('p','msg maker-preview'); band.setAttribute('aria-label','Customers would see');
+    pv.id='makerHoursPreview'; pv.setAttribute('role','status'); band.appendChild(pv); box.appendChild(band);
+    var done=el('div','apair');
+    var dis=actOn(el('button','salt-ghost','Discard changes'),'hours.discard'); dis.type='button';
+    dis.addEventListener('click',function(){ hrsDraft=null; hrsEditing=null; hrsCopy=null; hrsDraw(); }); done.appendChild(dis);
     makerButton(done,['Done','hours.save',name],function(){
       var before=hrsSaved;
       return refs('/all/maker/hours',{schedule:hrsWeekOut()})
@@ -5669,12 +5875,10 @@ export const OWNER_JS = `
   }
   function drawMakerHours(){
     barDraw();
-    var root=document.getElementById('makerSchedule'), status=document.getElementById('makerHoursStatus');
+    var root=document.getElementById('makerSchedule');
     if(!root||!makerHours) return;
     root.textContent='';
-    var state=makerHours.status||{};
-    status.textContent=(state.open?'Open now':'Closed now. Customers can still order; you answer when you open.')
-      +(state.source==='default'?' · No weekly hours set.':'');
+    drawMakerNow();
     drawConfirm();
     /* 20 Oct 2026 (his word, canvas V63, and his eight answers to Fable's design): THE WEEK CHART. A row a day, Monday first, a brass bar
        a span on a 00 to 24 track; a close earlier than the open is the next day's (stmt/hours.js openParts), said "+1", its tail hatched at
@@ -5682,16 +5886,20 @@ export const OWNER_JS = `
        day, Same as the day before, Copy to any days, and Done, which saves the week and its dates. Below: what customers would see, and
        the dated days. */
     if(!hrsDraft){ hrsDraft=hrsFromConfig(); hrsSaved=JSON.stringify(hrsWeekOut()); }
-    root.appendChild(el('p','msg','Tap a day to change it.'));
+    var whead=el('div','anow-head'); whead.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Weekly hours')); whead.appendChild(chip('mist','Tap a day'));
+    root.appendChild(whead);
     var week=el('div','maker-week'), scale=el('div','maker-week-scale'), ticks=el('span');
     week.setAttribute('role','group'); week.setAttribute('aria-label','Weekly hours'); scale.setAttribute('aria-hidden','true');
     ['00','06','12','18','24'].forEach(function(t){ ticks.appendChild(el('span',null,t)); });
     scale.appendChild(el('span')); scale.appendChild(ticks); scale.appendChild(el('span')); week.appendChild(scale);
-    HRS_ORDER.forEach(function(i){ week.appendChild(hrsRow(i)); if(hrsEditing===i) week.appendChild(hrsEdit(i)); });
+    /* 25 Oct 2026 (Salt Admin Shop): from 860px the open day stands in the pane beside the week, as Needs you's open card does; the same editor */
+    var pane=document.getElementById('makerDayPane'), side=wide()&&!!pane, put=function(list,key){ var box=hrsEdit(key); if(side){ pane.appendChild(box); } else list.appendChild(box); };
+    if(pane){ pane.textContent=''; }
+    HRS_ORDER.forEach(function(i){ week.appendChild(hrsRow(i)); if(hrsEditing===i) put(week,i); });
     root.appendChild(week);
     var weekSaid=el('p','msg osaid'); weekSaid.id='makerHoursSaved'; weekSaid.setAttribute('role','status'); weekSaid.setAttribute('aria-live','polite'); root.appendChild(weekSaid);
     var keep=el('div','maker-dayedit-acts');
-    if(hrsDirty()){ var dis=actOn(el('button','salt-ghost','Discard changes'),'hours.discard'); dis.type='button';
+    if(hrsDirty()&&hrsEditing===null){ var dis=actOn(el('button','salt-ghost','Discard changes'),'hours.discard'); dis.type='button';
       dis.addEventListener('click',function(){ hrsDraft=null; hrsEditing=null; hrsCopy=null; hrsDraw(); }); keep.appendChild(dis); }
     if(hrsUndo&&Date.now()<hrsUndo.until){ var un=actOn(el('button','salt-ghost','Undo'),'hours.undo'); un.type='button';
       un.addEventListener('click',function(){ if(un.disabled) return; un.disabled=true; var back=hrsUndo.week;
@@ -5699,13 +5907,14 @@ export const OWNER_JS = `
           .catch(function(error){ un.disabled=false; hoursSaid('week',null,error); }); });
       keep.appendChild(un); setTimeout(function(){ if(hrsUndo&&Date.now()>=hrsUndo.until){ hrsUndo=null; drawMakerHours(); } },Math.max(0,hrsUndo.until-Date.now())+50); }
     if(keep.children.length) root.appendChild(keep);
-    var pv=el('p','msg maker-preview'); pv.id='makerHoursPreview'; pv.setAttribute('role','status'); root.appendChild(pv); hrsPreviewDraw();
+    hrsPreviewDraw();
     /* the dated days (his answer): a holiday closed or a special day's hours, today to 90 days ahead, standing in for their weekday whole */
     var dated=el('div','maker-week maker-dates'), keys=Object.keys(hrsDraft.dates).sort();
     dated.setAttribute('role','group'); dated.setAttribute('aria-label','Dates');
-    dated.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Dates'));
+    var dhead=el('div','anow-head'); dhead.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Dates')); dhead.appendChild(chip('mist','Stand in for the weekday')); dated.appendChild(dhead);
     if(!keys.length) dated.appendChild(el('p','msg',"No dates set. A date stands in for its weekday: a holiday closed, or a special day's hours."));
-    keys.forEach(function(k){ dated.appendChild(hrsRow(k)); if(hrsEditing===k) dated.appendChild(hrsEdit(k)); });
+    keys.forEach(function(k){ dated.appendChild(hrsRow(k)); if(hrsEditing===k) put(dated,k); });
+    if(pane&&!pane.children.length){ pane.appendChild(el('h3','salt-eyebrow salt-eyebrow--mist','No day open')); pane.appendChild(el('p','msg','Tap a day or a date to change its hours.')); }
     var addRow=el('div','maker-dayedit-acts'), add=actOn(el('button','salt-ghost',hrsAdding?'Not now':'Add a date'),'hours.date-add'); add.type='button';
     add.addEventListener('click',function(){ hrsAdding=!hrsAdding; drawMakerHours(); hrsFocus(hrsAdding?'hours.date-pick':'hours.date-add',null); });
     addRow.appendChild(add);
@@ -5719,48 +5928,75 @@ export const OWNER_JS = `
     }
     dated.appendChild(addRow);
     root.appendChild(dated);
-    /* the shop held for now is two tiles over the field that says what the one chosen does: Closed until, or Open until; Kuala Lumpur time */
-    var override=el('div','maker-fields'), kind=makerTilesIn(override,['The shop, for now','hours.override-state'],[{value:'false',label:'Closed'},{value:'true',label:'Open'}]);
-    var until=makerField(override,['Closed until','hours.override-until'],'datetime-local',klInputValue(makerHours.config&&makerHours.config.manual&&makerHours.config.manual.until));
+  }
+  /* 25 Oct 2026 (canvas Salt Admin Shop, his yes): FOR NOW, first on Hours, where the bar's hours chip lands. The state is the title (Open until 22:00,
+     Paused until 14:00, Closed, opens 09:00), one line under it, and one pill, Hold the shop (Change while his override stands), beside a Weekly hours
+     ghost while one is filed. The pill opens the form: Closed or Open, the until time in Kuala Lumpur, Not now and Set it. Bodies as before. */
+  var hrsHold=false;
+  function drawMakerNow(){
+    var box=document.getElementById('makerNow'); if(!box||!makerHours) return;
+    var st=makerHours.status||{}, man=makerHours.config&&makerHours.config.manual, held=!!man&&st.source==='manual';
+    var at=st.open?st.nextChange:st.nextOpen, w=at&&!(Date.parse(at)<=Date.now())?barWhen(at):'';
+    box.textContent='';
+    var head=el('div','anow-head');
+    head.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','For now'));
+    head.appendChild(chip(held?'brass':st.open?'verdigris':'ember', held?'Held by you':st.source==='default'?'No weekly hours':'Weekly hours'));
+    box.appendChild(head);
+    var words=el('div'), title=el('p','anow-title', st.open?'Open'+(w?' until '+w:''):held?'Paused'+(w?' until '+w:''):'Closed'+(w?', opens '+w:''));
+    title.setAttribute('data-now', st.open?'open':held?'paused':'closed');
+    words.appendChild(title);
+    var sub=el('p','anow-sub', held?'Your weekly hours take over'+(w?' at '+w:'')+'.':st.open?'Customers can order and you answer now.'
+      :st.source==='default'?'No weekly hours set. Customers can still order.':'Customers can still order; you answer when you open.');
+    sub.id='makerHoursStatus'; words.appendChild(sub); box.appendChild(words);
+    var acts=el('div','apair');
+    if(man) makerButton(acts,['Weekly hours','hours.override-clear'],function(){
+      return refs('/all/maker/hours',{clearManual:true}).then(function(value){ makerHours=value; hrsHold=false; drawMakerHours(); hoursSaid('now','Back on the weekly hours.'); })
+        .catch(function(error){ hoursSaid('now',null,error); });
+    },false);
+    else acts.appendChild(el('span'));
+    var back=acts.querySelector('[data-act="hours.override-clear"]'); if(back) back.setAttribute('aria-label','Back to the weekly hours');
+    var hold=actOn(el('button','salt-pill salt-pill--sm',hrsHold?'Not now':man?'Change':'Hold the shop'),'hours.hold'); hold.type='button';
+    hold.setAttribute('aria-expanded',String(hrsHold)); hold.setAttribute('aria-controls','makerHold');
+    hold.addEventListener('click',function(){ hrsHold=!hrsHold; drawMakerNow(); var f=document.querySelector(hrsHold?'[data-act="hours.override-state"] input':'[data-act="hours.hold"]'); if(f&&f.focus) f.focus(); });
+    if(!hrsHold) acts.appendChild(hold);
+    box.appendChild(acts);
+    /* the form, under its pill: the shop held for now is two tiles over the field that says what the one chosen does */
+    var form=el('div'); form.id='makerHold'; form.hidden=!hrsHold;
+    var kind=makerTilesIn(form,['Hold the shop','hours.override-state'],[{value:'false',label:'Closed'},{value:'true',label:'Open'}]);
+    var until=makerField(form,['Closed until','hours.override-until'],'datetime-local',klInputValue(man&&man.until));
     var untilWord=until.parentNode.querySelector('.lbl');
     until.parentNode.appendChild(el('span','msg','Kuala Lumpur time'));
     kind.addEventListener('change',function(){ untilWord.textContent=kind.value==='true'?'Open until':'Closed until'; });
-    root.appendChild(override);
-    makerButton(root,['Set it','hours.override-set'],function(){
+    var go=el('div','apair');
+    if(hrsHold) go.appendChild(hold);
+    makerButton(go,['Set it','hours.override-set'],function(){
       var when=Date.parse(until.value+'+08:00');
       if(!Number.isFinite(when)){ hoursSaid('now','Choose an end time.'); return; }
       return refs('/all/maker/hours',{manual:{open:kind.value==='true',until:new Date(when).toISOString()}})
-        .then(function(value){ makerHours=value; drawMakerHours(); hoursSaid('now','Saved for now.'); })
+        .then(function(value){ makerHours=value; hrsHold=false; drawMakerHours(); hoursSaid('now','Saved for now.'); })
         .catch(function(error){ hoursSaid('now',null,error); });
-    },false);
-    makerButton(root,['Back to the weekly hours','hours.override-clear'],function(){
-      return refs('/all/maker/hours',{clearManual:true}).then(function(value){ makerHours=value; drawMakerHours(); hoursSaid('now','Back on the weekly hours.'); })
-        .catch(function(error){ hoursSaid('now',null,error); });
-    },false);
+    },true);
+    form.appendChild(go);
+    box.appendChild(form);
   }
   /* Salt Admin A to C (20 Oct 2026), P3: THE CONFIRM TIME, as the hourly cron filed it: the figure and what customers read, or how far it is
      from the ten it needs, or that none is filed yet. Old (over three hours) is said, since customers then see nothing. */
+  /* 25 Oct 2026 (canvas Salt Admin Shop): the band became the glance, the system's one-line KPI tiles, Points, Dates and Confirm time, and the
+     confirm time's state in one line under them; the figure keeps data-confirm */
   function drawConfirm(){
     var root=document.getElementById('makerConfirm'); if(!root) return;
     root.textContent='';
-    var c=makerHours&&makerHours.confirm, u=confirmUsual(), at=c&&Date.parse(c.at);
-    var band=el('section','salt-band'), top=el('div','salt-band__head');
-    band.setAttribute('aria-label','Confirm time');
-    top.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Confirm time'));
-    var open=makerHours&&makerHours.status&&makerHours.status.open;
-    top.appendChild(chip(open?'verdigris':'mist',open?'Open now':'Closed now'));
-    band.appendChild(top);
-    if(u!=null){
-      var fig=el('p','cfig'); fig.setAttribute('data-confirm',String(u)); fig.appendChild(el('b',null,String(u))); fig.appendChild(el('span',null,'minutes')); band.appendChild(fig);
-      band.appendChild(el('p','salt-band__when','Customers read "Usually confirmed within '+u+' minutes" on a placed order while you are open; closed, nothing until you open.'));
-      band.appendChild(el('div','salt-band__foot',c.n+' measured. The median from Place to Agree over your last '+c.n+' agrees made in Counter hours, up to the quarter hour. Refreshed hourly.'));
-    }else if(c&&at>0&&Date.now()-at>3*3600e3){
-      band.appendChild(el('p','salt-band__when','The last figure was filed '+fmtWhen(c.at)+', over three hours ago, so customers see none until the hourly measure runs again.'));
-    }else if(c&&at>0){
-      band.appendChild(el('p','cfig','Under 10 measured'));
-      band.appendChild(el('p','salt-band__when','Customers see a figure once 10 agrees made in Counter hours are measured, and only while you are open.'));
-    }else band.appendChild(el('p','salt-band__when','Not measured yet. The hourly measure files it.'));
-    root.appendChild(band);
+    var c=makerHours&&makerHours.confirm, u=confirmUsual(), at=c&&Date.parse(c.at), stale=u==null&&c&&at>0&&Date.now()-at>3*3600e3;
+    var tile=function(tone,label,value,cls){ var t=el('div','salt-kpi salt-kpi--line salt-kpi--'+tone+(cls?' '+cls:'')); t.appendChild(el('span','salt-kpi__label',label)); var v=el('span','salt-kpi__value',value); t.appendChild(v); root.appendChild(t); return v; };
+    var pts=makerPoints&&makerPoints.points&&makerPoints.points.list, dates=makerHours&&makerHours.config&&makerHours.config.schedule&&makerHours.config.schedule.dates;
+    tile('brass','Points',pts?String(pts.length):'·').setAttribute('data-glance','points');
+    tile('steel','Dates',makerHours?String(Object.keys(dates||{}).length):'·').setAttribute('data-glance','dates');
+    var fig=tile('copper','Confirm time',u!=null?u+' min':stale?'Old':c&&at>0?'Not yet':'None','shconfirm');
+    fig.setAttribute('data-glance','confirm'); if(u!=null) fig.setAttribute('data-confirm',String(u));
+    root.appendChild(el('p','shglance-note', u!=null?c.n+' measured · customers read it while you are open'
+      :stale?'Filed '+fmtWhen(c.at)+' · customers see none until it runs again'
+      :c&&at>0?(c.n!=null?c.n+' measured · ':'')+'customers see a figure from 10'
+      :'Not measured yet · the hourly measure files it'));
   }
   /* an answer on Shop's hours stands under the control that asked: the weekly save under Save, the shop held for now under Set it and Back to the weekly
      hours (#makerHoursMessage, which sits right below them); the other line is cleared, so one answer is on screen, and it is scrolled into reach */
@@ -5778,7 +6014,7 @@ export const OWNER_JS = `
   var makerPoints=null, makerPointsDraft=null;
   async function loadMakerPoints(){
     if(placeNow!=='shop') return;
-    try{ makerPoints=await refs('/all/maker/points'); makerPointsDraft=null; drawMakerPoints(); }
+    try{ makerPoints=await refs('/all/maker/points'); makerPointsDraft=null; drawMakerPoints(); drawConfirm(); }
     catch(error){ var s=document.getElementById('makerPointsStatus'); if(s) refusal(s,error); }
   }
   function pointPlace(text){
@@ -5795,18 +6031,28 @@ export const OWNER_JS = `
     root.textContent='';
     var list=makerPointsDraft||((makerPoints.points&&makerPoints.points.list)||[]).slice();
     status.textContent=list.length?list.length+(list.length===1?' point':' points')+'. Ready to collect asks which one.':'No points yet. Ready to collect needs one.';
-    var rows=el('ul','maker-points');
-    list.forEach(function(p,i){
-      var li=el('li','maker-row'); li.appendChild(el('span','maker-point-code','Point '+p.code));
-      li.appendChild(el('span','msg',p.lat.toFixed(5)+', '+p.lng.toFixed(5)));
-      makerButton(li,['Remove','points.remove',p.code],function(){ list.splice(i,1); makerPointsDraft=list; drawMakerPoints(); },false);
-      rows.appendChild(li);
-    });
-    root.appendChild(rows);
-    var add=el('div','maker-fields'), code=makerField(add,['Code','points.code'],'text',''), where=makerField(add,['Place, as two figures or a Maps link','points.place'],'text','');
-    code.setAttribute('maxlength','3'); code.setAttribute('autocapitalize','characters'); code.setAttribute('spellcheck','false');
+    /* 25 Oct 2026 (Salt Admin Shop): the points are a plain table, a code, its place, and a 44px cross that takes it off the draft */
+    if(list.length){
+      var tbl=el('table','salt-table salt-table--plain apoints'), head=el('tr'), body=el('tbody'), thead=el('thead');
+      [['Point','apoints-code'],['Place',''],['','apoints-x']].forEach(function(h){ var th=el('th',h[1]||null,h[0]); th.scope='col'; if(!h[0]) th.appendChild(el('span','sr','Remove')); head.appendChild(th); });
+      thead.appendChild(head); tbl.appendChild(thead);
+      list.forEach(function(p,i){
+        var tr=el('tr'), th=el('th','apoints-code',p.code); th.scope='row'; th.setAttribute('data-point',p.code); tr.appendChild(th);
+        tr.appendChild(el('td','apoints-place',p.lat.toFixed(5)+', '+p.lng.toFixed(5)));
+        var cell=el('td','apoints-x'), x=actOn(el('button','salt-ghost'),'points.remove',p.code); x.type='button'; x.setAttribute('aria-label','Remove point '+p.code);
+        x.innerHTML='<svg aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6 L18 18 M18 6 L6 18"></path></svg>';
+        x.addEventListener('click',function(){ list.splice(i,1); makerPointsDraft=list; drawMakerPoints(); });
+        cell.appendChild(x); tr.appendChild(cell); body.appendChild(tr);
+      });
+      tbl.appendChild(body);
+      var wrap=el('div','salt-glass-card salt-glass-card--radius-lg apoints-card'); wrap.appendChild(tbl); root.appendChild(wrap);
+    }
+    var add=el('div','apoints-add'), code=makerField(add,['Code','points.code'],'text',''), where=makerField(add,['Place','points.place'],'text','');
+    code.setAttribute('maxlength','3'); code.setAttribute('autocapitalize','characters'); code.setAttribute('spellcheck','false'); code.placeholder='A3';
+    where.placeholder='3.15214, 101.70312';
     root.appendChild(add);
-    makerButton(root,['Add','points.add'],function(){
+    var addRow=el('div','apair'); addRow.appendChild(el('p','msg','Or paste a Maps link.')); root.appendChild(addRow);
+    makerButton(addRow,['Add','points.add'],function(){
       var c=String(code.value||'').trim().toUpperCase(), place=pointPlace(where.value);
       if(!/^[A-Z][0-9]{1,2}$/.test(c)){ pointsSaid('A code is one capital letter and one or two digits, such as A2.'); return; }
       if(!place){ pointsSaid('Give the place as two figures, latitude then longitude, or paste a Maps link with a point.'); return; }
@@ -5814,7 +6060,8 @@ export const OWNER_JS = `
       if(list.length>=20){ pointsSaid('Twenty points at most.'); return; }
       list.push({code:c,lat:place.lat,lng:place.lng}); makerPointsDraft=list; drawMakerPoints(); pointsSaid('Point '+c+' added. Save to keep it.');
     },false);
-    makerButton(root,['Save the points','points.save'],function(){
+    var saveRow=el('div','apoints-save'); root.appendChild(saveRow);
+    makerButton(saveRow,['Save the points','points.save'],function(){
       return refs('/all/maker/points',{list:list}).then(function(value){ makerPoints=value; makerPointsDraft=null; drawMakerPoints(); pointsSaid('Points saved.'); })
         .catch(function(error){ pointsSaid(null,error); });
     },true);
@@ -6021,7 +6268,7 @@ export const OWNER_JS = `
   function needCard(o){
     var tap=!!o.open, c=el('article','salt-action salt-action--'+o.sev+' need ncard'), body=el('div','salt-action__body'), go=el('div','salt-action__go');
     var title=el(tap?'button':'div','salt-action__title'+(tap?' need-tap':'')), age=o.age!=null?o.age:ageOf(o.at), tt=o.title||o.who||'';
-    if(tap){ title.type='button'; actOn(title,o.act||'need.open',o.key); title.addEventListener('click', function(){ needOpen(o); }); }
+    if(tap){ title.type='button'; actOn(title,o.act||'need.open',o.key); title.addEventListener('click', function(){ if(typeof o.onTap==='function') o.onTap(); else needOpen(o); }); }
     c.setAttribute('data-need', o.key); c.setAttribute('data-kind', o.kind); c.setAttribute('data-sev', o.sev);
     if(o.u) c.setAttribute('data-u', o.u);
     if(o.practice) c.setAttribute('data-practice','');
@@ -6194,25 +6441,28 @@ export const OWNER_JS = `
   function bareNeed(a){
     return item('now','accounts','Account','n:'+a.username, '', {who:a.code||a.username, u:a.username, head:'Set up ', rest:"'s account", what:'No account yet', why:waitLine(),
       open:function(){ openNeed(a.username); }}, function(c){
-      var sh=pill(['Show','need.show-link']); sh.setAttribute('aria-label','Show the guest price list');
-      c._add(sh);
-      var note=noteOf(c);
-      function openSilver(){
-        var r=strangerLink();
-        if(!r){ note.textContent='The guest link is not made yet. Open Links once, then try again.'; return; }
-        silverOpen[a.username]=true;
-        var box=el('div','glink salt-glass-card salt-glass-card--radius-md'), img=document.createElement('img'), cp=ghost(['Copy link','need.copy-link']);
-        box.appendChild(el('code','gu',r.url));
-        img.src=r.qr; img.alt='QR to the guest price list'; img.width=180; img.height=180; box.appendChild(img);
-        cp.addEventListener('click', async function(){
-          try{ await navigator.clipboard.writeText(r.url); note.textContent='Copied.'; }catch(e){ note.textContent='Copy failed.'; }
-        });
-        box.appendChild(cp);
-        if(c._grow) c._grow(); c._body.insertBefore(box, note); sh.disabled=true;
-      }
-      sh.addEventListener('click', openSilver);
-      if(silverOpen[a.username]) openSilver();
+      silverOn(a, c, 'need');
     });
+  }
+  function silverOn(a, c, at){
+    var sh=pill(['Show',at+'.show-link']); sh.setAttribute('aria-label','Show the guest price list');
+    c._add(sh);
+    var note=noteOf(c);
+    function openSilver(){
+      var r=strangerLink();
+      if(!r){ note.textContent='The guest link is not made yet. Open Links once, then try again.'; return; }
+      silverOpen[a.username]=true;
+      var box=el('div','glink salt-glass-card salt-glass-card--radius-md'), img=document.createElement('img'), cp=ghost(['Copy link',at+'.copy-link']);
+      box.appendChild(el('code','gu',r.url));
+      img.src=r.qr; img.alt='QR to the guest price list'; img.width=180; img.height=180; box.appendChild(img);
+      cp.addEventListener('click', async function(){
+        try{ await navigator.clipboard.writeText(r.url); note.textContent='Copied.'; }catch(e){ note.textContent='Copy failed.'; }
+      });
+      box.appendChild(cp);
+      if(c._grow) c._grow(); c._body.insertBefore(box, note); sh.disabled=true;
+    }
+    sh.addEventListener('click', openSilver);
+    if(silverOpen[a.username]) openSilver();
   }
   function sendAt(rows){ return rows.map(function(a){ return a.issued||''; }).filter(Boolean).sort()[0]||''; }
   function sendNeed(rows){
@@ -6277,7 +6527,8 @@ export const OWNER_JS = `
       if(changed('book', v)){ owed=v; apply=true; }
     }catch(error){ nGot('book', error); apply=failNew('book', error); }
     owedReading=false;
-    if(apply) drawNeeds();
+    /* 25 Oct 2026: and Accounts, whose Owed says how late (P1) */
+    if(apply){ drawNeeds(); drawRoster(); }
   }
   /* the open site order a Desk row is, found by its key (a key of three parts is salt's, from before a key named its book) */
   function siteOrderOf(r){
@@ -6860,15 +7111,28 @@ export const OWNER_JS = `
     try{ cards=await refs('/all/assoc'); drawCards(); }
     catch(e){ sayFail(e); }
   }
-  function bar(frac){
-    var w=el('div','pbar'), f=document.createElement('i');
-    f.style.width=Math.round((frac||0)*100)+'%';
-    w.appendChild(f); return w;
+  /* 26 OCT 2026 (canvas Salt Admin Customers, P7): A BOOK IS ITS TYPED TAG AND HOW MANY; an associate is a card on a phone and a row of one plain table from 860px:
+     what they bought, sold for him and brought in, right-aligned; the reward on salt alone as the system's Meter, in units; the code opens their account */
+  function assocMeter(w){
+    var m=el('div','salt-meter ameter'), line=el('div','salt-meter__line'), a=el('span',null,'Reward '), b=el('span',null,''), tr=el('div','salt-meter__track');
+    a.appendChild(el('b',null,String(Math.round(w.left*100)/100))); a.appendChild(document.createTextNode(' left'));
+    b.appendChild(el('b',null,Math.round(w.next*100)+'%')); b.appendChild(document.createTextNode(' to next'));
+    line.appendChild(a); line.appendChild(b); m.appendChild(line); tr.appendChild(el('div','salt-meter__fill')); m.appendChild(tr);
+    m.style.setProperty('--salt-fill', String(Math.max(0, Math.min(100, Math.round(w.next*100)))));
+    m.setAttribute('aria-label','Reward, '+(Math.round(w.left*100)/100)+' units left, '+Math.round(w.next*100)+'% of the way to the next');
+    return m;
+  }
+  function assocCode(code, act){
+    var acc=OWNER.accounts.filter(function(x){ return x.code===code&&x.username; })[0];
+    if(!acc) return el('b','acode',code);
+    var b=actOn(el('button','acode apick',code),act||'assoc.open',code); b.type='button';
+    b.addEventListener('click', function(){ showPlace('customers','accounts',{fresh:true, push:true}); openCard(acc.username); });
+    return b;
   }
   function cardOf(r){
     var c=el('div','acard salt-glass-card salt-glass-card--radius-md'+(r.departed?' off':''));
     var head=el('div','srow');
-    head.appendChild(el('b','acode',r.id));
+    head.appendChild(assocCode(r.id));
     var marks=[];
     if(r.founder) marks.push('founder');
     if(r.rank) marks.push('#'+r.rank);
@@ -6877,7 +7141,7 @@ export const OWNER_JS = `
     head.appendChild(el('span','un',marks.join(' \\u00b7 ')));
     c.appendChild(head);
     var g=el('div','agrid salt-metrics salt-metrics--sm');
-    [['Bought from you',rm(r.bought)],['Sold for you',rm(r.soldFor)],['Introduced',rm(r.introduced)]].forEach(function(p){
+    [['Bought',rm(r.bought)],['Sold',rm(r.soldFor)],['Introduced',rm(r.introduced)]].forEach(function(p){
       var cell=el('div','acell'); cell.appendChild(el('span','salt-metrics__label',p[0])); cell.appendChild(el('span','salt-metrics__value',p[1])); g.appendChild(cell);
     });
     c.appendChild(g);
@@ -6893,8 +7157,23 @@ export const OWNER_JS = `
       ledRow('Reward',w.earned+' earned, '+w.taken+' taken, '+(Math.round(w.left*100)/100)+' left'+(w.held?', held while away':''));
     }
     if(led.childElementCount) c.appendChild(led);
-    if(r.reward&&r.reward.next!=null){ c.appendChild(bar(r.reward.next)); c.appendChild(el('p','op',Math.round(r.reward.next*100)+'% of the way to the next unit')); }
+    if(r.reward&&r.reward.next!=null) c.appendChild(assocMeter(r.reward));
     return c;
+  }
+  function assocTable(p){
+    var wrap=el('div','salt-glass-card salt-glass-card--radius-lg atable'), table=el('table','salt-table salt-table--plain'), hr=el('tr'), body=el('tbody'), tiered=p.rows.some(function(r){ return !!r.reward; });
+    table.appendChild(el('caption','sr','Each associate, this book'));
+    ['Associate','Standing','Bought','Sold','Introduced',tiered?'Reward, units':'Reward'].forEach(function(h, i){ var th=el('th',i<2||i===5?'l':null,h); th.setAttribute('scope','col'); hr.appendChild(th); });
+    table.appendChild(el('thead')).appendChild(hr); table.appendChild(body);
+    p.rows.forEach(function(r){
+      var tr=el('tr'), th=el('th','l'); th.setAttribute('scope','row'); th.appendChild(assocCode(r.id,'assoc.open-row')); tr.appendChild(th);
+      var marks=[]; if(r.founder) marks.push('founder'); if(r.rank) marks.push('#'+r.rank); if(r.departed) marks.push('away'); if(r.stars) marks.push(new Array(r.stars+1).join('\u2605'));
+      tr.appendChild(el('td','l astand2',marks.join(' \u00b7 ')));
+      [r.bought, r.soldFor, r.introduced].forEach(function(v){ tr.appendChild(el('td',null,rm(v))); });
+      var rw=el('td','l'); if(r.reward&&r.reward.next!=null) rw.appendChild(assocMeter(r.reward)); else rw.textContent=tiered?'':'None on this book';
+      tr.appendChild(rw); body.appendChild(tr);
+    });
+    wrap.appendChild(table); return wrap;
   }
   function drawCards(){
     var wrap=document.getElementById('clist'); if(!wrap) return;
@@ -6907,9 +7186,11 @@ export const OWNER_JS = `
     }
     if(head) head.textContent='As at '+(cards.at?stampDay(cards.at):'the last publish')+'.';
     cards.products.forEach(function(p){
-      wrap.appendChild(pmarkHead('h2',p.product));
+      var hd=el('div','aprodhead'), h2=el('h2','aprodtag'); h2.appendChild(productTag(p.product)); hd.appendChild(h2);
+      hd.appendChild(el('span','salt-status salt-status--mist',p.rows.length+(p.rows.length===1?' associate':' associates'))); wrap.appendChild(hd);
       if(!p.rows.length){ wrap.appendChild(el('p','rnone','Nobody on this book yet.')); return; }
-      p.rows.forEach(function(r){ wrap.appendChild(cardOf(r)); });
+      var list=el('div','aclist'); p.rows.forEach(function(r){ list.appendChild(cardOf(r)); }); wrap.appendChild(list);
+      wrap.appendChild(assocTable(p));
     });
   }
   /* ---- THE TEST ACCOUNT (v689) --------------------------------------------------------------
@@ -6930,18 +7211,36 @@ export const OWNER_JS = `
      all three; the names are stmt/testusers.js's list. */
   var TEST_ALL=${JSON.stringify(TEST_USERS)};
   var TEST_LINE='Password 0000-0000-0000-0000 for all three. Username 0000-0000 shows every case; 0000-0001 is locked, for paying only; 0000-0002 is fresh, with room to order.';
+  var TEST_SHOWS=['Every case','Locked, to pay','Fresh, to order'];
   function drawTest(){
     var box=document.getElementById('mTest'); if(!box) return;
     /* a pair made by halves (a tap cut off between its two sends) keeps Make, for the one missing (Fable's review) */
     var have=sheetRows.filter(function(a){ return a.test; }).map(function(a){ return a.username; });
     var need=TEST_ALL.filter(function(u){ return have.indexOf(u)<0; }), on=!need.length;
     box.textContent='';
-    box.appendChild(el('p','lead', on
-      ? 'Three practice accounts are open. '+TEST_LINE+' Nothing they do is recorded.'
-      : have.length ? 'Practice account'+(have.length>1?'s ':' ')+have.join(' and ')+(have.length>1?' are':' is')+' open. One tap makes '+need.join(' and ')+'.'
-      : 'No practice accounts. One tap makes three you can open anywhere: one with every case, one locked, one fresh. Nothing they do is recorded.'));
-    var b=el('button','btn quiet salt-ghost', on?'Remove the practice accounts':'Make the practice accounts'); b.type='button'; actOn(b,'more.test-accounts');
+    /* 25 Oct 2026 (Salt Admin Shop, his yes to both halves of Ask H): the accounts as a plain table (username, what it shows, Open or None),
+       the password once, Open the test page while all three are open, and Remove asking once on the Sheet */
+    box.appendChild(el('h2','sr','Practice accounts'));
+    var head=el('div','anow-head atest-head'), state=chip(on?'verdigris':have.length?'brass':'mist', have.length+' of '+TEST_ALL.length+' open');
+    state.setAttribute('data-test-state',String(have.length)); head.appendChild(state); box.appendChild(head);
+    box.appendChild(el('p','msg atest-lead', on?'Open them anywhere. Nothing they do is recorded.'
+      : have.length?'One tap makes '+need.join(' and ')+'.':'One tap makes three you can open anywhere.'));
+    var tbl=el('table','salt-table salt-table--plain apoints atest'), thead=el('thead'), hr=el('tr'), body=el('tbody');
+    [['Username','atest-u'],['Shows',''],['State','atest-st']].forEach(function(h){ var th=el('th',h[1]||null,h[0]); th.scope='col'; hr.appendChild(th); });
+    thead.appendChild(hr); tbl.appendChild(thead);
+    TEST_ALL.forEach(function(u,i){
+      var made=have.indexOf(u)>=0, tr=el('tr'), th=el('th','atest-u',u), st=el('td','atest-st'); th.scope='row'; th.setAttribute('data-test',u);
+      tr.appendChild(th); tr.appendChild(el('td','atest-shows',TEST_SHOWS[i]||'')); st.appendChild(chip(made?'verdigris':'mist',made?'Open':'None')); tr.appendChild(st); body.appendChild(tr);
+    });
+    tbl.appendChild(body);
+    var card=el('div','salt-glass-card salt-glass-card--radius-lg apoints-card'); card.appendChild(tbl); box.appendChild(card);
+    if(have.length){ var pw=el('div','salt-glass-card salt-glass-card--radius-lg atest-pw'); pw.appendChild(el('span','salt-kpi__label','Password')); pw.appendChild(el('span','atest-pwv','0000-0000-0000-0000')); box.appendChild(pw); }
+    var acts=el('div','atest-acts');
+    if(on){ var go=actOn(el('a','salt-pill salt-pill--sm','Open the test page'),'more.test-page'); go.href='/all/test'; acts.appendChild(go); }
+    var b=el('button',on?'salt-ghost':'salt-pill salt-pill--sm', on?'Remove the practice accounts':need.length===TEST_ALL.length?'Make the practice accounts':'Make '+need.join(' and ')); b.type='button'; actOn(b,'more.test-accounts');
+    if(on) ynTag(b,'test:remove');
     b.addEventListener('click', async function(){
+      if(on&&!(await ownerAsk(b,'test:remove',{title:'Remove all three?', say:['Everything they wrote goes with them.'], go:'Remove', keep:'Keep them'}))) return;
       b.disabled=true; say(on?'Removing...':'Making...','wait');
       try{
         if(on) await refs('/all/test',{make:false});
@@ -6951,7 +7250,7 @@ export const OWNER_JS = `
       }catch(e){ sayFail(e); }
       b.disabled=false; drawTest();
     });
-    box.appendChild(b);
+    acts.appendChild(b); box.appendChild(acts);
   }
   /* a place, an item on More, or a way back: one listener for the whole of his page */
   roster.addEventListener('click', function(ev){

@@ -682,6 +682,40 @@ an undo bookmark, so a restore can itself be undone. Recovery is per object: one
   (its parity against git at that fold), then remove the verb in the next version. Until S5 git is the source, so the simpler
   repair is the load itself: the next fold, or `tools/book-load.mjs` from a checkout, puts the live Book level with git.
 
+## The Book: read (S3, 25 Oct 2026)
+
+The Desk's readers can read the Book (`src/book.js`) instead of the D1 mirror. D1 stays seeded as the check, and git stays the source until S5.
+
+- **The flag** is one row in D1, `book_read` (`migrations/0018`), `'d1'` or `'book'`, and it ships as `'d1'`. `readBook` (`src/drafter.js`) reads it with each book it
+  reads (`src/book-read.js`). The way back is one statement and no deploy, either way:
+  `npx wrangler d1 execute salt_ledger --remote --command "UPDATE book_read SET mode='d1' WHERE one=1"` (and `'book'` to turn it on). A store before 0018, an
+  unbound Book, a Book with no snapshot, an answer that fails: the mirror is read.
+- **A Book that trails the mirror is never read.** The Book is loaded after the mirror is re-seeded, so after a fold there are seconds, and after a failed load
+  hours, when the mirror holds a newer version. `readBook` compares the Book's version with the snapshot's and reads the whole book from the mirror when the Book is
+  older, so a failed load costs speed of arrival and nothing else. The laptop's `tools/update.mjs` does not load the Book, so a hand fold also leaves it
+  behind until the next chain run, and the readers read the mirror meanwhile.
+- **"On its way" is the book's own bound** (`src/way.js`). The chain marks a folded draft committed, re-seeds the mirror, then loads the Book. A book read from the Book
+  carries `at`, the moment of that Book's latest load, and a draft marked committed after `at` is on its way while one marked at or before it is in the book. The bound
+  is taken from the SAME read as the book (rowRoom, the claim flow, the drafter and the tap handlers read the book first), so a tap whose reads straddle a load cannot
+  count a payment twice or miss it. A book read from the mirror carries no `at` and every clause is the one it always was (`committed_at IS NULL`, or after
+  `snapshot.at`). Only the "on its way to a reader" questions moved. "Awaiting the fold" (the redispatch count, the drafts view, the phone's queue status, a trip's
+  siblings under Approve) and the input-admission lifecycle stay on `committed_at`, and `test/book-read.mjs` pins the count of such literals.
+- **What the Book holds for it.** `rows.seq` (a row's place in its list, so every list reads back in the book's order), the derived documents `OPEN`, `TERMS`, `REWARD`
+  and `STOCK` beside `PRICING`, `__arrays` (the length of every list, so an empty list is still a fact), and one `snap` row (version, stamp, moment of the load). `GET /read`
+  and `GET /at` answer on the live Book only (404 on the recovery test's object and the live-socket object), and the Worker has no route for them: only `readBook`
+  and the readcheck reach them, through the binding. The answer carries cost, so it is never a CI route.
+- **A load of an older version is refused** (409, nothing written, a red step in the chain): readers key "on its way" off the moment of the latest load, so a laptop run
+  posting last version's book would otherwise advance it past a payment the Book does not hold. The same version is the idempotent replay.
+- **The readcheck** (`GET /book/readcheck`, a CI route behind the Book's key; `tools/book-readcheck.mjs`, the chain's step after the load, continue-on-error) reads the
+  mirror's book and the Book's side by side whatever the flag says and answers by NAMES whether they agree: sales and purchases and every state key, in order. STOCK is
+  left out (the mirror's seed leaves it out of its own hash), PRICING.takenAt and OPEN.at are ignored. A difference is a red step and never blocks the fold.
+- **Turning it on** (his call): read the chain's readcheck line green over a fold or two, then set the flag to `'book'`. Watch the next fold's log: the readcheck still
+  green, the Book at the mirror's version. Leave `input-admission` and the site-follow marks (`tellSite`, `tieOut`) on D1: they read the mirror's snapshot version
+  and the Book is never ahead of it in practice.
+- **Known gaps, said.** A draft marked committed outside a deploy (the stage's replay-clear, `drafts.mjs --committed` by hand) stays on its way until the next load that
+  lands, as it stayed on its way until the next seed before; rowRoom may refuse a legitimate payment on it meanwhile (the fail-safe side). The site-follow helpers (`fate`,
+  the flight checks) take the bound from a two-second memo of the Book's latest load, not from the read they follow.
+
 ## The Desk's live object (L1, Speed Wave 2, 21 Oct 2026)
 
 - **What it is.** A third object of the Book class, named `live` (`LIVE_NAME` in `src/book.js`), holding no book: it accepts the Desk

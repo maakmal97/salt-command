@@ -328,7 +328,7 @@ export async function run({ ok, pageWork }) {
     byAct(d, "acct.open", "abcd-efgh").click(); await work.quiet();
     s.refuse["/all/signin/abcd-efgh"] = "the link maker would not start";
     byAct(aopen(), "acct.signin-link").click(); await work.quiet();
-    const made = aopen().querySelector(".anote");
+    const made = aopen().querySelector(".anote:not(.athread__v)");   /* 26 Oct 2026: the card's thread line "Waiting 15 d for your reply" is an .anote too */
     ok(!!made && made.firstChild.textContent === "Could not make a link: " + GENERAL_SENTENCE && made.querySelectorAll("details > .rraw").length === 1
       && made.querySelector(".rraw").textContent === "the link maker would not start",
     "a link that could not be made says so in a plain sentence on the account card, the server's words under Details: " + (made ? made.textContent : "nothing drawn"));
@@ -372,10 +372,10 @@ export async function run({ ok, pageWork }) {
     byAct(d, "ask.keep").click(); await work.quiet();
     byAct(d, "nav.customers").click(); await work.quiet();
     byAct(d, "part.customers.associates").click(); await work.quiet();
-    const heads = [...d.querySelectorAll("#clist h2")].map((h) => [h.className, SHAPES.includes(h.getAttribute("aria-label")), h.querySelector("svg.psym") ? "mark" : "", h.textContent, h.querySelector(".pshape") ? "word" : ""]);
-    ok(heads.length === 2 && heads.every((h) => h[0] === "pmark" && h[1] && h[2] === "mark" && h[3].replace(/[^a-z]/gi, "").length <= 1 && h[4] === "")
-      && new Set([...d.querySelectorAll("#clist h2")].map((h) => h.getAttribute("aria-label"))).size === 2,
-    "the report card's book headings are the mark alone, named by their shape to a reader and by no word for the book: " + JSON.stringify(heads));
+    /* 26 Oct 2026: the report card's book heading is an h2 holding the typed Product tag (his rule of 22 Oct 2026 for Salt Admin), its name in its hue with its dot, and no drawn mark */
+    const heads = [...d.querySelectorAll("#clist h2.aprodtag")].map((h) => [h.className, h.querySelector("svg.psym") ? "mark" : "", h.textContent, h.querySelector(".salt-producttag__dot") ? "dot" : "", (h.querySelector(".salt-producttag") || { className: "" }).className.replace(/^salt-producttag salt-producttag--([a-z]+) ntag$/, "$1")]);
+    ok(heads.length === 2 && heads.every((h) => h[0] === "aprodtag" && h[1] === "" && h[3] === "dot" && /^[a-z]+$/.test(h[4]) && h[2].toLowerCase() === h[4]) && new Set(heads.map((h) => h[4])).size === 2,
+    "the report card's book headings are the typed Product tag, the name in its hue with its dot, and no drawn mark: " + JSON.stringify(heads));
     /* 22 Oct 2026: on Needs you a book is its typed Product tag, the name in its hue with its dot, and no drawn mark */
     byAct(d, "nav.needs").click(); await work.quiet();
     const tags = [...d.querySelectorAll("#nlist section .salt-producttag")].map((x) => [x.className, x.textContent, !!x.querySelector(".salt-producttag__dot")]);
