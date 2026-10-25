@@ -1013,7 +1013,6 @@ body.ended>*:not(#aEnded){display:none}
 .adm .aphead .salt-ghost,.adm .apticks button,.adm .apbar button,.adm .apmore{min-height:44px}
 .adm .apticks{display:flex;gap:8px}.adm .apticks button{flex:1 1 0;padding:0 12px}
 .adm .ap--a{border-color:var(--salt-verdigris)}.adm .ap--r{border-color:var(--salt-ember)}
-.adm .apreject--on{color:var(--salt-ember);border-color:var(--salt-ember)}
 .adm .aprefused{padding:12px;border-radius:12px;background:var(--salt-slate);border:1px solid var(--salt-ember);display:flex;flex-direction:column;gap:4px}
 .adm .aprefused p{margin:0}
 .adm .apdone{padding:16px;display:flex;flex-direction:column;gap:6px;border:1px solid var(--salt-verdigris)}

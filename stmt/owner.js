@@ -5446,7 +5446,8 @@ export const OWNER_JS = `
       if(!claim){
         var pick=apPick[draft.id], acts=el('div','salt-approve__actions apticks'); acts.setAttribute('role','group'); acts.setAttribute('aria-label','Decide this card'); card.appendChild(acts);
         var approve=actOn(el('button',pick==='a'?'salt-pill salt-pill--sm':'salt-ghost',approveLabel(g)),'draft.approve'); approve.type='button'; approve.setAttribute('aria-pressed',String(pick==='a'));
-        var reject=actOn(el('button','salt-ghost'+(pick==='r'?' apreject--on':''),g.trip?rejectWord(g.drafts.length):g.drafts.length>1?'Reject all':'Reject'),'draft.reject'); reject.type='button'; reject.setAttribute('aria-pressed',String(pick==='r'));
+        /* 25 Oct 2026 (canvas Salt Admin Orders, salt-ds 1.17.0): a ticked Reject is the danger pill, the weight of a ticked Approve */
+        var reject=actOn(el('button',pick==='r'?'salt-pill salt-pill--sm salt-pill--danger':'salt-ghost',g.trip?rejectWord(g.drafts.length):g.drafts.length>1?'Reject all':'Reject'),'draft.reject'); reject.type='button'; reject.setAttribute('aria-pressed',String(pick==='r'));
         approve.addEventListener('click',function(){ apChose(g,'a'); }); reject.addEventListener('click',function(){ apChose(g,'r'); });
         acts.appendChild(approve); acts.appendChild(reject);
         if(pick) card.classList.add(pick==='a'?'ap--a':'ap--r'); else if(gone) card.classList.add('ap--r');

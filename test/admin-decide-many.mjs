@@ -33,6 +33,7 @@ export async function run({ ok, pageWork }) {
     const a1 = [btn(T(1), "draft.approve").getAttribute("aria-pressed"), cardOf(T(1)).classList.contains("ap--a")];
     await tap(btn(T(1), "draft.reject"));
     const r1 = [btn(T(1), "draft.approve").getAttribute("aria-pressed"), btn(T(1), "draft.reject").getAttribute("aria-pressed"), cardOf(T(1)).classList.contains("ap--r")];
+    const rTicked = btn(T(1), "draft.reject").className;
     await tap(btn(T(1), "draft.reject"));
     const c1 = [btn(T(1), "draft.reject").getAttribute("aria-pressed"), cardOf(T(1)).classList.contains("ap--r")];
     const claim = cardOf(T(5));
@@ -73,8 +74,10 @@ export async function run({ ok, pageWork }) {
     const css = [...p.d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
     ok(/\.adm \.aphead \.salt-ghost,\.adm \.apticks button,\.adm \.apbar button,\.adm \.apmore\{min-height:44px\}/.test(css)
       && /\.adm \.ap--a\{border-color:var\(--salt-verdigris\)\}\.adm \.ap--r\{border-color:var\(--salt-ember\)\}/.test(css)
-      && /\.adm \.apreject--on\{color:var\(--salt-ember\);border-color:var\(--salt-ember\)\}/.test(css),
-    "44px targets, and the choice lit in the system's verdigris and ember");
+      && /\.salt-pill--danger \{ background: var\(--salt-ember\);/.test(css),
+    "44px targets, and the choice lit in the system's verdigris and ember, a ticked Reject the system's danger pill");
+    ok(/(^| )salt-pill( |$)/.test(rTicked) && / salt-pill--danger( |$)/.test(rTicked) && !/salt-ghost/.test(rTicked),
+      "a ticked Reject is filled, the danger pill, with the weight of a ticked Approve: " + rTicked);
   } catch (e) { ok(false, "admin-decide-many stopped on an error: " + (e && e.stack)); }
   finally { p.w.close(); }
 }

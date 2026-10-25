@@ -18,5 +18,5 @@
  {"name": "no done line", "file": "stmt/owner.js", "find": "      draftRoot.appendChild(dn);\n", "replace": "\n"},
  {"name": "a refused card counted decided", "file": "stmt/owner.js", "find": "var a=A.filter(function(g){ return !hit[g.lead.id]&&went[g.lead.id]==='approved'; }).length, rj=R.filter(function(g){ return !hit[g.lead.id]&&went[g.lead.id]==='rejected'; }).length;", "replace": "var a=A.length, rj=R.length;"},
  {"name": "targets under 44px", "file": "stmt/page.js", "find": ".adm .aphead .salt-ghost,.adm .apticks button,.adm .apbar button,.adm .apmore{min-height:44px}", "replace": ".adm .aphead .salt-ghost,.adm .apticks button,.adm .apbar button,.adm .apmore{min-height:32px}"},
- {"name": "Reject not ember", "file": "stmt/page.js", "find": ".adm .apreject--on{color:var(--salt-ember);border-color:var(--salt-ember)}", "replace": ".adm .apreject--on{color:var(--salt-brass)}"}
+ {"name": "a ticked Reject is a ghost again", "file": "stmt/owner.js", "find": "pick==='r'?'salt-pill salt-pill--sm salt-pill--danger':'salt-ghost',", "replace": "pick==='r'?'salt-ghost':'salt-ghost',"}
 ]
