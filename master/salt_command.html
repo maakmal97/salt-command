@@ -1920,6 +1920,10 @@ details.obs>summary{min-height:var(--tap);}
 }
 .salt-pill--md { padding: 16px 40px; font-size: 0.875rem; }
 .salt-pill--sm { padding: 10px 20px; font-size: 0.71875rem; }
+/* 1.17.0 (canvas Salt Admin Orders, 25 Oct 2026): THE DANGER PILL, a refusal chosen and filled, as a ticked Reject beside a ticked Approve: the ember
+   under the ink on accent, so the two decided states carry one weight; the danger ghost stays the refusal at rest (npm run contrast measures the ink) */
+.salt-pill--danger { background: var(--salt-ember); box-shadow: 0 8px 24px color-mix(in srgb, var(--salt-ember) 30%, transparent); }
+.salt-pill--danger:hover { box-shadow: 0 12px 32px color-mix(in srgb, var(--salt-ember) 40%, transparent); }
 .salt-pill:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(var(--salt-copper-rgb, 184, 115, 51), 0.4); }
 .salt-pill:active { transform: translateY(0); box-shadow: 0 8px 24px rgba(var(--salt-copper-rgb, 184, 115, 51), 0.3); }
 .salt-pill:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 3px; }
@@ -2861,6 +2865,9 @@ label.salt-field__label {
 /* an option that cannot be chosen now (Tide while it is off) greys as a ghost does, and takes no hover */
 .salt-segment__opt:disabled, .salt-segment__opt:disabled:hover { color: var(--salt-mist); opacity: 0.45; cursor: not-allowed; }
 .salt-segment__count { color: var(--salt-brass); margin-left: 6px; }   /* copper is 4.47:1 on Night's thumb */
+/* The tight slider (1.16.0, Salt Admin Customers, 25 Oct 2026): four places whose longest word is ten letters fit whole at 390px, the tracking
+   halved and the option's own padding thinned; nothing else about the recipe moves. */
+.salt-segment--tight .salt-segment__opt { letter-spacing: 0.06em; padding: 0 2px; }
 @media (prefers-reduced-motion: reduce) {
   .salt-segment::before { transition: none; }
 }
