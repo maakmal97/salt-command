@@ -2556,7 +2556,10 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `acct.find` | Accounts | Finds an account by a code or a username. |
 | `acct.message` | Accounts card for money owed (key: the username) | Opens their thread under Messages. |
 | `acct.open` | Accounts list, one card each (key: the username) | Opens that account's card. |
+| `acct.message-row` | Accounts table from 1080px, money owed (key: the username) | Opens their thread under Messages. |
 | `acct.open-card` | Accounts card with nothing to do but look (key: the username) | Opens that account's card, as a tap on the card does. |
+| `acct.open-row` | Accounts table from 1080px, the code (key: the username) | Opens that account's card. |
+| `acct.open-row-way` | Accounts table from 1080px, the way (key: the username) | Opens that account's card, where its Send or Show is. |
 | `acct.partner` | Account card, Partner (key: the code) | Makes them a partner on a second tap within four seconds: a name-free partner entry for review; a partner pays the Floor. |
 | `acct.pct.book` | Account card, Their % (key: the book) | Shows that book's %. |
 | `acct.pct.clear` | Account card, Their % (key: the code) | Sends their % back to 0, the Set Price, for review. |

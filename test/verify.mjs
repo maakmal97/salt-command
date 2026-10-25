@@ -50536,6 +50536,11 @@ await (async () => {
   await (await import("./admin-cust-assoc.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Admin Customers P8: from 1080px the accounts are plain tables and an open account fills the page in columns (26 Oct 2026)");
+await (async () => {
+  await (await import("./admin-cust-wide.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");
 await (async () => {
   await (await import("./maker-queue-withdrawal.mjs")).run({ ok, worker, handleMaker });

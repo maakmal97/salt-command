@@ -1229,6 +1229,27 @@ body.ended>*:not(#aEnded){display:none}
 .adm .atable .ameter{margin:0}
 .adm .atable td,.adm .atable th{white-space:nowrap}
 @media (min-width:860px){.adm .aclist{display:none}.adm .atable{display:block}}
+/* 26 Oct 2026 (the Customers canvas, P8; his yes to Asks C and D): from 1080px a group of accounts is one plain table, the cards hidden; an account opened fills
+   the page in columns, two and three from 1440px, as an open order does, the list and its way back as on a phone; Links and Associates use the width */
+.adm .atable2{display:none;padding:4px 6px;overflow:hidden}
+.adm .atable2 td,.adm .atable2 th{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .atable2 .atu{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
+.adm .atable2 .atfig{font-family:var(--salt-font-mono);font-size:var(--salt-text-lg);font-weight:600}
+.adm .atable2 .atgo{width:136px}
+.adm .atable2 .nbtn{width:120px;height:48px;min-height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (min-width:1080px){
+  .adm .alist .ngroup>.ncard{display:none}
+  .adm .atable2{display:block}
+  .adm #oLinks,.adm #oCards{max-width:none}
+  .adm #oAccts.open .asplit{grid-template-columns:minmax(0,1fr)}
+  .adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount,.adm #oAccts.open .alead{display:none}
+  .adm #oAccts.open #aopen{position:static;max-height:none;overflow:visible}
+  .adm #oAccts.open #aopen .aback{display:inline-flex}
+  .adm #aopen .oacct{display:block;column-count:2;column-gap:20px}
+  .adm #aopen .oacct .amore{display:contents}
+  .adm #aopen .oacct .asec{break-inside:avoid;margin:0 0 20px}
+}
+@media (min-width:1440px){.adm #aopen .oacct{column-count:3}}
 .adm .glinks{gap:10px}
 .adm .glinks .glink[hidden]{display:none}
 .adm .ncard .need-lead{flex:none;font-family:var(--salt-font-display)}

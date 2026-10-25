@@ -925,7 +925,30 @@ export const OWNER_JS = `
       box.setAttribute('data-sev', s[0]); box.setAttribute('aria-label', s[1]); h.setAttribute('data-sev', s[0]);
       box.appendChild(h); rlist.appendChild(box);
       group.forEach(function(a){ box.appendChild(rowOf(a)); });
+      box.appendChild(acctTable(group));
     });
+  }
+  /* 26 OCT 2026 (canvas Salt Admin Customers, P8; his yes to Ask D): FROM 1080PX A GROUP IS ONE PLAIN TABLE, the cards hidden: the code (its tap opens the account),
+     the username, the state as its word, since when, what is owed at the right and the one way, as the card's */
+  function acctTable(group){
+    var wrap=el('div','salt-glass-card salt-glass-card--radius-lg atable2'), table=el('table','salt-table salt-table--plain'), hr=el('tr'), body=el('tbody');
+    table.appendChild(el('caption','sr','The accounts in this group, money first'));
+    ['Account','Username','State','Since','Owed',''].forEach(function(h, i){ var th=el('th',i<4?'l':null,h); th.setAttribute('scope','col'); hr.appendChild(th); });
+    table.appendChild(el('thead')).appendChild(hr); table.appendChild(body);
+    group.forEach(function(a){
+      var s=acctState(a), who=a.test?testName(a):(a.code||a.username), tr=el('tr'), th=el('th','l'); th.setAttribute('scope','row'); tr.setAttribute('data-row-u', a.username);
+      var b=actOn(el('button','acode apick',who),'acct.open-row',a.username); b.type='button'; b.addEventListener('click', function(){ openCard(a.username); }); th.appendChild(b); tr.appendChild(th);
+      tr.appendChild(el('td','l atu',a.username));
+      var sd=el('td','l'); sd.appendChild(chip(s.sev==='now'?'copper':s.sev==='soon'?'brass':'mist', s.word)); tr.appendChild(sd);
+      tr.appendChild(el('td','l'+(s.late?' nage--late':''),s.age||''));
+      tr.appendChild(el('td','atfig'+(s.mine?' nfig--mine':''),+s.rm>0.004?rmShort(s.rm):''));
+      var go=el('td','atgo'), w;
+      if(s.act==='message'){ w=pill(['Message','acct.message-row',a.username]); w.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(a.username); }); }
+      else { w=pill([s.act==='send'?'Send':s.act==='show'?'Show':'Open','acct.open-row-way',a.username]); w.addEventListener('click', function(){ openCard(a.username); }); }
+      w.classList.remove('salt-pill--md'); w.classList.add('salt-pill--sm','nbtn'); go.appendChild(w); tr.appendChild(go);
+      body.appendChild(tr);
+    });
+    wrap.appendChild(table); return wrap;
   }
   function filterMark(){
     [].slice.call(document.querySelectorAll('#afil button[data-f]')).forEach(function(x){
