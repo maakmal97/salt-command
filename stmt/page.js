@@ -726,6 +726,20 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-cover__held:empty{display:none}
 .adm .maker-cover__fig{flex:none;white-space:nowrap;font-family:var(--salt-font-mono);font-variant-numeric:tabular-nums}
 .adm .reading-head{margin:12px 0 0}
+/* 25 Oct 2026 (Record redesign P5): the row chosen is a card of one height, its reference and when on line one, its typed book and who on line two, its total at the
+   right; the changes made ready a ledger; a move of its History one line, its Undo at the right */
+.adm .rowcard{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center;box-sizing:border-box;height:76px;padding:12px 14px;margin:12px 0 0}
+.adm .rowcard[hidden]{display:none}
+.adm .rowcard__kind{grid-column:1;grid-row:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);color:var(--salt-mist-bright)}
+.adm .rowcard__rid{color:var(--salt-brass)}
+.adm .rowcard__who{grid-column:1;grid-row:2;display:flex;align-items:center;gap:8px;min-width:0}
+.adm .rowcard__code{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--salt-font-mono)}
+.adm .rowcard__fig{grid-column:2;grid-row:1/3;white-space:nowrap;font-family:var(--salt-font-mono);font-size:1.25rem;font-weight:500;font-variant-numeric:tabular-nums}
+.adm .maker-changes{grid-column:1/-1;flex:1 1 100%}
+.adm .maker-changes .salt-ledger__value{white-space:nowrap}
+.adm [data-form="correct-a-row"] .undomove{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;border-bottom:1px solid var(--salt-line-faint)}
+.adm [data-form="correct-a-row"] .undomove>.maker-facts{flex:1 1 auto;min-width:0;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm [data-form="correct-a-row"] .undomove>button{flex:none;margin:0}
 .adm .reading-rows .salt-ledger__line{align-items:baseline}
 .adm .reading-rows .salt-ledger__label{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .reading-rows .salt-ledger__value{flex:none;white-space:nowrap;text-align:right}

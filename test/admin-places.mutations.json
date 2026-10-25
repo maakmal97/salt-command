@@ -38,8 +38,8 @@
  {
   "name": "a strip is no longer the system's tabs",
   "file": "stmt/page.js",
-  "find": "'<div class=\"' + (seg ? \"salt-segment\" : \"salt-tabs\") + ' aparts' + cls + '\"",
-  "replace": "'<div class=\"aparts' + cls + '\""
+  "find": "(nav ? \"salt-nav__links\" : seg ? \"salt-segment\" : \"salt-tabs\") + ' aparts' + cls + '\"",
+  "replace": "' aparts' + cls + '\""
  },
  {
   "name": "a strip is no tablist",

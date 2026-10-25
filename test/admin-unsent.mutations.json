@@ -18,5 +18,5 @@
  {"name": "a card never names the party", "file": "stmt/owner.js", "find": "who:/^[A-Z]+[0-9]+-[A-Z0-9-]+$/.test(code)?code:''}", "replace": "who:''}"},
  {"name": "the sentence says A before a vowel", "file": "stmt/owner.js", "find": "return (/^[aeiou]/.test(w)?'An ':'A ')+w+' you sent'", "replace": "return 'A '+w+' you sent'"},
  {"name": "the sentence leaves out the day", "file": "stmt/owner.js", "find": "' you sent'+(u.at?' on '+fmtWhen(u.at):'')+' was not confirmed.'", "replace": "' you sent was not confirmed.'"},
- {"name": "the entry's own section says something else", "file": "stmt/owner.js", "find": "status.textContent=unsentSaid(unsentRead(key))+' Send it again, or update it first.'", "replace": "status.textContent='This entry was retained. Send it again, or update it first.'"}
+ {"name": "the entry's own section says something else", "file": "stmt/owner.js", "find": "status.textContent=unsentSaid(u)+' Send it again, or update it first.'", "replace": "status.textContent='This entry was retained. Send it again, or update it first.'"}
 ]

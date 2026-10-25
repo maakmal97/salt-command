@@ -49861,17 +49861,18 @@ await (async () => {
     ok(!doc.querySelector("[data-accept]"), "a preview returning after a field edit cannot restore a stale Accept");
     const tradeSection = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Sale or purchase");
     /* the few, fixed choices (sale or purchase, the book, the handover) are tiles, tapped; the select left is the party, then the figures in the order they stand */
-    const tradeControls = tradeSection.querySelectorAll("select, input:not([type=radio])");
+    /* 25 Oct 2026 (Record redesign P4): found by their acts, since the resale choice now stands before Who */
+    const tradeControl = (act) => tradeSection.querySelector('[data-act="record.trade.' + act + '"]');
     tile(tradeSection, "Sale or purchase", "sale");
     tile(tradeSection, "Book", "salt");
-    tradeControls[0].value = "CX1-AB";
-    tradeControls[1].value = "2026-10-01";
-    tradeControls[2].value = "1";
-    tradeControls[3].value = "100";
-    tradeControls[4].value = "0";
-    tradeControls[5].value = "0";
+    tradeControl("party").value = "CX1-AB";
+    tradeControl("date").value = "2026-10-01";
+    tradeControl("units").value = "1";
+    tradeControl("total").value = "100";
+    tradeControl("cash").value = "0";
+    tradeControl("moved").value = "0";
     tile(tradeSection, "Handover", "");
-    tradeControls[6].value = "0";
+    tradeControl("delivery").value = "0";
     [...tradeSection.querySelectorAll("button")].find((button) => button.textContent === "Send the sale").click();
     for (let i = 0; i < 100 && !adminCalls.some((call) => call.route === "/all/maker/inputs/sale"); i++)
       await new Promise((resolve) => setTimeout(resolve, 10));
@@ -50333,6 +50334,11 @@ await (async () => {
 section("25 Oct 2026: Salt Admin Record, P4: the sale's resale choice before Who, its reading a ledger, its reward cover one row");
 await (async () => {
   await (await import("./admin-record-trade.mjs")).run({ ok, pageWork });
+})();
+
+section("25 Oct 2026: Salt Admin Record, P5: the row chosen a card, What to do tiles with their notes, the changes a ledger, Reopen alike");
+await (async () => {
+  await (await import("./admin-record-correct.mjs")).run({ ok, pageWork });
 })();
 
 

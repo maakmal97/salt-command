@@ -266,14 +266,14 @@
  {
   "name": "a book's tile is the drawn mark again",
   "file": "stmt/owner.js",
-  "find": "if(item.mark) face.appendChild(productTag(item.mark)); else",
-  "replace": "if(item.mark) face.appendChild(bookMark(item.mark,28)); else"
+  "find": "if(item.mark) face.appendChild(productTag(item.mark));\n        else if(item.detail)",
+  "replace": "if(item.mark) face.appendChild(bookMark(item.mark,28));\n        else if(item.detail)"
  },
  {
-  "name": "a book's tile loses its mark",
+  "name": "a book's tile loses its tag",
   "file": "stmt/owner.js",
-  "find": "if(item.mark) face.appendChild(productTag(item.mark)); else face.appendChild(el('span','salt-option__label',item.label));",
-  "replace": "face.appendChild(el('span','salt-option__label',item.label));"
+  "find": "        if(item.mark) face.appendChild(productTag(item.mark));\n        else if(item.detail)",
+  "replace": "        if(item.mark) face.appendChild(el('span','salt-option__label',item.label));\n        else if(item.detail)"
  },
  {
   "name": "a group of marks is two wide boxes across",

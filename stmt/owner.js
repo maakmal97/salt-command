@@ -2186,7 +2186,9 @@ export const OWNER_JS = `
         radio.type='radio'; radio.name=name; radio.value=String(item.value); if(item.aria) radio.setAttribute('aria-label',item.aria);
         actOn(radio,L[1],(L[2]?L[2]+'-':'')+(String(item.value)===''?'none':item.value));
         radio.checked=offered?String(item.value)===kept:(!none&&i===0);
-        if(item.mark) face.appendChild(productTag(item.mark)); else face.appendChild(el('span','salt-option__label',item.label));   /* a book's tile is its typed tag on Salt Admin (his decision of 22 Oct 2026; Record from 25 Oct) */
+        if(item.mark) face.appendChild(productTag(item.mark));
+        else if(item.detail){ var said=el('span','salt-option__text'); said.appendChild(el('span','salt-option__label',item.label)); said.appendChild(el('span','salt-option__detail',item.detail)); face.appendChild(said); }   /* a tile with its note under its words (25 Oct 2026) */
+        else face.appendChild(el('span','salt-option__label',item.label));   /* a book's tile is its typed tag on Salt Admin (his decision of 22 Oct 2026; Record from 25 Oct) */
         lab.appendChild(radio); lab.appendChild(face); grid.appendChild(lab);
       });
     };
@@ -2284,6 +2286,9 @@ export const OWNER_JS = `
     orderCode:'Order code', settle:'Settlement', note:'Note', handover:'Handover'};
   function fieldWord(f){ return FIELDW[f]||f; }
   var KINDW={Correction:'Change the figures', Fulfilment:'Record goods or cash moved', Cancellation:'Cancel the order', Payment:'Paid the supplier', Receipt:'Goods received', Default:'Nothing arrived'};
+  /* 25 Oct 2026 (Record redesign P5, his Ask F): what each choice does, under its words on its tile (the three notes the form opened with, and one for each of a purchase's) */
+  var KINDD={Correction:'Restate what was typed on the row.', Fulfilment:'What was handed over or paid.', Cancellation:'Only while nothing has moved.',
+    Payment:'What you paid the supplier.', Receipt:'What arrived from the supplier.', Default:'The lot never came.'};
   function makerStatus(parent){
     var status=el('p','msg'); status.setAttribute('role','status'); status.setAttribute('aria-live','polite');
     parent.appendChild(status); return status;
@@ -2480,24 +2485,40 @@ export const OWNER_JS = `
     };
     offerLoad();
     var editor=makerForm('entry');editor.appendChild(el('h3',null,'Correct a row'));
-    editor.appendChild(el('p','msg','Change the figures: restate what was typed on a row.'));
-    editor.appendChild(el('p','msg','Goods or cash moved: record what was handed over or paid.'));
-    editor.appendChild(el('p','msg','Cancel the order: only while nothing has moved.'));
     parent.appendChild(editor);
+    /* 25 Oct 2026 (Record redesign P5, his Ask F): the row is named by its reference, who and when; the card under the choice carries its book, its units and its total */
     var rows=catalog.rows||[], rowItems=rows.map(function(row){return {value:row.rid,
-      label:optionBook(row.product)+row.party+', '+units(row.qty)+', '+rm(row.total)+', '+(fmtWhen(row.date)||'undated')+(row.defaulted?', defaulted':'')};});
+      label:row.rid+' · '+row.party+' · '+(fmtWhen(row.date)||'undated')+(row.defaulted?', defaulted':'')};});
     /* no row is chosen until he picks one, so a movement never goes out against the book's first row by default */
     var editRow=addSelect(editor,['Which row','record.amend.row'],[{value:'',label:rows.length?'Choose a row':'No row to correct'}].concat(rowItems)),
+      rowCard=el('div','salt-glass-card salt-glass-card--radius-md rowcard'),
       editKind=makerTilesIn(editor,['What to do','record.amend.kind'],[{value:'Correction',label:KINDW.Correction},
         {value:'Fulfilment',label:KINDW.Fulfilment},{value:'Cancellation',label:KINDW.Cancellation}]),
       editDate=makerField(editor,['On','record.amend.date'],'date',today);
+    rowCard.setAttribute('aria-label','The row chosen'); editor.insertBefore(rowCard,editKind);
+    var drawRowCard=function(){
+      rowCard.textContent=''; var row=rows.find(function(item){return item.rid===editRow.value;}); rowCard.hidden=!row; if(!row) return;
+      var kind=el('span','rowcard__kind'); kind.appendChild(el('span','rowcard__rid',row.rid)); kind.appendChild(document.createTextNode(' · '+units(row.qty)+(row.direction==='BUY'?' bought':'')+' · '+(fmtWhen(row.date)||'undated')+(row.defaulted?' · defaulted':'')));
+      var who=el('span','rowcard__who'); if(row.product) who.appendChild(productTag(row.product)); who.appendChild(whoTag(el('span','rowcard__code',row.party),row.party));
+      rowCard.appendChild(kind); rowCard.appendChild(who); rowCard.appendChild(el('span','rowcard__fig',rmShort(row.total)));
+    };
     var movement=el('div','maker-fields');editor.appendChild(movement);
     var editCash=makerField(movement,['RM','record.amend.cash'],'number','0'), editUnits=makerField(movement,['Units','record.amend.units'],'number','0');
     var patch=el('div','maker-fields');editor.appendChild(patch);
     var definitions=catalog.correctionFields||[];
     var editField=addSelect(patch,['What to change','record.amend.field'],definitions.map(function(item){return {value:item.field,label:fieldWord(item.field)};}));
     var valueBox=el('div','maker-fields');patch.appendChild(valueBox);
-    var editValue=null, changes={}, patchList=el('p','msg');patch.appendChild(patchList);
+    var editValue=null, changes={}, patchList=el('div','maker-changes');patch.appendChild(patchList);
+    /* the changes made ready, a ledger of the field and its new value (25 Oct 2026); none, and nothing is drawn */
+    var drawChanges=function(){
+      patchList.textContent=''; var keys=Object.keys(changes); if(!keys.length) return;
+      patchList.appendChild(el('h4','salt-eyebrow salt-eyebrow--copper','Ready to send'));
+      var list=el('div','salt-ledger');
+      keys.forEach(function(k){ var v=changes[k], row=el('div','salt-ledger__row'), line=el('div','salt-ledger__line'); row.setAttribute('data-change',k);
+        line.appendChild(el('span','salt-ledger__label',fieldWord(k))); line.appendChild(el('span','salt-ledger__value',v===null?'Cleared':v===true?'Yes':v===false?'No':String(v)));
+        row.appendChild(line); list.appendChild(row); });
+      patchList.appendChild(list);
+    };
     var editStatus=makerStatus(editor);
     var cancelPreview=el('div','maker-cancellation');cancelPreview.setAttribute('aria-live','polite');editor.appendChild(cancelPreview);
     var drawValue=function(){
@@ -2520,16 +2541,16 @@ export const OWNER_JS = `
       if(!editValue.value.trim())throw new Error('Enter a new value, or tap Clear it to empty the field.');
       changes[definition.field]=definition.kind==='number'?Number(editValue.value)
         :definition.kind==='boolean'?editValue.value==='true':definition.kind==='text'?editValue.value.trim():editValue.value;
-      patchList.textContent=Object.keys(changes).map(fieldWord).join(', ')+' ready to send.';
+      drawChanges();
       editor.dispatchEvent(new Event('input',{bubbles:true}));
     });
     makerButton(patch,['Clear it','record.amend.clear-field'],function(){
       var definition=definitions.find(function(item){return item.field===editField.value;});
       if(!definition||definition.required)throw new Error('This field cannot be empty. Enter a new value.');
-      changes[definition.field]=null;patchList.textContent=Object.keys(changes).map(fieldWord).join(', ')+' ready to send.';
+      changes[definition.field]=null;drawChanges();
       editor.dispatchEvent(new Event('input',{bubbles:true}));
     });
-    editRow.addEventListener('change',function(){changes={};patchList.textContent='';});
+    editRow.addEventListener('change',function(){changes={};drawChanges();drawRowCard();});drawRowCard();
     /* plan 4: the row picked has its History, and Undo on its newest move */
     var editHist=el('div','maker-fields');editor.appendChild(editHist);
     var drawHist=function(){editHist.replaceChildren();if(editRow.value&&rows.some(function(item){return item.rid===editRow.value&&item.direction!=='BUY';}))historyBlock(editHist,{rid:editRow.value},'row:'+editRow.value,null,'row:'+editRow.value);};
@@ -2537,7 +2558,7 @@ export const OWNER_JS = `
     var kindsFor=function(){
       var row=rows.find(function(item){return item.rid===editRow.value;}), kept=editKind.value;
       var names=row&&row.defaulted?['Correction']:row&&row.direction==='BUY'?['Correction','Fulfilment','Cancellation','Payment','Receipt','Default']:['Correction','Fulfilment','Cancellation'];
-      editKind.fill(names.map(function(name){return {value:name,label:KINDW[name]||name};}));
+      editKind.fill(names.map(function(name){return {value:name,label:KINDW[name]||name,detail:KINDD[name]};}));
       editKind.value=names.indexOf(kept)>=0?kept:'Correction';
     };
     var drawKind=function(){var k=editKind.value;
@@ -2556,7 +2577,7 @@ export const OWNER_JS = `
       }};
     editKind.addEventListener('change',drawKind);editRow.addEventListener('change',function(){kindsFor();drawKind();});kindsFor();drawKind();
     /* plan 1: Needs you's owed cards open this form on their row, as goods or cash moved (amendFor) */
-    amendPick=function(rid){ if(!rows.some(function(item){return item.rid===rid;}))return false; editRow.value=rid; changes={}; patchList.textContent=''; kindsFor(); editKind.value='Fulfilment'; drawKind(); editorReady(); return true; };
+    amendPick=function(rid){ if(!rows.some(function(item){return item.rid===rid;}))return false; editRow.value=rid; changes={}; drawChanges(); drawRowCard(); kindsFor(); editKind.value='Fulfilment'; drawKind(); editorReady(); return true; };
     var editorButton=makerButton(editor,['Send the correction','record.amend.send'],async function(send){
       if(!editRow.value)throw new Error('Choose a row first.');
       var body={at:new Date().toISOString(),rid:editRow.value,kind:editKind.value,date:editDate.value};
@@ -2571,11 +2592,11 @@ export const OWNER_JS = `
         var rs=error.detail&&error.detail.restate;
         if(!rs||!(/^[0-9]{14}-[a-z0-9]{1,8}$/).test(rs.order))throw error;
         await refs('/all/maker/orders/'+encodeURIComponent(rs.order)+'/restate',{rid:mintRid(),qty:rs.qty,total:rs.total,delivery:rs.delivery});
-        changes={};patchList.textContent='';editStatus.textContent='Sent as an amendment of their order, so the order and the row change together.';
+        changes={};drawChanges();editStatus.textContent='Sent as an amendment of their order, so the order and the row change together.';
         await loadMaker();
         return;
       }
-      changes={};patchList.textContent='';editStatus.textContent='Sent. The row changes once you approve it.';
+      changes={};drawChanges();editStatus.textContent='Sent. The row changes once you approve it.';
       await loadMaker();
     },true);
     var editorReady=function(){editorButton.disabled=!rows.length||!editRow.value;};
@@ -2585,8 +2606,17 @@ export const OWNER_JS = `
     revive.appendChild(el('p','msg','Reopens an order you cancelled, if nothing was paid or handed over.'));
     parent.appendChild(revive);
     var revivable=(catalog.revivable||[]).filter(function(row){return !(row.paid>0.009)&&!(row.movedUnits>0.009);});
+    /* 25 Oct 2026 (Record redesign P5): the order named by its reference, who and when it was cancelled, and its card under the choice */
     var reviveRow=addSelect(revive,['Which order','record.revive.row'],revivable.map(function(row){return {value:row.rid,
-      label:optionBook(row.product)+row.party+', '+units(row.qty)+', '+rm(row.total)+', '+(fmtWhen(row.date)||'undated')+(row.cancelledOn?', cancelled '+fmtWhen(row.cancelledOn):'')};}));
+      label:row.rid+' · '+row.party+' · '+(row.cancelledOn?'cancelled '+fmtWhen(row.cancelledOn):fmtWhen(row.date)||'undated')};}));
+    var reviveCard=el('div','salt-glass-card salt-glass-card--radius-md rowcard'); reviveCard.setAttribute('aria-label','The order chosen'); revive.appendChild(reviveCard);
+    var drawReviveCard=function(){
+      reviveCard.textContent=''; var row=revivable.find(function(item){return item.rid===reviveRow.value;}); reviveCard.hidden=!row; if(!row) return;
+      var kind=el('span','rowcard__kind'); kind.appendChild(el('span','rowcard__rid',row.rid)); kind.appendChild(document.createTextNode(' · '+units(row.qty)+' · '+(fmtWhen(row.date)||'undated')));
+      var who=el('span','rowcard__who'); if(row.product) who.appendChild(productTag(row.product)); who.appendChild(whoTag(el('span','rowcard__code',row.party),row.party));
+      reviveCard.appendChild(kind); reviveCard.appendChild(who); reviveCard.appendChild(el('span','rowcard__fig',rmShort(row.total)));
+    };
+    reviveRow.addEventListener('change',drawReviveCard); drawReviveCard();
     var reviveDate=makerField(revive,['On','record.revive.date'],'date',today), reviveStatus=makerStatus(revive);
     var reviveButton=makerButton(revive,['Reopen the order','record.revive.send'],async function(send){
       reviveStatus.textContent='Sending.';

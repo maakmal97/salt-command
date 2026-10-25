@@ -626,8 +626,8 @@
  {
   "name": "every Entry row says Open again",
   "file": "stmt/owner.js",
-  "find": "title.appendChild(el('span',null,name)); main.appendChild(title);\n      row.appendChild(main);",
-  "replace": "title.appendChild(el('span',null,name)); main.appendChild(title); main.appendChild(el('span','salt-inbox-row__action','Open'));\n      row.appendChild(main);"
+  "find": "title.appendChild(el('span',null,name)); main.appendChild(title);\n      if(FORM_WHAT[slug])",
+  "replace": "title.appendChild(el('span',null,name)); main.appendChild(title); main.appendChild(el('span','salt-inbox-row__action','Open'));\n      if(FORM_WHAT[slug])"
  },
  {
   "name": "a reward offset is listed as a customer's",
