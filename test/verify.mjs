@@ -19784,7 +19784,7 @@ await (async () => {
     const card = D.getElementById("thisDevice"), body = () => card.textContent;
     ok(await until(() => !card.hidden && /iPhone, Safari/.test(body()) && /Kept signed in/.test(body())) && D.getElementById("pStmt").contains(card),
       "signed in, the statement ends on This device: " + JSON.stringify(body()));
-    const rows = () => [...card.querySelectorAll(".salt-ledger__row")].map((r) => r.textContent);
+    const rows = () => [...card.querySelectorAll(".salt-settings__row, .salt-ledger__row")].map((r) => r.textContent);
     ok(rows().some((t) => /^Notifications/.test(t)) && rows().some((t) => /^Windows computer, EdgeThis oneKept signed in since/.test(t))
       && rows().some((t) => /^iPhone, SafariSigned in .*, for that visit[.]$/.test(t)) && !body().includes("Mozilla"),
       "it lists notifications, this computer marked This one and kept signed in, and the iPhone for that visit: " + JSON.stringify(rows()));
@@ -20407,7 +20407,11 @@ await (async () => {
     D.getElementById("pw").value = pw;
     D.getElementById("f").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
     const card = D.getElementById("thisDevice");
-    const btn = (t) => [...card.querySelectorAll("button")].find((b) => b.textContent === t || b.getAttribute("aria-label") === t);
+    /* 26 Oct 2026, his word: Turn on and Turn off are This device's Notifications Switch, off or on */
+    const btn = (t) => { const sw = card.querySelector('.salt-settings__row .salt-switch[aria-label="Notifications"]');
+      if (t === "Turn on") return sw && sw.getAttribute("aria-checked") === "false" ? sw : undefined;
+      if (t === "Turn off") return sw && sw.getAttribute("aria-checked") === "true" ? sw : undefined;
+      return [...card.querySelectorAll("button")].find((b) => b.textContent === t || b.getAttribute("aria-label") === t); };
     ok(await until(() => !card.hidden && !!btn("Turn on")), "signed in with the question dismissed, This device offers Turn on");
     st.answer = "denied";
     btn("Turn on").click();
@@ -21450,22 +21454,23 @@ await (async () => {
       "the issues sealed beside the live document are never drawn on the Counter");
     /* This device: the phone was filed again on the way in, and Turn off drops it and keeps it off */
     const dev = D.getElementById("thisDevice");
-    const row = (label) => [...dev.querySelectorAll(".salt-ledger__row")].find((r) => r.querySelector(".salt-ledger__label").textContent === label);
+    /* 26 Oct 2026, his word: This device is a list of settings; Notifications is a Switch, on or off */
+    const row = (label) => [...dev.querySelectorAll(".salt-settings__row")].find((r) => r.querySelector(".salt-settings__label").textContent === label);
     const btnOf = (label) => row(label) && row(label).querySelector("button");
-    ok(await until(() => btnOf("Notifications") && btnOf("Notifications").textContent === "Turn off") && !dev.hidden && st.subs === 1,
+    ok(await until(() => btnOf("Notifications") && btnOf("Notifications").getAttribute("aria-checked") === "true") && !dev.hidden && st.subs === 1,
       "This device says the notifications are on, with Turn off beside them: " + JSON.stringify([st.subs, dev.textContent.slice(0, 120)]));
     btnOf("Notifications").click();
-    ok(await until(() => btnOf("Notifications") && btnOf("Notifications").textContent === "Turn on") && st.unsub === 1 && !st.subbed
+    ok(await until(() => btnOf("Notifications") && btnOf("Notifications").getAttribute("aria-checked") === "false") && st.unsub === 1 && !st.subbed
       && /Off[.]/.test(row("Notifications").textContent),
       "Turn off drops this phone's subscription and says Off on the row tapped: " + JSON.stringify(row("Notifications").textContent));
     /* signing out is on the card, and signing in again does not turn them back on by itself */
     signOutTap(D);
     ok(await until(() => !D.getElementById("gate").hidden) && dev.hidden, "Sign out of this device signs out, and the card goes with the account");
     ok(await signIn() && await until(() => st.rem === 2) && await new Promise((r) => setTimeout(() => r(true), 150))
-      && btnOf("Notifications").textContent === "Turn on" && st.key === 1 && st.subs === 1 && !st.subbed,
+      && btnOf("Notifications").getAttribute("aria-checked") === "false" && st.key === 1 && st.subs === 1 && !st.subbed,
       "and the next sign-in, run to its end, leaves them off, where the way in used to file the phone again: " + JSON.stringify([st.rem, st.key, st.subs, st.subbed]));
     btnOf("Notifications").click();
-    ok(await until(() => btnOf("Notifications") && btnOf("Notifications").textContent === "Turn off") && st.subs === 2 && st.subbed,
+    ok(await until(() => btnOf("Notifications") && btnOf("Notifications").getAttribute("aria-checked") === "true") && st.subs === 2 && st.subbed,
       "and Turn on files it again: " + JSON.stringify([st.subs, st.subbed]));
     signOutTap(D);
     ok(await until(() => !D.getElementById("gate").hidden) && await signIn() && await until(() => st.subs === 3) && st.subbed,
