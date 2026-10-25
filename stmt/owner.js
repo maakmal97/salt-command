@@ -3193,8 +3193,9 @@ export const OWNER_JS = `
     var theirs=((order&&order.msgs)||[]).filter(function(m){ return m.by==='customer'&&m.text; }).slice(-1)[0];
     if(theirs) card.appendChild(el('p','maker-facts','They wrote, '+fmtWhen(theirs.at)+': '+theirs.text));
     /* 18 Oct 2026 (part 3): the reply is folded under Answer them, shut until a tap; a closed order's, which is all its card holds, stands open */
-    var rf=ordFold(card,'Answer them','order.answer',order.id,'answer',!!replyOnly||orderAsked(order)), body=rf.body;
-    var said=makerField(body,['Answer them','order.reply-text'],'text','');
+    /* 25 Oct 2026 (canvas Salt Admin Orders): one word a thing, the fold Answer and its field Your line */
+    var rf=ordFold(card,'Answer','order.answer',order.id,'answer',!!replyOnly||orderAsked(order)), body=rf.body;
+    var said=makerField(body,['Your line','order.reply-text'],'text','');
     makerQuick().forEach(function(line,i){
       makerButton(body,[line,'order.quick-reply',i],function(){ said.value=line; keepWord(); },false).setAttribute('data-quick','');
     });
@@ -4032,7 +4033,7 @@ export const OWNER_JS = `
      money's controls) beside the record (the steps, the Bill, the Order log) and the insight (the messages, the reward); from 1440px three. The
      card's own parts are moved, never drawn again, so nothing typed or listened to is lost, and a change of width moves them back; below 1180 the
      card is as it was drawn, part for part in its order. Its foot stays under the columns. */
-  var OCOL_RECORD='.ordsteps, .obill, .ordmoney, .undohist', OCOL_INSIGHT='.ordfold:not(.ordfold--rowed), .orwdcard, .ocustcard';
+  var OCOL_RECORD='.ordsteps, .obill, .ordmoney, .undohist', OCOL_INSIGHT='.ordfold, .orwdcard, .ocustcard';
   function ordLayout(){
     var card=document.querySelector('#makerReview > .maker-card'); if(!card) return;
     var mm=window.matchMedia, n=mm&&mm('(min-width:1440px)').matches?3:mm&&mm('(min-width:1180px)').matches?2:1;
@@ -4447,11 +4448,12 @@ export const OWNER_JS = `
     /* Counter Batch A: the reference the customer sees on their order, so one they quote finds it here */
     var oref=el('span','salt-band__ref oref',orderRef(order.id)); oref.setAttribute('data-ref',''); top.appendChild(oref);
     head.appendChild(top);
-    var goods=el('div','ogoods'), tile=el('span','ogoods__tile'), what=el('span','ogoods__what'), sum=el('span','ogoods__sum');
-    tile.appendChild(bookMark(order.product,28)); goods.appendChild(tile);
+    var goods=el('div','ogoods'), what=el('span','ogoods__what'), sum=el('span','ogoods__sum');
+    /* 25 Oct 2026 (canvas Salt Admin Orders): the units as the heading, then the book's typed tag beside the code, as every card on Admin names it */
     what.appendChild(el('h3','ostate salt-title',units(order.qty)));
-    what.appendChild(whoTag(el('span','ogoods__who',codeByUser(order.u)),codeOfUser(order.u))); goods.appendChild(what);
-    sum.appendChild(el('span','ogoods__total',rm(order.total))); sum.appendChild(el('span','ogoods__label','Goods')); goods.appendChild(sum);
+    var whoRow=el('span','ogoods__line'); whoRow.appendChild(productTag(order.product));
+    whoRow.appendChild(whoTag(el('span','ogoods__who',codeByUser(order.u)),codeOfUser(order.u))); what.appendChild(whoRow); goods.appendChild(what);
+    sum.appendChild(el('span','ogoods__total',rmShort(order.total))); sum.appendChild(el('span','ogoods__label','Goods')); goods.appendChild(sum);
     head.appendChild(goods);
     var row=el('div','obandrow'), wayNode, waits=order.point&&order.status==='ready'&&order.mode==='collect'&&(+order.moved||0)<(+order.qty||0)-0.0004;
     if(waits&&order.pointAt&&isFinite(order.pointAt.lat)&&isFinite(order.pointAt.lng)){
@@ -4560,17 +4562,11 @@ export const OWNER_JS = `
            opening the fold below the row (its own summary hidden), and Decline is drawn into the row by makerOrderMoves. */
         var row3=el('div','ordrow3'); lead.appendChild(row3);
         /* beside Needs you the terms stand in view, as the canvas draws the open card (22 Oct 2026); on Orders they fold under Change terms */
-        var tf;
-        if(inline){ tf={body:el('div','oterms'), open:true}; card.appendChild(tf.body); row3.classList.add('ordrow3--two'); }
-        else {
-          tf=ordFold(card,'Change terms','order.terms',order.id,'terms',false);
-          tf.classList.add('ordfold--rowed'); actOn(tf.querySelector('summary'),'order.terms-fold',order.id);
-          var tb=actOn(el('button','salt-ghost ordrow3__terms','Change terms'),'order.terms',order.id); tb.type='button';
-          tb.setAttribute('aria-expanded',tf.open?'true':'false');
-          tb.addEventListener('click',function(){ tf.open=!tf.open; ordFolds[order.id+'|terms']=tf.open; tb.setAttribute('aria-expanded',tf.open?'true':'false'); });
-          tf.addEventListener('toggle',function(){ tb.setAttribute('aria-expanded',tf.open?'true':'false'); });
-          row3.appendChild(tb);
-        }
+        /* 25 Oct 2026 (canvas Salt Admin Orders, his yes to Ask E): ON ORDERS TOO THE TERMS STAND IN VIEW, as beside Needs you: Goods and Delivery two by two and
+           When across, the figures read under them, then Agree and Decline. Change terms and its fold are gone (his fold of 18 Oct 2026 reversed). */
+        var tf={body:el('div','oterms'), open:true};
+        if(inline) card.appendChild(tf.body); else card.insertBefore(tf.body,lead);
+        row3.classList.add('ordrow3--two');
         tf.body.appendChild(form);
         /* a sheet of several placed orders asks for the delivery charge once, on its first order (the Desk's ordPvDelivery):
            the others hide the chips and send nought */
@@ -4625,7 +4621,8 @@ export const OWNER_JS = `
           /* a sheet's lines take its first order's window, as they take its one delivery charge */
           var wv=makerPlacedWin(), yes=makerNeedsYes(order,q.total,wv);
           [].forEach.call(document.querySelectorAll('[data-reward="'+order.id+'"]'),function(n){ rewardPaint(n,order); });   /* the reward's figures come with the read */
-          var accept=makerButton(lead,[(yes?'Ask them, ':'Agree, ')+rm(q.result.quote)+(q.result.delivery>0?' + '+rm(q.result.delivery):''),yes?'order.send-yes':'order.accept'],function(){
+          /* 25 Oct 2026 (canvas Salt Admin Orders): the pill says the one sum it sends, the goods and the delivery together, so it fits its half of the row; the terms stand above it */
+          var accept=makerButton(lead,[(yes?'Ask them, ':'Agree, ')+rmShort((+q.result.quote||0)+(+q.result.delivery||0)),yes?'order.send-yes':'order.accept'],function(){
             var s=makerQuotes[order.id]; if(!s||!s.hash) return;
             /* version 2: a raise or another window goes to them as an offer, for their yes; never on a sheet, which the Desk refuses */
             if(yes){ var ob={total:s.total,delivery:s.delivery,hash:s.offerHash}; if(order.mode==='deliver'&&wv) ob.slot=wv;

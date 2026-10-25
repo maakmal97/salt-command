@@ -91,7 +91,7 @@ export async function run({ ok }) {
       "A successful preview shows the native card, margin, floor and usual tiles, not raw row JSON: " + card(id).textContent);
     ok(/They pay first: paid late before, 1 of 3 on time since; RM 300\.00 owed and this takes them past RM 250\.00\./.test(card(id).textContent),
       "The prepay line carries the late-payer clause from the server's late run and need: " + card(id).textContent);
-    ok(accept(id).textContent === "Agree, RM 200.00 + RM 10.00", "Accept is labelled with the server's quote and delivery: " + accept(id).textContent);
+    ok(accept(id).textContent === "Agree, RM 210", "Accept is labelled with the sum it sends, the server's quote and delivery together: " + accept(id).textContent);
 
     /* a redraw of the card keeps what it read, and asks the Desk for nothing more */
     const seen = previews().length;
@@ -104,14 +104,14 @@ export async function run({ ok }) {
     ok(!accept(id) && previews().length === seen, "Editing the goods total takes Accept away at once, and reads nothing until he finishes.");
     fire(total(id), "change");
     await until(() => accept(id));
-    ok(previews().length === seen + 1 && previews()[seen].body.total === 250 && !!accept(id) && accept(id).textContent === "Ask them, RM 250.00 + RM 10.00",
+    ok(previews().length === seen + 1 && previews()[seen].body.total === 250 && !!accept(id) && accept(id).textContent === "Ask them, RM 260",
       "Finishing the edit reads the figures again at the new total, and a raise goes for their yes: " + JSON.stringify(previews().slice(seen)) + (accept(id) || {}).textContent);
     total(id).value = "200"; fire(total(id), "input"); fire(total(id), "change");
-    await until(() => accept(id) && accept(id).textContent === "Agree, RM 200.00 + RM 10.00");
+    await until(() => accept(id) && accept(id).textContent === "Agree, RM 210");
     choose(id, "15");
     ok(!accept(id), "Choosing a different delivery charge takes Accept away at once.");
     await until(() => accept(id));
-    ok(/\+ RM 15\.00/.test(accept(id).textContent), "and reads the figures again at the new charge: " + accept(id).textContent);
+    ok(accept(id).textContent === "Agree, RM 215", "and reads the figures again at the new charge, the goods and the RM 15 together: " + accept(id).textContent);
 
     /* success -> failed refresh: a later preview failing clears what the earlier success left usable, at once */
     previewFail = 1;

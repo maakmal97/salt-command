@@ -669,7 +669,6 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 /* 20 Oct 2026: a placed order's three moves in one row */
 .adm .ordrow3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;flex:1 1 100%}
 .adm .ordrow3>button{width:100%;min-height:44px;padding-left:8px;padding-right:8px;white-space:nowrap}
-.adm .ordfold--rowed>summary{display:none}
 .adm .ordfold>summary .salt-plan__title{grid-column:1 / -1}
 .adm .ordfold__body>*+*{margin-top:12px}
 .adm .abody{display:flex;flex-direction:column;gap:28px}
@@ -1156,7 +1155,8 @@ body.ended>*:not(#aEnded){display:none}
 /* 20 Oct 2026: the order's band in four lines (the action, the goods, the way and moment, the minutes waited), the placed card's copper edge */
 .adm .ohead--placed{box-shadow:inset 3px 0 0 var(--salt-copper)}
 .adm .ogoods{display:flex;align-items:center;gap:14px}
-.adm .ogoods__tile{width:52px;height:52px;flex:none;border-radius:14px;background:var(--salt-slate);border:1px solid var(--salt-line);display:flex;align-items:center;justify-content:center}
+.adm .ogoods__line{display:flex;align-items:center;gap:8px;min-width:0}
+.adm .ogoods__line .ogoods__who{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .adm .ogoods__what{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .adm .ohead .ogoods__what h3{font-size:1.75rem;line-height:1.05}
 .adm .ogoods__who{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
