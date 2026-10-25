@@ -194,7 +194,8 @@
   and Remove asking once, This device rows, Shop's parts as text tabs. Section "Salt Admin's Shop on the Salt system". Accepted 26 Oct 2026.
 - v1258 (`4054c52f`, 26 Oct 2026; Cloud commit `40232565847`: chain and three suite parts green, live /rev `028280eedf4fc3ff`), his word: This device is a list of settings on
   salt-ds 1.18.0 (#30, the Switch and Settings recipes): Tide theme and Notifications switches, Names a password in its row with Unlock. Not yet opened by him.
-  Next (his yes of 26 Oct 2026): Salt Counter's own This device the same.
+- v1259 (`5e9edaf2`, 26 Oct 2026; Cloud commit `40235334331`: chain and three suite parts green, live /rev `6a58eb110eb5a135`), his yes of 26 Oct 2026: Salt Counter's own
+  This device is the same list (Notifications and Tide theme switches; Not here and why on a browser with no notifications; Saved as an app Yes). Not yet opened by him.
 
 ## Salt Admin Needs you redesign
 - Live as v1221 (`b8916ca2`, 23 Oct 2026; Cloud commit `39821813897`: chain and three suite parts green, live /rev `1e1013dcc935d44b`), from his canvas
