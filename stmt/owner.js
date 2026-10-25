@@ -5559,7 +5559,7 @@ export const OWNER_JS = `
     /* a stretch past midnight that reaches the next day's first opening runs on as one (openParts merges it): said, never refused */
     var next=hrsAfter(key), runs=late&&next&&a.filter(hrsLate).some(function(s){ return next.some(function(n){ return hrsMin(n.open)<=hrsMin(s.close); }); });
     box.appendChild(el('p','msg',runs?'This runs on into the next day’s hours: one stretch.':'A close earlier than the open runs into the next day, on its own.'));
-    var acts=el('div','maker-dayedit-acts');
+    var acts=el('div','maker-dayedit-acts ashop-two');
     var act=function(label,ac,fn,dis){ var b=actOn(el('button','salt-ghost',label),ac,name); b.type='button'; b.disabled=!!dis; b.addEventListener('click',function(){ fn(); hrsDraw(); hrsFocus(ac,name); }); acts.appendChild(b); return b; };
     act(a?'Closed':'Open','hours.day-closed',function(){ hrsSet(key,a?null:[{open:'09:00',close:'17:00'}]); });
     var last=a&&a[a.length-1], room=last&&!hrsLate(last)&&hrsMin(last.close)<=1380&&a.length<6;
@@ -5583,7 +5583,12 @@ export const OWNER_JS = `
       ap.addEventListener('click',function(){ hrsCopy.forEach(function(i){ hrsDraft.days[i]=hrsArr(a); }); hrsCopy=null; hrsDraw(); hrsFocus('hours.day-copy',name); });
       chips.appendChild(ap); box.appendChild(chips);
     }
-    var done=el('div','maker-dayedit-acts');
+    /* 25 Oct 2026 (Salt Admin Shop): what customers would see stands inside the open day, then Discard changes beside Done */
+    var band=el('section','salt-band ashop-pv'), pv=el('p','msg maker-preview'); band.setAttribute('aria-label','Customers would see');
+    pv.id='makerHoursPreview'; pv.setAttribute('role','status'); band.appendChild(pv); box.appendChild(band);
+    var done=el('div','apair');
+    var dis=actOn(el('button','salt-ghost','Discard changes'),'hours.discard'); dis.type='button';
+    dis.addEventListener('click',function(){ hrsDraft=null; hrsEditing=null; hrsCopy=null; hrsDraw(); }); done.appendChild(dis);
     makerButton(done,['Done','hours.save',name],function(){
       var before=hrsSaved;
       return refs('/all/maker/hours',{schedule:hrsWeekOut()})
@@ -5626,7 +5631,8 @@ export const OWNER_JS = `
        day, Same as the day before, Copy to any days, and Done, which saves the week and its dates. Below: what customers would see, and
        the dated days. */
     if(!hrsDraft){ hrsDraft=hrsFromConfig(); hrsSaved=JSON.stringify(hrsWeekOut()); }
-    root.appendChild(el('p','msg','Tap a day to change it.'));
+    var whead=el('div','anow-head'); whead.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Weekly hours')); whead.appendChild(chip('mist','Tap a day'));
+    root.appendChild(whead);
     var week=el('div','maker-week'), scale=el('div','maker-week-scale'), ticks=el('span');
     week.setAttribute('role','group'); week.setAttribute('aria-label','Weekly hours'); scale.setAttribute('aria-hidden','true');
     ['00','06','12','18','24'].forEach(function(t){ ticks.appendChild(el('span',null,t)); });
@@ -5635,7 +5641,7 @@ export const OWNER_JS = `
     root.appendChild(week);
     var weekSaid=el('p','msg osaid'); weekSaid.id='makerHoursSaved'; weekSaid.setAttribute('role','status'); weekSaid.setAttribute('aria-live','polite'); root.appendChild(weekSaid);
     var keep=el('div','maker-dayedit-acts');
-    if(hrsDirty()){ var dis=actOn(el('button','salt-ghost','Discard changes'),'hours.discard'); dis.type='button';
+    if(hrsDirty()&&hrsEditing===null){ var dis=actOn(el('button','salt-ghost','Discard changes'),'hours.discard'); dis.type='button';
       dis.addEventListener('click',function(){ hrsDraft=null; hrsEditing=null; hrsCopy=null; hrsDraw(); }); keep.appendChild(dis); }
     if(hrsUndo&&Date.now()<hrsUndo.until){ var un=actOn(el('button','salt-ghost','Undo'),'hours.undo'); un.type='button';
       un.addEventListener('click',function(){ if(un.disabled) return; un.disabled=true; var back=hrsUndo.week;
@@ -5643,11 +5649,11 @@ export const OWNER_JS = `
           .catch(function(error){ un.disabled=false; hoursSaid('week',null,error); }); });
       keep.appendChild(un); setTimeout(function(){ if(hrsUndo&&Date.now()>=hrsUndo.until){ hrsUndo=null; drawMakerHours(); } },Math.max(0,hrsUndo.until-Date.now())+50); }
     if(keep.children.length) root.appendChild(keep);
-    var pv=el('p','msg maker-preview'); pv.id='makerHoursPreview'; pv.setAttribute('role','status'); root.appendChild(pv); hrsPreviewDraw();
+    hrsPreviewDraw();
     /* the dated days (his answer): a holiday closed or a special day's hours, today to 90 days ahead, standing in for their weekday whole */
     var dated=el('div','maker-week maker-dates'), keys=Object.keys(hrsDraft.dates).sort();
     dated.setAttribute('role','group'); dated.setAttribute('aria-label','Dates');
-    dated.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Dates'));
+    var dhead=el('div','anow-head'); dhead.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Dates')); dhead.appendChild(chip('mist','Stand in for the weekday')); dated.appendChild(dhead);
     if(!keys.length) dated.appendChild(el('p','msg',"No dates set. A date stands in for its weekday: a holiday closed, or a special day's hours."));
     keys.forEach(function(k){ dated.appendChild(hrsRow(k)); if(hrsEditing===k) dated.appendChild(hrsEdit(k)); });
     var addRow=el('div','maker-dayedit-acts'), add=actOn(el('button','salt-ghost',hrsAdding?'Not now':'Add a date'),'hours.date-add'); add.type='button';

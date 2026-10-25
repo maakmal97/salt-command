@@ -736,14 +736,16 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
    a span past midnight's tail hatched at the start of the next day's row. A tapped day opens below its row on slate: Opens and Closes, then
    its quick buttons, every one 44px. */
 .adm .maker-week{display:flex;flex-direction:column;gap:2px;margin:8px 0}
-.adm .maker-week-scale,.adm .maker-day{display:grid;grid-template-columns:40px minmax(0,1fr) 136px;align-items:center;gap:12px;padding:0 8px}
+.adm .maker-week-scale,.adm .maker-day{display:grid;grid-template-columns:40px minmax(0,1fr) 128px;align-items:center;gap:12px;padding:0 8px}
+/* 25 Oct 2026 (Salt Admin Shop): a date's name is wider than a weekday's, so the dates keep their own column */
+.adm .maker-dates .maker-day{grid-template-columns:84px minmax(0,1fr) 128px}
 .adm .maker-week-scale>span:nth-child(2){display:flex;justify-content:space-between;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
 .adm .maker-day{min-height:44px;width:100%;border:0;border-radius:var(--salt-radius-md);background:none;color:var(--salt-salt);font:inherit;text-align:left;cursor:pointer}
 .adm .maker-day[aria-expanded=true]{background:var(--salt-glass)}
 .adm .maker-track{position:relative;display:block;height:10px;border-radius:4px;background:var(--salt-well)}
 .adm .maker-bar,.adm .maker-tail{position:absolute;top:0;bottom:0;border-radius:4px}
 .adm .maker-bar{background:var(--salt-brass)}
-.adm .maker-tail{background:repeating-linear-gradient(135deg,var(--salt-brass) 0 4px,transparent 4px 7px)}
+.adm .maker-tail{background:color-mix(in srgb,var(--salt-brass) 45%,transparent)}
 .adm .maker-day-times{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .maker-day-times.off{color:var(--salt-mist-bright)}
 .adm .maker-day-times sup,.adm .maker-plus1{color:var(--salt-brass);font-family:var(--salt-font-mono)}
@@ -755,6 +757,11 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-dayedit select{min-height:44px;width:100%;min-width:0}
 .adm .maker-dayedit-acts{display:flex;flex-wrap:wrap;gap:8px}
 .adm .maker-dayedit-acts button{min-height:44px;min-width:44px}
+.adm .ashop-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.adm .ashop-two>button{box-sizing:border-box;width:100%;height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .ashop-two>[data-act="hours.day-copy"]{grid-column:1/-1}
+.adm .ashop-pv{padding:12px 14px}
+.adm .ashop-pv .maker-preview{margin:0}
 .adm .maker-dayedit-times>button{min-height:44px;min-width:44px}
 .adm .maker-copy{display:flex;flex-wrap:wrap;gap:8px}
 .adm .maker-copy button{min-height:44px;min-width:44px}

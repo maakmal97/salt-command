@@ -13,5 +13,13 @@
  {"name":"the tiles are not one-line","file":"stmt/owner.js","find":"el('div','salt-kpi salt-kpi--line salt-kpi--'+tone+","replace":"el('div','salt-kpi salt-kpi--'+tone+"},
  {"name":"the points are miscounted","file":"stmt/owner.js","find":"pts?String(pts.length):'·'","replace":"pts?String(pts.length+1):'·'"},
  {"name":"the points read leaves the glance as it was","file":"stmt/owner.js","find":"makerPointsDraft=null; drawMakerPoints(); drawConfirm(); }","replace":"makerPointsDraft=null; drawMakerPoints(); }"},
- {"name":"no line under the tiles","file":"stmt/owner.js","find":":'Not measured yet · the hourly measure files it'));","replace":":''));"}
+ {"name":"no line under the tiles","file":"stmt/owner.js","find":":'Not measured yet · the hourly measure files it'));","replace":":''));"},
+ {"name":"the week's head has no chip","file":"stmt/owner.js","find":"whead.appendChild(chip('mist','Tap a day'));","replace":""},
+ {"name":"the dates' head has no chip","file":"stmt/owner.js","find":"dhead.appendChild(chip('mist','Stand in for the weekday'));","replace":""},
+ {"name":"the preview stands first in the day","file":"stmt/owner.js","find":"band.appendChild(pv); box.appendChild(band);","replace":"band.appendChild(pv); box.insertBefore(band,box.firstChild);"},
+ {"name":"the second choices are not two by two","file":"stmt/owner.js","find":"var acts=el('div','maker-dayedit-acts ashop-two');","replace":"var acts=el('div','maker-dayedit-acts');"},
+ {"name":"Discard changes stands outside the pair","file":"stmt/owner.js","find":"hrsDraw(); }); done.appendChild(dis);","replace":"hrsDraw(); }); box.appendChild(dis);"},
+ {"name":"Discard changes stands under the week with a day open","file":"stmt/owner.js","find":"if(hrsDirty()&&hrsEditing===null){","replace":"if(hrsDirty()){"},
+ {"name":"the dates share the weekday's column","file":"stmt/page.js","find":".adm .maker-dates .maker-day{grid-template-columns:84px minmax(0,1fr) 128px}","replace":".adm .maker-dates .maker-day{grid-template-columns:40px minmax(0,1fr) 128px}"},
+ {"name":"the tail is hatched","file":"stmt/page.js","find":".adm .maker-tail{background:color-mix(in srgb,var(--salt-brass) 45%,transparent)}","replace":".adm .maker-tail{background:repeating-linear-gradient(135deg,var(--salt-brass) 0 4px,transparent 4px 7px)}"}
 ]

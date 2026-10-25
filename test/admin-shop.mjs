@@ -5,6 +5,10 @@
  *   P1.2  its form is folded: Hold the shop opens it (Closed or Open, the until time, Not now and Set it) and Not now folds it again
  *   P1.3  the glance is three one-line KPI tiles, Points, Dates and Confirm time, each its count, and the confirm time's state in one line;
  *         a fresh read of the points redraws their count
+ *   P2.1  the week and the dates each head their card in one row, the word and a chip
+ *   P2.2  a tapped day holds, in order, its second choices two by two, what customers would see, then Discard changes beside Done; a tapped date too
+ *   P2.3  Discard changes stands under the week only while it differs and no day is open
+ *   P2.4  the dates keep their own wider name column, and the next day's tail is a solid bar, not a hatch
  * Drawn by the maker harness (test/maker-act.mjs). */
 import { richOwnerPage, byAct } from "./maker-act.mjs";
 
@@ -54,5 +58,31 @@ export async function run({ ok, pageWork }) {
     await p.tap("part.shop.notice"); await p.tap("part.shop.hours");
     await new Promise((done) => setTimeout(done, 80)); await p.work.quiet(); p0.slow = false; POINTS.points.list.pop();
     ok(t(p.d.querySelector('#makerConfirm [data-glance="points"]')) === "3", "a fresh read of the points redraws their count");
+    /* P2.1 */
+    const heads = [...p.d.querySelectorAll("#makerSchedule .anow-head")].map((h) => t(h.querySelector("h3")) + "/" + t(h.querySelector(".salt-status")));
+    ok(JSON.stringify(heads) === JSON.stringify(["Weekly hours/Tap a day", "Dates/Stand in for the weekday"]), "the week and the dates each head their card in one row: " + heads.join(" | "));
+    /* P2.2 */
+    await p.tap("hours.day", "Monday");
+    const box = p.d.querySelector(".maker-dayedit"), kids = box ? [...box.children] : [];
+    const at = (sel) => kids.findIndex((k) => k.matches(sel));
+    const pair = box && box.querySelector(".apair");
+    ok(at(".ashop-two") >= 0 && at(".ashop-two") < at(".ashop-pv") && at(".ashop-pv") < at(".apair") && at(".apair") === kids.filter((k) => !k.hidden).length - 1
+      && !!box.querySelector(".ashop-pv #makerHoursPreview") && !!pair && pair.children[0] === byAct(p.d, "hours.discard") && pair.children[1] === byAct(p.d, "hours.save", "Monday"),
+      "a tapped day holds its second choices, what customers would see, then Discard changes beside Done: " + kids.map((k) => k.className).join(" | "));
+    /* P2.3 */
+    const to = byAct(p.d, "hours.day-to", "Monday"); to.value = "18:00"; to.dispatchEvent(new p.w.Event("change", { bubbles: true })); await p.work.quiet();
+    ok(p.d.querySelectorAll('[data-act="hours.discard"]').length === 1 && !!byAct(p.d, "hours.discard").closest(".maker-dayedit"), "with the day open and changed, its one Discard changes is the day's own");
+    await p.tap("hours.day", "Monday");
+    const under = byAct(p.d, "hours.discard");
+    ok(!p.d.querySelector(".maker-dayedit") && !!under && !under.closest(".maker-dayedit"), "with the day closed and the week changed, Discard changes stands under the week");
+    await p.tap("hours.discard");
+    ok(!byAct(p.d, "hours.discard"), "and goes once the week is as saved");
+    await p.tap("hours.date", "2099-01-01");
+    const dbox = p.d.querySelector(".maker-dates .maker-dayedit");
+    ok(!!dbox && !!dbox.querySelector(".ashop-pv #makerHoursPreview") && !!dbox.querySelector('.apair [data-act="hours.discard"]'), "a tapped date opens the same editor, its preview and Discard changes inside");
+    /* P2.4 */
+    const css = [...p.d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
+    ok(css.includes(".adm .maker-dates .maker-day{grid-template-columns:84px minmax(0,1fr) 128px}") && css.includes(".adm .maker-tail{background:color-mix(in srgb,var(--salt-brass) 45%,transparent)}"),
+      "the dates keep an 84px name column, and the next day's tail is a solid bar at 45% brass");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 }
