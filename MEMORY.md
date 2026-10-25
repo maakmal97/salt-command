@@ -165,6 +165,11 @@
 - Accepted: six Counter Admin controls (10 Oct 2026); #62 complete, the Desk only reads since v1104, accepted on phone and laptop (14 Oct 2026).
 - Open, ask him: positive owner-keyed places and service acceptance.
 
+## Salt Admin Customers redesign
+- Built 26 Oct 2026 on branch `claude/peaceful-mclean-ddc05c` (P0 salt-ds#28 1.16.0 merged; P1 to P8), not landed: the moderator holds the landing turn
+  (order Shop, Orders, Customers, Record). Their % and Make partner moved from Record > Pricing to the account card; new reads
+  `/all/maker/customer-of|reward-of/<code>` (Fable reviewed, two low findings: one stated, one withdrawn).
+
 ## Salt Admin Needs you redesign
 - Live as v1221 (`b8916ca2`, 23 Oct 2026; Cloud commit `39821813897`: chain and three suite parts green, live /rev `1e1013dcc935d44b`), from his canvas
   https://claude.ai/artifact/LG8PTbuT2EGpqSqsUkG6ie and `docs/plan-admin-needs-you.html`, with salt-ds 1.13.0 (#25: bar chips two by two under 820px,

@@ -2464,6 +2464,29 @@ pause; it is not a vault authority switch. A maintenance refusal retains the bro
 Neither this release nor Access configuration alone proves owner acceptance or authorizes
 removing an incumbent Desk control.
 
+### Salt Admin's Customers on the system (25 and 26 Oct 2026, plan `docs/plan-admin-customers.html`)
+
+His yes to Asks A to J (relayed by the moderator, 25 Oct 2026), canvas Salt Admin Customers. Owner only; the customer's page is untouched.
+
+- **The parts** (Accounts, Messages, Links, Associates) are the slider, `salt-segment--tight` (salt-ds 1.16.0) so Associates fits at 390px.
+- **Accounts**: an Insight leads (owed to him and how much is past its term, what he owes back, the sign-ins waiting); the filters are Needs you's text
+  tab row with counts, No account in place of No account yet, an empty one dimmed; each account is Needs you's card (`needCard`) under To do, Pending and
+  FYI, the largest sum first: the state and its age, the code and username, one way (Message, Send, Show, Open) and what is owed, a refund he owes in
+  ember. A tap on the card opens the account. From 1080px each group is one plain table (`acctTable`), the cards hidden.
+- **An account** leads with where it stands: the state, the code, the figure, a ledger of the standing (locked out, opened and how, marked sent,
+  notifications) and their waiting line with Reply. Sign-in is its own card. **The Sent tick is gone** (Ask F): Mark as sent while it is not, a Marked sent
+  line once it is; there is no unticking. From 1080px an open account fills the page in columns, two and three from 1440px, with its way back.
+- **Their % and Make partner moved from Record > Pricing onto the account** (Ask A): a book a tab, the suggestion and why, a stepper in whole steps of 5
+  from -30% to +30% (Ask G), their prices off `/all/maker/drift-preview`, Send at that % only once it differs, Use the suggestion, Set back to 0; Make
+  partner asks once. Both send the same tier-set and partner inputs, for Approve. Record > Pricing keeps Printed sizes.
+- **This customer and the associate reward on the account** (Ask B), read by the account's roster code: `GET /all/maker/customer-of/<code>` and
+  `/all/maker/reward-of/<code>` (the Counter relays to the Desk's `/_internal/maker/customer-of|reward-of/<code>`, behind Access and the bridge key, GET
+  only; `makerCustomerReadingOf`, `makerRewardReadingOf`). A code is one dash, so a bucket (-R) and a username are refused. Nothing prices from either.
+- **Messages**: a thread is Needs you's card, Waiting under To do and Answered under FYI; the open thread is the system's Thread and Bubble.
+- **Links**: a link is Needs you's card under Waiting on you, Standing link, Made by associates and Older links, Opens in the figure's place; its address,
+  QR and moves open under it.
+- **Associates**: a book is its typed tag and how many; cards on a phone, one plain table from 860px; the reward the system's Meter; the code opens the account.
+
 ### Salt Admin A to C (20 and 21 Oct 2026, plan `docs/plan-counter-admin-ac.html`)
 
 Salt Admin catches up with Counter Batches A to C, his side of each (canvas Salt Admin Batches A to C; his answers of 20 Oct 2026).

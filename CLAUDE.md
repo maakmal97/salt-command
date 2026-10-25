@@ -77,7 +77,7 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      the board). **It runs on his curve** (22 Oct 2026, the engine's `driftMultiple`): salt's `ends` are the Floor multiples
      at -30% (2.00 at 0.5 unit, 1.20 at 12.5) and +30% (3.00, 1.45), each end the Set Price's own shape, and a % is that
      share of the way from the Set Price, so every 5% step is equal at every size, inside the walk, held between the Floor
-     and the Ceiling. **Everyone starts at 0%**. He types it on Salt Admin as a whole % in steps of 5, its prices shown
+     and the Ceiling. **Everyone starts at 0%**. He sets it on the customer's own card under Salt Admin's Customers (moved from Record, his yes of 25 Oct 2026), a whole % by a stepper in steps of 5, its prices shown
      live off the Desk before it goes to Approve (`makerDriftPreview`), or picks at Add ID
      from the presets -30%, -20%, -15%, -10%, -5%, Set Price, +5%, +10%, +15%, +20% and +30%; it is queued, folded as `tierset`, and a null clears it. **Nothing automatic prices**: the
      engine's `autoDrift` over `driftSignals` fills the card's good and bad only, and `suggestOf` (the engine's
