@@ -174,9 +174,11 @@
 - Open, ask him: positive owner-keyed places and service acceptance.
 
 ## Salt Admin Customers redesign
-- Built 26 Oct 2026 on branch `claude/peaceful-mclean-ddc05c` (P0 salt-ds#28 1.16.0 merged; P1 to P8), not landed: the moderator holds the landing turn
-  (order Shop, Orders, Customers, Record). Their % and Make partner moved from Record > Pricing to the account card; new reads
-  `/all/maker/customer-of|reward-of/<code>` (Fable reviewed, two low findings: one stated, one withdrawn).
+- Live as v1255 (`e763a261`, 26 Oct 2026; CI `40224705710` and Cloud commit `40224705732`: chain and three suite parts green, live /rev `1adb9e8f44b96dde`), from
+  `docs/plan-admin-customers.html` (his yes to Asks A to J, relayed by the moderator), salt-ds 1.16.0 (#28, `salt-segment--tight`). Accounts are Needs you's cards and
+  wide tables; an account leads with where it stands, Mark as sent for the tick; Their % and Make partner moved from Record > Pricing to the account card;
+  new reads `/all/maker/customer-of|reward-of/<code>` (Fable reviewed: one low finding stated, one withdrawn). Full suite on the merged tree: 10,638 passed,
+  7 red (the S1 fold replay). Not yet opened by him.
 
 ## Salt Admin Shop redesign
 - Live as v1254 (`7eb0e296`, 26 Oct 2026; Cloud commit `40214884137`: chain and three suite parts green, live /rev `88e6f50b08fc1cc3`), from his Shop canvas
