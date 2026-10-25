@@ -968,6 +968,15 @@ body.ended>*:not(#aEnded){display:none}
 .adm .formrow .mfig{font-family:var(--salt-font-mono);font-size:1.25rem;font-weight:500;font-variant-numeric:tabular-nums;color:var(--salt-salt)}
 .adm .formrow .mfig:empty{display:none}
 .adm .formrow .mgo{width:16px;height:16px;color:var(--salt-mist)}
+/* 25 Oct 2026 (Record redesign P2): an unsent entry is Needs you's card, its pill the phone's size beside the menu at every width; opened, its sentence and its
+   second choices two up under it */
+.adm .reclist .ncard{grid-template-columns:minmax(0,1fr) 72px 88px;gap:6px 8px;padding:12px;height:76px}
+.adm .reclist .ncard .nbtn{width:72px;min-width:72px;max-width:72px;padding:0 4px}
+.adm .maker-input.unsent{display:flex;flex-direction:column;gap:10px;margin:0 0 10px}
+.adm .unsent-open{display:flex;flex-direction:column;gap:10px}
+.adm .unsent-open[hidden]{display:none}
+.adm .unsent-ways{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.adm .unsent-ways>button{min-width:0;height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .apphead{min-height:44px;align-items:center}
 .adm .aplink{min-height:44px;background:none;border:0;padding:0 4px;text-decoration:underline;color:var(--salt-brass)}
 .adm .apverb{margin:0}

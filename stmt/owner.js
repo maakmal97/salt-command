@@ -2083,17 +2083,38 @@ export const OWNER_JS = `
           bar.appendChild(c);
         }catch(e){}
       }
+      /* 25 Oct 2026 (Record redesign P2, his canvas and Ask C): AN UNSENT ENTRY IS A CARD OF NEEDS YOU'S ONE SHAPE, under Unsent on this phone in its part: the
+         entry's kind and age, the book's typed tag and the code, one pill, Resend (it was Send again), and the figure last. A tap on the card opens it: the plan's
+         sentence, the one unlock where the entry holds a name or a place, and the second choices, Update and send and Discard; a refusal opens it to say why. */
       function makerRecovery(parent){
-        var keys=Object.keys(localStorage).filter(function(key){return key.indexOf('saltMakerPending:')===0;});
+        var keys=Object.keys(localStorage).filter(function(key){return key.indexOf('saltMakerPending:')===0;}), headed={};
+        keys.sort(function(a,b){ var x=unsentRead(a).at||'~', y=unsentRead(b).at||'~'; return x<y?-1:x>y?1:(a<b?-1:1); });
         keys.forEach(function(key){
-          var path=key.slice('saltMakerPending:'.length),saved;
-          var section=makerForm(retainedPart(path));section.setAttribute('data-key',path.split('/').pop());section.setAttribute('data-formmenu','');section.appendChild(el('h3',null,'Unsent entry'));
-          var status=makerStatus(section);
+          var path=key.slice('saltMakerPending:'.length),saved,part=retainedPart(path),u=unsentRead(key),body={};
+          if(!headed[part]){ headed[part]=true; var head=el('h2','salt-eyebrow salt-eyebrow--copper ghead unsent-head','Unsent on this phone'); head.setAttribute('data-in','record.'+part); head.setAttribute('data-formmenu',''); parent.appendChild(head); }
+          var section=makerForm(part);section.classList.add('unsent');section.setAttribute('data-key',path.split('/').pop());section.setAttribute('data-formmenu','');section.appendChild(el('h3','sr','Unsent entry'));
+          try{ body=(JSON.parse(localStorage.getItem(key))||{}).body||{}; }catch(e){}
+          var word=unsentWord(u), card=el('article','salt-action salt-action--now ncard unsent-card'), kind=el('span','salt-action__kind nkind',word.charAt(0).toUpperCase()+word.slice(1));
+          var age=u.at?ageOf(u.at):''; if(age){ kind.appendChild(document.createTextNode(' · ')); kind.appendChild(el('span','nage',age)); }
+          var cbody=el('div','salt-action__body'), tap=actOn(el('button','salt-action__title need-tap'),'record.retained.open',path.split('/').pop()), go=el('div','salt-action__go');
+          tap.type='button'; tap.setAttribute('aria-expanded','false');
+          if(typeof body.product==='string'&&body.product) tap.appendChild(productTag(body.product));
+          tap.appendChild(whoTag(el('span','need-who'+(u.who?' need-who--code':''),u.who||'Unsent '+word),u.who));
+          tap.setAttribute('aria-label','Unsent '+word+(u.who?' for '+u.who:'')+(age?', '+age:''));
+          cbody.appendChild(tap); card.appendChild(kind); card.appendChild(cbody); card.appendChild(go);
+          card.appendChild(el('span','salt-action__money salt-action__money--lg nfig',+body.total>0.004?rmShort(body.total):''));
+          section.appendChild(card);
+          var open=el('div','unsent-open'); open.hidden=true; section.appendChild(open);
+          var shut=function(on){ open.hidden=!on; tap.setAttribute('aria-expanded',on?'true':'false'); };
+          var gone=function(){ section.remove(); if(!parent.querySelector('.maker-input.unsent[data-in="record.'+part+'"]')){ var h=parent.querySelector('.unsent-head[data-in="record.'+part+'"]'); if(h) h.remove(); } };
+          tap.addEventListener('click',function(){ shut(open.hidden); });
+          var status=makerStatus(open), ways=el('div','unsent-ways');
           parent.appendChild(section);
-          try{saved=makerSaved(path);status.textContent=unsentSaid(unsentRead(key))+' Send it again, or update it first.';}
+          try{saved=makerSaved(path);status.textContent=unsentSaid(u)+' Send it again, or update it first.';}
           catch(error){refusal(status,error);}
           /* an unsent name or place opens on the one unlock before it is sent again or updated; any other entry needs none */
-          if(saved&&saved.body&&(saved.body.pair||saved.body.vault||saved.body.addrVault))makerVaultGate(section);
+          if(saved&&saved.body&&(saved.body.pair||saved.body.vault||saved.body.addrVault))makerVaultGate(open);
+          open.appendChild(ways);
           var run=async function(review){
             try{
               if(!saved)throw new Error('This saved entry cannot be sent. Discard it.');
@@ -2113,20 +2134,21 @@ export const OWNER_JS = `
               }else if(review)throw new Error('This saved entry cannot be sent. Discard it.');
               var answer=await refs(saved.path,saved.body);
               if(!answer||answer.ok!==true)throw new Error('The Desk did not confirm. Nothing is lost; tap Send again.');
-              makerClear(saved.path);section.remove();await loadMaker();
+              makerClear(saved.path);gone();await loadMaker();
               if(saved.body.pair||saved.body.vault||saved.body.addrVault)makerVaultRefresh();
-            }catch(error){refusal(status,error);}
+            }catch(error){refusal(status,error);shut(true);}
           };
-          ['Send again','Update and send','Discard'].forEach(function(label,index){
-            var button=actOn(el('button','salt-ghost',label),['record.retained.retry','record.retained.review','record.retained.cancel'][index]);button.type='button';
+          ['Resend','Update and send','Discard'].forEach(function(label,index){
+            var button=actOn(el('button',index?'salt-ghost'+(index===2?' salt-ghost--danger':''):'salt-pill salt-pill--sm nbtn',label),['record.retained.retry','record.retained.review','record.retained.cancel'][index]);button.type='button';
+            if(!index) button.setAttribute('aria-label','Send again');
             button.onclick=async function(){
               if(index===2){
-                retainedCancel(ynTag(button,'retained:'+path),'If the Desk already took it, it stays.',function(){ makerClear(path);section.remove(); });
+                retainedCancel(ynTag(button,'retained:'+path),'If the Desk already took it, it stays.',function(){ makerClear(path);gone(); });
                 return;
               }
               var controls=section.querySelectorAll('button');controls.forEach(function(control){control.disabled=true;});
               try{await run(index===1);}finally{controls.forEach(function(control){control.disabled=false;});}
-            };section.appendChild(button);
+            };(index?ways:go).appendChild(button);
           });
         });
       }

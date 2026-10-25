@@ -1,0 +1,11 @@
+[
+ {"name":"no heading over the unsent cards","file":"stmt/owner.js","find":"if(!headed[part]){ headed[part]=true; var head=","replace":"if(false){ headed[part]=true; var head="},
+ {"name":"the card loses its typed book","file":"stmt/owner.js","find":"if(typeof body.product==='string'&&body.product) tap.appendChild(productTag(body.product));","replace":""},
+ {"name":"the figure is left off the card","file":"stmt/owner.js","find":"el('span','salt-action__money salt-action__money--lg nfig',+body.total>0.004?rmShort(body.total):'')","replace":"el('span','salt-action__money salt-action__money--lg nfig','')"},
+ {"name":"the kind has no age","file":"stmt/owner.js","find":"var age=u.at?ageOf(u.at):''; if(age){","replace":"var age=u.at?ageOf(u.at):''; if(false){"},
+ {"name":"the pill keeps its old words","file":"stmt/owner.js","find":"['Resend','Update and send','Discard'].forEach(","replace":"['Send again','Update and send','Discard'].forEach("},
+ {"name":"Discard does not refuse in its colour","file":"stmt/owner.js","find":"index?'salt-ghost'+(index===2?' salt-ghost--danger':''):'salt-pill salt-pill--sm nbtn'","replace":"index?'salt-ghost':'salt-pill salt-pill--sm nbtn'"},
+ {"name":"the second choices stand on the card","file":"stmt/owner.js","find":"};(index?ways:go).appendChild(button);","replace":"};go.appendChild(button);"},
+ {"name":"the card opened says nothing of it","file":"stmt/owner.js","find":"          tap.addEventListener('click',function(){ shut(open.hidden); });\n","replace":""},
+ {"name":"the card beside the menu takes the wide pill","file":"stmt/page.js","find":".adm .reclist .ncard .nbtn{width:72px;min-width:72px;max-width:72px;padding:0 4px}","replace":".adm .reclist .ncard .nbtn{width:120px;min-width:120px;max-width:120px;padding:0 4px}"}
+]
