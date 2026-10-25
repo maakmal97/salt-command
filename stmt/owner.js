@@ -446,26 +446,62 @@ export const OWNER_JS = `
     story[u]=j?{log:j.log||[], devices:j.devices||[]}:{err:err};
     [].slice.call(document.querySelectorAll('[data-story]')).forEach(function(b){ if(b.getAttribute('data-story')===u) drawStory(b, a); });
   }
+  /* 25 OCT 2026 (canvas Salt Admin Customers, P2; his yes to Asks A to J): AN ACCOUNT LEADS WITH WHERE IT STANDS. The head: the state and its age, as its
+     card on the list says them, the code and the username, and what is owed, large at the right (ember when late or when he owes it back); under it a
+     ledger of the standing (locked out, opened and how, marked sent, notifications) and, when a line of theirs waits, the way to it. Then Sign-in, the
+     ways in on one card: Send a sign-in link filled, Show a code, View as them, Order for them and Copy password two by two, Sign out everywhere asking
+     once. The Sent tick goes (his yes to Ask F): Mark as sent while it is not, and Marked sent in the ledger once it is. */
+  function acctFig(a){
+    var t=a.t||{}, s=acctState(a);
+    if(a.test||a.account===false) return null;
+    if(a.flag==='owes') return {word:'They owe', fig:rmShort(t.owed), hot:!!s.late};
+    if(a.flag==='refund') return {word:'You owe them', fig:rmShort(t.refund), hot:true};
+    if(a.flag==='goods') return {word:'You owe them', fig:units(Math.round((+t.toGet||0)*100)/100), hot:false};
+    if(a.flag==='pend') return {word:'Agreed', fig:rmShort(t.pend), hot:false};
+    return {word:'Owed', fig:'Nil', hot:false};
+  }
+  function acctLine(L, k, v){ var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'); l.appendChild(el('span','salt-ledger__label',k)); l.appendChild(el('span','salt-ledger__value',v)); r.appendChild(l); r.setAttribute('data-line',k); L.appendChild(r); return r; }
   function acctCard(a){
     var u=a.username, none=a.account===false, why='No account yet';
     var c=el('section','oacct scard'); c.setAttribute('data-acct', u);
-    var h=el('div','ahead srow');
-    h.appendChild(whoTag(el('h2',null,a.test?testName(a):(a.code||u)),a.test?'':a.code));
-    h.appendChild(el('span','un',u));
-    c.appendChild(h);
-    var cs=el('div','achips');
-    function chips(){ cs.textContent=''; if(sheet) chipsOf(a).forEach(function(x){ cs.appendChild(x); }); }
-    chips(); c.appendChild(cs);
-    if(a.test) c.appendChild(el('p','atot','A practice account. Nothing it does is recorded.'));
-    else if(none) c.appendChild(el('p','atot',waitLine()));
-    else if(a.tot) c.appendChild(el('p','atot',a.tot));
-    var box=actOn(document.createElement('input'),'acct.sent');
+    var head=el('div','asec ahead salt-glass-card salt-glass-card--radius-lg'), top=el('div','ahead__top'), who=el('div','ahead__who'), s=acctState(a), f=acctFig(a);
+    var kd=el('span','salt-eyebrow salt-eyebrow--'+SEVC[s.sev]+' ahead__kind', s.word);
+    if(s.age){ kd.appendChild(document.createTextNode(' · ')); kd.appendChild(el('span','nage'+(s.late?' nage--late':''),s.age)); }
+    who.appendChild(kd);
+    who.appendChild(whoTag(el('h2',a.test?null:'ahead__code',a.test?testName(a):(a.code||u)),a.test?'':a.code));
+    who.appendChild(el('span','un',u));
+    top.appendChild(who);
+    if(f){ var fb=el('div','ahead__fig'); fb.appendChild(el('span','salt-eyebrow salt-eyebrow--mist',f.word)); fb.appendChild(el('span','ahead__rm'+(f.hot?' ahead__rm--hot':''),f.fig)); top.appendChild(fb); }
+    head.appendChild(top);
+    var st=el('div','salt-ledger salt-ledger--plain astand');
+    function stand(){
+      st.textContent='';
+      if(a.test){ acctLine(st,'Practice','Nothing recorded'); return; }
+      if(none){ acctLine(st,'Account','Next update'); return; }
+      if(a.locked) acctLine(st,'Locked out',a.locked.until?'until '+hm(a.locked.until):'now').classList.add('astand--hot');
+      acctLine(st,'Opened',a.seen&&a.seen.opens?dayMon(a.seen.last)+(howOf(a.seen)?' '+howOf(a.seen):''):'Not yet');
+      if(a.sent) acctLine(st,'Marked sent',dayMon(a.sent));
+      if(a.alerts) acctLine(st,'Notifications','On');
+    }
+    stand(); head.appendChild(st);
+    if(a.test) head.appendChild(el('p','atot','A practice account. Nothing it does is recorded.'));
+    else if(none) head.appendChild(el('p','atot',waitLine()));
+    var th=(makerThreads||[]).filter(function(x){ return x.u===u&&!x.test&&makerThreadAsked(x); })[0];
+    if(th){
+      var last=th.msgs[th.msgs.length-1], tr=el('div','athread'), tx=el('div','athread__txt'), rp=pill(['Reply','acct.reply',u]);
+      tx.appendChild(el('span','athread__k','Their messages')); tx.appendChild(el('span','anote athread__v','Waiting '+ageOf(last.at)+' for your reply'));
+      tr.appendChild(tx); rp.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(u); }); tr.appendChild(rp); head.appendChild(tr);
+    }
+    c.appendChild(head);
+    var sign=el('div','asec asign salt-glass-card salt-glass-card--radius-lg');
+    sign.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Sign-in'));
+    var mark=ghost(['Mark as sent','acct.sent']);
     var pn=el('p','anote'); pn.setAttribute('role','status');
-    c.appendChild(sendPill(a, pn, function(){ box.checked=!!a.sent; chips(); }));
-    c.appendChild(pn);
+    sign.appendChild(sendPill(a, pn, function(){ stand(); mark.hidden=!!a.sent||none||!!a.test; }));
+    sign.appendChild(pn);
     var grid=el('div','agrid'), gn=el('p','anote'); gn.setAttribute('role','status');
-    var hob=ghost(['Show a code, in person','acct.show-code']), open=ghost(['View as them','acct.view-as']), pwb=ghost(['Copy password','acct.password']), sob=ghost(['Sign out everywhere','acct.signout-all']), orderFor=ghost(['Order for them','acct.order-for']);
-    pwb.classList.add('salt-ghost--danger'); sob.classList.add('salt-ghost--danger');
+    var hob=ghost(['Show a code','acct.show-code']), open=ghost(['View as them','acct.view-as']), pwb=ghost(['Copy password','acct.password']), sob=ghost(['Sign out everywhere','acct.signout-all']), orderFor=ghost(['Order for them','acct.order-for']);
+    pwb.classList.add('salt-ghost--danger'); sob.classList.add('salt-ghost--danger','asignout');
     [hob, open, orderFor, pwb, sob].forEach(function(b){ if(none){ b.disabled=true; b.title=why; } grid.appendChild(b); });
     if(!none&&!a.pwMaster){ pwb.disabled=true; pwb.title='Password not stored yet.'; }
     hob.addEventListener('click', function(){ if(!none) showHandover(a, hob); });
@@ -496,24 +532,23 @@ export const OWNER_JS = `
       sob.textContent='Sign out everywhere'; sob.disabled=false;
       loadStory(a);
     });
-    c.appendChild(grid); c.appendChild(gn);
-    var tick=el('label','tick atick');
-    box.type='checkbox'; box.checked=!!a.sent; box.disabled=none;
-    box.addEventListener('change', async function(){
-      var want=box.checked;
+    mark.hidden=!!a.sent||none||!!a.test;
+    mark.addEventListener('click', async function(){
+      mark.disabled=true;
       try{
-        var j=await refs('/all/sent/'+u, {issue:sheetIssue, sent:want});
-        a.sent=j.sent; chips(); say(''); countSent(); drawRoster(); drawNeeds();
-      }catch(e){ box.checked=!want; sayFail(e); }
+        var j=await refs('/all/sent/'+u, {issue:sheetIssue, sent:true});
+        a.sent=j.sent; stand(); mark.hidden=!!a.sent; say(''); countSent(); drawRoster(); drawNeeds();
+      }catch(e){ sayFail(e); }
+      mark.disabled=false;
     });
-    /* 12 Oct 2026 (Phase 2a): the input is the 44px target, laid unseen over the box drawn beside it, so the control measures what the label did */
-    tick.appendChild(box); tick.appendChild(el('span','tickbox')); tick.appendChild(el('span',null,'Sent'));
-    c.appendChild(tick);
+    grid.insertBefore(mark, sob);
+    sign.appendChild(grid); sign.appendChild(gn);
+    c.appendChild(sign);
     /* 14 OCT 2026 (his decision): everything related to a customer is on their card, so their loans and their reward stand here, read from the Desk's catalogue */
-    var books=el('div','abooks'); books.setAttribute('data-loans', u);
+    var books=el('div','asec abooks salt-glass-card salt-glass-card--radius-lg'); books.setAttribute('data-loans', u);
     if(!none&&!a.test&&a.code){ c.appendChild(books); drawBooks(books, a); }
-    var st=el('div','astory'); st.setAttribute('data-story', u);
-    if(!none){ c.appendChild(st); drawStory(st, a); loadStory(a); }
+    var sty=el('div','asec astory salt-glass-card salt-glass-card--radius-lg'); sty.setAttribute('data-story', u);
+    if(!none){ c.appendChild(sty); drawStory(sty, a); loadStory(a); }
     return c;
   }
   /* the loans with this customer and their reward: the Desk's catalogue, the same read as Record's Repayment form, asked once a minute at most */
@@ -531,7 +566,7 @@ export const OWNER_JS = `
   }
   function drawBooks(box, a){
     box.textContent='';
-    box.appendChild(el('p','salt-eyebrow salt-eyebrow--copper','Loans and reward'));
+    box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Loan'));
     var body=el('div','aloans'); box.appendChild(body); body.appendChild(el('p','anote','Reading.'));
     readParty().then(function(cat){
       if(!box.isConnected) return;
@@ -629,67 +664,103 @@ export const OWNER_JS = `
   /* the two test accounts, told apart by the state each stands in (his answer of 29 Sep 2026) */
   function testName(a){ return a.state==='locked'?'Practice account, locked':'Practice account, open'; }
   function chip(tone, t){ return el('span','salt-status salt-status--'+tone, t); }
-  function chipsOf(a){
-    if(a.test) return [chip('mist','Practice')];
-    if(a.account===false) return [chip('alarm','No account yet')];
-    var out=[];
-    if(a.locked) out.push(chip('alarm','Locked out'+(a.locked.until?' until '+hm(a.locked.until):'')));
-    if(a.flag&&a.flag!=='clear') out.push(chip({owes:'ember', goods:'steel', refund:'brass', pend:'copper'}[a.flag]||'mist', flagLine(a)));
-    out.push(a.seen&&a.seen.opens?chip('mist','Opened '+dayMon(a.seen.last)+(howOf(a.seen)?' '+howOf(a.seen):'')):chip('steel','Not opened'));
-    if(a.alerts) out.push(chip('verdigris','Notifications on'));
-    if(a.sent) out.push(chip('verdigris','Sent '+dayMon(a.sent)));
-    return out;
-  }
-  /* 14 OCT 2026 (the layout rework): A ROW SHOWS ONE STATE, the most important, and the rest as one quiet line; the whole row is the tap. The order of
-     importance is no account, practice, locked out, then what they owe or are owed; Opened, Sent and Notifications stay on the card's chips. */
-  function stateOf(a){
-    if(a.test) return chip('mist','Practice');
-    if(a.account===false) return chip('alarm','No account yet');
-    if(a.locked) return chip('alarm','Locked out'+(a.locked.until?' until '+hm(a.locked.until):''));
-    if(a.flag&&a.flag!=='clear') return chip({owes:'ember', goods:'steel', refund:'brass', pend:'copper'}[a.flag]||'mist', flagLine(a));
-    return null;
-  }
-  function quietOf(a){
-    var bits=[a.username];
-    if(a.account===false) bits.push(waitLine());
-    else if(a.tot&&!a.test) bits.push(a.tot);
-    if(a.account!==false&&!a.test) bits.push(a.seen&&a.seen.opens?'Opened '+dayMon(a.seen.last)+(howOf(a.seen)?' '+howOf(a.seen):''):'Not opened');
-    if(a.sent) bits.push('Sent '+dayMon(a.sent));
-        return bits.join(' \u00b7 ');
+  /* 25 OCT 2026 (canvas Salt Admin Customers, P1; his yes to Asks A to J): AN ACCOUNT IS NEEDS YOU'S CARD. Where it stands, in a word and an age (Owed and
+     how late, Refund, Locked to HH:MM, Not sent, No account, Not opened, Opened, Practice), the code and the username, its one way and the sum: what they
+     owe, or what he owes back in ember. To do is his to act on (owed past its term, a refund, locked out, not sent, no account), Pending theirs (owed
+     within term, not opened), FYI the rest; within each the largest sum first. A tap anywhere but its way opens the account. */
+  function owedOf(a){ var m=owed&&owed.money&&a.code?owed.money.filter(function(x){ return x.party===a.code; })[0]:null; return m||null; }
+  function acctState(a){
+    var t=a.t||{}, m=owedOf(a), late=m&&Date.parse(m.due)<Date.now()?ageOf(m.due):'';
+    if(a.test) return {sev:'watch', word:'Practice', age:a.state==='locked'?'locked':'open', act:'open'};
+    if(a.account===false) return {sev:'now', word:'No account', age:'', act:'show'};
+    if(a.flag==='owes') return {sev:late?'now':'soon', word:'Owed', age:late?late+' late':m&&m.due?'due '+dayMon(m.due):'', late:!!late, rm:+t.owed||0, act:'message'};
+    if(a.flag==='refund') return {sev:'now', word:'Refund', age:'', rm:+t.refund||0, mine:true, act:'open'};
+    if(a.flag==='goods') return {sev:'now', word:'Goods', age:units(Math.round((+t.toGet||0)*100)/100), act:'open'};
+    if(a.locked) return {sev:'now', word:'Locked', age:a.locked.until?'to '+hm(a.locked.until):'', act:'send'};
+    if(!a.sent) return {sev:'now', word:'Not sent', age:a.issued?ageOf(a.issued):'', act:'send'};
+    if(!(a.seen&&a.seen.opens)) return {sev:'soon', word:'Not opened', age:ageOf(a.sent), act:'send'};
+    if(a.flag==='pend') return {sev:'soon', word:'Agreed', age:dayMon(a.seen.last), rm:+t.pend||0, act:'open'};
+    return {sev:'watch', word:'Opened', age:dayMon(a.seen.last), act:'open'};
   }
   function rowOf(a){
-    var b=el('button','salt-inbox-row arow'); b.type='button'; b.setAttribute('data-u', a.username); actOn(b,'acct.open',a.username);
-    if(aOpen===a.username) b.setAttribute('aria-current','true');
-    var main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title');
-    t.appendChild(whoTag(el('span','acode',a.test?testName(a):(a.code||a.username)),a.test?'':a.code));
-    var st=sheet?stateOf(a):null; if(st){ st.className+=' astate'; t.appendChild(st); }
-    main.appendChild(t);
-    main.appendChild(el('span','salt-inbox-row__what',quietOf(a)));
-    b.appendChild(main);
-    b.addEventListener('click', function(){ openCard(a.username); });
-    return b;
+    var s=acctState(a), who=a.test?testName(a):(a.code||a.username);
+    var c=needCard({sev:s.sev, kind:'accounts', word:s.word, key:'a:'+a.username, at:'', age:s.age, late:s.late, who:who, title:who, u:a.username, rm:s.rm, practice:!!a.test,
+      act:'acct.open', open:true, tap:function(){ openCard(a.username); }});
+    var title=c.querySelector('.salt-action__title');
+    title.appendChild(el('span','need-u',a.username));
+    title.setAttribute('aria-label', s.word+(s.age?', '+s.age:'')+': '+who+(s.rm?', '+rmShort(s.rm):''));
+    if(s.mine) c.querySelector('.nfig').classList.add('nfig--mine');
+    if(aOpen===a.username) c.setAttribute('aria-current','true');
+    if(s.act==='message'&&a.username){ var ms=pill(['Message','acct.message',a.username]); ms.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(a.username); }); c._add(ms); }
+    else if(s.act==='send') c._add(linkButton(a, noteOf(c)));
+    else if(s.act==='show') silverOn(a, c, 'acct');
+    else { var op=ghost(['Open','acct.open-card',a.username]); op.addEventListener('click', function(){ openCard(a.username); }); c._add(op); }
+    /* the older ways in click the card itself: anywhere but its way opens the account */
+    c.addEventListener('click', function(ev){ if(ev.target===c) openCard(a.username); });
+    return c;
+  }
+  /* the Insight over the list: what is owed to him and how much of it is late, what he owes back, the sign-ins waiting */
+  function drawALead(pool){
+    var box=document.getElementById('alead'); if(!box) return;
+    var real=pool.filter(function(a){ return !a.test; }), owedRM=0, lateRM=0, back=0, unsent=0, locked=0;
+    real.forEach(function(a){
+      var t=a.t||{}, s=acctState(a);
+      if(a.flag==='owes'){ owedRM+=+t.owed||0; if(s.late) lateRM+=+t.owed||0; }
+      if(a.flag==='refund') back+=+t.refund||0;
+      if(a.account!==false&&!a.sent) unsent++;
+      if(a.locked) locked++;
+    });
+    box.textContent='';
+    var bits=[];
+    function b(t){ return el('b',null,t); }
+    function join(nodes){ var span=document.createDocumentFragment(); nodes.forEach(function(n){ span.appendChild(typeof n==='string'?document.createTextNode(n):n); }); return span; }
+    if(owedRM>0.004) bits.push(join([b(rmShort(owedRM)),' is owed to you'+(lateRM>0.004?', '+rmShort(lateRM)+' of it past its term':'')]));
+    if(back>0.004) bits.push(join(['you owe ',b(rmShort(back)),' back']));
+    bits.forEach(function(n, i){ if(i) box.appendChild(document.createTextNode('; ')); box.appendChild(n); });
+    if(bits.length) box.appendChild(document.createTextNode('. '));
+    if(unsent+locked){
+      var w=[]; if(unsent) w.push(unsent+' not sent'); if(locked) w.push(locked+' locked out');
+      box.appendChild(b((unsent+locked)+((unsent+locked)===1?' account':' accounts')));
+      box.appendChild(document.createTextNode(' '+((unsent+locked)===1?'waits':'wait')+' on a sign-in: '+w.join(', ')+'.'));
+    }
+    if(!box.childNodes.length) box.textContent='Nothing is owed either way, and every account has its sign-in.';
+    box.hidden=!sheet;
   }
   function drawRoster(){
     if(!OWNER) return;
     var q=(rq.value||'').toLowerCase().replace(/\\s+/g,''), f=FILTER[aFilter]||FILTER.all;
     rlist.textContent='';
     var pool=sheet?sheetRows:OWNER.accounts;
-    /* a filter shows only while some account is in the state it names (the layout rework); the one in use is let go when none is */
+    /* 25 Oct 2026: each filter counts its accounts beside its word, as Needs you's kinds do, and one with none is dimmed and cannot be chosen; the one in
+       use is let go when none is left in it */
     [].slice.call(document.querySelectorAll('#afil button[data-f]')).forEach(function(x){
-      var k=x.getAttribute('data-f'); x.hidden=k!=='all'&&!pool.some(FILTER[k]); });
-    if(aFilter!=='all'&&!pool.some(FILTER[aFilter])){ aFilter='all'; f=FILTER.all;
-      [].slice.call(document.querySelectorAll('#afil button[data-f]')).forEach(function(x){ x.setAttribute('aria-pressed', x.getAttribute('data-f')==='all'?'true':'false'); }); }
+      var k=x.getAttribute('data-f'), n=pool.filter(FILTER[k]||FILTER.all).length, c=x.querySelector('.nktab__n');
+      if(c) c.textContent=sheet?String(n):'';
+      x.disabled=k!=='all'&&!n; });
+    if(aFilter!=='all'&&!pool.some(FILTER[aFilter])){ aFilter='all'; f=FILTER.all; filterMark(); }
     var hits=pool.filter(function(a){
       return f(a)&&(!q||((a.code||'')+' '+a.username).toLowerCase().replace(/\\s+/g,'').indexOf(q)>=0);
     });
-    countSent();
+    countSent(); drawALead(pool);
     if(!hits.length){ rlist.appendChild(el('p','rnone','Nothing matches that.')); return; }
-    hits.forEach(function(a){ rlist.appendChild(rowOf(a)); });
+    var rm=function(a){ var s=acctState(a); return +s.rm||0; };
+    SEVS.forEach(function(s){
+      var group=hits.map(function(a, i){ return [a, i]; }).filter(function(x){ return acctState(x[0]).sev===s[0]; })
+        .sort(function(x, y){ return (rm(y[0])-rm(x[0]))||(x[1]-y[1]); }).map(function(x){ return x[0]; });
+      if(!group.length) return;
+      var box=el('section','ngroup'), h=el('h2','salt-eyebrow salt-eyebrow--'+SEVC[s[0]]+' nsev', s[1]);
+      box.setAttribute('data-sev', s[0]); box.setAttribute('aria-label', s[1]); h.setAttribute('data-sev', s[0]);
+      box.appendChild(h); rlist.appendChild(box);
+      group.forEach(function(a){ box.appendChild(rowOf(a)); });
+    });
+  }
+  function filterMark(){
+    [].slice.call(document.querySelectorAll('#afil button[data-f]')).forEach(function(x){
+      var on=x.getAttribute('data-f')===aFilter; x.setAttribute('aria-selected', on?'true':'false'); x.classList.toggle('salt-nav__link--active', on); });
   }
   function filterBy(f){
     aFilter=FILTER[f]?f:'all';
-    [].slice.call(document.querySelectorAll('#afil button[data-f]')).forEach(function(x){
-      x.setAttribute('aria-pressed', x.getAttribute('data-f')===aFilter?'true':'false'); });
+    filterMark();
     drawRoster();
   }
   /* the open account: its chips, then Send's card, and on a phone the way back to the list above it */
@@ -5969,7 +6040,7 @@ export const OWNER_JS = `
   function needCard(o){
     var tap=!!o.open, c=el('article','salt-action salt-action--'+o.sev+' need ncard'), body=el('div','salt-action__body'), go=el('div','salt-action__go');
     var title=el(tap?'button':'div','salt-action__title'+(tap?' need-tap':'')), age=o.age!=null?o.age:ageOf(o.at), tt=o.title||o.who||'';
-    if(tap){ title.type='button'; actOn(title,o.act||'need.open',o.key); title.addEventListener('click', function(){ needOpen(o); }); }
+    if(tap){ title.type='button'; actOn(title,o.act||'need.open',o.key); title.addEventListener('click', function(){ if(o.tap) o.tap(); else needOpen(o); }); }
     c.setAttribute('data-need', o.key); c.setAttribute('data-kind', o.kind); c.setAttribute('data-sev', o.sev);
     if(o.u) c.setAttribute('data-u', o.u);
     if(o.practice) c.setAttribute('data-practice','');
@@ -6142,25 +6213,28 @@ export const OWNER_JS = `
   function bareNeed(a){
     return item('now','accounts','Account','n:'+a.username, '', {who:a.code||a.username, u:a.username, head:'Set up ', rest:"'s account", what:'No account yet', why:waitLine(),
       open:function(){ openNeed(a.username); }}, function(c){
-      var sh=pill(['Show','need.show-link']); sh.setAttribute('aria-label','Show the guest price list');
-      c._add(sh);
-      var note=noteOf(c);
-      function openSilver(){
-        var r=strangerLink();
-        if(!r){ note.textContent='The guest link is not made yet. Open Links once, then try again.'; return; }
-        silverOpen[a.username]=true;
-        var box=el('div','glink salt-glass-card salt-glass-card--radius-md'), img=document.createElement('img'), cp=ghost(['Copy link','need.copy-link']);
-        box.appendChild(el('code','gu',r.url));
-        img.src=r.qr; img.alt='QR to the guest price list'; img.width=180; img.height=180; box.appendChild(img);
-        cp.addEventListener('click', async function(){
-          try{ await navigator.clipboard.writeText(r.url); note.textContent='Copied.'; }catch(e){ note.textContent='Copy failed.'; }
-        });
-        box.appendChild(cp);
-        if(c._grow) c._grow(); c._body.insertBefore(box, note); sh.disabled=true;
-      }
-      sh.addEventListener('click', openSilver);
-      if(silverOpen[a.username]) openSilver();
+      silverOn(a, c, 'need');
     });
+  }
+  function silverOn(a, c, at){
+    var sh=pill(['Show',at+'.show-link']); sh.setAttribute('aria-label','Show the guest price list');
+    c._add(sh);
+    var note=noteOf(c);
+    function openSilver(){
+      var r=strangerLink();
+      if(!r){ note.textContent='The guest link is not made yet. Open Links once, then try again.'; return; }
+      silverOpen[a.username]=true;
+      var box=el('div','glink salt-glass-card salt-glass-card--radius-md'), img=document.createElement('img'), cp=ghost(['Copy link',at+'.copy-link']);
+      box.appendChild(el('code','gu',r.url));
+      img.src=r.qr; img.alt='QR to the guest price list'; img.width=180; img.height=180; box.appendChild(img);
+      cp.addEventListener('click', async function(){
+        try{ await navigator.clipboard.writeText(r.url); note.textContent='Copied.'; }catch(e){ note.textContent='Copy failed.'; }
+      });
+      box.appendChild(cp);
+      if(c._grow) c._grow(); c._body.insertBefore(box, note); sh.disabled=true;
+    }
+    sh.addEventListener('click', openSilver);
+    if(silverOpen[a.username]) openSilver();
   }
   function sendAt(rows){ return rows.map(function(a){ return a.issued||''; }).filter(Boolean).sort()[0]||''; }
   function sendNeed(rows){
@@ -6225,7 +6299,8 @@ export const OWNER_JS = `
       if(changed('book', v)){ owed=v; apply=true; }
     }catch(error){ nGot('book', error); apply=failNew('book', error); }
     owedReading=false;
-    if(apply) drawNeeds();
+    /* 25 Oct 2026: and Accounts, whose Owed says how late (P1) */
+    if(apply){ drawNeeds(); drawRoster(); }
   }
   /* the open site order a Desk row is, found by its key (a key of three parts is salt's, from before a key named its book) */
   function siteOrderOf(r){

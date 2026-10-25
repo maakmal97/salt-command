@@ -282,10 +282,10 @@
   "replace": "align-self:flex-start;width:fit-content;min-height:0;min-width:0;padding-right:8px;"
  },
  {
-  "name": "the tick draws no box",
+  "name": "Mark as sent is a plain button again",
   "file": "stmt/owner.js",
-  "find": "tick.appendChild(el('span','tickbox')); ",
-  "replace": ""
+  "find": "var mark=ghost(['Mark as sent','acct.sent']);",
+  "replace": "var mark=el('button',null,'Mark as sent'); mark.setAttribute('data-act','acct.sent');"
  },
  {
   "name": "an edit put back to what it was offers no read",

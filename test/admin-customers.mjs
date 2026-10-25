@@ -1,6 +1,6 @@
 /* test/admin-customers.mjs: CUSTOMERS AS ROWS (the layout rework, 14 Oct 2026). Each check is red under its own mutation (test/admin-customers.mutations.json).
- *   A  an account row carries ONE state pill, the most important, and the whole row is the tap (no Open)
- *   B  a filter shows only while some account is in the state it names
+ *   A  an account row is Needs you's card (25 Oct 2026): its state and age, its one way, its sum; the card itself is the tap
+ *   B  a filter with no account in its state is dimmed and cannot be chosen
  *   C  a guest link is one row: its address, QR and moves are inside a shut details, opened by its summary; a withdrawn link says so in a pill
  *   D  an associate's code is its own element beside its marks, its counts a ledger
  *   E  an account's card lists its loans with the date, what was lent, repaid and left, and Repayment opens Record's form with that loan chosen; their reward stands there */
@@ -17,22 +17,25 @@ export async function run({ ok, pageWork }) {
     const d = p.d; await p.work.quiet();
     enter(d, "customers", "accounts"); await p.work.quiet();
     const row = (u) => d.querySelector('#rlist [data-u="' + u + '"]');
-    const locked = [...d.querySelectorAll("#rlist [data-u]")].filter((r) => /Locked out/.test(r.textContent))[0];
-    ok(!!locked && locked.querySelectorAll(".salt-status").length === 1 && !byAct(locked, "acct.open-link") && !locked.querySelector(".salt-inbox-row__action") && locked.tagName === "BUTTON",
-      "an account row is one tap with one state pill and no Open: " + (locked && locked.textContent));
-    const owes = [...d.querySelectorAll("#rlist [data-u]")].find((r) => /owe/i.test(r.querySelector(".astate") ? r.querySelector(".astate").textContent : ""));
-    ok(!!owes && owes.querySelectorAll(".salt-status").length === 1 && /Opened|Not opened/.test(owes.querySelector(".salt-inbox-row__what").textContent),
-      "the owing account has its state as its one pill and Opened as part of the quiet line");
+    const cards = () => [...d.querySelectorAll("#rlist .ncard[data-u]")], kindOf = (r) => (r.querySelector(".nkind") || {}).textContent || "";
+    const locked = cards().filter((r) => /^Locked/.test(kindOf(r)))[0];
+    ok(!!locked && locked.tagName === "ARTICLE" && locked.classList.contains("salt-action") && locked.getAttribute("data-need") === "a:" + locked.getAttribute("data-u")
+      && locked.querySelectorAll(".salt-action__go button").length === 1 && /Send/.test(locked.querySelector(".salt-action__go button").textContent)
+      && !locked.querySelector(".salt-inbox-row__action") && !locked.classList.contains("salt-inbox-row"),
+      "an account row is Needs you's card with its one Send button and no Open: " + (locked && locked.textContent));
+    const owes = cards().find((r) => /^Owed/.test(kindOf(r)));
+    ok(!!owes && /^RM [0-9]/.test((owes.querySelector(".nfig") || {}).textContent || "") && owes.querySelectorAll(".salt-action__go button").length === 1,
+      "the owing account has Owed as its kind and its sum as its figure: " + (owes && owes.textContent));
     ok([...d.querySelectorAll('#afil button[data-f]')].find((b) => b.getAttribute("data-f") === "refund") === undefined, "no filter is offered for a state the filter list does not name");
-    const quiet = [...d.querySelectorAll("#rlist [data-u]")].find((r) => /CX4-ZED/.test(r.textContent));
+    const quiet = cards().find((r) => /CX4-ZED/.test(r.textContent));
     ok(!!quiet && quiet.querySelectorAll(".salt-status").length === 0, "an account with nothing to say has no pill: " + (quiet && quiet.textContent));
     const none = d.querySelector('#afil button[data-f="none"]'), locks = d.querySelector('#afil button[data-f="locked"]');
-    ok(!!none && !none.hidden && !!locks && !locks.hidden, "a filter shows while an account is in its state");
+    ok(!!none && !none.disabled && !!locks && !locks.disabled && none.getAttribute("role") === "tab", "a filter can be chosen while an account is in its state");
 
     const q = await richOwnerPage({ pageWork, sheetAnswer: (j) => ({ ...j, accounts: j.accounts.filter((a) => !a.locked && a.account !== false) }) });
     try { await q.work.quiet(); enter(q.d, "customers", "accounts"); await q.work.quiet();
       const f = (k) => q.d.querySelector('#afil button[data-f="' + k + '"]');
-      ok(!!f("all") && !f("all").hidden && f("locked").hidden && f("none").hidden && !f("owes").hidden, "a filter for a state no account is in is not offered"); }
+      ok(!!f("all") && !f("all").disabled && f("locked").disabled && f("none").disabled && !f("owes").disabled && !f("locked").hidden, "a filter for a state no account is in is dimmed and cannot be chosen, not hidden"); }
     finally { q.w.close(); }
 
     enter(d, "customers", "links"); await p.work.quiet();

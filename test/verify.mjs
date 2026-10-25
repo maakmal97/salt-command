@@ -17287,12 +17287,12 @@ await (async () => {
     const D = win.document;
     /* ---- S9 9.2: Accounts, a row opening each account's card; the four controls on the one with no account ---- */
     D.querySelector('button[data-m="customers"]').click();
-    const rowOf = (u) => [...D.querySelectorAll("#rlist button")].find((b) => b.textContent.includes(u));
-    ok(await until(() => rowOf(uB) && /No account/.test(rowOf(uB).textContent) && rowOf(uA)), "Accounts lists both usernames, and says the one has no account");
+    const rowOf = (u) => D.querySelector('#rlist .ncard[data-u="' + u + '"]');
+    ok(await until(() => rowOf(uB) && /No account/.test(rowOf(uB).querySelector(".nkind").textContent) && rowOf(uA)), "Accounts lists both usernames as cards, and says the one has no account");
     const cardOf = (u) => { rowOf(u).click(); return [...D.querySelectorAll("#aopen .scard")].find((x) => x.textContent.includes(u)); };
     const btn = (card, t) => [...card.querySelectorAll("button")].find((b) => b.textContent === t);
     /* S9 9.3: the account's screen, its one filled Send a sign-in link and the four other ways beside it */
-    const five = ["Send a sign-in link", "Show a code, in person", "View as them", "Copy password", "Sign out everywhere"];
+    const five = ["Send a sign-in link", "Show a code", "View as them", "Copy password", "Sign out everywhere"];
     const before = hits.length;
     const cB = cardOf(uB);
     await new Promise((r) => setTimeout(r, 60));
@@ -17302,7 +17302,7 @@ await (async () => {
     ok(!hits.slice(before).some((x) => /[/]open$|[/]all[/](signin|account)[/]/.test(x)), "and opening its card makes nothing and posts nothing: " + JSON.stringify(hits.slice(before)));
     ok(!cB.querySelector("[data-story]"), "the card with no account reads no story of how they got in");
     const cA = cardOf(uA);
-    ok(!!cA && await until(() => btn(cA, five[0]) && !btn(cA, five[0]).disabled) && ["Show a code, in person", "View as them", "Sign out everywhere"].every((t) => btn(cA, t) && !btn(cA, t).disabled),
+    ok(!!cA && await until(() => btn(cA, five[0]) && !btn(cA, five[0]).disabled) && ["Show a code", "View as them", "Sign out everywhere"].every((t) => btn(cA, t) && !btn(cA, t).disabled),
       "and on a card with an account they stay on, its link not yet made: " + JSON.stringify(five.map((t) => [t, cA && btn(cA, t) && btn(cA, t).disabled])));
 
     /* ---- the Worker: his correct master on a username with no account is never a miss ---- */
@@ -17609,16 +17609,18 @@ await (async () => {
     const head = () => (D.getElementById("scount") || {}).textContent;
     await until(() => inflight === 0);
     /* S9 9.2: the tick is on the account's own card, opened from its row */
-    const box = (u) => { const r = D.querySelector('#rlist [data-u="' + u + '"]'); if (!r) return null;
+    /* 25 OCT 2026: the Sent tick is gone; Mark as sent on the card replaces it, and there is no unticking */
+    const mark = (u) => { const r = D.querySelector('#rlist [data-u="' + u + '"]'); if (!r) return null;
       if (!D.querySelector("#aopen .scard") || !D.querySelector("#aopen .scard").textContent.includes(u)) r.click();
-      const c = D.querySelector("#aopen .scard"); return c && c.querySelector(".tick input"); };
-    ok(await until(() => box(uA)) && head() === "0 of 2 sent", "Accounts opens on nothing sent: " + head());
-    box(uA).checked = true; box(uA).dispatchEvent(new win.Event("change", { bubbles: true }));
+      const c = D.querySelector("#aopen .scard"); return c && [...c.querySelectorAll("button")].find((b) => b.textContent === "Mark as sent"); };
+    ok(await until(() => mark(uA)) && head() === "0 of 2 sent", "Accounts opens on nothing sent: " + head());
+    mark(uA).click();
     ok(await until(async () => !!(await kv.get("sent:2026-09-01:" + uA))) && await until(() => head() === "1 of 2 sent"),
-      "a tick is kept and the count moves with it: " + head());
-    box(uA).checked = false; box(uA).dispatchEvent(new win.Event("change", { bubbles: true }));
-    ok(await until(async () => !(await kv.get("sent:2026-09-01:" + uA))) && await until(() => head() === "0 of 2 sent"),
-      "and taking it back moves it back: " + head());
+      "Mark as sent is kept and the count moves with it: " + head());
+    const done = mark(uA);
+    ok(!!done && done.hidden && /Marked sent/.test(D.querySelector("#aopen .scard .astand").textContent) && !D.querySelector("#aopen .tick input")
+      && !!(await kv.get("sent:2026-09-01:" + uA)) && head() === "1 of 2 sent",
+      "and there is no unticking: the button goes, the card says Marked sent, no checkbox is left and the count and the record stand: " + head());
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
 section("S1 1.38: the associate's links box keeps its own note, so an order's Placed never shows under Your links");
@@ -18094,18 +18096,19 @@ await (async () => {
       "and it carries the count of what is To do there on both bars, the refused account, the ID with no account and the account not sent (all his to act since 22 Oct 2026): " + JSON.stringify([...D.querySelectorAll('[data-count="needs"]')].map((x) => x.textContent)));
 
     D.querySelector('.salt-appbar button[data-m="customers"]').click();
-    const rows = () => [...D.querySelectorAll("#rlist [data-u]")];
+    const rows = () => [...D.querySelectorAll("#rlist .ncard[data-u]")];
     const rowOf = (u) => D.querySelector('#rlist [data-u="' + u + '"]');
     ok(D.getElementById("oAccts").hidden === false && D.getElementById("mHome").hidden === true && current() === "customers",
       "a tap on Customers opens its Accounts and marks it the current place");
-    ok(await until(() => rows().length === 4) && rows().every((r) => r.classList.contains("salt-inbox-row")),
-      "every roster account is a row, drawn with the system's Inbox row");
-    /* a row is one state pill and a quiet line of facts, cut at its separators (the layout rework, 14 Oct 2026) */
-    const chips = (u) => [...rowOf(u).querySelectorAll(".salt-status, .salt-inbox-row__what")].flatMap((x) => (x.classList.contains("salt-status") ? [x.textContent] : x.textContent.split(" · ")));
-    ok(chips(uO).includes("They owe RM 272.00") && chips(uO).includes("Opened 14 Sep 2026 by link") && chips(uO).includes("Sent 03 Sep 2026"),
-      "a row's pill says what they owe and its quiet line how and when it was last opened and when it was sent: " + JSON.stringify(chips(uO)));
-    ok(chips(uL).some((t) => /^Locked out until \d\d:\d\d$/.test(t)) && chips(uN)[0] === "No account yet" && chips(uF).includes("Not opened"),
-      "an account locked out, one with no account and one never opened each say so: " + JSON.stringify([chips(uL), chips(uN), chips(uF)]));
+    ok(await until(() => rows().length === 4) && rows().every((r) => r.tagName === "ARTICLE" && r.classList.contains("salt-action") && r.classList.contains("ncard") && r.getAttribute("data-need") === "a:" + r.getAttribute("data-u")
+      && !!r.closest("section.ngroup") && !!r.querySelector("h2.nsev, .need-who")),
+      "every roster account is a row, drawn as Needs you's card inside its severity group");
+    /* 25 OCT 2026: a row is its state and age, then the sum; when and how it was opened and sent now live on the opened card's ledger */
+    const kind = (u) => (rowOf(u).querySelector(".nkind") || {}).textContent || "", fig = (u) => (rowOf(u).querySelector(".nfig") || {}).textContent || "";
+    ok(/^Owed/.test(kind(uO)) && /RM 272/.test(fig(uO)),
+      "a row says what they owe in its kind and its figure: " + JSON.stringify([kind(uO), fig(uO)]));
+    ok(/^Locked/.test(kind(uL)) && kind(uN).startsWith("No account") && !/No account yet/.test(kind(uN)) && /^Not (sent|opened)/.test(kind(uF)),
+      "an account locked out, one with no account and one never opened each say so: " + JSON.stringify([kind(uL), kind(uN), kind(uF)]));
 
     /* a word, then each filter */
     const rq = D.getElementById("rq");
@@ -18117,8 +18120,8 @@ await (async () => {
     const got = Object.fromEntries(Object.keys(want).map((f) => [f, shown(f)]));
     ok(Object.keys(want).every((f) => got[f] === want[f].slice().sort().join()), "each filter shows what it names and nothing else: " + JSON.stringify(got));
     shown("owes");
-    ok(D.querySelector('#afil button[data-f="owes"]').getAttribute("aria-pressed") === "true"
-      && [...D.querySelectorAll("#afil button[data-f]")].filter((b) => b.getAttribute("aria-pressed") === "true").length === 1,
+ok(D.querySelector('#afil button[data-f="owes"]').getAttribute("aria-selected") === "true"
+      && [...D.querySelectorAll("#afil button[data-f]")].filter((b) => b.getAttribute("aria-selected") === "true").length === 1,
       "and the filter in force is the one pressed");
     shown("all");
 
@@ -18127,6 +18130,9 @@ await (async () => {
     ok(D.getElementById("oAccts").classList.contains("open") && !D.getElementById("aopen").hidden
       && /CX0-OW/.test(D.querySelector("#aopen .scard").textContent) && rowOf(uO).getAttribute("aria-current") === "true",
       "a row opens its account's card and is marked the open one");
+    const stand = (k) => ((D.querySelector('#aopen .scard .astand [data-line="' + k + '"] .salt-ledger__value') || {}).textContent) || "";
+    ok(stand("Opened") === "14 Sep 2026 by link" && stand("Marked sent") === "03 Sep 2026" && stand("Notifications") === "On",
+      "and its ledger says when and how it was last opened, when it was marked sent and that notifications are on: " + JSON.stringify([stand("Opened"), stand("Marked sent"), stand("Notifications")]));
     D.querySelector('#aopen button[data-back="accounts"]').click();
     ok(!D.getElementById("oAccts").classList.contains("open") && D.getElementById("aopen").hidden && !rowOf(uO).hasAttribute("aria-current"),
       "and the way back closes it");
@@ -19036,11 +19042,13 @@ await (async () => {
       "a customer who last got in by typing a code reads so on their Needs you card, opened: " + (ko() || {}).textContent);
     delete win.matchMedia;
     D.querySelector('.salt-appbar button[data-m="customers"]').click();
-    const chips = (u) => { const r = D.querySelector('#rlist [data-u="' + u + '"]'); return r ? [...r.querySelectorAll(".salt-status, .salt-inbox-row__what")].flatMap((x) => (x.classList.contains("salt-status") ? [x.textContent] : x.textContent.split(" · "))) : []; };
-    ok(await until(() => chips(us[0]).includes("Opened 03 Sep 2026 by code")) && chips(us[1]).includes("Opened 03 Sep 2026 by code"),
-      "Accounts says an open by a scanned code and one by a typed code, by code for both: " + JSON.stringify([chips(us[0]), chips(us[1])]));
-    ok(chips(us[2]).includes("Opened 03 Sep 2026 by password") && chips(us[3]).includes("Opened 03 Sep 2026"),
-      "an open with no road recorded is the password's, and a road it does not know says none: " + JSON.stringify([chips(us[2]), chips(us[3])]));
+    /* 25 OCT 2026: an open is read from the opened card's Opened line, no longer from the row */
+    const opened = (u) => { const r = D.querySelector('#rlist [data-u="' + u + '"]'); if (!r) return ""; r.click();
+      const c = D.querySelector("#aopen .scard"); const v = c && c.textContent.includes(u) && c.querySelector('.astand [data-line="Opened"] .salt-ledger__value'); return v ? v.textContent : ""; };
+    ok(await until(() => opened(us[0]) === "03 Sep 2026 by code") && opened(us[1]) === "03 Sep 2026 by code",
+      "Accounts says an open by a scanned code and one by a typed code, by code for both: " + JSON.stringify([opened(us[0]), opened(us[1])]));
+    ok(opened(us[2]) === "03 Sep 2026 by password" && opened(us[3]) === "03 Sep 2026",
+      "an open with no road recorded is the password's, and a road it does not know says none: " + JSON.stringify([opened(us[2]), opened(us[3])]));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
 section("S9 fix SEC-1: who is shut out is read off the brake's listing, so fail: keys a stranger mints never cost /all/sheet a read each");
@@ -19311,10 +19319,16 @@ await (async () => {
     delete win.matchMedia;
     D.querySelector('.salt-appbar button[data-m="customers"]').click();
     const row = (u) => D.querySelector('#rlist [data-u="' + u + '"]');
-    ok(await until(() => row(uN) && row(uN).textContent.startsWith("CX3-NO")
-      && row(uN).textContent.includes("Their account comes with the next update. Show them the guest price list meanwhile.")
-      && row(uF) && !row(uF).textContent.includes("next update")),
-      "and its Accounts row says the same, where an account with one does not: " + JSON.stringify([(row(uN) || {}).textContent, (row(uF) || {}).textContent]));
+    /* 25 OCT 2026: the row says No account and offers Show; the next-update words are on the opened card */
+    const cardOf = (u) => { row(u).click(); const c = D.querySelector("#aopen .scard"); return c && c.textContent.includes(u) ? c : null; };
+    ok(await until(() => row(uN) && row(uN).querySelector(".need-who").textContent === "CX3-NO" && /^No account/.test(row(uN).querySelector(".nkind").textContent)
+      && [...row(uN).querySelectorAll("button")].some((b) => b.getAttribute("aria-label") === "Show the guest price list")
+      && row(uF) && !/No account/.test(row(uF).querySelector(".nkind").textContent)
+      && !row(uF).querySelector('button[aria-label="Show the guest price list"]')),
+      "and its Accounts row says No account and offers Show, where an account with one does not: " + JSON.stringify([(row(uN) || {}).textContent, (row(uF) || {}).textContent]));
+    const cN = cardOf(uN), nextN = cN && cN.querySelector(".atot");
+    ok(!!nextN && nextN.textContent === "Their account comes with the next update. Show them the guest price list meanwhile." && !(cardOf(uF) || { textContent: "next update" }).textContent.includes("next update"),
+      "and the opened card says it comes with the next update, where an account with one does not");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
 section("S9 fix UX-R3: from 860px Needs you stands beside the account a card is about and opens nothing by itself, and on a phone a card's code opens it on Accounts");
@@ -19523,9 +19537,10 @@ await (async () => {
     ok(inTap === 1 && /[/]s[/]/.test(shared[0]) && hits.length === before,
       "the second tap shares the link as its first act, with no fetch before it: " + JSON.stringify({ inTap, fetched: hits.slice(before) }));
     ok(await until(() => hits.includes("POST /all/sent/" + u))
-      && await until(() => /Sent[.] It signs them in once/.test(card().textContent) && card().querySelector(".tick input").checked)
+      && await until(() => /Sent[.] It signs them in once/.test(card().textContent) && !!card().querySelector('.astand [data-line="Marked sent"]')
+        && [...card().querySelectorAll("button")].some((b) => b.textContent === "Mark as sent" && b.hidden))
       && await work.quiet() && await links() === 1 && signins() === 1 && pill().textContent === "Send a sign-in link",
-      "a share that goes through ticks the account sent and makes no link for the next: " + JSON.stringify({ links: await links(), signins: signins(), text: card() && card().querySelector(".anote").textContent }));
+      "a share that goes through marks the account sent (Marked sent in its ledger, Mark as sent gone) and makes no link for the next: " + JSON.stringify({ links: await links(), signins: signins(), text: card() && card().querySelector(".anote").textContent }));
     pill().click();
     ok(await until(() => pill().textContent === "Share the link") && await work.quiet() && await links() === 2 && signins() === 2,
       "the next tap makes a new one: " + JSON.stringify({ label: pill().textContent, links: await links() }));
@@ -20277,9 +20292,10 @@ await (async () => {
     await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     D.querySelector('button[data-m="customers"]').click();
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
-    const chip = () => D.querySelector('#rlist [data-u="' + u + '"]').textContent;
-    ok(/Opened [0-9]{2} \w{3} [0-9]{4} by code/.test(chip()), "Accounts says the last open was by code, one word for the three roads: " + chip());
+    /* 25 OCT 2026: the row says only its state; when and how it was last opened is the opened card's Opened line */
     D.querySelector('#rlist [data-u="' + u + '"]').click();
+    const chip = () => ((D.querySelector('#aopen .scard .astand [data-line="Opened"] .salt-ledger__value') || {}).textContent) || "";
+    ok(/^[0-9]{2} \w{3} [0-9]{4} by code$/.test(chip()), "the opened card says the last open was by code, one word for the three roads: " + chip());
     const rows = () => [...D.querySelectorAll('#aopen [data-story] .salt-ledger__label')].map((x) => x.textContent);
     const flags = () => [...D.querySelectorAll('#aopen [data-story] .salt-ledger__flag')].map((x) => x.textContent);
     ok(await until(() => rows().includes("Code")) && JSON.stringify(rows().slice(0, 4)) === JSON.stringify(["Code", "Code", "Password", "Code"])
@@ -20818,8 +20834,10 @@ await (async () => {
       ok(!/issue/i.test(D88.getElementById("oAccts").textContent),
         "and Accounts never says issue: " + JSON.stringify((D88.getElementById("oAccts").textContent.match(/.{0,30}issue.{0,30}/i) || [""])[0]));
       const cardEl = open88("CX0-AA");
-      ok(!!cardEl && /CX0-AA/.test(cardEl.textContent) && /3 orders, RM 420.00/.test(cardEl.textContent),
-        "an account's card carries its totals and its code");
+      /* 25 OCT 2026: the head carries the code (its h2) and the sum (its figure); the older totals line is no longer drawn */
+      const headCode = cardEl && (cardEl.querySelector(".ahead h2") || {}).textContent, headFig = cardEl && (cardEl.querySelector(".ahead__rm") || {}).textContent;
+      ok(!!cardEl && headCode === "CX0-AA" && /^RM [0-9]/.test(headFig || ""),
+        "an account's card carries its figure and its code in the head: " + JSON.stringify([headCode, headFig]));
       /* S9 9.3: Copy message left with the Send card; the account's one filled control is Send a sign-in link */
       const liveLink = [...cardEl.querySelectorAll("button")].find((b) => b.textContent === "Send a sign-in link");
       ok(!!liveLink && liveLink.classList.contains("salt-pill") && cardEl.querySelectorAll(".salt-pill").length === 1,
@@ -25816,14 +25834,16 @@ await (async () => {
       /* S9 9.2: Review is Accounts now: its row, and the card the row opens */
       D.querySelector('button[data-m="customers"]').dispatchEvent(new Wd.Event("click", { bubbles: true }));
       await new Promise((r) => setTimeout(r, 60));
-      const rows = [...D.querySelectorAll("#rlist button")].map((b) => b.textContent);
-      const ltrRow = rows.find((t) => t.startsWith("CZ9-LTR")) || "", wlkRow = rows.find((t) => t.startsWith("CZ9-WLK")) || "";
-      const cardText = (code) => { const r = [...D.querySelectorAll("#rlist [data-u]")].find((b) => b.textContent.startsWith(code)); if (!r) return "";
+      /* 25 OCT 2026: a row is Needs you's card; its kind says No account, and the next-update words live on the opened card alone */
+      const rowFor = (code) => [...D.querySelectorAll("#rlist .ncard")].find((b) => (b.querySelector(".need-who") || {}).textContent === code);
+      const kindOf = (code) => ((rowFor(code) || {}).querySelector ? rowFor(code).querySelector(".nkind").textContent : "");
+      const ltrRow = kindOf("CZ9-LTR"), wlkRow = kindOf("CZ9-WLK");
+      const cardText = (code) => { const r = rowFor(code); if (!r) return "";
         r.dispatchEvent(new Wd.Event("click", { bubbles: true })); return (D.querySelector("#aopen .scard") || {}).textContent || ""; };
       const ltrCard = cardText("CZ9-LTR"), wlkCard = cardText("CZ9-WLK");
-      ok(ltrRow.includes("Their account comes with the next update. Show them the guest price list meanwhile.") && !!wlkRow && !wlkRow.includes("next update")
+      ok(/^No account/.test(ltrRow) && !!wlkRow && !/No account/.test(wlkRow)
         && ltrCard.includes("Their account comes with the next update. Show them the guest price list meanwhile.") && wlkCard.includes("CZ9-WLK") && !wlkCard.includes("next update"),
-        "Salt Admin says the waiting one comes with the next update, and to show the guest price list until then, on its row and its card; the bound one does not: "
+        "Salt Admin says the waiting one comes with the next update, and to show the guest price list until then, on its card (its row says No account); the bound one does not: "
         + JSON.stringify({ ltrRow, wlkRow, ltrCard: ltrCard.slice(0, 120), wlkCard: wlkCard.slice(0, 120) }));
     } finally { try { Wd.close(); } catch (e) { /* best effort */ } }
   } finally {
@@ -50479,6 +50499,16 @@ await (async () => {
 section("Salt Admin: Customers are rows with one state, a link is a row, and a card holds the customer's loans (14 Oct 2026)");
 await (async () => {
   await (await import("./admin-customers.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Admin Customers P1: the accounts are Needs you's cards under To do, Pending and FYI, the filters a tab row (25 Oct 2026)");
+await (async () => {
+  await (await import("./admin-cust-list.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Admin Customers P2: an account leads with where it stands, Sign-in its own card, Mark as sent for the tick (25 Oct 2026)");
+await (async () => {
+  await (await import("./admin-cust-card.mjs")).run({ ok, pageWork });
 })();
 
 section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");

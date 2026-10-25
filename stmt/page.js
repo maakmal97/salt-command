@@ -818,8 +818,19 @@ body.ended>*:not(#aEnded){display:none}
 .salt-rail__tab .salt-appbar__place{color:inherit}
 .adm #mFoot:empty{display:none}
 .adm .afind{display:flex;flex-direction:column;gap:12px;margin:0 0 16px}
-.adm .afil{display:flex;flex-wrap:wrap;gap:8px}
-.adm .alist{display:flex;flex-direction:column;gap:8px}
+/* 25 Oct 2026 (the Customers canvas, P1): the filters are Needs you's tab row, three across on a phone and six wide; the accounts are Needs you's
+   cards under To do, Pending and FYI, the username quiet beside the code, a sum he owes back in ember */
+.adm .afilnav{margin:0}
+.adm .afil{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 4px}
+.adm .afil .nktab{padding:0 4px;gap:6px;text-overflow:ellipsis}
+@media (min-width:860px){.adm .afil{grid-template-columns:repeat(6,minmax(0,1fr));gap:0 12px}}
+.adm .alead{margin:0 0 4px}
+.adm .alead[hidden]{display:none}
+.adm .alist{display:flex;flex-direction:column;gap:16px}
+.adm .alist .ngroup{gap:10px}
+.adm .ncard .need-u{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
+.adm .ncard .need-who--code{flex:none}
+.adm .nfig--mine{color:var(--salt-ember)}
 .adm .alist .salt-inbox-row__title{gap:6px}
 .adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 @media (min-width:1080px){
@@ -1175,6 +1186,24 @@ body.ended>*:not(#aEnded){display:none}
    S7 polish: its own name, .oacct. The customer's Account is .acct (S7 7.3), and this block's single column, coming
    after it, took that Account's two columns from 1080px when the stages were merged */
 .adm .oacct{display:flex;flex-direction:column;gap:12px}
+/* 25 Oct 2026 (the Customers canvas, P2): an account is glass cards, its head first: the state and age, the code and username, the figure large at the
+   right; a ledger of the standing; their waiting line with Reply. Sign-in two by two, Sign out everywhere the width of the card. Nothing wraps. */
+.adm .oacct .asec{display:flex;flex-direction:column;gap:12px;padding:16px;margin:0;box-sizing:border-box;min-width:0}
+.adm .oacct .asec>h3{margin:0}
+.adm .ahead__top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-width:0}
+.adm .ahead__who{display:flex;flex-direction:column;gap:4px;min-width:0}
+.adm .ahead__kind,.adm .ahead__fig .salt-eyebrow{margin:0;white-space:nowrap}
+.adm .oacct .ahead h2.ahead__code{font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}
+.adm .ahead__fig{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
+.adm .ahead__rm{font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);font-weight:600;line-height:1.2;white-space:nowrap;color:var(--salt-salt)}
+.adm .ahead__rm--hot,.adm .astand--hot .salt-ledger__value{color:var(--salt-ember)}
+.adm .astand .salt-ledger__label,.adm .astand .salt-ledger__value{white-space:nowrap}
+.adm .athread{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
+.adm .athread__txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.adm .athread__k,.adm .athread__v{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .athread .salt-pill{flex:none;width:120px;min-height:48px}
+.adm .asign .agrid .salt-ghost,.adm .asign .apill,.adm .asign .asignout{min-height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .asign .asignout{grid-column:1/-1}
 .adm .oacct .ahead h2{margin:0;font-size:var(--salt-text-2xl);line-height:1.15;overflow-wrap:anywhere}
 .adm .oacct .ahead .un{display:block;margin-top:4px;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);
   letter-spacing:.06em;color:var(--salt-text-muted)}
@@ -1809,8 +1838,8 @@ const ADMIN_PARTS = {
 /* 20 Oct 2026 (Counter Batch C, item 21): a place whose parts fit a phone's slider draws them as one, measured in Chromium at 358px:
    Record's three. Customers' and Shop's four (Associates, This device) and the six kinds of Needs you do not fit equal columns there,
    and Orders' second strip shares its choice with the stages, so it can stand with none chosen; those stay a strip of pills. */
-const ADMIN_SLIDERS = ["record"];
-const adminStrip = (p, list, cls, label, seg = !cls && ADMIN_SLIDERS.includes(p)) => '<div class="' + (seg ? "salt-segment" : "salt-tabs") + ' aparts' + cls + '" role="tablist" aria-label="' + label + '" data-place="' + p + '">'
+const ADMIN_SLIDERS = ["record", "customers"];
+const adminStrip = (p, list, cls, label, seg = !cls && ADMIN_SLIDERS.includes(p)) => '<div class="' + (seg ? "salt-segment" : "salt-tabs") + (seg && p === "customers" ? " salt-segment--tight" : "") + ' aparts' + cls + '" role="tablist" aria-label="' + label + '" data-place="' + p + '">'
   + list.map(([k, w]) => '<button type="button" class="' + (seg ? "salt-segment__opt" : "salt-tabs__pill") + '" role="tab" data-part="' + k + '" data-act="part.' + p + "." + k
     + '" aria-selected="' + (k === ADMIN_PARTS[p][0][0] ? "true" : "false") + '">' + w + "</button>").join("") + "</div>";
 /* 18 Oct 2026 (Salt Admin clarity, part 3): Orders draws its parts as two strips of one list. The six stages come first, in the order an order moves (a tab strip
@@ -1824,7 +1853,7 @@ const adminParts = (p, test) => test && !TEST_PARTS[p] ? ""
   : adminStrip(p, ADMIN_PARTS[p].filter(([k]) => !test || TEST_PARTS[p].includes(k)), "", ADMIN_PLACES.filter((x) => x[0] === p)[0][1]);
 /* PHASE 1b: Needs you's kind chips. They filter the one list and read nothing; each is a control with an act of its own, need.kind.<kind> */
 const ADMIN_KINDS = [["all", "All"], ["orders", "Orders"], ["payments", "Payments"], ["messages", "Messages"], ["rows", "Rows"], ["accounts", "Accounts"]];
-const ADMIN_FILTERS = [["all", "All"], ["unsent", "Not sent"], ["unopened", "Not opened"], ["owes", "They owe"], ["locked", "Locked out"], ["none", "No account yet"]];
+const ADMIN_FILTERS = [["all", "All"], ["unsent", "Not sent"], ["unopened", "Not opened"], ["owes", "They owe"], ["locked", "Locked out"], ["none", "No account"]];
 const ADMIN_ICONS = {
   needs: '<path d="M3.8 13 L6.5 5 H17.5 L20.2 13 V19.5 H3.8 Z M3.8 13 H8.6 L9.9 15.6 H14.1 L15.4 13 H20.2"/>',
   orders: '<path d="M5 4.5 H19 V19.5 H5 Z M8 8 H16 M8 11.5 H16 M8 15 H13"/>',
@@ -1992,12 +2021,15 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + adminParts("customers", test)
         + '<div class="abody">'
         + '<div id="oAccts" data-in="customers.accounts">'
-        + '<p class="lead" id="scount"></p>'
+        /* 25 Oct 2026 (the Customers canvas, P1): an Insight leads, money first, then the find field and the filters as Needs you's text tab row */
+        + '<p class="salt-insight salt-insight--copper alead" id="alead" hidden></p>'
         + '<div class="afind">'
         + '<input class="fld salt-field__input salt-field__input--mono" id="rq" type="search" autocapitalize="none" autocorrect="off" '
         + 'spellcheck="false" placeholder="A code or a username" aria-label="Find an account" data-act="acct.find">'
-        + '<div class="afil" id="afil" role="group" aria-label="Show only">' + ADMIN_FILTERS.map(([f, w], k) =>
-          '<button type="button" class="salt-ghost" data-f="' + f + '" data-act="acct.filter-' + f + '" aria-pressed="' + (k ? "false" : "true") + '">' + w + "</button>").join("") + "</div>"
+        + '<nav class="salt-nav nkinds afilnav" aria-label="Show only"><div class="salt-nav__links afil" id="afil" role="tablist">' + ADMIN_FILTERS.map(([f, w], k) =>
+          '<button type="button" class="salt-nav__link nktab' + (k ? "" : " salt-nav__link--active") + '" role="tab" data-f="' + f + '" data-act="acct.filter-' + f + '" aria-selected="' + (k ? "false" : "true") + '">' + w
+          + '<span class="nktab__n"></span></button>').join("") + "</div></nav>"
+        + '<p class="lead" id="scount"></p>'
         + "</div>"
         + '<div class="asplit"><div id="rlist" class="alist"></div><div id="aopen" hidden></div><p class="rnone panenone">Choose a card to see it in full.</p></div>'
         + "</div>"

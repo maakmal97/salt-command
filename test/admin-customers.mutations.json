@@ -1,21 +1,21 @@
 [
  {
-  "name": "a row shows an extra chip",
+  "name": "a locked account's way is Open, not Send",
   "file": "stmt/owner.js",
-  "find": "flagLine(a));\n    return null;",
-  "replace": "flagLine(a));\n    return chip('mist','extra');"
+  "find": "word:'Locked', age:a.locked.until?'to '+hm(a.locked.until):'', act:'send'}",
+  "replace": "word:'Locked', age:a.locked.until?'to '+hm(a.locked.until):'', act:'open'}"
  },
  {
-  "name": "a row brings back its Open",
+  "name": "an owing account loses its Owed kind",
   "file": "stmt/owner.js",
-  "find": "    b.appendChild(main);\n    b.addEventListener('click', function(){ openCard(a.username); });",
-  "replace": "    b.appendChild(main); main.appendChild(el('span','salt-inbox-row__action','Open'));\n    b.addEventListener('click', function(){ openCard(a.username); });"
+  "find": "return {sev:late?'now':'soon', word:'Owed',",
+  "replace": "return {sev:late?'now':'soon', word:'Debt',"
  },
  {
-  "name": "every filter is shown",
+  "name": "a filter with no account is still offered",
   "file": "stmt/owner.js",
-  "find": "x.hidden=k!=='all'&&!pool.some(FILTER[k]); });",
-  "replace": "x.hidden=false; });"
+  "find": "x.disabled=k!=='all'&&!n; });",
+  "replace": "x.disabled=false; });"
  },
  {
   "name": "a link row is a card again",
