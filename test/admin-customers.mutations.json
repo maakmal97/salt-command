@@ -20,14 +20,14 @@
  {
   "name": "a link row is a card again",
   "file": "stmt/owner.js",
-  "find": "var card=el('details','glink salt-glass-card salt-glass-card--radius-md'+(r.revoked?' off':''));",
-  "replace": "var card=el('div','glink salt-glass-card salt-glass-card--radius-md'+(r.revoked?' off':''));"
+  "find": "var c=needCard({sev:sev, kind:'links', word:word,",
+  "replace": "var c=el('div','glink'); void ({sev:sev, kind:'links', word:word,"
  },
  {
   "name": "a withdrawn link has no pill",
   "file": "stmt/owner.js",
-  "find": "if(r.revoked) top.appendChild(chip('mist','Withdrawn'));",
-  "replace": "if(r.revoked) top.appendChild(el('span',null,''));"
+  "find": "r.revoked?'Withdrawn':r.standing?'Standing'",
+  "replace": "r.revoked?'Standing':r.standing?'Standing'"
  },
  {
   "name": "the counts are not a ledger",

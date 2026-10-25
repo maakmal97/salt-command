@@ -38,8 +38,8 @@
  {
   "name": "a strip is no longer the system's tabs",
   "file": "stmt/page.js",
-  "find": "'<div class=\"' + (seg ? \"salt-segment\" : \"salt-tabs\") + ' aparts' + cls + '\"",
-  "replace": "'<div class=\"aparts' + cls + '\""
+  "find": "'<div class=\"' + (seg ? \"salt-segment\" : \"salt-tabs\") + (seg && p",
+  "replace": "'<div class=\"' + (seg && p"
  },
  {
   "name": "a strip is no tablist",
@@ -116,8 +116,8 @@
  {
   "name": "the Their % form moves to Entry",
   "file": "stmt/owner.js",
-  "find": "var driftSection=makerForm('pricing');",
-  "replace": "var driftSection=makerForm('entry');"
+  "find": "var houseSection=makerForm('pricing');",
+  "replace": "var houseSection=makerForm('entry');"
  },
  {
   "name": "Add ID moves to Pricing",

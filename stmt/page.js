@@ -720,9 +720,6 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-cover-row{display:flex;align-items:center;gap:10px}
 .adm .maker-cover-row .maker-cover{flex:1 1 auto}
 .adm .maker-cover-row button{flex:none;min-width:var(--salt-tap);min-height:var(--salt-tap)}
-.adm .maker-drift-actions{display:flex;flex-wrap:wrap;gap:8px}
-.adm .maker-drift-actions button{min-width:var(--salt-tap);min-height:var(--salt-tap)}
-.adm .maker-pct-preview{margin-top:8px;min-width:0}
 /* 16 OCT 2026: THE MINI LEDGER'S TABLES are the system's table in its scrolling wrap, so nine columns scroll inside their box on a phone and the page never does; a figure stands right, a word left. */
 .adm #oLedger{display:flex;flex-direction:column;gap:24px}
 .adm #oLedger .lead{margin:0}
@@ -1168,9 +1165,6 @@ body.ended>*:not(#aEnded){display:none}
 .lockd{opacity:.45;pointer-events:none;user-select:none}
 .adm .acard .agrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
 .adm .acard .acell{min-width:0}
-.adm .pbar{height:6px;margin:10px 0 6px;border:1px solid var(--salt-line);border-radius:999px;overflow:hidden;
-  background:var(--salt-well)}
-.adm .pbar i{display:block;height:100%;background:var(--salt-gradient)}
 .adm #oCards h2{margin:22px 0 0;font-size:var(--salt-text-md)}
 /* v696: the five stand above anything minted against a customer, each under its own line */
 .adm .ghead{margin:18px 0 6px}
@@ -1195,8 +1189,8 @@ body.ended>*:not(#aEnded){display:none}
 .adm .ahead__kind,.adm .ahead__fig .salt-eyebrow{margin:0;white-space:nowrap}
 .adm .oacct .ahead h2.ahead__code{font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}
 .adm .ahead__fig{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
-.adm .ahead__rm{font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);font-weight:600;line-height:1.2;white-space:nowrap;color:var(--salt-salt)}
-.adm .ahead__rm--hot,.adm .astand--hot .salt-ledger__value{color:var(--salt-ember)}
+.adm .ahead__rm{font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);font-weight:500;line-height:1.2;white-space:nowrap;color:var(--salt-salt)}
+.adm .ahead__rm--hot{color:var(--salt-ember)}
 .adm .astand .salt-ledger__label,.adm .astand .salt-ledger__value{white-space:nowrap}
 .adm .athread{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
 .adm .athread__txt{display:flex;flex-direction:column;gap:2px;min-width:0}
@@ -1220,7 +1214,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm .acard .salt-metrics__label,.adm .acard .salt-metrics__value{white-space:nowrap}
 .adm .acard .srow{flex-wrap:nowrap}
 .adm .acard .srow .un{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.adm .apick{min-height:44px;padding:0;background:none;border:0;color:inherit;font:inherit;font-weight:600;cursor:pointer;text-align:left}
+.adm .apick{min-height:44px;padding:0;background:none;border:0;color:inherit;font:inherit;font-weight:500;cursor:pointer;text-align:left}
 .adm .apick:hover{color:var(--salt-brass)}
 .adm .ameter{margin-top:10px}
 .adm .ameter .salt-meter__line{white-space:nowrap}
@@ -1234,7 +1228,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm .atable2{display:none;padding:4px 6px;overflow:hidden}
 .adm .atable2 td,.adm .atable2 th{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .atable2 .atu{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
-.adm .atable2 .atfig{font-family:var(--salt-font-mono);font-size:var(--salt-text-lg);font-weight:600}
+.adm .atable2 .atfig{font-family:var(--salt-font-mono);font-size:var(--salt-text-lg);font-weight:500}
 .adm .atable2 .atgo{width:136px}
 .adm .atable2 .nbtn{width:120px;height:48px;min-height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media (min-width:1080px){
@@ -1272,11 +1266,11 @@ body.ended>*:not(#aEnded){display:none}
 .adm .apct__tabs .nktab{padding:0 2px}
 .adm .apct__step{display:flex;align-items:center;gap:8px}
 .adm .apct__btn{flex:none;width:48px;min-width:48px;height:48px;padding:0;font-size:1.25rem;letter-spacing:0}
-.adm .apct__val{flex:1 1 auto;min-width:0;text-align:center;font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);font-weight:600;color:var(--salt-salt);white-space:nowrap}
+.adm .apct__val{flex:1 1 auto;min-width:0;text-align:center;font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);font-weight:500;color:var(--salt-salt);white-space:nowrap}
 .adm .apct__table{padding:0 6px;overflow:hidden}
-.adm .apct__at{font-weight:600;color:var(--salt-salt)}
+.adm .apct__at{font-weight:500;color:var(--salt-salt)}
 .adm .apct__floor{color:var(--salt-mist-bright)}
-.adm .apct__acts .salt-pill,.adm .apct__acts .salt-ghost,.adm .apart .salt-ghost{min-height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
+.adm .apct__acts .salt-pill,.adm .apct__acts .salt-ghost,.adm .apart__go{min-height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
 .adm .apct__acts .apct__clear,.adm .apct__acts>[role="status"]{grid-column:1/-1}
 .adm .acust__line{display:flex;align-items:center;justify-content:space-between;gap:12px;white-space:nowrap}
 .adm .acust__spark{display:block;width:100%;height:36px;color:var(--salt-brass)}
@@ -1335,14 +1329,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm #glist .glink>.gu{margin-top:0}
 .adm #glist .glink>.gwho{margin-top:0;margin-bottom:0;font-size:var(--salt-text-sm);font-weight:400;color:var(--salt-text-muted)}
 .adm #glist .glink img{width:150px;height:150px}
-.adm .gsum{display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:var(--salt-tap);padding:8px 16px;cursor:pointer;list-style:none}
-.adm .gsum::-webkit-details-marker{display:none}
-.adm .gsum::after{content:"";position:absolute;right:16px;width:7px;height:7px;border:solid var(--salt-text-muted);border-width:0 2px 2px 0;transform:rotate(45deg);top:20px}
 .adm #glist .glink{position:relative}
-.adm #glist .glink[open]>.gsum::after{transform:rotate(-135deg);top:24px}
-.adm .gsum .gtop{display:flex;align-items:center;gap:8px;padding-right:20px}
-.adm .gsum .gt{margin:0}
-.adm .gsum .gs{margin:0;font-size:var(--salt-text-xs);color:var(--salt-text-muted);font-family:var(--salt-font-mono);letter-spacing:.04em}
 .adm #glist .grow{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .adm #glist select{margin-top:12px}
 .adm .alist .arow .salt-inbox-row__title{display:flex;align-items:center;gap:8px}

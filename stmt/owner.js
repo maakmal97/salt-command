@@ -478,7 +478,7 @@ export const OWNER_JS = `
       st.textContent='';
       if(a.test){ acctLine(st,'Practice','Nothing recorded'); return; }
       if(none){ acctLine(st,'Account','Next update'); return; }
-      if(a.locked) acctLine(st,'Locked out',a.locked.until?'until '+hm(a.locked.until):'now').classList.add('astand--hot');
+      if(a.locked){ var lk=acctLine(st,'Locked out',a.locked.until?'until '+hm(a.locked.until):'now'); lk.classList.add('astand--hot'); lk.querySelector('.salt-ledger__value').classList.add('nage--late'); }
       acctLine(st,'Opened',a.seen&&a.seen.opens?dayMon(a.seen.last)+(howOf(a.seen)?' '+howOf(a.seen):''):'Not yet');
       if(a.sent) acctLine(st,'Marked sent',dayMon(a.sent));
       if(a.alerts) acctLine(st,'Notifications','On');

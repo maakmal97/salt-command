@@ -39,12 +39,13 @@ export async function run({ ok, pageWork }) {
     finally { q.w.close(); }
 
     enter(d, "customers", "links"); await p.work.quiet();
-    const g = d.querySelector('#glist [data-link="s1"]'), off = d.querySelector('#glist [data-link="r1"]');
-    ok(!!g && g.tagName === "DETAILS" && !g.open && g.querySelector("summary") && !!g.querySelector("img") && !!byAct(g, "link.copy"),
-      "a guest link is a shut row holding its QR and moves");
-    ok(!!off && !!off.querySelector("summary .salt-status") && /Withdrawn/.test(off.querySelector("summary").textContent) && !g.querySelector("summary .salt-status"),
-      "only a withdrawn link carries a pill");
-    ok(d.querySelectorAll('#glist details[open]').length === 0, "no link row is open until it is opened");
+    const g = d.querySelector('#glist .glink[data-link="s1"]'), off = d.querySelector('#glist .glink[data-link="r1"]');
+    const gc = d.querySelector('#glist [data-glink="s1"]'), oc = d.querySelector('#glist [data-glink="r1"]');
+    ok(!!g && !!gc && g.hidden && !g.open && gc.getAttribute("aria-expanded") === "false" && !!g.querySelector("img") && !!byAct(g, "link.copy"),
+      "a guest link is Needs you's card with its panel, holding the QR and moves, hidden until the card is tapped");
+    ok(!!off && !!oc && oc.classList.contains("off") && /Withdrawn/.test(oc.querySelector(".nkind").textContent) && !/Withdrawn/.test(gc.querySelector(".nkind").textContent),
+      "only a withdrawn link's card says Withdrawn in its kind line and is dimmed");
+    ok(d.querySelectorAll('#glist .glink:not([hidden])').length === 0, "no link panel is open until its card is tapped");
 
     enter(d, "customers", "associates"); await p.work.quiet();
     const card = d.querySelector("#clist .acard");

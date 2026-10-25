@@ -26,8 +26,8 @@
   {
     "name": "2 locked first and hot",
     "file": "stmt/owner.js",
-    "find": "if(a.locked) acctLine(st,'Locked out',a.locked.until?'until '+hm(a.locked.until):'now').classList.add('astand--hot');",
-    "replace": "if(a.locked) acctLine(st,'Locked out',a.locked.until?'until '+hm(a.locked.until):'now');"
+    "find": "lk.classList.add('astand--hot'); lk.querySelector('.salt-ledger__value').classList.add('nage--late');",
+    "replace": ""
   },
   {
     "name": "2 notifications",
