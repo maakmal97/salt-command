@@ -98,10 +98,12 @@ export async function run({ ok, pageWork }) {
       "A write that went through in one pane is told on the channel, and the other pane re-reads at once: " + JSON.stringify([before, A.seen.paths.filter((p) => p === "GET /all/test/c/orders").length]));
 
     /* ---- 3: storage, over a sign-in and a sign-out (two taps), which drops this phone's remembered account and seen marks */
-    B.d.querySelector('button.salt-segment__opt[data-look="night"]').click();   /* a look chosen here is this pane's own */
+    /* 26 Oct 2026, his word: the look is one Switch, greyed while Tide is off; a forced tap on it writes nothing outside this pane */
+    { const sw = B.d.querySelector('#lookRow .salt-switch[data-look="tide"]'); sw.disabled = false; sw.click(); }
     B.d.getElementById("lock").click(); B.d.getElementById("lock").click();
     await until(() => !B.d.getElementById("gate").hidden, 40);
-    ok(B.seen.sets.length > 0 && B.seen.writes.length > B.seen.sets.length && B.seen.writes.every((k) => k.indexOf("salt-test:") === 0) && B.w.localStorage.getItem("salt-stmt-seen") === "real-phone" && B.w.localStorage.getItem("salt-look") === "tide",
+    /* 26 Oct 2026: the look tap no longer writes (Tide is off), so the writes are the sign-out's removals alone */
+    ok(B.seen.writes.length > 0 && B.seen.writes.every((k) => k.indexOf("salt-test:") === 0) && B.w.localStorage.getItem("salt-stmt-seen") === "real-phone" && B.w.localStorage.getItem("salt-look") === "tide",
       "No localStorage key is written or removed but under salt-test:, and a real phone's keys are left as they were: " + JSON.stringify(B.seen.writes));
 
     /* ---- 7 and 8: Salt Admin */
