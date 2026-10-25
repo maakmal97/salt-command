@@ -2543,6 +2543,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | Act | Where | What it does |
 |---|---|---|
 | `acct.back` | Accounts, an open card on a phone | Takes the card back to the list. |
+| `assoc.open` | Associates, the code (key: the code) | Opens that associate's account under Accounts. |
+| `assoc.open-row` | Associates table from 860px, the code (key: the code) | Opens that associate's account under Accounts. |
 | `acct.copy-link` | Accounts card for an ID with no account, once the link is shown | Copies the guest price list's link. |
 | `acct.device-signout` | Account card, Phones and computers (key: the device id) | Signs that one device out. |
 | `acct.filter-all` | Accounts, the filter bar | Shows every account. |

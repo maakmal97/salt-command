@@ -1212,6 +1212,23 @@ body.ended>*:not(#aEnded){display:none}
 .adm #makerChatList{display:flex;flex-direction:column;gap:16px}
 /* 26 Oct 2026 (the Customers canvas, P6): a link is Needs you's card, Opens over its count in the figure's place; its address, QR and moves under it */
 .adm #glist{display:flex;flex-direction:column;gap:16px}
+/* 26 Oct 2026 (the Customers canvas, P7): a book's typed tag and how many; the associates cards on a phone and one plain table from 860px; the reward a Meter */
+.adm .aprodhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:16px 0 8px}
+.adm .aprodtag{margin:0;font-size:inherit}
+.adm .aclist{display:flex;flex-direction:column;gap:0}
+.adm .acard .agrid .acell{align-items:flex-end;text-align:right}
+.adm .acard .salt-metrics__label,.adm .acard .salt-metrics__value{white-space:nowrap}
+.adm .acard .srow{flex-wrap:nowrap}
+.adm .acard .srow .un{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.adm .apick{min-height:44px;padding:0;background:none;border:0;color:inherit;font:inherit;font-weight:600;cursor:pointer;text-align:left}
+.adm .apick:hover{color:var(--salt-brass)}
+.adm .ameter{margin-top:10px}
+.adm .ameter .salt-meter__line{white-space:nowrap}
+.adm .ameter .salt-meter__track{display:block}
+.adm .atable{display:none;padding:4px 6px;overflow:hidden}
+.adm .atable .ameter{margin:0}
+.adm .atable td,.adm .atable th{white-space:nowrap}
+@media (min-width:860px){.adm .aclist{display:none}.adm .atable{display:block}}
 .adm .glinks{gap:10px}
 .adm .glinks .glink[hidden]{display:none}
 .adm .ncard .need-lead{flex:none;font-family:var(--salt-font-display)}

@@ -50531,6 +50531,11 @@ await (async () => {
   await (await import("./admin-cust-links.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Admin Customers P7: a book is its tag and how many, the associates cards on a phone and a plain table wide (26 Oct 2026)");
+await (async () => {
+  await (await import("./admin-cust-assoc.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");
 await (async () => {
   await (await import("./maker-queue-withdrawal.mjs")).run({ ok, worker, handleMaker });

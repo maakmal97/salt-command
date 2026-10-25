@@ -218,7 +218,8 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
       devices: [{ id: "dev-1", label: "An iPhone", kept: true, at: ISO, last: ISO }] };
     if (route.startsWith("/all/signin/")) return { ok: true, msg: "Your link", url: "https://example.test/s/abc" };
     if (route === "/all/handover") return { ok: true, qr: ["101", "010", "101"], code: "ABCD-EFGH", exp: LATER };
-    if (route === "/all/assoc") return via(assocAnswer)({ ok: true, products: [], at: ISO });
+    /* 26 Oct 2026 (Customers P7): one associate with an account, so the report card's code is drawn as the control that opens it */
+    if (route === "/all/assoc") return via(assocAnswer)({ ok: true, products: [{ product: "salt", rows: [{ id: "CX1-ZED", rank: 1, bought: 10, soldFor: 5, introduced: 2 }] }], at: ISO });
     if (route === "/all/maker/review") return (review || ((j) => j))({ ok: true, orders: orders(), drafts: [draft("d-1"),
       draft("d-2", { row: { qty: 1, total: 100, trip: "t1" } }), draft("d-3", { row: { qty: 1, total: 50, trip: "t1" }, product: "oil" })],
     refused: [{ why: "Refused for the fixture" }],

@@ -1,0 +1,44 @@
+[
+  {
+    "name": "1 how many on the book",
+    "file": "stmt/owner.js",
+    "find": "hd.appendChild(el('span','salt-status salt-status--mist',p.rows.length+(p.rows.length===1?' associate':' associates')));",
+    "replace": ""
+  },
+  {
+    "name": "2 the short labels",
+    "file": "stmt/owner.js",
+    "find": "[['Bought',rm(r.bought)],['Sold',rm(r.soldFor)],['Introduced',rm(r.introduced)]]",
+    "replace": "[['Bought from you',rm(r.bought)],['Sold for you',rm(r.soldFor)],['Introduced',rm(r.introduced)]]"
+  },
+  {
+    "name": "2 the reward a Meter",
+    "file": "stmt/owner.js",
+    "find": "    if(r.reward&&r.reward.next!=null) c.appendChild(assocMeter(r.reward));",
+    "replace": ""
+  },
+  {
+    "name": "2 the meter's fill",
+    "file": "stmt/owner.js",
+    "find": "    m.style.setProperty('--salt-fill', String(Math.max(0, Math.min(100, Math.round(w.next*100)))));",
+    "replace": ""
+  },
+  {
+    "name": "3 the table",
+    "file": "stmt/owner.js",
+    "find": "      wrap.appendChild(assocTable(p));",
+    "replace": ""
+  },
+  {
+    "name": "3 the table from 860px",
+    "file": "stmt/page.js",
+    "find": "@media (min-width:860px){.adm .aclist{display:none}.adm .atable{display:block}}",
+    "replace": "@media (min-width:860px){.adm .aclist{display:none}}"
+  },
+  {
+    "name": "4 the code opens the account",
+    "file": "stmt/owner.js",
+    "find": "b.addEventListener('click', function(){ showPlace('customers','accounts',{fresh:true, push:true}); openCard(acc.username); });",
+    "replace": ""
+  }
+]

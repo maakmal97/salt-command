@@ -6964,15 +6964,28 @@ export const OWNER_JS = `
     try{ cards=await refs('/all/assoc'); drawCards(); }
     catch(e){ sayFail(e); }
   }
-  function bar(frac){
-    var w=el('div','pbar'), f=document.createElement('i');
-    f.style.width=Math.round((frac||0)*100)+'%';
-    w.appendChild(f); return w;
+  /* 26 OCT 2026 (canvas Salt Admin Customers, P7): A BOOK IS ITS TYPED TAG AND HOW MANY; an associate is a card on a phone and a row of one plain table from 860px:
+     what they bought, sold for him and brought in, right-aligned; the reward on salt alone as the system's Meter, in units; the code opens their account */
+  function assocMeter(w){
+    var m=el('div','salt-meter ameter'), line=el('div','salt-meter__line'), a=el('span',null,'Reward '), b=el('span',null,''), tr=el('div','salt-meter__track');
+    a.appendChild(el('b',null,String(Math.round(w.left*100)/100))); a.appendChild(document.createTextNode(' left'));
+    b.appendChild(el('b',null,Math.round(w.next*100)+'%')); b.appendChild(document.createTextNode(' to next'));
+    line.appendChild(a); line.appendChild(b); m.appendChild(line); tr.appendChild(el('div','salt-meter__fill')); m.appendChild(tr);
+    m.style.setProperty('--salt-fill', String(Math.max(0, Math.min(100, Math.round(w.next*100)))));
+    m.setAttribute('aria-label','Reward, '+(Math.round(w.left*100)/100)+' units left, '+Math.round(w.next*100)+'% of the way to the next');
+    return m;
+  }
+  function assocCode(code, act){
+    var acc=OWNER.accounts.filter(function(x){ return x.code===code&&x.username; })[0];
+    if(!acc) return el('b','acode',code);
+    var b=actOn(el('button','acode apick',code),act||'assoc.open',code); b.type='button';
+    b.addEventListener('click', function(){ showPlace('customers','accounts',{fresh:true, push:true}); openCard(acc.username); });
+    return b;
   }
   function cardOf(r){
     var c=el('div','acard salt-glass-card salt-glass-card--radius-md'+(r.departed?' off':''));
     var head=el('div','srow');
-    head.appendChild(el('b','acode',r.id));
+    head.appendChild(assocCode(r.id));
     var marks=[];
     if(r.founder) marks.push('founder');
     if(r.rank) marks.push('#'+r.rank);
@@ -6981,7 +6994,7 @@ export const OWNER_JS = `
     head.appendChild(el('span','un',marks.join(' \\u00b7 ')));
     c.appendChild(head);
     var g=el('div','agrid salt-metrics salt-metrics--sm');
-    [['Bought from you',rm(r.bought)],['Sold for you',rm(r.soldFor)],['Introduced',rm(r.introduced)]].forEach(function(p){
+    [['Bought',rm(r.bought)],['Sold',rm(r.soldFor)],['Introduced',rm(r.introduced)]].forEach(function(p){
       var cell=el('div','acell'); cell.appendChild(el('span','salt-metrics__label',p[0])); cell.appendChild(el('span','salt-metrics__value',p[1])); g.appendChild(cell);
     });
     c.appendChild(g);
@@ -6997,8 +7010,23 @@ export const OWNER_JS = `
       ledRow('Reward',w.earned+' earned, '+w.taken+' taken, '+(Math.round(w.left*100)/100)+' left'+(w.held?', held while away':''));
     }
     if(led.childElementCount) c.appendChild(led);
-    if(r.reward&&r.reward.next!=null){ c.appendChild(bar(r.reward.next)); c.appendChild(el('p','op',Math.round(r.reward.next*100)+'% of the way to the next unit')); }
+    if(r.reward&&r.reward.next!=null) c.appendChild(assocMeter(r.reward));
     return c;
+  }
+  function assocTable(p){
+    var wrap=el('div','salt-glass-card salt-glass-card--radius-lg atable'), table=el('table','salt-table salt-table--plain'), hr=el('tr'), body=el('tbody'), tiered=p.rows.some(function(r){ return !!r.reward; });
+    table.appendChild(el('caption','sr','Each associate, this book'));
+    ['Associate','Standing','Bought','Sold','Introduced',tiered?'Reward, units':'Reward'].forEach(function(h, i){ var th=el('th',i<2||i===5?'l':null,h); th.setAttribute('scope','col'); hr.appendChild(th); });
+    table.appendChild(el('thead')).appendChild(hr); table.appendChild(body);
+    p.rows.forEach(function(r){
+      var tr=el('tr'), th=el('th','l'); th.setAttribute('scope','row'); th.appendChild(assocCode(r.id,'assoc.open-row')); tr.appendChild(th);
+      var marks=[]; if(r.founder) marks.push('founder'); if(r.rank) marks.push('#'+r.rank); if(r.departed) marks.push('away'); if(r.stars) marks.push(new Array(r.stars+1).join('\u2605'));
+      tr.appendChild(el('td','l astand2',marks.join(' \u00b7 ')));
+      [r.bought, r.soldFor, r.introduced].forEach(function(v){ tr.appendChild(el('td',null,rm(v))); });
+      var rw=el('td','l'); if(r.reward&&r.reward.next!=null) rw.appendChild(assocMeter(r.reward)); else rw.textContent=tiered?'':'None on this book';
+      tr.appendChild(rw); body.appendChild(tr);
+    });
+    wrap.appendChild(table); return wrap;
   }
   function drawCards(){
     var wrap=document.getElementById('clist'); if(!wrap) return;
@@ -7011,9 +7039,11 @@ export const OWNER_JS = `
     }
     if(head) head.textContent='As at '+(cards.at?stampDay(cards.at):'the last publish')+'.';
     cards.products.forEach(function(p){
-      wrap.appendChild(pmarkHead('h2',p.product));
+      var hd=el('div','aprodhead'), h2=el('h2','aprodtag'); h2.appendChild(productTag(p.product)); hd.appendChild(h2);
+      hd.appendChild(el('span','salt-status salt-status--mist',p.rows.length+(p.rows.length===1?' associate':' associates'))); wrap.appendChild(hd);
       if(!p.rows.length){ wrap.appendChild(el('p','rnone','Nobody on this book yet.')); return; }
-      p.rows.forEach(function(r){ wrap.appendChild(cardOf(r)); });
+      var list=el('div','aclist'); p.rows.forEach(function(r){ list.appendChild(cardOf(r)); }); wrap.appendChild(list);
+      wrap.appendChild(assocTable(p));
     });
   }
   /* ---- THE TEST ACCOUNT (v689) --------------------------------------------------------------
