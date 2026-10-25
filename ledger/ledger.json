@@ -1,6 +1,6 @@
 {
- "v": "v1250",
- "stamped": "25 Oct 2026, 05:45 KL",
+ "v": "v1252",
+ "stamped": "25 Oct 2026, 21:38 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -83,7 +83,7 @@
    "rice": {
     "qty": 0,
     "costPerKg": null,
-    "stated": 0
+    "stated": 100
    },
    "spare": {
     "qty": 0,
@@ -1105,6 +1105,22 @@
     "paidOn": "2026-10-24",
     "note": "New buy of 25 unit of salt from SA5-BTR for RM1400, dated 24 Oct 2026, with RM50 freight beside it. Collected, RM1400 cash out and all 25 unit received on the day. At RM56 a unit it matches his quote of 23 Sep, two whole lots of 12.5 unit at RM700. Landed it costs RM58 a unit, and it is now the latest lot. Nothing is outstanding.",
     "rid": "p044"
+   },
+   {
+    "qty": 100,
+    "total": 320,
+    "cash": 330,
+    "handover": "collected",
+    "supplier": "SM4-KEP",
+    "freight": 10,
+    "status": "paid",
+    "product": "rice",
+    "date": "2026-10-25",
+    "receivedOn": "2026-10-25",
+    "receivedQty": 100,
+    "paidOn": "2026-10-25",
+    "note": "<b>PURCHASE OF 100 UNIT OF RICE FROM SM4-KEP, GOODS RM320, 25 OCT 2026.</b> Approved by Counter Admin. Collected and received in full on 25 Oct and paid the same day, RM330 cash: RM320 goods and RM10 freight. The rate is RM3.20 a unit, matching his word of 23 Sep for 100 unit at RM320; the 21 Sep lot was bought at the same rate. The party's median rate is RM38, range RM3.20 to RM42, across oil, candy and rice rows; outstanding before was RM0, nothing defaulted. The drafter flagged RM330 paid on RM320; the RM10 freight answers it. Nothing remains outstanding. The row is rice, so the salt inventory and its RM56 cost are untouched.",
+    "rid": "p045"
    }
   ],
   "sales": [
@@ -9867,7 +9883,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-24T21:44:41.038Z",
+  "QUEUE_COMMITTED": "2026-10-25T13:37:19.636Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -10015,7 +10031,7 @@
     {
      "id": "promo:revive:rice",
      "sev": "note",
-     "title": "Two messages are worth about RM 18 on rice"
+     "title": "Two messages are worth about RM 19 on rice"
     },
     {
      "id": "cust:oneanddone",
@@ -16412,7 +16428,7 @@
     },
     "rice": {
      "stockCost": 3.2,
-     "replCost": 3.4,
+     "replCost": 3.3,
      "floors": {
       "1": {
        "floor": 5
@@ -16435,7 +16451,7 @@
          "qty": 100,
          "total": 320,
          "rate": 3.2,
-         "date": "2026-09-21",
+         "date": "2026-10-25",
          "sup": "SM4-KEP"
         }
        },
@@ -16448,13 +16464,13 @@
         "qty": 100,
         "total": 320,
         "rate": 3.2,
-        "date": "2026-09-21",
+        "date": "2026-10-25",
         "sup": "SM4-KEP"
        },
        "meanLot": 100,
        "quoteRate": 3.2,
        "repl": 3.2,
-       "freightRate": 0.2,
+       "freightRate": 0.15,
        "leak": {
         "ratio": 0.3906,
         "leak": 25,
@@ -16468,12 +16484,12 @@
         "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
        },
        "latest": {
-        "rid": "p028",
-        "date": "2026-09-21",
+        "rid": "p045",
+        "date": "2026-10-25",
         "quote": 320,
-        "freight": 20,
+        "freight": 10,
         "units": 100,
-        "rate": 3.4
+        "rate": 3.3
        },
        "costBasis": {
         "freightPerTrip": {
@@ -16487,7 +16503,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.26,
+       "shrinkRate": 0.13,
        "avgDel": {
         "n": 14,
         "kg": 74,
@@ -17486,10 +17502,10 @@
      ]
     }
    },
-   "v": "v1250"
+   "v": "v1252"
   },
   "OPEN": {
-   "at": "2026-10-24T21:45:26.361Z",
+   "at": "2026-10-25T13:38:15.371Z",
    "count": 8,
    "byKey": {
     "CM4-MK|2026-10-25|180": {
@@ -17662,10 +17678,10 @@
     },
     "rice": {
      "name": "Rice",
-     "onHand": 0,
-     "free": 0,
+     "onHand": 100,
+     "free": 100,
      "owedOut": 0,
-     "coverDays": 0,
+     "coverDays": 51,
      "rate": 1.96,
      "owedToYou": 15,
      "promised": 0,
@@ -17679,7 +17695,7 @@
     "rice": "2026-10-20",
     "spare": null
    },
-   "v": "v1250"
+   "v": "v1252"
   },
   "TERMS": {
    "ceiling": 250,
@@ -17687,7 +17703,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1250"
+   "v": "v1252"
   },
   "REWARD": {
    "stated": {
@@ -17705,7 +17721,7 @@
      }
     }
    },
-   "v": "v1250"
+   "v": "v1252"
   },
   "STOCK": {
    "today": "2026-10-25",
@@ -17735,15 +17751,15 @@
      "transit": 0
     },
     "rice": {
-     "shelf": 0,
-     "free": 0,
+     "shelf": 100,
+     "free": 100,
      "commit": 0,
-     "light": "red",
-     "coverDays": 0,
+     "light": "green",
+     "coverDays": null,
      "transit": 0
     }
    },
-   "v": "v1250"
+   "v": "v1252"
   }
  }
 }

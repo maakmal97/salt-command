@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1252",
+  "d": "25 Oct 2026",
+  "t": "RICE PURCHASE FROM SM4-KEP LANDED, SALT UNTOUCHED",
+  "n": [
+   "<b>ONE PURCHASE FOLDED.</b> 100 unit of rice from SM4-KEP, goods RM320 plus RM10 freight, RM330 cash, collected and paid on 25 Oct. The rate matches his word of RM3.20 a unit. The drafter's flag on RM330 against RM320 is answered by the freight.",
+   "<b>INVENTORY.</b> The lot is rice, so salt stays at 6.5 units and the salt cost of RM56 does not move."
+  ]
+ },
+ {
   "v": "v1251",
   "d": "25 Oct 2026",
   "t": "THE NIGHTLY BACKUP OF D1'S DECISIONS, SEALED TO A PUBLIC KEY AND FILED IN R2",
