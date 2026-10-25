@@ -554,8 +554,8 @@
  {
   "name": "no count is drawn on a stage pill",
   "file": "stmt/owner.js",
-  "find": "      c.textContent=String(v);",
-  "replace": "      c.textContent='';"
+  "find": "      if(c.textContent!==(v?String(v):'')) c.textContent=v?String(v):'';",
+  "replace": ""
  },
  {
   "name": "Payments is not counted",
@@ -660,10 +660,10 @@
   "replace": "    setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordWaits(o); }).length+waitingClaims().filter(function(c){ return !c.test; }).length);"
  },
  {
-  "name": "the stages have no strip of their own",
+  "name": "the rest share the stages' row",
   "file": "stmt/page.js",
-  "find": "    + adminStrip(p, ADMIN_PARTS[p].filter(([k]) => !ADMIN_ORDER_STAGES.includes(k) && (!test || TEST_PARTS[p].includes(k))), \" aparts--minor\", \"Other orders\")",
-  "replace": "    + \"\""
+  "find": "+ ordTabs(ADMIN_PARTS[p].filter(([k]) => !ADMIN_ORDER_STAGES.includes(k)",
+  "replace": "+ ordTabs(ADMIN_PARTS[p].filter(([k]) => false && !ADMIN_ORDER_STAGES.includes(k)"
  },
  {
   "name": "Delivered or paid is drawn with the rest",
@@ -690,21 +690,22 @@
   "replace": "['Everyday',['repayment','sale-or-purchase','stock-count']]"
  },
  {
-  "name": "a strip wraps",
+  "name": "the stages stand three across on a phone",
   "file": "stmt/page.js",
-  "find": "{flex-wrap:nowrap;overflow-x:auto;scroll-snap-type",
-  "replace": "{overflow-x:auto;scroll-snap-type"
+  "find": ".adm .oparts .aparts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))",
+  "replace": ".adm .oparts .aparts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))"
  },
  {
-  "name": "a strip does not scroll",
+  "name": "Approve's tab shows",
   "file": "stmt/page.js",
-  "find": "overflow-x:auto;scroll-snap-type:x proximity;",
-  "replace": "scroll-snap-type:x proximity;"
+  "find": "ordTab(k, w, k === \"approve\")",
+  "replace": "ordTab(k, w, false)"
  },
  {
   "name": "a tap on Orders keeps the card open",
   "file": "stmt/owner.js",
   "find": "if(mm==='orders'&&placeNow==='orders'&&ordOpened){ closeOrder(); return; } ",
   "replace": ""
- }
+ },
+{"name": "a part is a pill again", "file": "stmt/page.js", "find": "role=\"tab\" class=\"salt-nav__link nktab'", "replace": "role=\"tab\" class=\"salt-tabs__pill'"}
 ]

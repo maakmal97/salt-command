@@ -656,11 +656,12 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .aparts.salt-segment{max-width:30rem}
 .adm .aparts .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
 /* 18 OCT 2026 (clarity, part 3): Orders' stages are the first strip, the rest a smaller one beneath it; an order's card leads with its answer and folds the rest */
-.adm .aparts--stages,.adm .aparts--minor{flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
-.adm .aparts--stages .salt-tabs__pill,.adm .aparts--minor .salt-tabs__pill{flex:0 0 auto;white-space:nowrap;scroll-snap-align:start}
-.adm .aparts--stages{margin-bottom:10px}
-.adm .aparts--minor{margin-top:0;gap:var(--salt-space-1)}
-.adm .aparts--minor .salt-tabs__pill{padding-inline:var(--salt-space-3)}
+/* 25 Oct 2026 (canvas Salt Admin Orders): the parts are Needs you's text tab row (.nktab), two rows; the stages two across on a phone, the rest three */
+.adm .oparts{padding:0;gap:0}
+.adm .oparts .aparts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px;margin:0;width:100%}
+.adm .oparts--minor{margin:0 0 16px}
+.adm .oparts--minor .aparts{grid-template-columns:repeat(3,minmax(0,1fr));gap:0 8px}
+@media (min-width:860px){.adm .oparts .aparts,.adm .oparts--minor .aparts{grid-template-columns:repeat(6,minmax(0,1fr));gap:0 12px}}
 .adm .ordend{display:flex;margin-top:16px}
 .adm .ordlead{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
 .adm .ordlead:empty{display:none}
@@ -1800,7 +1801,7 @@ const TEST_PARTS = { orders: ["placed", "confirmed", "ready", "paid", "done", "e
 const placeBtn = (cls, inner) => ([m, w, p]) => '<button type="button" class="' + cls + ' place" data-m="' + m + '"' + (p ? ' data-p="' + p + '"' : "")
   + ' data-act="nav.' + (p || m) + '">' + inner(m, w, p) + "</button>";
 const ADMIN_PARTS = {
-  orders: [["placed", "Received"], ["confirmed", "Agreed"], ["ready", "Ready"], ["paid", "Delivered or paid"], ["done", "Completed"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments"], ["group", "Group"], ["ledger", "Ledger"]],
+  orders: [["placed", "Placed"], ["confirmed", "Agreed"], ["ready", "Ready"], ["paid", "Out or paid"], ["done", "Done"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments"], ["group", "Group"], ["ledger", "Ledger"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
   record: [["entry", "Entry"], ["customers", "Customers"], ["pricing", "Pricing"]],
   shop: [["hours", "Hours"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
@@ -1817,10 +1818,18 @@ const adminStrip = (p, list, cls, label, seg = !cls && ADMIN_SLIDERS.includes(p)
    with each stage's count, since the Steps recipe is a drawing and not a row of controls); Approve, Payments, Group and Ledger stand apart beneath, smaller. Every part keeps
    its id, its act and its address, and PARTS is both strips together (stmt/owner.js), so only the drawing is split. */
 const ADMIN_ORDER_STAGES = ["placed", "confirmed", "ready", "paid", "done", "ended"];
+/* 25 Oct 2026 (canvas Salt Admin Orders, his yes to Asks A to C): THE PARTS ARE TWO TEXT TAB ROWS ON THE NAV RECIPE, as Needs you's kinds: the six
+   stages in the words of the order's steps (Placed, Agreed, Ready, Out or paid, Done, Ended), each with the count of its orders waiting on him, then
+   Payments, Group and Ledger under a hairline. Approve leaves the rows, reached by the bar's Approve; its tab stays, hidden, so its part and its
+   address (#orders/approve) are as they were. Two stages across on a phone and three of the rest, six across from 860px. */
+const ordTab = (k, w, hide) => '<button type="button" role="tab" class="salt-nav__link nktab' + (k === "placed" ? " salt-nav__link--active" : "") + '" data-part="' + k
+  + '" data-act="part.orders.' + k + '" aria-selected="' + (k === "placed" ? "true" : "false") + '"' + (hide ? " hidden" : "") + ">" + w + '<span class="nktab__n"></span></button>';
+const ordTabs = (list, cls, label) => '<nav class="salt-nav oparts ' + cls + '" aria-label="' + label + '"><div class="salt-nav__links aparts" role="tablist" aria-label="' + label
+  + '" data-place="orders">' + list.map(([k, w]) => ordTab(k, w, k === "approve")).join("") + "</div></nav>";
 const adminParts = (p, test) => test && !TEST_PARTS[p] ? ""
   : p === "orders"
-  ? adminStrip(p, ADMIN_PARTS[p].filter(([k]) => ADMIN_ORDER_STAGES.includes(k)), " salt-tabs--arrows aparts--stages", "Order stages")
-    + adminStrip(p, ADMIN_PARTS[p].filter(([k]) => !ADMIN_ORDER_STAGES.includes(k) && (!test || TEST_PARTS[p].includes(k))), " aparts--minor", "Other orders")
+  ? ordTabs(ADMIN_PARTS[p].filter(([k]) => ADMIN_ORDER_STAGES.includes(k)), "oparts--stages", "Order stages")
+    + ordTabs(ADMIN_PARTS[p].filter(([k]) => !ADMIN_ORDER_STAGES.includes(k) && (!test || TEST_PARTS[p].includes(k))), "oparts--minor", "Other orders")
   : adminStrip(p, ADMIN_PARTS[p].filter(([k]) => !test || TEST_PARTS[p].includes(k)), "", ADMIN_PLACES.filter((x) => x[0] === p)[0][1]);
 /* PHASE 1b: Needs you's kind chips. They filter the one list and read nothing; each is a control with an act of its own, need.kind.<kind> */
 const ADMIN_KINDS = [["all", "All"], ["orders", "Orders"], ["payments", "Payments"], ["messages", "Messages"], ["rows", "Rows"], ["accounts", "Accounts"]];
@@ -1958,12 +1967,11 @@ export function landingPage(user, nonce, owner, bulletin, test) {
            below it (PHASE 1c). Order for them, opened from an account, stands at the head of the place. */
         + '<div id="oOrders" class="aplace" data-in="orders" hidden>'
         + '<h1 class="sr">Orders</h1>'
-        + '<p class="lead">Orders from the Counter, by stage. The Desk checks each answer before it reaches the book.</p>'
         + adminParts("orders", test)
         + '<div class="abody">'
         + '<section id="makerFor" hidden aria-label="Order for a customer"></section>'
         + '<section id="oSplit" data-in="orders.placed orders.confirmed orders.ready orders.paid orders.done orders.ended" aria-label="Orders">'
-        + '<p class="lead" id="makerReviewStatus">Reading.</p>'
+        + '<p class="salt-insight salt-insight--copper olead" id="makerReviewStatus">Reading.</p>'
         + '<div class="ordgrid"><div id="makerOrderList" class="ordlist"></div><div id="makerReview" class="ordopen"></div></div></section>'
         + '<section id="oApprove" data-in="orders.approve" aria-label="Rows to approve">'
         + '<p class="lead" id="makerDraftStatus">Reading.</p>'

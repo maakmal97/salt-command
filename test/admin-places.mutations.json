@@ -14,8 +14,8 @@
  {
   "name": "Orders loses its Ended part",
   "file": "stmt/page.js",
-  "find": "[\"done\", \"Completed\"], [\"ended\", \"Ended\"], [\"approve\", \"Approve\"], [\"payments\", \"Payments\"]",
-  "replace": "[\"done\", \"Completed\"], [\"approve\", \"Approve\"], [\"payments\", \"Payments\"]"
+  "find": "[\"done\", \"Done\"], [\"ended\", \"Ended\"], [\"approve\", \"Approve\"], [\"payments\", \"Payments\"]",
+  "replace": "[\"done\", \"Done\"], [\"approve\", \"Approve\"], [\"payments\", \"Payments\"]"
  },
  {
   "name": "Shop loses its Practice part",
@@ -376,5 +376,6 @@
   "file": "stmt/owner.js",
   "find": "    'orders.approve':function(){ loadMaker(); },\n",
   "replace": ""
- }
+ },
+{"name": "an Orders part is no tab", "file": "stmt/page.js", "find": "'<button type=\"button\" role=\"tab\" class=\"salt-nav__link nktab'", "replace": "'<button type=\"button\" class=\"salt-nav__link nktab'"}
 ]

@@ -204,8 +204,8 @@ export async function run({ ok, pageWork }) {
     await p.tap("part.orders.confirmed");
     ok(/orders\.paid/.test((rowOf("o-pay") || { getAttribute: () => "" }).getAttribute("data-in")),
       "a site order paid in full and not handed over is under Delivered or paid: " + ((rowOf("o-pay") || { getAttribute: () => "" }).getAttribute("data-in")));
-    ok(!!p.d.querySelector('[data-part="paid"]') && /Delivered or paid/.test(text(p.d.querySelector('[data-part="paid"]'))) && /Received/.test(text(p.d.querySelector('[data-part="placed"]'))),
-      "the stages read Received, Agreed, Ready, Delivered or paid, Completed and Ended");
+    ok(!!p.d.querySelector('[data-part="paid"]') && /^Out or paid/.test(text(p.d.querySelector('[data-part="paid"]'))) && /^Placed/.test(text(p.d.querySelector('[data-part="placed"]'))) && /^Done/.test(text(p.d.querySelector('[data-part="done"]'))),
+      "the stages read Placed, Agreed, Ready, Out or paid, Done and Ended (his yes of 25 Oct 2026)");
     const done = () => [...p.d.querySelectorAll('[data-act="order.open"]')].filter((b) => /orders\.done/.test(b.getAttribute("data-in"))).length;
     const n0 = done();
     await p.tap("orders.more", "done");

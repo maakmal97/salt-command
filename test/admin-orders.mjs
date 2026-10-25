@@ -109,16 +109,19 @@ export async function run({ ok, pageWork }) {
     "each stage of Orders lists a row for the orders that stand in it, a declined one in Ended: " + JSON.stringify(stage));
     const all = Object.values(stage).join().split(",").filter(Boolean);
     ok(all.length === 11 && new Set(all).size === all.length, "and every order is in exactly one stage, none in two: " + all.join());
-    /* 18 Oct 2026 (clarity, part 3): THE STAGES ARE ONE STRIP IN THE ORDER AN ORDER MOVES, AND THE REST A SMALLER ONE BENEATH; both are one list of parts to the address and the reads */
+    /* 25 Oct 2026 (canvas Salt Admin Orders, Asks A to C): THE PARTS ARE TWO TEXT TAB ROWS ON THE NAV RECIPE, the stages in the order an order moves, then the rest;
+       both are one list of parts to the address and the reads, and Approve's tab is kept but hidden, the bar's Approve its road */
     const strips = [...d.querySelectorAll('.aparts[data-place="orders"]')], partsOf = (s) => [...s.querySelectorAll("[data-part]")].map((b) => b.getAttribute("data-part")).join();
-    ok(strips.length === 2 && partsOf(strips[0]) === "placed,confirmed,ready,paid,done,ended" && partsOf(strips[1]) === "approve,payments,group,ledger" && strips[1].classList.contains("aparts--minor")
-      && strips.every((s) => s.classList.contains("salt-tabs") && s.getAttribute("role") === "tablist"),
-    "Orders draws two strips, the six stages in the order an order moves and then Approve, Payments, Group and Ledger, smaller: " + JSON.stringify(strips.map(partsOf)));
-    /* 18 Oct 2026 (his word): the stages are arrowheads, the system's own variant, and the strip beneath stays pills */
-    ok(strips[0].classList.contains("salt-tabs--arrows") && !strips[1].classList.contains("salt-tabs--arrows") && /\.salt-tabs--arrows \.salt-tabs__pill::before[^{]*\{[^}]*clip-path/.test(SITE_RECIPES),
-      "the six stages are drawn as arrowheads (salt-tabs--arrows), Approve, Payments, Group and Ledger as pills: " + strips.map((s) => s.className).join(" | "));
-    const stripCss = ownerCss().top(".adm .aparts--stages,.adm .aparts--minor").join();
-    ok(/flex-wrap:\s*nowrap/.test(stripCss) && /overflow-x:\s*auto/.test(stripCss), "and a strip is one row that scrolls sideways on a narrow screen, never wrapping: " + stripCss);
+    ok(strips.length === 2 && partsOf(strips[0]) === "placed,confirmed,ready,paid,done,ended" && partsOf(strips[1]) === "approve,payments,group,ledger" && !!strips[1].closest(".oparts--minor")
+      && strips.every((s) => s.classList.contains("salt-nav__links") && !!s.closest("nav.salt-nav") && s.getAttribute("role") === "tablist"),
+    "Orders draws two text tab rows on the Nav recipe, the six stages in the order an order moves and then Approve, Payments, Group and Ledger: " + JSON.stringify(strips.map(partsOf)));
+    const tabs = strips.flatMap((s) => [...s.querySelectorAll("[data-part]")]);
+    ok(tabs.every((b) => b.classList.contains("salt-nav__link") && b.classList.contains("nktab") && b.getAttribute("role") === "tab")
+      && JSON.stringify(tabs.filter((b) => b.hidden).map((b) => b.getAttribute("data-part"))) === '["approve"]',
+      "every part is a text tab, as Needs you's kinds, and Approve's alone is hidden: " + tabs.map((b) => b.getAttribute("data-part") + (b.hidden ? " (hidden)" : "") + " " + b.className).join(" | "));
+    const stripCss = ownerCss().top(".adm .oparts .aparts").join() + ownerCss().top(".adm .oparts--minor .aparts").join();
+    ok(/^[.]adm [.]oparts [.]aparts\{[^}]*grid-template-columns:\s*repeat\(2,/.test(stripCss) && /oparts--minor [.]aparts\{grid-template-columns:\s*repeat\(3,/.test(stripCss),
+      "on a phone the stages stand two across and the rest three, never a strip that scrolls: " + stripCss);
     const reach = [];
     for (const part of ["approve", "payments", "group", "ledger", "ended", "paid", "placed"]) { await p.tap("part.orders." + part); const w = p.where(); if (w !== "orders/" + part) reach.push(part + ">" + w); }
     ok(reach.length === 0 && [...strips[1].querySelectorAll("button")].every((b) => /^part[.]orders[.]/.test(b.getAttribute("data-act"))), "and every part is still reached at its own act and address, in either strip: " + JSON.stringify(reach));
@@ -179,9 +182,9 @@ export async function run({ ok, pageWork }) {
   try {
     const d = p.d;
     await p.enter();
-    const pill = (part) => { const b = byAct(d, "part.orders." + part); const c = b.querySelector(".salt-tabs__count"); return b.firstChild.textContent + ":" + (c ? c.textContent : ""); };
-    ok(same(["placed", "confirmed", "ready", "paid", "done", "ended", "payments", "group"].map(pill), ["Received:4", "Agreed:2", "Ready:", "Delivered or paid:", "Completed:", "Ended:1", "Payments:2", "Group:"]),
-      "a stage whose orders wait on him carries their count on its pill (practice not counted), Payments the claims, and the rest none: " + JSON.stringify(["placed", "confirmed", "ready", "done", "ended", "payments"].map(pill)));
+    const pill = (part) => { const b = byAct(d, "part.orders." + part); const c = b.querySelector(".nktab__n"); return b.firstChild.textContent + ":" + (c ? c.textContent : ""); };
+    ok(same(["placed", "confirmed", "ready", "paid", "done", "ended", "payments", "group"].map(pill), ["Placed:4", "Agreed:2", "Ready:", "Out or paid:", "Done:", "Ended:1", "Payments:2", "Group:"]),
+      "a stage whose orders wait on him carries their count beside its word (practice not counted), Payments the claims, and the rest none: " + JSON.stringify(["placed", "confirmed", "ready", "done", "ended", "payments"].map(pill)));
     ok(p.where() === "orders/placed" && !d.getElementById("makerReviewTitle") && !/Choose an order to see it here/.test(d.getElementById("oOrders").textContent)
       && !d.querySelector("#oSplit > h2") && d.getElementById("oSplit").getAttribute("aria-label") === "Orders",
     "the page opens on Placed, where orders wait, with no repeated Orders heading and no floating placeholder: " + p.where());

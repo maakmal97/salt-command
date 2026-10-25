@@ -131,6 +131,7 @@ export const OWNER_JS = `
     [].forEach.call(document.querySelectorAll('.aparts button[data-part]'), function(b){
       var on=b.parentNode.getAttribute('data-place')===placeNow&&b.getAttribute('data-part')===partNow;
       b.setAttribute('aria-selected', on?'true':'false');
+      if(b.classList.contains('nktab')) b.classList.toggle('salt-nav__link--active', on);
       /* a strip scrolls sideways on a narrow screen: the part he is in is brought into view */
       var sp=b.parentNode; if(on&&sp.scrollWidth>sp.clientWidth) sp.scrollLeft=Math.max(0,b.offsetLeft-sp.offsetLeft-12); });
     [].forEach.call(document.querySelectorAll('.aparts.salt-segment'),segSync);
@@ -3917,10 +3918,33 @@ export const OWNER_JS = `
   }
   /* 18 Oct 2026: the line over the list counts the stage in view, every card it holds (a book row and an order of several books too), never
      the site's open orders across every stage, which read "2 open orders" over one card */
+  /* 25 Oct 2026 (canvas Salt Admin Orders, Ask H): THE LINE IS THE STAGE'S MONEY FIRST, one Insight: on Placed what waits on his Agree and what is offered
+     and waits on their yes; on the open stages what is still owed and what they say they sent; on Done what was settled; on Ended how many ended and how.
+     A stage with nothing in it says nothing here, its list's own line saying so. */
+  function ordLead(st,list){
+    var n=list.length, plural=function(k,w){ return k+' '+w+(k===1?'':'s'); }, sum=function(a,f){ return a.reduce(function(s,e){ return s+(f(e)||0); },0); };
+    var due=function(e){ var o=e.order, r=e.row, g=e.trip||e.day; return o?(+o.total||0)+(+o.delivery||0):r?(+r.total||0)+(+r.delivery||0):g?+g.owed||0:0; };
+    var owed=function(e){ var o=e.order, r=e.row, g=e.trip||e.day; return o?Math.max(0,(+o.total||0)+(+o.delivery||0)-(+o.paid||0)):r?+r.owed||0:g?+g.owed||0:0; };
+    if(st==='placed'){
+      var held=list.filter(function(e){ return e.order&&makerAccHeld(e.order)&&e.order.price.state==='offered'; }), agree=list.filter(function(e){ return held.indexOf(e)<0; });
+      return [agree.length?rm(sum(agree,function(e){ return e.order?+e.order.total||0:0; }))+' waits on your Agree, across '+plural(agree.length,'order')+'.':'',
+        held.length?rm(sum(held,function(e){ var f=e.order.price.offer||{}; return (+f.total||0)+(+f.delivery||0); }))+' is offered and waits on their yes.':''].filter(Boolean).join(' ');
+    }
+    if(st==='done') return rm(sum(list,due))+' settled on '+plural(n,'done order')+' shown, the newest first.';
+    if(st==='ended'){
+      var dec=list.filter(function(e){ return e.order&&e.order.status==='declined'; }).length, can=list.filter(function(e){ return e.order&&e.order.status==='cancelled'; }).length;
+      return plural(n,'order')+' ended'+(dec||can?': '+[dec?dec+' declined':'',can?can+' cancelled':''].filter(Boolean).join(', '):'')+'.';
+    }
+    var sent=sum(list,function(e){ return e.order?+e.order.claimed||0:0; }), asked=list.filter(function(e){ return e.order&&orderAsked(e.order); }).length;
+    var word=({confirmed:['agreed order','agreed orders'],ready:['order ready','orders ready'],paid:['order out or paid','orders out or paid']}[st]||['order','orders'])[n===1?0:1];
+    return rm(sum(list,owed))+' owed on '+n+' '+word+(sent>0.004?': '+rm(sent)+' they say they sent waits on your Received.':'.')
+      +(asked?' '+(asked===1?'One':asked)+' asked a question.':'');
+  }
   function paintOrdStatus(){
     var status=document.getElementById('makerReviewStatus'); if(!status) return;
-    var n=Object.keys(ordEntries).filter(function(k){ return ordEntries[k].parts==='orders.'+partNow; }).length;
-    status.textContent=n+(n===1?' order':' orders');
+    var list=Object.keys(ordEntries).map(function(k){ return ordEntries[k]; }).filter(function(e){ return e.parts==='orders.'+partNow; });
+    status.hidden=!list.length;
+    status.textContent=list.length?ordLead(partNow,list):'';
   }
   /* a count on the pill of each stage whose orders wait on him, and on Payments for the payments they say they sent; a practice order is not counted, as the rail does not */
   function paintOrdCounts(){
@@ -3928,10 +3952,10 @@ export const OWNER_JS = `
     Object.keys(ordEntries).forEach(function(k){ var e=ordEntries[k], st=e.parts.replace('orders.',''); if(e.waits&&e.order&&!e.order.test) n[st]=(n[st]||0)+1; });
     n.payments=waitingClaims().filter(function(c){ return !c.test; }).length;
     [].forEach.call(document.querySelectorAll('.aparts[data-place="orders"] [data-part]'), function(b){
-      var c=b.querySelector('.salt-tabs__count'), v=n[b.getAttribute('data-part')]||0;
-      if(!v){ if(c) c.remove(); return; }
-      if(!c){ c=el('span','salt-tabs__count'); b.appendChild(c); }
-      c.textContent=String(v);
+      /* the count stands beside the word, as on Needs you's kinds; a stage with none waiting says nothing there and is never dimmed */
+      var c=b.querySelector('.nktab__n'), v=n[b.getAttribute('data-part')]||0;
+      if(!c){ c=el('span','nktab__n'); b.appendChild(c); }
+      if(c.textContent!==(v?String(v):'')) c.textContent=v?String(v):'';
     });
   }
   function sheetGroup(grp){
@@ -4111,7 +4135,7 @@ export const OWNER_JS = `
       }
     });
     /* a stage with nothing in it says so, so an empty one is never read as a fault */
-    [['placed','No orders received.'],['confirmed','No agreed orders.'],['ready','No orders ready.'],['paid','No orders delivered or paid.'],['done','No completed orders.'],['ended','No ended orders.']].forEach(function(p){
+    [['placed','No orders placed.'],['confirmed','No agreed orders.'],['ready','No orders ready.'],['paid','No orders out or paid.'],['done','No done orders.'],['ended','No ended orders.']].forEach(function(p){
       if(entries.some(function(e){ return e.parts==='orders.'+p[0]; })) return;
       var none=el('p','rnone',p[1]); none.setAttribute('data-in','orders.'+p[0]); list.appendChild(none);
     });

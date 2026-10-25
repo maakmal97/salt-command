@@ -239,8 +239,9 @@ export async function run({ ok, pageWork }) {
     const nAgreed = shown("confirmed"), atAgreed = line();
     await p.tap("part.orders.placed");
     const nPlaced = shown("placed"), atPlaced = line();
-    ok(nAgreed >= 2 && atAgreed === nAgreed + " orders" && atPlaced === nPlaced + (nPlaced === 1 ? " order" : " orders") && nPlaced !== nAgreed,
-      "the line over the list counts the stage in view, and moves with the stage: " + J({ atAgreed, nAgreed, atPlaced, nPlaced }));
+    /* 25 Oct 2026 (Ask H): the line is the stage's money first, and the count it names is the stage in view */
+    ok(nAgreed >= 2 && new RegExp(" owed on " + nAgreed + " agreed orders[.:]").test(atAgreed) && (nPlaced ? /^RM [0-9,.]+ /.test(atPlaced) : atPlaced === "") && atPlaced !== atAgreed && nPlaced !== nAgreed,
+      "the line over the list counts the stage in view, money first, and moves with the stage: " + J({ atAgreed, nAgreed, atPlaced, nPlaced }));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
   p = await open({ refuse: "zt3" });
   try {
@@ -295,7 +296,7 @@ export async function run({ ok, pageWork }) {
     ok(inOf("day:yd1+yd2") === "orders.paid", "a same-day group is listed at its stage too: " + inOf("day:yd1+yd2"));
     await p.tap("part.orders.done");
     const doneN = [...p.d.querySelectorAll("#makerOrderList .ordrow")].filter((r) => r.getAttribute("data-in") === "orders.done").length;
-    ok(text0(p.d.getElementById("makerReviewStatus")) === doneN + (doneN === 1 ? " order" : " orders") && doneN >= 1,
+    ok(new RegExp("^RM [0-9,.]+ settled on " + doneN + " done orders? shown, the newest first[.]$").test(text0(p.d.getElementById("makerReviewStatus"))) && doneN >= 1,
       "the line over Done counts the trip filed there: " + text0(p.d.getElementById("makerReviewStatus")));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
   p = await open({ review: { trips: [], sameDay: [], tripsError: "Orders of several books could not be read." } });

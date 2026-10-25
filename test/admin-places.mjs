@@ -19,7 +19,7 @@ import { richOwnerPage, byAct } from "./maker-act.mjs";
 const PLACES = ["needs", "orders", "customers", "record", "shop"];
 const LABELS = ["Needs you", "Orders", "Customers", "Record", "Shop"];
 const PARTS = {
-  orders: [["placed", "Received"], ["confirmed", "Agreed"], ["ready", "Ready"], ["paid", "Delivered or paid"], ["done", "Completed"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments"], ["group", "Group"], ["ledger", "Ledger"]],
+  orders: [["placed", "Placed"], ["confirmed", "Agreed"], ["ready", "Ready"], ["paid", "Out or paid"], ["done", "Done"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments"], ["group", "Group"], ["ledger", "Ledger"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
   record: [["entry", "Entry"], ["customers", "Customers"], ["pricing", "Pricing"]],
   shop: [["hours", "Hours"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
@@ -94,12 +94,12 @@ export async function run({ ok, pageWork }) {
     const wantParts = (place) => PARTS[place].map(([k, t]) => k + ":" + t + ":part." + place + "." + k);
     ok(strips.length === 5 && ["orders", "customers", "record", "shop"].every((m) => same(form(m), wantParts(m))),
       "Orders, Customers, Record and Shop each have their parts in order, each tab with its act: " + JSON.stringify(["orders", "customers", "record", "shop"].map(form)));
-    /* 20 Oct 2026 (Counter Batch C): Record's three are the system's slider, the rest its tab pills */
-    const recipe = (s) => (s.getAttribute("data-place") === "record" ? ["salt-segment", "salt-segment__opt"] : ["salt-tabs", "salt-tabs__pill"]);
+    /* 20 Oct 2026 (Counter Batch C): Record's three are the system's slider, the rest its tab pills; 25 Oct 2026, Orders' are the Nav recipe's text tabs */
+    const recipe = (s) => (s.getAttribute("data-place") === "record" ? ["salt-segment", "salt-segment__opt"] : s.getAttribute("data-place") === "orders" ? ["salt-nav__links", "nktab"] : ["salt-tabs", "salt-tabs__pill"]);
     ok(strips.every((s) => s.classList.contains(recipe(s)[0]) && s.getAttribute("role") === "tablist" && s.getAttribute("aria-label")
       && [...s.querySelectorAll("button")].every((b) => b.classList.contains(recipe(s)[1]) && b.getAttribute("role") === "tab"))
       && !d.querySelector("#mHome .aparts"),
-    "a strip is the system's tabs or, for Record, its slider, a tablist of tabs, and Needs you has none");
+    "a strip is the system's tabs, for Record its slider and for Orders the Nav recipe's text tabs, a tablist of tabs, and Needs you has none");
 
     /* 3. THE TABS FOLLOW HIM */
     ok(p.where() === "needs", "the page opens on Needs you: " + p.where());
@@ -154,7 +154,7 @@ export async function run({ ok, pageWork }) {
       }
       await empty.tap("part.orders.approve");
       none.rows = [...empty.d.querySelectorAll("#makerDrafts .rnone")].filter(shown).map((e) => e.textContent).join();
-      ok(none.placed === "No orders received." && none.confirmed === "No agreed orders." && none.ready === "No orders ready." && none.paid === "No orders delivered or paid." && none.done === "No completed orders." && none.ended === "No ended orders."
+      ok(none.placed === "No orders placed." && none.confirmed === "No agreed orders." && none.ready === "No orders ready." && none.paid === "No orders out or paid." && none.done === "No done orders." && none.ended === "No ended orders."
         && none.rows === "Nothing waits for your approval.",
       "a part with nothing in it says so, and a part with something says nothing: " + JSON.stringify(none));
     } finally { empty.w.close(); }
