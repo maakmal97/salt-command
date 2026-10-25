@@ -6,10 +6,8 @@ from the owner's own standing rules, which live outside this repo; where they an
 project, and the owner's word in the conversation wins over both.
 
 ## Open work
-- Counter Admin plans: `docs/plans-counter-admin.html`. Plans 1 to 3 are live (v1123, v1125, v1130). Plan 4 (easy revert) is built
-  on its answers of 16 Oct 2026 (the newest move only; a customer banner); plan 5 (the rest of the order card) is next, on the owner's word.
-- The Book as a Durable Object: `docs/plan-book-do.md` (draft 8) and `docs/book-do-board.html`. S0 and S1a to S1d-i have landed;
-  S1d-ii is next.
+- What is live is in `MEMORY.md`. The Counter Admin plans are in `docs/plans-counter-admin.html`, and the Book's steps in
+  `docs/plan-book-do.md` and `docs/book-do-board.html`. This file keeps no list of open work of its own.
 
 ## Voice
 - British English everywhere: replies, files, code and copy. No em dashes anywhere. Never the word the suite bans (write "costly" or the figure).
@@ -38,4 +36,5 @@ project, and the owner's word in the conversation wins over both.
 
 ## What cannot run from GitHub
 - The names vault, `10_Data` and account minting are on the owner's laptop only, by design (rule 2). Hand those steps to him.
-- `tools/update.mjs` and laptop queue entries run on the laptop.
+- `tools/update.mjs` and laptop queue entries run on the laptop. So do `tools/backup-key.mjs` and `tools/backup-open.mjs`: they ask for his
+  passphrase, which no agent ever receives.

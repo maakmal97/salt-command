@@ -17,7 +17,7 @@ AES-GCM ciphertext ever leaves, pushed by `tools/seed-vault.mjs`.
 - **Refuse from a cloud session**: there is no directory there to edit and nothing to serve.
   Say so and point him at the laptop.
 - **No git anywhere in this workflow.** Nothing here touches a repo file: the directory sits
-  outside the repo and the vault lives in KV. If the session is a mounted sandbox (Cowork),
+  outside the repo and the vault is the D1 pair. If the session is a mounted sandbox (Cowork),
   refuse entirely per CLAUDE.md; but since this workflow never runs git, the mount rule is
   belt and braces, not the reason.
 
@@ -34,7 +34,7 @@ AES-GCM ciphertext ever leaves, pushed by `tools/seed-vault.mjs`.
    the old spelling beside it as `was`. Skipping this and seeding would push the laptop's older
    directory over them.
 
-1. **Open the desk.** Find `serve_desk.py`: repo root first, then the project folder beside it.
+1. **Open the desk.** `serve_desk.py` is in the project folder, `Per-Crm01_Salt Business\30_Published\`.
    Run it in the background (`python serve_desk.py`), read the port from its output, and give
    him the local URL with one line: open **Names & IDs**, type the name against the code, Save.
    Saving writes `salt_bio.json`. If `serve_desk.py` cannot be found, stop and ask where it is;
@@ -51,21 +51,15 @@ AES-GCM ciphertext ever leaves, pushed by `tools/seed-vault.mjs`.
    ```
 
    The tool prompts for the passphrase itself, hidden, asked twice, and pushes only the
-   ciphertext envelope to KV. **The agent never asks for, receives, relays or stores the
+   ciphertext to the vault pair in D1. **The agent never asks for, receives, relays or stores the
    passphrase, and it must never be typed into the chat.** That is why the agent does not run
    this command itself: the prompt has to reach his fingers, not a transcript. (Unattended runs
    still work the old way, `SALT_VAULT_PASS` in the environment.)
 
-4. **Prove it landed.** The agent fetches the live vault and checks the envelope is fresh:
-
-   ```
-   curl -s https://salt-command.qyts8mh72kyg.workers.dev/vault
-   ```
-
-   It must be `{updated, vault:{v,salt,iv,ct}, ids}` with `updated` within the last few
-   minutes. Stale means the push failed; read the tool's own output, which names the fix
-   (`npx wrangler whoami`, the KV id in `wrangler.jsonc`). Never print the envelope back into
-   the conversation beyond the `updated` stamp and the count the tool reported.
+4. **Prove it landed.** The proof is the tool's own `SEEDED:` line ("versioned ciphertext pair confirmed at revision N"),
+   as for the places. The vault is behind Cloudflare Access, so a bare `curl` of `/vault` answers 302 to the
+   Access login and proves nothing. A failed push names its own fix in the tool's output (`npx wrangler whoami`,
+   the maintenance gate). Never print the envelope back into the conversation beyond the revision and the count the tool reported.
 
 5. **Close up.** Stop the `serve_desk.py` process if this workflow started it, unless he wants
    the desk left up. Then say it plainly: the name is in the directory, the ciphertext is in
@@ -74,7 +68,7 @@ AES-GCM ciphertext ever leaves, pushed by `tools/seed-vault.mjs`.
 
 ## Places, the vault's second envelope (F14, 28 Sep 2026)
 
-The vault is two envelopes under one passphrase: names in KV `vault`, places in KV `vault-addr`.
+The vault is two envelopes under one passphrase: names and places, both in the D1 vault pair (KV `vault` and `vault-addr` are recovery material only).
 A place is `{addr, lat, lng, src, at}` under the party's code, and his base point is `_base`. On the
 phone, Add ID and Amend ID file a place from a Maps or Waze link. On the laptop the places live in
 `10_Data\salt_addr.json`, `{updated, addr: {<code>: {...}, _base: {...}}}`, beside `salt_bio.json`

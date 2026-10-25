@@ -1,5 +1,266 @@
 [
  {
+  "v": "v1252",
+  "d": "25 Oct 2026",
+  "t": "RICE PURCHASE FROM SM4-KEP LANDED, SALT UNTOUCHED",
+  "n": [
+   "<b>ONE PURCHASE FOLDED.</b> 100 unit of rice from SM4-KEP, goods RM320 plus RM10 freight, RM330 cash, collected and paid on 25 Oct. The rate matches his word of RM3.20 a unit. The drafter's flag on RM330 against RM320 is answered by the freight.",
+   "<b>INVENTORY.</b> The lot is rice, so salt stays at 6.5 units and the salt cost of RM56 does not move."
+  ]
+ },
+ {
+  "v": "v1251",
+  "d": "25 Oct 2026",
+  "t": "THE NIGHTLY BACKUP OF D1'S DECISIONS, SEALED TO A PUBLIC KEY AND FILED IN R2",
+  "n": [
+   "<b>THE NIGHTLY BACKUP, HIS WORD OF 25 OCT 2026 (S0B OF THE BOOK PLAN).</b> At 02:30 in Kuala Lumpur the Desk Worker reads the drafts, pre-approvals, refusals, maker requests, input admissions and the names and places vault pair in one batch, seals them to a public key and files the ciphertext in the R2 bucket salt-d1-backup as backup/DATE.json, keeping the newest 30. The private half of the key is on his laptop, sealed under the vault passphrase, so nothing on Cloudflare can open a backup. Each object is read back for its size, the result is kept in KV <code>backup:last</code>, and the 09:00 digest pushes when a backup failed, never ran or is more than 36 hours old.",
+   "<b>THE LAPTOP'S HALF.</b> <code>tools/backup-key.mjs</code> minted the key on 25 Oct 2026; <code>tools/backup-open.mjs</code> opens a night and writes a restore script, and the suite restores a filled database into an empty one and compares every table. The runbook is <code>docs/BACKUP.md</code>.",
+   "<b>NOTHING ELSE MOVES.</b> No price, order, ledger row or stock figure changed. Six comments in the Worker's source now say Salt Admin, and its note on the Access gate says it is on."
+  ]
+ },
+ {
+  "v": "v1250",
+  "d": "25 Oct 2026",
+  "t": "CA5-SEN SALT SET AT A 30% LIFT",
+  "n": [
+   "<b>ONE PRICING ROW FOLDED.</b> The ledger sets CA5-SEN's salt figure to a 30% lift on the set price, decided by Counter Admin on 24 Oct 2026. It is a pricing setting only: no cash, no sale and no stock moved, and the board is untouched.",
+   "<b>INVENTORY UNCHANGED.</b> Salt stays at 6.5 units against a ledger of 109.34 and self-use of 102.84, counted on 24 Oct 2026. Stock cost stays at RM56 a unit, replacement cost RM58, with nothing owed out and nothing promised."
+  ]
+ },
+ {
+  "v": "v1249",
+  "d": "25 Oct 2026",
+  "t": "THE DESK'S TAB IS TITLED SALT DESK, IN LINE WITH SALT COUNTER, SALT ADMIN AND QR",
+  "n": [
+   "<b>TAB TITLES, HIS WORD.</b> The desk's browser tab was titled Salt Command, the build's anchor, while its installed name was already Salt Desk. The tab, the build's anchor and the locked page now say Salt Desk. Salt Counter and Salt Admin already carried their own names, and QR Command's tab is now QR (its own repo).",
+   "<b>NOTHING ELSE MOVES.</b> No book, price or row changed, and the manifest, the home-screen name and the shell cache are as they were."
+  ]
+ },
+ {
+  "v": "v1248",
+  "d": "25 Oct 2026",
+  "t": "THE BROWSER TAB ICONS LOSE THEIR DARK GROUND ON THE DESK, THE COUNTER AND ADMIN",
+  "n": [
+   "<b>TAB ICONS ON A CLEAR GROUND, HIS WORD.</b> The desk's tab linked the 192 px home-screen icon, whose rounded dark tile and violet glow showed as a dark square on a tab; it now links <code>icon-tab.png</code>, the crystal alone on a transparent 128 px canvas. The shell cache moves to v9 so an installed desk reads it.",
+   "<b>COUNTER AND ADMIN.</b> Salt Counter and Salt Admin each gain a clear-ground tab icon (<code>/icon-tab.png</code> and <code>/icon-key-tab.png</code>), the tile's ring and dot and Salt Admin's keyhole, antialiased to soft alpha edges. The opaque tiles stay for the home screen, which draws any clear corner black."
+  ]
+ },
+ {
+  "v": "v1247",
+  "d": "25 Oct 2026",
+  "t": "COLLECTION OF 3 UNITS OF SALT RECORDED FOR CK4-SEN",
+  "n": [
+   "<b>ONE CORRECTION FOLDED, S292.</b> It records that CK4-SEN collected the 3 units of salt on 25 Oct, preapproved by Counter Admin. It sets deliveredQty to 3, deliveredOn to 25 Oct and handover to collected. It moves no cash. The goods total stays at RM280, so the order is now both paid and handed over.",
+   "<b>UNUSUAL:</b> the row's trail of 4 steps no longer adds up to the figure set directly, and the rate of RM93.33 a unit is 12.7% above the party's usual. The shelf rolls by 3 units out. No lot landed, so the cost basis does not move."
+  ]
+ },
+ {
+  "v": "v1246",
+  "d": "25 Oct 2026",
+  "t": "CASH RM280 RECEIVED ON S292, GOODS STILL TO HAND OVER",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED.</b> Cash of RM280 from CK4-SEN is recorded against order s292 for 3 units of salt, dated 25 Oct and entered on 24 Oct, preapproved by Counter Admin. It settles the money side only: the amount owed falls from RM280 to RM0. The master applies the amendment itself, so the fold does not recompute the row.",
+   "<b>UNUSUAL, AND THE INVENTORY.</b> The item label reads cash 0, while the entry and the raw text record RM280, and the fold follows the entry. No units moved, so stock stays at 9.5, the 3 units stay promised and the stock cost of RM56 a unit is unchanged."
+  ]
+ },
+ {
+  "v": "v1245",
+  "d": "25 Oct 2026",
+  "t": "CORRECTION TO S293 PUTS 0.1 UNIT BACK ON THE SHELF",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> The delivered quantity on s293, a salt sale to CM4-TO dated 24 Oct 2026, is cut from 12.6 to 12.5 units, approved by Counter Admin. No cash moves and no price changes. The drafter raised no flags.",
+   "<b>INVENTORY.</b> The 0.1 unit comes back from CM4-TO onto the shelf, so salt stock rises from 9.4 to 9.5 units. Salt was last counted on 24 Oct. The cost basis does not move, as nothing landed."
+  ]
+ },
+ {
+  "v": "v1244",
+  "d": "25 Oct 2026",
+  "t": "1.5 UNITS OF SALT HANDED TO CM4-MK AGAINST S295, NOTHING PAID",
+  "n": [
+   "<b>FULFILMENT ON S295 FOR CM4-MK.</b> The batch holds one row. It records the handover of 1.5 units of salt on 25 Oct against the order of RM180 agreed that day, approved by Counter Admin on 24 Oct. RM0 cash comes in with it. The drafter raised no flags. The order is above the ask total of RM170 for 1.5 units, as the pending note already said.",
+   "<b>STOCK DRAWS BY 1.5 UNITS.</b> The salt was last counted on 24 Oct. The draft carried the latest purchase cost of RM58 a unit, not the inventory's own RM56, so the row cost is restated at the inventory's rate. The cost basis does not move, and RM180 stays owed by CM4-MK."
+  ]
+ },
+ {
+  "v": "v1243",
+  "d": "25 Oct 2026",
+  "t": "ONE GIFT OF SALT OUT, ONE PENDING SALE ABOVE THE ASK",
+  "n": [
+   "<b>TWO ROWS FOLDED.</b> A gift of 1.5 units of salt to CS6-PER, collected on 24 Oct, and a pending sale of 1.5 units to CM4-MK for RM180, dated 25 Oct. The gift is booked as a cost and not as revenue, and is charged against the CS6-PER reward by RM84.",
+   "<b>WHAT WAS UNUSUAL.</b> The CM4-MK rate of RM120 a unit is above the ask of RM113.33 and 18.8% above the party's median of RM101. The sale is pending, so it draws no stock and books no revenue. Only the gift moved the inventory, by 1.5 units, and the stock cost stays at RM56."
+  ]
+ },
+ {
+  "v": "v1242",
+  "d": "25 Oct 2026",
+  "t": "ONE SALT SALE TO CM4-TO, 12.6 UNITS OUT ON AN ORDER OF 12.5",
+  "n": [
+   "<b>FOLDED: ONE NEW SALE.</b> CM4-TO's salt sale of 12.5 units for RM750, RM60 a unit, dated 24 Oct 2026, is appended to sales. It was collected and paid in full in cash on the day. Counter Admin approved it. The cost is the drafter's COGS off the latest purchase p044, RM725, and the fold keeps it.",
+   "<b>UNUSUAL: 12.6 UNITS MOVED ON AN ORDER OF 12.5.</b> The drafter flagged an advance of RM6 unpaid, but cash equals the total, so nothing is owed. The extra 0.1 unit has no reason in the dossier. Salt stock falls by 12.6 units; no lot landed and the cost basis does not move."
+  ]
+ },
+ {
+  "v": "v1241",
+  "d": "25 Oct 2026",
+  "t": "S292 TOTAL CORRECTED TO RM280, NO STOCK MOVED",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> S292, CK4-SEN's salt order of 3 units dated 25 Oct, has its goods total corrected from RM290 to RM280, with delivery at RM0. It was preapproved by Counter Admin on 24 Oct 2026. The drafter's flag on the rate is narrowed but not closed. No cash or units moved, so the inventory is untouched and stock stays at 25 units."
+  ]
+ },
+ {
+  "v": "v1240",
+  "d": "25 Oct 2026",
+  "t": "CK4-SEN SALT SET 20% OFF, S292 TOTAL CORRECTED TO RM290",
+  "n": [
+   "<b>TWO ROWS FOLDED, NEITHER MOVES CASH OR STOCK.</b> The first sets CK4-SEN's salt figure to 20% off on the set price, decided by Counter Admin. The second corrects order s292 for CK4-SEN: goods total from RM315 to RM290, delivery from unset to RM0, quantity kept at 3 units. The correction was preapproved by Counter Admin, and the fold applies the patch to the row itself.",
+   "<b>WHAT WAS UNUSUAL.</b> The corrected rate still stands above the party's usual rate, and the drafter's flag remains open. The inventory is untouched: stock stays at 25 units, the stock cost stays at RM56, and the 3 units promised stay promised, since s292 is still pending with nothing handed over."
+  ]
+ },
+ {
+  "v": "v1239",
+  "d": "25 Oct 2026",
+  "t": "ONE PENDING SALE OF 3 UNITS OF SALT AT THE ASK",
+  "n": [
+   "<b>FOLDED: ONE NEW SALT SALE, PENDING.</b> CK4-SEN ordered 3 units for RM315 on the statements site, dated 25 Oct 2026, with nothing paid and nothing handed over. The rate of RM105 a unit is the ask, and higher than the party's median of RM80. The drafter's flag on that rate is noted on the row.",
+   "<b>INVENTORY: NO MOVEMENT.</b> The row is pending, so it draws no stock and books no revenue until something moves. Stock stays at 25 units and the cost basis is unchanged."
+  ]
+ },
+ {
+  "v": "v1238",
+  "d": "24 Oct 2026",
+  "t": "SALT COUNT OF 25 UNIT ON 24 OCT",
+  "n": [
+   "<b>ONE COUNT FOLDED:</b> salt, 25 unit on hand on 24 Oct 2026, against 25 on the roll after v1237's buy. The gap is nil.",
+   "<b>INVENTORY:</b> the salt shelf stands at 25 and the count date moves to 24 Oct. The floors do not move."
+  ]
+ },
+ {
+  "v": "v1237",
+  "d": "24 Oct 2026",
+  "t": "P042 BACK TO 12.5 UNIT FOR RM700 AND A 25 UNIT BUY FROM SA5-BTR",
+  "n": [
+   "<b>TWO ROWS FOLDED:</b> p042 corrected back to 12.5 unit for RM700 with RM25 freight, and a new buy of 25 unit of salt from SA5-BTR for RM1400 with RM50 freight, paid and received on 24 Oct, both on his word.",
+   "<b>COST:</b> the latest lot was costed at RM116 a unit since v1235 because p042 held RM1400 over the 12.5 unit received. With p042 at RM700 and the new buy landed at RM58 a unit, the Floor for 1 unit returns to RM60.",
+   "<b>INVENTORY:</b> the 25 unit buy lands on 24 Oct, so the salt roll rises from 0 to 25. The count of 25 unit follows as its own version."
+  ]
+ },
+ {
+  "v": "v1236",
+  "d": "24 Oct 2026",
+  "t": "CANCELLATION OF PENDING BUY P043 FROM SA5-BTR",
+  "n": [
+   "<b>ONE CANCELLATION FOLDED.</b> The pending buy p043 from SA5-BTR, 12.5 unit for RM750 dated 24 Oct 2026, is withdrawn on the day it was booked. It was unusual only in its rate of RM60 a unit against his quote of RM56. Nothing had been paid or moved, so the row counts nowhere.",
+   "<b>INVENTORY UNCHANGED.</b> The row was pending and drew no stock, so stock stays at 0 and the cost basis stays at RM56 a unit."
+  ]
+ },
+ {
+  "v": "v1235",
+  "d": "24 Oct 2026",
+  "t": "PENDING BUY FROM SA5-BTR AND A QUANTITY CORRECTION ON P042",
+  "n": [
+   "<b>TWO ROWS FOLDED:</b> a pending buy of 12.5 unit of salt from SA5-BTR for RM750, and a correction to p042 raising it from 12.5 unit for RM700 to 25 unit for RM1400 with freight of RM50. The buy is dated 24 Oct and is unpaid with nothing moved. The pending buy is RM60 a unit against a median of RM56 and his quote of RM56.",
+   "<b>INVENTORY:</b> the pending buy draws no stock and the correction moves no cash or stock, as the fold treats it as a change to what the row says about itself. No lot has landed, so the cost basis stays at RM56 a unit."
+  ]
+ },
+ {
+  "v": "v1234",
+  "d": "24 Oct 2026",
+  "t": "TWO FULFILMENTS ON S290 FOR CA3-KP: 1 UNIT AND RM148",
+  "n": [
+   "<b>TWO FULFILMENTS FOLDED.</b> Both amend s290, CA3-KP's order of 1 unit of salt at RM140 with RM8 delivery, RM148 owed, agreed 23 Oct 2026. One moves the 1 unit on 24 Oct, the other receives RM148 cash on the same day. Neither carries a drafter flag, and together they settle the order.",
+   "<b>INVENTORY.</b> The unit delivery takes salt down by 1. The cash fulfilment moves no units. No lot landed, so the cost basis stands."
+  ]
+ },
+ {
+  "v": "v1233",
+  "d": "23 Oct 2026",
+  "t": "CA6-SET SALT % LIFT TO 30%, SALT COUNT SETS STOCK AT 1 UNIT",
+  "n": [
+   "<b>FOLDED:</b> two rows, a change to CA6-SET's salt percentage and a salt stock count on 23 Oct 2026. The percentage moves that party's own price only and never the board. The count found 1 unit against 0.85 on the book, so the count wins.",
+   "<b>INVENTORY:</b> stated salt stock is now 1 unit, with the salt count date moved to 23 Oct 2026. Self-use falls from RM102.99 to RM102.84. The floors and the ask are unchanged. No lot landed, so the cost basis stays as it was."
+  ]
+ },
+ {
+  "v": "v1232",
+  "d": "23 Oct 2026",
+  "t": "ONE UNIT OF SALT SOLD TO CA6-SET AT RM140",
+  "n": [
+   "<b>FOLDED:</b> one new salt sale to CA6-SET, 1 unit for RM140 plus RM30 delivery, RM170 cash, delivered and paid on 23 Oct 2026. It is the party's first salt order on the book, so there is no history of theirs to compare against. The cost stays at the drafter's RM60 a unit, set off the latest purchase.",
+   "<b>INVENTORY:</b> salt falls by 1 unit to 1.85 units, counted on 23 Oct 2026. Nothing landed, so the cost basis does not move. Against the book, 1 unit is promised and nothing is owed out."
+  ]
+ },
+ {
+  "v": "v1231",
+  "d": "23 Oct 2026",
+  "t": "S290 CORRECTED TO 1 UNIT FOR RM140; CA6-SET REGISTERED",
+  "n": [
+   "<b>TWO ROWS FOLDED.</b> A correction on s290 for CA3-KP restores the quantity to 1 unit and the total to RM140, and CA6-SET joins the roster as a customer at salt 0.15. The correction moves no cash and no stock. The roster entry touches no figure, and the directory is not touched.",
+   "<b>INVENTORY UNCHANGED.</b> Salt stands at 1.85 units, counted on 23 Oct 2026, with 0.5 unit promised. Nothing landed, so the cost basis stays at RM56 a unit."
+  ]
+ },
+ {
+  "v": "v1230",
+  "d": "23 Oct 2026",
+  "t": "THE DESK BAR SAYS NO PLACE",
+  "n": [
+   "<b>HIS WORD OF 23 OCT 2026.</b> The Desk's bar no longer says where you are: the destination and the page under it left the bar, as they left Salt Admin's on 22 Oct. The rail still marks both. The bar keeps the wordmark and its quiet line, Now, Waiting, Alerts, Approve, the version, Names and IDs, and Sections.",
+   "<b>SALT-DS 1.15.0.</b> The bar recipe drops the three classes no surface draws any more (salt-ds#27), synced to the Desk and the Counter; QR Command carries the tokens only and does not move. Nothing that prices, books or folds is touched."
+  ]
+ },
+ {
+  "v": "v1229",
+  "d": "23 Oct 2026",
+  "t": "S290 CORRECTED TO 0.5 UNIT FOR RM70",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> s290 for CA3-KP, dated 23 Oct 2026, had its quantity changed from 1 unit to 0.5 unit and its total from RM140 to RM70. The drafter raised no flags. The correction moves no cash and no stock, so the inventory is unchanged at 1.85 units against a ledger of 104.84."
+  ]
+ },
+ {
+  "v": "v1228",
+  "d": "23 Oct 2026",
+  "t": "ONE PENDING SALE OF SALT TO CA3-KP AT RM140",
+  "n": [
+   "<b>FOLDED: ONE NEW SALE, PENDING.</b> 1 unit of salt to CA3-KP for RM140 plus RM8 delivery, approved by Counter Admin. Nothing was paid and nothing handed over, so the row books no revenue and draws no stock. The rate sits above the ask of RM120 for one unit.",
+   "<b>INVENTORY: NO MOVEMENT.</b> Stock stays at 1.85 units, which is below the reorder point of 34.5. Cost basis stays at RM56 a unit; replacement cost is RM60."
+  ]
+ },
+ {
+  "v": "v1227",
+  "d": "23 Oct 2026",
+  "t": "S289 PAID IN FULL AND COLLECTED, SHELF DOWN 1.5 UNITS",
+  "n": [
+   "<b>PAYMENT AND COLLECTION FOLDED.</b> Two amendments on s289, CS6-PER-R, 1.5 units of salt for RM165. The first records RM165 paid by transfer on 23 Oct 2026, clearing the balance. The second records collection of the 1.5 units the same day. Both were preapproved by Counter Admin. Nothing is left outstanding on the order.",
+   "<b>INVENTORY.</b> Salt was counted on 23 Oct 2026 and stands at 3.35 units. The collection is the only move, 1.5 units out. The drafter flagged the advance against the credit cap; the payment answers it, as the goods left with nothing owing at the end."
+  ]
+ },
+ {
+  "v": "v1226",
+  "d": "23 Oct 2026",
+  "t": "ONE PENDING SALE OF SALT TO CS6-PER-R, NOTHING MOVED",
+  "n": [
+   "<b>FOLDED: ONE NEW SALE, PENDING.</b> 1.5 units of salt to CS6-PER-R for RM165, ordered on the statements site and preapproved by Counter Admin. Nothing has been paid or handed over, so no revenue is booked and no stock is drawn.",
+   "<b>INVENTORY UNCHANGED.</b> Stock stays at 3.35 units, below the reorder point of 34.5. The cost basis holds at RM56 a unit, with replacement at RM60."
+  ]
+ },
+ {
+  "v": "v1225",
+  "d": "23 Oct 2026",
+  "t": "SALT COUNT OF 23 OCT SETS STOCK TO 3.35 UNITS",
+  "n": [
+   "<b>ONE COUNT FOLDED.</b> A hand count of salt on 23 Oct found 3.35 units against 5 on the book, a gap of -1.65 units. The count wins over the ledger, so the stated salt inventory is now 3.35 units and the salt count date moves to 23 Oct 2026. The dossier gives no reason for the gap.",
+   "<b>NO SALES, PURCHASES OR LOANS.</b> Nothing else moved in this batch and no lot landed, so the cost basis stays at RM56 a unit. Stock of 3.35 units is below the reorder level of 34.5. The floors are unchanged apart from self-use, which moves from 102.89 to 102.99."
+  ]
+ },
+ {
+  "v": "v1224",
+  "d": "23 Oct 2026",
+  "t": "SALT COUNT OF 3.45 UNITS SETS THE STOCK",
+  "n": [
+   "<b>ONE COUNT FOLDED.</b> Salt was counted at 3.45 units on 23 Oct 2026 against 5 on the book, a gap of -1.55 units. The count wins over the ledger, so the stated salt stock becomes 3.45 and the count date moves from 20 Oct to 23 Oct. No sale, purchase or loan moved, and no lot landed.",
+   "<b>FLOORS.</b> The floors do not move: floor1 stays RM60, floor2 RM120, floor125 RM750 and ask1 RM120. Only the self-use rate moves, from RM101.34 to RM102.89 a unit. Stock cost stays RM56 a unit, replacement cost RM60. The 3.45 units sit below the reorder point of 34.5."
+  ]
+ },
+ {
   "v": "v1223",
   "d": "23 Oct 2026",
   "t": "CS6-PER SALT SET AT 5% OFF",

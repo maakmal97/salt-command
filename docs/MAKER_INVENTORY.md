@@ -1,7 +1,9 @@
 # Counter maker replacement inventory
 
-The inventory is a source/control inventory, not owner acceptance. Desk write controls remain
-available until the replacements pass genuine owner acceptance. All Salt Admin routes below
+**Historical, to 14 Oct 2026.** This is the inventory of the Desk controls that Counter Admin replaced in #62, accepted on phone
+and laptop on 14 Oct 2026. Since v1104 the Desk only reads. It is kept for the route map and lists no open work.
+
+The inventory is a source/control inventory, not owner acceptance. All Salt Admin routes below
 remain under the existing verified-owner `/all` boundary. A generic input route is not a
 replacement for an absent control.
 
@@ -82,8 +84,8 @@ Tide, the saved app) and by each redesign phase's whole-page probe, its numbers 
 
 ## Retirement gates
 
-The missing controls above remain open work. Local JWT fixtures prove server boundary behavior,
-not a genuine owner session. Positive live owner/keyed-vault acceptance remains unverified.
+At the time of writing the missing controls above were open work. Local JWT fixtures prove server boundary behavior,
+not a genuine owner session. Positive live owner/keyed-vault acceptance was unverified when this was written.
 No Desk input is retired on the strength of this inventory, a generated catalog, or the generic
 Maker input allowlist. Pricing rules, restricted amendment kinds and sealed history remain
 unchanged.

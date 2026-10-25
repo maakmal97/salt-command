@@ -7,8 +7,8 @@
    and the manifest and icons are served cache first below and sit outside the build id, so a phone reads a new one only
    when this name moves: a change to either bumps it in the same version. Bumped 29 Sep 2026 (Step 7): /threads joins the API,
    and a phone's old cache may hold a first answer to it. Bumped 18 Oct 2026: the faces became Newsreader and Geist Mono, and the
-   old cache holds the retired files. */
-const CACHE = "salt-shell-v8";
+   old cache holds the retired files. Bumped 24 Oct 2026: the browser tab's icon, a crystal on a clear ground (icon-tab.png), joins the shell. */
+const CACHE = "salt-shell-v9";
 
 /* "./index.html" is deliberately absent: the host serves "./" and a navigation
    cannot be answered from a redirected response. The manifest starts at "./" too. */
@@ -18,6 +18,7 @@ const SHELL = [
   "./icon-180.png",
   "./icon-192.png",
   "./icon-512.png",
+  "./icon-tab.png",
   /* the brand faces (22 Sep 2026; Newsreader and Geist Mono since 18 Oct 2026): cached with the shell, so the desk reads in its own type offline */
   "./fonts/newsreader-latin.woff2",
   "./fonts/geist-mono-latin.woff2"
