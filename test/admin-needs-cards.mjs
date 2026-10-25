@@ -13,6 +13,8 @@ import { richOwnerPage, byAct } from "./maker-act.mjs";
 
 const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
 const J = JSON.stringify;
+/* the page's ageOf, so a fixed fixture date ages with the clock */
+const ageOf = (iso) => { const m = Math.max(0, Math.floor((Date.now() - Date.parse(iso)) / 60000)); return m < 60 ? m + " min" : m < 2880 ? Math.floor(m / 60) + " h" : Math.floor(m / 1440) + " d"; };
 const OWED2 = { party: "CX7-ZED", rm: 40, since: "2026-10-01", due: "2026-10-08", rows: [{ rid: "s-owed-2", key: "k2", product: "salt" }] };
 const OWED = { party: "CX1-ZED", rm: 120, since: "2026-10-01", due: "2026-10-08", rows: [{ rid: "s-owed-1", key: "k1", product: "salt" }] };
 
@@ -28,7 +30,7 @@ export async function run({ ok, pageWork }) {
     /* 1 */
     const shape = (c) => [...c.children].map((x) => x.classList.contains("nkind") ? "kind" : x.classList.contains("salt-action__body") ? "body" : x.classList.contains("salt-action__go") ? "go" : x.classList.contains("nfig") ? "fig" : x.className);
     const bad = cards.filter((c) => J(shape(c)) !== J(["kind", "body", "go", "fig"]) || c.querySelector(".salt-action__why, .salt-status, .need-what, .need-clock, [data-clock]")).map((c) => c.getAttribute("data-need"));
-    ok(cards.length >= 15 && bad.length === 0 && t(card("p:ord-a1").querySelector(".nkind")) === "Payment · 12 d",
+    ok(cards.length >= 15 && bad.length === 0 && t(card("p:ord-a1").querySelector(".nkind")) === "Payment · " + ageOf("2026-10-10T01:00:00.000Z"),
       "every card is the kind and age, the title, the pill and the figure, and no why, chip, what or clock: " + cards.length + " cards; " + J(bad));
     /* 2 */
     const o1 = card("o:ord-p1"), tt = o1.querySelector(".need-tap"), tag = tt.querySelector(".salt-producttag"), who = tt.querySelector(".need-who");

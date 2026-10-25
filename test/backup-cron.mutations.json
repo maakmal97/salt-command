@@ -1,0 +1,80 @@
+[
+ {
+  "name": "the backup cron falls through to the minute's work",
+  "file": "src/worker.js",
+  "find": "          console.log(\"backup: \" + JSON.stringify(b.ok ? { ok: true, key: b.key, bytes: b.bytes, pruned: b.pruned } : b));\n          return;\n        }",
+  "replace": "          console.log(\"backup: \" + JSON.stringify(b.ok ? { ok: true, key: b.key, bytes: b.bytes, pruned: b.pruned } : b));\n        }"
+ },
+ {
+  "name": "the backup cron is never matched",
+  "file": "src/worker.js",
+  "find": "if (event && event.cron === BACKUP_CRON) {",
+  "replace": "if (false) {"
+ },
+ {
+  "name": "every cron runs the backup",
+  "file": "src/worker.js",
+  "find": "if (event && event.cron === BACKUP_CRON) {",
+  "replace": "if (event && event.cron) {"
+ },
+ {
+  "name": "the backup says nothing in the log",
+  "file": "src/worker.js",
+  "find": "console.log(\"backup: \" + JSON.stringify(b.ok ? { ok: true, key: b.key, bytes: b.bytes, pruned: b.pruned } : b));",
+  "replace": ""
+ },
+ {
+  "name": "the digest never asks about the backup",
+  "file": "src/worker.js",
+  "find": "const bk = await backupAlarm(env, new Date(event.scheduledTime || Date.now()));",
+  "replace": "const bk = null;"
+ },
+ {
+  "name": "the alarm does not make the digest worth sending",
+  "file": "src/worker.js",
+  "find": "if (bk) { worth = true; console.log(\"backup alarm: \" + bk); }",
+  "replace": "if (bk) { console.log(\"backup alarm: \" + bk); }"
+ },
+ {
+  "name": "the alarm speaks with no bucket bound",
+  "file": "src/backup.js",
+  "find": "if (!env.BACKUP || !env.SALT_QUEUE) return null;",
+  "replace": "if (!env.SALT_QUEUE) return null;"
+ },
+ {
+  "name": "a backup that never ran is not said",
+  "file": "src/backup.js",
+  "find": "if (!last) return \"the backup has never run\";",
+  "replace": "if (!last) return null;"
+ },
+ {
+  "name": "a failed last night is not said",
+  "file": "src/backup.js",
+  "find": "if (!last.ok) return \"the last backup failed: \" + last.error;",
+  "replace": ""
+ },
+ {
+  "name": "a stale backup is not said",
+  "file": "src/backup.js",
+  "find": "export const BACKUP_STALE_MS = 36 * 3600000;",
+  "replace": "export const BACKUP_STALE_MS = 360 * 3600000;"
+ },
+ {
+  "name": "the backup cron is the digest's",
+  "file": "src/backup.js",
+  "find": "export const BACKUP_CRON = \"30 18 * * *\";",
+  "replace": "export const BACKUP_CRON = \"0 1 * * *\";"
+ },
+ {
+  "name": "the cron is dropped but the bucket stays",
+  "file": "wrangler.jsonc",
+  "find": "\"crons\": [\"* * * * *\", \"0 1 * * *\", \"30 18 * * *\"]",
+  "replace": "\"crons\": [\"* * * * *\", \"0 1 * * *\"]"
+ },
+ {
+  "name": "the bucket is dropped but the cron stays",
+  "file": "wrangler.jsonc",
+  "find": "\t\"r2_buckets\": [\n\t\t{ \"binding\": \"BACKUP\", \"bucket_name\": \"salt-d1-backup\" }\n\t],\n",
+  "replace": ""
+ }
+]

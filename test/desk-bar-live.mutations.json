@@ -1,13 +1,13 @@
 [
 {
-"name": "the bar names no view",
-"find": "if(a)a.textContent=V.name;",
-"replace": ""
+"name": "the bar says where you are again",
+"find": "<div class=\"dhlive salt-deskbar__live\">\n",
+"replace": "<div class=\"dhlive salt-deskbar__live\"><div class=\"dhwhere salt-deskbar__where\" id=\"deskWhere\" aria-live=\"polite\"><span class=\"salt-deskbar__view\" id=\"dwView\">Today</span><span class=\"salt-deskbar__page\" id=\"dwPage\"></span></div>\n"
 },
 {
-"name": "the bar names no page",
-"find": "if(b)b.textContent=V.parts.length?(TAB_LABEL[p]||p):'';",
-"replace": ""
+"name": "a move to a view draws where you are",
+"find": "function railSubs(){\n",
+"replace": "function railSubs(){\n  if(curTab!=='today'&&!document.getElementById('dwView'))document.getElementById('deskbar').insertAdjacentHTML('beforeend','<span id=\"dwView\"></span>');\n"
 },
 {
 "name": "Now carries no figure",
@@ -45,11 +45,6 @@
 "replace": "      };});}"
 },
 {
-"name": "where you are is not in the bar",
-"find": "<div class=\"dhwhere salt-deskbar__where\" id=\"deskWhere\"",
-"replace": "<div class=\"dhwhere salt-deskbar__where\" id=\"deskWhereGone\""
-},
-{
 "name": "/admin goes to Salt Admin's front",
 "file": "src/worker.js",
 "find": "u.hash = \"orders/approve\"; ",
@@ -60,10 +55,5 @@
 "file": "src/worker.js",
 "find": "if (u.protocol === \"https:\") {",
 "replace": "if (u.protocol) {"
-},
-{
-"name": "the rail's render leaves the bar",
-"find": "function railSubs(){\n  try{deskWhereDraw();}catch(e){}\n",
-"replace": "function railSubs(){\n"
 }
 ]

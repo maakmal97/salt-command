@@ -79,7 +79,7 @@ const PWA_BLOCK = [
   '<meta name="mobile-web-app-capable" content="yes">',
   '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">',
   /* SALT DESK (his Q6 of 28 Sep 2026): the name a home screen shows, here and in the manifest's name and short_name;
-     the page's <title> stays Salt Command, the anchor this block is put after. A manifest change bumps CACHE in public/sw.js */
+     the page's <title> is Salt Desk too since 24 Oct 2026 (his word), and is the anchor this block is put after. A manifest change bumps CACHE in public/sw.js */
   '<meta name="apple-mobile-web-app-title" content="Salt Desk">',
   '<link rel="manifest" href="manifest.webmanifest">',
   '<link rel="apple-touch-icon" href="icon-180.png">',
@@ -315,8 +315,8 @@ requireOnce("P1b theme-color (master-owned since the two themes)",
   'The master must carry one theme-color meta for its head script to set. Without it the browser bar stays one colour whichever theme is chosen.');
 
 replaceOnce("P2 head PWA block",
-  '<title>Salt Command</title>',
-  '<title>Salt Command</title>' + EOL + PWA_BLOCK);
+  '<title>Salt Desk</title>',
+  '<title>Salt Desk</title>' + EOL + PWA_BLOCK);
 
 replaceOnce("P3 qInit cloud branch",
   "    if(r.ok&&(await r.json()).ok){qSyncState='server';renderQueue();qStatus(qNote());renderRole();await vaultLoad();await bioLoad();qHeartbeat();}",

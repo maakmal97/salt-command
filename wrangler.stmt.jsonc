@@ -18,17 +18,14 @@
 	// COMPATIBILITY DATE, raised from 2026-08-08 on his instruction of 22 Sep 2026. Checked
 	// before moving it: not one JavaScript flag defaults on between those two dates, the only
 	// entry in the window being python_workers_314 on 2026-09-08, so this changes no
-	// behaviour today. It is the newest date this workerd (1.20260921.1) supports, so local
-	// dev and the edge agree. rev.json's id does not cover this file, so a change here is
+	// behaviour today. It was the newest date the workerd of 22 Sep 2026 (1.20260921.1) supported, so
+	// local dev and the edge agreed. rev.json's id does not cover this file, so a change here is
 	// deployed BY HAND.
 	"compatibility_date": "2026-09-21",
 	// ITS OWN STORE. One key per username (u:<username>) holding that customer's envelope and
 	// verifier, plus the attempt counters (fail:) and the opened marks (seen:). Nothing from the
 	// desk's namespace is bound here, so this Worker cannot read the queue or the vault even by
-	// a bug. Create with:
-	//   npx wrangler kv namespace create stmt -c wrangler.stmt.jsonc
-	// then paste the printed id below in place of the placeholder. The deploy job stands down
-	// while the placeholder is still here, so an unfinished setup cannot break a ledger deploy.
+	// a bug.
 	"kv_namespaces":
 	[
 		{
@@ -109,10 +106,11 @@
 		// KV road's mark (orderbook:road) moves the book in again on its first request.
 		"ORDER_MOVE_IN": "1"
 	},
-	// THE CHASE (v700, his instruction of 18 Sep 2026; twice a day since S12 12.3, his decision D5 of
-	// 24 Sep 2026). This Worker had no clock at all until v700; it woke a phone only as a side effect
-	// of the desk touching an order. The cron stays on the hour, every hour, and stmt/worker.js's
-	// scheduled() decides: it chases only at 10:00 and 18:00 in Kuala Lumpur (chaseSlot), one wake a
+	// THE CHASE (v700, his instruction of 18 Sep 2026; tapered since V5, his answer of 29 Sep 2026).
+	// This Worker had no clock at all until v700; it woke a phone only as a side effect of the desk
+	// touching an order. The cron stays on the hour, every hour, and stmt/worker.js's scheduled()
+	// decides: it chases every hour from 08:00 to 22:00 in Kuala Lumpur for the first three days from
+	// the oldest unpaid handover, then at 10:00, 14:00 and 18:00 (chaseSlot, chaseDue), one wake a
 	// slot per customer through the chased:<username> mark, so a tick that fires twice cannot chase twice.
 	//
 	// A CRON HERE REACHES PRODUCTION ONLY THROUGH A DEPLOY OF THIS CONFIG, and public/rev.json's id

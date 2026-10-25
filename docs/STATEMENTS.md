@@ -637,8 +637,7 @@ shape (with the light where the book has one), and an inline mark is followed by
 **No shape word is a product's**: Cube, Droplet, Lozenge, Capsule and Ring name nothing, and the product-word and level-word scans (v695, v704, `siteWords`)
 pass them and every sentence of the new words; the suite drives that both ways. The Desk never drew a shape word and keeps its book names.
 
-**What follows on the Desk**: the order card's `ordTold` and `toldOf` in `src/orders.js` (`CUSTOMER_SEES`) say what they see in these words, the Accept and
-Decline answers read "They see Confirmed" and "They read Declined", the reasons legend says "Why it is declined", and the restock card says More by. The
+**What follows on the Desk**: `toldOf` in `src/orders.js` (`CUSTOMER_SEES`) says what they see in these words, and the restock card says More by. The
 practice accounts' feature labels follow (`tools/testfix.mjs`, the pool fixture), with no new `FEATURES` line.
 
 The suite section "One word per state, and the mark alone" (`test/counter-state-words.mjs`, its mutations in
@@ -1013,7 +1012,7 @@ soon as it can already chosen, or By a day, a date from tomorrow to `WANT_DAYS` 
 `CUSTOMER_FIELDS`, and a sheet's lines share it. **It is a day they asked for and nothing more**: the Pending row stays
 dated at the acknowledgement under the same key, its note carrying ", wanted by YYYY-MM-DD" in fixed words
 (`pendingEntry`, never their text), and the term and the chase count from the handover, so nothing that prices or chases
-reads it. The desk's card says it and how far off (`ordWantLine`) while goods are still to go.
+reads it.
 
 **A DELIVERY ASKS ASAP, OR A FOUR-HOUR WINDOW** (his decisions of 10 Oct 2026; the word ASAP his of 20 Oct 2026, for "as soon as it
 can", on Salt Counter and Salt Admin): a delivery's When is ASAP or one of six windows, 00-04 to 20-24 Kuala Lumpur, each its next occurrence within `SLOT_DAYS` (7) whose start
@@ -1245,7 +1244,7 @@ so a Place tapped after a refusal sends only what is still to go, and a retry th
 Leaving a check with a line placed (`dropPlaced`) takes that product off the picks: Change sends the rest under the same
 sheet id, the note not again; closed, they start afresh. A moved list is read again line by line. The Worker keeps the `sheet` on each order (`SHEET_RE`, in the customer's view),
 refuses a product twice on one sheet (`sheetTwice`), and **counts a sheet once against `MAX_OPEN`** (`openCount`), so
-a line joining a sheet already open is never the sixth; the page's `openN` counts the same way. On the desk each order
+a line joining a sheet already open is never the sixth; the page's `openN` counts the same way. On the desk (until 18 Oct 2026, when its order card left; Salt Admin's `sheetGroup` draws a sheet now) each order
 keeps its own card, Accept and row; `ordSheetLine` names the others open on its sheet, each a tap to its card, and a
 delivery still to agree says the trip is one, its charge on one order and RM 0 on the rest. **A sheet is agreed
 together** (V4b.2, his word of 29 Sep 2026): while every order on it waits for his Accept (`ordSheetLead`, none with a
@@ -1433,9 +1432,8 @@ row on Account and reads it every `THREAD_POLL_MS` (2 seconds) only while the Sh
 account's thread lives in its fixture (`exampleThread`, `exampleSay`); the desk cannot write one.
 **His side** (7b): the desk Worker's keyed `GET /threads` (each with its desk code) and `POST /threads/<username>`, which
 sends on only `{message}`, past `siteWords`, or `{noReply: true}`; `GET /orders` carries `threads`, and `/push/summary`'s
-lines take their thread lines too. On the desk each thread is a card of Waiting on you (`thrCard`): an Asked act while
-their line is the last and not marked No reply needed, else under Chat; read every 2 seconds (`THR_POLL`) only while one is
-open and the desk showing. `public/sw.js` never caches `/threads` (`salt-shell-v7`).
+lines take their thread lines too. On the desk a thread whose last line is theirs and not marked No reply needed counts in Waiting on you; Salt Admin reads its chat every 2 seconds (`chatMs`) only while one is
+open and showing, and once a minute while the live socket is up. `public/sw.js` never caches `/threads` (`salt-shell-v7`).
 
 **A CRON REACHES PRODUCTION ONLY THROUGH A DEPLOY OF THAT CONFIG.** `wrangler.stmt.jsonc` is on
 `cloud-commit.yml`'s push paths (since 03 Sep 2026), so a push to master that touches it runs the job, and its
@@ -1771,7 +1769,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   delivered only) and a field for his own words (`order.reason`); a tile fills the field and typing clears the pick, the reason is optional and
   rides as `note`, checked by `siteWords` on the Desk. The money taps (handover, cash, and Confirm received for another amount) are guarded once, as
   they were, with no sheet; **a claim's Received and Not found are not guarded once, they ask on the Sheet** (Phase 2b, below), and so do a Desk row's
-  Approve and Reject (`approveDraft`, Phase 2c, below).
+  Approve and Reject (`approveDraft`, Phase 2c, below; replaced on 22 Oct 2026 by Salt Admin's choices, bar and Confirm).
   **An edit put back to what it was offers its read** (Phase 2b, Fable's follow-up to 2a): the total's `input` takes the quote and Accept away, and
   only a `change` reads again, which a value put back before the field is left never fires, so the card said the figures would be read when he
   finished and showed no control. From the moment the total, or the charge typed as Other, is edited, the card offers Read the figures again
@@ -1865,7 +1863,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   the action, which runs just after), so a flow that awaits it carries on as it did when the confirm said no; a second tap on the action finds the Sheet gone and
   sends nothing. Its controls are `ask.go`, `ask.keep` and `ask.close`, keyed by what is asked, and focus goes back to the control that asked, found by its
   `data-yn` if a redraw replaced it. It asks, in place of the confirm: a Desk row's Approve and Reject, and a trip's (every row listed; `approveDraft` and
-  `rejectDraft`, which shut nothing until his yes, so a no leaves the Needs you pill as it was); Withdraw server-held entry (Finish server withdrawal,
+  `rejectDraft`, retired 22 Oct 2026 for Salt Admin's choices, bar and Confirm, which shut nothing until his yes, so a no leaves the Needs you pill as it was); Withdraw server-held entry (Finish server withdrawal,
   begun already, asked nothing before and asks nothing now); the group order's Close; the notice's Set and Clear; a twin at entry (`makerSecond` for a loan or
   a gift, the trade's own); Cancel retained input, beside a form's button and on Record's retained input; Cancel reply retry on a chat; and the vault
   conflict. Every request, body and request id is as it was. `ended()` now takes a Sheet left open down with the page, as `lapsed()` and `lock()` do. A test that
@@ -2958,7 +2956,7 @@ start, the apps' own names *Salt Admin*, *Salt Counter*, *Salt Command*, *Salt D
 Desk keeps its book names; this page does not.** `test/admin-words.mjs` draws the whole page and fails on any book of `ledger/book.json` PRODUCTS in a word, an aria
 name or a title, and on any drawn shape word.
 
-**One word for one thing, on the Desk and here** (18 Oct 2026, part 5 of `docs/plan-counter-admin-clarity.html`, his yes). Where the two surfaces name
+**One word for one thing, on the Desk and here** (18 Oct 2026, part 5 of `docs/plans-counter-admin.html`, his yes). Where the two surfaces name
 the same thing, this table is the word; a new card takes its word from here, and a word that differs between them is put to him, never changed unasked.
 
 | Thing | Desk | Salt Admin |

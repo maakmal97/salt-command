@@ -3,7 +3,8 @@
  * The desk's own "Save" writes plaintext names to salt_bio.json; the encrypted vault
  * (salt_vault.json) is legacy and stale. So this reads the current directory, encrypts
  * it with your passphrase into the exact envelope the desk's vaultDecrypt expects, and
- * pushes ONLY that ciphertext to the cloud (KV key "vault"). The phone then decrypts it
+ * pushes ONLY that ciphertext to the cloud (the versioned vault pair in D1 while the Worker's
+ * authority is the pair, as it is since v992; else KV key "vault"). The phone then decrypts it
  * with the same passphrase; the plaintext never leaves this machine.
  *
  * The crypto matches the desk byte for byte: PBKDF2-SHA256 x150000 over a random 16-byte
@@ -492,7 +493,7 @@ async function slipPub() {
 /* Ask for the passphrase at the terminal without echoing it. Raw mode, so nothing lands in
    shell history, the screen or a transcript; the string lives only in this process. Returns
    null when there is no terminal to ask, and the env-var road below still stands for that. */
-function promptHidden(question) {
+export function promptHidden(question) {
   if (!process.stdin.isTTY || !process.stdout.isTTY) return Promise.resolve(null);
   return new Promise((res) => {
     process.stdout.write(question);

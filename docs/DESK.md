@@ -123,14 +123,14 @@
   `STOCK_COST` and `PROD_STOCK_COST` are gone, and so is the Today note that caught a missed roll.
 - **The profile** (v666, his decisions of 16 Sep 2026). `buyerProfile(code,prod)` reads a customer's own
   priced orders and returns a name (one-off, small and often, small and rare, large and regular, rare and
-  large, consistent mid, occasional mid) and six flags: `frequent`, `small`, `bigger`, `loyal`, `rare`,
-  `lateTwice`. The thresholds are one constant, `PROFILE_RULE`, cut from the book on 16 Sep 2026: the median
+  large, consistent mid, occasional mid) and five flags: `frequent`, `small`, `bigger`, `loyal`, `rare`.
+  The thresholds are one constant, `PROFILE_RULE`, cut from the book on 16 Sep 2026: the median
   customer then bought 1.83 times a month, one and three units were the lower and upper quartiles of size,
   and the whole book was under three months old, so loyalty is counted in orders rather than time. Orders a
   month are read over at least 30 days, or every new customer arrives frequent. **Late** is an order paid
   past `RULES.creditDays` (10) or still owed past it; a write-off is not counted, having its own rule (the Credit
   age breach and Today's chase count instead from the handover, past `RULES.holdDays`, as the Counter does). On
-  the book that day: small and often CR3-DAM, CA4-DAM, CC5-OKR; loyal eight; late twice nobody. CH5-KLC,
+  the book that day: small and often CR3-DAM, CA4-DAM, CC5-OKR; loyal eight. CH5-KLC,
   who pays RM180 a unit for half-units, reads small and RARE. **It prices nothing**: it feeds the Their % card's good and bad.
 - **The late payer** (V5c, his answers of 29 Sep 2026, in place of `lateTwice` and rare and late twice). The profile
   reads no lateness; `lateOf(code)` does, across every book and the `-R` bucket, through the engine: `payDelays` gives each
@@ -432,10 +432,10 @@
   /vault/key` and has no write. The unlock imports it non-extractable for `deriveBits` alone, and the
   desk's `slipOpen` reads a slip `{v, epk, iv, ct}`: ECDH with the ephemeral point, HKDF-SHA-256 (no
   salt, info `salt-slip v1`), AES-GCM-256, the protocol of `slipSeal` in `tools/seed-vault.mjs`. **View slip**
-  (F13, the Counter half): a claim card whose claim carries `slip` draws View slip (`slipPart`); `slipView` fetches
+  (F13, the Counter half): a claim card whose claim carries `slip` draws View slip; `slipView` fetches
   the ciphertext keyed at `GET /slips/<username>/<id>` (the Worker's `slipRelay` over `STMT_SITE`, and `/slips` is on
   `sw.js`'s API list, so never cached), opens it with `slipOpen` and draws a `blob:` URL; locked, it asks for Show
-  names and fetches nothing, and `lockVault` revokes every picture drawn (`slipShut`). His base point, `_base`, is Amend ID's
+  names and fetches nothing, and `lockVault` revokes every picture drawn. His base point, `_base`, is Amend ID's
   first choice under Who. On the laptop: `seed-vault.mjs --addr` (refused unless the passphrase
   opens the live names vault, and, short of `--force`, while the live places hold a code the file
   lacks or an entry with a later `at`) and `pull-vault.mjs --addr` over `10_Data\salt_addr.json`.
@@ -451,25 +451,25 @@
   event moves the figures, never `closed`, and the customer reads "Amended to ...". No push is sent.
 - **The delivery fee by distance** (F15, 29 Sep 2026; the Desk's Site orders card left on 18 Oct 2026): a delivery's card, opened,
   and the Workbench's Delivery box on a new sale to a chosen party, opened, offer a fee worked on the
-  device: `navigator.geolocation` read once, fresh (`hereNow`, kept nowhere), else `_base`; to the
+  device: `navigator.geolocation` read once, fresh (kept nowhere), else `_base`; to the
   exact spot the customer shared on that order, opened on the device (`ordPinPoint`, 10 Oct 2026, `docs/STATEMENTS.md`),
   else the party's exact point in `vault-addr` (a `-R` bucket's associate's when it has none), else its
   `PLACED` locality, said as about a kilometre out (`RULES.delivery.localityFallback`, his answer at
-  design); `haversineKm` times `roadFactor` at `rmPerKm`, rounded to `roundTo` (`deliveryFeeFor`).
+  design); `haversineKm` times `roadFactor` at `rmPerKm`, rounded to `roundTo`.
   Only with the vault open on the phone (`feeOpen`), and on the card only once it is on screen
   (opened on the phone, or beside the list at 1080px); `lockVault` drops every offer, so an unlock
   reads again. On the card the figure fills Other on a trip's first order alone, and once that order
   is agreed no later order of the sheet takes one (a V4b sheet is one trip); the box keeps what it
-  holds past a lock, and a fresh read replaces only the figure the desk put there (`ORD_PUT`). The
+  holds past a lock, and a fresh read replaces only the figure the desk put there. The
   line under the chips names the two points used, never a point. On the Workbench it fills Delivery
   only while that stands at nought, an R2 sale measured to the associate. His figure wins: the preview and Accept send what the box holds. A setting, not a
   price: the goods, the floor and the board never read it. The desk's `Permissions-Policy` carries
   `geolocation=(self)`, nothing wider; `_headers` is outside the build id, so it ships in a version.
-- **Codes are derived** (`deriveCode`, phone and laptop alike): C or S, the name's first letter,
+- **Codes are derived** (`makerDerivedCode`, on Salt Admin): C or S, the name's first letter,
   the length of the saved name counting spaces, a dash, then the place's initials when it is
   several words or its first three letters when it is one; a blank place is TBC. A downstream
   buyer is `<associate>-<n>-<place>`; an associate's account is `<code>-R`. A clash takes one more
-  letter of the name at a time (`deriveFreeCode`), a number only when the name is used up; on an
+  letter of the name at a time (the same function), a number only when the name is used up; on an
   amendment the party's own code counts as free.
 - **The queue on load** (`qKeepOnLoad`): an entry clears only when the fold has passed it, this
   device saw it acknowledged (`qSentThrough`, seeded from the watermark), and the last good read
@@ -571,7 +571,7 @@
 | `src/drafter.js` | Queue plus D1 mirror to a proposed row in `draft`; never writes `entry` |
 | `tools/fold.mjs` | `--plan` reads `master/_to_fold.json`, refuses what it must, writes the notes skeleton; `--apply` folds all or nothing, syncs, bumps, rolls the shelf, moves the watermark |
 | `tools/drafts.mjs` | `--schema`, `--list`, `--draft <file>`, `--approved`, `--committed <id>`, `--from-queue`; via wrangler, no key |
-| `tools/drain.mjs` | KV to `06_Data\salt_queue_cloud.json`; `--committed <ISO>`, `--status`, `--forget`; `--status` sets each entry against `QUEUE_COMMITTED` and, where D1 answers, its draft or refusal, and lists the folded or decided apart from what is still to reach the ledger, offering `--forget` for the second alone (a device's key keeps a folded entry until that device posts again); `--retire-orders-blob` deletes the old `q:orders` blob only when empty (site stages take `q:orders:<at>`, one key an entry, and the drafter prunes committed ones; run it after seven days of `"legacy":0` on the drafter's log) |
+| `tools/drain.mjs` | KV to `10_Data\salt_queue_cloud.json`; `--committed <ISO>`, `--status`, `--forget`; `--status` sets each entry against `QUEUE_COMMITTED` and, where D1 answers, its draft or refusal, and lists the folded or decided apart from what is still to reach the ledger, offering `--forget` for the second alone (a device's key keeps a folded entry until that device posts again); `--retire-orders-blob` deletes the old `q:orders` blob only when empty (site stages take `q:orders:<at>`, one key an entry, and the drafter prunes committed ones; run it after seven days of `"legacy":0` on the drafter's log) |
 | `tools/sort-ledger.mjs` | Date order, undated pending last; asserts a permutation |
 | `tools/freenames.mjs` | Every name the page calls is defined (after v925's bare `poStat`): TypeScript's checker (`typescript`, a pinned dev dependency) over the master's inline script, each name it cannot find asked of the loaded page, less `LOADED_LATER` (`Chart`); and each inline handler's call a function. The suite runs it; by hand, `node tools/freenames.mjs [master]` |
 | `tools/renderdiff.mjs` | `--shoot <label>` every part at 1280 and 375, `--compare <a> <b>`; Playwright from `Code\salt-ds\.ds-sync`; by hand |
@@ -589,7 +589,7 @@ shown at all when a line was.
 
 ## First-time Cloudflare, and local work
 
-`npx wrangler kv namespace create salt_queue`, paste the id over `PLACEHOLDER_KV_ID`, deploy.
+`npx wrangler kv namespace create salt_queue`, paste the id into the `kv_namespaces` entry of `wrangler.jsonc`, deploy.
 The build adds only a PWA head, a service worker, a device id and cloud-mode copy.
 `/queue/ping` returns `cloud:true`. The laptop desk is `Open Salt Command.bat` in the project's
 `30_Published`: `serve_desk.py` serves this repo's master on port 8766 for Names & IDs and writes

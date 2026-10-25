@@ -25,6 +25,8 @@ import { world } from "./maker-queue-withdrawal.mjs";
 import { makerRequestFingerprint } from "../src/maker-request.js";
 
 const U1 = "abcd-efgh", U2 = "jkmn-pqrs", U3 = "tvwx-yz23", U4 = "4567-89ab", PRACTICE = "0000-0000";
+/* the page's ageOf, so a fixed fixture date ages with the clock */
+const ageOf = (iso) => { const m = Math.max(0, Math.floor((Date.now() - Date.parse(iso)) / 60000)); return m < 60 ? m + " min" : m < 2880 ? Math.floor(m / 60) + " h" : Math.floor(m / 1440) + " d"; };
 const NOW = Date.now(), ago = (h) => new Date(NOW - h * 3600000).toISOString();
 /* the page says a moment today by its time and any other by its day, in Kuala Lumpur (owner.js when()), so what an age reads depends on the hour the suite runs */
 const klDay = (iso) => new Date(Date.parse(iso) + 8 * 3600000).toISOString().slice(0, 10);
@@ -158,7 +160,7 @@ export async function run({ ok, pageWork }) {
     /* 1b. WHAT IS OWED, BOTH WAYS (plan 1, parts 3 and 4) */
     const owedM = p.words(p.card("$:CX1-ZED")), owedG = p.words(p.card("g:row-1"));
     ok(p.card("$:CX1-ZED").getAttribute("data-sev") === "soon" && p.card("$:CX1-ZED").getAttribute("data-kind") === "payments" && owedM.kind === "Owed" && owedM.who === "CX1-ZED"
-      && owedM.said === "Owed: Collect RM 150.00 from CX1-ZED, Past term" && owedM.fig === "RM 150" && owedM.age === "31 d late" && !!p.card("$:CX1-ZED").querySelector(".nage--late") && same(p.buttons(p.card("$:CX1-ZED")), ["Message"]),
+      && owedM.said === "Owed: Collect RM 150.00 from CX1-ZED, Past term" && owedM.fig === "RM 150" && owedM.age === ageOf("2026-09-21") + " late" && !!p.card("$:CX1-ZED").querySelector(".nage--late") && same(p.buttons(p.card("$:CX1-ZED")), ["Message"]),
     "money owed past term is a Pending card: who, the Desk's figure as the figure, how late in ember, and one way, Message (their thread; Record payment stands in the opened card): " + JSON.stringify(owedM));
     ok(p.card("g:row-1").getAttribute("data-sev") === "now" && p.card("g:row-1").getAttribute("data-kind") === "orders" && owedG.kind === "To hand over" && owedG.who === "CX2-ZED"
       && owedG.said === "To hand over: Hand over to CX2-ZED, 1.5 units paid, not handed over" && owedG.tag === "Oil" && same(p.buttons(p.card("g:row-1")), ["Handover"]),

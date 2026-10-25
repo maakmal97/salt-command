@@ -12,8 +12,8 @@ measurement of the desk.
   his plan, so a pull-request gate would be a habit, not a lock.
 - **A start-of-session `git status` is stale within minutes.** Tells of a peer: an untracked
   `master/_to_fold.json`, a `LAST_UPDATED` newer than HEAD, a file modified that was clean at the
-  start (`stat -c '%y' <file>` against the clock). Before any version, `list_sessions` for a
-  running session on this checkout; if there is one, `ListAgents`, then `SendMessage` two
+  start (`stat -c '%y' <file>` against the clock). Before any version, `ListAgents` (CLI) or `list_sessions` (desktop app) for a
+  running session on this checkout; if there is one, message it (`SendMessage` in the CLI, `send_message` in the desktop app) with two
   questions only: are these dirty files yours, and will you build, run the suite or push. A
   failure in code that is dirty in `git status` is a peer question first and a bug second.
 - **Work in a worktree.** `git worktree add .claude/worktrees/<name> -b <branch> HEAD` (or
@@ -94,7 +94,7 @@ measurement of the desk.
   outside the suite must `opened.clear()`. A section driving the Workbench waits about 200 ms
   before `w.close()`, or the record's own save answers into a closed document. Probe the heap by
   forcing GC per section, never by reading `heapUsed` raw.
-- The suite rewrites `public/desk.html` and `public/rev.json` and drains the live KV: restore
+- The suite rewrites `public/desk.html` and `public/rev.json`: restore
   `public/` from HEAD afterwards.
 - **One section on its own**, for red proofs in seconds: `node tools/section.mjs "<title prefix>"`
   runs the one section whose title starts so (none, or two, is refused) exactly as a shard of `npm
@@ -182,8 +182,7 @@ Each of these stayed green, or read clean, through a real fault.
   one-time restatement touched (read them off `git show <sha>:ledger/book.json`), and express a
   position as a difference (drop the row, recompute, assert what moved). The hourly runs run no
   suite, so such a red stays red until the next fold or push.
-  The same for a hand-set salt drift (CS6-BS since v1075, a number in `TIER_OF`): `levelWindow` sets the book's salt drifts aside
-  when it puts the level rule back, and a test of the drift takes the first customer with none (`driftOf(c, 'salt').hand == null`),
+  The same for a hand-set salt drift (CS6-BS since v1075, a number in `TIER_OF`): a test of the drift takes the first customer with none (`driftOf(c, 'salt').hand == null`),
   never `tierCustomers()[0]`. The held-drift proof is run on a master copy holding more of them (`tools/section.mjs --master`).
 - **A clock in the check** (28 Sep 2026, his instruction). Beside another session's suite, a
   stopwatch goes red with nothing wrong (v521's 10 s over a whole fold, the banner proof, S3 3.8,

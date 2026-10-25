@@ -1,25 +1,21 @@
 import { openMaster } from "../tools/payload.mjs";
 import { adminRedirect } from "../src/worker.js";
 
-/* 21 Oct 2026, his word: the Desk's bar is complete and persists on every view: where you are (the destination, the page under
-   it), every book's Now, what waits on you, this device's alerts, and Approve, which opens Salt Admin's Approve through the
-   Worker's /admin so the site's address is never in the public desk. */
+/* 21 Oct 2026, his word: the Desk's bar is complete and persists on every view: every book's Now, what waits on you, this
+   device's alerts, and Approve, which opens Salt Admin's Approve through the Worker's /admin so the site's address is never in
+   the public desk. Where you are (the destination, the page under it) left the bar on his word of 23 Oct 2026. */
 export async function run({ ok }) {
   const { w } = await openMaster();
   try {
-    const D = w.document, txt = (id) => (D.getElementById(id) || {}).textContent;
-    const bar = D.getElementById("deskbar"), where = D.getElementById("deskWhere"), live = D.getElementById("deskLive");
-    ok(!!where && !!live && bar.contains(where) && bar.contains(live) && !where.closest(".sec") && !live.closest(".sec"),
-      "the bar holds where you are and what is live, outside every view, so it persists over all of them");
-    w.eval("switchTab('pricing')");
-    ok(txt("dwView") === "Pricing" && txt("dwPage") === w.eval("TAB_LABEL.pricing"),
-      "on Pricing the bar names the destination and its page: " + JSON.stringify([txt("dwView"), txt("dwPage")]));
-    w.eval("switchTab('overview')");
-    ok(txt("dwView") === "Pricing" && txt("dwPage") === w.eval("TAB_LABEL.overview"), "and follows the page within it: " + JSON.stringify(txt("dwPage")));
+    const D = w.document;
+    const bar = D.getElementById("deskbar"), live = D.getElementById("deskLive");
+    ok(!!live && bar.contains(live) && !live.closest(".sec"),
+      "the bar holds what is live, outside every view, so it persists over all of them");
+    /* 23 Oct 2026, his word: the Desk's bar no longer says where you are, as Salt Admin's has not since 22 Oct */
+    const noWhere = () => !D.getElementById("deskWhere") && !D.getElementById("dwView") && !D.getElementById("dwPage") && !bar.querySelector(".salt-deskbar__where");
+    ok(noWhere(), "and no where-you-are");
     w.eval("switchTab('financials')");
-    ok(txt("dwView") === "Money" && txt("dwPage") === w.eval("TAB_LABEL.financials"), "and the destination: " + JSON.stringify([txt("dwView"), txt("dwPage")]));
-    w.eval("switchTab('today')");
-    ok(txt("dwView") === "Today" && txt("dwPage") === "", "a destination of one page names no page: " + JSON.stringify([txt("dwView"), txt("dwPage")]));
+    ok(noWhere(), "nor does a move to another view draw one");
 
     const now = live.querySelector('[data-dl="now"]'), want = w.eval("railCounts().today") || 0;
     ok(!!now && now.querySelector(".salt-deskbar__n").textContent === String(want),

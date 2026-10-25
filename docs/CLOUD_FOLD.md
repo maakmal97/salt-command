@@ -122,7 +122,7 @@ tool in `tools/`, the test suite, and `master/_to_fold.json` if there was anythi
    `ledger.mjs` re-reads the folded master in jsdom and rewrites `ledger/ledger.json`, the
    extract the D1 seed is built from; the test suite compares it against `ledger/book.json` on
    every key, so a fold that skips it leaves a stale extract and fails CI. The build writes
-   `public/desk.html`, `public/data.json` and `public/rev.json`; commit all four with the book
+   `public/desk.html` and `public/rev.json`; commit both with the book
    and the master.
 
 6. **Commit and push.** Say plainly what was folded, what was refused and why, and any figure you

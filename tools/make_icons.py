@@ -2,10 +2,11 @@
 
 The salt crystal from the desk's own inline favicon: a diamond with a gold
 top-right face and a violet lower-left face over a cyan body, on the desk's dark ground.
-Rendered at 4x and downscaled so the facets have clean edges. Run: python tools/make_icons.py
+Rendered at 4x and downscaled so the facets have clean edges. Run: python tools/make_icons.py (all), or with --tab for the clear-ground tab icon alone
 """
 from PIL import Image, ImageDraw
 import os
+import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "..", "public")
@@ -71,8 +72,27 @@ def make(size, maskable=False):
     return img
 
 
+def make_tab(size=128):
+    """The browser tab's icon (24 Oct 2026, his word: no dark background): the crystal alone on a clear ground, no
+    rounded tile and no glow, drawn larger in its canvas so it reads at 16 px. The home-screen icons above keep their
+    ground, which iOS would fill black anyway."""
+    S4 = size * SS
+    img = Image.new("RGBA", (S4, S4), (0, 0, 0, 0))
+    frac = 0.92
+    img = Image.alpha_composite(img, _layer(size, BODY,  S4, frac, CYAN,   235))
+    img = Image.alpha_composite(img, _layer(size, FGOLD, S4, frac, GOLD,   255))
+    img = Image.alpha_composite(img, _layer(size, FVIOL, S4, frac, VIOLET, 140))
+    return img.resize((size, size), Image.LANCZOS)
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
+    if "--tab" in sys.argv:
+        # only the tab icon: rewriting the others would move bytes the manifest and the shell cache already hold
+        p = os.path.normpath(os.path.join(OUT, "icon-tab.png"))
+        make_tab().save(p)
+        print("wrote", p, os.path.getsize(p), "bytes")
+        return
     jobs = [("icon-180.png", 180, False), ("icon-192.png", 192, False),
             ("icon-512.png", 512, False), ("icon-512-maskable.png", 512, True)]
     for name, size, mask in jobs:

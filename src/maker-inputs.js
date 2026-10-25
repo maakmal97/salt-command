@@ -361,7 +361,7 @@ export function makerTradeReading(body, book) {
   return reading;
 }
 
-/* 15 Oct 2026 (plan 1, parts 3 and 4): WHAT IS OWED, BOTH WAYS, as Salt Account's Needs you shows it, read off the engine so the Counter computes
+/* 15 Oct 2026 (plan 1, parts 3 and 4): WHAT IS OWED, BOTH WAYS, as Salt Admin's Needs you shows it, read off the engine so the Counter computes
    nothing. Money: a sale's txAdvance (goods handed over and not paid for), from txUnpaidSince, due that day plus TERMS.holdDays, and past term
    once that day is behind today in Kuala Lumpur; summed per party, the oldest first. Goods: a sale paid in full (txStat) with units still to
    hand over, the oldest first. Each row carries its ovKey, so the page finds the site order it belongs to. Codes and figures only (rule 2). */
