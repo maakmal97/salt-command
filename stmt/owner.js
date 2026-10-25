@@ -3339,6 +3339,7 @@ export const OWNER_JS = `
     'new-customer':'Name and place locked on this phone first.','make-an-associate':'Their name and place stay as they are.','change-a-name-or-place':'The code changes only with them.',
     'place-on-the-map':'Keep the filed point, or file a new link.','their':'One customer off the Set Price, every book.','partner':'Pays the Floor on every book.',
     'printed-sizes':'Sizes on the printed price list.','desk-reminders':'Hide a reminder for a while.'};
+  var PRICING_ORDER=['their','partner','printed-sizes','desk-reminders'];
   function menuCount(slug,n){
     var row=document.querySelector('#makerMenu [data-act="record.form"][data-key="'+slug+'"] .mfig');
     if(row) row.textContent=n>0?String(n):'';
@@ -3379,6 +3380,8 @@ export const OWNER_JS = `
       have.forEach(function(s){ seen[s]=1; lists.entry.appendChild(entryRows[s]); });
     });
     Object.keys(entryRows).forEach(function(s){ if(!seen[s]) lists.entry.appendChild(entryRows[s]); });
+    /* 25 Oct 2026 (Record redesign P8, his Ask G): Pricing leads with the form he uses most; a form not named keeps its place after them, and one that is not drawn is passed over */
+    PRICING_ORDER.slice().reverse().forEach(function(s){ var row=lists.pricing.querySelector('[data-key="'+s+'"]'); if(row) lists.pricing.insertBefore(row,lists.pricing.firstChild); });
     /* PHASE 4a (12 Oct 2026): THE FORM OPEN IS A PANE. The retained input and the menu are one column and the forms the pane beside it, moved into
        them and never drawn again; the grid is one column below 860px, where the form takes the menu's place and has its way back. */
     var grid=el('div','recgrid'), list=el('div','reclist'), pane=el('div','recpane');
