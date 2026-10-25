@@ -180,6 +180,13 @@
   new reads `/all/maker/customer-of|reward-of/<code>` (Fable reviewed: one low finding stated, one withdrawn). Full suite on the merged tree: 10,638 passed,
   7 red (the S1 fold replay). Not yet opened by him.
 
+## Salt Admin Orders redesign
+- Live as v1256 (`c4d677a6`, 26 Oct 2026; Cloud commit `40228185174`: chain and three suite parts green, CI `40228185236` green, live /rev `bc69bd8338333eba`), from his
+  canvas https://claude.ai/artifact/VNtoVjEo111nKYDbBzc487 and `docs/plan-admin-orders.html` (his yes to Asks A to M): the stages Placed, Agreed, Ready, Out or paid, Done,
+  Ended as text tabs; the row is Needs you's card, a plain table from 1080px; the row's move asks once and sends the order card's own request (section "a row's move
+  asks once"); the band's tag, terms in view; typed tags on Approve, Payments, Group and Ledger; a ticked Reject the danger pill (salt-ds#29, 1.17.0). Kept: Approve's
+  card with cost and margin (hard rule), "Change the order" (Ready has two ways), marks on form fields (Record's). Not yet opened by him.
+
 ## Salt Admin Shop redesign
 - Live as v1254 (`7eb0e296`, 26 Oct 2026; Cloud commit `40214884137`: chain and three suite parts green, live /rev `88e6f50b08fc1cc3`), from his Shop canvas
   https://claude.ai/artifact/TrC768miLDPZb7U5wWciBQ and `docs/plan-admin-shop.html` (his yes to every Ask, Ask H both halves): For now first and folded, the glance tiles,
