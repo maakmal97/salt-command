@@ -2480,7 +2480,7 @@ export const OWNER_JS = `
         offerLists.customer.textContent=''; offerLists.reward.textContent='';
         offerStatus.textContent='';
         read.offers.forEach(function(offer){
-          var kind=offer.associate===false?'customer':'reward', row=listCard('maker-offer',units(offer.units)+' off · order of '+(fmtWhen(offer.saleDate)||'an undated day'),offer.code,rmShort(offer.rm));
+          var kind=offer.associate===false?'customer':'reward', row=listCard('maker-offer',units(offer.units)+' off · '+(fmtWhen(offer.saleDate)||'undated'),offer.code,rmShort(offer.rm));
           row.setAttribute('data-key',offer.rid);
           cardPill(makerButton(row._go,['Add','record.offset.send'],async function(send){
             offerStatus.textContent='Sending.';

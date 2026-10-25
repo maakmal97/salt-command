@@ -48,7 +48,8 @@ export async function run({ ok, pageWork }) {
     const css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
     ok(/\.adm \.reading-rows \.salt-ledger__label\{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis\}/.test(css) && /\.adm \.reading-rows \.salt-ledger__value\{flex:none;white-space:nowrap/.test(css)
       && /\.adm \.reading-rows \.salt-ledger__flag\{white-space:nowrap;overflow:hidden;text-overflow:ellipsis\}/.test(css) && /\.adm \.maker-cover__fig\{flex:none;white-space:nowrap/.test(css)
-      && /\.adm \.maker-cover__words,\.adm \.maker-cover__held\{display:block;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis\}/.test(css),
+      && /\.adm \.maker-cover__words,\.adm \.maker-cover__held\{display:block;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis\}/.test(css)
+      && /\.adm \.maker-cover-row \.maker-cover\{flex:1 1 auto;min-width:0\}/.test(css),
       "a reading row and the cover are one line each, the figure never cut and the words an ellipsis at most");
   } finally { p.w.close(); }
 }

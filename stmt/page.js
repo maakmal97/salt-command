@@ -718,6 +718,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-marks .salt-option__face{justify-content:center}
 .adm .maker-sizes{flex:1 1 100%;min-width:0}
 .adm .maker-sizes .salt-options__grid{grid-template-columns:repeat(auto-fill,minmax(88px,1fr))}
+.adm .maker-sizes .salt-option__label{flex-wrap:nowrap;white-space:nowrap}
 .adm .maker-cover{display:flex;align-items:center;gap:10px;min-height:44px}
 .adm .maker-cover input{width:44px;height:44px;min-width:44px;min-height:44px;accent-color:var(--salt-brass)}
 .adm .maker-cover-row{display:flex;align-items:center;gap:10px}
@@ -756,7 +757,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .reading-rows .salt-ledger__value{flex:none;white-space:nowrap;text-align:right}
 .adm .reading-rows .salt-ledger__flag{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .reading-rows .reading-bad{color:var(--salt-ember)}
-.adm .maker-cover-row .maker-cover{flex:1 1 auto}
+.adm .maker-cover-row .maker-cover{flex:1 1 auto;min-width:0}
 .adm .maker-cover-row button{flex:none;min-width:var(--salt-tap);min-height:var(--salt-tap)}
 .adm .maker-drift-actions{display:flex;flex-wrap:wrap;gap:8px}
 .adm .maker-drift-actions button{min-width:var(--salt-tap);min-height:var(--salt-tap)}
@@ -1017,10 +1018,14 @@ body.ended>*:not(#aEnded){display:none}
 .adm .maker-input>.maker-field--short{grid-column:auto;min-width:0}
 .adm .maker-field>.lbl{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .maker-input input[type=number]{text-align:right}
-.adm .maker-input>.btn.salt-pill{width:100%;height:48px;margin-top:16px}
-@media (min-width:860px){.adm .maker-input>.btn.salt-pill{width:240px;justify-self:end}}
+.adm .maker-input>.btn.salt-pill{width:100%;height:48px;margin-top:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (min-width:860px){.adm .maker-input>.btn.salt-pill{width:auto;min-width:240px;max-width:100%;justify-self:end}}
 .adm .maker-input.unsent{display:flex;flex-direction:column;gap:10px;margin:0 0 10px}
 .adm .unsent-open{display:flex;flex-direction:column;gap:10px}
+.adm .unsent-card .need-tap{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:8px;width:100%;min-width:0;cursor:pointer;font:inherit;color:inherit}
+.adm .unsent-card .need-tap::after{content:"";position:absolute;inset:0}
+.adm .unsent-card .need-tap:focus-visible::after{outline:2px solid var(--salt-brass);outline-offset:2px;border-radius:inherit}
+.adm .unsent-card>.salt-action__go{position:relative;z-index:1}
 .adm .unsent-open[hidden]{display:none}
 .adm .unsent-ways{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .adm .unsent-ways>button{min-width:0;height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

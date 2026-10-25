@@ -32,7 +32,7 @@ export async function run({ ok, pageWork }) {
       "a reward held is the one card, its kind, the code, one short pill speaking its full words, and the units held; nothing to give, no pill: " + J(got));
     /* 2 */
     const off = form("offsets").querySelector(".maker-offer");
-    ok(!!off && J(read(off)) === J([true, S, "1 unit off · order of 01 Oct 2026", "AX1-ZED", [["Add", "Add 1 unit off the order of 01 Oct 2026 for AX1-ZED", true]], "RM 100"]),
+    ok(!!off && J(read(off)) === J([true, S, "1 unit off · 01 Oct 2026", "AX1-ZED", [["Add", "Add 1 unit off the order of 01 Oct 2026 for AX1-ZED", true]], "RM 100"]),
       "an offset offered is the same card, its units and the order's day, the code, Add speaking what it adds, and its ringgit: " + J(off && read(off)));
     /* 3 */
     const rp = form("repayment"), left = () => [...rp.querySelectorAll(".repay-left .salt-ledger__row span")].map(t).join(" | ");

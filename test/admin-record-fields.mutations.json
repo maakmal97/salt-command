@@ -7,6 +7,6 @@
  {"name":"a label may wrap","file":"stmt/page.js","find":".adm .maker-field>.lbl{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}","replace":".adm .maker-field>.lbl{display:block}"},
  {"name":"a figure is not in mono","file":"stmt/owner.js","find":"input.inputMode='decimal'; input.classList.add('salt-field__input--mono'); }","replace":"input.inputMode='decimal'; }"},
  {"name":"a figure is set left","file":"stmt/page.js","find":".adm .maker-input input[type=number]{text-align:right}","replace":""},
- {"name":"the pill keeps the browser's width","file":"stmt/page.js","find":".adm .maker-input>.btn.salt-pill{width:100%;height:48px;margin-top:16px}","replace":""},
- {"name":"the pill crosses the pane too","file":"stmt/page.js","find":"@media (min-width:860px){.adm .maker-input>.btn.salt-pill{width:240px;justify-self:end}}","replace":""}
+ {"name":"the pill keeps the browser's width","file":"stmt/page.js","find":".adm .maker-input>.btn.salt-pill{width:100%;height:48px;margin-top:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}","replace":""},
+ {"name":"the pill crosses the pane too","file":"stmt/page.js","find":"@media (min-width:860px){.adm .maker-input>.btn.salt-pill{width:auto;min-width:240px;max-width:100%;justify-self:end}}","replace":""}
 ]

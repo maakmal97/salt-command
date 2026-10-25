@@ -43,7 +43,7 @@ export async function run({ ok, pageWork }) {
     /* 5 */
     const send = byAct(trade, "record.trade.send");
     ok(!!send && send.parentElement === trade && send.classList.contains("salt-pill") && send.classList.contains("btn")
-      && /\.adm \.maker-input>\.btn\.salt-pill\{width:100%;height:48px/.test(outside) && /@media \(min-width:860px\)\{\.adm \.maker-input>\.btn\.salt-pill\{width:240px;justify-self:end\}\}/.test(css),
-      "a form's one pill crosses its foot on a phone and stands 240px at its right edge from 860px");
+      && /\.adm \.maker-input>\.btn\.salt-pill\{width:100%;height:48px;margin-top:16px;white-space:nowrap/.test(outside) && /@media \(min-width:860px\)\{\.adm \.maker-input>\.btn\.salt-pill\{width:auto;min-width:240px;max-width:100%;justify-self:end\}\}/.test(css),
+      "a form's one pill crosses its foot on a phone, one line, and from 860px stands at its right edge, 240px at least");
   } finally { p.w.close(); }
 }

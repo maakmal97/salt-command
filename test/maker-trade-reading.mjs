@@ -130,7 +130,7 @@ export async function run({ ok, pageWork }) {
       const row = (label) => { const r = box.querySelector('[data-reading="' + label + '"]'); return r ? [r.querySelector(".salt-ledger__value").textContent, (r.querySelector(".salt-ledger__flag") || { textContent: "" }).textContent] : null; };
       page.change("Units", "3"); page.change("Price (goods)", "100"); await page.work.quiet();
       const warn = [...box.querySelectorAll("p.msg.bad")].map((p) => p.textContent).join("|"), margin = row("Margin over cost") || [""];
-      ok(!box.hidden && (row("Cost a unit") || [])[0] === "RM 42.00" && /^(-RM 26[.]00|RM -26[.]00)/.test(margin[0]) && box.querySelector('[data-reading="Margin over cost"] .reading-bad')
+      ok(!box.hidden && (row("Cost a unit") || [])[0] === "RM 42.00" && /^(-RM 26[.]00|RM -26[.]00) · -26%$/.test(margin[0]) && box.querySelector('[data-reading="Margin over cost"] .reading-bad')
         && (row("Floor for 3 units") || [])[0] === "RM 130.00" && /RM 30 under the Floor of RM 130/.test(warn)
         && (row("Their usual a unit") || [])[0] === "RM 140.00" && /^3 orders/.test((row("Their usual a unit") || ["", ""])[1]),
       "trade reading page: before Send the form shows cost, margin (a loss in ember), the floor, a warning under it and their usual " + text());

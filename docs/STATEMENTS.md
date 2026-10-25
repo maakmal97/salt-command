@@ -1901,6 +1901,19 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   (between 860 and 1080px its height gives up the App bar's, as Orders' card does), Record widens for its forms (the rows to approve, under Orders, keep their 600px column)
   and the way back is not drawn. **Below 860px** the form open takes the menu's place and has its way back, and the pane's invitation to choose one is not
   drawn. `sweep` no longer hides the menu while a form is open: the CSS decides by width, as it does for Orders.
+- **Record on the Salt Commodities system** (25 Oct 2026, his canvas Salt Admin Record and his answers to its Asks A to N, K declined;
+  `test/admin-record-*.mjs`, each with its mutations). **The parts** are the Nav bar's text tab row (`ADMIN_NAVS`, never the slider), the count of what waits
+  unsent on this phone in a part beside its word (`unsentParts`). **A form's row** is its name, one line saying what it is for (`FORM_WHAT`), a count where the
+  read that drew the menu holds one (`menuCount`: loans, rewards to give, cancelled orders, the offsets once read) and the way in. **An unsent entry** is Needs
+  you's card under Unsent on this phone: kind and age, the typed book and the code, one pill, Resend (spoken Send again), the figure; a tap on the card opens the
+  sentence, the one unlock where it holds a name or place, Update and send and Discard. **Every form** is two columns at every width (a number, a date and the
+  sale's Who beside the next), its books typed Product tags, three short choices on one row, a label one line, every figure mono and right, its one pill across
+  the foot on a phone and at its right edge from 860px. **The sale** has its resale choice before Who (tiles No, Resells, Introduced, the full words spoken), its
+  reading a ledger (cost a unit, goods a unit, margin over cost, the Floor, their usual; a loss in ember), its reward cover one row with its figure. **Correct a
+  row** names a row by reference, who and when, stands the row chosen as a card, has What to do as tiles carrying their notes (`KINDD`) and the changes made
+  ready as a ledger; Reopen does the same. **Rewards and Offsets** are cards with one short pill speaking its full words; Repayment says what is left on the loan.
+  **New customer** shows the code it will get (`makerDerivedCode`, as it is sent) and Change a name or place the code after; Other % stays a fraction. **Pricing**
+  leads with Their % (`PRICING_ORDER`, passing over a form not drawn). No route, body, request id or retained send changed.
   **The few, fixed choices of a form are the system's Option tiles** (Phase 4a, 12 Oct 2026, `test/admin-tiles.mjs`, its mutations in
   `test/admin-tiles.mutations.json`): where a form asked in a `<select>` for a book, a direction, a handover, a kind of entry, a role, a starting %, a
   stream or a time to hide a reminder, it asks in `makerTiles` (`stmt/owner.js`), a fieldset (`salt-options maker-tiles`) whose legend is the field's label and

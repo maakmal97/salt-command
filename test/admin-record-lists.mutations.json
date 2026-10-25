@@ -5,7 +5,7 @@
  {"name":"a short pill speaks only its word","file":"stmt/owner.js","find":"if(said) b.setAttribute('aria-label',said); return b; };","replace":"return b; };"},
  {"name":"the pill keeps the form's size","file":"stmt/owner.js","find":"b.classList.remove('btn','salt-pill--md'); b.classList.add('salt-pill--sm','nbtn');","replace":""},
  {"name":"an offset's figure is left off","file":"stmt/owner.js","find":"offer.code,rmShort(offer.rm));\n          row.setAttribute('data-key',offer.rid);","replace":"offer.code,'');\n          row.setAttribute('data-key',offer.rid);"},
- {"name":"an offset's day is left off its kind","file":"stmt/owner.js","find":"listCard('maker-offer',units(offer.units)+' off · order of '+(fmtWhen(offer.saleDate)||'an undated day')","replace":"listCard('maker-offer',units(offer.units)+' off'"},
+ {"name":"an offset's day is left off its kind","file":"stmt/owner.js","find":"listCard('maker-offer',units(offer.units)+' off · '+(fmtWhen(offer.saleDate)||'undated')","replace":"listCard('maker-offer',units(offer.units)+' off'"},
  {"name":"nothing is said of what is left on the loan","file":"stmt/owner.js","find":"    repayLoan.addEventListener('change',drawLeft); drawLeft();","replace":""},
  {"name":"what is left does not follow the choice","file":"stmt/owner.js","find":"    repayLoan.addEventListener('change',drawLeft); drawLeft();","replace":"    drawLeft();"},
  {"name":"the cards touch","file":"stmt/page.js","find":".adm .maker-rewards,.adm .maker-offers{display:flex;flex-direction:column;gap:10px}","replace":".adm .maker-rewards,.adm .maker-offers{display:flex;flex-direction:column}"}

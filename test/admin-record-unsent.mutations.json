@@ -7,5 +7,7 @@
  {"name":"Discard does not refuse in its colour","file":"stmt/owner.js","find":"index?'salt-ghost'+(index===2?' salt-ghost--danger':''):'salt-pill salt-pill--sm nbtn'","replace":"index?'salt-ghost':'salt-pill salt-pill--sm nbtn'"},
  {"name":"the second choices stand on the card","file":"stmt/owner.js","find":"};(index?ways:go).appendChild(button);","replace":"};go.appendChild(button);"},
  {"name":"the card opened says nothing of it","file":"stmt/owner.js","find":"          tap.addEventListener('click',function(){ shut(open.hidden); });\n","replace":""},
+ {"name":"only the code is the tap","file":"stmt/page.js","find":".adm .unsent-card .need-tap::after{content:\"\";position:absolute;inset:0}","replace":""},
+ {"name":"the tap covers the pill","file":"stmt/page.js","find":".adm .unsent-card>.salt-action__go{position:relative;z-index:1}","replace":""},
  {"name":"the card beside the menu takes the wide pill","file":"stmt/page.js","find":".adm .reclist .ncard .nbtn{width:72px;min-width:72px;max-width:72px;padding:0 4px}","replace":".adm .reclist .ncard .nbtn{width:120px;min-width:120px;max-width:120px;padding:0 4px}"}
 ]
