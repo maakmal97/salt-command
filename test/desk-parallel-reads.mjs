@@ -107,8 +107,8 @@ export async function run({ ok }) {
     && d.j.clock.committedAt === "c" && d.j.clock.liveAt === "b", "and answers as it did: " + J(d.j));
   const ds = fakeDb({ sale: true });
   const s = await get(envOf(ds), "/drafts");
-  ok(s.status === 200 && s.j.count === 1 && ds.grp.wrbk,
-    "with a pending sale it asks the approved amendments while the book is being read, not before it: " + J([s.status, s.j.count, ds.grp.wrbk]));
+  ok(s.status === 200 && s.j.count === 1 && !ds.grp.wrbk,
+    "with a pending sale it reads the book first and the approved amendments after it, by that book's own bound (S3, 25 Oct 2026): " + J([s.status, s.j.count, ds.grp.wrbk]));
   const fl = await get(envOf(fakeDb({ refusedFails: true, yesFails: true })), "/drafts");
   ok(fl.status === 200 && fl.j.count === 0 && J(fl.j.refused) === "[]" && !!fl.j.clock,
     "a store lacking the refused list and the live yes still answers the drafts and the clock: " + J(fl.j));
