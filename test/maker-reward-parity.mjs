@@ -152,7 +152,7 @@ export async function run({ ok, pageWork }) {
     await ui.work.quiet();
     const cover = () => trade.querySelector("[data-reward-cover]");
     ok(cover() && !cover().parentNode.hidden && !cover().checked
-      && trade.textContent.includes("Use 0.75 unit of their reward: RM 30.00 off")
+      && /Use 0[.]75 unit of their reward.*RM 30[.]00 off/.test(trade.textContent)
       && wd.nativeCover.kg === 0.75 && wd.nativeCover.rm === 30,
     "generated cover is unticked and matches the native own-card gap at cost, delivery excluded");
     ui.set(trade, "Price (goods)", String(wd.ask)); await ui.work.quiet();
@@ -254,7 +254,7 @@ export async function runExtra({ ok, pageWork }) {
     extraUi.set(extra, "Price (goods)", String(extraCase.ask - 30));extraUi.set(extra, "Units handed over", "1");
     await extraUi.work.quiet();
     const check = extra.querySelector("[data-reward-cover]");
-    ok(!check.parentNode.hidden && !check.checked && /Use 0.75 unit of their reward: RM 30.00 off/.test(extra.textContent),
+    ok(!check.parentNode.hidden && !check.checked && /Use 0[.]75 unit of their reward.*RM 30[.]00 off/.test(extra.textContent),
       "the generated extra-book control offers native unticked cover when salt is not the trip carrier");
     check.checked = true;button(trade, "Send the sale").click();await extraUi.work.quiet();
     const drafts = extraCase.drafts();

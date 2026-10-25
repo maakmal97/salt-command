@@ -721,6 +721,16 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-cover{display:flex;align-items:center;gap:10px;min-height:44px}
 .adm .maker-cover input{width:44px;height:44px;min-width:44px;min-height:44px;accent-color:var(--salt-brass)}
 .adm .maker-cover-row{display:flex;align-items:center;gap:10px}
+.adm .maker-cover__said{display:flex;flex-direction:column;gap:2px;flex:1 1 auto;min-width:0}
+.adm .maker-cover__words,.adm .maker-cover__held{display:block;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .maker-cover__held:empty{display:none}
+.adm .maker-cover__fig{flex:none;white-space:nowrap;font-family:var(--salt-font-mono);font-variant-numeric:tabular-nums}
+.adm .reading-head{margin:12px 0 0}
+.adm .reading-rows .salt-ledger__line{align-items:baseline}
+.adm .reading-rows .salt-ledger__label{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .reading-rows .salt-ledger__value{flex:none;white-space:nowrap;text-align:right}
+.adm .reading-rows .salt-ledger__flag{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .reading-rows .reading-bad{color:var(--salt-ember)}
 .adm .maker-cover-row .maker-cover{flex:1 1 auto}
 .adm .maker-cover-row button{flex:none;min-width:var(--salt-tap);min-height:var(--salt-tap)}
 .adm .maker-drift-actions{display:flex;flex-wrap:wrap;gap:8px}

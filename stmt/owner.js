@@ -2183,7 +2183,7 @@ export const OWNER_JS = `
         :list.length===3&&brief?' maker-row maker-row--3':list.length!==3&&brief?' salt-options__grid--2':'');
       list.forEach(function(item,i){
         var lab=el('label','salt-option'), radio=el('input','salt-option__input'), face=el('span','salt-option__face');
-        radio.type='radio'; radio.name=name; radio.value=String(item.value);
+        radio.type='radio'; radio.name=name; radio.value=String(item.value); if(item.aria) radio.setAttribute('aria-label',item.aria);
         actOn(radio,L[1],(L[2]?L[2]+'-':'')+(String(item.value)===''?'none':item.value));
         radio.checked=offered?String(item.value)===kept:(!none&&i===0);
         if(item.mark) face.appendChild(productTag(item.mark)); else face.appendChild(el('span','salt-option__label',item.label));   /* a book's tile is its typed tag on Salt Admin (his decision of 22 Oct 2026; Record from 25 Oct) */
@@ -3402,12 +3402,14 @@ export const OWNER_JS = `
       var handover=makerTilesIn(tradeSection,['Handover','record.trade.handover'],[{value:'',label:'Not yet'},{value:'collected',label:'Collected'},{value:'delivered',label:'Delivered'}]);
       var carriage=makerField(tradeSection,['Delivery','record.trade.delivery'],'number','0','0.01');
       var attribution=el('div','maker-trade-attribution');
-      var tradeStream=makerTilesIn(attribution,['Through an associate?','record.trade.stream'],[{value:'',label:'No'},{value:'R2',label:'They resell'},{value:'R3',label:'They introduced the buyer'}]);
+      var tradeStream=makerTilesIn(attribution,['Through an associate?','record.trade.stream'],[{value:'',label:'No'},{value:'R2',label:'Resells',aria:'They resell'},{value:'R3',label:'Introduced',aria:'They introduced the buyer'}]);
       var tradeAssoc=actOn(el('select','fld salt-field__input salt-field__select'),'record.trade.associate'), tradeDown=actOn(el('select','fld salt-field__input salt-field__select'),'record.trade.end-customer');
       var assocLabel=el('label','maker-field','Which associate'), downLabel=el('label','maker-field','Their customer (optional)');
       assocLabel.appendChild(tradeAssoc); downLabel.appendChild(tradeDown);
       attribution.appendChild(assocLabel); attribution.appendChild(downLabel);
-      var attributionNote=el('p','msg'); attribution.appendChild(attributionNote); tradeSection.appendChild(attribution);
+      var attributionNote=el('p','msg'); attribution.appendChild(attributionNote);
+      /* 25 Oct 2026 (Record redesign P4, his Ask D): the resale choice stands before Who, since it says what Who is (hidden for a resale, Buyer for an introduction) */
+      tradeSection.insertBefore(attribution,partyLabel);
       function fillAttribution(){
         var isSale=direction.value==='sale', stream=isSale?tradeStream.value:'', r2=stream==='R2', kept=tradeAssoc.value;
         attribution.hidden=!isSale; assocLabel.hidden=!stream; downLabel.hidden=!r2;
@@ -3433,13 +3435,14 @@ export const OWNER_JS = `
         /* 11 Oct 2026: a read never collapses a box it has shown (a tap on Send after typing blurs the field, the change
            re-reads, and a box that hid moved Send up before the finger lifted: no click). Only an answer of no cover hides it;
            a failed read keeps it, dead, with its note and a Read cover again beside it. */
-        var row=el('div','maker-cover-row'), wrap=el('label','maker-cover'), check=actOn(el('input'),acts[0]), words=el('span'),
+        var row=el('div','maker-cover-row'), wrap=el('label','maker-cover'), check=actOn(el('input'),acts[0]), words=el('span','maker-cover__words'), fig=el('span','maker-cover__fig'), held=el('span','maker-cover__held'),
           retry=actOn(el('button','salt-ghost','Read again'),acts[1]), note=el('p','msg'), revision=0;
         check.type='checkbox';check.setAttribute('data-reward-cover','');check.disabled=true;retry.type='button';retry.hidden=true;
-        wrap.hidden=true;wrap.appendChild(check);wrap.appendChild(words);row.appendChild(wrap);row.appendChild(retry);
+        var said=el('span','maker-cover__said'); said.appendChild(words); said.appendChild(held);
+        wrap.hidden=true;wrap.appendChild(check);wrap.appendChild(said);wrap.appendChild(fig);row.appendChild(wrap);row.appendChild(retry);
         root.appendChild(row);root.appendChild(note);
         async function readCoverChoice(){
-          var ticket=++revision;check.checked=false;check.disabled=true;retry.hidden=true;note.textContent='';
+          var ticket=++revision;check.checked=false;check.disabled=true;retry.hidden=true;note.textContent='';fig.textContent='';held.textContent='';
           if(direction.value!=='sale'||tradeStream.value==='R2'||goodsControl.value===''||!(Number(unitsControl.value)>0)){wrap.hidden=true;return;}
           if(wrap.hidden)note.textContent='Reading.';else words.textContent='Checking.';
           try{
@@ -3448,7 +3451,8 @@ export const OWNER_JS = `
             if(ticket!==revision||!root.isConnected)return;
             note.textContent='';
             if(result.cover){
-              words.textContent='Use '+units(result.cover.units)+' of their reward: '+rm(result.cover.rm)+' off (they hold '+units(result.cover.free)+')';
+              /* 25 Oct 2026 (Record redesign P4): the use in words, the figure at the right, what they hold under it */
+              words.textContent='Use '+units(result.cover.units)+' of their reward'; fig.textContent=rm(result.cover.rm)+' off'; held.textContent='They hold '+units(result.cover.free);
               check.disabled=false;wrap.hidden=false;
             }else wrap.hidden=true;
           }catch(error){
@@ -3469,6 +3473,16 @@ export const OWNER_JS = `
       var readingBox=el('div','maker-reading'), readingRevision=0;
       readingBox.setAttribute('aria-live','polite'); readingBox.hidden=true; tradeSection.appendChild(readingBox);
       function readingLine(text,bad){ var p=el('p',bad?'msg bad':'msg',text); readingBox.appendChild(p); return p; }
+      /* 25 Oct 2026 (Record redesign P4, his Ask E): the reading is a ledger, the label and its figure on one line, what stands behind the figure under it; the same facts
+         as the sentences were, and a loss in ember */
+      var readingRows=null;
+      function readingRow(label,value,flag,bad){
+        if(!readingRows||!readingRows.isConnected){ readingBox.appendChild(el('h4','salt-eyebrow salt-eyebrow--copper reading-head','Reading')); readingRows=el('div','salt-ledger reading-rows'); readingBox.appendChild(readingRows); }
+        var row=el('div','salt-ledger__row'), line=el('div','salt-ledger__line');
+        row.setAttribute('data-reading',label);
+        line.appendChild(el('span','salt-ledger__label',label)); line.appendChild(el('span','salt-ledger__value'+(bad?' reading-bad':''),value));
+        row.appendChild(line); if(flag) row.appendChild(el('span','salt-ledger__flag',flag)); readingRows.appendChild(row); return row;
+      }
       async function readTrade(){
         var ticket=++readingRevision, isSale=direction.value==='sale';
         readingBox.textContent='';
@@ -3481,24 +3495,25 @@ export const OWNER_JS = `
         try{
           var got=(await refs('/all/maker/trade-reading',ask)).reading;
           if(ticket!==readingRevision||!readingBox.isConnected)return;
-          readingBox.textContent='';
+          readingBox.textContent=''; readingRows=null;
           var c=got.cogs||{};
-          readingLine(c.rate==null?'No cost to read against.':'Cost a unit '+rm(c.rate)+', from '+c.source+'.');
+          if(c.rate==null) readingLine('No cost to read against.'); else readingRow('Cost a unit',rm(c.rate),'From '+c.source+'.');
           if(!isSale){
-            if(got.purchase.versusCogs!=null)readingLine('This buy costs '+rm(got.purchase.perUnit)+' a unit, '+(got.purchase.versusCogs>=0?rm(got.purchase.versusCogs)+' above':rm(-got.purchase.versusCogs)+' under')+' the current cost.');
+            if(got.purchase.versusCogs!=null)readingRow('This buy, a unit',rm(got.purchase.perUnit),(got.purchase.versusCogs>=0?rm(got.purchase.versusCogs)+' above':rm(-got.purchase.versusCogs)+' under')+' the current cost.');
             return;
           }
-          if(got.margin)readingLine('Goods '+rm(got.goods)+', '+rm(got.price)+' a unit: margin '+rm(got.margin.rm)+(got.margin.pct==null?'':' ('+Math.round(got.margin.pct)+'%)')+' over cost.',got.margin.belowCost);
-          if(got.margin&&got.margin.belowCost&&!(got.floor&&got.floor.warn))readingLine('Below cost: every unit loses '+rm(c.rate-got.price)+'.',true);
-          if(got.floor){
-            readingLine('Floor '+rm(got.floor.rm)+' for '+units(got.qty)+', cost times the size.');
-            if(got.floor.warn)readingLine(got.floor.warn,true);
+          if(got.margin){
+            readingRow('Goods, a unit',rm(got.price),'Goods '+rm(got.goods)+'.');
+            readingRow('Margin over cost',rm(got.margin.rm)+(got.margin.pct==null?'':' · '+Math.round(got.margin.pct)+'%'),'',got.margin.belowCost);
           }
+          if(got.floor) readingRow('Floor for '+units(got.qty),rm(got.floor.rm),'Cost times the size.');
           var h=got.history;
-          if(h)readingLine('Their usual '+rm(h.median)+' a unit over '+h.count+' order'+(h.count===1?'':'s')+', '+rm(h.low)+' to '+rm(h.high)
-            +(h.offMedianPct==null?'':'; this is '+(h.offMedianPct>=0?h.offMedianPct+'% above':(-h.offMedianPct)+'% below'))+'. Recent: '
+          if(h)readingRow('Their usual a unit',rm(h.median),h.count+' order'+(h.count===1?'':'s')+', '+rm(h.low)+' to '+rm(h.high)
+            +(h.offMedianPct==null?'':': this is '+(h.offMedianPct>=0?h.offMedianPct+'% above':(-h.offMedianPct)+'% below'))+'. Recent: '
             +h.recent.map(function(r){return rm(r.rate);}).join(', ')+'.');
-          else if(ask.party)readingLine('No earlier price of theirs on this book.');
+          if(got.margin&&got.margin.belowCost&&!(got.floor&&got.floor.warn))readingLine('Below cost: every unit loses '+rm(c.rate-got.price)+'.',true);
+          if(got.floor&&got.floor.warn)readingLine(got.floor.warn,true);
+          if(!h&&ask.party)readingLine('No earlier price of theirs on this book.');
         }catch(error){
           if(ticket===readingRevision){readingBox.textContent='';refusal(readingLine('',true),error,'Reading not available. ');}
         }
