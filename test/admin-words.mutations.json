@@ -41,6 +41,5 @@
  {"name":"a link that could not be made keeps no error behind its note","file":"stmt/owner.js","find":"m.note='Could not make a link: '+e.message; m.err=e; linkMoved(u); });","replace":"m.note='Could not make a link: '+e.message; linkMoved(u); });"},
  {"name":"a retried link keeps the old Details","file":"stmt/owner.js","find":"if(m.fail){ m.fail=false; m.bad=false; m.note=''; m.err=null; }","replace":"if(m.fail){ m.fail=false; m.bad=false; m.note=''; }"},
  {"name":"a typed name escapes its tag","file":"stmt/owner.js","find":"    if(o.mark) title.appendChild(productTag(o.mark));\n","replace":"    if(o.mark){ title.appendChild(productTag(o.mark)); title.appendChild(document.createTextNode(o.mark)); }\n"},
- {"name":"the tag names another book","file":"stmt/owner.js","find":"t.appendChild(document.createTextNode(k.charAt(0).toUpperCase()+k.slice(1))); return t;","replace":"t.appendChild(document.createTextNode('Rice')); return t;"},
- {"name":"Needs you draws the mark in its tag","file":"stmt/owner.js","find":"    if(o.mark) title.appendChild(productTag(o.mark));\n","replace":"    if(o.mark) title.appendChild(bookTag(o.mark));\n"}
+ {"name":"the tag names another book","file":"stmt/owner.js","find":"t.appendChild(document.createTextNode(k.charAt(0).toUpperCase()+k.slice(1))); return t;","replace":"t.appendChild(document.createTextNode('Rice')); return t;"}
 ]
