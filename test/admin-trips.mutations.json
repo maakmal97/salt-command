@@ -155,12 +155,7 @@
   "find": "['Handed',t.handedLines+' of '+t.lines.length+' lines']",
   "replace": "['Handed',t.handedLines+' lines']"
  },
- {
-  "name": "a line names its book in words",
-  "file": "stmt/owner.js",
-  "find": "      p.appendChild(bookMark(l.product));\n      p.appendChild(document.createTextNode(' '+units(l.qty)",
-  "replace": "      p.appendChild(document.createTextNode(l.product));\n      p.appendChild(document.createTextNode(' '+units(l.qty)"
- },
+ {"name": "a line names its book in words", "file": "stmt/owner.js", "find": "      p.appendChild(productTag(l.product));\n      p.appendChild(document.createTextNode(' '+units(l.qty)", "replace": "      p.appendChild(document.createTextNode(l.product));\n      p.appendChild(document.createTextNode(' '+units(l.qty)"},
  {
   "name": "every line of Handover all is sent under one moment",
   "file": "stmt/owner.js",

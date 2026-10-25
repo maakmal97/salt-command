@@ -4847,7 +4847,7 @@ export const OWNER_JS = `
     t.lines.forEach(function(l){
       var row=el('div','tripline'), p=el('p','maker-facts');
       row.setAttribute('data-line',l.rid);
-      p.appendChild(bookMark(l.product));
+      p.appendChild(productTag(l.product));
       p.appendChild(document.createTextNode(' '+units(l.qty)+', '+rm(l.total)+(l.delivery>0.004?' + '+rm(l.delivery)+' delivery':'')+', handed '+String(+(+l.handed||0).toFixed(3))+' of '+units(l.qty)+(l.waiting>0?', '+(l.waiting===1?'one move':l.waiting+' moves')+' waiting under Approve':'')));
       row.appendChild(p); if(more) more(row,l); list.appendChild(row);
     });
@@ -4882,7 +4882,7 @@ export const OWNER_JS = `
     var r=e.row, key=e.id, card=makerCard(root,key), acts=el('div','maker-foot__acts'), live=!r.cancelled&&!r.writtenOff;
     card.setAttribute('data-in',e.parts); card.setAttribute('data-row',r.rid);
     var title=el('h3','');
-    title.appendChild(whoTag(el('span',null,r.party),r.party)); title.appendChild(document.createTextNode(', ')); title.appendChild(bookMark(r.product));
+    title.appendChild(whoTag(el('span',null,r.party),r.party)); title.appendChild(document.createTextNode(' ')); title.appendChild(productTag(r.product));
     title.appendChild(document.createTextNode(' '+units(r.qty)+', '+rm(r.total)+(r.delivery>0.004?' + '+rm(r.delivery):'')));
     card.appendChild(title);
     var st=r.cancelled?['mist','Cancelled','cross']:r.writtenOff?['mist','Written off','cross']:ROW_STAGE[r.stage]||['mist',String(r.stage)], head=el('p','lead');
@@ -4980,7 +4980,7 @@ export const OWNER_JS = `
     function draw(r){
       drop();
       r.split.shares.forEach(function(s){
-        var p=el('p','maker-facts'); p.setAttribute('data-share',s.rid); p.appendChild(bookMark(s.product));
+        var p=el('p','maker-facts'); p.setAttribute('data-share',s.rid); p.appendChild(productTag(s.product));
         p.appendChild(document.createTextNode(' '+s.rid+', '+rm(s.rm)+(s.rm<s.owed-0.004?' of '+rm(s.owed)+' owed':', all it owes')));
         shown.appendChild(p);
       });
@@ -5408,7 +5408,7 @@ export const OWNER_JS = `
       /* the head: the customer's code and the book's mark */
       party.appendChild(document.createTextNode(draftParty(draft)||'no code'));
       if(g.tripMoves) party.appendChild(document.createTextNode(' · '+tripMoveRows(g).length+' books, one order'));
-      else if(draft.product&&(draft.collection==='sales'||draft.collection==='purchases')){ party.appendChild(document.createTextNode(' · ')); party.appendChild(bookMark(draft.product)); }
+      else if(draft.product&&(draft.collection==='sales'||draft.collection==='purchases')){ party.appendChild(document.createTextNode(' ')); party.appendChild(productTag(draft.product)); }
       head.appendChild(party);
       card.appendChild(head);
       var kind=groupKind(g), verb=kind==='other'?entryWord(draft.entry||{}):AP_WORD[kind], fg=groupFigures(g), closed=kind==='close'?closeSay(g):'';
@@ -5416,7 +5416,7 @@ export const OWNER_JS = `
       if(fg&&fg.now) card.appendChild(nowAfter(fg));
       else if(g.tripMoves) tripMoveRows(g).forEach(function(r){
         /* each line of the order: its mark and row, then its Now and After as the Desk sent them; nothing is added up here */
-        var h=el('p','maker-facts apline'); h.appendChild(bookMark(r.product)); h.appendChild(document.createTextNode(' '+r.rid)); card.appendChild(h);
+        var h=el('p','maker-facts apline'); h.appendChild(productTag(r.product)); h.appendChild(document.createTextNode(' '+r.rid)); card.appendChild(h);
         if(r.fg) card.appendChild(nowAfter(r.fg));
       });
       else if(!draft.amends){
@@ -5909,7 +5909,7 @@ export const OWNER_JS = `
   /* NO BOOK HAS A NAME ON THIS PAGE (his word of 12 Oct 2026, "and even the name of the product", which took back decision 5 of 11 Oct): a book is its mark, with
      his letter in it, and no word for it is drawn, not the Desk's (salt, oil, candy, rice) and not the shape's (Cube, Droplet, Lozenge, Capsule). A reader is told the
      shape, as on the customer's page (pshape: a hidden .sr or an aria-label), never the product. The Desk keeps its names; this page does not. bookMark is a mark in
-     a line, bookTile mtile for a card (the mark, and under it "2.5 units"), bookTag the system's Product tag holding the mark, bookItem a tile of a form that is the
+     a line, bookTile mtile for a card (the mark, and under it "2.5 units"), bookTag the typed Product tag (Orders, since 25 Oct 2026), bookItem a tile of a form that is the
      mark alone, and pmarkHead, the customer's, a heading that is the mark alone. A select cannot hold a mark, so an option says the book's letter in brackets, [I],
      and nothing for a book with none. noBook takes a book's name out of a sentence the Desk or the Counter wrote, for the words that are not this page's to change. */
   var BOOKS=/\\b(salt|oil|candy|rice)\\b(?!\\s+(?:account|admin|counter|command|desk)\\b)/gi;
@@ -5923,10 +5923,8 @@ export const OWNER_JS = `
   function optionBook(product){ var l=bookLetter(product); return l?'['+l+'] ':''; }
   /* 12 Oct 2026 (Phase 5): A BOOK ON A ROW WEARS THE SYSTEM'S PRODUCT TAG, the book's mark in it and its own accent as its hue (PRODUCTS.accent in ledger/book.json is
      the system's --salt-product-<book> token, which the tag's modifier for the book reads). The tag holds no words; this page alone draws one. */
-  function bookTag(product){
-    var t=el('span','salt-producttag salt-producttag--'+String(product||'').toLowerCase().replace(/[^a-z]/g,'')), dot=el('span','salt-producttag__dot');
-    dot.setAttribute('aria-hidden','true'); t.appendChild(dot); t.appendChild(bookMark(product,20)); return t;
-  }
+  /* 25 Oct 2026 (canvas Salt Admin Orders): bookTag, read by Orders' Ledger, Group and Approve alone, is the typed Product tag, as Needs you's cards name a book */
+  function bookTag(product){ return productTag(product); }
   /* a quantity, its book and a sum on one line: 2 units [its tag], RM 100.00 */
   function bookLine(qty,product,total){
     var p=el('p','maker-facts');

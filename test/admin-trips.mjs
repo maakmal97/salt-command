@@ -225,9 +225,10 @@ export async function run({ ok, pageWork }) {
     ok(!!card && text(card.querySelector("h3")) === "CX9-ZED, 3 books, 14 Oct 2026" && text(card.querySelector(".salt-metrics")) === "Owed RM 271.00 Paid RM 0.00 Handed 0 of 3 lines",
       "its card's head reads owed, paid and the lines handed over across every line: " + text(card && card.querySelector(".salt-metrics")));
     const ls = card ? [...card.querySelectorAll(".tripline")] : [];
-    ok(ls.length === 3 && ls.every((l) => l.querySelector("svg.psym")) && text(ls[0].querySelector(".maker-facts")).endsWith("1 unit, RM 110.00 + RM 10.00 delivery, handed 0 of 1 unit")
-      && !/\b(salt|oil|rice)\b/i.test([...card.querySelectorAll(":scope > :not(.rdet)")].map(text).join(" ")),
-    "then one line a book, its mark, units, total and handed, and no word for a book: " + ls.map((l) => text(l.querySelector(".maker-facts"))).join(" | "));
+    const untagged = (n) => { const g = n.cloneNode(true); g.querySelectorAll(".salt-producttag").forEach((x) => x.remove()); return text(g); };
+    ok(ls.length === 3 && ls.every((l) => l.querySelector(".maker-facts .salt-producttag") && !l.querySelector(".maker-facts svg.psym")) && text(ls[0].querySelector(".maker-facts")).endsWith("1 unit, RM 110.00 + RM 10.00 delivery, handed 0 of 1 unit")
+      && !/\b(salt|oil|rice)\b/i.test([...card.querySelectorAll(":scope > :not(.rdet)")].map(untagged).join(" ")),
+    "then one line a book, its typed tag, units, total and handed, and no word for a book but in its tag: " + ls.map((l) => text(l.querySelector(".maker-facts"))).join(" | "));
     await p.tap("trip.handover", T);
     const hands = p.sent("/all/maker/inputs/ledger-amend");
     ok(J(hands.map((b) => [b.rid, b.kind, b.cash, b.movedUnits])) === J([["zt1", "Fulfilment", 0, 1], ["zt2", "Fulfilment", 0, 10], ["zt3", "Fulfilment", 0, 5]])
