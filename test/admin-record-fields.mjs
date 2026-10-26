@@ -38,7 +38,7 @@ export async function run({ ok, pageWork }) {
     const type = seg(trade, "record.trade.direction"), hand = seg(trade, "record.trade.handover"), of = seg(loan, "record.loan.form");
     ok(J(type) === J(["Type", "radiogroup", [["Sale", "radio", "sale", "true"], ["Purchase", "radio", "purchase", "false"]]])
       && J(hand) === J(["Handover", "radiogroup", [["Not yet", "radio", "none", "true"], ["Collected", "radio", "collected", "false"], ["Delivered", "radio", "delivered", "false"]]])
-      && J(of) === J(["Loan of", "radiogroup", [["Goods", "radio", "salt", "true"], ["Cash", "radio", "cash", "false"]]]) && !tileGroup(trade, "Handover"),
+      && J(of) === J(["Loan of", "radiogroup", [["Goods", "radio", "salt", "true"], ["Cash", "radio", "cash", "false"]]]) && !trade.querySelector('fieldset.maker-tiles [data-act="record.trade.handover"]'),
       "a choice of two or three plain words is a Segment in its row, each option keeping its act and key: " + J([type, hand, of]));
     const tap = (act, key) => { const c = byAct(loan, act, key); if (c) c.click(); };
     tap("record.loan.form", "cash"); await quiet();
