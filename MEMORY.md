@@ -201,6 +201,9 @@
 - v1261 (`22abfd74`, 26 Oct 2026; Cloud commit `40264069306`: chain and three suite parts green, live /rev `bff600870ad9d2e3`), his word: Practice and Notice are settings
   lists (a Practice accounts switch; Up now a row a line, Clear the notice in ember; New notice a box and Set the notice), and from 860px Practice, Notice and This device
   stand in one 640px column; salt-ds 1.19.0 (#31, the settings parts). Landed display-only (his yes of 18 Oct 2026). Not yet opened by him.
+- v1262 (`5319f9aa`, 26 Oct 2026), his word: Hours is lists of settings too (Now with Hold the shop a Switch, Hold as a Segment, Until, Set it; the week and dates as
+  list rows with the bar chart; the open day as switches and rows; points and Help as lists; the glance's tiles gone). CI's suite on v1262 found eight dead CSS rules
+  and one points check: fixed in `e88e206f` (Cloud commit `40268331943`: chain and three suite parts green). Not yet opened by him.
 
 ## Salt Admin Needs you redesign
 - Live as v1221 (`b8916ca2`, 23 Oct 2026; Cloud commit `39821813897`: chain and three suite parts green, live /rev `1e1013dcc935d44b`), from his canvas
