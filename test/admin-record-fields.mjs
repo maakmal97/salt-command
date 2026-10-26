@@ -48,7 +48,7 @@ export async function run({ ok, pageWork }) {
       "the Segment answers as the tiles did: Cash makes the loan's amount read RM, and Goods gives Units back: " + J([cashOn, segNow && segNow[2]]));
     /* 3 */
     const grid = (f, label) => { const g = tileGroup(f, label); return g ? g.querySelector(".salt-options__grid").className : null; };
-    /* the fixture offers Starting % no presets, so its two choices are a Segment and its name, not a legend, carries the book */
+    /* Starting % is a legend over its tiles, Other % a row's name: each about one book */
     const about = add ? [...add.querySelectorAll("fieldset.maker-tiles legend, .salt-settings__row .salt-settings__label")].filter((n) => n.querySelector(".salt-producttag")) : [];
     ok(grid(trade, "Book") === "salt-options__grid maker-marks" && [...tileGroup(trade, "Book").querySelectorAll(".salt-option__face")].every((f) => f.querySelector(".salt-producttag") && !f.querySelector("svg.psym"))
       && about.length === 2 && about.every((n) => n.lastElementChild.classList.contains("salt-producttag--salt") && t(n.lastElementChild) === "Salt") && !add.querySelector("legend svg.psym, legend .pwith, .salt-settings__label svg.psym"),

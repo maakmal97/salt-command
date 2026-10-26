@@ -2535,7 +2535,6 @@ export const OWNER_JS = `
   var segSeq=0;
   function makerSegRow(root,label,items){
     var L=labOf(label), row=el('div','salt-settings__row mrow'), name=el('span','salt-settings__label',L[0]), s=el('div','salt-segment salt-segment--tight mseg'), cur='', dis=false;
-    if(L[3]){ name.appendChild(document.createTextNode(' ')); name.appendChild(productTag(L[3])); }   /* a name about a book ends in its typed tag, as a legend does */
     name.id='mseg'+(++segSeq); row.appendChild(name); row.appendChild(s); makerList(root).appendChild(row);
     s.setAttribute('role','radiogroup'); s.setAttribute('aria-labelledby',name.id);
     var pick=function(v){ cur=''; [].forEach.call(s.children,function(b,i){ var on=b.getAttribute('data-value')===v; b.setAttribute('aria-checked',String(on)); if(on){ cur=v; s.style.setProperty('--i',String(i)); } }); };
@@ -2543,7 +2542,8 @@ export const OWNER_JS = `
     Object.defineProperty(s,'disabled',{ get:function(){ return dis; }, set:function(v){ dis=!!v; [].forEach.call(s.children,function(b){ b.disabled=dis; }); } });
     Object.defineProperty(s,'hidden',{ get:function(){ return row.hidden; }, set:function(v){ row.hidden=!!v; } });
     s.fill=function(list){
-      var kept=cur, offered=list.some(function(item){ return String(item.value)===kept; });
+      /* the choice kept is the option shown chosen, never the empty value before any is (For good is the empty value: the first fill falls to 7 days, as the tiles did) */
+      var on=s.querySelector('[aria-checked="true"]'), kept=on?on.getAttribute('data-value'):null, offered=list.some(function(item){ return String(item.value)===kept; });
       s.textContent=''; s.style.setProperty('--n',String(Math.max(list.length,1)));
       list.forEach(function(item){
         var b=actOn(el('button','salt-segment__opt',item.label),L[1],(L[2]?L[2]+'-':'')+(String(item.value)===''?'none':item.value));
@@ -3035,10 +3035,11 @@ export const OWNER_JS = `
     var driftBooks=books.filter(function(item){return item.drift;});
     var idDrifts=driftBooks.map(function(item){
       var presets=item.driftPresets||[];
-      var select=makerTilesIn(id,['Starting %','record.add-id.drift',item.product,item.product],[{value:'',label:'Not set'}]
+      /* 27 Oct 2026: the presets are tiles whatever their number (eleven, live), never a Segment */
+      var select=makerTiles(['Starting %','record.add-id.drift',item.product,item.product],[{value:'',label:'Not set'}]
         .concat(presets.map(function(preset){return {value:String(preset.value),
           label:preset.name};}))
-        .concat([{value:'typed',label:'Other %'}]));
+        .concat([{value:'typed',label:'Other %'}])); id.appendChild(select);
       var typed=makerField(id,['Other %','record.add-id.drift-value',item.product,item.product],'number','',0.05);
       typed.min='-0.3';typed.max='0.3';typed.removeAttribute('inputmode');typed.step='0.05';typed.placeholder='-0.3 to 0.3';typed.closest('label').hidden=true;
       select.addEventListener('change',function(){typed.closest('label').hidden=select.value!=='typed';});
