@@ -2942,6 +2942,8 @@ label.salt-field__label {
   border-top: 1px solid var(--salt-line-faint);
 }
 .salt-settings__row:first-child { border-top: 0; }
+/* a list may hold its rows in a box of their own (display: contents); while that box is empty, the next row is the first */
+.salt-settings > :empty:first-child + .salt-settings__row { border-top: 0; }
 .salt-settings__label {
   flex: 1 1 auto;
   min-width: 0;
@@ -2960,6 +2962,55 @@ label.salt-field__label {
   white-space: nowrap;
 }
 .salt-settings__row > .salt-field__input { flex: 0 1 200px; min-width: 0; box-sizing: border-box; }
+/* 1.19.0 (26 Oct 2026, the same word, for every part of his settings): a group's heading above the list and its one grey line under it,
+   as a phone's settings have them; a row that does something (opens, copies) with its mark at the right; a row that ends something, in
+   ember; a row of words alone (a notice's line), which may run to a second line; and a cell that is a whole field (a box to write in). */
+.salt-settings__head {
+  margin: 0 16px 6px;
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-xs);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--salt-mist-bright);
+}
+.salt-settings__foot {
+  margin: 6px 16px 0;
+  font-size: var(--salt-text-sm);
+  line-height: 1.45;
+  color: var(--salt-mist-bright);
+}
+.salt-settings__foot:empty { display: none; }
+.salt-settings + .salt-settings__foot + .salt-settings__head,
+.salt-settings + .salt-settings__head { margin-top: 24px; }
+.salt-settings__row--action {
+  width: 100%;
+  margin: 0;
+  background: none;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 0;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  color: var(--salt-brass);
+}
+.salt-settings__row--action:first-child { border-top: 0; }
+.salt-settings__row--action .salt-settings__label { color: inherit; }
+.salt-settings__row--action:hover .salt-settings__label, .salt-settings__row--action:focus-visible .salt-settings__label { color: var(--salt-salt); }
+.salt-settings__row--action:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: -2px; }
+.salt-settings__row--danger { color: var(--salt-ember); }
+.salt-settings__row--danger:hover .salt-settings__label, .salt-settings__row--danger:focus-visible .salt-settings__label { color: var(--salt-ember); }
+.salt-settings__row--action:disabled { opacity: 0.45; cursor: not-allowed; }
+.salt-settings__mark { flex: none; display: inline-flex; color: var(--salt-mist-bright); }
+.salt-settings__row--text .salt-settings__label { white-space: normal; overflow-wrap: anywhere; font-size: var(--salt-text-md); line-height: 1.45; }
+.salt-settings__row--muted .salt-settings__label { color: var(--salt-mist-bright); }
+.salt-settings__cell { padding: 12px 0; border-top: 1px solid var(--salt-line-faint); }
+.salt-settings__cell:first-child { border-top: 0; }
+.salt-settings__cell > .salt-field__input { display: block; width: 100%; box-sizing: border-box; background: transparent; border: 0; padding: 0; min-height: 96px; resize: vertical; }
+.salt-settings__cell > .salt-field__input:focus-visible { outline: none; }
+.salt-settings:focus-within:has(.salt-settings__cell > .salt-field__input:focus-visible) { border-color: var(--salt-brass); }
 @media (prefers-reduced-motion: reduce) {
   .salt-segment::before { transition: none; }
 }
