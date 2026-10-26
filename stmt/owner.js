@@ -2112,44 +2112,41 @@ export const OWNER_JS = `
     });
   }
   /* Up now: the first line on the recipe, a dot a line, every line in the list, the count in the chip; none, a line says so */
+  /* Up now: a row a line, in the words customers read; None while nothing is up; Clear the notice only while something is */
   function drawNoticeUp(list){
     list=list||[];
-    var cur=document.getElementById('makerBulletinCurrent'), card=document.getElementById('makerBulletinUp'), none=document.getElementById('makerBulletinNone'), n=document.getElementById('makerBulletinCount');
-    if(!cur||!card) return;
-    cur.textContent=''; list.forEach(function(l){ cur.appendChild(el('li',null,l)); });
-    var lines=card.querySelector('.salt-notice__lines'), dots=card.querySelector('.salt-notice__dots');
-    lines.textContent=''; dots.textContent='';
-    list.forEach(function(l,i){ lines.appendChild(el('p','salt-notice__line'+(i?'':' salt-notice__line--on'),l)); dots.appendChild(el('span','salt-notice__dot'+(i?'':' salt-notice__dot--on'))); });
-    card.hidden=!list.length; if(none) none.hidden=!!list.length;
-    if(n){ n.textContent=list.length?list.length+(list.length===1?' line':' lines')+' · every 6 s':'None'; }
+    var cur=document.getElementById('makerBulletinCurrent'), none=document.getElementById('makerBulletinNone'), clr=document.querySelector('[data-act="notice.clear"]'), foot=document.getElementById('makerBulletinFoot');
+    if(!cur) return;
+    cur.textContent=''; list.forEach(function(l){ var r=el('div','salt-settings__row salt-settings__row--text'); r.setAttribute('role','listitem'); r.appendChild(el('span','salt-settings__label',l)); cur.appendChild(r); });
+    if(none) none.hidden=!!list.length; if(clr) clr.hidden=!list.length; if(foot) foot.textContent=list.length?'Shown one at a time on every account.':'';
   }
   async function loadMakerBulletin(){
     var root=document.getElementById('makerBulletin'), status=document.getElementById('makerBulletinStatus');
     if(!root) return;
     var text=root.querySelector('textarea');
     if(!text){
-      /* 25 Oct 2026 (Salt Admin Shop): UP NOW, the notice as customers read it on the Counter's Notice recipe and every line numbered,
-         then NEW NOTICE, the box, Set the notice across and Clear it beside Read it again; Set and Clear still ask on the Sheet */
-      var colA=el('div','anotice-col'), colB=el('div','anotice-col'); root.appendChild(colA); root.appendChild(colB);
-      var upHead=el('div','anow-head'); upHead.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Up now'));
-      var upCount=chip('mist','None'); upCount.id='makerBulletinCount'; upHead.appendChild(upCount); colA.appendChild(upHead);
-      var upCard=el('div','salt-glass-card salt-glass-card--radius-lg anotice'); upCard.id='makerBulletinUp';
-      var rec=el('div','salt-notice'), rhead=el('div','salt-notice__head'), dots=el('span','salt-notice__dots');
-      rhead.appendChild(el('span','salt-eyebrow salt-eyebrow--brass','Notice')); dots.setAttribute('aria-hidden','true'); rhead.appendChild(dots); rec.appendChild(rhead);
-      var lines=el('div','salt-notice__lines'); rec.appendChild(lines); upCard.appendChild(rec);
-      var current=el('ol','anotice-list');current.id='makerBulletinCurrent';current.setAttribute('aria-label','Every line');upCard.appendChild(current);colA.appendChild(upCard);
-      var none=el('p','msg','No notice. Customers see none.'); none.id='makerBulletinNone'; colA.appendChild(none);
-      var newHead=el('div','anow-head'); newHead.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','New notice')); newHead.appendChild(chip('brass','Notifies everyone')); colB.appendChild(newHead);
-      var label=el('label','maker-field');label.appendChild(el('span','lbl salt-field__label','One line each'));
-      text=actOn(el('textarea','fld salt-field__input'),'notice.text');text.rows=4;label.appendChild(text);
-      label.appendChild(el('span','salt-field__hint','The lines show one at a time, in turn.'));colB.appendChild(label);
-      var retained=el('div','');retained.hidden=true;colB.appendChild(retained);
-      var set=el('button','btn salt-pill salt-pill--md anotice-set','Set the notice'), clear=el('button','salt-ghost','Clear it'),
-        refresh=el('button','salt-ghost','Read it again'), busy=false, needsRead=false, intended=null, pair=el('div','ashop-two');
+      /* 26 Oct 2026, his word (Notice "based on the same design language" as This device, iPad and Mac included): UP NOW, a list of the lines
+         customers read, None while nothing is up, and Clear the notice in ember, asking first; NEW NOTICE, the box filling its cell and one grey
+         line, then Set the notice, the one pill. Read it again stands only when a send left the notice unknown. */
+      root.appendChild(el('h3','salt-settings__head','Up now'));
+      var upList=el('div','salt-settings anotice-up');
+      var current=el('div','anotice-lines');current.id='makerBulletinCurrent';current.setAttribute('role','list');current.setAttribute('aria-label','Every line');upList.appendChild(current);
+      var none=el('div','salt-settings__row salt-settings__row--muted'); none.id='makerBulletinNone'; none.appendChild(el('span','salt-settings__label','None')); upList.appendChild(none);
+      var clear=el('button','salt-settings__row salt-settings__row--action salt-settings__row--danger'); clear.appendChild(el('span','salt-settings__label','Clear the notice')); clear.hidden=true;
+      upList.appendChild(clear); root.appendChild(upList);
+      var upFoot=el('p','salt-settings__foot'); upFoot.id='makerBulletinFoot'; root.appendChild(upFoot);
+      root.appendChild(el('h3','salt-settings__head','New notice'));
+      var box=el('div','salt-settings'), cell=el('label','salt-settings__cell');
+      text=actOn(el('textarea','fld salt-field__input'),'notice.text');text.rows=4;text.placeholder='One line each';text.setAttribute('aria-label','New notice, one line each');
+      cell.appendChild(text); box.appendChild(cell); root.appendChild(box);
+      root.appendChild(el('p','salt-settings__foot','Every customer is notified.'));
+      var retained=el('div','');retained.hidden=true;root.appendChild(retained);
+      var set=el('button','btn salt-pill salt-pill--md anotice-set','Set the notice'),
+        refresh=el('button','salt-ghost anotice-again','Read it again'), busy=false, needsRead=false, intended=null;
       [set,clear,refresh].forEach(function(button){button.type='button';});
-      colB.appendChild(set); pair.appendChild(clear); pair.appendChild(refresh); colB.appendChild(pair);
+      refresh.hidden=true; root.appendChild(set); root.appendChild(refresh);
       actOn(set,'notice.set');actOn(clear,'notice.clear');actOn(refresh,'notice.read');ynTag(set,'notice:set');ynTag(clear,'notice:clear');
-      function state(){set.disabled=busy||needsRead;clear.disabled=busy||needsRead;refresh.disabled=busy;text.disabled=busy;}
+      function state(){set.disabled=busy||needsRead;clear.disabled=busy||needsRead;refresh.disabled=busy;refresh.hidden=!needsRead;text.disabled=busy;}
       root.addEventListener('maker-notice-read',function(event){
         needsRead=false;
         if(intended){
@@ -2196,7 +2193,7 @@ export const OWNER_JS = `
     async function read(){
       var result=await refs('/all/maker/bulletin'); makerNotice=result.lines||[];
       drawNoticeUp(result.lines);
-      status.textContent='Notice read. Customers are notified only when you set one.';
+      status.textContent='';
       root.dispatchEvent(new CustomEvent('maker-notice-read',{detail:result}));
     }
     try{await read();}catch(error){refusal(status,error);}
@@ -7402,28 +7399,40 @@ export const OWNER_JS = `
     var have=sheetRows.filter(function(a){ return a.test; }).map(function(a){ return a.username; });
     var need=TEST_ALL.filter(function(u){ return have.indexOf(u)<0; }), on=!need.length;
     box.textContent='';
-    /* 25 Oct 2026 (Salt Admin Shop, his yes to both halves of Ask H): the accounts as a plain table (username, what it shows, Open or None),
-       the password once, Open the test page while all three are open, and Remove asking once on the Sheet */
+    /* 26 Oct 2026, his word (Practice "based on the same design language" as This device, iPad and Mac included): one Switch, Practice accounts,
+       on while all three exist; turned on it makes the missing, turned off it asks once and removes all three. While any exists, a plain list:
+       each username and what it shows, the password (a tap copies it) and Open the test page while all three are open. No chips, no counts. */
     box.appendChild(el('h2','sr','Practice accounts'));
-    var head=el('div','anow-head atest-head'), state=chip(on?'verdigris':have.length?'brass':'mist', have.length+' of '+TEST_ALL.length+' open');
-    state.setAttribute('data-test-state',String(have.length)); head.appendChild(state); box.appendChild(head);
-    box.appendChild(el('p','msg atest-lead', on?'Open them anywhere. Nothing they do is recorded.'
-      : have.length?'One tap makes '+need.join(' and ')+'.':'One tap makes three you can open anywhere.'));
-    var tbl=el('table','salt-table salt-table--plain apoints atest'), thead=el('thead'), hr=el('tr'), body=el('tbody');
-    [['Username','atest-u'],['Shows',''],['State','atest-st']].forEach(function(h){ var th=el('th',h[1]||null,h[0]); th.scope='col'; hr.appendChild(th); });
-    thead.appendChild(hr); tbl.appendChild(thead);
-    TEST_ALL.forEach(function(u,i){
-      var made=have.indexOf(u)>=0, tr=el('tr'), th=el('th','atest-u',u), st=el('td','atest-st'); th.scope='row'; th.setAttribute('data-test',u);
-      tr.appendChild(th); tr.appendChild(el('td','atest-shows',TEST_SHOWS[i]||'')); st.appendChild(chip(made?'verdigris':'mist',made?'Open':'None')); tr.appendChild(st); body.appendChild(tr);
-    });
-    tbl.appendChild(body);
-    var card=el('div','salt-glass-card salt-glass-card--radius-lg apoints-card'); card.appendChild(tbl); box.appendChild(card);
-    if(have.length){ var pw=el('div','salt-glass-card salt-glass-card--radius-lg atest-pw'); pw.appendChild(el('span','salt-kpi__label','Password')); pw.appendChild(el('span','atest-pwv','0000-0000-0000-0000')); box.appendChild(pw); }
-    var acts=el('div','atest-acts');
-    if(on){ var go=actOn(el('a','salt-pill salt-pill--sm','Open the test page'),'more.test-page'); go.href='/all/test'; acts.appendChild(go); }
-    var b=el('button',on?'salt-ghost':'salt-pill salt-pill--sm', on?'Remove the practice accounts':need.length===TEST_ALL.length?'Make the practice accounts':'Make '+need.join(' and ')); b.type='button'; actOn(b,'more.test-accounts');
-    if(on) ynTag(b,'test:remove');
+    box.appendChild(el('h3','salt-settings__head','Practice accounts'));
+    var list=el('div','salt-settings'), row=el('div','salt-settings__row'), lab=el('span','salt-settings__label','Practice accounts'); lab.id='testH';
+    var b=actOn(el('button','salt-switch'),'more.test-accounts'); b.type='button'; b.setAttribute('role','switch'); b.setAttribute('aria-checked',String(on)); b.setAttribute('aria-labelledby','testH');
+    b.setAttribute('data-test-state',String(have.length)); if(on) ynTag(b,'test:remove');
+    row.appendChild(lab); row.appendChild(b); list.appendChild(row); box.appendChild(list);
+    box.appendChild(el('p','salt-settings__foot', on?'Nothing they do is recorded.'
+      : have.length?have.length+' of '+TEST_ALL.length+' made. Turn on to make '+need.join(' and ')+'.':'Three accounts to try the customer’s page. Nothing they do is recorded.'));
+    if(have.length){
+      var accts=el('div','salt-settings atest-list');
+      TEST_ALL.forEach(function(u,i){
+        if(have.indexOf(u)<0) return;
+        var r=el('div','salt-settings__row'), n=el('span','salt-settings__label atest-u',u); n.setAttribute('data-test',u); r.appendChild(n);
+        r.appendChild(el('span','salt-settings__value atest-shows',TEST_SHOWS[i]||'')); accts.appendChild(r);
+      });
+      var pw=actOn(el('button','salt-settings__row salt-settings__row--action atest-pw'),'more.test-password'); pw.type='button';
+      pw.appendChild(el('span','salt-settings__label','Password')); pw.appendChild(el('span','salt-settings__value atest-pwv','0000-0000-0000-0000'));
+      var cm=el('span','salt-settings__mark'); cm.innerHTML='<svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8 V5.5 A1.5 1.5 0 0 0 14.5 4 H5.5 A1.5 1.5 0 0 0 4 5.5 V14.5 A1.5 1.5 0 0 0 5.5 16 H8"></path></svg>';
+      pw.appendChild(cm); pw.setAttribute('aria-label','Copy the password');
+      pw.addEventListener('click',function(){ try{ navigator.clipboard.writeText('0000-0000-0000-0000').then(function(){ say('Password copied.'); },function(){ say('Copy it by hand: 0000-0000-0000-0000.'); }); }catch(e){ say('Copy it by hand: 0000-0000-0000-0000.'); } });
+      accts.appendChild(pw);
+      if(on){
+        var go=actOn(el('a','salt-settings__row salt-settings__row--action'),'more.test-page'); go.href='/all/test';
+        go.appendChild(el('span','salt-settings__label','Open the test page'));
+        var ch=el('span','salt-settings__mark'); ch.innerHTML='<svg aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6 L15 12 L9 18"></path></svg>';
+        go.appendChild(ch); accts.appendChild(go);
+      }
+      box.appendChild(accts);
+    }
     b.addEventListener('click', async function(){
+      if(b.disabled) return;
       if(on&&!(await ownerAsk(b,'test:remove',{title:'Remove all three?', say:['Everything they wrote goes with them.'], go:'Remove', keep:'Keep them'}))) return;
       b.disabled=true; say(on?'Removing...':'Making...','wait');
       try{
@@ -7434,7 +7443,6 @@ export const OWNER_JS = `
       }catch(e){ sayFail(e); }
       b.disabled=false; drawTest();
     });
-    acts.appendChild(b); box.appendChild(acts);
   }
   /* a place, an item on More, or a way back: one listener for the whole of his page */
   roster.addEventListener('click', function(ev){

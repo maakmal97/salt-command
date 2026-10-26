@@ -820,25 +820,12 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .apoints-add>label{min-width:0}
 .adm .apoints-add input{box-sizing:border-box;width:100%;min-width:0}
 .adm .apoints-save{display:flex;margin:8px 0 0}
-/* 25 Oct 2026 (his Shop canvas): Practice, its table, the password once, the actions across */
-.adm #mTest{display:flex;flex-direction:column;gap:8px}
-.adm .atest-head{justify-content:flex-end}
-.adm .atest-lead{margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .atest .atest-u{width:112px;font-family:var(--salt-font-mono)}
-.adm .atest .atest-shows{font-size:var(--salt-text-sm)}
-.adm .atest .atest-st{width:72px;text-align:right}
-.adm .atest-pw{display:flex;align-items:center;justify-content:space-between;gap:12px;height:56px;box-sizing:border-box;padding:0 16px}
-.adm .atest-pw>*{white-space:nowrap}
-.adm .atest-pwv{font-family:var(--salt-font-mono)}
-.adm .atest-acts{display:flex;flex-direction:column;gap:8px;margin:8px 0 0}
-.adm .atest-acts>a,.adm .atest-acts>button{box-sizing:border-box;width:100%;height:48px;min-height:48px;padding:0 16px;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* 26 Oct 2026, his word: This device is the system's Settings list; the row's field and its one button */
 .adm #oLook .adev-note{margin:8px 4px 0}
 .adm #oLook .adev-note:empty{display:none}
 /* 25 Oct 2026 (his Shop canvas): WIDE. Below 860px one column as drawn; from 860px Shop takes the whole column: the glance in one row, the open
    day in a pane beside the week (380px, 420px from 1440px), the points beside Help, Notice's two parts and Practice's actions a column each */
 .adm .hpane{display:none}
-.adm .anotice-col{display:flex;flex-direction:column;gap:12px;min-width:0}
 @media (min-width:860px){
   .adm .amain>#oShop{max-width:none}
   .adm #makerConfirm.shglance{grid-template-columns:1fr 1fr 3fr;gap:12px}
@@ -850,13 +837,14 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
   .adm .hpane .maker-dayedit{padding:0;background:none;border:0}
   .adm .hpair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
   .adm .hpair>section{margin:0}
-  .adm #makerBulletin{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
-  .adm #mTest{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);column-gap:24px;row-gap:8px;align-items:start}
-  .adm #mTest>*{grid-column:1}
-  .adm #mTest>.atest-acts{grid-column:2;grid-row:1/span 5;margin:0}
-  .adm #oLook{max-width:560px}
 }
 @media (min-width:1440px){.adm .hsplit{grid-template-columns:minmax(0,1fr) 420px}}
+/* 26 Oct 2026, his word ("the same design language", iPad and Mac included): Practice, Notice and This device are lists of settings; from
+   860px one readable column, as a Mac's settings, never spread across the width */
+.adm #mTest{display:flex;flex-direction:column}
+.adm .atest-u,.adm .atest-pwv{font-family:var(--salt-font-mono)}
+.adm .atest-list{margin-top:24px}
+@media (min-width:860px){.adm #mTest,.adm #makerBulletin,.adm #oLook{max-width:640px}}
 .adm .apoints-save>.salt-pill{flex:1 1 auto;box-sizing:border-box;height:48px;min-height:48px;padding:0 16px}
 .adm .maker-dayedit-times>button{min-height:44px;min-width:44px}
 .adm .maker-copy{display:flex;flex-wrap:wrap;gap:8px}
@@ -866,13 +854,10 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-facts{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm)}
 .adm .maker-row{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--salt-text-sm)}
 .adm #makerBulletinCurrent{overflow-wrap:anywhere}
-/* 25 Oct 2026 (his Shop canvas): Up now, the Counter's Notice recipe and the numbered lines; New notice, Set across, the two ghosts beside */
-.adm #makerBulletin{display:flex;flex-direction:column;gap:12px}
-.adm .anotice{padding:16px;display:flex;flex-direction:column;gap:8px}
-.adm .anotice-list{margin:0;padding:0;list-style:none;counter-reset:nline}
-.adm .anotice-list li{counter-increment:nline;display:grid;grid-template-columns:28px minmax(0,1fr);align-items:baseline;padding:10px 0;border-top:1px solid var(--salt-line-faint)}
-.adm .anotice-list li::before{content:counter(nline);font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);color:var(--salt-brass)}
-.adm .anotice-set{box-sizing:border-box;width:100%;height:48px;min-height:48px;padding:0 16px}
+.adm #makerBulletin{display:flex;flex-direction:column}
+.adm .anotice-lines{display:contents}
+.adm .anotice-set{box-sizing:border-box;width:100%;height:48px;min-height:48px;padding:0 16px;margin-top:16px}
+.adm .anotice-again{margin-top:8px;height:44px}
 .adm .maker-slip{display:block;max-width:100%;height:auto}
 /* 12 OCT 2026 (PHASE 2b): THE CLAIM CARD. A waiting claim is a row of the system's Inbox row and the one opened is its card under it. Its slip is a thumbnail
    that is itself the control (44px at least both ways), enlarged in place by a tap and shrunk by the next */
@@ -1373,9 +1358,6 @@ body.ended>*:not(#aEnded){display:none}
 .adm .ghead:first-child{margin-top:4px}
 /* THE TEST ACCOUNT (v689): its own small block under the items, quiet, because it is a thing he
    makes and unmakes rather than a place he goes. */
-.adm .mtest{margin-top:18px;padding-top:14px;border-top:1px solid var(--salt-line)}
-.adm .mtest p.lead{margin:0 0 10px;color:var(--salt-mist-bright);font-size:.875rem;line-height:1.6}
-.adm .mtest .btn{margin-top:0}
 /* S9 9.3: AN ACCOUNT, as a row opens it (the plan's f13): the code large and the username under it, the chips, the one
    filled Send a sign-in link across the column with its answer under it, the other ways two by two with theirs, the
    Sent tick, then how they got in. The two quiet ways that must not be tapped by accident are the system's danger ghost.
@@ -2370,7 +2352,6 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         /* 21 Oct 2026 (P8): the customer's Help, read only, under the hours and the points it speaks of */
         + helpCard(true) + '</div>'
         + '<section data-in="shop.notice" aria-labelledby="makerBulletinTitle"><h2 id="makerBulletinTitle" class="sr">Notice</h2>'
-        + '<p class="lead">A line at the top of every customer account. Setting it also sends them a notification.</p>'
         + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></section>'
         + '<div id="mTest" class="mtest" data-in="shop.practice"></div>'
         /* 11 Oct 2026, his word: Salt Admin has its own Night or Tide, chosen on this device (the Counter origin's localStorage salt-look,
