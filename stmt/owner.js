@@ -3029,7 +3029,7 @@ export const OWNER_JS = `
     var idParentItems=(catalog.associates||[]).map(function(item){return {value:item.code,label:item.code};});
     var idParent=addSelect(id,['Their associate','record.add-id.parent'],idParentItems);
     var idName=makerField(id,['Name','record.add-id.name'],'text',''), idPlace=makerLocalityField(id,'record.add-id.place');
-    idPlace.placeholder='Optional, TBC if blank';   /* 27 Oct 2026: the row holds its field alone; the hint is the field's */
+    idPlace.placeholder='TBC if blank';   /* 27 Oct 2026: the row holds its field alone; the hint is the field's */
     var idGate=makerVaultGate(id);
     var idLink=makerField(id,['Map link','record.add-id.link'],'text','');idLink.placeholder='Google Maps or Waze';
     var driftBooks=books.filter(function(item){return item.drift;});
@@ -3753,7 +3753,7 @@ export const OWNER_JS = `
       go.setAttribute('fill','none'); go.setAttribute('stroke','currentColor'); go.setAttribute('stroke-width','2'); go.setAttribute('stroke-linecap','round'); go.setAttribute('stroke-linejoin','round');
       var path=document.createElementNS('http://www.w3.org/2000/svg','path'); path.setAttribute('d','M9 6 L15 12 L9 18'); go.appendChild(path); mark.appendChild(go); row.appendChild(mark);
       var head=form.querySelector('h3'), said=head.nextElementSibling;
-      if(FORM_WHAT[slug]&&!(said&&said.textContent.trim()===FORM_WHAT[slug])) head.parentNode.insertBefore(el('p','msg formwhat',FORM_WHAT[slug]),head.nextSibling);
+      if(FORM_WHAT[slug]&&!(said&&said.matches('p.msg'))) head.parentNode.insertBefore(el('p','msg formwhat',FORM_WHAT[slug]),head.nextSibling);
       row.addEventListener('click', function(){ openForm(slug); });
       if(part==='entry') entryRows[slug]=row; else (lists[part].firstChild||lists[part].appendChild(el('div','salt-settings'))).appendChild(row);
     });
