@@ -727,7 +727,7 @@
  "Counter approved registration staging: actual mixed-status SQLite selection": 60,
  "Counter confirmed Add ID selectability and dependent fold": 280,
  "Counter blank-locality Add ID: owner device pair and real bridge": 11140,
- "S1: the fold replays the last 20 staged batches byte-equal to the fold before the booking law moved": 13510,
+ "S1: the fold replays 20 staged batches, fixed at the one of 24 Oct 2026, byte-equal to the fold before the booking law moved": 13510,
  "S1b: the order-stage entries live in engine/stages.mjs, and every tap queues what it queued before": 6520,
  "S1c-i: the pricing rule tables live in engine/rules.mjs": 1660,
  "S1c-ii: the pricing glue lives in engine/snapshot.mjs, and every figure is the page's own": 1880,

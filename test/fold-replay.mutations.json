@@ -40,5 +40,65 @@
   "file": "engine/apply.mjs",
   "find": "const TODAY = ctx.today,",
   "replace": "const TODAY = \"2000-01-01\","
+ },
+ {
+  "name": "the working fold is given today's extract",
+  "file": "test/fold-replay.mjs",
+  "find": "process.argv = [...argv0, \"--ledger\", none];",
+  "replace": "process.argv = [...argv0, \"--ledger\", join(REPO, \"ledger\", \"ledger.json\")];"
+ },
+ {
+  "name": "the process's arguments are left changed",
+  "file": "test/fold-replay.mjs",
+  "find": "} finally { process.argv = argv0; }",
+  "replace": "} finally { }"
+ },
+ {
+  "name": "the window ends at an older batch",
+  "file": "test/fold-replay.mjs",
+  "find": "export function batches(n = 20, end = WINDOW_END) {",
+  "replace": "export function batches(n = 20, end = \"58698526\") {"
+ },
+ {
+  "name": "the window holds 19 batches",
+  "file": "test/fold-replay.mjs",
+  "find": "try { bs = batches(20); } catch (e) { bs = []; }",
+  "replace": "try { bs = batches(19); } catch (e) { bs = []; }"
+ },
+ {
+  "name": "a % off is read as a lift",
+  "file": "test/fold-replay.mjs",
+  "find": "(dir === \"off\" ? -1 : 1)",
+  "replace": "(dir === \"off\" ? 1 : 1)"
+ },
+ {
+  "name": "the working fold's figure is not carried",
+  "file": "test/fold-replay.mjs",
+  "find": "p + \" TIERSET \" + figure(d, +n))",
+  "replace": "p + \" TIERSET \")"
+ },
+ {
+  "name": "the old fold's figure is not carried",
+  "file": "test/fold-replay.mjs",
+  "find": "p + \" TIERSET \" + +v)",
+  "replace": "p + \" TIERSET \")"
+ },
+ {
+  "name": "the old fold's TIER prefix is not read",
+  "file": "test/fold-replay.mjs",
+  "find": "/\\b(?:TIER|THEIR %) (?=",
+  "replace": "/\\b(?:THEIR %) (?="
+ },
+ {
+  "name": "the old fold's \"tier to\" is not read",
+  "file": "test/fold-replay.mjs",
+  "find": "\n  .replace(/\\b([a-z]+) tier to TIERSET/g, \"$1 figure to TIERSET\");",
+  "replace": ";"
+ },
+ {
+  "name": "a count's note keeps its old word",
+  "file": "test/fold-replay.mjs",
+  "find": ".replace(/, a drift of /g, \", a difference of \")",
+  "replace": ""
  }
 ]

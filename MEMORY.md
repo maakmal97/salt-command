@@ -21,11 +21,11 @@
 - `0013_maker_requests.sql`, `0014_input_admission.sql`, `0015_vault_pair.sql` and `0016_vault_write_gate.sql` applied individually on 03 Oct 2026, with schema readback after each. Both `0012` indexes remain. Pair bootstrap/readback is revision 1; write gate reopened with zero active writers and pending outbox.
 
 ## Known red in the suite
-- S1 fold replay (`test/fold-replay.mjs`), re-run 25 Oct 2026 on master 1d3b7c27: run alone, 18 of 20 staged batches replay byte-equal and 7de3edad and 580680a7 do not;
-  in the full suite, with the same tree, it is 15 of 20 (also 9716cfe9, 61c21a89, 1867d416), six failed checks on master and on a branch with 57 more passes, so the section depends on what ran before it. Both of the first two carry a Their % row (`tierset`).
-  The old fold (43fc5b0a) words it "TIER ... drift -0.2", the working fold "THEIR % ... 20% off": that wording is the whole difference in 580680a7. 7de3edad also differs in a Correction's
-  `listRM` (315 old, 280 now; estimate: the 22 Oct curve). Not a booking-law regression: the test's moving 20-batch window has reached rows the fixed old fold cannot match. It stays
-  red until the test normalises the wording and leaves out repriced batches.
+- None. The S1 fold replay (`test/fold-replay.mjs`) was red from 21 Oct (17 of 20 alone, 14 to 15 of 20 in the full suite) and was fixed on 25 Oct 2026, his word "Fix S1". A fold reads the PRICING snapshot and the
+  reward scheme from a `ledger.json` beside the book it resolved when `tools/book.mjs` first loaded: no file when S1 ran alone on the frozen book, today's when an earlier section had loaded it on the live book. The working
+  fold has re-priced a restated row from that snapshot since 20 Oct and the old fold (43fc5b0a) never did, so the same batches passed alone and failed in the suite. Both folds are now loaded with `--ledger` pointing at no file;
+  the window is fixed at the batch of 24 Oct 2026 (`WINDOW_END`, 8344070c) instead of sliding onto rows the old fold can never match; and `law()` reads the Their % wording of 21 Oct ("TIER ... drift +0.3" against
+  "THEIR % ... 30% lift") as one figure, so a different value still differs. Move `WINDOW_END` only after accounting for what changed since.
 
 ## Counter Batch A
 - Built on branch `claude/counter-batch-a-build-b9ddad` (19 Oct 2026), P0 salt-ds#13 (1.7.0) merged; collection points live in Counter KV `maker:points` once the version ships; his list is empty until he fills it on Salt Admin, and a collect Ready is refused without one.
