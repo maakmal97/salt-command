@@ -198,6 +198,9 @@
   This device is the same list (Notifications and Tide theme switches; Not here and why on a browser with no notifications; Saved as an app Yes). Not yet opened by him.
 - v1260 (`6c258934`, 26 Oct 2026; Cloud commit `40260871795`: chain and three suite parts green, live /rev `f11319e0ef0436e2`), his second look: Salt Admin's Names is a
   Show names switch, on asking for the password in the one Sheet, off locking; every row of This device a name and one switch. Not yet opened by him.
+- v1261 (`22abfd74`, 26 Oct 2026; Cloud commit `40264069306`: chain and three suite parts green, live /rev `bff600870ad9d2e3`), his word: Practice and Notice are settings
+  lists (a Practice accounts switch; Up now a row a line, Clear the notice in ember; New notice a box and Set the notice), and from 860px Practice, Notice and This device
+  stand in one 640px column; salt-ds 1.19.0 (#31, the settings parts). Landed display-only (his yes of 18 Oct 2026). Not yet opened by him.
 
 ## Salt Admin Needs you redesign
 - Live as v1221 (`b8916ca2`, 23 Oct 2026; Cloud commit `39821813897`: chain and three suite parts green, live /rev `1e1013dcc935d44b`), from his canvas
