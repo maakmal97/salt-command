@@ -50,7 +50,7 @@ async function ownerLoan(wd, pageWork) {
   const section = [...dom.window.document.querySelectorAll("#makerInputs .maker-input")]
     .find((s) => s.querySelector("h3")?.textContent === "Loan");
   const set = (label, value) => { if (tileGroup(section, label)) tile(section, label, value); else field(section, label).value = value; };
-  for (const [label, value] of Object.entries({ "Goods or cash": "salt", Direction: "out", Who: "CX1-ZED", Book: "salt",
+  for (const [label, value] of Object.entries({ "Loan of": "salt", Direction: "out", Who: "CX1-ZED", Book: "salt",
     Date: "2099-10-05", "Units": "2" })) set(label, value);
   const tap = async () => { button(section, "Send the loan").click(); await work.quiet(); };
   return { dom, section, sent, asked, set, tap, answer: (value) => { answer = value; },

@@ -49912,7 +49912,7 @@ await (async () => {
     /* the few, fixed choices (sale or purchase, the book, the handover) are tiles, tapped; the select left is the party, then the figures in the order they stand */
     /* 25 Oct 2026 (Record redesign P4): found by their acts, since the resale choice now stands before Who */
     const tradeControl = (act) => tradeSection.querySelector('[data-act="record.trade.' + act + '"]');
-    tile(tradeSection, "Sale or purchase", "sale");
+    tile(tradeSection, "Type", "sale");
     tile(tradeSection, "Book", "salt");
     tradeControl("party").value = "CX1-AB";
     tradeControl("date").value = "2026-10-01";
@@ -50084,8 +50084,8 @@ await (async () => {
       + JSON.stringify({prompts:deviceSheets.length,revision:devicePairRevision,status:addId.querySelector('[role=\"status\"]')?.textContent,names:reviewedNames}));
     devicePairRevision = null;
     const loanForm = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Loan");
-    tile(loanForm, "Goods or cash", "cash");
-    const loanButton = loanForm.querySelector("button");
+    tile(loanForm, "Loan of", "cash");
+    const loanButton = loanForm.querySelector('[data-act="record.loan.send"]');   /* 27 Oct 2026 (Record's forms as settings rows): the first button is now the Segment's, so the submit is found by its act */
     holdLoan = true;
     loanButton.click(); loanButton.click();
     ok(loanButton.disabled && !!rejectLoan
@@ -50106,7 +50106,7 @@ await (async () => {
       "a transport retry retains the entire original maker request and timestamp despite a moved clock");
     const sentLoan = adminCalls.find((call) => call.route === "/all/maker/inputs/loan");
     const giftForm = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Gift");
-    giftForm.querySelector("button").click();
+    giftForm.querySelector('[data-act="record.gift.send"]').click();
     ok(await adminWork.quiet(), "the gift form write finishes");
     const repayForm = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Repayment");
     repayForm.querySelector("button").click();

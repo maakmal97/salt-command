@@ -31,11 +31,11 @@ function told(j) {
 /* the groups the page draws: legend, act, and the values offered in order, with the one chosen ("" first when it is the empty value, none when none is) */
 const GROUPS = [
   ["Stock count", "Book", "record.count.book", ["salt", "oil"], "salt"],
-  ["Sale or purchase", "Sale or purchase", "record.trade.direction", ["sale", "purchase"], "sale"],
+  ["Sale or purchase", "Type", "record.trade.direction", ["sale", "purchase"], "sale"],
   ["Sale or purchase", "Book", "record.trade.book", ["salt", "oil"], "salt"],
   ["Sale or purchase", "Handover", "record.trade.handover", ["", "collected", "delivered"], ""],
-  ["Sale or purchase", "Through an associate?", "record.trade.stream", ["", "R2", "R3"], ""],
-  ["Loan", "Goods or cash", "record.loan.form", ["salt", "cash"], "salt"],
+  ["Sale or purchase", "Associate", "record.trade.stream", ["", "R2", "R3"], ""],
+  ["Loan", "Loan of", "record.loan.form", ["salt", "cash"], "salt"],
   ["Loan", "Direction", "record.loan.direction", ["in", "out"], "in"],
   ["Loan", "Book", "record.loan.book", ["salt", "oil"], "salt"],
   ["Gift", "Book", "record.gift.book", ["salt", "oil"], "salt"],
@@ -72,30 +72,34 @@ export async function run({ ok, pageWork }) {
   let p = await open();
   try {
     const bad = [];
-    const found = [...p.d.querySelectorAll("#makerInputs fieldset.maker-tiles")];
+    /* 27 Oct 2026 (Record's forms as settings rows): a choice of two or three plain words is a Segment in its row (role radiogroup, a button for each option), the rest stay fieldsets of tiles */
+    const found = [...p.d.querySelectorAll("#makerInputs fieldset.maker-tiles, #makerInputs .salt-segment.mseg")];
     for (const [form, label, act, values, chosen] of GROUPS) {
       const section = p.form(form), group = section && tileGroup(section, label);
       if (!group) { bad.push(form + " / " + label + " (no group)"); continue; }
-      const radios = [...group.querySelectorAll("input")];
-      const got = [radios.map((r) => r.value), (radios.find((r) => r.checked) || { value: null }).value];
+      const seg = group.matches(".mseg"), radios = [...group.querySelectorAll(seg ? "button.salt-segment__opt" : "input")];
+      const got = seg ? [radios.map((r) => r.getAttribute("data-value")), (radios.find((r) => r.getAttribute("aria-checked") === "true") || { getAttribute: () => null }).getAttribute("data-value")]
+        : [radios.map((r) => r.value), (radios.find((r) => r.checked) || { value: null }).value];
       const keys = radios.map((r) => r.getAttribute("data-key"));
-      if (!(same(got, [values, chosen]) && radios.every((r) => r.type === "radio" && r.getAttribute("data-act") === act) && new Set(keys).size === keys.length
-        && group.tagName === "FIELDSET" && group.closest("section") === section && !!group.querySelector("legend")))
+      if (!(same(got, [values, chosen]) && radios.every((r) => (seg ? r.tagName === "BUTTON" && r.getAttribute("role") === "radio" : r.type === "radio") && r.getAttribute("data-act") === act) && new Set(keys).size === keys.length
+        && (seg ? group.getAttribute("role") === "radiogroup" && !!group.getAttribute("aria-labelledby") : group.tagName === "FIELDSET" && !!group.querySelector("legend")) && group.closest("section") === section))
         bad.push(form + " / " + label + " " + JSON.stringify(got));
     }
     ok(bad.length === 0 && found.length === GROUPS.length,
       "each of the " + GROUPS.length + " few, fixed choices of the forms is a group of tiles in its own form, offering its values in order with the one a select began on chosen (none for the appointment's role), "
         + "and no other group is drawn: " + JSON.stringify(bad) + " " + found.length);
-    const keyed = tileGroup(p.form("New customer"), "Starting %, salt").querySelectorAll("input");
+    /* 27 Oct 2026 (Record's forms as settings rows): the starting % stays tiles whatever its number of presets, its radios carrying the keys */
+    const keyed = tileGroup(p.form("New customer"), "Starting %, salt").querySelectorAll("input.salt-option__input");
     ok(same([...keyed].map((r) => r.getAttribute("data-key")), ["salt-none", "salt-0.25", "salt-typed"]),
       "a group drawn once for each book keys its tiles by the book first, the empty value 'none': " + [...keyed].map((r) => r.getAttribute("data-key")).join());
     const parties = ["record.trade.party", "record.trade.associate", "record.trade.end-customer", "record.loan.party", "record.gift.party", "record.repay.loan", "record.amend.row",
       "record.amend.field", "record.revive.row", "record.add-id.parent", "record.appoint.customer", "record.amend-id.party", "record.place.party", "record.tip.tip"];
     const stay = parties.filter((act) => { const c = byAct(p.d, act); return !c || c.tagName !== "SELECT"; });
     ok(stay.length === 0, "a party, a row, a loan, a field or a reminder, a list as long as the book, stays a select: " + JSON.stringify(stay));
-    const legends = found.map((g) => g.querySelector("legend")).filter(Boolean);
-    ok(legends.length === found.length && legends.every((l) => l.classList.contains("salt-options__legend") && l.classList.contains("lbl") && l.textContent.length > 0)
-      && found.every((g) => g.classList.contains("salt-options")),
+    const legends = found.filter((g) => g.tagName === "FIELDSET").map((g) => g.querySelector("legend")).filter(Boolean);
+    const sets = found.filter((g) => g.tagName === "FIELDSET");
+    ok(legends.length === sets.length && legends.every((l) => l.classList.contains("salt-options__legend") && l.classList.contains("lbl") && l.textContent.length > 0)
+      && sets.every((g) => g.classList.contains("salt-options")),
     "each group is the system's Options fieldset, named by a legend in the form's own label style");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
@@ -103,9 +107,11 @@ export async function run({ ok, pageWork }) {
   p = await open();
   try {
     const radios = [...p.d.querySelectorAll("#makerInputs fieldset.maker-tiles input")];
+    /* 27 Oct 2026 (Record's forms as settings rows): the Segments' buttons are tiles too, so the count of tiles on offer adds them */
+    const segButtons = p.d.querySelectorAll("#makerInputs .salt-segment.mseg button.salt-segment__opt").length;
     const names = new Map();
     for (const r of radios) { const g = r.closest("fieldset"); names.set(r.name, new Set([...(names.get(r.name) || []), g])); }
-    ok(radios.length > 30 && [...names.values()].every((gs) => gs.size === 1) && radios.every((r) => !!r.name && /^tiles[0-9]+$/.test(r.name)),
+    ok(radios.length + segButtons > 30 && [...names.values()].every((gs) => gs.size === 1) && radios.every((r) => !!r.name && /^tiles[0-9]+$/.test(r.name)),
       "every group is one radio group of its own, so it is one tab stop and the arrows move the choice: " + radios.length + " tiles in " + names.size + " groups");
     ok(radios.every((r) => !r.disabled && r.getAttribute("tabindex") === null && r.closest("label.salt-option") && r.nextElementSibling && r.nextElementSibling.classList.contains("salt-option__face")
       && (r.nextElementSibling.querySelector(".salt-option__label, .salt-producttag") || { textContent: "" }).textContent.length > 0),
@@ -135,9 +141,11 @@ export async function run({ ok, pageWork }) {
       "a group fills the row of its form's flex layout and may shrink, so its tiles wrap inside a narrow pane instead of widening it");
     const group = tileGroup(p.form("Sale or purchase"), "Handover");
     tile(p.form("Sale or purchase"), "Handover", "collected");
-    const one = [...group.querySelectorAll("input")].filter((r) => r.checked).map((r) => r.value);
+    /* 27 Oct 2026 (Record's forms as settings rows): the handover is a Segment, its chosen option the button that is aria-checked */
+    const checked = () => [...group.querySelectorAll("button.salt-segment__opt")].filter((r) => r.getAttribute("aria-checked") === "true").map((r) => r.getAttribute("data-value"));
+    const one = checked();
     tile(p.form("Sale or purchase"), "Handover", "delivered");
-    ok(same(one, ["collected"]) && same([...group.querySelectorAll("input")].filter((r) => r.checked).map((r) => r.value), ["delivered"]) && group.value === "delivered",
+    ok(same(one, ["collected"]) && same(checked(), ["delivered"]) && group.value === "delivered",
       "one tile is chosen at a time, and the group answers .value as the select did: " + group.value);
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
@@ -147,9 +155,9 @@ export async function run({ ok, pageWork }) {
     const trade = p.form("Sale or purchase");
     tile(trade, "Handover", "delivered"); tile(trade, "Book", "oil");
     let heard = 0;
-    const direction = tileGroup(trade, "Sale or purchase");
+    const direction = tileGroup(trade, "Type");
     direction.addEventListener("change", () => { heard++; });
-    tile(trade, "Sale or purchase", "purchase");
+    tile(trade, "Type", "purchase");
     ok(heard === 1 && direction.value === "purchase" && tileValue(trade, "Book") === "oil" && tileValue(trade, "Handover") === "delivered",
       "a tap tells the group's listeners once, and the other groups of the form keep their choice when the direction changes the books on offer: " + heard);
     const books = tileGroup(trade, "Book");
@@ -163,11 +171,11 @@ export async function run({ ok, pageWork }) {
     const role = (v) => tile(p.form("New customer"), "Role", v);
     const drift = tileGroup(p.form("New customer"), "Starting %, salt");
     role("supplier");
-    const shut = [drift.disabled, drift.querySelector("input").matches(":disabled")];
+    const shut = [drift.disabled, drift.querySelector("input, button").matches(":disabled")];
     role("customer");
     ok(same(shut, [true, true]) && !drift.disabled, "a supplier has no starting %, so the group is shut with every tile in it, and open again for a customer: " + shut.join());
     drift.value = "nothing";
-    ok(drift.value === "" && ![...drift.querySelectorAll("input")].some((r) => r.checked), "a value no tile offers leaves none chosen, as a select left none");
+    ok(drift.value === "" && ![...drift.querySelectorAll("input, button")].some((r) => r.checked || r.getAttribute("aria-checked") === "true"), "a value no tile offers leaves none chosen, as a select left none");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 4. EACH TILE SENDS WHAT ITS SELECT DID */
@@ -190,12 +198,12 @@ export async function run({ ok, pageWork }) {
     const trade = p.form("Sale or purchase");
     p.type(byAct(trade, "record.trade.date"), "2026-10-02"); p.type(byAct(trade, "record.trade.units"), "1"); p.type(byAct(trade, "record.trade.total"), "100");
     p.type(byAct(trade, "record.trade.delivery"), "10");
-    for (const direction of tileValues(trade, "Sale or purchase")) {
-      tile(trade, "Sale or purchase", direction);
+    for (const direction of tileValues(trade, "Type")) {
+      tile(trade, "Type", direction);
       const carriage = direction === "sale" ? { delivery: 10 } : { freight: 10 };
       check("trade " + direction, await send("/all/maker/inputs/" + direction, trade, "record.trade.send"), { party: "CX1-ZED", ...carriage });
     }
-    tile(trade, "Sale or purchase", "sale");
+    tile(trade, "Type", "sale");
     for (const book of tileValues(trade, "Book")) {
       tile(trade, "Book", book);
       check("trade book " + book, await send("/all/maker/inputs/sale", trade, "record.trade.send"), { product: book });
@@ -206,25 +214,25 @@ export async function run({ ok, pageWork }) {
     }
     tile(trade, "Handover", "");
     p.type(byAct(trade, "record.trade.associate"), "CA1-ZED");
-    for (const stream of tileValues(trade, "Through an associate?")) {
-      tile(trade, "Through an associate?", stream);
+    for (const stream of tileValues(trade, "Associate")) {
+      tile(trade, "Associate", stream);
       p.type(byAct(trade, "record.trade.associate"), "CA1-ZED");
       const body = await send("/all/maker/inputs/sale", trade, "record.trade.send");
       check("trade stream '" + stream + "'", body, stream ? { stream, assoc: "CA1-ZED", party: stream === "R2" ? "CA1-ZED" : "CX1-ZED" } : { party: "CX1-ZED" });
       if (!stream && body && (Object.hasOwn(body, "stream") || Object.hasOwn(body, "assoc"))) failed.push("trade with no associate named one " + JSON.stringify(body));
     }
-    tile(trade, "Through an associate?", "");
+    tile(trade, "Associate", "");
     /* a loan: in kind or cash, borrowed or lent, and the book only for goods */
     const loan = p.form("Loan");
     p.w.localStorage.removeItem("saltMakerPending:/all/maker/inputs/loan");   /* the harness keeps a loan unsent on this device; a new one is sent beside it */
     p.type(byAct(loan, "record.loan.amount"), "5");
-    for (const form of tileValues(loan, "Goods or cash")) {
-      tile(loan, "Goods or cash", form);
+    for (const form of tileValues(loan, "Loan of")) {
+      tile(loan, "Loan of", form);
       const body = await send("/all/maker/inputs/loan", loan, "record.loan.send");
       check("loan " + form, body, { form, amount: 5 });
       if (body && Object.hasOwn(body, "product") === (form === "cash")) failed.push("loan " + form + " product " + JSON.stringify(body));
     }
-    tile(loan, "Goods or cash", "salt");
+    tile(loan, "Loan of", "salt");
     for (const direction of tileValues(loan, "Direction")) {
       tile(loan, "Direction", direction);
       check("loan " + direction, await send("/all/maker/inputs/loan", loan, "record.loan.send"), { direction });

@@ -142,7 +142,7 @@ export async function run({ ok, pageWork }) {
       page.change("Price (goods)", "300"); await page.work.quiet();
       ok(!box.querySelector("p.msg.bad") && /Goods RM 300[.]00/.test(text()) && !box.querySelector(".reading-bad"),
         "trade reading page: a price at or over the floor draws no warning " + text());
-      page.change("Sale or purchase", "purchase"); await page.work.quiet();
+      page.change("Type", "purchase"); await page.work.quiet();
       page.change("Units", "100"); page.change("Price (goods)", "4400"); page.change("Freight", "200"); await page.work.quiet();
       ok(!/margin/i.test(text()) && !/Floor/.test(text()) && JSON.stringify(row("This buy, a unit")) === JSON.stringify(["RM 46.00", "RM 4.00 above the current cost."]),
         "trade reading page: a purchase shows its cost a unit against the current cost and no margin " + text());

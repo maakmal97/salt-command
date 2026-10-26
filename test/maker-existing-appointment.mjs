@@ -110,7 +110,7 @@ async function ownerPage(wd, { loseAppointmentAnswer = false, retained = [] } = 
 const sectionOf = (doc, heading) => [...doc.querySelectorAll("#makerInputs .maker-input")]
   .find((section) => section.querySelector("h3")?.textContent === heading);
 const field = (section, label) => section && [...section.querySelectorAll("label")]
-  .find((node) => node.querySelector(".lbl")?.textContent.trim() === label)?.querySelector("input,select");
+  .find((node) => node.querySelector(".lbl, .salt-settings__label")?.textContent.trim() === label)?.querySelector("input,select");
 const button = (section, text) => section && [...section.querySelectorAll("button")]
   .find((node) => node.textContent.trim() === text);
 

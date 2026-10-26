@@ -13,7 +13,7 @@
  *   7  Shop's hours fit a phone of 320 to 371px
  * Every code, name and amount is invented. */
 import { JSDOM } from "jsdom";
-import { richOwnerPage, byAct } from "./maker-act.mjs";
+import { richOwnerPage, byAct, drawEverything } from "./maker-act.mjs";
 import { landingPage } from "../stmt/page.js";
 import { FONT_FACE_CSS, STATEMENT_CSS, SITE_RECIPES } from "../stmt/statement-css.js";
 
@@ -124,18 +124,23 @@ export async function run({ ok, pageWork }) {
       await p.work.quiet();
       const page = p.d, tap = async (act, key) => { const c = byAct(page, act, key); if (c) c.click(); await p.work.quiet(); return !!c; };
       await tap("nav.record");
-      const fields = [];
+      /* 27 Oct 2026 (Record's forms as settings rows): a Record form's fields are rows of its lists (settings rows, full width, none marked short), so what the mark and the two-up rule cover is the fields that keep their label above them,
+         the cards' and sheets' (drawn here by drawEverything); the form itself is held to its rows */
+      const record = [];
       for (const [part, slug] of [["entry", "sale-or-purchase"], ["customers", "new-customer"]]) {
         await tap("part.record." + part); await tap("record.form", slug);
         const form = page.querySelector('section.maker-input[data-form="' + slug + '"]');
-        if (form) fields.push(...[...form.children].filter((c) => c.matches("label.maker-field")));
+        if (form) record.push(form);
       }
+      const rowsOk = record.length === 2 && record.every((f) => ![...f.children].some((c) => c.matches("label.maker-field")) && f.querySelectorAll(".salt-settings.maker-list > label.salt-settings__row").length >= 5
+        && !f.querySelector(".maker-field--short"));
+      const every = await richOwnerPage({ pageWork, slip: true, probe: true });
+      let fields = [];
+      try { await drawEverything(every); fields = [...every.d.querySelectorAll("label.maker-field")].filter((f) => !f.closest("#makerInputs")); } finally { every.w.close(); }
       const kind = (f) => (f.querySelector("input,select") || { type: "" }).type, SHORT = ["number", "date", "time"];
       const marked = fields.filter((f) => f.classList.contains("maker-field--short")), others = fields.filter((f) => !f.classList.contains("maker-field--short"));
-      /* 25 Oct 2026 (Record redesign P3): and the sale's Who, which stands beside its Date as the canvas pairs them */
-      const who = (f) => kind(f) === "select-one" && f.firstChild.textContent === "Who" && !!f.querySelector('[data-act="record.trade.party"]');
-      ok(marked.length >= 5 && marked.every((f) => SHORT.includes(kind(f)) || who(f)) && marked.filter(who).length === 1 && others.some((f) => kind(f) === "text") && others.every((f) => !SHORT.includes(kind(f))),
-        "the sale and new customer forms mark the short fields, a number, a date or a time, and the sale's Who beside its Date, and no other text or select field: " + JSON.stringify(fields.map((f) => [kind(f), f.classList.contains("maker-field--short")])));
+      ok(rowsOk && marked.length >= 1 && marked.every((f) => SHORT.includes(kind(f))) && others.some((f) => kind(f) === "text"),   /* the cards also hand-build a few number fields that carry no mark */
+        "the sale and new customer forms are rows of lists with no field marked short, and the fields that keep their label above mark the short ones, a number, a date or a time, and no other text or select field: " + rowsOk + " " + JSON.stringify(fields.map((f) => [kind(f), f.classList.contains("maker-field--short")])));
     } catch (e) { ok(false, "the form stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
   }
 

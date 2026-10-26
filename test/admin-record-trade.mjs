@@ -23,11 +23,12 @@ export async function run({ ok, pageWork }) {
     const trade = d.querySelector('#makerInputs section.maker-input[data-form="sale-or-purchase"]');
     const set = async (act, v) => { const f = byAct(trade, act); f.value = v; f.dispatchEvent(new d.defaultView.Event("input", { bubbles: true })); f.dispatchEvent(new d.defaultView.Event("change", { bubbles: true })); await quiet(); };
     /* 1 */
-    const stream = tileGroup(trade, "Through an associate?"), who = byAct(trade, "record.trade.party").closest("label");
-    const radios = [...stream.querySelectorAll("input")];
+    /* 27 Oct 2026 (Record's forms as settings rows): the choice is the Associate Segment (its options buttons, R3's word Referred) and Who is a row in the list that follows it */
+    const stream = tileGroup(trade, "Associate"), who = byAct(trade, "record.trade.party").closest("label").parentNode;
+    const radios = [...stream.querySelectorAll("button.salt-segment__opt")];
     ok(stream.closest(".maker-trade-attribution").nextElementSibling === who
-      && J(radios.map((r) => [r.value, t(r.nextElementSibling), r.getAttribute("aria-label")])) === J([["", "No", null], ["R2", "Resells", "They resell"], ["R3", "Introduced", "They introduced the buyer"]]),
-      "Through an associate? stands just before Who, its tiles No, Resells and Introduced, the full words spoken: " + J(radios.map((r) => t(r.nextElementSibling))));
+      && J(radios.map((r) => [r.getAttribute("data-value"), t(r), r.getAttribute("aria-label")])) === J([["", "No", null], ["R2", "Resells", "They resell"], ["R3", "Referred", "They introduced the buyer"]]),
+      "Associate stands just before Who, its options No, Resells and Referred, the full words spoken: " + J(radios.map((r) => t(r))));
     /* 2 */
     await set("record.trade.units", "3"); await set("record.trade.total", "100");
     const box = trade.querySelector(".maker-reading"), rows = [...box.querySelectorAll(".reading-rows .salt-ledger__row")];

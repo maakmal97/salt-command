@@ -1,6 +1,6 @@
 [
- {"name":"the resale choice stays after the figures","file":"stmt/owner.js","find":"      tradeSection.insertBefore(attribution,partyLabel);","replace":"      tradeSection.appendChild(attribution);"},
- {"name":"the resale tiles keep their long words","file":"stmt/owner.js","find":"{value:'R2',label:'Resells',aria:'They resell'},{value:'R3',label:'Introduced',aria:'They introduced the buyer'}]);\n      var tradeAssoc","replace":"{value:'R2',label:'They resell'},{value:'R3',label:'They introduced the buyer'}]);\n      var tradeAssoc"},
+ {"name":"the resale choice stays after the figures","file":"stmt/owner.js","find":"      tradeSection.insertBefore(attribution,partyLabel.parentNode);","replace":"      tradeSection.appendChild(attribution);"},
+ {"name":"the resale tiles keep their long words","file":"stmt/owner.js","find":"{value:'R2',label:'Resells',aria:'They resell'},{value:'R3',label:'Referred',aria:'They introduced the buyer'}]);\n      var tradeAssoc","replace":"{value:'R2',label:'They resell'},{value:'R3',label:'They introduced the buyer'}]);\n      var tradeAssoc"},
  {"name":"a short tile does not speak its full words","file":"stmt/owner.js","find":" if(item.aria) radio.setAttribute('aria-label',item.aria);","replace":""},
  {"name":"the reading is sentences again","file":"stmt/owner.js","find":"else readingRow('Cost a unit',rm(c.rate),'From '+c.source+'.');","replace":"else readingLine('Cost a unit '+rm(c.rate)+', from '+c.source+'.');"},
  {"name":"the reading has no eyebrow","file":"stmt/owner.js","find":"readingBox.appendChild(el('h4','salt-eyebrow salt-eyebrow--copper reading-head','Reading')); ","replace":""},

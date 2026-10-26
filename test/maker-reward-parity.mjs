@@ -20,7 +20,7 @@ const section = (doc, title) => [...doc.querySelectorAll("#makerInputs .maker-in
 /* a reward card's pill says Give or Take off and speaks its full words (25 Oct 2026, Record redesign P6), so a button is found by either */
 const button = (root, text) => [...root.querySelectorAll("button")].find((node) => node.textContent === text || node.getAttribute("aria-label") === text);
 const field = (root, text) => [...root.querySelectorAll("label")]
-  .find((node) => (node.querySelector(".lbl")?.textContent || node.firstChild.textContent) === text)?.querySelector("input,select");
+  .find((node) => (node.querySelector(".lbl, .salt-settings__label")?.textContent || node.firstChild.textContent) === text)?.querySelector("input,select");
 
 export async function fixture() {
   const source = await readBook(), wd = world(), codes = ["CX1-ZED", "CX2-ZED", "CX3-ZED", "CX4-ZED", "CA1-ZED", "CA1-ZED-R"];
@@ -148,7 +148,7 @@ export async function run({ ok, pageWork }) {
 
     const trade = section(ui.doc, "Sale or purchase");
     for (const [name, value] of Object.entries({ Who: "CX1-ZED", Date: "2099-10-05", Units: "1",
-      "Price (goods)": String(wd.ask - 30), "Units handed over": "1", "Delivery": "40", Handover: "delivered" }))
+      "Price (goods)": String(wd.ask - 30), "Handed over": "1", "Delivery": "40", Handover: "delivered" }))
       ui.set(trade, name, value);
     await ui.work.quiet();
     const cover = () => trade.querySelector("[data-reward-cover]");
@@ -192,9 +192,9 @@ export async function run({ ok, pageWork }) {
     ok(reservation.status === 200 && wd.drafts().some((d) => d.id === reservationAt && d.status === "pending"),
       "an actual pending redemption reserves reward capacity before the covered trade batch");
     ui.set(trade, "Date", "2099-10-05");
-    button(trade, "Another book on this visit").click();await ui.work.quiet();
+    button(trade, "Add a book").click();await ui.work.quiet();
     const extra = trade.querySelector(".maker-extra-trade");
-    for (const [name, value] of Object.entries({ Units: "2", "Price (goods)": "30", "Units handed over": "2" }))
+    for (const [name, value] of Object.entries({ Units: "2", "Price (goods)": "30", "Handed over": "2" }))
       ui.set(extra, name, value);
     await ui.work.quiet();
     cover().checked = true;ui.lose();
@@ -248,11 +248,11 @@ export async function runExtra({ ok, pageWork }) {
     extraUi = await owner(extraCase, pageWork);
     const trade = section(extraUi.doc, "Sale or purchase");
     for (const [name, value] of Object.entries({ Book: "oil", Who: "CX1-ZED", Date: "2099-10-05", Units: "2",
-      "Price (goods)": "30", "Units handed over": "2", "Delivery": "40", Handover: "delivered" }))
+      "Price (goods)": "30", "Handed over": "2", "Delivery": "40", Handover: "delivered" }))
       extraUi.set(trade, name, value);
-    button(trade, "Another book on this visit").click();await extraUi.work.quiet();
+    button(trade, "Add a book").click();await extraUi.work.quiet();
     const extra = trade.querySelector(".maker-extra-trade");
-    extraUi.set(extra, "Price (goods)", String(extraCase.ask - 30));extraUi.set(extra, "Units handed over", "1");
+    extraUi.set(extra, "Price (goods)", String(extraCase.ask - 30));extraUi.set(extra, "Handed over", "1");
     await extraUi.work.quiet();
     const check = extra.querySelector("[data-reward-cover]");
     ok(!check.parentNode.hidden && !check.checked && /Use 0[.]75 unit of their reward.*RM 30[.]00 off/.test(extra.textContent),

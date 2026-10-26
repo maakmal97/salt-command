@@ -53,7 +53,12 @@ export function byAct(root, act, key) {
 /* THE OPTION TILES OF A FORM (Phase 4a, 12 Oct 2026): a group is a fieldset.maker-tiles whose legend is the field's label, and a tile a radio in it. tile() taps
    one as he does and says whether there was one to tap; tileValue() is the value chosen ('' when none is), tileValues() the values offered, and tileGroup() the
    fieldset, which answers .value as the select it replaced did. A form is told its choice by the radio's change, so a test drives the tile and not the group. */
-export function tileGroup(root, label) { return [...root.querySelectorAll("fieldset.maker-tiles")].find((f) => legendLabel(f.querySelector("legend")) === label) || null; }
+export function tileGroup(root, label) {
+  const f = [...root.querySelectorAll("fieldset.maker-tiles")].find((g) => legendLabel(g.querySelector("legend")) === label);
+  if (f) return f;
+  /* 27 Oct 2026 (Record's forms as settings rows): a choice of two or three plain words is a Segment in a row; its name is the row's label, found as a legend's is */
+  return [...root.querySelectorAll(".salt-segment.mseg")].find((s) => { const n = s.getAttribute("aria-labelledby") && s.ownerDocument.getElementById(s.getAttribute("aria-labelledby")); return n && legendLabel(n) === label; }) || null;
+}
 /* A LEGEND ABOUT A BOOK ENDS IN THE BOOK'S MARK AND NO WORD (his word of 12 Oct 2026). legendLabel is the legend's words, then ", " and the code of the book that its mark stands for (read off the shape the
    mark tells a reader), so a test names a group "Starting level, salt" as it always did while the page draws the mark alone. A legend with no mark is just its words. */
 export function legendLabel(legend) {
@@ -65,10 +70,11 @@ export function legendLabel(legend) {
   const book = typed || shape && Object.keys(PSHAPE).find((k) => k !== "_" && PSHAPE[k] === shape);
   return g.textContent.trim() + (book ? ", " + book : "");
 }
-export function tileValues(root, label) { const g = tileGroup(root, label); return g ? [...g.querySelectorAll("input")].map((r) => r.value) : null; }
-export function tileValue(root, label) { const g = tileGroup(root, label); return g ? (g.querySelector("input:checked") || { value: "" }).value : null; }
+const segOpts = (g) => [...g.querySelectorAll("button.salt-segment__opt")];
+export function tileValues(root, label) { const g = tileGroup(root, label); return g ? (g.matches(".mseg") ? segOpts(g).map((b) => b.getAttribute("data-value")) : [...g.querySelectorAll("input")].map((r) => r.value)) : null; }
+export function tileValue(root, label) { const g = tileGroup(root, label); return g ? (g.matches(".mseg") ? g.value : (g.querySelector("input:checked") || { value: "" }).value) : null; }
 export function tile(root, label, value) {
-  const g = tileGroup(root, label), r = g && [...g.querySelectorAll("input")].find((x) => x.value === String(value));
+  const g = tileGroup(root, label), r = g && (g.matches(".mseg") ? segOpts(g) : [...g.querySelectorAll("input")]).find((x) => (x.getAttribute("data-value") ?? x.value) === String(value));
   if (r) r.click();
   return !!r;
 }

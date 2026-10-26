@@ -44,8 +44,8 @@
  {
   "name": "the empty tile is keyed by nothing",
   "file": "stmt/owner.js",
-  "find": "(String(item.value)===''?'none':item.value)",
-  "replace": "item.value"
+  "find": "actOn(radio,L[1],(L[2]?L[2]+'-':'')+(String(item.value)===''?'none':item.value))",
+  "replace": "actOn(radio,L[1],(L[2]?L[2]+'-':'')+item.value)"
  },
  {
   "name": "a tile is not in the recipe's label",
@@ -90,10 +90,10 @@
   "replace": ":(i===0);"
  },
  {
-  "name": "a fresh group takes the empty value as its choice",
+  "name": "a fresh group takes the empty value as its choice (27 Oct 2026: the one group whose empty value is not its first, Hide for, is a Segment now)",
   "file": "stmt/owner.js",
-  "find": "kept=on?on.value:null,",
-  "replace": "kept=on?on.value:'',"
+  "find": "kept=on?on.getAttribute('data-value'):null,",
+  "replace": "kept=on?on.getAttribute('data-value'):'',"
  },
  {
   "name": "a group with nothing chosen answers a value no tile has",
@@ -158,8 +158,8 @@
  {
   "name": "an introduction sends another stream",
   "file": "stmt/owner.js",
-  "find": "{value:'R3',label:'Introduced',aria:'They introduced the buyer'}]);\n      var tradeAssoc",
-  "replace": "{value:'R3x',label:'Introduced',aria:'They introduced the buyer'}]);\n      var tradeAssoc"
+  "find": "{value:'R3',label:'Referred',aria:'They introduced the buyer'}]);\n      var tradeAssoc",
+  "replace": "{value:'R3x',label:'Referred',aria:'They introduced the buyer'}]);\n      var tradeAssoc"
  },
  {
   "name": "a loan in goods sends another word",

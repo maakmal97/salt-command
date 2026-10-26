@@ -8,7 +8,7 @@
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { byAct, richOwnerPage } from "./maker-act.mjs";
+import { byAct, richOwnerPage, drawEverything } from "./maker-act.mjs";
 
 const REPO = join(import.meta.dirname, "..");
 const strip = (c) => c.replace(/\/\*[\s\S]*?\*\//g, "");
@@ -259,5 +259,13 @@ export async function run({ ok, pageWork }) {
     ok(!!card && card.classList.contains("salt-glass-card") && card.querySelector(".agrid").classList.contains("salt-metrics") && card.querySelector(".agrid").classList.contains("salt-metrics--sm")
       && JSON.stringify(cells.map((c) => [c.querySelector(".salt-metrics__label").textContent, c.querySelector(".salt-metrics__value").textContent])) === JSON.stringify([["Bought", "RM 100.00"], ["Sold", "RM 50.00"], ["Introduced", "RM 20.00"]]),
     "the report card is the system's glass card and its three figures its Metric row, label over figure");
+    /* 27 Oct 2026 (Record's forms as settings rows): Record's forms now name a field with the settings row's label, so the Field label class is read where a field keeps its label above it, the cards and sheets drawn on their busiest day */
+    const every = await richOwnerPage({ pageWork, slip: true, probe: true });
+    try {
+      await drawEverything(every);
+      const above = [...every.d.querySelectorAll("label.maker-field .lbl")];
+      ok(above.length >= 5 && labelsBad(every.d).length === 0 && above.every((n) => n.classList.contains("salt-field__label")),
+        `every field that keeps its label above it wears the system's Field label (${above.length} read; bare: ${labelsBad(every.d).slice(0, 3).join(" | ") || "none"})`);
+    } finally { every.w.close(); }
   } finally { p.w.close(); }
 }

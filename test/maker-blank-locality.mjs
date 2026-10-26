@@ -133,7 +133,7 @@ export async function run({ ok, pageWork }) {
       party.value = "CT11-TBC";
       tradeDate.value = new Date().toISOString().slice(0, 10);
       field("Units").value = "1"; field("Price (goods)").value = "130";
-      field("Cash received").value = "0"; field("Units handed over").value = "0";
+      field("Cash received").value = "0"; field("Handed over").value = "0";
       field("Delivery").value = "0";
       [...tradeSection.querySelectorAll("button")].find((button) => button.textContent === "Send the sale").click();
       if (!await blank.work.quiet()) throw new Error("The confirmed-ID trade did not settle.");

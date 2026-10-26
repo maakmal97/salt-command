@@ -93,7 +93,7 @@ export async function run({ ok, pageWork }) {
   try {
     const window = browser.window, doc = window.document;
     const field = (root, name) => [...root.querySelectorAll("label")]
-      .find((l) => l.querySelector(".lbl")?.textContent === name)?.querySelector("input,select");
+      .find((l) => l.querySelector(".lbl, .salt-settings__label")?.textContent === name)?.querySelector("input,select");
     const editor = () => [...doc.querySelectorAll("#makerInputs .maker-input")]
       .find((s) => s.querySelector("h3")?.textContent === "Correct a row");
     const change = (node, value) => { node.value = value; node.dispatchEvent(new window.Event("change", { bubbles: true })); };
@@ -107,7 +107,7 @@ export async function run({ ok, pageWork }) {
     select("f18");
     ok(cash.disabled, "v457.1a Counter Cancellation disables cash");
     ok(units.disabled, "v457.1b Counter Cancellation disables units");
-    ok(cash.parentNode.parentNode.style.display === "none", "v457.1c Counter Cancellation hides movement fields");
+    ok(cash.closest(".maker-fields").style.display === "none" /* 27 Oct 2026 (Record's forms as settings rows): the fields sit in a list inside the movement box */, "v457.1c Counter Cancellation hides movement fields");
     ok(/\bRefund due\b/.test(states()), "v457.2a paid cancellation preview reads Refund due");
     ok(/\bUndelivered\b/.test(states()), "v457.2b paid cancellation preview reads Undelivered");
     ok(/\bCancelled\b/.test(states()), "v457.2c paid cancellation preview reads Cancelled");

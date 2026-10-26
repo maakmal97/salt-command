@@ -35,10 +35,11 @@ export async function run({ ok, pageWork }) {
     ok(!!off && J(read(off)) === J([true, S, "1 unit off · 01 Oct 2026", "AX1-ZED", [["Add", "Add 1 unit off the order of 01 Oct 2026 for AX1-ZED", true]], "RM 100"]),
       "an offset offered is the same card, its units and the order's day, the code, Add speaking what it adds, and its ringgit: " + J(off && read(off)));
     /* 3 */
-    const rp = form("repayment"), left = () => [...rp.querySelectorAll(".repay-left .salt-ledger__row span")].map(t).join(" | ");
+    /* 27 Oct 2026 (Record's forms as settings rows): the left-to-repay line is a row of the form's list, its words and its figure the row's label and value */
+    const rp = form("repayment"), left = () => [...rp.querySelectorAll(".repay-left span")].map(t).join(" | ");
     const first = left(), pick = byAct(rp, "record.repay.loan");
     pick.value = "loan-2"; pick.dispatchEvent(new d.defaultView.Event("change", { bubbles: true })); await quiet();
-    ok(first === "Left on this loan | RM 5.00" && left() === "Left on this loan | 2 units" && rp.querySelector(".repay-left").nextElementSibling === byAct(rp, "record.repay.date").closest("label"),
+    ok(first === "Left to repay | RM 5.00" && left() === "Left to repay | 2 units" && rp.querySelector(".repay-left").nextElementSibling === byAct(rp, "record.repay.date").closest("label"),
       "Repayment says what is left on the loan chosen, and follows the choice: " + J([first, left()]));
     /* 4 */
     const css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n");

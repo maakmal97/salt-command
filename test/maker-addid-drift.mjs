@@ -137,7 +137,7 @@ export async function run({ ok }) {
     const driftLabel = driftSelect && legendLabel(driftSelect.querySelector("legend"));   /* the words, then the book's code that its mark stands for: the page draws the mark alone */
     const pick = (value) => tile(section, driftLabel, value);   /* the drift is a group of tiles, and a tap on one is the change */
     const typed = [...section.querySelectorAll("input[type=number]")]
-      .find((input) => input.closest("label")?.querySelector(".lbl")?.textContent.startsWith("Other %"));
+      .find((input) => input.closest("label")?.querySelector(".lbl, .salt-settings__label")?.textContent.startsWith("Other %"));
     /* the form's own answer line is the last status in it; the first is the one unlock's (Phase 4b) */
     const status = [...section.querySelectorAll('[role="status"]')].at(-1);
     doc.querySelector('[data-act="vault.unlock"]').click();

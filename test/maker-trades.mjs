@@ -96,14 +96,14 @@ export async function ownerTrade(wd, pageWork, cover) {
   dom.window.document.querySelector('button[data-act="nav.record"]').click(); await work.quiet();
   const section = [...dom.window.document.querySelectorAll("#makerInputs .maker-input")]
     .find((s) => s.querySelector("h3")?.textContent === "Sale or purchase");
-  button(section, "Another book on this visit").click(); await work.quiet();
+  button(section, "Add a book").click(); await work.quiet();
   for (const [label, value] of Object.entries({ Date: "2099-10-05", Units: "1",
-    "Price (goods)": "130", "Cash received": "0", "Units handed over": "1",
+    "Price (goods)": "130", "Cash received": "0", "Handed over": "1",
     "Delivery": "40" })) field(section, label).value = value;
   tile(section, "Handover", "delivered");
   const extra = section.querySelector(".maker-extra-trade");
   for (const [label, value] of Object.entries({ Units: "2", "Price (goods)": "30",
-    "Cash received": "0", "Units handed over": "2" })) field(extra, label).value = value;
+    "Cash received": "0", "Handed over": "2" })) field(extra, label).value = value;
   const change = (label, value) => {
     if (tileGroup(section, label)) { tile(section, label, value); return; }   /* a few, fixed choices are tiles, and a tap on one is the change */
     const control = field(section, label); control.value = value;
@@ -224,11 +224,11 @@ export async function run({ ok, pageWork }) {
     dom.window.document.querySelector('button[data-act="nav.record"]').click(); await work.quiet();
     const section = [...dom.window.document.querySelectorAll("#makerInputs .maker-input")].find((s) => s.querySelector("h3")?.textContent === "Sale or purchase");
     const button = (root, label) => [...root.querySelectorAll("button")].find((e) => e.textContent === label);
-    button(section, "Another book on this visit")?.click();
+    button(section, "Add a book")?.click();
     await work.quiet();
     const extra = section.querySelector(".maker-extra-trade");
     if (extra) {
-      const fields = section.querySelectorAll(":scope > label input");
+      const fields = section.querySelectorAll(":scope > .maker-list > label input")   /* 27 Oct 2026 (Record's forms as settings rows): the fields are rows of the form's lists */;
       ["2099-10-05", "1", "130", "170", "1", "40"].forEach((value, i) => { fields[i].value = value; });
       tile(section, "Handover", "delivered");
       ["2", "30", "30", "2"].forEach((value, i) => { extra.querySelectorAll("input:not([type=radio])")[i].value = value; });
@@ -245,15 +245,15 @@ export async function run({ ok, pageWork }) {
     if (approve) await decide(dom.window.document, work, approve);
     ok(!!approve && deviceWorld.drafts().length === 2 && deviceWorld.drafts().every((r) => r.status === "approved"),
       "multi-book owner tap: the generated Approve trip button decides both actual drafts");
-    button(section, "Remove")?.click();
+    button(section, "Remove this book")?.click();   /* 27 Oct 2026 (Record's forms as settings rows): the danger row's words */
     ok(extra && !section.querySelector(".maker-extra-trade"),
       "multi-book owner removal: Remove book actually removes its fields from the submitted trade");
     await work.quiet();
-    tile(section, "Sale or purchase", "purchase");
-    button(section, "Another book on this visit")?.click(); await work.quiet();
+    tile(section, "Type", "purchase");
+    button(section, "Add a book")?.click(); await work.quiet();
     const buyExtra = section.querySelector(".maker-extra-trade");
     if (buyExtra) {
-      const fields = section.querySelectorAll(":scope > label input");
+      const fields = section.querySelectorAll(":scope > .maker-list > label input")   /* 27 Oct 2026 (Record's forms as settings rows): the fields are rows of the form's lists */;
       ["2099-10-05", "1", "130", "130", "1", "0"].forEach((value, i) => { fields[i].value = value; });
       ["2", "30", "30", "2"].forEach((value, i) => { buyExtra.querySelectorAll("input:not([type=radio])")[i].value = value; });
       button(section, "Send the purchase").click(); await work.quiet();
@@ -306,11 +306,11 @@ export async function run({ ok, pageWork }) {
   for (const [stream, buyer] of [["R2", "CX1-ZED"], ["R2", ""], ["R3", null]]) {
     const attributed = world(), page = await ownerTrade(attributed, pageWork);
     try {
-      page.change("Through an associate?", stream); page.change("Which associate", "CA1-ZED");
-      if (stream === "R2") page.change("Their customer (optional)", buyer);
-      const party = [...page.section.querySelectorAll(":scope > label")].find((e) => e.contains(field(page.section, stream === "R3" ? "Buyer" : "Who")));
-      ok((stream === "R2" ? party?.hidden && !field(page.section, "Their customer (optional)").parentElement.hidden
-        : !party?.hidden && field(page.section, "Their customer (optional)").parentElement.hidden)
+      page.change("Associate", stream); page.change("Which associate", "CA1-ZED");
+      if (stream === "R2") page.change("Their customer", buyer);
+      const party = [...page.section.querySelectorAll(":scope > .maker-list > label")].find((e) => e.contains(field(page.section, stream === "R3" ? "Buyer" : "Who")));
+      ok((stream === "R2" ? party?.hidden && !field(page.section, "Their customer").parentElement.hidden
+        : !party?.hidden && field(page.section, "Their customer").parentElement.hidden)
         && field(page.section, "Which associate").value === "CA1-ZED",
         "multi-book attribution controls: " + stream + " exposes its own party/end-customer conditions " + String(buyer));
       await page.send();
@@ -334,7 +334,7 @@ export async function run({ ok, pageWork }) {
           : sales.every((r) => r.customer === "CX1-ZED") && sales[0].ref === "CA1-ZED" && !sales[1].ref
             && E.partyOwedRM(sales, "CX1-ZED") === 200 && E.partyOwedRM(sales, "CA1-ZED") === 0),
         "multi-book attributed approval/fold: " + stream + " books the correct account and credits no downstream buyer " + String(buyer));
-      page.change("Sale or purchase", "purchase");
+      page.change("Type", "purchase");
       ok(page.section.querySelector(".maker-trade-attribution").hidden
         && !field(page.section, "Who").parentElement.hidden,
         "multi-book attribution purchase boundary: sale-only controls disappear and Party returns " + stream + String(buyer));
@@ -348,9 +348,9 @@ export async function run({ ok, pageWork }) {
     .run(JSON.stringify({ banned: [{ id: "SX1-ZED" }] }));
   const choicesPage = await ownerTrade(choicesWorld, pageWork);
   try {
-    choicesPage.change("Through an associate?", "R2");
+    choicesPage.change("Associate", "R2");
     const r2Choices = [...field(choicesPage.section, "Which associate").options].map((o) => o.value);
-    choicesPage.change("Through an associate?", "R3");
+    choicesPage.change("Associate", "R3");
     const r3Choices = [...field(choicesPage.section, "Which associate").options].map((o) => o.value);
     ok(!r2Choices.includes("CX1-ZED") && r3Choices.includes("CX1-ZED") && !r3Choices.includes("SX1-ZED"),
       "multi-book associate catalog: actual controls include the incumbent introduction bench, exclude bans and require an R2 bucket");
@@ -363,7 +363,7 @@ export async function run({ ok, pageWork }) {
     { name: "supplier", direction: "purchase", field: "Who",
       error: "Choose a supplier on the roster. Register a new supplier under Salt Admin > Add ID first, then pick the code.",
       plain: "Choose a supplier from the list. A new supplier is added under Record, New customer, first." },
-    { name: "end buyer", direction: "sale", stream: "R2", field: "Their customer (optional)",
+    { name: "end buyer", direction: "sale", stream: "R2", field: "Their customer",
       error: "Choose an end buyer on the roster, or leave End customer as Not named. Register a new end buyer under Salt Admin > Add ID first, then pick the code.",
       plain: "Choose their customer from the list, or leave it as Not named. A new customer is added under Record, New customer, first." },
     { name: "referrer", direction: "sale", stream: "R3", field: "Which associate",
@@ -375,9 +375,9 @@ export async function run({ ok, pageWork }) {
   ]) {
     const refusedWorld = world(), page = await ownerTrade(refusedWorld, pageWork);
     try {
-      if (scenario.direction === "purchase") page.change("Sale or purchase", "purchase");
+      if (scenario.direction === "purchase") page.change("Type", "purchase");
       if (scenario.stream) {
-        page.change("Through an associate?", scenario.stream); page.change("Which associate", "CA1-ZED");
+        page.change("Associate", scenario.stream); page.change("Which associate", "CA1-ZED");
       }
       const forged = page.dom.window.document.createElement("option");
       forged.value = "CZ9-ZED"; forged.textContent = "CZ9-ZED";
@@ -387,7 +387,7 @@ export async function run({ ok, pageWork }) {
       const request = page.sent.find((s) => s.path.endsWith("/" + scenario.direction));
       const counts = ["maker_request", "input_admission", "input_admission_source", "draft"]
         .map((table) => refusedWorld.sqlite.prepare("SELECT COUNT(*) AS n FROM " + table).get().n);
-      ok(request && (scenario.field === "Their customer (optional)" ? request.body.downstream
+      ok(request && (scenario.field === "Their customer" ? request.body.downstream
         : scenario.field === "Which associate" ? request.body.assoc : request.body.party) === "CZ9-ZED"
         && refusedWorld.calls.includes("/_internal/maker/inputs/" + scenario.direction)
         && page.section.querySelector('[role="status"]').firstChild.textContent === scenario.plain
