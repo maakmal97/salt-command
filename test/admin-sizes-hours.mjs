@@ -93,17 +93,20 @@ export async function run({ ok, pageWork }) {
     /* the override */
     /* a save draws the hours again, so the controls are found afresh each time */
     const ui = () => {
-      /* 25 Oct 2026 (Salt Admin Shop): the override is For now's form, first on Hours, opened by Hold the shop */
+      /* 26 Oct 2026 (Hours as settings): the override is Now's, opened by the Hold the shop switch: Hold as a Segment of two, then Until */
       const now = p.d.getElementById("makerNowCard");
-      const state = [...now.querySelectorAll("fieldset.maker-tiles")].find((f) => f.querySelector("legend").textContent === "Hold the shop");
+      const state = now.querySelector('[role="radiogroup"]');
       const until = now.querySelector('input[type="datetime-local"]');
-      return { radios: state ? [...state.querySelectorAll("input")] : [], until, label: until ? until.closest("label").querySelector(".lbl").textContent : "no field" };
+      return { radios: state ? [...state.querySelectorAll('[role="radio"]')] : [], until, label: until ? until.closest("label").querySelector(".salt-settings__label").textContent : "no field" };
     };
-    const choose = (value) => { const r = ui().radios.find((x) => x.value === value); r.checked = true; r.dispatchEvent(new p.w.Event("change", { bubbles: true })); };
+    const choose = (value) => { ui().radios.find((x) => x.getAttribute("data-key") === value).click(); };
+    const sw = () => byAct(p.d, "hours.hold");
+    ok(!!sw() && sw().getAttribute("role") === "switch" && sw().getAttribute("aria-checked") === "false" && ui().radios.length === 0, "Hold the shop is a switch, off, with nothing under it");
+    sw().click(); await p.work.quiet();
     const radios = ui().radios;
-    ok(radios.length === 2 && same(radios.map((r) => r.value), ["false", "true"]) && same(radios.map((r) => r.nextElementSibling.textContent), ["Closed", "Open"])
-      && radios.every((r) => r.getAttribute("data-act") === "hours.override-state") && radios[0].checked && !radios[1].checked && ui().label === "Closed until",
-    "the shop held for now is two tiles, Closed first and chosen, over a field that says Closed until: " + radios.map((r) => r.value + ":" + r.checked).join() + " " + ui().label);
+    ok(sw().getAttribute("aria-checked") === "true" && radios.length === 2 && same(radios.map((r) => r.getAttribute("data-key")), ["false", "true"]) && same(radios.map((r) => r.textContent), ["Closed", "Open"])
+      && radios.every((r) => r.getAttribute("data-act") === "hours.override-state") && radios[0].getAttribute("aria-checked") === "true" && radios[1].getAttribute("aria-checked") === "false" && ui().label === "Closed until",
+    "on, the shop held for now is a choice of two, Closed first and chosen, over a field that says Closed until: " + radios.map((r) => r.getAttribute("data-key") + ":" + r.getAttribute("aria-checked")).join() + " " + ui().label);
     choose("true");
     const openLabel = ui().label;
     choose("false");
@@ -113,18 +116,17 @@ export async function run({ ok, pageWork }) {
     ok(p.sent("/all/maker/hours").length === before && /Choose an end time/.test(p.d.getElementById("makerHoursMessage").textContent), "with no end time chosen it says so and sends nothing");
     const stamp = new Date(Date.now() + 3 * 86400000 + 8 * 3600000).toISOString().slice(0, 16);
     p.type(ui().until, stamp);
-    ok(!byAct(p.d, "hours.override-clear"), "with no override filed there is no way back to the weekly hours to offer");
+
     filed = { open: false, until: new Date(Date.parse(stamp + ":00+08:00")).toISOString() };
     byAct(p.d, "hours.override-set").click(); await p.work.quiet();
-    ok(!!byAct(p.d, "hours.override-clear") && byAct(p.d, "hours.override-clear").getAttribute("aria-label") === "Back to the weekly hours" && byAct(p.d, "hours.hold").textContent === "Change",
-      "once one is filed, Weekly hours stands beside Change, named Back to the weekly hours");
-    byAct(p.d, "hours.hold").click(); await p.work.quiet();
+    ok(sw().getAttribute("aria-checked") === "true" && !!byAct(p.d, "hours.override-set") && ui().radios.length === 2,
+      "once one is filed, the switch stays on with its choice and Set it, to change it");
     choose("true"); p.type(ui().until, stamp);
     byAct(p.d, "hours.override-set").click(); await p.work.quiet();
-    byAct(p.d, "hours.override-clear").click(); await p.work.quiet();
+    sw().click(); await p.work.quiet();
     const iso = new Date(Date.parse(stamp + ":00+08:00")).toISOString();
     const sent = p.sent("/all/maker/hours");
     ok(same(sent.slice(1), [{ manual: { open: false, until: iso } }, { manual: { open: true, until: iso } }, { clearManual: true }]),
-      "Closed sends manual open false and the end time, Open sends open true, and Back to the weekly hours sends clearManual, as the select form sent: " + JSON.stringify(sent.slice(1)));
+      "Closed sends manual open false and the end time, Open sends open true, and the switch turned off sends clearManual, as the select form sent: " + JSON.stringify(sent.slice(1)));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 }

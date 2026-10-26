@@ -62,12 +62,14 @@ export async function run({ ok, pageWork }) {
       "the day before's tail runs from 00 to its close, and only where there is one");
     /* 3 */
     await p.tap("hours.day", "Friday");
-    const box = p.row("Friday").nextElementSibling, from = byAct(p.d, "hours.day-from", "Friday"), to = byAct(p.d, "hours.day-to", "Friday");
-    ok(p.row("Friday").getAttribute("aria-expanded") === "true" && !!box && box.classList.contains("maker-dayedit") && box.contains(from) && p.d.querySelectorAll(".maker-dayedit").length === 1,
-      "a tap opens that day below its row, and only that day");
+    /* 26 Oct 2026 (Hours as settings): the open day stands under the week's list, its name heading it */
+    const box = p.d.querySelector(".maker-dayedit"), from = byAct(p.d, "hours.day-from", "Friday"), to = byAct(p.d, "hours.day-to", "Friday");
+    ok(p.row("Friday").getAttribute("aria-expanded") === "true" && !!box && box.contains(from) && p.d.querySelectorAll(".maker-dayedit").length === 1
+      && box.previousElementSibling.previousElementSibling === p.row("Friday").closest(".maker-week") && box.querySelector("h3").textContent === "Friday",
+      "a tap opens that day under the week, its name heading it, and only that day");
     ok(from.options.length === 96 && to.options.length === 97 && to.options[96].value === "24:00" && from.value === "09:00" && to.value === "02:00",
       "Opens and Closes are quarter-hour pickers, Closes offering 24:00: " + [from.options.length, to.options.length, from.value, to.value]);
-    ok(/Closes next day/.test(box.textContent) && !!box.querySelector(".maker-plus1") && to.getAttribute("aria-label") === "Friday closes, next day",
+    ok(/Closes the next day/.test(box.textContent) && !!box.querySelector(".maker-plus1") && to.getAttribute("aria-label") === "Friday closes, next day",
       "past midnight, the day says Closes next day, +1 stands by Closes and Closes is named next day");
     await p.tap("hours.day", "Thursday");
     const thu = byAct(p.d, "hours.day-to", "Thursday");
@@ -78,10 +80,11 @@ export async function run({ ok, pageWork }) {
     ok(p.label("Friday") === "Fri: 09:00 to 20:00. Change" && geo("Saturday", "maker-tail") === null && p.d.activeElement === byAct(p.d, "hours.day-to", "Friday"),
       "a picked time redraws the week, the tail gone, and the picker keeps the focus: " + p.label("Friday"));
     await p.tap("hours.day-same", "Friday");
-    ok(p.label("Friday") === "Fri: 09:00 to 21:10. Change" && byAct(p.d, "hours.day-same", "Friday").textContent === "Same as Thu", "Same as Thu takes Thursday's times");
+    ok(p.label("Friday") === "Fri: 09:00 to 21:10. Change" && byAct(p.d, "hours.day-same", "Friday").textContent === "Same as Thursday", "Same as Thursday takes Thursday's times");
     await p.tap("hours.day-closed", "Friday");
-    ok(p.label("Friday") === "Fri: Closed. Change" && byAct(p.d, "hours.day-closed", "Friday").textContent === "Open" && byAct(p.d, "hours.day-from", "Friday").disabled,
-      "Closed closes the day and offers Open");
+    ok(p.label("Friday") === "Fri: Closed. Change" && byAct(p.d, "hours.day-closed", "Friday").getAttribute("role") === "switch" && byAct(p.d, "hours.day-closed", "Friday").getAttribute("aria-checked") === "false"
+      && !byAct(p.d, "hours.day-from", "Friday") && !byAct(p.d, "hours.day-allday", "Friday"),
+      "Open, a switch turned off, closes the day and its times go");
     await p.tap("hours.day-closed", "Friday");
     await p.pick("hours.day-to", "Friday", "03:00");
     await p.tap("hours.day-copy", "Friday");
@@ -99,10 +102,10 @@ export async function run({ ok, pageWork }) {
     await p.tap("hours.day-remove", "Tuesday 2");
     ok(p.label("Tuesday").startsWith("Tue: 09:00 to 21:00") && !p.label("Tuesday").includes("22:00") && !byAct(p.d, "hours.day-from", "Tuesday 2"), "Remove takes the span out: " + p.label("Tuesday"));
     await p.tap("hours.day-allday", "Tuesday");
-    ok(p.label("Tuesday").startsWith("Tue: Open all day") && geo("Tuesday", "maker-bar") === "0.00 100.00" && byAct(p.d, "hours.day-to", "Tuesday").value === "24:00", "Open all day is 00:00 to 24:00, the whole track");
+    ok(p.label("Tuesday").startsWith("Tue: Open all day") && geo("Tuesday", "maker-bar") === "0.00 100.00" && byAct(p.d, "hours.day-allday", "Tuesday").getAttribute("aria-checked") === "true" && !byAct(p.d, "hours.day-to", "Tuesday"), "Open all day, a switch, is 00:00 to 24:00, the whole track, and its times go");
     /* 6: Friday 20:00 to 11:00 reaches Saturday's opening at 10:00 */
     await p.tap("hours.day", "Friday"); await p.pick("hours.day-from", "Friday", "20:00"); await p.pick("hours.day-to", "Friday", "11:00");
-    ok(/runs on into the next day.s hours: one stretch/.test(p.row("Friday").nextElementSibling.textContent), "a stretch past midnight that reaches the next day's opening is said to run on as one: " + p.label("Friday") + " / " + p.label("Saturday") + " / " + p.row("Friday").nextElementSibling.textContent.slice(0, 200));
+    ok(/uns on into the next day.s hours: one stretch/.test(p.d.querySelector(".maker-dayedit").textContent), "a stretch past midnight that reaches the next day's opening is said to run on as one: " + p.label("Friday") + " / " + p.label("Saturday") + " / " + p.d.querySelector(".maker-dayedit").textContent.slice(0, 200));
     /* 7 */
     const pv = p.d.getElementById("makerHoursPreview");
     ok(/^Customers would see: (Open|Closed).*Fri [0-9]+ [A-Z][a-z]{2}: 00:00 to 03:00, 20:00 to 24:00\. Delivery windows 00-04 as 00:00-03:00, 20-24\.$/.test(pv.textContent)
@@ -136,8 +139,10 @@ export async function run({ ok, pageWork }) {
     await p.tap("hours.day", "Monday"); await p.tap("hours.save", "Monday");
     ok(/A day holds 24 hours at most/.test(p.d.getElementById("makerHoursSaved").textContent), "a refusal is said in Admin's words under the chart: " + p.d.getElementById("makerHoursSaved").textContent);
     const css = [...p.d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
-    ok(/\.adm \.maker-day\{[^}]*min-height:44px/.test(css) && /\.adm \.maker-dayedit select\{[^}]*min-height:44px/.test(css) && /\.adm \.maker-dayedit-acts button\{[^}]*min-height:44px/.test(css)
-      && /\.adm \.maker-copy button\{[^}]*min-height:44px/.test(css) && /\.adm \.maker-dayedit-times>button\{[^}]*min-height:44px/.test(css),
-    "every row, picker, chip and button is 44px tall");
+    /* 26 Oct 2026 (Hours as settings): every button of the open day is a settings row (56px, the recipe's), a Switch or the one pill */
+    await p.tap("hours.day", "Friday"); await p.tap("hours.day-copy", "Friday");
+    const btns = [...p.d.querySelectorAll(".maker-dayedit button")], odd = btns.filter((b) => !b.hidden && !["salt-settings__row", "salt-switch", "salt-pill"].some((c) => b.classList.contains(c)));
+    ok(/\.adm \.maker-day\{[^}]*min-height:44px/.test(css) && /\.adm \.maker-dayedit select\{[^}]*min-height:44px/.test(css) && btns.length > 6 && !odd.length,
+    "every row and picker is 44px tall at least, and every button of the open day a settings row, a Switch or the one pill: " + odd.map((b) => b.className).join());
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
 }

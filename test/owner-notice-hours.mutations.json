@@ -5,5 +5,5 @@
  {"name":"N4 a long word in the current notice does not wrap","file":"stmt/page.js","find":"#makerBulletinCurrent{overflow-wrap:anywhere}","replace":"#makerBulletinCurrent{color:inherit}"},
  {"name":"H1 Done lets go at once","file":"stmt/owner.js","find":"      return refs('/all/maker/hours',{schedule:hrsWeekOut()})","replace":"      refs('/all/maker/hours',{schedule:hrsWeekOut()})"},
  {"name":"H2 Set temporary override lets go at once","file":"stmt/owner.js","find":"      return refs('/all/maker/hours',{manual:{open:kind.value==='true',until:new Date(when).toISOString()}})","replace":"      refs('/all/maker/hours',{manual:{open:kind.value==='true',until:new Date(when).toISOString()}})"},
- {"name":"H3 Clear temporary override lets go at once","file":"stmt/owner.js","find":"      return refs('/all/maker/hours',{clearManual:true}).then(function(value){","replace":"      refs('/all/maker/hours',{clearManual:true}).then(function(value){"}
+ {"name":"H3 the hold switch lets go at once","file":"stmt/owner.js","find":"      sw.disabled=true;\n      refs('/all/maker/hours',{clearManual:true})","replace":"      refs('/all/maker/hours',{clearManual:true})"}
 ]

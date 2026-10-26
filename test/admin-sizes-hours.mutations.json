@@ -13,9 +13,9 @@
  {"name":"the sizes do not take the row of their form","file":"stmt/page.js","find":".adm .maker-sizes{flex:1 1 100%;min-width:0}","replace":".adm .maker-sizes{min-width:0}"},
  {"name":"the weekly hours are sent from the other end of the week","file":"stmt/owner.js","find":"var w={days:hrsDraft.days.map(hrsOut)}","replace":"var w={days:hrsDraft.days.slice().reverse().map(hrsOut)}"},
  {"name":"Closed and Open send each other's value","file":"stmt/owner.js","find":"[{value:'false',label:'Closed'},{value:'true',label:'Open'}]","replace":"[{value:'true',label:'Closed'},{value:'false',label:'Open'}]"},
- {"name":"the shop's tiles are not named","file":"stmt/owner.js","find":"['Hold the shop','hours.override-state']","replace":"['For now','hours.override-state']"},
- {"name":"the shop's tiles have another act","file":"stmt/owner.js","find":"['Hold the shop','hours.override-state']","replace":"['Hold the shop','hours.override-mode']"},
- {"name":"the field always says Closed until","file":"stmt/owner.js","find":"untilWord.textContent=kind.value==='true'?'Open until':'Closed until';","replace":"untilWord.textContent='Closed until';"},
- {"name":"the field is not called Closed until","file":"stmt/owner.js","find":"makerField(form,['Closed until','hours.override-until']","replace":"makerField(form,['Until','hours.override-until']"},
- {"name":"an open override is sent as closed","file":"stmt/owner.js","find":"{manual:{open:kind.value==='true',until:new Date(when).toISOString()}}","replace":"{manual:{open:kind.value!=='true',until:new Date(when).toISOString()}}"}
+ {"name":"the field always says Closed until","file":"stmt/owner.js","find":"kind.addEventListener('change',function(){ uw.textContent=kind.value==='true'?'Open until':'Closed until'; });","replace":"kind.addEventListener('change',function(){ uw.textContent='Closed until'; });"},
+ {"name":"an open override is sent as closed","file":"stmt/owner.js","find":"{manual:{open:kind.value==='true',until:new Date(when).toISOString()}}","replace":"{manual:{open:kind.value!=='true',until:new Date(when).toISOString()}}"},
+ {"name":"the hold's choice has another act","file":"stmt/owner.js","find":"hrsSeg('hours.override-state',","replace":"hrsSeg('hours.override-mode',"},
+ {"name":"the field is not called Closed until","file":"stmt/owner.js","find":"kind.value==='true'?'Open until':'Closed until'), until=","replace":"kind.value==='true'?'Open until':'Until'), until="},
+ {"name":"the switch turned off does not go back","file":"stmt/owner.js","find":"refs('/all/maker/hours',{clearManual:true}).then(function(value){ makerHours=value; hrsHold=false; drawMakerHours(); hoursSaid('now','Back on the weekly hours.'); })","replace":"Promise.resolve(makerHours).then(function(value){ makerHours=value; hrsHold=false; drawMakerHours(); hoursSaid('now','Back on the weekly hours.'); })"}
 ]

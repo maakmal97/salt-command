@@ -1946,8 +1946,11 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   before, Copy to any days (a chip a day, its group, Monday to Friday or Saturday and Sunday, chosen at first, then Apply), Add hours and
   Remove (up to six spans, "2 spans" in the row), Open all day, and Done, which sends the week and its dates; a stretch running on into the
   next day's opening is said as one. Below it: what customers would see for the day being changed (a read), Discard changes while the week
-  differs from the saved one, Undo for a minute after Done, and the dated days, a row each with Add a date and Remove this date (`test/admin-hours-week.mjs`). The override that holds the shop for now is two tiles, Closed and Open (`hours.override-state`, keyed `false` and
-  `true`), over a field that says **Closed until**, or Open until when Open is chosen, in Kuala Lumpur time. What is sent is what it was: `{schedule: {days}}`, then
+  differs from the saved one, Undo for a minute after Done, and the dated days, a row each with Add a date and Remove this date (`test/admin-hours-week.mjs`). **Since 26 Oct 2026 (his word) every part of Hours is a list of settings**: Now (the state, the confirm time, Hold the
+  shop as a Switch), the week and the dates a row a day, the open day under its list (beside the week from 860px) with Open and Open all day as
+  switches, Opens and Closes rows, and rows for Add hours, Same as, Copy to other days, Remove this date and Discard changes; the points a
+  row each, New point a Code and a Place row; Help a list. The override that holds the shop for now is Hold as, a Segment of Closed and Open
+  (`hours.override-state`, keyed `false` and `true`), over a field that says **Closed until**, or Open until when Open is chosen, in Kuala Lumpur time. What is sent is what it was: `{schedule: {days}}`, then
   `{manual: {open, until}}` or `{clearManual: true}`. `tools/maker-forms-geometry.mjs` measures the pane, every form's tiles, the size grid and the hours table in a
   real browser at 1280 and 375px, and proves a 20px tile red.
   **The bar of five places stands on the screen's foot** (12 Oct 2026, his iPhone report that on Record it did not; `test/admin-bar-foot.mjs`, its mutations in
@@ -2659,27 +2662,26 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `approve.confirm` | The bar under the cards | Asks once on the sheet, listing every card to approve and to reject; its yes sends one decide-many. |
 | `ended.sign-in` | Shown when the Access session has ended | Loads /all again, which is the Access login. |
 | `hours.copy-apply` | The opened day's Copy to (key: the weekday) | Copies its hours to the days chosen. |
-| `hours.copy-day` | Copy to, a chip a day (key: the weekday) | Chooses or leaves that day; its group is chosen at first. |
+| `hours.copy-day` | Copy to, a row a day (key: the weekday) | Ticks or leaves that day; its group is ticked at first. |
 | `hours.date` | Dates, a row a dated day (key: the date) | Opens or shuts that date's hours below its row. |
 | `hours.date-add` | Dates | Opens or shuts the date field. |
 | `hours.date-new` | Dates, the date field | Adds the date, closed, and opens it. |
 | `hours.date-pick` | Dates | The date, today to 90 days ahead. |
 | `hours.date-remove` | The opened date (key: the date) | Takes the date out; its weekday's hours stand again. |
 | `hours.day-add` | The opened day (key: the weekday or date) | Adds a span after the last, up to six. |
-| `hours.day-allday` | The opened day (key: the weekday or date) | Open all day: 00:00 to 24:00. |
+| `hours.day-allday` | The opened day, Open all day (key: the weekday or date) | The Switch: on is 00:00 to 24:00; off goes back to 09:00 to 17:00. |
 | `hours.day-remove` | A span of the opened day after the first (key: the day and its number) | Takes that span out. |
 | `hours.discard` | Operating hours, while the week differs from the saved one | Puts the saved week back. |
 | `hours.undo` | Operating hours, for a minute after Done | Sends back the week Done replaced. |
 | `hours.day` | Operating hours' week chart, a row a weekday (key: the weekday) | Opens or shuts that day's Opens and Closes below its row. |
-| `hours.day-closed` | The opened day (key: the weekday) | Closes the day, or opens a closed one at 09:00 to 17:00. |
-| `hours.day-copy` | The opened day (key: the weekday) | Copies its hours to the rest of its group: Monday to Friday, or Saturday and Sunday. |
+| `hours.day-closed` | The opened day, Open (key: the weekday or date) | The Switch: off closes the day; on opens a closed one at 09:00 to 17:00. |
+| `hours.day-copy` | The opened day, Copy to other days (key: the weekday) | Opens or shuts the list of days to copy its hours to, its group ticked at first: Monday to Friday, or Saturday and Sunday. |
 | `hours.day-from` | The opened day (key: the weekday) | The quarter hour it opens. |
 | `hours.day-same` | The opened day (key: the weekday) | Takes the day before's hours. |
 | `hours.day-to` | The opened day (key: the weekday) | The quarter hour it closes; earlier than the open is the next day. |
-| `hours.hold` | Operating hours, For now | Opens the form that holds the shop closed or open until a time; Not now folds it. |
-| `hours.override-clear` | Operating hours, For now, while an override is filed | Clears it (it reads Weekly hours, named Back to the weekly hours). |
+| `hours.hold` | Operating hours, Now, Hold the shop | The Switch: on shows Hold as, Until and Set it; off before Set it folds them; off while the shop is held goes back to the weekly hours (`clearManual`). |
 | `hours.override-set` | Operating hours | Sets the temporary override. |
-| `hours.override-state` | Operating hours (key: `false` for Closed, `true` for Open) | Whether the override holds the shop open or closed. |
+| `hours.override-state` | Operating hours, Hold as, a Segment (key: `false` for Closed, `true` for Open) | Whether the override holds the shop open or closed. |
 | `hours.override-until` | Operating hours | When the override ends, Kuala Lumpur time. |
 | `hours.save` | The opened day, Done (key: the weekday) | Saves the whole week and shuts the day. |
 | `link.approve` | Link card of an associate's link | Approves it, which opens it. |
@@ -2847,7 +2849,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `part.shop.notice` | The strip under Shop (tab: Notice) | Shows the notice, reading it. |
 | `part.shop.practice` | The strip under Shop (tab: Practice) | Shows the two practice accounts. |
 | `part.shop.device` | The strip under Shop (tab: This device) | Shows this device's Look, Night or Tide for Salt Admin, reading nothing. |
-| `points.add` | Collection points | Adds the point typed to the list, unsaved. |
+| `points.add` | Collection points, New point, Add point | Adds the point typed to the list, unsaved. |
 | `points.code` | Collection points | The point code: one capital letter and one or two digits, such as A2. |
 | `points.place` | Collection points | Its place: two figures, latitude and longitude, or a Maps link read on this device. |
 | `points.remove` | Collection points (key: the point code) | Takes the point off the list, unsaved. |

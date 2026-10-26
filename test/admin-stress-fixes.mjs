@@ -118,17 +118,20 @@ export async function run({ ok, pageWork }) {
     /* 20 Oct 2026 (canvas V63): Done stands in an opened day and closes it, so its answer stands on the line right under the week chart */
     const root = at(p, "makerSchedule"), save = () => { byAct(root, "hours.day", "Monday").click(); return byAct(root, "hours.save", "Monday"); };
     save().click(); await p.work.quiet();
-    let said = beside(root.querySelector(".maker-week"));
+    /* 26 Oct 2026 (Hours as settings): the week's list closes on its grey line, and the answer stands right under that */
+    let said = beside(root.querySelector(".maker-week + .salt-settings__foot"));
     ok(!!said && said.id === "makerHoursSaved" && said.getAttribute("role") === "status" && root.contains(said) && said.textContent === "Weekly hours saved." && at(p, "makerHoursMessage").textContent === "",
       "Done answers on the line right under the week chart, inside the hours, and the line below the shop-for-now controls stays empty: " + JSON.stringify([said && said.id, said && said.textContent]));
     ok(p.scrolled.includes(said), "and the answer is brought into reach");
     p.fail.add("/all/maker/hours");
     save().click(); await p.work.quiet();
-    said = beside(root.querySelector(".maker-week"));
+    /* the day stays open, so the answer stands right under it and its Done */
+    said = beside(root.querySelector(".maker-dayedit"));
     ok(!!said && said.id === "makerHoursSaved" && /Not sent/.test(said.textContent) && at(p, "makerHoursMessage").textContent === "",
-      "a Done that cannot be sent says so on the same line, under the week chart: " + JSON.stringify(said && said.textContent));
+      "a Done that cannot be sent says so on the same line, under the day still open: " + JSON.stringify(said && said.textContent));
     p.fail.delete("/all/maker/hours");
     /* 25 Oct 2026 (Salt Admin Shop): the shop held for now is For now's form, and its line closes For now's card */
+    byAct(p.d, "hours.hold").click(); await p.work.quiet();
     byAct(p.d, "hours.override-set").click(); await p.work.quiet();
     ok(/Choose an end time/.test(at(p, "makerHoursMessage").textContent) && beside(at(p, "makerNow")) === at(p, "makerHoursMessage") && at(p, "makerHoursSaved").textContent === "",
       "the shop held for now answers on its own line, right below Set it and Back, and the Save line is cleared so one answer is on screen: " + JSON.stringify([at(p, "makerHoursMessage").textContent, at(p, "makerHoursSaved").textContent]));

@@ -1,6 +1,6 @@
 [
  {"name":"an old word comes back in the hours","file":"stmt/owner.js","find":"{value:'false',label:'Closed'}","replace":"{value:'false',label:'Set temporary override'}"},
- {"name":"an old word comes back on the weekly hours","file":"stmt/owner.js","find":"'Back to the weekly hours'","replace":"'Clear temporary override'"},
+ {"name":"an old word comes back on the weekly hours","file":"stmt/owner.js","find":"hoursSaid('now','Back on the weekly hours.'); })\n        .catch(function(error){ sw.disabled=false;","replace":"hoursSaid('now','Clear temporary override'); })\n        .catch(function(error){ sw.disabled=false;"},
  {"name":"an old section title comes back on the page","file":"stmt/page.js","find":"<h2 id=\"makerClaimsTitle\">Payments they say they sent</h2>","replace":"<h2 id=\"makerClaimsTitle\">No account claims waiting.</h2>"},
  {"name":"fmtWhen prints a day as ISO","file":"stmt/owner.js","find":"return dmyOf({day:s.slice(8), month:s.slice(5,7), year:s.slice(0,4)}, 'en');","replace":"return s;"},
  {"name":"fmtWhen prints a moment as ISO","file":"stmt/owner.js","find":"return stamp(s, 'en');\n  }","replace":"return s;\n  }"},
@@ -23,7 +23,7 @@
  {"name":"a lost connection gets Details","file":"stmt/owner.js","find":"throw new Error('Not sent. Check the connection and try again.');","replace":"var offline=new Error('Not sent. Check the connection and try again.'); offline.raw='offline'; throw offline;"},
  {"name":"the order card drops Details","file":"stmt/owner.js","find":"makerPlacedSay(back+error.message,true,error);","replace":"makerPlacedSay(back+error.message,true);"},
  {"name":"refs raises the server's words","file":"stmt/owner.js","find":"if(!r.ok||!j.ok) throw refused(j.error, j, r.status);","replace":"if(!r.ok||!j.ok){ var failure=new Error(j.error||'that did not work'); failure.detail=j; failure.status=r.status; throw failure; }"},
- {"name": "the order list names the book beside its tag", "file": "stmt/owner.js", "find": "tag.appendChild(productTag(o.product)); code.appendChild(", "replace": "tag.appendChild(productTag(o.product)); tag.appendChild(document.createTextNode(o.product)); code.appendChild("},
+ {"name":"the order list names the book beside its tag","file":"stmt/owner.js","find":"tag.appendChild(productTag(o.product)); code.appendChild(","replace":"tag.appendChild(productTag(o.product)); tag.appendChild(document.createTextNode(o.product)); code.appendChild("},
  {"name":"the order sheet names the book beside its tile","file":"stmt/owner.js","find":"lab.appendChild(bookTile(order.product,order.qty)); lab.appendChild(el('span',null,codeByUser(order.u)));","replace":"lab.appendChild(bookTile(order.product,order.qty)); lab.appendChild(el('span',null,order.product+' '+codeByUser(order.u)));"},
  {"name":"the Approve sheet's row loses its tile","file":"stmt/owner.js","find":"!item.amends?bookTile(item.product,item.qty):null);","replace":"!item.amends?el('span',null,item.product):null);"},
  {"name":"the tile caption says the shape","file":"stmt/page.js","find":"var f=el('span','mq',words); f.setAttribute('aria-hidden','true');","replace":"var f=el('span','mq',pshape(product)+', '+words); f.setAttribute('aria-hidden','true');"},

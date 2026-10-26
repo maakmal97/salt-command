@@ -474,10 +474,13 @@ export async function run({ ok }) {
     /* 11 Oct 2026: each of the three hours buttons stays off until its answer lands, where its callback let go at once (Shop, Hours). 13 Oct 2026: Save answers on the line right under it (#makerHoursSaved), the other two on the one below them */
     doc.querySelector('[data-act="part.shop.hours"]').click();
     /* 25 Oct 2026 (Salt Admin Shop): Set it and the way back are For now's, first on Hours; the way back reads Weekly hours and goes once taken */
-    const hoursBtn = (label) => [...doc.querySelectorAll("#makerSchedule button, #makerNowCard button")].find((button) => button.textContent === label);
+    /* 26 Oct 2026 (Hours as settings): the way back is the Hold the shop switch turned off, and Set it stands once the switch is on */
+    const hoursBtn = (label) => label === "Weekly hours" ? doc.querySelector('#makerNowCard [data-act="hours.hold"][aria-checked="true"]')
+      : [...doc.querySelectorAll("#makerSchedule button, #makerNowCard button, #makerDayPane button")].find((button) => button.textContent === label);
     const holdHours = async (label, ready, saved) => {
       /* 20 Oct 2026 (canvas V63): Done stands in an opened day */
       if (label === "Done") { await until(() => doc.querySelector('#makerSchedule [data-act="hours.day"]')); doc.querySelector('#makerSchedule [data-act="hours.day"]').click(); }
+      if (label === "Set it") { await until(() => doc.querySelector('[data-act="hours.hold"]')); if (!hoursBtn(label)) doc.querySelector('[data-act="hours.hold"]').click(); }
       await until(() => hoursBtn(label));
       doc.getElementById("makerHoursMessage").textContent = ""; if (doc.getElementById("makerHoursSaved")) doc.getElementById("makerHoursSaved").textContent = "";
       if (ready) ready();
