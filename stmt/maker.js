@@ -5,6 +5,7 @@ import { hoursStatus, validateManualHours, validateWeeklyHours, HOURS_KEY, windo
 import { slotSpan, WINDOWS } from "./window.js";
 import { CONFIRM_KEY, confirmWithin, confirmView } from "./confirm.js";
 import { readPin } from "./pin.js";
+import { mapsOpen, placeSearch } from "./place.js";
 
 const OWNER_EMAIL = "maakmal97@icloud.com";
 const HEADERS = {
@@ -364,6 +365,9 @@ function internalOperation(path) {
   if (path === "/all/maker/vault/addr") return { kind: "vault-addr" };
   if (path === "/all/maker/vault/pair") return { kind: "vault-pair" };
   if (path === "/all/maker/geo/expand") return { kind: "geo-expand" };
+  /* 26 Oct 2026 (his answers): a short Google or Apple link opened for its point, and the OpenStreetMap search as he types (stmt/place.js) */
+  if (path === "/all/maker/geo/open") return { kind: "geo-open" };
+  if (path === "/all/maker/geo/search") return { kind: "geo-search" };
   if (path === "/all/maker/threads") return { kind: "threads" };
   if (path === "/all/maker/bulletin") return { kind: "bulletin" };
   if (path === "/all/maker/claims") return { kind: "claims" };
@@ -631,6 +635,16 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
       if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
       const route = op.kind === "bulletin" ? "/bulletin" : "/threads" + (op.u ? "/" + op.u : "");
       return json(await deskCall(env, "/_internal/maker" + route, method, parsed.body));
+    }
+    if (op.kind === "geo-open" || op.kind === "geo-search") {
+      if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      const parsed = await bodyOf(request);
+      if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
+      const field = op.kind === "geo-open" ? "url" : "q";
+      if (Object.keys(parsed.body).length !== 1 || typeof parsed.body[field] !== "string")
+        return json({ ok: false, error: op.kind === "geo-open" ? "Send only the map link." : "Send only the words." }, 400);
+      const out = op.kind === "geo-open" ? await mapsOpen(parsed.body.url, fetch) : await placeSearch(parsed.body.q, fetch);
+      return json(out.ok ? out : { ok: false, error: out.error }, out.ok ? 200 : out.status);
     }
     if (op.kind === "geo-expand") {
       if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
