@@ -1474,7 +1474,7 @@ export const OWNER_JS = `
     if(state) state.textContent=makerVault?'Open on this phone':'Locked';
     if(on) on.hidden=!!makerVault;
     if(off) off.hidden=!makerVault;
-    var inl=document.getElementById('vaultInline'); if(inl){ inl.hidden=!!makerVault; inl.value=''; }
+    var vsw=document.getElementById('vaultSwitch'); if(vsw) vsw.setAttribute('aria-checked',String(!!makerVault));
     makerVaultPaint();
   }
   /* a name beside its code, wherever a code is drawn with data-who, until the lock; a code the vault has no name for shows alone. A redraw of the page is
@@ -1522,22 +1522,9 @@ export const OWNER_JS = `
       else if(!ev.shiftKey&&i===f.length-1){ ev.preventDefault(); f[0].focus(); }
     });
     /* Shop > This device holds the control that is always in reach: Unlock while shut, Lock while open */
-    /* 26 Oct 2026, his word: This device's Unlock reads the password typed in its own row; with nothing typed it puts the cursor there */
-    (function(){
-      var inl=document.getElementById('vaultInline'), go=document.getElementById('vaultOn'), note=document.getElementById('vaultNote');
-      var send=async function(){
-        if(vaultBusy) return;
-        var secret=inl?inl.value:''; if(inl) inl.value='';
-        if(!secret){ if(note) note.textContent='Enter the password.'; try{ inl.focus({preventScroll:true}); }catch(x){} return; }
-        vaultBusy=true; go.disabled=true; if(note) note.textContent='Opening.';
-        try{ if(await makerVaultUnlock(secret)&&note) note.textContent=''; }
-        catch(error){ if(note) refusal(note,error); }
-        finally{ secret=''; vaultBusy=false; go.disabled=false; }
-      };
-      go.addEventListener('click',send);
-      if(inl) inl.addEventListener('keydown',function(ev){ if(ev.key==='Enter'){ ev.preventDefault(); send(); } });
-    })();
-    document.getElementById('vaultOff').addEventListener('click',function(){ makerVaultLock(); });
+    /* 26 Oct 2026, his word: Show names is a Switch; on asks for the password in the one Sheet, off locks */
+    var vaultSw=document.getElementById('vaultSwitch');
+    if(vaultSw) vaultSw.addEventListener('click',function(){ if(makerVault) makerVaultLock(); else vaultAsk(vaultSw); });
   }
   function makerClaimButton(parent,label,action,primary){
     var L=labOf(label), button=actOn(el('button',primary?'btn salt-pill salt-pill--md':'salt-ghost',L[0]),L[1],L[2]);

@@ -18,8 +18,8 @@
  *   P5.1  the practice accounts are a plain table, a username, what it shows and Open or None a row; the head counts the open
  *   P5.2  the password once; Open the test page, a pill to /all/test, only while all three are open; Make names the missing
  *   P5.3  Remove asks once on the Sheet: Keep them sends nothing, Remove sends the one removal
- *   P6.1  This device is one list of settings: Tide theme and Notifications switches (Tide greyed while off), Names a password and Unlock
- *   P6.2  Unlock with nothing typed asks in the row, opens no Sheet and reads nothing
+ *   P6.1  This device is one list of settings, each row a name and one switch: Tide theme (greyed while off), Show names, Notifications
+ *   P6.2  turning Show names on asks for the password in the one Sheet, and stays off until it is given
  *   P6.3  the Notifications switch takes the old road to turn them on; refused, it stays off and free, the line saying why
  *   P6.4  the customer's own Look row is drawn as it was
  *   P7.1  from 860px the open day stands in the pane beside the week, "No day open" until a tap, and none under its row
@@ -195,21 +195,22 @@ export async function run({ ok, pageWork }) {
     await dv.tap("nav.shop"); await dv.tap("part.shop.device");
     const sec = dv.d.getElementById("oLook"), list = sec.querySelector(".salt-settings"), rows = list ? [...list.querySelectorAll(".salt-settings__row")] : [];
     /* P6.1 */
-    ok(rows.length === 3 && JSON.stringify(rows.map((r) => t(r.querySelector(".salt-settings__label")))) === JSON.stringify(["Tide theme", "Names", "Notifications"]) && !sec.querySelector(".lead"),
-      "This device is one list of settings, Tide theme, Names and Notifications, with no lead: " + rows.map((r) => t(r.querySelector(".salt-settings__label"))).join());
+    ok(rows.length === 3 && JSON.stringify(rows.map((r) => t(r.querySelector(".salt-settings__label")))) === JSON.stringify(["Tide theme", "Show names", "Notifications"]) && !sec.querySelector(".lead") && rows.every((r) => r.querySelectorAll("button:not([hidden]), input").length === 1 && !!r.querySelector(".salt-switch")),
+      "This device is one list of settings, Tide theme, Show names and Notifications, each row a name and one switch, with no lead: " + rows.map((r) => t(r.querySelector(".salt-settings__label"))).join());
     const tide = rows[0].querySelector(".salt-switch"), bell = rows[2].querySelector(".salt-switch");
     ok(!!tide && tide.getAttribute("role") === "switch" && tide.getAttribute("aria-checked") === "false" && tide.disabled
       && !!bell && bell.getAttribute("role") === "switch" && bell.getAttribute("aria-checked") === "false" && !bell.disabled,
       "Tide theme and Notifications are switches, off; Tide greyed while it is off");
-    const pw = rows[1].querySelector("input"), go = byAct(rows[1], "vault.unlock");
-    ok(!!pw && pw.type === "password" && pw.getAttribute("autocomplete") === "off" && pw.id === "vaultInline" && !!go && go.classList.contains("salt-pill") && t(go) === "Unlock" && byAct(rows[1], "vault.lock").hidden,
-      "Names is a password typed in its own row and Unlock beside it");
-    ok(dv.d.getElementById("alertNote").textContent === "" && dv.d.getElementById("vaultNote").textContent === "", "and no line of words stands under the list until there is something to say");
+    /* his second look of 26 Oct 2026: Show names is a switch too, and the password is asked in the one Sheet */
+    const names = rows[1].querySelector(".salt-switch");
+    ok(!!names && names.id === "vaultSwitch" && names.getAttribute("role") === "switch" && names.getAttribute("aria-checked") === "false" && !names.disabled && !rows[1].querySelector("input"),
+      "Show names is a switch, off, with no field in its row");
+    ok(dv.d.getElementById("alertNote").textContent === "", "and no line of words stands under the list until there is something to say");
     /* P6.2 */
     const reads = dv.wire.filter((w) => String(w).startsWith("/all/maker/vault")).length;
-    go.click(); await dv.work.quiet();
-    ok(t(dv.d.getElementById("vaultNote")) === "Enter the password." && dv.d.getElementById("vaultSheet").hidden && dv.wire.filter((w) => String(w).startsWith("/all/maker/vault")).length === reads,
-      "Unlock with nothing typed asks for the password in the row, opens no Sheet and reads nothing");
+    names.click(); await dv.work.quiet();
+    ok(!dv.d.getElementById("vaultSheet").hidden && names.getAttribute("aria-checked") === "false" && dv.wire.filter((w) => String(w).startsWith("/all/maker/vault")).length === reads,
+      "turning Show names on asks for the password in the Sheet; it stays off and reads nothing until the password is given");
     /* P6.3 */
     bell.click(); await dv.work.quiet();
     ok(/cannot take notifications/.test(t(dv.d.getElementById("alertNote"))) && bell.getAttribute("aria-checked") === "false" && !bell.disabled,

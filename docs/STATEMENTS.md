@@ -2700,7 +2700,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `look.tide` | Shop, This device, Tide theme | The Switch: Tide on or off for Salt Admin on this device; greyed while Tide is off (19 Oct 2026). |
 | `maker.refresh` | Orders, Order review | Reads the orders again. |
 | `more.test-accounts` | Shop, Practice | Makes the three test accounts, or deletes them once its Sheet is answered Remove. |
-| `vault.password` | Shop, This device, the Names row | The password, typed in the row; Unlock reads it, and every tap and lock empties it. |
+| `vault.switch` | Shop, This device, Show names | On asks for the password in the one Sheet; off locks names, places and slips again. |
 | `alerts.switch` | Shop, This device | Notifications on or off; it presses Turn on or Turn off, which stay hidden. |
 | `more.test-page` | Shop, Practice, while all three are open | Opens the test surface, `/all/test`. |
 | `nav.add` | The + orb at the foot of the page, on every place but Record, below 1080px | Opens Record, on Entry, the menu of entries. Reads what Record reads on entering. |

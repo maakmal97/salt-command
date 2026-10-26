@@ -833,9 +833,6 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .atest-acts{display:flex;flex-direction:column;gap:8px;margin:8px 0 0}
 .adm .atest-acts>a,.adm .atest-acts>button{box-sizing:border-box;width:100%;height:48px;min-height:48px;padding:0 16px;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* 26 Oct 2026, his word: This device is the system's Settings list; the row's field and its one button */
-.adm #vaultInline{flex:1 1 140px;min-width:0;max-width:200px;min-height:44px;box-sizing:border-box}
-.adm #vaultH{flex:none}
-.adm #oLook .adev-go{flex:none;width:96px;height:44px;min-height:44px;padding:0 8px;box-sizing:border-box;white-space:nowrap}
 .adm #oLook .adev-note{margin:8px 4px 0}
 .adm #oLook .adev-note:empty{display:none}
 /* 25 Oct 2026 (his Shop canvas): WIDE. Below 860px one column as drawn; from 860px Shop takes the whole column: the glance in one row, the open
@@ -1840,13 +1837,12 @@ function lookRow(owner) {
 /* 12 Oct 2026 (PHASE 4b, his decision 3 of 11 Oct): THE ONE UNLOCK of Salt Admin, owner only. Shop > This device holds its state and its Unlock or Lock; the Sheet is
    the one field (stmt/owner.js, makerVaultUnlock), opened from here and from every place that says Locked. The field is never in a form and never remembered. */
 function vaultRow() {
-  /* 26 Oct 2026, his word on This device: the password typed in the row itself and Unlock beside it, as a settings app has it; once open, Lock.
-     The field is in no form and never remembered, and is emptied on every tap; elsewhere on his page Unlock still opens the one Sheet */
-  return '<div id="vaultRow" class="salt-settings__row"><span class="salt-settings__label" id="vaultH">Names</span>'
+  /* 26 Oct 2026, his word on This device, second look ("learn from how iPhone designs app"): every row the same shape, a name and one control.
+     Show names is a Switch like the others: turned on it asks for the password in the one Sheet, as a phone asks for its code; on, the names
+     show; turned off, they lock again */
+  return '<div id="vaultRow" class="salt-settings__row"><span class="salt-settings__label" id="vaultH">Show names</span>'
     + '<span id="vaultState" class="sr" role="status">Locked</span>'
-    + '<input type="password" class="fld salt-field__input" id="vaultInline" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Password" aria-labelledby="vaultH" data-act="vault.password">'
-    + '<button type="button" class="salt-pill salt-pill--sm adev-go" id="vaultOn" data-act="vault.unlock">Unlock</button>'
-    + '<button type="button" class="salt-ghost adev-go" id="vaultOff" data-act="vault.lock" hidden>Lock</button></div>';
+    + '<button type="button" class="salt-switch" role="switch" aria-checked="false" aria-labelledby="vaultH" id="vaultSwitch" data-act="vault.switch"></button></div>';
 }
 /* 19 Oct 2026 (docs/plan-notifications.html section 3): SALT ADMIN'S OWN NOTIFICATIONS, owner only, Shop > This device. A tap turns them on (the
    browser's question is asked from that tap alone) and a second control turns them off; the state is what this phone holds. Never on the test surface. */
@@ -2381,7 +2377,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
            shared with the Counter's pages on this device and apart from the Desk's), the same row the customer has under Account > This device. The first-open Sheet is below, beside #aEnded. */
         + '<section id="oLook" data-in="shop.device" aria-labelledby="oLookTitle"><h2 id="oLookTitle" class="sr">This device</h2>'
         + '<div class="salt-settings adevice">' + lookRow(true) + vaultRow() + (test ? "" : alertRow()) + "</div>"
-        + '<p class="msg adev-note" id="vaultNote" role="status"></p>' + (test ? "" : '<p class="msg adev-note" id="alertNote" role="status"></p>') + "</section>"
+        + (test ? "" : '<p class="msg adev-note" id="alertNote" role="status"></p>') + "</section>"
         + "</div></div>"
         + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div>'
         + '<nav class="salt-appbar" aria-label="Salt Admin">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("salt-appbar__item", (m, w, p) =>

@@ -57,7 +57,7 @@ export async function run({ ok, pageWork }) {
 
   /* C. THE LOCK LETS ALL THREE GO */
   for (const [name, trigger] of [
-    ["Lock in Shop", async (q) => { q.d.getElementById("vaultOff").click(); }],
+    ["Lock in Shop", async (q) => { q.d.getElementById("vaultSwitch").click(); }],
     ["a page hidden", async (q) => { Object.defineProperty(q.d, "hidden", { configurable: true, get: () => true }); q.d.dispatchEvent(new q.w.Event("visibilitychange")); }]
   ]) {
     p = await held();
