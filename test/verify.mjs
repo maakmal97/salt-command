@@ -21262,12 +21262,13 @@ await (async () => {
       } });
     wins27.push(dom27.window);
     const D27 = dom27.window.document;
-    const makeBtn27 = () => [...D27.querySelectorAll("#mTest button")].find((b) => b.textContent === "Make the practice accounts");
+    /* 26 Oct 2026 (Practice as a list of settings): the one tap is the Practice accounts switch, turned on */
+    const makeBtn27 = () => [...D27.querySelectorAll('#mTest [data-act="more.test-accounts"]')].find((b) => b.getAttribute("aria-checked") === "false");
     await until27(() => makeBtn27());
     const pageBefore27 = rounds27.length;
     const mb27 = makeBtn27();
     if (mb27) mb27.dispatchEvent(new dom27.window.Event("click", { bubbles: true }));
-    await until27(() => [...D27.querySelectorAll("#mTest button")].some((b) => b.textContent === "Remove the practice accounts"));
+    await until27(() => [...D27.querySelectorAll('#mTest [data-act="more.test-accounts"]')].some((b) => b.getAttribute("aria-checked") === "true"));
     const rec27 = await kv27.get("u:" + TU27, "json"), sent27 = posted27[0] || {};
     const recL27 = await kv27.get("u:0000-0001", "json"), sentL27 = posted27[1] || {};
     ok(posted27.length === 3 && sent27.u === TU27 && sentL27.u === "0000-0001" && (posted27[2] || {}).u === "0000-0002" && posted27[2].key !== sent27.key && !!rec27 && rec27.test === true && !!recL27 && recL27.test === true
@@ -21296,14 +21297,14 @@ await (async () => {
         };
       } });
     wins27.push(domB27.window);
-    const DB27 = domB27.window.document, btnB27 = (t) => [...DB27.querySelectorAll("#mTest button")].find((b) => b.textContent === t);
-    /* 25 Oct 2026 (Shop on the Salt system): the head counts the open, the line says what one tap makes, and the pill names the missing */
-    await until27(() => btnB27("Make 0000-0001"));
-    const leadB27 = ((DB27.querySelector("#mTest [data-test-state]") || {}).textContent || "") + " " + ((DB27.querySelector("#mTest .atest-lead") || {}).textContent || "");
-    if (btnB27("Make 0000-0001")) btnB27("Make 0000-0001").dispatchEvent(new domB27.window.Event("click", { bubbles: true }));
-    await until27(() => btnB27("Remove the practice accounts"));
+    const DB27 = domB27.window.document, btnB27 = (on) => [...DB27.querySelectorAll('#mTest [data-act="more.test-accounts"]')].find((b) => b.getAttribute("aria-checked") === String(on));
+    /* 26 Oct 2026 (Practice as a list of settings): the switch is off, its grey line says what turning it on makes */
+    await until27(() => btnB27(false) && /2 of 3/.test((DB27.querySelector("#mTest .salt-settings__foot") || {}).textContent || ""));
+    const leadB27 = (DB27.querySelector("#mTest .salt-settings__foot") || {}).textContent || "";
+    if (btnB27(false)) btnB27(false).dispatchEvent(new domB27.window.Event("click", { bubbles: true }));
+    await until27(() => btnB27(true));
     const recB27 = await kv27.get("u:" + TU27, "json");
-    ok(/^2 of 3 open One tap makes 0000-0001[.]$/.test(leadB27) && postedB27.map((b) => b.u).join() === "0000-0001"
+    ok(/^2 of 3 made[.] Turn on to make 0000-0001[.]$/.test(leadB27) && postedB27.map((b) => b.u).join() === "0000-0001"
       && !!(await kv27.get("u:0000-0001", "json")) && JSON.stringify(recB27.wrap) === JSON.stringify(rec27.wrap),
       "with only one of the pair live, his page says so and one tap makes the one missing, the other untouched: " + JSON.stringify([leadB27, postedB27.map((b) => b.u)]));
 
@@ -43597,9 +43598,9 @@ await (async () => {
   const pcssY = pgY.slice(pgY.indexOf("const PAGE_CSS = " + String.fromCharCode(96)), pgY.indexOf(String.fromCharCode(96) + ";", pgY.indexOf("const PAGE_CSS = ")));
   ok(!/\.btn\{[^}]*background/.test(pcssY) && !/\.tabs button\.on\{/.test(pcssY) && !/\n\.state\{/.test(pcssY) && !/\n\.fld\{[^}]*background/.test(pcssY) && /\.btn\{margin-top:18px;width:100%\}/.test(pcssY),
     "the page's own layer keeps geometry and states no look the recipe owns");
-  /* 25 Oct 2026 (Shop on the Salt system): Practice's Remove is the system's ghost, its Make the pill */
-  ok(/el\('button',on\?'salt-ghost':'salt-pill salt-pill--sm'/.test(readFileSync(join(REPO, "stmt", "owner.js"), "utf8")),
-    "and the master page's quiet button is the system's ghost");
+  /* 26 Oct 2026 (Practice as a list of settings): Practice's one control is the system's Switch */
+  ok(/actOn\(el\('button','salt-switch'\),'more\.test-accounts'\)/.test(readFileSync(join(REPO, "stmt", "owner.js"), "utf8")),
+    "and the master page's practice control is the system's Switch");
 })();
 
 section("C3: a figure on a statement line's sub-line carries the system's figure class; a words-only one does not; the shipped CSS carries the recipe");

@@ -12,21 +12,22 @@
  *   P3.1  the collection points are a plain table in a card, a code and its place a row, a cross named by its point
  *   P3.2  the cross takes a point off the draft and sends nothing; with none left there is no table
  *   P3.3  the code and place fields side by side, Add a ghost beside its line, Save the points a pill across
- *   P4.1  Up now and New notice head the notice; Up now is the Counter's Notice recipe, the first line on, and every line numbered
- *   P4.2  the box is One line each, Set the notice a pill across, Clear it beside Read it again
- *   P4.3  with no notice up, the card goes and a line says customers see none
- *   P5.1  the practice accounts are a plain table, a username, what it shows and Open or None a row; the head counts the open
- *   P5.2  the password once; Open the test page, a pill to /all/test, only while all three are open; Make names the missing
- *   P5.3  Remove asks once on the Sheet: Keep them sends nothing, Remove sends the one removal
+ *   P4.1  Notice is two settings groups, Up now and New notice: a row a line, its one grey line, no chip or count
+ *   P4.2  New notice is a box filling its cell, one grey line, Set the notice the one pill; Clear the notice an ember row; Read it again hidden
+ *   P4.3  with no notice up, the list says None, Clear the notice goes, and no grey line stands
+ *   P5.1  Practice is one Practice accounts switch, on only while all three exist, a grey line saying what is made
+ *   P5.2  a row an account made, the password row copying it, Open the test page a row to /all/test only while all three are open
+ *   P5.3  turning it off asks once on the Sheet: Keep them sends nothing, Remove sends the one removal
  *   P6.1  This device is one list of settings, each row a name and one switch: Tide theme (greyed while off), Show names, Notifications
  *   P6.2  turning Show names on asks for the password in the one Sheet, and stays off until it is given
  *   P6.3  the Notifications switch takes the old road to turn them on; refused, it stays off and free, the line saying why
  *   P6.4  the customer's own Look row is drawn as it was
  *   P7.1  from 860px the open day stands in the pane beside the week, "No day open" until a tap, and none under its row
- *   P7.2  from 860px Shop takes the whole column, the pane 380px (420px from 1440px), the points beside Help, Notice in two columns
- *   P7.3  Up now and New notice each stand in a column of their own
+ *   P7.2  from 860px Shop takes the whole column, the pane 380px (420px from 1440px), the points beside Help
+ *   P7.3  from 860px Notice, Practice and This device stand in one 640px column, as a Mac's settings
  *   P7.4  Shop's four parts are the Nav bar's text tabs; Collection points and Help head as the other sections
  * Drawn by the maker harness (test/maker-act.mjs). */
+import fs from "fs";
 import { richOwnerPage, byAct } from "./maker-act.mjs";
 import { landingPage } from "../stmt/page.js";
 
@@ -131,29 +132,28 @@ export async function run({ ok, pageWork }) {
   const n = await open({ bulletin: (j) => ({ ...j, lines: ["Closed Fri 31 Oct for the stock count.", "Rice lands Saturday. Order ahead."] }) });
   try {
     await n.tap("nav.shop"); await n.tap("part.shop.notice");
-    const root = n.d.getElementById("makerBulletin"), heads = [...root.querySelectorAll(".anow-head")];
-    const up = n.d.getElementById("makerBulletinUp"), rec = up && up.querySelector(".salt-notice");
-    /* P4.1 */
-    ok(heads.length === 2 && JSON.stringify(heads.map((h) => t(h.querySelector("h3")) + "/" + t(h.querySelector(".salt-status")))) === JSON.stringify(["Up now/2 lines · every 6 s", "New notice/Notifies everyone"]),
-      "Up now and New notice head their parts, the count of lines and that setting one notifies everyone: " + heads.map(t).join(" | "));
-    ok(!!rec && !up.hidden && up.classList.contains("salt-glass-card") && t(rec.querySelector(".salt-notice__line--on")) === "Closed Fri 31 Oct for the stock count."
-      && rec.querySelectorAll(".salt-notice__line").length === 2 && rec.querySelectorAll(".salt-notice__line--on").length === 1 && rec.querySelectorAll(".salt-notice__dot").length === 2,
-      "Up now draws the notice on the Counter's Notice recipe, the first line on, a dot a line");
-    ok(JSON.stringify([...n.d.querySelectorAll("#makerBulletinCurrent li")].map(t)) === JSON.stringify(["Closed Fri 31 Oct for the stock count.", "Rice lands Saturday. Order ahead."]) && n.d.getElementById("makerBulletinNone").hidden,
-      "and every line numbered under it");
+    const root = n.d.getElementById("makerBulletin"), heads = [...root.querySelectorAll("h3.salt-settings__head")].map(t);
+    const lines = [...n.d.querySelectorAll("#makerBulletinCurrent > .salt-settings__row--text")].map(t), clear = byAct(root, "notice.clear");
+    /* P4.1, his word of 26 Oct 2026: the same design language as This device */
+    ok(JSON.stringify(heads) === JSON.stringify(["Up now", "New notice"]) && !root.querySelector(".salt-status, .lead, .salt-notice") && !n.d.getElementById("makerBulletinCount"),
+      "Notice is two settings groups, Up now and New notice, with no chip, count or lead: " + heads.join());
+    ok(JSON.stringify(lines) === JSON.stringify(["Closed Fri 31 Oct for the stock count.", "Rice lands Saturday. Order ahead."]) && n.d.getElementById("makerBulletinNone").hidden
+      && t(n.d.getElementById("makerBulletinFoot")) === "Shown one at a time on every account.",
+      "Up now is a row a line, in the words customers read, and one grey line under it");
     /* P4.2 */
-    const set = byAct(root, "notice.set"), clear = byAct(root, "notice.clear"), again = byAct(root, "notice.read");
-    ok(set.classList.contains("salt-pill") && t(clear) === "Clear it" && clear.parentElement === again.parentElement && clear.parentElement.classList.contains("ashop-two")
-      && t(byAct(root, "notice.text").closest("label").querySelector(".salt-field__label")) === "One line each",
-      "the box is One line each, Set the notice a pill across, Clear it beside Read it again");
+    const set = byAct(root, "notice.set"), again = byAct(root, "notice.read"), box = byAct(root, "notice.text");
+    ok(set.classList.contains("salt-pill") && root.querySelectorAll(".salt-pill").length === 1 && !clear.hidden && clear.classList.contains("salt-settings__row--danger") && t(clear) === "Clear the notice"
+      && again.hidden && !!box.closest(".salt-settings__cell") && box.placeholder === "One line each" && /Every customer is notified/.test(t(root)),
+      "New notice is a box filling its cell, Set the notice the one pill, Clear the notice an ember row, Read it again hidden");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { n.w.close(); }
 
   /* P4.3: no notice up */
   const z = await open({ bulletin: (j) => ({ ...j, lines: [] }) });
   try {
     await z.tap("nav.shop"); await z.tap("part.shop.notice");
-    ok(z.d.getElementById("makerBulletinUp").hidden && !z.d.getElementById("makerBulletinNone").hidden && t(z.d.getElementById("makerBulletinCount")) === "None",
-      "with no notice up, the card goes and a line says customers see none");
+    ok(!z.d.getElementById("makerBulletinNone").hidden && t(z.d.getElementById("makerBulletinNone")) === "None" && byAct(z.d, "notice.clear").hidden
+      && z.d.querySelectorAll("#makerBulletinCurrent > *").length === 0 && t(z.d.getElementById("makerBulletinFoot")) === "",
+      "with no notice up, the list says None, Clear the notice goes, and no grey line stands");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { z.w.close(); }
 
   /* P5: the practice accounts, one open (the harness's own), then all three */
@@ -162,26 +162,27 @@ export async function run({ ok, pageWork }) {
   try {
     await one.tap("nav.shop"); await one.tap("part.shop.practice");
     const box = one.d.getElementById("mTest"), make = byAct(box, "more.test-accounts");
-    /* P5.1 */
-    const rowsT = [...box.querySelectorAll("table.salt-table--plain tbody tr")].map((r) => t(r.querySelector("th[data-test]")) + " " + t(r.querySelector(".atest-shows")) + " " + t(r.querySelector(".salt-status")));
-    ok(JSON.stringify(rowsT) === JSON.stringify(["0000-0000 Every case Open", "0000-0001 Locked, to pay None", "0000-0002 Fresh, to order None"]) && t(box.querySelector("[data-test-state]")) === "1 of 3 open",
-      "the practice accounts are a plain table, a username, what it shows and Open or None a row, and the head counts the open: " + rowsT.join(" | "));
+    /* P5.1, his word of 26 Oct 2026: Practice in This device's language */
+    ok(make.classList.contains("salt-switch") && make.getAttribute("role") === "switch" && make.getAttribute("aria-checked") === "false" && t(box.querySelector("h3.salt-settings__head")) === "Practice accounts"
+      && t(box.querySelector(".salt-settings__foot")) === "1 of 3 made. Turn on to make 0000-0001 and 0000-0002." && !box.querySelector("table, .salt-status, .salt-pill"),
+      "Practice is one switch, off while one of three exists, its grey line naming the missing, and no table, chip or pill");
     /* P5.2 */
-    ok(t(box.querySelector(".atest-pw .salt-kpi__label")) === "Password" && t(box.querySelector(".atest-pwv")) === "0000-0000-0000-0000" && !byAct(box, "more.test-page") && make.classList.contains("salt-pill") && t(make) === "Make 0000-0001 and 0000-0002",
-      "with one open: the password once, no test page yet, and one pill making the two missing: " + JSON.stringify([t(box.querySelector(".atest-pw")), !!byAct(box, "more.test-page"), make.className, t(make)]));
+    const rowsT = [...box.querySelectorAll(".atest-list > .salt-settings__row")].map(t);
+    ok(JSON.stringify(rowsT) === JSON.stringify(["0000-0000Every case", "Password0000-0000-0000-0000"]) && byAct(box, "more.test-password").getAttribute("aria-label") === "Copy the password" && !byAct(box, "more.test-page"),
+      "a row for the one made, the password row copying it, and no test page yet: " + JSON.stringify(rowsT));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { one.w.close(); }
   const all = await open({ sheetAnswer: (j) => ({ ...j, accounts: j.accounts.concat(["0000-0001", "0000-0002"].map(tests)) }) });
   try {
     await all.tap("nav.shop"); await all.tap("part.shop.practice");
     const box = all.d.getElementById("mTest"), go = byAct(box, "more.test-page"), rm = byAct(box, "more.test-accounts");
-    ok(!!go && go.tagName === "A" && go.getAttribute("href") === "/all/test" && go.classList.contains("salt-pill") && t(go) === "Open the test page" && rm.classList.contains("salt-ghost") && t(rm) === "Remove the practice accounts"
-      && t(box.querySelector("[data-test-state]")) === "3 of 3 open",
-      "with all three open: Open the test page, a pill to /all/test, and Remove the practice accounts a ghost");
+    ok(!!go && go.tagName === "A" && go.getAttribute("href") === "/all/test" && go.classList.contains("salt-settings__row--action") && t(go) === "Open the test page"
+      && rm.getAttribute("aria-checked") === "true" && box.querySelectorAll(".atest-u").length === 3 && t(box.querySelector(".salt-settings__foot")) === "Nothing they do is recorded.",
+      "with all three made: the switch on, a row each, and Open the test page a row to /all/test");
     /* P5.3 */
     const sent = () => all.posts.filter((x) => x.route === "/all/test").length, sheet = () => all.d.getElementById("ynSheet");
     rm.click(); await all.work.quiet();
     ok(!!sheet() && !sheet().hidden && t(sheet().querySelector(".salt-sheet__title")) === "Remove all three?" && /Everything they wrote goes with them/.test(t(sheet())) && sent() === 0,
-      "Remove asks once on the Sheet and sends nothing yet");
+      "turning it off asks once on the Sheet and sends nothing yet");
     byAct(sheet(), "ask.keep", "test:remove").click(); await all.work.quiet();
     ok(sent() === 0, "Keep them sends nothing");
     byAct(all.d.getElementById("mTest"), "more.test-accounts").click(); await all.work.quiet();
@@ -234,19 +235,18 @@ export async function run({ ok, pageWork }) {
     /* P7.2 */
     const css = [...wd.d.querySelectorAll("style")].map((s) => s.textContent).join("\n"), at860 = css.slice(css.indexOf("/* 25 Oct 2026 (his Shop canvas): WIDE."));
     ok(/@media \(min-width:860px\)\{[^@]*\.adm \.amain>#oShop\{max-width:none\}[^@]*\.adm \.hsplit\{display:grid;grid-template-columns:minmax\(0,1fr\) 380px/.test(at860)
-      && /\.adm \.hpair\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)/.test(at860) && /\.adm #makerBulletin\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)/.test(at860)
+      && /\.adm \.hpair\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)/.test(at860)
       && /@media \(min-width:1440px\)\{\.adm \.hsplit\{grid-template-columns:minmax\(0,1fr\) 420px\}\}/.test(at860) && /\.adm \.hpane\{display:none\}/.test(at860),
-      "from 860px Shop takes the whole column, the day's pane 380px (420px from 1440px), the points beside Help and Notice in two columns; below it no pane");
+      "from 860px Shop takes the whole column, the day's pane 380px (420px from 1440px) and the points beside Help; below it no pane");
     const pair = wd.d.querySelector(".hpair");
     ok(!!pair && !!pair.querySelector("#makerPoints") && !!pair.querySelector("#mHelp"), "the points and Help share one row");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { wd.w.close(); }
-  /* P7.3: the notice's two parts, a column each */
-  const nb = await open({ before: wideMq });
-  try {
-    await nb.tap("nav.shop"); await nb.tap("part.shop.notice");
-    const cols = [...nb.d.querySelectorAll("#makerBulletin > .anotice-col")];
-    ok(cols.length === 2 && [...cols[0].querySelectorAll("h3")].map(t).join() === "Up now" && [...cols[1].querySelectorAll("h3")].map(t).join() === "New notice" && !!cols[0].querySelector("#makerBulletinUp") && !!byAct(cols[1], "notice.text") && !!byAct(cols[1], "notice.set"), "Up now and New notice each stand in a column of their own");
-  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { nb.w.close(); }
+  /* P7.3: from 860px Notice, Practice and This device stand in one readable column, as a Mac's settings (his word of 26 Oct 2026) */
+  {
+    const css = fs.readFileSync(new URL("../stmt/page.js", import.meta.url), "utf8");
+    ok(/@media \(min-width:860px\)\{\.adm #mTest,\.adm #makerBulletin,\.adm #oLook\{max-width:640px\}\}/.test(css),
+      "from 860px Notice, Practice and This device stand in one 640px column");
+  }
   /* P7.4: Shop's parts are a text tab row, and every part's sections head as one */
   const tb = await open();
   try {
