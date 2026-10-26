@@ -162,6 +162,7 @@
 - `GET /slips/<username>/<id>` (F13: a slip's ciphertext, relayed from the Counter's `slip:` KV, never cached by `sw.js`)
 - `GET|POST /hush` (A5: the hushed Whiteboard tips, KV `hush`, `{tip id: day or null}`; `POST {id, until}` or `{id, clear: true}`; Counter Maker writes it through `inputs/hush`), keyed
 - `GET /stmt/rev` (Desk build id only; internal Counter service binding, keyed by `X-Stmt-Desk` using the shared `STMT_DESK_KEY`)
+- Counter Maker `POST /all/maker/geo/open {url}` (a short Google or Apple Maps link, or an Apple place id, opened for its point; Google and Apple hosts only) and `POST /all/maker/geo/search {q}` (the typed words to Photon, photon.komoot.io, Malaysia and Singapore, five places): v1263, 26 Oct 2026, his choice of Photon and his yes to Apple; nothing kept.
 - Counter: `GET /pools` and `POST /pools/<id>/join` (a customer session; the group order); Maker `GET|POST /all/maker/pools` and `POST /all/maker/pools/<id>/close` (verified owner only).
 - The endpoints above are keyed via `X-Salt-Key` except `/stmt/rev`, which uses `X-Stmt-Desk`.
 
@@ -204,6 +205,8 @@
 - v1262 (`5319f9aa`, 26 Oct 2026), his word: Hours is lists of settings too (Now with Hold the shop a Switch, Hold as a Segment, Until, Set it; the week and dates as
   list rows with the bar chart; the open day as switches and rows; points and Help as lists; the glance's tiles gone). CI's suite on v1262 found eight dead CSS rules
   and one points check: fixed in `e88e206f` (Cloud commit `40268331943`: chain and three suite parts green). Not yet opened by him.
+- v1263 (`35515bb7`, 26 Oct 2026; chain and three suite parts green, live build `c7dfe5c7a7aea82d`), his word: New point's Place lists OpenStreetMap places as he types
+  (Photon, his choice) and reads Google, Waze and Apple links, a short one opened on the Worker (Apple his yes). Section "Salt Admin's place for a point". Not yet opened by him.
 
 ## Salt Admin Needs you redesign
 - Live as v1221 (`b8916ca2`, 23 Oct 2026; Cloud commit `39821813897`: chain and three suite parts green, live /rev `1e1013dcc935d44b`), from his canvas
