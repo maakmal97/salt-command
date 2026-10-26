@@ -1,0 +1,23 @@
+[
+ {"name":"W1 the makers' list takes any host","file":"stmt/place.js","find":"  if (h === \"maps.apple.com\") return \"apple-page\";\n  return null;","replace":"  if (h === \"maps.apple.com\") return \"apple-page\";\n  return \"google\";"},
+ {"name":"W1 Google's old short links are not opened","file":"stmt/place.js","find":"  if (h === \"goo.gl\" && /^\\/maps\\/[A-Za-z0-9_-]{1,64}$/.test(u.pathname)) return \"google\";","replace":""},
+ {"name":"W1 the redirect is followed by fetch itself","file":"stmt/place.js","find":"{ method: \"GET\", redirect: \"manual\", headers: { \"user-agent\": AGENT }, signal: AbortSignal.timeout(TIMEOUT) }","replace":"{ method: \"GET\", redirect: \"follow\", headers: { \"user-agent\": AGENT }, signal: AbortSignal.timeout(TIMEOUT) }"},
+ {"name":"W2 Apple's short links are not opened","file":"stmt/place.js","find":"  if (h === \"maps.apple\" && /^\\/p\\/[A-Za-z0-9._~-]{1,80}$/.test(u.pathname)) return \"apple\";","replace":""},
+ {"name":"W2 the page's point is not read","file":"stmt/place.js","find":"  const lat = Number(meta(\"place:location:latitude\")), lng = Number(meta(\"place:location:longitude\"));","replace":"  const lat = NaN, lng = NaN;"},
+ {"name":"W2 the place's name is dropped","file":"stmt/place.js","find":"(title ? \"&q=\" + encodeURIComponent(title) : \"\")","replace":"\"\""},
+ {"name":"W4 the search is not held to Malaysia","file":"stmt/place.js","find":"&lat=3.139&lon=101.687&bbox=\" + BBOX;","replace":"&lat=3.139&lon=101.687\";"},
+ {"name":"W4 a road in pieces is three choices","file":"stmt/place.js","find":"key = name + \"|\" + where;","replace":"key = name + \"|\" + lat + \"|\" + lng;"},
+ {"name":"W4 more than five come back","file":"stmt/place.js","find":"    if (places.length === 5) break;","replace":""},
+ {"name":"W4 two letters are searched","file":"stmt/place.js","find":"  if (w.length < 3 || w.length > 80 || /^https?:/i.test(w) || pairIn(w)) return null;","replace":"  if (w.length > 80) return null;"},
+ {"name":"W4 a failed search reads as none found","file":"stmt/place.js","find":"  if (res.status !== 200) { try { if (res.body) await res.body.cancel(); } catch (e) { /* nothing to free */ } return { ok: false, status: 502, error: \"The place search did not answer.\" }; }","replace":"  if (res.status !== 200) return { ok: true, places: [] };"},
+ {"name":"W5 the search takes more than the words","file":"stmt/maker.js","find":"      if (Object.keys(parsed.body).length !== 1 || typeof parsed.body[field] !== \"string\")","replace":"      if (typeof parsed.body[field] !== \"string\")"},
+ {"name":"W5 the routes take a GET","file":"stmt/maker.js","find":"    if (op.kind === \"geo-open\" || op.kind === \"geo-search\") {\n      if (method !== \"POST\") return json({ ok: false, error: \"method not allowed\" }, 405);","replace":"    if (op.kind === \"geo-open\" || op.kind === \"geo-search\") {"},
+ {"name":"U1 every letter asks the search","file":"stmt/owner.js","find":"      },350);","replace":"      },0);"},
+ {"name":"U1 the list is no listbox","file":"stmt/owner.js","find":"found.setAttribute('role','listbox');","replace":""},
+ {"name":"U1 the list stands away from Place","file":"stmt/owner.js","find":"    where.closest('label').after(found);","replace":"    add.insertBefore(found, add.firstChild);"},
+ {"name":"U2 a tap does not fill Place","file":"stmt/owner.js","find":"where.value=h.lat.toFixed(5)+', '+h.lng.toFixed(5);","replace":""},
+ {"name":"U2 the place is not named","file":"stmt/owner.js","find":"picked.textContent=h.name+(h.where?', '+h.where:''); shut();","replace":"shut();"},
+ {"name":"U3 the arrows do not move","file":"stmt/owner.js","find":"      if(e.key==='ArrowDown'){ e.preventDefault(); mark((at+1)%hits.length); }","replace":""},
+ {"name":"U3 Escape leaves the list","file":"stmt/owner.js","find":"      else if(e.key==='Escape'){ e.preventDefault(); shut(); }","replace":""},
+ {"name":"U4 a short link is not opened","file":"stmt/owner.js","find":"    if(opaque){ var opened=await refs('/all/maker/geo/open',{url:opaque});","replace":"    if(false){ var opened=await refs('/all/maker/geo/open',{url:opaque});"}
+]

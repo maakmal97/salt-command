@@ -120,7 +120,7 @@ export async function run({ ok, pageWork }) {
       "with no points left the list says None");
     /* P3.3 */
     const addRow = byAct(pts, "points.add"), save = byAct(pts, "points.save"), np = byAct(pts, "points.code").closest(".apoints-add");
-    ok(!!np && np.classList.contains("salt-settings") && byAct(pts, "points.place").closest(".apoints-add") === np && byAct(pts, "points.place").placeholder === "3.15214, 101.70312"
+    ok(!!np && np.classList.contains("salt-settings") && byAct(pts, "points.place").closest(".apoints-add") === np && byAct(pts, "points.place").placeholder === "Search, or paste a link"
       && np.contains(addRow) && addRow.classList.contains("salt-settings__row--action") && t(addRow) === "Add point" && t(np.previousElementSibling) === "New point"
       && save.classList.contains("salt-pill") && !!save.closest(".apoints-save") && pts.querySelectorAll(".salt-pill").length === 1,
       "New point is a list, Code and Place rows and Add point, and Save the points the one pill");

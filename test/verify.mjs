@@ -50536,6 +50536,11 @@ await (async () => {
   await (await import("./admin-shop.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Admin's place for a point: Google, Waze and Apple links read, short ones opened on the Worker, and OpenStreetMap's places as he types (26 Oct 2026)");
+await (async () => {
+  await (await import("./admin-place.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin's week chart of the hours: a row a day, a span past midnight said +1 with its tail on the next day, quarter hours and the quick buttons (20 Oct 2026)");
 await (async () => {
   await (await import("./admin-hours-week.mjs")).run({ ok, pageWork });

@@ -69,7 +69,7 @@
  {"name":"the points' line does not say what Ready asks","file":"stmt/owner.js","find":"status.textContent=list.length?'Ready to collect asks which one.':'Ready to collect needs one.';","replace":"status.textContent='';"},
  {"name":"New point has no head","file":"stmt/owner.js","find":"    root.appendChild(el('h3','salt-settings__head','New point'));\n","replace":""},
  {"name":"Add point is a ghost","file":"stmt/owner.js","find":"var put=actOn(el('button','salt-settings__row salt-settings__row--action'),'points.add');","replace":"var put=actOn(el('button','salt-ghost'),'points.add');"},
- {"name":"the place has no example","file":"stmt/owner.js","find":"where=field('Place','points.place','3.15214, 101.70312');","replace":"where=field('Place','points.place','');"},
+ {"name":"the place has no example","file":"stmt/owner.js","find":"where=field('Place','points.place','Search, or paste a link');","replace":"where=field('Place','points.place','');"},
  {"name":"the points head in another style","file":"stmt/page.js","find":"<h2 id=\"makerPointsTitle\" class=\"salt-settings__head\">","replace":"<h2 id=\"makerPointsTitle\" class=\"salt-eyebrow\">"},
  {"name":"Help heads in another style","file":"stmt/page.js","find":"'<h2 id=\"mHelpH\" class=\"salt-settings__head\">Help</h2>'","replace":"'<h2 id=\"mHelpH\" class=\"salt-eyebrow\">Help</h2>'"},
  {"name":"Help is no list","file":"stmt/page.js","find":"'<div class=\"salt-settings ahelp-list\">' + rows + '</div>","replace":"'<div class=\"ahelp-list\">' + rows + '</div>"},

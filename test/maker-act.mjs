@@ -502,11 +502,16 @@ export async function auditStates({ pageWork }) {
      filed, so For now draws its way back to the weekly hours */
   const pt = await richOwnerPage({ pageWork, hours: (j) => { j.config.manual = { open: false, until: "2099-01-01T00:00:00.000Z" }; j.status = { open: false, source: "manual" }; return j; },
     extra: (route) => route === "/all/maker/points"
-    ? { ok: true, points: { v: 1, list: [{ code: "A2", lat: 3.11111, lng: 101.22222 }] }, examples: [] } : undefined });
+    ? { ok: true, points: { v: 1, list: [{ code: "A2", lat: 3.11111, lng: 101.22222 }] }, examples: [] }
+    : route === "/all/maker/geo/search" ? { ok: true, places: [{ name: "Zorvel Square", where: "Quindle", lat: 3.1, lng: 101.6 }] } : undefined });
   try {
     await pt.work.quiet();
     await pt.click(byAct(pt.d, "nav.shop")); await pt.click(byAct(pt.d, "part.shop.hours")); await pt.work.quiet();
     states.push(["his collection points", actAudit(pt.d)]);
+    /* 26 Oct 2026: a place typed in New point, and the places the search found standing under it */
+    const ptPlace = byAct(pt.d, "points.place"); ptPlace.value = "Zorv"; ptPlace.dispatchEvent(new pt.w.Event("input", { bubbles: true }));
+    pt.timers.filter((x) => x.ms === 350 && !x.off).forEach((x) => { x.off = true; x.f(); }); await pt.work.quiet();
+    states.push(["the places found under Place", actAudit(pt.d)]);
     /* 20 Oct 2026 (canvas V63): a day of the week chart opened, its pickers and quick buttons */
     await pt.click(byAct(pt.d, "hours.day", "Monday")); await pt.work.quiet();
     states.push(["a day of the hours opened", actAudit(pt.d)]);

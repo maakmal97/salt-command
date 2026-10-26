@@ -2359,6 +2359,15 @@ refused and directed to Desk. Amend ID preserves descendant place keys and `_bas
 a new encrypted address, and queues a placement when the code stays the same but its
 official point changes.
 
+**A collection point's place (26 Oct 2026, his answers).** Shop > Hours > New point reads a pasted Google Maps, Waze or Apple Maps
+link on the device (`makerGeo.link`; `test/admin-place.mjs` holds every shape, the real Apple place link included). A short Google
+link (`maps.app.goo.gl`, `goo.gl/maps`), Apple's short link (`maps.apple/p/...`) or an Apple link with only a place id is opened on
+the Counter Worker, `POST /all/maker/geo/open {url}` (`stmt/place.js` `mapsOpen`): redirects followed manually, a hop at a time, only
+Google's and Apple's hosts ever fetched, an Apple place page read for its `place:location` meta tags; his yes to Apple of 26 Oct 2026.
+Typing three letters or more in Place asks `POST /all/maker/geo/search {q}` (`placeSearch`), which sends only the words to Photon
+(photon.komoot.io, OpenStreetMap; his choice of 26 Oct 2026), held to Malaysia and Singapore, and answers five places, each a name,
+where it is and its point; a row tapped fills Place. Both routes are POST of the one field, behind `/all`'s two locks; nothing is kept.
+
 Add ID alone also accepts a blank locality, matching Desk and the laptop panel: the code
 uses the deterministic `TBC` suffix (with the existing name-letter clash handling), and the
 encrypted name says `(to be confirmed)`. No locality or approximate point is invented or
@@ -2851,7 +2860,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `part.shop.device` | The strip under Shop (tab: This device) | Shows this device's Look, Night or Tide for Salt Admin, reading nothing. |
 | `points.add` | Collection points, New point, Add point | Adds the point typed to the list, unsaved. |
 | `points.code` | Collection points | The point code: one capital letter and one or two digits, such as A2. |
-| `points.place` | Collection points | Its place: two figures, latitude and longitude, or a Maps link read on this device. |
+| `points.place` | Collection points, New point, Place | Its place: words searched on OpenStreetMap as he types, a Google Maps, Waze or Apple Maps link (a short one opened on the Worker), or two figures. |
+| `points.found` | Collection points, under Place (key: its row) | A place the search found: puts its point in Place and names it under the list. |
 | `points.remove` | Collection points (key: the point code) | Takes the point off the list, unsaved. |
 | `points.save` | Collection points | Saves the list. |
 | `pool.close` | Group order card (key: the pool id) | Closes it and sends each joined order for acknowledgement, or sends the ones left again. |
