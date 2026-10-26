@@ -839,6 +839,9 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .apoints-x{flex:none;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:0;background:none;color:var(--salt-mist-bright);cursor:pointer}
 .adm .apoints-x:hover,.adm .apoints-x:focus-visible{color:var(--salt-ember)}
 .adm .apoints-add .salt-field__input{flex:0 1 240px}
+.adm .apoints-found{display:contents}
+.adm .apoints-hit .salt-settings__value{min-width:0;max-width:55%;overflow:hidden;text-overflow:ellipsis}
+.adm .apoints-hit[aria-selected=true]{outline:2px solid var(--salt-brass);outline-offset:-2px}
 .adm .ahelp-list .ahelp__q:first-of-type{margin-top:0;border-top:0}
 .adm .ahelp-list .ahelp__sum{min-height:56px}
 @media (min-width:860px){

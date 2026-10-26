@@ -6227,9 +6227,23 @@ export const OWNER_JS = `
     try{ makerPoints=await refs('/all/maker/points'); makerPointsDraft=null; drawMakerPoints(); drawConfirm(); }
     catch(error){ var s=document.getElementById('makerPointsStatus'); if(s) refusal(s,error); }
   }
-  function pointPlace(text){
-    var reading=makerGeo.link(text);
-    if(reading&&Number.isFinite(reading.lat)&&Number.isFinite(reading.lng)) return {lat:reading.lat,lng:reading.lng};
+  /* 26 Oct 2026 (his word: "test it out with Google Maps, Waze and Apple Maps"): a link with its point is read on this device; a short
+     Google or Apple link, or an Apple one with only a place id, is opened on the Worker for its point (/all/maker/geo/open, his yes to
+     Apple); else two figures */
+  function pointOpaque(text){
+    var t=String(text||'').split(String.fromCharCode(10)).join(' ').split(String.fromCharCode(13)).join(' '), m=/https:[/][/][^ <>"]+/i.exec(t); if(!m) return null;
+    var u; try{ u=new URL(m[0]); }catch(e){ return null; }
+    var h=u.hostname.toLowerCase();
+    if(h==='maps.app.goo.gl'||h==='goo.gl'&&/^[/]maps[/]/.test(u.pathname)||h==='maps.apple'&&/^[/]p[/]/.test(u.pathname)) return u.href;
+    if(h==='maps.apple.com'&&u.searchParams.get('place-id')) return u.href;
+    return null;
+  }
+  function pointFigures(reading){ return reading&&Number.isFinite(reading.lat)&&Number.isFinite(reading.lng)?{lat:Math.round(reading.lat*1e5)/1e5,lng:Math.round(reading.lng*1e5)/1e5}:null; }
+  async function pointPlace(text){
+    var got=pointFigures(makerGeo.link(text));
+    if(got) return got;
+    var opaque=pointOpaque(text);
+    if(opaque){ var opened=await refs('/all/maker/geo/open',{url:opaque}); got=pointFigures(makerGeo.link(opened&&opened.location||'')); if(got) return got; }
     var two=String(text||'').split(',').map(function(x){ return x.trim(); });
     if(two.length!==2||!two[0]||!two[1]) return null;
     var lat=Number(two[0]), lng=Number(two[1]);
@@ -6257,11 +6271,53 @@ export const OWNER_JS = `
     root.appendChild(el('h3','salt-settings__head','New point'));
     var add=el('div','salt-settings apoints-add');
     var field=function(label,act,ph){ var r=el('label','salt-settings__row'), i=actOn(el('input','fld salt-field__input'),act); i.type='text'; i.placeholder=ph; r.appendChild(el('span','salt-settings__label',label)); r.appendChild(i); add.appendChild(r); return i; };
-    var code=field('Code','points.code','A3'), where=field('Place','points.place','3.15214, 101.70312');
+    var code=field('Code','points.code','A3'), where=field('Place','points.place','Search, or paste a link');
     code.setAttribute('maxlength','3'); code.setAttribute('autocapitalize','characters'); code.setAttribute('spellcheck','false');
+    /* 26 Oct 2026, his word ("type it and the relevant recommended place from OpenStreetMap appears"): three letters or more, a moment's pause,
+       and up to five places stand as rows under Place, each its name and where it is; a tap (or the arrows and Enter) puts its point in
+       Place and names it in the line under the list. A link or two figures are read as before. Escape or a fresh word closes the list. */
+    var found=el('div','apoints-found'); found.id='makerPointsFound'; found.setAttribute('role','listbox'); found.setAttribute('aria-label','Places found');
+    where.setAttribute('role','combobox'); where.setAttribute('aria-autocomplete','list'); where.setAttribute('aria-expanded','false'); where.setAttribute('aria-controls','makerPointsFound');
+    where.setAttribute('autocomplete','off'); where.setAttribute('spellcheck','false');
+    where.closest('label').after(found);
+    var picked=el('p','salt-settings__foot apoints-picked'); picked.setAttribute('role','status');
+    var seq=0, timer=null, hits=[], at=-1;
+    var shut=function(){ found.textContent=''; hits=[]; at=-1; where.setAttribute('aria-expanded','false'); where.removeAttribute('aria-activedescendant'); };
+    var choose=function(i){ var h=hits[i]; if(!h) return; where.value=h.lat.toFixed(5)+', '+h.lng.toFixed(5); picked.textContent=h.name+(h.where?', '+h.where:''); shut(); where.focus(); };
+    var mark=function(i){ at=i; [].forEach.call(found.children,function(r,j){ r.setAttribute('aria-selected',String(j===i)); }); if(i>=0&&found.children[i]) where.setAttribute('aria-activedescendant',found.children[i].id); };
+    var draw=function(list,note){
+      found.textContent=''; hits=list||[]; at=-1;
+      hits.forEach(function(h,i){
+        var r=actOn(el('button','salt-settings__row salt-settings__row--action apoints-hit'),'points.found',String(i)); r.type='button'; r.tabIndex=-1; r.id='makerPointsHit'+i; r.setAttribute('role','option'); r.setAttribute('aria-selected','false');
+        r.appendChild(el('span','salt-settings__label',h.name)); if(h.where) r.appendChild(el('span','salt-settings__value',h.where));
+        r.addEventListener('mousedown',function(e){ e.preventDefault(); }); r.addEventListener('click',function(){ choose(i); }); found.appendChild(r);
+      });
+      if(note){ var n=el('div','salt-settings__row salt-settings__row--muted'); n.appendChild(el('span','salt-settings__label',note)); found.appendChild(n); }
+      where.setAttribute('aria-expanded',String(!!hits.length));
+    };
+    where.addEventListener('input',function(){
+      picked.textContent=''; clearTimeout(timer);
+      var w=where.value.replace(/ {2,}/g,' ').trim(), mine=++seq;
+      if(w.length<3||/^https?:/i.test(w)||/^-?[0-9.]+ *, *-?[0-9.]+$/.test(w)){ shut(); return; }
+      timer=setTimeout(function(){
+        refs('/all/maker/geo/search',{q:w}).then(function(v){ if(mine!==seq) return; var l=v&&v.places||[]; draw(l,l.length?'':'No place found. Paste a link instead.'); })
+          .catch(function(){ if(mine!==seq) return; draw([],'The place search is not answering. Paste a link instead.'); });
+      },350);
+    });
+    where.addEventListener('keydown',function(e){
+      if(!hits.length) return;
+      if(e.key==='ArrowDown'){ e.preventDefault(); mark((at+1)%hits.length); }
+      else if(e.key==='ArrowUp'){ e.preventDefault(); mark(at<=0?hits.length-1:at-1); }
+      else if(e.key==='Enter'&&at>=0){ e.preventDefault(); choose(at); }
+      else if(e.key==='Escape'){ e.preventDefault(); shut(); }
+    });
     var put=actOn(el('button','salt-settings__row salt-settings__row--action'),'points.add'); put.type='button'; put.appendChild(el('span','salt-settings__label','Add point')); add.appendChild(put);
-    put.addEventListener('click',function(){
-      var c=String(code.value||'').trim().toUpperCase(), place=pointPlace(where.value);
+    put.addEventListener('click',async function(){
+      if(put.disabled) return;
+      var c=String(code.value||'').trim().toUpperCase(), place=null;
+      put.disabled=true;
+      try{ place=await pointPlace(where.value); }catch(e){ put.disabled=false; pointsSaid(null,e); return; }
+      put.disabled=false;
       if(!/^[A-Z][0-9]{1,2}$/.test(c)){ pointsSaid('A code is one capital letter and one or two digits, such as A2.'); return; }
       if(!place){ pointsSaid('Give the place as two figures, latitude then longitude, or paste a Maps link with a point.'); return; }
       if(list.some(function(p){ return p.code===c; })){ pointsSaid('Point '+c+' is on the list already.'); return; }
@@ -6269,7 +6325,8 @@ export const OWNER_JS = `
       list.push({code:c,lat:place.lat,lng:place.lng}); makerPointsDraft=list; drawMakerPoints(); pointsSaid('Point '+c+' added. Save to keep it.');
     });
     root.appendChild(add);
-    root.appendChild(el('p','salt-settings__foot','Or paste a Maps link in Place.'));
+    root.appendChild(picked);
+    root.appendChild(el('p','salt-settings__foot','Type a place, or paste a Google Maps, Waze or Apple Maps link.'));
     var saveRow=el('div','apoints-save'); root.appendChild(saveRow);
     makerButton(saveRow,['Save the points','points.save'],function(){
       return refs('/all/maker/points',{list:list}).then(function(value){ makerPoints=value; makerPointsDraft=null; drawMakerPoints(); pointsSaid('Points saved.'); })
