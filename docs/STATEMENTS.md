@@ -1896,8 +1896,11 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   for a font under 11px and for a control under 44px, and draws Salt Admin on its busiest day to read every label, link, card, table and tag. No route, body,
   request id or send changed.
 - **Record is a menu of forms, and one + orb opens it** (Phase 1c, 11 Oct 2026, his decision 9): Entry, Customers and Pricing each show a menu, a
-  row of the system's Inbox row for every form of the part by name (`record.form`, key the name as a slug), in the order the page draws them:
-  Entry (**grouped by use under small eyebrows, 18 Oct 2026**: Everyday, Sale or purchase, Repayment, Stock count; Now and then, Gift, Loan, Rewards, Offsets; Fixing, Correct a row, Reopen a cancelled order;
+  row for every form of the part by name (`record.form`, key the form's heading as a slug), in the order the page draws them. **Since 27 Oct 2026 a row is a
+  settings row in a settings list, as Shop's This device draws one** (his answers: forms, menus and words in its language): its name in three words at most
+  (`MENU_NAME`: Reopen an order, Name or place, Map point; the form keeps its longer heading and its key), a count where its read holds one, the chevron;
+  the line saying what a form is for (`FORM_WHAT`) stands once in the form under its heading. Record's lead is for a screen reader only, as Shop's is.
+  Entry (**grouped by use, 18 Oct 2026, each group a settings head over its own list since 27 Oct**: Everyday, Sale or purchase, Repayment, Stock count; Now and then, Gift, Loan, Rewards, Offsets; Fixing, Correct a row, Reopen a cancelled order;
   a form not listed follows them), Customers (Add ID, Appoint existing customer, Amend ID, Map placement), Pricing (Their %, Tips, Printed
   board sizes). A row opens **that form alone, in the menu's place**, with a way back at the head (`record.form-back`, "← Entry") that returns him
   to the row he came from. **The form is the node it was, moved and never drawn again**: its fields, its retained send and its request ids are

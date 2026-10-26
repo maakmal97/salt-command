@@ -26,11 +26,11 @@ export async function run({ ok, pageWork }) {
     const heads = [...d.querySelectorAll("#makerInputs .unsent-head")].map((h) => [h.getAttribute("data-in"), t(h)]);
     const saleCard = sec("sale") && sec("sale").querySelector("article.ncard");
     const tag = saleCard && saleCard.querySelector(".need-tap .salt-producttag");
-    ok(J(heads) === J([["record.entry", "Unsent on this phone"]]) && ["sale", "stock-count", "loan"].every((k) => J(shape(sec(k))) === J(["kind", "body", "go", "fig"]))
+    ok(J(heads) === J([["record.entry", "Unsent"]])   /* 27 Oct 2026: the head is one word, the tab says where */ && ["sale", "stock-count", "loan"].every((k) => J(shape(sec(k))) === J(["kind", "body", "go", "fig"]))
       && saleCard.classList.contains("salt-action--now") && /^Sale · \d+ (min|h|d)$/.test(t(saleCard.querySelector(".nkind")))
       && !!tag && tag.classList.contains("salt-producttag--salt") && t(saleCard.querySelector(".need-who--code")) === "CX2-ZED" && t(saleCard.querySelector(".nfig")) === "RM 58"
       && t(sec("stock-count").querySelector(".need-who")) === "Unsent stock count" && t(sec("stock-count").querySelector(".nfig")) === "",
-      "under one Unsent on this phone, each entry is the one shape, kind and age, the typed book and the code (the word where there is none), the pill and the figure: " + J([heads, t(saleCard)]));
+      "under one Unsent, each entry is the one shape, kind and age, the typed book and the code (the word where there is none), the pill and the figure: " + J([heads, t(saleCard)]));
     /* 2 */
     const go = [...saleCard.querySelectorAll(".salt-action__go button")];
     const open = sec("sale").querySelector(".unsent-open"), ways = [...open.querySelectorAll(".unsent-ways button")];

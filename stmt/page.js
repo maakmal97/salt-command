@@ -1051,21 +1051,12 @@ body.ended>*:not(#aEnded){display:none}
 /* 21 Oct 2026 (P10): from 1080px the + is the rail's own button under his places, and no orb floats over the page */
 @media (min-width:1080px){.adm #oAdd{display:none}}
 .adm .arailadd{margin-top:8px;padding-top:8px;border-top:1px solid var(--salt-line)}
-.adm .formlist{display:flex;flex-direction:column;gap:8px}
-.adm .formrow .salt-inbox-row__title{gap:6px}
 /* 14 OCT 2026 (Record): a form row is the tap, no Open word; a row to approve opens its detail by a tap on the card, its head the control; its figures stand on one grid so they align down the cards; an offset is a row of a code, its figure and one Add */
-.adm .formrow{min-height:44px}
 /* 25 Oct 2026 (Record redesign P1): the parts a text tab row of three, and a form's row one shape and one height: its name and one line in the display face, a count of
    what it holds at the right where its read has one, then the way in; nothing on it wraps */
 .adm .rparts{margin:0 0 20px;padding:0;gap:0}
 .adm .rparts>.aparts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 16px;margin:0;flex:1 1 auto}
-.adm .formrow{box-sizing:border-box;height:68px;flex-wrap:nowrap;align-items:center}
-.adm .formrow .salt-inbox-row__main{flex:1 1 auto;min-width:0}
-.adm .formrow .salt-inbox-row__title>span,.adm .formrow .salt-inbox-row__what{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.adm .formrow .salt-inbox-row__side{flex:none;flex-direction:row;align-items:center;gap:10px}
-.adm .formrow .mfig{font-family:var(--salt-font-mono);font-size:1.25rem;font-weight:500;font-variant-numeric:tabular-nums;color:var(--salt-salt)}
-.adm .formrow .mfig:empty{display:none}
-.adm .formrow .mgo{width:16px;height:16px;color:var(--salt-mist)}
+/* 27 Oct 2026: a form's row is the system's settings row (Shop's This device), one list a group, and the page adds nothing to it */
 /* 25 Oct 2026 (Record redesign P2): an unsent entry is Needs you's card, its pill the phone's size beside the menu at every width; opened, its sentence and its
    second choices two up under it */
 .adm .reclist .ncard{grid-template-columns:minmax(0,1fr) 72px 88px;gap:6px 8px;padding:12px;height:76px}
@@ -2308,7 +2299,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
            him and the entries the server holds are Approve, under Orders (17 Oct 2026, as the Desk's Order book took it). */
         + '<div id="oRecord" class="aplace" data-in="record" hidden>'
         + '<h1 class="sr">Record</h1>'
-        + '<p class="lead">Your own entries. Each waits for your approval under Orders &gt; Approve.</p>'
+        + '<p class="sr">Your own entries. Each waits for your approval under Orders &gt; Approve.</p>'
         + adminParts("record", test)
         + '<div class="abody">'
         + '<section id="makerInputs" data-in="record.entry record.customers record.pricing" aria-label="Record"></section>'

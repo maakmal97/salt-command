@@ -2424,7 +2424,7 @@ export const OWNER_JS = `
         keys.sort(function(a,b){ var x=unsentRead(a).at||'~', y=unsentRead(b).at||'~'; return x<y?-1:x>y?1:(a<b?-1:1); });
         keys.forEach(function(key){
           var path=key.slice('saltMakerPending:'.length),saved,part=retainedPart(path),u=unsentRead(key),body={};
-          if(!headed[part]){ headed[part]=true; var head=el('h2','salt-eyebrow salt-eyebrow--copper ghead unsent-head','Unsent on this phone'); head.setAttribute('data-in','record.'+part); head.setAttribute('data-formmenu',''); parent.appendChild(head); }
+          if(!headed[part]){ headed[part]=true; var head=el('h2','salt-eyebrow salt-eyebrow--copper ghead unsent-head','Unsent'); head.setAttribute('data-in','record.'+part); head.setAttribute('data-formmenu',''); parent.appendChild(head); }
           var section=makerForm(part);section.classList.add('unsent');section.setAttribute('data-key',path.split('/').pop());section.setAttribute('data-formmenu','');section.appendChild(el('h3','sr','Unsent entry'));
           try{ body=(JSON.parse(localStorage.getItem(key))||{}).body||{}; }catch(e){}
           var word=unsentWord(u), card=el('article','salt-action salt-action--now ncard unsent-card'), kind=el('span','salt-action__kind nkind',word.charAt(0).toUpperCase()+word.slice(1));
@@ -3674,6 +3674,8 @@ export const OWNER_JS = `
     'place-on-the-map':'Keep the filed point, or file a new link.',
     'printed-sizes':'Sizes on the printed price list.','desk-reminders':'Hide a reminder for a while.'};
   var PRICING_ORDER=['printed-sizes','desk-reminders'];   /* Their % and Partner moved to the account card on 26 Oct 2026 */
+  /* 27 Oct 2026 (his answers: forms, menus and words in the language of Shop's This device): a row's name is three words at most; the form keeps its own heading */
+  var MENU_NAME={'reopen-a-cancelled-order':'Reopen an order','change-a-name-or-place':'Name or place','place-on-the-map':'Map point'};
   function menuCount(slug,n){
     var row=document.querySelector('#makerMenu [data-act="record.form"][data-key="'+slug+'"] .mfig');
     if(row) row.textContent=n>0?String(n):'';
@@ -3694,28 +3696,32 @@ export const OWNER_JS = `
       if(form.hasAttribute('data-formmenu')) return;
       var name=form.querySelector('h3').textContent, slug=formSlug(name), part=form.getAttribute('data-in').replace('record.','');
       form.setAttribute('data-form',slug);
-      var row=el('button','salt-inbox-row formrow'), main=el('span','salt-inbox-row__main'), title=el('span','salt-inbox-row__title'), side=el('span','salt-inbox-row__side');
+      /* 27 Oct 2026: A FORM'S ROW IS A SETTINGS ROW, as Shop's This device draws one: its name, the count where its read holds one, the chevron. The line saying
+         what it is for moves into the form, under its heading, where a form had none of its own. */
+      var row=el('button','salt-settings__row salt-settings__row--action formrow'), mark=el('span','salt-settings__mark');
       row.type='button'; actOn(row,'record.form',slug);
-      title.appendChild(el('span',null,name)); main.appendChild(title);
-      if(FORM_WHAT[slug]) main.appendChild(el('span','salt-inbox-row__what',FORM_WHAT[slug]));
-      side.appendChild(el('span','mfig'));
+      row.appendChild(el('span','salt-settings__label',MENU_NAME[slug]||name));
+      row.appendChild(el('span','salt-settings__value mfig'));
       var go=document.createElementNS('http://www.w3.org/2000/svg','svg'); go.setAttribute('class','mgo'); go.setAttribute('viewBox','0 0 24 24'); go.setAttribute('aria-hidden','true');
+      go.setAttribute('width','16'); go.setAttribute('height','16');
       go.setAttribute('fill','none'); go.setAttribute('stroke','currentColor'); go.setAttribute('stroke-width','2'); go.setAttribute('stroke-linecap','round'); go.setAttribute('stroke-linejoin','round');
-      var path=document.createElementNS('http://www.w3.org/2000/svg','path'); path.setAttribute('d','M9 6 L15 12 L9 18'); go.appendChild(path); side.appendChild(go);
-      row.appendChild(main); row.appendChild(side);
+      var path=document.createElementNS('http://www.w3.org/2000/svg','path'); path.setAttribute('d','M9 6 L15 12 L9 18'); go.appendChild(path); mark.appendChild(go); row.appendChild(mark);
+      var head=form.querySelector('h3'), said=head.nextElementSibling;
+      if(FORM_WHAT[slug]&&!(said&&said.textContent.trim()===FORM_WHAT[slug])) head.parentNode.insertBefore(el('p','msg formwhat',FORM_WHAT[slug]),head.nextSibling);
       row.addEventListener('click', function(){ openForm(slug); });
-      if(part==='entry') entryRows[slug]=row; else lists[part].appendChild(row);
+      if(part==='entry') entryRows[slug]=row; else (lists[part].firstChild||lists[part].appendChild(el('div','salt-settings'))).appendChild(row);
     });
     /* 18 Oct 2026, CLARITY PART 4: Entry's forms are grouped by how often he uses them, each group under a small eyebrow. A form not listed goes at the end of Fixing. */
     var seen={};
     ENTRY_GROUPS.forEach(function(g){
       var have=g[1].filter(function(s){ return entryRows[s]; }); if(!have.length) return;
-      var head=el('p','salt-eyebrow salt-eyebrow--copper ghead',g[0]); head.setAttribute('data-group',formSlug(g[0])); lists.entry.appendChild(head);
-      have.forEach(function(s){ seen[s]=1; lists.entry.appendChild(entryRows[s]); });
+      /* 27 Oct 2026: each group a settings list under its head */
+      var head=el('h2','salt-settings__head',g[0]), group=el('div','salt-settings'); head.setAttribute('data-group',formSlug(g[0])); lists.entry.appendChild(head); lists.entry.appendChild(group);
+      have.forEach(function(s){ seen[s]=1; group.appendChild(entryRows[s]); });
     });
-    Object.keys(entryRows).forEach(function(s){ if(!seen[s]) lists.entry.appendChild(entryRows[s]); });
+    Object.keys(entryRows).forEach(function(s){ if(!seen[s]) (lists.entry.lastElementChild||lists.entry.appendChild(el('div','salt-settings'))).appendChild(entryRows[s]); });
     /* 25 Oct 2026 (Record redesign P8, his Ask G): Pricing in his order, Printed sizes then Desk reminders since Their % and Partner left (26 Oct); a form not named keeps its place after them */
-    PRICING_ORDER.slice().reverse().forEach(function(s){ var row=lists.pricing.querySelector('[data-key="'+s+'"]'); if(row) lists.pricing.insertBefore(row,lists.pricing.firstChild); });
+    PRICING_ORDER.slice().reverse().forEach(function(s){ var row=lists.pricing.querySelector('[data-key="'+s+'"]'); if(row) row.parentNode.insertBefore(row,row.parentNode.firstChild); });
     /* PHASE 4a (12 Oct 2026): THE FORM OPEN IS A PANE. The retained input and the menu are one column and the forms the pane beside it, moved into
        them and never drawn again; the grid is one column below 860px, where the form takes the menu's place and has its way back. */
     var grid=el('div','recgrid'), list=el('div','reclist'), pane=el('div','recpane');

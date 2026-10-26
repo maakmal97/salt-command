@@ -25,8 +25,9 @@ const ROUTES = { review: "/all/maker/review", claims: "/all/maker/claims", threa
   sheet: "/all/sheet", links: "/all/refs", inputs: "/all/maker/inputs" };
 /* Record's forms by name, the part each is in, in the order the page draws them */
 const MENU = {
-  entry: ["Sale or purchase", "Repayment", "Stock count", "Gift", "Loan", "Rewards", "Offsets", "Correct a row", "Reopen a cancelled order"],
-  customers: ["New customer", "Make an associate", "Change a name or place", "Place on the map"],
+  /* 27 Oct 2026: a menu row's name, three words at most; the form keeps its own heading */
+  entry: ["Sale or purchase", "Repayment", "Stock count", "Gift", "Loan", "Rewards", "Offsets", "Correct a row", "Reopen an order"],
+  customers: ["New customer", "Make an associate", "Name or place", "Map point"],
   pricing: ["Printed sizes", "Desk reminders"]   /* 26 Oct 2026: Their % and Partner moved to the account card; his Ask G orders the rest (25 Oct 2026) */
 };
 const order = (id, status, patch = {}) => ({ id, u: U1, product: "salt", delivery: 0, paid: 0, msgs: [], payments: [], history: [], mode: "collect", qty: 1, total: 100, status, ...patch });
@@ -84,7 +85,7 @@ export async function run({ ok, pageWork }) {
     p.tick = async () => { const t = p.live()[0]; if (t) t.f(); await p.work.quiet(); return !!t; };
     p.counts = () => Object.fromEntries([...d.querySelectorAll(".salt-rail [data-count]")].map((e) => [e.getAttribute("data-count"), e.textContent]));
     p.needs = () => [...d.querySelectorAll("#nlist [data-need]")].map((c) => c.getAttribute("data-need"));
-    p.menu = () => [...d.querySelectorAll('#makerMenu [data-act="record.form"]')].filter(shown).map((r) => r.querySelector(".salt-inbox-row__title").textContent);
+    p.menu = () => [...d.querySelectorAll('#makerMenu [data-act="record.form"]')].filter(shown).map((r) => r.querySelector(".salt-settings__label").textContent);   /* 27 Oct 2026 (Record in the language of Shop's This device): a menu row is a settings row, its name the label, three words at most */
     p.formsOpen = () => [...d.querySelectorAll("#makerInputs section.maker-input[data-form]")].filter(shown).map((s) => s.getAttribute("data-form"));
     p.retained = () => [...d.querySelectorAll("#makerInputs section[data-formmenu]")].filter(shown).map((s) => s.querySelector("h3").textContent);
     p.tap = async (act, key) => { const c = byAct(d, act, key); if (c) c.click(); await p.work.quiet(); return !!c; };
@@ -489,14 +490,16 @@ export async function run({ ok, pageWork }) {
       "Entry, Customers and Pricing are each a menu of their forms by name, no form shown, and the retained input kept on Entry: " + JSON.stringify(seen));
     /* 18 Oct 2026 (clarity part 4): Entry's forms stand in three groups by how often they are used, each under a small eyebrow, and every row keeps its slug */
     const lst = d.querySelector('#makerMenu .formlist[data-in="record.entry"]');
-    const groups = lst ? [...lst.children].map((n) => n.classList.contains("salt-eyebrow") ? "# " + n.textContent : n.querySelector(".salt-inbox-row__title").textContent + "=" + n.getAttribute("data-key")) : [];
+    /* 27 Oct 2026: each group is a settings head over its own settings list, the rows inside it */
+    const groups = lst ? [...lst.children].flatMap((n) => n.classList.contains("salt-settings__head") ? ["# " + n.textContent]
+      : n.classList.contains("salt-settings") ? [...n.children].map((r) => r.querySelector(".salt-settings__label").textContent + "=" + r.getAttribute("data-key")) : ["? " + n.className]) : [];
     ok(same(groups, ["# Everyday", "Sale or purchase=sale-or-purchase", "Repayment=repayment", "Stock count=stock-count", "# Now and then", "Gift=gift", "Loan=loan", "Rewards=rewards", "Offsets=offsets",
-      "# Fixing", "Correct a row=correct-a-row", "Reopen a cancelled order=reopen-a-cancelled-order"]),
-    "Entry's menu is Everyday, Now and then and Fixing, each a small eyebrow over its forms in that order, every row keeping its slug: " + JSON.stringify(groups));
+      "# Fixing", "Correct a row=correct-a-row", "Reopen an order=reopen-a-cancelled-order"]),
+    "Entry's menu is Everyday, Now and then and Fixing, each a settings head over its own list of forms in that order, every row keeping its slug: " + JSON.stringify(groups));
     const rows = [...d.querySelectorAll('#makerMenu [data-act="record.form"]')], kept = d.querySelector("#makerInputs section[data-formmenu]"), menuEl = d.getElementById("makerMenu");
-    ok(rows.length === 15 && rows.every((r) => r.tagName === "BUTTON" && r.classList.contains("salt-inbox-row") && /^[a-z0-9-]+$/.test(r.getAttribute("data-key")) && !r.querySelector(".salt-inbox-row__action") && !/Open/.test(r.textContent))
+    ok(rows.length === 15 && rows.every((r) => r.tagName === "BUTTON" && r.classList.contains("salt-settings__row--action") && r.parentElement.classList.contains("salt-settings") && /^[a-z0-9-]+$/.test(r.getAttribute("data-key")) && !/Open/.test(r.textContent))
       && new Set(rows.map((r) => r.getAttribute("data-key"))).size === 15 && !!kept && !!(kept.compareDocumentPosition(menuEl) & 4),
-    "a row is the system's Inbox row, named by its act and a key of its own, below the retained input: " + rows.map((r) => r.getAttribute("data-key")).join());
+    "a row is the system's settings row in a settings list (27 Oct 2026; it was the Inbox row), named by its act and a key of its own, below the retained input: " + rows.map((r) => r.getAttribute("data-key")).join());
     /* 14 Oct 2026 (Record): the title and its lead stand once; Offsets are two lists, never one, each offer one row with one Add */
     ok(d.querySelectorAll("#oRecord h1").length === 1 && (d.getElementById("oRecord").textContent.match(/Each waits for your approval under Orders > Approve/g) || []).length === 1
       && !d.querySelector("#makerInputs > h2") && !d.querySelector('#oApprove > h2') && !/Rows to approve/.test(d.getElementById("oRecord").textContent),
@@ -515,13 +518,14 @@ export async function run({ ok, pageWork }) {
     for (const part of ["entry", "customers", "pricing"]) {
       await p.tap("part.record." + part);
       for (const name of MENU[part]) {
-        const row = [...d.querySelectorAll('#makerMenu [data-act="record.form"]')].filter(shown).find((r) => r.querySelector(".salt-inbox-row__title").textContent === name);
+        /* 27 Oct 2026: the row is a settings row named in three words at most; three forms keep a longer heading of their own */
+        const row = [...d.querySelectorAll('#makerMenu [data-act="record.form"]')].filter(shown).find((r) => r.querySelector(".salt-settings__label").textContent === name);
         if (!row) { bad.push(name + " (no row: " + p.where() + " " + JSON.stringify(p.menu()) + ")"); continue; }
         const slug = row.getAttribute("data-key");
         p.posts.length = 0; p.reads.length = 0;
         row.click(); await p.work.quiet();
         const back = d.getElementById("makerFormBack"), form = d.querySelector('#makerInputs [data-form="' + slug + '"]');
-        if (!(same(p.formsOpen(), [slug]) && form.querySelector("h3").textContent === name && same(p.menu(), MENU[part]) && gridOpen() && row.getAttribute("aria-current") === "true"
+        if (!(same(p.formsOpen(), [slug]) && form.querySelector("h3").textContent === ({ "Reopen an order": "Reopen a cancelled order", "Name or place": "Change a name or place", "Map point": "Place on the map" }[name] || name) && same(p.menu(), MENU[part]) && gridOpen() && row.getAttribute("aria-current") === "true"
           && d.querySelectorAll('#makerMenu [aria-current="true"]').length === 1 && shown(back)
           && back.textContent === "← " + LABEL[part] && back.getAttribute("data-act") === "record.form-back" && p.posts.length === 0 && p.reads.length === 0 && d.activeElement === back)) bad.push(name);
         back.click(); await p.work.quiet();

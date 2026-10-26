@@ -303,8 +303,8 @@
  {
   "name": "the menu leaves a form out",
   "file": "stmt/owner.js",
-  "find": "if(part==='entry') entryRows[slug]=row; else lists[part].appendChild(row);",
-  "replace": "if(part==='entry'){ if(slug!=='gift') entryRows[slug]=row; } else lists[part].appendChild(row);"
+  "find": "if(part==='entry') entryRows[slug]=row; else (lists[part].firstChild",
+  "replace": "if(part==='entry'){ if(slug!=='gift') entryRows[slug]=row; } else (lists[part].firstChild"
  },
  {
   "name": "the menu lists every form under Entry",
@@ -571,8 +571,8 @@
  {
   "name": "every Entry row says Open again",
   "file": "stmt/owner.js",
-  "find": "title.appendChild(el('span',null,name)); main.appendChild(title);\n      if(FORM_WHAT[slug])",
-  "replace": "title.appendChild(el('span',null,name)); main.appendChild(title); main.appendChild(el('span','salt-inbox-row__action','Open'));\n      if(FORM_WHAT[slug])"
+  "find": "row.appendChild(el('span','salt-settings__label',MENU_NAME[slug]||name));",
+  "replace": "row.appendChild(el('span','salt-settings__label',(MENU_NAME[slug]||name)+' Open'));"
  },
  {
   "name": "a reward offset is listed as a customer's",

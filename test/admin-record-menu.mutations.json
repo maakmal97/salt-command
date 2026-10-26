@@ -2,10 +2,15 @@
  {"name":"Record's parts are a slider again","file":"stmt/page.js","find":"const ADMIN_NAVS = [\"record\"];","replace":"const ADMIN_NAVS = [];"},
  {"name":"the tab tapped is not marked","file":"stmt/owner.js","find":"      b.setAttribute('aria-selected', on?'true':'false');","replace":"      b.setAttribute('aria-selected', 'false');"},
  {"name":"no count of what waits unsent beside a part","file":"stmt/owner.js","find":"var c=b.querySelector('.nktab__n'); if(c) c.textContent=n[b.getAttribute('data-part')]?String(n[b.getAttribute('data-part')]):'';","replace":"var c=b.querySelector('.nktab__n'); if(c) c.textContent='';"},
- {"name":"a row has no line saying what the form is for","file":"stmt/owner.js","find":"      if(FORM_WHAT[slug]) main.appendChild(el('span','salt-inbox-row__what',FORM_WHAT[slug]));\n","replace":""},
+ {"name":"a row's name is the form's long heading","file":"stmt/owner.js","find":"row.appendChild(el('span','salt-settings__label',MENU_NAME[slug]||name));","replace":"row.appendChild(el('span','salt-settings__label',name));"},
+ {"name":"the form's line is not moved into the form","file":"stmt/owner.js","find":"if(FORM_WHAT[slug]&&!(said&&said.textContent.trim()===FORM_WHAT[slug])) head.parentNode.insertBefore(el('p','msg formwhat',FORM_WHAT[slug]),head.nextSibling);","replace":""},
+ {"name":"the form's line is doubled where the form had it","file":"stmt/owner.js","find":"if(FORM_WHAT[slug]&&!(said&&said.textContent.trim()===FORM_WHAT[slug]))","replace":"if(FORM_WHAT[slug])"},
+ {"name":"a row is the Inbox row again","file":"stmt/owner.js","find":"var row=el('button','salt-settings__row salt-settings__row--action formrow'), mark=el('span','salt-settings__mark');","replace":"var row=el('button','salt-inbox-row formrow'), mark=el('span','salt-settings__mark');"},
+ {"name":"Entry's rows stand outside a list","file":"stmt/owner.js","find":"have.forEach(function(s){ seen[s]=1; group.appendChild(entryRows[s]); });","replace":"have.forEach(function(s){ seen[s]=1; lists.entry.appendChild(entryRows[s]); });"},
+ {"name":"a head is the old eyebrow","file":"stmt/owner.js","find":"var head=el('h2','salt-settings__head',g[0]), group=el('div','salt-settings');","replace":"var head=el('p','salt-eyebrow salt-eyebrow--copper ghead',g[0]), group=el('div','salt-settings');"},
  {"name":"the loans to repay are not counted","file":"stmt/owner.js","find":"    menuCount('repayment',(catalog.loans||[]).length);\n","replace":""},
  {"name":"a reward with nothing to give is counted","file":"stmt/owner.js","find":"menuCount('rewards',(catalog.rewards||[]).filter(function(offer){ return offer.action; }).length);","replace":"menuCount('rewards',(catalog.rewards||[]).length);"},
  {"name":"the offsets' count never lands","file":"stmt/owner.js","find":"        menuOffers=read.offers.length; menuCount('offsets',menuOffers);\n","replace":""},
- {"name":"the row has no way in","file":"stmt/owner.js","find":"go.appendChild(path); side.appendChild(go);","replace":"go.appendChild(path);"},
- {"name":"a row is taller than the one height","file":"stmt/page.js","find":".adm .formrow{box-sizing:border-box;height:68px;flex-wrap:nowrap;align-items:center}","replace":".adm .formrow{box-sizing:border-box;height:76px;flex-wrap:nowrap;align-items:center}"}
+ {"name":"the row has no way in","file":"stmt/owner.js","find":"go.appendChild(path); mark.appendChild(go); row.appendChild(mark);","replace":"go.appendChild(path);"},
+ {"name":"the page styles a row again","file":"stmt/page.js","find":"/* 27 Oct 2026: a form's row is the system's settings row (Shop's This device), one list a group, and the page adds nothing to it */\n","replace":"/* 27 Oct 2026 */\n.adm .formrow{min-height:44px}\n"}
 ]

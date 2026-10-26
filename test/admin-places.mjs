@@ -40,8 +40,9 @@ const SHOWS = {
 };
 /* the forms of Record, by the part each belongs to (the page also draws an Unsent entry for the loan this device kept) */
 const FORMS = {
-  entry: ["Unsent entry", "Sale or purchase", "Repayment", "Stock count", "Gift", "Loan", "Rewards", "Offsets", "Correct a row", "Reopen a cancelled order"],
-  customers: ["New customer", "Make an associate", "Change a name or place", "Place on the map"],
+  /* 27 Oct 2026: a retained input is read by its heading, a menu row by its name, three words at most (Reopen an order, Name or place, Map point) */
+  entry: ["Unsent entry", "Sale or purchase", "Repayment", "Stock count", "Gift", "Loan", "Rewards", "Offsets", "Correct a row", "Reopen an order"],
+  customers: ["New customer", "Make an associate", "Name or place", "Map point"],
   pricing: ["Printed sizes", "Desk reminders"]   /* Their % and Partner on the account card since 26 Oct 2026; his Ask G orders the rest */
 };
 /* what each entry reads, by route: the place on tapping its item, the part on tapping its tab */
@@ -127,7 +128,7 @@ export async function run({ ok, pageWork }) {
     /* a part shows a menu of its forms by name, and a retained input above it; a form is shown when its row is tapped (test/admin-orders.mjs) */
     const formsIn = (part) => {
       const kept = [...d.querySelectorAll("#makerInputs .maker-input")].filter(shown).map((f) => (f.querySelector("h3") || {}).textContent);
-      const rows = [...d.querySelectorAll('#makerMenu [data-act="record.form"]')].filter(shown).map((r) => r.querySelector(".salt-inbox-row__title").textContent);
+      const rows = [...d.querySelectorAll('#makerMenu [data-act="record.form"]')].filter(shown).map((r) => r.querySelector(".salt-settings__label").textContent);   /* 27 Oct 2026 (Record in the language of Shop's This device): a menu row is a settings row, its name the label, three words at most */
       return kept.concat(rows);
     };
     const byPart = {};
