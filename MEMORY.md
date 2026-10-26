@@ -196,6 +196,8 @@
   salt-ds 1.18.0 (#30, the Switch and Settings recipes): Tide theme and Notifications switches, Names a password in its row with Unlock. Not yet opened by him.
 - v1259 (`5e9edaf2`, 26 Oct 2026; Cloud commit `40235334331`: chain and three suite parts green, live /rev `6a58eb110eb5a135`), his yes of 26 Oct 2026: Salt Counter's own
   This device is the same list (Notifications and Tide theme switches; Not here and why on a browser with no notifications; Saved as an app Yes). Not yet opened by him.
+- v1260 (`6c258934`, 26 Oct 2026; Cloud commit `40260871795`: chain and three suite parts green, live /rev `f11319e0ef0436e2`), his second look: Salt Admin's Names is a
+  Show names switch, on asking for the password in the one Sheet, off locking; every row of This device a name and one switch. Not yet opened by him.
 
 ## Salt Admin Needs you redesign
 - Live as v1221 (`b8916ca2`, 23 Oct 2026; Cloud commit `39821813897`: chain and three suite parts green, live /rev `1e1013dcc935d44b`), from his canvas
