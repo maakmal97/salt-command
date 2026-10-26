@@ -2527,14 +2527,58 @@ export const OWNER_JS = `
     };
     set.fill(items); return set;
   }
-  function makerTilesIn(root,label,items,none){ var set=makerTiles(label,items,none); root.appendChild(set); return set; }
+  /* 27 Oct 2026 (his answers: Record's forms in the language of Shop's This device): INSIDE ONE OF RECORD'S FORMS, A CHOICE OF TWO OR THREE PLAIN WORDS
+     (Sale or Purchase, Goods or Cash, the handover) IS A SEGMENT IN ITS ROW, as Hours' Hold as is; it answers as the tiles did (.value, .disabled, .hidden,
+     fill, a change that bubbles), each option keeping the tile's act and key. Books keep their typed tags as tiles (his word of 22 Oct 2026), and so do
+     choices with a note under them, more than three, or none chosen at first; a choice of tiles ends the list above it. */
+  function makerSegFits(items,none){ return !none&&items.length>=2&&items.length<=3&&items.every(function(item){ return !item.mark&&!item.detail&&String(item.label).length<=11; }); }
+  var segSeq=0;
+  function makerSegRow(root,label,items){
+    var L=labOf(label), row=el('div','salt-settings__row mrow'), name=el('span','salt-settings__label',L[0]), s=el('div','salt-segment salt-segment--tight mseg'), cur='', dis=false;
+    if(L[3]){ name.appendChild(document.createTextNode(' ')); name.appendChild(productTag(L[3])); }   /* a name about a book ends in its typed tag, as a legend does */
+    name.id='mseg'+(++segSeq); row.appendChild(name); row.appendChild(s); makerList(root).appendChild(row);
+    s.setAttribute('role','radiogroup'); s.setAttribute('aria-labelledby',name.id);
+    var pick=function(v){ cur=''; [].forEach.call(s.children,function(b,i){ var on=b.getAttribute('data-value')===v; b.setAttribute('aria-checked',String(on)); if(on){ cur=v; s.style.setProperty('--i',String(i)); } }); };
+    Object.defineProperty(s,'value',{ get:function(){ return cur; }, set:function(v){ pick(String(v)); } });
+    Object.defineProperty(s,'disabled',{ get:function(){ return dis; }, set:function(v){ dis=!!v; [].forEach.call(s.children,function(b){ b.disabled=dis; }); } });
+    Object.defineProperty(s,'hidden',{ get:function(){ return row.hidden; }, set:function(v){ row.hidden=!!v; } });
+    s.fill=function(list){
+      var kept=cur, offered=list.some(function(item){ return String(item.value)===kept; });
+      s.textContent=''; s.style.setProperty('--n',String(Math.max(list.length,1)));
+      list.forEach(function(item){
+        var b=actOn(el('button','salt-segment__opt',item.label),L[1],(L[2]?L[2]+'-':'')+(String(item.value)===''?'none':item.value));
+        b.type='button'; b.setAttribute('role','radio'); b.setAttribute('data-value',String(item.value)); b.disabled=dis; if(item.aria) b.setAttribute('aria-label',item.aria);
+        b.addEventListener('click',function(){ if(dis) return; pick(String(item.value)); s.dispatchEvent(new Event('change',{bubbles:true})); });
+        s.appendChild(b);
+      });
+      pick(offered?kept:(list.length?String(list[0].value):''));
+    };
+    s.fill(items); return s;
+  }
+  function makerTilesIn(root,label,items,none){
+    if(makerRowMode(root)&&makerSegFits(items,none)) return makerSegRow(root,label,items);
+    var set=makerTiles(label,items,none); root.appendChild(set); return set;
+  }
+  /* 27 Oct 2026 (his answers: Record's forms in the language of Shop's This device): INSIDE ONE OF RECORD'S FORMS A FIELD OR A DROPDOWN IS A ROW OF A
+     SETTINGS LIST, its name at the left and the control at the right; the rows that follow one another share one list, and anything else between them
+     (a choice of tiles, a line, a card) ends it. Elsewhere (an order's card, an account's) a field keeps its label above it. */
+  function makerRowMode(parent){ return !!(parent&&parent.closest&&parent.closest('section.maker-input,#makerInputs')); }   /* Stock count's are drawn in the box, then moved into its form */
+  function makerList(parent){
+    var last=parent.lastElementChild;
+    if(last&&last.classList.contains('maker-list')) return last;
+    var list=el('div','salt-settings maker-list'); parent.appendChild(list); return list;
+  }
+  function makerRow(parent,words,control){
+    var row=el('label','salt-settings__row mrow'), name=el('span','salt-settings__label',words);
+    row.appendChild(name); if(control) row.appendChild(control); makerList(parent).appendChild(row); return row;
+  }
   function makerField(parent, label, type, value, step){
-    var L=labOf(label), wrap=el('label','maker-field'), title=el('span','lbl salt-field__label',L[0]), input=actOn(el('input','fld salt-field__input'),L[1],L[2]);
+    var L=labOf(label), rowed=makerRowMode(parent), wrap=el('label',rowed?'salt-settings__row mrow':'maker-field'), title=el('span',rowed?'salt-settings__label':'lbl salt-field__label',L[0]), input=actOn(el('input','fld salt-field__input'),L[1],L[2]);
     if(L[3]){ title.appendChild(document.createTextNode(' ')); title.appendChild(productTag(L[3])); }   /* a field about a book ends in its typed tag: [words, act, key, book] */
     input.type=type; input.value=value==null?'':String(value);
     if(type==='number'){ input.step=step||'0.01'; input.min='0'; input.inputMode='decimal'; input.classList.add('salt-field__input--mono'); }   /* a figure in mono, set right (25 Oct 2026) */
-    if(type==='number'||type==='date'||type==='time') wrap.classList.add('maker-field--short');   /* a short field lies beside another on a portrait tablet (the page's CSS, 768 to 859px) */
-    wrap.appendChild(title); wrap.appendChild(input); parent.appendChild(wrap); return input;
+    if(!rowed&&(type==='number'||type==='date'||type==='time')) wrap.classList.add('maker-field--short');   /* a short field lies beside another on a portrait tablet (the page's CSS, 768 to 859px) */
+    wrap.appendChild(title); wrap.appendChild(input); (rowed?makerList(parent):parent).appendChild(wrap); return input;
   }
   function makerBytes64(bytes){
     var text=''; for(var i=0;i<bytes.length;i++) text+=String.fromCharCode(bytes[i]);
@@ -2634,7 +2678,7 @@ export const OWNER_JS = `
     makerGeo.picks().forEach(function(point,label){
       var option=el('option');option.value=label;list.appendChild(option);
     });
-    parent.appendChild(list);return input;
+    input.parentNode.appendChild(list);return input;
   }
   async function makerLocalityPoint(value){
     var picked=makerGeo.picks().get(value);
@@ -2688,8 +2732,10 @@ export const OWNER_JS = `
     var parties=(catalog.parties||[]).filter(function(code){return !code.endsWith('-R');});
     var books=catalog.products||[];
     var addSelect=function(root,label,items){
-      var L=labOf(label), wrap=el('label','maker-field'), title=el('span','lbl salt-field__label',L[0]), select=actOn(el('select','fld salt-field__input salt-field__select'),L[1],L[2]);
+      var L=labOf(label), select=actOn(el('select','fld salt-field__input salt-field__select'),L[1],L[2]);
       items.forEach(function(item){var option=el('option',null,item.label);option.value=item.value;select.appendChild(option);});
+      if(makerRowMode(root)){ makerRow(root,L[0],select); return select; }
+      var wrap=el('label','maker-field'), title=el('span','lbl salt-field__label',L[0]);
       wrap.appendChild(title);wrap.appendChild(select);root.appendChild(wrap);return select;
     };
     /* a row already booked with the same party, amount and date is asked about, as a trade is: he says it is a separate one, or nothing is sent */
@@ -2716,7 +2762,7 @@ export const OWNER_JS = `
     var loan=makerForm('entry');loan.appendChild(el('h3',null,'Loan'));
     loan.appendChild(el('p','msg','Cash or goods lent or borrowed.'));
     parent.appendChild(loan);
-    var loanForm=makerTilesIn(loan,['Goods or cash','record.loan.form'],[{value:'salt',label:'Goods'},{value:'cash',label:'Cash'}]);
+    var loanForm=makerTilesIn(loan,['Loan of','record.loan.form'],[{value:'salt',label:'Goods'},{value:'cash',label:'Cash'}]);
     var loanDirection=makerTilesIn(loan,['Direction','record.loan.direction'],[{value:'in',label:'We borrowed'},{value:'out',label:'We lent'}]);
     var loanParty=addSelect(loan,['Who','record.loan.party'],partyItems), loanProduct=makerTilesIn(loan,['Book','record.loan.book'],productItems);
     var loanDate=makerField(loan,['Date','record.loan.date'],'date',today), loanAmount=makerField(loan,['Units','record.loan.amount'],'number','1');
@@ -2753,11 +2799,11 @@ export const OWNER_JS = `
       return {value:item.rid,label:item.direction==='in'?'You owe '+item.party+' '+left+(on?' (borrowed '+on+')':''):item.party+' owes '+left+(on?' (lent '+on+')':'')};});
     var repayLoan=addSelect(repay,['Which loan','record.repay.loan'],loanItems), repayDate=makerField(repay,['Date','record.repay.date'],'date',today),
       repayAmount=makerField(repay,['Amount','record.repay.amount'],'number','1'), repayStatus=makerStatus(repay);
-    /* 25 Oct 2026 (Record redesign P6): what is left on the loan chosen, as a ledger line with its figure, under the choice */
-    var repayLeft=el('div','salt-ledger repay-left'); repay.insertBefore(repayLeft,repayDate.closest('label'));
+    /* 25 Oct 2026 (Record redesign P6): what is left on the loan chosen, under the choice; 27 Oct 2026: a row of the form's list, its figure the row's value */
+    var repayLeft=el('div','salt-settings__row repay-left'); repayLoan.closest('label').after(repayLeft);
     var drawLeft=function(){ repayLeft.textContent=''; var item=(catalog.loans||[]).find(function(x){return x.rid===repayLoan.value;}); repayLeft.hidden=!item; if(!item) return;
-      var row=el('div','salt-ledger__row'), line=el('div','salt-ledger__line'); line.appendChild(el('span','salt-ledger__label','Left on this loan'));
-      line.appendChild(el('span','salt-ledger__value',item.form==='cash'?rm(item.remaining):units(item.remaining))); row.appendChild(line); repayLeft.appendChild(row); };
+      repayLeft.appendChild(el('span','salt-settings__label','Left to repay'));
+      repayLeft.appendChild(el('span','salt-settings__value',item.form==='cash'?rm(item.remaining):units(item.remaining))); };
     repayLoan.addEventListener('change',drawLeft); drawLeft();
     makerButton(repay,['Send the repayment','record.repay.send'],async function(send){
       repayStatus.textContent='Sending.';
@@ -2983,9 +3029,9 @@ export const OWNER_JS = `
     var idParentItems=(catalog.associates||[]).map(function(item){return {value:item.code,label:item.code};});
     var idParent=addSelect(id,['Their associate','record.add-id.parent'],idParentItems);
     var idName=makerField(id,['Name','record.add-id.name'],'text',''), idPlace=makerLocalityField(id,'record.add-id.place');
-    idPlace.closest('label').appendChild(el('span','msg','Optional. Blank gives TBC until the place is confirmed.'));
+    idPlace.placeholder='Optional, TBC if blank';   /* 27 Oct 2026: the row holds its field alone; the hint is the field's */
     var idGate=makerVaultGate(id);
-    var idLink=makerField(id,['Maps or Waze link','record.add-id.link'],'text','');
+    var idLink=makerField(id,['Map link','record.add-id.link'],'text','');idLink.placeholder='Google Maps or Waze';
     var driftBooks=books.filter(function(item){return item.drift;});
     var idDrifts=driftBooks.map(function(item){
       var presets=item.driftPresets||[];
@@ -2993,7 +3039,7 @@ export const OWNER_JS = `
         .concat(presets.map(function(preset){return {value:String(preset.value),
           label:preset.name};}))
         .concat([{value:'typed',label:'Other %'}]));
-      var typed=makerField(id,['Other %, -0.3 to 0.3','record.add-id.drift-value',item.product,item.product],'number','',0.05);
+      var typed=makerField(id,['Other %','record.add-id.drift-value',item.product,item.product],'number','',0.05);
       typed.min='-0.3';typed.max='0.3';typed.removeAttribute('inputmode');typed.step='0.05';typed.placeholder='-0.3 to 0.3';typed.closest('label').hidden=true;
       select.addEventListener('change',function(){typed.closest('label').hidden=select.value!=='typed';});
       return {product:item.product,select:select,typed:typed};
@@ -3102,7 +3148,7 @@ export const OWNER_JS = `
     var amendParty=addSelect(amend,['Who','record.amend-id.party'],partyItems), amendName=makerField(amend,['Name','record.amend-id.name'],'text',''),
       amendPlace=makerLocalityField(amend,'record.amend-id.place'), amendGate=makerVaultGate(amend),
       amendStatus=makerStatus(amend), amendBusy=false;
-    var amendLink=makerField(amend,['Maps or Waze link','record.amend-id.link'],'text','');
+    var amendLink=makerField(amend,['Map link','record.amend-id.link'],'text','');amendLink.placeholder='Google Maps or Waze';
     /* the code after the change, as Save the change works it out (25 Oct 2026, his Ask J): unchanged where the name and place keep it */
     var amendCode=codeLine(amend,'Code after');
     var drawAmendCode=function(){ var from=amendParty.value, to=amendName.value.trim()&&amendPlace.value.trim()?makerDerivedCode(amendName.value.trim(),amendPlace.value.trim(),from.charAt(0)==='S'?'supplier':'customer',catalog.parties||[],from):null;
@@ -3145,7 +3191,7 @@ export const OWNER_JS = `
         if(!makerVault||!placeParty.value) return;
         gate.appendChild(el('p','msg',Object.hasOwn(makerVault.places,placeParty.value)?'A place is filed for them'+makerPlaceSaid(makerVault.places[placeParty.value])+' Filing a new link replaces it.':'No place is filed for them yet.'));
       }), placeStatus=makerStatus(placement), placeBusy=false;
-    var placeLocality=makerLocalityField(placement,'record.place.locality'), placeLink=makerField(placement,['New Maps or Waze link','record.place.link'],'text','');
+    var placeLocality=makerLocalityField(placement,'record.place.locality'), placeLink=makerField(placement,['New map link','record.place.link'],'text','');placeLink.placeholder='Google Maps or Waze';
     var placeDraft=null;
     pairDrafts.push({draft:function(){return placeDraft;},clear:function(){placeDraft=null;}});
     placement.addEventListener('input',function(){placeDraft=null;});
@@ -3772,7 +3818,7 @@ export const OWNER_JS = `
       note.remove();
       var countFrom=box.children.length;
       var product=makerTilesIn(box,['Book','record.count.book'],context.products.map(bookItem));
-      var date=makerField(box,['Counted on','record.count.date'],'date',''), qty=makerField(box,['Units on the shelf','record.count.units'],'number','', '0.01');
+      var date=makerField(box,['Counted on','record.count.date'],'date',''), qty=makerField(box,['On the shelf','record.count.units'],'number','', '0.01');
       var pending=false, at=null, signature='', answer=el('p','msg'); answer.setAttribute('role','status'); box.appendChild(answer);
       var button=makerButton(box,['Record the count','record.count.send'],async function(send){
         if(pending) return;
@@ -3791,26 +3837,22 @@ export const OWNER_JS = `
       tradeSection.appendChild(el('h3',null,'Sale or purchase'));
       tradeSection.appendChild(el('p','msg','Goods and delivery are entered separately.'));
       box.appendChild(tradeSection);
-      var direction=makerTilesIn(tradeSection,['Sale or purchase','record.trade.direction'],[{value:'sale',label:'Sale'},{value:'purchase',label:'Purchase'}]);
+      var direction=makerTilesIn(tradeSection,['Type','record.trade.direction'],[{value:'sale',label:'Sale'},{value:'purchase',label:'Purchase'}]);
       var tradeProduct=makerTilesIn(tradeSection,['Book','record.trade.book'],[]), tradeParty=actOn(el('select','fld salt-field__input salt-field__select'),'record.trade.party');
-      var partyLabel=el('label','maker-field maker-field--short','Who');   /* Who beside Date, as the canvas pairs them (25 Oct 2026) */
-      partyLabel.appendChild(tradeParty);
-      tradeSection.appendChild(partyLabel);
+      var partyLabel=makerRow(tradeSection,'Who',tradeParty);   /* 27 Oct 2026: a row of the form's list, Date under it */
       var tradeDate=makerField(tradeSection,['Date','record.trade.date'],'date',''), tradeQty=makerField(tradeSection,['Units','record.trade.units'],'number','1','0.01');
       var tradeTotal=makerField(tradeSection,['Price (goods)','record.trade.total'],'number','','0.01');
       var tradeCash=makerField(tradeSection,['Cash received','record.trade.cash'],'number','0','0.01');
-      var tradeMoved=makerField(tradeSection,['Units handed over','record.trade.moved'],'number','0','0.01');
+      var tradeMoved=makerField(tradeSection,['Handed over','record.trade.moved'],'number','0','0.01');
       var handover=makerTilesIn(tradeSection,['Handover','record.trade.handover'],[{value:'',label:'Not yet'},{value:'collected',label:'Collected'},{value:'delivered',label:'Delivered'}]);
       var carriage=makerField(tradeSection,['Delivery','record.trade.delivery'],'number','0','0.01');
-      var attribution=el('div','maker-trade-attribution');
-      var tradeStream=makerTilesIn(attribution,['Through an associate?','record.trade.stream'],[{value:'',label:'No'},{value:'R2',label:'Resells',aria:'They resell'},{value:'R3',label:'Introduced',aria:'They introduced the buyer'}]);
+      var attribution=el('div','maker-trade-attribution'); tradeSection.appendChild(attribution);   /* 27 Oct 2026: in the form first, so its rows are the form's; moved before Who below */
+      var tradeStream=makerTilesIn(attribution,['Associate','record.trade.stream'],[{value:'',label:'No'},{value:'R2',label:'Resells',aria:'They resell'},{value:'R3',label:'Referred',aria:'They introduced the buyer'}]);
       var tradeAssoc=actOn(el('select','fld salt-field__input salt-field__select'),'record.trade.associate'), tradeDown=actOn(el('select','fld salt-field__input salt-field__select'),'record.trade.end-customer');
-      var assocLabel=el('label','maker-field','Which associate'), downLabel=el('label','maker-field','Their customer (optional)');
-      assocLabel.appendChild(tradeAssoc); downLabel.appendChild(tradeDown);
-      attribution.appendChild(assocLabel); attribution.appendChild(downLabel);
+      var assocLabel=makerRow(attribution,'Which associate',tradeAssoc), downLabel=makerRow(attribution,'Their customer',tradeDown);   /* 27 Oct 2026: rows; Not named says it is optional */
       var attributionNote=el('p','msg'); attribution.appendChild(attributionNote);
       /* 25 Oct 2026 (Record redesign P4, his Ask D): the resale choice stands before Who, since it says what Who is (hidden for a resale, Buyer for an introduction) */
-      tradeSection.insertBefore(attribution,partyLabel);
+      tradeSection.insertBefore(attribution,partyLabel.parentNode);
       function fillAttribution(){
         var isSale=direction.value==='sale', stream=isSale?tradeStream.value:'', r2=stream==='R2', kept=tradeAssoc.value;
         attribution.hidden=!isSale; assocLabel.hidden=!stream; downLabel.hidden=!r2;
@@ -3924,26 +3966,28 @@ export const OWNER_JS = `
       });
       var extraBooks=el('div','maker-extra-books'), extraTrades=[], extraSeq=0;
       tradeSection.appendChild(extraBooks);
-      var tripNote=el('p','msg','Same buyer, same day; delivery charged once; approved in one tap.');
-      tradeSection.appendChild(tripNote);
+      var tripList=el('div','salt-settings maker-trip'), tripNote=el('p','salt-settings__foot','Same buyer, same day; delivery charged once; approved in one tap.');
+      tradeSection.appendChild(tripList); tradeSection.appendChild(tripNote);
+      /* 27 Oct 2026: a ghost in a form is a row of its list (Shop's Add point, Remove this date), its words three or four */
+      var asRow=function(b,words,list,danger){ b.className='salt-settings__row salt-settings__row--action'+(danger?' salt-settings__row--danger':''); b.textContent=''; b.appendChild(el('span','salt-settings__label',words)); list.appendChild(b); return b; };
       function extraChoices(tiles){
         tiles.fill((catalog.products||[]).filter(function(item){
           return item.product!==tradeProduct.value&&(direction.value==='sale'?item.saleReady:item.purchaseReady);
         }).map(function(item){ return bookItem(item.product); }));
       }
-      makerButton(tradeSection,['Another book on this visit','record.trade.add-book'],function(){
-        var row=el('section','maker-extra-trade'); row.setAttribute('data-key','extra'+(++extraSeq)); row.appendChild(el('h4',null,'Another book'));
+      asRow(makerButton(tradeSection,['Add a book','record.trade.add-book'],function(){
+        var row=el('section','maker-extra-trade'); row.setAttribute('data-key','extra'+(++extraSeq)); row.appendChild(el('h4',null,'Another book')); extraBooks.appendChild(row);
         var select=makerTilesIn(row,['Book','record.trade.extra-book'],[]); extraChoices(select);
         var extra={row:row,product:select,qty:makerField(row,['Units','record.trade.extra-units'],'number','1','0.01'),
           total:makerField(row,['Price (goods)','record.trade.extra-total'],'number','','0.01'),
           cash:makerField(row,['Cash received','record.trade.extra-cash'],'number','0','0.01'),
-          movedUnits:makerField(row,['Units handed over','record.trade.extra-moved'],'number','0','0.01')};
-        extraTrades.push(extra); extraBooks.appendChild(row);
+          movedUnits:makerField(row,['Handed over','record.trade.extra-moved'],'number','0','0.01')};
+        extraTrades.push(extra);
         extra.cover=coverChoice(row,select,extra.qty,extra.total,['record.trade.extra-cover','record.trade.extra-cover-retry']);
-        makerButton(row,['Remove','record.trade.remove-book'],function(){
+        asRow(makerButton(row,['Remove this book','record.trade.remove-book'],function(){
           extraTrades.splice(extraTrades.indexOf(extra),1);coverChoices.splice(coverChoices.indexOf(extra.cover),1);row.remove();
-        },false);
-      },false);
+        },false),'Remove this book',makerList(row),true);
+      },false),'Add a book',tripList);
       var tradeAnswer=el('p','msg'); tradeAnswer.setAttribute('role','status'); tradeSection.appendChild(tradeAnswer);
       var tradePending=false, tradeAt=null, tradeSignature='';
       function fillTradeChoices(){
@@ -3955,7 +3999,7 @@ export const OWNER_JS = `
           var option=el('option',null,code); option.value=code; tradeParty.appendChild(option);
         });
         if(Array.from(tradeParty.options).some(function(option){return option.value===keptParty;}))tradeParty.value=keptParty;
-        carriage.parentNode.querySelector('.lbl').textContent=isSale?'Delivery':'Freight';
+        carriage.parentNode.querySelector('.lbl,.salt-settings__label').textContent=isSale?'Delivery':'Freight';
         extraTrades.forEach(function(extra){extraChoices(extra.product);});
         fillAttribution();
         coverChoices.forEach(function(choice){choice.read();});
@@ -4069,7 +4113,7 @@ export const OWNER_JS = `
       }else{
         var tipId=actOn(el('select','fld salt-field__input salt-field__select'),'record.tip.tip');
         tips.forEach(function(tip){ var option=el('option',null,tip.title+(tip.hush===null?' (hidden for good)':tip.hush?' (hidden until '+fmtWhen(tip.hush)+')':'')); option.value=tip.id; tipId.appendChild(option); });
-        var tipWrap=el('label','maker-field','Reminder'); tipWrap.appendChild(tipId); tipSection.appendChild(tipWrap);
+        makerRow(tipSection,'Reminder',tipId);   /* 27 Oct 2026: a row of a settings list */
         var tipFor=makerTilesIn(tipSection,['Hide for','record.tip.for'],[{value:'7',label:'7 days'},{value:'30',label:'30 days'},{value:'',label:'For good'}]);
         var tipAnswer=el('p','msg'); tipAnswer.setAttribute('role','status'); tipSection.appendChild(tipAnswer);
         var tipPending=false, tipAt=null, tipSignature='';

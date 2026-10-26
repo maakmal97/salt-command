@@ -824,6 +824,8 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .anow-hold{display:contents}
 .adm .anow-src{color:var(--salt-mist-bright)}
 .adm .ahold-seg{flex:0 0 180px}
+/* 27 Oct 2026: a choice of two or three words in a row of Record's forms, as Hold as is on Hours */
+.adm .mseg{flex:1 1 220px;max-width:260px;min-width:0}
 .adm .anow-set,.adm .maker-done,.adm .apoints-save{display:flex;margin:16px 0 0}
 .adm .anow-set>.salt-pill,.adm .maker-done>.salt-pill{flex:1 1 auto;box-sizing:border-box;height:48px;min-height:48px;padding:0 16px}
 .adm .maker-week .maker-day{padding:0;min-height:52px;border-top:1px solid var(--salt-line-faint);border-radius:0}
