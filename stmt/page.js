@@ -776,13 +776,11 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 /* 20 OCT 2026 (his word, canvas V63): THE WEEK CHART. A row a day, 44px, the name, a 00 to 24 track and the times; the open span a brass bar,
    a span past midnight's tail hatched at the start of the next day's row. A tapped day opens below its row on slate: Opens and Closes, then
    its quick buttons, every one 44px. */
-.adm .maker-week{display:flex;flex-direction:column;gap:2px;margin:8px 0}
 .adm .maker-week-scale,.adm .maker-day{display:grid;grid-template-columns:40px minmax(0,1fr) 128px;align-items:center;gap:12px;padding:0 8px}
 /* 25 Oct 2026 (his Shop canvas): a date's name is wider than a weekday's, so the dates keep their own column */
 .adm .maker-dates .maker-day{grid-template-columns:84px minmax(0,1fr) 128px}
 .adm .maker-week-scale>span:nth-child(2){display:flex;justify-content:space-between;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
 .adm .maker-day{min-height:44px;width:100%;border:0;border-radius:var(--salt-radius-md);background:none;color:var(--salt-salt);font:inherit;text-align:left;cursor:pointer}
-.adm .maker-day[aria-expanded=true]{background:var(--salt-glass)}
 .adm .maker-track{position:relative;display:block;height:10px;border-radius:4px;background:var(--salt-well)}
 .adm .maker-bar,.adm .maker-tail{position:absolute;top:0;bottom:0;border-radius:4px}
 .adm .maker-bar{background:var(--salt-brass)}
@@ -790,35 +788,13 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-day-times{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .maker-day-times.off{color:var(--salt-mist-bright)}
 .adm .maker-day-times sup,.adm .maker-plus1{color:var(--salt-brass);font-family:var(--salt-font-mono)}
-.adm .maker-dayedit{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:var(--salt-radius-md);background:var(--salt-slate);border:1px solid var(--salt-line)}
-.adm .maker-dayedit-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.adm .maker-dayedit-times{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;align-items:end;gap:12px}
-.adm .maker-dayedit-field{display:flex;flex-direction:column;gap:4px;min-width:0}
-.adm .maker-dayedit-pick{display:flex;align-items:center;gap:8px}
-.adm .maker-dayedit select{min-height:44px;width:100%;min-width:0}
-.adm .maker-dayedit-acts{display:flex;flex-wrap:wrap;gap:8px}
-.adm .maker-dayedit-acts button{min-height:44px;min-width:44px}
 .adm .ashop-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .adm .ashop-two>button{box-sizing:border-box;width:100%;height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .ashop-two>[data-act="hours.day-copy"]{grid-column:1/-1}
-.adm .ashop-pv{padding:12px 14px}
-.adm .ashop-pv .maker-preview{margin:0}
-.adm .ashop-pv:has(.maker-preview:empty){display:none}
 .adm .aparts--nav{display:grid;grid-template-columns:auto auto auto auto;justify-content:space-between;gap:0 4px;margin:0}
 .adm .aparts--nav .nktab{padding:0 8px;white-space:nowrap}
 @media (min-width:860px){.adm .aparts--nav{grid-template-columns:repeat(4,minmax(0,1fr));gap:0 16px}}
 /* 25 Oct 2026 (his Shop canvas): the points, a plain table; the code and place fields side by side, Add beside a line, Save across */
-.adm .apoints-card{padding:4px 8px;margin:0 0 12px}
-.adm .apoints{table-layout:fixed;width:100%;border-collapse:collapse}
-.adm .apoints th,.adm .apoints td{height:52px;padding:0 8px;vertical-align:middle;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .apoints thead th{height:36px}
-.adm .apoints .apoints-code{width:64px;font-family:var(--salt-font-mono)}
-.adm .apoints .apoints-place{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
-.adm .apoints .apoints-x{width:60px;text-align:right}
-.adm .apoints .apoints-x .salt-ghost{width:44px;height:44px;min-width:44px;padding:0}
-.adm .apoints-add{display:grid;grid-template-columns:88px minmax(0,1fr);gap:8px;margin:0 0 8px}
-.adm .apoints-add>label{min-width:0}
-.adm .apoints-add input{box-sizing:border-box;width:100%;min-width:0}
 .adm .apoints-save{display:flex;margin:8px 0 0}
 /* 26 Oct 2026, his word: This device is the system's Settings list; the row's field and its one button */
 .adm #oLook .adev-note{margin:8px 4px 0}
@@ -828,36 +804,53 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .hpane{display:none}
 @media (min-width:860px){
   .adm .amain>#oShop{max-width:none}
-  .adm #makerConfirm.shglance{grid-template-columns:1fr 1fr 3fr;gap:12px}
   .adm #makerConfirm .shconfirm{grid-column:auto}
-  .adm #makerNow>.apair{display:flex;justify-content:flex-end;gap:8px}
-  .adm #makerNow>.apair>button{width:132px;flex:none}
   .adm .hsplit{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:20px;align-items:start}
   .adm .hpane{display:flex;flex-direction:column;gap:14px;position:sticky;top:24px;padding:20px;box-sizing:border-box;margin-top:calc(0.75rem * 1.4 + 10px)}
-  .adm .hpane .maker-dayedit{padding:0;background:none;border:0}
-  .adm .hpair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
-  .adm .hpair>section{margin:0}
 }
 @media (min-width:1440px){.adm .hsplit{grid-template-columns:minmax(0,1fr) 420px}}
 /* 26 Oct 2026, his word ("the same design language", iPad and Mac included): Practice, Notice and This device are lists of settings; from
    860px one readable column, as a Mac's settings, never spread across the width */
 .adm #mTest{display:flex;flex-direction:column}
 .adm .atest-u,.adm .atest-pwv{font-family:var(--salt-font-mono)}
-.adm .atest-list{margin-top:24px}
 @media (min-width:860px){.adm #mTest,.adm #makerBulletin,.adm #oLook{max-width:640px}}
 .adm .apoints-save>.salt-pill{flex:1 1 auto;box-sizing:border-box;height:48px;min-height:48px;padding:0 16px}
-.adm .maker-dayedit-times>button{min-height:44px;min-width:44px}
-.adm .maker-copy{display:flex;flex-wrap:wrap;gap:8px}
-.adm .maker-copy button{min-height:44px;min-width:44px}
-.adm .maker-dates{margin-top:16px}
-.adm .maker-dayedit-acts input[type=date]{min-height:44px;min-width:0}
 .adm .maker-facts{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm)}
 .adm .maker-row{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--salt-text-sm)}
 .adm #makerBulletinCurrent{overflow-wrap:anywhere}
 .adm #makerBulletin{display:flex;flex-direction:column}
 .adm .anotice-lines{display:contents}
+/* 26 Oct 2026 (his word): Hours in the same language. The week and the dates are lists, a row a day; the open day's rows and Now's hold are
+   rows of a list; a group after a group stands 24px down; from 860px every part of Shop is one 640px column, the open day beside the week */
+.adm #makerNowCard{margin:0 0 24px}
+.adm #makerNowCard>.msg:empty{display:none}
+.adm .anow-hold{display:contents}
+.adm .anow-src{color:var(--salt-mist-bright)}
+.adm .ahold-seg{flex:0 0 180px}
+.adm .anow-set,.adm .maker-done,.adm .apoints-save{display:flex;margin:16px 0 0}
+.adm .anow-set>.salt-pill,.adm .maker-done>.salt-pill{flex:1 1 auto;box-sizing:border-box;height:48px;min-height:48px;padding:0 16px}
+.adm .maker-week .maker-day{padding:0;min-height:52px;border-top:1px solid var(--salt-line-faint);border-radius:0}
+.adm .maker-week .maker-week-scale{padding:0;min-height:36px}
+.adm .maker-day[aria-expanded=true] .maker-day-name{color:var(--salt-brass)}
+.adm .maker-dayedit{margin:24px 0 0}
+.adm .maker-dayedit select{flex:0 0 120px;min-height:44px}
+.adm .maker-dayedit-times .maker-plus1{flex:none}
+.adm .maker-dayedit-acts,.adm .maker-copy,.adm .maker-keep{margin-top:16px}
+.adm .maker-dates .salt-settings__row>.salt-field__input{flex:0 1 180px}
+.adm .apoints-sec,.adm #mHelp{margin:24px 0 0}
+.adm .apoints-code{font-family:var(--salt-font-mono)}
+.adm .apoints-x{flex:none;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:0;background:none;color:var(--salt-mist-bright);cursor:pointer}
+.adm .apoints-x:hover,.adm .apoints-x:focus-visible{color:var(--salt-ember)}
+.adm .apoints-add .salt-field__input{flex:0 1 240px}
+.adm .ahelp-list .ahelp__q:first-of-type{margin-top:0;border-top:0}
+.adm .ahelp-list .ahelp__sum{min-height:56px}
+@media (min-width:860px){
+  .adm #makerNowCard,.adm .apoints-sec,.adm #mHelp{max-width:640px}
+  .adm .hsplit{grid-template-columns:minmax(0,640px) minmax(300px,380px)}
+  .adm .hpane{padding:0;margin-top:0}
+  .adm .hpane .maker-dayedit{margin:0}
+}
 .adm .anotice-set{box-sizing:border-box;width:100%;height:48px;min-height:48px;padding:0 16px;margin-top:16px}
-.adm .anotice-again{margin-top:8px;height:44px}
 .adm .maker-slip{display:block;max-width:100%;height:auto}
 /* 12 OCT 2026 (PHASE 2b): THE CLAIM CARD. A waiting claim is a row of the system's Inbox row and the one opened is its card under it. Its slip is a thumbnail
    that is itself the control (44px at least both ways), enlarged in place by a tap and shrunk by the next */
@@ -1328,20 +1321,11 @@ body.ended>*:not(#aEnded){display:none}
 .adm .need-clock{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 /* 25 Oct 2026 (his Shop canvas): FOR NOW, first on Hours, folded behind one pill; the form opens on that tap. A row action is 132px and the
    form's ask two halves (.apair); the glance is the system's one-line KPI tiles */
-.adm .anow{display:flex;flex-direction:column;gap:14px;padding:16px;margin:0 0 16px}
-.adm #makerNow{display:flex;flex-direction:column;gap:14px;min-width:0}
 .adm .anow-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .adm .anow-head>*{margin:0;white-space:nowrap}
-.adm .anow-title{margin:0;font-family:var(--salt-font-display);font-size:1.5rem;line-height:1.2;color:var(--salt-salt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .anow-sub{margin:4px 0 0;font-size:var(--salt-text-sm);color:var(--salt-prose);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .apair{display:grid;grid-template-columns:minmax(0,1fr) 132px;gap:8px;align-items:center}
 .adm .apair>button,.adm .apair>a{box-sizing:border-box;width:100%;min-width:0;height:48px;min-height:48px;padding:0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .apair>.msg{margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm #makerHold{display:flex;flex-direction:column;gap:14px}
-.adm #makerNowCard>.msg:empty{display:none}
-.adm .shglance{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 16px}
-.adm .shglance .shconfirm{grid-column:1/-1}
-.adm .shglance-note{grid-column:1/-1;margin:0 4px;font-size:var(--salt-text-sm);color:var(--salt-prose);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .nnote.bad{color:var(--salt-ember)}
 /* THE ASSOCIATES REPORT CARD (v691): three figures across, then what they have earned in units
    with a bar for the part-unit. The bar is the only chart on this site and it is a rule and a
@@ -1784,11 +1768,13 @@ function keepPage() {
 function helpCard(owner) {
   const row = (k) => '<details class="ahelp__q"><summary class="ahelp__sum"' + (owner ? ' data-act="shop.help.' + k + '"' : "") + ">" + wt("span", 'class="ahelp__t"', "help." + k) + glyphSvg("next", 18) + "</summary>"
     + wt("p", 'class="ahelp__a"', "help." + k + "A") + "</details>";
-  const head = owner ? '<h2 id="mHelpH" class="salt-eyebrow salt-eyebrow--copper">Help</h2><p class="msg">What a customer reads under Account, Help. Read only.</p>'
+  /* 26 Oct 2026 (his word): on Salt Admin the four are a list of settings under a grey head, one grey line under it */
+  const head = owner ? '<h2 id="mHelpH" class="salt-settings__head">Help</h2>'
     : wt("h2", 'class="salt-eyebrow salt-eyebrow--copper" id="helpH"', "help.h");
+  const rows = ["pay", "deliv", "coll", "change"].map(row).join("");
   return '<section id="' + (owner ? "mHelp" : "aHelp") + '" class="ahelp' + (owner ? "" : " salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm")
     + '" aria-labelledby="' + (owner ? "mHelpH" : "helpH") + '"' + (owner ? ' data-in="shop.hours"' : "") + ">"
-    + head + ["pay", "deliv", "coll", "change"].map(row).join("") + "</section>";
+    + head + (owner ? '<div class="salt-settings ahelp-list">' + rows + '</div><p class="salt-settings__foot">What a customer reads under Account, Help.</p>' : rows) + "</section>";
 }
 function thisDevice() {
   return '<section id="thisDevice" class="devcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="devH" hidden>'
@@ -2342,15 +2328,15 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div class="abody">'
         + '<section data-in="shop.hours" aria-labelledby="makerHoursTitle"><h2 id="makerHoursTitle" class="sr">Shop hours</h2>'
         /* 25 Oct 2026 (his Shop canvas, his yes): FOR NOW FIRST, where the bar's hours chip lands, then the glance, then the week */
-        + '<section id="makerNowCard" class="salt-glass-card salt-glass-card--radius-lg anow" aria-label="For now"><div id="makerNow"><p class="lead" id="makerHoursStatus">Reading.</p></div>'
+        /* 26 Oct 2026, his word (Hours "the same change" as Notice and Practice): every part of Hours a group of settings, in one column */
+        + '<section id="makerNowCard" class="anow" aria-label="Now"><div id="makerNow"><p class="salt-settings__foot" id="makerHoursStatus">Reading.</p></div>'
         + '<p id="makerHoursMessage" class="msg" role="status" aria-live="polite"></p></section>'
-        + '<div id="makerConfirm" class="shglance" role="group" aria-label="At a glance"></div>'
-        + '<div class="hsplit"><div id="makerSchedule"></div><aside id="makerDayPane" class="salt-glass-card salt-glass-card--radius-lg hpane" aria-label="The open day"></aside></div></section>'
-        + '<div class="hpair" data-in="shop.hours"><section data-in="shop.hours" aria-labelledby="makerPointsTitle"><h2 id="makerPointsTitle" class="salt-eyebrow salt-eyebrow--copper">Collection points</h2>'
+        + '<div class="hsplit"><div id="makerSchedule"></div><aside id="makerDayPane" class="hpane" aria-label="The open day"></aside></div></section>'
+        + '<section class="apoints-sec" data-in="shop.hours" aria-labelledby="makerPointsTitle"><h2 id="makerPointsTitle" class="salt-settings__head">Collection points</h2>'
         + '<p class="msg" id="makerPointsStatus">Reading.</p>'
         + '<div id="makerPoints"></div><p id="makerPointsMessage" class="msg" role="status" aria-live="polite"></p></section>'
         /* 21 Oct 2026 (P8): the customer's Help, read only, under the hours and the points it speaks of */
-        + helpCard(true) + '</div>'
+        + helpCard(true)
         + '<section data-in="shop.notice" aria-labelledby="makerBulletinTitle"><h2 id="makerBulletinTitle" class="sr">Notice</h2>'
         + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></section>'
         + '<div id="mTest" class="mtest" data-in="shop.practice"></div>'
