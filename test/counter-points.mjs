@@ -228,8 +228,8 @@ export async function run({ ok, pageWork }) {
       await p.work.quiet();
       await p.click(byAct(p.d, "nav.shop")); await p.click(byAct(p.d, "part.shop.hours"));
       const card = p.d.getElementById("makerPoints"), text = card ? card.textContent : "";
-      /* 25 Oct 2026 (Salt Admin Shop): the points are a plain table, a code a row under the Point column */
-      const codes = card ? [...card.querySelectorAll("tbody th[data-point]")].map((n) => n.textContent) : [];
+      /* 26 Oct 2026 (Hours as settings): the points are a list, a code a row */
+      const codes = card ? [...card.querySelectorAll("[data-point]")].map((n) => n.textContent) : [];
       ok(!!card && JSON.stringify(codes) === '["A2"]' && !/Z[0-9]/.test(codes.join()) && /3\.11111, 101\.22222/.test(text), "the Points card lists his points and never the test accounts': " + text.slice(0, 80));
       p.type(byAct(card, "points.code"), "d4"); p.type(byAct(card, "points.place"), "3.5, 101.5");
       await p.click(byAct(card, "points.add")); await p.click(byAct(p.d.getElementById("makerPoints"), "points.save"));

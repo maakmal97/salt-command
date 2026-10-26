@@ -788,9 +788,6 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-day-times{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .maker-day-times.off{color:var(--salt-mist-bright)}
 .adm .maker-day-times sup,.adm .maker-plus1{color:var(--salt-brass);font-family:var(--salt-font-mono)}
-.adm .ashop-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.adm .ashop-two>button{box-sizing:border-box;width:100%;height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .ashop-two>[data-act="hours.day-copy"]{grid-column:1/-1}
 .adm .aparts--nav{display:grid;grid-template-columns:auto auto auto auto;justify-content:space-between;gap:0 4px;margin:0}
 .adm .aparts--nav .nktab{padding:0 8px;white-space:nowrap}
 @media (min-width:860px){.adm .aparts--nav{grid-template-columns:repeat(4,minmax(0,1fr));gap:0 16px}}
@@ -1319,13 +1316,6 @@ body.ended>*:not(#aEnded){display:none}
 .adm .ordsteps .salt-steps__name,.adm .ordsteps .salt-steps__time{white-space:nowrap}
 .adm .need-clock--late .oclock__min{color:var(--salt-ember)}
 .adm .need-clock{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
-/* 25 Oct 2026 (his Shop canvas): FOR NOW, first on Hours, folded behind one pill; the form opens on that tap. A row action is 132px and the
-   form's ask two halves (.apair); the glance is the system's one-line KPI tiles */
-.adm .anow-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.adm .anow-head>*{margin:0;white-space:nowrap}
-.adm .apair{display:grid;grid-template-columns:minmax(0,1fr) 132px;gap:8px;align-items:center}
-.adm .apair>button,.adm .apair>a{box-sizing:border-box;width:100%;min-width:0;height:48px;min-height:48px;padding:0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .apair>.msg{margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .nnote.bad{color:var(--salt-ember)}
 /* THE ASSOCIATES REPORT CARD (v691): three figures across, then what they have earned in units
    with a bar for the part-unit. The bar is the only chart on this site and it is a rule and a
