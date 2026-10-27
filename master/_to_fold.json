@@ -1,0 +1,67 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-27T04:19:22.465Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CM4-TO-R",
+    "qty": 1,
+    "total": 130,
+    "cash": 0,
+    "handover": "collected",
+    "date": "2026-10-29",
+    "deliveredQty": 0,
+    "rev": "R2",
+    "listRM": 60,
+    "listQty": 1
+   },
+   "reasoning": "Sold 1 unit of salt to CM4-TO-R for RM 130, RM 130/unit. Costed at RM 58/unit from COGS off the latest purchase p044 landed 2026-10-24: RM 1400 quote plus RM 50 freight over 25 unit, so RM 72 on the goods at 55.4%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-10-29 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "Booked to CM4-TO-R as R2: CM4-TO buys it to sell on.",
+    "CM4-TO typically pays about RM 60/unit for salt across 7 orders; this one is RM 130, 116.7% above that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-27T04:19:22.465Z",
+    "type": "SELL",
+    "party": "CM4-TO-R",
+    "qty": 1,
+    "total": 130,
+    "status": "unpaid",
+    "raw": "Sell 1 unit salt to CM4-TO-R for RM130 on 2026-10-29, collected, RM0 cash, 0 unit moved → Pending (R2 via CM4-TO)",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CM4-TO",
+     "newId": null,
+     "date": "2026-10-29",
+     "qty": 1,
+     "total": 130,
+     "delivery": 0,
+     "freight": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": "CM4-TO",
+     "stream": "R2",
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "collected",
+     "second": null,
+     "more": null,
+     "coverFree": null
+    },
+    "makerRequest": "818b497579a75d2f98a3b45d5868c4bdf595afb3f36c90bfa8bd2e307e5b7ea7"
+   },
+   "decidedAt": "2026-10-27T04:19:46.821Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
