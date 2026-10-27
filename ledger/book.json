@@ -38,15 +38,25 @@
       "note": "Opened 22 Sep 2026 on his instruction, empty. Same bootstrap as candy: the first lot is entered by hand before the gate can price anything on this book.",
       "reward": false
     },
-    "spare": {
-      "id": "spare",
+    "gas": {
+      "id": "gas",
       "name": "Spare",
       "unit": "unit",
-      "accent": "var(--salt-product-spare)",
+      "accent": "var(--salt-product-gas)",
       "since": "2026-09-22",
       "retired": true,
       "note": "Opened 22 Sep 2026 as THE SPARE SLOT, on his instruction, to prove that adding a book is repeatable rather than surgical. It is deliberately given NO mark, so the Ring fallback is exercised by a real book. Put it away with tools/product.mjs --retire spare once it has served.",
       "reward": false
+    },
+    "prep": {
+      "id": "prep",
+      "name": "PrEP",
+      "unit": "unit",
+      "accent": "var(--salt-product-prep)",
+      "since": "2026-10-27",
+      "retired": false,
+      "reward": false,
+      "note": "Opened by tools/product.mjs. No lot, no sale and no count yet, so the fold will refuse a sale on it until its first lot is entered by hand."
     }
   },
   "PROD_ORDER": [
@@ -54,7 +64,8 @@
     "oil",
     "candy",
     "rice",
-    "spare"
+    "gas",
+    "prep"
   ],
   "opening": {
     "qty": 4.9,
@@ -81,7 +92,12 @@
       "costPerKg": null,
       "stated": 100
     },
-    "spare": {
+    "gas": {
+      "qty": 0,
+      "costPerKg": null,
+      "stated": null
+    },
+    "prep": {
       "qty": 0,
       "costPerKg": null,
       "stated": null
@@ -93,7 +109,8 @@
     "oil": "2026-10-20",
     "candy": "2026-10-20",
     "rice": "2026-10-20",
-    "spare": null
+    "gas": null,
+    "prep": null
   },
   "COUNTS": [
     {"product":"salt","date":"2026-08-24","qty":null,"was":null,"drift":null,"note":"anchor: the count the 15:70:15 leak split of 24 Aug was taken at; the figure itself was not recorded, so it bounds the next cycle and charges nothing Noted 27 Sep 2026: v351 did record it, 21.5 against 25.25; that drift of -3.75 is carried in the 55.2 self-use split, so this row still charges nothing."},
@@ -989,7 +1006,8 @@
         }
       ]
     },
-    "spare": null
+    "gas": null,
+    "prep": null
   },
   "CASH_COUNT_RETIRED": {
     "on": "2026-07-28",
@@ -1020,7 +1038,11 @@
       "prices": {},
       "hide": []
     },
-    "spare": {
+    "gas": {
+      "prices": {},
+      "hide": []
+    },
+    "prep": {
       "prices": {},
       "hide": []
     }
@@ -1042,9 +1064,13 @@
       "kind": "latestCogs",
       "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
     },
-    "spare": {
+    "gas": {
       "kind": "latestCogs",
       "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
+    },
+    "prep": {
+      "kind": "latestCogs",
+      "note": "His settled rule of 05 Oct 2026, every book alike: COGS off the latest purchase, quote plus trip freight over its units; the floor is that times the size and nothing else."
     }
   },
   "NOTES": {

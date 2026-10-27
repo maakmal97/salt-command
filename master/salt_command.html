@@ -8877,18 +8877,28 @@ const PRODUCTS={
     "note": "Opened 22 Sep 2026 on his instruction, empty. Same bootstrap as candy: the first lot is entered by hand before the gate can price anything on this book.",
     "reward": false
   },
-  "spare": {
-    "id": "spare",
+  "gas": {
+    "id": "gas",
     "name": "Spare",
     "unit": "unit",
-    "accent": "var(--salt-product-spare)",
+    "accent": "var(--salt-product-gas)",
     "since": "2026-09-22",
     "retired": true,
     "note": "Opened 22 Sep 2026 as THE SPARE SLOT, on his instruction, to prove that adding a book is repeatable rather than surgical. It is deliberately given NO mark, so the Ring fallback is exercised by a real book. Put it away with tools/product.mjs --retire spare once it has served.",
     "reward": false
+  },
+  "prep": {
+    "id": "prep",
+    "name": "PrEP",
+    "unit": "unit",
+    "accent": "var(--salt-product-prep)",
+    "since": "2026-10-27",
+    "retired": false,
+    "reward": false,
+    "note": "Opened by tools/product.mjs. No lot, no sale and no count yet, so the fold will refuse a sale on it until its first lot is entered by hand."
   }
 };
-const PROD_ORDER=["salt","oil","candy","rice","spare"];
+const PROD_ORDER=["salt","oil","candy","rice","gas","prep"];
 const opening={
   "qty": 4.9,
   "costPerKg": 64
@@ -8971,7 +8981,12 @@ const PROD_OPENING={
     "costPerKg": null,
     "stated": 100
   },
-  "spare": {
+  "gas": {
+    "qty": 0,
+    "costPerKg": null,
+    "stated": null
+  },
+  "prep": {
     "qty": 0,
     "costPerKg": null,
     "stated": null
@@ -9138,7 +9153,8 @@ const COUNT_ON={
   "oil": "2026-10-20",
   "candy": "2026-10-20",
   "rice": "2026-10-20",
-  "spare": null
+  "gas": null,
+  "prep": null
 };
 /* EVERY COUNT, AS TAKEN (v504, 07 Sep 2026): product, date, the figure counted, what the roll said and the drift, negative when units are missing. The fold appends one line per count. A count with no drift bounds a cycle and charges nothing; the 24 Aug anchor is one. Seeded from the fold notes of v473 (02 Sep, 10.5 against 18.75), v489 (04 Sep, 9.8 entered net of a rolled sale, no drift) and v498 (06 Sep, 7 against 8.3); the oil count of 23 Aug has no recorded drift. The leak is charged from these: the units missing over the last three cycles, at landed, over the units sold in them. */
 const COUNTS=[
@@ -9966,7 +9982,8 @@ const QUOTES={
       }
     ]
   },
-  "spare": null
+  "gas": null,
+  "prep": null
 };
 const CASH_COUNT_RETIRED={
   "on": "2026-07-28",
@@ -10001,7 +10018,11 @@ const PRICE_SET={
     "prices": {},
     "hide": []
   },
-  "spare": {
+  "gas": {
+    "prices": {},
+    "hide": []
+  },
+  "prep": {
     "prices": {},
     "hide": []
   }
@@ -10023,9 +10044,13 @@ const COST_RULE={
     "kind": "latestCogs",
     "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
   },
-  "spare": {
+  "gas": {
     "kind": "latestCogs",
     "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
+  },
+  "prep": {
+    "kind": "latestCogs",
+    "note": "His settled rule of 05 Oct 2026, every book alike: COGS off the latest purchase, quote plus trip freight over its units; the floor is that times the size and nothing else."
   }
 };
 /* THE SWITCH TO THE STEP AT LANDED COST, 2026-10-20 (his rules of 20 Oct 2026, his answer to Ask 3). Each associate opens on the units the count before the switch had earned and the share of the next one, so nothing they hold or see moves; from here a unit is 10 units' landed cost of margin on their own buying and resale, counted once paid in full. Written once by tools/reward-open.mjs; the fold adds one the day a customer becomes an associate. */
