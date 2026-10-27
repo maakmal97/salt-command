@@ -253,8 +253,12 @@ the case was anticipated.
 
 ## 9. The order step (his word of 15 Oct 2026)
 
-A customer orders each book in its smallest unit step: **salt 0.5 to 25 in quarters, oil 10 to 50 in tens, candy 1 to 30 and rice
-1 to 10 in ones**. There is one setting, the `grid` of the book's `TIER_RULE` in the master, `{min, step, max}`: `min` is the
+A customer orders each book in its smallest unit step: **oil 10 to 50 in tens, candy 1 to 50, rice 1 to 100 and gas 1 to 20 in ones**
+(his words of 27 Oct 2026 for the last three; they were 1 to 30, 1 to 10 and new). **Two books name their sizes instead of a step**
+(27 Oct 2026): salt's grid carries `only`, the halves from 0.5 to 5 then 6.25, 12.5, 25, 50 and 100, no other size to 100, over a grid
+that keeps its quarter step so the walk and every priced point are unchanged; PrEP's carries `multiples` [12, 30], any 12N or 30N pills,
+over a grid of 12 to 120 in sixes. Both are read by the engine (`gridOf`, `onGrid`), the price list (`priceSteps` carries them), the Worker
+(`sizeAllowed` in `onStep`) and the page (`sizeOk`); `only` cuts only up to the max, and past it Negotiate takes any point of the step. There is one setting, the `grid` of the book's `TIER_RULE` in the master, `{min, step, max}`: `min` is the
 smallest order, `step` the order step, `max` where Negotiate begins. The publish carries it in the clear beside the stamp
 (`priceSteps`); the page's field takes `min` and `step` from it, and the Worker's `onStep` (`stmt/orders.js`, from `checkPlacement`,
 which Place, a customer's amendment and Negotiate all pass through) refuses a size under `min` or off the step with `offStep`. Past

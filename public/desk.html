@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="ec6687197224bfb0";
+var SALT_BUILD_ID="4e4f4447b7d42ca5";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -5591,11 +5591,11 @@ const PRICE_ENGINE={
      derived beside his five stated sizes, they ask no more a unit than 50 unit does and clear their own floors
      (RM720 and RM900 on 16 Sep, RM9.00 a unit). */
   sizesBy:{
-    salt:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5],
+    salt:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5,25,50,100],
     oil:[10,20,30,40,50],   /* 19 Sep 2026: five sizes, his board. 80 and 100 went with the tiers. */
     candy:[1,5,10,20,30],   /* 23 Sep 2026: his three rates and a size inside each */
     rice:[1,5,10],
-    gas:[1],   /* 27 Oct 2026 */
+    gas:[1,5,10,20],   /* 27 Oct 2026 */
     prep:[12,30]
   },
   /* which rungs are PRINTED. A product with no entry prints every rung it has. Empty since
@@ -5685,10 +5685,11 @@ const TIER_RULE={
         suggest:{writtenOff:0.3, longLate:0.2, late:0.1, overdueDays:14, recent:5, step:0.05, minSettled:3, good:0.3},
         auto:{wP:0.35, wF:0.25, wV:0.2, wT:0.2, minSettled:3, perMonth:4, unitsPerMonth:10, orders:12, staleDays:60, overdueDays:14, U:0.5, D:0.5, cap:0.5},
         presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3},
-        rungs:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5],
-        /* 05 Oct 2026, his decision: any quantity from half a unit to 25 in quarters is quoted at once on the Counter, and the
-           walk runs through every point of it, so the rate never rises from one quarter to the next (the engine's walkSizes) */
-        grid:{min:0.5, step:0.25, max:25}},
+        rungs:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5,25,50,100],
+        /* 05 Oct 2026, his decision: the walk runs through every quarter of the grid, so the rate never rises from one quarter to the
+           next (the engine's walkSizes). 27 OCT 2026, HIS WORD: salt is ordered in halves from 0.5 to 5, then 6.25, 12.5, 25, 50 and 100
+           (`only`), no other size to 100; the grid keeps its quarter step for the walk and prices every point to 100. */
+        grid:{min:0.5, step:0.25, max:100, only:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5,25,50,100]}},
   /* 19 Sep 2026, HIS INSTRUCTION: oil has no pricing tier. One board, typed, the same for every
      customer, RM13 a unit falling a ringgit every ten to RM9. FIVE SIZES: he typed five prices and
      the engine does not extrapolate his taper, so 80 and 100 would have held flat at RM9 and quoted
@@ -5706,15 +5707,15 @@ const TIER_RULE={
      RM55 from 10 to 29 (his answer that day), RM50 from 30. Rice RM8 a unit, RM7 from 5, RM6 from 10. A size
      between rungs is its rung's rate times the size, which is what a rate a unit means; both books round to the
      ringgit (LADDER_BY) so a rate of RM8 is not rounded to a ten. */
-  candy:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":60,"10":550,"30":1500}, rungs:[1,10,30], ceilingX:3, grid:{min:1, step:1, max:30}},
+  candy:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":60,"10":550,"30":1500}, rungs:[1,10,30], ceilingX:3, grid:{min:1, step:1, max:50}},
   /* 05 OCT 2026, HIS DECISION: each stated board is held between its floor, COGS times the size, and a ceiling of
      `ceilingX` times that floor, capped down to the book's grid. Three times the floor on every book (18 Oct 2026, his decision;
      oil and candy were twice, rice two and a half). A typed price inside the band does not move. */
-  rice:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:3, grid:{min:1, step:1, max:10}},
+  rice:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:3, grid:{min:1, step:1, max:100}},
   /* 27 OCT 2026, HIS WORD: gas RM75 a unit on a cost of RM50 (1.5 times), bought in ones, the board at 1 and any more by Negotiate. PrEP 12 pills
      for RM60 or 30 pills for RM125 on a cost of RM100 per 30 (1.5 and 1.25 times), and any whole number of either pack: the grid runs 12 to 120 in
      sixes so every point is priced, `multiples` cuts what may be ordered to 12N and 30N (the Worker's onStep, the page, onGrid); past 120, Negotiate. */
-  gas:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":75}, rungs:[1], ceilingX:3, grid:{min:1, step:1, max:1}},
+  gas:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":75}, rungs:[1], ceilingX:3, grid:{min:1, step:1, max:20}},
   prep:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"12":60,"30":125}, rungs:[12,30], ceilingX:3, grid:{min:12, step:6, max:120, multiples:[12,30]}}
 };
 
@@ -8527,11 +8528,22 @@ function gridOf(R){
   if(!(min>0)||!(step>0)||!(max>=min)||!isFinite(max))return null;
   /* 27 Oct 2026, HIS WORD ON PrEP: `multiples` narrows the grid to sizes that are a whole number of any one of them (12 or 30
      pills, N times either). The grid still runs min to max in steps so every point is priced and p[i] stays at min+i*step;
-     only the sizes a customer may ORDER are cut (mulOk), by the Worker, the page and onGrid. */
+     only the sizes a customer may ORDER are cut (sizeOk), by the Worker, the page and onGrid. */
   const mul=Array.isArray(G.multiples)?G.multiples.map(Number).filter(x=>x>0&&isFinite(x)):[];
-  return mul.length?{min:min,step:step,max:max,multiples:mul}:{min:min,step:step,max:max};
+  /* `only` (salt, 27 Oct 2026, his list: halves to 5, then 6.25, 12.5, 25, 50, 100) is the sizes that may be ordered up to max: the grid
+     keeps its quarter step so the walk keeps its resolution and every point is priced, and the same cut applies. Past max Negotiate
+     takes any point of the step. */
+  const only=Array.isArray(G.only)?G.only.map(Number).filter(x=>x>0&&isFinite(x)):[];
+  const out={min:min,step:step,max:max};
+  if(mul.length)out.multiples=mul;
+  if(only.length)out.only=only;
+  return out;
 }
-function mulOk(q,G){return !G||!G.multiples||G.multiples.some(m=>Math.abs(q/m-Math.round(q/m))<1e-6);}
+function sizeOk(q,G){
+  if(!G)return true;
+  if(G.only&&G.only.length&&q<=G.max+1e-9&&!G.only.some(x=>Math.abs(x-q)<1e-6))return false;
+  return !G.multiples||G.multiples.some(m=>Math.abs(q/m-Math.round(q/m))<1e-6);
+}
 function gridSizes(G){
   if(!G)return [];
   const n=Math.round((G.max-G.min)/G.step),out=[];
@@ -8541,7 +8553,7 @@ function gridSizes(G){
 function onGrid(q,G){
   if(!G||typeof q!=='number'||!(q>0))return false;
   const k=(q-G.min)/G.step;
-  return q>=G.min-1e-9&&q<=G.max+1e-9&&Math.abs(k-Math.round(k))<1e-6&&mulOk(q,G);
+  return q>=G.min-1e-9&&q<=G.max+1e-9&&Math.abs(k-Math.round(k))<1e-6&&sizeOk(q,G);
 }
 /* the sizes a drift walk takes up to and including the largest asked for: the rungs and every grid point beneath it, with
    the sizes asked for, smallest first and each once. HIS DECISION: THE WHOLE GRID IS WALKED, so the rate per unit never
@@ -8683,7 +8695,10 @@ function quoteGrid(C,P,d){
   else if(R.fixed)ps=read(fixedWalk(walkSizes(R,qs),C,P,d),true);
   else ps=qs.map(q=>quoteAt(q,C,P,d));
   if(!ps.length||ps.some(p=>p==null||!isFinite(p)||!(p>0)))return null;
-  return G.multiples?{min:G.min,step:G.step,max:G.max,p:ps,multiples:G.multiples}:{min:G.min,step:G.step,max:G.max,p:ps};
+  const g={min:G.min,step:G.step,max:G.max,p:ps};
+  if(G.multiples)g.multiples=G.multiples;
+  if(G.only)g.only=G.only;
+  return g;
 }
 /* THE BOARD AND THE FLOORS, for quoting at the point of sale: what the phone receives. */
 /* THE CARD IS A COLLECTION PRICE AND DELIVERY IS QUOTED ON TOP, PER ORDER (v352, his instruction).
@@ -11300,7 +11315,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1279","d":"27 Oct 2026","t":"TWO STOCK COUNTS: OIL TO 0 UNIT, SALT TO 0.5 UNIT","n":["<b>TWO COUNTS FOLDED.</b> Oil was counted at 0 unit against 20 on the book, and salt at 0.5 unit against 1.5. Both were approved by Counter Admin on 27 Oct 2026. Each count wins over the ledger, so the stated stock is reset and the count dates move to 27 Oct 2026. The oil gap is -20 unit and the salt gap is -1 unit. The dossier gives no reason for either gap.","<b>INVENTORY.</b> Salt stock now stands at 0.5 unit, with the stock cost at RM56 a unit and the replacement cost at RM58. The oil self-use figure moves from 154 to 174 and the salt self-use figure from 102.84 to 103.84. The ladder floors and asks do not move for either product."]}];
+const evolution=[{"v":"v1280","d":"27 Oct 2026","t":"GAS AND PrEP OPEN IN SPARE'S PLACE; NEW ORDER SIZES","n":["<b>TWO NEW BOOKS.</b> Gas and PrEP are live, empty books. Gas took the retired spare book's place (it held no row, opening or price); PrEP is new. Gas sells at RM75 a unit on a cost of RM50. PrEP sells at RM60 for 12 pills or RM125 for 30 pills on a cost of RM100 per 30, and a customer may order 12N or 30N pills and no other size. A partner pays the floor (RM50 a unit of gas; RM40 for 12 and RM100 for 30 of PrEP). Costs sit on each book's opening until a first lot is entered; the fold refuses a sale on either book until then.","<b>THE COUNTER.</b> Gas is a flame lettered P and PrEP a heart-shaped pill lettered PrEP, its four letters set smaller to sit inside the heart. Their hues are salt-ds 1.20.0 (flame and magenta), which replaced the spare hue.","<b>ORDER SIZES, HIS WORD.</b> Gas is ordered 1 to 20 in ones, candy 1 to 50 and rice 1 to 100 in ones, and salt in halves from 0.5 to 5 then 6.25, 12.5, 25, 50 and 100 (no other size to 100; salt keeps its quarter step underneath, so every quarter is still priced and the walk is unchanged up to 25). Past each top, Negotiate. A grid may now carry `multiples` (PrEP) or `only` (salt), which the Worker, the page and the engine all read. Salt's board gains 25, 50 and 100 as tiles."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this

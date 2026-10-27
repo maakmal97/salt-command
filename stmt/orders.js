@@ -567,10 +567,14 @@ export const stepsOk = (g) => !!g && isNum(g.min) && isNum(g.step) && isNum(g.ma
 export const onStep = (q, g, past = false) => {
   if (!stepsOk(g) || !isNum(q)) return false;
   const k = (q - g.min) / g.step;
-  return q >= g.min - 1e-9 && (past || q <= g.max + 1e-9) && Math.abs(k - Math.round(k)) < 1e-6 && onMultiple(q, g);
+  return q >= g.min - 1e-9 && (past || q <= g.max + 1e-9) && Math.abs(k - Math.round(k)) < 1e-6 && sizeAllowed(q, g);
 };
 /** A grid with `multiples` (PrEP, 27 Oct 2026: 12 or 30 pills, N times either) takes a size only if it is a whole number of one of them. */
-export const onMultiple = (q, g) => !Array.isArray(g.multiples) || !g.multiples.length || g.multiples.some((m) => isNum(m) && m > 0 && Math.abs(q / m - Math.round(q / m)) < 1e-6);
+export const sizeAllowed = (q, g) => {
+  /* `only` (salt: halves to 5, then 6.25, 12.5, 25, 50, 100) is the sizes orderable up to the max; past it Negotiate takes any step */
+  if (Array.isArray(g.only) && g.only.length && q <= g.max + 1e-9 && !g.only.some((x) => isNum(x) && Math.abs(x - q) < 1e-6)) return false;
+  return !Array.isArray(g.multiples) || !g.multiples.length || g.multiples.some((m) => isNum(m) && m > 0 && Math.abs(q / m - Math.round(q / m)) < 1e-6);
+};
 /** An offer of his still open at `at`: offered, and `at` not past its `until`. */
 export const offerOpen = (o, at) => !!(o && o.price && o.price.state === "offered" && o.price.offer
   && String(at || new Date().toISOString()) <= String(o.price.offer.until));
@@ -597,7 +601,7 @@ export function checkPlacement(body, open, at, poolOk = false, steps = null, hou
   /* 05 Oct 2026: a size off the book's step, or over its max, is not a size the list quotes; over the max, Negotiate alone */
   const g = steps && steps[product], past = stepsOk(g) && qty > g.max + 1e-9;
   if (past && !ask) return refusal("overMax", { n: g.max });
-  if (stepsOk(g) && !onStep(qty, g, past)) return Array.isArray(g.multiples) && g.multiples.length ? refusal("offMult", { l: g.multiples.join(" or ") }) : refusal("offStep", { s: g.step, n: g.min });
+  if (stepsOk(g) && !onStep(qty, g, past)) return Array.isArray(g.multiples) && g.multiples.length ? refusal("offMult", { l: g.multiples.join(" or ") }) : Array.isArray(g.only) && g.only.length && qty <= g.max + 1e-9 ? refusal("offOnly", {}) : refusal("offStep", { s: g.step, n: g.min });
   const mode = String(body.mode || "");
   if (!MODES.includes(mode)) return { error: "collected or delivered, one or the other" };
   const total = past ? 0 : body.total, unit = past ? 0 : body.unit;

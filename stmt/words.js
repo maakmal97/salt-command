@@ -103,6 +103,7 @@ export const EN = {
   "e.overMax": "up to {n} units at the listed price; ask us for a price on more",
   "e.offStep": "order in steps of {s} units, from {n}",
   "e.offMult": "order {l} units, or a whole number of either",
+  "e.offOnly": "order one of the listed sizes",
   "w.or": " or ",
   "e.askFigure": "the price you suggest must be a figure in RM",
   "e.askFriend": "ask for a price on an order for yourself",
@@ -615,6 +616,7 @@ export const EN = {
   /* 05 Oct 2026: any amount, and Negotiate */
   "sh.any": "Any amount, units",
   "sh.anyHint": "From {n} in steps of {s}; up to {m} at the listed price",
+  "sh.anyOnly": "One of the listed sizes, up to {m} at the listed price",
   "sh.anyMult": "{l} units, or a whole number of either; up to {m} at the listed price",
   "sh.anyAt": "{rm}, {u} a unit",
   "sh.anyOver": "More than {m}: review it and ask us for a price",

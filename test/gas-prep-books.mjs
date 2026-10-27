@@ -24,8 +24,16 @@ export async function run({ ok }) {
   const take = (q) => SO.onStep(q, pg, q > pg.max);
   const yes = [12, 24, 30, 36, 48, 60, 72, 90, 120, 132, 150], no = [6, 18, 42, 54, 66, 78, 100, 13, 11, 31];
   ok(yes.every(take) && no.every((q) => !take(q)) && !SO.onStep(0, pg), "PrEP takes 12N and 30N, on the board or by Negotiate, and no other size: " + JSON.stringify({ wrongYes: yes.filter((q) => !take(q)), wrongNo: no.filter(take) }));
-  ok(TR.gas.grid.min === 1 && TR.gas.grid.max === 1 && TR.gas.grid.step === 1 && SO.onStep(3, TR.gas.grid, true) && !SO.onStep(2.5, TR.gas.grid, true),
-    "gas has its board at 1 and any whole number beyond, by Negotiate: " + JSON.stringify(TR.gas.grid));
+  const spans = { gas: [1, 1, 20], candy: [1, 1, 50], rice: [1, 1, 100] };
+  ok(Object.entries(spans).every(([b, [mn, st, mx]]) => TR[b].grid.min === mn && TR[b].grid.step === st && TR[b].grid.max === mx && SO.onStep(mx, TR[b].grid) && !SO.onStep(mx + 1, TR[b].grid) && SO.onStep(mx + 1, TR[b].grid, true) && !SO.onStep(mx + 0.5, TR[b].grid, true) && !SO.onStep(0.5, TR[b].grid)),
+    "gas runs 1 to 20, candy 1 to 50 and rice 1 to 100 in ones, any whole number beyond by Negotiate: " + JSON.stringify(Object.fromEntries(Object.keys(spans).map((b) => [b, TR[b].grid]))));
+  /* salt's list (his word of 27 Oct 2026): halves to 5, then 6.25, 12.5, 25, 50 and 100, and no other size to 100 */
+  const sg = TR.salt.grid, listed = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6.25, 12.5, 25, 50, 100], unlisted = [0.75, 5.5, 6, 7, 10, 12, 20, 30, 75, 99.75];
+  ok(sg.max === 100 && sg.step === 0.25 && listed.every((q) => SO.onStep(q, sg)) && unlisted.every((q) => !SO.onStep(q, sg)) && SO.onStep(100.25, sg, true)
+    && JSON.stringify(sg.only) === JSON.stringify(listed) && JSON.stringify(TR.salt.rungs) === JSON.stringify(listed),
+    "salt may be ordered in the listed sizes only, to 100, with the walk still on quarters: " + JSON.stringify({ wrongYes: listed.filter((q) => !SO.onStep(q, sg)), wrongNo: unlisted.filter((q) => SO.onStep(q, sg)) }));
+  const offOnly = SO.checkPlacement({ product: "salt", qty: 7, mode: "collected", total: 800, unit: 114 }, [], "2026-10-27T10:00:00Z", false, { salt: sg });
+  ok(offOnly.code === "offOnly", "a 7-unit salt order is refused as not a listed size: " + JSON.stringify(offOnly).slice(0, 120));
   const refuse = SO.checkPlacement({ product: "prep", qty: 18, mode: "collected", total: 80, unit: 4.4 }, [], "2026-10-27T10:00:00Z", false, { prep: pg });
   ok(refuse.code === "offMult", "an 18-pill order is refused as off the multiples: " + JSON.stringify(refuse).slice(0, 120));
 }

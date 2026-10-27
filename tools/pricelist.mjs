@@ -188,14 +188,14 @@ export function priceList(code, book, pricing, now, supply) {
    so an order at any quantity is checked at Place exactly as one at a board size is, and a moved grid re-quotes (409). */
 export function priceDigest(list, secret, username) {
   const figures = ((list && list.products) || []).map((p) => [p.product, (p.sizes || []).map((r) => [r.q, r.price]),
-    p.grid ? (p.grid.multiples ? [p.grid.min, p.grid.step, p.grid.max, p.grid.p, p.grid.multiples] : [p.grid.min, p.grid.step, p.grid.max, p.grid.p]) : null]);
+    p.grid ? [p.grid.min, p.grid.step, p.grid.max, p.grid.p].concat(p.grid.multiples || p.grid.only ? [p.grid.multiples || null, p.grid.only || null] : []) : null]);
   return createHmac("sha256", String(secret)).update("prices\n" + username + "\n" + JSON.stringify(figures)).digest("hex");
 }
 /* THE STEPS IN THE CLEAR, beside the stamp: each product's {min, step, max}, no price, so the Counter's Worker refuses a
    quantity off the step or over the max (stmt/orders.js checkPlacement) without reading the sealed list. */
 export function priceSteps(list) {
   const out = {};
-  for (const p of (list && list.products) || []) if (p.grid) out[p.product] = p.grid.multiples ? { min: p.grid.min, step: p.grid.step, max: p.grid.max, multiples: p.grid.multiples } : { min: p.grid.min, step: p.grid.step, max: p.grid.max };
+  for (const p of (list && list.products) || []) if (p.grid) out[p.product] = Object.assign({ min: p.grid.min, step: p.grid.step, max: p.grid.max }, p.grid.multiples ? { multiples: p.grid.multiples } : {}, p.grid.only ? { only: p.grid.only } : {});
   return out;
 }
 

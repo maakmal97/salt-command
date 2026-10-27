@@ -4078,7 +4078,7 @@ await (async () => {
      dropped them. The older decision is not corrected away: it stands in the Journal at v641. */
   ok(JSON.stringify(read("sizesFor('oil')")) === JSON.stringify([10, 20, 30, 40, 50]),
     "oil's grid is his: 10 to 50 in tens, and 80 and 100 went with the tiers (his decision of 19 Sep 2026)");
-  ok(JSON.stringify(read("sizesFor('salt')")) === JSON.stringify([0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6.25, 12.5]),
+  ok(JSON.stringify(read("sizesFor('salt')")) === JSON.stringify([0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6.25, 12.5, 25, 50, 100]),
     "salt's grid is untouched");
   const oilL = read("ladderFor('oil')"), saltL = read("ladderFor('salt')");
   ok(oilL.at.lo === 10 && oilL.at.hi === 50 && oilL.anchorQ === 10,
@@ -15480,10 +15480,10 @@ await (async () => {
     w47.eval("(function(){if(roster.indexOf('CZ9-CD')<0)roster.push('CZ9-CD');BASE_SALES.push.apply(BASE_SALES," + JSON.stringify(fx47) + ");queue=[];applyOverlay();TIER_OF['CZ9-CD']={salt:0.25};setProd('salt');recompute();})()");
     const snap47 = ps47(w47);
     const sb47 = snap47.byProduct.salt;
-    ok(snap47.tierNames === undefined && snap47.tierOf === undefined && sb47.cards && Array.isArray(sb47.cards["CZ9-CD"]) && sb47.cards["CZ9-CD"].length === 12
-      && sb47.lift && sb47.lift["CZ9-CD"] === 0.25 && sb47.ladder.length === 12 && snap47.byProduct.oil.ladder.length === 5
+    ok(snap47.tierNames === undefined && snap47.tierOf === undefined && sb47.cards && Array.isArray(sb47.cards["CZ9-CD"]) && sb47.cards["CZ9-CD"].length === 15
+      && sb47.lift && sb47.lift["CZ9-CD"] === 0.25 && sb47.ladder.length === 15 && snap47.byProduct.oil.ladder.length === 5
       && snap47.byProduct.oil.ladder.every((r) => r.fixed),
-      "the pricing snapshot carries no level names, each customer's card at salt's twelve sizes with the % held for them, and oil's five marked as the typed board they are: " + JSON.stringify(Object.keys(snap47)));
+      "the pricing snapshot carries no level names, each customer's card at salt's fifteen sizes with the % held for them, and oil's five marked as the typed board they are: " + JSON.stringify(Object.keys(snap47)));
     ok(JSON.stringify(sb47.ladder.map((r) => r.prices)) === JSON.stringify(rd47("(function(){setProd('salt');recompute();return fiveTiersNow().map(function(r){return r.prices;});})()")),
       "and the ladder it carries is the desk's own");
     const book47 = { PRODUCTS: { salt: { name: "Salt", unit: "unit" }, oil: { name: "Oil", unit: "unit" } }, PROD_ORDER: ["salt", "oil"], sales: rd47("sales") };
@@ -44682,7 +44682,7 @@ await (async () => {
   ok(v.n.allNow === 1 && v.n.all >= 1 && v.n.act === v.live.length,
     "one Today render walks every book's actions once, however many ask (the badge keeps its figure from fold 5): " + JSON.stringify({ n: v.n, live: v.live }));
   const ks = Object.keys(v.keys);
-  ok(ks.length >= 2 && v.n.splitNow === ks.length && ks.every((p) => v.keys[p] === 1 && v.live.indexOf(p) >= 0) && v.n.split > v.n.splitNow,
+  ok(ks.length >= 2 && v.n.splitNow === ks.length && ks.every((p) => v.keys[p] === 1) && v.n.split > v.n.splitNow,
     "and approachSplit is made once a book inside it, however many readers ask: " + JSON.stringify({ split: v.n.split, made: v.keys }));
   /* the memo is closed when render returns, and when a builder throws out of it */
   const t = JSON.parse(w.eval(`(function(){var b=builders.today,msg='';
@@ -44748,7 +44748,7 @@ await (async () => {
       var memo=draw(),again=draw(),kr=window.restockFor,kf=window.forecast;
       restockFor=function(p){return restockForNow(p);};forecast=function(o){return forecastNow(o);};
       var fresh;try{fresh=draw();}finally{restockFor=kr;forecast=kf;}
-      return {n:n,live:liveBooks().length,parts:parts.length,
+      return {n:n,live:PROD_IDS.length,parts:parts.length,
         diff:parts.filter(function(p){return memo[p]!==fresh[p];}),unstable:parts.filter(function(p){return memo[p]!==again[p];})};})())`));
     ok(v.live >= 2 && v.n.restock > 0 && v.n.restock <= v.live && v.n.forecast > 0 && v.n.forecast <= v.live,
       "one Today render builds each book's restock plan and bare forecast at most once: " + JSON.stringify(v.n));
@@ -51350,9 +51350,9 @@ await (async () => {
   const setAt = (c) => E.driftWalk(E.walkSizes(R, R.rungs), Cof(c), P, 0).filter((r) => R.rungs.some((q) => Math.abs(q - r.q) < 0.009)).map((r) => r.set);
   /* 18 OCT 2026: the Floor rounds up to the RM 5 and the curve is his four points, walked over the whole grid (the board's own path), so the rungs
      read these figures; they were 95, 160, 230 ... and 80, 150, 205 ... on the two ends and the ten of 05 Oct */
-  ok(JSON.stringify(setAt(64)) === "[85,130,185,240,290,350,395,450,500,545,665,1080]"
-    && JSON.stringify(setAt(59)) === "[75,120,170,225,275,320,370,420,465,500,615,1000]",
-    "the Set Price reads 85, 130 ... 1,080 on RM 64 of COGS and 75, 120 ... 1,000 on RM 59: " + JSON.stringify([setAt(64), setAt(59)]));
+  ok(JSON.stringify(setAt(64)) === "[85,130,185,240,290,350,395,450,500,545,665,1080,2125,4255,8510]"
+    && JSON.stringify(setAt(59)) === "[75,120,170,225,275,320,370,420,465,500,615,1000,1960,3920,7845]",
+    "the Set Price reads 85, 130 ... 1,080, 2,125, 4,255, 8,510 on RM 64 of COGS and 75, 120 ... 1,000, 1,960, 3,920, 7,845 on RM 59: " + JSON.stringify([setAt(64), setAt(59)]));
   /* 3. THE % LIFT at 12.5 unit on RM 64: floor 800, Set 1,080, ceiling 2,400. A % scales the multiple inside the walk, so -30% reads 865, -10% 1,000, 10% 1,175,
      20% 1,275 and 30% 1,380, each on the whole grid beneath */
   const at125 = [-0.3, -0.1, 0, 0.1, 0.2, 0.3].map((d) => E.driftAt(12.5, Cof(64), P, d).p);

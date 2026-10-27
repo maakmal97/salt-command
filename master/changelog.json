@@ -1,5 +1,15 @@
 [
  {
+  "v": "v1280",
+  "d": "27 Oct 2026",
+  "t": "GAS AND PrEP OPEN IN SPARE'S PLACE; NEW ORDER SIZES",
+  "n": [
+   "<b>TWO NEW BOOKS.</b> Gas and PrEP are live, empty books. Gas took the retired spare book's place (it held no row, opening or price); PrEP is new. Gas sells at RM75 a unit on a cost of RM50. PrEP sells at RM60 for 12 pills or RM125 for 30 pills on a cost of RM100 per 30, and a customer may order 12N or 30N pills and no other size. A partner pays the floor (RM50 a unit of gas; RM40 for 12 and RM100 for 30 of PrEP). Costs sit on each book's opening until a first lot is entered; the fold refuses a sale on either book until then.",
+   "<b>THE COUNTER.</b> Gas is a flame lettered P and PrEP a heart-shaped pill lettered PrEP, its four letters set smaller to sit inside the heart. Their hues are salt-ds 1.20.0 (flame and magenta), which replaced the spare hue.",
+   "<b>ORDER SIZES, HIS WORD.</b> Gas is ordered 1 to 20 in ones, candy 1 to 50 and rice 1 to 100 in ones, and salt in halves from 0.5 to 5 then 6.25, 12.5, 25, 50 and 100 (no other size to 100; salt keeps its quarter step underneath, so every quarter is still priced and the walk is unchanged up to 25). Past each top, Negotiate. A grid may now carry `multiples` (PrEP) or `only` (salt), which the Worker, the page and the engine all read. Salt's board gains 25, 50 and 100 as tiles."
+  ]
+ },
+ {
   "v": "v1279",
   "d": "27 Oct 2026",
   "t": "TWO STOCK COUNTS: OIL TO 0 UNIT, SALT TO 0.5 UNIT",

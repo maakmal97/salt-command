@@ -4286,7 +4286,7 @@ const CLIENT_JS = `
       var p=B.P.product, a=bsOf(p), t=bsTapsOf(p), N=B.node; N.textContent=''; N.hidden=!(a>0)||!bsOn(); if(N.hidden) return;
       var parts=t?Object.keys(t).sort(function(x,y){ return +y-(+x); }).reduce(function(s,q){ for(var i=0;i<t[q];i++) s.push(String(+q)); return s; },[]):[];
       N.appendChild(el('span','bkline__t',parts.length>1?tw('bk.inTaps',{q:unitsOf(a,B.P.unit), t:parts.join(' + ')}):tw('bk.in',{q:unitsOf(a,B.P.unit)})));
-      if(priceAt(B.P,a)==null){ var g=gridOf(B.P); N.appendChild(el('span','salt-field__hint',g&&a>g.max?tw('bk.over',{m:g.max}):g?offWhy(g):tw('bk.noPrice'))); }
+      if(priceAt(B.P,a)==null){ var g=gridOf(B.P); N.appendChild(el('span','salt-field__hint',g&&a>g.max?tw('bk.over',{m:g.max}):g?offWhy(g,a):tw('bk.noPrice'))); }
       var rb=el('button','salt-ghost bkline__out',tw('bk.remove')); rb.type='button'; rb.setAttribute('data-bkout','');
       rb.appendChild(el('span','sr',' '+pshape(p)));
       rb.addEventListener('click',function(){ bsDrop(p); bsPatch(); var f=bsRows.filter(function(R){ return R.P.product===p; })[0]; if(f) try{ f.plus.focus({preventScroll:true}); }catch(e){} });
@@ -4337,14 +4337,15 @@ const CLIENT_JS = `
      the list) prices any amount on it; a board size off the grid reads its own row. The page calculates nothing: every
      figure is read off the list, and past the grid's max there is no price, only Negotiate. */
   function gridOf(P){ var g=P&&P.grid; return g&&g.step>0&&g.p&&g.p.length?g:null; }
-  function mulOk(g,q){ return !g.multiples||!g.multiples.length||g.multiples.some(function(m){ return m>0&&Math.abs(+q/m-Math.round(+q/m))<1e-6; }); }
-  function gridIx(g,q){ var i=Math.round((+q-g.min)/g.step); return i>=0&&i<g.p.length&&Math.abs(g.min+i*g.step-(+q))<1e-6&&mulOk(g,q)?i:-1; }
+  function sizeOk(g,q){ if(g.only&&g.only.length&&+q<=g.max+1e-9&&!g.only.some(function(x){ return Math.abs(x-(+q))<1e-6; })) return false;
+    return !g.multiples||!g.multiples.length||g.multiples.some(function(m){ return m>0&&Math.abs(+q/m-Math.round(+q/m))<1e-6; }); }
+  function gridIx(g,q){ var i=Math.round((+q-g.min)/g.step); return i>=0&&i<g.p.length&&Math.abs(g.min+i*g.step-(+q))<1e-6&&sizeOk(g,q)?i:-1; }
   function priceAt(P,q){ if(!P||q==null||!(+q>0)) return null;
     var g=gridOf(P), i=g?gridIx(g,q):-1; if(i>=0&&typeof g.p[i]==='number') return g.p[i];
     var z=(P.sizes||[]).filter(function(x){ return String(x.q)===String(q); })[0]; return z?z.price:null; }
   var ASK_CAP=1000;   /* the Worker's own limit on a size (checkPlacement) */
   /* past the max a size is still a whole number of steps from min (the Worker's onStep with past), so Negotiate never takes an off-step size */
-  function overMax(P,q){ var g=gridOf(P), k=g?(+q-g.min)/g.step:0; return !!g&&+q>g.max+1e-9&&+q<=ASK_CAP&&Math.abs(k-Math.round(k))<1e-6&&mulOk(g,q); }
+  function overMax(P,q){ var g=gridOf(P), k=g?(+q-g.min)/g.step:0; return !!g&&+q>g.max+1e-9&&+q<=ASK_CAP&&Math.abs(k-Math.round(k))<1e-6&&sizeOk(g,q); }
   /* what the page says where nothing can be ordered: a list with nothing priced, or no list at all */
   function noOrderLine(){ return tw(prices&&(prices.soon&&prices.soon.length||prices.products&&prices.products.length)?'ord.opensSet':'ord.opensList'); }
   async function api(path, body, method){
@@ -5033,13 +5034,13 @@ const CLIENT_JS = `
   }
   /* ANY AMOUNT (05 Oct 2026): typed in units, read off the grid as it is typed, its figure and its rate said under it */
   /* why a size is not on the grid: its steps, or, where the grid carries multiples (PrEP), which sizes it takes */
-  function offWhy(g){ return g.multiples&&g.multiples.length?tw('e.offMult',{l:g.multiples.join(tw('w.or'))}):tw('e.offStep',{s:g.step, n:g.min}); }
+  function offWhy(g,q){ return g.multiples&&g.multiples.length?tw('e.offMult',{l:g.multiples.join(tw('w.or'))}):g.only&&g.only.length&&+q<=g.max+1e-9?tw('e.offOnly'):tw('e.offStep',{s:g.step, n:g.min}); }
   function anyHint(P,v){ var g=gridOf(P), q=+v, t=v===''?null:priceAt(P,q);
-    if(v===''||!(q>0)) return g.multiples&&g.multiples.length?tw('sh.anyMult',{l:g.multiples.join(tw('w.or')), m:g.max}):tw('sh.anyHint',{n:g.min, s:g.step, m:g.max});
+    if(v===''||!(q>0)) return g.multiples&&g.multiples.length?tw('sh.anyMult',{l:g.multiples.join(tw('w.or')), m:g.max}):g.only&&g.only.length?tw('sh.anyOnly',{m:g.max}):tw('sh.anyHint',{n:g.min, s:g.step, m:g.max});
     if(t!=null) return tw('sh.anyAt',{rm:rm(t), u:rm(+(t/q).toFixed(2))});
     if(overMax(P,q)) return tw('sh.anyOver',{m:g.max});
     if(q>ASK_CAP) return tw('sh.anyCap',{n:ASK_CAP});
-    return offWhy(g); }
+    return offWhy(g,q); }
   function anyField(P,i,cur){
     var onB=cur!=null&&(P.sizes||[]).some(function(x){ return String(x.q)===String(cur); }), g=gridOf(P);
     var af=el('div','salt-field oany'), al=el('label','salt-field__label',tw('sh.any')); al.htmlFor='oAny'+i;
