@@ -12351,7 +12351,7 @@ await (async () => {
     const { oneLine } = await import("../tools/d1json.mjs");
     const arg = readArgs(APPROVED_SQL).at(-1);
     let refused = ""; try { oneLine("SELECT id FROM draft WHERE id='a" + String.fromCharCode(10) + "b'"); } catch (e) { refused = e.message; }
-    ok(APPROVED_SQL.includes(String.fromCharCode(10)) && !/[\r\n\\]/.test(arg) && /^"SELECT d\.id,d\.status,.* ORDER BY d\.drafted_at"$/.test(arg) && /--file/.test(refused),
+    ok(APPROVED_SQL.includes(String.fromCharCode(10)) && !/[\r\n\\]/.test(arg) && /^"SELECT d\.id,d\.status,.* ORDER BY .*d\.drafted_at"$/.test(arg) && /--file/.test(refused),
       "drafts.mjs --approved hands wrangler its multi-line SELECT as one line with no backslash, and a line break inside a literal is refused: " + arg.slice(0, 60) + " ... " + arg.slice(-40));
     const sent = readdirSync(join(REPO, "tools")).filter((n) => n.endsWith(".mjs") && n !== "d1json.mjs" && /"--command",\s*JSON\.stringify\(/.test(readFileSync(join(REPO, "tools", n), "utf8")));
     ok(!sent.length, "and no tool hands --command its SQL except through d1json's oneLine: " + (sent.join(" ") || "none")); }
@@ -52163,6 +52163,16 @@ await (async () => {
 section("Book S3: the readers read the Book (flag in D1), on its way is the Book's own bound, and the readcheck names a Book that differs (25 Oct 2026)");
 await (async () => {
   await (await import("./book-read.mjs")).run({ ok });
+})();
+
+section("Book S4a and S4b: the Book books an entry beside its base, the fold takes what it booked (27 Oct 2026)");
+await (async () => {
+  await (await import("./book-tap.mjs")).run({ ok });
+})();
+
+section("Book S4c: the readers count a booked draft once (27 Oct 2026)");
+await (async () => {
+  await (await import("./book-way.mjs")).run({ ok });
 })();
 
 section("18 Oct 2026: the lean Desk: six views, the three parts gone, alerts in the rail, spots on Coverage, Noticed under To do");

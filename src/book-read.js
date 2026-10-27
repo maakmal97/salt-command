@@ -40,7 +40,7 @@ export async function wayBound(db) {
 export function bookOf(res) {
   const b = shape(res), state = b.state;
   if (!Array.isArray(state.loans)) state.loans = b.rows.loans;
-  return { sales: b.rows.sales, purchases: b.rows.purchases, state, version: b.version, pricing: state.PRICING || null, at: b.at, customerRefunds: b.rows.customerRefunds };
+  return { sales: b.rows.sales, purchases: b.rows.purchases, state, version: b.version, pricing: state.PRICING || null, at: b.at, customerRefunds: b.rows.customerRefunds, booked: Array.isArray(res.booked) ? res.booked : [] };
 }
 
 /* the Book's answer whatever the flag and the mirror say, or null: the readcheck's side of the comparison */
@@ -48,7 +48,8 @@ export async function bookDirect(db) {
   const ns = BOOKS.get(db);
   if (!ns) return null;
   try {
-    const r = await ns.get(ns.idFromName(BOOK_NAME)).fetch(new Request("https://book/read"));
+    /* S4a: the BASE, whatever entries are open: the readcheck compares git's book as the mirror holds it, and the entries are not in the mirror */
+    const r = await ns.get(ns.idFromName(BOOK_NAME)).fetch(new Request("https://book/read?base=1"));
     const res = r.ok ? await r.json() : null;
     return res && res.ok ? res : null;
   } catch (e) { return null; }

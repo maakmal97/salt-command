@@ -58,7 +58,7 @@ export async function run({ ok }) {
   };
   const ns = (book) => ({ idFromName: (n) => n, get: () => ({ fetch: (r) => book.fetch(r) }) });
   const setMode = (db, mode) => db.exec("UPDATE book_read SET mode='" + mode + "'");
-  const shown = async (D1, book) => { const r = await withRefunds(D1, book); const { at, ...rest } = r; return canon(rest); };
+  const shown = async (D1, book) => { const r = await withRefunds(D1, book); const { at, booked, ...rest } = r; return canon(rest); };
 
   /* 1: the Book's read equals the mirror's */
   const A = d1(); seedMirror(A.db); setMode(A.db, "book");
@@ -273,6 +273,6 @@ export async function run({ ok }) {
     const n = readFileSync(join(REPO, "src", f), "utf8").split("\n").filter((l) => /committed_at IS NULL|committed_at >|committed_at <=|committed_at IS NOT NULL/.test(l) && !/^\s*(\/\/|\*|\/\*)/.test(l)).length;
     if (n) lits[f] = n;
   }
-  ok(JSON.stringify(lits) === JSON.stringify({ "input-admission.js": 6, "worker.js": 6 }),
-    "the only draft clauses that ask committed_at are the awaiting-the-fold and admission ones (input-admission.js 6, worker.js 6): " + JSON.stringify(lits));
+  ok(JSON.stringify(lits) === JSON.stringify({ "input-admission.js": 6, "worker.js": 8 }),
+    "the only draft clauses that ask committed_at are the awaiting-the-fold and admission ones (input-admission.js 6, worker.js 8: the two the load asks to name the open entries the fold took, S4a): " + JSON.stringify(lits));
 }

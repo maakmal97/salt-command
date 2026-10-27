@@ -1,0 +1,50 @@
+[
+ {
+  "name": "unfolded forgets the entries",
+  "file": "src/way.js",
+  "find": "a + \"committed_at IS NULL\") + notBooked(b, a);",
+  "replace": "a + \"committed_at IS NULL\");"
+ },
+ {
+  "name": "on its way forgets the entries",
+  "file": "src/way.js",
+  "find": "return \"(\" + base + \")\" + ids;",
+  "replace": "return \"(\" + base + \")\";"
+ },
+ {
+  "name": "a draft id is spliced unchecked",
+  "file": "src/way.js",
+  "find": "typeof i === \"string\" && DRAFT_ID.test(i))",
+  "replace": "typeof i === \"string\")"
+ },
+ {
+  "name": "landed follows the entries",
+  "file": "src/way.js",
+  "find": "? \"committed_at IS NOT NULL AND committed_at <= '\" + at + \"'\"",
+  "replace": "? \"committed_at IS NOT NULL AND committed_at <= '\" + at + \"'\" + notBooked(b)"
+ },
+ {
+  "name": "a bound is always an object",
+  "file": "src/way.js",
+  "find": "return booked.length ? { at, booked } : at;",
+  "replace": "return { at, booked };"
+ },
+ {
+  "name": "a book read drops the entries it holds",
+  "file": "src/book-read.js",
+  "find": "booked: Array.isArray(res.booked) ? res.booked : [] };",
+  "replace": "booked: [] };"
+ },
+ {
+  "name": "/at forgets the entries",
+  "file": "src/book.js",
+  "find": "booked: v ? v.view.booked : [], stuck:",
+  "replace": "booked: [], stuck:"
+ },
+ {
+  "name": "the readcheck asks nothing of the Book's stuck entries",
+  "file": "src/worker.js",
+  "find": "fetch(new Request(\"https://book/at\"))).json(); stuck =",
+  "replace": "fetch(new Request(\"https://book/atx\"))).json(); stuck ="
+ }
+]

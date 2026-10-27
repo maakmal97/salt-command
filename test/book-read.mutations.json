@@ -122,8 +122,8 @@
  {
   "name": "on its way takes the wrong side of the bound",
   "file": "src/way.js",
-  "find": "  ? \"(status='pending' OR (status='approved' AND (committed_at IS NULL OR committed_at > '\" + at + \"')))\"",
-  "replace": "  ? \"(status='pending' OR (status='approved' AND (committed_at IS NULL OR committed_at < '\" + at + \"')))\""
+  "find": "    ? \"status='pending' OR (status='approved' AND (committed_at IS NULL OR committed_at > '\" + at + \"'))\"",
+  "replace": "    ? \"status='pending' OR (status='approved' AND (committed_at IS NULL OR committed_at < '\" + at + \"'))\""
  },
  {
   "name": "landed takes the wrong side of the bound",
@@ -134,8 +134,8 @@
  {
   "name": "the mirror's form of on its way changes",
   "file": "src/way.js",
-  "find": "committed_at > (SELECT at FROM snapshot WHERE one=1))))\");",
-  "replace": "committed_at >= (SELECT at FROM snapshot WHERE one=1))))\");"
+  "find": "committed_at > (SELECT at FROM snapshot WHERE one=1)))\";",
+  "replace": "committed_at >= (SELECT at FROM snapshot WHERE one=1)))\";"
  },
  {
   "name": "the money tap reads the payments beside the book again",
@@ -164,8 +164,8 @@
  {
   "name": "the Book's refunds are not carried",
   "file": "src/book-read.js",
-  "find": "at: b.at, customerRefunds: b.rows.customerRefunds };",
-  "replace": "at: b.at };"
+  "find": "at: b.at, customerRefunds: b.rows.customerRefunds, booked:",
+  "replace": "at: b.at, booked:"
  },
  {
   "name": "a loan list is not filled from the rows",
