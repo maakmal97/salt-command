@@ -1,0 +1,57 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-27T06:42:16.025Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "qty": 10,
+    "total": 120,
+    "cash": 0,
+    "date": "2026-10-27",
+    "customer": "CZ4-MK",
+    "product": "oil"
+   },
+   "reasoning": "Fulfilment against CZ4-MK's order of 10 unit for RM 120 agreed 2026-10-27. RM 120 and 10 unit move on 2026-10-27, against RM 120 and 10 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "s297",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-10-27T06:42:16.025Z",
+    "type": "AMEND",
+    "party": "CZ4-MK",
+    "qty": 10,
+    "total": 120,
+    "status": "partial",
+    "raw": "Fulfilment against s297 for CZ4-MK on 2026-10-27",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CZ4-MK",
+     "product": "oil",
+     "rid": "s297",
+     "orderKey": "CZ4-MK|2026-10-27|120|oil",
+     "date": "2026-10-27",
+     "kind": "Fulfilment",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "sameDay": true,
+     "note": null,
+     "qty": 10,
+     "total": 120,
+     "cash": 120,
+     "kg": 10
+    },
+    "makerRequest": "9671f4a81d600ee8bb79c0430dd70cd57d0200068c82439518a47430eece1ad3"
+   },
+   "decidedAt": "2026-10-27T06:58:22.966Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
