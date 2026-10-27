@@ -1277,6 +1277,7 @@ a stage cannot be queued twice by two roads racing (Accept's pending row is the 
 | A handover | an `amend` **Correction** stating the running total, `deliveredOn` and `handover` | only a Correction may set when and by whom, and it states rather than adds |
 | Closed at what was handed over (S11 11.9) | an `amend` **Correction** stating size, total (the engine's `closeGoods`, which the desk states and the site only range-checks; the rate awaits his word), `deliveredQty`, `deliveredOn` and `handover`; `ledgerKey` then moves to the key the new total makes (`closedKey`); rejected, the close gives it back, and offered again moves it once more | one entry states the handover and the restated row together |
 | Cancelled or declined | an `amend` **Cancellation** | the fold raises any refund itself |
+| Accepted with their credit (27 Oct 2026) | the **Pending** row carries `credit` as cash | the order keeps `credit` apart from `paid`; the fold closes the refunds it spent |
 
 **Which row a later stage amends.** A `rid` is minted at fold time and there is no route from the
 desk back to the site, so the site can never learn it. The desk writes the other identifier the

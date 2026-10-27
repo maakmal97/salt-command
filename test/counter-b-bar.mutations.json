@@ -1,15 +1,80 @@
 [
- {"name":"the bar adds the tapped size per tap","file":"stmt/page.js","find":"var sum=0, open=ls.some(function(x){ return x.t==null; }); ls.forEach(function(x){ if(x.t!=null) sum+=x.t; });","replace":"var sum=0, open=ls.some(function(x){ return x.t==null; }); ls.forEach(function(x){ var tt=bsTapsOf(x.P.product); if(tt) Object.keys(tt).forEach(function(q){ sum+=tt[q]*priceAt(x.P,+q); }); else if(x.t!=null) sum+=x.t; });"},
- {"name":"the bar adds a delivery","file":"stmt/page.js","find":"rm(+sum.toFixed(2)),tw(w&&w.mode==='deliver'?'sh.plusDeliv':'sh.toCollect')","replace":"rm(+(sum+(w&&w.mode==='deliver'?12:0)).toFixed(2)),tw(w&&w.mode==='deliver'?'sh.plusDeliv':'sh.toCollect')"},
- {"name":"the bar's words ignore the way","file":"stmt/page.js","find":"tw(w&&w.mode==='deliver'?'sh.plusDeliv':'sh.toCollect')));","replace":"tw('sh.toCollect')));"},
- {"name":"a basket of two goes without a sheet id","file":"stmt/page.js","find":"sheet:draft.pool?'':draft.sheetKeep||(qs.length>1?mintRid():'')","replace":"sheet:draft.pool?'':draft.sheetKeep||''"},
- {"name":"Sent leaves the basket","file":"stmt/page.js","find":"    c.lines.forEach(function(l){ if(l.placed){ if(draft.pick) delete draft.pick[l.product]; if(draft.src==='basket') bsDrop(l.product); } });\n    bsPatch();\n","replace":"    c.lines.forEach(function(l){ if(l.placed){ if(draft.pick) delete draft.pick[l.product]; } });\n    bsPatch();\n"},
- {"name":"Sent keeps what is picked","file":"stmt/page.js","find":"    c.lines.forEach(function(l){ if(l.placed){ if(draft.pick) delete draft.pick[l.product]; if(draft.src==='basket') bsDrop(l.product); } });\n    bsPatch();\n","replace":"    c.lines.forEach(function(l){ if(l.placed){ if(draft.src==='basket') bsDrop(l.product); } });\n    bsPatch();\n"},
- {"name":"Remove keeps the old check's sheet id","file":"stmt/page.js","find":"if(draft.pick) delete draft.pick[l.product]; bsDrop(l.product); bsPatch();","replace":"if(draft.pick) delete draft.pick[l.product]; bsDrop(l.product); draft.sheetKeep=c.sheet; bsPatch();"},
- {"name":"Remove lets a kept sheet id go","file":"stmt/page.js","find":"if(draft.pick) delete draft.pick[l.product]; bsDrop(l.product); bsPatch();","replace":"if(draft.pick) delete draft.pick[l.product]; bsDrop(l.product); draft.sheetKeep=''; bsPatch();"},
- {"name":"Remove leaves the basket","file":"stmt/page.js","find":"if(draft.pick) delete draft.pick[l.product]; bsDrop(l.product); bsPatch();","replace":"if(draft.pick) delete draft.pick[l.product]; bsPatch();"},
- {"name":"the sheet writes nothing back","file":"stmt/page.js","find":"  function formFoot(){\n    bsFromPick();\n","replace":"  function formFoot(){\n"},
- {"name":"Review takes an unpriced line","file":"stmt/page.js","find":"go.disabled=open;","replace":"go.disabled=false;"},
- {"name":"the bar sticks to the screen's foot on a phone","file":"stmt/page.js","find":"margin-top:24px;bottom:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px) - 1px);\n  display:flex;","replace":"margin-top:24px;bottom:0;\n  display:flex;"},
- {"name":"the bar keeps a phone's height on a desk","file":"stmt/page.js","find":"  .bkbar{bottom:0;padding:12px 16px;","replace":"  .bkbar{padding:12px 16px;"}
+  {
+    "name": "the bar adds the tapped size per tap",
+    "file": "stmt/page.js",
+    "find": "var sum=0, open=ls.some(function(x){ return x.t==null; }); ls.forEach(function(x){ if(x.t!=null) sum+=x.t; });",
+    "replace": "var sum=0, open=ls.some(function(x){ return x.t==null; }); ls.forEach(function(x){ var tt=bsTapsOf(x.P.product); if(tt) Object.keys(tt).forEach(function(q){ sum+=tt[q]*priceAt(x.P,+q); }); else if(x.t!=null) sum+=x.t; });"
+  },
+  {
+    "name": "the bar adds a delivery",
+    "file": "stmt/page.js",
+    "find": "rm(+sum.toFixed(2)),bco.any?",
+    "replace": "rm(+(sum+(w&&w.mode==='deliver'?12:0)).toFixed(2)),bco.any?"
+  },
+  {
+    "name": "the bar's words ignore the way",
+    "file": "stmt/page.js",
+    "find": "tw(w&&w.mode==='deliver'?'sh.plusDeliv':'sh.toCollect')));",
+    "replace": "tw('sh.toCollect')));"
+  },
+  {
+    "name": "a basket of two goes without a sheet id",
+    "file": "stmt/page.js",
+    "find": "sheet:draft.pool?'':draft.sheetKeep||(qs.length>1?mintRid():'')",
+    "replace": "sheet:draft.pool?'':draft.sheetKeep||''"
+  },
+  {
+    "name": "Sent leaves the basket",
+    "file": "stmt/page.js",
+    "find": "    c.lines.forEach(function(l){ if(l.placed){ if(draft.pick) delete draft.pick[l.product]; if(draft.src==='basket') bsDrop(l.product); } });\n    bsPatch();\n",
+    "replace": "    c.lines.forEach(function(l){ if(l.placed){ if(draft.pick) delete draft.pick[l.product]; } });\n    bsPatch();\n"
+  },
+  {
+    "name": "Sent keeps what is picked",
+    "file": "stmt/page.js",
+    "find": "    c.lines.forEach(function(l){ if(l.placed){ if(draft.pick) delete draft.pick[l.product]; if(draft.src==='basket') bsDrop(l.product); } });\n    bsPatch();\n",
+    "replace": "    c.lines.forEach(function(l){ if(l.placed){ if(draft.src==='basket') bsDrop(l.product); } });\n    bsPatch();\n"
+  },
+  {
+    "name": "Remove keeps the old check's sheet id",
+    "file": "stmt/page.js",
+    "find": "if(draft.pick) delete draft.pick[l.product]; bsDrop(l.product); bsPatch();",
+    "replace": "if(draft.pick) delete draft.pick[l.product]; bsDrop(l.product); draft.sheetKeep=c.sheet; bsPatch();"
+  },
+  {
+    "name": "Remove lets a kept sheet id go",
+    "file": "stmt/page.js",
+    "find": "if(draft.pick) delete draft.pick[l.product]; bsDrop(l.product); bsPatch();",
+    "replace": "if(draft.pick) delete draft.pick[l.product]; bsDrop(l.product); draft.sheetKeep=''; bsPatch();"
+  },
+  {
+    "name": "Remove leaves the basket",
+    "file": "stmt/page.js",
+    "find": "if(draft.pick) delete draft.pick[l.product]; bsDrop(l.product); bsPatch();",
+    "replace": "if(draft.pick) delete draft.pick[l.product]; bsPatch();"
+  },
+  {
+    "name": "the sheet writes nothing back",
+    "file": "stmt/page.js",
+    "find": "  function formFoot(){\n    bsFromPick();\n",
+    "replace": "  function formFoot(){\n"
+  },
+  {
+    "name": "Review takes an unpriced line",
+    "file": "stmt/page.js",
+    "find": "go.disabled=open;",
+    "replace": "go.disabled=false;"
+  },
+  {
+    "name": "the bar sticks to the screen's foot on a phone",
+    "file": "stmt/page.js",
+    "find": "margin-top:24px;bottom:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px) - 1px);\n  display:flex;",
+    "replace": "margin-top:24px;bottom:0;\n  display:flex;"
+  },
+  {
+    "name": "the bar keeps a phone's height on a desk",
+    "file": "stmt/page.js",
+    "find": "  .bkbar{bottom:0;padding:12px 16px;",
+    "replace": "  .bkbar{padding:12px 16px;"
+  }
 ]

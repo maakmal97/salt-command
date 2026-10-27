@@ -1,0 +1,4 @@
+[
+{"name": "the Accept card says no credit", "file": "stmt/owner.js", "find": "    if(+result.credit>0.004){ var crp=", "replace": "    if(false){ var crp="},
+{"name": "every Accept card says a credit", "file": "stmt/owner.js", "find": "    if(+result.credit>0.004){ var crp=", "replace": "    if(true){ var crp="}
+]

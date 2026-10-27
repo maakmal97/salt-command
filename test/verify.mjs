@@ -50198,6 +50198,31 @@ await (async () => {
   await (await import("./cash-over.mjs")).run({ ok });
 })();
 
+section("27 Oct 2026: a refund is never the book's money, cash flow keeps the till (refund credit P1)");
+await (async () => {
+  await (await import("./refund-credit-p1.mjs")).run({ ok });
+})();
+
+section("27 Oct 2026: a refund becomes their credit, the engine, the fold and what is on its way (refund credit P2)");
+await (async () => {
+  await (await import("./refund-credit-p2.mjs")).run({ ok });
+})();
+
+section("27 Oct 2026: his Accept spends their credit as paid, the order keeping it apart from paid (refund credit P3)");
+await (async () => {
+  await (await import("./refund-credit-p3.mjs")).run({ ok });
+})();
+
+section("27 Oct 2026: their credit on the Counter, said once on Prices and taken off the basket, the sheet and the order (refund credit P4)");
+await (async () => {
+  await (await import("./refund-credit-p4.mjs")).run({ ok, pageWork });
+})();
+
+section("27 Oct 2026: their credit on Salt Admin, Less RM 25 credit on the Accept card (refund credit P5)");
+await (async () => {
+  await (await import("./refund-credit-p5.mjs")).run({ ok });
+})();
+
 section("Salt Admin: Orders open by stage, a list beside the order, and Record a menu");
 await (async () => {
   await (await import("./admin-orders.mjs")).run({ ok, pageWork });
@@ -50736,6 +50761,7 @@ await (async () => {
           if (sql.includes("FROM state")) return { results: [{ key: "PRICING", doc: JSON.stringify(pricing) },
             { key: "roster", doc: JSON.stringify(["CX1-AB"]) }, { key: "OPEN", doc: '{"byKey":{}}' }] };
           if (sql.includes("FROM entry")) return { results: [] };
+          if (sql.includes("FROM draft")) return { results: [] };   /* 27 Oct 2026: the credit on its way (src/credit.js) */
           throw new Error("unexpected query " + sql);
         }
       };

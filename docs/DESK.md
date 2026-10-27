@@ -449,6 +449,18 @@
   the Correction lands (the engine's `refundOnOverpay`, the same rule on every sale amendment, a payment over the row
   included, and on the desk's overlay). The board is never repriced; the order book's `restate`
   event moves the figures, never `closed`, and the customer reads "Amended to ...". No push is sent.
+- **A refund becomes their credit** (his word and answers of 27 Oct 2026, `docs/plan-refund-credit.html`). Every open
+  `customerRefunds` row of theirs (no `paidOn`), on their own code or their -R bucket, overpays and cancelled orders alike, is
+  credit: the engine's `creditOf`, less what every unfolded Accept carries (`src/credit.js` reads the drafts on their way by the
+  book's bound and the orders queue; a rejected draft releases it). His Accept spends it (`previewAck`, `withCredit`): up to goods
+  and delivery together, booked on the pending row as `cash` with `credit` beside it, the price, the Floor and their % untouched;
+  an order for a friend spends none; paid in advance is judged on what is left. The fold closes what is spent (`setOffCredit`):
+  oldest first, a part split keeping its rid, each closed part `paidOn` the row's day and `setOff` its rid, a replay changing
+  nothing; credit no open refund covers comes off the row's cash (CREDIT SHORT) and the return leg lowers the order's. The
+  Counter order carries `credit` apart from `paid`; `dueOf`, the return leg (`rowPaidFor`), the tie-out and the claims read it.
+  **Money received by book is `bookCash`**, the row's cash less every refund on its rid, so s296 reads RM 455 on salt; cash flow
+  is the till, raw cash in and refunds in `refPaid` (a set-off named), the s190 and s191 precedent. `refundStale` flags a set-off
+  whose row was later paid less. Paid out in cash, the hand road stays: `paidOn` in the book.
 - **The delivery fee by distance** (F15, 29 Sep 2026; the Desk's Site orders card left on 18 Oct 2026): a delivery's card, opened,
   and the Workbench's Delivery box on a new sale to a chosen party, opened, offer a fee worked on the
   device: `navigator.geolocation` read once, fresh (kept nowhere), else `_base`; to the

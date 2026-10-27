@@ -75,7 +75,7 @@ export async function run({ ok, pageWork }) {
       "Mark as sent marks it, and the card says Marked sent where the button was: " + J(lines(after)));
     /* 1, his own debt */
     const r = await open("CX5-ZED");
-    ok(J([...r.querySelector(".ahead__fig").children].map(t)) === J(["You owe them", "RM 25"]) && r.querySelector(".ahead__rm").classList.contains("ahead__rm--hot") && J(lines(r))[0] && lines(r)[0] === "Opened=10 Oct 2026 by code",
+    ok(J([...r.querySelector(".ahead__fig").children].map(t)) === J(["Their credit", "RM 25"]) && r.querySelector(".ahead__rm").classList.contains("ahead__rm--hot") && J(lines(r))[0] && lines(r)[0] === "Opened=10 Oct 2026 by code",
       "a refund he owes is his figure, in ember, and an open by a code says so: " + J([t(r.querySelector(".ahead__fig")), lines(r)]));
     /* 2, locked */
     const l = await open("CX3-ZED");
