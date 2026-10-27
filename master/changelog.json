@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1290",
+  "d": "28 Oct 2026",
+  "t": "ONE UNIT OF SALT COLLECTED BY CZ5-TM, SHELF DOWN TO 0.5",
+  "n": [
+   "<b>FOLDED ONE CORRECTION.</b> The correction on s300 records that CZ5-TM collected 1 unit of salt on 28 Oct 2026. It sets deliveredQty to 1, deliveredOn to 2026-10-28 and handover to collected. It moves no cash, since RM105 was paid on 27 Oct.",
+   "<b>INVENTORY.</b> The shelf rolls out by 1 unit to CZ5-TM, the difference the correction states. The drafter flagged that the row's trail of 3 steps will no longer add up to the corrected figures; the correction is recorded beside them saying so."
+  ]
+ },
+ {
   "v": "v1289",
   "d": "27 Oct 2026",
   "t": "GAS IS NAMED AROMA, ITS MARK A STARBURST LETTERED POP",
