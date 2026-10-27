@@ -194,6 +194,11 @@
   new reads `/all/maker/customer-of|reward-of/<code>` (Fable reviewed: one low finding stated, one withdrawn). Full suite on the merged tree: 10,638 passed,
   7 red (the S1 fold replay). Not yet opened by him.
 
+## Salt Admin Orders review (v1296, 28 Oct 2026)
+- His word: Haiku, Sonnet, Opus and Fable on the Orders page. Salt Admin now reads `order.credit` as paid (`ordDue`/`ordPaidAll` in `stmt/owner.js`, the site's `dueOf`); a claim
+  past what is owed (payOnBook) is answered on the card only, never the row's one tap (Fable). Section "28 Oct 2026: Salt Admin's Orders review", 13 mutations. Open for him: a
+  transfer above what credit leaves owed is still filed Already recorded (books nothing); taking it as money with the excess a refund is a Counter change, unasked.
+
 ## Salt Admin Orders redesign
 - Live as v1256 (`c4d677a6`, 26 Oct 2026; Cloud commit `40228185174`: chain and three suite parts green, CI `40228185236` green, live /rev `bc69bd8338333eba`), from his
   canvas https://claude.ai/artifact/VNtoVjEo111nKYDbBzc487 and `docs/plan-admin-orders.html` (his yes to Asks A to M): the stages Placed, Agreed, Ready, Out or paid, Done,

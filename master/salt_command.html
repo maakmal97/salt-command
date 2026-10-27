@@ -11183,7 +11183,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1295","d":"28 Oct 2026","t":"HALF A UNIT HANDED OVER ON S300","n":["<b>ONE FULFILMENT FOLDED.</b> CZ5-TM's paid order s300 (1 unit of salt, goods RM105) had 0.5 unit handed over on 28 Oct 2026. It moves no cash. Nothing was unusual in the drafter's flags, though the trail on s300 already holds several corrections, the newest clearing an earlier delivery.","<b>INVENTORY.</b> Salt stock falls by 0.5 unit for the one move dated 28 Oct 2026. The last salt count was on 27 Oct 2026, and the stock cost and replacement cost are unchanged."]}];
+const evolution=[{"v":"v1296","d":"28 Oct 2026","t":"SALT ADMIN'S ORDERS, REVIEWED","n":["<b>HIS WORD OF 28 OCT 2026</b>: \"Haiku, Sonnet, Opus and Fable to ensure there are no UI/UX and bug on the Salt Admin's Order page.\" Haiku measured every stage at 390, 1180 and 1440 (no control under 44px, none unnamed), Sonnet read the copy against the plan, Opus hunted the money moves, Fable reviewed the money fixes and re-checked them clean.","<b>THEIR CREDIT IS PAID.</b> Since v1284 an order keeps the refunds his Agree spent as <code>credit</code>, apart from what is paid. Salt Admin read owed as goods and delivery less paid, so a credit read as owed: the Bill, the stage, the leads, the steps, Receivables and the cash guard. They now read the site's <code>dueOf</code>; the Bill names the credit on its own line.","<b>THE ROWS.</b> A Ready the Desk refused was said as \"Marked ready\" (makerMove returned nothing); it is said as refused. A row offers no move while cash is held for its order. A claim past what is owed is Already recorded, which books nothing, so it is answered on the card beside Not found, never on the row. Placed's lead counts goods and delivery as the rows do; a part handed over asks for what is left; Not now keeps focus on the row.","<b>FOR HIM.</b> A transfer above what credit leaves owed is still read as recorded another way; taking it as money with the excess a refund, as cash already is, is a change on the Counter and his call."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11331,7 +11331,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='28 Oct 2026, 00:30 KL';
+const LAST_UPDATED='28 Oct 2026, 00:57 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
