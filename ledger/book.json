@@ -103,7 +103,7 @@
       "stated": null
     }
   },
-  "STATED_STOCK": -0.5,
+  "STATED_STOCK": 0,
   "COUNT_ON": {
     "salt": "2026-10-27",
     "oil": "2026-10-27",
@@ -150,7 +150,8 @@
     {"product":"salt","date":"2026-10-23","qty":1,"was":0.85,"drift":0.15},
     {"product":"salt","date":"2026-10-24","qty":25,"was":25,"drift":0},
     {"product":"oil","date":"2026-10-27","qty":0,"was":20,"drift":-20},
-    {"product":"salt","date":"2026-10-27","qty":0.5,"was":1.5,"drift":-1}
+    {"product":"salt","date":"2026-10-27","qty":0.5,"was":1.5,"drift":-1},
+    {"product":"salt","date":"2026-10-27","qty":0,"was":0.5,"drift":-0.5}
   ],
   "purchases": [
     {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -1088,6 +1089,7 @@
       "RETIRED AT v549 on 2026-09-09, his instruction. The key held one hand-typed lot: 50 unit by 2026-08-28, stated on the 24th. He read it on 9 September with the date twelve days gone and four lots landed since (25 unit on 26 Aug, 25 on 31 Aug, 25 on 03 Sep and 50 on 08 Sep), and said he generally has no information on when he purchases. The Sourcing section is now about the CURRENT lot, and the cadence is measured off the book rather than typed. One standing fact from the retired basis is kept here because it is not a plan: the purchase ceiling of RM4,500 resets on the 28th of each month and anything beyond it comes out of rolling cash. The rest was the 24 Aug reasoning, that the 100 unit tier was the recommendation and he took the 50, at a landed RM45.20 a unit against RM43.60."
     ],
     "STATED_STOCK": [
+      "COUNTED AT v1291 on 2026-10-27: the salt inventory held 0 against 0.5 on the roll, a difference of -0.5. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-10-27. <b>STOCK COUNT OF SALT ON 27 OCT 2026: 0 UNIT.</b> Counted by hand and decided by Counter Admin on 27 Oct 2026. The book said 0.5 unit, so the gap is -0.5 unit. A count wins over the ledger, so the stated stock is set to 0 and the salt count date moves to 27 Oct 2026. The dossier gives no reason for the gap and none is offered here; it books as shrinkage across every unit sold. The ladder floors and ask are unchanged: floor RM60 for 1 unit, RM120 for 2, ask RM120 for 1. Self-use moves from 103.84 to 103.34. The drafter flagged 1.27 unit owed out and already paid for, and a zero count leaves open orders unmeetable. The dossier shows 0.27 unit owed out and 0 promised, so the figure in the flag does not match it. 0.27 unit remains outstanding until a lot lands.",
       "ROLLED AT v1290: 1 unit to CZ5-TM on 2026-10-28, so 0.5 less 1 is -0.5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The shelf stands at 0.5 units after the 1 unit collected by CZ5-TM.",
       "COUNTED AT v1279 on 2026-10-27: the salt inventory held 0.5 against 1.5 on the roll, a difference of -1. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-10-27. <b>COUNT OF SALT ON 27 OCT 2026: 0.5 UNIT AGAINST 1.5 ON THE BOOK.</b> Counter Admin approved it. Nothing was sold or bought, so there is no party and no rate to compare. The gap is -1 unit, and the last count was on 24 Oct 2026. The drafter flagged that the gap books as shrinkage across every unit sold, because a count always wins. The figures answer the flag as arithmetic only: the stated salt stock becomes 0.5 and the count date moves to 27 Oct 2026. The dossier gives no reason for the gap. The floors hold at floor1 RM60, floor2 RM120, floor125 RM725 and ask1 RM120. The self-use figure moves from 102.84 to 103.84. The stock cost stays at RM56 a unit. The gap of 1 unit remains unexplained.",
       "ROLLED AT v1274: 5 unit to CZ4-MK on 2026-10-27, so 6.5 less 5 is 1.5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Salt falls by 5 units on this handover, leaving 6.5 units, well under the reorder point of 33.25.",

@@ -1,6 +1,6 @@
 {
- "v": "v1290",
- "stamped": "28 Oct 2026, 00:09 KL",
+ "v": "v1291",
+ "stamped": "28 Oct 2026, 00:11 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -107,7 +107,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": -0.5,
+  "STATED_STOCK": 0,
   "COUNT_ON": {
    "salt": "2026-10-27",
    "oil": "2026-10-27",
@@ -389,6 +389,13 @@
     "qty": 0.5,
     "was": 1.5,
     "drift": -1
+   },
+   {
+    "product": "salt",
+    "date": "2026-10-27",
+    "qty": 0,
+    "was": 0.5,
+    "drift": -0.5
    }
   ],
   "purchases": [
@@ -10402,7 +10409,7 @@
     {
      "id": "upkeep:shrink:salt",
      "sev": "note",
-     "title": "The unexplained plug runs at 2.4% of everything handled"
+     "title": "The unexplained plug runs at 5.7% of everything handled"
     },
     {
      "id": "parity:declared:gas",
@@ -11560,11 +11567,11 @@
        "repl": 56,
        "freightRate": 2,
        "leak": {
-        "ratio": 0.0246,
-        "leak": 0.85,
-        "sold": 34.6,
+        "ratio": 0.061,
+        "leak": 1.5,
+        "sold": 24.6,
         "cycles": 3,
-        "from": "2026-10-20",
+        "from": "2026-10-23",
         "to": "2026-10-27"
        },
        "costRule": {
@@ -11591,7 +11598,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.09332283689973521,
+       "shrinkRate": 0.09260717097259,
        "avgDel": {
         "n": 233,
         "kg": 594.31,
@@ -20086,10 +20093,10 @@
      "suggest": null
     }
    },
-   "v": "v1290"
+   "v": "v1291"
   },
   "OPEN": {
-   "at": "2026-10-27T16:09:43.967Z",
+   "at": "2026-10-27T16:11:52.666Z",
    "count": 6,
    "byKey": {
     "CN3-WM|2026-10-05|130": {
@@ -20196,14 +20203,14 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": -0.5,
-     "free": -0.77,
+     "onHand": 0,
+     "free": -0.27,
      "owedOut": 0.27,
      "coverDays": 0,
      "rate": 4.36,
      "owedToYou": 240,
      "promised": 0.27,
-     "short": 0.77
+     "short": 0.27
     },
     "oil": {
      "name": "Oil",
@@ -20269,7 +20276,7 @@
     "gas": null,
     "prep": null
    },
-   "v": "v1290"
+   "v": "v1291"
   },
   "TERMS": {
    "ceiling": 250,
@@ -20277,7 +20284,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1290"
+   "v": "v1291"
   },
   "REWARD": {
    "stated": {
@@ -20295,14 +20302,14 @@
      }
     }
    },
-   "v": "v1290"
+   "v": "v1291"
   },
   "STOCK": {
    "today": "2026-10-28",
    "books": {
     "salt": {
-     "shelf": -0.5,
-     "free": -0.77,
+     "shelf": 0,
+     "free": -0.27,
      "commit": 0.27,
      "light": "red",
      "coverDays": 0,
@@ -20349,7 +20356,7 @@
      "transit": 0
     }
    },
-   "v": "v1290"
+   "v": "v1291"
   }
  }
 }

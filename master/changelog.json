@@ -1,5 +1,13 @@
 [
  {
+  "v": "v1291",
+  "d": "28 Oct 2026",
+  "t": "SALT COUNT OF 0 UNIT SETS STOCK TO ZERO",
+  "n": [
+   "<b>ONE COUNT FOLDED.</b> The salt count of 27 Oct 2026 found 0 unit against 0.5 on the book, a gap of -0.5. The count wins, so the stated salt inventory is set to 0 and the salt count date moves to 27 Oct 2026. Unusual: the drafter flagged 1.27 unit owed out and already paid for, whereas the dossier shows 0.27 owed out and nothing promised. The ladder floors and ask do not move; self-use falls from 103.84 to 103.34."
+  ]
+ },
+ {
   "v": "v1290",
   "d": "28 Oct 2026",
   "t": "ONE UNIT OF SALT COLLECTED BY CZ5-TM, SHELF DOWN TO 0.5",
