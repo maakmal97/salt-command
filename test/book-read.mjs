@@ -181,7 +181,7 @@ export async function run({ ok }) {
     && await flight(termsInFlight, T1, after, later) === true && await flight(termsInFlight, T1, before, early) === false
     && await flight(orderInFlight, null, after, before) === true && await flight(orderInFlight, null, before, after) === false,
     "an order's flight checks use the bound they are handed, against the mirror's snapshot when they disagree; with none handed the snapshot decides, as before");
-  ok((readFileSync(join(REPO, "src", "worker.js"), "utf8").match(/makerHeldMoves\(env, boundOf\(book\)\)/g) || []).length === 4, "the maker's held moves are asked by the bound of the book each caller already holds");
+  ok((readFileSync(join(REPO, "src", "worker.js"), "utf8").match(/makerHeldMoves\(env, boundOf\(book\)\)/g) || []).length === 5, /* the fifth since 27 Oct 2026: a row's payment past what it owes */ "the maker's held moves are asked by the bound of the book each caller already holds");
 
   /* 5: the reads are not routes */
   const T = new Book(objectState(), { BOOK: { idFromName: (n) => n } }); T.state.id = { equals: (o) => o === "book-pitr-test" };

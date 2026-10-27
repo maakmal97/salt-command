@@ -1,6 +1,6 @@
 {
- "v": "v1276",
- "stamped": "27 Oct 2026, 15:22 KL",
+ "v": "v1279",
+ "stamped": "27 Oct 2026, 16:04 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -73,7 +73,7 @@
    "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 20
+    "stated": 0
    },
    "candy": {
     "qty": 0,
@@ -91,10 +91,10 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 1.5,
+  "STATED_STOCK": 0.5,
   "COUNT_ON": {
-   "salt": "2026-10-24",
-   "oil": "2026-10-20",
+   "salt": "2026-10-27",
+   "oil": "2026-10-27",
    "candy": "2026-10-20",
    "rice": "2026-10-20",
    "spare": null
@@ -358,6 +358,20 @@
     "qty": 25,
     "was": 25,
     "drift": 0
+   },
+   {
+    "product": "oil",
+    "date": "2026-10-27",
+    "qty": 0,
+    "was": 20,
+    "drift": -20
+   },
+   {
+    "product": "salt",
+    "date": "2026-10-27",
+    "qty": 0.5,
+    "was": 1.5,
+    "drift": -1
    }
   ],
   "purchases": [
@@ -9120,7 +9134,7 @@
     "customer": "CZ4-MK",
     "qty": 5,
     "total": 455,
-    "cash": 0,
+    "cash": 480,
     "handover": "collected",
     "date": "2026-10-27",
     "deliveredQty": 5,
@@ -9155,16 +9169,24 @@
       "kg": 5,
       "note": "<b>FULFILMENT ON S296, 27 OCT 2026.</b> <b>5 UNITS OF SALT TO CZ4-MK, GOODS RM455, NO CASH.</b> Counter Admin approved it on 27 Oct, the day of the order. RM0 and 5 units move, against RM455 and 5 units outstanding, leaving RM455 and 0 units outstanding. The dossier gives no ladder floor or ask for this size, so the rate is not set against them. The party's median rate is RM84, range RM12 to RM92; outstanding before was RM455, no units on credit. The dossier gives no cap for the party. The drafter raised no flags. The cost is the inventory's own, and the row is applied by the master, not recomputed here. RM455 remains outstanding.",
       "cost": 290
+     },
+     {
+      "date": "2026-10-27",
+      "kind": "Fulfilment",
+      "cash": 480,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON S296, 27 OCT 2026.</b> CZ4-MK's salt order of 5 units, goods RM455, agreed 27 Oct. Approved by Counter Admin on the day, it brings RM480 cash and 0 units moved against RM455 outstanding, leaving RM0 outstanding. The dossier gives no ladder figures for this size, so no floor or ask comparison is made. The party's median rate is RM84, range RM12 to RM92; outstanding before was RM575, 15 units on credit. The row carries no new cost. The drafter flagged an over-payment of RM25 and the settlement in full. The figures answer both: RM480 less RM455 is the RM25 refund payable, open until returned, and nothing is left outstanding on the order."
      }
     ],
     "deliveredOn": "2026-10-27",
-    "cost": 290
+    "cost": 290,
+    "paidOn": "2026-10-27"
    },
    {
     "customer": "CZ4-MK",
     "qty": 10,
     "total": 120,
-    "cash": 0,
+    "cash": 120,
     "product": "oil",
     "date": "2026-10-27",
     "deliveredQty": 10,
@@ -9225,10 +9247,18 @@
       "kg": 10,
       "cost": 78.6,
       "note": "<b>FULFILMENT ON S297, 27 OCT 2026.</b> CZ4-MK's sale of 10 units of oil, goods RM120, agreed the same day. Approved by Counter Admin, it moves 10 units with cash RM0, so RM120 stays outstanding and no units. The trail shows an earlier fulfilment of RM120 cash and 10 units, undone by a correction, so this re-books the handover without payment. The dossier gives no ladder floor or ask for oil, so the rate is not compared with them. The party's median rate is RM84, range RM12 to RM92; outstanding before was RM575, with 5 units on credit. The dossier gives no cap or cost for this row. The drafter flagged nothing. RM120 remains outstanding."
+     },
+     {
+      "date": "2026-10-27",
+      "kind": "Fulfilment",
+      "cash": 120,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON S297, 27 OCT 2026.</b> CZ4-MK's oil order of 10 units, goods RM120, agreed 27 Oct. Approved by Counter Admin on the day, it brings RM120 cash and 0 units moved against RM120 outstanding, leaving RM0 outstanding. The trail already shows an earlier fulfilment and correction on the same day, so this is the latest step. The party's salt ladder does not apply to oil, so no floor or ask comparison is made. The party's median rate is RM84, range RM12 to RM92; outstanding before was RM575, 15 units on credit. The row carries no cost of its own here. The drafter flagged that the order is settled in full, and the figures agree: nothing remains outstanding."
      }
     ],
     "cost": 78.6,
-    "deliveredOn": "2026-10-27"
+    "deliveredOn": "2026-10-27",
+    "paidOn": "2026-10-27"
    },
    {
     "customer": "CM4-TO-R",
@@ -9415,6 +9445,13 @@
     "since": "2026-08-26",
     "paidOn": "2026-09-21",
     "note": "RM20 over-tender, cash payable to set off. Set off on 21 Sep against s190 and s191, 5 unit of salt and 10 of candy for RM920, which he settled with RM900 cash: the two rows carry RM920 as paid and this refund the RM20 back, so the cash nets to the RM900 handed over. Closed on his word of 23 Sep 2026."
+   },
+   {
+    "party": "CZ4-MK",
+    "rid": "s296",
+    "amount": 25,
+    "since": "2026-10-27",
+    "note": "order s296 paid RM 480 against RM 455 it comes to: RM 25 payable back to the customer."
    }
   ],
   "roster": [
@@ -10042,7 +10079,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-27T07:21:18.943Z",
+  "QUEUE_COMMITTED": "2026-10-27T08:02:33.745Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -10220,7 +10257,7 @@
     {
      "id": "upkeep:shrink:salt",
      "sev": "note",
-     "title": "The unexplained plug runs at 5.6% of everything handled"
+     "title": "The unexplained plug runs at 2.4% of everything handled"
     }
    ],
    "profileOf": {
@@ -11359,12 +11396,12 @@
        "repl": 56,
        "freightRate": 2,
        "leak": {
-        "ratio": 0.0598,
-        "leak": 1.5,
-        "sold": 25.1,
+        "ratio": 0.0246,
+        "leak": 0.85,
+        "sold": 34.6,
         "cycles": 3,
         "from": "2026-10-20",
-        "to": "2026-10-24"
+        "to": "2026-10-27"
        },
        "costRule": {
         "kind": "latestCogs",
@@ -11390,7 +11427,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.0918915050454448,
+       "shrinkRate": 0.09332283689973521,
        "avgDel": {
         "n": 232,
         "kg": 593.31,
@@ -13975,12 +14012,12 @@
        "repl": 7.72,
        "freightRate": 0.2083,
        "leak": {
-        "ratio": 0.8071,
-        "leak": 56.5,
-        "sold": 70,
+        "ratio": 0.3333,
+        "leak": 30,
+        "sold": 90,
         "cycles": 3,
         "from": "2026-10-06",
-        "to": "2026-10-20"
+        "to": "2026-10-27"
        },
        "costRule": {
         "kind": "latestCogs",
@@ -14006,7 +14043,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.27268817204301077,
+       "shrinkRate": 0.31569892473118283,
        "avgDel": {
         "n": 20,
         "kg": 291,
@@ -17661,48 +17698,12 @@
      ]
     }
    },
-   "v": "v1276"
+   "v": "v1279"
   },
   "OPEN": {
-   "at": "2026-10-27T07:22:17.798Z",
-   "count": 9,
+   "at": "2026-10-27T08:04:14.593Z",
+   "count": 7,
    "byKey": {
-    "CZ4-MK|2026-10-27|455": {
-     "d": "2026-10-27",
-     "p": "CZ4-MK",
-     "dir": "S",
-     "q": 5,
-     "t": 455,
-     "cash": 0,
-     "mv": 5,
-     "st": "dueMoney",
-     "oweRM": 455,
-     "rid": "s296",
-     "deliveredOn": "2026-10-27",
-     "handover": "collected",
-     "trip": "t1793074793926",
-     "key": "CZ4-MK|2026-10-27|455",
-     "age": 0,
-     "exp": 455
-    },
-    "CZ4-MK|2026-10-27|120|oil": {
-     "d": "2026-10-27",
-     "p": "CZ4-MK",
-     "dir": "S",
-     "q": 10,
-     "t": 120,
-     "cash": 0,
-     "mv": 10,
-     "st": "dueMoney",
-     "oweRM": 120,
-     "pr": "oil",
-     "rid": "s297",
-     "deliveredOn": "2026-10-27",
-     "trip": "t1793074793926",
-     "key": "CZ4-MK|2026-10-27|120|oil",
-     "age": 0,
-     "exp": 120
-    },
     "CR3-DAM|2026-10-20|75": {
      "d": "2026-10-20",
      "p": "CR3-DAM",
@@ -17824,23 +17825,23 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 1.5,
-     "free": 1.5,
-     "owedOut": 0,
-     "coverDays": 0.3,
+     "onHand": 0.5,
+     "free": 0.23,
+     "owedOut": 0.27,
+     "coverDays": 0.1,
      "rate": 4.54,
-     "owedToYou": 770,
-     "promised": 0,
+     "owedToYou": 315,
+     "promised": 0.27,
      "short": 0
     },
     "oil": {
      "name": "Oil",
-     "onHand": 20,
-     "free": 20,
+     "onHand": 0,
+     "free": 0,
      "owedOut": 0,
-     "coverDays": 7.7,
+     "coverDays": 0,
      "rate": 3.15,
-     "owedToYou": 120,
+     "owedToYou": 0,
      "promised": 0,
      "short": 0
     },
@@ -17868,13 +17869,13 @@
     }
    },
    "countedOn": {
-    "salt": "2026-10-24",
-    "oil": "2026-10-20",
+    "salt": "2026-10-27",
+    "oil": "2026-10-27",
     "candy": "2026-10-20",
     "rice": "2026-10-20",
     "spare": null
    },
-   "v": "v1276"
+   "v": "v1279"
   },
   "TERMS": {
    "ceiling": 250,
@@ -17882,7 +17883,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1276"
+   "v": "v1279"
   },
   "REWARD": {
    "stated": {
@@ -17900,25 +17901,25 @@
      }
     }
    },
-   "v": "v1276"
+   "v": "v1279"
   },
   "STOCK": {
    "today": "2026-10-27",
    "books": {
     "salt": {
-     "shelf": 1.5,
-     "free": 1.5,
-     "commit": 0,
+     "shelf": 0.5,
+     "free": 0.23,
+     "commit": 0.27,
      "light": "green",
-     "coverDays": 0.3,
+     "coverDays": 0.1,
      "transit": 0
     },
     "oil": {
-     "shelf": 20,
-     "free": 20,
+     "shelf": 0,
+     "free": 0,
      "commit": 0,
-     "light": "green",
-     "coverDays": 7.7,
+     "light": "red",
+     "coverDays": 0,
      "transit": 0
     },
     "candy": {
@@ -17938,7 +17939,7 @@
      "transit": 0
     }
    },
-   "v": "v1276"
+   "v": "v1279"
   }
  }
 }

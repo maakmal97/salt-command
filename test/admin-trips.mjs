@@ -4,7 +4,7 @@
  * each check red under its own mutation (test/admin-trips.mutations.json), with invented codes only (rule 2):
  *   A  the Desk reads each open trip as one card (owed, paid, lines handed in full, one line a book) and the same-day rows that could be one,
  *      never two of one book or two deliveries, and the rows as they will stand once the moves waiting on them are approved
- *   B  one payment, split by the Desk oldest first by the engine's claimAlloc, refused past what the order owes, refused whole if the split
+ *   B  one payment, split by the Desk the other books first and salt last (his word of 27 Oct 2026), each part by the engine's claimAlloc, refused past what the order owes, refused whole if the split
  *      moved since he read it, sent as one Fulfilment a share, and refused whole when one share is more than its row can take (rowRoom)
  *   C  These are one order: a Correction a row setting one trip, refused for two deliveries or a book twice, refused while a join waits,
  *      and never offered by Correct a row; the engine, the drafter and the fold each hold a trip together
@@ -117,33 +117,35 @@ export async function run({ ok, pageWork }) {
 
   /* B. ONE PAYMENT */
   const s200 = await f.call("/all/maker/trip-split", { trip: T, amount: 200 });
-  ok(s200.status === 200 && J(s200.j.split.shares.map((s) => [s.rid, s.rm, s.owed])) === J([["zt1", 120, 120], ["zt2", 80, 116]]),
-    "RM 200 for the order is split by the Desk oldest first, each line owing all that is left on it, the delivery's line taking its delivery: " + J(s200.j));
+  ok(s200.status === 200 && J(s200.j.split.shares.map((s) => [s.rid, s.rm, s.owed])) === J([["zt2", 116, 116], ["zt3", 35, 35], ["zt1", 49, 120]]),
+    "RM 200 for the order is split by the Desk the other books first and salt last, each line owing all that is left on it, the delivery's line taking its delivery: " + J(s200.j));
   const s300 = await f.call("/all/maker/trip-split", { trip: T, amount: 300 });
-  ok(s300.status !== 200 && /more than this order still owes \(RM 271\.00\)/.test(s300.j.error || ""), "a payment past what the order owes is refused, never split: " + J(s300.j));
+  /* 27 Oct 2026, his word: a payment past what the order owes is taken, the excess on its last line, a refund to them */
+  ok(s300.status === 200 && J(s300.j.split.shares.map((s) => [s.rid, s.rm, s.owed])) === J([["zt2", 116, 116], ["zt3", 35, 35], ["zt1", 149, 120]]) && s300.j.split.refund === 29,
+    "a payment past what the order owes is split with the excess on its last line, said as the refund: " + J(s300.j));
   const before = f.drafts().length;
   const stale = await f.call("/all/maker/inputs/trip-pay", { at: at(1), trip: T, date: "2026-10-16", amount: 200, shares: [{ rid: "zt1", rm: 100 }, { rid: "zt2", rm: 100 }] });
   ok(stale.status === 400 && /split changed/.test(stale.j.error || "") && f.drafts().length === before, "a payment sent with a split other than the Desk's is refused whole and nothing is drafted: " + J(stale.j));
-  const paid = await f.call("/all/maker/inputs/trip-pay", { at: at(2), trip: T, date: "2026-10-16", amount: 200, shares: [{ rid: "zt1", rm: 120 }, { rid: "zt2", rm: 80 }] });
+  const paid = await f.call("/all/maker/inputs/trip-pay", { at: at(2), trip: T, date: "2026-10-16", amount: 200, shares: [{ rid: "zt2", rm: 116 }, { rid: "zt3", rm: 35 }, { rid: "zt1", rm: 49 }] });
   const pays = f.drafts().filter((d) => d.entry.makerRequest && ["zt1", "zt2", "zt3"].includes(d.amends));
-  ok(paid.status === 200 && J(pays.map((d) => [d.amends, d.amend_kind, d.entry.payload.cash, d.entry.payload.kg])) === J([["zt1", "Fulfilment", 120, 0], ["zt2", "Fulfilment", 80, 0]]),
+  ok(paid.status === 200 && J(pays.map((d) => [d.amends, d.amend_kind, d.entry.payload.cash, d.entry.payload.kg])) === J([["zt2", "Fulfilment", 116, 0], ["zt3", "Fulfilment", 35, 0], ["zt1", "Fulfilment", 49, 0]]),
     "the split he read is sent as one Fulfilment a share, cash only, each waiting under Approve: " + J({ status: paid.status, j: paid.j, drafts: pays.map((d) => [d.amends, d.entry.payload.cash]) }));
   const r1 = await f.deskGet("/_internal/maker/drafts"), trip1 = mine(r1.trips, "CX9-ZED")[0] || {};
   const s71 = await f.call("/all/maker/trip-split", { trip: T, amount: 71 });
-  ok(trip1.owed === 71 && trip1.paid === 200 && trip1.waiting === 2 && J(s71.j.split && s71.j.split.shares.map((s) => [s.rid, s.rm])) === J([["zt2", 36], ["zt3", 35]]),
+  ok(trip1.owed === 71 && trip1.paid === 200 && trip1.waiting === 3 && J(s71.j.split && s71.j.split.shares.map((s) => [s.rid, s.rm])) === J([["zt1", 71]]),
     "the order then reads as it will stand once those wait under Approve: RM 71 owed, and the next split asks nothing twice: " + J({ owed: trip1.owed, waiting: trip1.waiting, split: s71.j }));
-  /* a claim against the account lands on the third line between the split and the check: the share it leaves no room for refuses the batch */
+  /* a claim against the account lands on the salt line between the split and the check: the share it leaves no room for refuses the batch */
   f.hooks.push({ after: "SELECT entry FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved')", run: () => {
-    const zt3 = { customer: "CX9-ZED", date: D, total: 35, product: "rice" };
+    const zt1 = { customer: "CX9-ZED", date: D, qty: 1, total: 110, delivery: 10, product: "salt" };
     f.db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,party,product,amends,amend_kind,drafter,drafted_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
-      .run("2026-10-16T02:00:30.000Z", "pending", "sales", J({ at: "2026-10-16T02:00:30.000Z", type: "AMEND", claimId: "c-x", payload: { mode: "amend", direction: "SELL", kind: "Fulfilment", orderKey: E.ovKey(zt3), cash: 35, kg: 0, date: "2026-10-16" } }),
-        J({ qty: 5, total: 35 }), "a claim", "CX9-ZED", "rice", null, "Fulfilment", "test", "2026-10-16T02:00:30.000Z");
+      .run("2026-10-16T02:00:30.000Z", "pending", "sales", J({ at: "2026-10-16T02:00:30.000Z", type: "AMEND", claimId: "c-x", payload: { mode: "amend", direction: "SELL", kind: "Fulfilment", orderKey: E.ovKey(zt1), cash: 35, kg: 0, date: "2026-10-16" } }),
+        J({ qty: 1, total: 110 }), "a claim", "CX9-ZED", "salt", null, "Fulfilment", "test", "2026-10-16T02:00:30.000Z");
   } });
   const n2 = f.drafts().length;
-  const raced = await f.call("/all/maker/inputs/trip-pay", { at: at(3), trip: T, date: "2026-10-16", amount: 71, shares: [{ rid: "zt2", rm: 36 }, { rid: "zt3", rm: 35 }] });
-  ok(raced.status === 409 && /^zt3: /.test(raced.j.error || "") && /Nothing was sent/.test(raced.j.error || "") && f.drafts().length === n2 + 1
-    && !f.drafts().some((d) => d.amends === "zt2" && d.entry.payload.cash === 36),
-  "a share its row can no longer take refuses the whole payment, the line that could take its share included: " + J(raced.j));
+  const raced = await f.call("/all/maker/inputs/trip-pay", { at: at(3), trip: T, date: "2026-10-16", amount: 71, shares: [{ rid: "zt1", rm: 71 }] });
+  ok(raced.status === 409 && /^zt1: /.test(raced.j.error || "") && /Nothing was sent/.test(raced.j.error || "") && f.drafts().length === n2 + 1
+    && !f.drafts().some((d) => d.amends === "zt1" && d.entry.payload.cash === 71),
+  "a share its row can no longer take refuses the whole payment, and nothing is sent: " + J(raced.j));
 
   /* C. THESE ARE ONE ORDER */
   const joined = await f.call("/all/maker/inputs/trip-join", { at: at(4), date: "2026-10-16", rids: ["yd1", "yd2"] });
@@ -163,6 +165,14 @@ export async function run({ ok, pageWork }) {
   const exts = f.drafts().filter((d) => ["vt1", "vt2", "vt3"].includes(d.amends));
   ok(ext.status === 200 && J(exts.map((d) => [d.amends, J(d.entry.payload.fields)])) === J([["vt3", J({ trip: T3 })]]),
     "naming a row with the trip beside it extends that trip: one Correction, on the row not yet on it: " + J({ j: ext.j, drafts: exts.map((d) => [d.amends, d.entry.payload.fields]) }));
+  /* 27 Oct 2026, his word: an order paid past what it owes (RM 150 here) is sent whole, the excess on its last line, drafted with the refund said */
+  const s200b = await f.call("/all/maker/trip-split", { trip: T3, amount: 200 });
+  const shares3 = (s200b.j.split && s200b.j.split.shares || []).map((s) => ({ rid: s.rid, rm: s.rm }));
+  const over3 = await f.call("/all/maker/inputs/trip-pay", { at: at(11), trip: T3, date: "2026-10-16", amount: 200, shares: shares3 });
+  const vtPay = f.drafts().filter((d) => ["vt1", "vt2"].includes(d.amends) && d.amend_kind === "Fulfilment");
+  ok(over3.status === 200 && J(vtPay.map((d) => [d.amends, d.entry.payload.cash])) === J([["vt2", 30], ["vt1", 170]])
+    && /RM 50 more than the order is owed\. The fold raises a refund/.test(f.db.prepare("SELECT flags FROM draft WHERE amends='vt1' AND amend_kind='Fulfilment'").get().flags || ""),
+    "a payment past what the order owes is taken, the oil first and RM 50 over on the salt, which its card says the fold refunds: " + J({ j: over3.j, drafts: vtPay.map((d) => [d.amends, d.entry.payload.cash]) }));
   const cat = await f.call("/all/maker/inputs");
   const typed = await f.call("/all/maker/inputs/ledger-amend", { at: at(8), rid: "xd1", kind: "Correction", date: "2026-10-16", fields: { trip: "t1791900000001" } });
   ok(!(cat.j.catalog.correctionFields || []).some((x) => x.field === "trip") && typed.status === 400,
@@ -200,9 +210,11 @@ export async function run({ ok, pageWork }) {
     { rid: "yd1", product: "salt", qty: 1, total: 110, delivery: 10, paid: 0, owed: 120, handed: 0, left: 1, waiting: 0, open: true },
     { rid: "yd2", product: "oil", qty: 2, total: 30, delivery: 0, paid: 0, owed: 30, handed: 0, left: 2, waiting: 0, open: true }] };
   const SPLIT = { trip: T, party: "CX9-ZED", amount: 200, shares: [{ rid: "zt1", product: "salt", rm: 120, owed: 120 }, { rid: "zt2", product: "oil", rm: 80, owed: 116 }] };
+  const OVER = { trip: T, party: "CX9-ZED", amount: 300, refund: 29, shares: [{ rid: "zt2", product: "oil", rm: 116, owed: 116 }, { rid: "zt3", product: "rice", rm: 35, owed: 35 },
+    { rid: "zt1", product: "salt", rm: 149, owed: 120 }] };
   const open = async (opts = {}) => {
     const p = await richOwnerPage({ pageWork, bare: true, review: (j) => ({ ...j, orders: [], drafts: opts.drafts || [], queue: [], trips: [TRIP], sameDay: [DAY], ...(opts.review || {}) }),
-      extra: (route, body) => route === "/all/maker/trip-split" ? { ok: true, split: SPLIT }
+      extra: (route, body) => route === "/all/maker/trip-split" ? { ok: true, split: body.amount === 300 ? OVER : SPLIT }
         : route === "/all/maker/drafts/decide-many" ? { ok: true, decided: body.approve.map((id) => ({ id, decision: "approved" })).concat(body.reject.map((id) => ({ id, decision: "rejected" }))), refused: [] }
         : route === "/all/maker/inputs/ledger-amend" && opts.refuse && body.rid === opts.refuse ? { refuse: "only 2 unit is on the shelf" }
           : /^\/all\/maker\/inputs\/(ledger-amend|trip-pay|trip-join)$/.test(route) ? { ok: true, draft: body.at, status: "pending" } : undefined });
@@ -279,6 +291,11 @@ export async function run({ ok, pageWork }) {
     const readAgain = !!byAct(card, "trip.pay", T) && !!card.querySelector("[data-share]");
     p.type(byAct(card, "trip.pay-amount", T), "150");
     ok(readAgain && !byAct(card, "trip.pay", T) && !card.querySelector("[data-share]"), "a new figure takes the split and Record away until it is read again");
+    /* 27 Oct 2026, his word: paid past what the order owes, the last line says the excess is a refund to them */
+    p.type(byAct(card, "trip.pay-amount", T), "300"); await p.tap("trip.pay-split", T); card = p.card("trip:" + T);
+    const overShown = [...card.querySelectorAll("[data-share]")].map((x) => x.textContent.replace(/\s+/g, " ").trim());
+    ok(/zt1, RM 149\.00, all it owes and RM 29\.00 over, a refund to them$/.test(overShown[2] || "") && byAct(card, "trip.pay", T).textContent === "Record RM 300.00",
+      "a payment past what the order owes shows the excess on its last line as a refund to them: " + J(overShown));
     await p.tap("nav.orders");
     const day = p.card("day:yd1+yd2");
     await p.tap("trip.join", "yd1+yd2");

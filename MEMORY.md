@@ -214,6 +214,11 @@
   way, or the row owing another figure. Section "cash past what an order owes"; Fable reviewed (one medium applied, re-checked clean; one low left:
   a stale open refund on the rid makes the stated refund larger than the fold raises). Only the relevant sections ran (his word); CI's suite is the full check.
 
+- v1277 (`8b386e9e`, 27 Oct 2026; Cloud commit `40469587340`: chain, CI and suite parts 1 and 2 green, part 3 red on one source count in `test/book-read.mjs`, fixed in the next push), his word
+  "I can't type in cash paid 600 in the latest CZ4-MK order": an order of several books paid past what it owes is taken (Salt Admin's Money received split, the excess on the last
+  line, a refund to them), and his second word: the split pays the other books first and salt last. A row's own payment past what it owes passes in `makerAmendmentRoom` while no money
+  and no other move waits on it and it owes something, priced and not a gift (Fable: one finding applied, re-checked clean).
+
 ## Salt Admin Needs you redesign
 - Live as v1221 (`b8916ca2`, 23 Oct 2026; Cloud commit `39821813897`: chain and three suite parts green, live /rev `1e1013dcc935d44b`), from his canvas
   https://claude.ai/artifact/LG8PTbuT2EGpqSqsUkG6ie and `docs/plan-admin-needs-you.html`, with salt-ds 1.13.0 (#25: bar chips two by two under 820px,

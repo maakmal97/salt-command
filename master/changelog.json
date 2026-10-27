@@ -1,5 +1,33 @@
 [
  {
+  "v": "v1279",
+  "d": "27 Oct 2026",
+  "t": "TWO STOCK COUNTS: OIL TO 0 UNIT, SALT TO 0.5 UNIT",
+  "n": [
+   "<b>TWO COUNTS FOLDED.</b> Oil was counted at 0 unit against 20 on the book, and salt at 0.5 unit against 1.5. Both were approved by Counter Admin on 27 Oct 2026. Each count wins over the ledger, so the stated stock is reset and the count dates move to 27 Oct 2026. The oil gap is -20 unit and the salt gap is -1 unit. The dossier gives no reason for either gap.",
+   "<b>INVENTORY.</b> Salt stock now stands at 0.5 unit, with the stock cost at RM56 a unit and the replacement cost at RM58. The oil self-use figure moves from 154 to 174 and the salt self-use figure from 102.84 to 103.84. The ladder floors and asks do not move for either product."
+  ]
+ },
+ {
+  "v": "v1278",
+  "d": "27 Oct 2026",
+  "t": "TWO SAME-DAY FULFILMENTS ON CZ4-MK SETTLE S297 AND S296",
+  "n": [
+   "<b>TWO FULFILMENTS FOLDED.</b> Both are amendments for CZ4-MK on 27 Oct 2026, approved by Counter Admin. The oil order s297 is settled at RM120 with nothing outstanding. The salt order s296 is settled but takes RM480 against RM455 owed, so the fold raises a refund payable for the RM25 over-tender, open until returned.",
+   "<b>INVENTORY.</b> No stock moved: both rows are amendments to existing orders and the dossier lists no moves. Salt stays at 1.5 units and the cost basis is unchanged."
+  ]
+ },
+ {
+  "v": "v1277",
+  "d": "27 Oct 2026",
+  "t": "AN ORDER OF SEVERAL BOOKS PAID PAST WHAT IT OWES; OTHER BOOKS FIRST, SALT LAST",
+  "n": [
+   "<b>A PAYMENT FOR AN ORDER OF SEVERAL BOOKS PAST WHAT IT OWES IS TAKEN (HIS WORD OF 27 OCT 2026).</b> Salt Admin's Money received split puts the excess on the last line, says it as a refund to them, and the fold raises it; refused only with nothing owed.",
+   "The split pays the other books first and salt last (his word), so the excess lands on salt.",
+   "A row's own payment past what it owes passes the same way while no money and no other move waits on it and the row owes something, priced and not a gift (Fable's review)."
+  ]
+ },
+ {
   "v": "v1276",
   "d": "27 Oct 2026",
   "t": "FULFILMENT OF 10 UNITS OF OIL RE-BOOKED ON S297, CASH NIL",
