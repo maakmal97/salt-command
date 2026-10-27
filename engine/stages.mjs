@@ -160,7 +160,7 @@ export function claimOrderFlight(sales, orders, u, by = {}, off = new Set()) {
     if (o.u !== u || !o.ledgerKey || off.has(o.id) || ["cancelled", "declined"].includes(o.status)) continue;
     const lk = ledgerKeyOf(o);   /* V4a: the row's key as the book names it, whether or not the pass has reached the order */
     if (o.status === "ready") ready.push(lk);
-    add(lk, done.has(o.id) ? (+o.paid || 0) - (+((o.queued || {}).paid) || 0) : (+o.paid || 0) + (+o.claimed || 0) - (cash[lk] || 0));
+    add(lk, done.has(o.id) ? (+o.paid || 0) - (+((o.queued || {}).paid) || 0) : (+o.paid || 0) + (+o.credit || 0) + (+o.claimed || 0) - (cash[lk] || 0));   /* 27 Oct 2026: the row's cash holds their credit too (Fable) */
   }
   return { by, ready };
 }
@@ -510,7 +510,7 @@ export function handoverTap(o, body, at, rej) {
   /* A CLOSE UNDER WHAT THEY HAVE PAID leaves money he holds that is theirs: the fold raises a customerRefunds row for the
      difference as its Correction lands (the engine's refundOnOverpay), so the tap files his yes like any close, and the
      answer and the drafter's flag say what opens */
-  const over = closing ? +((+o.paid || 0) - (+entry.total + (+o.delivery || 0))).toFixed(2) : 0;
+  const over = closing ? +((+o.paid || 0) + (+o.credit || 0) - (+entry.total + (+o.delivery || 0))).toFixed(2) : 0;   /* and their credit, paid on the row */
   const shown = { units: qty, how: o.mode === "deliver" ? "delivered" : "collected", close: closing };
   if (over > 0.004) shown.refund = over;
   return Object.assign({ entry, site: { handover }, shown }, over > 0.004 ? { refund: over } : {});
@@ -660,7 +660,7 @@ export function restateTap(o, at, body, ctx) {
   if ((o.payments || []).some((p) => p && p.claim === "waiting")) return { status: 409, error: "a payment they say they sent waits on this order: answer it first, Received or Not found" };
   const owed = +(figs.total + figs.delivery).toFixed(2);
   /* 06 Oct 2026: under what they paid is no longer refused; the fold raises a refund for the difference (refundOnOverpay) */
-  const over = +((+o.paid || 0) - owed).toFixed(2);
+  const over = +((+o.paid || 0) + (+o.credit || 0) - owed).toFixed(2);   /* 27 Oct 2026: their credit is paid on the row too */
   if (!book || book.version == null) return { status: 503, error: "the mirror is being seeded: try again in a minute" };
   /* never under the floor at the size, and the board is never repriced: what changes is this one order's figure */
   if (figs.qty !== was.qty || figs.total !== was.total) {

@@ -50754,6 +50754,7 @@ await (async () => {
           if (sql.includes("FROM state")) return { results: [{ key: "PRICING", doc: JSON.stringify(pricing) },
             { key: "roster", doc: JSON.stringify(["CX1-AB"]) }, { key: "OPEN", doc: '{"byKey":{}}' }] };
           if (sql.includes("FROM entry")) return { results: [] };
+          if (sql.includes("FROM draft")) return { results: [] };   /* 27 Oct 2026: the credit on its way (src/credit.js) */
           throw new Error("unexpected query " + sql);
         }
       };

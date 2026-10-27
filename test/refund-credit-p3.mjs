@@ -11,7 +11,7 @@
  *   6  his preview spends their credit; a second Accept before the fold finds it on its way and spends none; a rejected one releases it;
  *      an order for a friend spends none */
 import { readBook } from "../tools/book.mjs";
-import { pendingEntry, withCredit, rowPaidFor, settledFromRow, advanceOf, cashTap } from "../engine/stages.mjs";
+import { pendingEntry, withCredit, rowPaidFor, settledFromRow, advanceOf, cashTap, claimOrderFlight } from "../engine/stages.mjs";
 import { draftRow } from "../src/drafter.js";
 import PRICING_ENGINE from "../engine/pricing.mjs";
 
@@ -82,6 +82,9 @@ export async function run({ ok }) {
   const st = settledFromRow(done, row);
   ok(st && st.paid === 75, "a settled order is restated at RM 75 paid, its RM 25 of credit kept apart: " + J(st));
 
+  const fl = claimOrderFlight([{ customer: "CY2-NIL", date: "2026-10-28", qty: 1, total: 100, cash: 25, credit: 25 }],
+    [{ id: "o9", u: "1111-2222", status: "ready", ledgerKey: "CY2-NIL|2026-10-28|100", paid: 0, credit: 25, claimed: 20 }], "1111-2222");
+  ok(fl.by["CY2-NIL|2026-10-28|100"] === 20, "the RM 20 they say they sent is in flight, the row's RM 25 being their credit (Fable): " + J(fl.by));
   /* 6: his preview on the desk's own book, a customer with a card and an open RM 25 refund */
   const cardOf = (c, q) => PRICING_ENGINE.cardAt(L.PRICING, c, "salt", q).card;
   const customer = Object.keys(L.PRICING.byProduct.salt.cards || {}).find((c) => cardOf(c, 1) > 0 && !(L.associates || []).includes(c) && !(L.partners || []).includes(c));
@@ -107,12 +110,12 @@ export async function run({ ok }) {
     "his preview spends their RM 25 of credit on the row, the goods at their price: " + J(v1 && (v1.ok ? { credit: v1.credit, row: v1.row } : v1.error)));
   drafts.push({ id: "a1", status: "pending", entry: J({ at: "a1", payload: { mode: "new", direction: "SELL", party: customer, cash: 25, credit: 25 } }) });
   const v2 = pc ? await previewOrder(denv, pc.id, { delivery: 0 }, at) : null;
-  ok(v2 && v2.ok && v2.credit === 0 && v2.row.cash === 0 && !("credit" in v2.row), "a second Accept before the fold finds the first on its way and spends none: " + J(v2 && (v2.ok ? v2.credit : v2.error)));
+  ok(v2 && v2.ok && !v2.credit && v2.row.cash === 0 && !("credit" in v2.row), "a second Accept before the fold finds the first on its way and spends none: " + J(v2 && (v2.ok ? v2.credit : v2.error)));
   drafts[0].status = "rejected";
   const v3 = pc ? await previewOrder(denv, pc.id, { delivery: 0 }, at) : null;
   ok(v3 && v3.ok && v3.credit === 25, "the first rejected, its credit is theirs again: " + J(v3 && (v3.ok ? v3.credit : v3.error)));
   /* an order for a friend: the same order, marked so on the site's record */
   for (const k of skv.m.keys()) { const raw = skv.m.get(k); if (typeof raw === "string" && raw.includes(pc.id)) skv.m.set(k, raw.split('"forFriend":false').join('"forFriend":true')); }
   const v4 = pc ? await previewOrder(denv, pc.id, { delivery: 0 }, at) : null;
-  ok(v4 && v4.ok && v4.credit === 0 && v4.row.cash === 0, "an order for a friend spends none of it: " + J(v4 && (v4.ok ? v4.credit : v4.error)));
+  ok(v4 && v4.ok && !v4.credit && v4.row.cash === 0, "an order for a friend spends none of it: " + J(v4 && (v4.ok ? v4.credit : v4.error)));
 }

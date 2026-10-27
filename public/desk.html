@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="1fe6651b47349a0a";
+var SALT_BUILD_ID="696ca984303a937a";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -7681,6 +7681,7 @@ function setOffCredit(list,row,date){
   const spent=[];
   if(!(left>0.004))return {spent,short:0,replay:done>0.004};
   const day=date||row.date||null;
+  if(!day)return {spent,short:left,replay:false,undated:true};   /* never closed undated: an undated paidOn would leave it spendable (Fable) */
   const open=list.map((r,i)=>({r,i})).filter(x=>x.r&&!x.r.paidOn&&ownsCode(owner,x.r.party)&&+x.r.amount>0.004)
     .sort((a,b)=>{const p=String(a.r.since||''),q=String(b.r.since||'');return p<q?-1:p>q?1:a.i-b.i;});
   for(const {r} of open){

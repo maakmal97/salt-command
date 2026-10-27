@@ -1477,6 +1477,7 @@ function setOffCredit(list,row,date){
   const spent=[];
   if(!(left>0.004))return {spent,short:0,replay:done>0.004};
   const day=date||row.date||null;
+  if(!day)return {spent,short:left,replay:false,undated:true};   /* never closed undated: an undated paidOn would leave it spendable (Fable) */
   const open=list.map((r,i)=>({r,i})).filter(x=>x.r&&!x.r.paidOn&&ownsCode(owner,x.r.party)&&+x.r.amount>0.004)
     .sort((a,b)=>{const p=String(a.r.since||''),q=String(b.r.since||'');return p<q?-1:p>q?1:a.i-b.i;});
   for(const {r} of open){

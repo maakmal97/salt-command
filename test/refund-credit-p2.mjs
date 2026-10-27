@@ -84,6 +84,17 @@ export async function run({ ok }) {
       "the fold books the credited sale and closes s296's refund against it, saying so: " + J({ moves: res.moves, refunds: book.customerRefunds }));
   }
 
+  {
+    const book = { STATED_STOCK: 10, COUNT_ON: {}, COUNTS: [], NOTES: {}, PROD_OPENING: {}, purchases: [], roster: ["CZ4-MK"], QUEUE_COMMITTED: "", sales: [],
+      customerRefunds: [Object.assign(r296(), { paidOn: "2026-10-27" })] };
+    const sale = { id: "q-c2", status: "approved", collection: "sales", row: { customer: "CZ4-MK", date: "2026-10-28", qty: 1, total: 100, cash: 25, credit: 25, deliveredQty: 0 } };
+    const res = ENG.applyEntry(book, { id: "q-c2", append: "sales" }, { nextRid, staged: { approved: [sale] }, notes: { version: "v1", rows: { "q-c2": { note: "x" } } }, moves: [] });
+    const row = book.sales.at(-1);
+    ok(row.cash === 0 && !("credit" in row) && res.moves.some((m) => /CREDIT SHORT on s0*1: RM 25/.test(m)),
+      "credit no open refund covers comes off the row's cash, and the fold says so (Fable): " + J({ row, moves: res.moves }));
+    ok(PE.setOffCredit([r296()], { rid: "s9", customer: "CZ4-MK", credit: 25 }, null).undated === true, "an undated row closes nothing");
+  }
+
   /* 7: the Worker's read, on a stub D1 and KV */
   {
     const e = (at, credit, party) => ({ at, status: "Pending", payload: { mode: "new", direction: "SELL", party: party || "CZ4-MK", credit, cash: credit } });

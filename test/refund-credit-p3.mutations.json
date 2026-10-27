@@ -16,6 +16,7 @@
 {"name":"his preview spends no credit","file":"src/orders.js","find":"    withCredit(entry, credit);\n    credit = +(+entry.payload.credit || 0);","replace":"    credit = 0;"},
 {"name":"credit on its way is spent again","file":"src/orders.js","find":"    try { credit = await creditFor(env, await withRefunds(env.SALT_LEDGER, book), code); }","replace":"    try { credit = await creditFor(env, await withRefunds(env.SALT_LEDGER, book), code, []); }"},
 {"name":"an order for a friend spends credit","file":"src/orders.js","find":"  if (!o.forFriend) {\n    try { credit","replace":"  if (true) {\n    try { credit"},
-{"name":"the preview does not say the credit","file":"src/orders.js","find":"told: toldOf(o), pricing, credit, prepay:","replace":"told: toldOf(o), pricing, prepay:"},
+{"name":"the preview does not say the credit","file":"src/orders.js","find":"    credit > 0.004 ? { credit } : {},   /* 27 Oct 2026","replace":"    {},   /* 27 Oct 2026"},
 {"name":"another order owes its credit","file":"engine/stages.mjs","find":"(+x.delivery || 0) - (+x.paid || 0) - (+x.credit || 0)), 0);","replace":"(+x.delivery || 0) - (+x.paid || 0)), 0);"},
-{"name":"cash at the counter ignores the credit","file":"engine/stages.mjs","find":" - (+o.paid || 0) - (+o.credit || 0) - (+o.claimed || 0)).toFixed(2);","replace":" - (+o.paid || 0) - (+o.claimed || 0)).toFixed(2);"}]
+{"name":"cash at the counter ignores the credit","file":"engine/stages.mjs","find":" - (+o.paid || 0) - (+o.credit || 0) - (+o.claimed || 0)).toFixed(2);","replace":" - (+o.paid || 0) - (+o.claimed || 0)).toFixed(2);"},
+{"name":"money in flight ignores the credit","file":"engine/stages.mjs","find":"(+o.paid || 0) + (+o.credit || 0) + (+o.claimed || 0) - (cash[lk] || 0));","replace":"(+o.paid || 0) + (+o.claimed || 0) - (cash[lk] || 0));"}]

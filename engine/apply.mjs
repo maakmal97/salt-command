@@ -1041,7 +1041,14 @@ function bookItem(book, it, c) {
         book.customerRefunds = book.customerRefunds || [];
         const so = E.setOffCredit(book.customerRefunds, row, row.date || null);
         if (so) for (const s of so.spent) moves.push(`credit set off: ${row.customer} RM ${s.amount} of the refund${s.rid ? " on " + s.rid : ""}, on ${row.rid}${s.whole ? "" : ", the rest left open"}`);
-        if (so && so.short) moves.push(`CREDIT SHORT on ${row.rid}: RM ${so.short} of its credit found no open refund of ${row.customer}; the row carries it as paid, so check it by hand`);
+        /* 27 Oct 2026 (Fable): credit no open refund covers (a refund paid out by hand between the Accept and the fold) was never theirs to spend,
+           so it comes off the row's cash and credit, and the fold says so */
+        if (so && so.short) {
+          row.credit = +(+row.credit - so.short).toFixed(2); row.cash = +Math.max(0, (+row.cash || 0) - so.short).toFixed(2);
+          if (!(row.credit > 0.004)) delete row.credit;
+          if (row.paidOn && row.cash < (+row.total || 0) + (+row.delivery || 0) - 0.005) delete row.paidOn;
+          moves.push(`CREDIT SHORT on ${row.rid}: RM ${so.short} of its credit found no open refund of ${row.customer}, so it comes off the row's cash; the order owes it`);
+        }
       }
     } else if (it.count) {
       const c = it.count;

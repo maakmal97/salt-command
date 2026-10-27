@@ -341,10 +341,11 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
     quote: goods, asked: +(+o.total).toFixed(2), set: price != null, delivery: agreed.delivery, cost,
     margin: cost && goods > 0 ? { rm: +(goods - cost.total).toFixed(2), pct: +((goods - cost.total) / goods * 100).toFixed(1) } : null,
     floor: fl ? { rm: fl.floor, at: fl.at, exact: fl.exact } : null,
-    usual: usualFor(book, d.row), told: toldOf(o), pricing, credit, prepay: adv.prepay, owedWith: adv.owedWith, ceiling: adv.ceiling, late: adv.late || null,
+    usual: usualFor(book, d.row), told: toldOf(o), pricing, prepay: adv.prepay, owedWith: adv.owedWith, ceiling: adv.ceiling, late: adv.late || null,
     reward: product === "salt" ? rewardReading(book, code, { qty, goods, unitCost: priced0.cost }) : null, rwd: rc.cross ? "cross" : null,
     loyal: product === "salt" ? loyalReading(book, code, { qty, goods, card: card0, today: today0 }) : null,
     hash: await stageDigest("ack", entry, d, pricing) },
+    credit > 0.004 ? { credit } : {},   /* 27 Oct 2026: their credit, named only when some is spent */
     cardAt(book.pricing, code, product, qty));
 }
 /** POST /orders/<id>/preview {delivery}: the pending row an Accept would make now. Stores nothing. */
