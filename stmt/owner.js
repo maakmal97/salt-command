@@ -3331,7 +3331,7 @@ export const OWNER_JS = `
   function makerMove(order,body,message){
     var key=order.id+JSON.stringify(body), rid=makerRids[key]||(makerRids[key]=mintRid());
     return makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/'+(body.claim?'notfound':'move'),
-      Object.assign({rid:rid},body),message,order.id).then(function(done){ if(done) delete makerRids[key]; });
+      Object.assign({rid:rid},body),message,order.id).then(function(done){ if(done) delete makerRids[key]; return done; });   /* 28 Oct 2026: says how it went, as makerTap does */
   }
   /* a handover, a close, cash, a Received or a move offered again, under one request id until it lands, as a move is */
   function makerTap(order,action,body,message){
@@ -4483,7 +4483,8 @@ export const OWNER_JS = `
       way.textContent=ordWayWord(o,st); un.textContent=units(o.qty);
       why=o.test?'practice':makerCashHeld[e.id]?'cash held':held?'their yes':orderAsked(o)?'asked':ordPays(o).length?'says sent':o.again&&o.again.length?'send again':o.againOf?orderRef(o.againOf)+' again':'';
       sev=o.test?'watch':e.waits?'now':held?'soon':'watch';
-      main=ordMove(o);
+      /* 28 Oct 2026: cash held for the order shuts every control of its card, so the row offers no move beside it either */
+      main=makerCashHeld[e.id]||makerCashStorageError?'':ordMove(o);
       fig.textContent=rmShort(Number(o.total||0)+Number(o.delivery||0));
     }else if(e.row){
       /* a row of the book: the buyer's code, its book and units, what it owes, the Desk's figure */
@@ -4536,14 +4537,17 @@ export const OWNER_JS = `
   var ordAsk={}, ordBusy={}, ordNote={};
   function ordRowRedraw(e){
     var old=document.querySelector('#makerOrderList .ordcard > [data-order="'+e.id+'"]'); old=old&&old.parentNode;
-    if(old&&old.parentNode){ var n=orderRow(e); old.parentNode.replaceChild(n,old); sweep(); var f=n.querySelector('[data-act="order.move-yes"]:not([disabled])'); if(f&&f.focus) f.focus(); }
+    if(old&&old.parentNode){ var had=old.contains(document.activeElement), n=orderRow(e); old.parentNode.replaceChild(n,old); sweep();
+      /* 28 Oct 2026: Yes while it asks, else the row's own move or the row, so focus is never dropped to the page after Not now or an answer */
+      var f=n.querySelector('[data-act="order.move-yes"]:not([disabled])')||(had?n.querySelector('[data-act="order.move"]:not([hidden])')||n.querySelector('.ordrow'):null); if(f&&f.focus) f.focus(); }
   }
   /* what each move asks, in the words the order card and Needs you use */
   function ordAskWords(o,main){
     var who=codeByUser(o.u), pp=ordPays(o)[0];
+    /* 28 Oct 2026: a part handed over asks for what is left */
     if(main==='Withdraw'){ var f=(o.price&&o.price.offer)||{}; return 'Take back your offer of '+rm((+f.total||0)+(+f.delivery||0))+' to '+who+'?'; }
     if(main==='Ready') return 'Mark '+who+"'s order ready to deliver?";
-    if(main==='Handed') return 'Hand over '+units(o.qty)+' to '+who+'?';
+    if(main==='Handed'){ var left=+((+o.qty||0)-(+o.moved||0)).toFixed(3); return (left<(+o.qty||0)-0.0004?'Hand over the last '+units(left):'Hand over '+units(o.qty))+' to '+who+'?'; }
     if(main==='Received') return 'Confirm '+rm(pp?pp.amount:0)+' received from '+who+'?';
     return '';
   }
@@ -4552,11 +4556,14 @@ export const OWNER_JS = `
     if(!o){ openOrder(e.id); return; }
     if(main==='Message'){ ordFolds[o.id+'|answer']=true; openOrder(e.id); return; }
     /* Agree reads its figures on the card; a collection is made ready at one of his points, chosen on the card's Sheet; two payments are read on the card */
-    if(main==='Agree'||(main==='Ready'&&o.mode!=='deliver')||(main==='Received'&&ordPays(o).length!==1)){ openOrder(e.id); return; }
+    /* 28 Oct 2026 (Fable): a claim past what is owed is Already recorded, which books nothing; it is answered on the card, its Sheet saying so beside Not found */
+    if(main==='Agree'||(main==='Ready'&&o.mode!=='deliver')||(main==='Received'&&(ordPays(o).length!==1||payOnBook(o,ordPays(o)[0])))){ openOrder(e.id); return; }
     ordAsk[e.id]=main; ordRowRedraw(e);
   }
   function ordMoveSend(e,main){
     var o=e.order; if(!o||!main||ordBusy[e.id]) return;
+    /* Fable's re-check, 28 Oct 2026: a read since the ask may have left the claim past what is owed; that is the card's to answer, never the row's */
+    if(main==='Received'&&(ordPays(o).length!==1||payOnBook(o,ordPays(o)[0]))){ delete ordAsk[e.id]; openOrder(e.id); return; }
     delete ordAsk[e.id]; ordBusy[e.id]=main; ordRowRedraw(e);
     var done=main==='Withdraw'?makerTap(o,'withdraw',{},'Offer withdrawn; the order stands as they placed it.')
       :main==='Ready'?makerMove(o,{status:'ready',mode:'deliver'},'Order marked ready to deliver.')
@@ -4564,7 +4571,8 @@ export const OWNER_JS = `
       :main==='Received'?orderReceived(o,ordPays(o)[0]):Promise.resolve(false);
     Promise.resolve(done).then(function(ok){
       delete ordBusy[e.id];
-      ordNote[e.id]=ok===false?(makerSaid[o.id]||'Not sent. Try again.'):ok===undefined&&main!=='Ready'?'Busy, try again.':({Withdraw:'Offer withdrawn.',Ready:'Marked ready to deliver.',Handed:'Handover sent to the Desk.',Received:'Sent to the Desk.'})[main];
+      /* 28 Oct 2026: Ready's answer is read as every move's: a refusal or a busy page was said as "Marked ready" */
+      ordNote[e.id]=ok===false?(makerSaid[o.id]||'Not sent. Try again.'):ok===undefined?'Busy, try again.':({Withdraw:'Offer withdrawn.',Ready:'Marked ready to deliver.',Handed:'Handover sent to the Desk.',Received:'Sent to the Desk.'})[main];
       var now=ordEntries[e.id]; if(now&&document.querySelector('#makerOrderList [data-order="'+e.id+'"]')) ordRowRedraw(now);
     });
   }
@@ -4579,7 +4587,7 @@ export const OWNER_JS = `
     var owed=function(e){ var o=e.order, r=e.row, g=e.trip||e.day; return o?Math.max(0,ordDue(o)):r?+r.owed||0:g?+g.owed||0:0; };
     if(st==='placed'){
       var held=list.filter(function(e){ return e.order&&makerAccHeld(e.order)&&e.order.price.state==='offered'; }), agree=list.filter(function(e){ return held.indexOf(e)<0; });
-      return [agree.length?rmShort(sum(agree,function(e){ return e.order?+e.order.total||0:0; }))+' waits on your Agree, across '+plural(agree.length,'order')+'.':'',
+      return [agree.length?rmShort(sum(agree,due))+' waits on your Agree, across '+plural(agree.length,'order')+'.':'',
         held.length?rmShort(sum(held,function(e){ var f=e.order.price.offer||{}; return (+f.total||0)+(+f.delivery||0); }))+' is offered and waits on their yes.':''].filter(Boolean).join(' ');
     }
     if(st==='done') return rmShort(sum(list,due))+' settled on '+plural(n,'done order')+' shown, the newest first.';
@@ -5123,6 +5131,8 @@ export const OWNER_JS = `
       r.setAttribute('data-pay',''); L.appendChild(r);
     });
     else if(agreed||paid>0) L.appendChild(ordLine('Paid',rm(paid)));
+    /* 28 Oct 2026: their credit his Accept spent is paid too, on its own line, so Paid and Credit add up to what is settled */
+    if(+order.credit>0.004){ var cr=ordLine('Credit',rm(+order.credit),'Their refunds, spent at your Agree'); cr.setAttribute('data-credit',''); L.appendChild(cr); }
     if(+order.claimed>0) L.appendChild(ordLine('Says sent',rm(order.claimed),'Waiting for your Received'));
     if(agreed&&owed>0.004){ var due=ordLine('Owed',rm(owed),'','odue'); due.classList.add('salt-ledger__row--due'); L.appendChild(due); }
     else if(agreed||order.status==='done') L.appendChild(ordLine('Settled',rm(0),'','osettled'));
@@ -5131,8 +5141,6 @@ export const OWNER_JS = `
     rewardCard(card,order);   /* 20 Oct 2026: the associate reward, under the Bill */
     customerCard(card,order);   /* 21 Oct 2026: and This customer, the loyalty unit and the suggested %, for a customer */
     /* 17 Oct 2026: an ended order's last move is under Approve until he decides it, and the book keeps its row live until then */
-    /* 28 Oct 2026: their credit his Accept spent is paid too, on its own line, so Paid and Credit add up to what is settled */
-    if(+order.credit>0.004){ var cr=ordLine('Credit',rm(+order.credit),'Their refunds, spent at your Agree'); cr.setAttribute('data-credit',''); L.appendChild(cr); }
     var waitN=((makerData&&makerData.drafts)||[]).filter(function(d){ return d.status==='pending'&&d.entry&&d.entry.orderId===order.id; }).length;
     if(waitN&&!ordOpen(order)) card.appendChild(el('p','salt-insight',(waitN===1?'Its move waits':'Its '+waitN+' moves wait')+' under Approve: the book keeps the row as it was until you approve.'));
     /* 17 Oct 2026: a refund the book still owes them on this order's row */
