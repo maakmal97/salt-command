@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1279",
+  "d": "27 Oct 2026",
+  "t": "TWO STOCK COUNTS: OIL TO 0 UNIT, SALT TO 0.5 UNIT",
+  "n": [
+   "<b>TWO COUNTS FOLDED.</b> Oil was counted at 0 unit against 20 on the book, and salt at 0.5 unit against 1.5. Both were approved by Counter Admin on 27 Oct 2026. Each count wins over the ledger, so the stated stock is reset and the count dates move to 27 Oct 2026. The oil gap is -20 unit and the salt gap is -1 unit. The dossier gives no reason for either gap.",
+   "<b>INVENTORY.</b> Salt stock now stands at 0.5 unit, with the stock cost at RM56 a unit and the replacement cost at RM58. The oil self-use figure moves from 154 to 174 and the salt self-use figure from 102.84 to 103.84. The ladder floors and asks do not move for either product."
+  ]
+ },
+ {
   "v": "v1278",
   "d": "27 Oct 2026",
   "t": "TWO SAME-DAY FULFILMENTS ON CZ4-MK SETTLE S297 AND S296",

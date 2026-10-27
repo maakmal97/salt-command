@@ -69,7 +69,7 @@
     "oil": {
       "qty": 5,
       "costPerKg": 7.666666666666667,
-      "stated": 20
+      "stated": 0
     },
     "candy": {
       "qty": 0,
@@ -87,10 +87,10 @@
       "stated": null
     }
   },
-  "STATED_STOCK": 1.5,
+  "STATED_STOCK": 0.5,
   "COUNT_ON": {
-    "salt": "2026-10-24",
-    "oil": "2026-10-20",
+    "salt": "2026-10-27",
+    "oil": "2026-10-27",
     "candy": "2026-10-20",
     "rice": "2026-10-20",
     "spare": null
@@ -131,7 +131,9 @@
     {"product":"salt","date":"2026-10-23","qty":3.45,"was":5,"drift":-1.55},
     {"product":"salt","date":"2026-10-23","qty":3.35,"was":5,"drift":-1.65},
     {"product":"salt","date":"2026-10-23","qty":1,"was":0.85,"drift":0.15},
-    {"product":"salt","date":"2026-10-24","qty":25,"was":25,"drift":0}
+    {"product":"salt","date":"2026-10-24","qty":25,"was":25,"drift":0},
+    {"product":"oil","date":"2026-10-27","qty":0,"was":20,"drift":-20},
+    {"product":"salt","date":"2026-10-27","qty":0.5,"was":1.5,"drift":-1}
   ],
   "purchases": [
     {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -1000,7 +1002,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-10-27T08:01:09.105Z",
+  "QUEUE_COMMITTED": "2026-10-27T08:02:33.745Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -1058,6 +1060,7 @@
       "RETIRED AT v549 on 2026-09-09, his instruction. The key held one hand-typed lot: 50 unit by 2026-08-28, stated on the 24th. He read it on 9 September with the date twelve days gone and four lots landed since (25 unit on 26 Aug, 25 on 31 Aug, 25 on 03 Sep and 50 on 08 Sep), and said he generally has no information on when he purchases. The Sourcing section is now about the CURRENT lot, and the cadence is measured off the book rather than typed. One standing fact from the retired basis is kept here because it is not a plan: the purchase ceiling of RM4,500 resets on the 28th of each month and anything beyond it comes out of rolling cash. The rest was the 24 Aug reasoning, that the 100 unit tier was the recommendation and he took the 50, at a landed RM45.20 a unit against RM43.60."
     ],
     "STATED_STOCK": [
+      "COUNTED AT v1279 on 2026-10-27: the salt inventory held 0.5 against 1.5 on the roll, a difference of -1. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-10-27. <b>COUNT OF SALT ON 27 OCT 2026: 0.5 UNIT AGAINST 1.5 ON THE BOOK.</b> Counter Admin approved it. Nothing was sold or bought, so there is no party and no rate to compare. The gap is -1 unit, and the last count was on 24 Oct 2026. The drafter flagged that the gap books as shrinkage across every unit sold, because a count always wins. The figures answer the flag as arithmetic only: the stated salt stock becomes 0.5 and the count date moves to 27 Oct 2026. The dossier gives no reason for the gap. The floors hold at floor1 RM60, floor2 RM120, floor125 RM725 and ask1 RM120. The self-use figure moves from 102.84 to 103.84. The stock cost stays at RM56 a unit. The gap of 1 unit remains unexplained.",
       "ROLLED AT v1274: 5 unit to CZ4-MK on 2026-10-27, so 6.5 less 5 is 1.5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Salt falls by 5 units on this handover, leaving 6.5 units, well under the reorder point of 33.25.",
       "ROLLED AT v1247: 3 unit to CK4-SEN on 2026-10-25, so 9.5 less 3 is 6.5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. 3 units of salt went out to CK4-SEN on collection, against the count of 24 Oct. No lot landed, so the cost basis stays.",
       "ROLLED AT v1245: 0.1 unit from CM4-TO on 2026-10-25, so 9.4 plus 0.1 is 9.5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 0.1 unit returned by CM4-TO brings salt stock back up from 9.4 to 9.5 units.",
@@ -1218,6 +1221,7 @@
       "paidSplit: cash landed either side of the 28 Jul count; RM200 inside it, the rest after. Without the split the walk double-counted the RM200."
     ],
     "PROD_OPENING": [
+      "COUNTED AT v1279 on 2026-10-27: the oil inventory held 0 against 20 on the roll, a difference of -20. A COUNT AND NOT A ROLL, so COUNT_ON.oil moves to 2026-10-27. <b>COUNT OF OIL ON 27 OCT 2026: 0 UNIT AGAINST 20 ON THE BOOK.</b> Counter Admin approved it. Nothing was sold or bought, so there is no party, no goods total and no rate to set against the ladder. The gap is -20 unit, and the last count was on 20 Oct 2026. The drafter flagged that the gap books as shrinkage across every unit sold, because a count always wins. The figures answer the flag as arithmetic only: the stated oil stock becomes 0 and the count date moves to 27 Oct 2026. The dossier gives no reason for the gap, so none is offered. The floors stay at floor1 10, floor2 20, floor125 100 and ask1 10. The self-use figure moves from 154 to 174. The row carries no cost of its own. The gap of 20 unit remains unexplained.",
       "ROLLED AT v1276 (oil): 10 unit to CZ4-MK on 2026-10-27, so 30 less 10 is 20. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "ROLLED AT v1275 (oil): 10 unit from CZ4-MK on 2026-10-27, so 20 plus 10 is 30. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "ROLLED AT v1271 (oil): 10 unit to CZ4-MK on 2026-10-27, so 30 less 10 is 20. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
