@@ -208,6 +208,14 @@
 - v1263 (`35515bb7`, 26 Oct 2026; chain and three suite parts green, live build `c7dfe5c7a7aea82d`), his word: New point's Place lists OpenStreetMap places as he types
   (Photon, his choice) and reads Google, Waze and Apple links, a short one opened on the Worker (Apple his yes). Section "Salt Admin's place for a point". Not yet opened by him.
 
+## A refund becomes their credit
+- Live as v1284 (`37feb80b`, 27 Oct 2026; Cloud commit `40483983570`: chain and three suite parts green, CI `40483983661` green, live build `9504a9b4679327b1`), from
+  `docs/plan-refund-credit.html` draft 3 (his answers A to F and his yes of 27 Oct 2026), P1 to P6: `bookCash` (s296 reads RM 455 on salt; cash flow keeps the till),
+  `creditOf` and `setOffCredit` (engine), `src/credit.js` (credit on its way), the Accept booking credit as cash with `credit` on the row and the Counter order,
+  the Counter's sealed `credit`/`creditRows` (FIX_VERSION 15), Salt Admin's Less RM x credit. Fable reviewed P2 and P3 (two medium, three low applied) and re-checked
+  (one more applied: a credit the fold cut short is lowered on the order). CZ4-MK holds RM 25 of credit, spent at his next Accept for them. Not yet opened by him.
+  Known: S1b (`test/engine-stages.mjs`) is red locally on Windows on master too (227 of 392, from v1272's cash over), green in CI.
+
 ## Cash past what an order owes
 - Live as v1272 (`b266f659`, 27 Oct 2026; CI `40465237223` and Cloud commit `40465237241`: chain and three suite parts green, build `9eaf7b35dbf05643`), his word: the order card's Cash received takes more than goods plus delivery (his choice of that measure and
   of this road alone); the excess is the refund the fold raises (`refundOnOverpay`, unchanged); refused beside a claim, owing nothing, money on its
