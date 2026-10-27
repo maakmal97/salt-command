@@ -26,7 +26,7 @@ const ROUTES = { review: "/all/maker/review", claims: "/all/maker/claims", threa
 /* Record's forms by name, the part each is in, in the order the page draws them */
 const MENU = {
   /* 27 Oct 2026: a menu row's name, three words at most; the form keeps its own heading */
-  entry: ["Sale or purchase", "Repayment", "Stock count", "Gift", "Loan", "Rewards", "Offsets", "Correct a row", "Reopen an order"],
+  entry: ["Sale or purchase", "Repayment", "Stock count", "Gift", "Loan", "Rewards", "Offsets"],   /* 27 Oct 2026, his word: Correct a row and Reopen are no rows of the menu; the sale form reaches them */
   customers: ["New customer", "Make an associate", "Name or place", "Map point"],
   pricing: ["Printed sizes", "Desk reminders"]   /* 26 Oct 2026: Their % and Partner moved to the account card; his Ask G orders the rest (25 Oct 2026) */
 };
@@ -493,12 +493,11 @@ export async function run({ ok, pageWork }) {
     /* 27 Oct 2026: each group is a settings head over its own settings list, the rows inside it */
     const groups = lst ? [...lst.children].flatMap((n) => n.classList.contains("salt-settings__head") ? ["# " + n.textContent]
       : n.classList.contains("salt-settings") ? [...n.children].map((r) => r.querySelector(".salt-settings__label").textContent + "=" + r.getAttribute("data-key")) : ["? " + n.className]) : [];
-    ok(same(groups, ["# Everyday", "Sale or purchase=sale-or-purchase", "Repayment=repayment", "Stock count=stock-count", "# Now and then", "Gift=gift", "Loan=loan", "Rewards=rewards", "Offsets=offsets",
-      "# Fixing", "Correct a row=correct-a-row", "Reopen an order=reopen-a-cancelled-order"]),
-    "Entry's menu is Everyday, Now and then and Fixing, each a settings head over its own list of forms in that order, every row keeping its slug: " + JSON.stringify(groups));
+    ok(same(groups, ["# Everyday", "Sale or purchase=sale-or-purchase", "Repayment=repayment", "Stock count=stock-count", "# Now and then", "Gift=gift", "Loan=loan", "Rewards=rewards", "Offsets=offsets"]),   /* 27 Oct 2026, his word: Fixing is gone, and Correct a row and Reopen are no rows of the menu (the sale form reaches them) */
+    "Entry's menu is Everyday and Now and then, each a settings head over its own list of forms in that order, every row keeping its slug: " + JSON.stringify(groups));
     const rows = [...d.querySelectorAll('#makerMenu [data-act="record.form"]')], kept = d.querySelector("#makerInputs section[data-formmenu]"), menuEl = d.getElementById("makerMenu");
-    ok(rows.length === 15 && rows.every((r) => r.tagName === "BUTTON" && r.classList.contains("salt-settings__row--action") && r.parentElement.classList.contains("salt-settings") && /^[a-z0-9-]+$/.test(r.getAttribute("data-key")) && !/Open/.test(r.textContent))
-      && new Set(rows.map((r) => r.getAttribute("data-key"))).size === 15 && !!kept && !!(kept.compareDocumentPosition(menuEl) & 4),
+    ok(rows.length === 13 && rows.every((r) => r.tagName === "BUTTON" && r.classList.contains("salt-settings__row--action") && r.parentElement.classList.contains("salt-settings") && /^[a-z0-9-]+$/.test(r.getAttribute("data-key")) && !/Open/.test(r.textContent))
+      && new Set(rows.map((r) => r.getAttribute("data-key"))).size === 13 && !!kept && !!(kept.compareDocumentPosition(menuEl) & 4),
     "a row is the system's settings row in a settings list (27 Oct 2026; it was the Inbox row), named by its act and a key of its own, below the retained input: " + rows.map((r) => r.getAttribute("data-key")).join());
     /* 14 Oct 2026 (Record): the title and its lead stand once; Offsets are two lists, never one, each offer one row with one Add */
     ok(d.querySelectorAll("#oRecord h1").length === 1 && (d.getElementById("oRecord").textContent.match(/Each waits for your approval under Orders > Approve/g) || []).length === 1
@@ -532,7 +531,7 @@ export async function run({ ok, pageWork }) {
         if (!(p.formsOpen().length === 0 && same(p.menu(), MENU[part]) && !gridOpen() && !row.hasAttribute("aria-current") && !shown(back) && d.activeElement === row)) bad.push(name + " (back)");
       }
     }
-    ok(bad.length === 0, "each of the 15 forms opens alone from its row and no other form shows, its row marked and the grid open, a way back named for the part, nothing read or sent, and Back returns him to the row: " + JSON.stringify(bad));
+    ok(bad.length === 0, "each of the 13 forms on a menu opens alone from its row and no other form shows, its row marked and the grid open, a way back named for the part, nothing read or sent, and Back returns him to the row: " + JSON.stringify(bad));
     await p.tap("part.record.entry");
     await p.tap("record.form", "sale-or-purchase");
     const units = byAct(d, "record.trade.units"), form = units.closest("section");

@@ -241,15 +241,18 @@ export async function run({ ok, pageWork }) {
     /* plan 1: Handover, on a row with no site order, opens Record's Correct a row on that row, as goods or cash moved */
     p.posts.length = 0;
     byAct(p.card("g:row-1"), "need.owed-hand", "row-1").click(); await p.work.quiet();
-    const form = d.querySelector('#makerInputs [data-form="correct-a-row"]'), pick = form && form.querySelector('[data-act="record.amend.row"]'), kind = form && form.querySelector("input:checked[value=Fulfilment]");
-    const pickSend = form && form.querySelector('[data-act="record.amend.send"]');
-    ok(p.where() === "record/entry" && form && !form.hidden && pick && pick.value === "row-1" && !!kind && pickSend && pickSend.disabled === false,
-      "Handover on a row with no site order opens Correct a row on that row, as goods or cash moved, its Send ready: " + JSON.stringify([p.where(), form && form.hidden, pick && pick.value, !!kind, pickSend && pickSend.disabled]));
-    ok(p.posts.length === 0, "and it books nothing: " + JSON.stringify(p.posts.map((x) => x.route)));
+    /* 27 Oct 2026: a row is changed in the sale form, so an owed card opens it, filled with that row, its pill Record the change */
+    const form = d.querySelector('#makerInputs [data-form="sale-or-purchase"]'), pick = form && form.querySelector('[data-act="record.trade.edit"]');
+    const pickSend = form && form.querySelector('[data-act="record.trade.send"]');
+    ok(p.where() === "record/entry" && form && !form.hidden && pick && pick.value === "row-1" && pickSend && pickSend.textContent === "Record the change" && pickSend.disabled === false,
+      "Handover on a row with no site order opens the sale form on that row, its pill Record the change: " + JSON.stringify([p.where(), form && form.hidden, pick && pick.value, pickSend && pickSend.textContent]));
+    /* 27 Oct 2026: the sale form reads their price on opening (a read by POST), which books nothing */
+    const booked = () => p.posts.filter((x) => !/\/trade-reading$/.test(x.route));
+    ok(booked().length === 0, "and it books nothing: " + JSON.stringify(p.posts.map((x) => x.route)));
     /* the card's one way on money owed is Message: it opens their thread and sends nothing */
     byAct(d, "nav.needs").click(); await p.work.quiet();
     byAct(p.card("$:CX1-ZED"), "need.owed-message", "CX1-ZED").click(); await p.work.quiet();
-    ok(p.where() === "customers/messages" && shown(d.getElementById("makerChatOpen")) && p.posts.length === 0, "and Message on money owed opens their thread, sending nothing: " + p.where());
+    ok(p.where() === "customers/messages" && shown(d.getElementById("makerChatOpen")) && booked().length === 0, "and Message on money owed opens their thread, sending nothing: " + p.where());
 
     /* 6. THE ONE FILLED PILL */
     byAct(d, "nav.needs").click(); await p.work.quiet();

@@ -128,7 +128,8 @@ export async function run({ ok, pageWork }) {
       const box = page.section.querySelector(".maker-reading"), text = () => box.textContent;
       /* 25 Oct 2026 (Record redesign P4): the reading is a ledger, a row a fact, its label, its figure and what stands behind it */
       const row = (label) => { const r = box.querySelector('[data-reading="' + label + '"]'); return r ? [r.querySelector(".salt-ledger__value").textContent, (r.querySelector(".salt-ledger__flag") || { textContent: "" }).textContent] : null; };
-      page.change("Units", "3"); page.change("Price (goods)", "100"); await page.work.quiet();
+      page.change("Units", "3"); await page.work.quiet();   /* 27 Oct 2026: their price fills on the units; the price he then types is his */
+      page.change("Price", "100"); await page.work.quiet();
       const warn = [...box.querySelectorAll("p.msg.bad")].map((p) => p.textContent).join("|"), margin = row("Margin over cost") || [""];
       ok(!box.hidden && (row("Cost a unit") || [])[0] === "RM 42.00" && /^(-RM 26[.]00|RM -26[.]00) · -26%$/.test(margin[0]) && box.querySelector('[data-reading="Margin over cost"] .reading-bad')
         && (row("Floor for 3 units") || [])[0] === "RM 130.00" && /RM 30 under the Floor of RM 130/.test(warn)
@@ -139,11 +140,11 @@ export async function run({ ok, pageWork }) {
         "trade reading page: the form sends its date, so a date before the lot does not read that lot " + text());
       page.change("Date", ""); await page.work.quiet();
       ok(/latest purchase/.test(text()), "trade reading page: clearing the date reads the latest lot again " + text());
-      page.change("Price (goods)", "300"); await page.work.quiet();
+      page.change("Price", "300"); await page.work.quiet();
       ok(!box.querySelector("p.msg.bad") && /Goods RM 300[.]00/.test(text()) && !box.querySelector(".reading-bad"),
         "trade reading page: a price at or over the floor draws no warning " + text());
       page.change("Type", "purchase"); await page.work.quiet();
-      page.change("Units", "100"); page.change("Price (goods)", "4400"); page.change("Freight", "200"); await page.work.quiet();
+      page.change("Units", "100"); page.change("Price", "4400"); page.change("Freight", "200"); await page.work.quiet();
       ok(!/margin/i.test(text()) && !/Floor/.test(text()) && JSON.stringify(row("This buy, a unit")) === JSON.stringify(["RM 46.00", "RM 4.00 above the current cost."]),
         "trade reading page: a purchase shows its cost a unit against the current cost and no margin " + text());
     } finally { page.dom.window.close(); }

@@ -40,11 +40,11 @@ export async function run({ ok, pageWork }) {
     const row = (slug) => d.querySelector('#makerMenu [data-act="record.form"][data-key="' + slug + '"]');
     const read = (slug) => { const r = row(slug); return r ? [t(r.querySelector(".salt-settings__label")), t(r.querySelector(".salt-settings__value.mfig")), !!r.querySelector(".salt-settings__mark svg.mgo")] : null; };
     const want = { "sale-or-purchase": ["Sale or purchase", "", true], "repayment": ["Repayment", "2", true], "rewards": ["Rewards", "1", true], "offsets": ["Offsets", "1", true],
-      "reopen-a-cancelled-order": ["Reopen an order", "1", true], "gift": ["Gift", "", true], "change-a-name-or-place": ["Name or place", "", true], "place-on-the-map": ["Map point", "", true] };
+      "reopen-a-cancelled-order": null, "correct-a-row": null, "gift": ["Gift", "", true],   /* 27 Oct 2026, his word: Fixing's two forms are no rows of the menu */ "change-a-name-or-place": ["Name or place", "", true], "place-on-the-map": ["Map point", "", true] };
     const got = Object.keys(want).map((k) => [k, read(k)]);
-    ok(got.every(([k, v]) => J(v) === J(want[k])), "a form's row is its name, a count where its read holds one (2 loans, 1 reward to give, 1 offset, 1 order to reopen) and the chevron: " + J(got));
+    ok(got.every(([k, v]) => J(v) === J(want[k])), "a form's row is its name, a count where its read holds one (2 loans, 1 reward to give, 1 offset) and the chevron, and Correct a row and Reopen have none: " + J(got));
     const rows = [...d.querySelectorAll('#makerMenu [data-act="record.form"]')];
-    ok(rows.length >= 15 && rows.every((r) => r.classList.contains("salt-settings__row") && r.classList.contains("salt-settings__row--action") && r.parentElement.classList.contains("salt-settings")
+    ok(rows.length >= 13 && rows.every((r) => r.classList.contains("salt-settings__row") && r.classList.contains("salt-settings__row--action") && r.parentElement.classList.contains("salt-settings")
       && t(r.querySelector(".salt-settings__label")).split(" ").length <= 3 && !r.querySelector(".salt-inbox-row__what")),
       "every form's row, on all three parts, is a settings row in a settings list, named in three words at most, with no second line: " + rows.map((r) => t(r.querySelector(".salt-settings__label"))).join(", "));
     const form = (slug) => d.querySelector('#makerInputs section.maker-input[data-form="' + slug + '"]');
@@ -57,7 +57,7 @@ export async function run({ ok, pageWork }) {
     const css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
     const entry = d.querySelector('#makerMenu [data-in="record.entry"]'), kids = entry ? [...entry.children].map((n) => n.classList.contains("salt-settings__head") ? "head" : n.classList.contains("salt-settings") ? "list" : n.className) : [];
     ok(/\.adm \.rparts>\.aparts\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/.test(css) && !/\.formrow[^a-z-]/.test(css) && !/\.formlist[^a-z-]/.test(css)
-      && J(kids) === J(["head", "list", "head", "list", "head", "list"]) && entry.querySelector(".salt-settings__head").tagName === "H2",
+      && J(kids) === J(["head", "list", "head", "list"])   /* 27 Oct 2026: two groups, Fixing gone */ && entry.querySelector(".salt-settings__head").tagName === "H2",
       "Entry is three settings heads, each over its own list, the parts three equal columns, and the page adds no rule to a row or a list: " + J(kids));
   } finally { p.w.close(); }
 }

@@ -92,10 +92,13 @@ export async function run({ ok, pageWork }) {
     const keyed = tileGroup(p.form("New customer"), "Starting %, salt").querySelectorAll("input.salt-option__input");
     ok(same([...keyed].map((r) => r.getAttribute("data-key")), ["salt-none", "salt-0.25", "salt-typed"]),
       "a group drawn once for each book keys its tiles by the book first, the empty value 'none': " + [...keyed].map((r) => r.getAttribute("data-key")).join());
-    const parties = ["record.trade.party", "record.trade.associate", "record.trade.end-customer", "record.loan.party", "record.gift.party", "record.repay.loan", "record.amend.row",
+    const parties = ["record.trade.associate", "record.trade.end-customer", "record.loan.party", "record.gift.party", "record.repay.loan", "record.amend.row",
       "record.amend.field", "record.revive.row", "record.add-id.parent", "record.appoint.customer", "record.amend-id.party", "record.place.party", "record.tip.tip"];
     const stay = parties.filter((act) => { const c = byAct(p.d, act); return !c || c.tagName !== "SELECT"; });
     ok(stay.length === 0, "a party, a row, a loan, a field or a reminder, a list as long as the book, stays a select: " + JSON.stringify(stay));
+    /* 27 Oct 2026: the sale's Who is the exception, typed over a datalist of the book's codes (admin-record-sale-edit.mjs holds its list) */
+    const who = byAct(p.d, "record.trade.party");
+    ok(!!who && who.tagName === "INPUT" && who.type === "text" && !!who.getAttribute("list"), "the sale's Who is a typed field over a datalist, not a select: " + (who && who.tagName));
     const legends = found.filter((g) => g.tagName === "FIELDSET").map((g) => g.querySelector("legend")).filter(Boolean);
     const sets = found.filter((g) => g.tagName === "FIELDSET");
     ok(legends.length === sets.length && legends.every((l) => l.classList.contains("salt-options__legend") && l.classList.contains("lbl") && l.textContent.length > 0)
@@ -196,6 +199,7 @@ export async function run({ ok, pageWork }) {
     }
     /* a sale or purchase: the direction names the route and the key of the carriage, the book and the handover are the body's */
     const trade = p.form("Sale or purchase");
+    p.type(byAct(trade, "record.trade.party"), "CX1-ZED");   /* 27 Oct 2026: Who is typed, no longer a select that began on the first code */
     p.type(byAct(trade, "record.trade.date"), "2026-10-02"); p.type(byAct(trade, "record.trade.units"), "1"); p.type(byAct(trade, "record.trade.total"), "100");
     p.type(byAct(trade, "record.trade.delivery"), "10");
     for (const direction of tileValues(trade, "Type")) {

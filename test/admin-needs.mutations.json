@@ -576,10 +576,10 @@
   "replace": "ordFocus=null;"
  },
  {
-  "name": "Correct a row opens on Change the figures",
+  "name": "an owed card opens Correct a row, not the sale form",
   "file": "stmt/owner.js",
-  "find": "editKind.value='Fulfilment'; drawKind(); editorReady(); return true;",
-  "replace": "editKind.value='Correction'; drawKind(); editorReady(); return true;"
+  "find": "if(tradeEditPick(rid)) openForm('sale-or-purchase');",
+  "replace": "if(tradeEditPick(rid)) openForm('correct-a-row');"
  },
  {
   "name": "a failed owed read is not noted",

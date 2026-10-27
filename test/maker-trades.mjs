@@ -52,6 +52,9 @@ export function world() {
 }
 
 const button = (root, label) => [...root.querySelectorAll("button")].find((e) => e.textContent === label);
+/* 27 Oct 2026: the tail (Handed over, Cash paid) stands after the added books, so the form's own row is the one outside an added book */
+const mainField = (root, label) => [...root.querySelectorAll("label")].filter((e) => !e.closest(".maker-extra-trade"))
+  .find((e) => e.firstChild.textContent === label)?.querySelector("input,select");
 const field = (root, label) => [...root.querySelectorAll("label")]
   .find((e) => e.firstChild.textContent === label)?.querySelector("input,select");
 /* 22 Oct 2026 (multi-tick Approve): a card's Approve chooses; the bar's Confirm asks on the sheet, and its go sends the batch */
@@ -62,7 +65,8 @@ async function decide(doc, work, approve) {
   const go = doc.getElementById("ynGo");
   if (go) { go.click(); await work.quiet(); }
 }
-export async function ownerTrade(wd, pageWork, cover) {
+/* 27 Oct 2026: forge, a code the roster does not hold, is added to the catalog the page is given, so a typed Who the page would refuse reaches the Counter and the Desk, which are what these checks hold to account */
+export async function ownerTrade(wd, pageWork, cover, forge) {
   const sent = [];
   let work, loseAnswer = false, tick = Date.parse(AT);
   const dom = new JSDOM(landingPage("", "trade-nonce", { master: "fixture-master", accounts: [] }), {
@@ -78,7 +82,11 @@ export async function ownerTrade(wd, pageWork, cover) {
         if (String(path).startsWith("/all/maker/inputs") || String(path).startsWith("/all/maker/drafts/")) {
           const input = init.body && JSON.parse(init.body);
           if (input) sent.push({ path: String(path), bytes: init.body, body: input });
-          const response = await wd.call(String(path), input || undefined);
+          let response = await wd.call(String(path), input || undefined);
+          if (forge && String(path) === "/all/maker/inputs" && !input) {
+            const j = await response.json(); j.catalog.parties = [...j.catalog.parties, forge];
+            response = new Response(JSON.stringify(j), { status: response.status, headers: { "content-type": "application/json" } });
+          }
           if (loseAnswer && String(path) === "/all/maker/inputs/sale") {
             loseAnswer = false; throw new Error("Fixture lost the completed response.");
           }
@@ -98,18 +106,20 @@ export async function ownerTrade(wd, pageWork, cover) {
     .find((s) => s.querySelector("h3")?.textContent === "Sale or purchase");
   button(section, "Add a book").click(); await work.quiet();
   for (const [label, value] of Object.entries({ Date: "2099-10-05", Units: "1",
-    "Price (goods)": "130", "Cash received": "0", "Handed over": "1",
-    "Delivery": "40" })) field(section, label).value = value;
+    "Price": "130", "Cash paid": "0", "Handed over": "1",
+    "Delivery": "40" })) mainField(section, label).value = value;
+  /* 27 Oct 2026: Who is a typed field over a datalist, empty until chosen (it was a select that began on the first code) */
+  { const who = field(section, "Who"); who.value = "CX1-ZED"; }   /* no event: the price does not fill itself under the figures this harness types */
   tile(section, "Handover", "delivered");
   const extra = section.querySelector(".maker-extra-trade");
-  for (const [label, value] of Object.entries({ Units: "2", "Price (goods)": "30",
-    "Cash received": "0", "Handed over": "2" })) field(extra, label).value = value;
+  for (const [label, value] of Object.entries({ Units: "2", "Price": "30",
+    "Cash paid": "0", "Handed over": "2" })) field(extra, label).value = value;
   const change = (label, value) => {
     if (tileGroup(section, label)) { tile(section, label, value); return; }   /* a few, fixed choices are tiles, and a tap on one is the change */
     const control = field(section, label); control.value = value;
     control.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
   };
-  const send = async () => { (button(section, "Send the sale") || button(section, "Send the purchase")).click(); await work.quiet(); };
+  const send = async () => { (button(section, "Record the sale") || button(section, "Record the purchase")).click(); await work.quiet(); };
   return { dom, section, sent, work, change, send, lose: () => { loseAnswer = true; } };
 }
 
@@ -228,11 +238,13 @@ export async function run({ ok, pageWork }) {
     await work.quiet();
     const extra = section.querySelector(".maker-extra-trade");
     if (extra) {
-      const fields = section.querySelectorAll(":scope > .maker-list > label input")   /* 27 Oct 2026 (Record's forms as settings rows): the fields are rows of the form's lists */;
-      ["2099-10-05", "1", "130", "170", "1", "40"].forEach((value, i) => { fields[i].value = value; });
+      /* 27 Oct 2026: the form's rows are found by their names (Who a typed field, Units and Handed over wheels, the tail a list of its own), not by their place among the inputs */
+      const put = (root, label, value) => { field(root, label).value = value; };
+      put(section, "Who", "CX1-ZED");
+      [["Date", "2099-10-05"], ["Units", "1"], ["Price", "130"], ["Cash paid", "170"], ["Handed over", "1"], ["Delivery", "40"]].forEach(([label, value]) => { mainField(section, label).value = value; });
       tile(section, "Handover", "delivered");
-      ["2", "30", "30", "2"].forEach((value, i) => { extra.querySelectorAll("input:not([type=radio])")[i].value = value; });
-      button(section, "Send the sale").click(); await work.quiet();
+      [["Units", "2"], ["Price", "30"], ["Cash paid", "30"], ["Handed over", "2"]].forEach(([label, value]) => { field(extra, label).value = value; });   /* 27 Oct 2026: by name */
+      button(section, "Record the sale").click(); await work.quiet();
     }
     const rows = deviceWorld.drafts();
     ok(extra && rows.length === 2 && rows[0].row.delivery === 40 && rows[1].row.product === "oil" && !rows[1].row.delivery
@@ -253,15 +265,15 @@ export async function run({ ok, pageWork }) {
     button(section, "Add a book")?.click(); await work.quiet();
     const buyExtra = section.querySelector(".maker-extra-trade");
     if (buyExtra) {
-      const fields = section.querySelectorAll(":scope > .maker-list > label input")   /* 27 Oct 2026 (Record's forms as settings rows): the fields are rows of the form's lists */;
-      ["2099-10-05", "1", "130", "130", "1", "0"].forEach((value, i) => { fields[i].value = value; });
-      ["2", "30", "30", "2"].forEach((value, i) => { buyExtra.querySelectorAll("input:not([type=radio])")[i].value = value; });
-      button(section, "Send the purchase").click(); await work.quiet();
+      /* 27 Oct 2026: by name, as the sale above (Freight is the purchase's Delivery) */
+      [["Date", "2099-10-05"], ["Units", "1"], ["Price", "130"], ["Cash paid", "130"], ["Handed over", "1"], ["Freight", "0"]].forEach(([label, value]) => { mainField(section, label).value = value; });
+      [["Units", "2"], ["Price", "30"], ["Cash paid", "30"], ["Handed over", "2"]].forEach(([label, value]) => { field(buyExtra, label).value = value; });
+      button(section, "Record the purchase").click(); await work.quiet();
     }
     const lots = deviceWorld.drafts().filter((r) => r.collection === "purchases");
     ok(lots.length === 2 && lots.every((r) => r.status === "pending" && !r.row.trip && !r.row.delivery)
       && lots[0].row.receivedQty === 1 && lots[1].row.product === "oil" && lots[1].row.receivedQty === 2,
-      "multi-book owner purchase: actual controls send two native lots with separate units and no customer trip");
+      "multi-book owner purchase: actual controls send two native lots with separate units and no customer trip " + JSON.stringify([lots.map((r) => r.row), section.querySelector('[role="status"]')?.textContent]));
     ok(E.vaultPendingOk({ path: "/all/maker/inputs/sale", body: body() })
       && !E.vaultPendingOk({ path: "/all/maker/inputs/sale", body: body({ extras: [{ ...body().extras[0], note: "unchecked prose" }] }) }),
       "multi-book device recovery: the whole safe batch is retainable and an extra cannot hide prose");
@@ -293,8 +305,8 @@ export async function run({ ok, pageWork }) {
   try {
     lostPage.lose(); await lostPage.send();
     const saved = lostPage.dom.window.localStorage.getItem("saltMakerPending:/all/maker/inputs/sale");
-    field(lostPage.section, "Price (goods)").value = "999";
-    field(lostPage.section, "Price (goods)").dispatchEvent(new lostPage.dom.window.Event("input", { bubbles: true }));
+    field(lostPage.section, "Price").value = "999";
+    field(lostPage.section, "Price").dispatchEvent(new lostPage.dom.window.Event("input", { bubbles: true }));
     await lostPage.send();
     const requests = lostPage.sent.filter((s) => s.path.endsWith("/sale"));
     ok(saved && requests.length === 2 && requests[0].bytes === requests[1].bytes && lostWorld.drafts().length === 2
@@ -373,7 +385,7 @@ export async function run({ ok, pageWork }) {
       error: "Choose an associate on the roster. Register a new associate under Salt Admin > Add ID first, then pick the code.",
       plain: "Choose an associate from the list. A new one is added under Record, New customer, first." }
   ]) {
-    const refusedWorld = world(), page = await ownerTrade(refusedWorld, pageWork);
+    const refusedWorld = world(), page = await ownerTrade(refusedWorld, pageWork, undefined, scenario.field === "Who" ? "CZ9-ZED" : undefined);
     try {
       if (scenario.direction === "purchase") page.change("Type", "purchase");
       if (scenario.stream) {
@@ -381,7 +393,7 @@ export async function run({ ok, pageWork }) {
       }
       const forged = page.dom.window.document.createElement("option");
       forged.value = "CZ9-ZED"; forged.textContent = "CZ9-ZED";
-      field(page.section, scenario.field).appendChild(forged);
+      if (scenario.field !== "Who") field(page.section, scenario.field).appendChild(forged);   /* Who is typed: no option to add */
       field(page.section, scenario.field).value = forged.value;
       await page.send();
       const request = page.sent.find((s) => s.path.endsWith("/" + scenario.direction));
@@ -411,19 +423,19 @@ export async function runCoverRead({ ok, pageWork }) {
   try {
     const check = page.section.querySelector("[data-reward-cover]"), label = check.parentNode;
     const note = () => label.parentNode.nextElementSibling.firstChild?.textContent ?? "", raw = () => label.parentNode.nextElementSibling.querySelector(".rraw")?.textContent;
-    page.change("Price (goods)", "130"); await page.work.quiet();
+    page.change("Price", "130"); await page.work.quiet();
     ok(!label.hidden && !check.disabled && !check.checked && /Use 0[.]75 unit of their reward.*RM 30[.]00 off/.test(label.textContent) && reads.length === 1,
       "cover read: the first answer offers an unticked cover, and the read asked for the typed figures " + JSON.stringify(reads));
     check.checked = true;
     let release; gate = { promise: new Promise((resolve) => { release = resolve; }) };
-    page.change("Price (goods)", "131");
+    page.change("Price", "131");
     const mid = { hidden: label.hidden, disabled: check.disabled, ticked: check.checked, reads: reads.length, words: label.textContent };
     release(); gate = null; await page.work.quiet();
     ok(mid.reads === 2 && mid.hidden === false && mid.disabled && !mid.ticked && /Checking[.]/.test(mid.words)
       && !label.hidden && !check.disabled && /RM 30[.]00 off/.test(label.textContent),
       "cover read: a read in flight keeps the offered box at its place, unticked and disabled, so the tap on Send beside it is not moved "
         + JSON.stringify({ mid, now: label.textContent }));
-    mode = "fail"; page.change("Price (goods)", "132"); await page.work.quiet();
+    mode = "fail"; page.change("Price", "132"); await page.work.quiet();
     const retry = [...page.section.querySelectorAll("button")].find((e) => e.textContent === "Read again");
     ok(retry && !retry.hidden && !retry.disabled && !label.hidden && check.disabled && !check.checked
       && /Reward not read/.test(label.textContent) && note() === "The Counter could not do that. Try again." && raw() === "The Desk did not answer." && reads.length === 3,

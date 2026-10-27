@@ -548,6 +548,17 @@ export async function auditStates({ pageWork }) {
     await ra.click(byAct(ra.d, "nav.orders")); await ra.click(byAct(ra.d, "part.orders.placed")); await ra.click(byAct(ra.d, "order.move", "ord-p4")); await ra.work.quiet();
     states.push(["a row's move asking once", actAudit(ra.d)]);
   } finally { ra.w.close(); }
+  /* 27 Oct 2026, his word: a row open in the sale form draws Other fields and Cancel this sale, and a Ledger row's reference opens it */
+  const led = { rid: "row-1", date: "2026-09-01", customer: "CX1-ZED", product: "salt", qty: 2, total: 200, owed: 200, advance: 0, moved: 0, stage: "Agreed" };
+  const se = await richOwnerPage({ pageWork,
+    inputsAnswer: (j) => { j.catalog.rows = (j.catalog.rows || []).map((r) => r.rid === "row-1" ? { ...r, cancellation: { pay: "nothing paid", deliv: "nothing handed over", order: "cancelled", refundRM: null } } : r); return j; },
+    extra: (route) => route === "/all/maker/ledger" ? { ok: true, version: 1, orders: 1, open: [led], pending: [], recent: [] } : undefined });
+  try {
+    await se.work.quiet();
+    await se.click(byAct(se.d, "nav.orders")); await se.click(byAct(se.d, "part.orders.ledger")); await se.work.quiet();
+    await se.click(byAct(se.d, "ledger.open", "row-1")); await se.work.quiet();
+    states.push(["a Ledger row open in the sale form", actAudit(se.d)]);
+  } finally { se.w.close(); }
   return states;
 }
 

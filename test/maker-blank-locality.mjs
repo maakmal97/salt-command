@@ -128,14 +128,15 @@ export async function run({ ok, pageWork }) {
     const field = (label) => [...tradeSection.querySelectorAll("label")]
       .find((item) => item.firstChild.textContent === label)?.querySelector("input,select");
     const party = field("Who"), tradeDate = field("Date");
-    const selectability = !!party && [...party.options].some((option) => option.value === "CT11-TBC");
+    /* 27 Oct 2026: Who is a typed input with a datalist of the catalog's codes (not a select), so the code is offered in the list and chosen by typing it */
+    const selectability = !!party && party.tagName === "INPUT" && [...tradeSection.querySelectorAll("#makerWhoList option")].some((option) => option.value === "CT11-TBC");
     if (selectability) {
-      party.value = "CT11-TBC";
+      party.value = "CT11-TBC"; party.dispatchEvent(new blank.dom.window.Event("input", { bubbles: true }));
       tradeDate.value = new Date().toISOString().slice(0, 10);
-      field("Units").value = "1"; field("Price (goods)").value = "130";
-      field("Cash received").value = "0"; field("Handed over").value = "0";
+      field("Units").value = "1"; field("Price").value = "130";   /* 27 Oct 2026: Price and Cash paid are the new labels; Units and Handed over are wheels holding 1 and 0 */
+      field("Cash paid").value = "0"; field("Handed over").value = "0";
       field("Delivery").value = "0";
-      [...tradeSection.querySelectorAll("button")].find((button) => button.textContent === "Send the sale").click();
+      [...tradeSection.querySelectorAll("button")].find((button) => button.textContent === "Record the sale").click();
       if (!await blank.work.quiet()) throw new Error("The confirmed-ID trade did not settle.");
     }
     const trade = blank.body && sqlite.prepare("SELECT id,status,entry FROM draft WHERE collection='sales' AND id<>? ORDER BY drafted_at DESC LIMIT 1")

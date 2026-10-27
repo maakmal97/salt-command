@@ -57,8 +57,10 @@ export async function run({ ok, pageWork }) {
     const css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
     const outside = css.replace(/@media[^{]*\{(?:[^{}]*\{[^}]*\})*[^{}]*\}/g, "");
     const nums = [...d.querySelectorAll("#makerInputs section.maker-input input[type=number]")];
-    ok(nums.length >= 12 && nums.every((n) => n.classList.contains("salt-field__input--mono")) && /\.adm \.maker-input input\[type=number\]\{text-align:right\}/.test(css),
-      "every figure is in mono and set to the right: " + nums.length + " fields");
+    /* 27 Oct 2026: Units and Handed over are wheels now, so the typed figures are fewer and the wheels are counted beside them */
+    const wheels = [...d.querySelectorAll("#makerInputs section.maker-input select.mwheel")];
+    ok(nums.length >= 10 && wheels.length >= 2 && wheels.every((n) => n.classList.contains("salt-field__input--mono")) && nums.every((n) => n.classList.contains("salt-field__input--mono")) && /\.adm \.maker-input input\[type=number\]\{text-align:right\}/.test(css),
+      "every figure, a wheel too, is in mono and set to the right: " + nums.length + " fields, " + wheels.length + " wheels");
     /* 5 */
     const send = byAct(trade, "record.trade.send");
     ok(!!send && send.parentElement === trade && send.classList.contains("salt-pill") && send.classList.contains("btn")

@@ -114,10 +114,10 @@
   "replace": "idDrifts.forEach(function(item){item.select.disabled=false;item.typed.disabled=!canStart;});"
  },
  {
-  "name": "a party is no longer a select",
+  "name": "the sale Who is a select again",
   "file": "stmt/owner.js",
-  "find": "actOn(el('select','fld salt-field__input salt-field__select'),'record.trade.party')",
-  "replace": "actOn(el('input','fld salt-field__input'),'record.trade.party')"
+  "find": "actOn(el('input','fld salt-field__input mwho'),'record.trade.party')",
+  "replace": "actOn(el('select','fld salt-field__input salt-field__select'),'record.trade.party')"
  },
  {
   "name": "the count's book sends another word",

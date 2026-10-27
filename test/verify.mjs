@@ -49922,7 +49922,7 @@ await (async () => {
     tradeControl("moved").value = "0";
     tile(tradeSection, "Handover", "");
     tradeControl("delivery").value = "0";
-    [...tradeSection.querySelectorAll("button")].find((button) => button.textContent === "Send the sale").click();
+    [...tradeSection.querySelectorAll("button")].find((button) => button.textContent === "Record the sale").click();
     for (let i = 0; i < 100 && !adminCalls.some((call) => call.route === "/all/maker/inputs/sale"); i++)
       await new Promise((resolve) => setTimeout(resolve, 10));
     const sentSale = adminCalls.find((call) => call.route === "/all/maker/inputs/sale");
@@ -50388,6 +50388,11 @@ await (async () => {
 section("25 Oct 2026: Salt Admin Record, P4: the sale's resale choice before Who, its reading a ledger, its reward cover one row");
 await (async () => {
   await (await import("./admin-record-trade.mjs")).run({ ok, pageWork });
+})();
+
+section("27 Oct 2026: Salt Admin Record, the sale form in his order and every change in it");
+await (async () => {
+  await (await import("./admin-record-sale-edit.mjs")).run({ ok, pageWork });
 })();
 
 section("25 Oct 2026: Salt Admin Record, P5: the row chosen a card, What to do tiles with their notes, the changes a ledger, Reopen alike");
