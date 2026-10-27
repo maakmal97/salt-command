@@ -1,6 +1,6 @@
 {
- "v": "v1286",
- "stamped": "27 Oct 2026, 22:37 KL",
+ "v": "v1287",
+ "stamped": "27 Oct 2026, 22:44 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -8468,7 +8468,7 @@
     "customer": "CR3-DAM",
     "qty": 0.5,
     "total": 75,
-    "cash": 0,
+    "cash": 75,
     "date": "2026-10-20",
     "deliveredQty": 0.5,
     "note": "<b>CORRECTION ON s278: 0.5 UNIT OF SALT COLLECTED BY CR3-DAM ON 21 OCT, RM75 UNPAID.</b> The patch sets deliveredQty from 0 to 0.5, deliveredOn to 21 Oct and handover to collected, preapproved. Cash stays RM0 against goods of RM75, which is RM150 a unit. The dossier gives no floor or ask for this size, so no comparison with the ladder is possible. CR3-DAM has 23 orders, a median of RM80, a range of RM80 to RM150, RM100 outstanding and 0.27 unit on credit before this. No cap figure is given. The drafter flagged the high rate and the advance: the figures confirm both, but cannot answer the cap. The row keeps its own cost. RM75 is outstanding. <b>NEW PENDING SALE ON 20 OCT: 0.5 UNIT OF SALT TO CR3-DAM, GOODS RM75.</b> Ordered on the statements site, order 20261020155320-5eau7w, to collect. Nothing paid and nothing handed over, so it draws no stock and books no revenue yet. The goods total of RM75 equals the ask total of RM75 and is above the floor total of RM30, which is RM150 a unit against a floor of RM60 and an ask of RM150. CR3-DAM has 22 orders, a median rate of RM80, a range of RM80 to RM130, RM90 outstanding and 0.77 unit on credit, against a cap of 2. The row carries cost RM58, the inventory's replacement rate, and the fold keeps it. The drafter flagged that this is 87.5% above the usual RM80; the figures confirm it is high but give no reason. All RM75 and 0.5 unit are outstanding.",
@@ -8498,9 +8498,17 @@
        "handover": null
       },
       "cost": 29
+     },
+     {
+      "date": "2026-10-27",
+      "kind": "Fulfilment",
+      "cash": 75,
+      "kg": 0,
+      "note": "<b>PAID 27 OCT 2026: s278 SETTLED IN FULL.</b> Payment of RM75 from CR3-DAM against the order of 0.5 unit of salt for RM75 dated 20 Oct, collected 21 Oct. Paid by qr via maybank, preapproved by Counter Admin. No unit moves, so no stock is drawn. The dossier gives no ladder floor or ask for this order, so no rate comparison is made. The party's median rate is RM80, range RM80 to RM150; outstanding before was RM100, with 0.77 unit on credit and no cap figure given. The cost stays as booked on the order and this payment adds none. The drafter flagged that it settles the order in full. The figures answer it: RM75 paid against RM75 outstanding. Nothing is left outstanding on s278."
      }
     ],
-    "cost": 29
+    "cost": 29,
+    "paidOn": "2026-10-27"
    },
    {
     "customer": "CJ4-BJ",
@@ -10187,7 +10195,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-27T14:25:44.144Z",
+  "QUEUE_COMMITTED": "2026-10-27T14:43:30.014Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -10218,7 +10226,7 @@
     {
      "id": "cust:cadence:salt",
      "sev": "watch",
-     "title": "12 customers are past their own habit on salt"
+     "title": "13 customers are past their own habit on salt"
     },
     {
      "id": "cust:cadence:oil",
@@ -20062,11 +20070,11 @@
      "suggest": null
     }
    },
-   "v": "v1286"
+   "v": "v1287"
   },
   "OPEN": {
-   "at": "2026-10-27T14:37:30.897Z",
-   "count": 8,
+   "at": "2026-10-27T14:44:45.556Z",
+   "count": 7,
    "byKey": {
     "CZ5-TM|2026-10-27|105": {
      "d": "2026-10-27",
@@ -20082,23 +20090,6 @@
      "paidOn": "2026-10-27",
      "trip": "t1793091460898",
      "key": "CZ5-TM|2026-10-27|105"
-    },
-    "CR3-DAM|2026-10-20|75": {
-     "d": "2026-10-20",
-     "p": "CR3-DAM",
-     "dir": "S",
-     "q": 0.5,
-     "t": 75,
-     "cash": 0,
-     "mv": 0.5,
-     "st": "dueMoney",
-     "oweRM": 75,
-     "rid": "s278",
-     "deliveredOn": "2026-10-21",
-     "handover": "collected",
-     "key": "CR3-DAM|2026-10-20|75",
-     "age": 6,
-     "exp": 0
     },
     "CN3-WM|2026-10-05|130": {
      "d": "2026-10-05",
@@ -20209,7 +20200,7 @@
      "owedOut": 1.27,
      "coverDays": 0,
      "rate": 4.58,
-     "owedToYou": 315,
+     "owedToYou": 240,
      "promised": 1.27,
      "short": 0.77
     },
@@ -20277,7 +20268,7 @@
     "gas": null,
     "prep": null
    },
-   "v": "v1286"
+   "v": "v1287"
   },
   "TERMS": {
    "ceiling": 250,
@@ -20285,7 +20276,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1286"
+   "v": "v1287"
   },
   "REWARD": {
    "stated": {
@@ -20303,7 +20294,7 @@
      }
     }
    },
-   "v": "v1286"
+   "v": "v1287"
   },
   "STOCK": {
    "today": "2026-10-27",
@@ -20357,7 +20348,7 @@
      "transit": 0
     }
    },
-   "v": "v1286"
+   "v": "v1287"
   }
  }
 }

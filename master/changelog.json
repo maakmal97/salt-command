@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1287",
+  "d": "27 Oct 2026",
+  "t": "CR3-DAM PAYS RM75 AND SETTLES S278",
+  "n": [
+   "<b>ONE PAYMENT FOLDED.</b> CR3-DAM paid RM75 by qr via maybank on 27 Oct 2026 against order s278, 0.5 unit of salt dated 20 Oct and collected on 21 Oct. The payment was preapproved by Counter Admin. It settles the order in full, leaving RM0 and 0 unit outstanding on it.",
+   "<b>INVENTORY UNCHANGED.</b> No goods move with this payment, so stock stays at 0.5 unit and the cost basis is untouched."
+  ]
+ },
+ {
   "v": "v1286",
   "d": "27 Oct 2026",
   "t": "PAYMENT OF RM105 ON S300 FOR CZ5-TM",
