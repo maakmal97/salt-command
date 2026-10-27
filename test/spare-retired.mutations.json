@@ -1,5 +1,0 @@
-[
- {"name": "spare back on the live book", "file": "ledger/book.json", "find": "\"since\": \"2026-09-22\",\n      \"retired\": true,\n      \"note\": \"Opened 22 Sep 2026 as THE SPARE SLOT", "replace": "\"since\": \"2026-09-22\",\n      \"retired\": false,\n      \"note\": \"Opened 22 Sep 2026 as THE SPARE SLOT"},
- {"name": "spare back on the word list", "file": "src/orders.js", "find": "[\"salt\", \"oil\", \"candy\", \"rice\"]", "replace": "[\"salt\", \"oil\", \"candy\", \"rice\", \"spare\"]"},
- {"name": "product.mjs re-lays the book", "file": "tools/product.mjs", "find": "const write = (b) => writeBookFile(b, BOOK);", "replace": "const write = (b) => writeFileSync(BOOK, JSON.stringify(b, null, 2) + String.fromCharCode(10));"}
-]

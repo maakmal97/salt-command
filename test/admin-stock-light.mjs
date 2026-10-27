@@ -29,14 +29,14 @@ async function page(pageWork, answers) {
 
 export async function run({ ok, pageWork }) {
   const first = { ok: true, today: "2026-10-22", books: { salt: book(14.89, -1.11, 16, 2.6, 8, "yellow"), oil: book(45, 42, 3, 15.1, 0, "green"),
-    candy: book(0, 0, 2, null, 20, "red"), rice: book(9, 9, 0, 4, 0, "green"), spare: book(5, 5, 0, null, 0) }, by: { salt: "2026-10-25", candy: "2026-10-28", rice: "2026-10-30" } };
+    candy: book(0, 0, 2, null, 20, "red"), rice: book(9, 9, 0, 4, 0, "green"), gas: book(5, 5, 0, null, 0) }, by: { salt: "2026-10-25", candy: "2026-10-28", rice: "2026-10-30" } };
   const A = await page(pageWork, [first, { ok: true, today: "2026-10-22", books: { salt: book(0, 0, 16, null, 8, "red") }, by: {} }, { refuse: "down" }, { ok: true, today: "2026-10-23", books: {}, by: {} }]);
   try {
     /* 1 */
     const r = A.read();
     const before = r.s && r.s.previousElementSibling;
     ok(!!r.s && !r.s.hidden && !!before && before.classList.contains("nsplit") && t(r.s.querySelector(".nstock__head h2")) === "Stock by book" && t(r.s.querySelector(".nstock__head .salt-status")) === "Units · measured 22 Oct"
-      && J(r.rows.map((x) => x.book)) === J(["candy", "salt", "rice", "oil", "spare"]) && J(r.rows.map((x) => x.tag)) === J(["Candy", "Salt", "Rice", "Oil", "Spare"])
+      && J(r.rows.map((x) => x.book)) === J(["candy", "salt", "rice", "oil", "gas"]) && J(r.rows.map((x) => x.tag)) === J(["Candy", "Salt", "Rice", "Oil", "Gas"])
       && r.rows.map((x) => x.word).join("|") === "Out of stock|Limited|Available|Available|"
       && ["salt-status--ember", "salt-status--brass", "salt-status--verdigris", "salt-status--verdigris"].every((c, i) => r.rows[i].st.includes(c)) && r.rows[4].st === ""
       && !r.s.querySelector("svg.psym"),

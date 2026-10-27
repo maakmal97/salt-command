@@ -268,11 +268,12 @@ moved from 1 to 10 changes no price: its five points are its five typed rungs, a
 its grid**, or a listed tile could not be ordered; salt's 6.25 rung is one only because the step is a quarter. The suite holds each of
 these (`test/any-quantity.mjs`).
 
-## 10. Spare is retired (15 Oct 2026)
+## 10. Gas and PrEP (27 Oct 2026)
 
-The fifth book, `spare`, opened on 22 Sep 2026 to prove that adding a book is a command, is retired with `node tools/product.mjs
---retire spare`: it had no row, opening or price, so the tool allowed it. Its entry stays in `ledger/book.json` with `retired: true` (off
-the switch, the Enter form, the tier grid and the parity scan; `--unretire` brings it back). Its name left `PRODUCT_WORDS`, the position
-engine's word list and the Admin's book-name pattern, so the live books are four: salt, oil, candy and rice. The vendored hue tokens in
-`design/salt-ds.css` stay, they being the design system's to drop. `product.mjs` now writes the book through `writeBookFile`, since a plain
-`JSON.stringify` had re-laid all 8,000 lines.
+The fifth book, `spare`, opened on 22 Sep 2026 to prove that adding a book is a command and retired on 15 Oct 2026, became `gas` on his
+word of 27 Oct 2026: `node tools/product.mjs --rename spare gas` (it held no row, so the tool allowed it), then `--add prep --name PrEP`.
+Both are live and empty, so the fold refuses a first sale until a lot is entered by hand. **Gas** is a flame lettered P; **PrEP** is a
+heart-shaped pill lettered PrEP, the one word in a mark: `pletSize` in `stmt/page.js` sets a longer letter so its width stays inside
+the heart. Their hues are salt-ds 1.20.0's `--salt-product-gas` (flame) and `--salt-product-prep` (magenta), which replaced the spare hue.
+Their names join `PRODUCT_WORDS`, the position engine's word list and the Admin's book-name pattern. The suite section is
+`test/gas-prep-books.mjs`.
