@@ -1,0 +1,56 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-27T16:29:26.492Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "qty": 1,
+    "total": 105,
+    "cash": 105,
+    "date": "2026-10-27",
+    "customer": "CZ5-TM",
+    "rids": [],
+    "booked_seq": 2
+   },
+   "reasoning": "Fulfilment against CZ5-TM's order of 1 unit for RM 105 agreed 2026-10-27. RM 0 and 0.5 unit move on 2026-10-28, against RM 0 and 1 unit outstanding. Leaves RM 0 and 0.5 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [],
+   "amends": "s300",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-10-27T16:29:26.492Z",
+    "type": "AMEND",
+    "party": "CZ5-TM",
+    "qty": 0.5,
+    "total": 0,
+    "status": "partial",
+    "raw": "Fulfilment against s300 for CZ5-TM on 2026-10-28",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CZ5-TM",
+     "product": "salt",
+     "rid": "s300",
+     "orderKey": "CZ5-TM|2026-10-27|105",
+     "date": "2026-10-28",
+     "kind": "Fulfilment",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 0.5,
+     "total": 0,
+     "cash": 0,
+     "kg": 0.5
+    },
+    "makerRequest": "2f445ba84d53402ef0e9b6a23e5f61d4ca2a1b32b775edee702bca47aabfe803"
+   },
+   "decidedAt": "2026-10-27T16:29:50.704Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
