@@ -3384,10 +3384,12 @@ export const OWNER_JS = `
     if(makerCashStorageError){drawMaker();return;}
     if(makerCashHeld[order.id]) return;
     var due=Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0);
-    if(!Number.isFinite(amount)||amount<=0.004||amount>due+0.004){
-      makerCashSaid[order.id]='That is not a figure above RM 0 and up to the '+rm(due)+' owed. Nothing was sent.';drawMaker();return;
+    /* 27 Oct 2026, his word: cash past what they owe is taken, the excess a refund to them; beside a claim of theirs, or with nothing owed, it is not */
+    var claimed=(order.payments||[]).some(function(p){ return p&&p.claim==='waiting'; });
+    if(!Number.isFinite(amount)||amount<=0.004||(amount>due+0.004&&(claimed||due<=0.004))){
+      makerCashSaid[order.id]='That is not a figure above RM 0 and up to the '+rm(due)+' owed'+(claimed?' beside what they say they sent':'')+'. Nothing was sent.';drawMaker();return;
     }
-    var held={amount:amount,beforePaid:Number(order.paid||0),until:Date.now()+MAKER_CASH_MS,sent:false,busy:false};
+    var held={amount:amount,beforePaid:Number(order.paid||0),until:Date.now()+MAKER_CASH_MS,sent:false,busy:false,over:amount>due+0.004?+(amount-due).toFixed(2):0};
     makerCashHeld[order.id]=held;delete makerCashSaid[order.id];
     held.timer=setTimeout(function(){ makerCashGo(order.id); },MAKER_CASH_MS);
     held.tick=setInterval(function(){
@@ -3417,7 +3419,8 @@ export const OWNER_JS = `
       var result=await response.json();
       if(!response.ok||!result.ok)throw refused(result.error||'The Desk did not take the cash.',result,response.status);
       held.confirmed=true;
-      makerCashSaid[id]='Recorded. Refresh to see it.';
+      var refund=result.preapproval&&+result.preapproval.refund||0;
+      makerCashSaid[id]='Recorded.'+(refund>0.004?' '+rm(refund)+' over what they owe opens as a refund to them once it folds.':'')+' Refresh to see it.';
       makerCashSave(id,held);
       await loadMaker();
     }catch(error){
@@ -3435,7 +3438,7 @@ export const OWNER_JS = `
     if(held){
       card.querySelectorAll('button,input,select').forEach(function(node){node.disabled=true;});
       if(!held.sent){
-        note.appendChild(document.createTextNode('Cash received, '+rm(held.amount)+': it goes in '));
+        note.appendChild(document.createTextNode('Cash received, '+rm(held.amount)+(held.over?', '+rm(held.over)+' over what they owe, a refund to them':'')+': it goes in '));
         var left=el('span',null,String(makerCashLeft(order.id)));left.setAttribute('data-maker-cash-left',order.id);
         note.appendChild(left);note.appendChild(document.createTextNode(' s. Undo sends nothing.'));
         makerClaimButton(card,['Undo','order.cash-undo'],function(){makerCashUndo(order.id);},true).setAttribute('data-maker-cash-undo','');

@@ -276,7 +276,9 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
   drawn as the engine's `claimAlloc` (goods out oldest first, then the orders at Ready, each owing all that is left, V2), each row less the money already on its way to it, and its one Received approves exactly those rows. **A row paid past what it
   comes to is a refund the fold raises** (06 Oct 2026, the engine's `refundOnOverpay` beside `refundOnCancel`, read off the row as
   every sale amendment folds and on the desk's overlay): a close at what was handed over or an amendment under what they paid is
-  one tap like any other, and the difference opens as a `customerRefunds` row, Now until `paidOn`.
+  one tap like any other, and the difference opens as a `customerRefunds` row, Now until `paidOn`. **Cash received past what an order owes
+  is taken** (his word of 27 Oct 2026; goods plus delivery the measure, `cashTap` carrying the excess as `refund`), refused only beside a claim
+  of theirs, on an order owing nothing, with other money on its way to the row, or where the row owes another figure than the order.
 - **Every tap that books money checks what its row can still take** (`rowRoom` in `src/orders.js`:
   the mirror's figure less every payment on its way to the row by any road), **and the fold's
   `payFault` is the last check**, refusing a payment measured before other money reached its row.

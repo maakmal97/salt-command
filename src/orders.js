@@ -1332,7 +1332,7 @@ export async function againOrder(env, id, body, by, now, mirror) {
     return { ok: false, status: 409, error: "the order has moved on since that handover: record the handover as it stands" };
   const entry = againEntry(rej.entry, o, at);   /* V4a: a move rejected before the row key named the product is offered again under the key as it is now */
   /* 28 Sep 2026, s210: a payment offered again answers to what the row can still take, as the tap that made it does now */
-  if (stage === "pay" || stage === "cash") { const past = pastRoom(await rowRoom(db, "SELL", undefined, mirror), o, entry, "offered again"); if (past) return Object.assign({ ok: false }, past); }
+  if (stage === "pay" || stage === "cash") { const past = pastRoom(await rowRoom(db, "SELL", undefined, mirror), o, entry, "offered again", false, stage === "cash"); if (past) return Object.assign({ ok: false }, past); }
   const pv = await stagePreview(env, o, stage, entry, mirror);
   if (!pv.ok) return pv;
   /* a close offered again restates the row once more, so later stages wait for it under the name it will leave, as the

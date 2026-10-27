@@ -105,12 +105,17 @@ export async function run({ ok }) {
     ok(f.timers.length === timerCount && f.posts.length === 1 && f.note().startsWith("That is not a figure above RM 0"),
       "C8: an invalid amount is refused immediately, never held or posted");
     let refused = true;
-    for (const invalid of ["0.001", "-1", "101", ""]) {
+    for (const invalid of ["0.001", "-1", ""]) {
       await f.tap(invalid);
       refused &&= f.timers.length === timerCount && f.posts.length === 1 && !!f.button("Record cash")
         && f.note().startsWith("That is not a figure above RM 0");
     }
-    ok(refused, "C16: zero, sub-sen, negative and over-owed cash never enter a hold");
+    ok(refused, "C16: zero, sub-sen and negative cash never enter a hold");
+    /* 27 Oct 2026, his word: cash past what they owe is held like any other, and the hold says the refund it opens */
+    await f.tap(101);
+    ok(f.posts.length === 1 && !!f.button("Undo") && f.note().startsWith("Cash received, RM 101.00, RM 41.00 over what they owe, a refund to them: it goes in"),
+      "C16b: cash past what they owe is held, saying the excess is a refund to them: " + f.note());
+    f.button("Undo")?.click(); await f.quiet();
   } finally { f.w.close(); }
 
   for (const [event, code] of [["visibilitychange", 9], ["pagehide", 11]]) {
@@ -163,7 +168,8 @@ export async function run({ ok }) {
     const restored = !!refresh.button("Record cash") && !refresh.button("Refresh cash")
       && refresh.note().includes("RM 60.00 still owed.") && refresh.stored().length === 0;
     await refresh.tap(61);
-    const refused = refresh.posts.length === 1 && refresh.note().includes("RM 60.00 owed");
+    const refused = refresh.posts.length === 1 && refresh.note().includes("RM 1.00 over what they owe");   /* measured off the RM 60 remaining */
+    refresh.button("Undo")?.click(); await refresh.quiet();
     await refresh.tap(60); await refresh.advance(10000);
     ok(restored && refused && refresh.posts.length === 2 && refresh.posts[1].body.amount === 60
       && refresh.posts[1].body.rid !== refresh.posts[0].body.rid && refresh.backend.paid === 100,

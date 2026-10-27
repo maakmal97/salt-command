@@ -988,7 +988,9 @@ export function decideDesk(order, body, at) {
     const a = body.cash.amount;
     if (!isNum(a) || a <= 0) return { error: "say how much was received", status: 400 };
     const due = +(dueOf(order) - claimedOf(order)).toFixed(2);   /* S6: less what they say they sent, which he answers apart */
-    if (a > due + 0.004) return { error: "that is more than the " + due.toFixed(2) + " outstanding on this order", status: 400 };
+    /* 27 Oct 2026, his word: cash past what is owed is taken and the ledger raises the refund for it; beside a claim, or with nothing owed, refused */
+    if (a > due + 0.004 && (claimedOf(order) > 0.004 || dueOf(order) <= 0.004))
+      return { error: "that is more than the " + due.toFixed(2) + " outstanding on this order", status: 400 };
     return { ev: { kind: "cash", at, amount: +a.toFixed(2) } };
   }
   /* 06 Oct 2026, his decision: EVERYTHING ON AN AGREED ORDER IS AMENDABLE, the size, the goods' price and the delivery

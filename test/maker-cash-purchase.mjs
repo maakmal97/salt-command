@@ -95,8 +95,9 @@ export async function run({ ok }) {
     /* a refusal by the native road leaves no claim, so the same request is judged afresh */
     const c1 = await tap(idReady, "cash", { amount: 1000, rid: rid(3) }), c2 = await tap(idReady, "cash", { amount: 1000, rid: rid(3) });
     const c2Body = await c2.json();
-    ok(!c1.ok && !c2.ok && /more than the RM 285\.00 still owed/.test(c2Body.error) && !L.requests.has("order:" + rid(3)) && paid(idReady) === 0,
-      "Cash over what is owed reaches the Desk's own cashOrder, which refuses it, and is not kept under its id: " + c2Body.error);
+    /* 27 Oct 2026: cash past what is owed is taken now (the refund the fold raises), so this one is refused by the Desk for its row, not drafted yet */
+    ok(!c1.ok && !c2.ok && /pending row is not drafted yet/.test(c2Body.error) && !L.requests.has("order:" + rid(3)) && paid(idReady) === 0,
+      "Cash the Desk refuses reaches its own cashOrder, and is not kept under its id: " + c2Body.error);
     const r1 = await tap(idReady, "received", { amount: 25, rid: rid(4) }), r2 = await tap(idReady, "received", { amount: 25, rid: rid(4) });
     const r2Body = await r2.json();
     ok(r1.status === 409 && r2.status === 409 && /nothing they recorded is waiting/.test(r2Body.error) && !L.requests.has("order:" + rid(4)),

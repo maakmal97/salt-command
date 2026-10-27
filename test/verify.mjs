@@ -50190,6 +50190,11 @@ await (async () => {
   await (await import("./admin-orders-moves.mjs")).run({ ok, pageWork });
 })();
 
+section("27 Oct 2026: cash past what an order owes is taken, the excess a refund");
+await (async () => {
+  await (await import("./cash-over.mjs")).run({ ok });
+})();
+
 section("Salt Admin: Orders open by stage, a list beside the order, and Record a menu");
 await (async () => {
   await (await import("./admin-orders.mjs")).run({ ok, pageWork });

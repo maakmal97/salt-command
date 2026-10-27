@@ -1,0 +1,4 @@
+[
+{"name": "Admin refuses over-owed cash as before", "file": "stmt/owner.js", "find": "amount<=0.004||(amount>due+0.004&&(claimed||due<=0.004))", "replace": "amount<=0.004||amount>due+0.004"},
+{"name": "the hold says no refund", "file": "stmt/owner.js", "find": "+(held.over?', '+rm(held.over)+' over what they owe, a refund to them':'')+", "replace": "+"}
+]

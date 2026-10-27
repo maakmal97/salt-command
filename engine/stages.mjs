@@ -137,10 +137,13 @@ export function advanceOf(book, o, code, delivery, ctx) {
 /* 28 Sep 2026, s210: the refusal a tap gives when its payment would take the row past what it can still take. A claim of
    theirs is also told how it is answered: Received, on the book already, which the site takes only once its order has
    heard of the money (the return leg, in the minute after the mirror is re-seeded), or Not found */
-export function pastRoom(room, o, entry, word, claim) {
+export function pastRoom(room, o, entry, word, claim, overOk) {
   const r = room ? room(ledgerKeyOf(o), entry) : null, rm = +((entry && entry.payload) || {}).cash || 0;
   if (!r || !(rm > r.left + 0.004)) return null;
   const due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0)).toFixed(2);
+  /* 27 Oct 2026, his word: cash past what the row owes is a refund the fold raises, so it passes while nothing else is on its way to the row
+     and the row owes what the order does, so the refund he is told is the one the fold raises */
+  if (overOk && !(r.on > 0.004) && Math.abs(r.left - due) < 0.005) return null;
   return { status: 409, error: "the row owes RM " + r.owes.toFixed(2)
     + (r.on > 0.004 ? ", and RM " + r.on.toFixed(2) + " of it is on its way already, received or waiting under Approve and not folded yet" : "")
     + ", so RM " + rm.toFixed(2) + " " + word + " would pay it past what it owes" + (r.left > 0.004 ? ": RM " + r.left.toFixed(2) + " is what it can still take" : "")
@@ -543,7 +546,11 @@ export function cashTap(o, at, body, ctx) {
   /* the order already counts that cash: raising it again would count it twice */
   if (rej && Math.abs(+rej.entry.payload.cash - amount) < 0.005) return { again: "cash" };
   const due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0) - (+o.claimed || 0)).toFixed(2);   /* S6: less what they say they sent */
-  if (amount > due + 0.004) return { error: "that is more than the RM " + due.toFixed(2) + " still owed on this order" + ((+o.claimed || 0) > 0.004 ? " beside what they say they sent" : "") };
+  /* 27 Oct 2026, his word: CASH PAST WHAT THE ORDER OWES IS TAKEN, goods plus delivery the measure, and the excess is the refund the fold raises
+     (refundOnOverpay). Beside a claim of theirs, or on an order owing nothing, it is still refused: whether that money is the same is a judgement. */
+  if (amount > due + 0.004 && ((+o.claimed || 0) > 0.004 || due <= 0.004))
+    return { error: "that is more than the RM " + due.toFixed(2) + " still owed on this order" + ((+o.claimed || 0) > 0.004 ? " beside what they say they sent" : "") };
+  const over = amount > due + 0.004 ? +(amount - due).toFixed(2) : 0;
   /* a payment of theirs not yet queued would be swallowed by the mark the cash moves (orderWork reads paid against it) */
   /* S6: a claim he received and not yet queued is told by its own entry, so it is left out, as the site's paidUntold leaves it */
   const own = (o.payments || []).filter((p) => p && p.claim === "received" && !p.queued).reduce((n, p) => n + (+p.amount || 0), 0);
@@ -551,11 +558,12 @@ export function cashTap(o, at, body, ctx) {
   const entry = payEntry(o, o.code, amount, at, true);
   entry.orderId = o.id; entry.counter = true;   /* the desk's own, which a Received never answers */
   /* 28 Sep 2026, s210: AND WHAT THE ROW CAN STILL TAKE, asked of every road the money can come by */
-  const past = pastRoom(room, o, entry, "cash");
+  const past = pastRoom(room, o, entry, "cash", false, over > 0);
   if (past) return past;
   /* the site's own cash event (S11 11.8): paid at once, kept as his in cash, and the ledger's mark of the money moved
      by the same figure, because this Fulfilment is the desk's own and the reconcile must not queue it again */
-  return { entry, queueIt: true, site: { cash: { amount: +amount.toFixed(2) } }, shown: { amount: +amount.toFixed(2), cash: true } };
+  return Object.assign({ entry, queueIt: true, site: { cash: { amount: +amount.toFixed(2) } },
+    shown: Object.assign({ amount: +amount.toFixed(2), cash: true }, over ? { refund: over } : {}) }, over ? { refund: over } : {});
 }
 
 /** 16 Oct 2026, his word on CR3-DAM's s263 (a Correction cut the row to RM65 and the order kept RM80): AN AGREED ORDER STATES

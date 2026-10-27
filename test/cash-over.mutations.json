@@ -1,0 +1,12 @@
+[
+{"name": "cash past what is owed refused as before", "file": "engine/stages.mjs", "find": "  if (amount > due + 0.004 && ((+o.claimed || 0) > 0.004 || due <= 0.004))", "replace": "  if (amount > due + 0.004)"},
+{"name": "a claim no longer holds cash back", "file": "engine/stages.mjs", "find": "((+o.claimed || 0) > 0.004 || due <= 0.004))\n    return", "replace": "(due <= 0.004))\n    return"},
+{"name": "an order owing nothing takes cash", "file": "engine/stages.mjs", "find": "((+o.claimed || 0) > 0.004 || due <= 0.004))\n    return", "replace": "((+o.claimed || 0) > 0.004))\n    return"},
+{"name": "the refund not carried", "file": "engine/stages.mjs", "find": "cash: true }, over ? { refund: over } : {}) }, over ? { refund: over } : {});", "replace": "cash: true }, {}) }, {});"},
+{"name": "the row room ignores the overpay", "file": "engine/stages.mjs", "find": "  const past = pastRoom(room, o, entry, \"cash\", false, over > 0);", "replace": "  const past = pastRoom(room, o, entry, \"cash\");"},
+{"name": "money on its way no longer refuses", "file": "engine/stages.mjs", "find": "if (overOk && !(r.on > 0.004) && Math.abs(r.left - due) < 0.005) return null;", "replace": "if (overOk && Math.abs(r.left - due) < 0.005) return null;"},
+{"name": "a row owing another figure takes it", "file": "engine/stages.mjs", "find": "if (overOk && !(r.on > 0.004) && Math.abs(r.left - due) < 0.005) return null;", "replace": "if (overOk && !(r.on > 0.004)) return null;"},
+{"name": "the Counter refuses as before", "file": "stmt/orders.js", "find": "    if (a > due + 0.004 && (claimedOf(order) > 0.004 || dueOf(order) <= 0.004))", "replace": "    if (a > due + 0.004)"},
+{"name": "the Counter takes it beside a claim", "file": "stmt/orders.js", "find": "(claimedOf(order) > 0.004 || dueOf(order) <= 0.004))", "replace": "(dueOf(order) <= 0.004))"},
+{"name": "the Counter takes it with nothing owed", "file": "stmt/orders.js", "find": "(claimedOf(order) > 0.004 || dueOf(order) <= 0.004))", "replace": "(claimedOf(order) > 0.004))"}
+]
