@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="446c7a5fe3f07ab9";
+var SALT_BUILD_ID="8a4169d805c5ccff";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -6821,8 +6821,11 @@ function lateOffer(delays,rules){
    THE PURCHASE SIDE TOOK THIS EXACT SHAPE FIRST: poRecvUnits at v417 and poOpenUnits at v422,
    with poCash deliberately left unguarded because money that left the bank still left it. This
    is the sale-side mirror, and txPaid stays unguarded for the same reason: the cash is real, it
-   is simply a refund due rather than salt owed. */
-function txDeferUnits(s){if(s.cancelled)return 0;const p=txPrice(s);if(!(p>0))return 0;return Math.max(0,txPaid(s)/p-txEffDeliv(s));}
+   is simply a refund due rather than salt owed.
+   28 OCT 2026, HIS WORD ("I do not owe them salt due to the extra prepayment"): AND MONEY PAST THE ORDER IS NO SALT EITHER. s296, 5 units
+   for RM 455 paid RM 480 and all handed over, read 480/91 = 5.27 units paid for, so 0.27 unit owed out; the RM 25 is their credit
+   (creditOf), never a claim on the shelf. The units paid for stop at the units ordered. */
+function txDeferUnits(s){if(s.cancelled)return 0;const p=txPrice(s);if(!(p>0))return 0;return Math.max(0,Math.min(+s.qty||0,txPaid(s)/p)-txEffDeliv(s));}
 function txPendUnits(s){if(s.cancelled)return 0;return Math.max(0,+(s.qty-txEffDeliv(s)-txDeferUnits(s)).toFixed(2));}
 function txPendUnitsRaw(s){if(s.cancelled)return 0;return Math.max(0,s.qty-txEffDeliv(s)-txDeferUnits(s));}
 function txPendRM(s){if(s.cancelled)return 0;const p=txPrice(s);if(!(p>0))return 0;return +(Math.max(0,s.qty-txEffDeliv(s)-txDeferUnits(s))*p).toFixed(2);}
@@ -11382,7 +11385,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1291","d":"28 Oct 2026","t":"SALT COUNT OF 0 UNIT SETS STOCK TO ZERO","n":["<b>ONE COUNT FOLDED.</b> The salt count of 27 Oct 2026 found 0 unit against 0.5 on the book, a gap of -0.5. The count wins, so the stated salt inventory is set to 0 and the salt count date moves to 27 Oct 2026. Unusual: the drafter flagged 1.27 unit owed out and already paid for, whereas the dossier shows 0.27 owed out and nothing promised. The ladder floors and ask do not move; self-use falls from 103.84 to 103.34."]}];
+const evolution=[{"v":"v1293","d":"28 Oct 2026","t":"GAS IS NAMED GAS AGAIN; THE STARBURST AND POP STAY","n":["<b>THE NAME.</b> The book keyed gas reads Gas again wherever a person reads it (the desk, Salt Admin's tag, the Counter's word list, the practice account's coming-soon line), his word of 28 Oct 2026, reversing v1289's Aroma. The id never moved.","<b>THE MARK STAYS.</b> The twelve-point starburst lettered POP is kept. v1289's own suite parts went red because its frozen fixtures held the new name; this version puts the name and the fixtures back in step."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11530,7 +11533,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='28 Oct 2026, 00:11 KL';
+const LAST_UPDATED='28 Oct 2026, 00:20 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

@@ -1,5 +1,22 @@
 [
  {
+  "v": "v1293",
+  "d": "28 Oct 2026",
+  "t": "GAS IS NAMED GAS AGAIN; THE STARBURST AND POP STAY",
+  "n": [
+   "<b>THE NAME.</b> The book keyed gas reads Gas again wherever a person reads it (the desk, Salt Admin's tag, the Counter's word list, the practice account's coming-soon line), his word of 28 Oct 2026, reversing v1289's Aroma. The id never moved.",
+   "<b>THE MARK STAYS.</b> The twelve-point starburst lettered POP is kept. v1289's own suite parts went red because its frozen fixtures held the new name; this version puts the name and the fixtures back in step."
+  ]
+ },
+ {
+  "v": "v1292",
+  "d": "28 Oct 2026",
+  "t": "MONEY PAST AN ORDER IS NO SALT OWED",
+  "n": [
+   "<b>HIS WORD OF 28 OCT 2026</b>: \"I do not owe them salt due to the extra prepayment.\" The engine read the units paid for as the money over the rate, so s296 (5 units, RM 455, RM 480 paid, all handed over) read 0.27 unit paid ahead of delivery, owed out and committed on the shelf. txDeferUnits now stops the units paid for at the units ordered: money past the order is their credit, never a claim on the shelf. Money paid ahead of a handover is still owed in goods, up to the order."
+  ]
+ },
+ {
   "v": "v1291",
   "d": "28 Oct 2026",
   "t": "SALT COUNT OF 0 UNIT SETS STOCK TO ZERO",

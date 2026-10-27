@@ -1,0 +1,4 @@
+[
+{"name": "the units paid for are not capped at the order", "file": "engine/position.mjs", "find": "return Math.max(0,Math.min(+s.qty||0,txPaid(s)/p)-txEffDeliv(s));}", "replace": "return Math.max(0,txPaid(s)/p-txEffDeliv(s));}"},
+{"name": "paid ahead counts nothing", "file": "engine/position.mjs", "find": "return Math.max(0,Math.min(+s.qty||0,txPaid(s)/p)-txEffDeliv(s));}", "replace": "return Math.max(0,Math.min(+s.qty||0,txPaid(s)/p)-(+s.qty||0));}"}
+]
