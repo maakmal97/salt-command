@@ -539,6 +539,10 @@ export function receivedTap(o, at, body, ctx) {
 }
 
 /** Cash received: cash taken at the counter. ctx: { rej: the newest rejected cash entry, room: rowRoom's reader or null }. */
+/** 27 Oct 2026 (Fable's review): a cash offered again is measured on the order as it stood before it, since the site's paid already counts it */
+export function againRoomOrder(o, rej, stage) {
+  return stage === "cash" ? Object.assign({}, o, { paid: +((+o.paid || 0) - (+((rej && rej.entry && rej.entry.payload) || {}).cash || 0)).toFixed(2) }) : o;
+}
 export function cashTap(o, at, body, ctx) {
   const { rej, room } = ctx;
   const amount = body && body.amount;

@@ -8,5 +8,6 @@
 {"name": "a row owing another figure takes it", "file": "engine/stages.mjs", "find": "if (overOk && !(r.on > 0.004) && Math.abs(r.left - due) < 0.005) return null;", "replace": "if (overOk && !(r.on > 0.004)) return null;"},
 {"name": "the Counter refuses as before", "file": "stmt/orders.js", "find": "    if (a > due + 0.004 && (claimedOf(order) > 0.004 || dueOf(order) <= 0.004))", "replace": "    if (a > due + 0.004)"},
 {"name": "the Counter takes it beside a claim", "file": "stmt/orders.js", "find": "(claimedOf(order) > 0.004 || dueOf(order) <= 0.004))", "replace": "(dueOf(order) <= 0.004))"},
-{"name": "the Counter takes it with nothing owed", "file": "stmt/orders.js", "find": "(claimedOf(order) > 0.004 || dueOf(order) <= 0.004))", "replace": "(claimedOf(order) > 0.004))"}
+{"name": "the Counter takes it with nothing owed", "file": "stmt/orders.js", "find": "(claimedOf(order) > 0.004 || dueOf(order) <= 0.004))", "replace": "(claimedOf(order) > 0.004))"},
+{"name": "offered again on the order as it is", "file": "engine/stages.mjs", "find": "  return stage === \"cash\" ? Object.assign({}, o, {", "replace": "  return stage === \"never\" ? Object.assign({}, o, {"}
 ]

@@ -4,8 +4,9 @@
  *   1  the Desk's cashTap takes cash past what is owed and carries the excess as `refund`, on the tap and on what he was shown; cash within it carries none
  *   2  it is still refused beside a claim of theirs, and on an order that owes nothing
  *   3  the row's room still refuses it while other money is on its way to the row, or while the row owes another figure than the order
- *   4  the Counter's own cash event takes the same cash and refuses the same two cases */
-import { cashTap } from "../engine/stages.mjs";
+ *   4  the Counter's own cash event takes the same cash and refuses the same two cases
+ *   5  an overpay rejected under Approve is offered again on the order as it stood before it (Fable's review) */
+import { cashTap, pastRoom, againRoomOrder } from "../engine/stages.mjs";
 import { decideDesk } from "../stmt/orders.js";
 
 const J = JSON.stringify;
@@ -37,6 +38,12 @@ export async function run({ ok }) {
   ok(f.status === 409 && /can still take/.test(f.error || ""), "a row owing less than the order still refuses cash that is within the order: " + J(f));
   const f2 = tap(base(), 120, room(40, 0));
   ok(f2.status === 409 && /can still take/.test(f2.error || "") && !f2.entry, "and refuses cash past both, so the refund he is told is never another than the fold raises: " + J(f2));
+
+  /* 5: the site counts the rejected RM 120 already; offered again, it is measured on the order before it */
+  const rej = { entry: { payload: { cash: 120 } } }, paidOn = Object.assign(base(), { paid: 120 });
+  const again = pastRoom(room(110, 0), againRoomOrder(paidOn, rej, "cash"), { payload: { cash: 120 } }, "offered again", false, true);
+  ok(again === null && againRoomOrder(paidOn, rej, "pay").paid === 120 && paidOn.paid === 120,
+    "an overpay rejected and offered again passes on the order as it stood before it, and a claim's is measured as it was: " + J(again));
 
   /* 4 */
   const g = decideDesk(base(), { cash: { amount: 120 } }, at.toISOString());
