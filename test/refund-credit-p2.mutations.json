@@ -1,0 +1,22 @@
+[
+{"name": "a paid-out refund counts as credit", "file": "engine/position.mjs", "find": "a+(r&&!r.paidOn&&ownsCode(owner,r.party)&&+r.amount>0?+r.amount:0)", "replace": "a+(r&&ownsCode(owner,r.party)&&+r.amount>0?+r.amount:0)"},
+{"name": "another party's refund counts", "file": "engine/position.mjs", "find": "a+(r&&!r.paidOn&&ownsCode(owner,r.party)&&+r.amount>0?+r.amount:0)", "replace": "a+(r&&!r.paidOn&&+r.amount>0?+r.amount:0)"},
+{"name": "credit on its way is spent again", "file": "engine/position.mjs", "find": "  return Math.max(0,+(open-way).toFixed(2));", "replace": "  return Math.max(0,+(open-0*way).toFixed(2));"},
+{"name": "another party's way counts", "file": "engine/position.mjs", "find": "a+(e&&ownsCode(owner,e.party)&&+e.credit>0?+e.credit:0)", "replace": "a+(e&&+e.credit>0?+e.credit:0)"},
+{"name": "credit goes under nought", "file": "engine/position.mjs", "find": "  return Math.max(0,+(open-way).toFixed(2));", "replace": "  return +(open-way).toFixed(2);"},
+{"name": "a bucket spends credit", "file": "engine/position.mjs", "find": "  if(!party||isBucket(party))return 0;\n  const owner=ownerCode(party);\n  const open=", "replace": "  if(!party)return 0;\n  const owner=ownerCode(party);\n  const open="},
+{"name": "a set-off is not marked", "file": "engine/position.mjs", "find": "      r.paidOn=day;r.setOff=row.rid;", "replace": "      r.paidOn=day;"},
+{"name": "a replay spends again", "file": "engine/position.mjs", "find": "  let left=+(credit-done).toFixed(2);\n  const spent=[];", "replace": "  let left=+(credit-0*done).toFixed(2);\n  const spent=[];"},
+{"name": "newest first", "file": "engine/position.mjs", "find": "return p<q?-1:p>q?1:a.i-b.i;", "replace": "return p<q?1:p>q?-1:a.i-b.i;"},
+{"name": "a split drops the rid", "file": "engine/position.mjs", "find": "      const part=Object.assign({},r,{amount:used,paidOn:day,setOff:row.rid,", "replace": "      const part=Object.assign({},r,{rid:undefined,amount:used,paidOn:day,setOff:row.rid,"},
+{"name": "a split closes the whole", "file": "engine/position.mjs", "find": "      r.amount=rest;\n", "replace": "      r.amount=rest;r.paidOn=day;\n"},
+{"name": "nothing short is said", "file": "engine/position.mjs", "find": "  return {spent,short:left>0.004?+left.toFixed(2):0,replay:false};", "replace": "  return {spent,short:0,replay:false};"},
+{"name": "a set-off is never stale", "file": "engine/position.mjs", "find": "if(!r.paidOn||r.setOff)open+=a;", "replace": "if(!r.paidOn)open+=a;"},
+{"name": "a cash refund is called stale", "file": "engine/position.mjs", "find": "if(!r.paidOn||r.setOff)open+=a;", "replace": "open+=a;"},
+{"name": "the fold sets off nothing", "file": "engine/apply.mjs", "find": "      if (it.append === \"sales\" && +row.credit > 0.004) {", "replace": "      if (false && it.append === \"sales\" && +row.credit > 0.004) {"},
+{"name": "the fold says nothing", "file": "engine/apply.mjs", "find": "        if (so) for (const s of so.spent) moves.push(", "replace": "        if (false) for (const s of so.spent) moves.push("},
+{"name": "a rejected draft is on its way", "file": "src/credit.js", "find": "    for (const e of queued) if (!drafted.has(e.at)) out.set(e.at, e);", "replace": "    for (const e of queued) out.set(e.at, e);"},
+{"name": "the queue is never read", "file": "src/credit.js", "find": "  if (env.SALT_QUEUE) {", "replace": "  if (false) {"},
+{"name": "every device's queue is read", "file": "src/credit.js", "find": "const QUEUE = \"q:orders\";", "replace": "const QUEUE = \"q:\";"},
+{"name": "creditFor ignores the way", "file": "src/credit.js", "find": "w.map((e) => ({ party: e.payload.party, credit: +e.payload.credit }))", "replace": "[]"}
+]

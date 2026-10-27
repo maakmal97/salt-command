@@ -1035,6 +1035,14 @@ function bookItem(book, it, c) {
       row.rid = nextRid(book[it.append] || [], it.append === "sales" ? "s" : "p")(1);
       book[it.append].push(row);
       c.appended = row;
+      /* 27 Oct 2026 (docs/plan-refund-credit.html P2): AN ACCEPT THAT SPENT THEIR CREDIT closes the refunds it spent, oldest first, a part split
+         keeping its rid (the engine's setOffCredit); what no open refund covers is said, never booked */
+      if (it.append === "sales" && +row.credit > 0.004) {
+        book.customerRefunds = book.customerRefunds || [];
+        const so = E.setOffCredit(book.customerRefunds, row, row.date || null);
+        if (so) for (const s of so.spent) moves.push(`credit set off: ${row.customer} RM ${s.amount} of the refund${s.rid ? " on " + s.rid : ""}, on ${row.rid}${s.whole ? "" : ", the rest left open"}`);
+        if (so && so.short) moves.push(`CREDIT SHORT on ${row.rid}: RM ${so.short} of its credit found no open refund of ${row.customer}; the row carries it as paid, so check it by hand`);
+      }
     } else if (it.count) {
       const c = it.count;
       if (c.product === "salt") book.STATED_STOCK = c.qty;

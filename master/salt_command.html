@@ -7429,11 +7429,13 @@ function refundOnOverpay(list,row,date){
    cash on a row down, or the row up, until what it was paid past is less than the refunds the rid carries. This answers
    how much of the OPEN ones (no paidOn) that is, 0 when none; the fold and the desk's overlay say it in a note, and he
    removes the row in ledger/book.json by hand. It writes nothing. */
+/* 27 Oct 2026 (docs/plan-refund-credit.html P2): AND A REFUND SET OFF AS CREDIT whose row was later paid less: the credit was given and is
+   no longer owed, so it is flagged with the open ones, never withdrawn. One paid out in cash is the hand's, as before. */
 function refundStale(list,row){
   if(!list||!row||!row.rid||row.unpriced)return 0;
   const paid=+txPaid(row), owed=row.cancelled?0:+txOwed(row);
   let had=0,open=0;
-  for(const r of list)if(r&&r.rid===row.rid){const a=+r.amount||0;had+=a;if(!r.paidOn)open+=a;}
+  for(const r of list)if(r&&r.rid===row.rid){const a=+r.amount||0;had+=a;if(!r.paidOn||r.setOff)open+=a;}
   const x=Math.min(open,had-(paid-owed));
   return x>0.009?+x.toFixed(2):0;
 }
@@ -7447,6 +7449,53 @@ function bookCash(row,refunds){
   if(!row||!row.rid||!Array.isArray(refunds)||!refunds.length)return c;
   const r=refunds.reduce((a,x)=>a+(x&&x.rid===row.rid?(+x.amount||0):0),0);
   return r>0.004?Math.max(0,+(c-r).toFixed(2)):c;
+}
+/* ====== A REFUND BECOMES THEIR CREDIT (27 Oct 2026, his word; docs/plan-refund-credit.html P2) ======================================
+   Every open refund of theirs (customerRefunds with no paidOn), on their own code or their -R bucket, overpays and cancelled orders alike, is
+   their credit; it comes off their next order at his Accept, booked on its row as cash already paid (`credit` on the row says how much of the
+   cash it is), and the order keeps its true price. creditOf is what is left to spend: the open refunds less the credit every unfolded Accept
+   already carries (`onWay`, the Worker's read of the drafts on their way and the queue, a rejected one released). A bucket spends none: an
+   associate's refunds pay their own orders only (his answer). The figure is never under nought. */
+function creditOf(refunds,party,onWay){
+  if(!party||isBucket(party))return 0;
+  const owner=ownerCode(party);
+  const open=(refunds||[]).reduce((a,r)=>a+(r&&!r.paidOn&&ownsCode(owner,r.party)&&+r.amount>0?+r.amount:0),0);
+  const way=(onWay||[]).reduce((a,e)=>a+(e&&ownsCode(owner,e.party)&&+e.credit>0?+e.credit:0),0);
+  return Math.max(0,+(open-way).toFixed(2));
+}
+/* THE FOLD CLOSES WHAT IS SPENT: the open refunds of the row's party (their own code and bucket), oldest first by `since` then by place, up to
+   the row's credit. One used whole takes paidOn, the row's day, and setOff, the row's rid. One used in part is SPLIT: the used part a copy beside
+   it, closed and marked, and the rest left open, both keeping the rid, so refundOnOverpay's measure of what the rid carries never moves and the
+   fold never raises the remainder again. What is already set off on this row counts first, so a replay changes nothing. Returns the parts spent
+   and what no open refund covered (`short`), which the fold says; null when the row spends none. The caller owns the list. */
+function setOffCredit(list,row,date){
+  const credit=+(row&&row.credit)||0;
+  if(!list||!row||!row.rid||!(credit>0.004))return null;
+  const owner=ownerCode(row.customer);
+  const done=list.reduce((a,r)=>a+(r&&r.setOff===row.rid?(+r.amount||0):0),0);
+  let left=+(credit-done).toFixed(2);
+  const spent=[];
+  if(!(left>0.004))return {spent,short:0,replay:done>0.004};
+  const day=date||row.date||null;
+  const open=list.map((r,i)=>({r,i})).filter(x=>x.r&&!x.r.paidOn&&ownsCode(owner,x.r.party)&&+x.r.amount>0.004)
+    .sort((a,b)=>{const p=String(a.r.since||''),q=String(b.r.since||'');return p<q?-1:p>q?1:a.i-b.i;});
+  for(const {r} of open){
+    if(!(left>0.004))break;
+    const a=+r.amount;
+    if(a<=left+0.004){
+      r.paidOn=day;r.setOff=row.rid;
+      r.note=String(r.note||'').trim()+(r.note?' ':'')+'Set off as credit on '+row.rid+' on '+day+'.';
+      spent.push({rid:r.rid||null,amount:+a.toFixed(2),whole:true});left=+(left-a).toFixed(2);
+    }else{
+      const used=+left.toFixed(2),rest=+(a-used).toFixed(2);
+      const part=Object.assign({},r,{amount:used,paidOn:day,setOff:row.rid,
+        note:'RM '+used+' of the refund'+(r.rid?' on '+r.rid:'')+' raised '+(r.since||'undated')+', set off as credit on '+row.rid+' on '+day+'; RM '+rest+' of it stays open.'});
+      r.amount=rest;
+      list.splice(list.indexOf(r)+1,0,part);
+      spent.push({rid:r.rid||null,amount:used,whole:false});left=0;
+    }
+  }
+  return {spent,short:left>0.004?+left.toFixed(2):0,replay:false};
 }
 /* ====== PLAN 4, EASY REVERT (16 Oct 2026; his answers: the newest move only, and a site order's customer told by a banner) ======
    A ROW'S MOVES are the steps of its trail booked after the row itself (step 0 is the row as booked): a payment or a handover, which a
@@ -7756,7 +7805,7 @@ return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEnt
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,
-        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,refundOnOverpay:refundOnOverpay,refundStale:refundStale,bookCash:bookCash,UNDO_FIELDS:UNDO_FIELDS,rowMoves:rowMoves,undoOf:undoOf,undoSame:undoSame,
+        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,refundOnOverpay:refundOnOverpay,refundStale:refundStale,bookCash:bookCash,creditOf:creditOf,setOffCredit:setOffCredit,UNDO_FIELDS:UNDO_FIELDS,rowMoves:rowMoves,undoOf:undoOf,undoSame:undoSame,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
