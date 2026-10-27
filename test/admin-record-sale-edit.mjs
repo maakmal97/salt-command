@@ -54,10 +54,10 @@ export async function run({ ok, pageWork }) {
     /* a */
     const after = (x, y) => !!x && !!y && (x.compareDocumentPosition(y) & 4) === 4;
     const seq = [A("record.trade.edit"), A("record.trade.direction"), tileGroup(f, "Book"), A("record.trade.party"), A("record.trade.date"), A("record.trade.units"), A("record.trade.total"), A("record.trade.add-book")];
-    const tail = f.querySelector(".maker-tail"), tailNames = tail ? [...tail.querySelectorAll(":scope > .salt-settings__row > .salt-settings__label")].map(t) : [];
+    const tail = f.querySelector(".maker-trade-tail"), tailNames = tail ? [...tail.querySelectorAll(":scope > .salt-settings__row > .salt-settings__label")].map(t) : [];
     ok(seq.every((x, i) => !!x && (i === 0 || after(seq[i - 1], x))) && !!tail && after(seq[7], tail) && J(tailNames) === J(["Handover", "Delivery", "Handed over", "Cash paid"])
       && after(tail, A("record.trade.send")) && pill() === "Record the sale" && A("record.trade.send").parentElement === f
-      && !f.querySelector(":scope > .salt-settings:not(.maker-tail) [data-act='record.trade.cash'], :scope > .salt-settings:not(.maker-tail) [data-act='record.trade.moved']"),
+      && !f.querySelector(":scope > .salt-settings:not(.maker-trade-tail) [data-act='record.trade.cash'], :scope > .salt-settings:not(.maker-trade-tail) [data-act='record.trade.moved']"),
       "the sale form stands in his order: Row, Type, Book, Who, Date, Units, Price, Add a book, then Handover, Delivery, Handed over and Cash paid in one tail list, then Record the sale: "
         + J([seq.map((x) => !!x), tailNames, pill()]));
 

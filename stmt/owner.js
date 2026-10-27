@@ -4048,7 +4048,7 @@ export const OWNER_JS = `
         },false),'Remove this book',makerList(row),true);
       },false),'Add a book',tripList);
       /* 27 Oct 2026, his word: the handover and its cost come after every book, then what was handed over and paid, just above the pill */
-      var tradeTail=el('div','salt-settings maker-list maker-tail'); tradeSection.appendChild(tradeTail);
+      var tradeTail=el('div','salt-settings maker-list maker-trade-tail');   /* not maker-tail, which is the hours chart's bar */ tradeSection.appendChild(tradeTail);
       [handover,carriage,tradeMoved,tradeCash].forEach(function(c){ var r=c.closest('.salt-settings__row'); if(r) tradeTail.appendChild(r); });
       var tradeAnswer=el('p','msg'); tradeAnswer.setAttribute('role','status'); tradeSection.appendChild(tradeAnswer);
       var tradePending=false, tradeAt=null, tradeSignature='';
