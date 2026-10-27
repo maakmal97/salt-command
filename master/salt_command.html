@@ -9104,6 +9104,7 @@ const PROD_OPENING={
     "stated": null
   }
 };
+/* COUNTED AT v1299 on 2026-10-28: the salt inventory held 0 against 0.5 on the roll, a difference of -0.5. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-10-28. <b>COUNT OF SALT, 28 OCT 2026: 0 UNIT AGAINST 0.5 ON THE BOOK.</b> Counted by hand and decided by Counter Admin. The book said 0.5 unit, so the gap is -0.5 unit. The count wins over the ledger: the stated stock is set to 0 and the salt count date moves from 27 Oct to 28 Oct 2026. The gap books as shrinkage across every unit sold. The floors hold: floor1 RM60, floor2 RM120, floor125 RM725 and ask1 RM120 before and after. Self-use moves from RM103.34 to RM103.84. The drafter flagged that 0.5 unit is owed out and already paid for, so with stock at 0 it cannot be delivered, and every open order is unmeetable until a lot lands. The count answers none of this; the dossier gives no reason for the gap. The 0.5 unit owed out remains outstanding. */
 /* ROLLED AT v1295: 0.5 unit to CZ5-TM on 2026-10-28, so 1 less 0.5 is 0.5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Salt stock falls by 0.5 unit for the handover to CZ5-TM. */
 /* ROLLED AT v1294: 1 unit from CZ5-TM on 2026-10-28, so 0 plus 1 is 1. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The shelf rolls by 1 unit, back from CZ5-TM, the difference the correction states. */
 /* COUNTED AT v1291 on 2026-10-27: the salt inventory held 0 against 0.5 on the roll, a difference of -0.5. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-10-27. <b>STOCK COUNT OF SALT ON 27 OCT 2026: 0 UNIT.</b> Counted by hand and decided by Counter Admin on 27 Oct 2026. The book said 0.5 unit, so the gap is -0.5 unit. A count wins over the ledger, so the stated stock is set to 0 and the salt count date moves to 27 Oct 2026. The dossier gives no reason for the gap and none is offered here; it books as shrinkage across every unit sold. The ladder floors and ask are unchanged: floor RM60 for 1 unit, RM120 for 2, ask RM120 for 1. Self-use moves from 103.84 to 103.34. The drafter flagged 1.27 unit owed out and already paid for, and a zero count leaves open orders unmeetable. The dossier shows 0.27 unit owed out and 0 promised, so the figure in the flag does not match it. 0.27 unit remains outstanding until a lot lands. */
@@ -9264,9 +9265,9 @@ const PROD_OPENING={
 /* ROLLED AT v439: 1 unit to CA7-JTR on 2026-09-01, 6 unit to CK4-SEN on 2026-09-01, 1 unit to CR3-DAM on 2026-09-01, so 8.25 less 8 is 0.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Eight of the eight and a quarter unit on the shelf went out today across four rows, leaving 0.25 unit against 3 unit already promised: CE4-CHE's half unit owed out and CY2-NIL's 2.5 unit pending. The book is 2.75 unit short of its own commitments and sourcing is now the first decision on it. */
 /* ROLLED AT v404: 5 unit to CE4-AD on 2026-08-29, so 13.25 less 5 is 8.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* ROLLED AT v399: 3 unit to CH4-KS on 2026-08-28, so 16.25 less 3 is 13.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
-const STATED_STOCK=0.5;
+const STATED_STOCK=0;
 const COUNT_ON={
-  "salt": "2026-10-27",
+  "salt": "2026-10-28",
   "oil": "2026-10-27",
   "candy": "2026-10-20",
   "rice": "2026-10-20",
@@ -9313,7 +9314,8 @@ const COUNTS=[
   {"product":"salt","date":"2026-10-24","qty":25,"was":25,"drift":0},
   {"product":"oil","date":"2026-10-27","qty":0,"was":20,"drift":-20},
   {"product":"salt","date":"2026-10-27","qty":0.5,"was":1.5,"drift":-1},
-  {"product":"salt","date":"2026-10-27","qty":0,"was":0.5,"drift":-0.5}
+  {"product":"salt","date":"2026-10-27","qty":0,"was":0.5,"drift":-0.5},
+  {"product":"salt","date":"2026-10-28","qty":0,"was":0.5,"drift":-0.5}
 ];
 const purchases=[
   {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -10117,7 +10119,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-10-27T16:29:26.492Z";
+const QUEUE_COMMITTED="2026-10-27T21:21:10.798Z";
 /* <b>BOARD SIZES CHANGED ON 19 OCT: SALT, 3.5 AND 4.5 UNIT HIDDEN.</b> Counter Admin decided this at 15:38. The entry reads "Board sizes on salt: hiding 3.5 unit, 4.5 unit" and sets 0 prices, so no rate is set against the desk's floor or ask and no party is involved. The board's own price remains the ask at every size. The drafter flagged that two sizes leave the board; that is exactly what the entry does, and both stay priceable at the counter and off a quote, they simply stop being printed. The row moves no stock, no cash and no ledger row, so it carries no cost and nothing is left outstanding. */
 /* RETIRED AT v656 on 2026-09-16, his decision of 15 Sep off the pricing workbook: the board is the ladder, so a stated price no longer decides it and oil's five are cleared rather than left unread. The stranger's ask on oil moves from his RM130, 240, 330, 400 and 450 to Bronze at RM230, 440, 650, 850 and 1,040, with 80 and 100 unit at RM1,640 and RM2,000. The old five sat a hair over break-even (the 50 unit tier read 0.93x, RM32.20 UNDER its floor) because they were typed in July against a cost that has moved since; the ladder is struck on today's COGS and moves with it. No customer's price moves with this: every named customer is quoted their own tier capped at what they pay, and a stranger has no history to cap against. The hide list is untouched and still takes a size off the board. */
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
@@ -11197,7 +11199,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1298","d":"28 Oct 2026","t":"A RED SUITE IS ONE FYI LINE ON SALT ADMIN; A REFUSAL'S CARD SAYS ITS REASON","n":["<b>THE RED SUITE.</b> When the desk's own tests fail after a version goes live, cloud-commit files it as the refusal suite:&lt;version&gt;, and Salt Admin drew each one as an Entry card reading Desk and Fix, a Fix that led to Approve with nothing to act on. His screenshot showed four. It is the Desk informing him, so Needs you now draws one FYI line, Tests, \"Desk tests red after v1297\", the newest version alone, with no button; from 860px it opens beside the list with the Desk's reason in full and how many earlier runs were red. Approve lists none of them. The next green suite clears them, as before (tools/drafts.mjs --clear-suite-notices).","<b>A REFUSAL'S CARD.</b> Every other refused entry keeps its Entry card and Fix, its title now the reason in a verb (\"Not taken: add the date\") held to one line, so no card reads Desk alone.","<b>THE SUITE.</b> The reds behind the four notices were the Customers P1 and P2 day count, fixed on master before this version (d4f29994, CI green)."]}];
+const evolution=[{"v":"v1299","d":"28 Oct 2026","t":"SALT COUNTED AT ZERO AGAINST 0.5 ON THE BOOK","n":["<b>ONE COUNT FOLDED.</b> Salt was counted at 0 unit on 28 Oct 2026 against 0.5 on the book, a gap of -0.5. The count wins, so the stated salt inventory is set to 0 and the salt count date moves from 27 Oct to 28 Oct 2026. No sale, purchase or amendment was folded in this batch.","<b>UNUSUAL.</b> The 0.5 unit owed out is already paid for, and with stock at 0 it cannot be delivered until a lot lands. The dossier gives no reason for the gap, so none is stated. The floors and ask do not move; only the self-use figure changes, from RM103.34 to RM103.84."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11345,7 +11347,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='28 Oct 2026, 00:57 KL';
+const LAST_UPDATED='28 Oct 2026, 05:21 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

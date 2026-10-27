@@ -103,9 +103,9 @@
       "stated": null
     }
   },
-  "STATED_STOCK": 0.5,
+  "STATED_STOCK": 0,
   "COUNT_ON": {
-    "salt": "2026-10-27",
+    "salt": "2026-10-28",
     "oil": "2026-10-27",
     "candy": "2026-10-20",
     "rice": "2026-10-20",
@@ -151,7 +151,8 @@
     {"product":"salt","date":"2026-10-24","qty":25,"was":25,"drift":0},
     {"product":"oil","date":"2026-10-27","qty":0,"was":20,"drift":-20},
     {"product":"salt","date":"2026-10-27","qty":0.5,"was":1.5,"drift":-1},
-    {"product":"salt","date":"2026-10-27","qty":0,"was":0.5,"drift":-0.5}
+    {"product":"salt","date":"2026-10-27","qty":0,"was":0.5,"drift":-0.5},
+    {"product":"salt","date":"2026-10-28","qty":0,"was":0.5,"drift":-0.5}
   ],
   "purchases": [
     {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -1023,7 +1024,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-10-27T16:29:26.492Z",
+  "QUEUE_COMMITTED": "2026-10-27T21:21:10.798Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -1089,6 +1090,7 @@
       "RETIRED AT v549 on 2026-09-09, his instruction. The key held one hand-typed lot: 50 unit by 2026-08-28, stated on the 24th. He read it on 9 September with the date twelve days gone and four lots landed since (25 unit on 26 Aug, 25 on 31 Aug, 25 on 03 Sep and 50 on 08 Sep), and said he generally has no information on when he purchases. The Sourcing section is now about the CURRENT lot, and the cadence is measured off the book rather than typed. One standing fact from the retired basis is kept here because it is not a plan: the purchase ceiling of RM4,500 resets on the 28th of each month and anything beyond it comes out of rolling cash. The rest was the 24 Aug reasoning, that the 100 unit tier was the recommendation and he took the 50, at a landed RM45.20 a unit against RM43.60."
     ],
     "STATED_STOCK": [
+      "COUNTED AT v1299 on 2026-10-28: the salt inventory held 0 against 0.5 on the roll, a difference of -0.5. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-10-28. <b>COUNT OF SALT, 28 OCT 2026: 0 UNIT AGAINST 0.5 ON THE BOOK.</b> Counted by hand and decided by Counter Admin. The book said 0.5 unit, so the gap is -0.5 unit. The count wins over the ledger: the stated stock is set to 0 and the salt count date moves from 27 Oct to 28 Oct 2026. The gap books as shrinkage across every unit sold. The floors hold: floor1 RM60, floor2 RM120, floor125 RM725 and ask1 RM120 before and after. Self-use moves from RM103.34 to RM103.84. The drafter flagged that 0.5 unit is owed out and already paid for, so with stock at 0 it cannot be delivered, and every open order is unmeetable until a lot lands. The count answers none of this; the dossier gives no reason for the gap. The 0.5 unit owed out remains outstanding.",
       "ROLLED AT v1295: 0.5 unit to CZ5-TM on 2026-10-28, so 1 less 0.5 is 0.5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Salt stock falls by 0.5 unit for the handover to CZ5-TM.",
       "ROLLED AT v1294: 1 unit from CZ5-TM on 2026-10-28, so 0 plus 1 is 1. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The shelf rolls by 1 unit, back from CZ5-TM, the difference the correction states.",
       "COUNTED AT v1291 on 2026-10-27: the salt inventory held 0 against 0.5 on the roll, a difference of -0.5. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-10-27. <b>STOCK COUNT OF SALT ON 27 OCT 2026: 0 UNIT.</b> Counted by hand and decided by Counter Admin on 27 Oct 2026. The book said 0.5 unit, so the gap is -0.5 unit. A count wins over the ledger, so the stated stock is set to 0 and the salt count date moves to 27 Oct 2026. The dossier gives no reason for the gap and none is offered here; it books as shrinkage across every unit sold. The ladder floors and ask are unchanged: floor RM60 for 1 unit, RM120 for 2, ask RM120 for 1. Self-use moves from 103.84 to 103.34. The drafter flagged 1.27 unit owed out and already paid for, and a zero count leaves open orders unmeetable. The dossier shows 0.27 unit owed out and 0 promised, so the figure in the flag does not match it. 0.27 unit remains outstanding until a lot lands.",

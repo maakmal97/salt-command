@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1299",
+  "d": "28 Oct 2026",
+  "t": "SALT COUNTED AT ZERO AGAINST 0.5 ON THE BOOK",
+  "n": [
+   "<b>ONE COUNT FOLDED.</b> Salt was counted at 0 unit on 28 Oct 2026 against 0.5 on the book, a gap of -0.5. The count wins, so the stated salt inventory is set to 0 and the salt count date moves from 27 Oct to 28 Oct 2026. No sale, purchase or amendment was folded in this batch.",
+   "<b>UNUSUAL.</b> The 0.5 unit owed out is already paid for, and with stock at 0 it cannot be delivered until a lot lands. The dossier gives no reason for the gap, so none is stated. The floors and ask do not move; only the self-use figure changes, from RM103.34 to RM103.84."
+  ]
+ },
+ {
   "v": "v1298",
   "d": "28 Oct 2026",
   "t": "A RED SUITE IS ONE FYI LINE ON SALT ADMIN; A REFUSAL'S CARD SAYS ITS REASON",
