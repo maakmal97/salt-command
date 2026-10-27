@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1276",
+  "d": "27 Oct 2026",
+  "t": "FULFILMENT OF 10 UNITS OF OIL RE-BOOKED ON S297, CASH NIL",
+  "n": [
+   "<b>ONE ROW FOLDED.</b> A fulfilment on s297, CZ4-MK's order of 10 units of oil, goods RM120, agreed 27 Oct 2026 and approved by Counter Admin. It moves 10 units with cash 0. The master's amend step applies the row, so the fold does not recompute it. The drafter raised no flag.",
+   "<b>UNUSUAL.</b> The trail on s297 already holds an earlier fulfilment with RM120 cash and 10 units, followed by a correction that undid it. This one is the re-booking, with no cash. The oil stock falls by 10 units on 27 Oct, and RM120 stays owed."
+  ]
+ },
+ {
   "v": "v1275",
   "d": "27 Oct 2026",
   "t": "CORRECTION CLEARS PAYMENT AND HANDOVER ON S297",
