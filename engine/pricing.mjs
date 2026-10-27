@@ -553,8 +553,13 @@ function gridOf(R){
   const G=R&&R.grid;if(!G||typeof G!=='object')return null;
   const min=+G.min,step=+G.step,max=+G.max;
   if(!(min>0)||!(step>0)||!(max>=min)||!isFinite(max))return null;
-  return {min:min,step:step,max:max};
+  /* 27 Oct 2026, HIS WORD ON PrEP: `multiples` narrows the grid to sizes that are a whole number of any one of them (12 or 30
+     pills, N times either). The grid still runs min to max in steps so every point is priced and p[i] stays at min+i*step;
+     only the sizes a customer may ORDER are cut (mulOk), by the Worker, the page and onGrid. */
+  const mul=Array.isArray(G.multiples)?G.multiples.map(Number).filter(x=>x>0&&isFinite(x)):[];
+  return mul.length?{min:min,step:step,max:max,multiples:mul}:{min:min,step:step,max:max};
 }
+function mulOk(q,G){return !G||!G.multiples||G.multiples.some(m=>Math.abs(q/m-Math.round(q/m))<1e-6);}
 function gridSizes(G){
   if(!G)return [];
   const n=Math.round((G.max-G.min)/G.step),out=[];
@@ -564,7 +569,7 @@ function gridSizes(G){
 function onGrid(q,G){
   if(!G||typeof q!=='number'||!(q>0))return false;
   const k=(q-G.min)/G.step;
-  return q>=G.min-1e-9&&q<=G.max+1e-9&&Math.abs(k-Math.round(k))<1e-6;
+  return q>=G.min-1e-9&&q<=G.max+1e-9&&Math.abs(k-Math.round(k))<1e-6&&mulOk(q,G);
 }
 /* the sizes a drift walk takes up to and including the largest asked for: the rungs and every grid point beneath it, with
    the sizes asked for, smallest first and each once. HIS DECISION: THE WHOLE GRID IS WALKED, so the rate per unit never
@@ -706,7 +711,7 @@ function quoteGrid(C,P,d){
   else if(R.fixed)ps=read(fixedWalk(walkSizes(R,qs),C,P,d),true);
   else ps=qs.map(q=>quoteAt(q,C,P,d));
   if(!ps.length||ps.some(p=>p==null||!isFinite(p)||!(p>0)))return null;
-  return {min:G.min,step:G.step,max:G.max,p:ps};
+  return G.multiples?{min:G.min,step:G.step,max:G.max,p:ps,multiples:G.multiples}:{min:G.min,step:G.step,max:G.max,p:ps};
 }
 /* THE BOARD AND THE FLOORS, for quoting at the point of sale: what the phone receives. */
 /* THE CARD IS A COLLECTION PRICE AND DELIVERY IS QUOTED ON TOP, PER ORDER (v352, his instruction).

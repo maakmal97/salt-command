@@ -1473,7 +1473,8 @@ details.obs>summary{min-height:var(--tap);}
   --salt-product-oil: #c5a059;    /* brass */
   --salt-product-candy: #cf8fb4;  /* rose, hue 330 */
   --salt-product-rice: #7b86cc;   /* indigo, hue 235 */
-  --salt-product-spare: #a8b06a;  /* olive, hue 68 */
+  --salt-product-gas: #e8794d;    /* flame, hue 30 */
+  --salt-product-prep: #c77ae0;   /* magenta, hue 295 */
 
   /* Materials */
   --salt-glass: rgba(255, 255, 255, 0.03);
@@ -3559,7 +3560,8 @@ label.salt-field__label {
 .salt-product--oil { --salt-hue: var(--salt-product-oil); }
 .salt-product--candy { --salt-hue: var(--salt-product-candy); }
 .salt-product--rice { --salt-hue: var(--salt-product-rice); }
-.salt-product--spare { --salt-hue: var(--salt-product-spare); }
+.salt-product--gas { --salt-hue: var(--salt-product-gas); }
+.salt-product--prep { --salt-hue: var(--salt-product-prep); }
 .salt-product__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--salt-hue); flex: 0 0 auto; }
 .salt-product__sub { font-family: var(--salt-font-display); font-size: 0.71875rem; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--salt-mist); }
 .salt-product__rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--salt-line), transparent); }
@@ -3591,7 +3593,8 @@ label.salt-field__label {
 .salt-producttag--oil { --salt-hue: var(--salt-product-oil); }
 .salt-producttag--candy { --salt-hue: var(--salt-product-candy); }
 .salt-producttag--rice { --salt-hue: var(--salt-product-rice); }
-.salt-producttag--spare { --salt-hue: var(--salt-product-spare); }
+.salt-producttag--gas { --salt-hue: var(--salt-product-gas); }
+.salt-producttag--prep { --salt-hue: var(--salt-product-prep); }
 .salt-producttag__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--salt-hue, currentColor); box-shadow: 0 0 6px -1px currentColor; flex: 0 0 auto; }
 
 /* ---- Meter: a bar is a figure. A well-inset track, a lit fill, an optional marker
@@ -5387,7 +5390,9 @@ const PRICE_ENGINE={
     salt:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5],
     oil:[10,20,30,40,50],   /* 19 Sep 2026: five sizes, his board. 80 and 100 went with the tiers. */
     candy:[1,5,10,20,30],   /* 23 Sep 2026: his three rates and a size inside each */
-    rice:[1,5,10]
+    rice:[1,5,10],
+    gas:[1],   /* 27 Oct 2026 */
+    prep:[12,30]
   },
   /* which rungs are PRINTED. A product with no entry prints every rung it has. Empty since
      round 5: oil's grid IS its board now, so the mechanism stands and nothing uses it. */
@@ -5454,7 +5459,9 @@ const LADDER_BY={
   oil:{round:{to:10, up:true}, anchorQ:10, anchorX:0.62, at:{lo:10, hi:50}, floor:0, anchorG:0.36, gLo:0},   /* v504: 0.36 reproduces RM130 at 10 on the floor basis */
   /* 23 Sep 2026: stated a unit in single ringgit, so they round to the ringgit and not the ten */
   candy:{round:{to:1, up:true}},
-  rice:{round:{to:1, up:true}}
+  rice:{round:{to:1, up:true}},
+  gas:{round:{to:1, up:true}},
+  prep:{round:{to:1, up:true}}
 };
 
 const TIER_RULE={
@@ -5499,7 +5506,12 @@ const TIER_RULE={
   /* 05 OCT 2026, HIS DECISION: each stated board is held between its floor, COGS times the size, and a ceiling of
      `ceilingX` times that floor, capped down to the book's grid. Three times the floor on every book (18 Oct 2026, his decision;
      oil and candy were twice, rice two and a half). A typed price inside the band does not move. */
-  rice:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:3, grid:{min:1, step:1, max:10}}
+  rice:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:3, grid:{min:1, step:1, max:10}},
+  /* 27 OCT 2026, HIS WORD: gas RM75 a unit on a cost of RM50 (1.5 times), bought in ones, the board at 1 and any more by Negotiate. PrEP 12 pills
+     for RM60 or 30 pills for RM125 on a cost of RM100 per 30 (1.5 and 1.25 times), and any whole number of either pack: the grid runs 12 to 120 in
+     sixes so every point is priced, `multiples` cuts what may be ordered to 12N and 30N (the Worker's onStep, the page, onGrid); past 120, Negotiate. */
+  gas:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":75}, rungs:[1], ceilingX:3, grid:{min:1, step:1, max:1}},
+  prep:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"12":60,"30":125}, rungs:[12,30], ceilingX:3, grid:{min:12, step:6, max:120, multiples:[12,30]}}
 };
 
 const SHRINK_ATTRIB=1;
@@ -7656,7 +7668,7 @@ function vaultPendingOk(record,publicWord=()=>false){
     'id','until','cancelledOn','unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill','hide','orderCode','second','extras','cover',
     'shares','rids','undo'];
   const enumWords=['customer','supplier','reseller','referral','downstream','bucket','cash','goods','in','out',
-    'SELL','BUY','Correction','Fulfilment','Cancellation','Payment','Receipt','Default','R1','R2','R3','salt','oil','candy','rice','delivered','collected',
+    'SELL','BUY','Correction','Fulfilment','Cancellation','Payment','Receipt','Default','R1','R2','R3','salt','oil','candy','rice','gas','prep','delivered','collected',
     'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big','pct'];
   const house=object(record)&&typeof record.path==='string'&&/\/house-sizes$/.test(record.path);
   const offset=object(record)&&typeof record.path==='string'&&/^\/?all\/maker\/inputs\/offset$/.test(record.path);
@@ -8309,8 +8321,13 @@ function gridOf(R){
   const G=R&&R.grid;if(!G||typeof G!=='object')return null;
   const min=+G.min,step=+G.step,max=+G.max;
   if(!(min>0)||!(step>0)||!(max>=min)||!isFinite(max))return null;
-  return {min:min,step:step,max:max};
+  /* 27 Oct 2026, HIS WORD ON PrEP: `multiples` narrows the grid to sizes that are a whole number of any one of them (12 or 30
+     pills, N times either). The grid still runs min to max in steps so every point is priced and p[i] stays at min+i*step;
+     only the sizes a customer may ORDER are cut (mulOk), by the Worker, the page and onGrid. */
+  const mul=Array.isArray(G.multiples)?G.multiples.map(Number).filter(x=>x>0&&isFinite(x)):[];
+  return mul.length?{min:min,step:step,max:max,multiples:mul}:{min:min,step:step,max:max};
 }
+function mulOk(q,G){return !G||!G.multiples||G.multiples.some(m=>Math.abs(q/m-Math.round(q/m))<1e-6);}
 function gridSizes(G){
   if(!G)return [];
   const n=Math.round((G.max-G.min)/G.step),out=[];
@@ -8320,7 +8337,7 @@ function gridSizes(G){
 function onGrid(q,G){
   if(!G||typeof q!=='number'||!(q>0))return false;
   const k=(q-G.min)/G.step;
-  return q>=G.min-1e-9&&q<=G.max+1e-9&&Math.abs(k-Math.round(k))<1e-6;
+  return q>=G.min-1e-9&&q<=G.max+1e-9&&Math.abs(k-Math.round(k))<1e-6&&mulOk(q,G);
 }
 /* the sizes a drift walk takes up to and including the largest asked for: the rungs and every grid point beneath it, with
    the sizes asked for, smallest first and each once. HIS DECISION: THE WHOLE GRID IS WALKED, so the rate per unit never
@@ -8462,7 +8479,7 @@ function quoteGrid(C,P,d){
   else if(R.fixed)ps=read(fixedWalk(walkSizes(R,qs),C,P,d),true);
   else ps=qs.map(q=>quoteAt(q,C,P,d));
   if(!ps.length||ps.some(p=>p==null||!isFinite(p)||!(p>0)))return null;
-  return {min:G.min,step:G.step,max:G.max,p:ps};
+  return G.multiples?{min:G.min,step:G.step,max:G.max,p:ps,multiples:G.multiples}:{min:G.min,step:G.step,max:G.max,p:ps};
 }
 /* THE BOARD AND THE FLOORS, for quoting at the point of sale: what the phone receives. */
 /* THE CARD IS A COLLECTION PRICE AND DELIVERY IS QUOTED ON TOP, PER ORDER (v352, his instruction).
@@ -8879,12 +8896,12 @@ const PRODUCTS={
   },
   "gas": {
     "id": "gas",
-    "name": "Spare",
+    "name": "Gas",
     "unit": "unit",
     "accent": "var(--salt-product-gas)",
-    "since": "2026-09-22",
-    "retired": true,
-    "note": "Opened 22 Sep 2026 as THE SPARE SLOT, on his instruction, to prove that adding a book is repeatable rather than surgical. It is deliberately given NO mark, so the Ring fallback is exercised by a real book. Put it away with tools/product.mjs --retire spare once it has served.",
+    "since": "2026-10-27",
+    "retired": false,
+    "note": "Opened 27 Oct 2026 on his word, by renaming the retired spare book (no row, opening or price). Letter P, a flame mark. No lot, no sale and no count yet, so the fold will refuse a sale on it until its first lot is entered by hand.",
     "reward": false
   },
   "prep": {
@@ -8895,7 +8912,7 @@ const PRODUCTS={
     "since": "2026-10-27",
     "retired": false,
     "reward": false,
-    "note": "Opened by tools/product.mjs. No lot, no sale and no count yet, so the fold will refuse a sale on it until its first lot is entered by hand."
+    "note": "Opened 27 Oct 2026 on his word. Letter PrEP, a heart-shaped pill mark. No lot, no sale and no count yet, so the fold will refuse a sale on it until its first lot is entered by hand."
   }
 };
 const PROD_ORDER=["salt","oil","candy","rice","gas","prep"];
@@ -8983,12 +9000,12 @@ const PROD_OPENING={
   },
   "gas": {
     "qty": 0,
-    "costPerKg": null,
+    "costPerKg": 50,
     "stated": null
   },
   "prep": {
     "qty": 0,
-    "costPerKg": null,
+    "costPerKg": 3.3333333333333335,
     "stated": null
   }
 };
@@ -10161,7 +10178,7 @@ const openingFor=p=>SNAPSHOT_ENGINE.openingFor(snapCtx().B,p||PROD);
    over it unrolled, so the derived figure is the correction the rolls kept missing. The book asked is walked,
    never the book in view: the entry check and the Workbench's gift read another book's rate while one is on
    screen, and a book with no typed rate fell through to the view's weighted average, so with salt in view a
-   sale of spare, which has no lot, passed the entry check at salt's RM49.78. One figure per book, kept until the
+   sale of gas, which has no lot, passed the entry check at salt's RM49.78. One figure per book, kept until the
    next recompute, which drops them all; the book in view comes with the walk that recompute runs anyway.
    27 Sep 2026: the cache answers only its own keys, so a name on Object.prototype (constructor, __proto__)
    is walked as the book it names, never read off the prototype; restockFor's cache takes the same guard. */
@@ -13343,7 +13360,7 @@ function tabOverview(){
    the one in view back. allActions merges what actions() finds on each: an item the same on every book
    (a refund, a rule, a site order, the queue) is listed once and carries no tag, and one a book raised on its own carries that
    book's tag. Nothing is summed across books in units, because a unit of salt and a unit of oil are not the same thing. */
-/* a book with no lot and no sale has nothing to say: it would only report itself under its own trigger (spare, 23 Sep) */
+/* a book with no lot and no sale has nothing to say: it would only report itself under its own trigger (gas, 23 Sep) */
 function liveBooks(){return PROD_IDS.filter(p=>pSales(p).length||pPurch(p).length);}
 /* F1 (19 Oct 2026): the book in view is walked LAST, so its walk is already the one the page needs when the loop ends and the old
    closing recompute() (a second walk of that book, every call) is skipped; the answer keeps the books' order. If the loop
@@ -14382,7 +14399,7 @@ function drawAnalysis(){
       const buys=lots.map(p=>({x:p.qty,y:+(p.total/p.qty).toFixed(2),
         r:6+Math.sqrt(p.total/maxLot)*14,
         d:p.date,who:p.supplier,def:!!p.defaulted}));
-      /* found on a desk check: oil, candy, rice and spare have never defaulted a lot, so this
+      /* found on a desk check: oil, candy, rice, gas and prep have never defaulted a lot, so this
          legend carried "Defaulted" for a series with no points in it, same shape as the
          one-off series drawEarnChart guards below. Salt's write-offs keep the entry. */
       const defBuys=buys.filter(b=>b.def);
@@ -20901,7 +20918,7 @@ function pbWire(){const b=document.getElementById('pbPrint'),c=document.getEleme
 function tabPricing(){
   const c=pxCost();
   /* 27 SEP 2026: A BOOK WITH NO COST IS NOT PRICED (rule 5), AND THE PART SAYS SO RATHER THAN DRAWING A BOARD OF NOTHING.
-     COGS is the stack's landed rate times the size, and spare opened with no lot and no quote, so every figure below came
+     COGS is the stack's landed rate times the size, and gas opened with no lot and no quote, so every figure below came
      out RM 0 and the ask's margin and multiple divided by a price and a COGS of nothing: "NaN% margin" at every size,
      "NaN% to NaN%" under the board, and a green line saying every price cleared break-even. Nothing here measures anything
      until the book has a cost, so none of it is drawn. The engine is untouched and no price moves. */

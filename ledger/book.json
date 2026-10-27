@@ -40,12 +40,12 @@
     },
     "gas": {
       "id": "gas",
-      "name": "Spare",
+      "name": "Gas",
       "unit": "unit",
       "accent": "var(--salt-product-gas)",
-      "since": "2026-09-22",
-      "retired": true,
-      "note": "Opened 22 Sep 2026 as THE SPARE SLOT, on his instruction, to prove that adding a book is repeatable rather than surgical. It is deliberately given NO mark, so the Ring fallback is exercised by a real book. Put it away with tools/product.mjs --retire spare once it has served.",
+      "since": "2026-10-27",
+      "retired": false,
+      "note": "Opened 27 Oct 2026 on his word, by renaming the retired spare book (no row, opening or price). Letter P, a flame mark. No lot, no sale and no count yet, so the fold will refuse a sale on it until its first lot is entered by hand.",
       "reward": false
     },
     "prep": {
@@ -56,7 +56,7 @@
       "since": "2026-10-27",
       "retired": false,
       "reward": false,
-      "note": "Opened by tools/product.mjs. No lot, no sale and no count yet, so the fold will refuse a sale on it until its first lot is entered by hand."
+      "note": "Opened 27 Oct 2026 on his word. Letter PrEP, a heart-shaped pill mark. No lot, no sale and no count yet, so the fold will refuse a sale on it until its first lot is entered by hand."
     }
   },
   "PROD_ORDER": [
@@ -94,12 +94,12 @@
     },
     "gas": {
       "qty": 0,
-      "costPerKg": null,
+      "costPerKg": 50,
       "stated": null
     },
     "prep": {
       "qty": 0,
-      "costPerKg": null,
+      "costPerKg": 3.3333333333333335,
       "stated": null
     }
   },
