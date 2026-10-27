@@ -1,0 +1,224 @@
+[
+ {
+  "name": "the read ignores the open entries",
+  "file": "src/book.js",
+  "find": "if (!base) { const v = this.viewFor(snap); if (v) return v.text; }",
+  "replace": "if (false) { const v = this.viewFor(snap); if (v) return v.text; }"
+ },
+ {
+  "name": "a rid is minted on an empty list",
+  "file": "src/book.js",
+  "find": "const f = nextRid(rows, prefix);\n    return (n) => { const r = queue",
+  "replace": "const f = nextRid([], prefix);\n    return (n) => { const r = queue"
+ },
+ {
+  "name": "a tap is not idempotent by draft id",
+  "file": "src/book.js",
+  "find": "const missing = items.filter((i) => !have.has(i.id) && !closed.has(i.id));",
+  "replace": "const missing = items;"
+ },
+ {
+  "name": "a tap writes the base",
+  "file": "src/book.js",
+  "find": "      const at = this.clock();\n      for (const x of planned) sql.exec(\"INSERT INTO booked",
+  "replace": "      const at = this.clock();\n      sql.exec(\"UPDATE state SET revised_at = ? WHERE k = 'STATED_STOCK'\", at);\n      for (const x of planned) sql.exec(\"INSERT INTO booked"
+ },
+ {
+  "name": "the view is not sorted as the fold sorts",
+  "file": "src/book.js",
+  "find": "if (booked.length) sortBook(book);",
+  "replace": "if (false) sortBook(book);"
+ },
+ {
+  "name": "a refused item is skipped, the rest booked",
+  "file": "src/book.js",
+  "find": "if (!r.ok) return { ok: false, status: 409, refused: [{ id: it.id, why: r.why }] };",
+  "replace": "if (!r.ok) continue;"
+ },
+ {
+  "name": "a roster entry is booked by the tap",
+  "file": "src/book.js",
+  "find": "export const FOLD_ONLY = [\"roster\", \"rename\"];",
+  "replace": "export const FOLD_ONLY = [];"
+ },
+ {
+  "name": "a trade naming an unknown party is booked by the tap",
+  "file": "src/book.js",
+  "find": "if (miss.length) return \"names a party the book does not hold yet\";",
+  "replace": "if (false) return \"names a party the book does not hold yet\";"
+ },
+ {
+  "name": "a load does not close an entry whose rid the base holds",
+  "file": "src/book.js",
+  "find": "if (!rs.length || !rs.every((x) => heldDoc.has(\"r:\" + x))) return false;",
+  "replace": "if (true) return false;"
+ },
+ {
+  "name": "a load does not close an entry D1 says is committed",
+  "file": "src/book.js",
+  "find": "said.has(e.draft_id) || byRid(e)",
+  "replace": "byRid(e)"
+ },
+ {
+  "name": "the tap check does not compare the minted rows",
+  "file": "src/book.js",
+  "find": "else if (noNote(a) !== noNote(b)) differ.push(rid);",
+  "replace": "else if (false) differ.push(rid);"
+ },
+ {
+  "name": "the tap check does not compare the stock when the batch was all entries",
+  "file": "src/book.js",
+  "find": "if (pure) for (const k of",
+  "replace": "if (false) for (const k of"
+ },
+ {
+  "name": "a refused replay is booked into the view",
+  "file": "src/book.js",
+  "find": "else stuck.push({ id: e.draft_id, why: r.why });",
+  "replace": "else { book = next; booked.push(e.draft_id); }"
+ },
+ {
+  "name": "a tap with an entry stuck books on",
+  "file": "src/book.js",
+  "find": "if (view.stuck.length) return { ok: false, status: 409, fallback: true",
+  "replace": "if (false) return { ok: false, status: 409, fallback: true"
+ },
+ {
+  "name": "the recovery test's object answers the booked verbs",
+  "file": "src/book.js",
+  "find": "      if (this.isTest()) return Response.json({ ok: false, error: \"not found\" }, { status: 404 });\n      if (url.pathname === \"/events\")",
+  "replace": "      if (url.pathname === \"/events\")"
+ },
+ {
+  "name": "a tap books on a Book behind the mirror",
+  "file": "src/book.js",
+  "find": "a < b) return { ok: false, status: 409, fallback: true, behind: true",
+  "replace": "a < b && false) return { ok: false, status: 409, fallback: true, behind: true"
+ },
+ {
+  "name": "void takes nothing back",
+  "file": "src/book.js",
+  "find": "for (const id of ids) sql.exec(\"UPDATE booked SET voided_at = ? WHERE draft_id = ? AND folded_at IS NULL AND voided_at IS NULL\", at, id);",
+  "replace": "for (const id of ids) void id;"
+ },
+ {
+  "name": "the engine imports the drafter again",
+  "file": "engine/apply.mjs",
+  "find": "import { nextRidReserving } from \"./rid.mjs\";",
+  "replace": "import { nextRidReserving } from \"./rid.mjs\";\nimport { CORRECT_TEXT as _x } from \"../src/drafter.js\";"
+ },
+ {
+  "name": "the fold mints a booked row's rid afresh",
+  "file": "engine/apply.mjs",
+  "find": "const forced = src && src.row && Array.isArray(src.row.rids) ? src.row.rids.slice() : null;",
+  "replace": "const forced = null;"
+ },
+ {
+  "name": "the fold's mint ignores the rids staged rows carry",
+  "file": "engine/apply.mjs",
+  "find": "const nextRid = nextRidReserving(ctx.nextRid, staged), sortBook",
+  "replace": "const nextRid = ctx.nextRid, sortBook"
+ },
+ {
+  "name": "a booked rid already on the book is not a replay",
+  "file": "engine/apply.mjs",
+  "find": "if (held) { out.refused.push({ id: it.id, why: `would be a replay",
+  "replace": "if (false) { out.refused.push({ id: it.id, why: `would be a replay"
+ },
+ {
+  "name": "two staged rows may name one rid",
+  "file": "engine/apply.mjs",
+  "find": "r.rids.forEach((rid) => bookedRids.add(rid));",
+  "replace": ""
+ },
+ {
+  "name": "the notes' cost moves a booked purchase",
+  "file": "engine/apply.mjs",
+  "find": "&& !isBooked(src)) row.cost = +n.cost;",
+  "replace": ") row.cost = +n.cost;"
+ },
+ {
+  "name": "the tap's bookkeeping stays on the row",
+  "file": "engine/apply.mjs",
+  "find": "delete row.rids; delete row.booked_seq;   /*",
+  "replace": "/*"
+ },
+ {
+  "name": "the fold reads booked rows in drafted order",
+  "file": "tools/drafts.mjs",
+  "find": "ORDER BY (json_extract(CASE WHEN json_valid(d.row) THEN d.row ELSE '{}' END,'$.booked_seq') IS NULL), json_extract(CASE WHEN json_valid(d.row) THEN d.row ELSE '{}' END,'$.booked_seq'), d.drafted_at",
+  "replace": "ORDER BY d.drafted_at"
+ },
+ {
+  "name": "the Book's books that take a % are not the fold's",
+  "file": "src/book.js",
+  "find": "r.drift !== undefined || r.pct !== undefined",
+  "replace": "r.drift !== undefined"
+ },
+ {
+  "name": "the order read throws on a row that is not JSON",
+  "file": "tools/drafts.mjs",
+  "find": "json_extract(CASE WHEN json_valid(d.row) THEN d.row ELSE '{}' END,'$.booked_seq') IS NULL)",
+  "replace": "json_extract(d.row,'$.booked_seq') IS NULL)"
+ },
+ {
+  "name": "a rid held by another row closes the entry",
+  "file": "src/book.js",
+  "find": "return alike;",
+  "replace": "return true;"
+ },
+ {
+  "name": "a draft the load closed is booked again",
+  "file": "src/book.js",
+  "find": "const missing = items.filter((i) => !have.has(i.id) && !closed.has(i.id));",
+  "replace": "const missing = items.filter((i) => !have.has(i.id));"
+ },
+ {
+  "name": "the memo is keyed on the load's moment",
+  "file": "src/book.js",
+  "find": "SELECT COALESCE(MAX(seq), 0) AS m FROM loads\").toArray()[0].m + \"|\"",
+  "replace": "SELECT 1 AS m\").toArray()[0].m + snap.at + \"|\""
+ },
+ {
+  "name": "a replay on a rid another row holds is accepted",
+  "file": "src/book.js",
+  "find": "if (Array.isArray(forced)) for (const rid of forced) if (",
+  "replace": "if (false) for (const rid of forced) if ("
+ },
+ {
+  "name": "a load goes ahead when D1 does not answer",
+  "file": "src/worker.js",
+  "find": "catch (e) { return json({ ok: false, error: \"D1 did not say which open entries are committed, so the Book was not loaded\" }, 503); }",
+  "replace": "catch (e) { q = \"\"; }"
+ },
+ {
+  "name": "a load goes ahead when the Book does not say which entries are open",
+  "file": "src/worker.js",
+  "find": "catch (e) { return json({ ok: false, error: \"the Book did not say which entries are open, so it was not loaded\" }, 503); }",
+  "replace": "catch (e) { ev = null; }"
+ },
+ {
+  "name": "the open entries are asked of D1 all at once",
+  "file": "src/worker.js",
+  "find": "i += 50) {   /* D1 binds",
+  "replace": "i += 500) {   /* D1 binds"
+ },
+ {
+  "name": "a batch is pure whatever was committed",
+  "file": "src/worker.js",
+  "find": "pure = !!since && (since.results || []).every((r) => open.has(r.id));",
+  "replace": "pure = true;"
+ },
+ {
+  "name": "the pure compare reaches every document",
+  "file": "src/book.js",
+  "find": "const TAP_PURE = [\"STATED_STOCK\", \"PROD_OPENING\", \"COUNTS\", \"COUNT_ON\", \"loans\", \"sales\", \"purchases\"];",
+  "replace": "const TAP_PURE = [\"STATED_STOCK\", \"PROD_OPENING\", \"COUNTS\", \"COUNT_ON\", \"loans\", \"sales\", \"purchases\", \"TIER_OF\"];"
+ },
+ {
+  "name": "an amendment entry is closed by a rid another row holds",
+  "file": "src/book.js",
+  "find": "if (!own) return false;",
+  "replace": "if (!own) return true;"
+ }
+]

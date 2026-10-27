@@ -230,6 +230,10 @@ async function handleBookReadcheck(request, env, m) {
   try {
     const mirror = await withRefunds(env.SALT_LEDGER, await readMirror(env.SALT_LEDGER)), res = await bookDirect(env.SALT_LEDGER);
     const r = compareReads(mirror, res);
+    /* S4c: an entry a tap booked that the Book's base can no longer take is left out of the view and counted as on its way; the readcheck names it so it is not quiet */
+    let stuck = [];
+    try { const a = await (await env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)).fetch(new Request("https://book/at"))).json(); stuck = a && Array.isArray(a.stuck) ? a.stuck : []; } catch (e) { stuck = []; }
+    r.differ = r.differ.concat(stuck.map((id) => "entry " + id + " (stuck: the base cannot take it)")); r.ok = r.ok && !stuck.length;
     return json({ ok: r.ok, differ: r.differ, rows: r.rows || 0, version: mirror.version, bookVersion: res ? res.v : null, mode: await readMode(env.SALT_LEDGER) });
   } catch (e) { return json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }, 500); }
 }
@@ -240,7 +244,32 @@ async function handleBookLoad(request, env, m) {
   if (!env.BOOK) return json({ ok: false, error: "the Book is not bound" }, 503);
   const text = await request.text();
   if (text.length > MAX_LOAD_BYTES) return json({ ok: false, error: "the load is too large" }, 413);
-  return env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)).fetch(new Request("https://book/load", { method: "POST", body: text }));
+  /* S4a: the Book keeps the entries a tap booked (none until S4d) beside its base. D1's committed_at is the word on which of them this load's fold took, so the Worker
+     names them to the Book as `folded`, and says whether the batch was nothing but entries (no other draft committed since the previous load), which is when the
+     tap check also compares the stock documents. Below, a question that cannot be answered stops the load. */
+  const book = env.BOOK.get(env.BOOK.idFromName(BOOK_NAME));
+  let q = "";
+  if (env.SALT_LEDGER) {
+    /* FAIL CLOSED (Fable, 27 Oct 2026): an amendment entry mints nothing, so only D1's word closes it; a load that went ahead without that word would replay the amendment
+       on a base that already carries it. With entries open and the question unanswerable, nothing is loaded (the step goes red, the Book trails, the readers read the mirror). */
+    let ev = null;
+    try { const r = await book.fetch(new Request("https://book/events")); ev = r.status === 404 ? null : await r.json(); if (r.status !== 404 && !(ev && ev.ok)) throw new Error("not ok"); }
+    catch (e) { return json({ ok: false, error: "the Book did not say which entries are open, so it was not loaded" }, 503); }
+    if (ev && Array.isArray(ev.ids) && ev.ids.length) {
+      try {
+        const folded = [];
+        for (let i = 0; i < ev.ids.length; i += 50) {   /* D1 binds at most 100 a statement */
+          const part = ev.ids.slice(i, i + 50);
+          const done = await env.SALT_LEDGER.prepare("SELECT id FROM draft WHERE committed_at IS NOT NULL AND id IN (" + part.map((_, k) => "?" + (k + 1)).join(",") + ")").bind(...part).all();
+          for (const r of done.results || []) folded.push(r.id);
+        }
+        const since = ev.at ? await env.SALT_LEDGER.prepare("SELECT id FROM draft WHERE committed_at IS NOT NULL AND committed_at > ?1").bind(ev.at).all() : null;
+        const open = new Set(ev.ids), pure = !!since && (since.results || []).every((r) => open.has(r.id));
+        q = "?folded=" + encodeURIComponent(folded.join(",")) + (pure ? "&pure=1" : "");
+      } catch (e) { return json({ ok: false, error: "D1 did not say which open entries are committed, so the Book was not loaded" }, 503); }
+    }
+  }
+  return book.fetch(new Request("https://book/load" + q, { method: "POST", body: text }));
 }
 
 /* 21 Oct 2026, Speed Wave 2 L1: THE DESK'S LIVE SOCKET. GET /live sits after the Access gate AND asks ownerAccess itself, whatever

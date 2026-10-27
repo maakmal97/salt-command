@@ -356,7 +356,7 @@ export const APPROVED_SQL = `SELECT d.id,d.status,d.collection,d.row,d.reasoning
       r.operation AS receipt_operation,o.id AS outbox_id,o.entry AS outbox_entry,o.state AS outbox_state,
       o.completed_at AS outbox_completed_at
     FROM draft d LEFT JOIN vault_receipt r ON r.id=d.id LEFT JOIN vault_outbox o ON o.id=d.id
-    WHERE d.status='approved' AND d.committed_at IS NULL ORDER BY d.drafted_at`;
+    WHERE d.status='approved' AND d.committed_at IS NULL ORDER BY (json_extract(CASE WHEN json_valid(d.row) THEN d.row ELSE '{}' END,'$.booked_seq') IS NULL), json_extract(CASE WHEN json_valid(d.row) THEN d.row ELSE '{}' END,'$.booked_seq'), d.drafted_at`;
 function approved() {
   const rows = query(APPROVED_SQL);
   if (!rows) return;

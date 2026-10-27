@@ -23,13 +23,14 @@
 import { sendPush } from "./push.js";
 import { boundOf, onItsWay, landedBy } from "./way.js";
 import { wayBound } from "./book-read.js";
-import { readBook, bookOnce, draftRow, cogsFor, floorFor, usualFor, pricingOf, stageDigest, runDrafter, settlePre, withPending, noteQueued, offerDigest, isOfferPre } from "./drafter.js";
+import { readBook, bookOnce, withRefunds, draftRow, cogsFor, floorFor, usualFor, pricingOf, stageDigest, runDrafter, settlePre, withPending, noteQueued, offerDigest, isOfferPre } from "./drafter.js";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { admitInput, admitInputs } from "./input-admission.js";
 import { makerRequestFingerprint } from "./maker-request.js";
 import PRICING_ENGINE from "../engine/pricing.mjs";
 /* S1b: THE ENTRY EACH STAGE MAKES lives in engine/stages.mjs (pure); this reads, calls it, and queues. The builders stay named here for every importer. */
-import { rewardCrossOf, rewardReading, loyalReading, rwdOf } from "../engine/stages.mjs";
+import { rewardCrossOf, rewardReading, loyalReading, rwdOf, withCredit, rowPaidFor } from "../engine/stages.mjs";
+import { creditFor } from "./credit.js";
 import { rm, chargeOf, priceOf, advanceOf, acceptEntry, floorRefusal, ackRowWanted, stageAgainst, jobEntry, againEntry, keyGivenBack,
   handoverTap, receivedTap, cashTap, restateTap, pastRoom, againRoomOrder, claimRows, claimOrderFlight, claimEntry,
   stageAt, keyAfter, closedKey, ledgerKeyOf, partyOnBook, bucketFor, termsFromRow, settledFromRow, rowOut } from "../engine/stages.mjs";
@@ -307,6 +308,15 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
   const fl = floorFor(book, product, qty);
   const under = floorRefusal(price, fl, qty);   /* never under the floor at this size (rule 5), engine/stages.mjs */
   if (under) return under;
+  /* 27 Oct 2026 (docs/plan-refund-credit.html P3): THEIR CREDIT, every open refund of theirs less what an unfolded Accept carries, comes off this
+     order at his Accept as cash already paid, up to goods and delivery together; an order for a friend books to their bucket and spends none */
+  let credit = 0;
+  if (!o.forFriend) {
+    try { credit = await creditFor(env, await withRefunds(env.SALT_LEDGER, book), code); }
+    catch (e) { return { ok: false, status: 503, error: "their credit could not be read, so the row cannot be drafted: try again in a minute" }; }
+    withCredit(entry, credit);
+    credit = +(+entry.payload.credit || 0);
+  }
   /* 20 Oct 2026: AN ORDER THAT TAKES AN ASSOCIATE OVER THE NEXT REWARD says so at Accept, once paid: the verdict on the walk's paid progress at
      landed cost, stamped on the entry with the step it is promised at, which the drafter puts on the Pending row and the digest names */
   const priced0 = product === "salt" ? cogsFor(book, product, agreed.date || null) : { cost: null };
@@ -321,7 +331,7 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
   /* V5b2 (his answers of 29 Sep 2026): PAID IN ADVANCE when what they owe at once, with this order, is over the ceiling.
      The Worker decides, from the book and the site's own orders, never the phone; the verdict rides on the entry and in
      the digest, so his yes covers it and the order is moved with it (ackOnApproval). */
-  const adv = advanceOf(book, agreed, code, agreed.delivery, Object.assign({ today: new Date(now.getTime() + 8 * 36e5).toISOString().slice(0, 10) }, ctx || {}));
+  const adv = advanceOf(book, agreed, code, agreed.delivery, Object.assign({ today: new Date(now.getTime() + 8 * 36e5).toISOString().slice(0, 10) }, ctx || {}, { credit }));
   if (adv.error) return { ok: false, status: 503, error: adv.error };
   if (adv.prepay) entry.prepay = true;
   const pricing = await pricingOf(book);
@@ -335,6 +345,7 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
     reward: product === "salt" ? rewardReading(book, code, { qty, goods, unitCost: priced0.cost }) : null, rwd: rc.cross ? "cross" : null,
     loyal: product === "salt" ? loyalReading(book, code, { qty, goods, card: card0, today: today0 }) : null,
     hash: await stageDigest("ack", entry, d, pricing) },
+    credit > 0.004 ? { credit } : {},   /* 27 Oct 2026: their credit, named only when some is spent */
     cardAt(book.pricing, code, product, qty));
 }
 /** POST /orders/<id>/preview {delivery}: the pending row an Accept would make now. Stores nothing. */
@@ -405,6 +416,7 @@ export async function ackOnApproval(env, pre) {
   const r = shown.from !== "placed" ? { ok: true }
     : await moveOrder(env, pre.u, pre.order_id, Object.assign({ status: "acknowledged", delivery: +(entry.payload && entry.payload.delivery) || 0, prepay: entry.prepay === true },
       entry.rwd === "cross" ? { rwd: "cross" } : {},   /* 20 Oct 2026: the reward word his yes covered */
+      +(entry.payload && entry.payload.credit) > 0.004 ? { credit: +entry.payload.credit } : {},   /* 27 Oct 2026: their credit, the order's own field */
       /* Step 2: the goods the row was drafted at, the site keeping what they placed it at beside it; a yes filed without a
          figure (an older entry's shape) sends none, and the order keeps its own */
       typeof entry.total === "number" && entry.total > 0 ? { total: entry.total } : {},
@@ -878,7 +890,7 @@ export async function notFoundOrder(env, id, body, now, covered) {
     if (!theirs(de) || !theirs(q)) at = null;
   }
   /* the site's own test, asked first, so nothing is filed for a claim it would refuse */
-  if (covered && !(p.amount > +((+o.total + (+o.delivery || 0)) - (+o.paid || 0)).toFixed(2) + 0.004))
+  if (covered && !(p.amount > +((+o.total + (+o.delivery || 0)) - (+o.paid || 0) - (+o.credit || 0)).toFixed(2) + 0.004))
     return { ok: false, status: 409, error: "the order still owes what this claim is: answer it Received" };
   if (at && !(await fileNotFound(env, at, Object.assign(claimEntry(o, p), { at }), now, covered ? "covered" : "notfound")))
     return { ok: false, status: 409, error: "its row is decided already, so it cannot be filed " + (covered ? "as on the book already" : "not found") };
@@ -2058,7 +2070,7 @@ export async function tellSite(env, fixes, mirror) {
       continue;
     }
     const ledger = {};
-    const paid = +(+POSITION_ENGINE.txPaid(row)).toFixed(2), moved = rowOut(row);
+    const paid = rowPaidFor(o, row), moved = rowOut(row);   /* 27 Oct 2026: less their credit, the order's own field */
     /* 17 Oct 2026, HIS FLOW: money or goods LOWERED on the book (a Correction, never an undo, which its fix tells) reach an agreed order too, as the
        book's figures whole, once nothing of the order's own is on its way and the site holds no move the book has not heard */
     if (sole && !fixWaits.has(o.id) && (paid < (+o.paid || 0) - 0.004 || moved < (+o.moved || 0) - 0.0004)) {
@@ -2075,6 +2087,8 @@ export async function tellSite(env, fixes, mirror) {
     }
     if (paid > (+o.paid || 0) + 0.004) ledger.paid = paid;
     if (moved > (+o.moved || 0) + 0.0004) ledger.moved = moved;
+    /* 27 Oct 2026 (Fable): a credit the fold cut short (no open refund covered it) is lowered on the order, so it owes the right figure */
+    if (+o.credit > 0.004 && (+row.credit || 0) < +o.credit - 0.004) ledger.credit = +(+row.credit || 0).toFixed(2);
     if (Object.keys(ledger).length) {
       const m = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
         method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ledger })
@@ -2149,7 +2163,7 @@ export async function tieOut(env, mirror, now = new Date()) {
   for (const o of r.orders) {
     if (o.test || !o.ledgerKey || ["cancelled", "declined"].includes(o.status) || !(named.get(ledgerKeyOf(o)) > 1)) continue;
     const k = ledgerKeyOf(o), g = sums.get(k) || { n: 0, qty: 0, total: 0, delivery: 0, paid: 0, moved: 0, off: 0 };
-    for (const f of ["qty", "total", "delivery", "paid", "moved"]) g[f] += +o[f] || 0;
+    for (const f of ["qty", "total", "delivery", "paid", "moved", "credit"]) g[f] = (g[f] || 0) + (+o[f] || 0);
     g.n++; if (o.writtenOff) g.off++;
     sums.set(k, g);
   }
@@ -2173,7 +2187,7 @@ export async function tieOut(env, mirror, now = new Date()) {
         if (Math.abs(f2(row.total) - f2(fig.total)) > 0.004) diff.push("goods RM " + f2(fig.total) + " " + on + ", RM " + f2(row.total) + " on the row");
         if (!row.trip && Math.abs(f2(row.delivery) - f2(fig.delivery)) > 0.004) diff.push("delivery RM " + f2(fig.delivery) + " " + on + ", RM " + f2(row.delivery) + " on the row");
         const paid = f2(POSITION_ENGINE.txPaid(row)), moved = rowOut(row);
-        if (Math.abs(paid - f2(fig.paid)) > 0.004) diff.push("paid RM " + f2(fig.paid) + " " + on + ", RM " + paid + " on the row");
+        if (Math.abs(paid - f2(+fig.paid + (+fig.credit || 0))) > 0.004) diff.push("paid RM " + f2(+fig.paid + (+fig.credit || 0)) + " " + on + ", RM " + paid + " on the row");   /* their credit is paid on the row */
         if (Math.abs(moved - f3(fig.moved)) > 0.0004) diff.push("handed over " + f3(fig.moved) + " " + on + ", " + moved + " on the row");
       }
     }

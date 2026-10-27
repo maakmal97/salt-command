@@ -6,8 +6,11 @@
  * flag, one statement and no deploy; the class itself goes with a new migration tag that deletes it (wrangler.jsonc), nothing else.
  *
  * NO RULE LIVES HERE. The load books the folded rows verbatim; the fold (tools/fold.mjs over engine/apply.mjs) already
- * applied every rule to them, so a second copy of a rule would be the thing that drifts (CLAUDE.md rule 1). A later step
- * that books a row itself calls the engine's applyEntry; this file does not.
+ * applied every rule to them, so a second copy of a rule would be the thing that drifts (CLAUDE.md rule 1). Since S4a (27 Oct 2026)
+ * a TAP can book an ENTRY here, beside the base, and it does so by calling the engine's own planBatch and applyEntry (bookEntry
+ * below), never a rule of its own: the entries sit in the `booked` table, the base stays git's book as of the latest load, and
+ * the view (base plus the open entries replayed in booked order, their minted rids forced) is what `/read` answers while any is open.
+ * Nothing calls `tap` until S4d. A load closes the entries the fold took (docs/DESK.md, "The Book: tap").
  *
  * WHAT IT HOLDS, in its own SQLite:
  *   rows    each row of every array in the book (sales, purchases, COUNTS, loans, roster ...), under the collection and a
@@ -47,6 +50,10 @@
  *
  * A PLAIN CLASS WITH fetch(), like stmt/orderbook.js: nothing here imports from stmt/ and the suite drives it over node:sqlite.
  */
+import { planBatch, applyEntry, movesOf } from "../engine/apply.mjs";
+import { nextRid } from "../engine/rid.mjs";
+import { sortBook } from "../engine/sort.mjs";
+import PRICING_RULES from "../engine/rules.mjs";
 export const BOOK_NAME = "book";
 export const PITR_NAME = "book-pitr-test";
 /* 21 Oct 2026, Speed Wave 2 L1: a THIRD object of this class holds the Desk's live sockets and nothing else (see the header's last paragraph) */
@@ -127,6 +134,79 @@ export function shape(res) {
   return { rows: colls, state, version: res.v == null ? null : res.v, stamped: res.stamped == null ? null : res.stamped, at: res.at || null };
 }
 
+/* ---- S4a (27 Oct 2026): THE BOOKED ENTRIES. A tap books an ENTRY here, beside the base; the base (`rows`, `state`) stays git's book as of the latest load
+   and is written by a load alone. The VIEW is the base with the unfolded entries replayed through the engine's own planBatch and applyEntry (no second copy
+   of the law lives in this file), each with its minted rids FORCED, so a replay never mints again. Nothing calls `tap` until S4d; see docs/DESK.md. ---- */
+export const FOLD_ONLY = ["roster", "rename"];   /* a username comes from the spare pool in git, a rename re-keys files: the fold's alone */
+export const TAP_MAX = 50;
+const ISO_ID = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z$/;
+const DAY_RE = /^\d{4}-\d\d-\d\d$/;
+/* the books whose rule carries a % or a drift: the fold reads the same off the master's TIER_RULE lines (pinned equal by the suite) */
+export const DRIFT_BOOKS = Object.keys(PRICING_RULES.TIER_RULE).filter((k) => { const r = PRICING_RULES.TIER_RULE[k]; return !!r && (r.drift !== undefined || r.pct !== undefined); });
+/* a code in the engine's logic is "pinned": a Worker refuses every rename (the tap books none), so this answers yes to all */
+const pinnedAlways = () => true;
+
+/* what planBatch and applyEntry read beside the book: the reward scheme and the pricing snapshot are the Book's own derived documents */
+export function lawCtx(derived, day) {
+  const rw = derived.REWARD && derived.REWARD.stated ? { stated: derived.REWARD.stated, ...(derived.TERMS ? { terms: derived.TERMS } : {}) } : null;
+  const pricing = derived.PRICING && derived.PRICING.byProduct ? derived.PRICING : null;
+  return { today: day, pinnedInMaster: pinnedAlways, driftBooks: DRIFT_BOOKS, reward: rw, pricing };
+}
+
+/* why an item is the fold's alone, or null: a roster entry or a rename; a Counter trade naming a party the book does not hold yet (its Add ID has to book first) */
+export function foldOnlyWhy(item, book) {
+  if (FOLD_ONLY.includes(item.collection)) return item.collection + " is booked by the fold";
+  const pl = item.entry && item.entry.payload;
+  if (["sales", "purchases"].includes(item.collection) && pl && pl.mode === "new" && item.entry.makerRequest) {
+    const have = new Set(book.roster || []);
+    const miss = [pl.party, pl.assoc, pl.downstream].filter((c) => typeof c === "string" && c && !have.has(c));
+    if (miss.length) return "names a party the book does not hold yet";
+  }
+  return null;
+}
+
+/* ONE ENTRY BOOKED INTO `book` IN PLACE, by the engine's own plan and applyEntry. `forced` is the rids a first booking minted, in the order it minted them; with none the rids
+   are minted on the book as it stands and returned. A refusal leaves the book as it was (the plan is pure); a throw mid-apply is the caller's to contain (it books on a clone). */
+export function bookEntry(book, item, ctx, forced) {
+  /* a replay forces the rids the first booking minted; if the base now holds one of them under another row (a stranger's row, minted by the fold), this entry cannot stand */
+  if (Array.isArray(forced)) for (const rid of forced) if (["sales", "purchases", "loans"].some((c) => (book[c] || []).some((x) => x && x.rid === rid))) return { ok: false, why: "its rid " + rid + " is held by another row" };
+  const staged = { approved: [item] };
+  const notes = { version: "the tap", rows: { [item.id]: { what: "", note: "" } } };
+  const p = planBatch(book, staged, notes, ctx);
+  if (p.refused.length) return { ok: false, why: p.refused.map((x) => x.why).join("; ") };
+  const minted = [], queue = Array.isArray(forced) ? forced.slice() : null;
+  const mint = (rows, prefix) => {
+    const f = nextRid(rows, prefix);
+    return (n) => { const r = queue && queue.length ? queue.shift() : f(n); minted.push(r); return r; };
+  };
+  for (const it of p.items) applyEntry(book, it, { nextRid: mint, staged, notes, moves: movesOf(p, it), reward: ctx.reward, today: ctx.today, pricing: ctx.pricing });
+  return { ok: true, minted };
+}
+
+/* the money fields of a row for a tap-against-fold comparison: notes are the fold's to write, so every `note` is left out */
+const noNote = (v) => canon(JSON.parse(JSON.stringify(v === undefined ? null : v), (k, x) => (k === "note" ? undefined : x)));
+/* what an entry moves and the fold also writes the same way: the stock, the counts, the loans and the two lists; a document a hand edit of the master may move between loads is not compared */
+const TAP_PURE = ["STATED_STOCK", "PROD_OPENING", "COUNTS", "COUNT_ON", "loans", "sales", "purchases"];
+/* THE TAP CHECK: the view as it stood before a load against the view after it, for the entries the load folded. If the fold and the tap run one law the view does not move.
+   Always the rows the entries minted; and, when the batch was nothing but entries (`pure`), every list and document but the notes and the watermark (stock, counts, loans). Names only. */
+export function tapDiffer(pre, post, folded, pure) {
+  const differ = [];
+  for (const rid of [...new Set(folded.flatMap((e) => e.rids))]) {
+    const coll = rid[0] === "s" ? "sales" : rid[0] === "p" ? "purchases" : rid[0] === "l" ? "loans" : null;
+    if (!coll) continue;
+    const a = (pre.book[coll] || []).find((r) => r && r.rid === rid), b = (post.book[coll] || []).find((r) => r && r.rid === rid);
+    if (!b) differ.push(rid + " (not in the base)");
+    else if (!a) differ.push(rid + " (not in the view)");
+    else if (noNote(a) !== noNote(b)) differ.push(rid);
+  }
+  if (pure) for (const k of TAP_PURE) {
+    const a = pre.book[k], b = post.book[k];
+    if (Array.isArray(a) && Array.isArray(b)) { const key = (l) => l.map(noNote).sort().join("|"); if (key(a) !== key(b)) differ.push(k); }
+    else if (noNote(a) !== noNote(b)) differ.push(k);
+  }
+  return differ;
+}
+
 export class Book {
   constructor(state, env) {
     this.state = state;
@@ -147,11 +227,14 @@ export class Book {
        held rows before S3 gains the column; its rows read NULL until the next load sets them. */
     try { sql.exec("ALTER TABLE rows ADD COLUMN seq INTEGER"); } catch (e) { if (!/duplicate column/i.test(String((e && e.message) || e))) throw e; }
     sql.exec("CREATE TABLE IF NOT EXISTS snap (one INTEGER PRIMARY KEY CHECK (one = 1), v TEXT NOT NULL, stamped TEXT, at TEXT NOT NULL)");
+    /* S4a: the entries a tap booked. The view replays the unfolded, unvoided ones in seq order; a load marks the ones it folded. A voided one is kept, not deleted. */
+    sql.exec("CREATE TABLE IF NOT EXISTS booked (seq INTEGER PRIMARY KEY AUTOINCREMENT, draft_id TEXT NOT NULL, item TEXT NOT NULL, rids TEXT NOT NULL, day TEXT NOT NULL, at TEXT NOT NULL, folded_at TEXT, voided_at TEXT)");
+    sql.exec("CREATE INDEX IF NOT EXISTS booked_draft ON booked (draft_id)");
     sql.exec("CREATE TABLE IF NOT EXISTS loads (seq INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, rev TEXT, digest TEXT NOT NULL, added INTEGER NOT NULL, revised INTEGER NOT NULL, gone INTEGER NOT NULL, returned INTEGER NOT NULL, rows INTEGER NOT NULL)");
   }
 
   /* One synchronous transaction; see the header. `p` is prepare()'s result. */
-  load(p, rev) {
+  load(p, rev, opts = {}) {
     const sql = this.state.storage.sql, at = this.clock();
     return this.state.storage.transactionSync(() => {
       /* S3 (Fable, 25 Oct 2026): A LOAD OF AN OLDER VERSION IS REFUSED. Readers key "on its way" off the moment of the latest load, so a
@@ -161,6 +244,8 @@ export class Book {
         const was = sql.exec("SELECT v FROM snap WHERE one = 1").toArray()[0], a = was && versionNo(was.v), b = versionNo(p.snap.v);
         if (a !== null && b !== null && b < a) return { ok: false, stale: true, error: "the Book is at " + was.v + " and refuses a load of " + p.snap.v };
       }
+      /* S4a: the view as it stood before this load, for the tap check below (only while an entry is open) */
+      const evs = this.events(), pre = evs.length ? this.viewOf(evs) : null;
       const n = { added: 0, revised: 0, gone: 0, returned: 0 };
       const held = new Map();
       for (const r of sql.exec("SELECT coll, key, h, gone_at, seq FROM rows").toArray()) held.set(r.coll + "\u0000" + r.key, r);
@@ -183,10 +268,34 @@ export class Book {
       /* a key the book no longer carries leaves with it (PRICING, and the derived documents, are the load's own, and stay when a load omits them) */
       for (const r of sql.exec("SELECT k FROM state").toArray()) if (!keep.has(r.k) && r.k !== "PRICING" && !DERIVED.includes(r.k)) { sql.exec("DELETE FROM state WHERE k = ?", r.k); n.gone++; }
       if (p.snap) sql.exec("INSERT OR REPLACE INTO snap (one, v, stamped, at) VALUES (1, ?, ?, ?)", p.snap.v, p.snap.stamped, at);
+      /* S4a: THE ENTRIES THIS LOAD FOLDED. One is folded when D1 says its draft is committed (`opts.folded`, ids the Worker checked) or when the new base holds every rid it minted;
+         the rest stay open and are replayed on the new base. The view before and after is compared for the folded ones (tapDiffer). */
+      let tap = null;
+      if (evs.length) {
+        const said = new Set(opts.folded || []), clash = [];
+        const heldDoc = new Map(sql.exec("SELECT key, doc FROM rows WHERE gone_at IS NULL AND key LIKE 'r:%'").toArray().map((r) => [r.key, r.doc]));
+        /* a rid the base holds closes an entry only if the row under it is the one the entry booked (party, date, qty, total): a stranger's row under the same rid
+           leaves the entry open, and the replay then refuses it (its rid is held), so it is named stuck and clashing, never closed by another row's money */
+        const byRid = (e) => {
+          const rs = JSON.parse(e.rids);
+          if (!rs.length || !rs.every((x) => heldDoc.has("r:" + x))) return false;
+          const it = JSON.parse(e.item), own = ["sales", "purchases", "loans"].includes(it.collection) && !it.amends ? it.row || {} : null;
+          if (!own) return false;   /* an amendment mints no row of its own to compare (only generated ones): D1's word alone closes it */
+          const base = JSON.parse(heldDoc.get("r:" + rs[0]));
+          const alike = ["customer", "supplier", "party", "date", "qty", "total", "kg", "rm"].every((k) => own[k] === undefined || canon(own[k]) === canon(base[k]));
+          if (!alike) clash.push(e.draft_id);
+          return alike;
+        };
+        const done = evs.filter((e) => said.has(e.draft_id) || byRid(e));
+        for (const e of done) sql.exec("UPDATE booked SET folded_at = ? WHERE seq = ?", at, e.seq);
+        const rest = evs.filter((e) => !done.includes(e)), post = this.viewOf(rest);
+        tap = { folded: done.length, open: rest.length, stuck: post.stuck.map((s) => s.id), clash,
+          differ: done.length ? tapDiffer(pre, post, done.map((e) => ({ rids: JSON.parse(e.rids) })), !!opts.pure && !rest.length) : [] };
+      }
       const live = sql.exec("SELECT COUNT(*) AS c FROM rows WHERE gone_at IS NULL").toArray()[0].c;
       const docs = sql.exec("SELECT COUNT(*) AS c FROM state").toArray()[0].c;
       sql.exec("INSERT INTO loads (at, rev, digest, added, revised, gone, returned, rows) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", at, rev == null ? null : String(rev), p.digest, n.added, n.revised, n.gone, n.returned, live);
-      return { ok: true, at, rev: rev == null ? null : String(rev), digest: p.digest, rows: live, docs, ...n };
+      return { ok: true, at, rev: rev == null ? null : String(rev), digest: p.digest, rows: live, docs, ...n, ...(tap ? { tap } : {}) };
     });
   }
 
@@ -215,8 +324,8 @@ export class Book {
   }
 
   /* the load, its read-back and its bookmark as one piece: no other request may land between them while the hashes are awaited */
-  held(p, rev) {
-    return this.state.blockConcurrencyWhile(async () => { const r = this.load(p, rev); if (!r.ok) return r; return { ...r, readback: await this.readback(), bookmark: await this.mark() }; });
+  held(p, rev, opts) {
+    return this.state.blockConcurrencyWhile(async () => { const r = this.load(p, rev, opts); if (!r.ok) return r; return { ...r, readback: await this.readback(), bookmark: await this.mark() }; });
   }
 
   /* S2c: only the test object answers a recovery verb. An allowlist on its id, failing closed when the namespace is not to hand. */
@@ -284,10 +393,12 @@ export class Book {
      load is one transaction, and held() keeps the read-back's awaits from interleaving). Docs are stored as JSON text, so the answer is
      put together as text and the Worker parses it once. Rows of a list come back in the book's order (seq). Not a route: the Worker
      reaches it through the binding, only readBook and readcheck ask, and the answer carries cost, so it is never in CI_ROUTES. */
-  readText() {
+  readText(base = false) {
     const sql = this.state.storage.sql;
     const snap = sql.exec("SELECT v, stamped, at FROM snap WHERE one = 1").toArray()[0];
     if (!snap) return null;
+    /* S4a: with entries open the answer is the VIEW (base plus the entries, `booked` naming them), memoised on the load and the open entries; `base` asks for the base alone (the readcheck) */
+    if (!base) { const v = this.viewFor(snap); if (v) return v.text; }
     const by = new Map();
     for (const r of sql.exec("SELECT coll, doc FROM rows WHERE gone_at IS NULL ORDER BY coll, seq").toArray()) {
       if (!by.has(r.coll)) by.set(r.coll, []);
@@ -300,7 +411,112 @@ export class Book {
   /* S3: the Book's version and the moment of its latest load, and nothing else (cheap; for a caller that holds a book already or needs only the bound) */
   snapshot() {
     const snap = this.state.storage.sql.exec("SELECT v, stamped, at FROM snap WHERE one = 1").toArray()[0];
-    return snap ? { ok: true, v: snap.v, stamped: snap.stamped, at: snap.at } : null;
+    if (!snap) return null;
+    const v = this.viewFor(snap);
+    return { ok: true, v: snap.v, stamped: snap.stamped, at: snap.at, booked: v ? v.view.booked : [], stuck: v ? v.view.stuck.map((s) => s.id) : [] };
+  }
+
+  /* ---- S4a: the booked entries ---- */
+  events() { return this.state.storage.sql.exec("SELECT seq, draft_id, item, rids, day, at FROM booked WHERE folded_at IS NULL AND voided_at IS NULL ORDER BY seq").toArray(); }
+
+  /* the base as the engine's book object (derived documents kept apart), out of the Book's own SQLite */
+  baseBook() {
+    const sql = this.state.storage.sql, book = {}, derived = {}, arrays = {};
+    for (const r of sql.exec("SELECT k, doc FROM state").toArray()) {
+      const doc = JSON.parse(r.doc);
+      if (r.k === ARRAYS) Object.assign(arrays, doc);
+      else if (DERIVED.includes(r.k) || r.k === "PRICING") derived[r.k] = doc;
+      else book[r.k] = doc;
+    }
+    for (const k of Object.keys(arrays)) book[k] = [];
+    for (const r of sql.exec("SELECT coll, doc FROM rows WHERE gone_at IS NULL ORDER BY coll, seq").toArray()) (book[r.coll] = book[r.coll] || []).push(JSON.parse(r.doc));
+    return { book, derived };
+  }
+
+  /* THE VIEW: the base with each open entry replayed in booked order on the book as the earlier ones left it. An entry the base can no longer take (the plan refuses it,
+     or the apply throws) is left OUT of the view and of `booked` and named in `stuck`, so its draft counts as on its way once and the readcheck says so; the read never fails. */
+  viewOf(evs) {
+    let { book, derived } = this.baseBook();
+    const booked = [], stuck = [];
+    for (const e of evs) {
+      const next = structuredClone(book);
+      let r;
+      try { r = bookEntry(next, JSON.parse(e.item), lawCtx(derived, e.day), JSON.parse(e.rids)); } catch (err) { r = { ok: false, why: String((err && err.message) || err) }; }
+      if (r.ok) { book = next; booked.push(e.draft_id); } else stuck.push({ id: e.draft_id, why: r.why });
+    }
+    if (booked.length) sortBook(book);
+    return { book, derived, booked, stuck };
+  }
+
+  /* the view's `/read` text, or null with no open entry; memoised on the load's moment and the open entries' seqs */
+  viewFor(snap) {
+    const evs = this.events();
+    if (!evs.length) { this.memo = null; return null; }
+    const key = this.state.storage.sql.exec("SELECT COALESCE(MAX(seq), 0) AS m FROM loads").toArray()[0].m + "|" + evs.map((e) => e.seq).join(",");
+    if (this.memo && this.memo.key === key) return this.memo;
+    const view = this.viewOf(evs), rows = {}, state = {}, arrays = {};
+    for (const [k, v] of Object.entries(view.book)) { if (Array.isArray(v)) { arrays[k] = v.length; if (v.length) rows[k] = v; } else state[k] = v; }
+    state[ARRAYS] = arrays; Object.assign(state, view.derived);
+    const text = JSON.stringify({ ok: true, v: snap.v, stamped: snap.stamped, at: snap.at, rows, state, booked: view.booked, stuck: view.stuck.map((s) => s.id) });
+    this.memo = { key, text, view };
+    return this.memo;
+  }
+
+  /* BOOK THE ENTRIES OF ONE TAP (a trip is one call: every item or none). One synchronous transaction, nothing awaited. The answers:
+       { ok: true, booked: [{id, rids, seq, again?}] }   booked (an item already booked answers its own rids again: idempotent by draft id)
+       { ok: true, foldOnly: [{id, why}] }               nothing booked: the fold's alone (a trip with one such row is all the fold's)
+       { ok: false, refused: [{id, why}] }  409          the law refuses; nothing written
+       { ok: false, fallback: true }                     the Book cannot book now (behind the mirror, no snapshot, an entry stuck): the caller approves as today */
+  tap(body) {
+    const items = body && body.items, day = body && body.day, bad = (error) => ({ ok: false, status: 400, error });
+    if (!Array.isArray(items) || !items.length || items.length > TAP_MAX) return bad("send 1 to " + TAP_MAX + " items");
+    if (!DAY_RE.test(String(day))) return bad("day is YYYY-MM-DD");
+    for (const it of items) if (!it || typeof it !== "object" || typeof it.id !== "string" || !ISO_ID.test(it.id) || typeof it.collection !== "string" || it.status !== "approved") return bad("an item is a staged approved row");
+    if (new Set(items.map((i) => i.id)).size !== items.length) return bad("an item is named twice");
+    const sql = this.state.storage.sql;
+    return this.state.storage.transactionSync(() => {
+      const snap = sql.exec("SELECT v FROM snap WHERE one = 1").toArray()[0];
+      if (!snap) return { ok: false, status: 503, fallback: true, error: "the Book holds no snapshot yet" };
+      if (body.v != null) { const a = versionNo(snap.v), b = versionNo(body.v); if (a !== null && b !== null && a < b) return { ok: false, status: 409, fallback: true, behind: true, error: "the Book is at " + snap.v + ", behind " + body.v }; }
+      const evs = this.events(), have = new Map(evs.map((e) => [e.draft_id, e]));
+      /* a draft whose entry a load already closed is taken: booked again it would count twice (an amendment has no twin guard) */
+      const closed = new Map();
+      for (const i of items) { const c = sql.exec("SELECT rids, seq FROM booked WHERE draft_id = ? AND folded_at IS NOT NULL ORDER BY seq DESC LIMIT 1", i.id).toArray()[0]; if (c && !have.has(i.id)) closed.set(i.id, c); }
+      const missing = items.filter((i) => !have.has(i.id) && !closed.has(i.id));
+      const out = items.filter((i) => have.has(i.id) || closed.has(i.id)).map((i) => (have.has(i.id)
+        ? { id: i.id, rids: JSON.parse(have.get(i.id).rids), seq: have.get(i.id).seq, again: true }
+        : { id: i.id, rids: JSON.parse(closed.get(i.id).rids), seq: closed.get(i.id).seq, again: true, folded: true }));
+      if (!missing.length) return { ok: true, booked: out };
+      const view = this.viewOf(evs);
+      if (view.stuck.length) return { ok: false, status: 409, fallback: true, stuck: view.stuck.map((s) => s.id), error: "an earlier entry is stuck" };
+      let book = view.book;
+      const foldOnly = missing.map((it) => ({ id: it.id, why: foldOnlyWhy(it, book) })).filter((x) => x.why);
+      if (foldOnly.length) return { ok: true, foldOnly };
+      const planned = [];
+      for (const it of missing) {
+        const next = structuredClone(book);
+        let r;
+        try { r = bookEntry(next, it, lawCtx(view.derived, day), null); } catch (err) { return { ok: false, status: 500, fallback: true, error: "the entry could not be booked: " + String((err && err.message) || err).slice(0, 200) }; }
+        if (!r.ok) return { ok: false, status: 409, refused: [{ id: it.id, why: r.why }] };
+        book = next; planned.push({ it, rids: r.minted });
+      }
+      const at = this.clock();
+      for (const x of planned) sql.exec("INSERT INTO booked (draft_id, item, rids, day, at) VALUES (?, ?, ?, ?, ?)", x.it.id, JSON.stringify(x.it), JSON.stringify(x.rids), day, at);
+      const seqOf = (id) => sql.exec("SELECT seq FROM booked WHERE draft_id = ? AND folded_at IS NULL AND voided_at IS NULL", id).toArray()[0].seq;
+      return { ok: true, booked: out.concat(planned.map((x) => ({ id: x.it.id, rids: x.rids, seq: seqOf(x.it.id) }))) };
+    });
+  }
+
+  /* take back the open entries of these drafts (a rejection): folded ones stay, a voided one is kept */
+  void(ids) {
+    if (!Array.isArray(ids) || ids.some((i) => typeof i !== "string" || !ISO_ID.test(i))) return { ok: false, status: 400, error: "send draft ids" };
+    const sql = this.state.storage.sql, at = this.clock();
+    return this.state.storage.transactionSync(() => {
+      let n = 0;
+      for (const id of ids) n += sql.exec("SELECT COUNT(*) AS c FROM booked WHERE draft_id = ? AND folded_at IS NULL AND voided_at IS NULL", id).toArray()[0].c;
+      for (const id of ids) sql.exec("UPDATE booked SET voided_at = ? WHERE draft_id = ? AND folded_at IS NULL AND voided_at IS NULL", at, id);
+      return { ok: true, voided: n };
+    });
   }
 
   /* S2c, READ ONLY on any object: whether the first load is still inside the platform's 30 days (29, to keep off the edge).
@@ -354,9 +570,18 @@ export class Book {
     if (this.isLive()) return this.liveFetch(request, url);
     if (url.pathname === "/window" && request.method === "GET") return Response.json(await this.window());
     /* S3: the reads answer on the live Book alone; the recovery test's object is never read by a reader */
+    /* S4a: the booked entries' verbs answer on the live Book alone, like the reads, and are never a route of the Worker */
+    if ((url.pathname === "/events" && request.method === "GET") || ((url.pathname === "/tap" || url.pathname === "/void") && request.method === "POST")) {
+      if (this.isTest()) return Response.json({ ok: false, error: "not found" }, { status: 404 });
+      if (url.pathname === "/events") { const s = this.state.storage.sql.exec("SELECT at FROM snap WHERE one = 1").toArray()[0]; return Response.json({ ok: true, at: s ? s.at : null, ids: this.events().map((e) => e.draft_id) }); }
+      let body = null;
+      try { body = JSON.parse(await request.text()); } catch (e) { body = null; }
+      const r = url.pathname === "/tap" ? this.tap(body) : this.void(body && body.ids);
+      return Response.json(r, { status: r.status || (r.ok ? 200 : 400) });
+    }
     if ((url.pathname === "/read" || url.pathname === "/at") && request.method === "GET") {
       if (this.isTest()) return Response.json({ ok: false, error: "not found" }, { status: 404 });
-      const out = url.pathname === "/read" ? this.readText() : this.snapshot();
+      const out = url.pathname === "/read" ? this.readText(url.searchParams.get("base") === "1") : this.snapshot();
       if (!out) return Response.json({ ok: false, error: "the Book holds no snapshot yet" }, { status: 503 });
       return typeof out === "string" ? new Response(out, { headers: { "content-type": "application/json" } }) : Response.json(out);
     }
@@ -368,7 +593,9 @@ export class Book {
     let body, p;
     try { body = JSON.parse(text); p = await prepare(body && body.book, body && body.pricing, body && { v: body.v, stamped: body.stamped, derived: body.derived }); }
     catch (e) { return Response.json({ ok: false, error: String((e && e.message) || e) }, { status: 400 }); }
-    const r = await this.held(p, body.rev);
+    /* S4a: the ids the Worker found committed among the open entries, and whether the batch was nothing but entries (the tap check's second half) */
+    const folded = (url.searchParams.get("folded") || "").split(",").filter((x) => ISO_ID.test(x));
+    const r = await this.held(p, body.rev, { folded, pure: url.searchParams.get("pure") === "1" });
     return Response.json(r, { status: r.ok ? 200 : 409 });
   }
 }

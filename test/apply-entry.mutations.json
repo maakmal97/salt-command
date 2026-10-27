@@ -8,8 +8,8 @@
  {
   "name": "the salt fallback rate is read once, before the batch, not before the entry",
   "file": "engine/apply.mjs",
-  "find": "stockCost: stockCostOf(book), nextRid: ctx.nextRid",
-  "replace": "stockCost: (ctx.staged.zzSc === undefined ? (ctx.staged.zzSc = stockCostOf(book)) : ctx.staged.zzSc), nextRid: ctx.nextRid"
+  "find": "stockCost: stockCostOf(book), nextRid: nextRidFor",
+  "replace": "stockCost: (ctx.staged.zzSc === undefined ? (ctx.staged.zzSc = stockCostOf(book)) : ctx.staged.zzSc), nextRid: nextRidFor"
  },
  {
   "name": "a move is attributed to no entry",

@@ -20,18 +20,43 @@ const ISO = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z$/;
 /* a bound that may be spliced into SQL, or null */
 export const boundOk = (at) => (typeof at === "string" && ISO.test(at) ? at : null);
 
-/* the bound a book carries: its `at` where it was read from the Book, else null (the mirror's own subquery form) */
-export const boundOf = (book) => boundOk(book && book.at);
+/* S4c (27 Oct 2026): A BOUND IS THE BOOK'S LATEST LOAD, AND THE DRAFTS THE BOOK HOLDS AS OPEN ENTRIES. A tap books an entry in the Book, so the view the reader read already
+   holds that draft's row: the draft is no longer on its way to that reader, whatever its status or committed_at says, or its money would count twice (once in the view, once as
+   a draft on top of it). The book carries the ids (`booked`) from the SAME read as `at`. With none open the bound is the plain `at` string and every clause below is byte for byte
+   what S3 shipped; with some it is { at, booked }. Every helper takes either. The ids are spliced after a shape check, as `at` is. */
+const DRAFT_ID = ISO;
+const atOf = (b) => (b && typeof b === "object" ? boundOk(b.at) : boundOk(b));
+const idsOf = (b) => (b && typeof b === "object" && Array.isArray(b.booked) ? b.booked.filter((i) => typeof i === "string" && DRAFT_ID.test(i)) : []);
+const notBooked = (b, a = "") => { const ids = idsOf(b); return ids.length ? " AND " + a + "id NOT IN (" + ids.map((i) => "'" + i + "'").join(",") + ")" : ""; };
+
+/* the bound a book carries: its `at` where it was read from the Book (with the draft ids it holds open, if any), else null (the mirror's own subquery form) */
+export const boundOf = (book) => {
+  const at = boundOk(book && book.at);
+  if (!at) return null;
+  const booked = idsOf({ booked: book.booked });
+  return booked.length ? { at, booked } : at;
+};
 
 /* not folded into the book the reader read: for a clause that today says `committed_at IS NULL` */
-export const unfolded = (at, a = "") => (boundOk(at) ? "(" + a + "committed_at IS NULL OR " + a + "committed_at > '" + at + "')" : a + "committed_at IS NULL");
+export const unfolded = (b, a = "") => {
+  const at = atOf(b);
+  return (at ? "(" + a + "committed_at IS NULL OR " + a + "committed_at > '" + at + "')" : a + "committed_at IS NULL") + notBooked(b, a);
+};
 
 /* pending, or approved and not in the reader's book: today's ON_ITS_WAY, which counts a draft committed after the mirror's snapshot */
-export const onItsWay = (at) => (boundOk(at)
-  ? "(status='pending' OR (status='approved' AND (committed_at IS NULL OR committed_at > '" + at + "')))"
-  : "(status='pending' OR (status='approved' AND (committed_at IS NULL OR committed_at > (SELECT at FROM snapshot WHERE one=1))))");
+export const onItsWay = (b) => {
+  const at = atOf(b), ids = notBooked(b);
+  const base = at
+    ? "status='pending' OR (status='approved' AND (committed_at IS NULL OR committed_at > '" + at + "'))"
+    : "status='pending' OR (status='approved' AND (committed_at IS NULL OR committed_at > (SELECT at FROM snapshot WHERE one=1)))";
+  return "(" + base + ")" + ids;
+};
 
-/* the row an entry made is in the reader's book: today's `landed` */
-export const landedBy = (at) => (boundOk(at)
-  ? "committed_at IS NOT NULL AND committed_at <= '" + at + "'"
-  : "committed_at IS NOT NULL AND committed_at <= (SELECT at FROM snapshot WHERE one=1)");
+/* the row an entry made is in the reader's book: today's `landed`. It stays on committed_at, the fold's own question: a booked entry is in the view, but the Counter is told a
+   row landed only when the fold has put it in git, so a held batch never tells a site of money git never took. */
+export const landedBy = (b) => {
+  const at = atOf(b);
+  return at
+    ? "committed_at IS NOT NULL AND committed_at <= '" + at + "'"
+    : "committed_at IS NOT NULL AND committed_at <= (SELECT at FROM snapshot WHERE one=1)";
+};

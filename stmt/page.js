@@ -4186,6 +4186,8 @@ const CLIENT_JS = `
     pPrices.appendChild(el('p','lead',tw((prices.at&&pricesAt(prices.at)?'pr.asAt':'pr.week')+(tapTo?'Tap':''),
       {d:Dd(pricesAt,prices.at), w:prices.week&&prices.week.label||''})));
     pPrices.appendChild(el('p','lead',tw('pr.goods',{deliv:Wk('deliv')})));
+    /* 27 Oct 2026: the prices stay as they are, and their credit is said once, here */
+    var crl=el('p','salt-insight'); crl.id='prCredit'; crl.hidden=true; pPrices.appendChild(crl); creditDraw();
     var pw=el('div','pway'); pw.id='pWay'; pPrices.appendChild(pw); wayDraw();
     if(tapTo){ var bl=el('p','salt-insight salt-insight--copper',limitLine()); bl.id='bkLim'; bl.hidden=true; pPrices.appendChild(bl); }
     if(prices.since) pPrices.appendChild(el('p','sub2',tw('pr.since',{m:Dd(monthOf,prices.since)})));
@@ -4305,7 +4307,8 @@ const CLIENT_JS = `
     bar.textContent=''; bar.hidden=!ls.length; if(!ls.length) return;
     var sum=0, open=ls.some(function(x){ return x.t==null; }); ls.forEach(function(x){ if(x.t!=null) sum+=x.t; });
     var w=wayNow();
-    bar.appendChild(kpiTile('brass',tw(ls.length===1?'bk.lines1':'bk.linesN',{n:ls.length}),rm(+sum.toFixed(2)),tw(w&&w.mode==='deliver'?'sh.plusDeliv':'sh.toCollect')));
+    var bco=creditOff(+sum.toFixed(2));
+    bar.appendChild(kpiTile('brass',tw(ls.length===1?'bk.lines1':'bk.linesN',{n:ls.length}),rm(+sum.toFixed(2)),bco.any?tw('sh.creditOff',{c:rm(bco.c), p:rm(bco.pay)}):tw(w&&w.mode==='deliver'?'sh.plusDeliv':'sh.toCollect')));
     var go=el('button','salt-pill salt-pill--md',tw('sh.review')); go.type='button'; go.id='bkGo'; go.disabled=open;
     go.addEventListener('click',function(){ bsReview(go); });
     bar.appendChild(go);
@@ -4391,6 +4394,18 @@ const CLIENT_JS = `
      yet on it, and the sheet's lines at their goods, over the ceiling sealed with the list. One verdict a sheet. It is a
      forecast: nothing is sent at Place, and the desk's verdict is the order's. */
   function ceilingRM(){ return prices&&typeof prices.ceiling==='number'?prices.ceiling:null; }
+  /* 27 Oct 2026 (docs/plan-refund-credit.html P4): THEIR CREDIT, every open refund of theirs as the list was sealed, less the credit an order of
+     theirs carries that the sealed figure does not hold yet (its row not among the sealed rows that spent some). Never under nought */
+  function creditNow(){
+    var c=prices&&typeof prices.credit==='number'?prices.credit:0, rows=((prices&&prices.creditRows)||[]).slice();
+    orders.forEach(function(o){ if(!(+o.credit>0.004)||o.status==='cancelled'||o.status==='declined') return;
+      var i=-1; rows.some(function(r,j){ if(r.d===o.rowOn&&r.p===(o.product||'salt')&&Math.abs((+r.rm||0)-(+o.credit))<0.005){ i=j; return true; } return false; });
+      if(i>=0) rows.splice(i,1); else c-=+o.credit; });
+    return Math.max(0,+c.toFixed(2));
+  }
+  /* the line on Prices, drawn again when the orders are read, since an order's credit may not be in the sealed figure yet */
+  function creditDraw(){ var e=document.getElementById('prCredit'); if(!e) return; var c=creditNow(); e.hidden=!(c>0.004); e.textContent=c>0.004?tw('pr.credit',{rm:rm(c)}):''; }
+  function creditOff(sum){ var c=creditNow(); return {c:Math.min(c,sum), pay:Math.max(0,+(sum-c).toFixed(2)), any:c>0.004}; }
   /* an agreed order is on the statement once a sealed part is its row: to pay now by its day, side and whole (as nowOf
      matches), coming up by its day, side and product. Accepted and not yet published, it is counted from the order */
   function onStatement(o){
@@ -4401,7 +4416,7 @@ const CLIENT_JS = `
   }
   function owedAll(){
     var P=payDue||{}, t=(P.now?+P.now.rm||0:0)+(P.coming?+P.coming.rm||0:0);
-    orders.forEach(function(o){ if((o.status==='acknowledged'||o.status==='ready')&&!onStatement(o)) t+=Math.max(0,(+o.total||0)+(+o.delivery||0)-(+o.paid||0)); });
+    orders.forEach(function(o){ if((o.status==='acknowledged'||o.status==='ready')&&!onStatement(o)) t+=Math.max(0,(+o.total||0)+(+o.delivery||0)-(+o.paid||0)-(+o.credit||0)); });
     return +t.toFixed(2);
   }
   function advanceLikely(goods){ var c=ceilingRM(); if(c==null||!goods.length) return false;
@@ -5062,7 +5077,8 @@ const CLIENT_JS = `
     var qs=quotes(), why=formWhy(), t=el('div','ototal'), sum=0;
     qs.forEach(function(x){ sum+=x.total; });
     t.appendChild(el('b','salt-kpi__value',qs.length?rm(+sum.toFixed(2)):''));
-    t.appendChild(el('span','sub2',why||tw(draft.mode==='deliver'?'sh.plusDeliv':'sh.toCollect')));
+    var fco=creditOff(+sum.toFixed(2));
+    t.appendChild(el('span','sub2',why||(fco.any&&qs.length?tw('sh.creditOff',{c:rm(fco.c), p:rm(fco.pay)}):tw(draft.mode==='deliver'?'sh.plusDeliv':'sh.toCollect'))));
     F.appendChild(t);
     var go=el('button','salt-pill salt-pill--md',tw('sh.review')); go.type='button'; go.id='oGo'; go.disabled=!!why; go.setAttribute('data-k','review');
     go.addEventListener('click',reviewSheet);
@@ -5205,6 +5221,9 @@ const CLIENT_JS = `
           L.lastChild.appendChild(rb); } });
       row(tw('sh.total'),rm(sheetSum(c)));
     }
+    /* 27 Oct 2026: the goods, then their credit, then what they pay, never under RM 0; a delivery set at confirmation comes off it too */
+    var cco=c.pool?{any:false}:creditOff(sheetSum(c));
+    if(cco.any){ row(tw('sh.credit'),'- '+rm(cco.c)); row(tw('sh.youPay'),rm(cco.pay),c.mode==='deliver'?tw('sh.youPayDeliv'):''); }
     row(tw('sh.how'),c.mode==='deliver'?tw('sh.deliveredTo',{p:c.place}):tw('sh.youCollect'));
     if(c.mode==='deliver'&&(c.pin||c.pinKept)) row(tw(c.pin&&c.pin.src==='unit'?'od.sealed':'sh.pinRow'),tw('sh.pinShared'));
     if(c.mode==='deliver') row(tw('sh.delivery'),tw('sh.setOnConfirm'));
@@ -5477,9 +5496,9 @@ const CLIENT_JS = `
   }
   /* v694: money and goods are two tracks, so what is still owed and what is still to come are read
      off the order, never off a single word of state. Both figures are the ones the desk holds. */
-  function dueOf(o){ return +((o.total+(+o.delivery||0))-(+o.paid||0)).toFixed(2); }
+  function dueOf(o){ return +((o.total+(+o.delivery||0))-(+o.paid||0)-(+o.credit||0)).toFixed(2); }   /* 27 Oct 2026: less their credit, paid at our confirmation */
   /* an advance as the engine reads it: the share of the goods handed over above the share paid */
-  function aheadOnGoods(o){ var owed=o.total+(+o.delivery||0), pf=owed>0?(+o.paid||0)/owed:0, mf=o.qty>0?(+o.moved||0)/o.qty:0; return mf>pf+1e-9&&dueOf(o)>0.004; }
+  function aheadOnGoods(o){ var owed=o.total+(+o.delivery||0), pf=owed>0?((+o.paid||0)+(+o.credit||0))/owed:0, mf=o.qty>0?(+o.moved||0)/o.qty:0; return mf>pf+1e-9&&dueOf(o)>0.004; }
   function heldUnpaid(){ return orders.some(function(o){ return ['cancelled','declined'].indexOf(o.status)<0&&aheadOnGoods(o); }); }
   /* THE ANSWER TO A TAP ON AN ORDER IS DRAWN BESIDE WHAT WAS TAPPED (24 Sep 2026). Every answer went
      to the form's one note, which the payment page over RM 100 never draws, so I have paid, Confirm,
@@ -5890,6 +5909,8 @@ const CLIENT_JS = `
     if(d) L.appendChild(o.status==='placed'?lrow(tw('sh.delivery'),'',o.place?tw('om.setToP',{p:o.place}):tw('om.set')):lrow(tw('sh.delivery'),rm(o.delivery||0),where));
     /* 20 Oct 2026: the reward unit that comes with this order: its mark, one unit, no charge, and no amount */
     if(o.rwd==='given'){ var rwr=lrow(tw('om.rwd'),tw('om.rwdFree')), rwl=rwr.querySelector('.salt-ledger__label'); rwl.insertBefore(markLead(o.product,16),rwl.firstChild); rwr.classList.add('orwd'); L.appendChild(rwr); }
+    /* 27 Oct 2026: their credit, taken off at our confirmation, paid already and never a payment of theirs */
+    if(+o.credit>0.004) L.appendChild(lrow(tw('om.credit'),rm(+o.credit)));
     /* Counter Batch A: each payment we have, with its way and its day, where they add up to what is paid; else one line */
     var conf=(o.payments||[]).filter(function(x){ return x&&(!x.claim||x.claim==='received')&&+x.amount>0; }),
         csum=conf.reduce(function(s,x){ return s+(+x.amount); },0);
@@ -7313,7 +7334,7 @@ const CLIENT_JS = `
     if(mine!==ticket) return;
     if(r.status===401) return;   /* api() has said so in the bar */
     /* C14: a read that failed keeps the list as it last stood and says so; it is never an empty list */
-    if(r.body.ok){ orders=r.body.orders||[]; claims=Array.isArray(r.body.claims)?r.body.claims:[]; ordersFailed=false; readAt=Date.now(); if('thread' in r.body&&!thTimer) thPut(r.body.thread); }
+    if(r.body.ok){ orders=r.body.orders||[]; claims=Array.isArray(r.body.claims)?r.body.claims:[]; ordersFailed=false; readAt=Date.now(); if('thread' in r.body&&!thTimer) thPut(r.body.thread); creditDraw(); bsBarDraw(); }
     else ordersFailed=true;
     /* a group order is read with the orders; a read that fails keeps the list as it stood, and says nothing: the card is an extra */
     var pr=await api('/pools');

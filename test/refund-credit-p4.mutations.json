@@ -1,0 +1,14 @@
+[
+{"name": "the seal takes cancelled rows", "file": "tools/make_statements.mjs", "find": "s.customer===code&&!s.cancelled&&+s.credit>0.004", "replace": "s.customer===code&&+s.credit>0.004"},
+{"name": "the seal names the rid", "file": "tools/make_statements.mjs", "find": ".map(s=>({d:s.date||'',p:s.product||'salt',rm:+(+s.credit).toFixed(2)}));", "replace": ".map(s=>({rid:s.rid,d:s.date||'',p:s.product||'salt',rm:+(+s.credit).toFixed(2)}));"},
+{"name": "an empty seal is sealed", "file": "tools/make_statements.mjs", "find": "  return credit>0.004||creditRows.length?{credit,creditRows}:null;", "replace": "  return {credit,creditRows};"},
+{"name": "Prices says no credit", "file": "stmt/page.js", "find": "e.hidden=!(c>0.004); e.textContent=c>0.004?tw('pr.credit',{rm:rm(c)}):'';", "replace": "e.hidden=true; e.textContent='';"},
+{"name": "credit under nought", "file": "stmt/page.js", "find": "  function creditOff(sum){ var c=creditNow(); return {c:Math.min(c,sum), pay:Math.max(0,+(sum-c).toFixed(2)), any:c>0.004}; }", "replace": "  function creditOff(sum){ var c=creditNow(); return {c:c, pay:+(sum-c).toFixed(2), any:c>0.004}; }"},
+{"name": "the bar says no credit", "file": "stmt/page.js", "find": "rm(+sum.toFixed(2)),bco.any?tw('sh.creditOff'", "replace": "rm(+sum.toFixed(2)),false?tw('sh.creditOff'"},
+{"name": "the check says no credit", "file": "stmt/page.js", "find": "    if(cco.any){ row(tw('sh.credit')", "replace": "    if(false){ row(tw('sh.credit')"},
+{"name": "an unsealed order's credit is not taken off", "file": "stmt/page.js", "find": "      if(i>=0) rows.splice(i,1); else c-=+o.credit; });", "replace": "      if(i>=0) rows.splice(i,1); });"},
+{"name": "a sealed order's credit is taken twice", "file": "stmt/page.js", "find": "      if(i>=0) rows.splice(i,1); else c-=+o.credit; });", "replace": "      c-=+o.credit; });"},
+{"name": "the line is not drawn again with the orders", "file": "stmt/page.js", "find": "thPut(r.body.thread); creditDraw(); bsBarDraw(); }", "replace": "thPut(r.body.thread); }"},
+{"name": "the order card leaves the credit out", "file": "stmt/page.js", "find": "    if(+o.credit>0.004) L.appendChild(lrow(tw('om.credit'),rm(+o.credit)));", "replace": ""},
+{"name": "the page's order owes its credit", "file": "stmt/page.js", "find": "  function dueOf(o){ return +((o.total+(+o.delivery||0))-(+o.paid||0)-(+o.credit||0)).toFixed(2); }", "replace": "  function dueOf(o){ return +((o.total+(+o.delivery||0))-(+o.paid||0)).toFixed(2); }"}
+]

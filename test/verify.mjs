@@ -12351,7 +12351,7 @@ await (async () => {
     const { oneLine } = await import("../tools/d1json.mjs");
     const arg = readArgs(APPROVED_SQL).at(-1);
     let refused = ""; try { oneLine("SELECT id FROM draft WHERE id='a" + String.fromCharCode(10) + "b'"); } catch (e) { refused = e.message; }
-    ok(APPROVED_SQL.includes(String.fromCharCode(10)) && !/[\r\n\\]/.test(arg) && /^"SELECT d\.id,d\.status,.* ORDER BY d\.drafted_at"$/.test(arg) && /--file/.test(refused),
+    ok(APPROVED_SQL.includes(String.fromCharCode(10)) && !/[\r\n\\]/.test(arg) && /^"SELECT d\.id,d\.status,.* ORDER BY .*d\.drafted_at"$/.test(arg) && /--file/.test(refused),
       "drafts.mjs --approved hands wrangler its multi-line SELECT as one line with no backslash, and a line break inside a literal is refused: " + arg.slice(0, 60) + " ... " + arg.slice(-40));
     const sent = readdirSync(join(REPO, "tools")).filter((n) => n.endsWith(".mjs") && n !== "d1json.mjs" && /"--command",\s*JSON\.stringify\(/.test(readFileSync(join(REPO, "tools", n), "utf8")));
     ok(!sent.length, "and no tool hands --command its SQL except through d1json's oneLine: " + (sent.join(" ") || "none")); }
@@ -50198,6 +50198,31 @@ await (async () => {
   await (await import("./cash-over.mjs")).run({ ok });
 })();
 
+section("27 Oct 2026: a refund is never the book's money, cash flow keeps the till (refund credit P1)");
+await (async () => {
+  await (await import("./refund-credit-p1.mjs")).run({ ok });
+})();
+
+section("27 Oct 2026: a refund becomes their credit, the engine, the fold and what is on its way (refund credit P2)");
+await (async () => {
+  await (await import("./refund-credit-p2.mjs")).run({ ok });
+})();
+
+section("27 Oct 2026: his Accept spends their credit as paid, the order keeping it apart from paid (refund credit P3)");
+await (async () => {
+  await (await import("./refund-credit-p3.mjs")).run({ ok });
+})();
+
+section("27 Oct 2026: their credit on the Counter, said once on Prices and taken off the basket, the sheet and the order (refund credit P4)");
+await (async () => {
+  await (await import("./refund-credit-p4.mjs")).run({ ok, pageWork });
+})();
+
+section("27 Oct 2026: their credit on Salt Admin, Less RM 25 credit on the Accept card (refund credit P5)");
+await (async () => {
+  await (await import("./refund-credit-p5.mjs")).run({ ok });
+})();
+
 section("Salt Admin: Orders open by stage, a list beside the order, and Record a menu");
 await (async () => {
   await (await import("./admin-orders.mjs")).run({ ok, pageWork });
@@ -50736,6 +50761,7 @@ await (async () => {
           if (sql.includes("FROM state")) return { results: [{ key: "PRICING", doc: JSON.stringify(pricing) },
             { key: "roster", doc: JSON.stringify(["CX1-AB"]) }, { key: "OPEN", doc: '{"byKey":{}}' }] };
           if (sql.includes("FROM entry")) return { results: [] };
+          if (sql.includes("FROM draft")) return { results: [] };   /* 27 Oct 2026: the credit on its way (src/credit.js) */
           throw new Error("unexpected query " + sql);
         }
       };
@@ -52165,6 +52191,16 @@ await (async () => {
 section("Book S3: the readers read the Book (flag in D1), on its way is the Book's own bound, and the readcheck names a Book that differs (25 Oct 2026)");
 await (async () => {
   await (await import("./book-read.mjs")).run({ ok });
+})();
+
+section("Book S4a and S4b: the Book books an entry beside its base, the fold takes what it booked (27 Oct 2026)");
+await (async () => {
+  await (await import("./book-tap.mjs")).run({ ok });
+})();
+
+section("Book S4c: the readers count a booked draft once (27 Oct 2026)");
+await (async () => {
+  await (await import("./book-way.mjs")).run({ ok });
 })();
 
 section("18 Oct 2026: the lean Desk: six views, the three parts gone, alerts in the rail, spots on Coverage, Noticed under To do");

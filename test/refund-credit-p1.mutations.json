@@ -1,0 +1,12 @@
+[
+{"name": "bookCash reads raw cash", "file": "engine/position.mjs", "find": "  return r>0.004?Math.max(0,+(c-r).toFixed(2)):c;\n}", "replace": "  return c;\n}"},
+{"name": "bookCash goes under nought", "file": "engine/position.mjs", "find": "  return r>0.004?Math.max(0,+(c-r).toFixed(2)):c;\n}", "replace": "  return r>0.004?+(c-r).toFixed(2):c;\n}"},
+{"name": "bookCash takes every refund", "file": "engine/position.mjs", "find": "refunds.reduce((a,x)=>a+(x&&x.rid===row.rid?(+x.amount||0):0),0);", "replace": "refunds.reduce((a,x)=>a+(x?(+x.amount||0):0),0);"},
+{"name": "the walk reads raw cash", "find": "  W.revCollected=_S.reduce((a,s)=>a+bookCash(s,I.refunds),0);", "replace": "  W.revCollected=_S.reduce((a,s)=>a+(s.cash||0),0);"},
+{"name": "the walk is given no refunds", "find": "    refunds:B.refunds||[],", "replace": "    refunds:[],"},
+{"name": "the product summary reads raw cash", "find": "  const cash=+S.reduce((a,s)=>a+POSITION_ENGINE.bookCash(s,customerRefunds),0).toFixed(2);", "replace": "  const cash=+S.reduce((a,s)=>a+(s.cash||0),0).toFixed(2);"},
+{"name": "the P&L reads raw cash", "find": "bump(mo,'cash',POSITION_ENGINE.bookCash(t,customerRefunds));", "replace": "bump(mo,'cash',t.cash||0);"},
+{"name": "cash flow nets the set-off off the till", "find": "  const net=+(inRM+inj-outRM-spend-refPaid+loanIn-loanOut).toFixed(2);", "replace": "  const net=+(inRM+inj-outRM-spend-refPaid+refSetOff+loanIn-loanOut).toFixed(2);"},
+{"name": "no set-off is named", "find": "customerRefunds.filter(r=>r.paidOn&&r.setOff).reduce", "replace": "customerRefunds.filter(r=>false&&r.setOff).reduce"},
+{"name": "the set-off words are gone", "find": "of it set off as credit on a later order, whose cash carries it in", "replace": "of it paid back"}
+]

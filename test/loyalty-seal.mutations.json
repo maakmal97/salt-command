@@ -1,8 +1,6 @@
-[
- {"name":"the card carries their units","file":"tools/book.mjs","find":"loyal: { next: Math.max(0, Math.min(1, +(+walk.next).toFixed(2))) } }] };","replace":"loyal: { next: Math.max(0, Math.min(1, +(+walk.next).toFixed(2))), units: walk.units } }] };"},
- {"name":"the share at four decimals","file":"tools/book.mjs","find":"loyal: { next: Math.max(0, Math.min(1, +(+walk.next).toFixed(2))) } }] };","replace":"loyal: { next: Math.max(0, Math.min(1, +(+walk.next).toFixed(4))) } }] };"},
- {"name":"the partner walks on the desk","file":"master/salt_command.html","find":"  b.state.partners=typeof partners!=='undefined'?partners:[];\n","replace":""},
- {"name":"a card for nobody the walk names","file":"tools/book.mjs","find":"  if (!walk || !walk.walks || !Number.isFinite(+walk.next)) return null;","replace":"  if (!walk) return null;"},
- {"name":"the publish seals over an associate's card","file":"tools/stmt-publish.mjs","find":"        if (typeof code !== \"string\" || cards[code] || code.endsWith(\"-R\")) continue;","replace":"        if (typeof code !== \"string\" || code.endsWith(\"-R\")) continue;"},
- {"name":"the loyal mark reaches the customer","file":"stmt/orders.js","find":"  \"slot\", \"slotSpan\", \"point\", \"rwd\"];","replace":"  \"slot\", \"slotSpan\", \"point\", \"rwd\", \"rwdLoyal\"];"}
-]
+[{"name":"the card carries their units","file":"tools/book.mjs","find":"loyal: { next: Math.max(0, Math.min(1, +(+walk.next).toFixed(2))) } }] };","replace":"loyal: { next: Math.max(0, Math.min(1, +(+walk.next).toFixed(2))), units: walk.units } }] };"},
+{"name":"the share at four decimals","file":"tools/book.mjs","find":"loyal: { next: Math.max(0, Math.min(1, +(+walk.next).toFixed(2))) } }] };","replace":"loyal: { next: Math.max(0, Math.min(1, +(+walk.next).toFixed(4))) } }] };"},
+{"name":"the partner walks on the desk","file":"master/salt_command.html","find":"  b.state.partners=typeof partners!=='undefined'?partners:[];\n","replace":""},
+{"name":"a card for nobody the walk names","file":"tools/book.mjs","find":"  if (!walk || !walk.walks || !Number.isFinite(+walk.next)) return null;","replace":"  if (!walk) return null;"},
+{"name":"the publish seals over an associate's card","file":"tools/stmt-publish.mjs","find":"        if (typeof code !== \"string\" || cards[code] || code.endsWith(\"-R\")) continue;","replace":"        if (typeof code !== \"string\" || code.endsWith(\"-R\")) continue;"},
+{"name":"the loyal mark reaches the customer","file":"stmt/orders.js","find":"  \"slot\", \"slotSpan\", \"point\", \"rwd\", \"credit\"];","replace":"  \"slot\", \"slotSpan\", \"point\", \"rwd\", \"credit\", \"rwdLoyal\"];"}]
