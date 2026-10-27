@@ -1,0 +1,100 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-10-27T08:02:25.003Z",
+   "status": "approved",
+   "collection": "count",
+   "row": {
+    "product": "oil",
+    "qty": 0,
+    "date": "2026-10-27",
+    "was": 20,
+    "drift": -20
+   },
+   "reasoning": "Counted 0 unit of oil by hand on 2026-10-27, against 20 on the book: a difference of -20. The last count was 2026-10-20. A count wins over the ledger, and the fold sets the stated stock and moves COUNT_ON to this date.",
+   "flags": [
+    "The book says 20 and you counted 0: -20 unit unaccounted for. A COUNT ALWAYS WINS, so this becomes the inventory and the gap books as shrinkage across every unit sold."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-27T08:02:25.003Z",
+    "type": "COUNT",
+    "party": "stock count",
+    "qty": 0,
+    "total": null,
+    "status": "count",
+    "raw": "Stock count: 0 unit oil on hand on 2026-10-27",
+    "payload": {
+     "mode": "count",
+     "product": "oil",
+     "direction": null,
+     "party": null,
+     "date": "2026-10-27",
+     "qty": 0,
+     "total": null,
+     "cash": null,
+     "kg": 0,
+     "assoc": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null
+    },
+    "makerRequest": "b4ff8d454fc2b05e3fd9a320ef2d4aac6b60cd539dbe92dfaad2e3dabc2a8e81"
+   },
+   "decidedAt": "2026-10-27T08:02:55.968Z",
+   "decidedBy": "Counter Admin"
+  },
+  {
+   "id": "2026-10-27T08:02:33.745Z",
+   "status": "approved",
+   "collection": "count",
+   "row": {
+    "product": "salt",
+    "qty": 0.5,
+    "date": "2026-10-27",
+    "was": 1.5,
+    "drift": -1
+   },
+   "reasoning": "Counted 0.5 unit of salt by hand on 2026-10-27, against 1.5 on the book: a difference of -1. The last count was 2026-10-24. A count wins over the ledger, and the fold sets the stated stock and moves COUNT_ON to this date.",
+   "flags": [
+    "The book says 1.5 and you counted 0.5: -1 unit unaccounted for. A COUNT ALWAYS WINS, so this becomes the inventory and the gap books as shrinkage across every unit sold."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-27T08:02:33.745Z",
+    "type": "COUNT",
+    "party": "stock count",
+    "qty": 0.5,
+    "total": null,
+    "status": "count",
+    "raw": "Stock count: 0.5 unit salt on hand on 2026-10-27",
+    "payload": {
+     "mode": "count",
+     "product": "salt",
+     "direction": null,
+     "party": null,
+     "date": "2026-10-27",
+     "qty": 0.5,
+     "total": null,
+     "cash": null,
+     "kg": 0.5,
+     "assoc": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null
+    },
+    "makerRequest": "0647e735cc275c15423ad20a87a821ba8a0d17c3c60169472c30ac1da7b0ba6a"
+   },
+   "decidedAt": "2026-10-27T08:02:56.978Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
