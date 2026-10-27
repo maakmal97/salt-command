@@ -1,6 +1,6 @@
 {
- "v": "v1271",
- "stamped": "27 Oct 2026, 14:58 KL",
+ "v": "v1273",
+ "stamped": "27 Oct 2026, 15:12 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -9205,8 +9205,26 @@
     "rev": "R2",
     "listRM": 60,
     "listQty": 1,
-    "note": "<b>PENDING SALE OF 1 UNIT OF SALT TO CM4-TO-R, GOODS RM130, 29 OCT 2026.</b> Agreed for 29 Oct, approved by Counter Admin, booked as R2 via CM4-TO. Nothing is paid and nothing handed over, so no stock is drawn and no revenue is booked. For 1 unit the ladder gives a floor total of RM60 and an ask total of RM120, so RM130 is above both. That is RM130 a unit against a floor of RM60 and an ask of RM120. The party's median rate is RM91.4, range RM71.67 to RM150; outstanding before was RM0, no units on credit against a cap of 1. The cost is RM58 a unit, costed off the latest purchase. The drafter flagged a rate well above the usual RM60 a unit for CM4-TO. The figures answer it: the rate is above the ask and within the party's own range. RM130 and the 1 unit remain outstanding.",
-    "rid": "s298"
+    "note": "<b>CANCELLED ON 27 OCT 2026.</b> <b>PENDING SALE OF 1 UNIT OF SALT TO CM4-TO-R, GOODS RM130, 29 OCT 2026.</b> Agreed for 29 Oct, approved by Counter Admin, booked as R2 via CM4-TO. Nothing is paid and nothing handed over, so no stock is drawn and no revenue is booked. For 1 unit the ladder gives a floor total of RM60 and an ask total of RM120, so RM130 is above both. That is RM130 a unit against a floor of RM60 and an ask of RM120. The party's median rate is RM91.4, range RM71.67 to RM150; outstanding before was RM0, no units on credit against a cap of 1. The cost is RM58 a unit, costed off the latest purchase. The drafter flagged a rate well above the usual RM60 a unit for CM4-TO. The figures answer it: the rate is above the ask and within the party's own range. RM130 and the 1 unit remain outstanding.",
+    "rid": "s298",
+    "amend": [
+     {
+      "date": "2026-10-29",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-27",
+      "kind": "Cancellation",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CANCELLATION OF PENDING SALE S298 TO CM4-TO-R, 1 UNIT OF SALT, GOODS RM130, ON 27 OCT 2026.</b> The order was agreed for 29 Oct, with cash RM0 and nothing moved. It was withdrawn on 27 Oct and approved by Counter Admin. The row is not recomputed here, the master applies the cancellation. No stock was drawn and no revenue was booked, so nothing is reversed. The party's median rate is RM130, range RM71.67 to RM150; outstanding before was RM130, no units on credit. That RM130 was this pending order, so the cancellation clears it. The row carries no cost of its own. The drafter flagged nothing. Nothing is left outstanding on s298."
+     }
+    ],
+    "cancelled": true,
+    "cancelledOn": "2026-10-27"
    }
   ],
   "contacts": [
@@ -9988,7 +10006,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-27T06:42:16.025Z",
+  "QUEUE_COMMITTED": "2026-10-27T07:08:55.347Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -10281,53 +10299,6 @@
       "rare": false
      }
     },
-    "CM4-TO": {
-     "salt": {
-      "name": "large and regular",
-      "orders": 7,
-      "tenureDays": 73,
-      "sinceLastDays": 3,
-      "perMonth": 2.92,
-      "unitsPerMonth": 25.02,
-      "smallShare": 0.14,
-      "bigShare": 0.86,
-      "frequent": true,
-      "small": false,
-      "bigger": true,
-      "loyal": true,
-      "rare": false
-     },
-     "candy": {
-      "name": "one-off",
-      "orders": 1,
-      "tenureDays": 8,
-      "sinceLastDays": 8,
-      "perMonth": 1.01,
-      "unitsPerMonth": 3.04,
-      "smallShare": 0,
-      "bigShare": 1,
-      "frequent": false,
-      "small": false,
-      "bigger": true,
-      "loyal": false,
-      "rare": false
-     },
-     "rice": {
-      "name": "one-off",
-      "orders": 1,
-      "tenureDays": 34,
-      "sinceLastDays": 34,
-      "perMonth": 0.9,
-      "unitsPerMonth": 8.95,
-      "smallShare": 0,
-      "bigShare": 1,
-      "frequent": false,
-      "small": false,
-      "bigger": true,
-      "loyal": false,
-      "rare": true
-     }
-    },
     "CE4-CHE": {
      "salt": {
       "name": "consistent mid",
@@ -10388,6 +10359,53 @@
       "bigger": true,
       "loyal": false,
       "rare": false
+     }
+    },
+    "CM4-TO": {
+     "salt": {
+      "name": "large and regular",
+      "orders": 7,
+      "tenureDays": 73,
+      "sinceLastDays": 3,
+      "perMonth": 2.92,
+      "unitsPerMonth": 25.02,
+      "smallShare": 0.14,
+      "bigShare": 0.86,
+      "frequent": true,
+      "small": false,
+      "bigger": true,
+      "loyal": true,
+      "rare": false
+     },
+     "candy": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 8,
+      "sinceLastDays": 8,
+      "perMonth": 1.01,
+      "unitsPerMonth": 3.04,
+      "smallShare": 0,
+      "bigShare": 1,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false
+     },
+     "rice": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 34,
+      "sinceLastDays": 34,
+      "perMonth": 0.9,
+      "unitsPerMonth": 8.95,
+      "smallShare": 0,
+      "bigShare": 1,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": true
      }
     },
     "CM4-MK": {
@@ -11741,48 +11759,6 @@
         980
        ]
       ],
-      "CM4-TO": [
-       [
-        0.5,
-        30
-       ],
-       [
-        1,
-        60
-       ],
-       [
-        1.5,
-        90
-       ],
-       [
-        2,
-        120
-       ],
-       [
-        2.5,
-        145
-       ],
-       [
-        3,
-        175
-       ],
-       [
-        4,
-        235
-       ],
-       [
-        5,
-        290
-       ],
-       [
-        6.25,
-        365
-       ],
-       [
-        12.5,
-        725
-       ]
-      ],
       "CE4-CHE": [
        [
         0.5,
@@ -11823,6 +11799,48 @@
        [
         12.5,
         980
+       ]
+      ],
+      "CM4-TO": [
+       [
+        0.5,
+        30
+       ],
+       [
+        1,
+        60
+       ],
+       [
+        1.5,
+        90
+       ],
+       [
+        2,
+        120
+       ],
+       [
+        2.5,
+        145
+       ],
+       [
+        3,
+        175
+       ],
+       [
+        4,
+        235
+       ],
+       [
+        5,
+        290
+       ],
+       [
+        6.25,
+        365
+       ],
+       [
+        12.5,
+        725
        ]
       ],
       "CM4-MK": [
@@ -13597,8 +13615,8 @@
       "CS6-BS": -0.2,
       "CS6-PER": -0.05,
       "CJ4-BJ": 0,
-      "CM4-TO": "partner",
       "CE4-CHE": 0,
+      "CM4-TO": "partner",
       "CM4-MK": 0,
       "CK4-SEN": -0.2,
       "CZ4-MK": -0.15,
@@ -14174,28 +14192,6 @@
         450
        ]
       ],
-      "CM4-TO": [
-       [
-        10,
-        80
-       ],
-       [
-        20,
-        160
-       ],
-       [
-        30,
-        240
-       ],
-       [
-        40,
-        315
-       ],
-       [
-        50,
-        395
-       ]
-      ],
       "CE4-CHE": [
        [
         10,
@@ -14216,6 +14212,28 @@
        [
         50,
         450
+       ]
+      ],
+      "CM4-TO": [
+       [
+        10,
+        80
+       ],
+       [
+        20,
+        160
+       ],
+       [
+        30,
+        240
+       ],
+       [
+        40,
+        315
+       ],
+       [
+        50,
+        395
        ]
       ],
       "CM4-MK": [
@@ -15150,8 +15168,8 @@
       "CS6-BS": 0,
       "CS6-PER": 0,
       "CJ4-BJ": 0,
-      "CM4-TO": "partner",
       "CE4-CHE": 0,
+      "CM4-TO": "partner",
       "CM4-MK": 0,
       "CK4-SEN": 0,
       "CZ4-MK": -0.1,
@@ -15508,28 +15526,6 @@
         1500
        ]
       ],
-      "CM4-TO": [
-       [
-        1,
-        45
-       ],
-       [
-        5,
-        210
-       ],
-       [
-        10,
-        420
-       ],
-       [
-        20,
-        840
-       ],
-       [
-        30,
-        1260
-       ]
-      ],
       "CE4-CHE": [
        [
         1,
@@ -15550,6 +15546,28 @@
        [
         30,
         1500
+       ]
+      ],
+      "CM4-TO": [
+       [
+        1,
+        45
+       ],
+       [
+        5,
+        210
+       ],
+       [
+        10,
+        420
+       ],
+       [
+        20,
+        840
+       ],
+       [
+        30,
+        1260
        ]
       ],
       "CM4-MK": [
@@ -16484,8 +16502,8 @@
       "CS6-BS": 0,
       "CS6-PER": 0,
       "CJ4-BJ": 0,
-      "CM4-TO": "partner",
       "CE4-CHE": 0,
+      "CM4-TO": "partner",
       "CM4-MK": 0,
       "CK4-SEN": 0,
       "CZ4-MK": -0.25,
@@ -16775,20 +16793,6 @@
         60
        ]
       ],
-      "CM4-TO": [
-       [
-        1,
-        5
-       ],
-       [
-        5,
-        20
-       ],
-       [
-        10,
-        35
-       ]
-      ],
       "CE4-CHE": [
        [
         1,
@@ -16801,6 +16805,20 @@
        [
         10,
         60
+       ]
+      ],
+      "CM4-TO": [
+       [
+        1,
+        5
+       ],
+       [
+        5,
+        20
+       ],
+       [
+        10,
+        35
        ]
       ],
       "CM4-MK": [
@@ -17399,8 +17417,8 @@
       "CS6-BS": 0,
       "CS6-PER": 0,
       "CJ4-BJ": 0,
-      "CM4-TO": "partner",
       "CE4-CHE": 0,
+      "CM4-TO": "partner",
       "CM4-MK": 0,
       "CK4-SEN": 0,
       "CZ4-MK": 0,
@@ -17607,29 +17625,12 @@
      ]
     }
    },
-   "v": "v1271"
+   "v": "v1273"
   },
   "OPEN": {
-   "at": "2026-10-27T06:59:02.107Z",
-   "count": 9,
+   "at": "2026-10-27T07:12:57.396Z",
+   "count": 8,
    "byKey": {
-    "CM4-TO-R|2026-10-29|130": {
-     "d": "2026-10-29",
-     "p": "CM4-TO-R",
-     "dir": "S",
-     "q": 1,
-     "t": 130,
-     "cash": 0,
-     "mv": 0,
-     "st": "part",
-     "oweRM": 130,
-     "oweUnits": 1,
-     "rid": "s298",
-     "as": "CM4-TO",
-     "st2": "R2",
-     "handover": "collected",
-     "key": "CM4-TO-R|2026-10-29|130"
-    },
     "CZ4-MK|2026-10-27|455": {
      "d": "2026-10-27",
      "p": "CZ4-MK",
@@ -17773,7 +17774,7 @@
      "coverDays": 1.5,
      "rate": 4.54,
      "owedToYou": 315,
-     "promised": 6,
+     "promised": 5,
      "short": 0
     },
     "oil": {
@@ -17817,7 +17818,7 @@
     "rice": "2026-10-20",
     "spare": null
    },
-   "v": "v1271"
+   "v": "v1273"
   },
   "TERMS": {
    "ceiling": 250,
@@ -17825,7 +17826,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1271"
+   "v": "v1273"
   },
   "REWARD": {
    "stated": {
@@ -17843,7 +17844,7 @@
      }
     }
    },
-   "v": "v1271"
+   "v": "v1273"
   },
   "STOCK": {
    "today": "2026-10-27",
@@ -17851,7 +17852,7 @@
     "salt": {
      "shelf": 6.5,
      "free": 6.5,
-     "commit": 6,
+     "commit": 5,
      "light": "green",
      "coverDays": 1.5,
      "transit": 0
@@ -17881,7 +17882,7 @@
      "transit": 0
     }
    },
-   "v": "v1271"
+   "v": "v1273"
   }
  }
 }

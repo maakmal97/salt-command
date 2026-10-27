@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1273",
+  "d": "27 Oct 2026",
+  "t": "PENDING SALE S298 CANCELLED, NO STOCK MOVED",
+  "n": [
+   "<b>ONE CANCELLATION FOLDED.</b> Counter Admin cancelled s298, the pending sale of 1 unit of salt to CM4-TO-R for RM130 dated 29 Oct 2026, on 27 Oct. The order was only pending, with no cash and nothing handed over, so it counts nowhere. Nothing was unusual and the drafter raised no flags.",
+   "<b>INVENTORY UNCHANGED.</b> No stock was drawn and none returns, so the roll stays at 6.5 units with the stock cost and the reorder level untouched."
+  ]
+ },
+ {
   "v": "v1272",
   "d": "27 Oct 2026",
   "t": "CASH PAST WHAT AN ORDER OWES IS TAKEN, THE EXCESS A REFUND",
