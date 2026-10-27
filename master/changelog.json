@@ -1,6 +1,6 @@
 [
  {
-  "v": "v1286",
+  "v": "v1288",
   "d": "27 Oct 2026",
   "t": "A TAP BOOKS THE ROW AT ONCE IN THE BOOK, THE FLAG SHIPPED OFF (S4D)",
   "n": [
@@ -8,6 +8,24 @@
    "<b>BOOK FIRST, D1 SECOND.</b> With the flag on, an approval (one tap, every card of decide-many, his pre-approval spent on a row) asks the Book to book the row and its trip whole by the engine's own rules, then writes the rids and the booking order into the draft's row in the same D1 batch as the approval, so the fold copies them. A refusal by the law is a 409 with its reason and nothing written; a Book behind, silent or holding a stuck entry approves as before. An entry whose approval did not land (a batch that failed, a race lost to a rejection) is taken back, and a rejection takes any open entry back first.",
    "<b>THE MINUTE NET AND THE READCHECK.</b> With the flag on, the minute cron books approved drafts that have no booking (a fallback, the laptop's approve) in the order drafted, and voids the entry of a draft rejected by a road that does not take it back. The readcheck names an entry open under a rejected or a still pending draft, whatever the flag says.",
    "<b>THE FOLD HEALS A STALE BOOKING.</b> A booked row's rid that another row already holds (the fold minted it for a row the Book had not yet seen) is no longer a replay that holds the batch: the row is booked afresh, its drafter's cost kept, and the Book's entry waits on D1's word, the tap check naming the difference. The same row under the rid is still a replay, and an amendment is never judged a replay by a rid. Fable reviewed the diff and re-checked its findings."
+  ]
+ },
+ {
+  "v": "v1287",
+  "d": "27 Oct 2026",
+  "t": "CR3-DAM PAYS RM75 AND SETTLES S278",
+  "n": [
+   "<b>ONE PAYMENT FOLDED.</b> CR3-DAM paid RM75 by qr via maybank on 27 Oct 2026 against order s278, 0.5 unit of salt dated 20 Oct and collected on 21 Oct. The payment was preapproved by Counter Admin. It settles the order in full, leaving RM0 and 0 unit outstanding on it.",
+   "<b>INVENTORY UNCHANGED.</b> No goods move with this payment, so stock stays at 0.5 unit and the cost basis is untouched."
+  ]
+ },
+ {
+  "v": "v1286",
+  "d": "27 Oct 2026",
+  "t": "PAYMENT OF RM105 ON S300 FOR CZ5-TM",
+  "n": [
+   "<b>FOLDED ONE ROW.</b> A fulfilment on s300 for CZ5-TM: RM105 paid by transfer on 27 Oct 2026, preapproved by Counter Admin. It was the only row in the batch and nothing in it was unusual.",
+   "<b>INVENTORY.</b> No stock moved, since the payment hands over no goods. The 1 unit on the order is still to be handed over."
   ]
  },
  {
