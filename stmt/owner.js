@@ -2580,6 +2580,31 @@ export const OWNER_JS = `
     if(!rowed&&(type==='number'||type==='date'||type==='time')) wrap.classList.add('maker-field--short');   /* a short field lies beside another on a portrait tablet (the page's CSS, 768 to 859px) */
     wrap.appendChild(title); wrap.appendChild(input); (rowed?makerList(parent):parent).appendChild(wrap); return input;
   }
+  /* 27 Oct 2026, his word: units turn on a wheel of the sizes (a select, which an iPhone draws as a wheel), from a quarter of a unit to 25 in quarters, then whole
+     units to 200; a figure off the wheel (an older row's) is put on it when set. On a laptop the mouse wheel steps a wheel or a date while the pointer is over it */
+  function makerUnitSteps(from){ var a=[], q; if(from===0) a.push(0); for(q=1;q<=100;q++) a.push(q/4); for(q=26;q<=200;q++) a.push(q); return a; }
+  function makerWheelSet(s,v){
+    var t=v===''||v==null||!(+v>=0)?'':String(+v);
+    if(t&&!Array.from(s.options).some(function(o){ return o.value===t; })){ var o=el('option',null,t); o.value=t; s.insertBefore(o,Array.from(s.options).find(function(x){ return +x.value>+t; })||null); }
+    s.value=t;
+  }
+  function makerHoverStep(ctl,step){
+    ctl.addEventListener('wheel',function(e){
+      if(ctl.disabled||!e.deltaY) return; e.preventDefault(); step(e.deltaY>0?1:-1);
+      ctl.dispatchEvent(new Event('input',{bubbles:true})); ctl.dispatchEvent(new Event('change',{bubbles:true}));
+    },{passive:false});
+  }
+  function makerWheel(parent,label,value,from){
+    var L=labOf(label), s=actOn(el('select','fld salt-field__input salt-field__select salt-field__input--mono mwheel'),L[1],L[2]);
+    makerUnitSteps(from).forEach(function(q){ var o=el('option',null,String(q)); o.value=String(q); s.appendChild(o); });
+    makerWheelSet(s,value); makerRow(parent,L[0],s);
+    makerHoverStep(s,function(d){ var i=s.selectedIndex+d; if(i>=0&&i<s.options.length) s.selectedIndex=i; });
+    return s;
+  }
+  function makerDayStep(input){
+    makerHoverStep(input,function(d){ var t=Date.parse((input.value||tripToday())+'T00:00:00Z'); if(!isNaN(t)) input.value=new Date(t+d*86400000).toISOString().slice(0,10); });
+    return input;
+  }
   function makerBytes64(bytes){
     var text=''; for(var i=0;i<bytes.length;i++) text+=String.fromCharCode(bytes[i]);
     return btoa(text);
@@ -3839,12 +3864,15 @@ export const OWNER_JS = `
       tradeSection.appendChild(el('p','msg','Goods and delivery are entered separately.'));
       box.appendChild(tradeSection);
       var direction=makerTilesIn(tradeSection,['Type','record.trade.direction'],[{value:'sale',label:'Sale'},{value:'purchase',label:'Purchase'}]);
-      var tradeProduct=makerTilesIn(tradeSection,['Book','record.trade.book'],[]), tradeParty=actOn(el('select','fld salt-field__input salt-field__select'),'record.trade.party');
+      var tradeProduct=makerTilesIn(tradeSection,['Book','record.trade.book'],[]), tradeParty=actOn(el('input','fld salt-field__input mwho'),'record.trade.party'), whoList=el('datalist');
+      /* 27 Oct 2026, his word: Who is typed, the codes suggested as he types (a list the browser draws), and must be one of them */
+      tradeParty.type='text'; whoList.id='makerWhoList'; tradeParty.setAttribute('list',whoList.id); tradeParty.autocomplete='off'; tradeParty.spellcheck=false;
+      tradeParty.setAttribute('autocapitalize','characters'); tradeParty.placeholder='Type a code'; tradeSection.appendChild(whoList);
       var partyLabel=makerRow(tradeSection,'Who',tradeParty);   /* 27 Oct 2026: a row of the form's list, Date under it */
-      var tradeDate=makerField(tradeSection,['Date','record.trade.date'],'date',''), tradeQty=makerField(tradeSection,['Units','record.trade.units'],'number','1','0.01');
-      var tradeTotal=makerField(tradeSection,['Price (goods)','record.trade.total'],'number','','0.01');
-      var tradeCash=makerField(tradeSection,['Cash received','record.trade.cash'],'number','0','0.01');
-      var tradeMoved=makerField(tradeSection,['Handed over','record.trade.moved'],'number','0','0.01');
+      var tradeDate=makerDayStep(makerField(tradeSection,['Date','record.trade.date'],'date','')), tradeQty=makerWheel(tradeSection,['Units','record.trade.units'],1);
+      var tradeTotal=makerField(tradeSection,['Price','record.trade.total'],'number','','0.01');
+      var tradeCash=makerField(tradeSection,['Cash paid','record.trade.cash'],'number','0','0.01');
+      var tradeMoved=makerWheel(tradeSection,['Handed over','record.trade.moved'],0,0);
       var handover=makerTilesIn(tradeSection,['Handover','record.trade.handover'],[{value:'',label:'Not yet'},{value:'collected',label:'Collected'},{value:'delivered',label:'Delivered'}]);
       var carriage=makerField(tradeSection,['Delivery','record.trade.delivery'],'number','0','0.01');
       var attribution=el('div','maker-trade-attribution'); tradeSection.appendChild(attribution);   /* 27 Oct 2026: in the form first, so its rows are the form's; moved before Who below */
@@ -3927,6 +3955,29 @@ export const OWNER_JS = `
         line.appendChild(el('span','salt-ledger__label',label)); line.appendChild(el('span','salt-ledger__value'+(bad?' reading-bad':''),value));
         row.appendChild(line); if(flag) row.appendChild(el('span','salt-ledger__flag',flag)); readingRows.appendChild(row); return row;
       }
+      function knownParty(v){ return (catalog.parties||[]).indexOf(v)>=0; }
+      /* 27 Oct 2026, his word: the price is there once who and the units are chosen: their price at that size, read off the Desk (the engine's cardAt
+         over the pricing snapshot), never worked out here. A price he types stands; clearing it brings theirs back. */
+      function theirPrice(productCtl,qtyCtl,totalCtl){
+        var own=false, ticket=0;
+        totalCtl.addEventListener('input',function(){ own=totalCtl.value!==''; if(!own) fill(); });
+        async function fill(){
+          var t=++ticket, who=tradeStream.value==='R2'?tradeAssoc.value:tradeParty.value;
+          var auto=totalCtl.hasAttribute('data-their'), clear=function(){ if(auto){ totalCtl.value=''; totalCtl.removeAttribute('data-their'); totalCtl.dispatchEvent(new Event('change',{bubbles:true})); } };
+          if(own) return;
+          if(direction.value!=='sale'||!productCtl.value||!(Number(qtyCtl.value)>0)||!knownParty(who)){ clear(); return; }
+          var got=null;
+          try{ got=(await refs('/all/maker/trade-reading',{direction:'sale',product:productCtl.value,qty:Number(qtyCtl.value),party:who})).reading; }catch(error){ got=null; }
+          if(t!==ticket||own||!totalCtl.isConnected) return;
+          if(!got||!got.card){ clear(); return; }
+          totalCtl.value=String(got.card.rm); totalCtl.setAttribute('data-their','');
+          totalCtl.dispatchEvent(new Event('change',{bubbles:true}));
+        }
+        [productCtl,qtyCtl,tradeParty,tradeStream,tradeAssoc,direction].forEach(function(c){ c.addEventListener('change',fill); });
+        tradeParty.addEventListener('input',fill);
+        return {fill:fill, mine:function(v){ own=!!v; if(v) totalCtl.removeAttribute('data-their'); }};
+      }
+      var tradePrice=theirPrice(tradeProduct,tradeQty,tradeTotal);
       async function readTrade(){
         var ticket=++readingRevision, isSale=direction.value==='sale';
         readingBox.textContent='';
@@ -3934,7 +3985,7 @@ export const OWNER_JS = `
         readingBox.hidden=false; readingLine('Reading.');
         var ask={direction:direction.value,product:tradeProduct.value,qty:Number(tradeQty.value),total:Number(tradeTotal.value)};
         if(tradeDate.value)ask.date=tradeDate.value;
-        if(isSale){ if(tradeParty.value&&tradeStream.value!=='R2')ask.party=tradeParty.value; }
+        if(isSale){ if(knownParty(tradeParty.value)&&tradeStream.value!=='R2')ask.party=tradeParty.value; }
         else if(carriage.value!=='')ask.freight=Number(carriage.value);
         try{
           var got=(await refs('/all/maker/trade-reading',ask)).reading;
@@ -3951,6 +4002,7 @@ export const OWNER_JS = `
             readingRow('Margin over cost',rm(got.margin.rm)+(got.margin.pct==null?'':' · '+Math.round(got.margin.pct)+'%'),'',got.margin.belowCost);
           }
           if(got.floor) readingRow('Floor for '+units(got.qty),rm(got.floor.rm),'Cost times the size.');
+          if(got.card) readingRow('Their price',rm(got.card.rm),'Their % on the Set Price.');
           var h=got.history;
           if(h)readingRow('Their usual a unit',rm(h.median),h.count+' order'+(h.count===1?'':'s')+', '+rm(h.low)+' to '+rm(h.high)
             +(h.offMedianPct==null?'':': this is '+(h.offMedianPct>=0?h.offMedianPct+'% above':(-h.offMedianPct)+'% below'))+'. Recent: '
@@ -3979,27 +4031,26 @@ export const OWNER_JS = `
       asRow(makerButton(tradeSection,['Add a book','record.trade.add-book'],function(){
         var row=el('section','maker-extra-trade'); row.setAttribute('data-key','extra'+(++extraSeq)); row.appendChild(el('h4',null,'Another book')); extraBooks.appendChild(row);
         var select=makerTilesIn(row,['Book','record.trade.extra-book'],[]); extraChoices(select);
-        var extra={row:row,product:select,qty:makerField(row,['Units','record.trade.extra-units'],'number','1','0.01'),
-          total:makerField(row,['Price (goods)','record.trade.extra-total'],'number','','0.01'),
-          cash:makerField(row,['Cash received','record.trade.extra-cash'],'number','0','0.01'),
-          movedUnits:makerField(row,['Handed over','record.trade.extra-moved'],'number','0','0.01')};
-        extraTrades.push(extra);
+        var extra={row:row,product:select,qty:makerWheel(row,['Units','record.trade.extra-units'],1),
+          total:makerField(row,['Price','record.trade.extra-total'],'number','','0.01'),
+          cash:makerField(row,['Cash paid','record.trade.extra-cash'],'number','0','0.01'),
+          movedUnits:makerWheel(row,['Handed over','record.trade.extra-moved'],0,0)};
+        extraTrades.push(extra); extra.price=theirPrice(select,extra.qty,extra.total);
         extra.cover=coverChoice(row,select,extra.qty,extra.total,['record.trade.extra-cover','record.trade.extra-cover-retry']);
         asRow(makerButton(row,['Remove this book','record.trade.remove-book'],function(){
           extraTrades.splice(extraTrades.indexOf(extra),1);coverChoices.splice(coverChoices.indexOf(extra.cover),1);row.remove();
         },false),'Remove this book',makerList(row),true);
       },false),'Add a book',tripList);
+      /* 27 Oct 2026, his word: the handover and its cost come after every book, then what was handed over and paid, just above the pill */
+      var tradeTail=el('div','salt-settings maker-list maker-tail'); tradeSection.appendChild(tradeTail);
+      [handover,carriage,tradeMoved,tradeCash].forEach(function(c){ var r=c.closest('.salt-settings__row'); if(r) tradeTail.appendChild(r); });
       var tradeAnswer=el('p','msg'); tradeAnswer.setAttribute('role','status'); tradeSection.appendChild(tradeAnswer);
       var tradePending=false, tradeAt=null, tradeSignature='';
       function fillTradeChoices(){
         var isSale=direction.value==='sale';
-        var keptParty=tradeParty.value;
         tradeProduct.fill((catalog.products||[]).filter(function(item){ return isSale?item.saleReady:item.purchaseReady; }).map(function(item){ return bookItem(item.product); }));
-        tradeParty.textContent='';
-        (catalog.parties||[]).forEach(function(code){
-          var option=el('option',null,code); option.value=code; tradeParty.appendChild(option);
-        });
-        if(Array.from(tradeParty.options).some(function(option){return option.value===keptParty;}))tradeParty.value=keptParty;
+        whoList.textContent='';
+        (catalog.parties||[]).forEach(function(code){ var option=el('option'); option.value=code; whoList.appendChild(option); });
         carriage.parentNode.querySelector('.lbl,.salt-settings__label').textContent=isSale?'Delivery':'Freight';
         extraTrades.forEach(function(extra){extraChoices(extra.product);});
         fillAttribution();
@@ -4027,6 +4078,7 @@ export const OWNER_JS = `
           cash:tradeCash.value===''?null:Number(tradeCash.value),movedUnits:tradeMoved.value===''?null:Number(tradeMoved.value),
           handover:handover.value||null};
         body[isSale?'delivery':'freight']=carriage.value===''?null:Number(carriage.value);
+        if(!(isSale&&tradeStream.value==='R2')&&!knownParty(body.party)){ tradeAnswer.textContent='Choose who from the list.'; return; }
         if(isSale&&firstCover.check.checked)body.cover=true;
         if(isSale&&tradeStream.value){
           if(!tradeAssoc.value){tradeAnswer.textContent='Choose an associate first.';return;}
@@ -4063,10 +4115,10 @@ export const OWNER_JS = `
         }
         tradePending=false;
       }
-      var tradeSend=makerButton(tradeSection,['Send the sale','record.trade.send'],function(send){ return submitTrade(null,send); },true,function(){
+      var tradeSend=makerButton(tradeSection,['Record the sale','record.trade.send'],function(send){ return submitTrade(null,send); },true,function(){
         tradeAt=null;tradeSignature='';coverChoices.forEach(function(choice){choice.read();});
       });
-      direction.addEventListener('change',function(){ tradeSend.textContent='Send the '+direction.value; });
+      direction.addEventListener('change',function(){ tradeSend.textContent='Record the '+direction.value; });
       /* 26 Oct 2026 (Salt Admin Customers, P3; his yes to Ask A): Their % and Make partner left Record for the customer's own card on Customers */
       /* A6: the Desk's Make it the house board. Which sizes the board prints, never a price: the ask is the ladder's. */
       var houseSection=makerForm('pricing');
