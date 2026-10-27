@@ -514,8 +514,11 @@ export function planBatch(book, staged, notes, ctx) {
     /* S4b: A ROW THE TAP BOOKED CARRIES THE RIDS IT MINTED (row.rids). A rid already on the book, or named twice in this batch, is a replay: the same wording as the
        twin guard, so the replay check clears the handoff. The prefix names the list (s sales, p purchases, l loans). */
     if (Array.isArray(r.rids) && r.rids.length) {
-      const held = r.rids.find((rid) => bookedRids.has(rid) || ["sales", "purchases", "loans"].some((c) => (book[c] || []).some((x) => x && x.rid === rid)));
-      if (held) { out.refused.push({ id: it.id, why: `would be a replay: the rid ${held} this row was booked under is already on the book or in this batch` }); continue; }
+      const held = r.rids.find((rid) => ["sales", "purchases", "loans"].some((c) => (book[c] || []).some((x) => x && x.rid === rid)));
+      if (held) { out.refused.push({ id: it.id, why: `would be a replay: the rid ${held} this row was booked under is already on the book` }); continue; }
+      /* two rows of one batch naming one rid is not a replay (the replay check commits those): it is a fault for a person */
+      const dupe = r.rids.find((rid) => bookedRids.has(rid));
+      if (dupe) { out.refused.push({ id: it.id, why: `the rid ${dupe} is named by another row of this batch: two rows cannot share one rid` }); continue; }
       r.rids.forEach((rid) => bookedRids.add(rid));
     }
     /* round six: the fold took row.product verbatim, so a row folded under an unregistered

@@ -249,17 +249,26 @@ async function handleBookLoad(request, env, m) {
      tap check also compares the stock documents. A query that fails leaves both out: the Book still closes an entry whose rids the new base holds. */
   const book = env.BOOK.get(env.BOOK.idFromName(BOOK_NAME));
   let q = "";
-  try {
-    if (env.SALT_LEDGER) {
-      const ev = await (await book.fetch(new Request("https://book/events"))).json();
-      if (ev && ev.ok && Array.isArray(ev.ids) && ev.ids.length) {
-        const ph = ev.ids.map((_, i) => "?" + (i + 1)).join(",");
-        const done = await env.SALT_LEDGER.prepare("SELECT id FROM draft WHERE committed_at IS NOT NULL AND id IN (" + ph + ")").bind(...ev.ids).all();
-        const other = ev.at ? await env.SALT_LEDGER.prepare("SELECT COUNT(*) AS n FROM draft WHERE committed_at IS NOT NULL AND committed_at > ?1 AND id NOT IN (" + ev.ids.map((_, i) => "?" + (i + 2)).join(",") + ")").bind(ev.at, ...ev.ids).first() : null;
-        q = "?folded=" + encodeURIComponent(((done.results || []).map((r) => r.id)).join(",")) + (other && other.n === 0 ? "&pure=1" : "");
-      }
+  if (env.SALT_LEDGER) {
+    /* FAIL CLOSED (Fable, 27 Oct 2026): an amendment entry mints nothing, so only D1's word closes it; a load that went ahead without that word would replay the amendment
+       on a base that already carries it. With entries open and the question unanswerable, nothing is loaded (the step goes red, the Book trails, the readers read the mirror). */
+    let ev = null;
+    try { const r = await book.fetch(new Request("https://book/events")); ev = r.status === 404 ? null : await r.json(); if (r.status !== 404 && !(ev && ev.ok)) throw new Error("not ok"); }
+    catch (e) { return json({ ok: false, error: "the Book did not say which entries are open, so it was not loaded" }, 503); }
+    if (ev && Array.isArray(ev.ids) && ev.ids.length) {
+      try {
+        const folded = [];
+        for (let i = 0; i < ev.ids.length; i += 50) {   /* D1 binds at most 100 a statement */
+          const part = ev.ids.slice(i, i + 50);
+          const done = await env.SALT_LEDGER.prepare("SELECT id FROM draft WHERE committed_at IS NOT NULL AND id IN (" + part.map((_, k) => "?" + (k + 1)).join(",") + ")").bind(...part).all();
+          for (const r of done.results || []) folded.push(r.id);
+        }
+        const since = ev.at ? await env.SALT_LEDGER.prepare("SELECT id FROM draft WHERE committed_at IS NOT NULL AND committed_at > ?1").bind(ev.at).all() : null;
+        const open = new Set(ev.ids), pure = !!since && (since.results || []).every((r) => open.has(r.id));
+        q = "?folded=" + encodeURIComponent(folded.join(",")) + (pure ? "&pure=1" : "");
+      } catch (e) { return json({ ok: false, error: "D1 did not say which open entries are committed, so the Book was not loaded" }, 503); }
     }
-  } catch (e) { q = ""; }
+  }
   return book.fetch(new Request("https://book/load" + q, { method: "POST", body: text }));
 }
 

@@ -11,5 +11,5 @@
   {"name":"a collection only the Book holds is not looked for","file":"tools/book-load.mjs","find":"for (const k of [...new Set([...Object.keys(want.rows), ...Object.keys(gr)])].sort())","replace":"for (const k of Object.keys(want.rows).sort())"},
   {"name":"an empty collection is expected in the Book","file":"tools/book-load.mjs","find":"    if (!v.length) continue;\n","replace":""},
   {"name":"git's side strips takenAt too","file":"tools/book-load.mjs","find":"state.PRICING = h256(canonical(pricing)).slice(0, 16);","replace":"state.PRICING = (({ takenAt, ...p }) => h256(canonical(p)))(pricing).slice(0, 16);"},
-  {"name":"the step is green on any load, parity or none","file":"tools/book-load.mjs","find":"export const passed = (r, par) => !!(r.ok && par && par.ok && !(r.tap && ((r.tap.differ || []).length || (r.tap.stuck || []).length)));","replace":"export const passed = (r, par) => !!r.ok;"}
+  {"name":"the step is green on any load, parity or none","file":"tools/book-load.mjs","find":"export const passed = (r, par) => !!(r.ok && par && par.ok && !(r.tap && ((r.tap.differ || []).length || (r.tap.stuck || []).length || (r.tap.clash || []).length)));","replace":"export const passed = (r, par) => !!r.ok;"}
 ]

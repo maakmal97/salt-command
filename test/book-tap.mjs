@@ -15,7 +15,7 @@ import { dirname, resolve, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { objectState } from "./orderbook-harness.mjs";
 import { frozenBook } from "./frozen.mjs";
-import { Book, canon, tapDiffer, DRIFT_BOOKS, FOLD_ONLY } from "../src/book.js";
+import { Book, canon, DRIFT_BOOKS, FOLD_ONLY } from "../src/book.js";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const V = "v1252", AT_STAMP = "27 Oct 2026, 10:00 KL";
@@ -51,7 +51,7 @@ export async function run({ ok }) {
     return ENG.applyBatch(book, st, nt, Object.assign(Object.create(FOLD.planCtx), { nextRid, sortBook }));
   };
   const SKIP = ["NOTES", "QUEUE_COMMITTED"];
-  const same = (a, b) => { const names = []; if (!a || !b) return ["no book"]; for (const k of [...new Set([...Object.keys(a), ...Object.keys(b)])].sort()) if (!SKIP.includes(k)) { const x = a[k], y = b[k]; const key = (v) => Array.isArray(v) ? v.map((r) => canon(strip(r))).sort().join("|") : canon(strip(y === v ? v : v)); if (key(x) !== key(y)) names.push(k); } return names; };
+  const same = (a, b) => { const names = []; if (!a || !b) return ["no book"]; for (const k of [...new Set([...Object.keys(a), ...Object.keys(b)])].sort()) if (!SKIP.includes(k)) { const x = a[k], y = b[k]; const key = (v) => Array.isArray(v) ? v.map((r) => canon(strip(r))).sort().join("|") : canon(strip(v)); if (key(x) !== key(y)) names.push(k); } return names; };
   const strip = (v) => JSON.parse(JSON.stringify(v === undefined ? null : v), (k, x) => (k === "note" ? undefined : x));
   const viewBook = async (B) => { const r = await B.read(), out = {}; for (const [k, v] of Object.entries(r.rows || {})) out[k] = v; for (const k of Object.keys(r.state.__arrays)) if (!(k in out)) out[k] = [];
     for (const [k, v] of Object.entries(r.state)) if (k !== "__arrays" && !["OPEN", "TERMS", "REWARD", "STOCK", "PRICING"].includes(k)) out[k] = v; return out; };
@@ -138,13 +138,30 @@ export async function run({ ok }) {
   const G3 = mk(); await G3.load(); await G3.tap([gs]);
   const l4 = await G3.load(fb(), { v: "v1253" }, "?folded=" + encodeURIComponent(gs.id));
   ok(l4.ok && l4.tap.folded === 1, "an entry D1 says is committed is closed by the load that says so (`folded`)");
-  const bad = structuredClone(withRow); bad.sales = bad.sales.map((r) => r.rid === rid ? { ...r, total: 999 } : r);
+  const bad = structuredClone(withRow); bad.sales = bad.sales.map((r) => r.rid === rid ? { ...r, cost: 12345 } : r);
   const G4 = mk(); await G4.load(); await G4.tap([gs]);
   const l5 = await G4.load(bad, { v: "v1253" });
-  ok(l5.ok && l5.tap.folded === 1 && l5.tap.differ.join() === rid, "a fold that booked the row differently (another total) is named by the tap check: " + JSON.stringify(l5.tap));
+  ok(l5.ok && l5.tap.folded === 1 && l5.tap.differ.join() === rid, "a fold that booked the row differently (another cost) is named by the tap check: " + JSON.stringify(l5.tap));
+  /* Fable: a rid held by a STRANGER's row closes nothing. The base holds the entry's rid under another party's row; the entry stays open, the replay refuses it, and it is named */
+  const stranger = structuredClone(fb()); stranger.sales.push({ rid, customer: "ZZ2-BBB", date: T(5), qty: 9, total: 900, cash: 900, deliveredQty: 9, product: "salt", note: "a fold-only row minted the same rid" });
+  const GC = mk(); await GC.load(); await GC.tap([gs]);
+  const lc = await GC.load(stranger, { v: "v1253" }), vc = await GC.read();
+  ok(lc.ok && lc.tap.folded === 0 && lc.tap.open === 1 && lc.tap.clash.join() === gs.id && lc.tap.stuck.join() === gs.id && vc.rows.sales.filter((r) => r.rid === rid).length === 1 && vc.rows.sales.find((r) => r.rid === rid).customer === "ZZ2-BBB",
+    "a rid held by another row closes no entry: the entry stays open, is named clashing and stuck, and the view holds the stranger's row once, not two rows under one rid: " + JSON.stringify(lc.tap));
+  /* a draft whose entry a load closed is taken: tapped again it is not booked afresh (an amendment has no twin guard) */
+  const GF = mk(); await GF.load(); await GF.tap([gs]);
+  await GF.load(withRow, { v: "v1253" }, "?folded=" + encodeURIComponent(gs.id));
+  const again = await GF.tap([gs]);
+  ok(again.ok && again.booked[0].again === true && again.booked[0].folded === true && again.booked[0].rids.join() === rid && GF.os.db.prepare("SELECT COUNT(*) AS c FROM booked").get().c === 1 && (await GF.read()).booked === undefined,
+    "a draft the load has closed answers as taken and books nothing more: " + JSON.stringify(again));
+  /* the memo does not outlive its base: a load that carries no version replaces the base and keeps the stamp */
+  const GM = mk(); await GM.load(); await GM.tap([gs]); await GM.read();
+  const nb2 = structuredClone(fb()); nb2.sales.push({ rid: "s9997", customer: "ZZ2-BBB", date: T(1), qty: 1, total: 71, cash: 71, deliveredQty: 1, product: "salt", note: "new base" });
+  await GM.load(nb2, { v: null, stamped: null });
+  ok((await GM.read()).rows.sales.some((r) => r.rid === "s9997"), "a load that keeps the Book's stamp (no version sent) still shows in the next read: the view is rebuilt on the new base");
   /* the stock documents are compared only when the batch was nothing but entries (`pure`) */
   const cs = count(IDN(2), 4, T(3)), G5 = mk(); await G5.load(); await G5.tap([cs]);
-  const wrongStock = folded([cs]).book; wrongStock.STATED_STOCK = 7;
+  const wrongStock = folded([cs]).book; wrongStock.STATED_STOCK = 7; wrongStock.TIER_OF = { "ZZ1-AAA": { salt: 0.1 } };   /* a document a hand edit of the master may move: not compared */
   const impure = await G5.load(wrongStock, { v: "v1253" }, "?folded=" + encodeURIComponent(cs.id));
   const G6 = mk(); await G6.load(); await G6.tap([cs]);
   const pure = await G6.load(wrongStock, { v: "v1253" }, "?pure=1&folded=" + encodeURIComponent(cs.id));
@@ -199,7 +216,7 @@ export async function run({ ok }) {
   ok(!rp.ok && /would be a replay/.test(rp.problems.join()), "a booked row whose rid is already on the book is a replay, in the twin guard's words (so the replay check clears the handoff): " + JSON.stringify(rp.problems));
   const dup = sale(IDN(3), 3, T(4)); dup.row.rids = [top]; dup.row.booked_seq = 2;
   const dp = folded([bookedSale, dup]);
-  ok(!dp.ok && /would be a replay/.test(dp.problems.join()), "two staged rows naming one rid are refused: the second is the replay");
+  ok(!dp.ok && /named by another row of this batch/.test(dp.problems.join()) && !/would be a replay/.test(dp.problems.join()), "two staged rows naming one rid are refused in words of their own, never as a replay (the replay check commits replays): " + JSON.stringify(dp.problems));
   const lot = (id, extra) => ({ id, status: "approved", collection: "purchases", row: Object.assign({ supplier: "ZZ9-SUP", date: T(2), qty: 5, total: 250, cash: 0, receivedQty: 5, product: "salt", cost: 250 }, extra || {}) });
   const lotBooked = lot(IDN(4), { rids: ["p" + String(maxP + 40).padStart(3, "0")], booked_seq: 1 }), lotPlain = lot(IDN(5), { date: T(3), total: 260, cost: 260 });
   const sl = fb(); sl.roster.push("ZZ9-SUP");
@@ -223,7 +240,46 @@ export async function run({ ok }) {
   const viewStock = (await O.read()).state.STATED_STOCK;
   const foldStock = folded([cnt, snd]).book.STATED_STOCK, drafted = folded([snd, cnt]).book.STATED_STOCK;
   ok(viewStock === 8.5 && foldStock === 8.5 && drafted === 10.5, "a count tapped before the sale it was drafted after reads 8.5 in the view and in a fold run in tap order, where drafted order would have said 10.5: " + JSON.stringify([viewStock, foldStock, drafted]));
+  /* 7: the Worker's load is the only word on which entries the fold took, so it fails closed (Fable: an amendment mints no rid, so a load without D1's word replays it on a base that holds it) */
+  const W = await import("../src/worker.js");
+  const loadVia = async (BOOK, D1, body = "{}") => {
+    try {
+      const r = await W.default.fetch(new Request("https://salt.test/book/load", { method: "POST", headers: { "X-Book-Key": "bk" }, body }), { REQUIRE_ACCESS: "0", SALT_BOOK_KEY: "bk", SALT_WRITE_KEY: "wk", BOOK, SALT_LEDGER: D1 });
+      return { status: r.status, body: await r.json().catch(() => null) };
+    } catch (e) { return { status: 500, body: null }; }
+  };
+  const seen = [], bookStub = (ids, eventsStatus = 200) => ({ idFromName: (n) => n, get: () => ({ fetch: async (rq) => {
+    const u = new URL(rq.url); seen.push(u.pathname + u.search);
+    if (u.pathname === "/events") return eventsStatus === 200 ? Response.json({ ok: true, at: "2026-10-27T10:00:10.000Z", ids }) : new Response("no", { status: eventsStatus });
+    return Response.json({ ok: true, rows: 1 });
+  } }) });
+  const ids = (n) => Array.from({ length: n }, (_, i) => "2031-02-" + String(1 + (i % 28)).padStart(2, "0") + "T" + String(Math.floor(i / 28)).padStart(2, "0") + ":00:00.000Z");
+  const d1stub = (rows, since, boom) => { const binds = []; return { binds, prepare(sql) { const o = { bind: (...a) => { binds.push(a.length); return { all: async () => { if (boom) throw new Error("D1 is down"); return { results: /committed_at >/.test(sql) ? since : rows }; } }; } }; return o; } }; };
+  const ten = ids(10);
+  seen.length = 0; const okD1 = d1stub([{ id: ten[0] }], []);
+  const good = await loadVia(bookStub(ten), okD1);
+  ok(good.status === 200 && seen.some((s) => s.startsWith("/load?folded=" + encodeURIComponent(ten[0])) && s.includes("&pure=1")), "with entries open the Worker names the committed ones to the Book, and the batch is pure when nothing but entries was committed since the last load: " + JSON.stringify(seen));
+  seen.length = 0;
+  const mixed = await loadVia(bookStub(ten), d1stub([], [{ id: ten[1] }, { id: "2031-03-01T00:00:00.000Z" }]));
+  ok(mixed.status === 200 && seen.some((s) => s.startsWith("/load?folded=") && !s.includes("pure=1")), "a draft committed since the last load that holds no entry makes the batch not pure");
+  seen.length = 0; const down = await loadVia(bookStub(ten), d1stub([], [], true));
+  ok(down.status === 503 && !seen.some((s) => s.startsWith("/load")), "entries open and D1 not answering: nothing is loaded, 503, and the Book is not asked to load");
+  seen.length = 0; const mute = await loadVia({ idFromName: (n) => n, get: () => ({ fetch: async (rq) => { seen.push(new URL(rq.url).pathname); throw new Error("the object is down"); } }) }, d1stub([], []));
+  ok(mute.status === 503 && !seen.includes("/load"), "the Book not saying which entries are open: nothing is loaded either");
+  seen.length = 0; const old = await loadVia(bookStub([], 404), d1stub([], []));
+  ok(old.status === 200 && seen.includes("/load"), "an object with no /events (404) loads as it always did");
+  seen.length = 0; const none = await loadVia(bookStub([]), d1stub([], []));
+  ok(none.status === 200 && seen.includes("/load") && !seen.some((s) => s.includes("folded")), "with no entry open the load carries no query at all");
+  const wide = d1stub([], []); seen.length = 0; await loadVia(bookStub(ids(120)), wide);
+  ok(Math.max(...wide.binds) <= 50 && wide.binds.length >= 3, "a hundred and twenty open entries are asked of D1 fifty at a time, under its bind limit of a hundred: " + JSON.stringify(wide.binds));
+  /* APPROVED_SQL survives a row that is not JSON (json_extract would throw and fail the whole stage) */
+  const badDb = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) badDb.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  badDb.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,flags,drafter,drafted_at,decided_at) VALUES ('2031-01-02T01:00:00.000Z','approved','sales','{}','not json at all','r','[]','t','2031-01-02T01:00:00.000Z','2031-01-02T01:00:00.000Z')").run();
+  let threw = ""; let got = [];
+  try { got = badDb.prepare(APPROVED_SQL).all(); } catch (e) { threw = e.message; }
+  ok(!threw && got.length === 1, "a staged row whose text is not JSON does not stop the read of the rest: " + threw);
+
   /* the law's inputs: the Worker reads the books that take a % off the engine's rules, the fold off the master's TIER_RULE lines; the two must name the same books */
   ok([...DRIFT_BOOKS].sort().join() === [...FOLD.planCtx.driftBooks].sort().join() && DRIFT_BOOKS.length >= 4, "the books that take a % are the same off engine/rules.mjs (the Book's) as off the master's TIER_RULE (the fold's): " + DRIFT_BOOKS.join());
-  void tapDiffer;
 }

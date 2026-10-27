@@ -14,7 +14,7 @@
  {
   "name": "a tap is not idempotent by draft id",
   "file": "src/book.js",
-  "find": "const missing = items.filter((i) => !have.has(i.id));",
+  "find": "const missing = items.filter((i) => !have.has(i.id) && !closed.has(i.id));",
   "replace": "const missing = items;"
  },
  {
@@ -50,14 +50,14 @@
  {
   "name": "a load does not close an entry whose rid the base holds",
   "file": "src/book.js",
-  "find": "(rs.length > 0 && rs.every((x) => heldRids.has(\"r:\" + x)))",
-  "replace": "false"
+  "find": "if (!rs.length || !rs.every((x) => heldDoc.has(\"r:\" + x))) return false;",
+  "replace": "if (true) return false;"
  },
  {
   "name": "a load does not close an entry D1 says is committed",
   "file": "src/book.js",
-  "find": "return said.has(e.draft_id) || (rs.length",
-  "replace": "return (rs.length"
+  "find": "said.has(e.draft_id) || byRid(e)",
+  "replace": "byRid(e)"
  },
  {
   "name": "the tap check does not compare the minted rows",
@@ -146,7 +146,7 @@
  {
   "name": "the fold reads booked rows in drafted order",
   "file": "tools/drafts.mjs",
-  "find": "ORDER BY (json_extract(d.row,'$.booked_seq') IS NULL), json_extract(d.row,'$.booked_seq'), d.drafted_at",
+  "find": "ORDER BY (json_extract(CASE WHEN json_valid(d.row) THEN d.row ELSE '{}' END,'$.booked_seq') IS NULL), json_extract(CASE WHEN json_valid(d.row) THEN d.row ELSE '{}' END,'$.booked_seq'), d.drafted_at",
   "replace": "ORDER BY d.drafted_at"
  },
  {
@@ -154,5 +154,65 @@
   "file": "src/book.js",
   "find": "r.drift !== undefined || r.pct !== undefined",
   "replace": "r.drift !== undefined"
+ },
+ {
+  "name": "the order read throws on a row that is not JSON",
+  "file": "tools/drafts.mjs",
+  "find": "json_extract(CASE WHEN json_valid(d.row) THEN d.row ELSE '{}' END,'$.booked_seq') IS NULL)",
+  "replace": "json_extract(d.row,'$.booked_seq') IS NULL)"
+ },
+ {
+  "name": "a rid held by another row closes the entry",
+  "file": "src/book.js",
+  "find": "return alike;",
+  "replace": "return true;"
+ },
+ {
+  "name": "a draft the load closed is booked again",
+  "file": "src/book.js",
+  "find": "const missing = items.filter((i) => !have.has(i.id) && !closed.has(i.id));",
+  "replace": "const missing = items.filter((i) => !have.has(i.id));"
+ },
+ {
+  "name": "the memo is keyed on the load's moment",
+  "file": "src/book.js",
+  "find": "SELECT COALESCE(MAX(seq), 0) AS m FROM loads\").toArray()[0].m + \"|\"",
+  "replace": "SELECT 1 AS m\").toArray()[0].m + snap.at + \"|\""
+ },
+ {
+  "name": "a replay on a rid another row holds is accepted",
+  "file": "src/book.js",
+  "find": "if (Array.isArray(forced)) for (const rid of forced) if (",
+  "replace": "if (false) for (const rid of forced) if ("
+ },
+ {
+  "name": "a load goes ahead when D1 does not answer",
+  "file": "src/worker.js",
+  "find": "catch (e) { return json({ ok: false, error: \"D1 did not say which open entries are committed, so the Book was not loaded\" }, 503); }",
+  "replace": "catch (e) { q = \"\"; }"
+ },
+ {
+  "name": "a load goes ahead when the Book does not say which entries are open",
+  "file": "src/worker.js",
+  "find": "catch (e) { return json({ ok: false, error: \"the Book did not say which entries are open, so it was not loaded\" }, 503); }",
+  "replace": "catch (e) { ev = null; }"
+ },
+ {
+  "name": "the open entries are asked of D1 all at once",
+  "file": "src/worker.js",
+  "find": "i += 50) {   /* D1 binds",
+  "replace": "i += 500) {   /* D1 binds"
+ },
+ {
+  "name": "a batch is pure whatever was committed",
+  "file": "src/worker.js",
+  "find": "pure = !!since && (since.results || []).every((r) => open.has(r.id));",
+  "replace": "pure = true;"
+ },
+ {
+  "name": "the pure compare reaches every document",
+  "file": "src/book.js",
+  "find": "const TAP_PURE = [\"STATED_STOCK\", \"PROD_OPENING\", \"COUNTS\", \"COUNT_ON\", \"loans\", \"sales\", \"purchases\"];",
+  "replace": "const TAP_PURE = [\"STATED_STOCK\", \"PROD_OPENING\", \"COUNTS\", \"COUNT_ON\", \"loans\", \"sales\", \"purchases\", \"TIER_OF\"];"
  }
 ]
