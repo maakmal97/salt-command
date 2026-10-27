@@ -1,6 +1,6 @@
 {
- "v": "v1280",
- "stamped": "27 Oct 2026, 16:43 KL",
+ "v": "v1281",
+ "stamped": "27 Oct 2026, 16:58 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -9268,8 +9268,29 @@
     "product": "rice",
     "date": "2026-10-27",
     "deliveredQty": 0,
-    "note": "<b>PENDING SALE OF 5 UNITS OF RICE TO CZ5-TM, GOODS RM35, 27 OCT 2026.</b> Ordered on the statements site, order 20261027084009-gehaza, preapproved by Counter Admin. Nothing is paid and nothing handed over, so no stock is drawn and no revenue is booked. For 5 units the ladder gives a floor total of RM20 and an ask total of RM35, so RM35 is above the floor and level with the ask. That is RM7 a unit against a floor of RM4 and an ask of RM7. The party has RM0 outstanding and no units on credit against a cap of 1. The cost is RM3.3 a unit, costed off the latest purchase. The drafter flagged that CZ5-TM has no committed rice order, so there is no rate of theirs to compare. The figures cannot answer that, though the price meets the ask. RM35 and the 5 units remain outstanding.",
-    "rid": "s299"
+    "note": "<b>CORRECTION ON S299, 27 OCT 2026: TRIP SET.</b> The trip field on CZ5-TM's pending order of 5 units of rice, goods RM35, moves from unset to t1793091460898. Counter Admin decided it. It moves no cash and no stock, and the order stays pending with nothing paid or handed over. The dossier gives no floor or ask for rice, so the rate is not set against the desk's ladder. The party's history across all rows: median rate RM105, range RM7 to RM110, outstanding before RM140, no units on credit. The drafter flagged that CZ5-TM has no committed rice order on the book. The figures cannot answer that, since the party's history is of salt. RM35 and the 5 units remain outstanding. <b>PENDING SALE OF 5 UNITS OF RICE TO CZ5-TM, GOODS RM35, 27 OCT 2026.</b> Ordered on the statements site, order 20261027084009-gehaza, preapproved by Counter Admin. Nothing is paid and nothing handed over, so no stock is drawn and no revenue is booked. For 5 units the ladder gives a floor total of RM20 and an ask total of RM35, so RM35 is above the floor and level with the ask. That is RM7 a unit against a floor of RM4 and an ask of RM7. The party has RM0 outstanding and no units on credit against a cap of 1. The cost is RM3.3 a unit, costed off the latest purchase. The drafter flagged that CZ5-TM has no committed rice order, so there is no rate of theirs to compare. The figures cannot answer that, though the price meets the ask. RM35 and the 5 units remain outstanding.",
+    "rid": "s299",
+    "trip": "t1793091460898",
+    "mod": "corrected on 2026-10-27: trip (unset) to t1793091460898",
+    "amend": [
+     {
+      "date": "2026-10-27",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-27",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S299, 27 OCT 2026: TRIP SET.</b> The trip field on CZ5-TM's pending order of 5 units of rice, goods RM35, moves from unset to t1793091460898. Counter Admin decided it. It moves no cash and no stock, and the order stays pending with nothing paid or handed over. The dossier gives no floor or ask for rice, so the rate is not set against the desk's ladder. The party's history across all rows: median rate RM105, range RM7 to RM110, outstanding before RM140, no units on credit. The drafter flagged that CZ5-TM has no committed rice order on the book. The figures cannot answer that, since the party's history is of salt. RM35 and the 5 units remain outstanding.",
+      "was": {
+       "trip": null
+      }
+     }
+    ]
    },
    {
     "customer": "CZ5-TM",
@@ -9278,10 +9299,31 @@
     "cash": 0,
     "date": "2026-10-27",
     "deliveredQty": 0,
-    "note": "<b>PENDING SALE OF 1 UNIT OF SALT TO CZ5-TM, GOODS RM105, 27 OCT 2026.</b> Ordered on the statements site, order 20261027084009-nltzsg, preapproved by Counter Admin. Nothing is paid and nothing handed over, so no stock is drawn and no revenue is booked. For 1 unit the ladder gives a floor total of RM60 and an ask total of RM120, so RM105 is above the floor and below the ask. That is RM105 a unit against a floor of RM60 and an ask of RM120. The party's median rate is RM110, range RM95 to RM110; outstanding before was RM0, no units on credit against a cap of 1. The cost is RM58 a unit, costed off the latest purchase. The drafter raised no flag. Stock stands at 0.5 units, below this 1 unit. RM105 and the 1 unit remain outstanding.",
+    "note": "<b>CORRECTION ON S300, 27 OCT 2026: TRIP SET.</b> The trip field on CZ5-TM's pending order of 1 unit of salt, goods RM105, moves from unset to t1793091460898. Counter Admin decided it. It moves no cash and no stock, and the order stays pending with nothing paid or handed over. The dossier gives no floor or ask for this order, so no comparison is made. The rate of RM105 a unit equals the party's median of RM105 and sits within the range RM7 to RM110. Outstanding before was RM140, no units on credit. The drafter raised no flag. RM105 and the 1 unit remain outstanding. <b>PENDING SALE OF 1 UNIT OF SALT TO CZ5-TM, GOODS RM105, 27 OCT 2026.</b> Ordered on the statements site, order 20261027084009-nltzsg, preapproved by Counter Admin. Nothing is paid and nothing handed over, so no stock is drawn and no revenue is booked. For 1 unit the ladder gives a floor total of RM60 and an ask total of RM120, so RM105 is above the floor and below the ask. That is RM105 a unit against a floor of RM60 and an ask of RM120. The party's median rate is RM110, range RM95 to RM110; outstanding before was RM0, no units on credit against a cap of 1. The cost is RM58 a unit, costed off the latest purchase. The drafter raised no flag. Stock stands at 0.5 units, below this 1 unit. RM105 and the 1 unit remain outstanding.",
     "listRM": 105,
     "listQty": 1,
-    "rid": "s300"
+    "rid": "s300",
+    "trip": "t1793091460898",
+    "mod": "corrected on 2026-10-27: trip (unset) to t1793091460898",
+    "amend": [
+     {
+      "date": "2026-10-27",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-27",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S300, 27 OCT 2026: TRIP SET.</b> The trip field on CZ5-TM's pending order of 1 unit of salt, goods RM105, moves from unset to t1793091460898. Counter Admin decided it. It moves no cash and no stock, and the order stays pending with nothing paid or handed over. The dossier gives no floor or ask for this order, so no comparison is made. The rate of RM105 a unit equals the party's median of RM105 and sits within the range RM7 to RM110. Outstanding before was RM140, no units on credit. The drafter raised no flag. RM105 and the 1 unit remain outstanding.",
+      "was": {
+       "trip": null
+      }
+     }
+    ]
    },
    {
     "customer": "CM4-TO-R",
@@ -10102,7 +10144,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-27T08:42:36.833Z",
+  "QUEUE_COMMITTED": "2026-10-27T08:57:40.899Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -17721,10 +17763,10 @@
      ]
     }
    },
-   "v": "v1280"
+   "v": "v1281"
   },
   "OPEN": {
-   "at": "2026-10-27T08:43:10.109Z",
+   "at": "2026-10-27T08:58:28.256Z",
    "count": 9,
    "byKey": {
     "CZ5-TM|2026-10-27|35|rice": {
@@ -17740,6 +17782,7 @@
      "oweUnits": 5,
      "pr": "rice",
      "rid": "s299",
+     "trip": "t1793091460898",
      "key": "CZ5-TM|2026-10-27|35|rice"
     },
     "CZ5-TM|2026-10-27|105": {
@@ -17754,6 +17797,7 @@
      "oweRM": 105,
      "oweUnits": 1,
      "rid": "s300",
+     "trip": "t1793091460898",
      "key": "CZ5-TM|2026-10-27|105"
     },
     "CR3-DAM|2026-10-20|75": {
@@ -17927,7 +17971,7 @@
     "rice": "2026-10-20",
     "spare": null
    },
-   "v": "v1280"
+   "v": "v1281"
   },
   "TERMS": {
    "ceiling": 250,
@@ -17935,7 +17979,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1280"
+   "v": "v1281"
   },
   "REWARD": {
    "stated": {
@@ -17953,7 +17997,7 @@
      }
     }
    },
-   "v": "v1280"
+   "v": "v1281"
   },
   "STOCK": {
    "today": "2026-10-27",
@@ -17991,7 +18035,7 @@
      "transit": 0
     }
    },
-   "v": "v1280"
+   "v": "v1281"
   }
  }
 }

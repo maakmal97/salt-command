@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1281",
+  "d": "27 Oct 2026",
+  "t": "TRIP SET ON TWO PENDING ORDERS FOR CZ5-TM",
+  "n": [
+   "<b>TWO CORRECTIONS FOLDED.</b> Both set the trip field on CZ5-TM's pending orders of 27 Oct 2026, s299 (5 units of rice, RM35) and s300 (1 unit of salt, RM105), from unset to t1793091460898. Counter Admin decided both. Neither moves cash or stock, and neither is a count or a lot.",
+   "<b>INVENTORY UNCHANGED.</b> Both orders remain pending, so nothing is drawn and no revenue is booked. The drafter flagged that CZ5-TM has no committed rice order to compare s299 against. The salt row carries no flag."
+  ]
+ },
+ {
   "v": "v1280",
   "d": "27 Oct 2026",
   "t": "TWO PENDING SALES TO CZ5-TM, RICE AND SALT",
