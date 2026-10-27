@@ -62,7 +62,7 @@
  {
   "name": "the drafter's refusal is not shown",
   "file": "stmt/owner.js",
-  "find": "(makerData&&makerData.refused||[]).forEach(function(r, i){ L.push(entryNeed(r, 'x:'+i)); });",
+  "find": "(makerData&&makerData.refused||[]).forEach(function(r, i){ if(!suiteRow(r)) L.push(entryNeed(r, 'x:'+i)); });",
   "replace": ""
  },
  {
