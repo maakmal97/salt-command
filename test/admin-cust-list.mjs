@@ -21,7 +21,7 @@ export async function run({ ok, pageWork }) {
     { username: "owe2-acct", code: "CX6-ZED", account: true, t: { owed: 300, toGet: 0, refund: 0, pend: 0 }, flag: "owes", seen: { opens: 1, last: ISO, how: "link" }, sent: ISO, issued: "2026-10-01" },
     { username: "unop-acct", code: "CX7-ZED", account: true, t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear", seen: { opens: 0 }, sent: ISO, issued: "2026-10-01" }
   ];
-  const due = new Date(Date.now() + 8 * 3600000 - 3 * 86400000).toISOString().slice(0, 10) /* 27 Oct 2026: three Kuala Lumpur days back, as the page counts (todayKL); a UTC date read 4 d late from 16:00 to 01:00 UTC */, soon = new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10);
+  const due = new Date(Date.now() - 3 * 86400000).toISOString().slice(0, 10) /* 28 Oct 2026: the page's age is elapsed time from the due date's UTC midnight (ageOf), so a UTC date three days back reads 3 d at every hour; the 27 Oct Kuala Lumpur date read 2 d late from 16:00 to 24:00 UTC */, soon = new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10);
   const p = await richOwnerPage({ pageWork, sheetAnswer: (j) => ({ ...j, accounts: j.accounts.concat(extra) }),
     inputsAnswer: (j) => ({ ...j, catalog: { ...j.catalog, owedMoney: [{ party: "CX1-ZED", rm: 100, since: "2026-10-01", due, rows: [{ rid: "s1", key: "k1", product: "salt" }] },
       { party: "CX6-ZED", rm: 300, since: "2026-10-01", due: soon, rows: [{ rid: "s2", key: "k2", product: "salt" }] }], owedGoods: [] } }) });
