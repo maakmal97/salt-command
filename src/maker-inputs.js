@@ -1142,7 +1142,7 @@ export async function makerAmendmentRoom(db, entry, book, held) {
     ? p.fields.delivery - (+row.delivery || 0) : 0;
   /* 27 Oct 2026, his word: a sale's payment past what it owes is the refund the fold raises, so it passes while no money and no other move (an undo,
      a correction) waits on the row, which would change what it owes before this folds; with the moves not read (`held` absent) it is held as before */
-  if (sale && p.kind === "Fulfilment" && !(reading.on > 0.004) && Array.isArray(held)
+  if (sale && p.kind === "Fulfilment" && !(reading.on > 0.004) && Array.isArray(held) && reading.owes > 0.004 && !row.unpriced && !row.goodwill
     && !heldMoves(row, held).some((e) => e.at !== entry.at)) return "";
   return cash > Math.max(0, reading.left + changedTotal + changedDelivery) + 0.004
     ? "This row can still take RM " + reading.left.toFixed(2) + "; money already on its way is reserved."
