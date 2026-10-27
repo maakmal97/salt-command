@@ -514,8 +514,20 @@ export function planBatch(book, staged, notes, ctx) {
     /* S4b: A ROW THE TAP BOOKED CARRIES THE RIDS IT MINTED (row.rids). A rid already on the book, or named twice in this batch, is a replay: the same wording as the
        twin guard, so the replay check clears the handoff. The prefix names the list (s sales, p purchases, l loans). */
     if (Array.isArray(r.rids) && r.rids.length) {
-      const held = r.rids.find((rid) => ["sales", "purchases", "loans"].some((c) => (book[c] || []).some((x) => x && x.rid === rid)));
-      if (held) { out.refused.push({ id: it.id, why: `would be a replay: the rid ${held} this row was booked under is already on the book` }); continue; }
+      const holder = (rid) => { for (const c of ["sales", "purchases", "loans"]) { const x = (book[c] || []).find((y) => y && y.rid === rid); if (x) return x; } return null; };
+      const held = r.rids.find((rid) => holder(rid));
+      if (held) {
+        /* S4d (Fable, 27 Oct 2026): the rid is a replay only when the row under it IS this row (party, date, qty, total). Another row under it means the fold minted that rid
+           for a row the Book had not seen when it booked this one; this row's booking is stale, so it is booked afresh (the rids it carried are dropped) and the tap check
+           names the difference. Refusing it would hold the whole batch for ever. */
+        const under = holder(held), SAME = ["customer", "supplier", "party", "date", "qty", "total", "kg", "rm"];
+        /* an amendment's row is the change and not a row, and its forced rids are generated rows alone: it is never judged a replay by a rid (D1's word closes its entry) */
+        const alike = !it.amends && under && SAME.every((k) => r[k] === undefined || JSON.stringify(r[k]) === JSON.stringify(under[k]));
+        if (alike) { out.refused.push({ id: it.id, why: `would be a replay: the rid ${held} this row was booked under is already on the book` }); continue; }
+        delete r.rids;   /* booked_seq stays: it is what keeps the drafter's cost standing for a row that was booked, and the fold strips it from the row it writes */
+      }
+    }
+    if (Array.isArray(r.rids) && r.rids.length) {
       /* two rows of one batch naming one rid is not a replay (the replay check commits those): it is a fault for a person */
       const dupe = r.rids.find((rid) => bookedRids.has(rid));
       if (dupe) { out.refused.push({ id: it.id, why: `the rid ${dupe} is named by another row of this batch: two rows cannot share one rid` }); continue; }

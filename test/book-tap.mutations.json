@@ -120,10 +120,16 @@
   "replace": "const nextRid = ctx.nextRid, sortBook"
  },
  {
-  "name": "a booked rid already on the book is not a replay",
+  "name": "a stale rid held by another row is a replay",
   "file": "engine/apply.mjs",
-  "find": "if (held) { out.refused.push({ id: it.id, why: `would be a replay",
-  "replace": "if (false) { out.refused.push({ id: it.id, why: `would be a replay"
+  "find": "if (alike) { out.refused.push",
+  "replace": "if (true) { out.refused.push"
+ },
+ {
+  "name": "a stale booking keeps its rids",
+  "file": "engine/apply.mjs",
+  "find": "        delete r.rids;   /* booked_seq stays",
+  "replace": "        /* booked_seq stays"
  },
  {
   "name": "two staged rows may name one rid",
@@ -220,5 +226,17 @@
   "file": "src/book.js",
   "find": "if (!own) return false;",
   "replace": "if (!own) return true;"
+ },
+ {
+  "name": "an amendment is judged a replay by a rid",
+  "file": "engine/apply.mjs",
+  "find": "const alike = !it.amends && under &&",
+  "replace": "const alike = under &&"
+ },
+ {
+  "name": "a stale booking loses booked_seq and so the drafter's cost",
+  "file": "engine/apply.mjs",
+  "find": "        delete r.rids;   /* booked_seq stays",
+  "replace": "        delete r.rids; delete r.booked_seq;   /* booked_seq stays"
  }
 ]

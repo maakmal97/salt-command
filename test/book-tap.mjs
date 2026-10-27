@@ -217,9 +217,26 @@ export async function run({ ok }) {
   const rowOf = (res, ridv) => res.book.sales.find((r) => r.rid === ridv);
   ok(f6.ok && rowOf(f6, top) && rowOf(f6, top).qty === 2 && !("rids" in rowOf(f6, top)) && !("booked_seq" in rowOf(f6, top)), "the fold takes a booked row's rid verbatim and leaves the tap's bookkeeping off the row: " + JSON.stringify(f6.problems));
   ok(f6.ok && rowOf(f6, next) && rowOf(f6, next).qty === 1, "an un-booked row beside a booked one is minted past the booked rid, wherever it stands in the batch (the staged rids count as taken)");
-  const replayBook = fb(); replayBook.sales.push({ rid: top, customer: "ZZ2-BBB", date: T(1), qty: 1, total: 10, cash: 10, deliveredQty: 1, product: "salt", note: "x" });
+  const replayBook = fb(); replayBook.sales.push({ rid: top, customer: "ZZ1-AAA", date: T(2), qty: 2, total: 200, cash: 200, deliveredQty: 2, product: "salt", note: "x" });
   const rp = folded([bookedSale], replayBook);
   ok(!rp.ok && /would be a replay/.test(rp.problems.join()), "a booked row whose rid is already on the book is a replay, in the twin guard's words (so the replay check clears the handoff): " + JSON.stringify(rp.problems));
+  /* S4d (Fable): the rid held by ANOTHER row is not a replay: the fold minted it for a row the Book had not seen. The booked row is booked afresh, past it, and the batch is not held */
+  const strangerBook = fb(); strangerBook.sales.push({ rid: top, customer: "ZZ2-BBB", date: T(1), qty: 1, total: 10, cash: 10, deliveredQty: 1, product: "salt", note: "x" });
+  const bookedStale = sale(IDN(2), 2, T(2)); bookedStale.row.rids = [top]; bookedStale.row.booked_seq = 1;
+  const sg = folded([bookedStale], strangerBook);
+  const fresh = sg.ok && sg.book.sales.find((r) => r.customer === "ZZ1-AAA" && r.qty === 2 && r.date === T(2));
+  ok(sg.ok && fresh && fresh.rid !== top && sg.book.sales.find((r) => r.rid === top).customer === "ZZ2-BBB" && !("rids" in fresh) && !("booked_seq" in fresh), "a booked row whose rid another row holds is booked afresh, not held as a replay, and the stranger keeps its rid: " + JSON.stringify([sg.problems, fresh && fresh.rid]));
+  ok(sg.ok && fresh && sg.book.sales.find((r) => r.rid === top).customer === "ZZ2-BBB", "(a healed purchase keeps booked_seq, so the drafter's cost stands for it, below)");
+  const lotB = { id: IDN(2), status: "approved", collection: "purchases", row: { supplier: "ZZ9-SUP", date: T(2), qty: 5, total: 250, cash: 0, receivedQty: 5, product: "salt", cost: 250, rids: ["p" + String(maxP + 40).padStart(3, "0")], booked_seq: 1 } };
+  const lotBook = fb(); lotBook.purchases.push({ rid: "p" + String(maxP + 40).padStart(3, "0"), supplier: "ZZ8-OTH", date: T(1), qty: 1, total: 9, cash: 0, receivedQty: 1, product: "salt", cost: 9, note: "x" });
+  const lg = folded([lotB], lotBook, { [IDN(2)]: { cost: 999 } });
+  const lotRow = lg.ok && lg.book.purchases.find((r) => r.supplier === "ZZ9-SUP");
+  ok(lg.ok && lotRow && lotRow.cost === 250 && !("booked_seq" in lotRow), "a healed purchase keeps the drafter's cost over the model's note, as a booked purchase does: " + JSON.stringify([lg.problems, lotRow && lotRow.cost]));
+  /* an amendment is never judged a replay by a rid: its change shares keys with whatever row holds a generated rid */
+  const amd = fulfil(IDN(3), ENG_key(target), 50, T(4)); amd.row.rids = [top]; amd.row.booked_seq = 1;
+  const amBook = fb(); amBook.sales.push({ rid: top, customer: "ZZ2-BBB", date: T(4), cash: 50, kg: 0, qty: 1, total: 10, deliveredQty: 1, product: "salt", note: "x" });
+  const ag = folded([amd], amBook);
+  ok(ag.ok, "an amendment whose generated rid another row holds is not held as a replay: " + JSON.stringify(ag.problems));
   const dup = sale(IDN(3), 3, T(4)); dup.row.rids = [top]; dup.row.booked_seq = 2;
   const dp = folded([bookedSale, dup]);
   ok(!dp.ok && /named by another row of this batch/.test(dp.problems.join()) && !/would be a replay/.test(dp.problems.join()), "two staged rows naming one rid are refused in words of their own, never as a replay (the replay check commits replays): " + JSON.stringify(dp.problems));
