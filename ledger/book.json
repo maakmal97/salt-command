@@ -872,6 +872,11 @@
     },
     "CA5-SEN": {
       "salt": 0.3
+    },
+    "CZ4-MK": {
+      "candy": -0.25,
+      "oil": -0.1,
+      "salt": -0.15
     }
   },
   "PEOPLE": {
@@ -991,7 +996,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-10-26T12:56:57.167Z",
+  "QUEUE_COMMITTED": "2026-10-27T00:08:48.351Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
