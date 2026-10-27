@@ -216,6 +216,14 @@ export async function run({ ok, pageWork }) {
     const pay = await makerAmendmentRoom(f.D1, E.ledgerAmendmentEntry({ at: "2026-10-16T02:00:14.000Z", row: row1, direction: "SELL", kind: "Fulfilment", date: "2026-10-16", cash: 50, movedUnits: 0 }), book);
     ok(/Money is already on its way to this row\. Decide it before undoing a move\./.test(room) && /can still take RM 0\.00/.test(pay),
       "the room check refuses an undo over money on its way, and a payment on a row an undo waits on is still held to what the mirror says it can take: " + J([room, pay]));
+    /* 27 Oct 2026, his word: a payment past what the row owes passes as a refund only while no move waits on the row, and with the moves read */
+    const row3 = book.sales.find((s) => s.rid === "zu3");   /* RM 100 owed, nothing paid, nothing waiting */
+    const pay3 = E.ledgerAmendmentEntry({ at: "2026-10-16T02:00:16.000Z", row: row3, direction: "SELL", kind: "Fulfilment", date: "2026-10-16", cash: 150, movedUnits: 0 });
+    const waits3 = { at: "2026-10-16T02:00:17.000Z", payload: { mode: "amend", direction: "SELL", rid: "zu3", kind: "Correction", date: "2026-10-16", fields: { total: 90 } } };
+    const payFree = await makerAmendmentRoom(f.D1, pay3, book, []), payWaits = await makerAmendmentRoom(f.D1, pay3, book, [waits3]);
+    const paySettled = await makerAmendmentRoom(f.D1, E.ledgerAmendmentEntry({ at: "2026-10-16T02:00:18.000Z", row: row1, direction: "SELL", kind: "Fulfilment", date: "2026-10-16", cash: 50, movedUnits: 0 }), book, []);
+    ok(payFree === "" && /can still take RM 100\.00/.test(payWaits) && /can still take RM 0\.00/.test(paySettled),
+      "a payment past what the row owes passes with no move waiting on it, is held while one waits, and a row owing nothing takes none (Fable's review): " + J([payFree, payWaits, paySettled]));
     const h2 = await f.call("/all/maker/undo", { order: "20261002000000-un2" }), h3 = await f.call("/all/maker/undo", { rid: "zu3" });
     const s3 = await f.call("/all/maker/inputs/ledger-amend", { at: "2026-10-16T02:00:15.000Z", rid: "zu3", kind: "Correction", date: "2026-10-16", fields: { total: 110 }, undo: 1 });
     ok(h2.status === 200 && h2.j.history.rid === "zu2" && h2.j.history.order === "20261002000000-un2" && h2.j.history.undo.route === "ledger"

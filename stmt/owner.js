@@ -5444,7 +5444,7 @@ export const OWNER_JS = `
      in the head v1117 gave an order's card; then one line a book, its mark (never a word for it), units, total and what is handed over. Every figure is the
      Desk's (src/maker-inputs.js makerTrips, read with the drafts); this page adds up no money.
      Handover all sends one handover a line through Record's own input (a Fulfilment of units, ledger-amend), each line its own request under its own moment
-     until it lands, so a book short of stock holds only its own line; a line's field allows a part. One payment is split by the Desk, oldest first by the
+     until it lands, so a book short of stock holds only its own line; a line's field allows a part. One payment is split by the Desk, the other books first and salt last (27 Oct 2026), each part by the
      engine's claimAlloc, shown, and sent with the split he read (trip-pay); the Desk refuses it whole if the split moved or any share is more than its row can
      take. A buyer's same-day rows with no trip are offered as one order (trip-join), a Correction a row. All of it lands under Approve as one card. ---- */
   var tripHand={}, tripRead={};
@@ -5597,7 +5597,7 @@ export const OWNER_JS = `
       drop();
       r.split.shares.forEach(function(s){
         var p=el('p','maker-facts'); p.setAttribute('data-share',s.rid); p.appendChild(productTag(s.product));
-        p.appendChild(document.createTextNode(' '+s.rid+', '+rm(s.rm)+(s.rm<s.owed-0.004?' of '+rm(s.owed)+' owed':', all it owes')));
+        p.appendChild(document.createTextNode(' '+s.rid+', '+rm(s.rm)+(s.rm<s.owed-0.004?' of '+rm(s.owed)+' owed':s.rm>s.owed+0.004?', all it owes and '+rm(s.rm-s.owed)+' over, a refund to them':', all it owes')));
         shown.appendChild(p);
       });
       rec=makerButton(pay,['Record '+rm(r.amount),'trip.pay',t.trip],async function(send){
@@ -5617,7 +5617,7 @@ export const OWNER_JS = `
       var j=await refs('/all/maker/trip-split',{trip:t.trip,amount:a});
       tripRead[t.trip]={amount:a, split:j.split};
       draw(tripRead[t.trip]);
-      said.textContent='The Desk splits it oldest first. Check it before you record it.';
+      said.textContent='The Desk pays the other books first and salt last. Check it before you record it.';
     },false);
     pay.appendChild(shown); pay.appendChild(said);
     amount.addEventListener('input',function(){ delete tripRead[t.trip]; drop(); said.textContent=''; });
