@@ -1,0 +1,53 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-27T09:02:24.787Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "qty": 5,
+    "total": 35,
+    "cash": 0,
+    "date": "2026-10-27",
+    "customer": "CZ5-TM",
+    "product": "rice"
+   },
+   "reasoning": "Cancellation against CZ5-TM's order of 5 unit for RM 35 agreed 2026-10-27. The order is withdrawn and counts nowhere. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [],
+   "amends": "s299",
+   "amendKind": "Cancellation",
+   "entry": {
+    "at": "2026-10-27T09:02:24.787Z",
+    "type": "SELL",
+    "party": "CZ5-TM",
+    "qty": 0,
+    "total": 0,
+    "status": "Cancellation",
+    "raw": "Cancellation on CZ5-TM, order 20261027084009-gehaza, recorded 2026-10-27",
+    "payload": {
+     "mode": "amend",
+     "kind": "Cancellation",
+     "direction": "SELL",
+     "party": "CZ5-TM",
+     "rid": null,
+     "orderKey": "CZ5-TM|2026-10-27|35|rice",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-27",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "note": "Withdrawn on the statements site by the customer, order 20261027084009-gehaza."
+    },
+    "orderId": "20261027084009-gehaza"
+   },
+   "decidedAt": "2026-10-27T09:43:36.326Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
