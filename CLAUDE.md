@@ -217,8 +217,10 @@ directory. The leak checks exempt a directory place only when it IS an official 
 (`areaNameSet`) or a filed locality (`publishedLocalities`). Detail: `docs/DESK.md`.
 
 **Money he is holding that is somebody else's is Now**: an open `customerRefunds` row is severity
-`now` in `actions()` from the day it is raised. **Nothing closes a refund from the phone**: add
-`paidOn` in `ledger/book.json`, `booksync --sync`, build. **A refund the book no longer owes is flagged, never withdrawn**
+`now` in `actions()` from the day it is raised. **Nothing closes a refund from the phone, except an Accept spending it as
+credit, closed by the fold** (his word of 27 Oct 2026, `docs/DESK.md` "A refund becomes their credit"): paid out in cash, add
+`paidOn` in `ledger/book.json`, `booksync --sync`, build. **A refund is never the book's money**: money received by book reads
+`bookCash`, the row's cash less its refunds; cash flow keeps the till. **A refund the book no longer owes is flagged, never withdrawn**
 (the engine's `refundStale`, a fold move and a provenance note): he removes the row in `ledger/book.json`.
 
 **A defaulted sale is written off**: `txAdvance` reads nothing owed on it and `txWrittenOff`
@@ -565,6 +567,9 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   kept on the device. **Order again** stands only on an order handed over in full whose size is still listed (`oAgainOk`), never a
   withdrawn, declined or group order. **Sent forgets every size placed** on every road, reversing V4b's keep.
 - **The restock light** (F4, his decision of 05 Oct 2026): per book, the engine's `restockLight` over the shelf and `commitments().commitUnits`: green while free stock covers what is agreed, yellow the moment the commitments exceed the shelf (free stock below what is agreed, the engine's `coverable` false), red when the shelf is out. Sealed in each customer's price list (`supply`, outside the stamp) at publish and drawn as a coloured border on the mark with its words, Available, Limited or Out of stock, and on Home as Availability, a row a book, never a figure (the word stock allowed, his word of 22 Oct 2026); Salt Admin's Stock by book on Needs you carries the same light from `STOCK` with the units (`docs/DESK.md`); yellow or red carry "More by DD Mon" from the desk's `expected` date (KV `expected`, set on Stock through `/expected`, never named restock). Ordering is never refused.
+- **Their credit** (27 Oct 2026, his answers): every open refund of theirs, sealed in their price list outside the stamp (`credit`, and
+  `creditRows`, the rows that spent some, so an order not yet folded is taken off once); Prices keeps its prices and says it once at
+  the top, the basket, the Place sheet and the order card take it off down to RM 0. His Accept spends it; `docs/DESK.md`.
 - **The chase, tapered** (his decision D5, hours amended by V5 on 29 Sep 2026): the site's hourly cron (`wrangler.stmt.jsonc`) wakes a
   customer holding goods unpaid (`isAdvance`) every hour from 08:00 to 22:00 Kuala Lumpur (`chaseSlot`) for three days from
   their oldest unpaid handover, then at 10:00, 14:00 and 18:00 (`chaseDue`), from
