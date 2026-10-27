@@ -30,7 +30,7 @@ function pageRules() {
 }
 
 export async function run({ ok, pageWork }) {
-  const due = new Date(Date.now() - 3 * 86400000 - 3600000).toISOString().slice(0, 10);
+  const due = new Date(Date.now() + 8 * 3600000 - 3 * 86400000).toISOString().slice(0, 10) /* 27 Oct 2026: three Kuala Lumpur days back, as the page counts (todayKL); a UTC date read 4 d late from 16:00 to 01:00 UTC */;
   const refund = { username: "rfnd-acct", code: "CX5-ZED", account: true, t: { owed: 0, toGet: 0, refund: 25, pend: 0 }, flag: "refund", seen: { opens: 2, last: ISO, how: "qr" }, sent: ISO, issued: "2026-10-01" };
   const p = await richOwnerPage({ pageWork, sheetAnswer: (j) => ({ ...j, accounts: j.accounts.concat([refund]) }),
     extra: (route) => (/^\/all\/sent\//.test(route) ? { ok: true, sent: ISO } : undefined),
