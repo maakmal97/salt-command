@@ -38233,14 +38233,15 @@ await (async () => {
   later.setUTCHours(2, 0, 0, 0);   /* 10:00 in Kuala Lumpur, a chase slot, two days on */
   const held = JSON.parse(await kv.get("order:" + u + ":" + o.id));
   ok(O.isAdvance(held) && (await O.toChase(env, later)).some((c) => c.u === u), "the fixture holds goods out, nothing paid, and chased");
-  const over = await O.deskMove(env, u, o.id, { cash: { amount: 150 } });
-  ok(over.error && over.status === 400 && /more than the 100\.00 outstanding/.test(over.error), "cash over what is owed is refused: " + over.error);
   const r = await O.deskMove(env, u, o.id, { cash: { amount: 100 } });
   const paid = JSON.parse(await kv.get("order:" + u + ":" + o.id));
   const p = paid.payments.slice(-1)[0];
   ok(paid.paid === 100 && paid.status === "done" && p.by === "desk" && p.method === "cod" && !O.isAdvance(paid)
     && !(await O.toChase(env, later)).some((c) => c.u === u) && !O.claimWaits(paid),
     "Cash received pays it at once in cash, marked as his, the order completes and the chase stops: " + JSON.stringify({ paid: paid.paid, st: paid.status, p }));
+  /* 27 Oct 2026, his word: cash past what is owed is taken now (test/cash-over.mjs); on an order paid and done, nothing more is */
+  const over = await O.deskMove(env, u, o.id, { cash: { amount: 5 } });
+  ok(over.error && over.status === 409 && (JSON.parse(await kv.get("order:" + u + ":" + o.id))).paid === 100, "cash on an order paid and done is refused: " + over.error);
   ok(O.wakes({ kind: "cash", at: "x" }, paid, true).k === "complete" && O.marksOf({ kind: "cash", at: "x" }, paid).every(([k]) => k !== O.LAST_THEIRS),
     "they are told it is complete, and his cash never marks a move of theirs");
   const placed = (await O.placeOrder(env, u, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
