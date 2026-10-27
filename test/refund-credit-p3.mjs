@@ -70,6 +70,10 @@ export async function run({ ok }) {
   const acked = JSON.parse(J(placed)); O.applyEvent(acked, dv.ev);
   ok(acked.credit === 25 && acked.paid === 0 && O.dueOf(acked) === 75, "the order carries RM 25 of credit apart from paid, and owes RM 75: " + J({ credit: acked.credit, paid: acked.paid, due: O.dueOf(acked) }));
   ok(O.CUSTOMER_FIELDS.includes("credit"), "their page is handed the credit");
+  const cut = O.decideDesk(JSON.parse(J(acked)), { ledger: { credit: 0 } }, "2026-10-29T02:00:00.000Z"), up = O.decideDesk(JSON.parse(J(acked)), { ledger: { credit: 30 } }, "2026-10-29T02:00:00.000Z");
+  const lowered = JSON.parse(J(acked)); if (cut && cut.ev) O.applyEvent(lowered, cut.ev);
+  ok(cut && cut.ev && cut.ev.credit === 0 && !("credit" in lowered) && O.dueOf(lowered) === 100 && up && up.none === true,
+    "a credit the fold cut short is lowered on the order, which owes it again; it is never raised (Fable): " + J([cut, up, O.dueOf(lowered)]));
   const ahead = Object.assign(JSON.parse(J(acked)), { status: "ready", moved: 0.25 });
   ok(O.aheadOnGoods(ahead) === false && O.aheadOnGoods(Object.assign({}, ahead, { moved: 0.5 })) === true,
     "a quarter handed over against a quarter paid by credit is not goods ahead of money; half is");

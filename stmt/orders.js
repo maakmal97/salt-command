@@ -940,7 +940,9 @@ export function decideDesk(order, body, at) {
     const L = body.ledger, ev = { kind: "ledger", at };
     if (isNum(L.paid) && L.paid > (+order.paid || 0) + 0.004) ev.paid = L.paid;
     if (isNum(L.moved) && L.moved > (+order.moved || 0) + 0.0004) ev.moved = L.moved;
-    return ev.paid === undefined && ev.moved === undefined ? { none: true } : { ev };
+    /* 27 Oct 2026 (Fable): their credit, ONLY EVER LOWERED, when the fold found less open refund than the Accept spent and cut the row's */
+    if (isNum(L.credit) && L.credit >= 0 && L.credit < (+order.credit || 0) - 0.004) ev.credit = +L.credit.toFixed(2);
+    return ev.paid === undefined && ev.moved === undefined && ev.credit === undefined ? { none: true } : { ev };
   }
   /* S6 6.5 and 11.14 (D7): HIS ANSWER TO ONE CLAIM, named by its moment. The desk sends the figure it showed him, and
      this checks that it is that claim's and that it still waits: received makes it money he has confirmed, not found
@@ -1326,6 +1328,10 @@ export function applyEvent(order, ev) {
       order.moved = +ev.moved.toFixed(3); q.moved = order.moved; told = true;
       order.movedOn = klDay(at);   /* the day of the LAST handover, as Site orders writes it: the chase's grace runs from it (S12-R1) */
       order.history.push({ at, status: order.status, by: "desk", note: order.moved + " unit " + (order.mode === "deliver" ? "delivered" : "collected") });
+    }
+    if (isNum(ev.credit) && ev.credit < (+order.credit || 0) - 0.004) {
+      order.credit = ev.credit; if (!(order.credit > 0.004)) delete order.credit;
+      order.history.push({ at, status: order.status, by: "desk", inner: true, note: "their credit on this order is now " + (+ev.credit).toFixed(2) });
     }
     if (told) { order.queued = q; done = settle(order, at); }
   } else if (ev.kind === "restate") {

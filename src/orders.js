@@ -2087,6 +2087,8 @@ export async function tellSite(env, fixes, mirror) {
     }
     if (paid > (+o.paid || 0) + 0.004) ledger.paid = paid;
     if (moved > (+o.moved || 0) + 0.0004) ledger.moved = moved;
+    /* 27 Oct 2026 (Fable): a credit the fold cut short (no open refund covered it) is lowered on the order, so it owes the right figure */
+    if (+o.credit > 0.004 && (+row.credit || 0) < +o.credit - 0.004) ledger.credit = +(+row.credit || 0).toFixed(2);
     if (Object.keys(ledger).length) {
       const m = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
         method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ledger })

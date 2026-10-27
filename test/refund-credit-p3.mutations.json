@@ -19,4 +19,7 @@
 {"name":"the preview does not say the credit","file":"src/orders.js","find":"    credit > 0.004 ? { credit } : {},   /* 27 Oct 2026","replace":"    {},   /* 27 Oct 2026"},
 {"name":"another order owes its credit","file":"engine/stages.mjs","find":"(+x.delivery || 0) - (+x.paid || 0) - (+x.credit || 0)), 0);","replace":"(+x.delivery || 0) - (+x.paid || 0)), 0);"},
 {"name":"cash at the counter ignores the credit","file":"engine/stages.mjs","find":" - (+o.paid || 0) - (+o.credit || 0) - (+o.claimed || 0)).toFixed(2);","replace":" - (+o.paid || 0) - (+o.claimed || 0)).toFixed(2);"},
-{"name":"money in flight ignores the credit","file":"engine/stages.mjs","find":"(+o.paid || 0) + (+o.credit || 0) + (+o.claimed || 0) - (cash[lk] || 0));","replace":"(+o.paid || 0) + (+o.claimed || 0) - (cash[lk] || 0));"}]
+{"name":"money in flight ignores the credit","file":"engine/stages.mjs","find":"(+o.paid || 0) + (+o.credit || 0) + (+o.claimed || 0) - (cash[lk] || 0));","replace":"(+o.paid || 0) + (+o.claimed || 0) - (cash[lk] || 0));"},
+{"name":"a cut credit is not told","file":"stmt/orders.js","find":"    if (isNum(L.credit) && L.credit >= 0 && L.credit < (+order.credit || 0) - 0.004) ev.credit = +L.credit.toFixed(2);","replace":""},
+{"name":"a credit is raised by the book","file":"stmt/orders.js","find":"L.credit < (+order.credit || 0) - 0.004) ev.credit","replace":"L.credit !== (+order.credit || 0)) ev.credit"},
+{"name":"the order keeps its cut credit","file":"stmt/orders.js","find":"      order.credit = ev.credit; if (!(order.credit > 0.004)) delete order.credit;","replace":""}]
