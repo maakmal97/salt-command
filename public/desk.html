@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="d2d65cf34ec3f79f";
+var SALT_BUILD_ID="361228889709dc17";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -11405,7 +11405,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1300","d":"28 Oct 2026","t":"A HALF UNIT OF SALT COUNTED OVER THE BOOK","n":["<b>ONE COUNT FOLDED.</b> A hand count of salt on 28 Oct 2026 found 0.5 unit against 0 on the book, a gap of +0.5. Counter Admin approved it. The count wins over the ledger, so the stated salt inventory is set to 0.5 and the salt count date moves to 28 Oct 2026. The dossier gives no reason for the gap and none is offered.","<b>FLOORS AND COST.</b> The floors and the ask do not move: floor1 stays RM60, floor2 RM120, floor125 RM725 and ask1 RM120. Only selfUse changes, from 103.84 to 103.34. No lot landed, so the stock cost stays at RM56 a unit."]}];
+const evolution=[{"v":"v1301","d":"28 Oct 2026","t":"THE BOOK'S REVISION, ITS COMPACTION AND ITS SEALED EXPORT (S5A AND S5C, DORMANT)","n":["<b>PART 1 OF THE S5 PLAN: THE BOOK PREPARES TO BE THE SOURCE.</b> Nothing reads any of it, so nothing books, prices or shows differently. The plan is docs/plan-book-s5-s6.html, Fable reviewed its design and this diff, and the part is dormant until the flip, which waits for 7 days of parity and your typed go.","<b>A REVISION.</b> The Book counts what a reader could see differently (a load that changed or closed something, a tap that booked, a void that took one back, a compaction), separately from the version, which will stop moving once approvals are not versions. It is carried by the Book's answers and printed in the chain's readcheck line.","<b>A COMPACTION, REHEARSED ON EVERY FOLD.</b> The Book's own view can become its new base by the load's own path, strictly: the view unchanged, no entry stuck, no row lost, or the whole write is thrown away. It answers the draft ids it closed, so the flip can mark exactly those committed. It is not run live yet; a dry run is asked at every readcheck and turns the step red if it would be refused. The whole event log is kept.","<b>A SEALED EXPORT, AND A COUNT OF FALLBACKS.</b> The nightly job now files the Book's base, its whole event log and its revision, sealed to the same key as the D1 backup, in R2 (the newest 30 nights, heard of in the morning digest when it stops); the laptop's backup-open tool opens it. An approval the Book would not book is approved as before and now logged as a fallback; the flip's gate is zero of them."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11553,7 +11553,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='28 Oct 2026, 05:49 KL';
+const LAST_UPDATED='28 Oct 2026, 06:26 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

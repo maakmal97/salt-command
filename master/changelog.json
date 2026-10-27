@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1301",
+  "d": "28 Oct 2026",
+  "t": "THE BOOK'S REVISION, ITS COMPACTION AND ITS SEALED EXPORT (S5A AND S5C, DORMANT)",
+  "n": [
+   "<b>PART 1 OF THE S5 PLAN: THE BOOK PREPARES TO BE THE SOURCE.</b> Nothing reads any of it, so nothing books, prices or shows differently. The plan is docs/plan-book-s5-s6.html, Fable reviewed its design and this diff, and the part is dormant until the flip, which waits for 7 days of parity and your typed go.",
+   "<b>A REVISION.</b> The Book counts what a reader could see differently (a load that changed or closed something, a tap that booked, a void that took one back, a compaction), separately from the version, which will stop moving once approvals are not versions. It is carried by the Book's answers and printed in the chain's readcheck line.",
+   "<b>A COMPACTION, REHEARSED ON EVERY FOLD.</b> The Book's own view can become its new base by the load's own path, strictly: the view unchanged, no entry stuck, no row lost, or the whole write is thrown away. It answers the draft ids it closed, so the flip can mark exactly those committed. It is not run live yet; a dry run is asked at every readcheck and turns the step red if it would be refused. The whole event log is kept.",
+   "<b>A SEALED EXPORT, AND A COUNT OF FALLBACKS.</b> The nightly job now files the Book's base, its whole event log and its revision, sealed to the same key as the D1 backup, in R2 (the newest 30 nights, heard of in the morning digest when it stops); the laptop's backup-open tool opens it. An approval the Book would not book is approved as before and now logged as a fallback; the flip's gate is zero of them."
+  ]
+ },
+ {
   "v": "v1300",
   "d": "28 Oct 2026",
   "t": "A HALF UNIT OF SALT COUNTED OVER THE BOOK",
