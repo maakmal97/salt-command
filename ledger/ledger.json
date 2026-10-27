@@ -1,6 +1,6 @@
 {
- "v": "v1287",
- "stamped": "27 Oct 2026, 22:44 KL",
+ "v": "v1288",
+ "stamped": "27 Oct 2026, 23:25 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -44,7 +44,7 @@
    },
    "gas": {
     "id": "gas",
-    "name": "Gas",
+    "name": "Aroma",
     "unit": "unit",
     "accent": "var(--salt-product-gas)",
     "since": "2026-10-27",
@@ -10271,7 +10271,7 @@
     {
      "id": "parity:uncounted:gas",
      "sev": "watch",
-     "title": "Gas has never been counted, so its inventory is the ledger"
+     "title": "Aroma has never been counted, so its inventory is the ledger"
     },
     {
      "id": "parity:uncounted:prep",
@@ -10391,7 +10391,7 @@
     {
      "id": "parity:declared:gas",
      "sev": "note",
-     "title": "Gas is declared but has nothing on the books"
+     "title": "Aroma is declared but has nothing on the books"
     },
     {
      "id": "parity:declared:prep",
@@ -20070,10 +20070,10 @@
      "suggest": null
     }
    },
-   "v": "v1287"
+   "v": "v1288"
   },
   "OPEN": {
-   "at": "2026-10-27T14:44:45.556Z",
+   "at": "2026-10-27T15:53:32.370Z",
    "count": 7,
    "byKey": {
     "CZ5-TM|2026-10-27|105": {
@@ -20238,7 +20238,7 @@
      "short": 0
     },
     "gas": {
-     "name": "Gas",
+     "name": "Aroma",
      "onHand": 0,
      "free": 0,
      "owedOut": 0,
@@ -20268,7 +20268,7 @@
     "gas": null,
     "prep": null
    },
-   "v": "v1287"
+   "v": "v1288"
   },
   "TERMS": {
    "ceiling": 250,
@@ -20276,7 +20276,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1287"
+   "v": "v1288"
   },
   "REWARD": {
    "stated": {
@@ -20294,7 +20294,7 @@
      }
     }
    },
-   "v": "v1287"
+   "v": "v1288"
   },
   "STOCK": {
    "today": "2026-10-27",
@@ -20348,7 +20348,7 @@
      "transit": 0
     }
    },
-   "v": "v1287"
+   "v": "v1288"
   }
  }
 }

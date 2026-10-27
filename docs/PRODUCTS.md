@@ -276,7 +276,7 @@ these (`test/any-quantity.mjs`).
 
 The fifth book, `spare`, opened on 22 Sep 2026 to prove that adding a book is a command and retired on 15 Oct 2026, became `gas` on his
 word of 27 Oct 2026: `node tools/product.mjs --rename spare gas` (it held no row, so the tool allowed it), then `--add prep --name PrEP`.
-Both are live and empty, so the fold refuses a first sale until a lot is entered by hand. **Gas** is a flame lettered P; **PrEP** is a
+Both are live and empty, so the fold refuses a first sale until a lot is entered by hand. **Gas** (named Aroma from 27 Oct 2026, the id kept) is a twelve-point starburst lettered POP, his choice of an explosion over a diffuser flask; **PrEP** is a
 heart-shaped pill lettered PrEP, the one word in a mark: `pletSize` in `stmt/page.js` sets a longer letter so its width stays inside
 the heart. Their hues are salt-ds 1.20.0's `--salt-product-gas` (flame) and `--salt-product-prep` (magenta), which replaced the spare hue.
 Their names join `PRODUCT_WORDS`, the position engine's word list and the Admin's book-name pattern. The suite section is

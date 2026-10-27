@@ -168,7 +168,7 @@ export const EN = {
   "shape.Droplet": "Droplet",
   "shape.Lozenge": "Lozenge",
   "shape.Capsule": "Capsule",
-  "shape.Flame": "Flame",
+  "shape.Starburst": "Starburst",
   "shape.Heart": "Heart",
   "shape.Ring": "Ring",
   /* ---- THE DOOR ---- */

@@ -1584,10 +1584,11 @@ export const PSYM = {
      semicircle through its rounded ends and the capsule meets the square's sides. */
   candy: 'M12 2.6 L21.4 12 L12 21.4 L2.6 12 Z',
   rice: 'M12.84 19.64 L19.64 12.84 A5.99 5.99 0 0 0 11.16 4.36 L4.36 11.16 A5.99 5.99 0 0 0 12.84 19.64 Z M7.76 7.76 L16.24 16.24',
-  /* 27 Oct 2026, his two new books: a flame with a notch on its left shoulder for gas, and a heart-shaped pill for PrEP,
-     a heart split by the seam a pill carries. Both fill the same square (2.6 to 21.4 about the centre). The notch and the
-     seam stop clear of the letter, so neither mark needs a PLET_ROOM drawing. */
-  gas: 'M12 2.6 C13.5 6.3 20 8.8 20 13.4 A8 8 0 0 1 4 13.4 C4 9.6 6.2 7.8 7.6 5.8 C8.2 7.6 9.2 8.2 10.4 8.4 C10 6.2 10.6 4.6 12 2.6 Z',
+  /* 27 Oct 2026, his two new books: a heart-shaped pill for PrEP, a heart split by the seam a pill carries, and for the
+     book keyed gas (named Aroma, his word of 27 Oct 2026) a twelve-point starburst, an explosion carrying POP, his choice
+     of A over a diffuser flask. Both fill the same square (2.6 to 21.4 about the centre). The seam stops clear of the
+     letters and the burst's inner radius (7.7) is wide enough for three, so neither mark needs a PLET_ROOM drawing. */
+  gas: 'M12 2.6 L13.99 4.56 L16.7 3.86 L17.44 6.56 L20.14 7.3 L19.44 10.01 L21.4 12 L19.44 13.99 L20.14 16.7 L17.44 17.44 L16.7 20.14 L13.99 19.44 L12 21.4 L10.01 19.44 L7.3 20.14 L6.56 17.44 L3.86 16.7 L4.56 13.99 L2.6 12 L4.56 10.01 L3.86 7.3 L6.56 6.56 L7.3 3.86 L10.01 4.56 Z',
   prep: 'M12 21.4 C5 16.4 2.6 12.6 2.6 8.6 C2.6 5.2 5 2.6 7.9 2.6 C9.6 2.6 11.2 3.6 12 5.2 C12.8 3.6 14.4 2.6 16.1 2.6 C19 2.6 21.4 5.2 21.4 8.6 C21.4 12.6 19 16.4 12 21.4 Z M12 5.2 L12 8 M12 16.6 L12 21.4'
 };
 const RING = 'M12 3.4 A8.6 8.6 0 1 1 11.99 3.4 Z';
@@ -1595,14 +1596,14 @@ const RING = 'M12 3.4 A8.6 8.6 0 1 1 11.99 3.4 Z';
    only a decorative mark is unusable with a screen reader; an aria-label naming the product would
    put the word back for exactly the readers who cannot see that it was taken away. The shape is
    what is on the screen, so saying it aloud gives away no more than looking does. */
-export const PSHAPE = { salt: "Cube", oil: "Droplet", candy: "Lozenge", rice: "Capsule", gas: "Flame", prep: "Heart", _: "Ring" };
+export const PSHAPE = { salt: "Cube", oil: "Droplet", candy: "Lozenge", rice: "Capsule", gas: "Starburst", prep: "Heart", _: "Ring" };
 /* ---- F8, HIS ANSWERS OF 28 SEP 2026 ("everywhere", then "Yes everywhere", the statement and the guest board included):
    A LETTER OF HIS IN EVERY BOOK'S MARK, WHEREVER IT IS DRAWN ----
    None is its product's initial, in English, and together they spell no product word: a letter names nothing
    and the mark is still the thing. psymSvg and the page's psym draw it always (v913's `lettered` switch is retired), and no
    mark is drawn under 20 px, where the letter, a third of the mark, would be too small to read. Any
    product with no letter keep the Ring, bare, and the aria stays the shape. */
-export const PLET = { salt: "I", oil: "G", candy: "E", rice: "V", gas: "P", prep: "PrEP" };
+export const PLET = { salt: "I", oil: "G", candy: "E", rice: "V", gas: "POP", prep: "PrEP" };
 /* EVERY LETTER THE SAME SIZE ON THE SAME LINE (his redraw of 28 Sep 2026): the mono face (.plet) at size 8 in the 24
    grid, its capitals centred on the mark's centre, so the baseline sits half a capital (0.73 of the size) below 12. */
 const PLET_AT = { y: 14.92, s: 8 };

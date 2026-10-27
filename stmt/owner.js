@@ -6659,7 +6659,7 @@ export const OWNER_JS = `
   }
   function units(n){ return unitsOf(Number(n)||0); }
   /* NO BOOK HAS A NAME ON THIS PAGE (his word of 12 Oct 2026, "and even the name of the product", which took back decision 5 of 11 Oct): a book is its mark, with
-     his letter in it, and no word for it is drawn, not the Desk's (salt, oil, candy, rice, gas, prep) and not the shape's (Cube, Droplet, Lozenge, Capsule, Flame, Heart). A reader is told the
+     his letter in it, and no word for it is drawn, not the Desk's (salt, oil, candy, rice, gas, prep) and not the shape's (Cube, Droplet, Lozenge, Capsule, Starburst, Heart). A reader is told the
      shape, as on the customer's page (pshape: a hidden .sr or an aria-label), never the product. The Desk keeps its names; this page does not. bookMark is a mark in
      a line, bookTile mtile for a card (the mark, and under it "2.5 units"), bookTag the typed Product tag (Orders, since 25 Oct 2026), bookItem a tile of a form that is the
      mark alone, and pmarkHead, the customer's, a heading that is the mark alone. A select cannot hold a mark, so an option says the book's letter in brackets, [I],

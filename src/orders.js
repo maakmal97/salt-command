@@ -94,7 +94,7 @@ function site(env, path, init) {
  * ladder never reaches a customer. English only (the second language was removed on 05 Oct 2026, the owner's decision).
  * A word with no Latin letter is found as a substring, \b being blind to it, and is never one character. */
 export const LEVEL_WORDS = ["ambassador", "titanium", "platinum", "gold", "silver", "bronze"];
-export const PRODUCT_WORDS = ["salt", "oil", "candy", "rice", "gas", "prep"];
+export const PRODUCT_WORDS = ["salt", "oil", "candy", "rice", "aroma", "prep"];
 /** Which of `words` the text holds: whole words for Latin ones, a substring for any other script. */
 export function wordsIn(text, words) {
   const t = String(text || "").toLowerCase();

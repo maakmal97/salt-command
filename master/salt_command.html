@@ -8973,7 +8973,7 @@ const PRODUCTS={
   },
   "gas": {
     "id": "gas",
-    "name": "Gas",
+    "name": "Aroma",
     "unit": "unit",
     "accent": "var(--salt-product-gas)",
     "since": "2026-10-27",
@@ -11175,7 +11175,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1288","d":"27 Oct 2026","t":"A TAP BOOKS THE ROW AT ONCE IN THE BOOK, THE FLAG SHIPPED OFF (S4D)","n":["<b>S4 OF THE BOOK PLAN, SECOND VERSION: THE TAP, SHIPPED OFF.</b> The flag is the D1 row `book_tap` (migrations/0019), shipped `off`; turning it on is his call. With it off nothing books or reads differently: no road calls the Book at a tap, and a rejection never calls it.","<b>BOOK FIRST, D1 SECOND.</b> With the flag on, an approval (one tap, every card of decide-many, his pre-approval spent on a row) asks the Book to book the row and its trip whole by the engine's own rules, then writes the rids and the booking order into the draft's row in the same D1 batch as the approval, so the fold copies them. A refusal by the law is a 409 with its reason and nothing written; a Book behind, silent or holding a stuck entry approves as before. An entry whose approval did not land (a batch that failed, a race lost to a rejection) is taken back, and a rejection takes any open entry back first.","<b>THE MINUTE NET AND THE READCHECK.</b> With the flag on, the minute cron books approved drafts that have no booking (a fallback, the laptop's approve) in the order drafted, and voids the entry of a draft rejected by a road that does not take it back. The readcheck names an entry open under a rejected or a still pending draft, whatever the flag says.","<b>THE FOLD HEALS A STALE BOOKING.</b> A booked row's rid that another row already holds (the fold minted it for a row the Book had not yet seen) is no longer a replay that holds the batch: the row is booked afresh, its drafter's cost kept, and the Book's entry waits on D1's word, the tap check naming the difference. The same row under the rid is still a replay, and an amendment is never judged a replay by a rid. Fable reviewed the diff and re-checked its findings."]}];
+const evolution=[{"v":"v1289","d":"27 Oct 2026","t":"GAS IS NAMED AROMA, ITS MARK A STARBURST LETTERED POP","n":["<b>THE NAME.</b> The book keyed gas is named Aroma wherever a person reads it: the desk and Salt Admin's typed tag, the Counter's word list, the practice account's coming-soon line. Its id stays gas, so no row, fixture key or route moved.","<b>THE MARK, HIS CHOICE OF A.</b> On the Counter it is a twelve-point starburst, an explosion, lettered POP in place of the flame lettered P; the letters are set at about 7.2 on the 24 grid so three fit inside the burst's inner radius, as PrEP's four fit its heart. The shape word a screen reader hears is Starburst. The diffuser flask he saw beside it was not taken."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
