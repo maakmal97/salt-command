@@ -14,8 +14,8 @@
   {
     "name": "1 a refund he owes is hot",
     "file": "stmt/owner.js",
-    "find": "return {word:'You owe them', fig:rmShort(t.refund), hot:true};",
-    "replace": "return {word:'You owe them', fig:rmShort(t.refund), hot:false};"
+    "find": "return {word:'Their credit', fig:rmShort(t.refund), hot:true};",
+    "replace": "return {word:'Their credit', fig:rmShort(t.refund), hot:false};"
   },
   {
     "name": "2 opened and how",
