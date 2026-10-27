@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1275",
+  "d": "27 Oct 2026",
+  "t": "CORRECTION CLEARS PAYMENT AND HANDOVER ON S297",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> Counter Admin approved a correction on s297, CZ4-MK's oil sale of 10 units, goods RM120, dated 27 Oct 2026. It clears cash, delivered quantity, delivery date, handover and payment date, so the order shows as unpaid and undelivered. The drafter flagged that the row's three-step trail no longer adds up to the set figures.",
+   "<b>INVENTORY.</b> The 10 units of oil come back to the shelf, as the correction states. Nothing landed, so the cost basis does not move."
+  ]
+ },
+ {
   "v": "v1274",
   "d": "27 Oct 2026",
   "t": "FULFILMENT OF 5 UNITS OF SALT TO CZ4-MK ON S296, NO CASH",
