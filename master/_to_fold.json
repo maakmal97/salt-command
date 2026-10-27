@@ -1,0 +1,54 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-27T07:08:55.347Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "qty": 1,
+    "total": 130,
+    "cash": 0,
+    "date": "2026-10-29",
+    "customer": "CM4-TO-R"
+   },
+   "reasoning": "Cancellation against CM4-TO-R's order of 1 unit for RM 130 agreed 2026-10-29. The order is withdrawn and counts nowhere. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [],
+   "amends": "s298",
+   "amendKind": "Cancellation",
+   "entry": {
+    "at": "2026-10-27T07:08:55.347Z",
+    "type": "AMEND",
+    "party": "CM4-TO-R",
+    "qty": null,
+    "total": null,
+    "status": "cancelled",
+    "raw": "Cancellation against s298 for CM4-TO-R on 2026-10-27",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CM4-TO-R",
+     "product": "salt",
+     "rid": "s298",
+     "orderKey": "CM4-TO-R|2026-10-29|130",
+     "date": "2026-10-27",
+     "kind": "Cancellation",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "sameDay": false,
+     "note": null,
+     "qty": null,
+     "total": null,
+     "cash": null,
+     "kg": null
+    },
+    "makerRequest": "2d66d0b520507f5c5a89f0196122c36ff1c2b9cc8116384890114e51aedd7b49"
+   },
+   "decidedAt": "2026-10-27T07:12:24.335Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
