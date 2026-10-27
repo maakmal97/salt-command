@@ -1,6 +1,6 @@
 {
- "v": "v1293",
- "stamped": "28 Oct 2026, 00:20 KL",
+ "v": "v1296",
+ "stamped": "28 Oct 2026, 00:57 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -107,7 +107,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 0,
+  "STATED_STOCK": 0.5,
   "COUNT_ON": {
    "salt": "2026-10-27",
    "oil": "2026-10-27",
@@ -9339,13 +9339,13 @@
     "total": 105,
     "cash": 105,
     "date": "2026-10-27",
-    "deliveredQty": 1,
-    "note": "<b>CORRECTED ON 28 OCT 2026: 1 UNIT OF SALT COLLECTED BY CZ5-TM.</b> Correction on s300, preapproved by Counter Admin. It sets deliveredQty from 0 to 1, deliveredOn to 2026-10-28 and handover to collected, for order 20261027084009-nltzsg. The goods total is RM105, paid on 27 Oct, so no cash moves; the shelf rolls out by 1 unit. The ladder floor and ask for this size are not in the dossier, so no comparison is made. The party's median rate is RM105, range RM95 to RM110; outstanding before was RM0, no units on credit, nothing defaulted. The row carries no cost of its own. The drafter flagged that the trail of 3 steps will no longer add up; the correction is recorded beside them saying so. Nothing remains outstanding. <b>CORRECTION ON S300, 27 OCT 2026: TRIP SET.</b> The trip field on CZ5-TM's pending order of 1 unit of salt, goods RM105, moves from unset to t1793091460898. Counter Admin decided it. It moves no cash and no stock, and the order stays pending with nothing paid or handed over. The dossier gives no floor or ask for this order, so no comparison is made. The rate of RM105 a unit equals the party's median of RM105 and sits within the range RM7 to RM110. Outstanding before was RM140, no units on credit. The drafter raised no flag. RM105 and the 1 unit remain outstanding. <b>PENDING SALE OF 1 UNIT OF SALT TO CZ5-TM, GOODS RM105, 27 OCT 2026.</b> Ordered on the statements site, order 20261027084009-nltzsg, preapproved by Counter Admin. Nothing is paid and nothing handed over, so no stock is drawn and no revenue is booked. For 1 unit the ladder gives a floor total of RM60 and an ask total of RM120, so RM105 is above the floor and below the ask. That is RM105 a unit against a floor of RM60 and an ask of RM120. The party's median rate is RM110, range RM95 to RM110; outstanding before was RM0, no units on credit against a cap of 1. The cost is RM58 a unit, costed off the latest purchase. The drafter raised no flag. Stock stands at 0.5 units, below this 1 unit. RM105 and the 1 unit remain outstanding.",
+    "deliveredQty": 0.5,
+    "note": "<b>CORRECTION ON S300, 28 OCT 2026: DELIVERY CLEARED.</b> Counter Admin decided it on 27 Oct 2026. It undoes the newest step on CZ5-TM's order of 1 unit of salt, goods RM105. It sets deliveredOn to cleared, deliveredQty from 1 to 0 and handover from collected to cleared. The dossier gives no ladder floor or ask for this size, so no comparison is made. RM105 equals the party's median rate of RM105, range RM95 to RM110. Outstanding before was RM0, no units on credit; no cap is stated. The row sets no cost of its own. The drafter flagged that the trail of 4 steps will no longer add up; the correction is recorded beside it, which answers the flag. The RM105 stays paid and 1 unit remains owed. <b>CORRECTED ON 28 OCT 2026: 1 UNIT OF SALT COLLECTED BY CZ5-TM.</b> Correction on s300, preapproved by Counter Admin. It sets deliveredQty from 0 to 1, deliveredOn to 2026-10-28 and handover to collected, for order 20261027084009-nltzsg. The goods total is RM105, paid on 27 Oct, so no cash moves; the shelf rolls out by 1 unit. The ladder floor and ask for this size are not in the dossier, so no comparison is made. The party's median rate is RM105, range RM95 to RM110; outstanding before was RM0, no units on credit, nothing defaulted. The row carries no cost of its own. The drafter flagged that the trail of 3 steps will no longer add up; the correction is recorded beside them saying so. Nothing remains outstanding. <b>CORRECTION ON S300, 27 OCT 2026: TRIP SET.</b> The trip field on CZ5-TM's pending order of 1 unit of salt, goods RM105, moves from unset to t1793091460898. Counter Admin decided it. It moves no cash and no stock, and the order stays pending with nothing paid or handed over. The dossier gives no floor or ask for this order, so no comparison is made. The rate of RM105 a unit equals the party's median of RM105 and sits within the range RM7 to RM110. Outstanding before was RM140, no units on credit. The drafter raised no flag. RM105 and the 1 unit remain outstanding. <b>PENDING SALE OF 1 UNIT OF SALT TO CZ5-TM, GOODS RM105, 27 OCT 2026.</b> Ordered on the statements site, order 20261027084009-nltzsg, preapproved by Counter Admin. Nothing is paid and nothing handed over, so no stock is drawn and no revenue is booked. For 1 unit the ladder gives a floor total of RM60 and an ask total of RM120, so RM105 is above the floor and below the ask. That is RM105 a unit against a floor of RM60 and an ask of RM120. The party's median rate is RM110, range RM95 to RM110; outstanding before was RM0, no units on credit against a cap of 1. The cost is RM58 a unit, costed off the latest purchase. The drafter raised no flag. Stock stands at 0.5 units, below this 1 unit. RM105 and the 1 unit remain outstanding.",
     "listRM": 105,
     "listQty": 1,
     "rid": "s300",
     "trip": "t1793091460898",
-    "mod": "corrected on 2026-10-27: trip (unset) to t1793091460898, then corrected on 2026-10-28: deliveredQty 0 to 1; deliveredOn (unset) to 2026-10-28; handover (unset) to collected",
+    "mod": "corrected on 2026-10-27: trip (unset) to t1793091460898, then corrected on 2026-10-28: deliveredQty 0 to 1; deliveredOn (unset) to 2026-10-28; handover (unset) to collected, then corrected on 2026-10-28: deliveredQty 1 to 0; deliveredOn 2026-10-28 to (cleared); handover collected to (cleared)",
     "amend": [
      {
       "date": "2026-10-27",
@@ -9382,12 +9382,35 @@
        "deliveredOn": null,
        "handover": null
       },
-      "cost": 58
+      "cost": 58,
+      "undone": "2026-10-28"
+     },
+     {
+      "date": "2026-10-28",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S300, 28 OCT 2026: DELIVERY CLEARED.</b> Counter Admin decided it on 27 Oct 2026. It undoes the newest step on CZ5-TM's order of 1 unit of salt, goods RM105. It sets deliveredOn to cleared, deliveredQty from 1 to 0 and handover from collected to cleared. The dossier gives no ladder floor or ask for this size, so no comparison is made. RM105 equals the party's median rate of RM105, range RM95 to RM110. Outstanding before was RM0, no units on credit; no cap is stated. The row sets no cost of its own. The drafter flagged that the trail of 4 steps will no longer add up; the correction is recorded beside it, which answers the flag. The RM105 stays paid and 1 unit remains owed.",
+      "was": {
+       "deliveredQty": 1,
+       "deliveredOn": "2026-10-28",
+       "handover": "collected"
+      },
+      "undoes": 3,
+      "took": {
+       "units": 1
+      }
+     },
+     {
+      "date": "2026-10-28",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0.5,
+      "cost": 29,
+      "note": "<b>FULFILMENT ON S300, 28 OCT 2026: 0.5 UNIT OF SALT TO CZ5-TM.</b> The order is 1 unit, goods RM105, agreed and paid in cash on 27 Oct 2026, approved by Counter Admin. This step moves RM0 and 0.5 unit against 1 unit outstanding, leaving 0.5 unit. No new revenue is booked. The party's median rate is RM105, range RM95 to RM110; outstanding before was RM0, no units on credit, and no defaults. The order carries the cost already set on the row, and the draft's cost is the inventory's own. The drafter raised no flags, and none needed answering. The trail on s300 holds an earlier delivery that was cleared, so this is the live handover. RM0 and 0.5 unit remain outstanding."
      }
     ],
     "paidOn": "2026-10-27",
-    "deliveredOn": "2026-10-28",
-    "handover": "collected",
     "cost": 58
    },
    {
@@ -10218,7 +10241,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-27T16:09:05.944Z",
+  "QUEUE_COMMITTED": "2026-10-27T16:29:26.492Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -11594,15 +11617,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.28448275862068967
+         "v": 0.28695652173913044
         }
        },
        "attrib": 1,
        "shrinkRate": 0.09260717097259,
        "avgDel": {
         "n": 233,
-        "kg": 594.31,
-        "mean": 2.5507
+        "kg": 593.81,
+        "mean": 2.5485
        }
       },
       "policy": {
@@ -20093,12 +20116,27 @@
      "suggest": null
     }
    },
-   "v": "v1293"
+   "v": "v1296"
   },
   "OPEN": {
-   "at": "2026-10-27T16:42:16.805Z",
-   "count": 6,
+   "at": "2026-10-27T17:15:39.302Z",
+   "count": 7,
    "byKey": {
+    "CZ5-TM|2026-10-27|105": {
+     "d": "2026-10-27",
+     "p": "CZ5-TM",
+     "dir": "S",
+     "q": 1,
+     "t": 105,
+     "cash": 105,
+     "mv": 0.5,
+     "st": "oweStock",
+     "oweUnits": 0.5,
+     "rid": "s300",
+     "paidOn": "2026-10-27",
+     "trip": "t1793091460898",
+     "key": "CZ5-TM|2026-10-27|105"
+    },
     "CN3-WM|2026-10-05|130": {
      "d": "2026-10-05",
      "p": "CN3-WM",
@@ -20203,13 +20241,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 0,
+     "onHand": 0.5,
      "free": 0,
-     "owedOut": 0,
+     "owedOut": 0.5,
      "coverDays": 0,
      "rate": 4.36,
      "owedToYou": 240,
-     "promised": 0,
+     "promised": 0.5,
      "short": 0
     },
     "oil": {
@@ -20276,7 +20314,7 @@
     "gas": null,
     "prep": null
    },
-   "v": "v1293"
+   "v": "v1296"
   },
   "TERMS": {
    "ceiling": 250,
@@ -20284,7 +20322,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1293"
+   "v": "v1296"
   },
   "REWARD": {
    "stated": {
@@ -20302,16 +20340,16 @@
      }
     }
    },
-   "v": "v1293"
+   "v": "v1296"
   },
   "STOCK": {
    "today": "2026-10-28",
    "books": {
     "salt": {
-     "shelf": 0,
+     "shelf": 0.5,
      "free": 0,
-     "commit": 0,
-     "light": "red",
+     "commit": 0.5,
+     "light": "green",
      "coverDays": 0,
      "transit": 0
     },
@@ -20356,7 +20394,7 @@
      "transit": 0
     }
    },
-   "v": "v1293"
+   "v": "v1296"
   }
  }
 }

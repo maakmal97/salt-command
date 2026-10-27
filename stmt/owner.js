@@ -3331,7 +3331,7 @@ export const OWNER_JS = `
   function makerMove(order,body,message){
     var key=order.id+JSON.stringify(body), rid=makerRids[key]||(makerRids[key]=mintRid());
     return makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/'+(body.claim?'notfound':'move'),
-      Object.assign({rid:rid},body),message,order.id).then(function(done){ if(done) delete makerRids[key]; });
+      Object.assign({rid:rid},body),message,order.id).then(function(done){ if(done) delete makerRids[key]; return done; });   /* 28 Oct 2026: says how it went, as makerTap does */
   }
   /* a handover, a close, cash, a Received or a move offered again, under one request id until it lands, as a move is */
   function makerTap(order,action,body,message){
@@ -3340,7 +3340,11 @@ export const OWNER_JS = `
       Object.assign({rid:rid},body),message,order.id).then(function(done){ if(done) delete makerRids[key]; return done; });
   }
   /* a claim above what the order still owes is money he recorded another way; orderReceived is the one send of a claim's Received, the card's Sheet and Needs you's card alike */
-  function payOnBook(order,payment){ return Number(payment.amount)>Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0)+0.004; }
+  /* 28 Oct 2026: WHAT AN ORDER STILL OWES IS THE SITE'S dueOf, goods and delivery less what is paid AND their credit his Accept spent (v1284), which the
+     order keeps apart from paid; every reading of an order's money on this page goes through it, so a credit is never shown as owed */
+  function ordPaidAll(o){ return (+(o&&o.paid)||0)+(+(o&&o.credit)||0); }
+  function ordDue(o){ return +((+(o&&o.total)||0)+(+(o&&o.delivery)||0)-ordPaidAll(o)).toFixed(2); }
+  function payOnBook(order,payment){ return Number(payment.amount)>ordDue(order)+0.004; }
   function orderReceived(order,payment){
     var onBook=payOnBook(order,payment);
     return makerTap(order,'received',onBook?{amount:payment.amount,claim:payment.at,covered:true}:{amount:payment.amount,claim:payment.at},
@@ -3373,7 +3377,7 @@ export const OWNER_JS = `
       var held=makerCashHeld[id], order=(data.orders||[]).filter(function(o){return o.id===id;})[0];
       if(held.confirmed&&order&&Number(order.paid||0)+0.004>=held.beforePaid+held.amount){
         localStorage.removeItem(MAKER_CASH_PREFIX+id);delete makerCashHeld[id];
-        makerCashSaid[id]='Recorded: '+rm(held.amount)+' in cash. '+rm(Math.max(0,Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0)))+' still owed.';
+        makerCashSaid[id]='Recorded: '+rm(held.amount)+' in cash. '+rm(Math.max(0,ordDue(order)))+' still owed.';
       }
     });
   }
@@ -3385,9 +3389,10 @@ export const OWNER_JS = `
     makerCashRestore();
     if(makerCashStorageError){drawMaker();return;}
     if(makerCashHeld[order.id]) return;
-    var due=Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0);
+    /* 28 Oct 2026: the Desk's own measure (cashTap): what is owed less their credit and less what they say they sent */
+    var due=+(ordDue(order)-(+order.claimed||0)).toFixed(2);
     /* 27 Oct 2026, his word: cash past what they owe is taken, the excess a refund to them; beside a claim of theirs, or with nothing owed, it is not */
-    var claimed=(order.payments||[]).some(function(p){ return p&&p.claim==='waiting'; });
+    var claimed=(order.payments||[]).some(function(p){ return p&&p.claim==='waiting'; })||(+order.claimed||0)>0.004;
     if(!Number.isFinite(amount)||amount<=0.004||(amount>due+0.004&&(claimed||due<=0.004))){
       makerCashSaid[order.id]='That is not a figure above RM 0 and up to the '+rm(due)+' owed'+(claimed?' beside what they say they sent':'')+'. Nothing was sent.';drawMaker();return;
     }
@@ -4421,7 +4426,7 @@ export const OWNER_JS = `
     if(order.writtenOff) return 'orders.ended';   /* written off on the book: it ended there (17 Oct 2026) */
     var st=STAGE_OF[order.status]||'ended';
     if(st==='confirmed'||st==='ready'){
-      var q=Number(order.qty)||0, out=q>0&&Number(order.moved||0)>=q-0.0005, paid=Number(order.paid||0), owed=Number(order.total||0)+Number(order.delivery||0)-paid;
+      var q=Number(order.qty)||0, out=q>0&&Number(order.moved||0)>=q-0.0005, paid=ordPaidAll(order), owed=ordDue(order);
       if(out||(owed<=0.004&&paid>0.004)) st='paid';
     }
     return 'orders.'+st;
@@ -4457,7 +4462,7 @@ export const OWNER_JS = `
   /* the stage's move, said on the pill: the next step of the goods, or of the money once the goods are out */
   function ordMove(o){
     if(o.test) return '';
-    var owed=(+o.total||0)+(+o.delivery||0)-(+o.paid||0), out=(+o.qty||0)>0&&(+o.moved||0)>=(+o.qty||0)-0.0005;
+    var owed=ordDue(o), out=(+o.qty||0)>0&&(+o.moved||0)>=(+o.qty||0)-0.0005;
     if(o.status==='placed') return makerAccHeld(o)&&o.price.state==='offered'?'Withdraw':makerAccHeld(o)?'':'Agree';
     if(o.status!=='acknowledged'&&o.status!=='ready') return '';
     if(ordPays(o).length) return 'Received';
@@ -4478,7 +4483,8 @@ export const OWNER_JS = `
       way.textContent=ordWayWord(o,st); un.textContent=units(o.qty);
       why=o.test?'practice':makerCashHeld[e.id]?'cash held':held?'their yes':orderAsked(o)?'asked':ordPays(o).length?'says sent':o.again&&o.again.length?'send again':o.againOf?orderRef(o.againOf)+' again':'';
       sev=o.test?'watch':e.waits?'now':held?'soon':'watch';
-      main=ordMove(o);
+      /* 28 Oct 2026: cash held for the order shuts every control of its card, so the row offers no move beside it either */
+      main=makerCashHeld[e.id]||makerCashStorageError?'':ordMove(o);
       fig.textContent=rmShort(Number(o.total||0)+Number(o.delivery||0));
     }else if(e.row){
       /* a row of the book: the buyer's code, its book and units, what it owes, the Desk's figure */
@@ -4531,14 +4537,17 @@ export const OWNER_JS = `
   var ordAsk={}, ordBusy={}, ordNote={};
   function ordRowRedraw(e){
     var old=document.querySelector('#makerOrderList .ordcard > [data-order="'+e.id+'"]'); old=old&&old.parentNode;
-    if(old&&old.parentNode){ var n=orderRow(e); old.parentNode.replaceChild(n,old); sweep(); var f=n.querySelector('[data-act="order.move-yes"]:not([disabled])'); if(f&&f.focus) f.focus(); }
+    if(old&&old.parentNode){ var had=old.contains(document.activeElement), n=orderRow(e); old.parentNode.replaceChild(n,old); sweep();
+      /* 28 Oct 2026: Yes while it asks, else the row's own move or the row, so focus is never dropped to the page after Not now or an answer */
+      var f=n.querySelector('[data-act="order.move-yes"]:not([disabled])')||(had?n.querySelector('[data-act="order.move"]:not([hidden])')||n.querySelector('.ordrow'):null); if(f&&f.focus) f.focus(); }
   }
   /* what each move asks, in the words the order card and Needs you use */
   function ordAskWords(o,main){
     var who=codeByUser(o.u), pp=ordPays(o)[0];
+    /* 28 Oct 2026: a part handed over asks for what is left */
     if(main==='Withdraw'){ var f=(o.price&&o.price.offer)||{}; return 'Take back your offer of '+rm((+f.total||0)+(+f.delivery||0))+' to '+who+'?'; }
     if(main==='Ready') return 'Mark '+who+"'s order ready to deliver?";
-    if(main==='Handed') return 'Hand over '+units(o.qty)+' to '+who+'?';
+    if(main==='Handed'){ var left=+((+o.qty||0)-(+o.moved||0)).toFixed(3); return (left<(+o.qty||0)-0.0004?'Hand over the last '+units(left):'Hand over '+units(o.qty))+' to '+who+'?'; }
     if(main==='Received') return 'Confirm '+rm(pp?pp.amount:0)+' received from '+who+'?';
     return '';
   }
@@ -4547,11 +4556,14 @@ export const OWNER_JS = `
     if(!o){ openOrder(e.id); return; }
     if(main==='Message'){ ordFolds[o.id+'|answer']=true; openOrder(e.id); return; }
     /* Agree reads its figures on the card; a collection is made ready at one of his points, chosen on the card's Sheet; two payments are read on the card */
-    if(main==='Agree'||(main==='Ready'&&o.mode!=='deliver')||(main==='Received'&&ordPays(o).length!==1)){ openOrder(e.id); return; }
+    /* 28 Oct 2026 (Fable): a claim past what is owed is Already recorded, which books nothing; it is answered on the card, its Sheet saying so beside Not found */
+    if(main==='Agree'||(main==='Ready'&&o.mode!=='deliver')||(main==='Received'&&(ordPays(o).length!==1||payOnBook(o,ordPays(o)[0])))){ openOrder(e.id); return; }
     ordAsk[e.id]=main; ordRowRedraw(e);
   }
   function ordMoveSend(e,main){
     var o=e.order; if(!o||!main||ordBusy[e.id]) return;
+    /* Fable's re-check, 28 Oct 2026: a read since the ask may have left the claim past what is owed; that is the card's to answer, never the row's */
+    if(main==='Received'&&(ordPays(o).length!==1||payOnBook(o,ordPays(o)[0]))){ delete ordAsk[e.id]; openOrder(e.id); return; }
     delete ordAsk[e.id]; ordBusy[e.id]=main; ordRowRedraw(e);
     var done=main==='Withdraw'?makerTap(o,'withdraw',{},'Offer withdrawn; the order stands as they placed it.')
       :main==='Ready'?makerMove(o,{status:'ready',mode:'deliver'},'Order marked ready to deliver.')
@@ -4559,7 +4571,8 @@ export const OWNER_JS = `
       :main==='Received'?orderReceived(o,ordPays(o)[0]):Promise.resolve(false);
     Promise.resolve(done).then(function(ok){
       delete ordBusy[e.id];
-      ordNote[e.id]=ok===false?(makerSaid[o.id]||'Not sent. Try again.'):ok===undefined&&main!=='Ready'?'Busy, try again.':({Withdraw:'Offer withdrawn.',Ready:'Marked ready to deliver.',Handed:'Handover sent to the Desk.',Received:'Sent to the Desk.'})[main];
+      /* 28 Oct 2026: Ready's answer is read as every move's: a refusal or a busy page was said as "Marked ready" */
+      ordNote[e.id]=ok===false?(makerSaid[o.id]||'Not sent. Try again.'):ok===undefined?'Busy, try again.':({Withdraw:'Offer withdrawn.',Ready:'Marked ready to deliver.',Handed:'Handover sent to the Desk.',Received:'Sent to the Desk.'})[main];
       var now=ordEntries[e.id]; if(now&&document.querySelector('#makerOrderList [data-order="'+e.id+'"]')) ordRowRedraw(now);
     });
   }
@@ -4571,10 +4584,10 @@ export const OWNER_JS = `
   function ordLead(st,list){
     var n=list.length, plural=function(k,w){ return k+' '+w+(k===1?'':'s'); }, sum=function(a,f){ return a.reduce(function(s,e){ return s+(f(e)||0); },0); };
     var due=function(e){ var o=e.order, r=e.row, g=e.trip||e.day; return o?(+o.total||0)+(+o.delivery||0):r?(+r.total||0)+(+r.delivery||0):g?+g.owed||0:0; };
-    var owed=function(e){ var o=e.order, r=e.row, g=e.trip||e.day; return o?Math.max(0,(+o.total||0)+(+o.delivery||0)-(+o.paid||0)):r?+r.owed||0:g?+g.owed||0:0; };
+    var owed=function(e){ var o=e.order, r=e.row, g=e.trip||e.day; return o?Math.max(0,ordDue(o)):r?+r.owed||0:g?+g.owed||0:0; };
     if(st==='placed'){
       var held=list.filter(function(e){ return e.order&&makerAccHeld(e.order)&&e.order.price.state==='offered'; }), agree=list.filter(function(e){ return held.indexOf(e)<0; });
-      return [agree.length?rmShort(sum(agree,function(e){ return e.order?+e.order.total||0:0; }))+' waits on your Agree, across '+plural(agree.length,'order')+'.':'',
+      return [agree.length?rmShort(sum(agree,due))+' waits on your Agree, across '+plural(agree.length,'order')+'.':'',
         held.length?rmShort(sum(held,function(e){ var f=e.order.price.offer||{}; return (+f.total||0)+(+f.delivery||0); }))+' is offered and waits on their yes.':''].filter(Boolean).join(' ');
     }
     if(st==='done') return rmShort(sum(list,due))+' settled on '+plural(n,'done order')+' shown, the newest first.';
@@ -4819,7 +4832,7 @@ export const OWNER_JS = `
      the goods go on an order paid first, and part paid it says how much of what, "RM 40/70". On his page only. */
   function ordSteps(order){
     var d=order.mode==='deliver', cur=order.status==='done'?4:movedAll(order)?3:(order.status==='ready'||(+order.moved||0)>0)?2:order.status==='acknowledged'?1:0;
-    var due=(+order.total||0)+(+order.delivery||0), paid=+order.paid||0, agreed=['acknowledged','ready','done'].indexOf(order.status)>=0;
+    var due=(+order.total||0)+(+order.delivery||0), paid=ordPaidAll(order), agreed=['acknowledged','ready','done'].indexOf(order.status)>=0;
     var settled=agreed&&due>0&&paid>=due-0.004, pays=(order.payments||[]).filter(function(x){ return x&&(!x.claim||x.claim==='received')&&x.at; });
     var goods=[['placed','Placed',order.at],['confirmed','Agreed',firstAt(order,'acknowledged')],['ready','Ready',firstAt(order,'ready')],[d?'delivered':'collected',d?'Delivered':'Collected','']];
     var ol=el('ol','salt-steps salt-steps--marks ordsteps'); ol.setAttribute('aria-label','Where the goods are');
@@ -5100,7 +5113,7 @@ export const OWNER_JS = `
     /* 20 Oct 2026 (canvas V21, V23, V24, V27, V28): THE BILL, headed so: Goods (at the list price while placed), Delivery cost, the Total they
        owe (goods and delivery, the engine's txOwed), then what is paid and what is owed or settled; every figure in one right column */
     card.appendChild(el('h4','salt-eyebrow salt-eyebrow--copper obill','Bill'));
-    var L=el('div','ordmoney salt-ledger salt-ledger--plain'), paid=+order.paid||0, owed=Math.max(0,Number(order.total||0)+Number(order.delivery||0)-paid);
+    var L=el('div','ordmoney salt-ledger salt-ledger--plain'), paid=+order.paid||0, owed=Math.max(0,ordDue(order));
     var gl=ordLine('Goods',rm(order.total),agreed&&typeof order.asked==='number'&&Math.abs(order.asked-(+order.total||0))>0.004?'Set when you agreed it. They placed it at '+rm(order.asked):'');
     var gsub=el('span','salt-ledger__sub ocost'); gsub.setAttribute('data-cost',order.id); gl.querySelector('.salt-ledger__label').appendChild(gsub); billCost(order,gsub);
     L.appendChild(gl);
@@ -5118,6 +5131,8 @@ export const OWNER_JS = `
       r.setAttribute('data-pay',''); L.appendChild(r);
     });
     else if(agreed||paid>0) L.appendChild(ordLine('Paid',rm(paid)));
+    /* 28 Oct 2026: their credit his Accept spent is paid too, on its own line, so Paid and Credit add up to what is settled */
+    if(+order.credit>0.004){ var cr=ordLine('Credit',rm(+order.credit),'Their refunds, spent at your Agree'); cr.setAttribute('data-credit',''); L.appendChild(cr); }
     if(+order.claimed>0) L.appendChild(ordLine('Says sent',rm(order.claimed),'Waiting for your Received'));
     if(agreed&&owed>0.004){ var due=ordLine('Owed',rm(owed),'','odue'); due.classList.add('salt-ledger__row--due'); L.appendChild(due); }
     else if(agreed||order.status==='done') L.appendChild(ordLine('Settled',rm(0),'','osettled'));
@@ -7424,7 +7439,7 @@ export const OWNER_JS = `
       if(o.test&&!TESTING) return;
       if(orderPartsOf(o)==='orders.ready') ready++;
       if(['acknowledged','ready','done'].indexOf(o.status)<0||o.writtenOff) return;
-      var comes=(+o.total||0)+(+o.delivery||0), left=comes-(+o.paid||0);
+      var comes=(+o.total||0)+(+o.delivery||0), left=ordDue(o);
       due+=comes; if(left>0.004) owe+=left;
     });
     var paid=Math.max(0,due-owe), fill=due>0.004?Math.round(paid/due*100):0;

@@ -58,7 +58,7 @@ export async function run({ ok }) {
       return r;
     };
     const inputs = {
-      overlay: [`window.__r=BASE_SALES.filter(function(s){return (s.total-(+s.cash||0))>1&&!s.cancelled&&(+s.deliveredQty||0)>0;}).sort(function(a,b){return (b.total-(+b.cash||0))-(a.total-(+a.cash||0));})[0];window.__was=window.__r.cash;window.__r.cash=window.__r.total;applyOverlay()`,
+      overlay: [`window.__r=BASE_SALES.filter(function(s){return (s.total-(+s.cash||0)-(+s.settledRM||0))>1&&!s.cancelled&&!s.defaulted&&(+s.deliveredQty||0)>0;}).sort(function(a,b){return (b.total-(+b.cash||0)-(+b.settledRM||0))-(a.total-(+a.cash||0)-(+a.settledRM||0));})[0];window.__was=window.__r.cash;window.__r.cash=window.__r.total-(+window.__r.settledRM||0);applyOverlay()`,
         `window.__r.cash=window.__was;applyOverlay()`],
       order: [`window.__ko=ORD_OPEN;ORD_OPEN=[{id:'zt9',status:'placed',total:100,delivery:0,paid:0,at:new Date().toISOString(),code:'ZT9-TST'}]`, `ORD_OPEN=window.__ko`],
       date: [`window.__t0=TODAY.getTime();TODAY.setTime(window.__t0+400*864e5)`, `TODAY.setTime(window.__t0)`],

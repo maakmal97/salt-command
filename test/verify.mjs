@@ -21689,11 +21689,11 @@ await (async () => {
   ok(st.some((x) => /^settled paid 20 Sep 2026$/.test(x)) && st.some((x) => /^paid in full paid 07 Aug 2026 /.test(x)) && st.some((x) => /^RM 60\.00 due$/.test(x))
     && !dt.some((x) => /paid/.test(x)), "every fully paid row says when it was paid under its state word, the same day too, and the date cell carries the order's date alone (C4): " + JSON.stringify([st, dt]));
   /* C5: the live footer's every figure carries RM, as its lines do; an issue's footer is as it was sent */
-  const figs = (h) => [...h.slice(h.indexOf('<div class="tot">')).matchAll(/<div class="tr[^"]*"><span>[\s\S]*?<\/span><span>([^<]*)<\/span><\/div>/g)].map((m) => m[1]);
+  const figs = (h) => [...h.slice(h.indexOf('<div class="tot')).matchAll(/<div class="tr[^"]*"><span[^>]*>(?:(?!<\/div>)[\s\S])*?<\/span><span[^>]*>([^<]*)<\/span><\/div>/g)].map((m) => m[1]);   /* 28 Oct 2026: the live rows carry the settings classes */
   ok(figs(live).length >= 4 && figs(live).every((f) => /^RM [\d,]+\.\d\d$|^nil$/.test(f)) && figs(issue).some((f) => /^[\d,]+\.\d\d$/.test(f)),
     "the live footer's figures carry RM, as its lines do, and an issue's are as they were sent (C5): " + JSON.stringify([figs(live), figs(issue)]));
   /* C6 and C8: the live document describes itself as live, never by an issue date or the desk's approving */
-  ok(/as at the time shown above\./.test(text(live)) && !/issue date/.test(text(live)) && /updated whenever your account changes/.test(text(live)) && !/approved/.test(text(live))
+  ok(/from our records at the time shown/.test(text(live)) && !/issue date/.test(text(live)) && /Live statement as at/.test(text(live)) && !/approved/.test(text(live))   /* 28 Oct 2026: one sentence each, his word */
     && /as at the issue date\./.test(text(issue)), "the live document is as at the time it shows and changes with the account, and an issue keeps its issue date (C6, C8)");
   /* C7: units on the live document, the workings included, one alone and nought plural; an issue keeps its words */
   const bad = (h) => [...text(h).matchAll(/(?<![\d.,])(\d+(?:\.\d+)?) unit(?!s)/g)].filter((m) => !(+m[1] > 0 && +m[1] <= 1)).map((m) => m[0]);
@@ -50196,6 +50196,11 @@ await (async () => {
 section("25 Oct 2026: Salt Admin's Orders, a row's move asks once and sends what the order card sends");
 await (async () => {
   await (await import("./admin-orders-moves.mjs")).run({ ok, pageWork });
+})();
+
+section("28 Oct 2026: Salt Admin's Orders review, credit read as paid, held cash, refused Ready, the lead and the asks");
+await (async () => {
+  await (await import("./admin-orders-review.mjs")).run({ ok, pageWork });
 })();
 
 section("27 Oct 2026: cash past what an order owes is taken, the excess a refund");

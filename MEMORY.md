@@ -154,6 +154,14 @@
 - **Version 2, S4d, live as v1288** (`c68f538e`, 27 Oct 2026, his go typed the same day; Cloud commit `40530956484`: its first Deploy failed on a Cloudflare asset-upload error (code 10013), the failed job re-run green, chain and three suite parts green, CI `40530957125` green; the load line said "the Book agrees with git over 483 rows in 13 collections and 23 documents", the readcheck "mirror v1288, Book v1288, readers on book ... agree over 344 sales and purchases", live build `418cdc33ab5dd2e6`). The flag is D1 `book_tap` (migrations/0019, applied alone to the live D1 before the deploy and read back as `off`), **shipped `off`; turning it on is his call**. With it on, `decideDraft`, decide-many and `applyPre` book first (`src/book-tap.js` `bookTap`) and write `row.rids` and `row.booked_seq` in the approval's own D1 batch; a law refusal is a 409; a Book behind, silent or stuck approves as before; a rejection voids first (flag on only); the minute `bookNet` books approved drafts with no booking and voids entries of rejected ones; the readcheck names an entry under a rejected or pending draft. Fable reviewed the diff and re-checked (all applied): the fold treats a booked row's rid as a replay only when the row under it is the same row, otherwise it books afresh and keeps `booked_seq` (the drafter's cost stands); an amendment is never judged a replay by a rid. Not built: `liveTell("booked")` (LIVE_KINDS has no reader until S5). Said, not fixed (docs/DESK.md): an `applyPre` refusal shows no reason on its order card; decide-many at 50 adds about 150 subrequests (unverified). Way back, no deploy: `UPDATE book_tap SET mode='off' WHERE one=1`. Turning it on: tap one real row, read the next chain run's `tap: N closed` line, the readcheck and the tap check. Local note: the S1b section stays red on this laptop only.
 - Known gaps (docs/DESK.md has them): `tools/update.mjs` does not load the Book, so after a hand fold the Book trails and a tap falls back; a load fails closed (503, nothing loaded) when entries are open and D1 or the Book cannot say which the fold took; the S1b section ("the order-stage entries live in engine/stages") is red in a local run on this laptop (also on pristine master) and green in CI.
 
+## Counter statement in the settings language
+- v1297 (28 Oct 2026), his word "apply the skill" and his yes to the plan (salt-ds first, then the page, the month select and This device's rows in one version): salt-ds 1.21.0 (#33)
+  adds `salt-lines--list` (the statement's lines on glass, 56px rows, the date in the display face); `tools/make_statements.mjs` carries it on the live document only, with the footer as
+  `salt-settings` rows (`trow`: orders, a row of marks, the cancelled note, Delivery, Paid, Balance; an issue keeps its old footer); the month filter is a Month row holding a select
+  (`data-mf-select`, All first); Sign out is the first list's last row in ember (`#lock`, its label `#lockT`, "Sign out this phone"), and Sign in another device and Save a passkey are
+  rows of a list of their own (`devQuiet`, `devSet`). Gas was named Aroma for a day (v1289) and is Gas again (v1293); its mark is a starburst lettered POP. QR Command took the recipe through propagate
+  on its branch `claude/statement-lines` (not shipped by this session).
+
 ## Disabled automation
 - `Salt fold (manual backup)` = `trig_01UrnjQMWA3f6GXN5R6Dzi4S`, disabled.
 
@@ -194,6 +202,11 @@
   new reads `/all/maker/customer-of|reward-of/<code>` (Fable reviewed: one low finding stated, one withdrawn). Full suite on the merged tree: 10,638 passed,
   7 red (the S1 fold replay). Not yet opened by him.
 
+## Salt Admin Orders review (v1296, 28 Oct 2026)
+- His word: Haiku, Sonnet, Opus and Fable on the Orders page. Salt Admin now reads `order.credit` as paid (`ordDue`/`ordPaidAll` in `stmt/owner.js`, the site's `dueOf`); a claim
+  past what is owed (payOnBook) is answered on the card only, never the row's one tap (Fable). Section "28 Oct 2026: Salt Admin's Orders review", 13 mutations. Open for him: a
+  transfer above what credit leaves owed is still filed Already recorded (books nothing); taking it as money with the excess a refund is a Counter change, unasked.
+
 ## Salt Admin Orders redesign
 - Live as v1256 (`c4d677a6`, 26 Oct 2026; Cloud commit `40228185174`: chain and three suite parts green, CI `40228185236` green, live /rev `bc69bd8338333eba`), from his
   canvas https://claude.ai/artifact/VNtoVjEo111nKYDbBzc487 and `docs/plan-admin-orders.html` (his yes to Asks A to M): the stages Placed, Agreed, Ready, Out or paid, Done,
@@ -228,6 +241,7 @@
   the Counter's sealed `credit`/`creditRows` (FIX_VERSION 15), Salt Admin's Less RM x credit. Fable reviewed P2 and P3 (two medium, three low applied) and re-checked
   (one more applied: a credit the fold cut short is lowered on the order). CZ4-MK holds RM 25 of credit, spent at his next Accept for them. Not yet opened by him.
   Known: S1b (`test/engine-stages.mjs`) is red locally on Windows on master too (227 of 392, from v1272's cash over), green in CI.
+- v1292 (`22769095`, 28 Oct 2026; Cloud commit `40540116210`: chain green, the phone serving it; CI `40540116044` green), his word "I do not owe them salt due to the extra prepayment": `txDeferUnits` stops the units paid for at the units ordered, so s296's RM 25 past its order no longer reads as 0.27 unit owed out and committed on the shelf. Section "28 Oct 2026: money past an order". The Desk wave 1 overlay probe had paid s074 (settled in kind) a second time and leaned on the old reading; it now pays a row that owes.
 
 ## Cash past what an order owes
 - Live as v1272 (`b266f659`, 27 Oct 2026; CI `40465237223` and Cloud commit `40465237241`: chain and three suite parts green, build `9eaf7b35dbf05643`), his word: the order card's Cash received takes more than goods plus delivery (his choice of that measure and
