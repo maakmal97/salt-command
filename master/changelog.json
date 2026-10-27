@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1284",
+  "d": "27 Oct 2026",
+  "t": "A REFUND BECOMES THEIR CREDIT; A REFUND IS NEVER THE BOOK'S MONEY",
+  "n": [
+   "<b>HIS WORD AND ANSWERS OF 27 OCT 2026</b> (docs/plan-refund-credit.html, draft 3). Every open refund of a customer's, overpays and cancelled orders alike, is their credit. His Accept spends it on their next order, up to the goods and the delivery together, booked on the order's pending row as cash already paid with `credit` beside it; the order keeps its true price, the Floor and their % untouched. An order for a friend spends none. Paid in advance is judged on what is left.",
+   "<b>THE FOLD CLOSES WHAT IS SPENT</b>, oldest refund first: one used whole takes paidOn and setOff naming the new row; one used in part is split, both parts keeping the rid so nothing is raised twice. A replay changes nothing. Credit no open refund covers comes off the row's cash and the order owes it again. A second Accept before the fold finds the first on its way and spends none; a rejected one releases it.",
+   "<b>A REFUND IS NEVER THE BOOK'S MONEY.</b> Money received by book, the product summary, the P&L and the Collected cells read a row's cash less the refunds raised on it, so s296 reads RM 455 on salt, not RM 480. Cash flow is the till: raw cash in, refunds out in refPaid, a set-off named, the s190 and s191 precedent.",
+   "<b>THE COUNTER AND SALT ADMIN.</b> Their credit is sealed beside the price list, outside its stamp. Prices keeps its prices and says it once at the top; the basket, the Place sheet and the order card take it off, never under RM 0. Salt Admin's Accept card says Less RM 25 credit; an open refund reads as their credit, spent at the next Accept. CZ4-MK holds RM 25 of credit from s296."
+  ]
+ },
+ {
   "v": "v1283",
   "d": "27 Oct 2026",
   "t": "CANCELLATION OF A PENDING RICE ORDER FOR CZ5-TM",
