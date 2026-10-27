@@ -342,10 +342,18 @@ export function makerTradeReading(body, book) {
   if (!["sale", "purchase"].includes(body.direction)) return { error: "Choose sale or purchase." };
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
   if (!active(body.product, book)) return { error: "Choose an active product." };
-  if (!(figure(body.qty) && body.qty > 0) || !figure(body.total)) return { error: "Send units and a goods total." };
+  /* 27 Oct 2026, his word: the sale form fills their price once who and the units are chosen, so a sale's reading may come without a total and is then their price alone */
+  const priceOnly = body.direction === "sale" && body.total === undefined;
+  if (!(figure(body.qty) && body.qty > 0) || (!priceOnly && !figure(body.total))) return { error: "Send units and a goods total." };
   if (body.freight !== undefined && body.freight !== null && !figure(body.freight)) return { error: "Send a freight figure." };
   if (body.date !== undefined && body.date !== null && body.date !== "" && !date(body.date)) return { error: "Send a real date in YYYY-MM-DD." };
-  const sale = body.direction === "sale", qty = body.qty, goods = POSITION_ENGINE.txGoods({ total: body.total });
+  const sale = body.direction === "sale", qty = body.qty;
+  /* their price at this size: the engine's cardAt over the pricing snapshot, read and never worked out here (rule 5); a partner's is the Floor */
+  const who = sale && typeof body.party === "string" && code(body.party, book.state.roster || []) ? POSITION_ENGINE.ownerCode(body.party) : null;
+  const theirs = who ? cardAt(book.pricing, who, body.product, qty) : null;
+  const card = theirs && theirs.card != null && Number.isFinite(+theirs.card) ? { rm: +theirs.card, note: theirs.cardNote } : null;
+  if (priceOnly) return { direction: "sale", product: body.product, qty, card };
+  const goods = POSITION_ENGINE.txGoods({ total: body.total });
   /* a sale is costed at the latest purchase on or before its date, as the drafter does (drafter.js, cogsFor with pay.date) */
   const c = cogsFor(book, body.product, body.date || null);
   const rate = c.cost > 0 ? +c.cost.toFixed(2) : null;
@@ -356,7 +364,7 @@ export function makerTradeReading(body, book) {
     return { direction: "purchase", product: body.product, qty, goods, cogs,
       purchase: { perUnit, versusCogs: rate == null ? null : +(perUnit - rate).toFixed(2) } };
   }
-  const reading = { direction: "sale", product: body.product, qty, goods, price, cogs, margin: null, floor: null, history: null };
+  const reading = { direction: "sale", product: body.product, qty, goods, price, cogs, margin: null, floor: null, history: null, card };
   if (rate != null) {
     /* struck on the unrounded rate, as the drafter's row cost and flag 4 are; only the display is rounded */
     reading.margin = { rm: +(goods - Math.round(c.cost * qty * 100) / 100).toFixed(2),
@@ -729,6 +737,10 @@ export function makerInputCatalog(book, hush = {}, pending = [], registrations =
           product: row.product || "salt", date: row.date || null, qty: row.qty, total: row.total,
           cash: sale ? POSITION_ENGINE.txPaid(row) : POSITION_ENGINE.poCash(row),
           movedUnits, open,
+          /* 27 Oct 2026: what the sale form shows beside them, so a row on the Ledger opens that form filled in */
+          [sale ? "delivery" : "freight"]: +(+(sale ? row.delivery : row.freight) || 0).toFixed(2),
+          handover: row.handover || null, stream: row.stream || null, assoc: row.assoc || null, downstream: row.downstream || null,
+          ...(row.trip ? { trip: String(row.trip) } : {}),
           cancellation: open && !row.defaulted && movedUnits <= 0.009
             ? { pay: after.pay, deliv: after.deliv, order: after.order, refundRM: refund ? refund.amount : null } : null };
       })),
