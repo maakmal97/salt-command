@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1280",
+  "d": "27 Oct 2026",
+  "t": "TWO PENDING SALES TO CZ5-TM, RICE AND SALT",
+  "n": [
+   "<b>TWO PENDING SALES FOLDED.</b> Both are to CZ5-TM, dated 27 Oct 2026 and preapproved by Counter Admin: 5 units of rice for RM35 and 1 unit of salt for RM105. Each was ordered on the statements site, with nothing paid and nothing handed over. The rice order has no rice history for the party, so the drafter had no rate of theirs to compare it against.",
+   "<b>INVENTORY UNCHANGED.</b> Both rows are pending, so no stock is drawn and no revenue is booked. Salt stock stays at 0.5 units, below the 1 unit ordered, so collection will need stock first. No lot landed, so the cost basis does not move."
+  ]
+ },
+ {
   "v": "v1279",
   "d": "27 Oct 2026",
   "t": "TWO STOCK COUNTS: OIL TO 0 UNIT, SALT TO 0.5 UNIT",
