@@ -2,8 +2,8 @@
  {
   "name": "the backup cron falls through to the minute's work",
   "file": "src/worker.js",
-  "find": "          console.log(\"backup: \" + JSON.stringify(b.ok ? { ok: true, key: b.key, bytes: b.bytes, pruned: b.pruned } : b));\n          return;\n        }",
-  "replace": "          console.log(\"backup: \" + JSON.stringify(b.ok ? { ok: true, key: b.key, bytes: b.bytes, pruned: b.pruned } : b));\n        }"
+  "find": "          console.log(\"book export: \" + JSON.stringify(be.ok ? { ok: true, key: be.key, bytes: be.bytes, entries: be.entries, rev: be.rev, pruned: be.pruned } : be));\n          return;\n        }",
+  "replace": "          console.log(\"book export: \" + JSON.stringify(be.ok ? { ok: true, key: be.key, bytes: be.bytes, entries: be.entries, rev: be.rev, pruned: be.pruned } : be));\n        }"
  },
  {
   "name": "the backup cron is never matched",

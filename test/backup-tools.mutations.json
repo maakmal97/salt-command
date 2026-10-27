@@ -38,8 +38,8 @@
  {
   "name": "a version 2 object is opened",
   "file": "tools/backup-open.mjs",
-  "find": " || envelope.v !== 1)",
-  "replace": ")"
+  "find": "envelope.app !== \"salt-backup\" || envelope.v !== 1)",
+  "replace": "envelope.app !== \"salt-backup\")"
  },
  {
   "name": "a backup that lacks a table is accepted",

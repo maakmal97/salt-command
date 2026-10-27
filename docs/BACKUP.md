@@ -55,3 +55,7 @@ live database is a decision of his, never a routine. The suite runs the same dri
 A new key (`node tools/backup-key.mjs --force`) leaves every backup sealed to the old one unreadable, so it is refused unasked and the
 old file is kept aside. If the file and the passphrase are both lost, the backups are noise; the D1 decisions themselves are
 unaffected.
+
+## The Book's own export (S5a, 28 Oct 2026)
+
+The same job, the same bucket, the same public key and private half. After the D1 dump the Worker asks the Book for its export (the base, the whole event log of tapped entries, the revision, the last 30 loads) and files it sealed as `bookexport/<date>.json` (the newest 30 nights stay), `app: "salt-book-export"`. Open it with `node tools/backup-open.mjs <file>`; `--out` writes the plaintext. Its night is KV `bookexport:last`, and the morning digest says when it did not run. It carries codes and ledger rows, never a name. It is a copy for a rebuild after S5, not a restore script: restoring the Book from it is a load of its base and a replay of its open entries, written when S5f is.

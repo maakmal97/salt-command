@@ -33,6 +33,15 @@ export async function openBackup(privKey, envelope) {
   return plain;
 }
 
+/* S5a: the Book's own nightly export (src/backup.js runBookExport), sealed to the same key: {v, at, book: {v, stamped, at, rev, base, entries, loads}} */
+export async function openBookExport(privKey, envelope) {
+  if (!envelope || envelope.app !== "salt-book-export" || envelope.v !== 1) throw new Error("this is not a salt-book-export v1 object");
+  const plain = JSON.parse(new TextDecoder().decode(await backupOpen(privKey, envelope)));
+  const b = plain && plain.book;
+  if (!plain || plain.v !== 1 || !b || !b.base || !b.base.rows || !b.base.state || !Array.isArray(b.entries)) throw new Error("the Book export opened but holds no base or no event log");
+  return plain;
+}
+
 const lit = (v) => {
   if (v === null || v === undefined) return "NULL";
   if (typeof v === "number") { if (!Number.isFinite(v)) throw new Error("a non-finite number cannot be restored"); return String(v); }
@@ -64,7 +73,16 @@ async function main() {
   const pass = process.env.SALT_VAULT_PASS || await promptHidden("vault passphrase (hidden): ");
   if (!pass) { console.error("No terminal to ask, so SET SALT_VAULT_PASS first. It is never stored or printed."); process.exit(2); }
   const key = JSON.parse(readFileSync(keyFile, "utf8"));
-  const dump = await openBackup(await slipKeyOpen(pass, key.vault), JSON.parse(readFileSync(file, "utf8")));
+  const envelope = JSON.parse(readFileSync(file, "utf8"));
+  if (envelope && envelope.app === "salt-book-export") {
+    const ex = await openBookExport(await slipKeyOpen(pass, key.vault), envelope), b = ex.book;
+    console.log("OPENED: the Book export of " + ex.at + ", version " + b.v + ", revision " + b.rev + ".");
+    for (const [c, rows] of Object.entries(b.base.rows)) console.log("  " + c.padEnd(24) + String(rows.length).padStart(7) + " row(s)");
+    console.log("  entries (the event log)".padEnd(26) + String(b.entries.length).padStart(5) + ", open " + b.entries.filter((e) => !e.folded_at && !e.voided_at).length + ", folded " + b.entries.filter((e) => e.folded_at).length + ", voided " + b.entries.filter((e) => e.voided_at).length);
+    if (outFile) { writeFileSync(outFile, JSON.stringify(ex, null, 1), { flag: "wx" }); console.log("WROTE (plaintext): " + outFile); }
+    return;
+  }
+  const dump = await openBackup(await slipKeyOpen(pass, key.vault), envelope);
   console.log("OPENED: the backup of " + dump.at + ".");
   for (const t of BACKUP_TABLES) console.log("  " + t.padEnd(24) + String(dump.tables[t].length).padStart(7) + " row(s)");
   if (outFile) { writeFileSync(outFile, JSON.stringify(dump, null, 1), { flag: "wx" }); console.log("WROTE (plaintext): " + outFile); }

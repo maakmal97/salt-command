@@ -207,6 +207,10 @@ export function tapDiffer(pre, post, folded, pure) {
   return differ;
 }
 
+/* S5a: a strict load that would change the view, and a dry run's own unwinding: thrown inside a transaction so it rolls back, caught by compact */
+class Refused extends Error {}
+class DryRun extends Error { constructor(r) { super("dry run"); this.r = r; } }
+
 export class Book {
   constructor(state, env) {
     this.state = state;
@@ -227,6 +231,10 @@ export class Book {
        held rows before S3 gains the column; its rows read NULL until the next load sets them. */
     try { sql.exec("ALTER TABLE rows ADD COLUMN seq INTEGER"); } catch (e) { if (!/duplicate column/i.test(String((e && e.message) || e))) throw e; }
     sql.exec("CREATE TABLE IF NOT EXISTS snap (one INTEGER PRIMARY KEY CHECK (one = 1), v TEXT NOT NULL, stamped TEXT, at TEXT NOT NULL)");
+    /* S5a: THE BOOK'S REVISION. A monotonic count that moves with anything the Book holds that a reader could see differently: a load that changed a row or a document or closed an
+       entry, a tap that booked an entry, a void that took one back, a compaction. Unlike the version (a git version, which stops moving once approvals are not versions) it moves with
+       money. Nothing reads it yet. A Book that held a snapshot before S5a gains the column at 0. */
+    try { sql.exec("ALTER TABLE snap ADD COLUMN rev INTEGER NOT NULL DEFAULT 0"); } catch (e) { if (!/duplicate column/i.test(String((e && e.message) || e))) throw e; }
     /* S4a: the entries a tap booked. The view replays the unfolded, unvoided ones in seq order; a load marks the ones it folded. A voided one is kept, not deleted. */
     sql.exec("CREATE TABLE IF NOT EXISTS booked (seq INTEGER PRIMARY KEY AUTOINCREMENT, draft_id TEXT NOT NULL, item TEXT NOT NULL, rids TEXT NOT NULL, day TEXT NOT NULL, at TEXT NOT NULL, folded_at TEXT, voided_at TEXT)");
     sql.exec("CREATE INDEX IF NOT EXISTS booked_draft ON booked (draft_id)");
@@ -245,7 +253,7 @@ export class Book {
         if (a !== null && b !== null && b < a) return { ok: false, stale: true, error: "the Book is at " + was.v + " and refuses a load of " + p.snap.v };
       }
       /* S4a: the view as it stood before this load, for the tap check below (only while an entry is open) */
-      const evs = this.events(), pre = evs.length ? this.viewOf(evs) : null;
+      const evs = this.events(), pre = opts.pre || (evs.length ? this.viewOf(evs) : null);   /* S5a: compaction hands in the view it already built */
       const n = { added: 0, revised: 0, gone: 0, returned: 0 };
       const held = new Map();
       for (const r of sql.exec("SELECT coll, key, h, gone_at, seq FROM rows").toArray()) held.set(r.coll + "\u0000" + r.key, r);
@@ -267,6 +275,7 @@ export class Book {
       }
       /* a key the book no longer carries leaves with it (PRICING, and the derived documents, are the load's own, and stay when a load omits them) */
       for (const r of sql.exec("SELECT k FROM state").toArray()) if (!keep.has(r.k) && r.k !== "PRICING" && !DERIVED.includes(r.k)) { sql.exec("DELETE FROM state WHERE k = ?", r.k); n.gone++; }
+      const prevRev = (sql.exec("SELECT rev FROM snap WHERE one = 1").toArray()[0] || {}).rev || 0;
       if (p.snap) sql.exec("INSERT OR REPLACE INTO snap (one, v, stamped, at) VALUES (1, ?, ?, ?)", p.snap.v, p.snap.stamped, at);
       /* S4a: THE ENTRIES THIS LOAD FOLDED. One is folded when D1 says its draft is committed (`opts.folded`, ids the Worker checked) or when the new base holds every rid it minted;
          the rest stay open and are replayed on the new base. The view before and after is compared for the folded ones (tapDiffer). */
@@ -292,10 +301,17 @@ export class Book {
         tap = { folded: done.length, open: rest.length, stuck: post.stuck.map((s) => s.id), clash,
           differ: done.length ? tapDiffer(pre, post, done.map((e) => ({ rids: JSON.parse(e.rids) })), !!opts.pure && !rest.length) : [] };
       }
+      /* S5a: a strict load (compaction) is refused, and the whole transaction with it, when the view it would write is not the view that was read, or when it would lose a row */
+      if (opts.strict && (!tap || tap.differ.length || tap.stuck.length || tap.open || n.gone || !tap.folded))
+        throw new Refused("compaction refused: " + JSON.stringify(tap ? { differ: tap.differ, stuck: tap.stuck, open: tap.open, gone: n.gone, folded: tap.folded } : { entries: 0 }));
+      const moved = n.added + n.revised + n.gone + n.returned > 0 || !!(tap && tap.folded);
+      if (p.snap) sql.exec("UPDATE snap SET rev = ? WHERE one = 1", prevRev + (moved ? 1 : 0));
       const live = sql.exec("SELECT COUNT(*) AS c FROM rows WHERE gone_at IS NULL").toArray()[0].c;
       const docs = sql.exec("SELECT COUNT(*) AS c FROM state").toArray()[0].c;
       sql.exec("INSERT INTO loads (at, rev, digest, added, revised, gone, returned, rows) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", at, rev == null ? null : String(rev), p.digest, n.added, n.revised, n.gone, n.returned, live);
-      return { ok: true, at, rev: rev == null ? null : String(rev), digest: p.digest, rows: live, docs, ...n, ...(tap ? { tap } : {}) };
+      const out = { ok: true, at, rev: rev == null ? null : String(rev), bookRev: p.snap ? prevRev + (moved ? 1 : 0) : prevRev, digest: p.digest, rows: live, docs, ...n, ...(tap ? { tap } : {}) };
+      if (opts.dry) throw new DryRun(out);   /* S5a: a dry compaction is a load that unwinds, so nothing it did stays */
+      return out;
     });
   }
 
@@ -410,10 +426,10 @@ export class Book {
   }
   /* S3: the Book's version and the moment of its latest load, and nothing else (cheap; for a caller that holds a book already or needs only the bound) */
   snapshot() {
-    const snap = this.state.storage.sql.exec("SELECT v, stamped, at FROM snap WHERE one = 1").toArray()[0];
+    const snap = this.state.storage.sql.exec("SELECT v, stamped, at, rev FROM snap WHERE one = 1").toArray()[0];
     if (!snap) return null;
     const v = this.viewFor(snap);
-    return { ok: true, v: snap.v, stamped: snap.stamped, at: snap.at, booked: v ? v.view.booked : [], stuck: v ? v.view.stuck.map((s) => s.id) : [] };
+    return { ok: true, v: snap.v, stamped: snap.stamped, at: snap.at, rev: snap.rev || 0, booked: v ? v.view.booked : [], stuck: v ? v.view.stuck.map((s) => s.id) : [] };
   }
 
   /* ---- S4a: the booked entries ---- */
@@ -501,9 +517,53 @@ export class Book {
         book = next; planned.push({ it, rids: r.minted });
       }
       const at = this.clock();
+      sql.exec("UPDATE snap SET rev = rev + 1 WHERE one = 1");
       for (const x of planned) sql.exec("INSERT INTO booked (draft_id, item, rids, day, at) VALUES (?, ?, ?, ?, ?)", x.it.id, JSON.stringify(x.it), JSON.stringify(x.rids), day, at);
       const seqOf = (id) => sql.exec("SELECT seq FROM booked WHERE draft_id = ? AND folded_at IS NULL AND voided_at IS NULL", id).toArray()[0].seq;
       return { ok: true, booked: out.concat(planned.map((x) => ({ id: x.it.id, rids: x.rids, seq: seqOf(x.it.id) }))) };
+    });
+  }
+
+  /* S5a: EVERY ENTRY the Book ever booked, open, folded or voided, in booked order, with the item as staged: the event log a daily export replays. */
+  allEvents() { return this.state.storage.sql.exec("SELECT seq, draft_id, item, rids, day, at, folded_at, voided_at FROM booked ORDER BY seq").toArray().map((e) => ({ ...e, item: JSON.parse(e.item), rids: JSON.parse(e.rids) })); }
+
+  /* S5a: THE EXPORT: the base, the whole event log, the last loads and the revision, as one answer for the nightly sealed export (src/backup.js). Binding only, never a route. */
+  async exportAll() {
+    const sql = this.state.storage.sql, snap = sql.exec("SELECT v, stamped, at, rev FROM snap WHERE one = 1").toArray()[0];
+    if (!snap) return { ok: false, status: 503, error: "the Book holds no snapshot yet" };
+    return { ok: true, v: snap.v, stamped: snap.stamped, at: snap.at, rev: snap.rev || 0, base: JSON.parse(this.readText(true)),
+      entries: this.allEvents(), loads: sql.exec("SELECT seq, at, rev, digest, added, revised, gone, returned, rows FROM loads ORDER BY seq DESC LIMIT 30").toArray() };
+  }
+
+  /* S5a: COMPACTION. (A row with no rid is keyed by its content, so a replay that edits one in place would read as one row gone and one added and refuse for good: no entry kind does that today,
+     and the dry rehearsal on every fold is the alarm for the first one that does.) The Book's own view (the base with every open entry replayed) becomes the new base, by the SAME load path (prepare, load) as a git load, with every open entry marked
+     folded in that transaction. STRICT: the load's own tap check must find the view unchanged, no entry stuck, and no row lost, or the whole transaction is thrown away. `dry` prepares it,
+     reads the same checks off the plan and writes nothing: what the chain asks after every fold. Entries are kept (the event log), only closed. */
+  compact(dry) {
+    return this.state.blockConcurrencyWhile(async () => {
+      const sql = this.state.storage.sql, snap = sql.exec("SELECT v, stamped FROM snap WHERE one = 1").toArray()[0];
+      if (!snap) return { ok: false, status: 503, error: "the Book holds no snapshot yet" };
+      const evs = this.events();
+      if (!evs.length) return { ok: true, compacted: 0, open: 0, dry: !!dry };
+      const view = this.viewOf(evs);
+      if (view.stuck.length) return { ok: false, status: 409, error: "an entry is stuck, so the view is not whole", stuck: view.stuck.map((s) => s.id) };
+      const { PRICING, ...rest } = view.derived;
+      const p = await prepare(view.book, PRICING, { v: snap.v, stamped: snap.stamped, derived: rest });
+      const closed = evs.map((e) => e.draft_id), opts = { folded: closed, pure: true, strict: true, pre: view };
+      if (dry) {
+        /* the same plan, run as a load that unwinds inside its own transaction: nothing is written, and the strict checks decide */
+        try { this.load(p, "compact-dry", { ...opts, dry: true }); return { ok: false, status: 500, dry: true, error: "a dry compaction returned without unwinding" }; }   /* a load that returns here would be a real one */
+        catch (e) {
+          if (e instanceof DryRun) return { ok: true, dry: true, compactable: evs.length, closed, rows: e.r.rows, digest: e.r.digest, revised: e.r.revised, added: e.r.added };
+          if (e instanceof Refused) return { ok: false, status: 409, dry: true, error: e.message };
+          throw e;
+        }
+      }
+      try {
+        const r = this.load(p, "compact", opts);
+        /* `closed` is the draft ids this closed: the flip marks exactly those committed in D1 in the same step, or the readers count their money twice (the base holds the row and, with the entry closed, the draft is no longer excluded from "on its way"). A retry after a failure past the commit answers compacted 0 and open 0: that is success. */
+        return { ok: true, compacted: r.tap.folded, closed, bookRev: r.bookRev, digest: r.digest, rows: r.rows, revised: r.revised, added: r.added, readback: await this.readback(), bookmark: await this.mark() };
+      } catch (e) { if (e instanceof Refused) return { ok: false, status: 409, error: e.message }; throw e; }
     });
   }
 
@@ -515,6 +575,7 @@ export class Book {
       let n = 0;
       for (const id of ids) n += sql.exec("SELECT COUNT(*) AS c FROM booked WHERE draft_id = ? AND folded_at IS NULL AND voided_at IS NULL", id).toArray()[0].c;
       for (const id of ids) sql.exec("UPDATE booked SET voided_at = ? WHERE draft_id = ? AND folded_at IS NULL AND voided_at IS NULL", at, id);
+      if (n) sql.exec("UPDATE snap SET rev = rev + 1 WHERE one = 1");
       return { ok: true, voided: n };
     });
   }
@@ -571,8 +632,11 @@ export class Book {
     if (url.pathname === "/window" && request.method === "GET") return Response.json(await this.window());
     /* S3: the reads answer on the live Book alone; the recovery test's object is never read by a reader */
     /* S4a: the booked entries' verbs answer on the live Book alone, like the reads, and are never a route of the Worker */
-    if ((url.pathname === "/events" && request.method === "GET") || ((url.pathname === "/tap" || url.pathname === "/void") && request.method === "POST")) {
+    if ((url.pathname === "/events" && request.method === "GET") || ((url.pathname === "/tap" || url.pathname === "/void" || url.pathname === "/compact") && request.method === "POST") || (url.pathname === "/export" && request.method === "GET")) {
       if (this.isTest()) return Response.json({ ok: false, error: "not found" }, { status: 404 });
+      if (url.pathname === "/compact") { const r = await this.compact(url.searchParams.get("dry") === "1"); return Response.json(r, { status: r.status || (r.ok ? 200 : 409) }); }
+      if (url.pathname === "/export") { const r = await this.exportAll(); return Response.json(r, { status: r.status || (r.ok ? 200 : 503) }); }
+      if (url.pathname === "/events" && url.searchParams.get("all") === "1") { const s = this.state.storage.sql.exec("SELECT at, rev FROM snap WHERE one = 1").toArray()[0]; return Response.json({ ok: true, at: s ? s.at : null, rev: s ? s.rev : 0, entries: this.allEvents() }); }
       if (url.pathname === "/events") { const s = this.state.storage.sql.exec("SELECT at FROM snap WHERE one = 1").toArray()[0]; return Response.json({ ok: true, at: s ? s.at : null, ids: this.events().map((e) => e.draft_id) }); }
       let body = null;
       try { body = JSON.parse(await request.text()); } catch (e) { body = null; }

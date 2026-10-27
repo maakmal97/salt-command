@@ -21,6 +21,8 @@ export const BACKUP_KEEP = 30;
 export const BACKUP_LAST = "backup:last";
 export const BACKUP_STALE_MS = 36 * 3600000;        /* a night missed is heard of at the next morning digest */
 export const BACKUP_PREFIX = "backup/";
+export const BOOKEXPORT_PREFIX = "bookexport/";
+export const BOOKEXPORT_LAST = "bookexport:last";
 const INFO = "salt-backup v1";
 const ECDH = { name: "ECDH", namedCurve: "P-256" };
 const wc = globalThis.crypto;
@@ -68,10 +70,10 @@ function publicKeyOf(env) {
   return jwkPub(k);
 }
 
-async function prune(bucket, keepKey) {
+async function prune(bucket, keepKey, prefix = BACKUP_PREFIX) {
   const names = []; let cursor;
   for (;;) {
-    const page = await bucket.list({ prefix: BACKUP_PREFIX, cursor });
+    const page = await bucket.list({ prefix, cursor });
     for (const o of page.objects || []) names.push(o.key);
     if (!page.truncated) break;
     cursor = page.cursor;
@@ -104,6 +106,45 @@ export async function runBackup(env, now = new Date()) {
     try { if (env.SALT_QUEUE) await env.SALT_QUEUE.put(BACKUP_LAST, JSON.stringify(last)); } catch (ignored) { /* the log below still says it */ }
     return last;
   }
+}
+
+/* S5a: THE BOOK'S OWN EXPORT, nightly, beside the D1 dump and sealed to the same public key (same primitives, same info string, so tools/backup-open.mjs opens either). Until S5 the
+   Book is a copy of git's book plus the entries a tap booked; after it, it is the only copy, and its only other protection is the platform's 30 days of point-in-time recovery.
+   The object carries the base as /read?base=1 answers it, the whole event log (every entry, open, folded or voided, as staged), the revision and the last loads. Read back before the
+   night counts; the result is KV `bookexport:last`, which the morning digest reads. With no bucket, key or Book bound it does nothing and says so. */
+export const bookExportKeyFor = (now) => BOOKEXPORT_PREFIX + new Date(now.getTime() + 8 * 3600000).toISOString().slice(0, 10) + ".json";
+export async function runBookExport(env, now = new Date()) {
+  if (!env.BACKUP || !env.BACKUP_PUBLIC_JWK || !env.BOOK) return { ok: false, skipped: true, why: !env.BACKUP ? "no bucket bound" : !env.BACKUP_PUBLIC_JWK ? "no public key set" : "no Book bound" };
+  const at = now.toISOString();
+  try {
+    const pub = publicKeyOf(env);
+    const r = await env.BOOK.get(env.BOOK.idFromName("book")).fetch(new Request("https://book/export"));
+    const book = await r.json();
+    if (!r.ok || !book || !book.ok) throw new Error("the Book would not export: " + said((book && book.error) || "HTTP " + r.status));
+    const entries = book.entries.length;
+    const sealed = await backupSeal(pub, new TextEncoder().encode(JSON.stringify({ v: 1, at, book })));
+    const body = JSON.stringify({ v: 1, app: "salt-book-export", at, bookV: book.v, rev: book.rev, entries, ...sealed });
+    const bytes = new TextEncoder().encode(body).length, key = bookExportKeyFor(now);
+    await env.BACKUP.put(key, body, { httpMetadata: { contentType: "application/json" }, customMetadata: { at } });
+    const head = await env.BACKUP.head(key);
+    if (!head || head.size !== bytes) throw new Error("the object read back " + (head ? head.size : "missing") + " bytes, not the " + bytes + " sent");
+    const pruned = await prune(env.BACKUP, key, BOOKEXPORT_PREFIX);
+    const last = { ok: true, at, key, bytes, entries, rev: book.rev, bookV: book.v, pruned };
+    if (env.SALT_QUEUE) await env.SALT_QUEUE.put(BOOKEXPORT_LAST, JSON.stringify(last));
+    return last;
+  } catch (e) {
+    const last = { ok: false, at, error: said(e) };
+    try { if (env.SALT_QUEUE) await env.SALT_QUEUE.put(BOOKEXPORT_LAST, JSON.stringify(last)); } catch (ignored) { /* the log still says it */ }
+    return last;
+  }
+}
+export async function bookExportAlarm(env, now = new Date()) {
+  if (!env.BACKUP || !env.SALT_QUEUE || !env.BOOK) return null;
+  let last = null; try { last = await env.SALT_QUEUE.get(BOOKEXPORT_LAST, "json"); } catch (e) { /* unreadable reads as never run */ }
+  if (!last) return "the Book export has never run";
+  if (!last.ok) return "the last Book export failed: " + last.error;
+  if (now.getTime() - Date.parse(last.at) > BACKUP_STALE_MS) return "the last Book export is more than 36 hours old";
+  return null;
 }
 
 /* the morning digest's question: a sentence when the backup is not as it should be, else null. Quiet until a bucket is bound. */

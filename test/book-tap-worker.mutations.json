@@ -184,5 +184,11 @@
   "file": "src/book-tap.js",
   "find": "ORDER BY drafted_at, id LIMIT 40",
   "replace": "ORDER BY decided_at, id LIMIT 40"
+ },
+ {
+  "name": "a fallback is not counted",
+  "file": "src/worker.js",
+  "find": "if (tap.kind === \"fallback\") console.log(\"tap fallback \" + id + \": \"",
+  "replace": "if (false) console.log(\"tap fallback \" + id + \": \""
  }
 ]

@@ -2031,6 +2031,7 @@ export async function applyPre(db, pre, draft, book, now) {
       return "differs";
     }
     if (tap.kind === "booked") booked = tap.booked;
+    if (tap.kind === "fallback") console.log("tap fallback " + draft.id + " (his yes): " + (tap.why || "no reason"));
   }
   const approve = db.prepare("UPDATE draft SET status='approved', decided_at=?1, decided_by=?2 WHERE id=?3 AND status='pending'").bind(at, by, draft.id);
   let u;

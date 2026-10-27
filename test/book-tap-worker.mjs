@@ -118,8 +118,11 @@ export async function run({ ok }) {
   const sb = Wb.sale(IDN(1), 2); const rb = await Wb.approve(sb);
   ok(rb.status === 200 && Wb.row(sb).status === "approved" && !("rids" in Wb.rowOf(sb)) && (await Wb.events()).length === 0, "a Book behind the mirror approves as before, with no booking");
   const Ws = await world({ flag: "on" }); Ws.door.silent = true;
-  const ss = Ws.sale(IDN(1), 2); const rs = await Ws.approve(ss);
+  const ss = Ws.sale(IDN(1), 2);
+  const fbLines = [], fbWas = console.log; console.log = (...x) => { fbLines.push(x.join(" ")); };
+  let rs; try { rs = await Ws.approve(ss); } finally { console.log = fbWas; }
   ok(rs.status === 200 && Ws.row(ss).status === "approved" && !("rids" in Ws.rowOf(ss)), "a Book that does not answer approves as before");
+  ok(fbLines.some((l) => l.startsWith("tap fallback " + ss + ": ")), "and the approval that fell back is counted in the log, so a Book that quietly refuses for a day does not look like a healthy day: " + JSON.stringify(fbLines.filter((l) => /fallback/.test(l))));
   const Wn = await world({ flag: "on", noBook: true });
   const sn = Wn.sale(IDN(1), 2); const rn = await Wn.approve(sn);
   ok(rn.status === 200 && Wn.row(sn).status === "approved" && !("rids" in Wn.rowOf(sn)), "no Book bound approves as before");

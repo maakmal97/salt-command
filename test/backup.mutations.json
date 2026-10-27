@@ -20,8 +20,8 @@
  {
   "name": "the object is filed under the UTC date",
   "file": "src/backup.js",
-  "find": "new Date(now.getTime() + 8 * 3600000).toISOString().slice(0, 10)",
-  "replace": "now.toISOString().slice(0, 10)"
+  "find": "export const backupKeyFor = (now) => BACKUP_PREFIX + new Date(now.getTime() + 8 * 3600000).toISOString().slice(0, 10)",
+  "replace": "export const backupKeyFor = (now) => BACKUP_PREFIX + now.toISOString().slice(0, 10)"
  },
  {
   "name": "the row counts are zero",
@@ -86,14 +86,14 @@
  {
   "name": "the read-back size check is gone",
   "file": "src/backup.js",
-  "find": "if (!head || head.size !== bytes) throw new Error(",
-  "replace": "if (false) throw new Error("
+  "find": "if (!head || head.size !== bytes) throw new Error(\"the object read back \" + (head ? head.size : \"missing\") + \" bytes, not the \" + bytes + \" sent\");\n    const pruned = await prune(env.BACKUP, key);",
+  "replace": "if (false) throw new Error(\"the object read back \" + (head ? head.size : \"missing\") + \" bytes, not the \" + bytes + \" sent\");\n    const pruned = await prune(env.BACKUP, key);"
  },
  {
   "name": "the prune runs before the write",
   "file": "src/backup.js",
-  "find": "await env.BACKUP.put(key, body, { httpMetadata: { contentType: \"application/json\" }, customMetadata: { at } });",
-  "replace": "await prune(env.BACKUP, key); await env.BACKUP.put(key, body, { httpMetadata: { contentType: \"application/json\" }, customMetadata: { at } });"
+  "find": "key = backupKeyFor(now);\n    await env.BACKUP.put(key, body, { httpMetadata: { contentType: \"application/json\" }, customMetadata: { at } });",
+  "replace": "key = backupKeyFor(now);\n    await prune(env.BACKUP, key); await env.BACKUP.put(key, body, { httpMetadata: { contentType: \"application/json\" }, customMetadata: { at } });"
  },
  {
   "name": "a failed night is not recorded",
@@ -134,8 +134,8 @@
  {
   "name": "the night's key carries the hour",
   "file": "src/backup.js",
-  "find": ".toISOString().slice(0, 10) + \".json\";",
-  "replace": ".toISOString().slice(0, 13) + \".json\";"
+  "find": "BACKUP_PREFIX + new Date(now.getTime() + 8 * 3600000).toISOString().slice(0, 10) + \".json\";",
+  "replace": "BACKUP_PREFIX + new Date(now.getTime() + 8 * 3600000).toISOString().slice(0, 13) + \".json\";"
  },
  {
   "name": "the success record leaves out the byte count",

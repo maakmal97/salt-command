@@ -21,7 +21,7 @@ import { runDrafter, dryRunDrafter, readBook, readMirror, bookOnce, withDraftLot
 import { bookDirect, compareReads, readMode } from "./book-read.js";
 import { bookTap, bookNet, ridStmts, voidEntries, voidUnlessApproved, tapMode, TAP_COLS } from "./book-tap.js";
 import { boundOf, unfolded } from "./way.js";
-import { runBackup, backupAlarm, BACKUP_CRON } from "./backup.js";
+import { runBackup, backupAlarm, runBookExport, bookExportAlarm, BACKUP_CRON } from "./backup.js";
 import { approveFigures } from "./approve-figures.js";
 import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, TIEOUT_KEY, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades, wakeAdmin, ADMIN_ON } from "./orders.js";
@@ -232,8 +232,8 @@ async function handleBookReadcheck(request, env, m) {
     const mirror = await withRefunds(env.SALT_LEDGER, await readMirror(env.SALT_LEDGER)), res = await bookDirect(env.SALT_LEDGER);
     const r = compareReads(mirror, res);
     /* S4c: an entry a tap booked that the Book's base can no longer take is left out of the view and counted as on its way; the readcheck names it so it is not quiet */
-    let stuck = [];
-    try { const a = await (await env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)).fetch(new Request("https://book/at"))).json(); stuck = a && Array.isArray(a.stuck) ? a.stuck : []; } catch (e) { stuck = []; }
+    let stuck = [], bookRev = null;
+    try { const a = await (await env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)).fetch(new Request("https://book/at"))).json(); stuck = a && Array.isArray(a.stuck) ? a.stuck : []; bookRev = a && Number.isInteger(a.rev) ? a.rev : null; } catch (e) { stuck = []; }
     r.differ = r.differ.concat(stuck.map((id) => "entry " + id + " (stuck: the base cannot take it)")); r.ok = r.ok && !stuck.length;
     /* S4d: an entry open for a draft that was rejected would show a sale he turned down, and one open for a draft still pending a row he has not approved (a batch and its void both failed); the net voids the first with the flag on, and this names both whatever the flag says */
     try {
@@ -245,7 +245,15 @@ async function handleBookReadcheck(request, env, m) {
         for (const x of rs.results || []) { r.differ.push("entry " + x.id + (x.status === "rejected" ? " (its draft was rejected)" : " (its draft is still pending)")); r.ok = false; }
       }
     } catch (e) { /* an object before S4a has no entries to name */ }
-    return json({ ok: r.ok, differ: r.differ, rows: r.rows || 0, version: mirror.version, bookVersion: res ? res.v : null, mode: await readMode(env.SALT_LEDGER) });
+    /* S5a: WOULD COMPACTION HOLD? The Book's own view read as a new base, by the load's own path, thrown away: the view unchanged, no entry stuck, no row lost. Named here at every fold
+       so the one write that matters at the flip has been rehearsed on every fold before it. A stuck entry is already named above. */
+    let compact = null;
+    try {
+      const cp = await (await env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)).fetch(new Request("https://book/compact?dry=1", { method: "POST" }))).json();
+      if (cp && cp.ok) compact = { open: cp.compactable || cp.open || 0 };
+      else if (cp && !cp.stuck) { r.differ.push("compaction would be refused (" + String(cp.error || "no answer").slice(0, 160) + ")"); r.ok = false; }
+    } catch (e) { /* an object before S5a has no compaction to rehearse */ }
+    return json({ ok: r.ok, differ: r.differ, rows: r.rows || 0, version: mirror.version, bookVersion: res ? res.v : null, mode: await readMode(env.SALT_LEDGER), bookRev, compact });
   } catch (e) { return json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }, 500); }
 }
 
@@ -2461,6 +2469,8 @@ async function decideDraft(env, ctx, id, decision, by, hold) {
   if (decision === "approved") {
     const tap = await bookTap(env.SALT_LEDGER, [cur].concat(ts.rows), by, new Date().toISOString());
     if (tap.kind === "refused") return { status: 409, body: { ok: false, error: "the Book refuses it: " + tap.refused.map((x) => x.why).join("; "), refused: tap.refused } };
+    /* S5a: an approval that fell back is counted in the log: a Book that is quietly refusing for a day must not look like a healthy day */
+    if (tap.kind === "fallback") console.log("tap fallback " + id + ": " + (tap.why || "no reason"));
     if (tap.kind === "booked") {
       if (tap.booked.some((b) => b.folded)) return { status: 409, body: { ok: false, error: "the Book refuses it: the fold has already booked it; reject this card" } };
       booked = tap.booked;
@@ -2644,6 +2654,9 @@ export default {
         if (event && event.cron === BACKUP_CRON) {
           const b = await runBackup(env, new Date(event.scheduledTime || Date.now()));
           console.log("backup: " + JSON.stringify(b.ok ? { ok: true, key: b.key, bytes: b.bytes, pruned: b.pruned } : b));
+          /* S5a: and the Book's own export, sealed to the same key, in the same hour (its base, its whole event log, its revision) */
+          const be = await runBookExport(env, new Date(event.scheduledTime || Date.now()));
+          console.log("book export: " + JSON.stringify(be.ok ? { ok: true, key: be.key, bytes: be.bytes, entries: be.entries, rev: be.rev, pruned: be.pruned } : be));
           return;
         }
         if (daily) {
@@ -2663,6 +2676,8 @@ export default {
             /* S0b: a backup that failed or stopped is worth a morning banner; silent until a bucket is bound */
             const bk = await backupAlarm(env, new Date(event.scheduledTime || Date.now()));
             if (bk) { worth = true; console.log("backup alarm: " + bk); }
+            const bx = await bookExportAlarm(env, new Date(event.scheduledTime || Date.now()));
+            if (bx) { worth = true; console.log("book export alarm: " + bx); }
           } catch (e) { console.log("nudge check failed: " + String(e)); }
           console.log("morning nudge: " + (worth ? "sending" : "nothing worth saying"));
           if (worth) await sendPush(env, { tag: "salt", urgency: "normal" });

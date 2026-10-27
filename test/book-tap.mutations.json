@@ -20,8 +20,8 @@
  {
   "name": "a tap writes the base",
   "file": "src/book.js",
-  "find": "      const at = this.clock();\n      for (const x of planned) sql.exec(\"INSERT INTO booked",
-  "replace": "      const at = this.clock();\n      sql.exec(\"UPDATE state SET revised_at = ? WHERE k = 'STATED_STOCK'\", at);\n      for (const x of planned) sql.exec(\"INSERT INTO booked"
+  "find": "      const at = this.clock();\n      sql.exec(\"UPDATE snap SET rev = rev + 1 WHERE one = 1\");\n      for (const x of planned) sql.exec(\"INSERT INTO booked",
+  "replace": "      const at = this.clock();\n      sql.exec(\"UPDATE snap SET rev = rev + 1 WHERE one = 1\");\n      sql.exec(\"UPDATE state SET revised_at = ? WHERE k = 'STATED_STOCK'\", at);\n      for (const x of planned) sql.exec(\"INSERT INTO booked"
  },
  {
   "name": "the view is not sorted as the fold sorts",
@@ -86,8 +86,8 @@
  {
   "name": "the recovery test's object answers the booked verbs",
   "file": "src/book.js",
-  "find": "      if (this.isTest()) return Response.json({ ok: false, error: \"not found\" }, { status: 404 });\n      if (url.pathname === \"/events\")",
-  "replace": "      if (url.pathname === \"/events\")"
+  "find": "      if (this.isTest()) return Response.json({ ok: false, error: \"not found\" }, { status: 404 });\n      if (url.pathname === \"/compact\")",
+  "replace": "      if (url.pathname === \"/compact\")"
  },
  {
   "name": "a tap books on a Book behind the mirror",

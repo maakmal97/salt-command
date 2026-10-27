@@ -1,0 +1,224 @@
+[
+ {
+  "name": "a Book from before S5a starts its revision above 0",
+  "file": "src/book.js",
+  "find": "sql.exec(\"ALTER TABLE snap ADD COLUMN rev INTEGER NOT NULL DEFAULT 0\");",
+  "replace": "sql.exec(\"ALTER TABLE snap ADD COLUMN rev INTEGER NOT NULL DEFAULT 5\");"
+ },
+ {
+  "name": "a load never moves the revision",
+  "file": "src/book.js",
+  "find": "sql.exec(\"UPDATE snap SET rev = ? WHERE one = 1\", prevRev + (moved ? 1 : 0));",
+  "replace": "sql.exec(\"UPDATE snap SET rev = ? WHERE one = 1\", prevRev);"
+ },
+ {
+  "name": "every load moves the revision",
+  "file": "src/book.js",
+  "find": "sql.exec(\"UPDATE snap SET rev = ? WHERE one = 1\", prevRev + (moved ? 1 : 0));",
+  "replace": "sql.exec(\"UPDATE snap SET rev = ? WHERE one = 1\", prevRev + 1);"
+ },
+ {
+  "name": "a load forgets the revision it replaced",
+  "file": "src/book.js",
+  "find": "const prevRev = (sql.exec(\"SELECT rev FROM snap WHERE one = 1\").toArray()[0] || {}).rev || 0;",
+  "replace": "const prevRev = 0;"
+ },
+ {
+  "name": "a load does not say where the revision stands",
+  "file": "src/book.js",
+  "find": "bookRev: p.snap ? prevRev + (moved ? 1 : 0) : prevRev, ",
+  "replace": ""
+ },
+ {
+  "name": "a tap does not move the revision",
+  "file": "src/book.js",
+  "find": "      sql.exec(\"UPDATE snap SET rev = rev + 1 WHERE one = 1\");\n      for (const x of planned)",
+  "replace": "      for (const x of planned)"
+ },
+ {
+  "name": "a void does not move the revision",
+  "file": "src/book.js",
+  "find": "if (n) sql.exec(\"UPDATE snap SET rev = rev + 1 WHERE one = 1\");",
+  "replace": "if (false) sql.exec(\"UPDATE snap SET rev = rev + 1 WHERE one = 1\");"
+ },
+ {
+  "name": "a void of nothing moves the revision",
+  "file": "src/book.js",
+  "find": "if (n) sql.exec(\"UPDATE snap SET rev = rev + 1 WHERE one = 1\");",
+  "replace": "sql.exec(\"UPDATE snap SET rev = rev + 1 WHERE one = 1\");"
+ },
+ {
+  "name": "/at does not carry the revision",
+  "file": "src/book.js",
+  "find": "at: snap.at, rev: snap.rev || 0, booked:",
+  "replace": "at: snap.at, booked:"
+ },
+ {
+  "name": "a strict load may change a row",
+  "file": "src/book.js",
+  "find": "(!tap || tap.differ.length || tap.stuck.length",
+  "replace": "(!tap || tap.stuck.length"
+ },
+ {
+  "name": "a strict load may lose a row",
+  "file": "src/book.js",
+  "find": "|| tap.open || n.gone || !tap.folded)",
+  "replace": "|| tap.open || !tap.folded)"
+ },
+ {
+  "name": "a strict load may close nothing",
+  "file": "src/book.js",
+  "find": "if (opts.strict && (!tap || tap.differ.length",
+  "replace": "if (opts.strict && (tap && tap.differ.length"
+ },
+ {
+  "name": "a dry compaction writes",
+  "file": "src/book.js",
+  "find": "if (opts.dry) throw new DryRun(out);",
+  "replace": ""
+ },
+ {
+  "name": "compaction ignores a stuck entry",
+  "file": "src/book.js",
+  "find": "if (view.stuck.length) return { ok: false, status: 409, error: \"an entry is stuck",
+  "replace": "if (false) return { ok: false, status: 409, error: \"an entry is stuck"
+ },
+ {
+  "name": "the event log drops closed entries",
+  "file": "src/book.js",
+  "find": "FROM booked ORDER BY seq\").toArray().map((e) => ({ ...e, item",
+  "replace": "FROM booked WHERE folded_at IS NULL ORDER BY seq\").toArray().map((e) => ({ ...e, item"
+ },
+ {
+  "name": "the export carries no event log",
+  "file": "src/book.js",
+  "find": "entries: this.allEvents(), loads:",
+  "replace": "entries: [], loads:"
+ },
+ {
+  "name": "the export is sealed without the book",
+  "file": "src/backup.js",
+  "find": "JSON.stringify({ v: 1, at, book })",
+  "replace": "JSON.stringify({ v: 1, at })"
+ },
+ {
+  "name": "the export prunes the backup prefix",
+  "file": "src/backup.js",
+  "find": "const pruned = await prune(env.BACKUP, key, BOOKEXPORT_PREFIX);",
+  "replace": "const pruned = await prune(env.BACKUP, key);"
+ },
+ {
+  "name": "the export is not read back",
+  "file": "src/backup.js",
+  "find": "    if (!head || head.size !== bytes) throw new Error(\"the object read back \" + (head ? head.size : \"missing\") + \" bytes, not the \" + bytes + \" sent\");\n    const pruned = await prune(env.BACKUP, key, BOOKEXPORT_PREFIX);",
+  "replace": "    const pruned = await prune(env.BACKUP, key, BOOKEXPORT_PREFIX);"
+ },
+ {
+  "name": "the export night is not remembered",
+  "file": "src/backup.js",
+  "find": "    if (env.SALT_QUEUE) await env.SALT_QUEUE.put(BOOKEXPORT_LAST, JSON.stringify(last));\n    return last;\n  } catch (e) {",
+  "replace": "    return last;\n  } catch (e) {"
+ },
+ {
+  "name": "a failed export night is not remembered",
+  "file": "src/backup.js",
+  "find": "try { if (env.SALT_QUEUE) await env.SALT_QUEUE.put(BOOKEXPORT_LAST, JSON.stringify(last)); } catch (ignored)",
+  "replace": "try { } catch (ignored)"
+ },
+ {
+  "name": "an export that never ran is not heard of",
+  "file": "src/backup.js",
+  "find": "if (!last) return \"the Book export has never run\";",
+  "replace": "if (!last) return null;"
+ },
+ {
+  "name": "a stale export is not heard of",
+  "file": "src/backup.js",
+  "find": "return \"the last Book export is more than 36 hours old\";",
+  "replace": "return null;"
+ },
+ {
+  "name": "a failed export is not heard of",
+  "file": "src/backup.js",
+  "find": "if (!last.ok) return \"the last Book export failed: \" + last.error;",
+  "replace": "if (!last.ok) return null;"
+ },
+ {
+  "name": "the export runs with no Book bound",
+  "file": "src/backup.js",
+  "find": ": !env.BACKUP_PUBLIC_JWK ? \"no public key set\" : \"no Book bound\" };\n  const at = now.toISOString();\n  try {\n    const pub = publicKeyOf(env);\n    const r = await env.BOOK",
+  "replace": ": \"no public key set\" };\n  const at = now.toISOString();\n  try {\n    const pub = publicKeyOf(env);\n    const r = await env.BOOK"
+ },
+ {
+  "name": "the export counts no entries",
+  "file": "src/backup.js",
+  "find": "const entries = book.entries.length;",
+  "replace": "const entries = 0;"
+ },
+ {
+  "name": "the export night is the UTC date",
+  "file": "src/backup.js",
+  "find": "export const bookExportKeyFor = (now) => BOOKEXPORT_PREFIX + new Date(now.getTime() + 8 * 3600000)",
+  "replace": "export const bookExportKeyFor = (now) => BOOKEXPORT_PREFIX + new Date(now.getTime() + 0 * 3600000)"
+ },
+ {
+  "name": "the readcheck hides the revision",
+  "file": "src/worker.js",
+  "find": "mode: await readMode(env.SALT_LEDGER), bookRev, compact });",
+  "replace": "mode: await readMode(env.SALT_LEDGER), compact });"
+ },
+ {
+  "name": "the readcheck hides the compaction",
+  "file": "src/worker.js",
+  "find": "if (cp && cp.ok) compact = { open: cp.compactable || cp.open || 0 };",
+  "replace": "if (cp && cp.ok) compact = null;"
+ },
+ {
+  "name": "a refused compaction does not turn the readcheck red",
+  "file": "src/worker.js",
+  "find": "else if (cp && !cp.stuck) { r.differ.push(\"compaction would be refused (",
+  "replace": "else if (false) { r.differ.push(\"compaction would be refused ("
+ },
+ {
+  "name": "a stuck entry is named twice",
+  "file": "src/worker.js",
+  "find": "else if (cp && !cp.stuck) { r.differ.push",
+  "replace": "else if (cp) { r.differ.push"
+ },
+ {
+  "name": "the minute job does not export the Book",
+  "file": "src/worker.js",
+  "find": "const be = await runBookExport(env, new Date(event.scheduledTime || Date.now()));",
+  "replace": "const be = { ok: false, skipped: true };"
+ },
+ {
+  "name": "the chain line hides the revision",
+  "file": "tools/book-readcheck.mjs",
+  "find": "(Number.isInteger(r.bookRev) ? `, Book rev ${r.bookRev}` : \"\")",
+  "replace": "\"\""
+ },
+ {
+  "name": "the chain line hides the compaction",
+  "file": "tools/book-readcheck.mjs",
+  "find": "const tail = r.compact ? `; compaction would hold over ${r.compact.open} open entries` : \"\";",
+  "replace": "const tail = \"\";"
+ },
+ {
+  "name": "the laptop opens an export without its log",
+  "file": "tools/backup-open.mjs",
+  "find": "!b.base.rows || !b.base.state || !Array.isArray(b.entries)) throw",
+  "replace": "!b.base.rows || !b.base.state) throw"
+ },
+ {
+  "name": "a compaction does not say which drafts it closed",
+  "file": "src/book.js",
+  "find": "return { ok: true, compacted: r.tap.folded, closed, bookRev:",
+  "replace": "return { ok: true, compacted: r.tap.folded, closed: [], bookRev:"
+ },
+ {
+  "name": "a dry compaction does not say which drafts it would close",
+  "file": "src/book.js",
+  "find": "compactable: evs.length, closed, rows:",
+  "replace": "compactable: evs.length, closed: [], rows:"
+ }
+]

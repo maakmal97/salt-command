@@ -16,8 +16,9 @@ import { pathToFileURL } from "node:url";
 /* the one line the step says: counts, versions and names */
 export function line(r) {
   if (!r || r.error) return "Book readcheck NOT RUN: " + ((r && r.error) || "no answer");
-  const head = `Book readcheck: mirror ${r.version}, Book ${r.bookVersion}, readers on ${r.mode}`;
-  return r.ok ? head + `; the Book and the mirror agree over ${r.rows} sales and purchases` : head + "; DIFFER: " + (r.differ || []).join(", ");
+  const head = `Book readcheck: mirror ${r.version}, Book ${r.bookVersion}, readers on ${r.mode}` + (Number.isInteger(r.bookRev) ? `, Book rev ${r.bookRev}` : "");
+  const tail = r.compact ? `; compaction would hold over ${r.compact.open} open entries` : "";
+  return r.ok ? head + `; the Book and the mirror agree over ${r.rows} sales and purchases` + tail : head + "; DIFFER: " + (r.differ || []).join(", ");
 }
 
 export async function check(base, env, { tries = 3, wait = 2000, fetchImpl = fetch } = {}) {
