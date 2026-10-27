@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1286",
+  "d": "27 Oct 2026",
+  "t": "PAYMENT OF RM105 ON S300 FOR CZ5-TM",
+  "n": [
+   "<b>FOLDED ONE ROW.</b> A fulfilment on s300 for CZ5-TM: RM105 paid by transfer on 27 Oct 2026, preapproved by Counter Admin. It was the only row in the batch and nothing in it was unusual.",
+   "<b>INVENTORY.</b> No stock moved, since the payment hands over no goods. The 1 unit on the order is still to be handed over."
+  ]
+ },
+ {
   "v": "v1285",
   "d": "27 Oct 2026",
   "t": "THE BOOK BOOKS AN ENTRY BESIDE ITS BASE, THE FOLD TAKES WHAT IT BOOKED, THE READERS COUNT IT ONCE (S4A TO S4C, DORMANT)",

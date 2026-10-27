@@ -1,6 +1,6 @@
 {
- "v": "v1283",
- "stamped": "27 Oct 2026, 17:44 KL",
+ "v": "v1286",
+ "stamped": "27 Oct 2026, 22:37 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -9322,7 +9322,7 @@
     "customer": "CZ5-TM",
     "qty": 1,
     "total": 105,
-    "cash": 0,
+    "cash": 105,
     "date": "2026-10-27",
     "deliveredQty": 0,
     "note": "<b>CORRECTION ON S300, 27 OCT 2026: TRIP SET.</b> The trip field on CZ5-TM's pending order of 1 unit of salt, goods RM105, moves from unset to t1793091460898. Counter Admin decided it. It moves no cash and no stock, and the order stays pending with nothing paid or handed over. The dossier gives no floor or ask for this order, so no comparison is made. The rate of RM105 a unit equals the party's median of RM105 and sits within the range RM7 to RM110. Outstanding before was RM140, no units on credit. The drafter raised no flag. RM105 and the 1 unit remain outstanding. <b>PENDING SALE OF 1 UNIT OF SALT TO CZ5-TM, GOODS RM105, 27 OCT 2026.</b> Ordered on the statements site, order 20261027084009-nltzsg, preapproved by Counter Admin. Nothing is paid and nothing handed over, so no stock is drawn and no revenue is booked. For 1 unit the ladder gives a floor total of RM60 and an ask total of RM120, so RM105 is above the floor and below the ask. That is RM105 a unit against a floor of RM60 and an ask of RM120. The party's median rate is RM110, range RM95 to RM110; outstanding before was RM0, no units on credit against a cap of 1. The cost is RM58 a unit, costed off the latest purchase. The drafter raised no flag. Stock stands at 0.5 units, below this 1 unit. RM105 and the 1 unit remain outstanding.",
@@ -9348,8 +9348,16 @@
       "was": {
        "trip": null
       }
+     },
+     {
+      "date": "2026-10-27",
+      "kind": "Fulfilment",
+      "cash": 105,
+      "kg": 0,
+      "note": "<b>PAYMENT OF RM105 ON S300, 27 OCT 2026.</b> CZ5-TM paid RM105 by transfer via maybank against the account, for the pending order of 1 unit of salt, goods RM105, dated 27 Oct 2026. Preapproved by Counter Admin. The row is applied by the master's own amend routine, not recomputed here. No stock is drawn, as nothing is handed over. No floor or ask total is given in the dossier for this order, so the rate is not set against them. The party's median rate is RM105, range RM95 to RM110; outstanding before was RM105, no units on credit. The drafter raised no flags. The payment brings the outstanding money to RM0. The 1 unit of salt remains to be handed over; no cost is booked on this row."
      }
-    ]
+    ],
+    "paidOn": "2026-10-27"
    },
    {
     "customer": "CM4-TO-R",
@@ -10179,7 +10187,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-27T09:02:24.787Z",
+  "QUEUE_COMMITTED": "2026-10-27T14:25:44.144Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -10230,7 +10238,7 @@
     {
      "id": "int:nocost",
      "sev": "watch",
-     "title": "3 priced sales carry no cost of their own"
+     "title": "4 priced sales carry no cost of their own"
     },
     {
      "id": "int:underfloor",
@@ -10948,12 +10956,12 @@
     "CZ5-TM": {
      "salt": {
       "name": "small and often",
-      "orders": 6,
+      "orders": 7,
       "tenureDays": 38,
-      "sinceLastDays": 5,
-      "perMonth": 4.81,
-      "unitsPerMonth": 6.41,
-      "smallShare": 0.67,
+      "sinceLastDays": 0,
+      "perMonth": 5.61,
+      "unitsPerMonth": 7.21,
+      "smallShare": 0.71,
       "bigShare": 0,
       "frequent": true,
       "small": true,
@@ -20054,10 +20062,10 @@
      "suggest": null
     }
    },
-   "v": "v1283"
+   "v": "v1286"
   },
   "OPEN": {
-   "at": "2026-10-27T09:44:08.253Z",
+   "at": "2026-10-27T14:37:30.897Z",
    "count": 8,
    "byKey": {
     "CZ5-TM|2026-10-27|105": {
@@ -20066,12 +20074,12 @@
      "dir": "S",
      "q": 1,
      "t": 105,
-     "cash": 0,
+     "cash": 105,
      "mv": 0,
-     "st": "part",
-     "oweRM": 105,
+     "st": "oweStock",
      "oweUnits": 1,
      "rid": "s300",
+     "paidOn": "2026-10-27",
      "trip": "t1793091460898",
      "key": "CZ5-TM|2026-10-27|105"
     },
@@ -20197,9 +20205,9 @@
     "salt": {
      "name": "Salt",
      "onHand": 0.5,
-     "free": 0.23,
-     "owedOut": 0.27,
-     "coverDays": 0.1,
+     "free": -0.77,
+     "owedOut": 1.27,
+     "coverDays": 0,
      "rate": 4.58,
      "owedToYou": 315,
      "promised": 1.27,
@@ -20269,7 +20277,7 @@
     "gas": null,
     "prep": null
    },
-   "v": "v1283"
+   "v": "v1286"
   },
   "TERMS": {
    "ceiling": 250,
@@ -20277,7 +20285,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1283"
+   "v": "v1286"
   },
   "REWARD": {
    "stated": {
@@ -20295,17 +20303,17 @@
      }
     }
    },
-   "v": "v1283"
+   "v": "v1286"
   },
   "STOCK": {
    "today": "2026-10-27",
    "books": {
     "salt": {
      "shelf": 0.5,
-     "free": 0.23,
+     "free": -0.77,
      "commit": 1.27,
      "light": "yellow",
-     "coverDays": 0.1,
+     "coverDays": 0,
      "transit": 0
     },
     "oil": {
@@ -20349,7 +20357,7 @@
      "transit": 0
     }
    },
-   "v": "v1283"
+   "v": "v1286"
   }
  }
 }
