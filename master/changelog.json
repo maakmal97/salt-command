@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1285",
+  "d": "27 Oct 2026",
+  "t": "THE BOOK BOOKS AN ENTRY BESIDE ITS BASE, THE FOLD TAKES WHAT IT BOOKED, THE READERS COUNT IT ONCE (S4A TO S4C, DORMANT)",
+  "n": [
+   "<b>S4 OF THE BOOK PLAN, FIRST VERSION: THE DORMANT HALF.</b> No road calls the Book's new tap yet, so nothing books or reads differently until S4d ships the tap, off, on his go (his answers of 27 Oct 2026: two versions with his go before each; the drafter's cost stands for a booked purchase; a Book behind or down at a tap approves as today; the Desk page's own copy of the law waits for S5). Fable reviewed the design and the diff, and re-checked its own findings.",
+   "<b>THE BOOK BOOKS AN ENTRY.</b> A `booked` table beside an untouched base: tap (a trip's rows all or none, idempotent by draft id, through the engine's own planBatch and applyEntry), void, events, and the view (the base with the open entries replayed in booked order, their minted rids forced). `/read` is the view while any entry is open and the base byte for byte when none is; `/read?base=1` and the readcheck stay on the base. A roster entry, a rename, a Counter trade naming a party the book lacks, and any trip holding one stay the fold's. A load closes the entries the fold took (D1's word, or the rid the new base holds under the entry's own row) and names the tap check's differences, a stuck entry and a rid held by another row; it fails closed when it cannot ask. nextRid and sortBook moved into engine/.",
+   "<b>THE FOLD TAKES WHAT THE TAP BOOKED.</b> A staged row carrying `rids` keeps them in the order minted (reward and loyalty rows included), is refused as a replay when a rid is already on the book, counts every staged rid as taken when it mints for another row, keeps the drafter's cost over the model's note, and is read in the Book's tap order before the rows it books itself.",
+   "<b>THE READERS COUNT A BOOKED DRAFT ONCE.</b> A book read from the Book names the draft ids it holds open from the same read as its bound; `unfolded` and `onItsWay` leave those drafts out and `landedBy` stays on committed_at. With no entry open every clause is byte for byte as before. Sections: Book S4a and S4b, Book S4c; docs/DESK.md, The Book: tap."
+  ]
+ },
+ {
   "v": "v1284",
   "d": "27 Oct 2026",
   "t": "A REFUND BECOMES THEIR CREDIT; A REFUND IS NEVER THE BOOK'S MONEY",
