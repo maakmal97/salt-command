@@ -1,6 +1,6 @@
 {
-  "v": "v1270",
-  "derivedFrom": "3d119106ed1c38dc",
+  "v": "v1271",
+  "derivedFrom": "383c6a886217253f",
   "tables": {
     "sales": {
       "rows": 297,
@@ -54,7 +54,7 @@
           ]
         },
         "cost": {
-          "present": 272,
+          "present": 273,
           "of": 297,
           "optional": true,
           "types": [
@@ -102,7 +102,7 @@
           ]
         },
         "deliveredOn": {
-          "present": 239,
+          "present": 240,
           "of": 297,
           "optional": true,
           "types": [
@@ -198,7 +198,7 @@
           ]
         },
         "paidOn": {
-          "present": 210,
+          "present": 211,
           "of": 297,
           "optional": true,
           "types": [

@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1271",
+  "d": "27 Oct 2026",
+  "t": "FULFILMENT SETTLES CZ4-MK'S OIL ORDER S297",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED.</b> The fulfilment on s297 for CZ4-MK was approved by Counter Admin on 27 Oct 2026, the day of the order. It moves RM120 cash and 10 unit of oil against RM120 and 10 unit outstanding. The order is settled in full, with RM0 and 0 unit left open. The row itself is applied by the master's own amend routine, not recomputed here.",
+   "<b>WHAT WAS UNUSUAL.</b> The dossier carries no ladder and no oil cost, so no floor or ask comparison is made. The party already held RM575 outstanding before this row. Oil stock falls by 10 unit. Salt, the stated stock, and its cost basis do not move."
+  ]
+ },
+ {
   "v": "v1270",
   "d": "27 Oct 2026",
   "t": "TRIP T1793074793926 SET ON TWO SAME-DAY ORDERS FOR CZ4-MK",
