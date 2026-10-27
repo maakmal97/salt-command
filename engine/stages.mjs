@@ -122,10 +122,11 @@ export function advanceOf(book, o, code, delivery, ctx) {
   const onSheet = (x) => !!o.sheet && x.sheet === o.sheet && x.u === o.u;
   const mineToo = ctx.orders.filter((x) => x.id !== o.id && x.code && E.ownsCode(owner, x.code));
   const agreed = mineToo.filter((x) => !onSheet(x) && AGREED_ON_SITE.includes(x.status) && !onBook(x.ledgerKey, x.product))
-    .reduce((a, x) => a + Math.max(0, (+x.total || 0) + (+x.delivery || 0) - (+x.paid || 0)), 0);
+    .reduce((a, x) => a + Math.max(0, (+x.total || 0) + (+x.delivery || 0) - (+x.paid || 0) - (+x.credit || 0)), 0);
   const sheet = mineToo.filter((x) => onSheet(x) && (x.status === "placed" || (AGREED_ON_SITE.includes(x.status) && !onBook(x.ledgerKey, x.product))));
-  const lines = sheet.reduce((a, x) => a + Math.max(0, (+x.total || 0) - (+x.paid || 0)), 0);
-  const mine = (+o.total || 0) + (sheet.length ? 0 : (+delivery || 0));
+  const lines = sheet.reduce((a, x) => a + Math.max(0, (+x.total || 0) - (+x.paid || 0) - (+x.credit || 0)), 0);
+  /* 27 Oct 2026 (docs/plan-refund-credit.html P3): judged on what is left after their credit (ctx.credit), which is paid already */
+  const mine = Math.max(0, (+o.total || 0) + (sheet.length ? 0 : (+delivery || 0)) - (+ctx.credit || 0));
   const owedWith = +(E.partyOwedRM(book.sales, owner) + agreed + lines + mine).toFixed(2);
   /* V5b2c (his decisions of 29 Sep and 05 Oct 2026): a customer who has EVER paid late pays in advance until three payments
      in a row are on time. It reads the engine's lateOffer, the one state machine, over payDelays on the book's rows: on time is
@@ -140,7 +141,7 @@ export function advanceOf(book, o, code, delivery, ctx) {
 export function pastRoom(room, o, entry, word, claim, overOk) {
   const r = room ? room(ledgerKeyOf(o), entry) : null, rm = +((entry && entry.payload) || {}).cash || 0;
   if (!r || !(rm > r.left + 0.004)) return null;
-  const due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0)).toFixed(2);
+  const due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0) - (+o.credit || 0)).toFixed(2);
   /* 27 Oct 2026, his word: cash past what the row owes is a refund the fold raises, so it passes while nothing else is on its way to the row
      and the row owes what the order does, so the refund he is told is the one the fold raises */
   if (overOk && !(r.on > 0.004) && Math.abs(r.left - due) < 0.005) return null;
@@ -395,6 +396,23 @@ export function acceptEntry(o, code, delivery, price, now) {
   entry.orderId = o.id;
   return { agreed, entry };
 }
+/* 27 Oct 2026 (docs/plan-refund-credit.html P3, his answers): HIS ACCEPT SPENDS THEIR CREDIT. The order keeps its true price, the Floor, the Set
+   Price and their % untouched, and up to what it comes to, goods and delivery together, the credit is booked on its pending row as cash already
+   paid (`cash`, with `credit` saying how much of it is credit), the way s190 and s191's set-off was booked by hand; the fold closes the refunds
+   it spends (the engine's setOffCredit). The caller reads the figure (src/credit.js creditFor) and gives none on an order for a friend. */
+export function withCredit(entry, credit) {
+  const p = entry && entry.payload, c = +(+credit || 0).toFixed(2);
+  if (!p || !(c > 0.004)) return entry;
+  const use = +Math.min(c, (+p.total || 0) + (+p.delivery || 0)).toFixed(2);
+  if (!(use > 0.004)) return entry;
+  p.cash = use; p.credit = use;
+  p.note = String(p.note || "").replace(/\. Nothing paid and nothing handed over yet\.$/, "") + ". RM " + use + " of it paid by their credit, the refunds of theirs the fold closes; nothing handed over yet.";
+  entry.raw = String(entry.raw || "").replace(", nothing paid, nothing moved", ", RM " + use + " paid by their credit, nothing moved");
+  return entry;
+}
+/* what the row says the order paid, less the credit the order carries apart from `paid`: the return leg, a settled order's restatement
+   and the tie-out read it, so the credit is never told to the order as a payment of theirs */
+export const rowPaidFor = (o, row) => +Math.max(0, POSITION_ENGINE.txPaid(row) - (+(o && o.credit) || 0)).toFixed(2);
 /* never under the floor at this size: the one line no price he sets goes under (rule 5). A price is set only against the
    floor AT this size: none known, or only a carded size below it (an older snapshot), and no price can be set on it. `fl` is
    the drafter's floorFor answer; null when no price is set, or the price holds. */
@@ -514,7 +532,7 @@ export function receivedTap(o, at, body, ctx) {
       if (Math.abs(p.amount - amount) > 0.004) return { status: 409, error: "RM " + p.amount.toFixed(2) + " they say they sent is waiting to be received here, not RM " + amount.toFixed(2) };
       if (shut.has(p.queued || "") || shut.has(p.at)) return { status: 409, error: "that claim was filed not found, and its row with it: it cannot be received now" };
       /* S6 fix: money sent against the account, booked on this order's row and not folded yet, may be this very money */
-      const onRow = onRows[ledgerKeyOf(o)] || 0, due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0)).toFixed(2);
+      const onRow = onRows[ledgerKeyOf(o)] || 0, due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0) - (+o.credit || 0)).toFixed(2);
       if (onRow > 0.004 && p.amount > due - onRow + 0.004) return { status: 409, error: "RM " + onRow.toFixed(2) + " sent against their account is booked on this order's row and not folded yet, so this claim would pay it twice: answer it once the fold lands" };
       const site = { verdict: { kind: "received", claim: p.at, amount: p.amount } }, shown = { amount: p.amount, claim: p.at };
       const own = Object.assign({}, queued.find((e) => e.at === p.queued) || claimEntry(o, p));
@@ -549,7 +567,7 @@ export function cashTap(o, at, body, ctx) {
   if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) return { error: "say how much cash was taken" };
   /* the order already counts that cash: raising it again would count it twice */
   if (rej && Math.abs(+rej.entry.payload.cash - amount) < 0.005) return { again: "cash" };
-  const due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0) - (+o.claimed || 0)).toFixed(2);   /* S6: less what they say they sent */
+  const due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0) - (+o.credit || 0) - (+o.claimed || 0)).toFixed(2);   /* S6: less what they say they sent; P3: and their credit */
   /* 27 Oct 2026, his word: CASH PAST WHAT THE ORDER OWES IS TAKEN, goods plus delivery the measure, and the excess is the refund the fold raises
      (refundOnOverpay). Beside a claim of theirs, or on an order owing nothing, it is still refused: whether that money is the same is a judgement. */
   if (amount > due + 0.004 && ((+o.claimed || 0) > 0.004 || due <= 0.004))
@@ -610,7 +628,7 @@ export function settledFromRow(o, row) {
   if ((+o.paid || 0) > (+told.paid || 0) + 0.004 || (+o.moved || 0) > (+told.moved || 0) + 0.0004) return null;
   const qty = +(+row.qty).toFixed(3), total = +(+row.total).toFixed(2);
   const delivery = row.trip ? +(+(o.delivery || 0)).toFixed(2) : +(+(row.delivery || 0)).toFixed(2);
-  const paid = +(+POSITION_ENGINE.txPaid(row)).toFixed(2), moved = rowOut(row);
+  const paid = rowPaidFor(o, row), moved = rowOut(row);
   if (!(qty > 0) || !(total > 0) || !(delivery >= 0) || !(paid >= 0) || !(moved >= 0)) return null;
   if (qty > 1000000 || total > 1000000 || delivery > 1000000 || paid > 1000000 || moved > qty + 0.0004) return null;
   if (delivery > 0.004 && o.mode !== "deliver") return null;

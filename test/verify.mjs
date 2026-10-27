@@ -50206,6 +50206,11 @@ await (async () => {
   await (await import("./refund-credit-p2.mjs")).run({ ok });
 })();
 
+section("27 Oct 2026: his Accept spends their credit as paid, the order keeping it apart from paid (refund credit P3)");
+await (async () => {
+  await (await import("./refund-credit-p3.mjs")).run({ ok });
+})();
+
 section("Salt Admin: Orders open by stage, a list beside the order, and Record a menu");
 await (async () => {
   await (await import("./admin-orders.mjs")).run({ ok, pageWork });

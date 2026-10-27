@@ -1608,6 +1608,14 @@ export function draftRow(entry, book) {
      meaningless one now: a half-unit order with a long drive can genuinely cost more to carry than
      the salt is worth. What replaces it is the contradiction, below. */
   if (isNum(pay.delivery) && pay.delivery > 0.005) row.delivery = round(pay.delivery);
+  /* 27 Oct 2026 (docs/plan-refund-credit.html P3): HOW MUCH OF THE CASH IS THEIR CREDIT, which his Accept spent and the fold closes against their
+     refunds; a row on which nothing is handed over carries no cost yet, as a pending sale does */
+  if (isNum(pay.credit) && pay.credit > 0.004) {
+    if (dir !== "SELL") return { skip: "credit is a customer's, and this entry is a purchase" };
+    if (pay.credit > cash + 0.005) return { skip: `the credit of RM ${round(pay.credit)} is more than the RM ${round(cash)} it is booked as paid` };
+    row.credit = round(pay.credit);
+    if (moved < 0.005) delete row.cost;
+  }
   /* v373: who moved the goods, when the entry says. A row that does not say carries no key,
      because the measured delivered share counts the rows that answered and not the silent ones.
      v728: AND A PURCHASE ANSWERS THE SAME QUESTION. It was read on a sale alone, so the word the

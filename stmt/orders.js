@@ -305,7 +305,7 @@ export async function storeCompare(env) {
    F10: `rating` is theirs and travels; `rateAsk`, the moment they were asked, is the desk's and does not. */
 export const CUSTOMER_FIELDS = ["id", "u", "at", "status", "product", "qty", "unit", "mode", "place", "forFriend", "prepay", "sheet", "week",
   "total", "asked", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed", "rowOn", "rating", "wantBy", "replacement", "replaces", "pool",
-  "slot", "slotSpan", "point", "rwd"];   /* rwd (20 Oct 2026): "cross" or "given", one word, never a figure */
+  "slot", "slotSpan", "point", "rwd", "credit"];   /* credit (27 Oct 2026): their refunds spent on this order at his Accept, paid already */   /* rwd (20 Oct 2026): "cross" or "given", one word, never a figure */
 /* COUNTER BATCH A (18 Oct 2026, his decisions): WHERE AN ORDER WAITS. The point's code travels (Details reads "Collected at Point A2"
    after); its place, the snapshot taken at Ready (pointAt), only while the order waits at it: Ready, to collect, with goods still to
    hand over. A fix undo or an amendment can set Ready on an order owing only money, and a customer who owes money is not waiting there. */
@@ -419,7 +419,7 @@ export function orderWork(o) {
  * one wake a slot per CUSTOMER, not per order, and its words are its own ("A payment is due").
  */
 export const aheadOnGoods = (o) => {
-  const owed = +o.total + (+o.delivery || 0), paidF = owed > 0 ? (+o.paid || 0) / owed : 0;
+  const owed = +o.total + (+o.delivery || 0), paidF = owed > 0 ? ((+o.paid || 0) + (+o.credit || 0)) / owed : 0;
   const movedF = +o.qty > 0 ? (+o.moved || 0) / +o.qty : 0;
   return movedF > paidF + 1e-9 && dueOf(o) > 0.004;
 };
@@ -659,7 +659,7 @@ export function checkPlacement(body, open, at, poolOk = false, steps = null, hou
 /* WHAT IS STILL OWED ON AN ORDER, and what is still to be handed over. Both read the record alone:
    the site prices nothing and the ledger is not here. `due` carries the delivery charge, because
    that is what the customer is asked for. */
-export const dueOf = (o) => +((+o.total + (+o.delivery || 0)) - (+o.paid || 0)).toFixed(2);
+export const dueOf = (o) => +((+o.total + (+o.delivery || 0)) - (+o.paid || 0) - (+o.credit || 0)).toFixed(2);   /* 27 Oct 2026: less their credit, paid at his Accept */
 export const owedUnits = (o) => +((+o.qty) - (+o.moved || 0)).toFixed(3);
 
 /* CASH ON DELIVERY IS NOT OFFERED TO SOMEONE ALREADY HOLDING GOODS THEY HAVE NOT PAID FOR (his
@@ -1140,6 +1140,8 @@ export function decideDesk(order, body, at) {
     /* V5b2: the desk decides paid in advance at Accept, from the book; its verdict is the order's from then on */
     if (body && typeof body.prepay === "boolean") ev.prepay = body.prepay;
     if (body && body.rwd === "cross") ev.rwd = "cross";   /* 20 Oct 2026: the reward word his Accept carries */
+    /* 27 Oct 2026 (docs/plan-refund-credit.html P3): their credit his Accept spent, booked on the row as paid and kept here apart from `paid` */
+    if (body && isNum(body.credit) && body.credit > 0.004) ev.credit = +Math.min(body.credit, (+(isNum(ev.total) ? ev.total : order.total) || 0) + (+ev.delivery || 0)).toFixed(2);
     /* 10 Oct 2026 (his Q3): the window he chose for a delivery that asked for none, its span cut to the hours by deskMove.
        Anything else is left out, never refused: the row is approved already, and the acknowledgement must not stall */
     if (body && typeof body.slot === "string" && SLOT_RE.test(body.slot) && typeof body.slotSpan === "string" && SPAN_RE.test(body.slotSpan)
@@ -1169,6 +1171,7 @@ export function applyEvent(order, ev) {
     if (ev.delivery !== undefined) order.delivery = ev.delivery;
     if (ev.prepay === true) order.prepay = true; else if (ev.prepay === false) delete order.prepay;
     if (ev.rwd === "cross" && order.rwd !== "given") order.rwd = "cross";
+    if (isNum(ev.credit)) order.credit = ev.credit;
     if (ev.slot) { order.slot = ev.slot; order.slotSpan = ev.slotSpan; }
     /* Step 2: the goods at the price he set on this order, what they were quoted kept beside it as `asked` */
     if (isNum(ev.total)) { if (order.asked === undefined) order.asked = order.total; order.total = ev.total; }
