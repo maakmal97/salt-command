@@ -1,0 +1,15 @@
+[
+{"name":"an order's stage reads no credit","file":"stmt/owner.js","find":"paid=ordPaidAll(order), owed=ordDue(order);","replace":"paid=Number(order.paid||0), owed=Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0);"},
+{"name":"the stage's lead reads no credit","file":"stmt/owner.js","find":"return o?Math.max(0,ordDue(o)):r?","replace":"return o?Math.max(0,(+o.total||0)+(+o.delivery||0)-(+o.paid||0)):r?"},
+{"name":"a claim past the rest is not Already recorded","file":"stmt/owner.js","find":"function payOnBook(order,payment){ return Number(payment.amount)>ordDue(order)+0.004; }","replace":"function payOnBook(order,payment){ return Number(payment.amount)>Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0)+0.004; }"},
+{"name":"the row sends Already recorded on one tap","file":"stmt/owner.js","find":"||payOnBook(o,ordPays(o)[0])))){ openOrder(e.id); return; }","replace":"))){ openOrder(e.id); return; }"},
+{"name":"the Bill has no Credit line","file":"stmt/owner.js","find":"if(+order.credit>0.004){ var cr=ordLine(","replace":"if(false){ var cr=ordLine("},
+{"name":"the Bill owes the credit too","file":"stmt/owner.js","find":"paid=+order.paid||0, owed=Math.max(0,ordDue(order));","replace":"paid=+order.paid||0, owed=Math.max(0,Number(order.total||0)+Number(order.delivery||0)-paid);"},
+{"name":"cash measured without credit","file":"stmt/owner.js","find":"var due=+(ordDue(order)-(+order.claimed||0)).toFixed(2);","replace":"var due=Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0);"},
+{"name":"a row offers a move beside held cash","file":"stmt/owner.js","find":"main=makerCashHeld[e.id]||makerCashStorageError?'':ordMove(o);","replace":"main=ordMove(o);"},
+{"name":"makerMove says nothing of how it went","file":"stmt/owner.js","find":"if(done) delete makerRids[key]; return done; });   /* 28 Oct 2026: says how it went","replace":"if(done) delete makerRids[key]; });   /* 28 Oct 2026: says how it went"},
+{"name":"Placed's lead counts the goods alone","file":"stmt/owner.js","find":"return [agree.length?rmShort(sum(agree,due))","replace":"return [agree.length?rmShort(sum(agree,function(e){ return e.order?+e.order.total||0:0; }))"},
+{"name":"a part handed over asks for every unit","file":"stmt/owner.js","find":"return (left<(+o.qty||0)-0.0004?'Hand over the last '+units(left):'Hand over '+units(o.qty))","replace":"return ('Hand over '+units(o.qty))"},
+{"name":"Not now drops focus","file":"stmt/owner.js","find":"||(had?n.querySelector('[data-act=\"order.move\"]:not([hidden])')||n.querySelector('.ordrow'):null);","replace":";"},
+{"name":"the row's Yes sends a claim a read left past what is owed","file":"stmt/owner.js","find":"if(main==='Received'&&(ordPays(o).length!==1||payOnBook(o,ordPays(o)[0]))){ delete ordAsk[e.id]; openOrder(e.id); return; }","replace":""}
+]
