@@ -1,7 +1,7 @@
 [
  {"name":"a practice order counts on the glance","file":"stmt/owner.js","find":"      if(o.test&&!TESTING) return;\n      if(orderPartsOf","replace":"      if(orderPartsOf"},
  {"name":"Ready counts every ready status alike","file":"stmt/owner.js","find":"if(orderPartsOf(o)==='orders.ready') ready++;","replace":"if(o.status==='ready'||o.status==='acknowledged') ready++;"},
- {"name":"what is paid is not taken off","file":"stmt/owner.js","find":"left=comes-(+o.paid||0);","replace":"left=comes;"},
+ {"name":"what is paid is not taken off","file":"stmt/owner.js","find":"left=ordDue(o);","replace":"left=comes;"},
  {"name":"the delivery is left out","file":"stmt/owner.js","find":"var comes=(+o.total||0)+(+o.delivery||0), left","replace":"var comes=(+o.total||0), left"},
  {"name":"an agreed order is left out","file":"stmt/owner.js","find":"if(['acknowledged','ready','done'].indexOf(o.status)<0||o.writtenOff) return;","replace":"if(['ready','done'].indexOf(o.status)<0||o.writtenOff) return;"},
  {"name":"the Ready tile goes nowhere","file":"stmt/owner.js","find":"[['#orders/ready','ready'","replace":"[['#needs','ready'"},
