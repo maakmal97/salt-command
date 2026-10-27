@@ -284,7 +284,7 @@ export async function run({ ok }) {
     ok(!!tile && capOf(tile) === "2.5 units" && srOf(tile) === "Cube 2.5 units" && tile.querySelector(".mq").getAttribute("aria-hidden") === "true" && !tile.querySelector(".mq .nb")
       && tiles.length > 10 && tiles.every((tl) => srOf(tl) === SHAPES.find((s) => srOf(tl).startsWith(s + " ")) + " " + capOf(tl)),
       "a tile's caption is the size in words, 2.5 units, with no shape word, and a reader hears the shape and the size once; on every tile the reader's name is the shape, then the caption: " + JSON.stringify([capOf(tile), srOf(tile)]));
-    const sv = new JSDOM("<body>" + P.mtileSvg("salt", "2.5 units") + P.mtileSvg("spare", "1 unit") + "</body>").window.document;
+    const sv = new JSDOM("<body>" + P.mtileSvg("salt", "2.5 units") + P.mtileSvg("tin", "1 unit") + "</body>").window.document;
     const [t1, t2] = [...sv.querySelectorAll(".mtile")];
     ok(!!t1 && !!t2 && capOf(t1) === "2.5 units" && srOf(t1) === "Cube 2.5 units" && capOf(t2) === "1 unit" && srOf(t2) === "Ring 1 unit" && t1.querySelector(".mq").getAttribute("aria-hidden") === "true"
       && t1.querySelectorAll("svg.psym").length === 1 && t1.querySelector("svg text.plet").textContent === P.PLET.salt && shapesDrawn(sv.body).length === 0,
@@ -301,8 +301,8 @@ export async function run({ ok }) {
     /* the signed-in screens: the door and Account say the app's own name, Salt Counter, the one name the site may write (v704) */
     const screens = (d) => ["pHome", "pPrices", "pOrder", "pCard", "osheet", "ynSheet", "paySheet"].map((id) => d.getElementById(id)).filter(Boolean).map(words).join(" ");
     const bits9 = { page: screens(S.d), placed: screens(L.d), sheet: screens(checkL.d), board: words(board.body), tiles: t(sv.body) }, everyText = Object.values(bits9).join(" ");
-    const where9 = Object.entries(bits9).filter(([, v]) => SO.wordsIn(v, PRODUCTS).length).map(([k, v]) => [k, (v.match(/.{0,30}\b(salt|oil|candy|rice|spare)\b.{0,30}/i) || [""])[0]]);
-    ok(SO.wordsIn(everyText, PRODUCTS).length === 0 && !SHAPES.some((s) => SO.wordsIn(s, PRODUCTS).length) && !PRODUCTS.some((w) => new RegExp("(^|[^a-z])" + w, "i").test(SHAPES.join(" "))) && SHAPES.length === 5,
+    const where9 = Object.entries(bits9).filter(([, v]) => SO.wordsIn(v, PRODUCTS).length).map(([k, v]) => [k, (v.match(/.{0,30}\b(salt|oil|candy|rice|gas)\b.{0,30}/i) || [""])[0]]);
+    ok(SO.wordsIn(everyText, PRODUCTS).length === 0 && !SHAPES.some((s) => SO.wordsIn(s, PRODUCTS).length) && !PRODUCTS.some((w) => new RegExp("(^|[^a-z])" + w, "i").test(SHAPES.join(" "))) && SHAPES.length === 7,
       "no product word and no level word in the captions, headings and lines of any screen, what the reader is told included, and none among the five shape words: " + JSON.stringify(where9));
 
     /* ---- 10: his words, through the Worker's lock */

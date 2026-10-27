@@ -139,7 +139,7 @@ export async function run({ ok }) {
       && sh.classList.contains("salt-sheet") && P.d.getElementById("ynScrim").classList.contains("salt-sheet-scrim") && !!P.d.getElementById("ynX").classList.contains("salt-orb"),
       "one danger action, the system's danger ghost, and a ghost that keeps, on the system's Sheet with its scrim and its close orb: " + JSON.stringify([go.className, keep.className]));
     /* 19 Oct 2026: whole words over the sheet spaced at every tag, so encounter, frontier and levelled pass */
-    const banned = /\b(salt|oil|candy|rice|spare|titanium|platinum|gold|silver|bronze|ambassador|tiers?|levels?|counter)\b/i;
+    const banned = /\b(salt|oil|candy|rice|gas|titanium|platinum|gold|silver|bronze|ambassador|tiers?|levels?|counter)\b/i;
     ok(!banned.test(sh.innerHTML.replace(/<[^>]*>/g, " ")) && !banned.test(go.textContent + " " + keep.textContent) && !P.d.getElementById("ynWrap").querySelector("[style]") && !/[A-Z]{2,}[0-9]-[A-Z]{3}/.test(say),
       "it names no product, no brand, no level and no code, and carries no style attribute: " + JSON.stringify(say));
 

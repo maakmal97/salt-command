@@ -3743,7 +3743,7 @@ await (async () => {
 
 section("Every part of every book: no NaN, undefined or Infinity in the text (27 Sep 2026)");
 await (async () => {
-  /* MEASURED ON LIVE v890, 27 SEP 2026: with spare in view the Pricing board printed "NaN% margin" at every size and
+  /* MEASURED ON LIVE v890, 27 SEP 2026: with gas in view the Pricing board printed "NaN% margin" at every size and
      "NaN% to NaN%" and "NaNx to NaNx" under it, fourteen strings. Spare has no cost, and the engine's margin and markup
      divide by a price and a COGS of nothing. The sweeps above read one part, or the book the desk opens on, so a book
      opened empty was never read. Every book in turn, set as the desk sets it (PROD, then recompute: perProduct draws
@@ -3942,7 +3942,7 @@ await (async () => {
       /* a percentage OR a multiple: v401 states a ringgit as a multiple of any contribution
          under a ringgit, because "200.0% of what it earns" is not a share. Either form is a
          figure, and a figure is what the strip would have taken. */
-      /* 27 Sep 2026 (Rule 5 readings): the panel reads the ask, and a book the ask prices at no size (spare, with no
+      /* 27 Sep 2026 (Rule 5 readings): the panel reads the ask, and a book the ask prices at no size (gas, with no
          cost and no trade) has no earnings to take a share of, so it says that instead, still in bold */
       const askPriced = read("PRICING_ENGINE.ladderRow(shownSizes(PROD),pxCost(),pxPolicy()).find(function(r){return r.code==='T2';}).prices.some(function(p){return p>0;})");
       ok(askPriced ? /\d[\d.]*\s?(%|times)/.test(t) : /^No ask on this book yet, so no order has earnings/.test(t),
@@ -4078,7 +4078,7 @@ await (async () => {
      dropped them. The older decision is not corrected away: it stands in the Journal at v641. */
   ok(JSON.stringify(read("sizesFor('oil')")) === JSON.stringify([10, 20, 30, 40, 50]),
     "oil's grid is his: 10 to 50 in tens, and 80 and 100 went with the tiers (his decision of 19 Sep 2026)");
-  ok(JSON.stringify(read("sizesFor('salt')")) === JSON.stringify([0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6.25, 12.5]),
+  ok(JSON.stringify(read("sizesFor('salt')")) === JSON.stringify([0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6.25, 12.5, 25, 50, 100]),
     "salt's grid is untouched");
   const oilL = read("ladderFor('oil')"), saltL = read("ladderFor('salt')");
   ok(oilL.at.lo === 10 && oilL.at.hi === 50 && oilL.anchorQ === 10,
@@ -8379,7 +8379,7 @@ if (!(await import("./tide-off.mjs")).TIDE_OFF) await (async () => {   /* parked
   const lum = (hx) => { const c = [1, 3, 5].map((i) => parseInt(hx.slice(i, i + 2), 16) / 255).map((v) => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
   const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
   const HEX = /^#[0-9a-f]{6}$/i, TEXT = ["salt", "mist", "mist-light", "brass", "copper", "ember", "verdigris", "steel", "amber", "alarm", "brass-soft",
-    "product-salt", "product-oil", "product-candy", "product-rice", "product-spare"];
+    "product-salt", "product-oil", "product-candy", "product-rice", "product-gas"];
   const lowest = (T) => {   /* every text colour against the ground and the slate: the lowest ratio of each, and the ones under 4.5 */
     const grounds = ["obsidian", "slate"].map((k) => T[k]), rows = TEXT.map((k) => [k, HEX.test(T[k] || "") && grounds.every((g) => HEX.test(g || "")) ? Math.min(...grounds.map((g) => ratio(T[k], g))) : 0]);
     return { grounds, weak: rows.filter((r) => r[1] < 4.5).map((r) => r[0] + " " + (r[1] ? r[1].toFixed(2) : "missing")), min: Math.min(...rows.map((r) => r[1])) };
@@ -8389,7 +8389,7 @@ if (!(await import("./tide-off.mjs")).TIDE_OFF) await (async () => {   /* parked
   ok(lt.grounds.every(Boolean) && lt.weak.length === 0, `every Tide text colour holds 4.5:1 on Tide's ground and slate (lowest ${lt.min.toFixed(2)}; short: ${lt.weak.join(", ") || "none"})`);
   /* Tide restates every colour Night declares as a literal, bar the ones the two share by design (the warning, the books' hues, the black shadows and
      wells, the bar's white sheen, the QR): a token left out would quietly stay Night's on a Tide ground */
-  const SHARED = ["amber", "product-salt", "product-oil", "product-candy", "product-rice", "product-spare", "shadow", "shadow-desk", "well", "well-hover", "deskbar-sheen", "qr-field", "qr-ink"];
+  const SHARED = ["amber", "product-salt", "product-oil", "product-candy", "product-rice", "product-gas", "shadow", "shadow-desk", "well", "well-hover", "deskbar-sheen", "qr-field", "qr-ink"];
   /* 12 Oct 2026 (Phase 5b): the four look swatches and the paper inks are the same under both themes by design: a swatch shows its own theme while the other is on, and a sheet of paper is not a theme */
   const unrestated = Object.keys(NIGHT).filter((k) => /#[0-9a-f]{3,8}\b|rgba?\(/i.test(NIGHT[k]) && !/^var\(/.test(NIGHT[k]) && !(k in TIDE_OVER) && !SHARED.includes(k) && !/^(swatch-(night|tide)-(ground|accent)|paper(-[a-z-]+)?)$/.test(k));
   ok(Object.keys(TIDE_OVER).length > 20 && unrestated.length === 0, `Tide restates every colour token Night declares, bar the shared ones (left out: ${unrestated.join(" ") || "none"})`);
@@ -8678,7 +8678,7 @@ await (async () => {
   /* every token stubbed to its own colour: nothing a chart draws may be a literal */
   const STUB = { "salt-salt": "#0a0b01", "salt-brass": "#0a0b02", "salt-copper": "#0a0b03", "salt-verdigris": "#0a0b04", "salt-ember": "#0a0b05",
     "salt-steel": "#0a0b06", "salt-product-salt": "#0a0b07", "salt-mist-light": "#0a0b08", "salt-brass-soft": "#0a0b09", "salt-obsidian": "#0a0b0a",
-    "salt-slate": "#0a0b0b", "salt-product-oil": "#0a0b0c", "salt-product-candy": "#0a0b0d", "salt-product-rice": "#0a0b0e", "salt-product-spare": "#0a0b0f",
+    "salt-slate": "#0a0b0b", "salt-product-oil": "#0a0b0c", "salt-product-candy": "#0a0b0d", "salt-product-rice": "#0a0b0e", "salt-product-gas": "#0a0b0f",
     "salt-line-strong": "rgba(10,11,2,0.45)", "desk-chart-grid": "rgba(1,2,3,0.07)" };
   for (const [k, v] of Object.entries(STUB)) root("--" + k, v);
   const stubSeen = drawAll();
@@ -15480,10 +15480,10 @@ await (async () => {
     w47.eval("(function(){if(roster.indexOf('CZ9-CD')<0)roster.push('CZ9-CD');BASE_SALES.push.apply(BASE_SALES," + JSON.stringify(fx47) + ");queue=[];applyOverlay();TIER_OF['CZ9-CD']={salt:0.25};setProd('salt');recompute();})()");
     const snap47 = ps47(w47);
     const sb47 = snap47.byProduct.salt;
-    ok(snap47.tierNames === undefined && snap47.tierOf === undefined && sb47.cards && Array.isArray(sb47.cards["CZ9-CD"]) && sb47.cards["CZ9-CD"].length === 12
-      && sb47.lift && sb47.lift["CZ9-CD"] === 0.25 && sb47.ladder.length === 12 && snap47.byProduct.oil.ladder.length === 5
+    ok(snap47.tierNames === undefined && snap47.tierOf === undefined && sb47.cards && Array.isArray(sb47.cards["CZ9-CD"]) && sb47.cards["CZ9-CD"].length === 15
+      && sb47.lift && sb47.lift["CZ9-CD"] === 0.25 && sb47.ladder.length === 15 && snap47.byProduct.oil.ladder.length === 5
       && snap47.byProduct.oil.ladder.every((r) => r.fixed),
-      "the pricing snapshot carries no level names, each customer's card at salt's twelve sizes with the % held for them, and oil's five marked as the typed board they are: " + JSON.stringify(Object.keys(snap47)));
+      "the pricing snapshot carries no level names, each customer's card at salt's fifteen sizes with the % held for them, and oil's five marked as the typed board they are: " + JSON.stringify(Object.keys(snap47)));
     ok(JSON.stringify(sb47.ladder.map((r) => r.prices)) === JSON.stringify(rd47("(function(){setProd('salt');recompute();return fiveTiersNow().map(function(r){return r.prices;});})()")),
       "and the ladder it carries is the desk's own");
     const book47 = { PRODUCTS: { salt: { name: "Salt", unit: "unit" }, oil: { name: "Oil", unit: "unit" } }, PROD_ORDER: ["salt", "oil"], sales: rd47("sales") };
@@ -21921,7 +21921,7 @@ await (async () => {
     ok(tiered91.length >= 1 && order91.some((p) => !tiered91.includes(p))
       && JSON.stringify(snap91.products.map((p) => p.product)) === JSON.stringify(order91)
       && snap91.products.every((p) => p.rows.length >= 6),
-      "his card carries every book's progress, the fixed boards and the spare book beside the tiered: "
+      "his card carries every book's progress, the fixed boards and the gas book beside the tiered: "
       + JSON.stringify({ card: snap91.products.map((p) => p.product), order: order91, tiered: tiered91 }));
     book91.w.eval("var rs91=REWARD.stated.oil;REWARD.stated.oil=REWARD.stated.salt;");
     let oil91 = null;
@@ -23611,18 +23611,18 @@ await (async () => {
   const { JSDOM: JD8 } = await import("jsdom");
   const C8 = await import("../tools/stmt-crypto.mjs");
   const OW8 = await import("../src/orders.js");
-  const BOOKS8 = ["salt", "oil", "candy", "rice"];
+  const BOOKS8 = ["salt", "oil", "candy", "rice", "gas", "prep"];
 
   /* ---- the table ---- */
-  ok(JSON.stringify(P8.PLET) === JSON.stringify({ salt: "I", oil: "G", candy: "E", rice: "V" }),
-    "his letters: I in the cube, G in the droplet, E in the lozenge, V in the capsule: " + JSON.stringify(P8.PLET));
+  ok(JSON.stringify(P8.PLET) === JSON.stringify({ salt: "I", oil: "G", candy: "E", rice: "V", gas: "P", prep: "PrEP" }),
+    "his letters: I in the cube, G in the droplet, E in the lozenge, V in the capsule, P in the flame, PrEP in the heart-shaped pill: " + JSON.stringify(P8.PLET));
   /* each book's words, held to the lock's own list both ways: a word the list gains and no book here
      owns goes red, so a new name cannot slip past the initial check (a new book joins OWN8, lettered or not) */
-  const OWN8 = { salt: ["salt"], oil: ["oil"], candy: ["candy"], rice: ["rice"] };
+  const OWN8 = { salt: ["salt"], oil: ["oil"], candy: ["candy"], rice: ["rice"], gas: ["gas"], prep: ["prep"] };
   const owned8 = Object.values(OWN8).flat(), letters8 = Object.values(P8.PLET).join("");
   ok(OW8.PRODUCT_WORDS.every((w) => owned8.includes(w)) && owned8.every((w) => OW8.PRODUCT_WORDS.includes(w))
-    && Object.keys(P8.PLET).every((k) => OWN8[k] && /^[A-Z]$/.test(P8.PLET[k]) && OWN8[k].every((w) => w[0].toUpperCase() !== P8.PLET[k]))
-    && !OW8.PRODUCT_WORDS.some((w) => [...w.replace(/-/g, "").toUpperCase()].every((c) => letters8.includes(c))),
+    && Object.keys(P8.PLET).every((k) => OWN8[k] && (k === "prep" ? P8.PLET[k] === "PrEP" : /^[A-Z]$/.test(P8.PLET[k]) && OWN8[k].every((w) => w[0].toUpperCase() !== P8.PLET[k])))   /* PrEP is his word, set small in the heart (27 Oct 2026) */
+    && !OW8.PRODUCT_WORDS.filter((w) => w !== "prep").some((w) => [...w.replace(/-/g, "").toUpperCase()].every((c) => letters8.includes(c))),
     "each is one capital, none is its book's initial, and together they spell no product word: " + letters8);
 
   /* ---- psymSvg, the server's twin: the letter always, and nothing turns it off ---- */
@@ -23631,8 +23631,8 @@ await (async () => {
       return lets8(s).join() === P8.PLET[k] && (s.match(/<text/g) || []).length === 1 && P8.psymSvg(k, px, false) === s
         && /<text[^>]* fill="currentColor"/.test(s) && /aria-hidden="true"/.test(s) && s.includes('width="' + px + '" height="' + px + '"'); })),
     "psymSvg draws each book's letter in its mark once, at every size, in the mark's ink and hidden from a reader, and no third argument turns it off");
-  ok(["spare", "tin", "", null].every((k) => !/<text/.test(P8.psymSvg(k, 28)) && /A8\.6 8\.6/.test(P8.psymSvg(k, 28))),
-    "the spare book and a product with no mark keep the bare Ring");
+  ok(["tin", "tin", "", null].every((k) => !/<text/.test(P8.psymSvg(k, 28)) && /A8\.6 8\.6/.test(P8.psymSvg(k, 28))),
+    "the gas book and a product with no mark keep the bare Ring");
   /* the mark gives its letter room: the cube's three inner edges stop at radius 5 and the capsule gives its seam */
   const dOf8 = (svg) => (/<path d="([^"]*)"/.exec(svg) || [])[1] || "";
   const shell8 = (d) => d.slice(0, d.indexOf("Z") + 1);
@@ -23649,9 +23649,11 @@ await (async () => {
     "the capsule gives its seam, which crosses its centre, to the letter, and the droplet and the lozenge are drawn as they are: " + seam8);
   /* HIS REDRAW OF 28 SEP 2026: every letter the same size on the same line, and every mark one ratio, 1:1 */
   const at8 = BOOKS8.map((k) => (/<text[^>]* x="([\d.]+)" y="([\d.]+)" font-size="([\d.]+)"/.exec(P8.psymSvg(k, 28)) || []).slice(1).map(Number));
-  ok(at8.every((a) => a.length === 3) && new Set(at8.map((a) => a.join())).size === 1 && at8[0][0] === 12 && at8[0][2] === 8
-    && Math.abs(at8[0][1] - 0.365 * at8[0][2] - 12) < 0.01,
-    "every letter is the same size, 8 in the 24 grid, on the same line, its capitals centred on the mark's centre: " + JSON.stringify(at8));
+  /* PrEP is his word, not a capital (27 Oct 2026): it is set smaller so its width stays inside the heart, on the same centred line */
+  const one8 = at8.filter((a, i) => BOOKS8[i] !== "prep"), word8 = at8[BOOKS8.indexOf("prep")];
+  ok(at8.every((a) => a.length === 3) && new Set(one8.map((a) => a.join())).size === 1 && one8[0][0] === 12 && one8[0][2] === 8
+    && at8.every((a) => a[0] === 12 && Math.abs(a[1] - 0.365 * a[2] - 12) < 0.01) && word8[2] < 8 && word8[2] * 0.6 * 4 <= 13.01,
+    "every capital is the same size, 8 in the 24 grid, on the same line, centred on the mark's centre, and PrEP's word smaller on that line: " + JSON.stringify(at8));
   const pts8 = (d) => { const t = d.match(/[MLCAZ]|-?\d*\.?\d+/g) || [], out = []; let i = 0, c = "", x = 0, y = 0, x0 = 0, y0 = 0; const n = () => +t[i++];
     while (i < t.length) {
       if (/[MLCAZ]/.test(t[i])) c = t[i++];
@@ -23677,20 +23679,20 @@ await (async () => {
     return out; };
   const box8 = (d) => { const p = pts8(d), xs = p.map((q) => q[0]), ys = p.map((q) => q[1]);
     return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)].map((v) => +v.toFixed(2)); };
-  const MARKS8 = Object.keys(P8.PSYM), boxes8 = Object.fromEntries([...MARKS8, "spare"].map((k) => [k, box8(dOf8(P8.psymSvg(k, 28)))]));
+  const MARKS8 = Object.keys(P8.PSYM), boxes8 = Object.fromEntries([...MARKS8, "tin"].map((k) => [k, box8(dOf8(P8.psymSvg(k, 28)))]));
   const near8 = (a, b) => Math.abs(a - b) < 0.06;
   ok(MARKS8.length >= 4 && MARKS8.every((k) => { const [x0, y0, x1, y1] = boxes8[k]; return near8(y0, 2.6) && near8(y1, 21.4) && near8((x0 + x1) / 2, 12); })
     && near8(boxes8.rice[2] - boxes8.rice[0], boxes8.rice[3] - boxes8.rice[1]) && near8(boxes8.candy[2] - boxes8.candy[0], 18.8)
-    && near8((boxes8.spare[0] + boxes8.spare[2]) / 2, 12) && near8((boxes8.spare[1] + boxes8.spare[3]) / 2, 12) && boxes8.spare[3] - boxes8.spare[1] > 17,
+    && near8((boxes8.tin[0] + boxes8.tin[2]) / 2, 12) && near8((boxes8.tin[1] + boxes8.tin[3]) / 2, 12) && boxes8.tin[3] - boxes8.tin[1] > 17,
     "every book's mark stands 2.6 to 21.4 about the centre, the capsule and the lozenge as wide as they are tall, and the ring centred and near as large: "
     + JSON.stringify(boxes8));
-  /* the app's own ring is not the book's: the redraw grew the spare book's Ring, and the door keeps the icon's proportion */
-  ok(/A7\.8 7\.8/.test(P8.glyphSvg("ring", 40)) && dOf8(P8.glyphSvg("ring", 40)) !== dOf8(P8.psymSvg("spare", 40)),
+  /* the app's own ring is not the book's: the redraw grew the gas book's Ring, and the door keeps the icon's proportion */
+  ok(/A7\.8 7\.8/.test(P8.glyphSvg("ring", 40)) && dOf8(P8.glyphSvg("ring", 40)) !== dOf8(P8.psymSvg("tin", 40)),
     "and the app's own ring, on the door and the rail, keeps the home-screen icon's proportion");
 
   /* ---- mtileSvg, the card: the mark a button, the figure under it and nothing else to see; a reader hears the shape and
      the size in words, the figure once ---- */
-  const td8 = new JD8("<body>" + P8.mtileSvg("salt", "2.5 units") + P8.mtileSvg("spare", "1 unit") + "</body>").window.document;
+  const td8 = new JD8("<body>" + P8.mtileSvg("salt", "2.5 units") + P8.mtileSvg("tin", "1 unit") + "</body>").window.document;
   const seen8 = (n) => [...n.childNodes].filter((c) => !(c.classList && c.classList.contains("sr"))).map((c) => c.textContent).join("").trim();
   const [tS8, tR8] = [...td8.querySelectorAll(".mtile")];
   ok(!!tS8 && tS8.querySelectorAll("svg.psym").length === 1 && tS8.querySelector("svg.psym").getAttribute("width") === "28"
@@ -23700,13 +23702,13 @@ await (async () => {
     "a card's mark is a button at 28px with its letter, the size under it and no shape word drawn, and a reader hears the shape and the size once: "
     + JSON.stringify([tS8 && seen8(tS8), tS8 && tS8.querySelector(".sr").textContent]));
 
-  /* ---- the page, served and driven: an associate with three books priced, rice and the spare book not yet, a card, an order ---- */
+  /* ---- the page, served and driven: an associate with three books priced, rice and the gas book not yet, a card, an order ---- */
   const u8 = "abcd-efgh", pass8 = "fixture-pass-f8", ck8 = await C8.contentKey("test-secret", u8), env8 = { STMT: new KV() };
   const list8 = { at: "2026-09-28T00:00:00Z", week: { monday: "2026-09-28", label: "28 Sep 2026" },
     products: [{ product: "salt", name: "Salt", unit: "unit", rate: 120, orders: 4, basis: "yours", sizes: [{ q: 1, price: 130 }, { q: 2.5, price: 300 }] },
                { product: "oil", name: "Oil", unit: "unit", rate: 40, orders: 2, basis: "yours", sizes: [{ q: 1, price: 44 }] },
                { product: "candy", name: "Candy", unit: "unit", rate: 20, orders: 1, basis: "yours", sizes: [{ q: 1, price: 24 }] }],
-    soon: [{ product: "rice", name: "Rice" }, { product: "spare", name: "Spare" }] };
+    soon: [{ product: "rice", name: "Rice" }, { product: "tin", name: "Tin" }] };
   const card8 = { at: "2026-09-24T04:00:00Z", products: ["salt"].map((product) => ({ product, unit: "unit",
     summary: { bought: 770, soldFor: 390, onward: 2, introduced: 240, referred: 1 }, reward: { earned: 1.6, taken: 1, left: 0.6, next: 0.42, held: false },
     lines: [{ date: "2026-09-12", kind: "resale", qty: 2.5, rm: 270 }] })) };
@@ -23754,7 +23756,7 @@ await (async () => {
     const look8 = (s) => { const p = s.querySelector("path"), t = s.querySelector("text");
       return p.getAttribute("d") + "|" + (t ? ["class", "x", "y", "font-size", "text-anchor", "fill"].map((a) => t.getAttribute(a)).join(",") + "," + t.textContent : ""); };
     const srv8 = (k) => { const h = D8.createElement("div"); h.innerHTML = P8.psymSvg(k, 28); return look8(h.querySelector("svg")); };
-    const pair8 = [...D8.querySelectorAll("#pPrices h2.pmark svg.psym")].map((s, i) => [look8(s), srv8(["salt", "oil", "candy", "rice", "spare"][i])]);
+    const pair8 = [...D8.querySelectorAll("#pPrices h2.pmark svg.psym")].map((s, i) => [look8(s), srv8(["salt", "oil", "candy", "rice", "tin"][i])]);
     ok(pair8.length === 5 && pair8.every(([a, b]) => a === b), "and each is psymSvg's own drawing, path, letter and place: " + JSON.stringify(pair8.filter(([a, b]) => a !== b).slice(0, 2)));
     /* Home first, as it opens: Order again and the order under Coming up */
     const home8 = { again: [...D8.querySelectorAll("#pHome .htile svg.psym")], rows: [...D8.querySelectorAll("#pHome .salt-inbox-row svg.psym")] };
@@ -23796,14 +23798,14 @@ await (async () => {
   const RF8 = await import("../stmt/refs.js");
   const genv8 = { STMT: new KV() };
   await genv8.STMT.put("guestboard", JSON.stringify({ week: { label: "28 Sep 2026" },
-    products: BOOKS8.concat(["spare"]).map((product) => ({ product, unit: "unit", sizes: [{ q: 1, price: 10 }] })) }));
+    products: BOOKS8.concat(["tin"]).map((product) => ({ product, unit: "unit", sizes: [{ q: 1, price: 10 }] })) }));
   const g8 = await RF8.mintRef(genv8, { label: "f8" });
   const gr8 = await W8.fetch(new Request("https://k7m3p2.example/g/" + g8.id), genv8), board8 = await gr8.text();
   const gd8 = new JD8(board8).window.document, gm8 = census8(gd8);
   const gcss8 = [...gd8.querySelectorAll("style")].map((s) => s.textContent).join("\n");
-  ok(gr8.status === 200 && gm8.length === 5 && gm8.filter((m) => !m.ring).map((m) => m.lets).join("") === "IGEV" && gm8.filter((m) => m.ring).every((m) => !m.lets)
+  ok(gr8.status === 200 && gm8.length === 7 && gm8.filter((m) => !m.ring).map((m) => m.lets).join("") === "IGEVPPrEP" && gm8.filter((m) => m.ring).every((m) => !m.lets)
     && gm8.every((m) => m.px >= 20),
-    "the guest board draws its four books' marks with their letters, the Ring bare, none under 20px: " + JSON.stringify(gm8));
+    "the guest board draws its six books' marks with their letters, the Ring bare, none under 20px: " + JSON.stringify(gm8));
   ok(/\.psym \.plet\{font-family:var\(--salt-font-mono\)/.test(gcss8) && /font-family: 'Geist Mono'/.test(gcss8)
     && /font-src 'self'/.test(gr8.headers.get("content-security-policy") || ""),
     "and the board's own styles carry the letter's mono face, whose file its policy lets load");
@@ -25482,7 +25484,7 @@ await (async () => {
        this vacuous, and so would a book outside the tiers that no reward unit reaches: oil carries salt's unit in cardOil6 */
     ok(tiered6.length >= 1 && order6.some((p) => !tiered6.includes(p))
       && JSON.stringify(card6.products.map((p) => p.product)) === JSON.stringify(order6),
-      "their card carries every book's progress, the fixed boards and the spare book beside the tiered: "
+      "their card carries every book's progress, the fixed boards and the gas book beside the tiered: "
       + JSON.stringify({ card: card6.products.map((p) => p.product), order: order6, tiered: tiered6 }));
     const oilC6 = cardOil6 && cardOil6.products.find((p) => p.product === "oil"), saltC6 = cardOil6 && cardOil6.products.find((p) => p.product === "salt");
     ok(!!oilC6 && !!saltC6 && oilC6.reward === null && !!saltC6.reward && !tiered6.includes("oil")
@@ -39805,12 +39807,12 @@ await (async () => {
   ok(Object.keys(PSYM).every((k) => PSHAPE[k]),
     "every mark has a shape word, or a control holding only that mark says nothing to a screen reader");
   ok(PSHAPE.candy === "Lozenge" && PSHAPE.rice === "Capsule", "candy is a Lozenge and rice a Capsule");
-  ok(psymSvg("spare", 24).includes("A8.6 8.6") && psymSvg("spare", 24).includes("<path"),
+  ok(psymSvg("tin", 24).includes("A8.6 8.6") && psymSvg("tin", 24).includes("<path"),
     "a book with no mark draws the Ring rather than a blank, which would read as a fault");
   ok(psymSvg("SALT", 24) === psymSvg("salt", 24), "a mark is found whatever the case of the id");
   const words = Object.values(PSHAPE).join(" ").toLowerCase();
   const WLs = await import("../src/orders.js");
-  ok(!ids.some((id) => words.includes(id)) && !/\b(salt|oil|candy|rice|spare)\b/.test(words) && !WLs.wordsIn(words, WLs.PRODUCT_WORDS).length,
+  ok(!ids.some((id) => words.includes(id)) && !/\b(salt|oil|candy|rice|gas)\b/.test(words) && !WLs.wordsIn(words, WLs.PRODUCT_WORDS).length,
     "and no shape word is a product's name: the mark is the thing, never the word for it");
 })();
 
@@ -39826,7 +39828,7 @@ await (async () => {
   const { openMaster } = await import("../tools/payload.mjs");
   const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const MAPS6 = ["PRODUCTS", "PROD_OPENING", "COUNT_ON", "PRICE_SET", "COST_RULE", "QUOTES"];
-  const opened = ["candy", "rice", "spare"];
+  const opened = ["candy", "rice", "gas", "prep"];
   /* v789: WHICH BOOKS ARE EMPTY IS ASKED OF THE BOOK, NOT TYPED HERE. All three were empty the day
      they were opened; the v788 fold then put a sale and a lot on candy and two lots on rice, so a
      list typed into this test said "empty" about books that trade. Rule 2 of the parity scan is
@@ -39836,7 +39838,7 @@ await (async () => {
     + bk.purchases.filter((r) => (r.product || "salt") === id).length;
 
   ok(opened.every((id) => MAPS6.every((k) => book[k] && id in book[k]) && book.PROD_ORDER.includes(id)),
-    "candy, rice and spare are registered in all six per-product maps and the order");
+    "candy, rice, gas and prep are registered in all six per-product maps and the order");
   /* 25 Sep 2026, test only: WHAT A BOOK WITH NOTHING ON IT CARRIES IS ASKED OF EVERY BOOK, NOT OF THREE BY NAME.
      This line said nothing opened carries a stated count, and on 24 Sep 2026 (v836) he counted rice at 94, a count
      that wins over the ledger and that the book is right to hold: a book that trades gets counted. A stated count
@@ -39856,7 +39858,7 @@ await (async () => {
 
   const { w } = await openMaster();
   const ids = JSON.parse(w.eval("JSON.stringify(PROD_IDS)"));
-  ok(ids.length === 4 && opened.filter((id) => id !== "spare").every((id) => ids.includes(id)) && !ids.includes("spare"), "the desk carries four live books, spare registered but retired: " + JSON.stringify(ids));
+  ok(ids.length === 6 && opened.every((id) => ids.includes(id)), "the desk carries six live books, gas and prep the fifth and sixth: " + JSON.stringify(ids));
 
   /* A FIGURE IS STATED WHERE IT IS TRUE. creditCapFor falls back to the default book, so the
      sentence that begins "Credit caps are per book" stated salt's 1 unit as candy's own the
@@ -39887,7 +39889,7 @@ await (async () => {
   try { w.close(); } catch (e) { }
 
   /* 26 Sep 2026, test only: THE EMPTY BOOK THE SCAN READS IS OPENED FOR IT, NOT WAITED FOR. The book decided which books were
-     empty, but the check still asked that at least one was: spare is the last with nothing on it, and its first row would
+     empty, but the check still asked that at least one was: gas is the last with nothing on it, and its first row would
      leave rule 2 nothing to fire on and turn a version that changed nothing red. So the scan runs on a copy of the book and
      the master with one more book opened by the one road, tools/product.mjs, which opens it empty by construction (v778's),
      beside whichever books the live book leaves empty. Which books those are is still asked of the copy's own rows. */
@@ -42527,8 +42529,8 @@ await (async () => {
     out.twice = await place("salt", S);
     out.fifth = await place("rice");
     out.join = await place("candy", S);
-    out.sixth = await place("spare");
-    out.newSheet = await place("spare", T);
+    out.sixth = await place("gas");
+    out.newSheet = await place("gas", T);
     out.bad = await place("salt", "short");
     return out;
   };
@@ -43488,8 +43490,8 @@ await (async () => {
      a token name rather than on anything a customer can read. */
   /* S13 13.2: in either language, off the site lock's own list */
   const WL82 = await import("../src/orders.js");
-  ok(!/\b(salt|oil|candy|rice|spare)\b/i.test(t) && !WL82.wordsIn(t, WL82.PRODUCT_WORDS).length,
-    "and no product is named in words anywhere a customer reads: " + (t.match(/\b(salt|oil|candy|rice|spare)\b/i) || WL82.wordsIn(t, WL82.PRODUCT_WORDS))[0]);
+  ok(!/\b(salt|oil|candy|rice|gas)\b/i.test(t) && !WL82.wordsIn(t, WL82.PRODUCT_WORDS).length,
+    "and no product is named in words anywhere a customer reads: " + (t.match(/\b(salt|oil|candy|rice|gas)\b/i) || WL82.wordsIn(t, WL82.PRODUCT_WORDS))[0]);
   ok(/Cube/.test(b) && /Droplet/.test(b),
     "the marks carry their SHAPE as the accessible name, so a screen reader is told what is drawn and not what it is");
   ok(!/<img|src=/i.test(b.replace(/<svg[\s\S]*?<\/svg>/g, "")),
@@ -44007,9 +44009,9 @@ await (async () => {
     "an item every book raises is listed once and carries no book: " + JSON.stringify(everywhere));
   ok(saltOnly.length > 0 && saltOnly.every((t) => v.rows.some((r) => r.t === t && JSON.stringify(r.tags) === '["Salt"]')),
     "salt's own items are on Today with oil in view, each tagged Salt: " + JSON.stringify(saltOnly));
-  ok(JSON.stringify(v.band) === JSON.stringify(v.live.map((p) => p[0].toUpperCase() + p.slice(1))) && !v.live.includes("spare") && v.live.includes("rice"),
-    "the band is one row a book with anything on it, and a book with nothing, spare, is left off: " + JSON.stringify(v.band));
-  ok(!v.all.some((x) => x.books.includes("spare")), "and an empty book raises nothing on Today, not even its own trigger");
+  ok(JSON.stringify(v.band) === JSON.stringify(v.live.map((p) => p[0].toUpperCase() + p.slice(1))) && !v.live.includes("gas") && v.live.includes("rice"),
+    "the band is one row a book with anything on it, and a book with nothing, gas, is left off: " + JSON.stringify(v.band));
+  ok(!v.all.some((x) => x.books.includes("gas")), "and an empty book raises nothing on Today, not even its own trigger");
   ok(+v.badge === v.all.filter((x) => x.sev === "now").length && v.prod === "oil" && /Every book/.test(v.scope),
     "the Today badge counts Now across every book, and the book in view is left as it was: " + JSON.stringify({ badge: v.badge, prod: v.prod }));
   try { w.close(); } catch (e) { /* best effort */ }
@@ -44680,7 +44682,7 @@ await (async () => {
   ok(v.n.allNow === 1 && v.n.all >= 1 && v.n.act === v.live.length,
     "one Today render walks every book's actions once, however many ask (the badge keeps its figure from fold 5): " + JSON.stringify({ n: v.n, live: v.live }));
   const ks = Object.keys(v.keys);
-  ok(ks.length >= 2 && v.n.splitNow === ks.length && ks.every((p) => v.keys[p] === 1 && v.live.indexOf(p) >= 0) && v.n.split > v.n.splitNow,
+  ok(ks.length >= 2 && v.n.splitNow === ks.length && ks.every((p) => v.keys[p] === 1) && v.n.split > v.n.splitNow,
     "and approachSplit is made once a book inside it, however many readers ask: " + JSON.stringify({ split: v.n.split, made: v.keys }));
   /* the memo is closed when render returns, and when a builder throws out of it */
   const t = JSON.parse(w.eval(`(function(){var b=builders.today,msg='';
@@ -44746,7 +44748,7 @@ await (async () => {
       var memo=draw(),again=draw(),kr=window.restockFor,kf=window.forecast;
       restockFor=function(p){return restockForNow(p);};forecast=function(o){return forecastNow(o);};
       var fresh;try{fresh=draw();}finally{restockFor=kr;forecast=kf;}
-      return {n:n,live:liveBooks().length,parts:parts.length,
+      return {n:n,live:PROD_IDS.length,parts:parts.length,
         diff:parts.filter(function(p){return memo[p]!==fresh[p];}),unstable:parts.filter(function(p){return memo[p]!==again[p];})};})())`));
     ok(v.live >= 2 && v.n.restock > 0 && v.n.restock <= v.live && v.n.forecast > 0 && v.n.forecast <= v.live,
       "one Today render builds each book's restock plan and bare forecast at most once: " + JSON.stringify(v.n));
@@ -45354,7 +45356,7 @@ await (async () => {
 
 section("The lots chart names Defaulted only for a book that has actually defaulted a lot");
 await (async () => {
-  /* Desk check of 27 Sep 2026: oil, candy, rice and spare have never defaulted a purchase, so the
+  /* Desk check of 27 Sep 2026: oil, candy, rice and gas have never defaulted a purchase, so the
      Analysis view's bubble chart always pushed both "Lots received" and "Defaulted" as datasets,
      and the second carried a legend entry with nothing in it on every book but salt, the same
      shape as the one-off series drawEarnChart already guards and the Tier 1 line the board chart
@@ -45445,7 +45447,7 @@ await (async () => {
 
   /* the table, on a state made here */
   const state = (queue, tree) => ({ book: { books: { salt: { shelf: 11.5, counted: true, free: -5, credit: 390, writtenOff: 260 },
-    oil: { shelf: 30, counted: true, free: 30, credit: 0, writtenOff: 0 }, candy: { shelf: 14, counted: true, free: 10, credit: 0, writtenOff: 0 }, spare: { shelf: 0, counted: false, free: 0, credit: 0, writtenOff: 0 } }, pending: ["s1"], undated: 0 },
+    oil: { shelf: 30, counted: true, free: 30, credit: 0, writtenOff: 0 }, candy: { shelf: 14, counted: true, free: 10, credit: 0, writtenOff: 0 }, gas: { shelf: 0, counted: false, free: 0, credit: 0, writtenOff: 0 } }, pending: ["s1"], undated: 0 },
     queue, tree: Object.assign({ branch: "master", head: "abc1234", dirty: [], ahead: 0, behind: 0, fetched: true, staged: [] }, tree) });
   const tb = T.table(state({ list: Lf, approved: { n: 0 }, queue: Q }, {})).split("\n");
   const tb2 = T.table(state(null, { dirty: ["a.js", "b.js"], ahead: 1, fetched: false, staged: ["_to_fold.json"] })).split("\n");
@@ -48470,9 +48472,9 @@ section("05 Oct 2026: any quantity at an automatic price, one rule over each boo
 await (async () => {
   await (await import("./any-quantity.mjs")).run({ ok });
 })();
-section("15 Oct 2026: spare is retired, the Counter's words are the live books, and the one road moves one line");
+section("27 Oct 2026: gas and PrEP are the fifth and sixth books, the Counter's words are the live books");
 await (async () => {
-  await (await import("./spare-retired.mjs")).run({ ok });
+  await (await import("./gas-prep-books.mjs")).run({ ok });
 })();
 section("06 Oct 2026: a partner pays cost, the Floor (RM 5 up since 18 Oct 2026) on every book, nobody else's price moved");
 await (async () => {
@@ -49095,7 +49097,7 @@ await (async () => {
       });
       return Object.assign(bound([]), { bind: (...args) => bound(args) });
     } };
-    countDb.prepare("INSERT INTO state(key,doc) VALUES (?,?)").run("PRODUCTS", JSON.stringify({ salt: {}, spare: { retired: true } }));
+    countDb.prepare("INSERT INTO state(key,doc) VALUES (?,?)").run("PRODUCTS", JSON.stringify({ salt: {}, gas: { retired: true } }));
     countDb.prepare("INSERT INTO snapshot(one,v,stamped) VALUES (1,'maker-fixture',NULL)").run();
     const countQueue = new KV(), countEnv = { ...privateEnv, SALT_QUEUE: countQueue, SALT_LEDGER: countD1,
       /* a Counter with no orders: a Correction of a sale's terms reads the site's orders first (16 Oct 2026) */
@@ -49120,7 +49122,7 @@ await (async () => {
     ok(committedRetry.ok && committedRetry.queued === false
       && countDb.prepare("SELECT COUNT(*) AS n FROM maker_request").get().n === 1,
       "the original maker input replays after approval and a moved mirror without making another row");
-    const retired = await countCall({ ...countBody, at: "2026-09-29T12:01:00.000Z", product: "spare" });
+    const retired = await countCall({ ...countBody, at: "2026-09-29T12:01:00.000Z", product: "gas" });
     const unknown = await countCall({ ...countBody, at: "2026-09-29T12:02:00.000Z", product: "missing" });
     ok(retired.status === 400 && unknown.status === 400 && countDb.prepare("SELECT COUNT(*) AS n FROM draft").get().n === 1,
       "stock counts cannot enter retired or unknown books");
@@ -51348,9 +51350,9 @@ await (async () => {
   const setAt = (c) => E.driftWalk(E.walkSizes(R, R.rungs), Cof(c), P, 0).filter((r) => R.rungs.some((q) => Math.abs(q - r.q) < 0.009)).map((r) => r.set);
   /* 18 OCT 2026: the Floor rounds up to the RM 5 and the curve is his four points, walked over the whole grid (the board's own path), so the rungs
      read these figures; they were 95, 160, 230 ... and 80, 150, 205 ... on the two ends and the ten of 05 Oct */
-  ok(JSON.stringify(setAt(64)) === "[85,130,185,240,290,350,395,450,500,545,665,1080]"
-    && JSON.stringify(setAt(59)) === "[75,120,170,225,275,320,370,420,465,500,615,1000]",
-    "the Set Price reads 85, 130 ... 1,080 on RM 64 of COGS and 75, 120 ... 1,000 on RM 59: " + JSON.stringify([setAt(64), setAt(59)]));
+  ok(JSON.stringify(setAt(64)) === "[85,130,185,240,290,350,395,450,500,545,665,1080,2125,4255,8510]"
+    && JSON.stringify(setAt(59)) === "[75,120,170,225,275,320,370,420,465,500,615,1000,1960,3920,7845]",
+    "the Set Price reads 85, 130 ... 1,080, 2,125, 4,255, 8,510 on RM 64 of COGS and 75, 120 ... 1,000, 1,960, 3,920, 7,845 on RM 59: " + JSON.stringify([setAt(64), setAt(59)]));
   /* 3. THE % LIFT at 12.5 unit on RM 64: floor 800, Set 1,080, ceiling 2,400. A % scales the multiple inside the walk, so -30% reads 865, -10% 1,000, 10% 1,175,
      20% 1,275 and 30% 1,380, each on the whole grid beneath */
   const at125 = [-0.3, -0.1, 0, 0.1, 0.2, 0.3].map((d) => E.driftAt(12.5, Cof(64), P, d).p);

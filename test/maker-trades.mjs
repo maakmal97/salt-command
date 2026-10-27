@@ -18,7 +18,7 @@ const body = (patch = {}) => ({ at: AT, product: "salt", party: "CX1-ZED", date:
   qty: 1, total: 130, cash: 170, movedUnits: 1, handover: "delivered", delivery: 40,
   extras: [{ product: "oil", qty: 2, total: 30, cash: 30, movedUnits: 2 }], ...patch });
 const book = () => ({ version: "trade-fixture", sales: [], purchases: [],
-  state: { PRODUCTS: { salt: {}, oil: {}, spare: { retired: true } },
+  state: { PRODUCTS: { salt: {}, oil: {}, gas: { retired: true } },
     roster: ["CX1-ZED", "AX1-ZED", "AX1-ZED-R", "SX1-ZED", "CA1-ZED", "CA1-ZED-R"], associates: ["AX1-ZED", "CA1-ZED"] },
   pricing: { v: "trade-fixture", byProduct: { salt: { stockCost: 40 }, oil: { stockCost: 8 } } } });
 
@@ -162,7 +162,7 @@ export async function run({ ok, pageWork }) {
     && !!purchase.error,
     "multi-book without delivery: independent sales and purchases carry no trip, and purchase fields remain closed");
   for (const extras of [
-    [{ ...body().extras[0], product: "salt" }], [{ ...body().extras[0], product: "spare" }],
+    [{ ...body().extras[0], product: "salt" }], [{ ...body().extras[0], product: "gas" }],
     [{ ...body().extras[0], qty: "2" }], [{ ...body().extras[0], delivery: 5 }],
     [{ ...body().extras[0], party: "SX1-ZED" }], [{ ...body().extras[0], date: "2099-10-06" }],
     [{ ...body().extras[0], trip: "t1" }]

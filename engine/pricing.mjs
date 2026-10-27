@@ -553,7 +553,23 @@ function gridOf(R){
   const G=R&&R.grid;if(!G||typeof G!=='object')return null;
   const min=+G.min,step=+G.step,max=+G.max;
   if(!(min>0)||!(step>0)||!(max>=min)||!isFinite(max))return null;
-  return {min:min,step:step,max:max};
+  /* 27 Oct 2026, HIS WORD ON PrEP: `multiples` narrows the grid to sizes that are a whole number of any one of them (12 or 30
+     pills, N times either). The grid still runs min to max in steps so every point is priced and p[i] stays at min+i*step;
+     only the sizes a customer may ORDER are cut (sizeOk), by the Worker, the page and onGrid. */
+  const mul=Array.isArray(G.multiples)?G.multiples.map(Number).filter(x=>x>0&&isFinite(x)):[];
+  /* `only` (salt, 27 Oct 2026, his list: halves to 5, then 6.25, 12.5, 25, 50, 100) is the sizes that may be ordered up to max: the grid
+     keeps its quarter step so the walk keeps its resolution and every point is priced, and the same cut applies. Past max Negotiate
+     takes any point of the step. */
+  const only=Array.isArray(G.only)?G.only.map(Number).filter(x=>x>0&&isFinite(x)):[];
+  const out={min:min,step:step,max:max};
+  if(mul.length)out.multiples=mul;
+  if(only.length)out.only=only;
+  return out;
+}
+function sizeOk(q,G){
+  if(!G)return true;
+  if(G.only&&G.only.length&&q<=G.max+1e-9&&!G.only.some(x=>Math.abs(x-q)<1e-6))return false;
+  return !G.multiples||G.multiples.some(m=>Math.abs(q/m-Math.round(q/m))<1e-6);
 }
 function gridSizes(G){
   if(!G)return [];
@@ -564,7 +580,7 @@ function gridSizes(G){
 function onGrid(q,G){
   if(!G||typeof q!=='number'||!(q>0))return false;
   const k=(q-G.min)/G.step;
-  return q>=G.min-1e-9&&q<=G.max+1e-9&&Math.abs(k-Math.round(k))<1e-6;
+  return q>=G.min-1e-9&&q<=G.max+1e-9&&Math.abs(k-Math.round(k))<1e-6&&sizeOk(q,G);
 }
 /* the sizes a drift walk takes up to and including the largest asked for: the rungs and every grid point beneath it, with
    the sizes asked for, smallest first and each once. HIS DECISION: THE WHOLE GRID IS WALKED, so the rate per unit never
@@ -706,7 +722,10 @@ function quoteGrid(C,P,d){
   else if(R.fixed)ps=read(fixedWalk(walkSizes(R,qs),C,P,d),true);
   else ps=qs.map(q=>quoteAt(q,C,P,d));
   if(!ps.length||ps.some(p=>p==null||!isFinite(p)||!(p>0)))return null;
-  return {min:G.min,step:G.step,max:G.max,p:ps};
+  const g={min:G.min,step:G.step,max:G.max,p:ps};
+  if(G.multiples)g.multiples=G.multiples;
+  if(G.only)g.only=G.only;
+  return g;
 }
 /* THE BOARD AND THE FLOORS, for quoting at the point of sale: what the phone receives. */
 /* THE CARD IS A COLLECTION PRICE AND DELIVERY IS QUOTED ON TOP, PER ORDER (v352, his instruction).

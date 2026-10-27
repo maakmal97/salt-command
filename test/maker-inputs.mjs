@@ -8,7 +8,7 @@ export async function run({ ok, KV } = {}) {
   const book = () => ({
     version: 1, sales: [], purchases: [],
     state: {
-      PRODUCTS: { salt: { name: "salt" }, oil: { name: "oil" }, spare: { retired: true } },
+      PRODUCTS: { salt: { name: "salt" }, oil: { name: "oil" }, gas: { retired: true } },
       roster: ["CX1-ZED", "CX2-ZED", "AX1-ZED", "AX1-ZED-R", "SX1-ZED"],
       associates: ["AX1-ZED"], TIER_OF: { "CX1-ZED": { salt: 1 } },
       REWARD: { stated: { salt: { margin: 500, associate: { margin: 470, r3Hurdle: 1.2 } } } },
@@ -105,7 +105,7 @@ export async function run({ ok, KV } = {}) {
   check(!!sale({ qty: 0 }).error, "Zero units are refused.");
   check(!!sale({ party: "CX9-ZED" }).error && !!sale({ party: "Invented Person" }).error,
     "Unknown codes and plaintext parties are refused.");
-  check(!!sale({ product: "spare" }).error && !!sale({ product: "unknown" }).error,
+  check(!!sale({ product: "gas" }).error && !!sale({ product: "unknown" }).error,
     "Retired and unknown products are refused.");
   for (const value of ["", "2026-02-30", "2026-10-01T00:00:00Z", null])
     check(!!sale({ date: value }).error, "Trade dates must be real calendar dates.");
@@ -148,7 +148,7 @@ export async function run({ ok, KV } = {}) {
   check(!!tier({ code: "CX9-ZED" }).error && !!tier({ code: "Invented Person" }).error,
     "Tier input refuses unknown and plaintext codes.");
   check(!!tier({ product: "oil" }).error, "Fixed boards have no customer tier input.");
-  check(!!tier({ product: "spare" }).error && !!tier({ product: "unknown" }).error,
+  check(!!tier({ product: "gas" }).error && !!tier({ product: "unknown" }).error,
     "Tier input refuses retired and unknown products.");
   check(!!tier({ raw: "invented prose" }).error && !!tier({ tiers: {} }).error,
     "Tier input cannot forward prose or arbitrary tier maps.");

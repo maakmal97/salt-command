@@ -51,7 +51,8 @@
   --salt-product-oil: #c5a059;    /* brass */
   --salt-product-candy: #cf8fb4;  /* rose, hue 330 */
   --salt-product-rice: #7b86cc;   /* indigo, hue 235 */
-  --salt-product-spare: #a8b06a;  /* olive, hue 68 */
+  --salt-product-gas: #e8794d;    /* flame, hue 30 */
+  --salt-product-prep: #c77ae0;   /* magenta, hue 295 */
 
   /* Materials */
   --salt-glass: rgba(255, 255, 255, 0.03);
@@ -2137,7 +2138,8 @@ label.salt-field__label {
 .salt-product--oil { --salt-hue: var(--salt-product-oil); }
 .salt-product--candy { --salt-hue: var(--salt-product-candy); }
 .salt-product--rice { --salt-hue: var(--salt-product-rice); }
-.salt-product--spare { --salt-hue: var(--salt-product-spare); }
+.salt-product--gas { --salt-hue: var(--salt-product-gas); }
+.salt-product--prep { --salt-hue: var(--salt-product-prep); }
 .salt-product__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--salt-hue); flex: 0 0 auto; }
 .salt-product__sub { font-family: var(--salt-font-display); font-size: 0.71875rem; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--salt-mist); }
 .salt-product__rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--salt-line), transparent); }
@@ -2169,7 +2171,8 @@ label.salt-field__label {
 .salt-producttag--oil { --salt-hue: var(--salt-product-oil); }
 .salt-producttag--candy { --salt-hue: var(--salt-product-candy); }
 .salt-producttag--rice { --salt-hue: var(--salt-product-rice); }
-.salt-producttag--spare { --salt-hue: var(--salt-product-spare); }
+.salt-producttag--gas { --salt-hue: var(--salt-product-gas); }
+.salt-producttag--prep { --salt-hue: var(--salt-product-prep); }
 .salt-producttag__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--salt-hue, currentColor); box-shadow: 0 0 6px -1px currentColor; flex: 0 0 auto; }
 
 /* ---- Meter: a bar is a figure. A well-inset track, a lit fill, an optional marker

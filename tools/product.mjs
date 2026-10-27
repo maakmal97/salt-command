@@ -8,9 +8,9 @@
  *
  *   node tools/product.mjs --list
  *   node tools/product.mjs --add candy --name Candy [--note "..."] [--since 2026-09-22]
- *   node tools/product.mjs --rename spare rice [--orders-done]
- *   node tools/product.mjs --retire spare
- *   node tools/product.mjs --unretire spare
+ *   node tools/product.mjs --rename gas rice [--orders-done]
+ *   node tools/product.mjs --retire gas
+ *   node tools/product.mjs --unretire gas
  *
  * Every one writes ledger/book.json and then runs booksync --sync, because the master's BOOK
  * block is generated and a book edited without a sync fails CI until somebody notices.

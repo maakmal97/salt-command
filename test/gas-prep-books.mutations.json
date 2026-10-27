@@ -1,0 +1,9 @@
+[
+ {"name": "gas retired on the live book", "file": "ledger/book.json", "find": "\"since\": \"2026-10-27\",\n      \"retired\": false,\n      \"note\": \"Opened 27 Oct 2026 on his word, by renaming", "replace": "\"since\": \"2026-10-27\",\n      \"retired\": true,\n      \"note\": \"Opened 27 Oct 2026 on his word, by renaming"},
+ {"name": "prep off the word list", "file": "src/orders.js", "find": "\"rice\", \"gas\", \"prep\"]", "replace": "\"rice\", \"gas\"]"},
+ {"name": "prep letter at full size", "file": "stmt/page.js", "find": "const s = l.length > 1 ? Math.min(PLET_AT.s, 13 / (0.6 * l.length)) : PLET_AT.s;", "replace": "const s = PLET_AT.s;"},
+ {"name": "prep takes any step of 6", "file": "stmt/orders.js", "find": "  return !Array.isArray(g.multiples) || !g.multiples.length || g.multiples.some(", "replace": "  return true || g.multiples.some("},
+ {"name": "gas grid stops at 10", "file": "engine/rules.mjs", "find": "rungs:[1], ceilingX:3, grid:{min:1, step:1, max:20}}", "replace": "rungs:[1], ceilingX:3, grid:{min:1, step:1, max:10}}"},
+ {"name": "candy grid back to 30", "file": "engine/rules.mjs", "find": "rungs:[1,10,30], ceilingX:3, grid:{min:1, step:1, max:50}}", "replace": "rungs:[1,10,30], ceilingX:3, grid:{min:1, step:1, max:30}}"},
+ {"name": "salt takes any quarter again", "file": "stmt/orders.js", "find": "if (Array.isArray(g.only) && g.only.length && q <= g.max + 1e-9", "replace": "if (false && q <= g.max + 1e-9"}
+]
