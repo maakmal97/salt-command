@@ -298,8 +298,8 @@ export async function run({ ok, pageWork }) {
       "Record payment opens the order the row is, on Money received, and books nothing: " + p.where() + " " + (d.activeElement && d.activeElement.textContent));
     byAct(d, "nav.needs").click(); await p.work.quiet();
     await p.tap("need.open", "x:0");
-    ok(/Refused for the fixture/.test((pane() || { textContent: "" }).textContent) && !/Refused for the fixture/.test(p.card("x:0").textContent),
-      "an entry's reason it did not get through stands in the opened card, and not on the resting card");
+    ok(/Refused for the fixture/.test((pane() || { textContent: "" }).textContent) && p.card("x:0").querySelector(".need-who").textContent === "Not taken: Refused for the fixture",
+      "an entry's reason it did not get through stands in the opened card, and on the resting card as its one-line title (28 Oct 2026, his screenshot of cards reading Desk alone)");
     await p.tap("need.open", "w:hours");
     ok(!!pane() && /Paused until Fri 18:00/.test(pane().querySelector(".npane__title").textContent) && /overridden for now/.test(pane().textContent), "the hours card opens its title in words and its why");
   } finally { p.w.close(); }

@@ -50413,6 +50413,11 @@ await (async () => {
   await (await import("./admin-needs-cards.mjs")).run({ ok, pageWork });
 })();
 
+section("28 Oct 2026: a red suite on Salt Admin's Needs you is one FYI line, and a refusal's card says its reason");
+await (async () => {
+  await (await import("./admin-needs-suite.mjs")).run({ ok, pageWork });
+})();
+
 section("22 Oct 2026: from 860px a Needs you card opens beside the list, the card in full over the order's or the account's own");
 await (async () => {
   await (await import("./admin-needs-pane.mjs")).run({ ok, pageWork });

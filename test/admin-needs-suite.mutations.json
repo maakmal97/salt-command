@@ -1,0 +1,12 @@
+[
+ {"name":"suite rows draw Entry cards again","file":"stmt/owner.js","find":"forEach(function(r, i){ if(!suiteRow(r)) L.push(entryNeed(r, 'x:'+i)); });","replace":"forEach(function(r, i){ L.push(entryNeed(r, 'x:'+i)); });"},
+ {"name":"no suite card","file":"stmt/owner.js","find":"    if(reds.length) L.push(suiteNeed(reds));\n","replace":""},
+ {"name":"the suite card is To do","file":"stmt/owner.js","find":"return item('watch','watch','Tests','x:suite'","replace":"return item('now','watch','Tests','x:suite'"},
+ {"name":"the oldest version names it","file":"stmt/owner.js","find":"String(a.seenAt||'')<String(b.seenAt||'')?1:-1;","replace":"String(a.seenAt||'')<String(b.seenAt||'')?-1:1;"},
+ {"name":"the suite card taps on a phone","file":"stmt/owner.js","find":"open:wide()?function(){}:null});","replace":"open:function(){}});"},
+ {"name":"the suite card has a Fix","file":"stmt/owner.js","find":"open:wide()?function(){}:null});","replace":"open:wide()?function(){}:null}, function(c){ mainButton(c,'Fix','need.fix','x:suite', goPlace('orders','approve')); });"},
+ {"name":"the entry title is Desk again","file":"stmt/owner.js","find":"what:'Did not get through', title:notTaken(r.why),","replace":"what:'Did not get through',"},
+ {"name":"Approve lists the suite rows","file":"stmt/owner.js","find":"(makerData.refused||[]).filter(function(r){ return !suiteRow(r); }).forEach(function(refused){","replace":"(makerData.refused||[]).forEach(function(refused){"},
+ {"name":"the pane loses the count of earlier runs","file":"stmt/owner.js","find":"(rows.length>1?' Earlier red runs: '+(rows.length-1)+'.':'')","replace":"''"},
+ {"name":"the pane loses the why","file":"stmt/owner.js","find":"why:noBook(r.why||'')+","replace":"why:"}
+]

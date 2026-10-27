@@ -6088,11 +6088,11 @@ export const OWNER_JS = `
       card.appendChild(panel);
       makerFoot(card,'draft:'+draft.id);
     });
-    (makerData.refused||[]).forEach(function(refused){
+    (makerData.refused||[]).filter(function(r){ return !suiteRow(r); }).forEach(function(refused){
       var card=makerCard(draftRoot);
       card.appendChild(el('p','salt-insight',notTaken(refused.why)));
     });
-    if(!pendingRows.length&&!(makerData.refused||[]).length) draftRoot.appendChild(el('p','rnone','Nothing waits for your approval.'));
+    if(!pendingRows.length&&!(makerData.refused||[]).filter(function(r){ return !suiteRow(r); }).length) draftRoot.appendChild(el('p','rnone','Nothing waits for your approval.'));
     if(queueRoot){
       /* 14 Oct 2026 (his screenshot): a copy a device still holds of an entry already approved or committed is not waiting for anything,
          so it is not listed; it leaves the device's key when that device next posts */
@@ -7012,9 +7012,18 @@ export const OWNER_JS = `
     return item('now','rows','Entry','qx', '', {who:'Desk queue', what:unreadableLine(keys),
       why:'Every other entry is read as usual. No entry is withdrawn until that key is mended.', open:goPlace('orders','approve')}, function(c){ mainButton(c,'Check','need.check','qx', goPlace('orders','approve')); });
   }
+  /* 28 Oct 2026 (his screenshot, four cards reading Desk and Fix alone): the title is the reason, held to one line, so no card is blank */
   function entryNeed(r, key){
-    return item('now','rows','Entry',key, isoAt(r.at||r.seenAt||r.id), {who:r.party||'Desk', head:'Fix ', rest:"'s entry", what:'Did not get through',
+    return item('now','rows','Entry',key, isoAt(r.at||r.seenAt||r.id), {who:r.party||'Desk', head:'Fix ', rest:"'s entry", what:'Did not get through', title:notTaken(r.why),
       why:noBook(r.why||'The Desk could not take this entry.'), open:goPlace('orders','approve')}, function(c){ mainButton(c,'Fix','need.fix',key, goPlace('orders','approve')); });
+  }
+  /* 28 OCT 2026 (his word): A RED SUITE IS THE DESK INFORMING HIM, never his entry to fix. cloud-commit writes it as the refusal suite:<version> and clears
+     every one on the next green suite (tools/drafts.mjs --clear-suite-notices), so it is one FYI line, the newest version alone, with no button */
+  function suiteRow(r){ return /^suite:/.test(String(r&&r.id||'')); }
+  function suiteNeed(rows){
+    var r=rows.slice().sort(function(a,b){ return String(a.seenAt||'')<String(b.seenAt||'')?1:-1; })[0], v=String(r.id).slice(6);
+    return item('watch','watch','Tests','x:suite', isoAt(r.seenAt), {who:'Desk', title:'Desk tests red after '+v, what:'Desk tests red after '+v, counts:false,
+      why:noBook(r.why||'')+(rows.length>1?' Earlier red runs: '+(rows.length-1)+'.':''), open:wide()?function(){}:null});
   }
   /* an entry kept on this phone and not confirmed (Phase 4c): Soon, his own work; its Open is Record, on the entry's own section, where Send again, Update and send and Discard are */
   function unsentNeed(u){
@@ -7274,7 +7283,9 @@ export const OWNER_JS = `
     real.filter(function(a){ return a.account&&a.locked; }).forEach(function(a){ L.push(lockNeed(a)); });
     var rows=pendingRows();
     /* 22 Oct 2026 (his answer, no overlaps): a row to approve is on Orders > Approve alone; the glance counts them (To approve) */
-    (makerData&&makerData.refused||[]).forEach(function(r, i){ L.push(entryNeed(r, 'x:'+i)); });
+    (makerData&&makerData.refused||[]).forEach(function(r, i){ if(!suiteRow(r)) L.push(entryNeed(r, 'x:'+i)); });
+    var reds=(makerData&&makerData.refused||[]).filter(suiteRow);
+    if(reds.length) L.push(suiteNeed(reds));
     (makerData&&makerData.queue||[]).filter(function(e){ return e.state==='refused'; }).forEach(function(e){ L.push(entryNeed(e, 'q:'+e.id)); });
     if(unreadableKeys().length) L.push(unreadableNeed(unreadableKeys()));
     if(owed) owed.money.forEach(function(m){ if(m&&m.rows&&m.rows.length) L.push(moneyNeed(m)); });
