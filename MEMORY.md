@@ -228,6 +228,7 @@
   the Counter's sealed `credit`/`creditRows` (FIX_VERSION 15), Salt Admin's Less RM x credit. Fable reviewed P2 and P3 (two medium, three low applied) and re-checked
   (one more applied: a credit the fold cut short is lowered on the order). CZ4-MK holds RM 25 of credit, spent at his next Accept for them. Not yet opened by him.
   Known: S1b (`test/engine-stages.mjs`) is red locally on Windows on master too (227 of 392, from v1272's cash over), green in CI.
+- v1292 (`22769095`, 28 Oct 2026; Cloud commit `40540116210`: chain green, the phone serving it; CI `40540116044` green), his word "I do not owe them salt due to the extra prepayment": `txDeferUnits` stops the units paid for at the units ordered, so s296's RM 25 past its order no longer reads as 0.27 unit owed out and committed on the shelf. Section "28 Oct 2026: money past an order". The Desk wave 1 overlay probe had paid s074 (settled in kind) a second time and leaned on the old reading; it now pays a row that owes.
 
 ## Cash past what an order owes
 - Live as v1272 (`b266f659`, 27 Oct 2026; CI `40465237223` and Cloud commit `40465237241`: chain and three suite parts green, build `9eaf7b35dbf05643`), his word: the order card's Cash received takes more than goods plus delivery (his choice of that measure and
