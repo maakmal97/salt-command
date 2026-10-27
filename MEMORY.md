@@ -208,6 +208,12 @@
 - v1263 (`35515bb7`, 26 Oct 2026; chain and three suite parts green, live build `c7dfe5c7a7aea82d`), his word: New point's Place lists OpenStreetMap places as he types
   (Photon, his choice) and reads Google, Waze and Apple links, a short one opened on the Worker (Apple his yes). Section "Salt Admin's place for a point". Not yet opened by him.
 
+## Cash past what an order owes
+- Live as v1272 (`b266f659`, 27 Oct 2026; CI `40465237223` and Cloud commit `40465237241`: chain and three suite parts green, build `9eaf7b35dbf05643`), his word: the order card's Cash received takes more than goods plus delivery (his choice of that measure and
+  of this road alone); the excess is the refund the fold raises (`refundOnOverpay`, unchanged); refused beside a claim, owing nothing, money on its
+  way, or the row owing another figure. Section "cash past what an order owes"; Fable reviewed (one medium applied, re-checked clean; one low left:
+  a stale open refund on the rid makes the stated refund larger than the fold raises). Only the relevant sections ran (his word); CI's suite is the full check.
+
 ## Salt Admin Needs you redesign
 - Live as v1221 (`b8916ca2`, 23 Oct 2026; Cloud commit `39821813897`: chain and three suite parts green, live /rev `1e1013dcc935d44b`), from his canvas
   https://claude.ai/artifact/LG8PTbuT2EGpqSqsUkG6ie and `docs/plan-admin-needs-you.html`, with salt-ds 1.13.0 (#25: bar chips two by two under 820px,
