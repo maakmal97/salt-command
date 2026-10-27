@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1295",
+  "d": "28 Oct 2026",
+  "t": "HALF A UNIT HANDED OVER ON S300",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED.</b> CZ5-TM's paid order s300 (1 unit of salt, goods RM105) had 0.5 unit handed over on 28 Oct 2026. It moves no cash. Nothing was unusual in the drafter's flags, though the trail on s300 already holds several corrections, the newest clearing an earlier delivery.",
+   "<b>INVENTORY.</b> Salt stock falls by 0.5 unit for the one move dated 28 Oct 2026. The last salt count was on 27 Oct 2026, and the stock cost and replacement cost are unchanged."
+  ]
+ },
+ {
   "v": "v1294",
   "d": "28 Oct 2026",
   "t": "DELIVERY OF S300 UNDONE, 1 UNIT BACK ON THE SHELF",
