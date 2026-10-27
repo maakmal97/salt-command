@@ -1,5 +1,13 @@
 [
  {
+  "v": "v1292",
+  "d": "28 Oct 2026",
+  "t": "MONEY PAST AN ORDER IS NO SALT OWED",
+  "n": [
+   "<b>HIS WORD OF 28 OCT 2026</b>: \"I do not owe them salt due to the extra prepayment.\" The engine read the units paid for as the money over the rate, so s296 (5 units, RM 455, RM 480 paid, all handed over) read 0.27 unit paid ahead of delivery, owed out and committed on the shelf. txDeferUnits now stops the units paid for at the units ordered: money past the order is their credit, never a claim on the shelf. Money paid ahead of a handover is still owed in goods, up to the order."
+  ]
+ },
+ {
   "v": "v1291",
   "d": "28 Oct 2026",
   "t": "SALT COUNT OF 0 UNIT SETS STOCK TO ZERO",
