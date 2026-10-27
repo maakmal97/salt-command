@@ -916,7 +916,7 @@ function walk(I){
   W.stockBasis=stockBasis(_B,W.currentStock,_op);
   W.stockCost=W.stockBasis.rate!=null?W.stockBasis.rate:W.wavgBuy;
   W.revTotal=W.pricedSales.reduce((a,s)=>a+(s.total||0)-txPendRM(s),0);   // net of any pending tail on a part-moved order
-  W.revCollected=_S.reduce((a,s)=>a+(s.cash||0),0);
+  W.revCollected=_S.reduce((a,s)=>a+bookCash(s,I.refunds),0);   // 27 Oct 2026: less the refunds raised on each row (bookCash)
   /* AR = advance only: pending unpaid-and-undelivered is not a receivable */
   W.arList=_S.filter(s=>txAdvance(s)>0.009);
   W.arGross=W.arList.reduce((a,s)=>a+txAdvance(s),0);
@@ -1437,6 +1437,17 @@ function refundStale(list,row){
   const x=Math.min(open,had-(paid-owed));
   return x>0.009?+x.toFixed(2):0;
 }
+/* 27 Oct 2026, HIS WORD (docs/plan-refund-credit.html, P1): A REFUND IS NEVER THE BOOK'S MONEY. What a book received on a row is its cash
+   less every refund raised on its rid, open, paid out or set off as credit, so s296's RM 480 reads RM 455 on salt and the RM 25 counts once,
+   on the order it pays. Money received by book, the product summary, the P&L and the Collected cells read it; cash flow is the till and keeps
+   raw cash, the refunds going out in refPaid (the s190 and s191 precedent). Never under nought: a cancelled row's refund may carry what was
+   settled in kind, which was never cash. */
+function bookCash(row,refunds){
+  const c=+(row&&row.cash)||0;
+  if(!row||!row.rid||!Array.isArray(refunds)||!refunds.length)return c;
+  const r=refunds.reduce((a,x)=>a+(x&&x.rid===row.rid?(+x.amount||0):0),0);
+  return r>0.004?Math.max(0,+(c-r).toFixed(2)):c;
+}
 /* ====== PLAN 4, EASY REVERT (16 Oct 2026; his answers: the newest move only, and a site order's customer told by a banner) ======
    A ROW'S MOVES are the steps of its trail booked after the row itself (step 0 is the row as booked): a payment or a handover, which a
    Fulfilment carries, and a Correction, which since this version says what it replaced (`was`). An undo is itself a Correction, whose step
@@ -1745,7 +1756,7 @@ return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEnt
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,
-        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,refundOnOverpay:refundOnOverpay,refundStale:refundStale,UNDO_FIELDS:UNDO_FIELDS,rowMoves:rowMoves,undoOf:undoOf,undoSame:undoSame,
+        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,refundOnOverpay:refundOnOverpay,refundStale:refundStale,bookCash:bookCash,UNDO_FIELDS:UNDO_FIELDS,rowMoves:rowMoves,undoOf:undoOf,undoSame:undoSame,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,

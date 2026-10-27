@@ -38,6 +38,7 @@ function posInputs(C,P){
   return {sales:pSales(B,P), purchases:pPurch(B,P), opening:openingFor(B,P), isSalt:_isSalt,
     loanUnits:_isSalt?B.loanDrawUnits():0, counted:countedFor(B,P), today:C.today,
     supplierReceivable:(_isSalt&&B.supplierReceivable!=null)?B.supplierReceivable:null,
+    refunds:B.refunds||[],   /* 27 Oct 2026: money received by book is cash less the refunds on the row (bookCash) */
     wavgBuyPrev:C.W.wavgBuy};
 }
 function stockCost(C,p){return POSITION_ENGINE.walk(posInputs(C,p)).stockCost;}

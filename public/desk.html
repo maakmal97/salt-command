@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="0ff3d912b6b443d5";
+var SALT_BUILD_ID="ecb394a6f6c8071a";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -7120,7 +7120,7 @@ function walk(I){
   W.stockBasis=stockBasis(_B,W.currentStock,_op);
   W.stockCost=W.stockBasis.rate!=null?W.stockBasis.rate:W.wavgBuy;
   W.revTotal=W.pricedSales.reduce((a,s)=>a+(s.total||0)-txPendRM(s),0);   // net of any pending tail on a part-moved order
-  W.revCollected=_S.reduce((a,s)=>a+(s.cash||0),0);
+  W.revCollected=_S.reduce((a,s)=>a+bookCash(s,I.refunds),0);   // 27 Oct 2026: less the refunds raised on each row (bookCash)
   /* AR = advance only: pending unpaid-and-undelivered is not a receivable */
   W.arList=_S.filter(s=>txAdvance(s)>0.009);
   W.arGross=W.arList.reduce((a,s)=>a+txAdvance(s),0);
@@ -7641,6 +7641,17 @@ function refundStale(list,row){
   const x=Math.min(open,had-(paid-owed));
   return x>0.009?+x.toFixed(2):0;
 }
+/* 27 Oct 2026, HIS WORD (docs/plan-refund-credit.html, P1): A REFUND IS NEVER THE BOOK'S MONEY. What a book received on a row is its cash
+   less every refund raised on its rid, open, paid out or set off as credit, so s296's RM 480 reads RM 455 on salt and the RM 25 counts once,
+   on the order it pays. Money received by book, the product summary, the P&L and the Collected cells read it; cash flow is the till and keeps
+   raw cash, the refunds going out in refPaid (the s190 and s191 precedent). Never under nought: a cancelled row's refund may carry what was
+   settled in kind, which was never cash. */
+function bookCash(row,refunds){
+  const c=+(row&&row.cash)||0;
+  if(!row||!row.rid||!Array.isArray(refunds)||!refunds.length)return c;
+  const r=refunds.reduce((a,x)=>a+(x&&x.rid===row.rid?(+x.amount||0):0),0);
+  return r>0.004?Math.max(0,+(c-r).toFixed(2)):c;
+}
 /* ====== PLAN 4, EASY REVERT (16 Oct 2026; his answers: the newest move only, and a site order's customer told by a banner) ======
    A ROW'S MOVES are the steps of its trail booked after the row itself (step 0 is the row as booked): a payment or a handover, which a
    Fulfilment carries, and a Correction, which since this version says what it replaced (`was`). An undo is itself a Correction, whose step
@@ -7949,7 +7960,7 @@ return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEnt
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,
-        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,refundOnOverpay:refundOnOverpay,refundStale:refundStale,UNDO_FIELDS:UNDO_FIELDS,rowMoves:rowMoves,undoOf:undoOf,undoSame:undoSame,
+        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,refundOnOverpay:refundOnOverpay,refundStale:refundStale,bookCash:bookCash,UNDO_FIELDS:UNDO_FIELDS,rowMoves:rowMoves,undoOf:undoOf,undoSame:undoSame,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
@@ -8767,6 +8778,7 @@ function posInputs(C,P){
   return {sales:pSales(B,P), purchases:pPurch(B,P), opening:openingFor(B,P), isSalt:_isSalt,
     loanUnits:_isSalt?B.loanDrawUnits():0, counted:countedFor(B,P), today:C.today,
     supplierReceivable:(_isSalt&&B.supplierReceivable!=null)?B.supplierReceivable:null,
+    refunds:B.refunds||[],   /* 27 Oct 2026: money received by book is cash less the refunds on the row (bookCash) */
     wavgBuyPrev:C.W.wavgBuy};
 }
 function stockCost(C,p){return POSITION_ENGINE.walk(posInputs(C,p)).stockCost;}
@@ -11211,7 +11223,7 @@ function prodSummary(p){
      an EXPENSE, not a sale), this filter had drifted from that one and disagreed with it. */
   const live=S.filter(s=>{const o=txStat(s).order;return o!=='Pending'&&o!=='Cancelled'&&!s.goodwill;});
   const rev=+live.reduce((a,s)=>a+((s.total||0)-txPendRM(s)),0).toFixed(2);
-  const cash=+S.reduce((a,s)=>a+(s.cash||0),0).toFixed(2);
+  const cash=+S.reduce((a,s)=>a+POSITION_ENGINE.bookCash(s,customerRefunds),0).toFixed(2);   // 27 Oct 2026: a refund is never the book's money
   const qty=+live.reduce((a,s)=>a+txPhys(s),0).toFixed(2);
   const spend=+B.reduce((a,x)=>a+poCash(x),0).toFixed(2);
   const bought=+B.filter(x=>!x.defaulted).reduce((a,x)=>a+poRecvUnits(x),0).toFixed(2);
@@ -13269,7 +13281,7 @@ function snapCtx(){return snapCtx._c||(snapCtx._c={
     get statedStock(){return STATED_STOCK;},get loanDrawUnits(){return loanDrawUnits;},get supplierReceivable(){return typeof supplierReceivable!=='undefined'?supplierReceivable:null;},
     get counts(){return typeof COUNTS!=='undefined'?COUNTS:[];},get selfUseLog(){return typeof selfUseLog!=='undefined'?selfUseLog:[];},
     get quotes(){return QUOTES;},get priceSet(){return typeof PRICE_SET!=='undefined'?PRICE_SET:null;},get costRule(){return typeof COST_RULE!=='undefined'?COST_RULE:{};},
-    get defaultProd(){return DEFAULT_PROD;},
+    get defaultProd(){return DEFAULT_PROD;},get refunds(){return typeof customerRefunds!=='undefined'?customerRefunds:[];},
     get roster(){return roster;},get partners(){return typeof partners!=='undefined'?partners:[];},get tierOf(){return TIER_OF;},get prodOrder(){return PROD_ORDER;}},
   R:PRICING_RULES,
   get today(){return TODAY;},get over(){return pxOver;},
@@ -13301,6 +13313,8 @@ function cashFlow(){
   /* a PAID refund is trade cash going back out; it is not an expense and not a drawing,
      so it is carried on the refund entry itself and dated by paidOn (v170) */
   const refPaid=+customerRefunds.filter(r=>r.paidOn).reduce((a,r)=>a+ +r.amount,0).toFixed(2);
+  /* 27 Oct 2026: of which set off as credit on a later order (setOff), whose cash carries it in: the till nets, only the words differ */
+  const refSetOff=+customerRefunds.filter(r=>r.paidOn&&r.setOff).reduce((a,r)=>a+ +r.amount,0).toFixed(2);
   /* v589: A CASH LOAN IS CASH, borrowed in or lent out, while it is open. It is money that goes back, so it
      moves the flow and nothing in the profit and loss. A settled one has gone back, so it counts neither
      way until a repayment is recorded in its own right. */
@@ -13360,7 +13374,7 @@ function cashFlow(){
   const billsOut=+purchases.reduce((a,p)=>a+poOwed(p),0).toFixed(2);
   const refundsOut=+customerRefunds.filter(r=>!r.paidOn).reduce((a,r)=>a+ +r.amount,0).toFixed(2);   // a paid refund is no longer promised away
   const dueOut=+(billsOut+refundsOut).toFixed(2);
-  return {inRM,outRM,inj,spend,refPaid,loanIn,loanOut,net,onHand:null,dueIn,dueOut,billsOut,refundsOut,
+  return {inRM,outRM,inj,spend,refPaid,refSetOff,loanIn,loanOut,net,onHand:null,dueIn,dueOut,billsOut,refundsOut,
     free:null,count:null,netTo,netAfter,impliedOpen:null,drift:null,
     known:false};
 }
@@ -15927,7 +15941,7 @@ function finRows(){
      silently dropping revenue is the fault this review exists to catch. */
   const undated=[];
   pricedSales.forEach(t=>{if(!t.date){undated.push(t);return;}const mo=t.date.slice(0,7);
-    bump(mo,'rev',(t.total||0)-txPendRM(t));bump(mo,'cogs',(t.qty-txPendUnitsRaw(t))*costOf(t));bump(mo,'cash',t.cash||0);bump(mo,'kg',t.qty-txPendUnitsRaw(t));
+    bump(mo,'rev',(t.total||0)-txPendRM(t));bump(mo,'cogs',(t.qty-txPendUnitsRaw(t))*costOf(t));bump(mo,'cash',POSITION_ENGINE.bookCash(t,customerRefunds));bump(mo,'kg',t.qty-txPendUnitsRaw(t));
     bump(mo,'inkind',(t.waived||0)+((t.settle==='barter'||t.rebate)?(t.settledRM||0):0));
     bump(mo,'provAR',+(txAdvance(t)*saleProvRate(t,provAge(t))+txWrittenOff(t)).toFixed(2));});   // V5: aged from the handover   // v634: a write-off stays charged in its month
   /* v385: THE CLAIM IS SALT'S, SO ONLY SALT'S MONTHS MOVE. supRecovGross is nil on any other
@@ -22645,7 +22659,7 @@ function consoCashBlock(){
     <tr><td class="l salt-table__label">Cash out for inventory</td><td>${fmt0(-cf.outRM)}</td><td class="l salt-table__label">paid to suppliers, including the lot that never arrived</td></tr>
     ${cf.inj>0.009?`<tr><td class="l salt-table__label">Money you put in</td><td>${fmt0(cf.inj)}</td><td class="l salt-table__label">injections recorded in cashAdjust</td></tr>`:''}
     ${cf.spend>0.009?`<tr><td class="l salt-table__label">Costs and drawings</td><td>${fmt0(-cf.spend)}</td><td class="l salt-table__label">non-trading outflows recorded in cashAdjust</td></tr>`:''}
-    ${cf.refPaid>0.009?`<tr><td class="l salt-table__label">Customer refunds paid</td><td>${fmt0(-cf.refPaid)}</td><td class="l salt-table__label">a paid refund is trade cash going back out</td></tr>`:''}
+    ${cf.refPaid>0.009?`<tr><td class="l salt-table__label">Customer refunds paid</td><td>${fmt0(-cf.refPaid)}</td><td class="l salt-table__label">${cf.refSetOff>0.009?`a paid refund is trade cash going back out; ${fmt0(cf.refSetOff)} of it set off as credit on a later order, whose cash carries it in`:'a paid refund is trade cash going back out'}</td></tr>`:''}
     <tr class="tot"><td class="l salt-table__label">Trading net</td><td><b>${fmt0(cf.net)}</b></td><td class="l salt-table__label">${cf.known?'added to your opening balance above':'a flow, not a balance'}</td></tr>
   </tbody></table>
   <div class="dsc" style="margin-top:8px">${cf.known

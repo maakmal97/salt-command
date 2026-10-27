@@ -50196,6 +50196,11 @@ await (async () => {
   await (await import("./cash-over.mjs")).run({ ok });
 })();
 
+section("27 Oct 2026: a refund is never the book's money, cash flow keeps the till (refund credit P1)");
+await (async () => {
+  await (await import("./refund-credit-p1.mjs")).run({ ok });
+})();
+
 section("Salt Admin: Orders open by stage, a list beside the order, and Record a menu");
 await (async () => {
   await (await import("./admin-orders.mjs")).run({ ok, pageWork });
