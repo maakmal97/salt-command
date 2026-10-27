@@ -160,7 +160,7 @@ export const OWNER_JS = `
   /* ---- WHERE AN ACCOUNT STANDS ---------------------------------------------------------------
      The list is the roster, so a code with no account behind its username is still on it and
      says so. Everything else comes from /all/sheet. */
-  var FLAGW={owes:'They owe',goods:'You owe them',refund:'You owe a refund,',pend:'Agreed, not handed over,',clear:'Settled'};
+  var FLAGW={owes:'They owe',goods:'You owe them',refund:'Their credit, off their next order,',pend:'Agreed, not handed over,',clear:'Settled'};
   /* 23 SEP 2026: THE ACCOUNT IS ONE LIVE DOCUMENT (v769), so there is no issue for an account to be
      missing from. A row with no totals is a username with nothing behind it, and that is what it
      says. D15 (24 Sep 2026): the fold binds a spare account at Add ID and this run's publish opens it,
@@ -456,7 +456,7 @@ export const OWNER_JS = `
     var t=a.t||{}, s=acctState(a);
     if(a.test||a.account===false) return null;
     if(a.flag==='owes') return {word:'They owe', fig:rmShort(t.owed), hot:!!s.late};
-    if(a.flag==='refund') return {word:'You owe them', fig:rmShort(t.refund), hot:true};
+    if(a.flag==='refund') return {word:'Their credit', fig:rmShort(t.refund), hot:true};   /* 27 Oct 2026: an open refund is their credit */
     if(a.flag==='goods') return {word:'You owe them', fig:units(Math.round((+t.toGet||0)*100)/100), hot:false};
     if(a.flag==='pend') return {word:'Agreed', fig:rmShort(t.pend), hot:false};
     return {word:'Owed', fig:'Nil', hot:false};
@@ -848,7 +848,7 @@ export const OWNER_JS = `
     if(a.test) return {sev:'watch', word:'Practice', age:a.state==='locked'?'locked':'open', act:'open'};
     if(a.account===false) return {sev:'now', word:'No account', age:'', act:'show'};
     if(a.flag==='owes') return {sev:late?'now':'soon', word:'Owed', age:late?late+' late':m&&m.due?'due '+dayMon(m.due):'', late:!!late, rm:+t.owed||0, act:'message'};
-    if(a.flag==='refund') return {sev:'now', word:'Refund', age:'', rm:+t.refund||0, mine:true, act:'open'};
+    if(a.flag==='refund') return {sev:'now', word:'Credit', age:'', rm:+t.refund||0, mine:true, act:'open'};
     if(a.flag==='goods') return {sev:'now', word:'Goods', age:units(Math.round((+t.toGet||0)*100)/100), act:'open'};
     if(a.locked) return {sev:'now', word:'Locked', age:a.locked.until?'to '+hm(a.locked.until):'', act:'send'};
     if(!a.sent) return {sev:'now', word:'Not sent', age:a.issued?ageOf(a.issued):'', act:'send'};
@@ -2261,6 +2261,8 @@ export const OWNER_JS = `
     var flags=result.flags||[];
     parent.appendChild(el('p','salt-insight',flags.length?(flags.length===1?'1 thing':flags.length+' things')+' to check:':'Nothing to check.'));
     flags.forEach(function(flag){ parent.appendChild(el('p','salt-insight',noBook(flag))); });
+    /* 27 Oct 2026 (docs/plan-refund-credit.html P5): their credit this Accept spends, the Desk's own figure */
+    if(+result.credit>0.004){ var crp=el('p','salt-insight','Less '+rm(+result.credit)+' credit: their open refunds, paid on this order now and closed when it folds.'); crp.setAttribute('data-credit',String(+result.credit)); parent.appendChild(crp); }
     if(result.owedWith!=null&&result.ceiling!=null){
       var over=result.owedWith>result.ceiling+0.004, lateRun=result.late&&typeof result.late.run==='number'&&typeof result.late.need==='number'?'paid late before, '+result.late.run+' of '+result.late.need+' on time since; ':'';
       parent.appendChild(el('p','salt-insight',result.prepay
@@ -5128,7 +5130,7 @@ export const OWNER_JS = `
     if(waitN&&!ordOpen(order)) card.appendChild(el('p','salt-insight',(waitN===1?'Its move waits':'Its '+waitN+' moves wait')+' under Approve: the book keeps the row as it was until you approve.'));
     /* 17 Oct 2026: a refund the book still owes them on this order's row */
     var owes=makerData&&makerData.refunds&&order.ledgerKey&&makerData.refunds[order.ledgerKey];
-    if(+owes>0.004) card.appendChild(el('p','salt-insight','You owe them a refund of '+rm(owes)+' on this order. Close it on the Desk once it is paid.'));
+    if(+owes>0.004) card.appendChild(el('p','salt-insight',rm(owes)+' refund on this order is their credit, spent at your next Accept. Paid back by hand, close it on the Desk.'));
     /* 20 Oct 2026 (canvas V36): no Details fold; its rows stand in the band, the delivery address and the sheet's link */
   }
   /* Salt Admin A to C: the orders one sheet of theirs placed together, in the order the Desk asks the delivery on (the first by id) */
@@ -5506,7 +5508,7 @@ export const OWNER_JS = `
     if(r.reward) card.appendChild(el('p','salt-insight',REWARD_WORD[r.reward]+' for '+r.rewardOf+', at cost and free to them: it goes with that order or their next salt handover.'));
     card.appendChild(metrics([['Owed',rm(r.owed)],['Paid',rm(r.paid)],['Handed',String(+(+r.handed||0).toFixed(3))+' of '+units(r.qty)]]));
     if(r.waiting>0) card.appendChild(el('p','salt-insight','As it will stand once '+(r.waiting===1?'the move':'the '+r.waiting+' moves')+' waiting under Approve '+(r.waiting===1?'is':'are')+' approved.'));
-    if(+r.refund>0.004) card.appendChild(el('p','salt-insight','You owe them a refund of '+rm(r.refund)+' on this order. Close it on the Desk once it is paid.'));
+    if(+r.refund>0.004) card.appendChild(el('p','salt-insight',rm(r.refund)+' refund on this order is their credit, spent at your next Accept. Paid back by hand, close it on the Desk.'));
     function amend(send,body,said){
       return send('/all/maker/inputs/ledger-amend',Object.assign({at:new Date().toISOString(),rid:r.rid,date:tripToday()},body))
         .then(function(){ return loadMaker(); }).then(function(){ makerSay(key,said); });

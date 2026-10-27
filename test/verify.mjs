@@ -50216,6 +50216,11 @@ await (async () => {
   await (await import("./refund-credit-p4.mjs")).run({ ok, pageWork });
 })();
 
+section("27 Oct 2026: their credit on Salt Admin, Less RM 25 credit on the Accept card (refund credit P5)");
+await (async () => {
+  await (await import("./refund-credit-p5.mjs")).run({ ok });
+})();
+
 section("Salt Admin: Orders open by stage, a list beside the order, and Record a menu");
 await (async () => {
   await (await import("./admin-orders.mjs")).run({ ok, pageWork });
