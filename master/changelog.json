@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1283",
+  "d": "27 Oct 2026",
+  "t": "CANCELLATION OF A PENDING RICE ORDER FOR CZ5-TM",
+  "n": [
+   "<b>ONE CANCELLATION FOLDED.</b> Order s299 of CZ5-TM, 5 units of rice for RM35, is withdrawn on 27 Oct 2026, decided by Counter Admin. The order was pending with no cash and no stock moved, so nothing is reversed and no revenue stands. The drafter raised no flags. The only earlier entry on it was a trip being set.",
+   "<b>INVENTORY UNCHANGED.</b> Salt stays at 0.5 units, since this row concerns rice and no goods had left. The salt stock cost of RM56 and the replacement cost of RM58 a unit do not move."
+  ]
+ },
+ {
   "v": "v1282",
   "d": "27 Oct 2026",
   "t": "GAS AND PrEP OPEN IN SPARE'S PLACE; NEW ORDER SIZES",
