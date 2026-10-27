@@ -204,8 +204,8 @@
 
 ## Salt Admin Orders review (v1296, 28 Oct 2026)
 - His word: Haiku, Sonnet, Opus and Fable on the Orders page. Salt Admin now reads `order.credit` as paid (`ordDue`/`ordPaidAll` in `stmt/owner.js`, the site's `dueOf`); a claim
-  past what is owed (payOnBook) is answered on the card only, never the row's one tap (Fable). Section "28 Oct 2026: Salt Admin's Orders review", 13 mutations. Open for him: a
-  transfer above what credit leaves owed is still filed Already recorded (books nothing); taking it as money with the excess a refund is a Counter change, unasked.
+  past what is owed (payOnBook) is answered on the card only, never the row's one tap (Fable). Section "28 Oct 2026: Salt Admin's Orders review", 13 mutations. His answer of 28 Oct
+  2026: a transfer above what is owed stays Already recorded (books nothing); it is not taken as money with the excess a refund. Do not ask again.
 
 ## Salt Admin Orders redesign
 - Live as v1256 (`c4d677a6`, 26 Oct 2026; Cloud commit `40228185174`: chain and three suite parts green, CI `40228185236` green, live /rev `bc69bd8338333eba`), from his
