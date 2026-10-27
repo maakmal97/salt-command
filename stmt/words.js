@@ -556,6 +556,12 @@ export const EN = {
   "sh.stillAtAll": "Your prices were updated just now. Your order is still {rm}.",
   "sh.multi": "Pick a size of each you want. Tap a size again to take it off.",
   "sh.total": "Total",
+  "sh.credit": "Your credit",
+  "sh.youPay": "You pay",
+  "sh.youPayDeliv": "and delivery, less any credit left",
+  "sh.creditOff": "{c} credit off, you pay {p}",
+  "pr.credit": "{rm} credit comes off your next order",
+  "om.credit": "Paid by your credit",
   "sh.lineSent": "Placed",
   "sh.limit": "{n} open orders is the most. Cancel one, or wait for one to finish, and you can order again.",
   /* a figure said in words at the head of a sentence: the limit's (the page reads the code's own MAX_OPEN, and digits where there is no word) */

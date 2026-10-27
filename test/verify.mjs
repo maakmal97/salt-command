@@ -50211,6 +50211,11 @@ await (async () => {
   await (await import("./refund-credit-p3.mjs")).run({ ok });
 })();
 
+section("27 Oct 2026: their credit on the Counter, said once on Prices and taken off the basket, the sheet and the order (refund credit P4)");
+await (async () => {
+  await (await import("./refund-credit-p4.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin: Orders open by stage, a list beside the order, and Record a menu");
 await (async () => {
   await (await import("./admin-orders.mjs")).run({ ok, pageWork });

@@ -117,7 +117,7 @@ function fresh(now, u) {
   const O = [
     order(oid(0, "f1"), list, T(0, 10), { product: "salt", qty: 2.5, mode: "collect" }, []),
     /* 21 Oct 2026: ready and still to pay, the order that brings this customer to their next loyalty unit, his Accept's word on it */
-    order(oid(1, "f2"), list, T(1, 10), { product: "salt", qty: 1, mode: "collect" }, [[T(1, 30), "desk", { status: "acknowledged", rwd: "cross" }], [T(0, 30), "desk", READY_AT()]]),
+    order(oid(1, "f2"), list, T(1, 10), { product: "salt", qty: 1, mode: "collect" }, [[T(1, 30), "desk", { status: "acknowledged", rwd: "cross", credit: 25 }], [T(0, 30), "desk", READY_AT()]]),   /* 27 Oct 2026: RM 25 of it paid by their credit */
     order(oid(6, "f3"), list, T(6), { product: "salt", qty: 1, mode: "collect" }, [[T(6, 20), "desk", { status: "acknowledged" }], [T(5), "desk", READY_AT()],
       [T(5, 30), "desk", { handover: { units: 1 } }], [T(5, 31), "desk", { cash: { amount: 110 } }]]),
     order(oid(9, "f4"), list, T(9), { product: "rice", qty: 2, mode: "deliver", place: "Taman Rekaan" }, [[T(9, 20), "desk", { status: "acknowledged", delivery: 3 }],
@@ -135,13 +135,15 @@ function fresh(now, u) {
     const day = klDay(new Date(o.at));
     o.ledgerKey = FIX_CODE + "|" + day + "|" + o.qty + "|" + o.product;
     sales.push(Object.assign({ rid: "x" + (sales.length + 1), date: day, customer: FIX_CODE, qty: o.qty, total: o.total, product: o.product,
-      cash: +o.paid || 0, deliveredQty: +o.moved || 0 }, o.delivery ? { delivery: o.delivery } : {},
+      cash: +((+o.paid || 0) + (+o.credit || 0)).toFixed(2), deliveredQty: +o.moved || 0 }, +o.credit > 0 ? { credit: +o.credit } : {}, o.delivery ? { delivery: o.delivery } : {},
       o.movedOn ? { deliveredOn: o.movedOn, handover: o.mode === "deliver" ? "delivered" : "collected" } : {}, +o.paid > 0 ? { paidOn: o.movedOn || day } : {}));
   }
   const pools = [{ id: "p" + T(1, 0).replace(/[-:.TZ]/g, "").slice(0, 14) + "-exf1", kind: "pool", at: T(1), product: "salt", q: 2.5, target: 12.5, state: "open",
     closesOn: klDay(new Date(now.getTime() + 4 * 864e5)), joins: [], seedUnits: 5 }];
   /* 21 Oct 2026 (the loyalty plan's Ask 8): a plain customer, so the card is the share of their next loyalty unit alone */
   const card = { at: now.toISOString(), products: [{ product: "salt", loyal: { next: 0.7 } }] };
+  /* 27 Oct 2026 (docs/plan-refund-credit.html P4): RM 40 of refunds of theirs, RM 25 spent on the ready salt order at our confirmation, RM 15 left */
+  list.credit = 15; list.creditRows = sales.filter((s) => +s.credit > 0).map((s) => ({ d: s.date, p: s.product, rm: s.credit }));
   const book = { sales, customerRefunds: [] }, paynum = { maybank: { number: "0".repeat(13) } };
   return { v: FIX_VERSION, u, state: "fresh", at: now.toISOString(), code: FIX_CODE, book, live: liveFor(book, FIX_CODE, now, U), prices: list,
     orders: O, claims: [], refs: [], card, assoc: false, thread: null, pools, bulletin: null, look: "asked", paynum };
@@ -459,6 +461,8 @@ export const FEATURES = [
     && !(+o.moved > 0) && (+o.total || 0) + (+o.delivery || 0) - (+o.paid || 0) > 0.004)],
   ["a reward unit on an order's delivery (20 Oct 2026)", (f) => has(f, (o) => o.rwd === "given" && (o.product || "salt") === "salt")],
   ["the ceiling sealed with the list, for the sheet's forecast (V5b2b)", (f) => typeof f.prices.ceiling === "number"],
+  ["their credit sealed with the list, said once on Prices and off the basket and the sheet (27 Oct 2026)", (f) => typeof f.prices.credit === "number" && f.prices.credit > 0.004],
+  ["an order paid in part by their credit at our confirmation (27 Oct 2026)", (f) => has(f, (o) => +o.credit > 0.004 && ROWED.includes(o.status) && (f.prices.creditRows || []).some((r) => r.d === String(o.ledgerKey || "").split("|")[1] && Math.abs(r.rm - o.credit) < 0.005))],
   ["a claim on an order waiting on him", (f) => has(f, (o) => (o.payments || []).some((p) => p.claim === "waiting"))],
   ["a claim against the account waiting on him", (f) => f.claims.some((c) => c.state === "waiting")],
   ["cash he took", (f) => has(f, (o) => (o.payments || []).some((p) => p.method === "cod" && p.by === "desk"))],

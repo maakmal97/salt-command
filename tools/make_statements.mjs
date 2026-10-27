@@ -319,6 +319,16 @@ function stmtRecon(party,rows){
 /* A REFUND IS SOMETHING HE KNOWS ABOUT (v188), and the statement had no line for it.
    If he overpaid and money came back, that is his record as much as any order, and a
    statement that omits it is incomplete in the one direction that favours the seller. */
+/* 27 Oct 2026 (docs/plan-refund-credit.html P4): what an account's price list carries of their credit, or null with none open and none spent */
+export function creditSeal(code){
+  return creditSealOf(typeof sales!=='undefined'?sales:[], typeof customerRefunds!=='undefined'?customerRefunds:[], code);
+}
+export function creditSealOf(sold,refunds,code){
+  const credit=POSITION_ENGINE.creditOf(refunds,code,[]);
+  const creditRows=sold.filter(s=>s&&s.customer===code&&!s.cancelled&&+s.credit>0.004)
+    .map(s=>({d:s.date||'',p:s.product||'salt',rm:+(+s.credit).toFixed(2)}));
+  return credit>0.004||creditRows.length?{credit,creditRows}:null;
+}
 function stmtRefunds(party,o){
   o=o||{};
   const from=o.from?new Date(o.from):null, to=o.to?new Date(o.to):null;
@@ -1023,6 +1033,11 @@ export async function liveRecords(root, key, now, pricing, cards, buildId, suppl
            account's first order included */
         const ceiling = ceilingRM();
         if (ceiling != null) list.ceiling = ceiling;
+        /* 27 Oct 2026 (docs/plan-refund-credit.html P4): THEIR CREDIT, sealed beside the list and outside its stamp as the ceiling is: every open
+           refund of theirs, and the rows that spent some (day, product, figure), so the page takes off an order's credit only while this figure
+           does not hold it yet. Never a refund's row or note. A refund raised or spent is a fold, and every fold publishes */
+        const cr = creditSeal(code);
+        if (cr) Object.assign(list, cr);
         /* 05 Oct 2026 (any quantity at an automatic price): each product's {min, step, max} in the clear beside the stamp, no price,
            for the Worker to refuse a quantity off the step or over the max; Negotiate is the only way past the max */
         const steps = priceSteps(list);
