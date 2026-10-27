@@ -11046,7 +11046,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1271","d":"27 Oct 2026","t":"FULFILMENT SETTLES CZ4-MK'S OIL ORDER S297","n":["<b>ONE FULFILMENT FOLDED.</b> The fulfilment on s297 for CZ4-MK was approved by Counter Admin on 27 Oct 2026, the day of the order. It moves RM120 cash and 10 unit of oil against RM120 and 10 unit outstanding. The order is settled in full, with RM0 and 0 unit left open. The row itself is applied by the master's own amend routine, not recomputed here.","<b>WHAT WAS UNUSUAL.</b> The dossier carries no ladder and no oil cost, so no floor or ask comparison is made. The party already held RM575 outstanding before this row. Oil stock falls by 10 unit. Salt, the stated stock, and its cost basis do not move."]}];
+const evolution=[{"v":"v1272","d":"27 Oct 2026","t":"CASH PAST WHAT AN ORDER OWES IS TAKEN, THE EXCESS A REFUND","n":["<b>CASH RECEIVED PAST WHAT THE ORDER OWES (HIS WORD OF 27 OCT 2026).</b> The order card's Cash received takes more than goods plus delivery; the excess is the refund the fold raises to them, open and Now until it is paid, and Salt Admin's hold and answer say it.","Still refused: beside a claim of theirs, on an order owing nothing, with other money on its way to the row, or where the row owes another figure than the order. A cash rejected under Approve and offered again is measured on the order as it stood before it (Fable's review)."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11194,7 +11194,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='27 Oct 2026, 14:58 KL';
+const LAST_UPDATED='27 Oct 2026, 15:06 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
