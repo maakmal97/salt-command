@@ -148,6 +148,12 @@ export async function run({ ok }) {
   const lc = await GC.load(stranger, { v: "v1253" }), vc = await GC.read();
   ok(lc.ok && lc.tap.folded === 0 && lc.tap.open === 1 && lc.tap.clash.join() === gs.id && lc.tap.stuck.join() === gs.id && vc.rows.sales.filter((r) => r.rid === rid).length === 1 && vc.rows.sales.find((r) => r.rid === rid).customer === "ZZ2-BBB",
     "a rid held by another row closes no entry: the entry stays open, is named clashing and stuck, and the view holds the stranger's row once, not two rows under one rid: " + JSON.stringify(lc.tap));
+  /* an amendment that minted only generated rows is closed by D1's word alone, never by a rid another row may hold */
+  const GA = mk(); await GA.load();
+  GA.os.db.prepare("INSERT INTO booked (draft_id, item, rids, day, at) VALUES (?, ?, ?, ?, ?)").run(IDN(7), JSON.stringify({ id: IDN(7), status: "approved", collection: "sales", amends: "ZZ1-AAA|2031-01-02|100", amendKind: "Fulfilment", row: { cash: 1 } }), JSON.stringify(["s9996"]), T(2), "2026-10-27T10:00:00.000Z");
+  const withS = structuredClone(fb()); withS.sales.push({ rid: "s9996", customer: "ZZ2-BBB", date: T(1), qty: 1, total: 5, cash: 5, deliveredQty: 1, product: "salt", note: "a stranger" });
+  const la = await GA.load(withS, { v: "v1253" });
+  ok(la.ok && la.tap.folded === 0 && la.tap.open === 1, "an amendment entry whose generated rids a base holds is not closed by them: only D1's word closes it: " + JSON.stringify(la.tap));
   /* a draft whose entry a load closed is taken: tapped again it is not booked afresh (an amendment has no twin guard) */
   const GF = mk(); await GF.load(); await GF.tap([gs]);
   await GF.load(withRow, { v: "v1253" }, "?folded=" + encodeURIComponent(gs.id));

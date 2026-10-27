@@ -246,7 +246,7 @@ async function handleBookLoad(request, env, m) {
   if (text.length > MAX_LOAD_BYTES) return json({ ok: false, error: "the load is too large" }, 413);
   /* S4a: the Book keeps the entries a tap booked (none until S4d) beside its base. D1's committed_at is the word on which of them this load's fold took, so the Worker
      names them to the Book as `folded`, and says whether the batch was nothing but entries (no other draft committed since the previous load), which is when the
-     tap check also compares the stock documents. A query that fails leaves both out: the Book still closes an entry whose rids the new base holds. */
+     tap check also compares the stock documents. Below, a question that cannot be answered stops the load. */
   const book = env.BOOK.get(env.BOOK.idFromName(BOOK_NAME));
   let q = "";
   if (env.SALT_LEDGER) {

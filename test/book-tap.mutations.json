@@ -214,5 +214,11 @@
   "file": "src/book.js",
   "find": "const TAP_PURE = [\"STATED_STOCK\", \"PROD_OPENING\", \"COUNTS\", \"COUNT_ON\", \"loans\", \"sales\", \"purchases\"];",
   "replace": "const TAP_PURE = [\"STATED_STOCK\", \"PROD_OPENING\", \"COUNTS\", \"COUNT_ON\", \"loans\", \"sales\", \"purchases\", \"TIER_OF\"];"
+ },
+ {
+  "name": "an amendment entry is closed by a rid another row holds",
+  "file": "src/book.js",
+  "find": "if (!own) return false;",
+  "replace": "if (!own) return true;"
  }
 ]

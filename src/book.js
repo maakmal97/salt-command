@@ -280,9 +280,9 @@ export class Book {
           const rs = JSON.parse(e.rids);
           if (!rs.length || !rs.every((x) => heldDoc.has("r:" + x))) return false;
           const it = JSON.parse(e.item), own = ["sales", "purchases", "loans"].includes(it.collection) && !it.amends ? it.row || {} : null;
-          if (!own) return true;
+          if (!own) return false;   /* an amendment mints no row of its own to compare (only generated ones): D1's word alone closes it */
           const base = JSON.parse(heldDoc.get("r:" + rs[0]));
-          const alike = ["customer", "supplier", "date", "qty", "total"].every((k) => own[k] === undefined || canon(own[k]) === canon(base[k]));
+          const alike = ["customer", "supplier", "party", "date", "qty", "total", "kg", "rm"].every((k) => own[k] === undefined || canon(own[k]) === canon(base[k]));
           if (!alike) clash.push(e.draft_id);
           return alike;
         };
