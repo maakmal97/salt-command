@@ -41,7 +41,7 @@ const SHOWS = {
 /* the forms of Record, by the part each belongs to (the page also draws an Unsent entry for the loan this device kept) */
 const FORMS = {
   /* 27 Oct 2026: a retained input is read by its heading, a menu row by its name, three words at most (Reopen an order, Name or place, Map point) */
-  entry: ["Unsent entry", "Sale or purchase", "Repayment", "Stock count", "Gift", "Loan", "Rewards", "Offsets", "Correct a row", "Reopen an order"],
+  entry: ["Unsent entry", "Sale or purchase", "Repayment", "Stock count", "Gift", "Loan", "Rewards", "Offsets"],   /* 27 Oct 2026, his word: Correct a row and Reopen are reached from the sale form, no row of a menu */
   customers: ["New customer", "Make an associate", "Name or place", "Map point"],
   pricing: ["Printed sizes", "Desk reminders"]   /* Their % and Partner on the account card since 26 Oct 2026; his Ask G orders the rest */
 };
@@ -134,8 +134,9 @@ export async function run({ ok, pageWork }) {
     const byPart = {};
     await p.tap("nav.record");
     for (const part of ["entry", "customers", "pricing"]) { await p.tap("part.record." + part); byPart[part] = formsIn(part); }
-    const every = [...d.querySelectorAll("#makerInputs .maker-input")].length;
-    ok(same(byPart, FORMS) && Object.values(byPart).flat().length === every,
+    /* 27 Oct 2026: the two forms off the menu are still built, reached from the sale form (Other fields, a cancelled row's Reopen) */
+    const every = [...d.querySelectorAll("#makerInputs .maker-input")].filter((f) => !["correct-a-row", "reopen-a-cancelled-order"].includes(f.getAttribute("data-form"))).length;
+    ok(same(byPart, FORMS) && Object.values(byPart).flat().length === every && !!d.querySelector('#makerInputs [data-form="correct-a-row"]'),
       "each form of Record is named in the menu of one part, Entry, Customers or Pricing, and in no other, a retained input above it: " + JSON.stringify(byPart) + " of " + every);
 
     /* 5. ORDERS BY STAGE */
