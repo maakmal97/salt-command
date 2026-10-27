@@ -102,5 +102,7 @@
   { "name": "a settled order with goods out opens again where it was", "file": "stmt/orders.js", "find": "order.status = order.moved > 0.0004 ? \"ready\" : was ? was.status : \"ready\";", "replace": "order.status = was ? was.status : \"ready\";" },
   { "name": "a settled order the book says moved nothing keeps its handover day", "file": "stmt/orders.js", "find": "      if (order.moved <= 0.0004) { delete order.movedOn; delete order.movedAt; }\n", "replace": "" },
   { "name": "History is a box, not the customer's fold", "file": "stmt/owner.js", "find": "var box=el('details','undohist salt-plan'), sm=el('summary')", "replace": "var box=el('div','undohist salt-plan'), sm=el('summary')" },
- {"name":"an order's log keeps the old title","file":"stmt/owner.js","find":"order?'Order log':'What happened, step by step'","replace":"'What happened, step by step'"}
+ {"name":"an order's log keeps the old title","file":"stmt/owner.js","find":"order?'Order log':'What happened, step by step'","replace":"'What happened, step by step'"},
+{"name": "a row past what it owes refused as before", "file": "src/maker-inputs.js", "find": "if (sale && p.kind === \"Fulfilment\" && !(reading.on > 0.004) && Array.isArray(held)", "replace": "if (false && sale && p.kind === \"Fulfilment\" && !(reading.on > 0.004) && Array.isArray(held)"},
+{"name": "a waiting undo no longer holds the overpay", "file": "src/maker-inputs.js", "find": "    && !heldMoves(row, held).some((e) => e.at !== entry.at)) return \"\";", "replace": "    ) return \"\";"}
 ]

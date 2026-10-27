@@ -536,9 +536,13 @@ export function makerTripSplit(body, book, held = []) {
   const rows = standing(booked, held).map((x) => x.row);
   const alloc = E.claimAlloc(rows, rows[0].customer, body.amount, rows.map(E.ovKey));
   const owed = r2(alloc.rows.reduce((a, s) => a + s.owed, 0));
-  if (alloc.left > 0.004) return { error: "RM " + body.amount.toFixed(2) + " is more than this order still owes (RM " + owed.toFixed(2) + ")." };
-  return { trip: body.trip, party: rows[0].customer, amount: body.amount,
-    shares: alloc.rows.map((a) => ({ rid: a.rid, product: (rows.find((s) => s.rid === a.rid) || {}).product || "salt", rm: a.rm, owed: a.owed })) };
+  /* 27 Oct 2026, his word: money past what the order owes is taken, the excess on its last line, which the fold pays past what it owes and so
+     raises as a refund to them (refundOnOverpay); with nothing owed it is refused */
+  if (alloc.left > 0.004 && !alloc.rows.length) return { error: "RM " + body.amount.toFixed(2) + " is more than this order still owes (RM " + owed.toFixed(2) + ")." };
+  const over = r2(alloc.left), last = alloc.rows.length - 1;
+  return Object.assign({ trip: body.trip, party: rows[0].customer, amount: body.amount,
+    shares: alloc.rows.map((a, i) => ({ rid: a.rid, product: (rows.find((s) => s.rid === a.rid) || {}).product || "salt", rm: i === last ? r2(a.rm + over) : a.rm, owed: a.owed })) },
+    over > 0.004 ? { refund: over } : {});
 }
 export function makerTripPay(body, book, held = []) {
   if (!exact(body, ["at", "trip", "date", "amount", "shares"]) || !timestamp(body.at) || !date(body.date))
@@ -1116,7 +1120,7 @@ export function makerLedgerAmendment(body, book, undoCtx = null) {
     ...(body.undo !== undefined ? { undo: body.undo } : {}) }), book);
 }
 
-export async function makerAmendmentRoom(db, entry, book) {
+export async function makerAmendmentRoom(db, entry, book, held) {
   const p = entry.payload;
   const found = findRow(book, p.rid);
   if (found.err) return found.err;
@@ -1136,6 +1140,10 @@ export async function makerAmendmentRoom(db, entry, book) {
   const changedTotal = p.kind === "Correction" && p.fields.total != null ? p.fields.total - (+row.total || 0) : 0;
   const changedDelivery = sale && p.kind === "Correction" && p.fields.delivery != null
     ? p.fields.delivery - (+row.delivery || 0) : 0;
+  /* 27 Oct 2026, his word: a sale's payment past what it owes is the refund the fold raises, so it passes while no money and no other move (an undo,
+     a correction) waits on the row, which would change what it owes before this folds; with the moves not read (`held` absent) it is held as before */
+  if (sale && p.kind === "Fulfilment" && !(reading.on > 0.004) && Array.isArray(held)
+    && !heldMoves(row, held).some((e) => e.at !== entry.at)) return "";
   return cash > Math.max(0, reading.left + changedTotal + changedDelivery) + 0.004
     ? "This row can still take RM " + reading.left.toFixed(2) + "; money already on its way is reserved."
     : "";

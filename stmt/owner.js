@@ -5597,7 +5597,7 @@ export const OWNER_JS = `
       drop();
       r.split.shares.forEach(function(s){
         var p=el('p','maker-facts'); p.setAttribute('data-share',s.rid); p.appendChild(productTag(s.product));
-        p.appendChild(document.createTextNode(' '+s.rid+', '+rm(s.rm)+(s.rm<s.owed-0.004?' of '+rm(s.owed)+' owed':', all it owes')));
+        p.appendChild(document.createTextNode(' '+s.rid+', '+rm(s.rm)+(s.rm<s.owed-0.004?' of '+rm(s.owed)+' owed':s.rm>s.owed+0.004?', all it owes and '+rm(s.rm-s.owed)+' over, a refund to them':', all it owes')));
         shown.appendChild(p);
       });
       rec=makerButton(pay,['Record '+rm(r.amount),'trip.pay',t.trip],async function(send){

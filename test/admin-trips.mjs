@@ -120,7 +120,9 @@ export async function run({ ok, pageWork }) {
   ok(s200.status === 200 && J(s200.j.split.shares.map((s) => [s.rid, s.rm, s.owed])) === J([["zt1", 120, 120], ["zt2", 80, 116]]),
     "RM 200 for the order is split by the Desk oldest first, each line owing all that is left on it, the delivery's line taking its delivery: " + J(s200.j));
   const s300 = await f.call("/all/maker/trip-split", { trip: T, amount: 300 });
-  ok(s300.status !== 200 && /more than this order still owes \(RM 271\.00\)/.test(s300.j.error || ""), "a payment past what the order owes is refused, never split: " + J(s300.j));
+  /* 27 Oct 2026, his word: a payment past what the order owes is taken, the excess on its last line, a refund to them */
+  ok(s300.status === 200 && J(s300.j.split.shares.map((s) => [s.rid, s.rm, s.owed])) === J([["zt1", 120, 120], ["zt2", 116, 116], ["zt3", 64, 35]]) && s300.j.split.refund === 29,
+    "a payment past what the order owes is split with the excess on its last line, said as the refund: " + J(s300.j));
   const before = f.drafts().length;
   const stale = await f.call("/all/maker/inputs/trip-pay", { at: at(1), trip: T, date: "2026-10-16", amount: 200, shares: [{ rid: "zt1", rm: 100 }, { rid: "zt2", rm: 100 }] });
   ok(stale.status === 400 && /split changed/.test(stale.j.error || "") && f.drafts().length === before, "a payment sent with a split other than the Desk's is refused whole and nothing is drafted: " + J(stale.j));
@@ -163,6 +165,14 @@ export async function run({ ok, pageWork }) {
   const exts = f.drafts().filter((d) => ["vt1", "vt2", "vt3"].includes(d.amends));
   ok(ext.status === 200 && J(exts.map((d) => [d.amends, J(d.entry.payload.fields)])) === J([["vt3", J({ trip: T3 })]]),
     "naming a row with the trip beside it extends that trip: one Correction, on the row not yet on it: " + J({ j: ext.j, drafts: exts.map((d) => [d.amends, d.entry.payload.fields]) }));
+  /* 27 Oct 2026, his word: an order paid past what it owes (RM 150 here) is sent whole, the excess on its last line, drafted with the refund said */
+  const s200b = await f.call("/all/maker/trip-split", { trip: T3, amount: 200 });
+  const shares3 = (s200b.j.split && s200b.j.split.shares || []).map((s) => ({ rid: s.rid, rm: s.rm }));
+  const over3 = await f.call("/all/maker/inputs/trip-pay", { at: at(11), trip: T3, date: "2026-10-16", amount: 200, shares: shares3 });
+  const vtPay = f.drafts().filter((d) => ["vt1", "vt2"].includes(d.amends) && d.amend_kind === "Fulfilment");
+  ok(over3.status === 200 && J(vtPay.map((d) => [d.amends, d.entry.payload.cash])) === J([["vt1", 120], ["vt2", 80]])
+    && /RM 50 more than the order is owed\. The fold raises a refund/.test(f.db.prepare("SELECT flags FROM draft WHERE amends='vt2' AND amend_kind='Fulfilment'").get().flags || ""),
+    "a payment past what the order owes is taken, RM 50 over on its last line, which its card says the fold refunds: " + J({ j: over3.j, drafts: vtPay.map((d) => [d.amends, d.entry.payload.cash]) }));
   const cat = await f.call("/all/maker/inputs");
   const typed = await f.call("/all/maker/inputs/ledger-amend", { at: at(8), rid: "xd1", kind: "Correction", date: "2026-10-16", fields: { trip: "t1791900000001" } });
   ok(!(cat.j.catalog.correctionFields || []).some((x) => x.field === "trip") && typed.status === 400,
@@ -200,9 +210,11 @@ export async function run({ ok, pageWork }) {
     { rid: "yd1", product: "salt", qty: 1, total: 110, delivery: 10, paid: 0, owed: 120, handed: 0, left: 1, waiting: 0, open: true },
     { rid: "yd2", product: "oil", qty: 2, total: 30, delivery: 0, paid: 0, owed: 30, handed: 0, left: 2, waiting: 0, open: true }] };
   const SPLIT = { trip: T, party: "CX9-ZED", amount: 200, shares: [{ rid: "zt1", product: "salt", rm: 120, owed: 120 }, { rid: "zt2", product: "oil", rm: 80, owed: 116 }] };
+  const OVER = { trip: T, party: "CX9-ZED", amount: 300, refund: 29, shares: [{ rid: "zt1", product: "salt", rm: 120, owed: 120 }, { rid: "zt2", product: "oil", rm: 116, owed: 116 },
+    { rid: "zt3", product: "rice", rm: 64, owed: 35 }] };
   const open = async (opts = {}) => {
     const p = await richOwnerPage({ pageWork, bare: true, review: (j) => ({ ...j, orders: [], drafts: opts.drafts || [], queue: [], trips: [TRIP], sameDay: [DAY], ...(opts.review || {}) }),
-      extra: (route, body) => route === "/all/maker/trip-split" ? { ok: true, split: SPLIT }
+      extra: (route, body) => route === "/all/maker/trip-split" ? { ok: true, split: body.amount === 300 ? OVER : SPLIT }
         : route === "/all/maker/drafts/decide-many" ? { ok: true, decided: body.approve.map((id) => ({ id, decision: "approved" })).concat(body.reject.map((id) => ({ id, decision: "rejected" }))), refused: [] }
         : route === "/all/maker/inputs/ledger-amend" && opts.refuse && body.rid === opts.refuse ? { refuse: "only 2 unit is on the shelf" }
           : /^\/all\/maker\/inputs\/(ledger-amend|trip-pay|trip-join)$/.test(route) ? { ok: true, draft: body.at, status: "pending" } : undefined });
@@ -279,6 +291,11 @@ export async function run({ ok, pageWork }) {
     const readAgain = !!byAct(card, "trip.pay", T) && !!card.querySelector("[data-share]");
     p.type(byAct(card, "trip.pay-amount", T), "150");
     ok(readAgain && !byAct(card, "trip.pay", T) && !card.querySelector("[data-share]"), "a new figure takes the split and Record away until it is read again");
+    /* 27 Oct 2026, his word: paid past what the order owes, the last line says the excess is a refund to them */
+    p.type(byAct(card, "trip.pay-amount", T), "300"); await p.tap("trip.pay-split", T); card = p.card("trip:" + T);
+    const overShown = [...card.querySelectorAll("[data-share]")].map((x) => x.textContent.replace(/\s+/g, " ").trim());
+    ok(/zt3, RM 64\.00, all it owes and RM 29\.00 over, a refund to them$/.test(overShown[2] || "") && byAct(card, "trip.pay", T).textContent === "Record RM 300.00",
+      "a payment past what the order owes shows the excess on its last line as a refund to them: " + J(overShown));
     await p.tap("nav.orders");
     const day = p.card("day:yd1+yd2");
     await p.tap("trip.join", "yd1+yd2");

@@ -1084,7 +1084,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
         if (busy) return json({ ok: false, error: busy.payload.rid + " already waits to join an order. Decide that one under Approve first." }, 409);
       }
       for (const entry of entries) {
-        const room = await makerAmendmentRoom(env.SALT_LEDGER, entry, book);
+        const room = await makerAmendmentRoom(env.SALT_LEDGER, entry, book, held);
         if (room) return json({ ok: false, error: entry.payload.rid + ": " + room + " Nothing was sent." }, 409);
         const reserved = POSITION_ENGINE.entryReservationFault(entry, held, book);
         if (reserved) return json({ ok: false, error: entry.payload.rid + ": " + reserved + " Nothing was sent." }, 409);
@@ -1165,7 +1165,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     const proposed = draftRow(entry, book);
     if (proposed.skip) return json({ ok: false, error: proposed.skip }, 409);
     if (operation === "ledger-amend" || operation === "offset" || operation === "redeem" && entry.payload.mode === "amend") {
-      const roomFault = await makerAmendmentRoom(env.SALT_LEDGER, entry, book);
+      const roomFault = await makerAmendmentRoom(env.SALT_LEDGER, entry, book, operation === "ledger-amend" ? await makerHeldMoves(env, boundOf(book)) : undefined);
       if (roomFault) return json({ ok: false, error: roomFault }, 409);
     }
     const stored = await env.SALT_LEDGER.prepare("SELECT entry,status FROM draft WHERE id=?1").bind(entry.at).first();

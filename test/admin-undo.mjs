@@ -216,6 +216,11 @@ export async function run({ ok, pageWork }) {
     const pay = await makerAmendmentRoom(f.D1, E.ledgerAmendmentEntry({ at: "2026-10-16T02:00:14.000Z", row: row1, direction: "SELL", kind: "Fulfilment", date: "2026-10-16", cash: 50, movedUnits: 0 }), book);
     ok(/Money is already on its way to this row\. Decide it before undoing a move\./.test(room) && /can still take RM 0\.00/.test(pay),
       "the room check refuses an undo over money on its way, and a payment on a row an undo waits on is still held to what the mirror says it can take: " + J([room, pay]));
+    /* 27 Oct 2026, his word: a payment past what the row owes passes as a refund only while no move waits on the row, and with the moves read */
+    const payEntry = E.ledgerAmendmentEntry({ at: "2026-10-16T02:00:16.000Z", row: row1, direction: "SELL", kind: "Fulfilment", date: "2026-10-16", cash: 50, movedUnits: 0 });
+    const payFree = await makerAmendmentRoom(f.D1, payEntry, book, []), payUndo = await makerAmendmentRoom(f.D1, payEntry, book, [made[0].entry]);
+    ok(payFree === "" && /can still take RM 0\.00/.test(payUndo),
+      "a payment past what the row owes passes with no move waiting on the row, and is held while its undo waits: " + J([payFree, payUndo]));
     const h2 = await f.call("/all/maker/undo", { order: "20261002000000-un2" }), h3 = await f.call("/all/maker/undo", { rid: "zu3" });
     const s3 = await f.call("/all/maker/inputs/ledger-amend", { at: "2026-10-16T02:00:15.000Z", rid: "zu3", kind: "Correction", date: "2026-10-16", fields: { total: 110 }, undo: 1 });
     ok(h2.status === 200 && h2.j.history.rid === "zu2" && h2.j.history.order === "20261002000000-un2" && h2.j.history.undo.route === "ledger"
