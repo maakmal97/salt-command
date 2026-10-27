@@ -124,6 +124,13 @@
 ## Notifications
 - Live as v1167 (`e35ee35b`, 19 Oct 2026; Cloud commit `39223032636`: chain, three suite parts and CI green): Salt Admin (was Salt Account) has its own worker `/all/sw.js` and `opush:` subscriptions; the Desk rings orders and approvals only while no Salt Admin send goes through (KV `admin:on`). He has not yet re-added Salt Admin to the home screen or turned its bell on (Shop > This device), so the Desk still rings for now. The stock-light banner has its Desk side only: nothing posts `{"tag":"stock"}` yet (it needs `tools/stmt-publish.mjs` to compare lights).
 
+## Gas and PrEP (v1282, 27 Oct 2026)
+- Pushed as v1282 (`ebe435ec`; Cloud commit `40480514260` and CI `40480514091` were running at the push), his word: `spare` became `gas` (`product.mjs --rename`, no rows) and `prep` was added. Both are live and empty.
+  Gas is a flame lettered P, RM75 a unit on a cost of RM50, 1 to 20 in ones. PrEP is a heart-shaped pill lettered PrEP, RM60 for 12 and RM125 for 30 pills on a cost of RM100 per 30, orderable as 12N or 30N only (grid
+  `multiples`). Costs sit on `PROD_OPENING.costPerKg` (50 and 3.333) until a first lot is entered; their grid tops (gas 20, PrEP 120) were the builder's reading. Also his words: candy 1 to 50, rice 1 to 100, and salt orderable
+  only in the halves 0.5 to 5 then 6.25, 12.5, 25, 50, 100 (grid `only`, quarter step kept for the walk). Salt's Set Price at 25, 50 and 100 is the existing curve's, not typed by him. salt-ds 1.20.0 (#32) holds the hues
+  and was propagated to the Desk and Counter; QR Command was not run. The frozen test book and `pricing-before-s1c.json` were regenerated for the six books. S1b stays red here and on a clean master (CI passed it).
+
 ## Partner
 - `partners` in `ledger/book.json` = CM4-TO since v1029 (06 Oct 2026): pays the Floor, the order total up to the next RM 5, on every book (since 18 Oct 2026; it was cost to the sen). The CBDO role stays unheld, his answer. The Their % card's Make partner sets one (09 Oct 2026) and a partner is always an associate with a -R account; CM4-TO was made one by hand in the same version.
 
