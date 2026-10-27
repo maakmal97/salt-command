@@ -534,7 +534,11 @@ export function makerTripSplit(body, book, held = []) {
   if (fault) return { error: "That order does not hold together: " + fault + "." };
   /* the rows as they will stand, so money already waiting under Approve is not asked for twice; the allocator is the engine's */
   const rows = standing(booked, held).map((x) => x.row);
-  const alloc = E.claimAlloc(rows, rows[0].customer, body.amount, rows.map(E.ovKey));
+  /* 27 Oct 2026, his word: THE OTHER BOOKS ARE PAID FIRST AND SALT LAST, each part by the engine's claimAlloc, so an excess lands on salt */
+  const salt = (s) => (s.product || "salt") === "salt", keys = rows.map(E.ovKey);
+  const others = E.claimAlloc(rows.filter((s) => !salt(s)), rows[0].customer, body.amount, keys);
+  const salts = E.claimAlloc(rows.filter(salt), rows[0].customer, others.left, keys);
+  const alloc = { rows: others.rows.concat(salts.rows), left: salts.left };
   const owed = r2(alloc.rows.reduce((a, s) => a + s.owed, 0));
   /* 27 Oct 2026, his word: money past what the order owes is taken, the excess on its last line, which the fold pays past what it owes and so
      raises as a refund to them (refundOnOverpay); with nothing owed it is refused */

@@ -32,16 +32,10 @@
  {
   "name": "the split names no line ready, so it reads only goods out",
   "file": "src/maker-inputs.js",
-  "find": "E.claimAlloc(rows, rows[0].customer, body.amount, rows.map(E.ovKey));",
-  "replace": "E.claimAlloc(rows, rows[0].customer, body.amount, []);"
+  "find": "const salt = (s) => (s.product || \"salt\") === \"salt\", keys = rows.map(E.ovKey);",
+  "replace": "const salt = (s) => (s.product || \"salt\") === \"salt\", keys = [];"
  },
- {
-  "name": "a payment past what the order owes is split anyway",
-  "file": "src/maker-inputs.js",
-  "find": "  if (alloc.left > 0.004) return { error: \"RM \"",
-  "replace": "  if (false) return { error: \"RM \""
- },
- {
+{
   "name": "the Counter cannot reach the split",
   "file": "stmt/maker.js",
   "find": "    || path === \"/_internal/maker/trip-split\" && method === \"POST\"\n",
@@ -304,5 +298,6 @@
 {"name": "a trip paid past what it owes refused as before", "file": "src/maker-inputs.js", "find": "if (alloc.left > 0.004 && !alloc.rows.length) return", "replace": "if (alloc.left > 0.004) return"},
 {"name": "the excess left off the last line", "file": "src/maker-inputs.js", "find": "rm: i === last ? r2(a.rm + over) : a.rm,", "replace": "rm: a.rm,"},
 {"name": "the trip's room reads no moves", "file": "src/worker.js", "find": "const room = await makerAmendmentRoom(env.SALT_LEDGER, entry, book, held);", "replace": "const room = await makerAmendmentRoom(env.SALT_LEDGER, entry, book);"},
-{"name": "the split says no refund", "file": "stmt/owner.js", "find": "s.rm>s.owed+0.004?', all it owes and '+rm(s.rm-s.owed)+' over, a refund to them':", "replace": ""}
+{"name": "the split says no refund", "file": "stmt/owner.js", "find": "s.rm>s.owed+0.004?', all it owes and '+rm(s.rm-s.owed)+' over, a refund to them':", "replace": ""},
+{"name": "salt paid with the others", "file": "src/maker-inputs.js", "find": "const others = E.claimAlloc(rows.filter((s) => !salt(s)),", "replace": "const others = E.claimAlloc(rows,"}
 ]
