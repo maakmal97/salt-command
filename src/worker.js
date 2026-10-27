@@ -19,6 +19,7 @@
 
 import { runDrafter, dryRunDrafter, readBook, readMirror, bookOnce, withDraftLots, withRefunds, draftRow, tripCheck, bindBook, wayBound } from "./drafter.js";
 import { bookDirect, compareReads, readMode } from "./book-read.js";
+import { bookTap, bookNet, ridStmts, voidEntries, voidUnlessApproved, tapMode, TAP_COLS } from "./book-tap.js";
 import { boundOf, unfolded } from "./way.js";
 import { runBackup, backupAlarm, BACKUP_CRON } from "./backup.js";
 import { approveFigures } from "./approve-figures.js";
@@ -234,6 +235,16 @@ async function handleBookReadcheck(request, env, m) {
     let stuck = [];
     try { const a = await (await env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)).fetch(new Request("https://book/at"))).json(); stuck = a && Array.isArray(a.stuck) ? a.stuck : []; } catch (e) { stuck = []; }
     r.differ = r.differ.concat(stuck.map((id) => "entry " + id + " (stuck: the base cannot take it)")); r.ok = r.ok && !stuck.length;
+    /* S4d: an entry open for a draft that was rejected would show a sale he turned down, and one open for a draft still pending a row he has not approved (a batch and its void both failed); the net voids the first with the flag on, and this names both whatever the flag says */
+    try {
+      const ev = await (await env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)).fetch(new Request("https://book/events"))).json();
+      const ids = ev && Array.isArray(ev.ids) ? ev.ids : [];
+      for (let i = 0; i < ids.length; i += 50) {
+        const part = ids.slice(i, i + 50);
+        const rs = await env.SALT_LEDGER.prepare("SELECT id,status FROM draft WHERE status IN ('rejected','pending') AND id IN (" + part.map((_, k) => "?" + (k + 1)).join(",") + ")").bind(...part).all();
+        for (const x of rs.results || []) { r.differ.push("entry " + x.id + (x.status === "rejected" ? " (its draft was rejected)" : " (its draft is still pending)")); r.ok = false; }
+      }
+    } catch (e) { /* an object before S4a has no entries to name */ }
     return json({ ok: r.ok, differ: r.differ, rows: r.rows || 0, version: mirror.version, bookVersion: res ? res.v : null, mode: await readMode(env.SALT_LEDGER) });
   } catch (e) { return json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }, 500); }
 }
@@ -2412,7 +2423,7 @@ async function handleDraftDecide(request, env, ctx, id, decision) {
    with it; decide-many (22 Oct 2026, his multi-tick Approve) runs it for each card in turn with `hold`, which keeps back the
    fold's dispatch and the live tell, so the batch sends each once after its last row. Nothing else differs. */
 async function decideDraft(env, ctx, id, decision, by, hold) {
-  const cur = await env.SALT_LEDGER.prepare("SELECT id,status,collection,entry,row FROM draft WHERE id=?1").bind(id).first();
+  const cur = await env.SALT_LEDGER.prepare("SELECT " + TAP_COLS + ",status FROM draft WHERE id=?1").bind(id).first();
   if (!cur) return { status: 404, body: { ok: false, error: "no such draft" } };
   /* Only a pending draft may be decided. Deciding twice is reported rather than applied, so a
      double tap on a phone cannot flip an approval into a rejection. */
@@ -2441,10 +2452,31 @@ async function decideDraft(env, ctx, id, decision, by, hold) {
      same way IN THE SAME BATCH as the tapped row, one transaction, so a trip is decided whole or not at all. A claim and a
      row a site order made are never decided here (each has its own card), so neither is swept in. */
   const ts = await tripStmts(env.SALT_LEDGER, id, cur.row, decision, by);
+  /* S4d (flag book_tap, shipped off): A TAP BOOKS THE ROW AT ONCE. Book first: the Book books the tapped row and its trip's rows, every one or none, by the engine's own
+     plan, and a refusal by the law stops the tap here with its reason, nothing written. What it will not book (behind, silent, a stuck entry, the fold's alone) approves as
+     before. The rids it minted ride in the approval's batch below. A rejection takes any open entry of these rows back first, and with the flag on a Book that will not
+     take it back stops the rejection, since an entry must never outlive it. */
+  const tapIds = [id].concat(ts.ids.map((x) => x.id));
+  let booked = null;
+  if (decision === "approved") {
+    const tap = await bookTap(env.SALT_LEDGER, [cur].concat(ts.rows), by, new Date().toISOString());
+    if (tap.kind === "refused") return { status: 409, body: { ok: false, error: "the Book refuses it: " + tap.refused.map((x) => x.why).join("; "), refused: tap.refused } };
+    if (tap.kind === "booked") {
+      if (tap.booked.some((b) => b.folded)) return { status: 409, body: { ok: false, error: "the Book refuses it: the fold has already booked it; reject this card" } };
+      booked = tap.booked;
+    }
+  } else if (await tapMode(env.SALT_LEDGER) === "on") {
+    if (!await voidEntries(env.SALT_LEDGER, tapIds)) return { status: 503, body: { ok: false, error: "the Book did not take the entry back; try again" } };
+  }
   const head = [decide].concat(releases ? [admissionDecision(env.SALT_LEDGER, id, "rejected", true)] : []);
-  const res = head.length + ts.stmts.length > 1 ? await env.SALT_LEDGER.batch(head.concat(ts.stmts)) : [await decide.run()];
+  const rids = booked ? ridStmts(env.SALT_LEDGER, booked) : [];
+  let res;
+  try { res = head.length + ts.stmts.length + rids.length > 1 ? await env.SALT_LEDGER.batch(head.concat(ts.stmts, rids)) : [await decide.run()]; }
+  catch (e) { if (booked) await voidEntries(env.SALT_LEDGER, booked.map((b) => b.id)); throw e; }
   const upd = res[0];
   const trip = ts.ids.filter((x) => { const r = res[head.length + x.i]; return r && r.meta && r.meta.changes > 0; }).map((x) => x.id);
+  /* the entries of drafts that did not become approved (the tap lost a race to a rejection, or a sibling was decided meanwhile) are taken back */
+  if (booked) await voidUnlessApproved(env.SALT_LEDGER, booked.filter((b) => b.id !== id ? !trip.includes(b.id) : !(upd && upd.meta && upd.meta.changes > 0)).map((b) => b.id));
   /* 08 Sep 2026: THE SELECT ABOVE IS NOT THE UPDATE. Two taps in the same instant both read
      `pending`; the second UPDATE changes no row, and used to answer 200 with the first tap's
      decision in the body, and ring the stage for an approval that was in fact a rejection. */
@@ -2493,6 +2525,7 @@ export function refusalFix(error, status) {
   if (status === 404 || /no such draft/.test(e)) return "It is no longer waiting. Nothing to do.";
   if (/answered on its order/.test(e)) return "Answer it on its order, with Received or Not found.";
   if (/Add ID/.test(e)) return "Approve the new customer's Add ID first, then this card.";
+  if (/^the Book refuses it/.test(e)) return "The Book's own rules refuse it, the reason is above. Reject the card, or correct what it names.";
   return "Decide it on its own card; if it is refused again, this reason says what to change.";
 }
 async function decideMany(env, ctx, body) {
@@ -2529,9 +2562,9 @@ async function decideMany(env, ctx, body) {
 export async function tripStmts(db, id, rowText, decision, by) {
   let tripId = null;
   try { tripId = (JSON.parse(rowText || "{}") || {}).trip || null; } catch (e) { tripId = null; }
-  if (!tripId) return { stmts: [], ids: [] };
+  if (!tripId) return { stmts: [], ids: [], rows: [] };
   const sib = await db.prepare(
-    "SELECT id,entry FROM draft WHERE status='pending' AND committed_at IS NULL AND collection='sales' AND id<>?1 AND json_extract(row,'$.trip')=?2"
+    "SELECT " + TAP_COLS + " FROM draft WHERE status='pending' AND committed_at IS NULL AND collection='sales' AND id<>?1 AND json_extract(row,'$.trip')=?2"
   ).bind(id, tripId).all();
   const rows = (sib.results || []).filter((r) => { try { const e = JSON.parse(r.entry || "{}"); return !e.claim && !e.orderId; } catch (e) { return false; } });
   const at = new Date().toISOString(), stmts = [], ids = [];
@@ -2540,7 +2573,7 @@ export async function tripStmts(db, id, rowText, decision, by) {
     stmts.push(db.prepare("UPDATE draft SET status=?1, decided_at=?2, decided_by=?3 WHERE id=?4 AND status='pending'").bind(decision, at, by, r.id));
     if (decision === "rejected" && await hasInputAdmission(db, r.id, JSON.parse(r.entry || "{}"))) stmts.push(admissionDecision(db, r.id, "rejected", true));
   }
-  return { stmts, ids };
+  return { stmts, ids, rows };
 }
 
 /* Marked by the commit run once the row is actually in the master, so an approved row is not
@@ -2710,6 +2743,11 @@ export default {
           if (pw.did) console.log("publish dispatch: " + pw.reason);
           if (pw.covered) console.log("publish covered by waiting run " + pw.covered + ": " + pw.reason);
         } catch (e) { console.log("publish dispatch FAILED: " + String((e && e.stack) || e)); }
+        /* S4d: the tap's net, with the flag on only: an approved draft with no booking is booked, an entry of a rejected draft is voided */
+        try {
+          const bn = await bookNet(env.SALT_LEDGER);
+          if (bn.booked || bn.voided || bn.left) console.log("book net: " + JSON.stringify(bn));
+        } catch (e) { console.log("book net FAILED: " + String((e && e.stack) || e)); }
         /* the drafter's net still runs on the quarter-hour, as it did when this schedule ran every fifteen minutes */
         if (new Date(event.scheduledTime || Date.now()).getUTCMinutes() % 15 === 0) {
           const r = await draftedTold(env, ctx, await runDrafter(env, { mirror }));

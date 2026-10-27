@@ -54,6 +54,7 @@ const rewardBook = (book, p) => {
  * seed deletes it before replacing rows and writes it last. The collections can then be read together. */
 import { boundOf, unfolded } from "./way.js";
 import { fromBook, bindBook, wayBound, bookOf } from "./book-read.js";
+import { bookTap, ridStmts, voidEntries, voidUnlessApproved, tapMode, TAP_COLS } from "./book-tap.js";
 export { bindBook, wayBound };
 import PRICING_ENGINE from "../engine/pricing.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
@@ -2017,9 +2018,25 @@ export async function applyPre(db, pre, draft, book, now) {
     await db.prepare("UPDATE preapproval SET status='differs', draft_id=?1, decided_at=?2 WHERE id=?3").bind(draft.id, at, pre.id).run();
     return "differs";
   }
-  const u = await db.prepare("UPDATE draft SET status='approved', decided_at=?1, decided_by=?2 WHERE id=?3 AND status='pending'")
-    .bind(at, "preapproved" + (pre.tapped_by ? " by " + pre.tapped_by : ""), draft.id).run();
-  if (!(u && u.meta && u.meta.changes)) return null;
+  const by = "preapproved" + (pre.tapped_by ? " by " + pre.tapped_by : "");
+  /* S4d (flag book_tap, shipped off): his yes is a tap, so it books the row in the Book first, as decideDraft's does; the rids ride in the approval's batch. A refusal by the
+     law leaves the draft pending and his yes unspent, marked as differing, so the card waits under Approve and its own tap says why. */
+  let booked = null;
+  if (await tapMode(db) === "on") {
+    const row = await db.prepare("SELECT " + TAP_COLS + " FROM draft WHERE id=?1 AND status='pending'").bind(draft.id).first();
+    if (!row) return null;
+    const tap = await bookTap(db, [row], by, at);
+    if (tap.kind === "refused" || (tap.kind === "booked" && tap.booked.some((b) => b.folded))) {
+      await db.prepare("UPDATE preapproval SET status='differs', draft_id=?1, decided_at=?2 WHERE id=?3").bind(draft.id, at, pre.id).run();
+      return "differs";
+    }
+    if (tap.kind === "booked") booked = tap.booked;
+  }
+  const approve = db.prepare("UPDATE draft SET status='approved', decided_at=?1, decided_by=?2 WHERE id=?3 AND status='pending'").bind(at, by, draft.id);
+  let u;
+  try { u = booked ? (await db.batch([approve].concat(ridStmts(db, booked))))[0] : await approve.run(); }
+  catch (e) { if (booked) await voidEntries(db, booked.map((b) => b.id)); throw e; }
+  if (!(u && u.meta && u.meta.changes)) { if (booked) await voidUnlessApproved(db, booked.map((b) => b.id)); return null; }
   await db.prepare("UPDATE preapproval SET status='applied', draft_id=?1, decided_at=?2 WHERE id=?3").bind(draft.id, at, pre.id).run();
   return "applied";
 }

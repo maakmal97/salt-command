@@ -52203,6 +52203,11 @@ await (async () => {
   await (await import("./book-way.mjs")).run({ ok });
 })();
 
+section("Book S4d: a tap books the row at once, flag book_tap shipped off (27 Oct 2026)");
+await (async () => {
+  await (await import("./book-tap-worker.mjs")).run({ ok });
+})();
+
 section("18 Oct 2026: the lean Desk: six views, the three parts gone, alerts in the rail, spots on Coverage, Noticed under To do");
 await (async () => {
   /* HIS DECISION OF 18 OCT 2026: Approve, Site orders and Entries left the Desk, Salt Admin deciding every order, claim, chat and

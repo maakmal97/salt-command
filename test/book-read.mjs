@@ -273,6 +273,6 @@ export async function run({ ok }) {
     const n = readFileSync(join(REPO, "src", f), "utf8").split("\n").filter((l) => /committed_at IS NULL|committed_at >|committed_at <=|committed_at IS NOT NULL/.test(l) && !/^\s*(\/\/|\*|\/\*)/.test(l)).length;
     if (n) lits[f] = n;
   }
-  ok(JSON.stringify(lits) === JSON.stringify({ "input-admission.js": 6, "worker.js": 8 }),
-    "the only draft clauses that ask committed_at are the awaiting-the-fold and admission ones (input-admission.js 6, worker.js 8: the two the load asks to name the open entries the fold took, S4a): " + JSON.stringify(lits));
+  ok(JSON.stringify(lits) === JSON.stringify({ "book-tap.js": 2, "input-admission.js": 6, "worker.js": 8 }),
+    "the only draft clauses that ask committed_at are the awaiting-the-fold and admission ones (input-admission.js 6, worker.js 8: the two the load asks to name the open entries the fold took, S4a; book-tap.js 2: the net's and the rids' own, S4d): " + JSON.stringify(lits));
 }

@@ -10,6 +10,8 @@ import { boundOf } from "./way.js";
    same reader uses (src/way.js); from the mirror it carries none and every clause is as it was. The way back is the flag, no deploy. */
 const BOOKS = new WeakMap();
 export function bindBook(db, ns) { if (db && ns && typeof ns.get === "function" && typeof ns.idFromName === "function") BOOKS.set(db, ns); }
+/* S4d: the namespace a request bound (the tap and its net reach the Book through it, as the readers do) */
+export const nsOf = (db) => BOOKS.get(db) || null;
 export async function readMode(db) {
   try { const r = await db.prepare("SELECT mode FROM book_read WHERE one=1").first(); return r && r.mode === "book" ? "book" : "d1"; } catch (e) { return "d1"; }
 }

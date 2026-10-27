@@ -1,0 +1,188 @@
+[
+ {
+  "name": "the tap is never asked",
+  "file": "src/worker.js",
+  "find": "const tap = await bookTap(env.SALT_LEDGER, [cur].concat(ts.rows), by, new Date().toISOString());",
+  "replace": "const tap = { kind: \"off\" };"
+ },
+ {
+  "name": "a refusal by the law does not stop the approval",
+  "file": "src/worker.js",
+  "find": "if (tap.kind === \"refused\") return { status: 409, body: { ok: false, error: \"the Book refuses it: \"",
+  "replace": "if (false) return { status: 409, body: { ok: false, error: \"the Book refuses it: \""
+ },
+ {
+  "name": "a draft the fold already took is approved again",
+  "file": "src/worker.js",
+  "find": "if (tap.booked.some((b) => b.folded)) return { status: 409",
+  "replace": "if (false) return { status: 409"
+ },
+ {
+  "name": "the rids are not written in the approval's batch",
+  "file": "src/worker.js",
+  "find": "await env.SALT_LEDGER.batch(head.concat(ts.stmts, rids))",
+  "replace": "await env.SALT_LEDGER.batch(head.concat(ts.stmts))"
+ },
+ {
+  "name": "a failed D1 batch leaves the entry",
+  "file": "src/worker.js",
+  "find": "catch (e) { if (booked) await voidEntries(env.SALT_LEDGER, booked.map((b) => b.id)); throw e; }",
+  "replace": "catch (e) { throw e; }"
+ },
+ {
+  "name": "a lost race leaves the entry",
+  "file": "src/worker.js",
+  "find": "if (booked) await voidUnlessApproved(env.SALT_LEDGER, booked.filter(",
+  "replace": "if (false) await voidUnlessApproved(env.SALT_LEDGER, booked.filter("
+ },
+ {
+  "name": "the readcheck does not go red on a rejected draft's entry",
+  "file": "src/worker.js",
+  "find": "\" (its draft is still pending)\")); r.ok = false;",
+  "replace": "\" (its draft is still pending)\"));"
+ },
+ {
+  "name": "the minute cron never runs the net",
+  "file": "src/worker.js",
+  "find": "const bn = await bookNet(env.SALT_LEDGER);",
+  "replace": "const bn = { booked: 0, voided: 0, left: 0 };"
+ },
+ {
+  "name": "a refusal has no fix in his words",
+  "file": "src/worker.js",
+  "find": "if (/^the Book refuses it/.test(e)) return",
+  "replace": "if (/^the Book never refuses it/.test(e)) return"
+ },
+ {
+  "name": "the trip's rows are not given to the Book",
+  "file": "src/worker.js",
+  "find": "[cur].concat(ts.rows), by,",
+  "replace": "[cur], by,"
+ },
+ {
+  "name": "the flag is always on",
+  "file": "src/book-tap.js",
+  "find": "return r && r.mode === \"on\" ? \"on\" : \"off\"; } catch (e) { return \"off\"; }",
+  "replace": "return r ? \"on\" : \"off\"; } catch (e) { return \"off\"; }"
+ },
+ {
+  "name": "a store with no flag table reads as on",
+  "file": "src/book-tap.js",
+  "find": "return r && r.mode === \"on\" ? \"on\" : \"off\"; } catch (e) { return \"off\"; }",
+  "replace": "return r && r.mode === \"on\" ? \"on\" : \"off\"; } catch (e) { return \"on\"; }"
+ },
+ {
+  "name": "a refusal is treated as a fallback",
+  "file": "src/book-tap.js",
+  "find": "return { kind: \"refused\", refused: b.refused };",
+  "replace": "return { kind: \"fallback\", why: \"refused\" };"
+ },
+ {
+  "name": "the mirror's version is not sent",
+  "file": "src/book-tap.js",
+  "find": "day: klDay(), v });",
+  "replace": "day: klDay() });"
+ },
+ {
+  "name": "the entry is booked on the UTC day",
+  "file": "src/book-tap.js",
+  "find": "new Date(now + KL_MS).toISOString().slice(0, 10)",
+  "replace": "new Date(now).toISOString().slice(0, 10)"
+ },
+ {
+  "name": "a fresh booking overwrites one",
+  "file": "src/book-tap.js",
+  "find": "fresh ? \" AND json_extract(row,'$.booked_seq') IS NULL\" : \"\"",
+  "replace": "\"\""
+ },
+ {
+  "name": "a booking is written under a committed row",
+  "file": "src/book-tap.js",
+  "find": "WHERE id=?3 AND status='approved' AND committed_at IS NULL\" + guard",
+  "replace": "WHERE id=?3 AND status='approved'\" + guard"
+ },
+ {
+  "name": "the net never voids",
+  "file": "src/book-tap.js",
+  "find": "if (gone.length && await voidEntries(db, gone)) out.voided = gone.length;",
+  "replace": "if (false) out.voided = gone.length;"
+ },
+ {
+  "name": "the net books a trip a row at a time",
+  "file": "src/book-tap.js",
+  "find": "const trip = (parse(first.row, {}) || {}).trip || null;",
+  "replace": "const trip = null;"
+ },
+ {
+  "name": "the net books a committed draft",
+  "file": "src/book-tap.js",
+  "find": "const open = \"status='approved' AND committed_at IS NULL AND collection NOT IN",
+  "replace": "const open = \"status='approved' AND collection NOT IN"
+ },
+ {
+  "name": "the net runs with the flag off",
+  "file": "src/book-tap.js",
+  "find": "if (await tapMode(db) !== \"on\" || !nsOf(db)) return out;",
+  "replace": "if (!nsOf(db)) return out;"
+ },
+ {
+  "name": "the net books a row that is already booked",
+  "file": "src/book-tap.js",
+  "find": "const NONE = \"json_extract(CASE WHEN json_valid(row) THEN row ELSE '{}' END,'$.booked_seq') IS NULL\";",
+  "replace": "const NONE = \"1=1\";"
+ },
+ {
+  "name": "the pre-approval does not book",
+  "file": "src/drafter.js",
+  "find": "const tap = await bookTap(db, [row], by, at);",
+  "replace": "const tap = { kind: \"off\" };"
+ },
+ {
+  "name": "a refused pre-approval is spent",
+  "file": "src/drafter.js",
+  "find": "if (tap.kind === \"refused\" || (tap.kind === \"booked\" && tap.booked.some((b) => b.folded))) {",
+  "replace": "if (false) {"
+ },
+ {
+  "name": "the pre-approval writes no rids",
+  "file": "src/drafter.js",
+  "find": "(await db.batch([approve].concat(ridStmts(db, booked))))[0]",
+  "replace": "(await db.batch([approve]))[0]"
+ },
+ {
+  "name": "the namespace is not reachable",
+  "file": "src/book-read.js",
+  "find": "export const nsOf = (db) => BOOKS.get(db) || null;",
+  "replace": "export const nsOf = (db) => null;"
+ },
+ {
+  "name": "a rejection does not take the entry back",
+  "file": "src/worker.js",
+  "find": "} else if (await tapMode(env.SALT_LEDGER) === \"on\") {\n    if (!await voidEntries",
+  "replace": "} else if (false) {\n    if (!await voidEntries"
+ },
+ {
+  "name": "a rejection calls the Book whatever the flag",
+  "file": "src/worker.js",
+  "find": "} else if (await tapMode(env.SALT_LEDGER) === \"on\") {\n    if (!await voidEntries",
+  "replace": "} else if (true) {\n    if (!await voidEntries"
+ },
+ {
+  "name": "a Book that will not void never stops a rejection",
+  "file": "src/worker.js",
+  "find": "if (!await voidEntries(env.SALT_LEDGER, tapIds)) return { status: 503",
+  "replace": "if (false) return { status: 503"
+ },
+ {
+  "name": "the readcheck ignores an entry under a pending draft",
+  "file": "src/worker.js",
+  "find": "WHERE status IN ('rejected','pending') AND id IN",
+  "replace": "WHERE status IN ('rejected') AND id IN"
+ },
+ {
+  "name": "the net books in the order approved",
+  "file": "src/book-tap.js",
+  "find": "ORDER BY drafted_at, id LIMIT 40",
+  "replace": "ORDER BY decided_at, id LIMIT 40"
+ }
+]
