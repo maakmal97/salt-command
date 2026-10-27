@@ -2005,7 +2005,10 @@ export const OWNER_JS = `
   function ledgerCells(r){
     var owed=el('td','',rm(r.owed)); if(r.advance>0.009) owed.appendChild(el('small','','goods out, '+rm(r.advance)));
     var book=el('td','l'); book.appendChild(bookTag(r.product));
-    return [el('td','l salt-table__label',r.rid), el('td','l',r.date?fmtWhen(r.date):'Undated'), el('td','l',r.customer), book, el('td','',String(+r.qty)), el('td','',rm(r.total)),
+    /* 27 Oct 2026, his word: a row opens in the sale form from here, its reference the tap */
+    var ref=el('td','l salt-table__label'), open=actOn(el('button','salt-ghost lopen',r.rid),'ledger.open',r.rid); open.type='button';
+    open.setAttribute('aria-label','Open '+r.rid+' to change it'); open.onclick=function(){ amendFor(r.rid); }; ref.appendChild(open);
+    return [ref, el('td','l',r.date?fmtWhen(r.date):'Undated'), el('td','l',r.customer), book, el('td','',String(+r.qty)), el('td','',rm(r.total)),
       owed, el('td','l',String(+r.moved)+' of '+String(+r.qty)), el('td','l',r.stage)];
   }
   function drawLedger(j){
@@ -2995,7 +2998,7 @@ export const OWNER_JS = `
       }};
     editKind.addEventListener('change',drawKind);editRow.addEventListener('change',function(){kindsFor();drawKind();});kindsFor();drawKind();
     /* plan 1: Needs you's owed cards open this form on their row, as goods or cash moved (amendFor) */
-    amendPick=function(rid){ if(!rows.some(function(item){return item.rid===rid;}))return false; editRow.value=rid; changes={}; drawChanges(); drawRowCard(); kindsFor(); editKind.value='Fulfilment'; drawKind(); editorReady(); return true; };
+    amendPick=function(rid,kind){ if(!rows.some(function(item){return item.rid===rid;}))return false; editRow.value=rid; changes={}; drawChanges(); drawRowCard(); kindsFor(); editKind.value=kind||'Fulfilment'; drawKind(); drawHist(); editorReady(); return true; };
     var editorButton=makerButton(editor,['Send the correction','record.amend.send'],async function(send){
       if(!editRow.value)throw new Error('Choose a row first.');
       var body={at:new Date().toISOString(),rid:editRow.value,kind:editKind.value,date:editDate.value};
@@ -3736,7 +3739,7 @@ export const OWNER_JS = `
      again: what is typed in one, its retained send and its request ids are kept by closing it, as by opening another. A retained input
      stays on the menu, above the rows. */
   function formSlug(name){ return String(name).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
-  var ENTRY_GROUPS=[['Everyday',['sale-or-purchase','repayment','stock-count']],['Now and then',['gift','loan','rewards','offsets']],['Fixing',['correct-a-row','reopen-a-cancelled-order']]];
+  var ENTRY_GROUPS=[['Everyday',['sale-or-purchase','repayment','stock-count']],['Now and then',['gift','loan','rewards','offsets']]];   /* 27 Oct 2026, his word: Fixing left; a row is changed in the sale form, from Row or the Ledger */
   /* 25 Oct 2026 (Record redesign P1, his canvas Salt Admin Record): a form's row says what the form is for in one line, and counts what it holds where the read that
      drew it has the figure (the loans to repay, the rewards held, the cancelled orders that can come back; the offsets once their own read lands); a row with none is bare */
   var FORM_WHAT={'sale-or-purchase':'Goods and delivery are entered separately.','repayment':'Part or all of a loan, paid back.','stock-count':'Units on the shelf, by book.',
@@ -3915,7 +3918,7 @@ export const OWNER_JS = `
         root.appendChild(row);root.appendChild(note);
         async function readCoverChoice(){
           var ticket=++revision;check.checked=false;check.disabled=true;retry.hidden=true;note.textContent='';fig.textContent='';held.textContent='';
-          if(direction.value!=='sale'||tradeStream.value==='R2'||goodsControl.value===''||!(Number(unitsControl.value)>0)){wrap.hidden=true;return;}
+          if(tradeEditing||direction.value!=='sale'||tradeStream.value==='R2'||goodsControl.value===''||!(Number(unitsControl.value)>0)){wrap.hidden=true;return;}   /* a row open to change spends no reward: the cover is a new sale's */
           if(wrap.hidden)note.textContent='Reading.';else words.textContent='Checking.';
           try{
             var result=await refs('/all/maker/trade-cover',{product:bookControl.value,party:tradeParty.value,
@@ -4054,6 +4057,7 @@ export const OWNER_JS = `
         carriage.parentNode.querySelector('.lbl,.salt-settings__label').textContent=isSale?'Delivery':'Freight';
         extraTrades.forEach(function(extra){extraChoices(extra.product);});
         fillAttribution();
+        if(editPick) fillEditPick();   /* the row list is drawn once its picker stands */
         coverChoices.forEach(function(choice){choice.read();});
         readTrade();
       }
@@ -4072,6 +4076,7 @@ export const OWNER_JS = `
       fillTradeChoices();
       async function submitTrade(confirmedTwin,send){
         if(tradePending) return;
+        if(tradeEditing){ tradePending=true; try{ await submitEdit(send); } catch(error){ refusal(tradeAnswer,error); } tradePending=false; return; }
         var isSale=direction.value==='sale';
         var body={product:tradeProduct.value,party:tradeParty.value,date:tradeDate.value,
           qty:tradeQty.value===''?null:Number(tradeQty.value),total:tradeTotal.value===''?null:Number(tradeTotal.value),
@@ -4118,7 +4123,123 @@ export const OWNER_JS = `
       var tradeSend=makerButton(tradeSection,['Record the sale','record.trade.send'],function(send){ return submitTrade(null,send); },true,function(){
         tradeAt=null;tradeSignature='';coverChoices.forEach(function(choice){choice.read();});
       });
-      direction.addEventListener('change',function(){ tradeSend.textContent='Record the '+direction.value; });
+      direction.addEventListener('change',function(){ if(!tradeEditing) tradeSend.textContent='Record the '+direction.value; });
+      /* 27 Oct 2026, his word: EVERY CHANGE OF A ROW IS MADE IN THIS FORM, so it is always in the shape he recorded it in. A row chosen under Row, or tapped
+         on Orders > Ledger, or an owed card on Needs you, fills the form; Record the change sends what differs as one Correction and what was handed over
+         or paid since as one Fulfilment, the two kinds Correct a row sent; Cancel this sale and Reopen are its own rows; History and Undo sit under it.
+         A customer's site order still changes through its order (restate), as Correct a row's did. Nothing here prices or books: the drafter does. */
+      var tradeEditing=null, editPick=actOn(el('select','fld salt-field__input salt-field__select'),'record.trade.edit'), editHolder=el('div','maker-edit');
+      makerRow(editHolder,'Row',editPick); tradeSection.insertBefore(editHolder,direction.closest('.salt-settings'));
+      var editMore=el('div','salt-settings maker-list maker-edit-more'), editHist=el('div','maker-fields maker-edit-hist');
+      tradeSection.appendChild(editMore); tradeSection.appendChild(editHist);
+      function editRows(){
+        return (catalog.rows||[]).concat((catalog.revivable||[]).map(function(r){ return Object.assign({cancelledRow:true},r); }))
+          .slice().sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||''))||String(b.rid).localeCompare(String(a.rid)); });
+      }
+      function fillEditPick(){
+        var kept=tradeEditing?tradeEditing.rid:'';
+        editPick.textContent=''; var none=el('option',null,'New'); none.value=''; editPick.appendChild(none);
+        editRows().forEach(function(r){ var o=el('option',null,r.rid+' · '+r.party+' · '+(fmtWhen(r.date)||'undated')+(r.cancelledRow?' · cancelled':'')); o.value=r.rid; editPick.appendChild(o); });
+        editPick.value=Array.from(editPick.options).some(function(o){ return o.value===kept; })?kept:'';
+      }
+      function tradeControls(){ return [tradeProduct,tradeParty,tradeDate,tradeQty,tradeTotal,carriage,handover,tradeMoved,tradeCash,tradeStream,tradeAssoc,tradeDown]; }
+      function editDraw(){
+        var r=tradeEditing, word=r&&r.direction==='BUY'?'purchase':'sale';
+        direction.disabled=!!r; tripList.hidden=!!r; tripNote.hidden=!!r;
+        coverChoices.forEach(function(c){ var row=c.check.closest('.maker-cover-row'); if(row) row.hidden=!!r; });
+        tradeControls().forEach(function(c){ c.disabled=!!(r&&r.cancelledRow); });
+        tradeSend.textContent=!r?'Record the '+direction.value:r.cancelledRow?'Reopen this '+word:'Record the change';
+        editMore.textContent=''; editHist.textContent='';
+        if(!r) return;
+        if(r.cancelledRow){
+          if(r.paid>0.009||r.movedUnits>0.009) editMore.appendChild(el('p','salt-settings__foot','Cancelled after money or goods moved, so it cannot be reopened.'));
+          return;
+        }
+        asRow(makerButton(tradeSection,['Other fields','record.trade.other'],function(){
+          if(amendPick&&amendPick(r.rid,'Correction')) openForm('correct-a-row');
+        },false),'Other fields',editMore);
+        if(r.cancellation) asRow(makerButton(tradeSection,['Cancel this '+word,'record.trade.cancel'],async function(send){
+          var c=r.cancellation;
+          if(!await ownerAsk(send.button,'cancel:'+r.rid,{title:'Cancel '+r.rid+'?', say:['After: '+c.pay+', '+c.deliv+', '+c.order+'.'].concat(c.refundRM!=null?[rm(c.refundRM)+' already paid becomes a refund you owe '+r.party+'.']:[]),
+            go:'Cancel this '+word, keep:'Keep it'})) return;
+          tradeAnswer.textContent='Sending.';
+          await send('/all/maker/inputs/ledger-amend',{at:new Date().toISOString(),rid:r.rid,kind:'Cancellation',date:tripToday()});
+          tradeAnswer.textContent='Sent. It is cancelled once you approve it.'; loadMaker();
+        },false),'Cancel this '+word,editMore,true);
+        if(r.direction!=='BUY') historyBlock(editHist,{rid:r.rid},'row:'+r.rid,null,'row:'+r.rid);
+      }
+      function editLoad(rid){
+        var r=editRows().find(function(x){ return x.rid===rid; }); if(!r) return false;
+        extraTrades.slice().forEach(function(x){ coverChoices.splice(coverChoices.indexOf(x.cover),1); x.row.remove(); }); extraTrades.length=0;
+        var sale=r.direction==='SELL', r2=sale&&r.stream==='R2';
+        tradeEditing=r; direction.value=sale?'sale':'purchase'; fillTradeChoices(); fillEditPick();
+        tradeProduct.value=r.product||'salt';
+        tradeStream.value=sale?(r.stream||''):''; fillAttribution();
+        if(sale&&r.stream) tradeAssoc.value=r.assoc||String(r.party).replace(/-R$/,'');
+        if(r2) tradeDown.value=r.downstream||'';
+        tradeParty.value=r2?'':r.party; tradeDate.value=r.date||''; makerWheelSet(tradeQty,r.qty);
+        tradeTotal.value=String(+(+r.total||0).toFixed(2)); tradePrice.mine(true);
+        carriage.value=String(+(+(sale?r.delivery:r.freight)||0).toFixed(2)); handover.value=r.handover||'';
+        makerWheelSet(tradeMoved,+(+r.movedUnits||0).toFixed(4)); tradeCash.value=String(+(+(r.cancelledRow?r.paid:r.cash)||0).toFixed(2));
+        tradeAt=null; tradeSignature=''; tradeAnswer.textContent='';
+        editDraw(); readTrade(); return true;
+      }
+      function editClear(){
+        tradeEditing=null; fillEditPick();
+        tradeParty.value=''; tradeDate.value=''; makerWheelSet(tradeQty,1); tradeTotal.value=''; tradePrice.mine(false);
+        carriage.value='0'; handover.value=''; makerWheelSet(tradeMoved,0); tradeCash.value='0'; tradeStream.value=''; fillAttribution();
+        tradeAt=null; tradeSignature=''; tradeAnswer.textContent=''; editDraw(); readTrade();
+      }
+      editPick.addEventListener('change',function(){ if(editPick.value) editLoad(editPick.value); else editClear(); });
+      tradeEditPick=function(rid){ return editLoad(rid); }; fillEditPick();
+      async function submitEdit(send){
+        var r=tradeEditing, sale=r.direction==='SELL', same=function(a,b){ return Math.abs((+a||0)-(+b||0))<0.005; };
+        if(r.cancelledRow){
+          if(r.paid>0.009||r.movedUnits>0.009) throw new Error('Cancelled after money or goods moved, so it cannot be reopened.');
+          tradeAnswer.textContent='Sending.';
+          await send('/all/maker/inputs/ledger-amend',{at:new Date().toISOString(),rid:r.rid,kind:'Correction',date:tripToday(),fields:{cancelled:false,cancelledOn:null}});
+          tradeAnswer.textContent='Sent. It is back once you approve it.'; loadMaker(); return;
+        }
+        if(tradeTotal.value===''||!(Number(tradeTotal.value)>=0)) throw new Error('Enter the price.');
+        var r2=sale&&tradeStream.value==='R2', f={};
+        if(!r2&&!knownParty(tradeParty.value)) throw new Error('Choose who from the list.');
+        if(sale&&tradeStream.value&&!tradeAssoc.value) throw new Error('Choose an associate first.');
+        if(tradeProduct.value!==(r.product||'salt')) f.product=tradeProduct.value;
+        if(!r2&&tradeParty.value!==r.party) f.party=tradeParty.value;
+        if((tradeDate.value||null)!==(r.date||null)) f.date=tradeDate.value||null;
+        if(!same(tradeQty.value,r.qty)) f.qty=Number(tradeQty.value);
+        if(!same(tradeTotal.value,r.total)) f.total=Number(tradeTotal.value);
+        if(!same(carriage.value,sale?r.delivery:r.freight)) f[sale?'delivery':'freight']=Number(carriage.value||0);
+        if((handover.value||null)!==(r.handover||null)) f.handover=handover.value||null;
+        if(sale){
+          if((tradeStream.value||null)!==(r.stream||null)) f.stream=tradeStream.value||null;
+          var assocNow=tradeStream.value?tradeAssoc.value:null, assocWas=r.stream?(r.assoc||String(r.party).replace(/-R$/,'')):null;
+          if(assocNow!==assocWas) f.assoc=assocNow;
+          if(r2&&(tradeDown.value||null)!==(r.downstream||null)) f.downstream=tradeDown.value||null;
+        }
+        /* what was handed over and paid since is a movement, the difference; less than the book holds is taken back with Undo, never typed down */
+        var dCash=+(Number(tradeCash.value||0)-(+r.cash||0)).toFixed(2), dUnits=+(Number(tradeMoved.value||0)-(+r.movedUnits||0)).toFixed(4);
+        if(dCash<-0.004||dUnits<-0.00005) throw new Error('That is less than the book holds. Take it back with Undo under History.');
+        var moved=dCash>=0.005||dUnits>=0.00005;
+        if(!Object.keys(f).length&&!moved) throw new Error('Nothing has changed.');
+        tradeAnswer.textContent='Sending.';
+        var said=[], at=Date.now();
+        if(Object.keys(f).length){
+          try{ await send('/all/maker/inputs/ledger-amend',{at:new Date(at).toISOString(),rid:r.rid,kind:'Correction',date:tripToday(),fields:f}); said.push('The change'); }
+          catch(error){
+            /* a customer's order: the Desk names it, and the change goes as the order's Amend, so the order and the row change together */
+            var rs=error.detail&&error.detail.restate;
+            if(!rs||!(/^[0-9]{14}-[a-z0-9]{1,8}$/).test(rs.order)) throw error;
+            await refs('/all/maker/orders/'+encodeURIComponent(rs.order)+'/restate',{rid:mintRid(),qty:rs.qty,total:rs.total,delivery:rs.delivery});
+            said.push('The change, as an amendment of their order,');
+          }
+        }
+        if(moved){
+          await send('/all/maker/inputs/ledger-amend',{at:new Date(at+1).toISOString(),rid:r.rid,kind:'Fulfilment',date:tripToday(),cash:dCash,movedUnits:dUnits});
+          said.push(said.length?'and what moved':'What moved');
+        }
+        tradeAnswer.textContent=said.join(' ')+(said.length>1?' wait':' waits')+' under Approve.'; loadMaker();
+      }
       /* 26 Oct 2026 (Salt Admin Customers, P3; his yes to Ask A): Their % and Make partner left Record for the customer's own card on Customers */
       /* A6: the Desk's Make it the house board. Which sizes the board prints, never a price: the ask is the ladder's. */
       var houseSection=makerForm('pricing');
@@ -6919,11 +7040,12 @@ export const OWNER_JS = `
     if(!ordFocus||ordFocus.id!==ordOpened) return;
     try{ var n=document.querySelector('#makerReview '+ordFocus.at); if(n){ if(n.scrollIntoView) n.scrollIntoView({block:'center'}); if(n.focus) n.focus(); } }catch(x){}
   }
-  var amendWant=null, amendPick=null;
+  /* 27 Oct 2026, his word: a row opens in the sale form, from the Ledger and from Needs you's owed cards alike; Correct a row stays, reached from it as Other fields */
+  var amendWant=null, amendPick=null, tradeEditPick=null;
   function applyAmend(){
-    if(!amendWant||!amendPick) return;
+    if(!amendWant||!tradeEditPick) return;
     var rid=amendWant; amendWant=null;
-    if(amendPick(rid)) openForm('correct-a-row');
+    if(tradeEditPick(rid)) openForm('sale-or-purchase');
   }
   function amendFor(rid){ amendWant=rid; showPlace('record','entry',{fresh:true,push:true}); applyAmend(); }
   function owedGo(r, sect){
