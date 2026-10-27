@@ -1,6 +1,6 @@
 {
- "v": "v1291",
- "stamped": "28 Oct 2026, 00:11 KL",
+ "v": "v1293",
+ "stamped": "28 Oct 2026, 00:20 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -20093,10 +20093,10 @@
      "suggest": null
     }
    },
-   "v": "v1291"
+   "v": "v1293"
   },
   "OPEN": {
-   "at": "2026-10-27T16:15:00.951Z",
+   "at": "2026-10-27T16:42:16.805Z",
    "count": 6,
    "byKey": {
     "CN3-WM|2026-10-05|130": {
@@ -20204,13 +20204,13 @@
     "salt": {
      "name": "Salt",
      "onHand": 0,
-     "free": -0.27,
-     "owedOut": 0.27,
+     "free": 0,
+     "owedOut": 0,
      "coverDays": 0,
      "rate": 4.36,
      "owedToYou": 240,
-     "promised": 0.27,
-     "short": 0.27
+     "promised": 0,
+     "short": 0
     },
     "oil": {
      "name": "Oil",
@@ -20276,7 +20276,7 @@
     "gas": null,
     "prep": null
    },
-   "v": "v1291"
+   "v": "v1293"
   },
   "TERMS": {
    "ceiling": 250,
@@ -20284,7 +20284,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1291"
+   "v": "v1293"
   },
   "REWARD": {
    "stated": {
@@ -20302,15 +20302,15 @@
      }
     }
    },
-   "v": "v1291"
+   "v": "v1293"
   },
   "STOCK": {
    "today": "2026-10-28",
    "books": {
     "salt": {
      "shelf": 0,
-     "free": -0.27,
-     "commit": 0.27,
+     "free": 0,
+     "commit": 0,
      "light": "red",
      "coverDays": 0,
      "transit": 0
@@ -20356,7 +20356,7 @@
      "transit": 0
     }
    },
-   "v": "v1291"
+   "v": "v1293"
   }
  }
 }
