@@ -220,3 +220,8 @@
   https://claude.ai/artifact/6gHaEnSUVXzVDVBdwsJX6s and `docs/plan-admin-record.html` (every Ask as recommended, K declined: New customer's Other % stays a fraction).
   Parts a text tab row with unsent counts; form rows with their line and count; unsent entries as Needs you cards (Resend); every form two columns, typed tags,
   mono figures; the sale's reading a ledger; Correct a row's row card; Rewards and Offsets as cards; New customer's code shown as typed. Not yet opened by him.
+- v1266 (`6c3058f8`, 27 Oct 2026; Cloud commit `40426316745`: chain and three suite parts green, CI `40426316666` green, build `a72729bfc4fbcfa9`), his yes after the
+  shots: Record in the language of Shop's This device. Menus are settings lists; every form's fields are settings rows; two or three short choices a Segment
+  (Type, Handover, Loan of, Associate, Hide for); names three words at most; the lead line screen-reader only. Display only, no route or body changed. Open: New
+  customer's Role (six tiles) and its Locked / Unlock ghost; Handover and Associate are three-choice Segments against his "three or more, a dropdown", his call.
+  The same push fixed Customers P1 and P2's overdue fixture, which read "4 d late" from 16:00 to 01:00 UTC (a UTC date against the page's Kuala Lumpur day).
