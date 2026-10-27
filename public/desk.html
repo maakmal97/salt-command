@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="8e3423ac496e3cc7";
+var SALT_BUILD_ID="2f55298d605e8598";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -11401,7 +11401,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1297","d":"28 Oct 2026","t":"THE COUNTER'S STATEMENT AND THIS DEVICE IN THE SETTINGS LANGUAGE","n":["<b>THE STATEMENT.</b> Its order lines stand on glass in the settings list's frame, 56px rows with the date in the display face and the figure at the right, and its footer is a list of rows (orders, the marks, Paid, Balance) with the balance in verdigris when nil and ember when owed. The month filter is a select in a Month row, All first, where it was four pills. The lead line and the closing note are one sentence each. Every figure, the cancelled strike-through and what a tap sends are as they were; a sealed earlier issue keeps the footer it was sent with. salt-ds 1.21.0 (#33) adds the recipe, propagated to the Desk, the Counter and QR Command.","<b>THIS DEVICE.</b> Sign out, Sign in another device and Save a passkey are rows of its list, not ghost buttons: Sign out is the first list's last row in ember (still a tap and a tap again, now reading Sign out this phone), the other two stand in a list of their own. Each keeps its id and its request. No route or request body changed."]}];
+const evolution=[{"v":"v1298","d":"28 Oct 2026","t":"A RED SUITE IS ONE FYI LINE ON SALT ADMIN; A REFUSAL'S CARD SAYS ITS REASON","n":["<b>THE RED SUITE.</b> When the desk's own tests fail after a version goes live, cloud-commit files it as the refusal suite:&lt;version&gt;, and Salt Admin drew each one as an Entry card reading Desk and Fix, a Fix that led to Approve with nothing to act on. His screenshot showed four. It is the Desk informing him, so Needs you now draws one FYI line, Tests, \"Desk tests red after v1297\", the newest version alone, with no button; from 860px it opens beside the list with the Desk's reason in full and how many earlier runs were red. Approve lists none of them. The next green suite clears them, as before (tools/drafts.mjs --clear-suite-notices).","<b>A REFUSAL'S CARD.</b> Every other refused entry keeps its Entry card and Fix, its title now the reason in a verb (\"Not taken: add the date\") held to one line, so no card reads Desk alone.","<b>THE SUITE.</b> The reds behind the four notices were the Customers P1 and P2 day count, fixed on master before this version (d4f29994, CI green)."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
