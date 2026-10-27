@@ -33,7 +33,7 @@ export async function run({ ok }) {
   ok(!!add({ tiers: { oil: 0.5 } }).error && !!add({ tiers: { salt: 0.25, oil: 0.5 } }).error,
     "a starting tier on a fixed book is refused, alone or beside a tiered one");
   ok(!!add({ tiers: { salt: "Bronze" } }).error && !!add({ tiers: { salt: { small: "Gold" } } }).error
-    && !!add({ tiers: { salt: null } }).error && !!add({ tiers: {} }).error && !!add({ tiers: { spare: "Gold" } }).error,
+    && !!add({ tiers: { salt: null } }).error && !!add({ tiers: {} }).error && !!add({ tiers: { gas: "Gold" } }).error,
     "a starting tier with a bad shape, a band set, a null or an unknown book is refused");
   ok(!!add({ kind: "supplier", tiers: { salt: 0.25 } }).error
     && !!add({ kind: "downstream", parent: "CX1-ZED", tiers: { salt: 0.25 } }).error

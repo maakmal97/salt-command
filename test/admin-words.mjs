@@ -339,7 +339,7 @@ export async function run({ ok, pageWork }) {
   } finally { s.w.close(); }
 
   /* 6. NO BOOK HAS A NAME ON THIS PAGE: A MARK, NAMED TO A READER BY ITS SHAPE (his word of 12 Oct 2026, "and even the name of the product", which took back decision 5 of 11 Oct) */
-  const SHAPES = ["Cube", "Droplet", "Lozenge", "Capsule", "Ring"];
+  const SHAPES = ["Cube", "Droplet", "Lozenge", "Capsule", "Flame", "Heart", "Ring"];
   const SHAPE_WORD = new RegExp("\\b(" + SHAPES.join("|") + ")\\b");
   const SIZE = /^[\d.,]+ units?$/, SHAPE_SIZE = new RegExp("^(" + SHAPES.join("|") + ") [\\d.,]+ units?$");
   ok(!SHAPE_WORD.test(strip(OWNER_JS)) && !/\bbook(Name|Head)\b/.test(strip(OWNER_JS)),

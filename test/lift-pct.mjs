@@ -89,7 +89,7 @@ export async function run({ ok }) {
       prev = w;
     }
   }
-  ok(n2 === 7 * 9 * 99 && Object.values(bad).every((v) => v === 0),
+  ok(n2 === 7 * 9 * 399 && Object.values(bad).every((v) => v === 0),
     "over the whole grid, on seven costs and every % in use: the ringgit margin never falls, no price is under the Floor or over the Ceiling, all sit on the five, a % of nought or more is never under the Set Price, a negative one never over it, none is under a smaller %, and the quoted rate never rises by a step: " + JSON.stringify({ n2, ...bad }));
   const rise = (() => { const w = E.driftWalk(qs, Cof(58), P, 0); let mx = 0; w.forEach((r, i) => { if (i) mx = Math.max(mx, (r.p / r.q - w[i - 1].p / w[i - 1].q) * r.q); }); return mx; })();
   ok(rise > 0 && rise < to, "and the rate does rise between some quarters, by under one step of the grid over the size (the law is on the exact rate): " + rise.toFixed(3));
@@ -106,8 +106,8 @@ export async function run({ ok }) {
     const gp = E.quoteGrid(C, PX, "partner");
     gp.p.forEach((x, i) => { const q = gp.min + i * gp.step; if (x !== E.floorTotal(q, C, PX) || E.quoteAt(q, C, PX, "partner") !== x) partnerOff++; });
   }
-  ok(pts === 4 * 9 * 99 && disagree === 0 && partnerOff === 0,
-    "quoteGrid(...).p[i] is quoteAt at that size for every % in {-30, -20, -10, -5, 0, 5, 10, 20, 30} and all 99 grid points, on made-up costs and the desk's own, and a partner is floorTotal at every one: " + JSON.stringify({ pts, disagree, partnerOff }));
+  ok(pts === 4 * 9 * 399 && disagree === 0 && partnerOff === 0,
+    "quoteGrid(...).p[i] is quoteAt at that size for every % in {-30, -20, -10, -5, 0, 5, 10, 20, 30} and all 399 grid points, on made-up costs and the desk's own, and a partner is floorTotal at every one: " + JSON.stringify({ pts, disagree, partnerOff }));
 
   /* 4. A % IS -0.3 TO +0.3, AND NOTHING AUTOMATIC PRICES */
   ok([-0.31, -1, 0.31, 1, 2, 3, "0.2", NaN, null, undefined].every((v) => !E.driftOk(v)) && [-0.3, -0.05, 0, 0.05, 0.3].every((v) => E.driftOk(v)) && E.LIFT_MIN === -0.3 && E.LIFT_MAX === 0.3,

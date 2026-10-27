@@ -187,10 +187,12 @@ const PRICE_ENGINE={
      derived beside his five stated sizes, they ask no more a unit than 50 unit does and clear their own floors
      (RM720 and RM900 on 16 Sep, RM9.00 a unit). */
   sizesBy:{
-    salt:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5],
+    salt:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5,25,50,100],
     oil:[10,20,30,40,50],   /* 19 Sep 2026: five sizes, his board. 80 and 100 went with the tiers. */
     candy:[1,5,10,20,30],   /* 23 Sep 2026: his three rates and a size inside each */
-    rice:[1,5,10]
+    rice:[1,5,10],
+    gas:[1,5,10,20],   /* 27 Oct 2026 */
+    prep:[12,30]
   },
   /* which rungs are PRINTED. A product with no entry prints every rung it has. Empty since
      round 5: oil's grid IS its board now, so the mechanism stands and nothing uses it. */
@@ -257,7 +259,9 @@ const LADDER_BY={
   oil:{round:{to:10, up:true}, anchorQ:10, anchorX:0.62, at:{lo:10, hi:50}, floor:0, anchorG:0.36, gLo:0},   /* v504: 0.36 reproduces RM130 at 10 on the floor basis */
   /* 23 Sep 2026: stated a unit in single ringgit, so they round to the ringgit and not the ten */
   candy:{round:{to:1, up:true}},
-  rice:{round:{to:1, up:true}}
+  rice:{round:{to:1, up:true}},
+  gas:{round:{to:1, up:true}},
+  prep:{round:{to:1, up:true}}
 };
 
 const TIER_RULE={
@@ -277,10 +281,11 @@ const TIER_RULE={
         suggest:{writtenOff:0.3, longLate:0.2, late:0.1, overdueDays:14, recent:5, step:0.05, minSettled:3, good:0.3},
         auto:{wP:0.35, wF:0.25, wV:0.2, wT:0.2, minSettled:3, perMonth:4, unitsPerMonth:10, orders:12, staleDays:60, overdueDays:14, U:0.5, D:0.5, cap:0.5},
         presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3},
-        rungs:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5],
-        /* 05 Oct 2026, his decision: any quantity from half a unit to 25 in quarters is quoted at once on the Counter, and the
-           walk runs through every point of it, so the rate never rises from one quarter to the next (the engine's walkSizes) */
-        grid:{min:0.5, step:0.25, max:25}},
+        rungs:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5,25,50,100],
+        /* 05 Oct 2026, his decision: the walk runs through every quarter of the grid, so the rate never rises from one quarter to the
+           next (the engine's walkSizes). 27 OCT 2026, HIS WORD: salt is ordered in halves from 0.5 to 5, then 6.25, 12.5, 25, 50 and 100
+           (`only`), no other size to 100; the grid keeps its quarter step for the walk and prices every point to 100. */
+        grid:{min:0.5, step:0.25, max:100, only:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5,25,50,100]}},
   /* 19 Sep 2026, HIS INSTRUCTION: oil has no pricing tier. One board, typed, the same for every
      customer, RM13 a unit falling a ringgit every ten to RM9. FIVE SIZES: he typed five prices and
      the engine does not extrapolate his taper, so 80 and 100 would have held flat at RM9 and quoted
@@ -298,11 +303,16 @@ const TIER_RULE={
      RM55 from 10 to 29 (his answer that day), RM50 from 30. Rice RM8 a unit, RM7 from 5, RM6 from 10. A size
      between rungs is its rung's rate times the size, which is what a rate a unit means; both books round to the
      ringgit (LADDER_BY) so a rate of RM8 is not rounded to a ten. */
-  candy:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":60,"10":550,"30":1500}, rungs:[1,10,30], ceilingX:3, grid:{min:1, step:1, max:30}},
+  candy:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":60,"10":550,"30":1500}, rungs:[1,10,30], ceilingX:3, grid:{min:1, step:1, max:50}},
   /* 05 OCT 2026, HIS DECISION: each stated board is held between its floor, COGS times the size, and a ceiling of
      `ceilingX` times that floor, capped down to the book's grid. Three times the floor on every book (18 Oct 2026, his decision;
      oil and candy were twice, rice two and a half). A typed price inside the band does not move. */
-  rice:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:3, grid:{min:1, step:1, max:10}}
+  rice:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:3, grid:{min:1, step:1, max:100}},
+  /* 27 OCT 2026, HIS WORD: gas RM75 a unit on a cost of RM50 (1.5 times), bought in ones, the board at 1 and any more by Negotiate. PrEP 12 pills
+     for RM60 or 30 pills for RM125 on a cost of RM100 per 30 (1.5 and 1.25 times), and any whole number of either pack: the grid runs 12 to 120 in
+     sixes so every point is priced, `multiples` cuts what may be ordered to 12N and 30N (the Worker's onStep, the page, onGrid); past 120, Negotiate. */
+  gas:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":75}, rungs:[1], ceilingX:3, grid:{min:1, step:1, max:20}},
+  prep:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"12":60,"30":125}, rungs:[12,30], ceilingX:3, grid:{min:12, step:6, max:120, multiples:[12,30]}}
 };
 
 const SHRINK_ATTRIB=1;

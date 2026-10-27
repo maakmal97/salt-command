@@ -49,10 +49,10 @@ export async function run({ ok, KV, worker, handleMaker, REPO }) {
   } finally { w.close(); }
 
   /* 3. the constructor's refusals */
-  const state = { PRODUCTS: { salt: { name: "salt" }, oil: { name: "oil" }, spare: { name: "spare", retired: true } },
+  const state = { PRODUCTS: { salt: { name: "salt" }, oil: { name: "oil" }, gas: { name: "gas", retired: true } },
     roster: ["CX1-ZED"], PRICE_SET: { salt: { prices: {}, hide: [3] } } };
   const pricing = { tierNames: ["Gold"], byProduct: { salt: { sizes: [0.5, 1, 2, 4], inputs: { policy: { tierRule: { multiples: [1] } } } },
-    oil: { sizes: [10, 20], inputs: { policy: { tierRule: { fixed: true } } } }, spare: { sizes: [1, 2] } } };
+    oil: { sizes: [10, 20], inputs: { policy: { tierRule: { fixed: true } } } }, gas: { sizes: [1, 2] } } };
   const book = () => ({ version: 1, sales: [], purchases: [], state, pricing });
   const asked = (patch) => makerHouseSizes({ at: AT, product: "salt", hide: [0.5], ...patch }, book());
   ok(asked({}).entry && JSON.stringify(asked({}).entry.payload.hide) === "[0.5]"
@@ -62,7 +62,7 @@ export async function run({ ok, KV, worker, handleMaker, REPO }) {
     && !!asked({ payload: {} }).error && !!asked({ prices: {} }).error,
     "no field can carry a price: any key beyond the timestamp, book and hide list is refused");
   ok(!!asked({ hide: [7] }).error && !!asked({ hide: ["1"] }).error && !!asked({ hide: [0] }).error && !!asked({ hide: [-1] }).error
-    && !!asked({ hide: null }).error && !!asked({ hide: [0.5, 1, 2, 3, 4] }).error && !!asked({ product: "spare", hide: [1] }).error
+    && !!asked({ hide: null }).error && !!asked({ hide: [0.5, 1, 2, 3, 4] }).error && !!asked({ product: "gas", hide: [1] }).error
     && !!asked({ product: "zzz" }).error && !!asked({ at: "now" }).error && !!asked({ hide: new Array(51).fill(1) }).error,
     "a size off the board, a non-number, hiding every size, a retired or unknown book and a loose timestamp are refused");
   ok(makerHouseSizes({ at: AT, product: "oil", hide: [] }, book()).entry?.raw === "Board sizes on oil: every size printed"

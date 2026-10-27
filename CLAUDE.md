@@ -239,7 +239,7 @@ a change of its terms is undone through `restateOrder`. A refund it strands is s
 `restockPlan`, read through `restockFor(prod)` and `reorderFor`, from measured demand only;
 `RULES.reorderUnits` is the fallback for a book with no demand. Never type a mark back in.
 
-**Four books** (salt, oil, candy, rice; spare was retired on 15 Oct 2026). `node tools/product.mjs` is the one road that
+**Six books** (salt, oil, candy, rice, gas and prep; gas and prep, opened 27 Oct 2026, took the place of the retired spare). `node tools/product.mjs` is the one road that
 opens, re-keys, retires or restores one; it refuses to retire a book with rows or to re-key salt,
 a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`.
 

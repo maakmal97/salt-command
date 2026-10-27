@@ -456,7 +456,7 @@ the same line** (`PLET_AT`: 8 in the 24 grid, its capitals centred on the mark's
 square, the droplet rounder, the capsule turned to the diagonal so it is as wide as it is tall, the book's ring larger,
 the cube as it was. The app's own ring on the door and the rail keeps the home-screen icon's proportion (`APP_RING`). Where a line of the mark would
 cross its letter, `PLET_ROOM` gives it room: the cube's three inner edges stop at radius 5 and the capsule's seam gives
-way. A book with no mark draws the Ring, bare, and the aria stays the shape (spare, the book that exercised it, was retired on 15 Oct 2026). The letter's face is the class `.plet`, never a style attribute: the site's
+way. A book with no mark draws the Ring, bare, and the aria stays the shape (spare, the book that exercised it, became gas on 27 Oct 2026, which has its own mark). The letter's face is the class `.plet`, never a style attribute: the site's
 style policy refuses one. The guest board carries it in the page's own styles, with the mono face its policy lets load.
 
 **The one name on the site is the app's.** The manifest, the `<title>`, the iPhone app title, the
