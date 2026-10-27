@@ -225,3 +225,9 @@
   (Type, Handover, Loan of, Associate, Hide for); names three words at most; the lead line screen-reader only. Display only, no route or body changed. Open: New
   customer's Role (six tiles) and its Locked / Unlock ghost; Handover and Associate are three-choice Segments against his "three or more, a dropdown", his call.
   The same push fixed Customers P1 and P2's overdue fixture, which read "4 d late" from 16:00 to 01:00 UTC (a UTC date against the page's Kuala Lumpur day).
+- v1268 (`dd280fc3`, 27 Oct 2026; Cloud commit `40448833397`: chain and three suite parts green, CI `40448833537` green, build `5e68b2b172e55916`), his word and four answers:
+  the sale form in his order (Row, Type, Book, Who, Date, Units, Price, added books, then Handover, Delivery, Handed over, Cash paid, Record the sale); Who typed with a
+  datalist; Units and Handed over wheels (`makerWheel`, quarters to 25 then whole to 200); their price filled off the Desk's reading, which answers a sale with no
+  total with `card` (the engine's cardAt); every change of a row in the same form (Row, Orders > Ledger's `ledger.open`, owed cards): a Correction of what differs and
+  a Fulfilment of what moved since, Cancel this sale, Reopen, History, Other fields to Correct a row; Fixing off the menu. Fable: three findings applied (R2 attribution
+  from attributionOf, a two-part change kept whole on retry through makerButton's `action.after`, defaulted rows), re-checked clean. Not yet opened by him.
