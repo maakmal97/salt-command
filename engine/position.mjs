@@ -604,8 +604,11 @@ function lateOffer(delays,rules){
    THE PURCHASE SIDE TOOK THIS EXACT SHAPE FIRST: poRecvUnits at v417 and poOpenUnits at v422,
    with poCash deliberately left unguarded because money that left the bank still left it. This
    is the sale-side mirror, and txPaid stays unguarded for the same reason: the cash is real, it
-   is simply a refund due rather than salt owed. */
-function txDeferUnits(s){if(s.cancelled)return 0;const p=txPrice(s);if(!(p>0))return 0;return Math.max(0,txPaid(s)/p-txEffDeliv(s));}
+   is simply a refund due rather than salt owed.
+   28 OCT 2026, HIS WORD ("I do not owe them salt due to the extra prepayment"): AND MONEY PAST THE ORDER IS NO SALT EITHER. s296, 5 units
+   for RM 455 paid RM 480 and all handed over, read 480/91 = 5.27 units paid for, so 0.27 unit owed out; the RM 25 is their credit
+   (creditOf), never a claim on the shelf. The units paid for stop at the units ordered. */
+function txDeferUnits(s){if(s.cancelled)return 0;const p=txPrice(s);if(!(p>0))return 0;return Math.max(0,Math.min(+s.qty||0,txPaid(s)/p)-txEffDeliv(s));}
 function txPendUnits(s){if(s.cancelled)return 0;return Math.max(0,+(s.qty-txEffDeliv(s)-txDeferUnits(s)).toFixed(2));}
 function txPendUnitsRaw(s){if(s.cancelled)return 0;return Math.max(0,s.qty-txEffDeliv(s)-txDeferUnits(s));}
 function txPendRM(s){if(s.cancelled)return 0;const p=txPrice(s);if(!(p>0))return 0;return +(Math.max(0,s.qty-txEffDeliv(s)-txDeferUnits(s))*p).toFixed(2);}
