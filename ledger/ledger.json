@@ -1,6 +1,6 @@
 {
- "v": "v1267",
- "stamped": "27 Oct 2026, 09:58 KL",
+ "v": "v1270",
+ "stamped": "27 Oct 2026, 12:21 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -9126,8 +9126,29 @@
     "deliveredQty": 0,
     "listRM": 455,
     "listQty": 5,
-    "note": "<b>PENDING SALE OF 5 UNITS OF SALT TO CZ4-MK, GOODS RM455, 27 OCT 2026.</b> Agreed on 27 Oct, approved by Counter Admin. Nothing is paid and nothing handed over, so no stock is drawn and no revenue is booked. For 5 units the ladder gives a floor total of RM290 and an ask total of RM495, so RM455 is above the floor and below the ask. That is RM91 a unit against a floor of RM58 and an ask of RM99. The party's median rate is RM84, range RM13 to RM92; outstanding before was RM0, no units on credit against a cap of 1. The cost is RM58 a unit, costed off the latest purchase, against the inventory's own RM56. The drafter raised no flag. RM455 and all 5 units remain outstanding. Stock holds only 6.5 units.",
-    "rid": "s296"
+    "note": "<b>TRIP t1793074793926 SET ON 27 OCT 2026.</b> <b>CORRECTION ON S296, TRIP SET, 27 OCT 2026.</b> Counter Admin approved it on 27 Oct, the day of the order. It moves the trip on CZ4-MK's pending sale of 5 units of salt, goods RM455, from unset to t1793074793926. No price, quantity, cash or stock changes, so the earlier comparison with the desk's floor and ask is not reopened. The party's median rate is RM84, range RM12 to RM92; outstanding before was RM575, no units on credit. The drafter raised no flag, so there is nothing for the figures to answer. The row stays pending: RM455 and the 5 units remain outstanding. The cost it carries is unchanged. <b>PENDING SALE OF 5 UNITS OF SALT TO CZ4-MK, GOODS RM455, 27 OCT 2026.</b> Agreed on 27 Oct, approved by Counter Admin. Nothing is paid and nothing handed over, so no stock is drawn and no revenue is booked. For 5 units the ladder gives a floor total of RM290 and an ask total of RM495, so RM455 is above the floor and below the ask. That is RM91 a unit against a floor of RM58 and an ask of RM99. The party's median rate is RM84, range RM13 to RM92; outstanding before was RM0, no units on credit against a cap of 1. The cost is RM58 a unit, costed off the latest purchase, against the inventory's own RM56. The drafter raised no flag. RM455 and all 5 units remain outstanding. Stock holds only 6.5 units.",
+    "rid": "s296",
+    "trip": "t1793074793926",
+    "mod": "corrected on 2026-10-27: trip (unset) to t1793074793926",
+    "amend": [
+     {
+      "date": "2026-10-27",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-27",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S296, TRIP SET, 27 OCT 2026.</b> Counter Admin approved it on 27 Oct, the day of the order. It moves the trip on CZ4-MK's pending sale of 5 units of salt, goods RM455, from unset to t1793074793926. No price, quantity, cash or stock changes, so the earlier comparison with the desk's floor and ask is not reopened. The party's median rate is RM84, range RM12 to RM92; outstanding before was RM575, no units on credit. The drafter raised no flag, so there is nothing for the figures to answer. The row stays pending: RM455 and the 5 units remain outstanding. The cost it carries is unchanged.",
+      "was": {
+       "trip": null
+      }
+     }
+    ]
    },
    {
     "customer": "CZ4-MK",
@@ -9138,8 +9159,43 @@
     "product": "oil",
     "date": "2026-10-27",
     "deliveredQty": 0,
-    "note": "<b>PENDING SALE OF 10 UNITS OF OIL TO CZ4-MK, GOODS RM120, 27 OCT 2026.</b> Agreed on 27 Oct, approved by Counter Admin. Nothing is paid and nothing handed over, so no stock is drawn and no revenue is booked. For 10 units the ladder gives a floor total of RM80 and an ask total of RM130, so RM120 is above the floor and below the ask. That is RM12 a unit against a floor of RM8 and an ask of RM13. The party's median rate is RM84, range RM13 to RM92, which are mostly salt rates and do not fit oil; outstanding before was RM0, no units on credit against a cap of 10. The cost is RM7.86 a unit, costed off the latest purchase. The drafter raised no flag. RM120 and all 10 units remain outstanding.",
-    "rid": "s297"
+    "note": "<b>TRIP t1793074793926 SET ON 27 OCT 2026.</b> <b>CORRECTION ON S297, TRIP SET, 27 OCT 2026.</b> Counter Admin approved it on 27 Oct, the day of the order. It moves the trip on CZ4-MK's pending sale of 10 units of oil, goods RM120, from unset to t1793074793926. No price, quantity, cash or stock changes, so the earlier comparison with the desk's floor and ask is not reopened. The party's median rate is RM84, range RM12 to RM92; outstanding before was RM575, no units on credit. The drafter raised no flag, so there is nothing for the figures to answer. The row stays pending: RM120 and the 10 units remain outstanding. The cost it carries is unchanged. <b>PENDING SALE OF 10 UNITS OF OIL TO CZ4-MK, GOODS RM120, 27 OCT 2026.</b> Agreed on 27 Oct, approved by Counter Admin. Nothing is paid and nothing handed over, so no stock is drawn and no revenue is booked. For 10 units the ladder gives a floor total of RM80 and an ask total of RM130, so RM120 is above the floor and below the ask. That is RM12 a unit against a floor of RM8 and an ask of RM13. The party's median rate is RM84, range RM13 to RM92, which are mostly salt rates and do not fit oil; outstanding before was RM0, no units on credit against a cap of 10. The cost is RM7.86 a unit, costed off the latest purchase. The drafter raised no flag. RM120 and all 10 units remain outstanding.",
+    "rid": "s297",
+    "trip": "t1793074793926",
+    "mod": "corrected on 2026-10-27: trip (unset) to t1793074793926",
+    "amend": [
+     {
+      "date": "2026-10-27",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-27",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S297, TRIP SET, 27 OCT 2026.</b> Counter Admin approved it on 27 Oct, the day of the order. It moves the trip on CZ4-MK's pending sale of 10 units of oil, goods RM120, from unset to t1793074793926. No price, quantity, cash or stock changes, so the earlier comparison with the desk's floor and ask is not reopened. The party's median rate is RM84, range RM12 to RM92; outstanding before was RM575, no units on credit. The drafter raised no flag, so there is nothing for the figures to answer. The row stays pending: RM120 and the 10 units remain outstanding. The cost it carries is unchanged.",
+      "was": {
+       "trip": null
+      }
+     }
+    ]
+   },
+   {
+    "customer": "CM4-TO-R",
+    "qty": 1,
+    "total": 130,
+    "cash": 0,
+    "handover": "collected",
+    "date": "2026-10-29",
+    "deliveredQty": 0,
+    "rev": "R2",
+    "listRM": 60,
+    "listQty": 1,
+    "note": "<b>PENDING SALE OF 1 UNIT OF SALT TO CM4-TO-R, GOODS RM130, 29 OCT 2026.</b> Agreed for 29 Oct, approved by Counter Admin, booked as R2 via CM4-TO. Nothing is paid and nothing handed over, so no stock is drawn and no revenue is booked. For 1 unit the ladder gives a floor total of RM60 and an ask total of RM120, so RM130 is above both. That is RM130 a unit against a floor of RM60 and an ask of RM120. The party's median rate is RM91.4, range RM71.67 to RM150; outstanding before was RM0, no units on credit against a cap of 1. The cost is RM58 a unit, costed off the latest purchase. The drafter flagged a rate well above the usual RM60 a unit for CM4-TO. The figures answer it: the rate is above the ask and within the party's own range. RM130 and the 1 unit remain outstanding.",
+    "rid": "s298"
    }
   ],
   "contacts": [
@@ -9921,7 +9977,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-27T01:51:46.791Z",
+  "QUEUE_COMMITTED": "2026-10-27T04:19:53.927Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -10214,6 +10270,53 @@
       "rare": false
      }
     },
+    "CM4-TO": {
+     "salt": {
+      "name": "large and regular",
+      "orders": 7,
+      "tenureDays": 73,
+      "sinceLastDays": 3,
+      "perMonth": 2.92,
+      "unitsPerMonth": 25.02,
+      "smallShare": 0.14,
+      "bigShare": 0.86,
+      "frequent": true,
+      "small": false,
+      "bigger": true,
+      "loyal": true,
+      "rare": false
+     },
+     "candy": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 8,
+      "sinceLastDays": 8,
+      "perMonth": 1.01,
+      "unitsPerMonth": 3.04,
+      "smallShare": 0,
+      "bigShare": 1,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false
+     },
+     "rice": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 34,
+      "sinceLastDays": 34,
+      "perMonth": 0.9,
+      "unitsPerMonth": 8.95,
+      "smallShare": 0,
+      "bigShare": 1,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": true
+     }
+    },
     "CE4-CHE": {
      "salt": {
       "name": "consistent mid",
@@ -10274,53 +10377,6 @@
       "bigger": true,
       "loyal": false,
       "rare": false
-     }
-    },
-    "CM4-TO": {
-     "salt": {
-      "name": "large and regular",
-      "orders": 7,
-      "tenureDays": 73,
-      "sinceLastDays": 3,
-      "perMonth": 2.92,
-      "unitsPerMonth": 25.02,
-      "smallShare": 0.14,
-      "bigShare": 0.86,
-      "frequent": true,
-      "small": false,
-      "bigger": true,
-      "loyal": true,
-      "rare": false
-     },
-     "candy": {
-      "name": "one-off",
-      "orders": 1,
-      "tenureDays": 8,
-      "sinceLastDays": 8,
-      "perMonth": 1.01,
-      "unitsPerMonth": 3.04,
-      "smallShare": 0,
-      "bigShare": 1,
-      "frequent": false,
-      "small": false,
-      "bigger": true,
-      "loyal": false,
-      "rare": false
-     },
-     "rice": {
-      "name": "one-off",
-      "orders": 1,
-      "tenureDays": 34,
-      "sinceLastDays": 34,
-      "perMonth": 0.9,
-      "unitsPerMonth": 8.95,
-      "smallShare": 0,
-      "bigShare": 1,
-      "frequent": false,
-      "small": false,
-      "bigger": true,
-      "loyal": false,
-      "rare": true
      }
     },
     "CM4-MK": {
@@ -11674,48 +11730,6 @@
         980
        ]
       ],
-      "CE4-CHE": [
-       [
-        0.5,
-        75
-       ],
-       [
-        1,
-        120
-       ],
-       [
-        1.5,
-        170
-       ],
-       [
-        2,
-        225
-       ],
-       [
-        2.5,
-        265
-       ],
-       [
-        3,
-        315
-       ],
-       [
-        4,
-        410
-       ],
-       [
-        5,
-        495
-       ],
-       [
-        6.25,
-        605
-       ],
-       [
-        12.5,
-        980
-       ]
-      ],
       "CM4-TO": [
        [
         0.5,
@@ -11756,6 +11770,48 @@
        [
         12.5,
         725
+       ]
+      ],
+      "CE4-CHE": [
+       [
+        0.5,
+        75
+       ],
+       [
+        1,
+        120
+       ],
+       [
+        1.5,
+        170
+       ],
+       [
+        2,
+        225
+       ],
+       [
+        2.5,
+        265
+       ],
+       [
+        3,
+        315
+       ],
+       [
+        4,
+        410
+       ],
+       [
+        5,
+        495
+       ],
+       [
+        6.25,
+        605
+       ],
+       [
+        12.5,
+        980
        ]
       ],
       "CM4-MK": [
@@ -13530,8 +13586,8 @@
       "CS6-BS": -0.2,
       "CS6-PER": -0.05,
       "CJ4-BJ": 0,
-      "CE4-CHE": 0,
       "CM4-TO": "partner",
+      "CE4-CHE": 0,
       "CM4-MK": 0,
       "CK4-SEN": -0.2,
       "CZ4-MK": -0.15,
@@ -14107,28 +14163,6 @@
         450
        ]
       ],
-      "CE4-CHE": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
       "CM4-TO": [
        [
         10,
@@ -14149,6 +14183,28 @@
        [
         50,
         395
+       ]
+      ],
+      "CE4-CHE": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
        ]
       ],
       "CM4-MK": [
@@ -15083,8 +15139,8 @@
       "CS6-BS": 0,
       "CS6-PER": 0,
       "CJ4-BJ": 0,
-      "CE4-CHE": 0,
       "CM4-TO": "partner",
+      "CE4-CHE": 0,
       "CM4-MK": 0,
       "CK4-SEN": 0,
       "CZ4-MK": -0.1,
@@ -15441,28 +15497,6 @@
         1500
        ]
       ],
-      "CE4-CHE": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
-      ],
       "CM4-TO": [
        [
         1,
@@ -15483,6 +15517,28 @@
        [
         30,
         1260
+       ]
+      ],
+      "CE4-CHE": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
        ]
       ],
       "CM4-MK": [
@@ -16417,8 +16473,8 @@
       "CS6-BS": 0,
       "CS6-PER": 0,
       "CJ4-BJ": 0,
-      "CE4-CHE": 0,
       "CM4-TO": "partner",
+      "CE4-CHE": 0,
       "CM4-MK": 0,
       "CK4-SEN": 0,
       "CZ4-MK": -0.25,
@@ -16708,20 +16764,6 @@
         60
        ]
       ],
-      "CE4-CHE": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        60
-       ]
-      ],
       "CM4-TO": [
        [
         1,
@@ -16734,6 +16776,20 @@
        [
         10,
         35
+       ]
+      ],
+      "CE4-CHE": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        60
        ]
       ],
       "CM4-MK": [
@@ -17332,8 +17388,8 @@
       "CS6-BS": 0,
       "CS6-PER": 0,
       "CJ4-BJ": 0,
-      "CE4-CHE": 0,
       "CM4-TO": "partner",
+      "CE4-CHE": 0,
       "CM4-MK": 0,
       "CK4-SEN": 0,
       "CZ4-MK": 0,
@@ -17540,12 +17596,29 @@
      ]
     }
    },
-   "v": "v1267"
+   "v": "v1270"
   },
   "OPEN": {
-   "at": "2026-10-27T01:58:51.492Z",
-   "count": 9,
+   "at": "2026-10-27T04:21:58.028Z",
+   "count": 10,
    "byKey": {
+    "CM4-TO-R|2026-10-29|130": {
+     "d": "2026-10-29",
+     "p": "CM4-TO-R",
+     "dir": "S",
+     "q": 1,
+     "t": 130,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 130,
+     "oweUnits": 1,
+     "rid": "s298",
+     "as": "CM4-TO",
+     "st2": "R2",
+     "handover": "collected",
+     "key": "CM4-TO-R|2026-10-29|130"
+    },
     "CZ4-MK|2026-10-27|455": {
      "d": "2026-10-27",
      "p": "CZ4-MK",
@@ -17559,6 +17632,7 @@
      "oweUnits": 5,
      "rid": "s296",
      "handover": "collected",
+     "trip": "t1793074793926",
      "key": "CZ4-MK|2026-10-27|455"
     },
     "CZ4-MK|2026-10-27|120|oil": {
@@ -17575,6 +17649,7 @@
      "pr": "oil",
      "rid": "s297",
      "handover": "collected",
+     "trip": "t1793074793926",
      "key": "CZ4-MK|2026-10-27|120|oil"
     },
     "CR3-DAM|2026-10-20|75": {
@@ -17704,7 +17779,7 @@
      "coverDays": 1.5,
      "rate": 4.54,
      "owedToYou": 315,
-     "promised": 5,
+     "promised": 6,
      "short": 0
     },
     "oil": {
@@ -17748,7 +17823,7 @@
     "rice": "2026-10-20",
     "spare": null
    },
-   "v": "v1267"
+   "v": "v1270"
   },
   "TERMS": {
    "ceiling": 250,
@@ -17756,7 +17831,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1267"
+   "v": "v1270"
   },
   "REWARD": {
    "stated": {
@@ -17774,7 +17849,7 @@
      }
     }
    },
-   "v": "v1267"
+   "v": "v1270"
   },
   "STOCK": {
    "today": "2026-10-27",
@@ -17782,7 +17857,7 @@
     "salt": {
      "shelf": 6.5,
      "free": 6.5,
-     "commit": 5,
+     "commit": 6,
      "light": "green",
      "coverDays": 1.5,
      "transit": 0
@@ -17812,7 +17887,7 @@
      "transit": 0
     }
    },
-   "v": "v1267"
+   "v": "v1270"
   }
  }
 }
