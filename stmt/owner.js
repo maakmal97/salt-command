@@ -3795,7 +3795,9 @@ export const OWNER_JS = `
       var head=el('h2','salt-settings__head',g[0]), group=el('div','salt-settings'); head.setAttribute('data-group',formSlug(g[0])); lists.entry.appendChild(head); lists.entry.appendChild(group);
       have.forEach(function(s){ seen[s]=1; group.appendChild(entryRows[s]); });
     });
-    Object.keys(entryRows).forEach(function(s){ if(!seen[s]) (lists.entry.lastElementChild||lists.entry.appendChild(el('div','salt-settings'))).appendChild(entryRows[s]); });
+    /* 27 Oct 2026, his word: Correct a row and Reopen are no rows of the menu (the sale form's Other fields and a cancelled row's Reopen reach them); any other form not listed goes at the end */
+    var OFF_MENU={'correct-a-row':1,'reopen-a-cancelled-order':1};
+    Object.keys(entryRows).forEach(function(s){ if(OFF_MENU[s]){ entryRows[s].remove(); return; } if(!seen[s]) (lists.entry.lastElementChild||lists.entry.appendChild(el('div','salt-settings'))).appendChild(entryRows[s]); });
     /* 25 Oct 2026 (Record redesign P8, his Ask G): Pricing in his order, Printed sizes then Desk reminders since Their % and Partner left (26 Oct); a form not named keeps its place after them */
     PRICING_ORDER.slice().reverse().forEach(function(s){ var row=lists.pricing.querySelector('[data-key="'+s+'"]'); if(row) row.parentNode.insertBefore(row,row.parentNode.firstChild); });
     /* PHASE 4a (12 Oct 2026): THE FORM OPEN IS A PANE. The retained input and the menu are one column and the forms the pane beside it, moved into
@@ -3964,7 +3966,7 @@ export const OWNER_JS = `
          over the pricing snapshot), never worked out here. A price he types stands; clearing it brings theirs back. */
       function theirPrice(productCtl,qtyCtl,totalCtl){
         var own=false, ticket=0;
-        totalCtl.addEventListener('input',function(){ own=totalCtl.value!==''; if(!own) fillPrice(); });
+        totalCtl.addEventListener('input',function(){ own=totalCtl.value!==''; totalCtl.removeAttribute('data-their'); if(!own) fillPrice(); });
         async function fillPrice(){
           var t=++ticket, who=tradeStream.value==='R2'?tradeAssoc.value:tradeParty.value;
           var auto=totalCtl.hasAttribute('data-their'), clear=function(){ if(auto){ totalCtl.value=''; totalCtl.removeAttribute('data-their'); totalCtl.dispatchEvent(new Event('change',{bubbles:true})); } };

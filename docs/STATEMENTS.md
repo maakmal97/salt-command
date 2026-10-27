@@ -2969,7 +2969,11 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.trade.moved` | Record, sale or purchase | The units moved. |
 | `record.trade.party` | Record, sale or purchase | The party. |
 | `record.trade.remove-book` | Record, sale or purchase, an extra book (key: extra<n>) | Removes the extra book. |
-| `record.trade.send` | Record, sale or purchase | Sends the trade for review. |
+| `record.trade.send` | Record, sale or purchase | Records the trade for review (Record the sale); with a row open, Record the change sends what differs as a Correction and what moved since as a Fulfilment, or Reopen this sale. |
+| `record.trade.edit` | Record, sale or purchase | Row: New, or a recorded row, which fills the form to change it (27 Oct 2026). |
+| `record.trade.other` | Record, sale or purchase | Other fields, with a row open: opens Correct a row on it, at a Correction. |
+| `record.trade.cancel` | Record, sale or purchase | Cancel this sale, with a row open; asks once, then sends a Cancellation. |
+| `ledger.open` | Orders > Ledger | A row's reference: opens the row in the sale form. |
 | `record.trade.stream` | Record, sale or purchase | No associate, R2 resell or R3 refer. |
 | `record.trade.total` | Record, sale or purchase | The goods total, in RM. |
 | `record.trade.units` | Record, sale or purchase | The units. |
