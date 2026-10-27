@@ -36,7 +36,7 @@ export async function run({ ok, pageWork }) {
     const r = A.read();
     const before = r.s && r.s.previousElementSibling;
     ok(!!r.s && !r.s.hidden && !!before && before.classList.contains("nsplit") && t(r.s.querySelector(".nstock__head h2")) === "Stock by book" && t(r.s.querySelector(".nstock__head .salt-status")) === "Units · measured 22 Oct"
-      && J(r.rows.map((x) => x.book)) === J(["candy", "salt", "rice", "oil", "gas"]) && J(r.rows.map((x) => x.tag)) === J(["Candy", "Salt", "Rice", "Oil", "Aroma"])
+      && J(r.rows.map((x) => x.book)) === J(["candy", "salt", "rice", "oil", "gas"]) && J(r.rows.map((x) => x.tag)) === J(["Candy", "Salt", "Rice", "Oil", "Gas"])
       && r.rows.map((x) => x.word).join("|") === "Out of stock|Limited|Available|Available|"
       && ["salt-status--ember", "salt-status--brass", "salt-status--verdigris", "salt-status--verdigris"].every((c, i) => r.rows[i].st.includes(c)) && r.rows[4].st === ""
       && !r.s.querySelector("svg.psym"),

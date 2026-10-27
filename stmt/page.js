@@ -1585,7 +1585,7 @@ export const PSYM = {
   candy: 'M12 2.6 L21.4 12 L12 21.4 L2.6 12 Z',
   rice: 'M12.84 19.64 L19.64 12.84 A5.99 5.99 0 0 0 11.16 4.36 L4.36 11.16 A5.99 5.99 0 0 0 12.84 19.64 Z M7.76 7.76 L16.24 16.24',
   /* 27 Oct 2026, his two new books: a heart-shaped pill for PrEP, a heart split by the seam a pill carries, and for the
-     book keyed gas (named Aroma, his word of 27 Oct 2026) a twelve-point starburst, an explosion carrying POP, his choice
+     book keyed gas (named Aroma on 27 Oct 2026, named Gas again on 28 Oct) a twelve-point starburst, an explosion carrying POP, his choice
      of A over a diffuser flask. Both fill the same square (2.6 to 21.4 about the centre). The seam stops clear of the
      letters and the burst's inner radius (7.7) is wide enough for three, so neither mark needs a PLET_ROOM drawing. */
   gas: 'M12 2.6 L13.99 4.56 L16.7 3.86 L17.44 6.56 L20.14 7.3 L19.44 10.01 L21.4 12 L19.44 13.99 L20.14 16.7 L17.44 17.44 L16.7 20.14 L13.99 19.44 L12 21.4 L10.01 19.44 L7.3 20.14 L6.56 17.44 L3.86 16.7 L4.56 13.99 L2.6 12 L4.56 10.01 L3.86 7.3 L6.56 6.56 L7.3 3.86 L10.01 4.56 Z',

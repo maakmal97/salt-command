@@ -55,7 +55,7 @@ function priceList(now) {
       { product: "candy", name: "Candy", unit: "unit", basis: "board", supply: { light: "green", by: null }, sizes: [{ q: 1, price: 12 }, { q: 4, price: 45 }] },
       { product: "rice", name: "Rice", unit: "unit", basis: "board", sizes: [{ q: 1, price: 9 }, { q: 2, price: 17 }] }
     ],
-    soon: [{ product: "gas", name: "Aroma" }] };
+    soon: [{ product: "gas", name: "Gas" }] };
   list.digest = createHash("sha256").update("testfix\n" + JSON.stringify(list.products.map((p) => [p.product, p.sizes, p.grid || null]))).digest("hex");
   const ceiling = ceilingRM();
   if (ceiling != null) list.ceiling = ceiling;

@@ -44,7 +44,7 @@
    },
    "gas": {
     "id": "gas",
-    "name": "Aroma",
+    "name": "Gas",
     "unit": "unit",
     "accent": "var(--salt-product-gas)",
     "since": "2026-10-27",
@@ -10294,7 +10294,7 @@
     {
      "id": "parity:uncounted:gas",
      "sev": "watch",
-     "title": "Aroma has never been counted, so its inventory is the ledger"
+     "title": "Gas has never been counted, so its inventory is the ledger"
     },
     {
      "id": "parity:uncounted:prep",
@@ -10414,7 +10414,7 @@
     {
      "id": "parity:declared:gas",
      "sev": "note",
-     "title": "Aroma is declared but has nothing on the books"
+     "title": "Gas is declared but has nothing on the books"
     },
     {
      "id": "parity:declared:prep",
@@ -20096,7 +20096,7 @@
    "v": "v1291"
   },
   "OPEN": {
-   "at": "2026-10-27T16:11:52.666Z",
+   "at": "2026-10-27T16:15:00.951Z",
    "count": 6,
    "byKey": {
     "CN3-WM|2026-10-05|130": {
@@ -20246,7 +20246,7 @@
      "short": 0
     },
     "gas": {
-     "name": "Aroma",
+     "name": "Gas",
      "onHand": 0,
      "free": 0,
      "owedOut": 0,

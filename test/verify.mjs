@@ -23618,7 +23618,7 @@ await (async () => {
     "his letters: I in the cube, G in the droplet, E in the lozenge, V in the capsule, POP in the starburst, PrEP in the heart-shaped pill: " + JSON.stringify(P8.PLET));
   /* each book's words, held to the lock's own list both ways: a word the list gains and no book here
      owns goes red, so a new name cannot slip past the initial check (a new book joins OWN8, lettered or not) */
-  const OWN8 = { salt: ["salt"], oil: ["oil"], candy: ["candy"], rice: ["rice"], gas: ["aroma"], prep: ["prep"] };
+  const OWN8 = { salt: ["salt"], oil: ["oil"], candy: ["candy"], rice: ["rice"], gas: ["gas"], prep: ["prep"] };
   const owned8 = Object.values(OWN8).flat(), letters8 = Object.values(P8.PLET).join("");
   ok(OW8.PRODUCT_WORDS.every((w) => owned8.includes(w)) && owned8.every((w) => OW8.PRODUCT_WORDS.includes(w))
     && Object.keys(P8.PLET).every((k) => OWN8[k] && (k === "prep" ? P8.PLET[k] === "PrEP" : k === "gas" ? P8.PLET[k] === "POP" : /^[A-Z]$/.test(P8.PLET[k]) && OWN8[k].every((w) => w[0].toUpperCase() !== P8.PLET[k])))   /* PrEP and POP are his words, set small in the heart and the starburst (27 Oct 2026) */
