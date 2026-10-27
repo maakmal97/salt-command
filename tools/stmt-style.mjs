@@ -230,15 +230,23 @@ td.l{text-align:left}
 .nilamt{color:var(--salt-text-muted);font-weight:400}
 
 .tot{margin-top:30px}
-.tr{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:8px 0;
+.tot:not(.salt-settings) .tr{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:8px 0;
   font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 /* the figure is the row's own last child: the cancelled note nested in the words wraps (S7-R4, 25 Sep 2026) */
-.tr>span:last-child{color:var(--salt-text);white-space:nowrap}
-.tr.big{margin-top:10px;padding-top:16px;border-top:1px solid var(--salt-line);
+.tot:not(.salt-settings) .tr>span:last-child{color:var(--salt-text);white-space:nowrap}
+.tot:not(.salt-settings) .tr.big{margin-top:10px;padding-top:16px;border-top:1px solid var(--salt-line);
   font-size:var(--salt-text-xl);font-weight:500;color:var(--salt-text)}
-.tr.big span:last-child{color:var(--salt-ember)}
-.tr.big.clear span:last-child{color:var(--salt-verdigris)}
-.tr.sub{color:var(--salt-text-muted);font-size:var(--salt-text-sm)}
+.tot:not(.salt-settings) .tr.big span:last-child{color:var(--salt-ember)}
+.tot:not(.salt-settings) .tr.big.clear span:last-child{color:var(--salt-verdigris)}
+.tot:not(.salt-settings) .tr.sub{color:var(--salt-text-muted);font-size:var(--salt-text-sm)}
+/* 28 Oct 2026 (his yes, the statement in the language): the live footer is a settings list, the figures at the right in the text
+   colour, the balance in ember or verdigris, a row of marks alone, and a line under the sums in the muted ink */
+.tot.salt-settings .salt-settings__value{color:var(--salt-text);font-size:var(--salt-text-md)}
+.tot.salt-settings .tr.big .salt-settings__value{color:var(--salt-ember)}
+.tot.salt-settings .tr.big.clear .salt-settings__value{color:var(--salt-verdigris)}
+.tot.salt-settings .tr.sub .salt-settings__label{color:var(--salt-text-muted);font-size:var(--salt-text-sm)}
+.tot.salt-settings .salt-settings__row--tiles{min-height:0;padding:12px 0}
+.tot.salt-settings .salt-settings__row--tiles .mtiles{margin:0}
 
 /* GLASS ONCE: a pane is white 3% with a brass hairline. A pane inside a pane is flat. */
 .owed,.rec{margin-top:26px;border:1px solid var(--salt-line);border-radius:var(--salt-radius-md);

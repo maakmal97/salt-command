@@ -383,11 +383,16 @@ function stmtDoc(party,rows,o){
      mark a button and its caption under it, the size in words and no shape word, as on the Counter's own cards (mtileSvg) */
   const lineTile=(p,q)=>mtileSvg(p,units(q));
   const tiles=(ps,qOf)=>'<span class="mtiles">'+ps.map(p=>lineTile(p,qOf(p))).join('')+'</span>';
-  const lineList=(label,heads,rowsHtml)=>'<div class="salt-lines" role="table" aria-label="'+label+'"><div class="salt-lines__head" role="row">'
+  const lineList=(label,heads,rowsHtml)=>'<div class="salt-lines salt-lines--list" role="table" aria-label="'+label+'"><div class="salt-lines__head" role="row">'
     +['date','what','amount','state'].map((c,i)=>'<div class="salt-lines__'+c+'" role="columnheader">'+heads[i]+'</div>').join('')+'</div>'+rowsHtml+'</div>';
   const money=v=>Number(v).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
   /* C5 (29 Sep 2026): the live footer's figures carry RM as its lines do; an issue's footer is as it was sent */
   const fig=v=>(o.live?'RM ':'')+money(v);
+  /* 28 Oct 2026 (his yes, the statement in the language): the live footer is the settings list's rows, a name at the left and its figure at the right;
+     an issue keeps the footer it was sent with. lg is the old row's own class, rc the recipe row's. */
+  const trow=(label,val,lg,rc)=>lines
+    ?'<div class="tr'+(lg?' '+lg:'')+' salt-settings__row'+(rc?' '+rc:'')+'"><span class="salt-settings__label">'+label+'</span>'+(val===''?'':'<span class="salt-settings__value">'+val+'</span>')+'</div>'
+    :'<div class="tr'+(lg?' '+lg:'')+'"><span>'+label+'</span><span>'+val+'</span></div>';
   const refundOwed=(o.refunds||[]).filter(r=>!r.paidOn).reduce((a,r)=>a+(+r.amount||0),0);   // v454
   /* AN UNDATED ROW PRINTS AN EMPTY CELL, NOT "Invalid Date" (29 Aug 2026, the one
      behavioural change from the v387 text). The book now carries undated rows (a
@@ -577,8 +582,8 @@ function stmtDoc(party,rows,o){
       the deploy after every fold, so it covers every entry from the start to the moment it was
       written, and the moment is printed to the minute so a reader can tell two of them apart. */
    (o.live
-     ? '<p class="meta">Live statement &middot; as at '+e(o.issued)+' &middot; every entry from the beginning to today, '
-       +'updated whenever your account changes</p>'
+     /* 28 Oct 2026 (his word on the statement, "less word"): one sentence, the moment first */
+     ? '<p class="meta">Live statement &middot; as at '+e(o.issued)+'</p>'
      : '<p class="meta">Issued '+e(o.issued)+
      (o.archive
        ? ' &middot; every order placed up to '+e(dLong(o.to))+', shown as the account stands today'
@@ -607,10 +612,13 @@ function stmtDoc(party,rows,o){
        +'<td class="r">'+(r.paidOn?'<span class="ok">paid '+e(dLong(r.paidOn))+'</span>'
                                   :'<span class="due">owed to you</span>')+'</td></tr>').join('')
      +'</tbody></table>'):''),
-   '<div class="tot">',
+   '<div class="tot'+(lines?' salt-settings':'')+'">',
    /* the count must match what was actually totalled, or the footer says three orders
       over a figure covering two, which is the first thing a careful reader checks */
-   '<div class="tr"><span>'+(rows.length-T.cxN)+' order'+((rows.length-T.cxN)===1?'':'s')
+   (lines?trow((rows.length-T.cxN)+' order'+((rows.length-T.cxN)===1?'':'s')+(!marked?', '+n2(T.qty)+' unit':''),fig(T.total))
+     +(marked?'<div class="tr salt-settings__row salt-settings__row--tiles">'+tiles(bookOrder(Object.keys(T.qtyBy)),p=>T.qtyBy[p])+'</div>':'')
+     +(T.cxN?trow(T.cxN+' cancelled, not counted','','sub','salt-settings__row--muted'):'')
+   :'<div class="tr"><span>'+(rows.length-T.cxN)+' order'+((rows.length-T.cxN)===1?'':'s')
      /* v782: one figure a book, marked, and never one figure over two books. Where the account
         holds a single book this reads exactly as it always did, with its mark in front.
         SALT LEADS, his standing instruction of 11 Aug restated on the 13th: the books come out in
@@ -620,20 +628,18 @@ function stmtDoc(party,rows,o){
         : lines ? tiles(bookOrder(Object.keys(T.qtyBy)),p=>T.qtyBy[p])
         : ', '+bookOrder(Object.keys(T.qtyBy)).map(p=>markOf(p)+n2(T.qtyBy[p])+' unit').join(' &middot; '))
      +(T.cxN?'<span class="cxn"> &middot; '+T.cxN+' cancelled, not counted</span>':'')
-     +'</span><span>'+fig(T.total)+'</span></div>',
+     +'</span><span>'+fig(T.total)+'</span></div>'),
    /* C1: the delivery charged, between the goods and what was paid, on the live document; an issue is as it was sent */
-   (lines&&T.delivery>0.009?'<div class="tr"><span>Delivery</span><span>'+fig(T.delivery)+'</span></div>':''),
-   '<div class="tr"><span>Paid</span><span>'+fig(T.paid)+'</span></div>',
-   (T.writtenOff>0.009?'<div class="tr"><span>Written off</span><span>'+fig(T.writtenOff)+'</span></div>':''),
-   (T.defaultUncharged>0.009?'<div class="tr"><span>Not handed over on written-off orders</span><span>'+fig(T.defaultUncharged)+'</span></div>':''),
-   (T.cxPaid>0.009?'<div class="tr sub"><span>of which on cancelled orders</span><span>'+fig(T.cxPaid)+'</span></div>':''),
+   (lines&&T.delivery>0.009?trow('Delivery',fig(T.delivery)):''),
+   trow('Paid',fig(T.paid)),
+   (T.writtenOff>0.009?trow('Written off',fig(T.writtenOff)):''),
+   (T.defaultUncharged>0.009?trow('Not handed over on written-off orders',fig(T.defaultUncharged),'','salt-settings__row--text'):''),
+   (T.cxPaid>0.009?trow('of which on cancelled orders',fig(T.cxPaid),'sub','salt-settings__row--text'):''),
    /* say plainly which part of the total has not happened yet, so the ordered figure
       and the paid figure can be reconciled without him having to ask why they differ */
-   (T.pendN?'<div class="tr sub"><span>of which not yet collected or paid</span><span>'
-      +fig(T.pendVal+(lines?T.pendDel:0))+'</span></div>':''),
-   '<div class="tr big'+(T.owed>0.009?'':' clear')+'"><span>'+(T.owed>0.009?'Outstanding':'Balance')+'</span><span>'
-     +(T.owed>0.009?fig(T.owed):'nil')+'</span></div>',
-   (refundOwed>0.009?'<div class="tr big"><span>Owed to you</span><span>'+fig(refundOwed)+'</span></div>':''),
+   (T.pendN?trow('of which not yet collected or paid',fig(T.pendVal+(lines?T.pendDel:0)),'sub','salt-settings__row--text'):''),
+   trow(T.owed>0.009?'Outstanding':'Balance',T.owed>0.009?fig(T.owed):'nil','big'+(T.owed>0.009?'':' clear')),
+   (refundOwed>0.009?trow('Owed to you',fig(refundOwed),'big'):''),
    '</div>',
    /* GOODS OWED GET THEIR OWN BLOCK. A statement whose only large figure is money can
       read as though nothing else is outstanding, which is exactly the misreading a
@@ -721,7 +727,9 @@ function stmtDoc(party,rows,o){
        +' show as settled at the top of this statement because that balance was cleared '
        +'here, in '+goods+', rather than in cash. Nothing about them is still owed in money.</p>'
        +'</div>';}).join(''),
-   '<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at '+(o.live?'the time shown above':'the issue date')+'. If anything differs from your own, say so and it will be checked.</p>',
+   (o.live
+     ? '<p class="note">Amounts in RM, from our records at the time shown; tell us if anything differs.</p>'
+     : '<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>'),
    '</div></body></html>'].join('\n');
 }
 

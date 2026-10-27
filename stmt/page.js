@@ -221,7 +221,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .cbell--off .cbell__orb{border-color:var(--salt-brass)}
 /* S9 9.9: in This device (S7 7.3, below), its phones and computers with this one marked, and the two quiet ways, each
    answered on the line under them */
-.devcard .dacts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.devcard .dacts{margin-top:10px}
 .devcard .dnote{margin:8px 0 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .devcard .dnote:empty{display:none}
 .devcard .dnote.bad{color:var(--salt-ember)}
@@ -381,7 +381,6 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 #aThread:empty{display:none}
 #aGlance:empty{display:none}
 .aglance .salt-glance__value{overflow-wrap:anywhere}
-.mfil .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
 
 .devcard{margin:0}
 .devcard .devlist{margin-top:8px}
@@ -393,7 +392,6 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .devcard .salt-ledger__row:last-child{border-bottom:0}
 .devcard .salt-ledger__label{flex:1 1 auto}
 .devcard .salt-ledger__flag .glyph{vertical-align:-0.3em;margin:0 3px}
-.devout{width:100%;margin-top:14px}
 .ospots{display:flex;flex-direction:column;gap:var(--salt-space-2)}
 .ospot{display:flex;align-items:stretch;gap:var(--salt-space-2)}
 .ospot .salt-option{flex:1 1 auto;min-width:0}
@@ -1774,9 +1772,11 @@ function helpCard(owner) {
 function thisDevice() {
   return '<section id="thisDevice" class="devcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="devH" hidden>'
     + wt("h2", 'class="salt-eyebrow salt-eyebrow--copper" id="devH"', "dev.h")
-    + '<div class="salt-settings devlist"><div id="devRows" class="devrows"></div>' + lookRow() + "</div>"
+    + '<div class="salt-settings devlist"><div id="devRows" class="devrows"></div>' + lookRow()
+    /* 28 Oct 2026 (his yes): Sign out is the list's last row, in ember, still a tap and a tap again on the one control */
+    + '<button type="button" class="salt-settings__row salt-settings__row--action salt-settings__row--danger" id="lock" aria-live="polite">'
+    + wt("span", 'class="salt-settings__label" id="lockT"', "dev.out") + "</button></div>"
     + '<p class="msg devnote" id="devNote" role="status"></p>'
-    + wt("button", 'type="button" class="salt-ghost devout" id="lock" aria-live="polite"', "dev.out")
     + '<div id="devSlot"></div>' + keepPage()
     + "</section>";
 }
@@ -2425,7 +2425,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     + '<div id="pStmt" hidden><div id="acct" class="acct"><div id="aGlance"></div><div id="aThread"></div>'
     + (owner ? "" : thisDevice() + helpCard())
     + '<div class="acct__main">'
-    + '<div id="mfil" class="salt-tabs mfil" role="group"' + wl("acct.months") + ' hidden></div><p class="mfnote" id="mfnote" role="status"></p>'
+    + '<div id="mfil" class="salt-settings mfil" hidden></div><p class="mfnote" id="mfnote" role="status"></p>'
     + '<div id="out"></div>'
     + '</div>'
     + "</div></div>"
@@ -3081,7 +3081,7 @@ const CLIENT_JS = `
   async function pkSave(btn, reuse){
     var n=await pkPrep(); pkNew=null;
     if(!n||!PKSALT||!curCk){ devSaid={t:tw('dev.pkNotSaved'),bad:true}; drawDev(); return; }
-    btn.disabled=true; btn.textContent=tw('dev.pkWaiting');
+    btn.disabled=true; devSet(btn,tw('dev.pkWaiting'));
     var cred, half=crypto.getRandomValues(new Uint8Array(32));
     try{
       if(reuse){
@@ -3226,7 +3226,10 @@ const CLIENT_JS = `
     var s=String(l||''), m=/^(Android|Windows|Linux) (phone|tablet|computer)(, .+)?$/.exec(s), a=/^A (phone|computer)(, .+)?$/.exec(s);
     return m?tw('dname.'+m[2],{os:m[1]})+(m[3]||''):a?tw(a[1]==='phone'?'dname.aPhone':'dname.aComputer')+(a[2]||''):s;
   }
-  function devQuiet(t){ var b=el('button','btn salt-ghost',t); b.type='button'; return b; }
+  /* 28 Oct 2026 (his yes, the statement in the language): This device's three buttons are rows of its list, the name at the left and no
+     pill, as his page's are; each keeps its request, and a word changed while it is held goes to the row's label, never over it */
+  function devQuiet(t){ var b=el('button','salt-settings__row salt-settings__row--action'); b.type='button'; b.appendChild(el('span','salt-settings__label',t)); return b; }
+  function devSet(b,t){ var l=b.querySelector('.salt-settings__label'); (l||b).textContent=t; }
   async function drawDev(){
     if(!devSlot) return;
     if(!session||view||OWNER){ devN++; devSlot.textContent=''; return; }
@@ -3250,14 +3253,14 @@ const CLIENT_JS = `
     });
     if(!r.body.ok) list.appendChild(devLine(tw('dev.yours'), null, r.status===401?tw('dev.signinSee'):tw('dev.unread')));
     devSlot.appendChild(list);
-    var acts=el('div','dacts'), note=el('p','dnote'+(devSaid.bad?' bad':''),devSaid.t); note.setAttribute('role','status');
+    var acts=el('div','salt-settings dacts'), note=el('p','dnote'+(devSaid.bad?' bad':''),devSaid.t); note.setAttribute('role','status');
     var another=devQuiet(tw('dev.another')); another.setAttribute('data-back','dev:another'); another.addEventListener('click', function(){ openDevSheet(another); });
     acts.appendChild(another);
     if(others){
       var so=devQuiet(tw('dev.outOthers')), armed=null;
       so.addEventListener('click', async function(){
-        if(!armed){ so.textContent=tw('dev.outAgain'); armed=setTimeout(function(){ armed=null; so.textContent=tw('dev.outOthers'); }, 4000); return; }
-        clearTimeout(armed); armed=null; so.disabled=true; so.textContent=tw('dev.outGoing');
+        if(!armed){ devSet(so,tw('dev.outAgain')); armed=setTimeout(function(){ armed=null; devSet(so,tw('dev.outOthers')); }, 4000); return; }
+        clearTimeout(armed); armed=null; so.disabled=true; devSet(so,tw('dev.outGoing'));
         var s2=null; try{ s2=await phoneSub(); }catch(e){}
         var rr=remGet(), pm2=pkMine(), x=await api('/devices/signout',{token:rr&&rr.u===user?rr.t||null:null, passkey:pm2?pm2.c:null, endpoint:s2?s2.endpoint:null});
         devSaid=x.body.ok?{t:x.body.devices?tw(x.body.devices===1?'dev.outOne':'dev.outMany',{n:x.body.devices}):tw('dev.outNone'),bad:false}
@@ -3272,7 +3275,7 @@ const CLIENT_JS = `
       if(pmine){
         var pr=devQuiet(tw('dev.pkRemove')), parmed=null;
         pr.addEventListener('click', function(){
-          if(!parmed){ pr.textContent=tw('dev.pkAgain'); parmed=setTimeout(function(){ parmed=null; pr.textContent=tw('dev.pkRemove'); }, 4000); return; }
+          if(!parmed){ devSet(pr,tw('dev.pkAgain')); parmed=setTimeout(function(){ parmed=null; devSet(pr,tw('dev.pkRemove')); }, 4000); return; }
           clearTimeout(parmed); parmed=null; pr.disabled=true; pkRemove();
         });
         acts.appendChild(pr);
@@ -3498,12 +3501,12 @@ const CLIENT_JS = `
   /* 11 Oct 2026 (Phase 7d part 2, his yes): SIGN OUT IS A TAP AND A TAP AGAIN, on the one control and never the browser's confirm. The
      first tap arms it and says so in its own words; a second inside LOCK_MS signs out exactly as it did (logOut); left alone the
      arm lets go by itself and the words come back. His own way back to his list, which shares the id on his page, is a plain tap. */
-  var LOCK_MS=4000, lockEl=document.getElementById('lock'), lockArm=null;
-  function lockRest(){ if(lockArm){ clearTimeout(lockArm); lockArm=null; } if(!OWNER) setW(lockEl,'dev.out'); }
+  var LOCK_MS=4000, lockEl=document.getElementById('lock'), lockLbl=document.getElementById('lockT'), lockArm=null;
+  function lockRest(){ if(lockArm){ clearTimeout(lockArm); lockArm=null; } if(!OWNER) setW(lockLbl,'dev.out'); }
   lockEl.addEventListener('click', function(){
     if(OWNER){ logOut(); return; }
     if(lockArm){ lockRest(); logOut(); return; }
-    setW(lockEl,'dev.outAsk'); lockArm=setTimeout(lockRest, LOCK_MS);
+    setW(lockLbl,'dev.outAsk'); lockArm=setTimeout(lockRest, LOCK_MS);
   });
   /* S1 1.5, 24 SEP 2026: A LAPSED SESSION SAYS SO AT ONCE, IN VIEW, where the fifteen minutes had run out in
      silence. S3 3.5, HIS D1 OF 24 SEP 2026: IT REOPENS ITSELF FROM THE REMEMBERED PHONE. api() asks the phone's own
@@ -3708,8 +3711,7 @@ const CLIENT_JS = `
       ls[j].style.display=gone?'none':'';
       if(hd&&hd.tagName==='H3') hd.style.display=gone?'none':'';
     }
-    var bs=mfil.querySelectorAll('button');
-    for(var k=0;k<bs.length;k++){ var on=bs[k].getAttribute('data-mf')===(mfPick||''); bs[k].className='salt-tabs__pill'+(on?' salt-tabs__pill--active':''); bs[k].setAttribute('aria-pressed',on?'true':'false'); }
+    var msel=mfil.querySelector('select'); if(msel) msel.value=mfPick||'';
     mfnote.textContent=mfPick?tw('acct.showing',{m:Dd(monthLabel,mfPick)}):tw('acct.all');
   }
   function drawMonths(){
@@ -3722,14 +3724,15 @@ const CLIENT_JS = `
     months.sort().reverse();
     mfPick=null;   /* v769: the whole account, and a month is one tap */
     if(months.length<2){ mfil.hidden=true; mfnote.textContent=''; return; }
-    var oneYear=Object.keys(years).length<2;
+    /* 28 Oct 2026 (his yes to the statement in the language): four or more choices are a select in a settings row, All first */
+    var mrow=el('label','salt-settings__row'), msel=document.createElement('select');
+    mrow.appendChild(el('span','salt-settings__label',tw('acct.month')));
+    msel.className='fld salt-field__input'; msel.setAttribute('data-mf-select','');
     [''].concat(months).forEach(function(m){
-      var b=document.createElement('button'); b.type='button'; b.setAttribute('data-mf',m);
-      b.textContent=m?mon3()[+m.slice(5,7)-1]+(oneYear?'':' '+m.slice(0,4)):tw('acct.allPill');
-      if(m) b.setAttribute('aria-label',monthLabel(m));
-      b.addEventListener('click', function(){ mfPick=m||null; applyMonths(); });
-      mfil.appendChild(b);
+      var o=document.createElement('option'); o.value=m; o.textContent=m?monthLabel(m):tw('acct.allPill'); msel.appendChild(o);
     });
+    msel.addEventListener('change', function(){ mfPick=msel.value||null; applyMonths(); });
+    mrow.appendChild(msel); mfil.appendChild(mrow);
     /* beside the list it filters, not above the document's heading */
     var first=out.querySelector('[data-m]'), list=first&&first.closest('.salt-lines, .tblw, table');
     /* above the heading of a list that has one (C9: an account whose first dated rows are its refunds) */

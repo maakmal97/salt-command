@@ -8,8 +8,8 @@ export function statementWriteoffChecks(ok) {
   const now = new Date("2026-10-03T00:00:00Z");
   const base = { rid: "fixture", customer: "AA1-AAA", date: "2026-10-01",
     qty: 2, total: 120, deliveredQty: 2, defaulted: true };
-  const footer = doc => Object.fromEntries([...doc.body.slice(doc.body.indexOf('<div class="tot">'))
-    .matchAll(/<div class="tr(?: [a-z ]+)?"><span>([^<]*)<\/span><span>([^<]*)<\/span><\/div>/g)]
+  const footer = doc => Object.fromEntries([...doc.body.slice(doc.body.indexOf('<div class="tot'))
+    .matchAll(/<div class="tr[^"]*"><span[^>]*>([^<]*)<\/span><span[^>]*>([^<]*)<\/span><\/div>/g)]
     .map(m => [m[1], m[2] === "nil" ? 0 : +m[2].replace(/RM |,/g, "")]));
   for (const [name, patch] of [
     ["unpaid", {}],

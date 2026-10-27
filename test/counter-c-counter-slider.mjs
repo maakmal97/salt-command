@@ -41,7 +41,7 @@ export async function run({ ok, pageWork }) {
     ok(A.d.documentElement.getAttribute("data-theme") === "night" && tide.getAttribute("aria-checked") === "false", "and a forced tap on Tide moves nothing");
     /* 26 Oct 2026, his word: the customer's This device is a list of settings too; a browser that cannot take notifications says Not here in
        its row and why on the one line under the list */
-    const devList = A.d.querySelector("#thisDevice .salt-settings"), devLabels = devList ? [...devList.querySelectorAll(".salt-settings__label")].map((n) => n.textContent) : [];
+    const devList = A.d.querySelector("#thisDevice .salt-settings"), devLabels = devList ? [...devList.querySelectorAll(".salt-settings__label")].filter((n) => n.id !== "lockT").map((n) => n.textContent) : [];
     const pushRow = devList && [...devList.querySelectorAll(".salt-settings__row")].find((r) => r.querySelector(".salt-settings__label").textContent === "Notifications");
     ok(!!devList && J(devLabels) === J(["Notifications", "Tide theme"]) && !!pushRow && (pushRow.querySelector(".salt-settings__value") || {}).textContent === "Not here"
       && /cannot receive notifications/.test(A.d.getElementById("devNote").textContent),
@@ -55,7 +55,7 @@ export async function run({ ok, pageWork }) {
     const r2 = seg(row()), sel = [...row().querySelectorAll("button")].map((b) => b.getAttribute("aria-selected") === "true" ? 1 : 0).join("");
     ok(r2.i === "2" && r2.on === "0010" && sel === "0010", "a tap on To pay moves the thumb, the active mark and aria-selected together: " + J([r2, sel]));
     const mf = A.d.getElementById("mfil");
-    ok(mf && mf.classList.contains("salt-tabs") && !mf.classList.contains("salt-segment"), "the months stay a strip of pills");
+    ok(mf && mf.classList.contains("salt-settings") && !mf.classList.contains("salt-segment") && !mf.classList.contains("salt-tabs"), "the months are a select in a settings row (28 Oct 2026), never a strip of pills");
 
     /* ---- 4 and 5: Salt Admin ---- */
     const errs = [], vc = new VirtualConsole(); vc.on("jsdomError", (e) => errs.push(String(e.message || e)));

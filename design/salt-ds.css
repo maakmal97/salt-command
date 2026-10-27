@@ -1131,6 +1131,20 @@ label.salt-field__label {
   text-decoration: line-through;
   text-decoration-thickness: 1px;
 }
+/* Lines as a list (1.21.0, 28 Oct 2026, his word on the Counter's statement: "like settings on an iPhone"): the same cells on glass in the
+   settings list's frame, 56px rows with a hairline between, the date in the display face at the list's reading size like a row's name.
+   The stacked and table layouts, the container query and the cancelled strike are the recipe's own. */
+.salt-lines--list {
+  box-sizing: border-box;
+  padding: 0 16px;
+  border-radius: var(--salt-radius-lg);
+  background: var(--salt-glass);
+  border: 1px solid var(--salt-line-faint);
+}
+.salt-lines--list .salt-lines__row { min-height: 56px; padding: 10px 0; border-bottom: 0; border-top: 1px solid var(--salt-line-faint); }
+.salt-lines--list .salt-lines__row:first-child,
+.salt-lines--list .salt-lines__head + .salt-lines__row { border-top: 0; }
+.salt-lines--list .salt-lines__date { font-family: var(--salt-font-display); font-size: var(--salt-text-lg); color: var(--salt-salt); }
 @container salt-lines (min-width: 37.5rem) {
   .salt-lines__head,
   .salt-lines__row {

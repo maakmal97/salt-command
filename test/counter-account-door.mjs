@@ -129,6 +129,11 @@ export async function run({ ok }) {
       "the Look is one switch, Sign out keeps its words, and the install guide's heading is the card's third level, so Account carries no second page heading of its own: "
       + JSON.stringify({ lock: t(d.getElementById("lock")), keep: d.getElementById("keepHead").tagName }));
 
+    /* 28 Oct 2026 (his yes, the statement in the language): Sign out is the last row of This device's list, in ember, never a ghost */
+    ok(d.getElementById("lock").classList.contains("salt-settings__row--danger") && !d.getElementById("lock").classList.contains("salt-ghost")
+      && d.getElementById("lock").parentNode.classList.contains("devlist") && d.getElementById("lock") === d.querySelector("#thisDevice .devlist").lastElementChild,
+      "Sign out is the list's last row, in ember, and no ghost button");
+
     /* ---- 3: Sign out, a tap and a tap again */
     const lock = d.getElementById("lock"), asked = W.fill(W.EN["dev.outAsk"], { dev: "computer" }, "en");
     lock.click();

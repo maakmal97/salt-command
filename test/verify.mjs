@@ -10405,7 +10405,7 @@ await (async () => {
     const now = new Date("2026-09-03T06:20:00Z");
     const lv = liveStatement(both.who, now, u);
     ok(lv && lv.at === now.toISOString() && /Live statement/.test(lv.body) && /as at 03 Sep 2026 14:20/.test(lv.body)
-      && /every entry from the beginning to today/.test(lv.body) && !/class="qrb"/.test(lv.body) && !/>Issued /.test(lv.body),
+      && /Live statement (&middot;|·) as at/.test(lv.body) && !/class="qrb"/.test(lv.body) && !/>Issued /.test(lv.body),
       "a live statement says it is one, to the minute in Kuala Lumpur time, covers everything, and carries no QR");
     ok(!lv.body.includes('class="who"') && !lv.body.includes(u) && !lv.body.includes(both.who),
       "and it names the account no second time, the Counter's header carrying the username, and never the desk's code (S1 1.33, C2)");
@@ -18191,7 +18191,7 @@ await (async () => {
     const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
     const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
     const cust = await (await site("/")).text();
-    ok(!/Viewing as|Back to accounts|id="vas"/.test(cust) && /id="lock" aria-live="polite" data-w="dev.out">Sign out of this </.test(cust), "the customer's page carries no banner, and its one Log out is This device's Sign out");
+    ok(!/Viewing as|Back to accounts|id="vas"/.test(cust) && /id="lock" aria-live="polite"><span class="salt-settings__label" id="lockT" data-w="dev.out">Sign out this </.test(cust), "the customer's page carries no banner, and its one Log out is This device's Sign out");
     win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
       try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
       w.fetch = async (q, o) => { o = o || {}; hits.push((o.method || "GET") + " " + String(q));
@@ -21366,7 +21366,7 @@ await (async () => {
     const d = M.liveStatement(p, at, "abcd-efgh");
     if (!d || !/salt-lines__row|<tr/.test(d.body)) continue;
     docs++;
-    if (!/<div class="salt-lines" role="table" aria-label="Your orders">/.test(d.body) || /<th class="l">Date<\/th><th>Quantity<\/th>/.test(d.body)) tabled++;
+    if (!/<div class="salt-lines salt-lines--list" role="table" aria-label="Your orders">/.test(d.body) || /<th class="l">Date<\/th><th>Quantity<\/th>/.test(d.body)) tabled++;
     const rows = [...d.body.split('aria-label="Refunds"')[0].matchAll(/<div class="salt-lines__row[^"]*" role="row"( data-m="\d{4}-\d{2}")?><div class="salt-lines__date" role="cell">(\d\d [A-Z][a-z]{2} \d{4})?/g)];
     untagged += rows.filter((m) => !!m[2] !== !!m[1]).length;
     /* F8 (his answer of 28 Sep 2026, "It will be rendered cards in the statement"): the line's size is a card, its size
@@ -21434,21 +21434,22 @@ await (async () => {
   try {
     ok(await signIn(), "the account opens on the live statement's lines");
     const strip = D.getElementById("mfil"), note = D.getElementById("mfnote"), list = D.querySelector("#out .salt-lines");
-    const pills = [...strip.querySelectorAll("button")];
+    const mopts = [...strip.querySelectorAll("select option")], msel = strip.querySelector("select");
+    const pickM = (v) => { msel.value = v; msel.dispatchEvent(new W.Event("change", { bubbles: true })); };
     const shown = () => [...D.querySelectorAll("#out .salt-lines__row[data-m]")].filter((r) => r.style.display !== "none").map((r) => r.getAttribute("data-m"));
     const months = [...new Set(shown())];
-    ok(!strip.hidden && pills[0].textContent === "All" && pills[0].getAttribute("aria-pressed") === "true" && pills.length === months.length + 1
+    ok(!strip.hidden && mopts[0].textContent === "All" && msel.value === "" && mopts.length === months.length + 1
       && strip.nextElementSibling === note && note.nextElementSibling === list && !D.getElementById("mos"),
-      "one filter, All first and chosen, on the list it filters: " + JSON.stringify(pills.map((b) => b.textContent)));
-    pills[pills.length - 1].click();
-    const one = pills[pills.length - 1].getAttribute("data-mf");
-    ok(shown().length > 0 && shown().every((m) => m === one) && pills[pills.length - 1].getAttribute("aria-pressed") === "true",
+      "one filter, All first and chosen, on the list it filters: " + JSON.stringify(mopts.map((b) => b.textContent)));
+    const one = mopts[mopts.length - 1].value;
+    pickM(one);
+    ok(shown().length > 0 && shown().every((m) => m === one) && msel.value === one,
       "a month tapped shows that month's lines alone: " + JSON.stringify([one, shown()]));
     /* C9 (29 Sep 2026): the line under the filter names what it filters and what it leaves standing */
     const mfn = D.getElementById("mfnote").textContent;
     ok(/^Showing the orders and refunds of /.test(mfn) && /totals, what is still to collect and how it was worked out are the whole account/.test(mfn),
       "and the line under it names what the month filters and what stays the whole account's (C9): " + JSON.stringify(mfn));
-    pills[0].click();
+    pickM("");
     ok(new Set(shown()).size === months.length, "and All brings every line back");
     /* C13 (his yes of 29 Sep 2026, option a): the issues sealed beside it are off the Counter, kept on disk and on Salt Admin */
     ok(!D.getElementById("stmtFoot") && !D.getElementById("stmtBack") && !/ISSUE|Earlier statements/.test(D.getElementById("pStmt").textContent),
@@ -21496,7 +21497,7 @@ await (async () => {
   for (const p of parties) {
     const d = M.liveStatement(p, at, "abcd-efgh");
     if (!d) continue; docs++;
-    const trs = [...d.body.slice(d.body.indexOf('<div class="tot">')).matchAll(/<div class="tr( [a-z ]+)?"><span>([\s\S]*?)<\/span><span>([^<]*)<\/span><\/div>/g)]
+    const trs = [...d.body.slice(d.body.indexOf('<div class="tot')).matchAll(/<div class="tr( [a-z_ -]+)?"><span(?: class="salt-settings__label")?>((?:(?!<\/div>)[\s\S])*?)<\/span><span(?: class="salt-settings__value")?>([^<]*)<\/span><\/div>/g)]
       .map((m) => [m[2].replace(/<[^>]+>/g, "").trim(), m[3]]);
     const sum = (re) => trs.filter((t) => re.test(t[0])).reduce((a, t) => a + num(t[1]), 0);
     const del = sum(/^Delivery$/); if (del > 0) withDel++;
@@ -21649,14 +21650,15 @@ await (async () => {
     st.open = [async () => answer(await sealLive(Object.assign({}, live, { body: body9 }), ck))];
     st.orders = [async () => js({ ok: true, orders: [] })];
     signIn();
-    ok(await until(() => D.querySelectorAll("#mfil button").length === 3), "the fixture: two months and All");
+    ok(await until(() => D.querySelectorAll("#mfil select option").length === 3), "the fixture: two months and All");
+    const pickM = (v) => { const sl = D.querySelector("#mfil select"); sl.value = v; sl.dispatchEvent(new W.Event("change", { bubbles: true })); };
     const refH = () => [...D.querySelectorAll("#out h3")].find((h) => h.textContent === "Refunds");
     const seen9 = (x) => !!x && x.style.display !== "none";
-    D.querySelector('#mfil button[data-mf="2026-09"]').click();
+    pickM("2026-09");
     const sep9 = [seen9(refH()), seen9(refH() && refH().nextElementSibling)];
-    D.querySelector('#mfil button[data-mf="2026-08"]').click();
+    pickM("2026-08");
     const aug9 = [seen9(refH()), seen9(refH() && refH().nextElementSibling)];
-    D.querySelector('#mfil button[data-mf=""]').click();
+    pickM("");
     ok(sep9.join() === "false,false" && aug9.join() === "true,true" && seen9(refH()),
       "a month with no refund hides Refunds, heading and list, and a month with one or All shows them (C9): " + JSON.stringify([sep9, aug9]));
   } finally { await new Promise((r) => setTimeout(r, 100)); try { W.close(); } catch (e) { /* best effort */ } }
@@ -21857,7 +21859,8 @@ await (async () => {
     D90.getElementById("f").dispatchEvent(new W90.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 60 && !D90.querySelector("#out tbody tr[data-m]"); i++) await new Promise((r) => setTimeout(r, 50));
     const strip = D90.getElementById("mfil"), note = D90.getElementById("mfnote");
-    const pills = [...strip.querySelectorAll("button")].map((b) => b.textContent);
+    const pills = [...strip.querySelectorAll("select option")].map((b) => b.textContent);
+    const pick90 = (v) => { const sl = strip.querySelector("select"); sl.value = v; sl.dispatchEvent(new W90.Event("change", { bubbles: true })); };
     const newest = [...new Set(tagged)].sort().reverse()[0];
     const shown = () => [...D90.querySelectorAll("#out tbody tr[data-m]")].filter((r) => r.style.display !== "none").map((r) => r.getAttribute("data-m"));
     /* v769, his instruction of 21 Sep 2026: IT OPENS ON THE WHOLE ACCOUNT. v690 opened on the
@@ -21865,7 +21868,7 @@ await (async () => {
        statements any more, just one live document, so a month is a filter a reader chooses and never
        where they land. `newest` is still read, to prove the opening view is NOT it. */
     /* S7 7.3: ONE filter, All FIRST, then the months newest first */
-    const months90 = [...strip.querySelectorAll("button")].map((b) => b.getAttribute("data-mf"));
+    const months90 = [...strip.querySelectorAll("select option")].map((b) => b.value);
     ok(!strip.hidden && pills.length === new Set(tagged).size + 1 && pills[0] === "All"
       && months90.slice(1).join() === [...new Set(tagged)].sort().reverse().join()
       && shown().length === tagged.length && new Set(shown()).size > 1
@@ -21873,16 +21876,16 @@ await (async () => {
       "the strip is All first, then the months the account has, newest first, and it opens on the whole account: " + pills.join(", "));
     const older = [...new Set(tagged)].sort()[0];
     ok(older !== newest, "the fixture has two months, so opening on everything is not opening on one");
-    strip.querySelector('button[data-mf="' + older + '"]').dispatchEvent(new W90.Event("click", { bubbles: true }));
+    pick90(older);
     ok(new Set(shown()).size === 1 && shown()[0] === older && shown().length === tagged.filter((m) => m === older).length
       && /Showing /.test(note.textContent),
       "and a month is still one tap, showing that month's rows and no others");
-    strip.querySelector('button[data-mf=""]').dispatchEvent(new W90.Event("click", { bubbles: true }));
+    pick90("");
     ok(shown().length === tagged.length && /every order from the start/.test(note.textContent),
       "and All brings the whole account back");
     /* the filter hides rows and nothing else: what the account stands at is the account's */
     const footBefore = (D90.querySelector("#out") || {}).textContent || "";
-    strip.querySelector('button[data-mf=""]').dispatchEvent(new W90.Event("click", { bubbles: true }));
+    pick90("");
     ok(((D90.querySelector("#out") || {}).textContent || "").length === footBefore.length,
       "and filtering changes no text in the document, only which rows are on screen");
   } finally { try { W90.close(); } catch (e) { /* best effort */ } }
@@ -22966,7 +22969,7 @@ await (async () => {
   const { landingPage: lp92 } = await import("../stmt/page.js");
   const C92 = await import("../tools/stmt-crypto.mjs");
   const door92 = lp92("", "n92", null);
-  ok(door92.includes("Keep me signed in on this") && door92.includes('type="submit" data-w="door.go">Sign in</button>') && door92.includes('id="lock" aria-live="polite" data-w="dev.out">Sign out of this ')
+  ok(door92.includes("Keep me signed in on this") && door92.includes('type="submit" data-w="door.go">Sign in</button>') && door92.includes('id="lock" aria-live="polite"><span class="salt-settings__label" id="lockT" data-w="dev.out">Sign out this ')
     && !door92.includes("three minutes") && !door92.includes("Locks in") && !/WINDOW_MS/.test(door92),
     "the door offers to keep them signed in, signs in and logs out, and nothing counts down (v692; S3 3.7's words)");
 
@@ -40063,7 +40066,7 @@ await (async () => {
     ok([...D.querySelectorAll('#tabs [data-n="order"]')].map((c) => c.textContent).join(",") === "3,3" && !D.querySelector('#tabs [data-n="home"]').textContent,
       "the Orders place counts the three orders that need them, as a numeral on the bar and the rail");
     ok(D.getElementById("tCard").hidden && D.querySelector('nav.salt-appbar button[data-t="card"]').hidden
-      && D.querySelector("#pStmt #thisDevice #lock") && /^Sign out of this /.test(D.getElementById("lock").textContent) && !D.querySelector("#barw #lock"),
+      && D.querySelector("#pStmt #thisDevice #lock") && /^Sign out this /.test(D.getElementById("lock").textContent) && !D.querySelector("#barw #lock"),
       "Rewards is not offered to a customer, and Log out is This device's, on Account, not the bar's");
     D.querySelector('nav.salt-appbar button[data-t="order"]').click();
     ok(shown(D) === "pOrder" && current(D) === "bar:order,rail:order" && head() === "Orders" && W.location.hash === "#orders",
@@ -41606,17 +41609,17 @@ await (async () => {
     for (let i = 0; i < 60 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 50));
     d.getElementById("oNew").click();
     /* S4 4.3: the way is chosen in the order sheet, by the system's pressed ghost */
-    /* S7 7.3: the month filter is the system's tab strip, the chosen pill read off aria-pressed */
-    const chosen = [d.querySelector('#mfil button[aria-pressed="true"]'), [...d.querySelectorAll('#osheet button[aria-pressed="true"]')].find((b) => /collect|Deliver/.test(b.textContent))];
+    /* S7 7.3: the month filter was the system's tab strip; since 28 Oct 2026 it is a select in a settings row, the chosen month its selected option */
+    const chosen = [d.querySelector("#mfil select"), [...d.querySelectorAll('#osheet button[aria-pressed="true"]')].find((b) => /collect|Deliver/.test(b.textContent))];
     const look = chosen.map((b) => { const c = b && w.getComputedStyle(b);
       return c ? { fill: [c.background, c.backgroundColor, c.backgroundImage].join(" "), ink: c.color } : null; });
-    ok(chosen.every(Boolean) && chosen[0].textContent === "All" && chosen[1].textContent === "I will collect",
+    ok(chosen.every(Boolean) && chosen[0].selectedOptions[0].textContent === "All" && chosen[1].textContent === "I will collect",
       "the fixture draws a chosen month (All) and a chosen way (I will collect) to measure");
     ok(look.every((x) => x && !/brass/.test(x.fill)), "neither chosen control is filled brass: " + JSON.stringify(look.map((x) => x && x.fill)));
     /* the hairline itself is the rig's to see: jsdom reads a border drawn in a token as transparent */
-    ok(look[0] && /--salt-salt/.test(look[0].ink) && chosen[0].classList.contains("salt-tabs__pill--active")
+    ok(look[0] && chosen[0].classList.contains("salt-field__input") && chosen[0].closest(".salt-settings__row")
       && chosen[1].classList.contains("salt-ghost") && chosen[1].getAttribute("aria-pressed") === "true",
-      "and each is still told apart: the month as the system's tab pill, active, the way as the system's ghost, pressed: " + JSON.stringify(look.map((x) => x && x.ink)));
+      "and each is still told apart: the month as the system's field in a settings row, the way as the system's ghost, pressed: " + JSON.stringify(look.map((x) => x && x.ink)));
   } finally { w.close(); }
 })();
 
@@ -43462,7 +43465,7 @@ await (async () => {
   const who = many[0];
   const b = bodyOf(who), t = text(b);
   /* the footer's first line, the orders and their quantities (F8, Step 1a.2: a card a book, no comma after the count) */
-  const totLine = (h) => { const i = h.indexOf('<div class="tot">'); return i < 0 ? "" : h.slice(i, h.indexOf("</div>", i + 17)); };
+  const totLine = (h) => { const i = h.indexOf('<div class="tot'); if (i < 0) return ""; const e = h.indexOf('<div class="tr big', i); return h.slice(i, e > 0 ? e : h.indexOf("</div>", i + 17)); };   /* 28 Oct 2026: the live footer is a settings list, its orders and its marks two rows, read up to the balance */
   const foot = text(totLine(b));
 
   /* the footer keeps them apart: one figure a book, and their sum is NOT printed. A figure is read whole, so 5 unit is not

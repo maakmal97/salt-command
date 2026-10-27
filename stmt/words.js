@@ -250,7 +250,7 @@ export const EN = {
   "look.tide": "Tide",
   "look.switch": "Tide theme",
   "look.note": "You can change this under Account.",
-  "dev.out": "Sign out of this {dev}",
+  "dev.out": "Sign out this {dev}",
   "dev.outAsk": "Tap again to sign out of this {dev}",
   "dev.another": "Sign in another device",
   "dev.scan": "On the other device, scan this with its camera to open Salt Counter, then type the code where it asks for one.",
@@ -261,6 +261,7 @@ export const EN = {
   "pay.h": "Pay",
   /* ---- ACCOUNT ---- */
   "acct.months": "Show one month",
+  "acct.month": "Month",
   /* ---- A GUEST'S BOARD AND A SHUT LINK (no script: English, from here) ---- */
   "board.h": "Price list",
   "board.week": "For the week of {w}.",
