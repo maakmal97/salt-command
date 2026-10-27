@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1274",
+  "d": "27 Oct 2026",
+  "t": "FULFILMENT OF 5 UNITS OF SALT TO CZ4-MK ON S296, NO CASH",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED.</b> The row hands over the 5 units of salt on order s296 for CZ4-MK on 27 Oct 2026, with RM0 cash taken. The RM455 goods total stays open, so this is a handover on credit. Nothing was flagged by the drafter.",
+   "<b>INVENTORY.</b> Salt falls by 5 units on the move, leaving 6.5 units against a reorder point of 33.25. The cost basis is unchanged."
+  ]
+ },
+ {
   "v": "v1273",
   "d": "27 Oct 2026",
   "t": "PENDING SALE S298 CANCELLED, NO STOCK MOVED",
