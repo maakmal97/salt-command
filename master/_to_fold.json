@@ -1,0 +1,120 @@
+{
+ "ok": true,
+ "count": 3,
+ "approved": [
+  {
+   "id": "2026-10-27T00:08:34.334Z",
+   "status": "approved",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CZ4-MK": {
+      "candy": -0.25
+     }
+    },
+    "unit": "pct"
+   },
+   "reasoning": "Sets their % for 1 customer: CZ4-MK Candy 25% off. It moves no cash and no stock; a % lift moves that customer's own price and never the board.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-27T00:08:34.334Z",
+    "type": "TIER",
+    "party": "CZ4-MK",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CZ4-MK: candy -25% lift",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CZ4-MK": {
+       "candy": -0.25
+      }
+     },
+     "unit": "pct"
+    },
+    "makerRequest": "f941c71cd0cd4223e0858820583153cfc606419751c9a3cc17ef7e14de191fe9"
+   },
+   "decidedAt": "2026-10-27T00:09:29.138Z",
+   "decidedBy": "Counter Admin"
+  },
+  {
+   "id": "2026-10-27T00:08:42.028Z",
+   "status": "approved",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CZ4-MK": {
+      "oil": -0.1
+     }
+    },
+    "unit": "pct"
+   },
+   "reasoning": "Sets their % for 1 customer: CZ4-MK Oil 10% off. It moves no cash and no stock; a % lift moves that customer's own price and never the board.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-27T00:08:42.028Z",
+    "type": "TIER",
+    "party": "CZ4-MK",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CZ4-MK: oil -10% lift",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CZ4-MK": {
+       "oil": -0.1
+      }
+     },
+     "unit": "pct"
+    },
+    "makerRequest": "3ce052bd728fa17ab195566e3c223197e5b5c7f60b4b0b997a0088ce4eb0998e"
+   },
+   "decidedAt": "2026-10-27T00:09:29.194Z",
+   "decidedBy": "Counter Admin"
+  },
+  {
+   "id": "2026-10-27T00:08:48.351Z",
+   "status": "approved",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CZ4-MK": {
+      "salt": -0.15
+     }
+    },
+    "unit": "pct"
+   },
+   "reasoning": "Sets their % for 1 customer: CZ4-MK Salt 15% off. It moves no cash and no stock; a % lift moves that customer's own price and never the board.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-27T00:08:48.351Z",
+    "type": "TIER",
+    "party": "CZ4-MK",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CZ4-MK: salt -15% lift",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CZ4-MK": {
+       "salt": -0.15
+      }
+     },
+     "unit": "pct"
+    },
+    "makerRequest": "8a33da86d39a2e1dfb1334f776f39e8f802b313e1049bd4dbac2cee665e1fd88"
+   },
+   "decidedAt": "2026-10-27T00:09:29.263Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
