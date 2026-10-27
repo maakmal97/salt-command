@@ -2,7 +2,7 @@
   {
     "name": "pending rows replace approved uncommitted drafts",
     "file": "tools/drafts.mjs",
-    "find": "WHERE d.status='approved' AND d.committed_at IS NULL ORDER BY d.drafted_at",
-    "replace": "WHERE d.status='pending' AND d.committed_at IS NULL ORDER BY d.drafted_at"
+    "find": "WHERE d.status='approved' AND d.committed_at IS NULL ORDER BY (json_extract",
+    "replace": "WHERE d.status='pending' AND d.committed_at IS NULL ORDER BY (json_extract"
   }
 ]

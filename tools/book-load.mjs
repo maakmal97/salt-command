@@ -96,13 +96,15 @@ export function line(r, par) {
   const head = `Book loaded: ${r.rows} rows and ${r.docs} documents; ${r.added} booked, ${r.revised} revised, ${r.gone} gone, ${r.returned} returned, digest ${String(r.digest).slice(0, 12)}`;
   /* S2c: the live Book's exact bookmark after this load, so a restore by hand (docs/DESK.md) lands on a fold and not near one */
   const at = typeof r.bookmark === "string" && /^[0-9a-zA-Z-]{16,128}$/.test(r.bookmark) ? "; restore point " + r.bookmark : "";
-  if (!par) return head + "; parity NOT CHECKED: the Book answered no read-back" + at;
+  /* S4a: the entries a tap booked and this load closed: how many, how many stay open, and by NAME any the fold booked differently or the new base could not take (none until S4d) */
+  const tp = r.tap ? `; tap: ${r.tap.folded} closed, ${r.tap.open} open` + ((r.tap.differ || []).length ? ", FOLD BOOKED DIFFERENTLY: " + r.tap.differ.join(", ") : "") + ((r.tap.stuck || []).length ? ", STUCK: " + r.tap.stuck.join(", ") : "") : "";
+  if (!par) return head + "; parity NOT CHECKED: the Book answered no read-back" + tp + at;
   return (par.ok ? head + `; parity: the Book agrees with git over ${par.rows} rows in ${par.colls} collections and ${par.docs} documents`
-    : head + "; parity FAILED: " + par.differ.join(", ")) + at;
+    : head + "; parity FAILED: " + par.differ.join(", ")) + tp + at;
 }
 
 /* the step's verdict: green only on a load whose read-back agrees */
-export const passed = (r, par) => !!(r.ok && par && par.ok);
+export const passed = (r, par) => !!(r.ok && par && par.ok && !(r.tap && ((r.tap.differ || []).length || (r.tap.stuck || []).length)));
 
 /* post with up to `tries` attempts on a network fault or a 5xx; a 4xx is the route's answer and is not retried */
 export async function post(base, body, env, { tries = 3, wait = 2000, fetchImpl = fetch } = {}) {

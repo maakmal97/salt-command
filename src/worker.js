@@ -230,6 +230,10 @@ async function handleBookReadcheck(request, env, m) {
   try {
     const mirror = await withRefunds(env.SALT_LEDGER, await readMirror(env.SALT_LEDGER)), res = await bookDirect(env.SALT_LEDGER);
     const r = compareReads(mirror, res);
+    /* S4c: an entry a tap booked that the Book's base can no longer take is left out of the view and counted as on its way; the readcheck names it so it is not quiet */
+    let stuck = [];
+    try { const a = await (await env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)).fetch(new Request("https://book/at"))).json(); stuck = a && Array.isArray(a.stuck) ? a.stuck : []; } catch (e) { stuck = []; }
+    r.differ = r.differ.concat(stuck.map((id) => "entry " + id + " (stuck: the base cannot take it)")); r.ok = r.ok && !stuck.length;
     return json({ ok: r.ok, differ: r.differ, rows: r.rows || 0, version: mirror.version, bookVersion: res ? res.v : null, mode: await readMode(env.SALT_LEDGER) });
   } catch (e) { return json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }, 500); }
 }
@@ -240,7 +244,23 @@ async function handleBookLoad(request, env, m) {
   if (!env.BOOK) return json({ ok: false, error: "the Book is not bound" }, 503);
   const text = await request.text();
   if (text.length > MAX_LOAD_BYTES) return json({ ok: false, error: "the load is too large" }, 413);
-  return env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)).fetch(new Request("https://book/load", { method: "POST", body: text }));
+  /* S4a: the Book keeps the entries a tap booked (none until S4d) beside its base. D1's committed_at is the word on which of them this load's fold took, so the Worker
+     names them to the Book as `folded`, and says whether the batch was nothing but entries (no other draft committed since the previous load), which is when the
+     tap check also compares the stock documents. A query that fails leaves both out: the Book still closes an entry whose rids the new base holds. */
+  const book = env.BOOK.get(env.BOOK.idFromName(BOOK_NAME));
+  let q = "";
+  try {
+    if (env.SALT_LEDGER) {
+      const ev = await (await book.fetch(new Request("https://book/events"))).json();
+      if (ev && ev.ok && Array.isArray(ev.ids) && ev.ids.length) {
+        const ph = ev.ids.map((_, i) => "?" + (i + 1)).join(",");
+        const done = await env.SALT_LEDGER.prepare("SELECT id FROM draft WHERE committed_at IS NOT NULL AND id IN (" + ph + ")").bind(...ev.ids).all();
+        const other = ev.at ? await env.SALT_LEDGER.prepare("SELECT COUNT(*) AS n FROM draft WHERE committed_at IS NOT NULL AND committed_at > ?1 AND id NOT IN (" + ev.ids.map((_, i) => "?" + (i + 2)).join(",") + ")").bind(ev.at, ...ev.ids).first() : null;
+        q = "?folded=" + encodeURIComponent(((done.results || []).map((r) => r.id)).join(",")) + (other && other.n === 0 ? "&pure=1" : "");
+      }
+    }
+  } catch (e) { q = ""; }
+  return book.fetch(new Request("https://book/load" + q, { method: "POST", body: text }));
 }
 
 /* 21 Oct 2026, Speed Wave 2 L1: THE DESK'S LIVE SOCKET. GET /live sits after the Access gate AND asks ownerAccess itself, whatever

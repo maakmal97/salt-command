@@ -10,10 +10,12 @@
 import POSITION_ENGINE from "./position.mjs";
 import PRICING_ENGINE from "./pricing.mjs";
 import PRICING_RULES from "./rules.mjs";
+import { nextRidReserving } from "./rid.mjs";
 import { verifiedVaultRegistration } from "../src/vault-pair.js";
-import { CORRECT_BOOL, CORRECT_DATE, CORRECT_NUM_NN, CORRECT_NUM_POS, CORRECT_TEXT } from "../src/drafter.js";
 
 const E = POSITION_ENGINE;
+/* S4a: from the position engine, where the drafter takes them from too, so this file no longer imports the drafter (which reaches the Book, which will import this) */
+const { CORRECT_BOOL, CORRECT_DATE, CORRECT_NUM_NN, CORRECT_NUM_POS, CORRECT_TEXT } = E;
 const r2 = (v) => +(+v).toFixed(2);
 /* which entry made each of a plan's moves (a WeakMap, so the plan's own text is unchanged) */
 const MOVE_OF = new WeakMap(), PLANNED = new WeakSet();
@@ -22,6 +24,8 @@ export const movesOf = (p, it) => {
   if (!PLANNED.has(p)) throw new Error("movesOf: not a plan built by planBatch");
   return p.moves.filter((m) => MOVE_OF.get(m) === it.id);
 };
+/* S4b (his answer of 27 Oct 2026): a row the tap booked keeps the DRAFTER's cost; the notes' cost, which the model returns at the fold, does not move it, as the 05 Oct 2026 rule already holds for a new sale */
+const isBooked = (src) => !!(src && src.row && src.row.booked_seq != null);
 function prodOf(row) { return (row && row.product) || "salt"; }
 
 /* The attribution rule lives in engine/position.mjs, because the desk, this fold and the
@@ -487,7 +491,7 @@ export function planBatch(book, staged, notes, ctx) {
      applied to, so the rule reads what the row will say when this item lands, not what it said before the batch. */
   const simSoFar = new Map();
   const simOf = (row) => simSoFar.has(row) ? simSoFar.get(row) : JSON.parse(JSON.stringify(row));
-  const reservedEntries = [];
+  const reservedEntries = [], bookedRids = new Set();
   const reservationState = book.REWARD ? book : { ...book, REWARD: ctx.reward };
   for (const it of rows) {
     const entry = { id: it.id, what: describe(it), does: [] };
@@ -507,6 +511,13 @@ export function planBatch(book, staged, notes, ctx) {
     const reservationFault = E.entryReservationFault(resourceEntry, reservedEntries,
       { state: reservationState, sales: book.sales || [], purchases: book.purchases || [] });
     if (reservationFault) { out.refused.push({ id: it.id, why: reservationFault }); continue; }
+    /* S4b: A ROW THE TAP BOOKED CARRIES THE RIDS IT MINTED (row.rids). A rid already on the book, or named twice in this batch, is a replay: the same wording as the
+       twin guard, so the replay check clears the handoff. The prefix names the list (s sales, p purchases, l loans). */
+    if (Array.isArray(r.rids) && r.rids.length) {
+      const held = r.rids.find((rid) => bookedRids.has(rid) || ["sales", "purchases", "loans"].some((c) => (book[c] || []).some((x) => x && x.rid === rid)));
+      if (held) { out.refused.push({ id: it.id, why: `would be a replay: the rid ${held} this row was booked under is already on the book or in this batch` }); continue; }
+      r.rids.forEach((rid) => bookedRids.add(rid));
+    }
     /* round six: the fold took row.product verbatim, so a row folded under an unregistered
        product shipped to the phone as a ledger line while every total excluded it. This is
        the third-product bootstrap path (the drafter refuses the first lot, so it is
@@ -1007,7 +1018,7 @@ function bookItem(book, it, c) {
         else if (prodOf(it.target) === "salt" && stockCost != null) it.target.cost = +(stockCost * it.target.qty).toFixed(2);
       }
       /* 05 Oct 2026: A COST THE CORRECTION SETS STANDS: the notes may not move it back to the shelf rate */
-      if (n.cost != null && !(it.pay && it.pay.fields && it.pay.fields.cost != null)) it.target.cost = +n.cost;
+      if (n.cost != null && !(it.pay && it.pay.fields && it.pay.fields.cost != null) && !isBooked(src)) it.target.cost = +n.cost;
       /* v496: the step was written inside applyAmend before either fill above, so a movement on a row the
          shelf costs, or one the notes recost, takes its cost here, from the order's unit cost as it now stands. */
       { const last = it.target.amend && it.target.amend[it.target.amend.length - 1];
@@ -1026,8 +1037,9 @@ function bookItem(book, it, c) {
       /* 05 OCT 2026: A NEW SALE KEEPS THE DRAFTER'S COST. The drafter costs a sale at COGS off the latest purchase on or
          before its date (v1009, cogsFor); the notes' cost moved the CE5-SA-R salt row of trip t1791145053619 back to the
          shelf's RM60 a unit from p035's RM64. A notes cost is taken only where the draft carried none, or on a lot. */
-      if (n.cost != null && !(it.append === "sales" && src.row.cost != null)) row.cost = +n.cost;
+      if (n.cost != null && !(it.append === "sales" && src.row.cost != null) && !isBooked(src)) row.cost = +n.cost;
       row.note = String(n.note).trim();
+      delete row.rids; delete row.booked_seq;   /* the tap's bookkeeping, not part of the row */
       /* EVERY ROW GETS AN ID ON THE WAY IN (25 Aug 2026). A row with no rid cannot be named by
          the editor, so a fold that appended one without would put a row on the book that could
          never be corrected. Minted by the same function tools/rid.mjs uses, so the two cannot
@@ -1048,6 +1060,7 @@ function bookItem(book, it, c) {
       book.NOTES = book.NOTES || {}; book.NOTES[key] = [sentence].concat(book.NOTES[key] || []);
     } else if (it.append === "selfUseLog" || it.append === "lostDemand" || it.append === "loans") {
       const row = { ...src.row }; if (n.note) row.note = String(n.note).trim();
+      delete row.rids; delete row.booked_seq;
       if (it.append === "loans" && !row.rid) row.rid = nextRid(book.loans || [], "l")(1);   // v595: a loan is named by its repayments
       book[it.append] = book[it.append] || []; book[it.append].push(row);
     } else if (it.repay) {
@@ -1100,7 +1113,10 @@ function bookItem(book, it, c) {
 export function applyEntry(book, it, ctx) {
   const src = ctx.staged.approved.find((x) => x.id === it.id), n = (ctx.notes.rows && ctx.notes.rows[it.id]) || {};
   const moves = [], renames = [], unitMoves = [];
-  const c = { src, n, notes: ctx.notes, stockCost: stockCostOf(book), nextRid: ctx.nextRid, moves, renames,
+  /* S4b: an entry the tap booked has its rids already (row.rids, in the order it minted them): the booking takes them in that order and mints only what it did not */
+  const forced = src && src.row && Array.isArray(src.row.rids) ? src.row.rids.slice() : null;
+  const nextRidFor = forced ? (rows, prefix) => { const f = ctx.nextRid(rows, prefix); return (n) => (forced.length ? forced.shift() : f(n)); } : ctx.nextRid;
+  const c = { src, n, notes: ctx.notes, stockCost: stockCostOf(book), nextRid: nextRidFor, moves, renames,
     reward: ctx.reward || null, today: ctx.today || null, pricing: ctx.pricing || null, entryMoves: ctx.moves || [] };
   bookItem(book, it, c);
   rewardFold(book, it, c, unitMoves);   /* 20 Oct 2026: the associate reward's unit, and its unit off the shelf with the handover */
@@ -1122,7 +1138,8 @@ export function applyEntry(book, it, ctx) {
    8.5); a rename applies where it stands, and an Add ID has booked before the trade that names it (the plan orders them). What is written once for the batch is the ROLLED
    sentence, the sum of every roll of a product, QUEUE_COMMITTED and the sort. */
 export function applyInto(book, p, staged, notes, ctx) {
-  const nextRid = ctx.nextRid, sortBook = ctx.sortBook;
+  /* S4b: the rids the batch's booked rows carry count as taken for every rid minted here */
+  const nextRid = nextRidReserving(ctx.nextRid, staged), sortBook = ctx.sortBook;
   const moves = [], rolls = [], entryMoves = [];
   let newest = book.QUEUE_COMMITTED || "";
   const folded = [], renames = [];

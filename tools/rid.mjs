@@ -31,25 +31,8 @@ const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BOOK = process.env.SALT_BOOK || resolve(REPO, "ledger", "book.json");
 const PREFIX = { sales: "s", purchases: "p" };
 
-/* Parsed rather than matched with a regex, deliberately. The first version built the pattern
-   with a template literal, where a lone backslash-d is just "d", so it read as ^s(d+)$ and
-   matched nothing: max stayed at zero and it handed out s001 every single time. It looked
-   right in a diff, and the FIRST assignment was correct by luck, because that one counts up
-   from zero anyway. The collision would only have shown up on the first fold after it, on a
-   real row. A parse has no escaping to get wrong.
-
-   Found by a test asserting a folded row gets an unused id, which is the only reason it was
-   not shipped: nothing else on this road would have noticed until two rows shared a name. */
-export function nextRid(rows, prefix) {
-  let max = 0;
-  for (const r of rows) {
-    if (!r || typeof r.rid !== "string" || !r.rid.startsWith(prefix)) continue;
-    const tail = r.rid.slice(prefix.length);
-    if (!tail.length || [...tail].some((c) => c < "0" || c > "9")) continue;
-    max = Math.max(max, Number(tail));
-  }
-  return (n) => `${prefix}${String(max + n).padStart(3, "0")}`;
-}
+export { nextRid } from "../engine/rid.mjs";
+import { nextRid } from "../engine/rid.mjs";
 
 /* The one place a rid is minted, so the fold and this tool cannot disagree about the shape. */
 export function assignRids(book) {
