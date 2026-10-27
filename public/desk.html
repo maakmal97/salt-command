@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="b2bb06c638b6f5df";
+var SALT_BUILD_ID="a72729bfc4fbcfa9";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -11246,7 +11246,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1265","d":"27 Oct 2026","t":"CZ4-MK GETS THEIR % SET FOR CANDY, OIL AND SALT","n":["<b>THREE THEIR % FIGURES SET FOR CZ4-MK, 27 OCT 2026.</b> Candy is set to 25% off, oil to 10% off and salt to 15% off, each approved by Counter Admin. They are price settings only: no cash, no goods and no board price moved, and the drafter raised no flag on any of them.","<b>INVENTORY UNCHANGED.</b> Salt stock stays at 6.5 units against a stock cost of RM56 and a replacement cost of RM58. The salt count of 24 Oct 2026 stands, and nothing is owed out or promised."]}];
+const evolution=[{"v":"v1266","d":"27 Oct 2026","t":"SALT ADMIN'S RECORD IN THE LANGUAGE OF THIS DEVICE","n":["<b>RECORD'S MENUS ARE SETTINGS LISTS, 27 OCT 2026.</b> Every form is a row with its name, a count where it has one, and a chevron, as on Shop's This device; Everyday, Now and then and Fixing are grey headings over their own lists. Three names are cut to three words: Reopen an order, Name or place, Map point. The lead line under Record's tabs is gone from view.","<b>EVERY FORM'S FIELDS ARE ROWS.</b> A field or a dropdown is a row, its name left and the field right; a choice of two or three short words is a Segment (Type, Handover, Loan of, Associate, Hide for). Names are three words at most: Handed over, Map link, Other %, On the shelf, Referred. On a sale, Add a book is an action row and Remove this book is red.","<b>DISPLAY ONLY.</b> No route, request body or control name changed, and nothing prices, books or folds differently. Desk reminders' Hide for still opens on 7 days, a check the older suite caught and now holds."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11394,7 +11394,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='27 Oct 2026, 08:10 KL';
+const LAST_UPDATED='27 Oct 2026, 08:25 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
