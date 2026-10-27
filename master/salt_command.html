@@ -11049,7 +11049,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1276","d":"27 Oct 2026","t":"FULFILMENT OF 10 UNITS OF OIL RE-BOOKED ON S297, CASH NIL","n":["<b>ONE ROW FOLDED.</b> A fulfilment on s297, CZ4-MK's order of 10 units of oil, goods RM120, agreed 27 Oct 2026 and approved by Counter Admin. It moves 10 units with cash 0. The master's amend step applies the row, so the fold does not recompute it. The drafter raised no flag.","<b>UNUSUAL.</b> The trail on s297 already holds an earlier fulfilment with RM120 cash and 10 units, followed by a correction that undid it. This one is the re-booking, with no cash. The oil stock falls by 10 units on 27 Oct, and RM120 stays owed."]}];
+const evolution=[{"v":"v1277","d":"27 Oct 2026","t":"AN ORDER OF SEVERAL BOOKS PAID PAST WHAT IT OWES; OTHER BOOKS FIRST, SALT LAST","n":["<b>A PAYMENT FOR AN ORDER OF SEVERAL BOOKS PAST WHAT IT OWES IS TAKEN (HIS WORD OF 27 OCT 2026).</b> Salt Admin's Money received split puts the excess on the last line, says it as a refund to them, and the fold raises it; refused only with nothing owed.","The split pays the other books first and salt last (his word), so the excess lands on salt.","A row's own payment past what it owes passes the same way while no money and no other move waits on it and the row owes something, priced and not a gift (Fable's review)."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11197,7 +11197,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='27 Oct 2026, 15:22 KL';
+const LAST_UPDATED='27 Oct 2026, 15:50 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
