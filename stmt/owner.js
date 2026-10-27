@@ -2334,6 +2334,7 @@ export const OWNER_JS = `
       try{
         if(pending){
           await send(pending.path,pending.body);
+          if(action.after) await action.after(send);   /* 27 Oct 2026 (Fable): an action of two entries sends its second after a retried first */
           var status=message();
           if(status)status.textContent='Sent. It waits under Approve.';
           await loadMaker();
@@ -3963,8 +3964,8 @@ export const OWNER_JS = `
          over the pricing snapshot), never worked out here. A price he types stands; clearing it brings theirs back. */
       function theirPrice(productCtl,qtyCtl,totalCtl){
         var own=false, ticket=0;
-        totalCtl.addEventListener('input',function(){ own=totalCtl.value!==''; if(!own) fill(); });
-        async function fill(){
+        totalCtl.addEventListener('input',function(){ own=totalCtl.value!==''; if(!own) fillPrice(); });
+        async function fillPrice(){
           var t=++ticket, who=tradeStream.value==='R2'?tradeAssoc.value:tradeParty.value;
           var auto=totalCtl.hasAttribute('data-their'), clear=function(){ if(auto){ totalCtl.value=''; totalCtl.removeAttribute('data-their'); totalCtl.dispatchEvent(new Event('change',{bubbles:true})); } };
           if(own) return;
@@ -3976,9 +3977,9 @@ export const OWNER_JS = `
           totalCtl.value=String(got.card.rm); totalCtl.setAttribute('data-their','');
           totalCtl.dispatchEvent(new Event('change',{bubbles:true}));
         }
-        [productCtl,qtyCtl,tradeParty,tradeStream,tradeAssoc,direction].forEach(function(c){ c.addEventListener('change',fill); });
-        tradeParty.addEventListener('input',fill);
-        return {fill:fill, mine:function(v){ own=!!v; if(v) totalCtl.removeAttribute('data-their'); }};
+        [productCtl,qtyCtl,tradeParty,tradeStream,tradeAssoc,direction].forEach(function(c){ c.addEventListener('change',fillPrice); });
+        tradeParty.addEventListener('input',fillPrice);
+        return {fill:fillPrice, mine:function(v){ own=!!v; if(v) totalCtl.removeAttribute('data-their'); }};
       }
       var tradePrice=theirPrice(tradeProduct,tradeQty,tradeTotal);
       async function readTrade(){
@@ -4120,7 +4121,9 @@ export const OWNER_JS = `
         }
         tradePending=false;
       }
-      var tradeSend=makerButton(tradeSection,['Record the sale','record.trade.send'],function(send){ return submitTrade(null,send); },true,function(){
+      var tradeAction=function(send){ return submitTrade(null,send); };
+      tradeAction.after=async function(send){ if(!editAfter) return; var b=editAfter; editAfter=null; await send('/all/maker/inputs/ledger-amend',b); };
+      var tradeSend=makerButton(tradeSection,['Record the sale','record.trade.send'],tradeAction,true,function(){
         tradeAt=null;tradeSignature='';coverChoices.forEach(function(choice){choice.read();});
       });
       direction.addEventListener('change',function(){ if(!tradeEditing) tradeSend.textContent='Record the '+direction.value; });
@@ -4128,7 +4131,7 @@ export const OWNER_JS = `
          on Orders > Ledger, or an owed card on Needs you, fills the form; Record the change sends what differs as one Correction and what was handed over
          or paid since as one Fulfilment, the two kinds Correct a row sent; Cancel this sale and Reopen are its own rows; History and Undo sit under it.
          A customer's site order still changes through its order (restate), as Correct a row's did. Nothing here prices or books: the drafter does. */
-      var tradeEditing=null, editPick=actOn(el('select','fld salt-field__input salt-field__select'),'record.trade.edit'), editHolder=el('div','maker-edit');
+      var tradeEditing=null, editAfter=null, editPick=actOn(el('select','fld salt-field__input salt-field__select'),'record.trade.edit'), editHolder=el('div','maker-edit');
       makerRow(editHolder,'Row',editPick); tradeSection.insertBefore(editHolder,direction.closest('.salt-settings'));
       var editMore=el('div','salt-settings maker-list maker-edit-more'), editHist=el('div','maker-fields maker-edit-hist');
       tradeSection.appendChild(editMore); tradeSection.appendChild(editHist);
@@ -4139,7 +4142,7 @@ export const OWNER_JS = `
       function fillEditPick(){
         var kept=tradeEditing?tradeEditing.rid:'';
         editPick.textContent=''; var none=el('option',null,'New'); none.value=''; editPick.appendChild(none);
-        editRows().forEach(function(r){ var o=el('option',null,r.rid+' · '+r.party+' · '+(fmtWhen(r.date)||'undated')+(r.cancelledRow?' · cancelled':'')); o.value=r.rid; editPick.appendChild(o); });
+        editRows().forEach(function(r){ var o=el('option',null,r.rid+' · '+r.party+' · '+(fmtWhen(r.date)||'undated')+(r.cancelledRow?' · cancelled':r.defaulted?' · defaulted':'')); o.value=r.rid; editPick.appendChild(o); });
         editPick.value=Array.from(editPick.options).some(function(o){ return o.value===kept; })?kept:'';
       }
       function tradeControls(){ return [tradeProduct,tradeParty,tradeDate,tradeQty,tradeTotal,carriage,handover,tradeMoved,tradeCash,tradeStream,tradeAssoc,tradeDown]; }
@@ -4148,6 +4151,7 @@ export const OWNER_JS = `
         direction.disabled=!!r; tripList.hidden=!!r; tripNote.hidden=!!r;
         coverChoices.forEach(function(c){ var row=c.check.closest('.maker-cover-row'); if(row) row.hidden=!!r; });
         tradeControls().forEach(function(c){ c.disabled=!!(r&&r.cancelledRow); });
+        if(r&&r.defaulted){ tradeMoved.disabled=true; tradeCash.disabled=true; }   /* a defaulted row takes a correction only, as Correct a row offered */
         tradeSend.textContent=!r?'Record the '+direction.value:r.cancelledRow?'Reopen this '+word:'Record the change';
         editMore.textContent=''; editHist.textContent='';
         if(!r) return;
@@ -4172,10 +4176,10 @@ export const OWNER_JS = `
         var r=editRows().find(function(x){ return x.rid===rid; }); if(!r) return false;
         extraTrades.slice().forEach(function(x){ coverChoices.splice(coverChoices.indexOf(x.cover),1); x.row.remove(); }); extraTrades.length=0;
         var sale=r.direction==='SELL', r2=sale&&r.stream==='R2';
-        tradeEditing=r; direction.value=sale?'sale':'purchase'; fillTradeChoices(); fillEditPick();
+        tradeEditing=r; editAfter=null; direction.value=sale?'sale':'purchase'; fillTradeChoices(); fillEditPick();
         tradeProduct.value=r.product||'salt';
         tradeStream.value=sale?(r.stream||''):''; fillAttribution();
-        if(sale&&r.stream) tradeAssoc.value=r.assoc||String(r.party).replace(/-R$/,'');
+        if(sale&&r.stream) tradeAssoc.value=r.assoc||'';
         if(r2) tradeDown.value=r.downstream||'';
         tradeParty.value=r2?'':r.party; tradeDate.value=r.date||''; makerWheelSet(tradeQty,r.qty);
         tradeTotal.value=String(+(+r.total||0).toFixed(2)); tradePrice.mine(true);
@@ -4185,7 +4189,7 @@ export const OWNER_JS = `
         editDraw(); readTrade(); return true;
       }
       function editClear(){
-        tradeEditing=null; fillEditPick();
+        tradeEditing=null; editAfter=null; fillEditPick();
         tradeParty.value=''; tradeDate.value=''; makerWheelSet(tradeQty,1); tradeTotal.value=''; tradePrice.mine(false);
         carriage.value='0'; handover.value=''; makerWheelSet(tradeMoved,0); tradeCash.value='0'; tradeStream.value=''; fillAttribution();
         tradeAt=null; tradeSignature=''; tradeAnswer.textContent=''; editDraw(); readTrade();
@@ -4213,7 +4217,7 @@ export const OWNER_JS = `
         if((handover.value||null)!==(r.handover||null)) f.handover=handover.value||null;
         if(sale){
           if((tradeStream.value||null)!==(r.stream||null)) f.stream=tradeStream.value||null;
-          var assocNow=tradeStream.value?tradeAssoc.value:null, assocWas=r.stream?(r.assoc||String(r.party).replace(/-R$/,'')):null;
+          var assocNow=tradeStream.value?tradeAssoc.value:null, assocWas=r.stream?(r.assoc||null):null;
           if(assocNow!==assocWas) f.assoc=assocNow;
           if(r2&&(tradeDown.value||null)!==(r.downstream||null)) f.downstream=tradeDown.value||null;
         }
@@ -4224,6 +4228,8 @@ export const OWNER_JS = `
         if(!Object.keys(f).length&&!moved) throw new Error('Nothing has changed.');
         tradeAnswer.textContent='Sending.';
         var said=[], at=Date.now();
+        /* the movement waits as editAfter while the change goes, so a retry of the change sends it too (tradeAction.after) */
+        editAfter=moved?{at:new Date(at+1).toISOString(),rid:r.rid,kind:'Fulfilment',date:tripToday(),cash:dCash,movedUnits:dUnits}:null;
         if(Object.keys(f).length){
           try{ await send('/all/maker/inputs/ledger-amend',{at:new Date(at).toISOString(),rid:r.rid,kind:'Correction',date:tripToday(),fields:f}); said.push('The change'); }
           catch(error){
@@ -4234,8 +4240,8 @@ export const OWNER_JS = `
             said.push('The change, as an amendment of their order,');
           }
         }
-        if(moved){
-          await send('/all/maker/inputs/ledger-amend',{at:new Date(at+1).toISOString(),rid:r.rid,kind:'Fulfilment',date:tripToday(),cash:dCash,movedUnits:dUnits});
+        if(editAfter){
+          var b=editAfter; editAfter=null; await send('/all/maker/inputs/ledger-amend',b);
           said.push(said.length?'and what moved':'What moved');
         }
         tradeAnswer.textContent=said.join(' ')+(said.length>1?' wait':' waits')+' under Approve.'; loadMaker();

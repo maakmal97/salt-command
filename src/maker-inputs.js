@@ -739,7 +739,7 @@ export function makerInputCatalog(book, hush = {}, pending = [], registrations =
           movedUnits, open,
           /* 27 Oct 2026: what the sale form shows beside them, so a row on the Ledger opens that form filled in */
           [sale ? "delivery" : "freight"]: +(+(sale ? row.delivery : row.freight) || 0).toFixed(2),
-          handover: row.handover || null, stream: row.stream || null, assoc: row.assoc || null, downstream: row.downstream || null,
+          handover: row.handover || null, ...(sale ? POSITION_ENGINE.attributionOf(row, "customer") : { stream: null, assoc: null, downstream: null }),
           ...(row.trip ? { trip: String(row.trip) } : {}),
           cancellation: open && !row.defaulted && movedUnits <= 0.009
             ? { pay: after.pay, deliv: after.deliv, order: after.order, refundRM: refund ? refund.amount : null } : null };
