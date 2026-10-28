@@ -1,0 +1,164 @@
+[
+ {
+  "name": "a readcheck needs no agreement",
+  "file": "tools/flip-gate.mjs",
+  "find": "ok: /agree over/.test(l) && !/DIFFER",
+  "replace": "ok: !/DIFFER"
+ },
+ {
+  "name": "a load with no tap line anywhere is clean",
+  "file": "tools/flip-gate.mjs",
+  "find": "!badLoads.length && withTap.length >= 1,",
+  "replace": "!badLoads.length,"
+ },
+ {
+  "name": "the gate opens before 4 Nov",
+  "file": "tools/flip-gate.mjs",
+  "find": "ev.now ? ev.now.slice(0, 10) >= cfg.earliest : null",
+  "replace": "true"
+ },
+ {
+  "name": "any number of taps is enough",
+  "file": "tools/flip-gate.mjs",
+  "find": "closed >= cfg.minTaps && k.newIds >= cfg.minNewIds",
+  "replace": "k.newIds >= cfg.minNewIds"
+ },
+ {
+  "name": "no new IDs are needed",
+  "file": "tools/flip-gate.mjs",
+  "find": "k.newIds >= cfg.minNewIds && k.trips >= 1",
+  "replace": "k.trips >= 1"
+ },
+ {
+  "name": "no trip is needed",
+  "file": "tools/flip-gate.mjs",
+  "find": "k.trips >= 1 && k.purchases >= 1 && k.received >= 1",
+  "replace": "k.purchases >= 1 && k.received >= 1"
+ },
+ {
+  "name": "no purchase lot is needed",
+  "file": "tools/flip-gate.mjs",
+  "find": "k.purchases >= 1 && k.received >= 1",
+  "replace": "k.received >= 1"
+ },
+ {
+  "name": "no Received is needed",
+  "file": "tools/flip-gate.mjs",
+  "find": "k.purchases >= 1 && k.received >= 1",
+  "replace": "k.purchases >= 1"
+ },
+ {
+  "name": "the net's left may be anything",
+  "file": "tools/flip-gate.mjs",
+  "find": "d.left === 0 && d.voidedNotRejected === 0",
+  "replace": "d.voidedNotRejected === 0"
+ },
+ {
+  "name": "a fallback is allowed",
+  "file": "tools/flip-gate.mjs",
+  "find": "d.fallbacks === 0, d ?",
+  "replace": "true, d ?"
+ },
+ {
+  "name": "a pricing difference is allowed",
+  "file": "tools/flip-gate.mjs",
+  "find": "!par.length ? null : !badPar.length,",
+  "replace": "!par.length ? null : true,"
+ },
+ {
+  "name": "an unattested backup is accepted",
+  "file": "tools/flip-gate.mjs",
+  "find": "!srcs.length || !ev.backupOpened ? null : !badSrc.length && !badExp.length",
+  "replace": "!srcs.length ? null : !badSrc.length && !badExp.length"
+ },
+ {
+  "name": "a hand approval is allowed",
+  "file": "tools/flip-gate.mjs",
+  "find": "d.laptopApprovals === 0 && d.foldedUnbooked === 0",
+  "replace": "d.foldedUnbooked === 0"
+ },
+ {
+  "name": "a fold handoff in HEAD is allowed",
+  "file": "tools/flip-gate.mjs",
+  "find": "p.source === \"d1\" && p.exportSteps && !p.handoff",
+  "replace": "p.source === \"d1\" && p.exportSteps"
+ },
+ {
+  "name": "an unverified line passes the gate",
+  "file": "tools/flip-gate.mjs",
+  "find": "ok: L.every((x) => x.ok === true)",
+  "replace": "ok: L.every((x) => x.ok !== false)"
+ },
+ {
+  "name": "the net is given no time",
+  "file": "tools/flip-gate.mjs",
+  "find": "'-10 minutes'",
+  "replace": "'-0 minutes'"
+ },
+ {
+  "name": "a run in progress is read",
+  "file": "tools/flip-gate.mjs",
+  "find": "x.status === \"completed\"",
+  "replace": "true"
+ },
+ {
+  "name": "a dry run writes",
+  "file": "tools/flip.mjs",
+  "find": "if (!opts.go) { out.ok = pre.ok; return out; }",
+  "replace": "if (!opts.go) { out.ok = pre.ok; }"
+ },
+ {
+  "name": "a bare flag is his go",
+  "file": "tools/flip.mjs",
+  "find": "opts.go.trim().length < 8) return { ...out,",
+  "replace": "opts.go.trim().length < 0) return { ...out,"
+ },
+ {
+  "name": "a precondition does not stop the flip",
+  "file": "tools/flip.mjs",
+  "find": "if (!pre.ok) return { ...out, error: \"a precondition",
+  "replace": "if (false) return { ...out, error: \"a precondition"
+ },
+ {
+  "name": "the way back is not written",
+  "file": "tools/flip.mjs",
+  "find": "try { io.writeFile(WAY_BACK, JSON.stringify(way, null, 1)); } catch (e) {",
+  "replace": "try { void 0; } catch (e) {"
+ },
+ {
+  "name": "the roster flag is set the wrong way",
+  "file": "tools/flip.mjs",
+  "find": "setFlag(io, \"book_roster\", \"on\")",
+  "replace": "setFlag(io, \"book_roster\", \"off\")"
+ },
+ {
+  "name": "an unset source flag is not noticed",
+  "file": "tools/flip.mjs",
+  "find": "if (r5.code !== 0 || flagOf(io, \"book_source\") !== \"book\") return stop(\"5\"",
+  "replace": "if (r5.code !== 0) return stop(\"5\""
+ },
+ {
+  "name": "a refused compaction is not noticed",
+  "file": "tools/flip.mjs",
+  "find": "if (r6.status !== 200 || !r6.body.ok) return stop(\"6\"",
+  "replace": "if (false) return stop(\"6\""
+ },
+ {
+  "name": "the way back moves flags before the export",
+  "file": "tools/flip.mjs",
+  "find": "if (!opts.exported) return {",
+  "replace": "if (false) return {"
+ },
+ {
+  "name": "the way back does not return the source",
+  "file": "tools/flip.mjs",
+  "find": "const s = setFlag(io, \"book_source\", \"d1\");",
+  "replace": "const s = setFlag(io, \"book_source\", \"book\");"
+ },
+ {
+  "name": "verify takes any readcheck",
+  "file": "tools/flip.mjs",
+  "find": "rc.status === 200 && rc.body.ok === true && rc.body.source === \"book\"",
+  "replace": "true"
+ }
+]

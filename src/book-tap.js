@@ -70,6 +70,14 @@ export function ridStmts(db, booked, fresh) {
     .bind(JSON.stringify(b.rids), b.seq, b.id));
 }
 
+/** S5f-7: AN APPROVAL THAT FELL BACK IS WRITTEN ON ITS DRAFT (`row.tap_fallback`: why and when), not only in a log nobody can read back: the flip's gate is ZERO of them over its window, and tools/flip-gate.mjs counts them
+    with one read of D1. Best effort and never throwing: the approval itself must not fail over its own record. The row may still be pending when this runs (the approval batch follows), so it takes either status. */
+export async function noteFallback(db, ids, why, at = new Date().toISOString()) {
+  try {
+    for (const id of ids) await db.prepare("UPDATE draft SET row=json_set(CASE WHEN json_valid(row) THEN row ELSE '{}' END,'$.tap_fallback',json(?1)) WHERE id=?2 AND status IN ('pending','approved')").bind(JSON.stringify({ why: String(why || "no reason").slice(0, 160), at }), id).run();
+  } catch (e) { /* the log line stands */ }
+}
+
 /** take back the open entries of these drafts. True when the Book answered (an object before S4a answers 404: nothing to take back); false when it did not. */
 export async function voidEntries(db, ids) {
   if (!ids.length) return true;

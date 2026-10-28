@@ -54,7 +54,7 @@ const rewardBook = (book, p) => {
  * seed deletes it before replacing rows and writes it last. The collections can then be read together. */
 import { boundOf, unfolded } from "./way.js";
 import { fromBook, bindBook, wayBound, bookOf } from "./book-read.js";
-import { bookTap, ridStmts, voidEntries, voidUnlessApproved, tapMode, TAP_COLS } from "./book-tap.js";
+import { bookTap, ridStmts, voidEntries, voidUnlessApproved, tapMode, noteFallback, TAP_COLS } from "./book-tap.js";
 export { bindBook, wayBound };
 import PRICING_ENGINE from "../engine/pricing.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
@@ -2054,7 +2054,7 @@ export async function applyPre(db, pre, draft, book, now) {
       return "differs";
     }
     if (tap.kind === "booked") booked = tap.booked;
-    if (tap.kind === "fallback") console.log("tap fallback " + draft.id + " (his yes): " + (tap.why || "no reason"));
+    if (tap.kind === "fallback") { console.log("tap fallback " + draft.id + " (his yes): " + (tap.why || "no reason")); await noteFallback(db, [draft.id], tap.why); }
   }
   const approve = db.prepare("UPDATE draft SET status='approved', decided_at=?1, decided_by=?2 WHERE id=?3 AND status='pending'").bind(at, by, draft.id);
   let u;

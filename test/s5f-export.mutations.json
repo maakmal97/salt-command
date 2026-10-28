@@ -1,0 +1,158 @@
+[
+ {
+  "name": "documents ahead of the book are taken",
+  "file": "src/book.js",
+  "find": "if (body.forRev > (s.rev || 0)) return { ok: false, status: 409, error: \"those documents are for revision",
+  "replace": "if (false) return { ok: false, status: 409, error: \"those documents are for revision"
+ },
+ {
+  "name": "older documents replace newer ones",
+  "file": "src/book.js",
+  "find": "if (body.forRev < (s.derived_rev || 0)) return { ok: false, status: 409, stale: true,",
+  "replace": "if (false) return { ok: false, status: 409, stale: true,"
+ },
+ {
+  "name": "a refresh does not say which revision",
+  "file": "src/book.js",
+  "find": "sql.exec(\"UPDATE snap SET derived_rev = ? WHERE one = 1\", body.forRev);",
+  "replace": "void 0;"
+ },
+ {
+  "name": "a refresh moves the revision",
+  "file": "src/book.js",
+  "find": "sql.exec(\"UPDATE snap SET derived_rev = ? WHERE one = 1\", body.forRev);",
+  "replace": "sql.exec(\"UPDATE snap SET derived_rev = ?, rev = rev + 1 WHERE one = 1\", body.forRev);"
+ },
+ {
+  "name": "PRICING keeps its takenAt",
+  "file": "src/book.js",
+  "find": "const doc = canon(k === \"PRICING\" ? (({ takenAt, ...steady }) => steady)(v) : v);",
+  "replace": "const doc = canon(v);"
+ },
+ {
+  "name": "any key is a derived document",
+  "file": "src/book.js",
+  "find": "if (!KEYS.includes(k)) return { ok: false, status: 400,",
+  "replace": "if (false) return { ok: false, status: 400,"
+ },
+ {
+  "name": "a written note is replaced",
+  "file": "src/book.js",
+  "find": "if (typeof doc.note === \"string\" && doc.note.trim()) continue;",
+  "replace": ""
+ },
+ {
+  "name": "a note leaves the revision where it was",
+  "file": "src/book.js",
+  "find": "if (plan.length) { sql.exec(\"UPDATE snap SET rev = rev + 1 WHERE one = 1\"); this.memo = null; }",
+  "replace": "if (plan.length) { this.memo = null; }"
+ },
+ {
+  "name": "a note is kept untrimmed",
+  "file": "src/book.js",
+  "find": "doc.note = text.trim();",
+  "replace": "doc.note = text;"
+ },
+ {
+  "name": "any number of notes",
+  "file": "src/book.js",
+  "find": "n.length > 200 || n.some(",
+  "replace": "n.length > 20000 || n.some("
+ },
+ {
+  "name": "a note of any length",
+  "file": "src/book.js",
+  "find": "|| t.length > 600))",
+  "replace": "|| t.length > 600000))"
+ },
+ {
+  "name": "the verbs run with git as the source",
+  "file": "src/worker.js",
+  "find": "if (await sourceMode(env.SALT_LEDGER) !== \"book\") return json({ ok: false, error: \"the Book is not the source (D1 book_source reads d1): git's load",
+  "replace": "if (false) return json({ ok: false, error: \"the Book is not the source (D1 book_source reads d1): git's load"
+ },
+ {
+  "name": "the book names no row the tap booked",
+  "file": "src/worker.js",
+  "find": "tapped = ((ev && ev.entries) || []).filter((e) => !e.voided_at).flatMap(",
+  "replace": "tapped = [].concat(((ev && ev.entries) || []).filter((e) => false).flatMap("
+ },
+ {
+  "name": "the day's notes are written for every blank row",
+  "file": "tools/book-export.mjs",
+  "find": "const notes = day ? blankNotes(got.book, kl, got.tapped || []) : {};",
+  "replace": "const notes = day ? blankNotes(got.book, kl) : {};"
+ },
+ {
+  "name": "a run that is not the day's writes notes",
+  "file": "tools/book-export.mjs",
+  "find": "const notes = day ? blankNotes(got.book, kl, got.tapped || []) : {};",
+  "replace": "const notes = blankNotes(got.book, kl, got.tapped || []);"
+ },
+ {
+  "name": "the day's run does not compact",
+  "file": "tools/book-export.mjs",
+  "find": "  if (day) {\n    const c = await postBook(",
+  "replace": "  if (false) {\n    const c = await postBook("
+ },
+ {
+  "name": "the documents are for the wrong revision",
+  "file": "tools/book-export.mjs",
+  "find": "{ derived, forRev: got.rev }",
+  "replace": "{ derived, forRev: got.rev - 1 }"
+ },
+ {
+  "name": "the book is not read again after the notes",
+  "file": "tools/book-export.mjs",
+  "find": "if (written) { got = await fetchBookSource(",
+  "replace": "if (false) { got = await fetchBookSource("
+ },
+ {
+  "name": "the revision is not named for the publish",
+  "file": "tools/book-export.mjs",
+  "find": "appendFileSync(env.GITHUB_ENV,",
+  "replace": "void 0 && appendFileSync(env.GITHUB_ENV,"
+ },
+ {
+  "name": "a refused refresh is not a failure",
+  "file": "tools/book-export.mjs",
+  "find": "if (!d.ok && !(d.status === 409 && d.body && d.body.stale)) return fail(\"derived\"",
+  "replace": "if (false) return fail(\"derived\""
+ },
+ {
+  "name": "a refused compaction is not a failure",
+  "file": "tools/book-export.mjs",
+  "find": "if (!c.ok) return fail(\"compact\"",
+  "replace": "if (false) return fail(\"compact\""
+ },
+ {
+  "name": "the day's export step runs every time",
+  "file": ".github/workflows/cloud-commit.yml",
+  "find": "        if: steps.plan.outputs.export == '1'",
+  "replace": "        if: steps.plan.outputs.export != '1'"
+ },
+ {
+  "name": "the day's export is not the day's tool",
+  "file": ".github/workflows/cloud-commit.yml",
+  "find": "          node tools/book-export.mjs --day",
+  "replace": "          node tools/book-export.mjs"
+ },
+ {
+  "name": "the net's hour is another hour",
+  "file": ".github/workflows/cloud-commit.yml",
+  "find": "[ \"$(date -u +%H)\" = \"16\" ]",
+  "replace": "[ \"$(date -u +%H)\" = \"15\" ]"
+ },
+ {
+  "name": "the publish export also runs on the day",
+  "file": ".github/workflows/cloud-commit.yml",
+  "find": "        if: steps.source.outputs.mode == 'book' && steps.plan.outputs.export != '1'",
+  "replace": "        if: steps.source.outputs.mode == 'book'"
+ },
+ {
+  "name": "the day's export is not a deploy",
+  "file": ".github/workflows/cloud-commit.yml",
+  "find": "          if [ \"$export\" = \"1\" ]; then deploy=1; fi",
+  "replace": ""
+ }
+]

@@ -21,7 +21,7 @@ import { runDrafter, dryRunDrafter, readBook, readMirror, bookOnce, withDraftLot
 import { bookDirect, compareReads, readMode, versionToken, snapshotWithSource, tokenFrom, BOOK_TOKEN } from "./book-read.js";
 import { drainOutbox } from "./outbox.js";
 import { pageMode, servedBook } from "./book-page.js";
-import { bookTap, bookNet, ridStmts, voidEntries, voidUnlessApproved, tapMode, sourceMode, TAP_COLS } from "./book-tap.js";
+import { bookTap, bookNet, ridStmts, voidEntries, voidUnlessApproved, tapMode, sourceMode, noteFallback, TAP_COLS } from "./book-tap.js";
 import { compactAndMark } from "./book-compact.js";
 import { boundOf, unfolded } from "./way.js";
 import { runBackup, backupAlarm, runBookExport, bookExportAlarm, BACKUP_CRON } from "./backup.js";
@@ -119,7 +119,7 @@ async function accessOk(request, env, p, m) {
 }
 /* 19 Oct 2026: the pushes that INFORM the Desk (POST /push/send tags), each kept as KV inform:last for the banner */
 const INFORM_TAGS = new Set(["folded", "fold-refused", "suite-red", "stock"]);
-const CI_ROUTES = new Set(["GET /rev", "POST /push/send", "POST /book/load", "POST /book/compact", "POST /book/pitr", "GET /book/window", "GET /book/readcheck", "GET /book/ledger", "GET /book/roster"]);
+const CI_ROUTES = new Set(["GET /rev", "POST /push/send", "POST /book/load", "POST /book/compact", "POST /book/derived", "POST /book/notes", "POST /book/pitr", "GET /book/window", "GET /book/readcheck", "GET /book/ledger", "GET /book/roster"]);
 
 /* THE WRITE GATE (12 Aug 2026). Reads stay open, by the owner's standing decision; writes
  * do not have to. A caller must present X-Salt-Key matching the SALT_WRITE_KEY secret, and
@@ -246,7 +246,10 @@ async function handleBookLedger(request, env, m, url) {
     if (!res || !res.ok) return json({ ok: false, error: "the Book did not answer" }, 503);
     const a = await (await stub.fetch(new Request("https://book/at"))).json().catch(() => ({}));
     const { book, derived } = unshape(res);
-    return json({ ok: true, v: res.v, stamped: res.stamped, at: res.at, rev: Number.isInteger(a && a.rev) ? a.rev : null, view, booked: Array.isArray(a && a.booked) ? a.booked.length : 0, book, derived });
+    /* S5f-6: the rids the tap booked (every entry not taken back), so the export writes a note behind those rows and not behind a row git's fold wrote years ago with none */
+    let tapped = [];
+    try { const ev = await (await stub.fetch(new Request("https://book/events?all=1"))).json(); tapped = ((ev && ev.entries) || []).filter((e) => !e.voided_at).flatMap((e) => (Array.isArray(e.rids) ? e.rids : [])); } catch (e) { tapped = []; }
+    return json({ ok: true, v: res.v, stamped: res.stamped, at: res.at, rev: Number.isInteger(a && a.rev) ? a.rev : null, view, booked: Array.isArray(a && a.booked) ? a.booked.length : 0, tapped, book, derived });
   } catch (e) { return json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }, 500); }
 }
 
@@ -294,6 +297,18 @@ async function handleBookRoster(request, env, m, url) {
 /* S3 (25 Oct 2026): THE READCHECK. The mirror's book against the Book's, read side by side, whatever the flag says: it answers whether the two
    agree (names of what differs, counts, the versions and the flag; never a row or a value, since the Actions log is public). The chain asks it
    after each load and goes red on a difference, so "the readers agree" is proved at every fold. The same two locks as the load. */
+/* S5f-6: POST /book/derived and /book/notes, the chain's export step. The same two locks as the load, and only with the Book as the source (with git as the source the load is the only writer of what the Book holds). */
+async function handleBookVerb(request, env, m, p) {
+  if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  if (!bookKeyOk(request, env)) return needsKey();
+  if (!env.BOOK || !env.SALT_LEDGER) return json({ ok: false, error: "the Book or the ledger is not bound" }, 503);
+  if (await sourceMode(env.SALT_LEDGER) !== "book") return json({ ok: false, error: "the Book is not the source (D1 book_source reads d1): git's load is the only writer of what it holds" }, 409);
+  const text = await request.text();
+  if (text.length > MAX_LOAD_BYTES) return json({ ok: false, error: "too large" }, 413);
+  const r = await env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)).fetch(new Request("https://book/" + p.slice(6), { method: "POST", body: text }));
+  return new Response(r.body, { status: r.status, headers: { "content-type": "application/json" } });
+}
+
 /* S5f-3: POST /book/compact. The same two locks as the load. `?dry=1` rehearses in either world; a real run needs the Book as the source (src/book-compact.js) and answers counts, never a row. */
 async function handleBookCompact(request, env, m, url) {
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);   /* S5f-3: the compaction is POST only */
@@ -2580,7 +2595,7 @@ async function decideDraft(env, ctx, id, decision, by, hold) {
     const tap = await bookTap(env.SALT_LEDGER, [cur].concat(ts.rows), by, new Date().toISOString());
     if (tap.kind === "refused") return { status: 409, body: { ok: false, error: "the Book refuses it: " + tap.refused.map((x) => x.why).join("; "), refused: tap.refused } };
     /* S5a: an approval that fell back is counted in the log: a Book that is quietly refusing for a day must not look like a healthy day */
-    if (tap.kind === "fallback") console.log("tap fallback " + id + ": " + (tap.why || "no reason"));
+    if (tap.kind === "fallback") { console.log("tap fallback " + id + ": " + (tap.why || "no reason")); await noteFallback(env.SALT_LEDGER, [cur].concat(ts.rows).map((x) => x.id).filter(Boolean), tap.why); }
     if (tap.kind === "booked") {
       if (tap.booked.some((b) => b.folded)) return { status: 409, body: { ok: false, error: "the Book refuses it: the fold has already booked it; reject this card" } };
       booked = tap.booked;
@@ -2919,7 +2934,7 @@ export default {
     if (!await accessOk(request, env, p, m)) {
       if (p === "/queue" || /^\/queue\/[^/]+\/withdraw$/.test(p) || p === "/queue/ping" || p === "/vault" || p === "/bio" || p === "/bye"
         || p === "/vault/addr" || p === "/vault/pair" || p === "/vault/maintenance" || p === "/vault/key" || p === "/geo/expand" || p.startsWith("/slips/") || p.startsWith("/pins/")
-        || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/") || p === "/book/load" || p === "/book/compact" || p === "/book/pitr" || p === "/book/window" || p === "/live"
+        || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/") || p === "/book/load" || p === "/book/compact" || p === "/book/derived" || p === "/book/notes" || p === "/book/pitr" || p === "/book/window" || p === "/live"
         || p === "/drafts" || p.startsWith("/drafts/") || p === "/book/readcheck" || p === "/book/ledger" || p === "/book/roster")
         return json({ ok: false, error: "not authenticated" }, 401);
       return locked();
@@ -2967,6 +2982,7 @@ export default {
        when its secret is set, so an unset secret opens nothing; the dormant write-key branch of writeOk is NOT used here.
        The answer carries counts and a digest, never a row. Nothing reads the Book. */
     if (p === "/book/load") return handleBookLoad(request, env, m, url);
+    if (p === "/book/derived" || p === "/book/notes") return handleBookVerb(request, env, m, p);   /* S5f-6: the export step's two writes, the derived documents and the notes */
     if (p === "/book/compact") return handleBookCompact(request, env, m, url);   /* S5f-3: the flip's and the daily job's compaction, the drafts it closes marked committed */
     if (p === "/book/ledger") return handleBookLedger(request, env, m, url);   /* S5e: the Book's base as a book file, for the second publish */
     if (p === "/book/page") return handleBookPage(env, m);   /* S5d: the Book's view for the page, keyed above, 404 while the flag is off */

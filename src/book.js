@@ -647,6 +647,60 @@ export class Book {
     });
   }
 
+  /* S5f-6: THE DERIVED DOCUMENTS, REFRESHED BETWEEN LOADS. With the Book as the source nothing loads between imports, so the documents computed from the book (PRICING, OPEN, TERMS, REWARD, STOCK) are refreshed here, by the
+     chain's export step, which computes them over the book it exported at revision `forRev`. They change no row and move no `rev` (a statement's stamp must not change because a document did); they set
+     `derived_rev` to `forRev`, which can never go back (an older computation never replaces a newer one) nor run ahead of the book. The readers' staleness flags (src/book-read.js bookOf) read `rev - derived_rev`. */
+  async derived(body) {
+    const KEYS = ["PRICING", ...DERIVED];
+    if (!body || typeof body !== "object" || !body.derived || typeof body.derived !== "object" || !Number.isInteger(body.forRev) || body.forRev < 0) return { ok: false, status: 400, error: "send {derived, forRev}" };
+    const docs = [];
+    for (const k of Object.keys(body.derived)) {
+      if (!KEYS.includes(k)) return { ok: false, status: 400, error: k + " is not a derived document" };
+      const v = body.derived[k];
+      if (!v || typeof v !== "object" || Array.isArray(v)) return { ok: false, status: 400, error: k + " is a document" };
+      const doc = canon(k === "PRICING" ? (({ takenAt, ...steady }) => steady)(v) : v);
+      docs.push({ k, doc, h: await sha(doc) });
+    }
+    const sql = this.state.storage.sql, at = this.clock();
+    return this.state.storage.transactionSync(() => {
+      const s = sql.exec("SELECT rev, derived_rev FROM snap WHERE one = 1").toArray()[0];
+      if (!s) return { ok: false, status: 503, error: "the Book holds no snapshot yet" };
+      if (body.forRev > (s.rev || 0)) return { ok: false, status: 409, error: "those documents are for revision " + body.forRev + ", ahead of the Book at " + (s.rev || 0) };
+      if (body.forRev < (s.derived_rev || 0)) return { ok: false, status: 409, stale: true, error: "the Book's documents are already computed at revision " + (s.derived_rev || 0) + ", newer than " + body.forRev };
+      let changed = 0;
+      for (const d of docs) {
+        const was = sql.exec("SELECT h FROM state WHERE k = ?", d.k).toArray()[0];
+        if (!was) { sql.exec("INSERT INTO state (k, doc, h, booked_at) VALUES (?, ?, ?, ?)", d.k, d.doc, d.h, at); changed++; }
+        else if (was.h !== d.h) { sql.exec("UPDATE state SET doc = ?, h = ?, revised_at = ? WHERE k = ?", d.doc, d.h, at, d.k); changed++; }
+      }
+      sql.exec("UPDATE snap SET derived_rev = ? WHERE one = 1", body.forRev);
+      this.memo = null;
+      return { ok: true, changed, derivedRev: body.forRev, rev: s.rev || 0 };
+    });
+  }
+
+  /* S5f-6 (his answer to Ask C): A ROW'S NOTE FOLLOWS ITS ROW. A tap books a row with a blank note; the daily export job writes the note behind it (the notes are prose, never law), here, one note a rid, only into a
+     row of sales, purchases or loans whose note is still blank (a note a person wrote is never replaced), at most 200 a call and 600 characters each. Rows change, so the revision moves once and the view is rebuilt. */
+  async notes(body) {
+    const n = body && typeof body === "object" && body.notes && typeof body.notes === "object" && !Array.isArray(body.notes) ? Object.entries(body.notes) : null;
+    if (!n || !n.length || n.length > 200 || n.some(([rid, t]) => !/^[a-z]\d{3,6}$/.test(rid) || typeof t !== "string" || !t.trim() || t.length > 600)) return { ok: false, status: 400, error: "send {notes: {rid: text}}, 1 to 200 notes of 600 characters at most" };
+    const sql = this.state.storage.sql, at = this.clock(), plan = [];
+    for (const [rid, text] of n) {
+      const row = sql.exec("SELECT coll, key, doc, seq FROM rows WHERE key = ? AND gone_at IS NULL AND coll IN ('sales','purchases','loans')", "r:" + rid).toArray()[0];
+      if (!row) continue;
+      const doc = JSON.parse(row.doc);
+      if (typeof doc.note === "string" && doc.note.trim()) continue;
+      doc.note = text.trim();
+      const d = canon(doc);
+      plan.push({ coll: row.coll, key: row.key, doc: d, h: await sha(d) });
+    }
+    return this.state.storage.transactionSync(() => {
+      for (const p of plan) sql.exec("UPDATE rows SET doc = ?, h = ?, revised_at = ? WHERE coll = ? AND key = ?", p.doc, p.h, at, p.coll, p.key);
+      if (plan.length) { sql.exec("UPDATE snap SET rev = rev + 1 WHERE one = 1"); this.memo = null; }
+      return { ok: true, written: plan.length, skipped: n.length - plan.length };
+    });
+  }
+
   /* take back the open entries of these drafts (a rejection): folded ones stay, a voided one is kept */
   void(ids) {
     if (!Array.isArray(ids) || ids.some((i) => typeof i !== "string" || !ISO_ID.test(i))) return { ok: false, status: 400, error: "send draft ids" };
@@ -742,6 +796,13 @@ export class Book {
       const out = url.pathname === "/read" ? this.readText(url.searchParams.get("base") === "1") : url.pathname === "/revno" ? this.revno() : this.snapshot();
       if (!out) return Response.json({ ok: false, error: "the Book holds no snapshot yet" }, { status: 503 });
       return typeof out === "string" ? new Response(out, { headers: { "content-type": "application/json" } }) : Response.json(out);
+    }
+    if ((url.pathname === "/derived" || url.pathname === "/notes") && request.method === "POST") {
+      if (this.isTest()) return Response.json({ ok: false, error: "not found" }, { status: 404 });
+      let vb = null;
+      try { vb = JSON.parse(await request.text()); } catch (e) { vb = null; }
+      const r = url.pathname === "/derived" ? await this.derived(vb) : await this.notes(vb);
+      return Response.json(r, { status: r.status || (r.ok ? 200 : 400) });
     }
     const isLoad = url.pathname === "/load" && request.method === "POST", isPitr = url.pathname === "/pitr" && request.method === "POST";
     if (!isLoad && !isPitr) return Response.json({ ok: false, error: "not found" }, { status: 404 });

@@ -51945,7 +51945,7 @@ await (async () => {
       if (head) fn = head[1] || head[2];
       if (/env\.BOOK\b/.test(l) && !/^\s*(\/\/|\*|\/\*)/.test(l) && !/^\s*if \(env\.SALT_LEDGER && env\.BOOK\) bindBook\(env\.SALT_LEDGER, env\.BOOK\);/.test(l)) {
         readers.push(f + ":" + (i + 1));
-        if (!(f === "worker.js" && (fn === "handleBookLoad" || fn === "handleBookPitr" || fn === "handleLive" || fn === "liveTell" || fn === "handleBookReadcheck" || fn === "handleBookLedger" || fn === "handleBookRoster" || fn === "handleBookPage" || fn === "bookRevOf")) && !(f === "book.js" && (fn === "isTest" || fn === "isLive")) && !(f === "backup.js" && (fn === "runBookExport" || fn === "bookExportAlarm")) && !(f === "book-compact.js" && (fn === "ask" || fn === "compactAndMark"))) strays.push(f + ":" + (i + 1) + " in " + fn);
+        if (!(f === "worker.js" && (fn === "handleBookLoad" || fn === "handleBookPitr" || fn === "handleLive" || fn === "liveTell" || fn === "handleBookReadcheck" || fn === "handleBookLedger" || fn === "handleBookRoster" || fn === "handleBookPage" || fn === "handleBookVerb" || fn === "bookRevOf")) && !(f === "book.js" && (fn === "isTest" || fn === "isLive")) && !(f === "backup.js" && (fn === "runBookExport" || fn === "bookExportAlarm")) && !(f === "book-compact.js" && (fn === "ask" || fn === "compactAndMark"))) strays.push(f + ":" + (i + 1) + " in " + fn);
       }
     });
   }
@@ -52282,6 +52282,16 @@ await (async () => {
 section("Book S5f-5: the edit entry, a refund marked paid or taken off, approved in Salt Admin and booked by the tap (29 Oct 2026)");
 await (async () => {
   await (await import("./s5f-edit.mjs")).run({ ok });
+})();
+
+section("Book S5f-6: the export, the derived documents and the notes the chain runs with the Book as the source (29 Oct 2026)");
+await (async () => {
+  await (await import("./s5f-export.mjs")).run({ ok });
+})();
+
+section("Book S5f-7: the gate and the runbook for the flip, read and driven over stand-ins, never run (29 Oct 2026)");
+await (async () => {
+  await (await import("./s5f-gate.mjs")).run({ ok });
 })();
 
 section("18 Oct 2026: the lean Desk: six views, the three parts gone, alerts in the rail, spots on Coverage, Noticed under To do");
