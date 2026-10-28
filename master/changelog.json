@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1305",
+  "d": "28 Oct 2026",
+  "t": "THE COUNTER'S PUBLISH CAN READ THE BOOK, COMPARED WITH GIT AND NOT SEALED (S5E, DORMANT)",
+  "n": [
+   "<b>S5E OF THE S5 PLAN: THE ROAD FROM THE BOOK TO THE STATEMENTS, AND ITS PROOF.</b> Nothing publishes from it: the publish still reads git, so nothing a customer sees changes. Fable reviewed the diff twice; every finding is applied.",
+   "<b>A READ-ONLY ROUTE.</b> The Desk Worker answers GET /book/ledger, behind the same three locks as the Book's load and readcheck (Access, the CI service token, the Book's own key), with the Book's base put back in the shape of ledger/book.json beside its derived documents, the version, the revision and how many entries are open. The body is the whole ledger and nothing prints it.",
+   "<b>THE SECOND PUBLISH, COMPARED.</b> After the readcheck the chain now builds every account's live statement, in plaintext with nothing sealed or written, once from git's book and once from what the Book answered, and names any account whose document differs; red on a difference, never blocking a fold. It is not compared when the Book and the checkout are at different versions (a load that failed would otherwise read as a difference in the builder). The tool also writes the Book's book to a file for the flip, base or with --view the open entries replayed.",
+   "<b>WHAT IT DOES NOT COVER, SAID.</b> The price lists, cards, restock lights and associates' figures come from the page's own figures over the master, so their equal answer on the Book's shape waits for the Worker's PRICING (S5b); and the stamp the Counter gates a live statement on is still the Desk's build id until the flip."
+  ]
+ },
+ {
   "v": "v1304",
   "d": "28 Oct 2026",
   "t": "A BOOKED SALE TELLS ITS ORDER AT ONCE, THE FLAG SHIPPED OFF (S6)",
