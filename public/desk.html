@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="7fe05d24ab2300c8";
+var SALT_BUILD_ID="9f6622c6df74919f";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -11417,7 +11417,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1311","d":"28 Oct 2026","t":"THE SOURCE FLAG FOR THE FLIP (S5F-1, DORMANT: book_source SHIPS d1)","n":["<b>S5F-1 OF THE S5 PLAN, SHIPPED OFF.</b> A new flag in D1, book_source (migrations/0023, applied alone to the live D1 before this deploy and read back d1), says whether git's book file ('d1') or the Book ('book') is the source of the ledger. sourceMode reads it like the roster flag: anything but an exact 'book' reads d1, so a missing table or a store that will not answer is the old world. Nothing reads it yet; every guard of the flip, built in the next versions, keys off this one read.","<b>NOTHING CHANGES ON THE DESK, THE COUNTER OR THE CHAIN.</b> Turning the flag is tools/flip.mjs's alone, on his typed go, on or after 4 Nov 2026 and only when the gate reads every line true. The flip, the way back and the gate are in docs/DESK.md, 'The flip (S5f)'."]}];
+const evolution=[{"v":"v1312","d":"28 Oct 2026","t":"A COMPACTION MOVES THE BASE'S WATERMARK (S5F-2, DORMANT)","n":["<b>S5F-2 OF THE S5 PLAN, DORMANT: THE COMPACTION IS NOT RUN LIVE BEFORE THE FLIP.</b> The Book's base carries QUEUE_COMMITTED, the newest queue entry it holds. The fold moves it; a replay never did. A compaction that closed entries and left it behind would have the S5d page count a phone's queued entry twice (the new base holds the sale, the entry is no longer open so the served view does not name it, and it is not under the old mark). Compaction now sets the mark to the newest draft id it closes, never lowering it.","<b>PROVED ON THE RECOVERY-TEST STYLE OBJECT, NEVER THE LIVE BOOK.</b> A dry compaction moves nothing, a refused one leaves the mark, the view's money is unchanged, the revision moves once, and the page's queue judgment drops an entry at or under the served mark. Nothing on the desk, the Counter or the chain changes."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
