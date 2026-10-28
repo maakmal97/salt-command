@@ -95,7 +95,7 @@
     "gas": {
       "qty": 0,
       "costPerKg": 50,
-      "stated": null
+      "stated": 1
     },
     "prep": {
       "qty": 0,
@@ -109,7 +109,7 @@
     "oil": "2026-10-27",
     "candy": "2026-10-20",
     "rice": "2026-10-20",
-    "gas": null,
+    "gas": "2026-10-29",
     "prep": null
   },
   "COUNTS": [
@@ -153,7 +153,8 @@
     {"product":"salt","date":"2026-10-27","qty":0.5,"was":1.5,"drift":-1},
     {"product":"salt","date":"2026-10-27","qty":0,"was":0.5,"drift":-0.5},
     {"product":"salt","date":"2026-10-28","qty":0,"was":0.5,"drift":-0.5},
-    {"product":"salt","date":"2026-10-28","qty":0.5,"was":0,"drift":0.5}
+    {"product":"salt","date":"2026-10-28","qty":0.5,"was":0,"drift":0.5},
+    {"product":"gas","date":"2026-10-29","qty":1,"was":0,"drift":1}
   ],
   "purchases": [
     {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -1036,7 +1037,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-10-28T22:45:20.331Z",
+  "QUEUE_COMMITTED": "2026-10-28T23:26:59.800Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -1272,6 +1273,7 @@
       "paidSplit: cash landed either side of the 28 Jul count; RM200 inside it, the rest after. Without the split the walk double-counted the RM200."
     ],
     "PROD_OPENING": [
+      "COUNTED AT v1322 on 2026-10-29: the gas inventory held 1 against 0 on the roll, a difference of 1. A COUNT AND NOT A ROLL, so COUNT_ON.gas moves to 2026-10-29. <b>COUNT OF GAS: 1 UNIT ON HAND, 29 OCT 2026.</b> Counted by hand at 1 unit against 0 on the book, so the gap is +1 unit. The dossier gives no reason for it and none is assumed. The count wins, so the stated gas inventory becomes 1 and the gas count date moves to 29 Oct 2026. It was approved by Counter Admin. The drafter flagged that the +1 unit is unaccounted for and books as shrinkage across every unit sold. The figures answer this only in part: they confirm the size of the gap but not where it sits. The floors do not move: floor1 stays at 50, floor2 at 100, floor125 at 625 and ask1 at 75, with selfUse at 0. No party is involved and no cost is carried. The +1 unit gap is left unexplained.",
       "ROLLED AT v1318 (oil): 20 unit to CZ4-MK on 2026-10-29, so 50 less 20 is 30. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "ROLLED AT v1313 (oil): 50 unit from SP7-PUD on 2026-10-28, so 0 plus 50 is 50. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "COUNTED AT v1279 on 2026-10-27: the oil inventory held 0 against 20 on the roll, a difference of -20. A COUNT AND NOT A ROLL, so COUNT_ON.oil moves to 2026-10-27. <b>COUNT OF OIL ON 27 OCT 2026: 0 UNIT AGAINST 20 ON THE BOOK.</b> Counter Admin approved it. Nothing was sold or bought, so there is no party, no goods total and no rate to set against the ladder. The gap is -20 unit, and the last count was on 20 Oct 2026. The drafter flagged that the gap books as shrinkage across every unit sold, because a count always wins. The figures answer the flag as arithmetic only: the stated oil stock becomes 0 and the count date moves to 27 Oct 2026. The dossier gives no reason for the gap, so none is offered. The floors stay at floor1 10, floor2 20, floor125 100 and ask1 10. The self-use figure moves from 154 to 174. The row carries no cost of its own. The gap of 20 unit remains unexplained.",

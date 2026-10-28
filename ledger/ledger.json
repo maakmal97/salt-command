@@ -1,6 +1,6 @@
 {
- "v": "v1321",
- "stamped": "29 Oct 2026, 06:46 KL",
+ "v": "v1322",
+ "stamped": "29 Oct 2026, 07:27 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -99,7 +99,7 @@
    "gas": {
     "qty": 0,
     "costPerKg": 50,
-    "stated": null
+    "stated": 1
    },
    "prep": {
     "qty": 0,
@@ -113,7 +113,7 @@
    "oil": "2026-10-27",
    "candy": "2026-10-20",
    "rice": "2026-10-20",
-   "gas": null,
+   "gas": "2026-10-29",
    "prep": null
   },
   "COUNTS": [
@@ -410,6 +410,13 @@
     "qty": 0.5,
     "was": 0,
     "drift": 0.5
+   },
+   {
+    "product": "gas",
+    "date": "2026-10-29",
+    "qty": 1,
+    "was": 0,
+    "drift": 1
    }
   ],
   "purchases": [
@@ -10417,7 +10424,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-28T22:45:20.331Z",
+  "QUEUE_COMMITTED": "2026-10-28T23:26:59.800Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -10484,11 +10491,6 @@
      "id": "rhythm:holiday:salt",
      "sev": "watch",
      "title": "2 Kuala Lumpur holidays inside the next fortnight"
-    },
-    {
-     "id": "parity:uncounted:gas",
-     "sev": "watch",
-     "title": "Gas has never been counted, so its inventory is the ledger"
     },
     {
      "id": "parity:uncounted:prep",
@@ -20292,10 +20294,10 @@
      "suggest": null
     }
    },
-   "v": "v1321"
+   "v": "v1322"
   },
   "OPEN": {
-   "at": "2026-10-28T22:46:23.071Z",
+   "at": "2026-10-28T23:27:43.538Z",
    "count": 9,
    "byKey": {
     "CS6-BS-R|2026-10-29|150": {
@@ -20498,8 +20500,8 @@
     },
     "gas": {
      "name": "Gas",
-     "onHand": 0,
-     "free": 0,
+     "onHand": 1,
+     "free": 1,
      "owedOut": 0,
      "coverDays": null,
      "rate": 0,
@@ -20524,10 +20526,10 @@
     "oil": "2026-10-27",
     "candy": "2026-10-20",
     "rice": "2026-10-20",
-    "gas": null,
+    "gas": "2026-10-29",
     "prep": null
    },
-   "v": "v1321"
+   "v": "v1322"
   },
   "TERMS": {
    "ceiling": 250,
@@ -20535,7 +20537,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1321"
+   "v": "v1322"
   },
   "REWARD": {
    "stated": {
@@ -20553,7 +20555,7 @@
      }
     }
    },
-   "v": "v1321"
+   "v": "v1322"
   },
   "STOCK": {
    "today": "2026-10-29",
@@ -20591,10 +20593,10 @@
      "transit": 0
     },
     "gas": {
-     "shelf": 0,
-     "free": 0,
+     "shelf": 1,
+     "free": 1,
      "commit": 0,
-     "light": "red",
+     "light": "green",
      "coverDays": null,
      "transit": 0
     },
@@ -20607,7 +20609,7 @@
      "transit": 0
     }
    },
-   "v": "v1321"
+   "v": "v1322"
   }
  }
 }
