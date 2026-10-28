@@ -22,7 +22,7 @@
  */
 import { sendPush } from "./push.js";
 import { boundOf, onItsWay, landedBy } from "./way.js";
-import { wayBound } from "./book-read.js";
+import { wayBound, versionToken, BOOK_TOKEN } from "./book-read.js";
 import { readBook, bookOnce, withRefunds, draftRow, cogsFor, floorFor, usualFor, pricingOf, stageDigest, runDrafter, settlePre, withPending, noteQueued, offerDigest, isOfferPre } from "./drafter.js";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { admitInput, admitInputs } from "./input-admission.js";
@@ -75,7 +75,7 @@ const NEWS_WORD = { pay: "A customer says they paid", cancel: "A customer cancel
 /* v764: the book the return leg last told the site about. A fold mints a new version and re-seeds
    the mirror, so comparing the version is one cheap read a minute and a full pass only when there
    is something new to say. It moves only when the whole pass got through. */
-const TOLD_MARK = "orders:told";
+const TOLD_MARK = "orders:told", TOLD_SEEN = "orders:seen";   /* S5f-4: TOLD_SEEN is the revision the tie-out last saw and when (the Book as the source) */
 /* 19 Oct 2026: set while Salt Admin holds a subscribed device (wakeAdmin); the Desk's summary reads it as adminOn */
 export const ADMIN_ON = "admin:on";
 
@@ -739,7 +739,8 @@ export async function amendOrder(env, id, body) {
   const revisionResponse = await env.ASSETS.fetch(new Request("https://desk/rev.json"));
   if (!revisionResponse.ok) return { ok: false, status: 503, error: "the Desk revision is unavailable" };
   const revision = await revisionResponse.json(), book = await readBook(env.SALT_LEDGER);
-  if (!revision || !/^[a-f0-9]{16}$/.test(revision.id || "") || !book.version || book.version !== revision.v)
+  /* S5f-4: with the Book as the source its data is not the build's version (a code-only version moves no data), so the two are not compared; only a book that carries no version at all is "updating" */
+  if (!revision || !/^[a-f0-9]{16}$/.test(revision.id || "") || !book.version || (!BOOK_TOKEN.test(String(book.version)) && book.version !== revision.v))
     return { ok: false, status: 409, error: "the Desk mirror is updating", code: "amendPrices" };
   const quoted = cardAt(book.pricing, owner, body.product, body.qty).card;
   const floor = floorFor(book, body.product, body.qty);
@@ -2014,7 +2015,9 @@ export async function tellSite(env, fixes, mirror, opts = {}) {
   if (!env.SALT_LEDGER || !env.SALT_QUEUE) return { ok: true, told: 0 };
   let snap = null;
   try { snap = await env.SALT_LEDGER.prepare("SELECT v,stamped FROM snapshot WHERE one=1").first(); } catch (e) { return { ok: false, error: String((e && e.message) || e) }; }
-  const v = (snap && snap.v) || null;
+  /* S5f-4: the version a pass was for is git's in the old world and the Book's revision (`book@<rev>`) when the Book is the source, where an approval moves no git version; read BEFORE the book, so a tap in between makes the next pass run again, never skip */
+  let v = null;
+  try { v = await versionToken(env.SALT_LEDGER); } catch (e) { return { ok: false, error: String((e && e.message) || e) }; }
   if (!v) return { ok: true, told: 0 };
   if (!opts.force && (await env.SALT_QUEUE.get(TOLD_MARK)) === v) return { ok: true, told: 0, v };
   const r = await listOrders(env, true);   /* every order: a finished one follows its row too */
@@ -2146,16 +2149,25 @@ export async function tieOut(env, mirror, now = new Date()) {
   const at = now.toISOString(), faults = [], waiting = [];
   let snap = null;
   try { snap = await env.SALT_LEDGER.prepare("SELECT v, at FROM snapshot WHERE one=1").first(); } catch (e) { snap = null; }
-  const v = (snap && snap.v) || null, told = await env.SALT_QUEUE.get(TOLD_MARK);
+  /* S5f-4: the version the Counter should have been told of: git's, or the Book's revision when the Book is the source (the mirror is frozen then, so its moment says nothing: the stall is timed from the first pass that saw this revision) */
+  let v = null, since = snap && snap.at ? Date.parse(snap.at) : NaN;
+  try {
+    v = await versionToken(env.SALT_LEDGER);
+    if (v && BOOK_TOKEN.test(v)) {
+      const seen = await env.SALT_QUEUE.get(TOLD_SEEN, "json").catch(() => null);
+      if (!seen || seen.v !== v) { since = now.getTime(); await env.SALT_QUEUE.put(TOLD_SEEN, JSON.stringify({ v, at: at })); } else since = Date.parse(seen.at);
+    }
+  } catch (e) { v = null; }
+  const told = await env.SALT_QUEUE.get(TOLD_MARK);
   try {
     const old = (await env.SALT_LEDGER.prepare("SELECT order_id, stage, at FROM preapproval WHERE status='waiting' AND entry_at IS NULL AND json_extract(shown,'$.offer') IS NULL AND at <= ?1 ORDER BY at LIMIT 20").bind(yesFresh(now.getTime())).all()).results || [];
     for (const y of old) faults.push({ order: y.order_id, what: ["your yes to its " + y.stage + " of " + String(y.at).slice(0, 10) + " never reached Approve, so it holds nothing: tap it again if the move is still owed"] });
   } catch (e) { /* the yeses are read again next pass */ }
-  if (v && told !== v && snap.at && now.getTime() - Date.parse(snap.at) > TIEOUT_STALL_MS) {
+  if (v && told !== v && Number.isFinite(since) && now.getTime() - since > TIEOUT_STALL_MS) {
     let held = null;
     try { held = await env.SALT_QUEUE.get(TOLD_FAILED, "json"); } catch (e) { held = null; }
     const who = held && Array.isArray(held.failed) && held.failed.length ? "; held by " + held.failed.map((f) => (f.id || "the pass") + " (" + f.why + ")").join(", ") : "";
-    faults.push({ what: "return leg", why: "the Counter has not been told of book " + v + " since " + snap.at + " (last told " + (told || "never") + ")" + who });
+    faults.push({ what: "return leg", why: "the Counter has not been told of book " + v + " since " + new Date(since).toISOString() + " (last told " + (told || "never") + ")" + who });
   }
   const r = await listOrders(env, true);
   if (!r.ok) return { at, v, ok: false, error: "the site's orders could not be read: " + (r.error || "") };

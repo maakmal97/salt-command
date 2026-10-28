@@ -18,7 +18,7 @@
  */
 
 import { runDrafter, dryRunDrafter, readBook, readMirror, bookOnce, withDraftLots, withRefunds, draftRow, tripCheck, bindBook, wayBound } from "./drafter.js";
-import { bookDirect, compareReads, readMode } from "./book-read.js";
+import { bookDirect, compareReads, readMode, versionToken, BOOK_TOKEN } from "./book-read.js";
 import { drainOutbox } from "./outbox.js";
 import { pageMode, servedBook } from "./book-page.js";
 import { bookTap, bookNet, ridStmts, voidEntries, voidUnlessApproved, tapMode, sourceMode, TAP_COLS } from "./book-tap.js";
@@ -168,7 +168,15 @@ async function handleStmtRev(request, env, url, m) {
     const rev = await res.json();
     if (!rev || typeof rev.id !== "string" || !/^[0-9a-f]{16}$/.test(rev.id))
       return json({ ok: false, error: "invalid build manifest" }, 503);
-    return json({ ok: true, id: rev.id });
+    /* S5f-4: with the Book as the source an approval moves no build id, so the stamp the Counter holds a live statement to is the build id AND the Book's revision (`<id>.<rev>`): a statement sealed at an older revision is withheld
+       as updating until the next publish lands, as one sealed at an older build was. The Book not answering is a 503, never the plain id. */
+    let id = rev.id;
+    if (env.SALT_LEDGER && await sourceMode(env.SALT_LEDGER) === "book") {
+      const token = await versionToken(env.SALT_LEDGER).catch(() => null);
+      if (!token || !BOOK_TOKEN.test(token)) return json({ ok: false, error: "the Book did not say its revision" }, 503);
+      id = rev.id + "." + token.slice(5);
+    }
+    return json({ ok: true, id });
   } catch (e) {
     return json({ ok: false, error: "no build manifest" }, 503);
   }

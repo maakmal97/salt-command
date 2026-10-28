@@ -269,6 +269,9 @@ export class Book {
        entry, a tap that booked an entry, a void that took one back, a compaction. Unlike the version (a git version, which stops moving once approvals are not versions) it moves with
        money. Nothing reads it yet. A Book that held a snapshot before S5a gains the column at 0. */
     try { sql.exec("ALTER TABLE snap ADD COLUMN rev INTEGER NOT NULL DEFAULT 0"); } catch (e) { if (!/duplicate column/i.test(String((e && e.message) || e))) throw e; }
+    /* S5f-4: THE REVISION THE DERIVED DOCUMENTS (PRICING, OPEN, TERMS, REWARD, STOCK) WERE COMPUTED AT. A load carries them, so it sets this to the revision it leaves; a tap, a void and a compaction move `rev` and leave it, so
+       `rev - derived_rev` is how far the documents trail the book. With the Book as the source the readers' staleness flags say so (src/book-read.js); in the old world nothing reads it. A Book before this gains the column at 0. */
+    try { sql.exec("ALTER TABLE snap ADD COLUMN derived_rev INTEGER NOT NULL DEFAULT 0"); } catch (e) { if (!/duplicate column/i.test(String((e && e.message) || e))) throw e; }
     /* S4a: the entries a tap booked. The view replays the unfolded, unvoided ones in seq order; a load marks the ones it folded. A voided one is kept, not deleted. */
     sql.exec("CREATE TABLE IF NOT EXISTS booked (seq INTEGER PRIMARY KEY AUTOINCREMENT, draft_id TEXT NOT NULL, item TEXT NOT NULL, rids TEXT NOT NULL, day TEXT NOT NULL, at TEXT NOT NULL, folded_at TEXT, voided_at TEXT)");
     sql.exec("CREATE INDEX IF NOT EXISTS booked_draft ON booked (draft_id)");
@@ -316,7 +319,7 @@ export class Book {
       }
       /* a key the book no longer carries leaves with it (PRICING, and the derived documents, are the load's own, and stay when a load omits them) */
       for (const r of sql.exec("SELECT k FROM state").toArray()) if (!keep.has(r.k) && r.k !== "PRICING" && !DERIVED.includes(r.k)) { sql.exec("DELETE FROM state WHERE k = ?", r.k); n.gone++; }
-      const prevRev = (sql.exec("SELECT rev FROM snap WHERE one = 1").toArray()[0] || {}).rev || 0;
+      const prevSnap = sql.exec("SELECT rev, derived_rev FROM snap WHERE one = 1").toArray()[0] || {}, prevRev = prevSnap.rev || 0, prevDerived = prevSnap.derived_rev || 0;
       if (p.snap) sql.exec("INSERT OR REPLACE INTO snap (one, v, stamped, at) VALUES (1, ?, ?, ?)", p.snap.v, p.snap.stamped, at);
       /* S4a: THE ENTRIES THIS LOAD FOLDED. One is folded when D1 says its draft is committed (`opts.folded`, ids the Worker checked) or when the new base holds every rid it minted;
          the rest stay open and are replayed on the new base. The view before and after is compared for the folded ones (tapDiffer). */
@@ -355,7 +358,8 @@ export class Book {
       if (opts.strict && (!tap || tap.differ.length || tap.stuck.length || tap.open || n.gone || !tap.folded))
         throw new Refused("compaction refused: " + JSON.stringify(tap ? { differ: tap.differ, stuck: tap.stuck, open: tap.open, gone: n.gone, folded: tap.folded } : { entries: 0 }));
       const moved = n.added + n.revised + n.gone + n.returned > 0 || !!(tap && tap.folded);
-      if (p.snap) sql.exec("UPDATE snap SET rev = ? WHERE one = 1", prevRev + (moved ? 1 : 0));
+      /* S5f-4: a load's derived documents are as fresh as the revision it leaves; a compaction rewrites the documents it already held, so it leaves where they were computed (`keepDerived`) */
+      if (p.snap) sql.exec("UPDATE snap SET rev = ?, derived_rev = ? WHERE one = 1", prevRev + (moved ? 1 : 0), opts.keepDerived ? prevDerived : prevRev + (moved ? 1 : 0));
       const live = sql.exec("SELECT COUNT(*) AS c FROM rows WHERE gone_at IS NULL").toArray()[0].c;
       const docs = sql.exec("SELECT COUNT(*) AS c FROM state").toArray()[0].c;
       sql.exec("INSERT INTO loads (at, rev, digest, added, revised, gone, returned, rows) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", at, rev == null ? null : String(rev), p.digest, n.added, n.revised, n.gone, n.returned, live);
@@ -461,7 +465,7 @@ export class Book {
      reaches it through the binding, only readBook and readcheck ask, and the answer carries cost, so it is never in CI_ROUTES. */
   readText(base = false) {
     const sql = this.state.storage.sql;
-    const snap = sql.exec("SELECT v, stamped, at FROM snap WHERE one = 1").toArray()[0];
+    const snap = sql.exec("SELECT v, stamped, at, rev, derived_rev FROM snap WHERE one = 1").toArray()[0];
     if (!snap) return null;
     /* S4a: with entries open the answer is the VIEW (base plus the entries, `booked` naming them), memoised on the load and the open entries; `base` asks for the base alone (the readcheck) */
     if (!base) { const v = this.viewFor(snap); if (v) return v.text; }
@@ -472,19 +476,19 @@ export class Book {
     }
     const rows = [...by].map(([c, docs]) => JSON.stringify(c) + ":[" + docs.join(",") + "]").join(",");
     const state = sql.exec("SELECT k, doc FROM state ORDER BY k").toArray().map((r) => JSON.stringify(r.k) + ":" + r.doc).join(",");
-    return '{"ok":true,"v":' + JSON.stringify(snap.v) + ',"stamped":' + JSON.stringify(snap.stamped) + ',"at":' + JSON.stringify(snap.at) + ',"rows":{' + rows + '},"state":{' + state + "}}";
+    return '{"ok":true,"v":' + JSON.stringify(snap.v) + ',"stamped":' + JSON.stringify(snap.stamped) + ',"at":' + JSON.stringify(snap.at) + ',"rev":' + (snap.rev || 0) + ',"derivedRev":' + (snap.derived_rev || 0) + ',"rows":{' + rows + '},"state":{' + state + "}}";
   }
   /* S5d: the Book's revision and nothing else: one row, no view built (the page's /rev poll asks it) */
   revno() {
-    const s = this.state.storage.sql.exec("SELECT rev FROM snap WHERE one = 1").toArray()[0];
-    return s ? { ok: true, rev: s.rev || 0 } : null;
+    const s = this.state.storage.sql.exec("SELECT rev, derived_rev FROM snap WHERE one = 1").toArray()[0];
+    return s ? { ok: true, rev: s.rev || 0, derivedRev: s.derived_rev || 0 } : null;
   }
   /* S3: the Book's version and the moment of its latest load, and nothing else (cheap; for a caller that holds a book already or needs only the bound) */
   snapshot() {
-    const snap = this.state.storage.sql.exec("SELECT v, stamped, at, rev FROM snap WHERE one = 1").toArray()[0];
+    const snap = this.state.storage.sql.exec("SELECT v, stamped, at, rev, derived_rev FROM snap WHERE one = 1").toArray()[0];
     if (!snap) return null;
     const v = this.viewFor(snap);
-    return { ok: true, v: snap.v, stamped: snap.stamped, at: snap.at, rev: snap.rev || 0, booked: v ? v.view.booked : [], stuck: v ? v.view.stuck.map((s) => s.id) : [] };
+    return { ok: true, v: snap.v, stamped: snap.stamped, at: snap.at, rev: snap.rev || 0, derivedRev: snap.derived_rev || 0, booked: v ? v.view.booked : [], stuck: v ? v.view.stuck.map((s) => s.id) : [] };
   }
 
   /* ---- S4a: the booked entries ---- */
@@ -523,12 +527,12 @@ export class Book {
   viewFor(snap) {
     const evs = this.events();
     if (!evs.length) { this.memo = null; return null; }
-    const key = this.state.storage.sql.exec("SELECT COALESCE(MAX(seq), 0) AS m FROM loads").toArray()[0].m + "|" + evs.map((e) => e.seq).join(",");
+    const key = this.state.storage.sql.exec("SELECT COALESCE(MAX(seq), 0) AS m FROM loads").toArray()[0].m + "|" + evs.map((e) => e.seq).join(",") + "|" + (snap.rev || 0) + "|" + (snap.derived_rev || 0);   /* S5f-4: the revision is in the answer, so it is in the key */
     if (this.memo && this.memo.key === key) return this.memo;
     const view = this.viewOf(evs), rows = {}, state = {}, arrays = {};
     for (const [k, v] of Object.entries(view.book)) { if (Array.isArray(v)) { arrays[k] = v.length; if (v.length) rows[k] = v; } else state[k] = v; }
     state[ARRAYS] = arrays; Object.assign(state, view.derived);
-    const text = JSON.stringify({ ok: true, v: snap.v, stamped: snap.stamped, at: snap.at, rows, state, booked: view.booked, stuck: view.stuck.map((s) => s.id) });
+    const text = JSON.stringify({ ok: true, v: snap.v, stamped: snap.stamped, at: snap.at, rev: snap.rev || 0, derivedRev: snap.derived_rev || 0, rows, state, booked: view.booked, stuck: view.stuck.map((s) => s.id) });
     this.memo = { key, text, view };
     return this.memo;
   }
@@ -595,9 +599,9 @@ export class Book {
 
   /* S5a: THE EXPORT: the base, the whole event log, the last loads and the revision, as one answer for the nightly sealed export (src/backup.js). Binding only, never a route. */
   async exportAll() {
-    const sql = this.state.storage.sql, snap = sql.exec("SELECT v, stamped, at, rev FROM snap WHERE one = 1").toArray()[0];
+    const sql = this.state.storage.sql, snap = sql.exec("SELECT v, stamped, at, rev, derived_rev FROM snap WHERE one = 1").toArray()[0];
     if (!snap) return { ok: false, status: 503, error: "the Book holds no snapshot yet" };
-    return { ok: true, v: snap.v, stamped: snap.stamped, at: snap.at, rev: snap.rev || 0, base: JSON.parse(this.readText(true)),
+    return { ok: true, v: snap.v, stamped: snap.stamped, at: snap.at, rev: snap.rev || 0, derivedRev: snap.derived_rev || 0, base: JSON.parse(this.readText(true)),
       entries: this.allEvents(), outbox: sql.exec("SELECT seq, draft_id, at, sent_at, tries, err FROM outbox ORDER BY seq").toArray(), loads: sql.exec("SELECT seq, at, rev, digest, added, revised, gone, returned, rows FROM loads ORDER BY seq DESC LIMIT 30").toArray() };
   }
 
@@ -621,7 +625,7 @@ export class Book {
       const newest = closed.reduce((a, id) => (id > a ? id : a), ""), mark = typeof view.book.QUEUE_COMMITTED === "string" ? view.book.QUEUE_COMMITTED : "";
       if (newest > mark) view.book.QUEUE_COMMITTED = newest;
       const p = await prepare(view.book, PRICING, { v: snap.v, stamped: snap.stamped, derived: rest });
-      const opts = { folded: closed, pure: true, strict: true, pre: view };
+      const opts = { folded: closed, pure: true, strict: true, pre: view, keepDerived: true };
       if (dry) {
         /* the same plan, run as a load that unwinds inside its own transaction: nothing is written, and the strict checks decide */
         try { this.load(p, "compact-dry", { ...opts, dry: true }); return { ok: false, status: 500, dry: true, error: "a dry compaction returned without unwinding" }; }   /* a load that returns here would be a real one */

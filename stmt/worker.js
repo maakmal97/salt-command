@@ -958,7 +958,7 @@ function deskOk(request, env) {
   const want = String(env.STMT_DESK_KEY || "");
   return !!want && ctEq(String(request.headers.get("X-Stmt-Desk") || ""), want);
 }
-const BUILD_ID_RE = /^[0-9a-f]{16}$/;
+const BUILD_ID_RE = /^[0-9a-f]{16}(?:\.\d+)?$/;   /* S5f-4: the Desk's build id, and with the Book as the source its revision after a dot */
 async function customerLive(env, u, acct) {
   const live = acct && acct.live || null;
   if (isTest(u)) return { live, liveStatus: "fixture" };

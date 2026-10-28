@@ -30,12 +30,18 @@ import { isSpare, oneCodeEach } from "./stmt-pool.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CONFIG = join(REPO, "wrangler.stmt.jsonc");
-const BUILD_ID_RE = /^[0-9a-f]{16}$/;
+const BUILD_ID_RE = /^[0-9a-f]{16}(?:\.\d+)?$/;   /* S5f-4: the Desk's build id, and with the Book as the source its revision after a dot */
 
 export function readDeskBuildId(file = join(REPO, "public", "rev.json")) {
   const rev = JSON.parse(readFileSync(file, "utf8"));
   if (!rev || typeof rev.id !== "string" || !BUILD_ID_RE.test(rev.id))
     throw new Error("public/rev.json has no valid Desk build id");
+  /* S5f-4: with the Book as the source the chain names the Book revision the statements are built from (SALT_BOOK_REV, written by the export step), and the stamp is the build id AND that revision, as the Desk answers it */
+  const bookRev = process.env.SALT_BOOK_REV;
+  if (bookRev !== undefined && bookRev !== "") {
+    if (!/^\d+$/.test(bookRev)) throw new Error("SALT_BOOK_REV is not a revision: " + bookRev);
+    return rev.id + "." + bookRev;
+  }
   return rev.id;
 }
 

@@ -52274,6 +52274,11 @@ await (async () => {
   await (await import("./s5f-guards.mjs")).run({ ok });
 })();
 
+section("Book S5f-4: the staleness tests move from git's version to the Book's revision while the Book is the source (28 Oct 2026)");
+await (async () => {
+  await (await import("./s5f-rev.mjs")).run({ ok });
+})();
+
 section("18 Oct 2026: the lean Desk: six views, the three parts gone, alerts in the rail, spots on Coverage, Noticed under To do");
 await (async () => {
   /* HIS DECISION OF 18 OCT 2026: Approve, Site orders and Entries left the Desk, Salt Admin deciding every order, claim, chat and

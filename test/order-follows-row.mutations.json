@@ -20,7 +20,7 @@
 {"name":"V7: the order book refuses an agreed order the book's figures","file":"stmt/orders.js","find":"if (!ROWED.includes(order.status)) return { error: \"only an agreed order takes the book's figures whole\", status: 409 };","replace":"if (order.status !== \"done\") return { error: \"only an agreed order takes the book's figures whole\", status: 409 };"},
 {"name":"V8: an offset on the row is not money on the order","file":"engine/stages.mjs","find":"POSITION_ENGINE.txPaid(row) - (+(o && o.credit) || 0)).toFixed(2);","replace":"(+row.cash || 0) - (+(o && o.credit) || 0)).toFixed(2);"},
 {"name":"V9: the tie-out reads no money","file":"src/orders.js","find":"if (Math.abs(paid - f2(+fig.paid + (+fig.credit || 0))) > 0.004) diff.push(","replace":"if (false) diff.push("},
-{"name":"V9: a stalled return leg is silent","file":"src/orders.js","find":"if (v && told !== v && snap.at && now.getTime() - Date.parse(snap.at) > TIEOUT_STALL_MS)","replace":"if (false)"},
+{"name":"V9: a stalled return leg is silent","file":"src/orders.js","find":"if (v && told !== v && Number.isFinite(since) && now.getTime() - since > TIEOUT_STALL_MS)","replace":"if (false)"},
 {"name":"V9: a stall is read at once","file":"src/orders.js","find":"const TIEOUT_STALL_MS = 15 * 60000;","replace":"const TIEOUT_STALL_MS = -1;"},
 {"name":"Fable V9: two orders on one key both read the row","file":"src/orders.js","find":"    if (named.get(ledgerKeyOf(o)) > 1) continue;","replace":""},
 {"name":"Fable V9: the lowering branch skips what rose","file":"src/orders.js","find":"      /* nothing sent (a move of its own on its way): what rose on the book is still told, below (Fable's review) */\n    }","replace":"      continue;\n    }"},

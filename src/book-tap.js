@@ -8,7 +8,8 @@
    whatever its D1 status (src/way.js). What the Book will not book is approved as it always was: a Book behind the mirror, not answering, or holding a stuck
    entry (`fallback`), and what the fold alone books (`foldOnly`). A refusal by the law is the one thing that stops a tap, with the reason. */
 import { BOOK_NAME } from "./book.js";
-import { nsOf } from "./book-read.js";
+import { nsOf, sourceMode } from "./book-read.js";
+export { sourceMode };   /* S5f-4: the flag's reader lives with the readers (src/book-read.js); this is where the tap and the Worker have always asked for it */
 
 const KL_MS = 8 * 3600000;
 /** the Kuala Lumpur day an entry is booked on, YYYY-MM-DD */
@@ -24,12 +25,6 @@ export async function tapMode(db) {
 /** 'on' or 'off': the roster road's flag (migrations/0021, `book_roster`, shipped 'off'): whether the tap books an Add ID or a rename; 'off' when the table is missing or unreadable */
 export async function rosterMode(db) {
   try { const r = await db.prepare("SELECT mode FROM book_roster WHERE one=1").first(); return r && r.mode === "on" ? "on" : "off"; } catch (e) { return "off"; }
-}
-
-/** 'd1' or 'book': WHICH STORE IS THE SOURCE OF THE LEDGER (migrations/0023, `book_source`, shipped 'd1'; S5f, the flip). Anything but an explicit 'book' reads 'd1', so a missing table, an unreadable row or a
-    store before the migration is the old world: git's book is the source and the fold writes it. Every guard of the flip keys off this one read. */
-export async function sourceMode(db) {
-  try { const r = await db.prepare("SELECT mode FROM book_source WHERE one=1").first(); return r && r.mode === "book" ? "book" : "d1"; } catch (e) { return "d1"; }
 }
 
 /** a draft's D1 row as the item the fold stages (tools/drafts.mjs approvedRows), made approved at `at` by `by` */

@@ -80,7 +80,7 @@
  {
   "name": "the flag is ignored",
   "file": "src/book-read.js",
-  "find": "if (!ns || await readMode(db) !== \"book\") return null;",
+  "find": "if (!ns || await readFlag(db) !== \"book\") return null;",
   "replace": "if (!ns) return null;"
  },
  {

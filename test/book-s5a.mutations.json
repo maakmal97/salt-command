@@ -8,20 +8,20 @@
  {
   "name": "a load never moves the revision",
   "file": "src/book.js",
-  "find": "sql.exec(\"UPDATE snap SET rev = ? WHERE one = 1\", prevRev + (moved ? 1 : 0));",
-  "replace": "sql.exec(\"UPDATE snap SET rev = ? WHERE one = 1\", prevRev);"
+  "find": "sql.exec(\"UPDATE snap SET rev = ?, derived_rev = ? WHERE one = 1\", prevRev + (moved ? 1 : 0), opts.keepDerived ? prevDerived : prevRev + (moved ? 1 : 0));",
+  "replace": "sql.exec(\"UPDATE snap SET rev = ?, derived_rev = ? WHERE one = 1\", prevRev, prevRev);"
  },
  {
   "name": "every load moves the revision",
   "file": "src/book.js",
-  "find": "sql.exec(\"UPDATE snap SET rev = ? WHERE one = 1\", prevRev + (moved ? 1 : 0));",
-  "replace": "sql.exec(\"UPDATE snap SET rev = ? WHERE one = 1\", prevRev + 1);"
+  "find": "sql.exec(\"UPDATE snap SET rev = ?, derived_rev = ? WHERE one = 1\", prevRev + (moved ? 1 : 0), opts.keepDerived ? prevDerived : prevRev + (moved ? 1 : 0));",
+  "replace": "sql.exec(\"UPDATE snap SET rev = ?, derived_rev = ? WHERE one = 1\", prevRev + 1, prevRev + 1);"
  },
  {
   "name": "a load forgets the revision it replaced",
   "file": "src/book.js",
-  "find": "const prevRev = (sql.exec(\"SELECT rev FROM snap WHERE one = 1\").toArray()[0] || {}).rev || 0;",
-  "replace": "const prevRev = 0;"
+  "find": "const prevSnap = sql.exec(\"SELECT rev, derived_rev FROM snap WHERE one = 1\").toArray()[0] || {}, prevRev = prevSnap.rev || 0, prevDerived = prevSnap.derived_rev || 0;",
+  "replace": "const prevSnap = {}, prevRev = 0, prevDerived = 0;"
  },
  {
   "name": "a load does not say where the revision stands",
@@ -50,8 +50,8 @@
  {
   "name": "/at does not carry the revision",
   "file": "src/book.js",
-  "find": "at: snap.at, rev: snap.rev || 0, booked:",
-  "replace": "at: snap.at, booked:"
+  "find": "at: snap.at, rev: snap.rev || 0, derivedRev: snap.derived_rev || 0, booked:",
+  "replace": "at: snap.at, derivedRev: snap.derived_rev || 0, booked:"
  },
  {
   "name": "a strict load may change a row",

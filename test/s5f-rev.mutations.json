@@ -1,0 +1,200 @@
+[
+ {
+  "name": "a Book before this gains the column at a revision",
+  "file": "src/book.js",
+  "find": "ADD COLUMN derived_rev INTEGER NOT NULL DEFAULT 0",
+  "replace": "ADD COLUMN derived_rev INTEGER NOT NULL DEFAULT 5"
+ },
+ {
+  "name": "a load never freshens the documents",
+  "file": "src/book.js",
+  "find": "opts.keepDerived ? prevDerived : prevRev + (moved ? 1 : 0));",
+  "replace": "prevDerived);"
+ },
+ {
+  "name": "a compaction freshens the documents",
+  "file": "src/book.js",
+  "find": "opts.keepDerived ? prevDerived : prevRev + (moved ? 1 : 0));",
+  "replace": "prevRev + (moved ? 1 : 0));"
+ },
+ {
+  "name": "the base read carries no derived revision",
+  "file": "src/book.js",
+  "find": "',\"derivedRev\":' + (snap.derived_rev || 0) + ',\"rows\":{'",
+  "replace": "',\"derivedRev\":0,\"rows\":{'"
+ },
+ {
+  "name": "the view carries no derived revision",
+  "file": "src/book.js",
+  "find": "rev: snap.rev || 0, derivedRev: snap.derived_rev || 0, rows, state, booked: view.booked",
+  "replace": "rev: snap.rev || 0, rows, state, booked: view.booked"
+ },
+ {
+  "name": "the revision verb carries no derived revision",
+  "file": "src/book.js",
+  "find": "return s ? { ok: true, rev: s.rev || 0, derivedRev: s.derived_rev || 0 } : null;",
+  "replace": "return s ? { ok: true, rev: s.rev || 0 } : null;"
+ },
+ {
+  "name": "/at carries no derived revision",
+  "file": "src/book.js",
+  "find": "rev: snap.rev || 0, derivedRev: snap.derived_rev || 0, booked: v ? v.view.booked : []",
+  "replace": "rev: snap.rev || 0, booked: v ? v.view.booked : []"
+ },
+ {
+  "name": "the export carries no derived revision",
+  "file": "src/book.js",
+  "find": "rev: snap.rev || 0, derivedRev: snap.derived_rev || 0, base: JSON.parse(this.readText(true)),",
+  "replace": "rev: snap.rev || 0, base: JSON.parse(this.readText(true)),"
+ },
+ {
+  "name": "the Book as the source is read like git's",
+  "file": "src/book-read.js",
+  "find": "  if (src) {",
+  "replace": "  if (false) {"
+ },
+ {
+  "name": "a Book that will not answer reads as nothing",
+  "file": "src/book-read.js",
+  "find": "|| !Number.isInteger(res.derivedRev)) throw new BookDown(\"the Book is the source of the ledger and did not answer\");",
+  "replace": "|| !Number.isInteger(res.derivedRev)) return null;"
+ },
+ {
+  "name": "an unbound Book is read as nothing",
+  "file": "src/book-read.js",
+  "find": "    if (!ns) throw new BookDown(\"the Book is the source of the ledger and is not bound\");",
+  "replace": "    if (!ns) return null;"
+ },
+ {
+  "name": "a Book that answers no revision is taken",
+  "file": "src/book-read.js",
+  "find": "|| !Number.isInteger(res.rev) || !Number.isInteger(res.derivedRev)) throw new BookDown",
+  "replace": ") throw new BookDown"
+ },
+ {
+  "name": "the readers' flag decides with the Book as the source",
+  "file": "src/book-read.js",
+  "find": "export async function readMode(db) { return await sourceMode(db) === \"book\" ? \"book\" : readFlag(db); }",
+  "replace": "export async function readMode(db) { return readFlag(db); }"
+ },
+ {
+  "name": "the token is not a revision",
+  "file": "src/book-read.js",
+  "find": "export const bookToken = (rev) => \"book@\" + rev;",
+  "replace": "export const bookToken = (rev) => \"book#\" + rev;"
+ },
+ {
+  "name": "the token of the Book is the snapshot's",
+  "file": "src/book-read.js",
+  "find": "  if (await sourceMode(db) !== \"book\") {",
+  "replace": "  if (true) {"
+ },
+ {
+  "name": "a Book that will not say its revision gives a token",
+  "file": "src/book-read.js",
+  "find": "  if (!ns) throw new BookDown(\"the Book is the source of the ledger and is not bound, so it cannot say its revision\");",
+  "replace": "  if (!ns) return null;"
+ },
+ {
+  "name": "bookOf keeps git's version",
+  "file": "src/book-read.js",
+  "find": "    version = bookToken(res.rev);",
+  "replace": "    version = b.version;"
+ },
+ {
+  "name": "the documents are never behind",
+  "file": "src/book-read.js",
+  "find": "state[k] = { ...state[k], v: bookToken(res.derivedRev) };",
+  "replace": "state[k] = { ...state[k], v: bookToken(res.rev) };"
+ },
+ {
+  "name": "the open-order document keeps git's version",
+  "file": "src/book-read.js",
+  "find": "for (const k of [\"PRICING\", \"OPEN\"]) if (state[k]",
+  "replace": "for (const k of [\"PRICING\"]) if (state[k]"
+ },
+ {
+  "name": "the told mark reads git's version with the Book as the source",
+  "file": "src/orders.js",
+  "find": "try { v = await versionToken(env.SALT_LEDGER); } catch (e) { return { ok: false, error:",
+  "replace": "try { v = (snap && snap.v) || null; } catch (e) { return { ok: false, error:"
+ },
+ {
+  "name": "the stall is timed from the snapshot with the Book as the source",
+  "file": "src/orders.js",
+  "find": "if (v && told !== v && Number.isFinite(since) && now.getTime() - since > TIEOUT_STALL_MS) {",
+  "replace": "if (v && told !== v && snap && snap.at && now.getTime() - Date.parse(snap.at) > TIEOUT_STALL_MS) {"
+ },
+ {
+  "name": "a stall never accrues",
+  "file": "src/orders.js",
+  "find": "} else since = Date.parse(seen.at);",
+  "replace": "} else since = now.getTime();"
+ },
+ {
+  "name": "the first sight of a revision is not remembered",
+  "file": "src/orders.js",
+  "find": "since = now.getTime(); await env.SALT_QUEUE.put(TOLD_SEEN, JSON.stringify({ v, at: at }));",
+  "replace": "since = now.getTime();"
+ },
+ {
+  "name": "the amend preview compares the build with the Book's revision",
+  "file": "src/orders.js",
+  "find": "(!BOOK_TOKEN.test(String(book.version)) && book.version !== revision.v))",
+  "replace": "book.version !== revision.v)"
+ },
+ {
+  "name": "an admission is checked against git's snapshot with the Book as the source",
+  "file": "src/input-admission.js",
+  "find": "  if (!BOOK_TOKEN.test(String(book.version))) return CURRENT_OLD;",
+  "replace": "  return CURRENT_OLD;"
+ },
+ {
+  "name": "an admission is checked against nothing with the Book as the source",
+  "file": "src/input-admission.js",
+  "find": "return BOOK_TOKEN.test(String(token)) ? \"'\" + token + \"'\" : \"NULL\";",
+  "replace": "return \"NULL\";"
+ },
+ {
+  "name": "the stamp is the build id alone with the Book as the source",
+  "file": "src/worker.js",
+  "find": "      id = rev.id + \".\" + token.slice(5);",
+  "replace": "      id = rev.id;"
+ },
+ {
+  "name": "the stamp does not read the source",
+  "file": "src/worker.js",
+  "find": "    if (env.SALT_LEDGER && await sourceMode(env.SALT_LEDGER) === \"book\") {",
+  "replace": "    if (false) {"
+ },
+ {
+  "name": "a Book that will not say its revision stamps the plain id",
+  "file": "src/worker.js",
+  "find": "return json({ ok: false, error: \"the Book did not say its revision\" }, 503);",
+  "replace": "return json({ ok: true, id: rev.id });"
+ },
+ {
+  "name": "the Counter takes only a plain build id",
+  "file": "stmt/worker.js",
+  "find": "const BUILD_ID_RE = /^[0-9a-f]{16}(?:\\.\\d+)?$/;",
+  "replace": "const BUILD_ID_RE = /^[0-9a-f]{16}$/;"
+ },
+ {
+  "name": "the Counter takes any suffix after the dot",
+  "file": "stmt/worker.js",
+  "find": "const BUILD_ID_RE = /^[0-9a-f]{16}(?:\\.\\d+)?$/;",
+  "replace": "const BUILD_ID_RE = /^[0-9a-f]{16}(?:\\.\\w*)?$/;"
+ },
+ {
+  "name": "the publisher does not seal the revision",
+  "file": "tools/stmt-publish.mjs",
+  "find": "    return rev.id + \".\" + bookRev;",
+  "replace": "    return rev.id;"
+ },
+ {
+  "name": "the publisher seals a revision that is not a number",
+  "file": "tools/stmt-publish.mjs",
+  "find": "if (!/^\\d+$/.test(bookRev)) throw new Error(\"SALT_BOOK_REV is not a revision: \" + bookRev);",
+  "replace": ""
+ }
+]

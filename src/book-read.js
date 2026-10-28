@@ -12,13 +12,37 @@ const BOOKS = new WeakMap();
 export function bindBook(db, ns) { if (db && ns && typeof ns.get === "function" && typeof ns.idFromName === "function") BOOKS.set(db, ns); }
 /* S4d: the namespace a request bound (the tap and its net reach the Book through it, as the readers do) */
 export const nsOf = (db) => BOOKS.get(db) || null;
-export async function readMode(db) {
+/** 'd1' or 'book': WHICH STORE IS THE SOURCE OF THE LEDGER (migrations/0023, `book_source`, shipped 'd1'; S5f, the flip). Anything but an explicit 'book' reads 'd1', so a missing table, an unreadable row or a
+    store before the migration is the old world: git's book is the source and the fold writes it. Every guard of the flip keys off this one read. */
+export async function sourceMode(db) {
+  try { const r = await db.prepare("SELECT mode FROM book_source WHERE one=1").first(); return r && r.mode === "book" ? "book" : "d1"; } catch (e) { return "d1"; }
+}
+async function readFlag(db) {
   try { const r = await db.prepare("SELECT mode FROM book_read WHERE one=1").first(); return r && r.mode === "book" ? "book" : "d1"; } catch (e) { return "d1"; }
 }
-/* the Book's answer for `path` ("read" or "at"), or null: not in book mode, no Book bound or answering, no snapshot, or the Book trails the mirror */
+/* S5f-4: with the Book as the source the readers read it whatever the readers' flag says (that flag is the way back while git is the source, and a frozen mirror is not a book to read) */
+export async function readMode(db) { return await sourceMode(db) === "book" ? "book" : readFlag(db); }
+/* S5f-4: THE BOOK'S VERSION, FOR A STALENESS TEST. In the old world a book's version is git's (the snapshot's v), which moves with every fold. With the Book as the source an approval is not a version, so the token that moves with money is the
+   Book's revision: `book@<rev>`. Every test that asked "is this the book I read?" asks this instead: the told mark and the tie-out, the pricing and open-order flags, the input admission's snapshot, the maker's row room. */
+export const BOOK_TOKEN = /^book@\d+$/;
+export const bookToken = (rev) => "book@" + rev;
+/* a Book that is the source and cannot be read is an error, never the mirror: the mirror is frozen at the flip, so reading it would price and book against yesterday */
+export class BookDown extends Error {}
+/* the Book's answer for `path` ("read" or "at"), or null: not in book mode, no Book bound or answering, no snapshot, or the Book trails the mirror.
+   S5f-4: with the Book as the SOURCE none of those is a reason to read the mirror: the answer is marked `source: "book"` and carries its revision, and a Book that will not answer THROWS (BookDown), since the mirror is frozen. */
 export async function fromBook(db, path) {
-  const ns = BOOKS.get(db);
-  if (!ns || await readMode(db) !== "book") return null;
+  const ns = BOOKS.get(db), src = await sourceMode(db) === "book";
+  if (src) {
+    if (!ns) throw new BookDown("the Book is the source of the ledger and is not bound");
+    let res = null;
+    try {
+      const r = await ns.get(ns.idFromName(BOOK_NAME)).fetch(new Request("https://book/" + path));
+      res = r.ok ? await r.json() : null;
+    } catch (e) { res = null; }
+    if (!res || !res.ok || typeof res.at !== "string" || !Number.isInteger(res.rev) || !Number.isInteger(res.derivedRev)) throw new BookDown("the Book is the source of the ledger and did not answer");
+    return { ...res, source: "book" };
+  }
+  if (!ns || await readFlag(db) !== "book") return null;
   try {
     const head = await db.prepare("SELECT v FROM snapshot WHERE one=1").first();
     if (!head || head.v == null) return null;
@@ -31,6 +55,19 @@ export async function fromBook(db, path) {
     return res;
   } catch (e) { return null; }
 }
+/** the token a staleness test compares: the snapshot's v in the old world, `book@<rev>` with the Book as the source (the Book's own cheap revision verb, no view built); null when the old world has no snapshot yet, and a throw when the Book is the source and will not say */
+export async function versionToken(db) {
+  if (await sourceMode(db) !== "book") {
+    const h = await db.prepare("SELECT v FROM snapshot WHERE one=1").first();
+    return h && h.v != null ? h.v : null;
+  }
+  const ns = BOOKS.get(db);
+  if (!ns) throw new BookDown("the Book is the source of the ledger and is not bound, so it cannot say its revision");
+  let j = null;
+  try { const r = await ns.get(ns.idFromName(BOOK_NAME)).fetch(new Request("https://book/revno")); j = r.ok ? await r.json() : null; } catch (e) { j = null; }
+  if (!j || !Number.isInteger(j.rev)) throw new BookDown("the Book is the source of the ledger and did not say its revision");
+  return bookToken(j.rev);
+}
 /* the bound for a reader that holds no book of its own: the Book's latest load, or null for the mirror's own form */
 export async function wayBound(db) {
   const r = await fromBook(db, "at");
@@ -42,7 +79,14 @@ export async function wayBound(db) {
 export function bookOf(res) {
   const b = shape(res), state = b.state;
   if (!Array.isArray(state.loans)) state.loans = b.rows.loans;
-  return { sales: b.rows.sales, purchases: b.rows.purchases, state, version: b.version, pricing: state.PRICING || null, at: b.at, customerRefunds: b.rows.customerRefunds, booked: Array.isArray(res.booked) ? res.booked : [] };
+  /* S5f-4: from the Book as the source the version is the Book's revision, and the pricing and open-order documents carry the revision they were computed at, so the readers' own comparison (document.v against the book's version)
+     says "stale" exactly when they trail the book, and says nothing while they do not */
+  let version = b.version;
+  if (res.source === "book") {
+    version = bookToken(res.rev);
+    for (const k of ["PRICING", "OPEN"]) if (state[k] && typeof state[k] === "object" && !Array.isArray(state[k])) state[k] = { ...state[k], v: bookToken(res.derivedRev) };
+  }
+  return { sales: b.rows.sales, purchases: b.rows.purchases, state, version, pricing: state.PRICING || null, at: b.at, customerRefunds: b.rows.customerRefunds, booked: Array.isArray(res.booked) ? res.booked : [] };
 }
 
 /* the Book's answer whatever the flag and the mirror say, or null: the readcheck's side of the comparison */

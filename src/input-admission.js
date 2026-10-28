@@ -1,5 +1,17 @@
 import E from "../engine/position.mjs";
 import { makerRequestFingerprint } from "./maker-request.js";
+import { versionToken, BOOK_TOKEN } from "./book-read.js";
+
+/* S5f-4: AN ADMISSION IS HELD AGAINST THE VERSION OF THE BOOK THE READER READ. In the old world that is git's (the snapshot's v), compared in SQL against the mirror's own row so the check and the insert are one statement. With the
+   Book as the source an approval is not a version, so the token is the Book's revision (`book@<rev>`, what bookOf gives as the version): the SQL then compares against that token, spliced as a literal after a shape check (it
+   is read just before, and the check after the insert stands as it did: a revision that moved in between withdraws the admission and says the book changed). A reservation made at an older revision stops counting once
+   the revision moves, exactly as one made at an older git version did. */
+const CURRENT_OLD = "(SELECT v FROM snapshot WHERE one=1)";
+async function currentSql(db, book) {
+  if (!BOOK_TOKEN.test(String(book.version))) return CURRENT_OLD;
+  const token = await versionToken(db);
+  return BOOK_TOKEN.test(String(token)) ? "'" + token + "'" : "NULL";
+}
 
 const fault = (error, status = 409) => ({ error, status });
 const normalized = (entry) => {
@@ -44,8 +56,9 @@ export async function admitInputs(db, entries, book, source) {
     SELECT json_extract(value,'$[0]'),json_extract(value,'$[1]'),json_extract(value,'$[2]'),
       json_extract(value,'$[3]'),json_extract(value,'$[4]'),json_extract(value,'$[5]'),
       json_extract(value,'$[6]') FROM json_each(?1)) `;
+  const cur = await currentSql(db, book);
   const allFit = `NOT EXISTS (SELECT 1 FROM incoming i WHERE
-    NOT EXISTS (SELECT 1 FROM snapshot WHERE one=1 AND v=i.snapshot)
+    ${cur === CURRENT_OLD ? "NOT EXISTS (SELECT 1 FROM snapshot WHERE one=1 AND v=i.snapshot)" : "i.snapshot IS NOT " + cur}
     OR EXISTS (SELECT 1 FROM input_admission a WHERE a.id=i.id AND (a.fingerprint<>i.fingerprint OR a.state<>'accepted'))
     OR EXISTS (SELECT 1 FROM draft d WHERE d.id=i.id AND (d.status='rejected' OR d.committed_at IS NOT NULL))
     OR EXISTS (SELECT 1 FROM maker_request WHERE id='queue-withdraw:'||i.id)
@@ -67,7 +80,7 @@ export async function admitInputs(db, entries, book, source) {
     if (!accepted || accepted.fingerprint !== fingerprint || accepted.state !== "accepted")
       return fault("The book changed or this batch's balance is already reserved. Retry the original request.");
   }
-  const current = await db.prepare("SELECT v FROM snapshot WHERE one=1").first();
+  const current = { v: await versionToken(db) };
   if (String(current?.v) !== String(book.version)) {
     for (const [i, { entry }] of claims.entries())
       if (results[i + 1].meta.changes === 1) await withdrawInputAdmission(db, entry.at, source);
@@ -123,7 +136,7 @@ export async function admitInput(db, entry, book, source) {
   const insert = db.prepare(`INSERT OR IGNORE INTO input_admission
     (id,fingerprint,resource,amount,snapshot,entry)
     SELECT ?1,?2,?3,?4,?5,?6
-    WHERE (SELECT v FROM snapshot WHERE one=1)=?5
+    WHERE ${await currentSql(db, book)}=?5
       AND ?4 + COALESCE((SELECT SUM(amount) FROM input_admission
         WHERE resource=?3 AND (state='accepted' OR state='committed' AND snapshot=?5)),0) <= ?7 + 0.005
       AND NOT EXISTS (SELECT 1 FROM draft WHERE id=?1 AND (status='rejected' OR committed_at IS NOT NULL))
@@ -138,7 +151,7 @@ export async function admitInput(db, entry, book, source) {
   if (!accepted) return fault("The book changed or this balance is already reserved. Read the input again.");
   if (accepted.fingerprint !== fingerprint) return fault("That timestamp already names a different resource input.");
   if (accepted.state !== "accepted") return fault("That input is already " + accepted.state + ". Do not send it again.");
-  const current = await db.prepare("SELECT v FROM snapshot WHERE one=1").first();
+  const current = { v: await versionToken(db) };
   if (String(current?.v) !== String(book.version)) {
     if (results[1].meta.changes === 1) await withdrawInputAdmission(db, entry.at, source);
     return fault("The book changed during admission. This input was not sent; start a new input.");

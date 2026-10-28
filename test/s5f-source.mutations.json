@@ -1,25 +1,25 @@
 [
  {
   "name": "any word reads as the Book",
-  "file": "src/book-tap.js",
-  "find": "return r && r.mode === \"book\" ? \"book\" : \"d1\"; } catch (e) { return \"d1\"; }",
-  "replace": "return r && r.mode ? \"book\" : \"d1\"; } catch (e) { return \"d1\"; }"
+  "file": "src/book-read.js",
+  "find": "FROM book_source WHERE one=1\").first(); return r && r.mode === \"book\" ? \"book\" : \"d1\"; } catch (e) { return \"d1\"; }",
+  "replace": "FROM book_source WHERE one=1\").first(); return r && r.mode ? \"book\" : \"d1\"; } catch (e) { return \"d1\"; }"
  },
  {
   "name": "an unreadable store reads as the Book",
-  "file": "src/book-tap.js",
-  "find": "return r && r.mode === \"book\" ? \"book\" : \"d1\"; } catch (e) { return \"d1\"; }",
-  "replace": "return r && r.mode === \"book\" ? \"book\" : \"d1\"; } catch (e) { return \"book\"; }"
+  "file": "src/book-read.js",
+  "find": "FROM book_source WHERE one=1\").first(); return r && r.mode === \"book\" ? \"book\" : \"d1\"; } catch (e) { return \"d1\"; }",
+  "replace": "FROM book_source WHERE one=1\").first(); return r && r.mode === \"book\" ? \"book\" : \"d1\"; } catch (e) { return \"book\"; }"
  },
  {
   "name": "an empty row reads as the Book",
-  "file": "src/book-tap.js",
-  "find": "return r && r.mode === \"book\" ? \"book\" : \"d1\"; } catch (e) { return \"d1\"; }",
-  "replace": "return !r || r.mode === \"book\" ? \"book\" : \"d1\"; } catch (e) { return \"d1\"; }"
+  "file": "src/book-read.js",
+  "find": "FROM book_source WHERE one=1\").first(); return r && r.mode === \"book\" ? \"book\" : \"d1\"; } catch (e) { return \"d1\"; }",
+  "replace": "FROM book_source WHERE one=1\").first(); return !r || r.mode === \"book\" ? \"book\" : \"d1\"; } catch (e) { return \"d1\"; }"
  },
  {
   "name": "the flag reads another table",
-  "file": "src/book-tap.js",
+  "file": "src/book-read.js",
   "find": "SELECT mode FROM book_source WHERE one=1",
   "replace": "SELECT mode FROM book_roster WHERE one=1"
  },
