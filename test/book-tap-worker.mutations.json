@@ -62,14 +62,14 @@
  {
   "name": "the flag is always on",
   "file": "src/book-tap.js",
-  "find": "return r && r.mode === \"on\" ? \"on\" : \"off\"; } catch (e) { return \"off\"; }",
-  "replace": "return r ? \"on\" : \"off\"; } catch (e) { return \"off\"; }"
+  "find": "FROM book_tap WHERE one=1\").first(); return r && r.mode === \"on\" ? \"on\" : \"off\"; } catch (e) { return \"off\"; }",
+  "replace": "FROM book_tap WHERE one=1\").first(); return r ? \"on\" : \"off\"; } catch (e) { return \"off\"; }"
  },
  {
   "name": "a store with no flag table reads as on",
   "file": "src/book-tap.js",
-  "find": "return r && r.mode === \"on\" ? \"on\" : \"off\"; } catch (e) { return \"off\"; }",
-  "replace": "return r && r.mode === \"on\" ? \"on\" : \"off\"; } catch (e) { return \"on\"; }"
+  "find": "FROM book_tap WHERE one=1\").first(); return r && r.mode === \"on\" ? \"on\" : \"off\"; } catch (e) { return \"off\"; }",
+  "replace": "FROM book_tap WHERE one=1\").first(); return r && r.mode === \"on\" ? \"on\" : \"off\"; } catch (e) { return \"on\"; }"
  },
  {
   "name": "a refusal is treated as a fallback",
@@ -80,8 +80,8 @@
  {
   "name": "the mirror's version is not sent",
   "file": "src/book-tap.js",
-  "find": "day: klDay(), v });",
-  "replace": "day: klDay() });"
+  "find": "day: klDay(), v, roster:",
+  "replace": "day: klDay(), roster:"
  },
  {
   "name": "the entry is booked on the UTC day",
@@ -116,8 +116,8 @@
  {
   "name": "the net books a committed draft",
   "file": "src/book-tap.js",
-  "find": "const open = \"status='approved' AND committed_at IS NULL AND collection NOT IN",
-  "replace": "const open = \"status='approved' AND collection NOT IN"
+  "find": "const open = \"status='approved' AND committed_at IS NULL AND \"",
+  "replace": "const open = \"status='approved' AND \""
  },
  {
   "name": "the net runs with the flag off",

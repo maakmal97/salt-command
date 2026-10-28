@@ -20,8 +20,8 @@
  {
   "name": "the ledger route is not a CI route",
   "file": "src/worker.js",
-  "find": "\"GET /book/readcheck\", \"GET /book/ledger\"]);",
-  "replace": "\"GET /book/readcheck\"]);"
+  "find": "\"GET /book/readcheck\", \"GET /book/ledger\", \"GET /book/roster\"]);",
+  "replace": "\"GET /book/readcheck\", \"GET /book/roster\"]);"
  },
  {
   "name": "the ledger route takes any caller",

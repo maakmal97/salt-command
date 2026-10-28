@@ -50,7 +50,7 @@
  {
   "name": "a rename is held to the end of the batch",
   "file": "engine/apply.mjs",
-  "find": "      E.renameInBook(book, rn.pairs);   // PLACED is a map keyed by code, so a point filed earlier moves with the code\n      if (rn.geo) { book.PLACED = book.PLACED || {}; book.PLACED[rn.to] = rn.geo; }   // v633: and a new place moves it on\n      renames.push(rn);",
+  "find": "      applyRename(book, rn);\n      renames.push(rn);",
   "replace": "      renames.push(rn);"
  },
  {

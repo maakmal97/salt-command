@@ -1,0 +1,314 @@
+[
+ {
+  "name": "the list forgets a code the master quotes",
+  "file": "engine/pinned.mjs",
+  "find": "[\"CJ4-OKR\", \"SA5-BTR\", \"SP7-PUD\", \"CM6-HCM\"]",
+  "replace": "[\"CJ4-OKR\", \"SA5-BTR\", \"SP7-PUD\"]"
+ },
+ {
+  "name": "a non-string is looked up",
+  "file": "engine/pinned.mjs",
+  "find": "typeof code === \"string\" && PINNED_CODES",
+  "replace": "PINNED_CODES"
+ },
+ {
+  "name": "a rename's new place is not filed",
+  "file": "engine/apply.mjs",
+  "find": "if (rn.geo) { book.PLACED = book.PLACED || {}; book.PLACED[rn.to] = rn.geo; }\n}",
+  "replace": "if (false && rn.geo) { book.PLACED = book.PLACED || {}; book.PLACED[rn.to] = rn.geo; }\n}"
+ },
+ {
+  "name": "the law pins nothing",
+  "file": "src/book.js",
+  "find": "pinnedInMaster: isPinned,",
+  "replace": "pinnedInMaster: () => false,"
+ },
+ {
+  "name": "the flag is ignored: roster is always the fold's",
+  "file": "src/book.js",
+  "find": "if (!rosterOn && FOLD_ONLY.includes(item.collection))",
+  "replace": "if (FOLD_ONLY.includes(item.collection))"
+ },
+ {
+  "name": "the flag is ignored: roster is always booked",
+  "file": "src/book.js",
+  "find": "if (!rosterOn && FOLD_ONLY.includes(item.collection))",
+  "replace": "if (false && FOLD_ONLY.includes(item.collection))"
+ },
+ {
+  "name": "the Book takes the flag as always on",
+  "file": "src/book.js",
+  "find": "foldOnlyWhy(it, book, body.roster === true)",
+  "replace": "foldOnlyWhy(it, book, true)"
+ },
+ {
+  "name": "a rename does not re-key the book",
+  "file": "src/book.js",
+  "find": "{ applyRename(book, rn); effects.renames.push(",
+  "replace": "{ effects.renames.push("
+ },
+ {
+  "name": "a registration's effect is not recorded",
+  "file": "src/book.js",
+  "find": "if (it.roster) effects.roster.push(",
+  "replace": "if (false && it.roster) effects.roster.push("
+ },
+ {
+  "name": "a rename's pairs are not recorded",
+  "file": "src/book.js",
+  "find": "{ from: rn.from, to: rn.to, pairs: rn.pairs, geo: rn.geo || null }",
+  "replace": "{ from: rn.from, to: rn.to, pairs: [], geo: rn.geo || null }"
+ },
+ {
+  "name": "an entry with no effect records an empty one",
+  "file": "src/book.js",
+  "find": "effects.renames.length || effects.roster.length ? effects : null",
+  "replace": "effects"
+ },
+ {
+  "name": "the load check leaves the roster documents out",
+  "file": "src/book.js",
+  "find": "folded.some((e) => e.coll === \"roster\" || e.coll === \"rename\") ? TAP_PURE.concat(ROSTER_PURE) : TAP_PURE",
+  "replace": "TAP_PURE"
+ },
+ {
+  "name": "the load check does not know the entry's kind",
+  "file": "src/book.js",
+  "find": "coll: JSON.parse(e.item).collection,",
+  "replace": "coll: null,"
+ },
+ {
+  "name": "the event log hides the effects",
+  "file": "src/book.js",
+  "find": "effects: e.effects ? JSON.parse(e.effects) : null }))",
+  "replace": "effects: null }))"
+ },
+ {
+  "name": "the effects are not stored",
+  "file": "src/book.js",
+  "find": "x.effects ? JSON.stringify(x.effects) : null);",
+  "replace": "null);"
+ },
+ {
+  "name": "the route answers voided entries",
+  "file": "src/worker.js",
+  "find": "e.effects && e.seq > after && !e.voided_at)",
+  "replace": "e.effects && e.seq > after)"
+ },
+ {
+  "name": "the route keeps the entry it was asked after",
+  "file": "src/worker.js",
+  "find": "e.effects && e.seq > after && !e.voided_at)",
+  "replace": "e.effects && e.seq >= after && !e.voided_at)"
+ },
+ {
+  "name": "the route forgets the highest order",
+  "file": "src/worker.js",
+  "find": "max: ev.entries.reduce((a, e) => Math.max(a, e.seq), 0), events",
+  "replace": "max: 0, events"
+ },
+ {
+  "name": "the route needs no key",
+  "file": "src/worker.js",
+  "find": "async function handleBookRoster(request, env, m, url) {\n  if (m !== \"GET\") return json({ ok: false, error: \"method not allowed\" }, 405);\n  if (!bookKeyOk(request, env)) return needsKey();",
+  "replace": "async function handleBookRoster(request, env, m, url) {\n  if (m !== \"GET\") return json({ ok: false, error: \"method not allowed\" }, 405);"
+ },
+ {
+  "name": "the route is not a CI route",
+  "file": "src/worker.js",
+  "find": "\"GET /book/ledger\", \"GET /book/roster\"]);",
+  "replace": "\"GET /book/ledger\"]);"
+ },
+ {
+  "name": "the route is not behind the login's 401",
+  "file": "src/worker.js",
+  "find": "|| p === \"/book/ledger\" || p === \"/book/roster\")",
+  "replace": "|| p === \"/book/ledger\")"
+ },
+ {
+  "name": "the route takes any after",
+  "file": "src/worker.js",
+  "find": "if (!Number.isInteger(after) || after < 0) return json({ ok: false, error: \"after is a booking order, a whole number\" }, 400);",
+  "replace": ""
+ },
+ {
+  "name": "the flag always reads on",
+  "file": "src/book-tap.js",
+  "find": "FROM book_roster WHERE one=1\").first(); return r && r.mode === \"on\" ? \"on\" : \"off\";",
+  "replace": "FROM book_roster WHERE one=1\").first(); return \"on\";"
+ },
+ {
+  "name": "the net always leaves roster to the fold",
+  "file": "src/book-tap.js",
+  "find": "(await rosterMode(db) === \"on\" ? \"\" : \"collection NOT IN ('roster','rename') AND \")",
+  "replace": "\"collection NOT IN ('roster','rename') AND \""
+ },
+ {
+  "name": "the tap tells the Book the flag is on",
+  "file": "src/book-tap.js",
+  "find": "roster: await rosterMode(db) === \"on\" }",
+  "replace": "roster: true }"
+ },
+ {
+  "name": "a registration takes no spare",
+  "file": "tools/roster-export.mjs",
+  "find": "[ev.draft_id], free);",
+  "replace": "[ev.draft_id], []);"
+ },
+ {
+  "name": "a spare is given twice",
+  "file": "tools/roster-export.mjs",
+  "find": "if (i >= 0) { free.splice(i, 1); rep.bound.push(rg.code); }",
+  "replace": "if (i >= 0) { rep.bound.push(rg.code); }"
+ },
+ {
+  "name": "a replay mints again",
+  "file": "tools/roster-export.mjs",
+  "find": "if (end !== rg.code && users[end]) continue;",
+  "replace": ""
+ },
+ {
+  "name": "the account does not move",
+  "file": "tools/roster-export.mjs",
+  "find": "renameUsers(users, pairs); rep.moved.users += had;",
+  "replace": "rep.moved.users += had;"
+ },
+ {
+  "name": "the place override does not move",
+  "file": "tools/roster-export.mjs",
+  "find": "rep.moved.locs += renameLocs(places, pairs);",
+  "replace": "rep.moved.locs += 0;"
+ },
+ {
+  "name": "the fixtures do not move",
+  "file": "tools/roster-export.mjs",
+  "find": "const next = renameSuiteText(suite, pairs);",
+  "replace": "const next = suite;"
+ },
+ {
+  "name": "the entries are taken as they come",
+  "file": "tools/roster-export.mjs",
+  "find": ".slice().sort((a, b) => a.seq - b.seq);\n  /* where a code",
+  "replace": ".slice();\n  /* where a code"
+ },
+ {
+  "name": "the input is written into",
+  "file": "tools/roster-export.mjs",
+  "find": "const users = { ...(files.users || {}) }, places = JSON.parse(JSON.stringify(files.places || {})),",
+  "replace": "const users = files.users || {}, places = files.places || {},"
+ },
+ {
+  "name": "the key is not sent",
+  "file": "tools/roster-export.mjs",
+  "find": "const headers = { \"X-Book-Key\": key };",
+  "replace": "const headers = {};"
+ },
+ {
+  "name": "a 4xx is retried",
+  "file": "tools/roster-export.mjs",
+  "find": "if (r.status < 500) return { error: last };",
+  "replace": ""
+ },
+ {
+  "name": "the watermark is not asked",
+  "file": "tools/roster-export.mjs",
+  "find": "\"/book/roster?after=\" + (after || 0)",
+  "replace": "\"/book/roster\""
+ },
+ {
+  "name": "the migration ships on",
+  "file": "migrations/0021_book_roster.sql",
+  "find": "VALUES (1, 'off')",
+  "replace": "VALUES (1, 'on')"
+ },
+ {
+  "name": "the route carries the item",
+  "file": "src/worker.js",
+  "find": ".map((e) => ({ seq: e.seq, draft_id: e.draft_id, effects: {",
+  "replace": ".map((e) => ({ seq: e.seq, draft_id: e.draft_id, item: e.item, effects: {"
+ },
+ {
+  "name": "the route carries the place",
+  "file": "src/worker.js",
+  "find": "({ from: x.from, to: x.to, pairs: x.pairs }))",
+  "replace": "({ from: x.from, to: x.to, pairs: x.pairs, geo: x.geo }))"
+ },
+ {
+  "name": "a retired code is not refused",
+  "file": "src/book.js",
+  "find": "const gone = namedCodes(it).find(",
+  "replace": "const gone = [].find("
+ },
+ {
+  "name": "a trip's own rename is not remembered",
+  "file": "src/book.js",
+  "find": "if (r.effects) for (const rn of r.effects.renames) for (const [f, t] of rn.pairs || []) retired.set(f, t);",
+  "replace": ""
+ },
+ {
+  "name": "a code put back is still refused",
+  "file": "src/book.js",
+  "find": "retired.has(c) && !(book.roster || []).includes(c));",
+  "replace": "retired.has(c));"
+ },
+ {
+  "name": "a rename closes with the old code still there",
+  "file": "src/book.js",
+  "find": "(rn.pairs || []).every(([f, t]) => !rosterNow.has(f) && rosterNow.has(t))",
+  "replace": "(rn.pairs || []).every(([f, t]) => rosterNow.has(t))"
+ },
+ {
+  "name": "an Add ID closes without being in the base",
+  "file": "src/book.js",
+  "find": "regs.every((x) => rosterNow.has(x.code)) &&",
+  "replace": "true &&"
+ },
+ {
+  "name": "the effects never close an entry",
+  "file": "src/book.js",
+  "find": "|| byRid(e) || byEffect(e));",
+  "replace": "|| byRid(e));"
+ },
+ {
+  "name": "the load check is silent about a registration",
+  "file": "src/book.js",
+  "find": "differ.push(\"roster \" + x.code + \" (not in the base)\");",
+  "replace": "void 0;"
+ },
+ {
+  "name": "the load check is silent about a rename",
+  "file": "src/book.js",
+  "find": "differ.push(\"roster \" + f + \" to \" + t + \" (not moved in the base)\");",
+  "replace": "void 0;"
+ },
+ {
+  "name": "a registration moved on is named",
+  "file": "src/book.js",
+  "find": "x.register && !moved.has(x.code) && !rosterPost.has(x.code)",
+  "replace": "x.register && !rosterPost.has(x.code)"
+ },
+ {
+  "name": "the effects are not handed to the check",
+  "file": "src/book.js",
+  "find": "fx: e.effects ? JSON.parse(e.effects) : null }))",
+  "replace": "fx: null }))"
+ },
+ {
+  "name": "--init sees no open entry",
+  "file": "tools/roster-export.mjs",
+  "find": "(events || []).filter((e) => !e.folded);",
+  "replace": "[];"
+ },
+ {
+  "name": "a pinned code does not carry its bucket",
+  "file": "engine/pinned.mjs",
+  "find": "code === p || code.startsWith(p + \"-\")",
+  "replace": "code === p"
+ },
+ {
+  "name": "a pinned code carries any longer code",
+  "file": "engine/pinned.mjs",
+  "find": "code.startsWith(p + \"-\")",
+  "replace": "code.startsWith(p)"
+ }
+]

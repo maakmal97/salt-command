@@ -182,7 +182,7 @@
  {
   "name": "the readcheck is not a CI route",
   "file": "src/worker.js",
-  "find": "\"GET /book/window\", \"GET /book/readcheck\", \"GET /book/ledger\"]);",
+  "find": "\"GET /book/window\", \"GET /book/readcheck\", \"GET /book/ledger\", \"GET /book/roster\"]);",
   "replace": "\"GET /book/window\"]);"
  },
  {
