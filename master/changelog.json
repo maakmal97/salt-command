@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1321",
+  "d": "29 Oct 2026",
+  "t": "ONE UNIT OF SALT DELIVERED ON AN ADVANCE",
+  "n": [
+   "<b>ONE CORRECTION FOLDED, s303 MARKED DELIVERED.</b> The correction sets deliveredQty to 1, deliveredOn to 29 Oct 2026 and handover to delivered on the CS6-BS-R order of 1 unit, goods RM105. It was preapproved by Counter Admin. RM150 is still unpaid, so this is an advance: 1 unit has gone out on credit.",
+   "<b>SHELF DOWN BY 1 UNIT.</b> Salt rolls out to CS6-BS-R by the 1 unit the correction states. The cost basis is unchanged at RM56 a unit, and no lot landed."
+  ]
+ },
+ {
   "v": "v1320",
   "d": "29 Oct 2026",
   "t": "ONE PENDING RESALE BOOKED TO CS6-BS-R",

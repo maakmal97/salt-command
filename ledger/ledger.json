@@ -1,6 +1,6 @@
 {
- "v": "v1320",
- "stamped": "29 Oct 2026, 06:44 KL",
+ "v": "v1321",
+ "stamped": "29 Oct 2026, 06:46 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -107,7 +107,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 24.5,
+  "STATED_STOCK": 23.5,
   "COUNT_ON": {
    "salt": "2026-10-28",
    "oil": "2026-10-27",
@@ -9580,12 +9580,38 @@
     "cash": 0,
     "delivery": 45,
     "date": "2026-10-29",
-    "deliveredQty": 0,
-    "rev": "R2",
-    "note": "<b>PENDING SALE OF 1 UNIT OF SALT TO CS6-BS-R, GOODS RM105, 29 OCT 2026.</b> Ordered on the statements site, order 20261028224249-cg8tbw, with RM45 delivery, so RM150 is owed. It is booked as R2 and was preapproved by Counter Admin. Nothing is paid and nothing handed over, so no stock is drawn and no revenue is booked. For 1 unit the ladder gives a floor total of RM60 and an ask total of RM120, so the goods at RM105 are above the floor and below the ask. The party's median rate is RM96.67, range RM6 to RM120; outstanding before was RM0, no units on credit against a cap of 1. The cost is RM56 a unit, the inventory's own, costed off the latest purchase. The drafter flagged the R2 booking. The figures answer it: earlier R2 rows are booked to this account too. RM150 and the 1 unit remain outstanding.",
+    "deliveredQty": 1,
+    "note": "<b>CORRECTION ON s303: 1 UNIT OF SALT DELIVERED TO CS6-BS-R, 29 OCT 2026.</b> It sets deliveredQty from 0 to 1, deliveredOn to 29 Oct 2026 and handover to delivered, for order 20261028224249-cg8tbw, goods RM105 with RM45 delivery, so RM150 is owed. It was preapproved by Counter Admin. The shelf rolls out by 1 unit. For 1 unit the ladder gives a floor total of RM60 and an ask total of RM120, so the goods at RM105 stay above the floor and below the ask. The party's median rate is RM96.67, range RM6 to RM120; outstanding before was RM150, no units on credit against a cap of 1. The cost is RM56 a unit, the inventory's own. The drafter flagged an advance with RM150 unpaid, to be checked against the credit cap. The figures only partly answer it: this unit takes the credit to 1 unit, which is the cap. RM150 remains outstanding. <b>PENDING SALE OF 1 UNIT OF SALT TO CS6-BS-R, GOODS RM105, 29 OCT 2026.</b> Ordered on the statements site, order 20261028224249-cg8tbw, with RM45 delivery, so RM150 is owed. It is booked as R2 and was preapproved by Counter Admin. Nothing is paid and nothing handed over, so no stock is drawn and no revenue is booked. For 1 unit the ladder gives a floor total of RM60 and an ask total of RM120, so the goods at RM105 are above the floor and below the ask. The party's median rate is RM96.67, range RM6 to RM120; outstanding before was RM0, no units on credit against a cap of 1. The cost is RM56 a unit, the inventory's own, costed off the latest purchase. The drafter flagged the R2 booking. The figures answer it: earlier R2 rows are booked to this account too. RM150 and the 1 unit remain outstanding.",
     "listRM": 105,
     "listQty": 1,
-    "rid": "s303"
+    "rid": "s303",
+    "deliveredOn": "2026-10-29",
+    "handover": "delivered",
+    "rev": "R2",
+    "mod": "corrected on 2026-10-29: deliveredQty 0 to 1; deliveredOn (unset) to 2026-10-29; handover (unset) to delivered",
+    "amend": [
+     {
+      "date": "2026-10-29",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-29",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 1,
+      "note": "<b>CORRECTION ON s303: 1 UNIT OF SALT DELIVERED TO CS6-BS-R, 29 OCT 2026.</b> It sets deliveredQty from 0 to 1, deliveredOn to 29 Oct 2026 and handover to delivered, for order 20261028224249-cg8tbw, goods RM105 with RM45 delivery, so RM150 is owed. It was preapproved by Counter Admin. The shelf rolls out by 1 unit. For 1 unit the ladder gives a floor total of RM60 and an ask total of RM120, so the goods at RM105 stay above the floor and below the ask. The party's median rate is RM96.67, range RM6 to RM120; outstanding before was RM150, no units on credit against a cap of 1. The cost is RM56 a unit, the inventory's own. The drafter flagged an advance with RM150 unpaid, to be checked against the credit cap. The figures only partly answer it: this unit takes the credit to 1 unit, which is the cap. RM150 remains outstanding.",
+      "was": {
+       "deliveredQty": 0,
+       "deliveredOn": null,
+       "handover": null
+      },
+      "cost": 56
+     }
+    ],
+    "cost": 56
    }
   ],
   "contacts": [
@@ -10391,7 +10417,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-28T22:43:14.820Z",
+  "QUEUE_COMMITTED": "2026-10-28T22:45:20.331Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -10422,7 +10448,7 @@
     {
      "id": "cust:cadence:salt",
      "sev": "watch",
-     "title": "13 customers are past their own habit on salt"
+     "title": "12 customers are past their own habit on salt"
     },
     {
      "id": "cust:cadence:oil",
@@ -10599,13 +10625,13 @@
     "CS6-BS": {
      "salt": {
       "name": "consistent mid",
-      "orders": 20,
+      "orders": 21,
       "tenureDays": 109,
-      "sinceLastDays": 14,
-      "perMonth": 5.59,
-      "unitsPerMonth": 13.82,
-      "smallShare": 0.45,
-      "bigShare": 0.35,
+      "sinceLastDays": 0,
+      "perMonth": 5.86,
+      "unitsPerMonth": 14.1,
+      "smallShare": 0.48,
+      "bigShare": 0.33,
       "frequent": true,
       "small": false,
       "bigger": false,
@@ -11767,15 +11793,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.28448275862068967
+         "v": 0.2905982905982906
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08940786291715609,
        "avgDel": {
-        "n": 234,
-        "kg": 594.81,
-        "mean": 2.5419
+        "n": 235,
+        "kg": 595.81,
+        "mean": 2.5354
        }
       },
       "policy": {
@@ -20266,10 +20292,10 @@
      "suggest": null
     }
    },
-   "v": "v1320"
+   "v": "v1321"
   },
   "OPEN": {
-   "at": "2026-10-28T22:44:04.800Z",
+   "at": "2026-10-28T22:46:23.071Z",
    "count": 9,
    "byKey": {
     "CS6-BS-R|2026-10-29|150": {
@@ -20279,15 +20305,18 @@
      "q": 1,
      "t": 105,
      "cash": 0,
-     "mv": 0,
-     "st": "part",
+     "mv": 1,
+     "st": "dueMoney",
      "oweRM": 150,
-     "oweUnits": 1,
      "dv": 45,
      "rid": "s303",
      "as": "CS6-BS",
      "st2": "R2",
-     "key": "CS6-BS-R|2026-10-29|150"
+     "deliveredOn": "2026-10-29",
+     "handover": "delivered",
+     "key": "CS6-BS-R|2026-10-29|150",
+     "age": 0,
+     "exp": 150
     },
     "CR3-DAM|2026-10-28|110": {
      "d": "2026-10-28",
@@ -20425,13 +20454,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 24.5,
-     "free": 24,
+     "onHand": 23.5,
+     "free": 23,
      "owedOut": 0.5,
-     "coverDays": 6.3,
+     "coverDays": 6,
      "rate": 4.25,
-     "owedToYou": 350,
-     "promised": 1.5,
+     "owedToYou": 500,
+     "promised": 0.5,
      "short": 0
     },
     "oil": {
@@ -20498,7 +20527,7 @@
     "gas": null,
     "prep": null
    },
-   "v": "v1320"
+   "v": "v1321"
   },
   "TERMS": {
    "ceiling": 250,
@@ -20506,7 +20535,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1320"
+   "v": "v1321"
   },
   "REWARD": {
    "stated": {
@@ -20524,17 +20553,17 @@
      }
     }
    },
-   "v": "v1320"
+   "v": "v1321"
   },
   "STOCK": {
    "today": "2026-10-29",
    "books": {
     "salt": {
-     "shelf": 24.5,
-     "free": 24,
-     "commit": 1.5,
+     "shelf": 23.5,
+     "free": 23,
+     "commit": 0.5,
      "light": "green",
-     "coverDays": 6.3,
+     "coverDays": 6,
      "transit": 0
     },
     "oil": {
@@ -20578,7 +20607,7 @@
      "transit": 0
     }
    },
-   "v": "v1320"
+   "v": "v1321"
   }
  }
 }
