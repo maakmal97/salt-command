@@ -1,0 +1,55 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-28T23:26:59.800Z",
+   "status": "approved",
+   "collection": "count",
+   "row": {
+    "product": "gas",
+    "qty": 1,
+    "date": "2026-10-29",
+    "was": 0,
+    "drift": 1,
+    "rids": [],
+    "booked_seq": 16
+   },
+   "reasoning": "Counted 1 unit of gas by hand on 2026-10-29, against 0 on the book: a difference of +1. A count wins over the ledger, and the fold sets the stated stock and moves COUNT_ON to this date.",
+   "flags": [
+    "The book says 0 and you counted 1: +1 unit unaccounted for. A COUNT ALWAYS WINS, so this becomes the inventory and the gap books as shrinkage across every unit sold."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-28T23:26:59.800Z",
+    "type": "COUNT",
+    "party": "stock count",
+    "qty": 1,
+    "total": null,
+    "status": "count",
+    "raw": "Stock count: 1 unit gas on hand on 2026-10-29",
+    "payload": {
+     "mode": "count",
+     "product": "gas",
+     "direction": null,
+     "party": null,
+     "date": "2026-10-29",
+     "qty": 1,
+     "total": null,
+     "cash": null,
+     "kg": 1,
+     "assoc": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null
+    },
+    "makerRequest": "e407a42bd567755d5111d913e542da16b033c5ffd720c73a34b576804fe0555a"
+   },
+   "decidedAt": "2026-10-28T23:27:06.861Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
