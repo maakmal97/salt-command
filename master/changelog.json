@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1311",
+  "d": "28 Oct 2026",
+  "t": "THE SOURCE FLAG FOR THE FLIP (S5F-1, DORMANT: book_source SHIPS d1)",
+  "n": [
+   "<b>S5F-1 OF THE S5 PLAN, SHIPPED OFF.</b> A new flag in D1, book_source (migrations/0023, applied alone to the live D1 before this deploy and read back d1), says whether git's book file ('d1') or the Book ('book') is the source of the ledger. sourceMode reads it like the roster flag: anything but an exact 'book' reads d1, so a missing table or a store that will not answer is the old world. Nothing reads it yet; every guard of the flip, built in the next versions, keys off this one read.",
+   "<b>NOTHING CHANGES ON THE DESK, THE COUNTER OR THE CHAIN.</b> Turning the flag is tools/flip.mjs's alone, on his typed go, on or after 4 Nov 2026 and only when the gate reads every line true. The flip, the way back and the gate are in docs/DESK.md, 'The flip (S5f)'."
+  ]
+ },
+ {
   "v": "v1310",
   "d": "28 Oct 2026",
   "t": "COLLECTION OF 1 UNIT RECORDED ON AN UNPAID ORDER",
