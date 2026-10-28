@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="a8a739d92276ab8e";
+var SALT_BUILD_ID="a993ec398aafb179";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -10209,6 +10209,9 @@ const TIER_OF={
   },
   "CR3-DAM": {
     "salt": -0.1
+  },
+  "CH6-SET": {
+    "salt": -0.15
   }
 };
 const PEOPLE={
@@ -10335,7 +10338,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-10-28T14:47:08.964Z";
+const QUEUE_COMMITTED="2026-10-28T15:29:41.999Z";
 /* <b>BOARD SIZES CHANGED ON 19 OCT: SALT, 3.5 AND 4.5 UNIT HIDDEN.</b> Counter Admin decided this at 15:38. The entry reads "Board sizes on salt: hiding 3.5 unit, 4.5 unit" and sets 0 prices, so no rate is set against the desk's floor or ask and no party is involved. The board's own price remains the ask at every size. The drafter flagged that two sizes leave the board; that is exactly what the entry does, and both stay priceable at the counter and off a quote, they simply stop being printed. The row moves no stock, no cash and no ledger row, so it carries no cost and nothing is left outstanding. */
 /* RETIRED AT v656 on 2026-09-16, his decision of 15 Sep off the pricing workbook: the board is the ladder, so a stated price no longer decides it and oil's five are cleared rather than left unread. The stranger's ask on oil moves from his RM130, 240, 330, 400 and 450 to Bronze at RM230, 440, 650, 850 and 1,040, with 80 and 100 unit at RM1,640 and RM2,000. The old five sat a hair over break-even (the 50 unit tier read 0.93x, RM32.20 UNDER its floor) because they were typed in July against a cost that has moved since; the ladder is struck on today's COGS and moves with it. No customer's price moves with this: every named customer is quoted their own tier capped at what they pay, and a stranger has no history to cap against. The hide list is untouched and still takes a size off the board. */
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
@@ -11419,7 +11422,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1314","d":"28 Oct 2026","t":"THE GUARDS FOR THE FLIP (S5F-3, DORMANT: EVERY ONE KEYS OFF book_source, WHICH READS d1)","n":["<b>S5F-3 OF THE S5 PLAN, HIS ANSWER TO ASK B.</b> With the Book as the source a load into it must be an import (?import=1, tools/book-load.mjs --import); drafts.mjs --approve and update.mjs refuse, and refuse when the flag cannot be read; drafts.mjs --approved hands the chain nothing; the minute ladder rings no fold and an approval's dispatch is named a publish; and the chain's stage, mirror re-seed, shadow load and two comparisons stand down behind one new first step that reads the flag and fails the run when D1 will not say. While the flag reads d1 none of it changes anything.","<b>THE COMPACTION ROUTE.</b> POST /book/compact (the Book's key; ?dry=1 in either world, a real run only with the Book as the source) marks the drafts of the open entries committed in one batch before the Book compacts and any stray at the compaction's own moment, so no draft is ever on its way once the base holds its row, and reads back that none is left. An entry whose draft is not approved refuses the whole thing. Nothing calls it yet."]}];
+const evolution=[{"v":"v1315","d":"28 Oct 2026","t":"CH6-SET SALT PRICE SET TO 15% OFF","n":["<b>ONE PRICE SETTING FOLDED.</b> CH6-SET's salt figure is now 15% off, a percentage lift that moves only that party's own price and never the board. It was approved by Counter Admin on 28 Oct 2026. The drafter raised no flags and the dossier shows no other moves.","<b>INVENTORY UNCHANGED.</b> No cash moved and no salt was drawn or landed. Stock stays at 24.5 units, below the reorder point of 30.25, and the cost basis holds at RM56 a unit."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11567,7 +11570,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='28 Oct 2026, 22:48 KL';
+const LAST_UPDATED='28 Oct 2026, 23:30 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

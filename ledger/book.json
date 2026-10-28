@@ -911,6 +911,9 @@
     },
     "CR3-DAM": {
       "salt": -0.1
+    },
+    "CH6-SET": {
+      "salt": -0.15
     }
   },
   "PEOPLE": {
@@ -1031,7 +1034,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-10-28T14:47:08.964Z",
+  "QUEUE_COMMITTED": "2026-10-28T15:29:41.999Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
