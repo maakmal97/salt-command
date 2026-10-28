@@ -83,7 +83,7 @@ export async function run({ ok }) {
   const hung = await get("/rev", {}, env({ BOOK: { idFromName: (n) => n, get: () => ({ fetch: () => new Promise((done) => setTimeout(() => done(Response.json({ ok: true, rev: 3 })), 6000)) }) } }));
   ok(hung.status === 200 && hung.body.id === "0123456789abcdef" && !("rev" in hung.body) && Date.now() - t0 < 4000, "a Book that does not answer holds the build poll for a moment only, then /rev answers the manifest alone: " + (Date.now() - t0) + " ms");
   const rn = await (await book.fetch(new Request("https://book/revno"))).json(), rnEmpty = await new Book(objectState(), {}).fetch(new Request("https://book/revno"));
-  ok(rn.ok && Number.isInteger(rn.rev) && rn.rev >= 1 && Object.keys(rn).sort().join() === "ok,rev" && rnEmpty.status === 503, "the Book's revision verb answers the revision alone, and 503 while it holds nothing");
+  ok(rn.ok && Number.isInteger(rn.rev) && rn.rev >= 1 && Object.keys(rn).sort().join() === "derivedRev,ok,rev" && rnEmpty.status === 503, "the Book's revision verb answers the revision and the revision its documents were computed at, and nothing else, and 503 while it holds nothing");
   const r4 = await get("/rev", {}, env({ ASSETS: { fetch: async () => new Response("not json", { status: 200 }) } }));
   ok(r4.status === 200 && r4.text === "not json", "a manifest that is not JSON is passed through untouched");
   const r5 = await get("/rev", {}, env({ SALT_LEDGER: undefined }));
