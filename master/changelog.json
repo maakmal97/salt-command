@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1323",
+  "d": "29 Oct 2026",
+  "t": "GAS BOUGHT AND COUNTED, SALT UNTOUCHED",
+  "n": [
+   "<b>TWO GAS ROWS FOLDED.</b> A purchase of 2 unit of gas from SP7-PUD for RM100, paid and collected on 29 Oct 2026, with RM20 freight recorded beside it, and a count of 2 unit against a book figure of 1. Counter Admin approved both. The drafter raised no flag on the purchase. The count carried the one flag, a gap of +1 unit with no reason given.",
+   "<b>INVENTORY.</b> The count wins, so stated gas becomes 2 and the gas count date moves to 29 Oct 2026. The salt position is unchanged: stock 23.5 unit at RM56 a unit, counted on 28 Oct. The salt floors and asks do not move."
+  ]
+ },
+ {
   "v": "v1322",
   "d": "29 Oct 2026",
   "t": "GAS COUNT OF 1 UNIT AGAINST A BOOK OF 0",

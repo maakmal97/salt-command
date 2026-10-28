@@ -1,6 +1,6 @@
 {
- "v": "v1322",
- "stamped": "29 Oct 2026, 07:27 KL",
+ "v": "v1323",
+ "stamped": "29 Oct 2026, 07:47 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -99,7 +99,7 @@
    "gas": {
     "qty": 0,
     "costPerKg": 50,
-    "stated": 1
+    "stated": 2
    },
    "prep": {
     "qty": 0,
@@ -416,6 +416,13 @@
     "date": "2026-10-29",
     "qty": 1,
     "was": 0,
+    "drift": 1
+   },
+   {
+    "product": "gas",
+    "date": "2026-10-29",
+    "qty": 2,
+    "was": 1,
     "drift": 1
    }
   ],
@@ -1209,6 +1216,22 @@
     "paidOn": "2026-10-28",
     "note": "<b>NEW PAID OIL PURCHASE ON 28 OCT 2026: 50 UNIT FROM SP7-PUD, GOODS RM380.</b> Paid and received in full on 28 Oct, RM28 freight on top, RM408 cash, 50 unit moved. Approved by Counter Admin. No desk floor or ask applies to a purchase, but the goods total matches the 50 unit tier of RM380 quoted on 23 Sep, which is RM7.60 a unit. The party's median rate is RM7.6, range RM7 to RM8; outstanding before was RM0. The drafter flagged RM408 paid on an order of RM380. The figures answer it: the extra RM28 is the freight, higher than the RM12 and RM13 on earlier lots. Nothing is outstanding.",
     "rid": "p047"
+   },
+   {
+    "qty": 2,
+    "total": 100,
+    "cash": 100,
+    "handover": "collected",
+    "supplier": "SP7-PUD",
+    "freight": 20,
+    "status": "paid",
+    "product": "gas",
+    "date": "2026-10-29",
+    "receivedOn": "2026-10-29",
+    "receivedQty": 2,
+    "paidOn": "2026-10-29",
+    "note": "<b>NEW PAID GAS PURCHASE, 2 UNIT FROM SP7-PUD, RM100, 29 OCT 2026.</b> Paid in cash RM100 and collected in full on 29 Oct, so nothing is owed either way. The drafter put the rate at RM50 a unit and recorded RM20 freight beside it. It was approved by Counter Admin. No desk floor or ask applies to a purchase. The party has 9 orders, outstanding before RM0, nothing defaulted. Its median rate of RM7.6, range RM7 to RM8, sits on earlier rows, and the dossier gives no gas history to set RM50 against. The drafter flagged nothing. The dossier does not say whether the freight sits inside the RM100 cash. Nothing is left outstanding.",
+    "rid": "p048"
    }
   ],
   "sales": [
@@ -10424,7 +10447,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-28T23:26:59.800Z",
+  "QUEUE_COMMITTED": "2026-10-28T23:46:44.857Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -10611,11 +10634,6 @@
      "id": "upkeep:shrink:salt",
      "sev": "note",
      "title": "The unexplained plug runs at 4.4% of everything handled"
-    },
-    {
-     "id": "parity:declared:gas",
-     "sev": "note",
-     "title": "Gas is declared but has nothing on the books"
     },
     {
      "id": "parity:declared:prep",
@@ -18531,19 +18549,19 @@
     },
     "gas": {
      "stockCost": 50,
-     "replCost": 50,
+     "replCost": 60,
      "floors": {
       "1": {
-       "floor": 50
+       "floor": 60
       },
       "5": {
-       "floor": 250
+       "floor": 300
       },
       "10": {
-       "floor": 500
+       "floor": 600
       },
       "20": {
-       "floor": 1000
+       "floor": 1200
       }
      },
      "inputs": {
@@ -18553,24 +18571,43 @@
        "lockState": {
         "state": "none",
         "lock": null,
-        "cur": null
+        "cur": {
+         "qty": 2,
+         "total": 100,
+         "rate": 50,
+         "date": "2026-10-29",
+         "sup": "SP7-PUD"
+        }
        },
        "lockBase": null,
        "over": {
         "cost": null,
         "shrink": null
        },
-       "lot": null,
-       "meanLot": null,
-       "quoteRate": 50,
-       "repl": null,
-       "freightRate": 0,
+       "lot": {
+        "qty": 2,
+        "total": 100,
+        "rate": 50,
+        "date": "2026-10-29",
+        "sup": "SP7-PUD"
+       },
+       "meanLot": 2,
+       "quoteRate": 60,
+       "repl": 50,
+       "freightRate": 10,
        "leak": null,
        "costRule": {
         "kind": "latestCogs",
         "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
        },
-       "latest": null,
+       "latest": {
+        "rid": "p048",
+        "date": "2026-10-29",
+        "quote": 100,
+        "freight": 20,
+        "units": 2,
+        "rate": 60
+       },
        "costBasis": {
         "freightPerTrip": {
          "rm": 0
@@ -18678,7 +18715,7 @@
       {
        "q": 1,
        "prices": [
-        50,
+        60,
         75
        ],
        "fixed": true
@@ -18686,7 +18723,7 @@
       {
        "q": 5,
        "prices": [
-        250,
+        300,
         375
        ],
        "fixed": true
@@ -18694,7 +18731,7 @@
       {
        "q": 10,
        "prices": [
-        500,
+        600,
         750
        ],
        "fixed": true
@@ -18702,7 +18739,7 @@
       {
        "q": 20,
        "prices": [
-        1000,
+        1200,
         1500
        ],
        "fixed": true
@@ -18784,19 +18821,19 @@
       "CM4-TO": [
        [
         1,
-        50
+        60
        ],
        [
         5,
-        250
+        300
        ],
        [
         10,
-        500
+        600
        ],
        [
         20,
-        1000
+        1200
        ]
       ],
       "CM4-MK": [
@@ -20294,10 +20331,10 @@
      "suggest": null
     }
    },
-   "v": "v1322"
+   "v": "v1323"
   },
   "OPEN": {
-   "at": "2026-10-28T23:27:43.538Z",
+   "at": "2026-10-28T23:47:41.478Z",
    "count": 9,
    "byKey": {
     "CS6-BS-R|2026-10-29|150": {
@@ -20500,8 +20537,8 @@
     },
     "gas": {
      "name": "Gas",
-     "onHand": 1,
-     "free": 1,
+     "onHand": 2,
+     "free": 2,
      "owedOut": 0,
      "coverDays": null,
      "rate": 0,
@@ -20529,7 +20566,7 @@
     "gas": "2026-10-29",
     "prep": null
    },
-   "v": "v1322"
+   "v": "v1323"
   },
   "TERMS": {
    "ceiling": 250,
@@ -20537,7 +20574,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1322"
+   "v": "v1323"
   },
   "REWARD": {
    "stated": {
@@ -20555,7 +20592,7 @@
      }
     }
    },
-   "v": "v1322"
+   "v": "v1323"
   },
   "STOCK": {
    "today": "2026-10-29",
@@ -20593,8 +20630,8 @@
      "transit": 0
     },
     "gas": {
-     "shelf": 1,
-     "free": 1,
+     "shelf": 2,
+     "free": 2,
      "commit": 0,
      "light": "green",
      "coverDays": null,
@@ -20609,7 +20646,7 @@
      "transit": 0
     }
    },
-   "v": "v1322"
+   "v": "v1323"
   }
  }
 }

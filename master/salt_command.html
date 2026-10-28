@@ -9025,6 +9025,8 @@ const opening={
   "qty": 4.9,
   "costPerKg": 64
 };
+/* ROLLED AT v1323 (gas): 2 unit from SP7-PUD on 2026-10-29, from 1; a count of this product came in this batch and stands, so the figure that now stands is 2. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
+/* COUNTED AT v1323 on 2026-10-29: the gas inventory held 2 against 1 on the roll, a difference of 1. A COUNT AND NOT A ROLL, so COUNT_ON.gas moves to 2026-10-29. <b>COUNT OF GAS, 2 UNIT ON 29 OCT 2026, AGAINST 1 ON THE BOOK.</b> The hand count is 2 unit and the book said 1, a difference of +1 unit. Counter Admin approved it. A count wins over the ledger, so the stated gas stock becomes 2 and the count date moves to 29 Oct. The drafter flagged the extra unit as unaccounted for, to book as shrinkage across every unit sold. The figures only partly answer that: they show the size of the gap, not where it sits, and the dossier gives no reason. The floors do not move: floor1 50, floor2 100, floor125 625, ask1 75, before and after. Nothing is left outstanding. */
 /* COUNTED AT v1322 on 2026-10-29: the gas inventory held 1 against 0 on the roll, a difference of 1. A COUNT AND NOT A ROLL, so COUNT_ON.gas moves to 2026-10-29. <b>COUNT OF GAS: 1 UNIT ON HAND, 29 OCT 2026.</b> Counted by hand at 1 unit against 0 on the book, so the gap is +1 unit. The dossier gives no reason for it and none is assumed. The count wins, so the stated gas inventory becomes 1 and the gas count date moves to 29 Oct 2026. It was approved by Counter Admin. The drafter flagged that the +1 unit is unaccounted for and books as shrinkage across every unit sold. The figures answer this only in part: they confirm the size of the gap but not where it sits. The floors do not move: floor1 stays at 50, floor2 at 100, floor125 at 625 and ask1 at 75, with selfUse at 0. No party is involved and no cost is carried. The +1 unit gap is left unexplained. */
 /* ROLLED AT v1318 (oil): 20 unit to CZ4-MK on 2026-10-29, so 50 less 20 is 30. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* ROLLED AT v1313 (oil): 50 unit from SP7-PUD on 2026-10-28, so 0 plus 50 is 50. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
@@ -9110,7 +9112,7 @@ const PROD_OPENING={
   "gas": {
     "qty": 0,
     "costPerKg": 50,
-    "stated": 1
+    "stated": 2
   },
   "prep": {
     "qty": 0,
@@ -9335,7 +9337,8 @@ const COUNTS=[
   {"product":"salt","date":"2026-10-27","qty":0,"was":0.5,"drift":-0.5},
   {"product":"salt","date":"2026-10-28","qty":0,"was":0.5,"drift":-0.5},
   {"product":"salt","date":"2026-10-28","qty":0.5,"was":0,"drift":0.5},
-  {"product":"gas","date":"2026-10-29","qty":1,"was":0,"drift":1}
+  {"product":"gas","date":"2026-10-29","qty":1,"was":0,"drift":1},
+  {"product":"gas","date":"2026-10-29","qty":2,"was":1,"drift":1}
 ];
 const purchases=[
   {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -9384,7 +9387,8 @@ const purchases=[
   {"qty":25,"total":1400,"cash":1400,"handover":"collected","supplier":"SA5-BTR","freight":50,"status":"paid","date":"2026-10-24","receivedOn":"2026-10-24","receivedQty":25,"paidOn":"2026-10-24","note":"New buy of 25 unit of salt from SA5-BTR for RM1400, dated 24 Oct 2026, with RM50 freight beside it. Collected, RM1400 cash out and all 25 unit received on the day. At RM56 a unit it matches his quote of 23 Sep, two whole lots of 12.5 unit at RM700. Landed it costs RM58 a unit, and it is now the latest lot. Nothing is outstanding.","rid":"p044"},
   {"qty":100,"total":320,"cash":330,"handover":"collected","supplier":"SM4-KEP","freight":10,"status":"paid","product":"rice","date":"2026-10-25","receivedOn":"2026-10-25","receivedQty":100,"paidOn":"2026-10-25","note":"<b>PURCHASE OF 100 UNIT OF RICE FROM SM4-KEP, GOODS RM320, 25 OCT 2026.</b> Approved by Counter Admin. Collected and received in full on 25 Oct and paid the same day, RM330 cash: RM320 goods and RM10 freight. The rate is RM3.20 a unit, matching his word of 23 Sep for 100 unit at RM320; the 21 Sep lot was bought at the same rate. The party's median rate is RM38, range RM3.20 to RM42, across oil, candy and rice rows; outstanding before was RM0, nothing defaulted. The drafter flagged RM330 paid on RM320; the RM10 freight answers it. Nothing remains outstanding. The row is rice, so the salt inventory and its RM56 cost are untouched.","rid":"p045"},
   {"qty":25,"total":1400,"cash":1400,"handover":"delivered","supplier":"SA5-BTR","status":"paid","date":"2026-10-28","receivedOn":"2026-10-28","receivedQty":25,"paidOn":"2026-10-28","note":"<b>NEW BUY DATED 28 OCT 2026: 25 UNIT OF SALT FROM SA5-BTR FOR RM1400, PAID AND RECEIVED IN FULL.</b> Delivered, RM1400 cash out and all 25 unit received on the day, booked as p046 and approved by Counter Admin. The rate is RM56 a unit, which matches his quote of 23 Sep 2026: multiples of 12.5 unit at RM700 each, so two whole lots. The party's median rate is RM56, range RM44 to RM64; outstanding before was RM0 and defaulted RM0. The cost carried is the purchase itself at RM56 a unit, which is the inventory's own rate. The drafter raised no flags and the figures give none cause to. Nothing is left outstanding.","rid":"p046"},
-  {"qty":50,"total":380,"cash":408,"supplier":"SP7-PUD","freight":28,"status":"paid","product":"oil","date":"2026-10-28","receivedOn":"2026-10-28","receivedQty":50,"paidOn":"2026-10-28","note":"<b>NEW PAID OIL PURCHASE ON 28 OCT 2026: 50 UNIT FROM SP7-PUD, GOODS RM380.</b> Paid and received in full on 28 Oct, RM28 freight on top, RM408 cash, 50 unit moved. Approved by Counter Admin. No desk floor or ask applies to a purchase, but the goods total matches the 50 unit tier of RM380 quoted on 23 Sep, which is RM7.60 a unit. The party's median rate is RM7.6, range RM7 to RM8; outstanding before was RM0. The drafter flagged RM408 paid on an order of RM380. The figures answer it: the extra RM28 is the freight, higher than the RM12 and RM13 on earlier lots. Nothing is outstanding.","rid":"p047"}
+  {"qty":50,"total":380,"cash":408,"supplier":"SP7-PUD","freight":28,"status":"paid","product":"oil","date":"2026-10-28","receivedOn":"2026-10-28","receivedQty":50,"paidOn":"2026-10-28","note":"<b>NEW PAID OIL PURCHASE ON 28 OCT 2026: 50 UNIT FROM SP7-PUD, GOODS RM380.</b> Paid and received in full on 28 Oct, RM28 freight on top, RM408 cash, 50 unit moved. Approved by Counter Admin. No desk floor or ask applies to a purchase, but the goods total matches the 50 unit tier of RM380 quoted on 23 Sep, which is RM7.60 a unit. The party's median rate is RM7.6, range RM7 to RM8; outstanding before was RM0. The drafter flagged RM408 paid on an order of RM380. The figures answer it: the extra RM28 is the freight, higher than the RM12 and RM13 on earlier lots. Nothing is outstanding.","rid":"p047"},
+  {"qty":2,"total":100,"cash":100,"handover":"collected","supplier":"SP7-PUD","freight":20,"status":"paid","product":"gas","date":"2026-10-29","receivedOn":"2026-10-29","receivedQty":2,"paidOn":"2026-10-29","note":"<b>NEW PAID GAS PURCHASE, 2 UNIT FROM SP7-PUD, RM100, 29 OCT 2026.</b> Paid in cash RM100 and collected in full on 29 Oct, so nothing is owed either way. The drafter put the rate at RM50 a unit and recorded RM20 freight beside it. It was approved by Counter Admin. No desk floor or ask applies to a purchase. The party has 9 orders, outstanding before RM0, nothing defaulted. Its median rate of RM7.6, range RM7 to RM8, sits on earlier rows, and the dossier gives no gas history to set RM50 against. The drafter flagged nothing. The dossier does not say whether the freight sits inside the RM100 cash. Nothing is left outstanding.","rid":"p048"}
 ];
 /* paidSplit: cash landed either side of the 28 Jul count; RM200 inside it, the rest after. Without the split the walk double-counted the RM200. */
 const sales=[
@@ -10150,7 +10154,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-10-28T23:26:59.800Z";
+const QUEUE_COMMITTED="2026-10-28T23:46:44.857Z";
 /* <b>BOARD SIZES CHANGED ON 19 OCT: SALT, 3.5 AND 4.5 UNIT HIDDEN.</b> Counter Admin decided this at 15:38. The entry reads "Board sizes on salt: hiding 3.5 unit, 4.5 unit" and sets 0 prices, so no rate is set against the desk's floor or ask and no party is involved. The board's own price remains the ask at every size. The drafter flagged that two sizes leave the board; that is exactly what the entry does, and both stay priceable at the counter and off a quote, they simply stop being printed. The row moves no stock, no cash and no ledger row, so it carries no cost and nothing is left outstanding. */
 /* RETIRED AT v656 on 2026-09-16, his decision of 15 Sep off the pricing workbook: the board is the ladder, so a stated price no longer decides it and oil's five are cleared rather than left unread. The stranger's ask on oil moves from his RM130, 240, 330, 400 and 450 to Bronze at RM230, 440, 650, 850 and 1,040, with 80 and 100 unit at RM1,640 and RM2,000. The old five sat a hair over break-even (the 50 unit tier read 0.93x, RM32.20 UNDER its floor) because they were typed in July against a cost that has moved since; the ladder is struck on today's COGS and moves with it. No customer's price moves with this: every named customer is quoted their own tier capped at what they pay, and a stranger has no history to cap against. The hide list is untouched and still takes a size off the board. */
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
@@ -11234,7 +11238,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1322","d":"29 Oct 2026","t":"GAS COUNT OF 1 UNIT AGAINST A BOOK OF 0","n":["<b>ONE COUNT FOLDED.</b> Gas was counted at 1 unit on 29 Oct 2026 against 0 on the book, a gap of +1. The count wins over the ledger, so the stated gas inventory is set to 1 and the gas count date moves to 29 Oct 2026. It was approved by Counter Admin.","<b>SALT UNTOUCHED.</b> No salt moved and no lot landed, so the salt shelf stays at 23.5 units and the cost basis stays at RM56 a unit. The gas floors and ask are unchanged by the count."]}];
+const evolution=[{"v":"v1323","d":"29 Oct 2026","t":"GAS BOUGHT AND COUNTED, SALT UNTOUCHED","n":["<b>TWO GAS ROWS FOLDED.</b> A purchase of 2 unit of gas from SP7-PUD for RM100, paid and collected on 29 Oct 2026, with RM20 freight recorded beside it, and a count of 2 unit against a book figure of 1. Counter Admin approved both. The drafter raised no flag on the purchase. The count carried the one flag, a gap of +1 unit with no reason given.","<b>INVENTORY.</b> The count wins, so stated gas becomes 2 and the gas count date moves to 29 Oct 2026. The salt position is unchanged: stock 23.5 unit at RM56 a unit, counted on 28 Oct. The salt floors and asks do not move."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11382,7 +11386,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='29 Oct 2026, 07:27 KL';
+const LAST_UPDATED='29 Oct 2026, 07:47 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
