@@ -1,0 +1,119 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-10-28T23:46:08.157Z",
+   "status": "approved",
+   "collection": "purchases",
+   "row": {
+    "qty": 2,
+    "total": 100,
+    "cash": 100,
+    "handover": "collected",
+    "supplier": "SP7-PUD",
+    "freight": 20,
+    "status": "paid",
+    "product": "gas",
+    "date": "2026-10-29",
+    "receivedOn": "2026-10-29",
+    "receivedQty": 2,
+    "paidOn": "2026-10-29",
+    "rids": [
+     "p048"
+    ],
+    "booked_seq": 17
+   },
+   "reasoning": "Bought 2 unit of gas from SP7-PUD for RM 100, with RM 20 of freight beside it, RM 50/unit. Paid in full and delivered in full on 2026-10-29. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-28T23:46:08.157Z",
+    "type": "BUY",
+    "party": "SP7-PUD",
+    "qty": 2,
+    "total": 100,
+    "status": "paid",
+    "raw": "Buy 2 unit gas from SP7-PUD for RM100 on 2026-10-29 plus RM20 freight, collected, RM100 cash, 2 unit moved → Completed",
+    "payload": {
+     "mode": "new",
+     "product": "gas",
+     "direction": "BUY",
+     "party": "SP7-PUD",
+     "newId": null,
+     "date": "2026-10-29",
+     "qty": 2,
+     "total": 100,
+     "delivery": 0,
+     "freight": 20,
+     "cash": 100,
+     "kg": 2,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "collected",
+     "second": null,
+     "more": null,
+     "coverFree": null
+    },
+    "makerRequest": "0491816c6bf740209293f7079ed06d51e5b771c062df4b519e0d84f1e6204a34"
+   },
+   "decidedAt": "2026-10-28T23:46:50.684Z",
+   "decidedBy": "Counter Admin"
+  },
+  {
+   "id": "2026-10-28T23:46:44.857Z",
+   "status": "approved",
+   "collection": "count",
+   "row": {
+    "product": "gas",
+    "qty": 2,
+    "date": "2026-10-29",
+    "was": 1,
+    "drift": 1,
+    "rids": [],
+    "booked_seq": 18
+   },
+   "reasoning": "Counted 2 unit of gas by hand on 2026-10-29, against 1 on the book: a difference of +1. The last count was 2026-10-29. A count wins over the ledger, and the fold sets the stated stock and moves COUNT_ON to this date.",
+   "flags": [
+    "The book says 1 and you counted 2: +1 unit unaccounted for. A COUNT ALWAYS WINS, so this becomes the inventory and the gap books as shrinkage across every unit sold."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-28T23:46:44.857Z",
+    "type": "COUNT",
+    "party": "stock count",
+    "qty": 2,
+    "total": null,
+    "status": "count",
+    "raw": "Stock count: 2 unit gas on hand on 2026-10-29",
+    "payload": {
+     "mode": "count",
+     "product": "gas",
+     "direction": null,
+     "party": null,
+     "date": "2026-10-29",
+     "qty": 2,
+     "total": null,
+     "cash": null,
+     "kg": 2,
+     "assoc": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null
+    },
+    "makerRequest": "dc7c47a63d2e5a4ab8c1ebde2d1ca397adab6397ff8c761f878073b38e87d6d3"
+   },
+   "decidedAt": "2026-10-28T23:47:11.986Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
