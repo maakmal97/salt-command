@@ -1,6 +1,6 @@
 {
- "v": "v1307",
- "stamped": "28 Oct 2026, 17:23 KL",
+ "v": "v1310",
+ "stamped": "28 Oct 2026, 22:05 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -107,7 +107,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 25.5,
+  "STATED_STOCK": 24.5,
   "COUNT_ON": {
    "salt": "2026-10-28",
    "oil": "2026-10-27",
@@ -9447,11 +9447,37 @@
     "total": 110,
     "cash": 0,
     "date": "2026-10-28",
-    "deliveredQty": 0,
-    "note": "<b>PENDING SALE OF 1 UNIT OF SALT TO CR3-DAM, GOODS RM110, 28 OCT 2026.</b> Ordered on the statements site, order 20261028032856-i8wyuq, acknowledged, to collect, placed at RM120 and priced at RM110 on this order. Nothing is paid and nothing handed over, so no stock is drawn and no revenue is booked. For 1 unit the ladder gives a floor total of RM60 and an ask total of RM120, so RM110 is above the floor and below the ask. That is RM110 a unit against a floor of RM60 and an ask of RM120. The party's median rate is RM80, range RM80 to RM150; outstanding before was RM25, 0.27 unit on credit against a cap of 2. The cost is RM58 a unit, costed off the latest purchase. The drafter flagged a rate 33.3% above the usual RM82.5 a unit. The figures answer it: the rate is within the party's own range and below the ask. RM110 and the 1 unit remain outstanding.",
+    "deliveredQty": 1,
+    "note": "<b>CORRECTION ON s301: 1 UNIT OF SALT COLLECTED BY CR3-DAM ON 28 OCT 2026, RM110 UNPAID.</b> The order of 1 unit for RM110 now shows deliveredQty 1, deliveredOn 28 Oct 2026 and handover collected, preapproved by Counter Admin. Cash stays RM0. The dossier gives no ladder floor or ask for this size, so the rate cannot be set against the desk's own figures. Against the party's history, RM110 a unit sits above the median of RM80 and inside the range RM80 to RM150. Outstanding before was RM135, with 0.27 unit on credit; no cap is given. The drafter flagged a rate 33.3% above the usual and an advance. The range answers the first; the cap is not in the dossier, so the second is open. RM110 remains outstanding. <b>PENDING SALE OF 1 UNIT OF SALT TO CR3-DAM, GOODS RM110, 28 OCT 2026.</b> Ordered on the statements site, order 20261028032856-i8wyuq, acknowledged, to collect, placed at RM120 and priced at RM110 on this order. Nothing is paid and nothing handed over, so no stock is drawn and no revenue is booked. For 1 unit the ladder gives a floor total of RM60 and an ask total of RM120, so RM110 is above the floor and below the ask. That is RM110 a unit against a floor of RM60 and an ask of RM120. The party's median rate is RM80, range RM80 to RM150; outstanding before was RM25, 0.27 unit on credit against a cap of 2. The cost is RM58 a unit, costed off the latest purchase. The drafter flagged a rate 33.3% above the usual RM82.5 a unit. The figures answer it: the rate is within the party's own range and below the ask. RM110 and the 1 unit remain outstanding.",
     "listRM": 120,
     "listQty": 1,
-    "rid": "s301"
+    "rid": "s301",
+    "deliveredOn": "2026-10-28",
+    "handover": "collected",
+    "mod": "corrected on 2026-10-28: deliveredQty 0 to 1; deliveredOn (unset) to 2026-10-28; handover (unset) to collected",
+    "amend": [
+     {
+      "date": "2026-10-28",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-28",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 1,
+      "note": "<b>CORRECTION ON s301: 1 UNIT OF SALT COLLECTED BY CR3-DAM ON 28 OCT 2026, RM110 UNPAID.</b> The order of 1 unit for RM110 now shows deliveredQty 1, deliveredOn 28 Oct 2026 and handover collected, preapproved by Counter Admin. Cash stays RM0. The dossier gives no ladder floor or ask for this size, so the rate cannot be set against the desk's own figures. Against the party's history, RM110 a unit sits above the median of RM80 and inside the range RM80 to RM150. Outstanding before was RM135, with 0.27 unit on credit; no cap is given. The drafter flagged a rate 33.3% above the usual and an advance. The range answers the first; the cap is not in the dossier, so the second is open. RM110 remains outstanding.",
+      "was": {
+       "deliveredQty": 0,
+       "deliveredOn": null,
+       "handover": null
+      },
+      "cost": 56
+     }
+    ],
+    "cost": 56
    },
    {
     "customer": "CM4-TO-R",
@@ -10284,7 +10310,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-28T09:22:05.168Z",
+  "QUEUE_COMMITTED": "2026-10-28T14:04:52.276Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -10315,7 +10341,7 @@
     {
      "id": "cust:cadence:salt",
      "sev": "watch",
-     "title": "13 customers are past their own habit on salt"
+     "title": "12 customers are past their own habit on salt"
     },
     {
      "id": "cust:cadence:oil",
@@ -10475,7 +10501,7 @@
     {
      "id": "upkeep:shrink:salt",
      "sev": "note",
-     "title": "The unexplained plug runs at 4.8% of everything handled"
+     "title": "The unexplained plug runs at 4.4% of everything handled"
     },
     {
      "id": "parity:declared:gas",
@@ -10808,13 +10834,13 @@
     "CR3-DAM": {
      "salt": {
       "name": "small and often",
-      "orders": 22,
+      "orders": 23,
       "tenureDays": 121,
-      "sinceLastDays": 8,
-      "perMonth": 5.53,
-      "unitsPerMonth": 6.79,
-      "smallShare": 0.82,
-      "bigShare": 0.05,
+      "sinceLastDays": 0,
+      "perMonth": 5.79,
+      "unitsPerMonth": 7.04,
+      "smallShare": 0.83,
+      "bigShare": 0.04,
       "frequent": true,
       "small": true,
       "bigger": false,
@@ -11633,9 +11659,9 @@
        "repl": 56,
        "freightRate": 2,
        "leak": {
-        "ratio": 0.05,
+        "ratio": 0.0455,
         "leak": 0.5,
-        "sold": 10,
+        "sold": 11,
         "cycles": 3,
         "from": "2026-10-24",
         "to": "2026-10-28"
@@ -11660,15 +11686,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.28695652173913044
+         "v": 0.28448275862068967
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08940786291715609,
        "avgDel": {
-        "n": 233,
-        "kg": 593.81,
-        "mean": 2.5485
+        "n": 234,
+        "kg": 594.81,
+        "mean": 2.5419
        }
       },
       "policy": {
@@ -20159,10 +20185,10 @@
      "suggest": null
     }
    },
-   "v": "v1307"
+   "v": "v1310"
   },
   "OPEN": {
-   "at": "2026-10-28T09:23:15.035Z",
+   "at": "2026-10-28T14:05:55.941Z",
    "count": 8,
    "byKey": {
     "CR3-DAM|2026-10-28|110": {
@@ -20172,12 +20198,15 @@
      "q": 1,
      "t": 110,
      "cash": 0,
-     "mv": 0,
-     "st": "part",
+     "mv": 1,
+     "st": "dueMoney",
      "oweRM": 110,
-     "oweUnits": 1,
      "rid": "s301",
-     "key": "CR3-DAM|2026-10-28|110"
+     "deliveredOn": "2026-10-28",
+     "handover": "collected",
+     "key": "CR3-DAM|2026-10-28|110",
+     "age": 0,
+     "exp": 110
     },
     "CZ5-TM|2026-10-27|105": {
      "d": "2026-10-27",
@@ -20298,13 +20327,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 25.5,
-     "free": 25,
+     "onHand": 24.5,
+     "free": 24,
      "owedOut": 0.5,
-     "coverDays": 6.3,
+     "coverDays": 6.1,
      "rate": 4.41,
-     "owedToYou": 240,
-     "promised": 1.5,
+     "owedToYou": 350,
+     "promised": 0.5,
      "short": 0
     },
     "oil": {
@@ -20371,7 +20400,7 @@
     "gas": null,
     "prep": null
    },
-   "v": "v1307"
+   "v": "v1310"
   },
   "TERMS": {
    "ceiling": 250,
@@ -20379,7 +20408,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1307"
+   "v": "v1310"
   },
   "REWARD": {
    "stated": {
@@ -20397,17 +20426,17 @@
      }
     }
    },
-   "v": "v1307"
+   "v": "v1310"
   },
   "STOCK": {
    "today": "2026-10-28",
    "books": {
     "salt": {
-     "shelf": 25.5,
-     "free": 25,
-     "commit": 1.5,
+     "shelf": 24.5,
+     "free": 24,
+     "commit": 0.5,
      "light": "green",
-     "coverDays": 6.3,
+     "coverDays": 6.1,
      "transit": 0
     },
     "oil": {
@@ -20451,7 +20480,7 @@
      "transit": 0
     }
    },
-   "v": "v1307"
+   "v": "v1310"
   }
  }
 }
