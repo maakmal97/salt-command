@@ -1,6 +1,6 @@
 {
- "v": "v1310",
- "stamped": "28 Oct 2026, 22:05 KL",
+ "v": "v1313",
+ "stamped": "28 Oct 2026, 22:48 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -84,7 +84,7 @@
    "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 0
+    "stated": 50
    },
    "candy": {
     "qty": 0,
@@ -1187,6 +1187,21 @@
     "paidOn": "2026-10-28",
     "note": "<b>NEW BUY DATED 28 OCT 2026: 25 UNIT OF SALT FROM SA5-BTR FOR RM1400, PAID AND RECEIVED IN FULL.</b> Delivered, RM1400 cash out and all 25 unit received on the day, booked as p046 and approved by Counter Admin. The rate is RM56 a unit, which matches his quote of 23 Sep 2026: multiples of 12.5 unit at RM700 each, so two whole lots. The party's median rate is RM56, range RM44 to RM64; outstanding before was RM0 and defaulted RM0. The cost carried is the purchase itself at RM56 a unit, which is the inventory's own rate. The drafter raised no flags and the figures give none cause to. Nothing is left outstanding.",
     "rid": "p046"
+   },
+   {
+    "qty": 50,
+    "total": 380,
+    "cash": 408,
+    "supplier": "SP7-PUD",
+    "freight": 28,
+    "status": "paid",
+    "product": "oil",
+    "date": "2026-10-28",
+    "receivedOn": "2026-10-28",
+    "receivedQty": 50,
+    "paidOn": "2026-10-28",
+    "note": "<b>NEW PAID OIL PURCHASE ON 28 OCT 2026: 50 UNIT FROM SP7-PUD, GOODS RM380.</b> Paid and received in full on 28 Oct, RM28 freight on top, RM408 cash, 50 unit moved. Approved by Counter Admin. No desk floor or ask applies to a purchase, but the goods total matches the 50 unit tier of RM380 quoted on 23 Sep, which is RM7.60 a unit. The party's median rate is RM7.6, range RM7 to RM8; outstanding before was RM0. The drafter flagged RM408 paid on an order of RM380. The figures answer it: the extra RM28 is the freight, higher than the RM12 and RM13 on earlier lots. Nothing is outstanding.",
+    "rid": "p047"
    }
   ],
   "sales": [
@@ -10310,7 +10325,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-28T14:04:52.276Z",
+  "QUEUE_COMMITTED": "2026-10-28T14:47:08.964Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -10406,7 +10421,7 @@
     {
      "id": "promo:revive:oil",
      "sev": "note",
-     "title": "Three messages are worth about RM 186 on oil"
+     "title": "Three messages are worth about RM 174 on oil"
     },
     {
      "id": "dup:CN3-WM-R:2026-09-11:2026-09-13:130",
@@ -14805,22 +14820,22 @@
     },
     "oil": {
      "stockCost": 7.6,
-     "replCost": 7.86,
+     "replCost": 8.16,
      "floors": {
       "10": {
-       "floor": 80
+       "floor": 85
       },
       "20": {
-       "floor": 160
+       "floor": 165
       },
       "30": {
-       "floor": 240
+       "floor": 245
       },
       "40": {
-       "floor": 315
+       "floor": 330
       },
       "50": {
-       "floor": 395
+       "floor": 410
       }
      },
      "inputs": {
@@ -14853,7 +14868,7 @@
          "qty": 50,
          "total": 380,
          "rate": 7.6,
-         "date": "2026-10-19",
+         "date": "2026-10-28",
          "sup": "SP7-PUD"
         },
         "days": 83,
@@ -14887,13 +14902,13 @@
         "qty": 50,
         "total": 380,
         "rate": 7.6,
-        "date": "2026-10-19",
+        "date": "2026-10-28",
         "sup": "SP7-PUD"
        },
-       "meanLot": 51.111111111111114,
+       "meanLot": 51,
        "quoteRate": 10,
-       "repl": 7.72,
-       "freightRate": 0.2083,
+       "repl": 7.6,
+       "freightRate": 0.3118,
        "leak": {
         "ratio": 0.3333,
         "leak": 30,
@@ -14907,12 +14922,12 @@
         "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
        },
        "latest": {
-        "rid": "p041",
-        "date": "2026-10-19",
+        "rid": "p047",
+        "date": "2026-10-28",
         "quote": 380,
-        "freight": 13,
+        "freight": 28,
         "units": 50,
-        "rate": 7.86
+        "rate": 8.16
        },
        "costBasis": {
         "freightPerTrip": {
@@ -14926,7 +14941,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.31569892473118283,
+       "shrinkRate": 0.2850485436893204,
        "avgDel": {
         "n": 20,
         "kg": 291,
@@ -15043,7 +15058,7 @@
       {
        "q": 10,
        "prices": [
-        80,
+        90,
         130
        ],
        "fixed": true
@@ -15051,7 +15066,7 @@
       {
        "q": 20,
        "prices": [
-        160,
+        170,
         240
        ],
        "fixed": true
@@ -15059,7 +15074,7 @@
       {
        "q": 30,
        "prices": [
-        240,
+        250,
         330
        ],
        "fixed": true
@@ -15067,7 +15082,7 @@
       {
        "q": 40,
        "prices": [
-        320,
+        330,
         400
        ],
        "fixed": true
@@ -15075,7 +15090,7 @@
       {
        "q": 50,
        "prices": [
-        400,
+        410,
         450
        ],
        "fixed": true
@@ -15173,23 +15188,23 @@
       "CM4-TO": [
        [
         10,
-        80
+        85
        ],
        [
         20,
-        160
+        165
        ],
        [
         30,
-        240
+        245
        ],
        [
         40,
-        315
+        330
        ],
        [
         50,
-        395
+        410
        ]
       ],
       "CM4-MK": [
@@ -20185,10 +20200,10 @@
      "suggest": null
     }
    },
-   "v": "v1310"
+   "v": "v1313"
   },
   "OPEN": {
-   "at": "2026-10-28T14:05:55.941Z",
+   "at": "2026-10-28T14:48:24.731Z",
    "count": 8,
    "byKey": {
     "CR3-DAM|2026-10-28|110": {
@@ -20338,10 +20353,10 @@
     },
     "oil": {
      "name": "Oil",
-     "onHand": 0,
-     "free": 0,
+     "onHand": 50,
+     "free": 50,
      "owedOut": 0,
-     "coverDays": 0,
+     "coverDays": 18.9,
      "rate": 2.99,
      "owedToYou": 0,
      "promised": 0,
@@ -20400,7 +20415,7 @@
     "gas": null,
     "prep": null
    },
-   "v": "v1310"
+   "v": "v1313"
   },
   "TERMS": {
    "ceiling": 250,
@@ -20408,7 +20423,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1310"
+   "v": "v1313"
   },
   "REWARD": {
    "stated": {
@@ -20426,7 +20441,7 @@
      }
     }
    },
-   "v": "v1310"
+   "v": "v1313"
   },
   "STOCK": {
    "today": "2026-10-28",
@@ -20440,11 +20455,11 @@
      "transit": 0
     },
     "oil": {
-     "shelf": 0,
-     "free": 0,
+     "shelf": 50,
+     "free": 50,
      "commit": 0,
-     "light": "red",
-     "coverDays": 0,
+     "light": "green",
+     "coverDays": 18.9,
      "transit": 0
     },
     "candy": {
@@ -20480,7 +20495,7 @@
      "transit": 0
     }
    },
-   "v": "v1310"
+   "v": "v1313"
   }
  }
 }
