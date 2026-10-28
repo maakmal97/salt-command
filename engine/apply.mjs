@@ -1162,6 +1162,13 @@ export function applyEntry(book, it, ctx) {
   return { id: it.id, newest: it.id, moves, renames, rolls, entryMoves };
 }
 
+/* S5 (the roster road, 28 Oct 2026): A RENAME ENTRY'S RE-KEY, the one place the fold's batch (applyInto) and the Book's tap run it. PLACED is a map keyed by code, so a point
+   filed earlier moves with the code (v628), and a new place moves it on (v633). */
+export function applyRename(book, rn) {
+  E.renameInBook(book, rn.pairs);
+  if (rn.geo) { book.PLACED = book.PLACED || {}; book.PLACED[rn.to] = rn.geo; }
+}
+
 /* S1d-ii (18 Oct 2026, his answers of 16 Oct): A BATCH IS ITS ENTRIES BOOKED IN EVENT ORDER, one applyEntry after another, on the book the caller owns and wants folded IN PLACE
    (tools/fold.mjs's apply, whose callers hold the book and its rows by identity): `book` is the caller's own working copy and `p` the plan made against it. Everything else goes
    through applyBatch. Each entry rolls the stated figure of what it moved at once, so a count stands and only the moves after it change it (sale then count 10.5, count then sale
@@ -1179,8 +1186,7 @@ export function applyInto(book, p, staged, notes, ctx) {
     rolls.push(...r.rolls); entryMoves.push(...r.entryMoves);
     for (const rn of renames) E.renameInBook(book, rn.pairs);   /* a rename already applied carries a row booked after it under the old code, as the fold's last-of-all rename always did */
     for (const rn of r.renames) {   /* v628, now in booked order: the rename applies when its entry does */
-      E.renameInBook(book, rn.pairs);   // PLACED is a map keyed by code, so a point filed earlier moves with the code
-      if (rn.geo) { book.PLACED = book.PLACED || {}; book.PLACED[rn.to] = rn.geo; }   // v633: and a new place moves it on
+      applyRename(book, rn);
       renames.push(rn);
     }
     if (r.newest > newest) newest = r.newest;
