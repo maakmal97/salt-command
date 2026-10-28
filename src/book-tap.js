@@ -21,6 +21,11 @@ export async function tapMode(db) {
   try { const r = await db.prepare("SELECT mode FROM book_tap WHERE one=1").first(); return r && r.mode === "on" ? "on" : "off"; } catch (e) { return "off"; }
 }
 
+/** 'on' or 'off': the roster road's flag (migrations/0021, `book_roster`, shipped 'off'): whether the tap books an Add ID or a rename; 'off' when the table is missing or unreadable */
+export async function rosterMode(db) {
+  try { const r = await db.prepare("SELECT mode FROM book_roster WHERE one=1").first(); return r && r.mode === "on" ? "on" : "off"; } catch (e) { return "off"; }
+}
+
 /** a draft's D1 row as the item the fold stages (tools/drafts.mjs approvedRows), made approved at `at` by `by` */
 export function stagedItem(r, at, by) {
   return { id: r.id, status: "approved", collection: r.collection, row: parse(r.row, null), reasoning: r.reasoning == null ? null : r.reasoning,
@@ -39,7 +44,7 @@ async function ask(db, path, method, body) {
 /** Book the rows of one tap (the tapped row and its trip's pending rows), `rows` as D1 holds them (TAP_COLS). The answer's `kind`:
       off       the flag is off: approve as before, nothing asked
       booked    every row booked (or already booked): `booked` is [{id, rids, seq, again?, folded?}], to be written beside the approval
-      foldOnly  something here is the fold's alone (a roster, a rename, a party not on the book): approve as before, the fold mints
+      foldOnly  something here is the fold's alone (a roster or a rename while the roster flag is off, a party not on the book): approve as before, the fold mints
       fallback  the Book cannot book now (behind, silent, an entry stuck, an old object): approve as before, the minute net books it
       refused   the law refuses: `refused` is [{id, why}], nothing was booked, and the approval must not be written */
 export async function bookTap(db, rows, by, at) {
@@ -47,7 +52,7 @@ export async function bookTap(db, rows, by, at) {
   if (!nsOf(db)) return { kind: "fallback", why: "the Book is not bound" };
   let v = null;
   try { const h = await db.prepare("SELECT v FROM snapshot WHERE one=1").first(); v = h && h.v != null ? h.v : null; } catch (e) { v = null; }
-  const a = await ask(db, "tap", "POST", { items: rows.map((r) => stagedItem(r, at, by)), day: klDay(), v });
+  const a = await ask(db, "tap", "POST", { items: rows.map((r) => stagedItem(r, at, by)), day: klDay(), v, roster: await rosterMode(db) === "on" });
   if (!a || !a.body) return { kind: "fallback", why: "the Book did not answer" };
   const b = a.body;
   if (b.ok && Array.isArray(b.booked)) return { kind: "booked", booked: b.booked };
@@ -98,7 +103,7 @@ export async function bookNet(db, by = "the net") {
     if (gone.length && await voidEntries(db, gone)) out.voided = gone.length;
   }
   const NONE = "json_extract(CASE WHEN json_valid(row) THEN row ELSE '{}' END,'$.booked_seq') IS NULL";
-  const open = "status='approved' AND committed_at IS NULL AND collection NOT IN ('roster','rename') AND " + NONE;
+  const open = "status='approved' AND committed_at IS NULL AND " + (await rosterMode(db) === "on" ? "" : "collection NOT IN ('roster','rename') AND ") + NONE;
   const cand = ((await db.prepare("SELECT " + TAP_COLS + ",decided_at,decided_by FROM draft WHERE " + open + " ORDER BY drafted_at, id LIMIT 40").all()).results || []);
   const done = new Set();
   let groups = 0;

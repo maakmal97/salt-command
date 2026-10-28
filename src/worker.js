@@ -117,7 +117,7 @@ async function accessOk(request, env, p, m) {
 }
 /* 19 Oct 2026: the pushes that INFORM the Desk (POST /push/send tags), each kept as KV inform:last for the banner */
 const INFORM_TAGS = new Set(["folded", "fold-refused", "suite-red", "stock"]);
-const CI_ROUTES = new Set(["GET /rev", "POST /push/send", "POST /book/load", "POST /book/pitr", "GET /book/window", "GET /book/readcheck", "GET /book/ledger"]);
+const CI_ROUTES = new Set(["GET /rev", "POST /push/send", "POST /book/load", "POST /book/pitr", "GET /book/window", "GET /book/readcheck", "GET /book/ledger", "GET /book/roster"]);
 
 /* THE WRITE GATE (12 Aug 2026). Reads stay open, by the owner's standing decision; writes
  * do not have to. A caller must present X-Salt-Key matching the SALT_WRITE_KEY secret, and
@@ -237,6 +237,24 @@ async function handleBookLedger(request, env, m, url) {
     const a = await (await stub.fetch(new Request("https://book/at"))).json().catch(() => ({}));
     const { book, derived } = unshape(res);
     return json({ ok: true, v: res.v, stamped: res.stamped, at: res.at, rev: Number.isInteger(a && a.rev) ? a.rev : null, view, booked: Array.isArray(a && a.booked) ? a.booked.length : 0, book, derived });
+  } catch (e) { return json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }, 500); }
+}
+
+/* S5 (the roster road, 28 Oct 2026): WHAT THE BOOK'S ROSTER AND RENAME ENTRIES DID TO THE FILES GIT HOLDS BESIDE THE BOOK, for tools/roster-export.mjs: every entry after `after` (a booking order) that carried
+   effects, as the Book applied them (codes, kinds and the re-key pairs, never a row, a figure or a place), with the highest booking order the Book holds, so a quiet run can still move its watermark. The same two locks as the
+   ledger; read only. A voided entry is left out. */
+async function handleBookRoster(request, env, m, url) {
+  if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+  if (!bookKeyOk(request, env)) return needsKey();
+  if (!env.BOOK) return json({ ok: false, error: "the Book is not bound" }, 503);
+  const raw = url && url.searchParams.get("after"), after = raw == null || raw === "" ? 0 : Number(raw);
+  if (!Number.isInteger(after) || after < 0) return json({ ok: false, error: "after is a booking order, a whole number" }, 400);
+  try {
+    const r = await env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)).fetch(new Request("https://book/events?all=1"));
+    const ev = r.ok ? await r.json() : null;
+    if (!ev || !ev.ok || !Array.isArray(ev.entries)) return json({ ok: false, error: "the Book did not answer" }, 503);
+    const events = ev.entries.filter((e) => e.effects && e.seq > after && !e.voided_at).map((e) => ({ seq: e.seq, draft_id: e.draft_id, effects: { renames: (e.effects.renames || []).map((x) => ({ from: x.from, to: x.to, pairs: x.pairs })), roster: e.effects.roster || [] }, folded: !!e.folded_at }));   /* a place (geo) stays in the Book: the export never reads it */
+    return json({ ok: true, rev: ev.rev, at: ev.at, max: ev.entries.reduce((a, e) => Math.max(a, e.seq), 0), events });
   } catch (e) { return json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }, 500); }
 }
 
@@ -2848,7 +2866,7 @@ export default {
       if (p === "/queue" || /^\/queue\/[^/]+\/withdraw$/.test(p) || p === "/queue/ping" || p === "/vault" || p === "/bio" || p === "/bye"
         || p === "/vault/addr" || p === "/vault/pair" || p === "/vault/maintenance" || p === "/vault/key" || p === "/geo/expand" || p.startsWith("/slips/") || p.startsWith("/pins/")
         || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/") || p === "/book/load" || p === "/book/pitr" || p === "/book/window" || p === "/live"
-        || p === "/drafts" || p.startsWith("/drafts/") || p === "/book/readcheck" || p === "/book/ledger")
+        || p === "/drafts" || p.startsWith("/drafts/") || p === "/book/readcheck" || p === "/book/ledger" || p === "/book/roster")
         return json({ ok: false, error: "not authenticated" }, 401);
       return locked();
     }
@@ -2895,6 +2913,7 @@ export default {
        The answer carries counts and a digest, never a row. Nothing reads the Book. */
     if (p === "/book/load") return handleBookLoad(request, env, m);
     if (p === "/book/ledger") return handleBookLedger(request, env, m, url);   /* S5e: the Book's base as a book file, for the second publish */
+    if (p === "/book/roster") return handleBookRoster(request, env, m, url);   /* S5: the roster road's effects, for the flip's export */
     if (p === "/book/readcheck") return handleBookReadcheck(request, env, m);   /* S3: the Book against the mirror, names only */
     if (p === "/book/pitr" || p === "/book/window") return handleBookPitr(request, env, m, p);   /* S2c: the recovery test, the same two locks */
 

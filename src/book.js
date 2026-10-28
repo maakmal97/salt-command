@@ -50,7 +50,8 @@
  *
  * A PLAIN CLASS WITH fetch(), like stmt/orderbook.js: nothing here imports from stmt/ and the suite drives it over node:sqlite.
  */
-import { planBatch, applyEntry, movesOf } from "../engine/apply.mjs";
+import { planBatch, applyEntry, applyRename, movesOf } from "../engine/apply.mjs";
+import { isPinned } from "../engine/pinned.mjs";
 import { nextRid } from "../engine/rid.mjs";
 import { sortBook } from "../engine/sort.mjs";
 import PRICING_RULES from "../engine/rules.mjs";
@@ -149,25 +150,24 @@ export function shape(res) {
 /* ---- S4a (27 Oct 2026): THE BOOKED ENTRIES. A tap books an ENTRY here, beside the base; the base (`rows`, `state`) stays git's book as of the latest load
    and is written by a load alone. The VIEW is the base with the unfolded entries replayed through the engine's own planBatch and applyEntry (no second copy
    of the law lives in this file), each with its minted rids FORCED, so a replay never mints again. Nothing calls `tap` until S4d; see docs/DESK.md. ---- */
-export const FOLD_ONLY = ["roster", "rename"];   /* a username comes from the spare pool in git, a rename re-keys files: the fold's alone */
+export const FOLD_ONLY = ["roster", "rename"];   /* a username comes from the spare pool in git, a rename re-keys files: the fold's alone, until the roster flag (D1 book_roster, shipped off) is on */
 export const TAP_MAX = 50;
 const ISO_ID = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z$/;
 const DAY_RE = /^\d{4}-\d\d-\d\d$/;
 /* the books whose rule carries a % or a drift: the fold reads the same off the master's TIER_RULE lines (pinned equal by the suite) */
 export const DRIFT_BOOKS = Object.keys(PRICING_RULES.TIER_RULE).filter((k) => { const r = PRICING_RULES.TIER_RULE[k]; return !!r && (r.drift !== undefined || r.pct !== undefined); });
-/* a code in the engine's logic is "pinned": a Worker refuses every rename (the tap books none), so this answers yes to all */
-const pinnedAlways = () => true;
+/* a code written into the desk's own logic is "pinned" and its rename is left for a hand fold: engine/pinned.mjs is the master's scan written down (the suite scans the master against it) */
 
 /* what planBatch and applyEntry read beside the book: the reward scheme and the pricing snapshot are the Book's own derived documents */
 export function lawCtx(derived, day) {
   const rw = derived.REWARD && derived.REWARD.stated ? { stated: derived.REWARD.stated, ...(derived.TERMS ? { terms: derived.TERMS } : {}) } : null;
   const pricing = derived.PRICING && derived.PRICING.byProduct ? derived.PRICING : null;
-  return { today: day, pinnedInMaster: pinnedAlways, driftBooks: DRIFT_BOOKS, reward: rw, pricing };
+  return { today: day, pinnedInMaster: isPinned, driftBooks: DRIFT_BOOKS, reward: rw, pricing };
 }
 
-/* why an item is the fold's alone, or null: a roster entry or a rename; a Counter trade naming a party the book does not hold yet (its Add ID has to book first) */
-export function foldOnlyWhy(item, book) {
-  if (FOLD_ONLY.includes(item.collection)) return item.collection + " is booked by the fold";
+/* why an item is the fold's alone, or null: a roster entry or a rename (unless the roster flag is on: `rosterOn`); a Counter trade naming a party the book does not hold yet (its Add ID has to book first) */
+export function foldOnlyWhy(item, book, rosterOn) {
+  if (!rosterOn && FOLD_ONLY.includes(item.collection)) return item.collection + " is booked by the fold";
   const pl = item.entry && item.entry.payload;
   if (["sales", "purchases"].includes(item.collection) && pl && pl.mode === "new" && item.entry.makerRequest) {
     const have = new Set(book.roster || []);
@@ -175,6 +175,14 @@ export function foldOnlyWhy(item, book) {
     if (miss.length) return "names a party the book does not hold yet";
   }
   return null;
+}
+
+/* the party codes a row names (a sale's customer, a purchase's supplier, a Counter trade's party, associate and end buyer): what a rename can have retired */
+const NAMING = ["customer", "party", "supplier", "assoc", "downstream"];
+export function namedCodes(item) {
+  const out = new Set(), take = (o) => { if (o && typeof o === "object") for (const k of NAMING) if (typeof o[k] === "string" && o[k]) out.add(o[k]); };
+  take(item && item.row); take(item && item.entry && item.entry.payload);
+  return [...out];
 }
 
 /* ONE ENTRY BOOKED INTO `book` IN PLACE, by the engine's own plan and applyEntry. `forced` is the rids a first booking minted, in the order it minted them; with none the rids
@@ -191,14 +199,21 @@ export function bookEntry(book, item, ctx, forced) {
     const f = nextRid(rows, prefix);
     return (n) => { const r = queue && queue.length ? queue.shift() : f(n); minted.push(r); return r; };
   };
-  for (const it of p.items) applyEntry(book, it, { nextRid: mint, staged, notes, moves: movesOf(p, it), reward: ctx.reward, today: ctx.today, pricing: ctx.pricing });
-  return { ok: true, minted };
+  const effects = { renames: [], roster: [] };
+  for (const it of p.items) {
+    const r = applyEntry(book, it, { nextRid: mint, staged, notes, moves: movesOf(p, it), reward: ctx.reward, today: ctx.today, pricing: ctx.pricing });
+    for (const rn of r.renames) { applyRename(book, rn); effects.renames.push({ from: rn.from, to: rn.to, pairs: rn.pairs, geo: rn.geo || null }); }   /* S5: a rename re-keys the book where it stands, by the engine's own applyRename (the fold's batch runs the same) */
+    if (it.roster) effects.roster.push({ code: it.roster.code, kind: (item.row || {}).kind || null, register: !!it.roster.register });
+  }
+  return { ok: true, minted, effects: effects.renames.length || effects.roster.length ? effects : null };
 }
 
 /* the money fields of a row for a tap-against-fold comparison: notes are the fold's to write, so every `note` is left out */
 const noNote = (v) => canon(JSON.parse(JSON.stringify(v === undefined ? null : v), (k, x) => (k === "note" ? undefined : x)));
 /* what an entry moves and the fold also writes the same way: the stock, the counts, the loans and the two lists; a document a hand edit of the master may move between loads is not compared */
 const TAP_PURE = ["STATED_STOCK", "PROD_OPENING", "COUNTS", "COUNT_ON", "loans", "sales", "purchases"];
+/* S5: and, when a roster entry or a rename was among the folded, what the road writes: the roster, the associates and partners, the places and the starting %s (a rename re-keys sales and purchases too, already compared) */
+const ROSTER_PURE = ["roster", "associates", "partners", "PLACED", "TIER_OF"];
 /* THE TAP CHECK: the view as it stood before a load against the view after it, for the entries the load folded. If the fold and the tap run one law the view does not move.
    Always the rows the entries minted; and, when the batch was nothing but entries (`pure`), every list and document but the notes and the watermark (stock, counts, loans). Names only. */
 export function tapDiffer(pre, post, folded, pure) {
@@ -211,7 +226,14 @@ export function tapDiffer(pre, post, folded, pure) {
     else if (!a) differ.push(rid + " (not in the view)");
     else if (noNote(a) !== noNote(b)) differ.push(rid);
   }
-  if (pure) for (const k of TAP_PURE) {
+  /* S5: an Add ID or a rename the load folded (by D1's word or by its effects) is checked against the new base's roster, in any load: the code it registered is there (unless a later folded rename moved it on), the codes it renamed are moved */
+  const rosterPost = new Set(post.book.roster || []), moved = new Set(folded.flatMap((e) => ((e.fx && e.fx.renames) || []).flatMap((rn) => (rn.pairs || []).map((p) => p[0]))));
+  for (const e of folded) {
+    if (!e.fx) continue;
+    for (const x of e.fx.roster || []) if (x.register && !moved.has(x.code) && !rosterPost.has(x.code)) differ.push("roster " + x.code + " (not in the base)");
+    for (const rn of e.fx.renames || []) for (const [f, t] of rn.pairs || []) if (rosterPost.has(f) || !rosterPost.has(t)) differ.push("roster " + f + " to " + t + " (not moved in the base)");
+  }
+  if (pure) for (const k of folded.some((e) => e.coll === "roster" || e.coll === "rename") ? TAP_PURE.concat(ROSTER_PURE) : TAP_PURE) {
     const a = pre.book[k], b = post.book[k];
     if (Array.isArray(a) && Array.isArray(b)) { const key = (l) => l.map(noNote).sort().join("|"); if (key(a) !== key(b)) differ.push(k); }
     else if (noNote(a) !== noNote(b)) differ.push(k);
@@ -250,6 +272,9 @@ export class Book {
     /* S4a: the entries a tap booked. The view replays the unfolded, unvoided ones in seq order; a load marks the ones it folded. A voided one is kept, not deleted. */
     sql.exec("CREATE TABLE IF NOT EXISTS booked (seq INTEGER PRIMARY KEY AUTOINCREMENT, draft_id TEXT NOT NULL, item TEXT NOT NULL, rids TEXT NOT NULL, day TEXT NOT NULL, at TEXT NOT NULL, folded_at TEXT, voided_at TEXT)");
     sql.exec("CREATE INDEX IF NOT EXISTS booked_draft ON booked (draft_id)");
+    /* S5 (the roster road): WHAT AN ENTRY DID TO THE FILES GIT HOLDS BESIDE THE BOOK, as the Book applied it: { renames: [{from, to, pairs, geo}], roster: [{code, kind, register}] }, NULL for any other entry.
+       The flip's export step (tools/roster-export.mjs) reads it to move the statement username, the place override and the suite's fixtures exactly as the fold did. A Book that held entries before gains the column. */
+    try { sql.exec("ALTER TABLE booked ADD COLUMN effects TEXT"); } catch (e) { if (!/duplicate column/i.test(String((e && e.message) || e))) throw e; }
     /* S6: THE OUTBOX. A tap that booked a sale (or an amendment of one) leaves a row here in the SAME transaction; the Desk's drain (src/outbox.js) answers it with one forced pass of the return leg,
        which tells every order what the ledger says, and marks the rows it covered sent. A row is a durable "something booked: tell the orders", never a message: the leg's own messages are
        state, raise-only, and idempotent, so a row drained twice tells nothing twice. Nothing reads it while the flag (D1 book_outbox) is off. */
@@ -311,11 +336,20 @@ export class Book {
           if (!alike) clash.push(e.draft_id);
           return alike;
         };
-        const done = evs.filter((e) => said.has(e.draft_id) || byRid(e));
+        /* an Add ID or a rename mints no rid, so D1's word is not the only way it closes: the new base holds the code it registered, or has moved the codes it renamed (what its effects record) */
+        const rosterNow = new Set(sql.exec("SELECT doc FROM rows WHERE coll = 'roster' AND gone_at IS NULL").toArray().map((x) => JSON.parse(x.doc)));
+        const byEffect = (e) => {
+          const fx = e.effects ? JSON.parse(e.effects) : null;
+          if (!fx) return false;
+          const regs = (fx.roster || []).filter((x) => x.register), rns = fx.renames || [];
+          if (!regs.length && !rns.length) return false;
+          return regs.every((x) => rosterNow.has(x.code)) && rns.every((rn) => (rn.pairs || []).every(([f, t]) => !rosterNow.has(f) && rosterNow.has(t)));
+        };
+        const done = evs.filter((e) => said.has(e.draft_id) || byRid(e) || byEffect(e));
         for (const e of done) sql.exec("UPDATE booked SET folded_at = ? WHERE seq = ?", at, e.seq);
         const rest = evs.filter((e) => !done.includes(e)), post = this.viewOf(rest);
         tap = { folded: done.length, open: rest.length, stuck: post.stuck.map((s) => s.id), clash,
-          differ: done.length ? tapDiffer(pre, post, done.map((e) => ({ rids: JSON.parse(e.rids) })), !!opts.pure && !rest.length) : [] };
+          differ: done.length ? tapDiffer(pre, post, done.map((e) => ({ rids: JSON.parse(e.rids), coll: JSON.parse(e.item).collection, fx: e.effects ? JSON.parse(e.effects) : null })), !!opts.pure && !rest.length) : [] };
       }
       /* S5a: a strict load (compaction) is refused, and the whole transaction with it, when the view it would write is not the view that was read, or when it would lose a row */
       if (opts.strict && (!tap || tap.differ.length || tap.stuck.length || tap.open || n.gone || !tap.folded))
@@ -449,7 +483,7 @@ export class Book {
   }
 
   /* ---- S4a: the booked entries ---- */
-  events() { return this.state.storage.sql.exec("SELECT seq, draft_id, item, rids, day, at FROM booked WHERE folded_at IS NULL AND voided_at IS NULL ORDER BY seq").toArray(); }
+  events() { return this.state.storage.sql.exec("SELECT seq, draft_id, item, rids, day, at, effects FROM booked WHERE folded_at IS NULL AND voided_at IS NULL ORDER BY seq").toArray(); }
 
   /* the base as the engine's book object (derived documents kept apart), out of the Book's own SQLite */
   baseBook() {
@@ -522,20 +556,28 @@ export class Book {
       const view = this.viewOf(evs);
       if (view.stuck.length) return { ok: false, status: 409, fallback: true, stuck: view.stuck.map((s) => s.id), error: "an earlier entry is stuck" };
       let book = view.book;
-      const foldOnly = missing.map((it) => ({ id: it.id, why: foldOnlyWhy(it, book) })).filter((x) => x.why);
+      /* S5: A CODE A RENAME RETIRED IS REFUSED. A row that names it (a sale drafted before the rename and approved after) would land under a code the book no longer holds, or be re-keyed only while the
+         rename is still open and not once it is folded: the result would depend on the timing. The entries on file (open or folded, never voided) and this trip's own renames say which codes are retired;
+         a code put back on the roster since is not. */
+      const retired = new Map();
+      for (const x of sql.exec("SELECT effects FROM booked WHERE effects IS NOT NULL AND voided_at IS NULL").toArray()) for (const rn of (JSON.parse(x.effects).renames || [])) for (const [f, t] of (rn.pairs || [])) retired.set(f, t);
+      const foldOnly = missing.map((it) => ({ id: it.id, why: foldOnlyWhy(it, book, body.roster === true) })).filter((x) => x.why);
       if (foldOnly.length) return { ok: true, foldOnly };
       const planned = [];
       for (const it of missing) {
+        const gone = namedCodes(it).find((c) => retired.has(c) && !(book.roster || []).includes(c));
+        if (gone) return { ok: false, status: 409, refused: [{ id: it.id, why: gone + " is now " + retired.get(gone) + ": a rename moved it, so this row names a code the book no longer holds" }] };
         const next = structuredClone(book);
         let r;
         try { r = bookEntry(next, it, lawCtx(view.derived, day), null); } catch (err) { return { ok: false, status: 500, fallback: true, error: "the entry could not be booked: " + String((err && err.message) || err).slice(0, 200) }; }
         if (!r.ok) return { ok: false, status: 409, refused: [{ id: it.id, why: r.why }] };
-        book = next; planned.push({ it, rids: r.minted });
+        book = next; planned.push({ it, rids: r.minted, effects: r.effects });
+        if (r.effects) for (const rn of r.effects.renames) for (const [f, t] of rn.pairs || []) retired.set(f, t);
       }
       const at = this.clock();
       sql.exec("UPDATE snap SET rev = rev + 1 WHERE one = 1");
       for (const x of planned) {
-        sql.exec("INSERT INTO booked (draft_id, item, rids, day, at) VALUES (?, ?, ?, ?, ?)", x.it.id, JSON.stringify(x.it), JSON.stringify(x.rids), day, at);
+        sql.exec("INSERT INTO booked (draft_id, item, rids, day, at, effects) VALUES (?, ?, ?, ?, ?, ?)", x.it.id, JSON.stringify(x.it), JSON.stringify(x.rids), day, at, x.effects ? JSON.stringify(x.effects) : null);
         if (x.it.collection === "sales") sql.exec("INSERT INTO outbox (draft_id, at) VALUES (?, ?)", x.it.id, at);   /* S6: only a sale can move an order */
       }
       const seqOf = (id) => sql.exec("SELECT seq FROM booked WHERE draft_id = ? AND folded_at IS NULL AND voided_at IS NULL", id).toArray()[0].seq;
@@ -544,7 +586,7 @@ export class Book {
   }
 
   /* S5a: EVERY ENTRY the Book ever booked, open, folded or voided, in booked order, with the item as staged: the event log a daily export replays. */
-  allEvents() { return this.state.storage.sql.exec("SELECT seq, draft_id, item, rids, day, at, folded_at, voided_at FROM booked ORDER BY seq").toArray().map((e) => ({ ...e, item: JSON.parse(e.item), rids: JSON.parse(e.rids) })); }
+  allEvents() { return this.state.storage.sql.exec("SELECT seq, draft_id, item, rids, day, at, folded_at, voided_at, effects FROM booked ORDER BY seq").toArray().map((e) => ({ ...e, item: JSON.parse(e.item), rids: JSON.parse(e.rids), effects: e.effects ? JSON.parse(e.effects) : null })); }
 
   /* S5a: THE EXPORT: the base, the whole event log, the last loads and the revision, as one answer for the nightly sealed export (src/backup.js). Binding only, never a route. */
   async exportAll() {
