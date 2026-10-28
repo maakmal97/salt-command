@@ -149,7 +149,7 @@ export async function run({ ok }) {
   ok(mirrorLate.on === 50 && mirrorEarly.on === 0, "in 'd1' mode the bound is still the mirror's snapshot, as it was");
   const src = readFileSync(join(REPO, "src", "orders.js"), "utf8");
   const rr = src.slice(src.indexOf("export async function rowRoom("), src.indexOf("export async function rowRoom(") + 900);
-  ok(/const book = await \(mirror \? mirror\(\) : readBook\(db\)\)\.catch\(\(\) => null\);\s*const way = onWay \|\| await paysOnWay\(db, direction, boundOf\(book\)\)/.test(rr) && !/Promise\.all/.test(rr),
+  ok(/const book = await \(mirror \? mirror\(\) : readBook\(db\)\)\.catch\(\(e\) => \{ if \(e instanceof BookDown\) throw e; return null; \}\);\s*const way = onWay \|\| await paysOnWay\(db, direction, boundOf\(book\)\)/.test(rr) && !/Promise\.all/.test(rr),
     "the tap reads the book first and the payments on their way by that book's own bound, never the two at once");
 
   /* 4b: the load tool and git's side of the parity */
@@ -273,6 +273,6 @@ export async function run({ ok }) {
     const n = readFileSync(join(REPO, "src", f), "utf8").split("\n").filter((l) => /committed_at IS NULL|committed_at >|committed_at <=|committed_at IS NOT NULL/.test(l) && !/^\s*(\/\/|\*|\/\*)/.test(l)).length;
     if (n) lits[f] = n;
   }
-  ok(JSON.stringify(lits) === JSON.stringify({ "book-compact.js": 2, "book-tap.js": 2, "input-admission.js": 6, "worker.js": 8 }),
-    "the only draft clauses that ask committed_at are the awaiting-the-fold and admission ones (input-admission.js 6, worker.js 8: the two the load asks to name the open entries the fold took, S4a; book-tap.js 2: the net's and the rids' own, S4d; book-compact.js 2: the compaction marks and reads back the drafts it closed, S5f-3): " + JSON.stringify(lits));
+  ok(JSON.stringify(lits) === JSON.stringify({ "book-compact.js": 4, "book-tap.js": 2, "input-admission.js": 6, "worker.js": 8 }),
+    "the only draft clauses that ask committed_at are the awaiting-the-fold and admission ones (input-admission.js 6, worker.js 8: the two the load asks to name the open entries the fold took, S4a; book-tap.js 2: the net's and the rids' own, S4d; book-compact.js 4: the compaction marks, takes back and reads back the drafts it closes, S5f-3): " + JSON.stringify(lits));
 }
