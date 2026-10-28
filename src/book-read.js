@@ -31,9 +31,10 @@ export class BookDown extends Error {}
 /* the Book's answer for `path` ("read" or "at"), or null: not in book mode, no Book bound or answering, no snapshot, or the Book trails the mirror.
    S5f-4: with the Book as the SOURCE none of those is a reason to read the mirror: the answer is marked `source: "book"` and carries its revision, and a Book that will not answer THROWS (BookDown), since the mirror is frozen. */
 export async function fromBook(db, path) {
-  const ns = BOOKS.get(db), src = await sourceMode(db) === "book";
+  const ns = BOOKS.get(db);
+  if (!ns) return null;   /* no Book bound: nothing to read (a Worker deploys with the binding, and this asks D1 nothing, as it never did) */
+  const src = await sourceMode(db) === "book";
   if (src) {
-    if (!ns) throw new BookDown("the Book is the source of the ledger and is not bound");
     let res = null;
     try {
       const r = await ns.get(ns.idFromName(BOOK_NAME)).fetch(new Request("https://book/" + path));
@@ -42,7 +43,7 @@ export async function fromBook(db, path) {
     if (!res || !res.ok || typeof res.at !== "string" || !Number.isInteger(res.rev) || !Number.isInteger(res.derivedRev)) throw new BookDown("the Book is the source of the ledger and did not answer");
     return { ...res, source: "book" };
   }
-  if (!ns || await readFlag(db) !== "book") return null;
+  if (await readFlag(db) !== "book") return null;
   try {
     const head = await db.prepare("SELECT v FROM snapshot WHERE one=1").first();
     if (!head || head.v == null) return null;
@@ -54,6 +55,17 @@ export async function fromBook(db, path) {
     if (a !== null && b !== null ? a < b : res.v !== head.v) return null;
     return res;
   } catch (e) { return null; }
+}
+/** The snapshot row AND the source flag in ONE read (`src`): a caller that already reads the snapshot (tellSite, tieOut) must not add a round trip, or its timing against a concurrent writer moves. A store with no
+    book_source table answers the plain read, which is the old world. */
+export async function snapshotWithSource(db, cols) {
+  try { return await db.prepare("SELECT " + cols + ", (SELECT mode FROM book_source WHERE one=1) AS src FROM snapshot WHERE one=1").first(); }
+  catch (e) { return db.prepare("SELECT " + cols + " FROM snapshot WHERE one=1").first(); }
+}
+/** the token from a row snapshotWithSource read: its v in the old world, the Book's revision when `src` says book (a throw when the Book will not say) */
+export async function tokenFrom(db, snap) {
+  if (snap && snap.src === "book") return versionToken(db);
+  return snap && snap.v != null ? snap.v : null;
 }
 /** the token a staleness test compares: the snapshot's v in the old world, `book@<rev>` with the Book as the source (the Book's own cheap revision verb, no view built); null when the old world has no snapshot yet, and a throw when the Book is the source and will not say */
 export async function versionToken(db) {

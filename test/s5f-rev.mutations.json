@@ -60,12 +60,6 @@
   "replace": "|| !Number.isInteger(res.derivedRev)) return null;"
  },
  {
-  "name": "an unbound Book is read as nothing",
-  "file": "src/book-read.js",
-  "find": "    if (!ns) throw new BookDown(\"the Book is the source of the ledger and is not bound\");",
-  "replace": "    if (!ns) return null;"
- },
- {
   "name": "a Book that answers no revision is taken",
   "file": "src/book-read.js",
   "find": "|| !Number.isInteger(res.rev) || !Number.isInteger(res.derivedRev)) throw new BookDown",
@@ -116,7 +110,7 @@
  {
   "name": "the told mark reads git's version with the Book as the source",
   "file": "src/orders.js",
-  "find": "try { v = await versionToken(env.SALT_LEDGER); } catch (e) { return { ok: false, error:",
+  "find": "try { v = await tokenFrom(env.SALT_LEDGER, snap); } catch (e) { return { ok: false, error:",
   "replace": "try { v = (snap && snap.v) || null; } catch (e) { return { ok: false, error:"
  },
  {

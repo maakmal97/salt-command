@@ -22,7 +22,7 @@
  */
 import { sendPush } from "./push.js";
 import { boundOf, onItsWay, landedBy } from "./way.js";
-import { wayBound, versionToken, BOOK_TOKEN } from "./book-read.js";
+import { wayBound, versionToken, snapshotWithSource, tokenFrom, BOOK_TOKEN } from "./book-read.js";
 import { readBook, bookOnce, withRefunds, draftRow, cogsFor, floorFor, usualFor, pricingOf, stageDigest, runDrafter, settlePre, withPending, noteQueued, offerDigest, isOfferPre } from "./drafter.js";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { admitInput, admitInputs } from "./input-admission.js";
@@ -2014,10 +2014,10 @@ export async function termsInFlight(env, o, at) {
 export async function tellSite(env, fixes, mirror, opts = {}) {
   if (!env.SALT_LEDGER || !env.SALT_QUEUE) return { ok: true, told: 0 };
   let snap = null;
-  try { snap = await env.SALT_LEDGER.prepare("SELECT v,stamped FROM snapshot WHERE one=1").first(); } catch (e) { return { ok: false, error: String((e && e.message) || e) }; }
+  try { snap = await snapshotWithSource(env.SALT_LEDGER, "v,stamped"); } catch (e) { return { ok: false, error: String((e && e.message) || e) }; }
   /* S5f-4: the version a pass was for is git's in the old world and the Book's revision (`book@<rev>`) when the Book is the source, where an approval moves no git version; read BEFORE the book, so a tap in between makes the next pass run again, never skip */
   let v = null;
-  try { v = await versionToken(env.SALT_LEDGER); } catch (e) { return { ok: false, error: String((e && e.message) || e) }; }
+  try { v = await tokenFrom(env.SALT_LEDGER, snap); } catch (e) { return { ok: false, error: String((e && e.message) || e) }; }
   if (!v) return { ok: true, told: 0 };
   if (!opts.force && (await env.SALT_QUEUE.get(TOLD_MARK)) === v) return { ok: true, told: 0, v };
   const r = await listOrders(env, true);   /* every order: a finished one follows its row too */
@@ -2148,11 +2148,11 @@ const TIEOUT_STALL_MS = 15 * 60000;
 export async function tieOut(env, mirror, now = new Date()) {
   const at = now.toISOString(), faults = [], waiting = [];
   let snap = null;
-  try { snap = await env.SALT_LEDGER.prepare("SELECT v, at FROM snapshot WHERE one=1").first(); } catch (e) { snap = null; }
+  try { snap = await snapshotWithSource(env.SALT_LEDGER, "v, at"); } catch (e) { snap = null; }
   /* S5f-4: the version the Counter should have been told of: git's, or the Book's revision when the Book is the source (the mirror is frozen then, so its moment says nothing: the stall is timed from the first pass that saw this revision) */
   let v = null, since = snap && snap.at ? Date.parse(snap.at) : NaN;
   try {
-    v = await versionToken(env.SALT_LEDGER);
+    v = await tokenFrom(env.SALT_LEDGER, snap);
     if (v && BOOK_TOKEN.test(v)) {
       const seen = await env.SALT_QUEUE.get(TOLD_SEEN, "json").catch(() => null);
       if (!seen || seen.v !== v) { since = now.getTime(); await env.SALT_QUEUE.put(TOLD_SEEN, JSON.stringify({ v, at: at })); } else since = Date.parse(seen.at);
