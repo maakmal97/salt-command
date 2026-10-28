@@ -1,6 +1,6 @@
 {
- "v": "v1300",
- "stamped": "28 Oct 2026, 05:49 KL",
+ "v": "v1302",
+ "stamped": "28 Oct 2026, 11:31 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -9428,6 +9428,18 @@
     "cost": 58
    },
    {
+    "customer": "CR3-DAM",
+    "qty": 1,
+    "total": 110,
+    "cash": 0,
+    "date": "2026-10-28",
+    "deliveredQty": 0,
+    "note": "<b>PENDING SALE OF 1 UNIT OF SALT TO CR3-DAM, GOODS RM110, 28 OCT 2026.</b> Ordered on the statements site, order 20261028032856-i8wyuq, acknowledged, to collect, placed at RM120 and priced at RM110 on this order. Nothing is paid and nothing handed over, so no stock is drawn and no revenue is booked. For 1 unit the ladder gives a floor total of RM60 and an ask total of RM120, so RM110 is above the floor and below the ask. That is RM110 a unit against a floor of RM60 and an ask of RM120. The party's median rate is RM80, range RM80 to RM150; outstanding before was RM25, 0.27 unit on credit against a cap of 2. The cost is RM58 a unit, costed off the latest purchase. The drafter flagged a rate 33.3% above the usual RM82.5 a unit. The figures answer it: the rate is within the party's own range and below the ask. RM110 and the 1 unit remain outstanding.",
+    "listRM": 120,
+    "listQty": 1,
+    "rid": "s301"
+   },
+   {
     "customer": "CM4-TO-R",
     "qty": 1,
     "total": 130,
@@ -10255,7 +10267,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-27T21:49:06.986Z",
+  "QUEUE_COMMITTED": "2026-10-28T03:30:35.197Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -20130,12 +20142,26 @@
      "suggest": null
     }
    },
-   "v": "v1300"
+   "v": "v1302"
   },
   "OPEN": {
-   "at": "2026-10-27T21:49:56.366Z",
-   "count": 7,
+   "at": "2026-10-28T03:31:13.127Z",
+   "count": 8,
    "byKey": {
+    "CR3-DAM|2026-10-28|110": {
+     "d": "2026-10-28",
+     "p": "CR3-DAM",
+     "dir": "S",
+     "q": 1,
+     "t": 110,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 110,
+     "oweUnits": 1,
+     "rid": "s301",
+     "key": "CR3-DAM|2026-10-28|110"
+    },
     "CZ5-TM|2026-10-27|105": {
      "d": "2026-10-27",
      "p": "CZ5-TM",
@@ -20259,10 +20285,10 @@
      "free": 0,
      "owedOut": 0.5,
      "coverDays": 0,
-     "rate": 4.36,
+     "rate": 4.41,
      "owedToYou": 240,
-     "promised": 0.5,
-     "short": 0
+     "promised": 1.5,
+     "short": 1
     },
     "oil": {
      "name": "Oil",
@@ -20328,7 +20354,7 @@
     "gas": null,
     "prep": null
    },
-   "v": "v1300"
+   "v": "v1302"
   },
   "TERMS": {
    "ceiling": 250,
@@ -20336,7 +20362,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1300"
+   "v": "v1302"
   },
   "REWARD": {
    "stated": {
@@ -20354,7 +20380,7 @@
      }
     }
    },
-   "v": "v1300"
+   "v": "v1302"
   },
   "STOCK": {
    "today": "2026-10-28",
@@ -20362,8 +20388,8 @@
     "salt": {
      "shelf": 0.5,
      "free": 0,
-     "commit": 0.5,
-     "light": "green",
+     "commit": 1.5,
+     "light": "yellow",
      "coverDays": 0,
      "transit": 0
     },
@@ -20408,7 +20434,7 @@
      "transit": 0
     }
    },
-   "v": "v1300"
+   "v": "v1302"
   }
  }
 }
