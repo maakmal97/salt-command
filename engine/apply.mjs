@@ -396,6 +396,7 @@ function describe(item) {
     case "lostDemand": return `LOST SALE ${r.kg} unit ${r.product}${r.party ? " to " + r.party : ""} on ${r.date}: ${r.why}`;
     case "roster": if (r.partner) return `PARTNER ${r.code}: pays the Floor`; return `${APPOINTS[r.kind] ? "APPOINT" : "REGISTER"} ${r.code} as ${r.kind}${r.parent ? " under " + r.parent : ""}${r.tiers ? " at " + Object.entries(r.tiers).map(([p, t]) => p + " " + t).join(", ") : ""}`;
     case "rename": return `RENAME ${r.from} to ${r.to}`;
+    case "edit": return r.kind === "refundPaid" ? `MARK PAID the RM ${r.amount} refund to ${r.party} of ${r.since}, returned ${r.paidOn}` : `REMOVE the RM ${r.amount} refund to ${r.party} of ${r.since}`;
     case "place": return `PLACE ${Object.keys(r.places || {}).join(", ")} on the map`;
     case "tierset": return `THEIR % ${Object.entries(r.tiers || {}).map(([c, t]) => c + " " + Object.entries(t || {}).map(([p, v]) => p + " " + sayLift(v)).join(" ")).join(", ")}`;
     case "priceset": return `SET THE BOARD for ${r.product}${Object.keys(r.prices || {}).length ? ": " + Object.entries(r.prices).map(([q, p]) => `${q} unit at RM${p}`).join(", ") : ""}${(r.hide || []).length ? `, hiding ${r.hide.join(", ")} unit` : ""}`;
@@ -836,6 +837,14 @@ export function planBatch(book, staged, notes, ctx) {
       entry.tiers = keptTs.length ? keptTiers : {};   /* a tierset of old figures alone folds as a no-op: the item is filed, the book unchanged */
       if (keptTs.length) entry.does.push(`set ${keptTs.map(([c, p, v]) => `${c}'s ${p} figure to ${sayLift(v)}`).join(", ")}`);
       for (const c of [...new Set(oldTs.map((x) => x[0]))]) entry.does.push(oldLiftNote(c, oldTs.filter((x) => x[0] === c).map((x) => x[1]), oldWhy(it, oldTs.find((x) => x[0] === c)[1], oldTs.find((x) => x[0] === c)[2])));
+    } else if (it.collection === "edit") {
+      /* S5f-5: a hand edit of one open refund (Ask A). It is checked against the book it folds into, since the refund can be paid, removed or closed between the draft and the fold. */
+      const hit = E.editRefunds(book.customerRefunds, r);
+      if (!(["refundPaid", "refundRemove"].includes(r.kind))) { out.refused.push({ id: it.id, why: `${r.kind} is not an edit this fold takes` }); continue; }
+      if (hit.length !== 1) { out.refused.push({ id: it.id, why: hit.length ? `${hit.length} open refunds of RM ${r.amount} to ${r.party} of ${r.since} match, so the edit does not say which` : `no open refund of RM ${r.amount} to ${r.party} of ${r.since} is on the book` }); continue; }
+      if (r.kind === "refundPaid" && !/^\d{4}-\d\d-\d\d$/.test(String(r.paidOn || ""))) { out.refused.push({ id: it.id, why: "a refund marked paid needs the day it went back (YYYY-MM-DD)" }); continue; }
+      entry.edit = { kind: r.kind, party: r.party, since: r.since, amount: +r.amount, paidOn: r.paidOn || null, note: r.note || null };
+      entry.does.push(r.kind === "refundPaid" ? `mark the RM ${r.amount} refund to ${r.party} of ${r.since} paid on ${r.paidOn}` : `remove the RM ${r.amount} refund to ${r.party} of ${r.since}, which the book no longer owes`);
     } else if (it.collection === "rename") {
       /* v628, AMEND ID: checked again against the book it folds into, since a code can be taken or retired
          between the draft and the fold. What moves is the engine's renamePairs, as on the card. */
@@ -1130,6 +1139,13 @@ function bookItem(book, it, c) {
         const now = Object.assign({}, book.TIER_OF[c], t);
         Object.keys(now).forEach((p) => { if (now[p] == null) delete now[p]; });
         if (Object.keys(now).length) book.TIER_OF[c] = now; else delete book.TIER_OF[c];
+      }
+    }
+    else if (it.edit) {   /* S5f-5: one open refund, named by party, since and amount; a re-run finds it paid or gone and does nothing */
+      const ed = it.edit, hit = E.editRefunds(book.customerRefunds, ed);
+      if (hit.length === 1) {
+        if (ed.kind === "refundPaid") { hit[0][0].paidOn = ed.paidOn; if (ed.note) hit[0][0].note = (hit[0][0].note ? hit[0][0].note + " " : "") + ed.note; }
+        else book.customerRefunds.splice(hit[0][1], 1);
       }
     }
     else if (it.rename) renames.push(it.rename);

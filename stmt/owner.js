@@ -573,6 +573,36 @@ export const OWNER_JS = `
     readingOf('customer-of', code, function(r){ paintCust(cust, r); });
     readingOf('reward-of', code, function(r){ paintRwd(rwd, r); });
     if(books.length&&(partner||waiting||(cat.driftCustomers||[]).indexOf(code)>=0&&/^C/.test(code)&&!/-Gen$/.test(code))) box.appendChild(partnerSection(a, partner, waiting));
+    var rs=refundSection(a, cat); if(rs) box.appendChild(rs);
+  }
+  /* 29 OCT 2026 (S5f-5, his answer to Ask A): a refund the book still owes them, marked paid or taken off as stale. Each asks once and goes to Approve as an edit; nothing here moves cash. The refund is named by its day and amount, as the Desk holds it. */
+  function refundSection(a, cat){
+    var mine=(cat.openRefunds||[]).filter(function(r){ return r.party===a.code||r.party===a.code+'-R'; });
+    if(!mine.length) return null;
+    var s=el('div','asec arefund salt-glass-card salt-glass-card--radius-lg'), head=el('div','apct__head');
+    head.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Refunds'));
+    head.appendChild(el('span','salt-status salt-status--mist',mine.length===1?'1 open':mine.length+' open'));
+    s.appendChild(head);
+    mine.forEach(function(r){
+      var waits=(cat.editWaiting||[]).some(function(w){ return w.party===r.party&&w.since===r.since&&+w.amount===+r.amount; });
+      var row=el('div','arefund__row'); row.appendChild(el('p','anote',rm(r.amount)+' to '+r.party+', '+r.since+(waits?'. Waiting under Approve.':'.')));
+      s.appendChild(row); if(waits) return;
+      var answer=el('p','anote'); answer.setAttribute('role','status');
+      [['Mark paid today','refundPaid','Sent. It is marked paid once you approve it.'],['Remove as stale','refundRemove','Sent. It comes off the book once you approve it.']].forEach(function(k){
+        var armed=null, at=null, b=makerButton(row,[k[0],'acct.refund',a.code+':'+r.since+':'+r.amount+':'+k[1]],async function(send){
+          if(!armed){ b.textContent='Tap again to send it to Approve'; armed=setTimeout(function(){ armed=null; b.textContent=k[0]; }, 4000); return; }
+          clearTimeout(armed); armed=null; b.textContent=k[0];
+          var body={kind:k[1],party:r.party,since:r.since,amount:r.amount};
+          if(k[1]==='refundPaid') body.paidOn=new Date(Date.now()+8*36e5).toISOString().slice(0,10);
+          if(!at) at=new Date().toISOString();
+          body.at=at;
+          try{ await send('/all/maker/inputs/edit',body); answer.textContent=k[2]; loadMaker(); }
+          catch(error){ refusal(answer,error); }
+        },false,function(){ at=null; });
+      });
+      row.appendChild(answer);
+    });
+    return s;
   }
   function readingOf(kind, code, paint){
     var k=kind+'/'+code;

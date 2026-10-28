@@ -52279,6 +52279,11 @@ await (async () => {
   await (await import("./s5f-rev.mjs")).run({ ok });
 })();
 
+section("Book S5f-5: the edit entry, a refund marked paid or taken off, approved in Salt Admin and booked by the tap (29 Oct 2026)");
+await (async () => {
+  await (await import("./s5f-edit.mjs")).run({ ok });
+})();
+
 section("18 Oct 2026: the lean Desk: six views, the three parts gone, alerts in the rail, spots on Coverage, Noticed under To do");
 await (async () => {
   /* HIS DECISION OF 18 OCT 2026: Approve, Site orders and Entries left the Desk, Salt Admin deciding every order, claim, chat and

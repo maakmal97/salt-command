@@ -1402,6 +1402,29 @@ export function draftRow(entry, book) {
         + " It moves no cash and no stock; a % lift moves that customer's own price and never the board.",
     };
   }
+  /* S5f-5 (Ask A): A HAND EDIT OF ONE OPEN REFUND, marked paid or taken off. It moves no stock, no sale and no cash on a row; it is named by party, since and amount and must be the one open refund those pick out (the fold
+     checks again against the book it folds into). With the mirror read the refunds are not in the book, so only the Book's read can check it here, and the flag says so when it cannot. */
+  if (pay.mode === "edit") {
+    if (!["refundPaid", "refundRemove"].includes(pay.kind)) return { skip: `${pay.kind} is not an edit this desk drafts` };
+    if (typeof pay.party !== "string" || !pay.party || typeof pay.since !== "string" || !(+pay.amount > 0)) return { skip: "an edit names the refund by its party, its day and its amount" };
+    if (pay.kind === "refundPaid" && !/^\d{4}-\d\d-\d\d$/.test(String(pay.paidOn || ""))) return { skip: "a refund marked paid needs the day it went back" };
+    const flags = [], refunds = Array.isArray(book.customerRefunds) ? book.customerRefunds : null;
+    if (refunds) {
+      const hit = POSITION_ENGINE.editRefunds(refunds, pay);
+      if (hit.length !== 1) return { skip: hit.length ? `${hit.length} open refunds of RM ${pay.amount} to ${pay.party} of ${pay.since} match, so the edit does not say which` : `no open refund of RM ${pay.amount} to ${pay.party} of ${pay.since} is on the book` };
+    } else flags.push("The refunds were not read here, so this edit is checked against the book at the fold.");
+    const row = { kind: pay.kind, party: pay.party, since: pay.since, amount: +pay.amount };
+    if (pay.paidOn) row.paidOn = pay.paidOn;
+    if (pay.note) row.note = String(pay.note).slice(0, 300);
+    return {
+      collection: "edit",
+      row,
+      flags,
+      reasoning: pay.kind === "refundPaid"
+        ? `Marks the RM ${pay.amount} refund to ${pay.party} of ${pay.since} as paid, returned on ${pay.paidOn}. It closes what the book owes them; it moves no stock, no sale and no cash on a row.`
+        : `Takes the RM ${pay.amount} refund to ${pay.party} of ${pay.since} off the book: it is stale, so the book no longer owes it. It moves no stock, no sale and no cash on a row.`,
+    };
+  }
   /* A PRICE EDIT (v354). It moves no stock, no cash and no row: it states what the board asks and
      which sizes it shows. What it CAN do is put a price under its own floor, so that is the flag,
      and it is computed off the PRICING snapshot rather than re-derived here, for the same reason

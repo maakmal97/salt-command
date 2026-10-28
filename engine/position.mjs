@@ -414,6 +414,17 @@ function partnerEntry({at,code,raw}){
     raw:raw===undefined?'Make '+code+' a partner: pays the Floor, keeps every associate property':raw,
     payload:{mode:'partner',code}};
 }
+/* S5f-5 (Ask A): A HAND EDIT OF THE LEDGER HE APPROVES, for the two common ones the flip would otherwise leave to the laptop: a refund the book still owes marked paid (`refundPaid`, with the day it went back), and a stale
+   refund taken off (`refundRemove`). A refund has no id of its own, so it is named by the three things it carries (party, since, amount) and must be the ONE open refund those name. It moves no stock and no sale. */
+function editEntry({at,kind,party,since,amount,paidOn=null,note=null,raw}){
+  return {at,type:'EDIT',party,qty:null,total:null,status:'edit',
+    raw:raw===undefined?(kind==='refundPaid'?'Mark paid: the RM '+amount+' refund to '+party+' of '+since+', returned on '+paidOn:'Remove the RM '+amount+' refund to '+party+' of '+since+' from the book'):raw,
+    payload:{mode:'edit',kind,party,since,amount,...(paidOn?{paidOn}:{}),...(note?{note}:{})}};
+}
+/* the open refunds an edit's three names pick out: exactly one is an edit that can be applied */
+function editRefunds(list,p){
+  return (list||[]).map((r,i)=>[r,i]).filter(([r])=>r&&!r.paidOn&&r.party===p.party&&r.since===p.since&&+r.amount===+p.amount);
+}
 function renameEntry({at,from,to,geo=null,raw}){
   return {at,type:'RENAME',party:from,qty:null,total:null,status:'rename',
     raw:raw===undefined?'Amend ID: re-key '+from+' to '+to+' wherever the book names it':raw,
@@ -1805,7 +1816,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,loyaltyWalk:loyaltyWalk,loyalScheme:loyalScheme,cadenceOf:cadenceOf,rewardIsAssociate:rewardIsAssociate,rewardOpening:rewardOpening,rewardCut:rewardCut,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
+return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,loyaltyWalk:loyaltyWalk,loyalScheme:loyalScheme,cadenceOf:cadenceOf,rewardIsAssociate:rewardIsAssociate,rewardOpening:rewardOpening,rewardCut:rewardCut,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,editEntry:editEntry,editRefunds:editRefunds,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,

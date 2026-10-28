@@ -724,6 +724,11 @@ export function makerInputCatalog(book, hush = {}, pending = [], registrations =
     partners: (book.state.partners || []).filter((value) => code(value, bookRoster)),
     partnerWaiting: (pending || []).filter((entry) => entry && entry.payload && entry.payload.mode === "partner")
       .map((entry) => entry.payload.code),
+    /* S5f-5: the refunds the book still owes (no paid day), and the edits of them already waiting, for Salt Admin's refund card (Ask A); nothing here prices */
+    openRefunds: ((book && book.customerRefunds) || []).filter((r) => r && !r.paidOn && +r.amount > 0.004 && typeof r.party === "string" && typeof r.since === "string")
+      .map((r) => ({ party: r.party, since: r.since, amount: +r.amount, ...(r.rid ? { rid: r.rid } : {}) })),
+    editWaiting: (pending || []).filter((entry) => entry && entry.payload && entry.payload.mode === "edit")
+      .map((entry) => ({ party: entry.payload.party, since: entry.payload.since, amount: +entry.payload.amount })),
     handovers: POSITION_ENGINE.HANDOVER.slice(), streams: ["R2", "R3"],
     correctionFields: POSITION_ENGINE.CORRECTABLE.filter((field) => !DESK_ONLY_FIELDS.includes(field) && !JOIN_ONLY_FIELDS.includes(field))
       .map((field) => ({ field, required: POSITION_ENGINE.CORRECT_REQUIRED.includes(field),
@@ -914,6 +919,25 @@ export function makerPartner(body, book, pending = []) {
   return proposed(POSITION_ENGINE.partnerEntry({ at: body.at, code: body.code,
     raw: "Make " + body.code + " a partner: pays the Floor, keeps every associate property"
       + ((book.state.associates || []).includes(body.code) ? "" : ", appointed an associate on the R2 stream with " + bucket + " as their resell account") }), book);
+}
+
+/* S5f-5 (Ask A): a hand edit of one open refund, for Salt Admin's refund card: marked paid on a day, or removed as stale. The refund is named by party, since and amount (it has no id), drafted through the drafter's own
+   `edit` branch, which checks it is the ONE open refund those pick out when the Book's read carries the refunds. Nothing is queued twice: an edit of the same refund already waiting is a twin. */
+export function makerEdit(body, book, pending = []) {
+  const keys = ["at", "kind", "party", "since", "amount", "paidOn", "note"];
+  if (!object(body) || Object.keys(body).some((key) => !keys.includes(key))) return { error: "A refund edit carries only its timestamp, kind, party, day, amount, the day it was paid and a note." };
+  if (!timestamp(body.at)) return { error: "A refund edit needs its canonical request timestamp." };
+  if (!["refundPaid", "refundRemove"].includes(body.kind)) return { error: "Choose mark paid or remove." };
+  if (!ready(book)) return { error: "The Desk mirror is being seeded." };
+  if (!code(body.party, book.state.roster || [])) return { error: "Choose a party on the roster." };
+  if (!date(body.since)) return { error: "The refund's day needs a real date in YYYY-MM-DD." };
+  if (!(Number.isFinite(+body.amount) && +body.amount > 0)) return { error: "The refund's amount is what the book holds, over nothing." };
+  if (body.kind === "refundPaid" && !date(body.paidOn)) return { error: "A refund marked paid needs the day it went back, YYYY-MM-DD." };
+  if (body.kind === "refundRemove" && body.paidOn != null) return { error: "A removal carries no paid day." };
+  if (body.note != null && (typeof body.note !== "string" || body.note.length > 300)) return { error: "A note is text of 300 characters at most." };
+  if (pending.some((entry) => entry && entry.at !== body.at && entry.payload && entry.payload.mode === "edit" && entry.payload.party === body.party && entry.payload.since === body.since && +entry.payload.amount === +body.amount))
+    return { error: "That refund already has an edit waiting under Approve.", twin: true };
+  return proposed(POSITION_ENGINE.editEntry({ at: body.at, kind: body.kind, party: body.party, since: body.since, amount: +body.amount, paidOn: body.paidOn || null, note: body.note || null }), book);
 }
 
 /* A6: the sizes the printed board shows. The Desk's shQueueHouse queues the sizes he unticks as a hide list and no price:

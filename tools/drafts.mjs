@@ -185,7 +185,7 @@ function draft() {
      purchases as sales. The fold then planned it as "SELL undefined". The drafter's five other
      collections are honoured; anything else is still a sale. */
   /* v628: and repayment and rename (v633: and place), which the list had never named, so a hand-staged one was written as a sale */
-  const collection = ["purchases", "count", "loss", "lostDemand", "roster", "priceset", "loan", "repayment", "rename", "place", "tierset"].includes(d.collection) ? d.collection : "sales";
+  const collection = ["purchases", "count", "loss", "lostDemand", "roster", "priceset", "loan", "repayment", "rename", "place", "tierset", "edit"].includes(d.collection) ? d.collection : "sales";
   const row = d.row;
   const admissionFault = draftAdmissionFault(d);
   if (admissionFault) { fail(admissionFault); return; }

@@ -68,7 +68,7 @@
  {
   "name": "the load check leaves the roster documents out",
   "file": "src/book.js",
-  "find": "folded.some((e) => e.coll === \"roster\" || e.coll === \"rename\") ? TAP_PURE.concat(ROSTER_PURE) : TAP_PURE",
+  "find": "TAP_PURE.concat(folded.some((e) => e.coll === \"roster\" || e.coll === \"rename\") ? ROSTER_PURE : [], folded.some((e) => e.coll === \"edit\") ? EDIT_PURE : [])",
   "replace": "TAP_PURE"
  },
  {

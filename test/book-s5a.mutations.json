@@ -62,7 +62,7 @@
  {
   "name": "a strict load may lose a row",
   "file": "src/book.js",
-  "find": "|| tap.open || n.gone || !tap.folded)",
+  "find": "|| tap.open || n.gone > (tap ? tap.edits : 0) || !tap.folded)",
   "replace": "|| tap.open || !tap.folded)"
  },
  {

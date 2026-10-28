@@ -1,0 +1,176 @@
+[
+ {
+  "name": "the migration does not name edit",
+  "file": "migrations/0024_draft_edit.sql",
+  "find": "'tierset','label','edit'))",
+  "replace": "'tierset','label'))"
+ },
+ {
+  "name": "the migration forgets an index",
+  "file": "migrations/0024_draft_edit.sql",
+  "find": "CREATE INDEX IF NOT EXISTS draft_status_committed ON draft (status, committed_at);",
+  "replace": ""
+ },
+ {
+  "name": "the migration forgets the other index",
+  "file": "migrations/0024_draft_edit.sql",
+  "find": "CREATE INDEX IF NOT EXISTS draft_committed ON draft (committed_at);",
+  "replace": ""
+ },
+ {
+  "name": "the migration drops a row",
+  "file": "migrations/0024_draft_edit.sql",
+  "find": "FROM draft;\n\nDROP TABLE draft;",
+  "replace": "FROM draft WHERE status = 'pending';\n\nDROP TABLE draft;"
+ },
+ {
+  "name": "a paid refund is matched by an edit",
+  "file": "engine/position.mjs",
+  "find": "r&&!r.paidOn&&r.party===p.party&&r.since===p.since&&+r.amount===+p.amount",
+  "replace": "r&&r.party===p.party&&r.since===p.since&&+r.amount===+p.amount"
+ },
+ {
+  "name": "the day is not part of the name",
+  "file": "engine/position.mjs",
+  "find": "r.party===p.party&&r.since===p.since&&+r.amount===+p.amount",
+  "replace": "r.party===p.party&&+r.amount===+p.amount"
+ },
+ {
+  "name": "the amount is not part of the name",
+  "file": "engine/position.mjs",
+  "find": "r.party===p.party&&r.since===p.since&&+r.amount===+p.amount",
+  "replace": "r.party===p.party&&r.since===p.since"
+ },
+ {
+  "name": "an edit of two refunds is taken",
+  "file": "engine/apply.mjs",
+  "find": "      if (hit.length !== 1) { out.refused.push({ id: it.id, why: hit.length ?",
+  "replace": "      if (hit.length < 1) { out.refused.push({ id: it.id, why: hit.length ?"
+ },
+ {
+  "name": "a kind the fold does not know is taken",
+  "file": "engine/apply.mjs",
+  "find": "if (!([\"refundPaid\", \"refundRemove\"].includes(r.kind))) { out.refused.push",
+  "replace": "if (false) { out.refused.push"
+ },
+ {
+  "name": "a paid edit needs no day",
+  "file": "engine/apply.mjs",
+  "find": "if (r.kind === \"refundPaid\" && !/^\\d{4}-\\d\\d-\\d\\d$/.test(String(r.paidOn || \"\"))) { out.refused.push",
+  "replace": "if (false) { out.refused.push"
+ },
+ {
+  "name": "a paid edit writes no day",
+  "file": "engine/apply.mjs",
+  "find": "if (ed.kind === \"refundPaid\") { hit[0][0].paidOn = ed.paidOn;",
+  "replace": "if (ed.kind === \"refundPaid\") { hit[0][0].paidOn = null;"
+ },
+ {
+  "name": "a removal takes the first refund",
+  "file": "engine/apply.mjs",
+  "find": "else book.customerRefunds.splice(hit[0][1], 1);",
+  "replace": "else book.customerRefunds.splice(0, 1);"
+ },
+ {
+  "name": "a paid edit drops the note",
+  "file": "engine/apply.mjs",
+  "find": "if (ed.note) hit[0][0].note = (hit[0][0].note ? hit[0][0].note + \" \" : \"\") + ed.note; }",
+  "replace": "hit[0][0].note = ed.note; }"
+ },
+ {
+  "name": "a compaction refuses any row an edit takes",
+  "file": "src/book.js",
+  "find": "tap.open || n.gone > (tap ? tap.edits : 0) || !tap.folded))",
+  "replace": "tap.open || n.gone || !tap.folded))"
+ },
+ {
+  "name": "a compaction lets any row go",
+  "file": "src/book.js",
+  "find": "tap.open || n.gone > (tap ? tap.edits : 0) || !tap.folded))",
+  "replace": "tap.open || !tap.folded))"
+ },
+ {
+  "name": "the drafter drafts an edit nothing singles out",
+  "file": "src/drafter.js",
+  "find": "      if (hit.length !== 1) return { skip: hit.length ?",
+  "replace": "      if (hit.length < 1) return { skip: hit.length ?"
+ },
+ {
+  "name": "the drafter says nothing of an unchecked read",
+  "file": "src/drafter.js",
+  "find": "} else flags.push(\"The refunds were not read here, so this edit is checked against the book at the fold.\");",
+  "replace": "}"
+ },
+ {
+  "name": "the drafter takes a paid edit with no day",
+  "file": "src/drafter.js",
+  "find": "if (pay.kind === \"refundPaid\" && !/^\\d{4}-\\d\\d-\\d\\d$/.test(String(pay.paidOn || \"\"))) return { skip:",
+  "replace": "if (false) return { skip:"
+ },
+ {
+  "name": "a paid edit needs no day at the route",
+  "file": "src/maker-inputs.js",
+  "find": "if (body.kind === \"refundPaid\" && !date(body.paidOn)) return",
+  "replace": "if (false) return"
+ },
+ {
+  "name": "a removal may carry a paid day",
+  "file": "src/maker-inputs.js",
+  "find": "if (body.kind === \"refundRemove\" && body.paidOn != null) return",
+  "replace": "if (false) return"
+ },
+ {
+  "name": "a note is any length",
+  "file": "src/maker-inputs.js",
+  "find": "(typeof body.note !== \"string\" || body.note.length > 300)",
+  "replace": "(typeof body.note !== \"string\")"
+ },
+ {
+  "name": "a twin edit is queued",
+  "file": "src/maker-inputs.js",
+  "find": "entry.at !== body.at && entry.payload && entry.payload.mode === \"edit\"",
+  "replace": "false && entry.payload && entry.payload.mode === \"edit\""
+ },
+ {
+  "name": "a retry of the same request is its own twin",
+  "file": "src/maker-inputs.js",
+  "find": "entry.at !== body.at && entry.payload && entry.payload.mode === \"edit\"",
+  "replace": "entry.payload && entry.payload.mode === \"edit\""
+ },
+ {
+  "name": "the catalogue lists a paid refund",
+  "file": "src/maker-inputs.js",
+  "find": "((book && book.customerRefunds) || []).filter((r) => r && !r.paidOn && +r.amount > 0.004",
+  "replace": "((book && book.customerRefunds) || []).filter((r) => r && +r.amount > 0.004"
+ },
+ {
+  "name": "the catalogue names no edit waiting",
+  "file": "src/maker-inputs.js",
+  "find": "editWaiting: (pending || []).filter((entry) => entry && entry.payload && entry.payload.mode === \"edit\")",
+  "replace": "editWaiting: [].filter((entry) => entry && entry.payload && entry.payload.mode === \"edit\")"
+ },
+ {
+  "name": "the Desk does not build the edit",
+  "file": "src/worker.js",
+  "find": "      : operation === \"edit\" ? makerEdit(body, book, resourcePending)\n",
+  "replace": ""
+ },
+ {
+  "name": "Salt Admin sends without asking",
+  "file": "stmt/owner.js",
+  "find": "          if(!armed){ b.textContent='Tap again to send it to Approve'; armed=setTimeout(function(){ armed=null; b.textContent=k[0]; }, 4000); return; }",
+  "replace": ""
+ },
+ {
+  "name": "Salt Admin sends the edit to another route",
+  "file": "stmt/owner.js",
+  "find": "try{ await send('/all/maker/inputs/edit',body); answer.textContent=k[2]; loadMaker(); }",
+  "replace": "try{ await send('/all/maker/inputs/partner',body); answer.textContent=k[2]; loadMaker(); }"
+ },
+ {
+  "name": "the refund card is not on the account card",
+  "file": "stmt/owner.js",
+  "find": "var rs=refundSection(a, cat); if(rs) box.appendChild(rs);",
+  "replace": ""
+ }
+]
