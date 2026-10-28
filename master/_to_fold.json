@@ -1,0 +1,46 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-28T15:29:41.999Z",
+   "status": "approved",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CH6-SET": {
+      "salt": -0.15
+     }
+    },
+    "unit": "pct",
+    "rids": [],
+    "booked_seq": 10
+   },
+   "reasoning": "Sets their % for 1 customer: CH6-SET Salt 15% off. It moves no cash and no stock; a % lift moves that customer's own price and never the board.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-28T15:29:41.999Z",
+    "type": "TIER",
+    "party": "CH6-SET",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CH6-SET: salt -15% lift",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CH6-SET": {
+       "salt": -0.15
+      }
+     },
+     "unit": "pct"
+    },
+    "makerRequest": "2c2838909007f0ee830d8bdc92542a984812cdc40d58b59ea73fc617b684f4cc"
+   },
+   "decidedAt": "2026-10-28T15:30:05.900Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
