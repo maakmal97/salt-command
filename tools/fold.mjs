@@ -154,7 +154,7 @@ function driftBooks() {
   }
   return out;
 }
-function pinnedInMaster(code) {
+export function pinnedInMaster(code) {
   masterLines = masterLines || readFileSync(MASTER, "utf8").split("\n");
   let generated = false;
   return masterLines.some((l) => {
