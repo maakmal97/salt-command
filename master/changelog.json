@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1317",
+  "d": "29 Oct 2026",
+  "t": "CASH AT HANDOVER ON AN OIL ORDER",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED.</b> RM225 cash was recorded against CZ4-MK's oil order s302 (20 units, goods RM220, delivery RM30). It is an amendment, applied by the master's own fulfilment rule, so the row is not recomputed here. Nothing unusual was flagged, and the drafter's figures stand.",
+   "<b>INVENTORY UNCHANGED.</b> No units moved on this fulfilment, so no stock is drawn, no lot lands and the cost basis does not move."
+  ]
+ },
+ {
   "v": "v1316",
   "d": "28 Oct 2026",
   "t": "OIL ORDER BOOKED, NOTHING YET HANDED OVER",
