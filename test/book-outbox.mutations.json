@@ -1,0 +1,242 @@
+[
+ {
+  "name": "a tap leaves no outbox row",
+  "file": "src/book.js",
+  "find": "if (x.it.collection === \"sales\") sql.exec(\"INSERT INTO outbox",
+  "replace": "if (false) sql.exec(\"INSERT INTO outbox"
+ },
+ {
+  "name": "every collection leaves an outbox row",
+  "file": "src/book.js",
+  "find": "if (x.it.collection === \"sales\") sql.exec(\"INSERT INTO outbox",
+  "replace": "if (true) sql.exec(\"INSERT INTO outbox"
+ },
+ {
+  "name": "the export drops the outbox",
+  "file": "src/book.js",
+  "find": "outbox: sql.exec(\"SELECT seq, draft_id, at, sent_at, tries, err FROM outbox ORDER BY seq\").toArray(), loads:",
+  "replace": "outbox: [], loads:"
+ },
+ {
+  "name": "a sent row is tried again",
+  "file": "src/book.js",
+  "find": "\"UPDATE outbox SET tries = tries + 1, err = ? WHERE seq = ? AND sent_at IS NULL\"",
+  "replace": "\"UPDATE outbox SET tries = tries + 1, err = ? WHERE seq = ?\""
+ },
+ {
+  "name": "a try is not counted",
+  "file": "src/book.js",
+  "find": "\"UPDATE outbox SET tries = tries + 1, err = ?",
+  "replace": "\"UPDATE outbox SET tries = tries, err = ?"
+ },
+ {
+  "name": "a try keeps the whole reason",
+  "file": "src/book.js",
+  "find": "String(b.err || \"\").slice(0, 200)",
+  "replace": "String(b.err || \"\")"
+ },
+ {
+  "name": "the verbs take any number of rows",
+  "file": "src/book.js",
+  "find": "b.seqs.length <= 500 && ",
+  "replace": ""
+ },
+ {
+  "name": "the verbs take a row that is not an integer",
+  "file": "src/book.js",
+  "find": "b.seqs.every((n) => Number.isInteger(n)) ? b.seqs : null;",
+  "replace": "true ? b.seqs : null;"
+ },
+ {
+  "name": "the recovery test's object answers the outbox",
+  "file": "src/book.js",
+  "find": "      if (this.isTest()) return Response.json({ ok: false, error: \"not found\" }, { status: 404 });\n      const sql = this.state.storage.sql;\n      if (url.pathname === \"/outbox\" && ",
+  "replace": "      const sql = this.state.storage.sql;\n      if (url.pathname === \"/outbox\" && "
+ },
+ {
+  "name": "the pending rows come newest first",
+  "file": "src/book.js",
+  "find": "FROM outbox WHERE sent_at IS NULL ORDER BY seq\"",
+  "replace": "FROM outbox WHERE sent_at IS NULL ORDER BY seq DESC\""
+ },
+ {
+  "name": "a forced pass stands down on a told version",
+  "file": "src/orders.js",
+  "find": "if (!opts.force && (await env.SALT_QUEUE.get(TOLD_MARK)) === v)",
+  "replace": "if ((await env.SALT_QUEUE.get(TOLD_MARK)) === v)"
+ },
+ {
+  "name": "a forced pass moves the told mark",
+  "file": "src/orders.js",
+  "find": "if (!failed.length && !opts.force) await env.SALT_QUEUE.put(TOLD_MARK, v);",
+  "replace": "if (!failed.length) await env.SALT_QUEUE.put(TOLD_MARK, v);"
+ },
+ {
+  "name": "the regular pass never moves the told mark",
+  "file": "src/orders.js",
+  "find": "if (!failed.length && !opts.force) await env.SALT_QUEUE.put(TOLD_MARK, v);",
+  "replace": "if (false) await env.SALT_QUEUE.put(TOLD_MARK, v);"
+ },
+ {
+  "name": "a forced pass rewrites the failed mark",
+  "file": "src/orders.js",
+  "find": "if (!opts.force) try { if (failed.length) await env.SALT_QUEUE.put(TOLD_FAILED",
+  "replace": "try { if (failed.length) await env.SALT_QUEUE.put(TOLD_FAILED"
+ },
+ {
+  "name": "a forced pass does not say it was forced",
+  "file": "src/orders.js",
+  "find": "opts.force ? { forced: true } : {},",
+  "replace": "{},"
+ },
+ {
+  "name": "the drain ignores the flag",
+  "file": "src/outbox.js",
+  "find": "if (!db || await outboxMode(db) !== \"on\") return { skipped: true };",
+  "replace": "if (!db) return { skipped: true };"
+ },
+ {
+  "name": "any flag row reads on",
+  "file": "src/outbox.js",
+  "find": "return r && r.mode === \"on\" ? \"on\" : \"off\"; } catch (e) { return \"off\"; }",
+  "replace": "return r ? \"on\" : \"off\"; } catch (e) { return \"off\"; }"
+ },
+ {
+  "name": "a store with no flag table reads on",
+  "file": "src/outbox.js",
+  "find": "return r && r.mode === \"on\" ? \"on\" : \"off\"; } catch (e) { return \"off\"; }",
+  "replace": "return r && r.mode === \"on\" ? \"on\" : \"off\"; } catch (e) { return \"on\"; }"
+ },
+ {
+  "name": "the drain's pass is not forced",
+  "file": "src/outbox.js",
+  "find": "await tell(env, undefined, mirror || bookOnce(db), { force: true });",
+  "replace": "await tell(env, undefined, mirror || bookOnce(db), {});"
+ },
+ {
+  "name": "a failed pass marks the rows sent",
+  "file": "src/outbox.js",
+  "find": "if (clean) { if (!await mark(db, \"outbox/done\"",
+  "replace": "if (true) { if (!await mark(db, \"outbox/done\""
+ },
+ {
+  "name": "a failed pass is not counted",
+  "file": "src/outbox.js",
+  "find": "await mark(db, \"outbox/fail\", live.map((r) => r.seq), {",
+  "replace": "await mark(db, \"outbox/failx\", live.map((r) => r.seq), {"
+ },
+ {
+  "name": "a rejected draft's row is not dropped",
+  "file": "src/outbox.js",
+  "find": "if (dead.length && !await mark(db, \"outbox/done\", dead.map((r) => r.seq))) out.markFailed = true;",
+  "replace": "if (false && !await mark(db, \"outbox/done\", dead.map((r) => r.seq))) out.markFailed = true;"
+ },
+ {
+  "name": "a pending draft's row is dropped",
+  "file": "src/outbox.js",
+  "find": "status.get(r.draft_id) !== \"approved\" && status.get(r.draft_id) !== \"pending\");",
+  "replace": "status.get(r.draft_id) !== \"approved\");"
+ },
+ {
+  "name": "a pass that throws escapes the drain",
+  "file": "src/outbox.js",
+  "find": "catch (e) { res = { ok: false, error: String((e && e.message) || e) }; }",
+  "replace": "catch (e) { throw e; }"
+ },
+ {
+  "name": "a silent Book is not said",
+  "file": "src/outbox.js",
+  "find": "return { ok: false, why: \"the Book did not answer\" };",
+  "replace": "return { ok: true, pending: 0 };"
+ },
+ {
+  "name": "a pass that cannot read the orders is clean",
+  "file": "src/outbox.js",
+  "find": "const clean = !!res && res.ok !== false && !(res.failed && res.failed.length);",
+  "replace": "const clean = !!res && !(res.failed && res.failed.length);"
+ },
+ {
+  "name": "a pass with a refused order is clean",
+  "file": "src/outbox.js",
+  "find": "const clean = !!res && res.ok !== false && !(res.failed && res.failed.length);",
+  "replace": "const clean = !!res && res.ok !== false;"
+ },
+ {
+  "name": "an approval does not drain",
+  "file": "src/worker.js",
+  "find": "  if (!hold) outboxAfter(env, ctx);\n  return moved;",
+  "replace": "  return moved;"
+ },
+ {
+  "name": "decide-many does not drain",
+  "file": "src/worker.js",
+  "find": "  if (decided.some((d) => d.decision === \"approved\") || thrown) outboxAfter(env, ctx);",
+  "replace": "  if (false) outboxAfter(env, ctx);"
+ },
+ {
+  "name": "the minute cron does not drain",
+  "file": "src/worker.js",
+  "find": "const ob = await drainOutbox(env, { mirror });",
+  "replace": "const ob = { ok: true };"
+ },
+ {
+  "name": "a forced pass sends the fixes",
+  "file": "src/orders.js",
+  "find": "const fx = opts.force ? {} : await sendFixes(env, r.orders, allFixes);",
+  "replace": "const fx = await sendFixes(env, r.orders, allFixes);"
+ },
+ {
+  "name": "a folded draft's row is live",
+  "file": "src/outbox.js",
+  "find": "status.set(r.id, r.committed_at ? \"committed\" : r.status);",
+  "replace": "status.set(r.id, r.status);"
+ },
+ {
+  "name": "the marks are not chunked",
+  "file": "src/outbox.js",
+  "find": "for (let i = 0; i < seqs.length; i += MARK_MAX) { const r = await ask(db, path, \"POST\", { seqs: seqs.slice(i, i + MARK_MAX), ...(extra || {}) });",
+  "replace": "for (let i = 0; i < seqs.length; i += seqs.length + 1) { const r = await ask(db, path, \"POST\", { seqs: seqs.slice(i, i + seqs.length), ...(extra || {}) });"
+ },
+ {
+  "name": "a mark that did not land is taken as landed",
+  "file": "src/outbox.js",
+  "find": "if (!r || r.status !== 200 || !r.body || !r.body.ok) ok = false; }",
+  "replace": "}"
+ },
+ {
+  "name": "a stuck row is not said",
+  "file": "src/outbox.js",
+  "find": "const out = Object.assign({ ok: true, pending: pending.length, dropped: dead.length }, stuck ? { stuck } : {});",
+  "replace": "const out = Object.assign({ ok: true, pending: pending.length, dropped: dead.length }, {});"
+ },
+ {
+  "name": "every pending row is stuck",
+  "file": "src/outbox.js",
+  "find": "now - Date.parse(r.at) > STUCK_MS).length;",
+  "replace": "true).length;"
+ },
+ {
+  "name": "drains run side by side",
+  "file": "src/worker.js",
+  "find": "  if (draining) { drainAgain = true; if (ctx && typeof ctx.waitUntil === \"function\") ctx.waitUntil(draining); return draining; }",
+  "replace": "  if (false) { drainAgain = true; return draining; }"
+ },
+ {
+  "name": "a drain asked for meanwhile is forgotten",
+  "file": "src/worker.js",
+  "find": "    if (drainAgain) { drainAgain = false; await outboxAfter(env, ctx); }",
+  "replace": "    if (false) { drainAgain = false; await outboxAfter(env, ctx); }"
+ },
+ {
+  "name": "a caller during a drain is not given it to wait on",
+  "file": "src/worker.js",
+  "find": "if (draining) { drainAgain = true; if (ctx && typeof ctx.waitUntil === \"function\") ctx.waitUntil(draining); return draining; }",
+  "replace": "if (draining) { drainAgain = true; return draining; }"
+ },
+ {
+  "name": "a forced pass follows rows",
+  "file": "src/orders.js",
+  "find": "const { followed, failed } = opts.force ? { followed: 0, failed: [] } : await followRows(env, r.orders, { byKey, rows, byRid }, at);",
+  "replace": "const { followed, failed } = await followRows(env, r.orders, { byKey, rows, byRid }, at);"
+ }
+]

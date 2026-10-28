@@ -20,8 +20,8 @@
  {
   "name": "a tap writes the base",
   "file": "src/book.js",
-  "find": "      const at = this.clock();\n      sql.exec(\"UPDATE snap SET rev = rev + 1 WHERE one = 1\");\n      for (const x of planned) sql.exec(\"INSERT INTO booked",
-  "replace": "      const at = this.clock();\n      sql.exec(\"UPDATE snap SET rev = rev + 1 WHERE one = 1\");\n      sql.exec(\"UPDATE state SET revised_at = ? WHERE k = 'STATED_STOCK'\", at);\n      for (const x of planned) sql.exec(\"INSERT INTO booked"
+  "find": "      sql.exec(\"UPDATE snap SET rev = rev + 1 WHERE one = 1\");\n      for (const x of planned) {",
+  "replace": "      sql.exec(\"UPDATE snap SET rev = rev + 1 WHERE one = 1\");\n      sql.exec(\"UPDATE state SET revised_at = ? WHERE k = 'STATED_STOCK'\", at);\n      for (const x of planned) {"
  },
  {
   "name": "the view is not sorted as the fold sorts",

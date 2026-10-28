@@ -53,7 +53,9 @@ export const onItsWay = (b) => {
 };
 
 /* the row an entry made is in the reader's book: today's `landed`. It stays on committed_at, the fold's own question: a booked entry is in the view, but the Counter is told a
-   row landed only when the fold has put it in git, so a held batch never tells a site of money git never took. */
+   row landed only when the fold has put it in git, so a held batch never tells a site of money git never took. S6 (flag book_outbox) is the one deliberate exception: its forced pass of the return leg
+   tells the orders what the Book's view holds (a tapped, approved sale) without waiting for git, in the leg's own raise-only messages; an amendment that moves the row's key (a close, a change of total or
+   delivery) still waits for the fold, because the order finds its row by that key and `landed` is judged here. */
 export const landedBy = (b) => {
   const at = atOf(b);
   return at

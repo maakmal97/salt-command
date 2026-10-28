@@ -92,8 +92,8 @@
  {
   "name": "the export carries no event log",
   "file": "src/book.js",
-  "find": "entries: this.allEvents(), loads:",
-  "replace": "entries: [], loads:"
+  "find": "entries: this.allEvents(), outbox:",
+  "replace": "entries: [], outbox:"
  },
  {
   "name": "the export is sealed without the book",

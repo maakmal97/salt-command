@@ -19,6 +19,7 @@
 
 import { runDrafter, dryRunDrafter, readBook, readMirror, bookOnce, withDraftLots, withRefunds, draftRow, tripCheck, bindBook, wayBound } from "./drafter.js";
 import { bookDirect, compareReads, readMode } from "./book-read.js";
+import { drainOutbox } from "./outbox.js";
 import { bookTap, bookNet, ridStmts, voidEntries, voidUnlessApproved, tapMode, TAP_COLS } from "./book-tap.js";
 import { boundOf, unfolded } from "./way.js";
 import { runBackup, backupAlarm, runBookExport, bookExportAlarm, BACKUP_CRON } from "./backup.js";
@@ -368,6 +369,25 @@ export async function pushIfDrafted(env, result) {
    under Approve. The stage is rung once, as a tap rings it; and a pending row an Accept queued moves its order on
    the site now (ackOnApproval), which is the moment D6 lets the customer be told. A fault is logged and the
    approval stands: the order is moved again by the next Accept, which finds the row approved. */
+/* S6: one drain, off the request. Never throws, never awaited by the tap: the row waits in the Book and the minute cron is the net. */
+/* ONE DRAIN AT A TIME in an isolate (Fable, 28 Oct 2026): a second call while one runs only asks it to look again, so the preapproval road's two afterApproval calls, a tap and a decide-many never run two passes at once. */
+let draining = null, drainAgain = false;
+export function outboxAfter(env, ctx) {
+  /* a call while one runs asks it to look again, and is given the running job to wait on, so the extra look lives on every caller's waitUntil */
+  if (draining) { drainAgain = true; if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(draining); return draining; }
+  const job = (async () => {
+    try {
+      drainAgain = false;
+      const r = await drainOutbox(env).catch((e) => ({ ok: false, why: String((e && e.message) || e) }));
+      if (r && (r.ok === false || r.sent || r.dropped || r.stuck || r.markFailed)) console.log("outbox: " + JSON.stringify(r));
+    } finally { draining = null; }
+    /* the marker is cleared and the flag read with no await between them, so a call can never land in a gap: before it, it sets the flag this reads; after it, it starts a drain of its own */
+    if (drainAgain) { drainAgain = false; await outboxAfter(env, ctx); }
+  })().catch((e) => console.log("outbox FAILED: " + String((e && e.message) || e)));
+  draining = job;
+  if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(job);
+  return job;
+}
 async function afterApproval(env, ctx, ids, hold = false) {
   if (!ids || !ids.length) return [];
   /* 22 Oct 2026: a batch of decisions (decide-many) holds the dispatch and sends one after its last row */
@@ -382,6 +402,8 @@ async function afterApproval(env, ctx, ids, hold = false) {
       if (pre) moved.push(Object.assign({ id }, await ackOnApproval(env, pre)));
     } catch (e) { console.log("after approval of " + id + ": " + String((e && e.message) || e)); }
   }
+  /* S6 (flag book_outbox, shipped off): a booked sale tells its order now, not at the next fold. After the batch of decide-many, not after each card. */
+  if (!hold) outboxAfter(env, ctx);
   return moved;
 }
 
@@ -2564,6 +2586,7 @@ async function decideMany(env, ctx, body) {
     }
   }
   if (decided.some((d) => d.decision === "approved") || thrown) stageOnApproval(env, ctx);
+  if (decided.some((d) => d.decision === "approved") || thrown) outboxAfter(env, ctx);   /* S6: one drain after the batch */
   if (decided.length || thrown) await liveTell(env, ctx, "drafts");
   return { ok: true, decided, refused };
 }
@@ -2702,6 +2725,10 @@ export default {
         /* v764: what the book already holds, back the other way, before the read of what the orders owe:
            an order brought level here owes nothing for the reconcile to queue. A cheap read of the book's
            version on a quiet minute; the site is asked only after a fold. */
+        try {
+          const ob = await drainOutbox(env, { mirror });   /* S6: the net for a tap whose own drain did not finish */
+          if (ob && (ob.ok === false || ob.sent || ob.dropped || ob.stuck || ob.markFailed)) console.log("outbox: " + JSON.stringify(ob));
+        } catch (e) { console.log("outbox FAILED: " + String((e && e.stack) || e)); }
         try {
           const ts = await tellSite(env, undefined, mirror);
           if (!ts.ok || ts.told || ts.followed || ts.fixed || ts.refused || ts.waiting || ts.failed) console.log("orders return leg: " + JSON.stringify(ts));

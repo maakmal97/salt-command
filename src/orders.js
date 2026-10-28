@@ -2007,13 +2007,16 @@ export async function termsInFlight(env, o, at) {
     return !!(await env.SALT_LEDGER.prepare("SELECT 1 FROM preapproval WHERE order_id=?1 AND stage='amend' AND status='waiting' AND (entry_at IS NOT NULL OR at > ?2) LIMIT 1").bind(o.id, yesFresh()).first());
   } catch (e) { return true; }
 }
-export async function tellSite(env, fixes, mirror) {
+/* S6 (28 Oct 2026): `opts.force` is the outbox's pass (src/outbox.js): a booked sale tells the orders NOW, whatever version the Counter was last told of. It skips the "already told this version" exit and
+   leaves TOLD_MARK and TOLD_FAILED to the regular pass, which owns them (a clean forced pass must not hide the global pass's fault, or move the mark past a fold it never read). Every message it sends is
+   the leg's own: state, raise-only (credit only lowers), safe to send twice. */
+export async function tellSite(env, fixes, mirror, opts = {}) {
   if (!env.SALT_LEDGER || !env.SALT_QUEUE) return { ok: true, told: 0 };
   let snap = null;
   try { snap = await env.SALT_LEDGER.prepare("SELECT v,stamped FROM snapshot WHERE one=1").first(); } catch (e) { return { ok: false, error: String((e && e.message) || e) }; }
   const v = (snap && snap.v) || null;
   if (!v) return { ok: true, told: 0 };
-  if ((await env.SALT_QUEUE.get(TOLD_MARK)) === v) return { ok: true, told: 0, v };
+  if (!opts.force && (await env.SALT_QUEUE.get(TOLD_MARK)) === v) return { ok: true, told: 0, v };
   const r = await listOrders(env, true);   /* every order: a finished one follows its row too */
   if (!r.ok) return { ok: false, error: r.error };
   const book = await (mirror ? mirror() : readBook(env.SALT_LEDGER)).catch(() => null);
@@ -2022,7 +2025,9 @@ export async function tellSite(env, fixes, mirror) {
   const byKey = new Map(), rows = new Map(), byRid = new Map();
   for (const s of sales) { const k = POSITION_ENGINE.ovKey(s); byKey.set(k, s); rows.set(k, (rows.get(k) || 0) + 1); if (s.rid) byRid.set(s.rid, s); }
   const at = boundOf(book);   /* the flight checks take the bound of THIS book */
-  const { followed, failed } = await followRows(env, r.orders, { byKey, rows, byRid }, at);
+  /* S6 (Fable, 28 Oct 2026): a forced pass leaves `followRows` to the regular pass. A shared group moved onto its row by two passes at once, one of which fails on a member, would split for good; and an order only
+     follows a row whose entry has landed in git (`landed`), which a tapped row has not, so the forced pass could follow nothing anyway. */
+  const { followed, failed } = opts.force ? { followed: 0, failed: [] } : await followRows(env, r.orders, { byKey, rows, byRid }, at);
   /* a fix not yet sent to an order (an undo on its row) is the one road for what it takes back: a settled order waits for it (Fable's review) */
   const allFixes = (fixes || SITE_FIXES).concat(undoFixes(r.orders, byKey, rows));
   const fixedDone = (await env.SALT_QUEUE.get(FIXED_MARK, "json").catch(() => null)) || {};
@@ -2109,14 +2114,16 @@ export async function tellSite(env, fixes, mirror) {
   }
   /* fix 4: the committed list's corrections, sent on the list of orders this pass already read; and (plan 4) each undo the book now holds
      on a site order's row, taking back off the order what it took back off the row, once, by its own id */
-  const fx = await sendFixes(env, r.orders, allFixes);
+  /* S6 (Fable, 28 Oct 2026): a forced pass READS the fixes (a settled order still waits for an unsent undo, above) and SENDS none. A fix is applied by the order book with no id check of its own, so two passes at once, or a
+     pass reading the book in the view's order (the undo's place in `row.amend`, which names its fix, is the fold's order only after the fold), could apply an undo twice. The regular pass owns every fix. */
+  const fx = opts.force ? {} : await sendFixes(env, r.orders, allFixes);
   failed.push(...(fx.failed || []));
   /* the mark moves only on a clean pass, so an order the site refused is tried again next minute
      rather than waiting for the next fold */
-  if (!failed.length) await env.SALT_QUEUE.put(TOLD_MARK, v);
+  if (!failed.length && !opts.force) await env.SALT_QUEUE.put(TOLD_MARK, v);
   /* 17 Oct 2026: and what held it, for the tie-out to name (Fable's review): the stall is then an order's, not the return leg's */
-  try { if (failed.length) await env.SALT_QUEUE.put(TOLD_FAILED, JSON.stringify({ v, at: new Date().toISOString(), failed: failed.slice(0, 20) })); else await env.SALT_QUEUE.delete(TOLD_FAILED); } catch (e) {}
-  return Object.assign({ ok: true, told, v }, followed ? { followed } : {}, fx.sent ? { fixed: fx.sent } : {}, fx.refused ? { refused: fx.refused } : {}, fx.waiting ? { waiting: fx.waiting } : {},
+  if (!opts.force) try { if (failed.length) await env.SALT_QUEUE.put(TOLD_FAILED, JSON.stringify({ v, at: new Date().toISOString(), failed: failed.slice(0, 20) })); else await env.SALT_QUEUE.delete(TOLD_FAILED); } catch (e) {}
+  return Object.assign({ ok: true, told, v }, opts.force ? { forced: true } : {}, followed ? { followed } : {}, fx.sent ? { fixed: fx.sent } : {}, fx.refused ? { refused: fx.refused } : {}, fx.waiting ? { waiting: fx.waiting } : {},
     failed.length ? { failed } : {});
 }
 

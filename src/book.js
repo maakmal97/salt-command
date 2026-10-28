@@ -238,6 +238,10 @@ export class Book {
     /* S4a: the entries a tap booked. The view replays the unfolded, unvoided ones in seq order; a load marks the ones it folded. A voided one is kept, not deleted. */
     sql.exec("CREATE TABLE IF NOT EXISTS booked (seq INTEGER PRIMARY KEY AUTOINCREMENT, draft_id TEXT NOT NULL, item TEXT NOT NULL, rids TEXT NOT NULL, day TEXT NOT NULL, at TEXT NOT NULL, folded_at TEXT, voided_at TEXT)");
     sql.exec("CREATE INDEX IF NOT EXISTS booked_draft ON booked (draft_id)");
+    /* S6: THE OUTBOX. A tap that booked a sale (or an amendment of one) leaves a row here in the SAME transaction; the Desk's drain (src/outbox.js) answers it with one forced pass of the return leg,
+       which tells every order what the ledger says, and marks the rows it covered sent. A row is a durable "something booked: tell the orders", never a message: the leg's own messages are
+       state, raise-only, and idempotent, so a row drained twice tells nothing twice. Nothing reads it while the flag (D1 book_outbox) is off. */
+    sql.exec("CREATE TABLE IF NOT EXISTS outbox (seq INTEGER PRIMARY KEY AUTOINCREMENT, draft_id TEXT NOT NULL, at TEXT NOT NULL, sent_at TEXT, tries INTEGER NOT NULL DEFAULT 0, err TEXT)");
     sql.exec("CREATE TABLE IF NOT EXISTS loads (seq INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, rev TEXT, digest TEXT NOT NULL, added INTEGER NOT NULL, revised INTEGER NOT NULL, gone INTEGER NOT NULL, returned INTEGER NOT NULL, rows INTEGER NOT NULL)");
   }
 
@@ -518,7 +522,10 @@ export class Book {
       }
       const at = this.clock();
       sql.exec("UPDATE snap SET rev = rev + 1 WHERE one = 1");
-      for (const x of planned) sql.exec("INSERT INTO booked (draft_id, item, rids, day, at) VALUES (?, ?, ?, ?, ?)", x.it.id, JSON.stringify(x.it), JSON.stringify(x.rids), day, at);
+      for (const x of planned) {
+        sql.exec("INSERT INTO booked (draft_id, item, rids, day, at) VALUES (?, ?, ?, ?, ?)", x.it.id, JSON.stringify(x.it), JSON.stringify(x.rids), day, at);
+        if (x.it.collection === "sales") sql.exec("INSERT INTO outbox (draft_id, at) VALUES (?, ?)", x.it.id, at);   /* S6: only a sale can move an order */
+      }
       const seqOf = (id) => sql.exec("SELECT seq FROM booked WHERE draft_id = ? AND folded_at IS NULL AND voided_at IS NULL", id).toArray()[0].seq;
       return { ok: true, booked: out.concat(planned.map((x) => ({ id: x.it.id, rids: x.rids, seq: seqOf(x.it.id) }))) };
     });
@@ -532,7 +539,7 @@ export class Book {
     const sql = this.state.storage.sql, snap = sql.exec("SELECT v, stamped, at, rev FROM snap WHERE one = 1").toArray()[0];
     if (!snap) return { ok: false, status: 503, error: "the Book holds no snapshot yet" };
     return { ok: true, v: snap.v, stamped: snap.stamped, at: snap.at, rev: snap.rev || 0, base: JSON.parse(this.readText(true)),
-      entries: this.allEvents(), loads: sql.exec("SELECT seq, at, rev, digest, added, revised, gone, returned, rows FROM loads ORDER BY seq DESC LIMIT 30").toArray() };
+      entries: this.allEvents(), outbox: sql.exec("SELECT seq, draft_id, at, sent_at, tries, err FROM outbox ORDER BY seq").toArray(), loads: sql.exec("SELECT seq, at, rev, digest, added, revised, gone, returned, rows FROM loads ORDER BY seq DESC LIMIT 30").toArray() };
   }
 
   /* S5a: COMPACTION. (A row with no rid is keyed by its content, so a replay that edits one in place would read as one row gone and one added and refuse for good: no entry kind does that today,
@@ -632,6 +639,20 @@ export class Book {
     if (url.pathname === "/window" && request.method === "GET") return Response.json(await this.window());
     /* S3: the reads answer on the live Book alone; the recovery test's object is never read by a reader */
     /* S4a: the booked entries' verbs answer on the live Book alone, like the reads, and are never a route of the Worker */
+    if (url.pathname === "/outbox" || url.pathname === "/outbox/done" || url.pathname === "/outbox/fail") {
+      if (this.isTest()) return Response.json({ ok: false, error: "not found" }, { status: 404 });
+      const sql = this.state.storage.sql;
+      if (url.pathname === "/outbox" && request.method === "GET") return Response.json({ ok: true, pending: sql.exec("SELECT seq, draft_id, at, tries FROM outbox WHERE sent_at IS NULL ORDER BY seq").toArray() });
+      if (request.method !== "POST") return Response.json({ ok: false, error: "not found" }, { status: 404 });
+      let b = null; try { b = JSON.parse(await request.text()); } catch (e) { b = null; }
+      const seqs = b && Array.isArray(b.seqs) && b.seqs.length <= 500 && b.seqs.every((n) => Number.isInteger(n)) ? b.seqs : null;
+      if (!seqs) return Response.json({ ok: false, error: "send seqs, a list of integers" }, { status: 400 });
+      const at = this.clock(), mark = url.pathname === "/outbox/done"
+        ? (n) => sql.exec("UPDATE outbox SET sent_at = ?, err = NULL WHERE seq = ? AND sent_at IS NULL", at, n)
+        : (n) => sql.exec("UPDATE outbox SET tries = tries + 1, err = ? WHERE seq = ? AND sent_at IS NULL", String(b.err || "").slice(0, 200), n);
+      this.state.storage.transactionSync(() => { for (const n of seqs) mark(n); });
+      return Response.json({ ok: true, marked: seqs.length });
+    }
     if ((url.pathname === "/events" && request.method === "GET") || ((url.pathname === "/tap" || url.pathname === "/void" || url.pathname === "/compact") && request.method === "POST") || (url.pathname === "/export" && request.method === "GET")) {
       if (this.isTest()) return Response.json({ ok: false, error: "not found" }, { status: 404 });
       if (url.pathname === "/compact") { const r = await this.compact(url.searchParams.get("dry") === "1"); return Response.json(r, { status: r.status || (r.ok ? 200 : 409) }); }
