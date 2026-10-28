@@ -188,7 +188,7 @@
  {
   "name": "a fallback is not counted",
   "file": "src/worker.js",
-  "find": "if (tap.kind === \"fallback\") console.log(\"tap fallback \" + id + \": \"",
-  "replace": "if (false) console.log(\"tap fallback \" + id + \": \""
+  "find": "if (tap.kind === \"fallback\") { console.log(\"tap fallback \" + id + \": \"",
+  "replace": "if (false) { console.log(\"tap fallback \" + id + \": \""
  }
 ]

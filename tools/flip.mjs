@@ -18,6 +18,7 @@
  *   node tools/flip.mjs --go "<his words>"     the flip
  *   node tools/flip.mjs --verify              after the first tap: is the Book the source and healthy
  *   node tools/flip.mjs --back "<his words>"   the way back */
+import "./cloudflare.mjs";
 import { spawnSync } from "node:child_process";
 import { writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";

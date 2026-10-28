@@ -299,7 +299,7 @@ async function handleBookRoster(request, env, m, url) {
    after each load and goes red on a difference, so "the readers agree" is proved at every fold. The same two locks as the load. */
 /* S5f-6: POST /book/derived and /book/notes, the chain's export step. The same two locks as the load, and only with the Book as the source (with git as the source the load is the only writer of what the Book holds). */
 async function handleBookVerb(request, env, m, p) {
-  if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);   /* S5f-6: the export step's verbs take POST alone */
   if (!bookKeyOk(request, env)) return needsKey();
   if (!env.BOOK || !env.SALT_LEDGER) return json({ ok: false, error: "the Book or the ledger is not bound" }, 503);
   if (await sourceMode(env.SALT_LEDGER) !== "book") return json({ ok: false, error: "the Book is not the source (D1 book_source reads d1): git's load is the only writer of what it holds" }, 409);

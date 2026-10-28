@@ -98,11 +98,11 @@ export async function run({ ok }) {
     const bridge = (extra) => async (url, init) => { const u = new URL(url); if (extra) { const r = extra(u.pathname, init); if (r) return r; } return worker.fetch(new Request(url, init), env, { waitUntil() { } }); };
     const ghEnv = join(root, "github_env.txt");
     const ranTools = [];
-    const run = (cmd, args) => { ranTools.push(cmd + " " + args.join(" ")); if (cmd === "ledger.mjs") writeFileSync(join(root, "ledger", "ledger.json"), JSON.stringify({ v: V, ledger: { PRICING: { v: "x", floors: { salt: { 1: 61 } } }, OPEN: { v: "x", at: "n", count: 0, byKey: {} }, TERMS: { creditDays: 9 }, REWARD: { stated: {} }, STOCK: { today: "2026-10-29", books: {} } } })); };
+    const run = (cmd, args) => { ranTools.push(cmd + " " + args.join(" ")); if (cmd === "ledger.mjs") writeFileSync(join(root, "ledger", "ledger.json"), JSON.stringify({ v: V, ledger: { PRICING: { v: "x", floors: { salt: { 1: 61 } } }, OPEN: { v: "x", at: "n", count: 0, byKey: {} }, TERMS: { creditDays: 9 }, REWARD: { stated: {} }, STOCK: { today: "2026-10-29", books: {} } } })); };   /* book-read-ok: a temporary checkout's own files, written by the tool under test */
     const E = { SALT_BOOK_KEY: "bk", GITHUB_ENV: ghEnv };
     const rev0 = (await B.at()).rev;
     const r = await exportBook({ base: "https://salt.test", env: E, root, fetchImpl: bridge(), run, now: new Date("2026-10-28T20:00:00.000Z"), tries: 1, wait: 0 });
-    const a = await B.at(), file = JSON.parse(readFileSync(join(root, "ledger", "book.json"), "utf8")), rd = await B.read();
+    const a = await B.at(), file = JSON.parse(readFileSync(join(root, "ledger", "book.json"), "utf8")), rd = await B.read();   /* book-read-ok: a temporary checkout's own files, written by the tool under test */
     const tapped = ridsOf(rd).filter((x) => !fb().sales.some((s) => s.rid === x));
     ok(r.ok && !r.day && ranTools.join("|") === "booksync.mjs --sync|ledger.mjs " && r.notes === 0 && a.rev === rev0 && r.rev === a.rev && a.derivedRev === a.rev, "a run that is not the day's writes no note, moves no revision, and sends the documents for the revision it exported: " + JSON.stringify([r.ok, r.notes, rev0, a.rev, a.derivedRev, ranTools]));
     ok(file.sales.length === fb().sales.length + 2 && tapped.length === 2 && tapped.every((x) => file.sales.find((s) => s.rid === x)), "ledger/book.json is the Book's view, the tapped rows in it: " + file.sales.length);
@@ -112,8 +112,8 @@ export async function run({ ok }) {
     ok(r2.ok && r2.notes === 0 && r2.rev === a.rev && (await B.at()).rev === a.rev, "run again it writes no note and moves nothing");
     const d = await exportBook({ base: "https://salt.test", env: E, root, day: true, fetchImpl: bridge(), run, now: new Date("2026-10-28T20:00:00.000Z"), tries: 1, wait: 0 });
     const ad = await B.at();
-    ok(d.ok && d.day && /compacted 2/.test(d.steps[0]) && ad.booked.length === 0 && W.db.prepare("SELECT COUNT(*) AS n FROM draft WHERE committed_at IS NOT NULL").get().n === 2 && JSON.parse(readFileSync(join(root, "ledger", "book.json"), "utf8")).sales.length === file.sales.length && d.notes === 2, "the day's run compacts first (two entries closed, their drafts marked committed), writes the notes behind the two tapped rows and no other, and exports the same book: " + JSON.stringify(d.steps));
-    const dfile = JSON.parse(readFileSync(join(root, "ledger", "book.json"), "utf8")), blankOld = fb().sales.filter((s) => s.rid && !(s.note || "").trim()).length;
+    ok(d.ok && d.day && /compacted 2/.test(d.steps[0]) && ad.booked.length === 0 && W.db.prepare("SELECT COUNT(*) AS n FROM draft WHERE committed_at IS NOT NULL").get().n === 2 && JSON.parse(readFileSync(join(root, "ledger", "book.json"), "utf8")).sales.length === file.sales.length && d.notes === 2, "the day's run compacts first (two entries closed, their drafts marked committed), writes the notes behind the two tapped rows and no other, and exports the same book: " + JSON.stringify(d.steps));   /* book-read-ok: a temporary checkout's own files, written by the tool under test */
+    const dfile = JSON.parse(readFileSync(join(root, "ledger", "book.json"), "utf8")), blankOld = fb().sales.filter((s) => s.rid && !(s.note || "").trim()).length;   /* book-read-ok: a temporary checkout's own files, written by the tool under test */
     ok(tapped.every((x) => /not a model/.test(dfile.sales.find((s) => s.rid === x).note)) && dfile.sales.filter((s) => s.rid && !(s.note || "").trim()).length === blankOld, "the two tapped rows carry a note and a row git's fold wrote with none is left as it was: " + blankOld);
     /* 4: failures name their step */
     const fails = async (extra, over = {}) => exportBook({ base: "https://salt.test", env: { SALT_BOOK_KEY: "bk" }, root, fetchImpl: bridge(extra), run, now: new Date(), tries: 1, wait: 0, ...over });

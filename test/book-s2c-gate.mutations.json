@@ -2,6 +2,6 @@
   {"name":"the restart's lost answer is an error","file":"src/worker.js","find":"    if (verb === \"restart\") return json({ ok: true, restarted: true });\n","replace":""},
   {"name":"the recovery route names the live Book","file":"src/worker.js","find":"env.BOOK.get(env.BOOK.idFromName(PITR_NAME)).fetch(","replace":"env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)).fetch("},
   {"name":"the window reads the test object","file":"src/worker.js","find":"if (p === \"/book/window\") return env.BOOK.get(env.BOOK.idFromName(BOOK_NAME))","replace":"if (p === \"/book/window\") return env.BOOK.get(env.BOOK.idFromName(PITR_NAME))"},
-  {"name":"the CI token is not let through to the recovery route","file":"src/worker.js","find":"\"POST /book/load\", \"POST /book/compact\", \"POST /book/pitr\", \"GET /book/window\"","replace":"\"POST /book/load\", \"POST /book/compact\", \"GET /book/window\""},
+  {"name":"the CI token is not let through to the recovery route","file":"src/worker.js","find":"\"POST /book/load\", \"POST /book/compact\", \"POST /book/derived\", \"POST /book/notes\", \"POST /book/pitr\", \"GET /book/window\"","replace":"\"POST /book/load\", \"POST /book/compact\", \"POST /book/derived\", \"POST /book/notes\", \"GET /book/window\""},
   {"name":"the recovery routes need no key","file":"src/worker.js","find":"  if (m !== want) return json({ ok: false, error: \"method not allowed\" }, 405);\n  if (!bookKeyOk(request, env)) return needsKey();","replace":"  if (m !== want) return json({ ok: false, error: \"method not allowed\" }, 405);"}
 ]

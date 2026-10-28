@@ -9,6 +9,7 @@
  * A line whose evidence cannot be read is UNVERIFIED (null), never true: a gate that guesses is not one. The window starts at `--since` (default 28 Oct 2026, the day the tap went on) and the earliest flip is 4 Nov 2026.
  *
  *   node tools/flip-gate.mjs [--since YYYY-MM-DD] [--backup-opened YYYY-MM-DD] [--json]        (needs gh and wrangler, like the tools that read the same things) */
+import "./cloudflare.mjs";
 import { spawnSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
