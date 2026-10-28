@@ -850,3 +850,8 @@ The flip makes the Book the source of the ledger: an approval is booked by the t
 - D1 `book_source` (migrations/0023, applied alone to the live D1 before the deploy, read back `d1`), one row, `'d1'` or `'book'`, **shipped `d1`**. `sourceMode(db)` in `src/book-tap.js` reads it like `rosterMode`: anything but an exact `'book'` (a missing table, an empty row, a store that will not answer) reads `d1`, the old world. Every guard below keys off this one read.
 - Turning it is `tools/flip.mjs` alone (S5f-7), never a bare statement: the bare `UPDATE book_source SET mode='d1'` is not a way back (see S5f-7).
 - Tests: section "Book S5f-1", 5 checks, 7 mutations.
+
+### S5f-2: a compaction moves the base's watermark (v1311)
+- `QUEUE_COMMITTED` is the newest queue entry the base holds (a draft's id is its queue entry's `at`). The fold moves it to the newest id it folds; a replay never does. So a compaction that closed entries and left it behind would have the S5d page count a phone's queued entry twice: the new base holds the sale, the entry is no longer open (so the served `booked` ids do not name it) and it is not under the old mark. `compact()` now sets the base's `QUEUE_COMMITTED` to the newest draft id it closes, before the plan is prepared, so the load that writes the base writes the mark with it; never lowered.
+- Proved on the recovery-test style object (a Book over node:sqlite), never the live Book: dry moves nothing, a refused compaction (a stuck entry) leaves the mark, the view's money is unchanged by it, the revision moves once, and the page's `bookTrimQueue` drops a queued entry at or under the served mark.
+- Tests: section "Book S5f-2", 12 checks, 5 mutations.

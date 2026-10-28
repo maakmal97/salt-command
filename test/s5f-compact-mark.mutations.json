@@ -1,0 +1,32 @@
+[
+ {
+  "name": "the compaction leaves the mark behind",
+  "file": "src/book.js",
+  "find": "if (newest > mark) view.book.QUEUE_COMMITTED = newest;",
+  "replace": "if (false) view.book.QUEUE_COMMITTED = newest;"
+ },
+ {
+  "name": "the mark is lowered to the newest closed id",
+  "file": "src/book.js",
+  "find": "if (newest > mark) view.book.QUEUE_COMMITTED = newest;",
+  "replace": "if (newest) view.book.QUEUE_COMMITTED = newest;"
+ },
+ {
+  "name": "the mark takes the oldest closed id",
+  "file": "src/book.js",
+  "find": "closed.reduce((a, id) => (id > a ? id : a), \"\")",
+  "replace": "closed.reduce((a, id) => (!a || id < a ? id : a), \"\")"
+ },
+ {
+  "name": "the mark is the last booked, not the newest",
+  "file": "src/book.js",
+  "find": "closed.reduce((a, id) => (id > a ? id : a), \"\")",
+  "replace": "closed[closed.length - 1]"
+ },
+ {
+  "name": "the page keeps a queued entry the served mark covers",
+  "file": "master/salt_command.html",
+  "find": "queue=queue.filter(q=>qKeepOnLoad(q,BOOK_MARK,qSentThrough,refusedAts));",
+  "replace": "queue=queue.filter(q=>true);"
+ }
+]

@@ -52263,6 +52263,11 @@ await (async () => {
   await (await import("./s5f-source.mjs")).run({ ok });
 })();
 
+section("Book S5f-2: a compaction moves the base's watermark to the newest entry it closes (28 Oct 2026)");
+await (async () => {
+  await (await import("./s5f-compact-mark.mjs")).run({ ok });
+})();
+
 section("18 Oct 2026: the lean Desk: six views, the three parts gone, alerts in the rail, spots on Coverage, Noticed under To do");
 await (async () => {
   /* HIS DECISION OF 18 OCT 2026: Approve, Site orders and Entries left the Desk, Salt Admin deciding every order, claim, chat and

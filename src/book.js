@@ -614,8 +614,14 @@ export class Book {
       const view = this.viewOf(evs);
       if (view.stuck.length) return { ok: false, status: 409, error: "an entry is stuck, so the view is not whole", stuck: view.stuck.map((s) => s.id) };
       const { PRICING, ...rest } = view.derived;
+      const closed = evs.map((e) => e.draft_id);
+      /* S5f-2: THE WATERMARK MOVES WITH THE CLOSE. QUEUE_COMMITTED is the newest queue entry the base holds (a draft's id is its queue entry's `at`); the fold moves it to the newest id it folds, and a replay
+         never does. A compaction that closed entries and left it behind would have the page count a phone's queued entry twice: the new base holds it, the entry is no longer open (so BOOKED_IDS does not
+         name it) and it is not under the old mark. Never lowered, so an equal or newer mark is kept. */
+      const newest = closed.reduce((a, id) => (id > a ? id : a), ""), mark = typeof view.book.QUEUE_COMMITTED === "string" ? view.book.QUEUE_COMMITTED : "";
+      if (newest > mark) view.book.QUEUE_COMMITTED = newest;
       const p = await prepare(view.book, PRICING, { v: snap.v, stamped: snap.stamped, derived: rest });
-      const closed = evs.map((e) => e.draft_id), opts = { folded: closed, pure: true, strict: true, pre: view };
+      const opts = { folded: closed, pure: true, strict: true, pre: view };
       if (dry) {
         /* the same plan, run as a load that unwinds inside its own transaction: nothing is written, and the strict checks decide */
         try { this.load(p, "compact-dry", { ...opts, dry: true }); return { ok: false, status: 500, dry: true, error: "a dry compaction returned without unwinding" }; }   /* a load that returns here would be a real one */
