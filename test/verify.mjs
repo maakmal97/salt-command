@@ -51944,7 +51944,7 @@ await (async () => {
       if (head) fn = head[1] || head[2];
       if (/env\.BOOK\b/.test(l) && !/^\s*(\/\/|\*|\/\*)/.test(l) && !/^\s*if \(env\.SALT_LEDGER && env\.BOOK\) bindBook\(env\.SALT_LEDGER, env\.BOOK\);/.test(l)) {
         readers.push(f + ":" + (i + 1));
-        if (!(f === "worker.js" && (fn === "handleBookLoad" || fn === "handleBookPitr" || fn === "handleLive" || fn === "liveTell" || fn === "handleBookReadcheck" || fn === "handleBookLedger" || fn === "handleBookRoster")) && !(f === "book.js" && (fn === "isTest" || fn === "isLive")) && !(f === "backup.js" && (fn === "runBookExport" || fn === "bookExportAlarm"))) strays.push(f + ":" + (i + 1) + " in " + fn);
+        if (!(f === "worker.js" && (fn === "handleBookLoad" || fn === "handleBookPitr" || fn === "handleLive" || fn === "liveTell" || fn === "handleBookReadcheck" || fn === "handleBookLedger" || fn === "handleBookRoster" || fn === "handleBookPage" || fn === "bookRevOf")) && !(f === "book.js" && (fn === "isTest" || fn === "isLive")) && !(f === "backup.js" && (fn === "runBookExport" || fn === "bookExportAlarm"))) strays.push(f + ":" + (i + 1) + " in " + fn);
       }
     });
   }
@@ -52251,6 +52251,11 @@ await (async () => {
 section("Book S5: the roster road, an Add ID and a rename booked by the tap, the files beside the book by the flip's export (28 Oct 2026)");
 await (async () => {
   await (await import("./roster-road.mjs")).run({ ok });
+})();
+
+section("Book S5d: the Desk page reads the Book at request time, flag book_page shipped off (28 Oct 2026)");
+await (async () => {
+  await (await import("./book-page.mjs")).run({ ok });
 })();
 
 section("18 Oct 2026: the lean Desk: six views, the three parts gone, alerts in the rail, spots on Coverage, Noticed under To do");

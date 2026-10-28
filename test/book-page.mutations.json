@@ -1,0 +1,296 @@
+[
+ {
+  "name": "the flag reads on for any row",
+  "file": "src/book-page.js",
+  "find": "return r && r.mode === \"on\" ? \"on\" : \"off\"; } catch (e) { return \"off\"; }",
+  "replace": "return r ? \"on\" : \"off\"; } catch (e) { return \"off\"; }"
+ },
+ {
+  "name": "a missing table reads on",
+  "file": "src/book-page.js",
+  "find": "} catch (e) { return \"off\"; }",
+  "replace": "} catch (e) { return \"on\"; }"
+ },
+ {
+  "name": "the notes are served",
+  "file": "src/book-page.js",
+  "find": "delete book.NOTES;",
+  "replace": ""
+ },
+ {
+  "name": "the booked ids are dropped",
+  "file": "src/book-page.js",
+  "find": "booked: Array.isArray(res.booked) ? res.booked : [],",
+  "replace": "booked: [],"
+ },
+ {
+  "name": "any revision is taken",
+  "file": "src/book-page.js",
+  "find": "rev: Number.isInteger(rev) ? rev : null",
+  "replace": "rev: rev"
+ },
+ {
+  "name": "a Book with nothing is served",
+  "file": "src/book-page.js",
+  "find": "if (!res || !res.ok || !res.rows || !res.state) return null;",
+  "replace": "if (!res) return null;"
+ },
+ {
+  "name": "the migration ships on",
+  "file": "migrations/0022_book_page.sql",
+  "find": "VALUES (1, 'off')",
+  "replace": "VALUES (1, 'on')"
+ },
+ {
+  "name": "the route is not keyed",
+  "file": "src/worker.js",
+  "find": "      || p === \"/book/page\"   /* S5d: the Book's view is the whole ledger, cost and margin included */\n",
+  "replace": ""
+ },
+ {
+  "name": "the route serves with the flag off",
+  "file": "src/worker.js",
+  "find": "if (await pageMode(env.SALT_LEDGER) !== \"on\") return json({ ok: false, off: true,",
+  "replace": "if (false) return json({ ok: false, off: true,"
+ },
+ {
+  "name": "the view is read before the revision",
+  "file": "src/worker.js",
+  "find": "    const a = await (await stub.fetch(new Request(\"https://book/revno\"))).json().catch(() => ({}));   /* the revision first: a move between the two reads is a later revision to the page, never an earlier one */\n    const r = await stub.fetch(new Request(\"https://book/read\"));",
+  "replace": "    const r = await stub.fetch(new Request(\"https://book/read\"));\n    const a = await (await stub.fetch(new Request(\"https://book/revno\"))).json().catch(() => ({}));"
+ },
+ {
+  "name": "the route takes a POST",
+  "file": "src/worker.js",
+  "find": "async function handleBookPage(env, m) {\n  if (m !== \"GET\") return json({ ok: false, error: \"method not allowed\" }, 405);\n",
+  "replace": "async function handleBookPage(env, m) {\n"
+ },
+ {
+  "name": "a Book that holds nothing is served empty",
+  "file": "src/worker.js",
+  "find": "if (!out) return json({ ok: false, error: \"the Book did not answer\" }, 503);\n    return json(out);",
+  "replace": "return json(out || { ok: true, book: {} });"
+ },
+ {
+  "name": "/rev adds the revision with the flag off",
+  "file": "src/worker.js",
+  "find": "if (!env.BOOK || !env.SALT_LEDGER || await pageMode(env.SALT_LEDGER) !== \"on\") return null;",
+  "replace": "if (!env.BOOK || !env.SALT_LEDGER) return null;"
+ },
+ {
+  "name": "a Book that throws fails /rev",
+  "file": "src/worker.js",
+  "find": "  } catch (e) { return null; }\n}\nasync function handleBookPage",
+  "replace": "  } catch (e) { throw e; }\n}\nasync function handleBookPage"
+ },
+ {
+  "name": "a manifest that is not JSON fails /rev",
+  "file": "src/worker.js",
+  "find": "catch (e) { return new Response(text, { status: 200, headers: JSON_HEADERS }); }",
+  "replace": "catch (e) { throw e; }"
+ },
+ {
+  "name": "the service worker caches /book",
+  "file": "public/sw.js",
+  "find": "|slips|pins|threads|book)(\\/|$)/;",
+  "replace": "|slips|pins|threads)(\\/|$)/;"
+ },
+ {
+  "name": "the service worker's list takes any longer word",
+  "file": "public/sw.js",
+  "find": "|threads|book)(\\/|$)/;",
+  "replace": "|threads|book)/;"
+ },
+ {
+  "name": "the poll never asks for the Book",
+  "file": "tools/build.mjs",
+  "find": "  \"      try{if(j&&j.rev!==undefined&&typeof bookFetch==='function'&&j.rev!==BOOK_REV)bookFetch(j.rev);}catch(e){}\",\n",
+  "replace": ""
+ },
+ {
+  "name": "the poll asks after it judges the build",
+  "file": "tools/build.mjs",
+  "find": "  \"      try{if(j&&j.rev!==undefined&&typeof bookFetch==='function'&&j.rev!==BOOK_REV)bookFetch(j.rev);}catch(e){}\",\n  '      if(!j||!j.id||j.id===SALT_BUILD_ID)return;',",
+  "replace": "  '      if(!j||!j.id||j.id===SALT_BUILD_ID)return;',\n  \"      try{if(j&&j.rev!==undefined&&typeof bookFetch==='function'&&j.rev!==BOOK_REV)bookFetch(j.rev);}catch(e){}\","
+ },
+ {
+  "name": "the poll asks when the revision is the one it has",
+  "file": "tools/build.mjs",
+  "find": "&&j.rev!==BOOK_REV)bookFetch(j.rev);",
+  "replace": "&&j.rev===BOOK_REV)bookFetch(j.rev);"
+ },
+ {
+  "name": "the stock stays the baked one",
+  "file": "master/salt_command.html",
+  "find": "get statedStock(){return BOOK_STATED;}",
+  "replace": "get statedStock(){return STATED_STOCK;}"
+ },
+ {
+  "name": "the overlay counts an entry the view holds",
+  "file": "master/salt_command.html",
+  "find": "    if(BOOKED_IDS.size&&BOOKED_IDS.has(q.at))return;   /* S5d: the served Book already holds this entry's draft */\n",
+  "replace": ""
+ },
+ {
+  "name": "the overlay's base copies are not refilled",
+  "file": "master/salt_command.html",
+  "find": ".concat(Object.keys(BOOK_BASES).map(k=>[BOOK_BASES[k],copy(b[k])]))",
+  "replace": ""
+ },
+ {
+  "name": "the documents are not swapped",
+  "file": "master/salt_command.html",
+  "find": "  D.forEach(([o,c])=>{Object.keys(o).forEach(x=>delete o[x]);Object.assign(o,c);});\n",
+  "replace": ""
+ },
+ {
+  "name": "the lists are not swapped",
+  "file": "master/salt_command.html",
+  "find": "  L.forEach(([a,c])=>{a.length=0;c.forEach(x=>a.push(x));});\n",
+  "replace": ""
+ },
+ {
+  "name": "the board's base is not refilled",
+  "file": "master/salt_command.html",
+  "find": "  Object.keys(BASE_PRICESET).forEach(x=>delete BASE_PRICESET[x]);Object.assign(BASE_PRICESET,P);\n",
+  "replace": ""
+ },
+ {
+  "name": "the product list is not rebuilt",
+  "file": "master/salt_command.html",
+  "find": "  PROD_IDS.length=0;PROD_ORDER.filter(prodLive).concat(Object.keys(PRODUCTS).filter(p=>PROD_ORDER.indexOf(p)<0&&prodLive(p))).forEach(p=>PROD_IDS.push(p));\n",
+  "replace": ""
+ },
+ {
+  "name": "the stock is not taken",
+  "file": "master/salt_command.html",
+  "find": "BOOK_STATED=b.STATED_STOCK;BOOK_MARK=",
+  "replace": "BOOK_STATED=BOOK_STATED;BOOK_MARK="
+ },
+ {
+  "name": "the booked ids are not kept",
+  "file": "master/salt_command.html",
+  "find": "BOOKED_IDS=new Set(Array.isArray(j.booked)?j.booked:[]);",
+  "replace": "BOOKED_IDS=new Set();"
+ },
+ {
+  "name": "an older Book is taken",
+  "file": "master/salt_command.html",
+  "find": "  if(b.QUEUE_COMMITTED<BOOK_BAKED)return 'older than this page';\n",
+  "replace": ""
+ },
+ {
+  "name": "a stock that is no number is taken",
+  "file": "master/salt_command.html",
+  "find": "typeof b.STATED_STOCK!=='number'||!isFinite(b.STATED_STOCK)||",
+  "replace": ""
+ },
+ {
+  "name": "a document that is a list is taken",
+  "file": "master/salt_command.html",
+  "find": "||Array.isArray(b[k]))return 'no document '+k;",
+  "replace": ")return 'no document '+k;"
+ },
+ {
+  "name": "a missing list is not noticed",
+  "file": "master/salt_command.html",
+  "find": "  for(const k of lists)if(!Array.isArray(b[k]))return 'no list '+k;\n",
+  "replace": ""
+ },
+ {
+  "name": "a desk with no key asks anyway",
+  "file": "master/salt_command.html",
+  "find": "  if(!saltWriteKey())return false;   /* the Book's view is the whole ledger: only a desk holding the write key can read it */\n",
+  "replace": ""
+ },
+ {
+  "name": "the fetch may be cached",
+  "file": "master/salt_command.html",
+  "find": "fetch('book/page',{cache:'no-store',headers:qHeaders()})",
+  "replace": "fetch('book/page',{headers:qHeaders()})"
+ },
+ {
+  "name": "the fetch carries no key",
+  "file": "master/salt_command.html",
+  "find": "fetch('book/page',{cache:'no-store',headers:qHeaders()})",
+  "replace": "fetch('book/page',{cache:'no-store'})"
+ },
+ {
+  "name": "the revision is not recorded",
+  "file": "master/salt_command.html",
+  "find": "BOOK_REV=Number.isInteger(j.rev)?j.rev:rev;bookRefusedRev=null;",
+  "replace": "bookRefusedRev=null;"
+ },
+ {
+  "name": "a failure is asked again at once",
+  "file": "master/salt_command.html",
+  "find": "Date.now()-bookFailAt<60000||(rev",
+  "replace": "(rev"
+ },
+ {
+  "name": "a failed answer is not noted",
+  "file": "master/salt_command.html",
+  "find": "if(!r.ok){bookFailAt=Date.now();return false;}",
+  "replace": "if(!r.ok){return false;}"
+ },
+ {
+  "name": "a refused book is not noted",
+  "file": "master/salt_command.html",
+  "find": "if(bookApply(j)){bookRefusedRev=Number.isInteger(j.rev)?j.rev:rev;return false;}",
+  "replace": "if(bookApply(j)){return false;}"
+ },
+ {
+  "name": "the poll is not guarded",
+  "file": "tools/build.mjs",
+  "find": "  \"      try{if(j&&j.rev!==undefined&&typeof bookFetch==='function'&&j.rev!==BOOK_REV)bookFetch(j.rev);}catch(e){}\",",
+  "replace": "  \"      if(j&&j.rev!==undefined&&typeof bookFetch==='function'&&j.rev!==BOOK_REV)bookFetch(j.rev);\","
+ },
+ {
+  "name": "the queue is not judged after a swap",
+  "file": "master/salt_command.html",
+  "find": "    try{bookTrimQueue();}catch(e){}\n",
+  "replace": ""
+ },
+ {
+  "name": "a refused revision is asked again",
+  "file": "master/salt_command.html",
+  "find": "||(rev!==undefined&&rev===bookRefusedRev))return false;",
+  "replace": ")return false;"
+ },
+ {
+  "name": "a refused revision is not remembered",
+  "file": "master/salt_command.html",
+  "find": "bookRefusedRev=Number.isInteger(j.rev)?j.rev:rev;return false;",
+  "replace": "return false;"
+ },
+ {
+  "name": "a taken book keeps the refusal",
+  "file": "master/salt_command.html",
+  "find": "BOOK_REV=Number.isInteger(j.rev)?j.rev:rev;bookRefusedRev=null;",
+  "replace": "BOOK_REV=Number.isInteger(j.rev)?j.rev:rev;"
+ },
+ {
+  "name": "a value the copy cannot make is let through",
+  "file": "master/salt_command.html",
+  "find": "}catch(e){return 'a value that is not JSON';}",
+  "replace": "}catch(e){throw e;}"
+ },
+ {
+  "name": "the revision is read with the view",
+  "file": "src/worker.js",
+  "find": "\"https://book/revno\"))).json();\n    return a && a.ok",
+  "replace": "\"https://book/at\"))).json();\n    return a && a.ok"
+ },
+ {
+  "name": "the revision verb builds the view",
+  "file": "src/book.js",
+  "find": "url.pathname === \"/revno\" ? this.revno() : this.snapshot()",
+  "replace": "this.snapshot()"
+ },
+ {
+  "name": "the build poll waits on the Book",
+  "file": "src/worker.js",
+  "find": "await Promise.race([bookRevOf(env), new Promise((done) => setTimeout(() => done(null), 1500))])",
+  "replace": "await bookRevOf(env)"
+ }
+]
