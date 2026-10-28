@@ -1,0 +1,80 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-28T22:45:20.331Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s303",
+    "qty": 1,
+    "total": 105,
+    "cash": 0,
+    "date": "2026-10-29",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 1
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-10-29"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "delivered"
+     }
+    ],
+    "customer": "CS6-BS-R",
+    "rids": [],
+    "booked_seq": 15
+   },
+   "reasoning": "Correction against CS6-BS-R's order of 1 unit for RM 105 dated 2026-10-29 (s303). Sets deliveredQty from 0 to 1, deliveredOn from unset to 2026-10-29, handover from unset to delivered. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This is an ADVANCE: 1 unit goes out with RM 150 unpaid. Check it against CS6-BS's credit cap."
+   ],
+   "amends": "s303",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-28T22:45:20.331Z",
+    "type": "SELL",
+    "party": "CS6-BS-R",
+    "qty": 1,
+    "total": 0,
+    "status": "Handover",
+    "raw": "1 unit delivered to CS6-BS-R, order 20261028224249-cg8tbw, on 2026-10-29",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CS6-BS-R",
+     "rid": null,
+     "orderKey": "CS6-BS-R|2026-10-29|150",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-29",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 1,
+      "deliveredOn": "2026-10-29",
+      "handover": "delivered"
+     },
+     "note": "1 unit delivered for order 20261028224249-cg8tbw."
+    },
+    "orderId": "20261028224249-cg8tbw"
+   },
+   "decidedAt": "2026-10-28T22:45:22.336Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
