@@ -214,5 +214,59 @@
   "file": ".github/workflows/cloud-commit.yml",
   "find": "      - name: Publish the statements, live\n        if: steps.plan.outputs.publish == '1'",
   "replace": "      - name: Publish the statements, live\n        if: steps.plan.outputs.publish == '1' && steps.source.outputs.mode != 'book'"
+ },
+ {
+  "name": "a closed draft's admission is not released",
+  "file": "src/book-compact.js",
+  "find": "const ADMIT = \"UPDATE input_admission SET state='committed' WHERE state='accepted'",
+  "replace": "const ADMIT = \"UPDATE input_admission SET state='accepted' WHERE state='accepted'"
+ },
+ {
+  "name": "a refused compaction keeps its marks",
+  "file": "src/book-compact.js",
+  "find": "if (open.length > 0) { try { await db.batch(chunks(open).flatMap(",
+  "replace": "if (false) { try { await db.batch(chunks(open).flatMap("
+ },
+ {
+  "name": "a refusal unmarks a draft committed before it",
+  "file": "src/book-compact.js",
+  "find": "const UNMARK = \"UPDATE draft SET committed_at=NULL WHERE committed_at=?1 AND status='approved'",
+  "replace": "const UNMARK = \"UPDATE draft SET committed_at=NULL WHERE status='approved'"
+ },
+ {
+  "name": "a refusal keeps the admission released",
+  "file": "src/book-compact.js",
+  "find": "const UNADMIT = \"UPDATE input_admission SET state='accepted' WHERE state='committed'",
+  "replace": "const UNADMIT = \"UPDATE input_admission SET state='committed' WHERE state='committed'"
+ },
+ {
+  "name": "a draft marked after the base's moment stays so",
+  "file": "src/book-compact.js",
+  "find": "const CLAMP = \"UPDATE draft SET committed_at=?1 WHERE committed_at > ?1",
+  "replace": "const CLAMP = \"UPDATE draft SET committed_at=?1 WHERE committed_at < ?1"
+ },
+ {
+  "name": "the Book is not told which entries were checked",
+  "file": "src/book-compact.js",
+  "find": "ask(env, \"compact\", \"POST\", { expect: open })",
+  "replace": "ask(env, \"compact\", \"POST\", {})"
+ },
+ {
+  "name": "the Book seals an entry it was not told of",
+  "file": "src/book.js",
+  "find": "if (Array.isArray(expect)) { const known",
+  "replace": "if (false) { const known"
+ },
+ {
+  "name": "the Book names no entry it was not told of",
+  "file": "src/book.js",
+  "find": "if (fresh.length) return { ok: false, status: 409, error: \"an entry was booked since",
+  "replace": "if (false) return { ok: false, status: 409, error: \"an entry was booked since"
+ },
+ {
+  "name": "the hand seed of the mirror is not asked",
+  "file": "tools/d1.mjs",
+  "find": "if (WHERE === \"--remote\") refuseIfBook(\"d1.mjs --seed\", WHERE);",
+  "replace": ""
  }
 ]

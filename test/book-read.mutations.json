@@ -80,7 +80,7 @@
  {
   "name": "the flag is ignored",
   "file": "src/book-read.js",
-  "find": "if (!ns || await readFlag(db) !== \"book\") return null;",
+  "find": "if (await readFlag(db) !== \"book\") return null;",
   "replace": "if (!ns) return null;"
  },
  {
@@ -140,8 +140,8 @@
  {
   "name": "the money tap reads the payments beside the book again",
   "file": "src/orders.js",
-  "find": "  const book = await (mirror ? mirror() : readBook(db)).catch(() => null);\n  const way = onWay || await paysOnWay(db, direction, boundOf(book));",
-  "replace": "  const [book, way] = await Promise.all([(mirror ? mirror() : readBook(db)).catch(() => null), onWay || paysOnWay(db, direction, null)]);"
+  "find": "  const book = await (mirror ? mirror() : readBook(db)).catch((e) => { if (e instanceof BookDown) throw e; return null; });\n  const way = onWay || await paysOnWay(db, direction, boundOf(book));",
+  "replace": "  const [book, way] = await Promise.all([(mirror ? mirror() : readBook(db)).catch((e) => { if (e instanceof BookDown) throw e; return null; }), onWay || paysOnWay(db, direction, null)]);"
  },
  {
   "name": "the lots drafted and not folded ignore the book's bound",

@@ -164,6 +164,30 @@ export async function run({ ok }) {
     ok(leg(y) && /book v1252 since 2026-10-28T10:00:00.000Z/.test(leg(y).why) && !e3.q.m.has("orders:seen"), "git as the source: the stall is timed from the snapshot's moment, as it was, and nothing new is written: " + JSON.stringify(leg(y)));
   }
 
+  /* 4b: Fable's review of 29 Oct 2026 */
+  {
+    const { rowRoom, TIEOUT_KEY } = await import("../src/orders.js");
+    const down = { idFromName: (n) => n, get: () => ({ fetch: async () => new Response("{}", { status: 503 }) }) };
+    const Wb = world(); Wb.source("book"); R.bindBook(Wb.D1, down);
+    const Wd = world(); R.bindBook(Wd.D1, down);
+    const out = async (W) => rowRoom(W.D1, "SELL").then((room) => (typeof room === "function" ? "room" : "other"), (e) => (e instanceof R.BookDown ? "threw" : "other"));
+    ok(await out(Wb) === "threw" && await out(Wd) === "room", "a money tap's room check throws when the Book is the source and will not answer (an empty book has no row to check, so every tap would pass), and reads as it did with git as the source");
+    const B = mkBook(); await B.load();
+    const W = world(); W.source("book"); R.bindBook(W.D1, B.ns);
+    const kvm = new Map(), puts = [];
+    const q = { get: async (k, t) => (kvm.has(k) ? (t === "json" ? JSON.parse(kvm.get(k)) : kvm.get(k)) : null), put: async (k, v) => { puts.push(k); kvm.set(k, v); }, delete: async (k) => { kvm.delete(k); } };
+    const tok = R.bookToken((await B.at()).rev);
+    kvm.set(TIEOUT_KEY, JSON.stringify({ ok: true, clean: true, at: new Date().toISOString(), v: tok, faults: [] }));
+    const env = { SALT_LEDGER: W.D1, SALT_QUEUE: q, BOOK: B.ns, REQUIRE_ACCESS: "0", STMT_SITE: { fetch: async () => Response.json({ ok: true, orders: [] }) }, STMT_DESK_KEY: "k" };
+    const was = console.log; console.log = () => { };
+    try { const waits = []; await worker.scheduled({ cron: "* * * * *", scheduledTime: Date.now() }, env, { waitUntil: (p) => waits.push(p) }); await Promise.allSettled(waits); } finally { console.log = was; }
+    ok(!puts.includes(TIEOUT_KEY), "with the Book as the source a tie-out made for the revision the Counter was told of is not made again every minute: " + puts.join(","));
+    await B.tap([sale(IDN(1), 2)]);
+    const was2 = console.log; console.log = () => { };
+    try { const waits = []; await worker.scheduled({ cron: "* * * * *", scheduledTime: Date.now() }, env, { waitUntil: (p) => waits.push(p) }); await Promise.allSettled(waits); } finally { console.log = was2; }
+    ok(puts.includes(TIEOUT_KEY) && JSON.parse(kvm.get(TIEOUT_KEY)).v === R.bookToken((await B.at()).rev), "and it is made when the revision moves, for the revision it moved to: " + String(kvm.get(TIEOUT_KEY)).slice(0, 80));
+  }
+
   /* 5: the amend preview's version compare (read from the code that runs: the exported guard is the line's own condition) */
   {
     const src = readFileSync(join(REPO, "src", "orders.js"), "utf8");

@@ -12,12 +12,20 @@ import { sourceMode } from "./book-tap.js";
 
 const CHUNK = 500;   /* ids in one statement's json array: about 14 KB, well inside D1's statement size */
 const MARK = "UPDATE draft SET committed_at=?1 WHERE committed_at IS NULL AND status='approved' AND id IN (SELECT value FROM json_each(?2))";
+/* Fable's review (29 Oct 2026): an input admission (a reward unit or a loan repayment held against its balance) leaves `accepted` only when its draft is committed, and the fold's own mark does that in the same batch;
+   this mark is not the fold's, so it does it too, or a spent unit stays reserved for ever and the balance is held twice. Only an admission still accepted, only for these drafts. */
+const ADMIT = "UPDATE input_admission SET state='committed' WHERE state='accepted' AND id IN (SELECT value FROM json_each(?1))";
+/* the same batch undone for a compaction the Book refused: only what THIS run marked (its own moment), so a refusal leaves every draft as it found it */
+const UNMARK = "UPDATE draft SET committed_at=NULL WHERE committed_at=?1 AND status='approved' AND id IN (SELECT value FROM json_each(?2))";
+const UNADMIT = "UPDATE input_admission SET state='accepted' WHERE state='committed' AND id IN (SELECT value FROM json_each(?1)) AND id IN (SELECT id FROM draft WHERE committed_at IS NULL)";
+/* the Worker's clock and the Book's are two clocks: a draft marked after the base's moment would still be on its way, so the moment is made the base's for every closed draft */
+const CLAMP = "UPDATE draft SET committed_at=?1 WHERE committed_at > ?1 AND status='approved' AND id IN (SELECT value FROM json_each(?2))";
 const LEFT = "SELECT COUNT(*) AS n FROM draft WHERE committed_at IS NULL AND status='approved' AND id IN (SELECT value FROM json_each(?1))";
 const chunks = (ids) => { const out = []; for (let i = 0; i < ids.length; i += CHUNK) out.push(ids.slice(i, i + CHUNK)); return out; };
 
-async function ask(env, path, method) {
+async function ask(env, path, method, body) {
   const stub = env.BOOK.get(env.BOOK.idFromName(BOOK_NAME));
-  const r = await stub.fetch(new Request("https://book/" + path, { method }));
+  const r = await stub.fetch(new Request("https://book/" + path, body === undefined ? { method } : { method, body: JSON.stringify(body) }));
   return { status: r.status, body: await r.json().catch(() => ({})) };
 }
 
@@ -44,17 +52,23 @@ export async function compactAndMark(env, { dry = false, now = new Date().toISOS
   if (notApproved.length) return { ok: false, status: 409, error: "an open entry's draft is not approved, so the Book is not compacted", notApproved };
   let marked = 0;
   if (open.length) {
-    const rs = await db.batch(chunks(open).map((part) => db.prepare(MARK).bind(now, JSON.stringify(part))));
-    for (const r of rs) marked += Number((r && r.meta && r.meta.changes) || 0);
+    const stmts = [];
+    for (const part of chunks(open)) stmts.push(db.prepare(MARK).bind(now, JSON.stringify(part)), db.prepare(ADMIT).bind(JSON.stringify(part)));
+    const rs = await db.batch(stmts);
+    for (let i = 0; i < rs.length; i += 2) marked += Number((rs[i] && rs[i].meta && rs[i].meta.changes) || 0);
   }
-  const c = await ask(env, "compact", "POST");
-  if (!c.body || !c.body.ok) return { ok: false, status: c.status === 200 ? 409 : c.status, error: String((c.body && c.body.error) || "the Book would not compact").slice(0, 300), open: open.length, marked, markedBeforeRefusal: true };
+  /* the ids it verified approved are the ones the Book may close: an entry opened since (a tap between the read and this) is refused, so nothing unapproved is sealed into the base */
+  const c = await ask(env, "compact", "POST", { expect: open });
+  if (!c.body || !c.body.ok) {
+    if (open.length > 0) { try { await db.batch(chunks(open).flatMap((part) => [db.prepare(UNMARK).bind(now, JSON.stringify(part)), db.prepare(UNADMIT).bind(JSON.stringify(part))])); } catch (e) { /* the next run marks again */ } }
+    return { ok: false, status: c.status === 200 ? 409 : c.status, error: String((c.body && c.body.error) || "the Book would not compact").slice(0, 300), open: open.length, marked: 0, unmarked: true };
+  }
   /* the Book's own log says what is closed, so a retry after a failure past its commit marks what is left */
   const all = await ask(env, "events?all=1", "GET");
   const closed = all.body && Array.isArray(all.body.entries) ? all.body.entries.filter((e) => e.folded_at && !e.voided_at).map((e) => e.draft_id) : (c.body.closed || []);
   /* a retry finds nothing open and the Book answers no moment: its latest load's moment is then the one the base holds the rows at or before */
   const at = c.body.at || ((await ask(env, "at", "GET")).body || {}).at || now;
-  if (closed.length) await db.batch(chunks(closed).map((part) => db.prepare(MARK).bind(at, JSON.stringify(part))));
+  if (closed.length) await db.batch(chunks(closed).flatMap((part) => [db.prepare(MARK).bind(at, JSON.stringify(part)), db.prepare(CLAMP).bind(at, JSON.stringify(part)), db.prepare(ADMIT).bind(JSON.stringify(part))]));
   let left = 0;
   for (const part of chunks(closed)) { const r = await db.prepare(LEFT).bind(JSON.stringify(part)).first(); left += Number((r && r.n) || 0); }
   return { ok: left === 0, status: left === 0 ? 200 : 500, ...(left ? { error: left + " closed entries' drafts are still uncommitted after the mark" } : {}), open: open.length, compacted: c.body.compacted || 0, closed: closed.length, marked, left, at, bookRev: c.body.bookRev };

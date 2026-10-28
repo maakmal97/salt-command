@@ -135,6 +135,54 @@ export async function run({ ok }) {
     ok(r2.status === 500 && r2.body.ok === false && r2.body.left === 1 && /still uncommitted/.test(r2.body.error), "a mark that did not land fails the run with the count left, never reads as done: " + JSON.stringify(r2.body));
   }
 
+  /* 2b: Fable's review of 29 Oct 2026, each a way the compaction's marks could cost money */
+  {
+    const { compactAndMark } = await import("../src/book-compact.js");
+    const adm = (W, id, state = "accepted") => W.db.prepare("INSERT INTO input_admission (id,fingerprint,resource,amount,snapshot,entry,state) VALUES (?,?,?,?,?,?,?)").run(id, "f" + id, "loan:l1", 5, "book@1", "{}", state);
+    const admState = (W, id) => (W.db.prepare("SELECT state FROM input_admission WHERE id=?").get(id) || {}).state;
+    /* a reward unit or a loan repayment held against its balance is released when its draft is committed, here as the fold's own mark does it */
+    {
+      const B = mkBook(); await B.load();
+      const W = world([{ id: IDN(1), status: "approved" }, { id: IDN(2), status: "approved" }]); W.flag("book");
+      adm(W, IDN(1)); adm(W, "2031-01-09T00:00:00.000Z");
+      const env = { BOOK: B.ns, SALT_LEDGER: W.D1 };
+      await B.tap([sale(IDN(1), 1)]); await B.tap([sale(IDN(2), 2)]);
+      const r = await compactAndMark(env);
+      ok(r.ok && admState(W, IDN(1)) === "committed" && admState(W, "2031-01-09T00:00:00.000Z") === "accepted", "an admission held for a closed draft is released, and an admission for a draft the compaction did not close is left alone: " + JSON.stringify([r.ok, admState(W, IDN(1)), admState(W, "2031-01-09T00:00:00.000Z")]));
+    }
+    /* a compaction the Book refuses leaves every draft and admission as it found it */
+    {
+      const B = mkBook(); await B.load();
+      const W = world([{ id: IDN(1), status: "approved" }, { id: IDN(2), status: "approved", committed: "2026-01-01T00:00:00.000Z" }]); W.flag("book");
+      adm(W, IDN(1));
+      const refusing = { idFromName: (n) => n, get: () => ({ fetch: (r) => (new URL(r.url).pathname === "/compact" && !r.url.includes("dry=1") ? Promise.resolve(Response.json({ ok: false, error: "refused" }, { status: 409 })) : B.b.fetch(r)) }) };
+      await B.tap([sale(IDN(1), 1)]); await B.tap([sale(IDN(2), 2)]);
+      const r = await compactAndMark({ BOOK: refusing, SALT_LEDGER: W.D1 });
+      ok(!r.ok && r.status === 409 && W.committed(IDN(1)) === null && admState(W, IDN(1)) === "accepted" && W.committed(IDN(2)) === "2026-01-01T00:00:00.000Z", "a refused compaction takes back the marks this run made (the draft and its admission) and leaves a draft committed before it alone: " + JSON.stringify([r, W.committed(IDN(1)), admState(W, IDN(1)), W.committed(IDN(2))]));
+    }
+    /* the Worker's clock ahead of the Book's: the closed drafts are brought back to the base's moment */
+    {
+      const B = mkBook(); await B.load();
+      const W = world([{ id: IDN(1), status: "approved" }]); W.flag("book");
+      await B.tap([sale(IDN(1), 1)]);
+      const r = await compactAndMark({ BOOK: B.ns, SALT_LEDGER: W.D1 }, { now: "2099-01-01T00:00:00.000Z" }), a = await B.at();
+      const way = W.db.prepare("SELECT COUNT(*) AS n FROM draft WHERE " + onItsWay(boundOf({ at: a.at, booked: a.booked }))).get().n;
+      ok(r.ok && W.committed(IDN(1)) <= a.at && way === 0, "a Worker clock ahead of the Book's leaves no closed draft marked after the base's moment, so none counts twice: " + JSON.stringify([W.committed(IDN(1)), a.at, way]));
+    }
+    /* a tap that lands between the check and the compaction is not sealed into the base */
+    {
+      const B = mkBook(); await B.load();
+      const W = world([{ id: IDN(1), status: "approved" }, { id: IDN(5), status: "pending" }]); W.flag("book");
+      await B.tap([sale(IDN(1), 1)]);
+      B.me.hook = () => { B.b.tap({ items: [sale(IDN(5), 9)], day: "2031-01-02", v: V }); };
+      const r = await compactAndMark({ BOOK: B.ns, SALT_LEDGER: W.D1 }), a = await B.at();
+      ok(!r.ok && r.status === 409 && /booked since/.test(r.error) && a.booked.length === 2 && W.committed(IDN(1)) === null, "an entry booked after its draft was checked refuses the compaction, which seals nothing and takes its marks back: " + JSON.stringify([r.status, r.error, a.booked.length, W.committed(IDN(1))]));
+      B.me.hook = null;
+      const direct = await B.call("/compact", { method: "POST", body: JSON.stringify({ expect: [IDN(1)] }) }), plain = await B.call("/compact?dry=1", { method: "POST" });
+      ok(direct.status === 409 && direct.fresh && direct.fresh.join() === IDN(5) && plain.ok, "the Book itself names the entry it was not told of, and a caller that names none is as it was");
+    }
+  }
+
   /* 3: the dispatch */
   {
     const fetchLog = [], realF = globalThis.fetch, realL = console.log;
@@ -211,6 +259,8 @@ export async function run({ ok }) {
       ok(ad2.status !== 0 && !/"ok": true/.test(ad2.out) && /7403/.test(ad2.out), "--approved stops when the flag cannot be read, though the rows could be: " + ad2.status + " " + ad2.out.slice(0, 120).replace(/s+/g, " "));
       const up = tool("update.mjs", [], BOOKS);
       ok(up.status === 3 && /REFUSED/.test(up.out) && /update\.mjs/.test(up.out) && !/PREFLIGHT/i.test(up.out), "update.mjs is refused with the Book as the source before its preflight: " + up.status + " " + up.out.slice(0, 120));
+      const sd = tool("d1.mjs", ["--seed"], BOOKS), sd2 = tool("d1.mjs", ["--seed"], REF, 1);
+      ok(sd.status === 3 && /REFUSED/.test(sd.out) && /d1.mjs --seed/.test(sd.out) && sd2.status === 3, "the hand seed of the mirror is refused with the Book as the source, and when the flag cannot be read: " + [sd.status, sd2.status]);
       const up2 = tool("update.mjs", [], REF, 1);
       ok(up2.status === 3 && /REFUSED/.test(up2.out), "and when the flag cannot be read");
       const sf = tool("source-flag.mjs", [], BOOKS), sf2 = tool("source-flag.mjs", ["--refuse", "a road"], D1S), sf3 = tool("source-flag.mjs", [], REF, 1);

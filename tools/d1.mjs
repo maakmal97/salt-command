@@ -19,6 +19,7 @@
  *   --local                       act on the local D1 rather than the remote one
  */
 import { againIfLapsed } from "./cloudflare.mjs";
+import { refuseIfBook } from "./source-flag.mjs";
 import { d1Result, d1Rows, commandArgs } from "./d1json.mjs";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { spawnSync } from "node:child_process";
@@ -351,6 +352,8 @@ else if (arg === "--schema") applySchema();
 else if (arg === "--verify") verify();
 else if (arg === "--prove") await prove();
 else if (arg === "--seed") {
+  /* S5f-3 (Fable's review): re-seeding the mirror from the checkout makes its version newer than the Book's and every tap fall back; with the Book as the source nothing re-seeds it */
+  if (WHERE === "--remote") refuseIfBook("d1.mjs --seed", WHERE);
   const s = seed();
   if (s && !verify() && s === "held") fail("the snapshot names this book and the rows do not match it: seed it again with --seed --force");
 }

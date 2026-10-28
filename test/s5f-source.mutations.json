@@ -20,7 +20,7 @@
  {
   "name": "the flag reads another table",
   "file": "src/book-read.js",
-  "find": "SELECT mode FROM book_source WHERE one=1",
+  "find": "prepare(\"SELECT mode FROM book_source WHERE one=1\")",
   "replace": "SELECT mode FROM book_roster WHERE one=1"
  },
  {

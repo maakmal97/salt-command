@@ -22,7 +22,7 @@
  */
 import { sendPush } from "./push.js";
 import { boundOf, onItsWay, landedBy } from "./way.js";
-import { wayBound, versionToken, snapshotWithSource, tokenFrom, BOOK_TOKEN } from "./book-read.js";
+import { wayBound, versionToken, snapshotWithSource, tokenFrom, BookDown, BOOK_TOKEN } from "./book-read.js";
 import { readBook, bookOnce, withRefunds, draftRow, cogsFor, floorFor, usualFor, pricingOf, stageDigest, runDrafter, settlePre, withPending, noteQueued, offerDigest, isOfferPre } from "./drafter.js";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { admitInput, admitInputs } from "./input-admission.js";
@@ -969,7 +969,8 @@ async function acctInFlight(db, except, way) {
 export async function rowRoom(db, direction = "SELL", onWay, mirror) {
   /* 30 Sep 2026: the book and the payments on their way are two reads that wait on nothing of each other, so both go at once */
   /* S3: the book first, then the payments on their way by ITS bound: a tap whose two reads straddle a load counts a payment once */
-  const book = await (mirror ? mirror() : readBook(db)).catch(() => null);
+  /* Fable's review (29 Oct 2026): a Book that is the source and will not answer is an error, not an empty book: an empty book has no row for any key, and a money tap (Cash received, Received, a restate) would pass a room check that found nothing to check */
+  const book = await (mirror ? mirror() : readBook(db)).catch((e) => { if (e instanceof BookDown) throw e; return null; });
   const way = onWay || await paysOnWay(db, direction, boundOf(book));
   const isSale = direction !== "BUY";
   const sales = ((book && book[isSale ? "sales" : "purchases"]) || []).filter((s) => s && !s.cancelled);

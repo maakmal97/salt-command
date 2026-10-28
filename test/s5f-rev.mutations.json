@@ -190,5 +190,17 @@
   "file": "tools/stmt-publish.mjs",
   "find": "if (!/^\\d+$/.test(bookRev)) throw new Error(\"SALT_BOOK_REV is not a revision: \" + bookRev);",
   "replace": ""
+ },
+ {
+  "name": "a money tap's room check reads an empty book",
+  "file": "src/orders.js",
+  "find": ".catch((e) => { if (e instanceof BookDown) throw e; return null; });",
+  "replace": ".catch(() => null);"
+ },
+ {
+  "name": "the tie-out's due test reads git's version",
+  "file": "src/worker.js",
+  "find": "const snapV = { v: await tokenFrom(env.SALT_LEDGER, await snapshotWithSource(env.SALT_LEDGER, \"v\")).catch(() => null) };",
+  "replace": "const snapV = await env.SALT_LEDGER.prepare(\"SELECT v FROM snapshot WHERE one=1\").first();"
  }
 ]

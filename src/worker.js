@@ -18,7 +18,7 @@
  */
 
 import { runDrafter, dryRunDrafter, readBook, readMirror, bookOnce, withDraftLots, withRefunds, draftRow, tripCheck, bindBook, wayBound } from "./drafter.js";
-import { bookDirect, compareReads, readMode, versionToken, BOOK_TOKEN } from "./book-read.js";
+import { bookDirect, compareReads, readMode, versionToken, snapshotWithSource, tokenFrom, BOOK_TOKEN } from "./book-read.js";
 import { drainOutbox } from "./outbox.js";
 import { pageMode, servedBook } from "./book-page.js";
 import { bookTap, bookNet, ridStmts, voidEntries, voidUnlessApproved, tapMode, sourceMode, TAP_COLS } from "./book-tap.js";
@@ -30,7 +30,7 @@ import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, TIEOUT_KEY, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades, wakeAdmin, ADMIN_ON } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault, fixtureCheck } from "./maker.js";
 import { makerCustomerReading, makerRewardReadingOf, makerCustomerReadingOf } from "./maker-inputs.js";
-import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerLedgerMini, makerStock, makerUndo, makerRows, openRefunds, makerRewardReading, makerDriftPreview } from "./maker-inputs.js";
+import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerEdit, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerLedgerMini, makerStock, makerUndo, makerRows, openRefunds, makerRewardReading, makerDriftPreview } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerAppointmentClaim, makerOrderOnce } from "./maker-request.js";
 import { readVaultRegistrations } from "./vault-pair.js";
 import POSITION_ENGINE from "../engine/position.mjs";
@@ -772,7 +772,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     && !/^\/_internal\/maker\/fixture-claims\/0000-000[0-2]\/a[0-9]{14}-[a-z0-9]{1,8}\/preview$/.test(p)
     && !/^\/_internal\/maker\/claims\/[a-z0-9]{4}-[a-z0-9]{4}\/a[0-9]{14}-[a-z0-9]{1,8}\/(preview|received|notfound)$/.test(p)
     && !/^\/_internal\/maker\/threads\/[a-z0-9]{4}-[a-z0-9]{4}$/.test(p)
-    && !/^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|partner|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend|trip-pay|trip-join)$/.test(p)
+    && !/^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|partner|edit|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend|trip-pay|trip-join)$/.test(p)
     && !/^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(p) && p !== "/_internal/maker/drafts/decide-many"
     && !/^\/_internal\/maker\/queue\/[^/]+\/withdraw$/.test(p)
     && p !== "/_internal/maker/order-again" && p !== "/_internal/maker/words" && p !== "/_internal/maker/fixture-check"
@@ -913,7 +913,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
   if (p === "/_internal/maker/inputs") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     if (!env.SALT_LEDGER) return json({ ok: false, error: "the Desk mirror is required" }, 503);
-    const book = await readBook(env.SALT_LEDGER);
+    const book = await withRefunds(env.SALT_LEDGER, await readBook(env.SALT_LEDGER));   /* S5f-5: the catalogue lists the open refunds for Salt Admin's refund card */
     if (!book.version) return json({ ok: false, error: "the mirror is being seeded" }, 503);
     let registrations = [];
     if (env.VAULT_STORE === "pair") {
@@ -1136,7 +1136,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     return json({ ok: true, again, whole });
   }
   if (p === "/_internal/maker/inputs/offset"
-    || /^\/_internal\/maker\/inputs\/(stock-count|sale|purchase|tier-set|partner|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend|trip-pay|trip-join)$/.test(p)) {
+    || /^\/_internal\/maker\/inputs\/(stock-count|sale|purchase|tier-set|partner|edit|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend|trip-pay|trip-join)$/.test(p)) {
     let body;
     try {
       const text = await request.text();
@@ -1196,7 +1196,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       try { held = await offsetHeld(env); }
       catch (error) { return json({ ok: false, error: String(error && error.message || error) }, 503); }
     }
-    const resourcePending = ["sale", "redeem", "partner"].includes(operation) ? await reservedInputs(env.SALT_LEDGER, book) : [];
+    const resourcePending = ["sale", "redeem", "partner", "edit"].includes(operation) ? await reservedInputs(env.SALT_LEDGER, book) : [];
     let registrations = [];
     if (["sale", "purchase"].includes(operation) && env.VAULT_STORE === "pair") {
       try { registrations = await readVaultRegistrations(env.SALT_LEDGER); }
@@ -1214,6 +1214,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       : operation === "house-sizes" ? makerHouseSizes(body, book)
       : operation === "tier-set" ? makerTierSet(body, book)
       : operation === "partner" ? makerPartner(body, book, resourcePending)
+      : operation === "edit" ? makerEdit(body, book, resourcePending)
         : operation === "ledger-amend" ? makerLedgerAmendment(body, book, undoCtx)
           : operation === "trip-pay" ? makerTripPay(body, book, tripHeld)
           : operation === "trip-join" ? makerTripJoin(body, book)
@@ -2823,9 +2824,10 @@ export default {
         /* 17 Oct 2026, HIS FLOW: THE TIE-OUT, after each version the book moves to and every six hours, kept for Counter Admin's Ledger */
         if (env.SALT_LEDGER && env.SALT_QUEUE) try {
           const last = await env.SALT_QUEUE.get(TIEOUT_KEY, "json");
-          const snapV = await env.SALT_LEDGER.prepare("SELECT v FROM snapshot WHERE one=1").first();
+          /* S5f-4 (Fable's review): the version a tie-out was for is the token the pass uses (git's, or the Book's revision), or it would read as due every minute with the Book as the source */
+          const snapV = { v: await tokenFrom(env.SALT_LEDGER, await snapshotWithSource(env.SALT_LEDGER, "v")).catch(() => null) };
           const age = Date.now() - Date.parse(last && last.at || 0);
-          const due = !last || !last.ok || (snapV && last.v !== snapV.v) || age > 6 * 3600000 || (!last.clean && age > 5 * 60000);
+          const due = !last || !last.ok || (snapV && snapV.v && last.v !== snapV.v) || age > 6 * 3600000 || (!last.clean && age > 5 * 60000);
           if (due) {
             const tie = await tieOut(env, mirror);
             await env.SALT_QUEUE.put(TIEOUT_KEY, JSON.stringify(tie));
@@ -2876,6 +2878,8 @@ export default {
         try {
           const bn = await bookNet(env.SALT_LEDGER);
           if (bn.booked || bn.voided || bn.left) console.log("book net: " + JSON.stringify(bn));
+          /* Fable's review: a booking or a void moves the revision, and with the Book as the source a statement sealed before it is withheld until a publish; an approval asks for one, the net does too */
+          if ((bn.booked || bn.voided) && await sourceMode(env.SALT_LEDGER) === "book") await wantPublish(env, "book net");
         } catch (e) { console.log("book net FAILED: " + String((e && e.stack) || e)); }
         /* the drafter's net still runs on the quarter-hour, as it did when this schedule ran every fifteen minutes */
         if (new Date(event.scheduledTime || Date.now()).getUTCMinutes() % 15 === 0) {

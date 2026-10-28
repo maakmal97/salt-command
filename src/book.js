@@ -214,6 +214,8 @@ const noNote = (v) => canon(JSON.parse(JSON.stringify(v === undefined ? null : v
 const TAP_PURE = ["STATED_STOCK", "PROD_OPENING", "COUNTS", "COUNT_ON", "loans", "sales", "purchases"];
 /* S5: and, when a roster entry or a rename was among the folded, what the road writes: the roster, the associates and partners, the places and the starting %s (a rename re-keys sales and purchases too, already compared) */
 const ROSTER_PURE = ["roster", "associates", "partners", "PLACED", "TIER_OF"];
+/* S5f-5: and, when an edit entry was among the folded, the refunds it marked paid or took off (a refund carries no rid, so it is keyed by its content: an edit is the one entry that changes or removes rows of such a list, and the strict load below allows exactly that many rows to go) */
+const EDIT_PURE = ["customerRefunds"];
 /* THE TAP CHECK: the view as it stood before a load against the view after it, for the entries the load folded. If the fold and the tap run one law the view does not move.
    Always the rows the entries minted; and, when the batch was nothing but entries (`pure`), every list and document but the notes and the watermark (stock, counts, loans). Names only. */
 export function tapDiffer(pre, post, folded, pure) {
@@ -233,7 +235,7 @@ export function tapDiffer(pre, post, folded, pure) {
     for (const x of e.fx.roster || []) if (x.register && !moved.has(x.code) && !rosterPost.has(x.code)) differ.push("roster " + x.code + " (not in the base)");
     for (const rn of e.fx.renames || []) for (const [f, t] of rn.pairs || []) if (rosterPost.has(f) || !rosterPost.has(t)) differ.push("roster " + f + " to " + t + " (not moved in the base)");
   }
-  if (pure) for (const k of folded.some((e) => e.coll === "roster" || e.coll === "rename") ? TAP_PURE.concat(ROSTER_PURE) : TAP_PURE) {
+  if (pure) for (const k of TAP_PURE.concat(folded.some((e) => e.coll === "roster" || e.coll === "rename") ? ROSTER_PURE : [], folded.some((e) => e.coll === "edit") ? EDIT_PURE : [])) {
     const a = pre.book[k], b = post.book[k];
     if (Array.isArray(a) && Array.isArray(b)) { const key = (l) => l.map(noNote).sort().join("|"); if (key(a) !== key(b)) differ.push(k); }
     else if (noNote(a) !== noNote(b)) differ.push(k);
@@ -351,11 +353,11 @@ export class Book {
         const done = evs.filter((e) => said.has(e.draft_id) || byRid(e) || byEffect(e));
         for (const e of done) sql.exec("UPDATE booked SET folded_at = ? WHERE seq = ?", at, e.seq);
         const rest = evs.filter((e) => !done.includes(e)), post = this.viewOf(rest);
-        tap = { folded: done.length, open: rest.length, stuck: post.stuck.map((s) => s.id), clash,
+        tap = { folded: done.length, open: rest.length, edits: done.filter((e) => JSON.parse(e.item).collection === "edit").length, stuck: post.stuck.map((s) => s.id), clash,
           differ: done.length ? tapDiffer(pre, post, done.map((e) => ({ rids: JSON.parse(e.rids), coll: JSON.parse(e.item).collection, fx: e.effects ? JSON.parse(e.effects) : null })), !!opts.pure && !rest.length) : [] };
       }
       /* S5a: a strict load (compaction) is refused, and the whole transaction with it, when the view it would write is not the view that was read, or when it would lose a row */
-      if (opts.strict && (!tap || tap.differ.length || tap.stuck.length || tap.open || n.gone || !tap.folded))
+      if (opts.strict && (!tap || tap.differ.length || tap.stuck.length || tap.open || n.gone > (tap ? tap.edits : 0) || !tap.folded))
         throw new Refused("compaction refused: " + JSON.stringify(tap ? { differ: tap.differ, stuck: tap.stuck, open: tap.open, gone: n.gone, folded: tap.folded } : { entries: 0 }));
       const moved = n.added + n.revised + n.gone + n.returned > 0 || !!(tap && tap.folded);
       /* S5f-4: a load's derived documents are as fresh as the revision it leaves; a compaction rewrites the documents it already held, so it leaves where they were computed (`keepDerived`) */
@@ -609,12 +611,14 @@ export class Book {
      and the dry rehearsal on every fold is the alarm for the first one that does.) The Book's own view (the base with every open entry replayed) becomes the new base, by the SAME load path (prepare, load) as a git load, with every open entry marked
      folded in that transaction. STRICT: the load's own tap check must find the view unchanged, no entry stuck, and no row lost, or the whole transaction is thrown away. `dry` prepares it,
      reads the same checks off the plan and writes nothing: what the chain asks after every fold. Entries are kept (the event log), only closed. */
-  compact(dry) {
+  compact(dry, expect) {
     return this.state.blockConcurrencyWhile(async () => {
       const sql = this.state.storage.sql, snap = sql.exec("SELECT v, stamped FROM snap WHERE one = 1").toArray()[0];
       if (!snap) return { ok: false, status: 503, error: "the Book holds no snapshot yet" };
       const evs = this.events();
       if (!evs.length) return { ok: true, compacted: 0, open: 0, dry: !!dry };
+      /* Fable's review (29 Oct 2026): a caller that checked its drafts approved names them; an entry opened since is not one it checked, so it is not sealed into the base */
+      if (Array.isArray(expect)) { const known = new Set(expect), fresh = evs.filter((e) => !known.has(e.draft_id)).map((e) => e.draft_id); if (fresh.length) return { ok: false, status: 409, error: "an entry was booked since the drafts were checked, so the Book is not compacted", fresh }; }
       const view = this.viewOf(evs);
       if (view.stuck.length) return { ok: false, status: 409, error: "an entry is stuck, so the view is not whole", stuck: view.stuck.map((s) => s.id) };
       const { PRICING, ...rest } = view.derived;
@@ -724,7 +728,7 @@ export class Book {
     }
     if ((url.pathname === "/events" && request.method === "GET") || ((url.pathname === "/tap" || url.pathname === "/void" || url.pathname === "/compact") && request.method === "POST") || (url.pathname === "/export" && request.method === "GET")) {
       if (this.isTest()) return Response.json({ ok: false, error: "not found" }, { status: 404 });
-      if (url.pathname === "/compact") { const r = await this.compact(url.searchParams.get("dry") === "1"); return Response.json(r, { status: r.status || (r.ok ? 200 : 409) }); }
+      if (url.pathname === "/compact") { let eb = null; if (request.method === "POST") { try { eb = JSON.parse(await request.text() || "null"); } catch (e) { eb = null; } } const r = await this.compact(url.searchParams.get("dry") === "1", eb && Array.isArray(eb.expect) ? eb.expect : undefined); return Response.json(r, { status: r.status || (r.ok ? 200 : 409) }); }
       if (url.pathname === "/export") { const r = await this.exportAll(); return Response.json(r, { status: r.status || (r.ok ? 200 : 503) }); }
       if (url.pathname === "/events" && url.searchParams.get("all") === "1") { const s = this.state.storage.sql.exec("SELECT at, rev FROM snap WHERE one = 1").toArray()[0]; return Response.json({ ok: true, at: s ? s.at : null, rev: s ? s.rev : 0, entries: this.allEvents() }); }
       if (url.pathname === "/events") { const s = this.state.storage.sql.exec("SELECT at FROM snap WHERE one = 1").toArray()[0]; return Response.json({ ok: true, at: s ? s.at : null, ids: this.events().map((e) => e.draft_id) }); }
