@@ -26,6 +26,12 @@ export async function rosterMode(db) {
   try { const r = await db.prepare("SELECT mode FROM book_roster WHERE one=1").first(); return r && r.mode === "on" ? "on" : "off"; } catch (e) { return "off"; }
 }
 
+/** 'd1' or 'book': WHICH STORE IS THE SOURCE OF THE LEDGER (migrations/0023, `book_source`, shipped 'd1'; S5f, the flip). Anything but an explicit 'book' reads 'd1', so a missing table, an unreadable row or a
+    store before the migration is the old world: git's book is the source and the fold writes it. Every guard of the flip keys off this one read. */
+export async function sourceMode(db) {
+  try { const r = await db.prepare("SELECT mode FROM book_source WHERE one=1").first(); return r && r.mode === "book" ? "book" : "d1"; } catch (e) { return "d1"; }
+}
+
 /** a draft's D1 row as the item the fold stages (tools/drafts.mjs approvedRows), made approved at `at` by `by` */
 export function stagedItem(r, at, by) {
   return { id: r.id, status: "approved", collection: r.collection, row: parse(r.row, null), reasoning: r.reasoning == null ? null : r.reasoning,

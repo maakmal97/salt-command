@@ -1,0 +1,44 @@
+[
+ {
+  "name": "any word reads as the Book",
+  "file": "src/book-tap.js",
+  "find": "return r && r.mode === \"book\" ? \"book\" : \"d1\"; } catch (e) { return \"d1\"; }",
+  "replace": "return r && r.mode ? \"book\" : \"d1\"; } catch (e) { return \"d1\"; }"
+ },
+ {
+  "name": "an unreadable store reads as the Book",
+  "file": "src/book-tap.js",
+  "find": "return r && r.mode === \"book\" ? \"book\" : \"d1\"; } catch (e) { return \"d1\"; }",
+  "replace": "return r && r.mode === \"book\" ? \"book\" : \"d1\"; } catch (e) { return \"book\"; }"
+ },
+ {
+  "name": "an empty row reads as the Book",
+  "file": "src/book-tap.js",
+  "find": "return r && r.mode === \"book\" ? \"book\" : \"d1\"; } catch (e) { return \"d1\"; }",
+  "replace": "return !r || r.mode === \"book\" ? \"book\" : \"d1\"; } catch (e) { return \"d1\"; }"
+ },
+ {
+  "name": "the flag reads another table",
+  "file": "src/book-tap.js",
+  "find": "SELECT mode FROM book_source WHERE one=1",
+  "replace": "SELECT mode FROM book_roster WHERE one=1"
+ },
+ {
+  "name": "the migration ships the Book",
+  "file": "migrations/0023_book_source.sql",
+  "find": "VALUES (1, 'd1')",
+  "replace": "VALUES (1, 'book')"
+ },
+ {
+  "name": "the migration allows any word",
+  "file": "migrations/0023_book_source.sql",
+  "find": "CHECK (mode IN ('d1','book'))",
+  "replace": "CHECK (length(mode) > 0)"
+ },
+ {
+  "name": "the migration also drops a table",
+  "file": "migrations/0023_book_source.sql",
+  "find": "INSERT OR IGNORE INTO book_source",
+  "replace": "DROP TABLE IF EXISTS book_roster;\nINSERT OR IGNORE INTO book_source"
+ }
+]
