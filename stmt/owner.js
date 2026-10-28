@@ -585,7 +585,7 @@ export const OWNER_JS = `
     s.appendChild(head);
     mine.forEach(function(r){
       var waits=(cat.editWaiting||[]).some(function(w){ return w.party===r.party&&w.since===r.since&&+w.amount===+r.amount; });
-      var row=el('div','arefund__row'); row.appendChild(el('p','anote',rm(r.amount)+' to '+r.party+', '+r.since+(waits?'. Waiting under Approve.':'.')));
+      var row=el('div','arefund__row'); row.appendChild(el('p','anote',rm(r.amount)+' to '+r.party+', '+r.since+(waits?'. Waiting under Approve.':'. Paid marks it returned; Remove as stale takes it off the book, and the money received rises by it.')));
       s.appendChild(row); if(waits) return;
       var answer=el('p','anote'); answer.setAttribute('role','status');
       [['Mark paid today','refundPaid','Sent. It is marked paid once you approve it.'],['Remove as stale','refundRemove','Sent. It comes off the book once you approve it.']].forEach(function(k){

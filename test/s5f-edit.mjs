@@ -104,6 +104,16 @@ export async function run({ ok }) {
     const loseSpare = await mkP((b) => { b[spare].shift(); });
     let e3 = null; try { S.B.load(loseSpare, "t", { folded: evs.map((e) => e.draft_id), pure: true, strict: true }); } catch (e) { e3 = e.message; }
     ok(!!spare && /compaction refused/.test(e3 || "") && /\"gone\":[1-9]/.test(e3 || "") && !/"differ":\[[^\]]/.test(e3 || ""), "a row lost from a list nothing compares is refused by the row-loss guard alone, edit or no edit: " + e3);
+    /* a refund that carries a rid is revised in place by a paid edit and spends no row: the budget is the refunds' alone, so a row lost elsewhere still refuses */
+    {
+      const rb = fb(); rb.customerRefunds.push({ party: "ZZ1-AAA", amount: 22, since: T(1), rid: "s500", note: "keyed" });
+      const R = await bookOf(rb); await R.tap([item(IDN(1), { kind: "refundPaid", party: "ZZ1-AAA", since: T(1), amount: 22, paidOn: T(3) })]);
+      const rs = R.B.state.storage.sql.exec("SELECT v, stamped FROM snap").toArray()[0], revs = R.B.events();
+      const view = R.B.viewOf(R.B.events()); view.book[spare].shift(); const { PRICING: PR, ...rest } = view.derived;
+      const pp = await prepare(view.book, PR, { v: rs.v, stamped: rs.stamped, derived: rest });
+      let e5 = null; try { R.B.load(pp, "t", { folded: revs.map((e) => e.draft_id), pure: true, strict: true }); } catch (e) { e5 = e.message; }
+      ok(/compaction refused/.test(e5 || "") && /"gone":1/.test(e5 || ""), "with a paid edit of a keyed refund folded (no row gone for it) one row lost elsewhere is still refused: " + e5);
+    }
     const loseTwo = await mkP((b) => { b.customerRefunds.shift(); b.customerRefunds.shift(); });
     let e2 = null; try { S.B.load(loseTwo, "t", { folded: evs.map((e) => e.draft_id), pure: true, strict: true }); } catch (e) { e2 = e.message; }
     ok(/compaction refused/.test(e2 || ""), "and one that loses more refunds than the edits it folds is too: " + e2);

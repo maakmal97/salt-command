@@ -525,7 +525,7 @@ export function planBatch(book, staged, notes, ctx) {
         /* an amendment's row is the change and not a row, and its forced rids are generated rows alone: it is never judged a replay by a rid (D1's word closes its entry) */
         const alike = !it.amends && under && SAME.every((k) => r[k] === undefined || JSON.stringify(r[k]) === JSON.stringify(under[k]));
         if (alike) { out.refused.push({ id: it.id, why: `would be a replay: the rid ${held} this row was booked under is already on the book` }); continue; }
-        delete r.rids;   /* booked_seq stays: it is what keeps the drafter's cost standing for a row that was booked, and the fold strips it from the row it writes */
+        delete r.rids; delete r.tap_fallback;   /* booked_seq stays: it is what keeps the drafter's cost standing for a row that was booked, and the fold strips it from the row it writes */
       }
     }
     if (Array.isArray(r.rids) && r.rids.length) {
@@ -1063,7 +1063,7 @@ function bookItem(book, it, c) {
          shelf's RM60 a unit from p035's RM64. A notes cost is taken only where the draft carried none, or on a lot. */
       if (n.cost != null && !(it.append === "sales" && src.row.cost != null) && !isBooked(src)) row.cost = +n.cost;
       row.note = String(n.note).trim();
-      delete row.rids; delete row.booked_seq;   /* the tap's bookkeeping, not part of the row */
+      delete row.rids; delete row.booked_seq; delete row.tap_fallback;   /* the tap's bookkeeping, not part of the row */
       /* EVERY ROW GETS AN ID ON THE WAY IN (25 Aug 2026). A row with no rid cannot be named by
          the editor, so a fold that appended one without would put a row on the book that could
          never be corrected. Minted by the same function tools/rid.mjs uses, so the two cannot

@@ -312,7 +312,8 @@ export class Book {
         /* a place in the list is not a revision of the row */
         if (was.seq !== r.seq) sql.exec("UPDATE rows SET seq = ? WHERE coll = ? AND key = ?", r.seq, r.coll, r.key);
       }
-      for (const r of held.values()) if (!r.gone_at) { sql.exec("UPDATE rows SET gone_at = ? WHERE coll = ? AND key = ?", at, r.coll, r.key); n.gone++; }
+      n.goneOther = 0;   /* Fable's review (29 Oct 2026): rows gone outside customerRefunds, and keys of the state that left: an edit entry may take refunds and nothing else */
+      for (const r of held.values()) if (!r.gone_at) { sql.exec("UPDATE rows SET gone_at = ? WHERE coll = ? AND key = ?", at, r.coll, r.key); n.gone++; if (r.coll !== "customerRefunds") n.goneOther++; }
       const keep = new Set(p.state.map((s) => s.k));
       for (const s of p.state) {
         const was = sql.exec("SELECT h FROM state WHERE k = ?", s.k).toArray()[0];
@@ -320,7 +321,7 @@ export class Book {
         else if (was.h !== s.h) { sql.exec("UPDATE state SET doc = ?, h = ?, revised_at = ? WHERE k = ?", s.doc, s.h, at, s.k); n.revised++; }
       }
       /* a key the book no longer carries leaves with it (PRICING, and the derived documents, are the load's own, and stay when a load omits them) */
-      for (const r of sql.exec("SELECT k FROM state").toArray()) if (!keep.has(r.k) && r.k !== "PRICING" && !DERIVED.includes(r.k)) { sql.exec("DELETE FROM state WHERE k = ?", r.k); n.gone++; }
+      for (const r of sql.exec("SELECT k FROM state").toArray()) if (!keep.has(r.k) && r.k !== "PRICING" && !DERIVED.includes(r.k)) { sql.exec("DELETE FROM state WHERE k = ?", r.k); n.gone++; n.goneOther++; }
       const prevSnap = sql.exec("SELECT rev, derived_rev FROM snap WHERE one = 1").toArray()[0] || {}, prevRev = prevSnap.rev || 0, prevDerived = prevSnap.derived_rev || 0;
       if (p.snap) sql.exec("INSERT OR REPLACE INTO snap (one, v, stamped, at) VALUES (1, ?, ?, ?)", p.snap.v, p.snap.stamped, at);
       /* S4a: THE ENTRIES THIS LOAD FOLDED. One is folded when D1 says its draft is committed (`opts.folded`, ids the Worker checked) or when the new base holds every rid it minted;
@@ -357,7 +358,7 @@ export class Book {
           differ: done.length ? tapDiffer(pre, post, done.map((e) => ({ rids: JSON.parse(e.rids), coll: JSON.parse(e.item).collection, fx: e.effects ? JSON.parse(e.effects) : null })), !!opts.pure && !rest.length) : [] };
       }
       /* S5a: a strict load (compaction) is refused, and the whole transaction with it, when the view it would write is not the view that was read, or when it would lose a row */
-      if (opts.strict && (!tap || tap.differ.length || tap.stuck.length || tap.open || n.gone > (tap ? tap.edits : 0) || !tap.folded))
+      if (opts.strict && (!tap || tap.differ.length || tap.stuck.length || tap.open || n.goneOther > 0 || n.gone > (tap ? tap.edits : 0) || !tap.folded))
         throw new Refused("compaction refused: " + JSON.stringify(tap ? { differ: tap.differ, stuck: tap.stuck, open: tap.open, gone: n.gone, folded: tap.folded } : { entries: 0 }));
       const moved = n.added + n.revised + n.gone + n.returned > 0 || !!(tap && tap.folded);
       /* S5f-4: a load's derived documents are as fresh as the revision it leaves; a compaction rewrites the documents it already held, so it leaves where they were computed (`keepDerived`) */
@@ -686,18 +687,20 @@ export class Book {
     if (!n || !n.length || n.length > 200 || n.some(([rid, t]) => !/^[a-z]\d{3,6}$/.test(rid) || typeof t !== "string" || !t.trim() || t.length > 600)) return { ok: false, status: 400, error: "send {notes: {rid: text}}, 1 to 200 notes of 600 characters at most" };
     const sql = this.state.storage.sql, at = this.clock(), plan = [];
     for (const [rid, text] of n) {
-      const row = sql.exec("SELECT coll, key, doc, seq FROM rows WHERE key = ? AND gone_at IS NULL AND coll IN ('sales','purchases','loans')", "r:" + rid).toArray()[0];
+      const row = sql.exec("SELECT coll, key, doc, h, seq FROM rows WHERE key = ? AND gone_at IS NULL AND coll IN ('sales','purchases','loans')", "r:" + rid).toArray()[0];
       if (!row) continue;
       const doc = JSON.parse(row.doc);
       if (typeof doc.note === "string" && doc.note.trim()) continue;
       doc.note = text.trim();
       const d = canon(doc);
-      plan.push({ coll: row.coll, key: row.key, doc: d, h: await sha(d) });
+      plan.push({ coll: row.coll, key: row.key, doc: d, h: await sha(d), was: row.h });
     }
     return this.state.storage.transactionSync(() => {
-      for (const p of plan) sql.exec("UPDATE rows SET doc = ?, h = ?, revised_at = ? WHERE coll = ? AND key = ?", p.doc, p.h, at, p.coll, p.key);
-      if (plan.length) { sql.exec("UPDATE snap SET rev = rev + 1 WHERE one = 1"); this.memo = null; }
-      return { ok: true, written: plan.length, skipped: n.length - plan.length };
+      /* the row read before the hash was awaited is the row written over: one a load or a compaction changed in between is left (`h` must still be the one read) */
+      let wrote = 0;
+      for (const p of plan) { sql.exec("UPDATE rows SET doc = ?, h = ?, revised_at = ? WHERE coll = ? AND key = ? AND h = ?", p.doc, p.h, at, p.coll, p.key, p.was); const chk = sql.exec("SELECT h FROM rows WHERE coll = ? AND key = ?", p.coll, p.key).toArray()[0]; if (chk && chk.h === p.h) wrote++; }
+      if (plan.length && wrote) { sql.exec("UPDATE snap SET rev = rev + 1 WHERE one = 1"); this.memo = null; }
+      return { ok: true, written: wrote, skipped: n.length - wrote };
     });
   }
 

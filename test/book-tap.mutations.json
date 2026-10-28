@@ -128,8 +128,8 @@
  {
   "name": "a stale booking keeps its rids",
   "file": "engine/apply.mjs",
-  "find": "        delete r.rids;   /* booked_seq stays",
-  "replace": "        /* booked_seq stays"
+  "find": "        delete r.rids; delete r.tap_fallback;   /* booked_seq stays",
+  "replace": "        delete r.tap_fallback;   /* booked_seq stays"
  },
  {
   "name": "two staged rows may name one rid",
@@ -146,8 +146,8 @@
  {
   "name": "the tap's bookkeeping stays on the row",
   "file": "engine/apply.mjs",
-  "find": "delete row.rids; delete row.booked_seq;   /*",
-  "replace": "/*"
+  "find": "delete row.rids; delete row.booked_seq; delete row.tap_fallback;   /*",
+  "replace": "delete row.tap_fallback;   /*"
  },
  {
   "name": "the fold reads booked rows in drafted order",
@@ -236,7 +236,7 @@
  {
   "name": "a stale booking loses booked_seq and so the drafter's cost",
   "file": "engine/apply.mjs",
-  "find": "        delete r.rids;   /* booked_seq stays",
-  "replace": "        delete r.rids; delete r.booked_seq;   /* booked_seq stays"
+  "find": "        delete r.rids; delete r.tap_fallback;   /* booked_seq stays",
+  "replace": "        delete r.rids; delete r.tap_fallback; delete r.booked_seq;   /* booked_seq stays"
  }
 ]

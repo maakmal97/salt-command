@@ -44,8 +44,8 @@
  {
   "name": "a note leaves the revision where it was",
   "file": "src/book.js",
-  "find": "if (plan.length) { sql.exec(\"UPDATE snap SET rev = rev + 1 WHERE one = 1\"); this.memo = null; }",
-  "replace": "if (plan.length) { this.memo = null; }"
+  "find": "if (plan.length && wrote) { sql.exec(\"UPDATE snap SET rev = rev + 1 WHERE one = 1\"); this.memo = null; }",
+  "replace": "if (plan.length && wrote) { this.memo = null; }"
  },
  {
   "name": "a note is kept untrimmed",
@@ -138,10 +138,10 @@
   "replace": "          node tools/book-export.mjs"
  },
  {
-  "name": "the net's hour is another hour",
+  "name": "the day is never the day",
   "file": ".github/workflows/cloud-commit.yml",
-  "find": "[ \"$(date -u +%H)\" = \"16\" ]",
-  "replace": "[ \"$(date -u +%H)\" = \"15\" ]"
+  "find": "[ \"$(TZ=Asia/Kuala_Lumpur date +%H)\" -lt 6 ]",
+  "replace": "[ \"$(TZ=Asia/Kuala_Lumpur date +%H)\" -lt 0 ]"
  },
  {
   "name": "the publish export also runs on the day",
@@ -154,5 +154,11 @@
   "file": ".github/workflows/cloud-commit.yml",
   "find": "          if [ \"$export\" = \"1\" ]; then deploy=1; fi",
   "replace": ""
+ },
+ {
+  "name": "the fallback record rides into the ledger row",
+  "file": "engine/apply.mjs",
+  "find": "        delete r.rids; delete r.tap_fallback;   /* booked_seq stays",
+  "replace": "        delete r.rids;   /* booked_seq stays"
  }
 ]

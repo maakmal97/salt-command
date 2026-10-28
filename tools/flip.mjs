@@ -30,6 +30,16 @@ import { DATA_DIR } from "./book.mjs";
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const WAY_BACK = join(DATA_DIR, "flip-way-back.json");   /* the project's own data folder, which is never committed: the way back must survive this run */
 
+/** a GET of the Book's keyed routes (the readcheck), for the gate */
+export function realGet(env = process.env) {
+  const base = (env.SALT_BASE || "https://salt-command.qyts8mh72kyg.workers.dev").replace(/\/+$/, "");
+  return async (path) => {
+    const h = { "X-Book-Key": String(env.SALT_BOOK_KEY || "") };
+    if (env.CF_ACCESS_CLIENT_ID && env.CF_ACCESS_CLIENT_SECRET) { h["CF-Access-Client-Id"] = env.CF_ACCESS_CLIENT_ID; h["CF-Access-Client-Secret"] = env.CF_ACCESS_CLIENT_SECRET; }
+    const r = await fetch(base + path, { headers: h }); return { status: r.status, body: await r.json().catch(() => ({})) };
+  };
+}
+
 /** the real io: wrangler for D1, gh for Actions, git, node for the repo's own tools, fetch for the Book's keyed routes. Replaced by the suite. */
 export function realIo(env = process.env) {
   const sh = (cmd, args) => { const r = spawnSync(cmd, args, { cwd: REPO, encoding: "utf8", shell: process.platform === "win32", maxBuffer: 64 * 1024 * 1024 }); return { code: r.status === null ? 1 : r.status, out: (r.stdout || "") + (r.stderr || "") }; };
@@ -58,9 +68,9 @@ const flagOf = (io, t) => { const r = io.d1(`SELECT mode FROM ${t} WHERE one=1`)
 const setFlag = (io, t, m) => io.d1Write(`UPDATE ${t} SET mode='${m}' WHERE one=1`);
 
 /** the preconditions: the gate, level with origin, no run in flight, nothing approved and unbooked. Answers {ok, checks: [{id, ok, text}]}; reads only. */
-export function preflight(io, opts = {}) {
+export async function preflight(io, opts = {}) {
   const checks = [], add = (id, ok, text) => checks.push({ id, ok: ok === true, text });
-  const gate = io.judge(io.collect({ since: opts.since, backupOpened: opts.backupOpened }));
+  const gate = io.judge(await io.collect({ since: opts.since, backupOpened: opts.backupOpened, get: io.get }));
   add("gate", gate.ok, "the gate reads " + (gate.ok ? "true" : "NOT true:\n" + say(gate)));
   io.sh("git", ["fetch", "-q"]);
   const behind = io.sh("git", ["rev-list", "--count", "HEAD..origin/master"]), ahead = io.sh("git", ["rev-list", "--count", "origin/master..HEAD"]);
@@ -87,7 +97,7 @@ export const PLAN = [
 
 /** the flip. `opts.go` is his typed words, required to act; without it nothing is written. Answers {ok, dry, did: [], stoppedAt?, error?}. */
 export async function flip(io, opts = {}) {
-  const did = [], pre = preflight(io, opts), out = { ok: false, dry: !opts.go, pre, plan: PLAN, did };
+  const did = [], pre = await preflight(io, opts), out = { ok: false, dry: !opts.go, pre, plan: PLAN, did };
   if (!opts.go) { out.ok = pre.ok; return out; }
   if (typeof opts.go !== "string" || opts.go.trim().length < 8) return { ...out, error: "--go takes his typed words, not a bare flag" };
   if (!pre.ok) return { ...out, error: "a precondition does not stand: " + pre.checks.filter((c) => !c.ok).map((c) => c.id).join(", "), stoppedAt: "preflight" };
@@ -103,7 +113,10 @@ export async function flip(io, opts = {}) {
   const r3 = setFlag(io, "book_roster", "on"); if (r3.code !== 0 || flagOf(io, "book_roster") !== "on") return stop("3", "book_roster did not read on after it was set");
   did.push("3 book_roster on");
   const r4 = io.sh("node", ["tools/roster-export.mjs", "--init"]); if (r4.code !== 0) return stop("4", r4.out);
-  did.push("4 roster-export --init");
+  /* the chain reads the watermark from origin, not from this checkout: it is committed and pushed, or every day's export replays the roster from the start (Fable's review) */
+  const w1 = io.sh("git", ["add", "statements/_roster_export.json"]), w2 = io.sh("git", ["commit", "-q", "-m", "The flip: the roster export's watermark", "--", "statements/_roster_export.json"]), w3 = io.sh("git", ["push", "origin", "HEAD:master"]);
+  if (w1.code !== 0 || w2.code !== 0 || w3.code !== 0) return stop("4", "the watermark was written and could not be committed and pushed: " + [w1, w2, w3].filter((x) => x.code !== 0).map((x) => x.out).join(" "));
+  did.push("4 roster-export --init, the watermark pushed");
   const r5 = setFlag(io, "book_source", "book"); if (r5.code !== 0 || flagOf(io, "book_source") !== "book") return stop("5", "book_source did not read book after it was set");
   did.push("5 book_source book");
   const r6 = await io.post("/book/compact", {}); if (r6.status !== 200 || !r6.body.ok) return stop("6", "the compaction: " + JSON.stringify(r6.body).slice(0, 200));
@@ -132,13 +145,18 @@ export async function back(io, opts = {}) {
   const did = [];
   if (typeof opts.go !== "string" || opts.go.trim().length < 8) return { ok: false, did, error: "--back takes his typed words" };
   const stop = (step, error) => ({ ok: false, did, stoppedAt: step, error: String(error).slice(0, 300) });
-  const d = io.sh("gh", ["workflow", "run", "cloud-commit.yml", "-f", "export=true", "-f", "reason=the way back's export"]); if (d.code !== 0) return stop("export", d.out);
-  did.push("the day's export dispatched: wait for it green before going on (the run is the export)");
-  if (!opts.exported) return { ok: true, did, waiting: "re-run with --exported once the export run is green", exportedFirst: true };
+  /* `noExport`: the flip stopped before anything was compacted (step 6 refused), so there is nothing to export and the way back is the flags alone */
+  if (!opts.exported && !opts.noExport) {
+    const d = io.sh("gh", ["workflow", "run", "cloud-commit.yml", "-f", "export=true", "-f", "reason=the way back's export"]); if (d.code !== 0) return stop("export", d.out);
+    did.push("the day's export dispatched: wait for it green before going on (the run is the export)");
+    return { ok: true, did, waiting: "re-run with --exported once the export run is green", exportedFirst: true };
+  }
   const s = setFlag(io, "book_source", "d1"); if (s.code !== 0 || flagOf(io, "book_source") !== "d1") return stop("flag", "book_source did not read d1");
   did.push("book_source d1");
   const r = setFlag(io, "book_roster", "off"); if (r.code !== 0) return stop("roster", r.out);
   did.push("book_roster off");
+  /* the mirror is seeded from the export the chain pushed, not from whatever this checkout held: pulled, the extract made again, then seeded */
+  if (!opts.noExport) { const pu = io.sh("git", ["pull", "--ff-only"]); if (pu.code !== 0) return stop("pull", pu.out); const lg = io.sh("node", ["tools/ledger.mjs"]); if (lg.code !== 0) return stop("extract", lg.out); }
   const seed = io.sh("node", ["tools/d1.mjs", "--seed"]); if (seed.code !== 0) return stop("seed", seed.out);
   did.push("the mirror seeded from the export");
   const since = io.d1("SELECT id, collection FROM draft WHERE status='approved' AND json_extract(CASE WHEN json_valid(row) THEN row ELSE '{}' END,'$.booked_seq') IS NOT NULL AND committed_at IS NULL ORDER BY id");
@@ -149,7 +167,7 @@ const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv
 if (isMain) {
   const a = process.argv.slice(2), val = (f) => { const i = a.indexOf(f); return i >= 0 ? a[i + 1] : null; };
   const io = realIo();
-  const r = a.includes("--verify") ? await verify(io) : a.includes("--back") ? await back(io, { go: val("--back"), exported: a.includes("--exported") }) : await flip(io, { go: val("--go"), backupOpened: val("--backup-opened"), since: val("--since") });
+  const r = a.includes("--verify") ? await verify(io) : a.includes("--back") ? await back(io, { go: val("--back"), exported: a.includes("--exported"), noExport: a.includes("--no-export") }) : await flip(io, { go: val("--go"), backupOpened: val("--backup-opened"), since: val("--since") });
   console.log(JSON.stringify(r, (k, v) => (k === "gate" ? undefined : v), 1));
   if (r.pre && !r.ok) console.log("\n" + r.pre.checks.map((c) => (c.ok ? "  ok   " : "  NOT  ") + c.text).join("\n"));
   process.exit(r.ok ? 0 : 1);

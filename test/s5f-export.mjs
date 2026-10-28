@@ -68,6 +68,14 @@ export async function run({ ok }) {
     ok(g.status === 200 && g.body.ok && n.status === 200 && n.body.ok, "and with the Book as the source it reaches both verbs: " + JSON.stringify([g.status, n.status]));
   }
 
+  /* 2a: the fallback record is bookkeeping and never part of the row the Book holds (Fable's review) */
+  {
+    const B = mk(); await B.load();
+    const it = sale(IDN(1), 2); it.row.tap_fallback = { why: "the Book was behind", at: "2026-10-29T00:00:00.000Z" };
+    const tp = await B.tap([it]), rd = await B.read(), mine = rd.rows.sales.filter((s) => !fb().sales.some((o) => o.rid === s.rid));
+    ok(tp.ok && mine.length === 1 && !("tap_fallback" in mine[0]), "a draft that fell back once carries its record on the draft and not into the ledger row: " + JSON.stringify(mine[0] && Object.keys(mine[0])));
+  }
+
   /* 2: notes */
   {
     const B = mk(); await B.load(); await B.tap([sale(IDN(1), 2)]); await B.post("/compact");   /* a note can be written only into the base: the row an open entry holds is not in it yet */
@@ -138,7 +146,7 @@ export async function run({ ok }) {
     ok(!!day && /if: steps\.plan\.outputs\.export == '1'/.test(day) && /roster-export\.mjs --apply/.test(day) && /book-export\.mjs --day/.test(day) && /gate\.mjs/.test(day) && /git push origin HEAD:master/.test(day) && /SALT_BOOK_KEY/.test(day), "the day's export is a step: the roster road's files, the export, the build and the gate, then the commit and push as the runner");
     ok(!!pub && /steps\.source\.outputs\.mode == 'book' && steps\.plan\.outputs\.export != '1'/.test(pub) && /roster-export\.mjs --apply/.test(pub) && /book-export\.mjs\n?$/.test(pub.trim().split("\n").slice(-1)[0].replace(/^\s+/, "")), "every other book-mode run brings the checkout level with the Book before the publish");
     ok(yml.indexOf("Export the Book to the checkout for the publish") < yml.indexOf("- name: Deploy the statements site") && yml.indexOf("Export the Book to git (the day's record)") < yml.indexOf("- name: Already serving?") && !/steps\.plan\.outputs\.export/.test(publish || "") && !/mode/.test((publish || "").split("\n").find((l) => /^\s+if:/.test(l)) || ""), "the day's export comes before the deploy is decided, the publish export before the publish, and the publish is not gated on either");
-    ok(/export=0/.test(yml) && /\[ "\$\(date -u \+%H\)" = "16" \]/.test(yml) && /inputs\.export/.test(yml) && /\[ "\$export" = "1" \]; then deploy=1; fi/.test(yml) && /echo "export=\$export" >> "\$GITHUB_OUTPUT"/.test(yml) && /^      export:\n        description:/m.test(yml), "the plan decides the day by the net's hour (16 UTC is 00:23 in Kuala Lumpur) or a dispatch, makes it a deploy, and the dispatch declares the input");
+    ok(/export=0/.test(yml) && /\[ "\$\(TZ=Asia\/Kuala_Lumpur date \+%H\)" -lt 6 \]/.test(yml) && /inputs\.export/.test(yml) && /\[ "\$export" = "1" \]; then deploy=1; fi/.test(yml) && /echo "export=\$export" >> "\$GITHUB_OUTPUT"/.test(yml) && /^      export:\n        description:/m.test(yml), "the plan decides the day by a scheduled start between 00:00 and 05:59 in Kuala Lumpur (the 00:23 net, however late it starts) or a dispatch, makes it a deploy, and the dispatch declares the input");
     ok(!/SALT_BOOK_REV/.test(yml.replace(/#[^\n]*/g, "")), "and the workflow never sets SALT_BOOK_REV itself: only the export tool does, so with git as the source the stamp is the build id alone");
   }
 }

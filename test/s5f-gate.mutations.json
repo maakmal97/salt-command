@@ -56,8 +56,8 @@
  {
   "name": "a fallback is allowed",
   "file": "tools/flip-gate.mjs",
-  "find": "d.fallbacks === 0, d ?",
-  "replace": "true, d ?"
+  "find": "d.fallbacks > 0 ? false :",
+  "replace": "false ? false :"
  },
  {
   "name": "a pricing difference is allowed",
@@ -146,8 +146,8 @@
  {
   "name": "the way back moves flags before the export",
   "file": "tools/flip.mjs",
-  "find": "if (!opts.exported) return {",
-  "replace": "if (false) return {"
+  "find": "if (!opts.exported && !opts.noExport) {",
+  "replace": "if (false) {"
  },
  {
   "name": "the way back does not return the source",
@@ -160,5 +160,59 @@
   "file": "tools/flip.mjs",
   "find": "rc.status === 200 && rc.body.ok === true && rc.body.source === \"book\"",
   "replace": "true"
+ },
+ {
+  "name": "a fallback record shorter than seven days passes",
+  "file": "tools/flip-gate.mjs",
+  "find": "recorded !== null && recorded >= cfg.fallbackDays ? true : null",
+  "replace": "true"
+ },
+ {
+  "name": "an unread voided count passes",
+  "file": "tools/flip-gate.mjs",
+  "find": "!d || d.voidedNotRejected === null || d.voidedNotRejected === undefined ? null :",
+  "replace": "!d ? null :"
+ },
+ {
+  "name": "a new row is an Add ID",
+  "file": "tools/flip-gate.mjs",
+  "find": "SUM(collection IN ('sales','purchases','loan') AND amends IS NULL) AS newIds",
+  "replace": "SUM(collection='roster' AND amends IS NULL) AS newIds"
+ },
+ {
+  "name": "a roster row the fold booked is a hand approval",
+  "file": "tools/flip-gate.mjs",
+  "find": "AND collection NOT IN ('roster','rename') AND json_extract",
+  "replace": "AND json_extract"
+ },
+ {
+  "name": "the readcheck count is read from a bad answer",
+  "file": "tools/flip-gate.mjs",
+  "find": "r.status === 200 && Number.isInteger(r.body.voidedUnrejected)",
+  "replace": "Number.isInteger(r.body.voidedUnrejected)"
+ },
+ {
+  "name": "the watermark is not pushed",
+  "file": "tools/flip.mjs",
+  "find": "if (w1.code !== 0 || w2.code !== 0 || w3.code !== 0) return stop(\"4\"",
+  "replace": "if (false) return stop(\"4\""
+ },
+ {
+  "name": "the way back seeds without pulling",
+  "file": "tools/flip.mjs",
+  "find": "const pu = io.sh(\"git\", [\"pull\", \"--ff-only\"]);",
+  "replace": "const pu = { code: 0, out: \"\" };"
+ },
+ {
+  "name": "the way back with no export still pulls",
+  "file": "tools/flip.mjs",
+  "find": "if (!opts.noExport) { const pu",
+  "replace": "if (true) { const pu"
+ },
+ {
+  "name": "the roster export needs SALT_BASE",
+  "file": "tools/roster-export.mjs",
+  "find": "const base = process.env.SALT_BASE || \"https://salt-command.qyts8mh72kyg.workers.dev\";",
+  "replace": "const base = process.env.SALT_BASE; if (!base) { console.log(\"  FAIL  SALT_BASE is not set\"); process.exit(1); }"
  }
 ]

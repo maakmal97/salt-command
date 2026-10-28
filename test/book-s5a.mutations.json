@@ -62,7 +62,7 @@
  {
   "name": "a strict load may lose a row",
   "file": "src/book.js",
-  "find": "|| tap.open || n.gone > (tap ? tap.edits : 0) || !tap.folded)",
+  "find": "|| tap.open || n.goneOther > 0 || n.gone > (tap ? tap.edits : 0) || !tap.folded)",
   "replace": "|| tap.open || !tap.folded)"
  },
  {
@@ -164,8 +164,8 @@
  {
   "name": "the readcheck hides the revision",
   "file": "src/worker.js",
-  "find": "mode: await readMode(env.SALT_LEDGER), source: await sourceMode(env.SALT_LEDGER), bookRev, compact });",
-  "replace": "mode: await readMode(env.SALT_LEDGER), source: await sourceMode(env.SALT_LEDGER), compact });"
+  "find": "mode: await readMode(env.SALT_LEDGER), source: await sourceMode(env.SALT_LEDGER), bookRev, compact, voidedUnrejected });",
+  "replace": "mode: await readMode(env.SALT_LEDGER), source: await sourceMode(env.SALT_LEDGER), compact, voidedUnrejected });"
  },
  {
   "name": "the readcheck hides the compaction",
@@ -220,5 +220,11 @@
   "file": "src/book.js",
   "find": "compactable: evs.length, closed, rows:",
   "replace": "compactable: evs.length, closed: [], rows:"
+ },
+ {
+  "name": "the readcheck counts a rejected draft as an unrejected void",
+  "file": "src/worker.js",
+  "find": "WHERE status<>'rejected' AND id IN (",
+  "replace": "WHERE status='rejected' AND id IN ("
  }
 ]

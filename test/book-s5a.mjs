@@ -208,5 +208,14 @@ export async function run({ ok }) {
   const waits = [];
   try { await worker.scheduled({ cron: BACKUP_CRON, scheduledTime: Date.parse("2026-10-28T18:30:00.000Z") }, { BACKUP: cb, BACKUP_PUBLIC_JWK: pub, BOOK: nsOf(E), SALT_LEDGER: W.D1, SALT_QUEUE: cq }, { waitUntil(p) { waits.push(p); } }); await Promise.all(waits); } finally { console.log = was; }
   ok([...cb.m.keys()].some((k) => k.startsWith("bookexport/")) && lines.some((l) => /^book export: .*"ok":true/.test(l)), "the nightly job files the Book's export beside the backup, and says so in the log: " + J(lines.filter((l) => /book export/.test(l))));
+  /* S5f-7 (Fable's review): the readcheck counts the entries taken back whose draft is not rejected, for the flip's gate */
+  {
+    const RV = mk(); await RV.load(); await RV.tap([sale(IDN(1), 2, T(2))]); await RV.post("/void", { ids: [IDN(1)] });
+    const W2 = await world(RV);
+    const rc2 = async () => (await worker.fetch(new Request("https://salt.test/book/readcheck", { headers: { "X-Book-Key": "bk" } }), { REQUIRE_ACCESS: "0", SALT_BOOK_KEY: "bk", SALT_WRITE_KEY: "wk", BOOK: nsOf(RV), SALT_LEDGER: W2.D1 }, { waitUntil() {} })).json();
+    W2.db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,drafter,drafted_at) VALUES (?,'approved','sales','{}','{}','r','d','d')").run(IDN(1));
+    const v1 = await rc2(); W2.db.exec("UPDATE draft SET status='rejected' WHERE id='" + IDN(1) + "'"); const v2 = await rc2();
+    ok(v1.voidedUnrejected === 1 && v2.voidedUnrejected === 0, "the readcheck counts an entry taken back whose draft is still approved, and none once the draft is rejected: " + JSON.stringify([v1.voidedUnrejected, v2.voidedUnrejected]));
+  }
   function J(v) { return JSON.stringify(v); }
 }

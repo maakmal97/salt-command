@@ -89,8 +89,7 @@ if (isMain) {
   const argv = process.argv.slice(2), has = (f) => argv.includes(f);
   const MARK = resolve(REPO, "statements", "_roster_export.json"), USERS = resolve(REPO, "statements", "_users.json"), PLACES = resolve(REPO, "geo", "places.json"), SUITE = resolve(REPO, "test", "verify.mjs");
   const mark = existsSync(MARK) ? JSON.parse(readFileSync(MARK, "utf8")) : { seq: 0 };
-  const base = process.env.SALT_BASE;
-  if (!base) { console.log("  FAIL  SALT_BASE is not set"); process.exit(1); }
+  const base = process.env.SALT_BASE || "https://salt-command.qyts8mh72kyg.workers.dev";   /* Fable's review of 29 Oct 2026: the chain sets none, and every sibling tool defaults it */
   const res = await fetchRoster(base, process.env, has("--init") ? 0 : mark.seq);
   if (res.error) { console.log("  FAIL  the Book's roster entries were not read: " + res.error); process.exit(1); }
   if (has("--init")) {

@@ -16,7 +16,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { d1Rows, commandArgs } from "./d1json.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-export const GATE = { since: "2026-10-28", earliest: "2026-11-04", minTaps: 20, minNewIds: 5 };
+/* `fallbackFrom`: the moment the version that records an approval's fall back to the fold went live (S5f-7 noteFallback); a fallback before it left no trace, so G5 reads only over the days since, and needs seven of them. */
+export const GATE = { since: "2026-10-28", earliest: "2026-11-04", minTaps: 20, minNewIds: 5, fallbackFrom: "2026-10-29T12:00:00.000Z", fallbackDays: 7 };
 
 /** the chain's load, readcheck, pricing-parity and export lines out of one run's log text (a line carries its text after a timestamp) */
 export function parseLog(text) {
@@ -46,17 +47,19 @@ export function judge(ev, cfg = GATE) {
   /* G2 */
   const closed = withTap.reduce((a, l) => a + l.closed, 0);
   const k = d && d.kinds;
-  line("G2", `at least ${cfg.minTaps} taps closed, ${cfg.minNewIds} of them new rows with a minted ID, one trip, one purchase lot and one Received`,
+  line("G2", `at least ${cfg.minTaps} taps closed, ${cfg.minNewIds} of them new rows with a minted rid (a new sale, purchase or loan: an Add ID is the fold's alone until the roster flag is on), one trip, one purchase lot and one Received`,
     !loads.length || !k ? null : closed >= cfg.minTaps && k.newIds >= cfg.minNewIds && k.trips >= 1 && k.purchases >= 1 && k.received >= 1,
-    `${closed} closed by loads; booked by the tap in the window: ${k ? `${k.booked} rows, ${k.newIds} new IDs, ${k.trips} trip rows, ${k.purchases} purchases, ${k.received} Received` : "unread"}`);
+    `${closed} closed by loads; booked by the tap in the window: ${k ? `${k.booked} rows, ${k.newIds} new rows (a sale, purchase or loan that minted its own rid), ${k.trips} trip rows, ${k.purchases} purchases, ${k.received} Received` : "unread"}`);
   /* G3 */
   const badReads = reads.filter((r) => !r.ok);
   line("G3", "the readcheck green at every load", !reads.length ? null : !badReads.length, reads.length + " readchecks read, " + badReads.length + " not green" + (badReads[0] ? ": " + badReads[0].line.slice(0, 160) : ""));
   /* G4 */
-  line("G4", "the minute net's left at 0 (no approved draft waiting unbooked past ten minutes) and nothing voided but after a rejection", !d ? null : d.left === 0 && d.voidedNotRejected === 0,
-    d ? `${d.left} approved and unbooked past ten minutes; ${d.voidedNotRejected} entries voided whose draft was not rejected` : "D1 unread");
+  line("G4", "the minute net's left at 0 (no approved draft waiting unbooked past ten minutes) and nothing voided but after a rejection", !d || d.voidedNotRejected === null || d.voidedNotRejected === undefined ? null : d.left === 0 && d.voidedNotRejected === 0,
+    d ? `${d.left} approved and unbooked past ten minutes; ${d.voidedNotRejected === null || d.voidedNotRejected === undefined ? "entries voided whose draft was not rejected: UNREAD (the readcheck answered none)" : d.voidedNotRejected + " entries voided whose draft was not rejected"}` : "D1 unread");
   /* G5 */
-  line("G5", "zero approvals that fell back to the fold (the Book refused a rule the fold would take)", !d ? null : d.fallbacks === 0, d ? `${d.fallbacks} approvals recorded as fallen back since ${d.fallbackSince || "the window"}` : "D1 unread");
+  const recorded = ev.now && cfg.fallbackFrom ? Math.floor((Date.parse(ev.now) - Date.parse(cfg.fallbackFrom)) / 864e5) : null;
+  line("G5", `zero approvals that fell back to the fold (the Book refused a rule the fold would take), over ${cfg.fallbackDays} days that were recorded`, !d ? null : d.fallbacks > 0 ? false : recorded !== null && recorded >= cfg.fallbackDays ? true : null,
+    d ? `${d.fallbacks} approvals recorded as fallen back; recording began ${cfg.fallbackFrom}, ${recorded === null ? "unknown" : recorded + " of " + cfg.fallbackDays} days ago (an earlier fallback left no trace)` : "D1 unread");
   /* G6 */
   const badPar = par.filter((p) => !p.ok);
   line("G6", "the Worker's PRICING equal to the page's at every load, after a lot included", !par.length ? null : !badPar.length, par.length + " parity lines read, " + badPar.length + " not equal" + (badPar[0] ? ": " + badPar[0].line.slice(0, 160) : ""));
@@ -91,13 +94,14 @@ export function collectRuns(since, run = sh) {
 
 export function collectD1(since, run = sh) {
   const q = (sql) => d1(sql, run);
-  const kinds = q(`SELECT COUNT(*) AS booked, SUM(collection='roster' AND json_extract(row,'$.partner') IS NULL AND amends IS NULL) AS newIds, SUM(json_extract(row,'$.trip') IS NOT NULL) AS trips, SUM(collection='purchases' AND amends IS NULL) AS purchases, SUM(amends IS NOT NULL AND amend_kind IN ('Payment','Fulfilment')) AS received FROM draft WHERE status='approved' AND decided_at >= '${since}' AND json_extract(CASE WHEN json_valid(row) THEN row ELSE '{}' END,'$.booked_seq') IS NOT NULL`);
+  const kinds = q(`SELECT COUNT(*) AS booked, SUM(collection IN ('sales','purchases','loan') AND amends IS NULL) AS newIds, SUM(json_extract(row,'$.trip') IS NOT NULL) AS trips, SUM(collection='purchases' AND amends IS NULL) AS purchases, SUM(amends IS NOT NULL AND amend_kind IN ('Payment','Fulfilment')) AS received FROM draft WHERE status='approved' AND decided_at >= '${since}' AND json_extract(CASE WHEN json_valid(row) THEN row ELSE '{}' END,'$.booked_seq') IS NOT NULL`);
   const left = q(`SELECT COUNT(*) AS n FROM draft WHERE status='approved' AND committed_at IS NULL AND decided_at < strftime('%Y-%m-%dT%H:%M:%fZ','now','-10 minutes') AND json_extract(CASE WHEN json_valid(row) THEN row ELSE '{}' END,'$.booked_seq') IS NULL`);
   const fb = q(`SELECT COUNT(*) AS n, MIN(json_extract(row,'$.tap_fallback.at')) AS first FROM draft WHERE json_extract(CASE WHEN json_valid(row) THEN row ELSE '{}' END,'$.tap_fallback') IS NOT NULL AND decided_at >= '${since}'`);
-  const hand = q(`SELECT SUM(decided_by LIKE '%laptop%' OR decided_by LIKE '%drafts.mjs%' OR decided_by LIKE '%hand%') AS h, SUM(committed_at IS NOT NULL AND json_extract(CASE WHEN json_valid(row) THEN row ELSE '{}' END,'$.booked_seq') IS NULL) AS f FROM draft WHERE status='approved' AND decided_at >= '${since}'`);
+  /* from the first approval the tap booked, and never the fold's alone (an Add ID or a rename is the fold's until the roster flag is on): a row approved before the tap was on, or one only the fold may book, is not a hand approval */
+  const hand = q(`SELECT SUM(decided_by LIKE '%laptop%' OR decided_by LIKE '%drafts.mjs%' OR decided_by LIKE '%hand%') AS h, SUM(committed_at IS NOT NULL AND collection NOT IN ('roster','rename') AND json_extract(CASE WHEN json_valid(row) THEN row ELSE '{}' END,'$.booked_seq') IS NULL) AS f FROM draft WHERE status='approved' AND decided_at >= MAX('${since}', COALESCE((SELECT MIN(decided_at) FROM draft WHERE json_extract(CASE WHEN json_valid(row) THEN row ELSE '{}' END,'$.booked_seq') IS NOT NULL), '${since}'))`);
   if (!kinds || !left || !fb || !hand) return null;
   return { kinds: { booked: +kinds[0].booked || 0, newIds: +kinds[0].newIds || 0, trips: +kinds[0].trips || 0, purchases: +kinds[0].purchases || 0, received: +kinds[0].received || 0 },
-    left: +left[0].n || 0, voidedNotRejected: 0, fallbacks: +fb[0].n || 0, fallbackSince: fb[0].first || null, laptopApprovals: +hand[0].h || 0, foldedUnbooked: +hand[0].f || 0 };
+    left: +left[0].n || 0, voidedNotRejected: null, fallbacks: +fb[0].n || 0, fallbackSince: fb[0].first || null, laptopApprovals: +hand[0].h || 0, foldedUnbooked: +hand[0].f || 0 };
 }
 
 export function collectPre(run = sh) {
@@ -109,9 +113,16 @@ export function collectPre(run = sh) {
     exportSteps: yml.code === 0 && /Export the Book to git \(the day's record\)/.test(yml.out) && /Export the Book to the checkout for the publish/.test(yml.out), handoff: handoff.code === 0 && handoff.out.trim().length > 0 };
 }
 
-export function collect(opts = {}, run = sh) {
-  const since = (opts.since || GATE.since) + "T00:00:00.000Z";
-  return { since, now: new Date().toISOString(), backupOpened: opts.backupOpened || null, runs: collectRuns(since, run) || [], d1: collectD1(since, run), pre: collectPre(run) };
+/** the readcheck's count of entries voided whose draft was not rejected (GET /book/readcheck), or null: it needs the Book's key like every tool that reads the Book */
+export async function collectVoided(get) {
+  try { const r = await get("/book/readcheck"); return r && r.status === 200 && Number.isInteger(r.body.voidedUnrejected) ? r.body.voidedUnrejected : null; } catch (e) { return null; }
+}
+
+export async function collect(opts = {}, run = sh, get = opts.get) {
+  const since = (opts.since && opts.since.length > 10 ? opts.since : (opts.since || GATE.since) + "T00:00:00.000Z");
+  const d = collectD1(since, run);
+  if (d && get) d.voidedNotRejected = await collectVoided(get);
+  return { since, now: new Date().toISOString(), backupOpened: opts.backupOpened || null, runs: collectRuns(since, run) || [], d1: d, pre: collectPre(run) };
 }
 
 export const say = (r) => r.lines.map((x) => `  ${x.ok === true ? "ok        " : x.ok === false ? "NOT MET   " : "UNVERIFIED"} ${x.id}  ${x.text}\n              ${x.detail}`).join("\n") + `\n\n  The gate reads ${r.ok ? "TRUE" : "NOT TRUE"} over ${r.window.runs} chain runs since ${String(r.window.since).slice(0, 10)}.`;
@@ -119,7 +130,8 @@ export const say = (r) => r.lines.map((x) => `  ${x.ok === true ? "ok        " :
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
   const a = process.argv.slice(2), val = (f) => { const i = a.indexOf(f); return i >= 0 ? a[i + 1] : null; };
-  const r = judge(collect({ since: val("--since"), backupOpened: val("--backup-opened") }));
+  const { realGet } = await import("./flip.mjs");
+  const r = judge(await collect({ since: val("--since"), backupOpened: val("--backup-opened"), get: realGet() }));
   console.log(a.includes("--json") ? JSON.stringify(r, null, 1) : say(r));
   process.exit(r.ok ? 0 : 1);
 }

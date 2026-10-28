@@ -349,7 +349,19 @@ async function handleBookReadcheck(request, env, m) {
       if (cp && cp.ok) compact = { open: cp.compactable || cp.open || 0 };
       else if (cp && !cp.stuck) { r.differ.push("compaction would be refused (" + String(cp.error || "no answer").slice(0, 160) + ")"); r.ok = false; }
     } catch (e) { /* an object before S5a has no compaction to rehearse */ }
-    return json({ ok: r.ok, differ: r.differ, rows: r.rows || 0, version: mirror.version, bookVersion: res ? res.v : null, mode: await readMode(env.SALT_LEDGER), source: await sourceMode(env.SALT_LEDGER), bookRev, compact });
+    /* S5f-7 (Fable's review): an entry taken back is right only after a rejection; one whose draft is not rejected is a sale the Book dropped that D1 still approves. Counted for the flip's gate (names never printed). */
+    let voidedUnrejected = null;
+    try {
+      const ev = await (await env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)).fetch(new Request("https://book/events?all=1"))).json();
+      const ids = ((ev && ev.entries) || []).filter((e) => e.voided_at).map((e) => e.draft_id);
+      voidedUnrejected = 0;
+      for (let i = 0; i < ids.length; i += 50) {
+        const part = ids.slice(i, i + 50);
+        const rs = await env.SALT_LEDGER.prepare("SELECT COUNT(*) AS n FROM draft WHERE status<>'rejected' AND id IN (" + part.map((_, k) => "?" + (k + 1)).join(",") + ")").bind(...part).first();
+        voidedUnrejected += Number((rs && rs.n) || 0);
+      }
+    } catch (e) { voidedUnrejected = null; }
+    return json({ ok: r.ok, differ: r.differ, rows: r.rows || 0, version: mirror.version, bookVersion: res ? res.v : null, mode: await readMode(env.SALT_LEDGER), source: await sourceMode(env.SALT_LEDGER), bookRev, compact, voidedUnrejected });
   } catch (e) { return json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }, 500); }
 }
 

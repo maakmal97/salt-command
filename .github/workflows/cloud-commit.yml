@@ -288,9 +288,9 @@ jobs:
         id: plan
         run: |
           fold=0
-          # S5f-6: with the Book as the source nothing folds; the day's export (the 00:23 Kuala Lumpur net, which is hour 16 UTC, or a dispatch asking for it) is a deploy, since it rebuilds the page over the exported book
+          # S5f-6: with the Book as the source nothing folds; the day's export (a scheduled run that starts between 00:00 and 05:59 in Kuala Lumpur, which the 00:23 net is however late GitHub starts it, or a dispatch asking for it) is a deploy, since it rebuilds the page over the exported book
           export=0
-          if [ "${{ steps.source.outputs.mode }}" = "book" ] && { [ "${{ inputs.export }}" = "true" ] || { [ "${{ github.event_name }}" = "schedule" ] && [ "$(date -u +%H)" = "16" ]; }; }; then export=1; fi
+          if [ "${{ steps.source.outputs.mode }}" = "book" ] && { [ "${{ inputs.export }}" = "true" ] || { [ "${{ github.event_name }}" = "schedule" ] && [ "$(TZ=Asia/Kuala_Lumpur date +%H)" -lt 6 ]; }; }; then export=1; fi
           if [ "${{ steps.guard.outputs.staged }}" = "1" ] || [ "${{ steps.commit.outputs.staged }}" = "1" ]; then fold=1; fi
           deploy=0
           if [ "${{ github.event_name }}" = "push" ]; then deploy=1; fi

@@ -8,6 +8,7 @@
  *   6  the way back and the verify */
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync, readdirSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -44,7 +45,7 @@ export async function run({ ok }) {
 
   /* 2: the gate */
   const run1 = { id: 1, at: "2026-10-30T01:00:00Z", log: p }, runs = [run1, { id: 2, at: "2026-10-31T01:00:00Z", log: G.parseLog(log.split("\n").slice(0, 5).join("\n").replace("tap: 3 closed", "tap: 20 closed")) }];
-  const green = { runs, now: "2026-11-05T01:00:00.000Z", backupOpened: "2026-11-02", since: "2026-10-28", d1: { kinds: { booked: 30, newIds: 5, trips: 1, purchases: 1, received: 2 }, left: 0, voidedNotRejected: 0, fallbacks: 0, laptopApprovals: 0, foldedUnbooked: 0 },
+  const green = { runs, now: "2026-11-06T01:00:00.000Z", backupOpened: "2026-11-02", since: "2026-10-28", d1: { kinds: { booked: 30, newIds: 5, trips: 1, purchases: 1, received: 2 }, left: 0, voidedNotRejected: 0, fallbacks: 0, laptopApprovals: 0, foldedUnbooked: 0 },
     pre: { migrations: true, tap: "on", read: "book", source: "d1", exportSteps: true, handoff: false } };
   green.runs = [{ id: 1, at: "x", log: G.parseLog(log.split("\n").slice(0, 5).join("\n").replace("tap: 3 closed", "tap: 23 closed")) }];
   const r0 = G.judge(green);
@@ -61,6 +62,9 @@ export async function run({ ok }) {
     ["G2", (e) => { e.runs[0].log.loads[0].closed = 19; }],
     ["G3", (e) => { e.runs[0].log.readchecks[0].ok = false; }],
     ["G4", (e) => { e.d1.left = 1; }],
+    ["G4", (e) => { e.d1.voidedNotRejected = 2; }],
+    ["G4", (e) => { e.d1.voidedNotRejected = null; }],
+    ["G5", (e) => { e.now = "2026-11-04T01:00:00.000Z"; }],
     ["G5", (e) => { e.d1.fallbacks = 1; }],
     ["G6", (e) => { e.runs[0].log.parity[0].ok = false; }],
     ["G7", (e) => { e.backupOpened = null; }],
@@ -88,13 +92,21 @@ export async function run({ ok }) {
   const cd = G.collectD1("2026-10-28T00:00:00.000Z", fakeRun);
   ok(cd && cd.kinds.booked === 31 && cd.kinds.newIds === 6 && cd.kinds.trips === 2 && cd.kinds.purchases === 3 && cd.kinds.received === 4 && cd.left === 0 && cd.fallbacks === 0 && cd.laptopApprovals === 0 && cd.foldedUnbooked === 0, "the D1 evidence is read as kinds, left, fallbacks and hand approvals: " + JSON.stringify(cd));
   const sqls = seen.map((x) => x[1]).join("\n");
-  ok(/booked_seq/.test(sqls) && /tap_fallback/.test(sqls) && /decided_by LIKE/.test(sqls) && /-10 minutes/.test(sqls) && /2026-10-28T00:00:00\.000Z/.test(sqls), "from the drafts decided in the window, the booking, the fallback record and the ten minutes the net is given");
+  ok(/collection IN \('sales','purchases','loan'\)/.test(sqls) && /collection NOT IN \('roster','rename'\)/.test(sqls) && /MIN\(decided_at\)/.test(sqls) && /booked_seq/.test(sqls) && /tap_fallback/.test(sqls) && /decided_by LIKE/.test(sqls) && /-10 minutes/.test(sqls) && /2026-10-28T00:00:00\.000Z/.test(sqls), "from the drafts decided in the window, the booking, the fallback record and the ten minutes the net is given");
   ok(G.collectD1("x", () => ({ code: 1, out: "boom" })) === null, "a D1 that will not answer is null, not zero");
   const gh = (cmd, args) => (cmd === "gh" && args[0] === "run" && args[1] === "list" ? { code: 0, out: JSON.stringify([{ databaseId: 5, createdAt: "2026-10-30T00:00:00Z", event: "schedule", status: "completed" }, { databaseId: 4, createdAt: "2026-10-20T00:00:00Z", event: "push", status: "completed" }, { databaseId: 6, createdAt: "2026-10-31T00:00:00Z", event: "push", status: "in_progress" }]) }
     : cmd === "gh" && args[1] === "view" ? { code: 0, out: log } : { code: 1, out: "" });
   const runsGot = G.collectRuns("2026-10-28T00:00:00.000Z", gh);
   ok(runsGot.length === 1 && runsGot[0].id === 5 && runsGot[0].log.loads.length === 1, "the runs in the window that finished are read, an older one and one in progress are not");
   ok(G.collectRuns("x", () => ({ code: 1, out: "no gh" })) === null, "Actions that cannot be read is null");
+
+  /* 3b: the voided count comes from the readcheck, and the roster export has a base of its own (Fable's review) */
+  {
+    ok(await G.collectVoided(async () => ({ status: 200, body: { voidedUnrejected: 3 } })) === 3 && await G.collectVoided(async () => ({ status: 200, body: {} })) === null && await G.collectVoided(async () => { throw new Error("down"); }) === null && await G.collectVoided(async () => ({ status: 401, body: { voidedUnrejected: 0 } })) === null, "the gate's count of entries voided without a rejection is the readcheck's, and null when it cannot be read");
+    const env = { ...process.env }; delete env.SALT_BASE; delete env.SALT_BOOK_KEY;
+    const r = spawnSync(process.execPath, [join(REPO, "tools", "roster-export.mjs")], { cwd: REPO, encoding: "utf8", env, timeout: 60000 });
+    ok(!/SALT_BASE is not set/.test((r.stdout || "") + (r.stderr || "")) && /SALT_BOOK_KEY is not set/.test((r.stdout || "") + (r.stderr || "")), "the roster export needs no SALT_BASE (the chain sets none): it gets as far as asking for the key: " + ((r.stdout || "") + (r.stderr || "")).slice(0, 120).replace(/s+/g, " "));
+  }
 
   /* 4: the fallback record */
   {
@@ -118,7 +130,7 @@ export async function run({ ok }) {
     const st = { flags: { book_tap: "on", book_read: "book", book_source: "d1", book_roster: "off", book_outbox: "off", book_page: "on" }, calls: [], files: {}, unbooked: 0, ...over };
     const io = {
       collect: () => ({}), judge: () => ({ ok: st.gate !== false, lines: [{ id: "G1", ok: st.gate !== false, text: "x", detail: "y" }], window: { runs: 1, since: "2026-10-28" } }),
-      sh: (cmd, args) => { st.calls.push([cmd, args.join(" ")]); if (cmd === "git" && args[0] === "rev-list") return { code: 0, out: st.behind || "0" }; if (cmd === "git" && args[0] === "rev-parse") return { code: 0, out: "abc123\n" };
+      sh: (cmd, args) => { st.calls.push([cmd, args.join(" ")]); if (cmd === "git" && args[0] === "rev-list") return { code: 0, out: st.behind || "0" }; if (cmd === "git" && args[0] === "push") return { code: st.pushFail ? 1 : 0, out: "" }; if (cmd === "git" && args[0] === "rev-parse") return { code: 0, out: "abc123\n" };
         if (cmd === "gh" && args[0] === "run") return { code: 0, out: JSON.stringify(st.live || []) }; if (cmd === "gh" && args[0] === "workflow") return { code: st.ghFail ? 1 : 0, out: "" };
         if (cmd === "node" && args[0].includes("roster-export")) return { code: st.rosterFail ? 1 : 0, out: "" }; if (cmd === "node" && args[0].includes("d1.mjs")) return { code: st.seedFail ? 1 : 0, out: "" }; return { code: 0, out: "" }; },
       d1: (sql) => { const m = /SELECT mode FROM (\w+)/.exec(sql); if (m) return { rows: [{ mode: st.flags[m[1]] }] }; if (/tap_fallback/.test(sql)) return { rows: [{ n: st.fallbacks || 0 }] }; if (/COUNT\(\*\) AS n FROM draft/.test(sql)) return { rows: [{ n: st.unbooked }] }; return { rows: [] }; },
@@ -129,7 +141,7 @@ export async function run({ ok }) {
     };
     return { io, st };
   };
-  const writes = (st) => st.calls.filter((c) => ["d1Write", "post", "writeFile"].includes(c[0]) || (c[0] === "gh" && /workflow/.test(c[1])) || (c[0] === "node" && /roster-export/.test(c[1])));
+  const writes = (st) => st.calls.filter((c) => ["d1Write", "post", "writeFile"].includes(c[0]) || (c[0] === "gh" && /workflow/.test(c[1])) || (c[0] === "node" && /roster-export/.test(c[1])) || (c[0] === "git" && /^push/.test(c[1])));
   {
     const { io, st } = mkIo();
     const dry = await F.flip(io, {});
@@ -142,12 +154,12 @@ export async function run({ ok }) {
       const x = mkIo(over), r = await F.flip(x.io, { go: "his typed go here" });
       ok(!r.ok && r.stoppedAt === "preflight" && writes(x.st).length === 0, "a precondition (" + name + ") refuses the flip with nothing written");
     }
-    const g = mkIo(), r = await F.flip(g.io, { go: "his typed go here" }), order = writes(g.st).map((c) => c[0] === "d1Write" ? c[1].replace(/UPDATE (\w+) SET mode='(\w+)'.*/, "$1=$2") : c[0] === "post" ? c[1] : c[0] === "writeFile" ? "way back" : c[0] === "node" ? "roster-export" : "gh export");
-    ok(r.ok && order.join(" > ") === "way back > book_roster=on > roster-export > book_source=book > /book/compact > gh export" && g.st.flags.book_source === "book" && g.st.flags.book_roster === "on", "the steps run in the plan's order, the way back first: " + order.join(" > "));
+    const g = mkIo(), r = await F.flip(g.io, { go: "his typed go here" }), order = writes(g.st).map((c) => c[0] === "d1Write" ? c[1].replace(/UPDATE (\w+) SET mode='(\w+)'.*/, "$1=$2") : c[0] === "post" ? c[1] : c[0] === "writeFile" ? "way back" : c[0] === "node" ? "roster-export" : c[0] === "git" ? "watermark push" : "gh export");
+    ok(r.ok && order.join(" > ") === "way back > book_roster=on > roster-export > watermark push > book_source=book > /book/compact > gh export" && g.st.flags.book_source === "book" && g.st.flags.book_roster === "on", "the steps run in the plan's order, the way back first: " + order.join(" > "));
     const wb = JSON.parse(g.st.files[F.WAY_BACK]);
     ok(wb.sha === "abc123" && wb.flags.book_source === "d1" && wb.flags.book_roster === "off" && wb.bookRev === 7 && wb.his === "his typed go here" && wb.back.length === 2, "the way back holds the flags as they were, the revision, the sha, his words and the commands: " + JSON.stringify(wb).slice(0, 160));
     ok(!g.st.calls.some((c) => /book_outbox|book_page|book_tap|book_read/.test(c[1] || "") && c[0] === "d1Write"), "and the flip never touches book_outbox, book_page, book_tap or book_read");
-    const stops = [["stuckFlag", "3"], ["rosterFail", "4"], ["compactFail", "6"], ["ghFail", "7"]];
+    const stops = [["stuckFlag", "3"], ["rosterFail", "4"], ["pushFail", "4"], ["compactFail", "6"], ["ghFail", "7"]];
     for (const [key, step] of stops) {
       const x = mkIo({ [key]: true }), rr = await F.flip(x.io, { go: "his typed go here" });
       ok(!rr.ok && rr.stoppedAt === step && rr.wayBack === F.WAY_BACK && Object.keys(x.st.files).length === 1, "a failure at step " + step + " stops the run there, says so, and points at the way back already written: " + rr.stoppedAt);
@@ -165,8 +177,14 @@ export async function run({ ok }) {
     const { io, st } = mkIo({ flags: { book_tap: "on", book_read: "book", book_source: "book", book_roster: "on", book_outbox: "off", book_page: "on" } });
     const none = await F.back(io, { go: "x" }), ex = await F.back(io, { go: "his typed go here" });
     ok(!none.ok && /typed words/.test(none.error) && ex.exportedFirst && st.flags.book_source === "book" && !st.calls.some((c) => c[0] === "d1Write") && st.calls.some((c) => c[0] === "gh" && /workflow run cloud-commit.yml -f export=true/.test(c[1])), "the way back dispatches the export first and moves no flag until it is told the export ran");
+    st.calls.length = 0;
     const back = await F.back(io, { go: "his typed go here", exported: true });
+    const ci = (p) => st.calls.findIndex((c) => (c[0] === "git" || c[0] === "node") && p.test(c[1]));
+    ok(!st.calls.some((c) => c[0] === "gh" && /workflow/.test(c[1])) && ci(/pull --ff-only/) >= 0 && ci(/pull --ff-only/) < ci(/ledger.mjs/) && ci(/ledger.mjs/) < ci(/d1.mjs/), "the pass that is told the export ran dispatches nothing more, pulls what the chain pushed, makes the extract again and only then seeds the mirror");
     ok(back.ok && st.flags.book_source === "d1" && st.flags.book_roster === "off" && back.did.some((d) => /mirror seeded/.test(d)) && st.calls.findIndex((c) => c[0] === "node" && /d1\.mjs/.test(c[1])) > st.calls.findIndex((c) => c[0] === "d1Write" && /book_source/.test(c[1])), "then book_source goes back to d1, book_roster off, and the mirror is seeded (after the flag, which is what allows it): " + JSON.stringify(back.did));
+    const ne = mkIo({ flags: { book_tap: "on", book_read: "book", book_source: "book", book_roster: "on", book_outbox: "off", book_page: "on" } });
+    const nr = await F.back(ne.io, { go: "his typed go here", noExport: true });
+    ok(nr.ok && ne.st.flags.book_source === "d1" && !ne.st.calls.some((c) => c[0] === "gh") && !ne.st.calls.some((c) => c[0] === "git" && /pull/.test(c[1])), "when nothing was compacted (the flip stopped at step 6) the way back is the flags alone: no export, no pull");
     const f = mkIo({ flags: { book_tap: "on", book_read: "book", book_source: "book", book_roster: "on", book_outbox: "off", book_page: "on" }, seedFail: true });
     const bf = await F.back(f.io, { go: "his typed go here", exported: true });
     ok(!bf.ok && bf.stoppedAt === "seed" && f.st.flags.book_source === "d1", "a seed that fails is said, with the flags already back");
