@@ -42,9 +42,10 @@ const approvedCommand = draftsSource.slice(draftsSource.indexOf("function approv
 const stageApproved = (wd) => {
   let output;
   /* the statement as wrangler is handed it (readArgs), so the one line a shell sees is the one that selects */
-  Function("query", "approvedRows", "APPROVED_SQL", "console", approvedCommand + "\napproved();")(
+  /* S5f-3: approved() also asks which store is the source and says a refusal through fail(): the stand-ins are the old world and a thrower */
+  Function("query", "approvedRows", "APPROVED_SQL", "console", "readSource", "WHERE", "fail", approvedCommand + "\napproved();")(
     (sql) => wd.sqlite.prepare(JSON.parse(readArgs(sql).at(-1))).all(), approvedRows, APPROVED_SQL,
-    { log: (text) => { output = JSON.parse(text); } });
+    { log: (text) => { output = JSON.parse(text); } }, () => ({ mode: "d1" }), "--local", (m) => { throw new Error(m); });
   return output;
 };
 const foldBook = (wd) => {

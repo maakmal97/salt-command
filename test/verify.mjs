@@ -51944,7 +51944,7 @@ await (async () => {
       if (head) fn = head[1] || head[2];
       if (/env\.BOOK\b/.test(l) && !/^\s*(\/\/|\*|\/\*)/.test(l) && !/^\s*if \(env\.SALT_LEDGER && env\.BOOK\) bindBook\(env\.SALT_LEDGER, env\.BOOK\);/.test(l)) {
         readers.push(f + ":" + (i + 1));
-        if (!(f === "worker.js" && (fn === "handleBookLoad" || fn === "handleBookPitr" || fn === "handleLive" || fn === "liveTell" || fn === "handleBookReadcheck" || fn === "handleBookLedger" || fn === "handleBookRoster" || fn === "handleBookPage" || fn === "bookRevOf")) && !(f === "book.js" && (fn === "isTest" || fn === "isLive")) && !(f === "backup.js" && (fn === "runBookExport" || fn === "bookExportAlarm"))) strays.push(f + ":" + (i + 1) + " in " + fn);
+        if (!(f === "worker.js" && (fn === "handleBookLoad" || fn === "handleBookPitr" || fn === "handleLive" || fn === "liveTell" || fn === "handleBookReadcheck" || fn === "handleBookLedger" || fn === "handleBookRoster" || fn === "handleBookPage" || fn === "bookRevOf")) && !(f === "book.js" && (fn === "isTest" || fn === "isLive")) && !(f === "backup.js" && (fn === "runBookExport" || fn === "bookExportAlarm")) && !(f === "book-compact.js" && (fn === "ask" || fn === "compactAndMark"))) strays.push(f + ":" + (i + 1) + " in " + fn);
       }
     });
   }
