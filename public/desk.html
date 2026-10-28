@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="1c24cdad7df6d856";
+var SALT_BUILD_ID="4fe53c88e281f20a";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -6646,6 +6646,17 @@ function partnerEntry({at,code,raw}){
     raw:raw===undefined?'Make '+code+' a partner: pays the Floor, keeps every associate property':raw,
     payload:{mode:'partner',code}};
 }
+/* S5f-5 (Ask A): A HAND EDIT OF THE LEDGER HE APPROVES, for the two common ones the flip would otherwise leave to the laptop: a refund the book still owes marked paid (`refundPaid`, with the day it went back), and a stale
+   refund taken off (`refundRemove`). A refund has no id of its own, so it is named by the three things it carries (party, since, amount) and must be the ONE open refund those name. It moves no stock and no sale. */
+function editEntry({at,kind,party,since,amount,paidOn=null,note=null,raw}){
+  return {at,type:'EDIT',party,qty:null,total:null,status:'edit',
+    raw:raw===undefined?(kind==='refundPaid'?'Mark paid: the RM '+amount+' refund to '+party+' of '+since+', returned on '+paidOn:'Remove the RM '+amount+' refund to '+party+' of '+since+' from the book'):raw,
+    payload:{mode:'edit',kind,party,since,amount,...(paidOn?{paidOn}:{}),...(note?{note}:{})}};
+}
+/* the open refunds an edit's three names pick out: exactly one is an edit that can be applied */
+function editRefunds(list,p){
+  return (list||[]).map((r,i)=>[r,i]).filter(([r])=>r&&!r.paidOn&&r.party===p.party&&r.since===p.since&&+r.amount===+p.amount);
+}
 function renameEntry({at,from,to,geo=null,raw}){
   return {at,type:'RENAME',party:from,qty:null,total:null,status:'rename',
     raw:raw===undefined?'Amend ID: re-key '+from+' to '+to+' wherever the book names it':raw,
@@ -8037,7 +8048,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,loyaltyWalk:loyaltyWalk,loyalScheme:loyalScheme,cadenceOf:cadenceOf,rewardIsAssociate:rewardIsAssociate,rewardOpening:rewardOpening,rewardCut:rewardCut,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
+return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,loyaltyWalk:loyaltyWalk,loyalScheme:loyalScheme,cadenceOf:cadenceOf,rewardIsAssociate:rewardIsAssociate,rewardOpening:rewardOpening,rewardCut:rewardCut,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,editEntry:editEntry,editRefunds:editRefunds,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,
@@ -11424,7 +11435,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1318","d":"29 Oct 2026","t":"OIL DELIVERY RECORDED ON S302","n":["<b>ONE CORRECTION FOLDED.</b> Order s302, CZ4-MK's 20 unit of oil, now records delivery of 20 unit on 29 Oct 2026 with handover delivered. Counter Admin preapproved it on 28 Oct. The row already showed RM250 paid, so the correction moves no cash and changes only what the order says about itself. The fold applies the patch as stated.","<b>INVENTORY AND ONE ODDITY.</b> The oil shelf rolls 20 unit out to CZ4-MK, the difference the correction states. Nothing landed, so the cost basis does not move. Unusually, the row's 2-step payment trail is not rewritten, so it no longer adds up to the figure set directly; the correction is recorded beside it saying so."]}];
+const evolution=[{"v":"v1319","d":"29 Oct 2026","t":"THE FLIP'S DORMANT PARTS COMPLETE (S5F-4 TO S5F-7, DORMANT: book_source READS d1)","n":["<b>S5F-4, THE STALENESS TESTS ON THE BOOK'S REVISION.</b> With the Book as the source an approval is not a version, so every test that asked whether a book was the one read by comparing git's version now compares the Book's revision (book@rev): the told mark and the tie-out, the pricing and open-order flags, input admission, the amend preview, a money tap's room check, and the Counter's stamp (the build id and the revision). The Book carries the revision its derived documents were computed at, and a Book that is the source and will not answer is an error, never the frozen mirror. With git as the source every answer is what it was.","<b>S5F-5, THE EDIT ENTRY (ASK A).</b> A refund the book still owes can be marked paid or taken off as stale by an entry he approves in Salt Admin (a Refunds card on the account card) and the tap books. Migration 0024 (applied alone to the live D1 before this deploy: 649 drafts and the four indexes read back) rebuilds the draft table with the collection. The strict compaction allows as many refund rows to go as the edits it folds and refuses any other row lost.","<b>S5F-6 AND S5F-7, THE EXPORT, THE GATE AND THE RUNBOOK.</b> Two Book verbs refresh the derived documents for a revision (no revision moved) and write notes behind the rows the tap booked; tools/book-export.mjs and two chain steps export the Book to git once a day and bring the publish's checkout level on every other run, only with the Book as the source. tools/flip-gate.mjs reads the gate off the logs and D1 (UNVERIFIED is never true), tools/flip.mjs is the runbook (a dry run by default, the way back written first, never run by this build), and an approval that falls back is now recorded on its draft. Fable reviewed parts 3 to 7 twice; every finding is applied or named in docs/DESK.md.","<b>NOTHING CHANGES ON THE DESK OR THE COUNTER WHILE book_source READS d1.</b> The flip needs his typed go, on or after 4 Nov 2026, and every line of the gate TRUE (G5 cannot read true before seven recorded days after this version)."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
