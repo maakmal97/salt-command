@@ -1,6 +1,6 @@
 {
- "v": "v1318",
- "stamped": "29 Oct 2026, 00:26 KL",
+ "v": "v1320",
+ "stamped": "29 Oct 2026, 06:44 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -9572,6 +9572,20 @@
     ],
     "cancelled": true,
     "cancelledOn": "2026-10-27"
+   },
+   {
+    "customer": "CS6-BS-R",
+    "qty": 1,
+    "total": 105,
+    "cash": 0,
+    "delivery": 45,
+    "date": "2026-10-29",
+    "deliveredQty": 0,
+    "rev": "R2",
+    "note": "<b>PENDING SALE OF 1 UNIT OF SALT TO CS6-BS-R, GOODS RM105, 29 OCT 2026.</b> Ordered on the statements site, order 20261028224249-cg8tbw, with RM45 delivery, so RM150 is owed. It is booked as R2 and was preapproved by Counter Admin. Nothing is paid and nothing handed over, so no stock is drawn and no revenue is booked. For 1 unit the ladder gives a floor total of RM60 and an ask total of RM120, so the goods at RM105 are above the floor and below the ask. The party's median rate is RM96.67, range RM6 to RM120; outstanding before was RM0, no units on credit against a cap of 1. The cost is RM56 a unit, the inventory's own, costed off the latest purchase. The drafter flagged the R2 booking. The figures answer it: earlier R2 rows are booked to this account too. RM150 and the 1 unit remain outstanding.",
+    "listRM": 105,
+    "listQty": 1,
+    "rid": "s303"
    }
   ],
   "contacts": [
@@ -10377,7 +10391,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-28T16:25:23.840Z",
+  "QUEUE_COMMITTED": "2026-10-28T22:43:14.820Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -20252,12 +20266,29 @@
      "suggest": null
     }
    },
-   "v": "v1318"
+   "v": "v1320"
   },
   "OPEN": {
-   "at": "2026-10-28T16:26:17.810Z",
-   "count": 8,
+   "at": "2026-10-28T22:44:04.800Z",
+   "count": 9,
    "byKey": {
+    "CS6-BS-R|2026-10-29|150": {
+     "d": "2026-10-29",
+     "p": "CS6-BS-R",
+     "dir": "S",
+     "q": 1,
+     "t": 105,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 150,
+     "oweUnits": 1,
+     "dv": 45,
+     "rid": "s303",
+     "as": "CS6-BS",
+     "st2": "R2",
+     "key": "CS6-BS-R|2026-10-29|150"
+    },
     "CR3-DAM|2026-10-28|110": {
      "d": "2026-10-28",
      "p": "CR3-DAM",
@@ -20397,10 +20428,10 @@
      "onHand": 24.5,
      "free": 24,
      "owedOut": 0.5,
-     "coverDays": 6.4,
-     "rate": 4.2,
+     "coverDays": 6.3,
+     "rate": 4.25,
      "owedToYou": 350,
-     "promised": 0.5,
+     "promised": 1.5,
      "short": 0
     },
     "oil": {
@@ -20467,7 +20498,7 @@
     "gas": null,
     "prep": null
    },
-   "v": "v1318"
+   "v": "v1320"
   },
   "TERMS": {
    "ceiling": 250,
@@ -20475,7 +20506,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1318"
+   "v": "v1320"
   },
   "REWARD": {
    "stated": {
@@ -20493,7 +20524,7 @@
      }
     }
    },
-   "v": "v1318"
+   "v": "v1320"
   },
   "STOCK": {
    "today": "2026-10-29",
@@ -20501,9 +20532,9 @@
     "salt": {
      "shelf": 24.5,
      "free": 24,
-     "commit": 0.5,
+     "commit": 1.5,
      "light": "green",
-     "coverDays": 6.4,
+     "coverDays": 6.3,
      "transit": 0
     },
     "oil": {
@@ -20547,7 +20578,7 @@
      "transit": 0
     }
    },
-   "v": "v1318"
+   "v": "v1320"
   }
  }
 }
