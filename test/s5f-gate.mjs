@@ -37,9 +37,10 @@ export async function run({ ok }) {
     "x 2026-10-30T01:00:03.1Z Book NOT loaded: 503",
     "x 2026-10-30T01:00:04.1Z Book loaded: 1 rows; parity FAILED: sales",
     "x 2026-10-30T01:00:05.1Z Book readcheck: mirror v1, Book v1; DIFFER: sales",
+    "x 2026-10-30T01:00:05.5Z Book readcheck: mirror v1, Book v1, 12 rows, no word of agreement",
     "x 2026-10-30T01:00:06.1Z Pricing parity: the engine's PRICING differs: floors",
   ].join("\n"));
-  ok(bad.loads.every((l) => l.bad || !l.ok || l.open !== 0 || !l.agrees) && bad.loads.length === 5 && !bad.readchecks[0].ok && !bad.parity[0].ok, "an open entry, a stuck one, a fold booked differently, a failed load and a failed parity each read as not clean, and a differing readcheck and pricing as not green");
+  ok(bad.loads.every((l) => l.bad || !l.ok || l.open !== 0 || !l.agrees) && bad.loads.length === 5 && !bad.readchecks[0].ok && !bad.readchecks[1].ok && !bad.parity[0].ok, "an open entry, a stuck one, a fold booked differently, a failed load and a failed parity each read as not clean, and a differing readcheck and pricing as not green");
 
   /* 2: the gate */
   const run1 = { id: 1, at: "2026-10-30T01:00:00Z", log: p }, runs = [run1, { id: 2, at: "2026-10-31T01:00:00Z", log: G.parseLog(log.split("\n").slice(0, 5).join("\n").replace("tap: 3 closed", "tap: 20 closed")) }];
@@ -52,6 +53,7 @@ export async function run({ ok }) {
   const cases = [
     ["G0", (e) => { e.now = "2026-11-03T23:00:00.000Z"; }],
     ["G1", (e) => { e.runs[0].log.loads[0].open = 1; }],
+    ["G1", (e) => { e.runs.forEach((r) => r.log.loads.forEach((l) => { l.closed = null; l.open = null; })); }],
     ["G2", (e) => { e.d1.kinds.newIds = 4; }],
     ["G2", (e) => { e.d1.kinds.trips = 0; }],
     ["G2", (e) => { e.d1.kinds.purchases = 0; }],
@@ -131,7 +133,7 @@ export async function run({ ok }) {
   {
     const { io, st } = mkIo();
     const dry = await F.flip(io, {});
-    ok(dry.dry && dry.ok && dry.plan.length === 7 && writes(st).length === 0 && st.flags.book_source === "d1", "a dry run reads, reports the plan and the checks, and writes nothing: " + JSON.stringify(writes(st)));
+    ok(dry.dry && dry.ok && !dry.error && dry.did.length === 0 && dry.plan.length === 7 && writes(st).length === 0 && st.flags.book_source === "d1", "a dry run reads, reports the plan and the checks, and writes nothing: " + JSON.stringify(writes(st)));
     const a = mkIo({ gate: false }), r1 = await F.flip(a.io, {}), r2 = await F.flip(a.io, { go: "his typed go here" });
     ok(!r1.ok && r1.dry && !r2.ok && r2.stoppedAt === "preflight" && writes(a.st).length === 0, "a gate that is not true fails the dry run and refuses --go, with nothing written");
     const w = mkIo(), r3 = await F.flip(w.io, { go: "go" }), r4 = await F.flip(w.io, { go: true });

@@ -95,18 +95,20 @@ export async function run({ ok }) {
     const B = mk(); await B.load(); await B.tap([sale(IDN(1), 2)]); await B.tap([sale(IDN(2), 3)]);
     const W = world([IDN(1), IDN(2)]); W.source("book");
     const env = { REQUIRE_ACCESS: "0", SALT_BOOK_KEY: "bk", SALT_WRITE_KEY: "wk", BOOK: B.ns, SALT_LEDGER: W.D1 };
-    const bridge = (extra) => async (url, init) => { const u = new URL(url); if (extra) { const r = extra(u.pathname, init); if (r) return r; } return worker.fetch(new Request(url, init), env, { waitUntil() { } }); };
+    const seenPaths = [];
+    const bridge = (extra) => async (url, init) => { const u = new URL(url); seenPaths.push(u.pathname); if (extra) { const r = extra(u.pathname, init); if (r) return r; } return worker.fetch(new Request(url, init), env, { waitUntil() { } }); };
     const ghEnv = join(root, "github_env.txt");
     const ranTools = [];
     const run = (cmd, args) => { ranTools.push(cmd + " " + args.join(" ")); if (cmd === "ledger.mjs") writeFileSync(join(root, "ledger", "ledger.json"), JSON.stringify({ v: V, ledger: { PRICING: { v: "x", floors: { salt: { 1: 61 } } }, OPEN: { v: "x", at: "n", count: 0, byKey: {} }, TERMS: { creditDays: 9 }, REWARD: { stated: {} }, STOCK: { today: "2026-10-29", books: {} } } })); };   /* book-read-ok: a temporary checkout's own files, written by the tool under test */
     const E = { SALT_BOOK_KEY: "bk", GITHUB_ENV: ghEnv };
     const rev0 = (await B.at()).rev;
     const r = await exportBook({ base: "https://salt.test", env: E, root, fetchImpl: bridge(), run, now: new Date("2026-10-28T20:00:00.000Z"), tries: 1, wait: 0 });
+    const nonDayPaths = seenPaths.slice();
     const a = await B.at(), file = JSON.parse(readFileSync(join(root, "ledger", "book.json"), "utf8")), rd = await B.read();   /* book-read-ok: a temporary checkout's own files, written by the tool under test */
     const tapped = ridsOf(rd).filter((x) => !fb().sales.some((s) => s.rid === x));
-    ok(r.ok && !r.day && ranTools.join("|") === "booksync.mjs --sync|ledger.mjs " && r.notes === 0 && a.rev === rev0 && r.rev === a.rev && a.derivedRev === a.rev, "a run that is not the day's writes no note, moves no revision, and sends the documents for the revision it exported: " + JSON.stringify([r.ok, r.notes, rev0, a.rev, a.derivedRev, ranTools]));
+    ok(r.ok && !r.day && !nonDayPaths.includes("/book/notes") && !nonDayPaths.includes("/book/compact") && ranTools.join("|") === "booksync.mjs --sync|ledger.mjs " && r.notes === 0 && a.rev === rev0 && r.rev === a.rev && a.derivedRev === a.rev, "a run that is not the day's writes no note (it does not even ask: " + nonDayPaths.join(" ") + "), moves no revision, and sends the documents for the revision it exported: " + JSON.stringify([r.ok, r.notes, rev0, a.rev, a.derivedRev, ranTools]));
     ok(file.sales.length === fb().sales.length + 2 && tapped.length === 2 && tapped.every((x) => file.sales.find((s) => s.rid === x)), "ledger/book.json is the Book's view, the tapped rows in it: " + file.sales.length);
-    ok(readFileSync(ghEnv, "utf8").trim() === "SALT_BOOK_REV=" + a.rev && rd.state.PRICING.floors.salt[1] === 61 && rd.state.TERMS.creditDays === 9, "the revision is named for the publish (SALT_BOOK_REV), and the Book holds the documents the export computed");
+    ok(existsSync(ghEnv) && readFileSync(ghEnv, "utf8").trim() === "SALT_BOOK_REV=" + a.rev && rd.state.PRICING.floors.salt[1] === 61 && rd.state.TERMS.creditDays === 9, "the revision is named for the publish (SALT_BOOK_REV), and the Book holds the documents the export computed");
     ok(!(await W.db.prepare("SELECT committed_at FROM draft WHERE id=?").get(IDN(1))).committed_at, "a run that is not the day's compacts nothing and marks no draft");
     const r2 = await exportBook({ base: "https://salt.test", env: E, root, fetchImpl: bridge(), run, now: new Date("2026-10-28T20:00:00.000Z"), tries: 1, wait: 0 });
     ok(r2.ok && r2.notes === 0 && r2.rev === a.rev && (await B.at()).rev === a.rev, "run again it writes no note and moves nothing");

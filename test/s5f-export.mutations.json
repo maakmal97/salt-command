@@ -75,7 +75,7 @@
   "name": "the book names no row the tap booked",
   "file": "src/worker.js",
   "find": "tapped = ((ev && ev.entries) || []).filter((e) => !e.voided_at).flatMap(",
-  "replace": "tapped = [].concat(((ev && ev.entries) || []).filter((e) => false).flatMap("
+  "replace": "tapped = ((ev && ev.entries) || []).filter((e) => false).flatMap("
  },
  {
   "name": "the day's notes are written for every blank row",
