@@ -10250,6 +10250,10 @@ const REWARD_OPEN={
   }
 };
 /* ==== END BOOK ==== */
+/* S5d (28 Oct 2026): THE BOOK AT REQUEST TIME. The two primitives of the baked book are read through these, so a Book served to the page (bookApply, below) can replace them: the const above cannot move. BOOK_BAKED is the
+   watermark this page was built with: a served Book older than it is never swapped in. BOOK_REV is the Book revision this page last read (null: only what was baked), BOOKED_IDS the drafts the served view already holds. */
+let BOOK_STATED=STATED_STOCK,BOOK_MARK=QUEUE_COMMITTED,BOOK_REV=null,BOOKED_IDS=new Set();
+const BOOK_BAKED=QUEUE_COMMITTED;
 
 /* purchases: declared in the BOOK block near the top of this script, generated from ledger/book.json (v339). */
 /* opening: declared in the BOOK block near the top of this script, generated from ledger/book.json (v339). */
@@ -11527,6 +11531,67 @@ function ovRefund(row,date){
   const stale=POSITION_ENGINE.refundStale(customerRefunds,row);
   if(stale)provNotes.push('STALE refund on '+row.rid+': '+fmt0(stale)+' of its open refunds is no longer owed; remove it in ledger/book.json');
 }
+/* S5d (28 Oct 2026, flag book_page in D1, shipped off): THE BOOK SERVED AT REQUEST TIME, AND THE PAGE TAKING IT. When /rev says the Book's revision moved (it says one only with the flag on), the page fetches /book/page as its
+   own no-store request, keyed, and swaps the answer in over the book baked into it, in place (every list and document is a const the rest of the page holds, so the arrays and objects are emptied and refilled, the two
+   primitives are BOOK_STATED and BOOK_MARK), then rebuilds. The baked book stays as the fallback: an answer that is not a whole book, an older Book than this page was built with, or a failure changes nothing, and a failure is
+   tried again after a minute. A queued entry the served view already holds (BOOKED_IDS, the drafts it replayed) is skipped by the overlay, so a sale is never counted twice; the entry itself stays in the queue. The lists and
+   documents named here are the book's own keys less NOTES (the suite pins them to ledger/book.json), and the lists the overlay rebuilds (BASE_*) are refilled, not the live ones. */
+const BOOK_LISTS={PROD_ORDER,COUNTS,contacts,selfUseLog,lostDemand,loans,customerRefunds,roster,associates,partners,INTRODUCTIONS,ONE_OFFS,purchases,sales};
+const BOOK_DOCS={PRODUCTS,opening,PROD_OPENING,COUNT_ON,supplierReceivable,PLACED,TIER_OF,PEOPLE,AWARDS,QUOTES,CASH_COUNT_RETIRED,PRICE_SET,COST_RULE,REWARD_OPEN};
+const BOOK_BASES={purchases:BASE_PURCHASES,sales:BASE_SALES,selfUseLog:BASE_SELFUSE,lostDemand:BASE_LOST,contacts:BASE_CONTACTS,loans:BASE_LOANS,customerRefunds:BASE_REFUNDS};
+/* null when the served answer was taken, else the reason it was not (nothing is changed unless it is taken whole: the served book and this page's own targets are checked, and every copy is made, before the first list is emptied) */
+function bookApply(j){
+  if(!j||j.ok!==true||!j.book||typeof j.book!=='object')return 'not a book';
+  const b=j.book,lists=Object.keys(BOOK_LISTS),docs=Object.keys(BOOK_DOCS);
+  for(const k of lists)if(!Array.isArray(b[k]))return 'no list '+k;
+  for(const k of docs)if(!b[k]||typeof b[k]!=='object'||Array.isArray(b[k]))return 'no document '+k;
+  if(typeof b.STATED_STOCK!=='number'||!isFinite(b.STATED_STOCK)||typeof b.QUEUE_COMMITTED!=='string')return 'no stock or mark';
+  if(b.QUEUE_COMMITTED<BOOK_BAKED)return 'older than this page';
+  for(const k of lists)if(!Array.isArray(BOOK_LISTS[k]))return 'this page holds no list '+k;
+  for(const k of docs)if(!BOOK_DOCS[k]||typeof BOOK_DOCS[k]!=='object')return 'this page holds no document '+k;
+  let L,D,P;
+  try{const copy=x=>JSON.parse(JSON.stringify(x));
+    L=lists.map(k=>[BOOK_LISTS[k],copy(b[k])]).concat(Object.keys(BOOK_BASES).map(k=>[BOOK_BASES[k],copy(b[k])]));
+    D=docs.map(k=>[BOOK_DOCS[k],copy(b[k])]);P=copy(b.PRICE_SET);
+  }catch(e){return 'a value that is not JSON';}
+  L.forEach(([a,c])=>{a.length=0;c.forEach(x=>a.push(x));});
+  D.forEach(([o,c])=>{Object.keys(o).forEach(x=>delete o[x]);Object.assign(o,c);});
+  Object.keys(BASE_PRICESET).forEach(x=>delete BASE_PRICESET[x]);Object.assign(BASE_PRICESET,P);
+  PROD_IDS.length=0;PROD_ORDER.filter(prodLive).concat(Object.keys(PRODUCTS).filter(p=>PROD_ORDER.indexOf(p)<0&&prodLive(p))).forEach(p=>PROD_IDS.push(p));
+  BOOK_STATED=b.STATED_STOCK;BOOK_MARK=b.QUEUE_COMMITTED;BOOKED_IDS=new Set(Array.isArray(j.booked)?j.booked:[]);
+  if(!PRODUCTS[PROD])PROD=DEFAULT_PROD;
+  return null;
+}
+/* a Book that has taken this page's mark moves what the queue may still hold: the load's own judgment, asked again. An entry at or under the new mark is in the Book (dropped), and one that survived a mark that has passed it is
+   stuck and shown, exactly as at load (qKeepOnLoad, qFlagStuck): without it a folded sale the phone still holds would count twice until the next reload. */
+function bookTrimQueue(){
+  if(!BOOK_MARK||!queue.length)return;
+  const before=queue.length;
+  queue=queue.filter(q=>qKeepOnLoad(q,BOOK_MARK,qSentThrough,refusedAts));
+  qFlagStuck(queue,BOOK_MARK,refusedAts);
+  queueCleared+=before-queue.length;queueStuck=qStuckCount(queue,refusedAts);
+  try{localStorage.setItem('saltQueue',JSON.stringify(queue));}catch(e){}
+  if(queue.length!==before&&qSyncState==='server'){try{qPost();}catch(e){}}
+}
+/* bookRefusedRev: the revision a Book was refused at: a refusal is the same answer until the revision moves, so it is not fetched again (a transport failure is, after a minute) */
+let bookBusy=false,bookFailAt=0,bookRefusedRev=null;
+async function bookFetch(rev){
+  if(bookBusy||Date.now()-bookFailAt<60000||(rev!==undefined&&rev===bookRefusedRev))return false;
+  if(!saltWriteKey())return false;   /* the Book's view is the whole ledger: only a desk holding the write key can read it */
+  bookBusy=true;
+  try{
+    const r=await fetch('book/page',{cache:'no-store',headers:qHeaders()});
+    if(!r.ok){bookFailAt=Date.now();return false;}
+    const j=await r.json();
+    if(bookApply(j)){bookRefusedRev=Number.isInteger(j.rev)?j.rev:rev;return false;}
+    BOOK_REV=Number.isInteger(j.rev)?j.rev:rev;bookRefusedRev=null;
+    try{bookTrimQueue();}catch(e){}
+    try{applyOverlay();}catch(e){}
+    try{render();}catch(e){}
+    return true;
+  }catch(e){bookFailAt=Date.now();return false;}
+  finally{bookBusy=false;}
+}
 function applyOverlay(){
   DATA_STAMP++;   /* F1: the rows below are rebuilt, so whatever was derived from them is old (badgeKey, sessionMemo) */
   stockCostFor._c=null;   // 26 Sep 2026: the rows are rebuilt, so no book's inventory rate stands
@@ -11548,6 +11613,7 @@ function applyOverlay(){
   statedStockBy={};provCount=0;provNotes=[];provRM=0;provUnsent=0;unsentAts=new Set();
   queue.slice().sort((a,b)=>(a.at||'')<(b.at||'')?-1:1).forEach(q=>{
     const p=q.payload;if(!p)return;
+    if(BOOKED_IDS.size&&BOOKED_IDS.has(q.at))return;   /* S5d: the served Book already holds this entry's draft */
     if(!OVERLAY_UNSENT&&qIsUnsent(q))return;
     try{
       if(p.mode==='new')ovNew(p,q);
@@ -13215,7 +13281,7 @@ function boundaryPanel(b,r){
    stockCostFor, the per-recompute cache. The clock is TODAY and the override is pxOver: both the desk's. */
 function snapCtx(){return snapCtx._c||(snapCtx._c={
   B:{get sales(){return sales;},get purchases(){return purchases;},get opening(){return PROD_OPENING;},get statedStockBy(){return statedStockBy;},
-    get statedStock(){return STATED_STOCK;},get loanDrawUnits(){return loanDrawUnits;},get supplierReceivable(){return typeof supplierReceivable!=='undefined'?supplierReceivable:null;},
+    get statedStock(){return BOOK_STATED;},get loanDrawUnits(){return loanDrawUnits;},get supplierReceivable(){return typeof supplierReceivable!=='undefined'?supplierReceivable:null;},
     get counts(){return typeof COUNTS!=='undefined'?COUNTS:[];},get selfUseLog(){return typeof selfUseLog!=='undefined'?selfUseLog:[];},
     get quotes(){return QUOTES;},get priceSet(){return typeof PRICE_SET!=='undefined'?PRICE_SET:null;},get costRule(){return typeof COST_RULE!=='undefined'?COST_RULE:{};},
     get defaultProd(){return DEFAULT_PROD;},get refunds(){return typeof customerRefunds!=='undefined'?customerRefunds:[];},
@@ -13542,7 +13608,7 @@ function badgeKey(noProd){
     return JSON.stringify([noProd?0:PROD,TODAY.getTime(),cloudMode(),EXPECTED_READ,EXPECTED,HUSH_READ,HUSH,DATA_STAMP,sales.length,purchases.length,
       customerRefunds.length,loans.length,cashAdjust.length,selfUseLog.length,lostDemand.length,contacts.length,supplierReceivable,statedStockBy,
       PRICE_SET,pxOver,queue,AP_DRAFTS,ORD_OPEN,lapsed,roster,associates,partners,addedParties,PB_MONDAY,RULES,TIER_OF,PRODUCTS,PEOPLE,PLACED,
-      revealed,revealed?keyHash(JSON.stringify(vaultNames)):0,newIds]);   /* a short hash of the names, never the names: a kept key sits in memory long after the lock */
+      revealed,revealed?keyHash(JSON.stringify(vaultNames)):0,newIds,BOOK_STATED,PROD_IDS]);   /* S5d: a served Book moves the stock and the product list */   /* a short hash of the names, never the names: a kept key sits in memory long after the lock */
   }catch(e){return null;}
 }
 function railCounts(){

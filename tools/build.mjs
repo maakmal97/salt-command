@@ -263,6 +263,8 @@ const PWA_BLOCK = [
   "    try{if(typeof queue!=='undefined'&&queue&&queue.length&&typeof qSyncState!=='undefined'&&qSyncState==='server'&&typeof qPost==='function'&&unsent())qPost();}catch(e){}",
   "    if(klDay()!==dayAt){if(idle())saltFresh(); else offer(null,'New day');return;}",
   "    fetch('rev',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(j){",
+  /* S5d (28 Oct 2026, flag book_page): /rev answers the Book's revision beside the build id once the flag is on; a revision this page has not read has it fetch the Book as its own request (bookFetch, in the master) */
+  "      try{if(j&&j.rev!==undefined&&typeof bookFetch==='function'&&j.rev!==BOOK_REV)bookFetch(j.rev);}catch(e){}",
   '      if(!j||!j.id||j.id===SALT_BUILD_ID)return;',
   '      if(idle())saltFresh(); else offer(j.v);',
   '    }).catch(function(){});',

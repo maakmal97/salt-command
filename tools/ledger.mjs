@@ -78,6 +78,7 @@ const NOT_LEDGER = new Set([
      table beats thirty hand-written fields that would drift, which is the same reason VIEWS is
      data-shaped and equally not a fact about any trade. */, "PRICE_TIERS", "PRICE_MODEL", "PRICE_LOCK", "PXBANDS", "PX",
   "REF", "REF_POINTS", "LADDER", "LADDER_BY" /* round 5: the per-book ladder anchors; a rule, like LADDER itself */,
+  "BOOK_LISTS", "BOOK_DOCS", "BOOK_BASES" /* S5d: the page's table of which baked lists and documents a served Book replaces; names of the book's own keys, not a record */,
   "TIER_RULE" /* v641, v642: the rule per book (a stated board, or the Set Price); a rule, like LADDER */,
   "PROFILE_RULE" /* v666: the thresholds a customer's profile is read against; a rule, not a record, like TIER_RULE */,
   "BAND_LABEL", "BAND_NAME", "COST_BASIS", "COST_BOOK", "SALES_POLICY",
