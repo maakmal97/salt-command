@@ -1,0 +1,69 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-28T15:56:08.848Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CZ4-MK",
+    "qty": 20,
+    "total": 220,
+    "cash": 25,
+    "delivery": 30,
+    "credit": 25,
+    "product": "oil",
+    "date": "2026-10-28",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261028155513-qwaafw, acknowledged, to be delivered, delivery RM 30. RM 25 of it paid by their credit, the refunds of theirs the fold closes; nothing handed over yet.",
+    "rids": [
+     "s302"
+    ],
+    "booked_seq": 11
+   },
+   "reasoning": "Sold 20 unit of oil to CZ4-MK for RM 220, with RM 30 of delivery beside it, RM 250 owed, RM 11/unit. Costed at RM 8.16/unit from COGS off the latest purchase p047 landed 2026-10-28: RM 380 quote plus RM 28 freight over 50 unit, so RM 56.8 on the goods at 25.8%. RM 25 of RM 250 paid and 0 of 20 unit moved on 2026-10-28. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CZ4-MK typically pays about RM 12.5/unit for oil across 2 orders; this one is RM 11, 12% below that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-28T15:56:08.848Z",
+    "type": "SELL",
+    "party": "CZ4-MK",
+    "qty": 20,
+    "total": 220,
+    "status": "Pending",
+    "raw": "SELL CZ4-MK 20 oil RM 250, RM 25 paid by their credit, nothing moved (order 20261028155513-qwaafw)",
+    "orderKey": "CZ4-MK|2026-10-28|250|oil",
+    "payload": {
+     "mode": "new",
+     "product": "oil",
+     "direction": "SELL",
+     "party": "CZ4-MK",
+     "newId": null,
+     "date": "2026-10-28",
+     "qty": 20,
+     "total": 220,
+     "delivery": 30,
+     "cash": 25,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261028155513-qwaafw, acknowledged, to be delivered, delivery RM 30. RM 25 of it paid by their credit, the refunds of theirs the fold closes; nothing handed over yet.",
+     "handover": null,
+     "second": null,
+     "credit": 25
+    },
+    "orderId": "20261028155513-qwaafw"
+   },
+   "decidedAt": "2026-10-28T15:56:12.186Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
