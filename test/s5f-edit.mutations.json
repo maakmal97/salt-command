@@ -108,12 +108,6 @@
   "replace": "if (false) return { skip:"
  },
  {
-  "name": "a paid edit needs no day at the route",
-  "file": "src/maker-inputs.js",
-  "find": "if (body.kind === \"refundPaid\" && !date(body.paidOn)) return",
-  "replace": "if (false) return"
- },
- {
   "name": "a removal may carry a paid day",
   "file": "src/maker-inputs.js",
   "find": "if (body.kind === \"refundRemove\" && body.paidOn != null) return",

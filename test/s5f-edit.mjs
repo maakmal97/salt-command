@@ -47,7 +47,8 @@ export async function run({ ok }) {
     db.exec(readFileSync(join(REPO, "migrations", "0024_draft_edit.sql"), "utf8"));
     const after = db.prepare("SELECT COUNT(*) AS n FROM draft").get().n;
     ok(before === cols.length && after === before && JSON.stringify(db.prepare("SELECT id,status,collection,committed_at FROM draft ORDER BY id").all()) === sum, "the rebuild keeps every row, with its status, collection and committed moment: " + before + " to " + after);
-    db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,drafter,drafted_at) VALUES ('2026-10-28T09:00:00.000Z','pending','edit','{}','{}','r','d','d')").run();
+    let took = null; try { db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,drafter,drafted_at) VALUES ('2026-10-28T09:00:00.000Z','pending','edit','{}','{}','r','d','d')").run(); took = true; } catch (e) { took = e.message; }
+    ok(took === true, "the rebuilt table takes a draft of the collection edit: " + took);
     let bad = null; try { db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,drafter,drafted_at) VALUES ('y','pending','bogus','{}','{}','r','d','d')").run(); } catch (e) { bad = e.message; }
     ok(/CHECK/.test(bad || ""), "the new table takes edit and still refuses a collection it does not name");
     const idx = db.prepare("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='draft' AND name NOT LIKE 'sqlite_%' ORDER BY name").all().map((r) => r.name).join();
@@ -85,9 +86,30 @@ export async function run({ ok }) {
   const noDay = await B2.tap([item(IDN(5), paid({ party: "ZZ2-BBB", amount: 15, paidOn: "yesterday" }))]);
   const odd = await B2.tap([item(IDN(6), { ...rm(), kind: "refundEverything" })]);
   ok(noDay.status === 409 && odd.status === 409 && /day it went back|2 open/.test(JSON.stringify(noDay.refused)) && /not an edit/.test(JSON.stringify(odd.refused)), "a paid edit needs a real day and a kind the fold does not know is refused: " + JSON.stringify([noDay.refused, odd.refused]));
+  const B5 = await bookOf(), noDay2 = await B5.tap([item(IDN(9), paid({ paidOn: "yesterday" }))]);
+  ok(noDay2.status === 409 && /day it went back/.test(JSON.stringify(noDay2.refused)) && refundsOf(await B5.read()).some((r) => r.party === "ZZ1-AAA" && r.amount === 40 && !r.paidOn), "a paid edit with no real day is refused by the engine itself, whatever drafted it, and the refund stays open: " + JSON.stringify(noDay2.refused));
   const c = await B2.call("/compact", { method: "POST" }), base = refundsOf(await B2.read("?base=1"));
   ok(c.ok && c.compacted === 1 && !base.some((r) => r.party === "ZZ1-AAA" && r.amount === 40 && !r.paidOn), "a compaction writes the edit into the base, which holds the same refunds the view did: " + JSON.stringify([c.ok, c.compacted]));
+  /* a compaction that would lose a row the edit did not take is refused, an edit in the batch or not */
+  {
+    const { prepare } = await import("../src/book.js");
+    const S = await bookOf(); await S.tap([item(IDN(1), rm())]);
+    const snap = S.B.state.storage.sql.exec("SELECT v, stamped FROM snap").toArray()[0], evs = S.B.events();
+    const mkP = async (mut) => { const view = S.B.viewOf(S.B.events()); mut(view.book); const { PRICING, ...rest } = view.derived; return prepare(view.book, PRICING, { v: snap.v, stamped: snap.stamped, derived: rest }); };
+    const loseSale = await mkP((b) => b.sales.shift());
+    let e1 = null; try { S.B.load(loseSale, "t", { folded: evs.map((e) => e.draft_id), pure: true, strict: true }); } catch (e) { e1 = e.message; }
+    ok(/compaction refused/.test(e1 || "") && /\"gone\":[1-9]/.test(e1 || ""), "with an edit in the batch a compaction that also loses a sale is still refused whole: " + e1);
+    const { COLLECTIONS } = await import("../src/book.js");
+    const spare = COLLECTIONS.find((k) => !["sales", "purchases", "loans", "customerRefunds"].includes(k) && (S.B.viewOf(S.B.events()).book[k] || []).length > 0);
+    const loseSpare = await mkP((b) => { b[spare].shift(); });
+    let e3 = null; try { S.B.load(loseSpare, "t", { folded: evs.map((e) => e.draft_id), pure: true, strict: true }); } catch (e) { e3 = e.message; }
+    ok(!!spare && /compaction refused/.test(e3 || "") && /\"gone\":[1-9]/.test(e3 || "") && !/"differ":\[[^\]]/.test(e3 || ""), "a row lost from a list nothing compares is refused by the row-loss guard alone, edit or no edit: " + e3);
+    const loseTwo = await mkP((b) => { b.customerRefunds.shift(); b.customerRefunds.shift(); });
+    let e2 = null; try { S.B.load(loseTwo, "t", { folded: evs.map((e) => e.draft_id), pure: true, strict: true }); } catch (e) { e2 = e.message; }
+    ok(/compaction refused/.test(e2 || ""), "and one that loses more refunds than the edits it folds is too: " + e2);
+  }
   const pl = POSITION_ENGINE.editRefunds(fb().customerRefunds, { party: "ZZ1-AAA", since: T(1), amount: 40 });
+  ok(POSITION_ENGINE.editRefunds(fb().customerRefunds, { party: "ZZ1-AAA", since: T(5), amount: 40 }).length === 0 && POSITION_ENGINE.editRefunds(fb().customerRefunds, { party: "ZZ1-AAA", since: T(1), amount: 41 }).length === 0 && POSITION_ENGINE.editRefunds(fb().customerRefunds, { party: "ZZ2-BBB", since: T(1), amount: 40 }).length === 0, "a refund of another day, another amount or another party is not the one named");
   ok(pl.length === 1 && POSITION_ENGINE.editRefunds(fb().customerRefunds, { party: "ZZ1-AAA", since: T(1), amount: 9 }).length === 0 && POSITION_ENGINE.editRefunds(fb().customerRefunds, { party: "ZZ2-BBB", since: T(1), amount: 15 }).length === 2, "the engine's match is the open refunds those three name: one, none for a paid one, two for the twins");
   const en = POSITION_ENGINE.editEntry({ at: IDN(7), kind: "refundPaid", party: "ZZ1-AAA", since: T(1), amount: 40, paidOn: T(3) });
   ok(en.payload.mode === "edit" && en.payload.paidOn === T(3) && /Mark paid/.test(en.raw) && POSITION_ENGINE.editEntry({ at: IDN(7), kind: "refundRemove", party: "ZZ1-AAA", since: T(1), amount: 40 }).payload.paidOn === undefined, "the entry carries its payload, and a removal carries no paid day");
