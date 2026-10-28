@@ -276,7 +276,7 @@ function cardQuote(C,p,code,q){
 
 /* a book's moved figures, the Worker's road: the walk is made here, and nothing else is read */
 function ctxFor(B,R,prod,today,over){
-  const C0={B,R,today,over,W:{buyUnits:0,selfUse:0,wavgBuy:0,stockCost:null}};
+  const C0={B,R,today,over,memo:B.memo,W:{buyUnits:0,selfUse:0,wavgBuy:0,stockCost:null}};   /* S5b: B.memo, when a caller gives one (engine/book-inputs.mjs), is the render's cache of the page */
   return {...C0,W:POSITION_ENGINE.walk(posInputs(C0,prod))};
 }
 function figuresOf(C,prod){
