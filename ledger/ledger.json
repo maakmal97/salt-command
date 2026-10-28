@@ -1,6 +1,6 @@
 {
- "v": "v1317",
- "stamped": "29 Oct 2026, 00:00 KL",
+ "v": "v1318",
+ "stamped": "29 Oct 2026, 00:26 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -84,7 +84,7 @@
    "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 50
+    "stated": 30
    },
    "candy": {
     "qty": 0,
@@ -9503,8 +9503,8 @@
     "credit": 25,
     "product": "oil",
     "date": "2026-10-28",
-    "deliveredQty": 0,
-    "note": "<b>PENDING SALE OF 20 UNITS OF OIL TO CZ4-MK, GOODS RM220, 28 OCT 2026.</b> Site order 20261028155513-qwaafw, preapproved by Counter Admin, delivery RM30 beside it. RM25 is paid by their credit; nothing is handed over, so no oil is drawn. The ladder for 20 units gives a floor total of RM165 and an ask total of RM240, so RM220 is above the floor and under the ask: RM11 a unit against RM8.25 and RM12. The party's median rate is RM84, range RM12 to RM92; outstanding before RM0, no units on credit against a cap of 10. Cost is RM8.16 a unit off the latest purchase. The drafter flagged RM11 as 12% under the usual RM12.5; the figures bear that out, yet the rate clears the floor. The rest of the RM250 and the 20 units remain outstanding.",
+    "deliveredQty": 20,
+    "note": "<b>CORRECTION ON S302, DELIVERY RECORDED ON 29 OCT 2026.</b> Preapproved by Counter Admin. CZ4-MK's order of 20 unit of oil, goods RM220 plus RM30 delivery, paid RM250 on 28 Oct, now shows deliveredQty 20 (was 0), deliveredOn 29 Oct 2026 and handover delivered. No cash moves; the shelf rolls 20 unit out. The dossier gives no floor or ask for this size, so no rate is compared. The party's median rate is RM50, range RM11 to RM92; outstanding before RM0, no units on credit. The drafter flagged that the 2-step trail will no longer add up to the figure set directly; the correction is recorded beside it, so the flag stands. Nothing is left outstanding. <b>PENDING SALE OF 20 UNITS OF OIL TO CZ4-MK, GOODS RM220, 28 OCT 2026.</b> Site order 20261028155513-qwaafw, preapproved by Counter Admin, delivery RM30 beside it. RM25 is paid by their credit; nothing is handed over, so no oil is drawn. The ladder for 20 units gives a floor total of RM165 and an ask total of RM240, so RM220 is above the floor and under the ask: RM11 a unit against RM8.25 and RM12. The party's median rate is RM84, range RM12 to RM92; outstanding before RM0, no units on credit against a cap of 10. Cost is RM8.16 a unit off the latest purchase. The drafter flagged RM11 as 12% under the usual RM12.5; the figures bear that out, yet the rate clears the floor. The rest of the RM250 and the 20 units remain outstanding.",
     "rid": "s302",
     "amend": [
      {
@@ -9520,9 +9520,26 @@
       "cash": 225,
       "kg": 0,
       "note": "<b>FULFILMENT OF RM225 ON 28 OCT 2026, AGAINST ORDER S302.</b> CZ4-MK paid RM225 in cash at the counter for the oil order of 20 units, goods RM220 plus RM30 delivery, RM250 in all. Pre-approved by Counter Admin. The payment is recorded with 0 units moved, so the order stays undelivered. Cash on the order was RM25 and is now RM250 by the master's rule. The ladder floor and ask for oil are not in the dossier, so no comparison is made. The party's median rate is RM50, range RM11 to RM92; outstanding before was RM225, no units on credit. The cost stays as drafted, as no goods leave. The drafter raised no flag. The figures leave the order paid in full, with the 20 units still to hand over."
+     },
+     {
+      "date": "2026-10-29",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 20,
+      "note": "<b>CORRECTION ON S302, DELIVERY RECORDED ON 29 OCT 2026.</b> Preapproved by Counter Admin. CZ4-MK's order of 20 unit of oil, goods RM220 plus RM30 delivery, paid RM250 on 28 Oct, now shows deliveredQty 20 (was 0), deliveredOn 29 Oct 2026 and handover delivered. No cash moves; the shelf rolls 20 unit out. The dossier gives no floor or ask for this size, so no rate is compared. The party's median rate is RM50, range RM11 to RM92; outstanding before RM0, no units on credit. The drafter flagged that the 2-step trail will no longer add up to the figure set directly; the correction is recorded beside it, so the flag stands. Nothing is left outstanding.",
+      "was": {
+       "deliveredQty": 0,
+       "deliveredOn": null,
+       "handover": null
+      },
+      "cost": 163.2
      }
     ],
-    "paidOn": "2026-10-28"
+    "paidOn": "2026-10-28",
+    "deliveredOn": "2026-10-29",
+    "handover": "delivered",
+    "mod": "corrected on 2026-10-29: deliveredQty 0 to 20; deliveredOn (unset) to 2026-10-29; handover (unset) to delivered",
+    "cost": 163.2
    },
    {
     "customer": "CM4-TO-R",
@@ -10360,7 +10377,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-28T15:58:18.883Z",
+  "QUEUE_COMMITTED": "2026-10-28T16:25:23.840Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -10411,7 +10428,7 @@
     {
      "id": "int:nocost",
      "sev": "watch",
-     "title": "4 priced sales carry no cost of their own"
+     "title": "3 priced sales carry no cost of their own"
     },
     {
      "id": "int:underfloor",
@@ -14972,15 +14989,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.3333333333333333
+         "v": 0.38461538461538464
         }
        },
        "attrib": 1,
        "shrinkRate": 0.2850485436893204,
        "avgDel": {
-        "n": 20,
-        "kg": 291,
-        "mean": 14.55
+        "n": 21,
+        "kg": 311,
+        "mean": 14.8095
        }
       },
       "policy": {
@@ -20235,11 +20252,11 @@
      "suggest": null
     }
    },
-   "v": "v1317"
+   "v": "v1318"
   },
   "OPEN": {
-   "at": "2026-10-28T16:00:58.100Z",
-   "count": 9,
+   "at": "2026-10-28T16:26:17.810Z",
+   "count": 8,
    "byKey": {
     "CR3-DAM|2026-10-28|110": {
      "d": "2026-10-28",
@@ -20257,22 +20274,6 @@
      "key": "CR3-DAM|2026-10-28|110",
      "age": 1,
      "exp": 82.5
-    },
-    "CZ4-MK|2026-10-28|250|oil": {
-     "d": "2026-10-28",
-     "p": "CZ4-MK",
-     "dir": "S",
-     "q": 20,
-     "t": 220,
-     "cash": 250,
-     "mv": 0,
-     "st": "oweStock",
-     "oweUnits": 20,
-     "dv": 30,
-     "pr": "oil",
-     "rid": "s302",
-     "paidOn": "2026-10-28",
-     "key": "CZ4-MK|2026-10-28|250|oil"
     },
     "CZ5-TM|2026-10-27|105": {
      "d": "2026-10-27",
@@ -20404,13 +20405,13 @@
     },
     "oil": {
      "name": "Oil",
-     "onHand": 50,
+     "onHand": 30,
      "free": 30,
-     "owedOut": 20,
+     "owedOut": 0,
      "coverDays": 9.6,
      "rate": 3.78,
      "owedToYou": 0,
-     "promised": 20,
+     "promised": 0,
      "short": 0
     },
     "candy": {
@@ -20466,7 +20467,7 @@
     "gas": null,
     "prep": null
    },
-   "v": "v1317"
+   "v": "v1318"
   },
   "TERMS": {
    "ceiling": 250,
@@ -20474,7 +20475,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1317"
+   "v": "v1318"
   },
   "REWARD": {
    "stated": {
@@ -20492,7 +20493,7 @@
      }
     }
    },
-   "v": "v1317"
+   "v": "v1318"
   },
   "STOCK": {
    "today": "2026-10-29",
@@ -20506,9 +20507,9 @@
      "transit": 0
     },
     "oil": {
-     "shelf": 50,
+     "shelf": 30,
      "free": 30,
-     "commit": 20,
+     "commit": 0,
      "light": "green",
      "coverDays": 9.6,
      "transit": 0
@@ -20546,7 +20547,7 @@
      "transit": 0
     }
    },
-   "v": "v1317"
+   "v": "v1318"
   }
  }
 }

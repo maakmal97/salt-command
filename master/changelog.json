@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1318",
+  "d": "29 Oct 2026",
+  "t": "OIL DELIVERY RECORDED ON S302",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> Order s302, CZ4-MK's 20 unit of oil, now records delivery of 20 unit on 29 Oct 2026 with handover delivered. Counter Admin preapproved it on 28 Oct. The row already showed RM250 paid, so the correction moves no cash and changes only what the order says about itself. The fold applies the patch as stated.",
+   "<b>INVENTORY AND ONE ODDITY.</b> The oil shelf rolls 20 unit out to CZ4-MK, the difference the correction states. Nothing landed, so the cost basis does not move. Unusually, the row's 2-step payment trail is not rewritten, so it no longer adds up to the figure set directly; the correction is recorded beside it saying so."
+  ]
+ },
+ {
   "v": "v1317",
   "d": "29 Oct 2026",
   "t": "CASH AT HANDOVER ON AN OIL ORDER",
