@@ -1,0 +1,242 @@
+[
+ {
+  "name": "the page's sales are not the book's",
+  "file": "engine/book-inputs.mjs",
+  "find": "sales: book.sales || [], purchases:",
+  "replace": "sales: [], purchases:"
+ },
+ {
+  "name": "the purchases are left out",
+  "file": "engine/book-inputs.mjs",
+  "find": "purchases: book.purchases || [], opening:",
+  "replace": "purchases: [], opening:"
+ },
+ {
+  "name": "the opening is left out",
+  "file": "engine/book-inputs.mjs",
+  "find": "opening: book.PROD_OPENING || {}, statedStockBy: {}",
+  "replace": "opening: {}, statedStockBy: {}"
+ },
+ {
+  "name": "a loan out repaid counts in full",
+  "file": "engine/book-inputs.mjs",
+  "find": "(l.repaid || []).reduce((a, x) => a + (+x.kg || 0), 0)).toFixed(2);",
+  "replace": "0).toFixed(2);"
+ },
+ {
+  "name": "a settled loan still counts",
+  "file": "engine/book-inputs.mjs",
+  "find": "const loanLeft = (l) => (!l || l.status === \"settled\") ? 0 :",
+  "replace": "const loanLeft = (l) => (!l) ? 0 :"
+ },
+ {
+  "name": "a loan before the opening counts",
+  "file": "engine/book-inputs.mjs",
+  "find": "(l.preOpening || l.direction === \"in\" ? 0 : loanLeft(l))",
+  "replace": "(l.direction === \"in\" ? 0 : loanLeft(l))"
+ },
+ {
+  "name": "loans in are added, not taken off",
+  "file": "engine/book-inputs.mjs",
+  "find": "loanDrawUnits: () => loanOutUnits(loans) - loanInUnits(loans),",
+  "replace": "loanDrawUnits: () => loanOutUnits(loans) + loanInUnits(loans),"
+ },
+ {
+  "name": "the default book is not salt",
+  "file": "engine/book-inputs.mjs",
+  "find": "export const DEFAULT_PROD = \"salt\";",
+  "replace": "export const DEFAULT_PROD = \"\";"
+ },
+ {
+  "name": "the default book is read off the book",
+  "file": "engine/book-inputs.mjs",
+  "find": "defaultProd: DEFAULT_PROD, refunds",
+  "replace": "defaultProd: book.DEFAULT_PROD, refunds"
+ },
+ {
+  "name": "the refunds are left out",
+  "file": "engine/book-inputs.mjs",
+  "find": "refunds: book.customerRefunds || [],",
+  "replace": "refunds: [],"
+ },
+ {
+  "name": "the counts are left out",
+  "file": "engine/book-inputs.mjs",
+  "find": "counts: book.COUNTS || [],",
+  "replace": "counts: [],"
+ },
+ {
+  "name": "the self-use log is left out",
+  "file": "engine/book-inputs.mjs",
+  "find": "selfUseLog: book.selfUseLog || [],",
+  "replace": "selfUseLog: [],"
+ },
+ {
+  "name": "the supplier receivable is left out",
+  "file": "engine/book-inputs.mjs",
+  "find": "supplierReceivable: book.supplierReceivable !== undefined ? book.supplierReceivable : null,",
+  "replace": "supplierReceivable: null,"
+ },
+ {
+  "name": "the partners are left out",
+  "file": "engine/book-inputs.mjs",
+  "find": "partners: book.partners || [],",
+  "replace": "partners: [],"
+ },
+ {
+  "name": "the tiers are left out",
+  "file": "engine/book-inputs.mjs",
+  "find": "tierOf: book.TIER_OF || {},",
+  "replace": "tierOf: {},"
+ },
+ {
+  "name": "today is the UTC day",
+  "file": "engine/book-inputs.mjs",
+  "find": "new Date(+now + 8 * 36e5).toISOString().slice(0, 10)",
+  "replace": "new Date(+now).toISOString().slice(0, 10)"
+ },
+ {
+  "name": "the clock is ignored",
+  "file": "engine/book-inputs.mjs",
+  "find": "SNAPSHOT_ENGINE.pricing(B, PRICING_RULES, klToday(now), over)",
+  "replace": "SNAPSHOT_ENGINE.pricing(B, PRICING_RULES, klToday(Date.parse(\"2026-10-16T04:00:00Z\")), over)"
+ },
+ {
+  "name": "the sizes are the first book's of none",
+  "file": "engine/book-inputs.mjs",
+  "find": "return { sizes: first ? first.sizes : null, byProduct };",
+  "replace": "return { sizes: null, byProduct };"
+ },
+ {
+  "name": "the differ compares nothing",
+  "file": "engine/book-inputs.mjs",
+  "find": "if (r8(x[k]) === r8(y[k])) continue;",
+  "replace": "continue;"
+ },
+ {
+  "name": "the differ is exact to the last place",
+  "file": "engine/book-inputs.mjs",
+  "find": "typeof x === \"number\" ? Math.round(x * 1e8) / 1e8 : x));\n  const out = [];",
+  "replace": "typeof x === \"number\" ? x : x));\n  const out = [];"
+ },
+ {
+  "name": "the differ names no customers",
+  "file": "engine/book-inputs.mjs",
+  "find": "if ([\"cards\", \"lift\", \"suggest\"].includes(k) && x[k]",
+  "replace": "if (false && x[k]"
+ },
+ {
+  "name": "the differ names every customer",
+  "file": "engine/book-inputs.mjs",
+  "find": "codes.slice(0, 5).join(\", \") + (codes.length > 5 ? \", ...\" : \"\")",
+  "replace": "codes.join(\", \")"
+ },
+ {
+  "name": "the differ ignores a book on one side",
+  "file": "engine/book-inputs.mjs",
+  "find": "if (!x || !y) { out.push(p + \" (missing on one side)\"); continue; }",
+  "replace": "if (!x || !y) continue;"
+ },
+ {
+  "name": "the parity check ignores the sizes",
+  "file": "tools/pricing-parity.mjs",
+  "find": "ok: !x.differ.length && x.sizesSame, products:",
+  "replace": "ok: !x.differ.length, products:"
+ },
+ {
+  "name": "the parity check never tries the day before",
+  "file": "tools/pricing-parity.mjs",
+  "find": "if (stamped === null && (x.differ.length || !x.sizesSame)) { const y",
+  "replace": "if (false) { const y"
+ },
+ {
+  "name": "the day before is any day before",
+  "file": "tools/pricing-parity.mjs",
+  "find": "const y = at(new Date(+now - back));",
+  "replace": "const y = at(new Date(+now - back * 60));"
+ },
+ {
+  "name": "a ledger with no PRICING is called equal",
+  "file": "tools/pricing-parity.mjs",
+  "find": "if (!page || !page.byProduct) return { ok: false, error: \"ledger.json holds no PRICING to compare with\" };",
+  "replace": "if (!page || !page.byProduct) return { ok: true, products: 0, differ: [], sizesSame: true, ms: 0, v: null };"
+ },
+ {
+  "name": "an unreadable file is called equal",
+  "file": "tools/pricing-parity.mjs",
+  "find": "catch (e) { return { ok: false, error: \"could not read the checkout's files: \"",
+  "replace": "catch (e) { return { ok: true, error: \"could not read the checkout's files: \""
+ },
+ {
+  "name": "the line hides a failed run",
+  "file": "tools/pricing-parity.mjs",
+  "find": "return \"Pricing parity NOT RUN: \"",
+  "replace": "return \"Pricing parity: \""
+ },
+ {
+  "name": "the pricing step may block a fold",
+  "file": ".github/workflows/cloud-commit.yml",
+  "find": "      - name: Check the engine prices as the page did\n        if: steps.plan.outputs.deploy == '1'\n        continue-on-error: true\n",
+  "replace": "      - name: Check the engine prices as the page did\n        if: steps.plan.outputs.deploy == '1'\n"
+ },
+ {
+  "name": "the engine ignores the supplied cache",
+  "file": "engine/snapshot.mjs",
+  "find": "const C0={B,R,today,over,memo:B.memo,W:",
+  "replace": "const C0={B,R,today,over,W:"
+ },
+ {
+  "name": "the cache is never kept",
+  "file": "engine/book-inputs.mjs",
+  "find": "memo: (k, f) => { if (cache.has(k)) return cache.get(k); const v = f(); cache.set(k, v); return v; },",
+  "replace": "memo: (k, f) => f(),"
+ },
+ {
+  "name": "the opening has no default",
+  "file": "engine/book-inputs.mjs",
+  "find": "opening: book.PROD_OPENING || {}",
+  "replace": "opening: book.PROD_OPENING"
+ },
+ {
+  "name": "the quotes have no default",
+  "file": "engine/book-inputs.mjs",
+  "find": "quotes: book.QUOTES || {}",
+  "replace": "quotes: book.QUOTES"
+ },
+ {
+  "name": "the roster has no default",
+  "file": "engine/book-inputs.mjs",
+  "find": "roster: book.roster || [],",
+  "replace": "roster: book.roster,"
+ },
+ {
+  "name": "the tiers have no default",
+  "file": "engine/book-inputs.mjs",
+  "find": "tierOf: book.TIER_OF || {},",
+  "replace": "tierOf: book.TIER_OF,"
+ },
+ {
+  "name": "the book order has no default",
+  "file": "engine/book-inputs.mjs",
+  "find": "prodOrder: book.PROD_ORDER || []",
+  "replace": "prodOrder: book.PROD_ORDER"
+ },
+ {
+  "name": "the stamp is read as UTC",
+  "file": "tools/pricing-parity.mjs",
+  "find": "\":00+08:00\");",
+  "replace": "\":00Z\");"
+ },
+ {
+  "name": "the stamp is not used",
+  "file": "tools/pricing-parity.mjs",
+  "find": "x = at(stamped !== null ? new Date(stamped) : now);",
+  "replace": "x = at(now);"
+ },
+ {
+  "name": "the day before is tried with a stamp too",
+  "file": "tools/pricing-parity.mjs",
+  "find": "if (stamped === null && (x.differ.length || !x.sizesSame)) {",
+  "replace": "if (x.differ.length || !x.sizesSame) {"
+ }
+]
