@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1306",
+  "d": "28 Oct 2026",
+  "t": "THE ENGINE PRICES FROM A BOOK ALONE AND EQUALS THE PAGE, PROVED EVERY FOLD (S5B, DORMANT)",
+  "n": [
+   "<b>S5B OF THE S5 PLAN: A WORKER CAN NOW STRIKE THE PRICING, AND EVERY FOLD PROVES IT DOES IT AS THE PAGE DOES.</b> Nothing reads the engine's figures yet: the Worker, the Book and the drafter still use the page's PRICING, so no price, floor or card changed. Fable reviewed the diff and its findings are applied.",
+   "<b>A PURE MODULE.</b> engine/book-inputs.mjs builds, from a book alone, the context the page builds out of its own globals (the loans net, the counts, the self-use log, the default book, the Kuala Lumpur day) and calls the engine's own pricing(): every book's cost, floors, ladder and every customer's card. It imports engine files only, so a Worker can run it. The engine's context now takes a cache a caller supplies, which brings the strike from 1.6 seconds to about 0.2 on today's book, with the same figures; it still grows with customers times rows, so it must run in a Worker request or an alarm and never inside the Book's own request.",
+   "<b>THE PROOF, EVERY FOLD.</b> A new chain step compares the engine's figures from the book with the page's in ledger.json, at the moment ledger.json's stamp names (prices read the day, and lock ages move daily, so a re-run days later is equal as it should be). Red on a difference, never blocking a fold; names and counts only. It proves the glue, not the engine: the page's own snapshot calls the same engine, so a bug inside the engine would pass on both sides.",
+   "<b>WHAT STAYS FOR THE FLIP.</b> The Worker striking PRICING after a tap or a booked lot and writing it where the drafter reads it; how each customer buys and the Whiteboard's advice, which only the page derives and the price list and drafter read, must be kept from the last load until they are lifted too."
+  ]
+ },
+ {
   "v": "v1305",
   "d": "28 Oct 2026",
   "t": "THE COUNTER'S PUBLISH CAN READ THE BOOK, COMPARED WITH GIT AND NOT SEALED (S5E, DORMANT)",

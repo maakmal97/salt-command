@@ -8911,7 +8911,7 @@ function cardQuote(C,p,code,q){
 
 /* a book's moved figures, the Worker's road: the walk is made here, and nothing else is read */
 function ctxFor(B,R,prod,today,over){
-  const C0={B,R,today,over,W:{buyUnits:0,selfUse:0,wavgBuy:0,stockCost:null}};
+  const C0={B,R,today,over,memo:B.memo,W:{buyUnits:0,selfUse:0,wavgBuy:0,stockCost:null}};   /* S5b: B.memo, when a caller gives one (engine/book-inputs.mjs), is the render's cache of the page */
   return {...C0,W:POSITION_ENGINE.walk(posInputs(C0,prod))};
 }
 function figuresOf(C,prod){
@@ -11205,7 +11205,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1305","d":"28 Oct 2026","t":"THE COUNTER'S PUBLISH CAN READ THE BOOK, COMPARED WITH GIT AND NOT SEALED (S5E, DORMANT)","n":["<b>S5E OF THE S5 PLAN: THE ROAD FROM THE BOOK TO THE STATEMENTS, AND ITS PROOF.</b> Nothing publishes from it: the publish still reads git, so nothing a customer sees changes. Fable reviewed the diff twice; every finding is applied.","<b>A READ-ONLY ROUTE.</b> The Desk Worker answers GET /book/ledger, behind the same three locks as the Book's load and readcheck (Access, the CI service token, the Book's own key), with the Book's base put back in the shape of ledger/book.json beside its derived documents, the version, the revision and how many entries are open. The body is the whole ledger and nothing prints it.","<b>THE SECOND PUBLISH, COMPARED.</b> After the readcheck the chain now builds every account's live statement, in plaintext with nothing sealed or written, once from git's book and once from what the Book answered, and names any account whose document differs; red on a difference, never blocking a fold. It is not compared when the Book and the checkout are at different versions (a load that failed would otherwise read as a difference in the builder). The tool also writes the Book's book to a file for the flip, base or with --view the open entries replayed.","<b>WHAT IT DOES NOT COVER, SAID.</b> The price lists, cards, restock lights and associates' figures come from the page's own figures over the master, so their equal answer on the Book's shape waits for the Worker's PRICING (S5b); and the stamp the Counter gates a live statement on is still the Desk's build id until the flip."]}];
+const evolution=[{"v":"v1306","d":"28 Oct 2026","t":"THE ENGINE PRICES FROM A BOOK ALONE AND EQUALS THE PAGE, PROVED EVERY FOLD (S5B, DORMANT)","n":["<b>S5B OF THE S5 PLAN: A WORKER CAN NOW STRIKE THE PRICING, AND EVERY FOLD PROVES IT DOES IT AS THE PAGE DOES.</b> Nothing reads the engine's figures yet: the Worker, the Book and the drafter still use the page's PRICING, so no price, floor or card changed. Fable reviewed the diff and its findings are applied.","<b>A PURE MODULE.</b> engine/book-inputs.mjs builds, from a book alone, the context the page builds out of its own globals (the loans net, the counts, the self-use log, the default book, the Kuala Lumpur day) and calls the engine's own pricing(): every book's cost, floors, ladder and every customer's card. It imports engine files only, so a Worker can run it. The engine's context now takes a cache a caller supplies, which brings the strike from 1.6 seconds to about 0.2 on today's book, with the same figures; it still grows with customers times rows, so it must run in a Worker request or an alarm and never inside the Book's own request.","<b>THE PROOF, EVERY FOLD.</b> A new chain step compares the engine's figures from the book with the page's in ledger.json, at the moment ledger.json's stamp names (prices read the day, and lock ages move daily, so a re-run days later is equal as it should be). Red on a difference, never blocking a fold; names and counts only. It proves the glue, not the engine: the page's own snapshot calls the same engine, so a bug inside the engine would pass on both sides.","<b>WHAT STAYS FOR THE FLIP.</b> The Worker striking PRICING after a tap or a booked lot and writing it where the drafter reads it; how each customer buys and the Whiteboard's advice, which only the page derives and the price list and drafter read, must be kept from the last load until they are lifted too."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11353,7 +11353,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='28 Oct 2026, 15:51 KL';
+const LAST_UPDATED='28 Oct 2026, 16:57 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
