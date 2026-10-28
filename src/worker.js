@@ -20,6 +20,7 @@
 import { runDrafter, dryRunDrafter, readBook, readMirror, bookOnce, withDraftLots, withRefunds, draftRow, tripCheck, bindBook, wayBound } from "./drafter.js";
 import { bookDirect, compareReads, readMode } from "./book-read.js";
 import { drainOutbox } from "./outbox.js";
+import { pageMode, servedBook } from "./book-page.js";
 import { bookTap, bookNet, ridStmts, voidEntries, voidUnlessApproved, tapMode, TAP_COLS } from "./book-tap.js";
 import { boundOf, unfolded } from "./way.js";
 import { runBackup, backupAlarm, runBookExport, bookExportAlarm, BACKUP_CRON } from "./backup.js";
@@ -243,6 +244,29 @@ async function handleBookLedger(request, env, m, url) {
 /* S5 (the roster road, 28 Oct 2026): WHAT THE BOOK'S ROSTER AND RENAME ENTRIES DID TO THE FILES GIT HOLDS BESIDE THE BOOK, for tools/roster-export.mjs: every entry after `after` (a booking order) that carried
    effects, as the Book applied them (codes, kinds and the re-key pairs, never a row, a figure or a place), with the highest booking order the Book holds, so a quiet run can still move its watermark. The same two locks as the
    ledger; read only. A voided entry is left out. */
+/* S5d (28 Oct 2026): THE BOOK'S REVISION for /rev, and THE BOOK FOR THE PAGE. Both only with the D1 flag book_page on (shipped off): off, /rev answers the build manifest alone and /book/page 404s, so a desk reads what was baked into
+   it. The page is behind Access and the write key (the whole ledger, cost and margin included), the answer is never cached (sw.js keeps /book out of its cache too). */
+async function bookRevOf(env) {
+  try {
+    if (!env.BOOK || !env.SALT_LEDGER || await pageMode(env.SALT_LEDGER) !== "on") return null;
+    const a = await (await env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)).fetch(new Request("https://book/revno"))).json();
+    return a && a.ok !== false && Number.isInteger(a.rev) ? a.rev : null;
+  } catch (e) { return null; }
+}
+async function handleBookPage(env, m) {
+  if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+  if (!env.BOOK || !env.SALT_LEDGER) return json({ ok: false, error: "the Book is not bound" }, 503);
+  try {
+    if (await pageMode(env.SALT_LEDGER) !== "on") return json({ ok: false, off: true, error: "the Book is not served to the page" }, 404);
+    const stub = env.BOOK.get(env.BOOK.idFromName(BOOK_NAME));
+    const a = await (await stub.fetch(new Request("https://book/revno"))).json().catch(() => ({}));   /* the revision first: a move between the two reads is a later revision to the page, never an earlier one */
+    const r = await stub.fetch(new Request("https://book/read"));
+    const out = r.ok ? servedBook(await r.json(), a && a.rev) : null;
+    if (!out) return json({ ok: false, error: "the Book did not answer" }, 503);
+    return json(out);
+  } catch (e) { return json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }, 500); }
+}
+
 async function handleBookRoster(request, env, m, url) {
   if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
   if (!bookKeyOk(request, env)) return needsKey();
@@ -2890,6 +2914,7 @@ export default {
      * cannot quietly miss it. */
     if ((p === "/queue" || /^\/queue\/[^/]+\/withdraw$/.test(p) || p === "/ledger" || p.startsWith("/ledger/")
       || p === "/drafts" || p.startsWith("/drafts/")
+      || p === "/book/page"   /* S5d: the Book's view is the whole ledger, cost and margin included */
       || p === "/orders" || p.startsWith("/orders/") || p === "/stmt-users" || p === "/bulletin" || p === "/expected" || p === "/hush"
       || p.startsWith("/claims/")   /* S6: a claim against an account, read and answered like an order */
       || p === "/threads" || p.startsWith("/threads/")   /* Step 7: an account's thread, read and answered like an order's */
@@ -2913,6 +2938,7 @@ export default {
        The answer carries counts and a digest, never a row. Nothing reads the Book. */
     if (p === "/book/load") return handleBookLoad(request, env, m);
     if (p === "/book/ledger") return handleBookLedger(request, env, m, url);   /* S5e: the Book's base as a book file, for the second publish */
+    if (p === "/book/page") return handleBookPage(env, m);   /* S5d: the Book's view for the page, keyed above, 404 while the flag is off */
     if (p === "/book/roster") return handleBookRoster(request, env, m, url);   /* S5: the roster road's effects, for the flip's export */
     if (p === "/book/readcheck") return handleBookReadcheck(request, env, m);   /* S3: the Book against the mirror, names only */
     if (p === "/book/pitr" || p === "/book/window") return handleBookPitr(request, env, m, p);   /* S2c: the recovery test, the same two locks */
@@ -2980,7 +3006,10 @@ export default {
       try {
         const res = await env.ASSETS.fetch(new Request(new URL("/rev.json", url), { method: "GET" }));
         if (!res || !res.ok) return json({ ok: false, error: "no build manifest" }, 404);
-        return new Response(await res.text(), { status: 200, headers: JSON_HEADERS });
+        /* S5d: the Book's revision beside the build id, with the flag on, and never more than a moment of the build poll's time: a Book that is loading or waking answers late, and the poll that heals a stale build must not wait on it */
+        const text = await res.text(), rev = await Promise.race([bookRevOf(env), new Promise((done) => setTimeout(() => done(null), 1500))]);
+        if (rev === null) return new Response(text, { status: 200, headers: JSON_HEADERS });
+        try { return new Response(JSON.stringify({ ...JSON.parse(text), rev }), { status: 200, headers: JSON_HEADERS }); } catch (e) { return new Response(text, { status: 200, headers: JSON_HEADERS }); }
       } catch (e) {
         return json({ ok: false, error: "no build manifest" }, 404);
       }

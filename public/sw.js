@@ -38,8 +38,9 @@ const SHELL = [
    branch stored any 200 for ever. The phone's order list froze at first load. */
 /* /bulletin joins 26 Sep 2026 for the same reason: his editor read back the notice it first cached. */
 /* /slips joins 29 Sep 2026 (F13): a slip is fetched live when he opens it, and never kept on the phone, ciphertext or not. */
+/* /book joins 28 Oct 2026 (S5d): the Book's view is fetched live when the revision moves, and a cached first answer would be the book it read for ever. */
 /* /threads joins 29 Sep 2026 (Step 7): his Chat reads it every 2 seconds, and a cached first answer would be all it ever read. */
-const API = /^\/(queue|vault|bio|bye|menu|qr|rev|rev\.json|drafts|push|orders|stmt-users|draft-now|bulletin|slips|pins|threads)(\/|$)/;
+const API = /^\/(queue|vault|bio|bye|menu|qr|rev|rev\.json|drafts|push|orders|stmt-users|draft-now|bulletin|slips|pins|threads|book)(\/|$)/;
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

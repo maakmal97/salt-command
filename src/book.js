@@ -474,6 +474,11 @@ export class Book {
     const state = sql.exec("SELECT k, doc FROM state ORDER BY k").toArray().map((r) => JSON.stringify(r.k) + ":" + r.doc).join(",");
     return '{"ok":true,"v":' + JSON.stringify(snap.v) + ',"stamped":' + JSON.stringify(snap.stamped) + ',"at":' + JSON.stringify(snap.at) + ',"rows":{' + rows + '},"state":{' + state + "}}";
   }
+  /* S5d: the Book's revision and nothing else: one row, no view built (the page's /rev poll asks it) */
+  revno() {
+    const s = this.state.storage.sql.exec("SELECT rev FROM snap WHERE one = 1").toArray()[0];
+    return s ? { ok: true, rev: s.rev || 0 } : null;
+  }
   /* S3: the Book's version and the moment of its latest load, and nothing else (cheap; for a caller that holds a book already or needs only the bound) */
   snapshot() {
     const snap = this.state.storage.sql.exec("SELECT v, stamped, at, rev FROM snap WHERE one = 1").toArray()[0];
@@ -718,9 +723,9 @@ export class Book {
       const r = url.pathname === "/tap" ? this.tap(body) : this.void(body && body.ids);
       return Response.json(r, { status: r.status || (r.ok ? 200 : 400) });
     }
-    if ((url.pathname === "/read" || url.pathname === "/at") && request.method === "GET") {
+    if ((url.pathname === "/read" || url.pathname === "/at" || url.pathname === "/revno") && request.method === "GET") {
       if (this.isTest()) return Response.json({ ok: false, error: "not found" }, { status: 404 });
-      const out = url.pathname === "/read" ? this.readText(url.searchParams.get("base") === "1") : this.snapshot();
+      const out = url.pathname === "/read" ? this.readText(url.searchParams.get("base") === "1") : url.pathname === "/revno" ? this.revno() : this.snapshot();
       if (!out) return Response.json({ ok: false, error: "the Book holds no snapshot yet" }, { status: 503 });
       return typeof out === "string" ? new Response(out, { headers: { "content-type": "application/json" } }) : Response.json(out);
     }
