@@ -212,8 +212,8 @@
  {
   "name": "a compaction does not say which drafts it closed",
   "file": "src/book.js",
-  "find": "return { ok: true, compacted: r.tap.folded, closed, bookRev:",
-  "replace": "return { ok: true, compacted: r.tap.folded, closed: [], bookRev:"
+  "find": "return { ok: true, compacted: r.tap.folded, closed, at: r.at, bookRev:",
+  "replace": "return { ok: true, compacted: r.tap.folded, closed: [], at: r.at, bookRev:"
  },
  {
   "name": "a dry compaction does not say which drafts it would close",

@@ -15,7 +15,7 @@
   {"name":"a 4xx is retried","file":"tools/book-load.mjs","find":"if (r.status < 500) return","replace":"if (false) return"},
   {"name":"a 5xx is not retried","file":"tools/book-load.mjs","find":"{ tries = 3,","replace":"{ tries = 1,"},
   {"name":"a missing key still posts","file":"tools/book-load.mjs","find":"if (!key) return { ok: false, error: \"SALT_BOOK_KEY is not set, so the Book was not loaded\" };","replace":""},
-  {"name":"a failed load blocks the fold","file":".github/workflows/cloud-commit.yml","find":"      - name: Load the shadow Book from the book just shipped\n        if: steps.plan.outputs.deploy == '1'\n        continue-on-error: true","replace":"      - name: Load the shadow Book from the book just shipped\n        if: steps.plan.outputs.deploy == '1'"},
+  {"name":"a failed load blocks the fold","file":".github/workflows/cloud-commit.yml","find":"      - name: Load the shadow Book from the book just shipped\n        if: steps.plan.outputs.deploy == '1' && steps.source.outputs.mode != 'book'\n        continue-on-error: true","replace":"      - name: Load the shadow Book from the book just shipped\n        if: steps.plan.outputs.deploy == '1' && steps.source.outputs.mode != 'book'"},
   {"name":"PRICING.takenAt is held, so a replayed fold reads as a revision","file":"src/book.js","find":"const { takenAt, ...steady } = pricing; const doc = canon(steady);","replace":"const doc = canon(pricing);"},
   {"name":"the object reads the binding outside its allowlist","file":"src/book.js","find":"    const s = this.state.storage;\n    const w = s.sql.exec(","replace":"    const s = this.state.storage, nb = this.env.BOOK;\n    const w = s.sql.exec("}
 ]

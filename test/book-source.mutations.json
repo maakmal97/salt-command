@@ -134,8 +134,8 @@
  {
   "name": "the chain's second publish step may block a fold",
   "file": ".github/workflows/cloud-commit.yml",
-  "find": "      - name: Check the Book builds the same statements\n        if: steps.plan.outputs.deploy == '1'\n        continue-on-error: true\n",
-  "replace": "      - name: Check the Book builds the same statements\n        if: steps.plan.outputs.deploy == '1'\n"
+  "find": "      - name: Check the Book builds the same statements\n        if: steps.plan.outputs.deploy == '1' && steps.source.outputs.mode != 'book'\n        continue-on-error: true\n",
+  "replace": "      - name: Check the Book builds the same statements\n        if: steps.plan.outputs.deploy == '1' && steps.source.outputs.mode != 'book'\n"
  },
  {
   "name": "a Book behind the checkout is compared",

@@ -194,14 +194,14 @@
  {
   "name": "the readers get a /read route",
   "file": "src/worker.js",
-  "find": "    if (p === \"/book/load\") return handleBookLoad(request, env, m);",
-  "replace": "    if (p === \"/book/load\") return handleBookLoad(request, env, m);\n    if (p === \"/book/read\") return env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)).fetch(new Request(\"https://book/read\"));"
+  "find": "    if (p === \"/book/load\") return handleBookLoad(request, env, m, url);",
+  "replace": "    if (p === \"/book/load\") return handleBookLoad(request, env, m, url);\n    if (p === \"/book/read\") return env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)).fetch(new Request(\"https://book/read\"));"
  },
  {
   "name": "a red readcheck blocks the fold",
   "file": ".github/workflows/cloud-commit.yml",
-  "find": "      - name: Check the readers agree\n        if: steps.plan.outputs.deploy == '1'\n        continue-on-error: true",
-  "replace": "      - name: Check the readers agree\n        if: steps.plan.outputs.deploy == '1'"
+  "find": "      - name: Check the readers agree\n        if: steps.plan.outputs.deploy == '1' && steps.source.outputs.mode != 'book'\n        continue-on-error: true",
+  "replace": "      - name: Check the readers agree\n        if: steps.plan.outputs.deploy == '1' && steps.source.outputs.mode != 'book'"
  },
  {
   "name": "the load tool sends no derived documents",
