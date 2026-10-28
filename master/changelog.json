@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1308",
+  "d": "28 Oct 2026",
+  "t": "THE TAP CAN BOOK AN ADD ID AND A RENAME, AND RECORDS WHAT THEY DID TO THE FILES BESIDE THE BOOK (S5 ROSTER ROAD, DORMANT)",
+  "n": [
+   "<b>THE ROSTER ROAD OF THE S5 PLAN, SHIPPED OFF.</b> A new flag in D1, book_roster, ships off and turning it on is the flip's step, on his typed go. With it off nothing changes: the fold alone books an Add ID, an appointment, a partner and a rename, as before. Fable reviewed the diff and its findings are applied.",
+   "<b>WHAT THE TAP DOES WITH THE FLAG ON.</b> It books them in the Book by the engine's own plan, a rename by the same re-key the fold runs (one shared function), refused as the fold refuses (a code the desk's own logic names, a code not on the roster, a bucket, a taken code). A row that names a code a rename retired is refused with the new code named, so the result never depends on when a fold ran. The Book records what each entry did to the files git holds beside the book, and closes such an entry by that record as well as by D1's word, since it mints no rid; the load check names a folded entry whose roster change the new base lacks.",
+   "<b>THE GIT SIDE, FOR THE FLIP.</b> A read-only route, GET /book/roster, answers the entries that carried effects (codes, kinds and re-key pairs, never a row, a figure or a place), and tools/roster-export.mjs does with them what the fold did to the statement username, the place override and the suite's fixtures, by the fold's own functions, idempotently, behind a watermark whose first step refuses while an entry is booked and not folded. It is not in the chain yet. No username pool table was needed: the spare pool and the users file already live in git.",
+   "<b>WHAT STAYS FOR THE FLIP.</b> Migration 0021 applied alone and the flag turned on, the watermark started, and the export run in the chain before the publish and under its lock."
+  ]
+ },
+ {
   "v": "v1307",
   "d": "28 Oct 2026",
   "t": "25 UNIT SALT BUY FROM SA5-BTR LANDED AT QUOTE",
