@@ -11205,7 +11205,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1303","d":"28 Oct 2026","t":"CR3-DAM SALT PRICE SET 10% OFF","n":["<b>ONE PRICE SETTING FOLDED.</b> The batch holds a single tier change: CR3-DAM's salt figure is set to 10% off, approved by Counter Admin on 28 Oct 2026. It is a percentage lift on that party's own price and never moves the board. Nothing unusual was flagged by the drafter.","<b>INVENTORY UNCHANGED.</b> No cash, no stock and no cost moved. Stock stays at 0.5 unit, the stock cost stays at RM56 a unit and no lot landed."]}];
+const evolution=[{"v":"v1304","d":"28 Oct 2026","t":"A BOOKED SALE TELLS ITS ORDER AT ONCE, THE FLAG SHIPPED OFF (S6)","n":["<b>S6 OF THE BOOK PLAN: THE OUTBOX, SHIPPED OFF.</b> The flag is the D1 row <code>book_outbox</code> (migrations/0020), shipped <code>off</code>; turning it on is your call. With it off nothing is told earlier: the Book writes its outbox rows (they cost nothing, nothing reads them) and the return leg runs as before, once a fold changes the version. Fable reviewed the design and the diff twice; every finding is applied.","<b>A ROW IS A TRIGGER, NOT A MESSAGE.</b> The Book leaves one row, in the tap's own transaction, for each sale or amendment of a sale it books. With the flag on, the Desk answers the pending rows right after an approval (once after a decide-many) and in the minute cron with ONE forced pass of the return leg it already has, which tells every order what the ledger says in its own state messages (raise-only, safe to send twice). A clean pass marks the rows sent; a refusal marks none and the next minute tries again. A row whose draft was rejected, or folded, is dropped; one whose draft is still pending waits.","<b>WHAT THE FORCED PASS DOES NOT DO.</b> It sends no fix and follows no row (an undo applied twice, or an order group split by two passes at once, is the danger Fable named), and it leaves the told mark and its fault to the regular pass, which still runs on a version change and is the net for everything no tap booked. Drains in one isolate run one at a time and look again once if asked meanwhile; marks go in lists of 500 with the answer checked; a row stuck behind a draft that stayed pending for ten minutes is said in the log.","<b>THE WAY BACK.</b> One statement, no deploy, in docs/DESK.md. An amendment that moves the row's key (a close, a change of total or delivery) still reaches its order at the fold, because the order finds its row by that key."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11353,7 +11353,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='28 Oct 2026, 11:36 KL';
+const LAST_UPDATED='28 Oct 2026, 14:54 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
