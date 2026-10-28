@@ -39,7 +39,8 @@ export async function run({ ok }) {
   const sale = (id, qty, d, extra) => ({ id, status: "approved", collection: "sales", row: Object.assign({ customer: "ZZ1-AAA", date: d, qty, total: qty * 100, cash: qty * 100, deliveredQty: qty, product: "salt" }, extra || {}) });
   const count = (id, q, d) => ({ id, status: "approved", collection: "count", row: { product: "salt", qty: q, date: d } });
   const tr = (id, product, extra) => sale(id, 1, T(5), Object.assign({ trip: "t1791900000099", product, cash: 0, deliveredQty: 0, total: 100 }, extra || {}));
-  const body = (r) => JSON.stringify({ rows: canon(r.rows), state: canon(r.state) });
+  /* S5f-2: a compaction moves the base's QUEUE_COMMITTED to the newest id it closes (test/s5f-compact-mark.mjs), so "the view is unchanged" is read without that one watermark */
+  const body = (r) => JSON.stringify({ rows: canon(r.rows), state: canon({ ...r.state, QUEUE_COMMITTED: undefined }) });
   const baseTables = (B) => JSON.stringify([B.os.db.prepare("SELECT coll,key,h,seq,booked_at,revised_at,gone_at FROM rows ORDER BY coll,key").all(), B.os.db.prepare("SELECT k,h,booked_at,revised_at FROM state ORDER BY k").all()]);
   const open = (B) => B.os.db.prepare("SELECT COUNT(*) AS c FROM booked WHERE folded_at IS NULL AND voided_at IS NULL").get().c;
 
@@ -87,7 +88,7 @@ export async function run({ ok }) {
   const real = await C.post("/compact");
   const after = await C.read(), baseRead = await C.read("?base=1");
   ok(real.ok && real.compacted === 4 && open(C) === 0 && after.booked === undefined, "compaction closes the four open entries and the read is the base again: " + JSON.stringify({ ...real, readback: undefined, bookmark: undefined }));
-  ok(body(after) === body(viewBefore) && body(baseRead) === body(viewBefore), "the view is unchanged by it, and the base now holds every minted row (/read equals /read?base=1)");
+  ok(body(after) === body(viewBefore) && body(baseRead) === body(viewBefore) && after.state.QUEUE_COMMITTED === IDN(5) && baseRead.state.QUEUE_COMMITTED === IDN(5), "the view is unchanged by it (its watermark moved to the newest closed id), and the base now holds every minted row (/read equals /read?base=1)");
   ok((await C.at()).rev === revBefore + 1 && real.bookRev === revBefore + 1, "it moves the revision once");
   const kept = C.os.db.prepare("SELECT coll, key, h, revised_at FROM rows WHERE gone_at IS NULL").all().filter((r) => before.has(r.coll + "|" + r.key));
   ok(kept.length === before.size && kept.every((r) => before.get(r.coll + "|" + r.key) === r.h && r.revised_at === null) && real.revised <= 10, "every row the base already held keeps its hash and is not revised by it (only the few documents the entries moved are; a broken round-trip would revise hundreds): " + real.revised);
