@@ -17,12 +17,13 @@
  *   node tools/drafts.mjs --draft <file.json>  stage a proposed row for approval
  *   node tools/drafts.mjs --from-queue         draft the LAPTOP queue too, so it passes the same gate
  *   node tools/drafts.mjs --approve <id>... --by "..."   record a decision taken away from the phone
- *   node tools/drafts.mjs --approved           the approved, uncommitted rows the run should fold in
+ *   node tools/drafts.mjs --approved           the approved, uncommitted rows the run should fold in (none while D1 book_source reads book: nothing folds then, S5f-3)
  *   node tools/drafts.mjs --committed <id>...  mark rows as folded into the master
  *   --local                                    act on the local D1 rather than the remote one
  */
 import { againIfLapsed } from "./cloudflare.mjs";
 import { d1Rows, commandArgs } from "./d1json.mjs";
+import { readSource, refuseIfBook } from "./source-flag.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { verifiedVaultRegistration } from "../src/vault-pair.js";
 import { readFileSync, existsSync, writeFileSync, mkdirSync, rmSync, readdirSync } from "node:fs";
@@ -324,6 +325,8 @@ async function fromQueue() {
  * the audit trail reads the same and says where the decision actually came from.
  */
 function approve() {
+  /* S5f-3 (his answer to Ask B, 28 Oct 2026): with the Book as the source an approval from the laptop would be a second ledger, since only the tap and the net book into the Book; it is refused, and refused when the flag cannot be read */
+  refuseIfBook("drafts.mjs --approve", WHERE);
   const i = argv.indexOf("--approve");
   const by = (valOf("--by") || "").trim();
   /* The VALUE of --by is not a flag, so a naive "everything after --approve that does not
@@ -358,8 +361,13 @@ export const APPROVED_SQL = `SELECT d.id,d.status,d.collection,d.row,d.reasoning
     FROM draft d LEFT JOIN vault_receipt r ON r.id=d.id LEFT JOIN vault_outbox o ON o.id=d.id
     WHERE d.status='approved' AND d.committed_at IS NULL ORDER BY (json_extract(CASE WHEN json_valid(d.row) THEN d.row ELSE '{}' END,'$.booked_seq') IS NULL), json_extract(CASE WHEN json_valid(d.row) THEN d.row ELSE '{}' END,'$.booked_seq'), d.drafted_at`;
 function approved() {
+  /* S5f-3: with the Book as the source nothing is folded, so the run is handed nothing to stage (count 0) and told what waits (`held`: approved and not yet committed, the tap's or the net's to book, the daily compaction's to mark).
+     The flag unreadable stops the run: staging on a guess could fold what the Book already holds. */
+  const src = readSource(WHERE);
+  if (!src.mode) { fail("could not read which store is the source: " + src.error); return; }
   const rows = query(APPROVED_SQL);
   if (!rows) return;
+  if (src.mode === "book") { console.log(JSON.stringify({ ok: true, count: 0, source: "book", held: rows.length, approved: [] }, null, 1)); return; }
   console.log(JSON.stringify({ ok: true, count: rows.length, approved: approvedRows(rows) }, null, 1));
 }
 

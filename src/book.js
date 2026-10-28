@@ -634,7 +634,7 @@ export class Book {
       try {
         const r = this.load(p, "compact", opts);
         /* `closed` is the draft ids this closed: the flip marks exactly those committed in D1 in the same step, or the readers count their money twice (the base holds the row and, with the entry closed, the draft is no longer excluded from "on its way"). A retry after a failure past the commit answers compacted 0 and open 0: that is success. */
-        return { ok: true, compacted: r.tap.folded, closed, bookRev: r.bookRev, digest: r.digest, rows: r.rows, revised: r.revised, added: r.added, readback: await this.readback(), bookmark: await this.mark() };
+        return { ok: true, compacted: r.tap.folded, closed, at: r.at, bookRev: r.bookRev, digest: r.digest, rows: r.rows, revised: r.revised, added: r.added, readback: await this.readback(), bookmark: await this.mark() };
       } catch (e) { if (e instanceof Refused) return { ok: false, status: 409, error: e.message }; throw e; }
     });
   }

@@ -140,6 +140,18 @@ jobs:
             exit 1
           fi
 
+      # WHICH STORE IS THE SOURCE OF THE LEDGER (S5f-3, 28 Oct 2026). D1 `book_source` (migrations/0023, shipped d1) says whether git's ledger/book.json ('d1') or the Book ('book') is the
+      # source. With the Book as the source an approval is booked by the tap and is not a version, so this job stages nothing, folds nothing, re-seeds no mirror, loads no shadow Book and
+      # compares nothing (each of those steps below stands down on mode == book), and only publishes. Read here once, fail closed: a flag D1 will not say fails the run, since guessing d1
+      # would fold what the Book already holds. A CHANGE HERE NEVER TESTS ITSELF (not on its own push paths): dispatch a run by hand and read the step list.
+      - name: Which store is the source of the ledger
+        id: source
+        if: github.event_name != 'workflow_dispatch' || !inputs.probe_key
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: node tools/source-flag.mjs --github
+
       # THE FOLD'S KEY, PROVED WHERE IT IS USED (08 Sep 2026): a dispatch with probe_key asks the
       # API for the fold's model with the repo's secret and stops. Nothing is staged or deployed.
       - name: Probe the fold's key
@@ -165,7 +177,7 @@ jobs:
       # deploy, the proof, then the marks and the clear). The next tick stages as usual.
       - name: Stand down if the last batch is still unfolded
         id: guard
-        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && !inputs.probe_key)
+        if: (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && !inputs.probe_key)) && steps.source.outputs.mode != 'book'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
@@ -528,7 +540,7 @@ jobs:
       # against the snapshot in D1; a stale mirror is the silent fault this job exists to end.
       # Last of the ledger's steps, so a failure here leaves the deploy and the marks standing.
       - name: Re-seed the mirror from the master just shipped
-        if: steps.plan.outputs.deploy == '1'
+        if: steps.plan.outputs.deploy == '1' && steps.source.outputs.mode != 'book'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
@@ -542,7 +554,7 @@ jobs:
       # the fold: continue-on-error. Needs the repo secret SALT_BOOK_KEY (the Worker's secret of the same name); unset, it says so.
       # A CHANGE HERE NEVER TESTS ITSELF (not on its own push paths): dispatch a run by hand and read the step list.
       - name: Load the shadow Book from the book just shipped
-        if: steps.plan.outputs.deploy == '1'
+        if: steps.plan.outputs.deploy == '1' && steps.source.outputs.mode != 'book'
         continue-on-error: true
         env:
           SALT_BOOK_KEY: ${{ secrets.SALT_BOOK_KEY }}
@@ -555,7 +567,7 @@ jobs:
       # (migrations/0018) decides which of the two the readers use, and the Book that trails the mirror is not read at all.
       # A CHANGE HERE NEVER TESTS ITSELF (not on its own push paths): dispatch a run by hand and read the step list.
       - name: Check the readers agree
-        if: steps.plan.outputs.deploy == '1'
+        if: steps.plan.outputs.deploy == '1' && steps.source.outputs.mode != 'book'
         continue-on-error: true
         env:
           SALT_BOOK_KEY: ${{ secrets.SALT_BOOK_KEY }}
@@ -568,7 +580,7 @@ jobs:
       # Worker answers it (GET /book/ledger, the same keys as the readcheck), and names the accounts whose document differs. Red on a difference, never blocking the fold.
       # A CHANGE HERE NEVER TESTS ITSELF (not on its own push paths): dispatch a run by hand and read the step list.
       - name: Check the Book builds the same statements
-        if: steps.plan.outputs.deploy == '1'
+        if: steps.plan.outputs.deploy == '1' && steps.source.outputs.mode != 'book'
         continue-on-error: true
         env:
           SALT_BOOK_KEY: ${{ secrets.SALT_BOOK_KEY }}

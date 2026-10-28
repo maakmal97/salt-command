@@ -1,0 +1,218 @@
+[
+ {
+  "name": "a load is taken with the Book as the source",
+  "file": "src/worker.js",
+  "find": "if (env.SALT_LEDGER && await sourceMode(env.SALT_LEDGER) === \"book\" && !(url && url.searchParams.get(\"import\") === \"1\"))",
+  "replace": "if (false)"
+ },
+ {
+  "name": "any import parameter is an import",
+  "file": "src/worker.js",
+  "find": "!(url && url.searchParams.get(\"import\") === \"1\"))",
+  "replace": "!(url && url.searchParams.has(\"import\")))"
+ },
+ {
+  "name": "a load is refused with git as the source",
+  "file": "src/worker.js",
+  "find": "if (env.SALT_LEDGER && await sourceMode(env.SALT_LEDGER) === \"book\" && !(url",
+  "replace": "if (env.SALT_LEDGER && await sourceMode(env.SALT_LEDGER) !== \"book\" && !(url"
+ },
+ {
+  "name": "the compaction route is not keyed",
+  "file": "src/worker.js",
+  "find": "  if (!bookKeyOk(request, env)) return needsKey();   /* S5f-3: and keyed like the load */",
+  "replace": ""
+ },
+ {
+  "name": "the compaction route takes a GET",
+  "file": "src/worker.js",
+  "find": "if (m !== \"POST\") return json({ ok: false, error: \"method not allowed\" }, 405);   /* S5f-3: the compaction is POST only */",
+  "replace": ""
+ },
+ {
+  "name": "the route ignores the dry flag",
+  "file": "src/worker.js",
+  "find": "const r = await compactAndMark(env, { dry: url.searchParams.get(\"dry\") === \"1\" });",
+  "replace": "const r = await compactAndMark(env, { dry: false });"
+ },
+ {
+  "name": "the ladder rings with the Book as the source",
+  "file": "src/worker.js",
+  "find": "if (await sourceMode(env.SALT_LEDGER) === \"book\") return { waiting: 0, book: true };",
+  "replace": "if (false) return { waiting: 0, book: true };"
+ },
+ {
+  "name": "an approval asks for the fold with the Book as the source",
+  "file": "src/worker.js",
+  "find": "&& await sourceMode(env.SALT_LEDGER) === \"book\") reason = \"publish: \" + reason;",
+  "replace": "&& false) reason = \"publish: \" + reason;"
+ },
+ {
+  "name": "an approval names the publish with git as the source",
+  "file": "src/worker.js",
+  "find": "&& await sourceMode(env.SALT_LEDGER) === \"book\") reason = \"publish: \" + reason;",
+  "replace": "&& true) reason = \"publish: \" + reason;"
+ },
+ {
+  "name": "a real compaction runs with git as the source",
+  "file": "src/book-compact.js",
+  "find": "if (await sourceMode(env.SALT_LEDGER) !== \"book\") return",
+  "replace": "if (false) return"
+ },
+ {
+  "name": "the dry run writes",
+  "file": "src/book-compact.js",
+  "find": "const a = await ask(env, \"compact?dry=1\", \"POST\");",
+  "replace": "const a = await ask(env, \"compact\", \"POST\");"
+ },
+ {
+  "name": "an entry whose draft is pending is compacted",
+  "file": "src/book-compact.js",
+  "find": "if (notApproved.length) return",
+  "replace": "if (false) return"
+ },
+ {
+  "name": "the drafts are not marked before the Book compacts",
+  "file": "src/book-compact.js",
+  "find": "  if (open.length) {",
+  "replace": "  if (false) {"
+ },
+ {
+  "name": "the drafts are marked after the base's moment",
+  "file": "src/book-compact.js",
+  "find": "const at = c.body.at || ((await ask(env, \"at\", \"GET\")).body || {}).at || now;",
+  "replace": "const at = now;"
+ },
+ {
+  "name": "the stray drafts are not marked after the compaction",
+  "file": "src/book-compact.js",
+  "find": "if (closed.length) await db.batch(",
+  "replace": "if (false) await db.batch("
+ },
+ {
+  "name": "a marked draft is committed again",
+  "file": "src/book-compact.js",
+  "find": "const MARK = \"UPDATE draft SET committed_at=?1 WHERE committed_at IS NULL AND status='approved'",
+  "replace": "const MARK = \"UPDATE draft SET committed_at=?1 WHERE status='approved'"
+ },
+ {
+  "name": "a rejected draft is marked committed",
+  "file": "src/book-compact.js",
+  "find": "WHERE committed_at IS NULL AND status='approved' AND id IN (SELECT value FROM json_each(?2))\";",
+  "replace": "WHERE committed_at IS NULL AND id IN (SELECT value FROM json_each(?2))\";"
+ },
+ {
+  "name": "the read-back counts nothing",
+  "file": "src/book-compact.js",
+  "find": "left += Number((r && r.n) || 0); }",
+  "replace": "left += 0; }"
+ },
+ {
+  "name": "an unreadable flag reads as git",
+  "file": "tools/source-flag.mjs",
+  "find": ": { mode: null, error: res.error };",
+  "replace": ": { mode: \"d1\", error: res.error };"
+ },
+ {
+  "name": "a missing table reads as unknown",
+  "file": "tools/source-flag.mjs",
+  "find": "return /no such table/i.test(res.error) ? { mode: \"d1\", why: \"no book_source table yet\" }",
+  "replace": "return /no such table/i.test(res.error) ? { mode: null, why: \"no book_source table yet\" }"
+ },
+ {
+  "name": "any word reads as the Book on the laptop",
+  "file": "tools/source-flag.mjs",
+  "find": "return { mode: row && row.mode === \"book\" ? \"book\" : \"d1\" };",
+  "replace": "return { mode: row && row.mode ? \"book\" : \"d1\" };"
+ },
+ {
+  "name": "the Book is let through",
+  "file": "tools/source-flag.mjs",
+  "find": "if (src && src.mode === \"book\") return { ok: false,",
+  "replace": "if (false) return { ok: false,"
+ },
+ {
+  "name": "a flag nobody could read is let through",
+  "file": "tools/source-flag.mjs",
+  "find": "  return { ok: false, why: what + \" is refused: D1 would not say",
+  "replace": "  return { ok: true, why: what + \" is refused: D1 would not say"
+ },
+ {
+  "name": "the approve road does not ask",
+  "file": "tools/drafts.mjs",
+  "find": "  refuseIfBook(\"drafts.mjs --approve\", WHERE);",
+  "replace": ""
+ },
+ {
+  "name": "the approved road stages rows with the Book as the source",
+  "file": "tools/drafts.mjs",
+  "find": "if (src.mode === \"book\") { console.log(JSON.stringify({ ok: true, count: 0, source: \"book\"",
+  "replace": "if (false) { console.log(JSON.stringify({ ok: true, count: 0, source: \"book\""
+ },
+ {
+  "name": "the approved road does not stop on an unreadable flag",
+  "file": "tools/drafts.mjs",
+  "find": "if (!src.mode) { fail(\"could not read which store is the source: \" + src.error); return; }",
+  "replace": ""
+ },
+ {
+  "name": "the update road does not ask",
+  "file": "tools/update.mjs",
+  "find": "if (!DRY) refuseIfBook(\"update.mjs\");",
+  "replace": ""
+ },
+ {
+  "name": "an import is not named",
+  "file": "tools/book-load.mjs",
+  "find": "+ (importing ? \"?import=1\" : \"\")",
+  "replace": ""
+ },
+ {
+  "name": "every load is an import",
+  "file": "tools/book-load.mjs",
+  "find": "+ (importing ? \"?import=1\" : \"\")",
+  "replace": "+ \"?import=1\""
+ },
+ {
+  "name": "the chain does not read the flag",
+  "file": ".github/workflows/cloud-commit.yml",
+  "find": "        run: node tools/source-flag.mjs --github",
+  "replace": "        run: echo \"mode=d1\" >> \"$GITHUB_OUTPUT\""
+ },
+ {
+  "name": "the stage's guard folds with the Book as the source",
+  "file": ".github/workflows/cloud-commit.yml",
+  "find": "        if: (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && !inputs.probe_key)) && steps.source.outputs.mode != 'book'",
+  "replace": "        if: (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && !inputs.probe_key))"
+ },
+ {
+  "name": "the chain re-seeds the mirror with the Book as the source",
+  "file": ".github/workflows/cloud-commit.yml",
+  "find": "      - name: Re-seed the mirror from the master just shipped\n        if: steps.plan.outputs.deploy == '1' && steps.source.outputs.mode != 'book'",
+  "replace": "      - name: Re-seed the mirror from the master just shipped\n        if: steps.plan.outputs.deploy == '1'"
+ },
+ {
+  "name": "the chain loads the shadow Book with the Book as the source",
+  "file": ".github/workflows/cloud-commit.yml",
+  "find": "      - name: Load the shadow Book from the book just shipped\n        if: steps.plan.outputs.deploy == '1' && steps.source.outputs.mode != 'book'",
+  "replace": "      - name: Load the shadow Book from the book just shipped\n        if: steps.plan.outputs.deploy == '1'"
+ },
+ {
+  "name": "the chain compares the readers with the Book as the source",
+  "file": ".github/workflows/cloud-commit.yml",
+  "find": "      - name: Check the readers agree\n        if: steps.plan.outputs.deploy == '1' && steps.source.outputs.mode != 'book'",
+  "replace": "      - name: Check the readers agree\n        if: steps.plan.outputs.deploy == '1'"
+ },
+ {
+  "name": "the chain compares the statements with the Book as the source",
+  "file": ".github/workflows/cloud-commit.yml",
+  "find": "      - name: Check the Book builds the same statements\n        if: steps.plan.outputs.deploy == '1' && steps.source.outputs.mode != 'book'",
+  "replace": "      - name: Check the Book builds the same statements\n        if: steps.plan.outputs.deploy == '1'"
+ },
+ {
+  "name": "the publish stands down with the Book as the source",
+  "file": ".github/workflows/cloud-commit.yml",
+  "find": "      - name: Publish the statements, live\n        if: steps.plan.outputs.publish == '1'",
+  "replace": "      - name: Publish the statements, live\n        if: steps.plan.outputs.publish == '1' && steps.source.outputs.mode != 'book'"
+ }
+]

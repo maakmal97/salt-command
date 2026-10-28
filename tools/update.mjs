@@ -48,6 +48,7 @@ import { idleVerdict } from "./preflight.mjs";
 import { deployVerdict } from "./preflight.mjs";
 import { accessHeaders } from "./preflight.mjs";
 import { fileURLToPath } from "node:url";
+import { refuseIfBook } from "./source-flag.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_MASTER =
@@ -95,6 +96,10 @@ function readJson(p, fallback = null) {
   try { return JSON.parse(readFileSync(p, "utf8").replace(/^\uFEFF/, "")); }
   catch (e) { return fallback; }
 }
+
+/* S5f-3 (his answer to Ask B, 28 Oct 2026): with the Book as the source (D1 book_source reads book) this road is a second ledger, since it builds, commits and pushes a version off git's book. It refuses before it touches
+   anything, and refuses when the flag cannot be read. `--dry` reads and changes nothing, so it still runs. */
+if (!DRY) refuseIfBook("update.mjs");
 
 /* ---- 1. preflight ---------------------------------------------------------------- */
 step(1, "preflight");

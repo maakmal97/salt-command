@@ -19,6 +19,8 @@
  * since S2b, and the Book still strips one, so a stamp that returns on the git side is red here.
  *
  *   node tools/book-load.mjs          post the live book
+ *   node tools/book-load.mjs --import   post it as an IMPORT (?import=1): the only load the Worker takes while D1 book_source reads book (S5f-3, docs/DESK.md "The flip"). It replaces the Book's base with this checkout's
+ *                                     book file, so it is for a hand edit made in the checkout and then exported to the Book on purpose; the daily export is the other direction.
  *   SALT_BASE, SALT_BOOK_KEY, CF_ACCESS_CLIENT_ID, CF_ACCESS_CLIENT_SECRET in the environment
  */
 import "./cloudflare.mjs";
@@ -107,7 +109,7 @@ export function line(r, par) {
 export const passed = (r, par) => !!(r.ok && par && par.ok && !(r.tap && ((r.tap.differ || []).length || (r.tap.stuck || []).length || (r.tap.clash || []).length)));
 
 /* post with up to `tries` attempts on a network fault or a 5xx; a 4xx is the route's answer and is not retried */
-export async function post(base, body, env, { tries = 3, wait = 2000, fetchImpl = fetch } = {}) {
+export async function post(base, body, env, { tries = 3, wait = 2000, fetchImpl = fetch, importing = false } = {}) {
   const key = String(env.SALT_BOOK_KEY || "");
   if (!key) return { ok: false, error: "SALT_BOOK_KEY is not set, so the Book was not loaded" };
   const headers = { "content-type": "application/json", "X-Book-Key": key };
@@ -118,7 +120,7 @@ export async function post(base, body, env, { tries = 3, wait = 2000, fetchImpl 
   let last = "";
   for (let i = 1; i <= tries; i++) {
     try {
-      const r = await fetchImpl(base.replace(/\/+$/, "") + "/book/load", { method: "POST", headers, body });
+      const r = await fetchImpl(base.replace(/\/+$/, "") + "/book/load" + (importing ? "?import=1" : ""), { method: "POST", headers, body });
       const j = await r.json().catch(() => ({}));
       if (r.status === 200 && j.ok) return j;
       last = "HTTP " + r.status + " " + String(j.error || "").slice(0, 200);
@@ -135,7 +137,7 @@ if (isMain) {
   let r, par = null;
   try {
     const body = payload(resolve(REPO, "ledger", "book.json"), resolve(REPO, "ledger", "ledger.json"), process.env.GITHUB_SHA || null);
-    r = await post(base, body, process.env);
+    r = await post(base, body, process.env, { importing: process.argv.includes("--import") });
     if (r.ok && r.readback) { const sent = JSON.parse(body); par = compare(expected(sent.book, sent.pricing, sent.derived), r.readback); }
   } catch (e) { r = { ok: false, error: String((e && e.message) || e) }; }
   const said = line(r, par), good = passed(r, par);

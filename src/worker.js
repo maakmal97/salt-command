@@ -21,7 +21,8 @@ import { runDrafter, dryRunDrafter, readBook, readMirror, bookOnce, withDraftLot
 import { bookDirect, compareReads, readMode } from "./book-read.js";
 import { drainOutbox } from "./outbox.js";
 import { pageMode, servedBook } from "./book-page.js";
-import { bookTap, bookNet, ridStmts, voidEntries, voidUnlessApproved, tapMode, TAP_COLS } from "./book-tap.js";
+import { bookTap, bookNet, ridStmts, voidEntries, voidUnlessApproved, tapMode, sourceMode, TAP_COLS } from "./book-tap.js";
+import { compactAndMark } from "./book-compact.js";
 import { boundOf, unfolded } from "./way.js";
 import { runBackup, backupAlarm, runBookExport, bookExportAlarm, BACKUP_CRON } from "./backup.js";
 import { approveFigures } from "./approve-figures.js";
@@ -118,7 +119,7 @@ async function accessOk(request, env, p, m) {
 }
 /* 19 Oct 2026: the pushes that INFORM the Desk (POST /push/send tags), each kept as KV inform:last for the banner */
 const INFORM_TAGS = new Set(["folded", "fold-refused", "suite-red", "stock"]);
-const CI_ROUTES = new Set(["GET /rev", "POST /push/send", "POST /book/load", "POST /book/pitr", "GET /book/window", "GET /book/readcheck", "GET /book/ledger", "GET /book/roster"]);
+const CI_ROUTES = new Set(["GET /rev", "POST /push/send", "POST /book/load", "POST /book/compact", "POST /book/pitr", "GET /book/window", "GET /book/readcheck", "GET /book/ledger", "GET /book/roster"]);
 
 /* THE WRITE GATE (12 Aug 2026). Reads stay open, by the owner's standing decision; writes
  * do not have to. A caller must present X-Salt-Key matching the SALT_WRITE_KEY secret, and
@@ -285,6 +286,16 @@ async function handleBookRoster(request, env, m, url) {
 /* S3 (25 Oct 2026): THE READCHECK. The mirror's book against the Book's, read side by side, whatever the flag says: it answers whether the two
    agree (names of what differs, counts, the versions and the flag; never a row or a value, since the Actions log is public). The chain asks it
    after each load and goes red on a difference, so "the readers agree" is proved at every fold. The same two locks as the load. */
+/* S5f-3: POST /book/compact. The same two locks as the load. `?dry=1` rehearses in either world; a real run needs the Book as the source (src/book-compact.js) and answers counts, never a row. */
+async function handleBookCompact(request, env, m, url) {
+  if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);   /* S5f-3: the compaction is POST only */
+  if (!bookKeyOk(request, env)) return needsKey();   /* S5f-3: and keyed like the load */
+  try {
+    const r = await compactAndMark(env, { dry: url.searchParams.get("dry") === "1" });
+    return json(r, r.status || (r.ok ? 200 : 409));
+  } catch (e) { return json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }, 500); }
+}
+
 async function handleBookReadcheck(request, env, m) {
   if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
   if (!bookKeyOk(request, env)) return needsKey();
@@ -315,14 +326,18 @@ async function handleBookReadcheck(request, env, m) {
       if (cp && cp.ok) compact = { open: cp.compactable || cp.open || 0 };
       else if (cp && !cp.stuck) { r.differ.push("compaction would be refused (" + String(cp.error || "no answer").slice(0, 160) + ")"); r.ok = false; }
     } catch (e) { /* an object before S5a has no compaction to rehearse */ }
-    return json({ ok: r.ok, differ: r.differ, rows: r.rows || 0, version: mirror.version, bookVersion: res ? res.v : null, mode: await readMode(env.SALT_LEDGER), bookRev, compact });
+    return json({ ok: r.ok, differ: r.differ, rows: r.rows || 0, version: mirror.version, bookVersion: res ? res.v : null, mode: await readMode(env.SALT_LEDGER), source: await sourceMode(env.SALT_LEDGER), bookRev, compact });
   } catch (e) { return json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }, 500); }
 }
 
-async function handleBookLoad(request, env, m) {
+async function handleBookLoad(request, env, m, url) {
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
   if (!bookKeyOk(request, env)) return needsKey();
   if (!env.BOOK) return json({ ok: false, error: "the Book is not bound" }, 503);
+  /* S5f-3: WITH THE BOOK AS THE SOURCE A LOAD IS AN IMPORT. A load replaces the base with git's book, which after the flip is only the last daily export: the chain's load, a replayed fold or a stray run would write
+     yesterday over today's taps. So a load must say it is one (`?import=1`, tools/book-load.mjs --import), and the chain's own load is not an import. Read at every load, never cached. */
+  if (env.SALT_LEDGER && await sourceMode(env.SALT_LEDGER) === "book" && !(url && url.searchParams.get("import") === "1"))
+    return json({ ok: false, source: "book", error: "the Book is the source of the ledger, so a load must be an import (?import=1): nothing was loaded" }, 409);
   const text = await request.text();
   if (text.length > MAX_LOAD_BYTES) return json({ ok: false, error: "the load is too large" }, 413);
   /* S4a: the Book keeps the entries a tap booked (none until S4d) beside its base. D1's committed_at is the word on which of them this load's fold took, so the Worker
@@ -2332,6 +2347,8 @@ function stageOnApproval(env, ctx, reason = "approval") {
   if (!ctx || typeof ctx.waitUntil !== "function" || !dispatchArmed(env)) return;
   ctx.waitUntil((async () => {
     try {
+      /* S5f-3: with the Book as the source nothing is folded, so a dispatch asks the chain for the publish alone, and says so in the run's name (the chain stages nothing in that world) */
+      if (env.SALT_LEDGER && !/^publish/.test(String(reason)) && await sourceMode(env.SALT_LEDGER) === "book") reason = "publish: " + reason;
       const token = env.GH_APP_KEY ? await appInstallToken(env) : env.SALT_GITHUB_TOKEN;
       const r = await fetch("https://api.github.com/repos/" + STAGE_REPO + "/actions/workflows/cloud-commit.yml/dispatches", {
         method: "POST",
@@ -2362,6 +2379,7 @@ const REDISPATCH_KEY = "stage:redispatch";
 const REDISPATCH_MIN = [15, 30, 60];
 async function redispatchStale(env, ctx, now) {
   if (!env.SALT_LEDGER || !env.SALT_QUEUE || !dispatchArmed(env)) return { waiting: 0 };
+  if (await sourceMode(env.SALT_LEDGER) === "book") return { waiting: 0, book: true };   /* S5f-3: an approved row waits for no fold when the Book is the source: the tap booked it, the net books the rest */
   const r = await env.SALT_LEDGER.prepare(
     "SELECT COUNT(*) AS n, MAX(decided_at) AS newest FROM draft WHERE status='approved' AND committed_at IS NULL").first();
   if (!r || !r.n || !r.newest) return { waiting: 0 };
@@ -2889,7 +2907,7 @@ export default {
     if (!await accessOk(request, env, p, m)) {
       if (p === "/queue" || /^\/queue\/[^/]+\/withdraw$/.test(p) || p === "/queue/ping" || p === "/vault" || p === "/bio" || p === "/bye"
         || p === "/vault/addr" || p === "/vault/pair" || p === "/vault/maintenance" || p === "/vault/key" || p === "/geo/expand" || p.startsWith("/slips/") || p.startsWith("/pins/")
-        || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/") || p === "/book/load" || p === "/book/pitr" || p === "/book/window" || p === "/live"
+        || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/") || p === "/book/load" || p === "/book/compact" || p === "/book/pitr" || p === "/book/window" || p === "/live"
         || p === "/drafts" || p.startsWith("/drafts/") || p === "/book/readcheck" || p === "/book/ledger" || p === "/book/roster")
         return json({ ok: false, error: "not authenticated" }, 401);
       return locked();
@@ -2936,7 +2954,8 @@ export default {
        for this route alone) AND a key of its own: the Book's SALT_BOOK_KEY, or the owner's write key. Each is checked only
        when its secret is set, so an unset secret opens nothing; the dormant write-key branch of writeOk is NOT used here.
        The answer carries counts and a digest, never a row. Nothing reads the Book. */
-    if (p === "/book/load") return handleBookLoad(request, env, m);
+    if (p === "/book/load") return handleBookLoad(request, env, m, url);
+    if (p === "/book/compact") return handleBookCompact(request, env, m, url);   /* S5f-3: the flip's and the daily job's compaction, the drafts it closes marked committed */
     if (p === "/book/ledger") return handleBookLedger(request, env, m, url);   /* S5e: the Book's base as a book file, for the second publish */
     if (p === "/book/page") return handleBookPage(env, m);   /* S5d: the Book's view for the page, keyed above, 404 while the flag is off */
     if (p === "/book/roster") return handleBookRoster(request, env, m, url);   /* S5: the roster road's effects, for the flip's export */

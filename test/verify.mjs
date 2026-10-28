@@ -52268,6 +52268,11 @@ await (async () => {
   await (await import("./s5f-compact-mark.mjs")).run({ ok });
 })();
 
+section("Book S5f-3: the guards, a load needs an import, the laptop roads and the fold's dispatch stand down while the Book is the source (28 Oct 2026)");
+await (async () => {
+  await (await import("./s5f-guards.mjs")).run({ ok });
+})();
+
 section("18 Oct 2026: the lean Desk: six views, the three parts gone, alerts in the rail, spots on Coverage, Noticed under To do");
 await (async () => {
   /* HIS DECISION OF 18 OCT 2026: Approve, Site orders and Entries left the Desk, Salt Admin deciding every order, claim, chat and
