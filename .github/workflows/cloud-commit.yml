@@ -576,6 +576,15 @@ jobs:
           CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: node tools/book-source.mjs --compare
 
+      # THE ENGINE PRICES AS THE PAGE DID (S5b, 28 Oct 2026): the desk's PRICING is struck in jsdom over the master at every fold. engine/book-inputs.mjs builds the same figures from
+      # the book alone with the engine's own pricing(), which is what lets a Worker recompute them after a tap once approvals are not versions. This proves it each fold: every
+      # book's cost, floors, ladder and every customer's card from ledger/book.json equal the page's in ledger/ledger.json. Names and counts in the log, never a figure. Red on a
+      # difference, never blocking the fold. No secrets, no network. A CHANGE HERE NEVER TESTS ITSELF (not on its own push paths): dispatch a run by hand and read the step list.
+      - name: Check the engine prices as the page did
+        if: steps.plan.outputs.deploy == '1'
+        continue-on-error: true
+        run: node tools/pricing-parity.mjs
+
       # ---- THE STATEMENTS SITE, after everything the ledger needs ------------------------
       # A second Worker on its own address with its own KV store (docs/STATEMENTS.md). Both
       # steps stand down while the store has not been created yet.
