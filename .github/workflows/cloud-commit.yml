@@ -563,6 +563,19 @@ jobs:
           CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: node tools/book-readcheck.mjs
 
+      # THE SECOND PUBLISH, COMPARED (S5e, 28 Oct 2026): the Counter's statements are built from git today and will be built from the Book after S5. This builds every
+      # account's live statement (plaintext, nothing sealed or written, no figure in the log) from git's ledger/book.json and again from the Book's base as the Desk
+      # Worker answers it (GET /book/ledger, the same keys as the readcheck), and names the accounts whose document differs. Red on a difference, never blocking the fold.
+      # A CHANGE HERE NEVER TESTS ITSELF (not on its own push paths): dispatch a run by hand and read the step list.
+      - name: Check the Book builds the same statements
+        if: steps.plan.outputs.deploy == '1'
+        continue-on-error: true
+        env:
+          SALT_BOOK_KEY: ${{ secrets.SALT_BOOK_KEY }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: node tools/book-source.mjs --compare
+
       # ---- THE STATEMENTS SITE, after everything the ledger needs ------------------------
       # A second Worker on its own address with its own KV store (docs/STATEMENTS.md). Both
       # steps stand down while the store has not been created yet.

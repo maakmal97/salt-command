@@ -248,7 +248,7 @@ export async function run({ ok }) {
     && (await RT.check("https://x", { SALT_BOOK_KEY: "k" }, { wait: 0, fetchImpl: async () => { fours++; return { status: 401, json: async () => ({ error: "key" }) }; } })).error.startsWith("HTTP 401") && fours === 1,
     "a 5xx is retried and a 4xx is said at once");
   const wf = readFileSync(join(REPO, ".github", "workflows", "cloud-commit.yml"), "utf8");
-  const at = wf.indexOf("- name: Check the readers agree"), stepText = wf.slice(at, wf.indexOf("\n      # ----", at));
+  const at = wf.indexOf("- name: Check the readers agree"), stepText = wf.slice(at, wf.indexOf("\n      #", at + 10));   /* to the next comment at step level: S5e adds a step after this one */
   ok(at > wf.indexOf("- name: Load the shadow Book") && at < wf.indexOf("- name: Deploy the statements site") && /continue-on-error: true/.test(stepText)
     && /steps\.plan\.outputs\.deploy == '1'/.test(stepText) && /node tools\/book-readcheck\.mjs/.test(stepText),
     "the chain checks the readers agree after the Book loads, only on a deploy, and a red check never blocks the fold");

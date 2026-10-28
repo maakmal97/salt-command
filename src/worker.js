@@ -39,7 +39,7 @@ import { reservedInputs, admitInputs, admitInput, withdrawInputAdmission, finish
 import { ciAccess, ownerAccess } from "./access.js";
 /* S2a (18 Oct 2026): the shadow Book is a Durable Object exported from the main module, where the BOOK binding looks for its class */
 export { Book } from "./book.js";
-import { BOOK_NAME, PITR_NAME, LIVE_NAME, MAX_LOAD_BYTES } from "./book.js";
+import { BOOK_NAME, PITR_NAME, LIVE_NAME, MAX_LOAD_BYTES, unshape } from "./book.js";
 import { maintenance } from "./maintenance.js";
 import { readVaultPair, commitVaultPair, consumeVaultOutbox } from "./vault-pair.js";
 import { officialVaultPoint } from "./vault-locality.js";
@@ -117,7 +117,7 @@ async function accessOk(request, env, p, m) {
 }
 /* 19 Oct 2026: the pushes that INFORM the Desk (POST /push/send tags), each kept as KV inform:last for the banner */
 const INFORM_TAGS = new Set(["folded", "fold-refused", "suite-red", "stock"]);
-const CI_ROUTES = new Set(["GET /rev", "POST /push/send", "POST /book/load", "POST /book/pitr", "GET /book/window", "GET /book/readcheck"]);
+const CI_ROUTES = new Set(["GET /rev", "POST /push/send", "POST /book/load", "POST /book/pitr", "GET /book/window", "GET /book/readcheck", "GET /book/ledger"]);
 
 /* THE WRITE GATE (12 Aug 2026). Reads stay open, by the owner's standing decision; writes
  * do not have to. A caller must present X-Salt-Key matching the SALT_WRITE_KEY secret, and
@@ -219,6 +219,25 @@ async function handleBookPitr(request, env, m, p) {
     if (verb === "restart") return json({ ok: true, restarted: true });
     return json({ ok: false, error: "the test object did not answer" }, 502);
   }
+}
+
+/* S5e (28 Oct 2026): THE BOOK AS A BOOK FILE, for the second publish (tools/book-source.mjs). The Book's BASE (git's book as of the latest load, or with ?view=1 the base with the open entries replayed) put back in the
+   shape of ledger/book.json, with the derived documents beside it, and the Book's version, revision and load moment. It carries the whole ledger, cost and margin included, so it has the two locks of the load and
+   the readcheck (Access, the CI service token, and the Book's own key) and the caller must never print the body: the chain's step says counts and codes only. Read only; nothing is written. */
+async function handleBookLedger(request, env, m, url) {
+  if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+  if (!bookKeyOk(request, env)) return needsKey();
+  if (!env.BOOK) return json({ ok: false, error: "the Book is not bound" }, 503);
+  try {
+    const stub = env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)), view = url && url.searchParams.get("view") === "1";
+    const r = await stub.fetch(new Request("https://book/read" + (view ? "" : "?base=1")));
+    if (!r.ok) return json({ ok: false, error: "the Book did not answer" }, 503);
+    const res = await r.json();
+    if (!res || !res.ok) return json({ ok: false, error: "the Book did not answer" }, 503);
+    const a = await (await stub.fetch(new Request("https://book/at"))).json().catch(() => ({}));
+    const { book, derived } = unshape(res);
+    return json({ ok: true, v: res.v, stamped: res.stamped, at: res.at, rev: Number.isInteger(a && a.rev) ? a.rev : null, view, booked: Array.isArray(a && a.booked) ? a.booked.length : 0, book, derived });
+  } catch (e) { return json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }, 500); }
 }
 
 /* S3 (25 Oct 2026): THE READCHECK. The mirror's book against the Book's, read side by side, whatever the flag says: it answers whether the two
@@ -2829,7 +2848,7 @@ export default {
       if (p === "/queue" || /^\/queue\/[^/]+\/withdraw$/.test(p) || p === "/queue/ping" || p === "/vault" || p === "/bio" || p === "/bye"
         || p === "/vault/addr" || p === "/vault/pair" || p === "/vault/maintenance" || p === "/vault/key" || p === "/geo/expand" || p.startsWith("/slips/") || p.startsWith("/pins/")
         || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/") || p === "/book/load" || p === "/book/pitr" || p === "/book/window" || p === "/live"
-        || p === "/drafts" || p.startsWith("/drafts/") || p === "/book/readcheck")
+        || p === "/drafts" || p.startsWith("/drafts/") || p === "/book/readcheck" || p === "/book/ledger")
         return json({ ok: false, error: "not authenticated" }, 401);
       return locked();
     }
@@ -2875,6 +2894,7 @@ export default {
        when its secret is set, so an unset secret opens nothing; the dormant write-key branch of writeOk is NOT used here.
        The answer carries counts and a digest, never a row. Nothing reads the Book. */
     if (p === "/book/load") return handleBookLoad(request, env, m);
+    if (p === "/book/ledger") return handleBookLedger(request, env, m, url);   /* S5e: the Book's base as a book file, for the second publish */
     if (p === "/book/readcheck") return handleBookReadcheck(request, env, m);   /* S3: the Book against the mirror, names only */
     if (p === "/book/pitr" || p === "/book/window") return handleBookPitr(request, env, m, p);   /* S2c: the recovery test, the same two locks */
 

@@ -117,6 +117,18 @@ export async function prepare(book, pricing, meta) {
   return { rows, state, digest, snap };
 }
 
+/* S5e: WHAT A READ ANSWERS -> the book as ledger/book.json holds it, and the derived documents beside it. Every array (a collection or a plain list: the roster, the counts) is a book key of its own,
+   every other state document too; the five derived documents (and PRICING) are handed back apart, as ledger.json carries them. No rule lives here: it puts back what `prepare` took apart. */
+export function unshape(res) {
+  const rows = res.rows || {}, state = res.state || {}, arrays = state[ARRAYS] || {}, book = {}, derived = {};
+  for (const k of Object.keys(arrays)) book[k] = rows[k] || [];
+  for (const [k, doc] of Object.entries(state)) {
+    if (k === ARRAYS) continue;
+    if (DERIVED.includes(k) || k === "PRICING") derived[k] = doc; else book[k] = doc;
+  }
+  return { book, derived };
+}
+
 /* a version "v1252" as a number, or null where it does not read so (a stale-load check then cannot judge, and lets the load through) */
 export const versionNo = (v) => { const m = VERSION_RE.exec(String(v == null ? "" : v)); return m ? +m[1] : null; };
 

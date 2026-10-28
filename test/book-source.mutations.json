@@ -1,0 +1,164 @@
+[
+ {
+  "name": "unshape loses an empty list",
+  "file": "src/book.js",
+  "find": "for (const k of Object.keys(arrays)) book[k] = rows[k] || [];",
+  "replace": "for (const k of Object.keys(arrays)) book[k] = rows[k];"
+ },
+ {
+  "name": "unshape keeps the derived documents in the book",
+  "file": "src/book.js",
+  "find": "if (DERIVED.includes(k) || k === \"PRICING\") derived[k] = doc; else book[k] = doc;",
+  "replace": "book[k] = doc;"
+ },
+ {
+  "name": "unshape keeps the arrays document",
+  "file": "src/book.js",
+  "find": "    if (k === ARRAYS) continue;\n    if (DERIVED.includes(k)",
+  "replace": "    if (DERIVED.includes(k)"
+ },
+ {
+  "name": "the ledger route is not a CI route",
+  "file": "src/worker.js",
+  "find": "\"GET /book/readcheck\", \"GET /book/ledger\"]);",
+  "replace": "\"GET /book/readcheck\"]);"
+ },
+ {
+  "name": "the ledger route takes any caller",
+  "file": "src/worker.js",
+  "find": "  if (m !== \"GET\") return json({ ok: false, error: \"method not allowed\" }, 405);\n  if (!bookKeyOk(request, env)) return needsKey();\n  if (!env.BOOK) return json({ ok: false, error: \"the Book is not bound\" }, 503);\n  try {\n    const stub = env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)), view =",
+  "replace": "  if (m !== \"GET\") return json({ ok: false, error: \"method not allowed\" }, 405);\n  if (!env.BOOK) return json({ ok: false, error: \"the Book is not bound\" }, 503);\n  try {\n    const stub = env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)), view ="
+ },
+ {
+  "name": "the ledger route takes a POST",
+  "file": "src/worker.js",
+  "find": "  if (m !== \"GET\") return json({ ok: false, error: \"method not allowed\" }, 405);\n  if (!bookKeyOk(request, env)) return needsKey();\n  if (!env.BOOK) return json({ ok: false, error: \"the Book is not bound\" }, 503);\n  try {\n    const stub = env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)), view =",
+  "replace": "  if (!bookKeyOk(request, env)) return needsKey();\n  if (!env.BOOK) return json({ ok: false, error: \"the Book is not bound\" }, 503);\n  try {\n    const stub = env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)), view ="
+ },
+ {
+  "name": "the ledger route always answers the view",
+  "file": "src/worker.js",
+  "find": "view = url && url.searchParams.get(\"view\") === \"1\";",
+  "replace": "view = true;"
+ },
+ {
+  "name": "the ledger route hides the revision",
+  "file": "src/worker.js",
+  "find": "rev: Number.isInteger(a && a.rev) ? a.rev : null,",
+  "replace": "rev: null,"
+ },
+ {
+  "name": "the ledger route hides the open entries",
+  "file": "src/worker.js",
+  "find": "booked: Array.isArray(a && a.booked) ? a.booked.length : 0,",
+  "replace": "booked: 0,"
+ },
+ {
+  "name": "the fetch sends no Book key",
+  "file": "tools/book-source.mjs",
+  "find": "const headers = { \"X-Book-Key\": key };",
+  "replace": "const headers = {};"
+ },
+ {
+  "name": "the fetch sends no service token",
+  "file": "tools/book-source.mjs",
+  "find": "    headers[\"CF-Access-Client-Id\"] = env.CF_ACCESS_CLIENT_ID;\n",
+  "replace": ""
+ },
+ {
+  "name": "a 4xx is retried",
+  "file": "tools/book-source.mjs",
+  "find": "if (r.status < 500) return { error: last };",
+  "replace": "if (false) return { error: last };"
+ },
+ {
+  "name": "a 5xx is not retried",
+  "file": "tools/book-source.mjs",
+  "find": "for (let i = 1; i <= tries; i++) {",
+  "replace": "for (let i = 1; i <= 1; i++) {"
+ },
+ {
+  "name": "no key is not said",
+  "file": "tools/book-source.mjs",
+  "find": "  if (!key) return { error: \"SALT_BOOK_KEY is not set, so the Book was not read\" };\n",
+  "replace": ""
+ },
+ {
+  "name": "the view is not asked for",
+  "file": "tools/book-source.mjs",
+  "find": "\"/book/ledger\" + (view ? \"?view=1\" : \"\")",
+  "replace": "\"/book/ledger\" + \"\""
+ },
+ {
+  "name": "a second comparison reads the first one's book",
+  "file": "tools/book-source.mjs",
+  "find": "+ \"?book-source=\" + tag + \"-\" + (++calls));",
+  "replace": "+ \"?book-source=\" + tag);"
+ },
+ {
+  "name": "a bucket is compared as an account",
+  "file": "tools/book-source.mjs",
+  "find": "typeof c === \"string\" && !c.endsWith(\"-R\")",
+  "replace": "typeof c === \"string\""
+ },
+ {
+  "name": "unequal books are called equal",
+  "file": "tools/book-source.mjs",
+  "find": "same: canon(gitBook) === canon(fetched.book) };",
+  "replace": "same: true };"
+ },
+ {
+  "name": "a statement that differs is not named",
+  "file": "tools/book-source.mjs",
+  "find": "if (x !== y) differ.push(code);",
+  "replace": "if (false) differ.push(code);"
+ },
+ {
+  "name": "a comparison that failed is called good",
+  "file": "tools/book-source.mjs",
+  "find": "catch (e) { return { ok: false, accounts: 0, differ: [], same: false, error:",
+  "replace": "catch (e) { return { ok: true, accounts: 0, differ: [], same: true, error:"
+ },
+ {
+  "name": "the line names every code",
+  "file": "tools/book-source.mjs",
+  "find": "differ.slice(0, 5).join(\", \")",
+  "replace": "differ.join(\", \")"
+ },
+ {
+  "name": "the line hides a failed read",
+  "file": "tools/book-source.mjs",
+  "find": "return \"Book source NOT READ: \"",
+  "replace": "return \"Book source: \""
+ },
+ {
+  "name": "the chain's second publish step may block a fold",
+  "file": ".github/workflows/cloud-commit.yml",
+  "find": "      - name: Check the Book builds the same statements\n        if: steps.plan.outputs.deploy == '1'\n        continue-on-error: true\n",
+  "replace": "      - name: Check the Book builds the same statements\n        if: steps.plan.outputs.deploy == '1'\n"
+ },
+ {
+  "name": "a Book behind the checkout is compared",
+  "file": "tools/book-source.mjs",
+  "find": "if (gitV && fetched.v !== gitV) return {",
+  "replace": "if (false) return {"
+ },
+ {
+  "name": "the open entries are read off the read, not the revision answer",
+  "file": "src/worker.js",
+  "find": "booked: Array.isArray(a && a.booked) ? a.booked.length : 0,",
+  "replace": "booked: Array.isArray(res.booked) ? res.booked.length : 0,"
+ },
+ {
+  "name": "the checkout's version is read off PRICING",
+  "file": "tools/book-source.mjs",
+  "find": "return typeof j.v === \"string\" && j.v ? j.v : null;",
+  "replace": "return j.ledger && j.ledger.PRICING && j.ledger.PRICING.v ? j.ledger.PRICING.v : null;"
+ },
+ {
+  "name": "the CLI compares by no version",
+  "file": "tools/book-source.mjs",
+  "find": "return compareLive(gitFile, f, { now, codes, gitV: gitVersion(ledgerFile) });",
+  "replace": "return compareLive(gitFile, f, { now, codes, gitV: null });"
+ }
+]

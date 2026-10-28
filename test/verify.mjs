@@ -51944,7 +51944,7 @@ await (async () => {
       if (head) fn = head[1] || head[2];
       if (/env\.BOOK\b/.test(l) && !/^\s*(\/\/|\*|\/\*)/.test(l) && !/^\s*if \(env\.SALT_LEDGER && env\.BOOK\) bindBook\(env\.SALT_LEDGER, env\.BOOK\);/.test(l)) {
         readers.push(f + ":" + (i + 1));
-        if (!(f === "worker.js" && (fn === "handleBookLoad" || fn === "handleBookPitr" || fn === "handleLive" || fn === "liveTell" || fn === "handleBookReadcheck")) && !(f === "book.js" && (fn === "isTest" || fn === "isLive")) && !(f === "backup.js" && (fn === "runBookExport" || fn === "bookExportAlarm"))) strays.push(f + ":" + (i + 1) + " in " + fn);
+        if (!(f === "worker.js" && (fn === "handleBookLoad" || fn === "handleBookPitr" || fn === "handleLive" || fn === "liveTell" || fn === "handleBookReadcheck" || fn === "handleBookLedger")) && !(f === "book.js" && (fn === "isTest" || fn === "isLive")) && !(f === "backup.js" && (fn === "runBookExport" || fn === "bookExportAlarm"))) strays.push(f + ":" + (i + 1) + " in " + fn);
       }
     });
   }
@@ -52236,6 +52236,11 @@ await (async () => {
 section("Book S6: a booked sale tells its order at once, flag book_outbox shipped off (28 Oct 2026)");
 await (async () => {
   await (await import("./book-outbox.mjs")).run({ ok });
+})();
+
+section("Book S5e: the Counter's publish can read the Book, compared with git and not sealed (28 Oct 2026)");
+await (async () => {
+  await (await import("./book-source.mjs")).run({ ok });
 })();
 
 section("18 Oct 2026: the lean Desk: six views, the three parts gone, alerts in the rail, spots on Coverage, Noticed under To do");
