@@ -154,7 +154,7 @@ export async function run({ ok }) {
     ok(refusedFetch === false && w.eval("BOOK_REV") === 5 && w.eval("bookRefusedRev") === 9 && calls.length === nBefore + 1, "a book the page refuses leaves the revision it had and remembers the revision it was refused at");
     w.eval("bookFailAt=0;bookBusy=false");
     const again9 = await w.eval("bookFetch(9)");
-    ok(again9 === false && calls.length === nBefore + 1, "and is not downloaded again at that revision, however long it waits: the same answer is not worth 1.7 MB a minute");
+    ok(again9 === false && calls.length === nBefore + 1, "and is not downloaded again at that revision, however long it waits: the same answer is not worth fetching again a minute later");
     answer = { ok: true, status: 200, json: async () => ({ ok: true, rev: 10, booked: [], book: served }) };
     const moved = await w.eval("bookFetch(10)");
     ok(moved === true && calls.length === nBefore + 2 && w.eval("BOOK_REV") === 10 && w.eval("bookRefusedRev") === null, "when the revision moves it is asked for again, and a taken book forgets the refusal");
