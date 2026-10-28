@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1309",
+  "d": "28 Oct 2026",
+  "t": "THE DESK PAGE CAN READ THE BOOK AT REQUEST TIME (S5D, DORMANT BEHIND book_page)",
+  "n": [
+   "<b>S5D OF THE S5 PLAN, SHIPPED OFF.</b> A new flag in D1, book_page, ships off and turning it on is his call, after two days of probing. With it off nothing is served and nothing changes: the build poll answers the manifest alone and the page reads only the book baked into it. Fable reviewed the diff and its findings are applied.",
+   "<b>WHAT THE WORKER DOES WITH THE FLAG ON.</b> The build poll also answers the Book's revision, by a cheap one-row verb and never holding the poll for more than a moment. A keyed, read-only route answers the Book's view (the base with the open entries replayed) as a book file with the version, the revision and the drafts it holds, never cached; the revision is read before the view so a move between the two can only make the page fetch again.",
+   "<b>WHAT THE PAGE DOES.</b> When the revision is one it has not read it fetches the view as its own request (a desk holding the write key), and swaps it in over the baked book, whole or not at all: a book that lacks a key, is not of the right kind, is older than the page was built with, or cannot be copied is refused with a reason and changes nothing, and is not downloaded again at that revision. A taken book moves the stock, the lists, the documents, the board and the product list, judges the phone's queue against the new mark as the load does, and skips a queued entry whose draft the view holds, so a sale is never counted twice.",
+   "<b>WHAT STAYS FOR THE FLIP.</b> The compaction must move the base's mark to the newest entry it closes; places and the version string are still the build's. Migration 0022 is applied alone before the flag is turned on."
+  ]
+ },
+ {
   "v": "v1308",
   "d": "28 Oct 2026",
   "t": "THE TAP CAN BOOK AN ADD ID AND A RENAME, AND RECORDS WHAT THEY DID TO THE FILES BESIDE THE BOOK (S5 ROSTER ROAD, DORMANT)",
