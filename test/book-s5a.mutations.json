@@ -164,8 +164,8 @@
  {
   "name": "the readcheck hides the revision",
   "file": "src/worker.js",
-  "find": "mode: await readMode(env.SALT_LEDGER), bookRev, compact });",
-  "replace": "mode: await readMode(env.SALT_LEDGER), compact });"
+  "find": "mode: await readMode(env.SALT_LEDGER), source: await sourceMode(env.SALT_LEDGER), bookRev, compact });",
+  "replace": "mode: await readMode(env.SALT_LEDGER), source: await sourceMode(env.SALT_LEDGER), compact });"
  },
  {
   "name": "the readcheck hides the compaction",

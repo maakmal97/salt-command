@@ -1744,7 +1744,8 @@ await (async () => {
     ok(/- name: Gate\n\s+if: steps\.plan\.outputs\.deploy == '1' && steps\.already\.outputs\.live != '1'/.test(wf)
        && /- name: Deploy\n\s+if: steps\.plan\.outputs\.deploy == '1' && steps\.already\.outputs\.live != '1'/.test(wf),
        "and they are Gate and Deploy, the two steps that are about deploying");
-    ok(/- name: Re-seed the mirror from the master just shipped\n\s+if: steps\.plan\.outputs\.deploy == '1'\n/.test(wf)
+    /* S5f-3: whoever deployed, unless the Book is the source (the mirror is retired then, and the chain says so in one condition) */
+    ok(/- name: Re-seed the mirror from the master just shipped\n\s+if: steps\.plan\.outputs\.deploy == '1' && steps\.source\.outputs\.mode != 'book'\n/.test(wf)
        && /- name: Mark the folded rows committed\n\s+if: steps\.plan\.outputs\.deploy == '1'\n/.test(wf),
        "while the mirror re-seed and the marks run whoever deployed, because a stale mirror is the silent fault this job exists to end");
     ok(/git pull -q --rebase --autostash origin master\n\s+git push/.test(wf),
