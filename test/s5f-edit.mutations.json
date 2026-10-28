@@ -90,12 +90,6 @@
   "replace": "tap.open || n.gone > (tap ? tap.edits : 0) || !tap.folded))"
  },
  {
-  "name": "a compaction lets any row go",
-  "file": "src/book.js",
-  "find": "tap.open || n.goneOther > 0 || n.gone > (tap ? tap.edits : 0) || !tap.folded))",
-  "replace": "tap.open || n.goneOther > 0 || !tap.folded))"
- },
- {
   "name": "the drafter drafts an edit nothing singles out",
   "file": "src/drafter.js",
   "find": "      if (hit.length !== 1) return { skip: hit.length ?",

@@ -158,7 +158,7 @@
  {
   "name": "the fallback record rides into the ledger row",
   "file": "engine/apply.mjs",
-  "find": "        delete r.rids; delete r.tap_fallback;   /* booked_seq stays",
-  "replace": "        delete r.rids;   /* booked_seq stays"
+  "find": "delete row.rids; delete row.booked_seq; delete row.tap_fallback;   /* the tap's bookkeeping, not part of the row */",
+  "replace": "delete row.rids; delete row.booked_seq;   /* the tap's bookkeeping, not part of the row */"
  }
 ]

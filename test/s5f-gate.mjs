@@ -80,6 +80,7 @@ export async function run({ ok }) {
   const wrong = [];
   for (const [id, mut] of cases) { const e = clone(); mut(e); const r = G.judge(e); const l = r.lines.find((x) => x.id === id); if (r.ok || l.ok === true) wrong.push(id + ":" + (l && l.ok)); }
   ok(!wrong.length, "each line goes false on its own evidence and the gate with it: " + (wrong.join(",") || cases.length + " cases"));
+  { const e = clone(); e.d1.voidedNotRejected = null; const g4 = G.judge(e).lines.find((x) => x.id === "G4"); ok(g4.ok === null && /UNREAD/.test(g4.detail), "a voided count the readcheck did not answer leaves G4 UNVERIFIED, never true and never merely false"); }
   const none = G.judge({ runs: [], now: "2026-11-05T00:00:00.000Z" });
   ok(!none.ok && none.lines.filter((l) => l.id !== "G0").every((l) => l.ok === null) && /UNVERIFIED/.test(G.say(none)), "with no evidence every line is UNVERIFIED, never true, and the gate is not true");
   const sayG = G.say(r0);
