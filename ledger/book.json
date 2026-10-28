@@ -906,6 +906,9 @@
       "candy": -0.25,
       "oil": -0.1,
       "salt": -0.15
+    },
+    "CR3-DAM": {
+      "salt": -0.1
     }
   },
   "PEOPLE": {
@@ -1026,7 +1029,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-10-28T03:30:35.197Z",
+  "QUEUE_COMMITTED": "2026-10-28T03:35:00.657Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
