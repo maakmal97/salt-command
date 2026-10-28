@@ -1,0 +1,57 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-28T15:58:18.883Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "qty": 20,
+    "total": 220,
+    "cash": 25,
+    "date": "2026-10-28",
+    "customer": "CZ4-MK",
+    "product": "oil",
+    "rids": [],
+    "booked_seq": 12
+   },
+   "reasoning": "Fulfilment against CZ4-MK's order of 20 unit for RM 220 with RM 30 delivery, RM 250 owed agreed 2026-10-28. RM 225 and 0 unit move on 2026-10-28, against RM 225 and 20 unit outstanding. Leaves RM 0 and 20 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [],
+   "amends": "s302",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-10-28T15:58:18.883Z",
+    "type": "SELL",
+    "party": "CZ4-MK",
+    "qty": 0,
+    "total": 225,
+    "status": "Payment",
+    "by": "desk",
+    "raw": "Payment of RM 225 on CZ4-MK, order 20261028155513-qwaafw, by cash at the counter",
+    "payload": {
+     "mode": "amend",
+     "kind": "Fulfilment",
+     "direction": "SELL",
+     "party": "CZ4-MK",
+     "rid": null,
+     "orderKey": "CZ4-MK|2026-10-28|250|oil",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-28",
+     "qty": 0,
+     "total": 0,
+     "cash": 225,
+     "kg": 0,
+     "note": "Cash received at the handover, recorded on the desk, order 20261028155513-qwaafw."
+    },
+    "orderId": "20261028155513-qwaafw",
+    "counter": true
+   },
+   "decidedAt": "2026-10-28T15:59:17.225Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
