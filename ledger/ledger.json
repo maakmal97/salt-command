@@ -1,6 +1,6 @@
 {
- "v": "v1331",
- "stamped": "30 Oct 2026, 00:23 KL",
+ "v": "v1332",
+ "stamped": "30 Oct 2026, 02:03 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -94,7 +94,7 @@
    "rice": {
     "qty": 0,
     "costPerKg": null,
-    "stated": 100
+    "stated": 90
    },
    "gas": {
     "qty": 0,
@@ -9764,9 +9764,35 @@
     "cash": 0,
     "product": "rice",
     "date": "2026-10-30",
-    "deliveredQty": 0,
-    "note": "<b>PENDING SALE OF 10 UNITS OF RICE TO CK4-SEN, GOODS RM60, 30 OCT 2026.</b> Order 20261029125745-tphuww came from the statements site, acknowledged, to collect. Nothing is paid and nothing is handed over, so RM60 is owed once it moves. Preapproved by Counter Admin. For 10 units the goods total of RM60 clears the floor total of RM35 and equals the ask total of RM60, below the ceiling of RM99. That is RM6 a unit against a floor of RM3.5 and an ask of RM6. The drafter flagged that the party has paid RM8 a unit on all 3 earlier rice orders. The figures confirm it: RM6 is below that RM8. The dossier gives no reason for the lower rate. The party has nothing outstanding and no units on credit, against a credit cap of 1. The row keeps the cost the drafter set from the latest purchase. It moves no cash and no stock.",
-    "rid": "s307"
+    "deliveredQty": 10,
+    "note": "<b>CORRECTION ON S307, 30 OCT 2026: 10 UNITS OF RICE COLLECTED BY CK4-SEN, RM60 UNPAID.</b> It sets deliveredQty from 0 to 10, deliveredOn to 30 Oct and handover to collected. Preapproved by Counter Admin. The rate is RM6 a unit; the booking note put the floor total at RM35 and the ask total at RM60. The drafter flagged RM8 on all 3 earlier rice orders: the figures confirm RM6 is lower, and the dossier gives no reason. The party's median rate is RM80 and its range RM6 to RM94, across all products. Before this it owed RM60 with no units on credit, against a cap of 1; the 10 units go out as an advance, so only the preapproval covers it. RM60 remains outstanding. The row keeps the drafter's cost. <b>PENDING SALE OF 10 UNITS OF RICE TO CK4-SEN, GOODS RM60, 30 OCT 2026.</b> Order 20261029125745-tphuww came from the statements site, acknowledged, to collect. Nothing is paid and nothing is handed over, so RM60 is owed once it moves. Preapproved by Counter Admin. For 10 units the goods total of RM60 clears the floor total of RM35 and equals the ask total of RM60, below the ceiling of RM99. That is RM6 a unit against a floor of RM3.5 and an ask of RM6. The drafter flagged that the party has paid RM8 a unit on all 3 earlier rice orders. The figures confirm it: RM6 is below that RM8. The dossier gives no reason for the lower rate. The party has nothing outstanding and no units on credit, against a credit cap of 1. The row keeps the cost the drafter set from the latest purchase. It moves no cash and no stock.",
+    "rid": "s307",
+    "deliveredOn": "2026-10-30",
+    "handover": "collected",
+    "mod": "corrected on 2026-10-30: deliveredQty 0 to 10; deliveredOn (unset) to 2026-10-30; handover (unset) to collected",
+    "amend": [
+     {
+      "date": "2026-10-30",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-30",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 10,
+      "note": "<b>CORRECTION ON S307, 30 OCT 2026: 10 UNITS OF RICE COLLECTED BY CK4-SEN, RM60 UNPAID.</b> It sets deliveredQty from 0 to 10, deliveredOn to 30 Oct and handover to collected. Preapproved by Counter Admin. The rate is RM6 a unit; the booking note put the floor total at RM35 and the ask total at RM60. The drafter flagged RM8 on all 3 earlier rice orders: the figures confirm RM6 is lower, and the dossier gives no reason. The party's median rate is RM80 and its range RM6 to RM94, across all products. Before this it owed RM60 with no units on credit, against a cap of 1; the 10 units go out as an advance, so only the preapproval covers it. RM60 remains outstanding. The row keeps the drafter's cost.",
+      "was": {
+       "deliveredQty": 0,
+       "deliveredOn": null,
+       "handover": null
+      },
+      "cost": 33
+     }
+    ],
+    "cost": 33
    }
   ],
   "contacts": [
@@ -10572,7 +10598,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-29T16:22:33.223Z",
+  "QUEUE_COMMITTED": "2026-10-29T18:02:18.689Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -10618,7 +10644,7 @@
     {
      "id": "cust:cadence:rice",
      "sev": "watch",
-     "title": "2 customers are past their own habit on rice"
+     "title": "1 customer is past their own habit on rice"
     },
     {
      "id": "int:nocost",
@@ -10719,11 +10745,6 @@
      "id": "dup:CA4-DAM:2026-08-18:2026-08-20:50",
      "sev": "note",
      "title": "CA4-DAM bought the same thing twice in 2 days"
-    },
-    {
-     "id": "promo:revive:rice",
-     "sev": "note",
-     "title": "Two messages are worth about RM 19 on rice"
     },
     {
      "id": "cust:oneanddone",
@@ -11069,13 +11090,13 @@
      },
      "rice": {
       "name": "consistent mid",
-      "orders": 3,
+      "orders": 4,
       "tenureDays": 30,
-      "sinceLastDays": 18,
-      "perMonth": 3.04,
-      "unitsPerMonth": 5.07,
-      "smallShare": 0.33,
-      "bigShare": 0,
+      "sinceLastDays": 0,
+      "perMonth": 4.06,
+      "unitsPerMonth": 15.22,
+      "smallShare": 0.25,
+      "bigShare": 0.25,
       "frequent": true,
       "small": false,
       "bigger": false,
@@ -17830,15 +17851,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.07142857142857142
+         "v": 0.06666666666666667
         }
        },
        "attrib": 1,
        "shrinkRate": 0.13,
        "avgDel": {
-        "n": 14,
-        "kg": 74,
-        "mean": 5.2857
+        "n": 15,
+        "kg": 84,
+        "mean": 5.6
        }
       },
       "policy": {
@@ -20456,10 +20477,10 @@
      "suggest": null
     }
    },
-   "v": "v1331"
+   "v": "v1332"
   },
   "OPEN": {
-   "at": "2026-10-29T16:23:14.407Z",
+   "at": "2026-10-29T18:03:10.316Z",
    "count": 13,
    "byKey": {
     "CK4-SEN|2026-10-30|60|rice": {
@@ -20469,13 +20490,16 @@
      "q": 10,
      "t": 60,
      "cash": 0,
-     "mv": 0,
-     "st": "part",
+     "mv": 10,
+     "st": "dueMoney",
      "oweRM": 60,
-     "oweUnits": 10,
      "pr": "rice",
      "rid": "s307",
-     "key": "CK4-SEN|2026-10-30|60|rice"
+     "deliveredOn": "2026-10-30",
+     "handover": "collected",
+     "key": "CK4-SEN|2026-10-30|60|rice",
+     "age": 0,
+     "exp": 60
     },
     "CS6-BS-R|2026-10-29|150": {
      "d": "2026-10-29",
@@ -20711,13 +20735,13 @@
     },
     "rice": {
      "name": "Rice",
-     "onHand": 100,
-     "free": 100,
+     "onHand": 90,
+     "free": 90,
      "owedOut": 0,
-     "coverDays": 43.7,
+     "coverDays": 46.4,
      "rate": 2.29,
-     "owedToYou": 15,
-     "promised": 15,
+     "owedToYou": 75,
+     "promised": 5,
      "short": 0
     },
     "gas": {
@@ -20751,7 +20775,7 @@
     "gas": "2026-10-29",
     "prep": null
    },
-   "v": "v1331"
+   "v": "v1332"
   },
   "TERMS": {
    "ceiling": 250,
@@ -20759,7 +20783,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1331"
+   "v": "v1332"
   },
   "REWARD": {
    "stated": {
@@ -20777,7 +20801,7 @@
      }
     }
    },
-   "v": "v1331"
+   "v": "v1332"
   },
   "STOCK": {
    "today": "2026-10-30",
@@ -20807,11 +20831,11 @@
      "transit": 0
     },
     "rice": {
-     "shelf": 100,
-     "free": 100,
-     "commit": 15,
+     "shelf": 90,
+     "free": 90,
+     "commit": 5,
      "light": "green",
-     "coverDays": null,
+     "coverDays": 46.4,
      "transit": 0
     },
     "gas": {
@@ -20831,7 +20855,7 @@
      "transit": 0
     }
    },
-   "v": "v1331"
+   "v": "v1332"
   }
  }
 }

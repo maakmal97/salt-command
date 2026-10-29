@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1332",
+  "d": "30 Oct 2026",
+  "t": "RICE COLLECTED ON CREDIT, RM60 STILL OWED",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> The correction on s307 records that CK4-SEN collected 10 units of rice on 30 Oct 2026, order 20261029125745-tphuww. It sets deliveredQty to 10, deliveredOn to 30 Oct and handover to collected. It moves no cash, so the goods total of RM60 stays unpaid. It was preapproved by Counter Admin.",
+   "<b>UNUSUAL.</b> The rate is RM6 a unit, where CK4-SEN paid RM8 on all 3 earlier rice orders, and the 10 units leave on credit. The rice shelf falls by 10 units. Salt stock and the cost basis do not move."
+  ]
+ },
+ {
   "v": "v1331",
   "d": "30 Oct 2026",
   "t": "PENDING RICE SALE TO CK4-SEN, NO STOCK MOVED",
