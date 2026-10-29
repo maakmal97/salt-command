@@ -1,0 +1,57 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-29T08:26:44.834Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "qty": 2,
+    "total": 180,
+    "cash": 0,
+    "date": "2026-10-29",
+    "customer": "CZ5-TM",
+    "rids": [],
+    "booked_seq": 26
+   },
+   "reasoning": "Fulfilment against CZ5-TM's order of 2 unit for RM 180 agreed 2026-10-29. RM 180 and 0 unit move on 2026-10-29, against RM 180 and 2 unit outstanding. Leaves RM 0 and 2 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [],
+   "amends": "s306",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-10-29T08:26:44.834Z",
+    "type": "SELL",
+    "party": "CZ5-TM",
+    "qty": 0,
+    "total": 180,
+    "status": "Payment",
+    "by": "customer",
+    "raw": "Payment of RM 180 on CZ5-TM, order 20261029081307-zyon2w, by transfer via tng",
+    "payload": {
+     "mode": "amend",
+     "kind": "Fulfilment",
+     "direction": "SELL",
+     "party": "CZ5-TM",
+     "rid": null,
+     "orderKey": "CZ5-TM|2026-10-29|180",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-29",
+     "qty": 0,
+     "total": 0,
+     "cash": 180,
+     "kg": 0,
+     "note": "Paid on the statements site, order 20261029081307-zyon2w, by transfer via tng."
+    },
+    "orderId": "20261029081307-zyon2w",
+    "claim": true,
+    "claimOf": "2026-10-29T08:26:44.834Z"
+   },
+   "decidedAt": "2026-10-29T08:46:28.771Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
