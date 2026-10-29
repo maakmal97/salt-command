@@ -1,0 +1,66 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-29T16:22:33.223Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CK4-SEN",
+    "qty": 10,
+    "total": 60,
+    "cash": 0,
+    "product": "rice",
+    "date": "2026-10-30",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261029125745-tphuww, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+    "rids": [
+     "s307"
+    ],
+    "booked_seq": 28
+   },
+   "reasoning": "Sold 10 unit of rice to CK4-SEN for RM 60, RM 6/unit. Costed at RM 3.3/unit from COGS off the latest purchase p045 landed 2026-10-25: RM 320 quote plus RM 10 freight over 100 unit, so RM 27 on the goods at 45%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-10-30 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CK4-SEN has paid RM 8/unit on every one of their 3 orders of rice; this one is RM 6."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-29T16:22:33.223Z",
+    "type": "SELL",
+    "party": "CK4-SEN",
+    "qty": 10,
+    "total": 60,
+    "status": "Pending",
+    "raw": "SELL CK4-SEN 10 rice RM 60, nothing paid, nothing moved (order 20261029125745-tphuww)",
+    "orderKey": "CK4-SEN|2026-10-30|60|rice",
+    "payload": {
+     "mode": "new",
+     "product": "rice",
+     "direction": "SELL",
+     "party": "CK4-SEN",
+     "newId": null,
+     "date": "2026-10-30",
+     "qty": 10,
+     "total": 60,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261029125745-tphuww, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261029125745-tphuww"
+   },
+   "decidedAt": "2026-10-29T16:22:35.972Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
