@@ -313,10 +313,13 @@ async function customerPage(ok, pageWork) {
     R.clock.fire(R.clock.pending(1000).pop());
     ok(R.socks.length === 6, "and it is made again after a second");
 
-    /* Log out closes it, and nothing reconnects */
+    /* Log out closes it, and nothing reconnects. A reconnect is a timer the log out itself made, on the page's backoff of one to thirty seconds.
+       The page's clock also re-arms a sixty-second timer at every real minute boundary (stmt/page.js clockTick); that timer is recorded when
+       a boundary falls inside this run, about one run in fifty, and is no reconnect (28 Oct 2026: a suite part red on a 59977 ms timer alone). */
     const last = R.socks[5]; last.open().receive({ k: "hello" });
+    const before = new Set(R.clock.touts);
     const lock = R.d.getElementById("lock"); lock.click(); lock.click(); await R.work.quiet(); await sleep(50);
-    const pend = R.clock.touts.filter((t) => !t.off && t.ms >= 1000).length;
+    const pend = R.clock.touts.filter((t) => !before.has(t) && !t.off && t.ms >= 1000 && t.ms <= 30000).length;
     ok(last.closedByPage && R.socks.length === 6 && pend === 0, "Log out closes the socket and nothing makes another: " + JSON.stringify([last.closedByPage, R.socks.length, pend]));
   } finally { for (const w of wins) { try { w.close(); } catch (e) { /* jsdom */ } } }
 }
