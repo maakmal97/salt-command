@@ -1,0 +1,134 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-10-29T04:35:37.009Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s304",
+    "qty": 2.5,
+    "total": 235,
+    "cash": 0,
+    "date": "2026-10-29",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "trip",
+      "from": null,
+      "to": "t1793248537009"
+     }
+    ],
+    "customer": "CH6-SET",
+    "rids": [],
+    "booked_seq": 22
+   },
+   "reasoning": "Correction against CH6-SET's order of 2.5 unit for RM 235 dated 2026-10-29 (s304). Sets trip from unset to t1793248537009. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CH6-SET typically pays about RM 110.83/unit for salt across 4 orders; this one is RM 94, 15.2% below that."
+   ],
+   "amends": "s304",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-29T04:35:37.009Z",
+    "type": "AMEND",
+    "party": "CH6-SET",
+    "qty": 0,
+    "total": 0,
+    "status": "corrected",
+    "raw": "Correction against s304 for CH6-SET on 2026-10-29",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CH6-SET",
+     "product": "salt",
+     "rid": "s304",
+     "orderKey": "CH6-SET|2026-10-29|235",
+     "date": "2026-10-29",
+     "kind": "Correction",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "sameDay": true,
+     "note": null,
+     "fields": {
+      "trip": "t1793248537009"
+     },
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    },
+    "makerRequest": "9984ff4efa34ad7c1120777b38a2c33c00414cb41420bae309a105335fd2d9f6"
+   },
+   "decidedAt": "2026-10-29T04:35:51.775Z",
+   "decidedBy": "Counter Admin"
+  },
+  {
+   "id": "2026-10-29T04:35:37.010Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s305",
+    "qty": 5,
+    "total": 35,
+    "cash": 0,
+    "date": "2026-10-29",
+    "product": "rice",
+    "changes": [
+     {
+      "field": "trip",
+      "from": null,
+      "to": "t1793248537009"
+     }
+    ],
+    "customer": "CH6-SET",
+    "rids": [],
+    "booked_seq": 23
+   },
+   "reasoning": "Correction against CH6-SET's order of 5 unit for RM 35 dated 2026-10-29 (s305). Sets trip from unset to t1793248537009. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CH6-SET has no committed rice order on the book, so there is no rate of theirs to compare this against."
+   ],
+   "amends": "s305",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-29T04:35:37.010Z",
+    "type": "AMEND",
+    "party": "CH6-SET",
+    "qty": 0,
+    "total": 0,
+    "status": "corrected",
+    "raw": "Correction against s305 for CH6-SET on 2026-10-29",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CH6-SET",
+     "product": "rice",
+     "rid": "s305",
+     "orderKey": "CH6-SET|2026-10-29|35|rice",
+     "date": "2026-10-29",
+     "kind": "Correction",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "sameDay": true,
+     "note": null,
+     "fields": {
+      "trip": "t1793248537009"
+     },
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    },
+    "makerRequest": "9984ff4efa34ad7c1120777b38a2c33c00414cb41420bae309a105335fd2d9f6"
+   },
+   "decidedAt": "2026-10-29T04:35:52.187Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
