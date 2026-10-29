@@ -1,0 +1,65 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-29T08:18:00.504Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CZ5-TM",
+    "qty": 2,
+    "total": 190,
+    "cash": 0,
+    "date": "2026-10-29",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261029081307-zyon2w, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+    "listRM": 190,
+    "listQty": 2,
+    "rids": [
+     "s306"
+    ],
+    "booked_seq": 24
+   },
+   "reasoning": "Sold 2 unit of salt to CZ5-TM for RM 190, RM 95/unit. Costed at RM 56/unit from COGS off the latest purchase p046 landed 2026-10-28: RM 1400 quote plus RM 0 freight over 25 unit, so RM 78 on the goods at 41.1%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-10-29 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-29T08:18:00.504Z",
+    "type": "SELL",
+    "party": "CZ5-TM",
+    "qty": 2,
+    "total": 190,
+    "status": "Pending",
+    "raw": "SELL CZ5-TM 2 salt RM 190, nothing paid, nothing moved (order 20261029081307-zyon2w)",
+    "orderKey": "CZ5-TM|2026-10-29|190",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CZ5-TM",
+     "newId": null,
+     "date": "2026-10-29",
+     "qty": 2,
+     "total": 190,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261029081307-zyon2w, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261029081307-zyon2w"
+   },
+   "decidedAt": "2026-10-29T08:18:17.597Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
