@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1326",
+  "d": "29 Oct 2026",
+  "t": "TRIP REFERENCE ADDED TO TWO PENDING CH6-SET SALES",
+  "n": [
+   "<b>TWO CORRECTIONS FOLDED, BOTH SETTING A TRIP.</b> Orders s304 (salt) and s305 (rice) for CH6-SET, both dated 29 Oct 2026, now carry trip t1793248537009. Counter Admin approved both. Neither moves cash or stock, and both orders stay pending.",
+   "<b>INVENTORY UNCHANGED.</b> Stock stays at 23.5 units and the cost basis stays at RM56 a unit. The drafter's flags, a salt rate below the party's usual and no rice history, are not answered by a trip reference."
+  ]
+ },
+ {
   "v": "v1325",
   "d": "29 Oct 2026",
   "t": "TWO PENDING SALES TO CH6-SET, NOTHING MOVED",
