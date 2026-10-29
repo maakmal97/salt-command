@@ -232,5 +232,65 @@
   "file": "tools/flip-board.mjs",
   "find": "step(p.id, p.title, { cmd: p.cmd, does: p.does, read: p.read })",
   "replace": "step(p.id, p.title, { cmd: p.cmd, does: p.does, read: p.read, typed: true })"
+ },
+ {
+  "name": "the way back is offered before the flip",
+  "file": "tools/flip-board.mjs",
+  "find": "backReady: opts.wayBack === true || (!!p && p.source === \"book\")",
+  "replace": "backReady: true"
+ },
+ {
+  "name": "book_source at book does not open the way back",
+  "file": "tools/flip-board.mjs",
+  "find": "backReady: opts.wayBack === true || (!!p && p.source === \"book\")",
+  "replace": "backReady: opts.wayBack === true"
+ },
+ {
+  "name": "a locked way back keeps its Copy",
+  "file": "tools/flip-board.mjs",
+  "find": "${view.backReady ? cmdBlock(b.cmd, false) : textBlock(b.cmd)}",
+  "replace": "${cmdBlock(b.cmd, false)}"
+ },
+ {
+  "name": "the nothing-compacted way back says the flags alone",
+  "file": "tools/flip-board.mjs",
+  "find": "but it still seeds the mirror (d1.mjs --seed, a full replace) from this checkout",
+  "replace": "the flags alone, from this checkout"
+ },
+ {
+  "name": "the days count the Kuala Lumpur day",
+  "file": "tools/flip-board.mjs",
+  "find": "Math.round((Date.parse(day) - Date.parse(utcDay(now))) / DAY)",
+  "replace": "Math.round((Date.parse(day) - Date.parse(new Date(Date.parse(now) + MYT).toISOString().slice(0, 10))) / DAY)"
+ },
+ {
+  "name": "the tile says the day has come on its own count",
+  "file": "tools/flip-board.mjs",
+  "find": "view.g0 ? \"the earliest day has come\"",
+  "replace": "view.daysTo !== null && view.daysTo <= 1 ? \"the earliest day has come\""
+ },
+ {
+  "name": "an attestation that is no date shows as one",
+  "file": "tools/flip-board.mjs",
+  "find": "bo.date ? myt(bo.date + \"T00:00:00.000Z\", false) : \"not attested\"",
+  "replace": "ev.backupOpened ? myt(ev.backupOpened + \"T00:00:00.000Z\", false) : \"not attested\""
+ },
+ {
+  "name": "an attestation not taken rides in the refresh",
+  "file": "tools/flip-board.mjs",
+  "find": "backupOpened: bo.date,",
+  "replace": "backupOpened: ev.backupOpened || null,"
+ },
+ {
+  "name": "why an attestation is not taken is not said",
+  "file": "tools/flip-board.mjs",
+  "find": "data-backup-why><span",
+  "replace": "data-backup-gone><span"
+ },
+ {
+  "name": "G9 drops the chain's step order",
+  "file": "tools/flip-board.mjs",
+  "find": "pre(\"Marked before the load\", p && p.markBeforeLoad, true, yes(p && p.markBeforeLoad), \"yes\"),",
+  "replace": ""
  }
 ]

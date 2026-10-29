@@ -42,6 +42,16 @@ export function parseLog(text) {
   return out;
 }
 
+/** his word that he opened a Book backup with his key (G7): a real YYYY-MM-DD, not after today in Kuala Lumpur; anything else is not attested, and says why */
+export function attested(s, now) {
+  if (!s) return { date: null, why: "--backup-opened YYYY-MM-DD" };
+  const t = /^\d{4}-\d\d-\d\d$/.test(String(s)) ? Date.parse(s + "T00:00:00.000Z") : NaN;
+  if (!Number.isFinite(t) || new Date(t).toISOString().slice(0, 10) !== s) return { date: null, why: JSON.stringify(String(s).slice(0, 20)) + " is not a real YYYY-MM-DD date" };
+  const today = now && Number.isFinite(Date.parse(now)) ? new Date(Date.parse(now) + 8 * 36e5).toISOString().slice(0, 10) : null;
+  if (!today || s > today) return { date: null, why: s + " is after today" + (today ? ", " + today + " in Kuala Lumpur" : " (unknown)") };
+  return { date: s, why: null };
+}
+
 /** the gate, from evidence: { runs: [{id, at, event, log: parseLog()}], d1: {...}, backupOpened, now }. Pure. Answers {ok, lines: [{id, text, ok: true|false|null, detail}]}. */
 export function judge(ev, cfg = GATE) {
   const L = [], line = (id, text, ok, detail) => L.push({ id, text, ok, detail });
@@ -86,14 +96,16 @@ export function judge(ev, cfg = GATE) {
   line("G6", "the Worker's PRICING equal to the page's at every load, after a lot included", !par.length ? null : !badPar.length, par.length + " parity lines read, " + badPar.length + " not equal" + (badPar[0] ? ": " + badPar[0].line.slice(0, 160) : ""));
   /* G7 */
   /* before the flip the export cannot have run (it runs only with the Book as the source), so what proves the Book exports git's own book is the per-fold comparison of the statements built from each (the S5e step); any export line that exists must be clean too */
-  const badExp = exps.filter((e) => !e.ok), badSrc = srcs.filter((s) => !s.ok);
-  line("G7", "the Book builds git's own statements at every fold, any export that ran is clean, and one Book backup opened with his key", !srcs.length || !ev.backupOpened ? null : !badSrc.length && !badExp.length, srcs.length + " statement comparisons read, " + badSrc.length + " differ; " + exps.length + " export lines, " + badExp.length + " failed; backup opened: " + (ev.backupOpened || "NOT ATTESTED (--backup-opened YYYY-MM-DD)"));
+  const badExp = exps.filter((e) => !e.ok), badSrc = srcs.filter((s) => !s.ok), bo = attested(ev.backupOpened, ev.now);
+  line("G7", "the Book builds git's own statements at every fold, any export that ran is clean, and one Book backup opened with his key", !srcs.length || !bo.date ? null : !badSrc.length && !badExp.length, srcs.length + " statement comparisons read, " + badSrc.length + " differ; " + exps.length + " export lines, " + badExp.length + " failed; backup opened: " + (bo.date || "NOT ATTESTED (" + bo.why + ")"));
   /* G8 */
   line("G8", "no drafts.mjs --approve run in the window, and no row folded by the laptop", !d ? null : d.laptopApprovals === 0 && d.foldedUnbooked === 0, d ? `${d.laptopApprovals} approved by hand; ${d.foldedUnbooked} approved rows committed by the fold with no tap booking` : "D1 unread");
   /* G9 */
-  const p = ev.pre || null;
+  /* a precondition read and wrong is false; one unread (null) leaves the line UNVERIFIED, never false and never true (Fable's review of the board, 29 Oct 2026) */
+  const p = ev.pre || null, unread = (v) => v === null || v === undefined;
+  const want = p ? [[p.migrations, true], [p.tap, "on"], [p.read, "book"], [p.source, "d1"], [p.exportSteps, true], [p.markBeforeLoad, true], [p.handoff, false]] : [];
   line("G9", "the flip's own preconditions stand: migrations 0023 and 0024 applied, book_tap on, book_read book, book_source d1, the export steps in the chain on master, the chain marking what it folded before it loads the Book, no fold handoff in HEAD", !p ? null :
-    p.migrations && p.tap === "on" && p.read === "book" && p.source === "d1" && p.exportSteps && p.markBeforeLoad === true && !p.handoff, p ? JSON.stringify(p) : "unread");
+    want.some(([v, w]) => !unread(v) && v !== w) ? false : want.some(([v]) => unread(v)) ? null : true, p ? JSON.stringify(p) : "unread");
   return { ok: L.every((x) => x.ok === true), lines: L, window: { since: ev.since || cfg.since, runs: runs.length } };
 }
 
@@ -147,10 +159,11 @@ export function collectPre(run = sh) {
   const tbl = d1("SELECT name FROM sqlite_master WHERE name IN ('book_source') OR (name='draft' AND sql LIKE '%''edit''%')", run);
   const yml = run("git", ["show", "origin/master:.github/workflows/cloud-commit.yml"]);
   const handoff = run("git", ["ls-tree", "-r", "--name-only", "origin/master", "master/_to_fold.json", "master/_folded.json"]);
-  return { migrations: !!(tbl && tbl.length >= 2), tap: flag("book_tap"), read: flag("book_read"), source: flag("book_source"),
-    exportSteps: yml.code === 0 && /Export the Book to git \(the day's record\)/.test(yml.out) && /Export the Book to the checkout for the publish/.test(yml.out), handoff: handoff.code === 0 && handoff.out.trim().length > 0,
+  /* each answer is null when it could not be read, so G9 says UNVERIFIED rather than NOT MET */
+  return { migrations: tbl ? tbl.length >= 2 : null, tap: flag("book_tap"), read: flag("book_read"), source: flag("book_source"),
+    exportSteps: yml.code !== 0 ? null : /Export the Book to git \(the day's record\)/.test(yml.out) && /Export the Book to the checkout for the publish/.test(yml.out), handoff: handoff.code !== 0 ? null : handoff.out.trim().length > 0,
     /* G1's open entries are explained by count only because a run marks what it folded committed BEFORE it loads the Book, so a draft that run folded never stands in for an unexplained one (Fable, 04 Nov 2026) */
-    markBeforeLoad: yml.code === 0 && markBeforeLoad(yml.out) };
+    markBeforeLoad: yml.code !== 0 ? null : markBeforeLoad(yml.out) };
 }
 
 export function markBeforeLoad(yml) {

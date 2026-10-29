@@ -75,6 +75,10 @@ export async function preflight(io, opts = {}) {
   return { ok: checks.every((c) => c.ok), checks, gate };
 }
 
+/* words holding < or > are the board's placeholder pasted as it stands ("<your typed words>"), never his own go */
+export const placeholder = (words) => /[<>]/.test(String(words));
+export const PLACEHOLDER = "his typed words hold < or >: that is the placeholder copied from the board; type your own words in its place";
+
 export const PLAN = [
   ["0", "write the way back (flags, the Book's revision, the sha, the commands) before anything moves"],
   ["3", "book_roster on: the tap books an Add ID, a rename and a partner"],
@@ -90,6 +94,7 @@ export async function flip(io, opts = {}) {
   const did = [], pre = await preflight(io, opts), out = { ok: false, dry: !opts.go, pre, plan: PLAN, did };
   if (!opts.go) { out.ok = pre.ok; return out; }
   if (typeof opts.go !== "string" || opts.go.trim().length < 8) return { ...out, error: "--go takes his typed words, not a bare flag" };
+  if (placeholder(opts.go)) return { ...out, error: PLACEHOLDER };
   if (!pre.ok) return { ...out, error: "a precondition does not stand: " + pre.checks.filter((c) => !c.ok).map((c) => c.id).join(", "), stoppedAt: "preflight" };
   const stop = (step, error) => ({ ...out, stoppedAt: step, error: String(error).slice(0, 300), wayBack: WAY_BACK });
   /* 0: the way back, first */
@@ -139,6 +144,7 @@ export async function verify(io) {
 export async function back(io, opts = {}) {
   const did = [];
   if (typeof opts.go !== "string" || opts.go.trim().length < 8) return { ok: false, did, error: "--back takes his typed words" };
+  if (placeholder(opts.go)) return { ok: false, did, error: PLACEHOLDER };
   const stop = (step, error) => ({ ok: false, did, stoppedAt: step, error: String(error).slice(0, 300) });
   /* `noExport`: the flip stopped before anything was compacted (step 6 refused), so there is nothing to export and the way back is the flags alone */
   if (!opts.exported && !opts.noExport) {

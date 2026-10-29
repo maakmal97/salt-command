@@ -10,8 +10,8 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { GATE, judge, collect } from "./flip-gate.mjs";
-import { PLAN, realGet } from "./flip.mjs";
+import { GATE, judge, collect, attested } from "./flip-gate.mjs";
+import { PLAN, realGet, WAY_BACK } from "./flip.mjs";
 import { DATA_DIR } from "./book.mjs";   /* flip.mjs's own data folder, where its way back is written */
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -26,9 +26,10 @@ export function myt(iso, withTime = true) {
   const d = new Date(t + MYT), p = (n) => String(n).padStart(2, "0");
   return `${p(d.getUTCDate())} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}` + (withTime ? `, ${p(d.getUTCHours())}:${p(d.getUTCMinutes())} MYT` : "");
 }
-const mytDay = (iso) => new Date(Date.parse(iso) + MYT).toISOString().slice(0, 10);
-/** whole Kuala Lumpur calendar days from `now` to the day `day` (YYYY-MM-DD); negative once past */
-export const daysTo = (now, day) => Math.round((Date.parse(day) - Date.parse(mytDay(now))) / DAY);
+/* G0 reads the UTC date (flip-gate.mjs), so every day count here does too: the board and the gate never disagree on whether the day has come */
+const utcDay = (iso) => String(iso).slice(0, 10);
+/** whole days from `now`'s UTC date to the day `day` (YYYY-MM-DD), as G0 counts them; 0 or less once the day has come */
+export const daysTo = (now, day) => Math.round((Date.parse(day) - Date.parse(utcDay(now))) / DAY);
 
 /** the earliest moment the gate can read true: G0's day (the gate reads the UTC date) or G5's seven recorded days, whichever is later */
 export function earliestFlipDay(cfg = GATE) {
@@ -73,7 +74,7 @@ export const MOVES = {
   G6: "Each chain run's pricing parity step; a purchase lot must pass through it.",
   G7: "Each fold's statements comparison, and your --backup-opened after you open a Book backup with your key.",
   G8: "Nobody running drafts.mjs --approve or a laptop fold in the window.",
-  G9: "Holds while the flags stand as set: book_tap on, book_read book, book_source d1, the export steps on master, no fold handoff in HEAD.",
+  G9: "Holds while the flags stand as set: book_tap on, book_read book, book_source d1, the export steps on master, the chain marking before it loads, no fold handoff in HEAD.",
 };
 const STATE = (ok) => (ok === true ? "m" : ok === false ? "n" : "u");
 
@@ -92,14 +93,17 @@ export function readHistory(file) {
   try { const h = JSON.parse(readFileSync(file, "utf8")); return Array.isArray(h) ? h.filter((x) => x && typeof x === "object" && x.gates) : []; } catch (e) { return []; }
 }
 
-/** the page's data from the evidence, the judge's answer and the history (which already holds this read). Pure: the clock is ev.now. */
-export function viewOf(ev, judged, history = []) {
+/** the page's data from the evidence, the judge's answer and the history (which already holds this read). Pure: the clock is ev.now.
+ * opts.wayBack: flip.mjs's way-back file exists (the CLI looks); the way back is offered only then or with book_source read as book. */
+export function viewOf(ev, judged, history = [], opts = {}) {
   const c = counts(ev.runs || []), d = ev.d1 || null, k = d && d.kinds, p = ev.pre || null, now = ev.now || null;
   const since = String(ev.since || GATE.since).slice(0, 10), total = daysTo(since + "T00:00:00.000Z", GATE.earliest) + 0;
-  const elapsed = now ? Math.max(0, Math.min(total, Math.round((Date.parse(mytDay(now)) - Date.parse(since)) / DAY))) : null;
+  const elapsed = now ? Math.max(0, Math.min(total, Math.round((Date.parse(utcDay(now)) - Date.parse(since)) / DAY))) : null;
   const rec = now ? Math.max(0, Math.floor((Date.parse(now) - Date.parse(GATE.fallbackFrom)) / DAY)) : null;
   const kn = (f) => (k ? k[f] : null), dn = (f) => (d ? d[f] : null);
-  const yes = (v) => (v === true ? "yes" : v === false ? "no" : "unread");
+  const yes = (v) => (v === true ? "yes" : v === false ? "no" : "unread"), unread = (v) => v === null || v === undefined, bo = attested(ev.backupOpened, now);
+  /* a precondition unread is unread (null), never not met: as G9 reads it */
+  const pre = (label, v, want, shown, wantShown) => flag(label, shown, wantShown, unread(v) ? null : v === want);
   const prog = {
     G0: [meter("Days of the window", elapsed, total), count("Days to 04 Nov 2026", now ? daysTo(now, GATE.earliest) : null)],
     G1: [count("Loads read", c.loads), count("With a tap line", c.withTap), zero("Not clean", c.loads ? c.badLoads : null)],
@@ -109,11 +113,12 @@ export function viewOf(ev, judged, history = []) {
     G5: [meter("Days recorded", rec, GATE.fallbackDays), zero("Fallbacks", dn("fallbacks"))],
     G6: [count("Parity lines read", c.parity), zero("Not equal", c.parity ? c.badParity : null)],
     G7: [count("Statement comparisons", c.sources), zero("Differ", c.sources ? c.badSources : null), count("Export lines", c.exports), zero("Exports failed", c.badExports),
-      flag("Backup opened with your key", ev.backupOpened ? myt(ev.backupOpened + "T00:00:00.000Z", false).replace(/^/, "") : "not attested", "attested", ev.backupOpened ? true : null)],
+      flag("Backup opened with your key", bo.date ? myt(bo.date + "T00:00:00.000Z", false) : "not attested", "attested", bo.date ? true : null)],
     G8: [zero("Approved by hand", dn("laptopApprovals")), zero("Folded with no tap booking", dn("foldedUnbooked"))],
-    G9: [flag("Migrations 0023 and 0024", yes(p && p.migrations), "yes", p ? p.migrations === true : null), flag("book_tap", p ? p.tap || "unread" : "unread", "on", p && p.tap ? p.tap === "on" : null),
-      flag("book_read", p ? p.read || "unread" : "unread", "book", p && p.read ? p.read === "book" : null), flag("book_source", p ? p.source || "unread" : "unread", "d1", p && p.source ? p.source === "d1" : null),
-      flag("Export steps on master", yes(p && p.exportSteps), "yes", p ? p.exportSteps === true : null), flag("Fold handoff in HEAD", yes(p && p.handoff), "no", p ? p.handoff === false : null)],
+    G9: [pre("Migrations 0023 and 0024", p && p.migrations, true, yes(p && p.migrations), "yes"), pre("book_tap", p && p.tap, "on", (p && p.tap) || "unread", "on"),
+      pre("book_read", p && p.read, "book", (p && p.read) || "unread", "book"), pre("book_source", p && p.source, "d1", (p && p.source) || "unread", "d1"),
+      pre("Export steps on master", p && p.exportSteps, true, yes(p && p.exportSteps), "yes"), pre("Marked before the load", p && p.markBeforeLoad, true, yes(p && p.markBeforeLoad), "yes"),
+      pre("Fold handoff in HEAD", p && p.handoff, false, yes(p && p.handoff), "no")],
   };
   const hist = (Array.isArray(history) ? history : []).slice(-8);
   const gates = judged.lines.map((l) => ({ id: l.id, text: l.text, ok: l.ok, detail: scrub(l.detail), progress: prog[l.id] || [], moves: MOVES[l.id] || "",
@@ -121,7 +126,8 @@ export function viewOf(ev, judged, history = []) {
   const tally = (v) => judged.lines.filter((l) => l.ok === v).length;
   return { ok: judged.ok === true, met: tally(true), notMet: tally(false), unverified: tally(null), total: judged.lines.length,
     now, nowMyt: now ? myt(now) : "unknown", since, runs: (ev.runs || []).length, daysTo: now ? daysTo(now, GATE.earliest) : null,
-    earliest: earliestFlipDay(), backupOpened: ev.backupOpened || null, error: ev.collectError ? scrub(ev.collectError) : null, gates };
+    g0: (judged.lines.find((l) => l.id === "G0") || {}).ok === true, backReady: opts.wayBack === true || (!!p && p.source === "book"),
+    earliest: earliestFlipDay(), backupOpened: bo.date, backupWhy: ev.backupOpened && !bo.date ? scrub(bo.why) : null, error: ev.collectError ? scrub(ev.collectError) : null, gates };
 }
 
 /** the runbook: his preconditions, the flip in PLAN order, the check after, and the way back. `did` is what flip.mjs prints when the step ran. */
@@ -140,7 +146,7 @@ export const RUNBOOK = {
   back: [
     { id: "B1", title: "Way back, first pass", cmd: "node tools/flip.mjs --back \"<your typed words>\"", when: "After the flip, when anything is wrong. It dispatches the day's export first and moves no flag; wait for that run green." },
     { id: "B2", title: "Way back, after the export", cmd: "node tools/flip.mjs --back \"<your typed words>\" --exported", when: "Once the export run is green: book_source to d1, book_roster off, the mirror seeded from the export, and what was tapped since listed for a hand fold." },
-    { id: "B3", title: "Way back, nothing compacted", cmd: "node tools/flip.mjs --back \"<your typed words>\" --no-export", when: "Only when the flip stopped at step 6 or before, so nothing was compacted: the flags alone, no export and no pull." },
+    { id: "B3", title: "Way back, nothing compacted", cmd: "node tools/flip.mjs --back \"<your typed words>\" --no-export", when: "Only when the flip stopped at step 6 or before, so nothing was compacted. No export and no pull, but it still seeds the mirror (d1.mjs --seed, a full replace) from this checkout: run it only from a checkout pulled and level with origin/master." },
   ],
   notProved: [
     "The model's own notes (his D7) are not built: the day's export writes the tool's line saying no model wrote it.",
@@ -188,6 +194,9 @@ ${trend}
 function cmdBlock(cmd, locked) {
   return `<div class="salt-settings"><div class="salt-settings__cell"><pre class="salt-ledger fb-cmd" data-cmd>${esc(cmd)}</pre></div><button type="button" class="salt-settings__row salt-settings__row--action" data-copy${locked ? " disabled" : ""}><span class="salt-settings__label">Copy</span><span class="salt-settings__mark">${COPY}</span></button></div>`;
 }
+/* the way back is offered only once there is something to go back from: before that, --back would re-seed the mirror from this checkout */
+export const BACK_LOCKED = "nothing has flipped; --back would re-seed the mirror from this checkout.";
+const textBlock = (cmd) => `<div class="salt-settings"><div class="salt-settings__cell"><pre class="salt-ledger fb-cmd" data-cmd>${esc(cmd)}</pre></div></div>`;
 function step(id, title, { cmd, does, read, typed, locked }) {
   return `<li class="salt-stack salt-stack--tight" data-step="${esc(id)}"${locked ? ' data-locked=""' : ""}>
 <label class="salt-option"><input type="checkbox" class="salt-option__input" data-tick="${esc(id)}"${locked ? " disabled" : ""}><span class="salt-option__face"><span class="salt-option__lead"><span class="salt-status salt-status--mist" data-word>Not ticked</span></span><span class="salt-option__text"><span class="salt-option__label"><span>${esc(id)}</span> <span data-title>${esc(title)}</span>${typed ? ' <span class="salt-status salt-status--copper">Typed go</span>' : ""}</span><span class="salt-option__detail">${esc(does)}</span></span></span></label>
@@ -214,42 +223,39 @@ export function renderPage(view, runbook = RUNBOOK, assets = loadAssets()) {
 <style>
 ${assets.fonts}
 ${assets.css}
-/* layout only, on the system's tokens: no colour, face or token is set here */
+/* layout only, on the system's tokens, no colour, face or token set here; each is a gap logged in docs/DESK.md (the flip board) for salt-ds:
+   a page column, the padded root's phone gutter, the browser's own margins, a card that may shrink, a bare list, a code block */
 .fb-main { max-width: 75rem; margin: 0 auto; gap: var(--salt-space-6); }
 @media (max-width: 560px) { body.salt-root--padded { padding: var(--salt-space-4); } }
-.fb-main h1, .fb-main h2, .fb-h { margin: 0; }
-.fb-main p { margin: 0; }
+.fb-main p, .fb-h { margin: 0; }
 .fb-main article { min-width: 0; overflow-wrap: anywhere; }
 .fb-plain { list-style: none; margin: 0; padding: 0; }
-.fb-trend .salt-status__glyph { margin-right: 0; }
-.fb-main .salt-status { white-space: nowrap; }
-.fb-main .salt-band__ref { white-space: normal; }
 .fb-cmd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-.fb-head { justify-content: space-between; }
-.fb-head .salt-segment { flex: 0 1 14rem; }
 </style>
 </head>
 <body class="salt-root salt-root--padded">
 <div class="salt-aurora salt-aurora--page salt-aurora--fixed" aria-hidden="true"><div class="salt-aurora__blob salt-aurora__blob--copper"></div><div class="salt-aurora__blob salt-aurora__blob--brass"></div></div>
 <main class="salt-root__content salt-stack fb-main">
 <header class="salt-stack">
-<div class="salt-row fb-head"><p class="salt-eyebrow salt-eyebrow--copper">Salt Command · S5f</p>
+<div class="salt-row"><p class="salt-eyebrow salt-eyebrow--copper">Salt Command · S5f</p>
 <div class="salt-segment" role="radiogroup" aria-label="Theme" style="--n:2;--i:1"><button type="button" class="salt-segment__opt" role="radio" aria-checked="false" data-look="night">Night</button><button type="button" class="salt-segment__opt" role="radio" aria-checked="true" data-look="tide">Tide</button></div></div>
 <h1 class="salt-title salt-title--sm">Flip gate</h1>
 <section class="salt-band" aria-label="Verdict" data-verdict="${view.ok ? "true" : "false"}">
-<div class="salt-band__head"><h2 class="salt-eyebrow salt-eyebrow--brass">The gate reads ${view.ok ? "TRUE" : "NOT TRUE"}</h2>${chip(s).replace(WORD[s], view.ok ? "True" : "Not true")}</div>
+<h2 class="salt-eyebrow salt-eyebrow--brass">The gate reads ${view.ok ? "TRUE" : "NOT TRUE"}</h2>
+<div class="salt-row">${chip(s).replace(WORD[s], view.ok ? "True" : "Not true")}</div>
 <p class="salt-band__when"><span data-count="met">${view.met}</span> met, <span data-count="not">${view.notMet}</span> not met, <span data-count="unv">${view.unverified}</span> unverified, of ${view.total} lines.${view.ok ? " Every line is met: the flip still needs your typed go." : " Not ready: the flip steps below are locked."}</p>
 ${view.error ? `<p class="salt-insight salt-insight--alarm"><b>Collect failed</b> ${esc(view.error)}: every line it would have read is Unverified.</p>` : ""}
 <div class="salt-band__foot"><span class="salt-kpi__label">Snapshot</span><span class="salt-band__ref" data-now>${esc(view.nowMyt)}</span></div>
 </section>
 <div class="salt-glance">
 ${tile("Chain runs read", view.runs, "since " + myt(view.since + "T00:00:00.000Z", false))}
-${tile("Days to 04 Nov 2026", view.daysTo === null ? "unknown" : Math.max(0, view.daysTo), view.daysTo !== null && view.daysTo <= 0 ? "the earliest day has come" : "the earliest flip day")}
+${tile("Days to 04 Nov 2026", view.daysTo === null ? "unknown" : Math.max(0, view.daysTo), view.g0 ? "the earliest day has come" : "the earliest flip day, by the UTC date as G0 reads it")}
 ${tile("Earliest the gate can read true", view.earliest.myt, "set by " + view.earliest.by + (view.earliest.by === "G5" ? ": seven recorded days" : ""))}
 </div>
 <p class="salt-settings__head">Refresh this board</p>
 ${cmdBlock(refresh, false)}
 <p class="salt-settings__foot">Add --backup-opened &lt;YYYY-MM-DD&gt; once you have opened a Book backup with your key.</p>
+${view.backupWhy ? `<p class="salt-settings__foot" data-backup-why><span class="salt-status salt-status--ember">Not attested</span> ${esc(view.backupWhy)}</p>` : ""}
 <p class="salt-insight salt-insight--copper"><b>Ticks are your memory aid only</b> and change nothing in the system: flip-gate.mjs and flip.mjs enforce the gate, and every flag and the flip need your typed go in the session that acts.</p>
 </header>
 
@@ -278,7 +284,9 @@ ${step("S8", last[1], { cmd: runbook.verify, does: "Approve one real row in Salt
 <section class="salt-stack" aria-labelledby="h-back">
 <h2 class="salt-eyebrow salt-eyebrow--brass" id="h-back">The way back</h2>
 <p class="salt-settings__foot">flip.mjs writes the way back first, to 10_Data/flip-way-back.json. --back never turns book_outbox.</p>
-${runbook.back.map((b) => `<div class="salt-stack salt-stack--tight" data-back="${esc(b.id)}"><p class="salt-settings__head">${esc(b.title)} <span class="salt-status salt-status--copper">Typed go</span></p>${cmdBlock(b.cmd, false)}<p class="salt-settings__foot">${esc(b.when)}</p></div>`).join("\n")}
+${runbook.back.map((b) => `<div class="salt-stack salt-stack--tight" data-back="${esc(b.id)}"${view.backReady ? "" : ' data-locked=""'}><p class="salt-settings__head">${esc(b.title)} <span class="salt-status salt-status--copper">Typed go</span></p>
+${view.backReady ? cmdBlock(b.cmd, false) : textBlock(b.cmd)}<p class="salt-settings__foot">${esc(b.when)}</p>
+${view.backReady ? "" : `<p class="salt-settings__foot" data-lock><span class="salt-status salt-status--ember">Locked</span> ${esc(BACK_LOCKED)}</p>`}</div>`).join("\n")}
 </section>
 
 <section class="salt-stack" aria-labelledby="h-not">
@@ -346,7 +354,7 @@ if (isMain) {
   if (histFile) { try { mkdirSync(dirname(histFile), { recursive: true }); writeFileSync(histFile, JSON.stringify(history, null, 1)); } catch (e) { console.log("  history not written (" + e.message + "); the page shows this read alone"); } }
   const out = resolve(val("--out") || OUT);
   if (!existsSync(dirname(out))) mkdirSync(dirname(out), { recursive: true });
-  writeFileSync(out, renderPage(viewOf(ev, judged, history)));
+  writeFileSync(out, renderPage(viewOf(ev, judged, history, { wayBack: existsSync(WAY_BACK) })));
   console.log(`  The gate reads ${judged.ok ? "TRUE" : "NOT TRUE"}: ${judged.lines.map((l) => l.id + " " + WORD[STATE(l.ok)]).join(", ")}`);
   console.log("  " + pathToFileURL(out).href);
 }

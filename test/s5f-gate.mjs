@@ -140,6 +140,16 @@ export async function run({ ok }) {
 
   const sayG = G.say(r0);
   ok(/The gate reads TRUE/.test(sayG) && !/NOT MET|UNVERIFIED/.test(sayG) && /NOT TRUE/.test(G.say(none)), "and the report says which");
+  /* Fable's review of the board (29 Oct 2026): his attestation is a real date not after today, and an unread precondition is UNVERIFIED */
+  {
+    const g7 = (when) => { const e = clone(); e.backupOpened = when; return G.judge(e).lines.find((x) => x.id === "G7"); };
+    const feb = g7("2026-02-30"), word = g7("yesterday"), later = g7("2026-11-07"), today = g7("2026-11-06");
+    ok(feb.ok === null && /not a real/.test(feb.detail) && word.ok === null && /not a real/.test(word.detail) && later.ok === null && /after today/.test(later.detail) && today.ok === true,
+      "--backup-opened is taken only as a real YYYY-MM-DD not after today in Kuala Lumpur; otherwise G7 is not attested and says why: " + [feb, word, later].map((x) => x.detail.split("backup opened: ")[1]).join(" | "));
+    const g9 = (pre) => { const e = clone(); Object.assign(e.pre, pre); return G.judge(e).lines.find((x) => x.id === "G9").ok; };
+    ok(g9({ migrations: null }) === null && g9({ exportSteps: null }) === null && g9({ handoff: null }) === null && g9({ migrations: null, source: "book" }) === false && g9({ migrations: false }) === false,
+      "a precondition that could not be read leaves G9 UNVERIFIED; one read and wrong is still NOT MET");
+  }
 
   /* 3: the collectors, over a stand-in for wrangler and gh */
   const sets = (row) => ({ code: 0, out: JSON.stringify([{ results: [row], success: true }]) });
@@ -165,6 +175,8 @@ export async function run({ ok }) {
   const runsGot = G.collectRuns("2026-10-28T00:00:00.000Z", gh);
   ok(runsGot.length === 1 && runsGot[0].id === 5 && runsGot[0].log.loads.length === 1, "the runs in the window that finished are read, an older one and one in progress are not");
   ok(G.collectRuns("x", () => ({ code: 1, out: "no gh" })) === null, "Actions that cannot be read is null");
+  const pre0 = G.collectPre(() => ({ code: 1, out: "fetch failed" }));
+  ok(Object.values(pre0).every((v) => v === null), "preconditions that cannot be read are null, never false: " + JSON.stringify(pre0));
 
   /* 3b: the voided count comes from the readcheck, and the roster export has a base of its own (Fable's review) */
   {
@@ -216,6 +228,10 @@ export async function run({ ok }) {
     ok(!r1.ok && r1.dry && !r2.ok && r2.stoppedAt === "preflight" && writes(a.st).length === 0, "a gate that is not true fails the dry run and refuses --go, with nothing written");
     const w = mkIo(), r3 = await F.flip(w.io, { go: "go" }), r4 = await F.flip(w.io, { go: true });
     ok(!r3.ok && /typed words/.test(r3.error) && !r4.ok && writes(w.st).length === 0, "--go takes his words, not a bare flag");
+    const ph = mkIo(), p1 = await F.flip(ph.io, { go: "<your typed words>" }), p2 = await F.flip(ph.io, { go: "go ahead now >" });
+    const pb = mkIo({ flags: { book_tap: "on", book_read: "book", book_source: "book", book_roster: "on", book_outbox: "off", book_page: "on" } }), p3 = await F.back(pb.io, { go: "<your typed words>", exported: true });
+    ok(!p1.ok && /placeholder/.test(p1.error) && !p2.ok && /placeholder/.test(p2.error) && !p3.ok && /placeholder/.test(p3.error) && writes(ph.st).length === 0 && writes(pb.st).length === 0 && pb.st.flags.book_source === "book",
+      "the board's placeholder pasted as it stands is refused by --go and by --back, with nothing written: " + p1.error);
     for (const [name, over] of [["behind", { behind: "2" }], ["a run in progress", { live: [{ status: "in_progress", name: "x" }] }], ["an unbooked draft", { unbooked: 1 }], ["the flag already book", { flags: { book_tap: "on", book_read: "book", book_source: "book", book_roster: "off", book_outbox: "off", book_page: "on" } }]]) {
       const x = mkIo(over), r = await F.flip(x.io, { go: "his typed go here" });
       ok(!r.ok && r.stoppedAt === "preflight" && writes(x.st).length === 0, "a precondition (" + name + ") refuses the flip with nothing written");

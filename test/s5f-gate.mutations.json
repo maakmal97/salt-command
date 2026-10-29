@@ -68,7 +68,7 @@
  {
   "name": "an unattested backup is accepted",
   "file": "tools/flip-gate.mjs",
-  "find": "!srcs.length || !ev.backupOpened ? null : !badSrc.length && !badExp.length",
+  "find": "!srcs.length || !bo.date ? null : !badSrc.length && !badExp.length",
   "replace": "!srcs.length ? null : !badSrc.length && !badExp.length"
  },
  {
@@ -80,8 +80,8 @@
  {
   "name": "a fold handoff in HEAD is allowed",
   "file": "tools/flip-gate.mjs",
-  "find": "p.markBeforeLoad === true && !p.handoff, p",
-  "replace": "p.markBeforeLoad === true, p"
+  "find": "[p.markBeforeLoad, true], [p.handoff, false]]",
+  "replace": "[p.markBeforeLoad, true]]"
  },
  {
   "name": "an unverified line passes the gate",
@@ -332,8 +332,8 @@
  {
   "name": "G9 does not ask the step order",
   "file": "tools/flip-gate.mjs",
-  "find": " && p.markBeforeLoad === true && ",
-  "replace": " && "
+  "find": "[p.exportSteps, true], [p.markBeforeLoad, true], ",
+  "replace": "[p.exportSteps, true], "
  },
  {
   "name": "a chain that loads before it marks passes",
@@ -350,7 +350,7 @@
  {
   "name": "the gate does not read the order off the chain",
   "file": "tools/flip-gate.mjs",
-  "find": "markBeforeLoad: yml.code === 0 && markBeforeLoad(yml.out) };",
+  "find": "markBeforeLoad: yml.code !== 0 ? null : markBeforeLoad(yml.out) };",
   "replace": "markBeforeLoad: true };"
  },
  {
@@ -574,5 +574,71 @@
   "file": "tools/flip.mjs",
   "find": "rc.body.source === \"book\" && !rc.body.error &&",
   "replace": "rc.body.source === \"book\" &&"
+ },
+ {
+  "name": "an attestation that is no date is accepted",
+  "file": "tools/flip-gate.mjs",
+  "find": "!srcs.length || !bo.date ? null : !badSrc.length && !badExp.length",
+  "replace": "!srcs.length || !ev.backupOpened ? null : !badSrc.length && !badExp.length"
+ },
+ {
+  "name": "an impossible date is a date",
+  "file": "tools/flip-gate.mjs",
+  "find": "new Date(t).toISOString().slice(0, 10) !== s)",
+  "replace": "false)"
+ },
+ {
+  "name": "an attestation after today is accepted",
+  "file": "tools/flip-gate.mjs",
+  "find": "if (!today || s > today)",
+  "replace": "if (!today)"
+ },
+ {
+  "name": "an unread precondition is met",
+  "file": "tools/flip-gate.mjs",
+  "find": "want.some(([v]) => unread(v)) ? null : true",
+  "replace": "true"
+ },
+ {
+  "name": "an unread precondition is not met",
+  "file": "tools/flip-gate.mjs",
+  "find": "want.some(([v, w]) => !unread(v) && v !== w) ? false",
+  "replace": "want.some(([v, w]) => v !== w) ? false"
+ },
+ {
+  "name": "unread migrations read false",
+  "file": "tools/flip-gate.mjs",
+  "find": "migrations: tbl ? tbl.length >= 2 : null,",
+  "replace": "migrations: !!(tbl && tbl.length >= 2),"
+ },
+ {
+  "name": "unread export steps read false",
+  "file": "tools/flip-gate.mjs",
+  "find": "exportSteps: yml.code !== 0 ? null :",
+  "replace": "exportSteps: yml.code !== 0 ? false :"
+ },
+ {
+  "name": "an unread handoff reads false",
+  "file": "tools/flip-gate.mjs",
+  "find": "handoff: handoff.code !== 0 ? null :",
+  "replace": "handoff: handoff.code !== 0 ? false :"
+ },
+ {
+  "name": "--go takes the placeholder",
+  "file": "tools/flip.mjs",
+  "find": "  if (placeholder(opts.go)) return { ...out, error: PLACEHOLDER };",
+  "replace": "  /* the placeholder passes */"
+ },
+ {
+  "name": "--back takes the placeholder",
+  "file": "tools/flip.mjs",
+  "find": "  if (placeholder(opts.go)) return { ok: false, did, error: PLACEHOLDER };",
+  "replace": "  /* the placeholder passes */"
+ },
+ {
+  "name": "only a < marks the placeholder",
+  "file": "tools/flip.mjs",
+  "find": "/[<>]/.test(String(words))",
+  "replace": "/[<]/.test(String(words))"
  }
 ]

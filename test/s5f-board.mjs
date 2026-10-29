@@ -30,7 +30,7 @@ export async function run({ ok }) {
   ].join("\n");
   const green = () => ({ runs: [{ id: 1, at: "x", log: G.parseLog(log) }], now: "2026-11-06T01:00:00.000Z", backupOpened: "2026-11-02", since: "2026-10-28T00:00:00.000Z",
     d1: { kinds: { booked: 30, newIds: 5, trips: 1, purchases: 1, received: 2 }, left: 0, voidedNotRejected: 0, fallbacks: 0, laptopApprovals: 0, foldedUnbooked: 0 },
-    pre: { migrations: true, tap: "on", read: "book", source: "d1", exportSteps: true, handoff: false } });
+    pre: { migrations: true, tap: "on", read: "book", source: "d1", exportSteps: true, markBeforeLoad: true, handoff: false } });
   const page = (ev, hist) => { const j = G.judge(ev); return B.renderPage(B.viewOf(ev, j, hist || [B.snapshotOf(ev, j)]), B.RUNBOOK, bare); };
   const doc = (html) => new JSDOM(html).window.document;
   const dn0 = (d) => d.querySelector("[data-verdict] h2").textContent;
@@ -38,8 +38,9 @@ export async function run({ ok }) {
   /* 1: the verdict */
   {
     const ev = green(), d = doc(page(ev));
-    ok(G.judge(ev).ok && dn0(d) === "The gate reads TRUE" && d.querySelector("[data-verdict]").getAttribute("data-verdict") === "true" && !d.querySelector("[data-locked]") && d.querySelectorAll('[data-gate][data-state="m"]').length === 10,
+    ok(G.judge(ev).ok && dn0(d) === "The gate reads TRUE" && d.querySelector("[data-verdict]").getAttribute("data-verdict") === "true" && !d.querySelector("li[data-locked]") && d.querySelectorAll('[data-gate][data-state="m"]').length === 10,
       "with every line met the page says the gate reads TRUE, every card Met, and no step locked");
+    ok(d.querySelector('#G9 [data-p="Marked before the load"] [data-n]') && /yes/.test(d.querySelector('#G9 [data-p="Marked before the load"] [data-n]').textContent), "G9 shows master's precondition that the chain marks before it loads");
     const nv = green(); nv.d1.voidedNotRejected = null;
     const dn = doc(page(nv)), g4 = dn.querySelector("#G4");
     ok(g4.getAttribute("data-state") === "u" && /Unverified/.test(g4.querySelector(".salt-status").textContent) && g4.querySelector(".salt-status").classList.contains("salt-status--dashed") && !/\bMet\b/.test(g4.querySelector(".salt-status").textContent),
@@ -49,8 +50,8 @@ export async function run({ ok }) {
     const nf = green(); nf.d1.left = 2;
     const df = doc(page(nf)), g = df.querySelector("#G4");
     ok(g.getAttribute("data-state") === "n" && /Not met/.test(g.querySelector(".salt-status").textContent) && g.querySelector(".salt-status").classList.contains("salt-status--ember"), "a line NOT MET draws as Not met, never as Met");
-    const locked = [...df.querySelectorAll("[data-locked]")].map((li) => li.getAttribute("data-step"));
-    ok(locked.join() === "GO,S0,S3,S4,S5,S6,S7,S8" && [...df.querySelectorAll("[data-locked] [data-tick]")].every((b) => b.disabled) && [...df.querySelectorAll("[data-locked] [data-copy]")].every((b) => b.disabled) && df.querySelectorAll("[data-lock]").length === 8 && !df.querySelector('[data-step="P1"]').hasAttribute("data-locked"),
+    const locked = [...df.querySelectorAll("li[data-locked]")].map((li) => li.getAttribute("data-step"));
+    ok(locked.join() === "GO,S0,S3,S4,S5,S6,S7,S8" && [...df.querySelectorAll("li[data-locked] [data-tick]")].every((b) => b.disabled) && [...df.querySelectorAll("li[data-locked] [data-copy]")].every((b) => b.disabled) && df.querySelectorAll("li [data-lock]").length === 8 && !df.querySelector('[data-step="P1"]').hasAttribute("data-locked"),
       "with the gate not true the flip's steps stay on the page, locked, their ticks and Copy disabled, saying why; the preconditions stay open: " + locked.join());
   }
 
@@ -140,16 +141,53 @@ export async function run({ ok }) {
     ok(!d3.querySelector('[data-tick="P3"]').checked && JSON.stringify(JSON.parse(w3.localStorage.getItem("salt-flip-board")).ticks) === "{}", "Reset, once confirmed, clears every tick");
   }
 
-  /* 6: the runbook is flip.mjs's */
+  /* 6: the runbook is flip.mjs's, read off flip.mjs run over a stand-in (never off its source text) */
+  const stub = (flags) => {
+    const st = { flags: { book_tap: "on", book_read: "book", book_source: "d1", book_roster: "off", book_outbox: "off", book_page: "on", ...flags }, calls: [] };
+    const io = { collect: () => ({}), judge: () => ({ ok: true, lines: [], window: { runs: 1, since: "2026-10-28" } }),
+      sh: (cmd, args) => { st.calls.push(cmd + " " + args.join(" ")); return { code: 0, out: cmd === "gh" && args[0] === "run" ? "[]" : cmd === "git" && args[0] === "rev-list" ? "0" : "" }; },
+      d1: (sql) => { const m = /SELECT mode FROM (\w+)/.exec(sql); return m ? { rows: [{ mode: st.flags[m[1]] }] } : /SELECT id/.test(sql) ? { rows: [] } : { rows: [{ n: 0 }] }; },
+      d1Write: (sql) => { st.calls.push("d1Write " + sql); const m = /UPDATE (\w+) SET mode='(\w+)'/.exec(sql); if (m) st.flags[m[1]] = m[2]; return { code: 0, out: "" }; },
+      post: async (p) => { st.calls.push("post " + p); return { status: 200, body: { ok: true, compacted: 4, closed: 4 } }; },
+      get: async () => ({ status: 200, body: { ok: true, bookRev: 7, source: st.flags.book_source } }),
+      writeFile: (p) => st.calls.push("writeFile " + p), now: () => "2026-11-05T00:00:00.000Z" };
+    return { io, st };
+  };
   {
-    const html = page(green()), d = doc(html), src = readFileSync(join(REPO, "tools", "flip.mjs"), "utf8");
+    const html = page(green()), d = doc(html);
     const titles = F.PLAN.map(([n]) => d.querySelector(`[data-step="S${n}"] [data-title]`)?.textContent);
     ok(titles.join("|") === F.PLAN.map(([, t]) => t).join("|"), "the flip's steps are flip.mjs's PLAN, word for word and in its order");
-    const did = [0, 3, 4, 5, 7].map((n) => B.RUNBOOK.did[n]);
-    ok(did.every((t) => src.includes('did.push("' + t)) && src.includes('did.push("6 compacted "'), "each step's read-after is the line flip.mjs prints when the step ran: " + did.filter((t) => !src.includes('did.push("' + t)).join(" | "));
+    const ran = await F.flip(stub().io, { go: "his own typed go" }), said = ran.did.map((t) => t.replace(/(compacted|marked) \d+/g, "$1 N"));
+    const miss = [0, 3, 4, 5, 6, 7].filter((n) => !said.some((t) => t.startsWith(B.RUNBOOK.did[n])));
+    ok(ran.ok && said.length === 6 && !miss.length, "each step's read-after is the line flip.mjs prints when the step ran, read off a run over a stand-in: " + (miss.join() || said.join(" | ")));
     const cmds = [...d.querySelectorAll("[data-back] [data-cmd]")].map((c) => c.textContent);
-    ok(cmds.length === 3 && /--back "/.test(cmds[0]) && / --exported$/.test(cmds[1]) && / --no-export$/.test(cmds[2]) && src.includes('a.includes("--exported")') && src.includes('a.includes("--no-export")') && d.querySelector('[data-step="GO"] [data-cmd]').textContent === 'node tools/flip.mjs --go "<your typed words>"' && d.querySelector('[data-step="S8"] [data-cmd]').textContent === "node tools/flip.mjs --verify",
+    ok(cmds.length === 3 && /--back "/.test(cmds[0]) && / --exported$/.test(cmds[1]) && / --no-export$/.test(cmds[2]) && d.querySelector('[data-step="GO"] [data-cmd]').textContent === 'node tools/flip.mjs --go "<your typed words>"' && d.querySelector('[data-step="S8"] [data-cmd]').textContent === "node tools/flip.mjs --verify",
       "the go, the verify and the three way-back forms are flip.mjs's own flags: " + cmds.join(" | "));
+    const flipped = { book_source: "book", book_roster: "on" }, b2 = stub(flipped), b3 = stub(flipped);
+    await F.back(b2.io, { go: "his own typed go", exported: true }); await F.back(b3.io, { go: "his own typed go", noExport: true });
+    const seeds = (st) => st.calls.some((c) => /tools\/d1\.mjs --seed/.test(c)), pulls = (st) => st.calls.some((c) => /pull --ff-only/.test(c));
+    ok(seeds(b2.st) && pulls(b2.st) && seeds(b3.st) && !pulls(b3.st) && /mirror seeded from the export/.test(B.RUNBOOK.back[1].when) && /still seeds the mirror/.test(B.RUNBOOK.back[2].when) && /pulled and level/.test(B.RUNBOOK.back[2].when),
+      "the way back's words follow what flip.mjs does: --exported pulls then seeds; --no-export skips the pull and still seeds the mirror from this checkout, so the page says so");
     ok(d.querySelectorAll('[data-step="GO"] .salt-status--copper').length === 1 && d.querySelectorAll("[data-back] .salt-status--copper").length === 3 && !d.querySelector('[data-step="P5"] .salt-status--copper'), "the flip and the way back are marked as needing his typed go; the dry run is not");
+  }
+
+  /* 7: Fable's review of 29 Oct 2026: the way back offered only once there is one, the day as G0 reads it, the attestation checked */
+  {
+    const backs = (d) => ({ locked: d.querySelectorAll("[data-back][data-locked]").length, copy: d.querySelectorAll("[data-back] [data-copy]").length, cmds: d.querySelectorAll("[data-back] [data-cmd]").length, why: d.querySelectorAll("[data-back] [data-lock]").length });
+    const ev = green(), j = G.judge(ev);
+    const before = backs(doc(B.renderPage(B.viewOf(ev, j, []), B.RUNBOOK, bare))), wrote = backs(doc(B.renderPage(B.viewOf(ev, j, [], { wayBack: true }), B.RUNBOOK, bare)));
+    const evb = green(); evb.pre.source = "book"; const onBook = backs(doc(B.renderPage(B.viewOf(evb, G.judge(evb), []), B.RUNBOOK, bare)));
+    ok(before.locked === 3 && before.copy === 0 && before.cmds === 3 && before.why === 3 && /re-seed the mirror from this checkout/.test(B.BACK_LOCKED)
+      && wrote.locked === 0 && wrote.copy === 3 && onBook.locked === 0 && onBook.copy === 3,
+      "the way back is text only, locked with its reason, until flip.mjs's way-back file exists or book_source reads book: " + JSON.stringify([before, wrote, onBook]));
+    const day = (now) => { const e = green(); e.now = now; const jj = G.judge(e), v = B.viewOf(e, jj, []); return { g0: jj.lines[0].ok, days: v.daysTo, come: /the earliest day has come/.test(B.renderPage(v, B.RUNBOOK, bare)) }; };
+    const eve = day("2026-11-03T20:00:00.000Z"), morn = day("2026-11-04T00:30:00.000Z");
+    ok(eve.g0 === false && eve.days === 1 && !eve.come && morn.g0 === true && morn.days === 0 && morn.come,
+      "the days to 04 Nov and whether it has come are read as G0 reads them (the UTC date), so 04:00 MYT on 04 Nov is not yet the day: " + JSON.stringify([eve, morn]));
+    const att = (when) => { const e = green(); e.backupOpened = when; const v = B.viewOf(e, G.judge(e), []), d = doc(B.renderPage(v, B.RUNBOOK, bare));
+      return { row: d.querySelector('#G7 [data-p="Backup opened with your key"] [data-n]').textContent, why: (d.querySelector("[data-backup-why]") || {}).textContent || "", refresh: d.querySelector("header [data-cmd]").textContent, g7: d.querySelector("#G7").getAttribute("data-state") }; };
+    const bad = att("2026-13-01"), later = att("2026-12-01"), good = att("2026-11-02");
+    ok(/not attested/.test(bad.row) && /not a real/.test(bad.why) && !/--backup-opened/.test(bad.refresh) && bad.g7 === "u" && /not attested/.test(later.row) && /after today/.test(later.why) && /02 Nov 2026/.test(good.row) && !good.why && / --backup-opened 2026-11-02$/.test(good.refresh) && good.g7 === "m",
+      "an attestation that is not a real date, or is after today, is not taken: the board says why and leaves it out of the refresh: " + JSON.stringify([bad, later].map((x) => x.why)));
   }
 }
