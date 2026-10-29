@@ -1,5 +1,5 @@
 /* test/gas-prep-books.mjs: gas and PrEP, the fifth and sixth books (27 Oct 2026, his word; they took the place of the retired spare
-   book). On the LIVE book: both are live and hold no row, spare is gone from it, the Counter's word list names exactly the live
+   book). On the LIVE book: both are live (they held no row on 27 Oct; a row is fine since the first gas count of 28 Oct 2026), spare is gone from it with no row, the Counter's word list names exactly the live
    books, and each book has its mark, shape and letter (gas POP, a starburst; PrEP, a heart-shaped pill, its four letters set small). */
 import { readFileSync } from "node:fs";
 import { LIVE_BOOK } from "./frozen.mjs";
@@ -8,9 +8,9 @@ export async function run({ ok }) {
   const O = await import("../src/orders.js");
   const P = await import("../stmt/page.js");
   const book = JSON.parse(readFileSync(LIVE_BOOK, "utf8"));
-  const rows = ["sales", "purchases", "loans", "COUNTS", "selfUseLog", "lostDemand"].reduce((n, k) => n + (book[k] || []).filter((r) => r && ["gas", "prep", "spare"].includes(r.product)).length, 0);
-  ok(!book.PRODUCTS.spare && !book.PROD_ORDER.includes("spare") && book.PRODUCTS.gas && book.PRODUCTS.prep && !book.PRODUCTS.gas.retired && !book.PRODUCTS.prep.retired && rows === 0,
-    "gas and PrEP are live books with no row, and spare is gone: " + JSON.stringify({ order: book.PROD_ORDER, rows }));
+  const spareRows = ["sales", "purchases", "loans", "COUNTS", "selfUseLog", "lostDemand"].reduce((n, k) => n + (book[k] || []).filter((r) => r && r.product === "spare").length, 0);
+  ok(!book.PRODUCTS.spare && !book.PROD_ORDER.includes("spare") && book.PRODUCTS.gas && book.PRODUCTS.prep && !book.PRODUCTS.gas.retired && !book.PRODUCTS.prep.retired && spareRows === 0,
+    "gas and PrEP are live books, and spare is gone with no row: " + JSON.stringify({ order: book.PROD_ORDER, spareRows }));
   const live = Object.values(book.PRODUCTS).filter((p) => !p.retired).map((p) => String(p.name).toLowerCase());
   ok(live.length === 6 && JSON.stringify(O.PRODUCT_WORDS.slice().sort()) === JSON.stringify(live.slice().sort()), "the Counter's product words are exactly the live books: " + JSON.stringify({ live, words: O.PRODUCT_WORDS }));
   ok(P.PLET.gas === "POP" && P.PLET.prep === "PrEP" && P.PSHAPE.gas === "Starburst" && P.PSHAPE.prep === "Heart" && !!P.PSYM.gas && !!P.PSYM.prep,
