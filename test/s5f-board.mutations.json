@@ -1,0 +1,236 @@
+[
+ {
+  "name": "an unverified line draws as met",
+  "file": "tools/flip-board.mjs",
+  "find": "const STATE = (ok) => (ok === true ? \"m\" : ok === false ? \"n\" : \"u\");",
+  "replace": "const STATE = (ok) => (ok !== false ? \"m\" : \"n\");"
+ },
+ {
+  "name": "a line not met draws as met",
+  "file": "tools/flip-board.mjs",
+  "find": "const STATE = (ok) => (ok === true ? \"m\" : ok === false ? \"n\" : \"u\");",
+  "replace": "const STATE = (ok) => (ok === true || ok === false ? \"m\" : \"u\");"
+ },
+ {
+  "name": "the verdict reads the lines, not the judge",
+  "file": "tools/flip-board.mjs",
+  "find": "return { ok: judged.ok === true, met: tally(true)",
+  "replace": "return { ok: judged.lines.every((l) => l.ok !== false), met: tally(true)"
+ },
+ {
+  "name": "the unverified count is the not met count",
+  "file": "tools/flip-board.mjs",
+  "find": "data-count=\"unv\">${view.unverified}",
+  "replace": "data-count=\"unv\">${view.notMet}"
+ },
+ {
+  "name": "nothing locks while the gate is not true",
+  "file": "tools/flip-board.mjs",
+  "find": "const lock = !view.ok, s = view.ok ? \"m\" : \"n\";",
+  "replace": "const lock = false, s = view.ok ? \"m\" : \"n\";"
+ },
+ {
+  "name": "the preconditions lock too",
+  "file": "tools/flip-board.mjs",
+  "find": "step(p.id, p.title, { cmd: p.cmd, does: p.does, read: p.read })",
+  "replace": "step(p.id, p.title, { cmd: p.cmd, does: p.does, read: p.read, locked: lock })"
+ },
+ {
+  "name": "a locked step's Copy works",
+  "file": "tools/flip-board.mjs",
+  "find": "${cmd ? cmdBlock(cmd, locked) : \"\"}",
+  "replace": "${cmd ? cmdBlock(cmd, false) : \"\"}"
+ },
+ {
+  "name": "the taps closed are off by one",
+  "file": "tools/flip-board.mjs",
+  "find": "closed: withTap.reduce((a, l) => a + l.closed, 0),",
+  "replace": "closed: withTap.reduce((a, l) => a + l.closed + 1, 0),"
+ },
+ {
+  "name": "G5's days round up",
+  "file": "tools/flip-board.mjs",
+  "find": "const rec = now ? Math.max(0, Math.floor(",
+  "replace": "const rec = now ? Math.max(0, Math.ceil("
+ },
+ {
+  "name": "a meter drops its target",
+  "file": "tools/flip-board.mjs",
+  "find": "esc(p.n) + \" of \" + esc(p.of)",
+  "replace": "esc(p.n)"
+ },
+ {
+  "name": "new rows read the trips",
+  "file": "tools/flip-board.mjs",
+  "find": "meter(\"New rows\", kn(\"newIds\"), GATE.minNewIds)",
+  "replace": "meter(\"New rows\", kn(\"trips\"), GATE.minNewIds)"
+ },
+ {
+  "name": "the earliest day is G0's alone",
+  "file": "tools/flip-board.mjs",
+  "find": "const at = new Date(Math.max(g0, g5)).toISOString();",
+  "replace": "const at = new Date(g0).toISOString();"
+ },
+ {
+  "name": "an unread store reads 0",
+  "file": "tools/flip-board.mjs",
+  "find": "const kn = (f) => (k ? k[f] : null)",
+  "replace": "const kn = (f) => (k ? k[f] : 0)"
+ },
+ {
+  "name": "a failed collect is not said",
+  "file": "tools/flip-board.mjs",
+  "find": "<b>Collect failed</b>",
+  "replace": "<b>Collect</b>"
+ },
+ {
+  "name": "a failed collect's reason is not scrubbed",
+  "file": "tools/flip-board.mjs",
+  "find": "error: ev.collectError ? scrub(ev.collectError) : null",
+  "replace": "error: ev.collectError || null"
+ },
+ {
+  "name": "the history is not capped",
+  "file": "tools/flip-board.mjs",
+  "find": "[...(Array.isArray(hist) ? hist : []), snap].slice(-cap)",
+  "replace": "[...(Array.isArray(hist) ? hist : []), snap]"
+ },
+ {
+  "name": "a corrupt history throws",
+  "file": "tools/flip-board.mjs",
+  "find": "} catch (e) { return []; }",
+  "replace": "} catch (e) { throw e; }"
+ },
+ {
+  "name": "a history that is not a list is kept",
+  "file": "tools/flip-board.mjs",
+  "find": "x.gates) : []; } catch",
+  "replace": "x.gates) : [h]; } catch"
+ },
+ {
+  "name": "a snapshot carries the detail",
+  "file": "tools/flip-board.mjs",
+  "find": "[l.id, STATE(l.ok)]))",
+  "replace": "[l.id, l.detail]))"
+ },
+ {
+  "name": "the trend draws nine reads",
+  "file": "tools/flip-board.mjs",
+  "find": ".slice(-8);",
+  "replace": ".slice(-9);"
+ },
+ {
+  "name": "the trend draws every read as met",
+  "file": "tools/flip-board.mjs",
+  "find": "<li><span class=\"salt-status ${TONE[t.s]}\"",
+  "replace": "<li><span class=\"salt-status ${TONE.m}\""
+ },
+ {
+  "name": "the faces load from a file",
+  "file": "tools/flip-board.mjs",
+  "find": "url(data:font/woff2;base64,${readFileSync(join(REPO, \"design\", \"fonts\", f)).toString(\"base64\")})",
+  "replace": "url(fonts/${f})"
+ },
+ {
+  "name": "a link is kept",
+  "file": "tools/flip-board.mjs",
+  "find": ".replace(/https?:\\/\\/[^\\s\"'<>]+/gi, \"[link]\")",
+  "replace": ".replace(/zzz-link/gi, \"[link]\")"
+ },
+ {
+  "name": "a bearer token is kept",
+  "file": "tools/flip-board.mjs",
+  "find": ".replace(/\\bBearer\\s+\\S+/gi, \"Bearer [hidden]\")",
+  "replace": ".replace(/zzz-bearer/gi, \"Bearer [hidden]\")"
+ },
+ {
+  "name": "a JWT is kept",
+  "file": "tools/flip-board.mjs",
+  "find": ".replace(/\\beyJ[\\w-]+\\.[\\w-]+\\.[\\w-]*/g, \"[hidden]\")",
+  "replace": ".replace(/zzz-jwt/g, \"[hidden]\")"
+ },
+ {
+  "name": "a named key is kept",
+  "file": "tools/flip-board.mjs",
+  "find": "|client[-_]?id)(\\s*[:=]\\s*)",
+  "replace": "|client[-_]?id)(\\s*[;]\\s*)"
+ },
+ {
+  "name": "a long opaque string is kept",
+  "file": "tools/flip-board.mjs",
+  "find": ".replace(/[A-Za-z0-9+/_-]{32,}={0,2}/g, \"[hidden]\");",
+  "replace": ".replace(/[A-Za-z0-9+/_-]{320,}={0,2}/g, \"[hidden]\");"
+ },
+ {
+  "name": "a short digest is hidden",
+  "file": "tools/flip-board.mjs",
+  "find": ".replace(/[A-Za-z0-9+/_-]{32,}={0,2}/g, \"[hidden]\");",
+  "replace": ".replace(/[A-Za-z0-9+/_-]{12,}={0,2}/g, \"[hidden]\");"
+ },
+ {
+  "name": "the page opens in Night",
+  "file": "tools/flip-board.mjs",
+  "find": "<html lang=\"en-GB\" data-theme=\"tide\">",
+  "replace": "<html lang=\"en-GB\" data-theme=\"night\">"
+ },
+ {
+  "name": "the page may load from anywhere",
+  "file": "tools/flip-board.mjs",
+  "find": "content=\"default-src 'none';",
+  "replace": "content=\"default-src *;"
+ },
+ {
+  "name": "a refused store breaks a tick",
+  "file": "tools/flip-board.mjs",
+  "find": "function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }",
+  "replace": "function save() { localStorage.setItem(KEY, JSON.stringify(st)); }"
+ },
+ {
+  "name": "a tick is not kept",
+  "file": "tools/flip-board.mjs",
+  "find": "if (b.checked) st.ticks[id] = 1;",
+  "replace": "if (false) st.ticks[id] = 1;"
+ },
+ {
+  "name": "a locked step shows a kept tick",
+  "file": "tools/flip-board.mjs",
+  "find": "if (!b.disabled && st.ticks[",
+  "replace": "if (st.ticks["
+ },
+ {
+  "name": "a kept theme is not restored",
+  "file": "tools/flip-board.mjs",
+  "find": "if (p.look === \"night\" || p.look === \"tide\") st.look = p.look;",
+  "replace": "if (false) st.look = p.look;"
+ },
+ {
+  "name": "Reset clears nothing",
+  "file": "tools/flip-board.mjs",
+  "find": "st.ticks = {}; boxes.forEach",
+  "replace": "boxes.forEach"
+ },
+ {
+  "name": "a PLAN step is left out",
+  "file": "tools/flip-board.mjs",
+  "find": "PLAN.filter(([n]) => n !== \"8\").map(",
+  "replace": "PLAN.filter(([n]) => n !== \"8\" && n !== \"6\").map("
+ },
+ {
+  "name": "a read-after is not what flip.mjs prints",
+  "file": "tools/flip-board.mjs",
+  "find": "5: \"5 book_source book\"",
+  "replace": "5: \"5 book_source on\""
+ },
+ {
+  "name": "the way back's export flag is not flip.mjs's",
+  "file": "tools/flip-board.mjs",
+  "find": "\\\"<your typed words>\\\" --exported\"",
+  "replace": "\\\"<your typed words>\\\" --exported=1\""
+ },
+ {
+  "name": "the dry run is marked as needing his go",
+  "file": "tools/flip-board.mjs",
+  "find": "step(p.id, p.title, { cmd: p.cmd, does: p.does, read: p.read })",
+  "replace": "step(p.id, p.title, { cmd: p.cmd, does: p.does, read: p.read, typed: true })"
+ }
+]
