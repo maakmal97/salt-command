@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1329",
+  "d": "29 Oct 2026",
+  "t": "PAYMENT OF RM180 ON AN UNDELIVERED ORDER",
+  "n": [
+   "<b>ONE PAYMENT FOLDED.</b> CZ5-TM paid RM180 by transfer via tng on 29 Oct 2026 against order s306, 2 units of salt, preapproved by Counter Admin. The order was corrected from RM190 to RM180 earlier the same day. Nothing was delivered, so the 2 units remain owed. The drafter raised no flags.",
+   "<b>INVENTORY UNCHANGED.</b> No stock moved, so the roll and the cost basis stand, with stock at 23.5 units and stock cost at RM56 a unit. The 2 units owed to CZ5-TM sit as a promise until they are handed over."
+  ]
+ },
+ {
   "v": "v1328",
   "d": "29 Oct 2026",
   "t": "CZ5-TM ORDER CORRECTED TO RM180",
