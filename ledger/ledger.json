@@ -1,6 +1,6 @@
 {
- "v": "v1327",
- "stamped": "29 Oct 2026, 16:18 KL",
+ "v": "v1328",
+ "stamped": "29 Oct 2026, 16:23 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -9718,14 +9718,36 @@
    {
     "customer": "CZ5-TM",
     "qty": 2,
-    "total": 190,
+    "total": 180,
     "cash": 0,
     "date": "2026-10-29",
     "deliveredQty": 0,
-    "note": "<b>PENDING SALE OF 2 UNITS OF SALT TO CZ5-TM, GOODS RM190, 29 OCT 2026.</b> Order 20261029081307-zyon2w came from the statements site and is acknowledged, to collect. Nothing was paid and nothing delivered, so the whole RM190 is owed once it moves. Counter Admin preapproved it. For 2 units the ladder gives a floor total of RM115 and an ask total of RM215, so the goods sit above the floor and below the ask, at RM95 a unit against a floor of RM57.5 and an ask of RM107.5. The party's median rate is RM105, range RM95 to RM110, with nothing outstanding and no units on credit against a cap of 1. The row carries RM56 a unit, the inventory's own rate. The drafter flagged nothing. Nothing else is outstanding.",
+    "note": "<b>CORRECTION ON S306, 29 OCT 2026: GOODS TOTAL RM190 TO RM180.</b> For CZ5-TM's pending order 20261029081307-zyon2w, 2 units of salt, the total moves from 190 to 180 and delivery is set from unset to 0. Counter Admin preapproved it. The order stays pending, nothing paid or delivered, so RM180 is owed once it moves. The drafter flagged a rate 14.3% below the party's usual RM105. The figures confirm it: RM90 a unit, below the party's median of RM105 (range RM95 to RM110), so this is the lowest rate it has paid. The dossier gives no reason for the cut and none is stated here. No floor or ask total for 2 units is in the dossier, so no comparison is made. Outstanding before was RM190, with no units on credit. It moves no cash and no stock. The row keeps the cost it already carries. <b>PENDING SALE OF 2 UNITS OF SALT TO CZ5-TM, GOODS RM190, 29 OCT 2026.</b> Order 20261029081307-zyon2w came from the statements site and is acknowledged, to collect. Nothing was paid and nothing delivered, so the whole RM190 is owed once it moves. Counter Admin preapproved it. For 2 units the ladder gives a floor total of RM115 and an ask total of RM215, so the goods sit above the floor and below the ask, at RM95 a unit against a floor of RM57.5 and an ask of RM107.5. The party's median rate is RM105, range RM95 to RM110, with nothing outstanding and no units on credit against a cap of 1. The row carries RM56 a unit, the inventory's own rate. The drafter flagged nothing. Nothing else is outstanding.",
     "listRM": 190,
     "listQty": 2,
-    "rid": "s306"
+    "rid": "s306",
+    "delivery": 0,
+    "mod": "corrected on 2026-10-29: total 190 to 180; delivery (unset) to 0",
+    "amend": [
+     {
+      "date": "2026-10-29",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-29",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S306, 29 OCT 2026: GOODS TOTAL RM190 TO RM180.</b> For CZ5-TM's pending order 20261029081307-zyon2w, 2 units of salt, the total moves from 190 to 180 and delivery is set from unset to 0. Counter Admin preapproved it. The order stays pending, nothing paid or delivered, so RM180 is owed once it moves. The drafter flagged a rate 14.3% below the party's usual RM105. The figures confirm it: RM90 a unit, below the party's median of RM105 (range RM95 to RM110), so this is the lowest rate it has paid. The dossier gives no reason for the cut and none is stated here. No floor or ask total for 2 units is in the dossier, so no comparison is made. Outstanding before was RM190, with no units on credit. It moves no cash and no stock. The row keeps the cost it already carries.",
+      "was": {
+       "total": 190,
+       "delivery": null
+      }
+     }
+    ]
    }
   ],
   "contacts": [
@@ -10531,7 +10553,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-29T08:18:00.504Z",
+  "QUEUE_COMMITTED": "2026-10-29T08:23:15.273Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -20415,10 +20437,10 @@
      "suggest": null
     }
    },
-   "v": "v1327"
+   "v": "v1328"
   },
   "OPEN": {
-   "at": "2026-10-29T08:19:02.873Z",
+   "at": "2026-10-29T08:23:58.967Z",
    "count": 12,
    "byKey": {
     "CS6-BS-R|2026-10-29|150": {
@@ -20472,19 +20494,19 @@
      "trip": "t1793248537009",
      "key": "CH6-SET|2026-10-29|35|rice"
     },
-    "CZ5-TM|2026-10-29|190": {
+    "CZ5-TM|2026-10-29|180": {
      "d": "2026-10-29",
      "p": "CZ5-TM",
      "dir": "S",
      "q": 2,
-     "t": 190,
+     "t": 180,
      "cash": 0,
      "mv": 0,
      "st": "part",
-     "oweRM": 190,
+     "oweRM": 180,
      "oweUnits": 2,
      "rid": "s306",
-     "key": "CZ5-TM|2026-10-29|190"
+     "key": "CZ5-TM|2026-10-29|180"
     },
     "CR3-DAM|2026-10-28|110": {
      "d": "2026-10-28",
@@ -20695,7 +20717,7 @@
     "gas": "2026-10-29",
     "prep": null
    },
-   "v": "v1327"
+   "v": "v1328"
   },
   "TERMS": {
    "ceiling": 250,
@@ -20703,7 +20725,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1327"
+   "v": "v1328"
   },
   "REWARD": {
    "stated": {
@@ -20721,7 +20743,7 @@
      }
     }
    },
-   "v": "v1327"
+   "v": "v1328"
   },
   "STOCK": {
    "today": "2026-10-29",
@@ -20775,7 +20797,7 @@
      "transit": 0
     }
    },
-   "v": "v1327"
+   "v": "v1328"
   }
  }
 }
