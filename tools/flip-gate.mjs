@@ -127,10 +127,20 @@ export async function collect(opts = {}, run = sh, get = opts.get) {
 
 export const say = (r) => r.lines.map((x) => `  ${x.ok === true ? "ok        " : x.ok === false ? "NOT MET   " : "UNVERIFIED"} ${x.id}  ${x.text}\n              ${x.detail}`).join("\n") + `\n\n  The gate reads ${r.ok ? "TRUE" : "NOT TRUE"} over ${r.window.runs} chain runs since ${String(r.window.since).slice(0, 10)}.`;
 
+/** a GET of the Book's keyed routes (the readcheck), for the gate. It lives here and not in flip.mjs: flip.mjs imports this file, so a command line
+    that imported flip.mjs back deadlocked on the cycle and exited 13 with "unsettled top-level await" (29 Oct 2026). flip.mjs re-exports it. */
+export function realGet(env = process.env) {
+  const base = (env.SALT_BASE || "https://salt-command.qyts8mh72kyg.workers.dev").replace(/\/+$/, "");
+  return async (path) => {
+    const h = { "X-Book-Key": String(env.SALT_BOOK_KEY || "") };
+    if (env.CF_ACCESS_CLIENT_ID && env.CF_ACCESS_CLIENT_SECRET) { h["CF-Access-Client-Id"] = env.CF_ACCESS_CLIENT_ID; h["CF-Access-Client-Secret"] = env.CF_ACCESS_CLIENT_SECRET; }
+    const r = await fetch(base + path, { headers: h }); return { status: r.status, body: await r.json().catch(() => ({})) };
+  };
+}
+
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
   const a = process.argv.slice(2), val = (f) => { const i = a.indexOf(f); return i >= 0 ? a[i + 1] : null; };
-  const { realGet } = await import("./flip.mjs");
   const r = judge(await collect({ since: val("--since"), backupOpened: val("--backup-opened"), get: realGet() }));
   console.log(a.includes("--json") ? JSON.stringify(r, null, 1) : say(r));
   process.exit(r.ok ? 0 : 1);

@@ -30,15 +30,8 @@ import { DATA_DIR } from "./book.mjs";
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const WAY_BACK = join(DATA_DIR, "flip-way-back.json");   /* the project's own data folder, which is never committed: the way back must survive this run */
 
-/** a GET of the Book's keyed routes (the readcheck), for the gate */
-export function realGet(env = process.env) {
-  const base = (env.SALT_BASE || "https://salt-command.qyts8mh72kyg.workers.dev").replace(/\/+$/, "");
-  return async (path) => {
-    const h = { "X-Book-Key": String(env.SALT_BOOK_KEY || "") };
-    if (env.CF_ACCESS_CLIENT_ID && env.CF_ACCESS_CLIENT_SECRET) { h["CF-Access-Client-Id"] = env.CF_ACCESS_CLIENT_ID; h["CF-Access-Client-Secret"] = env.CF_ACCESS_CLIENT_SECRET; }
-    const r = await fetch(base + path, { headers: h }); return { status: r.status, body: await r.json().catch(() => ({})) };
-  };
-}
+/** a GET of the Book's keyed routes (the readcheck), for the gate: defined in flip-gate.mjs so that file never imports this one back (a cycle that deadlocked the gate's command line) */
+export { realGet } from "./flip-gate.mjs";
 
 /** the real io: wrangler for D1, gh for Actions, git, node for the repo's own tools, fetch for the Book's keyed routes. Replaced by the suite. */
 export function realIo(env = process.env) {

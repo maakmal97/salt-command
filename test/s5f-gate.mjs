@@ -5,9 +5,11 @@
  *   3  the collectors: the drafts the tap booked by kind, the approved-and-unbooked, the fallbacks, the hand approvals; a collector that cannot read answers null
  *   4  the fallback record: an approval that fell back is written on its draft, and the record never throws
  *   5  the runbook: a dry run writes nothing; --go needs his words and every precondition; the way back is written before any flag moves; the steps run in order and stop at the first failure and say where; book_outbox is never touched
- *   6  the way back and the verify */
+ *   6  the way back and the verify
+ *   7  the gate's own command line runs (it deadlocked on a cycle with flip.mjs and exited 13, 29 Oct 2026) */
 import { DatabaseSync } from "node:sqlite";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -196,5 +198,19 @@ export async function run({ ok }) {
     const v2 = mkIo({ flags: { book_tap: "on", book_read: "book", book_source: "d1", book_roster: "off", book_outbox: "off", book_page: "on" }, unbooked: 2 });
     const vr2 = await F.verify(v2.io);
     ok(!vr2.ok && vr2.checks.filter((c) => !c.ok).map((c) => c.id).join() === "source,roster,readcheck,unbooked", "and it fails on each thing that is wrong: " + vr2.checks.filter((c) => !c.ok).map((c) => c.id).join());
+  }
+
+  /* 7: the gate's own command line, as the runbook says to run it (node tools/flip-gate.mjs). It once imported flip.mjs back, which imports it: a cycle of
+     two top-level awaits that exited 13 with "unsettled top-level await" and printed nothing. Run here with no gh, wrangler or git to find (an empty PATH) and
+     nowhere to fetch from, it has nothing to read, so it must print the gate with every line it could not read UNVERIFIED and exit 1, not die or hang. */
+  {
+    const bin = mkdtempSync(join(tmpdir(), "flip-gate-bin-"));
+    const env = {}; for (const [k, v] of Object.entries(process.env)) if (!/^path$/i.test(k)) env[k] = v;
+    env.PATH = bin; env.SALT_BASE = "http://127.0.0.1:9";
+    const r = spawnSync(process.execPath, [join(REPO, "tools", "flip-gate.mjs")], { cwd: REPO, encoding: "utf8", env, timeout: 60000 });
+    rmSync(bin, { recursive: true, force: true });
+    ok(r.status === 1 && /G0 /.test(r.stdout) && /G9 /.test(r.stdout) && /The gate reads NOT TRUE/.test(r.stdout),
+      "the gate's command line runs and says it is not true, rather than deadlocking on its cycle with flip.mjs: " + JSON.stringify({ status: r.status, out: String(r.stdout).slice(0, 80), err: String(r.stderr).slice(0, 160) }));
+    ok(typeof F.realGet === "function" && F.realGet === G.realGet, "flip.mjs still exports realGet, the gate's one: a caller of either gets the same function");
   }
 }

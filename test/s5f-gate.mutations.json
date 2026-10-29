@@ -214,5 +214,23 @@
   "file": "tools/roster-export.mjs",
   "find": "const base = process.env.SALT_BASE || \"https://salt-command.qyts8mh72kyg.workers.dev\";",
   "replace": "const base = process.env.SALT_BASE; if (!base) { console.log(\"  FAIL  SALT_BASE is not set\"); process.exit(1); }"
+ },
+ {
+  "name": "the gate's command line imports flip.mjs back (the cycle that exited 13)",
+  "file": "tools/flip-gate.mjs",
+  "find": "  const r = judge(await collect({ since: val(\"--since\"), backupOpened: val(\"--backup-opened\"), get: realGet() }));",
+  "replace": "  const { realGet: rg } = await import(\"./flip.mjs\");\n  const r = judge(await collect({ since: val(\"--since\"), backupOpened: val(\"--backup-opened\"), get: rg() }));"
+ },
+ {
+  "name": "the gate's command line exits 0 whatever it read",
+  "file": "tools/flip-gate.mjs",
+  "find": "  process.exit(r.ok ? 0 : 1);",
+  "replace": "  process.exit(0);"
+ },
+ {
+  "name": "flip.mjs no longer exports realGet",
+  "file": "tools/flip.mjs",
+  "find": "export { realGet } from \"./flip-gate.mjs\";",
+  "replace": ""
  }
 ]
