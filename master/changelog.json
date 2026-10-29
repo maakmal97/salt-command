@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1324",
+  "d": "29 Oct 2026",
+  "t": "RM90 CASH RECEIVED ON CR3-DAM ORDER S301",
+  "n": [
+   "<b>ONE PAYMENT FOLDED.</b> A fulfilment amendment records RM90 cash from CR3-DAM on 29 Oct 2026 against order s301 (1 unit, RM110), preapproved by Counter Admin. It leaves RM20 outstanding on that order. The drafter raised no flags and nothing unusual turned up.",
+   "<b>INVENTORY UNCHANGED.</b> No salt moved, since the unit was already collected on 28 Oct. The stock stays at 23.5 units and the cost basis at RM56 a unit."
+  ]
+ },
+ {
   "v": "v1323",
   "d": "29 Oct 2026",
   "t": "GAS BOUGHT AND COUNTED, SALT UNTOUCHED",

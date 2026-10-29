@@ -1,6 +1,6 @@
 {
- "v": "v1323",
- "stamped": "29 Oct 2026, 07:47 KL",
+ "v": "v1324",
+ "stamped": "29 Oct 2026, 08:37 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -9490,7 +9490,7 @@
     "customer": "CR3-DAM",
     "qty": 1,
     "total": 110,
-    "cash": 0,
+    "cash": 90,
     "date": "2026-10-28",
     "deliveredQty": 1,
     "note": "<b>CORRECTION ON s301: 1 UNIT OF SALT COLLECTED BY CR3-DAM ON 28 OCT 2026, RM110 UNPAID.</b> The order of 1 unit for RM110 now shows deliveredQty 1, deliveredOn 28 Oct 2026 and handover collected, preapproved by Counter Admin. Cash stays RM0. The dossier gives no ladder floor or ask for this size, so the rate cannot be set against the desk's own figures. Against the party's history, RM110 a unit sits above the median of RM80 and inside the range RM80 to RM150. Outstanding before was RM135, with 0.27 unit on credit; no cap is given. The drafter flagged a rate 33.3% above the usual and an advance. The range answers the first; the cap is not in the dossier, so the second is open. RM110 remains outstanding. <b>PENDING SALE OF 1 UNIT OF SALT TO CR3-DAM, GOODS RM110, 28 OCT 2026.</b> Ordered on the statements site, order 20261028032856-i8wyuq, acknowledged, to collect, placed at RM120 and priced at RM110 on this order. Nothing is paid and nothing handed over, so no stock is drawn and no revenue is booked. For 1 unit the ladder gives a floor total of RM60 and an ask total of RM120, so RM110 is above the floor and below the ask. That is RM110 a unit against a floor of RM60 and an ask of RM120. The party's median rate is RM80, range RM80 to RM150; outstanding before was RM25, 0.27 unit on credit against a cap of 2. The cost is RM58 a unit, costed off the latest purchase. The drafter flagged a rate 33.3% above the usual RM82.5 a unit. The figures answer it: the rate is within the party's own range and below the ask. RM110 and the 1 unit remain outstanding.",
@@ -9520,6 +9520,13 @@
        "handover": null
       },
       "cost": 56
+     },
+     {
+      "date": "2026-10-29",
+      "kind": "Fulfilment",
+      "cash": 90,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON s301: RM90 CASH RECEIVED FROM CR3-DAM, 29 OCT 2026.</b> It is a payment of RM90 by cash at the counter against order 20261028032856-i8wyuq, 1 unit for RM110 agreed on 28 Oct, with RM110 and no units outstanding before. It was preapproved by Counter Admin. It moves no salt, as the unit was collected on 28 Oct. The row is not recomputed here, because the master applies the fulfilment. The party's median rate is RM80, range RM80 to RM150; outstanding before was RM135, with 1.27 units on credit. No default stands. The cost is the inventory's own and is unchanged. The drafter raised no flags. RM20 remains outstanding on s301."
      }
     ],
     "cost": 56
@@ -10447,7 +10454,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-28T23:46:44.857Z",
+  "QUEUE_COMMITTED": "2026-10-29T00:36:41.117Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -20331,10 +20338,10 @@
      "suggest": null
     }
    },
-   "v": "v1323"
+   "v": "v1324"
   },
   "OPEN": {
-   "at": "2026-10-28T23:47:41.478Z",
+   "at": "2026-10-29T00:37:19.467Z",
    "count": 9,
    "byKey": {
     "CS6-BS-R|2026-10-29|150": {
@@ -20363,16 +20370,16 @@
      "dir": "S",
      "q": 1,
      "t": 110,
-     "cash": 0,
+     "cash": 90,
      "mv": 1,
      "st": "dueMoney",
-     "oweRM": 110,
+     "oweRM": 20,
      "rid": "s301",
      "deliveredOn": "2026-10-28",
      "handover": "collected",
      "key": "CR3-DAM|2026-10-28|110",
      "age": 1,
-     "exp": 82.5
+     "exp": 15
     },
     "CZ5-TM|2026-10-27|105": {
      "d": "2026-10-27",
@@ -20498,7 +20505,7 @@
      "owedOut": 0.5,
      "coverDays": 6,
      "rate": 4.25,
-     "owedToYou": 500,
+     "owedToYou": 410,
      "promised": 0.5,
      "short": 0
     },
@@ -20566,7 +20573,7 @@
     "gas": "2026-10-29",
     "prep": null
    },
-   "v": "v1323"
+   "v": "v1324"
   },
   "TERMS": {
    "ceiling": 250,
@@ -20574,7 +20581,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1323"
+   "v": "v1324"
   },
   "REWARD": {
    "stated": {
@@ -20592,7 +20599,7 @@
      }
     }
    },
-   "v": "v1323"
+   "v": "v1324"
   },
   "STOCK": {
    "today": "2026-10-29",
@@ -20646,7 +20653,7 @@
      "transit": 0
     }
    },
-   "v": "v1323"
+   "v": "v1324"
   }
  }
 }
