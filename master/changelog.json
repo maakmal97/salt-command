@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1325",
+  "d": "29 Oct 2026",
+  "t": "TWO PENDING SALES TO CH6-SET, NOTHING MOVED",
+  "n": [
+   "<b>TWO PENDING SALES FOLDED.</b> A salt sale of 2.5 units at RM235 (s304) and a rice sale of 5 units at RM35 (s305), both to CH6-SET and dated 29 Oct 2026. Both were approved by Counter Admin. Nothing was paid and nothing was delivered, so both rows stay pending, draw no stock and book no revenue.",
+   "<b>UNUSUAL:</b> the salt rate of RM94 a unit is below the party's median of RM115 and under its range of RM100 to RM120. The rice has no earlier rice order from this party to compare against. The inventory did not move: salt stands at 23.5 units."
+  ]
+ },
+ {
   "v": "v1324",
   "d": "29 Oct 2026",
   "t": "RM90 CASH RECEIVED ON CR3-DAM ORDER S301",
