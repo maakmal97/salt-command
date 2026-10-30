@@ -1,0 +1,142 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-10-30T15:01:30.590Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CM4-TO-R",
+    "qty": 1,
+    "total": 140,
+    "cost": 56,
+    "cash": 150,
+    "delivery": 10,
+    "date": "2026-10-30",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-10-30",
+    "paidOn": "2026-10-30",
+    "rev": "R2",
+    "listRM": 60,
+    "listQty": 1,
+    "rids": [
+     "s310"
+    ],
+    "booked_seq": 45
+   },
+   "reasoning": "Sold 1 unit of salt to CM4-TO-R for RM 140, with RM 10 of delivery beside it, RM 150 owed, RM 140/unit. Costed at RM 56/unit from COGS off the latest purchase p046 landed 2026-10-28: RM 1400 quote plus RM 0 freight over 25 unit, so RM 84 on the goods at 60%. Paid in full and delivered in full on 2026-10-30. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "Booked to CM4-TO-R as R2: CM4-TO buys it to sell on.",
+    "CM4-TO typically pays about RM 60/unit for salt across 7 orders; this one is RM 140, 133.3% above that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-30T15:01:30.590Z",
+    "type": "SELL",
+    "party": "CM4-TO-R",
+    "qty": 1,
+    "total": 140,
+    "status": "paid",
+    "raw": "Sell 1 unit salt to CM4-TO-R for RM140 on 2026-10-30 plus RM10 delivery, RM150 cash, 1 unit moved → Completed (R2 via CM4-TO)",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CM4-TO",
+     "newId": null,
+     "date": "2026-10-30",
+     "qty": 1,
+     "total": 140,
+     "delivery": 10,
+     "freight": 0,
+     "cash": 150,
+     "kg": 1,
+     "assoc": "CM4-TO",
+     "stream": "R2",
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": null,
+     "second": null,
+     "more": null,
+     "coverFree": null
+    },
+    "makerRequest": "aebdadd6a48ed5c18cc7207060f581611538dba2996d5f76f64ba8609a7ef1dd"
+   },
+   "decidedAt": "2026-10-30T15:51:38.478Z",
+   "decidedBy": "Counter Admin"
+  },
+  {
+   "id": "2026-10-30T15:01:51.224Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CM4-TO-R",
+    "qty": 1,
+    "total": 160,
+    "cost": 56,
+    "cash": 170,
+    "delivery": 10,
+    "date": "2026-10-30",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-10-30",
+    "paidOn": "2026-10-30",
+    "rev": "R2",
+    "listRM": 60,
+    "listQty": 1,
+    "rids": [
+     "s311"
+    ],
+    "booked_seq": 46
+   },
+   "reasoning": "Sold 1 unit of salt to CM4-TO-R for RM 160, with RM 10 of delivery beside it, RM 170 owed, RM 160/unit. Costed at RM 56/unit from COGS off the latest purchase p046 landed 2026-10-28: RM 1400 quote plus RM 0 freight over 25 unit, so RM 104 on the goods at 65%. Paid in full and delivered in full on 2026-10-30. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "Booked to CM4-TO-R as R2: CM4-TO buys it to sell on.",
+    "CM4-TO typically pays about RM 60/unit for salt across 7 orders; this one is RM 160, 166.7% above that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-30T15:01:51.224Z",
+    "type": "SELL",
+    "party": "CM4-TO-R",
+    "qty": 1,
+    "total": 160,
+    "status": "paid",
+    "raw": "Sell 1 unit salt to CM4-TO-R for RM160 on 2026-10-30 plus RM10 delivery, RM170 cash, 1 unit moved → Completed (R2 via CM4-TO)",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CM4-TO",
+     "newId": null,
+     "date": "2026-10-30",
+     "qty": 1,
+     "total": 160,
+     "delivery": 10,
+     "freight": 0,
+     "cash": 170,
+     "kg": 1,
+     "assoc": "CM4-TO",
+     "stream": "R2",
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": null,
+     "second": null,
+     "more": null,
+     "coverFree": null
+    },
+    "makerRequest": "b0719dcf7ffdc104a3a0abc5cba42273cf8974f53fd615bdee53c32ca9223cc1"
+   },
+   "decidedAt": "2026-10-30T15:51:39.377Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
