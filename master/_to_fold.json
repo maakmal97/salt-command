@@ -1,0 +1,129 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-10-30T14:49:28.397Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s304",
+    "qty": 2.5,
+    "total": 235,
+    "cash": 0,
+    "date": "2026-10-29",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "delivery",
+      "from": null,
+      "to": 5
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "delivered"
+     }
+    ],
+    "customer": "CH6-SET",
+    "rids": [],
+    "booked_seq": 42
+   },
+   "reasoning": "Correction against CH6-SET's order of 2.5 unit for RM 235 dated 2026-10-29 (s304). Sets delivery from unset to 5, handover from unset to delivered. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CH6-SET typically pays about RM 106.67/unit for salt across 5 orders; this one is RM 94, 11.9% below that.",
+    "This is an ADVANCE: 2.5 unit goes out with RM 240 unpaid. Check it against CH6-SET's credit cap."
+   ],
+   "amends": "s304",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-30T14:49:28.397Z",
+    "type": "AMEND",
+    "party": "CH6-SET",
+    "qty": 0,
+    "total": 0,
+    "status": "corrected",
+    "raw": "Correction against s304 for CH6-SET on 2026-10-30",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CH6-SET",
+     "product": "salt",
+     "rid": "s304",
+     "orderKey": "CH6-SET|2026-10-29|235",
+     "date": "2026-10-30",
+     "kind": "Correction",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "sameDay": false,
+     "note": null,
+     "fields": {
+      "delivery": 5,
+      "handover": "delivered"
+     },
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    },
+    "makerRequest": "51fe2d18386a97082c7ff5280c3ea27dce155284a67e1cf7fd4c935d66242bf7"
+   },
+   "decidedAt": "2026-10-30T14:49:47.825Z",
+   "decidedBy": "Counter Admin"
+  },
+  {
+   "id": "2026-10-30T14:49:28.398Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "qty": 2.5,
+    "total": 235,
+    "cash": 0,
+    "date": "2026-10-29",
+    "customer": "CH6-SET",
+    "rids": [],
+    "booked_seq": 43
+   },
+   "reasoning": "Fulfilment against CH6-SET's order of 2.5 unit for RM 235 agreed 2026-10-29. RM 235 and 0 unit move on 2026-10-30, against RM 235 and 0 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "s304",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-10-30T14:49:28.398Z",
+    "type": "AMEND",
+    "party": "CH6-SET",
+    "qty": 0,
+    "total": 235,
+    "status": "partial",
+    "raw": "Fulfilment against s304 for CH6-SET on 2026-10-30",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CH6-SET",
+     "product": "salt",
+     "rid": "s304",
+     "orderKey": "CH6-SET|2026-10-29|235",
+     "date": "2026-10-30",
+     "kind": "Fulfilment",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 0,
+     "total": 235,
+     "cash": 235,
+     "kg": 0
+    },
+    "makerRequest": "02ea56eec1a81559ab742cb5510f694939533c52eeb77fa4c244fb27323c73a3"
+   },
+   "decidedAt": "2026-10-30T14:49:48.568Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
