@@ -1,6 +1,6 @@
 {
- "v": "v1334",
- "stamped": "30 Oct 2026, 16:10 KL",
+ "v": "v1335",
+ "stamped": "30 Oct 2026, 18:44 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -107,7 +107,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 21,
+  "STATED_STOCK": 20.5,
   "COUNT_ON": {
    "salt": "2026-10-28",
    "oil": "2026-10-27",
@@ -9847,8 +9847,8 @@
     "total": 75,
     "cash": 75,
     "date": "2026-10-30",
-    "deliveredQty": 0,
-    "note": "<b>SELL CA3-KP 0.5 UNIT SALT RM75 ON 2026-10-30.</b> Append to sales with its note. 0.5 unit for RM75, RM150 a unit, dated 30 Oct 2026. The desk's own floor for 0.5 unit is RM30 in all and the ask RM75. CA3-KP: 2 orders on the book, median RM140 a unit, range RM140 to RM140, RM0 outstanding before this row. The drafter raised no flag. Written by the tool, so the facts stand as the dossier gives them and no judgement is recorded on them.",
+    "deliveredQty": 0.5,
+    "note": "<b>COLLECTED 30 OCT 2026.</b> <b>CORRECTION ON S308, 30 OCT 2026: 0.5 UNIT OF SALT COLLECTED BY CA3-KP.</b> Three fields change: deliveredQty from 0 to 0.5, deliveredOn from unset to 2026-10-30, handover from unset to collected. The order is RM75 for 0.5 unit, RM150 a unit, already paid on 30 Oct. The desk's own floor for 0.5 unit is RM30 in all and the ask RM75, so the total sits at the ask. CA3-KP: 3 orders on the book, median RM140 a unit, range RM140 to RM150, RM0 outstanding, no units on credit. The shelf rolls out by 0.5 unit. The drafter flagged that the 2-step trail will no longer add up to the figure set directly. The figures do not answer that, so the correction is recorded beside the trail. Nothing is left outstanding. <b>SELL CA3-KP 0.5 UNIT SALT RM75 ON 2026-10-30.</b> Append to sales with its note. 0.5 unit for RM75, RM150 a unit, dated 30 Oct 2026. The desk's own floor for 0.5 unit is RM30 in all and the ask RM75. CA3-KP: 2 orders on the book, median RM140 a unit, range RM140 to RM140, RM0 outstanding before this row. The drafter raised no flag. Written by the tool, so the facts stand as the dossier gives them and no judgement is recorded on them.",
     "listRM": 75,
     "listQty": 0.5,
     "rid": "s308",
@@ -9866,9 +9866,26 @@
       "cash": 75,
       "kg": 0,
       "note": "<b>FULFILMENT ON S308: CASH 0.</b> Fulfilment RM75 on 2026-10-30 against order s308. It applies to s308, 0.5 unit for RM75 with RM0 paid on 30 Oct 2026. CA3-KP: 3 orders on the book, median RM140 a unit, range RM140 to RM150, RM75 outstanding before this row. The drafter raised no flag. Written by the tool, so the facts stand as the dossier gives them and no judgement is recorded on them."
+     },
+     {
+      "date": "2026-10-30",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0.5,
+      "note": "<b>CORRECTION ON S308, 30 OCT 2026: 0.5 UNIT OF SALT COLLECTED BY CA3-KP.</b> Three fields change: deliveredQty from 0 to 0.5, deliveredOn from unset to 2026-10-30, handover from unset to collected. The order is RM75 for 0.5 unit, RM150 a unit, already paid on 30 Oct. The desk's own floor for 0.5 unit is RM30 in all and the ask RM75, so the total sits at the ask. CA3-KP: 3 orders on the book, median RM140 a unit, range RM140 to RM150, RM0 outstanding, no units on credit. The shelf rolls out by 0.5 unit. The drafter flagged that the 2-step trail will no longer add up to the figure set directly. The figures do not answer that, so the correction is recorded beside the trail. Nothing is left outstanding.",
+      "was": {
+       "deliveredQty": 0,
+       "deliveredOn": null,
+       "handover": null
+      },
+      "cost": 28
      }
     ],
-    "paidOn": "2026-10-30"
+    "paidOn": "2026-10-30",
+    "deliveredOn": "2026-10-30",
+    "handover": "collected",
+    "mod": "corrected on 2026-10-30: deliveredQty 0 to 0.5; deliveredOn (unset) to 2026-10-30; handover (unset) to collected",
+    "cost": 28
    }
   ],
   "contacts": [
@@ -10674,7 +10691,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-30T02:55:04.273Z",
+  "QUEUE_COMMITTED": "2026-10-30T10:28:18.965Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -10725,7 +10742,7 @@
     {
      "id": "int:nocost",
      "sev": "watch",
-     "title": "4 priced sales carry no cost of their own"
+     "title": "3 priced sales carry no cost of their own"
     },
     {
      "id": "int:underfloor",
@@ -12035,15 +12052,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.2857142857142857
+         "v": 0.2833333333333333
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08940786291715609,
        "avgDel": {
-        "n": 236,
-        "kg": 598.31,
-        "mean": 2.5352
+        "n": 237,
+        "kg": 598.81,
+        "mean": 2.5266
        }
       },
       "policy": {
@@ -15087,8 +15104,8 @@
        "why": ""
       },
       "CA3-KP": {
-       "pct": 0,
-       "why": ""
+       "pct": -0.2,
+       "why": "good record"
       },
       "CA5-SEN": {
        "pct": 0,
@@ -20553,26 +20570,12 @@
      "suggest": null
     }
    },
-   "v": "v1334"
+   "v": "v1335"
   },
   "OPEN": {
-   "at": "2026-10-30T08:10:51.117Z",
-   "count": 10,
+   "at": "2026-10-30T10:44:56.923Z",
+   "count": 9,
    "byKey": {
-    "CA3-KP|2026-10-30|75": {
-     "d": "2026-10-30",
-     "p": "CA3-KP",
-     "dir": "S",
-     "q": 0.5,
-     "t": 75,
-     "cash": 75,
-     "mv": 0,
-     "st": "oweStock",
-     "oweUnits": 0.5,
-     "rid": "s308",
-     "paidOn": "2026-10-30",
-     "key": "CA3-KP|2026-10-30|75"
-    },
     "CS6-BS-R|2026-10-29|150": {
      "d": "2026-10-29",
      "p": "CS6-BS-R",
@@ -20728,13 +20731,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 21,
+     "onHand": 20.5,
      "free": 20.5,
-     "owedOut": 0.5,
+     "owedOut": 0,
      "coverDays": 5.5,
      "rate": 4.27,
      "owedToYou": 390,
-     "promised": 3,
+     "promised": 2.5,
      "short": 0
     },
     "oil": {
@@ -20801,7 +20804,7 @@
     "gas": "2026-10-29",
     "prep": null
    },
-   "v": "v1334"
+   "v": "v1335"
   },
   "TERMS": {
    "ceiling": 250,
@@ -20809,7 +20812,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1334"
+   "v": "v1335"
   },
   "REWARD": {
    "stated": {
@@ -20827,15 +20830,15 @@
      }
     }
    },
-   "v": "v1334"
+   "v": "v1335"
   },
   "STOCK": {
    "today": "2026-10-30",
    "books": {
     "salt": {
-     "shelf": 21,
+     "shelf": 20.5,
      "free": 20.5,
-     "commit": 3,
+     "commit": 2.5,
      "light": "green",
      "coverDays": 5.5,
      "transit": 0
@@ -20881,7 +20884,7 @@
      "transit": 0
     }
    },
-   "v": "v1334"
+   "v": "v1335"
   }
  }
 }

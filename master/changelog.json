@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1335",
+  "d": "30 Oct 2026",
+  "t": "COLLECTION RECORDED ON ORDER S308",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> Order s308 for CA3-KP, 0.5 unit of salt for RM75, now shows 0.5 unit delivered on 30 Oct 2026 and handed over as collected. The correction was preapproved by Counter Admin. The tool fell back to a local read because the Book was at v1332, behind v1334. The order's own trail of 2 steps no longer adds up to the corrected figure.",
+   "<b>SHELF MOVES BY 0.5 UNIT.</b> The 0.5 unit goes out to CA3-KP, so the salt shelf rolls down by that amount. No cash moves and no cost basis changes: the correction alters what the row says about itself."
+  ]
+ },
+ {
   "v": "v1334",
   "d": "30 Oct 2026",
   "t": "FULFILMENT ON S308: CASH 0",
