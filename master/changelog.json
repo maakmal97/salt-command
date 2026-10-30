@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1336",
+  "d": "30 Oct 2026",
+  "t": "PENDING SALT ORDER, NOTHING MOVED",
+  "n": [
+   "<b>ONE ORDER FOLDED.</b> A sale of 0.5 unit of salt to CR3-DAM for RM70 was appended, dated 30 Oct 2026, preapproved by Counter Admin. Nothing was paid and nothing handed over, so it is pending. The drafter flagged the rate against the party's usual; the figures only partly answer that.",
+   "<b>INVENTORY UNCHANGED.</b> The row draws no stock and books no revenue until something moves. The shelf stays at 20.5 units, with 7.5 promised, and the cost basis stays at RM56 a unit."
+  ]
+ },
+ {
   "v": "v1335",
   "d": "30 Oct 2026",
   "t": "COLLECTION RECORDED ON ORDER S308",

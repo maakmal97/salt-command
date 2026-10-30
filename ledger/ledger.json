@@ -1,6 +1,6 @@
 {
- "v": "v1335",
- "stamped": "30 Oct 2026, 18:44 KL",
+ "v": "v1336",
+ "stamped": "30 Oct 2026, 20:23 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -9886,6 +9886,18 @@
     "handover": "collected",
     "mod": "corrected on 2026-10-30: deliveredQty 0 to 0.5; deliveredOn (unset) to 2026-10-30; handover (unset) to collected",
     "cost": 28
+   },
+   {
+    "customer": "CR3-DAM",
+    "qty": 0.5,
+    "total": 70,
+    "cash": 0,
+    "date": "2026-10-30",
+    "deliveredQty": 0,
+    "note": "<b>PENDING SALE 30 OCT 2026: 0.5 UNIT OF SALT, RM70, NOTHING PAID, NOTHING MOVED.</b> CR3-DAM ordered on the statements site, order 20261030115801-61l0cq, acknowledged, to collect. The goods total of RM70 for 0.5 unit sits between the desk's floor of RM30 and the ask of RM75, so just under the ask. CR3-DAM: 24 orders on the book, median RM80 a unit, range RM80 to RM150, RM25 outstanding, 0.27 unit on credit against a cap of 2. The row carries cost at RM56 a unit, the inventory's own rate. The drafter flagged that RM140 a unit is 64.7% above the party's usual rate. The figures answer that only in part: the rate is below the ask of RM150 a unit and within the party's range. Outstanding: the collection and the RM70 payment.",
+    "listRM": 70,
+    "listQty": 0.5,
+    "rid": "s309"
    }
   ],
   "contacts": [
@@ -10691,7 +10703,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-30T10:28:18.965Z",
+  "QUEUE_COMMITTED": "2026-10-30T12:23:02.383Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -20570,12 +20582,26 @@
      "suggest": null
     }
    },
-   "v": "v1335"
+   "v": "v1336"
   },
   "OPEN": {
-   "at": "2026-10-30T10:44:56.923Z",
-   "count": 9,
+   "at": "2026-10-30T12:23:45.126Z",
+   "count": 10,
    "byKey": {
+    "CR3-DAM|2026-10-30|70": {
+     "d": "2026-10-30",
+     "p": "CR3-DAM",
+     "dir": "S",
+     "q": 0.5,
+     "t": 70,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 70,
+     "oweUnits": 0.5,
+     "rid": "s309",
+     "key": "CR3-DAM|2026-10-30|70"
+    },
     "CS6-BS-R|2026-10-29|150": {
      "d": "2026-10-29",
      "p": "CS6-BS-R",
@@ -20734,10 +20760,10 @@
      "onHand": 20.5,
      "free": 20.5,
      "owedOut": 0,
-     "coverDays": 5.5,
-     "rate": 4.27,
+     "coverDays": 5.4,
+     "rate": 4.3,
      "owedToYou": 390,
-     "promised": 2.5,
+     "promised": 3,
      "short": 0
     },
     "oil": {
@@ -20804,7 +20830,7 @@
     "gas": "2026-10-29",
     "prep": null
    },
-   "v": "v1335"
+   "v": "v1336"
   },
   "TERMS": {
    "ceiling": 250,
@@ -20812,7 +20838,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1335"
+   "v": "v1336"
   },
   "REWARD": {
    "stated": {
@@ -20830,7 +20856,7 @@
      }
     }
    },
-   "v": "v1335"
+   "v": "v1336"
   },
   "STOCK": {
    "today": "2026-10-30",
@@ -20838,9 +20864,9 @@
     "salt": {
      "shelf": 20.5,
      "free": 20.5,
-     "commit": 2.5,
+     "commit": 3,
      "light": "green",
-     "coverDays": 5.5,
+     "coverDays": 5.4,
      "transit": 0
     },
     "oil": {
@@ -20884,7 +20910,7 @@
      "transit": 0
     }
    },
-   "v": "v1335"
+   "v": "v1336"
   }
  }
 }
