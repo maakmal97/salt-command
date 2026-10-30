@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1338",
+  "d": "30 Oct 2026",
+  "t": "RICE ORDER S305 CUT TO 3 UNIT AND RM15, THEN PAID",
+  "n": [
+   "<b>TWO AMENDMENTS FOLDED ON s305.</b> A correction cut CH6-SET's rice order from 5 unit and RM35 to 3 unit and RM15, and a fulfilment then booked RM15 cash against it on 30 Oct 2026. The drafter's advance flag is answered by the payment: nothing is left owed on the order.",
+   "<b>NO SALT MOVED.</b> The order is rice, so the salt roll and its cost basis stand. Both amendments were decided by Counter Admin."
+  ]
+ },
+ {
   "v": "v1337",
   "d": "30 Oct 2026",
   "t": "TWO FULFILMENTS FOR CH6-SET, SALT AND RICE, NOTHING PAID",
