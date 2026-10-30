@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1333",
+  "d": "30 Oct 2026",
+  "t": "5 ROWS FOLDED, 30 OCT 2026",
+  "n": [
+   "<b>5 ROWS FOLDED FROM THE PHONE.</b> Fulfilment on s301: cash 90; Correction on s300: deliveredQty, deliveredOn, handover; Correction on s306: deliveredQty, deliveredOn, handover; Fulfilment on s307: cash 0; SELL CA3-KP 0.5 unit salt RM75 on 2026-10-30. The stated salt shelf stands at 23.5 unit, counted 28 Oct 2026, and this fold rolls it only for what physically moved.",
+   "<b>WRITTEN BY THE TOOL, NOT A MODEL.</b> No ANTHROPIC_API_KEY was set, so the model was never called. The figures are the dossier's own and the prose is tools/foldnotes.mjs, so every row here carries its terms, its party's history and the drafter's flags, and none of them carries a judgement on those flags. Each row note says as much on its own line, because a reader holding one row should not have to come here to learn it."
+  ]
+ },
+ {
   "v": "v1332",
   "d": "30 Oct 2026",
   "t": "RICE COLLECTED ON CREDIT, RM60 STILL OWED",
