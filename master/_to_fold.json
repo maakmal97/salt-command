@@ -1,0 +1,107 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-10-30T14:46:26.705Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "qty": 2.5,
+    "total": 235,
+    "cash": 0,
+    "date": "2026-10-29",
+    "customer": "CH6-SET",
+    "rids": [],
+    "booked_seq": 38
+   },
+   "reasoning": "Fulfilment against CH6-SET's order of 2.5 unit for RM 235 agreed 2026-10-29. RM 0 and 2.5 unit move on 2026-10-30, against RM 235 and 2.5 unit outstanding. Leaves RM 235 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [],
+   "amends": "s304",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-10-30T14:46:26.705Z",
+    "type": "AMEND",
+    "party": "CH6-SET",
+    "qty": 2.5,
+    "total": 0,
+    "status": "partial",
+    "raw": "Fulfilment against s304 for CH6-SET on 2026-10-30",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CH6-SET",
+     "product": "salt",
+     "rid": "s304",
+     "orderKey": "CH6-SET|2026-10-29|235",
+     "date": "2026-10-30",
+     "kind": "Fulfilment",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 2.5,
+     "total": 0,
+     "cash": 0,
+     "kg": 2.5
+    },
+    "makerRequest": "47a90dbbcc61a70f9be830a9a2dec30d3b74326e5d4338a2fb9ce31e1727b27f"
+   },
+   "decidedAt": "2026-10-30T14:46:51.646Z",
+   "decidedBy": "Counter Admin"
+  },
+  {
+   "id": "2026-10-30T14:46:26.706Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "qty": 5,
+    "total": 35,
+    "cash": 0,
+    "date": "2026-10-29",
+    "customer": "CH6-SET",
+    "product": "rice",
+    "rids": [],
+    "booked_seq": 39
+   },
+   "reasoning": "Fulfilment against CH6-SET's order of 5 unit for RM 35 agreed 2026-10-29. RM 0 and 3 unit move on 2026-10-30, against RM 35 and 5 unit outstanding. Leaves RM 35 and 2 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [],
+   "amends": "s305",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-10-30T14:46:26.706Z",
+    "type": "AMEND",
+    "party": "CH6-SET",
+    "qty": 3,
+    "total": 0,
+    "status": "partial",
+    "raw": "Fulfilment against s305 for CH6-SET on 2026-10-30",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CH6-SET",
+     "product": "rice",
+     "rid": "s305",
+     "orderKey": "CH6-SET|2026-10-29|35|rice",
+     "date": "2026-10-30",
+     "kind": "Fulfilment",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 3,
+     "total": 0,
+     "cash": 0,
+     "kg": 3
+    },
+    "makerRequest": "90eec7f246cafb997eadfa1b0bc2ad8846e770307334b1ca7ba99cefcedf4294"
+   },
+   "decidedAt": "2026-10-30T14:46:52.458Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
