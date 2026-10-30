@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1339",
+  "d": "30 Oct 2026",
+  "t": "S304 CORRECTED AND FULFILLED IN FULL",
+  "n": [
+   "<b>TWO AMENDMENTS FOLDED ON S304.</b> A correction set delivery to 5 and handover to delivered on CH6-SET's order of 2.5 units, goods RM235. A fulfilment then moved the 2.5 units and RM235 on 30 Oct 2026, settling the order. The drafter's advance flag no longer applies, as nothing is left owed.",
+   "<b>INVENTORY.</b> The fulfilment moved 2.5 units of salt out, so stock rolls down. The correction moved nothing. No lot landed and the cost basis is unchanged."
+  ]
+ },
+ {
   "v": "v1338",
   "d": "30 Oct 2026",
   "t": "RICE ORDER S305 CUT TO 3 UNIT AND RM15, THEN PAID",

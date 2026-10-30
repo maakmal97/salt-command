@@ -1,6 +1,6 @@
 {
- "v": "v1338",
- "stamped": "30 Oct 2026, 22:50 KL",
+ "v": "v1339",
+ "stamped": "30 Oct 2026, 22:52 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -9677,15 +9677,15 @@
     "customer": "CH6-SET",
     "qty": 2.5,
     "total": 235,
-    "cash": 0,
+    "cash": 235,
     "date": "2026-10-29",
     "deliveredQty": 2.5,
     "listRM": 235,
     "listQty": 2.5,
-    "note": "<b>CORRECTION ON s304, 29 OCT 2026: TRIP SET TO t1793248537009.</b> The pending sale of 2.5 units of salt to CH6-SET, goods RM235, had no trip and now has one. Nothing else changes: no cash, no stock, and the whole RM235 remains owed once it moves. Counter Admin approved it. The dossier gives no ladder floor or ask total for this order, so the rate cannot be set against them here. The party's salt median is RM106.67 a unit, within a range of 7 to 120, with RM270 outstanding and no units on credit. The drafter flagged that the rate is 15.2% below the party's typical RM110.83 a unit over 4 orders; a trip reference does not answer that. The cost is unchanged. <b>PENDING SALE OF 2.5 UNITS OF SALT TO CH6-SET, GOODS RM235, 29 OCT 2026.</b> Nothing was paid and nothing was delivered, so RM235 is owed once it moves. It was approved by Counter Admin. For 2.5 units the ladder gives a floor total of RM140 and an ask total of RM255, so the goods at RM235 sit above the floor and below the ask. The party's median rate is RM115, range RM100 to RM120; outstanding before was RM0, no units on credit against a cap of 1. The cost is RM56 a unit, the inventory's own. The drafter flagged a rate of RM94 a unit, 15.2% below the party's usual. The figures confirm it: RM94 is under the range floor of RM100, though above the desk floor of RM56 a unit. The whole RM235 remains outstanding, and 2.5 units are undelivered.",
+    "note": "<b>CORRECTION ON S304, 30 OCT 2026: DELIVERY SET TO 5, HANDOVER TO DELIVERED.</b> CH6-SET's order of 29 Oct, 2.5 units of salt, goods RM235, had neither field set. The row carries cost at the inventory's own rate. No cash and no stock move here: the row only changes what it says about itself. CH6-SET: 6 orders on the book, median RM106.67 a unit, range RM5 to RM120, RM235 outstanding before this, 2.5 units on credit. The drafter flagged a rate of RM94 a unit, 11.9% below the median, and an advance against the credit cap. The figures do not answer either flag; the dossier gives no cap. Outstanding: the RM235, settled by the fulfilment below. <b>CORRECTION ON s304, 29 OCT 2026: TRIP SET TO t1793248537009.</b> The pending sale of 2.5 units of salt to CH6-SET, goods RM235, had no trip and now has one. Nothing else changes: no cash, no stock, and the whole RM235 remains owed once it moves. Counter Admin approved it. The dossier gives no ladder floor or ask total for this order, so the rate cannot be set against them here. The party's salt median is RM106.67 a unit, within a range of 7 to 120, with RM270 outstanding and no units on credit. The drafter flagged that the rate is 15.2% below the party's typical RM110.83 a unit over 4 orders; a trip reference does not answer that. The cost is unchanged. <b>PENDING SALE OF 2.5 UNITS OF SALT TO CH6-SET, GOODS RM235, 29 OCT 2026.</b> Nothing was paid and nothing was delivered, so RM235 is owed once it moves. It was approved by Counter Admin. For 2.5 units the ladder gives a floor total of RM140 and an ask total of RM255, so the goods at RM235 sit above the floor and below the ask. The party's median rate is RM115, range RM100 to RM120; outstanding before was RM0, no units on credit against a cap of 1. The cost is RM56 a unit, the inventory's own. The drafter flagged a rate of RM94 a unit, 15.2% below the party's usual. The figures confirm it: RM94 is under the range floor of RM100, though above the desk floor of RM56 a unit. The whole RM235 remains outstanding, and 2.5 units are undelivered.",
     "rid": "s304",
     "trip": "t1793248537009",
-    "mod": "corrected on 2026-10-29: trip (unset) to t1793248537009",
+    "mod": "corrected on 2026-10-29: trip (unset) to t1793248537009, then corrected on 2026-10-30: delivery (unset) to 5; handover (unset) to delivered",
     "amend": [
      {
       "date": "2026-10-29",
@@ -9711,10 +9711,30 @@
       "kg": 2.5,
       "note": "<b>FULFILMENT 30 OCT 2026 ON s304: 2.5 UNITS OF SALT MOVED, RM0 PAID.</b> CH6-SET's order of 29 Oct, goods RM235 for 2.5 units, is delivered in full against RM235 and 2.5 units outstanding. The row's own cash stays at RM0, so the whole RM235 remains owed. CH6-SET: 6 orders on the book, median RM106.67 a unit, range RM7 to RM120, RM270 outstanding before this fold, no units on credit, no default. The drafter raised no flags, so there is nothing for the figures to answer. Outstanding: the RM235 payment.",
       "cost": 140
+     },
+     {
+      "date": "2026-10-30",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S304, 30 OCT 2026: DELIVERY SET TO 5, HANDOVER TO DELIVERED.</b> CH6-SET's order of 29 Oct, 2.5 units of salt, goods RM235, had neither field set. The row carries cost at the inventory's own rate. No cash and no stock move here: the row only changes what it says about itself. CH6-SET: 6 orders on the book, median RM106.67 a unit, range RM5 to RM120, RM235 outstanding before this, 2.5 units on credit. The drafter flagged a rate of RM94 a unit, 11.9% below the median, and an advance against the credit cap. The figures do not answer either flag; the dossier gives no cap. Outstanding: the RM235, settled by the fulfilment below.",
+      "was": {
+       "delivery": null,
+       "handover": null
+      }
+     },
+     {
+      "date": "2026-10-30",
+      "kind": "Fulfilment",
+      "cash": 235,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON S304, 30 OCT 2026: RM235 AND 2.5 UNITS MOVED, ORDER SETTLED.</b> CH6-SET's order of 29 Oct, 2.5 units of salt, goods RM235, was fully outstanding and now leaves RM0 and 0 unit owed. The draft carries cost at the inventory's own rate. CH6-SET: 6 orders on the book, median RM106.67 a unit, range RM5 to RM120, RM235 outstanding and 2.5 units on credit before this, nothing defaulted. The drafter flagged only that the order is settled in full, and the figures bear that out. The dossier gives no floor or ask for this size. Outstanding: nothing."
      }
     ],
     "deliveredOn": "2026-10-30",
-    "cost": 140
+    "cost": 140,
+    "delivery": 5,
+    "handover": "delivered"
    },
    {
     "customer": "CH6-SET",
@@ -10742,7 +10762,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-30T14:48:18.227Z",
+  "QUEUE_COMMITTED": "2026-10-30T14:49:28.398Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -12118,7 +12138,7 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.2833333333333333
+         "v": 0.2892561983471074
         }
        },
        "attrib": 1,
@@ -20636,10 +20656,10 @@
      "suggest": null
     }
    },
-   "v": "v1338"
+   "v": "v1339"
   },
   "OPEN": {
-   "at": "2026-10-30T14:50:03.571Z",
+   "at": "2026-10-30T14:52:03.851Z",
    "count": 9,
    "byKey": {
     "CR3-DAM|2026-10-30|70": {
@@ -20676,22 +20696,24 @@
      "age": 1,
      "exp": 112.5
     },
-    "CH6-SET|2026-10-29|235": {
+    "CH6-SET|2026-10-29|240": {
      "d": "2026-10-29",
      "p": "CH6-SET",
      "dir": "S",
      "q": 2.5,
      "t": 235,
-     "cash": 0,
+     "cash": 235,
      "mv": 2.5,
      "st": "dueMoney",
-     "oweRM": 235,
+     "oweRM": 5,
+     "dv": 5,
      "rid": "s304",
      "deliveredOn": "2026-10-30",
+     "handover": "delivered",
      "trip": "t1793248537009",
-     "key": "CH6-SET|2026-10-29|235",
+     "key": "CH6-SET|2026-10-29|240",
      "age": 0,
-     "exp": 235
+     "exp": 5
     },
     "CN3-WM|2026-10-05|130": {
      "d": "2026-10-05",
@@ -20802,7 +20824,7 @@
      "owedOut": 0,
      "coverDays": 4.8,
      "rate": 4.3,
-     "owedToYou": 625,
+     "owedToYou": 395,
      "promised": 0.5,
      "short": 0
     },
@@ -20870,7 +20892,7 @@
     "gas": "2026-10-29",
     "prep": null
    },
-   "v": "v1338"
+   "v": "v1339"
   },
   "TERMS": {
    "ceiling": 250,
@@ -20878,7 +20900,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1338"
+   "v": "v1339"
   },
   "REWARD": {
    "stated": {
@@ -20896,7 +20918,7 @@
      }
     }
    },
-   "v": "v1338"
+   "v": "v1339"
   },
   "STOCK": {
    "today": "2026-10-30",
@@ -20950,7 +20972,7 @@
      "transit": 0
     }
    },
-   "v": "v1338"
+   "v": "v1339"
   }
  }
 }
