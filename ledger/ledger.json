@@ -1,6 +1,6 @@
 {
- "v": "v1336",
- "stamped": "30 Oct 2026, 20:23 KL",
+ "v": "v1337",
+ "stamped": "30 Oct 2026, 22:47 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -94,7 +94,7 @@
    "rice": {
     "qty": 0,
     "costPerKg": null,
-    "stated": 90
+    "stated": 87
    },
    "gas": {
     "qty": 0,
@@ -107,7 +107,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 20.5,
+  "STATED_STOCK": 18,
   "COUNT_ON": {
    "salt": "2026-10-28",
    "oil": "2026-10-27",
@@ -9679,7 +9679,7 @@
     "total": 235,
     "cash": 0,
     "date": "2026-10-29",
-    "deliveredQty": 0,
+    "deliveredQty": 2.5,
     "listRM": 235,
     "listQty": 2.5,
     "note": "<b>CORRECTION ON s304, 29 OCT 2026: TRIP SET TO t1793248537009.</b> The pending sale of 2.5 units of salt to CH6-SET, goods RM235, had no trip and now has one. Nothing else changes: no cash, no stock, and the whole RM235 remains owed once it moves. Counter Admin approved it. The dossier gives no ladder floor or ask total for this order, so the rate cannot be set against them here. The party's salt median is RM106.67 a unit, within a range of 7 to 120, with RM270 outstanding and no units on credit. The drafter flagged that the rate is 15.2% below the party's typical RM110.83 a unit over 4 orders; a trip reference does not answer that. The cost is unchanged. <b>PENDING SALE OF 2.5 UNITS OF SALT TO CH6-SET, GOODS RM235, 29 OCT 2026.</b> Nothing was paid and nothing was delivered, so RM235 is owed once it moves. It was approved by Counter Admin. For 2.5 units the ladder gives a floor total of RM140 and an ask total of RM255, so the goods at RM235 sit above the floor and below the ask. The party's median rate is RM115, range RM100 to RM120; outstanding before was RM0, no units on credit against a cap of 1. The cost is RM56 a unit, the inventory's own. The drafter flagged a rate of RM94 a unit, 15.2% below the party's usual. The figures confirm it: RM94 is under the range floor of RM100, though above the desk floor of RM56 a unit. The whole RM235 remains outstanding, and 2.5 units are undelivered.",
@@ -9703,8 +9703,18 @@
       "was": {
        "trip": null
       }
+     },
+     {
+      "date": "2026-10-30",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 2.5,
+      "note": "<b>FULFILMENT 30 OCT 2026 ON s304: 2.5 UNITS OF SALT MOVED, RM0 PAID.</b> CH6-SET's order of 29 Oct, goods RM235 for 2.5 units, is delivered in full against RM235 and 2.5 units outstanding. The row's own cash stays at RM0, so the whole RM235 remains owed. CH6-SET: 6 orders on the book, median RM106.67 a unit, range RM7 to RM120, RM270 outstanding before this fold, no units on credit, no default. The drafter raised no flags, so there is nothing for the figures to answer. Outstanding: the RM235 payment.",
+      "cost": 140
      }
-    ]
+    ],
+    "deliveredOn": "2026-10-30",
+    "cost": 140
    },
    {
     "customer": "CH6-SET",
@@ -9713,7 +9723,7 @@
     "cash": 0,
     "product": "rice",
     "date": "2026-10-29",
-    "deliveredQty": 0,
+    "deliveredQty": 3,
     "note": "<b>CORRECTION ON s305, 29 OCT 2026: TRIP SET TO t1793248537009.</b> The pending sale of 5 units of rice to CH6-SET, goods RM35, had no trip and now has one. Nothing else changes: no cash, no stock, and the whole RM35 remains owed once it moves. Counter Admin approved it. The dossier gives no ladder floor or ask total for this order, so the goods cannot be set against them here. The party has no rice history; its salt median is RM106.67 a unit, with RM270 outstanding and no units on credit. The drafter flagged that there is no rice rate of theirs to compare with, and the figures cannot answer that. The cost is unchanged. <b>PENDING SALE OF 5 UNITS OF RICE TO CH6-SET, GOODS RM35, 29 OCT 2026.</b> Nothing was paid and nothing was delivered, so RM35 is owed once it moves. It was approved by Counter Admin. For 5 units the ladder gives a floor total of RM20 and an ask total of RM35, so the goods at RM35 sit above the floor and at the ask. The party has no rice history; its salt orders carry a median of RM115 and no outstanding balance, with no units on credit against a cap of 1. The cost is RM3.3 a unit, the inventory's own. The drafter flagged that there is no rice rate of theirs to compare with, and the figures cannot answer that. The whole RM35 remains outstanding.",
     "rid": "s305",
     "trip": "t1793248537009",
@@ -9735,8 +9745,17 @@
       "was": {
        "trip": null
       }
+     },
+     {
+      "date": "2026-10-30",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 3,
+      "note": "<b>FULFILMENT 30 OCT 2026 ON s305: 3 OF 5 UNITS OF RICE MOVED, RM0 PAID.</b> CH6-SET's rice order of 29 Oct, goods RM35 for 5 units, moves 3 units against RM35 and 5 units outstanding. That leaves 2 units still to move and the whole RM35 owed, as no cash was taken. CH6-SET: 6 orders on the book, median RM106.67 a unit, range RM7 to RM120, RM270 outstanding before this fold, no units on credit, no default. The drafter raised no flags. Outstanding: the last 2 units and the RM35 payment.",
+      "cost": 9.9
      }
-    ]
+    ],
+    "cost": 16.5
    },
    {
     "customer": "CZ5-TM",
@@ -10703,7 +10722,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-30T12:23:02.383Z",
+  "QUEUE_COMMITTED": "2026-10-30T14:46:26.706Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -10734,7 +10753,7 @@
     {
      "id": "cust:cadence:salt",
      "sev": "watch",
-     "title": "12 customers are past their own habit on salt"
+     "title": "11 customers are past their own habit on salt"
     },
     {
      "id": "cust:cadence:oil",
@@ -11474,16 +11493,31 @@
     "CH6-SET": {
      "salt": {
       "name": "occasional mid",
-      "orders": 4,
+      "orders": 5,
       "tenureDays": 101,
-      "sinceLastDays": 27,
-      "perMonth": 1.21,
-      "unitsPerMonth": 1.66,
-      "smallShare": 0.5,
+      "sinceLastDays": 1,
+      "perMonth": 1.51,
+      "unitsPerMonth": 2.41,
+      "smallShare": 0.4,
       "bigShare": 0,
       "frequent": false,
       "small": false,
       "bigger": false,
+      "loyal": false,
+      "rare": false
+     },
+     "rice": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 1,
+      "sinceLastDays": 1,
+      "perMonth": 1.01,
+      "unitsPerMonth": 5.07,
+      "smallShare": 0,
+      "bigShare": 1,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
       "loyal": false,
       "rare": false
      }
@@ -12070,9 +12104,9 @@
        "attrib": 1,
        "shrinkRate": 0.08940786291715609,
        "avgDel": {
-        "n": 237,
-        "kg": 598.81,
-        "mean": 2.5266
+        "n": 238,
+        "kg": 601.31,
+        "mean": 2.5265
        }
       },
       "policy": {
@@ -17962,9 +17996,9 @@
        "attrib": 1,
        "shrinkRate": 0.13,
        "avgDel": {
-        "n": 15,
-        "kg": 84,
-        "mean": 5.6
+        "n": 16,
+        "kg": 87,
+        "mean": 5.4375
        }
       },
       "policy": {
@@ -20582,10 +20616,10 @@
      "suggest": null
     }
    },
-   "v": "v1336"
+   "v": "v1337"
   },
   "OPEN": {
-   "at": "2026-10-30T12:23:45.126Z",
+   "at": "2026-10-30T14:47:41.821Z",
    "count": 10,
    "byKey": {
     "CR3-DAM|2026-10-30|70": {
@@ -20629,13 +20663,15 @@
      "q": 2.5,
      "t": 235,
      "cash": 0,
-     "mv": 0,
-     "st": "part",
+     "mv": 2.5,
+     "st": "dueMoney",
      "oweRM": 235,
-     "oweUnits": 2.5,
      "rid": "s304",
+     "deliveredOn": "2026-10-30",
      "trip": "t1793248537009",
-     "key": "CH6-SET|2026-10-29|235"
+     "key": "CH6-SET|2026-10-29|235",
+     "age": 0,
+     "exp": 235
     },
     "CH6-SET|2026-10-29|35|rice": {
      "d": "2026-10-29",
@@ -20644,14 +20680,16 @@
      "q": 5,
      "t": 35,
      "cash": 0,
-     "mv": 0,
+     "mv": 3,
      "st": "part",
      "oweRM": 35,
-     "oweUnits": 5,
+     "oweUnits": 2,
      "pr": "rice",
      "rid": "s305",
      "trip": "t1793248537009",
-     "key": "CH6-SET|2026-10-29|35|rice"
+     "key": "CH6-SET|2026-10-29|35|rice",
+     "age": 0,
+     "exp": 21
     },
     "CN3-WM|2026-10-05|130": {
      "d": "2026-10-05",
@@ -20757,13 +20795,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 20.5,
-     "free": 20.5,
+     "onHand": 18,
+     "free": 18,
      "owedOut": 0,
-     "coverDays": 5.4,
+     "coverDays": 4.8,
      "rate": 4.3,
-     "owedToYou": 390,
-     "promised": 3,
+     "owedToYou": 625,
+     "promised": 0.5,
      "short": 0
     },
     "oil": {
@@ -20790,13 +20828,13 @@
     },
     "rice": {
      "name": "Rice",
-     "onHand": 90,
-     "free": 90,
+     "onHand": 87,
+     "free": 87,
      "owedOut": 0,
-     "coverDays": 46.4,
+     "coverDays": 44.6,
      "rate": 2.29,
-     "owedToYou": 15,
-     "promised": 5,
+     "owedToYou": 36,
+     "promised": 2,
      "short": 0
     },
     "gas": {
@@ -20830,7 +20868,7 @@
     "gas": "2026-10-29",
     "prep": null
    },
-   "v": "v1336"
+   "v": "v1337"
   },
   "TERMS": {
    "ceiling": 250,
@@ -20838,7 +20876,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1336"
+   "v": "v1337"
   },
   "REWARD": {
    "stated": {
@@ -20856,17 +20894,17 @@
      }
     }
    },
-   "v": "v1336"
+   "v": "v1337"
   },
   "STOCK": {
    "today": "2026-10-30",
    "books": {
     "salt": {
-     "shelf": 20.5,
-     "free": 20.5,
-     "commit": 3,
+     "shelf": 18,
+     "free": 18,
+     "commit": 0.5,
      "light": "green",
-     "coverDays": 5.4,
+     "coverDays": 4.8,
      "transit": 0
     },
     "oil": {
@@ -20886,11 +20924,11 @@
      "transit": 0
     },
     "rice": {
-     "shelf": 90,
-     "free": 90,
-     "commit": 5,
+     "shelf": 87,
+     "free": 87,
+     "commit": 2,
      "light": "green",
-     "coverDays": 46.4,
+     "coverDays": 44.6,
      "transit": 0
     },
     "gas": {
@@ -20910,7 +20948,7 @@
      "transit": 0
     }
    },
-   "v": "v1336"
+   "v": "v1337"
   }
  }
 }

@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1337",
+  "d": "30 Oct 2026",
+  "t": "TWO FULFILMENTS FOR CH6-SET, SALT AND RICE, NOTHING PAID",
+  "n": [
+   "<b>TWO FULFILMENTS FOLDED:</b> CH6-SET's pending orders s304 (2.5 units of salt, RM235) and s305 (rice, RM35) moved on 30 Oct 2026, the salt in full and the rice in part, 3 of 5 units. No cash came in on either row, so RM270 stays owed on the two orders. The drafter raised no flags on either.",
+   "<b>INVENTORY:</b> salt stock falls by 2.5 units and rice by 3 units, per the moves list. No lot landed, so the cost basis stays at RM56 a unit. Rice leaves 2 units still to move on s305."
+  ]
+ },
+ {
   "v": "v1336",
   "d": "30 Oct 2026",
   "t": "PENDING SALT ORDER, NOTHING MOVED",

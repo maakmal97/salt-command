@@ -1,6 +1,6 @@
 {
-  "v": "v1336",
-  "derivedFrom": "3763c7e6d0e8be51",
+  "v": "v1337",
+  "derivedFrom": "5caa79c6e968be89",
   "tables": {
     "sales": {
       "rows": 308,
@@ -54,7 +54,7 @@
           ]
         },
         "cost": {
-          "present": 281,
+          "present": 283,
           "of": 308,
           "optional": true,
           "types": [
@@ -110,7 +110,7 @@
           ]
         },
         "deliveredOn": {
-          "present": 248,
+          "present": 249,
           "of": 308,
           "optional": true,
           "types": [
