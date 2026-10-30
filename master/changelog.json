@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1340",
+  "d": "30 Oct 2026",
+  "t": "DELIVERY FEE SETTLED ON S304",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED.</b> The RM5 delivery fee on CH6-SET's order s304 was paid on 30 Oct 2026, which settles the order in full. It was a cash-only amendment with no salt moved, so nothing was left outstanding on it.",
+   "<b>INVENTORY UNCHANGED.</b> Stock stays at 18 units and the cost basis at RM56 a unit. The 2.5 units had already left on 30 Oct under an earlier fulfilment."
+  ]
+ },
+ {
   "v": "v1339",
   "d": "30 Oct 2026",
   "t": "S304 CORRECTED AND FULFILLED IN FULL",
