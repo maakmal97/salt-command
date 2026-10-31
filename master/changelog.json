@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1342",
+  "d": "31 Oct 2026",
+  "t": "S303 SETTLED IN FULL BY QR PAYMENT",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED, S303 SETTLED.</b> CS6-BS-R paid RM150 on 31 Oct 2026 against order s303 (1 unit of salt, goods RM105 and RM45 delivery), by qr via tng on the statements site. It was preapproved by Counter Admin. Nothing is left outstanding on the order.",
+   "<b>NO STOCK MOVED.</b> The salt had already been delivered on 29 Oct, so this payment moves cash only. The inventory stays at 16 units and the cost basis is unchanged."
+  ]
+ },
+ {
   "v": "v1341",
   "d": "30 Oct 2026",
   "t": "TWO PAID SALT SALES TO CM4-TO-R, BOTH ABOVE THE ASK",
