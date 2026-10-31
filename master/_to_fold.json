@@ -1,0 +1,80 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-31T17:09:23.786Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s314",
+    "qty": 10,
+    "total": 60,
+    "cash": 90,
+    "date": "2026-10-31",
+    "product": "rice",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 10
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-11-01"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "delivered"
+     }
+    ],
+    "customer": "CI5-PER",
+    "rids": [],
+    "booked_seq": 69
+   },
+   "reasoning": "Correction against CI5-PER's order of 10 unit for RM 60 dated 2026-10-31 (s314). Sets deliveredQty from 0 to 10, deliveredOn from unset to 2026-11-01, handover from unset to delivered. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This row carries a trail of 7 steps. Setting the figure directly does not rewrite them, so the trail will no longer add up to it; the correction is recorded beside them saying so."
+   ],
+   "amends": "s314",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-31T17:09:23.786Z",
+    "type": "SELL",
+    "party": "CI5-PER",
+    "qty": 10,
+    "total": 0,
+    "status": "Handover",
+    "raw": "10 unit delivered to CI5-PER, order 20261031082613-s2jkva, on 2026-11-01",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CI5-PER",
+     "rid": null,
+     "orderKey": "CI5-PER|2026-10-31|90|rice",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-11-01",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 10,
+      "deliveredOn": "2026-11-01",
+      "handover": "delivered"
+     },
+     "note": "10 unit delivered for order 20261031082613-s2jkva."
+    },
+    "orderId": "20261031082613-s2jkva"
+   },
+   "decidedAt": "2026-10-31T17:09:26.541Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
