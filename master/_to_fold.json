@@ -1,0 +1,65 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-31T14:48:29.486Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CE5-SA",
+    "qty": 2,
+    "total": 215,
+    "cash": 0,
+    "date": "2026-10-31",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261031144735-zgwp1w, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+    "listRM": 215,
+    "listQty": 2,
+    "rids": [
+     "s317"
+    ],
+    "booked_seq": 59
+   },
+   "reasoning": "Sold 2 unit of salt to CE5-SA for RM 215, RM 107.5/unit. Costed at RM 56/unit from COGS off the latest purchase p046 landed 2026-10-28: RM 1400 quote plus RM 0 freight over 25 unit, so RM 103 on the goods at 47.9%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-10-31 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-31T14:48:29.486Z",
+    "type": "SELL",
+    "party": "CE5-SA",
+    "qty": 2,
+    "total": 215,
+    "status": "Pending",
+    "raw": "SELL CE5-SA 2 salt RM 215, nothing paid, nothing moved (order 20261031144735-zgwp1w)",
+    "orderKey": "CE5-SA|2026-10-31|215",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CE5-SA",
+     "newId": null,
+     "date": "2026-10-31",
+     "qty": 2,
+     "total": 215,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261031144735-zgwp1w, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261031144735-zgwp1w"
+   },
+   "decidedAt": "2026-10-31T14:48:33.052Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
