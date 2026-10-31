@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1354",
+  "d": "31 Oct 2026",
+  "t": "PAYMENT OF RM250 RECEIVED ON ORDER S317 FROM CE5-SA",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED.</b> CE5-SA paid RM250 on 31 Oct 2026 against order s317 (goods RM215 plus RM35 delivery), by transfer via tng on the statements site. The payment clears the money owed on the order in full. The 2 units are still to hand over.",
+   "<b>INVENTORY UNCHANGED.</b> No units moved with this row, so stock stays at 13.5 units and the cost basis is as it was."
+  ]
+ },
+ {
   "v": "v1353",
   "d": "31 Oct 2026",
   "t": "AN ORDER OF SEVERAL BOOKS NO LONGER DRAWN TWICE ON SALT ADMIN",
