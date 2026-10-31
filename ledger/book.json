@@ -619,7 +619,8 @@
     "CA3-KP",
     "CA4-P1",
     "CJ5-CHE",
-    "CA6-SET"
+    "CA6-SET",
+    "CA4-SJ"
   ],
   "associates": [
     "CS6-BS",
@@ -899,6 +900,11 @@
       3.21,
       101.73,
       "Setapak"
+    ],
+    "CA4-SJ": [
+      3.04,
+      101.58,
+      "Subang Jaya"
     ]
   },
   "TIER_OF": {
@@ -933,6 +939,9 @@
     },
     "CH6-SET": {
       "salt": -0.15
+    },
+    "CA4-SJ": {
+      "salt": 0.3
     }
   },
   "PEOPLE": {
@@ -1053,7 +1062,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-10-31T17:09:23.786Z",
+  "QUEUE_COMMITTED": "2026-10-31T17:26:19.579Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
