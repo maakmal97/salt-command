@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1344",
+  "d": "31 Oct 2026",
+  "t": "TWO PENDING ORDERS FROM A NEW PARTY",
+  "n": [
+   "<b>TWO PENDING SALES FOLDED.</b> Rice s314 (10 unit, RM60) and oil s315 (10 unit, RM130) were ordered on the statements site by CI5-PER, a party with no orders on the book. Both are at the desk's ask total and were preapproved by Counter Admin. Nothing was paid or handed over, so neither has a rate of the party's own to compare against.",
+   "<b>INVENTORY UNMOVED.</b> Both rows are pending, so they draw no stock and book no revenue until something moves. Stock stays at 13.5 unit and the stock cost at RM56 a unit. The promised figure of 0.5 is as the dossier stands."
+  ]
+ },
+ {
   "v": "v1343",
   "d": "31 Oct 2026",
   "t": "TWO PAID SALES TO CE4-CHE, SALT AND RICE",
