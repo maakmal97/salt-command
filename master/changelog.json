@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1352",
+  "d": "31 Oct 2026",
+  "t": "DELIVERY CHARGE ADDED TO A PENDING ORDER",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> Order s317 for CE5-SA, 2 units of salt at RM215, now carries a delivery charge of RM35, set after the order was accepted and preapproved by Counter Admin. It moves no cash and no stock, and the order is still pending.",
+   "<b>INVENTORY UNCHANGED.</b> Stock stays at 13.5 units and the cost basis at RM56 per unit. Nothing was handed over, so nothing left the shelf."
+  ]
+ },
+ {
   "v": "v1351",
   "d": "31 Oct 2026",
   "t": "RICE ORDER S314 PAID UP, UNITS STILL OWED",
