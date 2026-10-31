@@ -1,0 +1,57 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-31T15:06:34.802Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "qty": 10,
+    "total": 60,
+    "cash": 70,
+    "date": "2026-10-31",
+    "customer": "CI5-PER",
+    "product": "rice",
+    "rids": [],
+    "booked_seq": 63
+   },
+   "reasoning": "Fulfilment against CI5-PER's order of 10 unit for RM 60 with RM 30 delivery, RM 90 owed agreed 2026-10-31. RM 20 and 0 unit move on 2026-10-31, against RM 20 and 10 unit outstanding. Leaves RM 0 and 10 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [],
+   "amends": "s314",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-10-31T15:06:34.802Z",
+    "type": "AMEND",
+    "party": "CI5-PER",
+    "qty": 0,
+    "total": 20,
+    "status": "partial",
+    "raw": "Fulfilment against s314 for CI5-PER on 2026-10-31",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CI5-PER",
+     "product": "rice",
+     "rid": "s314",
+     "orderKey": "CI5-PER|2026-10-31|90|rice",
+     "date": "2026-10-31",
+     "kind": "Fulfilment",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "sameDay": true,
+     "note": null,
+     "qty": 0,
+     "total": 20,
+     "cash": 20,
+     "kg": 0
+    },
+    "makerRequest": "0dc8ac397b620be6e78c59690c073734f8e7a14bf664b15b0c48e09a82a3be0c"
+   },
+   "decidedAt": "2026-10-31T15:07:01.299Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
