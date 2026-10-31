@@ -1,6 +1,6 @@
 {
- "v": "v1356",
- "stamped": "01 Nov 2026, 00:01 KL",
+ "v": "v1357",
+ "stamped": "01 Nov 2026, 00:03 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -107,7 +107,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 13.5,
+  "STATED_STOCK": 12.5,
   "COUNT_ON": {
    "salt": "2026-10-28",
    "oil": "2026-10-27",
@@ -10181,8 +10181,8 @@
     "total": 120,
     "cash": 120,
     "date": "2026-10-31",
-    "deliveredQty": 0,
-    "note": "<b>CORRECTION TO s316, 31 OCT 2026: TRIP SET.</b> Salt order of 1 unit to CI5-PER, goods RM120. The trip field moves from unset to t1793443903933, decided by Counter Admin on the same day. It moves no cash and no stock. The goods total and the rate are unchanged by it, and the dossier gives no floor or ask for this correction, so none is restated. CI5-PER: 3 orders on the book, median rate RM13, range RM6 to RM120, nothing outstanding before, no units on credit. The drafter raised no flags, so there is nothing to answer. Outstanding: nothing further on this correction. <b>NEW PENDING SALE 31 OCT 2026: 1 UNIT OF SALT TO CI5-PER, GOODS RM120.</b> Ordered on the statements site, order 20261031082549-jda6ow, acknowledged, to collect. Nothing paid, nothing handed over, approved in advance by Counter Admin. The goods total of RM120 equals the ask total of RM120, above the floor total of RM60 and under the ceiling of RM170. At RM120 a unit it is at the ask of RM120 and above the floor of RM60. CI5-PER: 2 orders on the book, median rate RM13, range RM6 to RM13, RM190 outstanding, no units on credit against a cap of 1. The row carries cost of RM56, the inventory's own rate per unit, as the drafter set it off the latest purchase. The flag, no salt order of theirs to compare, is answered: there is none. Outstanding: the 1 unit and RM120.",
+    "deliveredQty": 1,
+    "note": "<b>CORRECTION ON S316, 01 NOV 2026: DELIVERY OF 1 UNIT RECORDED.</b> Order 20261031082549-jda6ow for 1 unit of salt to CI5-PER, goods RM120, unchanged and already paid on 2026-10-31. The correction sets deliveredQty from 0 to 1, deliveredOn from unset to 2026-11-01 and handover from unset to delivered, preapproved by Counter Admin. The goods total is unchanged, so its standing against the floor and ask for that size is as when booked. CI5-PER: 3 orders, median rate RM13, range RM6 to RM120, nothing outstanding before this row, no units on credit, nothing defaulted. The row's cost is unchanged and no cost is reset here. The drafter flagged that the 3-step trail will no longer add up to the figure set directly; the correction is recorded beside the trail saying so, and the figures do not otherwise answer it. Outstanding: nothing. <b>CORRECTION TO s316, 31 OCT 2026: TRIP SET.</b> Salt order of 1 unit to CI5-PER, goods RM120. The trip field moves from unset to t1793443903933, decided by Counter Admin on the same day. It moves no cash and no stock. The goods total and the rate are unchanged by it, and the dossier gives no floor or ask for this correction, so none is restated. CI5-PER: 3 orders on the book, median rate RM13, range RM6 to RM120, nothing outstanding before, no units on credit. The drafter raised no flags, so there is nothing to answer. Outstanding: nothing further on this correction. <b>NEW PENDING SALE 31 OCT 2026: 1 UNIT OF SALT TO CI5-PER, GOODS RM120.</b> Ordered on the statements site, order 20261031082549-jda6ow, acknowledged, to collect. Nothing paid, nothing handed over, approved in advance by Counter Admin. The goods total of RM120 equals the ask total of RM120, above the floor total of RM60 and under the ceiling of RM170. At RM120 a unit it is at the ask of RM120 and above the floor of RM60. CI5-PER: 2 orders on the book, median rate RM13, range RM6 to RM13, RM190 outstanding, no units on credit against a cap of 1. The row carries cost of RM56, the inventory's own rate per unit, as the drafter set it off the latest purchase. The flag, no salt order of theirs to compare, is answered: there is none. Outstanding: the 1 unit and RM120.",
     "listRM": 120,
     "listQty": 1,
     "rid": "s316",
@@ -10210,11 +10210,27 @@
       "was": {
        "trip": null
       }
+     },
+     {
+      "date": "2026-11-01",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 1,
+      "note": "<b>CORRECTION ON S316, 01 NOV 2026: DELIVERY OF 1 UNIT RECORDED.</b> Order 20261031082549-jda6ow for 1 unit of salt to CI5-PER, goods RM120, unchanged and already paid on 2026-10-31. The correction sets deliveredQty from 0 to 1, deliveredOn from unset to 2026-11-01 and handover from unset to delivered, preapproved by Counter Admin. The goods total is unchanged, so its standing against the floor and ask for that size is as when booked. CI5-PER: 3 orders, median rate RM13, range RM6 to RM120, nothing outstanding before this row, no units on credit, nothing defaulted. The row's cost is unchanged and no cost is reset here. The drafter flagged that the 3-step trail will no longer add up to the figure set directly; the correction is recorded beside the trail saying so, and the figures do not otherwise answer it. Outstanding: nothing.",
+      "was": {
+       "deliveredQty": 0,
+       "deliveredOn": null,
+       "handover": null
+      },
+      "cost": 56
      }
     ],
     "paidOn": "2026-10-31",
     "trip": "t1793443903933",
-    "mod": "corrected on 2026-10-31: trip (unset) to t1793443903933"
+    "mod": "corrected on 2026-10-31: trip (unset) to t1793443903933, then corrected on 2026-11-01: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-01; handover (unset) to delivered",
+    "deliveredOn": "2026-11-01",
+    "handover": "delivered",
+    "cost": 56
    },
    {
     "customer": "CE5-SA",
@@ -11061,7 +11077,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-31T15:50:07.208Z",
+  "QUEUE_COMMITTED": "2026-10-31T16:02:10.505Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -11112,7 +11128,7 @@
     {
      "id": "int:nocost",
      "sev": "watch",
-     "title": "6 priced sales carry no cost of their own"
+     "title": "5 priced sales carry no cost of their own"
     },
     {
      "id": "int:underfloor",
@@ -12484,15 +12500,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.28688524590163933
+         "v": 0.2926829268292683
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08940786291715609,
        "avgDel": {
-        "n": 241,
-        "kg": 605.81,
-        "mean": 2.5137
+        "n": 242,
+        "kg": 606.81,
+        "mean": 2.5075
        }
       },
       "policy": {
@@ -21002,11 +21018,11 @@
      "suggest": null
     }
    },
-   "v": "v1356"
+   "v": "v1357"
   },
   "OPEN": {
-   "at": "2026-10-31T16:01:59.645Z",
-   "count": 10,
+   "at": "2026-10-31T16:03:59.605Z",
+   "count": 9,
    "byKey": {
     "CI5-PER|2026-10-31|90|rice": {
      "d": "2026-10-31",
@@ -21024,21 +21040,6 @@
      "paidOn": "2026-10-31",
      "trip": "t1793443903933",
      "key": "CI5-PER|2026-10-31|90|rice"
-    },
-    "CI5-PER|2026-10-31|120": {
-     "d": "2026-10-31",
-     "p": "CI5-PER",
-     "dir": "S",
-     "q": 1,
-     "t": 120,
-     "cash": 120,
-     "mv": 0,
-     "st": "oweStock",
-     "oweUnits": 1,
-     "rid": "s316",
-     "paidOn": "2026-10-31",
-     "trip": "t1793443903933",
-     "key": "CI5-PER|2026-10-31|120"
     },
     "CE5-SA|2026-10-31|250": {
      "d": "2026-10-31",
@@ -21173,13 +21174,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 13.5,
+     "onHand": 12.5,
      "free": 10.5,
-     "owedOut": 3,
+     "owedOut": 2,
      "coverDays": 2.6,
      "rate": 4.23,
      "owedToYou": 240,
-     "promised": 3.5,
+     "promised": 2.5,
      "short": 0
     },
     "oil": {
@@ -21246,7 +21247,7 @@
     "gas": "2026-10-29",
     "prep": null
    },
-   "v": "v1356"
+   "v": "v1357"
   },
   "TERMS": {
    "ceiling": 250,
@@ -21254,7 +21255,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1356"
+   "v": "v1357"
   },
   "REWARD": {
    "stated": {
@@ -21272,15 +21273,15 @@
      }
     }
    },
-   "v": "v1356"
+   "v": "v1357"
   },
   "STOCK": {
    "today": "2026-11-01",
    "books": {
     "salt": {
-     "shelf": 13.5,
+     "shelf": 12.5,
      "free": 10.5,
-     "commit": 3.5,
+     "commit": 2.5,
      "light": "green",
      "coverDays": 2.6,
      "transit": 0
@@ -21326,7 +21327,7 @@
      "transit": 0
     }
    },
-   "v": "v1356"
+   "v": "v1357"
   }
  }
 }

@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1357",
+  "d": "01 Nov 2026",
+  "t": "ONE SALT UNIT DELIVERED TO CI5-PER, SHELF ROLLED BY 1",
+  "n": [
+   "<b>FOLDED:</b> one correction on s316, recording delivery of 1 unit of salt to CI5-PER on 01 Nov 2026. It sets deliveredQty, deliveredOn and handover, moves no cash, and was preapproved by Counter Admin.",
+   "<b>INVENTORY:</b> the shelf rolls by 1 unit out to CI5-PER, the difference the correction states. Nothing landed, so the cost basis stays at RM56 per unit. The drafter's flag on the order's 3-step trail is noted in the row."
+  ]
+ },
+ {
   "v": "v1356",
   "d": "01 Nov 2026",
   "t": "A DELIVERY OF OIL RECORDED AGAINST S315",
