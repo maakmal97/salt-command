@@ -1,0 +1,96 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-31T17:26:19.579Z",
+   "status": "approved",
+   "collection": "roster",
+   "row": {
+    "code": "CA4-SJ",
+    "kind": "customer",
+    "parent": null,
+    "note": null,
+    "geo": [
+     3.04,
+     101.58,
+     "Subang Jaya"
+    ],
+    "tiers": {
+     "salt": 0.3
+    },
+    "unit": "pct"
+   },
+   "reasoning": "Registers CA4-SJ as a customer. It starts them at Salt 0.3. It touches no figure: the fold appends the code to the roster. THE NAME AND THE PLACE ARE NOT HERE AND MUST NOT BE: the directory is typed at the laptop and never travels.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-31T17:26:19.579Z",
+    "type": "ADDID",
+    "party": "CA4-SJ",
+    "qty": null,
+    "total": null,
+    "status": "addid",
+    "raw": "Add CA4-SJ to the roster as customer",
+    "payload": {
+     "mode": "addid",
+     "code": "CA4-SJ",
+     "kind": "customer",
+     "parent": null,
+     "rev": null,
+     "note": null,
+     "geo": [
+      3.04,
+      101.58,
+      "Subang Jaya"
+     ],
+     "tiers": {
+      "salt": 0.3
+     },
+     "unit": "pct"
+    }
+   },
+   "decidedAt": "2026-10-31T17:27:02.077Z",
+   "decidedBy": "Counter Admin",
+   "vaultReceipt": {
+    "id": "2026-10-31T17:26:19.579Z",
+    "fingerprint": "a64b4f5cc011dfa8ffee76ea3ff245bf994d1746fe7bac5d86cfe58827932c0d",
+    "request_fingerprint": "911bbf9103591dcdef9ddf4a7c4f985f68c4165c112e7faba335251c83c00b26",
+    "revision": 9,
+    "operation": "add-id"
+   },
+   "vaultOutbox": {
+    "id": "2026-10-31T17:26:19.579Z",
+    "entry": {
+     "at": "2026-10-31T17:26:19.579Z",
+     "type": "ADDID",
+     "party": "CA4-SJ",
+     "qty": null,
+     "total": null,
+     "status": "addid",
+     "raw": "Add CA4-SJ to the roster as customer",
+     "payload": {
+      "mode": "addid",
+      "code": "CA4-SJ",
+      "kind": "customer",
+      "parent": null,
+      "rev": null,
+      "note": null,
+      "geo": [
+       3.04,
+       101.58,
+       "Subang Jaya"
+      ],
+      "tiers": {
+       "salt": 0.3
+      },
+      "unit": "pct"
+     }
+    },
+    "state": "complete",
+    "completed_at": "2026-10-31T17:26:25.184Z"
+   }
+  }
+ ]
+}
