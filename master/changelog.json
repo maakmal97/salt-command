@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1358",
+  "d": "01 Nov 2026",
+  "t": "RICE DELIVERY OF 10 UNITS RECORDED ON S314",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> The correction on s314 records 10 units of rice delivered to CI5-PER on 01 Nov 2026, setting deliveredQty to 10, deliveredOn to 2026-11-01 and handover to delivered. It was preapproved by Counter Admin. The drafter flagged that the row's 7-step trail will no longer add up to the figure set directly, and the correction is recorded beside it saying so.",
+   "<b>INVENTORY.</b> The shelf rolls out by 10 units of rice to CI5-PER. Salt is untouched: stock stays at 12.5 units, no lot landed, and the cost basis of RM56 does not move."
+  ]
+ },
+ {
   "v": "v1357",
   "d": "01 Nov 2026",
   "t": "ONE SALT UNIT DELIVERED TO CI5-PER, SHELF ROLLED BY 1",
