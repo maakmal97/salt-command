@@ -1,0 +1,126 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-10-31T08:30:34.657Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CI5-PER",
+    "qty": 10,
+    "total": 60,
+    "cash": 0,
+    "product": "rice",
+    "date": "2026-10-31",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261031082613-s2jkva, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+    "rids": [
+     "s314"
+    ],
+    "booked_seq": 50
+   },
+   "reasoning": "Sold 10 unit of rice to CI5-PER for RM 60, RM 6/unit. Costed at RM 3.3/unit from COGS off the latest purchase p045 landed 2026-10-25: RM 320 quote plus RM 10 freight over 100 unit, so RM 27 on the goods at 45%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-10-31 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CI5-PER has no committed rice order on the book, so there is no rate of theirs to compare this against."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-31T08:30:34.657Z",
+    "type": "SELL",
+    "party": "CI5-PER",
+    "qty": 10,
+    "total": 60,
+    "status": "Pending",
+    "raw": "SELL CI5-PER 10 rice RM 60, nothing paid, nothing moved (order 20261031082613-s2jkva)",
+    "orderKey": "CI5-PER|2026-10-31|60|rice",
+    "payload": {
+     "mode": "new",
+     "product": "rice",
+     "direction": "SELL",
+     "party": "CI5-PER",
+     "newId": null,
+     "date": "2026-10-31",
+     "qty": 10,
+     "total": 60,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261031082613-s2jkva, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261031082613-s2jkva"
+   },
+   "decidedAt": "2026-10-31T08:30:39.917Z",
+   "decidedBy": "preapproved by Counter Admin"
+  },
+  {
+   "id": "2026-10-31T08:30:51.623Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CI5-PER",
+    "qty": 10,
+    "total": 130,
+    "cash": 0,
+    "product": "oil",
+    "date": "2026-10-31",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261031082606-qxypyg, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+    "rids": [
+     "s315"
+    ],
+    "booked_seq": 51
+   },
+   "reasoning": "Sold 10 unit of oil to CI5-PER for RM 130, RM 13/unit. Costed at RM 8.16/unit from COGS off the latest purchase p047 landed 2026-10-28: RM 380 quote plus RM 28 freight over 50 unit, so RM 48.4 on the goods at 37.2%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-10-31 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CI5-PER has no committed oil order on the book, so there is no rate of theirs to compare this against."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-31T08:30:51.623Z",
+    "type": "SELL",
+    "party": "CI5-PER",
+    "qty": 10,
+    "total": 130,
+    "status": "Pending",
+    "raw": "SELL CI5-PER 10 oil RM 130, nothing paid, nothing moved (order 20261031082606-qxypyg)",
+    "orderKey": "CI5-PER|2026-10-31|130|oil",
+    "payload": {
+     "mode": "new",
+     "product": "oil",
+     "direction": "SELL",
+     "party": "CI5-PER",
+     "newId": null,
+     "date": "2026-10-31",
+     "qty": 10,
+     "total": 130,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261031082606-qxypyg, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261031082606-qxypyg"
+   },
+   "decidedAt": "2026-10-31T08:30:55.421Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
