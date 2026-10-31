@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1346",
+  "d": "31 Oct 2026",
+  "t": "THREE PAYMENTS SETTLE CI5-PER ORDERS",
+  "n": [
+   "<b>THREE FULFILMENTS FOLDED.</b> Each is a payment on a pending CI5-PER order booked earlier today: s315 oil RM130, s316 salt RM120, s314 rice RM60, RM310 in all. All were preapproved by Counter Admin, none carried a drafter flag, and each moves cash only. Order s316 is the only salt line.",
+   "<b>INVENTORY UNCHANGED.</b> No unit moved in any of the three, so salt stock stays at 13.5 units and the cost basis is untouched. The 1 unit of salt in s316 is still to be handed over."
+  ]
+ },
+ {
   "v": "v1345",
   "d": "31 Oct 2026",
   "t": "ONE PENDING SALT SALE, NOTHING MOVED",
