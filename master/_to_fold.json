@@ -1,0 +1,192 @@
+{
+ "ok": true,
+ "count": 3,
+ "approved": [
+  {
+   "id": "2026-10-31T10:51:43.933Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s314",
+    "qty": 10,
+    "total": 60,
+    "cash": 60,
+    "date": "2026-10-31",
+    "product": "rice",
+    "changes": [
+     {
+      "field": "trip",
+      "from": null,
+      "to": "t1793443903933"
+     }
+    ],
+    "customer": "CI5-PER",
+    "rids": [],
+    "booked_seq": 56
+   },
+   "reasoning": "Correction against CI5-PER's order of 10 unit for RM 60 dated 2026-10-31 (s314). Sets trip from unset to t1793443903933. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [],
+   "amends": "s314",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-31T10:51:43.933Z",
+    "type": "AMEND",
+    "party": "CI5-PER",
+    "qty": 0,
+    "total": 0,
+    "status": "corrected",
+    "raw": "Correction against s314 for CI5-PER on 2026-10-31",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CI5-PER",
+     "product": "rice",
+     "rid": "s314",
+     "orderKey": "CI5-PER|2026-10-31|60|rice",
+     "date": "2026-10-31",
+     "kind": "Correction",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "sameDay": true,
+     "note": null,
+     "fields": {
+      "trip": "t1793443903933"
+     },
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    },
+    "makerRequest": "8b588b22f7c24a7ed5b000a0b62bc1958822c9941c57dd3093ab0b7f9b3bcc3c"
+   },
+   "decidedAt": "2026-10-31T10:51:57.225Z",
+   "decidedBy": "Counter Admin"
+  },
+  {
+   "id": "2026-10-31T10:51:43.934Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s315",
+    "qty": 10,
+    "total": 130,
+    "cash": 130,
+    "date": "2026-10-31",
+    "product": "oil",
+    "changes": [
+     {
+      "field": "trip",
+      "from": null,
+      "to": "t1793443903933"
+     }
+    ],
+    "customer": "CI5-PER",
+    "rids": [],
+    "booked_seq": 57
+   },
+   "reasoning": "Correction against CI5-PER's order of 10 unit for RM 130 dated 2026-10-31 (s315). Sets trip from unset to t1793443903933. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [],
+   "amends": "s315",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-31T10:51:43.934Z",
+    "type": "AMEND",
+    "party": "CI5-PER",
+    "qty": 0,
+    "total": 0,
+    "status": "corrected",
+    "raw": "Correction against s315 for CI5-PER on 2026-10-31",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CI5-PER",
+     "product": "oil",
+     "rid": "s315",
+     "orderKey": "CI5-PER|2026-10-31|130|oil",
+     "date": "2026-10-31",
+     "kind": "Correction",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "sameDay": true,
+     "note": null,
+     "fields": {
+      "trip": "t1793443903933"
+     },
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    },
+    "makerRequest": "8b588b22f7c24a7ed5b000a0b62bc1958822c9941c57dd3093ab0b7f9b3bcc3c"
+   },
+   "decidedAt": "2026-10-31T10:51:57.911Z",
+   "decidedBy": "Counter Admin"
+  },
+  {
+   "id": "2026-10-31T10:51:43.935Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s316",
+    "qty": 1,
+    "total": 120,
+    "cash": 120,
+    "date": "2026-10-31",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "trip",
+      "from": null,
+      "to": "t1793443903933"
+     }
+    ],
+    "customer": "CI5-PER",
+    "rids": [],
+    "booked_seq": 58
+   },
+   "reasoning": "Correction against CI5-PER's order of 1 unit for RM 120 dated 2026-10-31 (s316). Sets trip from unset to t1793443903933. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [],
+   "amends": "s316",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-31T10:51:43.935Z",
+    "type": "AMEND",
+    "party": "CI5-PER",
+    "qty": 0,
+    "total": 0,
+    "status": "corrected",
+    "raw": "Correction against s316 for CI5-PER on 2026-10-31",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CI5-PER",
+     "product": "salt",
+     "rid": "s316",
+     "orderKey": "CI5-PER|2026-10-31|120",
+     "date": "2026-10-31",
+     "kind": "Correction",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "sameDay": true,
+     "note": null,
+     "fields": {
+      "trip": "t1793443903933"
+     },
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    },
+    "makerRequest": "8b588b22f7c24a7ed5b000a0b62bc1958822c9941c57dd3093ab0b7f9b3bcc3c"
+   },
+   "decidedAt": "2026-10-31T10:51:58.360Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
