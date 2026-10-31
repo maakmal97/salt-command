@@ -26,8 +26,8 @@
  {
   "name": "the Counter's review drops the Desk's orders of several books",
   "file": "stmt/maker.js",
-  "find": "const trips = Array.isArray(drafts.trips) ? drafts.trips : [],",
-  "replace": "const trips = [],"
+  "find": "const trips = (Array.isArray(drafts.trips) ? drafts.trips : []).filter(",
+  "replace": "const trips = [].filter("
  },
  {
   "name": "the split names no line ready, so it reads only goods out",

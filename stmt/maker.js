@@ -742,9 +742,12 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
       /* plan 1: a queue key the Desk could not read is named, never read as an empty queue (src/worker.js makerQueueReview) */
       const unreadable = Array.isArray(queue.unreadable) ? queue.unreadable.filter((k) => typeof k === "string" && /^q:[A-Za-z0-9._-]{1,80}$/.test(k)).slice(0, 20) : [];
       /* plan 3: the orders of several books the Desk read with the drafts, or that it could not read them */
-      const trips = Array.isArray(drafts.trips) ? drafts.trips : [], sameDay = Array.isArray(drafts.sameDay) ? drafts.sameDay : [];
       /* 17 Oct 2026: every live row of the book is an order here; a row a live site order holds is drawn as that order, by its key */
       const held = new Set(orders.filter((o) => !o.test && !["declined", "cancelled"].includes(o.status) && typeof o.ledgerKey === "string").map((o) => o.ledgerKey));
+      /* 31 Oct 2026: a trip or a buyer's day whose every line a live site order holds is those orders, not a card of its own (CI5-PER's three
+         orders stood in Out or paid twice, once each and once as the trip, the trip at RM 0) */
+      const heldAll = (c) => Array.isArray(c.lines) && c.lines.length > 0 && c.lines.every((l) => l && held.has(l.key));
+      const trips = (Array.isArray(drafts.trips) ? drafts.trips : []).filter((c) => !heldAll(c)), sameDay = (Array.isArray(drafts.sameDay) ? drafts.sameDay : []).filter((c) => !heldAll(c));
       const rows = Array.isArray(drafts.rows) ? drafts.rows.filter((r) => r && !held.has(r.key)) : [];
       /* 20 Oct 2026 (his answers): a placed order's minutes waited in Counter hours, measured at this read, and the Desk's road factor,
          so Salt Admin says the distance the fee is measured on; the points stay in his browser */

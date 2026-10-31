@@ -109,6 +109,19 @@ export async function run({ ok, pageWork }) {
   ok(rv.status === 200 && !got.includes("fs1") && got.includes("fs2") && got.includes("fa1") && (rv.j.refunds || {})["CQ9-ZED|2026-10-14|110"] === 30,
     "the review read drops the row a live site order holds and keeps one whose site order ended: " + J({ status: rv.status, error: rv.j.error, fs: got.filter((x) => /^f/.test(x)) }));
 
+  /* 31 Oct 2026: a trip whose every line live site orders hold is those orders, never a card of its own beside them (CI5-PER's three orders stood in
+     Out or paid twice, the trip at RM 0); a trip with one line unheld stays. The orders are put back after, so the checks below read as before. */
+  const tripT = (r0.trips || []).find((t) => t.trip === T), tk = ((tripT && tripT.lines) || []).map((l) => l.key);
+  const tripKeys = [];
+  for (const [i, k] of tk.entries()) { const oid = "2026" + "1014" + "01000" + i, key = "order:u-flow-t" + i + ":" + oid + "-flowt" + i; tripKeys.push(key);
+    await f.env.STMT.put(key, J({ id: oid + "-flowt" + i, u: "u-flow-t" + i, status: "acknowledged", ledgerKey: k, qty: 1, total: 110, product: "salt", at: D + "T01:00:00.000Z" })); }
+  const heldAll = await f.call("/all/maker/review"), heldTrips = (heldAll.j.trips || []).map((t) => t.trip);
+  await f.env.STMT.delete(tripKeys[tripKeys.length - 1]);
+  const heldPart = await f.call("/all/maker/review"), partTrips = (heldPart.j.trips || []).map((t) => t.trip);
+  for (const key of tripKeys) await f.env.STMT.delete(key);
+  ok(tk.length > 1 && heldAll.status === 200 && !heldTrips.includes(T) && partTrips.includes(T),
+    "the review read drops a trip every line of which a live site order holds, and keeps it while one line is unheld: " + J({ tk, heldTrips, partTrips }));
+
   const pay = await f.call("/all/maker/inputs/ledger-amend", { at: "2026-10-16T02:00:01.000Z", rid: "fa1", kind: "Fulfilment", date: "2026-10-16", cash: 50, movedUnits: 0 });
   const fa = ((await f.deskGet("/_internal/maker/drafts")).rows || []).find((r) => r.rid === "fa1") || {};
   ok(pay.status === 200 && fa.paid === 50 && fa.owed === 60 && fa.waiting === 1 && fa.stage === "confirmed",

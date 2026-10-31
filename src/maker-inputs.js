@@ -448,7 +448,7 @@ const standing = (rows, held) => rows.map((row) => {
 });
 const tripLine = ({ row, waiting }) => {
   const f = rowFigures(row);
-  return { rid: row.rid, product: row.product || "salt", qty: f.qty, total: f.total, delivery: f.delivery, paid: f.paid, owed: f.owed,
+  return { rid: row.rid, key: POSITION_ENGINE.ovKey(row), product: row.product || "salt", qty: f.qty, total: f.total, delivery: f.delivery, paid: f.paid, owed: f.owed,
     handed: f.handed, left: +Math.max(0, f.qty - f.handed).toFixed(3), waiting,
     open: POSITION_ENGINE.openable(POSITION_ENGINE.ledgerRow(row, "S", "salt")) };
 };

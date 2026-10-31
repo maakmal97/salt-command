@@ -11260,7 +11260,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1352","d":"31 Oct 2026","t":"DELIVERY CHARGE ADDED TO A PENDING ORDER","n":["<b>ONE CORRECTION FOLDED.</b> Order s317 for CE5-SA, 2 units of salt at RM215, now carries a delivery charge of RM35, set after the order was accepted and preapproved by Counter Admin. It moves no cash and no stock, and the order is still pending.","<b>INVENTORY UNCHANGED.</b> Stock stays at 13.5 units and the cost basis at RM56 per unit. Nothing was handed over, so nothing left the shelf."]}];
+const evolution=[{"v":"v1353","d":"31 Oct 2026","t":"AN ORDER OF SEVERAL BOOKS NO LONGER DRAWN TWICE ON SALT ADMIN","n":["<b>ONE CARD, NOT TWO.</b> Salt Admin's Orders drew CI5-PER's three paid orders of 31 Oct 2026 (rice, oil and salt) in Out or paid once each, and again as one order of several books at RM 0. The read now drops a trip or a buyer's day whose every line a live site order holds, by the same key that already hid a single row. A trip with any line not held stays.","<b>NO FIGURE MOVED.</b> Nothing on the book, the shelf or any price changed. Each trip line now carries its key. Proved by a check in the admin-flow section that goes red when the filter is removed."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11408,7 +11408,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='31 Oct 2026, 23:39 KL';
+const LAST_UPDATED='31 Oct 2026, 23:47 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
