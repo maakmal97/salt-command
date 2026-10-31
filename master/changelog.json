@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1348",
+  "d": "31 Oct 2026",
+  "t": "PENDING SALE OF 2 UNITS, NO STOCK DRAWN",
+  "n": [
+   "<b>ONE PENDING SALE FOLDED.</b> Salt order of 2 units to CE5-SA, goods RM215, placed on the statements site and approved in advance by Counter Admin. Nothing was paid and nothing handed over, so the row is pending. It books no revenue and draws no stock. The drafter raised no flags. The cost stays at the drafter's COGS of RM56 per unit.",
+   "<b>INVENTORY UNCHANGED.</b> Stock stays at 13.5 units, with 21 owed out and 0.5 promised. The stock cost stays at RM56 per unit, since no lot landed."
+  ]
+ },
+ {
   "v": "v1347",
   "d": "31 Oct 2026",
   "t": "THREE TRIP TAGS ON CI5-PER ORDERS",
