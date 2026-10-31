@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1355",
+  "d": "31 Oct 2026",
+  "t": "OIL FULFILMENT SETTLES ORDER S315 IN FULL",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED.</b> Ten units of oil were handed over to CI5-PER against order s315, goods RM130, already paid in cash on 31 Oct 2026. The fulfilment settles the order in full, with nothing left outstanding on it.",
+   "<b>INVENTORY.</b> The oil stock moves down by 10 units on 31 Oct 2026. Salt stock stays at 13.5 units, and no lot landed, so the cost basis is unchanged."
+  ]
+ },
+ {
   "v": "v1354",
   "d": "31 Oct 2026",
   "t": "PAYMENT OF RM250 RECEIVED ON ORDER S317 FROM CE5-SA",
