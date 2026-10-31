@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1356",
+  "d": "01 Nov 2026",
+  "t": "A DELIVERY OF OIL RECORDED AGAINST S315",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> The batch holds a single correction on s315, an oil order of 10 units to CI5-PER, goods RM130. It sets deliveredQty to 10, deliveredOn to 2026-10-31 and handover to delivered. Nothing was unusual, and the drafter raised no flags.",
+   "<b>INVENTORY UNCHANGED.</b> The correction moves no cash and no stock, so the salt stock stays at 13.5 units and the cost basis at RM56 per unit. No lot landed."
+  ]
+ },
+ {
   "v": "v1355",
   "d": "31 Oct 2026",
   "t": "OIL FULFILMENT SETTLES ORDER S315 IN FULL",
