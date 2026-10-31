@@ -1,6 +1,6 @@
 {
- "v": "v1349",
- "stamped": "31 Oct 2026, 22:50 KL",
+ "v": "v1350",
+ "stamped": "31 Oct 2026, 23:06 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -10047,7 +10047,7 @@
     "product": "rice",
     "date": "2026-10-31",
     "deliveredQty": 0,
-    "note": "<b>CORRECTION TO s314, 31 OCT 2026: DELIVERY SET.</b> The rice order of 10 units to CI5-PER, goods RM60, now carries qty 10, total 60 and delivery 10, where delivery was unset before. Counter Admin preapproved it. It moves no cash and no stock, and the fold applies the patch. CI5-PER: 3 orders, median rate RM13, range RM6 to RM120, nothing outstanding before, no units on credit. Floor and ask are not set out for rice in the dossier, so no comparison is made. No cost is carried or changed. The drafter raised no flags, so there is nothing to answer. Outstanding: nothing. <b>CORRECTION TO s314, 31 OCT 2026: TRIP SET.</b> Rice order of 10 units to CI5-PER, goods RM60. The trip field moves from unset to t1793443903933, decided by Counter Admin on the same day. It moves no cash and no stock. The rice price and the rice cost are not touched, and the dossier gives no rice floor or ask, so no comparison is made. CI5-PER: 3 orders on the book, median rate RM13, range RM6 to RM120, nothing outstanding before, no units on credit. The drafter raised no flags, so there is nothing to answer. Outstanding: nothing further on this correction. <b>NEW PENDING SALE 31 OCT 2026: 10 UNIT OF RICE TO CI5-PER, GOODS RM60.</b> Ordered on the statements site, order 20261031082613-s2jkva, acknowledged, to collect. Nothing paid, nothing handed over, approved in advance by Counter Admin. The goods total of RM60 equals the ask total of RM60, above the floor total of RM35 and under the ceiling of RM99. At RM6 a unit it is at the ask of RM6 and above the floor of RM3.5. CI5-PER: no orders on the book, so no median or range, nothing outstanding, no units on credit against a cap of 1. The row carries cost of RM33, RM3.3 a unit as the drafter set it off the latest purchase. The flag, no rate of theirs to compare, is answered: there is none. Outstanding: all 10 unit and RM60.",
+    "note": "<b>CORRECTION TO s314, 31 OCT 2026: DELIVERY SET TO RM30.</b> The rice order of 10 units to CI5-PER, goods RM60, keeps qty 10 and total 60. Delivery moves from RM10 to RM30. Preapproved by Counter Admin, order 20261031082613-s2jkva. The row moves no cash and no stock, and it sets no cost of its own. No salt floor or ask applies, as this is rice. CI5-PER: 3 orders on the book, median rate RM13, range RM6 to RM120, nothing outstanding before, no units on credit. The drafter raised no flags, so there is nothing to answer. Outstanding: nothing on the goods. The row records cash of RM70 against delivery of RM10, so the extra RM20 of delivery is not yet shown as paid. <b>CORRECTION TO s314, 31 OCT 2026: DELIVERY SET.</b> The rice order of 10 units to CI5-PER, goods RM60, now carries qty 10, total 60 and delivery 10, where delivery was unset before. Counter Admin preapproved it. It moves no cash and no stock, and the fold applies the patch. CI5-PER: 3 orders, median rate RM13, range RM6 to RM120, nothing outstanding before, no units on credit. Floor and ask are not set out for rice in the dossier, so no comparison is made. No cost is carried or changed. The drafter raised no flags, so there is nothing to answer. Outstanding: nothing. <b>CORRECTION TO s314, 31 OCT 2026: TRIP SET.</b> Rice order of 10 units to CI5-PER, goods RM60. The trip field moves from unset to t1793443903933, decided by Counter Admin on the same day. It moves no cash and no stock. The rice price and the rice cost are not touched, and the dossier gives no rice floor or ask, so no comparison is made. CI5-PER: 3 orders on the book, median rate RM13, range RM6 to RM120, nothing outstanding before, no units on credit. The drafter raised no flags, so there is nothing to answer. Outstanding: nothing further on this correction. <b>NEW PENDING SALE 31 OCT 2026: 10 UNIT OF RICE TO CI5-PER, GOODS RM60.</b> Ordered on the statements site, order 20261031082613-s2jkva, acknowledged, to collect. Nothing paid, nothing handed over, approved in advance by Counter Admin. The goods total of RM60 equals the ask total of RM60, above the floor total of RM35 and under the ceiling of RM99. At RM6 a unit it is at the ask of RM6 and above the floor of RM3.5. CI5-PER: no orders on the book, so no median or range, nothing outstanding, no units on credit against a cap of 1. The row carries cost of RM33, RM3.3 a unit as the drafter set it off the latest purchase. The flag, no rate of theirs to compare, is answered: there is none. Outstanding: all 10 unit and RM60.",
     "rid": "s314",
     "amend": [
      {
@@ -10090,12 +10090,22 @@
       "cash": 10,
       "kg": 0,
       "note": "<b>FULFILMENT ON s314, 31 OCT 2026: RM10 CASH RECEIVED.</b> Cash paid at the counter against the rice order of 10 units to CI5-PER, goods RM60. Counter Admin preapproved it. The order stood at RM0 outstanding, so this is RM10 more than owed. The drafter flagged exactly that, and the figures confirm it: the fold raises a refund payable of RM10, open until returned. No stock moves. CI5-PER: 3 orders, median rate RM13, range RM6 to RM120, nothing outstanding before, no units on credit. Outstanding: the RM10 refund to CI5-PER."
+     },
+     {
+      "date": "2026-10-31",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION TO s314, 31 OCT 2026: DELIVERY SET TO RM30.</b> The rice order of 10 units to CI5-PER, goods RM60, keeps qty 10 and total 60. Delivery moves from RM10 to RM30. Preapproved by Counter Admin, order 20261031082613-s2jkva. The row moves no cash and no stock, and it sets no cost of its own. No salt floor or ask applies, as this is rice. CI5-PER: 3 orders on the book, median rate RM13, range RM6 to RM120, nothing outstanding before, no units on credit. The drafter raised no flags, so there is nothing to answer. Outstanding: nothing on the goods. The row records cash of RM70 against delivery of RM10, so the extra RM20 of delivery is not yet shown as paid.",
+      "was": {
+       "delivery": 10
+      }
      }
     ],
     "paidOn": "2026-10-31",
     "trip": "t1793443903933",
-    "mod": "corrected on 2026-10-31: trip (unset) to t1793443903933, then corrected on 2026-10-31: delivery (unset) to 10",
-    "delivery": 10
+    "mod": "corrected on 2026-10-31: trip (unset) to t1793443903933, then corrected on 2026-10-31: delivery (unset) to 10, then corrected on 2026-10-31: delivery 10 to 30",
+    "delivery": 30
    },
    {
     "customer": "CI5-PER",
@@ -10994,7 +11004,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-31T14:50:05.969Z",
+  "QUEUE_COMMITTED": "2026-10-31T15:05:36.387Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -20935,13 +20945,13 @@
      "suggest": null
     }
    },
-   "v": "v1349"
+   "v": "v1350"
   },
   "OPEN": {
-   "at": "2026-10-31T14:50:50.764Z",
+   "at": "2026-10-31T15:06:27.813Z",
    "count": 11,
    "byKey": {
-    "CI5-PER|2026-10-31|70|rice": {
+    "CI5-PER|2026-10-31|90|rice": {
      "d": "2026-10-31",
      "p": "CI5-PER",
      "dir": "S",
@@ -20949,14 +20959,15 @@
      "t": 60,
      "cash": 70,
      "mv": 0,
-     "st": "oweStock",
+     "st": "part",
+     "oweRM": 20,
      "oweUnits": 10,
-     "dv": 10,
+     "dv": 30,
      "pr": "rice",
      "rid": "s314",
      "paidOn": "2026-10-31",
      "trip": "t1793443903933",
-     "key": "CI5-PER|2026-10-31|70|rice"
+     "key": "CI5-PER|2026-10-31|90|rice"
     },
     "CI5-PER|2026-10-31|130|oil": {
      "d": "2026-10-31",
@@ -21155,9 +21166,9 @@
     "rice": {
      "name": "Rice",
      "onHand": 77,
-     "free": 67,
-     "owedOut": 10,
-     "coverDays": 20.7,
+     "free": 69.22,
+     "owedOut": 7.78,
+     "coverDays": 21.6,
      "rate": 3.16,
      "owedToYou": 15,
      "promised": 10,
@@ -21194,7 +21205,7 @@
     "gas": "2026-10-29",
     "prep": null
    },
-   "v": "v1349"
+   "v": "v1350"
   },
   "TERMS": {
    "ceiling": 250,
@@ -21202,7 +21213,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1349"
+   "v": "v1350"
   },
   "REWARD": {
    "stated": {
@@ -21220,7 +21231,7 @@
      }
     }
    },
-   "v": "v1349"
+   "v": "v1350"
   },
   "STOCK": {
    "today": "2026-10-31",
@@ -21251,10 +21262,10 @@
     },
     "rice": {
      "shelf": 77,
-     "free": 67,
+     "free": 69.22,
      "commit": 10,
      "light": "green",
-     "coverDays": 20.7,
+     "coverDays": 21.6,
      "transit": 0
     },
     "gas": {
@@ -21274,7 +21285,7 @@
      "transit": 0
     }
    },
-   "v": "v1349"
+   "v": "v1350"
   }
  }
 }

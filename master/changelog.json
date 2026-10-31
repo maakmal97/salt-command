@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1350",
+  "d": "31 Oct 2026",
+  "t": "DELIVERY SET ON A RICE ORDER, NO STOCK MOVED",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> Correction on s314, a rice order of 10 units to CI5-PER, goods RM60. It sets delivery from RM10 to RM30, preapproved by Counter Admin on 31 Oct 2026. The drafter raised no flags. It moves no cash and no stock.",
+   "<b>INVENTORY UNCHANGED.</b> Salt stock stays at 13.5 units, counted on 28 Oct 2026, with the cost basis at RM56 per unit. Rice is not salt stock, so nothing here touches the salt roll or the reorder point."
+  ]
+ },
+ {
   "v": "v1349",
   "d": "31 Oct 2026",
   "t": "RICE DELIVERY SET AND A TEN RINGGIT OVERPAYMENT",
