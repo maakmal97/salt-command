@@ -1,6 +1,6 @@
 {
- "v": "v1350",
- "stamped": "31 Oct 2026, 23:06 KL",
+ "v": "v1351",
+ "stamped": "31 Oct 2026, 23:08 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -10043,7 +10043,7 @@
     "customer": "CI5-PER",
     "qty": 10,
     "total": 60,
-    "cash": 70,
+    "cash": 90,
     "product": "rice",
     "date": "2026-10-31",
     "deliveredQty": 0,
@@ -10100,6 +10100,13 @@
       "was": {
        "delivery": 10
       }
+     },
+     {
+      "date": "2026-10-31",
+      "kind": "Fulfilment",
+      "cash": 20,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON S314, 31 OCT 2026: RM20 CASH FROM CI5-PER, RICE.</b> Counter Admin approved it on 31 Oct 2026. The order is 10 units of rice, goods RM60, delivery RM30, RM90 owed. The drafter records RM20 and 0 units moving, against RM20 and 10 units outstanding, leaving RM0 and 10 units outstanding. The dossier holds no rice ladder, so the rate is not tested against a floor or ask. CI5-PER: 3 orders, median rate RM13, range RM6 to RM120, RM20 outstanding before, no units on credit, RM0 defaulted. The fulfilment carries no cost of its own. The drafter raised no flags. Outstanding: the 10 units of rice still to hand over."
      }
     ],
     "paidOn": "2026-10-31",
@@ -11004,7 +11011,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-31T15:05:36.387Z",
+  "QUEUE_COMMITTED": "2026-10-31T15:06:34.802Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -20945,10 +20952,10 @@
      "suggest": null
     }
    },
-   "v": "v1350"
+   "v": "v1351"
   },
   "OPEN": {
-   "at": "2026-10-31T15:06:27.813Z",
+   "at": "2026-10-31T15:08:22.849Z",
    "count": 11,
    "byKey": {
     "CI5-PER|2026-10-31|90|rice": {
@@ -20957,10 +20964,9 @@
      "dir": "S",
      "q": 10,
      "t": 60,
-     "cash": 70,
+     "cash": 90,
      "mv": 0,
-     "st": "part",
-     "oweRM": 20,
+     "st": "oweStock",
      "oweUnits": 10,
      "dv": 30,
      "pr": "rice",
@@ -21166,9 +21172,9 @@
     "rice": {
      "name": "Rice",
      "onHand": 77,
-     "free": 69.22,
-     "owedOut": 7.78,
-     "coverDays": 21.6,
+     "free": 67,
+     "owedOut": 10,
+     "coverDays": 20.7,
      "rate": 3.16,
      "owedToYou": 15,
      "promised": 10,
@@ -21205,7 +21211,7 @@
     "gas": "2026-10-29",
     "prep": null
    },
-   "v": "v1350"
+   "v": "v1351"
   },
   "TERMS": {
    "ceiling": 250,
@@ -21213,7 +21219,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1350"
+   "v": "v1351"
   },
   "REWARD": {
    "stated": {
@@ -21231,7 +21237,7 @@
      }
     }
    },
-   "v": "v1350"
+   "v": "v1351"
   },
   "STOCK": {
    "today": "2026-10-31",
@@ -21262,10 +21268,10 @@
     },
     "rice": {
      "shelf": 77,
-     "free": 69.22,
+     "free": 67,
      "commit": 10,
      "light": "green",
-     "coverDays": 21.6,
+     "coverDays": 20.7,
      "transit": 0
     },
     "gas": {
@@ -21285,7 +21291,7 @@
      "transit": 0
     }
    },
-   "v": "v1350"
+   "v": "v1351"
   }
  }
 }

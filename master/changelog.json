@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1351",
+  "d": "31 Oct 2026",
+  "t": "RICE ORDER S314 PAID UP, UNITS STILL OWED",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED.</b> A cash fulfilment of RM20 on 31 Oct 2026 against rice order s314 for CI5-PER, approved by Counter Admin. The order is 10 units, goods RM60, delivery RM30 after the earlier correction, RM90 owed. The drafter raised no flags. The tool applies the fulfilment to the row, so the fold sets no cost and recomputes nothing by hand.",
+   "<b>NO STOCK MOVED.</b> The fulfilment moves cash only and no units, so the salt count of 13.5 units and the stock cost of RM56 per unit stand as they were. The 10 rice units remain to be handed over. Nothing landed, so there is no change to the cost basis."
+  ]
+ },
+ {
   "v": "v1350",
   "d": "31 Oct 2026",
   "t": "DELIVERY SET ON A RICE ORDER, NO STOCK MOVED",
