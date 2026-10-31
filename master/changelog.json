@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1347",
+  "d": "31 Oct 2026",
+  "t": "THREE TRIP TAGS ON CI5-PER ORDERS",
+  "n": [
+   "<b>THREE CORRECTIONS FOLDED.</b> Orders s314 (rice), s315 (oil) and s316 (salt), all CI5-PER and all dated 31 Oct 2026, each had the trip field set from unset to t1793443903933. Counter Admin decided all three at 10:51 on the same day. Nothing unusual: the drafter raised no flags on any of them.",
+   "<b>INVENTORY UNCHANGED.</b> The corrections move no cash and no stock, so salt stays at 13.5 units and the stock cost at RM56 per unit. The rows keep the cost they already carried."
+  ]
+ },
+ {
   "v": "v1346",
   "d": "31 Oct 2026",
   "t": "THREE PAYMENTS SETTLE CI5-PER ORDERS",
