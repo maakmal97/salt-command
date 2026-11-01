@@ -1,6 +1,6 @@
 {
- "v": "v1370",
- "stamped": "02 Nov 2026, 02:50 KL",
+ "v": "v1372",
+ "stamped": "02 Nov 2026, 05:04 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -84,7 +84,7 @@
    "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 20
+    "stated": 0
    },
    "candy": {
     "qty": 0,
@@ -94,7 +94,7 @@
    "rice": {
     "qty": 0,
     "costPerKg": null,
-    "stated": 67
+    "stated": 75
    },
    "gas": {
     "qty": 0,
@@ -104,17 +104,17 @@
    "prep": {
     "qty": 0,
     "costPerKg": 3.3333333333333335,
-    "stated": null
+    "stated": 25
    }
   },
   "STATED_STOCK": 7.5,
   "COUNT_ON": {
    "salt": "2026-10-28",
-   "oil": "2026-10-27",
+   "oil": "2026-11-02",
    "candy": "2026-10-20",
-   "rice": "2026-10-20",
-   "gas": "2026-10-29",
-   "prep": null
+   "rice": "2026-11-02",
+   "gas": "2026-11-02",
+   "prep": "2026-11-02"
   },
   "COUNTS": [
    {
@@ -424,6 +424,34 @@
     "qty": 2,
     "was": 1,
     "drift": 1
+   },
+   {
+    "product": "gas",
+    "date": "2026-11-02",
+    "qty": 1,
+    "was": 1,
+    "drift": 0
+   },
+   {
+    "product": "oil",
+    "date": "2026-11-02",
+    "qty": 0,
+    "was": 20,
+    "drift": -20
+   },
+   {
+    "product": "prep",
+    "date": "2026-11-02",
+    "qty": 25,
+    "was": 0,
+    "drift": 25
+   },
+   {
+    "product": "rice",
+    "date": "2026-11-02",
+    "qty": 75,
+    "was": 67,
+    "drift": 8
    }
   ],
   "purchases": [
@@ -11227,7 +11255,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-01T18:49:40.595Z",
+  "QUEUE_COMMITTED": "2026-11-01T18:54:29.869Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -11294,11 +11322,6 @@
      "id": "rhythm:holiday:salt",
      "sev": "watch",
      "title": "2 Kuala Lumpur holidays inside the next fortnight"
-    },
-    {
-     "id": "parity:uncounted:prep",
-     "sev": "watch",
-     "title": "PrEP has never been counted, so its inventory is the ledger"
     },
     {
      "id": "promo:revive:salt",
@@ -15955,12 +15978,12 @@
        "repl": 7.6,
        "freightRate": 0.3118,
        "leak": {
-        "ratio": 0.3333,
-        "leak": 30,
-        "sold": 90,
+        "ratio": 0.375,
+        "leak": 45,
+        "sold": 120,
         "cycles": 3,
         "from": "2026-10-06",
-        "to": "2026-10-27"
+        "to": "2026-11-02"
        },
        "costRule": {
         "kind": "latestCogs",
@@ -15986,7 +16009,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.2850485436893204,
+       "shrinkRate": 0.3238834951456311,
        "avgDel": {
         "n": 22,
         "kg": 321,
@@ -18657,12 +18680,12 @@
        "repl": 3.2,
        "freightRate": 0.15,
        "leak": {
-        "ratio": 0.3906,
-        "leak": 25,
-        "sold": 64,
+        "ratio": 0.0645,
+        "leak": 6,
+        "sold": 93,
         "cycles": 3,
-        "from": "2026-09-24",
-        "to": "2026-10-20"
+        "from": "2026-09-27",
+        "to": "2026-11-02"
        },
        "costRule": {
         "kind": "latestCogs",
@@ -18688,7 +18711,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.13,
+       "shrinkRate": 0.09,
        "avgDel": {
         "n": 18,
         "kg": 107,
@@ -19589,7 +19612,14 @@
        "quoteRate": 50,
        "repl": 50,
        "freightRate": 10,
-       "leak": null,
+       "leak": {
+        "ratio": 0,
+        "leak": 0,
+        "sold": 2,
+        "cycles": 3,
+        "from": null,
+        "to": "2026-11-02"
+       },
        "costRule": {
         "kind": "latestCogs",
         "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
@@ -21355,10 +21385,10 @@
      "suggest": null
     }
    },
-   "v": "v1370"
+   "v": "v1372"
   },
   "OPEN": {
-   "at": "2026-11-01T18:50:46.502Z",
+   "at": "2026-11-01T21:04:59.323Z",
    "count": 7,
    "byKey": {
     "CR3-DAM|2026-10-30|70": {
@@ -21493,10 +21523,10 @@
     },
     "oil": {
      "name": "Oil",
-     "onHand": 20,
-     "free": 20,
+     "onHand": 0,
+     "free": 0,
      "owedOut": 0,
-     "coverDays": 6.2,
+     "coverDays": 0,
      "rate": 3.53,
      "owedToYou": 0,
      "promised": 0,
@@ -21515,10 +21545,10 @@
     },
     "rice": {
      "name": "Rice",
-     "onHand": 67,
-     "free": 67,
+     "onHand": 75,
+     "free": 75,
      "owedOut": 0,
-     "coverDays": 22.8,
+     "coverDays": 25,
      "rate": 2.82,
      "owedToYou": 15,
      "promised": 0,
@@ -21537,8 +21567,8 @@
     },
     "prep": {
      "name": "PrEP",
-     "onHand": 0,
-     "free": 0,
+     "onHand": 25,
+     "free": 25,
      "owedOut": 0,
      "coverDays": null,
      "rate": 0,
@@ -21549,13 +21579,13 @@
    },
    "countedOn": {
     "salt": "2026-10-28",
-    "oil": "2026-10-27",
+    "oil": "2026-11-02",
     "candy": "2026-10-20",
-    "rice": "2026-10-20",
-    "gas": "2026-10-29",
-    "prep": null
+    "rice": "2026-11-02",
+    "gas": "2026-11-02",
+    "prep": "2026-11-02"
    },
-   "v": "v1370"
+   "v": "v1372"
   },
   "TERMS": {
    "ceiling": 250,
@@ -21563,7 +21593,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1370"
+   "v": "v1372"
   },
   "REWARD": {
    "stated": {
@@ -21581,7 +21611,7 @@
      }
     }
    },
-   "v": "v1370"
+   "v": "v1372"
   },
   "STOCK": {
    "today": "2026-11-02",
@@ -21595,11 +21625,11 @@
      "transit": 0
     },
     "oil": {
-     "shelf": 20,
-     "free": 20,
+     "shelf": 0,
+     "free": 0,
      "commit": 0,
-     "light": "green",
-     "coverDays": 6.2,
+     "light": "red",
+     "coverDays": 0,
      "transit": 0
     },
     "candy": {
@@ -21611,11 +21641,11 @@
      "transit": 0
     },
     "rice": {
-     "shelf": 67,
-     "free": 67,
+     "shelf": 75,
+     "free": 75,
      "commit": 0,
      "light": "green",
-     "coverDays": 22.8,
+     "coverDays": 25,
      "transit": 0
     },
     "gas": {
@@ -21627,15 +21657,15 @@
      "transit": 0
     },
     "prep": {
-     "shelf": 0,
-     "free": 0,
+     "shelf": 25,
+     "free": 25,
      "commit": 0,
-     "light": "red",
+     "light": "green",
      "coverDays": null,
      "transit": 0
     }
    },
-   "v": "v1370"
+   "v": "v1372"
   }
  }
 }

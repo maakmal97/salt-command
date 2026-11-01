@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1372",
+  "d": "02 Nov 2026",
+  "t": "FOUR COUNTS FOLDED: GAS, OIL, PREP AND RICE",
+  "n": [
+   "<b>FOUR COUNTS FOLDED ON 02 NOV 2026.</b> Gas matched the book at 1 unit. Oil was counted at 0 against 20 on the book, a gap of -20. Prep was counted at 25 against 0, a gap of +25. Rice was counted at 75 against 67, a gap of +8. Each count wins over the ledger and moves its COUNT_ON date to 2026-11-02. The decider was Counter Admin, on 2026-11-01.",
+   "<b>UNUSUAL AND INVENTORY.</b> Oil and prep show large gaps, and the dossier gives no reason for either, so none is stated. Salt was not counted and stands at 7.5 units, with stockCost and replCost both RM56. Oil selfUse moves from 174 to 194 and rice selfUse from 26 to 18. Other floors do not move."
+  ]
+ },
+ {
   "v": "v1371",
   "d": "02 Nov 2026",
   "t": "A DELIVERY WITH A FLOOR OR UNIT IS PLACED AGAIN ON SALT COUNTER",

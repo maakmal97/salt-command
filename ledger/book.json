@@ -80,7 +80,7 @@
     "oil": {
       "qty": 5,
       "costPerKg": 7.666666666666667,
-      "stated": 20
+      "stated": 0
     },
     "candy": {
       "qty": 0,
@@ -90,7 +90,7 @@
     "rice": {
       "qty": 0,
       "costPerKg": null,
-      "stated": 67
+      "stated": 75
     },
     "gas": {
       "qty": 0,
@@ -100,17 +100,17 @@
     "prep": {
       "qty": 0,
       "costPerKg": 3.3333333333333335,
-      "stated": null
+      "stated": 25
     }
   },
   "STATED_STOCK": 7.5,
   "COUNT_ON": {
     "salt": "2026-10-28",
-    "oil": "2026-10-27",
+    "oil": "2026-11-02",
     "candy": "2026-10-20",
-    "rice": "2026-10-20",
-    "gas": "2026-10-29",
-    "prep": null
+    "rice": "2026-11-02",
+    "gas": "2026-11-02",
+    "prep": "2026-11-02"
   },
   "COUNTS": [
     {"product":"salt","date":"2026-08-24","qty":null,"was":null,"drift":null,"note":"anchor: the count the 15:70:15 leak split of 24 Aug was taken at; the figure itself was not recorded, so it bounds the next cycle and charges nothing Noted 27 Sep 2026: v351 did record it, 21.5 against 25.25; that drift of -3.75 is carried in the 55.2 self-use split, so this row still charges nothing."},
@@ -155,7 +155,11 @@
     {"product":"salt","date":"2026-10-28","qty":0,"was":0.5,"drift":-0.5},
     {"product":"salt","date":"2026-10-28","qty":0.5,"was":0,"drift":0.5},
     {"product":"gas","date":"2026-10-29","qty":1,"was":0,"drift":1},
-    {"product":"gas","date":"2026-10-29","qty":2,"was":1,"drift":1}
+    {"product":"gas","date":"2026-10-29","qty":2,"was":1,"drift":1},
+    {"product":"gas","date":"2026-11-02","qty":1,"was":1,"drift":0},
+    {"product":"oil","date":"2026-11-02","qty":0,"was":20,"drift":-20},
+    {"product":"prep","date":"2026-11-02","qty":25,"was":0,"drift":25},
+    {"product":"rice","date":"2026-11-02","qty":75,"was":67,"drift":8}
   ],
   "purchases": [
     {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -1066,7 +1070,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-11-01T18:49:40.595Z",
+  "QUEUE_COMMITTED": "2026-11-01T18:54:29.869Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -1312,6 +1316,10 @@
       "paidSplit: cash landed either side of the 28 Jul count; RM200 inside it, the rest after. Without the split the walk double-counted the RM200."
     ],
     "PROD_OPENING": [
+      "COUNTED AT v1372 on 2026-11-02: the rice inventory held 75 against 67 on the roll, a difference of 8. A COUNT AND NOT A ROLL, so COUNT_ON.rice moves to 2026-11-02. <b>COUNT RICE 02 NOV 2026: 75 UNITS COUNTED AGAINST 67 ON THE BOOK.</b> The difference is +8. The last count was 2026-10-20. The count wins, so the stated rice inventory becomes 75 and COUNT_ON.rice moves to 2026-11-02. The drafter flagged the 8 units as unaccounted for, booking the gap as shrinkage across every unit sold; the dossier gives no cause and none is stated here. The floors hold at floor1 5, floor2 10, floor125 45 and ask1 8, but selfUse moves from 26 to 18. Outstanding: the reason for the gap.",
+      "COUNTED AT v1372 on 2026-11-02: the prep inventory held 25 against 0 on the roll, a difference of 25. A COUNT AND NOT A ROLL, so COUNT_ON.prep moves to 2026-11-02. <b>COUNT PREP 02 NOV 2026: 25 UNITS COUNTED AGAINST 0 ON THE BOOK.</b> The difference is +25. No earlier count date is recorded for prep. The count wins, so the stated prep inventory becomes 25 and COUNT_ON.prep is set to 2026-11-02. The drafter flagged the 25 units as unaccounted for, booking the gap as shrinkage across every unit sold; the dossier gives no cause and none is stated here. The floors do not move: floor1 5, floor2 10, floor125 45, ask1 5, selfUse 0. Outstanding: the reason for the gap.",
+      "COUNTED AT v1372 on 2026-11-02: the oil inventory held 0 against 20 on the roll, a difference of -20. A COUNT AND NOT A ROLL, so COUNT_ON.oil moves to 2026-11-02. <b>COUNT OIL 02 NOV 2026: 0 UNITS COUNTED AGAINST 20 ON THE BOOK.</b> The difference is -20. The last count was 2026-10-27. The count wins, so the stated oil inventory becomes 0 and COUNT_ON.oil moves to 2026-11-02. The drafter flagged that the 20 units are unaccounted for and the gap books as shrinkage across every unit sold; the dossier gives no cause and none is stated here. The floors stay at floor1 10, floor2 20, floor125 105 and ask1 10, but selfUse moves from 174 to 194. Outstanding: the reason for the gap.",
+      "COUNTED AT v1372 on 2026-11-02: the gas inventory held 1 against 1 on the roll, a difference of 0. A COUNT AND NOT A ROLL, so COUNT_ON.gas moves to 2026-11-02. <b>COUNT GAS 02 NOV 2026: 1 UNIT COUNTED AGAINST 1 ON THE BOOK.</b> The difference is 0, so nothing is unaccounted for. The last count was 2026-10-29. The fold sets the stated gas inventory to 1 and moves COUNT_ON.gas to 2026-11-02. The floors do not move: floor1 stays at 50, floor2 at 100, floor125 at 625, ask1 at 75, and selfUse at 0. The row carries no cost and no party. The drafter flagged that this is the first count since the last one with nothing unaccounted for, and the figures answer that: the count and the book agree. Outstanding: nothing.",
       "ROLLED AT v1369 (gas): 1 unit from SP7-PUD on 2026-11-01, so 0 plus 1 is 1. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "ROLLED AT v1368 (gas): 2 unit to CM4-TO-R on 2026-10-31, so 2 less 2 is 0. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "ROLLED AT v1358 (rice): 10 unit to CI5-PER on 2026-11-01, so 77 less 10 is 67. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",

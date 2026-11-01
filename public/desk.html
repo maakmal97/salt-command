@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="e66f4185bde2315e";
+var SALT_BUILD_ID="78ef79ee121b07cf";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -9230,6 +9230,10 @@ const opening={
   "qty": 4.9,
   "costPerKg": 64
 };
+/* COUNTED AT v1372 on 2026-11-02: the rice inventory held 75 against 67 on the roll, a difference of 8. A COUNT AND NOT A ROLL, so COUNT_ON.rice moves to 2026-11-02. <b>COUNT RICE 02 NOV 2026: 75 UNITS COUNTED AGAINST 67 ON THE BOOK.</b> The difference is +8. The last count was 2026-10-20. The count wins, so the stated rice inventory becomes 75 and COUNT_ON.rice moves to 2026-11-02. The drafter flagged the 8 units as unaccounted for, booking the gap as shrinkage across every unit sold; the dossier gives no cause and none is stated here. The floors hold at floor1 5, floor2 10, floor125 45 and ask1 8, but selfUse moves from 26 to 18. Outstanding: the reason for the gap. */
+/* COUNTED AT v1372 on 2026-11-02: the prep inventory held 25 against 0 on the roll, a difference of 25. A COUNT AND NOT A ROLL, so COUNT_ON.prep moves to 2026-11-02. <b>COUNT PREP 02 NOV 2026: 25 UNITS COUNTED AGAINST 0 ON THE BOOK.</b> The difference is +25. No earlier count date is recorded for prep. The count wins, so the stated prep inventory becomes 25 and COUNT_ON.prep is set to 2026-11-02. The drafter flagged the 25 units as unaccounted for, booking the gap as shrinkage across every unit sold; the dossier gives no cause and none is stated here. The floors do not move: floor1 5, floor2 10, floor125 45, ask1 5, selfUse 0. Outstanding: the reason for the gap. */
+/* COUNTED AT v1372 on 2026-11-02: the oil inventory held 0 against 20 on the roll, a difference of -20. A COUNT AND NOT A ROLL, so COUNT_ON.oil moves to 2026-11-02. <b>COUNT OIL 02 NOV 2026: 0 UNITS COUNTED AGAINST 20 ON THE BOOK.</b> The difference is -20. The last count was 2026-10-27. The count wins, so the stated oil inventory becomes 0 and COUNT_ON.oil moves to 2026-11-02. The drafter flagged that the 20 units are unaccounted for and the gap books as shrinkage across every unit sold; the dossier gives no cause and none is stated here. The floors stay at floor1 10, floor2 20, floor125 105 and ask1 10, but selfUse moves from 174 to 194. Outstanding: the reason for the gap. */
+/* COUNTED AT v1372 on 2026-11-02: the gas inventory held 1 against 1 on the roll, a difference of 0. A COUNT AND NOT A ROLL, so COUNT_ON.gas moves to 2026-11-02. <b>COUNT GAS 02 NOV 2026: 1 UNIT COUNTED AGAINST 1 ON THE BOOK.</b> The difference is 0, so nothing is unaccounted for. The last count was 2026-10-29. The fold sets the stated gas inventory to 1 and moves COUNT_ON.gas to 2026-11-02. The floors do not move: floor1 stays at 50, floor2 at 100, floor125 at 625, ask1 at 75, and selfUse at 0. The row carries no cost and no party. The drafter flagged that this is the first count since the last one with nothing unaccounted for, and the figures answer that: the count and the book agree. Outstanding: nothing. */
 /* ROLLED AT v1369 (gas): 1 unit from SP7-PUD on 2026-11-01, so 0 plus 1 is 1. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* ROLLED AT v1368 (gas): 2 unit to CM4-TO-R on 2026-10-31, so 2 less 2 is 0. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* ROLLED AT v1358 (rice): 10 unit to CI5-PER on 2026-11-01, so 77 less 10 is 67. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
@@ -9309,7 +9313,7 @@ const PROD_OPENING={
   "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 20
+    "stated": 0
   },
   "candy": {
     "qty": 0,
@@ -9319,7 +9323,7 @@ const PROD_OPENING={
   "rice": {
     "qty": 0,
     "costPerKg": null,
-    "stated": 67
+    "stated": 75
   },
   "gas": {
     "qty": 0,
@@ -9329,7 +9333,7 @@ const PROD_OPENING={
   "prep": {
     "qty": 0,
     "costPerKg": 3.3333333333333335,
-    "stated": null
+    "stated": 25
   }
 };
 /* ROLLED AT v1368: 1 unit to CM6-PJ on 2026-10-31, so 8.5 less 1 is 7.5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Salt stock moved by 1 unit out on 31 Oct and gas by 2 units out; the salt cost basis is unchanged. */
@@ -9510,11 +9514,11 @@ const PROD_OPENING={
 const STATED_STOCK=7.5;
 const COUNT_ON={
   "salt": "2026-10-28",
-  "oil": "2026-10-27",
+  "oil": "2026-11-02",
   "candy": "2026-10-20",
-  "rice": "2026-10-20",
-  "gas": "2026-10-29",
-  "prep": null
+  "rice": "2026-11-02",
+  "gas": "2026-11-02",
+  "prep": "2026-11-02"
 };
 /* EVERY COUNT, AS TAKEN (v504, 07 Sep 2026): product, date, the figure counted, what the roll said and the drift, negative when units are missing. The fold appends one line per count. A count with no drift bounds a cycle and charges nothing; the 24 Aug anchor is one. Seeded from the fold notes of v473 (02 Sep, 10.5 against 18.75), v489 (04 Sep, 9.8 entered net of a rolled sale, no drift) and v498 (06 Sep, 7 against 8.3); the oil count of 23 Aug has no recorded drift. The leak is charged from these: the units missing over the last three cycles, at landed, over the units sold in them. */
 const COUNTS=[
@@ -9560,7 +9564,11 @@ const COUNTS=[
   {"product":"salt","date":"2026-10-28","qty":0,"was":0.5,"drift":-0.5},
   {"product":"salt","date":"2026-10-28","qty":0.5,"was":0,"drift":0.5},
   {"product":"gas","date":"2026-10-29","qty":1,"was":0,"drift":1},
-  {"product":"gas","date":"2026-10-29","qty":2,"was":1,"drift":1}
+  {"product":"gas","date":"2026-10-29","qty":2,"was":1,"drift":1},
+  {"product":"gas","date":"2026-11-02","qty":1,"was":1,"drift":0},
+  {"product":"oil","date":"2026-11-02","qty":0,"was":20,"drift":-20},
+  {"product":"prep","date":"2026-11-02","qty":25,"was":0,"drift":25},
+  {"product":"rice","date":"2026-11-02","qty":75,"was":67,"drift":8}
 ];
 const purchases=[
   {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -10402,7 +10410,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-11-01T18:49:40.595Z";
+const QUEUE_COMMITTED="2026-11-01T18:54:29.869Z";
 /* <b>BOARD SIZES CHANGED ON 19 OCT: SALT, 3.5 AND 4.5 UNIT HIDDEN.</b> Counter Admin decided this at 15:38. The entry reads "Board sizes on salt: hiding 3.5 unit, 4.5 unit" and sets 0 prices, so no rate is set against the desk's floor or ask and no party is involved. The board's own price remains the ask at every size. The drafter flagged that two sizes leave the board; that is exactly what the entry does, and both stay priceable at the counter and off a quote, they simply stop being printed. The row moves no stock, no cash and no ledger row, so it carries no cost and nothing is left outstanding. */
 /* RETIRED AT v656 on 2026-09-16, his decision of 15 Sep off the pricing workbook: the board is the ladder, so a stated price no longer decides it and oil's five are cleared rather than left unread. The stranger's ask on oil moves from his RM130, 240, 330, 400 and 450 to Bronze at RM230, 440, 650, 850 and 1,040, with 80 and 100 unit at RM1,640 and RM2,000. The old five sat a hair over break-even (the 50 unit tier read 0.93x, RM32.20 UNDER its floor) because they were typed in July against a cost that has moved since; the ladder is struck on today's COGS and moves with it. No customer's price moves with this: every named customer is quoted their own tier capped at what they pay, and a stranger has no history to cap against. The hide list is untouched and still takes a size off the board. */
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
@@ -11486,7 +11494,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1371","d":"02 Nov 2026","t":"A DELIVERY WITH A FLOOR OR UNIT IS PLACED AGAIN ON SALT COUNTER","n":["<b>SALT COUNTER, PLACE.</b> His report: a customer ordering to deliver could not submit the order. A spot's floor or unit is sealed to his slip key before anything leaves the phone, and the page asked for that key once a visit, so one failed read, and the practice surface, refused every such Place with \"the location could not be read\" and sent nothing. Place now asks for the key once more before it refuses, and a practice account's spot, which the Worker drops anyway, is not sealed. Nothing of a spot ever leaves unsealed; the refusal, when it still comes, reads as a sentence.","<b>NO ROUTE CHANGED.</b> The page asks GET /slip/key, a read it already made, once more at Place. Salt Admin places no delivery, so it has no side to this. Fable reviewed the change: no findings."]}];
+const evolution=[{"v":"v1372","d":"02 Nov 2026","t":"FOUR COUNTS FOLDED: GAS, OIL, PREP AND RICE","n":["<b>FOUR COUNTS FOLDED ON 02 NOV 2026.</b> Gas matched the book at 1 unit. Oil was counted at 0 against 20 on the book, a gap of -20. Prep was counted at 25 against 0, a gap of +25. Rice was counted at 75 against 67, a gap of +8. Each count wins over the ledger and moves its COUNT_ON date to 2026-11-02. The decider was Counter Admin, on 2026-11-01.","<b>UNUSUAL AND INVENTORY.</b> Oil and prep show large gaps, and the dossier gives no reason for either, so none is stated. Salt was not counted and stands at 7.5 units, with stockCost and replCost both RM56. Oil selfUse moves from 174 to 194 and rice selfUse from 26 to 18. Other floors do not move."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11634,7 +11642,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='02 Nov 2026, 04:59 KL';
+const LAST_UPDATED='02 Nov 2026, 05:04 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
