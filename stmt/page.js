@@ -2255,7 +2255,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div id="makerQueueReview" aria-live="polite"></div></div></details></section>'
         + '<section data-in="orders.payments" aria-labelledby="makerClaimsTitle"><h2 id="makerClaimsTitle">Payments they say they sent</h2><div id="makerClaims" aria-live="polite"></div></section>'
         + '<section data-in="orders.group" aria-labelledby="makerPoolsTitle"><h2 id="makerPoolsTitle">Group orders</h2>'
-        + '<p class="lead">Customers join a bulk order. When you close it, each order comes to you to agree.</p>'
+        + '<p class="lead">Customers join a bulk order, and each order comes to you to agree when you close it.</p>'
         + '<div id="makerPools" aria-live="polite"></div></section>'
         /* 16 Oct 2026: THE MINI LEDGER, three tables of the folded book in this order: Open orders, Pending orders and the latest twenty. Every other part of Orders
            is shut while it shows (stmt/owner.js, loadLedger). */
@@ -2288,7 +2288,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div id="makerChatList"></div><div id="makerChatOpen" hidden></div></section>'
         + '<div id="oLinks" data-in="customers.links">'
         + "<h2>Guest links</h2>"
-        + '<p class="lead">A guest link opens the Set Price list, the same for everybody. Name the customer whose friend it is, as your own note.</p>'
+        + '<p class="lead">A guest link opens the Set Price list, the same for everybody.</p>'
         + '<label class="lbl salt-field__label" for="gintro">Whose friend?</label>'
         + '<input class="fld salt-field__input" id="gintro" type="text" maxlength="20" autocapitalize="off" '
         + 'spellcheck="false" placeholder="their username" aria-label="The username of the customer whose friend this is" data-act="link.introducer">'

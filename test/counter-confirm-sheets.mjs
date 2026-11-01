@@ -204,7 +204,8 @@ export async function run({ ok }) {
     const lim = t(L.d.getElementById("oLimit")), wantLine = W.fill(W.EN["sh.limit"], { n: W.EN["num." + O.MAX_OPEN] }, "en");
     const cb = await openLimit(L);
     const inSheet = t(L.d.querySelector("#osheet .salt-insight"));
-    ok(lim === wantLine && inSheet === wantLine && /^Five open orders is the most\./.test(lim) && O.MAX_OPEN === 5,
+    /* 1 Nov 2026: the limit line is one sentence, Five open orders is the most: cancel one, or wait for one to finish */
+    ok(lim === wantLine && inSheet === wantLine && /^Five open orders is the most:/.test(lim) && O.MAX_OPEN === 5,
       "the limit is said in words off the code's own limit, in the Order tab and in the limit step, though six are open: " + JSON.stringify({ lim, inSheet }));
     const limRows = [...L.d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => ({ shape: t(r.querySelector(".mtile .sr")), amount: t(r.querySelector(".salt-ledger__value")), cancel: !!r.querySelector("button") }));
     ok(limRows.length === 6 && limRows[0].shape === "Cube 2.5 units" && limRows.map((r) => r.shape).join("|") === "Cube 2.5 units|Lozenge 1 unit|Droplet 3 units|Capsule 1 unit|Cube 1 unit|Droplet 1 unit"

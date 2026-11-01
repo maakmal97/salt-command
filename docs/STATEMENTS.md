@@ -655,8 +655,8 @@ carries one second-level heading of its own, the statement's, and no stray first
 the gap between the card and the statement's heading is 28 px (it was 0), Sign out sits at y 434 of 5,113 (it was 4,876 of 5,017), no sideways scroll,
 every control in the card 44 px tall.
 
-**Sign out is a tap and a tap again, on the same control.** The first tap arms it and says so in its own words (`dev.outAsk`, "Tap again to sign out of this
-{dev}", announced because the button is `aria-live=polite`) and sends nothing; a second within four seconds (`LOCK_MS`) signs out exactly as before; left alone
+**Sign out is a tap and a tap again, on the same control.** The first tap arms it and says so in its own words (`dev.outAsk`, "Tap again to confirm",
+announced because the button is `aria-live=polite`) and sends nothing; a second within four seconds (`LOCK_MS`) signs out exactly as before; left alone
 it lets go by itself. Never the browser's `confirm()` (7d part 1). His own page shares the control as Back to accounts and keeps one tap.
 
 **The door names the app**: the ring and one eyebrow line, `door.app` (Salt Counter, the one name allowed), above Sign in; his own page carries none of it. The

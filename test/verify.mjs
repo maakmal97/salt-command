@@ -15853,7 +15853,8 @@ await (async () => {
   const A = await drive(five);
   try {
     const lim = A.d.getElementById("oLimit");
-    ok(!!lim && lim.textContent === "Five open orders is the most. Cancel one, or wait for one to finish, and you can order again." && !A.d.getElementById("oNew"),
+    /* 1 Nov 2026: one sentence (it read: Five open orders is the most. Cancel one, or wait for one to finish, and you can order again.) */
+    ok(!!lim && lim.textContent === "Five open orders is the most: cancel one, or wait for one to finish." && !A.d.getElementById("oNew"),
       "at the limit the Order tab says so, in place of New order: " + JSON.stringify(lim && lim.textContent));
   } finally { A.w.close(); }
   /* one short of it, then refused because the fifth was filled from another phone */
@@ -15866,7 +15867,7 @@ await (async () => {
     /* F8 (Step 1a.2): the order is a tile, its figure under the mark, and its word stands beside the tile */
     const rows = [...d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => { const lab = r.querySelector(".salt-ledger__label"), tile = lab.querySelector(".mtile");
       return { tile: tile ? tile.querySelector(".sr").textContent + "|" + tile.querySelector(".mq").textContent : "", t: [...lab.children].filter((c) => c !== tile).map((c) => c.textContent).join(""), cancel: !!r.querySelector("button") }; });
-    ok(st.placed === 1 && /^Five open orders is the most\./.test((d.querySelector("#osheet .salt-insight") || {}).textContent || "") && !d.getElementById("oPlace") && rows.length === 5
+    ok(st.placed === 1 && /^Five open orders is the most:/.test((d.querySelector("#osheet .salt-insight") || {}).textContent || "") && !d.getElementById("oPlace") && rows.length === 5
       && JSON.stringify(rows.map((r) => r.cancel)) === "[true,true,true,true,false]" && rows.every((r) => r.tile === "Cube 1 unit|1 unit")
       && rows.map((r) => r.t).join("|") === "Placed|Placed|Confirmed|Confirmed|Collected",
       "a refusal the open orders explain turns the sheet to the limit, naming each open order with Cancel where the goods have not moved: " + JSON.stringify(rows));
@@ -19814,8 +19815,9 @@ await (async () => {
 
     /* ---- Sign out other devices, on a second tap: the iPhone goes, this computer stays ---- */
     btn("Sign out other devices").click();
-    ok(await orders(other) === 200 && !!btn("Tap again to sign them out"), "one tap only asks");
-    btn("Tap again to sign them out").click();
+    /* 1 Nov 2026: the armed label is Tap again to confirm on every armed button (dev.outAgain read Tap again to sign them out) */
+    ok(await orders(other) === 200 && !!btn("Tap again to confirm"), "one tap only asks");
+    btn("Tap again to confirm").click();
     ok(await until(() => /Signed out 1 other device[.]/.test(body())) && await orders(other) === 401 && !/iPhone, Safari/.test(body()) && !btn("Sign out other devices"),
       "the second signs the iPhone out, says so under the controls, and the list keeps this one alone: " + JSON.stringify(rows()));
 
@@ -21812,7 +21814,8 @@ await (async () => {
     ok(!img.hidden && qb.textContent === "Hide the QR" && qb.getAttribute("aria-expanded") === "true", "and one tap shows it");
     const mk = [...box.querySelectorAll("button")].find((b) => b.textContent === "Make a link");
     const next = mk && mk.previousElementSibling;
-    ok(!!mk && !!next && /stays shut until we approve it/.test(next.textContent) && /share it from here/.test(next.textContent),
+    /* 1 Nov 2026: the line is the first sentence alone (it went on: Once it is open it shows ... you share it from here) */
+    ok(!!mk && !!next && next.textContent === "A new link stays shut until we approve it.",
       "Make a link says what happens next, before it is tapped: " + JSON.stringify(next && next.textContent));
     const mtr = box.querySelector(".salt-meter");
     ok(!!mtr && mtr.style.getPropertyValue("--salt-fill") === "42" && /42%/.test(mtr.textContent)
@@ -36626,7 +36629,8 @@ await (async () => {
       if (back) back.click();
     }
   } finally { dom.window.close(); }
-  ok(!foot.oW.cancel && foot.oW.line === "We are checking the RM 90.00 you sent. You can cancel once we have answered it." && foot.oP.cancel,
+  /* 1 Nov 2026: one sentence (it read: We are checking the RM 90.00 you sent. You can cancel once we have answered it.) */
+  ok(!foot.oW.cancel && foot.oW.line === "You can cancel once we have answered the RM 90.00 you sent." && foot.oP.cancel,
     "their order with a claim waiting says why in place of Cancel; one with none keeps Cancel: " + JSON.stringify(foot));
   const held = await page({ term: 10, now: { rm: 300, due: "2026-09-11", parts: [part] }, overdue: { rm: 300, parts: [part] }, coming: none },
     [{ ...base, ...waiting, id: "oC", status: "cancelled", history: [{ at: iso(-30), status: "cancelled", by: "customer" }] }]);
@@ -42304,8 +42308,9 @@ await (async () => {
     const r = d.querySelector('#payBody input[name="payHow"][value="cod"]'); if (r) { r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); }
     const chosen = { into: !!d.getElementById("payInto"), ref: !!d.querySelector("#payBody .payref"), part: !!d.querySelector("#payBody .payseg"),
       go: t(d.getElementById("payGo")) + ":" + d.getElementById("payGo").tagName, cap: t(d.querySelector("#payFoot .paycap")) };
+    /* 1 Nov 2026: the filled pill is four words, Pay cash on collection (it read Pay in cash when I collect) */
     ok(JSON.stringify(onAccount) === '["transfer","qr"]' && JSON.stringify(onOrder) === '["transfer","qr","cod"]' && label === "Cash when you collect"
-      && !chosen.into && !chosen.ref && !chosen.part && chosen.go === "Pay in cash when I collect:BUTTON"
+      && !chosen.into && !chosen.ref && !chosen.part && chosen.go === "Pay cash on collection:BUTTON"
       && chosen.cap === "We record it when we take it, so there is nothing to tell us afterwards.",
       "To pay now's sheet has no cash; an order's has a third way, cash when you collect, which asks for no account, reference or figure: "
       + JSON.stringify({ onAccount, onOrder, label, chosen }));
@@ -42471,7 +42476,7 @@ await (async () => {
       "the sheet forecasts paid in advance once what they owe and the order are over the sealed ceiling, and says nothing at it: " + JSON.stringify([at1, at2]));
     d.getElementById("oGo").click();
     const chk = rows(d), say = line(d);
-    ok(/Payment Likely in advance/.test(chk) && say.includes("We confirm it when we accept."),
+    ok(/Payment Likely in advance/.test(chk) && say.includes("We confirm it when we accept;"),
       "the check carries the forecast from Review, a row and the one sentence: " + JSON.stringify([chk, say]));
     d.getElementById("oPlace").click();
     await until(() => posted.length === 1);
