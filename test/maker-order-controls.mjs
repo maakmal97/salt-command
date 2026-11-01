@@ -174,6 +174,18 @@ export async function run({ ok }) {
     ok(noRid.every((r) => r.status === 400) && (+book(idReady).moved || 0) === 0 && L.requests.size === 0,
       "A handover, a close or a stage offered again without its immutable request id is refused with 400: " + noRid.map((r) => r.status).join(","));
 
+    /* 1 Nov 2026: Offer and Withdraw on a real order pass both gates to the Desk's own roads. The Counter's deskCall (stmt/maker.js)
+       and the Desk's internal gate (src/worker.js) named neither, so Salt Admin's Sent to them for their yes answered 503 and, past it,
+       the Desk's gate 404. A withdrawal with no offer open is the Desk's own 409; an offer gets the Desk's own answer. */
+    {
+      const idOffer = make("placed");
+      const via = async (action, body) => { const r = await tap(idOffer, action, body); return { status: r.status, said: await r.json().catch(() => ({})) }; };
+      const wd = await via("withdraw", { rid: rid("bridge-withdraw") }), of = await via("offer", { total: 300, rid: rid("bridge-offer") });
+      const gated = (x) => x.status === 503 || x.said.error === "not found" || /operation is not available/.test(String(x.said.error || ""));
+      ok(wd.status === 409 && /no offer of yours is open/.test(String(wd.said.error)) && !gated(of),
+        "Offer and Withdraw on a real order reach the Desk's own roads through both gates: withdraw " + wd.status + " " + (wd.said.error || "") + ", offer " + of.status + " " + (of.said.error || "ok"));
+    }
+
     /* a retry under a kept id is answered from the Desk's record, the native road untouched */
     const kept = { id: idReady, qty: 1 }, keptRid = rid(1);
     L.requests.set("order:" + keptRid, { operation: "order-handed", fingerprint: await makerRequestFingerprint("order-handed", kept),

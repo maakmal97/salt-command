@@ -107,7 +107,7 @@ async function deskCall(env, path, method, body) {
     || /^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(path) && method === "POST"
     || path === "/_internal/maker/drafts/decide-many" && method === "POST"
     || /^\/_internal\/maker\/queue\/[^/]+\/withdraw$/.test(path) && method === "POST"
-    || /^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|notfound|move|restate)$/.test(path) && method === "POST"
+    || /^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|offer|withdraw|handed|cash|received|again|notfound|move|restate)$/.test(path) && method === "POST"
     || (path === "/_internal/maker/order-again" || path === "/_internal/maker/words" || path === "/_internal/maker/fixture-check") && method === "POST";
   if (!allowed) throw new Error("That Desk maker operation is not available.");
   const response = await env.DESK_MAKER.fetch(new Request("https://desk" + path, {

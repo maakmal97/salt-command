@@ -64,5 +64,17 @@
     "file": "stmt/owner.js",
     "find": "'approve.confirm'); go.type='button';",
     "replace": "'approve.confirmx'); go.type='button';"
+  },
+  {
+    "name": "1 Nov 2026: the Counter bridge names neither offer nor withdraw again",
+    "file": "stmt/maker.js",
+    "find": "(preview|accept|offer|withdraw|handed|cash|received|again|notfound|move|restate)$/.test(path)",
+    "replace": "(preview|accept|handed|cash|received|again|notfound|move|restate)$/.test(path)"
+  },
+  {
+    "name": "1 Nov 2026: the Desk's internal gate names neither offer nor withdraw again",
+    "file": "src/worker.js",
+    "find": "(preview|accept|offer|withdraw|handed|cash|received|again|amend|notfound|move|restate|take)$/.test(p))",
+    "replace": "(preview|accept|handed|cash|received|again|amend|notfound|move|restate|take)$/.test(p))"
   }
 ]
