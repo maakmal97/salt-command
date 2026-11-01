@@ -9,6 +9,7 @@
  *   R2  a refused Withdraw voids nothing: their yes is spent on the row he offered, and the order agreed at it
  *   R3  a Withdraw tapped after their Yes is refused in the same words, read off the order
  *   R4  a Withdraw's void names the offer the order book withdrew: a newer offer filed and taken between the move and the void is agreed at its figure
+ *   R10 a plain Withdraw voids the withdrawn offer's own yes at once, before any later move or the minute's pass (Fable's coverage note of 2 Nov 2026)
  *   R5  an old Withdraw id repeated over a newer offer they took between the read and the move is refused as fresh in the same words, off the order
  *       book's answer and never the read, and that offer is agreed at its figure
  *   R6  the minute's pass lets go only the yes it read: a newer offer filed and taken between its read and its void is agreed at its figure
@@ -92,7 +93,7 @@ export async function run({ ok, skip, pageWork }) {
   const gA = await where(a.id, 160);
   ok(agreed(gA, 160), "R2: a refused Withdraw voids nothing, so their yes is spent on the row he offered and the order agreed at RM 160: " + J(gA));
   const wA2 = await call("/orders/" + a.id + "/withdraw", { rid: rid() });
-  ok(wA2.status === 409 && SAID.test(wA2.j.error || ""), "R3: a Withdraw tapped after their Yes is refused in the same words, read off the order: " + J([wA2.status, wA2.j.error]));
+  ok(wA2.status === 409 && SAID.test(wA2.j.error || "") && wA2.j.fresh === true, "R3: a Withdraw tapped after their Yes is refused in the same words, read off the order, and fresh, so its id goes: " + J([wA2.status, wA2.j.error, wA2.j.fresh]));
 
   /* R4: A NEWER OFFER FILED AND TAKEN BETWEEN A WITHDRAW'S MOVE AND ITS VOID (his second device): the void names the offer withdrawn, so the newer yes stands */
   const c = await place(U1, true);
@@ -104,6 +105,16 @@ export async function run({ ok, skip, pageWork }) {
   const gC = await where(c.id, 230);
   ok(wC.status === 200 && agreed(gC, 230),
     "R4: a newer offer filed and taken between a Withdraw's move and its void keeps its yes, and the order is agreed at it, RM 230: " + J([wC.status, wC.j.error, gC]));
+
+  /* R10: A PLAIN WITHDRAW VOIDS ITS OWN OFFER'S YES AT ONCE. In R4, R6 and R7 the hook's newer offer voids the old yes itself (recordPre), so nothing there proves
+     the Withdraw's own void; here no other move follows before the read */
+  const g = await place(U1, true);
+  await offer(g.id, 160);
+  const yesBefore = yesOf(g.id, 160);
+  const wG = await call("/orders/" + g.id + "/withdraw", { rid: rid() });
+  const yesAfter = yesOf(g.id, 160);
+  ok(wG.status === 200 && yesBefore === "waiting" && yesAfter === "void",
+    "R10: a Withdraw voids the withdrawn offer's own yes at once: " + J([wG.status, yesBefore, yesAfter]));
 
   /* R5: AN OLD WITHDRAW ID REPEATED OVER A NEWER OFFER THEY TOOK BETWEEN THE READ AND THE MOVE. The read says withdrawn; the order book's answer says taken */
   const b = await place(U1, true);

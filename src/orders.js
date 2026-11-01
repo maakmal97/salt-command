@@ -612,7 +612,7 @@ export async function withdrawOffer(env, id, body) {
   const f = await findOrder(env, id);
   if (!f.ok) return f;
   const o = f.order, rid = body && typeof body.rid === "string" && /^[A-Za-z0-9_-]{16,64}$/.test(body.rid) ? body.rid : null;
-  if (o.price && o.price.state === "taken") return { ok: false, status: 409, error: SAID_YES };
+  if (o.price && o.price.state === "taken") return { ok: false, status: 409, fresh: true, error: SAID_YES };   /* fresh, as at the move: Salt Admin lets its id go (Fable, 2 Nov 2026) */
   /* 1 Nov 2026: a retried Withdraw whose first tap landed finds the offer withdrawn already; it goes on to the order book, which answers a
      request id it has filed as the first answer (again) and refuses one it has not, as offerOrder answers a repeated Send */
   if (!o.price || (o.price.state !== "offered" && !(rid && o.price.state === "withdrawn"))) return { ok: false, status: 409, error: "no offer of yours is open on this order" };

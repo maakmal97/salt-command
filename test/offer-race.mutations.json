@@ -14,7 +14,7 @@
  {
   "name": "R3: a Withdraw after their Yes is not read as taken",
   "file": "src/orders.js",
-  "find": "  if (o.price && o.price.state === \"taken\") return { ok: false, status: 409, error: SAID_YES };\n",
+  "find": "  if (o.price && o.price.state === \"taken\") return { ok: false, status: 409, fresh: true, error: SAID_YES };   /* fresh, as at the move: Salt Admin lets its id go (Fable, 2 Nov 2026) */\n",
   "replace": ""
  },
  {
@@ -64,5 +64,17 @@
   "file": "stmt/owner.js",
   "find": "    'they said yes before your withdraw reached them: its row is drafted at your offer':'They said yes before your Withdraw, so its row is drafted at your offer.',\n",
   "replace": ""
+ },
+ {
+  "name": "R3: the read-time refusal over their Yes keeps its id again",
+  "file": "src/orders.js",
+  "find": "return { ok: false, status: 409, fresh: true, error: SAID_YES };   /* fresh, as at the move",
+  "replace": "return { ok: false, status: 409, error: SAID_YES };   /* fresh, as at the move"
+ },
+ {
+  "name": "R10: a Withdraw leaves its own offer's yes waiting",
+  "file": "src/orders.js",
+  "find": "if (env.SALT_LEDGER && p.state === \"withdrawn\" && p.offer) await voidOffers(",
+  "replace": "if (env.SALT_LEDGER && p.state === \"withdrawn\" && p.offer && false) await voidOffers("
  }
 ]
