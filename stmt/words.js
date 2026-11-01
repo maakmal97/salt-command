@@ -56,7 +56,7 @@ export const EN = {
   "e.amendPrices": "Prices are updating. Your original order is unchanged. Open your prices again before changing it.",
   "ord.amend": "Change order",
   "ord.amendReview": "Replace this order",
-  "ord.amendAsk": "The replacement waits for us to confirm it.",
+  "ord.amendAsk": "The replacement waits for us to confirm it, and the original stays in your history.",
   "ord.amendQty": "Units",
   "ord.amendMode": "Collection or delivery",
   "ord.amendPlace": "Delivery locality",
@@ -444,7 +444,7 @@ export const EN = {
   "lnk.qrShow": "Show the QR",
   "lnk.withdraw": "Withdraw",
   "lnk.max": "You have {n} links. Withdraw one to make another.",
-  "lnk.next": "A new link stays shut until we approve it.",
+  "lnk.next": "A new link stays shut until we approve it, then shows a price list.",
   "lnk.make": "Make a link",
   "lnk.notMade": "That link was not made.",
   "lnk.notWithdrawn": "That link was not withdrawn.",
@@ -454,7 +454,7 @@ export const EN = {
      rate follows your first order", "The same price for everybody", and "written from your own history and changes
      weekly", which was also untrue: the list is sealed again at every publish, hourly. The keys are deleted, not left
      unused, because every word here is served in the page's source. */
-  "pr.none": "No price list has been written for your account yet.",
+  "pr.none": "No price list for your account yet; it comes with the next update.",
   "pr.asAt": "Prices as at {d}.",
   "pr.asAtTap": "Prices as at {d}. Tap a size to order it.",
   "pr.week": "For the week of {w}.",
@@ -610,7 +610,7 @@ export const EN = {
   "sh.setOnConfirm": "Set when we confirm it",
   "sh.pay": "Payment",
   "sh.inAdvance": "Likely in advance",
-  "sh.prepayP": "We confirm it when we accept; an order paid in advance is paid before we hand it over.",
+  "sh.prepayP": "We confirm it when we accept, then it is paid before we hand it over, never as cash on handover.",
   "sh.moved": "This size is now **{now}** (was {was}). Place at {now}?",
   "sh.movedLine": "Now **{now}** (was {was}).",
   "sh.gone": "This size is no longer on your list. Change it to pick another.",

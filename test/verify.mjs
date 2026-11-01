@@ -21815,7 +21815,7 @@ await (async () => {
     const mk = [...box.querySelectorAll("button")].find((b) => b.textContent === "Make a link");
     const next = mk && mk.previousElementSibling;
     /* 1 Nov 2026: the line is the first sentence alone (it went on: Once it is open it shows ... you share it from here) */
-    ok(!!mk && !!next && next.textContent === "A new link stays shut until we approve it.",
+    ok(!!mk && !!next && next.textContent === "A new link stays shut until we approve it, then shows a price list.",   /* 1 Nov 2026: one sentence that keeps what the link shows */
       "Make a link says what happens next, before it is tapped: " + JSON.stringify(next && next.textContent));
     const mtr = box.querySelector(".salt-meter");
     ok(!!mtr && mtr.style.getPropertyValue("--salt-fill") === "42" && /42%/.test(mtr.textContent)
@@ -51556,7 +51556,7 @@ await (async () => {
     "a bucket owner's drift reads their whole history, the -R bucket's orders in it, and the bucket answers as its owner: " + JSON.stringify(s16));
   /* 17. HIS PAGE'S GUEST-LINK LEAD NAMES NO LEVEL: the prices follow the introducer, never past the stranger's board */
   const pg17 = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
-  ok(/A guest link opens the Set Price list, the same for everybody[.]/.test(pg17) && !/prices follow|two levels above/.test(pg17),
+  ok(/A guest link opens the Set Price list for everybody[;]/.test(pg17)   /* 1 Nov 2026: one sentence, the one list for everybody kept */ && !/prices follow|two levels above/.test(pg17),
     "the guest-link lead says every link opens the Set Price list, and no longer that the prices follow the customer he names");
   /* 18. A HELD DRIFT SITS BESIDE A HELD LEVEL ON A STATED BOARD, as CS6-BS's entry has since v1075 ({oil: "Platinum", salt: -0.7}).
      The snapshot leaves a drift book out of tierOf and carries its % apart (byProduct.salt.lift, the hand or nought), so no

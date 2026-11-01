@@ -2288,7 +2288,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div id="makerChatList"></div><div id="makerChatOpen" hidden></div></section>'
         + '<div id="oLinks" data-in="customers.links">'
         + "<h2>Guest links</h2>"
-        + '<p class="lead">A guest link opens the Set Price list, the same for everybody.</p>'
+        + '<p class="lead">A guest link opens the Set Price list for everybody; naming whose friend it is stays your note.</p>'
         + '<label class="lbl salt-field__label" for="gintro">Whose friend?</label>'
         + '<input class="fld salt-field__input" id="gintro" type="text" maxlength="20" autocapitalize="off" '
         + 'spellcheck="false" placeholder="their username" aria-label="The username of the customer whose friend this is" data-act="link.introducer">'
