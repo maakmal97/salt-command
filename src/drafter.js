@@ -910,6 +910,7 @@ export function draftRow(entry, book) {
       if (newQty == null || newTotal == null || newQty <= 0) {
         return { skip: "this modification carries no new quantity and total to restate to" };
       }
+      if (newTotal < 0) return { skip: "a modification cannot restate to a negative total" };
       const isSale = dir2 === "SELL";
       const product = t.pr || "salt";
       const priced = isSale ? cogsFor(book, product, t.d) : { cost: null, mayBlend: false };
@@ -956,6 +957,8 @@ export function draftRow(entry, book) {
     const moved = isNum(pay.kg) ? +pay.kg : 0;
     const when = pay.date || null;
     const isMove = kind === "Fulfilment" || kind === "Payment" || kind === "Receipt";
+    /* 1 Nov 2026: a negative figure is refused here as on the new-row road; the fold would lower the row's cash or units by it */
+    if (cash < 0 || moved < 0) return { skip: "cash and units moved cannot be negative" };
     if (isMove) {
       if (cash < 0.005 && moved < 0.005) {
         return { skip: `this ${kind.toLowerCase()} moves neither cash nor stock, so there is nothing to apply` };

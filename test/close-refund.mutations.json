@@ -1,0 +1,14 @@
+[
+  {
+    "name": "1 Nov 2026: the amendment road takes a negative cash or unit figure again",
+    "file": "src/drafter.js",
+    "find": "    if (cash < 0 || moved < 0) return { skip: \"cash and units moved cannot be negative\" };\n",
+    "replace": ""
+  },
+  {
+    "name": "1 Nov 2026: a modification restates to a negative total again",
+    "file": "src/drafter.js",
+    "find": "      if (newTotal < 0) return { skip: \"a modification cannot restate to a negative total\" };\n",
+    "replace": ""
+  }
+]

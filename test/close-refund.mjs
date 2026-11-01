@@ -62,6 +62,14 @@ export async function run({ ok }) {
       withRow({ ...base, rid: "cr-pay", cash: 0 }).book);
     ok(!pay.skip && /RM 50 more than the order is owed/.test(refundFlag(pay) || "") && /refund payable to the customer/.test(refundFlag(pay)),
       "a payment over what the row owes says the fold raises the refund for it: " + JSON.stringify(pay.skip || pay.flags));
+    /* 1 Nov 2026: the amendment road refuses a negative figure as the new-row road does (the drafter's refusals, CLAUDE.md): a
+       Fulfilment of -50 cash with 3 units moved passed moves-neither and drafted, and the fold would lower the row's cash by it */
+    const neg = (id, extra) => draftRow({ at: "2026-10-06T01:00:00Z", type: "SELL", party: "CY2-NIL", qty: 0, total: 0, status: "Payment", raw: "x",
+      payload: Object.assign({ mode: "amend", kind: "Fulfilment", direction: "SELL", party: "CY2-NIL", rid: id, date: "2026-10-06", qty: 0, total: 0, cash: 0, kg: 0 }, extra) },
+      withRow({ ...base, rid: id, cash: 0 }).book);
+    const negCash = neg("cr-negc", { cash: -50, kg: 3 }), negKg = neg("cr-negk", { cash: 50, kg: -1 }), negMod = neg("cr-negm", { kind: "Modification", newQty: 3, newTotal: -10 });
+    ok(/cannot be negative/.test(negCash.skip || "") && /cannot be negative/.test(negKg.skip || "") && /negative total/.test(negMod.skip || ""),
+      "a negative cash, a negative unit figure or a negative restated total is refused on the amendment road: " + JSON.stringify([negCash.skip || negCash.flags, negKg.skip || negKg.flags, negMod.skip || negMod.flags]));
   }
 
   /* THE FOLD: the close books one open refund of the difference; an amendment then a cancellation book the rest */
