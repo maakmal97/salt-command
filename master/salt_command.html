@@ -20212,7 +20212,7 @@ function tabNetwork(){
      SHAPE of the network, and the ordering it encodes is already in the rank on line two. The
      total was on this part three times: here, in the summary line of that partner's own card,
      and in the partner chart. A figure lives once per view. */
-  const node=(x,bc,title)=>`<div style="background:var(--card2);border:1px solid ${bc};border-radius:10px;padding:8px 12px;text-align:center;min-width:96px"><div class="mono" style="font-size:12px;color:var(--ink)">${ID(x.id)}</div><div style="font-size:10px;color:${bc};font-weight:700;letter-spacing:.4px">${title}</div></div>`;
+  const node=(x,bc,title)=>`<div style="background:var(--card2);border:1px solid ${bc};border-radius:10px;padding:8px 12px;text-align:center;min-width:96px"><div class="mono" style="font-size:12px;color:var(--ink)">${ID(x.id)}</div><div style="font-size:10.5px;color:${bc};font-weight:700;letter-spacing:.4px">${title}</div></div>`;
   const stem=(inner,h)=>`<div class="ncol"><div class="nstem" style="height:${h}px"></div>${inner}</div>`;
   const prin=ns.filter(isPrincipal), bench=ns.filter(x=>!isPrincipal(x));
   const cols=prin.map(x=>stem(node(x,'var(--gold)',(isDeparted(x.id)?PRINCIPAL_TITLE.toUpperCase()+' &middot; DEPARTED':PRINCIPAL_TITLE.toUpperCase())),12))

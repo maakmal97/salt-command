@@ -30,6 +30,12 @@
     "replace": ""
   },
   {
+    "name": "D5: the chart's role labels drop to 10px again",
+    "file": "master/salt_command.html",
+    "find": "<div style=\"font-size:10.5px;color:${bc};font-weight:700;letter-spacing:.4px\">${title}</div>",
+    "replace": "<div style=\"font-size:10px;color:${bc};font-weight:700;letter-spacing:.4px\">${title}</div>"
+  },
+  {
     "name": "A1: Try again keeps the read mark again",
     "file": "stmt/owner.js",
     "find": "function(){ box.removeAttribute('data-read'); while(box.children.length) box.lastChild.remove(); loadMakerInputs(); }",

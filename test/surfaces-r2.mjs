@@ -6,6 +6,7 @@
  *   D2  To do's cash act reads the credit an Accept spent: an order its credit covers owes nothing, as Salt Admin and the Counter say
  *   D3  a tap on a rail tab's count opens that tab (the count had no data-s, so the tap did nothing)
  *   D4  an Analysis link to a ledger row opens the older fold and clears the filters, so a row older than seven days is reached
+ *   D5  the Associates chart's role labels stand at the type floor, 10.5px (they were 10px, measured on Network)
  *   A1  Record's Try again reads again after a failed read (the box kept its read mark, so the retry returned at once)
  *   A2  a redraw of an account while This customer is still being read draws it once the read lands (the new box waited for nothing)
  * Invented codes only. */
@@ -46,6 +47,10 @@ export async function run({ ok, pageWork }) {
       + "ledOlder=false;ledF={q:'zz-none-zz',state:'',party:'',month:'',product:''};goRid(s.rid);"
       + "return s.date+':'+(document.querySelector('.lcard[data-rid=\"'+s.rid+'\"]')?'drawn':'absent');})()"));
     ok(/:drawn$/.test(d4), "D4: an Analysis link reaches a ledger row older than seven days behind a filter: " + d4);
+
+    /* D5 */
+    const d5 = JSON.parse(String(w.eval("(function(){switchTab('network');return JSON.stringify([].map.call(document.querySelectorAll('#sec-people .ncol'),function(c){var n=c.lastElementChild,l=n&&n.children[1];return l?parseFloat(l.style.fontSize):0;}));})()")));
+    ok(d5.length > 0 && d5.every((px) => px >= 10.5), "D5: every role label on the Associates chart is at least 10.5px: " + J(d5));
   } finally {
     await new Promise((r) => setTimeout(r, 200));
     try { w.close(); } catch (e) { /* jsdom */ }
