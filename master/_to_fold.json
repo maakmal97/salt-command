@@ -1,0 +1,81 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-01T11:18:26.513Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s309",
+    "qty": 0.5,
+    "total": 70,
+    "cash": 0,
+    "date": "2026-10-30",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 0.5
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-11-01"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "collected"
+     }
+    ],
+    "customer": "CR3-DAM",
+    "rids": [],
+    "booked_seq": 72
+   },
+   "reasoning": "Correction against CR3-DAM's order of 0.5 unit for RM 70 dated 2026-10-30 (s309). Sets deliveredQty from 0 to 0.5, deliveredOn from unset to 2026-11-01, handover from unset to collected. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CR3-DAM typically pays about RM 85/unit for salt across 23 orders; this one is RM 140, 64.7% above that.",
+    "This is an ADVANCE: 0.5 unit goes out with RM 70 unpaid. Check it against CR3-DAM's credit cap."
+   ],
+   "amends": "s309",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-11-01T11:18:26.513Z",
+    "type": "SELL",
+    "party": "CR3-DAM",
+    "qty": 0.5,
+    "total": 0,
+    "status": "Handover",
+    "raw": "0.5 unit collected to CR3-DAM, order 20261030115801-61l0cq, on 2026-11-01",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CR3-DAM",
+     "rid": null,
+     "orderKey": "CR3-DAM|2026-10-30|70",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-11-01",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 0.5,
+      "deliveredOn": "2026-11-01",
+      "handover": "collected"
+     },
+     "note": "0.5 unit collected for order 20261030115801-61l0cq."
+    },
+    "orderId": "20261030115801-61l0cq"
+   },
+   "decidedAt": "2026-11-01T11:18:29.388Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
