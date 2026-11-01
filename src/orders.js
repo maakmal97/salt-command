@@ -454,7 +454,7 @@ export async function acceptOrder(env, id, body, by, now, mirror) {
   }
   let live = await livePre(db, id, "ack");
   if (live && isOfferPre(live) && live.status === "waiting" && !live.entry && o.price && (!ASKING.includes(o.price.state) || acceptClosed(o, at))) {
-    await voidOffers(db, id, at.toISOString()); live = await livePre(db, id, "ack");
+    await voidOffers(db, id, at.toISOString(), (o.price.offer || {}).id); live = await livePre(db, id, "ack");   /* a newer offer's yes stands, and refuses this Accept */
   }
   if (live && live.status === "applied") return o.status === "placed"
     ? Object.assign({ approved: true, again: true, draft: live.draft_id }, await ackOnApproval(env, live))   /* its move failed before: again */
@@ -517,7 +517,10 @@ export async function acceptOrder(env, id, body, by, now, mirror) {
 export const OFFER_HOURS = 48;
 /* the states of an ask still open: asked, an offer of his out (lapsed or not), or one they took on its way to its row */
 const ASKING = ["asked", "offered", "taken"];
-const voidOffers = (db, id, at) => db.prepare("UPDATE preapproval SET status='void', decided_at=?1 WHERE order_id=?2 AND stage='ack' AND status='waiting' AND entry IS NULL AND json_extract(shown,'$.offer') IS NOT NULL").bind(at, id).run();
+/* 2 Nov 2026 (his word, Fable's review of v1366): A VOID NAMES THE ONE OFFER IT READ. A Withdraw, the minute's pass or an Accept that found an offer closed
+   lets that offer's yes go, in one conditional statement, and no other: a newer offer's yes, filed between the read and the void and perhaps taken by their
+   Yes already, stands, as does a yes whose row a take has queued (entry). An offer is named by its id, which the order book requires and the yes keeps */
+const voidOffers = (db, id, at, offerId) => db.prepare("UPDATE preapproval SET status='void', decided_at=?1 WHERE order_id=?2 AND stage='ack' AND status='waiting' AND entry IS NULL AND json_extract(shown,'$.offer.id')=?3").bind(at, id, String(offerId || "")).run();
 /** POST /orders/<id>/offer {total, delivery, hash}. Returns { ok, order, offer } or { ok: false, status, error }. */
 export async function offerOrder(env, id, body, by, now) {
   const at = now || new Date();
@@ -614,8 +617,10 @@ export async function withdrawOffer(env, id, body) {
   /* the id answered a withdrawal of an older offer and a newer offer of his is open: refused, so it is never said withdrawn, and fresh, so Salt Admin
      drops the id and its next tap withdraws the newer one (Fable's low finding of 1 Nov 2026); that offer and its yes stand */
   if (r.again && o.price.state === "offered") return { ok: false, status: 409, fresh: true, error: "that Withdraw was answered already, and a newer offer of yours is open" };
-  /* the yes goes with the offer, on a repeat too (a first tap that landed and stopped before the void) */
-  if (env.SALT_LEDGER) await voidOffers(env.SALT_LEDGER, id, new Date().toISOString());
+  /* the yes goes with the offer the order book says it withdrew, on a repeat too (a first tap that landed and stopped before the void), and no other:
+     a newer offer's, filed after the move, stands (2 Nov 2026) */
+  const p = (r.order && r.order.price) || {}, now = new Date();
+  if (env.SALT_LEDGER && p.state === "withdrawn" && p.offer) await voidOffers(env.SALT_LEDGER, id, now.toISOString(), p.offer.id);
   return Object.assign({ ok: true, order: r.order }, r.again ? { again: true } : {});
 }
 /** THEIR ACCEPT, followed: the row drafted at the offer and queued, approved where it lands only if it equals what he offered. */
@@ -693,17 +698,18 @@ async function queueOffer(env, f, off, why, at, mirror) {
 async function offerPass(env, now, mirror) {
   const db = env.SALT_LEDGER;
   let rows = [];
-  try { rows = (await db.prepare("SELECT order_id FROM preapproval WHERE stage='ack' AND status='waiting' AND entry_at IS NULL AND json_extract(shown,'$.offer') IS NOT NULL").all()).results || []; }
+  try { rows = (await db.prepare("SELECT order_id, json_extract(shown,'$.offer.id') AS offer FROM preapproval WHERE stage='ack' AND status='waiting' AND entry_at IS NULL AND json_extract(shown,'$.offer') IS NOT NULL").all()).results || []; }
   catch (e) { return []; }
   if (!rows.length) return [];
   const all = await listOrders(env, true);
   if (!all.ok) return [];
   const taken = [];
-  for (const { order_id: id } of rows) {
+  /* 2 Nov 2026: a yes the pass read goes by its own offer's id, so a newer offer's, filed after the read, stands */
+  for (const { order_id: id, offer } of rows) {
     const o = all.orders.find((x) => x.id === id);
     if (o && o.status === "placed" && o.price && o.price.state === "taken") {
       try { const r = await takeOffer(env, id, now, mirror); if (r && r.approved && r.draft) taken.push(r.draft); } catch (e) { /* the next minute tries again */ }
-    } else if (!o || o.status !== "placed" || !o.price || ["passed", "withdrawn"].includes(o.price.state)) await voidOffers(db, id, (now || new Date()).toISOString());
+    } else if (!o || o.status !== "placed" || !o.price || ["passed", "withdrawn"].includes(o.price.state)) await voidOffers(db, id, (now || new Date()).toISOString(), offer);
   }
   return taken;
 }
