@@ -558,7 +558,7 @@ export const OWNER_JS = `
      Approve), their prices at that % off the Desk (drift-preview) against the Floor, Send at that % only once it differs from what is set, Use the
      suggestion, Set back to 0. Then This customer (salt) and the associate reward, read by the account's code (customer-of, reward-of), and Partner, which
      asks once. Nothing on the card prices: every figure is the Desk's. */
-  var pctOn={}, pctReads={}, ofReads={};
+  var pctOn={}, pctReads={}, ofReads={}, ofWait={};
   function pctWord(n){ return n>0?'+'+n+'%':n<0?'−'+(-n)+'%':'0%'; }
   function acctMore(box, a){
     readParty().then(function(cat){ if(box.isConnected) drawMore(box, a, cat||{}); }, function(){ if(box.isConnected){ box.textContent=''; box.appendChild(el('p','anote bad','Their prices could not be read.')); } });
@@ -607,10 +607,11 @@ export const OWNER_JS = `
   function readingOf(kind, code, paint){
     var k=kind+'/'+code;
     if(ofReads[k]&&!ofReads[k].reading){ paint(ofReads[k]); return; }
-    if(ofReads[k]) return;
+    /* 1 Nov 2026: a redraw while the read is out draws new boxes, and each waits for the read, so none is left hidden */
+    if(ofReads[k]){ (ofWait[k]=ofWait[k]||[]).push(paint); return; }
     ofReads[k]={reading:true};
     refs('/all/maker/'+kind+'/'+encodeURIComponent(code)).then(function(j){ ofReads[k]=j&&j.reading||{}; }, function(){ ofReads[k]={}; })
-      .then(function(){ paint(ofReads[k]); delete ofReads[k].reading; setTimeout(function(){ delete ofReads[k]; }, 60000); });
+      .then(function(){ var r=ofReads[k], wait=ofWait[k]||[]; delete ofWait[k]; [paint].concat(wait).forEach(function(f){ f(r); }); delete r.reading; setTimeout(function(){ delete ofReads[k]; }, 60000); });
   }
   function pctSection(a, cat, books, partner){
     var s=el('div','asec apct salt-glass-card salt-glass-card--radius-lg'), head=el('div','apct__head');
@@ -4352,7 +4353,7 @@ export const OWNER_JS = `
       makerOtherInputs(box,catalog,refreshMakerTradeCatalog);
       recordMenu(box,note,catalog);
     }catch(error){ refusal(note,error); note.dataset.retry='true';
-      makerButton(box,['Try again','record.retry'],function(){ while(box.children.length>1) box.lastChild.remove(); loadMakerInputs(); }); }
+      makerButton(box,['Try again','record.retry'],function(){ box.removeAttribute('data-read'); while(box.children.length) box.lastChild.remove(); loadMakerInputs(); }); }
     finally{ sweep(); }
   }
   async function makerForAccount(account){
