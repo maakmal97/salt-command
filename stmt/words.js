@@ -24,8 +24,8 @@
  */
 
 export const EN = {
-  "hours.closed": "Counter is closed. You can still place an order; confirmation may be delayed.",
-  "hours.unavailable": "Hours are unavailable. You can still place an order; confirmation may be delayed.",
+  "hours.closed": "Counter is closed; you can still place an order, but confirmation may be delayed.",
+  "hours.unavailable": "Hours are unavailable; you can still place an order, but confirmation may be delayed.",
   /* ---- REFUSALS: e.<code>, what the Worker answers beside its code (stmt/worker.js, stmt/orders.js, stmt/orderbook.js) ---- */
   "e.refused": "That username and password were not accepted.",
   "e.tooMany": "Too many attempts. Try again in fifteen minutes.",
@@ -186,7 +186,7 @@ export const EN = {
   "door.again": "Try again",
   "door.toCode": "Use a sign-in code",
   /* a sentence, drawn as one: nothing in it is bold or brass, since a link is only ever a link (11 Oct 2026) */
-  "door.help": "Lost your password or your link? Ask us for a new sign-in link. It works straight away.",
+  "door.help": "If you lost your password or your link, ask us for a new sign-in link.",
   /* ---- OPENING, SIGNED OUT, AND ANOTHER ACCOUNT ON THIS PHONE ---- */
   "open.lead": "Opening your account...",
   "out.h": "You were signed out on this {dev}",

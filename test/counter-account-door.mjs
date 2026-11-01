@@ -183,9 +183,9 @@ export async function run({ ok }) {
     const ownerGate = new JSDOM(landingPage("", "n7d2e", { master: "fixture-master", accounts: [] }), { url: "https://counter.fixture.test/all" }).window.document.getElementById("gate");
     ok(!!ownerGate && !ownerGate.querySelector('[data-w="door.app"]') && !ownerGate.querySelector(".appmark"),
       "his own page, which is Salt Admin, carries no copy of the customer's door name");
-    const help = [...gate.querySelectorAll(".salt-insight")].find((x) => /Lost your password or your link\?/.test(x.textContent));
+    const help = [...gate.querySelectorAll(".salt-insight")].find((x) => /lost your password or your link, ask us/.test(x.textContent));   /* 1 Nov 2026: one sentence now (craft.md section 3); it read "Lost your password or your link? Ask us ..." */
     ok(!!help && help.children.length === 0 && help.innerHTML === W.fillHtml(W.EN["door.help"], {}, "en") && !/[*]/.test(W.EN["door.help"]) && !/[*]/.test(gate.textContent)
-      && gate.querySelectorAll("a, [role=link], b, strong").length === 0 && /Ask us for a new sign-in link\./.test(t(help)),
+      && gate.querySelectorAll("a, [role=link], b, strong").length === 0 && /ask us for a new sign-in link\./.test(t(help)),
       "the help line is a sentence: plain words with nothing bold, brass or linked in it, and the door holds no link at all: " + JSON.stringify(help && help.innerHTML));
     /* ---- 6: the yes-or-no Sheet's danger tap sends once, from the tap that sent it */
     const Y = await open({ orders: [A, B] });

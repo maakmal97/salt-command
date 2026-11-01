@@ -26976,8 +26976,8 @@ await (async () => {
       "the door says Sign in, what to sign in with, and how each field is written");
     const tick = D.getElementById("rem"), tickText = tick.closest("label").textContent;
     ok(tick.checked && tickText === "Keep me signed in on this phone", "Keep me signed in on this phone, ticked: " + JSON.stringify(tickText));
-    const help = [...gate.querySelectorAll(".salt-insight")].find((x) => /Lost your password or your link\?/.test(x.textContent));
-    ok(!!help && /Ask us for a new sign-in link\./.test(help.textContent)
+    const help = [...gate.querySelectorAll(".salt-insight")].find((x) => /lost your password or your link, ask us/.test(x.textContent));   /* 1 Nov 2026: one sentence now */
+    ok(!!help && /ask us for a new sign-in link\./.test(help.textContent)
       && (help.compareDocumentPosition(D.getElementById("go")) & D.defaultView.Node.DOCUMENT_POSITION_PRECEDING) !== 0,
       "and beneath Sign in: Lost your password or your link? Ask us for a new sign-in link");
 

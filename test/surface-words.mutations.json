@@ -1,3 +1,6 @@
 [
- {"name":"the door's code button back to five words","file":"stmt/words.js","find":"\"door.toCode\": \"Use a sign-in code\"","replace":"\"door.toCode\": \"I have a sign-in code\""}
+ {"name":"the door's code button back to five words","file":"stmt/words.js","find":"\"door.toCode\": \"Use a sign-in code\"","replace":"\"door.toCode\": \"I have a sign-in code\""},
+ {"name":"the help line three sentences again","file":"stmt/words.js","find":"\"door.help\": \"If you lost your password or your link, ask us for a new sign-in link.\",","replace":"\"door.help\": \"Lost your password or your link? Ask us for a new sign-in link. It works straight away.\","},
+ {"name":"the closed line two sentences again","file":"stmt/words.js","find":"\"hours.closed\": \"Counter is closed; you can","replace":"\"hours.closed\": \"Counter is closed. You can"},
+ {"name":"the unavailable line two sentences again","file":"stmt/words.js","find":"\"hours.unavailable\": \"Hours are unavailable; you can","replace":"\"hours.unavailable\": \"Hours are unavailable. You can"}
 ]
