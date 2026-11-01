@@ -138,7 +138,7 @@ export async function run({ ok, pageWork }) {
     ok(byAct(p.row("d-1"), "draft.reject").getAttribute("aria-pressed") === "false" && !p.row("d-1").classList.contains("ap--r") && bar0.hidden, "a second tap on the same choice clears it, and the bar goes");
     const t2 = p.row("d-2"), t3 = p.row("d-3");
     ok(!t3 && [...d.querySelectorAll("#makerDrafts [data-maker-card]")].filter((x) => /one trip/.test(x.textContent)).length === 1 && t2.querySelectorAll(".rdet--row h4").length === 2, "a trip is drawn once, in one card holding both its rows, and never again for its other row: " + d.querySelectorAll("#makerDrafts [data-maker-card]").length);
-    ok(!!t2 && /Two books, one trip\. Approve decides both\./.test(t2.textContent) && byAct(t2, "draft.approve").textContent === "Approve both" && byAct(t2, "draft.reject").textContent === "Reject both"
+    ok(!!t2 && /Two books, one trip: Approve decides both\./.test(t2.textContent) && byAct(t2, "draft.approve").textContent === "Approve both" && byAct(t2, "draft.reject").textContent === "Reject both"
       && t2.querySelectorAll("[data-act='draft.approve']").length === 1,
     "a trip's rows stand in one card with one Approve and one Reject: " + (t2 && t2.textContent.slice(0, 140)));
     /* 25 Oct 2026 (canvas Salt Admin Orders): a row's book is its typed Product tag, "1 unit [tag], RM 100.00", its name in its hue and no mark */

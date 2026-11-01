@@ -94,9 +94,10 @@ export async function run({ ok, pageWork }) {
   await p.tap("nav.orders"); await p.tap("part.orders.payments");
   await p.tap("claim.open", CLAIM);
   let card = p.claim();
-  ok(!!card && /Locked/.test(card.textContent) && card.querySelectorAll('[data-act="vault.unlock"]').length === 1 && !card.querySelector('[data-act="claim.slip"]')
+  /* 1 Nov 2026: a locked slip says Unlock names and places to see the slip on this phone (it began Locked. and ran to two sentences) */
+  ok(!!card && /Unlock names and places to see the slip on this phone[.]/.test(card.textContent) && card.querySelectorAll('[data-act="vault.unlock"]').length === 1 && !card.querySelector('[data-act="claim.slip"]')
     && ownFields(d).length === 0 && !card.querySelector("input[type=password]") && readsOf(p, "/all/maker/vault/key") === 0 && !p.wire.some((w) => w.startsWith("/all/maker/slips/")),
-    "locked, a claim's slip says Locked and offers the one Unlock, with no field of its own, and asks the Counter for neither the key nor the slip: " + (card && card.textContent.slice(-120)));
+    "locked, a claim's slip says to unlock and offers the one Unlock, with no field of its own, and asks the Counter for neither the key nor the slip: " + (card && card.textContent.slice(-120)));
   await p.tap("nav.record"); await p.tap("part.record.customers");
   const forms = { "Add ID": p.form("New customer"), "Amend ID": p.form("Change a name or place"), "Place on the map": p.form("Place on the map"), "An unsent entry": p.unsent() };
   ok(ownFields(d).length === 0 && [...d.querySelectorAll("#roster input[type=password]")].length === 0 && d.querySelectorAll("#vaultSheet input[type=password]").length === 1
@@ -166,7 +167,7 @@ export async function run({ ok, pageWork }) {
   await p.tap("claim.open", CLAIM);
   card = p.claim();
   const reads1 = { names: readsOf(p, "/all/maker/vault"), addr: readsOf(p, "/all/maker/vault/addr"), key: readsOf(p, "/all/maker/vault/key") };
-  ok(/Locked/.test(card?.textContent) && p.names().length === 0, "after a wrong password the claim's slip still says Locked");
+  ok(/Unlock names and places to see the slip on this phone[.]/.test(card?.textContent) && p.names().length === 0, "after a wrong password the claim's slip still says to unlock");
   await p.unlockFrom(p.ask(card), PASS);
   ok(readsOf(p, "/all/maker/vault") - reads1.names === 1 && readsOf(p, "/all/maker/vault/addr") - reads1.addr === 1 && readsOf(p, "/all/maker/vault/key") - reads1.key === 1,
     "one password reads the names, the places and the slip key from the Counter, once each");
@@ -185,9 +186,9 @@ export async function run({ ok, pageWork }) {
 
   /* Lock, in the Shop row, then the unlock again (the unsent entry and the forms below are driven on the second) */
   d.getElementById("vaultSwitch").click(); await p.work.quiet();
-  ok(p.state() === "Locked" && p.names().length === 0 && p.urls.made.every((u) => p.urls.revoked.includes(u)) && !d.querySelector("[data-maker-slip]") && /Locked/.test(p.claim()?.textContent)
+  ok(p.state() === "Locked" && p.names().length === 0 && p.urls.made.every((u) => p.urls.revoked.includes(u)) && !d.querySelector("[data-maker-slip]") && /Unlock names and places to see the slip on this phone[.]/.test(p.claim()?.textContent)
     && store.dump() === stored && store.writes.length === 0,
-    "Lock in Shop drops the names, the slip and its blob URL, reads Locked on the card, and writes nothing");
+    "Lock in Shop drops the names, the slip and its blob URL, says to unlock on the card, and writes nothing");
   await p.unlockFrom(p.ask(p.claim()), PASS);
   ok(p.state() === "Open on this phone" && p.names().length > 0, "the page unlocks again after a lock");
 
@@ -276,8 +277,8 @@ export async function run({ ok, pageWork }) {
     ok(!q.d.querySelector("[data-maker-slip]") && q.urls.made.length === 1 && q.urls.revoked.length === 1 && q.urls.revoked[0] === q.urls.made[0],
       name + ": the slip picture is removed and its blob URL revoked");
     ok(q.state() === "Locked" && q.d.getElementById("vaultSwitch").getAttribute("aria-checked") === "false" && q.gates().length >= 3 && q.gates().every((g) => /^Locked/.test(g.textContent) && g.querySelectorAll('[data-act="vault.unlock"]').length === 1)
-      && !!card2 && /Locked/.test(card2.textContent) && card2.querySelectorAll('[data-act="vault.unlock"]').length === 1,
-      name + ": the Shop row, every gate and the claim's slip read Locked with the one Unlock");
+      && !!card2 && /Unlock names and places to see the slip on this phone[.]/.test(card2.textContent) && card2.querySelectorAll('[data-act="vault.unlock"]').length === 1,   /* 1 Nov 2026: the slip's note is the unlock sentence, not Locked */
+      name + ": the Shop row and every gate read Locked, and the claim's slip says to unlock, each with the one Unlock");
     q.type(byAct(form, "record.add-id.name"), "Zed Tester");
     await q.send(form, "record.add-id.send");
     ok(/Unlock names and places first[.]/.test(form.textContent) && q.wire.filter(isVault).length === before && q.posts.length === postsBefore,

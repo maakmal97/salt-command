@@ -18036,7 +18036,8 @@ await (async () => {
 
     /* the code with no account: Send is off, and the stranger's link is there to show */
     const nc = card("n:" + uN);
-    ok(/Their account comes with the next update[.] Show them the guest price list meanwhile[.]/.test(needFull(D, "n:" + uN).querySelector(".npane__why").textContent) && !btn(nc, "Send, after the update"),
+    /* 1 Nov 2026: the line is the first sentence alone (it went on: Show them the guest price list meanwhile); the Show the guest price list button below still offers the list */
+    ok(/Their account comes with the next update[.]$/.test(needFull(D, "n:" + uN).querySelector(".npane__why").textContent) && !btn(nc, "Send, after the update"),
       "an ID with no account says when it is made (in its open card), offers the guest price list and has no Send at all");
     btn(nc, "Show the guest price list").click();
     const standingRec = JSON.parse((await kv.list({ prefix: "g:" })).keys.map((k) => kv.m.get(k.name)).find((v) => /"standing":true/.test(v)));
@@ -19327,7 +19328,8 @@ await (async () => {
     const nc = () => D.querySelector('#nlist [data-need="n:' + uN + '"]');
     /* 22 Oct 2026: the why stands in the open card beside the list from 860px, and the card's pill says Show, its reader name the whole */
     const no = () => nc() && (wideNeeds(win), needFull(D, "n:" + uN).querySelector(".npane__why"));
-    ok(await until(() => no() && /Their account comes with the next update[.] Show them the guest price list meanwhile[.]/.test(no().textContent)
+    /* 1 Nov 2026: one sentence (the guest price list is the button beside it) */
+    ok(await until(() => no() && /Their account comes with the next update[.]$/.test(no().textContent)
       && [...nc().querySelectorAll("button")].some((b) => b.getAttribute("aria-label") === "Show the guest price list")),
       "Needs you offers the guest price list with only the sheet read: " + (nc() || {}).textContent);
     delete win.matchMedia;
@@ -19341,7 +19343,7 @@ await (async () => {
       && !row(uF).querySelector('button[aria-label="Show the guest price list"]')),
       "and its Accounts row says No account and offers Show, where an account with one does not: " + JSON.stringify([(row(uN) || {}).textContent, (row(uF) || {}).textContent]));
     const cN = cardOf(uN), nextN = cN && cN.querySelector(".atot");
-    ok(!!nextN && nextN.textContent === "Their account comes with the next update. Show them the guest price list meanwhile." && !(cardOf(uF) || { textContent: "next update" }).textContent.includes("next update"),
+    ok(!!nextN && nextN.textContent === "Their account comes with the next update." && !(cardOf(uF) || { textContent: "next update" }).textContent.includes("next update"),
       "and the opened card says it comes with the next update, where an account with one does not");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
@@ -25881,7 +25883,7 @@ await (async () => {
         r.dispatchEvent(new Wd.Event("click", { bubbles: true })); return (D.querySelector("#aopen .scard") || {}).textContent || ""; };
       const ltrCard = cardText("CZ9-LTR"), wlkCard = cardText("CZ9-WLK");
       ok(/^No account/.test(ltrRow) && !!wlkRow && !/No account/.test(wlkRow)
-        && ltrCard.includes("Their account comes with the next update. Show them the guest price list meanwhile.") && wlkCard.includes("CZ9-WLK") && !wlkCard.includes("next update"),
+        && ltrCard.includes("Their account comes with the next update.") && !ltrCard.includes("meanwhile") && wlkCard.includes("CZ9-WLK") && !wlkCard.includes("next update"),
         "Salt Admin says the waiting one comes with the next update, and to show the guest price list until then, on its card (its row says No account); the bound one does not: "
         + JSON.stringify({ ltrRow, wlkRow, ltrCard: ltrCard.slice(0, 120), wlkCard: wlkCard.slice(0, 120) }));
     } finally { try { Wd.close(); } catch (e) { /* best effort */ } }

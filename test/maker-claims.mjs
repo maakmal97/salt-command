@@ -215,16 +215,16 @@ export async function run({ ok }) {
     rowOf(0).click();
     await until(() => inCard("claim.received") && !inCard("claim.received").disabled);
     ok(!!card(0) && !card(1) && !!inCard("claim.received-booked") && !!inCard("claim.not-found") && !inCard("claim.preview")
-      && !!unlockBtn() && !doc.querySelector("#makerClaims input[type=password]") && /Locked/.test(card(0).textContent) && fetched.key === 0 && fetched.slip === 0
+      && !!unlockBtn() && !doc.querySelector("#makerClaims input[type=password]") && /Unlock names and places to see the slip on this phone[.]/.test(card(0).textContent) && fetched.key === 0 && fetched.slip === 0
       && posts.filter((p) => /[/]preview$/.test(p.route)).length === 1,
-      "Opening a claim reads its rows once and offers Received and Not found with no Preview rows button; its slip says Locked, offers the one Unlock and fetches nothing it cannot open");
+      "Opening a claim reads its rows once and offers Received and Not found with no Preview rows button; its slip says to unlock, offers the one Unlock and fetches nothing it cannot open");
     keyWait = true; unlockWith(pass);
     await until(() => releaseKey);
     lock();
     releaseKey();
     await settle();
     ok(created === 0 && imports.length === 0 && !doc.querySelector("[data-maker-slip]") && doc.getElementById("vaultPass").value === "" && doc.getElementById("vaultSheet").hidden
-      && !!unlockBtn() && /Locked/.test(card(0).textContent),
+      && !!unlockBtn() && /Unlock names and places to see the slip on this phone[.]/.test(card(0).textContent),
       "Held key-fetch completion after visibility lock cannot import/paint an old slip unlock.");
     keyWait = false; unlockWith(pass);
     await until(() => thumb());
@@ -239,8 +239,8 @@ export async function run({ ok }) {
     ok(small && large && thumb().getAttribute("aria-expanded") === "false" && created === 1,
       "Tapping the thumbnail opens the full slip in place and the next tap shrinks it, with no second picture made: " + JSON.stringify([small, large]));
     inCard("vault.lock").click();
-    ok(revoked === 1 && !doc.querySelector("[data-maker-slip]") && !!unlockBtn() && /Locked/.test(card(0).textContent),
-      "Lock revokes the actual picture URL, removes its rendered image, and the card says Locked again.");
+    ok(revoked === 1 && !doc.querySelector("[data-maker-slip]") && !!unlockBtn() && /Unlock names and places to see the slip on this phone[.]/.test(card(0).textContent),
+      "Lock revokes the actual picture URL, removes its rendered image, and the card says to unlock again.");
     slipWait = true; unlockWith(pass);
     await until(() => releaseSlip);
     lock();
@@ -306,7 +306,7 @@ export async function run({ ok }) {
     rowOf(0).click();
     await until(() => !!card(0));
     await settle();
-    const keptAcrossPlaces = await until(() => thumb()) && !unlockBtn() && !/Locked/.test(card(0).textContent) && fetched.slip === slips + 1;
+    const keptAcrossPlaces = await until(() => thumb()) && !unlockBtn() && !/Unlock names and places to see the slip on this phone[.]/.test(card(0).textContent) && fetched.slip === slips + 1;
     ok(keptAcrossPlaces && fetched.key === keysAtUnlock,
       "and it is kept when Orders is left: the next claim opened draws its slip with no unlock asked and the key not fetched again: " + JSON.stringify([keptAcrossPlaces, fetched.key, keysAtUnlock]));
     ok(asked.length === 0, "and no native confirm was asked on the way: " + JSON.stringify(asked));

@@ -91,7 +91,8 @@ export async function run({ ok, pageWork }) {
     await click(mk);
     const first = p.posts.length, said = t(mk);
     await click(mk);
-    ok(first === 0 && said === "Tap again: send to Approve" && p.posts.length === 1 && p.posts[0].route === "/all/maker/inputs/partner" && p.posts[0].body.code === "CX1-ZED",
+    /* 1 Nov 2026: the armed button reads Tap again to confirm (it read Tap again: send to Approve, five words) */
+    ok(first === 0 && said === "Tap again to confirm" && p.posts.length === 1 && p.posts[0].route === "/all/maker/inputs/partner" && p.posts[0].body.code === "CX1-ZED",
       "Make partner asks once, then sends the partner entry: " + J([first, said, p.posts]));
     /* 7 */
     enter(d, "record", "pricing"); await p.work.quiet();

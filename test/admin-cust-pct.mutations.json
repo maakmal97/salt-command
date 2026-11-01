@@ -80,8 +80,8 @@
   {
     "name": "6 Make partner asks once",
     "file": "stmt/owner.js",
-    "find": "if(!armed){ b.textContent='Tap again: send to Approve';",
-    "replace": "if(false){ b.textContent='Tap again: send to Approve';"
+    "find": "if(!armed){ b.textContent='Tap again to confirm'; armed=setTimeout(function(){ armed=null; b.textContent='Make partner'; }",
+    "replace": "if(false){ b.textContent='Tap again to confirm'; armed=setTimeout(function(){ armed=null; b.textContent='Make partner'; }"
   },
   {
     "name": "1 the account carries what prices it",

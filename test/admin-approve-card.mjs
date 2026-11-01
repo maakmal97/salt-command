@@ -203,8 +203,8 @@ export async function run({ ok, pageWork }) {
   try {
     await p.tap("nav.orders"); await p.tap("part.orders.approve");
     const c = p.card(CLAIM().id), go = c && byAct(c, "approve.to-payment", CLAIM().id);
-    ok(!!go && go.tagName === "BUTTON" && go.textContent === "Answer through the payment card" && !/Answer this/.test(c.textContent) && !byAct(c, "draft.approve") && !byAct(c, "draft.reject"),
-      "a claim's row offers Answer through the payment card, a button with its act, and has no Approve or Reject to choose: " + (c && c.textContent.slice(0, 200)));
+    ok(!!go && go.tagName === "BUTTON" && go.textContent === "Open the payment card" && !/Answer this/.test(c.textContent) && !byAct(c, "draft.approve") && !byAct(c, "draft.reject"),
+      "a claim's row offers Open the payment card (it read Answer through the payment card, five words), a button with its act, and has no Approve or Reject to choose: " + (c && c.textContent.slice(0, 200)));
     go.click(); await p.work.quiet();
     const row = byAct(p.d, "claim.open", "abcd-efgh:c-2");
     ok(!!row && row.getAttribute("aria-current") === "true" && p.approves().length === 0 && !p.posts.some((x) => /\/(approve|reject|received)$|decide-many/.test(x.route)),

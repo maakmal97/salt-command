@@ -165,7 +165,7 @@ export const OWNER_JS = `
      missing from. A row with no totals is a username with nothing behind it, and that is what it
      says. D15 (24 Sep 2026): the fold binds a spare account at Add ID and this run's publish opens it,
      so a row reads this only when no spare was free, and the laptop's next update makes it. */
-  function waitLine(){ return 'Their account comes with the next update. Show them the guest price list meanwhile.'; }
+  function waitLine(){ return 'Their account comes with the next update.'; }
   function flagLine(a){
     if(!a.t||!a.flag) return waitLine();
     var t=a.t;
@@ -526,7 +526,7 @@ export const OWNER_JS = `
     var soArmed=null;
     sob.addEventListener('click', async function(){
       if(none) return;
-      if(!soArmed){ sob.textContent='Tap again to sign them out'; soArmed=setTimeout(function(){ soArmed=null; sob.textContent='Sign out everywhere'; }, 4000); return; }
+      if(!soArmed){ sob.textContent='Tap again to confirm'; soArmed=setTimeout(function(){ soArmed=null; sob.textContent='Sign out everywhere'; }, 4000); return; }
       clearTimeout(soArmed); soArmed=null; sob.disabled=true; sob.textContent='Signing out...';
       try{ var j=await refs('/all/signout', {u:u, keep:await linkId(u)}); gn.textContent=endedLine(j); gn.className='anote'; }
       catch(e){ gn.textContent='Could not sign out: '+e.message; gn.className='anote bad'; }
@@ -585,12 +585,12 @@ export const OWNER_JS = `
     s.appendChild(head);
     mine.forEach(function(r){
       var waits=(cat.editWaiting||[]).some(function(w){ return w.party===r.party&&w.since===r.since&&+w.amount===+r.amount; });
-      var row=el('div','arefund__row'); row.appendChild(el('p','anote',rm(r.amount)+' to '+r.party+', '+r.since+(waits?'. Waiting under Approve.':'. Paid marks it returned; Remove as stale takes it off the book, and the money received rises by it.')));
+      var row=el('div','arefund__row'); row.appendChild(el('p','anote',rm(r.amount)+' to '+r.party+', '+r.since+(waits?'. Waiting under Approve.':'. Paid marks it returned.')));
       s.appendChild(row); if(waits) return;
       var answer=el('p','anote'); answer.setAttribute('role','status');
       [['Mark paid today','refundPaid','Sent. It is marked paid once you approve it.'],['Remove as stale','refundRemove','Sent. It comes off the book once you approve it.']].forEach(function(k){
         var armed=null, at=null, b=makerButton(row,[k[0],'acct.refund',a.code+':'+r.since+':'+r.amount+':'+k[1]],async function(send){
-          if(!armed){ b.textContent='Tap again to send it to Approve'; armed=setTimeout(function(){ armed=null; b.textContent=k[0]; }, 4000); return; }
+          if(!armed){ b.textContent='Tap again to confirm'; armed=setTimeout(function(){ armed=null; b.textContent=k[0]; }, 4000); return; }
           clearTimeout(armed); armed=null; b.textContent=k[0];
           var body={kind:k[1],party:r.party,since:r.since,amount:r.amount};
           if(k[1]==='refundPaid') body.paidOn=new Date(Date.now()+8*36e5).toISOString().slice(0,10);
@@ -744,7 +744,7 @@ export const OWNER_JS = `
     if(partner||waiting) return s;
     var answer=el('p','anote'); answer.setAttribute('role','status');
     var armed=null, at=null, sig='', b=makerButton(s,['Make partner','acct.partner',a.code],async function(send){
-      if(!armed){ b.textContent='Tap again: send to Approve'; armed=setTimeout(function(){ armed=null; b.textContent='Make partner'; }, 4000); return; }
+      if(!armed){ b.textContent='Tap again to confirm'; armed=setTimeout(function(){ armed=null; b.textContent='Make partner'; }, 4000); return; }
       clearTimeout(armed); armed=null; b.textContent='Make partner';
       var body={code:a.code}, check=JSON.stringify(body);
       if(check!==sig){ sig=check; at=new Date().toISOString(); }
@@ -1203,7 +1203,7 @@ export const OWNER_JS = `
     'A supplier has no % on the Set Price.':'A supplier has no % on the Set Price.',
     'Choose a % from -30% to +30% (-0.3 to 0.3), or clear it.':'Choose a % from -30 to +30, or clear it.',
     'Choose the sizes to hide from the board.':'Choose the sizes to leave off the printed list.',
-    "A size to hide must be one of this book's board sizes.":'Choose sizes from this book printed list.',
+    "A size to hide must be one of this book's board sizes.":"Choose sizes from this book's printed list.",
     'Every size is unticked, so there is no board to make.':'Every size is unticked, so there is nothing to print.',
     'A snooze is a real day, or null to dismiss.':'Pick a real day, or hide it for good.',
     'A snooze ends after today and within a year.':'Pick a day after today and within a year.',
@@ -1799,7 +1799,7 @@ export const OWNER_JS = `
     note.setAttribute('role','status');
     function slipSealed(){
       box.textContent=''; box.classList.remove('open');
-      note.textContent='Locked. Unlock names and places to see the slip; it is seen on this phone only.'; box.appendChild(note);
+      note.textContent='Unlock names and places to see the slip on this phone.'; box.appendChild(note);
       makerClaimButton(box,['Unlock','vault.unlock',key],function(button){ vaultAsk(button); },false);
     }
     function slipNone(){
@@ -1971,7 +1971,7 @@ export const OWNER_JS = `
       restore.hidden=!draft.saved||!!draft.pending;restore.disabled=busy||!!draft.storageError;
       cancel.hidden=!draft.pending&&!draft.saved&&!draft.storageError;cancel.disabled=busy;
       send.textContent=draft.pending&&draft.pending.message!==undefined?'Send again':'Send';
-      quiet.textContent=draft.pending&&draft.pending.noReply?'Send No reply needed again':'No reply needed';
+      quiet.textContent=draft.pending&&draft.pending.noReply?'Send it again':'No reply needed';
     }
     draft.redraw=makerChatState;
     async function makerChatSubmit(noReply){
@@ -5176,7 +5176,7 @@ export const OWNER_JS = `
     if(waitN&&!ordOpen(order)) card.appendChild(el('p','salt-insight',(waitN===1?'Its move waits':'Its '+waitN+' moves wait')+' under Approve: the book keeps the row as it was until you approve.'));
     /* 17 Oct 2026: a refund the book still owes them on this order's row */
     var owes=makerData&&makerData.refunds&&order.ledgerKey&&makerData.refunds[order.ledgerKey];
-    if(+owes>0.004) card.appendChild(el('p','salt-insight',rm(owes)+' refund on this order is their credit, spent at your next Accept. Paid back by hand, close it on the Desk.'));
+    if(+owes>0.004) card.appendChild(el('p','salt-insight',rm(owes)+' refund on this order is their credit, spent at your next Accept, or paid back by hand on the Desk.'));
     /* 20 Oct 2026 (canvas V36): no Details fold; its rows stand in the band, the delivery address and the sheet's link */
   }
   /* Salt Admin A to C: the orders one sheet of theirs placed together, in the order the Desk asks the delivery on (the first by id) */
@@ -5397,7 +5397,7 @@ export const OWNER_JS = `
           ws.addEventListener('change',function(){ win.value=ws.value; if(win.value) win.day=win.value.slice(0,10); makerPlacedInvalidate(); makerPlacedRead(); });
           winDraw=function(){ ws.value=win.value; };
           wl.appendChild(ws); form.appendChild(wl);
-          form.appendChild(el('p','salt-insight oagree__wide',order.slot?'They chose '+String(order.slotSpan||'').replace('-',' to ')+'. Choose another and they will be asked.'
+          form.appendChild(el('p','salt-insight oagree__wide',order.slot?'They chose '+String(order.slotSpan||'').replace('-',' to ')+', and choosing another asks them.'
             :'They want it ASAP; choose a window and it goes with Agree.'));
         }
         function makerPlacedDelivery(){
@@ -5526,8 +5526,8 @@ export const OWNER_JS = `
       historyBlock(row,{rid:l.rid},'line:'+l.rid,null,key); });   /* plan 4: each line its History and Undo */
     if(left.length){
       var hand=el('div','maker-fields triphand'), handSaid=el('p','msg'); handSaid.setAttribute('role','status');
-      var handBtn=makerButton(hand,['Handover all','trip.handover',t.trip],function(){ return tripHandover(t,key,fields,handSaid); },true);
-      var relabel=function(){ handBtn.textContent=left.every(function(l){ return Number(fields[l.rid].value)===l.left; })?'Handover all':'Hand over as typed'; };
+      var handBtn=makerButton(hand,['Hand over all','trip.handover',t.trip],function(){ return tripHandover(t,key,fields,handSaid); },true);
+      var relabel=function(){ handBtn.textContent=left.every(function(l){ return Number(fields[l.rid].value)===l.left; })?'Hand over all':'Hand over as typed'; };
       left.forEach(function(l){ fields[l.rid].addEventListener('input',relabel); });
       hand.appendChild(handSaid); card.appendChild(hand);
     }
@@ -5541,7 +5541,7 @@ export const OWNER_JS = `
      cancel a Cancellation; History and Undo are the row's. Every figure is the Desk's, as the row will stand once the moves waiting fold. */
   /* 22 Oct 2026 (his word): a unit the fold raised says which it is, on the row and its card */
   var REWARD_WORD={associate:'Associate reward', loyal:'Loyalty unit'};
-  var ROW_STAGE={confirmed:['brass','Agreed','tick'], paid:['verdigris','Delivered or paid','ticks'], done:['mist','Completed','ticks'], ended:['mist','Ended','cross']};
+  var ROW_STAGE={confirmed:['brass','Agreed','tick'], paid:['verdigris','Out or paid','ticks'], done:['mist','Done','ticks'], ended:['mist','Ended','cross']};
   function rowCard(root,e){
     var r=e.row, key=e.id, card=makerCard(root,key), acts=el('div','maker-foot__acts'), live=!r.cancelled&&!r.writtenOff;
     card.setAttribute('data-in',e.parts); card.setAttribute('data-row',r.rid);
@@ -5554,7 +5554,7 @@ export const OWNER_JS = `
     if(r.reward) card.appendChild(el('p','salt-insight',REWARD_WORD[r.reward]+' for '+r.rewardOf+', at cost and free to them: it goes with that order or their next salt handover.'));
     card.appendChild(metrics([['Owed',rm(r.owed)],['Paid',rm(r.paid)],['Handed',String(+(+r.handed||0).toFixed(3))+' of '+units(r.qty)]]));
     if(r.waiting>0) card.appendChild(el('p','salt-insight','As it will stand once '+(r.waiting===1?'the move':'the '+r.waiting+' moves')+' waiting under Approve '+(r.waiting===1?'is':'are')+' approved.'));
-    if(+r.refund>0.004) card.appendChild(el('p','salt-insight',rm(r.refund)+' refund on this order is their credit, spent at your next Accept. Paid back by hand, close it on the Desk.'));
+    if(+r.refund>0.004) card.appendChild(el('p','salt-insight',rm(r.refund)+' refund on this order is their credit, spent at your next Accept, or paid back by hand on the Desk.'));
     function amend(send,body,said){
       return send('/all/maker/inputs/ledger-amend',Object.assign({at:new Date().toISOString(),rid:r.rid,date:tripToday()},body))
         .then(function(){ return loadMaker(); }).then(function(){ makerSay(key,said); });
@@ -6085,14 +6085,14 @@ export const OWNER_JS = `
       });
       else if(!draft.amends){
         g.drafts.forEach(function(d){ card.appendChild(bookLine(d.qty,d.product||'salt',d.total)); var figs=readingFigures(d); if(figs.length){ var fr=metrics(figs); fr.classList.add('apfigs'); card.appendChild(fr); } });
-        if(g.trip) card.appendChild(el('p','salt-insight',g.drafts.length===2?'Two books, one trip. Approve decides both.':g.drafts.length+' books, one trip. Approve decides all of them.'));
+        if(g.trip) card.appendChild(el('p','salt-insight',g.drafts.length===2?'Two books, one trip: Approve decides both.':g.drafts.length+' books, one trip: Approve decides all of them.'));
       }
       if(fg&&fg.approvedBefore) card.appendChild(el('p','salt-insight aphalf','Half approved: '+(fg.approvedBefore===1?'one move':fg.approvedBefore+' moves')+' on this row approved before, waiting to be booked; '+(g.drafts.length===1?'this one waits for you.':'these wait for you.')));
       askLines(g).forEach(function(line){ var p=el('p','salt-insight apflag'), bang=el('span','apbang','!'); bang.setAttribute('aria-hidden','true'); p.appendChild(bang); p.appendChild(document.createTextNode(' '+line)); card.appendChild(p); });
       var claim=g.drafts.some(draftClaim);
       if(claim){
         /* 18 Oct 2026, CLARITY PART 4: the claim's answer is on its payment card, and this opens that card (Orders > Payments, the claim's card open) */
-        var to=actOn(el('button','salt-ghost aplink','Answer through the payment card'),'approve.to-payment',draft.id); to.type='button';
+        var to=actOn(el('button','salt-ghost aplink','Open the payment card'),'approve.to-payment',draft.id); to.type='button';
         to.addEventListener('click', function(){ var c=claimOf(draft); if(c) makerClaimOpen=c.u+':'+c.id; goPlace('orders','payments')(); });
         card.appendChild(to);
       }

@@ -105,9 +105,9 @@ export async function run({ ok, pageWork }) {
     ok(slipReads(p) === 0 && keyReads(p) === 0, "listing the claims asks for no slip and no key");
     await p.tap("claim.open", C1);
     const unlock = async () => { await p.click(p.in("vault.unlock")); p.type(byAct(d, "vault.passphrase"), p.slipPass); await p.click(byAct(d, "vault.open")); };
-    ok(!thumb() && !!p.in("vault.unlock") && !p.in("claim.view-slip") && /Locked/.test(p.card(C1).textContent) && !d.querySelector("#makerClaims input[type=password]")
+    ok(!thumb() && !!p.in("vault.unlock") && !p.in("claim.view-slip") && /Unlock names and places to see the slip on this phone[.]/.test(p.card(C1).textContent) && !d.querySelector("#makerClaims input[type=password]")
       && slipReads(p) === 0 && keyReads(p) === 0 && p.urls.made.length === 0,
-      "a claim with a slip, opened with nothing unlocked, says Locked and offers the one Unlock with no password field of its own, and fetches no ciphertext it cannot open");
+      "a claim with a slip, opened with nothing unlocked, says to unlock and offers the one Unlock with no password field of its own, and fetches no ciphertext it cannot open");
     await unlock();
     ok(!!thumb() && thumb().tagName === "BUTTON" && !!thumb().querySelector("img") && /^blob:/.test(thumb().querySelector("img").src) && p.urls.made.length === 1
       && slipReads(p) === 1 && keyReads(p) === 1 && !p.in("vault.unlock") && d.getElementById("vaultSheet").hidden,
@@ -124,8 +124,8 @@ export async function run({ ok, pageWork }) {
       + JSON.stringify(p.urls));
     const before = p.urls.revoked.length;
     await lockByHide();
-    ok(p.urls.revoked.length === before + 1 && p.urls.revoked.includes("blob:fixture-2") && !p.in("claim.slip") && !!p.in("vault.unlock") && /Locked/.test(p.card(C2).textContent),
-      "a page hidden revokes the picture and drops the key: the card says Locked again");
+    ok(p.urls.revoked.length === before + 1 && p.urls.revoked.includes("blob:fixture-2") && !p.in("claim.slip") && !!p.in("vault.unlock") && /Unlock names and places to see the slip on this phone[.]/.test(p.card(C2).textContent),
+      "a page hidden revokes the picture and drops the key: the card says to unlock again");
     const reads = slipReads(p);
     await p.tap("claim.open", C2); await p.tap("claim.open", C2);
     ok(!p.in("claim.slip") && !!p.in("vault.unlock") && slipReads(p) === reads, "and a card opened after that asks for the unlock again and fetches nothing");

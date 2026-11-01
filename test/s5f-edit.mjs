@@ -163,7 +163,8 @@ export async function run({ ok }) {
   /* 6: Salt Admin and the routes */
   {
     const owner = readFileSync(join(REPO, "stmt", "owner.js"), "utf8"), mk = readFileSync(join(REPO, "stmt", "maker.js"), "utf8"), wk = readFileSync(join(REPO, "src", "worker.js"), "utf8");
-    ok(/function refundSection\(a, cat\)/.test(owner) && /rs=refundSection\(a, cat\)/.test(owner) && /send\('\/all\/maker\/inputs\/edit',body\)/.test(owner) && /Tap again to send it to Approve/.test(owner.slice(owner.indexOf("function refundSection"))) && !/[`]/.test(owner.slice(owner.indexOf("function refundSection"), owner.indexOf("function refundSection") + 2500)),
+    /* 1 Nov 2026: the armed button reads Tap again to confirm (it read Tap again to send it to Approve, seven words); the phrase is sliced to refundSection alone, since Make partner and Sign out everywhere say it now too */
+    ok(/function refundSection\(a, cat\)/.test(owner) && /rs=refundSection\(a, cat\)/.test(owner) && /send\('\/all\/maker\/inputs\/edit',body\)/.test(owner) && /Tap again to confirm/.test(owner.slice(owner.indexOf("function refundSection"), owner.indexOf("function readingOf"))) && !/[`]/.test(owner.slice(owner.indexOf("function refundSection"), owner.indexOf("function refundSection") + 2500)),
       "the refund card is on the account card, asks once, and sends the edit to its route (no backtick in the page's template)");
     ok((mk.match(/partner\|edit\|house-sizes/g) || []).length === 2 && (wk.match(/partner\|edit\|house-sizes/g) || []).length === 2, "the Counter and the Desk both let the route through");
     ok(/operation === "edit" \? makerEdit\(body, book, resourcePending\)/.test(wk), "and the Desk builds it with makerEdit over the entries waiting");
