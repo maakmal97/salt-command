@@ -19,10 +19,13 @@
  *   W14  the Desk's empty Associates Insight is one sentence
  *   W15  the Desk's unsent-entries grey line is one sentence in both of its states
  *   W16  the Desk's Their % Insight is one sentence
+ *   W17  (1 Nov 2026, the pass's leftovers) the test surface's armed Reset reads Tap again to confirm, like every armed button
+ *   W18  a guest link waiting on him says so in one sentence of fourteen words at most
+ *   W19  Salt Admin's vault sheet leads with one sentence of fourteen words at most
  * Salt Admin is drawn by the maker harness (test/maker-act.mjs), the Desk by its own master (tools/payload.mjs). */
 import { JSDOM } from "jsdom";
 import { landingPage } from "../stmt/page.js";
-import { EN, fill } from "../stmt/words.js";
+import { EN, TS, fill } from "../stmt/words.js";
 import { openMaster } from "../tools/payload.mjs";
 import { richOwnerPage, byAct, enter, cardOf } from "./maker-act.mjs";
 
@@ -45,11 +48,16 @@ export async function run({ ok, pageWork }) {
   const pay = ["pay.cashGoArrives", "pay.cashGoCollect", "pay.againAcct"].map((k) => [k, EN[k]]);
   ok(J(pay.map(([, s]) => s)) === J(["Pay cash on arrival", "Pay cash on collection", "Show account number again"]) && pay.every(([, s]) => nw(s) <= 4),
     "W4: the pay buttons are four words at most: " + J(pay));
+  ok(TS["ts.ask"] === "Tap again to confirm", "W17: the test surface's armed Reset reads Tap again to confirm: " + J(TS["ts.ask"]));
+  const waiting = said("lnk.lineWaiting");
+  ok(/^Shut until we approve it/.test(waiting) && sentence(waiting, 14), "W18: a guest link waiting on him says so in one sentence of fourteen words at most: " + J(waiting));
 
   /* ---- Salt Admin's two leads, written in the page ---- */
   const page = new JSDOM(landingPage("", "r2-nonce", { master: "fixture-master", accounts: [] })).window.document;
   const group = t(page.querySelector('[data-in="orders.group"] .lead')), links = t(page.querySelector("#oLinks .lead"));
   ok(sentence(group, 20) && sentence(links, 20), "W5: Salt Admin's leads on Group orders and Guest links are one sentence of twenty words at most: " + J([group, links]));
+  const vaultLead = t(page.querySelector("#vaultSheet .lead"));
+  ok(/^One password/.test(vaultLead) && sentence(vaultLead, 14), "W19: Salt Admin's vault sheet leads with one sentence of fourteen words at most: " + J(vaultLead));
 
   /* ---- Salt Admin, drawn ---- */
   const D = "2026-10-14", SINCE = "2026-10-01", T = "t1791900000001";
@@ -105,7 +113,7 @@ export async function run({ ok, pageWork }) {
     await p.work.quiet();
     const chosen = t(agree && agree.querySelector(".oagree__wide.salt-insight"));
     ok(/^They chose 08:00 to 12:00/.test(chosen) && sentence(chosen, 20), "W10: the Agree card's Insight on the window they chose is one sentence: " + J(chosen));
-    const refundLine = (card) => [...(card ? card.querySelectorAll(".salt-insight") : [])].map(t).find((s) => /refund on this order/.test(s)) || "";
+    const refundLine = (card) => [...(card ? card.querySelectorAll(".salt-insight") : [])].map(t).find((s) => / refund (here|on this order) /.test(s)) || "";
     const rowFp = cardOf(d, "row:fp1");
     await p.work.quiet();
     const forRow = refundLine(rowFp), chipFp = t(rowFp && rowFp.querySelector("p.lead"));
@@ -115,7 +123,8 @@ export async function run({ ok, pageWork }) {
     const order = cardOf(d, OWED.id);
     await p.work.quiet();
     const lines = [forRow, refundLine(order)];
-    ok(lines.every((s) => /^RM 25[.]00 refund on this order is their credit/.test(s) && one(s)), "W11: an order's card and a row's card say the refund the book owes in one sentence: " + J(lines));
+    /* 1 Nov 2026: and in twenty words at most (it ran to 22: refund on this order ... or paid back by hand on the Desk) */
+    ok(lines.every((s) => /^RM 25[.]00 refund here is their credit/.test(s) && sentence(s, 20)), "W11: an order's card and a row's card say the refund the book owes in one sentence of twenty words at most: " + J(lines));
     const tab = (id) => t(d.querySelector('[data-part="' + id + '"]')), chips = [chipFp, chipFz];
     ok(J(chips) === J(["Out or paid", "Done"]) && tab("paid").startsWith(chips[0]) && tab("done").startsWith(chips[1]),
       "W12: a row's stage chip is its tab's word: " + J({ chips, tabs: [tab("paid"), tab("done")] }));

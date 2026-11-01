@@ -5176,7 +5176,7 @@ export const OWNER_JS = `
     if(waitN&&!ordOpen(order)) card.appendChild(el('p','salt-insight',(waitN===1?'Its move waits':'Its '+waitN+' moves wait')+' under Approve: the book keeps the row as it was until you approve.'));
     /* 17 Oct 2026: a refund the book still owes them on this order's row */
     var owes=makerData&&makerData.refunds&&order.ledgerKey&&makerData.refunds[order.ledgerKey];
-    if(+owes>0.004) card.appendChild(el('p','salt-insight',rm(owes)+' refund on this order is their credit, spent at your next Accept, or paid back by hand on the Desk.'));
+    if(+owes>0.004) card.appendChild(el('p','salt-insight',rm(owes)+' refund here is their credit, spent at your next Accept or repaid by hand on the Desk.'));
     /* 20 Oct 2026 (canvas V36): no Details fold; its rows stand in the band, the delivery address and the sheet's link */
   }
   /* Salt Admin A to C: the orders one sheet of theirs placed together, in the order the Desk asks the delivery on (the first by id) */
@@ -5554,7 +5554,7 @@ export const OWNER_JS = `
     if(r.reward) card.appendChild(el('p','salt-insight',REWARD_WORD[r.reward]+' for '+r.rewardOf+', at cost and free to them: it goes with that order or their next salt handover.'));
     card.appendChild(metrics([['Owed',rm(r.owed)],['Paid',rm(r.paid)],['Handed',String(+(+r.handed||0).toFixed(3))+' of '+units(r.qty)]]));
     if(r.waiting>0) card.appendChild(el('p','salt-insight','As it will stand once '+(r.waiting===1?'the move':'the '+r.waiting+' moves')+' waiting under Approve '+(r.waiting===1?'is':'are')+' approved.'));
-    if(+r.refund>0.004) card.appendChild(el('p','salt-insight',rm(r.refund)+' refund on this order is their credit, spent at your next Accept, or paid back by hand on the Desk.'));
+    if(+r.refund>0.004) card.appendChild(el('p','salt-insight',rm(r.refund)+' refund here is their credit, spent at your next Accept or repaid by hand on the Desk.'));
     function amend(send,body,said){
       return send('/all/maker/inputs/ledger-amend',Object.assign({at:new Date().toISOString(),rid:r.rid,date:tripToday()},body))
         .then(function(){ return loadMaker(); }).then(function(){ makerSay(key,said); });

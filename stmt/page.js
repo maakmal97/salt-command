@@ -1823,7 +1823,7 @@ function vaultSheet() {
     + '<div class="salt-sheet__grab"></div>'
     + '<div class="salt-sheet__head"><h2 class="salt-sheet__title" id="vaultT">Unlock names and places</h2>'
     + '<button type="button" class="salt-orb salt-sheet__close" id="vaultX" data-act="vault.close"' + wl("x.close") + ">" + glyphSvg("close", 20) + "</button></div>"
-    + '<div class="salt-sheet__body"><p class="lead">One password opens names, places and slips. They are seen on this phone only, and lock again when the page is hidden.</p>'
+    + '<div class="salt-sheet__body"><p class="lead">One password shows names, places and slips on this phone until the page hides.</p>'
     + '<label class="maker-field"><span class="lbl salt-field__label">Password for names and places</span>'
     + '<input class="fld salt-field__input" id="vaultPass" type="password" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" data-act="vault.passphrase"></label>'
     + '<p class="msg" id="vaultSay" role="status" aria-live="polite"></p></div>'

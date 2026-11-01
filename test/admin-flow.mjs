@@ -251,7 +251,8 @@ export async function run({ ok, pageWork }) {
     ok(/orders\.ended/.test((rowOf(WOFF.id) || { getAttribute: () => "" }).getAttribute("data-in")), "an order written off on the book is under Ended");
     await p.tap("part.orders.confirmed");
     await p.tap("order.open", OWED.id);
-    ok(/RM 25\.00 refund on this order is their credit, spent at your next Accept/.test(text(p.card(OWED.id))), "a site order's card says the refund the book owes on its row, as their credit (27 Oct 2026): " + text(p.card(OWED.id)).slice(0, 200));
+    /* 1 Nov 2026: the Insight in twenty words (it said refund on this order is their credit) */
+    ok(/RM 25\.00 refund here is their credit, spent at your next Accept/.test(text(p.card(OWED.id))), "a site order's card says the refund the book owes on its row, as their credit (27 Oct 2026): " + text(p.card(OWED.id)).slice(0, 200));
     await p.tap("part.orders.ended");
     await p.tap("order.open", GONE.id);
     ok(/waits under Approve/.test(text(p.card(GONE.id))), "a cancelled order whose cancellation waits under Approve says the book keeps the row until then: " + text(p.card(GONE.id)).slice(0, 200));
