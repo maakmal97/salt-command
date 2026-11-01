@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="0dd87225bc36c8f0";
+var SALT_BUILD_ID="e66f4185bde2315e";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -11486,7 +11486,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1370","d":"02 Nov 2026","t":"FULFILMENT SETTLES S320 FOR CM4-TO-R","n":["<b>ONE FULFILMENT FOLDED.</b> RM25 delivery on s320, an order of 2 units of gas to CM4-TO-R dated 31 Oct 2026, was received on 02 Nov 2026. It settles the order in full and leaves RM0 and 0 unit outstanding. Nothing unusual was found in the batch.","<b>INVENTORY UNCHANGED.</b> Gas is not salt and no unit moves with this fulfilment, so the salt stock of 7.5 units and its cost basis of RM56 per unit stand as they were."]}];
+const evolution=[{"v":"v1371","d":"02 Nov 2026","t":"A DELIVERY WITH A FLOOR OR UNIT IS PLACED AGAIN ON SALT COUNTER","n":["<b>SALT COUNTER, PLACE.</b> His report: a customer ordering to deliver could not submit the order. A spot's floor or unit is sealed to his slip key before anything leaves the phone, and the page asked for that key once a visit, so one failed read, and the practice surface, refused every such Place with \"the location could not be read\" and sent nothing. Place now asks for the key once more before it refuses, and a practice account's spot, which the Worker drops anyway, is not sealed. Nothing of a spot ever leaves unsealed; the refusal, when it still comes, reads as a sentence.","<b>NO ROUTE CHANGED.</b> The page asks GET /slip/key, a read it already made, once more at Place. Salt Admin places no delivery, so it has no side to this. Fable reviewed the change: no findings."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11634,7 +11634,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='02 Nov 2026, 02:50 KL';
+const LAST_UPDATED='02 Nov 2026, 04:59 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
