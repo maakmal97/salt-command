@@ -4,8 +4,8 @@
  *   A  the Desk's stage rule (flowStage) and its read of every row with no trip card: agreed, delivered or paid, completed, ended, as the row
  *      will stand once the moves waiting fold
  *   B  Salt Admin's review read drops a row a live site order holds (by its key), and keeps one whose site order ended
- *   C  the page: a row under its stage with its figure; a site order paid or handed in full under Delivered or paid; the row card's handover,
- *      payment, change and cancel, each Record's own ledger-amend; Completed paged fifty at a time
+ *   C  the page: a row under its stage with its figure; a site order paid or handed in full under Out or paid; the row card's handover,
+ *      payment, change and cancel, each Record's own ledger-amend; Done paged fifty at a time
  *   D  his answer: a cancel once goods are out cancels the rest, closing the order at what was handed over (a row's at the Desk's closeAt, a
  *      site order's by the close Finish at fewer units sends), anything paid above it a refund
  *   E  his answer: a completed order keeps Amend, on the site, the Desk's restate and the ledger's road, and figures that leave it owing open
@@ -209,20 +209,20 @@ export async function run({ ok, pageWork }) {
     const rowOf = (k) => p.d.querySelector('[data-act="order.open"][data-key="' + k + '"]');
     ok(/orders\.confirmed/.test((rowOf("row:fa1") || { getAttribute: () => "" }).getAttribute("data-in")) && /RM 110$/.test(text(rowOf("row:fa1").querySelector(".ofig")))
       && /orders\.paid/.test((rowOf("row:fp1") || { getAttribute: () => "" }).getAttribute("data-in")),
-    "a row of the book is a row under its stage, Agreed or Delivered or paid, with its figure: " + text(rowOf("row:fa1")));
+    "a row of the book is a row under its stage, Agreed or Out or paid, with its figure: " + text(rowOf("row:fa1")));
     const seen = (n) => { for (let e = n; e; e = e.parentElement) if (e.hidden) return false; return !!n; };
     await p.tap("part.orders.paid");
     ok(seen(rowOf("row:fp1")) && seen(rowOf("o-pay")) && !seen(rowOf("row:fa1")),
-      "Delivered or paid shows its own orders, a row of the book and a site order, and none of Agreed's: " + J([seen(rowOf("row:fp1")), seen(rowOf("o-pay")), seen(rowOf("row:fa1"))]));
+      "Out or paid shows its own orders, a row of the book and a site order, and none of Agreed's: " + J([seen(rowOf("row:fp1")), seen(rowOf("o-pay")), seen(rowOf("row:fa1"))]));
     await p.tap("part.orders.confirmed");
     ok(/orders\.paid/.test((rowOf("o-pay") || { getAttribute: () => "" }).getAttribute("data-in")),
-      "a site order paid in full and not handed over is under Delivered or paid: " + ((rowOf("o-pay") || { getAttribute: () => "" }).getAttribute("data-in")));
+      "a site order paid in full and not handed over is under Out or paid: " + ((rowOf("o-pay") || { getAttribute: () => "" }).getAttribute("data-in")));
     ok(!!p.d.querySelector('[data-part="paid"]') && /^Out or paid/.test(text(p.d.querySelector('[data-part="paid"]'))) && /^Placed/.test(text(p.d.querySelector('[data-part="placed"]'))) && /^Done/.test(text(p.d.querySelector('[data-part="done"]'))),
       "the stages read Placed, Agreed, Ready, Out or paid, Done and Ended (his yes of 25 Oct 2026)");
     const done = () => [...p.d.querySelectorAll('[data-act="order.open"]')].filter((b) => /orders\.done/.test(b.getAttribute("data-in"))).length;
     const n0 = done();
     await p.tap("orders.more", "done");
-    ok(n0 === 50 && done() === 61, "Completed shows fifty and Show 50 more the rest: " + J([n0, done()]));
+    ok(n0 === 50 && done() === 61, "Done shows fifty and Show 50 more the rest: " + J([n0, done()]));
     await p.tap("order.open", "row:fa1");
     const card = p.card("row:fa1");
     ok(!!card && /Owed RM 110\.00 Paid RM 0\.00 Handed 0 of 1 unit/.test(text(card.querySelector(".salt-metrics"))) && !!byAct(card, "row.cancel", "fa1"),

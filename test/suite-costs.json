@@ -796,7 +796,7 @@
  "Salt Admin: the approve card says the change, one card and one Approve an order (plan 2, 16 Oct 2026)": 4390,
  "Salt Admin: an order of several books is one card, handed over, paid and made one order as one (plan 3, 16 Oct 2026)": 9350,
  "Salt Admin: History on an order and each line of a trip, Undo on the newest move alone, the site order following with a banner (plan 4, 16 Oct 2026)": 26780,
- "Salt Admin: every live row of the book is an order at its stage, Delivered or paid between Ready and Completed (his flow, 17 Oct 2026)": 6200,
+ "Salt Admin: every live row of the book is an order at its stage, Out or paid between Ready and Done (his flow, 17 Oct 2026)": 6200,
  "Salt Admin: the order card's Bank and Cash over one amount, Change the order under the head, and one button on the units (plan 5, 16 Oct 2026)": 1710,
  "Salt Admin: the few, fixed choices of Record's forms are option tiles, each sending the value its select did": 11450,
  "Salt Admin: the printed sizes are a grid of tiles, and the weekly hours a table with labelled columns and a Closed until field": 1600,

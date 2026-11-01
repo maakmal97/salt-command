@@ -50586,7 +50586,7 @@ await (async () => {
   await (await import("./admin-undo.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Admin: every live row of the book is an order at its stage, Delivered or paid between Ready and Completed (his flow, 17 Oct 2026)");
+section("Salt Admin: every live row of the book is an order at its stage, Out or paid between Ready and Done (his flow, 17 Oct 2026)");
 await (async () => {
   await (await import("./admin-flow.mjs")).run({ ok, pageWork });
 })();

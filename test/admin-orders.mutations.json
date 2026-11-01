@@ -611,7 +611,7 @@
   "replace": "+ ordTabs(ADMIN_PARTS[p].filter(([k]) => false && !ADMIN_ORDER_STAGES.includes(k)"
  },
  {
-  "name": "Delivered or paid is drawn with the rest",
+  "name": "Out or paid is drawn with the rest",
   "file": "stmt/page.js",
   "find": "const ADMIN_ORDER_STAGES = [\"placed\", \"confirmed\", \"ready\", \"paid\", \"done\", \"ended\"];",
   "replace": "const ADMIN_ORDER_STAGES = [\"placed\", \"confirmed\", \"ready\", \"done\", \"ended\"];"
