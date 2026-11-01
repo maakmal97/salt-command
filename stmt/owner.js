@@ -1266,6 +1266,7 @@ export const OWNER_JS = `
     'this raises their price or changes their window: send it to them for their yes':'This raises their price or changes their window. Send it to them for their yes.',
     'nothing here needs their yes: Accept it':'Nothing here needs their yes. Accept it.',
     'no offer of yours is open on this order':'You have no offer open on this order.',
+    'that Withdraw was answered already, and a newer offer of yours is open':'Your newer offer is still open, so tap Withdraw again.',
     'this order has already been approved for a row and cannot be changed':'This order is already approved for a row and cannot be changed.',
     'this order is already under review or agreed':'This order is already under review or agreed.',
     'an offer is open on this order':'An offer is open on this order. Withdraw it first.',
@@ -3353,12 +3354,15 @@ export const OWNER_JS = `
       });
     },function(error){
       makerBusy=false;
+      if(error&&error.detail&&error.detail.fresh) makerFresh[key]=true;
       makerSay(key,error.message,error);
       return false;
     });
   }
   /* one request id per move until it lands, so a retry after a lost answer is the same request */
   var makerRids={};
+  /* 1 Nov 2026: a refusal marked fresh (a Withdraw's id answered once, now over a newer offer) drops the id, so the next tap is a new request */
+  var makerFresh={};
   function makerMove(order,body,message){
     var key=order.id+JSON.stringify(body), rid=makerRids[key]||(makerRids[key]=mintRid());
     return makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/'+(body.claim?'notfound':'move'),
@@ -3368,7 +3372,7 @@ export const OWNER_JS = `
   function makerTap(order,action,body,message){
     var key=order.id+action+JSON.stringify(body), rid=makerRids[key]||(makerRids[key]=mintRid());
     return makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/'+action,
-      Object.assign({rid:rid},body),message,order.id).then(function(done){ if(done) delete makerRids[key]; return done; });
+      Object.assign({rid:rid},body),message,order.id).then(function(done){ if(done||makerFresh[order.id]){ delete makerRids[key]; delete makerFresh[order.id]; } return done; });
   }
   /* a claim above what the order still owes is money he recorded another way; orderReceived is the one send of a claim's Received, the card's Sheet and Needs you's card alike */
   /* 28 Oct 2026: WHAT AN ORDER STILL OWES IS THE SITE'S dueOf, goods and delivery less what is paid AND their credit his Accept spent (v1284), which the

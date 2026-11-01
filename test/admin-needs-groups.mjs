@@ -53,6 +53,25 @@ export async function run({ ok, pageWork }) {
     ok(sent.length === 1 && /^[0-9a-f]{32}$/.test(sent[0].body.rid) && J(Object.keys(sent[0].body)) === J(["rid"]), "Yes sends the order card's own withdraw, once, with its request id: " + J(sent.map((x) => x.body)));
   } finally { p.w.close(); }
 
+  /* 4c (1 Nov 2026): a Withdraw refused keeps its request id for the retry, but one refused as fresh (its id answered once, now over a newer offer of his)
+     says the newer offer is open and lets the id go, so the next tap is a new request */
+  let answers = [{ refuse: "the statements site answered http 503" }, { refuse: "that Withdraw was answered already, and a newer offer of yours is open", detail: { fresh: true } }];
+  const r = await richOwnerPage({ pageWork, extra: (route) => (/\/all\/maker\/orders\/ord-p4\/withdraw$/.test(route) ? answers.shift() : undefined) });
+  try {
+    await r.work.quiet();
+    const d = r.d, click = async (e) => { if (e) e.click(); await r.work.quiet(); };
+    await click(byAct(d, "nav.needs"));
+    const card = () => d.querySelector('#nlist [data-need="f:ord-p4"]');
+    const send = async () => { await click(byAct(card(), "need.withdraw")); await click(byAct(card(), "need.ask-yes")); };
+    await send(); await send();
+    const said = t(card());
+    answers = [{ ok: true }];
+    await send();
+    const rids = r.posts.filter((x) => /\/all\/maker\/orders\/ord-p4\/withdraw$/.test(x.route)).map((x) => x.body.rid);
+    ok(rids.length === 3 && rids[0] === rids[1] && rids[2] !== rids[1] && /Your newer offer is still open, so tap Withdraw again[.]/.test(said),
+      "a refused Withdraw keeps its id, one refused as fresh says the newer offer is open and the next tap is a new request: " + J({ rids, said: said.slice(-120) }));
+  } finally { r.w.close(); }
+
   /* 4b: an offer they have taken waits under Approve and draws no card */
   const q = await richOwnerPage({ pageWork, review: (j) => ({ ...j, orders: (j.orders || []).map((o) => (o.id === "ord-p4" ? { ...o, price: { ...o.price, state: "taken" } } : o)) }) });
   try {
