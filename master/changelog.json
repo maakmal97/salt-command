@@ -1,5 +1,13 @@
 [
  {
+  "v": "v1367",
+  "d": "01 Nov 2026",
+  "t": "A WITHDRAW'S OLD TAP NEVER SAYS WITHDRAWN OVER A NEWER OFFER",
+  "n": [
+   "<b>WITHDRAW.</b> If a Withdraw's answer was lost, you then sent a newer offer and tapped Withdraw again, Salt Admin said Offer withdrawn while the newer offer stood. It now says Your newer offer is still open, so tap Withdraw again, and that next tap withdraws it. Route answer changed: the withdraw road may refuse such a repeat as fresh. Fable reviewed."
+  ]
+ },
+ {
   "v": "v1366",
   "d": "01 Nov 2026",
   "t": "THE SURFACES PASS'S LEFTOVERS: FOUR LINES, TWO TEST FIXES AND A WITHDRAW RETRIED",
