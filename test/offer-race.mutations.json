@@ -1,15 +1,15 @@
 [
  {
-  "name": "R1: a Withdraw the order book refused is not read again, so it says no offer is open",
-  "file": "src/orders.js",
-  "find": "    const g = r.status === 409 ? await findOrder(env, id) : null;",
-  "replace": "    const g = null;"
+  "name": "R1: the order book refuses a Withdraw over their Yes as if no offer were open",
+  "file": "stmt/orders.js",
+  "find": "    if (order.price && order.price.state === \"taken\") return { error: \"they said yes before your withdraw reached them: its row is drafted at your offer\", status: 409 };\n",
+  "replace": ""
  },
  {
   "name": "R2: a Withdraw the order book refused voids his yes anyway",
   "file": "src/orders.js",
-  "find": "    const g = r.status === 409 ? await findOrder(env, id) : null;",
-  "replace": "    if (env.SALT_LEDGER) await voidOffers(env.SALT_LEDGER, id, new Date().toISOString(), o.price.offer && o.price.offer.id);\n    const g = r.status === 409 ? await findOrder(env, id) : null;"
+  "find": "  const r = await moveOrder(env, o.u, id, Object.assign({ withdraw: true }, rid ? { rid } : {}));\n  if (!r.ok) return r;",
+  "replace": "  const r = await moveOrder(env, o.u, id, Object.assign({ withdraw: true }, rid ? { rid } : {}));\n  if (!r.ok) { if (env.SALT_LEDGER) await voidOffers(env.SALT_LEDGER, id, new Date().toISOString(), o.price.offer && o.price.offer.id); return r; }"
  },
  {
   "name": "R3: a Withdraw after their Yes is not read as taken",

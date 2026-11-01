@@ -4,7 +4,8 @@
  * terms. Now a void names the one offer it read (voidOffers), a Withdraw their Yes beat is refused in words, and on a repeated request id the order book's
  * own answer decides. Driven through both Workers over the real migrated schema (node:sqlite), each interleaving made by a hook on the site (siteHook) or on
  * the void itself (voidHook); every code, username and order id is invented. Each check is red under its own mutation (test/offer-race.mutations.json):
- *   R1  their Yes landing between a Withdraw's read and its move: the order book refuses the move, and the Withdraw is refused in words
+ *   R1  their Yes landing between a Withdraw's read and its move: the order book refuses the move in words of its own (decideDesk, which the
+ *       practice road composes into as well), and the Withdraw answers them
  *   R2  a refused Withdraw voids nothing: their yes is spent on the row he offered, and the order agreed at it
  *   R3  a Withdraw tapped after their Yes is refused in the same words, read off the order
  *   R4  a Withdraw's void names the offer the order book withdrew: a newer offer filed and taken between the move and the void is agreed at its figure
@@ -77,8 +78,8 @@ export async function run({ ok, skip, pageWork }) {
   const onWithdraw = (fn) => async (url, init) => { if (/\/desk\/orders\//.test(String(url)) && /"withdraw":true/.test(String(init && init.body))) { siteHook = null; await fn(); } };
   const onVoid = (id, fn) => async (a) => { if (a[1] !== id) return; voidHook = null; await fn(); };
 
-  /* R1 to R3: THEIR YES LANDS BETWEEN A WITHDRAW'S READ AND ITS MOVE. The order book refuses the move, as nothing is open to withdraw; nothing is voided, and
-     he is told why */
+  /* R1 to R3: THEIR YES LANDS BETWEEN A WITHDRAW'S READ AND ITS MOVE. The order book refuses the move in its own words, as nothing is open to withdraw;
+     nothing is voided, and he is told why */
   const a = await place(U1, true);
   await offer(a.id, 160);
   siteHook = onWithdraw(() => O.customerMove(senv, U1, a.id, "take", { rid: rid() }));

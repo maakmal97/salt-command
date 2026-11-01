@@ -1539,8 +1539,9 @@ exists the page says notifications are not switched on.
   (`voidOffers`, by `shown.offer.id`, in one conditional statement): a Withdraw lets go the yes of the offer the order book
   says it withdrew, the minute's pass the yes it read, and an Accept the yes of the offer it read as closed. So a newer
   offer's yes, filed between a read and its void and perhaps taken by their Yes already, stands and is followed to its row.
-  A Withdraw their Yes beat, read so or refused at the order book, voids nothing and answers in words ("they said yes
-  before your withdraw reached them: its row is drafted at your offer"), one plain sentence on Salt Admin. On a repeated
+  A Withdraw their Yes beat, read so on the Desk or refused by the order book (`decideDesk`, so a practice order says it
+  too), voids nothing and answers in words ("they said yes before your withdraw reached them: its row is drafted at your
+  offer"), one plain sentence on Salt Admin. On a repeated
   request id the order book's answer at the move decides, never the read: a newer offer of his open or taken is refused as
   fresh, and one for their yes that has lapsed (`acceptClosed`) is not called open. `test/offer-race.mjs` drives each
   interleaving.

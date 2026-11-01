@@ -1069,6 +1069,8 @@ export function decideDesk(order, body, at) {
     return { ev: { kind: "offer", at, offer: { id: f.id, total: +f.total.toFixed(2), until: new Date(Date.parse(f.until)).toISOString(), product: order.product, qty: order.qty } } };
   }
   if (body && body.withdraw === true) {
+    /* 2 Nov 2026 (his word): THEIR YES REACHED THE BOOK FIRST, AND THE EARLIER MOVE WINS, said in words on the Desk's road and on the practice one */
+    if (order.price && order.price.state === "taken") return { error: "they said yes before your withdraw reached them: its row is drafted at your offer", status: 409 };
     if (!order.price || order.price.state !== "offered") return { error: "no offer of yours is open on this order", status: 409 };
     return { ev: Object.assign({ kind: "price", at, state: "withdrawn", by: "desk", offer: order.price.offer ? order.price.offer.id : null },
       !(+order.total > 0) && !(+order.paid > 0) ? { cancel: true } : {}) };

@@ -604,8 +604,8 @@ async function acceptOffer(env, f, body, by, at) {
     shown: { from: "placed", offer, row: pv.row, flags: pv.flags, prepay: !!entry.prepay } });
   return { ok: true, order: r.order, offer, push: r.push || null, preview: pv };
 }
-/* 2 Nov 2026 (his word): THEIR YES CAME FIRST, AND THE EARLIER MOVE WINS. An offer they took before a Withdraw read it, or between the read and the move,
-   where the order book refuses the move as nothing is open, stands with the yes its row is drafted at, and he is told so in words */
+/* 2 Nov 2026 (his word): THEIR YES CAME FIRST, AND THE EARLIER MOVE WINS. An offer they took before a Withdraw read it is refused here, and one taken between
+   the read and the move by the order book in the same words (stmt/orders.js decideDesk); nothing is voided, and the yes its row is drafted at stands */
 const SAID_YES = "they said yes before your withdraw reached them: its row is drafted at your offer";
 /** POST /orders/<id>/withdraw: his open offer taken back; his yes with it. */
 export async function withdrawOffer(env, id, body) {
@@ -617,11 +617,7 @@ export async function withdrawOffer(env, id, body) {
      request id it has filed as the first answer (again) and refuses one it has not, as offerOrder answers a repeated Send */
   if (!o.price || (o.price.state !== "offered" && !(rid && o.price.state === "withdrawn"))) return { ok: false, status: 409, error: "no offer of yours is open on this order" };
   const r = await moveOrder(env, o.u, id, Object.assign({ withdraw: true }, rid ? { rid } : {}));
-  if (!r.ok) {
-    /* refused by the order book, which voids nothing: their yes may have landed after the read, and a second read says so */
-    const g = r.status === 409 ? await findOrder(env, id) : null;
-    return g && g.ok && g.order.price && g.order.price.state === "taken" ? { ok: false, status: 409, error: SAID_YES } : r;
-  }
+  if (!r.ok) return r;
   /* WHAT THE ORDER BOOK HOLDS AT THE MOVE DECIDES, NEVER THE READ (2 Nov 2026): the id answered a withdrawal of an older offer, and a newer offer of his is
      open (Fable's low finding of 1 Nov 2026) or taken: refused, so it is never said withdrawn, and fresh, so Salt Admin drops the id; that offer and its
      yes stand. A newer offer for their yes that has lapsed (acceptClosed) is not called open */
