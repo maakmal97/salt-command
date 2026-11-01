@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1370",
+  "d": "02 Nov 2026",
+  "t": "FULFILMENT SETTLES S320 FOR CM4-TO-R",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED.</b> RM25 delivery on s320, an order of 2 units of gas to CM4-TO-R dated 31 Oct 2026, was received on 02 Nov 2026. It settles the order in full and leaves RM0 and 0 unit outstanding. Nothing unusual was found in the batch.",
+   "<b>INVENTORY UNCHANGED.</b> Gas is not salt and no unit moves with this fulfilment, so the salt stock of 7.5 units and its cost basis of RM56 per unit stand as they were."
+  ]
+ },
+ {
   "v": "v1369",
   "d": "01 Nov 2026",
   "t": "ONE UNIT OF GAS BOUGHT FROM SP7-PUD, SALT STOCK UNMOVED",
