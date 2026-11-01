@@ -186,6 +186,10 @@
   - What the gate reads on the day is in docs/DESK.md S5f-7: G2 needs the 7 days of real taps, G5 counts fallbacks only from the version that records them, G7 needs his attestation of a backup opened with his key (`--backup-opened`). Do NOT run the flip before 4 Nov 2026 and only on his typed go in the session that acts.
   - Not built or not proved live, said: the model's own notes (D7); the chain's two export steps and the runbook have only run over stand-ins (with the flag at d1 the export steps are skipped, so nothing live has exercised them: read the step list of the first run after the flip); Fable's notes held (the `source` step fails a code push when D1 will not answer; stale-document flags are noisy until the first export refreshes them). Two Fable reviews (parts 3 and 4; parts 5 to 7) are applied, listed in docs/DESK.md.
 
+## Surfaces fix pass, round 1 (v1362)
+- Live as v1362 (`dfd0a0a8`, 01 Nov 2026; Cloud commit `41288731512`: chain green, its step "The phone is serving it" green on build `0afd311840cfd666`; CI `41288731458` green), his word "fix all bugs, consistent design across the three surfaces", cut by his 45-minute stop to words only: Shop's four two-sentence grey lines one sentence each, the door's code button "Use a sign-in code" and its help line one sentence, the order page's closed and unavailable lines one sentence. The sweep (skill `salt-fix-pass`, `scripts/sweep.mjs`) found no free name a tap reaches: `loadView` sits in the owner-only `view` branch, `apBusy` and `ordBusy` in a `typeof`-guarded patch in `tools/build.mjs`.
+- Next pass, not started: the full audit (money paths with Fable and the full suite); the Desk's measured breaches (view pills 43px wide, a column tick 13px, the 40px Orb, disclosure summaries overrunning); the Customers and Orders lead Insights at two sentences (Orders waits on his look at the v2 canvas).
+
 ## Disabled automation
 - `Salt fold (manual backup)` = `trig_01UrnjQMWA3f6GXN5R6Dzi4S`, disabled.
 
