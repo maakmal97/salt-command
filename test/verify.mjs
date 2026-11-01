@@ -48386,6 +48386,11 @@ await (async () => {
   await (await import("./maker-order-controls.mjs")).run({ ok });
 })();
 
+section("1 Nov 2026: the surfaces pass's next pass: the Desk's declined cancellation, credit on To do, the rail count, the ledger link, Record's Try again, This customer redrawn");
+await (async () => {
+  await (await import("./surfaces-r2.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter Batch A: the collection point, set at Ready on Salt Admin, read by the customer only while the order waits there, never by the Desk (18 Oct 2026)");
 await (async () => {
   await (await import("./counter-points.mjs")).run({ ok, pageWork });

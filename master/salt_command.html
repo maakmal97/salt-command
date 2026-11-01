@@ -11923,6 +11923,9 @@ function ovAmend(p,q){
        both vanish from every figure on the desk and the row would sit pending forever.
        The prior balance is read as zero rather than from status, because a pending row
        has paid nothing and received nothing however its status field happens to read. */
+    /* 1 Nov 2026: a cancellation the lot has outrun is declined BEFORE its step is written, as the Default branch is, so the trail
+       never holds a cancellation the book will refuse (History read it as closed) */
+    if(p.kind==='Cancellation'&&poRecvUnits(row)>0.009){provNotes.push('a cancellation on '+(row.rid||'a lot')+' was not applied: '+units(poRecvUnits(row))+' has already been received');return;}
     /* v450: the seed and the step, before anything moves; the fold's BUY branch does the same. */
     if(!row.amend||!row.amend.length)row.amend=[ovSeed(row,p.direction)];
     /* v496: a movement carries the cost of what it moved, in RM, from the row's own unit cost; a lot has none. */
@@ -11940,8 +11943,6 @@ function ovAmend(p,q){
       if(wasPending&&row.receivedQty==null){row.receivedQty=0;row.inTransit=true;}
     }
     if(p.kind==='Cancellation'){
-      const movedB=poRecvUnits(row);
-      if(movedB>0.009){provNotes.push('a cancellation on '+(row.rid||'a lot')+' was not applied: '+units(movedB)+' has already been received');return;}
       row.cancelled=true;if(p.date)row.cancelledOn=p.date;return;}   /* the field as well as the trail, as the fold stamps it (08 Sep 2026) */
     if((+p.cash||0)>0.009){
       const before=wasPending?0:(row.cash!=null?row.cash:(row.status==='paid'?row.total:0));
@@ -11964,6 +11965,9 @@ function ovAmend(p,q){
     if(!row.paidOn&&row.status==='paid'&&(+p.cash||0)>0.009)row.paidOn=p.date;
     return;
   }
+  /* 1 Nov 2026: v419's gate is read BEFORE the step is written: a cancellation on a sale that has delivered is declined with the
+     trail as it was, so it never holds a cancellation the book will refuse */
+  if(p.kind==='Cancellation'&&txEffDeliv(row)>0.009){provNotes.push('a cancellation on '+(row.rid||'a row')+' was not applied: '+units(txEffDeliv(row))+' has already been delivered');return;}
   /* seed the trail from the row as booked, else wbSoFar would read only this step */
   if(!row.amend||!row.amend.length)
     row.amend=[ovSeed(row,p.direction)];   /* v420: the fold's own words; the differential caught the drift */
@@ -11977,8 +11981,6 @@ function ovAmend(p,q){
      take the screen down. txEffDeliv is the sale's ruler and counts a settlement in kind, which is
      the same helper v415 gave the fold. */
   if(p.kind==='Cancellation'){
-    const movedS=txEffDeliv(row);
-    if(movedS>0.009){provNotes.push('a cancellation on '+(row.rid||'a row')+' was not applied: '+units(movedS)+' has already been delivered');return;}
     row.cancelled=true;if(p.date)row.cancelledOn=p.date;ovRefund(row,p.date);return;}   /* the field as well as the trail, as the fold stamps it (08 Sep 2026) */
   row.cash=+((row.cash||0)+(+p.cash||0)).toFixed(2);
   row.deliveredQty=+((row.deliveredQty||0)+(+p.kg||0)).toFixed(2);
@@ -15429,7 +15431,10 @@ function goEnt(code){return goEl(document.getElementById('ent-'+code));}
    element in a part that is not on screen, and the card is re-rendered by it, so the lookup
    has to happen after. */
 function goRid(rid){switchTab('ledger');
-  return goEl(document.querySelector('.lcard[data-rid="'+rid+'"]'));}
+  const card=()=>document.querySelector('.lcard[data-rid="'+rid+'"]');
+  /* 1 Nov 2026: a row older than seven days sits behind the fold, and a filter leaves rows out: open the fold, clear the filters, look again */
+  if(!card()){ledOlder=true;ledF={q:'',state:'',party:'',month:'',product:''};switchTab('ledger');}
+  return goEl(card());}
 /* v465: THE WHOLE BOOK, FIRST TO LATEST, AND SORTABLE. The ledger used to open on the last three
    days and fold the rest behind a summary, and a folded row reads as a missing one. Every row now
    shows, in book order, and any column heading sorts the list the way a sheet does: once ascending,
@@ -20537,7 +20542,8 @@ async function ordAlertAct(what){
      asked  their line is the last on the order, and he has not said it needs no reply
    A placed order's own line is on its New card, so it is one act and not two. Oldest first, by the
    moment of the act. */
-const ordDue=o=>+((+o.total||0)+(+o.delivery||0)-(+o.paid||0)).toFixed(2);
+/* 1 Nov 2026: less the credit an Accept spent, as Salt Admin's ordPaidAll and the Counter's dueOf read it: an order its credit covers owes nothing */
+const ordDue=o=>+((+o.total||0)+(+o.delivery||0)-(+o.paid||0)-(+o.credit||0)).toFixed(2);
 /* S6 (D7): the claims of theirs still waiting for his answer, oldest first, each named by its moment */
 const ordClaims=o=>((o&&o.payments)||[]).filter(p=>p&&p.claim==='waiting');
 /* 05 Oct 2026 (Negotiate): A PRICE THEY ASKED FOR is his to answer while nothing of his is open on it: asked, or an offer
@@ -23162,7 +23168,7 @@ function railIntoView(){
   const rail=document.getElementById('tabs'); if(!rail||rail.scrollWidth<=rail.clientWidth+2)return;
   try{on.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});}catch(e){}
 }
-document.getElementById('tabs').onclick=e=>{const s=e.target.dataset.s;if(s)switchTab(s);};
+document.getElementById('tabs').onclick=e=>{const b=e.target.closest&&e.target.closest('[data-s]'),s=b&&b.dataset.s;if(s)switchTab(s);};   /* 1 Nov 2026: a tap on a tab's count is the tab's */
 /* v281: THE RAIL ANSWERS THE KEYBOARD. Arrows move and activate, Home and End jump,
    and the active tab is the one tab stop (roving tabindex), so keyboard users are one
    Tab press from the content instead of fifteen. aria-current names the page; a full

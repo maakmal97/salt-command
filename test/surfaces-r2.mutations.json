@@ -1,0 +1,44 @@
+[
+  {
+    "name": "D1: the sale's declined cancellation is written to the trail first again",
+    "file": "master/salt_command.html",
+    "find": "  if(p.kind==='Cancellation'&&txEffDeliv(row)>0.009){provNotes.push('a cancellation on '+(row.rid||'a row')+' was not applied: '+units(txEffDeliv(row))+' has already been delivered');return;}\n  /* seed the trail",
+    "replace": "  /* seed the trail"
+  },
+  {
+    "name": "D1: the lot's declined cancellation is written to the trail first again",
+    "file": "master/salt_command.html",
+    "find": "    if(p.kind==='Cancellation'&&poRecvUnits(row)>0.009){provNotes.push('a cancellation on '+(row.rid||'a lot')+' was not applied: '+units(poRecvUnits(row))+' has already been received');return;}\n",
+    "replace": ""
+  },
+  {
+    "name": "D2: To do's ordDue reads no credit again",
+    "file": "master/salt_command.html",
+    "find": "-(+o.paid||0)-(+o.credit||0)).toFixed(2);",
+    "replace": "-(+o.paid||0)).toFixed(2);"
+  },
+  {
+    "name": "D3: a rail tap reads only the element tapped again",
+    "file": "master/salt_command.html",
+    "find": "const b=e.target.closest&&e.target.closest('[data-s]'),s=b&&b.dataset.s;if(s)switchTab(s);};",
+    "replace": "const s=e.target.dataset.s;if(s)switchTab(s);};"
+  },
+  {
+    "name": "D4: goRid looks once and gives up again",
+    "file": "master/salt_command.html",
+    "find": "  if(!card()){ledOlder=true;ledF={q:'',state:'',party:'',month:'',product:''};switchTab('ledger');}\n",
+    "replace": ""
+  },
+  {
+    "name": "A1: Try again keeps the read mark again",
+    "file": "stmt/owner.js",
+    "find": "function(){ box.removeAttribute('data-read'); while(box.children.length) box.lastChild.remove(); loadMakerInputs(); }",
+    "replace": "function(){ while(box.children.length>1) box.lastChild.remove(); loadMakerInputs(); }"
+  },
+  {
+    "name": "A2: a redraw during the read waits for nothing again",
+    "file": "stmt/owner.js",
+    "find": "    if(ofReads[k]){ (ofWait[k]=ofWait[k]||[]).push(paint); return; }",
+    "replace": "    if(ofReads[k]) return;"
+  }
+]
