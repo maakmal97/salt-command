@@ -1,0 +1,3 @@
+[
+ {"name":"the door's code button back to five words","file":"stmt/words.js","find":"\"door.toCode\": \"Use a sign-in code\"","replace":"\"door.toCode\": \"I have a sign-in code\""}
+]

@@ -50595,6 +50595,11 @@ await (async () => {
   await (await import("./admin-shop.mjs")).run({ ok, pageWork });
 })();
 
+section("1 Nov 2026: the surfaces pass, the door's code button in four words, a verb first");
+await (async () => {
+  await (await import("./surface-words.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin's place for a point: Google, Waze and Apple links read, short ones opened on the Worker, and OpenStreetMap's places as he types (26 Oct 2026)");
 await (async () => {
   await (await import("./admin-place.mjs")).run({ ok, pageWork });

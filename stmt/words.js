@@ -184,7 +184,7 @@ export const EN = {
   "door.rem": "Keep me signed in on this {dev}",
   "door.go": "Sign in",
   "door.again": "Try again",
-  "door.toCode": "I have a sign-in code",
+  "door.toCode": "Use a sign-in code",
   /* a sentence, drawn as one: nothing in it is bold or brass, since a link is only ever a link (11 Oct 2026) */
   "door.help": "Lost your password or your link? Ask us for a new sign-in link. It works straight away.",
   /* ---- OPENING, SIGNED OUT, AND ANOTHER ACCOUNT ON THIS PHONE ---- */
