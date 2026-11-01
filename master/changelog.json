@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1368",
+  "d": "01 Nov 2026",
+  "t": "TWO PAID SALES OF 31 OCT FOLDED, SALT AND GAS",
+  "n": [
+   "<b>TWO SALES FOLDED.</b> A salt sale of 1 unit to CM6-PJ at goods RM100, paid and delivered in full on 31 Oct 2026, and a gas sale of 2 units to CM4-TO-R at goods RM150 plus RM25 delivery, delivered on 31 Oct with RM150 paid. Both were approved by Counter Admin on 01 Nov 2026 and both are appended to sales. Neither is an amendment.",
+   "<b>UNUSUAL AND INVENTORY.</b> The gas sale is an advance: RM25 is unpaid, and CM4-TO-R has a credit cap of 1 unit. It is booked as R2. The salt sale drew 1 unit from stock and the gas sale moved 2 units. The salt cost basis stays at RM56 per unit, and no lot landed."
+  ]
+ },
+ {
   "v": "v1367",
   "d": "01 Nov 2026",
   "t": "A WITHDRAW'S OLD TAP NEVER SAYS WITHDRAWN OVER A NEWER OFFER",

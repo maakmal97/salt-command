@@ -1,6 +1,6 @@
 {
- "v": "v1365",
- "stamped": "01 Nov 2026, 19:19 KL",
+ "v": "v1368",
+ "stamped": "01 Nov 2026, 22:08 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -99,7 +99,7 @@
    "gas": {
     "qty": 0,
     "costPerKg": 50,
-    "stated": 2
+    "stated": 0
    },
    "prep": {
     "qty": 0,
@@ -107,7 +107,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 8.5,
+  "STATED_STOCK": 7.5,
   "COUNT_ON": {
    "salt": "2026-10-28",
    "oil": "2026-10-27",
@@ -10332,6 +10332,38 @@
     "cost": 112
    },
    {
+    "customer": "CM6-PJ",
+    "qty": 1,
+    "total": 100,
+    "cost": 56,
+    "cash": 100,
+    "handover": "collected",
+    "date": "2026-10-31",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-10-31",
+    "paidOn": "2026-10-31",
+    "listRM": 120,
+    "listQty": 1,
+    "note": "<b>NEW SALE 31 OCT 2026: 1 UNIT OF SALT TO CM6-PJ, GOODS RM100.</b> Cash RM100, no delivery charge, collected and paid in full on 31 Oct 2026. The goods total of RM100 sits above the floorTotal of RM60 and below the askTotal of RM120 for that size; per unit, RM100 against a floor of RM60 and an ask of RM120. CM6-PJ: 4 orders on the book, median rate RM100, range RM86.67 to RM100, so this sits at the median and the top of the range. Nothing outstanding, no units on credit against a cap of 1, nothing defaulted. The row carries cost RM56, from the latest purchase p046, which is the inventory's own rate. The drafter raised no flags. Outstanding: nothing.",
+    "rid": "s319"
+   },
+   {
+    "customer": "CM4-TO-R",
+    "qty": 2,
+    "total": 150,
+    "cost": 120,
+    "cash": 150,
+    "delivery": 25,
+    "handover": "delivered",
+    "product": "gas",
+    "date": "2026-10-31",
+    "deliveredQty": 2,
+    "deliveredOn": "2026-10-31",
+    "rev": "R2",
+    "note": "<b>NEW SALE 31 OCT 2026: 2 UNITS OF GAS TO CM4-TO-R, GOODS RM150.</b> Plus RM25 delivery, RM175 owed, RM150 cash paid, delivered in full on 31 Oct 2026, booked as R2 via CM4-TO. The goods total of RM150 equals the askTotal of RM150 and is above the floorTotal of RM120; per unit, RM75 equals the ask of RM75, against a floor of RM60. CM4-TO-R: 6 orders, median rate RM140, range RM71.67 to RM160, nothing outstanding before, no units on credit against a cap of 1, nothing defaulted. The row carries cost RM120, RM60 per unit from the latest gas purchase p048. The drafter flagged no earlier gas order to compare with, which the figures cannot answer, though the rate is at ask. It also flagged the advance against the cap, which the dossier does not settle. Outstanding: RM25.",
+    "rid": "s320"
+   },
+   {
     "customer": "CA4-SJ",
     "qty": 1.5,
     "total": 210,
@@ -11163,7 +11195,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-01T11:18:26.513Z",
+  "QUEUE_COMMITTED": "2026-11-01T14:00:26.358Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -11194,7 +11226,7 @@
     {
      "id": "cust:cadence:salt",
      "sev": "watch",
-     "title": "11 customers are past their own habit on salt"
+     "title": "10 customers are past their own habit on salt"
     },
     {
      "id": "cust:cadence:oil",
@@ -11432,6 +11464,68 @@
       "rare": false
      }
     },
+    "CM4-TO": {
+     "salt": {
+      "name": "large and regular",
+      "orders": 9,
+      "tenureDays": 78,
+      "sinceLastDays": 2,
+      "perMonth": 3.51,
+      "unitsPerMonth": 24.2,
+      "smallShare": 0.33,
+      "bigShare": 0.67,
+      "frequent": true,
+      "small": false,
+      "bigger": true,
+      "loyal": true,
+      "rare": false
+     },
+     "candy": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 13,
+      "sinceLastDays": 13,
+      "perMonth": 1.01,
+      "unitsPerMonth": 3.04,
+      "smallShare": 0,
+      "bigShare": 1,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false
+     },
+     "rice": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 39,
+      "sinceLastDays": 39,
+      "perMonth": 0.78,
+      "unitsPerMonth": 7.81,
+      "smallShare": 0,
+      "bigShare": 1,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": true
+     },
+     "gas": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 1,
+      "sinceLastDays": 1,
+      "perMonth": 1.01,
+      "unitsPerMonth": 2.03,
+      "smallShare": 0,
+      "bigShare": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": false,
+      "loyal": false,
+      "rare": false
+     }
+    },
     "CE4-CHE": {
      "salt": {
       "name": "consistent mid",
@@ -11492,53 +11586,6 @@
       "bigger": true,
       "loyal": false,
       "rare": false
-     }
-    },
-    "CM4-TO": {
-     "salt": {
-      "name": "large and regular",
-      "orders": 9,
-      "tenureDays": 78,
-      "sinceLastDays": 2,
-      "perMonth": 3.51,
-      "unitsPerMonth": 24.2,
-      "smallShare": 0.33,
-      "bigShare": 0.67,
-      "frequent": true,
-      "small": false,
-      "bigger": true,
-      "loyal": true,
-      "rare": false
-     },
-     "candy": {
-      "name": "one-off",
-      "orders": 1,
-      "tenureDays": 13,
-      "sinceLastDays": 13,
-      "perMonth": 1.01,
-      "unitsPerMonth": 3.04,
-      "smallShare": 0,
-      "bigShare": 1,
-      "frequent": false,
-      "small": false,
-      "bigger": true,
-      "loyal": false,
-      "rare": false
-     },
-     "rice": {
-      "name": "one-off",
-      "orders": 1,
-      "tenureDays": 39,
-      "sinceLastDays": 39,
-      "perMonth": 0.78,
-      "unitsPerMonth": 7.81,
-      "smallShare": 0,
-      "bigShare": 1,
-      "frequent": false,
-      "small": false,
-      "bigger": true,
-      "loyal": false,
-      "rare": true
      }
     },
     "CJ4-BJ": {
@@ -11997,6 +12044,23 @@
       "rare": true
      }
     },
+    "CM6-PJ": {
+     "salt": {
+      "name": "small and often",
+      "orders": 5,
+      "tenureDays": 72,
+      "sinceLastDays": 1,
+      "perMonth": 2.11,
+      "unitsPerMonth": 3.81,
+      "smallShare": 0.6,
+      "bigShare": 0.4,
+      "frequent": true,
+      "small": true,
+      "bigger": true,
+      "loyal": false,
+      "rare": false
+     }
+    },
     "CM4-SK": {
      "salt": {
       "name": "one-off",
@@ -12074,23 +12138,6 @@
       "frequent": false,
       "small": false,
       "bigger": false,
-      "loyal": false,
-      "rare": false
-     }
-    },
-    "CM6-PJ": {
-     "salt": {
-      "name": "rare and large",
-      "orders": 4,
-      "tenureDays": 72,
-      "sinceLastDays": 31,
-      "perMonth": 1.69,
-      "unitsPerMonth": 3.38,
-      "smallShare": 0.5,
-      "bigShare": 0.5,
-      "frequent": false,
-      "small": false,
-      "bigger": true,
       "loyal": false,
       "rare": false
      }
@@ -12603,15 +12650,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.30158730158730157
+         "v": 0.2992125984251969
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08940786291715609,
        "avgDel": {
-        "n": 245,
-        "kg": 610.81,
-        "mean": 2.4931
+        "n": 246,
+        "kg": 611.81,
+        "mean": 2.487
        }
       },
       "policy": {
@@ -13050,60 +13097,6 @@
         7325
        ]
       ],
-      "CE4-CHE": [
-       [
-        0.5,
-        75
-       ],
-       [
-        1,
-        120
-       ],
-       [
-        1.5,
-        160
-       ],
-       [
-        2,
-        215
-       ],
-       [
-        2.5,
-        255
-       ],
-       [
-        3,
-        305
-       ],
-       [
-        4,
-        390
-       ],
-       [
-        5,
-        475
-       ],
-       [
-        6.25,
-        580
-       ],
-       [
-        12.5,
-        945
-       ],
-       [
-        25,
-        1860
-       ],
-       [
-        50,
-        3720
-       ],
-       [
-        100,
-        7445
-       ]
-      ],
       "CM4-TO": [
        [
         0.5,
@@ -13156,6 +13149,60 @@
        [
         100,
         5600
+       ]
+      ],
+      "CE4-CHE": [
+       [
+        0.5,
+        75
+       ],
+       [
+        1,
+        120
+       ],
+       [
+        1.5,
+        160
+       ],
+       [
+        2,
+        215
+       ],
+       [
+        2.5,
+        255
+       ],
+       [
+        3,
+        305
+       ],
+       [
+        4,
+        390
+       ],
+       [
+        5,
+        475
+       ],
+       [
+        6.25,
+        580
+       ],
+       [
+        12.5,
+        945
+       ],
+       [
+        25,
+        1860
+       ],
+       [
+        50,
+        3720
+       ],
+       [
+        100,
+        7445
        ]
       ],
       "CJ4-BJ": [
@@ -14130,6 +14177,60 @@
         7445
        ]
       ],
+      "CM6-PJ": [
+       [
+        0.5,
+        75
+       ],
+       [
+        1,
+        120
+       ],
+       [
+        1.5,
+        160
+       ],
+       [
+        2,
+        215
+       ],
+       [
+        2.5,
+        255
+       ],
+       [
+        3,
+        305
+       ],
+       [
+        4,
+        390
+       ],
+       [
+        5,
+        475
+       ],
+       [
+        6.25,
+        580
+       ],
+       [
+        12.5,
+        945
+       ],
+       [
+        25,
+        1860
+       ],
+       [
+        50,
+        3720
+       ],
+       [
+        100,
+        7445
+       ]
+      ],
       "CM4-SK": [
        [
         0.5,
@@ -14239,60 +14340,6 @@
        ]
       ],
       "CE5-SA": [
-       [
-        0.5,
-        75
-       ],
-       [
-        1,
-        120
-       ],
-       [
-        1.5,
-        160
-       ],
-       [
-        2,
-        215
-       ],
-       [
-        2.5,
-        255
-       ],
-       [
-        3,
-        305
-       ],
-       [
-        4,
-        390
-       ],
-       [
-        5,
-        475
-       ],
-       [
-        6.25,
-        580
-       ],
-       [
-        12.5,
-        945
-       ],
-       [
-        25,
-        1860
-       ],
-       [
-        50,
-        3720
-       ],
-       [
-        100,
-        7445
-       ]
-      ],
-      "CM6-PJ": [
        [
         0.5,
         75
@@ -15541,8 +15588,8 @@
      "lift": {
       "CS6-BS": -0.2,
       "CS6-PER": -0.05,
-      "CE4-CHE": 0,
       "CM4-TO": "partner",
+      "CE4-CHE": 0,
       "CJ4-BJ": 0,
       "CM4-MK": 0,
       "CZ4-MK": -0.15,
@@ -15561,10 +15608,10 @@
       "CH4-KS": 0,
       "CH6-SET": -0.15,
       "CR4-PJ": 0,
+      "CM6-PJ": 0,
       "CM4-SK": 0,
       "CJ2-KUC": 0,
       "CE5-SA": 0,
-      "CM6-PJ": 0,
       "CG5-SB": 0,
       "CY2-NIL": 0,
       "CF5-WM": 0,
@@ -15673,6 +15720,10 @@
        "pct": 0,
        "why": ""
       },
+      "CM6-PJ": {
+       "pct": -0.2,
+       "why": "good record"
+      },
       "CM4-SK": {
        "pct": 0,
        "why": ""
@@ -15682,10 +15733,6 @@
        "why": ""
       },
       "CE5-SA": {
-       "pct": -0.2,
-       "why": "good record"
-      },
-      "CM6-PJ": {
        "pct": -0.2,
        "why": "good record"
       },
@@ -16102,28 +16149,6 @@
         450
        ]
       ],
-      "CE4-CHE": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
       "CM4-TO": [
        [
         10,
@@ -16144,6 +16169,28 @@
        [
         50,
         410
+       ]
+      ],
+      "CE4-CHE": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
        ]
       ],
       "CJ4-BJ": [
@@ -16542,6 +16589,28 @@
         450
        ]
       ],
+      "CM6-PJ": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
       "CM4-SK": [
        [
         10,
@@ -16587,28 +16656,6 @@
        ]
       ],
       "CE5-SA": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
-      "CM6-PJ": [
        [
         10,
         130
@@ -17121,8 +17168,8 @@
      "lift": {
       "CS6-BS": 0,
       "CS6-PER": 0,
-      "CE4-CHE": 0,
       "CM4-TO": "partner",
+      "CE4-CHE": 0,
       "CJ4-BJ": 0,
       "CM4-MK": 0,
       "CZ4-MK": -0.1,
@@ -17141,10 +17188,10 @@
       "CH4-KS": 0,
       "CH6-SET": 0,
       "CR4-PJ": 0,
+      "CM6-PJ": 0,
       "CM4-SK": 0,
       "CJ2-KUC": 0,
       "CE5-SA": 0,
-      "CM6-PJ": 0,
       "CG5-SB": 0,
       "CY2-NIL": 0,
       "CF5-WM": 0,
@@ -17459,28 +17506,6 @@
         1500
        ]
       ],
-      "CE4-CHE": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
-      ],
       "CM4-TO": [
        [
         1,
@@ -17501,6 +17526,28 @@
        [
         30,
         1260
+       ]
+      ],
+      "CE4-CHE": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
        ]
       ],
       "CJ4-BJ": [
@@ -17899,6 +17946,28 @@
         1500
        ]
       ],
+      "CM6-PJ": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
       "CM4-SK": [
        [
         1,
@@ -17944,28 +18013,6 @@
        ]
       ],
       "CE5-SA": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
-      ],
-      "CM6-PJ": [
        [
         1,
         60
@@ -18478,8 +18525,8 @@
      "lift": {
       "CS6-BS": 0,
       "CS6-PER": 0,
-      "CE4-CHE": 0,
       "CM4-TO": "partner",
+      "CE4-CHE": 0,
       "CJ4-BJ": 0,
       "CM4-MK": 0,
       "CZ4-MK": -0.25,
@@ -18498,10 +18545,10 @@
       "CH4-KS": 0,
       "CH6-SET": 0,
       "CR4-PJ": 0,
+      "CM6-PJ": 0,
       "CM4-SK": 0,
       "CJ2-KUC": 0,
       "CE5-SA": 0,
-      "CM6-PJ": 0,
       "CG5-SB": 0,
       "CY2-NIL": 0,
       "CF5-WM": 0,
@@ -18757,20 +18804,6 @@
         60
        ]
       ],
-      "CE4-CHE": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        60
-       ]
-      ],
       "CM4-TO": [
        [
         1,
@@ -18783,6 +18816,20 @@
        [
         10,
         35
+       ]
+      ],
+      "CE4-CHE": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        60
        ]
       ],
       "CJ4-BJ": [
@@ -19037,6 +19084,20 @@
         60
        ]
       ],
+      "CM6-PJ": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        60
+       ]
+      ],
       "CM4-SK": [
        [
         1,
@@ -19066,20 +19127,6 @@
        ]
       ],
       "CE5-SA": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        60
-       ]
-      ],
-      "CM6-PJ": [
        [
         1,
         8
@@ -19408,8 +19455,8 @@
      "lift": {
       "CS6-BS": 0,
       "CS6-PER": 0,
-      "CE4-CHE": 0,
       "CM4-TO": "partner",
+      "CE4-CHE": 0,
       "CJ4-BJ": 0,
       "CM4-MK": 0,
       "CZ4-MK": 0,
@@ -19428,10 +19475,10 @@
       "CH4-KS": 0,
       "CH6-SET": 0,
       "CR4-PJ": 0,
+      "CM6-PJ": 0,
       "CM4-SK": 0,
       "CJ2-KUC": 0,
       "CE5-SA": 0,
-      "CM6-PJ": 0,
       "CG5-SB": 0,
       "CY2-NIL": 0,
       "CF5-WM": 0,
@@ -19526,15 +19573,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.2
+         "v": 1
         }
        },
        "attrib": 1,
        "shrinkRate": 0,
        "avgDel": {
-        "n": 0,
-        "kg": 0,
-        "mean": null
+        "n": 1,
+        "kg": 2,
+        "mean": 2
        }
       },
       "policy": {
@@ -19692,24 +19739,6 @@
         1500
        ]
       ],
-      "CE4-CHE": [
-       [
-        1,
-        75
-       ],
-       [
-        5,
-        375
-       ],
-       [
-        10,
-        750
-       ],
-       [
-        20,
-        1500
-       ]
-      ],
       "CM4-TO": [
        [
         1,
@@ -19726,6 +19755,24 @@
        [
         20,
         1200
+       ]
+      ],
+      "CE4-CHE": [
+       [
+        1,
+        75
+       ],
+       [
+        5,
+        375
+       ],
+       [
+        10,
+        750
+       ],
+       [
+        20,
+        1500
        ]
       ],
       "CJ4-BJ": [
@@ -20052,6 +20099,24 @@
         1500
        ]
       ],
+      "CM6-PJ": [
+       [
+        1,
+        75
+       ],
+       [
+        5,
+        375
+       ],
+       [
+        10,
+        750
+       ],
+       [
+        20,
+        1500
+       ]
+      ],
       "CM4-SK": [
        [
         1,
@@ -20089,24 +20154,6 @@
        ]
       ],
       "CE5-SA": [
-       [
-        1,
-        75
-       ],
-       [
-        5,
-        375
-       ],
-       [
-        10,
-        750
-       ],
-       [
-        20,
-        1500
-       ]
-      ],
-      "CM6-PJ": [
        [
         1,
         75
@@ -20527,8 +20574,8 @@
      "lift": {
       "CS6-BS": 0,
       "CS6-PER": 0,
-      "CE4-CHE": 0,
       "CM4-TO": "partner",
+      "CE4-CHE": 0,
       "CJ4-BJ": 0,
       "CM4-MK": 0,
       "CZ4-MK": 0,
@@ -20547,10 +20594,10 @@
       "CH4-KS": 0,
       "CH6-SET": 0,
       "CR4-PJ": 0,
+      "CM6-PJ": 0,
       "CM4-SK": 0,
       "CJ2-KUC": 0,
       "CE5-SA": 0,
-      "CM6-PJ": 0,
       "CG5-SB": 0,
       "CY2-NIL": 0,
       "CF5-WM": 0,
@@ -20754,16 +20801,6 @@
         125
        ]
       ],
-      "CE4-CHE": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
       "CM4-TO": [
        [
         12,
@@ -20772,6 +20809,16 @@
        [
         30,
         100
+       ]
+      ],
+      "CE4-CHE": [
+       [
+        12,
+        60
+       ],
+       [
+        30,
+        125
        ]
       ],
       "CJ4-BJ": [
@@ -20954,6 +21001,16 @@
         125
        ]
       ],
+      "CM6-PJ": [
+       [
+        12,
+        60
+       ],
+       [
+        30,
+        125
+       ]
+      ],
       "CM4-SK": [
        [
         12,
@@ -20975,16 +21032,6 @@
        ]
       ],
       "CE5-SA": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CM6-PJ": [
        [
         12,
         60
@@ -21221,8 +21268,8 @@
      "lift": {
       "CS6-BS": 0,
       "CS6-PER": 0,
-      "CE4-CHE": 0,
       "CM4-TO": "partner",
+      "CE4-CHE": 0,
       "CJ4-BJ": 0,
       "CM4-MK": 0,
       "CZ4-MK": 0,
@@ -21241,10 +21288,10 @@
       "CH4-KS": 0,
       "CH6-SET": 0,
       "CR4-PJ": 0,
+      "CM6-PJ": 0,
       "CM4-SK": 0,
       "CJ2-KUC": 0,
       "CE5-SA": 0,
-      "CM6-PJ": 0,
       "CG5-SB": 0,
       "CY2-NIL": 0,
       "CF5-WM": 0,
@@ -21271,12 +21318,33 @@
      "suggest": null
     }
    },
-   "v": "v1365"
+   "v": "v1368"
   },
   "OPEN": {
-   "at": "2026-11-01T11:19:19.086Z",
-   "count": 7,
+   "at": "2026-11-01T14:08:39.371Z",
+   "count": 8,
    "byKey": {
+    "CM4-TO-R|2026-10-31|175|gas": {
+     "d": "2026-10-31",
+     "p": "CM4-TO-R",
+     "dir": "S",
+     "q": 2,
+     "t": 150,
+     "cash": 150,
+     "mv": 2,
+     "st": "dueMoney",
+     "oweRM": 25,
+     "dv": 25,
+     "pr": "gas",
+     "rid": "s320",
+     "as": "CM4-TO",
+     "st2": "R2",
+     "deliveredOn": "2026-10-31",
+     "handover": "delivered",
+     "key": "CM4-TO-R|2026-10-31|175|gas",
+     "age": 1,
+     "exp": 18.75
+    },
     "CR3-DAM|2026-10-30|70": {
      "d": "2026-10-30",
      "p": "CR3-DAM",
@@ -21398,11 +21466,11 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 8.5,
-     "free": 8.5,
+     "onHand": 7.5,
+     "free": 7.5,
      "owedOut": 0,
-     "coverDays": 2,
-     "rate": 4.3,
+     "coverDays": 1.8,
+     "rate": 4.34,
      "owedToYou": 310,
      "promised": 0,
      "short": 0
@@ -21442,12 +21510,12 @@
     },
     "gas": {
      "name": "Gas",
-     "onHand": 2,
-     "free": 2,
+     "onHand": 0,
+     "free": 0,
      "owedOut": 0,
-     "coverDays": null,
-     "rate": 0,
-     "owedToYou": 0,
+     "coverDays": 0,
+     "rate": 0.12,
+     "owedToYou": 25,
      "promised": 0,
      "short": 0
     },
@@ -21471,7 +21539,7 @@
     "gas": "2026-10-29",
     "prep": null
    },
-   "v": "v1365"
+   "v": "v1368"
   },
   "TERMS": {
    "ceiling": 250,
@@ -21479,7 +21547,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1365"
+   "v": "v1368"
   },
   "REWARD": {
    "stated": {
@@ -21497,17 +21565,17 @@
      }
     }
    },
-   "v": "v1365"
+   "v": "v1368"
   },
   "STOCK": {
    "today": "2026-11-01",
    "books": {
     "salt": {
-     "shelf": 8.5,
-     "free": 8.5,
+     "shelf": 7.5,
+     "free": 7.5,
      "commit": 0,
      "light": "green",
-     "coverDays": 2,
+     "coverDays": 1.8,
      "transit": 0
     },
     "oil": {
@@ -21535,11 +21603,11 @@
      "transit": 0
     },
     "gas": {
-     "shelf": 2,
-     "free": 2,
+     "shelf": 0,
+     "free": 0,
      "commit": 0,
-     "light": "green",
-     "coverDays": null,
+     "light": "red",
+     "coverDays": 0,
      "transit": 0
     },
     "prep": {
@@ -21551,7 +21619,7 @@
      "transit": 0
     }
    },
-   "v": "v1365"
+   "v": "v1368"
   }
  }
 }
