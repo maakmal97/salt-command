@@ -11275,7 +11275,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1365","d":"01 Nov 2026","t":"ONE COLLECTION RECORDED ON S309, SHELF DOWN 0.5 UNIT","n":["<b>ONE CORRECTION FOLDED.</b> The correction on s309 records that CR3-DAM collected 0.5 unit on 01 Nov 2026. It sets deliveredQty, deliveredOn and handover on the row and moves no cash. The order was dated 30 Oct 2026 for RM70, and it stays unpaid.","<b>UNUSUAL, AND THE SHELF.</b> This is an advance at RM140 per unit against a median of RM85 for CR3-DAM. The shelf rolls out by 0.5 unit. The cost basis is unchanged at RM56 per unit, and no lot landed."]}];
+const evolution=[{"v":"v1366","d":"01 Nov 2026","t":"THE SURFACES PASS'S LEFTOVERS: FOUR LINES, TWO TEST FIXES AND A WITHDRAW RETRIED","n":["<b>WORDS.</b> The test surface's armed Reset reads Tap again to confirm, like every armed button. A guest link waiting on approval says so in one sentence. Salt Admin's vault sheet leads with one sentence. The refund Insight on Salt Admin's order card and row card is one sentence of nineteen words.","<b>WITHDRAW.</b> A Withdraw tapped twice, whose first tap landed, is answered as the first was instead of saying no offer is open; a newer offer of his is left standing. Route answer changed: the withdraw road may answer again. Fable reviewed.","<b>SUITE.</b> Salt Admin's flow checks say Out or paid and Done; the one-unlock lock mutation, empty since its row left, now aims at the Show names switch."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11423,7 +11423,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='01 Nov 2026, 19:19 KL';
+const LAST_UPDATED='01 Nov 2026, 19:32 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
