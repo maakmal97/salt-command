@@ -1,0 +1,59 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-01T18:49:40.595Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "qty": 2,
+    "total": 150,
+    "cash": 150,
+    "date": "2026-10-31",
+    "customer": "CM4-TO-R",
+    "product": "gas",
+    "rids": [],
+    "booked_seq": 76
+   },
+   "reasoning": "Fulfilment against CM4-TO-R's order of 2 unit for RM 150 with RM 25 delivery, RM 175 owed agreed 2026-10-31. RM 25 and 0 unit move on 2026-11-02, against RM 25 and 0 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "s320",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-11-01T18:49:40.595Z",
+    "type": "AMEND",
+    "party": "CM4-TO-R",
+    "qty": 0,
+    "total": 25,
+    "status": "partial",
+    "raw": "Fulfilment against s320 for CM4-TO-R on 2026-11-02",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CM4-TO-R",
+     "product": "gas",
+     "rid": "s320",
+     "orderKey": "CM4-TO-R|2026-10-31|175|gas",
+     "date": "2026-11-02",
+     "kind": "Fulfilment",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 0,
+     "total": 25,
+     "cash": 25,
+     "kg": 0
+    },
+    "makerRequest": "cae4eee46b4aa82fe4115a1651c8fe4ca2ce69d56d0afcce3141b1c20abc2eda"
+   },
+   "decidedAt": "2026-11-01T18:50:12.757Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
