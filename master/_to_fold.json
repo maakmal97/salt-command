@@ -1,0 +1,69 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-01T15:15:37.786Z",
+   "status": "approved",
+   "collection": "purchases",
+   "row": {
+    "qty": 1,
+    "total": 50,
+    "cash": 50,
+    "handover": "delivered",
+    "supplier": "SP7-PUD",
+    "status": "paid",
+    "product": "gas",
+    "date": "2026-11-01",
+    "receivedOn": "2026-11-01",
+    "receivedQty": 1,
+    "paidOn": "2026-11-01",
+    "rids": [
+     "p049"
+    ],
+    "booked_seq": 75
+   },
+   "reasoning": "Bought 1 unit of gas from SP7-PUD for RM 50, RM 50/unit. Paid in full and delivered in full on 2026-11-01. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-11-01T15:15:37.786Z",
+    "type": "BUY",
+    "party": "SP7-PUD",
+    "qty": 1,
+    "total": 50,
+    "status": "paid",
+    "raw": "Buy 1 unit gas from SP7-PUD for RM50 on 2026-11-01, delivered, RM50 cash, 1 unit moved → Completed",
+    "payload": {
+     "mode": "new",
+     "product": "gas",
+     "direction": "BUY",
+     "party": "SP7-PUD",
+     "newId": null,
+     "date": "2026-11-01",
+     "qty": 1,
+     "total": 50,
+     "delivery": 0,
+     "freight": 0,
+     "cash": 50,
+     "kg": 1,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "delivered",
+     "second": null,
+     "more": null,
+     "coverFree": null
+    },
+    "makerRequest": "8aa8eba567ca03281b807d517efc2edec8ae8f51035969167686b5eba15df219"
+   },
+   "decidedAt": "2026-11-01T15:15:58.070Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
