@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="78ef79ee121b07cf";
+var SALT_BUILD_ID="d4f209c4e13ae2b3";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -11494,7 +11494,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1372","d":"02 Nov 2026","t":"FOUR COUNTS FOLDED: GAS, OIL, PREP AND RICE","n":["<b>FOUR COUNTS FOLDED ON 02 NOV 2026.</b> Gas matched the book at 1 unit. Oil was counted at 0 against 20 on the book, a gap of -20. Prep was counted at 25 against 0, a gap of +25. Rice was counted at 75 against 67, a gap of +8. Each count wins over the ledger and moves its COUNT_ON date to 2026-11-02. The decider was Counter Admin, on 2026-11-01.","<b>UNUSUAL AND INVENTORY.</b> Oil and prep show large gaps, and the dossier gives no reason for either, so none is stated. Salt was not counted and stands at 7.5 units, with stockCost and replCost both RM56. Oil selfUse moves from 174 to 194 and rice selfUse from 26 to 18. Other floors do not move."]}];
+const evolution=[{"v":"v1373","d":"02 Nov 2026","t":"A YES THAT LANDS BETWEEN A READ AND ITS VOID IS NEVER VOIDED","n":["<b>THE EARLIER MOVE WINS.</b> A customer's Yes that lands while a Withdraw, the minute's pass or an Accept is under way is no longer voided by it: every void names the one offer it read, so a newer offer's yes stands and its order is agreed at it.","<b>SAID PLAINLY.</b> A Withdraw their Yes beat says so on Salt Admin: they said yes before your Withdraw, so its row is drafted at your offer.","<b>A REPEATED WITHDRAW.</b> An old Withdraw tap over a newer offer they took is refused as a fresh tap and never said withdrawn; over a lapsed offer for their yes it is answered as done.","Routes changed: the Withdraw road's answers above, on the Desk and in the Counter's order book. No body, price or stored shape changed."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11642,7 +11642,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='02 Nov 2026, 05:04 KL';
+const LAST_UPDATED='02 Nov 2026, 06:14 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
