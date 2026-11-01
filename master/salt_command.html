@@ -11274,7 +11274,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1361","d":"01 Nov 2026","t":"DELIVERY OF 2 UNITS TO CE5-SA RECORDED AGAINST S317","n":["<b>ONE CORRECTION FOLDED.</b> The row records on s317 that 2 units were delivered to CE5-SA on 01 Nov 2026, setting deliveredQty to 2, deliveredOn to 2026-11-01 and handover to delivered. It was preapproved by Counter Admin. The order was already paid on 31 Oct 2026, so no cash moved.","<b>INVENTORY.</b> The shelf rolls out by 2 units, the difference the correction states, leaving salt at 11. The stock cost stays at RM56 per unit, and no lot landed."]}];
+const evolution=[{"v":"v1362","d":"01 Nov 2026","t":"ONE SENTENCE A GREY LINE, FOUR WORDS A BUTTON, ON SALT ADMIN AND SALT COUNTER","n":["<b>SALT ADMIN, SHOP.</b> Each grey line is one sentence. Hours with Hold the shop on reads \"Kuala Lumpur time; customers can still order.\", and with no weekly hours \"No weekly hours set; customers can still order.\" Practice reads \"1 of 3 made; turn on to make ...\", and with none made \"Three accounts to try the customer’s page; nothing they do is recorded.\"","<b>SALT COUNTER, THE DOOR AND THE ORDER PAGE.</b> The code button reads Use a sign-in code (it was I have a sign-in code), the help line is one sentence (\"If you lost your password or your link, ask us for a new sign-in link.\"), and the order page's closed and unavailable lines are one sentence each.","<b>WORDS ONLY.</b> No route, body, price or stored shape changed, and the Desk is as it was. A sweep of all three surfaces for names nothing defines found none a tap can reach."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11422,7 +11422,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='01 Nov 2026, 12:25 KL';
+const LAST_UPDATED='01 Nov 2026, 16:23 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
