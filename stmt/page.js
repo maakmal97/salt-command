@@ -5297,10 +5297,15 @@ const CLIENT_JS = `
     draft.busy=true; draft.snote=''; sheetDraw();
     var mine=ticket, week=(prices&&prices.week&&prices.week.monday)||'';
     /* 10 Oct 2026: the exact spot sealed once, here, before anything leaves; a retry sends the same sealed copy */
-    if(c.pin&&!c.pinSealed){
+    /* 2 Nov 2026: a practice account's spot is never kept (the Worker drops it), so it is not sealed and never stops Place; and a
+       key the visit's one ask did not bring is asked for once more here, so one failed read no longer stops every delivery with a
+       floor or unit. Nothing of the spot leaves unsealed. */
+    if(c.pin&&!c.pinSealed&&TESTS.indexOf(user)<0){
+      if(!SLIPKEY) await slipKeyNow();
+      if(mine!==ticket) return;
       try{ c.pinSealed=SLIPKEY?await pinSeal(c.pin):null; }catch(e){ c.pinSealed=null; }
       if(mine!==ticket) return;
-      if(!c.pinSealed){ draft.busy=false; draft.snote=tw('e.pinBad'); sheetDraw(); return; }
+      if(!c.pinSealed){ draft.busy=false; draft.snote=sentence(tw('e.pinBad')); sheetDraw(); return; }
     }
     var todo=c.lines.filter(function(l){ return !l.placed; });
     for(var i=0;i<todo.length;i++){
@@ -6732,6 +6737,8 @@ const CLIENT_JS = `
     SLIPKEY=null;   /* asked once a visit */
     api('/slip/key').then(function(r){ var k=r.body&&r.body.ok&&r.body.key; if(!k) return; SLIPKEY=k; if(PS&&PS.step==='check') drawPay(); if(osh&&(draft.step==='form'||draft.step==='spot')) sheetDraw(); });
   }
+  /* 2 Nov 2026: Place asks again when the visit's one ask brought no key (api answers a failure, it never throws) */
+  async function slipKeyNow(){ if(view) return; var r=await api('/slip/key'), k=r.body&&r.body.ok&&r.body.key; if(k) SLIPKEY=k; }
   async function slipSeal(pub,bytes,info){
     var S=crypto.subtle, E={name:'ECDH',namedCurve:'P-256'}, iv=crypto.getRandomValues(new Uint8Array(12));
     var eph=await S.generateKey(E,false,['deriveBits']);

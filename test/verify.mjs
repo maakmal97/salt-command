@@ -48471,6 +48471,11 @@ await (async () => {
   await (await import("./counter-c-pin-seal.mjs")).run({ ok });
 })();
 
+section("2 Nov 2026: a delivery with a floor or unit is placed after a failed key read, and on the practice surface");
+await (async () => {
+  await (await import("./counter-deliver-nokey.mjs")).run({ ok });
+})();
+
 section("Counter Batch C: the Desk reads the spot's name and unit after the unlock, a unit alone never filed (P7)");
 await (async () => {
   await (await import("./counter-c-desk-spot.mjs")).run({ ok });
