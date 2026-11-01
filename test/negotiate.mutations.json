@@ -1,0 +1,20 @@
+[
+ {
+  "name": "a retried Withdraw is refused again at the Desk state gate",
+  "file": "src/orders.js",
+  "find": "(o.price.state !== \"offered\" && !(rid && o.price.state === \"withdrawn\"))",
+  "replace": "o.price.state !== \"offered\""
+ },
+ {
+  "name": "a retried Withdraw does not say again",
+  "file": "src/orders.js",
+  "find": "return Object.assign({ ok: true, order: r.order }, r.again ? { again: true } : {});",
+  "replace": "return Object.assign({ ok: true, order: r.order }, {});"
+ },
+ {
+  "name": "a repeat over a newer offer voids that offer yes",
+  "file": "src/orders.js",
+  "find": "if (env.SALT_LEDGER && (!r.again || o.price.state === \"withdrawn\")) await voidOffers",
+  "replace": "if (env.SALT_LEDGER && true) await voidOffers"
+ }
+]

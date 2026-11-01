@@ -605,12 +605,15 @@ async function acceptOffer(env, f, body, by, at) {
 export async function withdrawOffer(env, id, body) {
   const f = await findOrder(env, id);
   if (!f.ok) return f;
-  const o = f.order;
-  if (!o.price || o.price.state !== "offered") return { ok: false, status: 409, error: "no offer of yours is open on this order" };
-  const r = await moveOrder(env, o.u, id, Object.assign({ withdraw: true }, body && typeof body.rid === "string" && /^[A-Za-z0-9_-]{16,64}$/.test(body.rid) ? { rid: body.rid } : {}));
+  const o = f.order, rid = body && typeof body.rid === "string" && /^[A-Za-z0-9_-]{16,64}$/.test(body.rid) ? body.rid : null;
+  /* 1 Nov 2026: a retried Withdraw whose first tap landed finds the offer withdrawn already; it goes on to the order book, which answers a
+     request id it has filed as the first answer (again) and refuses one it has not, as offerOrder answers a repeated Send */
+  if (!o.price || (o.price.state !== "offered" && !(rid && o.price.state === "withdrawn"))) return { ok: false, status: 409, error: "no offer of yours is open on this order" };
+  const r = await moveOrder(env, o.u, id, Object.assign({ withdraw: true }, rid ? { rid } : {}));
   if (!r.ok) return r;
-  if (env.SALT_LEDGER) await voidOffers(env.SALT_LEDGER, id, new Date().toISOString());
-  return { ok: true, order: r.order };
+  /* the yes goes with the offer; a repeat over a newer offer of his leaves that offer's yes standing */
+  if (env.SALT_LEDGER && (!r.again || o.price.state === "withdrawn")) await voidOffers(env.SALT_LEDGER, id, new Date().toISOString());
+  return Object.assign({ ok: true, order: r.order }, r.again ? { again: true } : {});
 }
 /** THEIR ACCEPT, followed: the row drafted at the offer and queued, approved where it lands only if it equals what he offered. */
 export async function takeOffer(env, id, now, mirror) {

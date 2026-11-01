@@ -236,4 +236,20 @@ export async function run({ ok, skip }) {
   ok(offH.status === 409 && /nothing here needs their yes: Accept it/.test(offH.j.error || "") && /the ask is closed/.test(siteOff.error || ""),
     /* version 2 (10 Oct 2026): on the desk a closed ask is an order at its listed price, which only a raise sends for their yes */
     "and a closed ask takes no new offer, on the desk or on the site: " + JSON.stringify([offH.status, offH.j.error, siteOff.error]));
+
+  /* 14. 1 Nov 2026: A WITHDRAW RETRIED UNDER ITS REQUEST ID, after the first landed, is answered as the first was (again), never 409; another id
+     still finds no offer open. A repeat over a newer offer of his (a raise sent for their yes) leaves that offer and its yes standing. */
+  const w = (await ask(2, 200, {}, U2)).order;
+  const pvW = await call("/orders/" + w.id + "/preview", { total: 185 });
+  await call("/orders/" + w.id + "/offer", { total: 185, delivery: 0, hash: pvW.j.offerHash, rid: rid() });
+  const wRid = rid(), wA = await call("/orders/" + w.id + "/withdraw", { rid: wRid }), wB = await call("/orders/" + w.id + "/withdraw", { rid: wRid });
+  const wC = await call("/orders/" + w.id + "/withdraw", { rid: rid() }), stW = (await orderOf(w.id)).price.state;
+  ok(wA.status === 200 && !wA.j.again && wB.status === 200 && wB.j.again === true && wC.status === 409 && /no offer of yours is open/.test(wC.j.error || "") && stW === "withdrawn",
+    "a Withdraw retried under its request id after the first landed is answered again, and another id still finds no offer open: " + JSON.stringify([wA.status, wA.j.again, wB.status, wB.j.again, wB.j.error, wC.status, wC.j.error, stW]));
+  const pvR = await call("/orders/" + w.id + "/preview", { total: 230 });
+  const raise = await call("/orders/" + w.id + "/offer", { total: 230, delivery: 0, hash: pvR.j.offerHash || pvR.j.hash, rid: rid() });
+  const wD = await call("/orders/" + w.id + "/withdraw", { rid: wRid }), stR = (await orderOf(w.id)).price.state;
+  const yes = db.prepare("SELECT COUNT(*) AS n FROM preapproval WHERE order_id=? AND status='waiting'").get(w.id).n;
+  ok(raise.status === 200 && wD.status === 200 && wD.j.again === true && stR === "offered" && yes === 1,
+    "and the old id repeated over his newer offer leaves that offer and its yes standing: " + JSON.stringify([raise.status, raise.j.error, wD.status, wD.j.again, stR, yes]));
 }
