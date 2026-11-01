@@ -10,7 +10,7 @@
  {"name":"the card is no link card","file":"stmt/page.js","find":"salt-glass-card salt-glass-card--radius-lg salt-glass-card--link'+(oClosed(o)","replace":"salt-glass-card salt-glass-card--radius-lg'+(oClosed(o)"},
  {"name":"what is owed is not in ember","file":"stmt/page.js","find":"main.appendChild(el('span','ocard__what'+(oOwes(o)?' odue':''),why));","replace":"main.appendChild(el('span','ocard__what',why));"},
  {"name":"the figure is what is left to pay","file":"stmt/page.js","find":"main.appendChild(el('span','ocard__total',rm(o.total+(+o.delivery||0))));","replace":"main.appendChild(el('span','ocard__total',rm(oToPay(o))));"},
- {"name":"a paid order says nothing","file":"stmt/page.js","find":"    if(paid>0.004&&paid>=owed-0.004) return tw('why.paidFull');\n","replace":""},
+ {"name":"a paid order says nothing","file":"stmt/page.js","find":"    if(pc>0.004&&pc>=owed-0.004) return tw('why.paidFull');\n","replace":""},
  {"name":"an ended order says nothing of money","file":"stmt/page.js","find":"    if(paid<=0.004&&(o.status==='declined'||o.status==='cancelled')) return tw('why.nothingPaid');\n","replace":""},
  {"name":"a tap on the card opens nothing","file":"stmt/page.js","find":"    b.addEventListener('click',function(){ oOpen(o.id); });\n    return b;\n  }\n  /* the four ways","replace":"    return b;\n  }\n  /* the four ways"},
  {"name":"a product's word on the card","file":"stmt/page.js","find":"    main.appendChild(el('span','ocard__total',rm(o.total+(+o.delivery||0))));","replace":"    main.appendChild(el('span','ocard__total',rm(o.total+(+o.delivery||0)))); main.appendChild(el('span','x',' '+o.product));"},

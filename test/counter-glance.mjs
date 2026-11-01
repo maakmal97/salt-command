@@ -21,7 +21,7 @@ export async function run({ ok, pageWork }) {
   const kl = (n) => new Date(Date.now() + 8 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
   const ago = (h) => new Date(Date.now() - h * 3600e3).toISOString();
   const wins = [];
-  const open = async ({ toPay = 0, claims = [] }) => {
+  const open = async ({ toPay = 0, claims = [], orders = null }) => {
     const polls = [];
     const u = "abcd-efgh", pass = "fixture-pass-p10", ck = await C.contentKey("test-secret", u);
     const parts = toPay ? [{ date: kl(-2), since: kl(-1), due: kl(2), late: false, rm: toPay, whole: toPay, product: "salt", qty: 2, got: 2, gotOn: kl(-1), resale: false, goods: toPay, deliv: 0, less: 0, rate: toPay / 2 }] : [];
@@ -44,7 +44,7 @@ export async function run({ ok, pageWork }) {
       try { win.localStorage.setItem("salt-look", "tide"); } catch (e) { /* no look Sheet over the page */ }
       win.fetch = async (path, init) => {
         const p = String(path), m = (init && init.method) || "GET";
-        const j = (p === "/open" || p === "/account") ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: [order], claims: claims.slice(), thread } : null;
+        const j = (p === "/open" || p === "/account") ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: orders ? orders(order) : [order], claims: claims.slice(), thread } : null;
         return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
       };
       work = pageWork(win);
@@ -93,6 +93,34 @@ export async function run({ ok, pageWork }) {
     /* ---- 5: no roster code */
     const all = g.outerHTML + Z.d.getElementById("aGlance").outerHTML;
     ok(!/\b[A-Z]{2}[0-9]{1,2}-[A-Z]{2,3}\b/.test(all) && !/\b[A-Z]{2}[0-9]{1,2}-[A-Z]{2,3}\b/i.test(t(g)), "nothing in the glance takes a roster code's shape");
+
+    /* ---- 6 (1 Nov 2026): the link between an order and the one that replaced it opens that order in place; it only moved the
+       address, since the page reads #o= once, at load */
+    const chain = (o) => [Object.assign({}, o, { status: "cancelled", replacement: "o-new" }),
+      { id: "o-new", status: "placed", at: ago(1), product: "salt", qty: 2, unit: "unit", total: 20, delivery: 0, paid: 0, moved: 0, mode: "collect", replaces: "o-owe",
+        history: [{ at: ago(1), status: "placed", by: "customer" }], msgs: [], payments: [] }];
+    /* the Orders list, on its Done part when asked: an ended order is listed there */
+    const listed = async (X, id, part) => {
+      X.d.querySelector('#tabs button[data-t="order"]').click();
+      if (part) { const seg = [...X.d.querySelectorAll('.otabs .salt-segment__opt')].find((b) => t(b).startsWith(part)); if (seg) seg.click(); }
+      await until(() => !!X.d.querySelector('.ocard[data-row="' + id + '"]'), 60); return X.d.querySelector('.ocard[data-row="' + id + '"]');
+    };
+    const R = await open({ toPay: 0, orders: chain }), rc = await listed(R, "o-new");
+    if (rc) rc.click();
+    await until(() => !!R.d.querySelector('#pOrder .oscreen[data-order="o-new"] .ohist a'), 80);
+    const link = R.d.querySelector('#pOrder .oscreen[data-order="o-new"] .ohist a');
+    if (link) link.click();
+    await until(() => !!R.d.querySelector('#pOrder .oscreen[data-order="o-owe"]'), 60);
+    ok(!!link && !!R.d.querySelector('#pOrder .oscreen[data-order="o-owe"]'), "6: the link to the order this one replaced opens it: " + (link ? t(link) : "(no link)"));
+
+    /* ---- 7 (1 Nov 2026): an order their credit paid reads paid: its Paid step is done and its card says Paid in full, as dueOf says nothing is owed */
+    const credited = (o) => [Object.assign({}, o, { status: "done", total: 20, delivery: 0, paid: 0, credit: 20 })];
+    const K = await open({ toPay: 0, orders: credited }), card = await listed(K, "o-owe", "Done"), cardSaid = t(card);
+    if (card) card.click();
+    await until(() => !!K.d.querySelector('#pOrder .oscreen[data-order="o-owe"] [data-step="paid"]'), 80);
+    const step = K.d.querySelector('#pOrder .oscreen[data-order="o-owe"] [data-step="paid"]');
+    ok(!!step && step.classList.contains("salt-steps__step--done") && /Paid in full/.test(cardSaid),
+      "7: an order their credit paid has its Paid step done and its card says Paid in full: " + JSON.stringify({ step: step ? step.className : null, card: cardSaid }));
   } catch (e) { ok(false, "counter-glance stopped on an error: " + (e && e.stack)); }
   finally { for (const w of wins) { try { w.close(); } catch (e) { /* jsdom */ } } }
 }

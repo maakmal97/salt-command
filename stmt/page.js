@@ -5587,8 +5587,9 @@ const CLIENT_JS = `
      then the mark and size, what it waits on (to pay in ember) or how it ended, and the figure; its name says all of it in one sentence. */
   function oCardWhy(o){
     var w=oWhy(o); if(w) return w;
-    var owed=o.total+(+o.delivery||0), paid=+o.paid||0;
-    if(paid>0.004&&paid>=owed-0.004) return tw('why.paidFull');
+    /* 1 Nov 2026: their credit pays as money does, as dueOf reads it; the cancelled line below still reads money alone */
+    var owed=o.total+(+o.delivery||0), paid=+o.paid||0, pc=paid+(+o.credit||0);
+    if(pc>0.004&&pc>=owed-0.004) return tw('why.paidFull');
     if(paid<=0.004&&(o.status==='declined'||o.status==='cancelled')) return tw('why.nothingPaid');
     return '';
   }
@@ -5815,7 +5816,7 @@ const CLIENT_JS = `
     });
     /* 20 Oct 2026 (his answer): PAID, the fourth step, before the goods' last: done once nothing is owed, which may come before the goods go
        on an order paid first; part paid, how much of what, "RM 40/70" */
-    var due=(+o.total||0)+(+o.delivery||0), paid=+o.paid||0, settled=['acknowledged','ready','done'].indexOf(o.status)>=0&&due>0&&paid>=due-0.004;
+    var due=(+o.total||0)+(+o.delivery||0), paid=(+o.paid||0)+(+o.credit||0), settled=['acknowledged','ready','done'].indexOf(o.status)>=0&&due>0&&paid>=due-0.004;
     var pays=(o.payments||[]).filter(function(x){ return x&&(!x.claim||x.claim==='received')&&x.at; }), pli=el('li','salt-steps__step'+(settled?' salt-steps__step--done':''));
     var pmk=el('span','salt-steps__mark'), NS2='http://www.w3.org/2000/svg', ps=document.createElementNS(NS2,'svg'), pp=document.createElementNS(NS2,'path');
     pmk.setAttribute('aria-hidden','true'); ps.setAttribute('viewBox','0 0 24 24'); pp.setAttribute('d',STEP_GLYPH.paid); ps.appendChild(pp); pmk.appendChild(ps);
@@ -6088,7 +6089,10 @@ const CLIENT_JS = `
     var w=el('div','ohist'), h=o.history||[];
     if(o.replacement||o.replaces){
       var replacement=el('a','salt-ghost',tw(o.replacement?'ord.replaced':'ord.replaces'));
-      replacement.href='#o='+encodeURIComponent(o.replacement||o.replaces); w.appendChild(replacement);
+      replacement.href='#o='+encodeURIComponent(o.replacement||o.replaces);
+      /* 1 Nov 2026: the page reads #o= once, at load, so the link opens the other order in place (the glance's way); the address stays for a long press */
+      replacement.addEventListener('click',function(ev){ var rid=o.replacement||o.replaces; if(oFind(rid)){ ev.preventDefault(); oOpen(rid); } });
+      w.appendChild(replacement);
     }
     if(!h.length) return w;
     var dt=el('details','salt-plan'); dt.open=!!(draft.oHist||{})[o.id];
