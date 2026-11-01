@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1369",
+  "d": "01 Nov 2026",
+  "t": "ONE UNIT OF GAS BOUGHT FROM SP7-PUD, SALT STOCK UNMOVED",
+  "n": [
+   "<b>ONE PAID GAS PURCHASE FOLDED.</b> The batch holds a single row: 1 unit of gas from SP7-PUD for RM50, paid in cash and delivered in full on 01 Nov 2026, appended to purchases as p049. Nothing was flagged by the drafter and nothing is outstanding.",
+   "<b>INVENTORY.</b> Salt stands at 7.5 units, counted on 28 Oct 2026, with nothing owed out or promised. Stock cost and replacement cost both stay at RM56 per unit, as gas is not salt and the row moves no salt."
+  ]
+ },
+ {
   "v": "v1368",
   "d": "01 Nov 2026",
   "t": "TWO PAID SALES OF 31 OCT FOLDED, SALT AND GAS",

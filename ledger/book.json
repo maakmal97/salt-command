@@ -95,7 +95,7 @@
     "gas": {
       "qty": 0,
       "costPerKg": 50,
-      "stated": 0
+      "stated": 1
     },
     "prep": {
       "qty": 0,
@@ -205,7 +205,8 @@
     {"qty":100,"total":320,"cash":330,"handover":"collected","supplier":"SM4-KEP","freight":10,"status":"paid","product":"rice","date":"2026-10-25","receivedOn":"2026-10-25","receivedQty":100,"paidOn":"2026-10-25","note":"<b>PURCHASE OF 100 UNIT OF RICE FROM SM4-KEP, GOODS RM320, 25 OCT 2026.</b> Approved by Counter Admin. Collected and received in full on 25 Oct and paid the same day, RM330 cash: RM320 goods and RM10 freight. The rate is RM3.20 a unit, matching his word of 23 Sep for 100 unit at RM320; the 21 Sep lot was bought at the same rate. The party's median rate is RM38, range RM3.20 to RM42, across oil, candy and rice rows; outstanding before was RM0, nothing defaulted. The drafter flagged RM330 paid on RM320; the RM10 freight answers it. Nothing remains outstanding. The row is rice, so the salt inventory and its RM56 cost are untouched.","rid":"p045"},
     {"qty":25,"total":1400,"cash":1400,"handover":"delivered","supplier":"SA5-BTR","status":"paid","date":"2026-10-28","receivedOn":"2026-10-28","receivedQty":25,"paidOn":"2026-10-28","note":"<b>NEW BUY DATED 28 OCT 2026: 25 UNIT OF SALT FROM SA5-BTR FOR RM1400, PAID AND RECEIVED IN FULL.</b> Delivered, RM1400 cash out and all 25 unit received on the day, booked as p046 and approved by Counter Admin. The rate is RM56 a unit, which matches his quote of 23 Sep 2026: multiples of 12.5 unit at RM700 each, so two whole lots. The party's median rate is RM56, range RM44 to RM64; outstanding before was RM0 and defaulted RM0. The cost carried is the purchase itself at RM56 a unit, which is the inventory's own rate. The drafter raised no flags and the figures give none cause to. Nothing is left outstanding.","rid":"p046"},
     {"qty":50,"total":380,"cash":408,"supplier":"SP7-PUD","freight":28,"status":"paid","product":"oil","date":"2026-10-28","receivedOn":"2026-10-28","receivedQty":50,"paidOn":"2026-10-28","note":"<b>NEW PAID OIL PURCHASE ON 28 OCT 2026: 50 UNIT FROM SP7-PUD, GOODS RM380.</b> Paid and received in full on 28 Oct, RM28 freight on top, RM408 cash, 50 unit moved. Approved by Counter Admin. No desk floor or ask applies to a purchase, but the goods total matches the 50 unit tier of RM380 quoted on 23 Sep, which is RM7.60 a unit. The party's median rate is RM7.6, range RM7 to RM8; outstanding before was RM0. The drafter flagged RM408 paid on an order of RM380. The figures answer it: the extra RM28 is the freight, higher than the RM12 and RM13 on earlier lots. Nothing is outstanding.","rid":"p047"},
-    {"qty":2,"total":100,"cash":100,"handover":"collected","supplier":"SP7-PUD","freight":20,"status":"paid","product":"gas","date":"2026-10-29","receivedOn":"2026-10-29","receivedQty":2,"paidOn":"2026-10-29","note":"<b>NEW PAID GAS PURCHASE, 2 UNIT FROM SP7-PUD, RM100, 29 OCT 2026.</b> Paid in cash RM100 and collected in full on 29 Oct, so nothing is owed either way. The drafter put the rate at RM50 a unit and recorded RM20 freight beside it. It was approved by Counter Admin. No desk floor or ask applies to a purchase. The party has 9 orders, outstanding before RM0, nothing defaulted. Its median rate of RM7.6, range RM7 to RM8, sits on earlier rows, and the dossier gives no gas history to set RM50 against. The drafter flagged nothing. The dossier does not say whether the freight sits inside the RM100 cash. Nothing is left outstanding.","rid":"p048"}
+    {"qty":2,"total":100,"cash":100,"handover":"collected","supplier":"SP7-PUD","freight":20,"status":"paid","product":"gas","date":"2026-10-29","receivedOn":"2026-10-29","receivedQty":2,"paidOn":"2026-10-29","note":"<b>NEW PAID GAS PURCHASE, 2 UNIT FROM SP7-PUD, RM100, 29 OCT 2026.</b> Paid in cash RM100 and collected in full on 29 Oct, so nothing is owed either way. The drafter put the rate at RM50 a unit and recorded RM20 freight beside it. It was approved by Counter Admin. No desk floor or ask applies to a purchase. The party has 9 orders, outstanding before RM0, nothing defaulted. Its median rate of RM7.6, range RM7 to RM8, sits on earlier rows, and the dossier gives no gas history to set RM50 against. The drafter flagged nothing. The dossier does not say whether the freight sits inside the RM100 cash. Nothing is left outstanding.","rid":"p048"},
+    {"qty":1,"total":50,"cash":50,"handover":"delivered","supplier":"SP7-PUD","status":"paid","product":"gas","date":"2026-11-01","receivedOn":"2026-11-01","receivedQty":1,"paidOn":"2026-11-01","note":"<b>NEW PAID GAS PURCHASE 01 NOV 2026: 1 UNIT FROM SP7-PUD, RM50.</b> RM50 cash, delivered in full and paid on 01 Nov 2026, so nothing is owed either way. No desk floor or ask applies to a purchase. The rate is RM50 per unit, with no delivery or freight beside it. SP7-PUD: on the roster, 10 orders, nothing outstanding, nothing defaulted, no units on credit. The median rate of RM7.6 and the range of RM7 to RM50 are mostly oil lots, but the last gas lot, p048 on 29 Oct 2026, was also RM50 per unit, so this rate matches it. The row carries its own cost of RM50 and no salt cost is touched. The drafter raised no flags. Outstanding: nothing.","rid":"p049"}
   ],
   "sales": [
     {"date":"2026-06-26","customer":"CG5-SB","qty":1,"total":100,"cost":64,"cash":100,"deliveredQty":1,"ref":"CJ4-OKR","refKg":1,"rid":"s001"},
@@ -1065,7 +1066,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-11-01T14:00:26.358Z",
+  "QUEUE_COMMITTED": "2026-11-01T15:15:37.786Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -1311,6 +1312,7 @@
       "paidSplit: cash landed either side of the 28 Jul count; RM200 inside it, the rest after. Without the split the walk double-counted the RM200."
     ],
     "PROD_OPENING": [
+      "ROLLED AT v1369 (gas): 1 unit from SP7-PUD on 2026-11-01, so 0 plus 1 is 1. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "ROLLED AT v1368 (gas): 2 unit to CM4-TO-R on 2026-10-31, so 2 less 2 is 0. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "ROLLED AT v1358 (rice): 10 unit to CI5-PER on 2026-11-01, so 77 less 10 is 67. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "ROLLED AT v1355 (oil): 10 unit to CI5-PER on 2026-10-31, so 30 less 10 is 20. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",

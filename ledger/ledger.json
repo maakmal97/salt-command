@@ -1,6 +1,6 @@
 {
- "v": "v1368",
- "stamped": "01 Nov 2026, 22:08 KL",
+ "v": "v1369",
+ "stamped": "01 Nov 2026, 23:16 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -99,7 +99,7 @@
    "gas": {
     "qty": 0,
     "costPerKg": 50,
-    "stated": 0
+    "stated": 1
    },
    "prep": {
     "qty": 0,
@@ -1232,6 +1232,21 @@
     "paidOn": "2026-10-29",
     "note": "<b>NEW PAID GAS PURCHASE, 2 UNIT FROM SP7-PUD, RM100, 29 OCT 2026.</b> Paid in cash RM100 and collected in full on 29 Oct, so nothing is owed either way. The drafter put the rate at RM50 a unit and recorded RM20 freight beside it. It was approved by Counter Admin. No desk floor or ask applies to a purchase. The party has 9 orders, outstanding before RM0, nothing defaulted. Its median rate of RM7.6, range RM7 to RM8, sits on earlier rows, and the dossier gives no gas history to set RM50 against. The drafter flagged nothing. The dossier does not say whether the freight sits inside the RM100 cash. Nothing is left outstanding.",
     "rid": "p048"
+   },
+   {
+    "qty": 1,
+    "total": 50,
+    "cash": 50,
+    "handover": "delivered",
+    "supplier": "SP7-PUD",
+    "status": "paid",
+    "product": "gas",
+    "date": "2026-11-01",
+    "receivedOn": "2026-11-01",
+    "receivedQty": 1,
+    "paidOn": "2026-11-01",
+    "note": "<b>NEW PAID GAS PURCHASE 01 NOV 2026: 1 UNIT FROM SP7-PUD, RM50.</b> RM50 cash, delivered in full and paid on 01 Nov 2026, so nothing is owed either way. No desk floor or ask applies to a purchase. The rate is RM50 per unit, with no delivery or freight beside it. SP7-PUD: on the roster, 10 orders, nothing outstanding, nothing defaulted, no units on credit. The median rate of RM7.6 and the range of RM7 to RM50 are mostly oil lots, but the last gas lot, p048 on 29 Oct 2026, was also RM50 per unit, so this rate matches it. The row carries its own cost of RM50 and no salt cost is touched. The drafter raised no flags. Outstanding: nothing.",
+    "rid": "p049"
    }
   ],
   "sales": [
@@ -11195,7 +11210,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-01T14:00:26.358Z",
+  "QUEUE_COMMITTED": "2026-11-01T15:15:37.786Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -19506,19 +19521,19 @@
     },
     "gas": {
      "stockCost": 50,
-     "replCost": 60,
+     "replCost": 50,
      "floors": {
       "1": {
-       "floor": 60
+       "floor": 50
       },
       "5": {
-       "floor": 300
+       "floor": 250
       },
       "10": {
-       "floor": 600
+       "floor": 500
       },
       "20": {
-       "floor": 1200
+       "floor": 1000
       }
      },
      "inputs": {
@@ -19529,10 +19544,10 @@
         "state": "none",
         "lock": null,
         "cur": {
-         "qty": 2,
-         "total": 100,
+         "qty": 1,
+         "total": 50,
          "rate": 50,
-         "date": "2026-10-29",
+         "date": "2026-11-01",
          "sup": "SP7-PUD"
         }
        },
@@ -19542,14 +19557,14 @@
         "shrink": null
        },
        "lot": {
-        "qty": 2,
-        "total": 100,
+        "qty": 1,
+        "total": 50,
         "rate": 50,
-        "date": "2026-10-29",
+        "date": "2026-11-01",
         "sup": "SP7-PUD"
        },
-       "meanLot": 2,
-       "quoteRate": 60,
+       "meanLot": 1.5,
+       "quoteRate": 50,
        "repl": 50,
        "freightRate": 10,
        "leak": null,
@@ -19558,12 +19573,12 @@
         "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
        },
        "latest": {
-        "rid": "p048",
-        "date": "2026-10-29",
-        "quote": 100,
-        "freight": 20,
-        "units": 2,
-        "rate": 60
+        "rid": "p049",
+        "date": "2026-11-01",
+        "quote": 50,
+        "freight": 0,
+        "units": 1,
+        "rate": 50
        },
        "costBasis": {
         "freightPerTrip": {
@@ -19672,7 +19687,7 @@
       {
        "q": 1,
        "prices": [
-        60,
+        50,
         75
        ],
        "fixed": true
@@ -19680,7 +19695,7 @@
       {
        "q": 5,
        "prices": [
-        300,
+        250,
         375
        ],
        "fixed": true
@@ -19688,7 +19703,7 @@
       {
        "q": 10,
        "prices": [
-        600,
+        500,
         750
        ],
        "fixed": true
@@ -19696,7 +19711,7 @@
       {
        "q": 20,
        "prices": [
-        1200,
+        1000,
         1500
        ],
        "fixed": true
@@ -19742,19 +19757,19 @@
       "CM4-TO": [
        [
         1,
-        60
+        50
        ],
        [
         5,
-        300
+        250
        ],
        [
         10,
-        600
+        500
        ],
        [
         20,
-        1200
+        1000
        ]
       ],
       "CE4-CHE": [
@@ -21318,10 +21333,10 @@
      "suggest": null
     }
    },
-   "v": "v1368"
+   "v": "v1369"
   },
   "OPEN": {
-   "at": "2026-11-01T14:08:39.371Z",
+   "at": "2026-11-01T15:16:45.017Z",
    "count": 8,
    "byKey": {
     "CM4-TO-R|2026-10-31|175|gas": {
@@ -21510,10 +21525,10 @@
     },
     "gas": {
      "name": "Gas",
-     "onHand": 0,
-     "free": 0,
+     "onHand": 1,
+     "free": 1,
      "owedOut": 0,
-     "coverDays": 0,
+     "coverDays": 8.2,
      "rate": 0.12,
      "owedToYou": 25,
      "promised": 0,
@@ -21539,7 +21554,7 @@
     "gas": "2026-10-29",
     "prep": null
    },
-   "v": "v1368"
+   "v": "v1369"
   },
   "TERMS": {
    "ceiling": 250,
@@ -21547,7 +21562,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1368"
+   "v": "v1369"
   },
   "REWARD": {
    "stated": {
@@ -21565,7 +21580,7 @@
      }
     }
    },
-   "v": "v1368"
+   "v": "v1369"
   },
   "STOCK": {
    "today": "2026-11-01",
@@ -21603,11 +21618,11 @@
      "transit": 0
     },
     "gas": {
-     "shelf": 0,
-     "free": 0,
+     "shelf": 1,
+     "free": 1,
      "commit": 0,
-     "light": "red",
-     "coverDays": 0,
+     "light": "green",
+     "coverDays": 8.2,
      "transit": 0
     },
     "prep": {
@@ -21619,7 +21634,7 @@
      "transit": 0
     }
    },
-   "v": "v1368"
+   "v": "v1369"
   }
  }
 }
