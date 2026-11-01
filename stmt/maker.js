@@ -126,7 +126,7 @@ async function deskCall(env, path, method, body) {
   if (!response.ok || !result || result.ok !== true)
     throw Object.assign(new Error(result && result.error || "The Desk maker operation failed."),
       { status: response.ok ? 502 : response.status, state: result && result.state,
-        twin: result && result.twin, queuedTwin: result && result.queuedTwin, restate: result && result.restate });
+        twin: result && result.twin, queuedTwin: result && result.queuedTwin, restate: result && result.restate, fresh: !!(result && result.fresh === true) });
   return result;
 }
 
@@ -876,7 +876,8 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
       ...(typeof error.state === "string" ? { state: error.state } : {}),
       ...(error.twin ? { twin: error.twin } : {}),
       ...(error.queuedTwin ? { queuedTwin: error.queuedTwin } : {}),
-      ...(error.restate && typeof error.restate === "object" ? { restate: error.restate } : {}) }, status);
+      ...(error.restate && typeof error.restate === "object" ? { restate: error.restate } : {}),
+      ...(error.fresh === true ? { fresh: true } : {}) }, status);
   }
   return json({ ok: false, error: "not found" }, 404);
 }

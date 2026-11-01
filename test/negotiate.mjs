@@ -250,6 +250,8 @@ export async function run({ ok, skip }) {
   const raise = await call("/orders/" + w.id + "/offer", { total: 230, delivery: 0, hash: pvR.j.offerHash || pvR.j.hash, rid: rid() });
   const wD = await call("/orders/" + w.id + "/withdraw", { rid: wRid }), stR = (await orderOf(w.id)).price.state;
   const yes = db.prepare("SELECT COUNT(*) AS n FROM preapproval WHERE order_id=? AND status='waiting'").get(w.id).n;
-  ok(raise.status === 200 && wD.status === 200 && wD.j.again === true && stR === "offered" && yes === 1,
-    "and the old id repeated over his newer offer leaves that offer and its yes standing: " + JSON.stringify([raise.status, raise.j.error, wD.status, wD.j.again, stR, yes]));
+  /* 1 Nov 2026 (Fable's low finding): refused as fresh, so it is never said withdrawn and Salt Admin's next tap is a new request, which withdraws it */
+  const wE = await call("/orders/" + w.id + "/withdraw", { rid: rid() }), stE = (await orderOf(w.id)).price.state;
+  ok(raise.status === 200 && wD.status === 409 && wD.j.fresh === true && /a newer offer of yours is open/.test(wD.j.error || "") && stR === "offered" && yes === 1 && wE.status === 200 && stE === "withdrawn",
+    "and the old id repeated over his newer offer is refused as fresh, leaving that offer and its yes standing, and a new id withdraws it: " + JSON.stringify([raise.status, raise.j.error, wD.status, wD.j.fresh, wD.j.error, stR, yes, wE.status, stE]));
 }

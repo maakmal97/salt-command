@@ -611,8 +611,11 @@ export async function withdrawOffer(env, id, body) {
   if (!o.price || (o.price.state !== "offered" && !(rid && o.price.state === "withdrawn"))) return { ok: false, status: 409, error: "no offer of yours is open on this order" };
   const r = await moveOrder(env, o.u, id, Object.assign({ withdraw: true }, rid ? { rid } : {}));
   if (!r.ok) return r;
-  /* the yes goes with the offer; a repeat over a newer offer of his leaves that offer's yes standing */
-  if (env.SALT_LEDGER && (!r.again || o.price.state === "withdrawn")) await voidOffers(env.SALT_LEDGER, id, new Date().toISOString());
+  /* the id answered a withdrawal of an older offer and a newer offer of his is open: refused, so it is never said withdrawn, and fresh, so Salt Admin
+     drops the id and its next tap withdraws the newer one (Fable's low finding of 1 Nov 2026); that offer and its yes stand */
+  if (r.again && o.price.state === "offered") return { ok: false, status: 409, fresh: true, error: "that Withdraw was answered already, and a newer offer of yours is open" };
+  /* the yes goes with the offer, on a repeat too (a first tap that landed and stopped before the void) */
+  if (env.SALT_LEDGER) await voidOffers(env.SALT_LEDGER, id, new Date().toISOString());
   return Object.assign({ ok: true, order: r.order }, r.again ? { again: true } : {});
 }
 /** THEIR ACCEPT, followed: the row drafted at the offer and queued, approved where it lands only if it equals what he offered. */

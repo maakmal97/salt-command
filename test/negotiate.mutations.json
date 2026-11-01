@@ -12,9 +12,15 @@
   "replace": "return Object.assign({ ok: true, order: r.order }, {});"
  },
  {
-  "name": "a repeat over a newer offer voids that offer yes",
+  "name": "a repeat over a newer offer is answered again, as if withdrawn",
   "file": "src/orders.js",
-  "find": "if (env.SALT_LEDGER && (!r.again || o.price.state === \"withdrawn\")) await voidOffers",
-  "replace": "if (env.SALT_LEDGER && true) await voidOffers"
+  "find": "  if (r.again && o.price.state === \"offered\") return { ok: false, status: 409, fresh: true,",
+  "replace": "  if (false) return { ok: false, status: 409, fresh: true,"
+ },
+ {
+  "name": "a repeat over a newer offer is not marked fresh",
+  "file": "src/orders.js",
+  "find": "status: 409, fresh: true, error: \"that Withdraw was answered already",
+  "replace": "status: 409, error: \"that Withdraw was answered already"
  }
 ]

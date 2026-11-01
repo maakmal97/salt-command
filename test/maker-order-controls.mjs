@@ -61,6 +61,8 @@ export function ledger() {
           if (row && row.response === null) { requests.delete(args[0]); return { meta: { changes: 1 } }; }
           return { meta: { changes: 0 } };
         }
+        /* 1 Nov 2026: a withdrawal voids his offer's yes; this fixture holds none */
+        if (/^UPDATE preapproval SET status='void'/.test(sql)) return { meta: { changes: 0 } };
         faults.push(sql); throw new Error("unexpected D1 write " + sql);
       },
       async all() {
@@ -184,6 +186,21 @@ export async function run({ ok }) {
       const gated = (x) => x.status === 503 || x.said.error === "not found" || /operation is not available/.test(String(x.said.error || ""));
       ok(wd.status === 409 && /no offer of yours is open/.test(String(wd.said.error)) && !gated(of),
         "Offer and Withdraw on a real order reach the Desk's own roads through both gates: withdraw " + wd.status + " " + (wd.said.error || "") + ", offer " + of.status + " " + (of.said.error || "ok"));
+    }
+
+    /* 1 Nov 2026: Salt Admin's Withdraw retried under its id answers again, and the same id over a newer offer of his is refused as fresh, the Desk's
+       answer carried through the bridge (deskCall), the newer offer standing; a new id withdraws it */
+    {
+      const idW = make("placed"), offerOf = (n) => ({ offer: { id: "controls-offer-" + n + "-pad", kind: "accept", total: 300, delivery: 0, slot: null, until: new Date(Date.now() + 36e5).toISOString() } });
+      harness.book.run("desk", { u, id: idW, body: offerOf(1) });
+      const via = async (body) => { const r = await tap(idW, "withdraw", body); return { status: r.status, said: await r.json().catch(() => ({})) }; };
+      const wA = await via({ rid: rid("fresh-withdraw") }), wB = await via({ rid: rid("fresh-withdraw") });
+      harness.book.run("desk", { u, id: idW, body: offerOf(2) });
+      const wC = await via({ rid: rid("fresh-withdraw") }), stC = book(idW).price.state, wD = await via({ rid: rid("fresh-withdraw-new") }), stD = book(idW).price.state;
+      ok(wA.status === 200 && wB.status === 200 && wB.said.again === true && wC.status === 409 && wC.said.fresh === true && /a newer offer of yours is open/.test(String(wC.said.error)) && stC === "offered"
+        && wD.status === 200 && stD === "withdrawn",
+        "Salt Admin's Withdraw under a landed id answers again, the same id over his newer offer is refused as fresh with that offer standing, and a new id withdraws it: "
+        + JSON.stringify([wA.status, wA.said.error, wB.status, wB.said.again, wC.status, wC.said.fresh, wC.said.error, stC, wD.status, wD.said.error, stD]));
     }
 
     /* a retry under a kept id is answered from the Desk's record, the native road untouched */
