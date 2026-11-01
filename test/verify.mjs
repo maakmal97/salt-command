@@ -44253,7 +44253,7 @@ await (async () => {
   const dated = v.shown.filter((d) => /^\d{4}-/.test(d));
   ok(v.shown.length === recent && dated.every((d) => d >= cut) && dated.every((d, i) => !i || dated[i - 1] >= d),
     `it opens on the last seven days, from ${cut}, newest first: ${v.shown.length} rows of ${v.dates.length}`);
-  ok(older > 0 && new RegExp("Show the " + older + " older transaction").test(v.btn) && /RM [\d,]+/.test(v.btn),
+  ok(older > 0 && new RegExp("Show " + older + " older transaction") /* 1 Nov 2026: four words, a verb first (was "Show the N older") */.test(v.btn) && /RM [\d,]+/.test(v.btn),
     "the rest fold behind one control that says how many and how much: " + v.btn);
   ok(v.all === v.dates.length, `and opening it shows every row (${v.all})`);
   ok(v.found > 0 && v.found < v.dates.length && !v.foldedOnSearch, `a search shows every match and folds nothing (${v.found})`);

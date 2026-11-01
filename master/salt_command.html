@@ -13588,7 +13588,7 @@ function tabOverview(){
   ${boundaryPanel(bnd,risks)}
   ${defAll.length?`<div class="pend"><h3>&#128230; Deferred deliveries <span class="cd" style="color:var(--amber);border-color:var(--amber)">${defAll.length} owed out</span></h3><div class="pchips">${defAll.map(d=>`<span class="pchip"><b>${ID(d.who)}</b> ${units(d.u)} ${tag(d.p)}</span>`).join('')}${ids.filter(p=>B[p].defUnits>B[p].held).map(p=>`<span class="pchip bad">${esc(PRODUCTS[p].name)}: exceeds ${units(B[p].held)} on hand</span>`).join('')}</div></div>`:''}
   ${arG>0.5?`<div class="pend"><h3>&#128179; Advances out <span class="cd" style="color:var(--amber);border-color:var(--amber)">${fmt0(arG)} owed to you</span></h3><div class="pchips">${advRows.map(a=>`<span class="pchip${a.over.length?' bad':''}"><b>${ID(a.who)}</b> ${fmt0(a.rm)}${a.over.map(p=>' &middot; over the '+units(capForParty(a.who,p))+' '+esc(PRODUCTS[p].name.toLowerCase())+' cap').join('')}</span>`).join('')}<span class="pchip warn">${fmt0(arNet)} net of provisioning</span></div></div>`:''}
-  ${(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status!=='closed')?`<div class="pend def"><h3>&#9888; Supplier default: ${ID(supplierReceivable.party)} <span class="cd crim">${supplierReceivable.status==='writtenOff'?fmt0(srGross)+' written off':fmt0(srNet)+' net'}</span></h3><div class="dsc">${supplierReceivable.status==='writtenOff'?`Paid 08 Jul, lot never arrived. The ${fmt0(srGross)} provision stays charged, so any recovery is upside.`:`Paid 08 Jul, lot never arrived. Recoverable pending the settlement meeting; ${fmt0(srNet)} net.`}</div><div class="pchips">${supplierReceivable.status==='writtenOff'?`<span class="pchip bad">written off ${supplierReceivable.writtenOffOn}</span><span class="pchip">${nDays(dAge(supplierReceivable.since))} out</span><span class="pchip bad">${fmt0(srGross)} charged to margin</span>`:`<span class="pchip">${nDays(dAge(supplierReceivable.since))} out</span><span class="pchip warn">${(provRate(dbet(supplierReceivable.since))*100).toFixed(0)}% provisioned</span><span class="pchip">${fmt0(srGross)} gross</span><span class="pchip warn">${fmt0(srNet)} net</span>`}</div></div>`:''}
+  ${(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status!=='closed')?`<div class="pend def"><h3>&#9888; Supplier default: ${ID(supplierReceivable.party)} <span class="cd crim">${supplierReceivable.status==='writtenOff'?fmt0(srGross)+' written off':fmt0(srNet)+' net'}</span></h3><div class="dsc">${supplierReceivable.status==='writtenOff'?`Paid 08 Jul and the lot never arrived; the ${fmt0(srGross)} provision stays charged, so any recovery is upside.`:`Paid 08 Jul and the lot never arrived; recoverable pending the settlement meeting, ${fmt0(srNet)} net.`}</div><div class="pchips">${supplierReceivable.status==='writtenOff'?`<span class="pchip bad">written off ${supplierReceivable.writtenOffOn}</span><span class="pchip">${nDays(dAge(supplierReceivable.since))} out</span><span class="pchip bad">${fmt0(srGross)} charged to margin</span>`:`<span class="pchip">${nDays(dAge(supplierReceivable.since))} out</span><span class="pchip warn">${(provRate(dbet(supplierReceivable.since))*100).toFixed(0)}% provisioned</span><span class="pchip">${fmt0(srGross)} gross</span><span class="pchip warn">${fmt0(srNet)} net</span>`}</div></div>`:''}
   <h2>Position at a glance <span class="sub" style="font-weight:400">money added across the books, each book's part beside it</span> <span class="rule"></span></h2>
   <div class="kpis k3">
     ${kpi('','Inventory at cost',fmt0(sum('stockVal')),split('held',units)||'nothing on hand')}
@@ -13755,7 +13755,7 @@ function tabToday(){
   ${block(now,'Now','now')}
   ${block(soon,'This week','soon')}
   ${block(watch,'Watch')}
-  ${a.length?'':'<div class="card"><div class="dsc">Nothing is outstanding. No debt past term, no rule broken, no promise unkept, and every book is above its trigger.</div></div>'}
+  ${a.length?'':'<div class="card"><div class="dsc">Nothing is outstanding: no debt past term, no rule broken, no promise unkept, and every book above its trigger.</div></div>'}
   <h2 style="margin-top:26px">Where the desk stands <span class="sub" style="font-weight:400">each book, then the cash</span> <span class="rule"></span></h2>
   <div class="card"><div class="tscroll"><table class="salt-table"><thead><tr><th class="l salt-table__label">Book</th><th>Held</th><th title="promised out and not yet handed over">Out</th><th title="days of inventory at the fortnight's rate">Cover</th><th title="owed to you on this book">Owed</th></tr></thead>
     <tbody>${bandRows}</tbody></table></div>
@@ -13901,7 +13901,7 @@ function tabForward(){
   <div class="dsc dsclead" style="margin-bottom:11px">Each book's inventory and the cash, day by day, at the daily rate its restock plan measures; an order not yet placed is in none of it.</div>
   <div style="display:flex;flex-wrap:wrap;gap:9px;align-items:center">
     <span class="viewsw" id="fwdSw">${sw}</span>
-    ${buys.length?`<button class="vbtn salt-pill salt-pill--sm" style="${fwdBuy?'':'opacity:.55'}" onclick="fwdToggle('buy')">${fwdBuy?'&#10003; ':''}Include the agreed ${buyWord}</button>`:''}
+    ${buys.length?`<button class="vbtn salt-pill salt-pill--sm" style="${fwdBuy?'':'opacity:.55'}" onclick="fwdToggle('buy')">${fwdBuy?'&#10003; ':''}Include the agreed buy</button>`:''}
     ${(typeof PLANS_CASH!=='undefined'&&PLANS_CASH.length)?`<button class="vbtn salt-pill salt-pill--sm" style="${fwdPlans?'':'opacity:.55'}" onclick="fwdToggle('plans')">${fwdPlans?'&#10003; ':''}Include the planned drawing</button>`:''}
   </div>
   ${/* v385: one sentence carries the scenario, because stripMethod cuts an .insight to its first sentence */''}${(fwdBuy&&buys.length||fwdPlans)?`<div class="insight salt-insight" style="margin-top:11px"><b>Scenario, not the book</b>: ${[fwdBuy&&buys.length?`the agreed ${buyWord}, drawn as though it lands and is paid for today`:'',fwdPlans?`${PLANS_CASH.map(p=>esc(p.label)).join('; ')}${taken>0.009?`, taking ${fmt0(taken)} out on this path`:''}`:''].filter(Boolean).join('; and ')}. Nothing here is recorded anywhere, and turning the switch off removes it entirely.</div>`:''}
@@ -14478,7 +14478,7 @@ function tabAnalysis(){
     const active=bad.length-removed.length;
     const rows=anCorrectionShowDeleted?bad:bad.filter(b=>!dismissed.has(anCorrectionKey(b.t,b.c,b.i)));
     return `<div class="pend def" style="margin-top:14px"><h3>Potential correction review <span class="cd crim">${active} active / ${removed.length} removed</span></h3>
-      <div class="insight salt-insight">These are potential mismatches against the row as it reads now. Open a row to review its correction history. Delete warning hides only this device’s review entry; the ledger row and dated history stay unchanged.</div>
+      <div class="insight salt-insight">Potential mismatches against the row as it reads now; Delete warning hides an entry on this device only and leaves the ledger unchanged.</div>
       ${anCorrectionMessage?`<div class="insight salt-insight" role="status" aria-live="polite">${esc(anCorrectionMessage)}</div>`:''}
       ${removed.length?`<div style="margin-top:8px"><button type="button" class="ubtn salt-ghost" aria-pressed="${anCorrectionShowDeleted}" onclick="anCorrectionToggle()">${anCorrectionShowDeleted?'Hide':'Show'} removed warnings (${removed.length})</button></div>`:''}
       ${rows.length?`<table class="salt-table" style="margin-top:10px"><thead><tr><th class="l salt-table__label">Row</th><th class="l salt-table__label">Party</th><th class="l salt-table__label">Stated</th><th class="l salt-table__label">What is wrong</th><th class="l salt-table__label">Review</th></tr></thead><tbody>
@@ -15235,7 +15235,7 @@ function tabInventory(){
        16.54%. The rate is printed in two places on Sourcing with nothing saying which way it
        moves when you buy, so it is said here, where the leak itself is read. */
     return h>0.009
-      ? `<b>${(pxShrinkRate()*100).toFixed(1)}%</b> of the ${units(h)} handled is charged into the price, and each new lot lowers it, since the divisor is everything handled.`
+      ? `<b>${(pxShrinkRate()*100).toFixed(1)}%</b> of the ${units(h)} handled is charged into the price, and each new lot lowers it.`
       : `Nothing has been bought on this book, so there is no volume to measure the leak against.`;})()}</div>
   ${sec('Why each loss is booked where it is',suRows.length?`${units(suUnits)} attributed across ${suRows.length} entr${suRows.length===1?'y':'ies'}`:'nothing attributed yet',suRows.length,
     suRows.map(r=>`<div class="dsc" style="margin-top:9px"><b>${r.date} &middot; ${LOSS_LABEL[r.why]||esc(r.why)+' (unrecognised cause)'} &middot; ${units(r.kg)}</b><br>${esc(plain(r.note))}</div>`).join(''))}
@@ -15948,7 +15948,7 @@ function tabLedger(){
   /* an undated row is agreed with nothing moved, the most open thing on the book, so it stays with the recent */
   const recent=fold?sorted.filter(r=>!r.date||r.date>=cut):sorted, older=fold?sorted.filter(r=>r.date&&r.date<cut):[];
   const olderRM=older.reduce((a,r)=>a+(r.k.total||0),0);
-  const moreBtn=older.length?`<button type="button" class="ubtn ledmore salt-ghost" style="width:100%;min-height:var(--tap);margin:8px 0" onclick="ledOlderToggle()">${ledOlder?`Show the last seven days only`:`Show the ${older.length} older transaction${older.length===1?'':'s'} &middot; ${fmt0(olderRM)}, before ${cut}`}</button>`:'';
+  const moreBtn=older.length?`<button type="button" class="ubtn ledmore salt-ghost" style="width:100%;min-height:var(--tap);margin:8px 0" onclick="ledOlderToggle()">${ledOlder?`Show seven days only`:`Show ${older.length} older transaction${older.length===1?'':'s'} &middot; ${fmt0(olderRM)}, before ${cut}`}</button>`:'';
   const rowsHtml=recent.map(r=>r.h).join('')+(ledOlder?older.map(r=>r.h).join(''):'');
   ledShown=shownTx;                       // the chart draws the same set the list shows
   const parties=[...new Set(all.map(t=>t.who))];
@@ -17485,7 +17485,7 @@ function observations(){
     const share=obsPct(once.length,cust.length);
     add({id:'cust:oneanddone',fam:'customer',sev:share>=50?'watch':'note',conf:'measured',rm:null,tab:'concentration',
       title:`${once.length} of ${cust.length} customers have bought exactly once`,
-      why:`${share}% of every name on the book. A first order costs the most to win and earns the least, so a book that does not convert first orders into second ones is paying acquisition over and over for the same revenue. This is a rate rather than a list of failures: some of these are simply recent.`,
+      why:`${share}% of every name on the book. A first order costs the most to win and earns the least, so a book that does not convert first orders into second ones is paying acquisition over and over for the same revenue. This is a rate rather than a list of failures: some of these are recent.`,
       ev:[`${once.length} single-order names against ${cust.length-once.length} repeat`,
           `of the single-order names, ${once.filter(c=>dbet(D.filter(s=>s.customer===c)[0].date)<=14).length} bought within the last fortnight and may simply not be due yet`,
           `worth ${fmt0(once.reduce((a,c)=>a+(+D.filter(s=>s.customer===c)[0].total||0),0))} in total first orders`]});
@@ -19059,7 +19059,7 @@ function renderQueue(){const b=document.getElementById('queueBox');if(!b)return;
   if(!txq.length){b.innerHTML=rec+cleared+stuck;return;}
   b.innerHTML=rec+cleared+stuck;b.innerHTML+='<div style="margin-top:12px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--gold)">Live in the desk, awaiting commit ('+txq.length+'), '+qLabel()+'</div>'
     +'<div class="dsc" style="margin-top:5px">These are already folded into every figure on the desk until they are committed to the ledger.</div>'
-    +'<table class="salt-table" style="margin-top:6px"><thead><tr><th class="l salt-table__label">Entry</th><th>Type</th><th>Party</th><th>Qty</th><th>RM</th><th>Status</th></tr></thead><tbody>'+txq.map(q=>`<tr><td class="l salt-table__label" style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(q.raw||'')}</td><td>${q.type}</td><td class="mono">${esc(q.party)||NIL}</td><td>${q.qty!=null?q.qty+'unit':NIL}</td><td>${q.total!=null?fmt0(q.total):NIL}</td><td><span class="tag salt-status ${q.status==='paid'?'paid':q.status==='inkind'?'inkind':q.status==='modified'?'mod':q.status==='cancelled'?'def':q.status==='count'?'inkind':'unpaid'}">${({paid:'Paid',unpaid:'Unpaid',partial:'Partial',inkind:'In-Kind',modified:'Modified',cancelled:'Cancelled',credit:'Unpaid',count:'Count'})[q.status]||q.status}</span></td></tr>`).join('')+'</tbody></table>';}
+    +'<table class="salt-table" style="margin-top:6px"><thead><tr><th class="l salt-table__label">Entry</th><th>Type</th><th>Party</th><th>Qty</th><th>RM</th><th>Status</th></tr></thead><tbody>'+txq.map(q=>`<tr><td class="l salt-table__label" style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(q.raw||'')}</td><td>${q.type}</td><td class="mono">${esc(q.party)||NIL}</td><td>${q.qty!=null?units(q.qty):NIL}</td><td>${q.total!=null?fmt0(q.total):NIL}</td><td><span class="tag salt-status ${q.status==='paid'?'paid':q.status==='inkind'?'inkind':q.status==='modified'?'mod':q.status==='cancelled'?'def':q.status==='count'?'inkind':'unpaid'}">${({paid:'Paid',unpaid:'Unpaid',partial:'Partial',inkind:'In-Kind',modified:'Modified',cancelled:'Cancelled',credit:'Unpaid',count:'Count'})[q.status]||q.status}</span></td></tr>`).join('')+'</tbody></table>';}
 
 /* ============ CHARTS for tracker tabs ============ */
 /* Chart.js is vendored at assets/chart.umd.js and loaded ON DEMAND (v176), never from a
@@ -20164,7 +20164,7 @@ function resellerCard(r){
   const starMin=10;
   const rated=r.starN
     ?`Rated <b>${starStr(r.starN)}</b> on <b>${r.share.toFixed(1)}%</b> of all revenue.`
-    :`Brought-in business is <b>${r.share.toFixed(1)}%</b> of all revenue. The first &#9733; starts at ${starMin}%.`;
+    :`Brought-in business is <b>${r.share.toFixed(1)}%</b> of all revenue, with the first &#9733; at ${starMin}%.`;
   const rebateLine=`<div class="insight salt-insight" style="margin-top:10px">${rated}</div>
     ${rewardTbl}
     ${freeUnits>0.009&&!held?'<div class="dsc" style="margin-top:9px">Redeem or offset on Salt Admin.</div>':''}`;
@@ -20175,7 +20175,7 @@ function resellerCard(r){
      "undefined" instead of a date. Same fallback every other date in this file uses. */
   const buyRows=buys.map(s=>{const si=txStat(s);return `<tr><td class="l salt-table__label">${s.date||'undated'}</td><td>${units(s.qty)}</td><td>${fmt0(s.total)}</td><td><span class="tag salt-status ${si.cls}">${si.order}</span></td></tr>`;}).join('');
   const resells=sales.filter(s=>s.total!=null&&s.rev==='R2'&&ownerOf(s.customer)===r.id);
-  const resellRows=resells.map(s=>{const si=txStat(s);return `<tr><td class="l salt-table__label">${s.date}</td><td class="mono">${ID(s.downstream||s.customer)}</td><td>${units(s.qty)}</td><td>${fmt0(s.total)}</td><td><span class="tag salt-status ${si.cls}">${si.order}</span></td></tr>`;}).join('');
+  const resellRows=resells.map(s=>{const si=txStat(s);return `<tr><td class="l salt-table__label">${s.date||'undated'}</td><td class="mono">${ID(s.downstream||s.customer)}</td><td>${units(s.qty)}</td><td>${fmt0(s.total)}</td><td><span class="tag salt-status ${si.cls}">${si.order}</span></td></tr>`;}).join('');
   const refRows=r.referrals.map(c=>`<tr><td class="l salt-table__label mono">${ID(c)}</td><td>${fmt0(firstOrderOf(c))}</td></tr>`).join('');
   /* v401: THESE OPEN SHUT NOW, and so does the card around them. Five associates with three
      ledgers each shipped seventeen open sections and 9,795px of Network on a 375px screen,
@@ -20236,9 +20236,9 @@ function tabNetwork(){
        matches FIGURE, so as a .dsc the strip would cull it; an insight is trimmed at
        NOTE_MIN but never removed, and this one is comfortably under. */
     return `<div class="pend"><h3>&#9733; ${ID(x.id)} has departed <span class="cd gold">${esc(dd.memorial)}</span></h3>
-      <div class="insight salt-insight">Left ${dd.since}, ${esc(dd.reason)}. His referrals stay attributed to him.</div></div>`;}).join(''):''}
+      <div class="insight salt-insight">Left ${dd.since}, ${esc(dd.reason)}; his referrals stay attributed to him.</div></div>`;}).join(''):''}
   ${vac.length?`<div class="pend def"><h3>&#9888; Vacant: ${esc(vac[0].title)} <span class="cd">${esc(vac[0].short||'')}</span></h3>
-    <div class="insight salt-insight">Open since ${vac[0].since}.${dep.length?` The seat brought <b>${fmt0(dep[0].r3)}</b> against <b>${fmt0(dep[0].direct)}</b> of buying, and nobody is doing it today.`:''}</div></div>`:''}`;
+    <div class="insight salt-insight">Open since ${vac[0].since}${dep.length?`; the seat brought <b>${fmt0(dep[0].r3)}</b> against <b>${fmt0(dep[0].direct)}</b> of buying, and nobody is doing it today.`:''}</div></div>`:''}`;
   // overall summary: total R1/R2/R3 across the network
   const tR1=ns.reduce((a,x)=>a+x.direct,0),tR2=ns.reduce((a,x)=>a+x.indirect,0),tIntro=ns.reduce((a,x)=>a+x.marginIntro,0);
   const nDs=ns.reduce((a,x)=>a+(x.dsResell||0),0);                       // end customers sold to on your behalf
@@ -21337,7 +21337,7 @@ function tabPricing(){
          neither can grow into the limit. The definition of the two floors is in the fold below. -->
     <!-- v749: the sentence the five-tier card carried, moved with the levels. ONE SENTENCE, because stripMethod
          keeps an .insight only as far as its first full stop. -->
-    ${driftBook(PROD)?`<div class="insight salt-insight">The Set Price is the least any customer but a partner pays and what a stranger is quoted; a customer's % lifts it, never past ${(TIER_RULE[PROD].ceilingX||3)} times the Floor.</div>`:''}
+    ${driftBook(PROD)?`<div class="insight salt-insight">The Set Price is a stranger's quote; a customer's % moves it between the Floor and the Ceiling.</div>`:''}
     ${!driftBook(PROD)&&TIER_RULE[PROD]?`<div class="insight salt-insight">The Set Price is one price for everybody, held between the Floor and ${(TIER_RULE[PROD].ceilingX||3)} times it.</div>`:''}
     ${flagged.length?`<div class="insight salt-insight" style="border-left-color:var(--crim)"><b>${flagged.length} price${flagged.length===1?'':'s'} on this board sit${flagged.length===1?'s':''} under break-even</b>: ${flagged.map(f=>f.who+' at '+units(f.q)+', short '+fmt(f.rm)).join('; ')}.</div>`:''}
     ${!flagged.length?`<div class="insight salt-insight" style="border-left-color:var(--grn)">Every price on the board clears break-even.</div>`:''}
@@ -21399,7 +21399,7 @@ function tabPricing(){
        moves one section down and stays a scroll from the table it prices against. -->
   <div class="card" style="margin-top:14px">
     <div class="qrow">
-      <div class="qfield qunits"><label>Quote any size (unit)</label><input id="pxAnyIn" type="number" step="0.25" min="0" value="${esc(pxOver.anyQ)}" inputmode="decimal" placeholder="e.g. 7"></div>
+      <div class="qfield qunits"><label for="pxAnyIn">Quote any size (unit)</label><input id="pxAnyIn" type="number" step="0.25" min="0" value="${esc(pxOver.anyQ)}" inputmode="decimal" placeholder="e.g. 7"></div>
       <div class="qfield"><label>Markup at that size</label><div class="qask none" style="font-size:20px">${anyQ>0?ladderMarkup(anyQ).toFixed(2)+'x':NIL}</div></div>
       <div class="qfield"><label>Price</label>${anyCell}</div>
     </div>
@@ -23296,7 +23296,7 @@ function renderProvBar(){
     +(provRM>0.009?', <b>'+fmt0(provRM)+'</b> of cash':'')
     +': every figure below includes '+(provCount===1?'it':'them')+'.'
     +(provUnsent?' <b>'+provUnsent+'</b> '+(provUnsent===1?'is':'are')+' <b>unsent</b>, held on this device only.':'')+'</span>'
-    +'<button class="ubtn salt-ghost" onclick="switchTab(\'add\')">Review in Entries</button>'
+    +'<button class="ubtn salt-ghost" onclick="switchTab(\'add\')">Review on To do</button>'
     +(provNotes.length?'<span style="color:var(--crim)">'+esc(provNotes.join('; '))+'</span>':'')
     +'</div>';
 }
