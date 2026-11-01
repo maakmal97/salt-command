@@ -3,6 +3,7 @@
  * with tools/section.mjs):
  *   (26 Oct 2026, his word: Hours in the same language as Notice, Practice and This device; the glance's tiles went)
  *   P1.1  Now is first on Hours, one list: the state beside what holds it, the confirm time, and Hold the shop; a grey line under it
+ *   P1.2b its grey line, the switch on, one sentence (1 Nov 2026)
  *   P1.2  Hold the shop is a Switch: on shows Hold as (a Segment, Closed or Open), Until and Set it, the one pill; off before Set it sends nothing
  *   P2.1  the week and the dates are lists under grey heads, a grey line under each, no chip
  *   P2.2  a tapped day is its name, a list (Open and Open all day switches, Opens and Closes), rows of what can be done, the preview, then Done
@@ -68,6 +69,9 @@ export async function run({ ok, pageWork }) {
       && JSON.stringify([...seg.querySelectorAll('[role="radio"]')].map((r) => t(r) + ":" + r.getAttribute("aria-checked"))) === JSON.stringify(["Closed:true", "Open:false"])
       && !!opened.querySelector('[data-act="hours.override-until"]') && card.querySelectorAll(".salt-pill").length === 1 && t(byAct(p.d, "hours.override-set")) === "Set it",
       "turned on, it shows Hold as, a Segment of Closed and Open, the until time, and Set it, the one pill");
+    /* P1.2b, 1 Nov 2026: its grey line is one sentence, as every grey line is (craft.md section 3; it read "Kuala Lumpur time. Customers can still order.") */
+    const holdFoot = t(p.d.getElementById("makerHoursStatus"));
+    ok(holdFoot === "Kuala Lumpur time; customers can still order." && !/[.!?] [A-Z]/.test(holdFoot), "with Hold the shop on, the grey line is one sentence: " + holdFoot);
     await p.tap("hours.hold");
     ok(p.d.getElementById("makerHold").hidden && byAct(p.d, "hours.hold").getAttribute("aria-checked") === "false" && !byAct(p.d, "hours.override-set") && !p.posts.some((y) => y.route === "/all/maker/hours"),
       "turned off before Set it, it folds and sends nothing");
@@ -166,7 +170,7 @@ export async function run({ ok, pageWork }) {
     const box = one.d.getElementById("mTest"), make = byAct(box, "more.test-accounts");
     /* P5.1, his word of 26 Oct 2026: Practice in This device's language */
     ok(make.classList.contains("salt-switch") && make.getAttribute("role") === "switch" && make.getAttribute("aria-checked") === "false" && t(box.querySelector("h3.salt-settings__head")) === "Accounts" && box.querySelector("h3.salt-settings__head").nextElementSibling.classList.contains("atest-list")
-      && t(box.querySelector(".salt-settings__foot")) === "1 of 3 made. Turn on to make 0000-0001 and 0000-0002." && !box.querySelector("table, .salt-status, .salt-pill"),
+      && t(box.querySelector(".salt-settings__foot")) === "1 of 3 made; turn on to make 0000-0001 and 0000-0002." && !box.querySelector("table, .salt-status, .salt-pill"),   /* 1 Nov 2026: one sentence, the grey line's rule (craft.md section 3); it read "made. Turn on" */
       "Practice is one switch, off while one of three exists, its grey line naming the missing, and no table, chip or pill");
     /* P5.2 */
     const rowsT = [...box.querySelectorAll(".atest-list > .salt-settings__row")].map(t);

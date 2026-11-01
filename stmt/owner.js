@@ -6457,8 +6457,8 @@ export const OWNER_JS = `
     }
     list.appendChild(form);
     box.appendChild(list);
-    var sub=el('p','salt-settings__foot', on&&!held?'Kuala Lumpur time. Customers can still order.':held?'Your weekly hours take over'+(w?' at '+w:'')+'.':st.open?'Customers can order and you answer now.'
-      :st.source==='default'?'No weekly hours set. Customers can still order.':'Customers can still order; you answer when you open.');
+    var sub=el('p','salt-settings__foot', on&&!held?'Kuala Lumpur time; customers can still order.':held?'Your weekly hours take over'+(w?' at '+w:'')+'.':st.open?'Customers can order and you answer now.'
+      :st.source==='default'?'No weekly hours set; customers can still order.':'Customers can still order; you answer when you open.');
     sub.id='makerHoursStatus'; box.appendChild(sub);
     if(on){
       var go=el('div','anow-set');
@@ -7788,7 +7788,7 @@ export const OWNER_JS = `
     b.setAttribute('data-test-state',String(have.length)); if(on) ynTag(b,'test:remove');
     row.appendChild(lab); row.appendChild(b); list.appendChild(row); box.appendChild(list);
     box.appendChild(el('p','salt-settings__foot', on?'Nothing they do is recorded.'
-      : have.length?have.length+' of '+TEST_ALL.length+' made. Turn on to make '+need.join(' and ')+'.':'Three accounts to try the customer’s page. Nothing they do is recorded.'));
+      : have.length?have.length+' of '+TEST_ALL.length+' made; turn on to make '+need.join(' and ')+'.':'Three accounts to try the customer’s page; nothing they do is recorded.'));
     if(have.length){
       box.appendChild(el('h3','salt-settings__head','Accounts'));
       var accts=el('div','salt-settings atest-list');

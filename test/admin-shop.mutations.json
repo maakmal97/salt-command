@@ -39,7 +39,7 @@
  {"name":"Read it again always stands","file":"stmt/owner.js","find":"refresh.hidden=!needsRead;","replace":"refresh.hidden=false;"},
  {"name":"Practice is a pill, not a switch","file":"stmt/owner.js","find":"var b=actOn(el('button','salt-switch'),'more.test-accounts');","replace":"var b=actOn(el('button','salt-pill salt-pill--sm'),'more.test-accounts');"},
  {"name":"the switch does not say it is on","file":"stmt/owner.js","find":"b.setAttribute('aria-checked',String(on)); b.setAttribute('aria-labelledby','testH');","replace":"b.setAttribute('aria-checked','false'); b.setAttribute('aria-labelledby','testH');"},
- {"name":"the grey line does not name the missing","file":"stmt/owner.js","find":"have.length+' of '+TEST_ALL.length+' made. Turn on to make '+need.join(' and ')+'.'","replace":"have.length+' of '+TEST_ALL.length+' made.'"},
+ {"name":"the grey line does not name the missing","file":"stmt/owner.js","find":"have.length+' of '+TEST_ALL.length+' made; turn on to make '+need.join(' and ')+'.'","replace":"have.length+' of '+TEST_ALL.length+' made.'"},
  {"name":"an account missing is still a row","file":"stmt/owner.js","find":"        if(have.indexOf(u)<0) return;\n","replace":""},
  {"name":"the password row does not say it copies","file":"stmt/owner.js","find":"pw.setAttribute('aria-label','Copy the password');","replace":""},
  {"name":"the test page shows with one made","file":"stmt/owner.js","find":"      if(on){\n        var go=actOn(","replace":"      if(true){\n        var go=actOn("},
@@ -75,5 +75,7 @@
  {"name":"Help is no list","file":"stmt/page.js","find":"'<div class=\"salt-settings ahelp-list\">' + rows + '</div>","replace":"'<div class=\"ahelp-list\">' + rows + '</div>"},
  {"name":"the pane says nothing with no day open","file":"stmt/owner.js","find":"nrow.appendChild(el('span','salt-settings__label','Tap a day or a date.'));","replace":""},
  {"name":"the wide column is not held for Hours","file":"stmt/page.js","find":"  .adm #makerNowCard,.adm .apoints-sec,.adm #mHelp{max-width:640px}","replace":"  .adm #makerNowCard,.adm .apoints-sec{max-width:640px}"},
- {"name":"the accounts' list has no head","file":"stmt/owner.js","find":"      box.appendChild(el('h3','salt-settings__head','Accounts'));\n","replace":""}
+ {"name":"the accounts' list has no head","file":"stmt/owner.js","find":"      box.appendChild(el('h3','salt-settings__head','Accounts'));\n","replace":""},
+ {"name":"the held grey line two sentences again","file":"stmt/owner.js","find":"'Kuala Lumpur time; customers can still order.'","replace":"'Kuala Lumpur time. Customers can still order.'"},
+ {"name":"the practice grey line two sentences again","file":"stmt/owner.js","find":"' made; turn on to make '","replace":"' made. Turn on to make '"}
 ]
