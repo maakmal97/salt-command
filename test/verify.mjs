@@ -5860,7 +5860,10 @@ await (async () => {
       for (const am of AMENDS) {
         const pay = Object.assign({ date: "2026-09-01" }, am);
         const fr = JSON.parse(JSON.stringify(seed));
-        try { fold5(fr, pay, dir, null); } catch (e) { /* a refusal is a state too; the desk must decline */ }
+        /* 1 Nov 2026: a refusal lands nothing (the batch stays staged), so its state is the row as it was, and the desk must decline
+           leaving it so; this compared the fold's row half written before its throw, which pinned the desk's declined Cancellation step */
+        let refused = false;
+        try { fold5(fr, pay, dir, null); } catch (e) { refused = true; }
         /* ONE window for the whole matrix, with the row put back to the seed before each pair.
            It used to open a fresh master per pair, which is what kept the table at four. */
         const arr = dir === "BUY" ? "purchases" : "sales";
@@ -5869,7 +5872,7 @@ await (async () => {
         const dr = JSON.parse(wq.eval("JSON.stringify(" + arr + ".find(r=>r.rid===" + JSON.stringify(seed.rid) + "))"));
         compared++;
         if (am.fields && (am.fields.deliveredQty || am.fields.receivedQty)) moved[seed.rid + (am.fields.deliveredQty ? ".d" : ".r")] = (fr.amend || []).map((x) => x.kind + ":" + x.kg).join();
-        const a = JSON.stringify(strip(fr)), b = JSON.stringify(strip(dr));
+        const a = JSON.stringify(strip(refused ? seed : fr)), b = JSON.stringify(strip(dr));
         if (a !== b) differed.push(seed.rid + " " + dir + " cash " + am.cash + " kg " + am.kg + " | fold " + a.slice(0, 150) + " | desk " + b.slice(0, 150));
       }
     }
