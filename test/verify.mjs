@@ -21305,7 +21305,8 @@ await (async () => {
     if (btnB27(false)) btnB27(false).dispatchEvent(new domB27.window.Event("click", { bubbles: true }));
     await until27(() => btnB27(true));
     const recB27 = await kv27.get("u:" + TU27, "json");
-    ok(/^2 of 3 made[.] Turn on to make 0000-0001[.]$/.test(leadB27) && postedB27.map((b) => b.u).join() === "0000-0001"
+    /* 1 Nov 2026 (v1362): the grey line is one sentence now; it read "2 of 3 made. Turn on to make 0000-0001." */
+    ok(/^2 of 3 made; turn on to make 0000-0001[.]$/.test(leadB27) && postedB27.map((b) => b.u).join() === "0000-0001"
       && !!(await kv27.get("u:0000-0001", "json")) && JSON.stringify(recB27.wrap) === JSON.stringify(rec27.wrap),
       "with only one of the pair live, his page says so and one tap makes the one missing, the other untouched: " + JSON.stringify([leadB27, postedB27.map((b) => b.u)]));
 
