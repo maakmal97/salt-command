@@ -48583,6 +48583,10 @@ section("10 Oct 2026: a raise or another window goes to them for their yes, and 
 await (async () => {
   await (await import("./delivery-yes.mjs")).run({ ok });
 })();
+section("02 Nov 2026: a yes that lands between a read and its void is never voided, and a Withdraw their Yes beat says so");
+await (async () => {
+  await (await import("./offer-race.mjs")).run({ ok, skip: skipOff, pageWork });
+})();
 section("06 Oct 2026: a clipped line never ends on half an emoji");
 await (async () => {
   await (await import("./clip-text.mjs")).run({ ok });

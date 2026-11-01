@@ -1,0 +1,68 @@
+[
+ {
+  "name": "R1: a Withdraw the order book refused is not read again, so it says no offer is open",
+  "file": "src/orders.js",
+  "find": "    const g = r.status === 409 ? await findOrder(env, id) : null;",
+  "replace": "    const g = null;"
+ },
+ {
+  "name": "R2: a Withdraw the order book refused voids his yes anyway",
+  "file": "src/orders.js",
+  "find": "    const g = r.status === 409 ? await findOrder(env, id) : null;",
+  "replace": "    if (env.SALT_LEDGER) await voidOffers(env.SALT_LEDGER, id, new Date().toISOString(), o.price.offer && o.price.offer.id);\n    const g = r.status === 409 ? await findOrder(env, id) : null;"
+ },
+ {
+  "name": "R3: a Withdraw after their Yes is not read as taken",
+  "file": "src/orders.js",
+  "find": "  if (o.price && o.price.state === \"taken\") return { ok: false, status: 409, error: SAID_YES };\n",
+  "replace": ""
+ },
+ {
+  "name": "R4: the Withdraw's void lets every offer's yes go",
+  "file": "src/orders.js",
+  "find": "await voidOffers(env.SALT_LEDGER, id, now.toISOString(), p.offer.id);",
+  "replace": "await env.SALT_LEDGER.prepare(\"UPDATE preapproval SET status='void', decided_at=?1 WHERE order_id=?2 AND stage='ack' AND status='waiting' AND entry IS NULL AND json_extract(shown,'$.offer') IS NOT NULL\").bind(now.toISOString(), id).run();"
+ },
+ {
+  "name": "R4, R6, R7: the void names no offer",
+  "file": "src/orders.js",
+  "find": "AND json_extract(shown,'$.offer.id')=?3\").bind(at, id, String(offerId || \"\")).run();",
+  "replace": "AND json_extract(shown,'$.offer') IS NOT NULL AND ?3 IS NOT NULL\").bind(at, id, String(offerId || \"\")).run();"
+ },
+ {
+  "name": "R5: a repeated Withdraw id reads the read, not the order book's answer",
+  "file": "src/orders.js",
+  "find": "  const p = (r.order && r.order.price) || {}, now = new Date();",
+  "replace": "  const p = o.price || {}, now = new Date();"
+ },
+ {
+  "name": "R5: a repeated Withdraw id over a newer offer they took is answered as withdrawn",
+  "file": "src/orders.js",
+  "find": "  if (r.again && p.state === \"taken\") return { ok: false, status: 409, fresh: true, error: SAID_YES };\n",
+  "replace": ""
+ },
+ {
+  "name": "R6: the minute's pass lets every offer's yes go",
+  "file": "src/orders.js",
+  "find": "await voidOffers(db, id, (now || new Date()).toISOString(), offer);",
+  "replace": "await db.prepare(\"UPDATE preapproval SET status='void', decided_at=?1 WHERE order_id=?2 AND stage='ack' AND status='waiting' AND entry IS NULL AND json_extract(shown,'$.offer') IS NOT NULL\").bind((now || new Date()).toISOString(), id).run();"
+ },
+ {
+  "name": "R7: his Accept lets every offer's yes go",
+  "file": "src/orders.js",
+  "find": "await voidOffers(db, id, at.toISOString(), (o.price.offer || {}).id);",
+  "replace": "await db.prepare(\"UPDATE preapproval SET status='void', decided_at=?1 WHERE order_id=?2 AND stage='ack' AND status='waiting' AND entry IS NULL AND json_extract(shown,'$.offer') IS NOT NULL\").bind(at.toISOString(), id).run();"
+ },
+ {
+  "name": "R8: a lapsed offer for their yes is called open",
+  "file": "src/orders.js",
+  "find": "  if (r.again && p.state === \"offered\" && !acceptClosed(r.order, now)) return",
+  "replace": "  if (r.again && p.state === \"offered\") return"
+ },
+ {
+  "name": "R9: Salt Admin has no sentence for their Yes first",
+  "file": "stmt/owner.js",
+  "find": "    'they said yes before your withdraw reached them: its row is drafted at your offer':'They said yes before your Withdraw, so its row is drafted at your offer.',\n",
+  "replace": ""
+ }
+]
