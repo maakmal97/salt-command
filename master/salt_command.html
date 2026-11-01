@@ -20937,10 +20937,10 @@ function pbCard(){
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
       <select id="pbWho" aria-label="Customer" style="min-height:44px;padding:8px 10px;font-size:16px">${who.map(id=>`<option value="${esc(id)}">${esc(codeOf(id))}</option>`).join('')}</select>
       <button class="vbtn salt-pill salt-pill--sm" id="pbPrint" type="button">Print</button>
-      <button class="vbtn salt-pill salt-pill--sm" id="pbImage" type="button" style="background:transparent;color:var(--gold)">Save as JPG</button>
-      <button class="vbtn salt-pill salt-pill--sm" id="pbPdf" type="button" style="background:transparent;color:var(--gold)">Save as PDF</button>
-      <button class="vbtn salt-pill salt-pill--sm" id="pbHtml" type="button" style="background:transparent;color:var(--gold)">Save as HTML</button>
-      <button class="vbtn salt-pill salt-pill--sm" id="pbCopy" type="button" style="background:transparent;color:var(--gold)">Copy as text</button>
+      <button class="vbtn salt-ghost" id="pbImage" type="button">Save as JPG</button>
+      <button class="vbtn salt-ghost" id="pbPdf" type="button">Save as PDF</button>
+      <button class="vbtn salt-ghost" id="pbHtml" type="button">Save as HTML</button>
+      <button class="vbtn salt-ghost" id="pbCopy" type="button">Copy as text</button>
     </div>
     <div id="pbSizes" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">${sizes.map(q=>`<label style="display:flex;gap:6px;align-items:center;min-height:44px;font-size:13px"><input type="checkbox" checked data-q="${q}" style="width:18px;height:18px"> ${units(q)}</label>`).join('')}</div>
     <div id="pbMsg" class="dsc" style="margin-top:6px;min-height:15px"></div>

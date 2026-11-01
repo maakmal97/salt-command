@@ -7,6 +7,7 @@
  *   D3  a tap on a rail tab's count opens that tab (the count had no data-s, so the tap did nothing)
  *   D4  an Analysis link to a ledger row opens the older fold and clears the filters, so a row older than seven days is reached
  *   D5  the Associates chart's role labels stand at the type floor, 10.5px (they were 10px, measured on Network)
+ *   D6  the price board has one filled pill, Print; its four saves (JPG, PDF, HTML, Copy as text) are the system's ghosts, not pills restyled inline
  *   A1  Record's Try again reads again after a failed read (the box kept its read mark, so the retry returned at once)
  *   A2  a redraw of an account while This customer is still being read draws it once the read lands (the new box waited for nothing)
  * Invented codes only. */
@@ -51,6 +52,11 @@ export async function run({ ok, pageWork }) {
     /* D5 */
     const d5 = JSON.parse(String(w.eval("(function(){switchTab('network');return JSON.stringify([].map.call(document.querySelectorAll('#sec-people .ncol'),function(c){var n=c.lastElementChild,l=n&&n.children[1];return l?parseFloat(l.style.fontSize):0;}));})()")));
     ok(d5.length > 0 && d5.every((px) => px >= 10.5), "D5: every role label on the Associates chart is at least 10.5px: " + J(d5));
+
+    /* D6 */
+    const board = String(w.eval("setProd('salt');pbCard()")), pills = (board.match(/class=\"[^\"]*salt-pill[ \"]/g) || []).length;
+    ok(pills === 1 && /class=\"vbtn salt-ghost\" id=\"pbImage\"/.test(board) && /class=\"vbtn salt-ghost\" id=\"pbPdf\"/.test(board) && !/style=\"background:transparent;color:var\(--gold\)\"/.test(board),
+      "D6: the price board has one filled pill and its saves are ghosts: " + pills + " pill(s)");
   } finally {
     await new Promise((r) => setTimeout(r, 200));
     try { w.close(); } catch (e) { /* jsdom */ }
