@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1361",
+  "d": "01 Nov 2026",
+  "t": "DELIVERY OF 2 UNITS TO CE5-SA RECORDED AGAINST S317",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> The row records on s317 that 2 units were delivered to CE5-SA on 01 Nov 2026, setting deliveredQty to 2, deliveredOn to 2026-11-01 and handover to delivered. It was preapproved by Counter Admin. The order was already paid on 31 Oct 2026, so no cash moved.",
+   "<b>INVENTORY.</b> The shelf rolls out by 2 units, the difference the correction states, leaving salt at 11. The stock cost stays at RM56 per unit, and no lot landed."
+  ]
+ },
+ {
   "v": "v1360",
   "d": "01 Nov 2026",
   "t": "ONE DELIVERED SALT SALE TO A FIRST-TIME PARTY, ABOVE ASK",

@@ -1,6 +1,6 @@
 {
- "v": "v1360",
- "stamped": "01 Nov 2026, 01:37 KL",
+ "v": "v1361",
+ "stamped": "01 Nov 2026, 12:25 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -107,7 +107,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 11,
+  "STATED_STOCK": 9,
   "COUNT_ON": {
    "salt": "2026-10-28",
    "oil": "2026-10-27",
@@ -10254,13 +10254,13 @@
     "total": 215,
     "cash": 250,
     "date": "2026-10-31",
-    "deliveredQty": 0,
-    "note": "<b>CORRECTION ON S317, 31 OCT 2026: DELIVERY SET TO RM35.</b> Order 20261031144735-zgwp1w for 2 units of salt, goods RM215, unchanged. The quantity and total are restated as 2 and RM215, and delivery moves from unset to RM35, preapproved by Counter Admin. The goods total of RM215 is unchanged by this, so its standing against the floor and ask for that size is as when the order was booked. CE5-SA: 3 orders on the book, median rate RM110, range RM107.5 to RM110, RM215 outstanding before this row (this order), no units on credit before, nothing defaulted. The row's cost is unchanged and no cost is reset here. The drafter raised no flags, so there is nothing to answer. Outstanding: RM215 goods plus RM35 delivery unpaid, and 2 units to hand over. <b>NEW PENDING SALE 31 OCT 2026: 2 UNITS OF SALT TO CE5-SA, GOODS RM215.</b> Ordered on the statements site, order 20261031144735-zgwp1w, acknowledged, to collect. Nothing paid, nothing handed over, approved in advance by Counter Admin. The goods total of RM215 equals the ask total of RM215 and is above the floor total of RM115. Per unit that is RM107.5, equal to the ask of RM107.5 and above the floor of RM57.5. CE5-SA: 2 orders on the book, median rate RM110, range RM110 to RM110, nothing outstanding before, no units on credit against a cap of 2. This order would put 2 units on credit if collected unpaid. The row carries the drafter's cost of RM56 per unit, the inventory's own rate. The drafter raised no flags, so there is nothing to answer. Outstanding: RM215 unpaid and 2 units to hand over.",
+    "deliveredQty": 2,
+    "note": "<b>CORRECTION ON S317, 01 NOV 2026: 2 UNITS DELIVERED TO CE5-SA.</b> Order s317 of 31 Oct 2026 is for 2 units of salt, goods RM215, cash RM250 including RM35 delivery, paid on 31 Oct 2026. Delivered quantity moves from 0 to 2, delivered on from unset to 2026-11-01, handover from unset to delivered. Preapproved by Counter Admin. No cash moves; the shelf rolls out 2 units. CE5-SA: 3 orders, median rate RM110, range RM107.50 to RM110, nothing outstanding, no units on credit, nothing defaulted. The dossier gives no floor or ask for this size, so no comparison is made. The drafter flagged that the trail of 3 steps will no longer add up to the figure set directly; the correction is recorded beside them, so the flag stands and the figures do not answer it. Outstanding: nothing. <b>CORRECTION ON S317, 31 OCT 2026: DELIVERY SET TO RM35.</b> Order 20261031144735-zgwp1w for 2 units of salt, goods RM215, unchanged. The quantity and total are restated as 2 and RM215, and delivery moves from unset to RM35, preapproved by Counter Admin. The goods total of RM215 is unchanged by this, so its standing against the floor and ask for that size is as when the order was booked. CE5-SA: 3 orders on the book, median rate RM110, range RM107.5 to RM110, RM215 outstanding before this row (this order), no units on credit before, nothing defaulted. The row's cost is unchanged and no cost is reset here. The drafter raised no flags, so there is nothing to answer. Outstanding: RM215 goods plus RM35 delivery unpaid, and 2 units to hand over. <b>NEW PENDING SALE 31 OCT 2026: 2 UNITS OF SALT TO CE5-SA, GOODS RM215.</b> Ordered on the statements site, order 20261031144735-zgwp1w, acknowledged, to collect. Nothing paid, nothing handed over, approved in advance by Counter Admin. The goods total of RM215 equals the ask total of RM215 and is above the floor total of RM115. Per unit that is RM107.5, equal to the ask of RM107.5 and above the floor of RM57.5. CE5-SA: 2 orders on the book, median rate RM110, range RM110 to RM110, nothing outstanding before, no units on credit against a cap of 2. This order would put 2 units on credit if collected unpaid. The row carries the drafter's cost of RM56 per unit, the inventory's own rate. The drafter raised no flags, so there is nothing to answer. Outstanding: RM215 unpaid and 2 units to hand over.",
     "listRM": 215,
     "listQty": 2,
     "rid": "s317",
     "delivery": 35,
-    "mod": "corrected on 2026-10-31: delivery (unset) to 35",
+    "mod": "corrected on 2026-10-31: delivery (unset) to 35, then corrected on 2026-11-01: deliveredQty 0 to 2; deliveredOn (unset) to 2026-11-01; handover (unset) to delivered",
     "amend": [
      {
       "date": "2026-10-31",
@@ -10285,9 +10285,25 @@
       "cash": 250,
       "kg": 0,
       "note": "<b>FULFILMENT ON S317, 31 OCT 2026: RM250 PAID BY CE5-SA.</b> Payment of RM250 by transfer via tng, order 20261031144735-zgwp1w, for 2 units of salt, goods RM215 plus RM35 delivery, preapproved by Counter Admin. No units move with it. The goods total is unchanged, so its standing against the floor and ask for that size is as when the order was booked. CE5-SA: 3 orders on the book, median rate RM110, range RM107.5 to RM110, RM250 outstanding before this row, no units on credit before, nothing defaulted. The row carries no cost of its own and none is reset here. The drafter raised no flags, so there is nothing to answer. Outstanding: RM0 owed, and 2 units still to hand over."
+     },
+     {
+      "date": "2026-11-01",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 2,
+      "note": "<b>CORRECTION ON S317, 01 NOV 2026: 2 UNITS DELIVERED TO CE5-SA.</b> Order s317 of 31 Oct 2026 is for 2 units of salt, goods RM215, cash RM250 including RM35 delivery, paid on 31 Oct 2026. Delivered quantity moves from 0 to 2, delivered on from unset to 2026-11-01, handover from unset to delivered. Preapproved by Counter Admin. No cash moves; the shelf rolls out 2 units. CE5-SA: 3 orders, median rate RM110, range RM107.50 to RM110, nothing outstanding, no units on credit, nothing defaulted. The dossier gives no floor or ask for this size, so no comparison is made. The drafter flagged that the trail of 3 steps will no longer add up to the figure set directly; the correction is recorded beside them, so the flag stands and the figures do not answer it. Outstanding: nothing.",
+      "was": {
+       "deliveredQty": 0,
+       "deliveredOn": null,
+       "handover": null
+      },
+      "cost": 112
      }
     ],
-    "paidOn": "2026-10-31"
+    "paidOn": "2026-10-31",
+    "deliveredOn": "2026-11-01",
+    "handover": "delivered",
+    "cost": 112
    },
    {
     "customer": "CA4-SJ",
@@ -11121,7 +11137,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-31T17:37:00.414Z",
+  "QUEUE_COMMITTED": "2026-11-01T04:24:49.472Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -11172,7 +11188,7 @@
     {
      "id": "int:nocost",
      "sev": "watch",
-     "title": "4 priced sales carry no cost of their own"
+     "title": "3 priced sales carry no cost of their own"
     },
     {
      "id": "int:underfloor",
@@ -12561,15 +12577,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.29838709677419356
+         "v": 0.304
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08940786291715609,
        "avgDel": {
-        "n": 243,
-        "kg": 608.31,
-        "mean": 2.5033
+        "n": 244,
+        "kg": 610.31,
+        "mean": 2.5013
        }
       },
       "policy": {
@@ -21229,27 +21245,12 @@
      "suggest": null
     }
    },
-   "v": "v1360"
+   "v": "v1361"
   },
   "OPEN": {
-   "at": "2026-10-31T17:37:59.323Z",
-   "count": 8,
+   "at": "2026-11-01T04:25:35.610Z",
+   "count": 7,
    "byKey": {
-    "CE5-SA|2026-10-31|250": {
-     "d": "2026-10-31",
-     "p": "CE5-SA",
-     "dir": "S",
-     "q": 2,
-     "t": 215,
-     "cash": 250,
-     "mv": 0,
-     "st": "oweStock",
-     "oweUnits": 2,
-     "dv": 35,
-     "rid": "s317",
-     "paidOn": "2026-10-31",
-     "key": "CE5-SA|2026-10-31|250"
-    },
     "CR3-DAM|2026-10-30|70": {
      "d": "2026-10-30",
      "p": "CR3-DAM",
@@ -21368,13 +21369,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 11,
+     "onHand": 9,
      "free": 9,
-     "owedOut": 2,
+     "owedOut": 0,
      "coverDays": 2.2,
      "rate": 4.3,
      "owedToYou": 240,
-     "promised": 2.5,
+     "promised": 0.5,
      "short": 0
     },
     "oil": {
@@ -21441,7 +21442,7 @@
     "gas": "2026-10-29",
     "prep": null
    },
-   "v": "v1360"
+   "v": "v1361"
   },
   "TERMS": {
    "ceiling": 250,
@@ -21449,7 +21450,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1360"
+   "v": "v1361"
   },
   "REWARD": {
    "stated": {
@@ -21467,15 +21468,15 @@
      }
     }
    },
-   "v": "v1360"
+   "v": "v1361"
   },
   "STOCK": {
    "today": "2026-11-01",
    "books": {
     "salt": {
-     "shelf": 11,
+     "shelf": 9,
      "free": 9,
-     "commit": 2.5,
+     "commit": 0.5,
      "light": "green",
      "coverDays": 2.2,
      "transit": 0
@@ -21521,7 +21522,7 @@
      "transit": 0
     }
    },
-   "v": "v1360"
+   "v": "v1361"
   }
  }
 }
