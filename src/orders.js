@@ -604,22 +604,31 @@ async function acceptOffer(env, f, body, by, at) {
     shown: { from: "placed", offer, row: pv.row, flags: pv.flags, prepay: !!entry.prepay } });
   return { ok: true, order: r.order, offer, push: r.push || null, preview: pv };
 }
+/* 2 Nov 2026 (his word): THEIR YES CAME FIRST, AND THE EARLIER MOVE WINS. An offer they took before a Withdraw read it, or between the read and the move,
+   where the order book refuses the move as nothing is open, stands with the yes its row is drafted at, and he is told so in words */
+const SAID_YES = "they said yes before your withdraw reached them: its row is drafted at your offer";
 /** POST /orders/<id>/withdraw: his open offer taken back; his yes with it. */
 export async function withdrawOffer(env, id, body) {
   const f = await findOrder(env, id);
   if (!f.ok) return f;
   const o = f.order, rid = body && typeof body.rid === "string" && /^[A-Za-z0-9_-]{16,64}$/.test(body.rid) ? body.rid : null;
+  if (o.price && o.price.state === "taken") return { ok: false, status: 409, error: SAID_YES };
   /* 1 Nov 2026: a retried Withdraw whose first tap landed finds the offer withdrawn already; it goes on to the order book, which answers a
      request id it has filed as the first answer (again) and refuses one it has not, as offerOrder answers a repeated Send */
   if (!o.price || (o.price.state !== "offered" && !(rid && o.price.state === "withdrawn"))) return { ok: false, status: 409, error: "no offer of yours is open on this order" };
   const r = await moveOrder(env, o.u, id, Object.assign({ withdraw: true }, rid ? { rid } : {}));
-  if (!r.ok) return r;
-  /* the id answered a withdrawal of an older offer and a newer offer of his is open: refused, so it is never said withdrawn, and fresh, so Salt Admin
-     drops the id and its next tap withdraws the newer one (Fable's low finding of 1 Nov 2026); that offer and its yes stand */
-  if (r.again && o.price.state === "offered") return { ok: false, status: 409, fresh: true, error: "that Withdraw was answered already, and a newer offer of yours is open" };
-  /* the yes goes with the offer the order book says it withdrew, on a repeat too (a first tap that landed and stopped before the void), and no other:
-     a newer offer's, filed after the move, stands (2 Nov 2026) */
+  if (!r.ok) {
+    /* refused by the order book, which voids nothing: their yes may have landed after the read, and a second read says so */
+    const g = r.status === 409 ? await findOrder(env, id) : null;
+    return g && g.ok && g.order.price && g.order.price.state === "taken" ? { ok: false, status: 409, error: SAID_YES } : r;
+  }
+  /* WHAT THE ORDER BOOK HOLDS AT THE MOVE DECIDES, NEVER THE READ (2 Nov 2026): the id answered a withdrawal of an older offer, and a newer offer of his is
+     open (Fable's low finding of 1 Nov 2026) or taken: refused, so it is never said withdrawn, and fresh, so Salt Admin drops the id; that offer and its
+     yes stand. A newer offer for their yes that has lapsed (acceptClosed) is not called open */
   const p = (r.order && r.order.price) || {}, now = new Date();
+  if (r.again && p.state === "taken") return { ok: false, status: 409, fresh: true, error: SAID_YES };
+  if (r.again && p.state === "offered" && !acceptClosed(r.order, now)) return { ok: false, status: 409, fresh: true, error: "that Withdraw was answered already, and a newer offer of yours is open" };
+  /* the yes goes with the offer the order book says it withdrew, on a repeat too (a first tap that landed and stopped before the void), and no other */
   if (env.SALT_LEDGER && p.state === "withdrawn" && p.offer) await voidOffers(env.SALT_LEDGER, id, now.toISOString(), p.offer.id);
   return Object.assign({ ok: true, order: r.order }, r.again ? { again: true } : {});
 }

@@ -14,7 +14,7 @@
  {
   "name": "a repeat over a newer offer is answered again, as if withdrawn",
   "file": "src/orders.js",
-  "find": "  if (r.again && o.price.state === \"offered\") return { ok: false, status: 409, fresh: true,",
+  "find": "  if (r.again && p.state === \"offered\" && !acceptClosed(r.order, now)) return { ok: false, status: 409, fresh: true,",
   "replace": "  if (false) return { ok: false, status: 409, fresh: true,"
  },
  {

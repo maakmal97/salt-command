@@ -1265,6 +1265,7 @@ export const OWNER_JS = `
     'they have taken your offer already: its row is drafted at it':'They have already taken your offer. Its row is drafted at that price.',
     'this raises their price or changes their window: send it to them for their yes':'This raises their price or changes their window. Send it to them for their yes.',
     'nothing here needs their yes: Accept it':'Nothing here needs their yes. Accept it.',
+    'they said yes before your withdraw reached them: its row is drafted at your offer':'They said yes before your Withdraw, so its row is drafted at your offer.',
     'no offer of yours is open on this order':'You have no offer open on this order.',
     'that Withdraw was answered already, and a newer offer of yours is open':'Your newer offer is still open, so tap Withdraw again.',
     'this order has already been approved for a row and cannot be changed':'This order is already approved for a row and cannot be changed.',
