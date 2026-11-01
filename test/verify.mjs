@@ -16345,7 +16345,7 @@ await (async () => {
     ok(/Ordering opens once your price list is written, with the next update[.]/.test(foot(d)) && d.getElementById("oPlace").disabled && !/open your prices again/.test(foot(d)),
       "a refusal carrying no list says ordering opens once the list is written, and Place is held: " + JSON.stringify(foot(d)));
     d.querySelector("#osheet .salt-sheet__close").click();
-    ok(posted.length === 1 && !d.getElementById("oNew") && /No price list has been written/.test(d.getElementById("pPrices").textContent) && !d.querySelector("#pPrices .szrow"),
+    ok(posted.length === 1 && !d.getElementById("oNew") && /No price list for your account yet/.test(d.getElementById("pPrices").textContent)   /* 1 Nov 2026: pr.none in one sentence */ && !d.querySelector("#pPrices .szrow"),
       "and behind it the page holds no list, as a sign-in would show it, so the same stamp cannot be placed again: " + JSON.stringify({ posted: posted.length }));
   } finally { await new Promise((r) => setTimeout(r, 100)); B.w.close(); }
 })();
@@ -42476,7 +42476,7 @@ await (async () => {
       "the sheet forecasts paid in advance once what they owe and the order are over the sealed ceiling, and says nothing at it: " + JSON.stringify([at1, at2]));
     d.getElementById("oGo").click();
     const chk = rows(d), say = line(d);
-    ok(/Payment Likely in advance/.test(chk) && say.includes("We confirm it when we accept;"),
+    ok(/Payment Likely in advance/.test(chk) && say.includes("We confirm it when we accept, then it is paid before we hand it over"),   /* 1 Nov 2026: the one sentence that keeps cash on handover */
       "the check carries the forecast from Review, a row and the one sentence: " + JSON.stringify([chk, say]));
     d.getElementById("oPlace").click();
     await until(() => posted.length === 1);
