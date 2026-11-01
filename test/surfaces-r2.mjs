@@ -8,6 +8,8 @@
  *   D4  an Analysis link to a ledger row opens the older fold and clears the filters, so a row older than seven days is reached
  *   D5  the Associates chart's role labels stand at the type floor, 10.5px (they were 10px, measured on Network)
  *   D6  the price board has one filled pill, Print; its four saves (JPG, PDF, HTML, Copy as text) are the system's ghosts, not pills restyled inline
+ *   D7  the Network groups' headers (Chase first, Due now, Lapsing, Tried once) stand at the type floor, 10.5px (they were 10px)
+ *   D8  no place on the Desk says simply (the words rule's tone); a Noticed list still did
  *   A1  Record's Try again reads again after a failed read (the box kept its read mark, so the retry returned at once)
  *   A2  a redraw of an account while This customer is still being read draws it once the read lands (the new box waited for nothing)
  * Invented codes only. */
@@ -57,6 +59,14 @@ export async function run({ ok, pageWork }) {
     const board = String(w.eval("setProd('salt');pbCard()")), pills = (board.match(/class=\"[^\"]*salt-pill[ \"]/g) || []).length;
     ok(pills === 1 && /class=\"vbtn salt-ghost\" id=\"pbImage\"/.test(board) && /class=\"vbtn salt-ghost\" id=\"pbPdf\"/.test(board) && !/style=\"background:transparent;color:var\(--gold\)\"/.test(board),
       "D6: the price board has one filled pill and its saves are ghosts: " + pills + " pill(s)");
+
+    /* D7 */
+    const d7 = String(w.eval("(function(){var e=document.createElement('div');e.className='aprh';document.body.appendChild(e);var px=getComputedStyle(e).fontSize;e.remove();return px;})()"));
+    ok(parseFloat(d7) >= 10.5, "D7: the Network groups' headers are at least 10.5px: " + d7);
+
+    /* D8 */
+    const d8 = JSON.parse(String(w.eval("(function(){var said={};VIEWS.forEach(function(v){switchTab(v.id);[v.lead].concat(v.parts).forEach(function(p){switchTab(p);var s=document.getElementById('sec-'+v.id),t=s?s.textContent:'';var m=t.match(/[^.]{0,60}\\bsimply\\b[^.]{0,30}/i);if(m)said[p]=m[0];});});return JSON.stringify(said);})()")));
+    ok(Object.keys(d8).length === 0, "D8: no place on the Desk says simply: " + J(d8));
   } finally {
     await new Promise((r) => setTimeout(r, 200));
     try { w.close(); } catch (e) { /* jsdom */ }

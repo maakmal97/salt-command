@@ -4943,7 +4943,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
 .apchip.aplapse{background:var(--salt-glass-faint);border-color:var(--salt-line-strong);color:var(--salt-mist);}
 .apchip .apv{font-weight:400;margin-left:6px;}
 .apday .apchip .apv{display:block;margin-left:0;}
-.aprh{font-size:10px;letter-spacing:.16em;text-transform:uppercase;margin-top:10px;color:var(--salt-brass);}
+.aprh{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;margin-top:10px;color:var(--salt-brass);}   /* 1 Nov 2026: at the type floor */
 .aprh.apch{color:var(--salt-ember);}
 .aprh.aplp,.aprh.apon{color:var(--salt-mist);}
 .aplist{display:none;}
@@ -17492,7 +17492,7 @@ function observations(){
       title:`${once.length} of ${cust.length} customers have bought exactly once`,
       why:`${share}% of every name on the book. A first order costs the most to win and earns the least, so a book that does not convert first orders into second ones is paying acquisition over and over for the same revenue. This is a rate rather than a list of failures: some of these are recent.`,
       ev:[`${once.length} single-order names against ${cust.length-once.length} repeat`,
-          `of the single-order names, ${once.filter(c=>dbet(D.filter(s=>s.customer===c)[0].date)<=14).length} bought within the last fortnight and may simply not be due yet`,
+          `of the single-order names, ${once.filter(c=>dbet(D.filter(s=>s.customer===c)[0].date)<=14).length} bought within the last fortnight and may not be due yet`,
           `worth ${fmt0(once.reduce((a,c)=>a+(+D.filter(s=>s.customer===c)[0].total||0),0))} in total first orders`]});
   }
   /* CONTACTED AND NO REPLY. A follow-up that got no answer is a different state from one

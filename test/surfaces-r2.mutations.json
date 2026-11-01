@@ -42,6 +42,18 @@
     "replace": "<button class=\"vbtn salt-pill salt-pill--sm\" id=\"pbImage\" type=\"button\" style=\"background:transparent;color:var(--gold)\">Save as JPG</button>"
   },
   {
+    "name": "D7: the Network groups' headers drop to 10px again",
+    "file": "master/salt_command.html",
+    "find": ".aprh{font-size:10.5px;",
+    "replace": ".aprh{font-size:10px;"
+  },
+  {
+    "name": "D8: a Noticed list says simply again",
+    "file": "master/salt_command.html",
+    "find": "bought within the last fortnight and may not be due yet`,",
+    "replace": "bought within the last fortnight and may simply not be due yet`,"
+  },
+  {
     "name": "A1: Try again keeps the read mark again",
     "file": "stmt/owner.js",
     "find": "function(){ box.removeAttribute('data-read'); while(box.children.length) box.lastChild.remove(); loadMakerInputs(); }",
