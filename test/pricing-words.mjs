@@ -40,7 +40,8 @@ export async function run({ ok }) {
     /* the % card: named Their %, the range note once (21 Oct 2026: -30 to +30, which replaced the 7% note), the suggestion as a % with its reason, the partner on the Floor */
     w.eval("setProd('salt');recompute();");
     const card = String(w.eval("driftCard()")).replace(/<[^>]+>/g, " ").replace(/&middot;/g, "·").replace(/\s+/g, " ");
-    ok(/Each customer's % on the Set Price/.test(card) && (card.match(/A % runs from -30 to \+30, never under the Floor or over the Ceiling/g) || []).length === 1 && !/Under about 7%/.test(card)
+    /* 1 Nov 2026: the card's Insight is one sentence, the range after a semicolon (it was two: ... below it. A % runs from -30 to +30 ...) */
+    ok(/Each customer's % on the Set Price/.test(card) && (card.match(/; a % runs from -30 to \+30, never under the Floor or over the Ceiling/g) || []).length === 1 && !/Under about 7%/.test(card)
       && /Their %, and what it quotes/.test(card) && !/\bSuggested 0\b/.test(card) && !FORBID.test(card),
       "the % card reads Their %, carries the one note that a % runs from -30 to +30 inside the Floor and the Ceiling, and names no level or drift: " + card.slice(0, 200));
     /* cards the parts draw only on a condition are read by their own function */

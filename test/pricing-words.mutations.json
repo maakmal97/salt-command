@@ -6,8 +6,8 @@
  },
  {
   "name": "the % card's note on the -30 to +30 range is gone",
-  "find": " A % runs from -30 to +30, never under the Floor or over the Ceiling.</div></div>`;",
-  "replace": "</div></div>`;"
+  "find": "; a % runs from -30 to +30, never under the Floor or over the Ceiling.</div></div>`;",
+  "replace": ".</div></div>`;"
  },
  {
   "name": "the suggestion says Proposed, not Suggested",

@@ -18520,7 +18520,7 @@ function driftCard(){
   finally{PROD=keep;recompute();}
   return `<div class="card"><div class="cardh">Each customer's % on the Set Price or the board <span class="sub">yours to set; the suggestion is the engine's</span></div>
     <div class="tscroll"><table class="salt-table tiertab"><thead><tr><th class="l salt-table__label">Customer</th><th class="l salt-table__label">Their %, and what it quotes</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>
-    <div class="insight salt-insight">${hand} of ${rows.length} are set by you, ${up} sit above the Set Price and ${down} below it. A % runs from -30 to +30, never under the Floor or over the Ceiling.</div></div>`;
+    <div class="insight salt-insight">${hand} of ${rows.length} are set by you, ${up} sit above the Set Price and ${down} below it; a % runs from -30 to +30, never under the Floor or over the Ceiling.</div></div>`;
 }
 /* ---- layer 3: five readings, each worth a few points, summed then clamped ---- */
 /* Analysis asks a book's signals 18 times a render; keyed like pxCost, whose cost boardHeadroom moves mid-render */
@@ -20197,7 +20197,7 @@ function resellerCard(r){
 }
 function tabNetwork(){
   const ns=networkStats();
-  if(!ns.length)return `<h1>Associates</h1><div class="insight salt-insight">No associates yet. When a customer refers a buyer or sells on your behalf, they appear here.</div>`;
+  if(!ns.length)return `<h1>Associates</h1><div class="insight salt-insight">No associates yet; one appears when a customer refers a buyer or sells on your behalf.</div>`;
   // tree: You -> all associates (R0 marked distinctly by colour, same 'Associate' term)
   /* the node's second line is a RANK by contribution (#1, #2 ...), not a revenue
      stream. It used to read R1/R2, which collided head-on with the R1/R2/R3 stream
@@ -22423,7 +22423,7 @@ function renderRecovery(){
   const rows=un.map(q=>{const road=qRoad(q),a=esc(q.at);
     return `<tr><td class="l salt-table__label" style="max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(q.raw||'')}</td><td>${esc(q.type||'')}</td><td>${way[road]}</td><td>${road==='none'?'':`<button class="ubtn salt-ghost" onclick="qRecSend('${a}')">Send</button> `}<button class="ubtn salt-ghost" onclick="qRecDiscard('${a}')">Discard</button></td></tr>`;}).join('');
   return `<div id="qRecovery" class="salt-insight" style="margin-top:12px"><div style="font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--gold)">Unsent on this device (${un.length})</div>`
-    +`<div class="dsc" style="margin-top:5px">Held in this browser only: the Worker has not confirmed ${un.length===1?'it':'them'}. ${OVERLAY_UNSENT?'Each still counts in the figures, marked Unsent.':'None counts in any figure.'} An entry leaves this list when the Worker confirms it.</div>`
+    +`<div class="dsc" style="margin-top:5px">Held in this browser only, not yet confirmed by the Worker, and ${OVERLAY_UNSENT?'counted in the figures, marked Unsent':'counted in no figure'}.</div>`
     +(un.length?`<table class="salt-table" style="margin-top:6px"><thead><tr><th class="l salt-table__label">Entry</th><th>Type</th><th>Road</th><th></th></tr></thead><tbody>${rows}</tbody></table>`:'')
     +(qRecMsg?`<div class="dsc" id="qRecMsg" role="status" style="margin-top:6px">${esc(qRecMsg)}</div>`:'')+'</div>';}
 /* ask the local server whether it accepts the queue; only meaningful when served */

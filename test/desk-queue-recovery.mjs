@@ -110,7 +110,8 @@ export async function run({ ok, KV, worker }) {
     w.eval("OVERLAY_UNSENT=false;applyOverlay();renderProvBar();");
     ok(w.eval("selfUseLog.length") === base + 1 && w.eval("provUnsent") === 0 && w.eval("provCount") === 1,
       "switch off: the unsent entry leaves every figure and the receipted one stays");
-    ok(/None counts in any figure/.test(w.eval("renderRecovery()")), "and the panel says so");
+    /* 1 Nov 2026: the panel's grey line is one sentence (it read: None counts in any figure.) */
+    ok(/counted in no figure/.test(w.eval("renderRecovery()")), "and the panel says so");
 
     /* ---- the Worker: in pair mode a post omitting a vault-kind entry the device still holds does not withdraw it ---- */
     const kv = new KV(), env = { SALT_QUEUE: kv, VAULT_STORE: "pair", REQUIRE_ACCESS: "0" };
