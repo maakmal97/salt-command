@@ -50234,6 +50234,11 @@ await (async () => {
   await (await import("./admin-orders-v2.mjs")).run({ ok, pageWork });
 })();
 
+section("2 Nov 2026: Salt Admin's Customers on the canvas, a Segment of four, settings lists, one plain table from 1080px, one way back");
+await (async () => {
+  await (await import("./admin-customers-v2.mjs")).run({ ok, pageWork });
+})();
+
 section("27 Oct 2026: cash past what an order owes is taken, the excess a refund");
 await (async () => {
   await (await import("./cash-over.mjs")).run({ ok });
