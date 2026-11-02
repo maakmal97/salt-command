@@ -11,7 +11,5 @@
  {"name": "a link that could not be made says so on the page's one line", "file": "stmt/owner.js", "find": "}catch(e){ linkSay(e.message,'bad',e); }", "replace": "}catch(e){ sayFail(e); }"},
  {"name": "the figures stand above the inputs again", "file": "stmt/owner.js", "find": "        tf.body.appendChild(qsay); tf.body.appendChild(qfigs);\n", "replace": "        tf.body.insertBefore(qsay,form); tf.body.insertBefore(qfigs,form);\n"},
  {"name": "the select is left on the charge that failed", "file": "stmt/owner.js", "find": "            if(feeSel) feeSel.value=chip.value;\n", "replace": "\n"},
- {"name": "an answer for a card that has gone is not brought into reach", "file": "stmt/owner.js", "find": " if(list.scrollIntoView) list.scrollIntoView({block:'nearest'}); }", "replace": " }"},
- {"name": "For a friend is a bare box again", "file": "stmt/owner.js", "find": "friendLabel.appendChild(el('span','tickbox')); ", "replace": ""},
- {"name": "the tick's rules are the account card's alone", "file": "stmt/page.js", "find": ".adm .atick input{position:absolute;", "replace": ".adm .oacct .atick input{position:absolute;"}
+ {"name": "an answer for a card that has gone is not brought into reach", "file": "stmt/owner.js", "find": " if(list.scrollIntoView) list.scrollIntoView({block:'nearest'}); }", "replace": " }"}
 ]

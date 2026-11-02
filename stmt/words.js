@@ -673,6 +673,7 @@ export const EN = {
   /* ---- ORDERS ---- */
   "ord.due": "Payment due",
   "ord.view": "Read only: their orders as their own page shows them. Nothing here is placed, paid or sent.",
+  "ord.act": "You are ordering for them. Nothing else here is paid or sent.",
   "pay.overdue": "Overdue",
   "pay.hold": "Please pay the overdue amount of {rm} before placing another order.",
   /* V5 (his answers of 29 Sep 2026): the stages, said before each comes */

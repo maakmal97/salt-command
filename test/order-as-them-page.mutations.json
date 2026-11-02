@@ -1,0 +1,12 @@
+[
+ {"name": "Order for them opens read only", "file": "stmt/page.js", "find": "    view=!!(OWNER&&body.byMaster); act=view&&actWant;\n", "replace": "    view=!!(OWNER&&body.byMaster); act=false;\n"},
+ {"name": "View as them orders too", "file": "stmt/owner.js", "find": "pw.value=OWNER.master; actWant=!!acting;", "replace": "pw.value=OWNER.master; actWant=true;"},
+ {"name": "Order for them is the old box", "file": "stmt/owner.js", "find": "  function makerForAccount(account){ openAcct(account, true); }\n", "replace": "  function makerForAccount(account){ openAcct(account); }\n"},
+ {"name": "the Orders form stays off on Order as them", "file": "stmt/page.js", "find": "    } else if(ro()){\n      /* no order form on his read-only view */", "replace": "    } else if(view){\n      /* no order form on his read-only view */"},
+ {"name": "his line says read only", "file": "stmt/page.js", "find": "tw(act?'ord.act':'ord.view')", "replace": "tw('ord.view')"},
+ {"name": "the note is offered on Order as them", "file": "stmt/page.js", "find": "    if(act){ /* his words reach them on the order's thread, which the Desk checks */ }\n    else if(", "replace": "    if(false){ }\n    else if("},
+ {"name": "Negotiate on Order as them", "file": "stmt/page.js", "find": "var canAsk=one&&!act&&!c.amend", "replace": "var canAsk=one&&!c.amend"},
+ {"name": "his Place goes to their road", "file": "stmt/page.js", "find": "var r=act&&!c.pool&&!c.amend?await actPlace(user,body):await api(", "replace": "var r=await api("},
+ {"name": "his Place carries the note field", "file": "stmt/page.js", "find": "      if(act) delete body.note;   /* v1377: his Place carries no note */\n", "replace": ""},
+ {"name": "his route is asked another account", "file": "stmt/owner.js", "find": "refs('/all/maker/customers/'+encodeURIComponent(u)+'/orders', body)", "replace": "refs('/all/maker/customers/'+encodeURIComponent(u+'x')+'/orders', body)"}
+]

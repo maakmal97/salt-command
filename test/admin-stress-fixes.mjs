@@ -7,8 +7,7 @@
  *      the card's line says which did not save; the read and Accept are unchanged
  *   2  an answer stands beside the control that asked, and is brought into reach: Save on Shop's weekly hours, Make a link (and the new link), Refresh,
  *      and the order card, whose figures stand under the inputs grid and not a screen below the charge, and whose answer, when its card has gone, scrolls the list's line
- *   3  For a friend is the tick the account card's Sent is: its input the 44px tap, in a label that measures it (settled in Chromium by a hit test, recorded in
- *      the pull request; jsdom has no layout, so this reads the page's own CSS rules and that they apply to the control)
+ *   3  (retired with v1377: Order for them opens their own page, whose sheet asks who an order is for; the box with its own For a friend tick is gone)
  * Drawn by the maker harness (test/maker-act.mjs). Every name, code and figure is invented. */
 import { richOwnerPage, byAct, enter } from "./maker-act.mjs";
 
@@ -193,23 +192,5 @@ export async function run({ ok, pageWork }) {
     const list = at(p, "makerReviewStatus");
     ok(!p.card("ord-p1") && list.textContent === "Agreed and sent to the Desk." && p.scrolled.includes(list),
       "an answer whose card has gone (the order moved on) lands on the list's line and that line is brought into reach: " + JSON.stringify([list.textContent, p.scrolled.length]));
-  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
-
-  /* 3. FOR A FRIEND IS THE ACCOUNT CARD'S TICK: the input is the 44px tap, in a label that measures it */
-  p = await open();
-  try {
-    enter(p.d, "customers", "accounts"); await p.work.quiet();
-    byAct(p.d, "acct.open", "abcd-efgh").click(); await p.work.quiet();
-    byAct(p.d.getElementById("aopen"), "acct.order-for").click(); await p.work.quiet();
-    const friend = byAct(p.d.getElementById("makerFor"), "orderfor.friend"), label = friend && friend.closest("label");
-    ok(!!friend && friend.type === "checkbox" && !!label && label.classList.contains("tick") && label.textContent.trim() === "For a friend" && !!friend.nextElementSibling && friend.nextElementSibling.classList.contains("tickbox"),
-      "For a friend is one checkbox in a label of the tick class, the box that shows its state drawn right after it");
-    const ruleOf = cssRules(p.w), prop = (r, name) => (r ? r.getPropertyValue(name) : "");
-    const tick = ruleOf(".adm .atick")[0], input = ruleOf(".adm .atick input")[0];
-    ok(label.matches(".adm .atick") && friend.matches(".adm .atick input") && friend.nextElementSibling.matches(".adm .atick .tickbox"),
-      "the rules for the tick apply to it, as they do to Sent, the account card's: " + [label.matches(".adm .atick"), friend.matches(".adm .atick input")]);
-    ok(prop(input, "width") === "var(--salt-tap)" && prop(input, "height") === "var(--salt-tap)" && prop(tick, "min-height") === "var(--salt-tap)" && prop(tick, "min-width") === "var(--salt-tap)",
-      "and they make its input and its label the 44px token both ways: " + (input && input.cssText));
-    ok(prop(tick, "width") === "fit-content", "a label that fits its words, so a tap beside it toggles nothing: " + prop(tick, "width"));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 }

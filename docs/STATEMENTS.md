@@ -2865,12 +2865,6 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.send-yes` | Order card (key: the order id), once its figures are read, when they raise the price or change the window | Sends it to them for their yes instead. |
 | `order.total` | Order card (key: the order id), placed | The order total, in RM; finishing a change reads the figures again. |
 | `order.withdraw-offer` | Order card (key: the order id), with an offer out | Withdraws the offer. |
-| `orderfor.friend` | Order for a customer, an associate's | Whether it is for a friend. |
-| `orderfor.mode` | Order for a customer | Collected or delivered. |
-| `orderfor.place` | Order for a customer | The delivery locality. |
-| `orderfor.place-order` | Order for a customer | Places it for them. |
-| `orderfor.size` | Order for a customer | The size and price from their list. |
-| `orderfor.want` | Order for a customer | The day it is wanted by, optional. |
 | `part.customers.accounts` | The strip under Customers (tab: Accounts) | Shows the accounts: the list, and the card of the one he opens. |
 | `part.customers.messages` | The strip under Customers (tab: Messages) | Shows the account conversations, reading the threads. |
 | `part.customers.links` | The strip under Customers (tab: Links) | Shows the guest links, reading them once. |

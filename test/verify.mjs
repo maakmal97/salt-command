@@ -48480,6 +48480,11 @@ await (async () => {
   await (await import("./order-as-them.mjs")).run({ ok });
 })();
 
+section("v1377 Order as them on the page: Order for them opens their own page with ordering live, Place through his route, View as them read only (1b, 1c)");
+await (async () => {
+  await (await import("./order-as-them-page.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter Batch C: the seal carries the spot's name and unit, a unit alone sealed as its own shape, nothing in the clear (P6)");
 await (async () => {
   await (await import("./counter-c-pin-seal.mjs")).run({ ok });
@@ -50174,12 +50179,16 @@ await (async () => {
     doc.querySelector('#rlist [data-u]').click();
     const forThem = [...doc.querySelectorAll("#aopen button")].find((button) => button.textContent === "Order for them");
     forThem.click();
-    for (let i = 0; i < 100 && ![...doc.querySelectorAll("#makerFor button")].some((button) => button.textContent === "Place for them"); i++)
-      await new Promise((resolve) => setTimeout(resolve, 10));
-    const placeFor = [...doc.querySelectorAll("#makerFor button")].find((button) => button.textContent === "Place for them");
-    ok(!!placeFor && /RM 100/.test(doc.querySelector("#makerFor").textContent),
-      "Order for them opens the customer's sealed prices, not a second pricing rule");
-    placeFor.click();
+    /* v1377 (Order as them, his answer A of 02 Nov 2026): Order for them opens the customer's own page by the master with ordering live,
+       so New order, Review and Place are their page's own, at their sealed prices */
+    const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((resolve) => setTimeout(resolve, 10)); return f(); };
+    ok(!!(await until(() => doc.getElementById("oNew"))) && !doc.getElementById("makerFor"),
+      "Order for them opens the customer's own page and sealed prices, not a second pricing rule");
+    doc.getElementById("oNew").click();
+    await until(() => doc.getElementById("oGo") && !doc.getElementById("oGo").disabled);
+    doc.getElementById("oGo").click();
+    await until(() => doc.getElementById("oPlace"));
+    doc.getElementById("oPlace").click();
     for (let i = 0; i < 100 && !adminCalls.some((call) => call.route === "/all/maker/customers/abcd-efgh/orders"); i++)
       await new Promise((resolve) => setTimeout(resolve, 10));
     const sentFor = adminCalls.find((call) => call.route === "/all/maker/customers/abcd-efgh/orders");
@@ -50666,7 +50675,7 @@ await (async () => {
   await (await import("./admin-hours-week.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Admin: the stress run's findings: a charge that did not save is not shown as chosen, an answer stands beside its control, and For a friend is a 44px target (13 Oct 2026)");
+section("Salt Admin: the stress run's findings: a charge that did not save is not shown as chosen, and an answer stands beside its control (13 Oct 2026)");
 await (async () => {
   await (await import("./admin-stress-fixes.mjs")).run({ ok, pageWork });
 })();

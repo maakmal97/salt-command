@@ -823,12 +823,12 @@ export const OWNER_JS = `
      A tap fills the customer's own form with his username and the master, and submits it. Nothing
      below the door knows the difference: the Worker answers byMaster, the page unwraps wrapMaster,
      and the statement, the prices and the lock are the customer's own. */
-  function openAcct(a){
+  function openAcct(a, acting){
     if(!OWNER) return;
     if(sheet&&sheet[a.username]&&sheet[a.username].account===false){ say(waitLine(),'bad'); return; }
     if(!OWNER.master){ say('This page cannot open accounts yet.','bad'); return; }
     if(busy) return;
-    un.value=a.username; pw.value=OWNER.master;
+    un.value=a.username; pw.value=OWNER.master; actWant=!!acting;   /* v1377: Order as them opens it with ordering live, View as them read only */
     if(whoacct) whoacct.textContent=(a.code||a.username)+' \\u00b7 ';
     document.getElementById('vasU').textContent=a.username;
     var f=document.getElementById('f');
@@ -841,6 +841,16 @@ export const OWNER_JS = `
   /* 24 SEP 2026 (M22): AN ACCOUNT HE OPENS IS READ ONLY, and it draws what their own page draws. It
      has no session, the owner does not order, so the orders and an associate's own links come from
      /all/orders/<u>, behind the prefix's one Access check. The page calls this when view is set. */
+  /* v1377, ORDER AS THEM: the page's Place and its slip key read, through his own route behind /all's two locks, answered in the page's
+     own api() shape so the sheet reads a refusal, a moved list (409 with the list) and an order exactly as on their road */
+  async function actPlace(u,body){
+    try{ return {status:200, body:await refs('/all/maker/customers/'+encodeURIComponent(u)+'/orders', body)}; }
+    catch(e){ return {status:e.status||0, body:Object.assign({ok:false, error:e.raw||e.message}, e.detail||{})}; }
+  }
+  async function actKey(){
+    try{ return {status:200, body:await refs('/all/maker/slip/key')}; }
+    catch(e){ return {status:e.status||0, body:{ok:false}}; }
+  }
   async function loadView(u){
     var mine=ticket, j=null;
     /* through refs, so a lapsed Access session reads as one (S9 9.7) */
@@ -4369,53 +4379,10 @@ export const OWNER_JS = `
       makerButton(box,['Try again','record.retry'],function(){ box.removeAttribute('data-read'); while(box.children.length) box.lastChild.remove(); loadMakerInputs(); }); }
     finally{ sweep(); }
   }
-  async function makerForAccount(account){
-    showPlace('orders','placed',{fresh:true,push:true});
-    var box=document.getElementById('makerFor'); box.hidden=false; box.textContent='';
-    box.appendChild(el('h2',null,'Order for '+(account.code||account.username)));
-    var note=el('p','msg','Opening their price list.'); note.setAttribute('role','status'); box.appendChild(note);
-    if(!OWNER.master){ note.textContent='This page cannot open accounts yet.'; return; }
-    try{
-      var response=await fetch('/open',{method:'POST',headers:{'content-type':'application/json'},
-        body:JSON.stringify({u:account.username,password:OWNER.master,master:OWNER.master})});
-      var result=await response.json();
-      if(!response.ok||!result.ok||!result.byMaster||!result.wrapMaster||!result.prices)
-        throw new Error('Their current price list could not be opened.');
-      var key=await unwrap(OWNER.master,result.wrapMaster), list=await openList(key,result.prices); key=null;
-      if(!box.isConnected||box.hidden) return;
-      var choices=[];
-      (list.products||[]).forEach(function(product){ (product.sizes||[]).forEach(function(size){
-        choices.push({product:product.product,qty:size.q,total:size.price});
-      }); });
-      if(!choices.length) throw new Error('No priced size is on their list.');
-      note.textContent='One order, at their current prices. You agree it next, under Orders.';
-      var label=el('label','maker-field','Size and price'), pick=actOn(el('select','fld salt-field__input salt-field__select'),'orderfor.size');
-      choices.forEach(function(choice,index){ var option=el('option',null,optionBook(choice.product)+units(choice.qty)+', '+rm(choice.total));
-        option.value=String(index); pick.appendChild(option); }); label.appendChild(pick); box.appendChild(label);
-      var modeLabel=el('label','maker-field','Collect or deliver'), mode=actOn(el('select','fld salt-field__input salt-field__select'),'orderfor.mode');
-      [['collect','Collected'],['deliver','Delivered']].forEach(function(item){ var option=el('option',null,item[1]); option.value=item[0]; mode.appendChild(option); });
-      modeLabel.appendChild(mode); box.appendChild(modeLabel);
-      var place=makerField(box,['Delivery place','orderfor.place'],'text',''), want=makerField(box,['Wanted by (optional)','orderfor.want'],'date','');
-      var friendLabel=el('label','tick atick'), friend=actOn(el('input'),'orderfor.friend'); friend.type='checkbox';
-      /* 13 Oct 2026 (stress, Low): the tick of the account card's Sent (the input is the 44px tap, the box beside it shows the state), where this was a bare box with a 19px label */
-      friendLabel.appendChild(friend); friendLabel.appendChild(el('span','tickbox')); friendLabel.appendChild(el('span',null,'For a friend')); friendLabel.hidden=!result.assoc; box.appendChild(friendLabel);
-      var answer=el('p','msg'); answer.setAttribute('role','status'); box.appendChild(answer);
-      var sent=false, pending=false, button=makerButton(box,['Place for them','orderfor.place-order'],async function(){
-        if(pending||sent) return;
-        var choice=choices[Number(pick.value)];
-        var body={product:choice.product,qty:choice.qty,total:choice.total,unit:+(choice.total/choice.qty).toFixed(2),
-          mode:mode.value,place:mode.value==='deliver'?place.value:'',forFriend:!!(result.assoc&&friend.checked),
-          week:list.week&&list.week.monday||'',digest:list.digest||'',wantBy:want.value};
-        body.rid=ridFor('maker:'+account.username,JSON.stringify(body));
-        pending=true; button.disabled=true; answer.textContent='Placing.';
-        try{
-          var placed=await refs('/all/maker/customers/'+account.username+'/orders',body);
-          sent=true; answer.textContent='Placed. It waits for you to agree it.'; loadMaker();
-        }catch(error){ refusal(answer,error); }
-        pending=false; button.disabled=sent;
-      },true);
-    }catch(error){ refusal(note,error); }
-  }
+  /* v1377, ORDER AS THEM (his answer A of 02 Nov 2026): their own page, opened by the master as View as them opens it, with ordering live
+     (stmt/page.js act): Prices, the basket and the order sheet as theirs, Place through his own route. The box of his own that stood here
+     (a size, a way and a place) is gone. */
+  function makerForAccount(account){ openAcct(account, true); }
   /* PHASE 1b: Needs you and Orders read this too. A poll (quiet true; a button hands this its own argument, never true) starts no read while
      one is out, nor on Orders while he has a field open, a tap in flight or cash held, and a poll that finds the same answer draws nothing.
      The newest read wins, so a slow one never draws over a fresher. */
@@ -6847,7 +6814,6 @@ export const OWNER_JS = `
   function bookMark(product,px){ var w=el('span','pwith'); w.appendChild(psym(product,px||20)); w.appendChild(el('span','sr',pshape(product))); return w; }
   function bookTile(product,q){ return mtile(product,Number(q)||0); }
   function bookItem(product){ return {value:product,label:pshape(product),mark:product}; }
-  function optionBook(product){ var l=bookLetter(product); return l?'['+l+'] ':''; }
   /* 12 Oct 2026 (Phase 5): A BOOK ON A ROW WEARS THE SYSTEM'S PRODUCT TAG, the book's mark in it and its own accent as its hue (PRODUCTS.accent in ledger/book.json is
      the system's --salt-product-<book> token, which the tag's modifier for the book reads). The tag holds no words; this page alone draws one. */
   /* 25 Oct 2026 (canvas Salt Admin Orders): bookTag, read by Orders' Ledger, Group and Approve alone, is the typed Product tag, as Needs you's cards name a book */

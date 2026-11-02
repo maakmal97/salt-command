@@ -2168,7 +2168,6 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<h1 class="sr">Orders</h1>'
         + adminParts("orders", test)
         + '<div class="abody">'
-        + '<section id="makerFor" hidden aria-label="Order for a customer"></section>'
         + '<section id="oSplit" data-in="orders.todo orders.open orders.done orders.ended" aria-label="Orders">'
         + '<p class="salt-insight salt-insight--copper olead" id="makerReviewStatus">Reading.</p>'
         + '<div class="ordgrid"><div id="makerOrderList" class="ordlist"></div><div id="makerReview" class="ordopen"></div></div></section>'
@@ -2631,6 +2630,12 @@ const CLIENT_JS = `
   /* 24 Sep 2026 (M22): an account he opened under the master is READ ONLY. It has no session, so its
      orders and links come from his own gated route, and nothing on it places, pays, sends or withdraws. */
   var view=false;
+  /* v1377, ORDER AS THEM (his answers A and D of 02 Nov 2026): his read-only view with ordering live. Salt Admin's Order for them sets
+     actWant before it opens their account by the master; Prices, the basket, Home's starts, Order again and the order sheet then work as
+     theirs do, Place going through his own route (stmt/owner.js actPlace), and their hold does not stop him. Everything else stays read
+     only: no Pay, claim, Cancel, thread, device or passkey. ro() is the read-only test the ordering guards read. */
+  var act=false, actWant=false;
+  function ro(){ return view&&!act; }
   var roster=document.getElementById('roster'), rq=document.getElementById('rq'),
       rlist=document.getElementById('rlist'), rmsg=document.getElementById('rmsg'),
       whoacct=document.getElementById('whoacct');
@@ -3380,7 +3385,7 @@ const CLIENT_JS = `
     if(poll){ clearInterval(poll); poll=null; }
     liveStop();   /* Speed Wave 2 L2: Log out closes the socket */
     thClose(); thPut(null); thOut=[]; thSig=''; thWhy='';
-    bundle=null; session=''; view=false; prices=null; orders=[]; pools=[]; claims=[]; ordersFailed=false; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
+    bundle=null; session=''; view=false; act=false; actWant=false; prices=null; orders=[]; pools=[]; claims=[]; ordersFailed=false; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
     hold=false; hidePrices=false; locked=false; payDue=null; liveAt='';
     parkMonths(); out.textContent=''; at=0; devNote=''; drawDevice();
     mfil.textContent=''; mfil.hidden=true; mfPick=null; mfnote.textContent='';
@@ -4113,7 +4118,7 @@ const CLIENT_JS = `
     }
     /* S4 4.8: THE STAMP SAYS WHEN THE LIST WAS WRITTEN, "Prices as at Thu 24 Sep, 11:59" in Kuala Lumpur, where "for the week
        of" stayed on an open page for good; a list sealed before it carried a time keeps its week. Every size is a tap. */
-    var tapTo=!view&&!hold;
+    var tapTo=!ro()&&!hold;
     bsRows=[]; bsPanes=[]; supPanes={};
     pPrices.appendChild(el('p','lead',tw((prices.at&&pricesAt(prices.at)?'pr.asAt':'pr.week')+(tapTo?'Tap':''),
       {d:Dd(pricesAt,prices.at), w:prices.week&&prices.week.label||''})));
@@ -4164,7 +4169,7 @@ const CLIENT_JS = `
      ordered from here (his read-only view, the overdue gate) */
   function wayDraw(){
     var pw=document.getElementById('pWay'); if(!pw) return;
-    var w=wayNow(), tapTo=!view&&!hold;
+    var w=wayNow(), tapTo=!ro()&&!hold;
     pw.textContent=''; pw.hidden=!w; if(!w) return;
     var pl=w.place.trim();
     pw.appendChild(el('span','pway__t',w.mode==='deliver'?(pl?tw('pr.wayDeliv',{p:pl}):tw('pr.wayDelivNone')):tw('pr.wayColl')));
@@ -4185,7 +4190,7 @@ const CLIENT_JS = `
   function bsTapsOf(p){ var t=(draft.bkTaps||{})[p]||{}, s=0, k=Object.keys(t); k.forEach(function(q){ s+=(+q)*t[q]; }); return k.length&&Math.abs(s-bsOf(p))<1e-6?t:null; }
   function bsSet(p,amt){ draft.bk=draft.bk||{}; if(amt>1e-9) draft.bk[p]=String(+amt.toFixed(6)); else { delete draft.bk[p]; if(draft.bkTaps) delete draft.bkTaps[p]; } }
   function bsDrop(p){ bsSet(p,0); }
-  function bsOn(){ return !view&&!hold&&!hidePrices; }
+  function bsOn(){ return !ro()&&!hold&&!hidePrices; }
   function bsCanAdd(P,q){ return bsOn()&&openN()<OMAX&&priceAt(P,+(bsOf(P.product)+(+q)).toFixed(6))!=null; }
   function bsAdd(P,q){
     var box=el('span','szadd'), w=pshape(P.product)+' '+unitsOf(q,P.unit);
@@ -4247,7 +4252,7 @@ const CLIENT_JS = `
     if(had) try{ go.focus({preventScroll:true}); }catch(e){}
   }
   function bsReview(go){
-    var ls=bsLines(); if(!ls.length||ls.some(function(x){ return x.t==null; })||view||hold||!lapse.hidden) return;
+    var ls=bsLines(); if(!ls.length||ls.some(function(x){ return x.t==null; })||ro()||hold||!lapse.hidden) return;
     draft.pick={}; ls.forEach(function(x){ draft.pick[x.P.product]=String(x.a); });
     draft.src='basket'; draft.sheetKeep=''; draft.amend=''; draft.pool='';
     sheetOpen(null,null,go);
@@ -4401,7 +4406,7 @@ const CLIENT_JS = `
   /* a size the sheet may hold: priced, or past the grid's max for a price to be asked */
   function oCanPick(p,q){ var P=sold().filter(function(x){ return x.product===p; })[0]; return oSoldHas(p,q)||!!P&&overMax(P,q); }
   function sheetOpen(product,q,opener,amend,pool,againOf){
-    if(view||hold||!sold().length||!lapse.hidden) return;
+    if(ro()||hold||!sold().length||!lapse.hidden) return;
     draft.amend=amend?amend.id:'';
     draft.pool=pool||'';   /* a group order is joined from the same sheet: collected, one size, its own request */
     /* 20 Oct 2026: the order this is placed again from, for its line of that product; never an amendment's or a group order's */
@@ -4969,7 +4974,8 @@ const CLIENT_JS = `
       df.appendChild(dl); df.appendChild(di); df.appendChild(el('span','salt-field__hint',tw('sh.wantHint',{n:WANT_DAYS}))); B.appendChild(df);
     }
     /* v751: a line with it, never required; it opens the order's thread. Folded until it is wanted */
-    if(!draft.amend&&(draft.noteOpen||String(draft.say||'').trim())){
+    if(act){ /* his words reach them on the order's thread, which the Desk checks */ }
+    else if(!draft.amend&&(draft.noteOpen||String(draft.say||'').trim())){
       var nf=el('div','salt-field'), nl=el('label','salt-field__label',tw('sh.note')); nl.htmlFor='oSay';
       var ni=el('input','salt-field__input'); ni.id='oSay'; ni.type='text'; ni.maxLength=140; ni.value=draft.say||''; ni.autocomplete='off';
       ni.placeholder=tw('sh.notePh'); ni.setAttribute('data-k','say');
@@ -5181,7 +5187,7 @@ const CLIENT_JS = `
     if(c.mode==='deliver') B.appendChild(el('p','salt-insight',tw('deliv')));
     /* NEGOTIATE (05 Oct 2026): one line, for themselves, asks for a price instead of placing at the list's. The check holds
        nothing to type into, so the figure of their own, optional, is its own step (drawAsk) */
-    var canAsk=one&&!c.amend&&!c.pool&&!c.forFriend&&!a.placed&&!c.sheet;
+    var canAsk=one&&!act&&!c.amend&&!c.pool&&!c.forFriend&&!a.placed&&!c.sheet;
     if(c.lines.some(function(l){ return l.over; })&&!canAsk) B.appendChild(el('p','salt-insight salt-insight--copper',tw('sh.askOne')));
     var F=osh.foot, was=c.lines.some(function(l){ return l.was!=null; }), gone=c.lines.some(function(l){ return l.gone; });
     var bk=el('button','salt-ghost',tw('sh.change')); bk.type='button'; bk.id='oBack'; bk.disabled=!!draft.busy; bk.setAttribute('data-k','change');
@@ -5250,9 +5256,10 @@ const CLIENT_JS = `
       /* Negotiate: its own request id, so an ask is never answered with a placing of the same line, or the other way */
       if(ask){ body.ask=true; if(!l.askRid) l.askRid=mintRid(); body.rid=l.askRid; if(fig!=null) body.propose=+fig.toFixed(2); }
       if(c.amend){ delete body.note; delete body.sheet; delete body.total; delete body.unit; }
+      if(act) delete body.note;   /* v1377: his Place carries no note */
       /* a group order is joined, not placed: its size is the pool's, it is collected, and the Worker makes the one order */
       if(c.pool) body={q:l.q,total:l.total,unit:l.rate,digest:c.digest,rid:l.rid,forFriend:!!(assoc&&c.forFriend)};
-      var r=await api(c.pool?'/pools/'+encodeURIComponent(c.pool)+'/join':c.amend?'/orders/'+encodeURIComponent(c.amend)+'/amend':'/orders',body);
+      var r=act&&!c.pool&&!c.amend?await actPlace(user,body):await api(c.pool?'/pools/'+encodeURIComponent(c.pool)+'/join':c.amend?'/orders/'+encodeURIComponent(c.amend)+'/amend':'/orders',body);
       if(mine!==ticket) return;
       if(r.status===409&&(r.body.code==='pricesMoved'||r.body.error==='prices moved')){ draft.busy=false; await pricesMoved(r.body.prices); if(mine!==ticket) return; sheetDraw(); return; }
       /* a retry the Worker already has on this sheet (its request id not yet read back on the kv road) is placed */
@@ -5261,9 +5268,9 @@ const CLIENT_JS = `
         draft.busy=false;
         draft.snote=wErr(r.body,'sh.notPlaced');
         /* a pool that closed, or one they are in already, is read again so Home says so */
-        if(c.pool&&r.status===409){ await loadOrders(); if(mine!==ticket) return; drawHome(); }
+        if(c.pool&&r.status===409){ await ordersAgain(); if(mine!==ticket) return; drawHome(); }
         /* S4 4.6: a refusal that the open orders explain (placed from another phone meanwhile) turns to the limit itself */
-        if(r.status===400){ await loadOrders(); if(mine!==ticket) return; drawOrder();
+        if(r.status===400){ await ordersAgain(); if(mine!==ticket) return; drawOrder();
           if(!c.amend&&openN()>=OMAX&&!c.lines.some(function(x){ return x.placed; })){ draft.step='limit'; draft.check=null; draft.snote=''; } }
         sheetDraw(); return;
       }
@@ -5278,7 +5285,7 @@ const CLIENT_JS = `
     draft.againOf=''; draft.againProd='';
     draft.asked=!!ask; draft.sent=c.lines[0].placed==='placed'?'':c.lines[0].placed; draft.sheetKeep=''; draft.step='sent'; draft.check=null; draft.say=''; draft.noteOpen=false; draft.pushNote=''; draft.forFriend=null; draft.when=''; draft.wantBy='';
     sheetDraw();
-    await loadOrders(); if(mine!==ticket) return;
+    await ordersAgain(); if(mine!==ticket) return;
     drawOrder();
     if(c.pool) drawHome();
   }
@@ -5317,7 +5324,7 @@ const CLIENT_JS = `
     var top=el('div','otop'); top.id='oTop'; oTopEl=top;
     /* S7 7.1: the header names the place, Orders; over the line the page below it still says what it is */
     if(hold) top.appendChild(el('h2',null,tw('ord.due')));
-    if(view) top.appendChild(el('p','lead',tw('ord.view')));
+    if(view) top.appendChild(el('p','lead',tw(act?'ord.act':'ord.view')));
     if(hold){
       /* S6 6.7: what is past its term, each part with the day it fell due, and one Pay for it */
       var dueBox=el('div','pane salt-glass-card salt-glass-card--radius-md'), od=odNow(), left=odLeft();
@@ -5342,7 +5349,7 @@ const CLIENT_JS = `
       /* 24 Sep 2026: the note was drawn in the order form alone, which this page never shows */
       if(draft.note) dueBox.appendChild(statusLine(draft.note));
       top.appendChild(dueBox);
-    } else if(view){
+    } else if(ro()){
       /* no order form on his read-only view */
     } else if(!sold().length){
       top.appendChild(el('p','lead',noOrderLine()));
@@ -5638,7 +5645,7 @@ const CLIENT_JS = `
      over in full whose size is still on their list, never a withdrawn, declined or group order, and nothing where nothing is ordered
      from here (his read-only view, the overdue gate) */
   function oAgainOk(o){
-    return !!o&&!view&&!hold&&!hidePrices&&movedAll(o)&&o.status!=='cancelled'&&o.status!=='declined'&&!o.pool&&oSoldHas(o.product,o.qty);
+    return !!o&&!ro()&&!hold&&!hidePrices&&movedAll(o)&&o.status!=='cancelled'&&o.status!=='declined'&&!o.pool&&oSoldHas(o.product,o.qty);
   }
   function oAgainOf(o){ return {product:o.product, q:o.qty, mode:o.mode==='deliver'?'deliver':'collect', place:o.mode==='deliver'?String(o.place||''):'', forFriend:!!o.forFriend, id:o.id}; }
   /* on the order's screen: one Pill, and today's figure off the list, never what it came to then */
@@ -6331,6 +6338,7 @@ const CLIENT_JS = `
     return Math.max(0,+(od-got).toFixed(2)); }
   /* S7 7.1: the places keep their names over the line; Home leads with what to pay, and Orders is the payment page */
   function setHold(){ hold=odLeft()>0.004&&!(sentWaiting()>0.004); var st=stageNow(), was=hidePrices; hidePrices=st>=2; locked=st>=3;
+    if(act){ hold=false; hidePrices=false; locked=false; }   /* v1377: their hold does not stop his order for them (his answer D) */
     if(was!==hidePrices&&(hidePrices||prices)) drawPrices();
     if(assoc&&rewardsEl) grey(rewardsEl,locked); }
   /* greyed out and out of reach: seen, never tapped or tabbed into */
@@ -6664,12 +6672,12 @@ const CLIENT_JS = `
      the claim says Slip sent, and no longer kept after its SLIP_DAYS. No key filed, no slip is offered. ---- */
   var SLIPKEY, SLIP_PX=1600, SLIP_BYTES=1500000, SLIP_DAYS=30;
   function slipKeyLoad(){
-    if(SLIPKEY!==undefined||view) return;
+    if(SLIPKEY!==undefined||ro()) return;
     SLIPKEY=null;   /* asked once a visit */
     api('/slip/key').then(function(r){ var k=r.body&&r.body.ok&&r.body.key; if(!k) return; SLIPKEY=k; if(PS&&PS.step==='check') drawPay(); if(osh&&(draft.step==='form'||draft.step==='spot')) sheetDraw(); });
   }
   /* 2 Nov 2026: Place asks again when the visit's one ask brought no key (api answers a failure, it never throws) */
-  async function slipKeyNow(){ if(view) return; var r=await api('/slip/key'), k=r.body&&r.body.ok&&r.body.key; if(k) SLIPKEY=k; }
+  async function slipKeyNow(){ if(ro()) return; var r=act?await actKey():await api('/slip/key'), k=r.body&&r.body.ok&&r.body.key; if(k) SLIPKEY=k; }
   async function slipSeal(pub,bytes,info){
     var S=crypto.subtle, E={name:'ECDH',namedCurve:'P-256'}, iv=crypto.getRandomValues(new Uint8Array(12));
     var eph=await S.generateKey(E,false,['deriveBits']);
@@ -7093,7 +7101,7 @@ const CLIENT_JS = `
      each opening the sheet with that way chosen (at the limit, the limit step, as every sheet does). Nothing is drawn where nothing can be
      ordered from here: his read-only view, the overdue gate, a list with nothing priced */
   function homeStart(){
-    var box=el('div'); if(!bundle||view||hold||!sold().length) return box;
+    var box=el('div'); if(!bundle||ro()||hold||!sold().length) return box;
     box.appendChild(hHead(tw('sh.new')));
     var g=el('div','salt-options__grid salt-options__grid--2'), w=wayNow();
     [['collect','sh.collect','hs.coll'],['deliver','sh.deliver',w&&w.place.trim()?'hs.delivLast':'hs.delivNew']].forEach(function(x){
@@ -7122,7 +7130,7 @@ const CLIENT_JS = `
     return box;
   }
   function homeAgain(){
-    var box=el('div'); if(!bundle||view||hold||!sold().length) return box;
+    var box=el('div'); if(!bundle||ro()||hold||!sold().length) return box;
     var list=againList(), start=!list.length;
     if(start) sold().forEach(function(P){ P.sizes.slice(0,2).forEach(function(z){ list.push({product:P.product, q:z.q, start:true}); }); });
     box.appendChild(hHead(tw(!start?'ha.again':fresh()?'ha.first':'ha.start')));
@@ -7273,6 +7281,8 @@ const CLIENT_JS = `
       box.appendChild(b);
     });
   }
+  /* v1377: their orders read again after a Place: their own read on a session, his route on Order as them */
+  async function ordersAgain(){ if(act) return loadView(user); return loadOrders(); }
   async function loadOrders(){
     if(!session) return;
     var mine=ticket;
@@ -7309,7 +7319,7 @@ const CLIENT_JS = `
     else if(JSON.stringify(thread)!==thWas) thAfter();   /* Step 7: a line on the thread, with no order moved */
   }
   async function loadCounterHours(){
-    if(!session) return;
+    if(!session&&!act) return;
     var before=JSON.stringify([counterHours,hoursError]);
     try{
       var response=await fetch('/hours',{cache:'no-store',redirect:'manual'});
@@ -7775,7 +7785,7 @@ const CLIENT_JS = `
     prices=x.prices; assoc=x.assoc; card=x.card; curCk=ck||null;
     user=u; session=body.session||'';
     if(!same){ liveStop(); orders=[]; pools=[]; claims=[]; draft={}; closePay(true); payDue=null; liveAt=''; ordersFailed=false; readAt=0; thClose(); thPut(null); thOut=[]; thSig=''; thWhy=''; }
-    view=!!(OWNER&&body.byMaster);
+    view=!!(OWNER&&body.byMaster); act=view&&actWant;
     if(linkBox) linkBox.hidden=true;
     if(opening) opening.hidden=true;
     lapse.hidden=true; closeSignedOut(true);
@@ -7797,7 +7807,7 @@ const CLIENT_JS = `
   }
   async function follow(stale){
     if(session){ await loadOrders(); await loadCounterHours(); if(stale()) return false; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); liveStart(); if(TESTS.indexOf(user)>=0) bullRead(); }
-    else if(view){ await loadView(user); if(stale()) return false; }   /* stmt/owner.js: his route alone carries it */
+    else if(view){ await loadView(user); if(act) await loadCounterHours(); if(stale()) return false; }   /* stmt/owner.js: his route alone carries it; v1377: Order as them reads the Counter's hours as theirs does */
     setHold(); drawOrder(); drawPayHead();   /* S6 6.5 and 6.7: the claims come with the orders, and may lift the hold */
     payNumLoad();   /* Phase 7b: the numbers the pay sheet shows, ready before it opens; asked on a session alone */
     if(session) payqBack();   /* S6 fix: a question the last open left unanswered */
