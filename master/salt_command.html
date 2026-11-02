@@ -11316,7 +11316,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1374","d":"02 Nov 2026","t":"ORDERS ON SALT ADMIN: ROWS THAT FIT, CHIPS AND COUNTS THAT AGREE","n":["<b>ROWS THAT FIT.</b> From 860 to 1080px the order list stands beside the open order, and its move button no longer covers the row's way and code: the button stands under the two lines.","<b>COLLECTED, NOT TO HAND OVER.</b> A ready order whose goods are all out says Collected or Delivered on its chip, with the day they went.","<b>ENDED ADDS UP.</b> The Ended line counts every order shown into declined, cancelled, written off or closed on the book, so its parts equal its total.","No route, body, price or stored shape changed."]}];
+const evolution=[{"v":"v1375","d":"02 Nov 2026","t":"DELIVER WITH ONE SAVED SPOT: REVIEW IS READY","n":["<b>THE ONLY SPOT IS PICKED.</b> A customer with exactly one saved spot who chooses Deliver now has it picked as the sheet opens, so Review is live at once; before, Review waited on a tap nothing asked for and the order could not go on. With two or three saved spots none is picked, as Counter Batch C settled.","Counter page only: no route, price, body or stored shape changed."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11464,7 +11464,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='02 Nov 2026, 04:27 KL';
+const LAST_UPDATED='02 Nov 2026, 06:58 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

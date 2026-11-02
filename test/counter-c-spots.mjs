@@ -7,7 +7,7 @@
  * mutation (test/counter-c-spots.mutations.json, tools/section.mjs).
  *   1  with none saved, the list holds Add a spot alone and Review waits, saying why
  *   2  a spot added and saved is picked, kept under this account's key, and Review goes
- *   3  a new sheet opens with nothing picked and Review waits; picking fills the area the order carries
+ *   3  one saved spot is picked on opening and its area reaches the check; 3b two or more open with none picked, Review waiting
  *   4  each spot's Edit is named for it and is 44px; the step's own controls are 44px
  *   5  at three saved, Add a spot gives way to the line saying so
  *   6  Remove drops one, with no confirm
@@ -57,9 +57,17 @@ export async function run({ ok, pageWork }) {
     const s0 = A.d.querySelector('#osheet [data-k="spot:0"]'); if (s0) { s0.click(); await A.settle(); }
     review(A).click(); await A.settle();
     const chk = txt(A.d.getElementById("osheet"));
-    ok(fresh.length === 1 && !fresh[0].on && list(A)[0] === undefined && /Veloria/.test(chk),
-      "a new sheet opens with nothing picked; picking the spot carries its area to the check: " + J(fresh));
+    ok(fresh.length === 1 && fresh[0].on && /Veloria/.test(chk),
+      "a new sheet with exactly one spot saved opens with it picked (2 Nov 2026: Review waited on a tap nothing asked for), and its area reaches the check: " + J(fresh));
     await close(A);
+    /* ---- 3b ---- */
+    const kept1 = A.w.localStorage.getItem(KEY);
+    A.w.localStorage.setItem(KEY, JSON.stringify([{ id: "a1", label: "Shop", place: "Veloria" }, { id: "a2", label: "Home", place: "Orlen" }]));
+    await sheet(A);
+    const two = list(A);
+    ok(two.length === 2 && two.every((x) => !x.on) && review(A).disabled && /Pick where it is going, or add a spot\./.test(txt(A.d.querySelector("#osheet .ototal"))),
+      "with two spots saved a new sheet still opens with none picked and Review waits, saying why (Batch C, his answer 4): " + J(two));
+    await close(A); A.w.localStorage.setItem(KEY, kept1);
     /* ---- 4 ---- */
     await sheet(A);
     const ed = A.d.querySelector('#osheet [data-k="spotedit:0"]');
