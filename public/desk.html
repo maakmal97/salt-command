@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="a93dfabe57636441";
+var SALT_BUILD_ID="1e3694b6897fdb0b";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -2898,6 +2898,22 @@ label.salt-field__label {
 .salt-table--plain tbody tr:last-child th, .salt-table--plain tbody tr:last-child td { border-bottom: 0; }
 .salt-table--plain tbody tr:hover td, .salt-table--plain tbody tr:hover th { background: var(--salt-glass); }
 .salt-table--plain .salt-table__left { text-align: left; }
+/* 1.22.0 (his words of 31 Oct and 2 Nov 2026, "beautiful and thoughtfully designed and consistent"): THE TABLE ON SHOP'S GRID, for a
+   list a phone draws as settings rows. Body rows are 56px like a settings row, the outer cells sit on the 16px text line, a row that
+   opens takes the pointer and a brass ring when its link has focus, and a group's head stands in its own row, drawn as a settings head.
+   A cell's control (a ghost) sits at the cell's right edge; a cell of tags lays them in one line. */
+.salt-table--rows tbody th, .salt-table--rows tbody td { height: 56px; }
+.salt-table--rows tr > :first-child { padding-left: 16px; }
+.salt-table--rows tr > :last-child { padding-right: 16px; }
+.salt-table--rows tbody th a, .salt-table--rows tbody td a { color: inherit; text-decoration: none; }
+.salt-table--rows tbody tr:focus-within > * { background: var(--salt-glass); }
+.salt-table--rows tbody a:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; border-radius: 4px; }
+.salt-table--rows tr.salt-table__group > th { height: 40px; padding-top: 16px; padding-bottom: 6px; vertical-align: bottom; border-bottom: 1px solid var(--salt-line-faint); }
+.salt-table--rows tbody tr.salt-table__group:hover > th { background: transparent; }
+.salt-table--rows tr.salt-table__group:first-child > th { padding-top: 6px; }
+.salt-table--rows tr.salt-table__group .salt-settings__head { display: block; margin: 0; }
+.salt-table--rows .salt-table__tags { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; }
+.salt-table--rows .salt-table__act { display: flex; justify-content: flex-end; align-items: center; }
 
 /* ---- Logo ---- */
 
@@ -3226,6 +3242,15 @@ label.salt-field__label {
 .salt-settings__mark { flex: none; display: inline-flex; color: var(--salt-mist-bright); }
 .salt-settings__row--text .salt-settings__label { white-space: normal; overflow-wrap: anywhere; font-size: var(--salt-text-md); line-height: 1.45; }
 .salt-settings__row--muted .salt-settings__label { color: var(--salt-mist-bright); }
+/* 1.22.0: a row's name over a second line (an order: its tag and code, then what it is and how long it has waited), as Mail lays out a
+   message; the whole text is the row's link. The second line is mist, copper when it says why the row waits on him, ember when late. */
+.salt-settings__text { flex: 1 1 auto; min-width: 0; min-height: 44px; display: flex; flex-direction: column; justify-content: center; gap: 2px; color: inherit; text-decoration: none; }
+.salt-settings__text .salt-settings__label { display: flex; align-items: center; gap: 8px; }
+.salt-settings__text:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; border-radius: 4px; }
+.salt-settings__sub { min-width: 0; font-family: var(--salt-font-display); font-size: var(--salt-text-sm); color: var(--salt-mist-bright); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.salt-settings__sub--why { color: var(--salt-copper); }
+.salt-settings__sub--late { color: var(--salt-ember); }
+.salt-settings__value--lg { font-size: var(--salt-text-md); color: var(--salt-salt); }
 .salt-settings__cell { padding: 12px 0; border-top: 1px solid var(--salt-line-faint); }
 .salt-settings__cell:first-child { border-top: 0; }
 .salt-settings__cell > .salt-field__input { display: block; width: 100%; box-sizing: border-box; background: transparent; border: 0; padding: 0; min-height: 96px; resize: vertical; }
@@ -3814,6 +3839,8 @@ label.salt-field__label {
 .salt-producttag--rice { --salt-hue: var(--salt-product-rice); }
 .salt-producttag--gas { --salt-hue: var(--salt-product-gas); }
 .salt-producttag--prep { --salt-hue: var(--salt-product-prep); }
+/* 1.22.0: the books past the first, folded to a count (+2) beside the first tag; the row's name reads every book out */
+.salt-producttag--more { color: var(--salt-mist-bright); letter-spacing: 0.04em; }
 .salt-producttag__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--salt-hue, currentColor); box-shadow: 0 0 6px -1px currentColor; flex: 0 0 auto; }
 
 /* ---- Meter: a bar is a figure. A well-inset track, a lit fill, an optional marker
@@ -11494,7 +11521,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1375","d":"02 Nov 2026","t":"DELIVER WITH ONE SAVED SPOT: REVIEW IS READY","n":["<b>THE ONLY SPOT IS PICKED.</b> A customer with exactly one saved spot who chooses Deliver now has it picked as the sheet opens, so Review is live at once; before, Review waited on a tap nothing asked for and the order could not go on. With two or three saved spots none is picked, as Counter Batch C settled.","Counter page only: no route, price, body or stored shape changed."]}];
+const evolution=[{"v":"v1376","d":"02 Nov 2026","t":"SALT ADMIN'S ORDERS AND CUSTOMERS ON HIS CANVAS","n":["<b>ORDERS IN FOUR PARTS.</b> One Segment, To do, Open, Done and Ended, replaces the nine text tabs. To do holds every order that waits on you; Open lists Agreed, Ready and Out or paid under their own heads; Payments, Group orders and Ledger check are rows under More. Approve stays on the bar.","<b>ONE TABLE FROM 1080PX.</b> Orders and Customers are one plain table on Shop's grid: 56px rows, words left, figures right, a code that opens the row, a sheet's books folded to the first tag and +N. On a phone each group is one settings list, a row's name over a second line saying what and how long.","<b>QUIET MOVES.</b> A row's move (Agree, Ready, Handed, Send, Message) is a lit ghost; the one filled pill stays in the open order. Refresh and the Reading line leave the list's foot; Approve's line no longer sits on Reading while hidden.","<b>CUSTOMERS FIXED.</b> Words no longer right-align, the buttons are no longer clipped, the table takes the full width with nothing open, and the way back from an account is one round button, as on Record's forms. A tap anywhere on a row opens it.","Old addresses still land: #orders/placed on To do, /confirmed, /ready and /paid on Open. salt-ds 1.22.0. No route, body, price or stored shape changed."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11642,7 +11669,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='02 Nov 2026, 06:58 KL';
+const LAST_UPDATED='02 Nov 2026, 16:55 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

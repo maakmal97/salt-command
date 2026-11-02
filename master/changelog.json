@@ -1,5 +1,17 @@
 [
  {
+  "v": "v1376",
+  "d": "02 Nov 2026",
+  "t": "SALT ADMIN'S ORDERS AND CUSTOMERS ON HIS CANVAS",
+  "n": [
+   "<b>ORDERS IN FOUR PARTS.</b> One Segment, To do, Open, Done and Ended, replaces the nine text tabs. To do holds every order that waits on you; Open lists Agreed, Ready and Out or paid under their own heads; Payments, Group orders and Ledger check are rows under More. Approve stays on the bar.",
+   "<b>ONE TABLE FROM 1080PX.</b> Orders and Customers are one plain table on Shop's grid: 56px rows, words left, figures right, a code that opens the row, a sheet's books folded to the first tag and +N. On a phone each group is one settings list, a row's name over a second line saying what and how long.",
+   "<b>QUIET MOVES.</b> A row's move (Agree, Ready, Handed, Send, Message) is a lit ghost; the one filled pill stays in the open order. Refresh and the Reading line leave the list's foot; Approve's line no longer sits on Reading while hidden.",
+   "<b>CUSTOMERS FIXED.</b> Words no longer right-align, the buttons are no longer clipped, the table takes the full width with nothing open, and the way back from an account is one round button, as on Record's forms. A tap anywhere on a row opens it.",
+   "Old addresses still land: #orders/placed on To do, /confirmed, /ready and /paid on Open. salt-ds 1.22.0. No route, body, price or stored shape changed."
+  ]
+ },
+ {
   "v": "v1375",
   "d": "02 Nov 2026",
   "t": "DELIVER WITH ONE SAVED SPOT: REVIEW IS READY",
