@@ -264,24 +264,6 @@
   "replace": "function makerAskTag(order,btn,kind){ return btn; }"
  },
  {
-  "name": "the tick's input is 18px",
-  "file": "stmt/page.js",
-  "find": "width:var(--salt-tap);height:var(--salt-tap);margin:0;opacity:0;cursor:pointer}",
-  "replace": "width:18px;height:18px;margin:0;opacity:0;cursor:pointer}"
- },
- {
-  "name": "the tick's input is taken out of the page",
-  "file": "stmt/page.js",
-  "find": "margin:0;opacity:0;cursor:pointer}",
-  "replace": "margin:0;display:none;cursor:pointer}"
- },
- {
-  "name": "the tick's label is not a 44px target",
-  "file": "stmt/page.js",
-  "find": "align-self:flex-start;width:fit-content;min-height:var(--salt-tap);min-width:var(--salt-tap);padding-right:8px;",
-  "replace": "align-self:flex-start;width:fit-content;min-height:0;min-width:0;padding-right:8px;"
- },
- {
   "name": "Mark as sent is a plain button again",
   "file": "stmt/owner.js",
   "find": "var mark=ghost(['Mark as sent','acct.sent']);",

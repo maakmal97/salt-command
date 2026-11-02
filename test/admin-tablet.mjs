@@ -141,7 +141,9 @@ export async function run({ ok, pageWork }) {
       try { await drawEverything(every); fields = [...every.d.querySelectorAll("label.maker-field")].filter((f) => !f.closest("#makerInputs")); } finally { every.w.close(); }
       const kind = (f) => (f.querySelector("input,select") || { type: "" }).type, SHORT = ["number", "date", "time"];
       const marked = fields.filter((f) => f.classList.contains("maker-field--short")), others = fields.filter((f) => !f.classList.contains("maker-field--short"));
-      ok(rowsOk && marked.length >= 1 && marked.every((f) => SHORT.includes(kind(f))) && others.some((f) => kind(f) === "text"),   /* the cards also hand-build a few number fields that carry no mark */
+      /* v1377: Order for them's own box, the one form outside Record with a marked field and a text field, is gone (it opens their page), so
+         what holds is that any field marked short is a number, a date or a time */
+      ok(rowsOk && marked.every((f) => SHORT.includes(kind(f))) && !others.some((f) => f.classList.contains("maker-field--short")),   /* the cards also hand-build a few number fields that carry no mark */
         "the sale and new customer forms are rows of lists with no field marked short, and the fields that keep their label above mark the short ones, a number, a date or a time, and no other text or select field: " + rowsOk + " " + JSON.stringify(fields.map((f) => [kind(f), f.classList.contains("maker-field--short")])));
     } catch (e) { ok(false, "the form stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
   }

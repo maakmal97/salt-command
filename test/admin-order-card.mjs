@@ -356,12 +356,7 @@ export async function run({ ok, pageWork }) {
     ok(!!sent && sent.tagName === "BUTTON" && sent.textContent === "Mark as sent" && !sent.hidden && sent.classList.contains("salt-ghost") && !sent.closest("label.tick")
       && !d.querySelector("#aopen input[type=checkbox]") && !!ghost && prop(ghost, "min-height") === "var(--salt-tap)" && prop(ghost, "min-width") === "var(--salt-tap)",
       "Sent is no checkbox: Mark as sent is a ghost button of the 44px token while it is not sent: " + (sent && sent.outerHTML));
-    const tick = ruleOf(".adm .atick")[0], input = ruleOf(".adm .atick input")[0], drawn = ruleOf(".adm .atick .tickbox")[0];
-    ok(!!input && prop(input, "width") === "var(--salt-tap)" && prop(input, "height") === "var(--salt-tap)" && prop(input, "position") === "absolute" && !/none|hidden/.test(prop(input, "display") + prop(input, "visibility")),
-      "the input measures the tap: the 44px token both ways, laid over the drawn box and never taken out of the page: " + (input && input.cssText));
-    ok(!!tick && prop(tick, "position") === "relative" && prop(tick, "min-height") === "var(--salt-tap)" && prop(tick, "min-width") === "var(--salt-tap)"
-      && !!drawn && prop(drawn, "width") === "18px" && prop(drawn, "height") === "18px",
-      "its label is a 44px target as well, round the 18px box it draws: " + (tick && tick.cssText));
+    /* v1377: the tick rules styled only Order for them's own box, gone with it; Mark as sent above is a ghost of the 44px token */
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 5. THE HEAD IS PROGRESS AND MONEY RECEIVED IS ONE BLOCK (15 Oct 2026): an agreed order's head reads Owed, Paid, Handed and Says sent; Money received holds the

@@ -24232,8 +24232,9 @@ await (async () => {
   const bare = await show(null);
   /* 10 Oct 2026: confirm, his Accept sent for their yes, is the twentieth kind, its one body the twenty-eighth banner; 16 Oct 2026 (plan 4):
      corrected, a step taken back, the twenty-first, its three cases the thirty-first; 18 Oct 2026 (Counter Batch A):
-     point-moved, a collection point changed, the twenty-second, its one body the thirty-second */
-  ok(!own.length && kinds.length === 22 && seen.length === 32 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
+     point-moved, a collection point changed, the twenty-second, its one body the thirty-second; 02 Nov 2026 (Order as them): placed,
+     an order he placed for them, the twenty-third, its one body the thirty-third */
+  ok(!own.length && kinds.length === 23 && seen.length === 33 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
     && bare && bare[0] === WD.EN["news.order"] && bare[1] === WD.EN["news.update"],
     "the banner writes no words of its own and shows each kind's title and each case's body, and the fixed words, from the table: "
     + JSON.stringify({ own, seen: seen.filter(([, s, w]) => JSON.stringify(s) !== JSON.stringify(w)) }));

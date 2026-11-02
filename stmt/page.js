@@ -1372,18 +1372,6 @@ body.ended>*:not(#aEnded){display:none}
 .adm .anote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm .anote:empty{display:none}
 .adm .anote.bad{color:var(--salt-ember)}
-/* 12 OCT 2026 (PHASE 2a): the tick's input is the tap, 44px both ways (his rule 6: a tap target is 44px, measured on the control, not on its label),
-   laid unseen over the 18px box drawn beside it, which shows the state: a ring, filled with a mark when ticked. 13 OCT 2026 (stress): for every tick of his page (atick),
-   not the account card's alone (For a friend, on Order for them, measured 102 by 19) */
-.adm .atick{position:relative;display:flex;align-items:center;gap:0;align-self:flex-start;width:fit-content;min-height:var(--salt-tap);min-width:var(--salt-tap);padding-right:8px;
-  font-size:var(--salt-text-sm);color:var(--salt-text-muted);cursor:pointer}
-.adm .atick input{position:absolute;left:0;top:0;width:var(--salt-tap);height:var(--salt-tap);margin:0;opacity:0;cursor:pointer}
-.adm .atick .tickbox{flex:none;box-sizing:border-box;width:18px;height:18px;margin:13px;border:2px solid var(--salt-text-muted);border-radius:4px}
-.adm .atick input:checked+.tickbox{background:var(--salt-verdigris);border-color:var(--salt-verdigris)}
-.adm .atick input:checked+.tickbox::after{content:"";display:block;width:4px;height:8px;margin:0 0 0 4px;border:solid var(--salt-ink-on-accent);border-width:0 2px 2px 0;transform:rotate(45deg)}
-.adm .atick input:focus-visible+.tickbox{outline:2px solid var(--salt-brass);outline-offset:2px}
-.adm .atick input:disabled+.tickbox{border-style:dashed}
-.adm .atick input:disabled{cursor:not-allowed}
 .adm .astory{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 /* S9 9.4: the phones and computers under their own head, the count at its end */
 .adm .astory .dhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:14px}
@@ -2630,7 +2618,7 @@ const CLIENT_JS = `
   /* 24 Sep 2026 (M22): an account he opened under the master is READ ONLY. It has no session, so its
      orders and links come from his own gated route, and nothing on it places, pays, sends or withdraws. */
   var view=false;
-  /* v1377, ORDER AS THEM (his answers A and D of 02 Nov 2026): his read-only view with ordering live. Salt Admin's Order for them sets
+  /* v1377, ORDER AS THEM (his answers A and D of 02 Nov 2026): his read-only view with ordering live. His Order for them sets
      actWant before it opens their account by the master; Prices, the basket, Home's starts, Order again and the order sheet then work as
      theirs do, Place going through his own route (stmt/owner.js actPlace), and their hold does not stop him. Everything else stays read
      only: no Pay, claim, Cancel, thread, device or passkey. ro() is the read-only test the ordering guards read. */
