@@ -700,7 +700,7 @@ export const OWNER_JS = `
       });
       wrap.appendChild(table); card.appendChild(wrap); prev.appendChild(card);
       var usual=j.rows.filter(function(r){ return r.usual; })[0];
-      if(usual) prev.appendChild(el('p','salt-settings__foot','Their usual is '+units(usual.q)+'. It goes to Approve first.'));
+      if(usual) prev.appendChild(el('p','salt-settings__foot','Their usual is '+units(usual.q)+', and a change goes to Approve first.'));
     }
     function pctPaint(){
       var whole=st.pct[st.book];
@@ -761,7 +761,7 @@ export const OWNER_JS = `
     m.style.setProperty('--salt-fill',String(Math.max(0,Math.min(100,Math.round(r.progress/r.step*100))))); rowOf(L, m, 'ameterrow');
     acctLine(L,'Step, '+r.times+' units’ cost',rmShort(r.step)); acctLine(L,'Given under Set Price',rmShort(r.given)); acctLine(L,'A unit, net to you',rmShort(r.net));
     box.appendChild(L);
-    box.appendChild(el('p','salt-settings__foot','Counted once paid. They see no figure.'));
+    box.appendChild(el('p','salt-settings__foot','Counted once paid, and they see no figure.'));
   }
   function partnerSection(a, partner, waiting){
     /* 3 Nov 2026: where they stand a row, Make partner an action row under it that still asks with a second tap, what it means the grey line */
@@ -811,7 +811,8 @@ export const OWNER_JS = `
         var go=actOn(el('button','salt-settings__row salt-settings__row--action aloan'),'acct.repay',item.rid); go.type='button'; go.setAttribute('data-loan', item.rid);
         var tx=el('span','salt-settings__text');
         tx.appendChild(el('span','salt-settings__label',(item.direction==='in'?'Borrowed':'Lent')+(item.value!=null?' '+fmt(item.value):'')));
-        var sub=[on, item.repaid!=null?'repaid '+fmt(item.repaid):''].filter(Boolean).join(', ');
+        /* what was lent and what is left say what was repaid; the second line is the day, or what was repaid when no day is kept */
+        var sub=on||(item.repaid!=null?'Repaid '+fmt(item.repaid):'');
         if(sub) tx.appendChild(el('span','salt-settings__sub',sub));
         go.appendChild(tx);
         if(item.remaining!=null) go.appendChild(el('span','salt-settings__value',fmt(item.remaining)+' left'));
