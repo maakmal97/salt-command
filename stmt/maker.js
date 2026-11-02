@@ -755,13 +755,17 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
       if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       const parsed = await bodyOf(request);
       if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
-      const fields = ["product", "qty", "mode", "unit", "total", "place", "forFriend", "rid", "week", "digest", "wantBy", "sheet", "slot", "pin", "againOf", "now"];
+      const fields = ["product", "qty", "mode", "unit", "total", "place", "forFriend", "rid", "week", "digest", "wantBy", "sheet", "slot", "pin", "againOf", "now", "on", "buyer"];
       if (Object.keys(parsed.body).some((key) => !fields.includes(key)) || !RID_RE.test(String(parsed.body.rid || ""))
         || typeof parsed.body.digest !== "string" || typeof parsed.body.forFriend !== "boolean")
         return json({ ok: false, error: "Send a quoted order and its request id, without private fields." }, 400);
       /* plan version 3: Handed over and paid now, his alone, for a collected order (a delivery waits on the charge he chooses) */
       if (parsed.body.now !== undefined && (typeof parsed.body.now !== "boolean" || parsed.body.now && parsed.body.mode !== "collect"))
         return json({ ok: false, error: "Handed over and paid now is for an order collected here." }, 400);
+      /* plan version 4 (Fable's F2): a day of the sale only on a sale handed over and paid now, so its handover and its payment take that day too;
+         the order book bounds it (onFaultSite) and the Desk's preview holds it to the book's newest lot */
+      if (parsed.body.on !== undefined && parsed.body.now !== true)
+        return json({ ok: false, error: "A sale is dated another day only when it is handed over and paid now." }, 400);
       if (!env.STMT) return json({ ok: false, error: "no Counter store" }, 503);
       const account = await accountRecord(env, op.u);
       if (!account) return json({ ok: false, error: "account not found" }, 404);

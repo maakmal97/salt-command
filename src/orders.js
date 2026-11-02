@@ -31,7 +31,7 @@ import PRICING_ENGINE from "../engine/pricing.mjs";
 /* S1b: THE ENTRY EACH STAGE MAKES lives in engine/stages.mjs (pure); this reads, calls it, and queues. The builders stay named here for every importer. */
 import { rewardCrossOf, rewardReading, loyalReading, rwdOf, withCredit, rowPaidFor } from "../engine/stages.mjs";
 import { creditFor } from "./credit.js";
-import { rm, chargeOf, priceOf, advanceOf, acceptEntry, siteTwins, twinCandidates, klDate, floorRefusal, ackRowWanted, stageAgainst, jobEntry, againEntry, keyGivenBack,
+import { rm, chargeOf, priceOf, advanceOf, acceptEntry, siteTwins, twinCandidates, klDate, onFault, dayOf, onLive, floorRefusal, ackRowWanted, stageAgainst, jobEntry, againEntry, keyGivenBack,
   handoverTap, receivedTap, cashTap, restateTap, pastRoom, againRoomOrder, claimRows, claimOrderFlight, claimEntry,
   stageAt, keyAfter, closedKey, ledgerKeyOf, partyOnBook, bucketFor, termsFromRow, settledFromRow, rowOut } from "../engine/stages.mjs";
 export { orderKeyFor, partyOnBook, ledgerKeyOf, pendingEntry, payEntry, claimEntry, handoverEntry, redateFrom, closeEntry, closedKey, cancelEntry,
@@ -318,16 +318,42 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
     const typed = e && e.payload && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(e.payload.date || "")) ? e.payload.date : null;
     rows.push({ order: x, day: typed || klDate(new Date(String((e && e.at) || id))) });
   }
-  const tw = siteTwins(agreed, rows, klDate(now));
+  const rowDay = dayOf(agreed, now), onToday = rowDay === klDate(now);
+  const tw = siteTwins(agreed, rows, rowDay);   /* plan version 4: twins on the day the row is dated, his day of the sale included, and said so */
   const keyed = tw.key;
   if (keyed.length) return { ok: false, status: 409, twin: true, error: keyed.every((x) => ["cancelled", "declined"].includes(x.status))
-    ? "an order of theirs that ended today keeps its row at this figure, and the book holds one row of it a day: place it at another size, or tomorrow"
-    : "an equal order of theirs is rowed today at this figure, and the book keeps one row of it a day: change that order to the sum instead" };
+    ? "an order of theirs that ended " + (onToday ? "today" : "on " + rowDay) + " keeps its row at this figure, and the book holds one row of it a day: place it at another size, or " + (onToday ? "tomorrow" : "another day")
+    : "an equal order of theirs is rowed " + (onToday ? "today" : "on " + rowDay) + " at this figure, and the book keeps one row of it a day: change that order to the sum instead" };
   if (tw.fold.length) entry.payload.second = true;
   const book = await (mirror ? mirror() : readBook(env.SALT_LEDGER));
   /* fold 2.2: no snapshot is a mirror being seeded, and the drafter stands down on it; so does the card */
   if (book.version == null) return { ok: false, status: 503, error: "the mirror is being seeded: try again in a minute" };
   const product = o.product || "salt", qty = +o.qty, goods = +(+agreed.total).toFixed(2);
+  /* plan version 4 (Fable's F2): HIS DAY OF THE SALE, held to the book's newest lot of it as well as the Counter's bounds, so the cost and the
+     Floor read on that day are today's; and HIS END BUYER, a code on the roster who is not the associate or a resale account */
+  if (onLive(o, now)) {
+    /* Fable's review: and not before their own newest salt row, which the reward and loyalty walks read in the order paid */
+    let theirs = null;
+    if (product === "salt") for (const s of book.sales || []) if (s && POSITION_ENGINE.ownsCode(code, s.customer) && (s.product || "salt") === "salt")
+      for (const d of [s.date, s.paidOn, POSITION_ENGINE.txDates(s).pOn]) if (typeof d === "string" && (!theirs || d > theirs)) theirs = d;   /* the day the walks read it paid, a Fulfilment's own (Fable's re-check) */
+    const fault = onFault(o.on, klDate(now), ((cogsFor(book, product, null) || {}).basis || {}).date || null, theirs);
+    if (fault) return { ok: false, status: 409, error: fault };
+  }
+  /* Fable's review: TWINS ON THE BOOK ITSELF, a sale typed on the Desk for that day as well as another order's row: one under this row's key is
+     refused with the way on, one equal only under the fold's replay test (party, book, day, size, goods) is a second sale. Never against the
+     order's own row (offered again, or already agreed) */
+  if (!(ctx && ctx.again) && !o.ledgerKey) {
+    const party = partyOnBook(agreed, code), mine = (book.sales || []).filter((s) => s && s.customer === party && (s.product || "salt") === product && s.date === rowDay);
+    const keyTwin = mine.find((s) => POSITION_ENGINE.ovKey(s) === entry.orderKey);
+    if (keyTwin) return { ok: false, status: 409, twin: true, error: "a sale of theirs on the book " + (onToday ? "today" : "on " + rowDay) + (keyTwin.rid ? ", " + keyTwin.rid + "," : "")
+      + " is at this figure, and the book keeps one row of it a day: add this order to that sale instead" };
+    if (mine.some((s) => +s.total === goods && +s.qty === qty)) entry.payload.second = true;
+  }
+  if (o.buyer !== undefined) {
+    const roster = (book.state && book.state.roster) || [];
+    if (!o.forFriend || typeof o.buyer !== "string" || !roster.includes(o.buyer) || POSITION_ENGINE.isBucket(o.buyer) || POSITION_ENGINE.ownerCode(o.buyer) === code)
+      return { ok: false, status: 409, error: "their customer " + o.buyer + " is not a customer on the roster apart from them" };
+  }
   const fl = floorFor(book, product, qty);
   const under = floorRefusal(price, fl, qty);   /* never under the floor at this size (rule 5), engine/stages.mjs */
   if (under) return under;

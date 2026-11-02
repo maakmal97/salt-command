@@ -194,7 +194,7 @@
   {
     "name": "Fable 1: a close at what is out restamps the row's day",
     "file": "engine/stages.mjs",
-    "find": "movedOn: still ? o.movedOn : klDate(at), moved: qty",
+    "find": "movedOn: still ? o.movedOn : dayOf(o, at), moved: qty",
     "replace": "movedOn: klDate(at), moved: qty"
   },
   {

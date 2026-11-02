@@ -1,7 +1,7 @@
 [
- {"name": "his Place takes no sheet", "file": "stmt/maker.js", "find": "\"wantBy\", \"sheet\", \"slot\", \"pin\", \"againOf\", \"now\"];", "replace": "\"wantBy\", \"slot\", \"pin\", \"againOf\", \"now\"];"},
+ {"name": "his Place takes no sheet", "file": "stmt/maker.js", "find": "\"wantBy\", \"sheet\", \"slot\", \"pin\", \"againOf\", \"now\", \"on\", \"buyer\"];", "replace": "\"wantBy\", \"slot\", \"pin\", \"againOf\", \"now\", \"on\", \"buyer\"];"},
  {"name": "his Place is stamped as theirs", "file": "stmt/maker.js", "find": ": await placeOrder(env, op.u, body, \"desk\");\n      if (!result.order) return json({ ok: false, ...result }, result.status || 400);\n      if (tp.pin", "replace": ": await placeOrder(env, op.u, body);\n      if (!result.order) return json({ ok: false, ...result }, result.status || 400);\n      if (tp.pin"},
- {"name": "his Place takes a note", "file": "stmt/maker.js", "find": "\"wantBy\", \"sheet\", \"slot\", \"pin\", \"againOf\", \"now\"];", "replace": "\"wantBy\", \"sheet\", \"slot\", \"pin\", \"againOf\", \"now\", \"note\"];"},
+ {"name": "his Place takes a note", "file": "stmt/maker.js", "find": "\"wantBy\", \"sheet\", \"slot\", \"pin\", \"againOf\", \"now\", \"on\", \"buyer\"];", "replace": "\"wantBy\", \"sheet\", \"slot\", \"pin\", \"againOf\", \"now\", \"on\", \"buyer\", \"note\"];"},
  {"name": "the spot rides on the body", "file": "stmt/maker.js", "find": "      const tp = await takePin(parsed.body);", "replace": "      const tp = { body: parsed.body };"},
  {"name": "the spot is never filed", "file": "stmt/maker.js", "find": "      if (tp.pin && !isTest(op.u)) await keepPin(env, op.u, tp.pin, result.order.pin);\n", "replace": ""},
  {"name": "a bad spot is waved through", "file": "stmt/maker.js", "find": "      if (tp.error) return json({ ok: false, error: tp.error, ...(tp.code ? { code: tp.code } : {}) }, tp.status || 400);\n", "replace": "      if (tp.error) return json({ ok: true, order: {} });\n"},

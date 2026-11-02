@@ -2591,7 +2591,7 @@ const CLIENT_JS = `
      actWant before it opens their account by the master; Prices, the basket, Home's starts, Order again and the order sheet then work as
      theirs do, Place going through his own route (stmt/owner.js actPlace), and their hold does not stop him. Everything else stays read
      only: no Pay, claim, Cancel, thread, device or passkey. ro() is the read-only test the ordering guards read. */
-  var act=false, actWant=false;
+  var act=false, actWant=false, actBuyers=null;   /* plan version 4: their customers' codes, read once on his first A friend */
   function ro(){ return view&&!act; }
   var roster=document.getElementById('roster'), rq=document.getElementById('rq'),
       rlist=document.getElementById('rlist'), rmsg=document.getElementById('rmsg'),
@@ -4363,7 +4363,7 @@ const CLIENT_JS = `
   /* a size the sheet may hold: priced, or past the grid's max for a price to be asked */
   function oCanPick(p,q){ var P=sold().filter(function(x){ return x.product===p; })[0]; return oSoldHas(p,q)||!!P&&overMax(P,q); }
   function sheetOpen(product,q,opener,amend,pool,againOf){
-    draft.now=false;   /* plan version 3 (Fable's review): Handed over and paid now is asked afresh on every sheet */
+    draft.now=false; draft.on=''; draft.buyer='';   /* plan version 3 (Fable's review): Handed over and paid now is asked afresh on every sheet; version 4: its day and their customer too */
     if(ro()||hold||!sold().length||!lapse.hidden) return;
     draft.amend=amend?amend.id:'';
     draft.pool=pool||'';   /* a group order is joined from the same sheet: collected, one size, its own request */
@@ -4858,6 +4858,18 @@ const CLIENT_JS = `
        chosen for them: Review waits for the answer, and every order asks again. Nobody else is asked. */
     if(assoc) B.appendChild(oChoice(tw('sh.whoFor'),[['me',tw('sh.me')],['friend',tw('sh.friend')]],draft.forFriend==null?'':(draft.forFriend?'friend':'me'),'for',
       function(v){ draft.forFriend=(v==='friend'); sheetDraw(); }));
+    /* plan version 4, part 3e: ON ORDER AS THEM, WHICH OF THEIR CUSTOMERS, by code off the Desk's roster (Record's own list, stmt/owner.js actParties),
+       or Not named; never on their own page, which knows no code */
+    if(act&&assoc&&draft.forFriend&&!draft.amend&&!draft.pool){
+      if(actBuyers===null&&typeof actParties==='function'){ actBuyers=[]; actParties().then(function(l){ actBuyers=l||[]; if(draft.step==='form') sheetDraw(); }); }
+      var bf=el('div','salt-field'), bl=el('label','salt-field__label',tw('sh.buyer')); bl.htmlFor='oBuyer';
+      var bs=el('select','salt-field__input salt-field__select'); bs.id='oBuyer'; bs.setAttribute('data-k','buyer');
+      var bn=el('option',null,tw('sh.buyerNone')); bn.value=''; bs.appendChild(bn);
+      (actBuyers||[]).forEach(function(code){ var op=el('option',null,code); op.value=code; bs.appendChild(op); });
+      bs.value=(actBuyers||[]).indexOf(draft.buyer)>=0?draft.buyer:'';
+      bs.addEventListener('change',function(){ draft.buyer=bs.value; });
+      bf.appendChild(bl); bf.appendChild(bs); B.appendChild(bf);
+    }
     /* a group order asks nothing more: its size and its way are fixed, and Review follows the answer an associate gives */
     if(draft.pool){ formFoot(); return; }
     /* V4b (his point 5 of 28 Sep 2026): EVERY PRODUCT ON THEIR LIST, EACH WITH ITS SIZES, a size of each they want. A
@@ -4896,6 +4908,16 @@ const CLIENT_JS = `
       nw.setAttribute('aria-labelledby','oNowH'); nw.setAttribute('data-k','now');
       nw.addEventListener('click',function(){ draft.now=!draft.now; sheetDraw(); });
       nr.appendChild(nh); nr.appendChild(nw); nl.appendChild(nr); B.appendChild(nl);
+      /* plan version 4, part 3c (Fable's F2): THE DAY OF THE SALE, only with it on, so its handover and payment take the same day: today, or a day
+         back to 30 days and 21 Oct 2026 at the earliest; the Desk holds it to the book's newest lot too */
+      if(draft.now){
+        var of=el('div','salt-field'), ol=el('label','salt-field__label',tw('sh.actOn')); ol.htmlFor='oOn';
+        var oi=el('input','salt-field__input'); oi.id='oOn'; oi.type='date'; oi.max=todayKL(); oi.min=klPlus(-30)>'2026-10-21'?klPlus(-30):'2026-10-21';
+        oi.value=draft.on||todayKL(); oi.setAttribute('data-k','on');
+        var onSet=function(){ draft.on=oi.value; };
+        oi.addEventListener('input',onSet); oi.addEventListener('change',onSet);
+        of.appendChild(ol); of.appendChild(oi); of.appendChild(el('span','salt-field__hint',tw('sh.actOnHint'))); B.appendChild(of);
+      }
     }
     /* v694: a delivery says roughly where it is going, in his words a general location; never an address */
     /* v1377: saved spots stay on their phone (Batch C), so Order as them asks the area and the exact spot afresh and keeps none on his */
@@ -5009,6 +5031,9 @@ const CLIENT_JS = `
       slot:draft.mode==='deliver'&&!draft.pool?draft.slot||'':'', span:'',
       /* the exact spot as read, sealed at Place; an amendment's is the order's own, kept by the Worker */
       pin:draft.mode==='deliver'&&!draft.pool&&!draft.amend?pinOf():null, pinKept:draft.mode==='deliver'&&!!draft.amend&&!!draft.pinKept, pinSealed:null,
+      /* plan version 4: his day of the sale (a past day only) and their customer, frozen with the rest */
+      on:act&&draft.now&&draft.mode==='collect'&&!draft.amend&&!draft.pool&&/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(draft.on||'')&&draft.on!==todayKL()?draft.on:'',
+      buyer:act&&ff&&!draft.amend&&!draft.pool&&draft.buyer?draft.buyer:'',
       /* S4 4.4: the stamp of the list these prices were read from */
       digest:(prices&&prices.digest)||''};
     /* from the list the form drew: the open windows, and an amendment's own window kept while it is still to end */
@@ -5116,6 +5141,8 @@ const CLIENT_JS = `
       l.appendChild(lab); if(typeof v==='string') val.textContent=v; else val.appendChild(v);
       l.appendChild(val); r.appendChild(l); if(flag) r.appendChild(el('span','salt-ledger__flag',flag)); L.appendChild(r); }
     if(assoc) row(tw('sh.for'),tw(c.forFriend?'sh.friend':'sh.me'));
+    if(c.buyer) row(tw('sh.buyer'),c.buyer);   /* plan version 4: his alone */
+    if(c.on) row(tw('sh.actOn'),ymdDay(c.on));
     if(one) row(tw('sh.price'),a.over?tw('sh.askOnly'):rm(a.total),a.over?'':tw('sh.perUnit',{rm:rm(a.rate)}));
     else {
       /* V4b: each line its size and mark, its price, and whether it is paid in advance or already sent; then the total */
@@ -5226,6 +5253,8 @@ const CLIENT_JS = `
       if(c.amend){ delete body.note; delete body.sheet; delete body.total; delete body.unit; }
       if(act) delete body.note;   /* v1377: his Place carries no note */
       if(act&&draft.now&&c.mode==='collect'&&!c.amend&&!c.pool) body.now=true;   /* plan version 3: handed over and paid now */
+      if(act&&body.now&&c.on) body.on=c.on;   /* plan version 4: the day of the sale, with it alone */
+      if(act&&c.buyer&&body.forFriend) body.buyer=c.buyer;   /* plan version 4: their customer */
       /* a group order is joined, not placed: its size is the pool's, it is collected, and the Worker makes the one order */
       if(c.pool) body={q:l.q,total:l.total,unit:l.rate,digest:c.digest,rid:l.rid,forFriend:!!(assoc&&c.forFriend)};
       var r=act&&!c.pool&&!c.amend?await actPlace(user,body):await api(c.pool?'/pools/'+encodeURIComponent(c.pool)+'/join':c.amend?'/orders/'+encodeURIComponent(c.amend)+'/amend':'/orders',body);
@@ -5259,7 +5288,7 @@ const CLIENT_JS = `
     draft.actSaid=!act?'':waits?tw('sh.actWaits',{w:waits.agreed.why||''}):unhanded?tw(unhanded.agreed.paid?'sh.actPaidNotHanded':'sh.actNotHanded',{w:unhanded.agreed.why||''})
       :c.lines.every(function(l){ return l.agreed&&l.agreed.accepted; })?tw(c.lines.every(function(l){ return l.agreed.handed===true; })?'sh.actDone'
       :c.lines.some(function(l){ return l.agreed.prepay; })?'sh.actAgreedPrepay':'sh.actAgreed'):'';
-    draft.now=false;   /* plan version 3: each sheet asks again */
+    draft.now=false; draft.on=''; draft.buyer='';   /* plan version 3: each sheet asks again */
     draft.asked=!!ask; draft.sent=c.lines[0].placed==='placed'?'':c.lines[0].placed; draft.sheetKeep=''; draft.step='sent'; draft.check=null; draft.say=''; draft.noteOpen=false; draft.pushNote=''; draft.forFriend=null; draft.when=''; draft.wantBy='';
     sheetDraw();
     await ordersAgain(); if(mine!==ticket) return;

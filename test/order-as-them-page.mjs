@@ -21,6 +21,7 @@ export async function run({ ok, pageWork }) {
   let refuseOpen = 0, agreed = { accepted: true };
   const extra = (route) => route === "/open" && refuseOpen > 0 ? (refuseOpen--, { refuse: "Busy, try again." }) : route === "/open" ? opened
     : route === "/all/maker/slip/key" ? { ok: true, key: { kty: "EC", crv: "P-256", x: "eA", y: "eQ" } }
+    : route === "/all/maker/inputs" ? { ok: true, catalog: { parties: ["CA5-SEN", "CS6-BS-R", "CB1-XY"] } }
     : route === "/all/maker/customers/" + U1 + "/orders" ? { ok: true, order: placed, agreed }
     : route === "/all/orders/" + U1 ? { ok: true, orders: [placed], claims: [], links: [], max: 0 } : undefined;
   const openAs = async (p, act) => {
@@ -171,4 +172,57 @@ export async function run({ ok, pageWork }) {
     enter(p.d, "orders", "todo"); await p.work.quiet();
     ok(/You placed/.test(p.d.getElementById("oSplit").textContent), "B7 his Orders row of an order he placed says You placed");
   } catch (e) { ok(false, "his Orders stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+
+  /* B19 to B22, plan version 4: the day of the sale under Handed over and paid now, and their customer on an associate's order for a friend */
+  const klNow = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
+  const yday = (() => { const d = new Date(klNow + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() - 1); return d.toISOString().slice(0, 10); })();
+  const floorDay = (() => { const d = new Date(klNow + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() - 30); const b = d.toISOString().slice(0, 10); return b > "2026-10-21" ? b : "2026-10-21"; })();
+  agreed = { accepted: true, handed: true, paid: true };
+  p = await richOwnerPage({ pageWork, extra });
+  try {
+    await openAs(p, "acct.order-for");
+    p.d.getElementById("oNew").click(); await p.work.quiet();
+    const off = p.d.getElementById("oOn");
+    p.d.getElementById("oNow").click(); await p.work.quiet();
+    const day = p.d.getElementById("oOn");
+    ok(!off && !!day && day.type === "date" && day.value === klNow && day.max === klNow && day.min === floorDay && /Day of the sale/.test(p.d.querySelector('label[for="oOn"]').textContent),
+      "B19 the day of the sale is asked only with Handed over and paid now on: today by default, back 30 days and to 21 Oct 2026 at most: " + JSON.stringify([!!off, day && [day.value, day.min, day.max]]));
+    day.value = yday; day.dispatchEvent(new p.w.Event("change")); await p.work.quiet();
+    p.d.getElementById("oGo").click(); await p.work.quiet();
+    const sheetBox = p.d.querySelector('[aria-labelledby="oshT"]'), said = !!sheetBox && /Day of the sale/.test(sheetBox.textContent);
+    const before = p.posts.length;
+    p.d.getElementById("oPlace").click(); await p.work.quiet();
+    const b = (p.posts.slice(before).find((x) => x.route === "/all/maker/customers/" + U1 + "/orders") || {}).body;
+    ok(said && b && b.now === true && b.on === yday, "B20 a day back is said on the check and Place carries it with now: " + JSON.stringify([said, b && b.now, b && b.on]));
+  } catch (e) { ok(false, "the day of the sale stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+  p = await richOwnerPage({ pageWork, extra });
+  try {
+    await openAs(p, "acct.order-for");
+    p.d.getElementById("oNew").click(); await p.work.quiet();
+    p.d.getElementById("oNow").click(); await p.work.quiet();
+    p.d.getElementById("oGo").click(); await p.work.quiet();
+    const before = p.posts.length;
+    p.d.getElementById("oPlace").click(); await p.work.quiet();
+    const b = (p.posts.slice(before).find((x) => x.route === "/all/maker/customers/" + U1 + "/orders") || {}).body;
+    ok(b && b.now === true && b.on === undefined, "B21 today, left as it is, sends no day: the sale is dated as it is agreed: " + JSON.stringify(b));
+  } catch (e) { ok(false, "today's sale stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+  opened.assoc = true;
+  p = await richOwnerPage({ pageWork, extra });
+  try {
+    await openAs(p, "acct.order-for");
+    p.d.getElementById("oNew").click(); await p.work.quiet();
+    p.d.querySelector('#osheet button[data-k="for:0"]').click(); await p.work.quiet();
+    const mine = p.d.getElementById("oBuyer");
+    p.d.querySelector('#osheet button[data-k="for:1"]').click(); await p.work.quiet();
+    const sel = p.d.getElementById("oBuyer"), opts = sel ? [...sel.options].map((x) => x.value) : [];
+    ok(!mine && !!sel && JSON.stringify(opts) === JSON.stringify(["", "CA5-SEN", "CB1-XY"]) && sel.options[0].textContent === "Not named",
+      "B22 on an associate's order for a friend he names their customer from the roster, the resale accounts left out, or Not named; for themselves none is asked: " + JSON.stringify([!!mine, opts]));
+    sel.value = "CB1-XY"; sel.dispatchEvent(new p.w.Event("change")); await p.work.quiet();
+    p.d.getElementById("oGo").click(); await p.work.quiet();
+    const sheetBox = p.d.querySelector('[aria-labelledby="oshT"]'), said = !!sheetBox && /Their customer\s*CB1-XY/.test(sheetBox.textContent);
+    const before = p.posts.length;
+    p.d.getElementById("oPlace").click(); await p.work.quiet();
+    const b = (p.posts.slice(before).find((x) => x.route === "/all/maker/customers/" + U1 + "/orders") || {}).body;
+    ok(said && b && b.forFriend === true && b.buyer === "CB1-XY", "B23 their customer is said on the check and Place carries it: " + JSON.stringify([said, b && b.forFriend, b && b.buyer]));
+  } catch (e) { ok(false, "their customer stopped on an error: " + (e && e.stack)); } finally { p.w.close(); opened.assoc = false; }
 }

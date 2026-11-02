@@ -873,6 +873,12 @@ export const OWNER_JS = `
     try{ return {status:200, body:await refs('/all/maker/customers/'+encodeURIComponent(u)+'/orders', body)}; }
     catch(e){ return {status:e.status||0, body:Object.assign({ok:false, error:e.raw||e.message}, e.detail||{})}; }
   }
+  /* plan version 4, part 3e: their customers by code for an associate's order for a friend, Record's own list (the Desk's catalogue, less the resale
+     accounts), read once a minute at most */
+  async function actParties(){
+    try{ var c=await readParty(); return (c.parties||[]).filter(function(code){ return !/[-]R$/.test(code); }); }
+    catch(e){ return []; }
+  }
   async function actKey(){
     try{ return {status:200, body:await refs('/all/maker/slip/key')}; }
     catch(e){ return {status:e.status||0, body:{ok:false}}; }

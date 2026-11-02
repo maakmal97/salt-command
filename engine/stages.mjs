@@ -201,6 +201,31 @@ export const orderKeyFor = (code, date, total, product, delivery) => POSITION_EN
 export const klDate = (now) => (now instanceof Date ? now : new Date(now || Date.now()))
   .toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
 
+/* ---- THE DAY OF THE SALE (plan version 4, part 3c, Fable's F2) -----------------------------------------------------------
+ * His stall sale may be dated the day it happened, on his road alone and only with Handed over and paid now, so one day rides
+ * every stage: the pending row, the handover (here and on the Counter, movedOn) and the payment, and nothing reads late. Bounded:
+ * not after today, at most ON_DAYS back, not before ON_SINCE (the reward and loyalty walks' start), and not before the book's
+ * newest lot of it, so the Floor and the cost are the day's as they are today's. `newest` is that lot's day, or null. */
+export const ON_SINCE = "2026-10-21", ON_DAYS = 30;
+export const isDay = (v) => /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(v || "")) && !isNaN(Date.parse(v + "T00:00:00Z"))
+  && new Date(v + "T00:00:00Z").toISOString().slice(0, 10) === v;
+export const dayBack = (today, n) => { const d = new Date(today + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().slice(0, 10); };
+export function onFault(on, today, newest, theirs) {
+  if (!isDay(on)) return "the day of the sale is a date";
+  if (on > today) return "the day of the sale cannot be after today";
+  if (on < dayBack(today, ON_DAYS)) return "a sale is dated at most " + ON_DAYS + " days back";
+  if (on < ON_SINCE) return "a sale is dated 21 Oct 2026 or after";
+  if (isDay(newest) && on < newest) return "the newest lot of it came in on " + newest + ", so the sale is dated that day or after";
+  /* Fable's review: and not before their own newest salt row (`theirs`), since the reward and loyalty walks read their rows in the order paid */
+  if (isDay(theirs) && on < theirs) return "their newest salt sale is dated " + theirs + ", so this one is dated that day or after";
+  return "";
+}
+/* Fable's review: HIS DAY HOLDS ONLY ON THE DAY HE PLACED IT, where Handed over and paid now runs; an order left Placed and agreed later, or
+   paid and handed over on a later day, is dated as that day, so nothing is recorded as done on a day it was not */
+export const onLive = (order, at) => !!order && isDay(order.on) && !!order.at && klDate(at) === klDate(new Date(order.at));
+/* the day an order's stages are dated: its own day of the sale, on the day he placed it, else the day of the stage */
+export const dayOf = (order, at) => (onLive(order, at) ? order.on : klDate(at));
+
 /* ---- ON BEHALF OF A FRIEND (v702, his instruction of 18 Sep 2026) ----------------------------
  * An associate's own order and one placed for somebody else are no longer told apart by what they
  * buy; they tick it, and a ticked order books to their `<CODE>-R` bucket exactly as a phone-entered
@@ -221,7 +246,7 @@ export const ledgerKeyOf = (order) => POSITION_ENGINE.ovRekey(order && order.led
 /** The pending row an acknowledged order becomes: agreed, nothing paid, nothing moved. */
 export function pendingEntry(order, code, now) {
   const at = now instanceof Date ? now : new Date(now || Date.now());
-  const date = klDate(at);
+  const date = dayOf(order, at);   /* plan version 4: the day of the sale he set, else the acknowledgement's */
   const delivery = +(order.delivery || 0);
   /* 19 SEP 2026: THE ROW TAKES THE GOODS AND THE CARRIAGE APART, and the KEY keeps them together.
      The site has always kept them apart (stmt/page.js prints "RM x for the goods and RM y delivery")
@@ -236,7 +261,7 @@ export function pendingEntry(order, code, now) {
   /* the general location the customer typed stays on the site, on his card: a note reaches the
      committed book, and free text a customer typed is the one thing here that could carry a street */
   const note = "Ordered on the statements site, order " + order.id + ", acknowledged"
-    + (friend ? ", on behalf of a friend" : "")
+    + (friend ? ", on behalf of a friend" + (order.buyer ? ", their customer " + order.buyer : "") : "")
     + (order.mode === "deliver" ? ", to be delivered" : ", to collect")
     + (delivery > 0 ? ", delivery RM " + delivery : "")
     /* Step 2: a price he set on this order at its acknowledgement, and what they placed at */
@@ -251,7 +276,8 @@ export function pendingEntry(order, code, now) {
     orderKey: orderKeyFor(books, date, goods, order.product || "salt", delivery),
     payload: { mode: "new", product: order.product || "salt", direction: "SELL", party: code, newId: null,
       date, qty: order.qty, total: goods, delivery, cash: 0, kg: 0,
-      assoc: friend ? code : null, stream: friend ? "R2" : null, downstream: null,
+      /* plan version 4, part 3e: the end buyer he named on an associate's order for a friend, noted on the row and credited nothing (bookR2) */
+      assoc: friend ? code : null, stream: friend ? "R2" : null, downstream: friend && order.buyer ? order.buyer : null,
       kind: null, orderCode: null, linkTo: null, note,
       handover: null, second: null }
   };
@@ -262,7 +288,7 @@ export function pendingEntry(order, code, now) {
  *  entry, said as his and marked `by: "desk"`, so the desk never reads it as a payment of theirs waiting on him. */
 export function payEntry(order, code, amount, now, cash) {
   const at = now instanceof Date ? now : new Date(now || Date.now());
-  const date = klDate(at);
+  const date = dayOf(order, at);   /* plan version 4: an order dated the day of the sale is paid that day */
   const rm = +(+amount).toFixed(2);
   const books = partyOnBook(order, code);
   const method = cash ? "cash at the counter" : (order.method ? (order.method + (order.account ? " via " + order.account : "")) : "not stated");
@@ -528,7 +554,7 @@ export function handoverTap(o, body, at, rej) {
   /* stamped as the site stamps it: the Kuala Lumpur day of the tap, the handover's own day */
   /* 17 Oct 2026 (Fable's review): a close at what is already out moves nothing, so the handover keeps its own day; Cancel the rest restamped it */
   const still = closing && Math.abs(qty - (+o.moved || 0)) < 0.0004 && o.movedOn;
-  const handed = Object.assign({}, o, { movedOn: still ? o.movedOn : klDate(at), moved: qty });
+  const handed = Object.assign({}, o, { movedOn: still ? o.movedOn : dayOf(o, at), moved: qty });   /* plan version 4: or the day of the sale */
   const entry = closing
     ? closeEntry(Object.assign(handed, { qty, total: POSITION_ENGINE.closeGoods(o.total, +o.qty, qty), closed: { at: at.toISOString(), qty: o.qty, total: o.total } }), o.code, at)
     : handoverEntry(handed, o.code, qty, at);

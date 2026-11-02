@@ -504,7 +504,9 @@ export const rateAskable = (o) => handedAll(o) && !o.rating && !o.rateAsk;
 export const rateDue = (o, at) => {
   if (!rateAskable(o) || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(o.movedOn || ""))) return false;
   const today = klDay(at);
-  return o.movedOn <= daysBefore(today, RATE_AFTER) && o.movedOn > daysBefore(today, RATE_UNTIL);
+  /* plan version 4 (Fable's review): a sale he dated back is asked from the day it was placed, never at once */
+  const day = o.on && o.at && klDay(o.at) > o.movedOn ? klDay(o.at) : o.movedOn;
+  return day <= daysBefore(today, RATE_AFTER) && day > daysBefore(today, RATE_UNTIL);
 };
 /** Every customer with an order to ask about at this moment, newest order first. */
 export async function toRate(env, at = new Date()) {
@@ -727,9 +729,33 @@ export const PRICES_MOVED = refusal("pricesMoved").error;
 /* 05 Oct 2026 (his decision): A PLACEMENT WITH NO STAMP IS REFUSED, as a moved one is, so it re-quotes off the list as it
    stands: the stamp is what holds a total typed at any quantity to the sealed grid. `ctx` carries the grid's steps in the
    clear (the account's record) and whether a claim of theirs waits, which Negotiate reads. */
+/* PLAN VERSION 4 (parts 3c and 3e): HIS DAY OF THE SALE AND HIS END BUYER, set on his road alone. The day is bounded here as the
+   engine's onFault bounds it (ON_SINCE and ON_DAYS, held equal by the suite), the newest lot's day and their newest salt row left to
+   the Desk, which reads the book; the end buyer is a roster code's shape on an order for a friend, the Desk checking the roster. The
+   day holds only on the day he placed it (onLive, as the engine's), where Handed over and paid now runs. */
+const onLive = (o, at) => !!(o && o.on && o.at) && klDay(at) === klDay(o.at);
+export const ON_SINCE = "2026-10-21", ON_DAYS = 30;
+const BUYER_RE = /^[A-Z]{1,3}[0-9]{1,2}-[A-Z0-9]{1,6}$/;
+export function onFaultSite(on, today) {
+  const d = new Date(String(on) + "T00:00:00Z");
+  if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(on || "")) || isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== on) return "the day of the sale is a date";
+  const back = new Date(today + "T00:00:00Z"); back.setUTCDate(back.getUTCDate() - ON_DAYS);
+  if (on > today) return "the day of the sale cannot be after today";
+  if (on < back.toISOString().slice(0, 10)) return "a sale is dated at most " + ON_DAYS + " days back";
+  if (on < ON_SINCE) return "a sale is dated 21 Oct 2026 or after";
+  return "";
+}
 export function decidePlace(u, body, open, at, digest, by = "customer", pool = null, ctx = {}) {
   const c = checkPlacement(body, open, at, !!pool, ctx && ctx.steps, ctx && ctx.hours, (ctx && ctx.mine) || []);
   if (c.error) return c;
+  if (body && (body.on !== undefined || body.buyer !== undefined)) {
+    if (by !== "desk") return { error: "a day of the sale or an end buyer is set by us alone" };
+    if (body.on !== undefined) { const f = onFaultSite(body.on, klDay(at)); if (f) return { error: f }; c.order.on = body.on; }
+    if (body.buyer !== undefined) {
+      if (!c.order.forFriend || !BUYER_RE.test(String(body.buyer))) return { error: "an end buyer is named by code, on an order for a friend" };
+      c.order.buyer = body.buyer;
+    }
+  }
   /* a stamped list is checked whatever the page sends, a Place with no stamp included; a list published with none has
      nothing to check */
   if (digest ? body.digest !== String(digest) : body.digest !== undefined && String(body.digest || "") !== "") return refusal("pricesMoved");
@@ -1347,7 +1373,7 @@ export function applyEvent(order, ev) {
     }
     if (isNum(ev.moved) && ev.moved > (+order.moved || 0) + 0.0004) {
       order.moved = +ev.moved.toFixed(3); q.moved = order.moved; told = true;
-      order.movedOn = klDay(at);   /* the day of the LAST handover, as Site orders writes it: the chase's grace runs from it (S12-R1) */
+      order.movedOn = onLive(order, at) ? order.on : klDay(at);   /* plan version 4: an order dated the day of the sale is handed over that day */   /* the day of the LAST handover, as Site orders writes it: the chase's grace runs from it (S12-R1) */
       order.history.push({ at, status: order.status, by: "desk", note: order.moved + " unit " + (order.mode === "deliver" ? "delivered" : "collected") });
     }
     if (isNum(ev.credit) && ev.credit < (+order.credit || 0) - 0.004) {
@@ -1378,7 +1404,7 @@ export function applyEvent(order, ev) {
     const moves = !(ev.close && order.movedOn && Math.abs(+ev.units - (+order.moved || 0)) < 0.0004);
     order.moved = +ev.units.toFixed(3);
     if (moves) {
-      order.movedOn = klDay(at);
+      order.movedOn = onLive(order, at) ? order.on : klDay(at);   /* plan version 4: or the day of the sale he set */
       order.movedAt = at;   /* the moment, for the desk to stamp the Correction with (20 Sep 2026) */
     }
     if (ev.mode) order.mode = ev.mode;
