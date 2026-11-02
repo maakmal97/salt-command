@@ -48532,7 +48532,7 @@ await (async () => {
   await (await import("./order-stream-v3.mjs")).run({ ok });
 })();
 
-section("v1386 One order stream, version 4: his day of the sale rides the row, the handover and the payment, bounded; his end buyer on a friend's order (3c, 3e)");
+section("v1387 One order stream, version 4: his day of the sale rides the row, the handover and the payment, bounded; his end buyer on a friend's order (3c, 3e)");
 await (async () => {
   await (await import("./order-stream-v4.mjs")).run({ ok });
 })();
