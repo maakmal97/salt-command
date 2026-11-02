@@ -10,9 +10,10 @@
  {"name": "the order is its own candidate", "file": "engine/stages.mjs", "find": "x && x.id !== agreed.id && x.u === agreed.u && ", "replace": "x && x.u === agreed.u && "},
  {"name": "another account is a candidate", "file": "engine/stages.mjs", "find": "x.id !== agreed.id && x.u === agreed.u && !!x.forFriend", "replace": "x.id !== agreed.id && !!x.forFriend"},
  {"name": "a friend's order is a candidate", "file": "engine/stages.mjs", "find": " && !!x.forFriend === !!agreed.forFriend\n    && (x.product", "replace": "\n    && (x.product"},
- {"name": "the book is not compared", "file": "engine/stages.mjs", "find": "    && (x.product || \"salt\") === (agreed.product || \"salt\"));\n}", "replace": ");\n}"},
+ {"name": "the book is not compared", "file": "engine/stages.mjs", "find": "    && (x.product || \"salt\") === (agreed.product || \"salt\") && may(x));\n}", "replace": "    && may(x));\n}"},
  {"name": "any day is today", "file": "engine/stages.mjs", "find": "    if (!x || r.day !== today) continue;", "replace": "    if (!x) continue;"},
  {"name": "the key reads the goods alone", "file": "engine/stages.mjs", "find": "    if (Math.abs((xg + xd) - (g + d)) < 0.005) out.key.push(x);", "replace": "    if (Math.abs(xg - g) < 0.005 && Math.abs(xd - d) < 0.005 && +x.qty === +agreed.qty) out.key.push(x);"},
  {"name": "the fold's test reads no size", "file": "engine/stages.mjs", "find": "    else if (+x.qty === +agreed.qty && Math.abs(xg - g) < 0.005) out.fold.push(x);", "replace": "    else if (Math.abs(xg - g) < 0.005) out.fold.push(x);"},
- {"name": "the fold's test reads the delivery too", "file": "engine/stages.mjs", "find": "    else if (+x.qty === +agreed.qty && Math.abs(xg - g) < 0.005) out.fold.push(x);", "replace": "    else if (+x.qty === +agreed.qty && Math.abs(xg - g) < 0.005 && Math.abs(xd - d) < 0.005) out.fold.push(x);"}
+ {"name": "the fold's test reads the delivery too", "file": "engine/stages.mjs", "find": "    else if (+x.qty === +agreed.qty && Math.abs(xg - g) < 0.005) out.fold.push(x);", "replace": "    else if (+x.qty === +agreed.qty && Math.abs(xg - g) < 0.005 && Math.abs(xd - d) < 0.005) out.fold.push(x);"},
+ {"name": "every order of theirs is a candidate", "file": "engine/stages.mjs", "find": " && may(x));\n}", "replace": ");\n}"}
 ]

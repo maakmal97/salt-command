@@ -399,8 +399,12 @@ export function stageAt(order, job, now) {
    books to the associate's -R bucket, another party): `twinCandidates` names them, and the desk finds each one's pending row (queued, or waiting
    under Approve after a yes of his) and the day that row is dated (src/orders.js previewAck), so `siteTwins` reads rows as `{order, day}`. */
 export function twinCandidates(agreed, others) {
+  /* Fable's re-check: only an order whose own figures could be a twin is a candidate, so the desk reads D1 for those alone, normally none */
+  const d = +(+agreed.delivery || 0).toFixed(2), g = +(+agreed.total || 0).toFixed(2);
+  const may = (x) => { const xg = +(+x.total || 0).toFixed(2), xd = +(+x.delivery || 0).toFixed(2);
+    return Math.abs((xg + xd) - (g + d)) < 0.005 || (+x.qty === +agreed.qty && Math.abs(xg - g) < 0.005); };
   return (others || []).filter((x) => x && x.id !== agreed.id && x.u === agreed.u && !!x.forFriend === !!agreed.forFriend
-    && (x.product || "salt") === (agreed.product || "salt"));
+    && (x.product || "salt") === (agreed.product || "salt") && may(x));
 }
 export function siteTwins(agreed, rows, today) {
   const d = +(+agreed.delivery || 0).toFixed(2), g = +(+agreed.total || 0).toFixed(2);

@@ -130,7 +130,8 @@ export async function run({ ok }) {
       "their yes drafts the row at the offer and moves the order to it: " + JSON.stringify([tkA.approved, tkA.error, gA.status, gA.total, gA.delivery]));
 
     /* another window: sent for their yes, and taken, the order carries it cut to the hours */
-    const b = await place({ slot: s12 });
+    /* 3 Nov 2026 (one order stream v3, his answer): 2 units, since an order agreed today at the figure e is agreed at below would be its twin, refused at Accept */
+    const b = await place({ slot: s12, qty: 2, total: 200 });
     const pB = await pv(b), ofB = await call("/orders/" + b.id + "/offer", { delivery: 10, hash: pB.offerHash, slot: s8, rid: rid() });
     const sB = await orderOf(b.id), vB = O.customerView(sB).price;
     await O.customerMove(senv, U1, b.id, "take", { rid: rid() });

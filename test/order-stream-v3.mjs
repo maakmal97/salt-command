@@ -34,6 +34,9 @@ export async function run({ ok }) {
     "T5 the same size and goods with another delivery charge is keyed apart, but the fold's replay test calls it equal: a second sale; another size too is neither");
   ok(twinCandidates(a, [Object.assign({}, twin, { u: "wxyz-wxyz" }), Object.assign({}, twin, { forFriend: true }), Object.assign({}, twin, { product: "oil" })]).length === 0,
     "T6 another account's order, a friend's (another bucket, another row) and another book's are no candidates: the desk reads every order on the site");
+  ok(twinCandidates(a, [Object.assign({}, twin, { total: 105 }), Object.assign({}, twin, { qty: 3, total: 300 })]).length === 0
+    && twinCandidates(a, [Object.assign({}, twin, { qty: 2 }), Object.assign({}, twin, { delivery: 10 })]).length === 2,
+    "T6b only an order whose own figures could be a twin is a candidate, so no other order costs a read of D1");
 
   /* T7 to T12: the Desk's own preview, on the frozen book */
   const now = new Date("2031-01-02T02:00:00Z"), same = "2031-01-02T01:00:00.000Z";
