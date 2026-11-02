@@ -70,5 +70,23 @@
     "file": "stmt/owner.js",
     "find": "            var body={total:s.total,delivery:s.delivery,hash:s.hash};",
     "replace": "            var body={total:s.total,delivery:s.delivery,hash:s.hash,again:Math.random()};"
+  },
+  {
+    "name": "a later line asks a charge once the first is agreed",
+    "file": "stmt/owner.js",
+    "find": "        var follower=order.mode==='deliver'&&group.length>1&&group[0].id!==order.id&&leadToday;",
+    "replace": "        var follower=group.length>1&&group.every(function(o){ return o.status==='placed'; })&&group[0].id!==order.id;"
+  },
+  {
+    "name": "a first line agreed another day still carries the charge",
+    "file": "stmt/owner.js",
+    "find": "&&group[0].id!==order.id&&leadToday;",
+    "replace": "&&group[0].id!==order.id;"
+  },
+  {
+    "name": "the sheet's lines are read off the open list",
+    "file": "stmt/owner.js",
+    "find": "        var group=((makerData&&makerData.orders)||[]).filter(function(o){ return order.sheet",
+    "replace": "        var group=open.filter(function(o){ return order.sheet"
   }
 ]

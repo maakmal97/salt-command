@@ -223,6 +223,18 @@ export function onFault(on, today, newest, theirs) {
 /* Fable's review: HIS DAY HOLDS ONLY ON THE DAY HE PLACED IT, where Handed over and paid now runs; an order left Placed and agreed later, or
    paid and handed over on a later day, is dated as that day, so nothing is recorded as done on a day it was not */
 export const onLive = (order, at) => !!order && isDay(order.on) && !!order.at && klDate(at) === klDate(new Date(order.at));
+/* ---- ONE SHEET, ONE TRIP (plan version 3, part 3d; his design of 05 Oct 2026, one delivery for a trip of several books) ----------------
+ * The delivered lines of one sheet of theirs are one trip: the Desk names it from the sheet (the same id for every line, nothing stored on the order),
+ * its one delivery rides the sheet's first line still standing (by id), and a line joins it only on the day its siblings' rows are dated, since a
+ * trip is one day's (the engine's tripFault). `orders` is every order the site handed over. */
+export function tripOf(o) {
+  if (!o || o.mode !== "deliver" || typeof o.sheet !== "string" || !o.sheet) return null;
+  const h = /^[0-9a-f]+$/i.test(o.sheet) ? BigInt("0x" + o.sheet) : [...o.sheet].reduce((n, c) => (n * 131n + BigInt(c.charCodeAt(0))) % (10n ** 18n), 0n);
+  return "t" + String(h % (10n ** 16n)).padStart(16, "0");
+}
+export const tripLines = (o, orders) => (tripOf(o) ? [o].concat((orders || []).filter((x) => x && x.id !== o.id && x.u === o.u && x.sheet === o.sheet
+  && x.mode === "deliver" && !["cancelled", "declined"].includes(x.status))).sort((a, b) => String(a.id).localeCompare(String(b.id))) : [o]);
+export const tripCarrier = (o, orders) => tripLines(o, orders)[0];
 /* the day an order's stages are dated: its own day of the sale, on the day he placed it, else the day of the stage */
 export const dayOf = (order, at) => (onLive(order, at) ? order.on : klDate(at));
 

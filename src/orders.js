@@ -31,7 +31,7 @@ import PRICING_ENGINE from "../engine/pricing.mjs";
 /* S1b: THE ENTRY EACH STAGE MAKES lives in engine/stages.mjs (pure); this reads, calls it, and queues. The builders stay named here for every importer. */
 import { rewardCrossOf, rewardReading, loyalReading, rwdOf, withCredit, rowPaidFor } from "../engine/stages.mjs";
 import { creditFor } from "./credit.js";
-import { rm, chargeOf, priceOf, advanceOf, acceptEntry, siteTwins, twinCandidates, klDate, onFault, dayOf, onLive, floorRefusal, ackRowWanted, stageAgainst, jobEntry, againEntry, keyGivenBack,
+import { rm, chargeOf, priceOf, advanceOf, acceptEntry, siteTwins, twinCandidates, klDate, onFault, dayOf, onLive, tripOf, tripLines, floorRefusal, ackRowWanted, stageAgainst, jobEntry, againEntry, keyGivenBack,
   handoverTap, receivedTap, cashTap, restateTap, pastRoom, againRoomOrder, claimRows, claimOrderFlight, claimEntry,
   stageAt, keyAfter, closedKey, ledgerKeyOf, partyOnBook, bucketFor, termsFromRow, settledFromRow, rowOut } from "../engine/stages.mjs";
 export { orderKeyFor, partyOnBook, ledgerKeyOf, pendingEntry, payEntry, claimEntry, handoverEntry, redateFrom, closeEntry, closedKey, cancelEntry,
@@ -296,6 +296,18 @@ export function acceptUntil(at, slot) {
 /* their card at this size: the desk's own cardQuote, carried in the pricing snapshot (tools/book.mjs), read and never worked out */
 export function cardAt(pricing, code, product, qty) { return PRICING_ENGINE.cardAt(pricing, code, product, qty); }   /* the engine's, since 20 Oct 2026 */
 /* `mirror`, here and below: the invocation's one reader of the mirror (bookOnce, 06 Oct 2026); without one, a read of its own */
+/* another order's pending row, found by its own draft (queued, or waiting under Approve after his yes) and read for the day it is dated, its
+   payload's date (a row offered again keeps its first), never the moment it was queued; null with no row, or one rejected (it stands aside) */
+async function pendingDay(env, x) {
+  let id = x.queued && x.queued.ack;
+  if (!id && env.SALT_LEDGER) { const p = await livePre(env.SALT_LEDGER, x.id, "ack"); id = p && p.entry_at; }
+  if (!id) return null;
+  let d = null; try { d = env.SALT_LEDGER ? await env.SALT_LEDGER.prepare("SELECT status, entry FROM draft WHERE id=?1").bind(id).first() : null; } catch (e) { d = null; }
+  if (d && d.status === "rejected") return null;
+  let e = null; try { e = d && d.entry ? JSON.parse(d.entry) : null; } catch (err) { e = null; }
+  const typed = e && e.payload && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(e.payload.date || "")) ? e.payload.date : null;
+  return typed || klDate(new Date(String((e && e.at) || id)));
+}
 async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
   if (!env.SALT_LEDGER) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" };
   /* the charge is the site's own rule (decideDesk): typed for a delivery, nought for a collection; Step 2: the goods at the
@@ -308,16 +320,7 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
      pre-approval's `entry_at`), and read for the day it is dated (its payload's date, a row offered again keeping its first), never the moment
      it was queued; a read that fails keeps the twin, the safe side */
   const rows = [];
-  for (const x of twinCandidates(agreed, ctx && ctx.orders)) {
-    let id = x.queued && x.queued.ack;
-    if (!id && env.SALT_LEDGER) { const p = await livePre(env.SALT_LEDGER, x.id, "ack"); id = p && p.entry_at; }
-    if (!id) continue;
-    let d = null; try { d = env.SALT_LEDGER ? await env.SALT_LEDGER.prepare("SELECT status, entry FROM draft WHERE id=?1").bind(id).first() : null; } catch (e) { d = null; }
-    if (d && d.status === "rejected") continue;
-    let e = null; try { e = d && d.entry ? JSON.parse(d.entry) : null; } catch (err) { e = null; }
-    const typed = e && e.payload && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(e.payload.date || "")) ? e.payload.date : null;
-    rows.push({ order: x, day: typed || klDate(new Date(String((e && e.at) || id))) });
-  }
+  for (const x of twinCandidates(agreed, ctx && ctx.orders)) { const day = await pendingDay(env, x); if (day) rows.push({ order: x, day }); }
   const rowDay = dayOf(agreed, now), onToday = rowDay === klDate(now);
   const tw = siteTwins(agreed, rows, rowDay);   /* plan version 4: twins on the day the row is dated, his day of the sale included, and said so */
   const keyed = tw.key;
@@ -353,6 +356,25 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
     const roster = (book.state && book.state.roster) || [];
     if (!o.forFriend || typeof o.buyer !== "string" || !roster.includes(o.buyer) || POSITION_ENGINE.isBucket(o.buyer) || POSITION_ENGINE.ownerCode(o.buyer) === code)
       return { ok: false, status: 409, error: "their customer " + o.buyer + " is not a customer on the roster apart from them" };
+  }
+  /* plan version 3, part 3d: ONE SHEET, ONE TRIP. Its one delivery rides its first line still standing, so another line's charge is refused with
+     the way on; and a line joins the trip only when every sibling's row (on the book, or pending) is dated this row's day, a trip being one day's,
+     else it stands as a row of its own (its delivery nought all the same) */
+  const trip = tripOf(o);
+  if (trip) {
+    const lines = tripLines(o, ctx && ctx.orders);
+    let oneDay = !(book.sales || []).some((s) => s && s.trip === trip && !s.cancelled && s.date !== rowDay);
+    for (const x of lines) if (oneDay && x.id !== o.id) { const day = await pendingDay(env, x); if (day && day !== rowDay) oneDay = false; }
+    /* Fable's re-check: and the first line carries it only while it is still Placed or has a row (pending or on the book) dated this day; agreed
+       on another day with its row rejected and not yet offered again, it carries nothing here, so this line takes its own charge, off the trip */
+    const lead = lines[0];
+    let leadHere = lead.id === o.id || lead.status === "placed";
+    if (!leadHere) leadHere = (await pendingDay(env, lead)) === rowDay
+      || (!!lead.ledgerKey && (book.sales || []).some((s) => s && !s.cancelled && s.date === rowDay && POSITION_ENGINE.ovKey(s) === ledgerKeyOf(lead)));
+    /* Fable's review: a line that cannot join the trip (its first line's row is another day's) is a delivery of its own, and its charge is taken */
+    if (oneDay && leadHere && lead.id !== o.id && (+agreed.delivery || 0) > 0.004)
+      return { ok: false, status: 409, error: "this sheet's one delivery rides its first order, " + lead.id.slice(-6) + ": agree this line at no delivery" };
+    if (oneDay && leadHere) entry.payload.trip = trip;
   }
   const fl = floorFor(book, product, qty);
   const under = floorRefusal(price, fl, qty);   /* never under the floor at this size (rule 5), engine/stages.mjs */

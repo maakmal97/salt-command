@@ -13,7 +13,11 @@ export async function run({ ok }) {
   const posts = [];
   let previewFail = 0, acceptFail = 0;
   const orderOf = (id, patch = {}) => ({ id, u: "abcd-efgh", product: "salt", qty: 2, total: 200, status: "placed", mode: "deliver", history: [], ...patch });
-  const reviewBody = { ok: true, drafts: [], orders: [orderOf("20261007090001-dlv", { sheet: "sh1" }), orderOf("20261007090002-dlv", { sheet: "sh1" })] };
+  const reviewBody = { ok: true, drafts: [], orders: [orderOf("20261007090001-dlv", { sheet: "sh1" }), orderOf("20261007090002-dlv", { sheet: "sh1" }),
+    /* plan version 3, part 3d: a sheet whose first line is agreed already */
+    orderOf("20261007090003-dlv", { sheet: "sh2", status: "done", history: [{ at: new Date().toISOString(), status: "acknowledged", by: "desk" }] }), orderOf("20261007090004-dlv", { sheet: "sh2" }),
+    /* and one whose first line was agreed on another day: another day's trip, so the next line asks its own charge */
+    orderOf("20261007090005-dlv", { sheet: "sh3", status: "ready", history: [{ at: "2026-10-01T01:00:00.000Z", status: "acknowledged", by: "desk" }] }), orderOf("20261007090006-dlv", { sheet: "sh3" })] };
   const preview = (body) => ({ cost: { unit: 80, total: 160, source: "purchase" },
     ok: true, quote: body.total, delivery: body.delivery, hash: "h-" + (posts.filter((p) => p.kind === "preview").length), row: { qty: 2, total: body.total },
     card: 190, cardNote: null, floor: { rm: 150, at: 2, exact: true }, margin: { rm: 40, pct: 21 },
@@ -147,5 +151,8 @@ export async function run({ ok }) {
     await until(() => previews(later).length > 0);
     ok(previews().length === beforeLater + 1 && previews(later)[0].body.delivery === 0 && previews(later)[0].body.total === 200,
       "A later order on a sheet reads its figures on opening, at delivery 0, and the Desk is asked once: " + JSON.stringify(previews(later)));
+    const after = "20261007090004-dlv";
+    ok(!!card(after) && !feeSel(after), "Plan version 3, part 3d: a line whose sheet's first line is agreed already still asks no charge, the trip's one delivery riding that line: " + !!feeSel(after));
+    ok(!!card("20261007090006-dlv") && !!feeSel("20261007090006-dlv"), "Plan version 3, part 3d (Fable's review): a line whose sheet's first line was agreed on another day asks its own charge, that being another day's trip");
   } finally { browser.window.close(); }
 }

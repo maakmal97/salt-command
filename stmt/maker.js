@@ -1,4 +1,25 @@
 import { allOrders, deskSeen, placeOrder, customerView, RID_RE, onBook, allPools, poolOpen, poolClose, deskBody, klDay, dueOf } from "./orders.js";
+
+/* plan version 3, part 3d: ONE SHEET, ONE TRIP, AGREED IN ONE REQUEST. His Agree on a delivered sheet's first line still standing goes on to agree
+   every other line still Placed, each through the Desk's own preview and Accept at no delivery (its one charge rides the first line) and the window
+   he chose for it where the line asked none, so the trip's rows are drafted on one day. A line that does not agree says why and stays Placed. */
+const sheetLines = (o, orders) => (o && o.mode === "deliver" && o.sheet ? (orders || []).filter((x) => x && x.u === o.u && x.sheet === o.sheet && x.mode === "deliver"
+  && !["cancelled", "declined"].includes(x.status)).sort((a, b) => String(a.id).localeCompare(String(b.id))) : []);
+async function sheetFollow(env, o, slot) {
+  const lines = sheetLines(o, await allOrders(env, true));
+  if (lines.length < 2 || lines[0].id !== o.id) return null;
+  const out = [];
+  for (const f of lines.slice(1).filter((x) => x.status === "placed")) {
+    try {
+      const body = Object.assign({ total: +f.total, delivery: 0 }, slot && !f.slot && !f.wantBy ? { slot } : {});
+      const pv = await deskCall(env, "/_internal/maker/orders/" + f.id + "/preview", "POST", body);
+      if ((pv.flags || []).some((x) => /under the Floor/.test(String(x)))) { out.push({ id: f.id, accepted: false, why: "Its price is under today's Floor, so agree it on its own." }); continue; }
+      const ac = await deskCall(env, "/_internal/maker/orders/" + f.id + "/accept", "POST", Object.assign({}, body, { hash: pv.hash }));
+      out.push(ac.approved ? { id: f.id, accepted: true } : { id: f.id, accepted: false, why: ac.differs ? "Its row differs, so it waits under Approve." : "Its row is being drafted." });
+    } catch (error) { out.push({ id: f.id, accepted: false, why: oneSentence(error && error.message || error) }); }
+  }
+  return out;
+}
 import { accountRecord, exampleAccount, examplePlace, examplePools, exampleThread, exampleDeskSay, isTest, isExample, EXAMPLE_ID, TEST_USERS, EXAMPLE_POINTS } from "./testfix.js";
 import { POINTS_KEY, readPoints, validatePoints, resolvePoint, isPointCode } from "./points.js";
 import { hoursStatus, validateManualHours, validateWeeklyHours, HOURS_KEY, windowHours, openMinutes, plainWeek, openParts } from "./hours.js";
@@ -888,7 +909,13 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
       if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
       /* the test surface: an example order's every move, in its fixture alone (exampleAction) */
       if (EXAMPLE_ID.test(op.id)) return await exampleAction(env, op.id, op.action, parsed.body);
-      return json(await deskCall(env, "/_internal/maker/orders/" + op.id + "/" + op.action, "POST", parsed.body));
+      const done = await deskCall(env, "/_internal/maker/orders/" + op.id + "/" + op.action, "POST", parsed.body);
+      if (op.action === "accept" && done && done.approved) {
+        const order = (await allOrders(env, true)).find((x) => x.id === op.id);
+        const sheet = order ? await sheetFollow(env, order, parsed.body && parsed.body.slot) : null;
+        if (sheet && sheet.length) done.sheet = sheet;
+      }
+      return json(done);
     }
     if (op.kind === "order-move") {
       if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);

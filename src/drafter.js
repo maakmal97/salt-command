@@ -1813,7 +1813,10 @@ export function draftRow(entry, book) {
         : "")
       + `, RM ${round(rate)}/unit.`,
     dir === "SELL" ? `Costed at RM ${round(priced.cost)}/unit from ${priced.source}, so ${margin == null ? "no margin could be computed" : `RM ${round(goodsTotal - priced.cost * qty)} on the goods at ${round(margin, 1)}%`}.` : "",
-    row.trip ? (carryRM > 0.005 ? `One row of trip ${row.trip}: it carries the trip's one delivery, and approving it approves every row of the trip.`
+    /* plan version 3, part 3d (Fable's review): a site order's row on a trip is approved on its own, as tripStmts leaves it */
+    row.trip ? (entry && entry.orderId ? (carryRM > 0.005 ? `One row of trip ${row.trip}, its sheet's: it carries the sheet's one delivery, and is approved on its own.`
+      : `One row of trip ${row.trip}, its sheet's: the delivery rides the sheet's first order, so none is charged here, and it is approved on its own.`)
+      : carryRM > 0.005 ? `One row of trip ${row.trip}: it carries the trip's one delivery, and approving it approves every row of the trip.`
       : `One row of trip ${row.trip}: the trip's delivery sits on another of its rows, so none is charged here, and approving it approves every row of the trip.`) : "",
     nothingMoved
       ? `Nothing was paid and nothing moved, so the row is PENDING, dated ${row.date} as the day it was agreed: it draws no stock and books no revenue until something moves.`
@@ -1895,7 +1898,7 @@ export async function draftedOf(db, ats) {
  * committed (rows this pass made included, since each is inserted before the next is drafted), and, on a dry run that
  * inserts nothing, the rows it would make. Read only when the row names a trip. A row with no delivery whose trip has no
  * row carrying one yet is FLAGGED: the delivery's row may have been refused, and this one would land with no charge. */
-export async function tripCheck(db, book, row, extra, flags) {
+export async function tripCheck(db, book, row, extra, flags, site) {
   if (!row || !row.trip) return null;
   const rs = await db.prepare(
     "SELECT row FROM draft WHERE " + unfolded(boundOf(book)) + " AND status IN ('pending','approved') AND collection='sales' AND json_extract(row,'$.trip')=?1"
@@ -1903,7 +1906,8 @@ export async function tripCheck(db, book, row, extra, flags) {
   const sibs = (book.sales || []).filter((s) => s && s.trip === row.trip)
     .concat((rs.results || []).map((r) => JSON.parse(r.row)), (extra || []).filter((r) => r && r.trip === row.trip));
   const fault = POSITION_ENGINE.tripFault(sibs.concat([row]));
-  if (!fault && flags && !sibs.concat([row]).some((s) => +s.delivery > 0.005))
+  /* a site sheet's trip may be agreed at no delivery, his charge: no flag, so its rows equal their previews */
+  if (!fault && flags && !site && !sibs.concat([row]).some((s) => +s.delivery > 0.005))
     flags.push(`No row of trip ${row.trip} carrying its delivery has been drafted, so this row would land with no delivery charged: if the delivery's row was refused, reject this one too and enter the trip again.`);
   return fault;
 }
@@ -1930,7 +1934,7 @@ export async function dryRunDrafter(env) {
     const admission = await checkInputAdmission(env.SALT_LEDGER, entry, book);
     const fault = admission.error || POSITION_ENGINE.entryReservationFault(entry, reservedEntries, book);
     let d = fault ? { skip: fault } : draftRow(entry, await withDraftLots(env.SALT_LEDGER, book));
-    const tf = !d.skip && d.row && d.row.trip ? await tripCheck(env.SALT_LEDGER, book, d.row, out.would.map((w) => w.row), d.flags) : null;
+    const tf = !d.skip && d.row && d.row.trip ? await tripCheck(env.SALT_LEDGER, book, d.row, out.would.map((w) => w.row), d.flags, !!(entry && entry.orderId)) : null;
     if (tf) d = { skip: tf };
     if (d.skip) out.skipped.push({ at, why: d.skip });
     else {
@@ -2165,7 +2169,7 @@ export async function runDrafter(env, { now = () => new Date().toISOString(), mi
     const reservationFault = admission.error || POSITION_ENGINE.entryReservationFault(entry, reservedEntries, book);
     let d = reservationFault ? { skip: reservationFault } : draftRow(entry, entry.payload && entry.payload.undo != null
       ? await withRefunds(env.SALT_LEDGER, await withDraftLots(env.SALT_LEDGER, book)) : await withDraftLots(env.SALT_LEDGER, book));
-    const tf = !d.skip && d.row && d.row.trip ? await tripCheck(env.SALT_LEDGER, book, d.row, [], d.flags) : null;
+    const tf = !d.skip && d.row && d.row.trip ? await tripCheck(env.SALT_LEDGER, book, d.row, [], d.flags, !!(entry && entry.orderId)) : null;
     if (tf) d = { skip: tf };
     if (d.skip) {
       if (await env.SALT_LEDGER.prepare(

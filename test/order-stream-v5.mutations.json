@@ -1,0 +1,19 @@
+[
+ {"name": "a collection names a trip", "file": "engine/stages.mjs", "find": "  if (!o || o.mode !== \"deliver\" || typeof o.sheet", "replace": "  if (!o || typeof o.sheet"},
+ {"name": "a cancelled line keeps the delivery", "file": "engine/stages.mjs", "find": "  && x.mode === \"deliver\" && ![\"cancelled\", \"declined\"].includes(x.status))).sort(", "replace": "  && x.mode === \"deliver\")).sort("},
+ {"name": "another account's line is on the trip", "file": "engine/stages.mjs", "find": "(orders || []).filter((x) => x && x.id !== o.id && x.u === o.u && x.sheet === o.sheet", "replace": "(orders || []).filter((x) => x && x.id !== o.id && x.sheet === o.sheet"},
+ {"name": "another line's charge is taken", "file": "src/orders.js", "find": "    if (oneDay && leadHere && lead.id !== o.id && (+agreed.delivery || 0) > 0.004)", "replace": "    if (false)"},
+ {"name": "a sibling's pending day is not read", "file": "src/orders.js", "find": "    for (const x of lines) if (oneDay && x.id !== o.id) { const day = await pendingDay(env, x); if (day && day !== rowDay) oneDay = false; }\n", "replace": ""},
+ {"name": "the book's rows of the trip are not read", "file": "src/orders.js", "find": "    let oneDay = !(book.sales || []).some((s) => s && s.trip === trip && !s.cancelled && s.date !== rowDay);", "replace": "    let oneDay = true;"},
+ {"name": "the row names no trip", "file": "src/orders.js", "find": "    if (oneDay && leadHere) entry.payload.trip = trip;\n", "replace": ""},
+ {"name": "his Agree agrees the line alone", "file": "stmt/maker.js", "find": "      if (op.action === \"accept\" && done && done.approved) {", "replace": "      if (false) {"},
+ {"name": "any line's Agree goes on to the others", "file": "stmt/maker.js", "find": "  if (lines.length < 2 || lines[0].id !== o.id) return null;", "replace": "  if (lines.length < 2) return null;"},
+ {"name": "the other lines are charged", "file": "stmt/maker.js", "find": "{ total: +f.total, delivery: 0 }, slot && !f.slot", "replace": "{ total: +f.total, delivery: 15 }, slot && !f.slot"},
+ {"name": "the window he chose is not carried", "file": "stmt/maker.js", "find": "slot && !f.slot && !f.wantBy ? { slot } : {});", "replace": "{});"},
+ {"name": "a collected sheet is followed too", "file": "stmt/maker.js", "find": "const sheetLines = (o, orders) => (o && o.mode === \"deliver\" && o.sheet ? (orders || []).filter((x) => x && x.u === o.u && x.sheet === o.sheet && x.mode === \"deliver\"\n", "replace": "const sheetLines = (o, orders) => (o && o.sheet ? (orders || []).filter((x) => x && x.u === o.u && x.sheet === o.sheet\n"},
+ {"name": "a refused line's reason is not cut to one sentence", "file": "stmt/maker.js", "find": "    } catch (error) { out.push({ id: f.id, accepted: false, why: oneSentence(error && error.message || error) }); }", "replace": "    } catch (error) { out.push({ id: f.id, accepted: false, why: String(error && error.message || error) }); }"},
+ {"name": "a line off the trip has its charge refused", "file": "src/orders.js", "find": "    if (oneDay && leadHere && lead.id !== o.id && (+agreed.delivery || 0) > 0.004)", "replace": "    if (leadHere && lead.id !== o.id && (+agreed.delivery || 0) > 0.004)"},
+ {"name": "a site row says approving it approves the trip", "file": "src/drafter.js", "find": "    row.trip ? (entry && entry.orderId ? (carryRM", "replace": "    row.trip ? (false ? (carryRM"},
+ {"name": "a site trip at no delivery is flagged", "file": "src/drafter.js", "find": "  if (!fault && flags && !site && !sibs", "replace": "  if (!fault && flags && !sibs"},
+ {"name": "a first line with no row here still carries the charge", "file": "src/orders.js", "find": "    let leadHere = lead.id === o.id || lead.status === \"placed\";", "replace": "    let leadHere = true;"}
+]

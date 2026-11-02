@@ -48537,6 +48537,11 @@ await (async () => {
   await (await import("./order-stream-v4.mjs")).run({ ok });
 })();
 
+section("v1388 One order stream: one sheet with one delivery is one trip, its delivery on its first line, one day, agreed in one request (3d)");
+await (async () => {
+  await (await import("./order-stream-v5.mjs")).run({ ok });
+})();
+
 section("Counter Batch C: the seal carries the spot's name and unit, a unit alone sealed as its own shape, nothing in the clear (P6)");
 await (async () => {
   await (await import("./counter-c-pin-seal.mjs")).run({ ok });

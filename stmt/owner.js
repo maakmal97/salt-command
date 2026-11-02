@@ -3391,7 +3391,7 @@ export const OWNER_JS = `
         makerSay(key,result.differs?'The row differs from what you saw and waits under Approve.'
           :result.waiting?'The row is still being made. Check Approve in a moment.'
           :result.dropped&&result.row?'Taken off. The money is on '+result.row+'.'
-          :result.preapproval&&result.preapproval.says?result.preapproval.says:message||'Saved.');
+          :result.preapproval&&result.preapproval.says?result.preapproval.says:(message||'Saved.')+sheetSaid(result.sheet));
         return true;
       });
     },function(error){
@@ -3400,6 +3400,13 @@ export const OWNER_JS = `
       makerSay(key,error.message,error);
       return false;
     });
+  }
+  /* plan version 3, part 3d: what the sheet's other lines did when his Agree on its first went on to them, in one sentence */
+  function sheetSaid(sheet){
+    if(!Array.isArray(sheet)||!sheet.length) return '';
+    var ok=sheet.filter(function(x){ return x&&x.accepted; }).length, left=sheet.filter(function(x){ return x&&!x.accepted; });
+    return ' '+(ok?ok+' other line'+(ok>1?'s':'')+' agreed with it, one trip and one delivery.':'')
+      +(left.length?(ok?' ':'')+left.length+' still to agree: '+String(left[0].why||'').replace(/[.]$/,'')+'.':'');
   }
   /* one request id per move until it lands, so a retry after a lost answer is the same request */
   var makerRids={};
@@ -5365,8 +5372,13 @@ export const OWNER_JS = `
         var tf={body:stage, open:true};
         /* a sheet of several placed orders asks for the delivery charge once, on its first order (the Desk's ordPvDelivery):
            the others hide the chips and send nought */
-        var group=open.filter(function(o){ return order.sheet&&o.u===order.u&&o.sheet===order.sheet; }).sort(function(a,b){ return String(a.id).localeCompare(String(b.id)); });
-        var follower=group.length>1&&group.every(function(o){ return o.status==='placed'; })&&group[0].id!==order.id;
+        /* plan version 3, part 3d: the charge rides the sheet's first delivered line still standing, agreed or not, so a later line never asks it again */
+        /* Fable's review: read off every order (as the Desk's tripLines), not the open list, so a first line at Out or paid still carries it; and a
+           first line agreed on another day is another day's trip, so this line asks its own charge */
+        var group=((makerData&&makerData.orders)||[]).filter(function(o){ return order.sheet&&o.u===order.u&&o.sheet===order.sheet&&o.mode==='deliver'&&o.status!=='cancelled'&&o.status!=='declined'; }).sort(function(a,b){ return String(a.id).localeCompare(String(b.id)); });
+        var lead0=group[0], leadAck=lead0?(lead0.history||[]).filter(function(h){ return h&&h.status==='acknowledged'; }).slice(-1)[0]:null;
+        var leadToday=!!lead0&&(lead0.status==='placed'||!!leadAck&&new Date(leadAck.at).toLocaleDateString('en-CA',{timeZone:'Asia/Kuala_Lumpur'})===tripToday());
+        var follower=order.mode==='deliver'&&group.length>1&&group[0].id!==order.id&&leadToday;
         var deliver=order.mode==='deliver'&&!follower;
         var chip=makerFee[order.id]||(makerFee[order.id]={value:'',other:''});
         var otherField=null, previewTurn=0, sig=JSON.stringify(order), feeSel=null, winDraw=null;
