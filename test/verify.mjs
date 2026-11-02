@@ -50776,6 +50776,11 @@ await (async () => {
   await (await import("./admin-cust-pct.mjs")).run({ ok, pageWork });
 })();
 
+section("3 Nov 2026: Salt Admin's open account on Shop's grid, every group a settings list under a mist head, no glass and no ghost, 24px apart");
+await (async () => {
+  await (await import("./admin-acct-grid.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin Customers P4: This customer and the associate reward by the account's code, behind both locks (26 Oct 2026)");
 await (async () => {
   await (await import("./admin-cust-reads.mjs")).run({ ok, pageWork });

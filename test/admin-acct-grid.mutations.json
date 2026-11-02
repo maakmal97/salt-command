@@ -1,0 +1,16 @@
+[
+  { "name":"G1 Partner in a glass card again", "file":"stmt/owner.js", "find":"var s=el('section','asec apart');", "replace":"var s=el('section','asec apart salt-glass-card salt-glass-card--radius-lg');" },
+  { "name":"G1 Sign-ins a div again", "file":"stmt/owner.js", "find":"var sty=el('section','asec astory');", "replace":"var sty=el('div','asec astory');" },
+  { "name":"G1 This customer in a glass card again", "file":"stmt/owner.js", "find":"var cust=el('section','asec acust'),", "replace":"var cust=el('section','asec acust salt-glass-card')," },
+  { "name":"G2 Loans headed by a copper eyebrow", "file":"stmt/owner.js", "find":"box.appendChild(el('h2','salt-settings__head','Loans and reward'));", "replace":"box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Loans and reward'));" },
+  { "name":"G2 Their % headed by a copper eyebrow", "file":"stmt/owner.js", "find":"s.appendChild(el('h2','salt-settings__head','Their %'));", "replace":"s.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Their %'));" },
+  { "name":"G2 This customer's head a copper eyebrow", "file":"stmt/owner.js", "find":"function acctHead(box, t){ var h=el('h2','salt-settings__head ahead2',t);", "replace":"function acctHead(box, t){ var h=el('h3','salt-eyebrow salt-eyebrow--copper',t);" },
+  { "name":"G3 Make partner a ghost again", "file":"stmt/owner.js", "find":"    b.classList.add('apart__go');\n    asRow(b);", "replace":"    b.classList.add('apart__go');" },
+  { "name":"G3 a device's Sign out a ghost again", "file":"stmt/owner.js", "find":"var so=asRow(ghost(['Sign out','acct.device-signout',d.id]),true);", "replace":"var so=ghost(['Sign out','acct.device-signout',d.id]);" },
+  { "name":"G3 Remove as stale not in ember", "file":"stmt/owner.js", "find":"asRow(b, k[1]==='refundRemove');", "replace":"asRow(b);" },
+  { "name":"G3 a loan a ghost again", "file":"stmt/owner.js", "find":"var go=actOn(el('button','salt-settings__row salt-settings__row--action aloan'),'acct.repay',item.rid);", "replace":"var go=actOn(el('button','salt-ghost aloan'),'acct.repay',item.rid);" },
+  { "name":"G4 columns 20px apart", "file":"stmt/page.js", "find":"  .adm #aopen .oacct{display:block;column-count:2;column-gap:24px}", "replace":"  .adm #aopen .oacct{display:block;column-count:2;column-gap:20px}" },
+  { "name":"G4 a group in columns with nothing under it", "file":"stmt/page.js", "find":"  .adm #aopen .oacct>*,.adm #aopen .oacct .amore>*{break-inside:avoid;margin:0 0 24px}", "replace":"  .adm #aopen .oacct .asec{break-inside:avoid;margin:0 0 20px}" },
+  { "name":"G4 the more groups 12px apart", "file":"stmt/page.js", "find":".adm .amore{display:flex;flex-direction:column;gap:24px}", "replace":".adm .amore{display:flex;flex-direction:column;gap:12px}" },
+  { "name":"G5 a device's line the long sentence again", "file":"stmt/owner.js", "find":"?'Kept since '+dayMon(d.at)+', used '+when(d.last)", "replace":"?'Kept signed in since '+dayMon(d.at)+', last used '+when(d.last)+'.'" }
+]
