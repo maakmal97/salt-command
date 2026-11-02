@@ -1,0 +1,116 @@
+[
+  {
+    "name": "V1 the open order keeps the stage's name and is swept hidden",
+    "file": "stmt/owner.js",
+    "find": "card.setAttribute('data-in',(opts&&opts.parts)||orderPartsOf(order));",
+    "replace": "card.setAttribute('data-in',orderPartsOf(order));"
+  },
+  {
+    "name": "V2 his band leaves the 16px line",
+    "file": "stmt/page.js",
+    "find": "var h=el('section','oband salt-band salt-band--grid'), top=",
+    "replace": "var h=el('section','oband salt-band'), top="
+  },
+  {
+    "name": "V2 his card is a glass card again",
+    "file": "stmt/owner.js",
+    "find": "var card=makerCard(root,order.id,'ocard'), acts=",
+    "replace": "var card=makerCard(root,order.id), acts="
+  },
+  {
+    "name": "V2 the Bill is a ledger again",
+    "file": "stmt/page.js",
+    "find": "var s=el('section','obill'), L=el('div','salt-settings ordmoney');",
+    "replace": "var s=el('section','obill'), L=el('div','salt-ledger ordmoney');"
+  },
+  {
+    "name": "V2 the total's row is not heavier",
+    "file": "stmt/page.js",
+    "find": "(r.total?' salt-settings__row--total':'')",
+    "replace": "''"
+  },
+  {
+    "name": "V3 a field in his decision keeps its label above it",
+    "file": "stmt/owner.js",
+    "find": "parent.closest('section.maker-input,#makerInputs,.odecide')",
+    "replace": "parent.closest('section.maker-input,#makerInputs')"
+  },
+  {
+    "name": "V3 the stand-in pill stays beside Agree",
+    "file": "stmt/owner.js",
+    "find": "var wait=lead.querySelector('[data-accept-wait]'); if(wait) wait.remove();",
+    "replace": "void 0;"
+  },
+  {
+    "name": "V4 Decline is no ember row",
+    "file": "stmt/owner.js",
+    "find": "yes:function(){ makerMove(order,Object.assign({status:'declined'},why.note()),'Order declined.'); }});\n      },false),true);",
+    "replace": "yes:function(){ makerMove(order,Object.assign({status:'declined'},why.note()),'Order declined.'); }});\n      },false));"
+  },
+  {
+    "name": "V4 the end comes before This customer",
+    "file": "stmt/owner.js",
+    "find": "ordNext(card,order,['acknowledged','ready','done'].indexOf(order.status)>=0);\n      ordEnd(card,order);",
+    "replace": "ordEnd(card,order);\n      ordNext(card,order,['acknowledged','ready','done'].indexOf(order.status)>=0);"
+  },
+  {
+    "name": "V5 an empty line is sent",
+    "file": "stmt/owner.js",
+    "find": "      if(!said.value.trim()) return;\n      makerMove(order,{message:said.value.trim()},'Reply sent.');",
+    "replace": "      makerMove(order,{message:said.value.trim()},'Reply sent.');"
+  },
+  {
+    "name": "V5 the line is sent untrimmed",
+    "file": "stmt/owner.js",
+    "find": "makerMove(order,{message:said.value.trim()},'Reply sent.');",
+    "replace": "makerMove(order,{message:said.value},'Reply sent.');"
+  },
+  {
+    "name": "V6 This customer opens nothing",
+    "file": "stmt/owner.js",
+    "find": "who.addEventListener('click',function(){ showPlace('customers','accounts',{fresh:true,push:true}); openCard(order.u); });",
+    "replace": "who.addEventListener('click',function(){ showPlace('customers','accounts',{fresh:true,push:true}); });"
+  },
+  {
+    "name": "V7 the Bill stays in the decision",
+    "file": "stmt/owner.js",
+    "find": "      cols[x.getAttribute('data-ocol')==='record'?1:0].appendChild(x);",
+    "replace": "      cols[x.matches('.omsgs,.ordend,.onext')?1:0].appendChild(x);"
+  },
+  {
+    "name": "V7 the columns wait for 1440px",
+    "file": "stmt/owner.js",
+    "find": "var mm=window.matchMedia, n=mm&&mm('(min-width:1180px)').matches?2:1;",
+    "replace": "var mm=window.matchMedia, n=mm&&mm('(min-width:1440px)').matches?2:1;"
+  },
+  {
+    "name": "V8 Their messages is a pill again",
+    "file": "stmt/owner.js",
+    "find": "rp=actOn(el('button','salt-settings__row salt-settings__row--action athread__row'),'acct.reply',u);",
+    "replace": "rp=actOn(el('button','salt-pill salt-pill--md athread__row'),'acct.reply',u);"
+  },
+  {
+    "name": "V8 Copy password is no ember row",
+    "file": "stmt/owner.js",
+    "find": "var pwb=asRow(ghost(['Copy password','acct.password']),true)",
+    "replace": "var pwb=asRow(ghost(['Copy password','acct.password']))"
+  },
+  {
+    "name": "V8 Sign out everywhere sends without asking",
+    "file": "stmt/owner.js",
+    "find": "      if(!await ownerAsk(sob,'acct.signout-all:'+u,{title:'Sign out everywhere?'",
+    "replace": "      if(false&&!await ownerAsk(sob,'acct.signout-all:'+u,{title:'Sign out everywhere?'"
+  },
+  {
+    "name": "V9 the customer's owed figure is not in ember",
+    "file": "stmt/page.js",
+    "find": "R.push(tp>0.004?{k:tw('pay.still'), v:rm(tp), sub:payWhen(o), due:true,",
+    "replace": "R.push(tp>0.004?{k:tw('pay.still'), v:rm(tp), sub:payWhen(o),"
+  },
+  {
+    "name": "V9 the customer's screen is a glass card again",
+    "file": "stmt/page.js",
+    "find": "    var s=el('section','oscreen'); s.setAttribute('data-order',o.id);",
+    "replace": "    var s=el('section','oscreen salt-glass-card'); s.setAttribute('data-order',o.id);"
+  }
+]
