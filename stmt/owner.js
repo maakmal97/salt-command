@@ -375,48 +375,51 @@ export const OWNER_JS = `
   /* S9 fix: a code his counter showed is scanned; a customer's own is copied across; key, before the two were told apart */
   var HOWW={link:'Sign-in link', qr:'Code', copy:'Code', key:'Code', code:'Code', password:'Password', passkey:'Passkey'};
   var HOWT={qr:'Scanned at the counter', copy:'Copied across', code:'Typed in'};
+  /* 3 Nov 2026 (the account on Shop's grid): a line of the account is a settings row: its name, a second line under it when there is one, a word at the
+     right; aval is that word, ember when hot */
   function lineRow(label, value, flag){
-    var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), v=el('span','salt-ledger__value');
-    l.appendChild(el('span','salt-ledger__label',label));
-    if(value) v.appendChild(value);
-    l.appendChild(v); r.appendChild(l);
-    if(flag) r.appendChild(el('span','salt-ledger__flag',flag));
+    var r=el('div','salt-settings__row'), tx=el('div','salt-settings__text');
+    tx.appendChild(el('span','salt-settings__label',label));
+    if(flag) tx.appendChild(el('span','salt-settings__sub',flag));
+    r.appendChild(tx);
+    if(value){ var v=el('span','salt-settings__value'); v.appendChild(value); r.appendChild(v); }
     return r;
   }
-  function onWhat(where){ return where?' on '+String(where).replace(/^A /,'a '):''; }
+  function aval(t, hot){ return el('span',hot?'nage--late':null,t); }
+  function onWhat(where){ return where?' on '+String(where).replace(/^An? /,function(m){ return m.toLowerCase(); }):''; }
   function drawStory(box, a){
     var s=story[a.username];
     box.textContent='';
-    box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Sign-ins'));
-    var list=el('div','salt-ledger salt-ledger--plain'), L=a.locked;
-    if(L) list.appendChild(lineRow('Password', chip('alarm','Locked out'),
-      'Too many wrong passwords'+(L.until?', locked out until '+hm(L.until):'')+'.'));
+    box.appendChild(el('h2','salt-settings__head','Sign-ins'));
+    var list=el('div','salt-settings astory__list'), L=a.locked;
+    if(L) list.appendChild(lineRow('Password', aval('Locked out',true), 'Too many wrong passwords'+(L.until?', until '+hm(L.until):'')));
     var log=(s&&s.log)||[];
     log.forEach(function(x){
-      var way=lineRow(HOWW[x.how]||'Signed in', x.how==='password'||x.how==='passkey'?null:chip('verdigris','Used'), fmtWhen(x.at)+onWhat(x.where)+(HOWT[x.how]?'. '+HOWT[x.how]+'.':''));
-      list.appendChild(way);
+      var sub=HOWT[x.how]?HOWT[x.how]+onWhat(x.where):x.where?String(x.where):'';
+      list.appendChild(lineRow(HOWW[x.how]||'Signed in', aval(fmtWhen(x.at)), sub));
     });
-    if(!s) list.appendChild(lineRow('Reading how they signed in.', null, ''));
+    if(!s){ var rd=lineRow('Reading', null, ''); rd.classList.add('salt-settings__row--muted'); list.appendChild(rd); }
     else if(s.err) list.appendChild(lineRow('Not read', null, s.err));
     else if(!log.length) list.appendChild(a.seen&&a.seen.opens
-      ?lineRow('Last opened', null, dayMon(a.seen.last)+(howOf(a.seen)?', '+howOf(a.seen):'')+'. Earlier sign-ins were not kept.')
-      :lineRow('Not opened yet', null, a.sent?'Sent '+dayMon(a.sent)+'.':''));
+      ?lineRow('Last opened', aval(dayMon(a.seen.last)+(howOf(a.seen)?' '+howOf(a.seen):'')), 'Earlier sign-ins were not kept.')
+      :lineRow('Not opened yet', a.sent?aval('Sent '+dayMon(a.sent)):null, ''));
     box.appendChild(list);
-    /* S9 9.4: PHONES AND COMPUTERS, off the account's own pointers: each device named as its browser described itself when
-       it signed in, when it came and when it was last used, whether it is kept signed in, and a Sign out of its own */
-    var devs=(s&&s.devices)||[], dh=el('h3','salt-eyebrow salt-eyebrow--copper dhead','Phones and computers');
+    /* S9 9.4: PHONES AND COMPUTERS, off the account's own pointers: each device named as its browser described itself when it signed in, when it came and
+       when it was last used, whether it is kept signed in, and a Sign out of its own. 3 Nov 2026: the device a row, its Sign out an ember row under it */
+    var devs=(s&&s.devices)||[], dh=el('h2','salt-settings__head dhead','Phones and computers');
     if(devs.length) dh.appendChild(el('span','dcount',String(devs.length)));
     box.appendChild(dh);
-    var dl=el('div','salt-ledger salt-ledger--plain');
+    var dl=el('div','salt-settings adevs');
     devs.forEach(function(d){
-      var so=ghost(['Sign out','acct.device-signout',d.id]);
+      dl.appendChild(lineRow(d.label||'An older device', null, d.kept
+        ?'Kept since '+dayMon(d.at)+', used '+when(d.last)
+        :'Not kept, signed in '+when(d.at)));
+      var so=asRow(ghost(['Sign out','acct.device-signout',d.id]),true);
       so.addEventListener('click', function(){ endOne(a, d, so); });
-      dl.appendChild(lineRow(d.label||'A device named before this list began', so, d.kept
-        ?'Kept signed in since '+dayMon(d.at)+', last used '+when(d.last)+'.'
-        :'Signed in '+when(d.at)+' for this visit, not kept.'));
+      dl.appendChild(so);
     });
     if(s&&!s.err&&!devs.length) dl.appendChild(lineRow('None signed in', null, 'A sign-in link or a code signs them in.'));
-    box.appendChild(dl);
+    if(dl.firstChild) box.appendChild(dl); else dh.remove();
   }
   async function endOne(a, d, b){
     b.disabled=true; b.textContent='Signing out...';
@@ -464,7 +467,7 @@ export const OWNER_JS = `
     if(a.flag==='pend') return {word:'Agreed', fig:rmShort(t.pend), hot:false};
     return {word:'Owed', fig:'Nil', hot:false};
   }
-  function acctLine(L, k, v){ var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'); l.appendChild(el('span','salt-ledger__label',k)); l.appendChild(el('span','salt-ledger__value',v)); r.appendChild(l); r.setAttribute('data-line',k); L.appendChild(r); return r; }
+  function acctLine(L, k, v){ var r=lineRow(k, aval(v), ''); r.setAttribute('data-line',k); L.appendChild(r); return r; }
   function acctCard(a){
     /* 2 Nov 2026 (his Orders canvas, page 2, the open account in the order's language; "accept all asks as recommended"): THE ACCOUNT AS THE OPEN ORDER IS.
        Its head is the band (the state and its age, the code and the username, what is owed at the right), then where it stands as a settings list, their
@@ -562,9 +565,9 @@ export const OWNER_JS = `
     c.appendChild(sign);
     if(!none&&!a.test&&a.code){ var more=el('div','amore'); c.appendChild(more); acctMore(more, a); }
     /* 14 OCT 2026 (his decision): everything related to a customer is on their card, so their loans and their reward stand here, read from the Desk's catalogue */
-    var books=el('div','asec abooks salt-glass-card salt-glass-card--radius-lg'); books.setAttribute('data-loans', u);
+    var books=el('section','asec abooks'); books.setAttribute('data-loans', u); books.setAttribute('aria-label','Loans and reward');
     if(!none&&!a.test&&a.code){ c.appendChild(books); drawBooks(books, a); }
-    var sty=el('div','asec astory salt-glass-card salt-glass-card--radius-lg'); sty.setAttribute('data-story', u);
+    var sty=el('section','asec astory'); sty.setAttribute('data-story', u); sty.setAttribute('aria-label','Sign-ins');
     if(!none){ c.appendChild(sty); drawStory(sty, a); loadStory(a); }
     /* what ends or removes, last and alone in its list */
     var endList=el('div','salt-settings aend'); endList.appendChild(pwb); endList.appendChild(sob);
@@ -586,7 +589,7 @@ export const OWNER_JS = `
     var code=a.code, partner=(cat.partners||[]).indexOf(code)>=0, waiting=(cat.partnerWaiting||[]).indexOf(code)>=0;
     var books=(cat.products||[]).filter(function(x){ return x.drift; }).map(function(x){ return x.product; });
     if(books.length&&(cat.driftCustomers||[]).indexOf(code)>=0) box.appendChild(pctSection(a, cat, books, partner));
-    var cust=el('div','asec acust salt-glass-card salt-glass-card--radius-lg'), rwd=el('div','asec arwd salt-glass-card salt-glass-card--radius-lg');
+    var cust=el('section','asec acust'), rwd=el('section','asec arwd'); cust.setAttribute('aria-label','This customer'); rwd.setAttribute('aria-label','Associate reward');
     cust.hidden=rwd.hidden=true; box.appendChild(cust); box.appendChild(rwd);
     readingOf('customer-of', code, function(r){ paintCust(cust, r); });
     readingOf('reward-of', code, function(r){ paintRwd(rwd, r); });
@@ -597,15 +600,15 @@ export const OWNER_JS = `
   function refundSection(a, cat){
     var mine=(cat.openRefunds||[]).filter(function(r){ return r.party===a.code||r.party===a.code+'-R'; });
     if(!mine.length) return null;
-    var s=el('div','asec arefund salt-glass-card salt-glass-card--radius-lg'), head=el('div','apct__head');
-    head.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Refunds'));
-    head.appendChild(el('span','salt-status salt-status--mist',mine.length===1?'1 open':mine.length+' open'));
-    s.appendChild(head);
+    var s=el('section','asec arefund'); s.setAttribute('aria-label','Refunds');
+    s.appendChild(el('h2','salt-settings__head','Refunds'));
     mine.forEach(function(r){
       var waits=(cat.editWaiting||[]).some(function(w){ return w.party===r.party&&w.since===r.since&&+w.amount===+r.amount; });
-      var row=el('div','arefund__row'); row.appendChild(el('p','anote',rm(r.amount)+' to '+r.party+', '+r.since+(waits?'. Waiting under Approve.':'. Paid marks it returned.')));
-      s.appendChild(row); if(waits) return;
-      var answer=el('p','anote'); answer.setAttribute('role','status');
+      /* 3 Nov 2026: a refund is its own list: its line a text row, then its two rows, the answer inside the list where makerButton looks for it */
+      var row=el('div','salt-settings arefund__row'), line=el('div','salt-settings__row salt-settings__row--text');
+      line.appendChild(el('span','salt-settings__label',rm(r.amount)+' to '+r.party+', '+r.since+(waits?'. Waiting under Approve.':'. Paid marks it returned.')));
+      row.appendChild(line); s.appendChild(row); if(waits) return;
+      var answer=el('p','anote aanswer'); answer.setAttribute('role','status');
       [['Mark paid today','refundPaid','Sent. It is marked paid once you approve it.'],['Remove as stale','refundRemove','Sent. It comes off the book once you approve it.']].forEach(function(k){
         var armed=null, at=null, b=makerButton(row,[k[0],'acct.refund',a.code+':'+r.since+':'+r.amount+':'+k[1]],async function(send){
           if(!armed){ b.textContent='Tap again to confirm'; armed=setTimeout(function(){ armed=null; b.textContent=k[0]; }, 4000); return; }
@@ -617,6 +620,7 @@ export const OWNER_JS = `
           try{ await send('/all/maker/inputs/edit',body); answer.textContent=k[2]; loadMaker(); }
           catch(error){ refusal(answer,error); }
         },false,function(){ at=null; });
+        asRow(b, k[1]==='refundRemove');
       });
       row.appendChild(answer);
     });
@@ -632,10 +636,10 @@ export const OWNER_JS = `
       .then(function(){ var r=ofReads[k], wait=ofWait[k]||[]; delete ofWait[k]; [paint].concat(wait).forEach(function(f){ f(r); }); delete r.reading; setTimeout(function(){ delete ofReads[k]; }, 60000); });
   }
   function pctSection(a, cat, books, partner){
-    var s=el('div','asec apct salt-glass-card salt-glass-card--radius-lg'), head=el('div','apct__head');
-    head.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Their %')); head.appendChild(el('span','salt-status salt-status--mist','Yours alone'));
-    s.appendChild(head);
-    if(partner){ s.appendChild(el('p','anote','A partner pays the Floor on every book: no % to set.')); return s; }
+    /* 3 Nov 2026 (the account on Shop's grid): no glass around it and the mist head: the books as tabs, then one list of the suggestion and the stepper */
+    var s=el('section','asec apct'); s.setAttribute('aria-label','Their %');
+    s.appendChild(el('h2','salt-settings__head','Their %'));
+    if(partner){ var pl=el('div','salt-settings'); pl.appendChild(lineRow('Pays the Floor', null, 'A partner has no % to set.')); s.appendChild(pl); return s; }
     var code=a.code, st=pctOn[code]||(pctOn[code]={book:books[0], pct:{}});
     if(books.indexOf(st.book)<0) st.book=books[0];
     var tabs=el('nav','salt-nav nkinds apct__books'), row=el('div','salt-nav__links apct__tabs'); tabs.setAttribute('aria-label','Book'); row.setAttribute('role','tablist');
@@ -647,14 +651,14 @@ export const OWNER_JS = `
     var card=(cat.driftCards||[]).filter(function(x){ return x.code===code&&x.product===st.book; })[0]||{};
     var held=card.held?Math.round(+card.value*100):0, sug=typeof card.suggest==='number'?Math.round(card.suggest*100):null;
     if(st.pct[st.book]==null) st.pct[st.book]=held;
-    var L=el('div','salt-ledger salt-ledger--plain'), sr=acctLine(L,'Suggested',sug==null?'None':pctWord(sug));
-    if(sug!=null&&card.why) sr.appendChild(el('span','salt-ledger__flag',card.why.charAt(0).toUpperCase()+card.why.slice(1)));
-    s.appendChild(L);
-    var step=el('div','apct__step'), down=actOn(el('button','salt-ghost apct__btn','−'),'acct.pct.down'), up=actOn(el('button','salt-ghost apct__btn','+'),'acct.pct.up'), out=el('output','apct__val');
+    var L=el('div','salt-settings apct__list');
+    L.appendChild(lineRow('Suggested', aval(sug==null?'None':pctWord(sug)), sug!=null&&card.why?card.why.charAt(0).toUpperCase()+card.why.slice(1):''));
+    /* the stepper is a row: its name, then the Counter's stepper (an Orb either side of the figure) */
+    var step=el('div','salt-settings__row apct__step'), down=actOn(el('button','salt-orb apct__btn','−'),'acct.pct.down'), up=actOn(el('button','salt-orb apct__btn','+'),'acct.pct.up'), out=el('output','apct__val');
     down.type=up.type='button'; down.setAttribute('aria-label','5% lower'); up.setAttribute('aria-label','5% higher'); out.setAttribute('aria-live','polite');
-    step.appendChild(down); step.appendChild(out); step.appendChild(up); s.appendChild(step);
+    step.appendChild(el('span','salt-settings__label','Set to')); step.appendChild(down); step.appendChild(out); step.appendChild(up); L.appendChild(step); s.appendChild(L);
     var prev=el('div','apct__prev'); s.appendChild(prev);
-    var acts=el('div','salt-settings apct__acts'), answer=el('p','anote apct__answer'); answer.setAttribute('role','status');
+    var acts=el('div','salt-settings apct__acts'), answer=el('p','anote aanswer apct__answer'); answer.setAttribute('role','status');
     var at=null, sig='';
     var sendB=makerButton(acts,['Send','acct.pct.send',code],async function(send){
       var whole=st.pct[st.book]; if(whole===held) return;
@@ -696,7 +700,7 @@ export const OWNER_JS = `
       });
       wrap.appendChild(table); card.appendChild(wrap); prev.appendChild(card);
       var usual=j.rows.filter(function(r){ return r.usual; })[0];
-      if(usual) prev.appendChild(el('p','anote','Their usual is '+units(usual.q)+'. It goes to Approve first.'));
+      if(usual) prev.appendChild(el('p','salt-settings__foot','Their usual is '+units(usual.q)+'. It goes to Approve first.'));
     }
     function pctPaint(){
       var whole=st.pct[st.book];
@@ -711,59 +715,63 @@ export const OWNER_JS = `
     pctPaint();
     return s;
   }
+  /* 3 Nov 2026 (the account on Shop's grid): This customer and the associate reward are lists under a mist head with the book's tag; the line of their rates,
+     the meter and the figures are its rows, what it means the grey line under it */
+  function acctHead(box, t){ var h=el('h2','salt-settings__head ahead2',t); h.appendChild(productTag('salt')); box.appendChild(h); }
+  function rowOf(L, node, cls){ var r=el('div','salt-settings__row '+cls); r.appendChild(node); L.appendChild(r); return r; }
   function paintCust(box, r){
     box.textContent='';
     if(!r||r.reading||!r.customer||r.error){ box.hidden=true; return; }
     box.hidden=false;
-    var head=el('div','apct__head'); head.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','This customer')); head.appendChild(productTag('salt')); box.appendChild(head);
+    acctHead(box,'This customer');
+    var L=el('div','salt-settings acust__list');
     if(r.rates&&r.rates.length>1){
       var lo=Math.min.apply(null,r.rates.map(function(x){ return x.rate; })), hi=Math.max.apply(null,r.rates.map(function(x){ return x.rate; })), span=hi-lo||1;
-      var line=el('div','acust__line'); line.appendChild(el('span','salt-eyebrow salt-eyebrow--mist','Last '+r.rates.length+', a unit')); line.appendChild(el('span','anote',rmShort(lo)+' to '+rmShort(hi))); box.appendChild(line);
+      L.appendChild(lineRow('Last '+r.rates.length+' rates', aval(rmShort(lo)+' to '+rmShort(hi)), ''));
       var NS='http://www.w3.org/2000/svg', svg=document.createElementNS(NS,'svg'); svg.setAttribute('viewBox','0 0 100 24'); svg.setAttribute('preserveAspectRatio','none'); svg.setAttribute('class','ocust__spark acust__spark');
       svg.setAttribute('role','img'); svg.setAttribute('aria-label','Their price a unit, '+r.rates.map(function(x){ return rmShort(x.rate); }).join(', '));
       var pl=document.createElementNS(NS,'polyline'); pl.setAttribute('fill','none'); pl.setAttribute('stroke','currentColor'); pl.setAttribute('stroke-width','1.5'); pl.setAttribute('vector-effect','non-scaling-stroke');
       pl.setAttribute('points',r.rates.map(function(x,i){ return (i*100/(r.rates.length-1)).toFixed(1)+','+(21-(x.rate-lo)/span*18).toFixed(1); }).join(' '));
-      svg.appendChild(pl); box.appendChild(svg);
+      svg.appendChild(pl); rowOf(L, svg, 'acust__sparkrow');
     }
-    var L=el('div','salt-ledger salt-ledger--plain');
     if(r.unitNow!=null) acctLine(L,'A unit now',rmShort(r.unitNow));
     if(r.highest!=null) acctLine(L,'Highest',rmShort(r.highest));
     if(r.cadence) acctLine(L,'Orders every',r.cadence.every+' days');
     if(r.dueIn!=null) acctLine(L,'Next order due',r.dueIn>0?'in '+r.dueIn+(r.dueIn===1?' day':' days'):r.dueIn===0?'today':(-r.dueIn)+(r.dueIn===-1?' day':' days')+' late');
-    box.appendChild(L);
     var y=r.loyal||{}, m=el('div','salt-meter salt-meter--verdigris'), ml=el('div','salt-meter__line'), a1=el('span',null,'Loyalty '), a2=el('span',null,'They see ');
     var share=Math.max(0,Math.min(100,Math.round((+y.units||0)/(+y.every||20)*100)));
     a1.appendChild(el('b',null,(+y.units||0)+' of '+(y.every||20)+' units')); a2.appendChild(el('b',null,share+'%'));
     ml.appendChild(a1); ml.appendChild(a2); m.appendChild(ml);
     var tr=el('div','salt-meter__track'); tr.appendChild(el('div','salt-meter__fill')); m.appendChild(tr); m.style.setProperty('--salt-fill',String(share));
-    box.appendChild(m);
-    if(y.paused) box.appendChild(chip('mist',y.why==='writeoff'?'Paused: a write-off':'Paused: a late payment'));
-    box.appendChild(el('p','anote','1 unit at cost every '+(y.every||20)+(r.cost!=null?' ('+rmShort(r.cost)+' to you)':'')+'.'));
+    rowOf(L, m, 'ameterrow');
+    if(y.paused) L.appendChild(lineRow('Loyalty paused', null, y.why==='writeoff'?'A write-off':'A late payment'));
+    box.appendChild(L);
+    box.appendChild(el('p','salt-settings__foot','1 unit at cost every '+(y.every||20)+(r.cost!=null?' ('+rmShort(r.cost)+' to you)':'')+'.'));
   }
   function paintRwd(box, r){
     box.textContent='';
     if(!r||r.reading||!r.associate||r.error||!(r.step>0)){ box.hidden=true; return; }
     box.hidden=false;
-    var head=el('div','apct__head'); head.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Associate reward')); head.appendChild(productTag('salt')); box.appendChild(head);
+    acctHead(box,'Associate reward');
+    var L=el('div','salt-settings arwd__list');
     var m=el('div','salt-meter'), ml=el('div','salt-meter__line'), a1=el('span',null,'Margin '), a2=el('span',null,'Next unit ');
     a1.appendChild(el('b',null,rmShort(r.progress))); a2.appendChild(el('b',null,rmShort(r.step)));
     ml.appendChild(a1); ml.appendChild(a2); m.appendChild(ml);
     var tr=el('div','salt-meter__track'); tr.appendChild(el('div','salt-meter__fill')); m.appendChild(tr);
-    m.style.setProperty('--salt-fill',String(Math.max(0,Math.min(100,Math.round(r.progress/r.step*100))))); box.appendChild(m);
-    var L=el('div','salt-ledger salt-ledger--plain');
-    acctLine(L,'Step, '+r.times+' units\u2019 cost',rmShort(r.step)); acctLine(L,'Given under Set Price',rmShort(r.given)); acctLine(L,'A unit, net to you',rmShort(r.net));
+    m.style.setProperty('--salt-fill',String(Math.max(0,Math.min(100,Math.round(r.progress/r.step*100))))); rowOf(L, m, 'ameterrow');
+    acctLine(L,'Step, '+r.times+' units’ cost',rmShort(r.step)); acctLine(L,'Given under Set Price',rmShort(r.given)); acctLine(L,'A unit, net to you',rmShort(r.net));
     box.appendChild(L);
-    box.appendChild(el('p','anote','Counted once paid. They see no figure.'));
+    box.appendChild(el('p','salt-settings__foot','Counted once paid. They see no figure.'));
   }
   function partnerSection(a, partner, waiting){
-    var s=el('div','asec apart salt-glass-card salt-glass-card--radius-lg'), head=el('div','apct__head');
-    head.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Partner'));
-    head.appendChild(el('span','salt-status salt-status--mist',partner?'Partner':waiting?'Waiting under Approve':'Not a partner'));
-    s.appendChild(head);
-    s.appendChild(el('p','anote','Pays the Floor on every book.'));
-    if(partner||waiting) return s;
-    var answer=el('p','anote'); answer.setAttribute('role','status');
-    var armed=null, at=null, sig='', b=makerButton(s,['Make partner','acct.partner',a.code],async function(send){
+    /* 3 Nov 2026: where they stand a row, Make partner an action row under it that still asks with a second tap, what it means the grey line */
+    var s=el('section','asec apart'); s.setAttribute('aria-label','Partner');
+    s.appendChild(el('h2','salt-settings__head','Partner'));
+    var list=el('div','salt-settings apart__list'); s.appendChild(list);
+    list.appendChild(lineRow('Status', aval(partner?'Partner':waiting?'Waiting under Approve':'Not a partner'), ''));
+    if(partner||waiting){ s.appendChild(el('p','salt-settings__foot','Pays the Floor on every book.')); return s; }
+    var answer=el('p','anote aanswer'); answer.setAttribute('role','status');
+    var armed=null, at=null, sig='', b=makerButton(list,['Make partner','acct.partner',a.code],async function(send){
       if(!armed){ b.textContent='Tap again to confirm'; armed=setTimeout(function(){ armed=null; b.textContent='Make partner'; }, 4000); return; }
       clearTimeout(armed); armed=null; b.textContent='Make partner';
       var body={code:a.code}, check=JSON.stringify(body);
@@ -773,7 +781,9 @@ export const OWNER_JS = `
       catch(error){ refusal(answer,error); }
     },false,function(){ at=null; sig=''; });
     b.classList.add('apart__go');
-    s.appendChild(answer);
+    asRow(b);
+    list.appendChild(answer);
+    s.appendChild(el('p','salt-settings__foot','Pays the Floor on every book.'));
     return s;
   }
   /* the loans with this customer and their reward: the Desk's catalogue, the same read as Record's Repayment form, asked once a minute at most */
@@ -785,36 +795,35 @@ export const OWNER_JS = `
     partyRead.catch(function(){ partyRead=null; });
     return partyRead;
   }
-  function loanLine(item){
-    var cash=item.form==='cash', fmt=cash?rm:units, on=fmtWhen(item.date);
-    return (item.direction==='in'?'Borrowed':'Lent')+(on?' '+on:'')+(item.value!=null?', '+fmt(item.value):'');
-  }
+  /* 3 Nov 2026 (the account on Shop's grid): a loan is a row that opens Repayment (what was lent and when, what is left at the right), the reward a row */
   function drawBooks(box, a){
     box.textContent='';
-    box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Loan'));
-    var body=el('div','aloans'); box.appendChild(body); body.appendChild(el('p','anote','Reading.'));
+    box.appendChild(el('h2','salt-settings__head','Loans and reward'));
+    var body=el('div','salt-settings aloans'), rd=lineRow('Reading', null, ''); rd.classList.add('salt-settings__row--muted');
+    box.appendChild(body); body.appendChild(rd);
     readParty().then(function(cat){
       if(!box.isConnected) return;
       body.textContent='';
       var mine=(cat.loans||[]).filter(function(item){ return item.party===a.code; });
       var reward=(cat.rewards||[]).filter(function(item){ return item.code===a.code; })[0];
       mine.forEach(function(item){
-        var cash=item.form==='cash', fmt=cash?rm:units, row=el('div','aloan'); row.setAttribute('data-loan', item.rid);
-        var txt=el('div','aloan__txt');
-        txt.appendChild(el('p','aloan__what',loanLine(item)));
-        var fig=el('div','aloan__fig');
-        [['Repaid',item.repaid],['Left',item.remaining]].forEach(function(p){
-          if(p[1]==null) return;
-          var f=el('span','aloan__f'); f.appendChild(el('span','aloan__k',p[0])); f.appendChild(el('span','aloan__v',fmt(p[1]))); fig.appendChild(f); });
-        txt.appendChild(fig); row.appendChild(txt);
-        var go=ghost(['Repayment','acct.repay']); go.setAttribute('data-key',item.rid);
+        var cash=item.form==='cash', fmt=cash?rm:units, on=fmtWhen(item.date);
+        var go=actOn(el('button','salt-settings__row salt-settings__row--action aloan'),'acct.repay',item.rid); go.type='button'; go.setAttribute('data-loan', item.rid);
+        var tx=el('span','salt-settings__text');
+        tx.appendChild(el('span','salt-settings__label',(item.direction==='in'?'Borrowed':'Lent')+(item.value!=null?' '+fmt(item.value):'')));
+        var sub=[on, item.repaid!=null?'repaid '+fmt(item.repaid):''].filter(Boolean).join(', ');
+        if(sub) tx.appendChild(el('span','salt-settings__sub',sub));
+        go.appendChild(tx);
+        if(item.remaining!=null) go.appendChild(el('span','salt-settings__value',fmt(item.remaining)+' left'));
+        go.appendChild(rowMark());
         go.addEventListener('click', function(){ repayFor(item.rid); });
-        row.appendChild(go); body.appendChild(row);
+        body.appendChild(go);
       });
-      if(reward){
-        var rw=el('p','aloan__what','Reward: '+units(reward.held)+' held'+(reward.departed?' while away':reward.free<reward.held?', '+units(reward.free)+' free':'')); rw.setAttribute('data-reward',a.code); body.appendChild(rw); }
-      if(!mine.length&&!reward) body.appendChild(el('p','anote','No loans and no reward held.'));
-    }).catch(function(){ if(box.isConnected){ body.textContent=''; body.appendChild(el('p','anote bad','Their loans could not be read.')); } });
+      if(!mine.length) body.appendChild(lineRow('Loans', aval('None'), ''));
+      var rw=lineRow('Reward', aval(reward?units(reward.held)+' held':'None'), reward?(reward.departed?'While away':reward.free<reward.held?units(reward.free)+' free':''):'');
+      if(reward) rw.setAttribute('data-reward',a.code);
+      body.appendChild(rw);
+    }).catch(function(){ if(box.isConnected){ body.textContent=''; body.appendChild(lineRow('Not read', null, 'Their loans could not be read.')); } });
   }
   /* Repayment opens Record's own form for that loan: the form is the one that sends, so a repayment waits under Approve like any other. A form not built yet is
      filled when it is (repayWant, applied once Record's forms are drawn). */

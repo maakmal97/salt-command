@@ -180,8 +180,9 @@ export async function run({ ok } = {}) {
     await open("SP1-ZED");
     check(!doc.querySelector("#aopen .apct") && !doc.querySelector("#aopen .apart"), "a supplier's account, outside the drift customers, has no Their % and no Make partner");
     await open("CX2-ZED");
-    check(!!pct() && text(pct().querySelector(".salt-ledger__row")) === "Suggested+25%Paid late" && !act("acct.pct.clear", "CX2-ZED") && !act("acct.pct.suggest").disabled && text(act("acct.pct.suggest")) === "Use +25%",
-      "none held reads as the Set Price with the suggestion and its reason beside it, and Set back to 0 is unavailable when nothing is held: " + text(pct() && pct().querySelector(".salt-ledger__row")));
+    /* 3 Nov 2026 (the account on Shop's grid): no glass card, a settings list; the suggestion a row, its why the second line under it */
+    check(!!pct() && text(pct().querySelector(".apct__list > .salt-settings__row")) === "SuggestedPaid late+25%" && !act("acct.pct.clear", "CX2-ZED") && !act("acct.pct.suggest").disabled && text(act("acct.pct.suggest")) === "Use +25%",
+      "none held reads as the Set Price with the suggestion and its reason beside it, and Set back to 0 is unavailable when nothing is held: " + text(pct() && pct().querySelector(".apct__list > .salt-settings__row")));
     act("acct.pct.suggest").click();
     check(val() === "+25%" && calls.length === 0, "Use the suggestion fills the stepper with the suggested % and sends nothing");
     await open("CX1-ZED");

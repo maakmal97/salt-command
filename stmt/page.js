@@ -1260,8 +1260,14 @@ body.ended>*:not(#aEnded){display:none}
 .adm .oacct{display:flex;flex-direction:column;gap:24px}
 /* 25 Oct 2026 (the Customers canvas, P2): an account is glass cards, its head first: the state and age, the code and username, the figure large at the
    right; a ledger of the standing; their waiting line with Reply. Sign-in two by two, Sign out everywhere the width of the card. Nothing wraps. */
-.adm .oacct .asec{display:flex;flex-direction:column;gap:12px;padding:16px;margin:0;box-sizing:border-box;min-width:0}
-.adm .oacct .asec>h3{margin:0}
+/* 3 Nov 2026 (the account on Shop's grid): every part a group with no glass of its own, its mist head 6px over its list (the recipe's), a second list or a
+   table 12px under the first, the groups 24px apart; in columns from 1080px each group keeps 24px under it, the answer of the last list 6px under it */
+.adm .oacct .asec{display:flex;flex-direction:column;margin:0;min-width:0}
+.adm .oacct .asec>.salt-settings+.salt-settings,.adm .oacct .asec>nav+.salt-settings,.adm .apct__prev:not(:empty),.adm .apct__prev+.apct__acts{margin-top:12px}
+.adm .oacct .ahead2{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.adm .oacct .salt-settings>.aanswer{padding:10px 0}
+.adm .apct__step .apct__val{flex:none;min-width:5ch}
+.adm .acust__sparkrow,.adm .ameterrow{display:block;padding:12px 0}
 .adm .ahead__top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-width:0}
 .adm .ahead__who{display:flex;flex-direction:column;gap:4px;min-width:0}
 .adm .ahead__kind,.adm .ahead__fig .salt-eyebrow{margin:0;white-space:nowrap}
@@ -1274,7 +1280,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm .oacct>.anote{margin:-18px 16px 0}
 /* 26 Oct 2026 (the Customers canvas, P3 and P4): Their %, This customer, the reward and Partner, each a glass card: a book a tab, the stepper's figure large
    between two 48px buttons, their prices a plain table, the actions two by two; nothing wraps */
-.adm .amore{display:flex;flex-direction:column;gap:12px}
+.adm .amore{display:flex;flex-direction:column;gap:24px}
 /* 26 Oct 2026 (the Customers canvas, P5): the threads are Needs you's cards, their last line quiet beside the code; the open thread the system's Thread, its head
    the code and what they owe */
 .adm #makerChatList{display:flex;flex-direction:column;gap:16px}
@@ -1305,9 +1311,10 @@ body.ended>*:not(#aEnded){display:none}
   .adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount,.adm #oAccts.open .alead{display:none}
   .adm #oAccts.open #aopen{position:static;max-height:none;overflow:visible}
   .adm #oAccts.open #aopen [data-back]{display:grid}
-  .adm #aopen .oacct{display:block;column-count:2;column-gap:20px}
+  .adm #aopen .oacct{display:block;column-count:2;column-gap:24px}
   .adm #aopen .oacct .amore{display:contents}
-  .adm #aopen .oacct .asec{break-inside:avoid;margin:0 0 20px}
+  .adm #aopen .oacct>*,.adm #aopen .oacct .amore>*{break-inside:avoid;margin:0 0 24px}
+  .adm #aopen .oacct>.anote{margin:-18px 16px 24px}
 }
 @media (min-width:1440px){.adm #aopen .oacct{column-count:3}}
 .adm .glinks{gap:10px}
@@ -1325,19 +1332,13 @@ body.ended>*:not(#aEnded){display:none}
 .adm #makerChatOpen{display:flex;flex-direction:column;gap:12px}
 .adm #makerChatOpen>button{min-height:48px}
 .adm .amore[hidden],.adm .amore .asec[hidden]{display:none}
-.adm .apct__head{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.adm .apct__head .salt-eyebrow{margin:0}
 .adm .apct__books{margin:0}
 .adm .apct__tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 4px}
 .adm .apct__tabs .nktab{padding:0 2px}
-.adm .apct__step{display:flex;align-items:center;gap:8px}
 .adm .apct__btn{flex:none;width:48px;min-width:48px;height:48px;padding:0;font-size:1.25rem;letter-spacing:0}
 .adm .apct__val{flex:1 1 auto;min-width:0;text-align:center;font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);font-weight:500;color:var(--salt-salt);white-space:nowrap}
 .adm .apct__at{font-weight:500;color:var(--salt-salt)}
 .adm .apct__floor{color:var(--salt-mist-bright)}
-.adm .apart__go{min-height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
-.adm .apct__acts>.apct__answer{padding:10px 0}
-.adm .acust__line{display:flex;align-items:center;justify-content:space-between;gap:12px;white-space:nowrap}
 .adm .acust__spark{display:block;width:100%;height:36px;color:var(--salt-brass)}
 .adm .amore .salt-meter__line{white-space:nowrap}
 .adm .amore .salt-meter__track{display:block}
@@ -1352,9 +1353,8 @@ body.ended>*:not(#aEnded){display:none}
 .adm .anote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm .anote:empty{display:none}
 .adm .anote.bad{color:var(--salt-ember)}
-.adm .astory{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 /* S9 9.4: the phones and computers under their own head, the count at its end */
-.adm .astory .dhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:14px}
+.adm .astory .dhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .adm .astory .dcount{color:var(--salt-text-muted);letter-spacing:0}
 /* the way back is a quiet line, not a second filled control: the page has one of those and it is
    the one that opens an account */
@@ -1392,17 +1392,6 @@ body.ended>*:not(#aEnded){display:none}
 .adm .acard .aled .salt-ledger__line{padding:4px 0}
 .adm .acard .acell{display:flex;flex-direction:column;justify-content:space-between;gap:4px}
 .adm .acard .aled .salt-ledger__value{text-align:right;white-space:nowrap}
-.adm .abooks{display:flex;flex-direction:column;gap:8px}
-.adm .abooks .salt-eyebrow{margin:6px 0 0}
-.adm .aloans{display:flex;flex-direction:column}
-.adm .aloan{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--salt-line)}
-.adm .aloan:last-child{border-bottom:0}
-.adm .aloan__txt{min-width:0}
-.adm .aloan__what{margin:0;font-size:var(--salt-text-sm)}
-.adm .aloan__fig{display:flex;gap:16px;margin-top:4px;font-size:var(--salt-text-sm)}
-.adm .aloan__k{color:var(--salt-text-muted);margin-right:6px}
-.adm .aloan__v{font-family:var(--salt-font-mono)}
-.adm .aloan .salt-ghost{flex:none}
 /* S8 8.1: an associate's own links, in Rewards: when it was made, its state in a word (the system's chip), what it
    has done, and the system's ghosts; the Meter is the reward's bar */
 .rlhead{display:flex;justify-content:space-between;align-items:baseline;gap:12px}

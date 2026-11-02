@@ -19571,8 +19571,10 @@ await (async () => {
     /* ---- how they got in, drawn ---- */
     const story = () => ((card() && card().querySelector("[data-story]")) || {}).textContent || "";
     /* 2 Nov 2026 (Customers on the canvas): the head is "Sign-ins", three words at most (craft.md) */
-    ok(await until(() => /Sign-ins/.test(story()) && /Password/.test(story()) && /Sign-in link/.test(story()) && /on iPhone, Safari/.test(story())
-      && /on Windows computer, Edge/.test(story())) && !story().includes(IP),
+    /* 3 Nov 2026 (the account on Shop's grid): each way in is a settings row, the device it was used on its second line, read above Phones and computers */
+    const ways = () => story().split("Phones and computers")[0];
+    ok(await until(() => /Sign-ins/.test(ways()) && /Password/.test(ways()) && /Sign-in link/.test(ways()) && /iPhone, Safari/.test(ways())
+      && /Windows computer, Edge/.test(ways())) && !story().includes(IP),
       "How they signed in lists each way in with the device it was used on, and no address: " + JSON.stringify(story()));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
@@ -19701,9 +19703,10 @@ await (async () => {
     D.querySelector('#rlist [data-u="' + u + '"] .arow__open').click();
     const card = () => D.querySelector('#aopen [data-acct="' + u + '"]');
     const story = () => ((card() && card().querySelector("[data-story]")) || {}).textContent || "";
-    ok(await until(() => /Phones and computers2/.test(story()) && /iPhone, SafariSign outKept signed in since/.test(story()) && /Windows computer, EdgeSign outSigned in .* for this visit, not kept/.test(story())),
+    /* 3 Nov 2026 (the account on Shop's grid): a device is a settings row, kept or not on its second line, and its Sign out the ember row under it */
+    ok(await until(() => /Phones and computers2/.test(story()) && /iPhone, SafariKept since .*, used .*?Sign out/.test(story()) && /Windows computer, EdgeNot kept, signed in .*?Sign out/.test(story())),
       "the account lists its two devices under Phones and computers, each with its own Sign out: " + JSON.stringify(story()));
-    const outOf = (label) => [...card().querySelectorAll("[data-story] .salt-ledger__row")].find((r) => r.textContent.startsWith(label)).querySelector("button");
+    const outOf = (label) => { const r = [...card().querySelectorAll("[data-story] .adevs > .salt-settings__row")].find((x) => x.textContent.startsWith(label)); return r && r.nextElementSibling; };
     outOf("Windows computer, Edge").click();
     ok(await until(() => /Phones and computers1/.test(story()) && !/Windows computer, Edge/.test(story().split("Phones and computers")[1])), "one tap on a device's Sign out ends it and the list follows: " + JSON.stringify(story()));
     const pill = () => card().querySelector(".apill");
@@ -20334,10 +20337,12 @@ await (async () => {
     /* 2 Nov 2026 (his Orders canvas, page 2): the standing's rows are settings rows */
     const chip = () => ((D.querySelector('#aopen .scard .astand [data-line="Opened"] .salt-settings__value') || {}).textContent) || "";
     ok(/^[0-9]{2} \w{3} [0-9]{4} by code$/.test(chip()), "the opened card says the last open was by code, one word for the three roads: " + chip());
-    const rows = () => [...D.querySelectorAll('#aopen [data-story] .salt-ledger__label')].map((x) => x.textContent);
-    const flags = () => [...D.querySelectorAll('#aopen [data-story] .salt-ledger__flag')].map((x) => x.textContent);
+    /* 3 Nov 2026 (the account on Shop's grid): a way in is a settings row, the road it took leading its second line */
+    const ways = () => [...D.querySelectorAll('#aopen [data-story] .astory__list > .salt-settings__row')];
+    const rows = () => ways().map((r) => (r.querySelector(".salt-settings__label") || {}).textContent);
+    const flags = () => ways().map((r) => ((r.querySelector(".salt-settings__sub") || {}).textContent) || "");
     ok(await until(() => rows().includes("Code")) && JSON.stringify(rows().slice(0, 4)) === JSON.stringify(["Code", "Code", "Password", "Code"])
-      && /Typed in[.]$/.test(flags()[0]) && /Copied across[.]$/.test(flags()[1]) && /Scanned at the counter[.]$/.test(flags()[3]),
+      && /^Typed in/.test(flags()[0]) && /^Copied across/.test(flags()[1]) && /^Scanned at the counter/.test(flags()[3]),
       "and How they signed in says Code for the three, the road each took under its line: " + JSON.stringify([rows(), flags()]));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
@@ -20390,7 +20395,8 @@ await (async () => {
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
     D.querySelector('#rlist [data-u="' + u + '"]').click();
     const story = () => ((D.querySelector('#aopen [data-story="' + u + '"]')) || {}).textContent || "";
-    ok(await until(() => /Last opened26 Sep 2026, by password[.] Earlier sign-ins were not kept[.]/.test(story()) && /A device named before this list beganSign out/.test(story()))
+    /* 3 Nov 2026 (the account on Shop's grid): Last opened a row, its day and road at the right; the device with no name an older device, its Sign out under it */
+    ok(await until(() => /Last openedEarlier sign-ins were not kept[.]26 Sep 2026 by password/.test(story()) && /An older deviceKept since .*?Sign out/.test(story()))
       && !/25 Sep/.test(story()),
       "the last open and the device from before the list began are said with no date of the build in them: " + JSON.stringify(story()));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
