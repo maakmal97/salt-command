@@ -130,5 +130,35 @@
   "file": "stmt/page.js",
   "find": "'np.cTaken')));\n      if(tp.k==='price'&&tp.t&&p.state==='offered'&&!lapsed) w.appendChild(statusLine(tp.t));",
   "replace": "'np.cTaken')));\n      if(tp.k==='price'&&tp.t) w.appendChild(statusLine(tp.t));"
+ },
+ {
+  "name": "R17: the reservation is made over an open offer",
+  "file": "stmt/orders.js",
+  "find": "    if (offerOpen(order, at) || (order.price && order.price.state === \"taken\")) return { error: \"an offer is open on this order, waiting on their answer\", status: 409 };\n",
+  "replace": ""
+ },
+ {
+  "name": "R18: an offer lands while an Accept's reservation is fresh",
+  "file": "stmt/orders.js",
+  "find": "  if (body && body.offer !== undefined && reviewing(order, at)) return { error: \"your Accept on this order is on its way: if it does not go through, offer again in two minutes\", status: 409 };\n",
+  "replace": ""
+ },
+ {
+  "name": "R18: a reservation keeps no moment, so it holds nothing",
+  "file": "stmt/orders.js",
+  "find": "{ order.reviewed = true; order.reviewedAt = at; }",
+  "replace": "order.reviewed = true;"
+ },
+ {
+  "name": "R19: the lease never ends",
+  "file": "stmt/orders.js",
+  "find": "Date.parse(at) - Date.parse(o.reviewedAt) < REVIEW_LEASE_MS",
+  "replace": "true"
+ },
+ {
+  "name": "R19: a stale reservation is not renewed",
+  "file": "stmt/orders.js",
+  "find": "return reviewing(order, at) ? { none: true }",
+  "replace": "return order.reviewed ? { none: true }"
  }
 ]

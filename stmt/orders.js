@@ -892,6 +892,12 @@ export function decideFix(order, f, at) {
   return { ev: { kind: "fix", at, fix } };
 }
 
+/* 3 Nov 2026 (Fable's review of v1382): HIS ACCEPT AND AN OFFER OF HIS NEVER BOTH LAND. Accept reserves the order, then records its yes, which lets
+   every waiting yes on the order go: an offer filed from his other device in between lost its yes. Now the reservation is refused while an offer is
+   open or taken, and an offer while a reservation is fresh, for REVIEW_LEASE_MS, so an Accept that failed after reserving holds offers back for two
+   minutes, never for good. An order reserved before this version has no moment and holds nothing */
+export const REVIEW_LEASE_MS = 120000;
+const reviewing = (o, at) => !!(o && o.reviewed && o.reviewedAt && Date.parse(at) - Date.parse(o.reviewedAt) < REVIEW_LEASE_MS);
 /** The owner's moves, from the phone through the desk's Worker. Returns { ev }, { none } when there is
  *  nothing to record, or { error, status }. */
 export function decideDesk(order, body, at) {
@@ -904,7 +910,9 @@ export function decideDesk(order, body, at) {
     if (order.status !== "placed" || !terms || typeof terms !== "object" || Array.isArray(terms)
       || Object.keys(terms).length !== fields.length || fields.some((key) => terms[key] !== (order[key] ?? null)))
       return { error: "the order changed before its review could be reserved", status: 409 };
-    return order.reviewed ? { none: true } : { ev: { kind: "mark", at, mark: { reviewed: true } } };
+    if (offerOpen(order, at) || (order.price && order.price.state === "taken")) return { error: "an offer is open on this order, waiting on their answer", status: 409 };
+    /* a reservation inside its lease is the one there; an older one is renewed, so the lease runs from this Accept */
+    return reviewing(order, at) ? { none: true } : { ev: { kind: "mark", at, mark: { reviewed: true } } };
   }
   /* v694: the desk's own bookkeeping, not a move. It is what the ledger has been told, written
      back by the reconcile the moment it queues a stage, and it is the only thing that stops a
@@ -1061,6 +1069,7 @@ export function decideDesk(order, body, at) {
      drafted the row at it (never under the floor) and recorded his yes: one live offer an order, a new one replacing the
      old, open OFFER_HOURS. The site keeps the figure and the moment it lapses, bound to the order's product and size, and
      never the digest, which is the desk's. Withdrawn, it is no longer theirs to take. */
+  if (body && body.offer !== undefined && reviewing(order, at)) return { error: "your Accept on this order is on its way: if it does not go through, offer again in two minutes", status: 409 };
   if (body && body.offer !== undefined && body.offer && body.offer.kind === "accept") return acceptOfferEv(order, body.offer, at);
   if (body && body.offer !== undefined) {
     const f = body.offer;
@@ -1267,7 +1276,7 @@ export function applyEvent(order, ev) {
     order.msgs = ((order.msgs) || []).concat([{ at, by: ev.by, text: ev.text }]);
   } else if (ev.kind === "mark") {
     const m = ev.mark, q = Object.assign({}, order.queued || {});
-    if (m.reviewed === true) order.reviewed = true;
+    if (m.reviewed === true) { order.reviewed = true; order.reviewedAt = at; }
     if (m.ledgerKey) order.ledgerKey = m.ledgerKey;
     if (typeof m.forFriend === "boolean") order.forFriend = m.forFriend;
     if (m.rwd === "given") order.rwd = "given"; else if (m.rwd === null && order.rwd === "cross") delete order.rwd;   /* given is terminal */
