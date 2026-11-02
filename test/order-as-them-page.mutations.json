@@ -17,5 +17,12 @@
  {"name": "Sent says nothing of the Accept", "file": "stmt/page.js", "find": "    if(act&&draft.actSaid){ var as=el('p','salt-insight',draft.actSaid); as.id='oActSaid'; top.appendChild(as); }\n", "replace": ""},
  {"name": "Sent drops the Desk's reason", "file": "stmt/page.js", "find": "tw('sh.actWaits',{w:waits.agreed.why||''})", "replace": "tw('sh.actWaits',{w:''})"},
  {"name": "the page forgets the answer", "file": "stmt/page.js", "find": "      if(act) l.agreed=r.body.agreed||null;", "replace": "      if(act) l.agreed=null;"},
- {"name": "paid in advance is not said on Sent", "file": "stmt/page.js", "find": "?tw(c.lines.some(function(l){ return l.agreed.prepay; })?'sh.actAgreedPrepay':'sh.actAgreed'):''", "replace": "?tw('sh.actAgreed'):''"}
+ {"name": "paid in advance is not said on Sent", "file": "stmt/page.js", "find": ":c.lines.some(function(l){ return l.agreed.prepay; })?'sh.actAgreedPrepay':'sh.actAgreed'):'';", "replace": ":'sh.actAgreed'):'';"},
+ {"name": "no switch on his sheet", "file": "stmt/page.js", "find": "    if(act&&draft.mode==='collect'&&!draft.amend&&!draft.pool){\n      var nl=", "replace": "    if(false){\n      var nl="},
+ {"name": "the switch on a delivery too", "file": "stmt/page.js", "find": "    if(act&&draft.mode==='collect'&&!draft.amend&&!draft.pool){\n      var nl=", "replace": "    if(act&&!draft.amend&&!draft.pool){\n      var nl="},
+ {"name": "the switch does not turn", "file": "stmt/page.js", "find": "      nw.addEventListener('click',function(){ draft.now=!draft.now; sheetDraw(); });", "replace": "      nw.addEventListener('click',function(){ sheetDraw(); });"},
+ {"name": "the check does not say it", "file": "stmt/page.js", "find": "    if(act&&draft.now&&c.mode==='collect'&&!c.amend&&!c.pool) B.appendChild(el('p','salt-insight',tw('sh.actNowCheck')));", "replace": ""},
+ {"name": "Place does not carry now", "file": "stmt/page.js", "find": "      if(act&&draft.now&&c.mode==='collect'&&!c.amend&&!c.pool) body.now=true;", "replace": ""},
+ {"name": "Sent never says handed over", "file": "stmt/page.js", "find": "?tw(c.lines.every(function(l){ return l.agreed.handed===true; })?'sh.actDone'\n", "replace": "?tw(false?'sh.actDone'\n"},
+ {"name": "Sent hides a handover that failed", "file": "stmt/page.js", "find": "unhanded?tw('sh.actNotHanded',{w:unhanded.agreed.why||''})\n", "replace": "false?''\n"}
 ]

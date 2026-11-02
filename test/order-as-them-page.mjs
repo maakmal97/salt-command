@@ -83,6 +83,45 @@ export async function run({ ok, pageWork }) {
     ok(!p.d.getElementById("oNew") && /Read only/.test(lead(p)), "B9 a refused Order for them leaves no ordering for the next open at the door: " + lead(p));
   } catch (e) { ok(false, "the refused open stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
 
+  /* B13 to B15, plan version 3: Handed over and paid now on his sheet */
+  agreed = { accepted: true, handed: true, paid: true };
+  p = await richOwnerPage({ pageWork, extra });
+  try {
+    await openAs(p, "acct.order-for");
+    p.d.getElementById("oNew").click(); await p.work.quiet();
+    const sw = p.d.getElementById("oNow");
+    ok(!!sw && sw.getAttribute("role") === "switch" && sw.getAttribute("aria-checked") === "false" && p.d.getElementById("oNowH").textContent === "Handed over and paid now",
+      "B13 his sheet offers Handed over and paid now as a switch, off until he turns it on: " + (sw && sw.outerHTML));
+    sw.click(); await p.work.quiet();
+    const on = p.d.getElementById("oNow");
+    p.d.querySelector("[data-k='mode:1']").click(); await p.work.quiet();
+    const onDeliver = p.d.getElementById("oNow");
+    p.d.querySelector("[data-k='mode:0']").click(); await p.work.quiet();
+    ok(on && on.getAttribute("aria-checked") === "true" && !onDeliver, "B14 it turns on, and a delivery offers none: " + [on && on.getAttribute("aria-checked"), !!onDeliver]);
+    p.d.getElementById("oGo").click(); await p.work.quiet();
+    const sheetBox = p.d.querySelector('[aria-labelledby="oshT"]'), told = !!sheetBox && /Handed over and paid as soon as it is placed\./.test(sheetBox.textContent);
+    const before = p.posts.length;
+    p.d.getElementById("oPlace").click(); await p.work.quiet();
+    const b = (p.posts.slice(before).find((x) => x.route === "/all/maker/customers/" + U1 + "/orders") || {}).body;
+    const said = p.d.getElementById("oActSaid");
+    ok(told && b && b.now === true && !!said && said.textContent === "Agreed, paid and handed over.",
+      "B15 the check says it before Place, Place carries now, and Sent says agreed, paid and handed over: " + JSON.stringify([told, b && b.now, said && said.textContent]));
+  } catch (e) { ok(false, "handed and paid now stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+
+  /* B16: agreed but not handed over says the Desk's reason */
+  agreed = { accepted: true, handed: false, why: "a payment they say they sent waits on this order." };
+  p = await richOwnerPage({ pageWork, extra });
+  try {
+    await openAs(p, "acct.order-for");
+    p.d.getElementById("oNew").click(); await p.work.quiet();
+    p.d.getElementById("oNow").click(); await p.work.quiet();
+    p.d.getElementById("oGo").click(); await p.work.quiet();
+    p.d.getElementById("oPlace").click(); await p.work.quiet();
+    const said = p.d.getElementById("oActSaid");
+    ok(!!said && said.textContent === "Agreed for them, not yet paid and handed over: a payment they say they sent waits on this order.",
+      "B16 agreed but not paid and handed over says the Desk's reason on Sent: " + (said && said.textContent));
+  } catch (e) { ok(false, "the unhanded Place stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+
   /* B12 v2: agreed paid in advance says so on Sent */
   agreed = { accepted: true, prepay: true };
   p = await richOwnerPage({ pageWork, extra });

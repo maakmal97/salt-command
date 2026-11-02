@@ -4899,6 +4899,14 @@ const CLIENT_JS = `
     var qsNow=quotes(); if(advanceLikely(qsNow.map(function(x){ return x.total; }))){ var lk=el('p','salt-insight',tw('sh.prepay',{c:rm(ceilingRM())})); lk.id='advLikely'; B.appendChild(lk); }
     B.appendChild(oChoice(tw('sh.reach'),[['collect',tw('sh.collect')],['deliver',tw('sh.deliver')]],draft.mode,'mode',
       function(v){ draft.mode=v; sheetDraw(); }));
+    /* plan version 3: HANDED OVER AND PAID NOW, his alone on Order as them, for a collected order: a settings row with its switch, as This device's */
+    if(act&&draft.mode==='collect'&&!draft.amend&&!draft.pool){
+      var nl=el('div','salt-settings'), nr=el('div','salt-settings__row'), nh=el('span','salt-settings__label',tw('sh.actNow')); nh.id='oNowH';
+      var nw=el('button','salt-switch'); nw.type='button'; nw.id='oNow'; nw.setAttribute('role','switch'); nw.setAttribute('aria-checked',String(!!draft.now));
+      nw.setAttribute('aria-labelledby','oNowH'); nw.setAttribute('data-k','now');
+      nw.addEventListener('click',function(){ draft.now=!draft.now; sheetDraw(); });
+      nr.appendChild(nh); nr.appendChild(nw); nl.appendChild(nr); B.appendChild(nl);
+    }
     /* v694: a delivery says roughly where it is going, in his words a general location; never an address */
     /* v1377: saved spots stay on their phone (Batch C), so Order as them asks the area and the exact spot afresh and keeps none on his */
     var SL=draft.mode==='deliver'&&!draft.pool&&!draft.amend&&!act?spotsRead():null;
@@ -5156,6 +5164,7 @@ const CLIENT_JS = `
     if(c.mode==='deliver') B.appendChild(el('p','salt-insight',tw('deliv')));
     /* NEGOTIATE (05 Oct 2026): one line, for themselves, asks for a price instead of placing at the list's. The check holds
        nothing to type into, so the figure of their own, optional, is its own step (drawAsk) */
+    if(act&&draft.now&&c.mode==='collect'&&!c.amend&&!c.pool) B.appendChild(el('p','salt-insight',tw('sh.actNowCheck')));   /* plan version 3: said before Place */
     var canAsk=one&&!act&&!c.amend&&!c.pool&&!c.forFriend&&!a.placed&&!c.sheet;
     if(c.lines.some(function(l){ return l.over; })&&!canAsk) B.appendChild(el('p','salt-insight salt-insight--copper',tw('sh.askOne')));
     var F=osh.foot, was=c.lines.some(function(l){ return l.was!=null; }), gone=c.lines.some(function(l){ return l.gone; });
@@ -5226,6 +5235,7 @@ const CLIENT_JS = `
       if(ask){ body.ask=true; if(!l.askRid) l.askRid=mintRid(); body.rid=l.askRid; if(fig!=null) body.propose=+fig.toFixed(2); }
       if(c.amend){ delete body.note; delete body.sheet; delete body.total; delete body.unit; }
       if(act) delete body.note;   /* v1377: his Place carries no note */
+      if(act&&draft.now&&c.mode==='collect'&&!c.amend&&!c.pool) body.now=true;   /* plan version 3: handed over and paid now */
       /* a group order is joined, not placed: its size is the pool's, it is collected, and the Worker makes the one order */
       if(c.pool) body={q:l.q,total:l.total,unit:l.rate,digest:c.digest,rid:l.rid,forFriend:!!(assoc&&c.forFriend)};
       var r=act&&!c.pool&&!c.amend?await actPlace(user,body):await api(c.pool?'/pools/'+encodeURIComponent(c.pool)+'/join':c.amend?'/orders/'+encodeURIComponent(c.amend)+'/amend':'/orders',body);
@@ -5255,7 +5265,11 @@ const CLIENT_JS = `
     draft.againOf=''; draft.againProd='';
     /* plan version 2 (his answer B): on Order as them, Sent says the lines were agreed, or the first reason one waits */
     var waits=act?c.lines.filter(function(l){ return l.agreed&&l.agreed.accepted===false; })[0]:null;
-    draft.actSaid=!act?'':waits?tw('sh.actWaits',{w:waits.agreed.why||''}):c.lines.every(function(l){ return l.agreed&&l.agreed.accepted; })?tw(c.lines.some(function(l){ return l.agreed.prepay; })?'sh.actAgreedPrepay':'sh.actAgreed'):'';
+    var unhanded=act?c.lines.filter(function(l){ return l.agreed&&l.agreed.accepted&&l.agreed.handed===false; })[0]:null;
+    draft.actSaid=!act?'':waits?tw('sh.actWaits',{w:waits.agreed.why||''}):unhanded?tw('sh.actNotHanded',{w:unhanded.agreed.why||''})
+      :c.lines.every(function(l){ return l.agreed&&l.agreed.accepted; })?tw(c.lines.every(function(l){ return l.agreed.handed===true; })?'sh.actDone'
+      :c.lines.some(function(l){ return l.agreed.prepay; })?'sh.actAgreedPrepay':'sh.actAgreed'):'';
+    draft.now=false;   /* plan version 3: each sheet asks again */
     draft.asked=!!ask; draft.sent=c.lines[0].placed==='placed'?'':c.lines[0].placed; draft.sheetKeep=''; draft.step='sent'; draft.check=null; draft.say=''; draft.noteOpen=false; draft.pushNote=''; draft.forFriend=null; draft.when=''; draft.wantBy='';
     sheetDraw();
     await ordersAgain(); if(mine!==ticket) return;
