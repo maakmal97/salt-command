@@ -4,7 +4,8 @@ import { POINTS_KEY, readPoints, validatePoints, resolvePoint, isPointCode } fro
 import { hoursStatus, validateManualHours, validateWeeklyHours, HOURS_KEY, windowHours, openMinutes, plainWeek, openParts } from "./hours.js";
 import { slotSpan, WINDOWS } from "./window.js";
 import { CONFIRM_KEY, confirmWithin, confirmView } from "./confirm.js";
-import { readPin } from "./pin.js";
+import { readPin, takePin, keepPin } from "./pin.js";
+import { slipPub } from "./slip.js";
 import { mapsOpen, placeSearch } from "./place.js";
 
 const OWNER_EMAIL = "maakmal97@icloud.com";
@@ -400,6 +401,8 @@ function internalOperation(path) {
   if (input) return { kind: "input", input: input[1] };
   const customer = /^\/all\/maker\/customers\/([a-z0-9]{4}-[a-z0-9]{4})\/orders$/.exec(path);
   if (customer) return { kind: "place", u: customer[1] };
+  /* v1377 (Order as them): the public half of his slip key, which their page in his hands seals a spot to, as /slip/key answers theirs */
+  if (path === "/all/maker/slip/key") return { kind: "slip-pub" };
   if (/^\/all\/maker\/drafts$/.test(path)) return { kind: "drafts" };
   if (path === "/all/maker/drafts/decide-many") return { kind: "decide-many" };
   const dm = /^\/all\/maker\/drafts\/([^/]+)\/(approve|reject)$/.exec(path);
@@ -430,12 +433,12 @@ function stockWithDates(desk, expected, test) {
    alone. Every other kind, every real order and every real username answers 404; the reads come from the fixtures and call no Desk route;
    a reply on a test account's thread is written in-process and wakes nobody (Fable's review). */
 const TEST_KINDS = { review: ["GET"], "order-action": ["POST"], "order-move": ["POST"], claim: ["POST"], claims: ["GET"], thread: ["POST"],
-  threads: ["GET"], pools: ["GET"], hours: ["GET"], points: ["GET"], stock: ["GET"] };
+  threads: ["GET"], pools: ["GET"], hours: ["GET"], points: ["GET"], stock: ["GET"], place: ["POST"], "slip-pub": ["GET"] };
 async function testMaker(request, env, op) {
   const method = request.method;
   if (!Object.hasOwn(TEST_KINDS, op.kind) || !TEST_KINDS[op.kind].includes(method)) return json({ ok: false, error: "not found" }, 404);
   if ((op.kind === "order-action" || op.kind === "order-move") && !EXAMPLE_ID.test(op.id)) return json({ ok: false, error: "not found" }, 404);
-  if ((op.kind === "claim" || op.kind === "thread") && !isTest(op.u)) return json({ ok: false, error: "not found" }, 404);
+  if ((op.kind === "claim" || op.kind === "thread" || op.kind === "place") && !isTest(op.u)) return json({ ok: false, error: "not found" }, 404);
   const fixtures = async (read) => {
     const out = [];
     for (const u of TEST_USERS) {
@@ -699,21 +702,34 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
       if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
       return json(await deskCall(env, "/_internal/maker/inputs/" + (op.input || "stock-count"), "POST", parsed.body));
     }
+    if (op.kind === "slip-pub") {
+      if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+      return json({ ok: true, key: await slipPub(env) });
+    }
+    /* v1377, ORDER AS THEM (his answers A and D of 02 Nov 2026): his Place, made on their own page opened by the master, carries what a
+       customer's Place carries (a sheet's line, a delivery window, a sealed spot, Order again, a day) into the same placeOrder, stamped
+       "desk". It refuses a note (his words reach them on the order's thread, which the Desk checks), an ask or a figure of his own, and a
+       group order. The sealed spot is taken off the body for its id and filed once the order names it, as on their road; a test
+       account's is dropped and its order goes to its fixture. */
     if (op.kind === "place") {
       if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       const parsed = await bodyOf(request);
       if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
-      const body = parsed.body;
-      const fields = ["product", "qty", "mode", "unit", "total", "place", "forFriend", "rid", "week", "digest", "wantBy"];
-      if (Object.keys(body).some((key) => !fields.includes(key)) || !RID_RE.test(String(body.rid || ""))
-        || typeof body.digest !== "string" || typeof body.forFriend !== "boolean")
+      const fields = ["product", "qty", "mode", "unit", "total", "place", "forFriend", "rid", "week", "digest", "wantBy", "sheet", "slot", "pin", "againOf"];
+      if (Object.keys(parsed.body).some((key) => !fields.includes(key)) || !RID_RE.test(String(parsed.body.rid || ""))
+        || typeof parsed.body.digest !== "string" || typeof parsed.body.forFriend !== "boolean")
         return json({ ok: false, error: "Send a quoted order and its request id, without private fields." }, 400);
       if (!env.STMT) return json({ ok: false, error: "no Counter store" }, 503);
       const account = await accountRecord(env, op.u);
       if (!account) return json({ ok: false, error: "account not found" }, 404);
+      const tp = await takePin(parsed.body);
+      if (tp.error) return json({ ok: false, error: tp.error, ...(tp.code ? { code: tp.code } : {}) }, tp.status || 400);
+      const body = tp.body;
+      if (isTest(op.u) && body.pin) delete body.pin;
       /* a test account's order goes to its fixture on this road too, never the book (the test surface, Ask 4) */
       const result = isTest(op.u) ? await examplePlace(env, op.u, body) : await placeOrder(env, op.u, body, "desk");
       if (!result.order) return json({ ok: false, ...result }, result.status || 400);
+      if (tp.pin && !isTest(op.u)) await keepPin(env, op.u, tp.pin, result.order.pin);
       return json({ ok: true, order: customerView(result.order) });
     }
     if (op.kind === "review") {

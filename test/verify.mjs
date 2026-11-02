@@ -48475,6 +48475,11 @@ await (async () => {
   await (await import("./counter-c-spots.mjs")).run({ ok, pageWork });
 })();
 
+section("v1377 Order as them: his Place on their page takes what theirs takes, refuses a note, an ask and a group order, seals the spot, reads the public slip key (1a)");
+await (async () => {
+  await (await import("./order-as-them.mjs")).run({ ok });
+})();
+
 section("Counter Batch C: the seal carries the spot's name and unit, a unit alone sealed as its own shape, nothing in the clear (P6)");
 await (async () => {
   await (await import("./counter-c-pin-seal.mjs")).run({ ok });
