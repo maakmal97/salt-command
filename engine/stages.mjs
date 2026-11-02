@@ -390,19 +390,25 @@ export function stageAt(order, job, now) {
    The order as it is agreed: the charge the site decides (typed for a delivery, nought for a collection) and, when he sets a
    price on this one order, the goods at it with what they placed it at kept beside it as `asked`. The entry, its key and its
    note are all built on the agreed order, so the row, its key and the digest are drafted on what he set. */
-/* plan version 3 (03 Nov 2026, Fable's review): AN EQUAL ORDER ROWED TODAY. A row is named by its key, party, date, goods and delivery and book
-   (the engine's ovKey), with no order in it, and a key that names two rows sticks every later stage of both (findRow refuses it, a payment by key
-   lands on the first). So two orders of one account at one book, size and figure whose rows would fall on the same Kuala Lumpur day cannot both be
-   rowed: the second is refused at the preview, and so at Accept, with the way on (that order changed to the sum, as s218 and s219 were joined),
-   where before it drafted and stalled the fold as a replay. ANOTHER order only, never itself, OF THE SAME ACCOUNT AND ROW: the desk's findOrder
-   hands over every order on the site, so the account is matched here, and a friend's order books to the associate's -R bucket, another row
-   key, so for-a-friend is matched too. `queued.ack` is the moment its pending entry was queued. */
-export function siteTwin(agreed, others, now) {
-  const day = klDate(now), d = +(+agreed.delivery || 0).toFixed(2);
-  return (others || []).some((x) => x && x.id !== agreed.id && x.u === agreed.u && !!x.forFriend === !!agreed.forFriend
-    && (x.product || "salt") === (agreed.product || "salt") && +x.qty === +agreed.qty
-    && Math.abs((+x.total || 0) - (+agreed.total || 0)) < 0.005 && Math.abs((+x.delivery || 0) - d) < 0.005
-    && !!(x.queued && x.queued.ack) && klDate(new Date(x.queued.ack)) === day);
+/* plan version 3 (03 Nov 2026, Fable's reviews): AN EQUAL ORDER ROWED TODAY. Two tests, as the book has them. A row is NAMED by its key: party, day,
+   goods and delivery together, and book (the engine's ovKey, no size and no order in it), and a key naming two rows sticks every later stage of
+   both (findRow refuses it, a payment by key lands on the first): so another order whose row would carry this one's key is refused at the
+   preview, and so at Accept, with the way on (his answer: refuse it, say why). The fold's REPLAY test is party, book, day, size and goods (the
+   delivery not in it): an order equal to another there but keyed apart (another delivery charge) is two rows that never stick, and is marked
+   `second` so the fold takes it. Both read ANOTHER order of the SAME ACCOUNT AND ROW (findOrder hands over every order on the site; for a friend
+   books to the associate's -R bucket, another party), whose pending entry was queued the same Kuala Lumpur day (`queued.ack`). Returns the
+   orders of each test; the desk lets go of one whose pending draft was rejected (src/orders.js previewAck). */
+export function siteTwins(agreed, others, now) {
+  const day = klDate(now), d = +(+agreed.delivery || 0).toFixed(2), g = +(+agreed.total || 0).toFixed(2);
+  const out = { key: [], fold: [] };
+  for (const x of others || []) {
+    if (!x || x.id === agreed.id || x.u !== agreed.u || !!x.forFriend !== !!agreed.forFriend || (x.product || "salt") !== (agreed.product || "salt")) continue;
+    if (!(x.queued && x.queued.ack) || klDate(new Date(x.queued.ack)) !== day) continue;
+    const xg = +(+x.total || 0).toFixed(2), xd = +(+x.delivery || 0).toFixed(2);
+    if (Math.abs((xg + xd) - (g + d)) < 0.005) out.key.push(x);
+    else if (+x.qty === +agreed.qty && Math.abs(xg - g) < 0.005) out.fold.push(x);
+  }
+  return out;
 }
 export function acceptEntry(o, code, delivery, price, now) {
   const agreed = Object.assign({}, o, { delivery: o.mode === "deliver" ? (delivery || 0) : 0 }, price != null ? { total: price, asked: +(+o.total).toFixed(2) } : {});

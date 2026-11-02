@@ -1,13 +1,17 @@
 [
- {"name": "a twin is never refused", "file": "src/orders.js", "find": "  if (siteTwin(agreed, ctx && ctx.orders, now)) return { ok: false, status: 409, twin: true,", "replace": "  if (false) return { ok: false, status: 409, twin: true,"},
- {"name": "the order is its own twin", "file": "engine/stages.mjs", "find": "(others || []).some((x) => x && x.id !== agreed.id && x.u === agreed.u", "replace": "(others || []).some((x) => x && x.u === agreed.u"},
- {"name": "any day is today", "file": "engine/stages.mjs", "find": "    && !!(x.queued && x.queued.ack) && klDate(new Date(x.queued.ack)) === day);", "replace": "    && !!(x.queued && x.queued.ack));"},
- {"name": "an order not rowed is a twin", "file": "engine/stages.mjs", "find": "    && !!(x.queued && x.queued.ack) && klDate(new Date(x.queued.ack)) === day);", "replace": "    && (!(x.queued && x.queued.ack) || klDate(new Date(x.queued.ack)) === day));"},
- {"name": "the size is not compared", "file": "engine/stages.mjs", "find": "    && (x.product || \"salt\") === (agreed.product || \"salt\") && +x.qty === +agreed.qty\n", "replace": "    && (x.product || \"salt\") === (agreed.product || \"salt\")\n"},
- {"name": "the figure is not compared", "file": "engine/stages.mjs", "find": "    && Math.abs((+x.total || 0) - (+agreed.total || 0)) < 0.005 && Math.abs((+x.delivery || 0) - d) < 0.005\n", "replace": "    && Math.abs((+x.delivery || 0) - d) < 0.005\n"},
- {"name": "the delivery is not compared", "file": "engine/stages.mjs", "find": " < 0.005 && Math.abs((+x.delivery || 0) - d) < 0.005\n", "replace": " < 0.005\n"},
- {"name": "the book is not compared", "file": "engine/stages.mjs", "find": "    && (x.product || \"salt\") === (agreed.product || \"salt\") && +x.qty === +agreed.qty\n", "replace": "    && +x.qty === +agreed.qty\n"},
+ {"name": "a twin is never refused", "file": "src/orders.js", "find": "  if (keyed.length) return { ok: false, status: 409, twin: true,", "replace": "  if (false) return { ok: false, status: 409, twin: true,"},
+ {"name": "a twin keyed apart is not marked second", "file": "src/orders.js", "find": "  if ((await rowed(tw.fold)).length) entry.payload.second = true;\n", "replace": ""},
+ {"name": "a rejected twin still refuses", "file": "src/orders.js", "find": "    if (!r || r.status !== \"rejected\") out.push(x); } return out; };", "replace": "    out.push(x); } return out; };"},
+ {"name": "an ended twin is told as a live one", "file": "src/orders.js", "find": "error: keyed.every((x) => [\"cancelled\", \"declined\"].includes(x.status))\n", "replace": "error: false\n"},
  {"name": "the refusal gives no way on", "file": "src/orders.js", "find": ": change that order to the sum instead\" };", "replace": "\" };"},
- {"name": "another account is a twin", "file": "engine/stages.mjs", "find": "x.id !== agreed.id && x.u === agreed.u && ", "replace": "x.id !== agreed.id && "},
- {"name": "a friend's order is a twin", "file": "engine/stages.mjs", "find": " && !!x.forFriend === !!agreed.forFriend\n", "replace": "\n"}
+ {"name": "the preview does not say second", "file": "src/orders.js", "find": "    entry.payload.second ? { second: true } : {},   /* plan version 3: a second sale keyed apart", "replace": "    {},   /* plan version 3: a second sale keyed apart"},
+ {"name": "the order is its own twin", "file": "engine/stages.mjs", "find": "    if (!x || x.id === agreed.id || x.u !== agreed.u", "replace": "    if (!x || x.u !== agreed.u"},
+ {"name": "another account is a twin", "file": "engine/stages.mjs", "find": " || x.u !== agreed.u || !!x.forFriend", "replace": " || !!x.forFriend"},
+ {"name": "a friend's order is a twin", "file": "engine/stages.mjs", "find": " || !!x.forFriend !== !!agreed.forFriend || (x.product", "replace": " || (x.product"},
+ {"name": "the book is not compared", "file": "engine/stages.mjs", "find": " || (x.product || \"salt\") !== (agreed.product || \"salt\")) continue;", "replace": ") continue;"},
+ {"name": "any day is today", "file": "engine/stages.mjs", "find": " || klDate(new Date(x.queued.ack)) !== day) continue;", "replace": ") continue;"},
+ {"name": "an order not rowed is a twin", "file": "engine/stages.mjs", "find": "    if (!(x.queued && x.queued.ack) || klDate(new Date(x.queued.ack)) !== day) continue;", "replace": "    if (x.queued && x.queued.ack && klDate(new Date(x.queued.ack)) !== day) continue;"},
+ {"name": "the key reads the goods alone", "file": "engine/stages.mjs", "find": "    if (Math.abs((xg + xd) - (g + d)) < 0.005) out.key.push(x);", "replace": "    if (Math.abs(xg - g) < 0.005 && Math.abs(xd - d) < 0.005 && +x.qty === +agreed.qty) out.key.push(x);"},
+ {"name": "the fold's test reads no size", "file": "engine/stages.mjs", "find": "    else if (+x.qty === +agreed.qty && Math.abs(xg - g) < 0.005) out.fold.push(x);", "replace": "    else if (Math.abs(xg - g) < 0.005) out.fold.push(x);"},
+ {"name": "the fold's test reads the delivery too", "file": "engine/stages.mjs", "find": "    else if (+x.qty === +agreed.qty && Math.abs(xg - g) < 0.005) out.fold.push(x);", "replace": "    else if (+x.qty === +agreed.qty && Math.abs(xg - g) < 0.005 && Math.abs(xd - d) < 0.005) out.fold.push(x);"}
 ]

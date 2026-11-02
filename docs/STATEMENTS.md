@@ -2347,10 +2347,13 @@ Cash received for exactly what it owes, first, then the handover of the whole or
 Place's (`<rid>-cash`, `<rid>-hand`), so a retry books nothing twice; a step refused stops there and Sent says why (`sh.actNotHanded`), done says
 `sh.actDone`; a cash step that landed with a handover that did not says `sh.actPaidNotHanded`, and the Place again finishes it (the fixed ids
 answer from their first answer). Their rows fold as every stage's do. **An equal order rowed today is refused at Accept** (the Desk's
-`siteTwin` in `previewAck`, Fable's review): a row is named by its key (party, date, goods and delivery, book; no order), a key naming two rows
-sticks every later stage of both, so a site order whose account has another order already rowed that Kuala Lumpur day at the same book, size,
-goods and delivery answers 409 `twin` with the way on (change that order to the sum, as s218 and s219 were joined); never for itself. Before, it
-drafted and stalled the fold as a replay.
+`siteTwins` in `previewAck`, Fable's reviews, his answer of 03 Nov 2026): a row is named by its key (party, day, goods and delivery together,
+book; no size and no order), and a key naming two rows sticks every later stage of both, so a site order whose account (and for-a-friend side)
+has ANOTHER order rowed that Kuala Lumpur day under the same key answers 409 `twin` with the way on (change that order to the sum, as s218 and
+s219 were joined; or, when that order ended today with its row, another size or tomorrow). One equal only under the fold's replay test (party,
+book, day, size, goods; the delivery not in it) is keyed apart and marked `second`, which the preview names. A twin whose pending draft was
+rejected has no row and stands aside. `findOrder` hands over every order on the site, so the account is matched. Before, it drafted and
+stalled the fold as a replay.
 
 Customer amendments use the customer's session at `POST /orders/<id>/amend`, not an Admin route.
 The replacement is checked against their own open order and carried over the private bridge to the
