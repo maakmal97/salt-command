@@ -1,5 +1,17 @@
 [
  {
+  "v": "v1378",
+  "d": "02 Nov 2026",
+  "t": "THE OPEN ORDER, BOTH SIDES, AND THE OPEN ACCOUNT",
+  "n": [
+   "<b>ONE ORDER CARD.</b> Salt Admin's open order and the customer's are now one card: the band, the steps, the Bill as a settings list and the messages with their box are drawn once for both. No card around it; its parts stand 24px apart on Shop's grid.",
+   "<b>YOUR SIDE, IN SHOP'S ORDER.</b> The band and the steps; the four figures; your decision as settings lists (Agree's Goods, Delivery and When; Ready; Handover; Money received) with one filled pill a stage and every other move a row; the Bill; every message of the order with your box in view (the Answer fold is gone); This customer, which opens their account, and the Order log; and last, in ember, Decline the order or Cancel the order, still asking first. From 1180px two columns, your decision left and the record right.",
+   "<b>THEIR SIDE.</b> The customer's card keeps its mark, never a product word, the state as the band's chip, what they owe in ember on the Bill's last row and one Pay under it.",
+   "<b>THE OPEN ACCOUNT.</b> The same way: one filled pill, Send a sign-in link; the rest rows; Copy password and Sign out everywhere ember rows at the end, each now asking on the sheet first (Sign out everywhere's second tap is gone).",
+   "<b>FIXED.</b> Since v1376 an order opened from To do or Open on Salt Admin was hidden by its own card's old stage name; it now opens in view. salt-ds 1.23.0. No route, request body, price, booking or stored shape changed."
+  ]
+ },
+ {
   "v": "v1377",
   "d": "02 Nov 2026",
   "t": "ORDER AS THEM: YOUR ORDER FOR A CUSTOMER IS THEIR OWN COUNTER",

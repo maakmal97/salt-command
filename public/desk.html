@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="ccfe2fc3ea667a2f";
+var SALT_BUILD_ID="6218d2a52ec15375";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -11531,7 +11531,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1377","d":"02 Nov 2026","t":"ORDER AS THEM: YOUR ORDER FOR A CUSTOMER IS THEIR OWN COUNTER","n":["<b>ORDER FOR THEM OPENS THEIR PAGE.</b> On Salt Admin an account's Order for them opens the customer's own Counter by the master, as View as them does, with ordering live: Prices, the basket, Home's starts, Order again and the order sheet work as theirs. Their overdue hold does not stop you. Everything else stays read only: no Pay, claim, Cancel, change, thread line, device or passkey. The box of your own (a size, a way, a place) is gone.","<b>ONE PLACE.</b> Each line goes through your route, /all/maker/customers/&lt;u&gt;/orders, into the same placeOrder a customer's Place uses, at their sealed price and stamp, marked as yours. It now takes a sheet's line, a delivery window, a sealed exact spot, Order again and a day; it refuses a note, an ask and a group order. A replayed tap books once.","<b>PLACED FOR YOU.</b> Their phone is told once, sealed, as Order placed for you; their card says Placed for you while it is placed, and your Orders row says You placed. Your device reads and keeps none of their saved spots: the area and the exact spot are asked afresh.","<b>PRACTICE.</b> On /all/test you can order as a test account, never a real one; 0000-0002's placed order is yours (FIX_VERSION 16). Plan: docs/plan-one-order-stream.html, version 1 of 10. Fable reviewed the route and the page twice, every finding applied."]}];
+const evolution=[{"v":"v1378","d":"02 Nov 2026","t":"THE OPEN ORDER, BOTH SIDES, AND THE OPEN ACCOUNT","n":["<b>ONE ORDER CARD.</b> Salt Admin's open order and the customer's are now one card: the band, the steps, the Bill as a settings list and the messages with their box are drawn once for both. No card around it; its parts stand 24px apart on Shop's grid.","<b>YOUR SIDE, IN SHOP'S ORDER.</b> The band and the steps; the four figures; your decision as settings lists (Agree's Goods, Delivery and When; Ready; Handover; Money received) with one filled pill a stage and every other move a row; the Bill; every message of the order with your box in view (the Answer fold is gone); This customer, which opens their account, and the Order log; and last, in ember, Decline the order or Cancel the order, still asking first. From 1180px two columns, your decision left and the record right.","<b>THEIR SIDE.</b> The customer's card keeps its mark, never a product word, the state as the band's chip, what they owe in ember on the Bill's last row and one Pay under it.","<b>THE OPEN ACCOUNT.</b> The same way: one filled pill, Send a sign-in link; the rest rows; Copy password and Sign out everywhere ember rows at the end, each now asking on the sheet first (Sign out everywhere's second tap is gone).","<b>FIXED.</b> Since v1376 an order opened from To do or Open on Salt Admin was hidden by its own card's old stage name; it now opens in view. salt-ds 1.23.0. No route, request body, price, booking or stored shape changed."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11679,7 +11679,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='02 Nov 2026, 22:43 KL';
+const LAST_UPDATED='02 Nov 2026, 23:11 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
