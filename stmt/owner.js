@@ -5291,10 +5291,10 @@ export const OWNER_JS = `
     customerCard(card,order);   /* 21 Oct 2026: and This customer, the loyalty unit and the suggested %, for a customer */
     /* 17 Oct 2026: an ended order's last move is under Approve until he decides it, and the book keeps its row live until then */
     var waitN=((makerData&&makerData.drafts)||[]).filter(function(d){ return d.status==='pending'&&d.entry&&d.entry.orderId===order.id; }).length;
-    if(waitN&&!ordOpen(order)) bill.appendChild(el('p','salt-settings__foot',(waitN===1?'Its move waits':'Its '+waitN+' moves wait')+' under Approve: the book keeps the row until then.'));
+    if(waitN&&!ordOpen(order)) bill.appendChild(el('p','salt-insight obillnote',(waitN===1?'Its move waits':'Its '+waitN+' moves wait')+' under Approve: the book keeps the row as it was until you approve.'));
     /* 17 Oct 2026: a refund the book still owes them on this order's row */
     var owes=makerData&&makerData.refunds&&order.ledgerKey&&makerData.refunds[order.ledgerKey];
-    if(+owes>0.004) bill.appendChild(el('p','salt-settings__foot',rm(owes)+' refund here is their credit, spent at your next Agree.'));
+    if(+owes>0.004) bill.appendChild(el('p','salt-insight obillnote',rm(owes)+' refund here is their credit, spent at your next Accept or repaid by hand on the Desk.'));
   }
   /* 20 Oct 2026 (canvas V21, V23, V24, V27, V28): THE BILL, headed so: Goods (at the list price while placed), Delivery cost, the Total they owe (goods and
      delivery, the engine's txOwed), then what is paid and what is owed or settled. 2 Nov 2026 (his Orders canvas, page 2): the Counter's own Bill (oBillOf),

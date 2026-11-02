@@ -699,6 +699,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .odecide__part>.salt-options,.adm .odecide__part>.salt-settings+.salt-settings{margin-top:12px}
 .adm .ostagerows:empty,.adm .oclaims:empty,.adm .odecide .salt-insight:empty{display:none}
 .adm .odecide__part>.salt-insight,.adm .odecide__part>.msg{margin:6px 16px 0}
+.adm .obillnote{margin:12px 0 0}
 .adm .oagree .salt-settings__row>.salt-field__input,.adm .oagree .salt-settings__row>.salt-field__select{flex:0 1 168px;min-width:0;text-align:right}
 .adm .ofigs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .adm .ogoods__units,.oband__sum{margin-left:auto}
