@@ -1241,6 +1241,17 @@ body.ended>*:not(#aEnded){display:none}
   .adm .ordcard>.ogo{right:144px;width:120px}
   .adm .ordcard .nbtn{width:120px;min-width:120px;max-width:120px;padding:0 8px}
 }
+/* 2 Nov 2026: from 860 to 1080px the list stands in a column beside the open order, about 360px wide, so the 120px move cannot sit in the row's line
+   (it left 49px for the way and the code, and covered them): the row keeps its two lines and the figure, and the move stands under them */
+@media (min-width:860px) and (max-width:1079.98px){
+  .adm .ordcard{height:auto}
+  .adm .ordrow{height:76px;grid-template-columns:minmax(0,1fr) 96px}
+  .adm .ordrow .ofig{grid-column:2}
+  .adm .ordcard>.ogo,.adm .ordcard--ask>.ogo{position:static;width:auto;height:auto;padding:0 16px 12px}
+  .adm .ordcard>.ogo:empty{display:none}
+  .adm .ordcard .nbtn{width:auto;min-width:112px;max-width:none;height:44px;min-height:44px;padding:0 16px}
+  .adm .ordcard--ask>.ordrow{height:76px}
+}
 @media (min-width:1080px){
   .adm .ordlist{gap:0;padding:4px 6px;border:1px solid var(--salt-line);border-radius:var(--salt-radius-lg);background:var(--salt-glass)}
   .adm .ordcard{height:56px;border-radius:0;border-width:0 0 1px;background:transparent;box-shadow:none}

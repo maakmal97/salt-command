@@ -19,7 +19,9 @@ const extra = [
   { ...base, id: "ord-ry", status: "ready", mode: "collect", qty: 1, total: 100, paid: 0, moved: 1, point: "Z9", pointAt: { lat: 3.14786, lng: 101.69369 }, payments: [] },
   { ...base, id: "ord-ad", status: "acknowledged", mode: "deliver", place: "Lirau", qty: 1, total: 100, delivery: 10, paid: 40, sheet: "sh-1",
     payments: [{ at: "2026-10-10T03:00:00.000Z", amount: 40, method: "transfer" }] },
-  { ...base, id: "ord-ae", status: "acknowledged", mode: "deliver", place: "Lirau", qty: 1, total: 50, delivery: 0, paid: 0, sheet: "sh-1", product: "oil", payments: [] }
+  { ...base, id: "ord-ae", status: "acknowledged", mode: "deliver", place: "Lirau", qty: 1, total: 50, delivery: 0, paid: 0, sheet: "sh-1", product: "oil", payments: [] },
+  { ...base, id: "ord-out", status: "ready", mode: "collect", qty: 1, moved: 1, movedOn: "2026-10-12", total: 50, payments: [] },
+  { ...base, id: "ord-exp", status: "expired", mode: "collect", qty: 1, total: 50, payments: [] }
 ];
 
 export async function run({ ok, pageWork }) {
@@ -28,6 +30,15 @@ export async function run({ ok, pageWork }) {
     await p.work.quiet();
     const d = p.d, go = async (part) => { byAct(d, "nav.orders").click(); await p.work.quiet(); byAct(d, "part.orders." + part).click(); await p.work.quiet(); };
     const tap = async (id) => { byAct(d, "order.open", id).click(); await p.work.quiet(); return p.card(id); };
+    /* 2 Nov 2026: a ready order whose goods are all out says Collected, never "To hand over", and its moment the day they went */
+    await go("paid");
+    const OUT = await tap("ord-out"), ohd = OUT && OUT.querySelector(".ohead");
+    ok(!!ohd && t(ohd.querySelector(".salt-band__head .salt-status")) === "Collected" && /Collected/.test(t(ohd)), "goods all out: the chip says Collected, not To hand over: " + (ohd && t(ohd).slice(0, 120)));
+    /* 2 Nov 2026: Ended's line counts every order shown into a word, so its parts add up to its total */
+    await go("ended");
+    const endLine = t(d.getElementById("makerReviewStatus")), endN = Number((/^(\d+) ended order/.exec(endLine) || [])[1]);
+    const endSum = [...endLine.matchAll(/(\d+) (declined|cancelled|written off|closed on the book)/g)].reduce((a, m) => a + Number(m[1]), 0);
+    ok(endN > 0 && endSum === endN, "Ended's line accounts for every order it shows: " + endLine);
     await go("ready");
     const R = await tap("ord-rz"), head = R && R.querySelector(".ohead");
     /* 1 */

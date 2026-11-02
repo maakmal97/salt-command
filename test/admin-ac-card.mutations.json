@@ -17,5 +17,7 @@
  {"name":"no Bill heading","file":"stmt/owner.js","find":"    card.appendChild(el('h4','salt-eyebrow salt-eyebrow--copper obill','Bill'));","replace":""},
  {"name":"the delivery row keeps its old word","file":"stmt/owner.js","find":"var dl=ordLine('Delivery cost',rm(order.delivery||0)), km=el('span','salt-ledger__sub okm');","replace":"var dl=ordLine('Delivery',rm(order.delivery||0)), km=el('span','salt-ledger__sub okm');"},
  {"name":"no Total","file":"stmt/owner.js","find":"tot.setAttribute('data-total',''); L.appendChild(tot);","replace":"tot.setAttribute('data-total','');"},
- {"name":"the Total leaves out the delivery","file":"stmt/owner.js","find":"var tot=ordLine('Total',rm((+order.total||0)+(+order.delivery||0)));","replace":"var tot=ordLine('Total',rm(+order.total||0));"}
+ {"name":"the Total leaves out the delivery","file":"stmt/owner.js","find":"var tot=ordLine('Total',rm((+order.total||0)+(+order.delivery||0)));","replace":"var tot=ordLine('Total',rm(+order.total||0));"},
+ {"name":"goods all out still says To hand over","file":"stmt/owner.js","find":"if(s==='ready'&&(+order.qty||0)>0&&(+order.moved||0)>=(+order.qty||0)-0.0005) return ['verdigris',dl?'Delivered':'Collected','ticks'];","replace":""},
+ {"name":"Ended's line leaves out what closed on the book","file":"stmt/owner.js","find":"rest?rest+' closed on the book':''","replace":"''"}
 ]

@@ -4628,8 +4628,13 @@ export const OWNER_JS = `
     }
     if(st==='done') return rmShort(sum(list,due))+' settled on '+plural(n,'done order')+' shown, the newest first.';
     if(st==='ended'){
-      var dec=list.filter(function(e){ return e.order&&e.order.status==='declined'; }).length, can=list.filter(function(e){ return e.order&&e.order.status==='cancelled'; }).length;
-      return plural(n,'order')+' ended'+(dec||can?': '+[dec?dec+' declined':'',can?can+' cancelled':''].filter(Boolean).join(', '):'')+'.';
+      /* 2 Nov 2026: every order is counted into a word (the line said "50 ended: 5 declined, 19 cancelled" and left 26 unsaid): a cancelled or written-off
+         book row counts as the order does, and what is left ended on the book */
+      var dec=list.filter(function(e){ return e.order&&e.order.status==='declined'&&!e.order.writtenOff; }).length;
+      var wo=list.filter(function(e){ return (e.order&&e.order.writtenOff)||(e.row&&e.row.writtenOff); }).length;
+      var can=list.filter(function(e){ return (e.order&&e.order.status==='cancelled'&&!e.order.writtenOff)||(e.row&&e.row.cancelled&&!e.row.writtenOff); }).length;
+      var rest=n-dec-wo-can;
+      return plural(n,'ended order')+' shown'+(n?': '+[dec?dec+' declined':'',can?can+' cancelled':'',wo?wo+' written off':'',rest?rest+' closed on the book':''].filter(Boolean).join(', '):'')+'.';
     }
     var sent=sum(list,function(e){ return e.order?+e.order.claimed||0:0; }), asked=list.filter(function(e){ return e.order&&orderAsked(e.order); }).length;
     var word=({confirmed:['agreed order','agreed orders'],ready:['order ready','orders ready'],paid:['order out or paid','orders out or paid']}[st]||['order','orders'])[n===1?0:1];
@@ -5088,11 +5093,14 @@ export const OWNER_JS = `
     if(order.writtenOff) return ['mist','Written off','cross'];
     if(s==='placed') return makerAccHeld(order)?['brass','Their yes','dot']:['copper','To agree','dot'];
     if(s==='acknowledged') return ['brass','To make ready','tick'];
+    /* 2 Nov 2026: a ready order whose goods are all out is not "to hand over" (the list calls it Out and its steps say Collected) */
+    if(s==='ready'&&(+order.qty||0)>0&&(+order.moved||0)>=(+order.qty||0)-0.0005) return ['verdigris',dl?'Delivered':'Collected','ticks'];
     if(s==='ready') return ['brass',dl?'To deliver':'To hand over','tick'];
     if(s==='done') return ['verdigris',dl?'Delivered':'Collected','ticks'];
     return ['mist',{declined:'Declined',cancelled:'Cancelled'}[s]||String(s||''),'cross'];
   }
   function ordMoment(order){
+    if(order.status==='ready'&&order.movedOn&&(+order.qty||0)>0&&(+order.moved||0)>=(+order.qty||0)-0.0005) return (order.mode==='deliver'?'Delivered ':'Collected ')+ymdDay(order.movedOn);
     var h=(order.history||[]).filter(function(x){ return x&&x.status===order.status&&x.at; }).pop(), at=order.status==='placed'||!h?order.at:h.at;
     var w={acknowledged:'Agreed ',ready:'Ready ',done:'Done ',declined:'Declined ',cancelled:'Cancelled '}[order.status]||'';
     return w+hm(at)+', '+dayMon(at).replace(/ [0-9]{4}$/,'');
