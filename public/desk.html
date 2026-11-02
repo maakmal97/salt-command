@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="6caa7d9ae92a0a8a";
+var SALT_BUILD_ID="6ce56ee4c9323a74";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -11535,7 +11535,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1384","d":"03 Nov 2026","t":"YOUR ACCEPT AND AN OFFER OF YOURS NEVER BOTH LAND","n":["<b>THE ORDER BOOK.</b> Your Accept reserves an order before it records your yes, and that record let every waiting yes on the order go: an offer you sent from your other device in that moment lost its yes, so the customer's Yes waited under Approve. Now an Accept is refused while an offer of yours is open or taken on the order, with \"an offer is open on this order, waiting on their answer\", and an offer is refused for two minutes after an Accept reserved the order, with \"your Accept on this order is on its way: if it does not go through, offer again in two minutes\". One of the two always wins whole, and no yes is lost.","<b>SALT ADMIN AND THE DESK.</b> Those two refusals are the only things you may see, and only when you tap Accept and an offer on one order at the same moment. Nothing else changes; no route changed.","<b>SALT COUNTER.</b> No change: customers never see either refusal."]}];
+const evolution=[{"v":"v1385","d":"03 Nov 2026","t":"ORDER AS THEM: HANDED OVER AND PAID NOW","n":["<b>THE STALL'S SALE ON THE ONE STREAM.</b> On a customer's own page, a collected order's sheet offers Handed over and paid now. Your Place is agreed at the price shown, then paid what it owes through the Desk's own Cash received (their credit counted) and handed over whole, each under a fixed request id, so a second tap books nothing twice. Sent says Agreed, paid and handed over, or why a step waits; the Place again finishes a step that did not land.","<b>AN EQUAL ORDER THE SAME DAY IS REFUSED, SAID WHY.</b> Your answer: a row is named by customer, day, goods with delivery, and book, never by size or order, so two equal orders of one customer on one day cannot be two rows. Accept on the second now says an equal order is on today's book and to change that one to the sum, where before it drafted and stalled the fold. An order equal only in size and goods, with another delivery charge, is a second sale and is taken.","<b>CHECKED.</b> Fable reviewed the money path four times; every finding applied, among them that the rule first compared across every customer (findOrder reads the whole site), now one account. Older checks that placed equal orders the same day were re-aimed to keep what they test. Version 3 of 10 of docs/plan-one-order-stream.html; a past date, an end buyer and one delivery over a sheet wait for later versions."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11683,7 +11683,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='03 Nov 2026, 03:29 KL';
+const LAST_UPDATED='03 Nov 2026, 03:39 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
