@@ -1355,6 +1355,8 @@ body.ended>*:not(#aEnded){display:none}
 .adm .apct__floor{color:var(--salt-mist-bright)}
 .adm .apct__acts .salt-pill,.adm .apct__acts .salt-ghost,.adm .apart__go{min-height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
 .adm .apct__acts .apct__clear,.adm .apct__acts>[role="status"]{grid-column:1/-1}
+/* 2 Nov 2026 (his Customers canvas): on a phone each of Their %'s ways takes the row, so Send +30% is never cut */
+@media (max-width:559.98px){.adm .apct__acts>*{grid-column:1/-1}}
 .adm .acust__line{display:flex;align-items:center;justify-content:space-between;gap:12px;white-space:nowrap}
 .adm .acust__spark{display:block;width:100%;height:36px;color:var(--salt-brass)}
 .adm .amore .salt-meter__line{white-space:nowrap}
@@ -1414,7 +1416,6 @@ body.ended>*:not(#aEnded){display:none}
 .adm #glist .grow{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .adm #glist select{margin-top:12px}
 .adm .alist .arow .salt-inbox-row__title{display:flex;align-items:center;gap:8px}
-.adm .alist .arow .acode{font-family:var(--salt-font-mono);font-weight:500}
 .adm .alist .arow .astate{margin-left:auto;text-align:right}
 .adm .alist .arow .salt-inbox-row__what{overflow-wrap:anywhere}
 .adm .acard .srow{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
@@ -2195,7 +2196,6 @@ export function landingPage(user, nonce, owner, bulletin, test) {
            filter, and a row opens the account beside the list from 860px, in its place below it on a phone. */
         + '<div id="oCustomers" class="aplace" data-in="customers" hidden>'
         + '<h1 class="sr">Customers</h1>'
-        + '<p class="lead">The people on the site: their accounts, their messages, guest links and associates.</p>'
         + adminParts("customers", test)
         + '<div class="abody">'
         + '<div id="oAccts" data-in="customers.accounts">'

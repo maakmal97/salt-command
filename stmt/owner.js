@@ -387,7 +387,7 @@ export const OWNER_JS = `
   function drawStory(box, a){
     var s=story[a.username];
     box.textContent='';
-    box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','How they signed in'));
+    box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Sign-ins'));
     var list=el('div','salt-ledger salt-ledger--plain'), L=a.locked;
     if(L) list.appendChild(lineRow('Password', chip('alarm','Locked out'),
       'Too many wrong passwords'+(L.until?', locked out until '+hm(L.until):'')+'.'));
@@ -921,6 +921,8 @@ export const OWNER_JS = `
     open.setAttribute('aria-label', s.word+(s.age?', '+s.age:'')+': '+who+(a.test?'':', '+a.username)+(s.rm?', '+rmShort(s.rm):''));
     if(aOpen===a.username){ open.setAttribute('aria-current','true'); row.setAttribute('aria-current','true'); }
     open.addEventListener('click', function(ev){ ev.preventDefault(); openCard(a.username); });
+    /* 2 Nov 2026: as a phone's settings row, a tap anywhere on the row opens it; its move and its tail keep their own taps */
+    row.addEventListener('click', function(ev){ if(ev.target===open||open.contains(ev.target)) return; if(tail.box.contains(ev.target)) return; if(ev.target.closest&&ev.target.closest('button,a,input,select,textarea')) return; openCard(a.username); });
     /* the tail is shown only while it holds an answer or the guest list: the note under the Send button fills as it is tapped */
     var sync=function(){ var on=!!tail.into.textContent; tail.box.hidden=!on; row.classList.toggle('arow--ask',on&&!wide); };
     sync(); if(window.MutationObserver) new MutationObserver(sync).observe(tail.into,{childList:true,characterData:true,subtree:true});

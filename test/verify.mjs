@@ -19533,7 +19533,8 @@ await (async () => {
     await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     D.querySelector('button[data-m="customers"]').click();
     ok(await until(() => D.querySelector('#rlist [data-u="' + u + '"]')), "Accounts lists the account");
-    D.querySelector('#rlist [data-u="' + u + '"]').click();
+    /* 2 Nov 2026 (Customers on the canvas): the row's text is its link; a tap on the row's empty space opens nothing */
+    D.querySelector('#rlist [data-u="' + u + '"] .arow__open').click();
     const card = () => D.querySelector('#aopen [data-acct="' + u + '"]');
     const pill = () => card() && card().querySelector(".apill");
     /* the links not yet used: the one opened above stays two minutes, spent, for the page that spent it */
@@ -19563,7 +19564,8 @@ await (async () => {
       "the next tap makes a new one: " + JSON.stringify({ label: pill().textContent, links: await links() }));
     /* ---- how they got in, drawn ---- */
     const story = () => ((card() && card().querySelector("[data-story]")) || {}).textContent || "";
-    ok(await until(() => /How they signed in/.test(story()) && /Password/.test(story()) && /Sign-in link/.test(story()) && /on iPhone, Safari/.test(story())
+    /* 2 Nov 2026 (Customers on the canvas): the head is "Sign-ins", three words at most (craft.md) */
+    ok(await until(() => /Sign-ins/.test(story()) && /Password/.test(story()) && /Sign-in link/.test(story()) && /on iPhone, Safari/.test(story())
       && /on Windows computer, Edge/.test(story())) && !story().includes(IP),
       "How they signed in lists each way in with the device it was used on, and no address: " + JSON.stringify(story()));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
@@ -19689,7 +19691,8 @@ await (async () => {
     await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     D.querySelector('button[data-m="customers"]').click();
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
-    D.querySelector('#rlist [data-u="' + u + '"]').click();
+    /* 2 Nov 2026 (Customers on the canvas): the row's text is its link; a tap on the row's empty space opens nothing */
+    D.querySelector('#rlist [data-u="' + u + '"] .arow__open').click();
     const card = () => D.querySelector('#aopen [data-acct="' + u + '"]');
     const story = () => ((card() && card().querySelector("[data-story]")) || {}).textContent || "";
     ok(await until(() => /Phones and computers2/.test(story()) && /iPhone, SafariSign outKept signed in since/.test(story()) && /Windows computer, EdgeSign outSigned in .* for this visit, not kept/.test(story())),
@@ -20014,7 +20017,8 @@ await (async () => {
     await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     D.querySelector('button[data-m="customers"]').click();
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
-    D.querySelector('#rlist [data-u="' + u + '"]').click();
+    /* 2 Nov 2026 (Customers on the canvas): the row's text is its link; a tap on the row's empty space opens nothing */
+    D.querySelector('#rlist [data-u="' + u + '"] .arow__open').click();
     const card = () => D.querySelector('#aopen [data-acct="' + u + '"]');
     const pill = () => card() && card().querySelector(".apill");
     const note = () => ((card() && card().querySelector(".apill + .anote")) || {}).textContent || "";

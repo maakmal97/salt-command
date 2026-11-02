@@ -190,8 +190,9 @@ export async function run({ ok }) {
   try {
     const doc = dom.window.document, text = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
     enter(doc, "customers", "accounts");
-    await waitFor(() => [...doc.querySelectorAll("#rlist [data-u]")].some((c) => text(c.querySelector(".need-who")) === "CX1-ZED"));
-    [...doc.querySelectorAll("#rlist [data-u]")].find((c) => text(c.querySelector(".need-who")) === "CX1-ZED").click();
+    /* 2 Nov 2026 (Customers on the canvas): a row is a settings row whose code sits in .acode and whose text link opens the account */
+    await waitFor(() => [...doc.querySelectorAll("#rlist [data-u]")].some((c) => text(c.querySelector(".acode")) === "CX1-ZED"));
+    [...doc.querySelectorAll("#rlist [data-u]")].find((c) => text(c.querySelector(".acode")) === "CX1-ZED").querySelector(".arow__open").click();
     await waitFor(() => !!doc.querySelector("#aopen .apct .apct__table"));
     const form = () => doc.querySelector("#aopen .apct"), act = (name, key) => byAct(form(), name, key), table = () => form().querySelector(".apct__table");
     const val = () => text(form().querySelector(".apct__val")), step = async (name, n) => { for (let i = 0; i < n; i++) act(name).click(); await new Promise((r) => setTimeout(r, 5)); };
