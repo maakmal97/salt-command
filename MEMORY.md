@@ -228,6 +228,20 @@
 - Left, said: the open order (the canvas's shared card with the Counter) and the open account card are the older design (three filled pills on the
   account); Orders' To do lead wraps to two lines at 390; QR Command took nothing from 1.22.0 (recipes only, no token or face).
 
+## The open order, both sides, and the open account (v1378)
+- Live as v1378 (`ab2fc571`, 02 Nov 2026; Cloud commit `41469200010`: chain green with "The phone is serving it" on build `6218d2a52ec15375`, the statements
+  deployed and published, three suite parts green; CI `41469199725` green), the second page of the Orders v2 canvas ("The open order, both sides") with salt-ds
+  1.23.0 (#35: `salt-band--grid`, `salt-kpi--grid`, `salt-settings__value--due`, `salt-settings__row--total`, an action row's bare words). One order card for
+  both readers: `oBandOf`, `oStepsOf`, `oBillOf`, `oThreadOf`, `oComposerOf` in `stmt/page.js`. His side: the four figures, his decision as settings lists
+  in `.odecide` (`makerRowMode` takes it) with one pill a stage, every other move a row (`asRow`), the Bill, every message with the box in view (the Answer
+  fold and act `order.answer` gone), This customer (new act `order.customer`) and the Order log (`ordNext`), the end last in `.ordend` ("Decline the order",
+  "Cancel the order"); two columns from 1180px by `data-ocol` (three at 1440 retired). The account card: one pill, `.aend` last, Copy password and Sign out
+  everywhere ask on the Sheet (the second tap retired). Fixed: since v1376 an order opened from To do or Open was swept hidden (its card named the stage).
+  Full suite on the merged tree: 11,601 passed, 1 failed (S1b, laptop only). New section "2 Nov 2026: the open order, both sides" (V1 to V9, 19 mutations red).
+- Left, said: the Counter's other order parts (Message, Details, the history fold, Cancel this order) keep their older ghosts and folds; Record's Their %
+  stepper, Make partner, Repayment and a device's Sign out stay ghosts in their glass cards; QR Command took nothing from 1.23.0 (recipes only); the needle
+  "no band on Shop hours" (admin-ac-confirm) is unnoticed (on v1377 too), and "Counter maker reward spends book" is red when run alone on this laptop (v1377 too), green in the suite.
+
 ## Disabled automation
 - `Salt fold (manual backup)` = `trig_01UrnjQMWA3f6GXN5R6Dzi4S`, disabled.
 
