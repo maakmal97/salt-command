@@ -206,6 +206,20 @@ export async function mintHandover(env, u, token, wrap, admin) {
   return { code, token, exp };
 }
 
+/** Plan version 5 (Fable's review): a hand-over key kept for a join page is held sealed under the hand-over secret, as this file holds every
+ *  hand-over body, so a store dump hands out no bearer key; opened only where it is spent (stmt/join.js). Null when the secret is unset. */
+export async function sealToken(env, token) {
+  const secret = String(env.STMT_HANDOVER_KEY || "");
+  if (!secret || !SIGNIN_RE.test(String(token || ""))) return null;
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  return { iv: b64(iv), ct: b64(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await sealKey(secret), enc(token))) };
+}
+export async function openToken(env, s) {
+  const secret = String(env.STMT_HANDOVER_KEY || "");
+  if (!secret || !s || typeof s.iv !== "string" || typeof s.ct !== "string") return null;
+  try { return new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(s.iv) }, await sealKey(secret), unb64(s.ct))); }
+  catch (e) { return null; }
+}
 /** S3 FIX, 24 SEP 2026: LOG OUT BURNS WHAT THE PAGE MINTED, so a key left on the clipboard or in the address of a phone
  *  handed on opens nothing. Burnt by the key alone, unopened: whoever holds it could spend it anyway. */
 export async function dropHandover(env, token) {

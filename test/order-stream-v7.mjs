@@ -94,11 +94,33 @@ export async function run({ ok }) {
     ok(wrongU.status === 409, "O4 a hand-over for an account that is not the one he added is refused: " + wrongU.status);
     const token = Buffer.from(webcrypto.getRandomValues(new Uint8Array(24))).toString("base64url"), wrap = { salt: "c2FsdA", iv: "aXY", ct: "Y3Q" };
     const ho = await owner("/all/joins/" + id + "/handover", { u: NEWU, token, wrap }), hoj = await ho.json();
-    ok(ho.status === 200 && hoj.ok && hoj.join.state === "keyed" && !("key" in hoj.join), "O5 the hand-over is minted and filed, never answered to his page here: " + J([ho.status, hoj.join && hoj.join.state, hoj.error]));
+    const kept = J(await store.get("j:" + id, "json"));
+    ok(ho.status === 200 && hoj.ok && hoj.join.state === "keyed" && !("ks" in hoj.join) && !kept.includes(token),
+      "O5 the hand-over is minted and filed sealed, never in the clear in the store and never answered to his page here: " + J([ho.status, hoj.join && hoj.join.state, hoj.error]));
+    const hoCount = () => [...store.values.keys()].filter((k) => k.startsWith("ho:")).length, before2 = hoCount();
+    const twice = await owner("/all/joins/" + id + "/handover", { u: NEWU, token: Buffer.from(webcrypto.getRandomValues(new Uint8Array(24))).toString("base64url"), wrap });
+    ok(twice.status === 409 && /sign-in already/.test((await twice.json()).error) && hoCount() === before2,
+      "O7 a second hand-over tap is refused before anything is minted, so no stray key is left: " + J([twice.status, hoCount(), before2]));
     const w2 = await (await go("/j/" + id + "/wait", { nonce })).json(), w3 = await go("/j/" + id + "/wait", { nonce }), w3j = await w3.json();
     const page2 = await go("/j/" + id);
-    ok(w2.ok && w2.key === token && w2.state === "spent" && w3j.ok && !w3j.key && page2.status === 404 && !("key" in (await store.get("j:" + id, "json"))),
+    ok(w2.ok && w2.key === token && w2.state === "spent" && w3j.ok && !w3j.key && page2.status === 404 && !("ks" in (await store.get("j:" + id, "json"))),
       "W1 the page holding the nonce takes the key once; asked again it is gone, the record forgets it, and the link is shut: " + J([w2.state, !!w2.key, w3j, page2.status]));
+
+    /* R1: a link he withdraws while its key waits hands over nothing, and the key is burnt unspent */
+    const r1 = (await (await assoc("/my/joins", {})).json()).join.id;
+    await owner("/all/joins/" + r1 + "/approve", {});
+    const nonce2 = Buffer.from(webcrypto.getRandomValues(new Uint8Array(32))).toString("base64url");
+    await go("/j/" + r1, { seal, nonceHash: await nonceHashOf(nonce2) });
+    await owner("/all/joins/" + r1 + "/added", { code: "CJ7-NEW" });
+    const tok2 = Buffer.from(webcrypto.getRandomValues(new Uint8Array(24))).toString("base64url");
+    await owner("/all/joins/" + r1 + "/handover", { u: NEWU, token: tok2, wrap });
+    const hoBefore = hoCount();
+    await owner("/all/joins/" + r1 + "/revoke", {});
+    const wr = await go("/j/" + r1 + "/wait", { nonce: nonce2 });
+    ok(wr.status === 404 && hoCount() === hoBefore - 2 && !("ks" in (await store.get("j:" + r1, "json"))),
+      "R1 a link withdrawn while its key waits hands over nothing, and the key is burnt unspent (Fable's review): " + J([wr.status, hoBefore, hoCount()]));
+    const big = await counter.fetch(new Request("https://counter.fixture.test/j/" + r1 + "/wait", { method: "POST", headers: { "content-type": "application/json", "content-length": "20000" }, body: "{}" }), env);
+    ok(big.status === 413, "R2 a public post past the bound is refused unread (Fable's review): " + big.status);
 
     /* O6: Decline is its own state and shuts the door; withdraw too */
     const d = (await (await assoc("/my/joins", {})).json()).join.id;

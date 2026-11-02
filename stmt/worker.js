@@ -1701,6 +1701,7 @@ async function handleJoinPage(request, env, p, m) {
     return key ? json({ ok: true, key }) : json({ ok: false }, 503);
   }
   if (m !== "POST") return no();
+  if (+(request.headers.get("content-length") || 0) > 16384) return json({ ok: false }, 413);   /* Fable's review: bounded before it is read */
   const b = await readJson(request);
   if (mm[2] === "wait") {
     const w = rec ? await waitJoin(env, rec.id, b && b.nonce) : null;
@@ -1921,6 +1922,8 @@ const worker = {
           return out ? json({ ok: true, join: joinOwner(out) }) : json({ ok: false, error: "It waits for its form, and takes one roster code." }, 409);
         }
         if (!env.STMT_HANDOVER_KEY) return noHandover();
+        /* Fable's review: one already handed over is said so before anything is minted, so a second tap leaves no stray key */
+        if (rec.state === "keyed" || rec.state === "spent") return json({ ok: false, error: "They have their sign-in already." }, 409);
         const u = normUser(b && b.u);
         if (rec.state !== "added" || !u || !(await roster(env)).some((x) => x.username === u && x.code === rec.code))
           return json({ ok: false, error: "Its account is not ready yet." }, 409);

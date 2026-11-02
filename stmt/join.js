@@ -19,6 +19,7 @@
  */
 import { newRef, normRef, getMany, MAX_PER_ASSOC } from "./refs.js";
 import { slipShape } from "./slip.js";
+import { sealToken, openToken, dropHandover } from "./signin.js";
 
 export const JKEY = (id) => "j:" + id;
 export const JOIN_LABEL = "salt-join v1";
@@ -30,6 +31,8 @@ const NONCE_RE = /^[A-Za-z0-9_-]{32,128}$/;
 export const joinShape = (s) => slipShape(s) && String(s.ct).length <= JOIN_MAX;
 /* waiting on his word: the guest link's own test, `approved === false`, never `!approved` */
 export const joinWaiting = (r) => !!r && r.approved === false && r.declined !== true && !r.revoked;
+/* approved and neither declined nor withdrawn: every step after his word needs it (Fable's review: a withdrawn link hands over nothing) */
+export const joinLive = (r) => !!r && r.approved === true && r.declined !== true && !r.revoked;
 /* open for the referee's form: approved, not declined or withdrawn, and nothing sent yet */
 export const joinOpen = (r) => !!r && r.approved === true && r.declined !== true && !r.revoked && r.state === "open";
 
@@ -80,6 +83,8 @@ export async function setJoin(env, id, patch) {
   if ("approved" in patch) { rec.approved = !!patch.approved; if (rec.approved) rec.declined = false; }
   if ("declined" in patch) { rec.declined = !!patch.declined; if (rec.declined) rec.approved = false; }
   if ("revoked" in patch) rec.revoked = !!patch.revoked;
+  /* a link shut while its key waits burns the key, unspent (Fable's review) */
+  if (!joinLive(rec) && rec.ks) { const t = await openToken(env, rec.ks); if (t) await dropHandover(env, t); delete rec.ks; }
   return save(env, rec);
 }
 
@@ -97,17 +102,19 @@ export async function sendJoin(env, id, body) {
 /** His Add ID made for it: the code noted, never a name. */
 export async function addedJoin(env, id, code) {
   const rec = await readJoin(env, id);
-  if (!rec || rec.state !== "sent" || typeof code !== "string" || !/^[A-Z]{1,3}[0-9]{1,2}-[A-Z0-9]{1,6}$/.test(code)) return null;
+  if (!joinLive(rec) || rec.state !== "sent" || typeof code !== "string" || !/^[A-Z]{1,3}[0-9]{1,2}-[A-Z0-9]{1,6}$/.test(code)) return null;
   rec.code = code; rec.state = "added"; rec.addedAt = new Date().toISOString();
   delete rec.seal;   /* opened and filed in his vault: the ciphertext is kept no longer than it is needed */
   return save(env, rec);
 }
 
-/** The hand-over key, filed beside the nonce's hash for the page that sent the form. */
+/** The hand-over key, filed SEALED beside the nonce's hash for the page that sent the form (Fable's review: no bearer key in the clear). */
 export async function keyJoin(env, id, key) {
   const rec = await readJoin(env, id);
-  if (!rec || rec.state !== "added" || typeof key !== "string" || !key) return null;
-  rec.key = key; rec.state = "keyed"; rec.keyAt = new Date().toISOString();
+  if (!joinLive(rec) || rec.state !== "added" || typeof key !== "string" || !key) return null;
+  const ks = await sealToken(env, key);
+  if (!ks) return null;
+  rec.ks = ks; rec.state = "keyed"; rec.keyAt = new Date().toISOString();
   return save(env, rec);
 }
 
@@ -117,11 +124,12 @@ export const nonceHashOf = async (nonce) => hex(await crypto.subtle.digest("SHA-
 /** The page waiting: its state, and the key once, only to the page holding the nonce. Answers { state, key? } or null. */
 export async function waitJoin(env, id, nonce) {
   const rec = await readJoin(env, id);
-  if (!rec || typeof nonce !== "string" || !NONCE_RE.test(nonce) || !rec.nonceHash) return null;
+  if (!joinLive(rec) || typeof nonce !== "string" || !NONCE_RE.test(nonce) || !rec.nonceHash) return null;
   if ((await nonceHashOf(nonce)) !== rec.nonceHash) return null;
-  if (rec.state !== "keyed" || !rec.key) return { state: rec.state };
-  const key = rec.key;
-  delete rec.key; rec.state = "spent"; rec.spentAt = new Date().toISOString();
+  if (rec.state !== "keyed" || !rec.ks) return { state: rec.state };
+  const key = await openToken(env, rec.ks);
+  if (!key) return { state: rec.state };
+  delete rec.ks; rec.state = "spent"; rec.spentAt = new Date().toISOString();
   await save(env, rec);
   return { state: "spent", key };
 }
@@ -130,4 +138,4 @@ export async function waitJoin(env, id, nonce) {
 export const joinMine = (origin, r) => ({ id: r.id, made: r.made || null, url: origin + "/j/" + r.id,
   state: r.revoked ? "withdrawn" : r.declined === true ? "declined" : r.approved === false ? "waiting" : r.state === "open" ? "open" : "used" });
 /** What he sees: the record less the key; the seal travels only while sent, for his one unlock to open. */
-export const joinOwner = (r) => { const o = Object.assign({}, r); delete o.key; delete o.nonceHash; return o; };
+export const joinOwner = (r) => { const o = Object.assign({}, r); delete o.ks; delete o.nonceHash; return o; };

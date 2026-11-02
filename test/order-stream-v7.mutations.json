@@ -6,11 +6,16 @@
  {"name": "the slip key goes out while shut", "file": "stmt/worker.js", "find": "    if (m !== \"GET\" || !joinOpen(rec)) return no();", "replace": "    if (m !== \"GET\") return no();"},
  {"name": "a second form is taken", "file": "stmt/join.js", "find": "  if (!joinOpen(rec)) return { error: \"shut\" };", "replace": "  if (!rec) return { error: \"shut\" };"},
  {"name": "the key goes to any nonce", "file": "stmt/join.js", "find": "  if ((await nonceHashOf(nonce)) !== rec.nonceHash) return null;\n", "replace": ""},
- {"name": "the key is handed twice", "file": "stmt/join.js", "find": "  delete rec.key; rec.state = \"spent\";", "replace": "  rec.state = \"keyed\";"},
- {"name": "his list carries the nonce's hash", "file": "stmt/join.js", "find": "delete o.key; delete o.nonceHash; return o;", "replace": "delete o.key; return o;"},
+ {"name": "the key is handed twice", "file": "stmt/join.js", "find": "  delete rec.ks; rec.state = \"spent\";", "replace": "  rec.state = \"keyed\";"},
+ {"name": "his list carries the nonce's hash", "file": "stmt/join.js", "find": "delete o.ks; delete o.nonceHash; return o;", "replace": "delete o.ks; return o;"},
  {"name": "the seal is kept after his Add ID", "file": "stmt/join.js", "find": "  delete rec.seal;   /* opened and filed", "replace": "  /* opened and filed"},
  {"name": "a hand-over for any account", "file": "stmt/worker.js", "find": "(await roster(env)).some((x) => x.username === u && x.code === rec.code))", "replace": "(await roster(env)).some((x) => x.username === u))"},
  {"name": "the associate sees the code", "file": "stmt/join.js", "find": "export const joinMine = (origin, r) => ({ id: r.id, made: r.made || null,", "replace": "export const joinMine = (origin, r) => ({ id: r.id, code: r.code, made: r.made || null,"},
  {"name": "declined reads as waiting", "file": "stmt/join.js", "find": "r.declined === true ? \"declined\" : r.approved === false", "replace": "r.approved === false"},
- {"name": "the page talks to any site", "file": "stmt/worker.js", "find": "frame-ancestors 'none'; connect-src 'self'; \"", "replace": "frame-ancestors 'none'; \""}
+ {"name": "the page talks to any site", "file": "stmt/worker.js", "find": "frame-ancestors 'none'; connect-src 'self'; \"", "replace": "frame-ancestors 'none'; \""},
+ {"name": "the key is kept in the clear", "file": "stmt/join.js", "find": "  rec.ks = ks; rec.state = \"keyed\";", "replace": "  rec.ks = ks; rec.key = key; rec.state = \"keyed\";"},
+ {"name": "a withdrawn link still hands over", "file": "stmt/join.js", "find": "  if (!joinLive(rec) || typeof nonce !== \"string\"", "replace": "  if (!rec || typeof nonce !== \"string\""},
+ {"name": "a withdrawn link's key is not burnt", "file": "stmt/join.js", "find": "  if (!joinLive(rec) && rec.ks) { const t = await openToken(env, rec.ks); if (t) await dropHandover(env, t); delete rec.ks; }\n", "replace": ""},
+ {"name": "a second tap mints a stray key", "file": "stmt/worker.js", "find": "        if (rec.state === \"keyed\" || rec.state === \"spent\") return json({ ok: false, error: \"They have their sign-in already.\" }, 409);\n", "replace": ""},
+ {"name": "a public body is read unbounded", "file": "stmt/worker.js", "find": "  if (+(request.headers.get(\"content-length\") || 0) > 16384) return json({ ok: false }, 413);", "replace": ""}
 ]
