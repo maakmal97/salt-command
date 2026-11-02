@@ -93,6 +93,43 @@ export async function run({ ok }) {
   const news7 = hit[0] ? await ph.read(hit[0]) : null;
   ok(hit.length === 1 && j7b.order.id === j7.order.id && news7 && news7.k === "placed" && news7.o === j7.order.id && SW.NEWS.placed === W.WORDS.en["news.placed"] && !!W.WORDS.en["news.placed.b"],
     "A7 his Place tells their phone once, sealed, as Order placed for you, naming the order, and a replay of the same request tells nobody: " + JSON.stringify([hit.length, news7]));
+
+  /* v2, his answer B: HIS PLACE IS HIS ACCEPT. A second account, so the five open orders of the first never stand in the way; the Desk is a fake
+     that answers the preview with a digest and the Accept by a scripted verdict, and every call, the Desk's and the phone's, lands on one timeline */
+  const U2 = "oatb-twoo";
+  await kv.put("u:" + U2, JSON.stringify({ prices: { digest: "as-them-list" } }));
+  await kv.put("push:" + U2 + ":k", JSON.stringify({ endpoint: "https://push.example/" + U2, at: "2026-10-01T00:00:00Z", keys: ph.keys }));
+  const timeline = [];
+  let verdict = { ok: true, approved: true };
+  Object.assign(env, { COUNTER_MAKER_KEY: "k".repeat(32), DESK_MAKER: { fetch: async (req) => {
+    const path = new URL(req.url).pathname, body = req.method === "POST" ? await req.json() : null;
+    timeline.push(["desk", path.split("/").pop(), body]);
+    const out = /\/preview$/.test(path) ? { ok: true, hash: "h".repeat(64) } : /\/accept$/.test(path) ? verdict : { ok: false, error: "not this fake's" };
+    return new Response(JSON.stringify(out), { status: out.ok ? 200 : 409 });
+  } } });
+  const place2 = async (body) => {
+    timeline.length = 0;
+    globalThis.fetch = async () => { timeline.push(["push"]); return new Response("", { status: 201 }); };
+    try { const r = await call("/all/maker/customers/" + U2 + "/orders", body); return await r.json(); } finally { globalThis.fetch = realF; }
+  };
+  const a8body = line();
+  const j8 = await place2(a8body), t8 = timeline.slice();
+  ok(j8.agreed && j8.agreed.accepted === true && t8.length === 3 && t8[0][1] === "preview" && JSON.stringify(t8[0][2]) === "{}"
+    && t8[1][1] === "accept" && JSON.stringify(t8[1][2]) === JSON.stringify({ hash: "h".repeat(64) }) && t8[2][0] === "push",
+    "A8 his collected Place is agreed at once: the Desk's preview, then its Accept on that digest and no price of his, then their banner: " + JSON.stringify([j8.agreed, t8]));
+  const j8b = await place2(a8body);
+  ok(j8b.order.id === j8.order.id && !j8b.agreed && timeline.length === 0, "A9 a replay of the same request agrees nothing again and wakes nobody: " + JSON.stringify(timeline));
+  const j10 = await place2(line({ mode: "deliver", place: "Taman Rekaan" }));
+  ok(j10.agreed && j10.agreed.accepted === false && /delivery charge/.test(j10.agreed.why) && !timeline.some((x) => x[0] === "desk"),
+    "A10 a delivery is not agreed here, since its charge is his to choose: it stays Placed and says so: " + JSON.stringify([j10.agreed, timeline]));
+  verdict = { ok: true, approved: false, differs: true };
+  const j11 = await place2(line());
+  ok(j11.agreed && j11.agreed.accepted === false && /waits under Approve/.test(j11.agreed.why),
+    "A11 a row that differs from the preview is not agreed, and says it waits under Approve: " + JSON.stringify(j11.agreed));
+  verdict = { ok: false, error: "the mirror is being seeded: try again in a minute" };
+  const j12 = await place2(line());
+  ok(j12.ok === true && j12.agreed && j12.agreed.accepted === false && /mirror is being seeded/.test(j12.agreed.why) && !!j12.order,
+    "A12 an Accept the Desk refuses leaves the order Placed and says the Desk's reason: " + JSON.stringify(j12));
 }
 
 /* a phone: its keys as the page files them, and RFC 8291's receiving side to read what is sealed to it (as test/pool-wake.mjs) */

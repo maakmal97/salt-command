@@ -415,6 +415,20 @@ function internalOperation(path) {
   return null;
 }
 
+/* plan version 2 (his answer B of 02 Nov 2026): HIS PLACE IS HIS ACCEPT. The Desk's own preview, then its Accept with that preview's digest and no
+   price of his, so the row is drafted at the total the sheet showed and his yes is the pre-approval that approves it where it lands (D6), as a
+   group order's close does. A delivery is agreed only at a charge he chooses, which the sheet never shows, so it stays Placed for him to set; a
+   row that differs from the preview waits under Approve. Nothing here throws: what did not agree says why, and the order stands Placed. */
+async function asPlaced(env, o) {
+  if (o.mode === "deliver") return { accepted: false, why: "Set its delivery charge under Orders to agree it." };
+  try {
+    const pv = await deskCall(env, "/_internal/maker/orders/" + o.id + "/preview", "POST", {});
+    const ac = await deskCall(env, "/_internal/maker/orders/" + o.id + "/accept", "POST", { hash: pv.hash });
+    if (ac.approved) return { accepted: true };
+    return { accepted: false, why: ac.differs ? "Its row differs from the price you saw, so it waits under Approve." : "Its row is being drafted, so it is agreed once it lands." };
+  } catch (error) { return { accepted: false, why: String(error && error.message || error).slice(0, 200) }; }
+}
+
 /* 20 Oct 2026 (canvas V62): THE GLANCE'S STOCK, the Desk's STOCK figures a book as they came (the desk measured them; nothing here does),
    and beside each the day he expects its next lot from this site's own KV `expected` (F4, set from the Desk's Stock), kept only while it is
    today or later in Kuala Lumpur: expectedSet drops a passed day only when the next one is set. */
@@ -731,9 +745,13 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
       const result = isTest(op.u) ? await examplePlace(env, op.u, body, "desk") : await placeOrder(env, op.u, body, "desk");
       if (!result.order) return json({ ok: false, ...result }, result.status || 400);
       if (tp.pin && !isTest(op.u)) await keepPin(env, op.u, tp.pin, result.order.pin);
-      /* his answer C: their phone is told, in fixed words, once the order is recorded; a practice account wakes nobody */
-      if (!isTest(op.u) && !result.again) await wakeCustomer(env, op.u, { k: "placed", o: result.order.id });   /* a replay of the same request wakes nobody */
-      return json({ ok: true, order: customerView(result.order) });
+      /* plan version 2, his answer B: HIS PLACE IS HIS ACCEPT, agreed at the total the sheet showed (asPlaced); a replay agrees nothing again */
+      const agreed = isTest(op.u) ? { accepted: false, why: "A practice order waits for you to agree it under Orders." }
+        : result.again ? null : await asPlaced(env, result.order);
+      /* his answer C: their phone is told, in fixed words, once the order is recorded, after the Accept so it is the banner they keep; a practice
+         account wakes nobody, and a replay of the same request wakes nobody */
+      if (!isTest(op.u) && !result.again) await wakeCustomer(env, op.u, { k: "placed", o: result.order.id });
+      return json(Object.assign({ ok: true, order: customerView(result.order) }, agreed ? { agreed } : {}));
     }
     if (op.kind === "review") {
       if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
