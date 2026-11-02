@@ -77,7 +77,8 @@ export async function run({ ok, pageWork }) {
     await p.work.quiet();
     /* the account card: a refund's two buttons and its line, then Sign out everywhere */
     enter(d, "customers", "accounts"); await p.work.quiet();
-    const acct = (code) => [...d.querySelectorAll("#rlist [data-u]")].find((c) => t(c.querySelector(".need-who")) === code);
+    /* 2 Nov 2026 (Customers on the canvas): an account is a settings row, its code the .acode */
+    const acct = (code) => [...d.querySelectorAll("#rlist [data-u]")].find((c) => t(c.querySelector(".acode")) === code);
     await click(acct("CX1-ZED"));
     const a = d.querySelector("#aopen .oacct"), key = "CX1-ZED:" + SINCE + ":40:";
     const paid = byAct(a, "acct.refund", key + "refundPaid"), stale = byAct(a, "acct.refund", key + "refundRemove"), out = byAct(a, "acct.signout-all");

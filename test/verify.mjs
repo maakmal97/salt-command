@@ -17218,9 +17218,10 @@ await (async () => {
     } }).window;
     const D = win.document;
     D.querySelector('button[data-m="customers"]').click();
-    ok(await until(() => [...D.querySelectorAll("#rlist button")].some((b) => b.textContent.includes("CX0-AA"))), "Accounts lists the account");
+    /* 2 Nov 2026 (Customers on the canvas): an account is a settings row whose link (a.arow__open) opens it, no longer a card's button */
+    ok(await until(() => [...D.querySelectorAll("#rlist .arow__open")].some((b) => b.textContent.includes("CX0-AA"))), "Accounts lists the account");
     /* S9 9.2: a row opens the account's card, and the card opens the account */
-    [...D.querySelectorAll("#rlist button")].find((b) => b.textContent.includes("CX0-AA")).click();
+    [...D.querySelectorAll("#rlist .arow__open")].find((b) => b.textContent.includes("CX0-AA")).click();
     ok(await until(() => [...D.querySelectorAll("#aopen button")].some((b) => b.textContent === "View as them")), "the row opens its card");
     [...D.querySelectorAll("#aopen button")].find((b) => b.textContent === "View as them").click();
     const pOrder = D.getElementById("pOrder");
@@ -17295,8 +17296,9 @@ await (async () => {
     const D = win.document;
     /* ---- S9 9.2: Accounts, a row opening each account's card; the four controls on the one with no account ---- */
     D.querySelector('button[data-m="customers"]').click();
-    const rowOf = (u) => D.querySelector('#rlist .ncard[data-u="' + u + '"]');
-    ok(await until(() => rowOf(uB) && /No account/.test(rowOf(uB).querySelector(".nkind").textContent) && rowOf(uA)), "Accounts lists both usernames as cards, and says the one has no account");
+    /* 2 Nov 2026 (Customers on the canvas): a settings row, its state word in the row's second line (.salt-settings__sub) */
+    const rowOf = (u) => D.querySelector('#rlist .arow[data-u="' + u + '"]');
+    ok(await until(() => rowOf(uB) && /No account/.test(rowOf(uB).querySelector(".salt-settings__sub").textContent) && rowOf(uA)), "Accounts lists both usernames as settings rows, and says the one has no account");
     const cardOf = (u) => { rowOf(u).click(); return [...D.querySelectorAll("#aopen .scard")].find((x) => x.textContent.includes(u)); };
     const btn = (card, t) => [...card.querySelectorAll("button")].find((b) => b.textContent === t);
     /* S9 9.3: the account's screen, its one filled Send a sign-in link and the four other ways beside it */
@@ -17907,8 +17909,9 @@ await (async () => {
       await new Promise((r) => setTimeout(r, 60));
       /* 26 Oct 2026: an account is Needs you's card; its word is the card's kind and its figure the card's, and the last open stands on the opened card's ledger */
       const list87 = D87.getElementById("rlist").textContent;
-      const card87 = D87.querySelector('#rlist article.ncard[data-u="aaaa-bbbb"]');
-      const kind87 = card87 ? card87.querySelector(".nkind").textContent.replace(/\s+/g, " ").trim() : "", fig87 = card87 ? card87.querySelector(".nfig").textContent.replace(/\s+/g, " ").trim() : "";
+      /* 2 Nov 2026 (Customers on the canvas): the card is a settings row; its word and age the row's second line, its figure the row's value */
+      const card87 = D87.querySelector('#rlist .arow[data-u="aaaa-bbbb"]');
+      const kind87 = card87 ? card87.querySelector(".salt-settings__sub").textContent.replace(/\s+/g, " ").trim() : "", fig87 = card87 ? card87.querySelector(".salt-settings__value--lg").textContent.replace(/\s+/g, " ").trim() : "";
       if (card87) card87.click();
       await new Promise((r) => setTimeout(r, 60));
       const stand87 = [...D87.querySelectorAll("#aopen .astand .salt-ledger__line")].map((l) => l.textContent.replace(/\s+/g, " ").trim());
@@ -18112,15 +18115,15 @@ await (async () => {
       "and it carries the count of what is To do there on both bars, the refused account, the ID with no account and the account not sent (all his to act since 22 Oct 2026): " + JSON.stringify([...D.querySelectorAll('[data-count="needs"]')].map((x) => x.textContent)));
 
     D.querySelector('.salt-appbar button[data-m="customers"]').click();
-    const rows = () => [...D.querySelectorAll("#rlist .ncard[data-u]")];
+    /* 2 Nov 2026 (Customers on the canvas): an account is a settings row inside its group's list (.salt-settings), no longer Needs you's card */
+    const rows = () => [...D.querySelectorAll("#rlist .arow[data-u]")];
     const rowOf = (u) => D.querySelector('#rlist [data-u="' + u + '"]');
     ok(D.getElementById("oAccts").hidden === false && D.getElementById("mHome").hidden === true && current() === "customers",
       "a tap on Customers opens its Accounts and marks it the current place");
-    ok(await until(() => rows().length === 4) && rows().every((r) => r.tagName === "ARTICLE" && r.classList.contains("salt-action") && r.classList.contains("ncard") && r.getAttribute("data-need") === "a:" + r.getAttribute("data-u")
-      && !!r.closest("section.ngroup") && !!r.querySelector("h2.nsev, .need-who")),
-      "every roster account is a row, drawn as Needs you's card inside its severity group");
+    ok(await until(() => rows().length === 4) && rows().every((r) => r.classList.contains("salt-settings__row") && !!r.closest(".salt-settings") && !!r.closest("section[data-sev]") && !!r.querySelector(".acode") && !r.classList.contains("ncard")),
+      "every roster account is a row, drawn as a settings row inside its severity group's list");
     /* 25 OCT 2026: a row is its state and age, then the sum; when and how it was opened and sent now live on the opened card's ledger */
-    const kind = (u) => (rowOf(u).querySelector(".nkind") || {}).textContent || "", fig = (u) => (rowOf(u).querySelector(".nfig") || {}).textContent || "";
+    const kind = (u) => (rowOf(u).querySelector(".salt-settings__sub") || {}).textContent || "", fig = (u) => (rowOf(u).querySelector(".salt-settings__value--lg") || {}).textContent || "";
     ok(/^Owed/.test(kind(uO)) && /RM 272/.test(fig(uO)),
       "a row says what they owe in its kind and its figure: " + JSON.stringify([kind(uO), fig(uO)]));
     ok(/^Locked/.test(kind(uL)) && kind(uN).startsWith("No account") && !/No account yet/.test(kind(uN)) && /^Not (sent|opened)/.test(kind(uF)),
@@ -19338,9 +19341,10 @@ await (async () => {
     const row = (u) => D.querySelector('#rlist [data-u="' + u + '"]');
     /* 25 OCT 2026: the row says No account and offers Show; the next-update words are on the opened card */
     const cardOf = (u) => { row(u).click(); const c = D.querySelector("#aopen .scard"); return c && c.textContent.includes(u) ? c : null; };
-    ok(await until(() => row(uN) && row(uN).querySelector(".need-who").textContent === "CX3-NO" && /^No account/.test(row(uN).querySelector(".nkind").textContent)
+    /* 2 Nov 2026 (Customers on the canvas): the row is a settings row, its code the .acode and its state the second line (.salt-settings__sub) */
+    ok(await until(() => row(uN) && row(uN).querySelector(".acode").textContent === "CX3-NO" && /^No account/.test(row(uN).querySelector(".salt-settings__sub").textContent)
       && [...row(uN).querySelectorAll("button")].some((b) => b.getAttribute("aria-label") === "Show the guest price list")
-      && row(uF) && !/No account/.test(row(uF).querySelector(".nkind").textContent)
+      && row(uF) && !/No account/.test(row(uF).querySelector(".salt-settings__sub").textContent)
       && !row(uF).querySelector('button[aria-label="Show the guest price list"]')),
       "and its Accounts row says No account and offers Show, where an account with one does not: " + JSON.stringify([(row(uN) || {}).textContent, (row(uF) || {}).textContent]));
     const cN = cardOf(uN), nextN = cN && cN.querySelector(".atot");
@@ -25882,9 +25886,10 @@ await (async () => {
       /* S9 9.2: Review is Accounts now: its row, and the card the row opens */
       D.querySelector('button[data-m="customers"]').dispatchEvent(new Wd.Event("click", { bubbles: true }));
       await new Promise((r) => setTimeout(r, 60));
-      /* 25 OCT 2026: a row is Needs you's card; its kind says No account, and the next-update words live on the opened card alone */
-      const rowFor = (code) => [...D.querySelectorAll("#rlist .ncard")].find((b) => (b.querySelector(".need-who") || {}).textContent === code);
-      const kindOf = (code) => ((rowFor(code) || {}).querySelector ? rowFor(code).querySelector(".nkind").textContent : "");
+      /* 25 OCT 2026: a row's kind says No account, and the next-update words live on the opened card alone */
+      /* 2 Nov 2026 (Customers on the canvas): the row is a settings row, its code the .acode and its kind the second line (.salt-settings__sub) */
+      const rowFor = (code) => [...D.querySelectorAll("#rlist .arow[data-u]")].find((b) => (b.querySelector(".acode") || {}).textContent === code);
+      const kindOf = (code) => ((rowFor(code) || {}).querySelector ? rowFor(code).querySelector(".salt-settings__sub").textContent : "");
       const ltrRow = kindOf("CZ9-LTR"), wlkRow = kindOf("CZ9-WLK");
       const cardText = (code) => { const r = rowFor(code); if (!r) return "";
         r.dispatchEvent(new Wd.Event("click", { bubbles: true })); return (D.querySelector("#aopen .scard") || {}).textContent || ""; };
@@ -49914,7 +49919,8 @@ await (async () => {
       { ...o0, id: "20260929120000-ca03", status: "ready", closed: { qty: 1 } }, { ...o0, id: "20260929120000-ca04", status: "acknowledged", claimed: 30 },
       { ...o0, id: "20260929120000-ca05", status: "ready", moved: 1 }, { ...o0, id: "20260929120000-ca06", status: "declined" },
       { ...o0, id: "20260929120000-ca07", status: "cancelled" }, { ...o0, id: "20260929120000-ca08", status: "placed" });
-    [...doc.querySelectorAll("#makerOrderList button")].find((b) => b.textContent === "Refresh").click();
+    /* 2 Nov 2026 (Customers on the canvas, the Orders list has no Refresh since ec45bfca): leaving Orders and entering it again reads the orders afresh */
+    doc.querySelector('[data-act="nav.record"]').click(); doc.querySelector('[data-act="nav.orders"]').click();
     for (let i = 0; i < 100 && !doc.querySelector('#makerOrderList [data-order$="ca01"]'); i++) await new Promise((resolve) => setTimeout(resolve, 10));
     /* a closed order has a card with its figures and no Cancel (it had none at all before Phase 1c: false is as null was) */
     const cancelOf = (suffix) => { const c = cardOf(doc, "20260929120000-" + suffix);
@@ -49923,7 +49929,8 @@ await (async () => {
       && cancelOf("ca05") === false && cancelOf("ca06") === false && cancelOf("ca07") === false && cancelOf("ca08") === false,
       "Maker offers Cancel on an acknowledged or ready order, paid or not, unless claimed, closed or handed over");
     extraReviewOrders.length = 0;
-    [...doc.querySelectorAll("#makerOrderList button")].find((b) => b.textContent === "Refresh").click();
+    /* 2 Nov 2026 (Customers on the canvas, the Orders list has no Refresh since ec45bfca): leaving Orders and entering it again reads the orders afresh */
+    doc.querySelector('[data-act="nav.record"]').click(); doc.querySelector('[data-act="nav.orders"]').click();
     for (let i = 0; i < 100 && doc.querySelector('#makerOrderList [data-order$="ca01"]'); i++) await new Promise((resolve) => setTimeout(resolve, 10));
     cardOf(doc, "20260929120000-makr");
     cards = doc.querySelectorAll("#makerReview .maker-card, #makerDrafts .maker-card");   /* the redraw replaced the cards read above */

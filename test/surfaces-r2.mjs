@@ -103,7 +103,8 @@ export async function run({ ok, pageWork }) {
       const d = p.d, t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : ""), quiet = async () => { await p.work.quiet(); await p.work.quiet(); };
       await quiet();
       enter(d, "customers", "accounts"); await quiet();
-      const row = () => [...d.querySelectorAll("#rlist [data-u]")].find((c) => t(c.querySelector(".need-who")) === "CX1-ZED");
+      /* 2 Nov 2026 (Customers on the canvas): an account is a settings row, its code the .acode */
+      const row = () => [...d.querySelectorAll("#rlist [data-u]")].find((c) => t(c.querySelector(".acode")) === "CX1-ZED");
       /* the read is held open on purpose, so a short pause, never quiet(), which would wait it out */
       if (row()) row().click(); await new Promise((r) => setTimeout(r, 80));
       const first = d.querySelector("#aopen .acust");

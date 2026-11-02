@@ -21,7 +21,8 @@ const U1 = "1111-2222";
 const account = { username: U1, code: "CX1-ZED", account: true, t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear", seen: { opens: 1, last: "2026-10-01T08:00:00.000Z", how: "link" }, sent: "2026-10-01T08:00:00.000Z", issued: "2026-10-01" };
 const onCard = async (doc, work) => {
   enter(doc, "customers", "accounts"); await work.quiet();
-  const card = [...doc.querySelectorAll("#rlist [data-u]")].find((c) => c.querySelector(".need-who").textContent === "CX1-ZED");
+  /* 2 Nov 2026 (Customers on the canvas): an account is a settings row, its code the .acode */
+  const card = [...doc.querySelectorAll("#rlist [data-u]")].find((c) => c.querySelector(".acode").textContent === "CX1-ZED");
   card.click(); await work.quiet(); await work.quiet();
 };
 const cases = [
