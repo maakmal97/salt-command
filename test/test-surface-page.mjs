@@ -132,7 +132,8 @@ export async function run({ ok, pageWork }) {
     const ad = adm.window.document, tick = () => new Promise((r) => setTimeout(r, 60));
     await until(() => calls.length >= 3); await awork.quiet();
     const places = [...ad.querySelectorAll("nav.salt-rail .place")].map((b) => b.textContent.trim());
-    const parts = [...ad.querySelectorAll(".aparts [data-part]")].map((b) => b.closest(".aparts").getAttribute("data-place") + "." + b.getAttribute("data-part"));
+    /* 2 Nov 2026 (Orders on the canvas): Orders' parts are the Segment of four and, under More, the Payments row */
+    const parts = [...ad.querySelectorAll(".aparts [data-part], .amore__list [data-part]")].map((b) => b.parentNode.getAttribute("data-place") + "." + b.getAttribute("data-part"));
     adm.window.location.hash = "#record"; await tick();
     const onRecord = [...ad.querySelectorAll('nav.salt-rail .place[aria-current="page"]')].map((b) => b.textContent.trim());
     ok(JSON.stringify(places) === JSON.stringify(["Needs you", "Orders", "Payments", "Chat"]) && !ad.getElementById("oAdd")
@@ -140,7 +141,7 @@ export async function run({ ok, pageWork }) {
       && JSON.stringify(onRecord) === JSON.stringify(["Needs you"]),
       "Salt Admin in test draws Needs you, Orders, Payments and Chat, no Record, Shop, Approve, account list, links or + orb, and #record lands on Needs you: " + JSON.stringify([places, parts, onRecord]));
     ad.querySelector('nav.salt-rail .place[data-p="payments"]').click(); await tick();
-    const onPay = [...ad.querySelectorAll('.aparts[data-place="orders"] [data-part]')].filter((b) => b.getAttribute("aria-selected") === "true").map((b) => b.getAttribute("data-part"));
+    const onPay = ["payments"].filter((k) => { const sec = ad.querySelector('[data-in="orders.' + k + '"]'); return !!sec && !sec.hidden; });
     ad.querySelector('nav.salt-rail .place[data-p="messages"]').click(); await tick();
     ad.querySelector('nav.salt-rail .place[data-m="orders"]:not([data-p])').click(); await tick();
     const reads = [...new Set(calls.map((c) => c[0]))];

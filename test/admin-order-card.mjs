@@ -13,7 +13,7 @@
  *      tick rules (still the For a friend tick's) keep the input over the box drawn beside it at the token both ways (settled in Chromium by a hit test,
  *      the four corners of the input each toggling it; jsdom has no layout, so this reads the page's own CSS rules)
  * Drawn by the maker harness (test/maker-act.mjs), whose hold(route) keeps an answer back until it is let go. */
-import { richOwnerPage, byAct } from "./maker-act.mjs";
+import { richOwnerPage, byAct, PART_OF } from "./maker-act.mjs";
 
 const previews = (p, id) => p.posts.filter((x) => /[/]preview$/.test(x.route) && (!id || x.route.includes("/" + id + "/")));
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -29,8 +29,11 @@ const cssRules = (w) => {
 
 export async function run({ ok, pageWork }) {
   const open = async () => {
-    const p = await richOwnerPage({ pageWork });
+    /* 2 Nov 2026 (Orders on the canvas): the list has no Refresh, so a read that finds a change elsewhere (a field on an order he is not in) is what redraws the list and the card */
+    let bump = 0;
+    const p = await richOwnerPage({ pageWork, review: (j) => { const x = (j.orders || []).find((o) => o.id === "ord-x1"); if (x) x.bumped = bump; return j; } });
     await p.work.quiet();
+    p.bumpRead = () => { bump++; const t = p.intervals.filter((i) => i.ms === 5000 && !i.off)[0]; if (t) t.f(); };
     p.enter = async () => { byAct(p.d, "nav.orders").click(); await p.work.quiet(); };
     p.tapRow = async (id) => { const r = byAct(p.d, "order.open", id); if (r) r.click(); await p.work.quiet(); return !!r; };
     p.cardOf = (id) => [...p.d.querySelectorAll("#makerReview [data-maker-card]")].find((c) => c.getAttribute("data-maker-card") === id) || null;
@@ -62,7 +65,7 @@ export async function run({ ok, pageWork }) {
     await p.tapRow("ord-p1");
     ok(previews(p, "ord-p1").length === 2 && !!p.accept(), "an order opened again reads its figures afresh: " + previews(p, "ord-p1").length);
     const seen = previews(p).length;
-    byAct(d, "maker.refresh").click(); await p.work.quiet();
+    p.bumpRead(); await p.work.quiet();
     ok(previews(p).length === seen && !!p.accept() && p.cardOf("ord-p1") && /Figures read/.test(p.say()),
       "a redraw of the card keeps its figures and its Accept and reads nothing again: " + previews(p).length + " of " + seen);
     /* an edit put back to what it was fires no change, and the read it waits for would never come: the card offers it (12 Oct 2026, Phase 2b) */
@@ -89,7 +92,7 @@ export async function run({ ok, pageWork }) {
     const release = p.hold("/all/maker/orders/ord-p3/preview");
     byAct(d, "order.open", "ord-p3").click();
     const before = p.cardOf("ord-p3");
-    byAct(d, "maker.refresh").click();
+    p.bumpRead();
     for (let i = 0; i < 400 && (!p.cardOf("ord-p3") || p.cardOf("ord-p3") === before); i++) await new Promise((r) => setTimeout(r, 5));
     const redrawn = p.cardOf("ord-p3") !== before && !!p.cardOf("ord-p3");
     release(); await p.work.quiet();
@@ -102,7 +105,7 @@ export async function run({ ok, pageWork }) {
   try {
     const d = p.d;
     await p.enter();
-    byAct(d, "part.orders.confirmed").click(); await p.work.quiet();
+    byAct(d, "part.orders.todo").click(); await p.work.quiet();
     await p.tapRow("ord-a2");
     const a2 = previews(p, "ord-a2");
     ok(a2.length === 1 && same(a2[0].body, {}) && !!byAct(d, "order.accept-again", "ord-a2") && !byAct(d, "order.preview-again", "ord-a2"),
@@ -119,7 +122,7 @@ export async function run({ ok, pageWork }) {
     await p.work.quiet();
     p.tapRow = async (id) => { const r = byAct(d, "order.open", id); if (r) r.click(); await p.work.quiet(); return !!r; };
     p.cardOf = (id) => [...d.querySelectorAll("#makerReview [data-maker-card]")].find((c) => c.getAttribute("data-maker-card") === id) || null;
-    const part = async (name) => { byAct(d, "part.orders." + name).click(); await p.work.quiet(); };
+    const part = async (name) => { byAct(d, "part.orders." + (PART_OF[name] || name)).click(); await p.work.quiet(); };
     const foot = () => d.querySelector("#makerReview .maker-foot");
     const moves = () => foot() ? [...foot().querySelectorAll(".maker-foot__acts [data-act]")].map((e) => e.getAttribute("data-act")).filter((a) => !/[.]cancel-retained$/.test(a)) : null;
     byAct(d, "nav.orders").click(); await p.work.quiet();
@@ -175,7 +178,7 @@ export async function run({ ok, pageWork }) {
     await pickFee("10");
     await p.tapRow("ord-p4");
     ok(same(moves(), ["order.withdraw-offer"]) && same(tail("ord-p4"), ["order.decline"]), "an order with an offer out has Withdraw the offer in its foot, Decline at the card's end, and no Accept: " + JSON.stringify([moves(), tail("ord-p4")]));
-    await part("confirmed");
+    await part("todo");
     await p.tapRow("ord-a1");
     ok(same(moves(), []) && same(tail("ord-a1"), ["order.cancel"]) && same([...leadOf("ord-a1").querySelectorAll("[data-act]")].map((e) => e.getAttribute("data-act")).filter((a) => /^order\.(ready|claim)/.test(a) && !/cancel-retained$/.test(a)), ["order.ready-collect", "order.ready-deliver", "order.claim-received", "order.claim-not-found", "order.claim-received", "order.claim-not-found"]),
       "an agreed order's foot holds Cancel order, and its one main action, Ready to collect or deliver, stands at the top with their claim's answer: " + JSON.stringify([moves(), [...leadOf("ord-a1").querySelectorAll("[data-act]")].map((e) => e.getAttribute("data-act"))]));
@@ -222,7 +225,7 @@ export async function run({ ok, pageWork }) {
     const sheetOf = () => d.getElementById("ynSheet");
     const inSheet = (act, key) => (sheetOf() ? byAct(sheetOf(), act, key) : null);
     const tapRow = async (id) => { const r = byAct(d, "order.open", id); if (r) r.click(); await p.work.quiet(); return !!r; };
-    const part = async (name) => { byAct(d, "part.orders." + name).click(); await p.work.quiet(); };
+    const part = async (name) => { byAct(d, "part.orders." + (PART_OF[name] || name)).click(); await p.work.quiet(); };
     const sends = (suffix) => p.posts.filter((x) => x.route.endsWith(suffix));
     const key = (target, k, extra = {}) => { const e = new w.KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...extra }); target.dispatchEvent(e); return e; };
     byAct(d, "nav.orders").click(); await p.work.quiet();
@@ -289,7 +292,7 @@ export async function run({ ok, pageWork }) {
     ok(sends("/move").length === 2 && same(Object.keys(sends("/move")[1].body).sort(), ["rid", "status"]), "and a Decline with no reason sends none: " + JSON.stringify(sends("/move")[1] && sends("/move")[1].body));
 
     /* Cancel: what is lost and what becomes of the money is said, and a retry carries the request id it had */
-    await part("confirmed"); await tapRow("ord-a1");
+    await part("todo"); await tapRow("ord-a1");
     byAct(d, "order.cancel", "ord-a1").click(); await p.work.quiet();
     ok(/Cancel this order/.test(sheetOf().querySelector(".salt-sheet__title").textContent) && /Nothing is paid on it/.test(sheetOf().textContent) && sends("/move").length === 2,
       "Cancel on an unpaid order says nothing is paid on it, and sends nothing as it opens");
@@ -322,7 +325,7 @@ export async function run({ ok, pageWork }) {
       "and sends the close it sent, the same route and body: " + JSON.stringify(closed));
 
     /* Offer again: a stage he rejected, asked on the sheet, sent under a request id */
-    await part("ended"); await tapRow("ord-x1");
+    await part("todo"); await tapRow("ord-x1");
     byAct(d, "order.again-pay", "ord-x1").click(); await p.work.quiet();
     ok(/Send the payment again/.test(sheetOf().querySelector(".salt-sheet__title").textContent) && sends("/again").length === 0 && !inSheet("order.ask-go").classList.contains("salt-ghost--danger"),
       "offering a stage again asks on the sheet and sends nothing as it opens");
@@ -369,7 +372,7 @@ export async function run({ ok, pageWork }) {
     const d = p.d, w = p.w;
     await p.work.quiet();
     const tapRow = async (id) => { const r = byAct(d, "order.open", id); if (r) r.click(); await p.work.quiet(); return !!r; };
-    const part = async (name) => { byAct(d, "part.orders." + name).click(); await p.work.quiet(); };
+    const part = async (name) => { byAct(d, "part.orders." + (PART_OF[name] || name)).click(); await p.work.quiet(); };
     const cardOf = (id) => [...d.querySelectorAll("#makerReview [data-maker-card]")].find((c) => c.getAttribute("data-maker-card") === id) || null;
     const before = (a, b) => !!a && !!b && !!(a.compareDocumentPosition(b) & w.Node.DOCUMENT_POSITION_FOLLOWING);
     const typed = (el, v) => { el.value = v; el.dispatchEvent(new w.Event("input", { bubbles: true })); };
@@ -380,13 +383,13 @@ export async function run({ ok, pageWork }) {
     await tapRow("ord-p1");
     ok(/^GoodsAt the list price RM 200\.00 Total RM 200\.00$/.test(head("ord-p1")) && !/Owed/.test(head("ord-p1")) && !cardOf("ord-p1").querySelector(".rdet"),
       "a placed order's Bill is Goods at the list price and the Total, with no figure owed: " + head("ord-p1"));
-    await part("ready"); await tapRow("ord-r1");
+    await part("todo"); await tapRow("ord-r1");
     const r1 = cardOf("ord-r1");
     ok(/Owed RM 60\.00/.test(head("ord-r1")) && /Paid RM 40\.00/.test(head("ord-r1")) && /Handed 0\.5 of 1/.test(head("ord-r1")) && /Says sent RM 20\.00/.test(head("ord-r1")) && /^Goods RM 100\.00 /.test(head("ord-r1")),
       "a ready order's head is its goods, what is paid, what they say they sent, what it owes and what is handed over: " + head("ord-r1"));
     ok(!r1.querySelector(".rdet") && r1.querySelectorAll(".salt-steps__step--done").length === 2 && /Ready/.test(r1.querySelector(".salt-steps__step--now").textContent),
       "so no Details repeats them, and the track stands at Ready, Paid not yet done while something is owed");
-    await tapRow("ord-r2");
+    await part("open"); await tapRow("ord-r2");
     ok(!/Says sent/.test(head("ord-r2")) && /Owed RM 100\.00/.test(head("ord-r2")) && /Handed 0 of 1/.test(head("ord-r2")), "an order with no claim says none: " + head("ord-r2"));
     /* plan 5 (16 Oct 2026): Bank and Cash are two tiles over one amount; the one button says the figure and the road (test/admin-card5.mjs proves the rest) */
     const r2 = cardOf("ord-r2"), cashIn = byAct(r2, "order.pay-amount");
@@ -407,7 +410,7 @@ export async function run({ ok, pageWork }) {
     ok(!!byAct(held, "order.cash-undo") && same(live, ["order.cash-undo"]),
       "cash held shuts the reply and every other control of the card, and only Undo is live: " + JSON.stringify(live));
     byAct(d, "order.cash-undo").click(); await p.work.quiet();
-    await part("confirmed"); await tapRow("ord-a1");
+    await part("todo"); await tapRow("ord-a1");
     const a1 = cardOf("ord-a1");
     ok(!byAct(a1, "order.pay-by", "cash") && !!byAct(a1, "order.claim-received") && before(byAct(a1, "order.claim-received"), money(a1)) && before(money(a1), byAct(a1, "order.pay-amount")) && before(byAct(a1, "order.pay"), byAct(a1, "order.reply-text")),
       "an agreed order answers their claim at the top, then its Money received holds Bank and no cash, with the reply below");

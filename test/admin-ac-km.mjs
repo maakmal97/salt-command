@@ -46,22 +46,22 @@ export async function run({ ok, pageWork }) {
   let p = await draw(1.3);
   try {
     const d = p.d, click = async (e) => { if (e) e.click(); await p.work.quiet(); };
-    await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.confirmed")); await click(byAct(d, "order.open", "ord-k1"));
+    await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.open")); await click(byAct(d, "order.open", "ord-k1"));
     const kmOf = () => t(p.card("ord-k1") && p.card("ord-k1").querySelector("[data-km]"));
     ok(kmOf() === "", "locked, Delivery cost says no distance: " + kmOf());
     await click(byAct(d, "vault.unlock") || byAct(d, "vault.unlock", "spot:ord-k1"));
     const f = byAct(d, "vault.passphrase"); if (f) f.value = p.slipPass; await click(byAct(d, "vault.open"));
     ok(kmOf() === "Distance 14.4 km", "unlocked, Delivery cost says the distance from his base to their filed point times the factor: " + kmOf());
-    await click(byAct(d, "part.orders.placed")); await click(byAct(d, "order.open", "ord-k2"));
+    await click(byAct(d, "part.orders.todo")); await click(byAct(d, "order.open", "ord-k2"));
     const m = p.card("ord-k2") && p.card("ord-k2").querySelector("[data-clock]");
     ok(!!m && /^Waited in hours 30 min/.test(t(m)), "the meter says Waited in hours and reads the review's figure: " + t(m));
-    await click(byAct(d, "part.orders.confirmed")); await click(byAct(d, "order.open", "ord-k1"));
+    await click(byAct(d, "part.orders.open")); await click(byAct(d, "order.open", "ord-k1"));
     ok(kmOf() === "Distance 14.4 km", "and a card drawn while unlocked says it from the start: " + kmOf());
   } finally { p.w.close(); }
   p = await draw(null);
   try {
     const d = p.d, click = async (e) => { if (e) e.click(); await p.work.quiet(); };
-    await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.confirmed")); await click(byAct(d, "order.open", "ord-k1"));
+    await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.open")); await click(byAct(d, "order.open", "ord-k1"));
     await click(byAct(d, "vault.unlock")); const f = byAct(d, "vault.passphrase"); if (f) f.value = p.slipPass; await click(byAct(d, "vault.open"));
     ok(t(p.card("ord-k1").querySelector("[data-km]")) === "", "with no factor read, no distance");
   } finally { p.w.close(); }

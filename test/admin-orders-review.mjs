@@ -34,44 +34,46 @@ export async function run({ ok, pageWork }) {
     await p.work.quiet();
     const d = p.d, click = async (e) => { if (e) e.click(); await p.work.quiet(); };
     const row = (id) => { const r = d.querySelector('#makerOrderList .ordcard > [data-order="' + id + '"]'); return r && r.parentNode; };
-    const inPart = (id, k) => !!row(id) && row(id).getAttribute("data-in") === "orders." + k;   /* every stage's rows are drawn, shown by data-in */
+    const inPart = (id, k) => !!row(id) && row(id).closest("[data-in]").getAttribute("data-in") === "orders." + k;   /* every part's rows are drawn, shown by data-in */
+    const headOf = (id) => row(id) && row(id).closest("section").getAttribute("aria-label");   /* 2 Nov 2026 (Orders on the canvas): Open's group heads are its stages */
     const pill = (id) => row(id) && byAct(row(id), "order.move", id);
     const part = async (k) => { await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders." + k)); };
     const openCard = async (id) => { await click(row(id).querySelector(".ordrow")); return d.querySelector('#makerReview [data-maker-card="' + id + '"]'); };
     const lead = () => t(d.getElementById("makerReviewStatus"));
 
     /* 1: credit */
-    await part("confirmed");
-    ok(inPart("ord-c1", "confirmed") && inPart("ord-c2", "paid"), "an order its credit settles stands under Out or paid, one it leaves owing under Agreed: "
-      + [row("ord-c1") && row("ord-c1").getAttribute("data-in"), row("ord-c2") && row("ord-c2").getAttribute("data-in")].join(", "));
-    ok(/^RM 450 owed on 4 agreed orders/.test(lead()), "Agreed's lead counts what credit leaves owed (RM 75, RM 75, RM 200 and RM 100): " + lead());
+    await part("open");
+    ok(inPart("ord-c1", "open") && inPart("ord-c2", "open") && headOf("ord-c1") === "Agreed" && headOf("ord-c2") === "Out or paid", "an order its credit settles stands under Out or paid, one it leaves owing under Agreed: "
+      + [headOf("ord-c1"), headOf("ord-c2")].join(", "));
+    ok(/^RM 950 owed on 6 open orders/.test(lead()), "Open's lead counts what credit leaves owed (RM 75 on c1, nothing on c2, RM 75 on c4, RM 500, RM 100 and RM 200): " + lead());
     /* 7: focus after Not now */
     await click(pill("ord-f1")); await click(byAct(row("ord-f1"), "order.move-no", "ord-f1"));
     ok(d.activeElement === pill("ord-f1"), "Not now leaves focus on the row's own move: " + (d.activeElement && d.activeElement.outerHTML.slice(0, 80)));
     /* Fable, 28 Oct 2026: a claim past what credit leaves owed is Already recorded, which books nothing, so the row opens the card and sends nothing */
     const sentN = p.posts.filter((x) => !/preview/.test(x.route)).length;
+    await part("todo");
     await click(pill("ord-c3"));
     const c3 = d.querySelector('#makerReview [data-maker-card="ord-c3"]');
     ok(!row("ord-c3") || !row("ord-c3").querySelector(".oask"), "a claim past what credit leaves owed asks nothing on its row");
     ok(!!c3 && /^Already recorded, RM 80\.00$/.test(t(byAct(c3, "order.claim-received", "2026-10-10T03:00:00.000Z"))) && p.posts.filter((x) => !/preview/.test(x.route)).length === sentN,
       "it opens the card, whose button says Already recorded, and sends nothing: " + t(c3 && byAct(c3, "order.claim-received", "2026-10-10T03:00:00.000Z")));
-    await part("confirmed");
+    await part("open");
     const c1 = await openCard("ord-c1");
     const bill = c1 && c1.querySelector(".ordmoney");
     ok(!!bill && !!bill.querySelector("[data-credit]") && /RM 25\.00/.test(t(bill.querySelector("[data-credit]"))) && /RM 75\.00/.test(t(bill.querySelector(".odue"))),
       "the Bill names their credit and owes the rest: " + t(bill));
 
     /* 2 and 3: cash on a ready order with credit */
-    await part("ready");
+    await part("open");
     const c4 = await openCard("ord-c4");
     const cashIn = byAct(c4, "order.pay-amount"); cashIn.value = "100"; cashIn.dispatchEvent(new p.w.Event("input", { bubbles: true }));
     byAct(c4, "order.pay-by", "cash").click(); byAct(d, "order.pay", "ord-c4").click(); await p.work.quiet();
     const note = d.querySelector('[data-maker-cash-status="ord-c4"]');
     ok(/RM 25\.00 over what they owe, a refund to them/.test(t(note)), "cash past what credit leaves owed says the excess is a refund: " + t(note));
-    await part("ready");
+    await part("open");
     ok(!!row("ord-c4") && !pill("ord-c4") && !!pill("ord-y1"), "while cash is held its row offers no move, and another row still does: " + [!!row("ord-c4"), t(pill("ord-c4")), t(pill("ord-y1")), t(row("ord-y1"))].join(" / "));
     byAct(d, "order.cash-undo") ? await click(byAct(d, "order.cash-undo")) : null;
-    await part("ready");
+    await part("open");
 
     /* 6: a part handed over asks for what is left */
     await click(pill("ord-h1"));
@@ -79,7 +81,7 @@ export async function run({ ok, pageWork }) {
     await click(byAct(row("ord-h1"), "order.move-no", "ord-h1"));
 
     /* 4: a refused Ready */
-    await part("confirmed");
+    await part("open");
     p.fail.add("/all/maker/orders/ord-f1/move");
     await click(pill("ord-f1")); await click(byAct(row("ord-f1"), "order.move-yes", "ord-f1"));
     const said = t(row("ord-f1") && row("ord-f1").querySelector(".oask"));
@@ -87,18 +89,19 @@ export async function run({ ok, pageWork }) {
     p.fail.delete("/all/maker/orders/ord-f1/move");
 
     /* Fable's re-check: asked while the claim fits, then a read leaves it past what is owed; the Yes opens the card and sends nothing */
-    await part("confirmed");
+    await part("open");
     await click(pill("ord-c5"));
     ok(/^Confirm RM 50[.]00 received from /.test(t(row("ord-c5").querySelector(".oask__q"))), "a claim that fits asks on its row: " + t(row("ord-c5").querySelector(".oask__q")));
-    later.paid = 60; await click(byAct(d, "maker.refresh"));
+    later.paid = 60; await part("todo");   /* 2 Nov 2026: the list has no Refresh; coming back to Orders reads it afresh (the 5-second read waits while cash is held) */
     const before5 = p.posts.filter((x) => x.route.endsWith("ord-c5/received")).length;
     await click(byAct(row("ord-c5"), "order.move-yes", "ord-c5"));
     ok(p.posts.filter((x) => x.route.endsWith("ord-c5/received")).length === before5 && !!d.querySelector('#makerReview [data-maker-card="ord-c5"]'),
       "its Yes after a read left it past what is owed sends nothing and opens the card");
 
     /* 5: Placed's lead */
-    await part("placed");
-    ok(t(row("ord-q1").querySelector(".ofig")) === "RM 115" && /^RM 115 waits on your Agree/.test(lead()), "Placed's lead counts what its row shows, goods and delivery: " + t(row("ord-q1").querySelector(".ofig")) + " / " + lead());
+    await part("todo");
+    ok(t(row("ord-q1").querySelector(".salt-settings__value--lg")) === "RM 115" && /^RM 245 waits on you across 3 orders[.]$/.test(lead()),
+      "To do's lead counts what its rows show, the placed order's goods and delivery (RM 115) and the payments they say they sent (RM 50 and RM 80): " + t(row("ord-q1").querySelector(".salt-settings__value--lg")) + " / " + lead());
   } catch (e) { ok(false, "admin-orders-review stopped on an error: " + (e && e.stack)); }
   finally { p.w.close(); }
 }

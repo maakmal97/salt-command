@@ -14,8 +14,8 @@
  {
   "name": "Orders loses its Ended part",
   "file": "stmt/page.js",
-  "find": "[\"done\", \"Done\"], [\"ended\", \"Ended\"], [\"approve\", \"Approve\"], [\"payments\", \"Payments\"]",
-  "replace": "[\"done\", \"Done\"], [\"approve\", \"Approve\"], [\"payments\", \"Payments\"]"
+  "find": "const ADMIN_ORDER_STAGES = [\"todo\", \"open\", \"done\", \"ended\"];",
+  "replace": "const ADMIN_ORDER_STAGES = [\"todo\", \"open\", \"done\"];"
  },
  {
   "name": "Shop loses its Practice part",
@@ -156,16 +156,16 @@
   "replace": "STAGE_OF[order.status]||'done'"
  },
  {
-  "name": "an empty Confirmed part says nothing",
+  "name": "an empty Open part says nothing",
   "file": "stmt/owner.js",
-  "find": "['confirmed','No agreed orders.']",
-  "replace": "['confirmed','']"
+  "find": "open:'No open orders.'",
+  "replace": "open:''"
  },
  {
   "name": "an empty Ended part says nothing",
   "file": "stmt/owner.js",
-  "find": "['ended','No ended orders.']",
-  "replace": "['ended','']"
+  "find": "ended:'No ended orders.'",
+  "replace": "ended:''"
  },
  {
   "name": "no Desk rows waiting says nothing",
@@ -377,5 +377,10 @@
   "find": "    'orders.approve':function(){ loadMaker(); },\n",
   "replace": ""
  },
-{"name": "an Orders part is no tab", "file": "stmt/page.js", "find": "'<button type=\"button\" role=\"tab\" class=\"salt-nav__link nktab'", "replace": "'<button type=\"button\" class=\"salt-nav__link nktab'"}
+ {
+  "name": "an Orders part is no tab",
+  "file": "stmt/page.js",
+  "find": "<button type=\"button\" role=\"tab\" class=\"salt-segment__opt\" data-part=\"",
+  "replace": "<button type=\"button\" class=\"salt-segment__opt\" data-part=\""
+ }
 ]

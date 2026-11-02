@@ -39,10 +39,10 @@ export async function run({ ok, pageWork }) {
     const d = p.d, click = async (e) => { if (e) e.click(); await p.work.quiet(); };
     const reads = () => p.wire.filter((x) => x.startsWith("/all/maker/trade-reading?")).map((x) => ({ method: x.split(" ")[1], body: Object.fromEntries(new URL(x.split(" ")[0], "https://x.test").searchParams) }));
     const sub = (id) => t(p.card(id) && p.card(id).querySelector(".ordmoney [data-cost]"));
-    await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.placed")); await click(byAct(d, "order.open", "ord-cp"));
+    await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.todo")); await click(byAct(d, "order.open", "ord-cp"));
     /* 1 */
     ok(sub("ord-cp") === "At the list price · cost RM 36.00, incl. freight", "while placed, Goods is at the list price and says what it cost: " + sub("ord-cp"));
-    await click(byAct(d, "part.orders.confirmed")); await click(byAct(d, "order.open", "ord-ca"));
+    await click(byAct(d, "part.orders.open")); await click(byAct(d, "order.open", "ord-ca"));
     ok(sub("ord-ca") === "Cost RM 36.00, incl. freight", "agreed, Goods says what it cost, the cost a unit times the units: " + sub("ord-ca"));
     /* 2 */
     const mine = reads().filter((x) => x.body && x.body.product === "salt");

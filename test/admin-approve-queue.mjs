@@ -41,7 +41,7 @@ export async function run({ ok, pageWork }) {
   /* a row decided leaves the review's answer, as the Desk would have it */
   /* 22 Oct 2026: a card is decided by Confirm, one decide-many request; the Desk's answer names each draft decided or refused (holder.refuse[id] = the fix) */
   const sentIds = () => ((holder.p && holder.p.posts) || []).filter((q) => q.route === MANY).flatMap((q) => [...q.body.approve, ...q.body.reject]);
-  const decided = (j) => ({ ...j, drafts: j.drafts.filter((x) => !sentIds().includes(x.id) || (holder.refuse || {})[x.id]) });
+  const decided = (j) => ({ ...j, bump: holder.bump || 0, drafts: j.drafts.filter((x) => !sentIds().includes(x.id) || (holder.refuse || {})[x.id]) });
   const manyAnswer = (path, body) => {
     if (path !== MANY || !body) return undefined;
     const refuse = holder.refuse || {};
@@ -226,7 +226,8 @@ export async function run({ ok, pageWork }) {
     /* a redraw behind the Sheet takes the control that asked: focus goes to the one drawn in its place, found by what it asks (its data-yn) */
     const old = confirm();
     old.click(); await p.work.quiet();
-    byAct(d, "maker.refresh").click(); await p.work.quiet();
+    /* 2 Nov 2026 (Orders on the canvas): the list has no Refresh; the 5-second read that finds a change draws the cards again */
+    holder.bump = (holder.bump || 0) + 1; { const tk = p.intervals.filter((i) => i.ms === 5000 && !i.off)[0]; if (tk) tk.f(); await p.work.quiet(); }
     const fresh = confirm();
     ok(!!p.sheet() && !!fresh && fresh !== old && !old.isConnected && fresh.getAttribute("data-yn") === "approve:confirm", "the list is read again while the Sheet is up and Confirm is a new control");
     p.inSheet("ask.keep").click(); await p.work.quiet();

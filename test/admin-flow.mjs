@@ -207,19 +207,21 @@ export async function run({ ok, pageWork }) {
   try {
     await p.tap("nav.orders");
     const rowOf = (k) => p.d.querySelector('[data-act="order.open"][data-key="' + k + '"]');
-    ok(/orders\.confirmed/.test((rowOf("row:fa1") || { getAttribute: () => "" }).getAttribute("data-in")) && /RM 110$/.test(text(rowOf("row:fa1").querySelector(".ofig")))
-      && /orders\.paid/.test((rowOf("row:fp1") || { getAttribute: () => "" }).getAttribute("data-in")),
+    /* 2 Nov 2026 (Orders on the canvas): Open lists a row under its stage's head, Agreed, Ready or Out or paid */
+    const headOf = (k) => { const r = rowOf(k), sec = r && r.closest("section[data-in]"); return sec ? sec.getAttribute("data-in") + "/" + sec.getAttribute("aria-label") : null; };
+    ok(headOf("row:fa1") === "orders.open/Agreed" && /RM 110$/.test(text(rowOf("row:fa1").closest(".ordcard").querySelector(".salt-settings__value--lg")))
+      && headOf("row:fp1") === "orders.open/Out or paid",
     "a row of the book is a row under its stage, Agreed or Out or paid, with its figure: " + text(rowOf("row:fa1")));
     const seen = (n) => { for (let e = n; e; e = e.parentElement) if (e.hidden) return false; return !!n; };
-    await p.tap("part.orders.paid");
-    ok(seen(rowOf("row:fp1")) && seen(rowOf("o-pay")) && !seen(rowOf("row:fa1")),
-      "Out or paid shows its own orders, a row of the book and a site order, and none of Agreed's: " + J([seen(rowOf("row:fp1")), seen(rowOf("o-pay")), seen(rowOf("row:fa1"))]));
-    await p.tap("part.orders.confirmed");
-    ok(/orders\.paid/.test((rowOf("o-pay") || { getAttribute: () => "" }).getAttribute("data-in")),
-      "a site order paid in full and not handed over is under Out or paid: " + ((rowOf("o-pay") || { getAttribute: () => "" }).getAttribute("data-in")));
-    ok(!!p.d.querySelector('[data-part="paid"]') && /^Out or paid/.test(text(p.d.querySelector('[data-part="paid"]'))) && /^Placed/.test(text(p.d.querySelector('[data-part="placed"]'))) && /^Done/.test(text(p.d.querySelector('[data-part="done"]'))),
-      "the stages read Placed, Agreed, Ready, Out or paid, Done and Ended (his yes of 25 Oct 2026)");
-    const done = () => [...p.d.querySelectorAll('[data-act="order.open"]')].filter((b) => /orders\.done/.test(b.getAttribute("data-in"))).length;
+    await p.tap("part.orders.open");
+    ok(seen(rowOf("row:fp1")) && seen(rowOf("o-pay")) && headOf("row:fp1") === "orders.open/Out or paid" && headOf("o-pay") === "orders.open/Out or paid" && headOf("row:fa1") === "orders.open/Agreed",
+      "Open shows Out or paid with its own orders, a row of the book and a site order, and Agreed's under their own head: " + J([headOf("row:fp1"), headOf("o-pay"), headOf("row:fa1")]));
+    ok(headOf("o-pay") === "orders.open/Out or paid",
+      "a site order paid in full and not handed over is under Out or paid: " + headOf("o-pay"));
+    ok(["To do", "Open", "Done", "Ended"].every((w) => [...p.d.querySelectorAll('.aparts[data-place="orders"] [data-part]')].some((b) => b.firstChild.textContent === w))
+      && ["Agreed", "Out or paid"].every((w) => [...p.d.querySelectorAll('section[data-in="orders.open"] > h2')].some((h) => text(h) === w)),
+      "the parts read To do, Open, Done and Ended, and Open's heads read Agreed, Ready and Out or paid, the order's own steps (his yes of 25 Oct 2026, his answers of 31 Oct 2026)");
+    const done = () => [...p.d.querySelectorAll('[data-act="order.open"]')].filter((b) => b.closest("[data-in]").getAttribute("data-in") === "orders.done").length;
     const n0 = done();
     await p.tap("orders.more", "done");
     ok(n0 === 50 && done() === 61, "Done shows fifty and Show 50 more the rest: " + J([n0, done()]));
@@ -241,15 +243,15 @@ export async function run({ ok, pageWork }) {
     await p.tap("row.cancel-rest", "fx1"); await p.tap("ask.go", "row.cancel-rest:fx1");
     const rest = p.sent("/all/maker/inputs/ledger-amend").filter((b) => b.rid === "fx1").map((b) => [b.kind, b.fields]);
     ok(J(rest) === J([["Correction", { qty: 1, total: 100 }]]), "Cancel the rest on a row sends one Correction closing it at what went, at the Desk's figure: " + J(rest));
-    await p.tap("part.orders.ready");
+    await p.tap("part.orders.open");
     await p.tap("order.open", PART.id);
     const pc = p.card(PART.id);
     ok(!!pc && !byAct(pc, "order.cancel") && !!byAct(pc, "order.cancel-rest"), "a site order with a unit out has Cancel the rest in place of Cancel");
     await p.tap("order.cancel-rest"); await p.tap("order.ask-go", PART.id);
     const closes = p.posts.filter((x) => /[/]handed$/.test(x.route)).map((x) => [x.route.split("/")[4], x.body.qty, x.body.close]);
     ok(J(closes) === J([[PART.id, 1, true]]), "and it sends the close at the unit already out: " + J(closes));
-    ok(/orders\.ended/.test((rowOf(WOFF.id) || { getAttribute: () => "" }).getAttribute("data-in")), "an order written off on the book is under Ended");
-    await p.tap("part.orders.confirmed");
+    ok(headOf(WOFF.id) && /^orders\.ended/.test(headOf(WOFF.id)), "an order written off on the book is under Ended");
+    await p.tap("part.orders.open");
     await p.tap("order.open", OWED.id);
     /* 1 Nov 2026: the Insight in twenty words (it said refund on this order is their credit) */
     ok(/RM 25\.00 refund here is their credit, spent at your next Accept/.test(text(p.card(OWED.id))), "a site order's card says the refund the book owes on its row, as their credit (27 Oct 2026): " + text(p.card(OWED.id)).slice(0, 200));

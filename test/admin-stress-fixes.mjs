@@ -158,19 +158,18 @@ export async function run({ ok, pageWork }) {
     ok(/Not sent/.test(gmsg.textContent) && gmsg.classList.contains("bad") && at(p, "rmsg").textContent === "", "and a link that could not be made says so under the button: " + JSON.stringify(gmsg.textContent));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
-  /* Orders: Refresh answers under itself when the read fails */
+  /* Orders: a read that fails says so on the list's own line at the head. 2 Nov 2026 (Orders on the canvas): the list has no Refresh, so the line that stood under it is gone
+     with it; the line at the head stays, and coming back to Orders reads again */
   p = await open();
   try {
     hook(p); await p.enter();
     p.fail.add("/all/maker/review");
-    byAct(p.d, "maker.refresh").click(); await p.work.quiet();
-    const rs = at(p, "makerRefreshSaid");
-    ok(!!rs && beside(byAct(p.d, "maker.refresh")) === rs && rs.getAttribute("role") === "status" && /Not sent/.test(rs.textContent) && p.scrolled.includes(rs),
-      "a Refresh whose read fails says so on a line right under Refresh, in reach: " + JSON.stringify(rs && rs.textContent));
-    ok(/Not sent/.test(at(p, "makerReviewStatus").textContent), "and the list's own line at the head still carries the refusal");
+    byAct(p.d, "nav.needs").click(); await p.work.quiet(); await p.enter();
+    ok(/Not sent/.test(at(p, "makerReviewStatus").textContent) && !at(p, "makerRefreshSaid") && !byAct(p.d, "maker.refresh"),
+      "a read that fails says so on the list's own line at the head, and the list has no Refresh nor a line under it: " + JSON.stringify(at(p, "makerReviewStatus").textContent));
     p.fail.delete("/all/maker/review");
-    byAct(p.d, "maker.refresh").click(); await p.work.quiet();
-    ok(at(p, "makerRefreshSaid").textContent === "", "a Refresh that works leaves the line empty");
+    byAct(p.d, "nav.needs").click(); await p.work.quiet(); await p.enter();
+    ok(!/Not sent/.test(at(p, "makerReviewStatus").textContent), "and a read that works takes the refusal away");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* the order card: the figures stand under the charge, and an answer for a card that has gone is brought into reach */

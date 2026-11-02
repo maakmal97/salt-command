@@ -125,9 +125,11 @@ export async function run({ ok, pageWork }) {
     const lines = [forRow, refundLine(order)];
     /* 1 Nov 2026: and in twenty words at most (it ran to 22: refund on this order ... or paid back by hand on the Desk) */
     ok(lines.every((s) => /^RM 25[.]00 refund here is their credit/.test(s) && sentence(s, 20)), "W11: an order's card and a row's card say the refund the book owes in one sentence of twenty words at most: " + J(lines));
+    /* 2 Nov 2026 (Orders on the canvas): Out or paid is Open's head now, Done still its tab */
     const tab = (id) => t(d.querySelector('[data-part="' + id + '"]')), chips = [chipFp, chipFz];
-    ok(J(chips) === J(["Out or paid", "Done"]) && tab("paid").startsWith(chips[0]) && tab("done").startsWith(chips[1]),
-      "W12: a row's stage chip is its tab's word: " + J({ chips, tabs: [tab("paid"), tab("done")] }));
+    const heads = [...d.querySelectorAll('#makerOrderList section[data-in="orders.open"] > h2')].map(t);
+    ok(J(chips) === J(["Out or paid", "Done"]) && heads.includes(chips[0]) && tab("done").startsWith(chips[1]),
+      "W12: a row's stage chip is its head's or tab's word: " + J({ chips, heads, tabs: [tab("done")] }));
     const refusal = p.w.__owner("plainRefusal")("A size to hide must be one of this book's board sizes.");
     ok(refusal === "Choose sizes from this book's printed list.", "W13: the refusal for a size to hide that is not on the board is a sentence with its apostrophe: " + J(refusal));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }

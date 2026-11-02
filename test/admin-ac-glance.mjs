@@ -59,9 +59,9 @@ export async function run({ ok, pageWork }) {
     w.location.hash = "#orders/approve"; await new Promise((r) => setTimeout(r, 20)); await p.work.quiet();
     const waiting = d.querySelectorAll("#makerDrafts .apcard").length;
     ok(waiting === 2, "To approve's 2 is the cards waiting under Approve: " + waiting);
-    w.location.hash = "#orders/ready"; await new Promise((r) => setTimeout(r, 20)); await p.work.quiet();
-    const lit = d.querySelector('.aparts button[data-part="ready"][aria-selected="true"]');
-    ok(!!lit && !d.getElementById("oOrders").hidden, "and Ready's tile lands on Orders at the Ready stage");
+    w.location.hash = "#orders/open"; await new Promise((r) => setTimeout(r, 20)); await p.work.quiet();
+    const lit = d.querySelector('.aparts button[data-part="open"][aria-selected="true"]');
+    ok(!!lit && !d.getElementById("oOrders").hidden, "and Ready's tile lands on Orders at Open, which holds the ready orders");
     w.location.hash = "#needs"; await new Promise((r) => setTimeout(r, 20)); await p.work.quiet();
     /* 2 */
     const pills = [...d.querySelectorAll(".nchips button")].filter((b) => !b.disabled);

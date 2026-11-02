@@ -289,7 +289,7 @@ export async function run({ ok }) {
     rowOf(0).click(); rowOf(0).click();
     await until(() => thumb());
     const unlocked = !!thumb();
-    doc.querySelector('[data-act="part.orders.confirmed"]').click();
+    doc.querySelector('[data-act="part.orders.open"]').click();
     const letGo = !doc.querySelector("[data-maker-slip]");
     doc.querySelector('[data-act="part.orders.payments"]').click();
     const shutOnReturn = !card(0) && !!rowOf(0);

@@ -9,7 +9,7 @@
  *   5  the Bill: headed Bill, Goods, Delivery cost, the Total of goods and delivery, then what is paid and owed
  *   4  Paid is the fourth of five steps: part paid it says how much of what, and it is done once settled, ahead of the goods if paid first
  * Drawn by the maker harness (test/maker-act.mjs). */
-import { richOwnerPage, byAct } from "./maker-act.mjs";
+import { richOwnerPage, byAct, PART_OF } from "./maker-act.mjs";
 
 const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
 const base = { u: "abcd-efgh", product: "salt", delivery: 0, msgs: [], history: [], at: "2026-10-10T02:00:00.000Z" };
@@ -28,7 +28,7 @@ export async function run({ ok, pageWork }) {
   const p = await richOwnerPage({ pageWork, review: (j) => ({ ...j, orders: (j.orders || []).concat(extra) }) });
   try {
     await p.work.quiet();
-    const d = p.d, go = async (part) => { byAct(d, "nav.orders").click(); await p.work.quiet(); byAct(d, "part.orders." + part).click(); await p.work.quiet(); };
+    const d = p.d, go = async (part) => { byAct(d, "nav.orders").click(); await p.work.quiet(); byAct(d, "part.orders." + (PART_OF[part] || part)).click(); await p.work.quiet(); };
     const tap = async (id) => { byAct(d, "order.open", id).click(); await p.work.quiet(); return p.card(id); };
     /* 2 Nov 2026: a ready order whose goods are all out says Collected, never "To hand over", and its moment the day they went */
     await go("paid");

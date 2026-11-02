@@ -19,8 +19,10 @@ export async function run({ ok, pageWork }) {
     ok(!!act && act.querySelector(".salt-deskbar__badge").textContent === "2" && !act.classList.contains("is-zero"),
       "Approve counts the rows to approve, a trip's rows as one: " + (act && act.textContent));
     await tap("bar.approve");
-    const on = d.querySelector('.aparts[data-place="orders"] [aria-selected="true"]');
-    ok(!!on && on.getAttribute("data-part") === "approve", "a tap on Approve opens Orders > Approve: " + (on && on.getAttribute("data-part")));
+    /* 2 Nov 2026 (Orders on the canvas): Approve has no tab in the Segment, so it is open when its own section is in view and the list is shut */
+    const inView = (el) => { for (let e = el; e && e.id !== "roster"; e = e.parentElement) if (e.hidden) return false; return !!el; };
+    ok(inView(d.getElementById("oApprove")) && !inView(d.getElementById("oSplit")) && d.querySelector('.place[data-m="orders"][aria-current="page"]') !== null && p.w.location.hash === "#orders/approve",
+      "a tap on Approve opens Orders > Approve: " + p.w.location.hash);
     const partOn = (pl) => { const b = d.querySelector('.aparts[data-place="' + pl + '"] [aria-selected="true"]'); return b && b.getAttribute("data-part"); };
     const placeOn = () => { const b = d.querySelector('button[data-m][aria-current="page"]'); return b && b.getAttribute("data-m"); };
     await tap("bar.customers");

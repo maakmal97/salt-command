@@ -50,7 +50,7 @@ export async function run({ ok, pageWork }) {
     const gateOf = (id) => { const c = p.card(id); return c && c.querySelector("[data-pin-gate]"); };
     const unlock = async (g) => { await click(g && byAct(g, "vault.unlock")); const f = byAct(d, "vault.passphrase"); if (f) f.value = p.slipPass; await click(byAct(d, "vault.open")); };
     const pinReads = () => p.wire.filter((x) => /\/all\/maker\/pins\//.test(typeof x === "string" ? x : x.route || x.url || "")).length;
-    await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.confirmed"));
+    await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.open"));
     const open = async (id) => { await click(byAct(d, "order.open", id)); return p.card(id); };
     /* 2 */
     let C = await open("ord-sp"), gate = C && C.querySelector("[data-pin-gate]");

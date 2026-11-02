@@ -43,8 +43,12 @@ export function enter(doc, place, part) {
   byAct(doc, "nav." + place).click();
   if (part) byAct(doc, "part." + place + "." + part).click();
 }
+/* 2 Nov 2026 (Orders on the canvas): the part that holds each of the six stages an older check names (what waits on him is in To do whatever its stage) */
+export const PART_OF = { placed: "todo", confirmed: "open", ready: "open", paid: "open" };
 export function byAct(root, act, key) {
+  /* 2 Nov 2026 (Orders on the canvas): Orders' parts are To do, Open, Done and Ended, and Approve, which has no control in the Segment, is found at the bar's Approve, the way to it */
   const all = [...root.querySelectorAll('[data-act="' + act + '"]')];
+  if (!all.length && act === "part.orders.approve") all.push(...root.querySelectorAll('[data-act="bar.approve"]'));
   if (key === undefined) return all[0] || null;
   const holds = (e) => ACT_KEYS.some((k) => e.getAttribute(k) === String(key));
   return all.find((c) => { for (let e = c; e && e !== root; e = e.parentElement) if (holds(e)) return true; return false; }) || null;
@@ -114,7 +118,8 @@ export function cardOf(doc, id) {
   if (there) return there;
   const row = [...doc.querySelectorAll('[data-act="order.open"]')].find((r) => r.getAttribute("data-key") === String(id));
   if (!row) return null;
-  const parts = row.getAttribute("data-in").split(" ").map((t) => t.replace(/^orders[.]/, ""));
+  /* 2 Nov 2026 (Orders on the canvas): a row is a link inside its group, which carries the data-in */
+  const parts = (row.closest("[data-in]") || row).getAttribute("data-in").split(" ").map((t) => t.replace(/^orders[.]/, ""));
   const here = doc.querySelector('.place[data-m="orders"][aria-current="page"]'), now = doc.querySelector('.aparts[data-place="orders"] [aria-selected="true"]');
   if (!here || !now || !parts.includes(now.getAttribute("data-part"))) { const tab = doc.querySelector('[data-act="part.orders.' + parts[0] + '"]'); if (tab) tab.click(); }
   row.click();
@@ -490,7 +495,7 @@ export async function auditStates({ pageWork }) {
     states.push(["a row of the book as an order", actAudit(t.d)]);
     t.card("row:rw-2"); await t.work.quiet();
     states.push(["a row of the book with goods out", actAudit(t.d)]);
-    await t.click(byAct(t.d, "part.orders.ready")); t.card(part.id); await t.work.quiet();
+    await t.click(byAct(t.d, "part.orders.open")); t.card(part.id); await t.work.quiet();
     states.push(["a site order with goods out", actAudit(t.d)]);
     await t.click(byAct(t.d, "part.orders.ledger")); await t.work.quiet();
     states.push(["the Ledger with its tie-out", actAudit(t.d)]);
@@ -545,7 +550,7 @@ export async function auditStates({ pageWork }) {
   const ra = await richOwnerPage({ pageWork });
   try {
     await ra.work.quiet();
-    await ra.click(byAct(ra.d, "nav.orders")); await ra.click(byAct(ra.d, "part.orders.placed")); await ra.click(byAct(ra.d, "order.move", "ord-p4")); await ra.work.quiet();
+    await ra.click(byAct(ra.d, "nav.orders")); await ra.click(byAct(ra.d, "part.orders.todo")); await ra.click(byAct(ra.d, "order.move", "ord-p4")); await ra.work.quiet();
     states.push(["a row's move asking once", actAudit(ra.d)]);
   } finally { ra.w.close(); }
   /* 27 Oct 2026, his word: a row open in the sale form draws Other fields and Cancel this sale, and a Ledger row's reference opens it */

@@ -369,7 +369,7 @@ export async function run({ ok, pageWork }) {
   const text = (n) => (n && n.textContent || "").replace(/\s+/g, " ").trim();
   let p = await open(HIST);
   try {
-    await p.tap("nav.orders"); await p.tap("part.orders.confirmed");
+    await p.tap("nav.orders"); await p.tap("part.orders.open");
     let card = p.card("trip:" + T);
     const lineH = card && [...card.querySelectorAll(".tripline")].map((l) => !!byAct(l, "undo.history"));
     await p.tap("undo.history", "line:zt1");
@@ -397,7 +397,7 @@ export async function run({ ok, pageWork }) {
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
   p = await open(HIST);
   try {
-    await p.tap("nav.orders"); await p.tap("part.orders.ready");
+    await p.tap("nav.orders"); await p.tap("part.orders.open");
     const card = p.card("ord-r1");
     ok(!!card && !!byAct(card, "undo.history", "order:ord-r1"), "an agreed order's card has its History");
     /* 18 Oct 2026: the customer's fold, shut until a tap */
@@ -441,7 +441,7 @@ export async function run({ ok, pageWork }) {
     const ph = await richOwnerPage({ pageWork, bare: true, review: (j) => ({ ...j, orders: (j.orders || []).map((o) => o.id === "ord-r1" ? { ...o, moved } : o), drafts: [], queue: [], trips: [], sameDay: [] }) });
     try {
       await ph.work.quiet();
-      byAct(ph.d, "nav.orders").click(); await ph.work.quiet(); byAct(ph.d, "part.orders.ready").click(); await ph.work.quiet();
+      byAct(ph.d, "nav.orders").click(); await ph.work.quiet(); byAct(ph.d, "part.orders.open").click(); await ph.work.quiet();
       const c = ph.card("ord-r1");
       return c ? [!!byAct(c, "order.handed-units"), !!byAct(c, "order.handed")] : null;
     } finally { ph.w.close(); }

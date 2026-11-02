@@ -360,7 +360,7 @@ export async function run({ ok, pageWork }) {
       || t.querySelector(".mq")?.getAttribute("aria-hidden") !== (rowTile(t) ? null : "true") || SHAPE_WORD.test(seen(t)) || /[a-z]{3,}/i.test(seen(t).replace(/units?/g, ""))).map((t) => t.textContent);
     /* 25 Oct 2026 (canvas Salt Admin Orders): an order on Orders names its book by its typed tag, as Needs you does, and draws no mark; a mark still drawn keeps the rule */
     const orows = [...d.querySelectorAll("#makerOrderList .ordrow")];
-    ok(orows.length >= 4 && orows.every((r) => !!r.querySelector(".otag .salt-producttag") && !r.querySelector(".mtile, svg.psym")) && wrong.length === 0,
+    ok(orows.length >= 4 && orows.every((r) => !!r.querySelector(".salt-settings__label .salt-producttag, .salt-producttag") && !r.querySelector(".mtile, svg.psym")) && wrong.length === 0,
       "each order on Orders names its book by its typed tag and draws no mark, and a mark still drawn says its size beneath, no word for the book and no shape word, a reader told the shape and the size: " + orows.length + " rows; " + tiles.length + " tiles; " + JSON.stringify(wrong.slice(0, 2)));
     byAct(d, "nav.orders").click(); await work.quiet();
     byAct(d, "part.orders.approve").click(); await work.quiet();
@@ -403,7 +403,9 @@ export async function run({ ok, pageWork }) {
   try {
     await drawEverything(all);
     const seenWords = drawnWords(all.d.body);
-    const named = seenWords.filter(([t]) => BOOK_NAMED.test(t)).map(([t]) => t.slice(0, 80));
+    /* 2 Nov 2026 (Orders on the canvas): an order's row reads its books out in its aria-label, the words its typed tags draw */
+    const rowLabels = new Set([...all.d.querySelectorAll(".ordcard[aria-label]")].map((e) => e.getAttribute("aria-label")));
+    const named = seenWords.filter(([t]) => BOOK_NAMED.test(t) && !rowLabels.has(t)).map(([t]) => t.slice(0, 80));
     const shaped = seenWords.filter(([t, hidden]) => !hidden && SHAPE_WORD.test(t)).map(([t]) => t.slice(0, 80));
     const typed = [...all.d.body.querySelectorAll(".salt-producttag")].filter((x) => !x.querySelector("svg") && x.textContent.trim()).map((x) => [x.className.split("--")[1].split(" ")[0], x.textContent.trim()]);
     ok(seenWords.length > 400 && named.length === 0 && typed.length > 0 && typed.every(([k, w]) => k === w.toLowerCase() && BOOK_NAMES.includes(k)),

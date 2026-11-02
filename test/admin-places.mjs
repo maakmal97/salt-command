@@ -19,7 +19,8 @@ import { richOwnerPage, byAct } from "./maker-act.mjs";
 const PLACES = ["needs", "orders", "customers", "record", "shop"];
 const LABELS = ["Needs you", "Orders", "Customers", "Record", "Shop"];
 const PARTS = {
-  orders: [["placed", "Placed"], ["confirmed", "Agreed"], ["ready", "Ready"], ["paid", "Out or paid"], ["done", "Done"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments"], ["group", "Group"], ["ledger", "Ledger"]],
+  /* 2 Nov 2026 (Orders on the canvas): the Segment draws the first four; Approve is reached by the bar, and Payments, Group and Ledger are rows under More */
+  orders: [["todo", "To do"], ["open", "Open"], ["done", "Done"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments they sent"], ["group", "Group orders"], ["ledger", "Ledger check"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
   record: [["entry", "Entry"], ["customers", "Customers"], ["pricing", "Pricing"]],
   shop: [["hours", "Hours"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
@@ -29,7 +30,7 @@ const IDS = ["mHome", "oOrders", "oCustomers", "oRecord", "oShop", "makerOrderLi
   "oCards", "oLedger", "makerDrafts", "makerQueueReview", "makerInputs", "makerSchedule", "makerBulletin", "mTest", "oLook"];
 const SHOWS = {
   needs: "mHome",
-  "orders/placed": "oOrders makerOrderList makerReview", "orders/confirmed": "oOrders makerOrderList makerReview", "orders/ready": "oOrders makerOrderList makerReview",
+  "orders/todo": "oOrders makerOrderList makerReview", "orders/open": "oOrders makerOrderList makerReview",
   "orders/done": "oOrders makerOrderList makerReview", "orders/ended": "oOrders makerOrderList makerReview", "orders/payments": "oOrders makerClaims",
   "orders/group": "oOrders makerPools", "orders/approve": "oOrders makerDrafts makerQueueReview", "orders/ledger": "oOrders oLedger",
   "customers/accounts": "oCustomers oAccts", "customers/messages": "oCustomers makerChatList", "customers/links": "oCustomers oLinks",
@@ -67,6 +68,11 @@ async function drawn(opts) {
   const where = () => {
     const place = [...p.d.querySelectorAll(".place[aria-current='page']")].map((b) => b.getAttribute("data-m"));
     const part = [...p.d.querySelectorAll(".aparts button[aria-selected='true']")].map((b) => b.parentNode.getAttribute("data-place") + "/" + b.getAttribute("data-part"));
+    /* 2 Nov 2026: a part with no tab in the Segment (Approve, Payments, Group, Ledger) is the address's */
+    if (!part.length && new Set(place).size === 1 && place[0] === "orders") {
+      const here = ["approve", "payments", "group", "ledger"].find((k) => shown(p.d.querySelector('[data-in="orders.' + k + '"]')));
+      if (here) part.push("orders/" + here);
+    }
     return [...new Set(place)].join() + (part.length ? " " + part.join() : "");
   };
   return { ...p, log, gets, tap, where, visible: () => IDS.filter((id) => shown(p.d.getElementById(id))).join(" ") };
@@ -76,7 +82,7 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 export async function run({ ok, pageWork }) {
   /* the busy day, with two orders that are over: a cancelled and a declined one */
   const over = (j) => { const o = { u: "abcd-efgh", product: "salt", delivery: 0, paid: 0, msgs: [], payments: [], history: [], mode: "collect", qty: 1, total: 100 };
-    j.orders.push({ ...o, id: "ord-c1", status: "cancelled" }, { ...o, id: "ord-c2", status: "declined" }); return j; };
+    j.orders.push({ ...o, id: "ord-c1", status: "cancelled" }, { ...o, id: "ord-c2", status: "declined" }, { ...o, id: "ord-g1", status: "acknowledged" }); return j; };
   const p = await drawn({ pageWork, review: over });
   const { d, w } = p;
   try {
@@ -92,12 +98,13 @@ export async function run({ ok, pageWork }) {
     const strips = [...d.querySelectorAll(".aparts")];
     const stripsOf = (place) => strips.filter((s) => s.getAttribute("data-place") === place);
     const form = (place) => { const s = stripsOf(place); return s.length ? s.flatMap((x) => [...x.querySelectorAll("button")]).map((b) => b.getAttribute("data-part") + ":" + b.firstChild.textContent + ":" + b.getAttribute("data-act")) : null; };
-    const wantParts = (place) => PARTS[place].map(([k, t]) => k + ":" + t + ":part." + place + "." + k);
-    ok(strips.length === 5 && ["orders", "customers", "record", "shop"].every((m) => same(form(m), wantParts(m))),
+    const wantParts = (place) => (place === "orders" ? PARTS[place].slice(0, 4) : PARTS[place]).map(([k, t]) => k + ":" + t + ":part." + place + "." + k);
+    ok(strips.length === 4 && ["orders", "customers", "record", "shop"].every((m) => same(form(m), wantParts(m))),
       "Orders, Customers, Record and Shop each have their parts in order, each tab with its act: " + JSON.stringify(["orders", "customers", "record", "shop"].map(form)));
     /* 20 Oct 2026 (Counter Batch C): Customers' parts are the system's slider (26 Oct 2026, the tight one); Record's three left it on 25 Oct 2026 (his Ask A) */
     /* 25 Oct 2026 (Salt Admin Shop, Orders and Record): Shop's four, Orders' two rows and Record's three are the Nav bar's text tabs, as Needs you's kinds */
-    const recipe = (s) => (["customers"].includes(s.getAttribute("data-place")) ? ["salt-segment", "salt-segment__opt"] : ["shop", "orders", "record"].includes(s.getAttribute("data-place")) ? ["salt-nav__links", "salt-nav__link"] : ["salt-tabs", "salt-tabs__pill"]);
+    /* 2 Nov 2026: Orders' four parts are one Segment, as Customers' */
+    const recipe = (s) => (["customers", "orders"].includes(s.getAttribute("data-place")) ? ["salt-segment", "salt-segment__opt"] : ["shop", "record"].includes(s.getAttribute("data-place")) ? ["salt-nav__links", "salt-nav__link"] : ["salt-tabs", "salt-tabs__pill"]);
     ok(strips.every((s) => s.classList.contains(recipe(s)[0]) && s.getAttribute("role") === "tablist" && s.getAttribute("aria-label")
       && [...s.querySelectorAll("button")].every((b) => b.classList.contains(recipe(s)[1]) && b.getAttribute("role") === "tab"))
       && !d.querySelector("#mHome .aparts"),
@@ -106,12 +113,12 @@ export async function run({ ok, pageWork }) {
     /* 3. THE TABS FOLLOW HIM */
     ok(p.where() === "needs", "the page opens on Needs you: " + p.where());
     await p.tap("nav.orders");
-    ok(p.where() === "orders orders/placed", "a place opens on its first part, marked in the bars and in its strip: " + p.where());
-    await p.tap("part.orders.ready");
+    ok(p.where() === "orders orders/todo", "a place opens on its first part, marked in the bars and in its strip: " + p.where());
+    await p.tap("part.orders.open");
     const pills = stripsOf("orders").flatMap((x) => [...x.querySelectorAll("button")]).map((b) => b.getAttribute("aria-selected")).join();
-    ok(p.where() === "orders orders/ready" && pills === "false,false,true,false,false,false,false,false,false,false", "a part he taps is the one marked, and only that one: " + p.where() + " " + pills);
+    ok(p.where() === "orders orders/open" && pills === "false,true,false,false", "a part he taps is the one marked, and only that one: " + p.where() + " " + pills);
     await p.tap("nav.customers"); await p.tap("nav.orders");
-    ok(p.where() === "orders orders/placed", "and a place he comes back to opens on its first part again: " + p.where());
+    ok(p.where() === "orders orders/todo", "and a place he comes back to opens on its first part again: " + p.where());
     const counts = [...d.querySelectorAll(".salt-rail [data-count]")].map((e) => e.getAttribute("data-count") + "=" + e.textContent).filter((x) => !/=$/.test(x));
     ok(counts.some((c) => c === "customers=2") && !counts.some((c) => /^shop=/.test(c)),
       "Customers carries the threads asked and the guest links waiting, and Shop has none (the counts are proved in test/admin-needs.mjs): " + JSON.stringify(counts));
@@ -144,20 +151,25 @@ export async function run({ ok, pageWork }) {
     const rows = () => [...d.querySelectorAll("#makerOrderList .ordrow")].filter(shown).map((r) => r.getAttribute("data-order")).join();
     const stage = {};
     for (const [part] of PARTS.orders) { await p.tap("part.orders." + part); stage[part] = rows(); }
-    ok(stage.placed === "ord-p1,ord-p2,ord-p3,ord-p4" && stage.confirmed === "ord-a1,ord-a2" && stage.ready === "ord-r1,ord-r2,ord-r3"
-      && stage.paid === "" && stage.done === "" && stage.ended === "ord-x1,ord-c1,ord-c2" && stage.payments === "" && stage.group === "",
-    "an order is a row in the one stage it stands at, a declined or cancelled one in Ended, and none in two: " + JSON.stringify(stage));
+    /* 2 Nov 2026: what waits on him is in To do (the declined order with a request to send again too), the rest of the live ones in Open, a cancelled or declined one that waits on nothing in Ended */
+    ok(stage.todo === "ord-p1,ord-p2,ord-p3,ord-p4,ord-a1,ord-a2,ord-x1" && stage.open === "ord-g1,ord-r1,ord-r2,ord-r3"
+      && stage.done === "" && stage.ended === "ord-c1,ord-c2" && stage.approve === "" && stage.payments === "" && stage.group === "",
+    "an order is a row in the one part it stands at, a declined or cancelled one in Ended, and none in two: " + JSON.stringify(stage));
+    /* 2 Nov 2026: and in Open an agreed order stands under Agreed and a ready one under Ready, the stage each is filed at */
+    await p.tap("part.orders.open");
+    const heads = [...d.querySelectorAll('#makerOrderList section[data-in="orders.open"]')].map((x) => x.getAttribute("aria-label") + ":" + [...x.querySelectorAll("[data-order]")].map((r) => r.getAttribute("data-order")).join("+")).join(" ");
+    ok(heads === "Agreed:ord-g1 Ready:ord-r1+ord-r2+ord-r3", "Open files an agreed order under Agreed and a ready one under Ready: " + heads);
     const empty = await drawn({ pageWork, review: () => ({ ok: true, orders: [], drafts: [], refused: [], queue: [] }) });
     try {
       await empty.tap("nav.orders");
       const none = {};
       for (const [part] of PARTS.orders.filter(([k]) => !["group", "payments", "ledger", "approve"].includes(k))) {
         await empty.tap("part.orders." + part);
-        none[part] = [...empty.d.querySelectorAll("#makerOrderList .rnone")].filter(shown).map((e) => e.textContent).join();
+        none[part] = [...empty.d.querySelectorAll("#makerOrderList .salt-settings__foot")].filter(shown).map((e) => e.textContent).join();
       }
       await empty.tap("part.orders.approve");
       none.rows = [...empty.d.querySelectorAll("#makerDrafts .rnone")].filter(shown).map((e) => e.textContent).join();
-      ok(none.placed === "No orders placed." && none.confirmed === "No agreed orders." && none.ready === "No orders ready." && none.paid === "No orders out or paid." && none.done === "No done orders." && none.ended === "No ended orders."
+      ok(none.todo === "Nothing waits on you." && none.open === "No open orders." && none.done === "No done orders." && none.ended === "No ended orders."
         && none.rows === "Nothing waits for your approval.",
       "a part with nothing in it says so, and a part with something says nothing: " + JSON.stringify(none));
     } finally { empty.w.close(); }
@@ -165,9 +177,9 @@ export async function run({ ok, pageWork }) {
     /* 6. ADDRESSES */
     const go = async (hash) => { const e = fires(w, "hashchange"); w.location.hash = hash; await e; await p.work.quiet(); return p.where(); };
     await p.tap("nav.shop");
-    const addresses = { "#maker": "orders orders/placed", "#more": "shop shop/hours", "#accounts": "customers customers/accounts",
-      "#links": "customers customers/links", "#cards": "customers customers/associates", "#needs": "needs", "#orders/ready": "orders orders/ready",
-      "#record/pricing": "record record/pricing", "#record/approve": "orders orders/approve", "#customers/messages": "customers customers/messages", "#orders/nowhere": "orders orders/placed" };
+    const addresses = { "#maker": "orders orders/todo", "#more": "shop shop/hours", "#accounts": "customers customers/accounts",
+      "#links": "customers customers/links", "#cards": "customers customers/associates", "#needs": "needs", "#orders/ready": "orders orders/open",
+      "#record/pricing": "record record/pricing", "#record/approve": "orders orders/approve", "#customers/messages": "customers customers/messages", "#orders/nowhere": "orders orders/todo" };
     const got = {};
     for (const hash of Object.keys(addresses)) got[hash] = await go(hash);
     const badAddr = Object.keys(addresses).filter((h) => got[h] !== addresses[h]);
@@ -181,7 +193,7 @@ export async function run({ ok, pageWork }) {
     ok(viaPop === "record record/pricing" && viaHash === "shop shop/hours", "Back and Forward (popstate) and an address typed in (hashchange) each move him on their own: " + JSON.stringify([viaPop, viaHash]));
     const at = async (hash) => { const q = await drawn({ pageWork, hash }); try { return [q.where(), q.w.location.hash, q.gets()]; } finally { q.w.close(); } };
     const [a1, a2, a3, a4] = [await at("#maker"), await at("#record/pricing"), await at("#cards"), await at("#record/approve")];
-    ok(a1[0] === "orders orders/placed" && a1[1] === "#orders" && a2[0] === "record record/pricing" && a2[1] === "#record/pricing"
+    ok(a1[0] === "orders orders/todo" && a1[1] === "#orders" && a2[0] === "record record/pricing" && a2[1] === "#record/pricing"
       && a3[0] === "customers customers/associates" && a3[1] === "#customers/associates" && a4[0] === "orders orders/approve" && a4[1] === "#orders/approve",
     "a page opened on an address is on the place and part it names, and its address is the new one; the old #record/approve is Orders > Approve: " + JSON.stringify([a1, a2, a3, a4]));
 
@@ -193,8 +205,8 @@ export async function run({ ok, pageWork }) {
       /* the window leaves the address when it has gone, or never if there was nowhere to go: a bounded poll, then what stands */
       const travel = async (dir) => { const from = q.w.location.href; q.w.history[dir](); for (let i = 0; i < 300 && q.w.location.href === from; i++) await new Promise((r) => setTimeout(r, 10)); await q.work.quiet(); return q.where() + " " + q.w.location.hash; };
       const back1 = await travel("back"), back2 = await travel("back"), back3 = await travel("back"), fwd = await travel("forward");
-      ok(same(trail, ["#orders", "#orders/group", "#shop"]) && back1 === "orders orders/group #orders/group" && back2 === "orders orders/placed #orders"
-        && back3 === "needs " && fwd === "orders orders/placed #orders",
+      ok(same(trail, ["#orders", "#orders/group", "#shop"]) && back1 === "orders orders/group #orders/group" && back2 === "orders orders/todo #orders"
+        && back3 === "needs " && fwd === "orders orders/todo #orders",
       "a tap writes the place's address, and Back and Forward move between places: " + JSON.stringify([trail, back1, back2, back3, fwd]));
     } finally { q.w.close(); }
 
@@ -210,7 +222,7 @@ export async function run({ ok, pageWork }) {
       await step("part.shop.device", reads());
       await step("part.shop.hours", reads("hours", "points"));
       await step("nav.orders", reads("review", "claims"));
-      for (const part of ["confirmed", "ready", "done", "ended", "payments", "placed"]) await step("part.orders." + part, reads());
+      for (const part of ["open", "done", "ended", "payments", "todo"]) await step("part.orders." + part, reads());
       await step("part.orders.group", reads("pools"));
       await step("nav.orders", reads("review", "claims", "pools"));
       await step("part.orders.ledger", reads("ledger"));
@@ -223,7 +235,8 @@ export async function run({ ok, pageWork }) {
       await step("nav.record", reads("inputs", "offsets"));
       for (const part of ["entry", "customers", "pricing"]) await step("part.record." + part, reads());
       await step("nav.orders", reads("review", "claims"));
-      await step("part.orders.approve", reads("review"));
+      /* 2 Nov 2026: Approve has no control in the Segment (the bar's Approve is fresh and reads the place too), so its address is what is typed in: it reads its own part alone */
+      { r.log.length = 0; const e = fires(r.w, "hashchange"); r.w.location.hash = "#orders/approve"; await e; await r.work.quiet(); entry.push(["#orders/approve", r.gets(), reads("review")]); }
       const off = entry.filter(([, got, want]) => !same(got, want));
       ok(off.length === 0, "each place reads what it shows when he enters it, each part what it shows, each route once and nothing of another place: "
         + JSON.stringify(off.map(([act, got, want]) => [act, got, want])));

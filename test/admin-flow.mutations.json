@@ -1,49 +1,284 @@
 [
-{ "name": "flowStage: paid in full is not delivered or paid", "file": "src/maker-inputs.js", "find": "out || (paid && f.paid > 0.004) ? \"paid\"", "replace": "out ? \"paid\"" },
-{ "name": "flowStage: ready is never read", "file": "src/maker-inputs.js", "find": ": f.ready ? \"ready\" : \"confirmed\"", "replace": ": \"confirmed\"" },
-{ "name": "flowStage: ended loses to completed", "file": "src/maker-inputs.js", "find": "  if (f.ended) return \"ended\";\n", "replace": "" },
-{ "name": "makerRows: trip rows listed twice", "file": "src/maker-inputs.js", "find": "s && s.rid && !carded.has(s.rid) && code(", "replace": "s && s.rid && code(" },
-{ "name": "makerRows: rows read without the moves waiting", "file": "src/maker-inputs.js", "find": "const st = standing([s], held)[0], line", "replace": "const st = standing([s], [])[0], line" },
-{ "name": "makerRows: a defaulted row is not ended", "file": "src/maker-inputs.js", "find": "const ended = !!(st.row.cancelled || st.row.defaulted);", "replace": "const ended = !!st.row.cancelled;" },
-{ "name": "review: rows not passed", "file": "stmt/maker.js", "find": "unreadable, trips, sameDay, rows,", "replace": "unreadable, trips, sameDay, rows: drafts.rows || [], rowsHeld: rows," },
-{ "name": "review: site orders not filtered", "file": "stmt/maker.js", "find": "drafts.rows.filter((r) => r && !held.has(r.key))", "replace": "drafts.rows.filter((r) => r)" },
-{ "name": "review: an ended site order still holds its row", "file": "stmt/maker.js", "find": "!o.test && ![\"declined\", \"cancelled\"].includes(o.status) && typeof o.ledgerKey", "replace": "!o.test && typeof o.ledgerKey" },
-{ "name": "page: a site order paid in full stays Agreed", "file": "stmt/owner.js", "find": "if(out||(owed<=0.004&&paid>0.004)) st='paid';", "replace": "if(out) st='paid';" },
-{ "name": "page: rows never listed", "file": "stmt/owner.js", "find": "(makerData.rows||[]).forEach(function(r){", "replace": "([]).forEach(function(r){" },
-{ "name": "page: no paging", "file": "stmt/owner.js", "find": "next.addEventListener('click',function(){ ordMore[st]=ordShown(st)+50; drawMaker(); });", "replace": "next.addEventListener('click',function(){ drawMaker(); });" },
-{ "name": "page: handover sends cash", "file": "stmt/owner.js", "find": "return amend(send,{kind:'Fulfilment',cash:0,movedUnits:v},'Sent. The handover waits under Approve.');", "replace": "return amend(send,{kind:'Fulfilment',cash:v,movedUnits:0},'Sent. The handover waits under Approve.');" },
-{ "name": "page: change sends every field", "file": "stmt/owner.js", "find": "if(Math.abs(t-r.total)>0.004) f.total=t;", "replace": "f.total=t; f.qty=q;" },
-{ "name": "page: no cancel on a row", "file": "stmt/owner.js", "find": "if(live&&r.handed<=0.0005){\n      makerButton(acts,['Cancel order'", "replace": "if(false){\n      makerButton(acts,['Cancel order'" },
-{ "name": "page: Out or paid tab gone", "file": "stmt/page.js", "find": "[\"paid\", \"Out or paid\"], ", "replace": "" },
-{ "name": "page: the orders strip hides Out or paid", "file": "stmt/page.js", "find": "orders.ready orders.paid orders.done", "replace": "orders.ready orders.done" },
-{"name": "closeAt: offered with nothing out", "file": "src/maker-inputs.js", "find": "!ended && line.handed > 0.0005 && line.left > 0.0005 ? { closeAt", "replace": "!ended && line.left > 0.0005 ? { closeAt"},
-{"name": "closeAt: the whole total", "file": "src/maker-inputs.js", "find": "r2(E.closeGoods(st.row.total, +st.row.qty, line.handed))", "replace": "r2(st.row.total)"},
-{"name": "row: no Cancel the rest", "file": "stmt/owner.js", "find": "    if(live&&r.closeAt!=null){", "replace": "    if(false){"},
-{"name": "row: Cancel the rest closes at the whole size", "file": "stmt/owner.js", "find": "fields:{qty:r.handed,total:r.closeAt}", "replace": "fields:{qty:r.qty,total:r.closeAt}"},
-{"name": "site: no Cancel the rest", "file": "stmt/owner.js", "find": "&&+order.moved>0&&+order.moved<+order.qty-0.0004){", "replace": "&&false){"},
-{"name": "site: Cancel the rest is a part handover", "file": "stmt/owner.js", "find": "makerTap(order,'handed',{qty:n,close:true},'Sent to the Desk: the order ends at what was handed over.');", "replace": "makerTap(order,'handed',{qty:n},'Sent to the Desk: the order ends at what was handed over.');"},
-{"name": "order book: Amend on a completed order refused", "file": "stmt/orders.js", "find": "if (!PAYABLE.includes(order.status) && order.status !== \"done\") return { error: \"an order that is \"", "replace": "if (!PAYABLE.includes(order.status)) return { error: \"an order that is \""},
-{"name": "order book: an amended completed order never reopens", "file": "stmt/orders.js", "find": "    if (order.status === \"done\" && (dueOf(order) > 0.004 || owedUnits(order) > 0.004)) {\n      const was", "replace": "    if (ev.book && order.status === \"done\" && (dueOf(order) > 0.004 || owedUnits(order) > 0.004)) {\n      const was"},
-{"name": "Desk: Amend on a completed order refused", "file": "engine/stages.mjs", "find": "if (!AGREED_ON_SITE.includes(o.status) && o.status !== \"done\") return { status: 409", "replace": "if (!AGREED_ON_SITE.includes(o.status)) return { status: 409"},
-{"name": "ledger road: a completed order's row changes alone", "file": "src/maker-inputs.js", "find": "if (order && (AGREED_ON_SITE.includes(order.status) || order.status === \"done\")) {", "replace": "if (order && AGREED_ON_SITE.includes(order.status)) {"},
-{"name": "page: no Change on a completed order", "file": "stmt/owner.js", "find": "if(order.status==='done'&&!order.test&&!makerAgainAck(order)){", "replace": "if(false){"},
-{"name": "order book: the book cancels goods already out", "file": "stmt/orders.js", "find": "if ((+order.moved || 0) > 0.0004) return { error: \"the goods are already out, so the book's cancellation", "replace": "if (false) return { error: \"the goods are already out, so the book's cancellation"},
-{"name": "order book: a write-off twice is a second event", "file": "stmt/orders.js", "find": "if ((e === \"writtenOff\") === !!order.writtenOff) return { none: true };", "replace": ""},
-{"name": "order book: the book's end waits on no claim", "file": "stmt/orders.js", "find": "    if (!ROWED.includes(order.status)) return { error: \"only an agreed order follows its row's end\", status: 409 };\n    if (claimWaits(order))", "replace": "    if (!ROWED.includes(order.status)) return { error: \"only an agreed order follows its row's end\", status: 409 };\n    if (false)"},
-{"name": "page: a written-off order stays at its stage", "file": "stmt/owner.js", "find": "    if(order.writtenOff) return 'orders.ended';", "replace": ""},
-{"name": "Fable 1: a close at what is out restamps the row's day", "file": "engine/stages.mjs", "find": "movedOn: still ? o.movedOn : klDate(at), moved: qty", "replace": "movedOn: klDate(at), moved: qty"},
-{"name": "Fable 1: a close at what is out writes a handover on the order", "file": "stmt/orders.js", "find": "const moves = !(ev.close && order.movedOn && Math.abs(+ev.units - (+order.moved || 0)) < 0.0004);", "replace": "const moves = true;"},
-{"name": "Fable 2: the ledger's road prices under the floor", "file": "src/maker-inputs.js", "find": "if (fl && fl.exact && t < fl.floor - 0.005)", "replace": "if (false)"},
-{"name": "Fable 3: same-day rows drawn twice", "file": "src/worker.js", "find": ".concat(cards.sameDay.flatMap((d) => d.rids))", "replace": ""},
-{"name": "Fable A: the book's lines reach the customer", "file": "stmt/orders.js", "find": "  if (Array.isArray(v.history)) v.history = v.history.filter((h) => !(h && h.inner));\n", "replace": ""},
-{"name": "Fable A: a book cancel carries a note", "file": "stmt/orders.js", "find": "{ cancel: \"book\" }); h.book = true; }", "replace": "{ cancel: \"book\" }); h.note = \"cancelled on the book\"; }"},
-{"name": "V7: no refund on a row", "file": "src/maker-inputs.js", "find": "...(refunds[s.rid] ? { refund: refunds[s.rid] } : {}),\n", "replace": "\n"},
-{"name": "V7: a paid refund still counts", "file": "src/maker-inputs.js", "find": "if (r && r.rid && !r.paidOn && +r.amount > 0.004)", "replace": "if (r && r.rid && +r.amount > 0.004)"},
-{"name": "V7: no refunds for orders", "file": "stmt/maker.js", "find": "refunds: drafts.refunds && typeof drafts.refunds === \"object\" ? drafts.refunds : {},", "replace": "refunds: {},"},
-{"name": "V7: an order's card says no refund", "file": "stmt/owner.js", "find": "    if(+owes>0.004) card.appendChild(", "replace": "    if(false) card.appendChild("},
-{"name": "V8: an ended order's waiting move is not said", "file": "stmt/owner.js", "find": "if(waitN&&!ordOpen(order)) card.appendChild(", "replace": "if(false) card.appendChild("},
-{"name": "V9: the Ledger draws no tie-out", "file": "stmt/owner.js", "find": "    drawLedger(j);\n    drawTieout(j.tieout);\n  }", "replace": "    drawLedger(j);\n  }"},
-{"name": "V9: a difference is not named", "file": "stmt/owner.js", "find": "(f.what?': '+[].concat(f.what).join('; '):f.why?f.why:'')+'.'", "replace": "'.'"},
-{"name": "Fable V9: Check now has no line of its own", "file": "stmt/owner.js", "find": "said.setAttribute('role','status'); root.appendChild(said);\n    makerButton(root,['Check now'", "replace": "said.hidden=true;\n    makerButton(root,['Check now'"},
-{ "name": "review: a trip held by live site orders still drawn", "file": "stmt/maker.js", "find": "(Array.isArray(drafts.trips) ? drafts.trips : []).filter((c) => !heldAll(c))", "replace": "(Array.isArray(drafts.trips) ? drafts.trips : [])" }
+ {
+  "name": "flowStage: paid in full is not delivered or paid",
+  "file": "src/maker-inputs.js",
+  "find": "out || (paid && f.paid > 0.004) ? \"paid\"",
+  "replace": "out ? \"paid\""
+ },
+ {
+  "name": "flowStage: ready is never read",
+  "file": "src/maker-inputs.js",
+  "find": ": f.ready ? \"ready\" : \"confirmed\"",
+  "replace": ": \"confirmed\""
+ },
+ {
+  "name": "flowStage: ended loses to completed",
+  "file": "src/maker-inputs.js",
+  "find": "  if (f.ended) return \"ended\";\n",
+  "replace": ""
+ },
+ {
+  "name": "makerRows: trip rows listed twice",
+  "file": "src/maker-inputs.js",
+  "find": "s && s.rid && !carded.has(s.rid) && code(",
+  "replace": "s && s.rid && code("
+ },
+ {
+  "name": "makerRows: rows read without the moves waiting",
+  "file": "src/maker-inputs.js",
+  "find": "const st = standing([s], held)[0], line",
+  "replace": "const st = standing([s], [])[0], line"
+ },
+ {
+  "name": "makerRows: a defaulted row is not ended",
+  "file": "src/maker-inputs.js",
+  "find": "const ended = !!(st.row.cancelled || st.row.defaulted);",
+  "replace": "const ended = !!st.row.cancelled;"
+ },
+ {
+  "name": "review: rows not passed",
+  "file": "stmt/maker.js",
+  "find": "unreadable, trips, sameDay, rows,",
+  "replace": "unreadable, trips, sameDay, rows: drafts.rows || [], rowsHeld: rows,"
+ },
+ {
+  "name": "review: site orders not filtered",
+  "file": "stmt/maker.js",
+  "find": "drafts.rows.filter((r) => r && !held.has(r.key))",
+  "replace": "drafts.rows.filter((r) => r)"
+ },
+ {
+  "name": "review: an ended site order still holds its row",
+  "file": "stmt/maker.js",
+  "find": "!o.test && ![\"declined\", \"cancelled\"].includes(o.status) && typeof o.ledgerKey",
+  "replace": "!o.test && typeof o.ledgerKey"
+ },
+ {
+  "name": "page: a site order paid in full stays Agreed",
+  "file": "stmt/owner.js",
+  "find": "if(out||(owed<=0.004&&paid>0.004)) st='paid';",
+  "replace": "if(out) st='paid';"
+ },
+ {
+  "name": "page: rows never listed",
+  "file": "stmt/owner.js",
+  "find": "(makerData.rows||[]).forEach(function(r){",
+  "replace": "([]).forEach(function(r){"
+ },
+ {
+  "name": "page: no paging",
+  "file": "stmt/owner.js",
+  "find": "next.addEventListener('click',function(){ ordMore[st]=ordShown(st)+50; drawMaker(); });",
+  "replace": "next.addEventListener('click',function(){ drawMaker(); });"
+ },
+ {
+  "name": "page: handover sends cash",
+  "file": "stmt/owner.js",
+  "find": "return amend(send,{kind:'Fulfilment',cash:0,movedUnits:v},'Sent. The handover waits under Approve.');",
+  "replace": "return amend(send,{kind:'Fulfilment',cash:v,movedUnits:0},'Sent. The handover waits under Approve.');"
+ },
+ {
+  "name": "page: change sends every field",
+  "file": "stmt/owner.js",
+  "find": "if(Math.abs(t-r.total)>0.004) f.total=t;",
+  "replace": "f.total=t; f.qty=q;"
+ },
+ {
+  "name": "page: no cancel on a row",
+  "file": "stmt/owner.js",
+  "find": "if(live&&r.handed<=0.0005){\n      makerButton(acts,['Cancel order'",
+  "replace": "if(false){\n      makerButton(acts,['Cancel order'"
+ },
+ {
+  "name": "Out or paid has no head",
+  "file": "stmt/owner.js",
+  "find": "var ORD_HEAD={confirmed:'Agreed',ready:'Ready',paid:'Out or paid'};",
+  "replace": "var ORD_HEAD={confirmed:'Agreed',ready:'Ready'};"
+ },
+ {
+  "name": "page: the orders section hides Open",
+  "file": "stmt/page.js",
+  "find": "<section id=\"oSplit\" data-in=\"orders.todo orders.open orders.done orders.ended\"",
+  "replace": "<section id=\"oSplit\" data-in=\"orders.todo orders.done orders.ended\""
+ },
+ {
+  "name": "closeAt: offered with nothing out",
+  "file": "src/maker-inputs.js",
+  "find": "!ended && line.handed > 0.0005 && line.left > 0.0005 ? { closeAt",
+  "replace": "!ended && line.left > 0.0005 ? { closeAt"
+ },
+ {
+  "name": "closeAt: the whole total",
+  "file": "src/maker-inputs.js",
+  "find": "r2(E.closeGoods(st.row.total, +st.row.qty, line.handed))",
+  "replace": "r2(st.row.total)"
+ },
+ {
+  "name": "row: no Cancel the rest",
+  "file": "stmt/owner.js",
+  "find": "    if(live&&r.closeAt!=null){",
+  "replace": "    if(false){"
+ },
+ {
+  "name": "row: Cancel the rest closes at the whole size",
+  "file": "stmt/owner.js",
+  "find": "fields:{qty:r.handed,total:r.closeAt}",
+  "replace": "fields:{qty:r.qty,total:r.closeAt}"
+ },
+ {
+  "name": "site: no Cancel the rest",
+  "file": "stmt/owner.js",
+  "find": "&&+order.moved>0&&+order.moved<+order.qty-0.0004){",
+  "replace": "&&false){"
+ },
+ {
+  "name": "site: Cancel the rest is a part handover",
+  "file": "stmt/owner.js",
+  "find": "makerTap(order,'handed',{qty:n,close:true},'Sent to the Desk: the order ends at what was handed over.');",
+  "replace": "makerTap(order,'handed',{qty:n},'Sent to the Desk: the order ends at what was handed over.');"
+ },
+ {
+  "name": "order book: Amend on a completed order refused",
+  "file": "stmt/orders.js",
+  "find": "if (!PAYABLE.includes(order.status) && order.status !== \"done\") return { error: \"an order that is \"",
+  "replace": "if (!PAYABLE.includes(order.status)) return { error: \"an order that is \""
+ },
+ {
+  "name": "order book: an amended completed order never reopens",
+  "file": "stmt/orders.js",
+  "find": "    if (order.status === \"done\" && (dueOf(order) > 0.004 || owedUnits(order) > 0.004)) {\n      const was",
+  "replace": "    if (ev.book && order.status === \"done\" && (dueOf(order) > 0.004 || owedUnits(order) > 0.004)) {\n      const was"
+ },
+ {
+  "name": "Desk: Amend on a completed order refused",
+  "file": "engine/stages.mjs",
+  "find": "if (!AGREED_ON_SITE.includes(o.status) && o.status !== \"done\") return { status: 409",
+  "replace": "if (!AGREED_ON_SITE.includes(o.status)) return { status: 409"
+ },
+ {
+  "name": "ledger road: a completed order's row changes alone",
+  "file": "src/maker-inputs.js",
+  "find": "if (order && (AGREED_ON_SITE.includes(order.status) || order.status === \"done\")) {",
+  "replace": "if (order && AGREED_ON_SITE.includes(order.status)) {"
+ },
+ {
+  "name": "page: no Change on a completed order",
+  "file": "stmt/owner.js",
+  "find": "if(order.status==='done'&&!order.test&&!makerAgainAck(order)){",
+  "replace": "if(false){"
+ },
+ {
+  "name": "order book: the book cancels goods already out",
+  "file": "stmt/orders.js",
+  "find": "if ((+order.moved || 0) > 0.0004) return { error: \"the goods are already out, so the book's cancellation",
+  "replace": "if (false) return { error: \"the goods are already out, so the book's cancellation"
+ },
+ {
+  "name": "order book: a write-off twice is a second event",
+  "file": "stmt/orders.js",
+  "find": "if ((e === \"writtenOff\") === !!order.writtenOff) return { none: true };",
+  "replace": ""
+ },
+ {
+  "name": "order book: the book's end waits on no claim",
+  "file": "stmt/orders.js",
+  "find": "    if (!ROWED.includes(order.status)) return { error: \"only an agreed order follows its row's end\", status: 409 };\n    if (claimWaits(order))",
+  "replace": "    if (!ROWED.includes(order.status)) return { error: \"only an agreed order follows its row's end\", status: 409 };\n    if (false)"
+ },
+ {
+  "name": "page: a written-off order stays at its stage",
+  "file": "stmt/owner.js",
+  "find": "    if(order.writtenOff) return 'orders.ended';",
+  "replace": ""
+ },
+ {
+  "name": "Fable 1: a close at what is out restamps the row's day",
+  "file": "engine/stages.mjs",
+  "find": "movedOn: still ? o.movedOn : klDate(at), moved: qty",
+  "replace": "movedOn: klDate(at), moved: qty"
+ },
+ {
+  "name": "Fable 1: a close at what is out writes a handover on the order",
+  "file": "stmt/orders.js",
+  "find": "const moves = !(ev.close && order.movedOn && Math.abs(+ev.units - (+order.moved || 0)) < 0.0004);",
+  "replace": "const moves = true;"
+ },
+ {
+  "name": "Fable 2: the ledger's road prices under the floor",
+  "file": "src/maker-inputs.js",
+  "find": "if (fl && fl.exact && t < fl.floor - 0.005)",
+  "replace": "if (false)"
+ },
+ {
+  "name": "Fable 3: same-day rows drawn twice",
+  "file": "src/worker.js",
+  "find": ".concat(cards.sameDay.flatMap((d) => d.rids))",
+  "replace": ""
+ },
+ {
+  "name": "Fable A: the book's lines reach the customer",
+  "file": "stmt/orders.js",
+  "find": "  if (Array.isArray(v.history)) v.history = v.history.filter((h) => !(h && h.inner));\n",
+  "replace": ""
+ },
+ {
+  "name": "Fable A: a book cancel carries a note",
+  "file": "stmt/orders.js",
+  "find": "{ cancel: \"book\" }); h.book = true; }",
+  "replace": "{ cancel: \"book\" }); h.note = \"cancelled on the book\"; }"
+ },
+ {
+  "name": "V7: no refund on a row",
+  "file": "src/maker-inputs.js",
+  "find": "...(refunds[s.rid] ? { refund: refunds[s.rid] } : {}),\n",
+  "replace": "\n"
+ },
+ {
+  "name": "V7: a paid refund still counts",
+  "file": "src/maker-inputs.js",
+  "find": "if (r && r.rid && !r.paidOn && +r.amount > 0.004)",
+  "replace": "if (r && r.rid && +r.amount > 0.004)"
+ },
+ {
+  "name": "V7: no refunds for orders",
+  "file": "stmt/maker.js",
+  "find": "refunds: drafts.refunds && typeof drafts.refunds === \"object\" ? drafts.refunds : {},",
+  "replace": "refunds: {},"
+ },
+ {
+  "name": "V7: an order's card says no refund",
+  "file": "stmt/owner.js",
+  "find": "    if(+owes>0.004) card.appendChild(",
+  "replace": "    if(false) card.appendChild("
+ },
+ {
+  "name": "V8: an ended order's waiting move is not said",
+  "file": "stmt/owner.js",
+  "find": "if(waitN&&!ordOpen(order)) card.appendChild(",
+  "replace": "if(false) card.appendChild("
+ },
+ {
+  "name": "V9: the Ledger draws no tie-out",
+  "file": "stmt/owner.js",
+  "find": "    drawLedger(j);\n    drawTieout(j.tieout);\n  }",
+  "replace": "    drawLedger(j);\n  }"
+ },
+ {
+  "name": "V9: a difference is not named",
+  "file": "stmt/owner.js",
+  "find": "(f.what?': '+[].concat(f.what).join('; '):f.why?f.why:'')+'.'",
+  "replace": "'.'"
+ },
+ {
+  "name": "Fable V9: Check now has no line of its own",
+  "file": "stmt/owner.js",
+  "find": "said.setAttribute('role','status'); root.appendChild(said);\n    makerButton(root,['Check now'",
+  "replace": "said.hidden=true;\n    makerButton(root,['Check now'"
+ },
+ {
+  "name": "review: a trip held by live site orders still drawn",
+  "file": "stmt/maker.js",
+  "find": "(Array.isArray(drafts.trips) ? drafts.trips : []).filter((c) => !heldAll(c))",
+  "replace": "(Array.isArray(drafts.trips) ? drafts.trips : [])"
+ }
 ]

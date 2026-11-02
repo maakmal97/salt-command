@@ -32,7 +32,7 @@ export async function run({ ok, pageWork }) {
     const d = p.d, click = async (e) => { if (e) e.click(); await p.work.quiet(); };
     const css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
     const split = d.getElementById("oSplit");
-    await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.ready"));
+    await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.open"));
     /* 1 */
     ok(!split.classList.contains("open") && !d.querySelector("#makerReview .maker-card"), "at 1440 no order opens itself: the list is the page");
     await click(byAct(d, "order.open", "ord-r1"));
@@ -70,7 +70,7 @@ export async function run({ ok, pageWork }) {
     ok(!split.classList.contains("open") && !d.querySelector("#makerReview .maker-card"), "and the rail's Orders closes it back to the list");
     /* 2 */
     st.w = 900;
-    await click(byAct(d, "part.orders.confirmed"));
+    await click(byAct(d, "part.orders.todo"));
     ok(split.classList.contains("open") && !!d.querySelector("#makerReview .maker-card") && !d.querySelector("#makerReview .ordcols"),
       "from 860 to 1080px the first order opens beside the list, in one column");
   } finally { p.w.close(); }

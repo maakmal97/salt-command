@@ -10,7 +10,7 @@
  *      all; More to come sends the part handover and That is all asks on the Sheet and sends the close, each as its old button sent it; a test
  *      order is offered no close; every tile is the system's 44px Option recipe
  * Drawn by the maker harness (test/maker-act.mjs). */
-import { richOwnerPage, byAct } from "./maker-act.mjs";
+import { richOwnerPage, byAct, PART_OF } from "./maker-act.mjs";
 
 const RID = "[0-9a-f]{32}";
 const wireBody = (p, route) => p.wire.filter((x) => x.startsWith(route + " POST ")).map((x) => x.slice(x.lastIndexOf("} ") + 2));
@@ -20,7 +20,7 @@ export async function run({ ok, pageWork }) {
   const p = await richOwnerPage({ pageWork, review: (j) => { for (const o of j.orders) Object.assign(o, patch[o.id] || {}); return j; } });
   try {
     const d = p.d, w = p.w;
-    const part = async (name) => { byAct(d, "part.orders." + name).click(); await p.work.quiet(); };
+    const part = async (name) => { byAct(d, "part.orders." + (PART_OF[name] || name)).click(); await p.work.quiet(); };
     const tapRow = async (id) => { const r = byAct(d, "order.open", id); if (r) r.click(); await p.work.quiet(); return !!r; };
     const cardOf = (id) => [...d.querySelectorAll("#makerReview [data-maker-card]")].find((c) => c.getAttribute("data-maker-card") === id) || null;
     const before = (a, b) => !!a && !!b && !!(a.compareDocumentPosition(b) & w.Node.DOCUMENT_POSITION_FOLLOWING);
@@ -54,7 +54,7 @@ export async function run({ ok, pageWork }) {
     const cash = wireBody(p, "/all/maker/orders/ord-r2/cash");
     ok(cash.length === 1 && new RegExp("^\\{\"rid\":\"" + RID + "\",\"amount\":50\\}$").test(cash[0]),
       "A6: and then sends the order's cash, the body the old Record cash sent to the byte: " + JSON.stringify(cash));
-    await part("confirmed"); await tapRow("ord-a1");
+    await part("todo"); await tapRow("ord-a1");
     c = cardOf("ord-a1");
     ok(roads(c).map((r) => r.value + (r.checked ? "*" : "")).join() === "bank*", "A7: an agreed order not yet Ready has Bank alone, chosen: " + roads(c).map((r) => r.value + r.checked).join());
     typed(byAct(c, "order.pay-amount"), "30"); byAct(c, "order.pay").click(); await p.work.quiet();

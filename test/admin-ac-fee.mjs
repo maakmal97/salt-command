@@ -14,7 +14,7 @@ export async function run({ ok, pageWork }) {
   try {
     await p.work.quiet();
     const d = p.d, click = async (e) => { if (e) e.click(); await p.work.quiet(); };
-    await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.placed"));
+    await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.todo"));
     await click(byAct(d, "order.open", "ord-p2"));
     const sel = byAct(d, "order.fee", "ord-p2"), opts = sel ? [...sel.options] : [];
     const read = () => ({ value: sel.value, on: opts.map((o) => o.selected ? 1 : 0).join("") });

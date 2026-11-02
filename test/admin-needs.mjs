@@ -110,7 +110,9 @@ export async function run({ ok, pageWork }) {
     p.tap = async (act, key) => { const c = byAct(d, act, key); if (c) c.click(); await p.work.quiet(); return !!c; };
     p.where = () => {
       const place = (d.querySelector('.salt-appbar .place[aria-current="page"]') || { getAttribute: () => "" }).getAttribute("data-m");
-      const part = (d.querySelector('.aparts[data-place="' + place + '"] [aria-selected="true"]') || { getAttribute: () => "" }).getAttribute("data-part");
+      /* 2 Nov 2026 (Orders on the canvas): Approve and Payments have no tab in the Segment; the part showing is the one whose section is in view */
+      const seen = (k) => { const s = d.querySelector('[data-in="orders.' + k + '"]'); for (let e = s; e && e.id !== "roster"; e = e.parentElement) if (e.hidden) return false; return !!s; };
+      const part = (d.querySelector('.aparts[data-place="' + place + '"] [aria-selected="true"]') || { getAttribute: () => (place === "orders" ? ["approve", "payments", "group", "ledger"].find(seen) || "" : "") }).getAttribute("data-part");
       return place + (part ? "/" + part : "");
     };
     /* the 5-second read, as the page set it: the one live interval of that length */
@@ -228,7 +230,7 @@ export async function run({ ok, pageWork }) {
       return then ? then() : "";
     };
     const opens = [
-      await open1("o:ord-p1", "orders/placed"), await open1("p:ord-a1", "orders/confirmed"), await open1("c:" + U1 + ":c-1", "orders/payments"),
+      await open1("o:ord-p1", "orders/todo"), await open1("p:ord-a1", "orders/todo"), await open1("c:" + U1 + ":c-1", "orders/payments"),
       await open1("m:" + U1, "customers/messages", () => (shown(d.getElementById("makerChatOpen")) && d.getElementById("makerChatOpen").getAttribute("data-key") === U1 ? "" : "the thread was not opened")),
       await open1("k:" + U3, "customers/accounts", () => (shown(d.getElementById("aopen")) && /CX3-ZED/.test(d.getElementById("aopen").textContent) ? "" : "the account was not opened")),
       await open1("x:0", "orders/approve"), await open1("l:w1", "customers/links"),
@@ -294,7 +296,7 @@ export async function run({ ok, pageWork }) {
     p.posts.length = 0;
     byAct(d, "need.owed-pay", "CX1-ZED").click(); await p.work.quiet();
     const moneyHead = d.querySelector('#makerReview [data-sect="money"]');
-    ok(p.where() === "orders/ready" && !!d.querySelector('#makerOrderList [data-order="ord-r1"][aria-current="true"]') && moneyHead && moneyHead.textContent === "Money received" && d.activeElement === moneyHead && p.posts.length === 0,
+    ok(p.where() === "orders/open" && !!d.querySelector('#makerOrderList [data-order="ord-r1"][aria-current="true"]') && moneyHead && moneyHead.textContent === "Money received" && d.activeElement === moneyHead && p.posts.length === 0,
       "Record payment opens the order the row is, on Money received, and books nothing: " + p.where() + " " + (d.activeElement && d.activeElement.textContent));
     byAct(d, "nav.needs").click(); await p.work.quiet();
     await p.tap("need.open", "x:0");
@@ -551,8 +553,9 @@ export async function run({ ok, pageWork }) {
     p.reads.length = 0; await p.tick();
     ok(!p.reads.includes(ROUTES.review) && d.querySelector('#makerReview [data-maker-card="ord-p1"] [data-act="order.total"]').value === "250" && !d.querySelector('#makerOrderList [data-order="ord-new"]'),
       "a tick finds the order card he has typed in and leaves the part as it is: nothing read, his 250 kept");
-    byAct(d, "maker.refresh").click(); await p.work.quiet();
-    ok(!!d.querySelector('#makerOrderList [data-order="ord-new"]'), "his own Refresh draws what came meanwhile");
+    /* 2 Nov 2026 (Orders on the canvas): the list has no Refresh; coming back to Orders reads it afresh */
+    byAct(d, "nav.needs").click(); await p.work.quiet(); byAct(d, "nav.orders").click(); await p.work.quiet();
+    ok(!!d.querySelector('#makerOrderList [data-order="ord-new"]'), "his own return to Orders draws what came meanwhile");
     p.reads.length = 0; await p.tick();
     ok(p.reads.includes(ROUTES.review) && p.reads.includes(ROUTES.claims), "and the next tick reads again, he having finished");
     /* 12 Oct 2026 (Phase 2b): the rows are read when the claim is opened, so a claim open is the claim he is reading */
@@ -609,7 +612,7 @@ export async function run({ ok, pageWork }) {
       /* an order's Agree needs the delivery and the window: the button opens the full card, and books nothing */
       const n = q.posts.filter((x) => /\/accept$/.test(x.route)).length;
       await q.tap("need.agree", "o:ord-p1");
-      ok(q.where() === "orders/placed" && q.posts.filter((x) => /\/accept$/.test(x.route)).length === n && !!q.d.querySelector('[data-act="order.agree"], .maker-card'),
+      ok(q.where() === "orders/todo" && q.posts.filter((x) => /\/accept$/.test(x.route)).length === n && !!q.d.querySelector('[data-act="order.agree"], .maker-card'),
         "an order's Agree opens its full card in Orders and books nothing: " + q.where());
     } finally { q.w.close(); }
   }

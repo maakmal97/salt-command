@@ -256,7 +256,7 @@ export async function run({ ok, pageWork }) {
     const sheet = () => d.getElementById("ynSheet");
     const sends = (suffix) => p.posts.filter((x) => x.route === "/all/maker/orders/ord-a1/" + suffix);
     await p.enter();
-    byAct(d, "part.orders.confirmed").click(); await p.work.quiet();
+    byAct(d, "part.orders.todo").click(); await p.work.quiet();
     byAct(d, "order.open", "ord-a1").click(); await p.work.quiet();
     const card = () => [...d.querySelectorAll("#makerReview [data-maker-card]")].find((c) => c.getAttribute("data-maker-card") === "ord-a1");
     byAct(card(), "order.claim-received", ACLAIM).click(); await p.work.quiet();

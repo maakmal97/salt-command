@@ -35,7 +35,7 @@ export async function run({ ok, pageWork }) {
   try {
     const d = p.d, click = async (e) => { if (e) e.click(); await p.work.quiet(); };
     const card = (id) => p.card(id) && p.card(id).querySelector("[data-reward]");
-    await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.placed")); await click(byAct(d, "order.open", "ord-r1"));
+    await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.todo")); await click(byAct(d, "order.open", "ord-r1"));
     /* 1 */
     const c1 = card("ord-r1");
     ok(!!c1 && !c1.hidden && t(c1.querySelector(".salt-eyebrow")) === "Associate reward" && t(c1.querySelector(".salt-status")) === "Reaches a reward"
@@ -43,7 +43,7 @@ export async function run({ ok, pageWork }) {
       && t(c1.querySelector(".orwdnote")) === "Margin past 10 units at landed cost (RM 580.00 at RM 58.00 today). Once paid, 1 unit joins this order at cost, one delivery: RM 58.00, less RM 20.00 given under their Set Price since the last reward, RM 38.00 net. Salt only."
       && c1.querySelector(".salt-meter").style.getPropertyValue("--salt-fill") === "100",
       "a placed order reads the preview: " + t(c1));
-    await click(byAct(d, "part.orders.confirmed")); await click(byAct(d, "order.open", "ord-r2"));
+    await click(byAct(d, "part.orders.open")); await click(byAct(d, "order.open", "ord-r2"));
     /* 2 */
     const c2 = card("ord-r2");
     ok(!!c2 && !c2.hidden && t(c2.querySelector(".salt-status")) === "RM 210.00 short" && /salt-status--mist/.test(c2.querySelector(".salt-status").className)

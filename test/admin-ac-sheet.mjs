@@ -31,19 +31,19 @@ export async function run({ ok, pageWork }) {
     ok(!!n1 && /2 orders on one sheet/.test(said) && fig === "RM 150" && !d.querySelector('#nlist [data-need="o:ord-s2"]') && !!d.querySelector('#nlist [data-need="o:ord-s3"]'),
       "Needs you shows one card for the sheet, saying how many and the sum of both orders, none for its second order, and the lone order its own: " + said + " | " + fig);
     /* 1 */
-    await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.placed"));
-    const g = d.querySelector('#makerOrderList .ordsheet[data-sheet="sh-9"]'), rows = g ? [...g.querySelectorAll("[data-order]")].map((r) => r.getAttribute("data-order")) : [];
-    const lines = g ? [t(g.querySelector(".ordsheet__ref")), t(g.querySelector(".ordsheet__sum"))] : [];
-    /* 25 Oct 2026 (Ask I): the sheet is headed by its first order's reference, the delivery charge on the right; each order its own card */
-    ok(!!g && JSON.stringify(rows.sort()) === JSON.stringify(["ord-s1", "ord-s2"]) && /^Sheet [A-Z0-9]{4}-[A-Z0-9]{3}$/.test(lines[0] || "") && lines[1] === "RM 10 delivery"
-      && g.querySelectorAll(":scope > .ordcard").length === 2
-      && !d.querySelector('#makerOrderList [data-order="ord-s3"]').closest(".ordsheet") && !d.querySelector('#makerOrderList [data-order="ord-s4"]').closest(".ordsheet"),
-      "a sheet's orders stand in one group under its reference, each its own card, the sheet's delivery on the right; a lone order, or one whose sheet has moved on, stands alone: " + JSON.stringify([rows, lines]));
+    await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.todo"));
+    /* 2 Nov 2026 (Orders on the canvas): a sheet's orders at one stage stand under one head, Sheet and its reference with the delivery charge, each its own row */
+    const g = d.querySelector('#makerOrderList section[data-sheet="sh-9"]'), rows = g ? [...g.querySelectorAll("[data-order]")].map((r) => r.getAttribute("data-order")) : [];
+    const head = g ? t(g.querySelector("h2.salt-settings__head")) : "";
+    ok(!!g && JSON.stringify(rows.sort()) === JSON.stringify(["ord-s1", "ord-s2"]) && /^Sheet [A-Z0-9]{4}-[A-Z0-9]{3} \u00b7 RM 10 delivery$/.test(head)
+      && g.querySelectorAll(".salt-settings > .ordcard").length === 2
+      && !d.querySelector('#makerOrderList [data-order="ord-s3"]').closest("section[data-sheet]") && !d.querySelector('#makerOrderList [data-order="ord-s4"]').closest("section[data-sheet]"),
+      "a sheet's orders stand in one group under its reference and the sheet's delivery, each its own row; a lone order, or one whose sheet has moved on, stands alone: " + JSON.stringify([rows, head]));
     /* 2 */
     await click(byAct(d, "order.open", "ord-s2"));
     const link = byAct(d, "order.sheet", "ord-s2");
     ok(!!link && link.tagName === "BUTTON" && t(link) === "Sheet 2 of 2" && !!link.closest(".ohead"), "an order of a sheet says which of it in its band: " + t(link));
     await click(link);
-    ok(!d.querySelector("#makerReview .ohead") && !!d.querySelector('#makerOrderList .ordsheet[data-sheet="sh-9"]'), "and the link closes the order, back to the sheet's group: " + t(d.querySelector("#makerReview")).slice(0, 80));
+    ok(!d.querySelector("#makerReview .ohead") && !!d.querySelector('#makerOrderList section[data-sheet="sh-9"]'), "and the link closes the order, back to the sheet's group: " + t(d.querySelector("#makerReview")).slice(0, 80));
   } finally { p.w.close(); }
 }

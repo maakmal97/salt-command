@@ -95,7 +95,8 @@ export async function run({ ok }) {
 
     /* a redraw of the card keeps what it read, and asks the Desk for nothing more */
     const seen = previews().length;
-    doc.querySelector('[data-act="maker.refresh"]').click();
+    /* 2 Nov 2026 (Orders on the canvas): the list has no Refresh; a return to the page reads the orders again, as the 5-second read does */
+    doc.dispatchEvent(new browser.window.Event("visibilitychange"));
     await new Promise((resolve) => setTimeout(resolve, 60));
     ok(!!accept(id) && previews().length === seen, "A redraw of the card (a read that finds the order the same) keeps its figures and Accept, and reads nothing again: " + previews().length + " of " + seen);
 

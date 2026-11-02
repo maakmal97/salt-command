@@ -83,7 +83,7 @@ export async function run({ ok, pageWork }) {
   try {
     const d = p.d, click = async (e) => { if (e) e.click(); await p.work.quiet(); };
     const card = (id) => p.card(id) && p.card(id).querySelector("[data-customer]");
-    await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.confirmed")); await click(byAct(d, "order.open", "ord-c1"));
+    await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.open")); await click(byAct(d, "order.open", "ord-c1"));
     /* 4 */
     const c1 = card("ord-c1"), figs = c1 ? [...c1.querySelectorAll(".salt-ledger__row")].map((n) => [...n.querySelectorAll(".salt-ledger__line > span")].map(t).join(" ")) : [];
     const pts = c1 && c1.querySelector("svg.ocust__spark polyline") ? c1.querySelector("svg.ocust__spark polyline").getAttribute("points").split(" ").length : 0;

@@ -25,10 +25,11 @@ export async function run({ ok, pageWork }) {
   try {
     await p.work.quiet();
     const d = p.d, click = async (e) => { if (e) e.click(); await p.work.quiet(); };
-    await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.placed"));
+    await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.todo"));
     const row = d.querySelector('#makerOrderList [data-order="ord-g1"]'), plain = d.querySelector('#makerOrderList [data-order="ord-g2"]');
-    const note = (r) => r && r.querySelector(".onote");
-    ok(!!row && /^[A-Z0-9]{4}-[A-Z0-9]{3} again$/.test(t(note(row))) && note(row).classList.contains("onote--why") && !!plain && !/again/i.test(t(plain)),
+    /* 2 Nov 2026 (Orders on the canvas): the row's second line leads with the reason, in copper, then how long */
+    const note = (r) => r && r.querySelector(".salt-settings__sub");
+    ok(!!row && /^[A-Z0-9]{4}-[A-Z0-9]{3} again$/.test(t(note(row)).split(" · ")[0]) && note(row).classList.contains("salt-settings__sub--why") && !!plain && !/again/i.test(t(plain)),
       "his Orders row says the source's reference and again, in copper, and an order placed afresh neither: " + t(row));
     await click(byAct(d, "order.open", "ord-g1"));
     const ag = p.card("ord-g1") && p.card("ord-g1").querySelector(".ohead [data-again]");

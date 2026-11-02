@@ -46,7 +46,7 @@ export async function run({ ok, pageWork }) {
       && ageOf("o:ord-late").classList.contains("nage--late") && !ageOf("o:ord-soon").classList.contains("nage--late"),
       "a placed order's card marks its age late past his usual, and its open card says the minutes waiting and his usual: " + t(nl) + " / " + t(ns));
     /* 3 */
-    await click("nav.orders"); await click("part.orders.placed");
+    await click("nav.orders"); await click("part.orders.todo");
     const open = async (id) => { await click("order.open", id); return p.card(id); };
     const L = (await open("ord-late")).querySelector(".ohead [data-clock]");
     ok(!!L && /^Waited in hours 5[23] min/.test(t(L)) && /Usually 45 min/.test(t(L)) && L.classList.contains("salt-meter--ember") && L.style.getPropertyValue("--salt-fill") === "100",

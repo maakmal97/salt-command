@@ -95,10 +95,13 @@ export async function run({ ok, pageWork }) {
     firstPart.hidden = false;
     /* 22 Oct 2026 (canvas Needs you): Needs you's kinds left the pills for the Nav bar's text tabs (test/admin-ac-glance.mjs), so they are neither pills nor the slider */
     /* 25 Oct 2026 (Salt Admin Shop and Orders): Shop's parts and Orders' two rows left the pills for the Nav bar's text tabs too */
-    const kinds = d.querySelector(".nchips"), navs = ['.aparts[data-place="shop"]', ".oparts--stages .aparts", ".oparts--minor .aparts"].map((s) => [s, d.querySelector(s)]);
+    const kinds = d.querySelector(".nchips"), navs = ['.aparts[data-place="shop"]'].map((s) => [s, d.querySelector(s)]);   /* 2 Nov 2026 (Orders on the canvas): Orders' parts are one Segment of four now, the slider */
     const navOk = navs.map(([s, g]) => [s, !!g && !g.classList.contains("salt-segment") && [...g.querySelectorAll("button")].every((b) => b.classList.contains("salt-nav__link"))]);
     ok(!!kinds && !kinds.classList.contains("salt-segment") && [...kinds.querySelectorAll("button")].every((b) => b.classList.contains("salt-nav__link")) && navOk.every((x) => x[1]),
-      "the kinds, Shop's parts and Orders' two rows are the Nav bar's tabs, never the slider: " + J(navOk));
+      "the kinds and Shop's parts are the Nav bar's tabs, never the slider: " + J(navOk));
+    const ordSeg = d.querySelector('.aparts[data-place="orders"]');
+    ok(!!ordSeg && ordSeg.classList.contains("salt-segment") && [...ordSeg.querySelectorAll("button")].length === 4 && [...ordSeg.querySelectorAll("button")].every((b) => b.classList.contains("salt-segment__opt")),
+      "and Orders' four parts are the slider, a Segment of four");
     /* 26 Oct 2026, his word: Salt Admin's look is one Switch now, Tide on or off */
     const al = d.querySelector("#lookRow .salt-switch");
     ok(!!al && al.getAttribute("role") === "switch" && !d.querySelector("#lookRow .lookset"), "Salt Admin's Look row is a switch, not the slider");
