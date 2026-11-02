@@ -140,7 +140,7 @@
  {
   "name": "R18: an offer lands while an Accept's reservation is fresh",
   "file": "stmt/orders.js",
-  "find": "  if (body && body.offer !== undefined && reviewing(order, at)) return { error: \"your Accept on this order is on its way, so there is nothing to offer\", status: 409 };\n",
+  "find": "  if (body && body.offer !== undefined && reviewing(order, at)) return { error: \"your Accept on this order is on its way: if it does not go through, offer again in two minutes\", status: 409 };\n",
   "replace": ""
  },
  {

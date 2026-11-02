@@ -1069,7 +1069,7 @@ export function decideDesk(order, body, at) {
      drafted the row at it (never under the floor) and recorded his yes: one live offer an order, a new one replacing the
      old, open OFFER_HOURS. The site keeps the figure and the moment it lapses, bound to the order's product and size, and
      never the digest, which is the desk's. Withdrawn, it is no longer theirs to take. */
-  if (body && body.offer !== undefined && reviewing(order, at)) return { error: "your Accept on this order is on its way, so there is nothing to offer", status: 409 };
+  if (body && body.offer !== undefined && reviewing(order, at)) return { error: "your Accept on this order is on its way: if it does not go through, offer again in two minutes", status: 409 };
   if (body && body.offer !== undefined && body.offer && body.offer.kind === "accept") return acceptOfferEv(order, body.offer, at);
   if (body && body.offer !== undefined) {
     const f = body.offer;
