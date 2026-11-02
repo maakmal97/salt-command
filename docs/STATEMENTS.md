@@ -2358,6 +2358,23 @@ its own draft, queued (`queued.ack`) or waiting under Approve after his yes (a l
 dated (its payload's date, so a row offered again keeps its first); a twin whose pending draft was rejected has no row and stands aside. `findOrder` hands over every order on the site, so the account is matched. Before, it drafted and
 stalled the fold as a replay.
 
+**The day of the sale and their customer** (plan version 4, parts 3c and 3e, Fable's F2). With Handed over and paid now on, his sheet asks
+**Day of the sale** (`#oOn`: today by default, back 30 days and to 21 Oct 2026 at most); a day other than today rides Place as `on`, refused by
+his route without `now`. The order book keeps `on` only from his road (`decidePlace`, by `desk`; a customer's Place naming one is refused) and
+bounds it (`onFaultSite`, the engine's `onFault` held equal by the suite: not after today, at most `ON_DAYS` back, not before `ON_SINCE`). The
+Desk's preview also holds it to the book's newest lot of that book (`cogsFor(...).basis.date`, the day it landed), so the cost and the Floor
+on that day are today's, and to their own newest salt row (date or paid day), since the reward and loyalty walks read their rows in the
+order paid. ONE DAY RIDES EVERY STAGE (`dayOf`): the pending row and its key, the payment (`payEntry`), the handover on the Desk
+(`handoverTap`'s `movedOn`) and on the Counter (both events that write `movedOn`), so nothing reads late; twins are read on that day and the
+refusal names it. **It holds only on the Kuala Lumpur day he placed it** (`onLive`, engine and Counter alike, Fable's review): an order left
+Placed and agreed, paid or handed over on a later day is dated that day, and the preview checks no stale day. The rating ask reads the Place's
+day for such an order, never a handover he dated back. **The preview also reads the book itself for twins** (every Accept, not only a dated
+one; never the order's own row, offered again or agreed): a sale of theirs on the book that day under this row's key is refused with the way
+on (add this order to that sale), one equal in size and goods with another delivery is marked `second`. On an associate's order for a friend his sheet asks **Their customer** (`#oBuyer`: Not named, or a code off the Desk's
+catalogue less the resale accounts, owner.js `actParties`, Record's own list), sent as `buyer`, kept by the order book in a code's shape on an
+order for a friend only, and checked by the Desk's preview against the roster (not the associate, not a resale account); the pending row
+carries it as `downstream`, credited nothing (`bookR2`). Neither `on` nor `buyer` is in `CUSTOMER_FIELDS`: their own page never shows them.
+
 Customer amendments use the customer's session at `POST /orders/<id>/amend`, not an Admin route.
 The replacement is checked against their own open order and carried over the private bridge to the
 atomic order book; missing bridge configuration fails closed.
