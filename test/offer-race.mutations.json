@@ -76,5 +76,47 @@
   "file": "src/orders.js",
   "find": "if (env.SALT_LEDGER && p.state === \"withdrawn\" && p.offer) await voidOffers(",
   "replace": "if (env.SALT_LEDGER && p.state === \"withdrawn\" && p.offer && false) await voidOffers("
+ },
+ {
+  "name": "R11: a Yes naming a replaced offer takes the open one",
+  "file": "stmt/orders.js",
+  "find": "    if (body && body.offer != null && String(body.offer) !== String(p.offer.id)) return Object.assign(refusal(\"offerChanged\"), { status: 409 });\n",
+  "replace": ""
+ },
+ {
+  "name": "R11: the customer's view of an offer carries no id to name",
+  "file": "stmt/orders.js",
+  "find": "Object.assign(v, { id: p.offer.id, total: p.offer.total,",
+  "replace": "Object.assign(v, { total: p.offer.total,"
+ },
+ {
+  "name": "R12: any answer naming an offer is refused, the open one too",
+  "file": "stmt/orders.js",
+  "find": "if (body && body.offer != null && String(body.offer) !== String(p.offer.id)) return Object.assign(refusal(\"offerChanged\"), { status: 409 });",
+  "replace": "if (body && body.offer != null) return Object.assign(refusal(\"offerChanged\"), { status: 409 });"
+ },
+ {
+  "name": "R13: only a Yes is checked against the offer, so a stale No thanks answers the new one",
+  "file": "stmt/orders.js",
+  "find": "if (body && body.offer != null && String(body.offer) !== String(p.offer.id)) return Object.assign(refusal(\"offerChanged\"), { status: 409 });",
+  "replace": "if (action === \"take\" && body && body.offer != null && String(body.offer) !== String(p.offer.id)) return Object.assign(refusal(\"offerChanged\"), { status: 409 });"
+ },
+ {
+  "name": "R14: an answer naming no offer is refused",
+  "file": "stmt/orders.js",
+  "find": "if (body && body.offer != null && String(body.offer) !== String(p.offer.id)) return Object.assign(refusal(\"offerChanged\"), { status: 409 });",
+  "replace": "if (!(body && String(body.offer) === String(p.offer.id))) return Object.assign(refusal(\"offerChanged\"), { status: 409 });"
+ },
+ {
+  "name": "R15: their page's Yes names no offer",
+  "file": "stmt/page.js",
+  "find": ", offer:(o.price&&o.price.id)||undefined}",
+  "replace": "}"
+ },
+ {
+  "name": "R15: their page says something other than that the offer changed",
+  "file": "stmt/words.js",
+  "find": "\"e.offerChanged\": \"this offer has changed; look at the new one\"",
+  "replace": "\"e.offerChanged\": \"there is no offer open on this order\""
  }
 ]
