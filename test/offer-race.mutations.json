@@ -160,5 +160,29 @@
   "file": "stmt/orders.js",
   "find": "return reviewing(order, at) ? { none: true }",
   "replace": "return order.reviewed ? { none: true }"
+ },
+ {
+  "name": "R20: his Accept files its yes beside another live yes",
+  "file": "src/orders.js",
+  "find": "\n    + (p.alone ? \" WHERE NOT EXISTS (SELECT 1 FROM preapproval WHERE order_id=?2 AND stage=?4 AND status IN ('waiting','differs','applied'))\" : \"\"))",
+  "replace": ")"
+ },
+ {
+  "name": "R20: his Accept does not ask to be the one yes",
+  "file": "src/orders.js",
+  "find": "at: at.toISOString(), by, alone: true,",
+  "replace": "at: at.toISOString(), by,"
+ },
+ {
+  "name": "R20: his Accept goes on when its yes was not filed",
+  "file": "src/orders.js",
+  "find": "  if (!preId) return { ok: false, status: 409, error: \"its row is being drafted: look again in a moment\" };   /* his other device's Accept filed first */\n",
+  "replace": ""
+ },
+ {
+  "name": "R20: a yes not filed is answered as filed",
+  "file": "src/orders.js",
+  "find": "return p.alone && !(r && r.meta && r.meta.changes > 0) ? null : id;",
+  "replace": "return id;"
  }
 ]

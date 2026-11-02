@@ -27,7 +27,9 @@
  * And his Accept beside an offer of his (3 Nov 2026, Fable's review of v1382): Accept reserves the order, then records its yes, letting every waiting yes go.
  *   R17 an offer filed between an Accept's read and its reservation refuses the Accept, and the offer's yes stands, taken and agreed at its figure
  *   R18 an offer sent between an Accept's reservation and its record is refused in words, and the Accept agrees the order at its own figure
- *   R19 the reservation holds offers back REVIEW_LEASE_MS and no longer; one made before this version holds nothing; a stale one is renewed */
+ *   R19 the reservation holds offers back REVIEW_LEASE_MS and no longer; one made before this version holds nothing; a stale one is renewed
+ *   R20 two Accepts from his two devices, the second run whole between the first's read and its record: one yes is filed and one row queued, the
+ *       first told its row is being drafted (3 Nov 2026, Fable's review of v1384) */
 import { readdirSync, readFileSync } from "node:fs";
 import { webcrypto } from "node:crypto";
 import { join } from "node:path";
@@ -258,6 +260,24 @@ export async function run({ ok, skip, pageWork }) {
     const marked = renew.ev ? O.applyEvent(JSON.parse(J(base)), renew.ev).order : null;
     ok(held.status === 409 && !!freed.ev && !!old.ev && within.none === true && !!renew.ev && marked && marked.reviewedAt === out1 && O.REVIEW_LEASE_MS === 120000,
       "R19: a reservation holds offers back two minutes and no longer, one with no moment holds nothing, and a stale one is renewed from this Accept: " + J([held.status, !!freed.ev, !!old.ev, within.none, !!renew.ev, marked && marked.reviewedAt]));
+  }
+
+  /* R20: TWO ACCEPTS OF HIS, ONE ORDER. The second, from his other device, runs whole while the first waits at its record: the first files nothing */
+  {
+    const w = await place(U3, false);
+    const pvW = await call("/orders/" + w.id + "/preview", {});
+    let acW2 = null;
+    preHook = async (a) => { if (a[1] !== w.id) return; preHook = null; acW2 = await call("/orders/" + w.id + "/accept", { hash: pvW.j.hash }); };
+    const acW1 = await call("/orders/" + w.id + "/accept", { hash: pvW.j.hash });
+    preHook = null;
+    await deskPass(denv, new Date());
+    const yesW = db.prepare("SELECT status FROM preapproval WHERE order_id=? AND stage='ack' AND status<>'void'").all(w.id).map((x) => x.status);
+    /* a yes filed with its entry is a row queued (queueSale runs once for each) */
+    const queued = Number(db.prepare("SELECT COUNT(*) AS n FROM preapproval WHERE order_id=? AND stage='ack' AND status<>'void' AND entry IS NOT NULL").get(w.id).n);
+    const oW = await orderOf(w.id);
+    ok(acW2 && acW2.status === 200 && acW2.j.approved === true && acW1.status === 409 && /its row is being drafted/.test(acW1.j.error || "")
+      && J(yesW) === J(["applied"]) && queued === 1 && oW.status === "acknowledged",
+      "R20: two Accepts on one order from his two devices file one yes and queue one row, the other told its row is being drafted: " + J([acW2 && acW2.status, acW1.status, acW1.j.error, yesW, queued, oW.status]));
   }
 
   /* R15: THEIR PAGE. Its Yes names the offer drawn; refused as changed, it says so and draws the new offer, whose Yes names the new id */
