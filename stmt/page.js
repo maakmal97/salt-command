@@ -6189,7 +6189,8 @@ const CLIENT_JS = `
   async function offerAnswer(o,how){
     if(view||draft.offerBusy) return;
     var key=o.id+':'+how, mine=ticket; draft.offerBusy=o.id; oPart(o.id,'price');
-    var r=await api('/orders/'+encodeURIComponent(o.id)+'/'+how,{rid:ridFor(key,'')});
+    /* 3 Nov 2026: the answer names the offer drawn, so a newer one is never answered unseen */
+    var r=await api('/orders/'+encodeURIComponent(o.id)+'/'+how,{rid:ridFor(key,''), offer:(o.price&&o.price.id)||undefined});
     draft.offerBusy='';
     if(mine!==ticket) return;
     var b=r.body||{}; if(b.ok) ridDone(key);
