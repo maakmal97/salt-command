@@ -1,6 +1,6 @@
 {
- "v": "v1380",
- "stamped": "03 Nov 2026, 01:10 KL",
+ "v": "v1381",
+ "stamped": "03 Nov 2026, 01:24 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -107,7 +107,7 @@
     "stated": 25
    }
   },
-  "STATED_STOCK": 6.5,
+  "STATED_STOCK": 6,
   "COUNT_ON": {
    "salt": "2026-10-28",
    "oil": "2026-11-02",
@@ -10458,6 +10458,21 @@
     "listQty": 1,
     "note": "<b>NEW SALE 02 NOV 2026: 1 UNIT OF SALT TO CN3-WM-R, GOODS RM120.</b> Plus RM25 delivery, RM145 cash, delivered in full and paid on 02 Nov 2026, booked as R2 via CN3-WM. The goods total of RM120 equals the askTotal of RM120 and stands above the floorTotal of RM60 for that size; per unit, RM120 against an ask of RM120 and a floor of RM60. CN3-WM-R: 7 orders, median rate RM116.67, range RM67.69 to RM130, nothing outstanding, no units on credit against a cap of 1, nothing defaulted. The row carries cost RM56, RM56 per unit from the latest purchase p046, which is the inventory's own rate. The drafter flagged the R2 booking to CN3-WM-R; the figures agree with it, as a resale to an associate. Outstanding: nothing.",
     "rid": "s321"
+   },
+   {
+    "customer": "CS6-PER",
+    "qty": 0.5,
+    "total": 28,
+    "cost": 28,
+    "cash": 0,
+    "settledRM": 28,
+    "goodwill": true,
+    "deliveredQty": 0.5,
+    "deliveredOn": "2026-11-03",
+    "date": "2026-11-03",
+    "handover": "collected",
+    "note": "<b>GIFT 03 NOV 2026: 0.5 UNIT OF SALT TO CS6-PER, FREE.</b> Collected on 03 Nov 2026, nothing owed, nothing paid. It is booked as a cost, not revenue, on his ruling of 11 Sep 2026, and charged against their reward on his decision of 19 Sep 2026. The goods value of RM28 sits below the floorTotal of RM30 and the askTotal of RM75 for that size; per unit, RM56 against a floor of RM60 and an ask of RM150. CS6-PER: 28 orders, median rate RM70.40, range RM6 to RM120, RM84 outstanding before, 1.5 units on credit against a cap of 2, nothing defaulted. The row carries cost RM28, RM56 per unit, the inventory's own rate. The drafter flagged that this is a gift, not a redemption; the figures agree, as goodwill without rebate. Outstanding: nothing new.",
+    "rid": "s322"
    }
   ],
   "contacts": [
@@ -11272,7 +11287,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-02T17:09:41.189Z",
+  "QUEUE_COMMITTED": "2026-11-02T17:21:28.723Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -11328,7 +11343,7 @@
     {
      "id": "int:underfloor",
      "sev": "watch",
-     "title": "1 recent sale sits under the ladder's floor at today's cost"
+     "title": "2 recent sales sit under the ladder's floor at today's cost"
     },
     {
      "id": "rhythm:weekend:salt",
@@ -12727,15 +12742,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.2992125984251969
+         "v": 0.296875
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08940786291715609,
        "avgDel": {
-        "n": 247,
-        "kg": 612.81,
-        "mean": 2.481
+        "n": 248,
+        "kg": 613.31,
+        "mean": 2.473
        }
       },
       "policy": {
@@ -21402,10 +21417,10 @@
      "suggest": null
     }
    },
-   "v": "v1380"
+   "v": "v1381"
   },
   "OPEN": {
-   "at": "2026-11-02T17:10:43.827Z",
+   "at": "2026-11-02T17:24:26.989Z",
    "count": 7,
    "byKey": {
     "CR3-DAM|2026-10-30|70": {
@@ -21529,11 +21544,11 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 6.5,
-     "free": 6.5,
+     "onHand": 6,
+     "free": 6,
      "owedOut": 0,
-     "coverDays": 1.7,
-     "rate": 3.98,
+     "coverDays": 1.5,
+     "rate": 4,
      "owedToYou": 310,
      "promised": 0,
      "short": 0
@@ -21602,7 +21617,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1380"
+   "v": "v1381"
   },
   "TERMS": {
    "ceiling": 250,
@@ -21610,7 +21625,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1380"
+   "v": "v1381"
   },
   "REWARD": {
    "stated": {
@@ -21628,17 +21643,17 @@
      }
     }
    },
-   "v": "v1380"
+   "v": "v1381"
   },
   "STOCK": {
    "today": "2026-11-03",
    "books": {
     "salt": {
-     "shelf": 6.5,
-     "free": 6.5,
+     "shelf": 6,
+     "free": 6,
      "commit": 0,
      "light": "green",
-     "coverDays": 1.7,
+     "coverDays": 1.5,
      "transit": 0
     },
     "oil": {
@@ -21682,7 +21697,7 @@
      "transit": 0
     }
    },
-   "v": "v1380"
+   "v": "v1381"
   }
  }
 }
