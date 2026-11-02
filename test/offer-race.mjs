@@ -58,20 +58,20 @@ export async function run({ ok, skip, pageWork }) {
   const C1 = "CQ5-RC", U1 = "rcab-cdef", C2 = "CQ6-RD", U2 = "rdab-cdef";   /* two accounts, so neither reaches its five open orders */
   /* 3 Nov 2026 (one order stream v3, his answer): two equal orders of one account rowed the same day are refused at Accept, the book keeping one row
      a key, so the scenarios that agree an order at a figure another has on its account today take an account of their own, with the same history */
-  const C3 = "CQ7-RE", U3 = "reab-cdef", C4 = "CQ8-RF", U4 = "rfab-cdef", C5 = "CQ9-RG", U5 = "rgab-cdef";
+  const C3 = "CQ7-RE", U3 = "reab-cdef", C4 = "CQ8-RF", U4 = "rfab-cdef", C5 = "CQ9-RG", U5 = "rgab-cdef", C6 = "CR4-RH", U6 = "rhab-cdef", C7 = "CR5-RJ", U7 = "rjab-cdef";
   const PRICING = { v: "v900", takenAt: "2026-10-01T00:00:00.000Z", tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"], profileRule: { smallUpTo: 1, bigFrom: 3 },
     byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 }, "3": { floor: 215 } }, inputs: null, sizes: [1, 2, 3] } } };
   const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
   let seq = 0;
-  for (const cust of [C1, C2, C3, C4, C5]) for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)")
+  for (const cust of [C1, C2, C3, C4, C5, C6, C7]) for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)")
     .run("sales", seq++, "h" + seq, JSON.stringify({ rid: "s8" + seq, customer: cust, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d }));
-  setState("roster", [C1, C2, C3, C4, C5]); setState("PRICING", PRICING); setState("OPEN", { byKey: {}, position: {} });
+  setState("roster", [C1, C2, C3, C4, C5, C6, C7]); setState("PRICING", PRICING); setState("OPEN", { byKey: {}, position: {} });
   db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
   let siteHook = null;   /* runs before the desk reaches the site: how their Yes lands between his read and his move */
   const skv = new Store(), dkv = new Store();
   const senv = { STMT: skv, STMT_DESK_KEY: "desk-key", ORDER_STORE: "object" };
   senv.ORDERBOOK = orderBook(senv).ns;
-  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1, [U2]: C2, [U3]: C3, [U4]: C4, [U5]: C5 }));
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1, [U2]: C2, [U3]: C3, [U4]: C4, [U5]: C5, [U6]: C6, [U7]: C7 }));
   const assets = { fetch: async () => new Response(JSON.stringify({ id: "rev-fixture" }), { headers: { "content-type": "application/json" } }) };
   const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
     STMT_SITE: { fetch: async (url, init) => { if (siteHook) await siteHook(url, init); return stmtW.fetch(new Request(url, init), senv); } } };
@@ -182,28 +182,28 @@ export async function run({ ok, skip, pageWork }) {
 
   /* R11 to R14: THEIR ANSWER NAMES THE OFFER THEY WERE SHOWN. He replaces an offer while their Yes is on its way: the Yes names the one their page drew */
   const shownOf = async (id) => { const v = O.customerView(await orderOf(id)); return v && v.price ? v.price.id : undefined; };
-  const h = await place(U1, true);
+  const h = await place(U6, true);
   await offer(h.id, 160);
   const shownH = await shownOf(h.id);
   await offer(h.id, 230);
-  const tH = await O.customerMove(senv, U1, h.id, "take", { rid: rid(), offer: shownH });
+  const tH = await O.customerMove(senv, U6, h.id, "take", { rid: rid(), offer: shownH });
   await deskPass(denv, new Date());
   const gH = await where(h.id, 230), oH = await orderOf(h.id);
   ok(typeof shownH === "string" && shownH.length > 0 && tH.status === 409 && tH.code === "offerChanged" && O.customerView(oH).price.state === "offered"
     && O.customerView(oH).price.total === 230 && gH.st === "placed" && gH.yes === "waiting",
     "R11: a Yes naming an offer he has since replaced is refused in their words and takes nothing, the newer offer open and its yes waiting: " + J([shownH, tH.status, tH.code, tH.error, gH]));
   const shownH2 = await shownOf(h.id);
-  const tH2 = await O.customerMove(senv, U1, h.id, "take", { rid: rid(), offer: shownH2 });
+  const tH2 = await O.customerMove(senv, U6, h.id, "take", { rid: rid(), offer: shownH2 });
   await deskPass(denv, new Date());
   const gH2 = await where(h.id, 230);
   ok(shownH2 !== shownH && !tH2.error && agreed(gH2, 230), "R12: a Yes naming the open offer takes it, and the order is agreed at RM 230: " + J([tH2.error, gH2]));
 
-  const k = await place(U2, false);
+  const k = await place(U7, false);
   await offer(k.id, 230);
   const shownK = await shownOf(k.id);
   await call("/orders/" + k.id + "/withdraw", { rid: rid() });
   await offer(k.id, 240);
-  const pK = await O.customerMove(senv, U2, k.id, "pass", { rid: rid(), offer: shownK });
+  const pK = await O.customerMove(senv, U7, k.id, "pass", { rid: rid(), offer: shownK });
   const oK = O.customerView(await orderOf(k.id));
   ok(pK.status === 409 && pK.code === "offerChanged" && oK.status === "placed" && oK.price.state === "offered" && oK.price.total === 240,
     "R13: a No thanks naming a replaced offer for their yes is refused, and the order stands with the new offer open: " + J([pK.status, pK.code, oK.status, oK.price]));
