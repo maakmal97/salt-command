@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="94a1982aed89a6cf";
+var SALT_BUILD_ID="eaf79d5c0a7fd94b";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -11535,7 +11535,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1382","d":"03 Nov 2026","t":"THEIR ANSWER REACHES ONLY THE OFFER THEY SAW","n":["<b>THE ORDER BOOK.</b> A customer's Yes or No thanks now names the offer their page showed. If you replaced that offer while their tap was on its way, it is refused and takes nothing: your newer offer stays open, its yes waiting. Before, a Yes on your old offer took the new one unseen, perhaps at a higher price, and a No thanks on an offer for their yes cancelled the order.","<b>SALT COUNTER.</b> Refused that way, the customer reads \"This offer has changed; look at the new one.\" beside the new offer, and their next Yes names it. A page opened before this version names no offer and answers the open one, as before. The words go once the offer is withdrawn, lapsed or answered.","<b>SALT ADMIN.</b> Nothing changes on your side: an answer refused this way never reaches you, and Needs you still shows your newer offer waiting. No Desk route changed; the Counter's take and No thanks accept the offer's id."]}];
+const evolution=[{"v":"v1383","d":"03 Nov 2026","t":"THE OPEN ACCOUNT ON SHOP'S GRID","n":["<b>ONE LANGUAGE ON THE ACCOUNT.</b> On Salt Admin, an account's Their %, This customer, Associate reward, Partner, Refunds, Loans and reward and Sign-ins are now settings lists under the same quiet grey heads as Sign-in, Orders and Shop: no glass cards, no copper heads.","<b>ROWS, NOT BUTTONS.</b> Make partner, a loan (it opens Repayment), Mark paid today, Remove as stale and a device's Sign out are rows of their lists; Remove as stale and Sign out in ember. Their % keeps its book tabs; its stepper is a row with a round button either side of the figure.","<b>SPACING.</b> Every group stands 24px from the next, on the phone and in the columns from 1080px, where Sign-in no longer touches Their messages and Send a sign-in link no longer touches Their %. The columns are 24px apart.","<b>FEWER WORDS.</b> A device reads Kept since its day, used when, on one line; a loan reads what was lent, its day, and what is left; the grey lines are one sentence each.","Display only: no route, request body, price, booking or stored shape changed; every button keeps what it sends."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11683,7 +11683,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='03 Nov 2026, 02:54 KL';
+const LAST_UPDATED='03 Nov 2026, 03:15 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
