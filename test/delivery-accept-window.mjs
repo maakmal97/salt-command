@@ -90,7 +90,10 @@ export async function run({ ok, KV, assets }) {
         headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, { waitUntil() {} });
       return { status: r.status, j: await r.json() };
     };
-    const place = async (mode, extra) => (await O.placeOrder(senv, U1, Object.assign({ product: "salt", qty: 1, mode, place: mode === "deliver" ? "by the old market" : "", unit: 100, total: 100, week: "" }, extra || {}))).order;
+    /* 3 Nov 2026 (one order stream v3, his answer): two equal orders of one account rowed the same day are refused at Accept, the book keeping one row
+       a key, so each order here is its own size, the units counting up from one at RM 100 a unit */
+    let size = 0;
+    const place = async (mode, extra) => { size++; return (await O.placeOrder(senv, U1, Object.assign({ product: "salt", qty: size, mode, place: mode === "deliver" ? "by the old market" : "", unit: 100, total: 100 * size, week: "" }, extra || {}))).order; };
     const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
     const shownOf = (id) => { const r = db.prepare("SELECT shown FROM preapproval WHERE order_id=? ORDER BY at DESC").get(id); return r ? JSON.parse(r.shown) : null; };
     const accept = async (o, extra) => { const d = o.mode === "deliver" ? 10 : 0, pv = await call("/orders/" + o.id + "/preview", { delivery: d });

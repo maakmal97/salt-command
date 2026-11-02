@@ -394,11 +394,13 @@ export function stageAt(order, job, now) {
    (the engine's ovKey), with no order in it, and a key that names two rows sticks every later stage of both (findRow refuses it, a payment by key
    lands on the first). So two orders of one account at one book, size and figure whose rows would fall on the same Kuala Lumpur day cannot both be
    rowed: the second is refused at the preview, and so at Accept, with the way on (that order changed to the sum, as s218 and s219 were joined),
-   where before it drafted and stalled the fold as a replay. ANOTHER order only, never itself; `others` are the account's orders as the desk reads
-   them, `queued.ack` the moment its pending entry was queued. */
+   where before it drafted and stalled the fold as a replay. ANOTHER order only, never itself, OF THE SAME ACCOUNT AND ROW: the desk's findOrder
+   hands over every order on the site, so the account is matched here, and a friend's order books to the associate's -R bucket, another row
+   key, so for-a-friend is matched too. `queued.ack` is the moment its pending entry was queued. */
 export function siteTwin(agreed, others, now) {
   const day = klDate(now), d = +(+agreed.delivery || 0).toFixed(2);
-  return (others || []).some((x) => x && x.id !== agreed.id && (x.product || "salt") === (agreed.product || "salt") && +x.qty === +agreed.qty
+  return (others || []).some((x) => x && x.id !== agreed.id && x.u === agreed.u && !!x.forFriend === !!agreed.forFriend
+    && (x.product || "salt") === (agreed.product || "salt") && +x.qty === +agreed.qty
     && Math.abs((+x.total || 0) - (+agreed.total || 0)) < 0.005 && Math.abs((+x.delivery || 0) - d) < 0.005
     && !!(x.queued && x.queued.ack) && klDate(new Date(x.queued.ack)) === day);
 }

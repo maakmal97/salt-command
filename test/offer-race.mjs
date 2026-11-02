@@ -45,19 +45,22 @@ export async function run({ ok, skip, pageWork }) {
       first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
     const self = mk([]); self.bind = (...a) => mk(a); return self; } };
   const C1 = "CQ5-RC", U1 = "rcab-cdef", C2 = "CQ6-RD", U2 = "rdab-cdef";   /* two accounts, so neither reaches its five open orders */
+  /* 3 Nov 2026 (one order stream v3, his answer): two equal orders of one account rowed the same day are refused at Accept, the book keeping one row
+     a key, so the scenarios that agree an order at a figure another has on its account today take an account of their own, with the same history */
+  const C3 = "CQ7-RE", U3 = "reab-cdef", C4 = "CQ8-RF", U4 = "rfab-cdef", C5 = "CQ9-RG", U5 = "rgab-cdef";
   const PRICING = { v: "v900", takenAt: "2026-10-01T00:00:00.000Z", tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"], profileRule: { smallUpTo: 1, bigFrom: 3 },
     byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 }, "3": { floor: 215 } }, inputs: null, sizes: [1, 2, 3] } } };
   const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
   let seq = 0;
-  for (const cust of [C1, C2]) for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)")
+  for (const cust of [C1, C2, C3, C4, C5]) for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)")
     .run("sales", seq++, "h" + seq, JSON.stringify({ rid: "s8" + seq, customer: cust, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d }));
-  setState("roster", [C1, C2]); setState("PRICING", PRICING); setState("OPEN", { byKey: {}, position: {} });
+  setState("roster", [C1, C2, C3, C4, C5]); setState("PRICING", PRICING); setState("OPEN", { byKey: {}, position: {} });
   db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
   let siteHook = null;   /* runs before the desk reaches the site: how their Yes lands between his read and his move */
   const skv = new Store(), dkv = new Store();
   const senv = { STMT: skv, STMT_DESK_KEY: "desk-key", ORDER_STORE: "object" };
   senv.ORDERBOOK = orderBook(senv).ns;
-  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1, [U2]: C2 }));
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1, [U2]: C2, [U3]: C3, [U4]: C4, [U5]: C5 }));
   const assets = { fetch: async () => new Response(JSON.stringify({ id: "rev-fixture" }), { headers: { "content-type": "application/json" } }) };
   const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
     STMT_SITE: { fetch: async (url, init) => { if (siteHook) await siteHook(url, init); return stmtW.fetch(new Request(url, init), senv); } } };
@@ -96,9 +99,9 @@ export async function run({ ok, skip, pageWork }) {
   ok(wA2.status === 409 && SAID.test(wA2.j.error || "") && wA2.j.fresh === true, "R3: a Withdraw tapped after their Yes is refused in the same words, read off the order, and fresh, so its id goes: " + J([wA2.status, wA2.j.error, wA2.j.fresh]));
 
   /* R4: A NEWER OFFER FILED AND TAKEN BETWEEN A WITHDRAW'S MOVE AND ITS VOID (his second device): the void names the offer withdrawn, so the newer yes stands */
-  const c = await place(U1, true);
+  const c = await place(U3, true);
   await offer(c.id, 160);
-  voidHook = onVoid(c.id, async () => { await offer(c.id, 230); await O.customerMove(senv, U1, c.id, "take", { rid: rid() }); });
+  voidHook = onVoid(c.id, async () => { await offer(c.id, 230); await O.customerMove(senv, U3, c.id, "take", { rid: rid() }); });
   const wC = await call("/orders/" + c.id + "/withdraw", { rid: rid() });
   voidHook = null;
   await deskPass(denv, new Date());
@@ -108,7 +111,7 @@ export async function run({ ok, skip, pageWork }) {
 
   /* R10: A PLAIN WITHDRAW VOIDS ITS OWN OFFER'S YES AT ONCE. In R4, R6 and R7 the hook's newer offer voids the old yes itself (recordPre), so nothing there proves
      the Withdraw's own void; here no other move follows before the read */
-  const g = await place(U1, true);
+  const g = await place(U4, true);
   await offer(g.id, 160);
   const yesBefore = yesOf(g.id, 160);
   const wG = await call("/orders/" + g.id + "/withdraw", { rid: rid() });
@@ -117,10 +120,10 @@ export async function run({ ok, skip, pageWork }) {
     "R10: a Withdraw voids the withdrawn offer's own yes at once: " + J([wG.status, yesBefore, yesAfter]));
 
   /* R5: AN OLD WITHDRAW ID REPEATED OVER A NEWER OFFER THEY TOOK BETWEEN THE READ AND THE MOVE. The read says withdrawn; the order book's answer says taken */
-  const b = await place(U1, true);
+  const b = await place(U4, true);
   await offer(b.id, 160);
   const wRid = rid(), wB1 = await call("/orders/" + b.id + "/withdraw", { rid: wRid });
-  siteHook = onWithdraw(async () => { await offer(b.id, 230); await O.customerMove(senv, U1, b.id, "take", { rid: rid() }); });
+  siteHook = onWithdraw(async () => { await offer(b.id, 230); await O.customerMove(senv, U4, b.id, "take", { rid: rid() }); });
   const wB2 = await call("/orders/" + b.id + "/withdraw", { rid: wRid });
   siteHook = null;
   await deskPass(denv, new Date());
@@ -140,11 +143,11 @@ export async function run({ ok, skip, pageWork }) {
   ok(agreed(gD, 230), "R6: the minute's pass lets go only the yes it read: a raise filed and taken between its read and its void is agreed at RM 230: " + J(gD));
 
   /* R7: HIS ACCEPT reads their No thanks and lets that yes go; a raise of his filed and taken between its read and its void refuses the Accept */
-  const e = await place(U2, true);
+  const e = await place(U5, true);
   await offer(e.id, 160);
-  await O.customerMove(senv, U2, e.id, "pass", { rid: rid() });
+  await O.customerMove(senv, U5, e.id, "pass", { rid: rid() });
   const pvE = await call("/orders/" + e.id + "/preview", {});
-  voidHook = onVoid(e.id, async () => { await offer(e.id, 230); await O.customerMove(senv, U2, e.id, "take", { rid: rid() }); });
+  voidHook = onVoid(e.id, async () => { await offer(e.id, 230); await O.customerMove(senv, U5, e.id, "take", { rid: rid() }); });
   const acE = await call("/orders/" + e.id + "/accept", { hash: pvE.j.hash });
   voidHook = null;
   await deskPass(denv, new Date());
@@ -153,7 +156,7 @@ export async function run({ ok, skip, pageWork }) {
     "R7: his Accept lets go only the closed offer's yes: a raise taken between its read and its void refuses the Accept and is agreed at RM 230: " + J([acE.status, acE.j.error, gE]));
 
   /* R8: A LAPSED OFFER IS NOT CALLED OPEN. A raise sent for their yes, withdrawn under an id; a newer one, lapsed two days on; the old id repeated */
-  const f = await place(U2, false);
+  const f = await place(U1, false);
   await offer(f.id, 230);
   const fRid = rid(), wF1 = await call("/orders/" + f.id + "/withdraw", { rid: fRid });
   const ofF = await offer(f.id, 240);

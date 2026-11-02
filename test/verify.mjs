@@ -35081,8 +35081,9 @@ await (async () => {
   const cod = await O.customerMove(senv, U1, b.id, "method", { method: "cod" });
   ok(cod && cod.code === "cashPrepay", "and cash on handover is refused on it: " + JSON.stringify(cod));
 
-  /* C. the verdict is in the digest: a ceiling moved between the card and Accept is a changed row, refused */
-  const c = await place(U1, 1, 20);
+  /* C. the verdict is in the digest: a ceiling moved between the card and Accept is a changed row, refused. 3 Nov 2026: RM 25, since an order
+     equal to B, rowed today, is refused at Accept as its twin (one order stream v3, his answer); RM 285 is still over RM 250 and under RM 400 */
+  const c = await place(U1, 1, 25);
   const pvC = await call("/orders/" + c.id + "/preview", {});
   setState("TERMS", { ceiling: 400, holdDays: 1, lockDays: 4, v: "v900" });
   const acC = await call("/orders/" + c.id + "/accept", { hash: pvC.j.hash });
@@ -35210,11 +35211,12 @@ await (async () => {
   ok(pvOdd.status === 409 && /no floor is known at 1\.5 unit/.test(pvOdd.j.error) && pvOddOwn.status === 200 && pvOddOwn.j.ok === true,
     "a price set on a size with no floor of its own is refused, and the same order at their price still previews: " + JSON.stringify({ set: pvOdd.status, e: pvOdd.j.error, own: pvOddOwn.status }));
 
-  /* 3. HIS YES COVERS THE PRICE: another price has another digest, and an Accept at a price the card did not draw is refused */
-  const pv95 = await call("/orders/" + b.id + "/preview", { total: 95 }), pv90 = await call("/orders/" + b.id + "/preview", { total: 90 });
-  const acMix = await call("/orders/" + b.id + "/accept", { total: 95, hash: pv90.j.hash });
-  ok(pv95.j.hash && pv90.j.hash && pv95.j.hash !== pv90.j.hash && acMix.status === 409 && acMix.j.differs === true && (await orderOf(b.id)).status === "placed",
-    "the price is in the digest: RM 95 and RM 90 draw two, and an Accept sending RM 95 with the digest of RM 90 is refused as changed: " + JSON.stringify({ status: acMix.status }));
+  /* 3. HIS YES COVERS THE PRICE: another price has another digest, and an Accept at a price the card did not draw is refused. 3 Nov 2026: RM 85
+     where it was RM 90, since 1 unit at RM 90 is order a's row today and an equal order is refused at Accept as its twin (one order stream v3) */
+  const pv95 = await call("/orders/" + b.id + "/preview", { total: 95 }), pv85 = await call("/orders/" + b.id + "/preview", { total: 85 });
+  const acMix = await call("/orders/" + b.id + "/accept", { total: 95, hash: pv85.j.hash });
+  ok(pv95.j.hash && pv85.j.hash && pv95.j.hash !== pv85.j.hash && acMix.status === 409 && acMix.j.differs === true && (await orderOf(b.id)).status === "placed",
+    "the price is in the digest: RM 95 and RM 85 draw two, and an Accept sending RM 95 with the digest of RM 85 is refused as changed: " + JSON.stringify({ status: acMix.status }));
 
   /* 4. THE SITE TAKES A PRICE AT THE ACKNOWLEDGEMENT ALONE */
   const agreed = { id: "o1", u: U1, status: "acknowledged", mode: "collect", qty: 1, total: 100, history: [] };
@@ -51782,8 +51784,10 @@ await (async () => {
   /* THE WORLD: two orders on the site, one acknowledged and owing its row, the mirror on the real schema */
   const skv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" }, DESK = { "content-type": "application/json", "X-Stmt-Desk": "desk-key" };
   await skv.put("u:" + U, JSON.stringify({ v: 1, issued: "2026-09-01", env: { v: 1, salt: "s", iv: "i", ct: "c" } }));
-  const place = async () => (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: 90, total: 90, week: "" })).order;
-  const owed = await place(), fresh = await place();
+  /* 3 Nov 2026 (one order stream v3, his answer): two equal orders of one account rowed the same day are refused at Accept, the book keeping one row a
+     key, so the order Accept is tapped on here is a different size from the one already rowed */
+  const place = async (q = 1, t = 90) => (await O.placeOrder(senv, U, { product: "salt", qty: q, mode: "collect", unit: +(t / q).toFixed(2), total: t, week: "" })).order;
+  const owed = await place(), fresh = await place(2, 180);
   await stmtW.fetch(new Request("https://site.test/desk/orders/" + U + "/" + owed.id, { method: "POST", headers: DESK, body: JSON.stringify({ status: "acknowledged", delivery: 0 }) }), senv);
   const db = migrated(); db.exec(D.buildSeed(body).sql);
   const n = { q: 0, state: 0, fail: false };

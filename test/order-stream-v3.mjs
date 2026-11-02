@@ -19,14 +19,16 @@ const J = JSON.stringify;
 export async function run({ ok }) {
   /* T1 to T4: the rule alone */
   const now = new Date("2031-01-02T02:00:00Z"), same = "2031-01-02T01:00:00.000Z", before = "2031-01-01T01:00:00.000Z";
-  const a = { id: "o-a", product: "salt", qty: 1, total: 100, delivery: 0 };
-  const twin = { id: "o-b", product: "salt", qty: 1, total: 100, delivery: 0, queued: { ack: same } };
+  const a = { id: "o-a", u: "abcd-efgh", product: "salt", qty: 1, total: 100, delivery: 0 };
+  const twin = { id: "o-b", u: "abcd-efgh", product: "salt", qty: 1, total: 100, delivery: 0, queued: { ack: same } };
   ok(siteTwin(a, [twin], now) === true, "T1 another order of theirs rowed today at the same book, size, goods and delivery is its twin");
   ok(siteTwin(a, [Object.assign({}, twin, { id: "o-a" })], now) === false, "T2 the order itself is never its own twin, so a second queue of it is still a replay");
   ok(siteTwin(a, [Object.assign({}, twin, { queued: { ack: before } })], now) === false && siteTwin(a, [Object.assign({}, twin, { queued: {} })], now) === false,
     "T3 one rowed another day, or not rowed at all, is no twin");
   ok([{ qty: 2 }, { total: 105 }, { product: "oil" }, { delivery: 5 }].every((d) => siteTwin(a, [Object.assign({}, twin, d)], now) === false),
     "T4 another size, figure, book or delivery is not a twin");
+  ok(siteTwin(a, [Object.assign({}, twin, { u: "wxyz-wxyz" })], now) === false && siteTwin(a, [Object.assign({}, twin, { forFriend: true })], now) === false,
+    "T6 another account's equal order, and a friend's (another bucket, another row), are no twin: the desk reads every order on the site");
 
   /* T5: the Desk's own preview marks it, on the frozen book */
   const desk = await readBook(), L = JSON.parse(JSON.stringify(desk.ledger));
