@@ -98,7 +98,7 @@ export async function run({ ok }) {
   L.sales.pop();
   ok(p5 && p5.ok && !p5.row.trip, "P5 a row of the trip on the book on another day keeps this line off it: " + J(p5 && (p5.ok ? p5.row.trip || null : p5.error)));
   /* P10: the first line's row is today's, but a second line's is another day's: the third cannot be one day's trip with them, so it takes its own charge */
-  const sh4 = "1111111111111111222222222222222";
+  const sh4 = "a1b2a1b2a1b2a1b2a1b2a1b2a1b2a1b";
   const [g1, g2, g3] = sorted([await put("wxyz-abcd", "salt", sh4 + "a"), await put("wxyz-abcd", "oil", sh4 + "a"), await put("wxyz-abcd", "rice", sh4 + "a")]);
   const ackOf = (o, at) => { const kk = "order:wxyz-abcd:" + o.id, d = JSON.parse(skv.m.get(kk)); d.queued = { ack: at }; d.status = "acknowledged"; skv.m.set(kk, J(d)); };
   ackOf(g1, "2031-01-05T01:30:00.000Z"); ackOf(g2, "2031-01-04T01:30:00.000Z");
