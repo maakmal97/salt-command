@@ -246,6 +246,16 @@
 - Left, said: the Counter's other order parts (Message, Details, the history fold, Cancel this order) keep their older ghosts and folds; Record's Their %
   stepper, Make partner, Repayment and a device's Sign out stay ghosts in their glass cards; QR Command took nothing from 1.23.0 (recipes only); the needle
   "no band on Shop hours" (admin-ac-confirm) is unnoticed (on v1377 too), and "Counter maker reward spends book" is red when run alone on this laptop (v1377 too), green in the suite.
+- The account's leftovers, live as v1383 (`43437f6a`, 03 Nov 2026; Cloud commit `41508382253`: chain green with "The phone is serving it" on build
+  `eaf79d5c0a7fd94b`, the statements deployed and published, three suite parts green; CI verify green), display only, with the `salt-design-language` skill:
+  Their %, This customer, Associate reward, Partner, Refunds, Loans and reward (was Loan) and Sign-ins are sections with the mist `salt-settings__head` over
+  settings lists, no glass, no copper eyebrow; Make partner, a loan (`.aloan` is now the action row itself, act `acct.repay`), a refund's moves and a device's
+  Sign out are action rows (Remove as stale and Sign out ember); Their %'s stepper a row with `salt-orb` buttons; "Yours alone" and the Refunds count chip gone;
+  groups 24px apart on a phone and in the columns from 1080px (`.oacct>*` and `.amore>*` 24px under, columns 24px apart). Words: a device "Kept since <day>,
+  used <when>" / "Not kept, signed in <when>", an unnamed one "An older device"; a loan "Lent RM x", its day, "RM y left". New section "3 Nov 2026: Salt
+  Admin's open account on Shop's grid" (G1 to G5, 14 mutations red). Full suite on the rebased unbumped tree: 11,626 passed, 1 failed (S1b, laptop only).
+  Argued, not fixed: measure's row-two-controls on the stepper (one control of two halves, as iOS's stepper in a row) and head-no-list on Their % (its book
+  tabs sit between head and list); Orders' To do Insight wraps at 390 when it carries "more on their yes" (a live two-clause sentence, kept whole).
 
 ## Disabled automation
 - `Salt fold (manual backup)` = `trig_01UrnjQMWA3f6GXN5R6Dzi4S`, disabled.
