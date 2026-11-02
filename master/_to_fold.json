@@ -1,0 +1,73 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-02T17:09:41.189Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CN3-WM-R",
+    "qty": 1,
+    "total": 120,
+    "cost": 56,
+    "cash": 145,
+    "delivery": 25,
+    "date": "2026-11-02",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-11-02",
+    "paidOn": "2026-11-02",
+    "rev": "R2",
+    "listRM": 120,
+    "listQty": 1,
+    "rids": [
+     "s321"
+    ],
+    "booked_seq": 81
+   },
+   "reasoning": "Sold 1 unit of salt to CN3-WM-R for RM 120, with RM 25 of delivery beside it, RM 145 owed, RM 120/unit. Costed at RM 56/unit from COGS off the latest purchase p046 landed 2026-10-28: RM 1400 quote plus RM 0 freight over 25 unit, so RM 64 on the goods at 53.3%. Paid in full and delivered in full on 2026-11-02. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "Booked to CN3-WM-R as R2: CN3-WM buys it to sell on."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-11-02T17:09:41.189Z",
+    "type": "SELL",
+    "party": "CN3-WM-R",
+    "qty": 1,
+    "total": 120,
+    "status": "paid",
+    "raw": "Sell 1 unit salt to CN3-WM-R for RM120 on 2026-11-02 plus RM25 delivery, RM145 cash, 1 unit moved → Completed (R2 via CN3-WM)",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CN3-WM",
+     "newId": null,
+     "date": "2026-11-02",
+     "qty": 1,
+     "total": 120,
+     "delivery": 25,
+     "freight": 0,
+     "cash": 145,
+     "kg": 1,
+     "assoc": "CN3-WM",
+     "stream": "R2",
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": null,
+     "second": null,
+     "more": null,
+     "coverFree": null
+    },
+    "makerRequest": "02125de0a61bc7c57d1c7fc30835dcdec45824abda268bbdc6d2783bb68aae42"
+   },
+   "decidedAt": "2026-11-02T17:10:03.748Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
