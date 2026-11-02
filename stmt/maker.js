@@ -419,14 +419,21 @@ function internalOperation(path) {
    price of his, so the row is drafted at the total the sheet showed and his yes is the pre-approval that approves it where it lands (D6), as a
    group order's close does. A delivery is agreed only at a charge he chooses, which the sheet never shows, so it stays Placed for him to set; a
    row that differs from the preview waits under Approve. Nothing here throws: what did not agree says why, and the order stands Placed. */
-async function asPlaced(env, o) {
+/* Fable's review of version 2: a row the preview flags under today's Floor is never agreed blind (rule 5), it waits for him under Orders; a verdict of
+   paid in advance is said on Sent; and an answer lost after the Accept landed is settled by the order as it stands (a replay of the same request). */
+const oneSentence = (s) => { const t = String(s == null ? "" : s).slice(0, 200), m = /^.*?[.!?](?=\s|$)/.exec(t); return (m ? m[0] : t).trim(); };
+async function asPlaced(env, o, reread) {
   if (o.mode === "deliver") return { accepted: false, why: "Set its delivery charge under Orders to agree it." };
   try {
     const pv = await deskCall(env, "/_internal/maker/orders/" + o.id + "/preview", "POST", {});
+    if ((pv.flags || []).some((f) => /under the Floor/.test(String(f)))) return { accepted: false, why: "Its list price is under today's Floor, so agree it under Orders." };
     const ac = await deskCall(env, "/_internal/maker/orders/" + o.id + "/accept", "POST", { hash: pv.hash });
-    if (ac.approved) return { accepted: true };
+    if (ac.approved) return pv.prepay ? { accepted: true, prepay: true } : { accepted: true };
     return { accepted: false, why: ac.differs ? "Its row differs from the price you saw, so it waits under Approve." : "Its row is being drafted, so it is agreed once it lands." };
-  } catch (error) { return { accepted: false, why: String(error && error.message || error).slice(0, 200) }; }
+  } catch (error) {
+    try { const now = reread ? await reread() : null; if (now && now.order && now.order.status !== "placed") return { accepted: true }; } catch (e) { /* said below */ }
+    return { accepted: false, why: oneSentence(error && error.message || error) };
+  }
 }
 
 /* 20 Oct 2026 (canvas V62): THE GLANCE'S STOCK, the Desk's STOCK figures a book as they came (the desk measured them; nothing here does),
@@ -745,12 +752,14 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
       const result = isTest(op.u) ? await examplePlace(env, op.u, body, "desk") : await placeOrder(env, op.u, body, "desk");
       if (!result.order) return json({ ok: false, ...result }, result.status || 400);
       if (tp.pin && !isTest(op.u)) await keepPin(env, op.u, tp.pin, result.order.pin);
-      /* plan version 2, his answer B: HIS PLACE IS HIS ACCEPT, agreed at the total the sheet showed (asPlaced); a replay agrees nothing again */
-      const agreed = isTest(op.u) ? { accepted: false, why: "A practice order waits for you to agree it under Orders." }
-        : result.again ? null : await asPlaced(env, result.order);
-      /* his answer C: their phone is told, in fixed words, once the order is recorded, after the Accept so it is the banner they keep; a practice
-         account wakes nobody, and a replay of the same request wakes nobody */
+      /* his answer C: their phone is told, in fixed words, once the order is recorded; a practice account wakes nobody, and a replay of the same
+         request wakes nobody. Before the Accept (Fable's review of version 2): its banner, Order confirmed with the pay case, is the one they keep */
       if (!isTest(op.u) && !result.again) await wakeCustomer(env, op.u, { k: "placed", o: result.order.id });
+      /* plan version 2, his answer B: HIS PLACE IS HIS ACCEPT, agreed at the total the sheet showed (asPlaced); a replay agrees nothing again and
+         answers what the order says, agreed once it has moved on */
+      const agreed = isTest(op.u) ? { accepted: false, why: "A practice order waits for you to agree it under Orders." }
+        : result.again ? (result.order.status !== "placed" ? { accepted: true } : null)
+        : await asPlaced(env, result.order, () => placeOrder(env, op.u, body, "desk"));
       return json(Object.assign({ ok: true, order: customerView(result.order) }, agreed ? { agreed } : {}));
     }
     if (op.kind === "review") {

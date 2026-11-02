@@ -5255,7 +5255,7 @@ const CLIENT_JS = `
     draft.againOf=''; draft.againProd='';
     /* plan version 2 (his answer B): on Order as them, Sent says the lines were agreed, or the first reason one waits */
     var waits=act?c.lines.filter(function(l){ return l.agreed&&l.agreed.accepted===false; })[0]:null;
-    draft.actSaid=!act?'':waits?tw('sh.actWaits',{w:waits.agreed.why||''}):c.lines.every(function(l){ return l.agreed&&l.agreed.accepted; })?tw('sh.actAgreed'):'';
+    draft.actSaid=!act?'':waits?tw('sh.actWaits',{w:waits.agreed.why||''}):c.lines.every(function(l){ return l.agreed&&l.agreed.accepted; })?tw(c.lines.some(function(l){ return l.agreed.prepay; })?'sh.actAgreedPrepay':'sh.actAgreed'):'';
     draft.asked=!!ask; draft.sent=c.lines[0].placed==='placed'?'':c.lines[0].placed; draft.sheetKeep=''; draft.step='sent'; draft.check=null; draft.say=''; draft.noteOpen=false; draft.pushNote=''; draft.forFriend=null; draft.when=''; draft.wantBy='';
     sheetDraw();
     await ordersAgain(); if(mine!==ticket) return;

@@ -83,6 +83,18 @@ export async function run({ ok, pageWork }) {
     ok(!p.d.getElementById("oNew") && /Read only/.test(lead(p)), "B9 a refused Order for them leaves no ordering for the next open at the door: " + lead(p));
   } catch (e) { ok(false, "the refused open stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
 
+  /* B12 v2: agreed paid in advance says so on Sent */
+  agreed = { accepted: true, prepay: true };
+  p = await richOwnerPage({ pageWork, extra });
+  try {
+    await openAs(p, "acct.order-for");
+    p.d.getElementById("oNew").click(); await p.work.quiet();
+    p.d.getElementById("oGo").click(); await p.work.quiet();
+    p.d.getElementById("oPlace").click(); await p.work.quiet();
+    const said = p.d.getElementById("oActSaid");
+    ok(!!said && said.textContent === "Agreed for them at the price shown, to be paid before handover.", "B12 v2: agreed paid in advance says so on Sent: " + (said && said.textContent));
+  } catch (e) { ok(false, "the prepay Place stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+
   /* B11 v2: a Place that was not agreed says why on Sent */
   agreed = { accepted: false, why: "Set its delivery charge under Orders to agree it." };
   p = await richOwnerPage({ pageWork, extra });

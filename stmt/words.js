@@ -675,6 +675,7 @@ export const EN = {
   "ord.view": "Read only: their orders as their own page shows them. Nothing here is placed, paid or sent.",
   "ord.act": "You are ordering for them. Nothing else here is paid or sent.",
   "sh.actAgreed": "Agreed for them at the price shown.",
+  "sh.actAgreedPrepay": "Agreed for them at the price shown, to be paid before handover.",
   "sh.actWaits": "Placed for them, not yet agreed: {w}",
   "pay.overdue": "Overdue",
   "pay.hold": "Please pay the overdue amount of {rm} before placing another order.",

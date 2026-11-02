@@ -96,15 +96,16 @@ export async function run({ ok }) {
 
   /* v2, his answer B: HIS PLACE IS HIS ACCEPT. A second account, so the five open orders of the first never stand in the way; the Desk is a fake
      that answers the preview with a digest and the Accept by a scripted verdict, and every call, the Desk's and the phone's, lands on one timeline */
-  const U2 = "oatb-twoo";
+  let U2 = "oatb-twoo";
   await kv.put("u:" + U2, JSON.stringify({ prices: { digest: "as-them-list" } }));
   await kv.put("push:" + U2 + ":k", JSON.stringify({ endpoint: "https://push.example/" + U2, at: "2026-10-01T00:00:00Z", keys: ph.keys }));
   const timeline = [];
-  let verdict = { ok: true, approved: true };
+  let verdict = { ok: true, approved: true }, pvExtra = {}, onAccept = null;
   Object.assign(env, { COUNTER_MAKER_KEY: "k".repeat(32), DESK_MAKER: { fetch: async (req) => {
     const path = new URL(req.url).pathname, body = req.method === "POST" ? await req.json() : null;
     timeline.push(["desk", path.split("/").pop(), body]);
-    const out = /\/preview$/.test(path) ? { ok: true, hash: "h".repeat(64) } : /\/accept$/.test(path) ? verdict : { ok: false, error: "not this fake's" };
+    if (/\/accept$/.test(path) && onAccept) return onAccept(path.split("/")[path.split("/").length - 2]);
+    const out = /\/preview$/.test(path) ? Object.assign({ ok: true, hash: "h".repeat(64), flags: [] }, pvExtra) : /\/accept$/.test(path) ? verdict : { ok: false, error: "not this fake's" };
     return new Response(JSON.stringify(out), { status: out.ok ? 200 : 409 });
   } } });
   const place2 = async (body) => {
@@ -114,9 +115,9 @@ export async function run({ ok }) {
   };
   const a8body = line();
   const j8 = await place2(a8body), t8 = timeline.slice();
-  ok(j8.agreed && j8.agreed.accepted === true && t8.length === 3 && t8[0][1] === "preview" && JSON.stringify(t8[0][2]) === "{}"
-    && t8[1][1] === "accept" && JSON.stringify(t8[1][2]) === JSON.stringify({ hash: "h".repeat(64) }) && t8[2][0] === "push",
-    "A8 his collected Place is agreed at once: the Desk's preview, then its Accept on that digest and no price of his, then their banner: " + JSON.stringify([j8.agreed, t8]));
+  ok(j8.agreed && j8.agreed.accepted === true && t8.length === 3 && t8[0][0] === "push" && t8[1][1] === "preview" && JSON.stringify(t8[1][2]) === "{}"
+    && t8[2][1] === "accept" && JSON.stringify(t8[2][2]) === JSON.stringify({ hash: "h".repeat(64) }),
+    "A8 his collected Place is agreed at once: their banner, then the Desk's preview, then its Accept on that digest and no price of his, so the Accept's own banner is the one they keep: " + JSON.stringify([j8.agreed, t8]));
   const j8b = await place2(a8body);
   ok(j8b.order.id === j8.order.id && !j8b.agreed && timeline.length === 0, "A9 a replay of the same request agrees nothing again and wakes nobody: " + JSON.stringify(timeline));
   const j10 = await place2(line({ mode: "deliver", place: "Taman Rekaan" }));
@@ -130,6 +131,32 @@ export async function run({ ok }) {
   const j12 = await place2(line());
   ok(j12.ok === true && j12.agreed && j12.agreed.accepted === false && /mirror is being seeded/.test(j12.agreed.why) && !!j12.order,
     "A12 an Accept the Desk refuses leaves the order Placed and says the Desk's reason: " + JSON.stringify(j12));
+  verdict = { ok: true, approved: true };
+
+  /* Fable's review of version 2, on a third account, as the second holds five open orders by now */
+  U2 = "oatc-thre";
+  await kv.put("u:" + U2, JSON.stringify({ prices: { digest: "as-them-list" } }));
+  pvExtra = { flags: ["RM 90 for the goods is RM 5 under the Floor of RM 95 at 1 unit: the Floor is the goods at COGS, rounded up to the next RM 5."] };
+  const j13 = await place2(line());
+  ok(j13.agreed && j13.agreed.accepted === false && /under today's Floor/.test(j13.agreed.why) && !timeline.some((x) => x[1] === "accept"),
+    "A13 a row the preview flags under the Floor is never agreed blind: no Accept is sent and it waits for him: " + JSON.stringify([j13.agreed, timeline]));
+  pvExtra = { prepay: true };
+  const j14 = await place2(line());
+  ok(j14.agreed && j14.agreed.accepted === true && j14.agreed.prepay === true, "A14 a verdict of paid in advance rides back with the agreement: " + JSON.stringify(j14.agreed));
+  pvExtra = {};
+  /* an Accept that lands but whose answer is lost: the fake moves the order on, then fails; the order as it stands answers */
+  const ack = (id) => { const row = ob.db.prepare("SELECT doc FROM ord WHERE oid=?").get(id); const d = JSON.parse(row.doc); d.status = "acknowledged";
+    ob.db.prepare("UPDATE ord SET doc=? WHERE oid=?").run(JSON.stringify(d), id); };
+  onAccept = (id) => { ack(id); return new Response("not json", { status: 502 }); };
+  const a15 = line(), j15 = await place2(a15);
+  onAccept = null;
+  ok(j15.agreed && j15.agreed.accepted === true, "A15 an Accept that landed but whose answer was lost is settled by the order as it stands: " + JSON.stringify(j15.agreed));
+  const j16 = await place2(a15);
+  ok(j16.agreed && j16.agreed.accepted === true && !timeline.some((x) => x[0] === "desk"), "A16 a replay of an order already agreed says so, and asks the Desk nothing: " + JSON.stringify([j16.agreed, timeline]));
+  onAccept = () => new Response(JSON.stringify({ ok: false, error: "The first sentence says it. The second goes too far." }), { status: 409 });
+  const j17 = await place2(line());
+  onAccept = null;
+  ok(j17.agreed && j17.agreed.why === "The first sentence says it.", "A17 the Desk's reason reaches Sent as one sentence: " + JSON.stringify(j17.agreed));
 }
 
 /* a phone: its keys as the page files them, and RFC 8291's receiving side to read what is sealed to it (as test/pool-wake.mjs) */

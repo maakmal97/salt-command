@@ -16,5 +16,6 @@
  {"name": "a refused open leaves the wish for the door", "file": "stmt/page.js", "find": "    var acting=actWant; actWant=false;\n", "replace": "    var acting=actWant;\n"},
  {"name": "Sent says nothing of the Accept", "file": "stmt/page.js", "find": "    if(act&&draft.actSaid){ var as=el('p','salt-insight',draft.actSaid); as.id='oActSaid'; top.appendChild(as); }\n", "replace": ""},
  {"name": "Sent drops the Desk's reason", "file": "stmt/page.js", "find": "tw('sh.actWaits',{w:waits.agreed.why||''})", "replace": "tw('sh.actWaits',{w:''})"},
- {"name": "the page forgets the answer", "file": "stmt/page.js", "find": "      if(act) l.agreed=r.body.agreed||null;", "replace": "      if(act) l.agreed=null;"}
+ {"name": "the page forgets the answer", "file": "stmt/page.js", "find": "      if(act) l.agreed=r.body.agreed||null;", "replace": "      if(act) l.agreed=null;"},
+ {"name": "paid in advance is not said on Sent", "file": "stmt/page.js", "find": "?tw(c.lines.some(function(l){ return l.agreed.prepay; })?'sh.actAgreedPrepay':'sh.actAgreed'):''", "replace": "?tw('sh.actAgreed'):''"}
 ]
