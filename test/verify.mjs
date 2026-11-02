@@ -48519,6 +48519,11 @@ await (async () => {
   await (await import("./order-as-them-page.mjs")).run({ ok, pageWork });
 })();
 
+section("v1380 One order stream, version 3: two equal site orders of one account rowed the same day are two sales, marked second, never a replay (3b)");
+await (async () => {
+  await (await import("./order-stream-v3.mjs")).run({ ok });
+})();
+
 section("Counter Batch C: the seal carries the spot's name and unit, a unit alone sealed as its own shape, nothing in the clear (P6)");
 await (async () => {
   await (await import("./counter-c-pin-seal.mjs")).run({ ok });

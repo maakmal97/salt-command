@@ -31,7 +31,7 @@ import PRICING_ENGINE from "../engine/pricing.mjs";
 /* S1b: THE ENTRY EACH STAGE MAKES lives in engine/stages.mjs (pure); this reads, calls it, and queues. The builders stay named here for every importer. */
 import { rewardCrossOf, rewardReading, loyalReading, rwdOf, withCredit, rowPaidFor } from "../engine/stages.mjs";
 import { creditFor } from "./credit.js";
-import { rm, chargeOf, priceOf, advanceOf, acceptEntry, floorRefusal, ackRowWanted, stageAgainst, jobEntry, againEntry, keyGivenBack,
+import { rm, chargeOf, priceOf, advanceOf, acceptEntry, siteTwin, floorRefusal, ackRowWanted, stageAgainst, jobEntry, againEntry, keyGivenBack,
   handoverTap, receivedTap, cashTap, restateTap, pastRoom, againRoomOrder, claimRows, claimOrderFlight, claimEntry,
   stageAt, keyAfter, closedKey, ledgerKeyOf, partyOnBook, bucketFor, termsFromRow, settledFromRow, rowOut } from "../engine/stages.mjs";
 export { orderKeyFor, partyOnBook, ledgerKeyOf, pendingEntry, payEntry, claimEntry, handoverEntry, redateFrom, closeEntry, closedKey, cancelEntry,
@@ -301,6 +301,8 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
   /* the charge is the site's own rule (decideDesk): typed for a delivery, nought for a collection; Step 2: the goods at the
      price he sets on this order, when he sets one, so the row, its key and the digest are all drafted on it */
   const { agreed, entry } = acceptEntry(o, code, delivery, price, now);
+  /* plan version 3: another order of theirs already rowed today at the same book, size and figure makes this one a second sale, never a replay */
+  if (siteTwin(agreed, ctx && ctx.orders, now)) entry.payload.second = true;
   const book = await (mirror ? mirror() : readBook(env.SALT_LEDGER));
   /* fold 2.2: no snapshot is a mirror being seeded, and the drafter stands down on it; so does the card */
   if (book.version == null) return { ok: false, status: 503, error: "the mirror is being seeded: try again in a minute" };
@@ -346,6 +348,7 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
     loyal: product === "salt" ? loyalReading(book, code, { qty, goods, card: card0, today: today0 }) : null,
     hash: await stageDigest("ack", entry, d, pricing) },
     credit > 0.004 ? { credit } : {},   /* 27 Oct 2026: their credit, named only when some is spent */
+    entry.payload.second ? { second: true } : {},   /* plan version 3: a second equal sale today, never a replay, named on the card */
     cardAt(book.pricing, code, product, qty));
 }
 /** POST /orders/<id>/preview {delivery}: the pending row an Accept would make now. Stores nothing. */

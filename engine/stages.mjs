@@ -390,6 +390,18 @@ export function stageAt(order, job, now) {
    The order as it is agreed: the charge the site decides (typed for a delivery, nought for a collection) and, when he sets a
    price on this one order, the goods at it with what they placed it at kept beside it as `asked`. The entry, its key and its
    note are all built on the agreed order, so the row, its key and the digest are drafted on what he set. */
+/* plan version 3 (03 Nov 2026, Fable's review of the plan): TWO EQUAL SITE ORDERS ARE TWO ROWS. The fold refuses a row matching another by party,
+   date, size and total as a replay unless the entry says `second` (engine/apply.mjs), and two orders of one account, at one book, size and figure,
+   whose rows are dated the same Kuala Lumpur day, are two sales, not a replay: two collected at a stall in one afternoon. So a site order's pending
+   entry is `second` when ANOTHER order of the account (never itself, so the same order queued twice is still caught) already has its row queued
+   that day at the same book, size, goods and delivery. `others` are the account's orders as the desk reads them, `queued.ack` the moment its
+   pending entry was queued. */
+export function siteTwin(agreed, others, now) {
+  const day = klDate(now), d = +(+agreed.delivery || 0).toFixed(2);
+  return (others || []).some((x) => x && x.id !== agreed.id && (x.product || "salt") === (agreed.product || "salt") && +x.qty === +agreed.qty
+    && Math.abs((+x.total || 0) - (+agreed.total || 0)) < 0.005 && Math.abs((+x.delivery || 0) - d) < 0.005
+    && !!(x.queued && x.queued.ack) && klDate(new Date(x.queued.ack)) === day);
+}
 export function acceptEntry(o, code, delivery, price, now) {
   const agreed = Object.assign({}, o, { delivery: o.mode === "deliver" ? (delivery || 0) : 0 }, price != null ? { total: price, asked: +(+o.total).toFixed(2) } : {});
   const entry = pendingEntry(agreed, code, now);
