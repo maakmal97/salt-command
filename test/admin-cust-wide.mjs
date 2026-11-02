@@ -1,10 +1,10 @@
-/* test/admin-cust-wide.mjs: SALT ADMIN CUSTOMERS, P8, THE WIDE PAGE (26 Oct 2026; his yes to Asks C and D). Each check is red under its own mutation
- * (test/admin-cust-wide.mutations.json):
- *   1  each group of accounts is also one plain table, a row an account: the code, the username, the state, since when, what is owed and the way
+/* test/admin-cust-wide.mjs: SALT ADMIN CUSTOMERS, P8, THE WIDE PAGE (26 Oct 2026; his yes to Asks C and D; re-aimed 2 Nov 2026 to his Customers canvas, whose table is
+ * ONE table for every group, drawn from 1080px in place of the settings lists). Each check is red under its own mutation (test/admin-cust-wide.mutations.json):
+ *   1  from 1080px the accounts are one plain table, a row an account: the code, the username, the state, since when, what is owed and the way
  *   2  the code's tap opens the account, and the way of money owed opens their thread
- *   3  the page's rules from 1080px: the table shows and the cards hide; an open account takes the list's place with its way back and fills the page in
- *      columns, two, and three from 1440px, each section whole in its column; Links and Associates use the width
- * Drawn by the maker harness (test/maker-act.mjs). */
+ *   3  the page's rules from 1080px: an open account takes the list's place with its way back and fills the page in columns, two, and three from 1440px, each
+ *      section whole in its column; Links and Associates use the width
+ * Drawn by the maker harness (test/maker-act.mjs), at a width of 1100px (matchMedia answers 860 and 1080). */
 import { richOwnerPage, enter } from "./maker-act.mjs";
 import { landingPage } from "../stmt/page.js";
 import { FONT_FACE_CSS, STATEMENT_CSS, SITE_RECIPES } from "../stmt/statement-css.js";
@@ -12,6 +12,7 @@ import { JSDOM } from "jsdom";
 
 const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
 const J = JSON.stringify;
+const wideAt = (w) => { w.matchMedia = (q) => ({ matches: /min-width:\s*(860|1080)px/.test(q) && !/max-width/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} }); };
 
 function pageRules() {
   const html = landingPage("", "wide-nonce", { master: "fixture-master", accounts: [] });
@@ -24,31 +25,32 @@ function pageRules() {
 }
 
 export async function run({ ok, pageWork }) {
-  const p = await richOwnerPage({ pageWork });
+  const p = await richOwnerPage({ pageWork, before: wideAt });
   try {
     const d = p.d, click = async (e) => { if (e) e.click(); await p.work.quiet(); };
     await p.work.quiet();
     enter(d, "customers", "accounts"); await p.work.quiet();
     /* 1 */
-    const tables = [...d.querySelectorAll("#rlist .ngroup .atable2 table.salt-table--plain")];
-    const row = (u) => d.querySelector('#rlist .atable2 tr[data-row-u="' + u + '"]'), cells = (u) => (row(u) ? [...row(u).children].map(t) : []);
-    if (!row("abcd-efgh")) { ok(false, "each group is one plain table, a row an account"); return; }
-    ok(tables.length === d.querySelectorAll("#rlist .ngroup").length && tables.length >= 2 && J([...tables[0].querySelectorAll("thead th")].map(t)) === J(["Account", "Username", "State", "Since", "Owed", ""])
+    const tables = [...d.querySelectorAll("#rlist table.salt-table--plain")];
+    const row = (u) => d.querySelector('#rlist tr[data-u="' + u + '"]'), cells = (u) => (row(u) ? [...row(u).children].map(t) : []);
+    if (!row("abcd-efgh")) { ok(false, "the accounts are one plain table, a row an account"); return; }
+    ok(tables.length === 1 && J([...tables[0].querySelectorAll("thead th")].map(t)) === J(["Account", "Username", "State", "Since", "Owed", "Move"])
       && J(cells("abcd-efgh")) === J(["CX1-ZED", "abcd-efgh", "Owed", "", "RM 100", "Message"]) && cells("tvwx-yz23")[2] === "Locked" && /^to \d\d:\d\d$/.test(cells("tvwx-yz23")[3])
-      && cells("tvwx-yz23")[5] === "Send",
-      "each group is one plain table, a row an account: " + J([cells("abcd-efgh"), cells("tvwx-yz23")]));
+      && cells("tvwx-yz23")[5] === "Send" && !d.querySelector("#rlist .salt-settings"),
+      "the accounts are one plain table, a row an account: " + J([cells("abcd-efgh"), cells("tvwx-yz23")]));
     /* 2 */
-    await click(row("tvwx-yz23").querySelector('[data-act="acct.open-row"]'));
+    await click(row("tvwx-yz23").querySelector('[data-act="acct.open"]'));
     const opened = !!d.querySelector('#aopen [data-acct="tvwx-yz23"]') && d.getElementById("oAccts").classList.contains("open");
-    await click(row("abcd-efgh").querySelector('[data-act="acct.message-row"]'));
+    await click(d.querySelector("#aopen [data-back]"));
+    await click(row("abcd-efgh").querySelector('[data-act="acct.message"]'));
     ok(opened && d.getElementById("makerChatOpen").getAttribute("data-key") === "abcd-efgh", "the code opens the account, and Message opens their thread");
     /* 3 */
     const R = pageRules(), rule = (sel) => (R.find((x) => x[0] === sel) || [, null])[1], get = (sel, prop) => { const r = rule(sel); return r ? r.getPropertyValue(prop) : "(none)"; };
     const W = "@(min-width:1080px) ";
-    const got = [get(".adm .atable2", "display"), get(W + ".adm .atable2", "display"), get(W + ".adm .alist .ngroup>.ncard", "display"), get(W + ".adm #oAccts.open .asplit", "grid-template-columns"),
-      get(W + ".adm #oAccts.open #aopen .aback", "display"), get(W + ".adm #aopen .oacct", "column-count"), get("@(min-width:1440px) .adm #aopen .oacct", "column-count"),
+    const got = [get(W + ".adm #oAccts.open .asplit", "grid-template-columns"), get(W + ".adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount,.adm #oAccts.open .alead", "display"),
+      get(W + ".adm #oAccts.open #aopen [data-back]", "display"), get(W + ".adm #aopen .oacct", "column-count"), get("@(min-width:1440px) .adm #aopen .oacct", "column-count"),
       get(W + ".adm #aopen .oacct .asec", "break-inside"), get(W + ".adm #aopen .oacct .amore", "display"), get(W + ".adm #oLinks,.adm #oCards", "max-width")];
-    ok(J(got) === J(["none", "block", "none", "minmax(0,1fr)", "inline-flex", "2", "3", "avoid", "contents", "none"]),
-      "from 1080px the table shows and the cards hide, an open account fills the page in columns with its way back, three from 1440px, and Links and Associates use the width: " + J(got));
+    ok(J(got) === J(["minmax(0,1fr)", "none", "grid", "2", "3", "avoid", "contents", "none"]),
+      "from 1080px an open account takes the list's place and fills the page in columns with its way back, three from 1440px, and Links and Associates use the width: " + J(got));
   } finally { p.w.close(); }
 }

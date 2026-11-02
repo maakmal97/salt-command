@@ -39,8 +39,9 @@ export async function run({ ok, pageWork }) {
     const d = p.d, click = async (e) => { if (e) e.click(); await p.work.quiet(); };
     await p.work.quiet();
     enter(d, "customers", "accounts"); await p.work.quiet();
-    const card = (code) => [...d.querySelectorAll("#rlist [data-u]")].find((c) => t(c.querySelector(".need-who")) === code);
-    const open = async (code) => { await click(card(code)); return d.querySelector("#aopen .oacct"); };
+    /* 2 Nov 2026 (Customers on the canvas): an account is a settings row, its code the .acode in the row, and the account opens from the row's own text (acct.open), no longer from the card */
+    const card = (code) => [...d.querySelectorAll("#rlist [data-u]")].find((c) => t(c.querySelector(".acode")) === code);
+    const open = async (code) => { await click(card(code).querySelector('[data-act="acct.open"]')); return d.querySelector("#aopen .oacct"); };
     /* 1 */
     let a = await open("CX1-ZED");
     const head = a.querySelector(".ahead"), fig = head.querySelector(".ahead__fig");

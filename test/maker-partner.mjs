@@ -154,8 +154,9 @@ export async function run({ ok, KV, worker, REPO } = {}) {
   try {
     const doc = dom.window.document;
     doc.querySelector('[data-act="nav.customers"]').click(); doc.querySelector('[data-act="part.customers.accounts"]').click();
-    const open = async (code) => { await waitFor(() => [...doc.querySelectorAll("#rlist [data-u]")].some((c) => c.querySelector(".need-who")?.textContent === code));
-      [...doc.querySelectorAll("#rlist [data-u]")].find((c) => c.querySelector(".need-who").textContent === code).click();
+    /* 2 Nov 2026 (Customers on the canvas): the row's code is .acode and its text opens the account */
+    const open = async (code) => { await waitFor(() => [...doc.querySelectorAll("#rlist [data-u]")].some((c) => c.querySelector(".acode")?.textContent === code));
+      [...doc.querySelectorAll("#rlist [data-u]")].find((c) => c.querySelector(".acode").textContent === code).querySelector('[data-act="acct.open"]').click();
       await waitFor(() => doc.querySelector("#aopen .apart, #aopen .amore .apct")); return doc.querySelector("#aopen .oacct"); };
     const three = await open("CX3-ZED"), three2 = three && three.querySelector(".apart");
     const assoc = await open("AX1-ZED"), assocPart = !!(assoc && assoc.querySelector('[data-act="acct.partner"]'));

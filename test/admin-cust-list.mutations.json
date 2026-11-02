@@ -1,9 +1,9 @@
 [
   {
-    "name": "1 the username beside the code",
+    "name": "1 the username in the reading name",
     "file": "stmt/owner.js",
-    "find": "title.appendChild(el('span','need-u',",
-    "replace": "title.appendChild(el('span','need-x',"
+    "find": "+(a.test?'':', '+a.username)+",
+    "replace": "+"
   },
   {
     "name": "2 not opened is Pending",
@@ -20,8 +20,8 @@
   {
     "name": "3 a refund in ember",
     "file": "stmt/owner.js",
-    "find": "if(s.mine) c.querySelector('.nfig').classList.add('nfig--mine');",
-    "replace": ""
+    "find": "salt-settings__value--lg'+(s.mine?' nfig--mine':''),rmShort(s.rm)));",
+    "replace": "salt-settings__value--lg',rmShort(s.rm)));"
   },
   {
     "name": "4 Message for money owed",
@@ -36,16 +36,22 @@
     "replace": ""
   },
   {
-    "name": "5 the card's way does not open it",
+    "name": "4 the way is a lit ghost, never the filled pill",
     "file": "stmt/owner.js",
-    "find": "c.addEventListener('click', function(ev){ if(ev.target===c) openCard(a.username); });",
-    "replace": "c.addEventListener('click', function(ev){ openCard(a.username); });"
+    "find": "b.classList.add('salt-ghost','salt-ghost--lit','salt-ghost--tight'); return b; }\n  function rowTail",
+    "replace": "return b; }\n  function rowTail"
   },
   {
-    "name": "5 the card opens",
+    "name": "5 the row's way opens the account too",
     "file": "stmt/owner.js",
-    "find": "c.addEventListener('click', function(ev){ if(ev.target===c) openCard(a.username); });",
-    "replace": ""
+    "find": "if(!mv){ mv=asMove(b);",
+    "replace": "if(!mv){ mv=asMove(b); b.addEventListener('click', function(){ openCard(a.username); });"
+  },
+  {
+    "name": "5 the row's text opens",
+    "file": "stmt/owner.js",
+    "find": "open.addEventListener('click', function(ev){ ev.preventDefault(); openCard(a.username); });",
+    "replace": "open.addEventListener('click', function(ev){ ev.preventDefault(); });"
   },
   {
     "name": "6 No account",
@@ -76,6 +82,12 @@
     "file": "stmt/owner.js",
     "find": "if(s.late) lateRM+=+t.owed||0;",
     "replace": ""
+  },
+  {
+    "name": "7 the lead is two sentences again",
+    "file": "stmt/owner.js",
+    "find": "bits.forEach(function(n, i){ if(i) box.appendChild(document.createTextNode('; ')); box.appendChild(n); });",
+    "replace": "bits.forEach(function(n, i){ if(i) box.appendChild(document.createTextNode('. ')); box.appendChild(n); });"
   },
   {
     "name": "7 the lead shows",

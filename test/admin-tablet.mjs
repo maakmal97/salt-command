@@ -48,15 +48,16 @@ export async function run({ ok, pageWork }) {
 
   /* 2. NEEDS YOU AND CUSTOMERS: A LIST AND A DETAIL FROM 860px */
   {
-    const grid = at("(min-width:860px)", ".adm .nsplit,.adm .asplit"), pane = at("(min-width:860px)", ".adm #nopen,.adm #aopen");
-    ok(/display: grid/.test(grid) && /grid-template-columns: minmax\(0,1fr\) minmax\(0,440px\)/.test(grid),
-      "from 860px Needs you and Customers stand the list and the account side by side, the account up to 440px: " + grid);
+    /* 2 Nov 2026 (Customers on the canvas): Customers' list takes the whole width until an account is open; only then does the account stand beside it, up to 440px */
+    const grid = at("(min-width:860px)", ".adm .nsplit,.adm .asplit"), cols = at("(min-width:860px)", ".adm .nsplit,.adm #oAccts.open .asplit"), alone = at("(min-width:860px)", ".adm .asplit"), pane = at("(min-width:860px)", ".adm #nopen,.adm #aopen");
+    ok(/display: grid/.test(grid) && /grid-template-columns: minmax\(0,1fr\) minmax\(0,440px\)/.test(cols) && /grid-template-columns: minmax\(0,1fr\)(;|$)/.test(alone),
+      "from 860px Needs you stands its list and card side by side and Customers does once an account is open, the account up to 440px, the list alone across the page before: " + [grid, cols, alone].join(" | "));
     ok(/position: sticky/.test(pane) && /overflow-y: auto/.test(pane) && /max-height: calc[(]100vh - 48px[)]/.test(pane) && !/salt-bar-h/.test(pane),
       "the account is sticky and scrolls inside itself: " + pane);
     const band = at("(min-width:860px)and(max-width:1079.98px)", ".adm #nopen,.adm #aopen");
     ok(/max-height: calc[(]100vh - 48px - var[(]--salt-bar-h[)]/.test(band),
       "between 860 and 1080px, where the App bar is still fixed, the account's height gives up the bar's: " + band);
-    const back = at("(min-width:860px)", ".adm #aopen .aback"), phone = at("(max-width:859.98px)", ".adm #nopen"), shut = at("(max-width:859.98px)", ".adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount");
+    const back = at("(min-width:860px)", ".adm #aopen [data-back]"), phone = at("(max-width:859.98px)", ".adm #nopen"), shut = at("(max-width:859.98px)", ".adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount");
     ok(/display: none/.test(back) && /display: none/.test(phone) && /display: none/.test(shut),
       "from 860px the way back is not drawn; below it Needs you draws no pane and an account open takes the list's place: " + [back, phone, shut].join(" | "));
     /* 26 Oct 2026 (his yes to the Customers plan's Ask C): from 1080px an OPEN account fills the page in columns, as an open order does; Needs you's pane still waits for
@@ -69,13 +70,14 @@ export async function run({ ok, pageWork }) {
 
   /* 3. NOTHING OPENS BY ITSELF: TAP A CARD */
   {
-    const base = top(".adm .panenone"), wide = at("(min-width:860px)", ".adm .panenone"), open = at("(min-width:860px)", ".adm #nopen:not([hidden])~.panenone,.adm #aopen:not([hidden])~.panenone");
+    const base = top(".adm .panenone"), wide = at("(min-width:860px)", ".adm .panenone"), open = at("(min-width:860px)", ".adm #nopen:not([hidden])~.panenone");
     ok(/display: none/.test(base) && /display: block/.test(wide) && /display: none/.test(open),
       "the invitation is not drawn on a phone, drawn beside the list from 860px, and not drawn beside an account that is open: " + [base, wide, open].join(" | "));
     const kids = (id) => [...d.getElementById(id).parentElement.children].map((c) => c.id || c.className).join("|");
     const words = [...d.querySelectorAll(".panenone")].map((p) => p.textContent);
-    ok(kids("nopen") === "|nopen|rnone panenone" && kids("aopen") === "rlist|aopen|rnone panenone" && words.length === 2 && words.every((w) => w === "Choose a card to see it in full."),
-      "Needs you's column and Customers' each hold the list, the account's pane and then the invitation, which says Choose a card to see it in full: " + kids("nopen") + " , " + kids("aopen") + " " + JSON.stringify(words));
+    /* 2 Nov 2026 (Customers on the canvas): Customers' column holds the list and the account's pane and no invitation, so the table takes the width until an account is open */
+    ok(kids("nopen") === "|nopen|rnone panenone" && kids("aopen") === "rlist|aopen" && words.length === 1 && words.every((w) => w === "Choose a card to see it in full."),
+      "Needs you's column holds the list, the card's pane and then the invitation, which says Choose a card to see it in full, and Customers' holds the list and the account's pane alone: " + kids("nopen") + " , " + kids("aopen") + " " + JSON.stringify(words));
   }
 
   /* 4. SHEETS: a centred 560px dialog from 768 to 859px, the 460px drawer from 860px (the system's own from 1080px), placement only */

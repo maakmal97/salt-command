@@ -525,12 +525,12 @@ export async function run({ ok, pageWork }) {
         const back = d.getElementById("makerFormBack"), form = d.querySelector('#makerInputs [data-form="' + slug + '"]');
         if (!(same(p.formsOpen(), [slug]) && form.querySelector("h3").textContent === ({ "Reopen an order": "Reopen a cancelled order", "Name or place": "Change a name or place", "Map point": "Place on the map" }[name] || name) && same(p.menu(), MENU[part]) && gridOpen() && row.getAttribute("aria-current") === "true"
           && d.querySelectorAll('#makerMenu [aria-current="true"]').length === 1 && shown(back)
-          && back.textContent === "← " + LABEL[part] && back.getAttribute("data-act") === "record.form-back" && p.posts.length === 0 && p.reads.length === 0 && d.activeElement === back)) bad.push(name);
+          && back.getAttribute("aria-label") === "All forms" && back.classList.contains("salt-orb") && back.getAttribute("data-act") === "record.form-back" && p.posts.length === 0 && p.reads.length === 0 && d.activeElement === back)) bad.push(name);
         back.click(); await p.work.quiet();
         if (!(p.formsOpen().length === 0 && same(p.menu(), MENU[part]) && !gridOpen() && !row.hasAttribute("aria-current") && !shown(back) && d.activeElement === row)) bad.push(name + " (back)");
       }
     }
-    ok(bad.length === 0, "each of the 13 forms on a menu opens alone from its row and no other form shows, its row marked and the grid open, a way back named for the part, nothing read or sent, and Back returns him to the row: " + JSON.stringify(bad));
+    ok(bad.length === 0, "each of the 13 forms on a menu opens alone from its row and no other form shows, its row marked and the grid open, a way back (an Orb named All forms, 2 Nov 2026), nothing read or sent, and Back returns him to the row: " + JSON.stringify(bad));
     await p.tap("part.record.entry");
     await p.tap("record.form", "sale-or-purchase");
     const units = byAct(d, "record.trade.units"), form = units.closest("section");

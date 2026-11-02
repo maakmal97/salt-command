@@ -36,7 +36,8 @@ export async function run({ ok, pageWork }) {
     const d = p.d, click = async (e) => { if (e) e.click(); await p.work.quiet(); await p.work.quiet(); };
     await p.work.quiet();
     enter(d, "customers", "accounts"); await p.work.quiet();
-    const open = async (code) => { await click([...d.querySelectorAll("#rlist [data-u]")].find((c) => t(c.querySelector(".need-who")) === code)); return d.querySelector("#aopen .oacct"); };
+    /* 2 Nov 2026 (Customers on the canvas): the row's code is .acode and its text opens the account */
+    const open = async (code) => { await click([...d.querySelectorAll("#rlist [data-u]")].find((c) => t(c.querySelector(".acode")) === code).querySelector('[data-act="acct.open"]')); return d.querySelector("#aopen .oacct"); };
     let a = await open("CX1-ZED");
     if (!d.querySelector("#aopen .apct") || !d.querySelector("#aopen .acust")) { ok(false, "the account carries Their % and This customer"); return; }
     const pct = () => d.querySelector("#aopen .apct"), btn = (act) => byAct(pct(), act, act === "acct.pct.send" || act === "acct.pct.clear" ? "CX1-ZED" : undefined) || byAct(pct(), act);

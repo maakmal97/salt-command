@@ -374,14 +374,14 @@
  {
   "name": "an open form does not take the focus",
   "file": "stmt/owner.js",
-  "find": "(tab?tab.firstChild.textContent:'Back'); back.focus();",
-  "replace": "(tab?tab.firstChild.textContent:'Back');"
+  "find": "var back=document.getElementById('makerFormBack');\n      back.focus();",
+  "replace": "var back=document.getElementById('makerFormBack');"
  },
  {
   "name": "the way back is not named for the part",
   "file": "stmt/owner.js",
-  "find": "back.textContent='← '+(tab?tab.firstChild.textContent:'Back');",
-  "replace": "back.textContent='← Entry';"
+  "find": "backOrb('form','All forms')",
+  "replace": "backOrb('form','Back')"
  },
  {
   "name": "the owner's script names a variable the customer page names a function",

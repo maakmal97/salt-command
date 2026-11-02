@@ -1,9 +1,9 @@
 [
   {
-    "name": "1 a table a group",
+    "name": "1 the table is not drawn",
     "file": "stmt/owner.js",
-    "find": "      box.appendChild(acctTable(group));",
-    "replace": ""
+    "find": "      rlist.appendChild(t.card);\n",
+    "replace": "\n"
   },
   {
     "name": "1 the state's word",
@@ -14,26 +14,26 @@
   {
     "name": "1 what is owed",
     "file": "stmt/owner.js",
-    "find": "tr.appendChild(el('td','atfig'+(s.mine?' nfig--mine':''),+s.rm>0.004?rmShort(s.rm):''));",
-    "replace": "tr.appendChild(el('td','atfig',''));"
+    "find": "row.appendChild(el('td',s.mine?'nfig--mine':null,+s.rm>0.004?rmShort(s.rm):''));",
+    "replace": "row.appendChild(el('td',null,''));"
   },
   {
     "name": "2 the code opens the account",
     "file": "stmt/owner.js",
-    "find": "b.addEventListener('click', function(){ openCard(a.username); }); th.appendChild(b);",
-    "replace": "th.appendChild(b);"
+    "find": "open.addEventListener('click', function(ev){ ev.preventDefault(); openCard(a.username); });",
+    "replace": "open.addEventListener('click', function(ev){ ev.preventDefault(); });"
   },
   {
     "name": "2 Message opens the thread",
     "file": "stmt/owner.js",
-    "find": "w=pill(['Message','acct.message-row',a.username]); w.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(a.username); });",
-    "replace": "w=pill(['Message','acct.message-row',a.username]);"
+    "find": "ms.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(a.username); });",
+    "replace": ""
   },
   {
-    "name": "3 the table from 1080px",
+    "name": "3 the open account takes the list's place",
     "file": "stmt/page.js",
-    "find": "  .adm .alist .ngroup>.ncard{display:none}\n  .adm .atable2{display:block}",
-    "replace": "  .adm .alist .ngroup>.ncard{display:none}"
+    "find": "  .adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount,.adm #oAccts.open .alead{display:none}\n",
+    "replace": ""
   },
   {
     "name": "3 the account in columns",
@@ -50,7 +50,7 @@
   {
     "name": "3 its way back",
     "file": "stmt/page.js",
-    "find": "  .adm #oAccts.open #aopen .aback{display:inline-flex}",
+    "find": "  .adm #oAccts.open #aopen [data-back]{display:grid}",
     "replace": ""
   }
 ]

@@ -1,5 +1,5 @@
 /* test/admin-customers.mjs: CUSTOMERS AS ROWS (the layout rework, 14 Oct 2026). Each check is red under its own mutation (test/admin-customers.mutations.json).
- *   A  an account row is Needs you's card (25 Oct 2026): its state and age, its one way, its sum; the card itself is the tap
+ *   A  an account row is a settings row (2 Nov 2026, his Customers canvas; Needs you's card from 25 Oct): its state and age, its one way as a lit ghost, its sum; the row's text is the tap
  *   B  a filter with no account in its state is dimmed and cannot be chosen
  *   C  a guest link is one row: its address, QR and moves are inside a shut details, opened by its summary; a withdrawn link says so in a pill
  *   D  an associate's code is its own element beside its marks, its counts a ledger
@@ -16,19 +16,20 @@ export async function run({ ok, pageWork }) {
   try {
     const d = p.d; await p.work.quiet();
     enter(d, "customers", "accounts"); await p.work.quiet();
+    /* 2 Nov 2026 (Customers on the canvas): an account is a settings row, its state the second line of its text, its way a lit ghost, its sum the row's value */
     const row = (u) => d.querySelector('#rlist [data-u="' + u + '"]');
-    const cards = () => [...d.querySelectorAll("#rlist .ncard[data-u]")], kindOf = (r) => (r.querySelector(".nkind") || {}).textContent || "";
+    const cards = () => [...d.querySelectorAll("#rlist .arow[data-u]")], kindOf = (r) => ((r.querySelector(".salt-settings__sub") || {}).textContent || "");
     const locked = cards().filter((r) => /^Locked/.test(kindOf(r)))[0];
-    ok(!!locked && locked.tagName === "ARTICLE" && locked.classList.contains("salt-action") && locked.getAttribute("data-need") === "a:" + locked.getAttribute("data-u")
-      && locked.querySelectorAll(".salt-action__go button").length === 1 && /Send/.test(locked.querySelector(".salt-action__go button").textContent)
-      && !locked.querySelector(".salt-inbox-row__action") && !locked.classList.contains("salt-inbox-row"),
-      "an account row is Needs you's card with its one Send button and no Open: " + (locked && locked.textContent));
+    ok(!!locked && locked.tagName === "DIV" && locked.classList.contains("salt-settings__row") && locked.getAttribute("data-u") === locked.querySelector('[data-act="acct.open"]').getAttribute("data-key").slice(2)
+      && locked.querySelectorAll(".salt-ghost--lit").length === 1 && /Send/.test(locked.querySelector(".salt-ghost--lit").textContent)
+      && !locked.querySelector(".salt-pill") && !locked.querySelector('[data-act="acct.open-card"]') && !locked.classList.contains("salt-inbox-row"),
+      "an account row is a settings row with its one Send ghost and no Open: " + (locked && locked.textContent));
     const owes = cards().find((r) => /^Owed/.test(kindOf(r)));
-    ok(!!owes && /^RM [0-9]/.test((owes.querySelector(".nfig") || {}).textContent || "") && owes.querySelectorAll(".salt-action__go button").length === 1,
-      "the owing account has Owed as its kind and its sum as its figure: " + (owes && owes.textContent));
+    ok(!!owes && /^RM [0-9]/.test((owes.querySelector(".salt-settings__value") || {}).textContent || "") && owes.querySelectorAll(".salt-ghost--lit").length === 1,
+      "the owing account has Owed as its state and its sum as its value: " + (owes && owes.textContent));
     ok([...d.querySelectorAll('#afil button[data-f]')].find((b) => b.getAttribute("data-f") === "refund") === undefined, "no filter is offered for a state the filter list does not name");
     const quiet = cards().find((r) => /CX4-ZED/.test(r.textContent));
-    ok(!!quiet && quiet.querySelectorAll(".salt-status").length === 0, "an account with nothing to say has no pill: " + (quiet && quiet.textContent));
+    ok(!!quiet && quiet.querySelectorAll(".salt-status").length === 0 && quiet.querySelectorAll(".salt-pill").length === 0, "an account with nothing to say has no pill: " + (quiet && quiet.textContent));
     const none = d.querySelector('#afil button[data-f="none"]'), locks = d.querySelector('#afil button[data-f="locked"]');
     ok(!!none && !none.disabled && !!locks && !locks.disabled && none.getAttribute("role") === "tab", "a filter can be chosen while an account is in its state");
 
@@ -54,7 +55,7 @@ export async function run({ ok, pageWork }) {
 
     enter(d, "customers", "accounts"); await p.work.quiet();
     const u = [...d.querySelectorAll("#rlist [data-u]")].find((r) => /CX1-ZED/.test(r.textContent));
-    u.click(); await p.work.quiet(); await p.work.quiet();
+    u.querySelector('[data-act="acct.open"]').click(); await p.work.quiet(); await p.work.quiet();
     const box = d.querySelector(".oacct .abooks"), loanRows = box ? [...box.querySelectorAll(".aloan")] : [];
     ok(loanRows.length === 1 && loanRows[0].getAttribute("data-loan") === "loan-1" && /Lent 15 Sep 2026, RM 500\.00/.test(loanRows[0].textContent)
       && /Repaid\s*RM 200\.00/.test(loanRows[0].textContent) && /Left\s*RM 300\.00/.test(loanRows[0].textContent),

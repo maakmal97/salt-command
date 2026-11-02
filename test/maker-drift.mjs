@@ -151,8 +151,9 @@ export async function run({ ok } = {}) {
     const doc = dom.window.document, text = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
     enter(doc, "customers", "accounts");
     const open = async (code) => {
-      await waitFor(() => [...doc.querySelectorAll("#rlist [data-u]")].some((c) => text(c.querySelector(".need-who")) === code));
-      [...doc.querySelectorAll("#rlist [data-u]")].find((c) => text(c.querySelector(".need-who")) === code).click();
+      /* 2 Nov 2026 (Customers on the canvas): the row's code is .acode and its text opens the account */
+      await waitFor(() => [...doc.querySelectorAll("#rlist [data-u]")].some((c) => text(c.querySelector(".acode")) === code));
+      [...doc.querySelectorAll("#rlist [data-u]")].find((c) => text(c.querySelector(".acode")) === code).querySelector('[data-act="acct.open"]').click();
       return waitFor(() => !!doc.querySelector("#aopen .acust") && doc.querySelector("#aopen .need-who, #aopen h2, #aopen .oacct") !== null);
     };
     const pct = () => doc.querySelector("#aopen .apct"), act = (name, key) => byAct(pct(), name, key);
