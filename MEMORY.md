@@ -212,6 +212,18 @@
 - Live as v1373 (`3c2fa185`, 02 Nov 2026; Cloud commit `41356246048`: chain green with "The phone is serving it" on build `d4f209c4e13ae2b3`, the statements deployed and published, three suite parts green; CI `41356246033` green), his "Yes, fix it" typed in the parent session, five parts `f1fad2ab` to `08aa581d`. Five real interleavings in `src/orders.js` at 58d18ec0: a Withdraw read then their Yes (words only, nothing voided); a newer offer filed and taken between a Withdraw's move and its void; a repeated Withdraw id voiding a newer taken yes; the minute's `offerPass` and his Accept each voiding every waiting yes on the order after reading. Fix: `voidOffers(db, id, at, offerId)` voids one named offer in one conditional statement; Withdraw voids only what the order book says it withdrew and reads its answer, never the read; a Withdraw their Yes beat is a 409 "they said yes before your withdraw reached them: its row is drafted at your offer" (Desk and the Counter's `decideDesk`), fresh, and Salt Admin says it in one sentence; a repeat over a lapsed newer offer for their yes is answered again. Live D1 read 02 Nov 2026: no waiting offer yes without an offer id (0). Section "02 Nov 2026: a yes that lands between a read and its void ...", R1 to R10, 13 mutations all red. Fable: sound, two optional notes applied (fresh at the read; R10 proving the Withdraw's own void) and re-checked sound. Full suite on the committed tree 11,524 passed, 1 failed (S1b, laptop only).
 - Left, said: the customer's take names no offer (`stmt/page.js` near 6250 sends only the rid; `stmt/orders.js` near 798 takes whichever offer is current), so a Yes tapped on an offer he replaced a moment before takes the new one, perhaps at a higher price; `recordPre` can still void an offer filed from his other device between an Accept's check and its record; a taken offer with no waiting yes is followed only by the Counter's take nudge; two imprecise answers (Accept says an offer is open when they already said yes to the newer one; a repeated Withdraw id over a newer offer they declined says Offer withdrawn).
 
+## Salt Admin's Orders and Customers on his canvas (v1376)
+- Live as v1376 (`d74f066b`, 02 Nov 2026; Cloud commit `41416626067`: chain green with "The phone is serving it" on build `1e3694b6897fdb0b`, the statements
+  deployed and published; suite part 2 first failed on the runner's own lane check ("tools/section.mjs runs one section as", unrelated, green locally) and its
+  re-run was green, parts 1 and 3 green; CI `41416626042` green), his "Both here" and "accept all asks as recommended", from the Orders v2 canvas
+  (https://claude.ai/artifact/8jpGHxD2KDMatffe2dn6as, his four answers of 31 Oct) with salt-ds 1.22.0 (#34). Orders: one Segment, To do, Open, Done, Ended
+  (Open grouped Agreed, Ready, Out or paid), Payments, Group orders and Ledger check as More rows, Approve off the Segment (the bar and `#orders/approve`),
+  old stage addresses aliased; Refresh off the list. Orders and Customers: settings rows with a second line under 1080px, one `salt-table--rows` table from
+  1080px, moves as lit ghosts, a tap anywhere on a row opens it; Customers' words left, nothing clipped, full width with nothing open, one `backOrb`
+  (accounts, Record's forms). Full suite on the branch: 11,570 passed, 1 failed (S1b, laptop only).
+- Left, said: the open order (the canvas's shared card with the Counter) and the open account card are the older design (three filled pills on the
+  account); Orders' To do lead wraps to two lines at 390; QR Command took nothing from 1.22.0 (recipes only, no token or face).
+
 ## Disabled automation
 - `Salt fold (manual backup)` = `trig_01UrnjQMWA3f6GXN5R6Dzi4S`, disabled.
 
