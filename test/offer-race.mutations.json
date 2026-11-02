@@ -124,5 +124,11 @@
   "file": "stmt/page.js",
   "find": "np.withdrawn':'np.taken')));\n    if(tp.k==='price'&&tp.t&&p.state==='offered'&&!lapsed) w.appendChild(statusLine(tp.t));",
   "replace": "np.withdrawn':'np.taken')));\n    if(tp.k==='price'&&tp.t) w.appendChild(statusLine(tp.t));"
+ },
+ {
+  "name": "R16: a refused tap's words stand under an offer for their yes withdrawn since",
+  "file": "stmt/page.js",
+  "find": "'np.cTaken')));\n      if(tp.k==='price'&&tp.t&&p.state==='offered'&&!lapsed) w.appendChild(statusLine(tp.t));",
+  "replace": "'np.cTaken')));\n      if(tp.k==='price'&&tp.t) w.appendChild(statusLine(tp.t));"
  }
 ]
