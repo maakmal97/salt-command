@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="1e3694b6897fdb0b";
+var SALT_BUILD_ID="8179133bb061463d";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -3251,6 +3251,12 @@ label.salt-field__label {
 .salt-settings__sub--why { color: var(--salt-copper); }
 .salt-settings__sub--late { color: var(--salt-ember); }
 .salt-settings__value--lg { font-size: var(--salt-text-md); color: var(--salt-salt); }
+/* 1.23.0 (his Orders canvas, page 2, "The open order, both sides", 31 Oct and 2 Nov 2026): A BILL IS A SETTINGS LIST. What is still owed is the
+   row's figure in ember and bold, said beside its name (never colour alone); the total's name in the heavier weight. An action or danger row may
+   hold its words bare, without a __label, and they are drawn as a row's name. */
+.salt-settings__value--due { color: var(--salt-ember); font-weight: 700; }
+.salt-settings__row--total .salt-settings__label { font-weight: 600; }
+.salt-settings__row--action { font-family: var(--salt-font-display); font-size: var(--salt-text-lg); white-space: nowrap; }
 .salt-settings__cell { padding: 12px 0; border-top: 1px solid var(--salt-line-faint); }
 .salt-settings__cell:first-child { border-top: 0; }
 .salt-settings__cell > .salt-field__input { display: block; width: 100%; box-sizing: border-box; background: transparent; border: 0; padding: 0; min-height: 96px; resize: vertical; }
@@ -3699,6 +3705,8 @@ label.salt-field__label {
 .salt-kpi--line .salt-kpi__label, .salt-kpi--line .salt-kpi__value { margin: 0; line-height: 1; white-space: nowrap; }
 .salt-kpi--line .salt-kpi__value { font-size: 1.25rem; overflow: hidden; text-overflow: ellipsis; }
 .salt-kpi--line .salt-kpi__note { display: none; }
+/* 1.23.0: a tile on Shop's grid, its label, figure and note on the 16px text line (the 2px rule stands in the first two) */
+.salt-kpi--grid { padding: 12px 16px 12px 14px; }
 @media (min-width: 860px) { .salt-kpi--line { min-height: 56px; padding: 8px 16px 8px 18px; } }
 
 /* ---- Action: something to do, with the money at stake. Kind, title, why, money, the way there (__go),
@@ -4517,6 +4525,8 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
 .salt-band__ref { font-family: var(--salt-font-mono); font-size: 1rem; font-weight: 600; letter-spacing: 0.08em; color: var(--salt-brass); white-space: nowrap; }
 .salt-band__when { margin: 0; font-size: 1rem; color: var(--salt-prose); }
 .salt-band__foot { display: flex; align-items: center; gap: var(--salt-space-3); padding-top: var(--salt-space-3); border-top: 1px solid var(--salt-line); min-width: 0; }
+/* 1.23.0: the band on Shop's grid, its words on the 16px text line as a list's are */
+.salt-band--grid { padding: var(--salt-space-4); }
 
 /* ---- Empty state: a mark and one way on (18 Oct 2026, Counter Batch A). A dashed disc holding the place's own
    glyph, a heading, one sentence, and the one action, a lit ghost. ---- */
