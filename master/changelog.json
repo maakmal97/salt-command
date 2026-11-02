@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1380",
+  "d": "03 Nov 2026",
+  "t": "ONE R2 SALE OF SALT TO CN3-WM-R AT THE ASK, STOCK DOWN TO 7.5 UNITS",
+  "n": [
+   "<b>FOLDED:</b> one new sale, 1 unit of salt to CN3-WM-R on 02 Nov 2026, goods RM120 plus RM25 delivery, RM145 cash, delivered and paid the same day. It is booked as R2, since CN3-WM buys to sell on. Nothing unusual beyond that flag, and the goods total sits exactly at the askTotal of RM120.",
+   "<b>INVENTORY:</b> salt falls by 1 unit to the stated 7.5 units, below the reorder point of 52.5. Nothing is owed out or promised, and no loans are open. The cost stays at RM56 per unit."
+  ]
+ },
+ {
   "v": "v1379",
   "d": "03 Nov 2026",
   "t": "ORDER AS THEM: YOUR PLACE IS YOUR ACCEPT",
