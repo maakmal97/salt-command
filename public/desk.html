@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="ffdbf17abafc947a";
+var SALT_BUILD_ID="2a12494a92d96836";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -11535,7 +11535,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1387","d":"03 Nov 2026","t":"ORDER AS THEM: THE DAY OF THE SALE AND THEIR CUSTOMER","n":["<b>A STALL SALE DATED THE DAY IT HAPPENED.</b> With Handed over and paid now on, his sheet asks Day of the sale: today, or a day in the last 30 (not before 21 Oct 2026). The row, its payment and its handover all take that day, so nothing reads late. The Desk refuses a day before the newest lot of that book landed or before their newest salt sale, so the cost, the Floor and the reward and loyalty walks read as they would today. The day counts only on the day he placed it: an order left Placed and agreed later is dated as that day.","<b>THEIR CUSTOMER ON A FRIEND'S ORDER.</b> On an associate's order for a friend his sheet asks Their customer: Not named, or a code off the roster (Record's own list, the resale accounts left out). The row books to the associate's resale account with that customer noted beside it and credited nothing. The Desk refuses a code off the roster, the associate themself or a resale account. Their own page shows neither the day nor the customer.","<b>TWINS ON THE BOOK TOO.</b> Fable's review: Accept now also reads the book for a sale of theirs that day. One under the same row key is refused, with the way on (add this order to that sale). One equal in size and goods with another delivery charge is a second sale. The rating ask reads the day he placed a back-dated sale.","<b>CHECKED.</b> Fable reviewed: four findings applied and re-checked closed. Version 4 of 10 of docs/plan-one-order-stream.html; one delivery over a sheet as one trip waits for a later version."]}];
+const evolution=[{"v":"v1388","d":"03 Nov 2026","t":"ONE SHEET, ONE TRIP","n":["<b>A SHEET DELIVERED IS ONE TRIP.</b> The delivered lines of one sheet of theirs now book as one trip, your design of 05 Oct 2026: one delivery, on the sheet's first line, and every row of it on one day. Before, agreeing the first line and then opening the second asked the delivery charge again, so a sheet could carry two.","<b>AGREE ONCE.</b> Your Agree on the sheet's first line, with its charge, agrees the sheet's other lines in the same request at no delivery, in the window you chose. A line that does not agree says why and stays Placed. Salt Admin asks the charge on the first line alone, agreed or not.","<b>WHEN IT CANNOT BE ONE DAY.</b> A line whose sibling was agreed on another day, or whose first line's row was rejected, is a delivery of its own: it takes its own charge and stays off the trip, so the fold never meets a trip spanning two days. A trip row from a sheet is approved on its own under Approve, and a sheet agreed at no delivery raises no flag.","<b>CHECKED.</b> Fable reviewed: five findings and one in the re-check, every medium and low applied or said, all closed. This finishes plan version 3 (On the spot); version 4 (Walk-in ready) is next."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11683,7 +11683,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='03 Nov 2026, 04:59 KL';
+const LAST_UPDATED='03 Nov 2026, 06:25 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

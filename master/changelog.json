@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1388",
+  "d": "03 Nov 2026",
+  "t": "ONE SHEET, ONE TRIP",
+  "n": [
+   "<b>A SHEET DELIVERED IS ONE TRIP.</b> The delivered lines of one sheet of theirs now book as one trip, your design of 05 Oct 2026: one delivery, on the sheet's first line, and every row of it on one day. Before, agreeing the first line and then opening the second asked the delivery charge again, so a sheet could carry two.",
+   "<b>AGREE ONCE.</b> Your Agree on the sheet's first line, with its charge, agrees the sheet's other lines in the same request at no delivery, in the window you chose. A line that does not agree says why and stays Placed. Salt Admin asks the charge on the first line alone, agreed or not.",
+   "<b>WHEN IT CANNOT BE ONE DAY.</b> A line whose sibling was agreed on another day, or whose first line's row was rejected, is a delivery of its own: it takes its own charge and stays off the trip, so the fold never meets a trip spanning two days. A trip row from a sheet is approved on its own under Approve, and a sheet agreed at no delivery raises no flag.",
+   "<b>CHECKED.</b> Fable reviewed: five findings and one in the re-check, every medium and low applied or said, all closed. This finishes plan version 3 (On the spot); version 4 (Walk-in ready) is next."
+  ]
+ },
+ {
   "v": "v1387",
   "d": "03 Nov 2026",
   "t": "ORDER AS THEM: THE DAY OF THE SALE AND THEIR CUSTOMER",
