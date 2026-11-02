@@ -1,5 +1,44 @@
 [
  {
+  "v": "v1383",
+  "d": "03 Nov 2026",
+  "t": "THE OPEN ACCOUNT ON SHOP'S GRID",
+  "n": [
+   "<b>ONE LANGUAGE ON THE ACCOUNT.</b> On Salt Admin, an account's Their %, This customer, Associate reward, Partner, Refunds, Loans and reward and Sign-ins are now settings lists under the same quiet grey heads as Sign-in, Orders and Shop: no glass cards, no copper heads.",
+   "<b>ROWS, NOT BUTTONS.</b> Make partner, a loan (it opens Repayment), Mark paid today, Remove as stale and a device's Sign out are rows of their lists; Remove as stale and Sign out in ember. Their % keeps its book tabs; its stepper is a row with a round button either side of the figure.",
+   "<b>SPACING.</b> Every group stands 24px from the next, on the phone and in the columns from 1080px, where Sign-in no longer touches Their messages and Send a sign-in link no longer touches Their %. The columns are 24px apart.",
+   "<b>FEWER WORDS.</b> A device reads Kept since its day, used when, on one line; a loan reads what was lent, its day, and what is left; the grey lines are one sentence each.",
+   "Display only: no route, request body, price, booking or stored shape changed; every button keeps what it sends."
+  ]
+ },
+ {
+  "v": "v1382",
+  "d": "03 Nov 2026",
+  "t": "THEIR ANSWER REACHES ONLY THE OFFER THEY SAW",
+  "n": [
+   "<b>THE ORDER BOOK.</b> A customer's Yes or No thanks now names the offer their page showed. If you replaced that offer while their tap was on its way, it is refused and takes nothing: your newer offer stays open, its yes waiting. Before, a Yes on your old offer took the new one unseen, perhaps at a higher price, and a No thanks on an offer for their yes cancelled the order.",
+   "<b>SALT COUNTER.</b> Refused that way, the customer reads \"This offer has changed; look at the new one.\" beside the new offer, and their next Yes names it. A page opened before this version names no offer and answers the open one, as before. The words go once the offer is withdrawn, lapsed or answered.",
+   "<b>SALT ADMIN.</b> Nothing changes on your side: an answer refused this way never reaches you, and Needs you still shows your newer offer waiting. No Desk route changed; the Counter's take and No thanks accept the offer's id."
+  ]
+ },
+ {
+  "v": "v1381",
+  "d": "03 Nov 2026",
+  "t": "A HALF UNIT OF SALT GIVEN FREE TO CS6-PER",
+  "n": [
+   "<b>ONE GIFT FOLDED.</b> CS6-PER was given 0.5 unit of salt free on 03 Nov 2026, collected, approved by Counter Admin. It is booked as a cost of RM28, not as revenue, and charged against their reward. Nothing is owed and nothing is paid. The inventory rolls the stated shelf down by 0.5 unit. No lot landed, so the cost basis stands at RM56 per unit."
+  ]
+ },
+ {
+  "v": "v1380",
+  "d": "03 Nov 2026",
+  "t": "ONE R2 SALE OF SALT TO CN3-WM-R AT THE ASK, STOCK DOWN TO 7.5 UNITS",
+  "n": [
+   "<b>FOLDED:</b> one new sale, 1 unit of salt to CN3-WM-R on 02 Nov 2026, goods RM120 plus RM25 delivery, RM145 cash, delivered and paid the same day. It is booked as R2, since CN3-WM buys to sell on. Nothing unusual beyond that flag, and the goods total sits exactly at the askTotal of RM120.",
+   "<b>INVENTORY:</b> salt falls by 1 unit to the stated 7.5 units, below the reorder point of 52.5. Nothing is owed out or promised, and no loans are open. The cost stays at RM56 per unit."
+  ]
+ },
+ {
   "v": "v1379",
   "d": "03 Nov 2026",
   "t": "ORDER AS THEM: YOUR PLACE IS YOUR ACCEPT",

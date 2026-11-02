@@ -56,12 +56,14 @@ export async function run({ ok, pageWork }) {
     enter(d, "customers", "accounts"); await p.work.quiet();
     const u = [...d.querySelectorAll("#rlist [data-u]")].find((r) => /CX1-ZED/.test(r.textContent));
     u.querySelector('[data-act="acct.open"]').click(); await p.work.quiet(); await p.work.quiet();
+    /* 3 Nov 2026 (the account on Shop's grid): a loan is a row that opens Repayment: what was lent, the day under it, what is left at the right
+       (what was repaid follows from the two, so the line fits one line at 390) */
     const box = d.querySelector(".oacct .abooks"), loanRows = box ? [...box.querySelectorAll(".aloan")] : [];
-    ok(loanRows.length === 1 && loanRows[0].getAttribute("data-loan") === "loan-1" && /Lent 15 Sep 2026, RM 500\.00/.test(loanRows[0].textContent)
-      && /Repaid\s*RM 200\.00/.test(loanRows[0].textContent) && /Left\s*RM 300\.00/.test(loanRows[0].textContent),
+    ok(loanRows.length === 1 && loanRows[0].getAttribute("data-loan") === "loan-1" && /^Lent RM 500\.00/.test(loanRows[0].textContent) && loanRows[0].querySelector(".salt-settings__sub").textContent === "15 Sep 2026"
+      && loanRows[0].querySelector(".salt-settings__value").textContent === "RM 300.00 left",
     "the card lists this customer's loan only, with its date, what was lent, repaid and left: " + (box && box.textContent));
-    ok(!!box && !!box.querySelector('[data-reward="CX1-ZED"]') && /Reward: 2 units held, 1 unit free/.test(box.textContent), "their reward standing is on the card: " + (box && box.textContent));
-    const go = byAct(loanRows[0], "acct.repay", "loan-1");
+    ok(!!box && !!box.querySelector('[data-reward="CX1-ZED"]') && /^Reward1 unit free2 units held$/.test(box.querySelector('[data-reward="CX1-ZED"]').textContent), "their reward standing is on the card: " + (box && box.textContent));
+    const go = loanRows[0].getAttribute("data-act") === "acct.repay" && loanRows[0].getAttribute("data-key") === "loan-1" ? loanRows[0] : null;
     go.click(); await p.work.quiet(); await p.work.quiet();
     const form = d.querySelector('#makerInputs [data-form="repayment"]'), pick = form && form.querySelector('[data-act="record.repay.loan"]');
     ok(!!form && !form.hidden && !!pick && pick.value === "loan-1", "Repayment opens Record's form with that loan chosen: " + (pick && pick.value));

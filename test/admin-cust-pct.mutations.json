@@ -8,8 +8,8 @@
   {
     "name": "1 the suggestion's why",
     "file": "stmt/owner.js",
-    "find": "if(sug!=null&&card.why) sr.appendChild(",
-    "replace": "if(false) sr.appendChild("
+    "find": "sug!=null&&card.why?card.why.charAt(0)",
+    "replace": "false?card.why.charAt(0)"
   },
   {
     "name": "1 Send off while unchanged",

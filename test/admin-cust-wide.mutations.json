@@ -38,8 +38,8 @@
   {
     "name": "3 the account in columns",
     "file": "stmt/page.js",
-    "find": "  .adm #aopen .oacct{display:block;column-count:2;column-gap:20px}",
-    "replace": "  .adm #aopen .oacct{display:block;column-gap:20px}"
+    "find": "  .adm #aopen .oacct{display:block;column-count:2;column-gap:24px}",
+    "replace": "  .adm #aopen .oacct{display:block;column-gap:24px}"
   },
   {
     "name": "3 three from 1440px",

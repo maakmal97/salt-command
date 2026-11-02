@@ -14,8 +14,8 @@
  {
   "name": "the form shows the % without its reason",
   "file": "stmt/owner.js",
-  "find": "if(sug!=null&&card.why) sr.appendChild",
-  "replace": "if(false) sr.appendChild"
+  "find": "sug!=null&&card.why?card.why.charAt(0)",
+  "replace": "false?card.why.charAt(0)"
  },
  {
   "name": "the maker input takes a salt figure with no unit: a page cached from before the % lift can queue 0.3 as 30%",
@@ -44,8 +44,8 @@
  {
   "name": "the account card gets a typed % field back, which has no minus key on a decimal pad",
   "file": "stmt/owner.js",
-  "find": "step.appendChild(down); step.appendChild(out); step.appendChild(up); s.appendChild(step);",
-  "replace": "var nf=el('input'); nf.type='number'; step.appendChild(nf); step.appendChild(down); step.appendChild(out); step.appendChild(up); s.appendChild(step);"
+  "find": "step.appendChild(down); step.appendChild(out); step.appendChild(up); L.appendChild(step);",
+  "replace": "var nf=el('input'); nf.type='number'; step.appendChild(nf); step.appendChild(down); step.appendChild(out); step.appendChild(up); L.appendChild(step);"
  },
  {
   "name": "the stepper's buttons shrink under the tap size",

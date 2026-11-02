@@ -162,7 +162,8 @@ export async function run({ ok, KV, worker, REPO } = {}) {
     const assoc = await open("AX1-ZED"), assocPart = !!(assoc && assoc.querySelector('[data-act="acct.partner"]'));
     const one = await open("CX1-ZED"), section = one && one.querySelector(".apart"), button = section && section.querySelector('[data-act="acct.partner"]');
     check(!!button && button.textContent === "Make partner", "the owner page renders the Partner control on the customer's card");
-    check(!!three2 && /Partner/.test(three2.querySelector(".salt-status").textContent) && !three2.querySelector('[data-act="acct.partner"]') && !assocPart,
+    /* 3 Nov 2026 (the account on Shop's grid): where they stand is the list's Status row, no chip */
+    check(!!three2 && /^Partner$/.test(three2.querySelector(".apart__list .salt-settings__value").textContent) && !three2.querySelector('[data-act="acct.partner"]') && !assocPart,
       "a partner shows as one and is not offered again; only customers are offered it");
     const tap = async () => { button.click(); await new Promise((r) => setTimeout(r, 0)); button.click(); };
     await tap();

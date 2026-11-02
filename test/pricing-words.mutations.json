@@ -37,8 +37,8 @@
  {
   "name": "Salt Admin's % card is headed Price drift",
   "file": "stmt/owner.js",
-  "find": "el('h3','salt-eyebrow salt-eyebrow--copper','Their %')",
-  "replace": "el('h3','salt-eyebrow salt-eyebrow--copper','Price drift')"
+  "find": "el('h2','salt-settings__head','Their %')",
+  "replace": "el('h2','salt-settings__head','Price drift')"
  },
  {
   "name": "Salt Admin's Add ID group is headed Starting price drift",

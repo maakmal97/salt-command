@@ -49,7 +49,8 @@ export async function run({ ok, pageWork }) {
     const W = "@(min-width:1080px) ";
     const got = [get(W + ".adm #oAccts.open .asplit", "grid-template-columns"), get(W + ".adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount,.adm #oAccts.open .alead", "display"),
       get(W + ".adm #oAccts.open #aopen [data-back]", "display"), get(W + ".adm #aopen .oacct", "column-count"), get("@(min-width:1440px) .adm #aopen .oacct", "column-count"),
-      get(W + ".adm #aopen .oacct .asec", "break-inside"), get(W + ".adm #aopen .oacct .amore", "display"), get(W + ".adm #oLinks,.adm #oCards", "max-width")];
+      /* 3 Nov 2026 (the account on Shop's grid): every group of the card, not only the .asec ones, keeps whole in its column with 24px under it */
+      get(W + ".adm #aopen .oacct>*,.adm #aopen .oacct .amore>*", "break-inside"), get(W + ".adm #aopen .oacct .amore", "display"), get(W + ".adm #oLinks,.adm #oCards", "max-width")];
     ok(J(got) === J(["minmax(0,1fr)", "none", "grid", "2", "3", "avoid", "contents", "none"]),
       "from 1080px an open account takes the list's place and fills the page in columns with its way back, three from 1440px, and Links and Associates use the width: " + J(got));
   } finally { p.w.close(); }

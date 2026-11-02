@@ -580,12 +580,13 @@ export const offerOpen = (o, at) => !!(o && o.price && o.price.state === "offere
   && String(at || new Date().toISOString()) <= String(o.price.offer.until));
 /** An ask still waiting on his answer or on theirs: asked, or offered and open. */
 export const askOpen = (o, at) => !!(o && o.price && o.price.from !== "accept" && OPEN_STATES.includes(o.status) && (o.price.state === "asked" || offerOpen(o, at)));
-/** What the customer reads of a negotiation, his whitelist: {state, total, delivery: null, until}, delivery being set at the
+/** What the customer reads of a negotiation, his whitelist: {state, id, total, delivery: null, until}, delivery being set at the
  *  acknowledgement as ever. Never a floor, a cost, a margin, a digest, a drift or anything else of the desk's. */
 export const priceView = (p) => {
   if (!p || typeof p !== "object") return null;
   const v = { state: ["asked", "offered", "taken", "passed", "withdrawn"].includes(p.state) ? p.state : "asked" };
-  if (p.offer && ["offered", "taken", "passed"].includes(p.state)) Object.assign(v, { total: p.offer.total, delivery: null, until: p.offer.until });
+  /* 3 Nov 2026: and its id, which their Yes or No thanks names back, so an answer reaches only the offer they were shown */
+  if (p.offer && ["offered", "taken", "passed"].includes(p.state)) Object.assign(v, { id: p.offer.id, total: p.offer.total, delivery: null, until: p.offer.until });
   /* version 2: his Accept for their yes, the whole order as he would agree it: goods, delivery and the window with its span */
   if (p.from === "accept") Object.assign(v, { from: "accept" }, p.offer && ["offered", "taken", "passed"].includes(p.state)
     ? { delivery: p.offer.delivery, slot: p.offer.slot || null, slotSpan: p.offer.slotSpan || null } : {});
@@ -791,6 +792,9 @@ export function decideCustomer(order, action, body, mine, at) {
   if (action === "take" || action === "pass") {
     const p = order.price;
     if (!p || p.state !== "offered" || !p.offer || order.status !== "placed") return Object.assign(refusal("offerNone"), { status: 409 });
+    /* 3 Nov 2026: THEIR ANSWER NAMES THE OFFER THEY WERE SHOWN. One he replaced while their tap was on its way answers nothing:
+       they are told it changed and read the new one. A page from before this version names none and answers the open offer */
+    if (body && body.offer != null && String(body.offer) !== String(p.offer.id)) return Object.assign(refusal("offerChanged"), { status: 409 });
     if (action === "take" && String(at) > String(p.offer.until)) return Object.assign(refusal("offerLapsed"), { status: 409 });
     if (action === "take" && (p.offer.product !== order.product || Math.abs(+p.offer.qty - +order.qty) > 0.0004)) return Object.assign(refusal("offerVoid"), { status: 409 });
     /* version 2: No thanks to his Accept withdraws the order, at no cost: nothing is paid before it is agreed */

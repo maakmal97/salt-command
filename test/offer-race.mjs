@@ -15,8 +15,17 @@
  *   R6  the minute's pass lets go only the yes it read: a newer offer filed and taken between its read and its void is agreed at its figure
  *   R7  his Accept lets go only the closed offer's yes: a newer offer filed and taken between its read and its void refuses the Accept and is agreed
  *   R8  an old Withdraw id over a newer offer for their yes that has lapsed is not answered as an open offer
- *   R9  Salt Admin says their Yes came first in one plain sentence */
+ *   R9  Salt Admin says their Yes came first in one plain sentence
+ * And their own answer (3 Nov 2026): a Yes or No thanks names the offer their page drew, read off the order as they read it (priceView's id).
+ *   R11 a Yes naming an offer he has since replaced is refused in their words and takes nothing: the newer offer stays open, its yes waiting
+ *   R12 a Yes naming the open offer takes it as before, and the order is agreed at its figure
+ *   R13 a No thanks naming a replaced offer for their yes is refused too, and the order is not cancelled
+ *   R14 a Yes naming no offer (a page loaded before this version) answers the open offer as before
+ *   R15 their page's Yes names the offer it drew; refused as changed, it says so in their words and draws the new offer, whose Yes names it
+ *   R16 those words go with the offer: refused as changed onto an offer withdrawn since, the page says withdrawn alone (Fable, 3 Nov 2026), on an
+ *       answer to their ask and on an offer for their yes alike */
 import { readdirSync, readFileSync } from "node:fs";
+import { webcrypto } from "node:crypto";
 import { join } from "node:path";
 import { orderBook } from "./orderbook-harness.mjs";
 import { Store } from "./maker-order-controls.mjs";
@@ -24,6 +33,8 @@ import { richOwnerPage, byAct } from "./maker-act.mjs";
 
 const J = JSON.stringify;
 const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
+const wait = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 15)); return f(); };
+const CHANGED = "This offer has changed; look at the new one.";
 
 export async function run({ ok, skip, pageWork }) {
   let DatabaseSync = null;
@@ -168,6 +179,106 @@ export async function run({ ok, skip, pageWork }) {
   } finally { globalThis.Date = RealDate; }
   ok(wF1.status === 200 && ofF.status === 200 && wF2.status === 200 && wF2.j.again === true && !wF2.j.fresh,
     "R8: an old Withdraw id over a newer offer for their yes that has lapsed is answered as the first was, never as an open offer: " + J([wF1.status, ofF.status, wF2.status, wF2.j.again, wF2.j.error]));
+
+  /* R11 to R14: THEIR ANSWER NAMES THE OFFER THEY WERE SHOWN. He replaces an offer while their Yes is on its way: the Yes names the one their page drew */
+  const shownOf = async (id) => { const v = O.customerView(await orderOf(id)); return v && v.price ? v.price.id : undefined; };
+  const h = await place(U1, true);
+  await offer(h.id, 160);
+  const shownH = await shownOf(h.id);
+  await offer(h.id, 230);
+  const tH = await O.customerMove(senv, U1, h.id, "take", { rid: rid(), offer: shownH });
+  await deskPass(denv, new Date());
+  const gH = await where(h.id, 230), oH = await orderOf(h.id);
+  ok(typeof shownH === "string" && shownH.length > 0 && tH.status === 409 && tH.code === "offerChanged" && O.customerView(oH).price.state === "offered"
+    && O.customerView(oH).price.total === 230 && gH.st === "placed" && gH.yes === "waiting",
+    "R11: a Yes naming an offer he has since replaced is refused in their words and takes nothing, the newer offer open and its yes waiting: " + J([shownH, tH.status, tH.code, tH.error, gH]));
+  const shownH2 = await shownOf(h.id);
+  const tH2 = await O.customerMove(senv, U1, h.id, "take", { rid: rid(), offer: shownH2 });
+  await deskPass(denv, new Date());
+  const gH2 = await where(h.id, 230);
+  ok(shownH2 !== shownH && !tH2.error && agreed(gH2, 230), "R12: a Yes naming the open offer takes it, and the order is agreed at RM 230: " + J([tH2.error, gH2]));
+
+  const k = await place(U2, false);
+  await offer(k.id, 230);
+  const shownK = await shownOf(k.id);
+  await call("/orders/" + k.id + "/withdraw", { rid: rid() });
+  await offer(k.id, 240);
+  const pK = await O.customerMove(senv, U2, k.id, "pass", { rid: rid(), offer: shownK });
+  const oK = O.customerView(await orderOf(k.id));
+  ok(pK.status === 409 && pK.code === "offerChanged" && oK.status === "placed" && oK.price.state === "offered" && oK.price.total === 240,
+    "R13: a No thanks naming a replaced offer for their yes is refused, and the order stands with the new offer open: " + J([pK.status, pK.code, oK.status, oK.price]));
+
+  const m = await place(U2, true);
+  await offer(m.id, 160);
+  const tM = await O.customerMove(senv, U2, m.id, "take", { rid: rid() });
+  await deskPass(denv, new Date());
+  const gM = await where(m.id, 160);
+  ok(!tM.error && agreed(gM, 160), "R14: a Yes naming no offer, from a page loaded before this version, answers the open offer as before: " + J([tM.error, gM]));
+
+  /* R15: THEIR PAGE. Its Yes names the offer drawn; refused as changed, it says so and draws the new offer, whose Yes names the new id */
+  {
+    const { landingPage } = await import("../stmt/page.js"), Cr = await import("../tools/stmt-crypto.mjs"), { JSDOM } = await import("jsdom");
+    const U = "rfab-cdef", PASS = "fixture-pass-race-15", ck = await Cr.contentKey("test-secret", U), P = "20261103010000-ofrc", Q = "20261103010001-ofrd", R = "20261103010002-ofre";
+    const until = new Date(Date.now() + 20 * 3600e3).toISOString();
+    const one = (oid, pid, total, state, from) => Object.assign({ id: oid, at: "2026-11-03T01:00:00Z", product: "salt", qty: 2, unit: 100, total: 200, delivery: 0, mode: "collect", paid: 0, moved: 0, status: "placed",
+      history: [{ at: "2026-11-03T01:00:00Z", status: "placed", by: "customer" }], msgs: [], price: Object.assign({ state: state || "offered", id: pid, total, delivery: null, until }, from ? { from, delivery: 0, slot: null, slotSpan: null } : {}) });
+    const byId = { [P]: one(P, "offA-race", 160), [Q]: one(Q, "offC-race", 160), [R]: one(R, "offE-race", 230, "offered", "accept") };
+    const mk = (pid, total) => { byId[P] = one(P, pid, total); };
+    const body = { ok: true, wrap: await Cr.wrapKey(PASS, ck), session: "sess-race",
+      env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+    const posts = [];
+    const dom = new JSDOM(landingPage(U, "nrace", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+      win.fetch = async (path, init) => {
+        const p = String(path), mth = (init && init.method) || "GET", reply = (status, b) => ({ ok: status === 200, status, type: "basic", json: async () => b });
+        if (p === "/open") return reply(200, body);
+        if (p === "/orders" && mth === "GET") return reply(200, { ok: true, orders: [byId[P], byId[Q], byId[R]] });
+        if (mth === "POST" && p === "/orders/" + R + "/take") { posts.push("R:" + JSON.parse((init && init.body) || "{}").offer); byId[R] = one(R, "offF-race", 240, "withdrawn", "accept");
+          return reply(409, { ok: false, code: "offerChanged", error: "this offer has changed; look at the new one" }); }
+        if (mth === "POST" && p === "/orders/" + Q + "/take") { posts.push("Q:" + JSON.parse((init && init.body) || "{}").offer); byId[Q] = one(Q, "offD-race", 230, "withdrawn");
+          return reply(409, { ok: false, code: "offerChanged", error: "this offer has changed; look at the new one" }); }
+        if (mth === "POST" && p === "/orders/" + P + "/take") {
+          const b = JSON.parse((init && init.body) || "{}"); posts.push(b.offer);
+          if (b.offer === "offB-race") return reply(200, { ok: true });
+          mk("offB-race", 230);
+          return reply(409, { ok: false, code: "offerChanged", error: "this offer has changed; look at the new one" });
+        }
+        return reply(404, { ok: false });
+      };
+    } });
+    try {
+      const w = dom.window, d = w.document, yes = (sc) => sc && [...sc.querySelectorAll(".oprice button")].find((x) => x.className.includes("salt-pill"));
+      d.getElementById("un").value = U; d.getElementById("pw").value = PASS;
+      d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+      await wait(() => d.querySelector('#pOrder [data-row="' + P + '"]'));
+      const row = d.querySelector('#pOrder [data-row="' + P + '"]'); if (row) row.click();
+      await wait(() => yes(d.querySelector("#pOrder .oscreen")));
+      const y1 = yes(d.querySelector("#pOrder .oscreen")); if (y1) y1.click();
+      await wait(() => posts.length >= 1 && /RM ?230/.test(t(d.querySelector("#pOrder .oprice"))));
+      const said = t(d.querySelector("#pOrder .oprice"));
+      const y2 = yes(d.querySelector("#pOrder .oscreen")); if (y2) y2.click();
+      await wait(() => posts.length >= 2 && yes(d.querySelector("#pOrder .oscreen")) && !yes(d.querySelector("#pOrder .oscreen")).disabled);
+      ok(posts[0] === "offA-race" && said.includes(CHANGED) && /RM ?230/.test(said) && posts[1] === "offB-race" && posts.length === 2,
+        "R15: their page's Yes names the offer drawn; refused as changed it says so and draws the new offer, whose Yes names it: " + J([posts, said.slice(0, 300)]));
+      const back = d.querySelector("#pOrder .oback"); if (back) back.click();
+      await wait(() => d.querySelector('#pOrder [data-row="' + Q + '"]'));
+      const rowQ = d.querySelector('#pOrder [data-row="' + Q + '"]'); if (rowQ) rowQ.click();
+      await wait(() => yes(d.querySelector("#pOrder .oscreen")));
+      const y3 = yes(d.querySelector("#pOrder .oscreen")); if (y3) y3.click();
+      await wait(() => byId[Q].price.state === "withdrawn" && /We withdrew our price/.test(t(d.querySelector("#pOrder .oprice"))));
+      const saidQ = t(d.querySelector("#pOrder .oprice"));
+      ok(posts[2] === "Q:offC-race" && /We withdrew our price/.test(saidQ) && !saidQ.includes(CHANGED), "R16: refused as changed onto an offer withdrawn since, the page says withdrawn alone: " + J([posts, saidQ]));
+      const back2 = d.querySelector("#pOrder .oback"); if (back2) back2.click();
+      await wait(() => d.querySelector('#pOrder [data-row="' + R + '"]'));
+      const rowR = d.querySelector('#pOrder [data-row="' + R + '"]'); if (rowR) rowR.click();
+      await wait(() => yes(d.querySelector("#pOrder .oscreen")) && !yes(d.querySelector("#pOrder .oscreen")).disabled);
+      const y4 = yes(d.querySelector("#pOrder .oscreen")); if (y4) y4.click();
+      await wait(() => byId[R].price.state === "withdrawn" && /We took that back/.test(t(d.querySelector("#pOrder .oprice"))));
+      const saidR = t(d.querySelector("#pOrder .oprice"));
+      ok(posts[3] === "R:offE-race" && /We took that back/.test(saidR) && !saidR.includes(CHANGED), "R16: and so on an offer for their yes: " + J([posts, saidR]));
+    } finally { await new Promise((r) => setTimeout(r, 60)); dom.window.close(); }
+  }
 
   /* R9: SALT ADMIN, the Desk's own words for a Withdraw their Yes beat, as Needs you's offer card draws them */
   const p = await richOwnerPage({ pageWork, extra: (route) => (/\/all\/maker\/orders\/ord-p4\/withdraw$/.test(route) ? { refuse: said } : undefined) });

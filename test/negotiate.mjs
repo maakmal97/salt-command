@@ -56,7 +56,7 @@ export async function run({ ok, skip }) {
   const ask = async (qty, total, extra, u) => O.placeOrder(senv, u || U1, Object.assign({ product: "salt", qty, mode: "collect", place: "", unit: total / qty, total, week: "", ask: true, rid: rid() }, extra || {}));
   const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
   const preOf = (id) => db.prepare("SELECT status,entry,entry_at,shown FROM preapproval WHERE order_id=? ORDER BY at DESC").get(id) || null;
-  const VIEW = ["state", "total", "delivery", "until"];
+  const VIEW = ["state", "id", "total", "delivery", "until"];
 
   /* 1. ASKED: the order waits on his answer, and their page reads its state alone; Accept is not his road on it */
   const a = (await ask(2, 200, { propose: 180 })).order;
@@ -73,7 +73,7 @@ export async function run({ ok, skip }) {
     "an offer under the floor at the size is refused at the preview and at Offer, and the ask stands: " + JSON.stringify([pv140.status, of140.status, of140.j.error]));
 
   /* 3. HIS OFFER: drafted as Accept would draft it, filed as his yes waiting on their answer, with no entry yet; the site keeps
-     the figure and its lapse, and their page reads {state, total, delivery: null, until} and nothing of the desk's */
+     the figure and its lapse, and their page reads {state, id, total, delivery: null, until} and nothing of the desk's (the id since 3 Nov 2026) */
   const pv = await call("/orders/" + a.id + "/preview", { total: 160 });
   const tap = rid(), of = await call("/orders/" + a.id + "/offer", { total: 160, delivery: 0, hash: pv.j.offerHash, rid: tap });
   const sA = await orderOf(a.id), vOff = O.customerView(sA).price, pre = preOf(a.id);
@@ -85,7 +85,7 @@ export async function run({ ok, skip }) {
   ok(JSON.stringify(Object.keys(vOff)) === JSON.stringify(VIEW) && vOff.delivery === null && vOff.total === 160
     /* 19 Oct 2026: a word or a part of a camelCase name (offerHash, floorRM), never letters inside one */
     && !(leak.match(/[A-Za-z]+/g) || []).some((w) => w.split(/(?<=[a-z])(?=[A-Z])/).some((p) => /^(floors?|costs?|margins?|hash|drift|proposed)$/i.test(p))),
-    "their page reads the offer as {state, total, delivery: null, until} alone, never a floor, cost, margin, digest, drift or their figure: " + JSON.stringify(vOff));
+    "their page reads the offer as {state, id, total, delivery: null, until} alone, never a floor, cost, margin, digest, drift or their figure: " + JSON.stringify(vOff));
   /* a tap sent twice files one offer */
   const again = await call("/orders/" + a.id + "/offer", { total: 160, delivery: 0, hash: pv.j.offerHash, rid: tap });
   ok(again.status === 200 && again.j.again === true && db.prepare("SELECT COUNT(*) AS n FROM preapproval WHERE order_id=? AND status='waiting'").get(a.id).n === 1,

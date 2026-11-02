@@ -89,7 +89,8 @@ export async function run({ ok, pageWork }) {
     ok(J(named) === J(["Mark paid today", "Remove as stale", "Sign out everywhere"]) && [paid, stale].every((b) => t(b) === "Tap again to confirm")
       && asked.length === 1 && /^Sign out everywhere\?/.test(asked[0]) && t(out) === "Sign out everywhere",
       "W6: a refund's two buttons read Tap again to confirm once tapped, and Sign out everywhere asks on the Sheet: " + J({ named, armed: [t(paid), t(stale), t(out)], asked }));
-    const note = t(a.querySelector(".arefund__row .anote"));
+    /* 3 Nov 2026 (the account on Shop's grid): the refund's line is the text row of its own list */
+    const note = t(a.querySelector(".arefund__row .salt-settings__row--text .salt-settings__label"));
     ok(/^RM 40[.]00 to CX1-ZED, .*Paid marks it returned[.]$/.test(note) && nw(note) <= 14 && !/Remove as stale|money received/.test(note),
       "W7: a refund's line is its figure and what Paid does, with no second explanation: " + J(note));
 

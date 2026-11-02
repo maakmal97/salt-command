@@ -52,8 +52,9 @@ export async function run({ ok }) {
   const held = O.applyEvent(Object.assign({}, base, { history: [] }), e1.ev).order;
   const view = O.customerView(held).price;
   ok(held.price.from === "accept" && held.price.state === "offered" && !O.askOpen(held, at.toISOString())
-    && JSON.stringify(Object.keys(view).sort()) === JSON.stringify(["delivery", "from", "slot", "slotSpan", "state", "total", "until"])
-    && view.total === 120 && view.delivery === 10 && !("id" in view),
+    /* 3 Nov 2026: and the offer's id, a random request id their Yes names back so it reaches only this offer (Fable reviewed it safe) */
+    && JSON.stringify(Object.keys(view).sort()) === JSON.stringify(["delivery", "from", "id", "slot", "slotSpan", "state", "total", "until"])
+    && view.total === 120 && view.delivery === 10 && view.id === held.price.offer.id,
     "their page reads the whole offer and nothing of the desk's, and it never counts as an ask of theirs: " + JSON.stringify(view));
   const again = dd({ price: held.price }, offerBody({ id: "acc2" })), ackOpen = dd({ price: held.price }, { status: "acknowledged", delivery: 10 }),
     ackLapsed = dd({ price: held.price }, { status: "acknowledged", delivery: 10 }, new Date("2026-10-13T00:00:00.000Z")),

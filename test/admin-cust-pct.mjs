@@ -43,9 +43,10 @@ export async function run({ ok, pageWork }) {
     const pct = () => d.querySelector("#aopen .apct"), btn = (act) => byAct(pct(), act, act === "acct.pct.send" || act === "acct.pct.clear" ? "CX1-ZED" : undefined) || byAct(pct(), act);
     /* 1 */
     const tabs = [...pct().querySelectorAll('[data-act="acct.pct.book"]')];
-    const sug = [...pct().querySelectorAll(".salt-ledger__row")].map(t);
-    ok(!!pct() && pct().classList.contains("salt-glass-card") && J(tabs.map(t)) === J(["Salt", "Oil"]) && tabs[0].getAttribute("aria-selected") === "true" && !!tabs[0].querySelector(".salt-producttag")
-      && J(sug) === J(["Suggested−15%Good record"]) && t(pct().querySelector(".apct__val")) === "−10%" && t(btn("acct.pct.send")) === "Send −10%" && btn("acct.pct.send").disabled
+    /* 3 Nov 2026 (the account on Shop's grid): no glass card, a settings list; the suggestion a row, its why the second line under it */
+    const sug = [...pct().querySelectorAll(".apct__list > .salt-settings__row:first-child")].map(t);
+    ok(!!pct() && !pct().classList.contains("salt-glass-card") && J(tabs.map(t)) === J(["Salt", "Oil"]) && tabs[0].getAttribute("aria-selected") === "true" && !!tabs[0].querySelector(".salt-producttag")
+      && J(sug) === J(["SuggestedGood record−15%"]) && t(pct().querySelector(".apct__val")) === "−10%" && t(btn("acct.pct.send")) === "Send −10%" && btn("acct.pct.send").disabled
       && t(btn("acct.pct.suggest")) === "Use −15%" && !btn("acct.pct.suggest").disabled && !!btn("acct.pct.clear"),
       "Their % stands on the account: the books as tabs, the suggestion and why, the stepper at what is set, Send off while unchanged: " + J([tabs.map(t), sug, t(pct().querySelector(".apct__val"))]));
     /* 2 */
@@ -74,16 +75,18 @@ export async function run({ ok, pageWork }) {
     /* 4 */
     await click(pct().querySelectorAll('[data-act="acct.pct.book"]')[1]);
     ok(pct().querySelectorAll('[data-act="acct.pct.book"]')[1].getAttribute("aria-selected") === "true" && t(pct().querySelector(".apct__val")) === "0%" && btn("acct.pct.suggest").disabled
-      && t(btn("acct.pct.suggest")) === "No suggestion" && !byAct(pct(), "acct.pct.clear", "CX1-ZED") && t(pct().querySelector(".salt-ledger__row")) === "SuggestedNone",
+      && t(btn("acct.pct.suggest")) === "No suggestion" && !byAct(pct(), "acct.pct.clear", "CX1-ZED") && t(pct().querySelector(".apct__list > .salt-settings__row")) === "SuggestedNone",
       "a book with nothing set offers neither Use nor Set back to 0");
     /* 5 */
     const c = d.querySelector("#aopen .acust"), r = d.querySelector("#aopen .arwd");
-    const lines = (box) => [...box.querySelectorAll(".salt-ledger__line")].map((l) => t(l.children[0]) + "=" + t(l.children[1]));
-    ok(!!c && !c.hidden && t(c.querySelector("h3")) === "This customer" && J(lines(c)) === J(["A unit now=RM 110", "Highest=RM 120", "Orders every=9 days", "Next order due=in 2 days"])
+    /* 3 Nov 2026 (the account on Shop's grid): the figures are settings rows (data-line), the head a mist settings head carrying the book's tag */
+    const lines = (box) => [...box.querySelectorAll(".salt-settings__row[data-line]")].map((l) => t(l.querySelector(".salt-settings__label")) + "=" + t(l.querySelector(".salt-settings__value")));
+    const headOf = (box) => (box.querySelector("h2.salt-settings__head").firstChild.textContent || "").trim();
+    ok(!!c && !c.hidden && headOf(c) === "This customer" && J(lines(c)) === J(["A unit now=RM 110", "Highest=RM 120", "Orders every=9 days", "Next order due=in 2 days"])
       && /Loyalty 7 of 20 units/.test(t(c.querySelector(".salt-meter"))) && c.querySelector(".salt-meter").style.getPropertyValue("--salt-fill") === "35" && !!c.querySelector("svg.acust__spark")
       && p.wire.some((w) => w.startsWith("/all/maker/customer-of/CX1-ZED GET")),
       "This customer is read by the account's code and drawn: " + J(lines(c)));
-    ok(!!r && !r.hidden && t(r.querySelector("h3")) === "Associate reward" && J(lines(r)) === J(["Step, 10 units’ cost=RM 560", "Given under Set Price=RM 15", "A unit, net to you=RM 41"])
+    ok(!!r && !r.hidden && headOf(r) === "Associate reward" && J(lines(r)) === J(["Step, 10 units’ cost=RM 560", "Given under Set Price=RM 15", "A unit, net to you=RM 41"])
       && r.querySelector(".salt-meter").style.getPropertyValue("--salt-fill") === "68" && p.wire.some((w) => w.startsWith("/all/maker/reward-of/CX1-ZED GET")),
       "the associate reward is read by code and drawn: " + J(lines(r)));
     /* 6 */
