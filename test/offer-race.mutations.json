@@ -182,7 +182,13 @@
  {
   "name": "R20: a yes not filed is answered as filed",
   "file": "src/orders.js",
-  "find": "return p.alone && !(r && r.meta && r.meta.changes > 0) ? null : id;",
-  "replace": "return id;"
+  "find": "  return filed ? id : null;",
+  "replace": "  return id;"
+ },
+ {
+  "name": "R21: a result with no count reads as not filed",
+  "file": "src/orders.js",
+  "find": ": !!(await db.prepare(\"SELECT 1 FROM preapproval WHERE id=?1\").bind(id).first());",
+  "replace": ": false;"
  }
 ]

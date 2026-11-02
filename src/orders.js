@@ -421,7 +421,10 @@ async function recordPre(db, p) {
   const r = await db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,entry,status,tapped_by,at) SELECT ?1,?2,?3,?4,?5,?6,?7,'waiting',?8,?9"
     + (p.alone ? " WHERE NOT EXISTS (SELECT 1 FROM preapproval WHERE order_id=?2 AND stage=?4 AND status IN ('waiting','differs','applied'))" : ""))
     .bind(id, p.order_id, p.u || null, p.stage, p.hash, JSON.stringify(p.shown || {}), p.entry ? JSON.stringify(p.entry) : null, p.by || null, p.at).run();
-  return p.alone && !(r && r.meta && r.meta.changes > 0) ? null : id;
+  if (!p.alone) return id;
+  /* a result that carries no count is read back by its id, so a yes filed is never answered as not filed (Fable): that one would wait for good, its row unqueued */
+  const filed = r && r.meta && typeof r.meta.changes === "number" ? r.meta.changes > 0 : !!(await db.prepare("SELECT 1 FROM preapproval WHERE id=?1").bind(id).first());
+  return filed ? id : null;
 }
 const markOrder = (env, u, id, mark) => site(env, "/desk/orders/" + encodeURIComponent(u) + "/" + encodeURIComponent(id),
   { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mark }) });
