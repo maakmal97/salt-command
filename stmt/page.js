@@ -658,13 +658,10 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .aparts{margin:0 0 20px}
 .adm .aparts.salt-segment{max-width:30rem}
 .adm .aparts .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
-/* 18 OCT 2026 (clarity, part 3): Orders' stages are the first strip, the rest a smaller one beneath it; an order's card leads with its answer and folds the rest */
-/* 25 Oct 2026 (the Orders canvas): the parts are Needs you's text tab row (.nktab), two rows; the stages two across on a phone, the rest three */
-.adm .oparts{padding:0;gap:0}
-.adm .oparts .aparts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px;margin:0;width:100%}
-.adm .oparts--minor{margin:0 0 16px}
-.adm .oparts--minor .aparts{grid-template-columns:repeat(3,minmax(0,1fr));gap:0 8px}
-@media (min-width:860px){.adm .oparts .aparts,.adm .oparts--minor .aparts{grid-template-columns:repeat(6,minmax(0,1fr));gap:0 12px}}
+/* 2 Nov 2026 (his Orders canvas): the Segment of four stands 16px over the lead, the lead 24px over the list and the list 24px over More, Shop's grid */
+.adm .aparts[data-place="orders"]{margin:0 0 16px}
+.adm .olead{margin:0 0 24px}
+.adm #oOrders>.abody{gap:24px}
 .adm .ordend{display:flex;margin-top:16px}
 .adm .ordlead{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
 .adm .ordlead:empty{display:none}
@@ -966,8 +963,7 @@ body.ended>*:not(#aEnded){display:none}
 /* 11 OCT 2026 (PHASE 1c, his decision 9): ORDERS ARE A LIST AND A DETAIL. A row an order (the system's Inbox row) in #makerOrderList, the order's
    card in #makerReview. From 860px they stand side by side, the card sticky and scrolling inside itself; below it the card takes the list's place
    and has its way back. From 860px up to the rail's 1080 the page widens for Orders alone, the other places keeping their 600px column. */
-.adm .ordlist{display:flex;flex-direction:column;gap:8px}
-.adm .ordlist .rnone{margin:0}
+.adm .ordlist{display:flex;flex-direction:column;gap:24px}
 .adm .ordlist>.salt-ghost{align-self:flex-start;margin-top:8px}
 /* 21 Oct 2026 (canvas V39, his answer (a)): FROM 1080PX AN OPEN ORDER TAKES THE LIST'S PLACE, as on a phone, and fills the page; the rail's
    Orders closes it. This reverses his split of 11 Oct 2026 at that width: the list and the card stand side by side from 860 to 1080 only.
@@ -1205,74 +1201,11 @@ body.ended>*:not(#aEnded){display:none}
 .adm .nfold>summary.nsev::before{content:"+";display:inline-block;width:1.2em}
 .adm .nfold[open]>summary.nsev::before{content:"-"}
 .adm .nfold>summary.nsev:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px}
-/* 14 OCT 2026: ORDERS ARE ROWS OF ONE GRID: the mark in a fixed column, the code and at most one pill over what it is, the age over the figure in a fixed column on the
-   right, every row the same height. The system's Inbox row keeps its class; the grid is this page's own container class. */
-/* 25 Oct 2026 (the Orders canvas): AN ORDER IS NEEDS YOU'S CARD, 76px on a phone and 80 from 860; the row's button fills it and the pill stands in its
-   column above it; from 1080px the parts are a plain table's columns under .ohead-row */
-.adm .ordcard{position:relative;display:block;height:76px;padding:0;box-sizing:border-box}
-.adm .ordcard:hover{background:var(--salt-glass-hover)}
-.adm .ordcard[aria-current="true"]{box-shadow:inset 2px 0 0 var(--salt-brass)}
-.adm .ordrow{all:unset;box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) 72px 88px;grid-template-rows:auto auto;align-content:center;gap:6px 8px;width:100%;height:100%;padding:0 10px;cursor:pointer;font:inherit;color:inherit}
-.adm .ordrow:focus-visible{outline:2px solid var(--salt-brass);outline-offset:-2px;border-radius:inherit}
-.adm .ordrow .okind{grid-column:1;grid-row:1;display:flex;gap:0;min-width:0;padding-top:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .ordrow .okind>span{white-space:nowrap}
-.adm .ordrow .onote:not(:empty)::before{content:" · "}
-.adm .ordrow .onote{min-width:0;overflow:hidden;text-overflow:ellipsis}
-.adm .ordrow .onote--why{color:var(--salt-copper)}
-.adm .ordrow .onote--late{color:var(--salt-ember)}
-.adm .ordrow .otitle{grid-column:1;grid-row:2;display:flex;flex-wrap:nowrap;align-items:center;gap:6px;min-width:0}
-.adm .ordrow .otag{display:flex;gap:4px;flex:none}
-.adm .ordrow .ocode{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--salt-font-mono)}
-.adm .ordrow .ounits{display:none}
-.adm .ordrow .ofig{grid-column:3;grid-row:1/3;display:flex;align-items:center;justify-content:flex-end;margin:0;padding:0;line-height:1;white-space:nowrap;overflow:hidden;font-variant-numeric:tabular-nums}
-.adm .ordcard>.ogo{position:absolute;top:0;bottom:0;right:106px;width:72px;display:flex;align-items:center;margin:0}
-.adm .ordcard .nbtn{box-sizing:border-box;width:72px;min-width:72px;max-width:72px;height:48px;min-height:48px;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-/* 25 Oct 2026 (Ask D): a move that sends asks once under its row; the card grows to hold the ask, its row keeping its height */
-.adm .ordcard--ask{height:auto}
-.adm .ordcard--ask>.ordrow{height:76px}
-.adm .ordcard--ask>.ogo{bottom:auto;height:76px}
-.adm .oask{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:0 10px 10px}
-.adm .oask__q{flex:1 1 100%;font-size:var(--salt-text-sm);color:var(--salt-prose)}
-.adm .oask .nbtn{width:auto;min-width:96px;max-width:none;padding:0 14px}
-.adm .ohead-row{display:none}
-@media (min-width:860px){
-  .adm .ordcard{height:80px}
-  .adm .ordrow{grid-template-columns:minmax(0,1fr) 120px 116px;gap:4px 12px;padding:0 16px}
-  .adm .ordcard>.ogo{right:144px;width:120px}
-  .adm .ordcard .nbtn{width:120px;min-width:120px;max-width:120px;padding:0 8px}
-}
-/* 2 Nov 2026: from 860 to 1080px the list stands in a column beside the open order, about 360px wide, so the 120px move cannot sit in the row's line
-   (it left 49px for the way and the code, and covered them): the row keeps its two lines and the figure, and the move stands under them */
-@media (min-width:860px) and (max-width:1079.98px){
-  .adm .ordcard{height:auto}
-  .adm .ordrow{height:76px;grid-template-columns:minmax(0,1fr) 96px}
-  .adm .ordrow .ofig{grid-column:2}
-  .adm .ordcard>.ogo,.adm .ordcard--ask>.ogo{position:static;width:auto;height:auto;padding:0 16px 12px}
-  .adm .ordcard>.ogo:empty{display:none}
-  .adm .ordcard .nbtn{width:auto;min-width:112px;max-width:none;height:44px;min-height:44px;padding:0 16px}
-  .adm .ordcard--ask>.ordrow{height:76px}
-}
-@media (min-width:1080px){
-  .adm .ordlist{gap:0;padding:4px 6px;border:1px solid var(--salt-line);border-radius:var(--salt-radius-lg);background:var(--salt-glass)}
-  .adm .ordcard{height:56px;border-radius:0;border-width:0 0 1px;background:transparent;box-shadow:none}
-  .adm .ordcard[aria-current="true"]{box-shadow:inset 2px 0 0 var(--salt-brass)}
-  .adm .ordrow,.adm .ohead-row{grid-template-columns:96px 120px minmax(0,1fr) 88px 176px 132px 136px;grid-template-rows:auto;gap:0 10px;padding:0 10px}
-  .adm .ordrow .okind,.adm .ordrow .otitle{display:contents}
-  .adm .ordrow .otag{grid-column:1;grid-row:1}
-  .adm .ordrow .ocode{grid-column:2;grid-row:1}
-  .adm .ordrow .oway{grid-column:3;grid-row:1;overflow:hidden;text-overflow:ellipsis;color:var(--salt-prose)}
-  .adm .ordrow .ounits{display:block;grid-column:4;grid-row:1;text-align:right;font-family:var(--salt-font-mono)}
-  .adm .ordrow .onote{grid-column:5;grid-row:1;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
-  .adm .ordrow .onote:not(:empty)::before{content:none}
-  .adm .ordrow .okind>span{text-transform:none;letter-spacing:0}
-  .adm .ordrow .onote--why{color:var(--salt-copper)}
-  .adm .ordrow .onote--late{color:var(--salt-ember)}
-  .adm .ordrow .ofig{grid-column:6;grid-row:1}
-  .adm .ordcard>.ogo{right:10px;width:120px}
-  .adm .ordrow>*{align-self:center}
-  .adm .ohead-row{display:grid;height:40px;align-items:center;border-bottom:1px solid var(--salt-line);font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:0.1em;text-transform:uppercase;color:var(--salt-mist-bright)}
-  .adm .ohead-row>:nth-child(4),.adm .ohead-row>:nth-child(6){text-align:right}
-}
+/* 2 Nov 2026 (his Orders canvas): a row's ask stands under it, wrapping its question over a full line and its two ghosts beneath */
+.adm .ordcard--ask{flex-wrap:wrap}
+.adm div.oask,.adm .oask__in{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.adm div.oask{flex:1 1 100%;padding-bottom:8px}
+.adm .oask__q{flex:1 1 100%}
 /* 14 Oct 2026: the live clock beside his page's name */
 .adm .clk{font-variant-numeric:tabular-nums}
 .adm .clk:not(:empty)::before{content:"\\00b7";margin:0 8px}
@@ -1307,12 +1240,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm .oclock__track{display:block}
 .adm .obagain{display:inline-flex;align-items:center;gap:8px}
 .adm .ordsteps{--salt-steps-n:5;padding:20px 12px}
-/* 20 Oct 2026, P5: a sheet's orders in one group card, and the band's link to it */
-.adm .ordsheet{display:flex;flex-direction:column;gap:6px;margin:0}
-.adm .ordsheet__head{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:24px;padding:0 10px}
-.adm .ordsheet__ref{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.adm .ordsheet__sum{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright);white-space:nowrap}
-@media (min-width:1080px){.adm .ordsheet{gap:0}.adm .ordsheet__head{min-height:40px;border-bottom:1px solid var(--salt-line-faint)}}
+/* 20 Oct 2026, P5: the band's link to a sheet */
 .adm .osheetlink{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:44px;margin:0;padding:6px 0 0;border:0;border-top:1px solid var(--salt-line);background:none;color:var(--salt-brass);font:inherit;font-family:var(--salt-font-mono);cursor:pointer}
 /* 20 Oct 2026: the Bill, its figures in one right column */
 .adm .obill{margin:16px 0 4px}
@@ -2069,12 +1997,12 @@ const ADMIN_PLACES = [["needs", "Needs you"], ["orders", "Orders"], ["customers"
 /* THE TEST SURFACE (his answers of 18 Oct 2026): Salt Admin on the practice accounts draws four places, Needs you, Orders, Payments and
    Chat; the last two open a part (the third field), and Record, Shop, the account list, the links, Approve, Group and Ledger are not drawn */
 const TEST_PLACES = [["needs", "Needs you"], ["orders", "Orders"], ["orders", "Payments", "payments"], ["customers", "Chat", "messages"]];
-const TEST_PARTS = { orders: ["placed", "confirmed", "ready", "paid", "done", "ended", "payments"], customers: ["messages"] };
+const TEST_PARTS = { orders: ["todo", "open", "done", "ended", "payments"], customers: ["messages"] };
 /* a place's rail button: data-p names the part a test place opens */
 const placeBtn = (cls, inner) => ([m, w, p]) => '<button type="button" class="' + cls + ' place" data-m="' + m + '"' + (p ? ' data-p="' + p + '"' : "")
   + ' data-act="nav.' + (p || m) + '">' + inner(m, w, p) + "</button>";
 const ADMIN_PARTS = {
-  orders: [["placed", "Placed"], ["confirmed", "Agreed"], ["ready", "Ready"], ["paid", "Out or paid"], ["done", "Done"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments"], ["group", "Group"], ["ledger", "Ledger"]],
+  orders: [["todo", "To do"], ["open", "Open"], ["done", "Done"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments they sent"], ["group", "Group orders"], ["ledger", "Ledger check"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
   record: [["entry", "Entry"], ["customers", "Customers"], ["pricing", "Pricing"]],
   shop: [["hours", "Hours"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
@@ -2091,22 +2019,20 @@ const adminStrip = (p, list, cls, label, seg = !cls && ADMIN_SLIDERS.includes(p)
   + '<div class="' + (nav ? "salt-nav__links" : seg ? "salt-segment" : "salt-tabs") + (seg && p === "customers" ? " salt-segment--tight" : "") + ' aparts' + cls + '" role="tablist" aria-label="' + label + '" data-place="' + p + '">'
   + list.map(([k, w]) => '<button type="button" class="' + (nav ? "salt-nav__link nktab" : seg ? "salt-segment__opt" : "salt-tabs__pill") + '" role="tab" data-part="' + k + '" data-act="part.' + p + "." + k
     + '" aria-selected="' + (k === ADMIN_PARTS[p][0][0] ? "true" : "false") + '">' + w + (nav ? '<span class="nktab__n"></span>' : "") + "</button>").join("") + "</div>" + (nav ? "</nav>" : "");
-/* 18 Oct 2026 (Salt Admin clarity, part 3): Orders draws its parts as two strips of one list. The six stages come first, in the order an order moves (a tab strip
-   with each stage's count, since the Steps recipe is a drawing and not a row of controls); Approve, Payments, Group and Ledger stand apart beneath, smaller. Every part keeps
-   its id, its act and its address, and PARTS is both strips together (stmt/owner.js), so only the drawing is split. */
-const ADMIN_ORDER_STAGES = ["placed", "confirmed", "ready", "paid", "done", "ended"];
-/* 25 Oct 2026 (the Orders canvas, his yes to Asks A to C): THE PARTS ARE TWO TEXT TAB ROWS ON THE NAV RECIPE, as Needs you's kinds: the six
-   stages in the words of the order's steps (Placed, Agreed, Ready, Out or paid, Done, Ended), each with the count of its orders waiting on him, then
-   Payments, Group and Ledger under a hairline. Approve leaves the rows, reached by the bar's Approve; its tab stays, hidden, so its part and its
-   address (#orders/approve) are as they were. Two stages across on a phone and three of the rest, six across from 860px. */
-const ordTab = (k, w, hide) => '<button type="button" role="tab" class="salt-nav__link nktab' + (k === "placed" ? " salt-nav__link--active" : "") + '" data-part="' + k
-  + '" data-act="part.orders.' + k + '" aria-selected="' + (k === "placed" ? "true" : "false") + '"' + (hide ? " hidden" : "") + ">" + w + '<span class="nktab__n"></span></button>';
-const ordTabs = (list, cls, label) => '<nav class="salt-nav oparts ' + cls + '" aria-label="' + label + '"><div class="salt-nav__links aparts" role="tablist" aria-label="' + label
-  + '" data-place="orders">' + list.map(([k, w]) => ordTab(k, w, k === "approve")).join("") + "</div></nav>";
+/* 2 Nov 2026 (his Orders canvas, his answers of 31 Oct 2026): THE PARTS ARE ONE SEGMENT OF FOUR, To do, Open, Done and Ended, To do carrying the count of what waits
+   on him; Open lists Agreed, Ready and Out or paid each under its own head. Payments, Group and Ledger are action rows in a More group at the foot of the list, and
+   Approve has no control of its own: the bar's Approve reaches it, and #orders/approve still opens it. Every part keeps its act and its address. */
+const ADMIN_ORDER_STAGES = ["todo", "open", "done", "ended"];
+const ordSegment = () => '<div class="salt-segment salt-segment--tight aparts" role="tablist" aria-label="Orders" data-place="orders">'
+  + ADMIN_ORDER_STAGES.map((k) => '<button type="button" role="tab" class="salt-segment__opt" data-part="' + k + '" data-act="part.orders.' + k + '" aria-selected="' + (k === "todo" ? "true" : "false") + '">'
+    + ADMIN_PARTS.orders.filter((x) => x[0] === k)[0][1] + (k === "todo" ? '<span class="salt-segment__count" hidden></span>' : "") + "</button>").join("") + "</div>";
+const ordMore = (test) => '<section class="amore" aria-label="More" data-in="orders.todo orders.open orders.done orders.ended"><h2 class="salt-settings__head">More</h2><div class="salt-settings amore__list" data-place="orders">'
+  + ["payments", "group", "ledger"].filter((k) => !test || TEST_PARTS.orders.includes(k)).map((k) => '<button type="button" class="salt-settings__row salt-settings__row--action" data-part="' + k + '" data-act="part.orders.' + k + '">'
+    + '<span class="salt-settings__label">' + ADMIN_PARTS.orders.filter((x) => x[0] === k)[0][1] + '</span>' + (k === "payments" ? '<span class="salt-settings__value" data-n="payments"></span>' : "")
+    + '<span class="salt-settings__mark" aria-hidden="true">›</span></button>').join("") + "</div></section>";
 const adminParts = (p, test) => test && !TEST_PARTS[p] ? ""
   : p === "orders"
-  ? ordTabs(ADMIN_PARTS[p].filter(([k]) => ADMIN_ORDER_STAGES.includes(k)), "oparts--stages", "Order stages")
-    + ordTabs(ADMIN_PARTS[p].filter(([k]) => !ADMIN_ORDER_STAGES.includes(k) && (!test || TEST_PARTS[p].includes(k))), "oparts--minor", "Other orders")
+  ? ordSegment()
   /* 25 Oct 2026 (his Shop canvas): Shop's four parts are a text tab row on the nav recipe, as Needs you's kinds; the acts, ids and aria-selected as every strip's */
   : p === "shop"
   ? '<nav class="salt-nav nkinds" aria-label="Shop"><div class="salt-nav__links aparts aparts--nav" role="tablist" aria-label="Shop" data-place="shop">'
@@ -2252,11 +2178,12 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + adminParts("orders", test)
         + '<div class="abody">'
         + '<section id="makerFor" hidden aria-label="Order for a customer"></section>'
-        + '<section id="oSplit" data-in="orders.placed orders.confirmed orders.ready orders.paid orders.done orders.ended" aria-label="Orders">'
+        + '<section id="oSplit" data-in="orders.todo orders.open orders.done orders.ended" aria-label="Orders">'
         + '<p class="salt-insight salt-insight--copper olead" id="makerReviewStatus">Reading.</p>'
         + '<div class="ordgrid"><div id="makerOrderList" class="ordlist"></div><div id="makerReview" class="ordopen"></div></div></section>'
+        + ordMore(test)
         + '<section id="oApprove" data-in="orders.approve" aria-label="Rows to approve">'
-        + '<p class="lead" id="makerDraftStatus">Reading.</p>'
+        + '<p class="lead" id="makerDraftStatus"></p>'
         + '<div id="makerDrafts"></div>'
         /* 22 Oct 2026: the multi-tick Approve's bar, drawn by stmt/owner.js apBarDraw once a card is chosen */
         + '<div id="apBar" class="apbar salt-glass-card salt-glass-card--radius-lg" hidden></div>'

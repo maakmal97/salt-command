@@ -47,10 +47,14 @@ export const OWNER_JS = `
      payments and chats, and nothing else (no account list, links, inputs, notice or book) */
   var TESTING=/*__TESTING__*/false;
   var placeNow='needs', partNow='', PARTS={}, fOpen=null;
-  [].forEach.call(document.querySelectorAll('.aparts'), function(strip){
-    /* a place may draw its parts as two strips (Orders: the stages, then the rest): PARTS is both, in the order they are drawn */
+  [].forEach.call(document.querySelectorAll('.aparts, .amore__list'), function(strip){
+    /* a place may draw its parts as a strip and a list (Orders: the Segment of four, then More's rows): PARTS is both, in the order they are drawn */
     var pl=strip.getAttribute('data-place'); PARTS[pl]=(PARTS[pl]||[]).concat([].map.call(strip.querySelectorAll('[data-part]'), function(b){ return b.getAttribute('data-part'); }));
   });
+  /* 2 Nov 2026: Approve has no control of its own on Orders (the bar's Approve reaches it), so its address is listed here, and the old stage addresses
+     (#orders/ready) land on the part that holds that stage now */
+  if(PARTS.orders&&!TESTING) PARTS.orders.push('approve');
+  var PART_ALIAS={placed:'todo', confirmed:'open', ready:'open', paid:'open'};
   /* what a place reads when it is entered, and what a part reads when it is entered. The stages of Orders are one list that its
      place reads once, so moving between them is a filter and never a second read. */
   var PLACE_READ={
@@ -102,20 +106,19 @@ export const OWNER_JS = `
     if(Object.prototype.hasOwnProperty.call(PART_ADDR,k+'/'+t[1])){ var m=PART_ADDR[k+'/'+t[1]]; return {place:m[0], part:m[1]}; }
     if(!Object.prototype.hasOwnProperty.call(ADDR,k)) return null;
     var a=ADDR[k], part=t[1]||a[1];
+    if(a[0]==='orders'&&Object.prototype.hasOwnProperty.call(PART_ALIAS,part)) part=PART_ALIAS[part];
     return {place:a[0], part:(PARTS[a[0]]||[]).indexOf(part)>=0?part:''};
   }
   /* o.fresh reads the place again (a tap on its item, as entering Maker always read it); o.push writes the address, so Back and
      Forward move between places */
   function showPlace(place, part, o){
     o=o||{};
-    var asked=part, prevPlace=placeNow;
     if(place!=='needs'&&!PARTS[place]) place='needs';
     var parts=PARTS[place]||[];
+    if(place==='orders'&&Object.prototype.hasOwnProperty.call(PART_ALIAS,part)) part=PART_ALIAS[part];
     if(!parts.length) part=''; else if(parts.indexOf(part)<0) part=parts[0];
     var fresh=!!o.fresh||place!==placeNow, moved2=place!==placeNow||part!==partNow;
     placeNow=place; partNow=part;
-    /* Orders opens on the first stage that has something waiting, found when the read lands (drawMaker); a stage he chose is his */
-    ordAuto=place==='orders'&&place!==prevPlace&&!asked;
     /* the order whose card is open is closed by leaving the place or the part (Phase 1c) */
     if(moved2&&(ordOpened||placeNow==='orders')){ ordOpened=null; drawOrderPane(); }
     /* so is the form open on Record: leaving the part or the place closes it; the + orb is not shown on Record, where the parts are one tap away */
@@ -4420,8 +4423,8 @@ export const OWNER_JS = `
     reviewReading=true;
     if(!poll){
       if(status) status.textContent='Reading.';
-      if(rows) rows.textContent='Reading.';
-      var reading0=document.getElementById('makerRefreshSaid'); if(reading0) reading0.textContent='Reading.';
+      /* 2 Nov 2026: Approve's line says Reading only while Approve is the part in view; a hidden line is never left on it */
+      if(rows&&partNow==='approve') rows.textContent='Reading.';
     }
     try{
       makerCashRestore();
@@ -4438,7 +4441,6 @@ export const OWNER_JS = `
       nGot('review', error); apply=failNew('review', error)||!poll;
       if(!poll){
         drawMaker();if(status) refusal(status,error); if(rows) refusal(rows,error);
-        var failed0=document.getElementById('makerRefreshSaid'); if(failed0){ refusal(failed0,error); if(failed0.scrollIntoView) failed0.scrollIntoView({block:'nearest'}); }
       }
     }finally{ if(gen===makerGen){ reviewReading=false; ordFocus=null; if(apply) drawNeeds(); } }
   }
@@ -4455,6 +4457,8 @@ export const OWNER_JS = `
     return !order.test&&(again||orderAsked(order));
   }
   var STAGE_OF={placed:'placed', acknowledged:'confirmed', ready:'ready', done:'done'};
+  /* 2 Nov 2026: the part an order is listed in: To do when it waits on him, else its stage's (Open for Agreed, Ready and Out or paid) */
+  function ordPartFor(stage,waits){ return waits?'todo':ORD_PART_OF[stage]||'ended'; }
   /* 17 Oct 2026, HIS FLOW: an agreed order whose goods are all out, or that is paid in full, is Delivered or paid until it is both (the Desk's flowStage
      for a row of the book, the same rule) */
   function orderPartsOf(order){
@@ -4472,7 +4476,7 @@ export const OWNER_JS = `
      card in #makerReview, today's card with every control, request and guard as it was, drawn for the order opened and no other. From 860px
      the list stands beside the card; below it the card takes the list's place, with a way back. A row has no preview: that read is the
      card's. Leaving the place or the part closes the card. */
-  var ordOpened=null, ordEntries={}, makerOpenOrders=[], ordAuto=false, ordFocus=null, ordMore={};
+  var ordOpened=null, ordEntries={}, makerOpenOrders=[], ordFocus=null, ordMore={};
   function ordShown(st){ return ordMore[st]||50; }
   var ORD_STAGE={placed:['copper','Waiting on you','dot'], acknowledged:['brass','Agreed','tick'], ready:['verdigris','Ready','tick'], done:['mist','Done','ticks'], declined:['mist','Declined','cross'], cancelled:['mist','Cancelled','cross']};
   /* Counter Batch A: an order's chip carries the customer page's glyph before its word (a dot, a tick, a double tick, a cross), aria-hidden */
@@ -4483,10 +4487,9 @@ export const OWNER_JS = `
     s.appendChild(d); c.appendChild(s); c.appendChild(document.createTextNode(st[1])); return c;
   }
   function ordInPart(e){ return e.parts.split(' ').indexOf('orders.'+partNow)>=0; }
-  /* 25 Oct 2026 (canvas Salt Admin Orders, his yes to Asks F, G and I): AN ORDER IS NEEDS YOU'S CARD. One shape and one height: the way and the age, or why it
-     waits on him in copper (asked, says sent, send again, their yes), then the book's typed tag and the code, the stage's move as one filled pill and the figure
-     last, large. The row is still the one button that opens the order (its act, its data-in, its aria-current), the pill standing beside it; from 1080px the
-     same parts stand as a plain table's columns, Book, Code, Way, Units, Waiting and Total, under a head of their names (#makerOrderList .ohead). */
+  /* 25 Oct 2026 (canvas Salt Admin Orders, his yes to Asks F, G and I), redrawn 2 Nov 2026 on his second canvas (ordRowNodes below): a row says why it waits on him in
+     copper (asked, says sent, send again, their yes), the book's typed tag and the code, the stage's move as a lit ghost and the figure, large. The row is still the
+     one link that opens the order (its act, its aria-current); from 1080px the same parts stand as a plain table's columns, Code, Book, Way, Units, Waiting and Total. */
   function ordWayWord(o,st){
     if(o.status==='declined') return 'Declined';
     if(o.status==='cancelled') return 'Cancelled';
@@ -4495,7 +4498,7 @@ export const OWNER_JS = `
     if(st==='paid'&&out) return 'Out';
     return d?'Deliver':o.mode==='collect'?(o.point?'Collect at '+o.point:'Collect'):'';
   }
-  /* the stage's move, said on the pill: the next step of the goods, or of the money once the goods are out */
+  /* the stage's move, said on the lit ghost: the next step of the goods, or of the money once the goods are out */
   function ordMove(o){
     if(o.test) return '';
     var owed=ordDue(o), out=(+o.qty||0)>0&&(+o.moved||0)>=(+o.qty||0)-0.0005;
@@ -4505,77 +4508,185 @@ export const OWNER_JS = `
     if(!out) return o.status==='acknowledged'?'Ready':'Handed';
     return owed>0.004?'Message':'';
   }
-  function orderRow(e){
-    var o=e.order, card=el('div','salt-action ordcard'), b=el('button','ordrow'); b.type='button';
-    [card,b].forEach(function(n){ n.setAttribute('data-in',e.parts); });
-    b.setAttribute('data-order',e.id); actOn(b,'order.open',e.id);
-    if(ordOpened===e.id){ b.setAttribute('aria-current','true'); card.setAttribute('aria-current','true'); }
-    var kind=el('span','salt-action__kind okind'), title=el('span','salt-action__title otitle'), way=el('span','oway'), un=el('span','ounits'), note=el('span','onote'), fig=el('span','salt-action__money salt-action__money--lg ofig');
-    var tag=el('span','otag'), code=el('span','ocode'), sev='watch', main='', why='';
-    kind.appendChild(way); kind.appendChild(note); title.appendChild(tag); title.appendChild(code);
+  /* 2 Nov 2026 (his Orders canvas, his four answers of 31 Oct 2026): THE LIST IS THE SYSTEM'S SETTINGS LIST BELOW 1080px AND ONE PLAIN TABLE FROM IT. An order is a row: the
+     book's typed tag (the first and a +N for an order of several books) and the code over what it is and how long, copper when it waits on him and ember when late, the
+     total, and the stage's move as a lit ghost (the one filled pill lives in the open order alone). The row is still the one link that opens the order (its act, its
+     data-key); the move still asks once and sends what it sent. A group is a head over ONE list: To do's Orders and each sheet, Open's Agreed, Ready and Out or paid, a
+     month in Done and Ended. Only one drawing stands at a time (ordWide), so a control is never drawn twice. */
+  var ORD_PART_OF={placed:'todo',confirmed:'open',ready:'open',paid:'open',done:'done',ended:'ended'};
+  var ORD_HEAD={confirmed:'Agreed',ready:'Ready',paid:'Out or paid'};
+  var ORD_WORD={todo:'To do',open:'Open',done:'Done',ended:'Ended'};
+  var ORD_NONE={todo:'Nothing waits on you.',open:'No open orders.',done:'No done orders.',ended:'No ended orders.'};
+  var ORD_MONTH=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  function ordWide(){ return !!(window.matchMedia&&window.matchMedia('(min-width:1080px)').matches); }
+  function bookWord(p){ var k=String(p||'').toLowerCase().replace(/[^a-z]/g,''); return k.charAt(0).toUpperCase()+k.slice(1); }
+  /* the moment a done or ended order is filed under: its stage's own, else the day it was placed; a row of the book has its date */
+  function ordStamp(e){
+    var o=e.order;
+    if(o){ var h=(o.history||[]).filter(function(x){ return x&&x.status===o.status&&x.at; }).pop(); return (h&&h.at)||o.at||''; }
+    var g=e.row||e.trip||e.day; return (g&&g.date)||'';
+  }
+  function ordYM(s){
+    s=String(s||'');
+    if(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(s)) return [s.slice(0,4),+s.slice(5,7)];
+    try{ var p=klBits(s); return p.year?[p.year,+p.month]:null; }catch(x){ return null; }
+  }
+  function ordMonth(e){
+    var ym=ordYM(ordStamp(e)); if(!ym||!ORD_MONTH[ym[1]-1]) return '';
+    var now=ordYM(new Date().toISOString());
+    return ORD_MONTH[ym[1]-1]+(now&&now[0]!==ym[0]?' '+ym[0]:'');
+  }
+  function ordDay(e){
+    var s=ordStamp(e); if(!s) return '';
+    return (/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(s)?fmtWhen(s):dayMon(s)).replace(/ [0-9]{4}$/,'');
+  }
+  function ordLateAge(party,owedRM){
+    if(!(owedRM>0.004)||!party) return '';
+    var m=owedOf({code:party});
+    return m&&Date.parse(m.due)<Date.now()?ageOf(m.due):'';
+  }
+  /* what a row says, one place for both drawings: the books, the code, the way, the units, why it waits on him or what it still owes, how long, the total and the move */
+  function ordFacts(e){
+    var o=e.order, st=e.stage, f={tags:[], code:'', who:'', way:'', units:'', why:'', age:'', owed:0, late:'', total:0, move:'', placed:false};
     if(o){
-      var st=e.parts.replace('orders.',''), held=makerAccHeld(o)&&o.price.state==='offered';
-      tag.appendChild(productTag(o.product)); code.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));
-      way.textContent=ordWayWord(o,st); un.textContent=units(o.qty);
-      why=o.test?'practice':makerCashHeld[e.id]?'cash held':held?'their yes':orderAsked(o)?'asked':ordPays(o).length?'says sent':o.again&&o.again.length?'send again':o.againOf?orderRef(o.againOf)+' again':'';
-      sev=o.test?'watch':e.waits?'now':held?'soon':'watch';
+      var held=makerAccHeld(o)&&o.price.state==='offered', sent=ordPays(o).reduce(function(s,p){ return s+(+p.amount||0); },0);
+      f.tags=[o.product]; f.code=codeByUser(o.u); f.who=codeOfUser(o.u); f.way=ordWayWord(o,st); f.units=units(o.qty);
+      f.why=o.test?'Practice':makerCashHeld[e.id]?'Cash held':held?'Offered, their yes':orderAsked(o)?'Asked a question':ordPays(o).length?'Says sent '+rmShort(sent):o.again&&o.again.length?'Send again':o.againOf?orderRef(o.againOf)+' again':'';
+      f.placed=st==='placed'&&!f.why;
+      f.total=(+o.total||0)+(+o.delivery||0); f.owed=Math.max(0,ordDue(o));
       /* 28 Oct 2026: cash held for the order shuts every control of its card, so the row offers no move beside it either */
-      main=makerCashHeld[e.id]||makerCashStorageError?'':ordMove(o);
-      fig.textContent=rmShort(Number(o.total||0)+Number(o.delivery||0));
+      f.move=makerCashHeld[e.id]||makerCashStorageError?'':ordMove(o);
+      f.age=st==='done'||st==='ended'?ordDay(e):ageOf(o.at);
     }else if(e.row){
-      /* a row of the book: the buyer's code, its book and units, what it owes, the Desk's figure */
+      /* a row of the book: the buyer's code, its book and units, the Desk's figures. Its way is a word, never the row's id. */
       var r=e.row;
-      tag.appendChild(productTag(r.product)); code.appendChild(whoTag(el('span',null,r.party),r.party));
-      way.textContent=r.rid; un.textContent=units(r.qty);
-      why=r.cancelled?'cancelled':r.writtenOff?'written off':r.waiting>0?'waits under Approve':r.owed>0.004?'owes '+rmShort(r.owed):r.reward?REWARD_WORD[r.reward]:'';
-      fig.textContent=rmShort(Number(r.total||0)+Number(r.delivery||0));
-      if(!why) note.textContent=r.date?fmtWhen(r.date):'Undated';
+      f.tags=[r.product]; f.code=r.party; f.who=r.party; f.units=units(r.qty);
+      f.way={confirmed:'Agreed',ready:'Ready',paid:'Out',done:'Handed over'}[st]||(r.cancelled?'Cancelled':r.writtenOff?'Written off':'Closed');
+      f.why=r.waiting>0?'Waits under Approve':r.reward?REWARD_WORD[r.reward]:'';
+      f.total=(+r.total||0)+(+r.delivery||0); f.owed=+r.owed||0;
+      f.age=st==='done'||st==='ended'?ordDay(e):r.date?fmtWhen(r.date):'Undated';
     }else if(e.trip||e.day){
-      /* an order of several books: a tag a line, and what the order owes, the Desk's figure */
+      /* an order of several books: the first tag and a +N, and what the order comes to */
       var g=e.trip||e.day;
-      g.lines.forEach(function(l){ tag.appendChild(productTag(l.product)); });
-      code.appendChild(whoTag(el('span',null,g.party),g.party));
-      way.textContent=e.trip?'One order':'Same day'; why=e.trip?'':'not one order';
-      fig.textContent=rmShort(g.owed);
-    }else{ code.textContent=e.id; if(e.waits){ why='waiting on you'; sev='now'; } }
-    if(why){ note.textContent=why; note.classList.add('onote--why'); }
-    else if(o&&!note.textContent){ var ag=ageOf(o.at); note.textContent=ag||''; if(e.waits&&o.status==='placed') note.classList.add('onote--late'); }
-    card.classList.add('salt-action--'+sev);
-    b.appendChild(kind); b.appendChild(title); b.appendChild(un); b.appendChild(fig);
-    b.setAttribute('aria-label',[code.textContent,way.textContent,un.textContent,note.textContent,fig.textContent].filter(Boolean).join(', '));
-    b.addEventListener('click', function(){ openOrder(e.id); });
-    card.appendChild(b);
-    var go=el('div','salt-action__go ogo');
-    if(main){
-      var pill=actOn(el('button','salt-pill salt-pill--sm nbtn',main),'order.move',e.id); pill.type='button';
-      pill.addEventListener('click', function(){ ordMoveTap(e,main); });
-      if(ordAsk[e.id]||ordBusy[e.id]) pill.hidden=true;
-      go.appendChild(pill);
+      f.tags=g.lines.map(function(l){ return l.product; }); f.code=g.party; f.who=g.party; f.way=e.trip?'One order':'Same day'; f.why=e.trip?'':'Not one order';
+      f.total=g.lines.reduce(function(s,l){ return s+(+l.total||0)+(+l.delivery||0); },0); f.owed=+g.owed||0;
+      f.age=st==='done'||st==='ended'?ordDay(e):g.date?fmtWhen(g.date):'Undated';
+    }else{ f.code=e.id; f.why='Waiting on you'; }
+    if(st==='paid') f.late=ordLateAge(f.who||f.code,f.owed);
+    var owes=st==='paid'&&f.owed>0.004?'owes '+rmShort(f.owed):'';
+    /* the Waiting cell: why it waits on him in copper, else what is still owed (ember when late), else how long */
+    f.cell=f.why||(f.placed?'Placed':owes||f.age); f.cellTone=f.why||f.placed?'copper':owes&&f.late?'ember':'';
+    /* the second line of a phone row */
+    var wu=f.way&&f.units?f.way+(/ |^Out$/.test(f.way)?' · ':' ')+f.units:f.way||f.units;
+    f.sub=f.why?[f.why,f.age].filter(Boolean).join(' · ')
+      :f.placed?['Placed',(f.way?f.way.toLowerCase()+' ':'')+f.units,f.age].filter(Boolean).join(' · ')
+      :[wu,owes?(f.late?f.late+' late':owes):f.age].filter(Boolean).join(' · ');
+    f.subTone=f.why||f.placed?'why':owes&&f.late?'late':'';
+    f.aria=[f.code,f.tags.map(bookWord).join(', '),f.way,f.units,f.cell,rmShort(f.total)].filter(Boolean).join(', ');
+    return f;
+  }
+  function ordTagNodes(f,into){
+    if(f.tags[0]) into.appendChild(productTag(f.tags[0]));
+    if(f.tags.length>1) into.appendChild(el('span','salt-producttag salt-producttag--more','+'+(f.tags.length-1)));
+  }
+  function ordMoveGhost(e,f){
+    if(!f.move) return null;
+    var g=actOn(el('button','salt-ghost salt-ghost--lit salt-ghost--tight',f.move),'order.move',e.id); g.type='button';
+    g.addEventListener('click', function(){ ordMoveTap(e,f.move); });
+    if(ordAsk[e.id]||ordBusy[e.id]) g.hidden=true;
+    return g;
+  }
+  /* 25 Oct 2026 (his yes to Ask D): a move that sends asks once on the row; its answer stands under the row */
+  function ordAskNodes(e,o,wide){
+    var box=el(wide?'tr':'div','oask'), into=box;
+    if(wide) box.setAttribute('data-rowof',e.id);
+    box.setAttribute('role','status');
+    if(wide){ var td=el('td'); td.setAttribute('colspan','7'); into=el('div','oask__in'); td.appendChild(into); box.appendChild(td); }
+    if(ordAsk[e.id]||ordBusy[e.id]){
+      into.appendChild(el('span','oask__q',ordAskWords(o,ordAsk[e.id]||ordBusy[e.id])));
+      var yes=actOn(el('button','salt-ghost salt-ghost--lit salt-ghost--tight','Yes'),'order.move-yes',e.id), no=actOn(el('button','salt-ghost salt-ghost--tight','Not now'),'order.move-no',e.id);
+      yes.type='button'; no.type='button';
+      if(ordBusy[e.id]){ yes.disabled=true; no.disabled=true; yes.textContent='Sending'; }
+      yes.addEventListener('click', function(){ ordMoveSend(e,ordAsk[e.id]); });
+      no.addEventListener('click', function(){ delete ordAsk[e.id]; ordRowRedraw(e); });
+      into.appendChild(yes); into.appendChild(no);
+    }else into.appendChild(el('span','oask__q',ordNote[e.id]));
+    return box;
+  }
+  /* a row's nodes: the row, and the ask or the answer when there is one, inside the row of a list (its question over a full line) and a row of the table under it */
+  function ordRowNodes(e){
+    var f=ordFacts(e), wide=ordWide(), o=e.order, row=el(wide?'tr':'div',wide?'ordcard':'salt-settings__row ordcard'), open, out=[row];
+    row.setAttribute('data-rowof',e.id); row.setAttribute('aria-label',f.aria);
+    if(wide){
+      open=el('a','ordrow',f.code); var th=el('th','salt-table__left'); th.setAttribute('scope','row'); whoTag(open,f.who); th.appendChild(open); row.appendChild(th);
+      var tg=el('td','salt-table__left'), tags=el('div','salt-table__tags'); ordTagNodes(f,tags); tg.appendChild(tags); row.appendChild(tg);
+      row.appendChild(el('td','salt-table__left',f.way)); row.appendChild(el('td',null,f.units));
+      var wc=el('td','salt-table__left'); if(f.cellTone) wc.appendChild(chip(f.cellTone,f.cell)); else wc.appendChild(document.createTextNode(f.cell)); row.appendChild(wc);
+      row.appendChild(el('td',null,rmShort(f.total)));
+      var mv=el('td'), act=el('div','salt-table__act'), g=ordMoveGhost(e,f); if(g) act.appendChild(g); mv.appendChild(act); row.appendChild(mv);
+    }else{
+      open=el('a','ordrow salt-settings__text');
+      var lab=el('span','salt-settings__label'); ordTagNodes(f,lab); lab.appendChild(whoTag(el('span','ocode',f.code),f.who));
+      open.appendChild(lab); open.appendChild(el('span','salt-settings__sub'+(f.subTone?' salt-settings__sub--'+f.subTone:''),f.sub)); row.appendChild(open);
+      row.appendChild(el('span','salt-settings__value salt-settings__value--lg',rmShort(f.total)));
+      var g2=ordMoveGhost(e,f); if(g2) row.appendChild(g2);
     }
-    card.appendChild(go);
-    /* 25 Oct 2026 (his yes to Ask D): a move that sends asks once on the row, as Needs you's cards do; its answer stands under the row */
-    if(o&&(ordAsk[e.id]||ordBusy[e.id]||ordNote[e.id])){
-      card.classList.add('ordcard--ask');
-      var ask=el('div','oask'); ask.setAttribute('role','status');
-      if(ordAsk[e.id]||ordBusy[e.id]){
-        ask.appendChild(el('span','oask__q',ordAskWords(o,ordAsk[e.id]||ordBusy[e.id])));
-        var yes=actOn(el('button','salt-pill salt-pill--sm nbtn','Yes'),'order.move-yes',e.id), no=actOn(el('button','salt-ghost nbtn','Not now'),'order.move-no',e.id);
-        yes.type='button'; no.type='button';
-        if(ordBusy[e.id]){ yes.disabled=true; no.disabled=true; yes.textContent='Sending'; }
-        yes.addEventListener('click', function(){ ordMoveSend(e,ordAsk[e.id]); });
-        no.addEventListener('click', function(){ delete ordAsk[e.id]; ordRowRedraw(e); });
-        ask.appendChild(yes); ask.appendChild(no);
-      }else ask.appendChild(el('span','oask__q',ordNote[e.id]));
-      card.appendChild(ask);
-    }
-    return card;
+    open.setAttribute('href','#orders'); open.setAttribute('data-order',e.id); actOn(open,'order.open',e.id);
+    if(ordOpened===e.id){ open.setAttribute('aria-current','true'); row.setAttribute('aria-current','true'); }
+    open.addEventListener('click', function(ev){ ev.preventDefault(); openOrder(e.id); });
+    if(o&&(ordAsk[e.id]||ordBusy[e.id]||ordNote[e.id])){ if(!wide) row.classList.add('ordcard--ask'); var ask=ordAskNodes(e,o,wide); if(wide) out.push(ask); else row.appendChild(ask); }
+    return out;
   }
   var ordAsk={}, ordBusy={}, ordNote={};
   function ordRowRedraw(e){
-    var old=document.querySelector('#makerOrderList .ordcard > [data-order="'+e.id+'"]'); old=old&&old.parentNode;
-    if(old&&old.parentNode){ var had=old.contains(document.activeElement), n=orderRow(e); old.parentNode.replaceChild(n,old); sweep();
-      /* 28 Oct 2026: Yes while it asks, else the row's own move or the row, so focus is never dropped to the page after Not now or an answer */
-      var f=n.querySelector('[data-act="order.move-yes"]:not([disabled])')||(had?n.querySelector('[data-act="order.move"]:not([hidden])')||n.querySelector('.ordrow'):null); if(f&&f.focus) f.focus(); }
+    var list=document.getElementById('makerOrderList'), olds=list?[].slice.call(list.querySelectorAll('[data-rowof="'+e.id+'"]')):[];
+    if(!olds.length) return;
+    var had=olds.some(function(x){ return x.contains(document.activeElement); }), at=olds[0], nodes=ordRowNodes(e);
+    nodes.forEach(function(n){ at.parentNode.insertBefore(n,at); }); olds.forEach(function(x){ x.remove(); }); sweep();
+    /* 28 Oct 2026: Yes while it asks, else the row's own move or the row, so focus is never dropped to the page after Not now or an answer */
+    var n0=nodes[0], f=nodes.map(function(n){ return n.querySelector('[data-act="order.move-yes"]:not([disabled])'); }).filter(Boolean)[0]||(had?n0.querySelector('[data-act="order.move"]:not([hidden])')||n0.querySelector('.ordrow'):null); if(f&&f.focus) f.focus();
+  }
+  /* the groups of one part: To do's Orders and each sheet, Open's three stages, a month in Done and Ended (a sheet's orders, two or more at one stage, stand under their own head) */
+  function ordGroups(part,pe){
+    var out=[], idx={}, sheets={};
+    function put(key,head,e,sheet){ var g=idx[key]; if(!g){ g=idx[key]={key:key, head:head, rows:[], sheet:!!sheet}; out.push(g); } g.rows.push(e); }
+    if(part==='todo'||part==='open') pe.forEach(function(e){ var o=e.order; if(o&&o.sheet) (sheets[o.u+'|'+o.sheet+'|'+e.stage]=sheets[o.u+'|'+o.sheet+'|'+e.stage]||[]).push(e); });
+    pe.forEach(function(e){
+      var o=e.order, sk=o&&o.sheet?o.u+'|'+o.sheet+'|'+e.stage:'';
+      if(sk&&sheets[sk]&&sheets[sk].length>1){
+        var os=sheets[sk].map(function(x){ return x.order; }).sort(function(a,b){ return String(a.id).localeCompare(String(b.id)); }), first=os[0];
+        put('sheet:'+sk,'Sheet '+orderRef(first.id)+' · '+(first.mode==='deliver'?rmShort(+first.delivery||0)+' delivery':rmShort(os.reduce(function(s,x){ return s+(+x.total||0); },0))+' goods')+(part==='open'?' · '+ORD_HEAD[e.stage]:''),e,true);
+      }else if(part==='todo') put('orders','Orders',e);
+      else if(part==='open') put('stage:'+e.stage,ORD_HEAD[e.stage]||'Open',e);
+      else{ var mo=ordMonth(e); put('m:'+mo,mo||'Undated',e); }
+    });
+    out.forEach(function(g){ if(g.sheet) g.rows.sort(function(a,b){ return String(a.id).localeCompare(String(b.id)); }); });
+    var rank=function(g){ return g.sheet?9:part==='open'?['confirmed','ready','paid'].indexOf(g.key.slice(6)):0; };
+    return out.map(function(g,i){ return [rank(g),i,g]; }).sort(function(a,b){ return a[0]-b[0]||a[1]-b[1]; }).map(function(x){ return x[2]; });
+  }
+  function ordListGroup(part,g){
+    var sec=el('section',null), ul=el('div','salt-settings'), hd=el('h2','salt-settings__head',g.head);
+    sec.setAttribute('data-in','orders.'+part); sec.setAttribute('aria-label',g.head);
+    if(g.sheet) sec.setAttribute('data-sheet',g.rows[0].order.sheet);
+    g.rows.forEach(function(e){ ordRowNodes(e).forEach(function(n){ ul.appendChild(n); }); });
+    sec.appendChild(hd); sec.appendChild(ul); return sec;
+  }
+  /* from 1080px: one plain table a part, its columns' names over it, a group's head a row of it */
+  function ordTable(part,gs){
+    var card=el('div','salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-none'), wrap=el('div','salt-table-wrap'), tb=el('table','salt-table salt-table--plain salt-table--rows');
+    var cg=el('colgroup'), th=el('thead'), hr=el('tr'), bd=el('tbody');
+    card.setAttribute('data-in','orders.'+part); wrap.setAttribute('role','region'); wrap.setAttribute('aria-label',ORD_WORD[part]+' orders'); wrap.setAttribute('tabindex','0');
+    [136,140,0,104,136,112,140].forEach(function(w){ var c=el('col'); if(w) c.style.setProperty('width',w+'px'); cg.appendChild(c); }); tb.appendChild(cg);
+    [['Code',1],['Book',1],['Way',1],['Units'],['Waiting',1],['Total'],['',0]].forEach(function(x){
+      var c=el('th',x[1]?'salt-table__left':null); c.setAttribute('scope','col'); if(x[0]) c.textContent=x[0]; else c.appendChild(el('span','sr','Move')); hr.appendChild(c); });
+    th.appendChild(hr); tb.appendChild(th);
+    gs.forEach(function(g){
+      var gr=el('tr','salt-table__group'), gh=el('th','salt-table__left'); gh.setAttribute('colspan','7'); gh.setAttribute('scope','colgroup'); gh.appendChild(el('span','salt-settings__head',g.head));
+      if(g.sheet) gr.setAttribute('data-sheet',g.rows[0].order.sheet);
+      gr.appendChild(gh); bd.appendChild(gr);
+      g.rows.forEach(function(e){ ordRowNodes(e).forEach(function(n){ bd.appendChild(n); }); });
+    });
+    tb.appendChild(bd); wrap.appendChild(tb); card.appendChild(wrap); return card;
   }
   /* what each move asks, in the words the order card and Needs you use */
   function ordAskWords(o,main){
@@ -4621,10 +4732,12 @@ export const OWNER_JS = `
     var n=list.length, plural=function(k,w){ return k+' '+w+(k===1?'':'s'); }, sum=function(a,f){ return a.reduce(function(s,e){ return s+(f(e)||0); },0); };
     var due=function(e){ var o=e.order, r=e.row, g=e.trip||e.day; return o?(+o.total||0)+(+o.delivery||0):r?(+r.total||0)+(+r.delivery||0):g?+g.owed||0:0; };
     var owed=function(e){ var o=e.order, r=e.row, g=e.trip||e.day; return o?Math.max(0,ordDue(o)):r?+r.owed||0:g?+g.owed||0:0; };
-    if(st==='placed'){
-      var held=list.filter(function(e){ return e.order&&makerAccHeld(e.order)&&e.order.price.state==='offered'; }), agree=list.filter(function(e){ return held.indexOf(e)<0; });
-      return [agree.length?rmShort(sum(agree,due))+' waits on your Agree, across '+plural(agree.length,'order')+'.':'',
-        held.length?rmShort(sum(held,function(e){ var f=e.order.price.offer||{}; return (+f.total||0)+(+f.delivery||0); }))+' is offered and waits on their yes.':''].filter(Boolean).join(' ');
+    /* 2 Nov 2026 (his Orders canvas): To do is every order that waits on him, one sentence, money first: what waits on his Agree or Received, and what rides on their yes */
+    if(st==='todo'){
+      var held=list.filter(function(e){ return e.order&&makerAccHeld(e.order)&&e.order.price.state==='offered'; });
+      var mine=sum(list,function(e){ var o=e.order; if(!o||held.indexOf(e)>=0) return 0; return o.status==='placed'?due(e):ordPays(o).reduce(function(s,p){ return s+(+p.amount||0); },0); });
+      var theirs=sum(held,function(e){ var f=e.order.price.offer||{}; return (+f.total||0)+(+f.delivery||0); });
+      return (mine>0.004?rmShort(mine)+' waits on you across '+plural(n,'order'):plural(n,'order')+(n===1?' waits':' wait')+' on you')+(theirs>0.004?', '+rmShort(theirs)+' more on their yes':'')+'.';
     }
     if(st==='done') return rmShort(sum(list,due))+' settled on '+plural(n,'done order')+' shown, the newest first.';
     if(st==='ended'){
@@ -4636,45 +4749,29 @@ export const OWNER_JS = `
       var rest=n-dec-wo-can;
       return plural(n,'ended order')+' shown'+(n?': '+[dec?dec+' declined':'',can?can+' cancelled':'',wo?wo+' written off':'',rest?rest+' closed on the book':''].filter(Boolean).join(', '):'')+'.';
     }
-    var sent=sum(list,function(e){ return e.order?+e.order.claimed||0:0; }), asked=list.filter(function(e){ return e.order&&orderAsked(e.order); }).length;
-    var word=({confirmed:['agreed order','agreed orders'],ready:['order ready','orders ready'],paid:['order out or paid','orders out or paid']}[st]||['order','orders'])[n===1?0:1];
-    return rmShort(sum(list,owed))+' owed on '+n+' '+word+(sent>0.004?': '+rmShort(sent)+' they say they sent waits on your Received.':'.')
-      +(asked?' '+(asked===1?'One':asked)+' asked a question.':'');
+    /* Open: what is still owed on the orders in it, and how much of that is late (the buyer's account past its term) */
+    var lateRM=sum(list,function(e){ return e.stage==='paid'&&ordLateAge(codeOfParty(e),owed(e))?owed(e):0; });
+    return rmShort(sum(list,owed))+' owed on '+plural(n,'open order')+(lateRM>0.004?', '+rmShort(lateRM)+' of it late':'')+'.';
   }
+  function codeOfParty(e){ var o=e.order, g=e.row||e.trip||e.day; return o?codeOfUser(o.u)||codeByUser(o.u):g?g.party:''; }
   function paintOrdStatus(){
     var status=document.getElementById('makerReviewStatus'); if(!status) return;
     var list=Object.keys(ordEntries).map(function(k){ return ordEntries[k]; }).filter(function(e){ return e.parts==='orders.'+partNow; });
     status.hidden=!list.length;
     status.textContent=list.length?ordLead(partNow,list):'';
   }
-  /* a count on the pill of each stage whose orders wait on him, and on Payments for the payments they say they sent; a practice order is not counted, as the rail does not */
+  /* 2 Nov 2026: the count on To do is the orders that wait on him, and the one beside Payments they sent the payments they say they sent; a practice order is not counted, as the rail does not */
   function paintOrdCounts(){
-    var n={};
-    Object.keys(ordEntries).forEach(function(k){ var e=ordEntries[k], st=e.parts.replace('orders.',''); if(e.waits&&e.order&&!e.order.test) n[st]=(n[st]||0)+1; });
-    n.payments=waitingClaims().filter(function(c){ return !c.test; }).length;
-    [].forEach.call(document.querySelectorAll('.aparts[data-place="orders"] [data-part]'), function(b){
-      /* the count stands beside the word, as on Needs you's kinds; a stage with none waiting says nothing there and is never dimmed */
-      var c=b.querySelector('.nktab__n'), v=n[b.getAttribute('data-part')]||0;
-      if(!c){ c=el('span','nktab__n'); b.appendChild(c); }
-      if(c.textContent!==(v?String(v):'')) c.textContent=v?String(v):'';
-    });
-  }
-  /* 25 Oct 2026 (canvas Salt Admin Orders, Ask I): A SHEET IS ITS ORDERS TOGETHER under "Sheet" and its reference, the delivery charge on the right, each order
-     its own card and agreed alone (his P5 of 20 Oct 2026) */
-  function sheetGroup(grp){
-    var os=grp.map(function(x){ return x.order; }).sort(function(a,b){ return String(a.id).localeCompare(String(b.id)); }), first=os[0];
-    var g=el('section','ordsheet'), hd=el('div','ordsheet__head');
-    g.setAttribute('data-in',grp[0].parts); g.setAttribute('data-sheet',first.sheet);
-    g.setAttribute('aria-label',os.length+' orders on one sheet from '+codeByUser(first.u));
-    hd.appendChild(el('span','salt-eyebrow salt-eyebrow--copper ordsheet__ref','Sheet '+orderRef(first.id)));
-    hd.appendChild(el('span','ordsheet__sum',first.mode==='deliver'?rmShort(+first.delivery||0)+' delivery':rmShort(os.reduce(function(s,o){ return s+(+o.total||0); },0))+' goods'));
-    g.appendChild(hd);
-    grp.forEach(function(x){ g.appendChild(orderRow(x)); });
-    return g;
+    var todo=0;
+    Object.keys(ordEntries).forEach(function(k){ var e=ordEntries[k]; if(e.parts==='orders.todo'&&e.order&&!e.order.test) todo++; });
+    var c=document.querySelector('.aparts[data-place="orders"] [data-part="todo"] .salt-segment__count');
+    if(c){ c.textContent=todo?String(todo):''; c.hidden=!todo; }
+    var pay=waitingClaims().filter(function(x){ return !x.test; }).length, pn=document.querySelector('.amore__list [data-n="payments"]');
+    if(pn) pn.textContent=pay?String(pay):'';
   }
   function markOrderRows(){
-    [].forEach.call(document.querySelectorAll('#makerOrderList [data-order]'), function(r){
-      if(r.getAttribute('data-order')===ordOpened) r.setAttribute('aria-current','true'); else r.removeAttribute('aria-current'); });
+    [].forEach.call(document.querySelectorAll('#makerOrderList [data-order], #makerOrderList [data-rowof]'), function(r){
+      if((r.getAttribute('data-order')||r.getAttribute('data-rowof'))===ordOpened&&!r.classList.contains('oask')) r.setAttribute('aria-current','true'); else r.removeAttribute('aria-current'); });
   }
   /* the card of the order opened, drawn from the read that stands; it closes when its order has left the part showing (the answer to a tap
      that moved it is then on the list's line, as a card that had gone always left it) */
@@ -4731,6 +4828,8 @@ export const OWNER_JS = `
   if(window.matchMedia) ['(min-width:1180px)','(min-width:1440px)'].forEach(function(q){
     var m=window.matchMedia(q); if(m&&m.addEventListener) m.addEventListener('change', ordLayout);
   });
+  /* 2 Nov 2026: the list is a table from 1080px and a settings list below it, drawn one at a time, so a change across that width draws it again */
+  if(window.matchMedia){ var wideMq=window.matchMedia('(min-width:1080px)'); if(wideMq&&wideMq.addEventListener) wideMq.addEventListener('change', function(){ var list=document.getElementById('makerOrderList'); if(list&&makerData){ drawOrderList(list,Object.keys(ordEntries).map(function(k){ return ordEntries[k]; })); sweep(); markOrderRows(); } }); }
   function openOrder(id){
     var e=ordEntries[id];
     if(!e||placeNow!=='orders'||!ordInPart(e)) return;
@@ -4770,6 +4869,31 @@ export const OWNER_JS = `
   /* a row's Approve and Reject, and a trip's: Approve, or Approve both for two books and Approve all for more */
   function approveWord(n){ return n?(n===2?'Approve both':'Approve all'):'Approve'; }
   function rejectWord(n){ return n?(n===2?'Reject both':'Reject all'):'Reject'; }
+  /* 2 Nov 2026: the list is drawn from the entries alone, so a change across 1080px draws it again without touching the open card or what is typed in it */
+  var ordClosedAll={}, ordTripsError='';
+  function drawOrderList(list,entries){
+    list.textContent='';
+    /* 2 Nov 2026 (his Orders canvas): each part draws its groups, a settings list a group below 1080px and one plain table from it; a part with nothing in it says so in one grey line */
+    var wide=ordWide();
+    ['todo','open','done','ended'].forEach(function(part){
+      var pe=entries.filter(function(e){ return e.parts==='orders.'+part; }), gs=ordGroups(part,pe);
+      if(!gs.length){ var none=el('p','salt-settings__foot',ORD_NONE[part]); none.setAttribute('data-in','orders.'+part); list.appendChild(none); }
+      else if(wide) list.appendChild(ordTable(part,gs));
+      else gs.forEach(function(g){ list.appendChild(ordListGroup(part,g)); });
+    });
+    /* a done or ended part lists the orders with nothing asked of him (fifty at most) and every one that waits on him, which is never dropped; the note
+       counts what the list shows against every order of the stage */
+    ['done','ended'].forEach(function(st){
+      var shownN=entries.filter(function(e){ return e.stage===st; }).length;
+      if(shownN<(ordClosedAll[st]||0)){
+        var more=el('p','salt-settings__foot',shownN+' of '+ordClosedAll[st]+' closed orders are shown.'); more.setAttribute('data-in','orders.'+st); list.appendChild(more);
+        /* 17 Oct 2026: Completed is paged, fifty more a tap */
+        var next=el('button','salt-ghost','Show 50 more'); next.type='button'; next.setAttribute('data-in','orders.'+st); actOn(next,'orders.more',st);
+        next.addEventListener('click',function(){ ordMore[st]=ordShown(st)+50; drawMaker(); }); list.appendChild(next);
+      }
+    });
+    if(ordTripsError){ var te=el('p','msg bad',ordTripsError); te.setAttribute('data-in','orders.open orders.done orders.ended'); te.setAttribute('data-trips-error',''); list.appendChild(te); }
+  }
   function drawMaker(){
     var root=document.getElementById('makerReview'), list=document.getElementById('makerOrderList'), status=document.getElementById('makerReviewStatus');
     var queueRoot=document.getElementById('makerQueueReview'), draftRoot=document.getElementById('makerDrafts')||root, draftStatus=document.getElementById('makerDraftStatus');
@@ -4785,7 +4909,7 @@ export const OWNER_JS = `
     if(draftStatus) draftStatus.textContent=pendingRows.length+(pendingRows.length===1?' row':' rows')+' waiting for your approval';
     /* a row for each order of its stage, a done or ended one (fifty a stage at most) as well; an order whose cash is held is marked Waiting on you
        with its Undo, whatever else it is, and a held cash with no order on the read is a row of its own, in Placed */
-    var held=Object.keys(makerCashHeld), entries=[], known={}, settled={}, closedAll={}, STAGES=['placed','confirmed','ready','paid','done','ended'];
+    var held=Object.keys(makerCashHeld), entries=[], known={}, settled={}, closedAll={};
     (makerData.orders||[]).forEach(function(o){
       known[o.id]=true;
       var parts=orderPartsOf(o);
@@ -4795,7 +4919,8 @@ export const OWNER_JS = `
         closedAll[stage]=(closedAll[stage]||0)+1;
         if(!waits&&(settled[stage]=(settled[stage]||0)+1)>ordShown(stage)) return;
       }
-      entries.push({id:o.id, order:o, parts:parts, waits:waits});
+      /* 2 Nov 2026: cash held for an order marks it, but never moves it to To do, so the card it is held in (and its Undo) stays where it is for the ten seconds */
+      entries.push({id:o.id, order:o, stage:stage, parts:'orders.'+ordPartFor(stage,orderWaits(o)), waits:waits});
     });
     /* 17 Oct 2026, HIS FLOW: every live row of the book with no live site order is an order here, at the stage the Desk read off its figures */
     /* 18 Oct 2026: an order of several books and a buyer's same-day rows are filed the same way, at the stage the Desk read off their lines */
@@ -4805,55 +4930,17 @@ export const OWNER_JS = `
         closedAll[stage]=(closedAll[stage]||0)+1;
         if((settled[stage]=(settled[stage]||0)+1)>ordShown(stage)) return;
       }
-      var e={id:id, parts:'orders.'+stage, waits:false}; e[key]=g; entries.push(e);
+      var e={id:id, stage:stage, parts:'orders.'+ordPartFor(stage,false), waits:false}; e[key]=g; entries.push(e);
     }
     (makerData.rows||[]).forEach(function(r){ bookEntry('row:'+r.rid,'row',r); });
-    held.filter(function(id){ return !known[id]; }).forEach(function(id){ entries.push({id:id, order:null, parts:'orders.placed', waits:true}); });
+    held.filter(function(id){ return !known[id]; }).forEach(function(id){ entries.push({id:id, order:null, stage:'placed', parts:'orders.todo', waits:true}); });
     /* plan 3 (16 Oct 2026): an order of several books on the book is one card for all its lines; a buyer's same-day rows that could be one stand beside it */
     (makerData.trips||[]).forEach(function(t){ bookEntry('trip:'+t.trip,'trip',t); });
     (makerData.sameDay||[]).forEach(function(t){ bookEntry('day:'+t.rids.join('+'),'day',t); });
     ordEntries={}; entries.forEach(function(e){ ordEntries[e.id]=e; });
     if(status) paintOrdStatus();
-    list.textContent='';
-    /* from 1080px the list is a plain table: its columns' names stand over it, shown there alone */
-    var ohead=el('div','ohead-row'); ohead.setAttribute('aria-hidden','true'); ohead.setAttribute('data-in','orders.placed orders.confirmed orders.ready orders.paid orders.done orders.ended');
-    ['Book','Code','Way','Units','Waiting','Total'].forEach(function(w){ ohead.appendChild(el('span',null,w)); }); list.appendChild(ohead);
-    /* Salt Admin A to C (20 Oct 2026), P5, HIS ANSWER: A SHEET IS ONE GROUP. A sheet's orders at the same stage stand in one card, each its own row
-       (and its own [data-order]) and each agreed alone; under them the sheet's delivery, on its first order, and the goods of all of them */
-    var grouped={};
-    entries.forEach(function(e){
-      if(grouped[e.id]) return;
-      var o=e.order, grp=o&&o.sheet?entries.filter(function(x){ return x.order&&x.order.u===o.u&&x.order.sheet===o.sheet&&x.parts===e.parts; }):[];
-      if(grp.length<2){ list.appendChild(orderRow(e)); return; }
-      grp.forEach(function(x){ grouped[x.id]=true; });
-      list.appendChild(sheetGroup(grp));
-    });
-    /* a done or ended stage lists the orders with nothing asked of him (fifty at most) and every one that waits on him, which is never dropped; the note
-       counts what the list shows against every order of the stage */
-    ['done','ended'].forEach(function(st){
-      var shownN=entries.filter(function(e){ return e.parts==='orders.'+st; }).length;
-      if(shownN<(closedAll[st]||0)){
-        var more=el('p','rnone',shownN+' of '+closedAll[st]+' closed orders are shown.'); more.setAttribute('data-in','orders.'+st); list.appendChild(more);
-        /* 17 Oct 2026: Completed is paged, fifty more a tap */
-        var next=el('button','salt-ghost','Show 50 more'); next.type='button'; next.setAttribute('data-in','orders.'+st); actOn(next,'orders.more',st);
-        next.addEventListener('click',function(){ ordMore[st]=ordShown(st)+50; drawMaker(); }); list.appendChild(next);
-      }
-    });
-    /* a stage with nothing in it says so, so an empty one is never read as a fault */
-    [['placed','No orders placed.'],['confirmed','No agreed orders.'],['ready','No orders ready.'],['paid','No orders out or paid.'],['done','No done orders.'],['ended','No ended orders.']].forEach(function(p){
-      if(entries.some(function(e){ return e.parts==='orders.'+p[0]; })) return;
-      var none=el('p','rnone',p[1]); none.setAttribute('data-in','orders.'+p[0]); list.appendChild(none);
-    });
-    if(makerData.tripsError){ var te=el('p','msg bad',makerData.tripsError); te.setAttribute('data-in','orders.confirmed orders.paid orders.done orders.ended'); te.setAttribute('data-trips-error',''); list.appendChild(te); }
-    makerButton(list,['Refresh','maker.refresh'],loadMaker,false);
-    /* 13 Oct 2026 (stress, Medium): Refresh answers under itself; its refusal went to the list's line at the head of Orders, a screen above it */
-    var refreshSaid=el('p','msg osaid'); refreshSaid.id='makerRefreshSaid'; refreshSaid.setAttribute('role','status'); refreshSaid.setAttribute('aria-live','polite'); list.appendChild(refreshSaid);
-    /* the first read after entering Orders opens the first stage with something waiting (Placed when nothing does), unless he has chosen one */
-    if(ordAuto&&placeNow==='orders'){
-      ordAuto=false;
-      var wait1=STAGES.filter(function(st){ return entries.some(function(e){ return e.waits&&e.parts==='orders.'+st; }); })[0];
-      if(wait1&&wait1!==partNow){ showPlace('orders',wait1,{}); try{ history.replaceState(null,'',addrFor('orders',wait1)); }catch(x){} }
-    }
+    ordClosedAll=closedAll; ordTripsError=makerData.tripsError||'';
+    drawOrderList(list,entries);
     paintOrdCounts();
     drawOrderPane();
     drawDeskRows(draftRoot,queueRoot,pendingRows);
@@ -7044,7 +7131,7 @@ export const OWNER_JS = `
   function ordPays(o){ return ordOpen(o)?(o.payments||[]).filter(function(p){ return p.claim==='waiting'; }):[]; }
   function ordWaits(o){ return orderWaits(o); }
   /* an order's Open goes to Orders, the stage it stands at, with that order's card open (Phase 1c) */
-  function orderOpener(id){ return function(){ var e=ordEntries[id], st=e?e.parts.replace('orders.',''):'placed'; showPlace('orders',st,{fresh:true, push:true}); openOrder(id); }; }
+  function orderOpener(id){ return function(){ var e=ordEntries[id], st=e?e.parts.replace('orders.',''):'todo'; showPlace('orders',st,{fresh:true, push:true}); openOrder(id); }; }
   function orderWhat(o){ return units(o.qty)+' · '+rm(o.total); }
   function waitingClaims(){ return makerClaims.filter(function(c){ return c.state==='waiting'; }); }
   function pendingRows(){ return (makerData&&makerData.drafts||[]).filter(function(d){ return d.status==='pending'; }); }
