@@ -5011,6 +5011,9 @@ const CLIENT_JS = `
       function(v){ draft.mode=v; sheetDraw(); }));
     /* v694: a delivery says roughly where it is going, in his words a general location; never an address */
     var SL=draft.mode==='deliver'&&!draft.pool&&!draft.amend?spotsRead():null;
+    /* 2 Nov 2026: with one spot saved there is nothing to choose between, so it is picked (his report that Deliver would not
+       progress: Review waited on a tap nothing asked for); two or more still open with none picked (Batch C, his answer 4) */
+    if(SL&&SL.length===1&&!draft.spot) spotPick(SL[0]);
     if(SL){ slipKeyLoad(); B.appendChild(spotList(SL)); }   /* a saved spot's point or unit is sealed at Place, so the key is asked for here too */
     else if(draft.mode==='deliver'){
       var wf=el('div','salt-field'), wl=el('label','salt-field__label',tw('sh.whereTo')); wl.htmlFor='oWhere';
