@@ -822,6 +822,7 @@ export const EN = {
   "pw.DueNow": "Due now",
   "pw.Prepay": "Before we hand it over",
   "om.to": "To {p}",
+  "om.h": "Bill",
   "om.goods": "Goods",
   "om.rwd": "Reward \u00b7 1 unit",
   "om.rwdFree": "No charge",

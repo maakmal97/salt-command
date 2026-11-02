@@ -1708,6 +1708,21 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   placed order the terms stand in view (no Change terms, no fold), Agree and Decline in one row of two under them, Agree saying the one sum it sends;
   the reply's fold is **Answer**, its field Your line. Every book on Approve, Payments, Group and the Ledger is its typed tag (`bookTag`). What is below
   is the history of the earlier drawings; where it says otherwise, this paragraph is the page.
+  **2 Nov 2026, the open order, both sides (his Orders canvas, page 2; his answer 4 of 31 Oct 2026 and "accept all asks as recommended"):** the open
+  order is ONE card for two readers: the band, the Steps, the Bill as a settings list and the thread with its composer are drawn once, in `stmt/page.js`
+  (`oBandOf`, `oStepsOf`, `oBillOf`, `oThreadOf`, `oComposerOf`), his page and the customer's passing their own words. No card around it on either
+  side; its parts 24px apart on Shop's grid. His side, in Shop's order: the band and the Steps; the four figures (`salt-kpi--grid`); his decision as
+  settings lists (Agree's Goods, Delivery and When; Ready; Handover; Money received) with the stage's ONE filled pill 16px under it and every other move a
+  row (`asRow`); the Bill; the messages, every line of the order with his box in view (the fold Answer, `order.answer`, is gone: the box sends what its
+  Send sent) and Save this line and No reply needed as rows; This customer (`order.customer`, opening their account) and the Order log (the History fold,
+  its summary a row); and last, in ember and alone in its list, Decline the order, Cancel the order or Cancel the rest, each still asking on the Sheet.
+  From 1180px two columns 24px apart (`data-ocol`: the decision left, the record right), at 1440 too. The customer keeps the mark, never a product word,
+  what they owe in ember on the Bill's last row and one Pay under it. The open card is in its row's part (To do, Open, Done or Ended): until this version it
+  carried the stage's name, which v1376's four parts no longer hold, and was swept hidden. **The open account** the same way: its head the band, where it
+  stands a settings list, their waiting line a row (no longer a pill), Sign-in's rows with the one filled pill (Send a sign-in link) under them, Their %'s
+  Send a row, and last Copy password and Sign out everywhere as ember rows, each asking on the Sheet first (Sign out everywhere's second tap retired).
+  salt-ds 1.23.0 (#35): `salt-band--grid`, `salt-kpi--grid`, `salt-settings__value--due`, `salt-settings__row--total`, an action row's bare words.
+
   **2 Nov 2026, Orders on the canvas (his four answers of 31 Oct 2026; display and markup only):** the parts are ONE Segment of four, **To do, Open, Done,
   Ended** (`part.orders.todo`, `.open`, `.done`, `.ended`), To do carrying the count of what waits on him (`.salt-segment__count`). **To do is every order that
   waits on him, whatever its stage** (a placed one, a payment they say they sent, a stage he rejected, a question, a request to send again; a declined order
@@ -2664,13 +2679,13 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `acct.pct.up` | Account card, Their % | Raises the % by 5, to +30% at most; their prices show at it. |
 | `acct.repay` | Account card, Loans (key: the loan rid) | Opens Record's Repayment form with that loan chosen. |
 | `acct.order-for` | Account card | Opens an order for them, at the head of Orders. |
-| `acct.password` | Account card | Opens their sealed password straight to the clipboard, never into the page. |
+| `acct.password` | Account card | Asks on the Sheet (2 Nov 2026), then opens their sealed password straight to the clipboard, never into the page. |
 | `acct.reply` | Account card, their waiting line (key: the username) | Opens their thread under Messages. |
 | `acct.sent` | Account card | Mark as sent: marks the account sent, while it is not. |
 | `acct.show-link` | Accounts row for an ID with no account (key: the username) | Shows the guest price list and its QR until the account is made. |
 | `acct.show-code` | Account card | Opens the sheet that shows a code for them in person. |
 | `acct.signin-link` | Account card (key: data-acct, the username) | First tap makes their one-time sign-in link, the next shares it. |
-| `acct.signout-all` | Account card | Signs them out everywhere, on a second tap within four seconds. |
+| `acct.signout-all` | Account card | Asks on the Sheet, then signs them out everywhere (the second tap within four seconds until 2 Nov 2026). |
 | `acct.view-as` | Account card | Opens their own page, read only. |
 | `ask.close` | The Sheet every other yes or no asks on: a Desk row's Approve or Reject, a held entry's Withdraw, a group order's Close, the notice, a twin, a retained input's Cancel, a chat retry's Cancel and a vault conflict (key: what is asked, as `draft:<id>:approve`, `queue:<id>`, `pool:<id>`, `notice:set`, `twin:<what>`, `retained:<route>`, `chat:<username>:retry`, `vault:conflict`) | Closes it and sends nothing. |
 | `ask.go` | Same sheet | Does what it asked, once: sends the request the confirm let through. |
@@ -2810,7 +2825,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.accept` | Order card (key: the order id), once its figures are read | Accepts the order at the price read. |
 | `order.accept-again` | Same card, once its figures are read | Accepts again at the order's own price. |
 | `order.accept-wait` | Order card, placed, until its figures are read | Stands in for Agree and sends nothing: asks for the delivery charge (and takes him to it; the terms stand in view since 25 Oct 2026), or says the figures are being read. |
-| `order.answer` | Order card | Opens or shuts the folded reply, Answer them. |
+| `order.customer` | Order card (key: the order id), This customer | Opens their account on Customers (2 Nov 2026). |
 | `order.customer.use` | Order card (key: the order id), This customer, a customer's salt order with a suggested % over theirs | Sends the suggested % as their % (tier-set), for review under Approve. |
 | `order.again-amend` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected amendment again. |
 | `order.again-cancel` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected cancellation again. |
