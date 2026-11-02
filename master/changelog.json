@@ -1,5 +1,15 @@
 [
  {
+  "v": "v1382",
+  "d": "03 Nov 2026",
+  "t": "THEIR ANSWER REACHES ONLY THE OFFER THEY SAW",
+  "n": [
+   "<b>THE ORDER BOOK.</b> A customer's Yes or No thanks now names the offer their page showed. If you replaced that offer while their tap was on its way, it is refused and takes nothing: your newer offer stays open, its yes waiting. Before, a Yes on your old offer took the new one unseen, perhaps at a higher price, and a No thanks on an offer for their yes cancelled the order.",
+   "<b>SALT COUNTER.</b> Refused that way, the customer reads \"This offer has changed; look at the new one.\" beside the new offer, and their next Yes names it. A page opened before this version names no offer and answers the open one, as before. The words go once the offer is withdrawn, lapsed or answered.",
+   "<b>SALT ADMIN.</b> Nothing changes on your side: an answer refused this way never reaches you, and Needs you still shows your newer offer waiting. No Desk route changed; the Counter's take and No thanks accept the offer's id."
+  ]
+ },
+ {
   "v": "v1381",
   "d": "03 Nov 2026",
   "t": "A HALF UNIT OF SALT GIVEN FREE TO CS6-PER",
