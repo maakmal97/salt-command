@@ -2375,6 +2375,21 @@ catalogue less the resale accounts, owner.js `actParties`, Record's own list), s
 order for a friend only, and checked by the Desk's preview against the roster (not the associate, not a resale account); the pending row
 carries it as `downstream`, credited nothing (`bookR2`). Neither `on` nor `buyer` is in `CUSTOMER_FIELDS`: their own page never shows them.
 
+**One sheet, one trip** (plan version 3, part 3d; his design of 05 Oct 2026, one delivery for a trip of several books). The delivered lines of one
+sheet of theirs are one trip, its id named by the Desk from the sheet (`tripOf`: `t` and 16 digits, the same for every line, nothing stored on the
+order). Its one delivery rides the sheet's first delivered line still standing, by id (`tripCarrier`, as Salt Admin's `sheetOf` reads it): the
+preview refuses a charge on any other line with the way on, and Salt Admin asks the charge on that line alone, agreed or not. A line joins the
+trip (`payload.trip`, the drafter's `row.trip`, held by the engine's `tripFault`) only when every sibling's row, on the book or pending (its draft's
+day, `pendingDay`), is dated this row's day, a trip being one day's; else it stands as a row of its own, at no delivery all the same. **His Agree on
+the first line agrees the others in the same request** (`stmt/maker.js` `sheetFollow`, on the order-action road): each still-Placed line through
+the Desk's own preview and Accept at no delivery, in the window he chose where the line asked none; a line that does not agree says why
+(`sheet` on the answer, said on his card) and stays Placed. A collected sheet is no trip. Fable's review: a line kept off the trip by another
+day's row is a delivery of its own and its charge is taken (the refusal holds only for a line joining the trip), and Salt Admin asks the charge
+again once the first line was agreed on another day; it reads the sheet off every order, as the Desk does. A site row on a trip is approved
+on its own (`tripStmts` leaves `orderId` entries alone), its words say so, and a sheet agreed at no delivery raises no flag (`tripCheck`'s
+`site`). Said, not changed: a first line cancelled after it was agreed takes the delivery with it, and the lines agreed at nought then carry
+none (an Amend of one of them restores it); each line agreed wakes the customer once, so a sheet of three rings three times.
+
 Customer amendments use the customer's session at `POST /orders/<id>/amend`, not an Admin route.
 The replacement is checked against their own open order and carried over the private bridge to the
 atomic order book; missing bridge configuration fails closed.
