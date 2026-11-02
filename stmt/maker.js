@@ -1,4 +1,4 @@
-import { allOrders, deskSeen, placeOrder, customerView, RID_RE, onBook, allPools, poolOpen, poolClose, deskBody, klDay } from "./orders.js";
+import { allOrders, deskSeen, placeOrder, customerView, RID_RE, onBook, allPools, poolOpen, poolClose, deskBody, klDay, dueOf } from "./orders.js";
 import { accountRecord, exampleAccount, examplePlace, examplePools, exampleThread, exampleDeskSay, isTest, isExample, EXAMPLE_ID, TEST_USERS, EXAMPLE_POINTS } from "./testfix.js";
 import { POINTS_KEY, readPoints, validatePoints, resolvePoint, isPointCode } from "./points.js";
 import { hoursStatus, validateManualHours, validateWeeklyHours, HOURS_KEY, windowHours, openMinutes, plainWeek, openParts } from "./hours.js";
@@ -436,6 +436,22 @@ async function asPlaced(env, o, reread) {
   }
 }
 
+/* plan version 3 (03 Nov 2026): HANDED OVER AND PAID NOW, the stall's sale on the one stream. Once agreed, the order as it stands (their credit at
+   the Accept counted) is paid what it owes through the Desk's own Cash received, first, so a verdict of paid in advance never holds the goods, and
+   then handed over whole through its own handover tap, each under a request id fixed by the Place's, so a retry books nothing twice. Their rows
+   fold as every stage's do, in order; nothing new is booked here. A step that did not record says why, and the order keeps what landed. */
+async function handedPaid(env, o, rid, reread) {
+  const base = String(rid).slice(0, 58);
+  try {
+    const now = await reread(), ord = now && now.order;
+    if (!ord || !ord.id) throw new Error("The order could not be read again.");
+    const owed = dueOf(ord);
+    if (owed > 0.004) await deskCall(env, "/_internal/maker/orders/" + o.id + "/cash", "POST", { amount: owed, rid: base + "-cash" });
+    await deskCall(env, "/_internal/maker/orders/" + o.id + "/handed", "POST", { qty: +ord.qty, rid: base + "-hand" });
+    return { handed: true, paid: true };
+  } catch (error) { return { handed: false, why: oneSentence(error && error.message || error) }; }
+}
+
 /* 20 Oct 2026 (canvas V62): THE GLANCE'S STOCK, the Desk's STOCK figures a book as they came (the desk measured them; nothing here does),
    and beside each the day he expects its next lot from this site's own KV `expected` (F4, set from the Desk's Stock), kept only while it is
    today or later in Kuala Lumpur: expectedSet drops a passed day only when the next one is set. */
@@ -737,16 +753,20 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
       if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       const parsed = await bodyOf(request);
       if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
-      const fields = ["product", "qty", "mode", "unit", "total", "place", "forFriend", "rid", "week", "digest", "wantBy", "sheet", "slot", "pin", "againOf"];
+      const fields = ["product", "qty", "mode", "unit", "total", "place", "forFriend", "rid", "week", "digest", "wantBy", "sheet", "slot", "pin", "againOf", "now"];
       if (Object.keys(parsed.body).some((key) => !fields.includes(key)) || !RID_RE.test(String(parsed.body.rid || ""))
         || typeof parsed.body.digest !== "string" || typeof parsed.body.forFriend !== "boolean")
         return json({ ok: false, error: "Send a quoted order and its request id, without private fields." }, 400);
+      /* plan version 3: Handed over and paid now, his alone, for a collected order (a delivery waits on the charge he chooses) */
+      if (parsed.body.now !== undefined && (typeof parsed.body.now !== "boolean" || parsed.body.now && parsed.body.mode !== "collect"))
+        return json({ ok: false, error: "Handed over and paid now is for an order collected here." }, 400);
       if (!env.STMT) return json({ ok: false, error: "no Counter store" }, 503);
       const account = await accountRecord(env, op.u);
       if (!account) return json({ ok: false, error: "account not found" }, 404);
       const tp = await takePin(parsed.body);
       if (tp.error) return json({ ok: false, error: tp.error, ...(tp.code ? { code: tp.code } : {}) }, tp.status || 400);
-      const body = tp.body;
+      const body = tp.body, handNow = body.now === true;
+      delete body.now;   /* his word on this Place, never the order's: the order book keeps what a customer's Place keeps */
       if (isTest(op.u) && body.pin) delete body.pin;
       /* a test account's order goes to its fixture on this road too, never the book (the test surface, Ask 4) */
       const result = isTest(op.u) ? await examplePlace(env, op.u, body, "desk") : await placeOrder(env, op.u, body, "desk");
@@ -757,9 +777,12 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
       if (!isTest(op.u) && !result.again) await wakeCustomer(env, op.u, { k: "placed", o: result.order.id });
       /* plan version 2, his answer B: HIS PLACE IS HIS ACCEPT, agreed at the total the sheet showed (asPlaced); a replay agrees nothing again and
          answers what the order says, agreed once it has moved on */
+      const reread = () => placeOrder(env, op.u, body, "desk");
       const agreed = isTest(op.u) ? { accepted: false, why: "A practice order waits for you to agree it under Orders." }
-        : result.again ? (result.order.status !== "placed" ? { accepted: true } : null)
-        : await asPlaced(env, result.order, () => placeOrder(env, op.u, body, "desk"));
+        : result.again ? (result.order.status === "done" ? { accepted: true, handed: true, paid: true } : result.order.status !== "placed" ? { accepted: true } : null)
+        : await asPlaced(env, result.order, reread);
+      /* plan version 3: and, agreed, handed over and paid in the same request (handedPaid) */
+      if (handNow && agreed && agreed.accepted && !result.again) Object.assign(agreed, await handedPaid(env, result.order, parsed.body.rid, reread));
       return json(Object.assign({ ok: true, order: customerView(result.order) }, agreed ? { agreed } : {}));
     }
     if (op.kind === "review") {
