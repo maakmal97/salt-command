@@ -23,7 +23,11 @@
  *   R14 a Yes naming no offer (a page loaded before this version) answers the open offer as before
  *   R15 their page's Yes names the offer it drew; refused as changed, it says so in their words and draws the new offer, whose Yes names it
  *   R16 those words go with the offer: refused as changed onto an offer withdrawn since, the page says withdrawn alone (Fable, 3 Nov 2026), on an
- *       answer to their ask and on an offer for their yes alike */
+ *       answer to their ask and on an offer for their yes alike
+ * And his Accept beside an offer of his (3 Nov 2026, Fable's review of v1382): Accept reserves the order, then records its yes, letting every waiting yes go.
+ *   R17 an offer filed between an Accept's read and its reservation refuses the Accept, and the offer's yes stands, taken and agreed at its figure
+ *   R18 an offer sent between an Accept's reservation and its record is refused in words, and the Accept agrees the order at its own figure
+ *   R19 the reservation holds offers back REVIEW_LEASE_MS and no longer; one made before this version holds nothing; a stale one is renewed */
 import { readdirSync, readFileSync } from "node:fs";
 import { webcrypto } from "node:crypto";
 import { join } from "node:path";
@@ -49,26 +53,27 @@ export async function run({ ok, skip, pageWork }) {
   /* an offer's void waits on voidHook while one is set, given the statement's values (the order id second): how a move of his and their Yes land between a
      read and its void. The order's own waits are recordPre's, which name no offer, and the take's, which name its yes by id: neither waits */
   const VOID_RE = /^UPDATE preapproval SET status='void'.*json_extract\(shown,'\$\.offer/;
-  let voidHook = null;
+  let voidHook = null, preHook = null;   /* preHook: recordPre's own void, which runs before its yes is filed */
+  const PRE_RE = /^UPDATE preapproval SET status='void'.*figures\.claim/;
   const D1 = { prepare(sql) { const st = db.prepare(sql);
     const mk = (a) => ({ run() { const go = () => { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; };
-        return voidHook && VOID_RE.test(sql) ? Promise.resolve(voidHook(a)).then(go) : go(); },
+        return voidHook && VOID_RE.test(sql) ? Promise.resolve(voidHook(a)).then(go) : preHook && PRE_RE.test(sql) ? Promise.resolve(preHook(a)).then(go) : go(); },
       first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
     const self = mk([]); self.bind = (...a) => mk(a); return self; } };
-  const C1 = "CQ5-RC", U1 = "rcab-cdef", C2 = "CQ6-RD", U2 = "rdab-cdef";   /* two accounts, so neither reaches its five open orders */
+  const C1 = "CQ5-RC", U1 = "rcab-cdef", C2 = "CQ6-RD", U2 = "rdab-cdef", C3 = "CQ7-RE", U3 = "reab-cdef";   /* two accounts, so neither reaches its five open orders */
   const PRICING = { v: "v900", takenAt: "2026-10-01T00:00:00.000Z", tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"], profileRule: { smallUpTo: 1, bigFrom: 3 },
     byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 }, "3": { floor: 215 } }, inputs: null, sizes: [1, 2, 3] } } };
   const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
   let seq = 0;
-  for (const cust of [C1, C2]) for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)")
+  for (const cust of [C1, C2, C3]) for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)")
     .run("sales", seq++, "h" + seq, JSON.stringify({ rid: "s8" + seq, customer: cust, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d }));
-  setState("roster", [C1, C2]); setState("PRICING", PRICING); setState("OPEN", { byKey: {}, position: {} });
+  setState("roster", [C1, C2, C3]); setState("PRICING", PRICING); setState("OPEN", { byKey: {}, position: {} });
   db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
   let siteHook = null;   /* runs before the desk reaches the site: how their Yes lands between his read and his move */
   const skv = new Store(), dkv = new Store();
   const senv = { STMT: skv, STMT_DESK_KEY: "desk-key", ORDER_STORE: "object" };
   senv.ORDERBOOK = orderBook(senv).ns;
-  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1, [U2]: C2 }));
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1, [U2]: C2, [U3]: C3 }));
   const assets = { fetch: async () => new Response(JSON.stringify({ id: "rev-fixture" }), { headers: { "content-type": "application/json" } }) };
   const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
     STMT_SITE: { fetch: async (url, init) => { if (siteHook) await siteHook(url, init); return stmtW.fetch(new Request(url, init), senv); } } };
@@ -211,6 +216,46 @@ export async function run({ ok, skip, pageWork }) {
   await deskPass(denv, new Date());
   const gM = await where(m.id, 160);
   ok(!tM.error && agreed(gM, 160), "R14: a Yes naming no offer, from a page loaded before this version, answers the open offer as before: " + J([tM.error, gM]));
+
+  /* R17: AN OFFER FILED BETWEEN AN ACCEPT'S READ AND ITS RESERVATION (his other device): the order book refuses the reservation, so nothing lets its yes go */
+  const q = await place(U3, false);
+  const pvQ = await call("/orders/" + q.id + "/preview", {});
+  let offQ = null;
+  siteHook = async (url, init) => { if (/"reserveReview"/.test(String(init && init.body))) { siteHook = null; offQ = await offer(q.id, 230); } };
+  const acQ = await call("/orders/" + q.id + "/accept", { hash: pvQ.j.hash });
+  siteHook = null;
+  const yQ = yesOf(q.id, 230), vQ = O.customerView(await orderOf(q.id));
+  const tQ = await O.customerMove(senv, U3, q.id, "take", { rid: rid(), offer: vQ.price && vQ.price.id });
+  await deskPass(denv, new Date());
+  const gQ = await where(q.id, 230);
+  ok(offQ && offQ.status === 200 && acQ.status === 409 && yQ === "waiting" && vQ.status === "placed" && !tQ.error && agreed(gQ, 230),
+    "R17: an offer filed between an Accept's read and its reservation refuses the Accept, its yes standing, taken and agreed at RM 230: " + J([offQ && offQ.status, acQ.status, acQ.j.error, yQ, tQ.error, gQ]));
+
+  /* R18: AN OFFER SENT BETWEEN AN ACCEPT'S RESERVATION AND ITS RECORD: refused while the reservation is fresh, so the Accept's record lets no yes of it go */
+  const r = await place(U3, false);
+  const pvR = await call("/orders/" + r.id + "/preview", {});
+  let offR = null;
+  preHook = async (a) => { if (a[1] !== r.id) return; preHook = null; offR = await offer(r.id, 230); };
+  const acR = await call("/orders/" + r.id + "/accept", { hash: pvR.j.hash });
+  preHook = null;
+  await deskPass(denv, new Date());
+  const oR = await orderOf(r.id);
+  ok(offR && offR.status === 409 && /your Accept on this order is on its way/.test(offR.j.error || "") && acR.status === 200 && acR.j.approved === true
+    && oR.status === "acknowledged" && oR.total === 200 && yesOf(r.id, 230) === null,
+    "R18: an offer sent between an Accept's reservation and its record is refused in words, and the Accept agrees the order at RM 200: " + J([offR && offR.status, offR && offR.j.error, acR.status, acR.j.error, oR.status, oR.total]));
+
+  /* R19: THE LEASE, on the order book's own clock */
+  {
+    const T0 = "2026-11-03T01:00:00.000Z", in1 = "2026-11-03T01:01:00.000Z", out1 = "2026-11-03T01:02:01.000Z";
+    const base = { id: "20261103010000-lease", u: U3, status: "placed", product: "salt", qty: 2, total: 200, mode: "collect", place: "", forFriend: false, wantBy: null, slot: null, reviewed: true, reviewedAt: T0 };
+    const off = { offer: { id: "leaseOffer0000000001", kind: "accept", total: 230, delivery: 0, until: "2026-11-05T01:00:00.000Z" } };
+    const terms = { status: "placed", product: "salt", qty: 2, total: 200, mode: "collect", place: "", forFriend: false, wantBy: null, slot: null };
+    const held = O.decideDesk(base, off, in1), freed = O.decideDesk(base, off, out1), old = O.decideDesk(Object.assign({}, base, { reviewedAt: undefined }), off, in1);
+    const within = O.decideDesk(base, { reserveReview: terms }, in1), renew = O.decideDesk(base, { reserveReview: terms }, out1);
+    const marked = renew.ev ? O.applyEvent(JSON.parse(J(base)), renew.ev).order : null;
+    ok(held.status === 409 && !!freed.ev && !!old.ev && within.none === true && !!renew.ev && marked && marked.reviewedAt === out1 && O.REVIEW_LEASE_MS === 120000,
+      "R19: a reservation holds offers back two minutes and no longer, one with no moment holds nothing, and a stale one is renewed from this Accept: " + J([held.status, !!freed.ev, !!old.ev, within.none, !!renew.ev, marked && marked.reviewedAt]));
+  }
 
   /* R15: THEIR PAGE. Its Yes names the offer drawn; refused as changed, it says so and draws the new offer, whose Yes names the new id */
   {
