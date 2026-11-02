@@ -2336,7 +2336,11 @@ uses `placeOrder` with `by: desk`, so a moved list answers 409 with the list and
 sealed to the public half read at `GET /all/maker/slip/key` (kind `slip-pub`; the older `slip-key` kind is the sealed private
 key, never on the practice surface). Once recorded, their phone is woken as `placed` ("Order placed for you"); their card says
 Placed for you while it is placed, his Orders row You placed. On `/all/test` his Place is taken for a test account only. The
-box of his own that stood here (a size, a way, a place) is gone.
+box of his own that stood here (a size, a way, a place) is gone. **His Place is his Accept** (plan version 2, his answer B): once recorded, the
+same request runs the Desk's preview and its Accept on that digest with no price of his (`asPlaced` in `stmt/maker.js`, the pattern of a group
+order's close), so the row drafts at the total the sheet showed and his yes approves it where it lands; the banner goes after, so it is the one
+they keep. A delivery stays Placed, since its charge is his to choose and the sheet shows none; a row that differs waits under Approve; a Desk
+refusal leaves it Placed; a practice account's waits; each says why on the sheet's Sent (`sh.actWaits`), and an agreed one says so (`sh.actAgreed`).
 
 Customer amendments use the customer's session at `POST /orders/<id>/amend`, not an Admin route.
 The replacement is checked against their own open order and carried over the private bridge to the

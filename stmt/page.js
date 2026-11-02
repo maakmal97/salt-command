@@ -5244,6 +5244,7 @@ const CLIENT_JS = `
         sheetDraw(); return;
       }
       l.placed=(r.body.order&&r.body.order.id)||'placed';
+      if(act) l.agreed=r.body.agreed||null;   /* plan version 2: his Place answers whether it was agreed, or why it waits */
     }
     draft.busy=false;
     /* COUNTER BATCH B (his answer 3 of 18 Oct 2026): A SIZE PLACED IS FORGOTTEN, by what is picked on every road and by the basket when the
@@ -5252,6 +5253,9 @@ const CLIENT_JS = `
     bsPatch();
     /* S4 4.5: Sent answers in the sheet; the Order tab behind it is drawn again with the order in it */
     draft.againOf=''; draft.againProd='';
+    /* plan version 2 (his answer B): on Order as them, Sent says the lines were agreed, or the first reason one waits */
+    var waits=act?c.lines.filter(function(l){ return l.agreed&&l.agreed.accepted===false; })[0]:null;
+    draft.actSaid=!act?'':waits?tw('sh.actWaits',{w:waits.agreed.why||''}):c.lines.every(function(l){ return l.agreed&&l.agreed.accepted; })?tw('sh.actAgreed'):'';
     draft.asked=!!ask; draft.sent=c.lines[0].placed==='placed'?'':c.lines[0].placed; draft.sheetKeep=''; draft.step='sent'; draft.check=null; draft.say=''; draft.noteOpen=false; draft.pushNote=''; draft.forFriend=null; draft.when=''; draft.wantBy='';
     sheetDraw();
     await ordersAgain(); if(mine!==ticket) return;
@@ -5266,6 +5270,7 @@ const CLIENT_JS = `
     top.appendChild(oGlyph('tick','otick',40));
     var h=el('h2','salt-sheet__title',tw('sh.sent')); h.id='oshT'; top.appendChild(h);
     top.appendChild(el('p',null,tw(draft.asked?'sh.askedP':'sh.sentP')));
+    if(act&&draft.actSaid){ var as=el('p','salt-insight',draft.actSaid); as.id='oActSaid'; top.appendChild(as); }
     B.appendChild(top);
     /* Step 1b: Sent's ask retired; the bell in the saved app's header asks, on every view, until notifications are on */
     var see=el('button','salt-ghost ofull',tw('sh.see')); see.type='button'; see.id='oSee'; see.setAttribute('data-k','see');

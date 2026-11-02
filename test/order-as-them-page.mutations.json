@@ -13,5 +13,8 @@
  {"name": "his row does not say he placed it", "file": "stmt/owner.js", "find": "st==='placed'&&o.history&&o.history[0]&&o.history[0].by==='desk'?'You placed':'';", "replace": "'';"},
  {"name": "the spot's key is read on their road", "file": "stmt/page.js", "find": "    (act?actKey():api('/slip/key')).then(", "replace": "    api('/slip/key').then("},
  {"name": "his device reads their saved spots", "file": "stmt/page.js", "find": "draft.mode==='deliver'&&!draft.pool&&!draft.amend&&!act?spotsRead():null;", "replace": "draft.mode==='deliver'&&!draft.pool&&!draft.amend?spotsRead():null;"},
- {"name": "a refused open leaves the wish for the door", "file": "stmt/page.js", "find": "    var acting=actWant; actWant=false;\n", "replace": "    var acting=actWant;\n"}
+ {"name": "a refused open leaves the wish for the door", "file": "stmt/page.js", "find": "    var acting=actWant; actWant=false;\n", "replace": "    var acting=actWant;\n"},
+ {"name": "Sent says nothing of the Accept", "file": "stmt/page.js", "find": "    if(act&&draft.actSaid){ var as=el('p','salt-insight',draft.actSaid); as.id='oActSaid'; top.appendChild(as); }\n", "replace": ""},
+ {"name": "Sent drops the Desk's reason", "file": "stmt/page.js", "find": "tw('sh.actWaits',{w:waits.agreed.why||''})", "replace": "tw('sh.actWaits',{w:''})"},
+ {"name": "the page forgets the answer", "file": "stmt/page.js", "find": "      if(act) l.agreed=r.body.agreed||null;", "replace": "      if(act) l.agreed=null;"}
 ]

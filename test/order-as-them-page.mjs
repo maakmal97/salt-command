@@ -18,10 +18,10 @@ export async function run({ ok, pageWork }) {
   const opened = { ok: true, byMaster: true, session: "", assoc: false, card: null, wrapMaster: await C.wrapKey("fixture-master", ck),
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-11-01", label: "November", body: "<p>Statement</p>" }] })),
     prices: Object.assign({ at: list.at, week: list.week.monday, digest: list.digest }, await C.encryptWith(ck, JSON.stringify(list))) };
-  let refuseOpen = 0;
+  let refuseOpen = 0, agreed = { accepted: true };
   const extra = (route) => route === "/open" && refuseOpen > 0 ? (refuseOpen--, { refuse: "Busy, try again." }) : route === "/open" ? opened
     : route === "/all/maker/slip/key" ? { ok: true, key: { kty: "EC", crv: "P-256", x: "eA", y: "eQ" } }
-    : route === "/all/maker/customers/" + U1 + "/orders" ? { ok: true, order: placed }
+    : route === "/all/maker/customers/" + U1 + "/orders" ? { ok: true, order: placed, agreed }
     : route === "/all/orders/" + U1 ? { ok: true, orders: [placed], claims: [], links: [], max: 0 } : undefined;
   const openAs = async (p, act) => {
     enter(p.d, "customers", "accounts"); await p.work.quiet();
@@ -59,6 +59,8 @@ export async function run({ ok, pageWork }) {
     const b = mine[0] && mine[0].body;
     ok(mine.length === 1 && !theirs.length && !!b && !("note" in b) && b.digest === "as-them-list" && b.product === "salt" && b.total > 0 && /^[A-Za-z0-9_-]{16,}$/.test(b.rid || ""),
       "B4 Place goes through his route with their list's total and stamp and no note, never their /orders: " + JSON.stringify(sent.map((x) => [x.route, x.body])));
+    const said = p.d.getElementById("oActSaid");
+    ok(!!said && said.textContent === "Agreed for them at the price shown.", "B10 v2: Sent says his Place was agreed for them: " + (said && said.textContent));
   } catch (e) { ok(false, "Order as them stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
 
   /* B5: View as them stays read only */
@@ -80,6 +82,19 @@ export async function run({ ok, pageWork }) {
     f.dispatchEvent(new p.w.Event("submit", { bubbles: true, cancelable: true })); await p.work.quiet();
     ok(!p.d.getElementById("oNew") && /Read only/.test(lead(p)), "B9 a refused Order for them leaves no ordering for the next open at the door: " + lead(p));
   } catch (e) { ok(false, "the refused open stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+
+  /* B11 v2: a Place that was not agreed says why on Sent */
+  agreed = { accepted: false, why: "Set its delivery charge under Orders to agree it." };
+  p = await richOwnerPage({ pageWork, extra });
+  try {
+    await openAs(p, "acct.order-for");
+    p.d.getElementById("oNew").click(); await p.work.quiet();
+    p.d.getElementById("oGo").click(); await p.work.quiet();
+    p.d.getElementById("oPlace").click(); await p.work.quiet();
+    const said = p.d.getElementById("oActSaid");
+    ok(!!said && said.textContent === "Placed for them, not yet agreed: Set its delivery charge under Orders to agree it.",
+      "B11 v2: a Place not agreed says so on Sent, with the Desk's reason: " + (said && said.textContent));
+  } catch (e) { ok(false, "the waiting Place stopped on an error: " + (e && e.stack)); } finally { p.w.close(); agreed = { accepted: true }; }
 
   /* B7: Salt Admin's Orders row of an order he placed, still placed, says You placed */
   p = await richOwnerPage({ pageWork, extra, review: (j) => Object.assign({}, j, { orders: j.orders.concat([placed]) }) });
