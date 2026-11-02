@@ -27,7 +27,10 @@
  * And his Accept beside an offer of his (3 Nov 2026, Fable's review of v1382): Accept reserves the order, then records its yes, letting every waiting yes go.
  *   R17 an offer filed between an Accept's read and its reservation refuses the Accept, and the offer's yes stands, taken and agreed at its figure
  *   R18 an offer sent between an Accept's reservation and its record is refused in words, and the Accept agrees the order at its own figure
- *   R19 the reservation holds offers back REVIEW_LEASE_MS and no longer; one made before this version holds nothing; a stale one is renewed */
+ *   R19 the reservation holds offers back REVIEW_LEASE_MS and no longer; one made before this version holds nothing; a stale one is renewed
+ *   R20 two Accepts from his two devices, the second run whole between the first's read and its record: one yes is filed and one row queued, the
+ *       first told its row is being drafted (3 Nov 2026, Fable's review of v1384)
+ *   R21 a D1 answer with no count never strands his Accept's yes: it is read back by its id, and the order agreed */
 import { readdirSync, readFileSync } from "node:fs";
 import { webcrypto } from "node:crypto";
 import { join } from "node:path";
@@ -53,10 +56,10 @@ export async function run({ ok, skip, pageWork }) {
   /* an offer's void waits on voidHook while one is set, given the statement's values (the order id second): how a move of his and their Yes land between a
      read and its void. The order's own waits are recordPre's, which name no offer, and the take's, which name its yes by id: neither waits */
   const VOID_RE = /^UPDATE preapproval SET status='void'.*json_extract\(shown,'\$\.offer/;
-  let voidHook = null, preHook = null;   /* preHook: recordPre's own void, which runs before its yes is filed */
+  let voidHook = null, preHook = null, noMeta = false;   /* noMeta: the yes's INSERT answers with no count */   /* preHook: recordPre's own void, which runs before its yes is filed */
   const PRE_RE = /^UPDATE preapproval SET status='void'.*figures\.claim/;
   const D1 = { prepare(sql) { const st = db.prepare(sql);
-    const mk = (a) => ({ run() { const go = () => { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; };
+    const mk = (a) => ({ run() { const go = () => { const r = st.run(...a); return noMeta && /^INSERT INTO preapproval/.test(sql) ? {} : { meta: { changes: Number(r.changes || 0) } }; };
         return voidHook && VOID_RE.test(sql) ? Promise.resolve(voidHook(a)).then(go) : preHook && PRE_RE.test(sql) ? Promise.resolve(preHook(a)).then(go) : go(); },
       first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
     const self = mk([]); self.bind = (...a) => mk(a); return self; } };
@@ -87,7 +90,7 @@ export async function run({ ok, skip, pageWork }) {
   };
   let n = 0;
   const rid = () => ("offerRaceTap" + (++n) + "0".repeat(16)).slice(0, 24);
-  const place = async (u, ask) => (await O.placeOrder(senv, u, Object.assign({ product: "salt", qty: 2, mode: "collect", place: "", unit: 100, total: 200, week: "", rid: rid() }, ask ? { ask: true } : {}))).order;
+  const place = async (u, ask, qty = 2) => (await O.placeOrder(senv, u, Object.assign({ product: "salt", qty, mode: "collect", place: "", unit: 100, total: 100 * qty, week: "", rid: rid() }, ask ? { ask: true } : {}))).order;
   const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
   /* his offer of `total` for the goods, previewed and sent as the order card sends it: an answer to their ask, or a raise sent for their yes */
   const offer = async (id, total) => { const pv = await call("/orders/" + id + "/preview", { total }); return call("/orders/" + id + "/offer", { total, delivery: 0, hash: pv.j.offerHash, rid: rid() }); };
@@ -258,6 +261,36 @@ export async function run({ ok, skip, pageWork }) {
     const marked = renew.ev ? O.applyEvent(JSON.parse(J(base)), renew.ev).order : null;
     ok(held.status === 409 && !!freed.ev && !!old.ev && within.none === true && !!renew.ev && marked && marked.reviewedAt === out1 && O.REVIEW_LEASE_MS === 120000,
       "R19: a reservation holds offers back two minutes and no longer, one with no moment holds nothing, and a stale one is renewed from this Accept: " + J([held.status, !!freed.ev, !!old.ev, within.none, !!renew.ev, marked && marked.reviewedAt]));
+  }
+
+  /* R20: TWO ACCEPTS OF HIS, ONE ORDER. The second, from his other device, runs whole while the first waits at its record: the first files nothing */
+  {
+    const w = await place(U3, false);
+    const pvW = await call("/orders/" + w.id + "/preview", {});
+    let acW2 = null;
+    preHook = async (a) => { if (a[1] !== w.id) return; preHook = null; acW2 = await call("/orders/" + w.id + "/accept", { hash: pvW.j.hash }); };
+    const acW1 = await call("/orders/" + w.id + "/accept", { hash: pvW.j.hash });
+    preHook = null;
+    await deskPass(denv, new Date());
+    const yesW = db.prepare("SELECT status FROM preapproval WHERE order_id=? AND stage='ack' AND status<>'void'").all(w.id).map((x) => x.status);
+    /* a yes filed with its entry is a row queued (queueSale runs once for each) */
+    const queued = Number(db.prepare("SELECT COUNT(*) AS n FROM preapproval WHERE order_id=? AND stage='ack' AND status<>'void' AND entry IS NOT NULL").get(w.id).n);
+    const oW = await orderOf(w.id);
+    ok(acW2 && acW2.status === 200 && acW2.j.approved === true && acW1.status === 409 && /its row is being drafted/.test(acW1.j.error || "")
+      && J(yesW) === J(["applied"]) && queued === 1 && oW.status === "acknowledged",
+      "R20: two Accepts on one order from his two devices file one yes and queue one row, the other told its row is being drafted: " + J([acW2 && acW2.status, acW1.status, acW1.j.error, yesW, queued, oW.status]));
+  }
+
+  /* R21: A D1 ANSWER WITH NO COUNT, on a plain Accept */
+  {
+    const v = await place(U3, false, 3);   /* its own size: an equal order rowed today is refused at Accept (v1385) */
+    const pvV = await call("/orders/" + v.id + "/preview", {});
+    noMeta = true;
+    let acV;
+    try { acV = await call("/orders/" + v.id + "/accept", { hash: pvV.j.hash }); } finally { noMeta = false; }
+    const yesV = db.prepare("SELECT status FROM preapproval WHERE order_id=? AND stage='ack' AND status<>'void'").all(v.id).map((x) => x.status), oV = await orderOf(v.id);
+    ok(acV.status === 200 && acV.j.approved === true && J(yesV) === J(["applied"]) && oV.status === "acknowledged",
+      "R21: a D1 answer with no count is read back by the yes's id, and the order agreed: " + J([acV.status, acV.j.error, yesV, oV.status]));
   }
 
   /* R15: THEIR PAGE. Its Yes names the offer drawn; refused as changed, it says so and draws the new offer, whose Yes names the new id */

@@ -439,12 +439,18 @@ const preById = async (db, id) => db.prepare("SELECT * FROM preapproval WHERE id
    and voided before it was queued it was never booked, the site already counting the cash. S6 fix: nor a claim's.
    Each claim is a row of its own and its yes answers that claim alone: a second claim's Received, given before the
    first claim's row was drafted, voided the first yes, and that row could then never be booked. */
+/* 3 Nov 2026 (Fable's review of v1384): `alone`, his Accept's yes, is filed only while no other yes on the order and stage is live, in the one
+   statement, so two Accepts from his two devices, each past its own read, file one yes and queue one row; the other answers null and queues nothing */
 async function recordPre(db, p) {
   const id = p.order_id + "|" + p.stage + "|" + p.at;
   await db.prepare("UPDATE preapproval SET status='void', decided_at=?1 WHERE order_id=?2 AND stage=?3 AND status='waiting' AND entry IS NULL AND json_extract(shown,'$.figures.claim') IS NULL").bind(p.at, p.order_id, p.stage).run();
-  await db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,entry,status,tapped_by,at) VALUES (?1,?2,?3,?4,?5,?6,?7,'waiting',?8,?9)")
+  const r = await db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,entry,status,tapped_by,at) SELECT ?1,?2,?3,?4,?5,?6,?7,'waiting',?8,?9"
+    + (p.alone ? " WHERE NOT EXISTS (SELECT 1 FROM preapproval WHERE order_id=?2 AND stage=?4 AND status IN ('waiting','differs','applied'))" : ""))
     .bind(id, p.order_id, p.u || null, p.stage, p.hash, JSON.stringify(p.shown || {}), p.entry ? JSON.stringify(p.entry) : null, p.by || null, p.at).run();
-  return id;
+  if (!p.alone) return id;
+  /* a result that carries no count is read back by its id, so a yes filed is never answered as not filed (Fable): that one would wait for good, its row unqueued */
+  const filed = r && r.meta && typeof r.meta.changes === "number" ? r.meta.changes > 0 : !!(await db.prepare("SELECT 1 FROM preapproval WHERE id=?1").bind(id).first());
+  return filed ? id : null;
 }
 const markOrder = (env, u, id, mark) => site(env, "/desk/orders/" + encodeURIComponent(u) + "/" + encodeURIComponent(id),
   { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mark }) });
@@ -534,8 +540,9 @@ export async function acceptOrder(env, id, body, by, now, mirror) {
     const reserved = await moveOrder(env, o.u, id, { reserveReview: Object.fromEntries(fields.map((key) => [key, o[key] ?? null])) });
     if (!reserved.ok) return reserved;
   }
-  const preId = await recordPre(db, { order_id: id, u: o.u, stage: "ack", hash: pv.hash, entry, at: at.toISOString(), by,
+  const preId = await recordPre(db, { order_id: id, u: o.u, stage: "ack", hash: pv.hash, entry, at: at.toISOString(), by, alone: true,
     shown: Object.assign({ from: o.status, row: pv.row, flags: pv.flags, pricing: pv.pricing }, win.slot ? { slot: win.slot } : {}) });
+  if (!preId) return { ok: false, status: 409, error: "its row is being drafted: look again in a moment" };   /* his other device's Accept filed first */
   await queueSale(env, entry, false, mirror);   /* which may move entry.at to a free millisecond */
   await db.prepare("UPDATE preapproval SET entry_at=?1, entry=?2 WHERE id=?3").bind(entry.at, JSON.stringify(entry), preId).run();
   /* D6: THE DRAFTER READS THE MIRROR FOR ITSELF, never the card's read above, so a mirror that moved under the tap drafts

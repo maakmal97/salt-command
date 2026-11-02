@@ -11330,7 +11330,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1385","d":"03 Nov 2026","t":"ORDER AS THEM: HANDED OVER AND PAID NOW","n":["<b>THE STALL'S SALE ON THE ONE STREAM.</b> On a customer's own page, a collected order's sheet offers Handed over and paid now. Your Place is agreed at the price shown, then paid what it owes through the Desk's own Cash received (their credit counted) and handed over whole, each under a fixed request id, so a second tap books nothing twice. Sent says Agreed, paid and handed over, or why a step waits; the Place again finishes a step that did not land.","<b>AN EQUAL ORDER THE SAME DAY IS REFUSED, SAID WHY.</b> Your answer: a row is named by customer, day, goods with delivery, and book, never by size or order, so two equal orders of one customer on one day cannot be two rows. Accept on the second now says an equal order is on today's book and to change that one to the sum, where before it drafted and stalled the fold. An order equal only in size and goods, with another delivery charge, is a second sale and is taken.","<b>CHECKED.</b> Fable reviewed the money path four times; every finding applied, among them that the rule first compared across every customer (findOrder reads the whole site), now one account. Older checks that placed equal orders the same day were re-aimed to keep what they test. Version 3 of 10 of docs/plan-one-order-stream.html; a past date, an end buyer and one delivery over a sheet wait for later versions."]}];
+const evolution=[{"v":"v1386","d":"03 Nov 2026","t":"TWO ACCEPTS ON ONE ORDER QUEUE ONE ROW","n":["<b>THE DESK.</b> Two Accepts on one order from your two devices, tapped together, could each file your yes and queue a row, two rows for one order. Now your Accept's yes is filed only while no other yes on that order is live, checked in the same step that files it: the first is agreed, the other files and queues nothing and says \"its row is being drafted: look again in a moment\", the words Accept already used. An Accept after a row you rejected under Approve is not held back.","<b>SALT ADMIN.</b> The same words on the Accept you tapped second; nothing else changes, no route changed.","<b>SALT COUNTER.</b> No change."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11478,7 +11478,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='03 Nov 2026, 03:39 KL';
+const LAST_UPDATED='03 Nov 2026, 04:03 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
