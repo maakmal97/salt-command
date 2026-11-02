@@ -4706,7 +4706,7 @@ export const OWNER_JS = `
   }
   /* from 1080px: one plain table a part, its columns' names over it, a group's head a row of it */
   function ordTable(part,gs){
-    var t=rowsTable(ORD_WORD[part]+' orders',[136,140,0,104,136,112,140],[['Code',1],['Book',1],['Way',1],['Units'],['Waiting',1],['Total'],['',0]]);
+    var t=rowsTable(ORD_WORD[part]+' orders',[136,140,0,104,184,112,140],[['Code',1],['Book',1],['Way',1],['Units'],['Waiting',1],['Total'],['',0]]);
     t.card.setAttribute('data-in','orders.'+part);
     gs.forEach(function(g){
       var gr=tableGroup(t,g.head);

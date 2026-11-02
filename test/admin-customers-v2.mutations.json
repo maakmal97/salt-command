@@ -1,4 +1,5 @@
 [
+ {"name": "C3 the account's code link is a small target", "file": "stmt/page.js", "find": ".adm .salt-table--rows tbody th a{display:flex;align-items:center;min-height:var(--salt-tap)}", "replace": ".adm .salt-table--rows tbody th a{display:inline}"},
  {
   "name": "C1 Customers is not a Segment",
   "file": "stmt/page.js",

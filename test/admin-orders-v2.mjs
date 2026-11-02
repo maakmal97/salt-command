@@ -13,8 +13,12 @@
  *   O9  the lead over the list is one sentence, money first, and Open's names what is late
  *   O10 a part with nothing in it is one grey line, no button
  *   O11 Approve's status line is never left on Reading while it is hidden
+ *   O12 (2 Nov 2026) the Waiting column is 184px so the longest chip fits at 1180, and the code link in a table row is a 44px target
  * Drawn by the maker harness (test/maker-act.mjs). */
 import { richOwnerPage, byAct } from "./maker-act.mjs";
+import { landingPage } from "../stmt/page.js";
+import { FONT_FACE_CSS, STATEMENT_CSS, SITE_RECIPES } from "../stmt/statement-css.js";
+import { JSDOM } from "jsdom";
 
 const NOW = Date.now(), ago = (h) => new Date(NOW - h * 3600000).toISOString();
 const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
@@ -33,6 +37,15 @@ const ROW = { rid: "s182", party: "CX2-ZED", product: "oil", date: "2026-10-06",
 const owedLate = { party: "CX1-ZED", rm: 100, since: "2026-10-01", due: ago(72), rows: [{ rid: "s1", key: "k1", product: "salt" }] };
 const shown = (el) => { for (let e = el; e && e.id !== "roster"; e = e.parentElement) if (e.hidden) return false; return !!el; };
 /* a width of 1100px: the table is drawn, an open order fills the page */
+/* the owner page's own stylesheet read as rules, by selector (jsdom applies no layout, so a width is proved as the rule that sets it) */
+function pageRules() {
+  const html = landingPage("", "ord2-nonce", { master: "fixture-master", accounts: [] });
+  const css = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1].slice((FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES).length);
+  const sheet = new JSDOM("<style>" + css + "</style>").window.document.styleSheets[0], out = [];
+  const walk = (rules) => { for (const r of rules) { if (r.selectorText) out.push([r.selectorText, r.style]); if (r.cssRules) walk(r.cssRules); } };
+  walk(sheet.cssRules);
+  return out;
+}
 const wideAt = (w) => { w.matchMedia = (q) => ({ matches: /min-width:\s*(860|1080)px/.test(q) && !/max-width/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} }); };
 
 export async function run({ ok, pageWork }) {
@@ -116,8 +129,12 @@ export async function run({ ok, pageWork }) {
     const cols = tb ? [...tb.querySelectorAll(":scope > colgroup > col")].map((c) => c.style.getPropertyValue("width")) : [];
     const heads = tb ? [...tb.querySelectorAll(":scope > thead th")] : [];
     ok(!!wrap && wrap.classList.contains("salt-glass-card--radius-lg") && wrap.classList.contains("salt-glass-card--pad-none") && region.getAttribute("role") === "region"
-      && tb.classList.contains("salt-table") && tb.classList.contains("salt-table--plain") && tb.classList.contains("salt-table--rows") && J(cols) === J(["136px", "140px", "", "104px", "136px", "112px", "140px"]),
-    "from 1080px the list is one plain table in a glass card, its colgroup 136, 140, auto, 104, 136, 112 and 140px: " + J(cols));
+      && tb.classList.contains("salt-table") && tb.classList.contains("salt-table--plain") && tb.classList.contains("salt-table--rows") && J(cols) === J(["136px", "140px", "", "104px", "184px", "112px", "140px"]),
+    "from 1080px the list is one plain table in a glass card, its colgroup 136, 140, auto, 104, 184, 112 and 140px (2 Nov 2026: Waiting was 136px and cut Offered, their yes and Says sent RM 530): " + J(cols));
+    /* O12: the code link fills its cell's height, so the table's link is a 44px target (measured 59x14 before) */
+    const link = (pageRules().find((x) => x[0] === ".adm .salt-table--rows tbody th a") || [, null])[1];
+    ok(!!link && link.getPropertyValue("display") === "flex" && link.getPropertyValue("align-items") === "center" && link.getPropertyValue("min-height") === "var(--salt-tap)",
+      "the code link in a table row fills its cell's height with a 44px minimum: " + (link && link.cssText));
     ok(heads.map((h) => t(h)).join() === "Code,Book,Way,Units,Waiting,Total,Move" && heads.every((h) => h.getAttribute("scope") === "col") && !!heads[6].querySelector(".sr")
       && ["Code", "Book", "Way", "Waiting"].every((w, i) => heads[[0, 1, 2, 4][i]].classList.contains("salt-table__left")),
     "its columns are Code, Book, Way, Units, Waiting, Total and a move with a screen-reader head, the word columns left: " + heads.map((h) => t(h)).join());

@@ -8,6 +8,8 @@
  {"name": "an order of several books has no +N", "file": "stmt/owner.js", "find": "if(f.tags.length>1) into.appendChild(el('span','salt-producttag salt-producttag--more','+'+(f.tags.length-1)));", "replace": ""},
  {"name": "the row reads out only its first book", "file": "stmt/owner.js", "find": "f.aria=[f.code,f.tags.map(bookWord).join(', '),f.way,", "replace": "f.aria=[f.code,f.tags.slice(0,1).map(bookWord).join(', '),f.way,"},
  {"name": "a book row's Way is its id", "file": "stmt/owner.js", "find": "f.way={confirmed:'Agreed',ready:'Ready',paid:'Out',done:'Handed over'}[st]||(r.cancelled?'Cancelled':r.writtenOff?'Written off':'Closed');", "replace": "f.way=r.rid;"},
+ {"name": "the Waiting column is narrow again", "file": "stmt/owner.js", "find": "[136,140,0,104,184,112,140]", "replace": "[136,140,0,104,136,112,140]"},
+ {"name": "the code link in a row is a small target", "file": "stmt/page.js", "find": ".adm .salt-table--rows tbody th a{display:flex;align-items:center;min-height:var(--salt-tap)}", "replace": ".adm .salt-table--rows tbody th a{display:inline}"},
  {"name": "a move is a filled pill", "file": "stmt/owner.js", "find": "'salt-ghost salt-ghost--lit salt-ghost--tight',label)", "replace": "'salt-pill salt-pill--sm',label)"},
  {"name": "a move sends without asking", "file": "stmt/owner.js", "find": "    ordAsk[e.id]=main; ordRowRedraw(e);", "replace": "    ordMoveSend(e,main);"},
  {"name": "the table has no colgroup", "file": "stmt/owner.js", "find": "widths.forEach(function(w){ var c=el('col');", "replace": "[].forEach(function(w){ var c=el('col');"},

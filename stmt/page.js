@@ -1202,6 +1202,8 @@ body.ended>*:not(#aEnded){display:none}
 .adm .nfold>summary.nsev:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px}
 /* 2 Nov 2026 (his Orders canvas): a row's ask stands under it, wrapping its question over a full line and its two ghosts beneath */
 .adm .ordcard--ask,.adm .arow--ask{flex-wrap:wrap}
+/* 2 Nov 2026: the code in a table row is a link that fills its cell's height, so the 44px target holds in the table of Orders and of Customers alike */
+.adm .salt-table--rows tbody th a{display:flex;align-items:center;min-height:var(--salt-tap)}
 .adm div.oask,.adm .oask__in{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 .adm div.oask{flex:1 1 100%;padding-bottom:8px}
 .adm .oask__q{flex:1 1 100%}

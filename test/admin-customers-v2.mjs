@@ -154,6 +154,10 @@ export async function run({ ok, pageWork }) {
       && [1, 2, 3].every((i) => cs[i].classList.contains("salt-table__left")) && !cs[4].classList.contains("salt-table__left") && t(cs[4]) === "RM 100" && !!cs[2].querySelector(".salt-status")
       && !!cs[5].querySelector(":scope > .salt-table__act > .salt-ghost--lit") && !d.querySelector("#rlist .salt-pill") && !d.querySelector("#oCustomers th.l, #oCustomers td.l"),
     "its group heads are rows of it, the code the link that opens the account, the word cells left, the figure right, the move in the act cell: " + cs.map(t).join(" | "));
+    /* the account's code link fills its cell's height, so it is a 44px target (the Orders table's shares the rule) */
+    const link = (pageRules().find((x) => x[0] === ".adm .salt-table--rows tbody th a") || [, null])[1];
+    ok(!!link && link.getPropertyValue("display") === "flex" && link.getPropertyValue("min-height") === "var(--salt-tap)" && cs[0].firstElementChild.classList.contains("arow__open"),
+      "the account's code link in the table fills its cell's height with a 44px minimum: " + (link && link.cssText));
     /* C4 */
     await p.click(r1.querySelector('[data-act="acct.message"]'));
     const thread = d.getElementById("makerChatOpen").getAttribute("data-key") === "abcd-efgh";
