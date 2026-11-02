@@ -11330,7 +11330,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1386","d":"03 Nov 2026","t":"TWO ACCEPTS ON ONE ORDER QUEUE ONE ROW","n":["<b>THE DESK.</b> Two Accepts on one order from your two devices, tapped together, could each file your yes and queue a row, two rows for one order. Now your Accept's yes is filed only while no other yes on that order is live, checked in the same step that files it: the first is agreed, the other files and queues nothing and says \"its row is being drafted: look again in a moment\", the words Accept already used. An Accept after a row you rejected under Approve is not held back.","<b>SALT ADMIN.</b> The same words on the Accept you tapped second; nothing else changes, no route changed.","<b>SALT COUNTER.</b> No change."]}];
+const evolution=[{"v":"v1387","d":"03 Nov 2026","t":"ORDER AS THEM: THE DAY OF THE SALE AND THEIR CUSTOMER","n":["<b>A STALL SALE DATED THE DAY IT HAPPENED.</b> With Handed over and paid now on, his sheet asks Day of the sale: today, or a day in the last 30 (not before 21 Oct 2026). The row, its payment and its handover all take that day, so nothing reads late. The Desk refuses a day before the newest lot of that book landed or before their newest salt sale, so the cost, the Floor and the reward and loyalty walks read as they would today. The day counts only on the day he placed it: an order left Placed and agreed later is dated as that day.","<b>THEIR CUSTOMER ON A FRIEND'S ORDER.</b> On an associate's order for a friend his sheet asks Their customer: Not named, or a code off the roster (Record's own list, the resale accounts left out). The row books to the associate's resale account with that customer noted beside it and credited nothing. The Desk refuses a code off the roster, the associate themself or a resale account. Their own page shows neither the day nor the customer.","<b>TWINS ON THE BOOK TOO.</b> Fable's review: Accept now also reads the book for a sale of theirs that day. One under the same row key is refused, with the way on (add this order to that sale). One equal in size and goods with another delivery charge is a second sale. The rating ask reads the day he placed a back-dated sale.","<b>CHECKED.</b> Fable reviewed: four findings applied and re-checked closed. Version 4 of 10 of docs/plan-one-order-stream.html; one delivery over a sheet as one trip waits for a later version."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11478,7 +11478,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='03 Nov 2026, 04:03 KL';
+const LAST_UPDATED='03 Nov 2026, 04:59 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
