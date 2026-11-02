@@ -196,6 +196,28 @@ export async function run({ ok }) {
   verdict = { ok: true, approved: true };
   ok(j23.agreed && j23.agreed.accepted === false && !("handed" in j23.agreed) && !t23.some((x) => x[1] === "cash" || x[1] === "handed"),
     "A23 a Place not agreed is never paid or handed over: " + JSON.stringify([j23.agreed, t23]));
+  /* Fable's review: a cash step that landed and a handover that did not; the Place again finishes it, each step under its first request id */
+  stepAnswer = (path) => /handed$/.test(path) ? new Response(JSON.stringify({ ok: false, error: "the Desk did not answer in time." }), { status: 503 }) : okStep();
+  const b24 = line({ now: true }), j24 = await place2(b24), t24 = timeline.slice();
+  stepAnswer = okStep;
+  onAccept = () => new Response(JSON.stringify({ ok: true, approved: true }), { status: 200 });
+  setDoc(j24.order.id, (d) => { d.status = "acknowledged"; });
+  const j24b = await place2(b24), t24b = timeline.slice();
+  onAccept = null;
+  const hands = t24.concat(t24b).filter((x) => x[1] === "handed").map((x) => x[2].rid);
+  ok(j24.agreed && j24.agreed.paid === true && j24.agreed.handed === false && j24b.agreed && j24b.agreed.handed === true
+    && hands.length === 2 && hands[0] === hands[1] && !t24b.some((x) => x[1] === "preview" || x[1] === "accept"),
+    "A24 a cash step that landed is said paid, and the Place again finishes the handover under the same request id without agreeing twice: " + JSON.stringify([j24.agreed, j24b.agreed, t24b]));
+  /* the handover and the cash both landed but their answers were lost: the Place again books neither a second time */
+  const four = U2;
+  U2 = "oate-five";   /* the fourth account holds five open orders by now */
+  await kv.put("u:" + U2, JSON.stringify({ prices: { digest: "as-them-list" } }));
+  const b25 = line({ now: true }), j25 = await place2(b25);
+  setDoc(j25.order.id, (d) => { d.status = "acknowledged"; d.paid = 100; d.moved = 1; });
+  const j25b = await place2(b25), t25b = timeline.slice();
+  ok(j25b.agreed && j25b.agreed.handed === true && !t25b.some((x) => x[1] === "cash" || x[1] === "handed"),
+    "A25 a replay of a sale already paid and handed over taps neither again: " + JSON.stringify([j25b.agreed, t25b]));
+  U2 = four;
   setDoc(j18.order.id, (d) => { d.status = "done"; });
   const j22 = await place2(b18);
   ok(j22.agreed && j22.agreed.handed === true && j22.agreed.paid === true && !timeline.some((x) => x[0] === "desk"),

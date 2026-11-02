@@ -390,12 +390,12 @@ export function stageAt(order, job, now) {
    The order as it is agreed: the charge the site decides (typed for a delivery, nought for a collection) and, when he sets a
    price on this one order, the goods at it with what they placed it at kept beside it as `asked`. The entry, its key and its
    note are all built on the agreed order, so the row, its key and the digest are drafted on what he set. */
-/* plan version 3 (03 Nov 2026, Fable's review of the plan): TWO EQUAL SITE ORDERS ARE TWO ROWS. The fold refuses a row matching another by party,
-   date, size and total as a replay unless the entry says `second` (engine/apply.mjs), and two orders of one account, at one book, size and figure,
-   whose rows are dated the same Kuala Lumpur day, are two sales, not a replay: two collected at a stall in one afternoon. So a site order's pending
-   entry is `second` when ANOTHER order of the account (never itself, so the same order queued twice is still caught) already has its row queued
-   that day at the same book, size, goods and delivery. `others` are the account's orders as the desk reads them, `queued.ack` the moment its
-   pending entry was queued. */
+/* plan version 3 (03 Nov 2026, Fable's review): AN EQUAL ORDER ROWED TODAY. A row is named by its key, party, date, goods and delivery and book
+   (the engine's ovKey), with no order in it, and a key that names two rows sticks every later stage of both (findRow refuses it, a payment by key
+   lands on the first). So two orders of one account at one book, size and figure whose rows would fall on the same Kuala Lumpur day cannot both be
+   rowed: the second is refused at the preview, and so at Accept, with the way on (that order changed to the sum, as s218 and s219 were joined),
+   where before it drafted and stalled the fold as a replay. ANOTHER order only, never itself; `others` are the account's orders as the desk reads
+   them, `queued.ack` the moment its pending entry was queued. */
 export function siteTwin(agreed, others, now) {
   const day = klDate(now), d = +(+agreed.delivery || 0).toFixed(2);
   return (others || []).some((x) => x && x.id !== agreed.id && (x.product || "salt") === (agreed.product || "salt") && +x.qty === +agreed.qty

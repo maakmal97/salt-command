@@ -301,8 +301,10 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
   /* the charge is the site's own rule (decideDesk): typed for a delivery, nought for a collection; Step 2: the goods at the
      price he sets on this order, when he sets one, so the row, its key and the digest are all drafted on it */
   const { agreed, entry } = acceptEntry(o, code, delivery, price, now);
-  /* plan version 3: another order of theirs already rowed today at the same book, size and figure makes this one a second sale, never a replay */
-  if (siteTwin(agreed, ctx && ctx.orders, now)) entry.payload.second = true;
+  /* plan version 3 (Fable's review): another order of theirs already rowed today at the same book, size and figure shares its row's key, which
+     the book cannot carry twice: refused here, so at Accept, with the way on, never drafted to stall the fold */
+  if (siteTwin(agreed, ctx && ctx.orders, now)) return { ok: false, status: 409, twin: true,
+    error: "an equal order of theirs is rowed today at this size and figure, and the book keeps one row of it a day: change that order to the sum instead" };
   const book = await (mirror ? mirror() : readBook(env.SALT_LEDGER));
   /* fold 2.2: no snapshot is a mirror being seeded, and the drafter stands down on it; so does the card */
   if (book.version == null) return { ok: false, status: 503, error: "the mirror is being seeded: try again in a minute" };
@@ -348,7 +350,6 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
     loyal: product === "salt" ? loyalReading(book, code, { qty, goods, card: card0, today: today0 }) : null,
     hash: await stageDigest("ack", entry, d, pricing) },
     credit > 0.004 ? { credit } : {},   /* 27 Oct 2026: their credit, named only when some is spent */
-    entry.payload.second ? { second: true } : {},   /* plan version 3: a second equal sale today, never a replay, named on the card */
     cardAt(book.pricing, code, product, qty));
 }
 /** POST /orders/<id>/preview {delivery}: the pending row an Accept would make now. Stores nothing. */

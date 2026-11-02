@@ -4374,6 +4374,7 @@ const CLIENT_JS = `
   /* a size the sheet may hold: priced, or past the grid's max for a price to be asked */
   function oCanPick(p,q){ var P=sold().filter(function(x){ return x.product===p; })[0]; return oSoldHas(p,q)||!!P&&overMax(P,q); }
   function sheetOpen(product,q,opener,amend,pool,againOf){
+    draft.now=false;   /* plan version 3 (Fable's review): Handed over and paid now is asked afresh on every sheet */
     if(ro()||hold||!sold().length||!lapse.hidden) return;
     draft.amend=amend?amend.id:'';
     draft.pool=pool||'';   /* a group order is joined from the same sheet: collected, one size, its own request */
@@ -5266,7 +5267,7 @@ const CLIENT_JS = `
     /* plan version 2 (his answer B): on Order as them, Sent says the lines were agreed, or the first reason one waits */
     var waits=act?c.lines.filter(function(l){ return l.agreed&&l.agreed.accepted===false; })[0]:null;
     var unhanded=act?c.lines.filter(function(l){ return l.agreed&&l.agreed.accepted&&l.agreed.handed===false; })[0]:null;
-    draft.actSaid=!act?'':waits?tw('sh.actWaits',{w:waits.agreed.why||''}):unhanded?tw('sh.actNotHanded',{w:unhanded.agreed.why||''})
+    draft.actSaid=!act?'':waits?tw('sh.actWaits',{w:waits.agreed.why||''}):unhanded?tw(unhanded.agreed.paid?'sh.actPaidNotHanded':'sh.actNotHanded',{w:unhanded.agreed.why||''})
       :c.lines.every(function(l){ return l.agreed&&l.agreed.accepted; })?tw(c.lines.every(function(l){ return l.agreed.handed===true; })?'sh.actDone'
       :c.lines.some(function(l){ return l.agreed.prepay; })?'sh.actAgreedPrepay':'sh.actAgreed'):'';
     draft.now=false;   /* plan version 3: each sheet asks again */

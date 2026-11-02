@@ -679,6 +679,7 @@ export const EN = {
   "sh.actNowCheck": "Handed over and paid as soon as it is placed.",
   "sh.actDone": "Agreed, paid and handed over.",
   "sh.actNotHanded": "Agreed for them, not yet paid and handed over: {w}",
+  "sh.actPaidNotHanded": "Agreed and paid, not yet handed over: {w}",
   "sh.actAgreedPrepay": "Agreed for them at the price shown, to be paid before handover.",
   "sh.actWaits": "Placed for them, not yet agreed: {w}",
   "pay.overdue": "Overdue",

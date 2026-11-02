@@ -2345,8 +2345,12 @@ refusal leaves it Placed; a practice account's waits; each says why on the sheet
 it before Place, and Place carries `now`. Once agreed, `handedPaid` reads the order as it stands (their credit at the Accept counted) and records
 Cash received for exactly what it owes, first, then the handover of the whole order, each through the Desk bridge under a request id fixed by the
 Place's (`<rid>-cash`, `<rid>-hand`), so a retry books nothing twice; a step refused stops there and Sent says why (`sh.actNotHanded`), done says
-`sh.actDone`. Their rows fold as every stage's do. **Two equal site orders are two rows** (the Desk's `siteTwin`): a pending entry is `second`
-when another order of the account already has its row queued that Kuala Lumpur day at the same book, size, goods and delivery, never for itself.
+`sh.actDone`; a cash step that landed with a handover that did not says `sh.actPaidNotHanded`, and the Place again finishes it (the fixed ids
+answer from their first answer). Their rows fold as every stage's do. **An equal order rowed today is refused at Accept** (the Desk's
+`siteTwin` in `previewAck`, Fable's review): a row is named by its key (party, date, goods and delivery, book; no order), a key naming two rows
+sticks every later stage of both, so a site order whose account has another order already rowed that Kuala Lumpur day at the same book, size,
+goods and delivery answers 409 `twin` with the way on (change that order to the sum, as s218 and s219 were joined); never for itself. Before, it
+drafted and stalled the fold as a replay.
 
 Customer amendments use the customer's session at `POST /orders/<id>/amend`, not an Admin route.
 The replacement is checked against their own open order and carried over the private bridge to the

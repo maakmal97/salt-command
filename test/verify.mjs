@@ -48519,7 +48519,7 @@ await (async () => {
   await (await import("./order-as-them-page.mjs")).run({ ok, pageWork });
 })();
 
-section("v1380 One order stream, version 3: two equal site orders of one account rowed the same day are two sales, marked second, never a replay (3b)");
+section("v1380 One order stream, version 3: an equal order of an account already rowed the same day is refused at Accept, the book holding one row a key (3b)");
 await (async () => {
   await (await import("./order-stream-v3.mjs")).run({ ok });
 })();

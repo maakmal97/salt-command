@@ -24,5 +24,7 @@
  {"name": "the check does not say it", "file": "stmt/page.js", "find": "    if(act&&draft.now&&c.mode==='collect'&&!c.amend&&!c.pool) B.appendChild(el('p','salt-insight',tw('sh.actNowCheck')));", "replace": ""},
  {"name": "Place does not carry now", "file": "stmt/page.js", "find": "      if(act&&draft.now&&c.mode==='collect'&&!c.amend&&!c.pool) body.now=true;", "replace": ""},
  {"name": "Sent never says handed over", "file": "stmt/page.js", "find": "?tw(c.lines.every(function(l){ return l.agreed.handed===true; })?'sh.actDone'\n", "replace": "?tw(false?'sh.actDone'\n"},
- {"name": "Sent hides a handover that failed", "file": "stmt/page.js", "find": "unhanded?tw('sh.actNotHanded',{w:unhanded.agreed.why||''})\n", "replace": "false?''\n"}
+ {"name": "Sent hides a handover that failed", "file": "stmt/page.js", "find": "unhanded?tw(unhanded.agreed.paid?'sh.actPaidNotHanded':'sh.actNotHanded',{w:unhanded.agreed.why||''})", "replace": "false?''"},
+ {"name": "paid is not said apart", "file": "stmt/page.js", "find": "tw(unhanded.agreed.paid?'sh.actPaidNotHanded':'sh.actNotHanded',", "replace": "tw('sh.actNotHanded',"},
+ {"name": "the switch is kept between sheets", "file": "stmt/page.js", "find": "    draft.now=false;   /* plan version 3 (Fable's review): Handed over and paid now is asked afresh on every sheet */\n", "replace": ""}
 ]

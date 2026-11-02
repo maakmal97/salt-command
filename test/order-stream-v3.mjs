@@ -1,8 +1,8 @@
-/* test/order-stream-v3.mjs: plan version 3 (03 Nov 2026), TWO EQUAL SITE ORDERS ARE TWO ROWS. The fold refuses a row matching another by party, date,
- * size and total unless its entry says `second`; two orders of one account at one book, size and figure, rowed the same Kuala Lumpur day, are two sales.
- * The Desk's pending entry for a site order is `second` when ANOTHER order of the account already has its row queued that day at the same book, size,
- * goods and delivery (engine/stages.mjs siteTwin, src/orders.js previewAck); never for itself, so the same order queued twice is still a replay.
- * Invented figures on the frozen book; the preview harness is test/refund-credit-p3.mjs's. */
+/* test/order-stream-v3.mjs: plan version 3 (03 Nov 2026, Fable's review), AN EQUAL ORDER ROWED TODAY IS REFUSED AT ACCEPT. A row is named by party,
+ * date, goods and delivery and book (ovKey), with no order in it, and a key naming two rows sticks every later stage of both; so a site order whose
+ * account has ANOTHER order already rowed that Kuala Lumpur day at the same book, size, goods and delivery is refused at the preview, and so at Accept,
+ * with the way on (engine/stages.mjs siteTwin, src/orders.js previewAck); never for itself. Invented figures on the frozen book; the preview harness
+ * is test/refund-credit-p3.mjs's. */
 import { readBook } from "../tools/book.mjs";
 import { siteTwin } from "../engine/stages.mjs";
 import PRICING_ENGINE from "../engine/pricing.mjs";
@@ -21,10 +21,10 @@ export async function run({ ok }) {
   const now = new Date("2031-01-02T02:00:00Z"), same = "2031-01-02T01:00:00.000Z", before = "2031-01-01T01:00:00.000Z";
   const a = { id: "o-a", product: "salt", qty: 1, total: 100, delivery: 0 };
   const twin = { id: "o-b", product: "salt", qty: 1, total: 100, delivery: 0, queued: { ack: same } };
-  ok(siteTwin(a, [twin], now) === true, "T1 another order of theirs rowed today at the same book, size, goods and delivery makes this one a second sale");
+  ok(siteTwin(a, [twin], now) === true, "T1 another order of theirs rowed today at the same book, size, goods and delivery is its twin");
   ok(siteTwin(a, [Object.assign({}, twin, { id: "o-a" })], now) === false, "T2 the order itself is never its own twin, so a second queue of it is still a replay");
   ok(siteTwin(a, [Object.assign({}, twin, { queued: { ack: before } })], now) === false && siteTwin(a, [Object.assign({}, twin, { queued: {} })], now) === false,
-    "T3 one rowed another day, or not rowed at all, makes nothing second");
+    "T3 one rowed another day, or not rowed at all, is no twin");
   ok([{ qty: 2 }, { total: 105 }, { product: "oil" }, { delivery: 5 }].every((d) => siteTwin(a, [Object.assign({}, twin, d)], now) === false),
     "T4 another size, figure, book or delivery is not a twin");
 
@@ -53,6 +53,6 @@ export async function run({ ok }) {
   const k1 = "order:wxyz-abcd:" + first.id, o1 = JSON.parse(skv.m.get(k1));
   o1.queued = Object.assign({}, o1.queued, { ack: same }); skv.m.set(k1, J(o1));
   const p1 = await previewOrder(denv, second.id, { delivery: 0 }, now);
-  ok(!!customer && p0 && p0.ok && !p0.second && p1 && p1.ok && p1.second === true,
-    "T5 the Desk's preview marks the second equal order a second sale once the first is rowed today: " + J([p0 && (p0.ok ? !!p0.second : p0.error), p1 && (p1.ok ? p1.second : p1.error)]));
+  ok(!!customer && p0 && p0.ok && p1 && !p1.ok && p1.status === 409 && p1.twin === true && /change that order to the sum/.test(p1.error),
+    "T5 the Desk's preview refuses the second equal order once the first is rowed today, and says the way on: " + J([p0 && (p0.ok || p0.error), p1 && (p1.ok || [p1.status, p1.error])]));
 }

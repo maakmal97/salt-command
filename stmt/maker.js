@@ -442,14 +442,16 @@ async function asPlaced(env, o, reread) {
    fold as every stage's do, in order; nothing new is booked here. A step that did not record says why, and the order keeps what landed. */
 async function handedPaid(env, o, rid, reread) {
   const base = String(rid).slice(0, 58);
+  let paid = false;   /* Fable's review: the cash that landed is said, and a replay goes on to the handover */
   try {
     const now = await reread(), ord = now && now.order;
     if (!ord || !ord.id) throw new Error("The order could not be read again.");
     const owed = dueOf(ord);
     if (owed > 0.004) await deskCall(env, "/_internal/maker/orders/" + o.id + "/cash", "POST", { amount: owed, rid: base + "-cash" });
-    await deskCall(env, "/_internal/maker/orders/" + o.id + "/handed", "POST", { qty: +ord.qty, rid: base + "-hand" });
+    paid = true;
+    if (+ord.qty - (+ord.moved || 0) > 0.0004) await deskCall(env, "/_internal/maker/orders/" + o.id + "/handed", "POST", { qty: +ord.qty, rid: base + "-hand" });
     return { handed: true, paid: true };
-  } catch (error) { return { handed: false, why: oneSentence(error && error.message || error) }; }
+  } catch (error) { return { handed: false, paid, why: oneSentence(error && error.message || error) }; }
 }
 
 /* 20 Oct 2026 (canvas V62): THE GLANCE'S STOCK, the Desk's STOCK figures a book as they came (the desk measured them; nothing here does),
@@ -781,8 +783,9 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
       const agreed = isTest(op.u) ? { accepted: false, why: "A practice order waits for you to agree it under Orders." }
         : result.again ? (result.order.status === "done" ? { accepted: true, handed: true, paid: true } : result.order.status !== "placed" ? { accepted: true } : null)
         : await asPlaced(env, result.order, reread);
-      /* plan version 3: and, agreed, handed over and paid in the same request (handedPaid) */
-      if (handNow && agreed && agreed.accepted && !result.again) Object.assign(agreed, await handedPaid(env, result.order, parsed.body.rid, reread));
+      /* plan version 3: and, agreed, handed over and paid in the same request (handedPaid); a replay of it finishes what the first left (Fable's
+         review), its two steps answered from their first answer by their fixed request ids */
+      if (handNow && agreed && agreed.accepted && !agreed.handed) Object.assign(agreed, await handedPaid(env, result.order, parsed.body.rid, reread));
       return json(Object.assign({ ok: true, order: customerView(result.order) }, agreed ? { agreed } : {}));
     }
     if (op.kind === "review") {

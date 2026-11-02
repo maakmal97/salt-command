@@ -122,6 +122,24 @@ export async function run({ ok, pageWork }) {
       "B16 agreed but not paid and handed over says the Desk's reason on Sent: " + (said && said.textContent));
   } catch (e) { ok(false, "the unhanded Place stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
 
+  /* B17: paid but not handed over says so; B18: the switch is asked afresh on every sheet */
+  agreed = { accepted: true, handed: false, paid: true, why: "the Desk did not answer in time." };
+  p = await richOwnerPage({ pageWork, extra });
+  try {
+    await openAs(p, "acct.order-for");
+    p.d.getElementById("oNew").click(); await p.work.quiet();
+    p.d.getElementById("oNow").click(); await p.work.quiet();
+    p.d.querySelector("[data-k='close']").click(); await p.work.quiet();
+    p.d.getElementById("oNew").click(); await p.work.quiet();
+    const fresh = p.d.getElementById("oNow");
+    ok(!!fresh && fresh.getAttribute("aria-checked") === "false", "B18 a sheet closed with the switch on opens again with it off: " + (fresh && fresh.getAttribute("aria-checked")));
+    fresh.click(); await p.work.quiet();
+    p.d.getElementById("oGo").click(); await p.work.quiet();
+    p.d.getElementById("oPlace").click(); await p.work.quiet();
+    const said = p.d.getElementById("oActSaid");
+    ok(!!said && said.textContent === "Agreed and paid, not yet handed over: the Desk did not answer in time.", "B17 paid but not handed over says so on Sent: " + (said && said.textContent));
+  } catch (e) { ok(false, "the paid Place stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+
   /* B12 v2: agreed paid in advance says so on Sent */
   agreed = { accepted: true, prepay: true };
   p = await richOwnerPage({ pageWork, extra });
