@@ -1882,8 +1882,9 @@ export function notFoundPage(nonce) { return onePage("nf", nonce); }
    nonce only this page knows, and once his Add ID has made the account it is handed a sign-in key that only this page can take, and opens the
    account in this tab (the saved app's own /app#qr. road). The guest frame; the script a plain string under the page's nonce. */
 const JOIN_JS = "(function(){var F=document.getElementById('jf'),N=document.getElementById('jn'),P=document.getElementById('jp'),S=document.getElementById('js'),"
-  + "M=document.getElementById('jm'),ID=F.getAttribute('data-id'),K='salt-join:'+ID,W=JSON.parse(document.getElementById('jw').textContent);"
+  + "M=document.getElementById('jm'),ID=F.getAttribute('data-id'),K='salt-join:'+ID,W=JSON.parse(document.getElementById('jw').textContent),NONCE='',MISS=0;"
   + "function say(k){M.textContent=W[k];}"
+  + "var UA=navigator.userAgent||'';if(/WhatsApp|Instagram|FBAN|FBAV|FB_IAB|FBIOS|FB4A|Line[/]|MicroMessenger/.test(UA)){F.hidden=true;say(/iPhone|iPad|iPod/.test(UA)?'inappIos':'inappDroid');return;}"
   + "function b64(u){var s='';for(var i=0;i<u.length;i++)s+=String.fromCharCode(u[i]);return btoa(s);}"
   + "function b64u(u){return b64(u).replace(/[+]/g,'-').replace(/[/]/g,'_').replace(/=+$/,'');}"
   + "function hex(b){return Array.prototype.map.call(new Uint8Array(b),function(x){return('0'+x.toString(16)).slice(-2);}).join('');}"
@@ -1891,23 +1892,24 @@ const JOIN_JS = "(function(){var F=document.getElementById('jf'),N=document.getE
   + "var eph=await C.generateKey(E,false,['deriveBits']);var pk=await C.importKey('jwk',{kty:pub.kty,crv:pub.crv,x:pub.x,y:pub.y},E,false,[]);"
   + "var hk=await C.importKey('raw',await C.deriveBits({name:'ECDH',public:pk},eph.privateKey,256),'HKDF',false,['deriveKey']);"
   + "var key=await C.deriveKey({name:'HKDF',hash:'SHA-256',salt:new Uint8Array(0),info:new TextEncoder().encode('salt-join v1')},hk,{name:'AES-GCM',length:256},false,['encrypt']);"
-  + "return{v:1,epk:b64(new Uint8Array(await C.exportKey('raw',eph.publicKey))),iv:b64(iv),ct:b64(new Uint8Array(await C.encrypt({name:'AES-GCM',iv:iv},key,bytes))))};}"
-  + "function kept(){try{return localStorage.getItem(K)||'';}catch(e){return '';}}"
+  + "return{v:1,epk:b64(new Uint8Array(await C.exportKey('raw',eph.publicKey))),iv:b64(iv),ct:b64(new Uint8Array(await C.encrypt({name:'AES-GCM',iv:iv},key,bytes)))};}"
+  + "function kept(){if(NONCE)return NONCE;try{return localStorage.getItem(K)||'';}catch(e){return '';}}"
   + "var timer=null;async function wait(){var n=kept();if(!n)return;F.hidden=true;say('wait');"
   + "try{var r=await fetch('/j/'+ID+'/wait',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({nonce:n})});"
-  + "if(r.status===404){say('used');return;}var j=await r.json();"
-  + "if(j.key){say('ready');try{localStorage.removeItem(K);}catch(e){}location.replace('/app#qr.'+j.key);return;}}catch(e){}"
+  + "if(r.status===404){MISS++;if(MISS>=3){say('used');return;}}else{MISS=0;var j=await r.json();"
+  + "if(j.key){say('ready');try{localStorage.removeItem(K);}catch(e){}location.replace('/app#qr.'+j.key);return;}}}catch(e){}"
   + "timer=setTimeout(wait,5000);}"
   + "F.addEventListener('submit',async function(e){e.preventDefault();var name=N.value.trim(),place=P.value.trim();if(!name||!place){say('both');return;}"
   + "S.disabled=true;try{var kr=await fetch('/j/'+ID+'/key');if(!kr.ok){say('used');return;}var pub=(await kr.json()).key;if(!pub){say('bad');S.disabled=false;return;}"
   + "var sealed=await seal(pub,new TextEncoder().encode(JSON.stringify({v:1,name:name.slice(0,60),place:place.slice(0,60),at:new Date().toISOString()})));"
-  + "var n=kept()||b64u(crypto.getRandomValues(new Uint8Array(32)));try{localStorage.setItem(K,n);}catch(e){}"
+  + "var n=kept()||b64u(crypto.getRandomValues(new Uint8Array(32)));NONCE=n;try{localStorage.setItem(K,n);}catch(e){}"
   + "var nh=hex(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(n)));"
   + "var r=await fetch('/j/'+ID,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({seal:sealed,nonceHash:nh})});"
   + "if(r.status===404){say('used');return;}if(!r.ok){say('bad');S.disabled=false;return;}N.value='';P.value='';wait();}catch(e){say('bad');S.disabled=false;}});"
   + "wait();})();";
 export function joinPage(nonce, id) {
   const W = {}; for (const k of ["wait", "ready", "bad", "both", "used"]) W[k] = EN["join." + k];
+  W.inappIos = EN["join.inappIos"]; W.inappDroid = EN["join.inappDroid"];   /* the sign-in link's test (INAPP), the join page's own words */
   const field = (key, nm, hint) => '<label class="salt-field"><span class="salt-field__label">' + wd(key) + '</span><input class="salt-field__input" id="' + nm
     + '" required maxlength="60" autocomplete="off"><span class="salt-field__hint">' + wd(hint) + "</span></label>";
   const inner = '<span class="appmark">' + glyphSvg("ring", 40) + "</span>" + '<h1 class="gh">' + wd("join.h") + "</h1>" + '<p class="lead">' + wd("join.p") + "</p>"
@@ -2224,6 +2226,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         /* 13 Oct 2026 (stress): the answer to Make a link stands under it, where it went to the page's one line at the foot of Customers */
         + '<p class="msg osaid" id="gmsg" role="status" aria-live="polite"></p>'
         + '<div id="glist"></div>'
+        + '<div id="jlist"></div>'
         + "</div>"
         + '<div id="oCards" data-in="customers.associates">'
         + "<h2>Associates report card</h2>"
@@ -3969,6 +3972,9 @@ const CLIENT_JS = `
   /* the box keeps its own note (24 Sep 2026): it drew the order form's, so "Placed..." appeared under
      Your links, and a link that was not made said so under the order form as well */
   var myLinks=null, myMax=0, myNote='';
+  /* plan version 5 (join by link): their join links, one person each; the state in words, never a name or a code */
+  var myJoins=null, myJoinNote='';
+  var JOIN_STATE={waiting:'jn.waiting', open:'jn.open', used:'jn.used', declined:'jn.declined', withdrawn:'jn.withdrawn'};
   var LINK_STATE={open:['lnk.open','verdigris'], waiting:['lnk.waiting','steel salt-status--dashed'], declined:['lnk.declined','mist'], withdrawn:['lnk.withdrawn','mist']};
   var qrShown={};
   function linkDay(iso,L){ try{ return dmyOf(klBits(iso),L); }catch(e){ return ''; } }
@@ -4060,7 +4066,41 @@ const CLIENT_JS = `
       box.appendChild(mk);
     }
     if(myNote) box.appendChild(el('p','msg',myNote));
+    if(!view&&myJoins!==null) drawMyJoins(box);
     into.appendChild(box);
+  }
+  /* a join link is for one person: ask for one, and see where each stands; an open one is copied to send, and nothing else is shown of who it is for */
+  function drawMyJoins(box){
+    var sec=el('div'); sec.setAttribute('data-joins','');
+    sec.appendChild(el('h3',null,tw('jn.h')));
+    sec.appendChild(el('p','sub2',tw('jn.note')));
+    var ask=el('button','salt-ghost',tw('jn.ask')); ask.type='button';
+    ask.addEventListener('click', async function(){
+      ask.disabled=true; var mine=ticket;
+      var r=await api('/my/joins',{});
+      if(mine!==ticket) return;
+      myJoinNote=r.body.ok?'':wErr(r.body,'jn.notMade');
+      await loadMyLinks();
+    });
+    sec.appendChild(ask);
+    myJoins.forEach(function(r){
+      var row=el('div','glink salt-glass-card salt-glass-card--radius-md'), top=el('div','gtop');
+      row.setAttribute('data-join', r.id);
+      top.appendChild(el('p','gh',r.made?tw('jn.made',{d:Dd(oDay,r.made)}):tw('jn.yours')));
+      top.appendChild(el('span','gstate salt-status salt-status--'+(r.state==='open'?'verdigris':r.state==='waiting'?'steel salt-status--dashed':'mist'),tw(JOIN_STATE[r.state]||'jn.used')));
+      row.appendChild(top);
+      if(r.state==='open'){
+        var acts=el('div','racts'), cp=el('button','salt-ghost',tw('lnk.copy')); cp.type='button';
+        cp.addEventListener('click', async function(){
+          try{ await navigator.clipboard.writeText(r.url); cp.textContent=tw('lnk.copied'); }catch(e){ cp.textContent=tw('lnk.copyFail'); }
+          setTimeout(function(){ cp.textContent=tw('lnk.copy'); },1500);
+        });
+        acts.appendChild(cp); row.appendChild(acts);
+      }
+      sec.appendChild(row);
+    });
+    if(myJoinNote) sec.appendChild(el('p','msg',myJoinNote));
+    box.appendChild(sec);
   }
   async function loadMyLinks(){
     var mine=ticket;
@@ -4069,6 +4109,8 @@ const CLIENT_JS = `
     /* a dropped read keeps the list already drawn and redraws it, which gives back a button a tap disabled */
     if(r.status===0){ if(myLinks!==null) drawCard(); return; }
     myLinks=(r.body&&r.body.refs)||[]; myMax=(r.body&&r.body.max)||0;
+    /* and their join links, read beside: a read that fails leaves the list as it was, and none is drawn before the first answer */
+    if(!view){ var jr=await api('/my/joins'); if(mine!==ticket) return; if(jr.body&&jr.body.ok&&Array.isArray(jr.body.joins)) myJoins=jr.body.joins; }
     drawCard();
   }
 

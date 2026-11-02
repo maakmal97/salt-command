@@ -43770,8 +43770,8 @@ await (async () => {
   const { FONTS: fontsF } = await import("../stmt/fonts.js");
   ok(FF.every((f) => Buffer.from(fontsF[f] || "", "base64").equals(readFileSync(join(REPO, "design", "fonts", f)))), "and its bytes are the files");
   const wF = readFileSync(join(REPO, "stmt", "worker.js"), "utf8");
-  ok((wF.match(/font-src 'self'/g) || []).length === 3 && /p\.startsWith\("\/fonts\/"\)/.test(wF) && /"content-type": "font\/woff2"/.test(wF),
-    "each of the site's three policies (the guest pages, the account page and the test surface's shell) admits its own fonts and the Worker serves them at /fonts/");
+  ok((wF.match(/font-src 'self'/g) || []).length === 4 && /p\.startsWith\("\/fonts\/"\)/.test(wF) && /"content-type": "font\/woff2"/.test(wF),
+    "each of the site's four policies (the guest pages, the account page, the test surface's shell and the join page, plan version 5) admits its own fonts and the Worker serves them at /fonts/");
   const stmtWF = (await import("../stmt/worker.js")).default;
   const rF = await stmtWF.fetch(new Request("https://site.test/fonts/newsreader-latin.woff2"), { STMT: new KV() });
   const bodyF = Buffer.from(await rF.arrayBuffer());
@@ -48555,6 +48555,11 @@ await (async () => {
 section("v1390 One order stream, version 5: join by link, sealed on their phone, approved by him, the sign-in handed only to the page that sent it (5a, 5b, 5d)");
 await (async () => {
   await (await import("./order-stream-v7.mjs")).run({ ok });
+})();
+
+section("v1390 One order stream, version 5, the two pages: join links on Salt Admin (list, Approve, Decline, Withdraw, Add them, the sealed name into New customer, the code told, the hand-over once) and on the associate's Counter page (5c, 5e)");
+await (async () => {
+  await (await import("./order-stream-v7-ui.mjs")).run({ ok, pageWork });
 })();
 
 section("Counter Batch C: the seal carries the spot's name and unit, a unit alone sealed as its own shape, nothing in the clear (P6)");

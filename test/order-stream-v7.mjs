@@ -7,6 +7,28 @@ import counter from "../stmt/worker.js";
 import * as O from "../stmt/orders.js";
 import { Store } from "./maker-order-controls.mjs";
 import { nonceHashOf, JOIN_LABEL } from "../stmt/join.js";
+import { joinPage } from "../stmt/page.js";
+import { EN } from "../stmt/words.js";
+import { JSDOM } from "jsdom";
+
+/* the join page's own script, in a browser of its own: `ua` the browser, `store` whether localStorage works, `answers` the site's replies by path */
+async function joinBrowser(ua, store, answers) {
+  const calls = [];
+  const dom = new JSDOM(joinPage("n0nce", "abcd-efgh"), { url: "https://counter.test/j/abcd-efgh", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(w) {
+      Object.defineProperty(w.navigator, "userAgent", { value: ua });
+      Object.defineProperty(w, "crypto", { value: webcrypto });
+      w.Uint8Array = Uint8Array; w.ArrayBuffer = ArrayBuffer;   /* Node's WebCrypto takes its own realm's typed arrays */
+      w.TextEncoder = TextEncoder; w.TextDecoder = TextDecoder;
+      if (!store) Object.defineProperty(w, "localStorage", { get() { throw new Error("blocked"); } });
+      w.setTimeout = (f) => { Promise.resolve().then(f); return 1; };
+      w.fetch = async (path, init) => { const body = init && init.body ? JSON.parse(init.body) : null; calls.push([String(path), body]);
+        const a = answers(String(path), body, calls), st = a.status || 200; return { ok: st < 300, status: st, json: async () => a.body || {} }; };
+    } });
+  const settle = () => new Promise((r) => setTimeout(r, 30));
+  await settle();
+  return { dom, d: dom.window.document, calls, settle };
+}
 
 const J = JSON.stringify;
 
@@ -130,4 +152,28 @@ export async function run({ ok }) {
       && !J(mineList).includes("CJ7-NEW") && !J(mineList).includes("seal"),
       "O6 a declined link is shut and the associate reads Declined; a used one Used; their list carries no code and no seal: " + J(mineList));
   } finally { globalThis.fetch = real; }
+
+  /* J1 to J3, Fable's review of the page's script */
+  const IOS_WA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 WhatsApp/2.23";
+  const SAFARI = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";
+  const j1 = await joinBrowser(IOS_WA, true, () => ({}));
+  ok(j1.d.getElementById("jf").hidden && j1.d.getElementById("jm").textContent === EN["join.inappIos"] && j1.calls.length === 0,
+    "J1 opened in WhatsApp's own browser, the page sends nothing and says to open it in Safari, before anything is sealed: " + J([j1.d.getElementById("jm").textContent, j1.calls.length]));
+  j1.dom.window.close();
+  const pubJ = await webcrypto.subtle.exportKey("jwk", (await webcrypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"])).publicKey);
+  let waits = 0;
+  const j2 = await joinBrowser(SAFARI, false, (path, body) => {
+    if (path.endsWith("/key")) return { body: { ok: true, key: pubJ } };
+    if (path.endsWith("/wait")) { waits++; return waits <= 2 ? { status: 404 } : { body: { ok: true, state: "spent", key: "the-key-0000000000000000" } }; }
+    return { body: { ok: true } };
+  });
+  j2.d.getElementById("jn").value = "Jonah"; j2.d.getElementById("jp").value = "Taman Rekaan";
+  j2.d.getElementById("jf").dispatchEvent(new j2.dom.window.Event("submit", { cancelable: true }));
+  for (let i = 0; i < 20 && j2.d.getElementById("jm").textContent !== EN["join.ready"]; i++) await j2.settle();
+  const sent = j2.calls.find((c) => c[0] === "/j/abcd-efgh"), waited = j2.calls.filter((c) => c[0] === "/j/abcd-efgh/wait");
+  ok(!!sent && waited.length >= 3 && !!waited[0][1].nonce && (await nonceHashOf(waited[0][1].nonce)) === sent[1].nonceHash,
+    "J2 with the phone's store blocked, the page still keeps its nonce and waits on it: " + J([!!sent, waited.length]));
+  ok(j2.d.getElementById("jm").textContent === EN["join.ready"] && waited.length === 3,
+    "J3 two passing not-founds do not end the wait: the key that follows is taken and the account opens: " + J([j2.d.getElementById("jm").textContent, waited.length]));
+  j2.dom.window.close();
 }

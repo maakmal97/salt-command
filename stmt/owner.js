@@ -191,7 +191,7 @@ export const OWNER_JS = `
       sheet={}; sheetAt=j.at||null; sheetRows=j.accounts||[]; sheetIssue=j.issue||null;
       sheetSpares=typeof j.spares==='number'&&j.spares>=0?j.spares:null;
       sheetRows.forEach(function(a){ sheet[a.username]=a; });
-      drawRoster(); drawTest(); drawNeeds(); drawNeedOpen(true);
+      drawRoster(); drawTest(); drawNeeds(); drawNeedOpen(true); joinsDrive();
       if(aOpen) openCard(aOpen);
       /* the count is of accounts on the book: the test account is not one (v689) */
       var real=sheetRows.filter(function(a){ return !a.test; }).length;
@@ -1492,6 +1492,7 @@ export const OWNER_JS = `
     makerVaultTurn++; makerVault=null;
     makerSpotGen++; makerSpotOpened={}; document.querySelectorAll('[data-maker-pin]').forEach(function(node){ node.remove(); });
     pairDrafts.forEach(function(d){ d.clear(); });
+    joinForget();
     makerSlipClose(); vaultShut(true);
     makerVaultNotify(); if(makerSlipDraw) makerSlipDraw();
   }
@@ -1560,6 +1561,7 @@ export const OWNER_JS = `
     if(off) off.hidden=!makerVault;
     var vsw=document.getElementById('vaultSwitch'); if(vsw) vsw.setAttribute('aria-checked',String(!!makerVault));
     makerVaultPaint();
+    if(makerVault&&joinWant) joinOpenNow();
   }
   /* a name beside its code, wherever a code is drawn with data-who, until the lock; a code the vault has no name for shows alone. A redraw of the page is
      painted at once by the observer, so a card opened after the unlock is named too. */
@@ -3180,6 +3182,7 @@ export const OWNER_JS = `
       idDrifts.forEach(function(item){item.select.disabled=!canStart;item.typed.disabled=!canStart;});
     });
     idKind.dispatchEvent(new Event('change'));
+    joinForm={kind:idKind,name:idName,place:idPlace,status:idStatus,filled:false};
     var idDraft=null;
     pairDrafts.push({draft:function(){return idDraft;},clear:function(){idDraft=null;}});
     id.addEventListener('input',function(){idDraft=null;});
@@ -3226,6 +3229,7 @@ export const OWNER_JS = `
         if(idDraft)makerPairBody(idBody,idDraft);
         await send('/all/maker/inputs/add-id',idBody,idDraft);
         idDraft=null;
+        var joinNote=await joinTold(name,locality,kind,code);
         idName.value='';idPlace.value='';idLink.value='';
         if(kind!=='bucket')makerVaultRefresh();
         try{
@@ -3234,6 +3238,7 @@ export const OWNER_JS = `
         }catch(refreshError){
           idStatus.textContent='Sent. '+code+' waits under Approve, but the lists could not be refreshed: '+refreshError.message;
         }
+        if(joinNote)idStatus.textContent+=' '+joinNote;
         loadMaker();
       }catch(error){refusal(idStatus,error);}
       idBusy=false;
@@ -3953,6 +3958,7 @@ export const OWNER_JS = `
     menuCount('reopen-a-cancelled-order',(catalog.revivable||[]).filter(function(row){return !(row.paid>0.009)&&!(row.movedUnits>0.009);}).length);
     if(menuOffers!=null) menuCount('offsets',menuOffers);
     unsentParts();
+    joinApply();   /* a join waiting to be added fills New customer and opens it once the forms stand */
   }
   /* the count beside a part's word is what waits unsent on this phone in that part */
   function unsentParts(){
@@ -6792,10 +6798,11 @@ export const OWNER_JS = `
     if(!poll) moved=null;
     linksBusy=true;
     try{
+      var jd=await readJoins();
       var j=await refs('/all/refs'); nGot('links');
-      var diff=changed('links',[j.refs]);
+      var diff=changed('links',[j.refs])||jd;
       links=j.refs||[]; linksRead=true;
-      if(diff||!poll){ drawLinks(); drawNeeds(); if(!poll){ say(''); linkSay(''); } }
+      if(diff||!poll){ drawLinks(); drawJoins(); drawNeeds(); joinsDrive(); if(!poll){ say(''); linkSay(''); } }
     }
     catch(e){ nGot('links', e); if(!poll) sayFail(e); }
     finally{ linksBusy=false; }
@@ -6826,6 +6833,131 @@ export const OWNER_JS = `
       if(mc&&mc.scrollIntoView&&!oLinks.hidden) mc.scrollIntoView({block:'center'});
     }catch(e){ linkSaid={id:r.id, t:e.message, bad:true, err:e}; drawLinks(); drawNeeds(); say(''); }
     finally{ delete moving[r.id]; moveLock(r.id, false); }
+  }
+  /* ---- JOIN LINKS (plan version 5, his answers E to E2 of 02 Nov 2026; stmt/join.js) ------------------------------------------------
+     An associate asks for a link for ONE person; he approves it here beside the guest links; the referee's page seals a name and a place to the slip key
+     (info 'salt-join v1') and sends it once. A join in state sent is a To do card, Add them: the one unlock opens the seal and Record's New customer is
+     filled with the name and the place, kind Customer, and he adds the ID as ever. When that Add ID is sent the join is told its code (state added), and
+     once the code has an account on the sheet this page mints the hand-over as Show a code does and files it for the referee's page (once a join a load).
+     The name lives in page memory (joinHold) until the lock, and goes nowhere but into the Add ID form's sealed vault envelope. */
+  var joins=[], joinsRead=false, joinHold=null, joinWant=null, joinForm=null, joinHanded={}, joinSaid={}, joinMoving={};
+  function joinWaiting(r){ return r.approved===false&&r.declined!==true&&!r.revoked; }
+  function joinWord(r){ return r.revoked?'Withdrawn':r.declined===true?'Declined':r.approved===false?'Waiting':({open:'Open',sent:'Sent',added:'Added',keyed:'Signing in',spent:'Used'}[r.state]||'Open'); }
+  function joinPut(j){ for(var i=0;i<joins.length;i++) if(joins[i].id===j.id){ joins[i]=j; return; } joins.unshift(j); }
+  async function readJoins(){
+    try{ var j=await refs('/all/joins'); nGot('joins'); var was=changed('joins',[j.joins]); joins=j.joins||[]; joinsRead=true; return was; }
+    catch(e){ nGot('joins', e); return false; }
+  }
+  function drawJoins(){
+    var box=document.getElementById('jlist'); if(!box) return;
+    box.textContent='';
+    if(!joins.length) return;
+    var group=el('section','ngroup glinks'); group.setAttribute('aria-label','Join links');
+    group.appendChild(el('h2','salt-eyebrow salt-eyebrow--brass nsev ghead','Join links'));
+    joins.forEach(function(r){
+      var who=codeByUser(r.by), waiting=joinWaiting(r), key='jl:'+r.id;
+      var c=needCard({sev:waiting?'now':r.state==='sent'?'soon':'watch', kind:'links', word:joinWord(r), key:key, at:'', age:waiting?ageOf(r.made):stampDay(r.made), late:waiting,
+        who:who, title:'Join link from '+who, rm:0});
+      c.setAttribute('data-join', r.id);
+      if(waiting){
+        var ap=pill(['Approve','join.approve',key]), de=ghost(['Decline','join.decline',key]);
+        ap.setAttribute('data-move',''); de.setAttribute('data-move','');
+        ap.disabled=de.disabled=!!joinMoving[r.id];
+        ap.addEventListener('click', function(){ moveJoin(r,'approve'); }); de.addEventListener('click', function(){ moveJoin(r,'decline'); });
+        c._grow(); c._add(ap); c._add(de);
+      }else if(r.approved===true&&!r.revoked&&r.state==='open'){
+        var wd=ghost(['Withdraw','join.withdraw',key]); wd.setAttribute('data-move',''); wd.disabled=!!joinMoving[r.id];
+        wd.addEventListener('click', function(){ moveJoin(r,'revoke'); });
+        c._add(wd);
+      }
+      if(joinSaid[r.id]){ var n=noteOf(c); n.textContent=joinSaid[r.id]; n.className+=' bad'; }
+      group.appendChild(c);
+    });
+    box.appendChild(group);
+  }
+  async function moveJoin(r, how){
+    if(joinMoving[r.id]) return;
+    joinMoving[r.id]=true; delete joinSaid[r.id]; drawJoins();
+    try{
+      var j=await refs('/all/joins/'+r.id+'/'+how, {});
+      joinPut(j.join); joinSaid[r.id]=({approve:'Approved. It opens now.',decline:'Declined. It stays shut.',revoke:'Withdrawn.'}[how]||'Done.');
+    }catch(e){ joinSaid[r.id]=e.message; }
+    delete joinMoving[r.id]; drawJoins(); drawNeeds();
+  }
+  /* a join in state sent: the referee's form is in, waiting on his Add ID */
+  function joinNeed(r){
+    var who=codeByUser(r.by);
+    return item('now','accounts','Customer','j:'+r.id, r.sentAt||r.made, {who:who, title:'New customer from '+who,
+      why:'They sent their name and place. Add them, and they sign in by themselves.', open:(wide()?function(){}:null)}, function(c){
+      mainButton(c,'Add them','need.join-add','j:'+r.id, function(){ joinAdd(r, this); });
+      if(joinSaid[r.id]){ var n=noteOf(c); n.textContent=joinSaid[r.id]; n.className+=' bad'; }
+    });
+  }
+  /* added, and waiting for the account or for its hand-over to be filed: FYI, no button */
+  function joinSignNeed(r){
+    var t='Signing in '+(r.code||'the new customer');
+    return item('watch','accounts','Customer','js:'+r.id, r.addedAt||r.made, {who:r.code||'Customer', title:t, counts:false,
+      why:'Their account opens once the Add ID is approved and folded. Then they sign in by themselves.', open:(wide()?function(){}:null)}, function(c){
+      if(joinSaid[r.id]){ var n=noteOf(c); n.textContent=joinSaid[r.id]; n.className+=' bad'; }
+    });
+  }
+  function joinAdd(r, from){
+    delete joinSaid[r.id]; joinWant=r.id;
+    if(!makerVault){ vaultAsk(from); return; }
+    joinOpenNow();
+  }
+  /* the seal opened with the slip key the one unlock holds, then Record's New customer filled (joinApply) */
+  async function joinOpenNow(){
+    var id=joinWant; if(!id||!makerVault) return; joinWant=null;
+    var r=joins.filter(function(x){ return x.id===id; })[0];
+    try{
+      if(!r||r.state!=='sent'||!r.seal) throw new Error('That join is not waiting any more.');
+      if(!makerVault.slip) throw new Error('No slip key is filed.');
+      var plain=await makerSealedOpen(makerVault.slip, r.seal, 'salt-join v1'), p=null;
+      try{ p=JSON.parse(new TextDecoder().decode(plain)); }catch(x){ p=null; }
+      if(!p||typeof p.name!=='string'||typeof p.place!=='string'||!p.name.trim()||!p.place.trim()) throw new Error('It holds nothing this page reads.');
+      if(!makerVault) return;
+      joinHold={id:r.id, by:r.by, name:p.name.trim().slice(0,60), place:p.place.trim().slice(0,60)};
+    }catch(e){ if(r) joinSaid[id]='Could not open it: '+e.message; drawNeeds(); return; }
+    showPlace('record','customers',{fresh:true, push:true});
+    joinApply();
+  }
+  function joinApply(){
+    var f=joinForm; if(!joinHold||!f||!f.name.isConnected) return;
+    f.kind.value='customer'; f.kind.dispatchEvent(new Event('change',{bubbles:true}));
+    f.name.value=joinHold.name; f.place.value=joinHold.place;
+    f.name.dispatchEvent(new Event('input',{bubbles:true})); f.place.dispatchEvent(new Event('input',{bubbles:true}));
+    f.filled=true; f.status.textContent='Filled from the join link of '+codeByUser(joinHold.by)+'. Check them, then add.';
+    openForm('new-customer');
+  }
+  /* the lock lets the name go: the held copy, and the form fields it filled */
+  function joinForget(){
+    joinHold=null; joinWant=null;
+    if(joinForm&&joinForm.filled){ joinForm.filled=false; joinForm.name.value=''; joinForm.place.value=''; joinForm.status.textContent=''; }
+  }
+  /* his Add ID went through for what the join filled: the join is told the code, never a name. Answers a sentence to add to the form's line, or '' */
+  async function joinTold(name, locality, kind, code){
+    if(!joinHold||kind!=='customer'||name!==joinHold.name||locality!==joinHold.place) return '';
+    var id=joinHold.id; joinHold=null; if(joinForm) joinForm.filled=false;
+    try{ var j=await refs('/all/joins/'+id+'/added', {code:code}); joinPut(j.join); delete joinSaid[id]; drawJoins(); drawNeeds(); return 'The join link has its code.'; }
+    catch(e){ joinSaid[id]='Its code was not told to the link: '+e.message; drawNeeds(); return 'The join link was not told its code: '+e.message; }
+  }
+  /* once the code has an account on the sheet, the hand-over is minted as Show a code mints it and filed for the page that sent the form; once a join a load */
+  function joinsDrive(){
+    if(!joinsRead||!sheet) return;
+    joins.forEach(function(r){
+      if(r.state!=='added'||!r.code||joinHanded[r.id]) return;
+      var a=sheetRows.filter(function(x){ return x.code===r.code&&x.account; })[0]; if(!a) return;
+      joinHanded[r.id]=true; joinSignIn(r, a);
+    });
+  }
+  async function joinSignIn(r, a){
+    try{
+      var k=await keyFor(a);
+      var j=await refs('/all/joins/'+r.id+'/handover', {u:a.username, token:k.token, wrap:k.wrap});
+      k=null; joinPut(j.join); delete joinSaid[r.id];
+    }catch(e){ joinSaid[r.id]='Not signed in: '+e.message; }
+    drawJoins(); drawNeeds();
   }
   /* ---- NEEDS YOU, THE INBOX (S9 9.1, and Phase 1b of 11 Oct 2026) ------------------------------------
      His home: every thing that waits on him, one card each on the system's Action recipe (salt-action, coloured by --salt-sev), ranked
@@ -7497,6 +7629,7 @@ export const OWNER_JS = `
     unsentList().forEach(function(u){ L.push(unsentNeed(u)); });
     /* a link he has just moved stays where he tapped it, saying what happened, and is no longer counted */
     links.filter(function(r){ return waitingLink(r)||(moved&&moved.id===r.id&&!r.standing&&r.by); }).forEach(function(r){ L.push(linkNeed(r)); });
+    joins.forEach(function(r){ if(r.state==='sent') L.push(joinNeed(r)); else if(r.state==='added') L.push(joinSignNeed(r)); });
     real.filter(function(a){ return a.account===false; }).forEach(function(a){ L.push(bareNeed(a)); });
     var fresh=real.filter(function(a){ return a.account&&!a.sent&&!(a.seen&&a.seen.opens); });
     if(turn||fresh.length) L.push(turn?turnCard(fresh.length>0):sendNeed(fresh));

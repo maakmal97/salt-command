@@ -449,6 +449,18 @@ export const EN = {
   "lnk.make": "Make a link",
   "lnk.notMade": "That link was not made.",
   "lnk.notWithdrawn": "That link was not withdrawn.",
+  /* plan version 5, join by link: an associate asks for a link for one person; it says where it stands and never who it is for */
+  "jn.h": "Join links",
+  "jn.note": "A join link is for one person.",
+  "jn.ask": "Ask for a join link",
+  "jn.waiting": "Waiting for us",
+  "jn.open": "Ready to share",
+  "jn.used": "Used",
+  "jn.declined": "Not approved",
+  "jn.withdrawn": "Withdrawn",
+  "jn.made": "Asked {d}",
+  "jn.yours": "Your join link",
+  "jn.notMade": "That join link was not made.",
   /* ---- PRICES ---- */
   /* HIS INSTRUCTION OF 27 SEP 2026: Prices never states a customer's own rate, and never says that one customer's prices
      differ from another's. Gone: "Your rate: {rm} per {u}, from your last {n} orders" and its one-order twin, "Your own
@@ -690,6 +702,8 @@ export const EN = {
   "join.ready": "Your account is ready, so it opens now.",
   "join.bad": "That did not go through, so check your connection and try again.",
   "join.used": "This link has been used.",
+  "join.inappIos": "This app's browser cannot keep your sign-in, so open this page in Safari.",
+  "join.inappDroid": "This app's browser cannot keep your sign-in, so open this page in Chrome.",
   "sh.actNow": "Handed over and paid now",
   "sh.actNowCheck": "Handed over and paid as soon as it is placed.",
   "sh.actOn": "Day of the sale",

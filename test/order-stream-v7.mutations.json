@@ -17,5 +17,8 @@
  {"name": "a withdrawn link still hands over", "file": "stmt/join.js", "find": "  if (!joinLive(rec) || typeof nonce !== \"string\"", "replace": "  if (!rec || typeof nonce !== \"string\""},
  {"name": "a withdrawn link's key is not burnt", "file": "stmt/join.js", "find": "  if (!joinLive(rec) && rec.ks) { const t = await openToken(env, rec.ks); if (t) await dropHandover(env, t); delete rec.ks; }\n", "replace": ""},
  {"name": "a second tap mints a stray key", "file": "stmt/worker.js", "find": "        if (rec.state === \"keyed\" || rec.state === \"spent\") return json({ ok: false, error: \"They have their sign-in already.\" }, 409);\n", "replace": ""},
- {"name": "a public body is read unbounded", "file": "stmt/worker.js", "find": "  if (+(request.headers.get(\"content-length\") || 0) > 16384) return json({ ok: false }, 413);", "replace": ""}
+ {"name": "a public body is read unbounded", "file": "stmt/worker.js", "find": "  if (+(request.headers.get(\"content-length\") || 0) > 16384) return json({ ok: false }, 413);", "replace": ""},
+ {"name": "an app's own browser sends the form", "file": "stmt/page.js", "find": "if(/WhatsApp|Instagram|FBAN|FBAV|FB_IAB|FBIOS|FB4A|Line[/]|MicroMessenger/.test(UA)){F.hidden=true;", "replace": "if(false){F.hidden=true;"},
+ {"name": "the nonce lives in the store alone", "file": "stmt/page.js", "find": "function kept(){if(NONCE)return NONCE;try{", "replace": "function kept(){try{"},
+ {"name": "one not-found ends the wait", "file": "stmt/page.js", "find": "if(r.status===404){MISS++;if(MISS>=3){say('used');return;}}", "replace": "if(r.status===404){say('used');return;}"}
 ]

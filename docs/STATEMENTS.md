@@ -2399,6 +2399,20 @@ now"): with no row chosen, Record's Sale or purchase form records a purchase alo
 them, with Handed over and paid now); a sale's row still changes there; Gift, Redeem, loans and the stock count stay. The server's
 `/inputs/sale` road stays, unreached from Salt Admin, as recovery, as the raw queue does.
 
+**Join by link** (plan version 5, his answers E, E1 and E2 of 02 Nov 2026; `stmt/join.js`). An associate asks for a join link for one person
+(`/my/joins`, associates only, a practice account none); he approves it on Salt Admin's links (shut until `approved === false` turns true,
+Decline its own state, Withdraw while open). `/j/<id>` serves the referee's page while the link is approved, not withdrawn or declined, and not
+spent; every other id and any longer path is the one shut page. In an app's own browser (the sign-in link's `INAPP` test) it sends nothing and
+says to open it in Safari or Chrome. It asks a name or nickname and where they are, both required, seals them on the phone to his slip key
+(`salt-join v1`, the pin's construction), and sends the seal once with the SHA-256 of a nonce it keeps (in the page and the phone's store); the
+record holds the ciphertext alone, never a name. Needs you shows "New customer from <associate>"; Add them opens the seal behind his one
+unlock and fills New customer (the name and place in page memory only, cleared by the lock); his Add ID tells the link its code (`/added`, the
+code alone) and the seal is let go. Once the code's account is open, Salt Admin mints a hand-over as Show a code does and files it on the link
+(`/all/joins/<id>/handover`), sealed under the hand-over secret (`sealToken`), for the page whose nonce matches; that page takes it once
+(`/j/<id>/wait`), the record forgets it, and the page opens the account in its tab (`/app#qr.<key>`, the road a key he minted takes). A link
+withdrawn while its key waits burns the key unspent; a second hand-over tap mints nothing; the public posts are bounded at 16 KB. The
+username is the pool's (E1); the passkey is offered on the account as ever. The introducer is kept on the link (`by`) for version 6.
+
 Customer amendments use the customer's session at `POST /orders/<id>/amend`, not an Admin route.
 The replacement is checked against their own open order and carried over the private bridge to the
 atomic order book; missing bridge configuration fails closed.
