@@ -4684,16 +4684,16 @@ export const OWNER_JS = `
   /* the groups of one part: To do's Orders and each sheet, Open's three stages, a month in Done and Ended (a sheet's orders, two or more at one stage, stand under their own head) */
   function ordGroups(part,pe){
     var out=[], idx={}, sheets={};
-    function put(key,head,e,sheet){ var g=idx[key]; if(!g){ g=idx[key]={key:key, head:head, rows:[], sheet:!!sheet}; out.push(g); } g.rows.push(e); }
+    function putGroup(key,head,e,sheet){ var g=idx[key]; if(!g){ g=idx[key]={key:key, head:head, rows:[], sheet:!!sheet}; out.push(g); } g.rows.push(e); }
     if(part==='todo'||part==='open') pe.forEach(function(e){ var o=e.order; if(o&&o.sheet) (sheets[o.u+'|'+o.sheet+'|'+e.stage]=sheets[o.u+'|'+o.sheet+'|'+e.stage]||[]).push(e); });
     pe.forEach(function(e){
       var o=e.order, sk=o&&o.sheet?o.u+'|'+o.sheet+'|'+e.stage:'';
       if(sk&&sheets[sk]&&sheets[sk].length>1){
         var os=sheets[sk].map(function(x){ return x.order; }).sort(function(a,b){ return String(a.id).localeCompare(String(b.id)); }), first=os[0];
-        put('sheet:'+sk,'Sheet '+orderRef(first.id)+' · '+(first.mode==='deliver'?rmShort(+first.delivery||0)+' delivery':rmShort(os.reduce(function(s,x){ return s+(+x.total||0); },0))+' goods')+(part==='open'?' · '+ORD_HEAD[e.stage]:''),e,true);
-      }else if(part==='todo') put('orders','Orders',e);
-      else if(part==='open') put('stage:'+e.stage,ORD_HEAD[e.stage]||'Open',e);
-      else{ var mo=ordMonth(e); put('m:'+mo,mo||'Undated',e); }
+        putGroup('sheet:'+sk,'Sheet '+orderRef(first.id)+' · '+(first.mode==='deliver'?rmShort(+first.delivery||0)+' delivery':rmShort(os.reduce(function(s,x){ return s+(+x.total||0); },0))+' goods')+(part==='open'?' · '+ORD_HEAD[e.stage]:''),e,true);
+      }else if(part==='todo') putGroup('orders','Orders',e);
+      else if(part==='open') putGroup('stage:'+e.stage,ORD_HEAD[e.stage]||'Open',e);
+      else{ var mo=ordMonth(e); putGroup('m:'+mo,mo||'Undated',e); }
     });
     out.forEach(function(g){ if(g.sheet) g.rows.sort(function(a,b){ return String(a.id).localeCompare(String(b.id)); }); });
     var rank=function(g){ return g.sheet?9:part==='open'?['confirmed','ready','paid'].indexOf(g.key.slice(6)):0; };
