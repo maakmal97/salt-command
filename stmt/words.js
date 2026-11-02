@@ -116,6 +116,7 @@ export const EN = {
   "e.offerNone": "there is no offer open on this order",
   "e.offerLapsed": "this offer has lapsed; ask us again",
   "e.offerVoid": "this offer was for a different order",
+  "e.offerChanged": "this offer has changed; look at the new one",
   /* ---- THE WHOLE PAGE ---- */
   "x.close": "Close",
   "dev.phone": "phone",
