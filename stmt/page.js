@@ -659,7 +659,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .aparts.salt-segment{max-width:30rem}
 .adm .aparts .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
 /* 2 Nov 2026 (his Orders canvas): the Segment of four stands 16px over the lead, the lead 24px over the list and the list 24px over More, Shop's grid */
-.adm .aparts[data-place="orders"]{margin:0 0 16px}
+.adm .aparts[data-place="orders"],.adm .aparts[data-place="customers"]{margin:0 0 16px}
 .adm .olead{margin:0 0 24px}
 .adm #oOrders>.abody{gap:24px}
 .adm .ordend{display:flex;margin-top:16px}
@@ -909,11 +909,9 @@ body.ended>*:not(#aEnded){display:none}
 .adm .afil{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 4px}
 .adm .afil .nktab{padding:0 4px;gap:6px;text-overflow:ellipsis}
 @media (min-width:860px){.adm .afil{grid-template-columns:repeat(6,minmax(0,1fr));gap:0 12px}}
-.adm .alead{margin:0 0 4px}
+.adm .alead{margin:0 0 24px}
 .adm .alead[hidden]{display:none}
-.adm .alist{display:flex;flex-direction:column;gap:16px}
-.adm .alist .ngroup{gap:10px}
-.adm .ncard .need-u{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
+.adm .alist{display:flex;flex-direction:column;gap:24px}
 .adm .ncard .need-who--code{flex:none}
 .adm .nfig--mine{color:var(--salt-ember)}
 .adm .alist .salt-inbox-row__title{gap:6px}
@@ -951,14 +949,16 @@ body.ended>*:not(#aEnded){display:none}
 }
 @media (min-width:860px){
   .adm #oLinks,.adm #oCards{max-width:600px}
-  .adm .nsplit,.adm .asplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:20px;align-items:start}
+  .adm .nsplit,.adm .asplit{display:grid;gap:20px;align-items:start}
+  .adm .nsplit,.adm #oAccts.open .asplit{grid-template-columns:minmax(0,1fr) minmax(0,440px)}
+  .adm .asplit{grid-template-columns:minmax(0,1fr)}
   .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
-  .adm #aopen .aback{display:none}
+  .adm #aopen [data-back]{display:none}
   .adm .nsplit{grid-template-columns:minmax(0,1fr) 360px}
   .adm #nopen{margin-top:calc(0.75rem * 1.4 + 10px);padding:20px;display:flex;flex-direction:column;gap:14px;box-sizing:border-box}
   .adm #nopen[hidden]{display:none}
   .adm .panenone{display:block}
-  .adm #nopen:not([hidden])~.panenone,.adm #aopen:not([hidden])~.panenone{display:none}
+  .adm #nopen:not([hidden])~.panenone{display:none}
 }
 /* 11 OCT 2026 (PHASE 1c, his decision 9): ORDERS ARE A LIST AND A DETAIL. A row an order (the system's Inbox row) in #makerOrderList, the order's
    card in #makerReview. From 860px they stand side by side, the card sticky and scrolling inside itself; below it the card takes the list's place
@@ -973,7 +973,6 @@ body.ended>*:not(#aEnded){display:none}
 }
 @media (min-width:860px){
   .adm #oOrders{max-width:none}
-  .adm #makerReview .aback{display:none}
 }
 @media (min-width:860px) and (max-width:1079.98px){
   .adm .ordgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:20px;align-items:start}
@@ -1202,7 +1201,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm .nfold[open]>summary.nsev::before{content:"-"}
 .adm .nfold>summary.nsev:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px}
 /* 2 Nov 2026 (his Orders canvas): a row's ask stands under it, wrapping its question over a full line and its two ghosts beneath */
-.adm .ordcard--ask{flex-wrap:wrap}
+.adm .ordcard--ask,.adm .arow--ask{flex-wrap:wrap}
 .adm div.oask,.adm .oask__in{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 .adm div.oask{flex:1 1 100%;padding-bottom:8px}
 .adm .oask__q{flex:1 1 100%}
@@ -1310,26 +1309,18 @@ body.ended>*:not(#aEnded){display:none}
 .adm .ameter{margin-top:10px}
 .adm .ameter .salt-meter__line{white-space:nowrap}
 .adm .ameter .salt-meter__track{display:block}
-.adm .atable{display:none;padding:4px 6px;overflow:hidden}
+.adm .atable{display:none}
 .adm .atable .ameter{margin:0}
 .adm .atable td,.adm .atable th{white-space:nowrap}
 @media (min-width:860px){.adm .aclist{display:none}.adm .atable{display:block}}
-/* 26 Oct 2026 (the Customers canvas, P8; his yes to Asks C and D): from 1080px a group of accounts is one plain table, the cards hidden; an account opened fills
+/* 26 Oct 2026 (the Customers canvas, P8; his yes to Asks C and D): from 1080px the accounts are one plain table (his Customers canvas, 2 Nov 2026); an account opened fills
    the page in columns, two and three from 1440px, as an open order does, the list and its way back as on a phone; Links and Associates use the width */
-.adm .atable2{display:none;padding:4px 6px;overflow:hidden}
-.adm .atable2 td,.adm .atable2 th{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .atable2 .atu{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
-.adm .atable2 .atfig{font-family:var(--salt-font-mono);font-size:var(--salt-text-lg);font-weight:500}
-.adm .atable2 .atgo{width:136px}
-.adm .atable2 .nbtn{width:120px;height:48px;min-height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media (min-width:1080px){
-  .adm .alist .ngroup>.ncard{display:none}
-  .adm .atable2{display:block}
   .adm #oLinks,.adm #oCards{max-width:none}
   .adm #oAccts.open .asplit{grid-template-columns:minmax(0,1fr)}
   .adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount,.adm #oAccts.open .alead{display:none}
   .adm #oAccts.open #aopen{position:static;max-height:none;overflow:visible}
-  .adm #oAccts.open #aopen .aback{display:inline-flex}
+  .adm #oAccts.open #aopen [data-back]{display:grid}
   .adm #aopen .oacct{display:block;column-count:2;column-gap:20px}
   .adm #aopen .oacct .amore{display:contents}
   .adm #aopen .oacct .asec{break-inside:avoid;margin:0 0 20px}
@@ -1358,7 +1349,6 @@ body.ended>*:not(#aEnded){display:none}
 .adm .apct__step{display:flex;align-items:center;gap:8px}
 .adm .apct__btn{flex:none;width:48px;min-width:48px;height:48px;padding:0;font-size:1.25rem;letter-spacing:0}
 .adm .apct__val{flex:1 1 auto;min-width:0;text-align:center;font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);font-weight:500;color:var(--salt-salt);white-space:nowrap}
-.adm .apct__table{padding:0 6px;overflow:hidden}
 .adm .apct__at{font-weight:500;color:var(--salt-salt)}
 .adm .apct__floor{color:var(--salt-mist-bright)}
 .adm .apct__acts .salt-pill,.adm .apct__acts .salt-ghost,.adm .apart__go{min-height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
@@ -1396,9 +1386,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm .astory .dcount{color:var(--salt-text-muted);letter-spacing:0}
 /* the way back is a quiet line, not a second filled control: the page has one of those and it is
    the one that opens an account */
-.adm .amain button[data-back]{display:inline-flex;align-items:center;min-height:var(--salt-tap);margin:0;padding:0;
-  background:none;border:0;color:var(--salt-brass);cursor:pointer;text-align:left;
-  font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:.14em;text-transform:uppercase}
+.adm .amain .salt-orb[data-back]{margin:0 0 16px}
 /* A GUEST LINK, as a card: who it is for leads, then the tier, then what it has done. The address
    is selectable text rather than a live link, because the thing he does with it is copy it. */
 /* #glist as well: the door's rule for a glass card inside .gate (margin 0 0 4px) is more specific than .glink alone */
@@ -2219,7 +2207,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
           + '<span class="nktab__n"></span></button>').join("") + "</div></nav>"
         + '<p class="lead" id="scount"></p>'
         + "</div>"
-        + '<div class="asplit"><div id="rlist" class="alist"></div><div id="aopen" hidden></div><p class="rnone panenone">Choose a card to see it in full.</p></div>'
+        + '<div class="asplit"><div id="rlist" class="alist"></div><div id="aopen" hidden></div></div>'
         + "</div>"
         + '<section class="chatgrid" data-in="customers.messages" aria-labelledby="makerChatTitle"><h2 id="makerChatTitle">Messages</h2>'
         + '<p id="makerChatStatus" class="msg" role="status" aria-live="polite"></p>'

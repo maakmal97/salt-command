@@ -1926,7 +1926,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   the line saying what a form is for (`FORM_WHAT`) stands once in the form under its heading. Record's lead is for a screen reader only, as Shop's is.
   Entry (**grouped by use, 18 Oct 2026, each group a settings head over its own list since 27 Oct**: Everyday, Sale or purchase, Repayment, Stock count; Now and then, Gift, Loan, Rewards, Offsets; Fixing, Correct a row, Reopen a cancelled order;
   a form not listed follows them), Customers (Add ID, Appoint existing customer, Amend ID, Map placement), Pricing (Their %, Tips, Printed
-  board sizes). A row opens **that form alone, in the menu's place**, with a way back at the head (`record.form-back`, "← Entry") that returns him
+  board sizes). A row opens **that form alone, in the menu's place**, with a way back at the head (`record.form-back`, an Orb named All forms) that returns him
   to the row he came from. **The form is the node it was, moved and never drawn again**: its fields, its retained send and its request ids are
   untouched, shown and hidden by `sweep` from `fOpen` (the form open, a slug), so what he has typed survives Back and opening another form.
   The count's controls are a form of their own now (Stock count). A **Retained input stays on the menu**, above the rows, and below 860px goes while a form
@@ -2550,6 +2550,17 @@ His yes to Asks A to J (relayed by the moderator, 25 Oct 2026), canvas Salt Admi
 - **Links**: a link is Needs you's card under Waiting on you, Standing link, Made by associates and Older links, Opens in the figure's place; its address,
   QR and moves open under it.
 - **Associates**: a book is its typed tag and how many; cards on a phone, one plain table from 860px; the reward the system's Meter; the code opens the account.
+- **2 Nov 2026, Customers on his canvas (his words "beautiful and thoughtfully designed and consistent" and "accept all asks as recommended"; display and markup
+  only, no route, body, price, booking or stored shape changed).** The parts are one Segment of four. **An account is a settings row below 1080px and a row of ONE
+  plain table from 1080px**, drawn one at a time (`ordWide`), with the helpers Orders uses (`moveGhost`, `asMove`, `rowTail`, `rowsTable`, `tableGroup`): the code,
+  or the practice account's name, over the state word and its age (copper when it waits on him, ember when late), what they owe, or what he owes back in ember, and
+  its one way as a lit ghost, keeping its act and request (Message `acct.message`, Send `need.signin-link`, Show `acct.show-link`, Open `acct.open-card`). The row's
+  text and the table's code are the one link that opens the account (`acct.open`); the table's own acts of the earlier drawing (`acct.open-row`, `acct.message-row`,
+  `acct.open-row-way`) are gone, and its Send and Show now do what the card's did (the table's Send used to open the account). A group is a head over one list (To do,
+  Pending, FYI), a move's answer or the guest list stands under its row. With nothing open the table takes the page's width (the column of 440px and its invitation
+  are for an open account only). **The way back from an open record is one Orb** (`backOrb`, a chevron named for where it goes): All accounts (`acct.back`) and
+  All forms (`record.form-back`); the open order has none of its own (canvas V35). The Accounts tab, tapped while an account is open, returns to the list. The
+  line over the list is one sentence, money first. Associates' and Their %'s tables are the rows table with their word columns left.
 
 ### Salt Admin A to C (20 and 21 Oct 2026, plan `docs/plan-counter-admin-ac.html`)
 
@@ -2629,7 +2640,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 
 | Act | Where | What it does |
 |---|---|---|
-| `acct.back` | Accounts, an open card on a phone | Takes the card back to the list. |
+| `acct.back` | Accounts, an open card (an Orb named All accounts, on a phone and from 1080px) | Takes the card back to the list, as a tap on the Accounts tab does. |
 | `assoc.open` | Associates, the code (key: the code) | Opens that associate's account under Accounts. |
 | `assoc.open-row` | Associates table from 860px, the code (key: the code) | Opens that associate's account under Accounts. |
 | `acct.copy-link` | Accounts card for an ID with no account, once the link is shown | Copies the guest price list's link. |
@@ -2641,12 +2652,9 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `acct.filter-unopened` | Accounts, the filter bar | Shows accounts never opened. |
 | `acct.filter-unsent` | Accounts, the filter bar | Shows accounts not yet sent a sign-in. |
 | `acct.find` | Accounts | Finds an account by a code or a username. |
-| `acct.message` | Accounts card for money owed (key: the username) | Opens their thread under Messages. |
-| `acct.open` | Accounts list, one card each (key: the username) | Opens that account's card. |
-| `acct.message-row` | Accounts table from 1080px, money owed (key: the username) | Opens their thread under Messages. |
-| `acct.open-card` | Accounts card with nothing to do but look (key: the username) | Opens that account's card, as a tap on the card does. |
-| `acct.open-row` | Accounts table from 1080px, the code (key: the username) | Opens that account's card. |
-| `acct.open-row-way` | Accounts table from 1080px, the way (key: the username) | Opens that account's card, where its Send or Show is. |
+| `acct.message` | Accounts row for money owed (key: the username) | Opens their thread under Messages. |
+| `acct.open` | Accounts, the row's text or the table's code, one each (key: a: and the username) | Opens that account's card. |
+| `acct.open-card` | Accounts row with nothing to do but look (key: the username) | Opens that account's card, as a tap on the row does. |
 | `acct.partner` | Account card, Partner (key: the code) | Makes them a partner on a second tap within four seconds: a name-free partner entry for review; a partner pays the Floor. |
 | `acct.pct.book` | Account card, Their % (key: the book) | Shows that book's %. |
 | `acct.pct.clear` | Account card, Their % (key: the code) | Sends their % back to 0, the Set Price, for review. |
@@ -2659,7 +2667,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `acct.password` | Account card | Opens their sealed password straight to the clipboard, never into the page. |
 | `acct.reply` | Account card, their waiting line (key: the username) | Opens their thread under Messages. |
 | `acct.sent` | Account card | Mark as sent: marks the account sent, while it is not. |
-| `acct.show-link` | Accounts card for an ID with no account (key: the username) | Shows the guest price list and its QR until the account is made. |
+| `acct.show-link` | Accounts row for an ID with no account (key: the username) | Shows the guest price list and its QR until the account is made. |
 | `acct.show-code` | Account card | Opens the sheet that shows a code for them in person. |
 | `acct.signin-link` | Account card (key: data-acct, the username) | First tap makes their one-time sign-in link, the next shares it. |
 | `acct.signout-all` | Account card | Signs them out everywhere, on a second tap within four seconds. |

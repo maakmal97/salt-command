@@ -668,16 +668,17 @@ export const OWNER_JS = `
     function pctDraw(j){
       prev.textContent='';
       if(!j||!j.rows||!j.rows.length) return;
-      var say=pctWord(st.pct[st.book]), wrap=el('div','salt-glass-card apct__table'), table=el('table','salt-table salt-table--plain'), hr=el('tr'), body=el('tbody');
+      var say=pctWord(st.pct[st.book]), card=el('div','salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-none apct__table'), wrap=el('div','salt-table-wrap'), table=el('table','salt-table salt-table--plain salt-table--rows'), hr=el('tr'), body=el('tbody');
+      wrap.setAttribute('role','region'); wrap.setAttribute('aria-label','Their prices at '+say); wrap.setAttribute('tabindex','0');
       table.appendChild(el('caption','sr',code+' at '+say+': their prices before anything goes to Approve'));
-      ['Units','Now','At '+say,'Floor'].forEach(function(t, i){ var th=el('th',i?null:'l',t); th.setAttribute('scope','col'); hr.appendChild(th); });
+      ['Units','Now','At '+say,'Floor'].forEach(function(t, i){ var th=el('th',i?null:'salt-table__left',t); th.setAttribute('scope','col'); hr.appendChild(th); });
       table.appendChild(el('thead')).appendChild(hr); table.appendChild(body);
       j.rows.forEach(function(r){
-        var tr=el('tr'), th=el('th','l',units(r.q)); th.setAttribute('scope','row'); tr.appendChild(th);
+        var tr=el('tr'), th=el('th','salt-table__left',units(r.q)); th.setAttribute('scope','row'); tr.appendChild(th);
         tr.appendChild(el('td',null,rmShort(r.now))); tr.appendChild(el('td','apct__at',rmShort(r.at))); tr.appendChild(el('td','apct__floor',rmShort(r.floor)));
         body.appendChild(tr);
       });
-      wrap.appendChild(table); prev.appendChild(wrap);
+      wrap.appendChild(table); card.appendChild(wrap); prev.appendChild(card);
       var usual=j.rows.filter(function(r){ return r.usual; })[0];
       if(usual) prev.appendChild(el('p','anote','Their usual is '+units(usual.q)+'. It goes to Approve first.'));
     }
@@ -890,48 +891,62 @@ export const OWNER_JS = `
     if(a.flag==='pend') return {sev:'soon', word:'Agreed', age:dayMon(a.seen.last), rm:+t.pend||0, act:'open'};
     return {sev:'watch', word:'Opened', age:dayMon(a.seen.last), act:'open'};
   }
-  function rowOf(a){
-    var s=acctState(a), who=a.test?testName(a):(a.code||a.username);
-    var c=needCard({sev:s.sev, kind:'accounts', word:s.word, key:'a:'+a.username, at:'', age:s.age, late:s.late, who:who, title:who, u:a.username, rm:s.rm, practice:!!a.test,
-      act:'acct.open', open:true, onTap:function(){ openCard(a.username); }});
-    var title=c.querySelector('.salt-action__title');
-    title.appendChild(el('span','need-u',a.username));
-    title.setAttribute('aria-label', s.word+(s.age?', '+s.age:'')+': '+who+(s.rm?', '+rmShort(s.rm):''));
-    if(s.mine) c.querySelector('.nfig').classList.add('nfig--mine');
-    if(aOpen===a.username) c.setAttribute('aria-current','true');
+  /* 2 Nov 2026 (his Customers canvas, his answers of 31 Oct 2026, as his Orders canvas): AN ACCOUNT IS A SETTINGS ROW BELOW 1080PX AND A ROW OF ONE PLAIN TABLE FROM IT,
+     drawn one at a time (ordWide). Its code, or the practice account's name, over where it stands in a word and an age (copper when it waits on him, ember when
+     late), what they owe, or what he owes back in ember, and its one way as a lit ghost: Message, Send, Show or Open, each with the act and the request it had on the
+     card. A group is a head over ONE list, To do, Pending or FYI, the largest sum first. A move's answer or the guest list stands under its row. */
+  function acctRowNodes(a){
+    var wide=ordWide(), s=acctState(a), who=a.test?testName(a):(a.code||a.username), row=el(wide?'tr':'div',wide?'arow':'salt-settings__row arow'), open, mv=null;
+    var tail=rowTail(wide,a.username,6), c={_body:tail.into, _grow:function(){}, _add:function(b){ if(!mv){ mv=asMove(b); if(!mv.getAttribute('data-key')) mv.setAttribute('data-key',a.username); } }};
+    row.setAttribute('data-u',a.username);
     if(s.act==='message'&&a.username){ var ms=pill(['Message','acct.message',a.username]); ms.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(a.username); }); c._add(ms); }
     else if(s.act==='send') c._add(linkButton(a, noteOf(c)));
     else if(s.act==='show') silverOn(a, c, 'acct');
     else { var op=ghost(['Open','acct.open-card',a.username]); op.addEventListener('click', function(){ openCard(a.username); }); c._add(op); }
-    /* the older ways in click the card itself: anywhere but its way opens the account */
-    c.addEventListener('click', function(ev){ if(ev.target===c) openCard(a.username); });
-    return c;
+    if(wide){
+      open=el('a','arow__open',who); whoTag(open,who); var th=el('th','salt-table__left'); th.setAttribute('scope','row'); th.appendChild(open); row.appendChild(th);
+      row.appendChild(el('td','salt-table__left',a.username));
+      var sd=el('td','salt-table__left'); sd.appendChild(chip(s.sev==='now'?'copper':s.sev==='soon'?'brass':'mist', s.word)); row.appendChild(sd);
+      row.appendChild(el('td','salt-table__left'+(s.late?' nage--late':''),s.age||''));
+      row.appendChild(el('td',s.mine?'nfig--mine':null,+s.rm>0.004?rmShort(s.rm):''));
+      var go=el('td'), act=el('div','salt-table__act'); if(mv) act.appendChild(mv); go.appendChild(act); row.appendChild(go);
+    }else{
+      open=el('a','arow__open salt-settings__text');
+      var lab=el('span','salt-settings__label'); lab.appendChild(whoTag(el('span','acode',who),who)); open.appendChild(lab);
+      open.appendChild(el('span','salt-settings__sub'+(s.late?' salt-settings__sub--late':s.sev==='now'?' salt-settings__sub--why':''),[s.word,s.age].filter(Boolean).join(' · '))); row.appendChild(open);
+      if(+s.rm>0.004) row.appendChild(el('span','salt-settings__value salt-settings__value--lg'+(s.mine?' nfig--mine':''),rmShort(s.rm)));
+      if(mv) row.appendChild(mv);
+    }
+    open.setAttribute('href','#customers'); actOn(open,'acct.open','a:'+a.username);
+    open.setAttribute('aria-label', s.word+(s.age?', '+s.age:'')+': '+who+(a.test?'':', '+a.username)+(s.rm?', '+rmShort(s.rm):''));
+    if(aOpen===a.username){ open.setAttribute('aria-current','true'); row.setAttribute('aria-current','true'); }
+    open.addEventListener('click', function(ev){ ev.preventDefault(); openCard(a.username); });
+    /* the tail is shown only while it holds an answer or the guest list: the note under the Send button fills as it is tapped */
+    var sync=function(){ var on=!!tail.into.textContent; tail.box.hidden=!on; row.classList.toggle('arow--ask',on&&!wide); };
+    sync(); if(window.MutationObserver) new MutationObserver(sync).observe(tail.into,{childList:true,characterData:true,subtree:true});
+    if(!wide) row.appendChild(tail.box);
+    return wide?[row,tail.box]:[row];
   }
-  /* the Insight over the list: what is owed to him and how much of it is late, what he owes back, the sign-ins waiting */
+  /* the Insight over the list, one sentence, money first: what is owed to him and how much of it is late, what he owes back, the sign-ins waiting */
   function drawALead(pool){
     var box=document.getElementById('alead'); if(!box) return;
-    var real=pool.filter(function(a){ return !a.test; }), owedRM=0, lateRM=0, back=0, unsent=0, locked=0;
+    var real=pool.filter(function(a){ return !a.test; }), owedRM=0, lateRM=0, back=0, wait=0;
     real.forEach(function(a){
       var t=a.t||{}, s=acctState(a);
       if(a.flag==='owes'){ owedRM+=+t.owed||0; if(s.late) lateRM+=+t.owed||0; }
       if(a.flag==='refund') back+=+t.refund||0;
-      if(a.account!==false&&!a.sent) unsent++;
-      if(a.locked) locked++;
+      if((a.account!==false&&!a.sent)||a.locked) wait++;
     });
     box.textContent='';
     var bits=[];
     function b(t){ return el('b',null,t); }
     function join(nodes){ var span=document.createDocumentFragment(); nodes.forEach(function(n){ span.appendChild(typeof n==='string'?document.createTextNode(n):n); }); return span; }
-    if(owedRM>0.004) bits.push(join([b(rmShort(owedRM)),' is owed to you'+(lateRM>0.004?', '+rmShort(lateRM)+' of it past its term':'')]));
-    if(back>0.004) bits.push(join(['you owe ',b(rmShort(back)),' back']));
+    if(owedRM>0.004) bits.push(join([b(rmShort(owedRM)),' is owed to you'+(lateRM>0.004?', '+rmShort(lateRM)+' of it late':'')]));
+    if(back>0.004) bits.push(join([b(rmShort(back)),' owed back']));
+    if(wait) bits.push(join([b(wait+(wait===1?' account':' accounts')),(wait===1?' awaits':' await')+' a sign-in']));
     bits.forEach(function(n, i){ if(i) box.appendChild(document.createTextNode('; ')); box.appendChild(n); });
-    if(bits.length) box.appendChild(document.createTextNode('. '));
-    if(unsent+locked){
-      var w=[]; if(unsent) w.push(unsent+' not sent'); if(locked) w.push(locked+' locked out');
-      box.appendChild(b((unsent+locked)+((unsent+locked)===1?' account':' accounts')));
-      box.appendChild(document.createTextNode(' '+((unsent+locked)===1?'waits':'wait')+' on a sign-in: '+w.join(', ')+'.'));
-    }
-    if(!box.childNodes.length) box.textContent='Nothing is owed either way, and every account has its sign-in.';
+    if(bits.length) box.appendChild(document.createTextNode('.'));
+    else box.textContent='Nothing is owed either way, and every account has its sign-in.';
     box.hidden=!sheet;
   }
   function drawRoster(){
@@ -950,40 +965,28 @@ export const OWNER_JS = `
       return f(a)&&(!q||((a.code||'')+' '+a.username).toLowerCase().replace(/\\s+/g,'').indexOf(q)>=0);
     });
     countSent(); drawALead(pool);
-    if(!hits.length){ rlist.appendChild(el('p','rnone','Nothing matches that.')); return; }
-    var rm=function(a){ var s=acctState(a); return +s.rm||0; };
+    if(!hits.length){ rlist.appendChild(el('p','salt-settings__foot','Nothing matches that.')); return; }
+    var rm=function(a){ var s=acctState(a); return +s.rm||0; }, groups=[];
     SEVS.forEach(function(s){
       var group=hits.map(function(a, i){ return [a, i]; }).filter(function(x){ return acctState(x[0]).sev===s[0]; })
         .sort(function(x, y){ return (rm(y[0])-rm(x[0]))||(x[1]-y[1]); }).map(function(x){ return x[0]; });
-      if(!group.length) return;
-      var box=el('section','ngroup'), h=el('h2','salt-eyebrow salt-eyebrow--'+SEVC[s[0]]+' nsev', s[1]);
-      box.setAttribute('data-sev', s[0]); box.setAttribute('aria-label', s[1]); h.setAttribute('data-sev', s[0]);
-      box.appendChild(h); rlist.appendChild(box);
-      group.forEach(function(a){ box.appendChild(rowOf(a)); });
-      box.appendChild(acctTable(group));
+      if(group.length) groups.push({sev:s[0], head:s[1], rows:group});
     });
-  }
-  /* 26 OCT 2026 (canvas Salt Admin Customers, P8; his yes to Ask D): FROM 1080PX A GROUP IS ONE PLAIN TABLE, the cards hidden: the code (its tap opens the account),
-     the username, the state as its word, since when, what is owed at the right and the one way, as the card's */
-  function acctTable(group){
-    var wrap=el('div','salt-glass-card salt-glass-card--radius-lg atable2'), table=el('table','salt-table salt-table--plain'), hr=el('tr'), body=el('tbody');
-    table.appendChild(el('caption','sr','The accounts in this group, money first'));
-    ['Account','Username','State','Since','Owed',''].forEach(function(h, i){ var th=el('th',i<4?'l':null,h); th.setAttribute('scope','col'); hr.appendChild(th); });
-    table.appendChild(el('thead')).appendChild(hr); table.appendChild(body);
-    group.forEach(function(a){
-      var s=acctState(a), who=a.test?testName(a):(a.code||a.username), tr=el('tr'), th=el('th','l'); th.setAttribute('scope','row'); tr.setAttribute('data-row-u', a.username);
-      var b=actOn(el('button','acode apick',who),'acct.open-row',a.username); b.type='button'; b.addEventListener('click', function(){ openCard(a.username); }); th.appendChild(b); tr.appendChild(th);
-      tr.appendChild(el('td','l atu',a.username));
-      var sd=el('td','l'); sd.appendChild(chip(s.sev==='now'?'copper':s.sev==='soon'?'brass':'mist', s.word)); tr.appendChild(sd);
-      tr.appendChild(el('td','l'+(s.late?' nage--late':''),s.age||''));
-      tr.appendChild(el('td','atfig'+(s.mine?' nfig--mine':''),+s.rm>0.004?rmShort(s.rm):''));
-      var go=el('td','atgo'), w;
-      if(s.act==='message'){ w=pill(['Message','acct.message-row',a.username]); w.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(a.username); }); }
-      else { w=pill([s.act==='send'?'Send':s.act==='show'?'Show':'Open','acct.open-row-way',a.username]); w.addEventListener('click', function(){ openCard(a.username); }); }
-      w.classList.remove('salt-pill--md'); w.classList.add('salt-pill--sm','nbtn'); go.appendChild(w); tr.appendChild(go);
-      body.appendChild(tr);
+    /* from 1080px one plain table for every group, its columns named over it and a group's head a row of it; below, a head over one settings list a group */
+    if(ordWide()){
+      var t=rowsTable('Accounts',[0,168,136,120,112,128],[['Account',1],['Username',1],['State',1],['Since',1],['Owed',0],['',0]]);
+      groups.forEach(function(g){
+        tableGroup(t,g.head).setAttribute('data-sev',g.sev);
+        g.rows.forEach(function(a){ acctRowNodes(a).forEach(function(n){ t.body.appendChild(n); }); });
+      });
+      rlist.appendChild(t.card);
+    }else groups.forEach(function(g){
+      var sec=el('section',null), list=el('div','salt-settings');
+      sec.setAttribute('data-sev',g.sev); sec.setAttribute('aria-label',g.head);
+      sec.appendChild(el('h2','salt-settings__head',g.head));
+      g.rows.forEach(function(a){ acctRowNodes(a).forEach(function(n){ list.appendChild(n); }); });
+      sec.appendChild(list); rlist.appendChild(sec);
     });
-    wrap.appendChild(table); return wrap;
   }
   function filterMark(){
     [].slice.call(document.querySelectorAll('#afil button[data-f]')).forEach(function(x){
@@ -1003,7 +1006,7 @@ export const OWNER_JS = `
     [].slice.call(rlist.querySelectorAll('[data-u]')).forEach(function(r){
       if(r.getAttribute('data-u')===aOpen) r.setAttribute('aria-current','true'); else r.removeAttribute('aria-current'); });
     if(!a) return;
-    var back=el('button','aback','← Accounts'); back.type='button'; back.setAttribute('data-back','accounts'); actOn(back,'acct.back');
+    var back=backOrb('accounts','All accounts'); actOn(back,'acct.back');
     aopen.appendChild(back);
     acctPane(aopen, a);
     /* below 860px the account takes the list's place with its way back showing, so he is taken to the top of it; from 860px the list is the page's
@@ -3807,7 +3810,7 @@ export const OWNER_JS = `
   }
   function recordMenu(box,note,catalog){
     fOpen=null;
-    var back=el('button','aback','← Entry'); back.type='button'; back.id='makerFormBack'; back.setAttribute('data-back','form'); back.setAttribute('data-formback','');
+    var back=backOrb('form','All forms'); back.id='makerFormBack'; back.setAttribute('data-formback','');
     back.setAttribute('data-in','record.entry record.customers record.pricing'); actOn(back,'record.form-back');
     box.insertBefore(back,note.nextSibling);
     var menu=el('div','formmenu'), lists={}, anchor=back, entryRows={};
@@ -3879,8 +3882,8 @@ export const OWNER_JS = `
     /* below 860px the form takes the menu's place and has its way back showing, so he is taken to the top of it; from 860px the menu is the
        page's scroll and the form stands beside it, so a tap on a low row only brings the pane into view */
     try{
-      var back=document.getElementById('makerFormBack'), tab=document.querySelector('.aparts[data-place="record"] [data-part="'+partNow+'"]');
-      back.textContent='← '+(tab?tab.firstChild.textContent:'Back'); back.focus();
+      var back=document.getElementById('makerFormBack');
+      back.focus();
       if(window.getComputedStyle(back).display!=='none') window.scrollTo(0,0);
       else { var pane=form.parentNode; if(pane&&pane.scrollIntoView) pane.scrollIntoView({block:'nearest'}); }
     }catch(x){}
@@ -4589,22 +4592,52 @@ export const OWNER_JS = `
     if(f.tags[0]) into.appendChild(productTag(f.tags[0]));
     if(f.tags.length>1) into.appendChild(el('span','salt-producttag salt-producttag--more','+'+(f.tags.length-1)));
   }
+  /* 2 Nov 2026 (his Customers canvas): THE ROW HELPERS THAT ORDERS AND CUSTOMERS SHARE. A move is a lit ghost (never the filled pill), a button made for another
+     card is turned into one, a row's ask or answer stands under it (inside the row of a list, a row of the table), and a table is one glass card with its colgroup
+     and its columns named. */
+  function moveGhost(label,act,key){ var g=actOn(el('button','salt-ghost salt-ghost--lit salt-ghost--tight',label),act,key); g.type='button'; return g; }
+  function asMove(b){ b.classList.remove('salt-pill','salt-pill--md','salt-pill--sm','nbtn'); b.classList.add('salt-ghost','salt-ghost--lit','salt-ghost--tight'); return b; }
+  function rowTail(wide,id,cols){
+    var box=el(wide?'tr':'div','oask'), into=box;
+    if(wide) box.setAttribute('data-rowof',id);
+    box.setAttribute('role','status');
+    if(wide){ var td=el('td'); td.setAttribute('colspan',String(cols)); into=el('div','oask__in'); td.appendChild(into); box.appendChild(td); }
+    return {box:box, into:into};
+  }
+  /* widths: a column's width in px, 0 for the one that takes the rest; heads: [its name, 1 when it is a word column], a nameless one is the move */
+  function rowsTable(label,widths,heads){
+    var card=el('div','salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-none'), wrap=el('div','salt-table-wrap'), tb=el('table','salt-table salt-table--plain salt-table--rows');
+    var cg=el('colgroup'), th=el('thead'), hr=el('tr'), bd=el('tbody');
+    wrap.setAttribute('role','region'); wrap.setAttribute('aria-label',label); wrap.setAttribute('tabindex','0');
+    widths.forEach(function(w){ var c=el('col'); if(w) c.style.setProperty('width',w+'px'); cg.appendChild(c); }); tb.appendChild(cg);
+    heads.forEach(function(x){ var c=el('th',x[1]?'salt-table__left':null); c.setAttribute('scope','col'); if(x[0]) c.textContent=x[0]; else c.appendChild(el('span','sr','Move')); hr.appendChild(c); });
+    th.appendChild(hr); tb.appendChild(th); tb.appendChild(bd); wrap.appendChild(tb); card.appendChild(wrap);
+    return {card:card, body:bd, cols:widths.length};
+  }
+  function tableGroup(t,head){
+    var gr=el('tr','salt-table__group'), gh=el('th','salt-table__left'); gh.setAttribute('colspan',String(t.cols)); gh.setAttribute('scope','colgroup'); gh.appendChild(el('span','salt-settings__head',head));
+    gr.appendChild(gh); t.body.appendChild(gr); return gr;
+  }
+  /* 2 Nov 2026 (his Customers canvas): THE WAY BACK FROM AN OPEN RECORD IS ONE CONTROL, an Orb holding a chevron and named for where it goes (All accounts,
+     All forms), as Customers' open account and Record's open form draw it; the open order has none of its own, the rail's Orders closes it (canvas V35) */
+  function backOrb(way,label){
+    var b=el('button','salt-orb'); b.type='button'; b.setAttribute('data-back',way); b.setAttribute('aria-label',label);
+    var g=svgEl('svg',{viewBox:'0 0 24 24',width:'20',height:'20',fill:'none',stroke:'currentColor','stroke-width':'1.5','stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':'true',focusable:'false'});
+    g.appendChild(svgEl('path',{d:'M15 6 L9 12 L15 18'})); b.appendChild(g); return b;
+  }
   function ordMoveGhost(e,f){
     if(!f.move) return null;
-    var g=actOn(el('button','salt-ghost salt-ghost--lit salt-ghost--tight',f.move),'order.move',e.id); g.type='button';
+    var g=moveGhost(f.move,'order.move',e.id);
     g.addEventListener('click', function(){ ordMoveTap(e,f.move); });
     if(ordAsk[e.id]||ordBusy[e.id]) g.hidden=true;
     return g;
   }
   /* 25 Oct 2026 (his yes to Ask D): a move that sends asks once on the row; its answer stands under the row */
   function ordAskNodes(e,o,wide){
-    var box=el(wide?'tr':'div','oask'), into=box;
-    if(wide) box.setAttribute('data-rowof',e.id);
-    box.setAttribute('role','status');
-    if(wide){ var td=el('td'); td.setAttribute('colspan','7'); into=el('div','oask__in'); td.appendChild(into); box.appendChild(td); }
+    var tail=rowTail(wide,e.id,7), box=tail.box, into=tail.into;
     if(ordAsk[e.id]||ordBusy[e.id]){
       into.appendChild(el('span','oask__q',ordAskWords(o,ordAsk[e.id]||ordBusy[e.id])));
-      var yes=actOn(el('button','salt-ghost salt-ghost--lit salt-ghost--tight','Yes'),'order.move-yes',e.id), no=actOn(el('button','salt-ghost salt-ghost--tight','Not now'),'order.move-no',e.id);
+      var yes=moveGhost('Yes','order.move-yes',e.id), no=actOn(el('button','salt-ghost salt-ghost--tight','Not now'),'order.move-no',e.id);
       yes.type='button'; no.type='button';
       if(ordBusy[e.id]){ yes.disabled=true; no.disabled=true; yes.textContent='Sending'; }
       yes.addEventListener('click', function(){ ordMoveSend(e,ordAsk[e.id]); });
@@ -4673,20 +4706,14 @@ export const OWNER_JS = `
   }
   /* from 1080px: one plain table a part, its columns' names over it, a group's head a row of it */
   function ordTable(part,gs){
-    var card=el('div','salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-none'), wrap=el('div','salt-table-wrap'), tb=el('table','salt-table salt-table--plain salt-table--rows');
-    var cg=el('colgroup'), th=el('thead'), hr=el('tr'), bd=el('tbody');
-    card.setAttribute('data-in','orders.'+part); wrap.setAttribute('role','region'); wrap.setAttribute('aria-label',ORD_WORD[part]+' orders'); wrap.setAttribute('tabindex','0');
-    [136,140,0,104,136,112,140].forEach(function(w){ var c=el('col'); if(w) c.style.setProperty('width',w+'px'); cg.appendChild(c); }); tb.appendChild(cg);
-    [['Code',1],['Book',1],['Way',1],['Units'],['Waiting',1],['Total'],['',0]].forEach(function(x){
-      var c=el('th',x[1]?'salt-table__left':null); c.setAttribute('scope','col'); if(x[0]) c.textContent=x[0]; else c.appendChild(el('span','sr','Move')); hr.appendChild(c); });
-    th.appendChild(hr); tb.appendChild(th);
+    var t=rowsTable(ORD_WORD[part]+' orders',[136,140,0,104,136,112,140],[['Code',1],['Book',1],['Way',1],['Units'],['Waiting',1],['Total'],['',0]]);
+    t.card.setAttribute('data-in','orders.'+part);
     gs.forEach(function(g){
-      var gr=el('tr','salt-table__group'), gh=el('th','salt-table__left'); gh.setAttribute('colspan','7'); gh.setAttribute('scope','colgroup'); gh.appendChild(el('span','salt-settings__head',g.head));
+      var gr=tableGroup(t,g.head);
       if(g.sheet) gr.setAttribute('data-sheet',g.rows[0].order.sheet);
-      gr.appendChild(gh); bd.appendChild(gr);
-      g.rows.forEach(function(e){ ordRowNodes(e).forEach(function(n){ bd.appendChild(n); }); });
+      g.rows.forEach(function(e){ ordRowNodes(e).forEach(function(n){ t.body.appendChild(n); }); });
     });
-    tb.appendChild(bd); wrap.appendChild(tb); card.appendChild(wrap); return card;
+    return t.card;
   }
   /* what each move asks, in the words the order card and Needs you use */
   function ordAskWords(o,main){
@@ -4829,7 +4856,7 @@ export const OWNER_JS = `
     var m=window.matchMedia(q); if(m&&m.addEventListener) m.addEventListener('change', ordLayout);
   });
   /* 2 Nov 2026: the list is a table from 1080px and a settings list below it, drawn one at a time, so a change across that width draws it again */
-  if(window.matchMedia){ var wideMq=window.matchMedia('(min-width:1080px)'); if(wideMq&&wideMq.addEventListener) wideMq.addEventListener('change', function(){ var list=document.getElementById('makerOrderList'); if(list&&makerData){ drawOrderList(list,Object.keys(ordEntries).map(function(k){ return ordEntries[k]; })); sweep(); markOrderRows(); } }); }
+  if(window.matchMedia){ var wideMq=window.matchMedia('(min-width:1080px)'); if(wideMq&&wideMq.addEventListener) wideMq.addEventListener('change', function(){ var list=document.getElementById('makerOrderList'); if(list&&makerData){ drawOrderList(list,Object.keys(ordEntries).map(function(k){ return ordEntries[k]; })); sweep(); markOrderRows(); } drawRoster(); }); }
   function openOrder(id){
     var e=ordEntries[id];
     if(!e||placeNow!=='orders'||!ordInPart(e)) return;
@@ -7823,19 +7850,20 @@ export const OWNER_JS = `
     return c;
   }
   function assocTable(p){
-    var wrap=el('div','salt-glass-card salt-glass-card--radius-lg atable'), table=el('table','salt-table salt-table--plain'), hr=el('tr'), body=el('tbody'), tiered=p.rows.some(function(r){ return !!r.reward; });
+    var card=el('div','salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-none atable'), wrap=el('div','salt-table-wrap'), table=el('table','salt-table salt-table--plain salt-table--rows'), hr=el('tr'), body=el('tbody'), tiered=p.rows.some(function(r){ return !!r.reward; });
+    wrap.setAttribute('role','region'); wrap.setAttribute('aria-label','Associates on this book'); wrap.setAttribute('tabindex','0');
     table.appendChild(el('caption','sr','Each associate, this book'));
-    ['Associate','Standing','Bought','Sold','Introduced',tiered?'Reward, units':'Reward'].forEach(function(h, i){ var th=el('th',i<2||i===5?'l':null,h); th.setAttribute('scope','col'); hr.appendChild(th); });
+    ['Associate','Standing','Bought','Sold','Introduced',tiered?'Reward, units':'Reward'].forEach(function(h, i){ var th=el('th',i<2||i===5?'salt-table__left':null,h); th.setAttribute('scope','col'); hr.appendChild(th); });
     table.appendChild(el('thead')).appendChild(hr); table.appendChild(body);
     p.rows.forEach(function(r){
-      var tr=el('tr'), th=el('th','l'); th.setAttribute('scope','row'); th.appendChild(assocCode(r.id,'assoc.open-row')); tr.appendChild(th);
+      var tr=el('tr'), th=el('th','salt-table__left'); th.setAttribute('scope','row'); th.appendChild(assocCode(r.id,'assoc.open-row')); tr.appendChild(th);
       var marks=[]; if(r.founder) marks.push('founder'); if(r.rank) marks.push('#'+r.rank); if(r.departed) marks.push('away'); if(r.stars) marks.push(new Array(r.stars+1).join('\u2605'));
-      tr.appendChild(el('td','l astand2',marks.join(' \u00b7 ')));
+      tr.appendChild(el('td','salt-table__left astand2',marks.join(' \u00b7 ')));
       [r.bought, r.soldFor, r.introduced].forEach(function(v){ tr.appendChild(el('td',null,rm(v))); });
-      var rw=el('td','l'); if(r.reward&&r.reward.next!=null) rw.appendChild(assocMeter(r.reward)); else rw.textContent=tiered?'':'None on this book';
+      var rw=el('td','salt-table__left'); if(r.reward&&r.reward.next!=null) rw.appendChild(assocMeter(r.reward)); else rw.textContent=tiered?'':'None on this book';
       tr.appendChild(rw); body.appendChild(tr);
     });
-    wrap.appendChild(table); return wrap;
+    wrap.appendChild(table); card.appendChild(wrap); return card;
   }
   function drawCards(){
     var wrap=document.getElementById('clist'); if(!wrap) return;
@@ -7932,7 +7960,10 @@ export const OWNER_JS = `
     var b=ev.target.closest('button[data-m]'); if(b){ var mm=b.getAttribute('data-m'); if(mm==='orders'&&placeNow==='orders'&&ordOpened){ closeOrder(); return; } showPlace(mm, b.getAttribute('data-p')||(mm===placeNow?partNow:''), {fresh:true,push:true}); return; }
     var k=ev.target.closest('button[data-chip]');
     if(k){ nPick(k.getAttribute('data-chip')); return; }
-    var t=ev.target.closest('button[data-part]'); if(t) showPlace(t.parentNode.getAttribute('data-place'), t.getAttribute('data-part'), {push:true});
+    var t=ev.target.closest('button[data-part]');
+    /* 2 Nov 2026: the Accounts tab, tapped while an account is open, returns to the list, as the way back does */
+    if(t&&aOpen&&t.parentNode.getAttribute('data-place')==='customers'&&t.getAttribute('data-part')==='accounts') openCard(null);
+    if(t) showPlace(t.parentNode.getAttribute('data-place'), t.getAttribute('data-part'), {push:true});
   });
   /* the + orb opens Record's menu of entries */
   var oAdd=document.getElementById('oAdd');
