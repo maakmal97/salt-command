@@ -2351,8 +2351,9 @@ answer from their first answer). Their rows fold as every stage's do. **An equal
 book; no size and no order), and a key naming two rows sticks every later stage of both, so a site order whose account (and for-a-friend side)
 has ANOTHER order rowed that Kuala Lumpur day under the same key answers 409 `twin` with the way on (change that order to the sum, as s218 and
 s219 were joined; or, when that order ended today with its row, another size or tomorrow). One equal only under the fold's replay test (party,
-book, day, size, goods; the delivery not in it) is keyed apart and marked `second`, which the preview names. A twin whose pending draft was
-rejected has no row and stands aside. `findOrder` hands over every order on the site, so the account is matched. Before, it drafted and
+book, day, size, goods; the delivery not in it) is keyed apart and marked `second`, which the preview names. Each twin's pending row is found by
+its own draft, queued (`queued.ack`) or waiting under Approve after his yes (a live ack pre-approval's `entry_at`), and read for the day it is
+dated (its payload's date, so a row offered again keeps its first); a twin whose pending draft was rejected has no row and stands aside. `findOrder` hands over every order on the site, so the account is matched. Before, it drafted and
 stalled the fold as a replay.
 
 Customer amendments use the customer's session at `POST /orders/<id>/amend`, not an Admin route.

@@ -396,14 +396,18 @@ export function stageAt(order, job, now) {
    preview, and so at Accept, with the way on (his answer: refuse it, say why). The fold's REPLAY test is party, book, day, size and goods (the
    delivery not in it): an order equal to another there but keyed apart (another delivery charge) is two rows that never stick, and is marked
    `second` so the fold takes it. Both read ANOTHER order of the SAME ACCOUNT AND ROW (findOrder hands over every order on the site; for a friend
-   books to the associate's -R bucket, another party), whose pending entry was queued the same Kuala Lumpur day (`queued.ack`). Returns the
-   orders of each test; the desk lets go of one whose pending draft was rejected (src/orders.js previewAck). */
-export function siteTwins(agreed, others, now) {
-  const day = klDate(now), d = +(+agreed.delivery || 0).toFixed(2), g = +(+agreed.total || 0).toFixed(2);
+   books to the associate's -R bucket, another party): `twinCandidates` names them, and the desk finds each one's pending row (queued, or waiting
+   under Approve after a yes of his) and the day that row is dated (src/orders.js previewAck), so `siteTwins` reads rows as `{order, day}`. */
+export function twinCandidates(agreed, others) {
+  return (others || []).filter((x) => x && x.id !== agreed.id && x.u === agreed.u && !!x.forFriend === !!agreed.forFriend
+    && (x.product || "salt") === (agreed.product || "salt"));
+}
+export function siteTwins(agreed, rows, today) {
+  const d = +(+agreed.delivery || 0).toFixed(2), g = +(+agreed.total || 0).toFixed(2);
   const out = { key: [], fold: [] };
-  for (const x of others || []) {
-    if (!x || x.id === agreed.id || x.u !== agreed.u || !!x.forFriend !== !!agreed.forFriend || (x.product || "salt") !== (agreed.product || "salt")) continue;
-    if (!(x.queued && x.queued.ack) || klDate(new Date(x.queued.ack)) !== day) continue;
+  for (const r of rows || []) {
+    const x = r && r.order;
+    if (!x || r.day !== today) continue;
     const xg = +(+x.total || 0).toFixed(2), xd = +(+x.delivery || 0).toFixed(2);
     if (Math.abs((xg + xd) - (g + d)) < 0.005) out.key.push(x);
     else if (+x.qty === +agreed.qty && Math.abs(xg - g) < 0.005) out.fold.push(x);

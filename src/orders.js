@@ -31,7 +31,7 @@ import PRICING_ENGINE from "../engine/pricing.mjs";
 /* S1b: THE ENTRY EACH STAGE MAKES lives in engine/stages.mjs (pure); this reads, calls it, and queues. The builders stay named here for every importer. */
 import { rewardCrossOf, rewardReading, loyalReading, rwdOf, withCredit, rowPaidFor } from "../engine/stages.mjs";
 import { creditFor } from "./credit.js";
-import { rm, chargeOf, priceOf, advanceOf, acceptEntry, siteTwins, floorRefusal, ackRowWanted, stageAgainst, jobEntry, againEntry, keyGivenBack,
+import { rm, chargeOf, priceOf, advanceOf, acceptEntry, siteTwins, twinCandidates, klDate, floorRefusal, ackRowWanted, stageAgainst, jobEntry, againEntry, keyGivenBack,
   handoverTap, receivedTap, cashTap, restateTap, pastRoom, againRoomOrder, claimRows, claimOrderFlight, claimEntry,
   stageAt, keyAfter, closedKey, ledgerKeyOf, partyOnBook, bucketFor, termsFromRow, settledFromRow, rowOut } from "../engine/stages.mjs";
 export { orderKeyFor, partyOnBook, ledgerKeyOf, pendingEntry, payEntry, claimEntry, handoverEntry, redateFrom, closeEntry, closedKey, cancelEntry,
@@ -304,15 +304,26 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
   /* plan version 3 (Fable's reviews, his answer): another order of theirs rowed today under this row's key is refused here, so at Accept, with the
      way on; one equal under the fold's replay test but keyed apart is a second sale, marked so. A twin whose pending draft was rejected (he said no,
      or it was withdrawn while it waited) has no row and stands aside */
-  const tw = siteTwins(agreed, ctx && ctx.orders, now);
-  const rowed = async (list) => { const out = []; for (const x of list) {
-    let r = null; try { r = env.SALT_LEDGER ? await env.SALT_LEDGER.prepare("SELECT status FROM draft WHERE id=?1").bind(x.queued.ack).first() : null; } catch (e) { r = null; }
-    if (!r || r.status !== "rejected") out.push(x); } return out; };
-  const keyed = await rowed(tw.key);
+  /* Fable's re-check: each twin's pending row is found by its own draft, queued (`queued.ack`) or waiting under Approve after his yes (a live ack
+     pre-approval's `entry_at`), and read for the day it is dated (its payload's date, a row offered again keeping its first), never the moment
+     it was queued; a read that fails keeps the twin, the safe side */
+  const rows = [];
+  for (const x of twinCandidates(agreed, ctx && ctx.orders)) {
+    let id = x.queued && x.queued.ack;
+    if (!id && env.SALT_LEDGER) { const p = await livePre(env.SALT_LEDGER, x.id, "ack"); id = p && p.entry_at; }
+    if (!id) continue;
+    let d = null; try { d = env.SALT_LEDGER ? await env.SALT_LEDGER.prepare("SELECT status, entry FROM draft WHERE id=?1").bind(id).first() : null; } catch (e) { d = null; }
+    if (d && d.status === "rejected") continue;
+    let e = null; try { e = d && d.entry ? JSON.parse(d.entry) : null; } catch (err) { e = null; }
+    const typed = e && e.payload && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(e.payload.date || "")) ? e.payload.date : null;
+    rows.push({ order: x, day: typed || klDate(new Date(String((e && e.at) || id))) });
+  }
+  const tw = siteTwins(agreed, rows, klDate(now));
+  const keyed = tw.key;
   if (keyed.length) return { ok: false, status: 409, twin: true, error: keyed.every((x) => ["cancelled", "declined"].includes(x.status))
     ? "an order of theirs that ended today keeps its row at this figure, and the book holds one row of it a day: place it at another size, or tomorrow"
     : "an equal order of theirs is rowed today at this figure, and the book keeps one row of it a day: change that order to the sum instead" };
-  if ((await rowed(tw.fold)).length) entry.payload.second = true;
+  if (tw.fold.length) entry.payload.second = true;
   const book = await (mirror ? mirror() : readBook(env.SALT_LEDGER));
   /* fold 2.2: no snapshot is a mirror being seeded, and the drafter stands down on it; so does the card */
   if (book.version == null) return { ok: false, status: 503, error: "the mirror is being seeded: try again in a minute" };
