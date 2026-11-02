@@ -82,12 +82,12 @@ export async function run({ ok, pageWork }) {
     const h = sent("ord-r2", "handed");
     ok(h.length === 1 && h[0].body.qty === 1 && /^[0-9a-f]{32}$/.test(h[0].body.rid) && J(Object.keys(h[0].body).sort()) === J(["qty", "rid"]), "Yes sends the card's handover of the order's units: " + J(h.map((x) => x.body)));
 
-    /* 3: Message opens the order with the reply's fold open */
+    /* 3: Message opens the order at its reply (2 Nov 2026: the box stands in view, no fold, and Message takes him to it) */
     await click(byAct(d, "part.orders.open"));
     ok(t(pill("ord-m1")) === "Message", "goods out and money owed: the move is Message");
     await click(pill("ord-m1"));
-    const fold = d.querySelector('#makerReview [data-maker-card="ord-m1"] details[data-fold="answer"]');
-    ok(opened("ord-m1") && !!fold && fold.open, "Message opens the order with Answer open");
+    const box = d.querySelector('#makerReview [data-maker-card="ord-m1"] .omsgs [data-act="order.reply-text"]');
+    ok(opened("ord-m1") && !!box && d.activeElement === box, "Message opens the order with its reply box in focus");
   } catch (e) { ok(false, "admin-orders-moves stopped on an error: " + (e && e.stack)); }
   finally { p.w.close(); }
 }

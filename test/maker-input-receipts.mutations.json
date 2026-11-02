@@ -8,8 +8,8 @@
   {
     "name": "their % confirmed cache not released",
     "file": "stmt/owner.js",
-    "find": "},true,function(){ at=null; sig=''; });",
-    "replace": "},true,function(){});"
+    "find": "    },false,function(){ at=null; sig=''; });\n    asRow(sendB);",
+    "replace": "    },false,function(){});\n    asRow(sendB);"
   },
   {
     "name": "house confirmed cache not released",

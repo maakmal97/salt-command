@@ -52,7 +52,8 @@ export async function run({ ok, pageWork }) {
     /* 6 */
     const row = D.d.querySelector('[data-row="20261027000000-cr1"]');
     if (row) { row.click(); await D.settle(); }
-    const money = [...D.d.querySelectorAll(".salt-ledger__row")].map((r) => txt(r));
+    /* 2 Nov 2026 (his Orders canvas, page 2): the order screen's Bill is settings rows, label, value, then the second line */
+    const money = [...D.d.querySelectorAll('[data-part="money"] .salt-settings__row')].map((r) => [".salt-settings__label", ".salt-settings__value", ".salt-settings__sub"].map((q) => txt(r.querySelector(q))).join(" ").trim());
     ok(money.some((r) => /^Paid by your credit\s*RM 25\.00/.test(r)) && money.some((r) => /^Still to pay\s*RM 75\.00/.test(r)),
       "the order card says what their credit paid, and RM 75.00 still to pay: " + J(money.filter((r) => /credit|Still/.test(r))));
   } finally { for (const p of pages) p.close(); }

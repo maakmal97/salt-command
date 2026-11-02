@@ -58,7 +58,8 @@ export async function run({ ok }) {
     /* 22 Oct 2026 (his canvas): the delivery charge is one select, Choose, 0, 10, 15 and Other; a choice is its value, set with a change */
     const feeSel = (id) => card(id) && card(id).querySelector('select[data-act="order.fee"]');
     const choose = (id, v) => { const sel = feeSel(id); sel.value = v; sel.dispatchEvent(new browser.window.Event("change", { bubbles: true })); };
-    const total = (id) => card(id).querySelector(".maker-fields input[type=\"number\"]");
+    /* 2 Nov 2026 (his Orders canvas, page 2): Agree's terms are rows of a settings list; the goods' total is found by its act */
+    const total = (id) => card(id).querySelector('[data-act="order.total"]');
     const tile = (id, label) => [...card(id).querySelectorAll(".salt-kpi")].find((k) => k.querySelector(".salt-kpi__label") && k.querySelector(".salt-kpi__label").textContent === label);
     const previews = (id) => posts.filter((p) => p.kind === "preview" && (!id || p.path.includes(id)));
     const fire = (node, type) => node.dispatchEvent(new browser.window.Event(type, { bubbles: true }));

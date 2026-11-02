@@ -94,8 +94,9 @@ export async function run({ ok, pageWork }) {
 
     /* ---- 2: the band, the point and its pin ---- */
     const hR = part(sR, "head"), pin = hR && hR.querySelector("a.salt-pin");
-    ok(!!hR && hR.classList.contains("salt-band") && t(hR.querySelector("h3.state")) === "Ready to collect" && t(hR.querySelector(".oband__point")) === "At Point Z9",
-      "the head is a band, its state the heading and the point it waits at under what it is: " + t(hR));
+    ok(!!hR && hR.classList.contains("salt-band") && /* 2 Nov 2026 (his Orders canvas, page 2): the state word is the chip's, in the band's head; the heading that repeated it is gone */
+      t(hR.querySelector(".salt-band__head .salt-status")) === "Ready to collect" && !hR.querySelector("h3.state, .oband__state") && t(hR.querySelector(".oband__point")) === "At Point Z9",
+      "the head is a band, its state the chip's word and the point it waits at under what it is: " + t(hR));
     ok(!!pin && pin.getAttribute("href") === "https://maps.apple.com/?ll=3.14786,101.69369&q=Point%20Z9" && pin.getAttribute("aria-label") === "Directions to Point Z9, opens your maps app"
       && !!pin.querySelector('svg[aria-hidden="true"]') && pin.target === "_blank" && /noopener/.test(pin.rel),
       "the pin opens their maps app at the point's place, named by its code alone: " + (pin && pin.getAttribute("href")));
@@ -129,8 +130,10 @@ export async function run({ ok, pageWork }) {
     ok(at(B.history[0].at, stB[0]) && at(B.history[1].at, stB[1]) && stB[2] === "Next" && stB[3] === "",
       "a step that happened today shows its time of day, an earlier one its day, and only the step to come says Next: " + JSON.stringify(stB));
     /* ---- 4: the money ---- */
-    const rows = [...part(sR, "money").querySelectorAll(".salt-ledger__row")].map((r) => [t(r.querySelector(".salt-ledger__label")), t(r.querySelector(".salt-ledger__value")), r.classList.contains("salt-ledger__row--due")]);
-    const paidRows = rows.filter((r) => /^Paid/.test(r[0]));
+    /* 2 Nov 2026 (his Orders canvas, page 2): the money is the Bill's settings rows; the way and the day are a row's second line, read after its name as the receipt line read them; the due line is the total row, last, its figure in ember */
+    const rows = [...part(sR, "money").querySelectorAll(".salt-settings__row")].map((r) => [t(r.querySelector(".salt-settings__label")), t(r.querySelector(".salt-settings__value")),
+      r.classList.contains("salt-settings__row--total") && r.classList.contains("obill--due") && !!r.querySelector(".salt-settings__value--due"), t(r.querySelector(".salt-settings__sub"))]);
+    const paidRows = rows.filter((r) => /^Paid/.test(r[0])).map((r) => [r[0] + r[3], r[1]]);
     ok(paidRows.length === 2 && /^PaidBy DuitNow Transfer, \d\d \w{3} \d{4}$/.test(paidRows[0][0]) && paidRows[0][1] === "RM 30.00" && /^PaidBy cash on handover, \d\d \w{3} \d{4}$/.test(paidRows[1][0]) && paidRows[1][1] === "RM 10.00",
       "each payment we have stands on its own line with its way and its day: " + JSON.stringify(paidRows));
     const due = rows.find((r) => r[0] === "Still to pay");

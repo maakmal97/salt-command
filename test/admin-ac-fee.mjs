@@ -4,7 +4,8 @@
  *      NOTHING is chosen until he chooses, and Other's field is shut
  *   2  a charge chosen is the option selected, and no other; Other opens its field and the others shut it
  *   3  the charge chosen is the one the figures are read at
- *   4  the select stands in the Agree grid beside Goods, as a field the system draws at the full width of its column */
+ *   4  the select stands in the Agree grid beside Goods, as a field the system draws at the full width of its column; 2 Nov 2026 (his Orders canvas, page 2):
+ *      a row of Agree's one settings list under Goods, the system's select at the row's right */
 import { richOwnerPage, byAct } from "./maker-act.mjs";
 
 const J = JSON.stringify;
@@ -19,7 +20,7 @@ export async function run({ ok, pageWork }) {
     const sel = byAct(d, "order.fee", "ord-p2"), opts = sel ? [...sel.options] : [];
     const read = () => ({ value: sel.value, on: opts.map((o) => o.selected ? 1 : 0).join("") });
     /* 1 */
-    ok(!!sel && sel.tagName === "SELECT" && sel.closest("label").querySelector(".lbl").textContent === "Delivery, RM"
+    ok(!!sel && sel.tagName === "SELECT" && sel.closest("label").querySelector(".salt-settings__label").textContent === "Delivery, RM"
       && J(opts.map((o) => [o.value, o.textContent])) === J([["", "Choose"], ["0", "0"], ["10", "10"], ["15", "15"], ["other", "Other"]])
       && read().value === "" && read().on === "10000",
       "a delivery's charge is one select, its options Choose, 0, 10, 15 and Other, Choose selected while none is chosen: " + J(sel && read()));
@@ -39,9 +40,11 @@ export async function run({ ok, pageWork }) {
     ok(J(read()) === J({ value: "10", on: "00100" }) && shut() && !!pv && pv.body.delivery === 10,
       "RM 10 shuts Other's field again, and the figures are read at RM 10: " + J(pv && pv.body));
     /* 4 */
-    const grid = sel.closest(".oagree"), css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
-    ok(!!grid && grid.classList.contains("maker-fields") && sel.classList.contains("salt-field__select") && sel.classList.contains("salt-field__input")
-      && /\.adm \.oagree \.salt-field__input\{width:100%;min-width:0;box-sizing:border-box\}/.test(css),
-      "the select stands in the Agree grid as the system's select, filling its column");
+    const grid = sel.closest(".oagree"), row = sel.closest(".salt-settings__row"), css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
+    const goods = byAct(d, "order.total", "ord-p2");
+    ok(!!grid && !!row && row.parentElement.matches(".salt-settings") && !!goods && goods.closest(".salt-settings") === row.parentElement
+      && sel.classList.contains("salt-field__select") && sel.classList.contains("salt-field__input")
+      && css.includes(".adm .oagree .salt-settings__row>.salt-field__input,.adm .oagree .salt-settings__row>.salt-field__select{flex:0 1 168px;min-width:0;text-align:right}"),
+      "the select stands in Agree's settings list with Goods, the system's select at its row's right");
   } finally { p.w.close(); }
 }

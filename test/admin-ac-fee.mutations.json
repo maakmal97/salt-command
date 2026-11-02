@@ -1,12 +1,62 @@
 [
- {"name":"the select's first line preset to RM 0","file":"stmt/owner.js","find":"[['','Choose'],['0','0'],['10','10'],['15','15'],['other','Other']]","replace":"[['0','0'],['','Choose'],['10','10'],['15','15'],['other','Other']]"},
- {"name":"no charge chosen is read as nothing","file":"stmt/owner.js","find":"dsel.value=chip.value;\n","replace":"dsel.value='0';\n"},
- {"name":"no sync on choosing","file":"stmt/owner.js","find":"chip.value=dsel.value;\n","replace":""},
- {"name":"Other never opens its field","file":"stmt/owner.js","find":"if(otherField) otherField.closest('label').hidden=chip.value!=='other';\n            makerPlacedInvalidate(); makerPlacedRead();","replace":"makerPlacedInvalidate(); makerPlacedRead();"},
- {"name":"Other's field open from the start","file":"stmt/owner.js","find":"otherField.closest('label').hidden=chip.value!=='other';\n          otherField.addEventListener","replace":"otherField.closest('label').hidden=false;\n          otherField.addEventListener"},
- {"name":"the select without its act","file":"stmt/owner.js","find":"actOn(dsel,'order.fee');","replace":""},
- {"name":"the select's label changed","file":"stmt/owner.js","find":"'Delivery, RM'","replace":"'Delivery'"},
- {"name":"the select outside the Agree grid","file":"stmt/owner.js","find":"dl.appendChild(dsel); form.appendChild(dl); feeSel=dsel;","replace":"dl.appendChild(dsel); card.appendChild(dl); feeSel=dsel;"},
- {"name":"the select drawn bare","file":"stmt/owner.js","find":"dsel=el('select','fld salt-field__input salt-field__input--mono salt-field__select')","replace":"dsel=el('select','fld')"},
- {"name":"the grid's width rule gone","file":"stmt/page.js","find":".adm .oagree .salt-field__input{width:100%;min-width:0;box-sizing:border-box}\n","replace":""}
+  {
+    "name": "the select's first line preset to RM 0",
+    "file": "stmt/owner.js",
+    "find": "[['','Choose'],['0','0'],['10','10'],['15','15'],['other','Other']]",
+    "replace": "[['0','0'],['','Choose'],['10','10'],['15','15'],['other','Other']]"
+  },
+  {
+    "name": "no charge chosen is read as nothing",
+    "file": "stmt/owner.js",
+    "find": "dsel.value=chip.value;\n",
+    "replace": "dsel.value='0';\n"
+  },
+  {
+    "name": "no sync on choosing",
+    "file": "stmt/owner.js",
+    "find": "chip.value=dsel.value;\n",
+    "replace": ""
+  },
+  {
+    "name": "Other never opens its field",
+    "file": "stmt/owner.js",
+    "find": "if(otherField) otherField.closest('label').hidden=chip.value!=='other';\n            makerPlacedInvalidate(); makerPlacedRead();",
+    "replace": "makerPlacedInvalidate(); makerPlacedRead();"
+  },
+  {
+    "name": "Other's field open from the start",
+    "file": "stmt/owner.js",
+    "find": "otherField.closest('label').hidden=chip.value!=='other';\n          otherField.addEventListener",
+    "replace": "otherField.closest('label').hidden=false;\n          otherField.addEventListener"
+  },
+  {
+    "name": "the select without its act",
+    "file": "stmt/owner.js",
+    "find": "actOn(dsel,'order.fee');",
+    "replace": ""
+  },
+  {
+    "name": "the select's label changed",
+    "file": "stmt/owner.js",
+    "find": "'Delivery, RM'",
+    "replace": "'Delivery'"
+  },
+  {
+    "name": "the select outside Agree's list",
+    "file": "stmt/owner.js",
+    "find": "makerRow(form,'Delivery, RM',dsel).classList.add('oagree__fee'); feeSel=dsel;",
+    "replace": "makerRow(card,'Delivery, RM',dsel).classList.add('oagree__fee'); feeSel=dsel;"
+  },
+  {
+    "name": "the select drawn bare",
+    "file": "stmt/owner.js",
+    "find": "dsel=el('select','fld salt-field__input salt-field__input--mono salt-field__select')",
+    "replace": "dsel=el('select','fld')"
+  },
+  {
+    "name": "the row's width rule gone",
+    "file": "stmt/page.js",
+    "find": ".adm .oagree .salt-settings__row>.salt-field__input,.adm .oagree .salt-settings__row>.salt-field__select{flex:0 1 168px;min-width:0;text-align:right}\n",
+    "replace": ""
+  }
 ]

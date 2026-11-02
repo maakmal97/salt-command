@@ -20,19 +20,19 @@
   {
     "name": "2 opened and how",
     "file": "stmt/owner.js",
-    "find": "acctLine(st,'Opened',a.seen&&a.seen.opens?dayMon(a.seen.last)+(howOf(a.seen)?' '+howOf(a.seen):''):'Not yet');",
-    "replace": "acctLine(st,'Opened',a.seen&&a.seen.opens?dayMon(a.seen.last):'Not yet');"
+    "find": "standRow('Opened',a.seen&&a.seen.opens?dayMon(a.seen.last)+(howOf(a.seen)?' '+howOf(a.seen):''):'Not yet');",
+    "replace": "standRow('Opened',a.seen&&a.seen.opens?dayMon(a.seen.last):'Not yet');"
   },
   {
     "name": "2 locked first and hot",
     "file": "stmt/owner.js",
-    "find": "lk.classList.add('astand--hot'); lk.querySelector('.salt-ledger__value').classList.add('nage--late');",
+    "find": "lk.classList.add('astand--hot'); lk.querySelector('.salt-settings__value').classList.add('nage--late');",
     "replace": ""
   },
   {
     "name": "2 notifications",
     "file": "stmt/owner.js",
-    "find": "if(a.alerts) acctLine(st,'Notifications','On');",
+    "find": "if(a.alerts) standRow('Notifications','On');",
     "replace": ""
   },
   {
@@ -48,16 +48,16 @@
     "replace": "rp.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); });"
   },
   {
-    "name": "4 Sign out everywhere last and wide",
+    "name": "4 Sign out everywhere last",
     "file": "stmt/owner.js",
-    "find": "grid.insertBefore(mark, sob);",
-    "replace": "grid.appendChild(mark);"
+    "find": "endList.appendChild(pwb); endList.appendChild(sob);",
+    "replace": "endList.appendChild(sob); endList.appendChild(pwb);"
   },
   {
     "name": "4 Show a code",
     "file": "stmt/owner.js",
-    "find": "var hob=ghost(['Show a code','acct.show-code'])",
-    "replace": "var hob=ghost(['Show a code, in person','acct.show-code'])"
+    "find": "var hob=asRow(ghost(['Show a code','acct.show-code']))",
+    "replace": "var hob=asRow(ghost(['Show a code, in person','acct.show-code']))"
   },
   {
     "name": "5 Mark as sent hidden once sent",
@@ -68,13 +68,13 @@
   {
     "name": "5 Mark as sent marks it",
     "file": "stmt/owner.js",
-    "find": "var j=await refs('/all/sent/'+u, {issue:sheetIssue, sent:true});\n        a.sent=j.sent; stand();",
-    "replace": "var j={sent:a.sent};\n        a.sent=j.sent; stand();"
+    "find": "var j=await refs('/all/sent/'+u, {issue:sheetIssue, sent:true});\n        a.sent=j.sent; standDraw();",
+    "replace": "var j={sent:a.sent};\n        a.sent=j.sent; standDraw();"
   },
   {
     "name": "6 no account says so",
     "file": "stmt/owner.js",
-    "find": "if(none){ acctLine(st,'Account','Next update'); return; }",
+    "find": "if(none){ standRow('Account','Next update'); return; }",
     "replace": ""
   },
   {
@@ -82,5 +82,17 @@
     "file": "stmt/page.js",
     "find": "line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}",
     "replace": "line-height:1.2;overflow:hidden;overflow-wrap:normal}"
+  },
+  {
+    "name": "4 Copy password asks on the Sheet",
+    "file": "stmt/owner.js",
+    "find": "      if(!await ownerAsk(pwb,'acct.password:'+u,{title:'Copy their password?', plain:true, go:'Copy it', keep:'Not now',\n        say:['It goes to this phone’s clipboard, for you to give to them.']})) return;",
+    "replace": ""
+  },
+  {
+    "name": "4 Sign out everywhere asks on the Sheet",
+    "file": "stmt/owner.js",
+    "find": "      if(!await ownerAsk(sob,'acct.signout-all:'+u,{title:'Sign out everywhere?', go:'Sign out everywhere', keep:'Not now',\n        say:['Every phone, link, code and alert on this account ends. A new link or a code signs them back in.']})) return;",
+    "replace": ""
   }
 ]

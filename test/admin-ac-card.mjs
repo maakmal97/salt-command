@@ -42,34 +42,38 @@ export async function run({ ok, pageWork }) {
     await go("ready");
     const R = await tap("ord-rz"), head = R && R.querySelector(".ohead");
     /* 1 */
-    /* 20 Oct 2026 (canvas V11): the action as a chip by the reference, the units as the heading over the buyer's code, the goods' total beside */
-    ok(!!head && head.classList.contains("salt-band") && t(head.querySelector(".salt-band__head .salt-status")) === "To hand over"
-      && /^[A-Z0-9]{4}-[A-Z0-9]{3}$/.test(t(head.querySelector(".salt-band__ref[data-ref]"))) && t(head.querySelector("h3.ostate")) === "2 units"
-      && t(head.querySelector(".ogoods__who")) === "CX1-ZED" && t(head.querySelector(".ogoods__total")) === "RM 100",
-      "his order's head is the band: the action as a chip by the short reference, the units as the heading over the buyer, the goods' total: " + t(head));
+    /* 20 Oct 2026 (canvas V11): the action as a chip by the reference. 2 Nov 2026 (his Orders canvas, page 2): the Counter's own band, its foot the book's
+       tag, the buyer's code and the units at the right; the goods' total is the Bill's */
+    ok(!!head && head.classList.contains("salt-band") && head.classList.contains("salt-band--grid") && t(head.querySelector(".salt-band__head .salt-status")) === "To hand over"
+      && /^[A-Z0-9]{4}-[A-Z0-9]{3}$/.test(t(head.querySelector(".salt-band__ref[data-ref]"))) && t(head.querySelector(".salt-band__foot .ogoods__units")) === "2 units"
+      && t(head.querySelector(".salt-band__foot .ogoods__who")) === "CX1-ZED" && /^Ready /.test(t(head.querySelector(".salt-band__when .omoment"))),
+      "his order's head is the band: the action as a chip by the short reference, the moment and the way, the buyer and the units: " + t(head));
     ok(t(head.querySelector(".oway")) === "Collect at Z9", "a collection says where: " + t(head && head.querySelector(".oway")));
     /* 2 */
     const pin = head && head.querySelector("a.oway--link");
     ok(!!pin && /3\.14786,101\.69369/.test(pin.getAttribute("href")) && pin.getAttribute("aria-label") === "Point Z9 in maps",
       "a collection waiting at his point is itself the link to the maps app, at the point's own place: " + (pin && pin.getAttribute("href")));
     /* 3 */
-    const pays = [...R.querySelectorAll(".ordmoney [data-pay]")].map((r) => [t(r.querySelector(".salt-ledger__sub")), t(r.querySelector(".salt-ledger__value"))]);
+    /* 2 Nov 2026: the Bill is a settings list, a payment's way and day its row's second line */
+    const pays = [...R.querySelectorAll(".ordmoney [data-pay]")].map((r) => [t(r.querySelector(".salt-settings__sub")), t(r.querySelector(".salt-settings__value"))]);
     ok(pays.length === 2 && /^DuitNow Transfer, /.test(pays[0][0]) && /^RM 40/.test(pays[0][1]) && /, /.test(pays[1][0]) && /^RM 60/.test(pays[1][1]),
       "each payment received stands on its own line with its way and its day: " + JSON.stringify(pays));
-    const settled = [...R.querySelectorAll(".ordmoney .salt-ledger__row")].find((r) => /^Settled/.test(t(r)));
-    ok(!!settled && !!settled.querySelector(".osettled") && !R.querySelector(".ordmoney .salt-ledger__row--due"),
+    const settled = [...R.querySelectorAll(".ordmoney .salt-settings__row")].find((r) => /^Settled/.test(t(r)));
+    ok(!!settled && !!settled.querySelector(".osettled") && !R.querySelector(".ordmoney .salt-settings__value--due"),
       "paid in full, the card says Settled and draws no due row");
     const Y = await tap("ord-ry");
     ok(!!Y && !Y.querySelector(".ohead a.oway--link") && t(Y.querySelector(".ohead .oway")) === "Collect at Z9", "all handed over, the way is no longer a link");
     await go("confirmed");
-    const A = await tap("ord-ad"), due = A && A.querySelector(".ordmoney .salt-ledger__row--due");
+    const A = await tap("ord-ad"), due = A && A.querySelector(".ordmoney .salt-settings__value--due") && A.querySelector(".ordmoney .salt-settings__value--due").closest(".salt-settings__row");
     ok(!!due && /^Owed/.test(t(due)) && /RM 70/.test(t(due)) && t(A.querySelector(".ohead .oway")) === "Lirau · ASAP · +RM 10.00 delivery"
       && t(A.querySelector(".ohead .salt-band__head .salt-status")) === "To make ready",
       "something owed stands in the due row, and a delivery says where to and when, as the customer reads it: " + t(due) + " / " + t(A && A.querySelector(".oway")));
     /* 5 (20 Oct 2026, canvas V21, V24): the Bill, headed so, Goods, Delivery cost, the Total, then what is paid and owed */
-    const bill = A.querySelector(".ordmoney"), labels = bill ? [...bill.querySelectorAll(":scope > .salt-ledger__row")].map((r) => t(r.querySelector(".salt-ledger__label"))) : [];
+    /* 2 Nov 2026: the Bill is the Counter's (oBillOf), a settings list under its grey head; the total's name heavier */
+    const bill = A.querySelector(".ordmoney"), labels = bill ? [...bill.querySelectorAll(":scope > .salt-settings__row")].map((r) => t(r.querySelector(".salt-settings__label"))) : [];
     const totRow = bill && bill.querySelector("[data-total]");
-    ok(!!bill && t(bill.previousElementSibling) === "Bill" && bill.previousElementSibling.tagName === "H4"
+    ok(!!bill && bill.classList.contains("salt-settings") && t(bill.previousElementSibling) === "Bill" && bill.previousElementSibling.classList.contains("salt-settings__head")
+      && !!totRow && totRow.classList.contains("salt-settings__row--total")
       && JSON.stringify(labels.map((l) => l.replace(/^(Paid|Goods).*/, "$1"))) === JSON.stringify(["Goods", "Delivery cost", "Total", "Paid", "Owed", "Handed"])
       && /RM 110\.00/.test(t(totRow)), "the Bill: its heading, Goods, Delivery cost, the Total of goods and delivery, Paid, then Owed: " + JSON.stringify([labels, t(totRow)]));
     /* 4 (20 Oct 2026, canvas V17, V30): Paid is the fourth step; part paid it says how much of what, and done once nothing is owed */

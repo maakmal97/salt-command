@@ -47,7 +47,8 @@ export async function run({ ok, pageWork }) {
       "a tap opens that card beside the list, alone marked current: its kind and age in To do's copper, the title in words, what it is with its typed tag: " + t(head));
     /* 3 */
     const low = pane().querySelector(".npane-x"), oc = low && low.querySelector(".maker-card");
-    const grid = oc && oc.querySelector(".oagree"), fields = grid ? [...grid.children].filter((x) => !x.hidden).map((x) => t(x.querySelector(".salt-field__label")) || "line") : [];
+    /* 2 Nov 2026 (his Orders canvas, page 2): Goods, Delivery and When are rows of one settings list (label at the left, input at the right), then the foot line */
+    const grid = oc && oc.querySelector(".oagree"), fields = grid ? [...grid.querySelectorAll("label.salt-settings__row:not([hidden])"), ...grid.querySelectorAll(":scope > p.salt-settings__foot")].map((x) => x.matches("label") ? t(x.querySelector(".salt-settings__label")) : "line") : [];
     const fee = oc && byAct(oc, "order.fee");
     ok(!!oc && !oc.querySelector("details.ordfold--rowed") && !byAct(oc, "order.terms") && J(fields) === J(["Goods, RM", "Delivery, RM", "When", "line"])
       && !!fee && fee.value === "" && t(fee.options[fee.selectedIndex]) === "Choose" && !!head && !head.querySelector(".npane__go") && !!byAct(oc, "order.decline"),

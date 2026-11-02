@@ -3,7 +3,9 @@
  *   1  from 1080px an open order takes the list's place, as on a phone, and the rail's Orders closes it back to the list; no order opens itself
  *   2  from 860 to 1080px the list still stands beside the card, the first order opening in it
  *   3  from 1180px the card lays out in two columns, decision beside record and insight; from 1440px in three, decision, record, insight, at
- *      the widths he gave; below 1180 the card is as drawn, part for part in its order; the foot stays under the columns
+ *      the widths he gave; below 1180 the card is as drawn, part for part in its order; the foot stays under the columns.
+ *      2 Nov 2026 (his Orders canvas, page 2): from 1180px TWO columns, 24px apart, at 1440 too: the decision (the band, the Steps, his decision) left
+ *      and the record (the Bill, the messages, This customer and the Order log, the end) right; three columns are retired
  *   4  a change of width moves the parts, never draws them again: what he typed stays */
 import { richOwnerPage, byAct } from "./maker-act.mjs";
 
@@ -42,23 +44,19 @@ export async function run({ ok, pageWork }) {
     /* 3 */
     const card = d.querySelector("#makerReview .maker-card"), box = card && card.querySelector(":scope > .ordcols");
     const colOf = (sel) => { const x = card.querySelector(sel); return x && x.closest(".ordcol") ? x.closest(".ordcol").getAttribute("data-ocol") : "none"; };
-    const map3 = { band: colOf(".ohead"), lead: colOf(".ordlead"), steps: colOf(".ordsteps"), bill: colOf(".ordmoney"), log: colOf(".undohist"), msg: colOf(".ordfold:not(.ordfold--rowed)"), foot: colOf(".maker-foot") };
-    ok(!!box && box.classList.contains("ordcols--3") && box.children.length === 3 && J(map3) === J({ band: "decision", lead: "decision", steps: "record", bill: "record", log: "record", msg: "insight", foot: "none" })
-      && card.lastElementChild.classList.contains("maker-foot") && /\.adm \.ordcols--3\{grid-template-columns:minmax\(0,1\.15fr\) minmax\(0,1fr\) minmax\(0,0\.9fr\)\}/.test(css)
-      && /\.adm \.ordcols\{display:grid;gap:20px;/.test(css),
-      "at 1440 the card is three columns, decision, record and insight, at 1.15, 1 and 0.9, gap 20px, the foot under them: " + J(map3));
-    /* 3b: the render pass of 21 Oct 2026 at 1440 found the row of three and the band too wide for a column */
-    ok(/\.adm \.ordcol \.ordrow3\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)\}/.test(css) && /\.adm \.ordcol \.ordrow3>:first-child\{grid-column:1\/-1\}/.test(css)
-      && /\.adm \.ordcols--3 \.ogoods\{flex-wrap:wrap\}/.test(css) && /\.adm \.ordcols--3 \.ogoods__sum\{flex:1 1 100%;/.test(css),
-      "in a column Agree stands on its own line over Change terms and Decline, and three across the band's total stands under the units");
+    /* 2 Nov 2026: the parts go by what each says it is (data-ocol); at 1440 two columns, as at 1180 */
+    const map3 = { band: colOf(".ohead"), lead: colOf(".ordlead"), steps: colOf(".ordsteps"), bill: colOf(".ordmoney"), log: colOf(".undohist"), msg: colOf(".omsgs"), foot: colOf(".maker-foot") };
+    ok(!!box && box.classList.contains("ordcols--2") && box.children.length === 2 && J(map3) === J({ band: "decision", lead: "decision", steps: "decision", bill: "record", log: "record", msg: "record", foot: "none" })
+      && card.lastElementChild.classList.contains("maker-foot") && /\.adm \.ordcols\{display:grid;gap:24px;/.test(css) && !/ordcols--3/.test(css),
+      "at 1440 the card is two columns, the decision and the record, gap 24px, the foot under them: " + J(map3));
     /* 4 */
-    const field = card.querySelector('[data-sect="money"]') && card.querySelector("label.maker-field input");
+    const field = card.querySelector('[data-sect="money"]') && card.querySelector('.omoney [data-act="order.pay-amount"]');
     if (field) field.value = "37";
     st.w = 1180; st.fire();
-    const box2 = card.querySelector(":scope > .ordcols"), map2 = { band: colOf(".ohead"), steps: colOf(".ordsteps"), msg: colOf(".ordfold:not(.ordfold--rowed)") };
-    ok(d.querySelector("#makerReview .maker-card") === card && !!box2 && box2.classList.contains("ordcols--2") && J(map2) === J({ band: "decision", steps: "record", msg: "record" })
+    const box2 = card.querySelector(":scope > .ordcols"), map2 = { band: colOf(".ohead"), steps: colOf(".ordsteps"), msg: colOf(".omsgs") };
+    ok(d.querySelector("#makerReview .maker-card") === card && !!box2 && box2.classList.contains("ordcols--2") && J(map2) === J({ band: "decision", steps: "decision", msg: "record" })
       && /\.adm \.ordcols--2\{grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)\}/.test(css) && (!field || field.value === "37"),
-      "at 1180 the same card is two columns, the insight under the record, and what he typed stays: " + J(map2));
+      "at 1180 the same card is two columns, the decision and the record, and what he typed stays: " + J(map2));
     st.w = 1100; st.fire();
     const seq = (c) => [...c.children].map((x) => x.tagName + "." + x.className).join(" | ");
     const moved = seq(card);

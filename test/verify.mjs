@@ -17914,7 +17914,8 @@ await (async () => {
       const kind87 = card87 ? card87.querySelector(".salt-settings__sub").textContent.replace(/\s+/g, " ").trim() : "", fig87 = card87 ? card87.querySelector(".salt-settings__value--lg").textContent.replace(/\s+/g, " ").trim() : "";
       if (card87) card87.click();
       await new Promise((r) => setTimeout(r, 60));
-      const stand87 = [...D87.querySelectorAll("#aopen .astand .salt-ledger__line")].map((l) => l.textContent.replace(/\s+/g, " ").trim());
+      /* 2 Nov 2026 (his Orders canvas, page 2): the standing is a settings list now, a row a line */
+      const stand87 = [...D87.querySelectorAll("#aopen .astand .salt-settings__row")].map((l) => l.textContent.replace(/\s+/g, " ").trim());
       ok(D87.getElementById("oAccts").hidden === false && D87.getElementById("mHome").hidden === true
         && /CX0-AA/.test(list87) && /CX1-BB/.test(list87) && /^Owed/.test(kind87) && /272/.test(fig87) && stand87.some((x) => x.startsWith("Opened14 Sep")),
         "a tap on Accounts draws every account with its word and its last open: " + JSON.stringify({ kind87, fig87, stand87 }));
@@ -18149,7 +18150,8 @@ ok(D.querySelector('#afil button[data-f="owes"]').getAttribute("aria-selected") 
     ok(D.getElementById("oAccts").classList.contains("open") && !D.getElementById("aopen").hidden
       && /CX0-OW/.test(D.querySelector("#aopen .scard").textContent) && rowOf(uO).getAttribute("aria-current") === "true",
       "a row opens its account's card and is marked the open one");
-    const stand = (k) => ((D.querySelector('#aopen .scard .astand [data-line="' + k + '"] .salt-ledger__value') || {}).textContent) || "";
+    /* 2 Nov 2026 (his Orders canvas, page 2): the standing is a settings list, its figure the row's .salt-settings__value */
+    const stand = (k) => ((D.querySelector('#aopen .scard .astand [data-line="' + k + '"] .salt-settings__value') || {}).textContent) || "";
     ok(stand("Opened") === "14 Sep 2026 by link" && stand("Marked sent") === "03 Sep 2026" && stand("Notifications") === "On",
       "and its ledger says when and how it was last opened, when it was marked sent and that notifications are on: " + JSON.stringify([stand("Opened"), stand("Marked sent"), stand("Notifications")]));
     D.querySelector('#aopen button[data-back="accounts"]').click();
@@ -19063,7 +19065,7 @@ await (async () => {
     D.querySelector('.salt-appbar button[data-m="customers"]').click();
     /* 25 OCT 2026: an open is read from the opened card's Opened line, no longer from the row */
     const opened = (u) => { const r = D.querySelector('#rlist [data-u="' + u + '"]'); if (!r) return ""; r.click();
-      const c = D.querySelector("#aopen .scard"); const v = c && c.textContent.includes(u) && c.querySelector('.astand [data-line="Opened"] .salt-ledger__value'); return v ? v.textContent : ""; };
+      const c = D.querySelector("#aopen .scard"); const v = c && c.textContent.includes(u) && c.querySelector('.astand [data-line="Opened"] .salt-settings__value'); return v ? v.textContent : ""; };
     ok(await until(() => opened(us[0]) === "03 Sep 2026 by code") && opened(us[1]) === "03 Sep 2026 by code",
       "Accounts says an open by a scanned code and one by a typed code, by code for both: " + JSON.stringify([opened(us[0]), opened(us[1])]));
     ok(opened(us[2]) === "03 Sep 2026 by password" && opened(us[3]) === "03 Sep 2026",
@@ -19707,10 +19709,13 @@ await (async () => {
     const pill = () => card().querySelector(".apill");
     pill().click();
     ok(await until(() => pill() && pill().textContent === "Share the link"), "the account's link is made by its first tap");
-    const sob = () => [...card().querySelectorAll("button")].find((b) => /Sign out everywhere|Tap again/.test(b.textContent));
-    sob().click(); sob().click();
+    /* 2 Nov 2026 (his Orders canvas, page 2): Sign out everywhere is an ember row at the card's end and asks on the Sheet, in place of a second tap; the line of what it ended follows the list */
+    const sob = () => [...card().querySelectorAll("button")].find((b) => /Sign out everywhere|Signing out/.test(b.textContent));
+    sob().click();
+    ok(await until(() => D.getElementById("ynGo")) && /Sign out everywhere[?]/.test(D.getElementById("ynSheet").textContent), "one tap only asks, on the Sheet");
+    D.getElementById("ynGo").click();
     ok(await until(() => /Signed out: 1 device[.]/.test(card().textContent) && /Phones and computers/.test(story()) && /None signed in/.test(story())) && !pill().disabled && pill().textContent === "Share the link",
-      "Sign out everywhere says what it ended, the list empties, and Send a sign-in link still has its link: " + JSON.stringify((card().querySelector(".agrid + .anote") || {}).textContent));
+      "Sign out everywhere says what it ended, the list empties, and Send a sign-in link still has its link: " + JSON.stringify((card().querySelector(".aend + .anote") || {}).textContent));
     /* ---- an account closed while its link and its story are still on their way: their landing throws nothing ----
        28 Sep 2026: jsdom from 30.1.0 keeps a closed window's document, so the late answers draw into it, harmlessly; what
        is held is that nothing they do throws into the next section's time. The answers are held until the page has
@@ -19936,10 +19941,13 @@ await (async () => {
       await until(() => D.querySelector('#rlist [data-u="' + x + '"]')); D.querySelector('#rlist [data-u="' + x + '"]').click(); };
     const card = (x) => D.querySelector('#aopen [data-acct="' + x + '"]');
     const pill = (x) => card(x) && card(x).querySelector(".apill");
+    /* 2 Nov 2026 (his Orders canvas, page 2): Sign out everywhere asks on the Sheet, answered yes; its line follows the end list (.aend) */
     const signOutAll = async (x) => {
-      const sob = () => [...card(x).querySelectorAll("button")].find((b) => /Sign out everywhere|Tap again/.test(b.textContent));
-      sob().click(); sob().click();
-      return until(() => /Signed out|Nothing was signed in/.test((card(x).querySelector(".agrid + .anote") || {}).textContent || ""));
+      const sob = () => [...card(x).querySelectorAll("button")].find((b) => /Sign out everywhere|Signing out/.test(b.textContent));
+      sob().click();
+      if (!await until(() => D.getElementById("ynGo"))) return false;
+      D.getElementById("ynGo").click();
+      return until(() => /Signed out|Nothing was signed in/.test((card(x).querySelector(".aend + .anote") || {}).textContent || ""));
     };
 
     /* ---- the account's own Send, copied ---- */
@@ -20221,11 +20229,14 @@ await (async () => {
       const pill = () => card() && card().querySelector(".apill");
       await until(() => pill() && !pill().disabled);
       const make = async () => { pill().click(); return until(() => pill().textContent === "Share the link"); };
+      /* 2 Nov 2026 (his Orders canvas, page 2): Sign out everywhere asks on the Sheet (answered yes), its line follows the end list (.aend) */
       const signOutAll = async () => {
-        const sob = () => [...card().querySelectorAll("button")].find((b) => /Sign out everywhere|Tap again/.test(b.textContent));
-        sob().click(); sob().click();
-        await until(() => /Signed out|Nothing was signed in/.test((card().querySelector(".agrid + .anote") || {}).textContent || ""));
-        return (card().querySelector(".agrid + .anote") || {}).textContent || "";
+        const sob = () => [...card().querySelectorAll("button")].find((b) => /Sign out everywhere|Signing out/.test(b.textContent));
+        sob().click();
+        if (!await until(() => D.getElementById("ynGo"))) return "";
+        D.getElementById("ynGo").click();
+        await until(() => /Signed out|Nothing was signed in/.test((card().querySelector(".aend + .anote") || {}).textContent || ""));
+        return (card().querySelector(".aend + .anote") || {}).textContent || "";
       };
       return { shared, pill, until, make, signOutAll, quiet: () => work.quiet() };
     };
@@ -20320,7 +20331,8 @@ await (async () => {
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
     /* 25 OCT 2026: the row says only its state; when and how it was last opened is the opened card's Opened line */
     D.querySelector('#rlist [data-u="' + u + '"]').click();
-    const chip = () => ((D.querySelector('#aopen .scard .astand [data-line="Opened"] .salt-ledger__value') || {}).textContent) || "";
+    /* 2 Nov 2026 (his Orders canvas, page 2): the standing's rows are settings rows */
+    const chip = () => ((D.querySelector('#aopen .scard .astand [data-line="Opened"] .salt-settings__value') || {}).textContent) || "";
     ok(/^[0-9]{2} \w{3} [0-9]{4} by code$/.test(chip()), "the opened card says the last open was by code, one word for the three roads: " + chip());
     const rows = () => [...D.querySelectorAll('#aopen [data-story] .salt-ledger__label')].map((x) => x.textContent);
     const flags = () => [...D.querySelectorAll('#aopen [data-story] .salt-ledger__flag')].map((x) => x.textContent);
@@ -20876,6 +20888,11 @@ await (async () => {
       const buttons = [...cardEl.querySelectorAll("button")];
       const pwBtn = buttons.find((b) => b.textContent === "Copy password");
       pwBtn.dispatchEvent(new W88.Event("click", { bubbles: true }));
+      /* 2 Nov 2026 (his Orders canvas, page 2): Copy password asks on the Sheet first; nothing is opened or copied until the yes */
+      for (let i = 0; i < 200 && !D88.getElementById("ynGo"); i++) await new Promise((r) => setTimeout(r, 25));
+      ok(!!D88.getElementById("ynGo") && /Copy their password[?]/.test(D88.getElementById("ynSheet").textContent) && copied !== PW88,
+        "Copy password asks on the Sheet first, and copies nothing before the yes");
+      D88.getElementById("ynGo").click();
       /* the copy waits on a PBKDF2 under the master: waited for, never timed (28 Sep 2026: a 900 ms pause, short under load) */
       for (let i = 0; i < 400 && copied !== PW88; i++) await new Promise((r) => setTimeout(r, 25));
       ok(copied === PW88, "Copy password opens the sealed password with the master and copies it: " + (copied === PW88));
@@ -28709,10 +28726,15 @@ await (async () => {
     const btn = () => { let k = card(); if (!k) { const r = D.querySelector('#rlist [data-u="' + u + '"]'); if (r) r.click(); k = card(); }
       return k && [...k.querySelectorAll("button")].find((b) => /Sign out everywhere|Tap again|Signing out|Signed out|Nothing was|Could not sign out/.test(b.textContent)); };
     ok(await until(() => !!btn()) && btn().textContent === "Sign out everywhere", "each account's card carries Sign out everywhere");
+    /* 2 Nov 2026 (his Orders canvas, page 2): Sign out everywhere asks on the Sheet in place of "Tap again"; Keep sends nothing, the go signs out */
     btn().click();
+    ok(await until(() => D.getElementById("ynKeep")) && /Sign out everywhere[?]/.test(D.getElementById("ynSheet").textContent), "one tap only asks, on the Sheet");
+    D.getElementById("ynKeep").click();
     await new Promise((r) => setTimeout(r, 40));
-    ok(seen.length === 0 && /Tap again/.test(btn().textContent), "one tap only asks, on the button itself, and sends nothing");
+    ok(seen.length === 0 && btn().textContent === "Sign out everywhere", "and Keep sends nothing");
     btn().click();
+    ok(await until(() => D.getElementById("ynGo")), "the second tap asks again");
+    D.getElementById("ynGo").click();
     ok(await until(() => seen.length === 1) && seen[0].u === u && await until(() => /Signed out everywhere|Nothing was signed in/.test(card().textContent)),
       "and the second signs the account out everywhere: " + JSON.stringify(seen));
   } finally { globalThis.fetch = realFetch; if (win) { try { win.close(); } catch (e) { /* best effort */ } } }
@@ -31701,8 +31723,9 @@ await (async () => {
     const r = d.querySelector('#pOrder [data-row="' + id + '"]'); if (r) r.click();
     return scr() && scr().getAttribute("data-order") === id;
   };
-  const lines = () => [...scr().querySelectorAll('[data-part="money"] .salt-ledger__row')].map((r) => [r.querySelector(".salt-ledger__label").textContent,
-    r.querySelector(".salt-ledger__value").textContent, (r.querySelector(".salt-ledger__flag") || {}).textContent || ""]);
+  /* 2 Nov 2026 (his Orders canvas, page 2): the money is the shared Bill, a settings list; a line's flag is its row's second line */
+  const lines = () => [...scr().querySelectorAll('[data-part="money"] .salt-settings__row')].map((r) => [r.querySelector(".salt-settings__label").textContent,
+    r.querySelector(".salt-settings__value").textContent, (r.querySelector(".salt-settings__sub") || {}).textContent || ""]);
   const pills = () => [...scr().querySelectorAll(".salt-pill")].filter((b) => !b.closest("[hidden]")).map((b) => b.textContent);
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
@@ -35237,8 +35260,9 @@ await (async () => {
     const goods = (id) => { const later = D.querySelector("#pOrder .olater");
       if (!D.querySelector('#pOrder [data-row="' + id + '"]') && later && later.getAttribute("aria-expanded") !== "true") later.click();
       D.querySelector('#pOrder [data-row="' + id + '"]').click();
-      const r = [...D.querySelectorAll(".oscreen .salt-ledger__row")].find((x) => /Goods/.test(x.textContent));
-      return r ? r.textContent.replace(/\s+/g, " ").trim() : ""; };
+      /* 2 Nov 2026 (his Orders canvas, page 2): the order screen's money is the Bill's settings rows, a row's flag its second line */
+      const r = [...D.querySelectorAll('.oscreen [data-part="money"] .salt-settings__row')].find((x) => /Goods/.test(x.textContent));
+      return r ? [".salt-settings__label", ".salt-settings__sub", ".salt-settings__value"].map((q) => (r.querySelector(q) || { textContent: "" }).textContent).join(" ").replace(/\s+/g, " ").trim() : ""; };
     const set = goods(SET), none = goods(NONE);
     ok(/RM ?90/.test(set) && /Set when we confirmed it\. You placed it at RM ?100/.test(set) && /RM ?100/.test(none) && !/placed it at/.test(none),
       "the order priced at the acknowledgement reads its price with what they placed it at beside the goods; one not priced so says nothing more: " + JSON.stringify({ set, none }));
@@ -38231,7 +38255,8 @@ await (async () => {
       r.click();
       const s = pd.querySelector('#pOrder .oscreen[data-order="' + id + '"]'); if (!s) return null;
       const h = [...s.querySelectorAll('[data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
-      return [s.querySelector(".state").textContent, s.querySelector('[data-part="when"] .salt-insight').textContent, h[h.length - 1]];
+      /* 2 Nov 2026 (his Orders canvas, page 2): the state is the band's chip, as on his card; the heading that repeated it is gone */
+      return [s.querySelector('[data-part="head"] .salt-band__head .salt-status').textContent, s.querySelector('[data-part="when"] .salt-insight').textContent, h[h.length - 1]];
     };
     ok(JSON.stringify(said(dec.id)) === JSON.stringify(["Declined", "We could not take this order. Out of stock this week. Nothing is owed.", "Declined: Out of stock this week"]),
       "a decline reads Declined, with his reason, on the order and in what happened: " + JSON.stringify(said(dec.id)));
@@ -38382,8 +38407,10 @@ await (async () => {
     const line = scr ? scr.querySelector('[data-part="when"] .salt-insight').textContent : "";
     ok(/ Closed at 2 units of the 5 ordered, RM 200.00 for the goods\.$/.test(line), "their page says it was closed there, and at what: " + line);
     const steps = scr ? [...scr.querySelectorAll(".salt-steps__step")].map((x) => (x.querySelector(".salt-steps__name") || x).textContent + (x.getAttribute("aria-current") ? "*" : "")) : [];
-    const goods = scr ? [...scr.querySelectorAll('[data-part="money"] .salt-ledger__row')].map((x) => x.textContent) : [];
-    ok(JSON.stringify(steps) === JSON.stringify(["Placed", "Confirmed", "Ready", "Paid", "Collected*"]) && scr.querySelector(".state").textContent === "Collected"
+    /* 2 Nov 2026 (his Orders canvas, page 2): a Bill row read as its name, its figure and its second line; the state is the band's chip */
+    const cell = (x, q) => (x.querySelector(q) || { textContent: "" }).textContent;
+    const goods = scr ? [...scr.querySelectorAll('[data-part="money"] .salt-settings__row')].map((x) => cell(x, ".salt-settings__label") + cell(x, ".salt-settings__value") + cell(x, ".salt-settings__sub")) : [];
+    ok(JSON.stringify(steps) === JSON.stringify(["Placed", "Confirmed", "Ready", "Paid", "Collected*"]) && scr.querySelector('[data-part="head"] .salt-band__head .salt-status').textContent === "Collected"
       && goods[0] === "GoodsRM 200.002 units handed over of the 5 ordered" && goods.some((g) => /^Still to payRM 200.00The goods are with you$/.test(g)),
       "its goods stand at Collected, all of what was kept being with them, and the money is billed for the 2 units, saying so: " + JSON.stringify({ steps, goods }));
     const h = [...scr.querySelectorAll('[data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
@@ -41895,7 +41922,8 @@ await (async () => {
     await until(() => d.querySelector('#pOrder [data-row="20260920010000-v2rr"]'));
     d.querySelector('#pOrder [data-row="20260920010000-v2rr"]').click();
     const scr = d.querySelector("#pOrder .oscreen");
-    const money = [...scr.querySelectorAll(".salt-ledger__row")].map((r) => [".salt-ledger__label", ".salt-ledger__value", ".salt-ledger__flag"].map((q) => t(r.querySelector(q))).join("|"));
+    /* 2 Nov 2026 (his Orders canvas, page 2): the Bill's settings rows; a row's flag is its second line */
+    const money = [...scr.querySelectorAll('[data-part="money"] .salt-settings__row')].map((r) => [".salt-settings__label", ".salt-settings__value", ".salt-settings__sub"].map((q) => t(r.querySelector(q))).join("|"));
     scr.querySelector(".oact .salt-pill").click();
     const oWays = [...d.querySelectorAll('#payBody input[name="payHow"]')].map((r) => r.value).join();
     const oInv = !!d.querySelector("#payBody .inv"), oTitle = t(d.getElementById("payT"));
@@ -42141,7 +42169,8 @@ await (async () => {
       && JSON.stringify(Object.assign({}, st.sent[1][1], { rid: 1 })) === JSON.stringify({ amount: 150, method: "transfer", account: "maybank", rid: 1 }),
       "Not yet asks nothing more until the pay page is opened again; a refused Yes answers beside itself and a retry carries the same id: "
       + JSON.stringify({ once, refused, sent: st.sent }));
-    const lines = [...scr().querySelectorAll(".salt-ledger__row")].map((x) => [".salt-ledger__label", ".salt-ledger__value", ".salt-ledger__flag"].map((q) => t(x.querySelector(q))).join("|"));
+    /* 2 Nov 2026 (his Orders canvas, page 2): the Bill's settings rows; a row's flag is its second line */
+    const lines = [...scr().querySelectorAll('[data-part="money"] .salt-settings__row')].map((x) => [".salt-settings__label", ".salt-settings__value", ".salt-settings__sub"].map((q) => t(x.querySelector(q))).join("|"));
     const hist = [...scr().querySelectorAll('[data-part="hist"] li')].map(t);
     const row = t(d.querySelector('#pOrder [data-row="oA"] .ocard__what'));
     ok(lines.includes("Sent by you|RM 150.00|Waiting for us to confirm") && lines.includes("Still to pay|RM 0.00|Sent, waiting for us to confirm")
@@ -42174,7 +42203,8 @@ await (async () => {
     const why = t(dB.querySelector('#pOrder [data-row="oB"] .ocard__what'));
     dB.querySelector('#pOrder [data-row="oB"]').click();
     const scrB = dB.querySelector("#pOrder .oscreen");
-    const lost = [...scrB.querySelectorAll(".salt-ledger__row")].map((x) => t(x.querySelector(".salt-ledger__label")) + "|" + t(x.querySelector(".salt-ledger__value")));
+    /* 2 Nov 2026 (his Orders canvas, page 2): the Bill's settings rows */
+    const lost = [...scrB.querySelectorAll('[data-part="money"] .salt-settings__row')].map((x) => t(x.querySelector(".salt-settings__label")) + "|" + t(x.querySelector(".salt-settings__value")));
     const histB = [...scrB.querySelectorAll('[data-part="hist"] li')].map(t);
     ok(/a payment we have not found/.test(why) && lost.includes("Not found yet|RM 50.00") && histB.some((x) => x.endsWith(" We have not found RM 50.00 yet"))
       && !!scrB.querySelector(".oact .salt-pill"),
@@ -42327,7 +42357,7 @@ await (async () => {
     await until(() => st.sent.length === 1 && d.getElementById("paySheet").hidden && /In cash when you collect/.test(t(d.querySelector("#pOrder .oscreen"))));
     const scr = d.querySelector("#pOrder .oscreen");
     ok(st.sent.length === 1 && st.sent[0].method === "cod" && !("amount" in st.sent[0]) && !!st.sent[0].rid
-      && /You pay in cash when you collect\. We record it when we take it\./.test(t(scr)) && /Still to payRM 110.00In cash when you collect/.test(scr.querySelector('[data-part="money"]').textContent),
+      && /You pay in cash when you collect\. We record it when we take it\./.test(t(scr)) && /Still to payIn cash when you collectRM 110.00/.test(scr.querySelector('[data-part="money"]').textContent),
       "choosing it sends the choice and no figure, and the order then says it is paid in cash at the handover, recorded by us: " + JSON.stringify(st.sent));
   } finally { w.close(); }
 })();
@@ -42943,7 +42973,8 @@ await (async () => {
       await until(() => d.querySelector("#pOrder .oscreen"));
       const scr = d.querySelector("#pOrder .oscreen");
       out.orderPay = [...scr.querySelectorAll(".oact button:not(.omsg)")].map(t).join();
-      out.lines = [...scr.querySelectorAll(".salt-ledger__row")].map(t);
+      /* 2 Nov 2026 (his Orders canvas, page 2): the Bill's settings rows; read as label, value, then the second line, as the ledger row read */
+      out.lines = [...scr.querySelectorAll('[data-part="money"] .salt-settings__row')].map((r) => [".salt-settings__label", ".salt-settings__value", ".salt-settings__sub"].map((q) => t(r.querySelector(q))).join(" ").trim());
       return out;
     } finally { dom.window.close(); }
   };
@@ -43070,7 +43101,8 @@ await (async () => {
         out.row = t(d.querySelector('#pOrder [data-row="oN"]'));
         d.querySelector('#pOrder [data-row="oN"]').click();
         await until(() => d.querySelector("#pOrder .oscreen"));
-        out.lines = [...d.querySelectorAll('#pOrder .oscreen [data-part="money"] .salt-ledger__row')].map(t);
+        /* 2 Nov 2026: a Bill row read as before, its name, its figure, then its second line (the flag it was) */
+        out.lines = [...d.querySelectorAll('#pOrder .oscreen [data-part="money"] .salt-settings__row')].map((x) => t(x.querySelector(".salt-settings__label")) + t(x.querySelector(".salt-settings__value")) + t(x.querySelector(".salt-settings__sub")));
       }
       return out;
     } finally { dom.window.close(); }
@@ -43622,7 +43654,8 @@ await (async () => {
     "the places are the system's, and a tap moves aria-current with the open one");
   /* S5 5.3: the chip is drawn in one place, stateChip, its word the customer's and its tone read off the order; F8 (Step
      1a.2) stood it beside the head's card; Counter Batch A P4 put an aria-hidden glyph before the word, so the word is a text node after it */
-  ok(/\+'salt-status salt-status--'\+tone\);\s*c\.appendChild\(chipGlyph\(stateGlyph\(o\)\)\); c\.appendChild\(document\.createTextNode\(stateWord\(o\)\)\)/.test(pgY) && /tone=s==='placed'\?'steel salt-status--dashed':/.test(pgY) && /t\.appendChild\(stateChip\(o\)\)/.test(pgY) && /top\.appendChild\(stateChip\(o\)\)/.test(pgY) && /h\.appendChild\(el\('h3','state oband__state',stateWord\(o\)\)\)/.test(pgY),
+  ok(/\+'salt-status salt-status--'\+tone\);\s*c\.appendChild\(chipGlyph\(stateGlyph\(o\)\)\); c\.appendChild\(document\.createTextNode\(stateWord\(o\)\)\)/.test(pgY) && /tone=s==='placed'\?'steel salt-status--dashed':/.test(pgY) && /t\.appendChild\(stateChip\(o\)\)/.test(pgY) && /top\.appendChild\(stateChip\(o\)\)/.test(pgY) && /oBandOf\(o,\{aria:tw\('oh\.order'\), chip:stateChip\(o\), when:/.test(pgY) && /top\.appendChild\(b\.chip\)/.test(pgY) && !/oband__state/.test(pgY),
+    /* 2 Nov 2026 (his Orders canvas, page 2): the screen's band is the shared band, whose head holds the chip; the heading that repeated the word is gone, so the chip alone says it */
     "an order's state is the system's chip, in its tone, on its row and card; its own screen's band says the word alone (Counter Batch A P7)");
   const pcssY = pgY.slice(pgY.indexOf("const PAGE_CSS = " + String.fromCharCode(96)), pgY.indexOf(String.fromCharCode(96) + ";", pgY.indexOf("const PAGE_CSS = ")));
   ok(!/\.btn\{[^}]*background/.test(pcssY) && !/\.tabs button\.on\{/.test(pcssY) && !/\n\.state\{/.test(pcssY) && !/\n\.fld\{[^}]*background/.test(pcssY) && /\.btn\{margin-top:18px;width:100%\}/.test(pcssY),
@@ -49924,7 +49957,8 @@ await (async () => {
     for (let i = 0; i < 100 && !doc.querySelector('#makerOrderList [data-order$="ca01"]'); i++) await new Promise((resolve) => setTimeout(resolve, 10));
     /* a closed order has a card with its figures and no Cancel (it had none at all before Phase 1c: false is as null was) */
     const cancelOf = (suffix) => { const c = cardOf(doc, "20260929120000-" + suffix);
-      return c ? [...c.querySelectorAll("button")].some((b) => b.textContent === "Cancel") : null; };
+      /* 2 Nov 2026 (his Orders canvas, page 2): the card's last row reads Cancel the order (it read Cancel) */
+      return c ? [...c.querySelectorAll("button")].some((b) => b.textContent === "Cancel the order") : null; };
     ok(cancelOf("ca01") === true && cancelOf("ca02") === true && cancelOf("ca03") === false && cancelOf("ca04") === false
       && cancelOf("ca05") === false && cancelOf("ca06") === false && cancelOf("ca07") === false && cancelOf("ca08") === false,
       "Maker offers Cancel on an acknowledged or ready order, paid or not, unless claimed, closed or handed over");
@@ -50243,6 +50277,11 @@ await (async () => {
 section("2 Nov 2026: Salt Admin's Orders list on the canvas, a Segment of four, rows that fit, a ghost for the move, one plain table from 1080px");
 await (async () => {
   await (await import("./admin-orders-v2.mjs")).run({ ok, pageWork });
+})();
+
+section("2 Nov 2026: the open order, both sides, and the open account, on his canvas");
+await (async () => {
+  await (await import("./admin-open-order.mjs")).run({ ok, pageWork });
 })();
 
 section("2 Nov 2026: Salt Admin's Customers on the canvas, a Segment of four, settings lists, one plain table from 1080px, one way back");

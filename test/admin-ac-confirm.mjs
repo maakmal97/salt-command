@@ -52,7 +52,7 @@ export async function run({ ok, pageWork }) {
     ok(!!L && /^Waited in hours 5[23] min/.test(t(L)) && /Usually 45 min/.test(t(L)) && L.classList.contains("salt-meter--ember") && L.style.getPropertyValue("--salt-fill") === "100",
       "a placed order past his usual says how long it has waited and that it is past his usual: " + t(L));
     const H = p.card("ord-late").querySelector(".ohead"), mo = t(H && H.querySelector(".omoment"));
-    ok(!!H && H.classList.contains("ohead--placed") && /^[0-9]{2}:[0-9]{2}, [0-9]{1,2} [A-Z][a-z]{2}$/.test(mo),
+    ok(!!H && H.classList.contains("ohead--placed") && /^Placed [0-9]{2}:[0-9]{2}, [0-9]{1,2} [A-Z][a-z]{2}$/.test(mo),
       "a placed card carries the copper edge, and its band says when it was placed, the time and the day: " + mo);
     const S = (await open("ord-soon")).querySelector(".ohead [data-clock]");
     ok(!!S && /^Waited in hours 2[01] min/.test(t(S)) && /Usually 45 min/.test(t(S)) && !S.classList.contains("salt-meter--ember") && /^4[4-7]$/.test(S.style.getPropertyValue("--salt-fill")),

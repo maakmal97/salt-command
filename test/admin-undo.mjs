@@ -402,8 +402,10 @@ export async function run({ ok, pageWork }) {
     ok(!!card && !!byAct(card, "undo.history", "order:ord-r1"), "an agreed order's card has its History");
     /* 18 Oct 2026: the customer's fold, shut until a tap */
     const fold = card && card.querySelector('[data-history="order:ord-r1"]');
-    ok(!!fold && fold.tagName === "DETAILS" && fold.classList.contains("salt-plan") && !fold.open && text(fold.querySelector(".salt-plan__title")) === "Order log",
-      "its History is the customer's fold, named Order log on an order (canvas V16), shut: " + (fold && fold.outerHTML.slice(0, 120)));
+    /* 2 Nov 2026 (his Orders canvas, page 2): the fold's summary is an action row of Where next (Order log, its count at the right), the fold itself no longer a salt-plan */
+    ok(!!fold && fold.tagName === "DETAILS" && fold.classList.contains("onext__log") && !fold.classList.contains("salt-plan") && !fold.open && text(fold.querySelector("summary > .salt-settings__label")) === "Order log"
+      && fold.querySelector("summary").matches(".salt-settings__row.salt-settings__row--action"),
+      "its History is the customer's fold, named Order log on an order (canvas V16), a row of Where next, shut: " + (fold && fold.outerHTML.slice(0, 120)));
     await p.tap("undo.history", "order:ord-r1");
     ok(J(p.sent("/all/maker/undo")) === J([{ order: "ord-r1" }]), "read by its order: " + J(p.sent("/all/maker/undo")));
     await p.tap("undo.open", "order:ord-r1");

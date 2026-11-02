@@ -209,8 +209,11 @@ export async function run({ ok } = {}) {
     check(clearSent && calls[5].body.tier === null && calls[5].body.product === "salt",
       "Set back to 0 sends null through the same endpoint so the record resumes");
     const css = [...doc.querySelectorAll("style")].map((style) => style.textContent).join("\n");
-    check(/\.adm \.apct__btn\{[^}]*min-width:48px[^}]*height:48px/.test(css) && /\.adm \.apct__acts \.salt-pill,[^{]*\{[^}]*min-height:48px/.test(css),
-      "the stepper's buttons and the actions keep a 48px minimum under the 44px tap size on desktop and phone");
+    /* 2 Nov 2026 (his Orders canvas, page 2): Send, Use and Set back to 0 are action rows of a settings list now (no pill), 56px by the recipe's row */
+    const actRows = [...doc.querySelectorAll(".salt-settings.apct__acts > .salt-settings__row--action")];
+    check(/\.adm \.apct__btn\{[^}]*min-width:48px[^}]*height:48px/.test(css) && /\.salt-settings__row \{[^}]*min-height: 56px/.test(css)
+      && actRows.length >= 2 && actRows.every((r) => !r.classList.contains("salt-pill") && !r.classList.contains("salt-ghost")),
+      "the stepper's buttons keep a 48px minimum and the actions are settings rows at the recipe's 56px, over the 44px tap size on desktop and phone: " + actRows.length);
     check(/--salt-tap:\s*44px/.test(css),
       "the shared tap token resolves to the hard 44px minimum");
   } finally {

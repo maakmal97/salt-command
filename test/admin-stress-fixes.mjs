@@ -181,12 +181,14 @@ export async function run({ ok, pageWork }) {
     const card2 = p.card("ord-p2"), grid = card2.querySelector(".oagree");
     const later = (a, b) => !a.contains(b) && !!(a.compareDocumentPosition(b) & 4);
     const status = [...card2.querySelectorAll("[role=status]")].find((x) => !x.hasAttribute("data-maker-say")), figs = card2.querySelector(".maker-quote");
-    /* 22 Oct 2026 (his canvas): the inputs stand together two by two, and the figures stand under all of them */
-    ok(!!grid && grid.contains(byAct(card2, "order.fee")) && grid.contains(byAct(card2, "order.window")) && grid.contains(byAct(card2, "order.total")) && later(grid, status) && later(status, figs),
-      "on a delivery the figures' line and the figures stand under the inputs grid (Goods, Delivery, When), after it in the page");
+    /* 22 Oct 2026 (his canvas): the inputs stand together, and the figures stand with them. 2 Nov 2026 (his Orders canvas, page 2): the figures are the part right ABOVE Agree's list
+       ("The figures", then "Agree"), still the next thing to the inputs and never a screen away, their line before the figures */
+    const figsec = figs && figs.closest(".ofigsec");
+    ok(!!grid && grid.contains(byAct(card2, "order.fee")) && grid.contains(byAct(card2, "order.window")) && grid.contains(byAct(card2, "order.total")) && !!figsec && figsec.contains(status) && figsec.nextElementSibling === grid.closest(".oagreesec") && later(status, figs),
+      "on a delivery the figures' line and the figures stand in the part just above the inputs list (Goods, Delivery, When), the next thing to it in the page");
     await p.tapRow("ord-p1");
     const card1 = p.card("ord-p1"), s1 = [...card1.querySelectorAll("[role=status]")].find((x) => !x.hasAttribute("data-maker-say"));
-    ok(later(byAct(p.d, "order.total", "ord-p1"), s1) && later(s1, p.d.querySelector("#makerReview .maker-foot")), "and on a collection they stand under the price and above the foot");
+    ok(!!s1 && !!s1.closest(".ofigsec") && s1.closest(".ofigsec").nextElementSibling === byAct(p.d, "order.total", "ord-p1").closest(".oagreesec") && later(s1, p.d.querySelector("#makerReview .maker-foot")), "and on a collection they stand in the part just above the price and above the foot");
     p.scrolled.length = 0;
     moved.on = true;
     p.accept().click(); await p.work.quiet();

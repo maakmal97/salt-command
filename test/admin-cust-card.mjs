@@ -10,7 +10,7 @@
  *   6  an ID with no account says so in its head and offers nothing it cannot do
  *   7  the page's rules: the code and the figure never wrap, the head's figure in the mono face
  * Drawn by the maker harness (test/maker-act.mjs). */
-import { richOwnerPage, byAct, enter } from "./maker-act.mjs";
+import { richOwnerPage, byAct, enter, answerSheets } from "./maker-act.mjs";
 import { landingPage } from "../stmt/page.js";
 import { FONT_FACE_CSS, STATEMENT_CSS, SITE_RECIPES } from "../stmt/statement-css.js";
 import { JSDOM } from "jsdom";
@@ -45,26 +45,50 @@ export async function run({ ok, pageWork }) {
     /* 1 */
     let a = await open("CX1-ZED");
     const head = a.querySelector(".ahead"), fig = head.querySelector(".ahead__fig");
-    ok(head.classList.contains("salt-glass-card") && t(head.querySelector(".ahead__kind")) === "Owed · 3 d late" && t(head.querySelector("h2.ahead__code")) === "CX1-ZED"
+    /* 2 Nov 2026 (his Orders canvas, page 2): the head is the band (salt-band), no longer a glass card */
+    ok(head.classList.contains("salt-band") && !head.classList.contains("salt-glass-card") && t(head.querySelector(".ahead__kind")) === "Owed · 3 d late" && t(head.querySelector("h2.ahead__code")) === "CX1-ZED"
       && t(head.querySelector(".un")) === "abcd-efgh" && J([...fig.children].map(t)) === J(["They owe", "RM 100"]) && fig.querySelector(".ahead__rm").classList.contains("ahead__rm--hot"),
       "the head: the state and its age, the code, the username, and what they owe at the right, in ember when late: " + t(head.querySelector(".ahead__top")));
     /* 2 */
-    const lines = (box) => [...box.querySelectorAll(".astand .salt-ledger__line")].map((l) => t(l.children[0]) + "=" + t(l.children[1]));
+    /* 2 Nov 2026 (his Orders canvas, page 2): the standing is a settings list, a row a line (label and value) */
+    const lines = (box) => [...box.querySelectorAll(".astand .salt-settings__row")].map((l) => t(l.querySelector(".salt-settings__label")) + "=" + t(l.querySelector(".salt-settings__value")));
     ok(J(lines(a)) === J(["Opened=10 Oct 2026 by link", "Marked sent=10 Oct 2026", "Notifications=On"]) && !a.querySelector(".achips"),
       "a ledger of the standing in place of the chips: " + J(lines(a)));
     /* 3 */
     const reply = byAct(a, "acct.reply", "abcd-efgh");
-    ok(!!reply && reply.classList.contains("salt-pill") && !!reply.closest(".ahead") && t(reply.closest(".athread").querySelector(".athread__k")) === "Their messages" && /^Waiting \d+ (min|h|d) for your reply$/.test(t(reply.closest(".athread").querySelector(".athread__v"))),
-      "their waiting line stands in the head with Reply: " + t(a.querySelector(".athread")));
+    /* 2 Nov 2026: their waiting line is a row that goes to the thread (it was a filled Reply pill in the head) */
+    ok(!!reply && reply.classList.contains("salt-settings__row--action") && !reply.classList.contains("salt-pill") && !reply.closest(".ahead") && !!reply.closest(".salt-settings.athread")
+      && t(reply.querySelector(".salt-settings__label")) === "Their messages" && /^Waiting \d+ (min|h|d)$/.test(t(reply.querySelector(".athread__v"))),
+      "their waiting line is a row that goes to the thread: " + t(a.querySelector(".athread")));
     await click(reply);
     ok(!d.querySelector('[data-in="customers.messages"]').hidden && d.getElementById("makerChatOpen").getAttribute("data-key") === "abcd-efgh", "Reply opens their thread");
     enter(d, "customers", "accounts"); await p.work.quiet();
     a = await open("CX1-ZED");
     /* 4 */
     const sign = a.querySelector(".asign"), acts = [...sign.querySelectorAll("button")].filter((b) => !b.hidden).map((b) => b.getAttribute("data-act"));
-    ok(sign.classList.contains("salt-glass-card") && t(sign.querySelector("h3")) === "Sign-in" && J(acts) === J(["acct.signin-link", "acct.show-code", "acct.view-as", "acct.order-for", "acct.password", "acct.signout-all"])
-      && sign.querySelector(".agrid").lastElementChild.classList.contains("asignout") && !a.querySelector('input[type="checkbox"]') && t(byAct(sign, "acct.show-code")) === "Show a code",
-      "Sign-in is its own card, Send first, four ways two by two, Sign out everywhere last and wide, no checkbox: " + J(acts));
+    /* 2 Nov 2026 (his Orders canvas, page 2): Sign-in is rows (Show a code, View as them, Order for them) with the one filled pill under them; Copy password and
+       Sign out everywhere are danger rows alone in .aend at the card's end */
+    const endActs = [...a.querySelectorAll(".aend > button")].map((b) => b.getAttribute("data-act")), aend = a.querySelector(".salt-settings.aend");
+    ok(!sign.classList.contains("salt-glass-card") && t(sign.querySelector("h2.salt-settings__head")) === "Sign-in" && J(acts) === J(["acct.show-code", "acct.view-as", "acct.order-for", "acct.signin-link"])
+      && sign.querySelectorAll(".salt-pill").length === 1 && sign.querySelector(".apill").getAttribute("data-act") === "acct.signin-link"
+      && J(endActs) === J(["acct.password", "acct.signout-all"]) && aend.lastElementChild.classList.contains("asignout")
+      && [...aend.children].every((b) => b.classList.contains("salt-settings__row--action") && b.classList.contains("salt-settings__row--danger"))
+      && !!(sign.compareDocumentPosition(aend) & 4) && !a.querySelector('input[type="checkbox"]') && t(byAct(sign, "acct.show-code")) === "Show a code",
+      "Sign-in is rows with Send a sign-in link its one pill, Copy password and Sign out everywhere last, in ember, no checkbox: " + J([acts, endActs]));
+    /* 2 Nov 2026: both ember rows ask on the Sheet first, and send nothing before the yes; Not now ends it */
+    const asked = [];
+    let yes = false;
+    answerSheets(p.w, asked, () => yes);
+    const signOutPosts = () => p.posts.filter((x) => /^\/all\/signout/.test(x.route)).length;
+    p.posts.length = 0;
+    await click(byAct(a, "acct.signout-all"));
+    ok(asked.length === 1 && /^Sign out everywhere[?]/.test(asked[0]) && signOutPosts() === 0, "Sign out everywhere asks on the Sheet, and Not now sends nothing: " + J(asked));
+    yes = true;
+    await click(byAct(a, "acct.signout-all"));
+    ok(asked.length === 2 && signOutPosts() === 1, "and the yes signs them out everywhere, once: " + signOutPosts());
+    yes = false;
+    await click(byAct(a, "acct.password"));
+    ok(asked.length === 3 && /^Copy their password[?]/.test(asked[2]), "Copy password asks on the Sheet first, Copy their password?: " + J(asked[2]));
     ok(byAct(a, "acct.sent").hidden, "an account already sent offers no Mark as sent");
     /* 5 */
     const four = await open("CX4-ZED"), mark = byAct(four, "acct.sent");

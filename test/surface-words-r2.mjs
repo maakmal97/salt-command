@@ -8,7 +8,8 @@
  *   W3   every armed button on the Counter reads Tap again to confirm: Sign out, Sign out other devices and Remove this passkey
  *   W4   the pay buttons are four words at most: cash on arrival, cash on collection and Show account number again
  *   W5   Salt Admin's leads on Group orders and Guest links are one sentence of twenty words at most
- *   W6   Salt Admin's armed buttons read Tap again to confirm: a refund's Mark paid today and Remove as stale, and Sign out everywhere
+ *   W6   Salt Admin's armed buttons read Tap again to confirm: a refund's Mark paid today and Remove as stale; Sign out everywhere (2 Nov 2026, his
+ *        Orders canvas, page 2) is an ember row that asks on the Sheet instead
  *   W7   a refund's grey line is its figure and what Paid does, with no second explanation
  *   W8   the thread's No reply needed reads Send it again after a send that failed
  *   W9   the trip card's button reads Hand over all, and Hand over as typed once a line holds a part
@@ -27,7 +28,7 @@ import { JSDOM } from "jsdom";
 import { landingPage } from "../stmt/page.js";
 import { EN, TS, fill } from "../stmt/words.js";
 import { openMaster } from "../tools/payload.mjs";
-import { richOwnerPage, byAct, enter, cardOf } from "./maker-act.mjs";
+import { richOwnerPage, byAct, enter, cardOf, answerSheets } from "./maker-act.mjs";
 
 const J = JSON.stringify;
 const t = (n) => (n ? n.textContent.replace(/\s+/g, " ").trim() : "");
@@ -83,9 +84,11 @@ export async function run({ ok, pageWork }) {
     const a = d.querySelector("#aopen .oacct"), key = "CX1-ZED:" + SINCE + ":40:";
     const paid = byAct(a, "acct.refund", key + "refundPaid"), stale = byAct(a, "acct.refund", key + "refundRemove"), out = byAct(a, "acct.signout-all");
     const named = [t(paid), t(stale), t(out)];
+    const asked = []; answerSheets(p.w, asked, () => false);
     await click(paid); await click(stale); await click(out);
-    ok(J(named) === J(["Mark paid today", "Remove as stale", "Sign out everywhere"]) && [paid, stale, out].every((b) => t(b) === "Tap again to confirm"),
-      "W6: a refund's two buttons and Sign out everywhere read Tap again to confirm once tapped: " + J({ named, armed: [t(paid), t(stale), t(out)] }));
+    ok(J(named) === J(["Mark paid today", "Remove as stale", "Sign out everywhere"]) && [paid, stale].every((b) => t(b) === "Tap again to confirm")
+      && asked.length === 1 && /^Sign out everywhere\?/.test(asked[0]) && t(out) === "Sign out everywhere",
+      "W6: a refund's two buttons read Tap again to confirm once tapped, and Sign out everywhere asks on the Sheet: " + J({ named, armed: [t(paid), t(stale), t(out)], asked }));
     const note = t(a.querySelector(".arefund__row .anote"));
     ok(/^RM 40[.]00 to CX1-ZED, .*Paid marks it returned[.]$/.test(note) && nw(note) <= 14 && !/Remove as stale|money received/.test(note),
       "W7: a refund's line is its figure and what Paid does, with no second explanation: " + J(note));
@@ -112,8 +115,9 @@ export async function run({ ok, pageWork }) {
     ok(all === "Hand over all" && part === "Hand over as typed" && whole === "Hand over all", "W9: the trip card's button reads Hand over all, and Hand over as typed once a line holds a part: " + J([all, part, whole]));
     const agree = cardOf(d, "ord-p2");
     await p.work.quiet();
-    const chosen = t(agree && agree.querySelector(".oagree__wide.salt-insight"));
-    ok(/^They chose 08:00 to 12:00/.test(chosen) && sentence(chosen, 20), "W10: the Agree card's Insight on the window they chose is one sentence: " + J(chosen));
+    /* 2 Nov 2026 (his Orders canvas, page 2): the line is the grey line under Agree's settings list */
+    const chosen = t(agree && agree.querySelector(".oagree > .salt-settings__foot"));
+    ok(/^They chose 08:00 to 12:00/.test(chosen) && sentence(chosen, 14), "W10: the Agree card's line on the window they chose is one sentence: " + J(chosen));
     const refundLine = (card) => [...(card ? card.querySelectorAll(".salt-insight") : [])].map(t).find((s) => / refund (here|on this order) /.test(s)) || "";
     const rowFp = cardOf(d, "row:fp1");
     await p.work.quiet();

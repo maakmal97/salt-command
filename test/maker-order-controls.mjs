@@ -324,7 +324,8 @@ export async function run({ ok }) {
     const button = (id, text) => card(id) && [...card(id).querySelectorAll("button")].find((b) => b.textContent === text);
     const field = (id, label) => {
       const wrap = card(id) && [...card(id).querySelectorAll("label")].find((l) => l.querySelector(".lbl, .salt-settings__label") && l.querySelector(".lbl, .salt-settings__label").textContent === label);
-      return wrap && wrap.querySelector("input");
+      /* 2 Nov 2026 (his Orders canvas, page 2): the reply's box is the thread's composer, an input named by its aria-label with no label around it */
+      return (wrap && wrap.querySelector("input")) || (card(id) && card(id).querySelector('form.salt-composer input[aria-label="' + label + '"]'));
     };
     const settle = async (n) => { await until(() => posts.length >= n); await new Promise((resolve) => setTimeout(resolve, 40)); };
     /* his decision 4 of 11 Oct 2026: a yes or no on the card is the page's Sheet; its one action is what the native confirm's OK was */
@@ -353,11 +354,11 @@ export async function run({ ok }) {
     /* plan 5 (16 Oct 2026): the units field has one button; fewer units than ordered show More to come and That is all, and That is all is the close */
     const handed = () => card("20261003090002-rdy") && card("20261003090002-rdy").querySelector('button[data-act="order.handed"]');
     const finishAt = (n) => {
-      const u = field("20261003090002-rdy", "Units handed over"); u.value = String(n); u.dispatchEvent(new window.Event("input", { bubbles: true }));
+      const u = field("20261003090002-rdy", "Handed over"); u.value = String(n); u.dispatchEvent(new window.Event("input", { bubbles: true }));
       const all = card("20261003090002-rdy").querySelector('input[data-act="order.handed-rest"][data-key="all"]'); if (all) all.click();
     };
     await until(() => handed());
-    const units = field("20261003090002-rdy", "Units handed over");
+    const units = field("20261003090002-rdy", "Handed over");
     units.value = "3"; units.dispatchEvent(new window.Event("input", { bubbles: true }));
     const restSet = card("20261003090002-rdy").querySelector("fieldset[data-close]");
     ok(!!restSet && restSet.hidden && handed().textContent === "Handed over, 3 units" && !button("20261003090002-rdy", "Finish at fewer units") && posts.length === 1,
@@ -378,7 +379,7 @@ export async function run({ ok }) {
       "The finish sends a close at the units in the box, and its retry after a failure carries the same request id: "
       + JSON.stringify(posts.slice(1, 3)));
     await until(() => handed());
-    const back = field("20261003090002-rdy", "Units handed over"); back.value = "3"; back.dispatchEvent(new window.Event("input", { bubbles: true }));
+    const back = field("20261003090002-rdy", "Handed over"); back.value = "3"; back.dispatchEvent(new window.Event("input", { bubbles: true }));
     handed().click(); await settle(4);
     ok(posts[3].path === "/all/maker/orders/20261003090002-rdy/handed" && posts[3].body.close === undefined
       && /^[0-9a-f]{32}$/.test(posts[3].body.rid) && posts[3].body.rid !== posts[1].body.rid,
@@ -387,7 +388,8 @@ export async function run({ ok }) {
     await until(() => button("20261003090004-can", "Send the cancellation again"));
     /* plan 4 (16 Oct 2026): a done order's History is a read, and its Undo is drawn only once the Desk has said what it would undo */
     const gone = card("20261003090005-gone");
-    ok(!!gone && [...gone.querySelectorAll("button, input")].filter((n) => !/^(undo[.]history|order[.]amend)/.test(n.getAttribute("data-act") || "")).length === 0
+    /* 2 Nov 2026 (his Orders canvas, page 2): This customer is a row of every order's Where next list, a way to their account, never a move on the order */
+    ok(!!gone && [...gone.querySelectorAll("button, input")].filter((n) => !/^(undo[.]history|order[.]amend|order[.]customer)/.test(n.getAttribute("data-act") || "")).length === 0
       && (!/done/.test(gone.getAttribute("data-in") || "") || !!gone.querySelector('[data-act="undo.history"]')),
       "A closed order with nothing rejected has a card of its figures and nothing to move it by (it had none at all before Phase 1c); a done one reads its History and keeps Change the order (17 Oct 2026): " + JSON.stringify(gone && [...gone.querySelectorAll("button, input")].map((n) => n.getAttribute("data-act"))));
     button("20261003090004-can", "Send the cancellation again").click();
@@ -398,16 +400,16 @@ export async function run({ ok }) {
 
     /* the reasons are asked on the sheet a Decline or a Cancel opens, as option tiles and a field of his own words */
     const tilesOf = () => [...doc.querySelectorAll("#ynSheet .salt-option__label")].map((l) => l.textContent);
-    await until(() => button("20261003090003-del", "Decline"));
-    button("20261003090003-del", "Decline").click();
+    await until(() => button("20261003090003-del", "Decline the order"));
+    button("20261003090003-del", "Decline the order").click();
     const tilesDel = tilesOf();
     doc.getElementById("ynKeep").click();
-    button("20261003090001-ack", "Cancel").click();
+    button("20261003090001-ack", "Cancel the order").click();
     const tilesAck = tilesOf();
     doc.getElementById("ynKeep").click();
     ok(tilesDel.includes("Cannot deliver there") && !tilesAck.includes("Cannot deliver there") && tilesAck.includes("Prices changed") && posts.length === 5,
       "The reason for a place delivery cannot reach is offered only on an order to be delivered, and neither sheet sent anything: " + JSON.stringify([tilesDel, tilesAck]));
-    button("20261003090003-del", "Decline").click();
+    button("20261003090003-del", "Decline the order").click();
     [...doc.querySelectorAll("#ynSheet .salt-option input")].find((r) => r.getAttribute("data-act") === "order.reason-stock").click();
     ok(doc.querySelector('#ynSheet [data-act="order.reason"]').value === "We do not have enough in hand this week.",
       "A reason picked fills the reason box.");

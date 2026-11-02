@@ -80,7 +80,8 @@ export async function run({ ok }) {
     ok(!!heldTimer, "C1: the Counter cash window is ten seconds");
     await f.advance(9999);
     ok(f.posts.length === 0 && !!f.button("Undo"), "C2: a cash tap posts nothing before ten seconds");
-    ok(f.button("Undo")?.classList.contains("salt-pill") && !f.button("Record cash")
+    /* 2 Nov 2026 (his Orders canvas, page 2): Undo is an action row of the held cash's list, the card's one filled pill being its stage's */
+    ok(f.button("Undo")?.matches(".salt-settings__row.salt-settings__row--action") && !f.button("Undo")?.matches(".salt-pill, .salt-ghost") && !!f.button("Undo")?.closest(".ocashrows") && !f.button("Record cash")
       && f.note() === "Cash received, RM 100.00: it goes in 1 s. Undo sends nothing.",
       "C3: the card replaces Record cash with Undo and says the held amount and countdown");
     f.button("Undo")?.click(); await f.quiet();

@@ -1,692 +1,692 @@
 [
- {
-  "name": "a row has no book tag",
-  "file": "stmt/owner.js",
-  "find": "if(f.tags[0]) into.appendChild(productTag(f.tags[0]));",
-  "replace": ""
- },
- {
-  "name": "a row names no one",
-  "file": "stmt/owner.js",
-  "find": "lab.appendChild(whoTag(el('span','ocode',f.code),f.who));",
-  "replace": ""
- },
- {
-  "name": "a waiting row is not copper",
-  "file": "stmt/owner.js",
-  "find": "f.subTone=f.why||f.placed?'why':owes&&f.late?'late':'';",
-  "replace": "f.subTone=owes&&f.late?'late':'';"
- },
- {
-  "name": "a row does not say a payment is sent",
-  "file": "stmt/owner.js",
-  "find": ":ordPays(o).length?'Says sent '+rmShort(sent):",
-  "replace": ":"
- },
- {
-  "name": "a row does not say a stage is rejected",
-  "file": "stmt/owner.js",
-  "find": ":o.again&&o.again.length?'Send again':",
-  "replace": ":"
- },
- {
-  "name": "a practice order is not marked",
-  "file": "stmt/owner.js",
-  "find": "f.why=o.test?'Practice':makerCashHeld",
-  "replace": "f.why=makerCashHeld"
- },
- {
-  "name": "a row shows no age",
-  "file": "stmt/owner.js",
-  "find": "f.age=st==='done'||st==='ended'?ordDay(e):ageOf(o.at);",
-  "replace": "f.age='';"
- },
- {
-  "name": "a row's figure leaves out the delivery",
-  "file": "stmt/owner.js",
-  "find": "f.total=(+o.total||0)+(+o.delivery||0); f.owed=Math.max(0,ordDue(o));",
-  "replace": "f.total=(+o.total||0); f.owed=Math.max(0,ordDue(o));"
- },
- {
-  "name": "a row says nothing of the units",
-  "file": "stmt/owner.js",
-  "find": "f.way=ordWayWord(o,st); f.units=units(o.qty);",
-  "replace": "f.way=ordWayWord(o,st);"
- },
- {
-  "name": "listing the orders previews each",
-  "file": "stmt/owner.js",
-  "find": "row.setAttribute('data-rowof',e.id); row.setAttribute('aria-label',f.aria);",
-  "replace": "row.setAttribute('data-rowof',e.id); row.setAttribute('aria-label',f.aria); refs('/all/maker/orders/'+encodeURIComponent(e.id)+'/preview',{}).catch(function(){});"
- },
- {
-  "name": "a closed order is not listed in any stage",
-  "file": "stmt/owner.js",
-  "find": "    if(!ordOpen(order)&&order.test) return '';\n    if(order.writtenOff)",
-  "replace": "    if(!ordOpen(order)) return '';\n    if(order.writtenOff)"
- },
- {
-  "name": "a row opens no card",
-  "file": "stmt/owner.js",
-  "find": "    ordOpened=id; drawOrderPane(); sweep();",
-  "replace": "    ordOpened=id; sweep();"
- },
- {
-  "name": "a card is added to the card before it",
-  "file": "stmt/owner.js",
-  "find": "    if(!root) return;\n    root.textContent=''; dirty.makerReview=false;\n    var e=ordOpened",
-  "replace": "    if(!root) return;\n    dirty.makerReview=false;\n    var e=ordOpened"
- },
- {
-  "name": "the row opened is not marked",
-  "file": "stmt/owner.js",
-  "find": "if((r.getAttribute('data-order')||r.getAttribute('data-rowof'))===ordOpened&&!r.classList.contains('oask')) r.setAttribute('aria-current','true'); else r.removeAttribute('aria-current'); });",
-  "replace": "r.removeAttribute('aria-current'); });"
- },
- {
-  "name": "the list is not set beside the card",
-  "file": "stmt/owner.js",
-  "find": "    if(split) split.classList.toggle('open', !!e);",
-  "replace": ""
- },
- {
-  "name": "the card has no reply",
-  "file": "stmt/owner.js",
-  "find": "      makerOrderMoves(card,order,false,acts);\n      /* cash held for the order shuts",
-  "replace": "      /* cash held for the order shuts"
- },
- {
-  "name": "Preview sends the total alone",
-  "file": "stmt/owner.js",
-  "find": "var payload={total:Number(total.value),delivery:delivery}",
-  "replace": "var payload={total:Number(total.value)}"
- },
- {
-  "name": "a back link of its own returns",
-  "file": "stmt/owner.js",
-  "find": "    /* 20 Oct 2026 (canvas V35): no back link; the rail or the app bar's Orders is the way back, a tap on it closing the order */",
-  "replace": "    root.appendChild(actOn(el('button','aback','Orders'),'order.back'));"
- },
- {
-  "name": "Back leaves him nowhere",
-  "file": "stmt/owner.js",
-  "find": "[data-order=\"'+was+'\"]'); if(row&&row.focus) row.focus(); }catch(x){}",
-  "replace": "[data-order=\"'+was+'\"]'); }catch(x){}"
- },
- {
-  "name": "leaving the part or the place keeps the card",
-  "file": "stmt/owner.js",
-  "find": "    if(moved2&&(ordOpened||placeNow==='orders')){ ordOpened=null; drawOrderPane(); }",
-  "replace": ""
- },
- {
-  "name": "tapping the part he is in closes the card",
-  "file": "stmt/owner.js",
-  "find": "moved2=place!==placeNow||part!==partNow;",
-  "replace": "moved2=true;"
- },
- {
-  "name": "an order that left the part keeps its card",
-  "file": "stmt/owner.js",
-  "find": "    if(e&&!ordInPart(e)) e=null;\n",
-  "replace": ""
- },
- {
-  "name": "a read that finds the same draws again",
-  "file": "stmt/owner.js",
-  "find": "      if(!changed('review', reading)&&poll) return;",
-  "replace": "      changed('review', reading);"
- },
- {
-  "name": "the split starts at 1080px",
-  "file": "stmt/page.js",
-  "find": "@media (min-width:860px){\n  .adm #oOrders{max-width:none}",
-  "replace": "@media (min-width:1080px){\n  .adm #oOrders{max-width:none}"
- },
- {
-  "name": "below 860px the card does not take the list's place",
-  "file": "stmt/page.js",
-  "find": "  .adm #oSplit.open .ordlist,.adm #oSplit:not(.open) #makerReview,.adm #oSplit.open #makerReviewStatus{display:none}",
-  "replace": "  .adm #oSplit.open #makerReviewStatus{display:none}"
- },
- {
-  "name": "the card stands before the list",
-  "file": "stmt/page.js",
-  "find": "<div class=\"ordgrid\"><div id=\"makerOrderList\" class=\"ordlist\"></div><div id=\"makerReview\" class=\"ordopen\"></div></div>",
-  "replace": "<div class=\"ordgrid\"><div id=\"makerReview\" class=\"ordopen\"></div><div id=\"makerOrderList\" class=\"ordlist\"></div></div>"
- },
- {
-  "name": "a question on an order is only FYI",
-  "file": "stmt/owner.js",
-  "find": "L.push(item('now','messages','Message','om:'+o.id, last.at, {who:who, head:'Reply to ', what:cut(last.text), why:'On their order.', practice:t, open:to, order:o.id}, function(c){",
-  "replace": "L.push(item('watch','messages','Message','om:'+o.id, last.at, {who:who, head:'Reply to ', what:cut(last.text), why:'On their order.', practice:t, open:to, order:o.id}, function(c){"
- },
- {
-  "name": "a question on an order is Pending, not To do",
-  "file": "stmt/owner.js",
-  "find": "L.push(item('now','messages','Message','om:'",
-  "replace": "L.push(item('soon','messages','Message','om:'"
- },
- {
-  "name": "a question on an order is not a Message",
-  "file": "stmt/owner.js",
-  "find": "L.push(item('now','messages','Message','om:'",
-  "replace": "L.push(item('now','orders','Order','om:'"
- },
- {
-  "name": "a practice order's question is counted",
-  "file": "stmt/owner.js",
-  "find": "why:'On their order.', practice:t,",
-  "replace": "why:'On their order.', practice:false,"
- },
- {
-  "name": "a question on a closed order is not asked of him",
-  "file": "stmt/owner.js",
-  "find": "    return !order.test&&(again||orderAsked(order));",
-  "replace": "    return !order.test&&again;"
- },
- {
-  "name": "a question on an open order does not wait on him",
-  "file": "stmt/owner.js",
-  "find": "||again||orderAsked(order);\n    return !order.test",
-  "replace": "||again;\n    return !order.test"
- },
- {
-  "name": "an answered question is still asked",
-  "file": "stmt/owner.js",
-  "find": "return !!(last&&last.by==='customer'&&!(order.quiet",
-  "replace": "return !!(last&&!(order.quiet"
- },
- {
-  "name": "a question he marked as needing no reply is still asked",
-  "file": "stmt/owner.js",
-  "find": "last.by==='customer'&&!(order.quiet&&String(order.quiet)>=String(last.at)));",
-  "replace": "last.by==='customer');"
- },
- {
-  "name": "Open does not open the order's card",
-  "file": "stmt/owner.js",
-  "find": "showPlace('orders',st,{fresh:true, push:true}); openOrder(id); }; }",
-  "replace": "showPlace('orders',st,{fresh:true, push:true}); }; }"
- },
- {
-  "name": "Open goes to the wrong part of Orders",
-  "file": "stmt/owner.js",
-  "find": "showPlace('orders',st,{fresh:true, push:true}); openOrder(id); }; }",
-  "replace": "showPlace('orders','done',{fresh:true, push:true}); openOrder(id); }; }"
- },
- {
-  "name": "the 30-second read goes on while an account is viewed as them",
-  "file": "stmt/owner.js",
-  "find": "    if(roster.hidden) return;\n",
-  "replace": ""
- },
- {
-  "name": "the 30-second read is silent on Needs you only",
-  "file": "stmt/owner.js",
-  "find": "    if(roster.hidden) return;\n",
-  "replace": "    if(roster.hidden&&placeNow==='needs') return;\n"
- },
- {
-  "name": "the orb opens the wrong part of Record",
-  "file": "stmt/owner.js",
-  "find": "  [oAdd, document.getElementById('oAddRail')].forEach(function(b){ if(b) b.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); }); });",
-  "replace": "  [oAdd, document.getElementById('oAddRail')].forEach(function(b){ if(b) b.addEventListener('click', function(){ showPlace('record','pricing',{fresh:true,push:true}); }); });"
- },
- {
-  "name": "the orb opens nothing",
-  "file": "stmt/owner.js",
-  "find": "  [oAdd, document.getElementById('oAddRail')].forEach(function(b){ if(b) b.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); }); });",
-  "replace": ""
- },
- {
-  "name": "the orb stays on Record",
-  "file": "stmt/owner.js",
-  "find": "function(add){ add.hidden=placeNow==='record'; });",
-  "replace": "function(add){ add.hidden=false; });"
- },
- {
-  "name": "the orb is gone from Orders",
-  "file": "stmt/owner.js",
-  "find": "function(add){ add.hidden=placeNow==='record'; });",
-  "replace": "function(add){ add.hidden=placeNow==='record'||placeNow==='orders'; });"
- },
- {
-  "name": "the orb has no act",
-  "file": "stmt/page.js",
-  "find": "id=\"oAdd\" data-act=\"nav.add\" aria-label",
-  "replace": "id=\"oAdd\" aria-label"
- },
- {
-  "name": "the orb has no name",
-  "file": "stmt/page.js",
-  "find": "data-act=\"nav.add\" aria-label=\"Record an entry\">",
-  "replace": "data-act=\"nav.add\">"
- },
- {
-  "name": "the orb stands in the page's flow",
-  "file": "stmt/page.js",
-  "find": ".adm #oAdd{position:fixed;",
-  "replace": ".adm #oAdd{position:static;"
- },
- {
-  "name": "the orb covers the App bar",
-  "file": "stmt/page.js",
-  "find": "env(safe-area-inset-bottom,0px));z-index:40}",
-  "replace": "env(safe-area-inset-bottom,0px));z-index:60}"
- },
- {
-  "name": "the last section is left under the orb",
-  "file": "stmt/page.js",
-  "find": "@media (max-width:1079.98px){.adm .amain{padding-bottom:72px}}",
-  "replace": ""
- },
- {
-  "name": "the orb still floats on a desk",
-  "file": "stmt/page.js",
-  "find": "@media (min-width:1080px){.adm #oAdd{display:none}}",
-  "replace": "@media (min-width:1080px){.adm #oAdd{right:24px}}"
- },
- {
-  "name": "a form is shown at the menu",
-  "file": "stmt/owner.js",
-  "find": "n.hidden=!here||n.getAttribute('data-form')!==fOpen;",
-  "replace": "n.hidden=!here;"
- },
- {
-  "name": "a form open hides the menu",
-  "file": "stmt/owner.js",
-  "find": "else if(n.hasAttribute('data-formmenu')) n.hidden=!here;",
-  "replace": "else if(n.hasAttribute('data-formmenu')) n.hidden=!here||!!fOpen;"
- },
- {
-  "name": "the way back stays when no form is open",
-  "file": "stmt/owner.js",
-  "find": "else n.hidden=!here||!fOpen;",
-  "replace": "else n.hidden=!here;"
- },
- {
-  "name": "the menu once hidden never comes back",
-  "file": "stmt/owner.js",
-  "find": "var here=!n.hasAttribute('data-in')||!n.hidden;",
-  "replace": "var here=!n.hidden;"
- },
- {
-  "name": "a retained input shows in a part that is not its own",
-  "file": "stmt/owner.js",
-  "find": "var here=!n.hasAttribute('data-in')||!n.hidden;",
-  "replace": "var here=true;"
- },
- {
-  "name": "a retained input stays while a form is open",
-  "file": "stmt/owner.js",
-  "find": "section.setAttribute('data-key',path.split('/').pop());section.setAttribute('data-formmenu','');",
-  "replace": "section.setAttribute('data-key',path.split('/').pop());"
- },
- {
-  "name": "a row opens the wrong form",
-  "file": "stmt/owner.js",
-  "find": "row.addEventListener('click', function(){ openForm(slug); });",
-  "replace": "row.addEventListener('click', function(){ openForm('gift'); });"
- },
- {
-  "name": "a row opens no form",
-  "file": "stmt/owner.js",
-  "find": "row.addEventListener('click', function(){ openForm(slug); });",
-  "replace": "row.addEventListener('click', function(){});"
- },
- {
-  "name": "the menu leaves a form out",
-  "file": "stmt/owner.js",
-  "find": "if(part==='entry') entryRows[slug]=row; else (lists[part].firstChild",
-  "replace": "if(part==='entry'){ if(slug!=='gift') entryRows[slug]=row; } else (lists[part].firstChild"
- },
- {
-  "name": "the menu lists every form under Entry",
-  "file": "stmt/owner.js",
-  "find": "part=form.getAttribute('data-in').replace('record.','');",
-  "replace": "part='entry';"
- },
- {
-  "name": "the stock count is not named",
-  "file": "stmt/owner.js",
-  "find": "countForm.appendChild(el('h3',null,'Stock count'));",
-  "replace": "countForm.appendChild(el('h3',null,'Count'));"
- },
- {
-  "name": "opening a form reads",
-  "file": "stmt/owner.js",
-  "find": "    fOpen=slug; sweep();\n",
-  "replace": "    fOpen=slug; sweep(); refs('/all/maker/inputs').catch(function(){});\n"
- },
- {
-  "name": "the way back does nothing on a form",
-  "file": "stmt/owner.js",
-  "find": "else if(way==='form') closeForm(); return; }",
-  "replace": "else if(way==='form'){} return; }"
- },
- {
-  "name": "Back leaves him off the row he came from",
-  "file": "stmt/owner.js",
-  "find": "[data-key=\"'+was+'\"]'); if(row&&row.focus) row.focus(); }catch(x){}",
-  "replace": "[data-key=\"'+was+'\"]'); }catch(x){}"
- },
- {
-  "name": "an open form does not take the focus",
-  "file": "stmt/owner.js",
-  "find": "var back=document.getElementById('makerFormBack');\n      back.focus();",
-  "replace": "var back=document.getElementById('makerFormBack');"
- },
- {
-  "name": "the way back is not named for the part",
-  "file": "stmt/owner.js",
-  "find": "backOrb('form','All forms')",
-  "replace": "backOrb('form','Back')"
- },
- {
-  "name": "the owner's script names a variable the customer page names a function",
-  "file": "stmt/owner.js",
-  "find": "  var ordOpened=null, ordEntries={}, makerOpenOrders=[], ordFocus=null, ordMore={};",
-  "replace": "  var oOpen=null, ordOpened=null, ordEntries={}, makerOpenOrders=[], ordFocus=null, ordMore={};"
- },
- {
-  "name": "a row tap always takes him to the top",
-  "file": "stmt/owner.js",
-  "find": "      if(!ordSide()) window.scrollTo(0,0);\n      else if(card&&card.scrollIntoView) card.scrollIntoView({block:'nearest'});",
-  "replace": "      window.scrollTo(0,0);"
- },
- {
-  "name": "the card is not brought into view from 860px",
-  "file": "stmt/owner.js",
-  "find": "\n      else if(card&&card.scrollIntoView) card.scrollIntoView({block:'nearest'});",
-  "replace": ""
- },
- {
-  "name": "a row tap scrolls the wrong way round",
-  "file": "stmt/owner.js",
-  "find": "if(!ordSide()) window.scrollTo(0,0);",
-  "replace": "if(ordSide()) window.scrollTo(0,0);"
- },
- {
-  "name": "the sticky card's foot goes under the App bar",
-  "file": "stmt/page.js",
-  "find": "  .adm #makerReview{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}\n",
-  "replace": ""
- },
- {
-  "name": "the card keeps the bar's room from 1080px too",
-  "file": "stmt/page.js",
-  "find": "  .adm #makerReview{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}",
-  "replace": "  .adm #makerReview{position:sticky;top:24px;max-height:calc(100vh - 48px - var(--salt-bar-h));overflow-y:auto}"
- },
- {
-  "name": "the card gives up the bar's room by too little",
-  "file": "stmt/page.js",
-  "find": ".adm #makerReview{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}",
-  "replace": ".adm #makerReview{max-height:calc(100vh - 48px - env(safe-area-inset-bottom,0px))}"
- },
- {
-  "name": "the owner's script names a customer function second in a var list",
-  "file": "stmt/owner.js",
-  "find": "  var placeNow='needs', partNow='', PARTS={}, fOpen=null;",
-  "replace": "  var placeNow='needs', partNow='', PARTS={}, fOpen=null, oFind=null;"
- },
- {
-  "name": "the owner's pay ways overwrite the customer's again",
-  "file": "stmt/owner.js",
-  "find": "  var HOW_IN={password:",
-  "replace": "  var HOW={password:"
- },
- {
-  "name": "the closed note counts only the closed orders with nothing else asked",
-  "file": "stmt/owner.js",
-  "find": "var shownN=entries.filter(function(e){ return e.stage===st; }).length;",
-  "replace": "var shownN=entries.filter(function(e){ return e.stage===st&&!e.waits; }).length;"
- },
- {
-  "name": "the closed note does not count an order that also waits on him",
-  "file": "stmt/owner.js",
-  "find": "        closedAll[stage]=(closedAll[stage]||0)+1;\n        if(!waits&&",
-  "replace": "        if(!waits&&"
- },
- {
-  "name": "the closed list drops an order that also waits on him",
-  "file": "stmt/owner.js",
-  "find": "if(!waits&&(settled[stage]=(settled[stage]||0)+1)>ordShown(stage)) return;",
-  "replace": "if((settled[stage]=(settled[stage]||0)+1)>ordShown(stage)) return;"
- },
- {
-  "name": "leaving the part keeps the form open",
-  "file": "stmt/owner.js",
-  "find": "    if(moved2) fOpen=null;\n",
-  "replace": ""
- },
- {
-  "name": "a form open leaves the grid unmarked",
-  "file": "stmt/owner.js",
-  "find": "if(grid) grid.classList.toggle('open', !!fOpen);",
-  "replace": "if(grid) grid.classList.toggle('open', false);"
- },
- {
-  "name": "the menu is put out of the way by the sweep while a form is open",
-  "file": "stmt/owner.js",
-  "find": "else if(n.hasAttribute('data-formmenu')) n.hidden=!here;",
-  "replace": "else if(n.hasAttribute('data-formmenu')) n.hidden=!here||!!fOpen;"
- },
- {
-  "name": "the row of the form open is not marked",
-  "file": "stmt/owner.js",
-  "find": "if(fOpen&&r.getAttribute('data-key')===fOpen) r.setAttribute('aria-current','true'); else r.removeAttribute('aria-current'); });",
-  "replace": "r.removeAttribute('aria-current'); });"
- },
- {
-  "name": "the forms are left outside the pane",
-  "file": "stmt/owner.js",
-  "find": "if(n.hasAttribute('data-formmenu')) list.appendChild(n); else if(n.hasAttribute('data-form')) pane.appendChild(n);",
-  "replace": "if(n.hasAttribute('data-formmenu')) list.appendChild(n);"
- },
- {
-  "name": "the menu and the retained input are left outside the list",
-  "file": "stmt/owner.js",
-  "find": "if(n.hasAttribute('data-formmenu')) list.appendChild(n); else if(n.hasAttribute('data-form')) pane.appendChild(n);",
-  "replace": "if(n.hasAttribute('data-form')) pane.appendChild(n);"
- },
- {
-  "name": "a form open does not take the menu's place below 860px",
-  "file": "stmt/page.js",
-  "find": "  .adm .recgrid.open .reclist,.adm .recnone{display:none}",
-  "replace": "  .adm .recgrid.open .reclist,.adm .recnone{display:block}"
- },
- {
-  "name": "the pane's invitation is drawn on a phone",
-  "file": "stmt/page.js",
-  "find": "  .adm .recgrid.open .reclist,.adm .recnone{display:none}",
-  "replace": "  .adm .recgrid.open .reclist{display:none}"
- },
- {
-  "name": "the menu and the form do not stand side by side from 860px",
-  "file": "stmt/page.js",
-  "find": "  .adm .recgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:20px;align-items:start}",
-  "replace": "  .adm .recgrid{display:block}"
- },
- {
-  "name": "the way back still shows beside the menu",
-  "file": "stmt/page.js",
-  "find": "  .adm #makerFormBack{display:none}",
-  "replace": "  .adm #makerFormBack{display:inline-flex}"
- },
- {
-  "name": "Record keeps its narrow column from 860px",
-  "file": "stmt/page.js",
-  "find": "  .adm #oRecord{max-width:none}",
-  "replace": "  .adm #oRecord{max-width:760px}"
- },
- {
-  "name": "the rows to approve widen with the forms",
-  "file": "stmt/page.js",
-  "find": "  .adm #oOrders>.abody>#oApprove{max-width:600px}\n",
-  "replace": ""
- },
- {
-  "name": "the pane does not scroll inside itself",
-  "file": "stmt/page.js",
-  "find": "  .adm .recpane{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}",
-  "replace": "  .adm .recpane{position:sticky;top:24px}"
- },
- {
-  "name": "the pane's height ignores the App bar",
-  "file": "stmt/page.js",
-  "find": "  .adm .recpane{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}",
-  "replace": "  .adm .recpane{max-height:calc(100vh - 48px)}"
- },
- {
-  "name": "an order stands in two stages",
-  "file": "stmt/owner.js",
-  "find": "    return 'orders.'+st;\n  }",
-  "replace": "    return 'orders.'+st+(orderWaits(order)?' orders.placed':'');\n  }"
- },
- {
-  "name": "the count includes practice orders",
-  "file": "stmt/owner.js",
-  "find": "if(e.parts==='orders.todo'&&e.order&&!e.order.test) todo++;",
-  "replace": "if(e.parts==='orders.todo'&&e.order) todo++;"
- },
- {
-  "name": "no count is drawn on To do",
-  "file": "stmt/owner.js",
-  "find": "if(c){ c.textContent=todo?String(todo):''; c.hidden=!todo; }",
-  "replace": ""
- },
- {
-  "name": "Payments is not counted",
-  "file": "stmt/owner.js",
-  "find": "if(pn) pn.textContent=pay?String(pay):'';",
-  "replace": ""
- },
- {
-  "name": "from 860px nothing opens by itself",
-  "file": "stmt/owner.js",
-  "find": "      if(first){ e=first;",
-  "replace": "      if(false){ e=first;"
- },
- {
-  "name": "the floating placeholder returns",
-  "file": "stmt/owner.js",
-  "find": "    if(!e) return;\n    /* 20 Oct 2026 (canvas V35): no back link; the rail or the app bar's Orders is the way back, a tap on it closing the order */",
-  "replace": "    if(!e){ root.appendChild(el('p','rnone','Choose an order to see it here.')); return; }\n    /* 20 Oct 2026 (canvas V35): no back link; the rail or the app bar's Orders is the way back, a tap on it closing the order */"
- },
- {
-  "name": "the repeated Orders heading returns",
-  "file": "stmt/page.js",
-  "find": "orders.ended\" aria-label=\"Orders\">'",
-  "replace": "orders.ended\" aria-labelledby=\"makerReviewTitle\"><h2 id=\"makerReviewTitle\">Orders</h2>'"
- },
- {
-  "name": "a payment claim does not wait on him",
-  "file": "stmt/owner.js",
-  "find": "(order.payments||[]).some(function(p){ return p.claim==='waiting'; })",
-  "replace": "false"
- },
- {
-  "name": "why is not drawn in copper",
-  "file": "stmt/owner.js",
-  "find": "f.subTone=f.why||f.placed?'why':owes&&f.late?'late':'';",
-  "replace": "f.subTone='';"
- },
- {
-  "name": "a practice order carries a move",
-  "file": "stmt/owner.js",
-  "find": "    if(o.test) return '';\n",
-  "replace": ""
- },
- {
-  "name": "every Entry row says Open again",
-  "file": "stmt/owner.js",
-  "find": "row.appendChild(el('span','salt-settings__label',MENU_NAME[slug]||name));",
-  "replace": "row.appendChild(el('span','salt-settings__label',(MENU_NAME[slug]||name)+' Open'));"
- },
- {
-  "name": "a reward offset is listed as a customer's",
-  "file": "stmt/owner.js",
-  "find": "kind=offer.associate===false?'customer':'reward'",
-  "replace": "kind=offer.associate===false?'reward':'customer'"
- },
- {
-  "name": "the offsets instruction paragraph returns",
-  "file": "stmt/owner.js",
-  "find": "parent.appendChild(offsets);",
-  "replace": "parent.appendChild(offsets);offsets.appendChild(el('p','msg','One unit off the oldest unpaid order of someone holding a reward.'));"
- },
- {
-  "name": "the second Record heading returns over the forms",
-  "file": "stmt/page.js",
-  "find": "aria-label=\"Record\"></section>",
-  "replace": "aria-label=\"Record\"><h2>Record</h2></section>"
- },
- {
-  "name": "the offset button says Send the offset again",
-  "file": "stmt/owner.js",
-  "find": "makerButton(row._go,['Add','record.offset.send']",
-  "replace": "makerButton(row._go,['Send the offset','record.offset.send']"
- },
- {
-  "name": "Orders counts what waits on him, not the orders open",
-  "file": "stmt/owner.js",
-  "find": "    setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordOpen(o); }).length);",
-  "replace": "    setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordWaits(o); }).length+waitingClaims().filter(function(c){ return !c.test; }).length);"
- },
- {
-  "name": "no More group",
-  "file": "stmt/page.js",
-  "find": "\n        + ordMore(test)",
-  "replace": ""
- },
- {
-  "name": "Ended is not in the Segment",
-  "file": "stmt/page.js",
-  "find": "const ADMIN_ORDER_STAGES = [\"todo\", \"open\", \"done\", \"ended\"];",
-  "replace": "const ADMIN_ORDER_STAGES = [\"todo\", \"open\", \"done\"];"
- },
- {
-  "name": "a row says the size twice",
-  "file": "stmt/owner.js",
-  "find": "lab.appendChild(whoTag(el('span','ocode',f.code),f.who));",
-  "replace": "lab.appendChild(whoTag(el('span','ocode',f.code),f.who)); lab.appendChild(el('span',null,f.units));"
- },
- {
-  "name": "a placed row says to decide",
-  "file": "stmt/owner.js",
-  "find": "    return d?'Deliver':o.mode==='collect'?",
-  "replace": "    return o.status==='placed'?'To decide':d?'Deliver':o.mode==='collect'?"
- },
- {
-  "name": "Entry's forms are not grouped in his order",
-  "file": "stmt/owner.js",
-  "find": "['Everyday',['sale-or-purchase','repayment','stock-count']]",
-  "replace": "['Everyday',['repayment','sale-or-purchase','stock-count']]"
- },
- {
-  "name": "a tap on Orders keeps the card open",
-  "file": "stmt/owner.js",
-  "find": "if(mm==='orders'&&placeNow==='orders'&&ordOpened){ closeOrder(); return; } ",
-  "replace": ""
- },
- {
-  "name": "a part is a pill again",
-  "file": "stmt/page.js",
-  "find": "role=\"tab\" class=\"salt-segment__opt\" data-part=\"",
-  "replace": "role=\"tab\" class=\"salt-tabs__pill\" data-part=\""
- },
- {
-  "name": "the move is not drawn",
-  "file": "stmt/owner.js",
-  "find": "if(!f.move) return null;",
-  "replace": "return null;"
- },
- {
-  "name": "a payment's move is Ready",
-  "file": "stmt/owner.js",
-  "find": "    if(ordPays(o).length) return 'Received';\n",
-  "replace": ""
- }
+  {
+    "name": "a row has no book tag",
+    "file": "stmt/owner.js",
+    "find": "if(f.tags[0]) into.appendChild(productTag(f.tags[0]));",
+    "replace": ""
+  },
+  {
+    "name": "a row names no one",
+    "file": "stmt/owner.js",
+    "find": "lab.appendChild(whoTag(el('span','ocode',f.code),f.who));",
+    "replace": ""
+  },
+  {
+    "name": "a waiting row is not copper",
+    "file": "stmt/owner.js",
+    "find": "f.subTone=f.why||f.placed?'why':owes&&f.late?'late':'';",
+    "replace": "f.subTone=owes&&f.late?'late':'';"
+  },
+  {
+    "name": "a row does not say a payment is sent",
+    "file": "stmt/owner.js",
+    "find": ":ordPays(o).length?'Says sent '+rmShort(sent):",
+    "replace": ":"
+  },
+  {
+    "name": "a row does not say a stage is rejected",
+    "file": "stmt/owner.js",
+    "find": ":o.again&&o.again.length?'Send again':",
+    "replace": ":"
+  },
+  {
+    "name": "a practice order is not marked",
+    "file": "stmt/owner.js",
+    "find": "f.why=o.test?'Practice':makerCashHeld",
+    "replace": "f.why=makerCashHeld"
+  },
+  {
+    "name": "a row shows no age",
+    "file": "stmt/owner.js",
+    "find": "f.age=st==='done'||st==='ended'?ordDay(e):ageOf(o.at);",
+    "replace": "f.age='';"
+  },
+  {
+    "name": "a row's figure leaves out the delivery",
+    "file": "stmt/owner.js",
+    "find": "f.total=(+o.total||0)+(+o.delivery||0); f.owed=Math.max(0,ordDue(o));",
+    "replace": "f.total=(+o.total||0); f.owed=Math.max(0,ordDue(o));"
+  },
+  {
+    "name": "a row says nothing of the units",
+    "file": "stmt/owner.js",
+    "find": "f.way=ordWayWord(o,st); f.units=units(o.qty);",
+    "replace": "f.way=ordWayWord(o,st);"
+  },
+  {
+    "name": "listing the orders previews each",
+    "file": "stmt/owner.js",
+    "find": "row.setAttribute('data-rowof',e.id); row.setAttribute('aria-label',f.aria);",
+    "replace": "row.setAttribute('data-rowof',e.id); row.setAttribute('aria-label',f.aria); refs('/all/maker/orders/'+encodeURIComponent(e.id)+'/preview',{}).catch(function(){});"
+  },
+  {
+    "name": "a closed order is not listed in any stage",
+    "file": "stmt/owner.js",
+    "find": "    if(!ordOpen(order)&&order.test) return '';\n    if(order.writtenOff)",
+    "replace": "    if(!ordOpen(order)) return '';\n    if(order.writtenOff)"
+  },
+  {
+    "name": "a row opens no card",
+    "file": "stmt/owner.js",
+    "find": "    ordOpened=id; drawOrderPane(); sweep();",
+    "replace": "    ordOpened=id; sweep();"
+  },
+  {
+    "name": "a card is added to the card before it",
+    "file": "stmt/owner.js",
+    "find": "    if(!root) return;\n    root.textContent=''; dirty.makerReview=false;\n    var e=ordOpened",
+    "replace": "    if(!root) return;\n    dirty.makerReview=false;\n    var e=ordOpened"
+  },
+  {
+    "name": "the row opened is not marked",
+    "file": "stmt/owner.js",
+    "find": "if((r.getAttribute('data-order')||r.getAttribute('data-rowof'))===ordOpened&&!r.classList.contains('oask')) r.setAttribute('aria-current','true'); else r.removeAttribute('aria-current'); });",
+    "replace": "r.removeAttribute('aria-current'); });"
+  },
+  {
+    "name": "the list is not set beside the card",
+    "file": "stmt/owner.js",
+    "find": "    if(split) split.classList.toggle('open', !!e);",
+    "replace": ""
+  },
+  {
+    "name": "the card has no reply",
+    "file": "stmt/owner.js",
+    "find": "      ordMessages(card,order);\n      /* plan 4: an agreed order's History",
+    "replace": "      /* plan 4: an agreed order's History"
+  },
+  {
+    "name": "Preview sends the total alone",
+    "file": "stmt/owner.js",
+    "find": "var payload={total:Number(total.value),delivery:delivery}",
+    "replace": "var payload={total:Number(total.value)}"
+  },
+  {
+    "name": "a back link of its own returns",
+    "file": "stmt/owner.js",
+    "find": "    /* 20 Oct 2026 (canvas V35): no back link; the rail or the app bar's Orders is the way back, a tap on it closing the order */",
+    "replace": "    root.appendChild(actOn(el('button','aback','Orders'),'order.back'));"
+  },
+  {
+    "name": "Back leaves him nowhere",
+    "file": "stmt/owner.js",
+    "find": "[data-order=\"'+was+'\"]'); if(row&&row.focus) row.focus(); }catch(x){}",
+    "replace": "[data-order=\"'+was+'\"]'); }catch(x){}"
+  },
+  {
+    "name": "leaving the part or the place keeps the card",
+    "file": "stmt/owner.js",
+    "find": "    if(moved2&&(ordOpened||placeNow==='orders')){ ordOpened=null; drawOrderPane(); }",
+    "replace": ""
+  },
+  {
+    "name": "tapping the part he is in closes the card",
+    "file": "stmt/owner.js",
+    "find": "moved2=place!==placeNow||part!==partNow;",
+    "replace": "moved2=true;"
+  },
+  {
+    "name": "an order that left the part keeps its card",
+    "file": "stmt/owner.js",
+    "find": "    if(e&&!ordInPart(e)) e=null;\n",
+    "replace": ""
+  },
+  {
+    "name": "a read that finds the same draws again",
+    "file": "stmt/owner.js",
+    "find": "      if(!changed('review', reading)&&poll) return;",
+    "replace": "      changed('review', reading);"
+  },
+  {
+    "name": "the split starts at 1080px",
+    "file": "stmt/page.js",
+    "find": "@media (min-width:860px){\n  .adm #oOrders{max-width:none}",
+    "replace": "@media (min-width:1080px){\n  .adm #oOrders{max-width:none}"
+  },
+  {
+    "name": "below 860px the card does not take the list's place",
+    "file": "stmt/page.js",
+    "find": "  .adm #oSplit.open .ordlist,.adm #oSplit:not(.open) #makerReview,.adm #oSplit.open #makerReviewStatus{display:none}",
+    "replace": "  .adm #oSplit.open #makerReviewStatus{display:none}"
+  },
+  {
+    "name": "the card stands before the list",
+    "file": "stmt/page.js",
+    "find": "<div class=\"ordgrid\"><div id=\"makerOrderList\" class=\"ordlist\"></div><div id=\"makerReview\" class=\"ordopen\"></div></div>",
+    "replace": "<div class=\"ordgrid\"><div id=\"makerReview\" class=\"ordopen\"></div><div id=\"makerOrderList\" class=\"ordlist\"></div></div>"
+  },
+  {
+    "name": "a question on an order is only FYI",
+    "file": "stmt/owner.js",
+    "find": "L.push(item('now','messages','Message','om:'+o.id, last.at, {who:who, head:'Reply to ', what:cut(last.text), why:'On their order.', practice:t, open:to, order:o.id}, function(c){",
+    "replace": "L.push(item('watch','messages','Message','om:'+o.id, last.at, {who:who, head:'Reply to ', what:cut(last.text), why:'On their order.', practice:t, open:to, order:o.id}, function(c){"
+  },
+  {
+    "name": "a question on an order is Pending, not To do",
+    "file": "stmt/owner.js",
+    "find": "L.push(item('now','messages','Message','om:'",
+    "replace": "L.push(item('soon','messages','Message','om:'"
+  },
+  {
+    "name": "a question on an order is not a Message",
+    "file": "stmt/owner.js",
+    "find": "L.push(item('now','messages','Message','om:'",
+    "replace": "L.push(item('now','orders','Order','om:'"
+  },
+  {
+    "name": "a practice order's question is counted",
+    "file": "stmt/owner.js",
+    "find": "why:'On their order.', practice:t,",
+    "replace": "why:'On their order.', practice:false,"
+  },
+  {
+    "name": "a question on a closed order is not asked of him",
+    "file": "stmt/owner.js",
+    "find": "    return !order.test&&(again||orderAsked(order));",
+    "replace": "    return !order.test&&again;"
+  },
+  {
+    "name": "a question on an open order does not wait on him",
+    "file": "stmt/owner.js",
+    "find": "||again||orderAsked(order);\n    return !order.test",
+    "replace": "||again;\n    return !order.test"
+  },
+  {
+    "name": "an answered question is still asked",
+    "file": "stmt/owner.js",
+    "find": "return !!(last&&last.by==='customer'&&!(order.quiet",
+    "replace": "return !!(last&&!(order.quiet"
+  },
+  {
+    "name": "a question he marked as needing no reply is still asked",
+    "file": "stmt/owner.js",
+    "find": "last.by==='customer'&&!(order.quiet&&String(order.quiet)>=String(last.at)));",
+    "replace": "last.by==='customer');"
+  },
+  {
+    "name": "Open does not open the order's card",
+    "file": "stmt/owner.js",
+    "find": "showPlace('orders',st,{fresh:true, push:true}); openOrder(id); }; }",
+    "replace": "showPlace('orders',st,{fresh:true, push:true}); }; }"
+  },
+  {
+    "name": "Open goes to the wrong part of Orders",
+    "file": "stmt/owner.js",
+    "find": "showPlace('orders',st,{fresh:true, push:true}); openOrder(id); }; }",
+    "replace": "showPlace('orders','done',{fresh:true, push:true}); openOrder(id); }; }"
+  },
+  {
+    "name": "the 30-second read goes on while an account is viewed as them",
+    "file": "stmt/owner.js",
+    "find": "    if(roster.hidden) return;\n",
+    "replace": ""
+  },
+  {
+    "name": "the 30-second read is silent on Needs you only",
+    "file": "stmt/owner.js",
+    "find": "    if(roster.hidden) return;\n",
+    "replace": "    if(roster.hidden&&placeNow==='needs') return;\n"
+  },
+  {
+    "name": "the orb opens the wrong part of Record",
+    "file": "stmt/owner.js",
+    "find": "  [oAdd, document.getElementById('oAddRail')].forEach(function(b){ if(b) b.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); }); });",
+    "replace": "  [oAdd, document.getElementById('oAddRail')].forEach(function(b){ if(b) b.addEventListener('click', function(){ showPlace('record','pricing',{fresh:true,push:true}); }); });"
+  },
+  {
+    "name": "the orb opens nothing",
+    "file": "stmt/owner.js",
+    "find": "  [oAdd, document.getElementById('oAddRail')].forEach(function(b){ if(b) b.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); }); });",
+    "replace": ""
+  },
+  {
+    "name": "the orb stays on Record",
+    "file": "stmt/owner.js",
+    "find": "function(add){ add.hidden=placeNow==='record'; });",
+    "replace": "function(add){ add.hidden=false; });"
+  },
+  {
+    "name": "the orb is gone from Orders",
+    "file": "stmt/owner.js",
+    "find": "function(add){ add.hidden=placeNow==='record'; });",
+    "replace": "function(add){ add.hidden=placeNow==='record'||placeNow==='orders'; });"
+  },
+  {
+    "name": "the orb has no act",
+    "file": "stmt/page.js",
+    "find": "id=\"oAdd\" data-act=\"nav.add\" aria-label",
+    "replace": "id=\"oAdd\" aria-label"
+  },
+  {
+    "name": "the orb has no name",
+    "file": "stmt/page.js",
+    "find": "data-act=\"nav.add\" aria-label=\"Record an entry\">",
+    "replace": "data-act=\"nav.add\">"
+  },
+  {
+    "name": "the orb stands in the page's flow",
+    "file": "stmt/page.js",
+    "find": ".adm #oAdd{position:fixed;",
+    "replace": ".adm #oAdd{position:static;"
+  },
+  {
+    "name": "the orb covers the App bar",
+    "file": "stmt/page.js",
+    "find": "env(safe-area-inset-bottom,0px));z-index:40}",
+    "replace": "env(safe-area-inset-bottom,0px));z-index:60}"
+  },
+  {
+    "name": "the last section is left under the orb",
+    "file": "stmt/page.js",
+    "find": "@media (max-width:1079.98px){.adm .amain{padding-bottom:72px}}",
+    "replace": ""
+  },
+  {
+    "name": "the orb still floats on a desk",
+    "file": "stmt/page.js",
+    "find": "@media (min-width:1080px){.adm #oAdd{display:none}}",
+    "replace": "@media (min-width:1080px){.adm #oAdd{right:24px}}"
+  },
+  {
+    "name": "a form is shown at the menu",
+    "file": "stmt/owner.js",
+    "find": "n.hidden=!here||n.getAttribute('data-form')!==fOpen;",
+    "replace": "n.hidden=!here;"
+  },
+  {
+    "name": "a form open hides the menu",
+    "file": "stmt/owner.js",
+    "find": "else if(n.hasAttribute('data-formmenu')) n.hidden=!here;",
+    "replace": "else if(n.hasAttribute('data-formmenu')) n.hidden=!here||!!fOpen;"
+  },
+  {
+    "name": "the way back stays when no form is open",
+    "file": "stmt/owner.js",
+    "find": "else n.hidden=!here||!fOpen;",
+    "replace": "else n.hidden=!here;"
+  },
+  {
+    "name": "the menu once hidden never comes back",
+    "file": "stmt/owner.js",
+    "find": "var here=!n.hasAttribute('data-in')||!n.hidden;",
+    "replace": "var here=!n.hidden;"
+  },
+  {
+    "name": "a retained input shows in a part that is not its own",
+    "file": "stmt/owner.js",
+    "find": "var here=!n.hasAttribute('data-in')||!n.hidden;",
+    "replace": "var here=true;"
+  },
+  {
+    "name": "a retained input stays while a form is open",
+    "file": "stmt/owner.js",
+    "find": "section.setAttribute('data-key',path.split('/').pop());section.setAttribute('data-formmenu','');",
+    "replace": "section.setAttribute('data-key',path.split('/').pop());"
+  },
+  {
+    "name": "a row opens the wrong form",
+    "file": "stmt/owner.js",
+    "find": "row.addEventListener('click', function(){ openForm(slug); });",
+    "replace": "row.addEventListener('click', function(){ openForm('gift'); });"
+  },
+  {
+    "name": "a row opens no form",
+    "file": "stmt/owner.js",
+    "find": "row.addEventListener('click', function(){ openForm(slug); });",
+    "replace": "row.addEventListener('click', function(){});"
+  },
+  {
+    "name": "the menu leaves a form out",
+    "file": "stmt/owner.js",
+    "find": "if(part==='entry') entryRows[slug]=row; else (lists[part].firstChild",
+    "replace": "if(part==='entry'){ if(slug!=='gift') entryRows[slug]=row; } else (lists[part].firstChild"
+  },
+  {
+    "name": "the menu lists every form under Entry",
+    "file": "stmt/owner.js",
+    "find": "part=form.getAttribute('data-in').replace('record.','');",
+    "replace": "part='entry';"
+  },
+  {
+    "name": "the stock count is not named",
+    "file": "stmt/owner.js",
+    "find": "countForm.appendChild(el('h3',null,'Stock count'));",
+    "replace": "countForm.appendChild(el('h3',null,'Count'));"
+  },
+  {
+    "name": "opening a form reads",
+    "file": "stmt/owner.js",
+    "find": "    fOpen=slug; sweep();\n",
+    "replace": "    fOpen=slug; sweep(); refs('/all/maker/inputs').catch(function(){});\n"
+  },
+  {
+    "name": "the way back does nothing on a form",
+    "file": "stmt/owner.js",
+    "find": "else if(way==='form') closeForm(); return; }",
+    "replace": "else if(way==='form'){} return; }"
+  },
+  {
+    "name": "Back leaves him off the row he came from",
+    "file": "stmt/owner.js",
+    "find": "[data-key=\"'+was+'\"]'); if(row&&row.focus) row.focus(); }catch(x){}",
+    "replace": "[data-key=\"'+was+'\"]'); }catch(x){}"
+  },
+  {
+    "name": "an open form does not take the focus",
+    "file": "stmt/owner.js",
+    "find": "var back=document.getElementById('makerFormBack');\n      back.focus();",
+    "replace": "var back=document.getElementById('makerFormBack');"
+  },
+  {
+    "name": "the way back is not named for the part",
+    "file": "stmt/owner.js",
+    "find": "backOrb('form','All forms')",
+    "replace": "backOrb('form','Back')"
+  },
+  {
+    "name": "the owner's script names a variable the customer page names a function",
+    "file": "stmt/owner.js",
+    "find": "  var ordOpened=null, ordEntries={}, makerOpenOrders=[], ordFocus=null, ordMore={};",
+    "replace": "  var oOpen=null, ordOpened=null, ordEntries={}, makerOpenOrders=[], ordFocus=null, ordMore={};"
+  },
+  {
+    "name": "a row tap always takes him to the top",
+    "file": "stmt/owner.js",
+    "find": "      if(!ordSide()) window.scrollTo(0,0);\n      else if(card&&card.scrollIntoView) card.scrollIntoView({block:'nearest'});",
+    "replace": "      window.scrollTo(0,0);"
+  },
+  {
+    "name": "the card is not brought into view from 860px",
+    "file": "stmt/owner.js",
+    "find": "\n      else if(card&&card.scrollIntoView) card.scrollIntoView({block:'nearest'});",
+    "replace": ""
+  },
+  {
+    "name": "a row tap scrolls the wrong way round",
+    "file": "stmt/owner.js",
+    "find": "if(!ordSide()) window.scrollTo(0,0);",
+    "replace": "if(ordSide()) window.scrollTo(0,0);"
+  },
+  {
+    "name": "the sticky card's foot goes under the App bar",
+    "file": "stmt/page.js",
+    "find": "  .adm #makerReview{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}\n",
+    "replace": ""
+  },
+  {
+    "name": "the card keeps the bar's room from 1080px too",
+    "file": "stmt/page.js",
+    "find": "  .adm #makerReview{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}",
+    "replace": "  .adm #makerReview{position:sticky;top:24px;max-height:calc(100vh - 48px - var(--salt-bar-h));overflow-y:auto}"
+  },
+  {
+    "name": "the card gives up the bar's room by too little",
+    "file": "stmt/page.js",
+    "find": ".adm #makerReview{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}",
+    "replace": ".adm #makerReview{max-height:calc(100vh - 48px - env(safe-area-inset-bottom,0px))}"
+  },
+  {
+    "name": "the owner's script names a customer function second in a var list",
+    "file": "stmt/owner.js",
+    "find": "  var placeNow='needs', partNow='', PARTS={}, fOpen=null;",
+    "replace": "  var placeNow='needs', partNow='', PARTS={}, fOpen=null, oFind=null;"
+  },
+  {
+    "name": "the owner's pay ways overwrite the customer's again",
+    "file": "stmt/owner.js",
+    "find": "  var HOW_IN={password:",
+    "replace": "  var HOW={password:"
+  },
+  {
+    "name": "the closed note counts only the closed orders with nothing else asked",
+    "file": "stmt/owner.js",
+    "find": "var shownN=entries.filter(function(e){ return e.stage===st; }).length;",
+    "replace": "var shownN=entries.filter(function(e){ return e.stage===st&&!e.waits; }).length;"
+  },
+  {
+    "name": "the closed note does not count an order that also waits on him",
+    "file": "stmt/owner.js",
+    "find": "        closedAll[stage]=(closedAll[stage]||0)+1;\n        if(!waits&&",
+    "replace": "        if(!waits&&"
+  },
+  {
+    "name": "the closed list drops an order that also waits on him",
+    "file": "stmt/owner.js",
+    "find": "if(!waits&&(settled[stage]=(settled[stage]||0)+1)>ordShown(stage)) return;",
+    "replace": "if((settled[stage]=(settled[stage]||0)+1)>ordShown(stage)) return;"
+  },
+  {
+    "name": "leaving the part keeps the form open",
+    "file": "stmt/owner.js",
+    "find": "    if(moved2) fOpen=null;\n",
+    "replace": ""
+  },
+  {
+    "name": "a form open leaves the grid unmarked",
+    "file": "stmt/owner.js",
+    "find": "if(grid) grid.classList.toggle('open', !!fOpen);",
+    "replace": "if(grid) grid.classList.toggle('open', false);"
+  },
+  {
+    "name": "the menu is put out of the way by the sweep while a form is open",
+    "file": "stmt/owner.js",
+    "find": "else if(n.hasAttribute('data-formmenu')) n.hidden=!here;",
+    "replace": "else if(n.hasAttribute('data-formmenu')) n.hidden=!here||!!fOpen;"
+  },
+  {
+    "name": "the row of the form open is not marked",
+    "file": "stmt/owner.js",
+    "find": "if(fOpen&&r.getAttribute('data-key')===fOpen) r.setAttribute('aria-current','true'); else r.removeAttribute('aria-current'); });",
+    "replace": "r.removeAttribute('aria-current'); });"
+  },
+  {
+    "name": "the forms are left outside the pane",
+    "file": "stmt/owner.js",
+    "find": "if(n.hasAttribute('data-formmenu')) list.appendChild(n); else if(n.hasAttribute('data-form')) pane.appendChild(n);",
+    "replace": "if(n.hasAttribute('data-formmenu')) list.appendChild(n);"
+  },
+  {
+    "name": "the menu and the retained input are left outside the list",
+    "file": "stmt/owner.js",
+    "find": "if(n.hasAttribute('data-formmenu')) list.appendChild(n); else if(n.hasAttribute('data-form')) pane.appendChild(n);",
+    "replace": "if(n.hasAttribute('data-form')) pane.appendChild(n);"
+  },
+  {
+    "name": "a form open does not take the menu's place below 860px",
+    "file": "stmt/page.js",
+    "find": "  .adm .recgrid.open .reclist,.adm .recnone{display:none}",
+    "replace": "  .adm .recgrid.open .reclist,.adm .recnone{display:block}"
+  },
+  {
+    "name": "the pane's invitation is drawn on a phone",
+    "file": "stmt/page.js",
+    "find": "  .adm .recgrid.open .reclist,.adm .recnone{display:none}",
+    "replace": "  .adm .recgrid.open .reclist{display:none}"
+  },
+  {
+    "name": "the menu and the form do not stand side by side from 860px",
+    "file": "stmt/page.js",
+    "find": "  .adm .recgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:20px;align-items:start}",
+    "replace": "  .adm .recgrid{display:block}"
+  },
+  {
+    "name": "the way back still shows beside the menu",
+    "file": "stmt/page.js",
+    "find": "  .adm #makerFormBack{display:none}",
+    "replace": "  .adm #makerFormBack{display:inline-flex}"
+  },
+  {
+    "name": "Record keeps its narrow column from 860px",
+    "file": "stmt/page.js",
+    "find": "  .adm #oRecord{max-width:none}",
+    "replace": "  .adm #oRecord{max-width:760px}"
+  },
+  {
+    "name": "the rows to approve widen with the forms",
+    "file": "stmt/page.js",
+    "find": "  .adm #oOrders>.abody>#oApprove{max-width:600px}\n",
+    "replace": ""
+  },
+  {
+    "name": "the pane does not scroll inside itself",
+    "file": "stmt/page.js",
+    "find": "  .adm .recpane{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}",
+    "replace": "  .adm .recpane{position:sticky;top:24px}"
+  },
+  {
+    "name": "the pane's height ignores the App bar",
+    "file": "stmt/page.js",
+    "find": "  .adm .recpane{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}",
+    "replace": "  .adm .recpane{max-height:calc(100vh - 48px)}"
+  },
+  {
+    "name": "an order stands in two stages",
+    "file": "stmt/owner.js",
+    "find": "    return 'orders.'+st;\n  }",
+    "replace": "    return 'orders.'+st+(orderWaits(order)?' orders.placed':'');\n  }"
+  },
+  {
+    "name": "the count includes practice orders",
+    "file": "stmt/owner.js",
+    "find": "if(e.parts==='orders.todo'&&e.order&&!e.order.test) todo++;",
+    "replace": "if(e.parts==='orders.todo'&&e.order) todo++;"
+  },
+  {
+    "name": "no count is drawn on To do",
+    "file": "stmt/owner.js",
+    "find": "if(c){ c.textContent=todo?String(todo):''; c.hidden=!todo; }",
+    "replace": ""
+  },
+  {
+    "name": "Payments is not counted",
+    "file": "stmt/owner.js",
+    "find": "if(pn) pn.textContent=pay?String(pay):'';",
+    "replace": ""
+  },
+  {
+    "name": "from 860px nothing opens by itself",
+    "file": "stmt/owner.js",
+    "find": "      if(first){ e=first;",
+    "replace": "      if(false){ e=first;"
+  },
+  {
+    "name": "the floating placeholder returns",
+    "file": "stmt/owner.js",
+    "find": "    if(!e) return;\n    /* 20 Oct 2026 (canvas V35): no back link; the rail or the app bar's Orders is the way back, a tap on it closing the order */",
+    "replace": "    if(!e){ root.appendChild(el('p','rnone','Choose an order to see it here.')); return; }\n    /* 20 Oct 2026 (canvas V35): no back link; the rail or the app bar's Orders is the way back, a tap on it closing the order */"
+  },
+  {
+    "name": "the repeated Orders heading returns",
+    "file": "stmt/page.js",
+    "find": "orders.ended\" aria-label=\"Orders\">'",
+    "replace": "orders.ended\" aria-labelledby=\"makerReviewTitle\"><h2 id=\"makerReviewTitle\">Orders</h2>'"
+  },
+  {
+    "name": "a payment claim does not wait on him",
+    "file": "stmt/owner.js",
+    "find": "(order.payments||[]).some(function(p){ return p.claim==='waiting'; })",
+    "replace": "false"
+  },
+  {
+    "name": "why is not drawn in copper",
+    "file": "stmt/owner.js",
+    "find": "f.subTone=f.why||f.placed?'why':owes&&f.late?'late':'';",
+    "replace": "f.subTone='';"
+  },
+  {
+    "name": "a practice order carries a move",
+    "file": "stmt/owner.js",
+    "find": "    if(o.test) return '';\n",
+    "replace": ""
+  },
+  {
+    "name": "every Entry row says Open again",
+    "file": "stmt/owner.js",
+    "find": "row.appendChild(el('span','salt-settings__label',MENU_NAME[slug]||name));",
+    "replace": "row.appendChild(el('span','salt-settings__label',(MENU_NAME[slug]||name)+' Open'));"
+  },
+  {
+    "name": "a reward offset is listed as a customer's",
+    "file": "stmt/owner.js",
+    "find": "kind=offer.associate===false?'customer':'reward'",
+    "replace": "kind=offer.associate===false?'reward':'customer'"
+  },
+  {
+    "name": "the offsets instruction paragraph returns",
+    "file": "stmt/owner.js",
+    "find": "parent.appendChild(offsets);",
+    "replace": "parent.appendChild(offsets);offsets.appendChild(el('p','msg','One unit off the oldest unpaid order of someone holding a reward.'));"
+  },
+  {
+    "name": "the second Record heading returns over the forms",
+    "file": "stmt/page.js",
+    "find": "aria-label=\"Record\"></section>",
+    "replace": "aria-label=\"Record\"><h2>Record</h2></section>"
+  },
+  {
+    "name": "the offset button says Send the offset again",
+    "file": "stmt/owner.js",
+    "find": "makerButton(row._go,['Add','record.offset.send']",
+    "replace": "makerButton(row._go,['Send the offset','record.offset.send']"
+  },
+  {
+    "name": "Orders counts what waits on him, not the orders open",
+    "file": "stmt/owner.js",
+    "find": "    setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordOpen(o); }).length);",
+    "replace": "    setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordWaits(o); }).length+waitingClaims().filter(function(c){ return !c.test; }).length);"
+  },
+  {
+    "name": "no More group",
+    "file": "stmt/page.js",
+    "find": "\n        + ordMore(test)",
+    "replace": ""
+  },
+  {
+    "name": "Ended is not in the Segment",
+    "file": "stmt/page.js",
+    "find": "const ADMIN_ORDER_STAGES = [\"todo\", \"open\", \"done\", \"ended\"];",
+    "replace": "const ADMIN_ORDER_STAGES = [\"todo\", \"open\", \"done\"];"
+  },
+  {
+    "name": "a row says the size twice",
+    "file": "stmt/owner.js",
+    "find": "lab.appendChild(whoTag(el('span','ocode',f.code),f.who));",
+    "replace": "lab.appendChild(whoTag(el('span','ocode',f.code),f.who)); lab.appendChild(el('span',null,f.units));"
+  },
+  {
+    "name": "a placed row says to decide",
+    "file": "stmt/owner.js",
+    "find": "    return d?'Deliver':o.mode==='collect'?",
+    "replace": "    return o.status==='placed'?'To decide':d?'Deliver':o.mode==='collect'?"
+  },
+  {
+    "name": "Entry's forms are not grouped in his order",
+    "file": "stmt/owner.js",
+    "find": "['Everyday',['sale-or-purchase','repayment','stock-count']]",
+    "replace": "['Everyday',['repayment','sale-or-purchase','stock-count']]"
+  },
+  {
+    "name": "a tap on Orders keeps the card open",
+    "file": "stmt/owner.js",
+    "find": "if(mm==='orders'&&placeNow==='orders'&&ordOpened){ closeOrder(); return; } ",
+    "replace": ""
+  },
+  {
+    "name": "a part is a pill again",
+    "file": "stmt/page.js",
+    "find": "role=\"tab\" class=\"salt-segment__opt\" data-part=\"",
+    "replace": "role=\"tab\" class=\"salt-tabs__pill\" data-part=\""
+  },
+  {
+    "name": "the move is not drawn",
+    "file": "stmt/owner.js",
+    "find": "if(!f.move) return null;",
+    "replace": "return null;"
+  },
+  {
+    "name": "a payment's move is Ready",
+    "file": "stmt/owner.js",
+    "find": "    if(ordPays(o).length) return 'Received';\n",
+    "replace": ""
+  }
 ]

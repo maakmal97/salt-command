@@ -1,29 +1,164 @@
 [
- {"name": "Accept times an order with a day of its own", "file": "src/orders.js", "find": "  if (o.wantBy) return { error: \"they chose their own day, and it stands\", status: 409 };\n", "replace": ""},
- {"name": "Accept times a collection", "file": "src/orders.js", "find": "  if (!o || o.mode !== \"deliver\") return { error: \"only a delivery takes a time window\", status: 400 };\n", "replace": ""},
- {"name": "Accept takes an ended window", "file": "src/orders.js", "find": "  if (!(start + 4 * 3600e3 > now) || start - now > 8 * 86400e3)", "replace": "  if (start - now > 8 * 86400e3)"},
- {"name": "Accept takes a window weeks off", "file": "src/orders.js", "find": "  if (!(start + 4 * 3600e3 > now) || start - now > 8 * 86400e3)", "replace": "  if (!(start + 4 * 3600e3 > now) || start - now > 80 * 86400e3)"},
- {"name": "Accept reads no window", "file": "src/orders.js", "find": "  const win = again ? { slot: null } : slotOf(body, o, at);", "replace": "  const win = { slot: null };"},
- {"name": "his yes forgets the window", "file": "src/orders.js", "find": "pricing: pv.pricing }, win.slot ? { slot: win.slot } : {}) });", "replace": "pricing: pv.pricing }, {}) });"},
- {"name": "the approved row moves no window", "file": "src/orders.js", "find": "      slotShown(shown) ? { slot: slotShown(shown) } : {}));", "replace": "      {}));"},
- {"name": "the Counter overrides their window", "file": "stmt/orders.js", "find": "((!order.slot && !order.wantBy) ||", "replace": "((!order.wantBy) ||"},
- {"name": "the Counter times an order with a day", "file": "stmt/orders.js", "find": "((!order.slot && !order.wantBy) ||", "replace": "((!order.slot) ||"},
- {"name": "the Counter times a collection", "file": "stmt/orders.js", "find": "      && ev.delivery !== undefined && (ev.mode || order.mode) === \"deliver\"\n", "replace": "      && ev.delivery !== undefined\n"},
- {"name": "the Counter takes any span", "file": "stmt/orders.js", "find": "typeof body.slotSpan === \"string\" && SPAN_RE.test(body.slotSpan)\n", "replace": "typeof body.slotSpan === \"string\"\n"},
- {"name": "the order does not keep the window", "file": "stmt/orders.js", "find": "    if (ev.slot) { order.slot = ev.slot; order.slotSpan = ev.slotSpan; }\n", "replace": ""},
- {"name": "the move is not cut to the hours", "file": "stmt/orders.js", "find": "  if (body && body.status === \"acknowledged\" && body.slot !== undefined) body = await ackSlot(env, body);\n", "replace": ""},
- {"name": "the hours are not read", "file": "stmt/orders.js", "find": "const t = slotTake(body.slot, await hoursConfig(env), now),", "replace": "const t = slotTake(body.slot, null, now),"},
- {"name": "a window outside the hours is dropped", "file": "stmt/orders.js", "find": "k = t.error ? slotTake(body.slot, null, now) : t;", "replace": "k = t;"},
- {"name": "a past window rides through", "file": "stmt/orders.js", "find": "  return k.error ? b : Object.assign(b, { slot: k.slot, slotSpan: k.span });", "replace": "  return k.error ? body : Object.assign(b, { slot: k.slot, slotSpan: k.span });"},
- {"name": "the banner does not ask", "file": "stmt/words.js", "find": "\"Please pay now if you can. Payment is due when it is ready", "replace": "\"Payment is due when it is ready"},
- {"name": "the page asks the wrong way", "file": "stmt/page.js", "find": "put(o.prepay?'ow.payNow':'ow.payNowCredit');", "replace": "put(o.prepay?'ow.payNowCredit':'ow.payNow');"},
- {"name": "the page asks a placed order", "file": "stmt/page.js", "find": "    if(s==='acknowledged'&&!(mv>0)&&(+o.total||0)", "replace": "    if(!(mv>0)&&(+o.total||0)"},
- {"name": "the page asks a paid order", "file": "stmt/page.js", "find": "if(s==='acknowledged'&&!(mv>0)&&(+o.total||0)+(+o.delivery||0)-paid-oClaimed(o)>0.004){", "replace": "if(s==='acknowledged'&&!(mv>0)&&(+o.total||0)+(+o.delivery||0)-oClaimed(o)>0.004){"},
- {"name": "Admin offers no window as theirs", "file": "stmt/owner.js", "find": "var own=order.slot&&order.slotSpan?'Theirs, '", "replace": "var own=false?'Theirs, '"},
- {"name": "Admin's sheet lines send no window", "file": "stmt/owner.js", "find": "((follower?(makerWin[group[0].id]||{}).value:win.value)||'')", "replace": "(win.value||'')"},
- {"name": "Admin offers a window begun", "file": "stmt/owner.js", "find": ".filter(function(x){ return x[2]>now; });", "replace": ".filter(function(x){ return x[2]>now-14400000; });"},
- {"name": "Admin does not say a spot was shared", "file": "stmt/owner.js", "find": "      if(order.mode==='deliver'&&order.pin&&!order.test) makerSpotControl(card,order);\n", "replace": ""},
- {"name": "the desk always names the window", "file": "src/orders.js", "find": "\"wantBy\"].concat(o.slot ? [\"slot\"] : []);", "replace": "\"wantBy\", \"slot\"];"},
- {"name": "the desk never names the window", "file": "src/orders.js", "find": "\"wantBy\"].concat(o.slot ? [\"slot\"] : []);", "replace": "\"wantBy\"];"},
- {"name": "the Counter needs the window named", "file": "stmt/orders.js", "find": "      ? Object.assign({ slot: null }, body.reserveReview) : body.reserveReview;", "replace": "      ? body.reserveReview : body.reserveReview;"}
+  {
+    "name": "Accept times an order with a day of its own",
+    "file": "src/orders.js",
+    "find": "  if (o.wantBy) return { error: \"they chose their own day, and it stands\", status: 409 };\n",
+    "replace": ""
+  },
+  {
+    "name": "Accept times a collection",
+    "file": "src/orders.js",
+    "find": "  if (!o || o.mode !== \"deliver\") return { error: \"only a delivery takes a time window\", status: 400 };\n",
+    "replace": ""
+  },
+  {
+    "name": "Accept takes an ended window",
+    "file": "src/orders.js",
+    "find": "  if (!(start + 4 * 3600e3 > now) || start - now > 8 * 86400e3)",
+    "replace": "  if (start - now > 8 * 86400e3)"
+  },
+  {
+    "name": "Accept takes a window weeks off",
+    "file": "src/orders.js",
+    "find": "  if (!(start + 4 * 3600e3 > now) || start - now > 8 * 86400e3)",
+    "replace": "  if (!(start + 4 * 3600e3 > now) || start - now > 80 * 86400e3)"
+  },
+  {
+    "name": "Accept reads no window",
+    "file": "src/orders.js",
+    "find": "  const win = again ? { slot: null } : slotOf(body, o, at);",
+    "replace": "  const win = { slot: null };"
+  },
+  {
+    "name": "his yes forgets the window",
+    "file": "src/orders.js",
+    "find": "pricing: pv.pricing }, win.slot ? { slot: win.slot } : {}) });",
+    "replace": "pricing: pv.pricing }, {}) });"
+  },
+  {
+    "name": "the approved row moves no window",
+    "file": "src/orders.js",
+    "find": "      slotShown(shown) ? { slot: slotShown(shown) } : {}));",
+    "replace": "      {}));"
+  },
+  {
+    "name": "the Counter overrides their window",
+    "file": "stmt/orders.js",
+    "find": "((!order.slot && !order.wantBy) ||",
+    "replace": "((!order.wantBy) ||"
+  },
+  {
+    "name": "the Counter times an order with a day",
+    "file": "stmt/orders.js",
+    "find": "((!order.slot && !order.wantBy) ||",
+    "replace": "((!order.slot) ||"
+  },
+  {
+    "name": "the Counter times a collection",
+    "file": "stmt/orders.js",
+    "find": "      && ev.delivery !== undefined && (ev.mode || order.mode) === \"deliver\"\n",
+    "replace": "      && ev.delivery !== undefined\n"
+  },
+  {
+    "name": "the Counter takes any span",
+    "file": "stmt/orders.js",
+    "find": "typeof body.slotSpan === \"string\" && SPAN_RE.test(body.slotSpan)\n",
+    "replace": "typeof body.slotSpan === \"string\"\n"
+  },
+  {
+    "name": "the order does not keep the window",
+    "file": "stmt/orders.js",
+    "find": "    if (ev.slot) { order.slot = ev.slot; order.slotSpan = ev.slotSpan; }\n",
+    "replace": ""
+  },
+  {
+    "name": "the move is not cut to the hours",
+    "file": "stmt/orders.js",
+    "find": "  if (body && body.status === \"acknowledged\" && body.slot !== undefined) body = await ackSlot(env, body);\n",
+    "replace": ""
+  },
+  {
+    "name": "the hours are not read",
+    "file": "stmt/orders.js",
+    "find": "const t = slotTake(body.slot, await hoursConfig(env), now),",
+    "replace": "const t = slotTake(body.slot, null, now),"
+  },
+  {
+    "name": "a window outside the hours is dropped",
+    "file": "stmt/orders.js",
+    "find": "k = t.error ? slotTake(body.slot, null, now) : t;",
+    "replace": "k = t;"
+  },
+  {
+    "name": "a past window rides through",
+    "file": "stmt/orders.js",
+    "find": "  return k.error ? b : Object.assign(b, { slot: k.slot, slotSpan: k.span });",
+    "replace": "  return k.error ? body : Object.assign(b, { slot: k.slot, slotSpan: k.span });"
+  },
+  {
+    "name": "the banner does not ask",
+    "file": "stmt/words.js",
+    "find": "\"Please pay now if you can. Payment is due when it is ready",
+    "replace": "\"Payment is due when it is ready"
+  },
+  {
+    "name": "the page asks the wrong way",
+    "file": "stmt/page.js",
+    "find": "put(o.prepay?'ow.payNow':'ow.payNowCredit');",
+    "replace": "put(o.prepay?'ow.payNowCredit':'ow.payNow');"
+  },
+  {
+    "name": "the page asks a placed order",
+    "file": "stmt/page.js",
+    "find": "    if(s==='acknowledged'&&!(mv>0)&&(+o.total||0)",
+    "replace": "    if(!(mv>0)&&(+o.total||0)"
+  },
+  {
+    "name": "the page asks a paid order",
+    "file": "stmt/page.js",
+    "find": "if(s==='acknowledged'&&!(mv>0)&&(+o.total||0)+(+o.delivery||0)-paid-oClaimed(o)>0.004){",
+    "replace": "if(s==='acknowledged'&&!(mv>0)&&(+o.total||0)+(+o.delivery||0)-oClaimed(o)>0.004){"
+  },
+  {
+    "name": "Admin offers no window as theirs",
+    "file": "stmt/owner.js",
+    "find": "var own=order.slot&&order.slotSpan?'Theirs, '",
+    "replace": "var own=false?'Theirs, '"
+  },
+  {
+    "name": "Admin's sheet lines send no window",
+    "file": "stmt/owner.js",
+    "find": "((follower?(makerWin[group[0].id]||{}).value:win.value)||'')",
+    "replace": "(win.value||'')"
+  },
+  {
+    "name": "Admin offers a window begun",
+    "file": "stmt/owner.js",
+    "find": ".filter(function(x){ return x[2]>now; });",
+    "replace": ".filter(function(x){ return x[2]>now-14400000; });"
+  },
+  {
+    "name": "Admin does not say a spot was shared",
+    "file": "stmt/owner.js",
+    "find": "      if(order.mode==='deliver'&&order.pin&&!order.test) makerSpotControl(dec,order);\n",
+    "replace": ""
+  },
+  {
+    "name": "the desk always names the window",
+    "file": "src/orders.js",
+    "find": "\"wantBy\"].concat(o.slot ? [\"slot\"] : []);",
+    "replace": "\"wantBy\", \"slot\"];"
+  },
+  {
+    "name": "the desk never names the window",
+    "file": "src/orders.js",
+    "find": "\"wantBy\"].concat(o.slot ? [\"slot\"] : []);",
+    "replace": "\"wantBy\"];"
+  },
+  {
+    "name": "the Counter needs the window named",
+    "file": "stmt/orders.js",
+    "find": "      ? Object.assign({ slot: null }, body.reserveReview) : body.reserveReview;",
+    "replace": "      ? body.reserveReview : body.reserveReview;"
+  }
 ]

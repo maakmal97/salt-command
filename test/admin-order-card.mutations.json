@@ -1,482 +1,470 @@
 [
- {
-  "name": "an order opened reads no preview",
-  "file": "stmt/owner.js",
-  "find": "      if(quoteStart) quoteStart();\n",
-  "replace": "\n"
- },
- {
-  "name": "listing the orders reads a preview for each",
-  "file": "stmt/owner.js",
-  "find": "row.setAttribute('data-rowof',e.id); row.setAttribute('aria-label',f.aria);",
-  "replace": "row.setAttribute('data-rowof',e.id); row.setAttribute('aria-label',f.aria); if(e.order&&e.order.status==='placed'&&e.order.mode!=='deliver') refs('/all/maker/orders/'+encodeURIComponent(e.id)+'/preview',{total:Number(e.order.total),delivery:0}).catch(function(){});"
- },
- {
-  "name": "an order opened again keeps its earlier figures",
-  "file": "stmt/owner.js",
-  "find": "    [id,id+':again'].forEach(function(k){ delete makerQuotes[k]; delete makerPv[k]; });\n",
-  "replace": "\n"
- },
- {
-  "name": "a redraw reads the figures again",
-  "file": "stmt/owner.js",
-  "find": "          if(held&&held.sig===sig&&held.key===makerPlacedKey()) makerPlacedShow(held); else makerPlacedRead();",
-  "replace": "          makerPlacedRead();"
- },
- {
-  "name": "a redraw while the read is out asks again",
-  "file": "stmt/owner.js",
-  "find": "          if(!pv||pv.key!==key) pv=makerPv[order.id]={key:key,payload:payload,p:refs(",
-  "replace": "          pv=makerPv[order.id]={key:key,payload:payload,p:refs("
- },
- {
-  "name": "a delivery with no charge chosen reads",
-  "file": "stmt/owner.js",
-  "find": "          if(delivery==null){ previewTurn++; makerPlacedSay('Choose the delivery charge, and the figures read themselves.'); return; }",
-  "replace": "          if(false){ previewTurn++; makerPlacedSay('Choose the delivery charge, and the figures read themselves.'); return; }"
- },
- {
-  "name": "the Preview button is back",
-  "file": "stmt/owner.js",
-  "find": "        tf.body.appendChild(qsay); tf.body.appendChild(qfigs);\n",
-  "replace": "        tf.body.appendChild(qsay); tf.body.appendChild(qfigs); makerButton(card,['Preview','order.preview'],makerPlacedRead,false);\n"
- },
- {
-  "name": "an order with a rejected pending row reads nothing on opening",
-  "file": "stmt/owner.js",
-  "find": "    return function(){ var held=makerQuotes[key]; if(held&&held.sig===sig) againShow(held.result); else againRead(); };",
-  "replace": "    return function(){};"
- },
- {
-  "name": "Accept stands in the body of the card",
-  "file": "stmt/owner.js",
-  "find": "accept.setAttribute('data-accept',''); row3.insertBefore(accept,row3.firstChild);",
-  "replace": "accept.setAttribute('data-accept',''); card.appendChild(accept);"
- },
- {
-  "name": "Accept stands after Decline",
-  "file": "stmt/owner.js",
-  "find": "accept.setAttribute('data-accept',''); row3.insertBefore(accept,row3.firstChild);",
-  "replace": "accept.setAttribute('data-accept','');"
- },
- {
-  "name": "Decline stands in the body of the card",
-  "file": "stmt/owner.js",
-  "find": "      var dec=makerButton(card.querySelector('.ordrow3')||tail,['Decline','order.decline'],function(){",
-  "replace": "      var dec=makerButton(card,['Decline','order.decline'],function(){"
- },
- {
-  "name": "Cancel order stands in the body of the card",
-  "file": "stmt/owner.js",
-  "find": "      var can=makerButton(tail,['Cancel','order.cancel'],function(){",
-  "replace": "      var can=makerButton(card,['Cancel','order.cancel'],function(){"
- },
- {
-  "name": "Ready stands in the body of the card",
-  "file": "stmt/owner.js",
-  "find": "          var b=makerButton(lead,[m[1],'order.ready-'+m[0]]",
-  "replace": "          var b=makerButton(card,[m[1],'order.ready-'+m[0]]"
- },
- {
-  "name": "Record handover stands in the body of the card",
-  "file": "stmt/owner.js",
-  "find": "        var handed=makerButton(lead,['Handed over, '+units(order.qty),'order.handed']",
-  "replace": "        var handed=makerButton(card,['Handed over, '+units(order.qty),'order.handed']"
- },
- {
-  "name": "Accept again stands in the body of the card",
-  "file": "stmt/owner.js",
-  "find": "      again.setAttribute('data-accept-again',''); acts.insertBefore(again,acts.firstChild);",
-  "replace": "      again.setAttribute('data-accept-again',''); card.appendChild(again);"
- },
- {
-  "name": "Accept again stands after the stages offered again",
-  "file": "stmt/owner.js",
-  "find": "      again.setAttribute('data-accept-again',''); acts.insertBefore(again,acts.firstChild);",
-  "replace": "      again.setAttribute('data-accept-again','');"
- },
- {
-  "name": "a stage he rejected is offered again outside the foot",
-  "file": "stmt/owner.js",
-  "find": "      var offer=makerButton(acts,['Send the '+MAKER_AGAIN[stage]+' again'",
-  "replace": "      var offer=makerButton(card,['Send the '+MAKER_AGAIN[stage]+' again'"
- },
- {
-  "name": "the answer line stands outside the foot",
-  "file": "stmt/owner.js",
-  "find": "card.appendChild(foot); makerFoot(foot,key);",
-  "replace": "card.appendChild(foot); makerFoot(card,key);"
- },
- {
-  "name": "a foot with moves does not stand along the card",
-  "file": "stmt/owner.js",
-  "find": "    if(acts.children.length||pending) foot.classList.add('has');\n",
-  "replace": "\n"
- },
- {
-  "name": "cash held leaves the foot live",
-  "file": "stmt/owner.js",
-  "find": "[].forEach.call(card.querySelectorAll('button,input,select'),function(n){\n        if(!n.hasAttribute('data-maker-cash-undo')",
-  "replace": "[].forEach.call(card.querySelectorAll('.ordlead button,.ordlead input,.ordlead select'),function(n){\n        if(!n.hasAttribute('data-maker-cash-undo')"
- },
- {
-  "name": "the foot does not stick",
-  "file": "stmt/page.js",
-  "find": ".adm .maker-foot.has{position:sticky;",
-  "replace": ".adm .maker-foot.has{position:static;"
- },
- {
-  "name": "the foot sticks under the App bar",
-  "file": "stmt/page.js",
-  "find": "bottom:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px) - 1px);margin:16px -4px -4px;",
-  "replace": "bottom:0;margin:16px -4px -4px;"
- },
- {
-  "name": "the card's own foot is not reached from 860px",
-  "file": "stmt/page.js",
-  "find": "@media (min-width:860px){.adm #makerReview .maker-foot.has{bottom:0}}",
-  "replace": "@media (min-width:860px){.adm #makerReview .maker-foot.has{bottom:9px}}"
- },
- {
-  "name": "Decline asks a native confirm",
-  "file": "stmt/owner.js",
-  "find": "        makerAsk(order,dec,'decline',{",
-  "replace": "        if(!window.confirm('Decline this order?')) return; makerAsk(order,dec,'decline',{"
- },
- {
-  "name": "Cancel asks a native confirm",
-  "file": "stmt/owner.js",
-  "find": "        makerAsk(order,can,'cancel',{",
-  "replace": "        if(!window.confirm('Cancel this order?')) return; makerAsk(order,can,'cancel',{"
- },
- {
-  "name": "Close asks a native confirm",
-  "file": "stmt/owner.js",
-  "find": "          makerAsk(order,handed,'close',{",
-  "replace": "          if(!window.confirm('Close this order?')) return; makerAsk(order,handed,'close',{"
- },
- {
-  "name": "Offer again asks a native confirm",
-  "file": "stmt/owner.js",
-  "find": "        makerAsk(order,offer,'again-'+stage,{",
-  "replace": "        if(!window.confirm('Offer it again?')) return; makerAsk(order,offer,'again-'+stage,{"
- },
- {
-  "name": "Record handover asks a native confirm",
-  "file": "stmt/owner.js",
-  "find": "          if(!handedEnds()){ makerTap(order,'handed',{qty:Number(qty.value)},'Handover sent to the Desk.'); return; }",
-  "replace": "          if(!handedEnds()){ if(!window.confirm('Record the handover?')) return; makerTap(order,'handed',{qty:Number(qty.value)},'Handover sent to the Desk.'); return; }"
- },
- {
-  "name": "Decline sends as the sheet opens",
-  "file": "stmt/owner.js",
-  "find": "          yes:function(){ makerMove(order,Object.assign({status:'declined'},why.note()),'Order declined.'); }});",
-  "replace": "          yes:function(){}}); makerMove(order,Object.assign({status:'declined'},why.note()),'Order declined.');"
- },
- {
-  "name": "Cancel sends as the sheet opens",
-  "file": "stmt/owner.js",
-  "find": "          yes:function(){ makerMove(order,Object.assign({status:'cancelled'},why.note()),'Order cancelled.'); }});",
-  "replace": "          yes:function(){}}); makerMove(order,Object.assign({status:'cancelled'},why.note()),'Order cancelled.');"
- },
- {
-  "name": "Close sends as the sheet opens",
-  "file": "stmt/owner.js",
-  "find": "            yes:function(){ makerTap(order,'handed',{qty:n,close:true},'Finish sent to the Desk.'); }});",
-  "replace": "            yes:function(){}}); makerTap(order,'handed',{qty:n,close:true},'Finish sent to the Desk.');"
- },
- {
-  "name": "Offer again sends as the sheet opens",
-  "file": "stmt/owner.js",
-  "find": "          yes:function(){ makerTap(order,'again',{stage:stage},'The '+MAKER_AGAIN[stage]+' is sent again.'); }});",
-  "replace": "          yes:function(){}}); makerTap(order,'again',{stage:stage},'The '+MAKER_AGAIN[stage]+' is sent again.');"
- },
- {
-  "name": "a tile does not fill the reason",
-  "file": "stmt/owner.js",
-  "find": "      radio.addEventListener('change',function(){ field.value=w[1]; });",
-  "replace": "      radio.addEventListener('change',function(){});"
- },
- {
-  "name": "typing his own words keeps the tile picked",
-  "file": "stmt/owner.js",
-  "find": "    field.addEventListener('input',function(){ [].forEach.call(grid.querySelectorAll('input'),function(r){ r.checked=false; }); });",
-  "replace": "    field.addEventListener('input',function(){});"
- },
- {
-  "name": "the place line is offered on a collection",
-  "file": "stmt/owner.js",
-  "find": "return w[0]!=='place'||order.mode==='deliver'; })",
-  "replace": "return true; })"
- },
- {
-  "name": "a Decline does not carry the reason",
-  "file": "stmt/owner.js",
-  "find": "makerMove(order,Object.assign({status:'declined'},why.note()),'Order declined.')",
-  "replace": "makerMove(order,{status:'declined'},'Order declined.')"
- },
- {
-  "name": "a Cancel does not carry the reason",
-  "file": "stmt/owner.js",
-  "find": "makerMove(order,Object.assign({status:'cancelled'},why.note()),'Order cancelled.')",
-  "replace": "makerMove(order,{status:'cancelled'},'Order cancelled.')"
- },
- {
-  "name": "Cancel does not say what is paid",
-  "file": "stmt/owner.js",
-  "find": "say:[+order.paid>0?rm(+order.paid)+",
-  "replace": "say:[+order.paid<0?rm(+order.paid)+"
- },
- {
-  "name": "the sheet does not restate the order",
-  "file": "stmt/owner.js",
-  "find": "body:[makerAskRow(order)].concat(",
-  "replace": "body:[].concat("
- },
- {
-  "name": "the one action carries no act",
-  "file": "stmt/owner.js",
-  "find": "actOn(go,'order.ask-go',order.id); ",
-  "replace": ""
- },
- {
-  "name": "the close control carries no act",
-  "file": "stmt/owner.js",
-  "find": " actOn(document.getElementById('ynX'),'order.ask-close',order.id);",
-  "replace": ""
- },
- {
-  "name": "a close is a danger action",
-  "file": "stmt/owner.js",
-  "find": "    if(q.plain) go.classList.remove('salt-ghost--danger');",
-  "replace": ""
- },
- {
-  "name": "Tab inside the sheet misses its field and tiles",
-  "file": "stmt/page.js",
-  "find": "    var f=ynTabs(yn.box), i=f.indexOf(document.activeElement);",
-  "replace": "    var f=[].slice.call(yn.box.querySelectorAll('button')), i=f.indexOf(document.activeElement);"
- },
- {
-  "name": "the control that asks carries no mark for a redraw",
-  "file": "stmt/owner.js",
-  "find": "function makerAskTag(order,btn,kind){ btn.setAttribute('data-yn',makerAskKey(order,kind)); return btn; }",
-  "replace": "function makerAskTag(order,btn,kind){ return btn; }"
- },
- {
-  "name": "the tick's input is 18px",
-  "file": "stmt/page.js",
-  "find": "width:var(--salt-tap);height:var(--salt-tap);margin:0;opacity:0;cursor:pointer}",
-  "replace": "width:18px;height:18px;margin:0;opacity:0;cursor:pointer}"
- },
- {
-  "name": "the tick's input is taken out of the page",
-  "file": "stmt/page.js",
-  "find": "margin:0;opacity:0;cursor:pointer}",
-  "replace": "margin:0;display:none;cursor:pointer}"
- },
- {
-  "name": "the tick's label is not a 44px target",
-  "file": "stmt/page.js",
-  "find": "align-self:flex-start;width:fit-content;min-height:var(--salt-tap);min-width:var(--salt-tap);padding-right:8px;",
-  "replace": "align-self:flex-start;width:fit-content;min-height:0;min-width:0;padding-right:8px;"
- },
- {
-  "name": "Mark as sent is a plain button again",
-  "file": "stmt/owner.js",
-  "find": "var mark=ghost(['Mark as sent','acct.sent']);",
-  "replace": "var mark=el('button',null,'Mark as sent'); mark.setAttribute('data-act','acct.sent');"
- },
- {
-  "name": "an edit put back to what it was offers no read",
-  "file": "stmt/owner.js",
-  "find": "          if(chosen) makerButton(qfigs,['Read the figures again','order.reread'],makerPlacedRead,false);\n",
-  "replace": "\n"
- },
- {
-  "name": "the read offered after an edit does not read",
-  "file": "stmt/owner.js",
-  "find": "          if(chosen) makerButton(qfigs,['Read the figures again','order.reread'],makerPlacedRead,false);\n",
-  "replace": "          if(chosen) makerButton(qfigs,['Read the figures again','order.reread'],function(){},false);\n"
- },
- {
-  "name": "an agreed order keeps Goods in its head",
-  "file": "stmt/owner.js",
-  "find": "var agreed=['acknowledged','ready','done'].indexOf(order.status)>=0,",
-  "replace": "var agreed=false,"
- },
- {
-  "name": "the head drops Says sent",
-  "file": "stmt/owner.js",
-  "find": "if(+order.claimed>0) L.appendChild(ordLine('Says sent',rm(order.claimed),'Waiting for your Received'));",
-  "replace": ""
- },
- {
-  "name": "Money received has no heading",
-  "file": "stmt/owner.js",
-  "find": "        var moneyHead=el('h4','','Money received'); moneyHead.setAttribute('data-sect','money'); moneyHead.tabIndex=-1; card.appendChild(moneyHead);\n",
-  "replace": ""
- },
- {
-  "name": "the reply stands above the money",
-  "file": "stmt/owner.js",
-  "find": "        var moneyHead=el('h4','','Money received'); moneyHead.setAttribute('data-sect','money'); moneyHead.tabIndex=-1; card.appendChild(moneyHead);\n",
-  "replace": "        makerOrderMoves(card,order,false,acts); var moneyHead=el('h4','','Money received'); moneyHead.setAttribute('data-sect','money'); moneyHead.tabIndex=-1; card.appendChild(moneyHead);\n"
- },
- {
-  "name": "the one button does not say its road",
-  "file": "stmt/owner.js",
-  "find": "'Record '+rm(amount.value)+', '+by.value",
-  "replace": "'Record '+rm(amount.value)"
- },
- {
-  "name": "their last line is not drawn",
-  "file": "stmt/owner.js",
-  "find": "    if(theirs) card.appendChild(",
-  "replace": "    if(false) card.appendChild("
- },
- {
-  "name": "cash held leaves the reply live",
-  "file": "stmt/owner.js",
-  "find": "if(!n.hasAttribute('data-maker-cash-undo')&&!n.hasAttribute('data-maker-cash-retry')) n.disabled=true;",
-  "replace": "void 0;"
- },
- {
-  "name": "an agreed order offers cash",
-  "file": "stmt/owner.js",
-  "find": "        if(order.status==='ready'){ makerCashControls(card,order); cashed=true; } else makerPayControl(card,order,false);\n",
-  "replace": "        { makerCashControls(card,order); cashed=true; }\n"
- },
- {
-  "name": "Agree stands in the foot, not at the top",
-  "file": "stmt/owner.js",
-  "find": "          },true); accept.setAttribute('data-accept',''); row3.insertBefore(accept,row3.firstChild);",
-  "replace": "          },true); accept.setAttribute('data-accept',''); acts.insertBefore(accept,acts.firstChild);"
- },
- {
-  "name": "the stand-in for Agree does not ask for the charge",
-  "file": "stmt/owner.js",
-  "find": "pick?'Choose the delivery charge':bad?",
-  "replace": "pick?'Reading the figures':bad?"
- },
- {
-  "name": "the stand-in does not take him to the charge",
-  "file": "stmt/owner.js",
-  "find": "function(){ tf.open=true; if(feeSel&&feeSel.focus) feeSel.focus(); }",
-  "replace": "function(){ tf.open=true; }"
- },
- {
-  "name": "a fold opens by itself",
-  "file": "stmt/owner.js",
-  "find": "d.open=ordFolds[k]==null?!!open:!!ordFolds[k];",
-  "replace": "d.open=true;"
- },
- {
-  "name": "Decline is not a danger ghost",
-  "file": "stmt/owner.js",
-  "find": "dec.classList.add('salt-ghost--danger');",
-  "replace": ""
- },
- {
-  "name": "Ready stays in the foot",
-  "file": "stmt/owner.js",
-  "find": "          var b=makerButton(lead,[m[1],",
-  "replace": "          var b=makerButton(acts,[m[1],"
- },
- {
-  "name": "Handed over stays in the foot",
-  "file": "stmt/owner.js",
-  "find": "var handed=makerButton(lead,['Handed over, '",
-  "replace": "var handed=makerButton(acts,['Handed over, '"
- },
- {
-  "name": "their claim's answer stays below the money",
-  "file": "stmt/owner.js",
-  "find": "          var got=makerButton(lead,[onBook?",
-  "replace": "          var got=makerButton(card,[onBook?"
- },
- {
-  "name": "the main action stands below Goods and Details",
-  "file": "stmt/owner.js",
-  "find": "function leadPlace(){ card.insertBefore(lead,card.querySelector(':scope > .obill')||card.querySelector(':scope > .ordmoney')); }",
-  "replace": "function leadPlace(){ card.appendChild(lead); }"
- },
- {
-  "name": "Decline stands in the sticky foot",
-  "file": "stmt/owner.js",
-  "find": "var dec=makerButton(card.querySelector('.ordrow3')||tail,['Decline'",
-  "replace": "var dec=makerButton(acts,['Decline'"
- },
- {
-  "name": "the track never reaches Ready",
-  "file": "stmt/owner.js",
-  "find": "cur=order.status==='done'?4:movedAll(order)?3:(order.status==='ready'||(+order.moved||0)>0)?2:order.status==='acknowledged'?1:0;",
-  "replace": "cur=order.status==='done'?4:movedAll(order)?3:order.status==='acknowledged'?1:0;"
- },
- {
-  "name": "Salt Admin's chip draws no glyph",
-  "file": "stmt/owner.js",
-  "find": "    s.appendChild(d); c.appendChild(s); c.appendChild(document.createTextNode(st[1])); return c;",
-  "replace": "    c.appendChild(document.createTextNode(st[1])); return c;"
- },
- {
-  "name": "Salt Admin's placed order takes a tick",
-  "file": "stmt/owner.js",
-  "find": "['copper','To agree','dot']",
-  "replace": "['copper','To agree','tick']"
- },
- {
-  "name": "Salt Admin's glyph is read aloud",
-  "file": "stmt/owner.js",
-  "find": "'data-g':k,'aria-hidden':'true',focusable:'false'}",
-  "replace": "'data-g':k,focusable:'false'}"
- },
- {
-  "name": "the card keeps its old bar track, not the Counter marked steps",
-  "file": "stmt/owner.js",
-  "find": "    var ol=el('ol','salt-steps salt-steps--marks ordsteps'); ol.setAttribute('aria-label','Where the goods are');",
-  "replace": "    var ol=el('ol','salt-steps'); ol.setAttribute('aria-label','Where the goods are'); ['Placed','Confirmed','Ready','Collected'].forEach(function(n,i){ ol.appendChild(el('li','salt-steps__step'+(i===0?' salt-steps__step--now':''),n)); });"
- },
- {
-  "name": "Decline goes back to the card's end",
-  "file": "stmt/owner.js",
-  "find": "var dec=makerButton(card.querySelector('.ordrow3')||tail,['Decline','order.decline'],function(){",
-  "replace": "var dec=makerButton(tail,['Decline','order.decline'],function(){"
- },
- {
-  "name": "the terms fold again",
-  "file": "stmt/owner.js",
-  "find": "        var tf={body:el('div','oterms'), open:true};\n        if(inline) card.appendChild(tf.body); else card.insertBefore(tf.body,lead);",
-  "replace": "        var tf=inline?{body:el('div','oterms'), open:true}:ordFold(card,'Change terms','order.terms',order.id,'terms',false);\n        if(inline) card.appendChild(tf.body);"
- },
- {
-  "name": "the terms stand under Agree",
-  "file": "stmt/owner.js",
-  "find": "else card.insertBefore(tf.body,lead);",
-  "replace": "else card.appendChild(tf.body);"
- },
- {
-  "name": "Agree outside the row",
-  "file": "stmt/owner.js",
-  "find": "accept.setAttribute('data-accept',''); row3.insertBefore(accept,row3.firstChild);",
-  "replace": "accept.setAttribute('data-accept',''); lead.insertBefore(accept,lead.firstChild);"
- },
- {
-  "name": "the terms line above the row",
-  "file": "stmt/owner.js",
-  "find": "var row3=el('div','ordrow3'); lead.appendChild(row3);\n",
-  "replace": "var row3=el('div','ordrow3');\n"
- },
- {
-  "name": "the band draws the mark again",
-  "file": "stmt/owner.js",
-  "find": "var whoRow=el('span','ogoods__line'); whoRow.appendChild(productTag(order.product));",
-  "replace": "var whoRow=el('span','ogoods__line'); whoRow.appendChild(bookMark(order.product,28));"
- },
- {
-  "name": "the reply's fold says Answer them",
-  "file": "stmt/owner.js",
-  "find": "ordFold(card,'Answer','order.answer'",
-  "replace": "ordFold(card,'Answer them','order.answer'"
- }
+  {
+    "name": "an order opened reads no preview",
+    "file": "stmt/owner.js",
+    "find": "      if(quoteStart) quoteStart();\n",
+    "replace": "\n"
+  },
+  {
+    "name": "listing the orders reads a preview for each",
+    "file": "stmt/owner.js",
+    "find": "row.setAttribute('data-rowof',e.id); row.setAttribute('aria-label',f.aria);",
+    "replace": "row.setAttribute('data-rowof',e.id); row.setAttribute('aria-label',f.aria); if(e.order&&e.order.status==='placed'&&e.order.mode!=='deliver') refs('/all/maker/orders/'+encodeURIComponent(e.id)+'/preview',{total:Number(e.order.total),delivery:0}).catch(function(){});"
+  },
+  {
+    "name": "an order opened again keeps its earlier figures",
+    "file": "stmt/owner.js",
+    "find": "    [id,id+':again'].forEach(function(k){ delete makerQuotes[k]; delete makerPv[k]; });\n",
+    "replace": "\n"
+  },
+  {
+    "name": "a redraw reads the figures again",
+    "file": "stmt/owner.js",
+    "find": "          if(held&&held.sig===sig&&held.key===makerPlacedKey()) makerPlacedShow(held); else makerPlacedRead();",
+    "replace": "          makerPlacedRead();"
+  },
+  {
+    "name": "a redraw while the read is out asks again",
+    "file": "stmt/owner.js",
+    "find": "          if(!pv||pv.key!==key) pv=makerPv[order.id]={key:key,payload:payload,p:refs(",
+    "replace": "          pv=makerPv[order.id]={key:key,payload:payload,p:refs("
+  },
+  {
+    "name": "a delivery with no charge chosen reads",
+    "file": "stmt/owner.js",
+    "find": "          if(delivery==null){ previewTurn++; makerPlacedSay('Choose the delivery charge, and the figures read themselves.'); return; }",
+    "replace": "          if(false){ previewTurn++; makerPlacedSay('Choose the delivery charge, and the figures read themselves.'); return; }"
+  },
+  {
+    "name": "the Preview button is back",
+    "file": "stmt/owner.js",
+    "find": "figs.appendChild(qsay); figs.appendChild(qfigs);\n",
+    "replace": "figs.appendChild(qsay); figs.appendChild(qfigs); makerButton(card,['Preview','order.preview'],makerPlacedRead,false);\n"
+  },
+  {
+    "name": "an order with a rejected pending row reads nothing on opening",
+    "file": "stmt/owner.js",
+    "find": "    return function(){ var held=makerQuotes[key]; if(held&&held.sig===sig) againShow(held.result); else againRead(); };",
+    "replace": "    return function(){};"
+  },
+  {
+    "name": "Accept stands in the body of the card",
+    "file": "stmt/owner.js",
+    "find": "accept.setAttribute('data-accept',''); row3.insertBefore(accept,row3.firstChild);",
+    "replace": "accept.setAttribute('data-accept',''); card.appendChild(accept);"
+  },
+  {
+    "name": "Decline stands in the body of the card",
+    "file": "stmt/owner.js",
+    "find": "var dec=asRow(makerButton(tail,['Decline the order','order.decline']",
+    "replace": "var dec=asRow(makerButton(card,['Decline the order','order.decline']"
+  },
+  {
+    "name": "Cancel order stands in the body of the card",
+    "file": "stmt/owner.js",
+    "find": "var can=asRow(makerButton(tail,['Cancel the order','order.cancel']",
+    "replace": "var can=asRow(makerButton(card,['Cancel the order','order.cancel']"
+  },
+  {
+    "name": "Ready stands in the body of the card",
+    "file": "stmt/owner.js",
+    "find": "var b=makerButton(mine?lead:stageRows,[m[1],'order.ready-'+m[0]]",
+    "replace": "var b=makerButton(card,[m[1],'order.ready-'+m[0]]"
+  },
+  {
+    "name": "Record handover stands in the body of the card",
+    "file": "stmt/owner.js",
+    "find": "        var handed=makerButton(lead,['Handed over, '+units(order.qty),'order.handed']",
+    "replace": "        var handed=makerButton(card,['Handed over, '+units(order.qty),'order.handed']"
+  },
+  {
+    "name": "Accept again stands in the body of the card",
+    "file": "stmt/owner.js",
+    "find": "      again.setAttribute('data-accept-again',''); acts.insertBefore(again,acts.firstChild);",
+    "replace": "      again.setAttribute('data-accept-again',''); card.appendChild(again);"
+  },
+  {
+    "name": "the stages offered again stay in the foot",
+    "file": "stmt/owner.js",
+    "find": "if(againRows.length){ var al=el('div','salt-settings oagainrows');",
+    "replace": "if(false){ var al=el('div','salt-settings oagainrows');"
+  },
+  {
+    "name": "a stage he rejected is offered again outside the foot",
+    "file": "stmt/owner.js",
+    "find": "      var offer=makerButton(acts,['Send the '+MAKER_AGAIN[stage]+' again'",
+    "replace": "      var offer=makerButton(card,['Send the '+MAKER_AGAIN[stage]+' again'"
+  },
+  {
+    "name": "the answer line stands outside the foot",
+    "file": "stmt/owner.js",
+    "find": "card.appendChild(foot); makerFoot(foot,key);",
+    "replace": "card.appendChild(foot); makerFoot(card,key);"
+  },
+  {
+    "name": "a foot with moves does not stand along the card",
+    "file": "stmt/owner.js",
+    "find": "    if(acts.children.length||pending) foot.classList.add('has');\n",
+    "replace": "\n"
+  },
+  {
+    "name": "cash held leaves the foot live",
+    "file": "stmt/owner.js",
+    "find": "[].forEach.call(card.querySelectorAll('button,input,select'),function(n){\n        if(!n.hasAttribute('data-maker-cash-undo')",
+    "replace": "[].forEach.call(card.querySelectorAll('.ordlead button,.ordlead input,.ordlead select'),function(n){\n        if(!n.hasAttribute('data-maker-cash-undo')"
+  },
+  {
+    "name": "the foot does not stick",
+    "file": "stmt/page.js",
+    "find": ".adm .maker-foot.has{position:sticky;",
+    "replace": ".adm .maker-foot.has{position:static;"
+  },
+  {
+    "name": "the foot sticks under the App bar",
+    "file": "stmt/page.js",
+    "find": "bottom:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px) - 1px);margin:16px -4px -4px;",
+    "replace": "bottom:0;margin:16px -4px -4px;"
+  },
+  {
+    "name": "the card's own foot is not reached from 860px",
+    "file": "stmt/page.js",
+    "find": "@media (min-width:860px){.adm #makerReview .maker-foot.has{bottom:0}}",
+    "replace": "@media (min-width:860px){.adm #makerReview .maker-foot.has{bottom:9px}}"
+  },
+  {
+    "name": "Decline asks a native confirm",
+    "file": "stmt/owner.js",
+    "find": "        makerAsk(order,dec,'decline',{",
+    "replace": "        if(!window.confirm('Decline this order?')) return; makerAsk(order,dec,'decline',{"
+  },
+  {
+    "name": "Cancel asks a native confirm",
+    "file": "stmt/owner.js",
+    "find": "        makerAsk(order,can,'cancel',{",
+    "replace": "        if(!window.confirm('Cancel this order?')) return; makerAsk(order,can,'cancel',{"
+  },
+  {
+    "name": "Close asks a native confirm",
+    "file": "stmt/owner.js",
+    "find": "          makerAsk(order,handed,'close',{",
+    "replace": "          if(!window.confirm('Close this order?')) return; makerAsk(order,handed,'close',{"
+  },
+  {
+    "name": "Offer again asks a native confirm",
+    "file": "stmt/owner.js",
+    "find": "        makerAsk(order,offer,'again-'+stage,{",
+    "replace": "        if(!window.confirm('Offer it again?')) return; makerAsk(order,offer,'again-'+stage,{"
+  },
+  {
+    "name": "Record handover asks a native confirm",
+    "file": "stmt/owner.js",
+    "find": "          if(!handedEnds()){ makerTap(order,'handed',{qty:Number(qty.value)},'Handover sent to the Desk.'); return; }",
+    "replace": "          if(!handedEnds()){ if(!window.confirm('Record the handover?')) return; makerTap(order,'handed',{qty:Number(qty.value)},'Handover sent to the Desk.'); return; }"
+  },
+  {
+    "name": "Decline sends as the sheet opens",
+    "file": "stmt/owner.js",
+    "find": "          yes:function(){ makerMove(order,Object.assign({status:'declined'},why.note()),'Order declined.'); }});",
+    "replace": "          yes:function(){}}); makerMove(order,Object.assign({status:'declined'},why.note()),'Order declined.');"
+  },
+  {
+    "name": "Cancel sends as the sheet opens",
+    "file": "stmt/owner.js",
+    "find": "          yes:function(){ makerMove(order,Object.assign({status:'cancelled'},why.note()),'Order cancelled.'); }});",
+    "replace": "          yes:function(){}}); makerMove(order,Object.assign({status:'cancelled'},why.note()),'Order cancelled.');"
+  },
+  {
+    "name": "Close sends as the sheet opens",
+    "file": "stmt/owner.js",
+    "find": "            yes:function(){ makerTap(order,'handed',{qty:n,close:true},'Finish sent to the Desk.'); }});",
+    "replace": "            yes:function(){}}); makerTap(order,'handed',{qty:n,close:true},'Finish sent to the Desk.');"
+  },
+  {
+    "name": "Offer again sends as the sheet opens",
+    "file": "stmt/owner.js",
+    "find": "          yes:function(){ makerTap(order,'again',{stage:stage},'The '+MAKER_AGAIN[stage]+' is sent again.'); }});",
+    "replace": "          yes:function(){}}); makerTap(order,'again',{stage:stage},'The '+MAKER_AGAIN[stage]+' is sent again.');"
+  },
+  {
+    "name": "a tile does not fill the reason",
+    "file": "stmt/owner.js",
+    "find": "      radio.addEventListener('change',function(){ field.value=w[1]; });",
+    "replace": "      radio.addEventListener('change',function(){});"
+  },
+  {
+    "name": "typing his own words keeps the tile picked",
+    "file": "stmt/owner.js",
+    "find": "    field.addEventListener('input',function(){ [].forEach.call(grid.querySelectorAll('input'),function(r){ r.checked=false; }); });",
+    "replace": "    field.addEventListener('input',function(){});"
+  },
+  {
+    "name": "the place line is offered on a collection",
+    "file": "stmt/owner.js",
+    "find": "return w[0]!=='place'||order.mode==='deliver'; })",
+    "replace": "return true; })"
+  },
+  {
+    "name": "a Decline does not carry the reason",
+    "file": "stmt/owner.js",
+    "find": "makerMove(order,Object.assign({status:'declined'},why.note()),'Order declined.')",
+    "replace": "makerMove(order,{status:'declined'},'Order declined.')"
+  },
+  {
+    "name": "a Cancel does not carry the reason",
+    "file": "stmt/owner.js",
+    "find": "makerMove(order,Object.assign({status:'cancelled'},why.note()),'Order cancelled.')",
+    "replace": "makerMove(order,{status:'cancelled'},'Order cancelled.')"
+  },
+  {
+    "name": "Cancel does not say what is paid",
+    "file": "stmt/owner.js",
+    "find": "say:[+order.paid>0?rm(+order.paid)+",
+    "replace": "say:[+order.paid<0?rm(+order.paid)+"
+  },
+  {
+    "name": "the sheet does not restate the order",
+    "file": "stmt/owner.js",
+    "find": "body:[makerAskRow(order)].concat(",
+    "replace": "body:[].concat("
+  },
+  {
+    "name": "the one action carries no act",
+    "file": "stmt/owner.js",
+    "find": "actOn(go,'order.ask-go',order.id); ",
+    "replace": ""
+  },
+  {
+    "name": "the close control carries no act",
+    "file": "stmt/owner.js",
+    "find": " actOn(document.getElementById('ynX'),'order.ask-close',order.id);",
+    "replace": ""
+  },
+  {
+    "name": "a close is a danger action",
+    "file": "stmt/owner.js",
+    "find": "    if(q.plain) go.classList.remove('salt-ghost--danger');",
+    "replace": ""
+  },
+  {
+    "name": "Tab inside the sheet misses its field and tiles",
+    "file": "stmt/page.js",
+    "find": "    var f=ynTabs(yn.box), i=f.indexOf(document.activeElement);",
+    "replace": "    var f=[].slice.call(yn.box.querySelectorAll('button')), i=f.indexOf(document.activeElement);"
+  },
+  {
+    "name": "the control that asks carries no mark for a redraw",
+    "file": "stmt/owner.js",
+    "find": "function makerAskTag(order,btn,kind){ btn.setAttribute('data-yn',makerAskKey(order,kind)); return btn; }",
+    "replace": "function makerAskTag(order,btn,kind){ return btn; }"
+  },
+  {
+    "name": "the tick's input is 18px",
+    "file": "stmt/page.js",
+    "find": "width:var(--salt-tap);height:var(--salt-tap);margin:0;opacity:0;cursor:pointer}",
+    "replace": "width:18px;height:18px;margin:0;opacity:0;cursor:pointer}"
+  },
+  {
+    "name": "the tick's input is taken out of the page",
+    "file": "stmt/page.js",
+    "find": "margin:0;opacity:0;cursor:pointer}",
+    "replace": "margin:0;display:none;cursor:pointer}"
+  },
+  {
+    "name": "the tick's label is not a 44px target",
+    "file": "stmt/page.js",
+    "find": "align-self:flex-start;width:fit-content;min-height:var(--salt-tap);min-width:var(--salt-tap);padding-right:8px;",
+    "replace": "align-self:flex-start;width:fit-content;min-height:0;min-width:0;padding-right:8px;"
+  },
+  {
+    "name": "Mark as sent is a plain button again",
+    "file": "stmt/owner.js",
+    "find": "var mark=asRow(ghost(['Mark as sent','acct.sent']));",
+    "replace": "var mark=el('button',null,'Mark as sent'); mark.setAttribute('data-act','acct.sent');"
+  },
+  {
+    "name": "an edit put back to what it was offers no read",
+    "file": "stmt/owner.js",
+    "find": "          if(chosen) makerButton(qfigs,['Read the figures again','order.reread'],makerPlacedRead,false);\n",
+    "replace": "\n"
+  },
+  {
+    "name": "the read offered after an edit does not read",
+    "file": "stmt/owner.js",
+    "find": "          if(chosen) makerButton(qfigs,['Read the figures again','order.reread'],makerPlacedRead,false);\n",
+    "replace": "          if(chosen) makerButton(qfigs,['Read the figures again','order.reread'],function(){},false);\n"
+  },
+  {
+    "name": "an agreed order keeps Goods in its head",
+    "file": "stmt/owner.js",
+    "find": "var agreed=['acknowledged','ready','done'].indexOf(order.status)>=0,",
+    "replace": "var agreed=false,"
+  },
+  {
+    "name": "the head drops Says sent",
+    "file": "stmt/owner.js",
+    "find": "if(+order.claimed>0) R.push({k:'Says sent', v:rm(order.claimed), sub:'Waiting for your Received', subCls:'salt-settings__sub--why'});",
+    "replace": ""
+  },
+  {
+    "name": "Money received has no heading",
+    "file": "stmt/owner.js",
+    "find": "moneyHead.tabIndex=-1; money.appendChild(moneyHead); money.appendChild(claims);",
+    "replace": "moneyHead.tabIndex=-1; money.appendChild(claims);"
+  },
+  {
+    "name": "the reply stands above the money",
+    "file": "stmt/owner.js",
+    "find": "    sec.appendChild(rows);\n    card.appendChild(sec);\n",
+    "replace": "    sec.appendChild(rows);\n    card.insertBefore(sec,card.querySelector(':scope > .odecide'));\n"
+  },
+  {
+    "name": "the one button does not say its road",
+    "file": "stmt/owner.js",
+    "find": "'Record '+rm(amount.value)+', '+by.value",
+    "replace": "'Record '+rm(amount.value)"
+  },
+  {
+    "name": "their last line is not drawn",
+    "file": "stmt/owner.js",
+    "find": "var lines=((order&&order.msgs)||[]).filter(function(m){ return m&&m.text; })",
+    "replace": "var lines=((order&&order.msgs)||[]).filter(function(m){ return m&&m.text&&m.by==='desk'; })"
+  },
+  {
+    "name": "cash held leaves the reply live",
+    "file": "stmt/owner.js",
+    "find": "if(!n.hasAttribute('data-maker-cash-undo')&&!n.hasAttribute('data-maker-cash-retry')) n.disabled=true;",
+    "replace": "void 0;"
+  },
+  {
+    "name": "an agreed order offers cash",
+    "file": "stmt/owner.js",
+    "find": "if(order.status==='ready'){ makerCashControls(money,order); cashed=true; } else makerPayControl(money,order,false);",
+    "replace": "{ makerCashControls(money,order); cashed=true; }"
+  },
+  {
+    "name": "Agree stands in the foot, not at the top",
+    "file": "stmt/owner.js",
+    "find": "          },true); accept.setAttribute('data-accept',''); row3.insertBefore(accept,row3.firstChild);",
+    "replace": "          },true); accept.setAttribute('data-accept',''); acts.insertBefore(accept,acts.firstChild);"
+  },
+  {
+    "name": "the stand-in for Agree does not ask for the charge",
+    "file": "stmt/owner.js",
+    "find": "pick?'Choose the delivery charge':bad?",
+    "replace": "pick?'Reading the figures':bad?"
+  },
+  {
+    "name": "the stand-in does not take him to the charge",
+    "file": "stmt/owner.js",
+    "find": "function(){ tf.open=true; if(feeSel&&feeSel.focus) feeSel.focus(); }",
+    "replace": "function(){ tf.open=true; }"
+  },
+  {
+    "name": "Decline is not an ember row",
+    "file": "stmt/owner.js",
+    "find": "      },false),true);\n      makerAskTag(order,dec,'decline');",
+    "replace": "      },false),false);\n      makerAskTag(order,dec,'decline');"
+  },
+  {
+    "name": "Ready stays in the foot",
+    "file": "stmt/owner.js",
+    "find": "var b=makerButton(mine?lead:stageRows,[m[1],",
+    "replace": "var b=makerButton(acts,[m[1],"
+  },
+  {
+    "name": "Handed over stays in the foot",
+    "file": "stmt/owner.js",
+    "find": "var handed=makerButton(lead,['Handed over, '",
+    "replace": "var handed=makerButton(acts,['Handed over, '"
+  },
+  {
+    "name": "their claim's answer stands outside Money received",
+    "file": "stmt/owner.js",
+    "find": "var got=asRow(makerButton(claims,[onBook?",
+    "replace": "var got=asRow(makerButton(card,[onBook?"
+  },
+  {
+    "name": "the main action stands below the stage's rows",
+    "file": "stmt/owner.js",
+    "find": "p.appendChild(lead); p.appendChild(stageRows); }",
+    "replace": "p.appendChild(stageRows); p.appendChild(lead); }"
+  },
+  {
+    "name": "Decline stands in the sticky foot",
+    "file": "stmt/owner.js",
+    "find": "var dec=asRow(makerButton(tail,['Decline the order'",
+    "replace": "var dec=asRow(makerButton(acts,['Decline the order'"
+  },
+  {
+    "name": "the track never reaches Ready",
+    "file": "stmt/page.js",
+    "find": "var cur=o.status==='done'?4:movedAll(o)?3:(o.status==='ready'||(+o.moved||0)>0)?2:o.status==='acknowledged'?1:0;",
+    "replace": "var cur=o.status==='done'?4:movedAll(o)?3:o.status==='acknowledged'?1:0;"
+  },
+  {
+    "name": "Salt Admin's chip draws no glyph",
+    "file": "stmt/owner.js",
+    "find": "    s.appendChild(d); c.appendChild(s); c.appendChild(document.createTextNode(st[1])); return c;",
+    "replace": "    c.appendChild(document.createTextNode(st[1])); return c;"
+  },
+  {
+    "name": "Salt Admin's placed order takes a tick",
+    "file": "stmt/owner.js",
+    "find": "['copper','To agree','dot']",
+    "replace": "['copper','To agree','tick']"
+  },
+  {
+    "name": "Salt Admin's glyph is read aloud",
+    "file": "stmt/owner.js",
+    "find": "'data-g':k,'aria-hidden':'true',focusable:'false'}",
+    "replace": "'data-g':k,focusable:'false'}"
+  },
+  {
+    "name": "the card keeps its old bar track, not the Counter marked steps",
+    "file": "stmt/page.js",
+    "find": "var ol=el('ol','salt-steps salt-steps--marks'); ol.setAttribute('aria-label',names.aria);",
+    "replace": "var ol=el('ol','salt-steps'); ol.setAttribute('aria-label',names.aria);"
+  },
+  {
+    "name": "Decline goes back beside Agree",
+    "file": "stmt/owner.js",
+    "find": "var dec=asRow(makerButton(tail,['Decline the order'",
+    "replace": "var dec=asRow(makerButton(card.querySelector('.ordlead')||tail,['Decline the order'"
+  },
+  {
+    "name": "the terms fold again",
+    "file": "stmt/owner.js",
+    "find": "stageOf('Agree','oagreesec').appendChild(form);",
+    "replace": "var tfd=el('details'); tfd.setAttribute('data-fold','terms'); tfd.appendChild(form); stageOf('Agree','oagreesec').appendChild(tfd);"
+  },
+  {
+    "name": "the terms stand under Agree",
+    "file": "stmt/owner.js",
+    "find": "function stageEnd(){ var p=stage||part(null); p.appendChild(lead); p.appendChild(stageRows); }",
+    "replace": "function stageEnd(){ var p=stage||part(null); p.insertBefore(lead,p.children[1]||null); p.appendChild(stageRows); }"
+  },
+  {
+    "name": "Agree outside the lead",
+    "file": "stmt/owner.js",
+    "find": "accept.setAttribute('data-accept',''); row3.insertBefore(accept,row3.firstChild);",
+    "replace": "accept.setAttribute('data-accept',''); card.insertBefore(accept,card.firstChild);"
+  },
+  {
+    "name": "a terms line restates the band",
+    "file": "stmt/owner.js",
+    "find": "var row3=lead;\n",
+    "replace": "var row3=lead; lead.appendChild(el('p','ordterms','Agree at RM 0'));\n"
+  },
+  {
+    "name": "the band draws the mark again",
+    "file": "stmt/owner.js",
+    "find": "foot:[productTag(order.product), who,",
+    "replace": "foot:[bookMark(order.product,28), who,"
+  },
+  {
+    "name": "the reply's box folds again",
+    "file": "stmt/owner.js",
+    "find": "th.appendChild(quick); th.appendChild(f);",
+    "replace": "var ans=el('details'); ans.setAttribute('data-fold','answer'); ans.appendChild(f); th.appendChild(quick); th.appendChild(ans);"
+  }
 ]

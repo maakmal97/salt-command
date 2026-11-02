@@ -133,23 +133,30 @@ export async function run({ ok, pageWork }) {
       && gP1[0].getAttribute("data-g") === "dot" && gP1[0].classList.contains("salt-status__glyph"),
       "a placed order's chip on Salt Admin leads with the dot, aria-hidden, its word unchanged: " + (chipP1 ? chipP1.outerHTML.slice(0, 160) : "none"));
     /* 25 Oct 2026 (canvas Salt Admin Orders): the band names the book by its typed tag beside the code and draws no mark; the reply's fold says Answer */
-    const bandP1 = p.cardOf("ord-p1").querySelector(".ohead"), ansP1 = p.cardOf("ord-p1").querySelector('details[data-fold="answer"] > summary');
-    ok(!!bandP1.querySelector(".ogoods__line .salt-producttag--salt") && !bandP1.querySelector(".ogoods__tile, svg.psym") && /CX1-ZED/.test(bandP1.querySelector(".ogoods__line").textContent)
-      && !!ansP1 && /^Answer$/.test(ansP1.textContent.replace(/[0-9·]/g, "").trim()),
-      "the band names the book by its typed tag beside the code, no mark, and the reply's fold says Answer: " + (ansP1 ? ansP1.textContent : "none"));
+    /* 2 Nov 2026 (his Orders canvas, page 2): the band's foot holds the typed tag and the code; the Answer fold is gone, its composer stands in view under Messages */
+    const bandP1 = p.cardOf("ord-p1").querySelector(".ohead"), footP1 = bandP1.querySelector(".salt-band__foot"), compP1 = p.cardOf("ord-p1").querySelector('.omsgs form.salt-composer [data-act="order.reply-text"]');
+    ok(!!footP1.querySelector(".salt-producttag--salt") && !bandP1.querySelector(".ogoods__tile, svg.psym") && /CX1-ZED/.test(footP1.textContent)
+      && !!compP1 && !compP1.closest("details") && !p.cardOf("ord-p1").querySelector('details[data-fold="answer"]') && !byAct(d, "order.answer"),
+      "the band names the book by its typed tag beside the code, no mark, and the reply's box stands in view under Messages, no Answer fold: " + (compP1 ? "composer" : "none"));
     /* 18 Oct 2026 (clarity, part 3): the answer leads the card, Agree at the top with its terms beside it; the foot keeps Decline alone, a ghost danger button */
     const leadOf = (id) => p.cardOf(id).querySelector(".ordlead"), termsOf = (id) => (leadOf(id).querySelector(".ordterms") || { textContent: "" }).textContent;
     const tail = (id) => [...p.cardOf(id).querySelectorAll(".ordend [data-act]")].map((e) => e.getAttribute("data-act")).filter((a) => !/[.]cancel-retained$/.test(a));
-    /* 25 Oct 2026 (canvas Salt Admin Orders, his yes to Ask E): the terms stand in view under the track, as beside Needs you, then Agree and Decline in one row of two */
-    const rowOf = (id) => p.cardOf(id).querySelector(".ordlead .ordrow3"), rowActs = (id) => rowOf(id) ? [...rowOf(id).children].filter((e) => !e.hidden).map((e) => e.getAttribute("data-act")) : [];
-    ok(same(moves(), []) && !foot().classList.contains("has") && same(rowActs("ord-p1"), ["order.accept", "order.decline"]) && rowOf("ord-p1").classList.contains("ordrow3--two") && byAct(d, "order.decline", "ord-p1").classList.contains("salt-ghost--danger")
-      && !byAct(d, "order.decline", "ord-p1").closest(".maker-foot") && !p.cardOf("ord-p1").querySelector(".ordend") && !leadOf("ord-p1").querySelector(".ordterms"),
-      "a placed order's Agree and Decline stand in one row of two, Decline a ghost danger button, never in a sticky foot, and no terms line restates the band: " + JSON.stringify([moves(), rowActs("ord-p1")]));
-    const terms = p.cardOf("ord-p1").querySelector(":scope > .oterms");
-    ok(!byAct(d, "order.terms", "ord-p1") && !p.cardOf("ord-p1").querySelector('details[data-fold="terms"]') && !!terms && !!terms.querySelector('[data-act="order.total"]'),
-      "and the terms are in view, no Change terms and no fold: the goods' price stands in the card");
-    ok(!!(p.cardOf("ord-p1").querySelector(".ordlead").compareDocumentPosition(p.cardOf("ord-p1").querySelector(".ordmoney")) & 4) && p.cardOf("ord-p1").querySelector(".ordlead").previousElementSibling === terms
-      && terms.previousElementSibling.classList.contains("salt-steps") && p.cardOf("ord-p1").querySelector(".salt-steps").previousElementSibling.classList.contains("ohead"),
+    /* 2 Nov 2026 (his Orders canvas, page 2): the lead holds the stage's ONE filled pill; every other move is an action row of its stage part (.ostagerows, .oagainrows), and the card's end is an ember row */
+    const leadActs = (id) => [...leadOf(id).querySelectorAll("[data-act]")].filter((e) => !e.hidden).map((e) => e.getAttribute("data-act")).filter((a) => !/[.]cancel-retained$/.test(a));
+    const isRow = (e) => !!e && e.matches(".salt-settings__row.salt-settings__row--action") && !e.matches(".salt-ghost, .salt-pill, .btn");
+    const pillsOf = (id) => [...p.cardOf(id).querySelectorAll(".salt-pill")].filter((b) => !b.hidden);
+    const rowOf = (id) => leadOf(id), rowActs = (id) => leadActs(id);
+    const decl = byAct(d, "order.decline", "ord-p1");
+    ok(same(moves(), []) && !foot().classList.contains("has") && same(rowActs("ord-p1"), ["order.accept"]) && same(pillsOf("ord-p1").map((b) => b.getAttribute("data-act")), ["order.accept"])
+      && isRow(decl) && decl.classList.contains("salt-settings__row--danger") && !decl.closest(".maker-foot") && same(tail("ord-p1"), ["order.decline"]) && decl.parentElement.classList.contains("ordend")
+      && p.cardOf("ord-p1").lastElementChild.previousElementSibling === decl.parentElement && !leadOf("ord-p1").querySelector(".ordterms"),
+      "a placed order's Agree is the card's one filled pill and Decline the order its last row, an ember action row, never in a sticky foot, and no terms line restates the band: " + JSON.stringify([moves(), rowActs("ord-p1"), tail("ord-p1")]));
+    const terms = p.cardOf("ord-p1").querySelector(".oagreesec > .oagree");
+    ok(!byAct(d, "order.terms", "ord-p1") && !p.cardOf("ord-p1").querySelector('details[data-fold="terms"]') && !!terms && !!terms.querySelector('label.salt-settings__row > .salt-settings__label + [data-act="order.total"]'),
+      "and the terms are in view, no Change terms and no fold: the goods' price is a settings row of the card, its input at the right");
+    const oDec = terms.closest(".odecide");
+    ok(!!(leadOf("ord-p1").compareDocumentPosition(p.cardOf("ord-p1").querySelector(".obill")) & 4) && leadOf("ord-p1").previousElementSibling === terms && leadOf("ord-p1").parentElement === terms.closest(".oagreesec")
+      && oDec.previousElementSibling.classList.contains("salt-steps") && p.cardOf("ord-p1").querySelector(".salt-steps").previousElementSibling.classList.contains("ohead") && oDec.nextElementSibling.classList.contains("obill"),
       "and the terms stand under the card's head and its track, Agree under them, ahead of the Bill");
     /* 19 Oct 2026 (his word): the track is the Counter's marked steps, a drawn mark on each of the four, Next on the step to come */
     const trackP1 = p.cardOf("ord-p1").querySelector("ol.salt-steps"), stepsP1 = trackP1 ? [...trackP1.children] : [];
@@ -160,15 +167,17 @@ export async function run({ ok, pageWork }) {
       && stepsP1[0].classList.contains("salt-steps__step--now") && stepsP1[1].classList.contains("salt-steps__step--next") && /Next/.test(stepsP1[1].querySelector(".salt-steps__time").textContent),
       "the card's track is the marked steps, five with Paid fourth, Placed now and Next on Agreed: " + (trackP1 ? trackP1.className + " | " + trackP1.textContent : "none"));
     ok(!foot().contains(byAct(d, "order.accept")) && leadOf("ord-p1").contains(byAct(d, "order.accept")) && rowOf("ord-p1").firstElementChild === byAct(d, "order.accept") && byAct(d, "order.accept").classList.contains("salt-pill")
-      && !!(leadOf("ord-p1").compareDocumentPosition(p.cardOf("ord-p1").querySelector(".maker-fields")) & 2),
-      "Agree is the filled pill first in its row, under the fields it sends, and not in the foot");
+      && !!(leadOf("ord-p1").compareDocumentPosition(p.cardOf("ord-p1").querySelector(".oagree")) & 2),
+      "Agree is the filled pill first in its lead, under the rows it sends, and not in the foot");
     await p.tapRow("ord-p2");
-    ok(same(moves(), []) && rowActs("ord-p2").includes("order.decline") && !byAct(d, "order.accept"), "a delivery with no charge chosen has Decline in the row and no Agree: " + JSON.stringify([moves(), rowActs("ord-p2")]));
+    ok(same(moves(), []) && same(tail("ord-p2"), ["order.decline"]) && isRow(byAct(d, "order.decline", "ord-p2")) && !byAct(d, "order.accept"),
+      "a delivery with no charge chosen has Decline the order as the card's last row and no Agree: " + JSON.stringify([moves(), rowActs("ord-p2"), tail("ord-p2")]));
     const wait = () => leadOf("ord-p2").querySelector("[data-accept-wait]");
-    ok(!!wait() && wait().textContent === "Choose the delivery charge" && !wait().disabled && leadOf("ord-p2").parentNode === p.cardOf("ord-p2"),
+    ok(!!wait() && wait().textContent === "Choose the delivery charge" && !wait().disabled && !!leadOf("ord-p2").closest(".odecide") && p.cardOf("ord-p2").contains(leadOf("ord-p2")),
       "and the lead says Choose the delivery charge, as a button that sends nothing, never a half-filled Agree: " + (wait() || {}).textContent);
     const fold = (id, k) => p.cardOf(id).querySelector('details[data-fold="' + k + '"]');
-    ok(!fold("ord-p2", "terms") && !!fold("ord-p2", "answer") && !fold("ord-p2", "answer").open, "Answer is folded, shut by default, and the terms are in view, never folded");
+    const compP2 = p.cardOf("ord-p2").querySelector('.omsgs form.salt-composer [data-act="order.reply-text"]');
+    ok(!fold("ord-p2", "terms") && !fold("ord-p2", "answer") && !!compP2 && !compP2.closest("details"), "the reply's box stands in view with no Answer fold (2 Nov 2026), and the terms are in view, never folded");
     const postsBefore = p.posts.length; wait().click(); await p.work.quiet();
     ok(d.activeElement === byAct(d, "order.fee", "ord-p2") && p.posts.length === postsBefore, "and the stand-in takes him to the charge, and sends nothing");
     const pickFee = async (v) => { const sel = byAct(d, "order.fee", "ord-p2"); sel.value = v; sel.dispatchEvent(new d.defaultView.Event("change", { bubbles: true })); await p.work.quiet(); };
@@ -177,20 +186,32 @@ export async function run({ ok, pageWork }) {
     await pickFee("15");
     await pickFee("10");
     await p.tapRow("ord-p4");
-    ok(same(moves(), ["order.withdraw-offer"]) && same(tail("ord-p4"), ["order.decline"]), "an order with an offer out has Withdraw the offer in its foot, Decline at the card's end, and no Accept: " + JSON.stringify([moves(), tail("ord-p4")]));
+    /* 2 Nov 2026: Take back the offer is a row of the stage part (.ostagerows), not of a foot */
+    const wd = byAct(d, "order.withdraw-offer", "ord-p4");
+    ok(same(moves(), []) && isRow(wd) && !!wd.closest(".ostagerows") && !wd.closest(".maker-foot") && same(tail("ord-p4"), ["order.decline"]) && !byAct(d, "order.accept"),
+      "an order with an offer out has Take back the offer as a row of its stage, Decline the order at the card's end, and no Accept: " + JSON.stringify([moves(), tail("ord-p4")]));
     await part("todo");
     await p.tapRow("ord-a1");
-    ok(same(moves(), []) && same(tail("ord-a1"), ["order.cancel"]) && same([...leadOf("ord-a1").querySelectorAll("[data-act]")].map((e) => e.getAttribute("data-act")).filter((a) => /^order\.(ready|claim)/.test(a) && !/cancel-retained$/.test(a)), ["order.ready-collect", "order.ready-deliver", "order.claim-received", "order.claim-not-found", "order.claim-received", "order.claim-not-found"]),
-      "an agreed order's foot holds Cancel order, and its one main action, Ready to collect or deliver, stands at the top with their claim's answer: " + JSON.stringify([moves(), [...leadOf("ord-a1").querySelectorAll("[data-act]")].map((e) => e.getAttribute("data-act"))]));
-    ok(!foot().contains(byAct(d, "order.received")) && !foot().contains(byAct(d, "order.amend")) && !foot().contains(byAct(d, "order.claim-received")),
-      "while its claims, Received and Amend stay in the body of the card");
+    /* 2 Nov 2026: the lead holds the one pill, their way's Ready; the other Ready is a row beside Change the order; their claims are rows of Money received; Cancel the order is the last row */
+    const a1rows = [...p.cardOf("ord-a1").querySelectorAll(".ostagerows > [data-act], .oclaims > [data-act]")].map((e) => e.getAttribute("data-act")).filter((a) => /^order\.(ready|claim)/.test(a) && !/cancel-retained$/.test(a));
+    ok(same(moves(), []) && same(tail("ord-a1"), ["order.cancel"]) && isRow(byAct(d, "order.cancel", "ord-a1")) && same(leadActs("ord-a1"), ["order.ready-collect"]) && byAct(d, "order.ready-collect").classList.contains("salt-pill")
+      && same(a1rows, ["order.ready-deliver", "order.claim-received", "order.claim-not-found", "order.claim-received", "order.claim-not-found"]),
+      "an agreed order's one main action, Ready to collect, is the filled pill at the top, Ready to deliver a row beside it, their claim's answer rows of Money received, and Cancel the order its last row: " + JSON.stringify([moves(), leadActs("ord-a1"), a1rows]));
+    ok(!foot().contains(byAct(d, "order.received")) && !foot().contains(byAct(d, "order.amend")) && !foot().contains(byAct(d, "order.claim-received")) && !!byAct(d, "order.amend").closest(".ostagerows") && !!byAct(d, "order.claim-received").closest(".oclaims"),
+      "while its claims, Received and Amend stay in the body of the card, rows of its parts");
     await p.tapRow("ord-a2");
-    ok(moves()[0] === "order.accept-again" && moves().includes("order.again-pay") && moves().includes("order.again-drop-cancel") && moves().includes("order.again-drop-move") && moves().includes("order.again-drop-amend") && !moves().includes("order.again-drop") && !moves().includes("order.again-drop-pay") && tail("ord-a2").includes("order.cancel") && !moves().includes("order.ready-collect") && foot().classList.contains("has"),
-      "an order with a rejected pending row has Accept again first in its foot, which stands along the card, with the stages he rejected offered again: " + JSON.stringify(moves()));
+    /* 2 Nov 2026: Agree again's pill stays in the foot; the stages he rejected, offered again, and Not needed are rows of .oagainrows in his decision */
+    const again2 = [...p.cardOf("ord-a2").querySelectorAll(".odecide > .oagainrows > [data-act]")].map((e) => e.getAttribute("data-act")).filter((a) => !/[.]cancel-retained$/.test(a));
+    ok(same(moves(), ["order.accept-again"]) && again2.includes("order.again-pay") && again2.includes("order.again-drop-cancel") && again2.includes("order.again-drop-move") && again2.includes("order.again-drop-amend") && !again2.includes("order.again-drop") && !again2.includes("order.again-drop-pay")
+      && [...p.cardOf("ord-a2").querySelectorAll(".oagainrows > [data-act]")].filter((e) => !/cancel-retained/.test(e.getAttribute("data-act"))).every(isRow) && tail("ord-a2").includes("order.cancel") && !byAct(d, "order.ready-collect") && foot().classList.contains("has"),
+      "an order with a rejected pending row has Accept again first in its foot, which stands along the card, with the stages he rejected offered again as rows of his decision: " + JSON.stringify([moves(), again2]));
     await part("ready");
     await p.tapRow("ord-r1");
-    ok(same(moves(), []) && same(tail("ord-r1"), ["order.cancel"]) && [byAct(d, "order.handed"), byAct(d, "order.handed-units"), byAct(d, "order.handed-rest")].every((e) => !!e && leadOf("ord-r1").contains(e)),
-      "a ready order's foot holds Cancel order, and Handed over with its units and the tiles that make it a close stand at the top: " + JSON.stringify(moves()));
+    /* 2 Nov 2026: the Handover part holds the units (a settings row, Handed over) and the tiles that make it a close, then the one pill; Cancel the order is the last row */
+    const hp = byAct(d, "order.handed-units", "ord-r1").closest(".odecide__part");
+    ok(same(moves(), []) && same(tail("ord-r1"), ["order.cancel"]) && [byAct(d, "order.handed"), byAct(d, "order.handed-units"), byAct(d, "order.handed-rest")].every((e) => !!e && hp.contains(e)) && leadOf("ord-r1").contains(byAct(d, "order.handed"))
+      && byAct(d, "order.handed-units", "ord-r1").closest("label.salt-settings__row") && !!(byAct(d, "order.handed-units").compareDocumentPosition(byAct(d, "order.handed")) & 4),
+      "a ready order's Cancel the order is its last row, and Handed over with its units and the tiles that make it a close stand at the top, the units first: " + JSON.stringify(moves()));
     byAct(d, "order.pay", "ord-r1").click(); await p.work.quiet();
     ok(!!foot().querySelector("[data-maker-say]") && /Choose Bank or Cash first/.test(foot().querySelector("[data-maker-say]").textContent) && foot().lastElementChild === foot().querySelector("[data-maker-say]"),
       "the card's answer lands in its foot, under its moves: " + (foot().querySelector("[data-maker-say]") || {}).textContent);
@@ -352,10 +373,11 @@ export async function run({ ok, pageWork }) {
     byAct(d, "acct.open", "4567-89ab").click(); await p.work.quiet();
     const sent = byAct(d.getElementById("aopen"), "acct.sent");
     const ruleOf = cssRules(p.w), prop = (r, name) => (r ? r.getPropertyValue(name) : "");
-    const ghost = ruleOf(".salt-ghost")[0];
-    ok(!!sent && sent.tagName === "BUTTON" && sent.textContent === "Mark as sent" && !sent.hidden && sent.classList.contains("salt-ghost") && !sent.closest("label.tick")
-      && !d.querySelector("#aopen input[type=checkbox]") && !!ghost && prop(ghost, "min-height") === "var(--salt-tap)" && prop(ghost, "min-width") === "var(--salt-tap)",
-      "Sent is no checkbox: Mark as sent is a ghost button of the 44px token while it is not sent: " + (sent && sent.outerHTML));
+    /* 2 Nov 2026 (his Orders canvas, page 2): Mark as sent is a row of the account's Sign-in list, the whole row its button, the system's 56px row (over the 44px target) */
+    const rowRule = ruleOf(".salt-settings__row")[0];
+    ok(!!sent && sent.tagName === "BUTTON" && sent.textContent === "Mark as sent" && !sent.hidden && sent.matches(".salt-settings__row.salt-settings__row--action") && !sent.matches(".salt-ghost, .salt-pill") && !sent.closest("label.tick")
+      && !d.querySelector("#aopen input[type=checkbox]") && !!rowRule && parseFloat(prop(rowRule, "min-height")) >= 44 && sent.parentElement.classList.contains("salt-settings"),
+      "Sent is no checkbox: Mark as sent is an action row of at least 44px while it is not sent: " + (sent && sent.outerHTML));
     const tick = ruleOf(".adm .atick")[0], input = ruleOf(".adm .atick input")[0], drawn = ruleOf(".adm .atick .tickbox")[0];
     ok(!!input && prop(input, "width") === "var(--salt-tap)" && prop(input, "height") === "var(--salt-tap)" && prop(input, "position") === "absolute" && !/none|hidden/.test(prop(input, "display") + prop(input, "visibility")),
       "the input measures the tap: the 44px token both ways, laid over the drawn box and never taken out of the page: " + (input && input.cssText));
@@ -377,11 +399,12 @@ export async function run({ ok, pageWork }) {
     const before = (a, b) => !!a && !!b && !!(a.compareDocumentPosition(b) & w.Node.DOCUMENT_POSITION_FOLLOWING);
     const typed = (el, v) => { el.value = v; el.dispatchEvent(new w.Event("input", { bubbles: true })); };
     /* 18 Oct 2026: the head's money is the customer's lines, a label and its figure a row */
-    const head = (id) => [...cardOf(id).querySelectorAll(".ordmoney .salt-ledger__line")].map((l) => [...l.children].map((c) => c.textContent).join(" ")).join(" ");
-    const money = (c) => [...c.querySelectorAll("h4")].find((h) => h.textContent === "Money received");
+    /* 2 Nov 2026 (his Orders canvas, page 2): the Bill is a settings list, a row a label (its second line apart) and its figure at the right; Money received's head is an h2 */
+    const head = (id) => [...cardOf(id).querySelectorAll(".ordmoney > .salt-settings__row")].map((l) => [l.querySelector(".salt-settings__label"), l.querySelector(".salt-settings__value")].map((c) => (c ? c.textContent : "")).join(" ")).join(" ");
+    const money = (c) => c.querySelector('h2.salt-settings__head[data-sect="money"]');
     byAct(d, "nav.orders").click(); await p.work.quiet();
     await tapRow("ord-p1");
-    ok(/^GoodsAt the list price RM 200\.00 Total RM 200\.00$/.test(head("ord-p1")) && !/Owed/.test(head("ord-p1")) && !cardOf("ord-p1").querySelector(".rdet"),
+    ok(/^Goods RM 200\.00 Total RM 200\.00$/.test(head("ord-p1")) && /At the list price/.test(cardOf("ord-p1").querySelector(".ordmoney .ocost").textContent) && !/Owed/.test(head("ord-p1")) && !cardOf("ord-p1").querySelector(".rdet"),
       "a placed order's Bill is Goods at the list price and the Total, with no figure owed: " + head("ord-p1"));
     await part("todo"); await tapRow("ord-r1");
     const r1 = cardOf("ord-r1");
@@ -400,8 +423,9 @@ export async function run({ ok, pageWork }) {
     ok(byAct(r2, "order.pay").textContent === "Record RM 50.00, cash", "and the figure and the road once both are there: " + byAct(r2, "order.pay").textContent);
     typed(cashIn, "");
     ok(byAct(r2, "order.pay").textContent === "Record payment", "a figure cleared takes the figure off the button");
-    ok(![...r2.querySelectorAll(".maker-facts")].some((x) => /They wrote/.test(x.textContent)), "an order with no message of theirs draws no line of theirs");
-    const said = [...r1.querySelectorAll(".maker-facts")].find((x) => /They wrote/.test(x.textContent));
+    /* 2 Nov 2026: their last line is a bubble of the Messages thread (theirs on the left), no longer a facts line above the Answer fold */
+    ok(!r2.querySelector(".omsgs .salt-bubble--theirs"), "an order with no message of theirs draws no line of theirs");
+    const said = r1.querySelector(".omsgs .salt-bubble--theirs");
     ok(!!said && /Can you come after five\?/.test(said.textContent) && before(byAct(r1, "order.pay-amount"), said) && before(said, byAct(r1, "order.reply-text")),
       "their last line stands above the reply, below the money: " + (said && said.textContent));
     typed(cashIn, "50");
@@ -412,7 +436,7 @@ export async function run({ ok, pageWork }) {
     byAct(d, "order.cash-undo").click(); await p.work.quiet();
     await part("todo"); await tapRow("ord-a1");
     const a1 = cardOf("ord-a1");
-    ok(!byAct(a1, "order.pay-by", "cash") && !!byAct(a1, "order.claim-received") && before(byAct(a1, "order.claim-received"), money(a1)) && before(money(a1), byAct(a1, "order.pay-amount")) && before(byAct(a1, "order.pay"), byAct(a1, "order.reply-text")),
-      "an agreed order answers their claim at the top, then its Money received holds Bank and no cash, with the reply below");
+    ok(!byAct(a1, "order.pay-by", "cash") && !!byAct(a1, "order.claim-received") && before(money(a1), byAct(a1, "order.claim-received")) && !!byAct(a1, "order.claim-received").closest(".oclaims") && before(byAct(a1, "order.claim-received"), byAct(a1, "order.pay-amount")) && before(byAct(a1, "order.pay"), byAct(a1, "order.reply-text")),
+      "an agreed order's Money received answers their claim in rows under its head, then holds Bank and no cash, with the reply below (2 Nov 2026: the claim rows are of the part, no longer above it)");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 }

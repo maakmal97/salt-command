@@ -63,10 +63,11 @@ export async function run({ ok, pageWork }) {
 
     /* B. CHANGE THE ORDER UNDER THE HEAD */
     c = cardOf("ord-a1");
-    const amend = byAct(c, "order.amend"), money = [...c.querySelectorAll("h4")].find((h) => h.textContent === "Money received");
+    /* 2 Nov 2026 (his Orders canvas, page 2): the head is the band and its steps; Change the order is a row of the stage's own list (Ready), the Bill is the record under his decision */
+    const amend = byAct(c, "order.amend"), money = c.querySelector('h2.salt-settings__head[data-sect="money"]');
     const firstField = c.querySelector("input, select, textarea");
-    ok(!!amend && before(c.querySelector(".ordmoney"), amend) && before(amend, money) && before(amend, firstField) && !c.querySelector(".maker-foot").contains(amend),
-      "B1: Change the order stands under the head, above the money and every field of the card, never in the foot");
+    ok(!!amend && !!amend.closest(".ostagerows") && before(c.querySelector(".ohead"), amend) && before(c.querySelector(".ordsteps"), amend) && before(amend, money) && before(amend, firstField) && !c.querySelector(".maker-foot").contains(amend),
+      "B1: Change the order stands under the head, a row of its stage, above the money and every field of the card, never in the foot");
     amend.click(); await p.work.quiet();
     const units = sheetOf() && byAct(sheetOf(), "order.amend-units");
     if (units) units.value = "3";

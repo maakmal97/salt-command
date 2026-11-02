@@ -277,7 +277,8 @@ export async function run({ ok }) {
     ok(await wait(() => posts.some((p) => p.kind === "withdraw")) && /^[A-Za-z0-9_-]{16,64}$/.test(posts.find((p) => p.kind === "withdraw").body.rid), "Withdraw posts under its tap's own id");
     await new Promise((r) => setTimeout(r, 250));
     choose(feeSel(A), "10");
-    const tot = acard(A).querySelector('.maker-fields input[type="number"]'); tot.value = "125"; tot.dispatchEvent(new Ev("input", { bubbles: true })); tot.dispatchEvent(new Ev("change", { bubbles: true }));
+    /* 2 Nov 2026 (his Orders canvas, page 2): Goods is a settings row of Agree, no .maker-fields label above the field; found by its act */
+    const tot = acard(A).querySelector('input[data-act="order.total"]'); tot.value = "125"; tot.dispatchEvent(new Ev("input", { bubbles: true })); tot.dispatchEvent(new Ev("change", { bubbles: true }));
     await wait(() => button(A, "Ask them"));
     ok(!!button(A, "Ask them, RM 135"), "a raise previewed is sent for their yes, never accepted, its pill saying the goods and the delivery together");
     button(A, "Ask them").click();

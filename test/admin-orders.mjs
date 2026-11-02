@@ -227,8 +227,10 @@ export async function run({ ok, pageWork }) {
       && !byAct(d, "order.open", "ord-p2").hasAttribute("aria-current"),
     "a row opens that order's card alone, marks itself current and stands the list and the card side by side: " + JSON.stringify(p.cardsIn()));
     /* 25 Oct 2026 (Ask E): the terms in view lead, then Agree and Decline in one row; Change terms and its fold are gone */
-    const want = ["order.total", "order.accept", "order.decline", "order.answer", "order.reply-text", "order.quick-reply",
-      "order.quick-reply", "order.quick-keep", "order.reply", "order.no-reply"];
+    /* 2 Nov 2026 (his Orders canvas, page 2): his decision (Goods, Agree), then the Messages thread open (quick replies, the box, Send, Save this line, No reply needed; no Answer fold),
+       then This customer, and Decline the order last */
+    const want = ["order.total", "order.accept", "order.quick-reply", "order.quick-reply", "order.reply-text", "order.reply",
+      "order.quick-keep", "order.no-reply", "order.customer", "order.decline"];
     const got = p.acts("ord-p1");
     ok(same(got, want), "the card has the controls it had, less the reason, which is asked on the Decline's Sheet, and Details for its reference: " + JSON.stringify(got));
     /* his decision 6 of 11 Oct 2026: the card reads its own preview on opening, once, and has no Preview button */

@@ -147,7 +147,8 @@ export async function run({ ok }) {
       "each chip leads with one aria-hidden glyph: a dot while placed, a tick once confirmed or ready, a double tick once handed over or complete, a cross once ended: " + JSON.stringify(gotG));
 
     const screen = async (o) => { R0[o.id].click(); await until(() => S.d.querySelector('#pOrder .oscreen[data-order="' + o.id + '"]')); return S.d.querySelector('#pOrder .oscreen[data-order="' + o.id + '"]'); };
-    const parts = (s) => ({ head: t(s.querySelector('[data-part="head"] .state')), when: t(s.querySelector('[data-part="when"]')),
+    /* 2 Nov 2026 (his Orders canvas, page 2): the state word is the band's chip, the heading that repeated it gone */
+    const parts = (s) => ({ head: t(s.querySelector('[data-part="head"] .salt-band__head .salt-status')), when: t(s.querySelector('[data-part="when"]')),
       steps: [...s.querySelectorAll('[data-part="steps"] li .salt-steps__name')].map(t).join("|"), money: t(s.querySelector('[data-part="money"]')), hist: t(s.querySelector('[data-part="hist"]')) });
     const sA = parts(await screen(A)), sB = parts(await screen(B)), sH = parts(await screen(H)), sD2 = parts(await screen(D2)), sE = parts(await screen(E)), sN = parts(await screen(N));
     ok(sA.head === "Placed" && /^Waiting for us to confirm\. You will see it change here\./.test(sA.when) && sA.steps === "Placed|Confirmed|Ready|Paid|Collected",
