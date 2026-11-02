@@ -76,6 +76,9 @@ export async function run({ ok }) {
     if (room) await call("0000-0002", "/orders/" + room.id + "/cancel", { action: "cancel", rid: "surface-cancel-0002-padded" });
     const admin = await s.owner("/all/maker/customers/0000-0002/orders", rice());
     const ab = await admin.json(), a6 = counts();
+    const mine6 = (await exampleAccount(s.env, "0000-0002")).orders.find((o) => o.id === (ab.order || {}).id);
+    ok(!!mine6 && (mine6.history || [])[0] && mine6.history[0].by === "desk",
+      "v1377: Salt Admin's practice Place is stamped his, so it reads Placed for you there as on a real account: " + JSON.stringify(mine6 && mine6.history && mine6.history[0]));
     ok(admin.status === 200 && (await exampleAccount(s.env, "0000-0002")).orders.some((o) => o.id === (ab.order || {}).id) && a6.ev === b6.ev && a6.ord === b6.ord && a6.mark === null,
       "Salt Admin placing for a test account writes to its fixture too, and the book is untouched: " + JSON.stringify([admin.status, ab.error, b6, a6]));
   } finally { s.close(); }

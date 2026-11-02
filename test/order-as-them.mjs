@@ -87,11 +87,12 @@ export async function run({ ok }) {
   await kv.put("push:" + U + ":k", JSON.stringify({ endpoint: "https://push.example/" + U, at: "2026-10-01T00:00:00Z", keys: ph.keys }));
   const realF = globalThis.fetch, hit = [];
   globalThis.fetch = async (url, init) => { hit.push(init.body); return new Response("", { status: 201 }); };
-  let j7;
-  try { j7 = await (await place(line())).json(); } finally { globalThis.fetch = realF; }
+  let j7, j7b;
+  const once = line();
+  try { j7 = await (await place(once)).json(); j7b = await (await place(once)).json(); } finally { globalThis.fetch = realF; }
   const news7 = hit[0] ? await ph.read(hit[0]) : null;
-  ok(hit.length === 1 && news7 && news7.k === "placed" && news7.o === j7.order.id && SW.NEWS.placed === W.WORDS.en["news.placed"] && !!W.WORDS.en["news.placed.b"],
-    "A7 his Place tells their phone once, sealed, as Order placed for you, naming the order: " + JSON.stringify([hit.length, news7]));
+  ok(hit.length === 1 && j7b.order.id === j7.order.id && news7 && news7.k === "placed" && news7.o === j7.order.id && SW.NEWS.placed === W.WORDS.en["news.placed"] && !!W.WORDS.en["news.placed.b"],
+    "A7 his Place tells their phone once, sealed, as Order placed for you, naming the order, and a replay of the same request tells nobody: " + JSON.stringify([hit.length, news7]));
 }
 
 /* a phone: its keys as the page files them, and RFC 8291's receiving side to read what is sealed to it (as test/pool-wake.mjs) */

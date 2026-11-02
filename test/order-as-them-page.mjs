@@ -18,7 +18,9 @@ export async function run({ ok, pageWork }) {
   const opened = { ok: true, byMaster: true, session: "", assoc: false, card: null, wrapMaster: await C.wrapKey("fixture-master", ck),
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-11-01", label: "November", body: "<p>Statement</p>" }] })),
     prices: Object.assign({ at: list.at, week: list.week.monday, digest: list.digest }, await C.encryptWith(ck, JSON.stringify(list))) };
-  const extra = (route) => route === "/open" ? opened
+  let refuseOpen = 0;
+  const extra = (route) => route === "/open" && refuseOpen > 0 ? (refuseOpen--, { refuse: "Busy, try again." }) : route === "/open" ? opened
+    : route === "/all/maker/slip/key" ? { ok: true, key: { kty: "EC", crv: "P-256", x: "eA", y: "eQ" } }
     : route === "/all/maker/customers/" + U1 + "/orders" ? { ok: true, order: placed }
     : route === "/all/orders/" + U1 ? { ok: true, orders: [placed], claims: [], links: [], max: 0 } : undefined;
   const openAs = async (p, act) => {
@@ -40,6 +42,13 @@ export async function run({ ok, pageWork }) {
       "B1 Order for them opens their own page with New order and says he is ordering for them; the old box is gone: " + JSON.stringify([!!nb, lead(p)]));
     nb.click(); await p.work.quiet();
     ok(!p.d.getElementById("oAddNote") && !p.d.getElementById("oSay"), "B2 the sheet has no note on Order as them");
+    const way = p.d.querySelector("[data-k='mode:1']");
+    if (way) { way.click(); await p.work.quiet(); }
+    const slips = p.wire.map((x) => x.split(" ")[0]).filter((r) => /slip/.test(r));
+    ok(slips.includes("/all/maker/slip/key") && !slips.includes("/slip/key") && !!p.d.querySelector(".opin") && !p.d.getElementById("spAdd"),
+      "B8 on Deliver the exact spot is offered, its key read through his route, and no saved spot of theirs is read or kept on his device: " + JSON.stringify([slips, !!p.d.querySelector(".opin")]));
+    const back = p.d.querySelector("[data-k='mode:0']");
+    if (back) { back.click(); await p.work.quiet(); }
     const go = p.d.getElementById("oGo");
     go.click(); await p.work.quiet();
     ok(!p.d.getElementById("oAskGo") && !!p.d.getElementById("oPlace"), "B3 the check offers Place and no Negotiate");
@@ -58,6 +67,19 @@ export async function run({ ok, pageWork }) {
     await openAs(p, "acct.view-as");
     ok(!p.d.getElementById("oNew") && /Read only/.test(lead(p)), "B5 View as them stays read only: no New order, the read-only line: " + lead(p));
   } catch (e) { ok(false, "View as them stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+
+  /* B9: an Order for them whose open was refused leaves nothing behind: an account then opened at the door is read only */
+  p = await richOwnerPage({ pageWork, extra });
+  try {
+    refuseOpen = 1;
+    enter(p.d, "customers", "accounts"); await p.work.quiet();
+    byAct(p.d, "acct.open", U1).click(); await p.work.quiet();
+    byAct(p.d.getElementById("aopen"), "acct.order-for").click(); await p.work.quiet();
+    const f = p.d.getElementById("f"), un = p.d.getElementById("un"), pw = p.d.getElementById("pw");
+    un.value = U1; pw.value = "fixture-master";
+    f.dispatchEvent(new p.w.Event("submit", { bubbles: true, cancelable: true })); await p.work.quiet();
+    ok(!p.d.getElementById("oNew") && /Read only/.test(lead(p)), "B9 a refused Order for them leaves no ordering for the next open at the door: " + lead(p));
+  } catch (e) { ok(false, "the refused open stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
 
   /* B7: Salt Admin's Orders row of an order he placed, still placed, says You placed */
   p = await richOwnerPage({ pageWork, extra, review: (j) => Object.assign({}, j, { orders: j.orders.concat([placed]) }) });

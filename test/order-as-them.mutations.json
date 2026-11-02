@@ -9,7 +9,9 @@
  {"name": "the practice surface places for anyone", "file": "stmt/maker.js", "find": "op.kind === \"thread\" || op.kind === \"place\") && !isTest(op.u)", "replace": "op.kind === \"thread\") && !isTest(op.u)"},
  {"name": "the public key is not on the practice surface", "file": "stmt/maker.js", "find": "place: [\"POST\"], \"slip-pub\": [\"GET\"] };", "replace": "place: [\"POST\"] };"},
  {"name": "the sealed vault key is on the practice surface", "file": "stmt/maker.js", "find": "place: [\"POST\"], \"slip-pub\": [\"GET\"] };", "replace": "place: [\"POST\"], \"slip-pub\": [\"GET\"], \"slip-key\": [\"GET\"] };"},
- {"name": "his Place wakes nobody", "file": "stmt/maker.js", "find": "      if (!isTest(op.u)) await wakeCustomer(env, op.u, { k: \"placed\", o: result.order.id });\n", "replace": ""},
+ {"name": "his Place wakes nobody", "file": "stmt/maker.js", "find": "      if (!isTest(op.u) && !result.again) await wakeCustomer(env, op.u, { k: \"placed\", o: result.order.id });   /* a replay of the same request wakes nobody */\n", "replace": ""},
  {"name": "his Place wakes in another kind", "file": "stmt/maker.js", "find": "await wakeCustomer(env, op.u, { k: \"placed\", o: result.order.id });", "replace": "await wakeCustomer(env, op.u, { k: \"confirmed\", o: result.order.id });"},
- {"name": "the banner kind is not the service worker's", "file": "stmt/sw.js", "find": "\"corrected\", \"point-moved\", \"placed\"];", "replace": "\"corrected\", \"point-moved\"];"}
+ {"name": "the banner kind is not the service worker's", "file": "stmt/sw.js", "find": "\"corrected\", \"point-moved\", \"placed\"];", "replace": "\"corrected\", \"point-moved\"];"},
+ {"name": "a replay wakes them again", "file": "stmt/maker.js", "find": "if (!isTest(op.u) && !result.again) await wakeCustomer(", "replace": "if (!isTest(op.u)) await wakeCustomer("},
+ {"name": "the book road forgets it was a replay", "file": "stmt/orders.js", "find": "    return r.again ? { order: r.order, again: true } : { order: r.order };", "replace": "    return { order: r.order };"}
 ]

@@ -728,11 +728,11 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
       const body = tp.body;
       if (isTest(op.u) && body.pin) delete body.pin;
       /* a test account's order goes to its fixture on this road too, never the book (the test surface, Ask 4) */
-      const result = isTest(op.u) ? await examplePlace(env, op.u, body) : await placeOrder(env, op.u, body, "desk");
+      const result = isTest(op.u) ? await examplePlace(env, op.u, body, "desk") : await placeOrder(env, op.u, body, "desk");
       if (!result.order) return json({ ok: false, ...result }, result.status || 400);
       if (tp.pin && !isTest(op.u)) await keepPin(env, op.u, tp.pin, result.order.pin);
       /* his answer C: their phone is told, in fixed words, once the order is recorded; a practice account wakes nobody */
-      if (!isTest(op.u)) await wakeCustomer(env, op.u, { k: "placed", o: result.order.id });
+      if (!isTest(op.u) && !result.again) await wakeCustomer(env, op.u, { k: "placed", o: result.order.id });   /* a replay of the same request wakes nobody */
       return json({ ok: true, order: customerView(result.order) });
     }
     if (op.kind === "review") {

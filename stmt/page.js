@@ -4932,7 +4932,8 @@ const CLIENT_JS = `
     B.appendChild(oChoice(tw('sh.reach'),[['collect',tw('sh.collect')],['deliver',tw('sh.deliver')]],draft.mode,'mode',
       function(v){ draft.mode=v; sheetDraw(); }));
     /* v694: a delivery says roughly where it is going, in his words a general location; never an address */
-    var SL=draft.mode==='deliver'&&!draft.pool&&!draft.amend?spotsRead():null;
+    /* v1377: saved spots stay on their phone (Batch C), so Order as them asks the area and the exact spot afresh and keeps none on his */
+    var SL=draft.mode==='deliver'&&!draft.pool&&!draft.amend&&!act?spotsRead():null;
     /* 2 Nov 2026: with one spot saved there is nothing to choose between, so it is picked (his report that Deliver would not
        progress: Review waited on a tap nothing asked for); two or more still open with none picked (Batch C, his answer 4) */
     if(SL&&SL.length===1&&!draft.spot) spotPick(SL[0]);
@@ -6675,7 +6676,7 @@ const CLIENT_JS = `
   function slipKeyLoad(){
     if(SLIPKEY!==undefined||ro()) return;
     SLIPKEY=null;   /* asked once a visit */
-    api('/slip/key').then(function(r){ var k=r.body&&r.body.ok&&r.body.key; if(!k) return; SLIPKEY=k; if(PS&&PS.step==='check') drawPay(); if(osh&&(draft.step==='form'||draft.step==='spot')) sheetDraw(); });
+    (act?actKey():api('/slip/key')).then(function(r){ var k=r.body&&r.body.ok&&r.body.key; if(!k) return; SLIPKEY=k; if(PS&&PS.step==='check') drawPay(); if(osh&&(draft.step==='form'||draft.step==='spot')) sheetDraw(); });
   }
   /* 2 Nov 2026: Place asks again when the visit's one ask brought no key (api answers a failure, it never throws) */
   async function slipKeyNow(){ if(ro()) return; var r=act?await actKey():await api('/slip/key'), k=r.body&&r.body.ok&&r.body.key; if(k) SLIPKEY=k; }
@@ -7595,6 +7596,8 @@ const CLIENT_JS = `
   document.getElementById('f').addEventListener('submit', async function(ev){
     ev.preventDefault();
     var u=norm(un.value), pass=OWNER?pw.value.trim():canonPass(pw.value);
+    /* v1377: Order for them's wish is taken by this open alone, so one refused leaves nothing for the next at the door */
+    var acting=actWant; actWant=false;
     var bad=function(f,t){ say(t,'bad'); f.setAttribute('aria-invalid','true'); f.classList.add('salt-field__input--error'); try{ f.focus(); }catch(e){} };
     if(!OWNER&&unfit(un.value,8,'username')){ bad(un,unfit(un.value,8,'username')); return; }
     if(!u){ bad(un,tw('door.needUn')); return; }
@@ -7647,6 +7650,7 @@ const CLIENT_JS = `
     done();
     /* used, so it goes: a phone that lapses later opens the signed-out Sheet with the username, never the password */
     pw.value=''; showPw(false);
+    actWant=acting;
     enter(u, body, b, x, ck, !!(outSheet&&!outSheet.hidden));
     if(!(await follow(stale))) return;
     if(keep) await remember(u, ck);

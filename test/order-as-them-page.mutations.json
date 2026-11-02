@@ -10,5 +10,8 @@
  {"name": "his Place carries the note field", "file": "stmt/page.js", "find": "      if(act) delete body.note;   /* v1377: his Place carries no note */\n", "replace": ""},
  {"name": "his route is asked another account", "file": "stmt/owner.js", "find": "refs('/all/maker/customers/'+encodeURIComponent(u)+'/orders', body)", "replace": "refs('/all/maker/customers/'+encodeURIComponent(u+'x')+'/orders', body)"},
  {"name": "his order is not said on their card", "file": "stmt/page.js", "find": "b.push(tw(o.history&&o.history[0]&&o.history[0].by==='desk'?'why.forYou':'why.placed'));", "replace": "b.push(tw('why.placed'));"},
- {"name": "his row does not say he placed it", "file": "stmt/owner.js", "find": "st==='placed'&&o.history&&o.history[0]&&o.history[0].by==='desk'?'You placed':'';", "replace": "'';"}
+ {"name": "his row does not say he placed it", "file": "stmt/owner.js", "find": "st==='placed'&&o.history&&o.history[0]&&o.history[0].by==='desk'?'You placed':'';", "replace": "'';"},
+ {"name": "the spot's key is read on their road", "file": "stmt/page.js", "find": "    (act?actKey():api('/slip/key')).then(", "replace": "    api('/slip/key').then("},
+ {"name": "his device reads their saved spots", "file": "stmt/page.js", "find": "draft.mode==='deliver'&&!draft.pool&&!draft.amend&&!act?spotsRead():null;", "replace": "draft.mode==='deliver'&&!draft.pool&&!draft.amend?spotsRead():null;"},
+ {"name": "a refused open leaves the wish for the door", "file": "stmt/page.js", "find": "    var acting=actWant; actWant=false;\n", "replace": "    var acting=actWant;\n"}
 ]
