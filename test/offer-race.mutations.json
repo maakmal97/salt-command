@@ -118,5 +118,11 @@
   "file": "stmt/words.js",
   "find": "\"e.offerChanged\": \"this offer has changed; look at the new one\"",
   "replace": "\"e.offerChanged\": \"there is no offer open on this order\""
+ },
+ {
+  "name": "R16: a refused tap's words stand under an offer withdrawn since",
+  "file": "stmt/page.js",
+  "find": "np.withdrawn':'np.taken')));\n    if(tp.k==='price'&&tp.t&&p.state==='offered'&&!lapsed) w.appendChild(statusLine(tp.t));",
+  "replace": "np.withdrawn':'np.taken')));\n    if(tp.k==='price'&&tp.t) w.appendChild(statusLine(tp.t));"
  }
 ]

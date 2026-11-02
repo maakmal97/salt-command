@@ -1522,7 +1522,9 @@ exists the page says notifications are not switched on.
   open offer freezes it (their amend and cancel, his decline and cancel: `offerOpen`); the lapse and the size are read at
   the take. Limits: two asks open an account, none while a claim of theirs waits, none for a friend (a `-R` bucket) or on a
   sheet; while the overdue gate is on the page closes the sheet, Negotiate with it (the Worker cannot read the sealed
-  `pay`). Their view of it is `priceView`: {state, total, delivery: null, until}. The accepted price stays on that order.
+  `pay`). Their view of it is `priceView`: {state, id, total, delivery: null, until}. Their Yes or No thanks names that `id`, and the order
+  book refuses one naming an offer he has since replaced (`offerChanged`, 3 Nov 2026); a page from before names none and answers the
+  open offer. The accepted price stays on that order.
 - **His Accept, for their yes** (version 2, his decisions of 10 Oct 2026). `needsYes` decides it: goods above what they
   placed it at (to the sen), or a window other than the one they chose. Never his first delivery charge, never a window on an
   order asked for ASAP, never a lower price. Accept with either is refused (409, `needsYes`), and the card, or

@@ -6147,6 +6147,7 @@ const CLIENT_JS = `
   function oOfferOpen(o){ var p=o.price; return !!p&&p.state==='offered'&&o.status==='placed'&&!!p.until&&new Date().toISOString()<=String(p.until); }
   function oPrice(o){
     var w=el('div','oprice'), p=o.price; if(!p||o.status!=='placed') return w;
+    /* 3 Nov 2026 (Fable): a tap's words here answer an open offer, so they go once it is withdrawn, lapsed or answered */
     var lapsed=p.state==='offered'&&!oOfferOpen(o), tp=oTap(o);
     /* VERSION 2 (10 Oct 2026): HIS ACCEPT FOR THEIR YES, the whole order as he would agree it: the goods beside what they placed
        it at, his delivery charge and the window. Yes takes it; No thanks withdraws the order, at no cost */
@@ -6167,7 +6168,7 @@ const CLIENT_JS = `
         }
       }
       else w.appendChild(el('p','sub2',tw(lapsed?'np.cLapsed':p.state==='withdrawn'?'np.cWithdrawn':'np.cTaken')));
-      if(tp.k==='price'&&tp.t) w.appendChild(statusLine(tp.t));
+      if(tp.k==='price'&&tp.t&&p.state==='offered'&&!lapsed) w.appendChild(statusLine(tp.t));
       return w;
     }
     if(p.state==='asked') w.appendChild(el('p','salt-insight',tw('np.asked')));
@@ -6183,7 +6184,7 @@ const CLIENT_JS = `
       }
     }
     else w.appendChild(el('p','sub2',tw(lapsed?'np.lapsed':p.state==='passed'?'np.passed':p.state==='withdrawn'?'np.withdrawn':'np.taken')));
-    if(tp.k==='price'&&tp.t) w.appendChild(statusLine(tp.t));
+    if(tp.k==='price'&&tp.t&&p.state==='offered'&&!lapsed) w.appendChild(statusLine(tp.t));
     return w;
   }
   async function offerAnswer(o,how){

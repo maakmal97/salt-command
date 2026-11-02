@@ -580,7 +580,7 @@ export const offerOpen = (o, at) => !!(o && o.price && o.price.state === "offere
   && String(at || new Date().toISOString()) <= String(o.price.offer.until));
 /** An ask still waiting on his answer or on theirs: asked, or offered and open. */
 export const askOpen = (o, at) => !!(o && o.price && o.price.from !== "accept" && OPEN_STATES.includes(o.status) && (o.price.state === "asked" || offerOpen(o, at)));
-/** What the customer reads of a negotiation, his whitelist: {state, total, delivery: null, until}, delivery being set at the
+/** What the customer reads of a negotiation, his whitelist: {state, id, total, delivery: null, until}, delivery being set at the
  *  acknowledgement as ever. Never a floor, a cost, a margin, a digest, a drift or anything else of the desk's. */
 export const priceView = (p) => {
   if (!p || typeof p !== "object") return null;
