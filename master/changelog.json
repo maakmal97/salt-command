@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1375",
+  "d": "02 Nov 2026",
+  "t": "DELIVER WITH ONE SAVED SPOT: REVIEW IS READY",
+  "n": [
+   "<b>THE ONLY SPOT IS PICKED.</b> A customer with exactly one saved spot who chooses Deliver now has it picked as the sheet opens, so Review is live at once; before, Review waited on a tap nothing asked for and the order could not go on. With two or three saved spots none is picked, as Counter Batch C settled.",
+   "Counter page only: no route, price, body or stored shape changed."
+  ]
+ },
+ {
   "v": "v1374",
   "d": "02 Nov 2026",
   "t": "ORDERS ON SALT ADMIN: ROWS THAT FIT, CHIPS AND COUNTS THAT AGREE",
