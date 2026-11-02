@@ -59,7 +59,7 @@ import { nextRid } from "./rid.mjs";
 import * as ENGINE_APPLY from "../engine/apply.mjs";
 const { STATEMENT_KINDS } = ENGINE_APPLY;
 import { userFor, usersJson } from "./stmt-crypto.mjs";
-import { freeSpares, oneCodeEach } from "./stmt-pool.mjs";
+import { freeSpares, oneCodeEach, POOL_LOW, POOL_SIZE } from "./stmt-pool.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const argv = process.argv.slice(2);
@@ -101,6 +101,11 @@ const r2 = (v) => +(+v).toFixed(2);
    already has a sealed record behind it and the publish in this same run opens it. The binding is the one
    line in _users.json, so it lives in the repo, and nothing here needs a key. With none free it mints a bare
    username as before, and the laptop's next update makes the account. */
+/* plan version 4, part 4a (his answer E, a walk-in account always ready): a binding that leaves fewer than POOL_LOW free says so, with the one line
+   that makes POOL_SIZE again, so the next walk-in is never left without one; Salt Admin's Needs you says the same from the publish's count */
+export function poolNote(bound, left) {
+  return bound > 0 && left < POOL_LOW ? `  note  ${left} ready account${left === 1 ? "" : "s"} left after this Add ID: node tools/stmt-account.mjs --pool on the laptop makes ${POOL_SIZE} again` : "";
+}
 export function mintUsernames(users, staged, folded, spares) {
   const minted = [];
   const free = (spares || []).slice();
@@ -319,6 +324,8 @@ if (isMain) {
       + (bound.length ? `; ${bound.join(", ")} on a spare account, which opens at this run's publish` : ""));
     const waiting = minted.filter((c) => !bound.includes(c));
     if (waiting.length) console.log(`  note  no spare account was free for ${waiting.join(", ")}: the account is made at the next laptop update`);
+    const low = poolNote(bound.length, freeSpares(STMTS, users).length);
+    if (low) console.log(low);
     /* v628: a rename reaches three files beyond the book: the statement key, a place override and the suite */
     const pairs = res.renames.flatMap((x) => x.pairs);
     if (pairs.length) {

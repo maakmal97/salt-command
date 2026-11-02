@@ -17867,7 +17867,7 @@ await (async () => {
     await kv87.put("u:aaaa-bbbb", "{}"); await kv87.put("u:cccc-dddd", "{}");
     await kv87.put("roster", JSON.stringify([{ code: "CX0-AA", username: "aaaa-bbbb" }, { code: "CX1-BB", username: "cccc-dddd" }]));
     await kv87.put("sheet", JSON.stringify({ at: now87.toISOString(), issue: "2026-09-01",
-      accounts: [{ code: "CX0-AA", username: "aaaa-bbbb", issued: "2026-09-01", t: { owed: 272, toGet: 0, refund: 0, pend: 0 }, flag: "owes" }] }));
+      accounts: [{ code: "CX0-AA", username: "aaaa-bbbb", issued: "2026-09-01", t: { owed: 272, toGet: 0, refund: 0, pend: 0 }, flag: "owes" }], spares: 2 }));
     await kv87.put("seen:aaaa-bbbb", JSON.stringify({ first: "2026-09-02T01:00:00Z", last: "2026-09-14T09:00:00Z", opens: 3, issued: "2026-09-01" }));
     const env87 = { STMT: kv87, STMT_MASTER: "mp87", ACCESS_TEAM: TEAM87, ACCESS_AUD: AUD87 };
     const get87 = async (path, tok) => stmtWorker.fetch(new Request("https://k7m3p2.example" + path, tok ? { headers: { "cf-access-jwt-assertion": tok } } : {}), env87);
@@ -17885,6 +17885,7 @@ await (async () => {
       "with Access it answers the account list, each with its word and when it was last opened");
     ok(a1 && a1.t === null && a1.flag === null && a1.seen === null,
       "an account the publish has no row for is still listed, and says nothing rather than guessing");
+    ok(js87.spares === 2, "plan version 4, part 4a: and the free spare accounts as the last publish counted them, for Needs you's warning: " + JSON.stringify(js87.spares));
     const nope = await get87("/all/nope", tok87), plain = await get87("/nope");
     ok(nope.status === 404 && plain.status === 404 && (await nope.text()) === (await plain.text()),
       "and an unknown path past the check answers the site's usual 404, byte for byte");
@@ -25652,6 +25653,10 @@ await (async () => {
       && JSON.stringify(plan.spares) === JSON.stringify([uSp]),
       "it is on no list: not his sheet, not the roster or the desk's map, not the unmatched warning; the plan counts it apart: "
       + JSON.stringify({ sheet: plan.sheet.map((a) => a.username), unmatched: plan.unmatched, spares: plan.spares }));
+    /* plan version 4, part 4a: the sheet record carries the free count for Salt Admin's warning, a number and no username */
+    const sheetPut = plan.puts.find((y) => y.key === "sheet"), sheetDoc = sheetPut ? JSON.parse(sheetPut.value) : null;
+    ok(!!sheetDoc && sheetDoc.spares === 1 && !JSON.stringify(sheetDoc).includes(uSp),
+      "the sheet record counts the free spares for Salt Admin's warning, naming none: " + JSON.stringify(sheetDoc && sheetDoc.spares));
     const { freeSpares: fs141 } = await import("../tools/stmt-pool.mjs");
     const orph = putOf(plan, uOrph);
     ok(!!orph && !("spare" in orph) && !plan.spares.includes(uOrph) && plan.unmatched.includes(uOrph)
@@ -48540,6 +48545,11 @@ await (async () => {
 section("v1388 One order stream: one sheet with one delivery is one trip, its delivery on its first line, one day, agreed in one request (3d)");
 await (async () => {
   await (await import("./order-stream-v5.mjs")).run({ ok });
+})();
+
+section("v1389 One order stream, version 4: a walk-in account always ready, Needs you saying when fewer than three are left (4a)");
+await (async () => {
+  await (await import("./order-stream-v6.mjs")).run({ ok, pageWork });
 })();
 
 section("Counter Batch C: the seal carries the spot's name and unit, a unit alone sealed as its own shape, nothing in the clear (P6)");

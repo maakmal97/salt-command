@@ -1,0 +1,3 @@
+[
+ {"name": "the Worker drops the count", "file": "stmt/worker.js", "find": "    spares: sheet && Number.isInteger(sheet.spares) ? sheet.spares : null,\n", "replace": ""}
+]

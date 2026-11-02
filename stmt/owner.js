@@ -26,7 +26,7 @@ export const OWNER_JS = `
   var makerGeo=${MAKER_GEO_JS};
   var mHome=document.getElementById('mHome'), oAccts=document.getElementById('oAccts'),
       oLinks=document.getElementById('oLinks'), aopen=document.getElementById('aopen'),
-      sheet=null, sheetAt=null, sheetRows=[], sheetIssue=null, cards=null, sheetBusy=false;
+      sheet=null, sheetAt=null, sheetRows=[], sheetIssue=null, cards=null, sheetBusy=false, sheetSpares=null;
   /* 11 Oct 2026: EVERY CONTROL CARRIES A STABLE data-act, "<place>.<thing>", named by what the control does and never by its words, so a
      later change of label, class or layout leaves whatever finds a control by its act where it was (docs/STATEMENTS.md). A control drawn
      once for each item of a list also carries the item's id as data-key. Where a helper makes the control, its label may be
@@ -187,8 +187,9 @@ export const OWNER_JS = `
     try{
       var j=await refs('/all/sheet');
       nGot('sheet');
-      if(!changed('sheet',[j.accounts,j.desk,j.issue])&&quiet===true) return;
+      if(!changed('sheet',[j.accounts,j.desk,j.issue,j.spares])&&quiet===true) return;
       sheet={}; sheetAt=j.at||null; sheetRows=j.accounts||[]; sheetIssue=j.issue||null;
+      sheetSpares=typeof j.spares==='number'&&j.spares>=0?j.spares:null;
       sheetRows.forEach(function(a){ sheet[a.username]=a; });
       drawRoster(); drawTest(); drawNeeds(); drawNeedOpen(true);
       if(aOpen) openCard(aOpen);
@@ -4005,6 +4006,11 @@ export const OWNER_JS = `
       var catalog=context.catalog||{}, tradeSection=makerForm('entry');
       tradeSection.appendChild(el('h3',null,'Sale or purchase'));
       tradeSection.appendChild(el('p','msg','Goods and delivery are entered separately.'));
+      /* plan version 4, part 4b (his answer of 03 Nov 2026, "Remove it now"): A NEW SALE IS PLACED ON THEIR OWN PAGE, Order for them with Handed over and
+         paid now, so with no row chosen this form records a purchase alone; a sale's row still changes here. The server's road stays, unreached, as
+         recovery, as the raw queue does */
+      var newSaleNote=el('p','salt-settings__foot','A new sale is placed on their own page: open their account under Customers, then Order for them.');
+      newSaleNote.setAttribute('data-new-sale',''); tradeSection.appendChild(newSaleNote);
       box.appendChild(tradeSection);
       var direction=makerTilesIn(tradeSection,['Type','record.trade.direction'],[{value:'sale',label:'Sale'},{value:'purchase',label:'Purchase'}]);
       var tradeProduct=makerTilesIn(tradeSection,['Book','record.trade.book'],[]), tradeParty=actOn(el('input','fld salt-field__input mwho'),'record.trade.party'), whoList=el('datalist');
@@ -4218,6 +4224,7 @@ export const OWNER_JS = `
         if(tradePending) return;
         if(tradeEditing){ tradePending=true; try{ await submitEdit(send); } catch(error){ refusal(tradeAnswer,error); } tradePending=false; return; }
         var isSale=direction.value==='sale';
+        if(isSale){ tradeAnswer.textContent='A new sale is placed on their own page: Order for them.'; return; }   /* plan version 4, part 4b */
         var body={product:tradeProduct.value,party:tradeParty.value,date:tradeDate.value,
           qty:tradeQty.value===''?null:Number(tradeQty.value),total:tradeTotal.value===''?null:Number(tradeTotal.value),
           cash:tradeCash.value===''?null:Number(tradeCash.value),movedUnits:tradeMoved.value===''?null:Number(tradeMoved.value),
@@ -4287,6 +4294,8 @@ export const OWNER_JS = `
       function tradeControls(){ return [tradeProduct,tradeParty,tradeDate,tradeQty,tradeTotal,carriage,handover,tradeMoved,tradeCash,tradeStream,tradeAssoc,tradeDown]; }
       function editDraw(){
         var r=tradeEditing, word=r&&r.direction==='BUY'?'purchase':'sale';
+        direction.hidden=!r; newSaleNote.hidden=!!r;
+        if(!r&&direction.value!=='purchase'){ direction.value='purchase'; fillTradeChoices(); }
         direction.disabled=!!r; tripList.hidden=!!r; tripNote.hidden=!!r;
         coverChoices.forEach(function(c){ var row=c.check.closest('.maker-cover-row'); if(row) row.hidden=!!r; });
         tradeControls().forEach(function(c){ c.disabled=!!(r&&r.cancelledRow); });
@@ -4334,7 +4343,7 @@ export const OWNER_JS = `
         tradeAt=null; tradeSignature=''; tradeAnswer.textContent=''; editDraw(); readTrade();
       }
       editPick.addEventListener('change',function(){ if(editPick.value) editLoad(editPick.value); else editClear(); });
-      tradeEditPick=function(rid){ return editLoad(rid); }; fillEditPick();
+      tradeEditPick=function(rid){ return editLoad(rid); }; fillEditPick(); editDraw();
       async function submitEdit(send){
         var r=tradeEditing, sale=r.direction==='SELL', same=function(a,b){ return Math.abs((+a||0)-(+b||0))<0.005; };
         if(r.cancelledRow){
@@ -7205,6 +7214,14 @@ export const OWNER_JS = `
   }
   /* 28 OCT 2026 (his word): A RED SUITE IS THE DESK INFORMING HIM, never his entry to fix. cloud-commit writes it as the refusal suite:<version> and clears
      every one on the next green suite (tools/drafts.mjs --clear-suite-notices), so it is one FYI line, the newest version alone, with no button */
+  /* plan version 4, part 4a (his answer E, walk-in ready): A WALK-IN TAKES THE NEXT READY ACCOUNT at Add ID, so Needs you says when fewer than three are
+     left (tools/stmt-pool.mjs POOL_LOW), as the last publish counted them; the laptop's pool makes ten again. FYI: nothing to tap here */
+  var POOL_LOW=3;
+  function poolNeed(n){
+    var t=n===0?'No ready accounts left':n+' ready account'+(n===1?'':'s')+' left';
+    return item('watch','watch','Accounts','x:pool', sheetAt||'', {who:'Accounts', title:t, what:t, counts:false,
+      why:'A walk-in takes one at Add ID, so run the pool on the laptop to make ten again.', open:(wide()?function(){}:null)});
+  }
   function suiteRow(r){ return /^suite:/.test(String(r&&r.id||'')); }
   function suiteNeed(rows){
     var r=rows.slice().sort(function(a,b){ return String(a.seenAt||'')<String(b.seenAt||'')?1:-1; })[0], v=String(r.id).slice(6);
@@ -7474,6 +7491,7 @@ export const OWNER_JS = `
     if(reds.length) L.push(suiteNeed(reds));
     (makerData&&makerData.queue||[]).filter(function(e){ return e.state==='refused'; }).forEach(function(e){ L.push(entryNeed(e, 'q:'+e.id)); });
     if(unreadableKeys().length) L.push(unreadableNeed(unreadableKeys()));
+    if(sheetSpares!=null&&sheetSpares<POOL_LOW) L.push(poolNeed(sheetSpares));
     if(owed) owed.money.forEach(function(m){ if(m&&m.rows&&m.rows.length) L.push(moneyNeed(m)); });
     if(owed) owed.goods.forEach(function(r){ if(r&&r.rid) L.push(goodsNeed(r)); });
     unsentList().forEach(function(u){ L.push(unsentNeed(u)); });

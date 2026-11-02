@@ -2390,6 +2390,15 @@ on its own (`tripStmts` leaves `orderId` entries alone), its words say so, and a
 `site`). Said, not changed: a first line cancelled after it was agreed takes the delivery with it, and the lines agreed at nought then carry
 none (an Amend of one of them restores it); each line agreed wakes the customer once, so a sheet of three rings three times.
 
+**Walk-in ready** (plan version 4, his answer E: everyone has an account, a walk-in account always ready). At the stall he adds the customer at
+Add ID (name and locality, his passphrase); the fold binds the next free spare account (D15), the run's publish opens it, and Show a code signs
+their phone in. The publish counts the free spares into the `sheet` record (`spares`, a number and no username), `/all/sheet` answers it, and
+Salt Admin's Needs you shows one FYI card, Accounts, when fewer than `POOL_LOW` (3) are left; the fold says the same after a binding that leaves
+fewer (`poolNote`), with the line that makes `POOL_SIZE` (10) again. **Record's new sale is retired** (his answer of 03 Nov 2026, "Remove it
+now"): with no row chosen, Record's Sale or purchase form records a purchase alone and says a new sale is placed on their own page (Order for
+them, with Handed over and paid now); a sale's row still changes there; Gift, Redeem, loans and the stock count stay. The server's
+`/inputs/sale` road stays, unreached from Salt Admin, as recovery, as the raw queue does.
+
 Customer amendments use the customer's session at `POST /orders/<id>/amend`, not an Admin route.
 The replacement is checked against their own open order and carried over the private bridge to the
 atomic order book; missing bridge configuration fails closed.

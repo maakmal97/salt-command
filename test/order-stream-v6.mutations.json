@@ -1,0 +1,14 @@
+[
+ {"name": "the warning never shows", "file": "stmt/owner.js", "find": "    if(sheetSpares!=null&&sheetSpares<POOL_LOW) L.push(poolNeed(sheetSpares));", "replace": ""},
+ {"name": "the warning shows at three", "file": "stmt/owner.js", "find": "sheetSpares<POOL_LOW) L.push", "replace": "sheetSpares<=POOL_LOW) L.push"},
+ {"name": "a publish with no count warns of none left", "file": "stmt/owner.js", "find": "    if(sheetSpares!=null&&sheetSpares<POOL_LOW)", "replace": "    if(sheetSpares==null||sheetSpares<POOL_LOW)"},
+ {"name": "the count is not read", "file": "stmt/owner.js", "find": "      sheetSpares=typeof j.spares==='number'&&j.spares>=0?j.spares:null;\n", "replace": ""},
+ {"name": "none left reads as a number", "file": "stmt/owner.js", "find": "var t=n===0?'No ready accounts left':", "replace": "var t="},
+ {"name": "the card asks a tap", "file": "stmt/owner.js", "find": "why:'A walk-in takes one at Add ID, so run the pool on the laptop to make ten again.', open:(wide()?function(){}:null)});", "replace": "why:'A walk-in takes one at Add ID, so run the pool on the laptop to make ten again.', open:wide()?function(){}:null}, function(c){ mainButton(c,'Check','need.check','x:pool',function(){}); });"},
+ {"name": "the card is To do", "file": "stmt/owner.js", "find": "return item('watch','watch','Accounts','x:pool',", "replace": "return item('now','watch','Accounts','x:pool',"},
+ {"name": "the fold never says the pool is low", "file": "tools/fold.mjs", "find": "  return bound > 0 && left < POOL_LOW ?", "replace": "  return false ?"},
+ {"name": "the fold says so with nothing bound", "file": "tools/fold.mjs", "find": "  return bound > 0 && left < POOL_LOW ?", "replace": "  return left < POOL_LOW ?"},
+ {"name": "Record keeps the new sale", "file": "stmt/owner.js", "find": "        direction.hidden=!r; newSaleNote.hidden=!!r;\n        if(!r&&direction.value!=='purchase'){ direction.value='purchase'; fillTradeChoices(); }\n", "replace": ""},
+ {"name": "a forced sale is sent", "file": "stmt/owner.js", "find": "        if(isSale){ tradeAnswer.textContent='A new sale is placed on their own page: Order for them.'; return; }   /* plan version 4, part 4b */\n", "replace": ""},
+ {"name": "Type stays hidden on a sale's row", "file": "stmt/owner.js", "find": "        direction.hidden=!r; newSaleNote.hidden=!!r;", "replace": "        direction.hidden=true; newSaleNote.hidden=!!r;"}
+]

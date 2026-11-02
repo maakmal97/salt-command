@@ -187,7 +187,8 @@ export async function planPublish(root, key, now, existingKeys, storedIssue, pri
     return { code, username: rec.u, issued: rec.issued || null, t, flag: reviewFlag(t), pwMaster: rec.pwMaster || null };
   }).filter(Boolean).sort((a, b) => a.code.localeCompare(b.code));
   if (r.records.length) {
-    puts.push({ key: "sheet", value: JSON.stringify({ at: new Date(now || Date.now()).toISOString(), issue: issued, accounts: sheet }) });
+    /* plan version 4, part 4a (walk-in ready): how many spare accounts are free, a count and nothing else, for Salt Admin's warning under POOL_LOW */
+    puts.push({ key: "sheet", value: JSON.stringify({ at: new Date(now || Date.now()).toISOString(), issue: issued, accounts: sheet, spares: spares.size }) });
   }
   /* v691: the associates' report card rides the same bulk put, so it lands or fails with the
      records rather than in a write of its own. Given only when the desk was opened for prices. */

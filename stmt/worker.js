@@ -1362,6 +1362,8 @@ async function ownerSheet(env, origin) {
      may not have been open since */
   const touched = marks ? marks.touched : null;
   return { ok: true, at: sheet ? sheet.at || null : null, issue, month, accounts: out,
+    /* plan version 4, part 4a: the free spare accounts as the last publish counted them, or null from a publish before it */
+    spares: sheet && Number.isInteger(sheet.spares) ? sheet.spares : null,
     desk: desk ? { n: +desk.n || 0, at: desk.at || null, moved: !!(touched && desk.at && String(touched) > String(desk.at)) } : null };
 }
 
