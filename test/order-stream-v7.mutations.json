@@ -1,0 +1,16 @@
+[
+ {"name": "anyone may ask for a join link", "file": "stmt/worker.js", "find": "  if (!acct || acct.assoc !== true) return notFound();\n  if (m === \"GET\") return json({ ok: true, joins:", "replace": "  if (!acct) return notFound();\n  if (m === \"GET\") return json({ ok: true, joins:"},
+ {"name": "a link is open at mint", "file": "stmt/join.js", "find": "made: new Date().toISOString(), approved: false,", "replace": "made: new Date().toISOString(), approved: true,"},
+ {"name": "the page is served while shut", "file": "stmt/worker.js", "find": "const joinServes = (r) => !!r && r.approved === true && r.declined !== true", "replace": "const joinServes = (r) => !!r && r.declined !== true"},
+ {"name": "the page is served when spent", "file": "stmt/worker.js", "find": "[\"open\", \"sent\", \"added\", \"keyed\"].includes(r.state);", "replace": "[\"open\", \"sent\", \"added\", \"keyed\", \"spent\"].includes(r.state);"},
+ {"name": "the slip key goes out while shut", "file": "stmt/worker.js", "find": "    if (m !== \"GET\" || !joinOpen(rec)) return no();", "replace": "    if (m !== \"GET\") return no();"},
+ {"name": "a second form is taken", "file": "stmt/join.js", "find": "  if (!joinOpen(rec)) return { error: \"shut\" };", "replace": "  if (!rec) return { error: \"shut\" };"},
+ {"name": "the key goes to any nonce", "file": "stmt/join.js", "find": "  if ((await nonceHashOf(nonce)) !== rec.nonceHash) return null;\n", "replace": ""},
+ {"name": "the key is handed twice", "file": "stmt/join.js", "find": "  delete rec.key; rec.state = \"spent\";", "replace": "  rec.state = \"keyed\";"},
+ {"name": "his list carries the nonce's hash", "file": "stmt/join.js", "find": "delete o.key; delete o.nonceHash; return o;", "replace": "delete o.key; return o;"},
+ {"name": "the seal is kept after his Add ID", "file": "stmt/join.js", "find": "  delete rec.seal;   /* opened and filed", "replace": "  /* opened and filed"},
+ {"name": "a hand-over for any account", "file": "stmt/worker.js", "find": "(await roster(env)).some((x) => x.username === u && x.code === rec.code))", "replace": "(await roster(env)).some((x) => x.username === u))"},
+ {"name": "the associate sees the code", "file": "stmt/join.js", "find": "export const joinMine = (origin, r) => ({ id: r.id, made: r.made || null,", "replace": "export const joinMine = (origin, r) => ({ id: r.id, code: r.code, made: r.made || null,"},
+ {"name": "declined reads as waiting", "file": "stmt/join.js", "find": "r.declined === true ? \"declined\" : r.approved === false", "replace": "r.approved === false"},
+ {"name": "the page talks to any site", "file": "stmt/worker.js", "find": "frame-ancestors 'none'; connect-src 'self'; \"", "replace": "frame-ancestors 'none'; \""}
+]

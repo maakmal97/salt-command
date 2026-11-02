@@ -1877,6 +1877,47 @@ function onePage(k, nonce) {
     + '<p class="lead">' + wd(k + ".p") + "</p>", nonce, esc(EN[k + ".title"]));
 }
 export function notFoundPage(nonce) { return onePage("nf", nonce); }
+/* PLAN VERSION 5 (his answers E, E1, E2 of 02 Nov 2026): THE JOIN PAGE, for one person an associate invited. A name or nickname and where they
+   are, both required, sealed on this phone to his slip key under `salt-join v1` (stmt/join.js) before anything leaves it; then it waits, holding a
+   nonce only this page knows, and once his Add ID has made the account it is handed a sign-in key that only this page can take, and opens the
+   account in this tab (the saved app's own /app#qr. road). The guest frame; the script a plain string under the page's nonce. */
+const JOIN_JS = "(function(){var F=document.getElementById('jf'),N=document.getElementById('jn'),P=document.getElementById('jp'),S=document.getElementById('js'),"
+  + "M=document.getElementById('jm'),ID=F.getAttribute('data-id'),K='salt-join:'+ID,W=JSON.parse(document.getElementById('jw').textContent);"
+  + "function say(k){M.textContent=W[k];}"
+  + "function b64(u){var s='';for(var i=0;i<u.length;i++)s+=String.fromCharCode(u[i]);return btoa(s);}"
+  + "function b64u(u){return b64(u).replace(/[+]/g,'-').replace(/[/]/g,'_').replace(/=+$/,'');}"
+  + "function hex(b){return Array.prototype.map.call(new Uint8Array(b),function(x){return('0'+x.toString(16)).slice(-2);}).join('');}"
+  + "async function seal(pub,bytes){var C=crypto.subtle,E={name:'ECDH',namedCurve:'P-256'},iv=crypto.getRandomValues(new Uint8Array(12));"
+  + "var eph=await C.generateKey(E,false,['deriveBits']);var pk=await C.importKey('jwk',{kty:pub.kty,crv:pub.crv,x:pub.x,y:pub.y},E,false,[]);"
+  + "var hk=await C.importKey('raw',await C.deriveBits({name:'ECDH',public:pk},eph.privateKey,256),'HKDF',false,['deriveKey']);"
+  + "var key=await C.deriveKey({name:'HKDF',hash:'SHA-256',salt:new Uint8Array(0),info:new TextEncoder().encode('salt-join v1')},hk,{name:'AES-GCM',length:256},false,['encrypt']);"
+  + "return{v:1,epk:b64(new Uint8Array(await C.exportKey('raw',eph.publicKey))),iv:b64(iv),ct:b64(new Uint8Array(await C.encrypt({name:'AES-GCM',iv:iv},key,bytes))))};}"
+  + "function kept(){try{return localStorage.getItem(K)||'';}catch(e){return '';}}"
+  + "var timer=null;async function wait(){var n=kept();if(!n)return;F.hidden=true;say('wait');"
+  + "try{var r=await fetch('/j/'+ID+'/wait',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({nonce:n})});"
+  + "if(r.status===404){say('used');return;}var j=await r.json();"
+  + "if(j.key){say('ready');try{localStorage.removeItem(K);}catch(e){}location.replace('/app#qr.'+j.key);return;}}catch(e){}"
+  + "timer=setTimeout(wait,5000);}"
+  + "F.addEventListener('submit',async function(e){e.preventDefault();var name=N.value.trim(),place=P.value.trim();if(!name||!place){say('both');return;}"
+  + "S.disabled=true;try{var kr=await fetch('/j/'+ID+'/key');if(!kr.ok){say('used');return;}var pub=(await kr.json()).key;if(!pub){say('bad');S.disabled=false;return;}"
+  + "var sealed=await seal(pub,new TextEncoder().encode(JSON.stringify({v:1,name:name.slice(0,60),place:place.slice(0,60),at:new Date().toISOString()})));"
+  + "var n=kept()||b64u(crypto.getRandomValues(new Uint8Array(32)));try{localStorage.setItem(K,n);}catch(e){}"
+  + "var nh=hex(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(n)));"
+  + "var r=await fetch('/j/'+ID,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({seal:sealed,nonceHash:nh})});"
+  + "if(r.status===404){say('used');return;}if(!r.ok){say('bad');S.disabled=false;return;}N.value='';P.value='';wait();}catch(e){say('bad');S.disabled=false;}});"
+  + "wait();})();";
+export function joinPage(nonce, id) {
+  const W = {}; for (const k of ["wait", "ready", "bad", "both", "used"]) W[k] = EN["join." + k];
+  const field = (key, nm, hint) => '<label class="salt-field"><span class="salt-field__label">' + wd(key) + '</span><input class="salt-field__input" id="' + nm
+    + '" required maxlength="60" autocomplete="off"><span class="salt-field__hint">' + wd(hint) + "</span></label>";
+  const inner = '<span class="appmark">' + glyphSvg("ring", 40) + "</span>" + '<h1 class="gh">' + wd("join.h") + "</h1>" + '<p class="lead">' + wd("join.p") + "</p>"
+    + '<form id="jf" data-id="' + esc(id) + '">' + field("join.name", "jn", "join.nameHint") + field("join.place", "jp", "join.placeHint")
+    + '<button class="salt-pill salt-pill--md" id="js" type="submit">' + wd("join.send") + "</button></form>"
+    + '<p class="lead" id="jm" role="status"></p>'
+    + '<script type="application/json" id="jw">' + JSON.stringify(W).replace(/</g, "\\u003c") + "</script>"
+    + '<script nonce="' + nonce + '">' + JOIN_JS + "</script>";
+  return guestPage(inner, nonce, esc(EN["join.title"]));
+}
 /* S13 13.1, HIS DECISION D12 OF 24 SEP 2026: EVERY PAGE OF THE COUNTER IS KEPT OUT OF THE TRANSLATOR. On a phone set
    to another language, Chrome offers to translate a page, and accepting sends what is on it, an opened statement
    included, to a translation service. translate="no" on the root and Google's notranslate say no for every page:

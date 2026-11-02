@@ -38,7 +38,8 @@
  * NO IMPORT FROM src/ OR tools/. The suite proves it: this Worker must bundle on its own, and
  * must never be able to reach the ledger's code even by accident.
  */
-import { landingPage, boardPage, shutPage, notFoundPage, MON3, mtileSvg } from "./page.js";
+import { landingPage, boardPage, shutPage, notFoundPage, joinPage, MON3, mtileSvg } from "./page.js";
+import { mintJoin, readJoin, listJoins, joinsBy, setJoin, sendJoin, addedJoin, keyJoin, waitJoin, joinOpen, joinMine, joinOwner, JOIN_OPEN_MAX } from "./join.js";
 import { testShell } from "./testsurface.js";
 import { SW_JS } from "./sw.js";
 import { ADMIN_SW_JS } from "./admin-sw.js";
@@ -638,6 +639,24 @@ const mineOut = (origin, r) => ({ id: r.id, url: refUrl(origin, r.id), qr: refQr
   made: r.made || null, opens: r.opens || 0, last: r.last || null,
   state: r.revoked ? "withdrawn" : (r.declined === true ? "declined" : (r.approved === false ? "waiting" : "open")) });
 
+/* plan version 5: AN ASSOCIATE'S JOIN LINKS, one person each (E2), shut until he approves: their own list in words and a new one. Only an
+   associate may ask (Fable: a referral link from anyone else would make them one); a practice account asks for none */
+async function handleMyJoins(request, env, m, origin) {
+  if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
+  const u = await sessionUser(request, env);
+  if (!u) return signinAgain("signinLinks");
+  let acct = null;
+  try { acct = await accountRecord(env, u); } catch (e) { acct = null; }
+  if (!acct || acct.assoc !== true) return notFound();
+  if (m === "GET") return json({ ok: true, joins: isTest(u) ? [] : (await joinsBy(env, u)).map((r) => joinMine(origin, r)), max: JOIN_OPEN_MAX });
+  if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  if (isTest(u)) return json({ ok: false, error: "A practice account asks for no join link." }, 409);
+  const waiting = (await joinsBy(env, u)).filter((r) => !r.revoked && r.declined !== true && ["open"].includes(r.state));
+  if (waiting.length >= JOIN_OPEN_MAX) return json(Object.assign({ ok: false }, refusal("linksMax", { n: JOIN_OPEN_MAX })), 409);
+  const rec = await mintJoin(env, u);
+  if (!rec) return json(Object.assign({ ok: false }, refusal("mintFailed")), 500);
+  return json({ ok: true, join: joinMine(origin, rec) });
+}
 async function handleMyRefs(request, env, p, m, origin) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
   const u = await sessionUser(request, env);
@@ -1657,6 +1676,42 @@ const guestNonce = () => b64e(crypto.getRandomValues(new Uint8Array(16))).replac
 const shut = () => { const n = guestNonce(); return guestHtml(shutPage(n), n, 404); };
 /* the same frame and the same policy for the site's 404, which says one thing and echoes nothing of the path or the query */
 const lost = () => { const n = guestNonce(); return guestHtml(notFoundPage(n), n, 404); };
+/* PLAN VERSION 5 (his answers E, E1, E2 of 02 Nov 2026; stmt/join.js): THE JOIN PAGE. Served while the link is approved and not withdrawn
+   or declined and not yet spent (open, or sent and waiting on its account), so a page reloaded after Send still waits; every other id, and
+   any longer path, is the shut page. Its script runs under the page's nonce and reaches this site alone. */
+const joinHtml = (html, nonce) => new Response(html, {
+  status: 200,
+  headers: Object.assign({
+    "content-type": "text/html; charset=utf-8",
+    "content-security-policy": "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; connect-src 'self'; "
+      + "img-src 'self' data:; font-src 'self'; style-src 'nonce-" + nonce + "'; script-src 'nonce-" + nonce + "'"
+  }, HEADERS)
+});
+const joinServes = (r) => !!r && r.approved === true && r.declined !== true && !r.revoked && ["open", "sent", "added", "keyed"].includes(r.state);
+async function handleJoinPage(request, env, p, m) {
+  if (!env.STMT) return shut();
+  const mm = /^\/j\/([^/]+)(?:\/(key|wait))?$/.exec(p);
+  if (!mm) return shut();
+  const rec = await readJoin(env, mm[1]);
+  if (!mm[2] && m === "GET") { if (!joinServes(rec)) return shut(); const n = guestNonce(); return joinHtml(joinPage(n, rec.id), n); }
+  const no = () => json({ ok: false }, 404);
+  if (mm[2] === "key") {
+    if (m !== "GET" || !joinOpen(rec)) return no();
+    const key = await slipPub(env);
+    return key ? json({ ok: true, key }) : json({ ok: false }, 503);
+  }
+  if (m !== "POST") return no();
+  const b = await readJson(request);
+  if (mm[2] === "wait") {
+    const w = rec ? await waitJoin(env, rec.id, b && b.nonce) : null;
+    return w ? json(Object.assign({ ok: true }, w)) : no();
+  }
+  if (!rec) return no();
+  const r = await sendJoin(env, rec.id, b);
+  if (r.error === "shut") return no();
+  if (r.error) return json({ ok: false }, 400);
+  return json({ ok: true });
+}
 async function handleGuest(request, env, id) {
   if (!env.STMT) return shut();
   const rec = await readRef(env, id);
@@ -1732,6 +1787,8 @@ const worker = {
       const g = /^\/g\/([^/]+)$/.exec(p);
       return g ? handleGuest(request, env, g[1]) : shut();
     }
+    /* plan version 5: JOIN BY LINK, the referee's page and its three verbs; any id that cannot be used answers the one shut page */
+    if (p.startsWith("/j/")) return handleJoinPage(request, env, p, m);
 
     /* the test surface's short address: a redirect to /all/test and nothing more, so it serves nothing outside /all's gate */
     if (p === "/test") return new Response(null, { status: 302, headers: Object.assign({ location: "/all/test" }, HEADERS) });
@@ -1843,6 +1900,35 @@ const worker = {
          master, wraps the content key under a key it mints, and posts { u, token, wrap }, as the Sign-in link does;
          what comes back is the code to read out and the address of the saved app's own page with the key after the
          #, drawn as a QR for their camera. The key never reaches a log: a fragment is never sent. */
+      /* plan version 5: HIS JOIN LINKS. The list (the seal travels while sent, for his one unlock), his word on each, his Add ID's code, and
+         the hand-over minted as /all/handover mints one, its key filed on the record for the page holding the nonce and never answered here */
+      if (p === "/all/joins") {
+        if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+        return json({ ok: true, joins: (await listJoins(env)).map(joinOwner) });
+      }
+      const jm = /^\/all\/joins\/([^/]+)\/(approve|decline|revoke|added|handover)$/.exec(p);
+      if (jm) {
+        if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+        const rec = await readJoin(env, jm[1]);
+        if (!rec) return json({ ok: false, error: "no such join link" }, 404);
+        const b = await readJson(request);
+        if (jm[2] === "approve" || jm[2] === "decline" || jm[2] === "revoke") {
+          const out = await setJoin(env, rec.id, jm[2] === "approve" ? { approved: true } : jm[2] === "decline" ? { declined: true } : { revoked: true });
+          return json({ ok: true, join: joinOwner(out) });
+        }
+        if (jm[2] === "added") {
+          const out = await addedJoin(env, rec.id, b && b.code);
+          return out ? json({ ok: true, join: joinOwner(out) }) : json({ ok: false, error: "It waits for its form, and takes one roster code." }, 409);
+        }
+        if (!env.STMT_HANDOVER_KEY) return noHandover();
+        const u = normUser(b && b.u);
+        if (rec.state !== "added" || !u || !(await roster(env)).some((x) => x.username === u && x.code === rec.code))
+          return json({ ok: false, error: "Its account is not ready yet." }, 409);
+        const made = await mintHandover(env, u, b.token, b.wrap, true);
+        if (!made) return json({ ok: false, error: "send the key and the wrap" }, 400);
+        const out = await keyJoin(env, rec.id, made.token);
+        return out ? json({ ok: true, join: joinOwner(out) }) : json({ ok: false, error: "Its account is not ready yet." }, 409);
+      }
       if (p === "/all/handover") {
         if (!env.STMT_HANDOVER_KEY) return noHandover();
         if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
@@ -2051,6 +2137,7 @@ const worker = {
       || p === "/thread" || p === "/pools" || p.startsWith("/pools/")) return handleCustomer(request, env, p, m, ctx);
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
+    if (p === "/my/joins") return handleMyJoins(request, env, m, url.origin);
     if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/owner-wake" || p === "/desk/expected" || p === "/desk/waiting" || p === "/desk/claims" || p.startsWith("/desk/claims/") || p.startsWith("/desk/slips/") || p.startsWith("/desk/pins/")
       || p === "/desk/threads" || p.startsWith("/desk/threads/")) return handleDesk(request, env, p, m);
     /* the notice, in the clear, for the page's poll; anything past it is still the site's 404 */

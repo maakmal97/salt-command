@@ -48552,6 +48552,11 @@ await (async () => {
   await (await import("./order-stream-v6.mjs")).run({ ok, pageWork });
 })();
 
+section("v1390 One order stream, version 5: join by link, sealed on their phone, approved by him, the sign-in handed only to the page that sent it (5a, 5b, 5d)");
+await (async () => {
+  await (await import("./order-stream-v7.mjs")).run({ ok });
+})();
+
 section("Counter Batch C: the seal carries the spot's name and unit, a unit alone sealed as its own shape, nothing in the clear (P6)");
 await (async () => {
   await (await import("./counter-c-pin-seal.mjs")).run({ ok });
