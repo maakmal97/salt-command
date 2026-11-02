@@ -1708,6 +1708,19 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   placed order the terms stand in view (no Change terms, no fold), Agree and Decline in one row of two under them, Agree saying the one sum it sends;
   the reply's fold is **Answer**, its field Your line. Every book on Approve, Payments, Group and the Ledger is its typed tag (`bookTag`). What is below
   is the history of the earlier drawings; where it says otherwise, this paragraph is the page.
+  **2 Nov 2026, Orders on the canvas (his four answers of 31 Oct 2026; display and markup only):** the parts are ONE Segment of four, **To do, Open, Done,
+  Ended** (`part.orders.todo`, `.open`, `.done`, `.ended`), To do carrying the count of what waits on him (`.salt-segment__count`). **To do is every order that
+  waits on him, whatever its stage** (a placed one, a payment they say they sent, a stage he rejected, a question, a request to send again; a declined order
+  with such a request stands there too); an order is in exactly one part (`ordPartFor`), and cash held for it marks it without moving it, so its card and its Undo
+  stay. Open lists **Agreed, Ready and Out or paid** each under its own head, a month a head in Done and Ended, and To do's Orders and each sheet (a sheet's
+  orders at one stage, two or more, stand under "Sheet", its reference and its delivery). Payments they sent, Group orders and Ledger check are action rows in a
+  More group at the foot of the list; **Approve has no control of its own**: the bar's Approve and the Desk's `/admin` land on `#orders/approve`, which still
+  opens it, and the old stage addresses (`#orders/placed`, `/confirmed`, `/ready`, `/paid`) land on To do or Open (`PART_ALIAS`). The list has **no Refresh and no
+  line under it**: the page polls and has the live socket, and a return to Orders reads again. The line over the list is one sentence, money first. A row is a
+  settings row below 1080px (the book's typed tag, the first and a +N for an order of several books, the code, the second line saying what and how long, copper
+  when it waits on him and ember when late, the total, the move as a lit ghost that asks once and sends what it sent) and, from 1080px, one plain table
+  (Code, Book, Way, Units, Waiting, Total, move), drawn one at a time; the row's `aria-label` reads out every book. The Way is a word, never a row's id. The
+  move is a ghost on a list; the one filled pill lives in the open order.
   claims under Payments, the group orders under Group, Order for them at the head of the place), **Customers** (Accounts,
   Messages, Links, Associates: the list and the card, the chat, the guest links, the report card), **Record** (Entry,
   Customers, Pricing: the forms by the part they belong to; each waits for his approval under Orders > Approve) and
@@ -1768,7 +1781,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   and what is still chosen; Read the figures again then reads for the choice put back, and with none chosen there is nothing to read.
   **An answer stands beside the control that asked** (13 Oct 2026, the stress run's Medium finding; same test): Save on Shop's weekly hours answers in
   `#makerHoursSaved` under it (`hoursSaid('week', ...)`; Set it and Back keep `#makerHoursMessage` under theirs), Make a link in `#gmsg` under it (`linkSay`)
-  with the new link scrolled into reach, Refresh in `#makerRefreshSaid` under it, and an order card's own line (the #120 status) stands under the delivery charge,
+  with the new link scrolled into reach, (Refresh in `#makerRefreshSaid` under it until 2 Nov 2026, when the list lost its Refresh), and an order card's own line (the #120 status) stands under the delivery charge,
   above the time and the figures, so that it is not a screen below the radio that asked. Each is a polite status line and is brought into reach (`block:
   'nearest'`, clear of the bar by `.adm .osaid`'s scroll margin); an answer whose card has gone from the list scrolls the list's line instead. The page's one line
   at the foot of Customers keeps the rest.
@@ -2723,7 +2736,6 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `look.sheet-night` | Same Sheet | Chooses Night, keeps it and closes the Sheet. |
 | `look.sheet-tide` | Same Sheet | Chooses Tide, keeps it and closes the Sheet. |
 | `look.tide` | Shop, This device, Tide theme | The Switch: Tide on or off for Salt Admin on this device; greyed while Tide is off (19 Oct 2026). |
-| `maker.refresh` | Orders, Order review | Reads the orders again. |
 | `more.test-accounts` | Shop, Practice, Practice accounts | The Switch: on makes the missing test accounts; off deletes all three once its Sheet is answered Remove. |
 | `more.test-password` | Shop, Practice, while any is made | Copies the test accounts' one password. |
 | `vault.switch` | Shop, This device, Show names | On asks for the password in the one Sheet; off locks names, places and slips again. |
@@ -2855,16 +2867,13 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `part.customers.messages` | The strip under Customers (tab: Messages) | Shows the account conversations, reading the threads. |
 | `part.customers.links` | The strip under Customers (tab: Links) | Shows the guest links, reading them once. |
 | `part.customers.associates` | The strip under Customers (tab: Associates) | Shows the associates' report card, reading it once. |
-| `part.orders.placed` | The tab row under Orders (tab: Placed) | Shows the orders placed and not yet agreed, reading them. |
-| `part.orders.confirmed` | The strip under Orders (tab: Agreed) | Shows the agreed orders, and every row of the book with nothing paid or handed over in full. |
-| `part.orders.ready` | The strip under Orders (tab: Ready) | Shows the orders marked ready. |
-| `part.orders.paid` | The tab row under Orders (tab: Out or paid) | Shows the orders handed over in full or paid in full, not yet both. |
-| `part.orders.done` | The tab row under Orders (tab: Done) | Shows the orders handed over and closed. |
-| `part.orders.ended` | The strip under Orders (tab: Ended) | Shows the declined and cancelled orders. |
-| `part.orders.approve` | Under Orders, reached by the bar's Approve (its tab hidden since 25 Oct 2026) | Shows the Desk's rows waiting for him and the entries the server holds, reading them. |
-| `part.orders.payments` | The strip under Orders (tab: Payments) | Shows the payments they say they sent. |
-| `part.orders.group` | The strip under Orders (tab: Group) | Shows the group orders, reading them. |
-| `part.orders.ledger` | The strip under Orders (tab: Ledger) | Shows the mini ledger, reading the folded book: Open orders, Pending orders and the latest 20 orders. |
+| `part.orders.todo` | The Segment under Orders (tab: To do, with its count) | Shows every order that waits on him: a placed one, a payment they say they sent, a stage he rejected, a question of theirs, a request to send again. |
+| `part.orders.open` | The Segment under Orders (tab: Open) | Shows the live orders that wait on nothing, Agreed, Ready and Out or paid each under its own head, and every row of the book at its stage. |
+| `part.orders.done` | The Segment under Orders (tab: Done) | Shows the orders handed over and closed, a month to a head. |
+| `part.orders.ended` | The Segment under Orders (tab: Ended) | Shows the declined, cancelled and written-off orders that wait on nothing, a month to a head. |
+| `part.orders.payments` | Under More, below the list (row: Payments they sent, with its count) | Shows the payments they say they sent. |
+| `part.orders.group` | Under More, below the list (row: Group orders) | Shows the group orders, reading them. |
+| `part.orders.ledger` | Under More, below the list (row: Ledger check) | Shows the mini ledger, reading the folded book: Open orders, Pending orders and the latest 20 orders. |
 | `part.record.customers` | The strip under Record (tab: Customers) | Shows the menu of the forms that add, change or place a customer, one form at a time. |
 | `part.record.entry` | The strip under Record (tab: Entry) | Shows the menu of the forms for a count, a sale or purchase, a loan, a gift, a repayment, a reward, an offset, a correction and a revival, one form at a time. |
 | `part.record.pricing` | The strip under Record (tab: Pricing) | Shows the menu of the forms for a customer's %, the printed board sizes and the tips, one form at a time. |
