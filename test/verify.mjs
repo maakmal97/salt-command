@@ -24249,8 +24249,9 @@ await (async () => {
   const bare = await show(null);
   /* 10 Oct 2026: confirm, his Accept sent for their yes, is the twentieth kind, its one body the twenty-eighth banner; 16 Oct 2026 (plan 4):
      corrected, a step taken back, the twenty-first, its three cases the thirty-first; 18 Oct 2026 (Counter Batch A):
-     point-moved, a collection point changed, the twenty-second, its one body the thirty-second */
-  ok(!own.length && kinds.length === 22 && seen.length === 32 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
+     point-moved, a collection point changed, the twenty-second, its one body the thirty-second; 02 Nov 2026 (Order as them): placed,
+     an order he placed for them, the twenty-third, its one body the thirty-third */
+  ok(!own.length && kinds.length === 23 && seen.length === 33 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
     && bare && bare[0] === WD.EN["news.order"] && bare[1] === WD.EN["news.update"],
     "the banner writes no words of its own and shows each kind's title and each case's body, and the fixed words, from the table: "
     + JSON.stringify({ own, seen: seen.filter(([, s, w]) => JSON.stringify(s) !== JSON.stringify(w)) }));
@@ -48508,6 +48509,16 @@ await (async () => {
   await (await import("./counter-c-spots.mjs")).run({ ok, pageWork });
 })();
 
+section("v1377 Order as them: his Place on their page takes what theirs takes, refuses a note, an ask and a group order, seals the spot, reads the public slip key (1a)");
+await (async () => {
+  await (await import("./order-as-them.mjs")).run({ ok });
+})();
+
+section("v1377 Order as them on the page: Order for them opens their own page with ordering live, Place through his route, View as them read only (1b, 1c)");
+await (async () => {
+  await (await import("./order-as-them-page.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter Batch C: the seal carries the spot's name and unit, a unit alone sealed as its own shape, nothing in the clear (P6)");
 await (async () => {
   await (await import("./counter-c-pin-seal.mjs")).run({ ok });
@@ -50203,12 +50214,16 @@ await (async () => {
     doc.querySelector('#rlist [data-u]').click();
     const forThem = [...doc.querySelectorAll("#aopen button")].find((button) => button.textContent === "Order for them");
     forThem.click();
-    for (let i = 0; i < 100 && ![...doc.querySelectorAll("#makerFor button")].some((button) => button.textContent === "Place for them"); i++)
-      await new Promise((resolve) => setTimeout(resolve, 10));
-    const placeFor = [...doc.querySelectorAll("#makerFor button")].find((button) => button.textContent === "Place for them");
-    ok(!!placeFor && /RM 100/.test(doc.querySelector("#makerFor").textContent),
-      "Order for them opens the customer's sealed prices, not a second pricing rule");
-    placeFor.click();
+    /* v1377 (Order as them, his answer A of 02 Nov 2026): Order for them opens the customer's own page by the master with ordering live,
+       so New order, Review and Place are their page's own, at their sealed prices */
+    const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((resolve) => setTimeout(resolve, 10)); return f(); };
+    ok(!!(await until(() => doc.getElementById("oNew"))) && !doc.getElementById("makerFor"),
+      "Order for them opens the customer's own page and sealed prices, not a second pricing rule");
+    doc.getElementById("oNew").click();
+    await until(() => doc.getElementById("oGo") && !doc.getElementById("oGo").disabled);
+    doc.getElementById("oGo").click();
+    await until(() => doc.getElementById("oPlace"));
+    doc.getElementById("oPlace").click();
     for (let i = 0; i < 100 && !adminCalls.some((call) => call.route === "/all/maker/customers/abcd-efgh/orders"); i++)
       await new Promise((resolve) => setTimeout(resolve, 10));
     const sentFor = adminCalls.find((call) => call.route === "/all/maker/customers/abcd-efgh/orders");
@@ -50700,7 +50715,7 @@ await (async () => {
   await (await import("./admin-hours-week.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Admin: the stress run's findings: a charge that did not save is not shown as chosen, an answer stands beside its control, and For a friend is a 44px target (13 Oct 2026)");
+section("Salt Admin: the stress run's findings: a charge that did not save is not shown as chosen, and an answer stands beside its control (13 Oct 2026)");
 await (async () => {
   await (await import("./admin-stress-fixes.mjs")).run({ ok, pageWork });
 })();

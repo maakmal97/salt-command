@@ -2324,12 +2324,19 @@ closed and the next change, and for each of the next seven days its hours in wor
 nothing. A page cached before these reads a list day or a 24:00 close as closed and does not know the dates; the Worker's
 `slotTake` refuses a slot a date shuts.
 
-Accounts > Order for them opens that customer's sealed current list on his device under the
-existing master wrap. It sends one priced size with the list digest and a request id to
-`POST /all/maker/customers/<username>/orders`. The server requires an existing account and the
-verified owner, uses `placeOrder` on the site's normal KV/Object road, and records `by: desk` in
-the initial history. A retry keeps its id. No passphrase or unchecked Admin note goes with the
-placement. A moved list is refused, not silently requoted; reopen the form to read it again.
+**Order as them** (v1377, 02 Nov 2026, his answers A, C and D; `docs/plan-one-order-stream.html` part 1). Accounts > Order for them
+opens the customer's own page by the master, as View as them does, with `act` set (`stmt/page.js`, `actWant` set by
+`openAcct(a, true)`): Prices, the basket, Home's starts, Order again and the order sheet work as theirs, and their overdue hold
+does not stop him (`setHold` clears it under `act`). Everything else stays read only: `ro()` (view and not act) is the test the
+ordering guards read, and every other `view` guard is unchanged, so no Pay, claim, Cancel, amend, rating, thread line, device,
+passkey or push. The sheet has no note and no Negotiate. Each line Places through `actPlace` (`stmt/owner.js`) to
+`POST /all/maker/customers/<username>/orders`, which takes a customer's body (a sheet's line, a window, a sealed spot taken off
+for its id and filed once the order names it, Order again, a day) and refuses a note, an ask, a figure and a group order; it
+uses `placeOrder` with `by: desk`, so a moved list answers 409 with the list and the sheet re-quotes as theirs does. The spot is
+sealed to the public half read at `GET /all/maker/slip/key` (kind `slip-pub`; the older `slip-key` kind is the sealed private
+key, never on the practice surface). Once recorded, their phone is woken as `placed` ("Order placed for you"); their card says
+Placed for you while it is placed, his Orders row You placed. On `/all/test` his Place is taken for a test account only. The
+box of his own that stood here (a size, a way, a place) is gone.
 
 Customer amendments use the customer's session at `POST /orders/<id>/amend`, not an Admin route.
 The replacement is checked against their own open order and carried over the private bridge to the
@@ -2880,12 +2887,6 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.send-yes` | Order card (key: the order id), once its figures are read, when they raise the price or change the window | Sends it to them for their yes instead. |
 | `order.total` | Order card (key: the order id), placed | The order total, in RM; finishing a change reads the figures again. |
 | `order.withdraw-offer` | Order card (key: the order id), with an offer out | Withdraws the offer. |
-| `orderfor.friend` | Order for a customer, an associate's | Whether it is for a friend. |
-| `orderfor.mode` | Order for a customer | Collected or delivered. |
-| `orderfor.place` | Order for a customer | The delivery locality. |
-| `orderfor.place-order` | Order for a customer | Places it for them. |
-| `orderfor.size` | Order for a customer | The size and price from their list. |
-| `orderfor.want` | Order for a customer | The day it is wanted by, optional. |
 | `part.customers.accounts` | The strip under Customers (tab: Accounts) | Shows the accounts: the list, and the card of the one he opens. |
 | `part.customers.messages` | The strip under Customers (tab: Messages) | Shows the account conversations, reading the threads. |
 | `part.customers.links` | The strip under Customers (tab: Links) | Shows the guest links, reading them once. |

@@ -60,12 +60,6 @@
     "replace": "}catch(e){ sayFail(e); }"
   },
   {
-    "name": "the figures have no part of their own",
-    "file": "stmt/owner.js",
-    "find": "        var figs=part('The figures','ofigsec');\n",
-    "replace": "        var figs=null;\n"
-  },
-  {
     "name": "the select is left on the charge that failed",
     "file": "stmt/owner.js",
     "find": "            if(feeSel) feeSel.value=chip.value;\n",
@@ -78,15 +72,9 @@
     "replace": " }"
   },
   {
-    "name": "For a friend is a bare box again",
+    "name": "the figures have no part of their own",
     "file": "stmt/owner.js",
-    "find": "friendLabel.appendChild(el('span','tickbox')); ",
-    "replace": ""
-  },
-  {
-    "name": "the tick's rules are the account card's alone",
-    "file": "stmt/page.js",
-    "find": ".adm .atick input{position:absolute;",
-    "replace": ".adm .oacct .atick input{position:absolute;"
+    "find": "        var figs=part('The figures','ofigsec');\n",
+    "replace": "        var figs=null;\n"
   }
 ]

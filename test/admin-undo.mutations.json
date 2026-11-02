@@ -332,8 +332,8 @@
   {
     "name": "the banner has no words for an undo",
     "file": "stmt/sw.js",
-    "find": "\"offer\", \"confirm\", \"corrected\", \"point-moved\"];",
-    "replace": "\"offer\", \"confirm\", \"point-moved\"];"
+    "find": "\"offer\", \"confirm\", \"corrected\", \"point-moved\", \"placed\"];",
+    "replace": "\"offer\", \"confirm\", \"point-moved\", \"placed\"];"
   },
   {
     "name": "Undo is offered on an older move",

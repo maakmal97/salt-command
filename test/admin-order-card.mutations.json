@@ -84,12 +84,6 @@
     "replace": "      again.setAttribute('data-accept-again',''); card.appendChild(again);"
   },
   {
-    "name": "the stages offered again stay in the foot",
-    "file": "stmt/owner.js",
-    "find": "if(againRows.length){ var al=el('div','salt-settings oagainrows');",
-    "replace": "if(false){ var al=el('div','salt-settings oagainrows');"
-  },
-  {
     "name": "a stage he rejected is offered again outside the foot",
     "file": "stmt/owner.js",
     "find": "      var offer=makerButton(acts,['Send the '+MAKER_AGAIN[stage]+' again'",
@@ -258,24 +252,6 @@
     "replace": "function makerAskTag(order,btn,kind){ return btn; }"
   },
   {
-    "name": "the tick's input is 18px",
-    "file": "stmt/page.js",
-    "find": "width:var(--salt-tap);height:var(--salt-tap);margin:0;opacity:0;cursor:pointer}",
-    "replace": "width:18px;height:18px;margin:0;opacity:0;cursor:pointer}"
-  },
-  {
-    "name": "the tick's input is taken out of the page",
-    "file": "stmt/page.js",
-    "find": "margin:0;opacity:0;cursor:pointer}",
-    "replace": "margin:0;display:none;cursor:pointer}"
-  },
-  {
-    "name": "the tick's label is not a 44px target",
-    "file": "stmt/page.js",
-    "find": "align-self:flex-start;width:fit-content;min-height:var(--salt-tap);min-width:var(--salt-tap);padding-right:8px;",
-    "replace": "align-self:flex-start;width:fit-content;min-height:0;min-width:0;padding-right:8px;"
-  },
-  {
     "name": "Mark as sent is a plain button again",
     "file": "stmt/owner.js",
     "find": "var mark=asRow(ghost(['Mark as sent','acct.sent']));",
@@ -360,12 +336,6 @@
     "replace": "function(){ tf.open=true; }"
   },
   {
-    "name": "Decline is not an ember row",
-    "file": "stmt/owner.js",
-    "find": "      },false),true);\n      makerAskTag(order,dec,'decline');",
-    "replace": "      },false),false);\n      makerAskTag(order,dec,'decline');"
-  },
-  {
     "name": "Ready stays in the foot",
     "file": "stmt/owner.js",
     "find": "var b=makerButton(mine?lead:stageRows,[m[1],",
@@ -376,18 +346,6 @@
     "file": "stmt/owner.js",
     "find": "var handed=makerButton(lead,['Handed over, '",
     "replace": "var handed=makerButton(acts,['Handed over, '"
-  },
-  {
-    "name": "their claim's answer stands outside Money received",
-    "file": "stmt/owner.js",
-    "find": "var got=asRow(makerButton(claims,[onBook?",
-    "replace": "var got=asRow(makerButton(card,[onBook?"
-  },
-  {
-    "name": "the main action stands below the stage's rows",
-    "file": "stmt/owner.js",
-    "find": "p.appendChild(lead); p.appendChild(stageRows); }",
-    "replace": "p.appendChild(stageRows); p.appendChild(lead); }"
   },
   {
     "name": "Decline stands in the sticky foot",
@@ -426,12 +384,6 @@
     "replace": "var ol=el('ol','salt-steps'); ol.setAttribute('aria-label',names.aria);"
   },
   {
-    "name": "Decline goes back beside Agree",
-    "file": "stmt/owner.js",
-    "find": "var dec=asRow(makerButton(tail,['Decline the order'",
-    "replace": "var dec=asRow(makerButton(card.querySelector('.ordlead')||tail,['Decline the order'"
-  },
-  {
     "name": "the terms fold again",
     "file": "stmt/owner.js",
     "find": "stageOf('Agree','oagreesec').appendChild(form);",
@@ -444,6 +396,42 @@
     "replace": "function stageEnd(){ var p=stage||part(null); p.insertBefore(lead,p.children[1]||null); p.appendChild(stageRows); }"
   },
   {
+    "name": "the band draws the mark again",
+    "file": "stmt/owner.js",
+    "find": "foot:[productTag(order.product), who,",
+    "replace": "foot:[bookMark(order.product,28), who,"
+  },
+  {
+    "name": "the stages offered again stay in the foot",
+    "file": "stmt/owner.js",
+    "find": "if(againRows.length){ var al=el('div','salt-settings oagainrows');",
+    "replace": "if(false){ var al=el('div','salt-settings oagainrows');"
+  },
+  {
+    "name": "Decline is not an ember row",
+    "file": "stmt/owner.js",
+    "find": "      },false),true);\n      makerAskTag(order,dec,'decline');",
+    "replace": "      },false),false);\n      makerAskTag(order,dec,'decline');"
+  },
+  {
+    "name": "their claim's answer stands outside Money received",
+    "file": "stmt/owner.js",
+    "find": "var got=asRow(makerButton(claims,[onBook?",
+    "replace": "var got=asRow(makerButton(card,[onBook?"
+  },
+  {
+    "name": "the main action stands below the stage's rows",
+    "file": "stmt/owner.js",
+    "find": "p.appendChild(lead); p.appendChild(stageRows); }",
+    "replace": "p.appendChild(stageRows); p.appendChild(lead); }"
+  },
+  {
+    "name": "Decline goes back beside Agree",
+    "file": "stmt/owner.js",
+    "find": "var dec=asRow(makerButton(tail,['Decline the order'",
+    "replace": "var dec=asRow(makerButton(card.querySelector('.ordlead')||tail,['Decline the order'"
+  },
+  {
     "name": "Agree outside the lead",
     "file": "stmt/owner.js",
     "find": "accept.setAttribute('data-accept',''); row3.insertBefore(accept,row3.firstChild);",
@@ -454,12 +442,6 @@
     "file": "stmt/owner.js",
     "find": "var row3=lead;\n",
     "replace": "var row3=lead; lead.appendChild(el('p','ordterms','Agree at RM 0'));\n"
-  },
-  {
-    "name": "the band draws the mark again",
-    "file": "stmt/owner.js",
-    "find": "foot:[productTag(order.product), who,",
-    "replace": "foot:[bookMark(order.product,28), who,"
   },
   {
     "name": "the reply's box folds again",

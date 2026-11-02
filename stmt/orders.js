@@ -1490,10 +1490,10 @@ export async function placeOrder(env, u, body, by = "customer") {
     if (r.error) return moved(r);
     /* in the week of reading both the id is filed for the KV road too, so a retry after a flip back lands once (S10 fix DS4) */
     if (readsBoth(env) && !r.again) await fileRid(env, u, rid, r.order.id);
-    return { order: r.order };
+    return r.again ? { order: r.order, again: true } : { order: r.order };   /* v1377: a replay says so, so his route wakes their phone once */
   }
   const rid = ridOf(body), again = await repeatOf(env, u, rid);
-  if (again) return again;
+  if (again) return again.order ? Object.assign({ again: true }, again) : again;
   const all = await ordersOf(env, u), open = all.filter((o) => OPEN_STATES.includes(o.status));
   const d = decidePlace(u, body, open, new Date().toISOString(), digest, by, null, { steps, hours, mine: all });
   if (d.error) return moved(d);

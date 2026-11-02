@@ -480,7 +480,7 @@ export class OrderBook {
                his answer of 18 Oct 2026): every open order the fixture holds, as the page counts them, so an account seeded at the
                limit is refused here as its page refuses it; 0000-0002 is the one with room */
             const open = doc.orders.filter((o) => OPEN_STATES.includes(o.status));
-            const decision = decidePlace(a.u, a.body, open, at, a.digest, "customer", null,
+            const decision = decidePlace(a.u, a.body, open, at, a.digest, a.by === "desk" ? "desk" : "customer", null,
               { steps: a.steps || null, hours: a.hours || null, claimWaiting: doc.claims.some((c) => c.state === "waiting"), mine: doc.orders });
             if (decision.error) return no(decision, decision.status || 400);
             order = applyEvent(null, decision.ev).order;

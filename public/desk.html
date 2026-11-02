@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="8179133bb061463d";
+var SALT_BUILD_ID="48c843b8cea1fe62";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -3251,12 +3251,6 @@ label.salt-field__label {
 .salt-settings__sub--why { color: var(--salt-copper); }
 .salt-settings__sub--late { color: var(--salt-ember); }
 .salt-settings__value--lg { font-size: var(--salt-text-md); color: var(--salt-salt); }
-/* 1.23.0 (his Orders canvas, page 2, "The open order, both sides", 31 Oct and 2 Nov 2026): A BILL IS A SETTINGS LIST. What is still owed is the
-   row's figure in ember and bold, said beside its name (never colour alone); the total's name in the heavier weight. An action or danger row may
-   hold its words bare, without a __label, and they are drawn as a row's name. */
-.salt-settings__value--due { color: var(--salt-ember); font-weight: 700; }
-.salt-settings__row--total .salt-settings__label { font-weight: 600; }
-.salt-settings__row--action { font-family: var(--salt-font-display); font-size: var(--salt-text-lg); white-space: nowrap; }
 .salt-settings__cell { padding: 12px 0; border-top: 1px solid var(--salt-line-faint); }
 .salt-settings__cell:first-child { border-top: 0; }
 .salt-settings__cell > .salt-field__input { display: block; width: 100%; box-sizing: border-box; background: transparent; border: 0; padding: 0; min-height: 96px; resize: vertical; }
@@ -3705,8 +3699,6 @@ label.salt-field__label {
 .salt-kpi--line .salt-kpi__label, .salt-kpi--line .salt-kpi__value { margin: 0; line-height: 1; white-space: nowrap; }
 .salt-kpi--line .salt-kpi__value { font-size: 1.25rem; overflow: hidden; text-overflow: ellipsis; }
 .salt-kpi--line .salt-kpi__note { display: none; }
-/* 1.23.0: a tile on Shop's grid, its label, figure and note on the 16px text line (the 2px rule stands in the first two) */
-.salt-kpi--grid { padding: 12px 16px 12px 14px; }
 @media (min-width: 860px) { .salt-kpi--line { min-height: 56px; padding: 8px 16px 8px 18px; } }
 
 /* ---- Action: something to do, with the money at stake. Kind, title, why, money, the way there (__go),
@@ -4525,8 +4517,6 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
 .salt-band__ref { font-family: var(--salt-font-mono); font-size: 1rem; font-weight: 600; letter-spacing: 0.08em; color: var(--salt-brass); white-space: nowrap; }
 .salt-band__when { margin: 0; font-size: 1rem; color: var(--salt-prose); }
 .salt-band__foot { display: flex; align-items: center; gap: var(--salt-space-3); padding-top: var(--salt-space-3); border-top: 1px solid var(--salt-line); min-width: 0; }
-/* 1.23.0: the band on Shop's grid, its words on the 16px text line as a list's are */
-.salt-band--grid { padding: var(--salt-space-4); }
 
 /* ---- Empty state: a mark and one way on (18 Oct 2026, Counter Batch A). A dashed disc holding the place's own
    glyph, a heading, one sentence, and the one action, a lit ghost. ---- */
@@ -11531,7 +11521,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1376","d":"02 Nov 2026","t":"SALT ADMIN'S ORDERS AND CUSTOMERS ON HIS CANVAS","n":["<b>ORDERS IN FOUR PARTS.</b> One Segment, To do, Open, Done and Ended, replaces the nine text tabs. To do holds every order that waits on you; Open lists Agreed, Ready and Out or paid under their own heads; Payments, Group orders and Ledger check are rows under More. Approve stays on the bar.","<b>ONE TABLE FROM 1080PX.</b> Orders and Customers are one plain table on Shop's grid: 56px rows, words left, figures right, a code that opens the row, a sheet's books folded to the first tag and +N. On a phone each group is one settings list, a row's name over a second line saying what and how long.","<b>QUIET MOVES.</b> A row's move (Agree, Ready, Handed, Send, Message) is a lit ghost; the one filled pill stays in the open order. Refresh and the Reading line leave the list's foot; Approve's line no longer sits on Reading while hidden.","<b>CUSTOMERS FIXED.</b> Words no longer right-align, the buttons are no longer clipped, the table takes the full width with nothing open, and the way back from an account is one round button, as on Record's forms. A tap anywhere on a row opens it.","Old addresses still land: #orders/placed on To do, /confirmed, /ready and /paid on Open. salt-ds 1.22.0. No route, body, price or stored shape changed."]}];
+const evolution=[{"v":"v1377","d":"02 Nov 2026","t":"ORDER AS THEM: YOUR ORDER FOR A CUSTOMER IS THEIR OWN COUNTER","n":["<b>ORDER FOR THEM OPENS THEIR PAGE.</b> On Salt Admin an account's Order for them opens the customer's own Counter by the master, as View as them does, with ordering live: Prices, the basket, Home's starts, Order again and the order sheet work as theirs. Their overdue hold does not stop you. Everything else stays read only: no Pay, claim, Cancel, change, thread line, device or passkey. The box of your own (a size, a way, a place) is gone.","<b>ONE PLACE.</b> Each line goes through your route, /all/maker/customers/&lt;u&gt;/orders, into the same placeOrder a customer's Place uses, at their sealed price and stamp, marked as yours. It now takes a sheet's line, a delivery window, a sealed exact spot, Order again and a day; it refuses a note, an ask and a group order. A replayed tap books once.","<b>PLACED FOR YOU.</b> Their phone is told once, sealed, as Order placed for you; their card says Placed for you while it is placed, and your Orders row says You placed. Your device reads and keeps none of their saved spots: the area and the exact spot are asked afresh.","<b>PRACTICE.</b> On /all/test you can order as a test account, never a real one; 0000-0002's placed order is yours (FIX_VERSION 16). Plan: docs/plan-one-order-stream.html, version 1 of 10. Fable reviewed the route and the page twice, every finding applied."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11679,7 +11669,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='02 Nov 2026, 16:55 KL';
+const LAST_UPDATED='02 Nov 2026, 22:43 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

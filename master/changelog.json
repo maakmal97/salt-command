@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1377",
+  "d": "02 Nov 2026",
+  "t": "ORDER AS THEM: YOUR ORDER FOR A CUSTOMER IS THEIR OWN COUNTER",
+  "n": [
+   "<b>ORDER FOR THEM OPENS THEIR PAGE.</b> On Salt Admin an account's Order for them opens the customer's own Counter by the master, as View as them does, with ordering live: Prices, the basket, Home's starts, Order again and the order sheet work as theirs. Their overdue hold does not stop you. Everything else stays read only: no Pay, claim, Cancel, change, thread line, device or passkey. The box of your own (a size, a way, a place) is gone.",
+   "<b>ONE PLACE.</b> Each line goes through your route, /all/maker/customers/&lt;u&gt;/orders, into the same placeOrder a customer's Place uses, at their sealed price and stamp, marked as yours. It now takes a sheet's line, a delivery window, a sealed exact spot, Order again and a day; it refuses a note, an ask and a group order. A replayed tap books once.",
+   "<b>PLACED FOR YOU.</b> Their phone is told once, sealed, as Order placed for you; their card says Placed for you while it is placed, and your Orders row says You placed. Your device reads and keeps none of their saved spots: the area and the exact spot are asked afresh.",
+   "<b>PRACTICE.</b> On /all/test you can order as a test account, never a real one; 0000-0002's placed order is yours (FIX_VERSION 16). Plan: docs/plan-one-order-stream.html, version 1 of 10. Fable reviewed the route and the page twice, every finding applied."
+  ]
+ },
+ {
   "v": "v1376",
   "d": "02 Nov 2026",
   "t": "SALT ADMIN'S ORDERS AND CUSTOMERS ON HIS CANVAS",

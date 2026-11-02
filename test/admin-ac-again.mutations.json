@@ -32,8 +32,8 @@
   {
     "name": "no again on his row",
     "file": "stmt/owner.js",
-    "find": ":o.againOf?orderRef(o.againOf)+' again':'';",
-    "replace": ":'';"
+    "find": ":o.againOf?orderRef(o.againOf)+' again':st==='placed'",
+    "replace": ":st==='placed'"
   },
   {
     "name": "the again is not copper",

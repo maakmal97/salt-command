@@ -673,6 +673,7 @@ export const EN = {
   /* ---- ORDERS ---- */
   "ord.due": "Payment due",
   "ord.view": "Read only: their orders as their own page shows them. Nothing here is placed, paid or sent.",
+  "ord.act": "You are ordering for them. Nothing else here is paid or sent.",
   "pay.overdue": "Overdue",
   "pay.hold": "Please pay the overdue amount of {rm} before placing another order.",
   /* V5 (his answers of 29 Sep 2026): the stages, said before each comes */
@@ -723,6 +724,7 @@ export const EN = {
   "why.reply": "a reply for you",
   "why.placed": "waiting for us to confirm",
   "why.paidFull": "Paid in full",
+  "why.forYou": "Placed for you",
   "why.nothingPaid": "Nothing was paid",
   "ord.noneYet": "None yet.",
   "ord.tabs": "Show orders",
@@ -1075,6 +1077,8 @@ export const EN = {
   "news.point-moved.b": "Open your order to see where to collect it.",
   "news.pool-closed": "Group order closed",
   "news.pool-closed.b": "Your order is in. We confirm it next.",
+  "news.placed": "Order placed for you",
+  "news.placed.b": "We placed this order for you. Open it to see it.",
   "news.reply": "Counter says:",
   "news.message": "Counter says:",
   "news.paid": "Payment received",
