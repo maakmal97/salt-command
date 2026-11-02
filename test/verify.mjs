@@ -50035,7 +50035,8 @@ await (async () => {
     /* the few, fixed choices (sale or purchase, the book, the handover) are tiles, tapped; the select left is the party, then the figures in the order they stand */
     /* 25 Oct 2026 (Record redesign P4): found by their acts, since the resale choice now stands before Who */
     const tradeControl = (act) => tradeSection.querySelector('[data-act="record.trade.' + act + '"]');
-    tile(tradeSection, "Type", "sale");
+    /* 03 Nov 2026 (his decision: Record records no new sale, a new sale is placed on the customer's own page): with no row chosen the form records a purchase, so the typed figures go to the purchase operation */
+    tile(tradeSection, "Type", "purchase");
     tile(tradeSection, "Book", "salt");
     tradeControl("party").value = "CX1-AB";
     tradeControl("date").value = "2026-10-01";
@@ -50045,10 +50046,10 @@ await (async () => {
     tradeControl("moved").value = "0";
     tile(tradeSection, "Handover", "");
     tradeControl("delivery").value = "0";
-    [...tradeSection.querySelectorAll("button")].find((button) => button.textContent === "Record the sale").click();
-    for (let i = 0; i < 100 && !adminCalls.some((call) => call.route === "/all/maker/inputs/sale"); i++)
+    [...tradeSection.querySelectorAll("button")].find((button) => button.textContent === "Record the purchase").click();
+    for (let i = 0; i < 100 && !adminCalls.some((call) => call.route === "/all/maker/inputs/purchase"); i++)
       await new Promise((resolve) => setTimeout(resolve, 10));
-    const sentSale = adminCalls.find((call) => call.route === "/all/maker/inputs/sale");
+    const sentSale = adminCalls.find((call) => call.route === "/all/maker/inputs/purchase");
     ok(sentSale && sentSale.body.party === "CX1-AB" && sentSale.body.qty === 1
       && sentSale.body.total === 100 && !Object.hasOwn(sentSale.body, "note"),
       "the Maker trade form sends typed figures and no free-text note to the named Desk operation: "+tradeSection.textContent);

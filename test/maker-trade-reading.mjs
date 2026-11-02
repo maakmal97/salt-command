@@ -123,7 +123,10 @@ export async function run({ ok, pageWork }) {
       "trade reading route: the Desk side refuses a call without the bridge key");
 
     /* the page: the reading is on the form before Send is tapped */
-    const page = await ownerTrade(wd, pageWork);
+    /* 03 Nov 2026 (rule 2): Record records no new sale, so the sale's reading is held on a sale's row chosen under Row, which the form changes as before; a purchase is what New records */
+    const row = { rid: "row-1", party: "CX1-ZED", product: "salt", date: "2099-10-05", qty: 1, total: 130, direction: "SELL", cash: 0, movedUnits: 0, delivery: 0, handover: null };
+    const page = await ownerTrade(wd, pageWork, undefined, undefined, [row]);
+    await page.pick("row-1");
     try {
       const box = page.section.querySelector(".maker-reading"), text = () => box.textContent;
       /* 25 Oct 2026 (Record redesign P4): the reading is a ledger, a row a fact, its label, its figure and what stands behind it */
@@ -143,7 +146,7 @@ export async function run({ ok, pageWork }) {
       page.change("Price", "300"); await page.work.quiet();
       ok(!box.querySelector("p.msg.bad") && /Goods RM 300[.]00/.test(text()) && !box.querySelector(".reading-bad"),
         "trade reading page: a price at or over the floor draws no warning " + text());
-      page.change("Type", "purchase"); await page.work.quiet();
+      await page.pick(""); await page.work.quiet();   /* New: a purchase */
       page.change("Units", "100"); page.change("Price", "4400"); page.change("Freight", "200"); await page.work.quiet();
       ok(!/margin/i.test(text()) && !/Floor/.test(text()) && JSON.stringify(row("This buy, a unit")) === JSON.stringify(["RM 46.00", "RM 4.00 above the current cost."]),
         "trade reading page: a purchase shows its cost a unit against the current cost and no margin " + text());

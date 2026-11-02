@@ -4269,7 +4269,7 @@ export const OWNER_JS = `
       }
       var tradeAction=function(send){ return submitTrade(null,send); };
       tradeAction.after=async function(send){ if(!editAfter) return; var b=editAfter; editAfter=null; await send('/all/maker/inputs/ledger-amend',b); };
-      var tradeSend=makerButton(tradeSection,['Record the sale','record.trade.send'],tradeAction,true,function(){
+      var tradeSend=makerButton(tradeSection,['Record the purchase','record.trade.send'],tradeAction,true,function(){
         tradeAt=null;tradeSignature='';coverChoices.forEach(function(choice){choice.read();});
       });
       direction.addEventListener('change',function(){ if(!tradeEditing) tradeSend.textContent='Record the '+direction.value; });

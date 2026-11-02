@@ -1,7 +1,6 @@
 [
  {"name": "a: the tail swaps Cash paid and Handed over", "file": "stmt/owner.js", "find": "[handover,carriage,tradeMoved,tradeCash].forEach(function(c){ var r=c.closest('.salt-settings__row'); if(r) tradeTail.appendChild(r); });", "replace": "[handover,carriage,tradeCash,tradeMoved].forEach(function(c){ var r=c.closest('.salt-settings__row'); if(r) tradeTail.appendChild(r); });"},
  {"name": "a: Row stands last", "file": "stmt/owner.js", "find": "tradeSection.insertBefore(editHolder,direction.closest('.salt-settings'));", "replace": "tradeSection.appendChild(editHolder);"},
- {"name": "a: the pill says Send the sale", "file": "stmt/owner.js", "find": "['Record the sale','record.trade.send']", "replace": "['Send the sale','record.trade.send']"},
  {"name": "a: the pill does not follow Type", "file": "stmt/owner.js", "find": "if(!tradeEditing) tradeSend.textContent='Record the '+direction.value; });", "replace": "if(!tradeEditing) tradeSend.textContent='Record the sale'; });"},
  {"name": "b: Who is a search box", "file": "stmt/owner.js", "find": "tradeParty.type='text'; whoList.id=", "replace": "tradeParty.type='search'; whoList.id="},
  {"name": "b: Units starts at a half", "file": "stmt/owner.js", "find": "for(q=1;q<=100;q++) a.push(q/4);", "replace": "for(q=2;q<=100;q++) a.push(q/4);"},

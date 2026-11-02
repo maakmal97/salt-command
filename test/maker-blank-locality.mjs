@@ -131,12 +131,11 @@ export async function run({ ok, pageWork }) {
     /* 27 Oct 2026: Who is a typed input with a datalist of the catalog's codes (not a select), so the code is offered in the list and chosen by typing it */
     const selectability = !!party && party.tagName === "INPUT" && [...tradeSection.querySelectorAll("#makerWhoList option")].some((option) => option.value === "CT11-TBC");
     if (selectability) {
-      party.value = "CT11-TBC"; party.dispatchEvent(new blank.dom.window.Event("input", { bubbles: true }));
-      tradeDate.value = new Date().toISOString().slice(0, 10);
-      field("Units").value = "1"; field("Price").value = "130";   /* 27 Oct 2026: Price and Cash paid are the new labels; Units and Handed over are wheels holding 1 and 0 */
-      field("Cash paid").value = "0"; field("Handed over").value = "0";
-      field("Delivery").value = "0";
-      [...tradeSection.querySelectorAll("button")].find((button) => button.textContent === "Record the sale").click();
+      /* 03 Nov 2026 (his decision: Record records no new sale; rule 1): the form offers the confirmed code as Who (above) but records a purchase now, so the sale the form used to send
+         for it (one unit at 130, nothing paid or handed over, no delivery) is posted to the sale route through the page's own fetch, the real bridge and Worker answering */
+      const sold = await blank.dom.window.fetch("/all/maker/inputs/sale", { method: "POST", body: JSON.stringify({ at: new Date().toISOString(), product: "salt",
+        party: "CT11-TBC", date: new Date().toISOString().slice(0, 10), qty: 1, total: 130, cash: 0, movedUnits: 0, handover: null, delivery: 0 }) });
+      if (sold.status !== 200) throw new Error("The confirmed-ID trade was refused: " + sold.status);
       if (!await blank.work.quiet()) throw new Error("The confirmed-ID trade did not settle.");
     }
     const trade = blank.body && sqlite.prepare("SELECT id,status,entry FROM draft WHERE collection='sales' AND id<>? ORDER BY drafted_at DESC LIMIT 1")

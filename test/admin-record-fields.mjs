@@ -36,7 +36,8 @@ export async function run({ ok, pageWork }) {
     /* 2 */
     const seg = (f, act) => { const r = rowOf(f, act); const s = r && r.querySelector(".salt-segment"); return s ? [t(r.querySelector(".salt-settings__label")), s.getAttribute("role"), [...s.children].map((b) => [t(b), b.getAttribute("role"), b.getAttribute("data-key"), b.getAttribute("aria-checked")])] : null; };
     const type = seg(trade, "record.trade.direction"), hand = seg(trade, "record.trade.handover"), of = seg(loan, "record.loan.form");
-    ok(J(type) === J(["Type", "radiogroup", [["Sale", "radio", "sale", "true"], ["Purchase", "radio", "purchase", "false"]]])
+    /* 03 Nov 2026 (his decision: Record records no new sale): with no row chosen the Type stands on Purchase (its row hidden, held by Record's new-sale checks in test/order-stream-v6.mjs) */
+    ok(J(type) === J(["Type", "radiogroup", [["Sale", "radio", "sale", "false"], ["Purchase", "radio", "purchase", "true"]]])
       && J(hand) === J(["Handover", "radiogroup", [["Not yet", "radio", "none", "true"], ["Collected", "radio", "collected", "false"], ["Delivered", "radio", "delivered", "false"]]])
       && J(of) === J(["Loan of", "radiogroup", [["Goods", "radio", "salt", "true"], ["Cash", "radio", "cash", "false"]]]) && !trade.querySelector('fieldset.maker-tiles [data-act="record.trade.handover"]'),
       "a choice of two or three plain words is a Segment in its row, each option keeping its act and key: " + J([type, hand, of]));

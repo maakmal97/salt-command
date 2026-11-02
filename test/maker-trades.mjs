@@ -17,6 +17,19 @@ const AT = "2099-10-05T01:00:00.000Z";
 const body = (patch = {}) => ({ at: AT, product: "salt", party: "CX1-ZED", date: "2099-10-05",
   qty: 1, total: 130, cash: 170, movedUnits: 1, handover: "delivered", delivery: 40,
   extras: [{ product: "oil", qty: 2, total: 30, cash: 30, movedUnits: 2 }], ...patch });
+/* 03 Nov 2026: the body Record's form used to send for the two-book sale it typed (cash 0, delivery 40), stamped as it chose; the form sends it no more, so a check posts it itself */
+export const formSale = (at, patch = {}) => body({ at, cash: 0, extras: [{ product: "oil", qty: 2, total: 30, cash: 0, movedUnits: 2 }], ...patch });
+/* and what the form did when the Worker named a booked twin and he said yes on the Sheet: send it again with that twin named, on the book it belongs to, until none is named */
+export async function postAgreeing(post, path, input) {
+  let sent = structuredClone(input), answer = await post(path, sent);
+  for (let i = 0; i < 4 && answer.status === 409 && answer.json && answer.json.twin && answer.json.twin.second; i++) {
+    const index = answer.json.twin.index || 0;
+    if (index === 0) sent.second = answer.json.twin.second; else sent.extras[index - 1].second = answer.json.twin.second;
+    sent.at = new Date(Date.parse(sent.at) + 1).toISOString();   /* the form's stamp moved with its content, as a changed request's does */
+    answer = await post(path, sent);
+  }
+  return { ...answer, sent };
+}
 const book = () => ({ version: "trade-fixture", sales: [], purchases: [],
   state: { PRODUCTS: { salt: {}, oil: {}, gas: { retired: true } },
     roster: ["CX1-ZED", "AX1-ZED", "AX1-ZED-R", "SX1-ZED", "CA1-ZED", "CA1-ZED-R"], associates: ["AX1-ZED", "CA1-ZED"] },
@@ -65,8 +78,11 @@ async function decide(doc, work, approve) {
   const go = doc.getElementById("ynGo");
   if (go) { go.click(); await work.quiet(); }
 }
-/* 27 Oct 2026: forge, a code the roster does not hold, is added to the catalog the page is given, so a typed Who the page would refuse reaches the Counter and the Desk, which are what these checks hold to account */
-export async function ownerTrade(wd, pageWork, cover, forge) {
+/* 27 Oct 2026: forge, a code the roster does not hold, is added to the catalog the page is given, so a typed Who the page would refuse reaches the Counter and the Desk, which are what these checks hold to account.
+   03 Nov 2026 (his decision, Record records no new sale): with no row chosen the form is a purchase, so this page types a two-book PURCHASE. A new sale is posted with post(), the
+   body the form used to send, straight to the same route through the page's own fetch, so the real bridge and Worker still run. rows are sale rows added to the catalog, for a check
+   that changes one (pick(rid) chooses it under Row). */
+export async function ownerTrade(wd, pageWork, cover, forge, rows) {
   const sent = [];
   let work, loseAnswer = false, tick = Date.parse(AT);
   const dom = new JSDOM(landingPage("", "trade-nonce", { master: "fixture-master", accounts: [] }), {
@@ -83,11 +99,12 @@ export async function ownerTrade(wd, pageWork, cover, forge) {
           const input = init.body && JSON.parse(init.body);
           if (input) sent.push({ path: String(path), bytes: init.body, body: input });
           let response = await wd.call(String(path), input || undefined);
-          if (forge && String(path) === "/all/maker/inputs" && !input) {
-            const j = await response.json(); j.catalog.parties = [...j.catalog.parties, forge];
+          if ((forge || rows) && String(path) === "/all/maker/inputs" && !input) {
+            const j = await response.json(); if (forge) j.catalog.parties = [...j.catalog.parties, forge];
+            if (rows) j.catalog.rows = rows;
             response = new Response(JSON.stringify(j), { status: response.status, headers: { "content-type": "application/json" } });
           }
-          if (loseAnswer && String(path) === "/all/maker/inputs/sale") {
+          if (loseAnswer && /^\/all\/maker\/inputs\/(sale|purchase)$/.test(String(path))) {
             loseAnswer = false; throw new Error("Fixture lost the completed response.");
           }
           return response;
@@ -107,7 +124,7 @@ export async function ownerTrade(wd, pageWork, cover, forge) {
   button(section, "Add a book").click(); await work.quiet();
   for (const [label, value] of Object.entries({ Date: "2099-10-05", Units: "1",
     "Price": "130", "Cash paid": "0", "Handed over": "1",
-    "Delivery": "40" })) mainField(section, label).value = value;
+    "Freight": "0" })) mainField(section, label).value = value;   /* a purchase's carriage is Freight, and a multi-book purchase carries none */
   /* 27 Oct 2026: Who is a typed field over a datalist, empty until chosen (it was a select that began on the first code) */
   { const who = field(section, "Who"); who.value = "CX1-ZED"; }   /* no event: the price does not fill itself under the figures this harness types */
   tile(section, "Handover", "delivered");
@@ -119,8 +136,14 @@ export async function ownerTrade(wd, pageWork, cover, forge) {
     const control = field(section, label); control.value = value;
     control.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
   };
-  const send = async () => { (button(section, "Record the sale") || button(section, "Record the purchase")).click(); await work.quiet(); };
-  return { dom, section, sent, work, change, send, lose: () => { loseAnswer = true; } };
+  const send = async () => { (button(section, "Record the purchase") || button(section, "Record the sale")).click(); await work.quiet(); };
+  /* a body posted as the page posts one: through its own fetch to the same route, answered by the same bridge and Worker */
+  const post = async (path, input) => { const r = await dom.window.fetch(path, { method: "POST", body: JSON.stringify(input) }); return { status: r.status, json: await r.json() }; };
+  const refresh = async () => {   /* the page reads the review again on coming to Orders, and the form is as he left it on coming back to Record */
+    for (const place of ["orders", "record"]) { dom.window.document.querySelector('button[data-act="nav.' + place + '"]').click(); await work.quiet(); }
+  };
+  const pick = async (rid) => { const e = section.querySelector('[data-act="record.trade.edit"]'); e.value = rid; e.dispatchEvent(new dom.window.Event("change", { bubbles: true })); await work.quiet(); };
+  return { dom, section, sent, work, change, send, post, pick, refresh, lose: () => { loseAnswer = true; } };
 }
 
 function foldRows(wd) {
@@ -234,29 +257,24 @@ export async function run({ ok, pageWork }) {
     dom.window.document.querySelector('button[data-act="nav.record"]').click(); await work.quiet();
     const section = [...dom.window.document.querySelectorAll("#makerInputs .maker-input")].find((s) => s.querySelector("h3")?.textContent === "Sale or purchase");
     const button = (root, label) => [...root.querySelectorAll("button")].find((e) => e.textContent === label);
-    button(section, "Add a book")?.click();
-    await work.quiet();
-    const extra = section.querySelector(".maker-extra-trade");
-    if (extra) {
-      /* 27 Oct 2026: the form's rows are found by their names (Who a typed field, Units and Handed over wheels, the tail a list of its own), not by their place among the inputs */
-      const put = (root, label, value) => { field(root, label).value = value; };
-      put(section, "Who", "CX1-ZED");
-      [["Date", "2099-10-05"], ["Units", "1"], ["Price", "130"], ["Cash paid", "170"], ["Handed over", "1"], ["Delivery", "40"]].forEach(([label, value]) => { mainField(section, label).value = value; });
-      tile(section, "Handover", "delivered");
-      [["Units", "2"], ["Price", "30"], ["Cash paid", "30"], ["Handed over", "2"]].forEach(([label, value]) => { field(extra, label).value = value; });   /* 27 Oct 2026: by name */
-      button(section, "Record the sale").click(); await work.quiet();
-    }
+    /* 03 Nov 2026 (rule 1): the form sends no new sale, so the body it used to send for this two-book sale is posted to the same route through the page's own fetch,
+       the booked oil twin named as his yes on the Sheet named it. The bridge, the Worker and the drafter are the ones that ran. The page's own review then shows the trip. */
+    const post = async (path, input) => { const r = await dom.window.fetch(path, { method: "POST", body: JSON.stringify(input) }); return { status: r.status, json: await r.json() }; };
+    const placed = await postAgreeing(post, "/all/maker/inputs/sale", formSale(AT, { cash: 170, extras: [{ product: "oil", qty: 2, total: 30, cash: 30, movedUnits: 2 }] }));
+    for (const place of ["orders", "record"]) { dom.window.document.querySelector('button[data-act="nav.' + place + '"]').click(); await work.quiet(); }   /* the page reads the review again on coming to Orders */
     const rows = deviceWorld.drafts();
-    ok(extra && rows.length === 2 && rows[0].row.delivery === 40 && rows[1].row.product === "oil" && !rows[1].row.delivery
+    ok(placed.status === 200 && rows.length === 2 && rows[0].row.delivery === 40 && rows[1].row.product === "oil" && !rows[1].row.delivery
       && rows[1].row.qty === 2 && rows[1].row.cash === 30 && rows[1].row.deliveredQty === 2 && rows[1].entry.payload.second === "s900",
-      "multi-book owner UI: actual generated controls submit independent second-book figures through the real bridge/drafter " +
-        JSON.stringify({ rows: rows.map((r) => r.row), status: section?.querySelector('[role="status"]')?.textContent, calls: deviceWorld.calls }));
+      "multi-book sale route: independent second-book figures, with the booked oil twin named, go through the real bridge/drafter " +
+        JSON.stringify({ rows: rows.map((r) => r.row), placed, calls: deviceWorld.calls }));
     const approve = button(dom.window.document, "Approve both");
     ok(approve && /Two books, one trip/.test(dom.window.document.body.textContent) && /one tap/.test(section.textContent),
       "multi-book owner review: the actual page labels the trip decision and shows the waiting siblings");
     if (approve) await decide(dom.window.document, work, approve);
     ok(!!approve && deviceWorld.drafts().length === 2 && deviceWorld.drafts().every((r) => r.status === "approved"),
       "multi-book owner tap: the generated Approve trip button decides both actual drafts");
+    button(section, "Add a book")?.click(); await work.quiet();
+    const extra = section.querySelector(".maker-extra-trade");
     button(section, "Remove this book")?.click();   /* 27 Oct 2026 (Record's forms as settings rows): the danger row's words */
     ok(extra && !section.querySelector(".maker-extra-trade"),
       "multi-book owner removal: Remove book actually removes its fields from the submitted trade");
@@ -265,7 +283,8 @@ export async function run({ ok, pageWork }) {
     button(section, "Add a book")?.click(); await work.quiet();
     const buyExtra = section.querySelector(".maker-extra-trade");
     if (buyExtra) {
-      /* 27 Oct 2026: by name, as the sale above (Freight is the purchase's Delivery) */
+      /* 27 Oct 2026: by name, as everywhere in this file (Freight is the purchase's Delivery); 03 Nov 2026: Who and the handover are typed here, no sale having typed them first */
+      field(section, "Who").value = "CX1-ZED"; tile(section, "Handover", "delivered");
       [["Date", "2099-10-05"], ["Units", "1"], ["Price", "130"], ["Cash paid", "130"], ["Handed over", "1"], ["Freight", "0"]].forEach(([label, value]) => { mainField(section, label).value = value; });
       [["Units", "2"], ["Price", "30"], ["Cash paid", "30"], ["Handed over", "2"]].forEach(([label, value]) => { field(buyExtra, label).value = value; });
       button(section, "Record the purchase").click(); await work.quiet();
@@ -281,8 +300,10 @@ export async function run({ ok, pageWork }) {
 
   const receiptWorld = world(), receiptPage = await ownerTrade(receiptWorld, pageWork);
   try {
-    await receiptPage.send();
+    /* 03 Nov 2026 (rule 1): the sale is posted as the form posted it; its stamp is its own, as the form's was until a figure changed */
+    const first = await receiptPage.post("/all/maker/inputs/sale", formSale(AT));
     const original = receiptPage.sent.find((s) => s.path.endsWith("/sale"));
+    await receiptPage.refresh();
     const approve = button(receiptPage.dom.window.document, "Approve both");
     if (approve) await decide(receiptPage.dom.window.document, receiptPage.work, approve);
     for (const [i, row] of foldRows(receiptWorld).items.entries())
@@ -292,32 +313,39 @@ export async function run({ ok, pageWork }) {
     receiptWorld.sqlite.prepare("INSERT INTO state(key,doc) VALUES ('QUEUE_COMMITTED',?)")
       .run(JSON.stringify(receiptWorld.drafts().at(-1).id));
     await runDrafter(receiptWorld.desk);
-    await receiptPage.send();
+    /* the same batch again: named as a twin of the booked rows, nothing drafted, then sent again with each twin named and a fresh stamp (as the form did on his yes) */
+    const again = formSale("2099-10-05T03:00:00.000Z");
+    const bare = await receiptPage.post("/all/maker/inputs/sale", again);
+    const confirmed = await postAgreeing(receiptPage.post, "/all/maker/inputs/sale", again);
     const requests = receiptPage.sent.filter((s) => s.path.endsWith("/sale"));
-    ok(original && requests[1]?.body.at !== original.body.at
+    ok(first.status === 200 && approve && original && bare.status === 409 && bare.json.twin && confirmed.status === 200
+      && confirmed.sent.at !== original.body.at && requests.at(-1)?.body.at !== original.body.at
       && requests.at(-1)?.body.second && requests.at(-1)?.body.extras[0].second
       && receiptWorld.drafts().length === 4,
-      "multi-book confirmed receipt: an identical intentional second batch gets fresh ids and its own twin confirmations " +
-        JSON.stringify({ requests, rows: receiptWorld.drafts().map((r) => r.row), answer: receiptPage.section.textContent }));
+      "multi-book confirmed receipt: an identical intentional second batch is refused as a twin, then gets fresh ids and its own twin confirmations " +
+        JSON.stringify({ requests, bare, rows: receiptWorld.drafts().map((r) => r.row) }));
   } finally { receiptPage.dom.window.close(); receiptWorld.sqlite.close(); }
 
   const lostWorld = world(), lostPage = await ownerTrade(lostWorld, pageWork);
   try {
     lostPage.lose(); await lostPage.send();
-    const saved = lostPage.dom.window.localStorage.getItem("saltMakerPending:/all/maker/inputs/sale");
+    const saved = lostPage.dom.window.localStorage.getItem("saltMakerPending:/all/maker/inputs/purchase");
     field(lostPage.section, "Price").value = "999";
     field(lostPage.section, "Price").dispatchEvent(new lostPage.dom.window.Event("input", { bubbles: true }));
     await lostPage.send();
-    const requests = lostPage.sent.filter((s) => s.path.endsWith("/sale"));
+    const requests = lostPage.sent.filter((s) => s.path.endsWith("/purchase"));
     ok(saved && requests.length === 2 && requests[0].bytes === requests[1].bytes && lostWorld.drafts().length === 2
       && lostWorld.drafts()[0].row.total === 130
-      && !lostPage.dom.window.localStorage.getItem("saltMakerPending:/all/maker/inputs/sale"),
+      && !lostPage.dom.window.localStorage.getItem("saltMakerPending:/all/maker/inputs/purchase"),
       "multi-book lost answer: edited controls retry the original whole batch byte-for-byte until confirmation");
   } finally { lostPage.dom.window.close(); lostWorld.sqlite.close(); }
 
   for (const [stream, buyer] of [["R2", "CX1-ZED"], ["R2", ""], ["R3", null]]) {
     const attributed = world(), page = await ownerTrade(attributed, pageWork);
     try {
+      /* 03 Nov 2026 (rule 2): the attribution controls are a new sale's; the form no longer records one, but its Type still takes Sale (it then refuses to send), so the controls are held as they were.
+         The sale they described is posted as they built it (rule 1) */
+      page.change("Type", "sale");
       page.change("Associate", stream); page.change("Which associate", "CA1-ZED");
       if (stream === "R2") page.change("Their customer", buyer);
       const party = [...page.section.querySelectorAll(":scope > .maker-list > label")].find((e) => e.contains(field(page.section, stream === "R3" ? "Buyer" : "Who")));
@@ -325,16 +353,18 @@ export async function run({ ok, pageWork }) {
         : !party?.hidden && field(page.section, "Their customer").parentElement.hidden)
         && field(page.section, "Which associate").value === "CA1-ZED",
         "multi-book attribution controls: " + stream + " exposes its own party/end-customer conditions " + String(buyer));
-      await page.send();
+      const posted = await page.post("/all/maker/inputs/sale", formSale(AT, stream === "R2"
+        ? { party: "CA1-ZED", assoc: "CA1-ZED", stream, downstream: buyer || null } : { assoc: "CA1-ZED", stream }));
+      await page.refresh();
       const request = page.sent.find((s) => s.path.endsWith("/sale")), rows = attributed.drafts();
-      ok(request?.body.stream === stream && request.body.assoc === "CA1-ZED" && rows.length === 2
+      ok(posted.status === 200 && request?.body.stream === stream && request.body.assoc === "CA1-ZED" && rows.length === 2
         && (stream === "R2"
           ? request.body.party === "CA1-ZED" && rows.every((r) => r.row.customer === "CA1-ZED-R"
             && r.row.rev === "R2" && (r.row.downstream || null) === (buyer || null))
           : request.body.party === "CX1-ZED" && rows.every((r) => r.row.customer === "CX1-ZED")
             && rows[0].row.ref === "CA1-ZED" && !rows[1].row.ref),
-        "multi-book attributed UI route: " + stream + " owner controls reach real bridge/Worker/native drafts " + String(buyer) +
-          JSON.stringify({ request, rows: rows.map((r) => r.row), answer: page.section.textContent }));
+        "multi-book attributed sale route: " + stream + " attribution reaches real bridge/Worker/native drafts " + String(buyer) +
+          JSON.stringify({ request, posted, rows: rows.map((r) => r.row) }));
       const approve = button(page.dom.window.document, "Approve both");
       if (approve) await decide(page.dom.window.document, page.work, approve);
       const folded = foldRows(attributed), sales = folded.items.map((item) => item.row);
@@ -360,6 +390,7 @@ export async function run({ ok, pageWork }) {
     .run(JSON.stringify({ banned: [{ id: "SX1-ZED" }] }));
   const choicesPage = await ownerTrade(choicesWorld, pageWork);
   try {
+    choicesPage.change("Type", "sale");   /* 03 Nov 2026 (rule 2): the control is a sale's, held with Type forced to Sale as the attribution controls above */
     choicesPage.change("Associate", "R2");
     const r2Choices = [...field(choicesPage.section, "Which associate").options].map((o) => o.value);
     choicesPage.change("Associate", "R3");
@@ -387,26 +418,31 @@ export async function run({ ok, pageWork }) {
   ]) {
     const refusedWorld = world(), page = await ownerTrade(refusedWorld, pageWork, undefined, scenario.field === "Who" ? "CZ9-ZED" : undefined);
     try {
-      if (scenario.direction === "purchase") page.change("Type", "purchase");
-      if (scenario.stream) {
-        page.change("Associate", scenario.stream); page.change("Which associate", "CA1-ZED");
+      let answer = null;
+      if (scenario.direction === "purchase") {
+        const forged = page.dom.window.document.createElement("option");
+        forged.value = "CZ9-ZED"; forged.textContent = "CZ9-ZED";
+        field(page.section, scenario.field).value = forged.value;   /* Who is typed: no option to add */
+        await page.send();
+      } else {
+        /* 03 Nov 2026 (rule 1): a sale is no longer typed into the form, so the forged body the form would have built is posted to the same route; the Worker's refusal and
+           its Add ID guidance are what is held. The page's plain sentence over that refusal is a purchase's alone now, held by the supplier case */
+        answer = await page.post("/all/maker/inputs/sale", formSale(AT, scenario.field === "Who" ? { party: "CZ9-ZED" }
+          : scenario.field === "Their customer" ? { party: "CA1-ZED", assoc: "CA1-ZED", stream: "R2", downstream: "CZ9-ZED" }
+          : scenario.stream === "R3" ? { assoc: "CZ9-ZED", stream: "R3" } : { party: "CZ9-ZED", assoc: "CZ9-ZED", stream: "R2" }));
       }
-      const forged = page.dom.window.document.createElement("option");
-      forged.value = "CZ9-ZED"; forged.textContent = "CZ9-ZED";
-      if (scenario.field !== "Who") field(page.section, scenario.field).appendChild(forged);   /* Who is typed: no option to add */
-      field(page.section, scenario.field).value = forged.value;
-      await page.send();
       const request = page.sent.find((s) => s.path.endsWith("/" + scenario.direction));
       const counts = ["maker_request", "input_admission", "input_admission_source", "draft"]
         .map((table) => refusedWorld.sqlite.prepare("SELECT COUNT(*) AS n FROM " + table).get().n);
+      const status = page.section.querySelector('[role="status"]');
       ok(request && (scenario.field === "Their customer" ? request.body.downstream
         : scenario.field === "Which associate" ? request.body.assoc : request.body.party) === "CZ9-ZED"
         && refusedWorld.calls.includes("/_internal/maker/inputs/" + scenario.direction)
-        && page.section.querySelector('[role="status"]').firstChild.textContent === scenario.plain
-        && page.section.querySelector('[role="status"] .rraw').textContent === scenario.error
+        && (answer ? answer.status >= 400 && answer.json.error === scenario.error
+          : status.firstChild.textContent === scenario.plain && status.querySelector(".rraw").textContent === scenario.error)
         && counts.every((n) => n === 0) && refusedWorld.puts.length === 0,
         "trade unknown " + scenario.name + ": forged generated-owner input reaches the real bridge/Worker, shows precise Add ID guidance and writes no queue, draft or admission " +
-          JSON.stringify({ request, calls: refusedWorld.calls, counts, answer: page.section.querySelector('[role="status"]').textContent }));
+          JSON.stringify({ request, calls: refusedWorld.calls, counts, answer: answer || status.textContent }));
     } finally { page.dom.window.close(); refusedWorld.sqlite.close(); }
   }
 }
@@ -421,6 +457,12 @@ export async function runCoverRead({ ok, pageWork }) {
       : Response.json({ ok: true, cover: { rm: 30, units: 0.75, free: 1, ask: 130 } });
   });
   try {
+    /* 03 Nov 2026 (rule 2, with a note for the owner): the reward cover is a new sale's, and the form records none. Its Type still takes Sale, which it then refuses to send, and
+       the cover box and its read are still the code that runs there, so they are held as they were with Type forced to Sale; a purchase offers no cover (held below). */
+    page.change("Price", "130"); await page.work.quiet();
+    ok(page.section.querySelector("[data-reward-cover]").parentNode.hidden && reads.length === 0,
+      "cover read: the form as it stands, a purchase, offers no reward cover and asks the Worker for none " + JSON.stringify(reads));
+    page.change("Type", "sale"); await page.work.quiet(); reads.length = 0;
     const check = page.section.querySelector("[data-reward-cover]"), label = check.parentNode;
     const note = () => label.parentNode.nextElementSibling.firstChild?.textContent ?? "", raw = () => label.parentNode.nextElementSibling.querySelector(".rraw")?.textContent;
     page.change("Price", "130"); await page.work.quiet();

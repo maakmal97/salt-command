@@ -31,7 +31,7 @@ function told(j) {
 /* the groups the page draws: legend, act, and the values offered in order, with the one chosen ("" first when it is the empty value, none when none is) */
 const GROUPS = [
   ["Stock count", "Book", "record.count.book", ["salt", "oil"], "salt"],
-  ["Sale or purchase", "Type", "record.trade.direction", ["sale", "purchase"], "sale"],
+  ["Sale or purchase", "Type", "record.trade.direction", ["sale", "purchase"], "purchase"],   /* 03 Nov 2026: with no row chosen the form records a purchase (Record records no new sale) */
   ["Sale or purchase", "Book", "record.trade.book", ["salt", "oil"], "salt"],
   ["Sale or purchase", "Handover", "record.trade.handover", ["", "collected", "delivered"], ""],
   ["Sale or purchase", "Associate", "record.trade.stream", ["", "R2", "R3"], ""],
@@ -202,30 +202,24 @@ export async function run({ ok, pageWork }) {
     p.type(byAct(trade, "record.trade.party"), "CX1-ZED");   /* 27 Oct 2026: Who is typed, no longer a select that began on the first code */
     p.type(byAct(trade, "record.trade.date"), "2026-10-02"); p.type(byAct(trade, "record.trade.units"), "1"); p.type(byAct(trade, "record.trade.total"), "100");
     p.type(byAct(trade, "record.trade.delivery"), "10");
+    /* 03 Nov 2026 (his decision: Record records no new sale; rule 2): a purchase is what the form sends, its carriage Freight; Type taken to Sale sends nothing at all, and the Associate
+       tiles (a resale's or an introduction's stream) belong to a sale alone, which the form no longer sends, so the check that they sent R2 and R3 is dropped (the sale route's attribution is held in test/maker-trades.mjs) */
     for (const direction of tileValues(trade, "Type")) {
       tile(trade, "Type", direction);
-      const carriage = direction === "sale" ? { delivery: 10 } : { freight: 10 };
-      check("trade " + direction, await send("/all/maker/inputs/" + direction, trade, "record.trade.send"), { party: "CX1-ZED", ...carriage });
+      const body = await send("/all/maker/inputs/" + direction, trade, "record.trade.send");
+      if (direction === "sale") { if (body !== null) failed.push("trade sale was sent " + JSON.stringify(body)); }
+      else check("trade " + direction, body, { party: "CX1-ZED", freight: 10 });
     }
-    tile(trade, "Type", "sale");
+    tile(trade, "Type", "purchase");
     for (const book of tileValues(trade, "Book")) {
       tile(trade, "Book", book);
-      check("trade book " + book, await send("/all/maker/inputs/sale", trade, "record.trade.send"), { product: book });
+      check("trade book " + book, await send("/all/maker/inputs/purchase", trade, "record.trade.send"), { product: book });
     }
     for (const handover of tileValues(trade, "Handover")) {
       tile(trade, "Handover", handover);
-      check("trade handover '" + handover + "'", await send("/all/maker/inputs/sale", trade, "record.trade.send"), { handover: handover || null });
+      check("trade handover '" + handover + "'", await send("/all/maker/inputs/purchase", trade, "record.trade.send"), { handover: handover || null });
     }
     tile(trade, "Handover", "");
-    p.type(byAct(trade, "record.trade.associate"), "CA1-ZED");
-    for (const stream of tileValues(trade, "Associate")) {
-      tile(trade, "Associate", stream);
-      p.type(byAct(trade, "record.trade.associate"), "CA1-ZED");
-      const body = await send("/all/maker/inputs/sale", trade, "record.trade.send");
-      check("trade stream '" + stream + "'", body, stream ? { stream, assoc: "CA1-ZED", party: stream === "R2" ? "CA1-ZED" : "CX1-ZED" } : { party: "CX1-ZED" });
-      if (!stream && body && (Object.hasOwn(body, "stream") || Object.hasOwn(body, "assoc"))) failed.push("trade with no associate named one " + JSON.stringify(body));
-    }
-    tile(trade, "Associate", "");
     /* a loan: in kind or cash, borrowed or lent, and the book only for goods */
     const loan = p.form("Loan");
     p.w.localStorage.removeItem("saltMakerPending:/all/maker/inputs/loan");   /* the harness keeps a loan unsent on this device; a new one is sent beside it */

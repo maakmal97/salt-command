@@ -30,6 +30,8 @@ export async function run({ ok, pageWork }) {
       && J(radios.map((r) => [r.getAttribute("data-value"), t(r), r.getAttribute("aria-label")])) === J([["", "No", null], ["R2", "Resells", "They resell"], ["R3", "Referred", "They introduced the buyer"]]),
       "Associate stands just before Who, its options No, Resells and Referred, the full words spoken: " + J(radios.map((r) => t(r))));
     /* 2 */
+    /* 03 Nov 2026 (his decision: Record records no new sale): the sale's reading is read on a sale's row chosen under Row, which the form changes as before */
+    await set("record.trade.edit", "row-1");
     await set("record.trade.units", "3"); await set("record.trade.total", "100");
     const box = trade.querySelector(".maker-reading"), rows = [...box.querySelectorAll(".reading-rows .salt-ledger__row")];
     const read = rows.map((r) => [r.getAttribute("data-reading"), t(r.querySelector(".salt-ledger__label")), t(r.querySelector(".salt-ledger__value")), t(r.querySelector(".salt-ledger__flag"))]);
@@ -41,8 +43,14 @@ export async function run({ ok, pageWork }) {
       && J([...box.querySelectorAll("p.msg.bad")].map(t)) === J(["RM 30 under the Floor of RM 130 for 3 units."]),
       "the reading is a ledger, label, figure and what stands behind it, a loss in ember and the warning a sentence: " + J(read));
     /* 3 */
+    /* the reward cover is a new sale's choice and the form records none, so with no row chosen the form offers none (a purchase); its Type still takes Sale, which it then refuses to
+       send, and the cover row is held there as it was drawn (a note for the owner: this holds code the form no longer reaches in use) */
+    await set("record.trade.edit", "");
+    const none = trade.querySelector(".maker-cover").hidden;
+    tile(trade, "Type", "sale"); await quiet();
+    await set("record.trade.units", "3"); await set("record.trade.total", "100");
     const cover = trade.querySelector(".maker-cover");
-    ok(!cover.hidden && t(cover.querySelector(".maker-cover__words")) === "Use 0.75 unit of their reward" && t(cover.querySelector(".maker-cover__held")) === "They hold 2 units"
+    ok(none && !cover.hidden && t(cover.querySelector(".maker-cover__words")) === "Use 0.75 unit of their reward" && t(cover.querySelector(".maker-cover__held")) === "They hold 2 units"
       && t(cover.querySelector(".maker-cover__fig")) === "RM 30.00 off" && cover.lastElementChild.classList.contains("maker-cover__fig") && cover.firstElementChild.type === "checkbox",
       "the reward cover is one ticked row: the use in words, what they hold under it, the figure at the right: " + t(cover));
     /* 4 */

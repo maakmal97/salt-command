@@ -146,26 +146,23 @@ export async function run({ ok, pageWork }) {
       && JSON.stringify(redeemBook.sales.filter((s) => s.rid !== redeemedRow.rid)) === redeemBefore,
     "returned holder's generated redemption approves and folds exactly one whole unit, no other sales changed");
 
-    const trade = section(ui.doc, "Sale or purchase");
-    for (const [name, value] of Object.entries({ Who: "CX1-ZED", Date: "2099-10-05", Units: "1",
-      "Price": String(wd.ask - 30), "Handed over": "1", "Delivery": "40", Handover: "delivered" }))
-      ui.set(trade, name, value);
-    await ui.work.quiet();
-    const cover = () => trade.querySelector("[data-reward-cover]");
-    ok(cover() && !cover().parentNode.hidden && !cover().checked
-      && /Use 0[.]75 unit of their reward.*RM 30[.]00 off/.test(trade.textContent)
-      && wd.nativeCover.kg === 0.75 && wd.nativeCover.rm === 30,
-    "generated cover is unticked and matches the native own-card gap at cost, delivery excluded");
-    ui.set(trade, "Price", String(wd.ask)); await ui.work.quiet();
-    ok(cover().parentNode.hidden, "a sale at its own quote generates no cover offer");
-    ui.set(trade, "Price", String(wd.ask - 30));await ui.work.quiet();
-    ui.set(trade, "Book", "oil"); await ui.work.quiet();
-    ok(cover().parentNode.hidden, "a fixed nonreward book generates no cover offer");
-    ui.set(trade, "Book", "salt");ui.set(trade, "Who", "CA1-ZED");await ui.work.quiet();
-    ok(cover().parentNode.hidden, "an associate generates no customer cover offer");
-    ui.set(trade, "Who", "CX1-ZED"); ui.set(trade, "Price", String(wd.ask - 30));await ui.work.quiet();
-    ui.set(trade, "Date", "2099-10-04");
-    button(trade, "Record the sale").click();await ui.work.quiet();
+    /* 03 Nov 2026 (his decision: Record records no new sale; a new sale is placed on their own page). The cover is a new sale's choice, so what the form generated is held where
+       it was made, in the Worker's cover reading (the route the form asked, through the real bridge), and the sale the form would have built is posted to the sale route (rule 1).
+       The form's own cover box (unticked, hidden) is held by the cover read section and by Record, P4. */
+    const post = async (path, input) => { const r = await ui.dom.window.fetch(path, { method: "POST", body: JSON.stringify(input) }); return { status: r.status, json: await r.json() }; };
+    const read = async (patch) => {
+      const answer = await post("/all/maker/trade-cover", { product: "salt", party: "CX1-ZED", qty: 1, total: wd.ask - 30, stream: null, ...patch });
+      if (answer.status !== 200 || !answer.json.ok) throw new Error("The cover reading did not answer: " + JSON.stringify(answer));
+      return answer.json.cover;
+    };
+    const offered = await read({});
+    ok(offered && offered.units === 0.75 && offered.rm === 30 && wd.nativeCover.kg === 0.75 && wd.nativeCover.rm === 30,
+    "generated cover reading matches the native own-card gap at cost, delivery excluded: " + JSON.stringify(offered));
+    ok(!(await read({ total: wd.ask })), "a sale at its own quote generates no cover offer");
+    ok(!(await read({ product: "oil" })), "a fixed nonreward book generates no cover offer");
+    ok(!(await read({ party: "CA1-ZED" })), "an associate generates no customer cover offer");
+    const unmarkedAt = "2099-10-05T01:30:00.000Z";
+    await post("/all/maker/inputs/sale", wd.trade(unmarkedAt, { date: "2099-10-04" }));
     const unmarked = wd.drafts().find((d) => d.entry.payload.mode === "new");
     ok(unmarked && !unmarked.row.coverUnits && !unmarked.entry.payload.more,
       "the generated unticked trade sends no cover and reserves no reward");
@@ -191,25 +188,20 @@ export async function run({ ok, pageWork }) {
       { at: reservationAt, code: "CX1-ZED", date: wd.date });
     ok(reservation.status === 200 && wd.drafts().some((d) => d.id === reservationAt && d.status === "pending"),
       "an actual pending redemption reserves reward capacity before the covered trade batch");
-    ui.set(trade, "Date", "2099-10-05");
-    button(trade, "Add a book").click();await ui.work.quiet();
-    const extra = trade.querySelector(".maker-extra-trade");
-    for (const [name, value] of Object.entries({ Units: "2", "Price": "30", "Handed over": "2" }))
-      ui.set(extra, name, value);
-    await ui.work.quiet();
-    cover().checked = true;ui.lose();
-    button(trade, "Record the sale").click();await ui.work.quiet();
+    /* the covered two-book sale the form built with its cover ticked, posted whole; its answer is lost, as the form's was, and the same bytes are sent again (rule 1) */
+    const coveredAt = "2099-10-05T02:10:00.000Z";
+    const covered = wd.trade(coveredAt, { cover: true, extras: [{ product: "oil", qty: 2, total: 30, cash: 0, movedUnits: 2 }] });
+    const lostFirst = await post("/all/maker/inputs/sale", covered);
     const salePosts = () => ui.sent.filter((p) => p.path === "/all/maker/inputs/sale" && p.body.extras);
     const batch = wd.drafts().filter((d) => d.entry.payload.mode === "new" && d.row.trip);
     ok(batch.length === 2 && batch[0].row.coverUnits === 0.75 && batch[0].row.coverRM === 30
       && batch[0].entry.payload.coverFree === 1 && /covered by/.test(batch[0].entry.raw)
       && batch[0].row.delivery === 40 && !batch[1].row.delivery && batch[0].row.trip === batch[1].row.trip,
     "marked owner batch keeps pending reward reservations and one delivery on the unchanged trip carrier when verified registrations are present");
-    ui.set(trade, "Price", "999");
-    button(trade, "Record the sale").click();await ui.work.quiet();
-    ok(salePosts().length === 2 && salePosts()[0].bytes === salePosts()[1].bytes
-      && wd.drafts().filter((d) => d.entry.payload.mode === "new" && d.row.trip).length === 2 && !cover().checked,
-    "lost-answer owner retry sends immutable whole-batch bytes once and clears the checkbox on confirmation");
+    const retried = await post("/all/maker/inputs/sale", covered);
+    ok(lostFirst.status === 200 && retried.status === 200 && salePosts().length === 2 && salePosts()[0].bytes === salePosts()[1].bytes
+      && wd.drafts().filter((d) => d.entry.payload.mode === "new" && d.row.trip).length === 2,
+    "lost-answer owner retry sends immutable whole-batch bytes once and drafts it once: " + JSON.stringify([lostFirst.status, retried.status, retried.json.replay]));
     const changed = await wd.call("/all/maker/inputs/sale", { ...salePosts()[0].body, total: 999 });
     ok(changed.status === 409, "changed input under the retained request timestamp is refused");
     const approval = await wd.call("/all/maker/drafts/" + encodeURIComponent(batch[0]?.id || "missing") + "/approve", {});
@@ -243,21 +235,16 @@ export async function run({ ok, pageWork }) {
 
 export async function runExtra({ ok, pageWork }) {
   const extraCase = await fixture();
-  let extraUi;
   try {
-    extraUi = await owner(extraCase, pageWork);
-    const trade = section(extraUi.doc, "Sale or purchase");
-    for (const [name, value] of Object.entries({ Book: "oil", Who: "CX1-ZED", Date: "2099-10-05", Units: "2",
-      "Price": "30", "Handed over": "2", "Delivery": "40", Handover: "delivered" }))
-      extraUi.set(trade, name, value);
-    button(trade, "Add a book").click();await extraUi.work.quiet();
-    const extra = trade.querySelector(".maker-extra-trade");
-    extraUi.set(extra, "Price", String(extraCase.ask - 30));extraUi.set(extra, "Handed over", "1");
-    await extraUi.work.quiet();
-    const check = extra.querySelector("[data-reward-cover]");
-    ok(!check.parentNode.hidden && !check.checked && /Use 0[.]75 unit of their reward.*RM 30[.]00 off/.test(extra.textContent),
-      "the generated extra-book control offers native unticked cover when salt is not the trip carrier");
-    check.checked = true;button(trade, "Record the sale").click();await extraUi.work.quiet();
+    /* 03 Nov 2026 (his decision: Record records no new sale; rules 1 and 2): the extra book's cover is a new sale's choice, so it is held where it was made, in the cover reading
+       the extra's control asked, and the sale the form built with it ticked is posted whole to the sale route through the real bridge */
+    const read = await extraCase.call("/all/maker/trade-cover", { product: "salt", party: "CX1-ZED", qty: 1, total: extraCase.ask - 30, stream: null });
+    const offered = (await read.json()).cover;
+    ok(read.status === 200 && offered && offered.units === 0.75 && offered.rm === 30,
+      "the extra book's cover reading offers native cover when salt is not the trip carrier: " + JSON.stringify(offered));
+    const placed = await extraCase.call("/all/maker/inputs/sale", { at: "2099-10-05T01:00:00.100Z", product: "oil", party: "CX1-ZED", date: "2099-10-05",
+      qty: 2, total: 30, cash: 0, movedUnits: 2, handover: "delivered", delivery: 40,
+      extras: [{ product: "salt", qty: 1, total: extraCase.ask - 30, cash: 0, movedUnits: 1, cover: true }] });
     const drafts = extraCase.drafts();
     if (drafts[0]) await extraCase.call("/all/maker/drafts/" + encodeURIComponent(drafts[0].id) + "/approve", {});
     const approved = extraCase.drafts().filter((d) => d.status === "approved");
@@ -267,12 +254,12 @@ export async function runExtra({ ok, pageWork }) {
     const result = apply(book, staged, { version: "v9999", date: "05 Oct 2099", title: "EXTRA COVER TEST",
       notes: ["<b>TEST.</b> Nothing real."], rows: Object.fromEntries(approved.map((d) => [d.id, { note: "Test extra cover." }])),
       stockNote: "" }, master());
-    ok(approved.length === 2 && result.ok && drafts[0].row.delivery === 40 && !drafts[1].row.delivery
+    ok(placed.status === 200 && approved.length === 2 && result.ok && drafts[0].row.delivery === 40 && !drafts[1].row.delivery
       && drafts[1].row.coverUnits === 0.75 && drafts[1].row.coverRM === 30
       && JSON.stringify(book.sales.slice(0, extraCase.foldBook.sales.length)) === before
       && book.sales.some((s) => s.coverUnits === 0.75 && !s.delivery && s.total === extraCase.ask - 30),
       "extra-book marked cover crosses the bridge, trip approval and native fold without moving the carrier or other sales");
-  } finally { extraUi?.dom.window.close();extraCase.source.w.close();extraCase.sqlite.close(); }
+  } finally { extraCase.source.w.close();extraCase.sqlite.close(); }
 }
 
 export async function runRecovery({ ok }) {
