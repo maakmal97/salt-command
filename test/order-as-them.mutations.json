@@ -8,5 +8,8 @@
  {"name": "the public key is not served", "file": "stmt/maker.js", "find": "      return json({ ok: true, key: await slipPub(env) });\n    }\n    /* v1377, ORDER AS THEM", "replace": "      return json({ ok: true, key: null });\n    }\n    /* v1377, ORDER AS THEM"},
  {"name": "the practice surface places for anyone", "file": "stmt/maker.js", "find": "op.kind === \"thread\" || op.kind === \"place\") && !isTest(op.u)", "replace": "op.kind === \"thread\") && !isTest(op.u)"},
  {"name": "the public key is not on the practice surface", "file": "stmt/maker.js", "find": "place: [\"POST\"], \"slip-pub\": [\"GET\"] };", "replace": "place: [\"POST\"] };"},
- {"name": "the sealed vault key is on the practice surface", "file": "stmt/maker.js", "find": "place: [\"POST\"], \"slip-pub\": [\"GET\"] };", "replace": "place: [\"POST\"], \"slip-pub\": [\"GET\"], \"slip-key\": [\"GET\"] };"}
+ {"name": "the sealed vault key is on the practice surface", "file": "stmt/maker.js", "find": "place: [\"POST\"], \"slip-pub\": [\"GET\"] };", "replace": "place: [\"POST\"], \"slip-pub\": [\"GET\"], \"slip-key\": [\"GET\"] };"},
+ {"name": "his Place wakes nobody", "file": "stmt/maker.js", "find": "      if (!isTest(op.u)) await wakeCustomer(env, op.u, { k: \"placed\", o: result.order.id });\n", "replace": ""},
+ {"name": "his Place wakes in another kind", "file": "stmt/maker.js", "find": "await wakeCustomer(env, op.u, { k: \"placed\", o: result.order.id });", "replace": "await wakeCustomer(env, op.u, { k: \"confirmed\", o: result.order.id });"},
+ {"name": "the banner kind is not the service worker's", "file": "stmt/sw.js", "find": "\"corrected\", \"point-moved\", \"placed\"];", "replace": "\"corrected\", \"point-moved\"];"}
 ]

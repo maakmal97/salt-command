@@ -20,7 +20,7 @@ export async function run({ ok, pageWork }) {
     prices: Object.assign({ at: list.at, week: list.week.monday, digest: list.digest }, await C.encryptWith(ck, JSON.stringify(list))) };
   const extra = (route) => route === "/open" ? opened
     : route === "/all/maker/customers/" + U1 + "/orders" ? { ok: true, order: placed }
-    : route === "/all/orders/" + U1 ? { ok: true, orders: [], claims: [], links: [], max: 0 } : undefined;
+    : route === "/all/orders/" + U1 ? { ok: true, orders: [placed], claims: [], links: [], max: 0 } : undefined;
   const openAs = async (p, act) => {
     enter(p.d, "customers", "accounts"); await p.work.quiet();
     byAct(p.d, "acct.open", U1).click(); await p.work.quiet();
@@ -34,6 +34,8 @@ export async function run({ ok, pageWork }) {
   try {
     await openAs(p, "acct.order-for");
     const nb = p.d.getElementById("oNew");
+    ok(/Placed for you/.test(p.d.getElementById("pOrder").textContent),
+      "B6 an order he placed says Placed for you on its card, on their own page");
     ok(!!nb && /ordering for them/.test(lead(p)) && !p.d.getElementById("makerFor"),
       "B1 Order for them opens their own page with New order and says he is ordering for them; the old box is gone: " + JSON.stringify([!!nb, lead(p)]));
     nb.click(); await p.work.quiet();
@@ -56,4 +58,11 @@ export async function run({ ok, pageWork }) {
     await openAs(p, "acct.view-as");
     ok(!p.d.getElementById("oNew") && /Read only/.test(lead(p)), "B5 View as them stays read only: no New order, the read-only line: " + lead(p));
   } catch (e) { ok(false, "View as them stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+
+  /* B7: Salt Admin's Orders row of an order he placed, still placed, says You placed */
+  p = await richOwnerPage({ pageWork, extra, review: (j) => Object.assign({}, j, { orders: j.orders.concat([placed]) }) });
+  try {
+    enter(p.d, "orders", "todo"); await p.work.quiet();
+    ok(/You placed/.test(p.d.getElementById("oSplit").textContent), "B7 his Orders row of an order he placed says You placed");
+  } catch (e) { ok(false, "his Orders stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
 }

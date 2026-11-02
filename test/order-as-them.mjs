@@ -78,4 +78,39 @@ export async function run({ ok }) {
   const v6 = await call("/all/test/maker/vault/key", null, "GET", OWNER, { test: true });
   ok(t6.status === 404 && k6.status === 200 && v6.status === 404,
     "A6 on the practice surface his Place for a real account is not found, the public slip key reads, the sealed vault key does not: " + JSON.stringify([t6.status, k6.status, v6.status]));
+
+  /* A7. 1d, his answer C: their phone is told, sealed to it, in the fixed kind "placed", naming the order; the words are the table's */
+  const W = await import("../stmt/words.js"), SW = await import("../stmt/sw.js");
+  const vp = await S.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  Object.assign(env, { STMT_VAPID_PUBLIC_KEY: "pub", STMT_VAPID_SUBJECT: "mailto:a@b.test", STMT_VAPID_PRIVATE_JWK: JSON.stringify(await S.exportKey("jwk", vp.privateKey)) });
+  const ph = await phone();
+  await kv.put("push:" + U + ":k", JSON.stringify({ endpoint: "https://push.example/" + U, at: "2026-10-01T00:00:00Z", keys: ph.keys }));
+  const realF = globalThis.fetch, hit = [];
+  globalThis.fetch = async (url, init) => { hit.push(init.body); return new Response("", { status: 201 }); };
+  let j7;
+  try { j7 = await (await place(line())).json(); } finally { globalThis.fetch = realF; }
+  const news7 = hit[0] ? await ph.read(hit[0]) : null;
+  ok(hit.length === 1 && news7 && news7.k === "placed" && news7.o === j7.order.id && SW.NEWS.placed === W.WORDS.en["news.placed"] && !!W.WORDS.en["news.placed.b"],
+    "A7 his Place tells their phone once, sealed, as Order placed for you, naming the order: " + JSON.stringify([hit.length, news7]));
+}
+
+/* a phone: its keys as the page files them, and RFC 8291's receiving side to read what is sealed to it (as test/pool-wake.mjs) */
+const b64u = (a) => Buffer.from(a).toString("base64url");
+const cat = (...a) => { const o = new Uint8Array(a.reduce((n, x) => n + x.length, 0)); let i = 0; for (const x of a) { o.set(x, i); i += x.length; } return o; };
+const hk = async (salt, ikm, info, n) => new Uint8Array(await S.deriveBits({ name: "HKDF", hash: "SHA-256", salt, info },
+  await S.importKey("raw", ikm, "HKDF", false, ["deriveBits"]), n * 8));
+async function phone() {
+  const kp = await S.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+  const pub = new Uint8Array(await S.exportKey("raw", kp.publicKey)), auth = webcrypto.getRandomValues(new Uint8Array(16));
+  const read = async (msg) => {
+    const salt = msg.slice(0, 16), idlen = msg[20], asPub = msg.slice(21, 21 + idlen), ct = msg.slice(21 + idlen);
+    const asKey = await S.importKey("raw", asPub, { name: "ECDH", namedCurve: "P-256" }, false, []);
+    const secret = new Uint8Array(await S.deriveBits({ name: "ECDH", public: asKey }, kp.privateKey, 256));
+    const ikm = await hk(auth, secret, cat(enc.encode("WebPush: info"), [0], pub, asPub), 32);
+    const cek = await hk(salt, ikm, cat(enc.encode("Content-Encoding: aes128gcm"), [0]), 16), nonce = await hk(salt, ikm, cat(enc.encode("Content-Encoding: nonce"), [0]), 12);
+    const pt = new Uint8Array(await S.decrypt({ name: "AES-GCM", iv: nonce }, await S.importKey("raw", cek, "AES-GCM", false, ["decrypt"]), ct));
+    let end = pt.length - 1; while (end > 0 && pt[end] === 0) end--;
+    return JSON.parse(new TextDecoder().decode(pt.slice(0, end)));
+  };
+  return { keys: { p256dh: b64u(pub), auth: b64u(auth) }, read };
 }

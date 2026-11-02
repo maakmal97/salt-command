@@ -4523,7 +4523,7 @@ export const OWNER_JS = `
     if(o){
       var held=makerAccHeld(o)&&o.price.state==='offered', sent=ordPays(o).reduce(function(s,p){ return s+(+p.amount||0); },0);
       f.tags=[o.product]; f.code=codeByUser(o.u); f.who=codeOfUser(o.u); f.way=ordWayWord(o,st); f.units=units(o.qty);
-      f.why=o.test?'Practice':makerCashHeld[e.id]?'Cash held':held?'Offered, their yes':orderAsked(o)?'Asked a question':ordPays(o).length?'Says sent '+rmShort(sent):o.again&&o.again.length?'Send again':o.againOf?orderRef(o.againOf)+' again':'';
+      f.why=o.test?'Practice':makerCashHeld[e.id]?'Cash held':held?'Offered, their yes':orderAsked(o)?'Asked a question':ordPays(o).length?'Says sent '+rmShort(sent):o.again&&o.again.length?'Send again':o.againOf?orderRef(o.againOf)+' again':st==='placed'&&o.history&&o.history[0]&&o.history[0].by==='desk'?'You placed':'';   /* v1377: one he placed on their page */
       f.placed=st==='placed'&&!f.why;
       f.total=(+o.total||0)+(+o.delivery||0); f.owed=Math.max(0,ordDue(o));
       /* 28 Oct 2026: cash held for the order shuts every control of its card, so the row offers no move beside it either */

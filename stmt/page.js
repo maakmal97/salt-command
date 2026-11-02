@@ -5504,7 +5504,8 @@ const CLIENT_JS = `
     if(oClaimed(o)>0) b.push(tw('why.sent',{rm:rm(oClaimed(o))}));
     if(oPayable(o)&&oLost(o).length) b.push(tw('why.lost'));
     if(replyWaiting(o)) b.push(tw('why.reply'));
-    if(!b.length&&o.status==='placed') b.push(tw('why.placed'));
+    /* v1377 (his answer C of 02 Nov 2026): one he placed on their page says so while it is placed, read off its first step */
+    if(!b.length&&o.status==='placed') b.push(tw(o.history&&o.history[0]&&o.history[0].by==='desk'?'why.forYou':'why.placed'));
     var t=b.join(', '); return t&&t.charAt(0).toUpperCase()+t.slice(1);
   }
   /* one line: the mark and the size with the state, why it is here, then the day and the figure */

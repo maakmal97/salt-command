@@ -81,10 +81,10 @@ const priceOf = (list, product, q) => {
 const AT = (code) => { const p = EXAMPLE_POINTS.find((x) => x.code === code); return { point: code, pointAt: { lat: p.lat, lng: p.lng } }; };
 const READY_AT = (code = "Z9") => Object.assign({ status: "ready" }, AT(code));
 /* one order, taken through the order book's own moves: each step is [moment, who, body] */
-function order(id, list, placedAt, place, steps, hours) {
+function order(id, list, placedAt, place, steps, hours, by = "customer") {
   const body = Object.assign({ unit: 0, week: list.week.monday, digest: list.digest }, place);
   body.total = priceOf(list, body.product, body.qty); body.unit = +(body.total / body.qty).toFixed(2);
-  const p = decidePlace(U, body, [], placedAt, list.digest, "customer", null, { steps: priceSteps(list), hours: hours || null });
+  const p = decidePlace(U, body, [], placedAt, list.digest, by, null, { steps: priceSteps(list), hours: hours || null });
   if (p.error) throw new Error("the fixture's order " + id + " was refused at Place: " + p.error);
   let o = applyEvent(null, p.ev).order;
   o.id = id;
@@ -115,7 +115,8 @@ function fresh(now, u) {
   /* the list as it stood: oil at two units as well, a size the list no longer carries */
   const was = Object.assign({}, list, { products: list.products.map((p) => p.product === "oil" ? Object.assign({}, p, { sizes: p.sizes.concat([{ q: 2, price: 78 }]) }) : p) });
   const O = [
-    order(oid(0, "f1"), list, T(0, 10), { product: "salt", qty: 2.5, mode: "collect" }, []),
+    /* v1377 (Order as them, 02 Nov 2026): the placed salt order is one he placed on their page, so its card says Placed for you */
+    order(oid(0, "f1"), list, T(0, 10), { product: "salt", qty: 2.5, mode: "collect" }, [], null, "desk"),
     /* 21 Oct 2026: ready and still to pay, the order that brings this customer to their next loyalty unit, his Accept's word on it */
     order(oid(1, "f2"), list, T(1, 10), { product: "salt", qty: 1, mode: "collect" }, [[T(1, 30), "desk", { status: "acknowledged", rwd: "cross", credit: 25 }], [T(0, 30), "desk", READY_AT()]]),   /* 27 Oct 2026: RM 25 of it paid by their credit */
     order(oid(6, "f3"), list, T(6), { product: "salt", qty: 1, mode: "collect" }, [[T(6, 20), "desk", { status: "acknowledged" }], [T(5), "desk", READY_AT()],
@@ -401,6 +402,7 @@ const invoiceLines = (f) => {
 const accYes = (o, f) => !!(o.price && o.price.from === "accept" && o.price.state === "offered" && String(o.price.offer.until) > f.at);
 export const FEATURES = [
   ["order placed, waiting on him", (f) => has(f, (o) => o.status === "placed")],
+  ["an order he placed for them, Placed for you (Order as them, 02 Nov 2026)", (f) => has(f, (o) => o.status === "placed" && (o.history || [])[0] && o.history[0].by === "desk")],
   ["order replaced before it was confirmed, both kept in history", (f) => has(f, (o) => o.status === "cancelled"
     && o.replacement && has(f, (n) => n.id === o.replacement && n.replaces === o.id && n.status === "placed"))],
   ["order confirmed", (f) => has(f, (o) => o.status === "acknowledged")],

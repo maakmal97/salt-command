@@ -6,6 +6,7 @@ import { slotSpan, WINDOWS } from "./window.js";
 import { CONFIRM_KEY, confirmWithin, confirmView } from "./confirm.js";
 import { readPin, takePin, keepPin } from "./pin.js";
 import { slipPub } from "./slip.js";
+import { wakeCustomer } from "./push.js";
 import { mapsOpen, placeSearch } from "./place.js";
 
 const OWNER_EMAIL = "maakmal97@icloud.com";
@@ -730,6 +731,8 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
       const result = isTest(op.u) ? await examplePlace(env, op.u, body) : await placeOrder(env, op.u, body, "desk");
       if (!result.order) return json({ ok: false, ...result }, result.status || 400);
       if (tp.pin && !isTest(op.u)) await keepPin(env, op.u, tp.pin, result.order.pin);
+      /* his answer C: their phone is told, in fixed words, once the order is recorded; a practice account wakes nobody */
+      if (!isTest(op.u)) await wakeCustomer(env, op.u, { k: "placed", o: result.order.id });
       return json({ ok: true, order: customerView(result.order) });
     }
     if (op.kind === "review") {
