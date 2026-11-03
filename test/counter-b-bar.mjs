@@ -1,6 +1,6 @@
 /* test/counter-b-bar.mjs: THE BASKET'S BAR, REVIEW AND SENT (Counter Batch B, P5, item 12; his answers 3, 4 and 6 of 18 Oct 2026).
  *
- * The bar says how many lines and the goods at the list's figures, delivery left to his confirmation, with Review, which copies the priced
+ * The bar says how many lines and the goods at the list's figures, delivery left to his confirmation, with Continue (Review until plan version 8), which copies the priced
  * lines into the sheet and opens its check: a line a product, each its own rid, two or more under one sheet id. Remove on the check takes
  * a line out and freezes the check again. Sent forgets every size placed, by what is picked on every road and by the basket. The page
  * prices nothing. Every assertion observes the signed-in page in jsdom (test/counter-b-kit.mjs); each was proved red by its own mutation
@@ -8,8 +8,7 @@
  *   1  the bar's figure is the summed amount's own (10 units at the 10-unit figure, never twice 5), goods only, its words by the way
  *   2  Review with two marks: the check holds two lines; Place posts two bodies, two rids, one sheet id; then the bar and the lines are gone
  *   3  Remove on the check: one line left, a fresh rid and no sheet id, and the basket follows
- *   4  a change in the sheet writes back; a line with no price greys Review and says why
- *   5  Sent forgets the sizes placed on the sheet's own road too, so the next sheet does not offer them again
+ *   4, 5  retired by plan version 8 (03 Nov 2026): the sheet's own size field is gone, so nothing writes back and nothing is left to forget
  *   6  the bar sticks above the App bar under 1080px and to the foot of the column from 1080px
  *   7  after a partial place, Remove on the re-reviewed check keeps the sheet id, so the basket still counts once (Fable's review) */
 import { open, done, txt, ago, LIST } from "./counter-b-kit.mjs";
@@ -55,28 +54,11 @@ export async function run({ ok, pageWork }) {
     ok(one === 1 && R.st.posts.length === 1 && rb.product === "salt" && !("sheet" in rb) && /^[0-9a-f]{32}$/.test(rb.rid || "") && !bar(R),
       "Remove on the check takes the line out of the sheet and the basket; the one left goes as one order, a fresh rid and no sheet id: " + JSON.stringify(rb));
 
-    /* ---- 4 ---- */
-    const C = await page({ orders: [] });
-    plus(C, 0, 5).click();
-    C.d.getElementById("bkGo").click(); await C.settle();
-    C.d.getElementById("oBack").click(); await C.settle();
-    const any = C.d.getElementById("oAny0"); any.value = "30"; any.dispatchEvent(new C.w.Event("input", { bubbles: true }));
-    C.d.querySelector('#osheet [data-k="close"]').click(); await C.settle();
-    const hint = txt(pane(C, 0).querySelector(".bkline .salt-field__hint"));
-    ok(txt(pane(C, 0).querySelector(".bkline__t")) === "In your order: 30 units" && C.d.getElementById("bkGo").disabled && hint === "Over 25 units has no list price. Take some off.",
-      "a change in the sheet writes back to the basket, and a line with no price greys Review and says why: " + JSON.stringify([txt(pane(C, 0).querySelector(".bkline__t")), hint]));
-
-    /* ---- 5 ---- */
-    const S = await page({ orders: [] });
-    S.d.querySelector('#pPrices .pgrid > .pane .szrow[data-q="1"]').click(); await S.settle();
-    S.d.querySelector('#osheet input[data-k="size1:1"]').click(); await S.settle();
-    S.d.getElementById("oGo").click(); await S.settle();
-    S.d.getElementById("oPlace").click(); await S.settle();
-    S.d.querySelector('#osheet [data-k="close"]').click(); await S.settle();
-    S.d.querySelector('button[data-t="order"]').click(); await S.settle();
-    S.d.getElementById("oNew").click(); await S.settle();
-    const picked = [...S.d.querySelectorAll('#osheet input[type="radio"]:checked')].length;
-    ok(S.st.posts.length === 2 && picked === 1, "Sent forgets the sizes it placed on the sheet's own road too: the next sheet offers one size, not both again: " + picked);
+    /* ---- 4 and 5, retired by plan version 8 (03 Nov 2026) ----
+       4 was a change typed into the sheet's own size field writing back to the basket, and a line with no price greying Review; 5 was Sent forgetting
+       the sizes the sheet chose for itself. The sheet has no size field and chooses no size any more (version 9 brings the typed size to Order), so
+       nothing is written back and nothing is left to forget: every new sheet is built from the tap or the basket alone (pickBasket). What remains of
+       both is 2 (Place and Sent clear the bar and the lines) and 3 (Remove keeps the basket). */
 
     /* ---- 6 ---- */
     const css = [...P.landingPage("", "nbb6", null, null).matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n");

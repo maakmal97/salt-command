@@ -20,6 +20,7 @@ import { hoursStatus } from "../stmt/hours.js";
 import { unionByAt, pruneCommitted } from "../tools/drain.mjs";
 import { NAME_STOPWORDS, NAME_COLLISIONS, areaNameSet, publishedLocalities } from "../tools/book.mjs";
 import { opened } from "../tools/payload.mjs";
+import { startAt, basketAdd, toSheet, sizeRow } from "./counter-b-kit.mjs";   /* plan version 8: how an order starts */
 /* a delivery's Where to is a saved spot (Counter Batch C, his answer 4 of 20 Oct 2026): Add a spot, a preset name, the area, Use this spot */
 const spotAddTo = (d, w, place) => { d.getElementById("spAdd").click(); d.querySelector('#osheet [data-k="spn:0"]').click();
   const x = d.getElementById("oWhere"); x.value = place; x.dispatchEvent(new w.Event("input", { bubbles: true })); d.getElementById("spUse").click(); };
@@ -15545,9 +15546,9 @@ await (async () => {
       return { prices: d.getElementById("pPrices").textContent, order: d.getElementById("pOrder").textContent + " " + (sh ? sh.textContent : ""),
         marks: [...d.querySelectorAll("#pPrices h2.pmark")].map((h) => h.getAttribute("aria-label")),
         priced: [...d.querySelectorAll("#pPrices .pane")].filter((x) => x.querySelector(".salt-ledger .szrow")).length,
-        /* V4b: each product's sizes sit under its mark, the fieldset's legend, and the shape is said to the reader in the legend's words, drawn nowhere (12 Oct 2026) */
-        products: [...d.querySelectorAll("#osheet fieldset.salt-options legend .pwith")].filter((x) => x.querySelector("svg.psym")).map((x) => x.querySelector(".sr").textContent),
-        orderable: !!nw && !!d.querySelector('#osheet input[name="osize"]') };
+        /* V4b, plan version 8: each product's sizes sit under its mark on Order (the sheet no longer lists sizes), and the shape is said to the reader in the mark's label, drawn nowhere (12 Oct 2026) */
+        products: [...d.querySelectorAll("#pPrices .pane")].filter((x) => x.querySelector(".szrow")).map((x) => x.querySelector("h2.pmark").getAttribute("aria-label").split(",")[0]),
+        orderable: !!nw && !!d.querySelector("#pPrices .szrow") && !d.getElementById("osheet") };
     } finally { dom.window.close(); }
   };
   /* 19 SEP 2026: OIL IS PRICED FOR EVERYBODY NOW, so a page with one product priced and one coming
@@ -15557,12 +15558,12 @@ await (async () => {
   const one47 = onlySalt47 ? await openPage47(onlySalt47) : null;
   ok(one47 && JSON.stringify(one47.marks) === '["Cube","Droplet"]' && one47.priced === 1 && /Price coming soon\./.test(one47.prices)
     && one47.orderable && JSON.stringify(one47.products) === '["Cube"]' && !/\b(salt|oil)\b/i.test(one47.prices + one47.order),
-    "the customer's own page draws each product as its mark, prices one of them, says the other is coming soon, and offers the priced one alone to order, its sizes under its mark: "
+    "the customer's own page draws each product as its mark, prices one of them, says the other is coming soon, and offers the priced one alone to order, its sizes under its mark on Order: "
       + JSON.stringify(one47 && { marks: one47.marks, priced: one47.priced, products: one47.products }));
   /* AND WITH BOTH PRICED, which is the live shape since oil's board, both are offered */
   const live47 = page47 ? await openPage47(page47) : null;
   ok(live47 && live47.priced === 2 && JSON.stringify(live47.products) === '["Cube","Droplet"]' && !/\b(salt|oil)\b/i.test(live47.prices + live47.order),
-    "and with both priced it draws two marks, two prices and each product's sizes under its mark on the one sheet (V4b), naming neither product: "
+    "and with both priced it draws two marks, two prices and each product's sizes under its mark on Order (V4b, plan version 8), naming neither product: "
       + JSON.stringify(live47 && { priced: live47.priced, products: live47.products }));
   const both47 = page47 ? await openPage47({ ...page47, products: [], soon: [{ product: "salt", name: "Salt" }, { product: "oil", name: "Oil" }] }) : null;
   ok(both47 && JSON.stringify(both47.marks) === '["Cube","Droplet"]' && both47.priced === 0
@@ -15571,7 +15572,7 @@ await (async () => {
     "and with no tier on either product, both marks read coming soon and ordering waits for the prices to be set: " + JSON.stringify(both47 && both47.order.slice(0, 80)));
 })();
 
-section("S4 4.3: the order is a sheet, with size tiles and their prices, the usual size, the last way and place, and the total with Review in the foot");
+section("S4 4.3: the order is a sheet, with the line a size tap made and its price, the last way and place, and the total with Review in the foot");
 await (async () => {
   /* STAGE 4 OF THE COUNTER'S REDESIGN, HIS "ALL RECOMMENDED" OF 24 SEP 2026. The form was a pane at the head of the Order
      tab; it is the system's Sheet now, laid over the page from New order. Driven on the real page with the real crypto. */
@@ -15609,17 +15610,19 @@ await (async () => {
       + d.querySelectorAll("#pOrder select").length;
     ok(!!d.getElementById("oNew") && formOnTab === 0 && !d.getElementById("osheet"),
       "the Order tab offers New order and holds no form of its own: " + formOnTab);
-    d.getElementById("oNew").click();
+    await startAt(d, "salt", 2.5);
     const dlg = d.querySelector("#osheet .salt-sheet");
     ok(!!dlg && d.getElementById("osheet").parentNode === d.body && dlg.getAttribute("role") === "dialog" && dlg.getAttribute("aria-modal") === "true"
       && d.getElementById(dlg.getAttribute("aria-labelledby")).textContent === "New order" && !!d.querySelector("#osheet .salt-sheet-scrim"),
-      "New order lays the system's Sheet over the page, at the root of the body, as a named modal dialog");
-    const tiles = [...d.querySelectorAll('#osheet .salt-option input[type=radio][name="osize"]')].map((r) => ({ q: r.value, on: r.checked,
-      label: r.closest(".salt-option").querySelector(".salt-option__label").textContent, fig: r.closest(".salt-option").querySelector(".salt-option__figure").textContent }));
-    ok(tiles.length === 3 && tiles.map((t) => t.fig).join() === "RM 60.00,RM 110.00,RM 250.00" && tiles.map((t) => t.label.replace("your usual", "")).join() === "0.5 unit,1 unit,2.5 units",
-      "the sizes are Option tiles, each carrying its own price, units above one and unit at one: " + JSON.stringify(tiles));
-    ok(tiles.filter((t) => /your usual/.test(t.label)).map((t) => t.q).join() === "2.5" && tiles.filter((t) => t.on).map((t) => t.q).join() === "2.5",
-      "the size they order most is tagged your usual and chosen to begin with: " + JSON.stringify(tiles.map((t) => [t.q, t.on, /usual/.test(t.label)])));
+      "A size tapped on Order lays the system's Sheet over the page, at the root of the body, as a named modal dialog");
+    /* plan version 8 (03 Nov 2026): the sizes are chosen on Order, each row carrying its own price; the sheet lists the line the tap made and chooses no size */
+    const rowsO = [...d.querySelectorAll("#pPrices .pane")[0].querySelectorAll(".szrow")].map((r) => ({ q: r.getAttribute("data-q"), fig: r.querySelector(".salt-ledger__value").textContent, label: r.querySelector(".salt-ledger__label").textContent }));
+    ok(rowsO.length === 3 && rowsO.map((t) => t.fig).join() === "RM 60.00,RM 110.00,RM 250.00" && rowsO.map((t) => t.label).join() === "0.5 unit,1 unit,2.5 units",
+      "the sizes stand on Order, each row carrying its own price, units above one and unit at one: " + JSON.stringify(rowsO));
+    const lines = [...d.querySelectorAll("#osheet [data-sheet-lines] .salt-settings__row")].map((r) => r.textContent.replace(/\s+/g, " ").trim());
+    ok(!d.querySelector('#osheet input[name^="osize"]') && !d.querySelector("#osheet .oany") && lines.length === 1 && /2\.5 units/.test(lines[0]) && /RM 250\.00/.test(lines[0])
+      && /Change the units on Order[.]/.test(d.getElementById("osheet").textContent),
+      "the sheet chooses no size: it lists the line the tap made, with its figure, and says the units change on Order: " + JSON.stringify(lines));
     const pressed = (t) => { const b = [...d.querySelectorAll("#osheet button.salt-ghost")].find((x) => x.textContent === t); return b && b.getAttribute("aria-pressed"); };
     const where = d.getElementById("oWhere");
     ok(pressed("Deliver to me") === "true" && pressed("I will collect") === "false" && !where && !!d.getElementById("spAdd") && !/Same as last time/.test(d.getElementById("osheet").textContent),
@@ -15627,9 +15630,9 @@ await (async () => {
     const foot = d.querySelector("#osheet .salt-sheet__foot");
     ok(foot && foot.contains(d.getElementById("oGo")) && d.getElementById("oGo").classList.contains("salt-pill") && /^RM 250/.test(foot.textContent) && d.getElementById("oGo").disabled && /Pick where it is going, or add a spot[.]/.test(foot.textContent),
       "the total and Review, the one filled control, sit in the sheet's foot, Review waiting for a spot and saying so (Counter Batch C, his answer 4 of 20 Oct 2026): " + JSON.stringify(foot && foot.textContent));
-    const one = d.querySelector('#osheet input[name="osize"][value="1"]');
-    one.checked = true; one.dispatchEvent(new w.Event("change", { bubbles: true }));
-    ok(/^RM 110/.test(d.querySelector("#osheet .salt-sheet__foot").textContent), "a tap on another size moves the total with it");
+    d.querySelector("#osheet .salt-sheet").dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    await startAt(d, "salt", 1);
+    ok(/^RM 110/.test(d.querySelector("#osheet .salt-sheet__foot").textContent), "a tap on another size on Order opens the sheet at that size's total");
     /* 19 Oct 2026: whole words, so toilet or Golden, or a random id, is not a product or a level */
     ok(!/\b(salt|oil|gold)\b/i.test(d.getElementById("osheet").outerHTML.replace(/salt-[a-z_-]+/g, "")),
       "and the sheet carries no product word and no level's name, in its text or its attributes");
@@ -15676,9 +15679,7 @@ await (async () => {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
-    d.getElementById("oNew").click();
-    const one = d.querySelector('#osheet input[name="osize"][value="1"]');
-    one.checked = true; one.dispatchEvent(new w.Event("change", { bubbles: true }));
+    await startAt(d, "salt", 1);
     d.getElementById("oGo").click();
     d.getElementById("oPlace").click();
     for (let i = 0; i < 100 && !(posted.length && d.getElementById("oBack") && !d.getElementById("oBack").disabled); i++) await new Promise((r) => setTimeout(r, 30));
@@ -15772,7 +15773,7 @@ await (async () => {
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
     await new Promise((r) => setTimeout(r, 100));
-    d.getElementById("oNew").click();
+    await startAt(d);
     d.getElementById("oGo").click();
     d.getElementById("oPlace").click();
     for (let i = 0; i < 100 && !(d.getElementById("osheet") && /Order placed/.test(d.getElementById("osheet").textContent) && d.querySelector('#pOrder [data-row]')); i++) await new Promise((r) => setTimeout(r, 30));
@@ -15862,7 +15863,7 @@ await (async () => {
   try {
     const { w, d, st } = B;
     ok(!!d.getElementById("oNew") && !d.getElementById("oLimit"), "one short of the limit, New order is offered");
-    d.getElementById("oNew").click(); d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    await startAt(d); d.getElementById("oGo").click(); d.getElementById("oPlace").click();
     for (let i = 0; i < 100 && !d.querySelector("#osheet .olim"); i++) await new Promise((r) => setTimeout(r, 30));
     /* F8 (Step 1a.2): the order is a tile, its figure under the mark, and its word stands beside the tile */
     const rows = [...d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => { const lab = r.querySelector(".salt-ledger__label"), tile = lab.querySelector(".mtile");
@@ -15912,7 +15913,7 @@ await (async () => {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
-    d.getElementById("oNew").click();
+    await startAt(d);
     return { w, d, st };
   };
   const who = (d) => { const fs = d.querySelector("#osheet .salt-sheet__body > fieldset");
@@ -15931,7 +15932,7 @@ await (async () => {
     d.getElementById("oPlace").click();
     for (let i = 0; i < 100 && !(d.getElementById("osheet") && /Order placed/.test(d.getElementById("osheet").textContent)); i++) await new Promise((r) => setTimeout(r, 30));
     ok(st.posted.length === 1 && st.posted[0].forFriend === true, "and Place carries it: " + JSON.stringify(st.posted.map((x) => x.forFriend)));
-    d.getElementById("oNew").click();
+    await startAt(d);
     ok(JSON.stringify(who(d)) === '["Me=false","A friend=false"]' && d.getElementById("oGo").disabled, "the next order asks again: " + JSON.stringify(who(d)));
     [...d.querySelectorAll("#osheet button")].find((b) => b.textContent === "Me").click();
     d.getElementById("oGo").click(); d.getElementById("oPlace").click();
@@ -15987,11 +15988,11 @@ await (async () => {
       "every size is a row of the plain ledger, and each row is a button: " + JSON.stringify(rows.map((r) => r.textContent)));
     rows[3].click();
     const sh = d.getElementById("osheet");
-    /* V4b: the size is chosen under its product's mark, and it is the one line on the sheet */
-    const picked = sh ? [...sh.querySelectorAll("input.salt-option__input")].filter((r) => r.checked) : [];
-    const on = picked.map((r) => r.value);
-    const prod = picked.map((r) => { const f = r.closest("fieldset"), x = f && f.querySelector("legend .sr"); return x ? x.textContent : ""; });
-    ok(!!sh && on.join() === "3" && prod.join() === "Droplet" && /^RM 120/.test(sh.querySelector(".salt-sheet__foot").textContent),
+    /* V4b, plan version 8: the size tapped on its product's mark is the one line on the sheet, listed with its mark, its size and its figure */
+    const lns = sh ? [...sh.querySelectorAll("[data-sheet-lines] .salt-settings__row")] : [];
+    const on = lns.map((r) => (r.querySelector(".mq, .pwith") || r).textContent.replace(/\s+/g, " ").trim());
+    const prod = lns.map((r) => { const x = r.querySelector(".sr"); return x ? x.textContent : ""; });
+    ok(!!sh && lns.length === 1 && /3 units/.test(on[0]) && prod.join() === "Droplet" && /RM 120/.test(lns[0].textContent) && /^RM 120/.test(sh.querySelector(".salt-sheet__foot").textContent),
       "a tap on a size opens the order sheet on that product at that size: " + JSON.stringify({ on, prod }));
     void w;
   } finally { A.w.close(); }
@@ -16085,7 +16086,7 @@ await (async () => {
     for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
     const lead = [...d.querySelectorAll("#pPrices p.lead")].map((p) => p.textContent);
     ok(lead.some((t) => t.includes(ONE)) && !lead.some((t) => /acknowledged/.test(t)), "Prices says it, in the customer's word for the step: " + JSON.stringify(lead.find((t) => /Delivery/.test(t))));
-    d.getElementById("oNew").click();
+    await startAt(d);
     [...d.querySelectorAll("#osheet button")].find((b) => b.textContent === "Deliver to me").click();
     spotAddTo(d, w, "Old market");
     d.getElementById("oGo").click();
@@ -16128,7 +16129,7 @@ await (async () => {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
-    d.getElementById("oNew").click(); d.getElementById("oGo").click();
+    await startAt(d); d.getElementById("oGo").click();
     const pl = d.getElementById("oPlace"); pl.focus(); pl.click();
     for (let i = 0; i < 100 && !/Order placed/.test((d.getElementById("osheet") || {}).textContent || ""); i++) await new Promise((r) => setTimeout(r, 30));
     await new Promise((r) => setTimeout(r, 60));
@@ -16192,7 +16193,7 @@ await (async () => {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
-    d.getElementById("oNew").click(); d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    await startAt(d); d.getElementById("oGo").click(); d.getElementById("oPlace").click();
     for (let i = 0; i < 100 && !posted.length; i++) await new Promise((r) => setTimeout(r, 30));
     ok(posted.length === 1 && Object.prototype.hasOwnProperty.call(posted[0], "digest") && posted[0].digest === "",
       "Place from a list sealed with no stamp still carries the stamp field, empty: " + JSON.stringify(posted.map((x) => Object.keys(x))));
@@ -16230,7 +16231,7 @@ await (async () => {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
-    d.getElementById("oNew").click(); d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    await startAt(d); d.getElementById("oGo").click(); d.getElementById("oPlace").click();
     for (let i = 0; i < 100 && !st.release; i++) await new Promise((r) => setTimeout(r, 30));
     const orbs = [...d.querySelectorAll("#osheet .salt-sheet__head button")].map((b) => [b.getAttribute("aria-label"), b.disabled]);
     ok(st.posted === 1 && orbs.length === 2 && orbs.every((o) => o[1] === true),
@@ -16277,12 +16278,12 @@ await (async () => {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
-    d.getElementById("oNew").click(); d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    await startAt(d); d.getElementById("oGo").click(); d.getElementById("oPlace").click();
     for (let i = 0; i < 100 && d.getElementById("lapse").hidden; i++) await new Promise((r) => setTimeout(r, 30));
     await new Promise((r) => setTimeout(r, 60));
     ok(st.posted === 1 && !d.getElementById("lapse").hidden && !d.getElementById("osheet"),
       "a Place answered signed out closes the sheet, and the bar with Continue is what is left in view: " + JSON.stringify({ posted: st.posted, sheet: !!d.getElementById("osheet") }));
-    d.getElementById("oNew").click();
+    await startAt(d);
     const row = d.querySelector("#pPrices .szrow"); if (row) row.click();
     ok(!!row && !d.getElementById("osheet"), "and neither New order nor a size on Prices opens it again over the lapse");
   } finally { await new Promise((r) => setTimeout(r, 100)); w.close(); }
@@ -16321,7 +16322,7 @@ await (async () => {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
-    d.getElementById("oNew").click(); d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    await startAt(d); d.getElementById("oGo").click(); d.getElementById("oPlace").click();
     for (let i = 0; i < 100 && !(posted.length && d.getElementById("oBack") && !d.getElementById("oBack").disabled); i++) await new Promise((r) => setTimeout(r, 30));
     await new Promise((r) => setTimeout(r, 60));
     return { w, d, posted, errs };
@@ -17670,7 +17671,7 @@ await (async () => {
     D.getElementById("f").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
     const pOrder = D.getElementById("pOrder"), pCard = D.getElementById("pCard");
     ok(await until(() => D.getElementById("oNew")), "the associate's page opens with New order");
-    D.getElementById("oNew").click();
+    await startAt(D);
     [...D.querySelectorAll("#osheet button")].find((b) => b.textContent === "Me").click();   /* S4 4.7: asked who it is for, first */
     D.getElementById("oGo").click();
     const place = () => D.getElementById("oPlace");
@@ -22211,7 +22212,7 @@ await (async () => {
     D.getElementById("pw").value = passC;
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
     await wait(() => D.getElementById("oNew") && D.querySelector("#pOrder [data-row]"));
-    D.getElementById("oNew").click();
+    await startAt(D);
     btn("Review").click();
     await wait(() => btn("Place order"));
     btn("Place order").click();
@@ -22355,7 +22356,7 @@ await (async () => {
     await until(() => D.getElementById("pPrices").textContent);
     D.querySelector('button[data-t="order"]').click();
     await until(() => D.getElementById("oNew"));
-    D.getElementById("oNew").click();
+    await startAt(D);
     await until(() => D.getElementById("oGo") && !D.getElementById("oGo").disabled);
     st.lapsed = true;
     D.getElementById("oGo").click();
@@ -23618,16 +23619,17 @@ await (async () => {
     d95.querySelector('button[data-t="order"]').click();
     /* S4 4.3: in the order sheet, which opens on the product they order most, so the tap below goes to the other one */
     for (let i = 0; i < 60 && !d95.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 50));
-    d95.getElementById("oNew").click();
-    /* V4b (his point 5 of 28 Sep 2026): the segment went with the one-product sheet; each product's sizes sit under its mark */
-    const legOf95 = () => [...d95.querySelectorAll("#osheet fieldset.salt-options")].filter((f) => f.querySelector("legend svg.psym"));
-    const onOf95 = () => legOf95().map((f) => (f.querySelector("input:checked") ? f.querySelector("legend .sr").textContent : "")).filter(Boolean);
-    const leg95 = legOf95(), on95 = onOf95();
-    ok(leg95.length === 2 && leg95.map((f) => f.querySelector("legend .sr").textContent).join(",") === "Cube,Droplet" && on95.length === 1,
-      "each product's sizes are drawn under its mark, the one they order most chosen: it was a dropdown, then a segment: " + JSON.stringify(on95));
-    const other95 = leg95.find((f) => !f.querySelector("input:checked"));
-    if (other95) other95.querySelector("input").click();
-    ok(onOf95().length === 2, "and a size of the other product joins the sheet beside it: " + JSON.stringify(onOf95()));
+    /* V4b (his point 5 of 28 Sep 2026), plan version 8: each product's sizes sit under its mark on Order, a tap makes the sheet's one line, and the basket joins a size of the other beside it */
+    const legOf95 = () => [...d95.querySelectorAll("#pPrices .pane")].filter((f) => f.querySelector(".szrow") && f.querySelector("h2.pmark svg.psym"));
+    const onOf95 = () => [...d95.querySelectorAll("#osheet .pwith")].map((x) => x.querySelector(".sr").textContent);
+    const leg95 = legOf95();
+    await startAt(d95, "salt");
+    const on95 = onOf95();
+    ok(leg95.length === 2 && leg95.map((f) => f.querySelector("h2.pmark").getAttribute("aria-label")).join(",") === "Cube,Droplet" && on95.join() === "Cube",
+      "each product's sizes are drawn under its mark on Order, and the one tapped is the sheet's one line: " + JSON.stringify(on95));
+    d95.querySelector('#osheet [data-k="close"]').click();
+    await basketAdd(d95, "salt", leg95[0].querySelector(".szrow").getAttribute("data-q")); await basketAdd(d95, "oil", leg95[1].querySelector(".szrow").getAttribute("data-q")); await toSheet(d95);
+    ok(onOf95().join() === "Cube,Droplet", "and a size of the other product joins the sheet beside it, by the basket: " + JSON.stringify(onOf95()));
     /* a product waiting for its price is a mark too, not a name */
     const soon95 = [...d95.querySelectorAll("#pPrices .pane")].filter((x) => !x.querySelector(".szrow"));
     ok(soon95.length === 1 && soon95[0].querySelector("h2.pmark svg.psym")
@@ -23825,15 +23827,18 @@ await (async () => {
     const screen8 = [...D8.querySelectorAll("#pOrder .oband svg.psym")];
     all8.push(...census8(D8.querySelector("#pOrder .oband")));
     /* the order sheet: its choice of book, then the check before Place */
-    D8.getElementById("oNew").click();
+    /* plan version 8: the sheet lists the lines the basket made, a mark each, so every priced book is added on Order first */
+    for (const pn of [...D8.querySelectorAll("#pPrices .pane")].filter((x) => x.querySelector(".szrow"))) await basketAdd(D8, pn.querySelector("h2.pmark").getAttribute("aria-label").split(",")[0], pn.querySelector(".szrow").getAttribute("data-q"));
+    await toSheet(D8);
     await until8(() => D8.querySelectorAll("#osheet svg.psym").length >= 3);
     const choice8 = census8(D8.getElementById("osheet"));
     all8.push(...choice8);
+    /* the check of one line, as before: the sheet of the first book's first size tapped on Order */
+    D8.querySelector('#osheet [data-k="close"]').click();
+    await startAt(D8);
     /* an associate says who it is for first (S4 4.7), or Review waits */
     const me8 = D8.querySelector('#osheet button[data-k="for:0"]'); if (me8) me8.click();
-    const one8 = D8.querySelector('#osheet input[name="osize"][value="1"]');
-    if (one8) { one8.checked = true; one8.dispatchEvent(new dom8.window.Event("change", { bubbles: true })); }
-    D8.getElementById("oGo").click();
+    if (D8.getElementById("oGo")) D8.getElementById("oGo").click();
     await until8(() => D8.querySelector("#osheet .mhero svg.psym"));
     const check8 = [...D8.querySelectorAll("#osheet .mhero svg.psym")], checkRows8 = [...D8.querySelectorAll("#osheet .salt-ledger svg.psym")];
     all8.push(...census8(D8.getElementById("osheet")));
@@ -26903,7 +26908,7 @@ await (async () => {
     /* the session lapses; Place is tapped: the phone reopens itself and the order goes, once */
     g1.D.querySelector('button[data-t="order"]').click();
     await until(() => g1.D.getElementById("oNew"));
-    g1.D.getElementById("oNew").click();   /* S4 4.3: the order is a sheet */
+    await startAt(g1.D);   /* S4 4.3: the order is a sheet */
     await until(() => g1.D.getElementById("oGo") && !g1.D.getElementById("oGo").disabled);
     g1.st.dead.add(sessOf(g1));
     const before = g1.st.reopened;
@@ -26958,7 +26963,7 @@ await (async () => {
     /* S4 4.3: the line is the order sheet's note, folded until Add a note; a lapse closes the sheet and the same
        account let in again opens it again, the line in it */
     await until(() => g2.D.getElementById("oNew"));
-    g2.D.getElementById("oNew").click(); g2.D.getElementById("oAddNote").click();
+    await startAt(g2.D); g2.D.getElementById("oAddNote").click();
     const line = () => g2.D.querySelector("#osheet #oSay");
     await until(() => line());
     line().value = "leave it with the guard"; line().dispatchEvent(new g2.W.Event("input", { bubbles: true }));
@@ -27665,7 +27670,7 @@ await (async () => {
       "the fixture: Keep leaves A remembered with B on screen");
     g1.D.querySelector('button[data-t="order"]').click();
     await until(() => g1.D.getElementById("oNew"));
-    g1.D.getElementById("oNew").click();   /* S4 4.3: the order is a sheet */
+    await startAt(g1.D);   /* S4 4.3: the order is a sheet */
     await until(() => g1.D.getElementById("oGo") && !g1.D.getElementById("oGo").disabled);
     g1.st.dead.add(g1.st.sB);
     g1.D.getElementById("oGo").click();
@@ -28387,7 +28392,7 @@ await (async () => {
     D.querySelector('button[data-t="order"]').click();
     /* S4 4.3: the line is the order sheet's note; a lapse closes the sheet, and the same account let in opens it again */
     await until(() => D.getElementById("oNew"));
-    D.getElementById("oNew").click(); D.getElementById("oAddNote").click();
+    await startAt(D); D.getElementById("oAddNote").click();
     const line = () => D.querySelector("#osheet #oSay");
     await until(() => line());
     line().value = "by the side gate"; line().dispatchEvent(new W.Event("input", { bubbles: true }));
@@ -29951,7 +29956,7 @@ await (async () => {
   const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
   const btn = (t) => [...d.querySelectorAll("#pOrder button, #osheet button")].find((b) => b.textContent === t && !b.disabled);
   /* S4 4.3: a review is New order (unless the sheet is already on the form) and then Review */
-  const review = async () => { if (!d.getElementById("oGo")) { await until(() => d.getElementById("oNew")); d.getElementById("oNew").click(); }
+  const review = async () => { if (!d.getElementById("oGo")) { await until(() => d.getElementById("oNew")); await startAt(d); }
     await until(() => d.getElementById("oGo") && !d.getElementById("oGo").disabled); d.getElementById("oGo").click(); };
   try {
     d.getElementById("un").value = un; d.getElementById("pw").value = pw;
@@ -29979,8 +29984,9 @@ await (async () => {
     await until(() => btn("Place order")); btn("Place order").click();
     await until(() => sent.place.length === 4 && btn("Place order"));
     btn("Change").click();
-    const size = d.querySelector('#osheet input[name="osize"][value="2"]');
-    size.checked = true; size.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+    /* plan version 8: the sheet chooses no size, so the other size is tapped on Order and the sheet opens on it */
+    d.querySelector('#osheet [data-k="close"]').click();
+    await startAt(d, "salt", 2);
     d.getElementById("oGo").click();
     await until(() => btn("Place order")); btn("Place order").click();
     await until(() => sent.place.length === 5 && btn("Place order"));
@@ -32036,7 +32042,7 @@ await (async () => {
       "the money moved and its lines say so, while the amount being typed keeps its field, its focus and its figure");
 
     /* S4 over S5: the order sheet lies over the page, and a poll that patches the orders never draws it or its check again */
-    d.getElementById("oNew").click(); d.getElementById("oGo").click();
+    await startAt(d); d.getElementById("oGo").click();
     const sheet = d.getElementById("osheet"), place = d.getElementById("oPlace");
     phase = 3;
     await until(() => /Ready to collect/.test(row(D).textContent));
@@ -40146,7 +40152,7 @@ await (async () => {
   } finally { a.W.close(); }
   const b = await open({ hash: "#prices" });
   try {
-    ok(shown(b.D) === "pPrices" && b.D.getElementById("placeT").textContent === "Prices",
+    ok(shown(b.D) === "pPrices" && b.D.getElementById("placeT").textContent === "Order",
       "an address naming a place opens that place at sign-in: " + JSON.stringify(shown(b.D)));
   } finally { b.W.close(); }
   const c = await open({ fresh: true });
@@ -40323,9 +40329,9 @@ await (async () => {
     const hero = () => D.querySelector("#osheet .mhero .mtile");
     /* Counter Batch C, his answer 4 of 20 Oct 2026: a delivery opens with no spot picked, so the tile opens the form at its size and
        way, Review waiting for a spot; one added, the check reads as before */
-    const onSize = D.querySelector('#osheet input[name="osize"]:checked'), waits = !!(D.getElementById("oGo") && D.getElementById("oGo").disabled) && !!D.getElementById("spAdd");
+    const onSize = D.querySelector("#osheet [data-sheet-lines] .salt-settings__row"), waits = !!(D.getElementById("oGo") && D.getElementById("oGo").disabled) && !!D.getElementById("spAdd");
     if (D.getElementById("spAdd")) { spotAddTo(D, a.W, "Veloria"); if (D.getElementById("oGo")) D.getElementById("oGo").click(); }
-    ok(onSize && onSize.value === "2" && waits && /Check your order/.test(sheet()) && hero() && said(hero()) === "Cube 2 units|2 units" && /PriceRM 200/.test(sheet()) && /HowDelivered to Veloria/.test(sheet())
+    ok(onSize && /2 units/.test(onSize.textContent) && waits && /Check your order/.test(sheet()) && hero() && said(hero()) === "Cube 2 units|2 units" && /PriceRM 200/.test(sheet()) && /HowDelivered to Veloria/.test(sheet())
       && !/Side gate/.test(sheet()) && D.getElementById("oPlace") && D.getElementById("oPlace").textContent === "Place order",
       "a tap opens the sheet at the same size and way with no spot picked, and with one added the check reads today's price without the old order's note: " + JSON.stringify(sheet().slice(0, 140)));
     D.getElementById("oPlace").click();
@@ -40342,8 +40348,9 @@ await (async () => {
       && [...D.querySelectorAll("#hAgain button.htile .salt-option__detail")].every((x) => x.classList.contains("mono")),
       "a new account is offered its list's first sizes, each saying its unit and its price in the mono face (C19): " + JSON.stringify(tiles(D)));
     D.querySelectorAll("#hAgain button.htile")[1].click();
-    const on = D.querySelector('#osheet input[name="osize"]:checked');
-    ok(on && on.value === "2" && D.getElementById("oGo") && !D.getElementById("oPlace"), "and a tap opens the sheet at that size, to choose the way");
+    /* plan version 8 (03 Nov 2026): a start tile lands on Order at its size, with no sheet and nothing in the basket */
+    const on = D.querySelector('#pPrices .szrow[data-q="2"]');
+    ok(on && D.activeElement === on && !D.getElementById("osheet") && !D.getElementById("pPrices").hidden && !D.getElementById("bkGo"), "and a tap lands on Order at that size, to choose the way there");
   } finally { b.W.close(); }
   const c = await open({ owed: 250 });
   try {
@@ -41458,7 +41465,7 @@ await (async () => {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 50));
-    d.getElementById("oNew").click();
+    await startAt(d);
     button("Deliver to me").click();
     spotAddTo(d, w, "Old market");
     d.getElementById("oAddNote").click();
@@ -41473,7 +41480,7 @@ await (async () => {
       "Place sends exactly the place and the line the check showed, and the stamp of the list it read (S4 4.2): " + JSON.stringify(posted.map((x) => [x.place, x.note, x.digest])));
     /* and the way back opens the form again, holding what was typed; once the placement has answered */
     for (let i = 0; i < 100 && d.getElementById("oPlace"); i++) await new Promise((r) => setTimeout(r, 50));
-    d.getElementById("oNew").click();
+    await startAt(d);
     spotAddTo(d, w, "Old market");
     d.getElementById("oGo").click();
     button("Change").click();
@@ -41538,11 +41545,13 @@ await (async () => {
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 60 && !thrown.length && !/Your orders/.test(d.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
     const po = d.getElementById("pOrder");
-    if (d.getElementById("oNew")) d.getElementById("oNew").click();
-    const sizes = [...d.querySelectorAll('#osheet input[name="osize"]')].map((o) => o.value);
+    if (d.getElementById("oNew")) await startAt(d);
+    /* plan version 8: Order offers the one product with a price, and the sheet a tap on it opens lists that one line */
+    const sizes = [...d.querySelectorAll("#pPrices .szrow")].map((o) => o.getAttribute("data-q"));
+    const sheetLns = d.querySelectorAll("#osheet [data-sheet-lines] .salt-settings__row").length;
     ok(!thrown.length && !/Notifications/.test(po.textContent) && /Your orders/.test(po.textContent) && po.querySelectorAll("[data-row] .salt-status").length === 1
-      && sizes.join() === "1" && !d.querySelector("#osheet button[aria-pressed][aria-label]"),
-      "the Order tab draws: the order sheet offers the one product with a price, and their order is there, with no Notifications pane (the bell is the saved app header): " + JSON.stringify({ sizes, thrown }));
+      && sizes.join() === "1" && sheetLns === 1 && !d.querySelector("#osheet button[aria-pressed][aria-label]"),
+      "the Order tab draws: Order offers the one product with a price, the sheet lists its one line, and their order is there, with no Notifications pane (the bell is the saved app header): " + JSON.stringify({ sizes, thrown }));
     const pp = d.getElementById("pPrices");
     ok(/Price coming soon\./.test(pp.textContent) && pp.querySelectorAll(".salt-ledger").length === 1,
       "and Prices says coming soon for the one with no size rather than drawing an empty list");
@@ -41675,7 +41684,7 @@ await (async () => {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 60 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 50));
-    d.getElementById("oNew").click();
+    await startAt(d);
     /* S4 4.3: the way is chosen in the order sheet, by the system's pressed ghost */
     /* S7 7.3: the month filter was the system's tab strip; since 28 Oct 2026 it is a select in a settings row, the chosen month its selected option */
     const chosen = [d.querySelector("#mfil select"), [...d.querySelectorAll('#osheet button[aria-pressed="true"]')].find((b) => /collect|Deliver/.test(b.textContent))];
@@ -42520,7 +42529,8 @@ await (async () => {
     await until(() => d.getElementById("oNew") && d.querySelector('#pOrder [data-row="oP"]'));
     return { w, d, posted };
   };
-  const size = (d, w, q) => { const r = d.querySelector('#osheet input[name="osize"][value="' + q + '"]'); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); };
+  /* plan version 8: a size is chosen on Order, so a sheet at another size is a sheet opened again at it */
+  const size = async (d, w, q) => { const c = d.querySelector('#osheet [data-k="close"]'); if (c) c.click(); await startAt(d, "salt", q); };
   const line = (d) => [...d.querySelectorAll("#osheet .salt-insight")].map(t).join(" | ");
   const rows = (d) => [...d.querySelectorAll("#osheet .salt-ledger__line")].map((l) => [...l.children].map(t).join(" ")).join(" | ");
 
@@ -42529,9 +42539,8 @@ await (async () => {
   const A = await open(440, false);
   try {
     const { w, d, posted } = A;
-    d.getElementById("oNew").click();
-    size(d, w, 1); const at1 = line(d);
-    size(d, w, 2); const at2 = line(d);
+    await size(d, w, 1); const at1 = line(d);
+    await size(d, w, 2); const at2 = line(d);
     ok(at1 === "" && at2 === "Over RM 440.00 owed with this order: likely paid in advance.",
       "the sheet forecasts paid in advance once what they owe and the order are over the sealed ceiling, and says nothing at it: " + JSON.stringify([at1, at2]));
     d.getElementById("oGo").click();
@@ -42567,17 +42576,19 @@ await (async () => {
   /* a sheet is one verdict, and a list with no ceiling forecasts nothing */
   const M = await open(440, false), N = await open(null, false), Q = await open(435, false);
   try {
-    const pickOil = (d, w) => { const r = d.querySelector('#osheet input[name="osize1"][value="1"]'); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); };
     const { w, d } = M;
-    d.getElementById("oNew").click();
-    size(d, w, 1); const one = line(d);
-    pickOil(d, w); const both = line(d);
+    await size(d, w, 1); const one = line(d);
+    /* the oil joins by the basket, which opens the sheet on both lines and goes to the check; Change is back to the form */
+    d.querySelector('#osheet [data-k="close"]').click();
+    await basketAdd(d, "salt", 1); await basketAdd(d, "oil", 1); await toSheet(d);
+    if (d.getElementById("oBack")) d.getElementById("oBack").click();
+    const both = line(d);
     ok(one === "" && both === "Over RM 440.00 owed with this order: likely paid in advance.",
       "a sheet of salt 1 and oil 1 is over as one verdict though neither line is alone: " + JSON.stringify([one, both]));
-    N.d.getElementById("oNew").click(); size(N.d, N.w, 2);
+    await size(N.d, N.w, 2);
     ok(line(N.d) === "", "and a list sealed with no ceiling forecasts nothing: " + JSON.stringify(line(N.d)));
     /* every part counts: RM 440 is over RM 435 only with the RM 30 now, the RM 20 coming up and oN's RM 100 all in */
-    Q.d.getElementById("oNew").click(); size(Q.d, Q.w, 1);
+    await size(Q.d, Q.w, 1);
     ok(line(Q.d) === "Over RM 435.00 owed with this order: likely paid in advance.",
       "to pay now, coming up and an agreed order not on the book each count toward the ceiling: " + JSON.stringify(line(Q.d)));
   } finally { await new Promise((r) => setTimeout(r, 100)); M.w.close(); N.w.close(); Q.w.close(); }
@@ -42627,7 +42638,7 @@ await (async () => {
     "openCount counts a sheet once and an order alone once");
 })();
 
-section("V4b (29 Sep 2026): the sheet takes a size of each product, a size tapped again comes off, the check has a line each and the total, and Place sends each under the sheet, again only what is still to go");
+section("V4b (29 Sep 2026): the sheet takes a size of each product from the basket, the check has a line each and the total, and Place sends each under the sheet, again only what is still to go");
 await (async () => {
   const { landingPage: lp } = await import("../stmt/page.js");
   const C = await import("../tools/stmt-crypto.mjs");
@@ -42674,23 +42685,15 @@ await (async () => {
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => d.getElementById("oNew") && d.querySelector('#pOrder [data-row="o5"]'));
     ok(!d.getElementById("oLimit"), "five open orders, three of them one sheet, are three against the limit: the Order tab says no limit");
-    d.getElementById("oNew").click();
-    const radio = (k) => d.querySelector('#osheet input[data-k="' + k + '"]');
+    /* plan version 8 (03 Nov 2026): the sheet chooses no size, so the claims about picking, taking a size off by tapping it again and a sheet
+       with every line off are retired with the choice itself (the units change on Order; a sheet with no line is test/order-stream-p8-order.mjs).
+       The sheet is the basket's two lines, a size of each product, and Continue goes straight to the check. */
+    await basketAdd(d, "salt", 2); await basketAdd(d, "oil", 10); await toSheet(d);
     const total = () => t(d.querySelector("#osheet .ototal .salt-kpi__value"));
-    const fields = [...d.querySelectorAll("#osheet fieldset.salt-options")].filter((f) => f.querySelector("legend svg.psym")).length;
-    const first = [...d.querySelectorAll("#osheet input.salt-option__input:checked")].map((r) => r.getAttribute("data-k"));
-    ok(fields === 2 && first.join() === "size:1" && total() === "RM 100.00",
-      "the sheet shows each product's sizes under its mark and opens on their usual, one line: " + JSON.stringify([fields, first, total()]));
-    radio("size:2").click(); radio("size1:10").click();
-    const both = total();
-    const only = () => { radio("size1:10").click(); radio("size:2").click(); const x = [total(), d.getElementById("oGo").disabled]; radio("size:2").click(); radio("size1:10").click(); return x; };
-    const empty = only();
-    radio("size:2").click();
-    const off = [total(), !!radio("size:2").checked];
-    radio("size:2").click();
-    ok(both === "RM 285.00" && off[0] === "RM 95.00" && off[1] === false && total() === "RM 285.00",
-      "a size of each adds to one total, and a size tapped again comes off the sheet: " + JSON.stringify([both, off, total()]));
-    ok(empty[0] === "" && empty[1] === true, "a sheet with every line taken off has no total and Review waits: " + JSON.stringify(empty));
+    d.getElementById("oBack").click();
+    const fields = d.querySelectorAll("#osheet [data-sheet-lines] .salt-settings__row").length;
+    ok(fields === 2 && total() === "RM 285.00" && !d.querySelector("#osheet input.salt-option__input"),
+      "the sheet lists a line each for the sizes of two products from the basket, one total: " + JSON.stringify([fields, total()]));
     d.getElementById("oGo").click();
     /* a row read as its label, value and flag, the mark's drawing left out and its shape, which only a reader is told, left out too */
     const clean = (e) => { const c = e.cloneNode(true); c.querySelectorAll("svg, .sr").forEach((x) => x.remove()); return t(c); };
@@ -42719,38 +42722,37 @@ await (async () => {
     /* COUNTER BATCH B (his answer 3 of 18 Oct 2026, reversing V4b's keep): the next sheet forgets the sizes just placed, so it opens on one
        size as a first sheet does; a second picked there makes a sheet of its own, each line under its own request id */
     d.querySelector('#osheet [data-k="close"]').click();
-    d.getElementById("oNew").click();
-    const carried = [...d.querySelectorAll('#osheet input[type="radio"]:checked')];
-    [...d.querySelectorAll('#osheet input[type="radio"]')].find((r) => r.name !== carried[0].name).click();
-    d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    await startAt(d);
+    const carried = [...d.querySelectorAll("#osheet [data-sheet-lines] .salt-settings__row")];
+    d.querySelector('#osheet [data-k="close"]').click();
+    await basketAdd(d, "salt", 1); await basketAdd(d, "oil", 5); await toSheet(d);
+    d.getElementById("oPlace").click();
     await until(() => posted.length === 6 && !!d.querySelector("#osheet .osent"));
     ok(carried.length === 1 && posted.length === 6 && posted[4].rid !== posted[5].rid && posted[4].sheet === posted[5].sheet && posted[4].sheet !== posted[0].sheet
       && posted.slice(4).map((x) => x.product).join() === "salt,oil",
-      "the next sheet carries none of the sizes just placed, and a sheet of two picked afresh goes under a sheet id of its own, each line its own request id: " + JSON.stringify([carried.length, posted.slice(4).map((x) => [x.product, x.sheet, x.rid])]));
-    /* Change after one line placed: the placed product is off the form, and the rest go on under the same sheet (two picked afresh, Batch B) */
+      "the next sheet carries none of the sizes just placed, and a sheet of two chosen afresh goes under a sheet id of its own, each line its own request id: " + JSON.stringify([carried.length, posted.slice(4).map((x) => [x.product, x.sheet, x.rid])]));
+    /* Change after one line placed: the placed product is off the form, and the rest go on under the same sheet (two chosen afresh, Batch B) */
     d.querySelector('#osheet [data-k="close"]').click();
-    d.getElementById("oNew").click();
-    d.querySelector('#osheet input[data-k="size1:10"]').click();
-    d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    await basketAdd(d, "salt", 1); await basketAdd(d, "oil", 10); await toSheet(d);
+    d.getElementById("oPlace").click();
     await until(() => posted.length === 8 && d.getElementById("oPlace") && !d.getElementById("oPlace").disabled);
     d.getElementById("oBack").click();
-    const onForm = [...d.querySelectorAll("#osheet input.salt-option__input:checked")].map((r) => r.getAttribute("data-k"));
+    const onForm = [...d.querySelectorAll("#osheet [data-sheet-lines] .salt-settings__row")].map((r) => t(r.querySelector(".sr")) + "|" + t(r.querySelector(".salt-settings__label")));
     /* and Change again before placing keeps that sheet */
     d.getElementById("oGo").click(); d.getElementById("oBack").click();
     d.getElementById("oGo").click(); d.getElementById("oPlace").click();
     await until(() => posted.length === 9 && !!d.querySelector("#osheet .osent"));
-    ok(onForm.join() === "size1:10" && posted[8].product === "oil" && posted[8].sheet === posted[6].sheet && posted[6].product === "salt",
+    ok(onForm.length === 1 && /Droplet/.test(onForm[0]) && /10 units/.test(onForm[0]) && posted[8].product === "oil" && posted[8].sheet === posted[6].sheet && posted[6].product === "salt",
       "Change after a line is placed takes that product off the form, and the rest are placed under the same sheet: " + JSON.stringify([onForm, posted.slice(6).map((x) => [x.product, x.sheet])]));
     /* closed after one line placed: reopened, the placed product is not offered again */
     d.querySelector('#osheet [data-k="close"]').click();
-    d.getElementById("oNew").click();
-    radio("size:2").click(); d.querySelector('#osheet input[data-k="size1:10"]').click();
-    d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    await basketAdd(d, "salt", 2); await basketAdd(d, "oil", 10); await toSheet(d);
+    d.getElementById("oPlace").click();
     await until(() => posted.length === 11 && d.getElementById("oPlace") && !d.getElementById("oPlace").disabled);
     d.querySelector('#osheet [data-k="close"]').click();
-    d.getElementById("oNew").click();
-    const reopened = [...d.querySelectorAll("#osheet input.salt-option__input:checked")].map((r) => r.getAttribute("data-k"));
-    ok(posted[9].product === "salt" && posted[10].product === "oil" && reopened.join() === "size1:10",
+    d.getElementById("pWayGo").click();
+    const reopened = [...d.querySelectorAll("#osheet [data-sheet-lines] .salt-settings__row")].map((r) => t(r.querySelector(".sr")) + "|" + t(r.querySelector(".salt-settings__label")));
+    ok(posted[9].product === "salt" && posted[10].product === "oil" && reopened.length === 1 && /Droplet/.test(reopened[0]),
       "a sheet closed after one line is placed reopens without that product: " + JSON.stringify([reopened, posted.slice(9).map((x) => x.product)]));
   } finally { await new Promise((r) => setTimeout(r, 100)); w.close(); }
 })();
@@ -48235,7 +48237,7 @@ await (async () => {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
-    d.getElementById("oNew").click();
+    await startAt(d);
     const soon = d.querySelector('#osheet [data-k="when:0"]'), day = d.querySelector('#osheet [data-k="when:1"]');
     ok(!!soon && !!day && soon.getAttribute("aria-pressed") === "true" && !d.getElementById("oWant") && !d.getElementById("oGo").disabled,
       "the sheet asks when, as soon as it can already chosen, with no day to fill");
@@ -48489,7 +48491,7 @@ await (async () => {
   await (await import("./counter-b-way.mjs")).run({ ok, pageWork });
 })();
 
-section("Counter Batch B: Collect and Deliver on Home, each opening the sheet with its way, the limit step at five open, none under the gate (P2)");
+section("Counter Batch B: Collect and Deliver on Home, each landing on Order with its way, the limit said at five open, none under the gate (P2)");
 await (async () => {
   await (await import("./counter-b-start.mjs")).run({ ok, pageWork });
 })();
@@ -48592,6 +48594,11 @@ await (async () => {
 section("v1392 One order stream, version 7: one list on the Counter (7a to 7d)");
 await (async () => {
   await (await import("./order-stream-v8-list.mjs")).run({ ok, pageWork });
+})();
+
+section("v1394 One order stream, version 8: Order is where every order starts, and the sheet keeps the way, the place and the check (8a, 8b)");
+await (async () => {
+  await (await import("./order-stream-p8-order.mjs")).run({ ok, pageWork });
 })();
 
 section("Counter Batch C: the seal carries the spot's name and unit, a unit alone sealed as its own shape, nothing in the clear (P6)");
@@ -49193,9 +49200,7 @@ await (async () => {
     ok(!!doc.getElementById("oNew") && notice && /Counter is closed/.test(notice.textContent)
       && /confirmation may be delayed/.test(notice.textContent),
       "a closed-hours customer still sees New order and the delayed-confirmation notice");
-    doc.getElementById("oNew").click();
-    const size = doc.querySelector('#osheet input[name="osize"][value="1"]');
-    if (size) { size.checked = true; size.dispatchEvent(new page.Event("change", { bubbles: true })); }
+    await startAt(doc, "salt", 1);
     doc.getElementById("oGo").click();
     for (let i = 0; i < 100 && !doc.getElementById("oPlace"); i++) await new Promise((resolve) => setTimeout(resolve, 20));
     if (doc.getElementById("oPlace")) doc.getElementById("oPlace").click();
@@ -50295,7 +50300,7 @@ await (async () => {
     const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((resolve) => setTimeout(resolve, 10)); return f(); };
     ok(!!(await until(() => doc.getElementById("oNew"))) && !doc.getElementById("makerFor"),
       "Order for them opens the customer's own page and sealed prices, not a second pricing rule");
-    doc.getElementById("oNew").click();
+    await startAt(doc);
     await until(() => doc.getElementById("oGo") && !doc.getElementById("oGo").disabled);
     doc.getElementById("oGo").click();
     await until(() => doc.getElementById("oPlace"));

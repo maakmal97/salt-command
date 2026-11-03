@@ -83,3 +83,46 @@ export async function open({ ok, pageWork, orders = [], assoc = false, late = 0,
   const tick = async () => { for (const f of st.polls) f(); await work.quiet(); };
   return { w: dom.window, d, st, settle, tick, close: () => dom.window.close() };
 }
+
+/* ---- HOW A TEST STARTS AN ORDER, SINCE PLAN VERSION 8 (03 Nov 2026) ----
+ * A new order's sheet has no size choice: an order starts on Order (the place that was Prices), at a size tapped there or at the basket's
+ * Continue. Every check that starts an order goes through these three, and only these touch the size rows and the plus, so the next
+ * change to Order (version 9: a stepper and one Add a book) changes them alone. `p` is a page from open() or a bare document; a product
+ * is named by its mark's shape (Cube salt, Droplet oil, Lozenge candy, Capsule rice, Starburst gas, Heart prep), and none means the
+ * first pane, where the old sheet opened. The click lands before the first await, so a caller may skip the await when it settles itself. */
+export const SHAPE = { salt: "Cube", oil: "Droplet", candy: "Lozenge", rice: "Capsule", gas: "Starburst", prep: "Heart" };
+const docOf = (p) => (p && p.d ? p.d : p);
+const paneOf = (d, shape) => {
+  const panes = [...d.querySelectorAll("#pPrices .pane")].filter((x) => x.querySelector(".szrow"));
+  const s = SHAPE[shape] || shape;
+  return s ? panes.find((x) => ((x.querySelector(".pmark") || {}).getAttribute("aria-label") || "").startsWith(s)) : panes[0];
+};
+/* the size row, for a check that reads it (the first size when q is not given) */
+export function sizeRow(p, shape, q) {
+  const pn = paneOf(docOf(p), shape);
+  return !pn ? null : q == null ? pn.querySelector(".szrow") : [...pn.querySelectorAll(".szrow")].find((r) => r.getAttribute("data-q") === String(q)) || null;
+}
+/* tap one size: the sheet opens on that one line */
+export async function startAt(p, shape, q) {
+  const r = sizeRow(p, shape, q);
+  if (!r) throw new Error("no size row on Order for " + (shape || "the first product") + " " + q);
+  r.click();
+  if (p && p.settle) await p.settle();
+  return r;
+}
+/* tap one size's plus, n times: the basket */
+export async function basketAdd(p, shape, q, n = 1) {
+  const pn = paneOf(docOf(p), shape), b = pn && [...pn.querySelectorAll(".szplus")].find((x) => x.getAttribute("data-add") === String(q));
+  if (!b) throw new Error("no plus on Order for " + shape + " " + q);
+  for (let i = 0; i < n; i++) b.click();
+  if (p && p.settle) await p.settle();
+  return b;
+}
+/* the basket's Continue: the sheet opens on its lines */
+export async function toSheet(p) {
+  const go = docOf(p).getElementById("bkGo");
+  if (!go) throw new Error("no Continue on Order");
+  go.click();
+  if (p && p.settle) await p.settle();
+  return go;
+}

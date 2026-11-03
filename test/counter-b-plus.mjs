@@ -61,9 +61,10 @@ export async function run({ ok, pageWork }) {
     plus(B, 0, 2.5).click(); plus(B, 1, 3).click();
     const words = /\b(salt|oil|candy|rice)\b/i, attrs = [...B.d.querySelectorAll("#pPrices *")].flatMap((e) => [...e.attributes].map((a) => a.name + "=" + a.value.replace(/salt-[a-z_-]+/g, ""))).filter((s) => words.test(s));   /* the design system's class prefix is no product word */
     B.d.querySelector('#pPrices .pgrid > .pane .szrow[data-q="1"]').click(); await B.settle();
-    const checked = [...B.d.querySelectorAll('#osheet input[type="radio"]:checked')].map((r) => r.getAttribute("data-k"));
+    /* plan version 8: the sheet lists the one line the row's tap made (a size, not a radio) */
+    const checked = [...B.d.querySelectorAll("#osheet [data-sheet-lines] .salt-settings__row")].map((r) => txt(r.querySelector(".salt-settings__label")));
     B.d.querySelector('#osheet [data-k="close"]').click(); await B.settle();
-    ok(!attrs.length && JSON.stringify(checked) === '["size:1"]' && line(B, 0) === "In your order: 2.5 units" && line(B, 1) === "In your order: 3 units",
+    ok(!attrs.length && JSON.stringify(checked) === '["1 unit"]' && line(B, 0) === "In your order: 2.5 units" && line(B, 1) === "In your order: 3 units",
       "no product word in any attribute on Prices, and a size's own row opens the sheet at that size alone, the basket untouched: " + JSON.stringify({ attrs, checked }));
 
     /* ---- 6 ---- */

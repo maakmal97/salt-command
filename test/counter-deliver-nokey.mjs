@@ -7,6 +7,7 @@
  *   N2  a practice account on the practice surface: the order is sent, with no spot and no /slip asked of the server
  *   N3  with no key on any ask, nothing is sent and the refusal reads as a sentence, naming no fault of their location (3 Nov 2026)
  * Each check is proved red by its own mutation (test/counter-deliver-nokey.mutations.json). */
+import { startAt } from "./counter-b-kit.mjs";
 import { webcrypto } from "node:crypto";
 import { JSDOM, VirtualConsole } from "jsdom";
 import { landingPage } from "../stmt/page.js";
@@ -54,7 +55,7 @@ async function drive({ keys, test = false }) {
     await wait(() => !d.getElementById("tabs").hidden && !!d.getElementById("pOrder").textContent, 1200);
     const ot = d.querySelector('button[data-t="order"]'); if (ot) ot.click();
     await wait(() => !!d.getElementById("oNew"), 600);
-    d.getElementById("oNew").click();
+    await startAt(d);
     await wait(() => !!d.querySelector('#osheet [data-k="mode:1"]'));
     d.querySelector('#osheet [data-k="mode:1"]').click();
     await wait(() => !!d.getElementById("spAdd"));

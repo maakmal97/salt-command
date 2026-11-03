@@ -13,6 +13,7 @@
 import { JSDOM } from "jsdom";
 import { landingPage } from "../stmt/page.js";
 import { FONT_FACE_CSS, STATEMENT_CSS, SITE_RECIPES } from "../stmt/statement-css.js";
+import { startAt } from "./counter-b-kit.mjs";
 
 export async function run({ ok }) {
   const html = landingPage("abcd-efgh", "tablet-nonce", null);
@@ -109,14 +110,15 @@ export async function run({ ok }) {
         d.getElementById("un").value = u; d.getElementById("pw").value = pass;
         d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
         for (let i = 0; i < 200 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 15));
-        const go = d.getElementById("oNew"); if (go) go.click();
+        if (d.getElementById("oNew")) await startAt(d);   /* plan version 8: a size tapped on Order opens the sheet */
         const box = d.querySelector("#osheet .salt-sheet"), grids = [...d.querySelectorAll("#osheet .salt-options__grid")].filter((g) => g.children.length > 1);
         return { box: box ? placed(w, box) : "", grids: grids.map((g) => ({ kids: g.children.length, cols: w.getComputedStyle(g).getPropertyValue("grid-template-columns") })) };
       } finally { w.close(); }
     };
     const a = await read(768), b = await read(861);
-    const two = (r) => r.grids.length >= 3 && r.grids.every((g) => /^repeat\(2, ?minmax\(0, ?1fr\)\)$/.test(g.cols));
+    /* plan version 8 (03 Nov 2026): the size tiles left the new order's sheet (an amendment's keeps them), so its one grid of two columns is the two ways */
+    const two = (r) => r.grids.length >= 1 && r.grids.every((g) => /^repeat\(2, ?minmax\(0, ?1fr\)\)$/.test(g.cols));
     ok(two(a) && two(b) && /top:50%/.test(a.box) && /width:min\(560px/.test(a.box) && /top:0px/.test(b.box) && /width:min\(460px/.test(b.box),
-      "the order sheet's size tiles and its two ways are two columns, in the 560px dialog at 768px and in the drawer at 861px: " + JSON.stringify({ a, b }));
+      "the order sheet's two ways are two columns, in the 560px dialog at 768px and in the drawer at 861px: " + JSON.stringify({ a, b }));
   }
 }

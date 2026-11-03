@@ -3,6 +3,7 @@
  * ciphertext alone: the envelope is taken off for its id before the order book is asked, filed only once the order names it,
  * for 30 days and 30 more at each read of the desk's relay. The area words become the fallback. Every username, point and key
  * is invented. Every assertion was proved red by its own mutation. */
+import { startAt } from "./counter-b-kit.mjs";
 import { createHash, webcrypto } from "node:crypto";
 import { orderBook } from "./orderbook-harness.mjs";
 import { Store } from "./maker-order-controls.mjs";
@@ -161,7 +162,7 @@ export async function run({ ok }) {
   const A = await drive(pub, { latitude: 3.1412, longitude: 101.6865, accuracy: 12 });
   try {
     const { d, posted, asked } = A;
-    d.getElementById("oNew").click();
+    await startAt(d);
     d.querySelector('#osheet [data-k="mode:1"]').click();
     ok(!d.getElementById("oPinHere") && d.getElementById("oGo").disabled, "the form itself no longer draws the exact spot; with no spot picked Review waits (Counter Batch C, his answer 4 of 20 Oct 2026)");
     d.getElementById("spAdd").click();
@@ -188,7 +189,7 @@ export async function run({ ok }) {
   const B = await drive(null, null);
   try {
     const { d } = B;
-    d.getElementById("oNew").click(); d.querySelector('#osheet [data-k="mode:1"]').click();
+    await startAt(d); d.querySelector('#osheet [data-k="mode:1"]').click();
     await new Promise((r) => setTimeout(r, 150));
     d.getElementById("spAdd").click(); await new Promise((r) => setTimeout(r, 100));
     ok(!d.getElementById("oPinHere") && !!d.getElementById("oWhere"), "with no key filed no spot is offered, and the area is asked as ever");
@@ -196,7 +197,7 @@ export async function run({ ok }) {
   const D = await drive(pub, null);
   try {
     const { d } = D;
-    d.getElementById("oNew").click(); d.querySelector('#osheet [data-k="mode:1"]').click();
+    await startAt(d); d.querySelector('#osheet [data-k="mode:1"]').click();
     d.getElementById("spAdd").click(); await wait(() => !!d.getElementById("spName"));
     await new Promise((r) => setTimeout(r, 200)); d.querySelector('#osheet [data-k="spn:0"]').click();
     await wait(() => !!d.getElementById("oPinHere")); d.getElementById("oPinHere").click();

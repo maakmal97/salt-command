@@ -15,6 +15,7 @@
  *   9  a saved spot picked from the list, the step never opened, is sealed (the key asked for with the list), and one read back
  *      from a store holding more than the step allows is cut first */
 import { webcrypto } from "node:crypto";
+import { startAt } from "./counter-b-kit.mjs";
 const U = "pnab-cdeh", PASS = "fixture-pass-seal-03";
 const S = webcrypto.subtle, enc = new TextEncoder();
 const b64 = (u8) => Buffer.from(u8).toString("base64");
@@ -74,7 +75,7 @@ export async function run({ ok }) {
   /* one order through the sheet: a new spot named Shop, its unit, its exact spot if asked, its area; returns what Place sent */
   const place = async (A, { unit = "", here = false, area = "Veloria" } = {}) => {
     const { d } = A;
-    d.getElementById("oNew").click(); d.querySelector('#osheet [data-k="mode:1"]').click();
+    await startAt(d); d.querySelector('#osheet [data-k="mode:1"]').click();
     d.getElementById("spAdd").click(); await wait(() => !!d.getElementById("spName"));
     d.querySelector('#osheet [data-k="spn:0"]').click();
     await wait(() => !!d.getElementById("oPinHere"));   /* the key is filed, so Place can seal */
@@ -114,7 +115,7 @@ export async function run({ ok }) {
     /* ---- 5 ---- */
     let release; const late = new Promise((r) => { release = r; });
     const D = await drive({ keyLate: late }); closeAll.push(D);
-    D.d.getElementById("oNew").click(); D.d.querySelector('#osheet [data-k="mode:1"]').click();
+    await startAt(D.d); D.d.querySelector('#osheet [data-k="mode:1"]').click();
     D.d.getElementById("spAdd").click(); await wait(() => !!D.d.getElementById("spName"));
     const before = !!D.d.getElementById("oPinHere");
     release(); await new Promise((r) => setTimeout(r, 120));
@@ -148,7 +149,7 @@ export async function run({ ok }) {
     /* ---- 9 ---- */
     const F = await drive(); closeAll.push(F);
     F.w.localStorage.setItem("salt-spots:" + U, J([{ id: "t1", label: "N".repeat(40), place: "Veloria", unit: "U".repeat(90) }]));
-    F.d.getElementById("oNew").click(); F.d.querySelector('#osheet [data-k="mode:1"]').click();
+    await startAt(F.d); F.d.querySelector('#osheet [data-k="mode:1"]').click();
     await wait(() => !!F.d.querySelector('#osheet [data-k="spot:0"]'));
     F.d.querySelector('#osheet [data-k="spot:0"]').click();
     await wait(() => !!F.d.getElementById("oGo") && !F.d.getElementById("oGo").disabled);

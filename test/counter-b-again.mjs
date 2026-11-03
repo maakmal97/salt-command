@@ -10,7 +10,7 @@
  *   3  no day wanted from an earlier sheet rides into it
  *   4  none under the overdue gate
  *   5  the card holds no button; a poll that hands an order over brings its Order again, and focus on a ghost stays */
-import { open, ord, done, txt, ago, LIST, addSpot } from "./counter-b-kit.mjs";
+import { open, ord, done, txt, ago, LIST, addSpot, startAt } from "./counter-b-kit.mjs";
 
 export async function run({ ok, pageWork }) {
   const pages = [];
@@ -56,7 +56,7 @@ export async function run({ ok, pageWork }) {
     /* ---- 3 ---- */
     const S = await page({ orders: [C] });
     S.d.querySelector('button[data-t="order"]').click(); await S.settle();
-    S.d.getElementById("oNew").click(); await S.settle();
+    await startAt(S.d); await S.settle();
     S.d.querySelector('#osheet [data-k="when:1"]').click(); await S.settle();
     const day = S.d.getElementById("oWant");
     day.value = new Date(Date.now() + 8 * 3600e3 + 3 * 864e5).toISOString().slice(0, 10); day.dispatchEvent(new S.w.Event("change", { bubbles: true }));
@@ -72,7 +72,7 @@ export async function run({ ok, pageWork }) {
     ok(sb.againOf === "oC", "Order again names the order it was placed again from: " + JSON.stringify(sb.againOf));
     const close = S.d.querySelector('#osheet [data-k="close"]'); if (close) { close.click(); await S.settle(); }
     S.d.querySelector('button[data-t="order"]').click(); await S.settle();
-    S.d.getElementById("oNew").click(); await S.settle();
+    await startAt(S.d); await S.settle();
     const go = S.d.getElementById("oGo"); if (go) { go.click(); await S.settle(); }
     const pl2 = S.d.getElementById("oPlace"); if (pl2) { pl2.click(); await S.settle(); }
     const sb2 = S.st.posts[1] || null;

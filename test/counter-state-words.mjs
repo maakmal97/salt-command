@@ -22,6 +22,7 @@
  *  10  his answers and his reasons that use the new words pass siteWords, and the locks still refuse
  *  11  what the order's card says they see follows: Placed, Confirmed, Declined, off the page's own words
  *  12  the practice accounts show the new words on their orders, and their feature names carry none of the old */
+import { startAt, basketAdd, toSheet } from "./counter-b-kit.mjs";
 import { webcrypto } from "node:crypto";
 import vm from "node:vm";
 
@@ -170,14 +171,14 @@ export async function run({ ok }) {
     /* ---- 3: no word of the family in any text the page renders; Place and the order sheet driven too */
     tab(S, "prices");
     const priceText = words(S.d.getElementById("pPrices"));
-    S.d.getElementById("oNew") && S.d.getElementById("oNew").click();
+    S.d.getElementById("oNew") && await startAt(S.d);
     const textAll = () => words(S.d.body);
     const sweepA = textAll();
     ok(!FAMILY.test(sweepA), "no acknowledged, no Not taken and no Expected by in anything the page shows with every screen drawn: " + JSON.stringify((sweepA.match(/.{0,30}(acknowledg|not taken|expected by).{0,30}/i) || [""])[0]));
     const L = await open({ placed: ord("20261010090011-sw11", { qty: 1, total: 100 }) });
     tab(L, "order");
     await until(() => L.d.getElementById("oNew"));
-    L.d.getElementById("oNew").click();
+    await startAt(L.d);
     [...L.d.querySelectorAll("#osheet button")].find((b) => b.textContent === "Deliver to me").click();
     L.d.getElementById("spAdd").click(); L.d.querySelector('#osheet [data-k="spn:0"]').click();
     const wh = L.d.getElementById("oWhere"); wh.value = "Old market"; wh.dispatchEvent(new L.w.Event("input", { bubbles: true })); L.d.getElementById("spUse").click();
@@ -249,16 +250,21 @@ export async function run({ ok }) {
       && heads.length === 4 && heads.every(([a, b]) => SHAPES.includes(a) && b === ""),
       "no shape word is drawn across Prices, Home, Your orders, each order's screen and the order sheet, every mark is still named by its shape for the reader, and a heading is its mark alone: " + JSON.stringify({ marks: seen.marks, drawn: shapesDrawn(S.d.body).concat(shapesDrawn(L.d.body)), nameless: nameP.length + nameL.length, heads }));
     const checkL = await open({ orders: [] });
-    tab(checkL, "order"); await until(() => checkL.d.getElementById("oNew")); checkL.d.getElementById("oNew").click();
-    const legsAll = [...checkL.d.querySelectorAll("#osheet fieldset.salt-options")].filter((f) => f.querySelector("legend svg.psym"));
-    const legs = legsAll.map((f) => [t(f.querySelector("legend .sr")), drawnText(f.querySelector("legend")).trim()]);
-    const more = legsAll.filter((f) => !f.querySelector("input:checked"));
-    more.forEach((f) => f.querySelector("input").click());
-    checkL.d.getElementById("oGo").click();
+    tab(checkL, "order"); await until(() => checkL.d.getElementById("oNew"));
+    /* plan version 8: the sheet lists the lines Order made, each its mark and its size; the form holds the line of one tap, the check one a book of the basket */
+    await startAt(checkL.d);
+    const legsAll = [...checkL.d.querySelectorAll("#osheet [data-sheet-lines] .pwith")].filter((f) => f.querySelector("svg.psym"));
+    const legs = legsAll.map((f) => [t(f.querySelector(".sr")), drawnText(f).trim()]);
+    checkL.d.querySelector('#osheet [data-k="close"]').click();
+    for (const pn of [...checkL.d.querySelectorAll("#pPrices .pane")].filter((x) => x.querySelector(".szrow"))) {
+      const sh = pn.querySelector("h2.pmark").getAttribute("aria-label").split(",")[0];
+      await basketAdd(checkL, sh, pn.querySelector(".szrow").getAttribute("data-q"));
+    }
+    await toSheet(checkL);
     const lines = [...checkL.d.querySelectorAll("#osheet .pwith")].map((x) => [t(x.querySelector(".sr")), drawnText(x).trim()]);
-    ok(legs.length === 4 && legs.every(([said, drawn]) => SHAPES.includes(said) && drawn === "") && lines.length >= 2 && lines.every(([said, drawn]) => SHAPES.includes(said) && /^\d+(\.\d+)? units?$/.test(drawn))
+    ok(legs.length === 1 && legs.every(([said, drawn]) => SHAPES.includes(said) && /^\d+(\.\d+)? units?$/.test(drawn)) && lines.length >= 4 && lines.every(([said, drawn]) => SHAPES.includes(said) && /^\d+(\.\d+)? units?$/.test(drawn))
       && marks(checkL.d).length === 0 && shapesDrawn(checkL.d.body).length === 0,
-      "the order sheet names each book by its shape for the reader only, in its legend (the mark alone) and in each line of the check (the size, then the mark): " + JSON.stringify({ legs, lines }));
+      "the order sheet names each book by its shape for the reader only, in the line of the form and in each line of the check, drawn as the size then the mark: " + JSON.stringify({ legs, lines }));
 
     /* 7b: a sheet of two books whose list moved at Place: each line that moved leads with its mark, named by its shape for the reader only */
     const list2 = (digest, oil10) => ({ at: new Date().toISOString(), digest, week: { monday: "2026-10-05", label: "5 to 11 Oct 2026" }, soon: [],
@@ -268,10 +274,10 @@ export async function run({ ok }) {
     const body2 = Object.assign({}, body, { prices: await sealed2(list2("d1", 95)) });
     const moved2 = { status: 409, j: { ok: false, error: "prices moved", code: "pricesMoved", prices: await sealed2(list2("d2", 99)) } };
     const M = await open({ open: body2, post: async () => ({ ok: false, status: moved2.status, json: async () => moved2.j }) });
-    tab(M, "order"); await until(() => M.d.getElementById("oNew")); M.d.getElementById("oNew").click();
-    const radio = (k) => M.d.querySelector('#osheet input[data-k="' + k + '"]');
-    radio("size:2").click(); radio("size1:10").click();
-    M.d.getElementById("oGo").click(); M.d.getElementById("oPlace").click();
+    tab(M, "order"); await until(() => M.d.getElementById("oNew"));
+    await basketAdd(M, "salt", 2); await basketAdd(M, "oil", 10); await toSheet(M);
+    if (M.d.getElementById("oGo")) M.d.getElementById("oGo").click();
+    M.d.getElementById("oPlace").click();
     await until(() => M.d.querySelector("#osheet .salt-insight--copper"));
     const mv = M.d.querySelector("#osheet .salt-insight--copper"), mvKid = mv && mv.firstElementChild, mvNext = mvKid && mvKid.nextElementSibling;
     ok(!!mv && /Now RM 99\.00 \(was RM 95\.00\)/.test(t(mv)) && !!mvKid && mvKid.classList.contains("psym") && !!mvNext && mvNext.classList.contains("sr") && t(mvNext) === "Droplet"

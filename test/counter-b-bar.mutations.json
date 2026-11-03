@@ -30,12 +30,6 @@
     "replace": "    c.lines.forEach(function(l){ if(l.placed){ if(draft.pick) delete draft.pick[l.product]; } });\n    bsPatch();\n"
   },
   {
-    "name": "Sent keeps what is picked",
-    "file": "stmt/page.js",
-    "find": "    c.lines.forEach(function(l){ if(l.placed){ if(draft.pick) delete draft.pick[l.product]; if(draft.src==='basket') bsDrop(l.product); } });\n    bsPatch();\n",
-    "replace": "    c.lines.forEach(function(l){ if(l.placed){ if(draft.src==='basket') bsDrop(l.product); } });\n    bsPatch();\n"
-  },
-  {
     "name": "Remove keeps the old check's sheet id",
     "file": "stmt/page.js",
     "find": "if(draft.pick) delete draft.pick[l.product]; bsDrop(l.product); bsPatch();",
@@ -52,18 +46,6 @@
     "file": "stmt/page.js",
     "find": "if(draft.pick) delete draft.pick[l.product]; bsDrop(l.product); bsPatch();",
     "replace": "if(draft.pick) delete draft.pick[l.product]; bsPatch();"
-  },
-  {
-    "name": "the sheet writes nothing back",
-    "file": "stmt/page.js",
-    "find": "  function formFoot(){\n    bsFromPick();\n",
-    "replace": "  function formFoot(){\n"
-  },
-  {
-    "name": "Review takes an unpriced line",
-    "file": "stmt/page.js",
-    "find": "go.disabled=open;",
-    "replace": "go.disabled=false;"
   },
   {
     "name": "the bar sticks to the screen's foot on a phone",

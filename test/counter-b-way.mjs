@@ -1,6 +1,6 @@
 /* test/counter-b-way.mjs: THE WAY ON PRICES (Counter Batch B, P1, item 11; his answers 10 and 11 of 18 Oct 2026).
  *
- * Under the Prices stamp one line says how the next order reaches them, "Delivering to {place}" or "Collecting", read by wayNow(), the
+ * Under the Order stamp (Prices until plan version 8) one line says how the next order reaches them, "Delivering to {place}" or "Collecting", read by wayNow(), the
  * same read the order sheet opens on, with Change opening the sheet at How it reaches you. Every assertion observes the signed-in page in
  * jsdom (test/counter-b-kit.mjs); each was proved red by its own mutation (test/counter-b-way.mutations.json, tools/section.mjs).
  *   1  the newest order sets it: collect, deliver, collect reads Collecting; a newest delivery reads Delivering to its place
@@ -36,8 +36,8 @@ export async function run({ ok, pageWork }) {
     /* ---- 4 ---- */
     B.d.getElementById("pWayGo").click(); await B.settle();
     const ae = B.d.activeElement;
-    ok(!!B.d.getElementById("osheet") && !!ae && ae.getAttribute("data-k") === "mode:1" && ae.getAttribute("aria-pressed") === "true" && !B.d.getElementById("oWhere") && !!B.d.getElementById("spAdd") && B.d.getElementById("oGo").disabled,
-      "Change opens the order sheet with focus on How it reaches you, the way chosen, no spot picked and Review waiting (the place is no longer filled: Counter Batch C, his answer 4 of 20 Oct 2026): " + (ae && ae.getAttribute("data-k")));
+    ok(!!B.d.getElementById("osheet") && !!ae && ae.getAttribute("data-k") === "mode:1" && ae.getAttribute("aria-pressed") === "true" && !B.d.getElementById("oWhere") && !!B.d.getElementById("spAdd") && !B.d.getElementById("oGo") && !!B.d.getElementById("oDone"),
+      "Change opens the order sheet with focus on How it reaches you, the way chosen, no spot picked and, with no line chosen on Order, no Review but a Done (plan version 8; the place is no longer filled: Counter Batch C, his answer 4 of 20 Oct 2026): " + (ae && ae.getAttribute("data-k")));
 
     /* ---- 5 ---- */
     const N = await page({ orders: [] });

@@ -3,6 +3,7 @@
  * them and offers New order; the sheet has no note and no Negotiate; Place goes to /all/maker/customers/<u>/orders with their list's own
  * total and stamp, never to their /orders; Pay stays off. View as them stays read only. The old box of his own is gone. Every username
  * and figure is invented. */
+import { startAt } from "./counter-b-kit.mjs";
 import { richOwnerPage, byAct, enter } from "./maker-act.mjs";
 import * as C from "../tools/stmt-crypto.mjs";
 
@@ -41,7 +42,7 @@ export async function run({ ok, pageWork }) {
       "B6 an order he placed says Placed for you on its card, on their own page");
     ok(!!nb && /ordering for them/.test(lead(p)) && !p.d.getElementById("makerFor"),
       "B1 Order for them opens their own page with New order and says he is ordering for them; the old box is gone: " + JSON.stringify([!!nb, lead(p)]));
-    nb.click(); await p.work.quiet();
+    await startAt(p.d); await p.work.quiet();   /* plan version 8: New order lands on Order; the sheet opens at a size tapped there */
     ok(!p.d.getElementById("oAddNote") && !p.d.getElementById("oSay"), "B2 the sheet has no note on Order as them");
     const way = p.d.querySelector("[data-k='mode:1']");
     if (way) { way.click(); await p.work.quiet(); }
@@ -89,7 +90,7 @@ export async function run({ ok, pageWork }) {
   p = await richOwnerPage({ pageWork, extra });
   try {
     await openAs(p, "acct.order-for");
-    p.d.getElementById("oNew").click(); await p.work.quiet();
+    await startAt(p.d); await p.work.quiet();
     const sw = p.d.getElementById("oNow");
     ok(!!sw && sw.getAttribute("role") === "switch" && sw.getAttribute("aria-checked") === "false" && p.d.getElementById("oNowH").textContent === "Handed over and paid now",
       "B13 his sheet offers Handed over and paid now as a switch, off until he turns it on: " + (sw && sw.outerHTML));
@@ -114,7 +115,7 @@ export async function run({ ok, pageWork }) {
   p = await richOwnerPage({ pageWork, extra });
   try {
     await openAs(p, "acct.order-for");
-    p.d.getElementById("oNew").click(); await p.work.quiet();
+    await startAt(p.d); await p.work.quiet();
     p.d.getElementById("oNow").click(); await p.work.quiet();
     p.d.getElementById("oGo").click(); await p.work.quiet();
     p.d.getElementById("oPlace").click(); await p.work.quiet();
@@ -128,10 +129,10 @@ export async function run({ ok, pageWork }) {
   p = await richOwnerPage({ pageWork, extra });
   try {
     await openAs(p, "acct.order-for");
-    p.d.getElementById("oNew").click(); await p.work.quiet();
+    await startAt(p.d); await p.work.quiet();
     p.d.getElementById("oNow").click(); await p.work.quiet();
     p.d.querySelector("[data-k='close']").click(); await p.work.quiet();
-    p.d.getElementById("oNew").click(); await p.work.quiet();
+    await startAt(p.d); await p.work.quiet();
     const fresh = p.d.getElementById("oNow");
     ok(!!fresh && fresh.getAttribute("aria-checked") === "false", "B18 a sheet closed with the switch on opens again with it off: " + (fresh && fresh.getAttribute("aria-checked")));
     fresh.click(); await p.work.quiet();
@@ -146,7 +147,7 @@ export async function run({ ok, pageWork }) {
   p = await richOwnerPage({ pageWork, extra });
   try {
     await openAs(p, "acct.order-for");
-    p.d.getElementById("oNew").click(); await p.work.quiet();
+    await startAt(p.d); await p.work.quiet();
     p.d.getElementById("oGo").click(); await p.work.quiet();
     p.d.getElementById("oPlace").click(); await p.work.quiet();
     const said = p.d.getElementById("oActSaid");
@@ -158,7 +159,7 @@ export async function run({ ok, pageWork }) {
   p = await richOwnerPage({ pageWork, extra });
   try {
     await openAs(p, "acct.order-for");
-    p.d.getElementById("oNew").click(); await p.work.quiet();
+    await startAt(p.d); await p.work.quiet();
     p.d.getElementById("oGo").click(); await p.work.quiet();
     p.d.getElementById("oPlace").click(); await p.work.quiet();
     const said = p.d.getElementById("oActSaid");
@@ -181,7 +182,7 @@ export async function run({ ok, pageWork }) {
   p = await richOwnerPage({ pageWork, extra });
   try {
     await openAs(p, "acct.order-for");
-    p.d.getElementById("oNew").click(); await p.work.quiet();
+    await startAt(p.d); await p.work.quiet();
     const off = p.d.getElementById("oOn");
     p.d.getElementById("oNow").click(); await p.work.quiet();
     const day = p.d.getElementById("oOn");
@@ -198,7 +199,7 @@ export async function run({ ok, pageWork }) {
   p = await richOwnerPage({ pageWork, extra });
   try {
     await openAs(p, "acct.order-for");
-    p.d.getElementById("oNew").click(); await p.work.quiet();
+    await startAt(p.d); await p.work.quiet();
     p.d.getElementById("oNow").click(); await p.work.quiet();
     p.d.getElementById("oGo").click(); await p.work.quiet();
     const before = p.posts.length;
@@ -210,7 +211,7 @@ export async function run({ ok, pageWork }) {
   p = await richOwnerPage({ pageWork, extra });
   try {
     await openAs(p, "acct.order-for");
-    p.d.getElementById("oNew").click(); await p.work.quiet();
+    await startAt(p.d); await p.work.quiet();
     p.d.querySelector('#osheet button[data-k="for:0"]').click(); await p.work.quiet();
     const mine = p.d.getElementById("oBuyer");
     p.d.querySelector('#osheet button[data-k="for:1"]').click(); await p.work.quiet();

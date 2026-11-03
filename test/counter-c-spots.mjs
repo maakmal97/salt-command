@@ -15,14 +15,14 @@
  *   7  Save on this phone off keeps nothing, and the spot serves this order alone
  *   8  two usernames keep two lists; Log out keeps this account's
  *   9  a store that throws leaves today's sheet: the area field, no list */
-import { open, ord, ago, txt, until } from "./counter-b-kit.mjs";
+import { open, ord, ago, txt, until, startAt } from "./counter-b-kit.mjs";
 
 const KEY = "salt-spots:abcd-efgh";
 
 export async function run({ ok, pageWork }) {
   const pages = [];
   const page = async (o) => { const p = await open(Object.assign({ pageWork }, o)); pages.push(p); return p; };
-  const sheet = async (p) => { p.d.querySelector('button[data-t="order"]').click(); await p.settle(); p.d.getElementById("oNew").click(); await p.settle();
+  const sheet = async (p) => { p.d.querySelector('button[data-t="order"]').click(); await p.settle(); await startAt(p.d); await p.settle();
     p.d.querySelector('#osheet [data-k="mode:1"]').click(); await p.settle(); };
   const close = async (p) => { p.d.querySelector('#osheet [data-k="close"]').click(); await p.settle(); };
   const list = (p) => [...p.d.querySelectorAll("#osheet .ospot")].map((r) => ({ label: txt(r.querySelector(".salt-option__label")), on: r.querySelector("input").checked, edit: r.querySelector(".ospot__edit").getAttribute("aria-label") }));

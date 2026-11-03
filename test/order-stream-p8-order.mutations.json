@@ -1,0 +1,16 @@
+[
+ {"name":"A1 the place is still named Prices","file":"stmt/words.js","find":"  \"place.prices\": \"Order\",","replace":"  \"place.prices\": \"Prices\","},
+ {"name":"A2 New order opens the sheet","file":"stmt/page.js","find":"nb.addEventListener('click',function(){ goOrder(); });","replace":"nb.addEventListener('click',function(){ sheetOpen(null,null,nb); });"},
+ {"name":"A3 a start tile opens the sheet","file":"stmt/page.js","find":"if(a.start) goOrder(a.product,a.q); else","replace":"if(a.start) sheetOpen(a.product,a.q,b); else"},
+ {"name":"A4 Collect and Deliver open the sheet","file":"stmt/page.js","find":"draft.mode=x[0]; goOrder(); });","replace":"draft.mode=x[0]; sheetOpen(null,null,b); });"},
+ {"name":"A5 the tile's size is not focused","file":"stmt/page.js","find":"    if(r) try{ r.focus({preventScroll:true}); }catch(e){}\n  }","replace":"  }"},
+ {"name":"A6 the way is not said on landing","file":"stmt/page.js","find":"placeShow('prices',true); wayDraw();","replace":"placeShow('prices',true);"},
+ {"name":"B1 the sheet keeps its sizes","file":"stmt/page.js","find":"    if(!draft.amend) sheetLines(B);\n    else S.forEach","replace":"    if(false) sheetLines(B);\n    else S.forEach"},
+ {"name":"B2 the sheet is filled with a size","file":"stmt/page.js","find":"      if(!picked()&&amend){ var S0=sold(), P0=","replace":"      if(!picked()){ var S0=sold(), P0="},
+ {"name":"B3 the way's Change keeps an old size","file":"stmt/page.js","find":"function(){ pickBasket(); sheetOpen(null,null,ch);","replace":"function(){ sheetOpen(null,null,ch);"},
+ {"name":"B4 no Done on the way alone","file":"stmt/page.js","find":"    if(!draft.amend&&!draft.pool&&!quotes().length){ var dn=","replace":"    if(false){ var dn="},
+ {"name":"B5 the units line is not said","file":"stmt/page.js","find":"    B.appendChild(el('p','salt-field__hint',tw('sh.unitsOn')));\n","replace":""},
+ {"name":"B6 the lines carry no figure","file":"stmt/page.js","find":"r.appendChild(el('span','salt-settings__value',x.over?'':rm(x.total)));","replace":"r.appendChild(el('span','salt-settings__value',''));"},
+ {"name":"B7 the basket's lines are not the sheet's","file":"stmt/page.js","find":"    draft.pick={}; ls.forEach(function(x){ draft.pick[x.P.product]=String(x.a); });\n    draft.src=ls.length?'basket':'';","replace":"    draft.pick={};\n    draft.src=ls.length?'basket':'';"},
+ {"name":"B8 the way alone says nothing","file":"stmt/page.js","find":"    if(!qs.length){ B.appendChild(el('p','lead',tw('sh.wayOnly'))); return; }","replace":"    if(!qs.length) return;"}
+]

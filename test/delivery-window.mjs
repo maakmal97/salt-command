@@ -3,6 +3,7 @@
  * override), a closed day rolling it to its next open one; a window partly inside says the part inside. The Worker takes
  * what the page offers (one rule, stmt/window.js, carried to the page as text), the order keeps the window and its span,
  * Salt Admin's card says it, and no ledger entry carries it. Every assertion was proved red by its own mutation. */
+import { startAt } from "./counter-b-kit.mjs";
 const U = "wrnd-zwse", PASS = "fixture-pass-window-01";
 
 export async function run({ ok }) {
@@ -141,7 +142,7 @@ export async function run({ ok }) {
     const { w, d, posted } = S;
     await wait(() => true);
     await new Promise((r) => setTimeout(r, 120));   /* the hours read, which the page makes on its own */
-    d.getElementById("oNew").click();
+    await startAt(d);
     d.querySelector('#osheet [data-k="mode:1"]').click();
     const wins = () => [...d.querySelectorAll('#osheet [data-k^="win:"]')];
     ok(await wait(() => wins().length === 2), "a delivery's When offers As soon as it can and the one window the hours leave open: " + wins().map((b) => b.textContent).join(" | "));
@@ -171,7 +172,7 @@ export async function run({ ok }) {
   const S2 = await drive(narrow, { failFirst: true, poll });
   try {
     const { d } = S2;
-    d.getElementById("oNew").click();
+    await startAt(d);
     d.querySelector('#osheet [data-k="mode:1"]').click();
     const wins = () => [...d.querySelectorAll('#osheet [data-k^="win:"]')];
     const early = wins().length;
