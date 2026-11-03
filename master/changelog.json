@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1404",
+  "d": "03 Nov 2026",
+  "t": "PAYMENT OF RM185 FROM CZ5-TM ON ORDER S325",
+  "n": [
+   "<b>PAYMENT FOLDED.</b> One fulfilment row: CZ5-TM paid RM185 by transfer via tng on 03 Nov 2026 against order s325 for 2 unit. It was preapproved by Counter Admin and the drafter raised no flags. Nothing unusual in the row itself.",
+   "<b>SHELF UNCHANGED.</b> The payment moves cash only, so no unit leaves the shelf. The 2 unit remain to be handed over."
+  ]
+ },
+ {
   "v": "v1403",
   "d": "03 Nov 2026",
   "t": "A PENDING ORDER FOR 2 UNIT OF SALT BOOKED, NO STOCK MOVED",
