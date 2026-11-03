@@ -2561,6 +2561,7 @@ const CLIENT_JS = `
   bullDraw(BULL);
   var PAY_SITE=__PAY_SITE__, PAY=__PAY_ACCOUNTS__;
   var session='', user='', prices=null, orders=[], pools=[], poll=null, tab='home', draft={}, counterHours=null, hoursError=false;
+  var startPlace='';   /* 3 Nov 2026: the place a tap that promised their last place carries into the sheet it opens, spent on opening */
   /* S6 6.5: the account's own claims, money said to be sent on To pay now rather than on an order (GET /orders) */
   var claims=[];
   /* S3 3.5: the content key the account was opened with, so a return re-reads it without asking for anything */
@@ -4516,6 +4517,7 @@ const CLIENT_JS = `
     /* 10 Oct 2026: the exact spot is asked afresh on every sheet and kept nowhere; an amendment keeps the order's own */
     draft.pin=null; draft.pinMsg=''; draft.pinLinkOpen=false; draft.pinBusy=false; draft.pinKept=!!(amend&&amend.pinned);
     draft.spot=null; draft.spotEdit=null;   /* Counter Batch C: no spot picked on opening (his answer 4) */
+    draft.startPlace=startPlace; startPlace='';   /* except the saved spot a To your last place or an Order again names */
     draft.ownSlot=amend&&amend.slot&&amend.slotSpan?{slot:amend.slot, span:amend.slotSpan}:null;
     var U=oUsual();
     if(product&&oSoldHas(product,q)){ draft.pick={}; draft.pick[product]=String(q); }
@@ -5062,6 +5064,8 @@ const CLIENT_JS = `
     /* 2 Nov 2026: with one spot saved there is nothing to choose between, so it is picked (his report that Deliver would not
        progress: Review waited on a tap nothing asked for); two or more still open with none picked (Batch C, his answer 4) */
     if(SL&&SL.length===1&&!draft.spot) spotPick(SL[0]);
+    /* 3 Nov 2026: To your last place and Order again pick the one saved spot at that place, once; a tap that promised nothing picks nothing */
+    if(SL&&draft.startPlace){ var hit=!draft.spot?SL.filter(function(s){ return s.place===draft.startPlace; }):[]; if(hit.length===1) spotPick(hit[0]); draft.startPlace=''; }
     if(SL){ slipKeyLoad(); B.appendChild(spotList(SL)); }   /* a saved spot's point or unit is sealed at Place, so the key is asked for here too */
     else if(draft.mode==='deliver'){
       var wf=el('div','salt-field'), wl=el('label','salt-field__label',tw('sh.whereTo')); wl.htmlFor='oWhere';
@@ -5374,7 +5378,7 @@ const CLIENT_JS = `
       if(mine!==ticket) return;
       try{ c.pinSealed=SLIPKEY?await pinSeal(c.pin):null; }catch(e){ c.pinSealed=null; }
       if(mine!==ticket) return;
-      if(!c.pinSealed){ draft.busy=false; draft.snote=sentence(tw('e.pinBad')); sheetDraw(); return; }
+      if(!c.pinSealed){ draft.busy=false; draft.snote=sentence(tw(SLIPKEY?'e.pinBad':'e.keyMissing')); sheetDraw(); return; }   /* 3 Nov 2026: no key is not their location's fault */
     }
     var todo=c.lines.filter(function(l){ return !l.placed; });
     for(var i=0;i<todo.length;i++){
@@ -7329,6 +7333,7 @@ const CLIENT_JS = `
     /* nothing of an earlier sheet rides into this one: its day, its window, its sheet id */
     draft.when='soon'; draft.wantBy=''; draft.slot=''; draft.sheetKeep='';
     if(assoc) draft.forFriend=a.forFriend;
+    startPlace=a.mode==='deliver'?(a.place||''):'';
     sheetOpen(a.product,a.q,tile,null,null,a);
     if(osh&&draft.step==='form'&&!formWhy()) reviewSheet();
   }
@@ -7342,7 +7347,7 @@ const CLIENT_JS = `
     [['collect','sh.collect','hs.coll'],['deliver','sh.deliver',w&&w.place.trim()?'hs.delivLast':'hs.delivNew']].forEach(function(x){
       var b=el('button','salt-option__face salt-option__face--tap hstart'), t=el('span','salt-option__text'); b.type='button'; b.setAttribute('data-start',x[0]);
       t.appendChild(el('span','salt-option__label',tw(x[1]))); t.appendChild(el('span','salt-option__detail',tw(x[2]))); b.appendChild(t);
-      b.addEventListener('click',function(){ draft.mode=x[0]; sheetOpen(null,null,b); });
+      b.addEventListener('click',function(){ draft.mode=x[0]; startPlace=x[0]==='deliver'&&w&&w.place.trim()?w.place:''; sheetOpen(null,null,b); });
       g.appendChild(b);
     });
     box.appendChild(g); return box;

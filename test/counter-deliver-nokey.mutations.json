@@ -1,5 +1,6 @@
 [
  {"name":"Place no longer asks for the key again","file":"stmt/page.js","find":"      if(!SLIPKEY) await slipKeyNow();\n","replace":""},
  {"name":"a practice account's spot must be sealed again","file":"stmt/page.js","find":"if(c.pin&&!c.pinSealed&&TESTS.indexOf(user)<0){","replace":"if(c.pin&&!c.pinSealed){"},
- {"name":"the refusal is a bare lower-case clause again","file":"stmt/page.js","find":"draft.snote=sentence(tw('e.pinBad'));","replace":"draft.snote=tw('e.pinBad');"}
+ {"name":"the refusal is a bare lower-case clause again","file":"stmt/page.js","find":"draft.snote=sentence(tw(SLIPKEY?'e.pinBad':'e.keyMissing'));","replace":"draft.snote=tw(SLIPKEY?'e.pinBad':'e.keyMissing');"},
+ {"name":"no key blames their location again (3 Nov 2026)","file":"stmt/page.js","find":"tw(SLIPKEY?'e.pinBad':'e.keyMissing')","replace":"tw('e.pinBad')"}
 ]

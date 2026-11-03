@@ -7,7 +7,8 @@
  * mutation (test/counter-c-spots.mutations.json, tools/section.mjs).
  *   1  with none saved, the list holds Add a spot alone and Review waits, saying why
  *   2  a spot added and saved is picked, kept under this account's key, and Review goes
- *   3  one saved spot is picked on opening and its area reaches the check; 3b two or more open with none picked, Review waiting
+ *   3  one saved spot is picked on opening and its area reaches the check; 3b two or more open with none picked, Review waiting;
+ *      3c To your last place picks the one saved at that place (3 Nov 2026)
  *   4  each spot's Edit is named for it and is 44px; the step's own controls are 44px
  *   5  at three saved, Add a spot gives way to the line saying so
  *   6  Remove drops one, with no confirm
@@ -68,6 +69,20 @@ export async function run({ ok, pageWork }) {
     ok(two.length === 2 && two.every((x) => !x.on) && review(A).disabled && /Pick where it is going, or add a spot\./.test(txt(A.d.querySelector("#osheet .ototal"))),
       "with two spots saved a new sheet still opens with none picked and Review waits, saying why (Batch C, his answer 4): " + J(two));
     await close(A); A.w.localStorage.setItem(KEY, kept1);
+    /* ---- 3c (3 Nov 2026) ---- */
+    {
+      const C = await page({ orders: [ord("s1", "done", ago(300), { mode: "deliver", place: "Orlen" })] });
+      C.w.localStorage.setItem(KEY, JSON.stringify([{ id: "a1", label: "Shop", place: "Veloria" }, { id: "a2", label: "Home", place: "Orlen" }]));
+      const tile = C.d.querySelector('[data-start="deliver"]');
+      const said = tile ? txt(tile) : "";
+      if (tile) { tile.click(); await C.settle(); }
+      const fromHome = list(C);
+      await close(C); await sheet(C);
+      const fromOrders = list(C);
+      ok(/To your last place/.test(said) && J(fromHome.map((x) => [x.label, x.on])) === J([["Shop", false], ["Home", true]]) && fromOrders.every((x) => !x.on),
+        "To your last place picks the saved spot at that place, and a sheet opened another way still picks none: " + J([said, fromHome, fromOrders]));
+      await close(C);
+    }
     /* ---- 4 ---- */
     await sheet(A);
     const ed = A.d.querySelector('#osheet [data-k="spotedit:0"]');

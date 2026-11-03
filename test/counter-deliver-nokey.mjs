@@ -5,7 +5,7 @@
  * drops anyway, is not sealed. Nothing of the spot ever travels in the clear. The real page in jsdom; every name, key and place invented.
  *   N1  a customer whose visit's first key read failed: Place asks again, seals the unit and sends one order
  *   N2  a practice account on the practice surface: the order is sent, with no spot and no /slip asked of the server
- *   N3  with no key on any ask, nothing is sent and the refusal reads as a sentence
+ *   N3  with no key on any ask, nothing is sent and the refusal reads as a sentence, naming no fault of their location (3 Nov 2026)
  * Each check is proved red by its own mutation (test/counter-deliver-nokey.mutations.json). */
 import { webcrypto } from "node:crypto";
 import { JSDOM, VirtualConsole } from "jsdom";
@@ -90,6 +90,6 @@ export async function run({ ok }) {
     "N2: a practice account's delivery with a unit is sent, with no spot and no /slip asked of the server: " + JSON.stringify({ posts: r2.posts.length, pin: !!(r2.posts[0] && r2.posts[0].pin), slip: r2.slipAsked, said: r2.said }));
 
   const r3 = await drive({ keys: [null] });
-  ok(r3.posts.length === 0 && /^The location could not be read\./.test(r3.said),
-    "N3: with no key on any ask nothing is sent, and the refusal reads as a sentence: " + JSON.stringify({ posts: r3.posts.length, said: r3.said }));
+  ok(r3.posts.length === 0 && /^Your spot could not be sent just now, so tap Place again\.$/.test(r3.said),
+    "N3: with no key on any ask nothing is sent, and the refusal says to tap Place again, not to share the location (3 Nov 2026): " + JSON.stringify({ posts: r3.posts.length, said: r3.said }));
 }

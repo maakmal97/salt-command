@@ -22,5 +22,6 @@
  {"name": "Approve has no address", "file": "stmt/owner.js", "find": "if(PARTS.orders&&!TESTING) PARTS.orders.push('approve');", "replace": ""},
  {"name": "Open's lead leaves out what is late", "file": "stmt/owner.js", "find": "+(lateRM>0.004?', '+rmShort(lateRM)+' of it late':'')+'.';", "replace": "+'.';"},
  {"name": "an empty part says nothing", "file": "stmt/owner.js", "find": "done:'No done orders.',", "replace": "done:'',"},
- {"name": "Approve's line says Reading while hidden", "file": "stmt/owner.js", "find": "if(rows&&partNow==='approve') rows.textContent='Reading.';", "replace": "if(rows) rows.textContent='Reading.';"}
+ {"name": "Approve's line says Reading while hidden", "file": "stmt/owner.js", "find": "if(rows&&partNow==='approve') rows.textContent='Reading.';", "replace": "if(rows) rows.textContent='Reading.';"},
+ {"name": "the count stays beside both sums (3 Nov 2026)", "file": "stmt/owner.js", "find": "' waits on you'+(theirs>0.004?'':' across '+plural(n,'order'))", "replace": "' waits on you across '+plural(n,'order')"}
 ]

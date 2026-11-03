@@ -4832,7 +4832,8 @@ export const OWNER_JS = `
       var held=list.filter(function(e){ return e.order&&makerAccHeld(e.order)&&e.order.price.state==='offered'; });
       var mine=sum(list,function(e){ var o=e.order; if(!o||held.indexOf(e)>=0) return 0; return o.status==='placed'?due(e):ordPays(o).reduce(function(s,p){ return s+(+p.amount||0); },0); });
       var theirs=sum(held,function(e){ var f=e.order.price.offer||{}; return (+f.total||0)+(+f.delivery||0); });
-      return (mine>0.004?rmShort(mine)+' waits on you across '+plural(n,'order'):plural(n,'order')+(n===1?' waits':' wait')+' on you')+(theirs>0.004?', '+rmShort(theirs)+' more on their yes':'')+'.';
+      /* 3 Nov 2026: with both sums the count goes, so the line fits one line at 390 (no text wraps on Salt Admin) */
+      return (mine>0.004?rmShort(mine)+' waits on you'+(theirs>0.004?'':' across '+plural(n,'order')):plural(n,'order')+(n===1?' waits':' wait')+' on you')+(theirs>0.004?', '+rmShort(theirs)+' more on their yes':'')+'.';
     }
     if(st==='done') return rmShort(sum(list,due))+' settled on '+plural(n,'done order')+' shown, the newest first.';
     if(st==='ended'){

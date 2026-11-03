@@ -106,7 +106,7 @@ export async function run({ ok, pageWork }) {
     /* O9 */
     await p.enter("open");
     const leadOpen = t(d.getElementById("makerReviewStatus"));
-    ok(leadTodo === "RM 930 waits on you across 7 orders, RM 110 more on their yes.",
+    ok(leadTodo === "RM 930 waits on you, RM 110 more on their yes.",
       "To do's lead is one sentence, money first: " + leadTodo);
     ok(/^RM [0-9,.]+ owed on [0-9]+ open orders?, RM 100 of it late[.]$/.test(leadOpen), "Open's lead is one sentence, money first, and names what is late: " + leadOpen);
     /* O7 */

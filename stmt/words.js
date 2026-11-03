@@ -99,6 +99,7 @@ export const EN = {
   "e.slipBad": "the slip could not be read. Attach it again, or send without it",
   "e.slipBig": "the slip is too large. Attach a screenshot instead",
   "e.pinBad": "the location could not be read. Share it again, or say the area",
+  "e.keyMissing": "your spot could not be sent just now, so tap Place again",
   /* 05 Oct 2026: any amount at its automatic price, and a price asked for (Negotiate) */
   "e.overMax": "up to {n} units at the listed price; ask us for a price on more",
   "e.offStep": "order in steps of {s} units, from {n}",
