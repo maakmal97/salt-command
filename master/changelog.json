@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1390",
+  "d": "03 Nov 2026",
+  "t": "JOIN BY LINK",
+  "n": [
+   "<b>AN ASSOCIATE INVITES ONE PERSON.</b> Your answers E, E1 and E2: an associate's links card now asks for a join link, one person each. It is shut until you approve it on Salt Admin's links (Approve, Decline, Withdraw), and it works once.",
+   "<b>THEIR PAGE, SEALED.</b> The link opens a page asking a name or nickname and where they are, both required. It seals them on their phone to your key before anything leaves it, so no name reaches the cloud; in WhatsApp's or another app's own browser it says to open it in Safari or Chrome first.",
+   "<b>YOU ADD THEM; THEY ARE SIGNED IN.</b> Needs you shows a new customer from that associate. Add them opens the seal behind your one unlock and fills New customer; your Add ID tells the link its code. Once the account is open, Salt Admin hands their waiting page a sign-in that only that page can take, once, and their account opens there, on a ready account from the pool.",
+   "<b>CHECKED.</b> Fable reviewed both halves: twelve findings and one more in the re-check, all applied and closed, among them a sealed sign-in key, a withdrawn link handing over nothing, and a link told only its own customer's code. Plan version 5 of 10; the first week counting for the associate (R3) is next."
+  ]
+ },
+ {
   "v": "v1389",
   "d": "03 Nov 2026",
   "t": "WALK-IN READY, AND RECORD'S NEW SALE RETIRED",
