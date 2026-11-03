@@ -1,0 +1,67 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-03T04:23:41.148Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CS11-AMP",
+    "qty": 1,
+    "total": 130,
+    "cash": 0,
+    "date": "2026-11-03",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261103041924-bmjlca, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+    "listRM": 130,
+    "listQty": 1,
+    "rids": [
+     "s323"
+    ],
+    "booked_seq": 83
+   },
+   "reasoning": "Sold 1 unit of salt to CS11-AMP for RM 130, RM 130/unit. Costed at RM 56/unit from COGS off the latest purchase p046 landed 2026-10-28: RM 1400 quote plus RM 0 freight over 25 unit, so RM 74 on the goods at 56.9%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-11-03 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CS11-AMP has no committed salt order on the book, so there is no rate of theirs to compare this against."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-11-03T04:23:41.148Z",
+    "type": "SELL",
+    "party": "CS11-AMP",
+    "qty": 1,
+    "total": 130,
+    "status": "Pending",
+    "raw": "SELL CS11-AMP 1 salt RM 130, nothing paid, nothing moved (order 20261103041924-bmjlca)",
+    "orderKey": "CS11-AMP|2026-11-03|130",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CS11-AMP",
+     "newId": null,
+     "date": "2026-11-03",
+     "qty": 1,
+     "total": 130,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261103041924-bmjlca, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261103041924-bmjlca"
+   },
+   "decidedAt": "2026-11-03T04:23:46.554Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
