@@ -1,5 +1,13 @@
 [
  {
+  "v": "v1422",
+  "d": "04 Nov 2026",
+  "t": "THE LEDGER CHECK ALIGNED",
+  "n": [
+   "<b>SALT ADMIN.</b> Orders > Ledger check: Open orders, Pending orders and the latest twenty share one column layout, so Order, Date, Customer, Book, Units, Total, Owed, Handed over and Stage each start at the same place in all three; on a phone each table still scrolls in its own box. Display only: no route, price or book changed."
+  ]
+ },
+ {
   "v": "v1421",
   "d": "04 Nov 2026",
   "t": "EVERY ORDER SAYS THE ROAD IT CAME BY",
