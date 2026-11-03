@@ -11373,7 +11373,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1399","d":"03 Nov 2026","t":"ORDER IS WHERE EVERY ORDER STARTS","n":["<b>PRICES IS NOW ORDER.</b> Your answer G: Salt Counter's second place, after Home, is named Order. New order on Orders, Home's start tiles and Home's Collect and Deliver all land there, at the tile's book with its size in view; nothing is put in the basket for them.","<b>THE SHEET KEEPS THE WAY, THE PLACE AND THE CHECK.</b> A new order's sheet no longer chooses sizes: it lists the lines from the size tapped or from the basket, with their figures, and says the units change on Order. Opened from the way's Change with nothing in the basket, it sets the way alone and closes with Done. An amendment and a group order keep their own sizes.","<b>THE BASKET'S PILL READS CONTINUE.</b> It opens the sheet; the sheet's Review opens the check, as before. Plan version 8 of 10."]}];
+const evolution=[{"v":"v1400","d":"03 Nov 2026","t":"ORDER AS THEM: A DELIVERY GOES","n":["<b>ORDER AS THEM.</b> A delivery with an area typed, or an exact spot, now reaches Review and Place on Salt Admin's Order for them; Review had stayed grey on every delivery there, asking to pick a saved spot the sheet never shows. No route, price or book changed; a customer's own sheet is as before."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11521,7 +11521,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='03 Nov 2026, 17:44 KL';
+const LAST_UPDATED='03 Nov 2026, 18:50 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

@@ -1,5 +1,13 @@
 [
  {
+  "v": "v1400",
+  "d": "03 Nov 2026",
+  "t": "ORDER AS THEM: A DELIVERY GOES",
+  "n": [
+   "<b>ORDER AS THEM.</b> A delivery with an area typed, or an exact spot, now reaches Review and Place on Salt Admin's Order for them; Review had stayed grey on every delivery there, asking to pick a saved spot the sheet never shows. No route, price or book changed; a customer's own sheet is as before."
+  ]
+ },
+ {
   "v": "v1399",
   "d": "03 Nov 2026",
   "t": "ORDER IS WHERE EVERY ORDER STARTS",
