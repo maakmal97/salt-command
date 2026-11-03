@@ -2413,6 +2413,17 @@ code alone) and the seal is let go. Once the code's account is open, Salt Admin 
 withdrawn while its key waits burns the key unspent; a second hand-over tap mints nothing; the public posts are bounded at 16 KB. The
 username is the pool's (E1); the passkey is offered on the account as ever. The introducer is kept on the link (`by`) for version 6.
 
+**One list** (plan version 7, his answers F and the plan's version 7 of 02 Nov 2026). The live statement's order lines carry `data-d` (the row's day),
+`data-g` (goods), `data-dv` (delivery) and `data-b` (the book's index in the page's own mark table, `Object.keys(PSYM)` less `_`), and their list
+`data-lines="orders"` (`tools/make_statements.mjs`); refund rows, the money rows and an issued statement carry none. The page (`stmt/page.js`
+`earlierLines`, `oEarlier`) holds a line by a site order when book, day (`rowOn` or `ackDayOf`), goods (`total`, or `closed.total`) and delivery
+agree, one to one, oldest order first; a cancelled order holds only its own cancelled line, a declined one nothing. Orders draws the site orders,
+then Earlier: the lines no order holds, by month newest first, behind one fold, with a Month select over two months or more. Account
+(`pickStmt`) draws the live document without its order lines and no filter, and Full statement opens the whole body in a Sheet (`fsOpen`, on his
+own page too), the month filter inside it. The year card reads `data-b` (`yearRows`), the drawing only for an older line. With `/orders` unread,
+Earlier is not drawn. Known, transient: an amendment approved but not published, or a row on his day of the sale before `rowOn` lands, shows its
+card and an Earlier line until the next publish.
+
 Customer amendments use the customer's session at `POST /orders/<id>/amend`, not an Admin route.
 The replacement is checked against their own open order and carried over the private bridge to the
 atomic order book; missing bridge configuration fails closed.

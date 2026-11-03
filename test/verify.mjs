@@ -21407,8 +21407,8 @@ await (async () => {
     const d = M.liveStatement(p, at, "abcd-efgh");
     if (!d || !/salt-lines__row|<tr/.test(d.body)) continue;
     docs++;
-    if (!/<div class="salt-lines salt-lines--list" role="table" aria-label="Your orders">/.test(d.body) || /<th class="l">Date<\/th><th>Quantity<\/th>/.test(d.body)) tabled++;
-    const rows = [...d.body.split('aria-label="Refunds"')[0].matchAll(/<div class="salt-lines__row[^"]*" role="row"( data-m="\d{4}-\d{2}")?><div class="salt-lines__date" role="cell">(\d\d [A-Z][a-z]{2} \d{4})?/g)];
+    if (!/<div class="salt-lines salt-lines--list" role="table" aria-label="Your orders" data-lines="orders">/.test(d.body) || /<th class="l">Date<\/th><th>Quantity<\/th>/.test(d.body)) tabled++;
+    const rows = [...d.body.split('aria-label="Refunds"')[0].matchAll(/<div class="salt-lines__row[^"]*" role="row"( data-m="\d{4}-\d{2}")?(?: data-d="\d{4}-\d{2}-\d{2}")? data-g="[^"]*" data-dv="[^"]*" data-b="-?\d+"><div class="salt-lines__date" role="cell">(\d\d [A-Z][a-z]{2} \d{4})?/g)];
     untagged += rows.filter((m) => !!m[2] !== !!m[1]).length;
     /* F8 (his answer of 28 Sep 2026, "It will be rendered cards in the statement"): the line's size is a card, its size
        under the mark (no shape word drawn, 12 Oct 2026), and the words a reader hears carry the unit */
@@ -21470,28 +21470,32 @@ await (async () => {
   const signIn = async () => {
     D.getElementById("un").value = u; D.getElementById("pw").value = pass;
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
-    return until(() => !!D.querySelector("#out .salt-lines"));
+    return until(() => !!D.querySelector("#out .tot"));
   };
   try {
-    ok(await signIn(), "the account opens on the live statement's lines");
-    const strip = D.getElementById("mfil"), note = D.getElementById("mfnote"), list = D.querySelector("#out .salt-lines");
+    ok(await signIn(), "the account opens on the live statement's money");
+    /* plan version 7 (7c): Account keeps the money and Full statement holds the lines and the month filter, in a Sheet */
+    ok(!D.querySelector('#out [data-lines="orders"]') && D.getElementById("mfil").hidden, "Account draws no order lines and no month filter");
+    D.getElementById("fsOpen").click();
+    const strip = D.getElementById("fsMf"), note = D.getElementById("fsNote"), list = D.querySelector("#fsOut .salt-lines");
     const mopts = [...strip.querySelectorAll("select option")], msel = strip.querySelector("select");
     const pickM = (v) => { msel.value = v; msel.dispatchEvent(new W.Event("change", { bubbles: true })); };
-    const shown = () => [...D.querySelectorAll("#out .salt-lines__row[data-m]")].filter((r) => r.style.display !== "none").map((r) => r.getAttribute("data-m"));
+    const shown = () => [...D.querySelectorAll("#fsOut .salt-lines__row[data-m]")].filter((r) => r.style.display !== "none").map((r) => r.getAttribute("data-m"));
     const months = [...new Set(shown())];
     ok(!strip.hidden && mopts[0].textContent === "All" && msel.value === "" && mopts.length === months.length + 1
-      && strip.nextElementSibling === note && note.nextElementSibling === list && !D.getElementById("mos"),
+      && strip.nextElementSibling === note && note.nextElementSibling === D.getElementById("fsOut") && !!list && !D.getElementById("mos"),
       "one filter, All first and chosen, on the list it filters: " + JSON.stringify(mopts.map((b) => b.textContent)));
     const one = mopts[mopts.length - 1].value;
     pickM(one);
     ok(shown().length > 0 && shown().every((m) => m === one) && msel.value === one,
       "a month tapped shows that month's lines alone: " + JSON.stringify([one, shown()]));
     /* C9 (29 Sep 2026): the line under the filter names what it filters and what it leaves standing */
-    const mfn = D.getElementById("mfnote").textContent;
+    const mfn = D.getElementById("fsNote").textContent;
     ok(/^Showing the orders and refunds of /.test(mfn) && /totals, what is still to collect and how it was worked out are the whole account/.test(mfn),
       "and the line under it names what the month filters and what stays the whole account's (C9): " + JSON.stringify(mfn));
     pickM("");
     ok(new Set(shown()).size === months.length, "and All brings every line back");
+    D.getElementById("fsX").click();
     /* C13 (his yes of 29 Sep 2026, option a): the issues sealed beside it are off the Counter, kept on disk and on Salt Admin */
     ok(!D.getElementById("stmtFoot") && !D.getElementById("stmtBack") && !/ISSUE|Earlier statements/.test(D.getElementById("pStmt").textContent),
       "the issues sealed beside the live document are never drawn on the Counter");
@@ -21618,7 +21622,7 @@ await (async () => {
     /* Try again: the re-read brings the live document, overdue part and all, and the hold with it */
     st.account = [async () => js({ ok: true, env, live: await sealLive(overdueLive, ck), liveStatus: "current" })];
     D.querySelector('#out [data-unread] button').click();
-    ok(await until(() => !!D.querySelector("#out .salt-lines")) && /123[.]45/.test(head()) && /Please pay the overdue amount/.test(head()),
+    ok(await until(() => !!D.querySelector("#out .tot")) && /123[.]45/.test(head()) && /Please pay the overdue amount/.test(head()),
       "Try again opens the live document, and its overdue part holds ordering: " + JSON.stringify(head().slice(0, 120)));
     /* a later return whose live document will not open keeps the hold where it last stood */
     st.account = [async () => js({ ok: true, env, live: await sealLive(live, other), liveStatus: "current" })];
@@ -21669,7 +21673,7 @@ await (async () => {
     st.open = [async () => answer(await sealLive(live, ck), "current")];
     st.orders = [async () => js({ ok: false, error: "no KV binding" }, 500), async () => js({ ok: true, orders: [] })];
     signIn();
-    ok(await until(() => !!D.querySelector("#out .salt-lines")) && !D.getElementById("stmtFoot") && !/ISSUE|Earlier statements/.test(vis()),
+    ok(await until(() => !!D.querySelector("#out .tot")) && !D.getElementById("stmtFoot") && !/ISSUE|Earlier statements/.test(vis()),
       "the Counter draws the live document alone: no earlier statements, no issue");
     /* C14: the first read of orders failed; the list and Home say so, never the empty state (No orders yet; Counter Batch A P5 replaced "None yet."), and Try again reads it */
     const oArea = () => D.getElementById("oArea");
@@ -21677,7 +21681,8 @@ await (async () => {
       && !!D.querySelector('#hNeeds [data-unread="ord.unread"]') && !/KV/.test(vis()),
       "a failed read of orders says so on Orders and Home, never None yet: " + JSON.stringify(oArea() && oArea().textContent.slice(0, 120)));
     oArea().querySelector("[data-unread] button").click();
-    ok(await until(() => oArea().textContent.includes(EN["ord.empty.none.t"])) && !D.querySelector('[data-unread="ord.unread"]'),
+    /* plan version 7: an account with no site order but statement lines lists those lines as Earlier, in the empty state's place */
+    ok(await until(() => oArea().textContent.includes(EN["ord.empty.none.t"]) || !!oArea().querySelector("[data-earlier]")) && !D.querySelector('[data-unread="ord.unread"]'),
       "and Try again reads them, the line gone with the failure");
     signOutTap(D);
     await until(() => !D.getElementById("gate").hidden);
@@ -21691,9 +21696,11 @@ await (async () => {
     st.open = [async () => answer(await sealLive(Object.assign({}, live, { body: body9 }), ck))];
     st.orders = [async () => js({ ok: true, orders: [] })];
     signIn();
-    ok(await until(() => D.querySelectorAll("#mfil select option").length === 3), "the fixture: two months and All");
-    const pickM = (v) => { const sl = D.querySelector("#mfil select"); sl.value = v; sl.dispatchEvent(new W.Event("change", { bubbles: true })); };
-    const refH = () => [...D.querySelectorAll("#out h3")].find((h) => h.textContent === "Refunds");
+    ok(await until(() => !!D.getElementById("fsOpen")), "the fixture: the account is open on the money");
+    D.getElementById("fsOpen").click();   /* plan version 7 (7c): the lines and the month filter are Full statement's */
+    ok(D.querySelectorAll("#fsMf select option").length === 3, "the fixture: two months and All");
+    const pickM = (v) => { const sl = D.querySelector("#fsMf select"); sl.value = v; sl.dispatchEvent(new W.Event("change", { bubbles: true })); };
+    const refH = () => [...D.querySelectorAll("#fsOut h3")].find((h) => h.textContent === "Refunds");
     const seen9 = (x) => !!x && x.style.display !== "none";
     pickM("2026-09");
     const sep9 = [seen9(refH()), seen9(refH() && refH().nextElementSibling)];
@@ -22970,7 +22977,7 @@ await (async () => {
     const btn = btnOf(u);
     btn.click();
     /* the hand-over Sheet is the one with .ho: his page also carries the look Sheet and its scrim, hidden, from the first paint */
-    const sheet = () => D.querySelector(".salt-sheet.ho[role=dialog]"), scrim = () => D.querySelector(".salt-sheet-scrim:not(#lookScrim):not(#vaultScrim)");
+    const sheet = () => D.querySelector(".salt-sheet.ho[role=dialog]"), scrim = () => D.querySelector(".salt-sheet-scrim:not(#lookScrim):not(#vaultScrim):not(#fsScrim)");
     ok(!!sheet() && sheet().getAttribute("aria-modal") === "true" && D.getElementById(sheet().getAttribute("aria-labelledby")).textContent === "Sign in on their phone"
       && !!scrim() && !!sheet().querySelector(".salt-orb.salt-sheet__close[aria-label=Close]")
       && /Making a code/.test(sheet().textContent) && D.activeElement === sheet(),
@@ -48565,6 +48572,11 @@ await (async () => {
 section("v1391 One order stream, version 6: R3, a referee's orders in their first week count toward the associate who brought them in, once paid in full (6a, 6b)");
 await (async () => {
   await (await import("./order-stream-v6-r3.mjs")).run({ ok, pageWork });
+})();
+
+section("v1392 One order stream, version 7: one list on the Counter (7a to 7d)");
+await (async () => {
+  await (await import("./order-stream-v8-list.mjs")).run({ ok, pageWork });
 })();
 
 section("Counter Batch C: the seal carries the spot's name and unit, a unit alone sealed as its own shape, nothing in the clear (P6)");

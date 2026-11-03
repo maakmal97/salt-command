@@ -68,7 +68,7 @@
  {
   "name": "the page loses its place and its scroll on the re-open",
   "file": "stmt/page.js",
-  "find": "var same=!!keep&&u===user&&!!bundle, t=tab, sy=window.scrollY||0, mf=mfPick;",
-  "replace": "var same=false, t=tab, sy=window.scrollY||0, mf=mfPick;"
+  "find": "var same=!!keep&&u===user&&!!bundle, t=tab, sy=window.scrollY||0, mf=AMF.pick;",
+  "replace": "var same=false, t=tab, sy=window.scrollY||0, mf=AMF.pick;"
  }
 ]

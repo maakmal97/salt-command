@@ -263,6 +263,7 @@ export const EN = {
   /* ---- ACCOUNT ---- */
   "acct.months": "Show one month",
   "acct.month": "Month",
+  "acct.full": "Full statement",
   /* ---- A GUEST'S BOARD AND A SHUT LINK (no script: English, from here) ---- */
   "board.h": "Price list",
   "board.week": "For the week of {w}.",
@@ -796,6 +797,8 @@ export const EN = {
   "ord.open": "Open",
   "ord.earlier1": "{n} earlier order",
   "ord.earlierN": "{n} earlier orders",
+  "ord.earlierBook1": "{n} earlier line",
+  "ord.earlierBookN": "{n} earlier lines",
   /* ---- AN ORDER'S OWN SCREEN ---- */
   "oh.deliverTo": "Ordered {t}, to be delivered to {p}",
   "oh.deliverToF": "Ordered {t}, to be delivered to {p}, on behalf of a friend",

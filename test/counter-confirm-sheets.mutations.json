@@ -146,8 +146,8 @@
  {
   "name": "a log out leaves it open",
   "file": "stmt/page.js",
-  "find": "closeDevSheet(); lookShut(); ynShut(true); devN++;",
-  "replace": "closeDevSheet(); lookShut(); devN++;"
+  "find": "closeDevSheet(); fsClose(); lookShut(); ynShut(true); devN++;",
+  "replace": "closeDevSheet(); fsClose(); lookShut(); devN++;"
  },
  {
   "name": "the order's Cancel sends a new id each time",

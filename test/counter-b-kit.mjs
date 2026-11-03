@@ -30,14 +30,14 @@ export const ord = (id, status, at, extra = {}) => Object.assign({ id, status, a
 /* handed over in full: moved is the size, done */
 export const done = (id, at, extra = {}) => ord(id, "done", at, Object.assign({ moved: extra.qty || 1, movedOn: at.slice(0, 10), paid: extra.total || 100 }, extra));
 
-export async function open({ ok, pageWork, orders = [], assoc = false, late = 0, list = LIST(), poll = true, width = 0, hours = null, card = null } = {}) {
+export async function open({ ok, pageWork, orders = [], assoc = false, late = 0, list = LIST(), poll = true, width = 0, hours = null, card = null, body: liveBody = "<p>Live</p>" } = {}) {
   const P = await import("../stmt/page.js");
   const C = await import("../tools/stmt-crypto.mjs");
   const { JSDOM } = await import("jsdom");
   const u = "abcd-efgh", pass = "fixture-pass-bb", ck = await C.contentKey("test-secret", u);
   const parts = late ? [{ date: kl(-late), since: kl(-late), gotOn: kl(-late), due: kl(-late + 1), late: true, rm: 50, whole: 50, product: "salt", qty: 0.5, got: 0.5, resale: false, goods: 50, deliv: 0, less: 0, rate: 100 }] : [];
   const pay = { term: 1, hide: 3, lock: 4, window: 60, now: { rm: late ? 50 : 0, due: parts.length ? parts[0].due : null, parts }, overdue: { rm: late ? 50 : 0, parts }, coming: { rm: 0, parts: [] } };
-  const stamped = { at: ago(1), body: "<p>Live</p>", owed: late ? 50 : 0, pay, buildId: BUILD };
+  const stamped = { at: ago(1), body: liveBody, owed: late ? 50 : 0, pay, buildId: BUILD };
   const body = { ok: true, assoc, wrap: await C.wrapKey(pass, ck), session: "sess-bb-abcdefghij", liveStatus: "current",
     live: Object.assign({ at: stamped.at, buildId: BUILD }, await C.encryptWith(ck, JSON.stringify(stamped))),
     env: await C.encryptWith(ck, JSON.stringify({ statements: [] })), prices: await C.encryptWith(ck, JSON.stringify(list)),

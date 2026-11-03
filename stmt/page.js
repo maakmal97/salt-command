@@ -546,6 +546,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .olist .olab:first-child{margin-top:4px}
 .olist .salt-inbox-row{margin:0 0 8px}
 .olater{width:100%;margin-top:10px}
+.oearlier{margin-top:16px}
 /* Counter Batch A (18 Oct 2026): the order card, the phone's filter row and the desk's two columns */
 .ocard{display:flex;flex-direction:column;gap:12px;width:100%;margin:0 0 12px;padding:20px;text-align:left;font:inherit}
 .ocard[aria-current]{border-color:var(--salt-brass)}
@@ -1782,6 +1783,16 @@ function threadSheet() {
     + '<p class="msg" id="thSaid" role="status" hidden></p></div>'
     + "</div>";
 }
+/* plan version 7 (7c): THE FULL STATEMENT, the live document whole in a Sheet of its own; Account keeps the money and this button */
+function fullSheet() {
+  return '<div id="fsScrim" class="salt-sheet-scrim" hidden></div>'
+    + '<div id="fsSheet" class="salt-sheet" role="dialog" aria-modal="true" aria-labelledby="fsT" tabindex="-1" hidden>'
+    + '<div class="salt-sheet__grab"></div>'
+    + '<div class="salt-sheet__head">' + wt("h2", 'class="salt-sheet__title" id="fsT"', "acct.full")
+    + '<button type="button" class="salt-orb salt-sheet__close" id="fsX"' + wl("x.close") + ">" + glyphSvg("close", 20) + "</button></div>"
+    + '<div class="salt-sheet__body" id="fsBody"><div id="fsMf" class="salt-settings mfil" hidden></div><p class="mfnote" id="fsNote" role="status"></p><div id="fsOut"></div></div>'
+    + "</div>";
+}
 function devSheet() {
   return '<div id="devScrim" class="salt-sheet-scrim" hidden></div>'
     + '<div id="devSheet" class="salt-sheet" role="dialog" aria-modal="true" aria-labelledby="devT" tabindex="-1" hidden>'
@@ -2318,6 +2329,8 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     + wt("p", 'class="salt-insight"', "door.help")
     + "</div></div>"
     + (owner ? "" : linkScreen() + codeScreen() + signedOutSheet() + replaceAsk() + bellSheet() + paySheet() + devSheet() + threadSheet() + lookSheet())
+    /* plan version 7 (Fable's review): Full statement on his View as them and Order as them too, the owner page being theirs read in his hands */
+    + fullSheet()
     /* S7 7.1 (his D11 of 24 Sep 2026): THE PLACES. Home opens first, and the places sit on the system's App bar under
        the thumb on a phone and on its rail beside the page from 1080px, the recipe's own switch. The bar of lines
        and the header live inside the shell, so what is hidden while signed out is hidden in one place. */
@@ -3389,12 +3402,12 @@ const CLIENT_JS = `
     bundle=null; session=''; view=false; act=false; actWant=false; prices=null; orders=[]; pools=[]; claims=[]; ordersFailed=false; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote=''; myJoins=null; myJoinNote='';
     hold=false; hidePrices=false; locked=false; payDue=null; liveAt='';
     parkMonths(); out.textContent=''; at=0; devNote=''; drawDevice();
-    mfil.textContent=''; mfil.hidden=true; mfPick=null; mfnote.textContent='';
+    mfil.textContent=''; mfil.hidden=true; AMF.pick=null; mfnote.textContent='';
     pPrices.textContent=''; pOrder.textContent=''; drawHome();
     tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
     curCk=null; closeSignedOut(true); if(opening) opening.hidden=true;
     keepReset(); closePay(true); if(codeBox) codeBox.hidden=true;
-    closeDevSheet(); lookShut(); ynShut(true); devN++; if(devSlot) devSlot.textContent='';
+    closeDevSheet(); fsClose(); lookShut(); ynShut(true); devN++; if(devSlot) devSlot.textContent='';
     pkNew=null; if(!OWNER) pkPrime();   /* Step 6: the door is on screen again */
     /* S3 fix: a key the Keep Sheet wrote into the address leaves it with the account */
     try{ if(location.hash) history.replaceState(history.state,'',location.pathname); }catch(e){}
@@ -3613,8 +3626,38 @@ const CLIENT_JS = `
       return;
     }
     out.innerHTML=s.body;
-    drawMonths();
+    /* plan version 7 (7c): the live statement's order lines are Orders' now (their orders, then Earlier by month), so Account keeps the
+       money, Refunds and what is still to collect, with no month filter, and Full statement opens the whole document in a Sheet.
+       A document without that list (an issue, or a live one published before the lines carried it) is drawn as it was, whole, with its filter. */
+    var ol=s.live?out.querySelector('[data-lines="orders"]'):null;
+    if(ol){
+      ol.remove();
+      mfil.textContent=''; mfil.hidden=true; mfnote.textContent=''; AMF.pick=null;
+      var fb=el('button','btn quiet salt-ghost',tw('acct.full')); fb.type='button'; fb.id='fsOpen'; fb.setAttribute('data-back','fs:open');
+      fb.addEventListener('click',function(){ fsOpen(fb); });
+      out.appendChild(fb);
+    } else drawMonths();
     window.scrollTo(0,0);
+  }
+  /* ---- THE FULL STATEMENT (plan version 7, 7c): the live document whole, the month filter working inside it, in the page's Sheet ---- */
+  var fsEl=document.getElementById('fsSheet'), fsScrim=document.getElementById('fsScrim'), fsOut=document.getElementById('fsOut'), fsFrom=null,
+      FSMF={root:fsOut, fil:document.getElementById('fsMf'), note:document.getElementById('fsNote'), pick:null, onPick:null};
+  function liveDoc(){ return bundle&&bundle.statements.filter(function(x){ return x.live&&!x.bad&&x.body; })[0]||null; }
+  function fsOpen(from){
+    var lv=liveDoc(); if(!fsEl||!lv) return;
+    fsFrom=from||null; fsOut.innerHTML=lv.body; FSMF.pick=null; mfBuild(FSMF);
+    fsScrim.hidden=false; fsEl.hidden=false; behind(); bkOpen('fs',fsClose);
+    try{ fsEl.focus(); }catch(e){}
+  }
+  function fsClose(){
+    if(!fsEl||fsEl.hidden) return;
+    fsEl.hidden=true; fsScrim.hidden=true; behind(); bkDrop('fs'); fsOut.textContent='';
+    focusBack(fsFrom,backFind('fs:open'));
+  }
+  if(fsEl){
+    document.getElementById('fsX').addEventListener('click', fsClose);
+    fsScrim.addEventListener('click', fsClose);
+    document.addEventListener('keydown', function(ev){ if(ev.key==='Escape') fsClose(); });
   }
 
   /* ---- THE MONTH FILTER (v690, his instruction of 18 Sep 2026) -------------------------------
@@ -3625,19 +3668,20 @@ const CLIENT_JS = `
      v769, HIS INSTRUCTION OF 21 SEP 2026: IT OPENS ON THE WHOLE ACCOUNT, and since S7 7.3 All is the first pill,
      then the months newest first, a short month where they share a year. A row is a table row in an issue and a
      Statement line in the live document; either carries data-m. */
-  var mfPick=null;
   function monthLabel(m,L){
     var y=m.slice(0,4), mm=+m.slice(5,7);
     return monthsIn(L)[mm-1]+' '+y;
   }
-  function applyMonths(){
-    var rows=out.querySelectorAll('[data-m]');
+  /* plan version 7: the filter works on a given root, so Account (an issue), the full statement's Sheet and Orders' Earlier each have their own.
+     c = {root, fil (the settings list holding the select), note (a status line or null), pick, onPick (or null)} */
+  function mfApply(c){
+    var rows=c.root.querySelectorAll('[data-m]');
     for(var i=0;i<rows.length;i++){
       var m=rows[i].getAttribute('data-m');
-      rows[i].style.display=(!mfPick||m===mfPick)?'':'none';
+      rows[i].style.display=(!c.pick||m===c.pick)?'':'none';
     }
     /* C9: a list the month leaves empty goes with its heading, Refunds with nothing of that month under it */
-    var ls=out.querySelectorAll('.salt-lines');
+    var ls=c.root.querySelectorAll('.salt-lines');
     for(var j=0;j<ls.length;j++){
       var rs=ls[j].querySelectorAll('.salt-lines__row'), any=false;
       for(var q=0;q<rs.length;q++) if(rs[q].style.display!=='none') any=true;
@@ -3645,19 +3689,20 @@ const CLIENT_JS = `
       ls[j].style.display=gone?'none':'';
       if(hd&&hd.tagName==='H3') hd.style.display=gone?'none':'';
     }
-    var msel=mfil.querySelector('select'); if(msel) msel.value=mfPick||'';
-    mfnote.textContent=mfPick?tw('acct.showing',{m:Dd(monthLabel,mfPick)}):tw('acct.all');
+    var msel=c.fil.querySelector('select'); if(msel) msel.value=c.pick||'';
+    if(c.note) c.note.textContent=c.pick?tw('acct.showing',{m:Dd(monthLabel,c.pick)}):tw('acct.all');
   }
-  function drawMonths(){
-    mfil.textContent='';
-    var rows=out.querySelectorAll('[data-m]'), seen={}, months=[], years={};
+  /* the select of the months its root holds, All first and the months newest first; hidden under two months. True when it is shown. */
+  function mfBuild(c){
+    c.fil.textContent='';
+    var rows=c.root.querySelectorAll('[data-m]'), seen={}, months=[];
     for(var i=0;i<rows.length;i++){
       var m=rows[i].getAttribute('data-m');
-      if(m&&!seen[m]){ seen[m]=1; months.push(m); years[m.slice(0,4)]=1; }
+      if(m&&!seen[m]){ seen[m]=1; months.push(m); }
     }
     months.sort().reverse();
-    mfPick=null;   /* v769: the whole account, and a month is one tap */
-    if(months.length<2){ mfil.hidden=true; mfnote.textContent=''; return; }
+    if(c.pick&&months.indexOf(c.pick)<0) c.pick=null;
+    if(months.length<2){ c.pick=null; c.fil.hidden=true; if(c.note) c.note.textContent=''; return false; }
     /* 28 Oct 2026 (his yes to the statement in the language): four or more choices are a select in a settings row, All first */
     var mrow=el('label','salt-settings__row'), msel=document.createElement('select');
     mrow.appendChild(el('span','salt-settings__label',tw('acct.month')));
@@ -3665,15 +3710,22 @@ const CLIENT_JS = `
     [''].concat(months).forEach(function(m){
       var o=document.createElement('option'); o.value=m; o.textContent=m?monthLabel(m):tw('acct.allPill'); msel.appendChild(o);
     });
-    msel.addEventListener('change', function(){ mfPick=msel.value||null; applyMonths(); });
-    mrow.appendChild(msel); mfil.appendChild(mrow);
+    msel.addEventListener('change', function(){ c.pick=msel.value||null; if(c.onPick) c.onPick(c.pick); mfApply(c); });
+    mrow.appendChild(msel); c.fil.appendChild(mrow);
+    c.fil.hidden=false;
+    mfApply(c);
+    return true;
+  }
+  var AMF={root:out, fil:mfil, note:mfnote, pick:null, onPick:null};
+  function applyMonths(){ mfApply(AMF); }
+  function drawMonths(){
+    AMF.pick=null;   /* v769: the whole account, and a month is one tap */
+    if(!mfBuild(AMF)) return;
     /* beside the list it filters, not above the document's heading */
     var first=out.querySelector('[data-m]'), list=first&&first.closest('.salt-lines, .tblw, table');
     /* above the heading of a list that has one (C9: an account whose first dated rows are its refunds) */
     if(list&&list.previousElementSibling&&list.previousElementSibling.tagName==='H3') list=list.previousElementSibling;
     if(list&&list.parentNode){ list.parentNode.insertBefore(mfil,list); list.parentNode.insertBefore(mfnote,list); }
-    mfil.hidden=false;
-    applyMonths();
   }
 
   /* ---- THIS DEVICE (S7 7.3) -------------------------------------------------------------------------------------
@@ -5677,10 +5729,66 @@ const CLIENT_JS = `
     box.appendChild(eb);
     if(draft.oEarlier) past.forEach(function(o){ box.appendChild(oItem(o,shown)); });
   }
+  /* ---- EARLIER BY MONTH (plan version 7, 7b, his "Orders lists every order") ------------------------------------------------------
+     After their site orders, the live statement's lines that no site order holds, by month, behind one fold. A statement line is
+     HELD by an order when the book (its index in the page's own mark table, data-b), the day (the row's, or the day the desk
+     acknowledged it), the goods (the order's total, or the total before a close) and the delivery all agree; one order holds one
+     line, one line one order, matched oldest order first. A cancelled or declined order holds nothing. Nothing is drawn without a
+     live statement, and an issued statement is never read here. The page joins by what the line already says: no key leaves the Desk. */
+  function earlierLines(){
+    var lv=liveDoc(); if(!lv) return [];
+    var tp=document.createElement('template'); tp.innerHTML=lv.body;
+    var rows=[].slice.call(tp.content.querySelectorAll('.salt-lines[data-lines="orders"] > .salt-lines__row')), keys=Object.keys(PSYM).filter(function(k){ return k!=='_'; }), held={};
+    function near(a,b){ return Math.abs(a-b)<0.005; }
+    /* a cancelled order holds only its own cancelled line, never a live one (Fable's review); a declined one never had a row */
+    orders.filter(function(o){ return o.status!=='declined'; })
+      .sort(function(a,b){ return String(a.at||'').localeCompare(String(b.at||'')); })
+      .forEach(function(o){
+        var b=keys.indexOf(o.product||'salt'), days=[o.rowOn,ackDayOf(o)].filter(Boolean), goods=[+o.total||0], dv=+o.delivery||0;
+        if(o.closed&&o.closed.total!=null) goods.push(+o.closed.total||0);
+        for(var i=0;i<rows.length;i++){
+          if(held[i]) continue;
+          var r=rows[i], d=r.getAttribute('data-d'), g=parseFloat(r.getAttribute('data-g')), v=parseFloat(r.getAttribute('data-dv'))||0;
+          if((o.status==='cancelled')!==r.classList.contains('salt-lines__row--cancelled')) continue;
+          if(+r.getAttribute('data-b')!==b||!d||days.indexOf(d)<0||isNaN(g)||!goods.some(function(x){ return near(x,g); })||!near(dv,v)) continue;
+          held[i]=1; break;
+        }
+      });
+    return rows.filter(function(r,i){ return !held[i]; });
+  }
+  function oEarlier(){
+    var left=earlierLines(); if(!left.length) return null;
+    var head=left[0].parentNode&&left[0].parentNode.querySelector('.salt-lines__head');
+    var box=el('div','oearlier'); box.setAttribute('data-earlier','');
+    var eb=el('button','salt-ghost olater',tw(left.length===1?'ord.earlierBook1':'ord.earlierBookN',{n:left.length})); eb.type='button'; eb.setAttribute('data-earlier-fold','');
+    eb.setAttribute('aria-expanded',draft.oEarlierBook?'true':'false');
+    eb.addEventListener('click',function(){ draft.oEarlierBook=!draft.oEarlierBook; oDraw(); });
+    box.appendChild(eb);
+    if(!draft.oEarlierBook) return box;
+    var by={}, months=[];
+    left.forEach(function(r){ var m=r.getAttribute('data-m')||''; if(!(m in by)){ by[m]=[]; if(m) months.push(m); } by[m].push(r); });
+    months.sort().reverse(); if('' in by) months.push('');
+    var fil=el('div','salt-settings mfil'); fil.hidden=true; box.appendChild(fil);
+    months.forEach(function(m){
+      if(m) box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper olab',monthLabel(m)));
+      var lst=el('div','salt-lines salt-lines--list'); lst.setAttribute('role','table'); lst.setAttribute('aria-label',m?monthLabel(m):tw('ord.yours'));
+      if(head) lst.appendChild(head.cloneNode(true));   /* the column names, for a screen reader (Fable's review) */
+      by[m].forEach(function(r){ lst.appendChild(r.cloneNode(true)); });
+      box.appendChild(lst);
+    });
+    var c={root:box, fil:fil, note:null, pick:draft.oMonth||null, onPick:function(p){ draft.oMonth=p||''; }};
+    mfBuild(c);
+    return box;
+  }
   function oList(shown){
     var box=el('div','olist'); box.setAttribute('data-olist','');
     if(ordersFailed) box.appendChild(unreadNode('ord.unread',retryOrders));
-    if(!orders.length){ if(!ordersFailed) box.appendChild(oEmpty('none')); return box; }
+    if(!orders.length){
+      /* no site order yet: the statement's own lines, if it has any, are still their orders */
+      var e0=ordersFailed?null:oEarlier();   /* with the orders unread every line would read as unheld, so none is drawn until they are (Fable's review) */
+      if(e0) box.appendChild(e0); else if(!ordersFailed) box.appendChild(oEmpty('none'));
+      return box;
+    }
     var B=oBuckets();
     if(oWide()){
       /* from 860px: Open and Done, two columns where the list has the room and one under the other beside an open order */
@@ -5697,6 +5805,7 @@ const CLIENT_JS = `
         cols.appendChild(col);
       });
       box.appendChild(cols);
+      var ew=oEarlier(); if(ew) box.appendChild(ew);
       return box;
     }
     box.appendChild(oTabs());
@@ -5706,6 +5815,7 @@ const CLIENT_JS = `
       if(B.needs.length) sec(tw('x.needs'),B.needs);
       if(B.open.length) sec(tw('ord.open'),B.open);
       if(B.past.length) oFold(box,B.past,shown);
+      var ep=oEarlier(); if(ep) box.appendChild(ep);
       return box;
     }
     var list=oOf(k);
@@ -7361,7 +7471,9 @@ const CLIENT_JS = `
     [].forEach.call(tp.content.querySelectorAll('.salt-lines__row[data-m]'),function(r){
       var m=r.getAttribute('data-m')||'', mq=r.querySelector('.salt-lines__what .mtile .mq');
       if(m.slice(0,4)!==y||!mq||r.classList.contains('salt-lines__row--cancelled')) return;
-      out.push({m:m, p:yearMark(r.querySelector('.salt-lines__what .mtile svg')), q:parseFloat(String(mq.textContent).replace(/,/g,''))||0});
+      /* plan version 7 (7d): the book is the line's data-b, the page's own mark table; the drawing is read only for a line published before it */
+      var bk=Object.keys(PSYM).filter(function(k){ return k!=='_'; })[parseInt(r.getAttribute('data-b'),10)];
+      out.push({m:m, p:bk||yearMark(r.querySelector('.salt-lines__what .mtile svg')), q:parseFloat(String(mq.textContent).replace(/,/g,''))||0});
     });
     return out;
   }
@@ -7909,7 +8021,7 @@ const CLIENT_JS = `
     say(''); again(false);
     /* S3 3.5: the same account let in again (a lapse reopened, a sign-in on the Sheet, a return re-read) keeps
        the draft, the tab, the month and the place on the page */
-    var same=!!keep&&u===user&&!!bundle, t=tab, sy=window.scrollY||0, mf=mfPick;
+    var same=!!keep&&u===user&&!!bundle, t=tab, sy=window.scrollY||0, mf=AMF.pick;
     prices=x.prices; assoc=x.assoc; card=x.card; curCk=ck||null;
     user=u; session=body.session||'';
     if(!same){ liveStop(); orders=[]; pools=[]; claims=[]; draft={}; closePay(true); payDue=null; liveAt=''; ordersFailed=false; readAt=0; thClose(); thPut(null); thOut=[]; thSig=''; thWhy=''; }
@@ -7928,7 +8040,7 @@ const CLIENT_JS = `
     else if(placeBtns(t)[0].hidden) placeShow(t);
     lookAsk(b);   /* 11 Oct 2026: a device that has chosen no look is asked, once a visit */
     if(same){
-      if(mf&&mfil.querySelector('button[data-mf="'+mf+'"]')){ mfPick=mf; applyMonths(); }
+      if(mf&&mfil.querySelector('button[data-mf="'+mf+'"]')){ AMF.pick=mf; applyMonths(); }
       window.scrollTo(0,sy);
       if(draft.sheetBack){ draft.sheetBack=false; sheetOpen(); }
     }
