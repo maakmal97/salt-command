@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="291555a71ed7ece6";
+var SALT_BUILD_ID="62c0350d0fd5b9dc";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -11568,7 +11568,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1391","d":"03 Nov 2026","t":"A REFEREE'S FIRST WEEK COUNTS FOR THE ASSOCIATE","n":["<b>THE FIRST WEEK COUNTS.</b> Your answers R3 and E3: a customer an associate's join link brought in has their orders placed in the 7 days from the day their account opens counted toward that associate's reward step, as the associate's own buying is, once paid in full. Priced orders only; nothing after the week.","<b>FILED AT ADD ID.</b> Salt Admin's Add them now sends the associate's code with the Add ID, and the run that folds it files the week. Only a customer is brought in, only by an associate with a reward opening and no ban, and one link a customer; an introduction that cannot be filed is said and the ID still goes in.","<b>THE UNIT.</b> When a referee's paid order takes the associate over the step, the fold raises the associate's unit at that day's landed cost, named for the referee's order, and it goes with the associate's next salt handover once that order is out in full. A redate out of the week, an undo or a cancellation marks it stale at once. What you gave under the referee's own price is never netted off the associate's unit.","<b>NOTHING TO THE REFEREE.</b> The referee is never told of the associate's unit on their order, and their own loyalty unit counts as before.","<b>WHERE IT SHOWS.</b> Salt Admin's associate reward lists each person they brought in, the week's last day and the orders counted, and a referee's order says whose week it counts in. The associate's Counter card says how many first-week orders counted, a count and nothing else."]}];
+const evolution=[{"v":"v1392","d":"03 Nov 2026","t":"ONE LIST ON THE COUNTER","n":["<b>ORDERS IS THE ONE LIST.</b> Your answer F: Salt Counter's Orders now shows every order. Their site orders as before, then Earlier: the statement lines no site order holds, grouped by month, newest first, behind one fold, with a Month select once it spans two months.","<b>MATCHED BY WHAT THE LINE SAYS.</b> A statement line belongs to an order when its book, day, goods and delivery agree, so a sale is drawn once. No key leaves the Desk; the publish writes those four on each line as data.","<b>ACCOUNT HOLDS THE MONEY.</b> Account keeps the balance, what was paid, delivery, refunds and what is still to collect. Full statement opens the whole document in a sheet, with its month filter, on their page and on your View as them.","<b>THE YEAR CARD READS THE BOOK.</b> Home's year card now counts each book from the line's own data, not its drawing, so new marks will not break it."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11716,7 +11716,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='03 Nov 2026, 09:23 KL';
+const LAST_UPDATED='03 Nov 2026, 10:08 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
