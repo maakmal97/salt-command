@@ -8,8 +8,8 @@
  {
   "name": "the Worker drops the unit when it files the Add ID entry",
   "file": "src/maker-inputs.js",
-  "find": "geo: body.geo || null, tiers, unit: tiers != null ? \"pct\" : null });",
-  "replace": "geo: body.geo || null, tiers });"
+  "find": "geo: body.geo || null, tiers, unit: tiers != null ? \"pct\" : null, introducer: body.introducer || null });",
+  "replace": "geo: body.geo || null, tiers, introducer: body.introducer || null });"
  },
  {
   "name": "the typed starting % gets the decimal pad back, which has no minus key on an iPhone",

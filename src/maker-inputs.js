@@ -1259,7 +1259,7 @@ export function makerLedgerInput(operation, body, book, pending = []) {
         qty: free, earned: state.earned, applied: state.applied, balance: state.held });
     }
   } else if (operation === "add-id") {
-    if (!exact(body, ["at", "code", "kind", "parent", "geo", "tiers", "unit", "vault", "addrVault"])
+    if (!exact(body, ["at", "code", "kind", "parent", "geo", "tiers", "unit", "vault", "addrVault", "introducer"])
       || !/^[A-Z]{1,3}[0-9]{0,2}[A-Z0-9-]*$/.test(body.code) || !["customer", "supplier", "reseller", "referral", "downstream", "bucket"].includes(body.kind))
       return { error: "An ID entry carries only codes, role, point, starting % and the encrypted vault envelope." };
     if (body.kind === "bucket") {
@@ -1270,6 +1270,10 @@ export function makerLedgerInput(operation, body, book, pending = []) {
       return { error: "A filed address needs an encrypted envelope for a named party." };
     if (roster.includes(body.code)) return { error: "That code is already on the roster." };
     if (body.parent != null && !realCode(body.parent, roster)) return { error: "Choose a parent already on the roster." };
+    /* R3 (plan version 6): a customer brought in by an associate's join link names them, so their first week counts toward that associate's step */
+    if (body.introducer != null && (body.kind !== "customer" || typeof body.introducer !== "string" || !realCode(body.introducer, roster)
+      || POSITION_ENGINE.isBucket(body.introducer) || !associateCodes(book).includes(body.introducer) || !((book.state.REWARD_OPEN || {})[body.introducer])))
+      return { error: "Only a customer is brought in, and only by an associate on the roster." };
     if (body.geo != null && !safeGeo(body.geo)) return { error: "The map point is outside Malaysia or has invalid locality text." };
     const tiers = body.tiers == null ? null : body.tiers;
     if (tiers != null) {
@@ -1287,7 +1291,7 @@ export function makerLedgerInput(operation, body, book, pending = []) {
     }
     entry = POSITION_ENGINE.addIdEntry({ at: body.at, code: body.code, kind: body.kind,
       parent: body.parent || null, rev: body.kind === "reseller" ? "R2" : body.kind === "referral" ? "R3" : null,
-      geo: body.geo || null, tiers, unit: tiers != null ? "pct" : null });
+      geo: body.geo || null, tiers, unit: tiers != null ? "pct" : null, introducer: body.introducer || null });
   } else if (operation === "amend-id") {
     if (!exact(body, ["at", "from", "to", "geo", "vault", "addrVault"])
       || !realCode(body.from, roster) || POSITION_ENGINE.isBucket(body.from)

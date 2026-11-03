@@ -42,17 +42,34 @@ export function lateHistory(book, owner, today, terms) {
    them over: on top of the walk's PAID progress alone, so other unpaid orders are never counted ahead of it, at the lesser of today's
    step and the row's own promise (rwdStep). The unit's ringgit is its cost less what he gave under their own price since the last
    reward, never under nought. Nothing prices from it, and no figure of it travels to a customer: they are told one word (rwdOf). */
+/* R3 (plan version 6): an associate's referees' first weeks, for his reading alone: the code, the last day of the week and the orders counted */
+function r3Weeks(book, owner, walk) {
+  const E = POSITION_ENGINE, state = book.state || {};
+  return (state.INTRODUCTIONS || []).filter((e) => e && e.by === owner && typeof e.customer === "string" && E.r3Link(state, e.customer) === e)
+    .map((e) => { const end = E.r3Until(e), last = new Date(Date.parse(end + "T00:00:00Z") - 864e5).toISOString().slice(0, 10);
+      return { code: E.ownerCode(e.customer), since: e.since, last, orders: (walk && walk.r3 && walk.r3.by && walk.r3.by[E.ownerCode(e.customer)]) || 0 }; })
+    .filter((w, i, all) => w.orders > 0 || w.since === all.reduce((m, x) => (x.since > m ? x.since : m), ""));
+}
+/* a referee's order: whose first week it counts in, for his card (codes, behind Access) */
+export function r3For(book, code, rid, day) {
+  const E = POSITION_ENGINE, state = book.state || {}, link = E.r3Link(state, code);
+  if (!link) return null;
+  const row = rid ? (book.sales || []).find((s) => s && s.rid === rid) : null;
+  const end = E.r3Until(link), last = new Date(Date.parse(end + "T00:00:00Z") - 864e5).toISOString().slice(0, 10);
+  const probe = row || (typeof day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(day) ? { customer: code, date: day } : null);   /* an order not yet rowed: its Pending day */
+  return { by: link.by, since: link.since, last, counts: probe ? E.r3Of(book, probe) === link.by : null };
+}
 export function rewardReading(book, code, opts = {}) {
   const E = POSITION_ENGINE, owner = E.ownerCode(code);
   const acc = E.rewardAccount(book, owner);
-  if (!acc.associate) return { associate: false };
+  if (!acc.associate) return { associate: false, r3For: r3For(book, owner, opts.rid || null, opts.day || null) };
   const walk = E.rewardWalk(book, owner);
   if (!walk || walk.error || walk.step == null) return { associate: true, error: (walk && walk.error) || "This book states no step." };
   const two = (n) => +(+n).toFixed(2);
   const out = { associate: true, departed: !!acc.departed, times: walk.times, rate: walk.rate, step: walk.step, progress: walk.progress, next: walk.next,
-    given: walk.given, net: two(Math.max(0, walk.rate - walk.given)), order: null, unit: null };
+    given: walk.given, net: two(Math.max(0, walk.rate - walk.given)), order: null, unit: null, r3: r3Weeks(book, owner, walk) };
   const row = opts.rid ? (book.sales || []).find((s) => s && s.rid === opts.rid) : null;
-  const unit = row && row.rid ? (book.sales || []).find((s) => s && s.rewardOf && s.rewardOf === row.rid && !s.cancelled) : null;
+  const unit = row && row.rid ? (book.sales || []).find((s) => s && s.rewardOf && s.rewardOf === row.rid && !s.cancelled && E.ownerCode(s.customer) === owner) : null;
   if (unit) out.unit = { rid: unit.rid, cost: two(unit.cost), given: two(+unit.given || 0), net: two(Math.max(0, +unit.cost - (+unit.given || 0))), delivered: +unit.deliveredQty > 0.009 };
   const qty = row ? +row.qty : +opts.qty, goods = row ? E.txGoods(row) : +opts.goods;
   if (!(qty > 0) || !Number.isFinite(goods) || (row && (row.product || "salt") !== "salt")) return out;
@@ -101,7 +118,8 @@ export function rewardCrossOf(book, code, qty, goods, unitCost, opts = {}) {
 export function rwdOf(book, row, now, today) {
   if (!row || (row.product || "salt") !== "salt") return undefined;
   if (!row.rid) return undefined;
-  const units = (book.sales || []).filter((s) => s && s.rewardOf && s.rewardOf === row.rid && !s.cancelled);
+  const own = POSITION_ENGINE.ownerCode(row.customer);   /* R3: the associate's unit raised on a referee's order is never the referee's word */
+  const units = (book.sales || []).filter((s) => s && s.rewardOf && s.rewardOf === row.rid && !s.cancelled && POSITION_ENGINE.ownerCode(s.customer) === own);
   if (units.some((s) => +s.deliveredQty > 0.009)) return now === "given" ? undefined : "given";   /* given once the unit is handed over (Fable's review) */
   if (units.length) return undefined;   /* raised and waiting for its handover: the word stands */
   if (now !== "cross") return undefined;

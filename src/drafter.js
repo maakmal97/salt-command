@@ -1270,6 +1270,12 @@ export function draftRow(entry, book) {
     if (parent && !roster.includes(parent)) {
       flags.push(`The parent ${parent} is not on the roster either, so this bucket would hang off nothing.`);
     }
+    /* R3 (plan version 6): the associate whose join link brought them; their first week counts toward that associate's step */
+    const introducer = typeof pay.introducer === "string" && pay.introducer ? pay.introducer.trim().toUpperCase() : null;
+    if (pay.introducer != null && !introducer) return { skip: "an introducer is an associate's code" };
+    if (introducer && kind !== "customer") return { skip: "only a customer is brought in by an associate" };
+    if (introducer && !associates.includes(introducer) && !(((book.state && book.state.INTRODUCTIONS) || []).some((e) => e && e.by === introducer)))
+      flags.push(`${introducer} is not on the associate bench, so the fold files no first week for ${code}.`);
     /* THE STANDING IS THE POINT, so the reasoning says what it changes rather than only that a
        code joined a list. He approves the ROW, and on this row the row is a rule change: the
        credit cap, the reward hurdle and which table the party is counted on all move with it. */
@@ -1283,10 +1289,11 @@ export function draftRow(entry, book) {
       : "";
     return {
       collection: "roster",
-      row: Object.assign({ code, kind, parent, note: pay.note || null }, geoOf(pay.geo) ? { geo: geoOf(pay.geo) } : {}, pay.tiers ? { tiers: { ...pay.tiers } } : {}, pay.tiers && pay.unit === "pct" ? { unit: "pct" } : {}),
+      row: Object.assign({ code, kind, parent, note: pay.note || null }, geoOf(pay.geo) ? { geo: geoOf(pay.geo) } : {}, pay.tiers ? { tiers: { ...pay.tiers } } : {}, pay.tiers && pay.unit === "pct" ? { unit: "pct" } : {}, introducer ? { introducer } : {}),
       flags,
       reasoning: `${stream && roster.includes(code) ? "Appoints" : "Registers"} ${code} as a ${kind}${parent ? ` under ${parent}` : ""}.`
         + (pay.tiers ? ` It starts them at ${tierLine(pay.tiers)}.` : "")
+        + (introducer ? ` ${introducer} brought them in: their orders placed in the ${POSITION_ENGINE.R3_DAYS} days from the day this folds count toward ${introducer}'s reward step once paid in full.` : "")
         + ` It touches no figure: the fold appends ${roster.includes(code) ? "nothing new" : "the code"} to the roster.`
         + appointBits
         + " THE NAME AND THE PLACE ARE NOT HERE AND MUST NOT BE: the directory is typed at the laptop and never travels.",

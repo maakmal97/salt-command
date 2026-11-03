@@ -12,7 +12,7 @@
 {"name":"Accept stamps no step","file":"src/orders.js","find":"entry.rwdStep = rc.step; entry.rwdRate = rc.rate;","replace":"entry.rwdRate = rc.rate;"},
 {"name":"Accept stamps no rate","file":"src/orders.js","find":"entry.rwdStep = rc.step; entry.rwdRate = rc.rate;","replace":"entry.rwdStep = rc.step;"},
 {"name":"the preview hides the verdict","file":"src/orders.js","find":"rwd: rc.cross ? \"cross\" : null,","replace":"rwd: null,"},
-{"name":"the preview hides his reading","file":"src/orders.js","find":"    reward: product === \"salt\" ? rewardReading(book, code, { qty, goods, unitCost: priced0.cost }) : null,","replace":"    reward: null,"},
+{"name":"the preview hides his reading","file":"src/orders.js","find":"    reward: product === \"salt\" ? rewardReading(book, code, { qty, goods, unitCost: priced0.cost, day: d.row && d.row.date }) : null,","replace":"    reward: null,"},
 {"name":"the approval drops the word","file":"src/orders.js","find":"      entry.rwd === \"cross\" ? { rwd: \"cross\" } : {},   /* 20 Oct 2026: the reward word his yes covered */","replace":"      {},"},
 {"name":"the reading has no route","file":"src/worker.js","find":"  if (rwdAt) {","replace":"  if (false) {"},
 {"name":"the reading forgets the promised rate","file":"engine/stages.mjs","find":"promised = row && +row.rwdRate > 0 ? +row.rwdRate : null;","replace":"promised = null;"},

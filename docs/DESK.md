@@ -165,6 +165,18 @@
   never on a lot. His figures: `GET /all/maker/reward/<ledgerKey>` (the Desk's `/_internal/maker/reward/<key>`, bridge key), a read.
 - **Customers** (P8): `rewardAccount` reads `redeemable` false for a non-associate from the switch and `inputResource` refuses every spend; their
   count stands on the rows it read at the switch (`rewardCut`). No basis (the loyalty plan's Ask 4).
+- **R3, a referee's first week** (plan version 6, his answers R3 and E3 of 02 Nov 2026): an Add ID naming its `introducer` (Salt Admin's join card sends the
+  associate's code; `src/maker-inputs.js` takes it for a customer and an associate with an opening only) files `INTRODUCTIONS` `{by, customer, since, days: 7}`,
+  `since` the fold's (or the tap's) day, once a customer and never a second (the plan says why it filed none; the registration always stands). The engine's
+  `r3Link`, `r3In` and `r3Of` read it: a referee's row dated in the week counts in the introducer's `rewardWalk` as their own buying does, paid in full,
+  priced rows only, with no stamp of the referee's (`listRM`, `rwdStep`, `rwdRate` ignored, so `given` is nought); an own row in someone's live week counts
+  there, once. The old count reads only entries with no `since`. The fold runs the introducer's walk on a referee's touch in the week and on a touch of a row
+  another's live unit names (STALE at once on a redate, an undo or a cancel); the unit goes with the associate's next salt handover once the referee's order is
+  handed over in full. `rwdOf` and `rewardReading`'s unit read only the row owner's units, so a referee is never told of it. His reading carries `r3` (each
+  week, its last day, the orders counted) and a referee's order `r3For`; the associate's Counter card `reward.r3`, a count. The referee's own loyalty walk still
+  counts the same rows (two people's schemes; said, not his decision yet). With `book_roster` on (after the flip) the tap files `since` at its own day and
+  the fold at its TODAY, so an approval before midnight folded after it would differ under `ROSTER_PURE`: take the tap's day at the flip. The associate's
+  Counter card's "brought" ringgit (`summary.introduced`) reads the referee's sales, as a referral's always has.
 
 ## The customer loyalty unit (his rule of 20 Oct 2026, docs/plan-loyalty-unit.html)
 

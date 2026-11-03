@@ -6135,6 +6135,29 @@ function rewardCut(book){
   const ups=Object.values((book&&book.state||{}).REWARD_OPEN||{}).map(o=>o&&typeof o.upTo==='string'?rewardRid(o.upTo):null).filter(n=>n!=null&&n>=0);
   return ups.length?Math.min(...ups):null;
 }
+/* R3, THE FIRST WEEK (his answers R3 and E3 of 02 Nov 2026, plan version 6): a referee's orders in the `days` (7) after their account opens
+   count toward their introducer's step, as the associate's own buying does, once paid in full. The link is an INTRODUCTIONS entry with a
+   window, {by, customer, since, days}, filed by the fold at an Add ID naming its introducer, `since` the day it booked (the account binds in
+   that run); an entry with no since is the declared network, read by the old count and the map alone. The first windowed entry naming a
+   customer is their one link (the fold files no second). A row is in the week by its own date (the Pending day, or his on-the-spot day). */
+const R3_DAYS=7;
+function r3Link(state,code){
+  const owner=ownerCode(code);
+  return (state&&state.INTRODUCTIONS||[]).find(e=>e&&typeof e.by==='string'&&typeof e.customer==='string'&&ownerCode(e.customer)===owner&&e.by!==owner
+    &&typeof e.since==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(e.since)&&+e.days>0)||null;
+}
+/* the first day outside the week */
+function r3Until(link){return new Date(Date.parse(link.since+'T00:00:00Z')+Math.round(+link.days)*864e5).toISOString().slice(0,10);}
+function r3In(link,day){return !!link&&typeof day==='string'&&day>=link.since&&day<r3Until(link);}
+/* the associate a row counts for in its referee's first week, or null: their introducer, an associate with an opening on the book (a departed
+   one keeps it, as their own rows wait on their return in rewardAccount) */
+function r3Of(book,s){
+  const state=book&&book.state||{};
+  if(!s||typeof s.customer!=='string')return null;
+  const link=r3Link(state,s.customer);
+  if(!link||!r3In(link,s.date))return null;
+  return (state.REWARD_OPEN||{})[link.by]&&rewardIsAssociate(state,book.sales||[],link.by)?link.by:null;
+}
 function rewardWalk(book,id,today){
   const product='salt',state=book&&book.state||{},scheme=rewardScheme(book,product);
   if(!scheme)return null;
@@ -6150,8 +6173,17 @@ function rewardWalk(book,id,today){
   const upTo=rewardRid(open.upTo),pend=new Set(Array.isArray(open.pend)?open.pend:[]),on=open.on||scheme.since;
   const rows=[];
   (book.sales||[]).forEach(s=>{
+    /* R3: a referee's first-week order counts here as their own would, a priced order only, with no stamp of theirs: no promise was made to this
+       associate at its Accept, and what he gave under the referee's price is not netted off this associate's unit (Fable's review) */
+    const r3=s&&ownerCode(s.customer)!==id&&r3Of(book,s)===id?ownerCode(s.customer):null;
+    if(r3){
+      if((s.product||'salt')!==product||s.rewardOf||s.loyal||s.goodwill||!(rewardRid(s.rid)>upTo)||s.cancelled||s.defaulted)return;
+      s={...s,rwdStep:null,rwdRate:null,listRM:null};
+    }else{
     if(!s||(s.product||'salt')!==product||ownerCode(s.customer)!==id||s.rewardOf||s.loyal)return;
     if(!(rewardRid(s.rid)>upTo||pend.has(s.rid))||s.cancelled||s.defaulted)return;
+    if(r3Of(book,s))return;   /* their own row inside a first week of theirs counts for their introducer, once */
+    }
     const d=txDates(s);let day,margin;
     if(s.goodwill){
       if(s.rebate||!d.full||!d.dOn)return;
@@ -6163,7 +6195,7 @@ function rewardWalk(book,id,today){
       const uc=txUnitCost(s,averageCost),held=+s.rwdRate>0&&+s.rwdRate<uc?+s.rwdRate:uc;   /* the Accept-day rate a promise was made at (rwdRate) */
       day=d.pOn;margin=rm-q*held;
     }
-    rows.push({rid:s.rid,day,margin:+margin.toFixed(2),rwdStep:+s.rwdStep>0?+s.rwdStep:null,
+    rows.push({rid:s.rid,day,margin:+margin.toFixed(2),rwdStep:+s.rwdStep>0?+s.rwdStep:null,...(r3?{r3}:{}),
       given:s.listRM!=null&&!s.goodwill?Math.max(0,+(+s.listRM-(+s.total||0)).toFixed(2)):0});
   });
   rows.sort((a,b)=>a.day<b.day?-1:a.day>b.day?1:rewardRid(a.rid)-rewardRid(b.rid));
@@ -6179,7 +6211,8 @@ function rewardWalk(book,id,today){
   const now=rewardStep(purchases,today,scheme.times);
   return {earned:+open.earned+crossings.length,open:{earned:+open.earned,share:+open.share,upTo:open.upTo,on,rm:openRM},
     rows:rows.length,counted,progress,times:scheme.times,step:now?now.step:null,rate:now?now.rate:null,
-    next:now&&now.step>0?Math.max(0,Math.min(1,+(progress/now.step).toFixed(4))):null,crossings,given};
+    next:now&&now.step>0?Math.max(0,Math.min(1,+(progress/now.step).toFixed(4))):null,crossings,given,
+    r3:{rows:rows.filter(r=>r.r3).length,by:rows.reduce((m,r)=>{if(r.r3)m[r.r3]=(m[r.r3]||0)+1;return m;},{})}};
 }
 /* THE STATED OPENING (20 Oct 2026, his answer to Ask 3): what the count before the switch reads for a party, taken once and written
    into REWARD_OPEN by tools/reward-open.mjs at the switch, and by the fold the day a customer becomes an associate. earned is the old
@@ -6206,7 +6239,7 @@ function rewardAccount(book,id,product='salt',opts={}){
   const refs=new Set();
   if(associate){
     allSales.forEach(s=>{if(s.ref===id&&s.customer)refs.add(ownerCode(s.customer));});
-    introductions.forEach(e=>{if(e&&e.by===id&&e.customer)refs.add(ownerCode(e.customer));});
+    introductions.forEach(e=>{if(e&&e.by===id&&e.customer&&e.since==null)refs.add(ownerCode(e.customer));});   /* R3's windowed entries count in the walk alone */
   }
   const opening=state.PROD_OPENING&&state.PROD_OPENING[product]||{qty:0,costPerKg:null};
   const lots=(book.purchases||[]).filter(p=>(p.product||'salt')===product&&!p.defaulted&&poRecvUnits(p)>0.0001);
@@ -6465,10 +6498,10 @@ function rebateOffsetEntry({at,party,date,sale,units,rm,raw,auto=false}){
     orderKey:ovKey(sale),date,fields:{settledRM:+((+sale.settledRM||0)+rm).toFixed(2),
       rebate:true,rebateKg:+((+sale.rebateKg||0)+units).toFixed(2)}}};
 }
-function addIdEntry({at,code,kind,parent=null,rev=null,geo=null,tiers=null,unit=null,note=null,raw}){
+function addIdEntry({at,code,kind,parent=null,rev=null,geo=null,tiers=null,unit=null,note=null,introducer=null,raw}){
   return {at,type:'ADDID',party:code,qty:null,total:null,status:'addid',
     raw:raw===undefined?'Add '+code+' to the roster as '+kind+(parent?' under '+parent:''):raw,
-    payload:{mode:'addid',code,kind,parent,rev,note,geo,tiers,...(unit?{unit}:{})}};
+    payload:{mode:'addid',code,kind,parent,rev,note,geo,tiers,...(unit?{unit}:{}),...(introducer?{introducer}:{})}};
 }
 /* 09 Oct 2026, his decision: A PARTNER IS AN ASSOCIATE WHO PAYS COST. One name-free entry naming a code already on the roster; the
    drafter makes it a roster row carrying partner:true, which the fold files in `partners` and, if they are no associate yet,
@@ -7793,7 +7826,7 @@ function vaultPendingOk(record,publicWord=()=>false){
     'stream','associate','assoc','downstream','trip','level','tier','unit','form','direction','amount','loan','rid','movedUnits','fields','sameDay','handover',
     'cost','settledRM','settledKg','rebateKg','coverUnits','coverRM','agreedOn','paidOn','deliveredOn','receivedOn',
     'id','until','cancelledOn','unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill','hide','orderCode','second','extras','cover',
-    'shares','rids','undo'];
+    'shares','rids','undo','introducer'];   /* introducer: R3, the associate whose join link brought a customer in (plan version 6) */
   const enumWords=['customer','supplier','reseller','referral','downstream','bucket','cash','goods','in','out',
     'SELL','BUY','Correction','Fulfilment','Cancellation','Payment','Receipt','Default','R1','R2','R3','salt','oil','candy','rice','gas','prep','delivered','collected',
     'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big','pct'];
@@ -7880,7 +7913,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,loyaltyWalk:loyaltyWalk,loyalScheme:loyalScheme,cadenceOf:cadenceOf,rewardIsAssociate:rewardIsAssociate,rewardOpening:rewardOpening,rewardCut:rewardCut,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,editEntry:editEntry,editRefunds:editRefunds,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
+return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,R3_DAYS:R3_DAYS,r3Link:r3Link,r3Until:r3Until,r3In:r3In,r3Of:r3Of,loyaltyWalk:loyaltyWalk,loyalScheme:loyalScheme,cadenceOf:cadenceOf,rewardIsAssociate:rewardIsAssociate,rewardOpening:rewardOpening,rewardCut:rewardCut,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,editEntry:editEntry,editRefunds:editRefunds,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,
@@ -19611,7 +19644,7 @@ function networkStats(){
     return {id,kind:isR0?'R0':'R2',direct,indirect,r3,referrals:refs,dsN:conns,connKind:isR0?'referred':(ds.size&&refs.length?'linked':refs.length?'referred':'end cust'),
       dsResell:resellN,total:direct+indirect,share,starN,
       earned,toNext,unit,marginMine:bm.mine.margin,nMine:bm.mine.n,marginIntro:bm.intro.margin,nIntro:bm.intro.n,r3x,marginTotal:pooled,
-      walk:walk&&!walk.error?{openRM:walk.open.rm,on:walk.open.on,rows:walk.rows,counted:walk.counted}:null};
+      walk:walk&&!walk.error?{openRM:walk.open.rm,on:walk.open.on,rows:walk.rows,counted:walk.counted,r3:walk.r3?walk.r3.rows:0}:null};   /* r3: first-week orders of their referees counted (plan version 6), a count */
   });
   // R0 first, then by total made-you
   out.sort((a,b)=>{if(a.kind==='R0'&&b.kind!=='R0')return -1;if(b.kind==='R0'&&a.kind!=='R0')return 1;return b.total-a.total;});

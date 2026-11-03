@@ -213,7 +213,7 @@ const noNote = (v) => canon(JSON.parse(JSON.stringify(v === undefined ? null : v
 /* what an entry moves and the fold also writes the same way: the stock, the counts, the loans and the two lists; a document a hand edit of the master may move between loads is not compared */
 const TAP_PURE = ["STATED_STOCK", "PROD_OPENING", "COUNTS", "COUNT_ON", "loans", "sales", "purchases"];
 /* S5: and, when a roster entry or a rename was among the folded, what the road writes: the roster, the associates and partners, the places and the starting %s (a rename re-keys sales and purchases too, already compared) */
-const ROSTER_PURE = ["roster", "associates", "partners", "PLACED", "TIER_OF"];
+const ROSTER_PURE = ["roster", "associates", "partners", "PLACED", "TIER_OF", "INTRODUCTIONS"];   /* INTRODUCTIONS: an Add ID files a referee's first week (R3, Fable's review) */
 /* S5f-5: and, when an edit entry was among the folded, the refunds it marked paid or took off (a refund carries no rid, so it is keyed by its content: an edit is the one entry that changes or removes rows of such a list, and the strict load below allows exactly that many rows to go) */
 const EDIT_PURE = ["customerRefunds"];
 /* THE TAP CHECK: the view as it stood before a load against the view after it, for the entries the load folded. If the fold and the tap run one law the view does not move.

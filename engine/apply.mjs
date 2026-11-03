@@ -791,6 +791,22 @@ export function planBatch(book, staged, notes, ctx) {
       if (appoints) entry.does.push(`appoint ${r.code} an associate: R2 and R3 credit reaches them, their credit cap moves from the retail one to the associate one, their turnover hurdles to the associate hurdle, and they leave the customer reward table for the network bench`);
       if (entry.roster.resell) entry.does.push(`append ${entry.roster.resell} to the roster as their resell account, which holds what they buy to sell on`);
       if (rtOld.length) entry.does.push(oldLiftNote(r.code, rtOld, oldWhy(it, rtOld[0], rt[rtOld[0]])));
+      /* R3 (plan version 6, his answers R3 and E3): an Add ID that names its introducer files the referee's first week, from the day it books,
+         as an INTRODUCTIONS entry with a window. Never a refusal, which would hold the batch: an introduction that cannot be filed is said and the
+         registration stands. One link a customer, whoever names them second (Fable's review). */
+      if (r.introducer != null) {
+        const by = r.introducer, why = typeof by !== "string" || !by ? "it names no code"
+          : r.kind !== "customer" ? "only a customer is brought in" : !entry.roster.register ? `${r.code} is already on the roster`
+          : !(book.roster || []).includes(by) || E.isBucket(by) ? `${by} is not on the roster`
+          : !(book.REWARD_OPEN || {})[by] || !E.rewardIsAssociate(book, book.sales || [], by) ? `${by} is not an associate with a reward opening`
+          : (((book.PEOPLE || {}).banned) || []).some((x) => x && x.id === by && !x.lifted) ? `${by} is banned`
+          : E.r3Link(book, r.code) ? `${r.code} already has a first week filed` : !/^\d{4}-\d{2}-\d{2}$/.test(String(TODAY || "")) ? "the fold has no day to start it" : null;
+        if (why) entry.does.push(`file no first week for ${r.code} under ${by}: ${why}`);
+        else {
+          entry.roster.intro = { by, since: TODAY, days: E.R3_DAYS };
+          entry.does.push(`file ${r.code}'s first week, ${E.R3_DAYS} days from ${TODAY}, for ${by}'s reward: their orders placed in it count toward ${by}'s step once paid in full`);
+        }
+      }
     } else if (it.collection === "priceset") {
       /* v354: A PRICE EDIT MOVES NO STOCK AND NO CASH. It REPLACES that product's entry in
          PRICE_SET rather than merging into it, so the form on the desk is the whole statement of
@@ -939,7 +955,19 @@ function rewardFold(book, it, c, unitMoves) {
   const touched = it.target && it.dir !== "BUY" ? it.target : it.append === "sales" ? c.appended : null;
   if (!touched || prodOf(touched) !== "salt") return;
   const code = E.ownerCode(touched.customer);
-  if (!assoc || !E.rewardIsAssociate(eb.state, eb.sales, code)) { loyalFold(book, eb, code, day, touched, c, unitMoves); return; }
+  /* R3 (plan version 6): a referee's row in their first week runs their introducer's walk too, and so does a row a live unit of another's
+     names, so a redate out of the week, an undo or a cancellation is flagged STALE at once (Fable's review) */
+  const others = assoc ? [...new Set([E.r3Of(eb, touched)].concat(book.sales.filter((s) => s && touched.rid && s.rewardOf === touched.rid && !s.loyal && !s.cancelled)
+    .map((s) => E.ownerCode(s.customer))).filter((x) => x && x !== code))] : [];
+  const link = assoc ? E.r3Link(eb.state, code) : null;
+  const near = link && typeof touched.date === "string" && touched.date < new Date(Date.parse(E.r3Until(link) + "T00:00:00Z") + 30 * 864e5).toISOString().slice(0, 10);
+  if (link && near && !E.r3In(link, touched.date)) c.moves.push(`R3: ${touched.rid || "this order"} of ${code} is dated ${touched.date || "nowhere"}, outside their first week from ${link.since}, so it counts nothing for ${link.by}`);
+  else if (link && others.includes(link.by)) c.moves.push(`R3: ${touched.rid || "this order"} of ${code} is in their first week from ${link.since}, so it counts toward ${link.by}'s step once paid in full`);
+  if (!assoc || !E.rewardIsAssociate(eb.state, eb.sales, code)) { loyalFold(book, eb, code, day, touched, c, unitMoves); for (const by of others) assocFold(book, eb, by, day, touched, c, unitMoves); return; }
+  assocFold(book, eb, code, day, touched, c, unitMoves);
+  for (const by of others) assocFold(book, eb, by, day, touched, c, unitMoves);
+}
+function assocFold(book, eb, code, day, touched, c, unitMoves) {
   const acc = E.rewardAccount(eb, code);
   if (acc.error || !acc.associate) return;
   const walk = E.rewardWalk(eb, code);
@@ -949,10 +977,10 @@ function rewardFold(book, it, c, unitMoves) {
   for (const cr of walk.crossings) {
     seen[cr.rid] = (seen[cr.rid] || 0) + 1;
     if (book.sales.filter((s) => mine(s) && s.rewardOf === cr.rid).length >= seen[cr.rid]) continue;
-    const cost = +(+cr.rate).toFixed(2);
+    const cost = +(+cr.rate).toFixed(2), of = book.sales.find((s) => s && s.rid === cr.rid), r3 = of && E.ownerCode(of.customer) !== code ? E.ownerCode(of.customer) : null;
     const row = { customer: code, product: "salt", qty: 1, total: cost, cost, cash: 0, settledRM: cost, rebate: true, rebateKg: 1, goodwill: true,
       deliveredQty: 0, date: day, rewardOf: cr.rid, auto: true, given: cr.given,
-      note: `<b>REWARD UNIT: 1 UNIT OF SALT TO ${code} AT COST, NO CHARGE.</b> Their margin on their own buying and resale reached the step of RM ${cr.step} (${walk.times} units at RM ${cr.rate} landed on ${cr.day}) with ${cr.rid}, paid in full. Raised by the fold at RM ${cost} and settled by the reward, so it is cost and not revenue; it goes with ${cr.rid}'s delivery, or with their next salt order where that has gone. RM ${cr.given} was given under their own price since the last reward (his information only).` };
+      note: `<b>REWARD UNIT: 1 UNIT OF SALT TO ${code} AT COST, NO CHARGE.</b> Their margin on their own buying and resale reached the step of RM ${cr.step} (${walk.times} units at RM ${cr.rate} landed on ${cr.day}) with ${cr.rid}${r3 ? `, an order of ${r3} in their first week (R3)` : ""}, paid in full. Raised by the fold at RM ${cost} and settled by the reward, so it is cost and not revenue; it goes with ${r3 ? `their next salt handover once ${cr.rid} is handed over in full` : `${cr.rid}'s delivery, or with their next salt order where that has gone`}. RM ${cr.given} was given under their own price since the last reward (his information only).` };
     row.rid = c.nextRid(book.sales, "s")(1);
     book.sales.push(row);
     c.moves.push(`reward unit: ${row.rid}, 1 unit to ${code} at RM ${cost}, for ${cr.rid}`);
@@ -1119,6 +1147,12 @@ function bookItem(book, it, c) {
       if (rr.appoint) {
         book.associates = book.associates || [];
         if (!book.associates.includes(rr.code)) book.associates.push(rr.code);
+      }
+      if (rr.intro) {   // R3 (plan version 6): the referee's first week
+        book.INTRODUCTIONS = book.INTRODUCTIONS || [];
+        if (!book.INTRODUCTIONS.some((e) => e && e.by === rr.intro.by && e.customer === rr.code))
+          book.INTRODUCTIONS.push({ by: rr.intro.by, customer: rr.code, since: rr.intro.since, days: rr.intro.days,
+            note: `R3 by join link: ${rr.code}'s orders placed in the ${rr.intro.days} days from ${rr.intro.since} count toward ${rr.intro.by}'s reward step once paid in full.` });
       }
       if (rr.partner) {   // 09 Oct 2026: a partner pays cost
         book.partners = book.partners || [];

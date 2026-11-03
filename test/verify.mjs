@@ -25559,8 +25559,8 @@ await (async () => {
     if (p6.reward) {
       ok(p6.reward.next === null || (p6.reward.next >= 0 && p6.reward.next <= 1),
         "the distance to the next unit is a SHARE of one unit, never a figure of margin: " + p6.reward.next);
-      ok(["earned", "taken", "left", "next", "held"].every((k) => k in p6.reward) && Object.keys(p6.reward).length === 5,
-        "and the reward is units, what is taken, what is left, the share and whether it is held");
+      ok(["earned", "taken", "left", "next", "held", "r3"].every((k) => k in p6.reward) && Object.keys(p6.reward).length === 6 && Number.isInteger(p6.reward.r3) && p6.reward.r3 >= 0,
+        "and the reward is units, what is taken, what is left, the share, whether it is held and a count of first-week orders (R3)");
     } else skipData("this associate has no reward on this book");
   }
 
@@ -48560,6 +48560,11 @@ await (async () => {
 section("v1390 One order stream, version 5, the two pages: join links on Salt Admin (list, Approve, Decline, Withdraw, Add them, the sealed name into New customer, the code told, the hand-over once) and on the associate's Counter page (5c, 5e)");
 await (async () => {
   await (await import("./order-stream-v7-ui.mjs")).run({ ok, pageWork });
+})();
+
+section("v1391 One order stream, version 6: R3, a referee's orders in their first week count toward the associate who brought them in, once paid in full (6a, 6b)");
+await (async () => {
+  await (await import("./order-stream-v6-r3.mjs")).run({ ok, pageWork });
 })();
 
 section("Counter Batch C: the seal carries the spot's name and unit, a unit alone sealed as its own shape, nothing in the clear (P6)");
