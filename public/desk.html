@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="529281dac9a80e49";
+var SALT_BUILD_ID="ea42ee1c3688d436";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -11670,7 +11670,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1414","d":"03 Nov 2026","t":"THE MARKS AS COINS","n":["<b>A BOOK'S MARK IS A COIN.</b> The canvas of 03 Nov 2026: the book's hue as a ring, the shape inside in brass, your letter under the shape. Large on Home's start tiles, medium at the head of each book on Order and on the guest board, small on order cards, Availability, the reward and Salt Admin's book tiles. A mark inside a line of text keeps the plain shape with its letter.","<b>THE RESTOCK LIGHT IS A DOT AND ITS WORD.</b> Available, Limited or Out of stock now stands beside the coin as a coloured dot and its word, never a border round the mark; More by DD Mon stays under it.","<b>SALT-DS 1.25.0.</b> The coin and the light are recipes of the design system, carried to the Desk and the Counter; QR Command was already level. The hue rides the book's number, never its name. Plan version 10 of 10: the one order stream is complete."]}];
+const evolution=[{"v":"v1415","d":"03 Nov 2026","t":"THE DESK'S BROWSER TAB ICON IS THE GOLD CUBE","n":["<b>ONE MARK ON EVERY ICON, HIS WORD.</b> The browser tab showed the cyan, gold and violet crystal retired at v472 while the home-screen icon and the rail showed the gold cube. The tab icon is now that cube on a clear ground, drawn from the rail's own mark, and the shell cache moves to v10 so an installed desk reads it.","<b>NOTHING ELSE MOVES.</b> No route, price or row changed; the home-screen icons are the brand plates as before."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11818,7 +11818,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='03 Nov 2026, 21:35 KL';
+const LAST_UPDATED='03 Nov 2026, 21:36 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
