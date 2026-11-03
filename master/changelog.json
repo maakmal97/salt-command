@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1429",
+  "d": "04 Nov 2026",
+  "t": "DELIVERY OF 3 UNIT OF CANDY TO CI5-PER RECORDED ON S334",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> The correction on s334 records that 3 unit of candy went out to CI5-PER on 04 Nov 2026. It sets deliveredQty, deliveredOn and handover on the order and rewrites no money. It was preapproved by Counter Admin. The drafter flagged an advance with the sale unpaid, and the figures do not clear that.",
+   "<b>INVENTORY.</b> The shelf rolls down by 3 unit of candy, the difference the correction states. Nothing landed, so the cost basis stays as it was."
+  ]
+ },
+ {
   "v": "v1428",
   "d": "04 Nov 2026",
   "t": "ONE PENDING CANDY SALE TO CI5-PER BOOKED",
