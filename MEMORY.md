@@ -326,6 +326,9 @@
 ## The Ledger check aligned (v1422)
 - Live as v1422 (`8944f4e2`, 04 Nov 2026, its commit titled v1421 because a fold took that number meanwhile; Cloud commit `41696958875`: chain green with "The phone is serving it" on build `4bea05ba8fe4b60a`, three suite parts green; CI `41696958896` green), his word after a screenshot, answered "Three, aligned": Salt Admin's Orders > Ledger check draws Open, Pending and the latest twenty each with one `colgroup` (`lc1` to `lc9`, `drawLedger` in `stmt/owner.js`) under `.ledtable` (fixed layout, 1000px minimum, widths in `stmt/page.js`). Measured in a browser: every column starts at the same pixel at 1440 and 1180, nothing clipped; at 390 each scrolls in its own box. Check 7 in `test/admin-ledger.mjs`, three mutations red. Display only.
 
+## The queue takes no new sale (v1423)
+- Live as v1423 (`2a30d7c0`, 04 Nov 2026; Cloud commit `41698525839`: chain and three suite parts green, the phone serving `8ff34028ee634c25`; CI `41698525924` verify green), his "Yes, close it" after v1421 showed the laptop queue still booking sales (CM4-MK, CN3-WM-R on 03 Nov). `queueSaleFault` in `src/drafter.js` (from `QUEUE_SALE_SINCE` 2026-11-04) is read by the pass, its dry run and `tools/drafts.mjs --from-queue`: a new sale with neither `orderId` nor `makerRequest` is filed refused, "a new sale is a site order now: place it with Order for them on Salt Admin". `draftRow` unchanged (a gate there broke hundreds of law checks). Section "4 Nov 2026: a new sale is a site order" (5 checks, 7 mutations) and a pass check in Fold 1.4, red; the one-delivery trip fixture dated 2026. Not driven by the suite: the dry run's line and `--from-queue`'s (needs live D1). Salt Admin's `/inputs/sale` (road admin) stays as recovery.
+
 ## Disabled automation
 - `Salt fold (manual backup)` = `trig_01UrnjQMWA3f6GXN5R6Dzi4S`, disabled.
 
