@@ -20,8 +20,13 @@
  {"name": "the seal is a slip's", "file": "stmt/page.js", "find": "JSON.stringify(Object.assign({v:1, at:new Date().toISOString()},p))),'salt-pin v1');", "replace": "JSON.stringify(Object.assign({v:1, at:new Date().toISOString()},p))));"},
  {"name": "the map's centre before the place", "file": "stmt/page.js", "find": "      x=new RegExp('!3d'+num+'!4d'+num).exec(path); if(x) return pt(x[1],x[2]);\n", "replace": ""},
  {"name": "the geohash is read the wrong way", "file": "stmt/page.js", "find": "if((c>>k)&1) r[0]=mid; else r[1]=mid;", "replace": "if((c>>k)&1) r[1]=mid; else r[0]=mid;"},
- {"name": "a short link is dropped", "file": "stmt/page.js", "find": "return {link:'https://'+host+path, src:'link'};", "replace": "return null;"},
+ {"name": "a short link is dropped", "file": "stmt/page.js", "find": "/^[/]maps[/]./.test(path)) return {link:'https://'+host+path, src:'link'};", "replace": "/^[/]maps[/]./.test(path)) return null;"},
  {"name": "a plain http link is read", "file": "stmt/page.js", "find": "m=/^https:[/][/]([a-z0-9.-]+)", "replace": "m=/^https?:[/][/]([a-z0-9.-]+)"},
  {"name": "the check does not say the spot", "file": "stmt/page.js", "find": "    if(c.mode==='deliver'&&(c.pin||c.pinKept)) row(", "replace": "    if(false) row("},
- {"name": "a refusal to share says nothing", "file": "stmt/page.js", "find": "      if(p){ draft.pin=p; draft.pinMsg=''; } else draft.pinMsg=tw('sh.pinNo');", "replace": "      if(p){ draft.pin=p; draft.pinMsg=''; } else draft.pinMsg='';"}
+ {"name": "a refusal to share says nothing", "file": "stmt/page.js", "find": "      if(p){ draft.pin=p; draft.pinMsg=''; } else draft.pinMsg=tw('sh.pinNo');", "replace": "      if(p){ draft.pin=p; draft.pinMsg=''; } else draft.pinMsg='';"},
+ {"name":"an Apple Maps link reads nothing (4 Nov 2026)","file":"stmt/page.js","find":"    if(host==='maps.apple.com'){ x=new RegExp('[?&](ll|sll|coordinate|q)='+num+'(,|%2C)'+num).exec(path); return x?pt(x[2],x[4]):null; }\n","replace":""},
+ {"name":"an Apple short link is refused (4 Nov 2026)","file":"stmt/page.js","find":"    if(host==='maps.apple'&&/^[/]p[/][A-Za-z0-9._~-]{1,80}$/.test(path)) return {link:'https://'+host+path, src:'link'};\n","replace":""},
+ {"name":"a link after words is refused (4 Nov 2026)","file":"stmt/page.js","find":"var s=(/https:[/][/][^ <>\"]+/i.exec(t)||[''])[0].replace(/[),.;!?']+$/,''),","replace":"var s=t,"},
+ {"name":"two figures alone read nothing (4 Nov 2026)","file":"stmt/page.js","find":"    if(two) return pinPt(+two[1],+two[2])?{lat:+two[1], lng:+two[2], src:'link'}:null;\n","replace":""},
+ {"name":"maps.google.com needs /maps (4 Nov 2026)","file":"stmt/page.js","find":"(host.indexOf('maps.')===0||/^[/]maps/.test(path))","replace":"/^[/]maps/.test(path)"}
 ]

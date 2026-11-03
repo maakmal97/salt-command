@@ -4960,12 +4960,21 @@ const CLIENT_JS = `
     for(var i=0;i<h.length;i++){ var c=B.indexOf(h.charAt(i)); if(c<0) return null;
       for(var k=4;k>=0;k--){ var r=even?lo:la, mid=(r[0]+r[1])/2; if((c>>k)&1) r[0]=mid; else r[1]=mid; even=!even; } }
     var a=+((la[0]+la[1])/2).toFixed(6), b=+((lo[0]+lo[1])/2).toFixed(6); return pinPt(a,b)?{lat:a, lng:b, src:'link'}:null; }
+  /* 4 Nov 2026 (his report that sharing the exact location did not work): what a phone shares is often the place's name and then its
+     link, an iPhone's is Apple Maps', and some share the two figures alone; the link is read out of the words around it, Apple's point
+     read off its ll or coordinate, Apple's short link kept as a link for Salt Admin to open, and two figures taken as they are */
   function pinRead(v){
-    var s=String(v||'').trim(), m=/^https:[/][/]([a-z0-9.-]+)([/?][^ ]*)?$/i.exec(s);
-    if(!m||s.length>600) return null;
+    var t=String(v||'').split('').map(function(c){ return c.charCodeAt(0)<33?' ':c; }).join('').trim();
+    if(!t||t.length>600) return null;
+    var two=/^(-?[0-9]{1,2}[.][0-9]{3,})[ ]*,[ ]*(-?[0-9]{1,3}[.][0-9]{3,})$/.exec(t);
+    if(two) return pinPt(+two[1],+two[2])?{lat:+two[1], lng:+two[2], src:'link'}:null;
+    var s=(/https:[/][/][^ <>"]+/i.exec(t)||[''])[0].replace(/[),.;!?']+$/,''), m=/^https:[/][/]([a-z0-9.-]+)([/?][^ ]*)?$/i.exec(s);
+    if(!m) return null;
     var host=m[1].toLowerCase(), path=m[2]||'', num='(-?[0-9]{1,3}[.][0-9]+)', x;
     function pt(a,b){ a=+a; b=+b; return pinPt(a,b)?{lat:a, lng:b, src:'link'}:null; }
-    if(/(^|[.])google[.][a-z.]+$/.test(host)&&/^[/]maps/.test(path)){
+    if(host==='maps.apple.com'){ x=new RegExp('[?&](ll|sll|coordinate|q)='+num+'(,|%2C)'+num).exec(path); return x?pt(x[2],x[4]):null; }
+    if(host==='maps.apple'&&/^[/]p[/][A-Za-z0-9._~-]{1,80}$/.test(path)) return {link:'https://'+host+path, src:'link'};
+    if(/(^|[.])google[.][a-z.]+$/.test(host)&&(host.indexOf('maps.')===0||/^[/]maps/.test(path))){
       x=new RegExp('!3d'+num+'!4d'+num).exec(path); if(x) return pt(x[1],x[2]);
       x=new RegExp('[?&](q|query|ll|destination|center)=(loc:)?'+num+'(,|%2C)[+]?'+num).exec(path); if(x) return pt(x[3],x[5]);
       x=new RegExp('@'+num+','+num).exec(path); if(x) return pt(x[1],x[2]);

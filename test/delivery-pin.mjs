@@ -128,6 +128,18 @@ export async function run({ ok }) {
   const none = ["https://example.com/maps/@3.1,101.6,15z", "http://www.google.com/maps/@3.1,101.6,15z", "https://www.google.com/maps/place/Somewhere", "Jalan 1", "https://waze.com/ul/h"]
     .filter((u) => pinRead(u) !== null);
   ok(none.length === 0, "a link of any other site, not https, or with no point in it reads as nothing: " + JSON.stringify(none));
+  /* 4 Nov 2026 (his report that the exact location did not work): what phones share, read as served */
+  const shared = [
+    ["https://maps.apple.com/?ll=3.0738,101.7255&q=Dropped%20Pin", 3.0738, 101.7255],
+    ["https://maps.apple.com/place?coordinate=3.0738,101.7255&name=Marked%20Location", 3.0738, 101.7255],
+    ["https://maps.google.com/?q=3.0738,101.7255", 3.0738, 101.7255],
+    ["Taman Midah\nhttps://www.google.com/maps?q=3.0738,101.7255", 3.0738, 101.7255],
+    ["3.0738, 101.7255", 3.0738, 101.7255]];
+  const missed = shared.filter(([u, a, b]) => { const r = pinRead(u); return !r || Math.abs(r.lat - a) > 1e-6 || Math.abs(r.lng - b) > 1e-6; });
+  ok(missed.length === 0, "P1 an Apple Maps link, maps.google.com's ?q, a link after the place's name and two figures alone are each read to their point: " + JSON.stringify(missed.map((c) => c[0].slice(0, 40))));
+  const ap = pinRead("https://maps.apple/p/AbCdEf.12"), named = pinRead("Kedai Ali https://maps.app.goo.gl/AbCdEf123.");
+  ok(ap && ap.link === "https://maps.apple/p/AbCdEf.12" && !("lat" in ap) && named && named.link === "https://maps.app.goo.gl/AbCdEf123",
+    "P2 an Apple short link is kept as the link, and a short link after the place's name is read without the words or the full stop: " + JSON.stringify([ap, named]));
 
   const ck = await C.contentKey("test-secret", U);
   const list = { at: "2026-10-10T03:59:00Z", digest: "dp1", week: { label: "5 to 11 Oct 2026", monday: "2026-10-05" }, soon: [],
