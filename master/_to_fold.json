@@ -1,0 +1,80 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-03T13:07:39.314Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s327",
+    "qty": 1,
+    "total": 120,
+    "cash": 120,
+    "date": "2026-11-03",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 1
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-11-03"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "delivered"
+     }
+    ],
+    "customer": "CI5-PER",
+    "rids": [],
+    "booked_seq": 99
+   },
+   "reasoning": "Correction against CI5-PER's order of 1 unit for RM 120 dated 2026-11-03 (s327). Sets deliveredQty from 0 to 1, deliveredOn from unset to 2026-11-03, handover from unset to delivered. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This row carries a trail of 2 steps. Setting the figure directly does not rewrite them, so the trail will no longer add up to it; the correction is recorded beside them saying so."
+   ],
+   "amends": "s327",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-11-03T13:07:39.314Z",
+    "type": "SELL",
+    "party": "CI5-PER",
+    "qty": 1,
+    "total": 0,
+    "status": "Handover",
+    "raw": "1 unit delivered to CI5-PER, order 20261103122319-ome5ea, on 2026-11-03",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CI5-PER",
+     "rid": null,
+     "orderKey": "CI5-PER|2026-11-03|120",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-11-03",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 1,
+      "deliveredOn": "2026-11-03",
+      "handover": "delivered"
+     },
+     "note": "1 unit delivered for order 20261103122319-ome5ea."
+    },
+    "orderId": "20261103122319-ome5ea"
+   },
+   "decidedAt": "2026-11-03T13:07:40.610Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
