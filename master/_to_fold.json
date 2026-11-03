@@ -1,0 +1,96 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-03T03:58:07.375Z",
+   "status": "approved",
+   "collection": "roster",
+   "row": {
+    "code": "CS11-AMP",
+    "kind": "customer",
+    "parent": null,
+    "note": null,
+    "geo": [
+     3.15,
+     101.77,
+     "Ampang"
+    ],
+    "tiers": {
+     "salt": 0.2
+    },
+    "unit": "pct"
+   },
+   "reasoning": "Registers CS11-AMP as a customer. It starts them at Salt 0.2. It touches no figure: the fold appends the code to the roster. THE NAME AND THE PLACE ARE NOT HERE AND MUST NOT BE: the directory is typed at the laptop and never travels.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-11-03T03:58:07.375Z",
+    "type": "ADDID",
+    "party": "CS11-AMP",
+    "qty": null,
+    "total": null,
+    "status": "addid",
+    "raw": "Add CS11-AMP to the roster as customer",
+    "payload": {
+     "mode": "addid",
+     "code": "CS11-AMP",
+     "kind": "customer",
+     "parent": null,
+     "rev": null,
+     "note": null,
+     "geo": [
+      3.15,
+      101.77,
+      "Ampang"
+     ],
+     "tiers": {
+      "salt": 0.2
+     },
+     "unit": "pct"
+    }
+   },
+   "decidedAt": "2026-11-03T03:58:54.429Z",
+   "decidedBy": "Counter Admin",
+   "vaultReceipt": {
+    "id": "2026-11-03T03:58:07.375Z",
+    "fingerprint": "f528c0d114fd5c238373ac9199179866dac5a10d2ffc00e0a39490f1b2902176",
+    "request_fingerprint": "9cbfcfcb4cc318b7674b81f0d1095a7eaf4dc80cbd3d89a1b36d7bab9c3a0143",
+    "revision": 10,
+    "operation": "add-id"
+   },
+   "vaultOutbox": {
+    "id": "2026-11-03T03:58:07.375Z",
+    "entry": {
+     "at": "2026-11-03T03:58:07.375Z",
+     "type": "ADDID",
+     "party": "CS11-AMP",
+     "qty": null,
+     "total": null,
+     "status": "addid",
+     "raw": "Add CS11-AMP to the roster as customer",
+     "payload": {
+      "mode": "addid",
+      "code": "CS11-AMP",
+      "kind": "customer",
+      "parent": null,
+      "rev": null,
+      "note": null,
+      "geo": [
+       3.15,
+       101.77,
+       "Ampang"
+      ],
+      "tiers": {
+       "salt": 0.2
+      },
+      "unit": "pct"
+     }
+    },
+    "state": "complete",
+    "completed_at": "2026-11-03T03:58:21.878Z"
+   }
+  }
+ ]
+}
