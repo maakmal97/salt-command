@@ -1,0 +1,81 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-03T22:05:17.200Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s334",
+    "qty": 3,
+    "total": 204,
+    "cash": 0,
+    "date": "2026-11-04",
+    "product": "candy",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 3
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-11-04"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "delivered"
+     }
+    ],
+    "customer": "CI5-PER",
+    "rids": [],
+    "booked_seq": 112
+   },
+   "reasoning": "Correction against CI5-PER's order of 3 unit for RM 204 dated 2026-11-04 (s334). Sets deliveredQty from 0 to 3, deliveredOn from unset to 2026-11-04, handover from unset to delivered. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CI5-PER has no committed candy order on the book, so there is no rate of theirs to compare this against.",
+    "This is an ADVANCE: 3 unit goes out with RM 230 unpaid. Check it against CI5-PER's credit cap."
+   ],
+   "amends": "s334",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-11-03T22:05:17.200Z",
+    "type": "SELL",
+    "party": "CI5-PER",
+    "qty": 3,
+    "total": 0,
+    "status": "Handover",
+    "raw": "3 unit delivered to CI5-PER, order 20261103204226-drpjsq, on 2026-11-04",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CI5-PER",
+     "rid": null,
+     "orderKey": "CI5-PER|2026-11-04|230|candy",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-11-04",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 3,
+      "deliveredOn": "2026-11-04",
+      "handover": "delivered"
+     },
+     "note": "3 unit delivered for order 20261103204226-drpjsq."
+    },
+    "orderId": "20261103204226-drpjsq"
+   },
+   "decidedAt": "2026-11-03T22:05:22.175Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
