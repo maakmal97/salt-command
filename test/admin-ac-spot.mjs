@@ -15,7 +15,7 @@ import { readPin } from "../stmt/pin.js";
 
 const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
 const b64 = (v) => Buffer.from(v).toString("base64");
-const U = "abcd-efgh", IDP = "a".repeat(32), IDU = "b".repeat(32), IDX = "c".repeat(32);
+const U = "abcd-efgh", IDP = "a".repeat(32), IDU = "b".repeat(32), IDX = "c".repeat(32), IDL = "d".repeat(32);
 /* a spot sealed as their phone seals it (stmt/page.js pinSeal): an ephemeral pair, ECDH with his public half, HKDF under 'salt-pin v1', AES-GCM */
 async function pinSeal(pubJwk, value) {
   const S = webcrypto.subtle, E = { name: "ECDH", namedCurve: "P-256" };
@@ -39,11 +39,13 @@ export async function run({ ok, pageWork }) {
 
   const fix = await slipFixture();
   const sealed = { [IDP]: await pinSeal(fix.pub, { lat: 3.15, lng: 101.71, label: "Back door", unit: "Unit 12, floor 3" }),
-    [IDU]: await pinSeal(fix.pub, { unit: "Unit 7", src: "unit" }) };
+    [IDU]: await pinSeal(fix.pub, { unit: "Unit 7", src: "unit" }),
+    [IDL]: await pinSeal(fix.pub, { link: "https://maps.app.goo.gl/AbCdEf123", src: "link", label: "Gate" }) };
   const base = { u: U, product: "salt", delivery: 10, msgs: [], history: [], payments: [], paid: 0, mode: "deliver", place: "Lirau", qty: 1, total: 50, status: "acknowledged", at: "2026-10-10T02:00:00.000Z" };
-  const orders = [{ ...base, id: "ord-sp", pin: IDP }, { ...base, id: "ord-su", pin: IDU }, { ...base, id: "ord-sx", pin: IDX, test: true }];
+  const orders = [{ ...base, id: "ord-sp", pin: IDP }, { ...base, id: "ord-su", pin: IDU }, { ...base, id: "ord-sx", pin: IDX, test: true }, { ...base, id: "ord-sl", pin: IDL }];
   const p = await richOwnerPage({ pageWork, slip: true, review: (j) => ({ ...j, orders: (j.orders || []).concat(orders) }),
-    extra: (route) => { const m = /^\/all\/maker\/pins\/[^/]+\/([0-9a-f]{32})$/.exec(route); return m ? (sealed[m[1]] ? { ok: true, pin: sealed[m[1]] } : undefined) : undefined; } });
+    extra: (route) => { if (route === "/all/maker/geo/open") return { ok: true, location: "https://www.google.com/maps/place/Gate/@3.0738,101.7255,17z" };
+      const m = /^\/all\/maker\/pins\/[^/]+\/([0-9a-f]{32})$/.exec(route); return m ? (sealed[m[1]] ? { ok: true, pin: sealed[m[1]] } : undefined) : undefined; } });
   try {
     await p.work.quiet();
     const d = p.d, click = async (e) => { if (e) e.click(); await p.work.quiet(); };
@@ -80,5 +82,11 @@ export async function run({ ok, pageWork }) {
     ok(!!U7 && /Floor or unit\s*Unit 7/.test(t(U7)) && !U7.querySelector("a[data-spot-maps]"), "a unit sealed alone is read with no Maps: " + t(U7));
     C = await open("ord-sx");
     ok(!!C && !C.querySelector("[data-pin-gate]") && /A practice spot is never filed/.test(t(C)), "a practice order's spot offers no Unlock");
+    /* 6 (4 Nov 2026, his report that the exact location did not work): a short link they shared is opened on Salt Admin for its point */
+    C = await open("ord-sl");
+    const SL = C && C.querySelector("[data-pin-gate] [data-maker-pin]"), slMaps = SL && SL.querySelector("a[data-spot-maps]");
+    const geo = p.wire.filter((x) => /\/all\/maker\/geo\/open/.test(typeof x === "string" ? x : x.route || x.url || "")).length;
+    ok(!!slMaps && /3\.0738,101\.7255/.test(slMaps.getAttribute("href")) && geo === 1 && !/try it on the Desk/.test(t(SL)),
+      "6 a short link they shared opens through Salt Admin's map road to Maps at its point: " + t(SL) + " " + (slMaps && slMaps.getAttribute("href")) + " geo " + geo);
   } finally { p.w.close(); }
 }

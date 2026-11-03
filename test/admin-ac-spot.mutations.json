@@ -94,5 +94,6 @@
     "file": "stmt/owner.js",
     "find": "      if(held){ adSpotPaint(held); return; }",
     "replace": "      if(false){ adSpotPaint(held); return; }"
-  }
+  },
+ {"name":"a shared short link is never opened on Salt Admin (4 Nov 2026)","file":"stmt/owner.js","find":"          if(lp) p=Object.assign({},p,{lat:lp.lat, lng:lp.lng});\n","replace":""}
 ]
