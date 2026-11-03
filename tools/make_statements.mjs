@@ -36,7 +36,11 @@ import { priceList, priceDigest, priceSteps } from "./pricelist.mjs";
    what a book looks like. tools/ reading stmt/ is the safe direction and is what stmt-send.mjs
    already does; the ban is on stmt/ reaching OUT, because that Worker bundle must stay free of
    node builtins. */
-import { psymSvg, mtileSvg, PSHAPE, MON3 } from "../stmt/page.js";
+import { psymSvg, mtileSvg, PSHAPE, MON3, PSYM } from "../stmt/page.js";
+/* plan version 7 (One list): a live line carries its day, goods, delivery and book as data, so the Counter joins it to the order that holds it.
+   The book is its index in the Counter's own mark table (PSYM), never a product word; no key and nothing the line does not already say. */
+const BOOK_INDEX = Object.keys(PSYM).filter((k) => k !== "_");
+const bookIx = (p) => { const i = BOOK_INDEX.indexOf(p || "salt"); return i < 0 ? -1 : i; };
 /* 27 Sep 2026: the reward's line is the one the Counter draws on Home (part.cover), so the two are one set of words */
 import { EN, fill } from "../stmt/words.js";
 
@@ -383,7 +387,7 @@ function stmtDoc(party,rows,o){
      mark a button and its caption under it, the size in words and no shape word, as on the Counter's own cards (mtileSvg) */
   const lineTile=(p,q)=>mtileSvg(p,units(q));
   const tiles=(ps,qOf)=>'<span class="mtiles">'+ps.map(p=>lineTile(p,qOf(p))).join('')+'</span>';
-  const lineList=(label,heads,rowsHtml)=>'<div class="salt-lines salt-lines--list" role="table" aria-label="'+label+'"><div class="salt-lines__head" role="row">'
+  const lineList=(label,heads,rowsHtml,mark)=>'<div class="salt-lines salt-lines--list" role="table" aria-label="'+label+'"'+(mark?' data-lines="'+mark+'"':'')+'><div class="salt-lines__head" role="row">'
     +['date','what','amount','state'].map((c,i)=>'<div class="salt-lines__'+c+'" role="columnheader">'+heads[i]+'</div>').join('')+'</div>'+rowsHtml+'</div>';
   const money=v=>Number(v).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
   /* C5 (29 Sep 2026): the live footer's figures carry RM as its lines do; an issue's footer is as it was sent */
@@ -514,7 +518,8 @@ function stmtDoc(party,rows,o){
         :owedUnits?['paid in full','verdigris',[[paidSaid,1],[units(r.toGet)+' still to collect',1]]]
         :['settled','verdigris',[[paidSaid,1]]];
       return '<div class="salt-lines__row'+(r.cancelled?' salt-lines__row--cancelled':'')+'" role="row"'
-        +(r.date?' data-m="'+e(r.date.slice(0,7))+'"':'')+'>'
+        +(r.date?' data-m="'+e(r.date.slice(0,7))+'" data-d="'+e(r.date)+'"':'')
+        +' data-g="'+(+(+r.total||0).toFixed(2))+'" data-dv="'+(+(+r.delivery||0).toFixed(2))+'" data-b="'+bookIx(r.product)+'">'
         +'<div class="salt-lines__date" role="cell">'+(r.date?e(dLong(r.date)):moved)+'</div>'
         +'<div class="salt-lines__what" role="cell">'+lineTile(r.product,r.qty)+sub(r.resale?'on behalf of a friend':'')
           +sub(r.inKindUnits>0.009?units(r.inKindUnits)+' applied '+(noLegDates.has(r.date)?'by agreement':'to an earlier balance'):'',1)+'</div>'
@@ -593,7 +598,7 @@ function stmtDoc(party,rows,o){
    who&&!o.live?'<p class="whol gap1">Account</p>':'',
    who&&!o.live?'<div class="who">'+e(who)+'</div>':'',
    '<div class="rule"></div>',
-   rows.length?(lines?lineList('Your orders',['Date','Quantity','Amount','Status'],body)
+   rows.length?(lines?lineList('Your orders',['Date','Quantity','Amount','Status'],body,'orders')
      :box('<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead>'
      +'<tbody>'+body+'</tbody></table>'))
      :'<p class="meta">'+(o.live?'No orders yet.':'No orders in this period.')+'</p>',
