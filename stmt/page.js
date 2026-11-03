@@ -4501,6 +4501,7 @@ const CLIENT_JS = `
   /* a size the sheet may hold: priced, or past the grid's max for a price to be asked */
   function oCanPick(p,q){ var P=sold().filter(function(x){ return x.product===p; })[0]; return oSoldHas(p,q)||!!P&&overMax(P,q); }
   function sheetOpen(product,q,opener,amend,pool,againOf){
+    var sp=startPlace; startPlace='';   /* 3 Nov 2026 (Fable): spent before any early return, so a tap the lapse sheet stopped carries no place into a later sheet */
     draft.now=false; draft.on=''; draft.buyer='';   /* plan version 3 (Fable's review): Handed over and paid now is asked afresh on every sheet; version 4: its day and their customer too */
     if(ro()||hold||!sold().length||!lapse.hidden) return;
     draft.amend=amend?amend.id:'';
@@ -4517,7 +4518,7 @@ const CLIENT_JS = `
     /* 10 Oct 2026: the exact spot is asked afresh on every sheet and kept nowhere; an amendment keeps the order's own */
     draft.pin=null; draft.pinMsg=''; draft.pinLinkOpen=false; draft.pinBusy=false; draft.pinKept=!!(amend&&amend.pinned);
     draft.spot=null; draft.spotEdit=null;   /* Counter Batch C: no spot picked on opening (his answer 4) */
-    draft.startPlace=startPlace; startPlace='';   /* except the saved spot a To your last place or an Order again names */
+    draft.startPlace=sp;   /* except the saved spot a To your last place or an Order again names */
     draft.ownSlot=amend&&amend.slot&&amend.slotSpan?{slot:amend.slot, span:amend.slotSpan}:null;
     var U=oUsual();
     if(product&&oSoldHas(product,q)){ draft.pick={}; draft.pick[product]=String(q); }
