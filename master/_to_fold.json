@@ -1,0 +1,186 @@
+{
+ "ok": true,
+ "count": 3,
+ "approved": [
+  {
+   "id": "2026-11-03T19:48:52.848Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CA7-AMP",
+    "qty": 5,
+    "total": 475,
+    "cash": 0,
+    "date": "2026-11-04",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261103194851-dm0fcg, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+    "listRM": 475,
+    "listQty": 5,
+    "rids": [
+     "s331"
+    ],
+    "booked_seq": 107
+   },
+   "reasoning": "Sold 5 unit of salt to CA7-AMP for RM 475, RM 95/unit. Costed at RM 56/unit from COGS off the latest purchase p050 landed 2026-11-02: RM 1400 quote plus RM 0 freight over 25 unit, so RM 195 on the goods at 41.1%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-11-04 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-11-03T19:48:52.848Z",
+    "type": "SELL",
+    "party": "CA7-AMP",
+    "qty": 5,
+    "total": 475,
+    "status": "Pending",
+    "raw": "SELL CA7-AMP 5 salt RM 475, nothing paid, nothing moved (order 20261103194851-dm0fcg)",
+    "orderKey": "CA7-AMP|2026-11-04|475",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CA7-AMP",
+     "newId": null,
+     "date": "2026-11-04",
+     "qty": 5,
+     "total": 475,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261103194851-dm0fcg, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261103194851-dm0fcg",
+    "prepay": true
+   },
+   "decidedAt": "2026-11-03T19:48:56.592Z",
+   "decidedBy": "preapproved by Counter Admin"
+  },
+  {
+   "id": "2026-11-03T19:48:58.395Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CA7-AMP",
+    "qty": 50,
+    "total": 450,
+    "cash": 0,
+    "product": "oil",
+    "date": "2026-11-04",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261103194857-w8fu2q, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+    "rids": [
+     "s332"
+    ],
+    "booked_seq": 108
+   },
+   "reasoning": "Sold 50 unit of oil to CA7-AMP for RM 450, RM 9/unit. Costed at RM 7.6/unit from COGS off the latest purchase p051 landed 2026-11-03: RM 380 quote plus RM 0 freight over 50 unit, so RM 70 on the goods at 15.6%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-11-04 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-11-03T19:48:58.395Z",
+    "type": "SELL",
+    "party": "CA7-AMP",
+    "qty": 50,
+    "total": 450,
+    "status": "Pending",
+    "raw": "SELL CA7-AMP 50 oil RM 450, nothing paid, nothing moved (order 20261103194857-w8fu2q)",
+    "orderKey": "CA7-AMP|2026-11-04|450|oil",
+    "payload": {
+     "mode": "new",
+     "product": "oil",
+     "direction": "SELL",
+     "party": "CA7-AMP",
+     "newId": null,
+     "date": "2026-11-04",
+     "qty": 50,
+     "total": 450,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261103194857-w8fu2q, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261103194857-w8fu2q",
+    "prepay": true
+   },
+   "decidedAt": "2026-11-03T19:49:01.025Z",
+   "decidedBy": "preapproved by Counter Admin"
+  },
+  {
+   "id": "2026-11-03T19:49:02.854Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CA7-AMP",
+    "qty": 2,
+    "total": 150,
+    "cash": 0,
+    "product": "gas",
+    "date": "2026-11-04",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261103194901-tqsyeg, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+    "rids": [
+     "s333"
+    ],
+    "booked_seq": 109
+   },
+   "reasoning": "Sold 2 unit of gas to CA7-AMP for RM 150, RM 75/unit. Costed at RM 70/unit from COGS off the latest purchase p052 landed 2026-11-03: RM 70 quote plus RM 0 freight over 1 unit, so RM 10 on the goods at 6.7%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-11-04 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CA7-AMP has no committed gas order on the book, so there is no rate of theirs to compare this against."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-11-03T19:49:02.854Z",
+    "type": "SELL",
+    "party": "CA7-AMP",
+    "qty": 2,
+    "total": 150,
+    "status": "Pending",
+    "raw": "SELL CA7-AMP 2 gas RM 150, nothing paid, nothing moved (order 20261103194901-tqsyeg)",
+    "orderKey": "CA7-AMP|2026-11-04|150|gas",
+    "payload": {
+     "mode": "new",
+     "product": "gas",
+     "direction": "SELL",
+     "party": "CA7-AMP",
+     "newId": null,
+     "date": "2026-11-04",
+     "qty": 2,
+     "total": 150,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261103194901-tqsyeg, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261103194901-tqsyeg",
+    "prepay": true
+   },
+   "decidedAt": "2026-11-03T19:49:05.101Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
