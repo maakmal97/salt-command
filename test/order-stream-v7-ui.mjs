@@ -118,6 +118,7 @@ export async function run({ ok, pageWork }) {
     const addId = p.posts.find((x) => /add-id$/.test(x.route)), told = posts(/\/all\/joins\/jsent0001\/added$/);
     ok(!!addId && told.length === 1 && told[0].body && J(Object.keys(told[0].body)) === J(["code"]) && told[0].body.code === addId.body.code && /^[A-Z]{1,3}[0-9]{1,2}-[A-Z0-9]{1,6}$/.test(addId.body.code),
       "U4 when the Add ID is sent the join is told its code and nothing else: " + J([addId && addId.body.code, told.map((x) => x.body)]));
+    ok(!!addId && addId.body.introducer === "CX1-ZED", "U4b (plan version 6, R3) the join's Add ID names the associate whose link brought them, by code: " + J(addId && addId.body.introducer));
     ok(!p.wire.some((w) => w.includes(NAME)) && !J(told).includes("Zed") && state.jsent0001.state === "added" && !d.querySelector('#nlist [data-need="j:jsent0001"]'),
       "U5 no request carries the plaintext name, and the card leaves To do once the join is added");
     ok(!!d.querySelector('#nlist [data-need="js:jsent0001"]') && d.querySelector('#nlist [data-need="js:jsent0001"]').getAttribute("data-sev") === "watch",
@@ -139,7 +140,7 @@ export async function run({ ok, pageWork }) {
     await fill("jsent0002");
     let form = formOf();
     const fillLine = form && [...form.querySelectorAll('[role="status"]')].map(t).find((x) => /^Filled/.test(x));
-    ok(!!form && byAct(form, "record.add-id.name").value === NAME && /^Filled from the join link of CX1-ZED; check them, then add[.]$/.test(fillLine || ""),
+    ok(!!form && byAct(form, "record.add-id.name").value === NAME && /^Filled from the join link of CX1-ZED, their first week counting for them; check them, then add[.]$/.test(fillLine || ""),
       "U6a Add them after the unlock fills the form, and its line is one sentence: " + fillLine);
     q.type(byAct(form, "record.add-id.place"), "Pudu");
     await click(byAct(form, "record.add-id.send"));
@@ -151,6 +152,8 @@ export async function run({ ok, pageWork }) {
     await click(byAct(form, "record.add-id.send"));
     ok(q.posts.filter((x) => /add-id$/.test(x.route)).length === 2 && !q.posts.some((x) => /\/jsent0003\/added$/.test(x.route)),
       "U7c a different name typed straight over the filled one is another customer: the Add ID goes in and the join is never told (Fable's re-check)");
+    ok(q.posts.filter((x) => /add-id$/.test(x.route))[0].body.introducer === "CX1-ZED" && !("introducer" in q.posts.filter((x) => /add-id$/.test(x.route))[1].body),
+      "U7d (R3) and that other customer names no introducer, while the join's own Add ID does");
     await fill("jsent0003");
     form = formOf();
     q.type(byAct(form, "record.add-id.name"), ""); q.type(byAct(form, "record.add-id.name"), "Fourth Person");

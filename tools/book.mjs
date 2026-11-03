@@ -376,7 +376,7 @@ export function pricingSnapshot(w) {
  * salt where the window has none, and is null on every other, whatever networkStats says. */
 export const ASSOC_FIELDS = ["id", "founder", "rank", "bought", "soldFor", "onward", "introduced",
   "referred", "share", "stars", "departed", "reward"];
-export const REWARD_FIELDS = ["earned", "taken", "left", "next", "held"];
+export const REWARD_FIELDS = ["earned", "taken", "left", "next", "held", "r3"];   /* r3: how many first-week orders of people they brought in counted, a count (plan version 6) */
 export function associateSnapshot(w) {
   const read = reader(w);
   const call = (expr) => { const r = read(expr); return r.ok && typeof r.value !== "undefined" ? r.value : null; };
@@ -408,7 +408,7 @@ export function associateSnapshot(w) {
             departed: typeof isDeparted==='function' ? !!isDeparted(r.id) : false,
             reward: r.unit == null ? null : {
               earned: earned, taken: taken, left: +(earned - taken).toFixed(2), next: next,
-              held: typeof canRedeem==='function' ? !canRedeem(r.id) : false
+              held: typeof canRedeem==='function' ? !canRedeem(r.id) : false, r3: r.walk && +r.walk.r3 > 0 ? +r.walk.r3 : 0
             }
           };
         });
@@ -489,7 +489,7 @@ export function associateCard(w, code) {
           },
           reward: r.unit == null ? null : {
             earned: earned, taken: taken, left: +(earned - taken).toFixed(2), next: next,
-            held: typeof canRedeem === 'function' ? !canRedeem(id) : false
+            held: typeof canRedeem === 'function' ? !canRedeem(id) : false, r3: r.walk && +r.walk.r3 > 0 ? +r.walk.r3 : 0
           },
           lines: lines
         };

@@ -412,6 +412,8 @@ export const EN = {
   "rew.onward": "Onward sales",
   "rew.brought": "Brought in",
   "rew.people": "People you introduced",
+  "rew.r3One": "1 order from someone you brought in counted, in their first week.",
+  "rew.r3": "{n} orders from people you brought in counted, in their first week.",
   "rew.noMonth": "Nothing in that month.",
   "rew.date": "Date",
   "rew.what": "What",

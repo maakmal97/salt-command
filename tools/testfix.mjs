@@ -360,7 +360,7 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
   /* AN ASSOCIATE'S CARD, each book's sales progress, the reward on salt alone (a tiered book) */
   const card = { at: now.toISOString(), products: [
     { product: "salt", name: "Salt", unit: "unit", summary: { bought: 1805, soldFor: 270, onward: 1, introduced: 530, referred: 2 },
-      reward: { earned: 42.5, taken: 20, left: 22.5, next: 0.4, held: false },
+      reward: { earned: 42.5, taken: 20, left: 22.5, next: 0.4, held: false, r3: 2 },
       lines: [{ date: T(3).slice(0, 10), kind: "onward", qty: 2.5, rm: 270 }, { date: T(9).slice(0, 10), kind: "own", qty: 1, rm: 110 },
         { date: T(21).slice(0, 10), kind: "own", qty: 2.5, rm: 265 }] },
     { product: "oil", name: "Oil", unit: "unit", summary: { bought: 115, soldFor: 0, onward: 0, introduced: 0, referred: 0 }, reward: null,
@@ -488,6 +488,7 @@ export const FEATURES = [
   ["This year on Home, off the live statement's lines this year (Counter Batch A)", (f) => !!(f.live && new RegExp('salt-lines__row[^"]*" role="row" data-m="' + new Date(Date.parse(f.at) + 8 * 3600e3).toISOString().slice(0, 4)).test(f.live.body || ""))],
   ["guest links: open, waiting, declined, withdrawn", (f) => ["open", "waiting", "declined", "withdrawn"].every((s) => f.refs.some((r) => refState(r) === s))],
   ["an associate's card, with a reward", (f) => !!(f.card && f.card.products.some((p) => p.reward) && f.card.products.some((p) => !p.reward))],
+  ["first-week orders of people an associate brought in, counted toward their reward (R3, 03 Nov 2026)", (f) => !!(f.card && f.card.products.some((p) => p.reward && +p.reward.r3 > 0))],
   ["the nearest reward on Home, its meter to the next unit (Counter Batch A)", (f) => !!(f.card && f.card.products.some((p) => p.reward && p.reward.next != null))],
   ["the restock light: green, yellow with its day, red (F4)", (f) => { const s = ((f.prices && f.prices.products) || []).map((p) => p.supply).filter(Boolean);
     return ["green", "red"].every((l) => s.some((x) => x.light === l)) && s.some((x) => x.light === "yellow" && /^\d{4}-\d{2}-\d{2}$/.test(x.by || "")); }],

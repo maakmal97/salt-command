@@ -43,5 +43,7 @@
  {"name": "the filled line is two sentences", "file": "stmt/owner.js", "find": "'; check them, then add.';", "replace": "'. Check them, then add.';"},
  {"name": "Approve says two sentences", "file": "stmt/owner.js", "find": "approve:'Approved, and it opens now.'", "replace": "approve:'Approved. It opens now.'"},
  {"name": "the retell button is a second Add them", "file": "stmt/owner.js", "find": "if(joinNamed(r)) mainButton(c,'Send its code','need.join-told','j:'+r.id, function(){ joinTell(r.id, joinTried[r.id]); });\n      else mainButton", "replace": "if(false) mainButton(c,'Send its code','need.join-told','j:'+r.id, function(){ joinTell(r.id, joinTried[r.id]); });\n      mainButton"},
- {"name": "a name typed over the filled one still tells the link", "file": "stmt/owner.js", "find": "joinForm.filled=!!joinHold&&idName.value.trim()===joinHold.name; });", "replace": "joinForm.filled=!!joinHold&&!!idName.value.trim(); });"}
+ {"name": "a name typed over the filled one still tells the link", "file": "stmt/owner.js", "find": "joinForm.filled=!!joinHold&&idName.value.trim()===joinHold.name; });", "replace": "joinForm.filled=!!joinHold&&!!idName.value.trim(); });"},
+ {"name":"U4b the join's Add ID names no introducer","file":"stmt/owner.js","find":"if(introBy)idBody.introducer=introBy;","replace":"void introBy;"},
+ {"name":"U7d every Add ID names the introducer","file":"stmt/owner.js","find":"        if(joinHold&&joinForm&&joinForm.filled&&kind==='customer'){\n          joinTried[joinHold.id]=code;","replace":"        if(joinHold)idBody.introducer=codeOfUser(joinHold.by);\n        if(joinHold&&joinForm&&joinForm.filled&&kind==='customer'){\n          joinTried[joinHold.id]=code;"}
 ]

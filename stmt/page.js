@@ -3913,6 +3913,8 @@ const CLIENT_JS = `
           tr.setAttribute('role','img'); tr.setAttribute('aria-label',tw('rew.nextAria',{p:pc}));
           pane.appendChild(mtr);
         }
+        /* R3 (plan version 6): the first-week orders of people they brought in that counted toward it, a count and nothing else */
+        if(+rw.r3>0) pane.appendChild(el('p','sub2',tw(+rw.r3===1?'rew.r3One':'rew.r3',{n:String(rw.r3)})));
       }
       var sm=p.summary||{};
       var ul=el('ul','conf');

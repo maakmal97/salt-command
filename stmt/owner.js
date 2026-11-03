@@ -761,6 +761,8 @@ export const OWNER_JS = `
     var tr=el('div','salt-meter__track'); tr.appendChild(el('div','salt-meter__fill')); m.appendChild(tr);
     m.style.setProperty('--salt-fill',String(Math.max(0,Math.min(100,Math.round(r.progress/r.step*100))))); rowOf(L, m, 'ameterrow');
     acctLine(L,'Step, '+r.times+' units’ cost',rmShort(r.step)); acctLine(L,'Given under Set Price',rmShort(r.given)); acctLine(L,'A unit, net to you',rmShort(r.net));
+    /* R3 (plan version 6): each person they brought in, their first week's last day and the orders of it counted */
+    (Array.isArray(r.r3)?r.r3:[]).forEach(function(w){ if(w&&w.code) acctLine(L,'Brought in '+w.code,w.orders+' counted, to '+dayMon(w.last)); });
     box.appendChild(L);
     box.appendChild(el('p','salt-settings__foot','Counted once paid, and they see no figure.'));
   }
@@ -3231,7 +3233,10 @@ export const OWNER_JS = `
          if(geo)idBody.geo=geo;
         if(addrEnvelope)idBody.addrVault=addrEnvelope;
         if(idDraft)makerPairBody(idBody,idDraft);
-        if(joinHold&&joinForm&&joinForm.filled&&kind==='customer')joinTried[joinHold.id]=code;
+        if(joinHold&&joinForm&&joinForm.filled&&kind==='customer'){
+          joinTried[joinHold.id]=code;
+          var introBy=codeOfUser(joinHold.by); if(introBy)idBody.introducer=introBy;   /* R3: the associate whose link brought them; their first week counts for them */
+        }
         await send('/all/maker/inputs/add-id',idBody,idDraft);
         idDraft=null;
         var joinNote=await joinTold(name,locality,kind,code);
@@ -5155,6 +5160,9 @@ export const OWNER_JS = `
   function rewardPaint(box,order){
     box.textContent='';
     var r=rewardOfOrder(order);
+    /* R3 (plan version 6): a referee's order in their first week counts toward the associate who brought them in */
+    if(r&&!r.reading&&!r.associate&&r.r3For&&r.r3For.counts){ box.hidden=false; box.appendChild(el('h4','salt-eyebrow salt-eyebrow--copper','Associate reward'));
+      box.appendChild(el('p','salt-insight orwdnote','Counts toward '+r.r3For.by+'’s reward once paid: their first week, to '+dayMon(r.r3For.last)+'.')); return; }
     if(!r||r.reading||!r.associate||r.error||!(r.step>0)){ box.hidden=true; return; }
     box.hidden=false;
     box.appendChild(el('h4','salt-eyebrow salt-eyebrow--copper','Associate reward'));
@@ -6933,7 +6941,7 @@ export const OWNER_JS = `
     f.kind.value='customer'; f.kind.dispatchEvent(new Event('change',{bubbles:true}));
     f.name.value=joinHold.name; f.place.value=joinHold.place;
     f.name.dispatchEvent(new Event('input',{bubbles:true})); f.place.dispatchEvent(new Event('input',{bubbles:true}));
-    f.filled=true; f.status.textContent='Filled from the join link of '+codeByUser(joinHold.by)+'; check them, then add.';
+    f.filled=true; f.status.textContent='Filled from the join link of '+codeByUser(joinHold.by)+(codeOfUser(joinHold.by)?', their first week counting for them':'')+'; check them, then add.';
     openForm('new-customer');
   }
   /* the lock lets the name go: the held copy, and the form fields it filled */

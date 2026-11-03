@@ -248,7 +248,7 @@
   {
     "name": "the fixture version stays where it was",
     "file": "stmt/testfix.js",
-    "find": "export const FIX_VERSION = 16;",
+    "find": "export const FIX_VERSION = 17;",
     "replace": "export const FIX_VERSION = 8;"
   },
   {
