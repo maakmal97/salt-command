@@ -25,7 +25,7 @@ const extra = [
   { ...base, id: "ord-t2", status: "placed", total: 100, test: true }
 ];
 const STOCK = { ok: true, today: "2026-10-22", books: { salt: { shelf: 11, free: 8.5, commit: 2.5, coverDays: 4, transit: 20, light: "green" },
-  rice: { shelf: 6, free: -2, commit: 8, coverDays: 0, transit: 10, light: "yellow" }, candy: { shelf: 0, free: 0, commit: 0, coverDays: null, transit: 0, light: "red" } }, by: {} };
+  rice: { shelf: 6, free: -2, commit: 8, coverDays: 0, transit: 10, light: "red" }, candy: { shelf: 0, free: 0, commit: 0, coverDays: null, transit: 0, light: "red" } }, by: {} };
 const rule = (sel) => { const m = SITE_RECIPES.match(new RegExp("(^|[}\\s])" + sel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + " \\{([^}]*)\\}")); return m ? m[2] : ""; };
 
 export async function run({ ok, pageWork }) {

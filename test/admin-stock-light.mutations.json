@@ -1,11 +1,11 @@
 [
  {"name":"Stock by book stands over the cards","file":"stmt/page.js","find":"+ '<div class=\"nsplit\"><div>'","replace":"+ '<section id=\"nStock\" class=\"nstock\" aria-label=\"Stock by book\" hidden></section><div class=\"nsplit\"><div>'"},
  {"name":"the least cover first, whatever the light","file":"stmt/owner.js","find":"var rank=function(b){ return [b.light in STOCK_RANK?STOCK_RANK[b.light]:3, b.coverDays==null?Infinity:+b.coverDays]; };\n    ids.sort(function(x,y){ var a=rank(books[x]), c=rank(books[y]); return a[0]-c[0]||a[1]-c[1]; });\n    /* 22 Oct","replace":"var rank=function(b){ return [0, b.coverDays==null?Infinity:+b.coverDays]; };\n    ids.sort(function(x,y){ var a=rank(books[x]), c=rank(books[y]); return a[0]-c[0]||a[1]-c[1]; });\n    /* 22 Oct"},
- {"name":"the light in one tone","file":"stmt/owner.js","find":"STOCK_TONE={green:'verdigris',yellow:'brass',red:'ember'}","replace":"STOCK_TONE={green:'brass',yellow:'brass',red:'brass'}"},
+ {"name":"the light in one tone","file":"stmt/owner.js","find":"STOCK_TONE={green:'verdigris',yellow:'amber',amber:'orange',red:'ember'}","replace":"STOCK_TONE={green:'brass',yellow:'brass',amber:'brass',red:'brass'}"},
  {"name":"a book with no light says Available","file":"stmt/owner.js","find":"light=b.light in STOCK_RANK?b.light:'';\n      return {p:p,","replace":"light=b.light in STOCK_RANK?b.light:'green';\n      return {p:p,"},
  {"name":"the book is its mark","file":"stmt/owner.js","find":"row.setAttribute('data-book',r.p); who.appendChild(productTag(r.p));","replace":"row.setAttribute('data-book',r.p); who.appendChild(bookMark(r.p,20));"},
  {"name":"the meter never fills past the shelf","file":"stmt/owner.js","find":"fill:shelf>0.009?Math.min(100,Math.round(commit/shelf*100)):commit>0.009?100:0,","replace":"fill:shelf>0.009?Math.min(100,Math.round(commit/shelf*100)):0,"},
- {"name":"the meter is never ember","file":"stmt/owner.js","find":"ember:light==='red'||light==='yellow'||commit>shelf+0.009,","replace":"ember:false,"},
+ {"name":"the meter is never ember","file":"stmt/owner.js","find":"ember:light==='red'||commit>shelf+0.009,","replace":"ember:false,"},
  {"name":"four weeks of cover says over 4 wk","file":"stmt/owner.js","find":"b.coverDays==null?'4 wk+':b.coverDays+' d',\n        lot:","replace":"b.coverDays==null?'over 4 wk':b.coverDays+' d',\n        lot:"},
  {"name":"a day with nothing coming says nothing","file":"stmt/owner.js","find":":by?'None yet · '+glanceDay(by):'None'};","replace":":'None'};"},
  {"name":"a figure under nought keeps a hyphen","file":"stmt/owner.js","find":"return (v<0?'\\u2212':'')+Math.abs(v)","replace":"return (v<0?'-':'')+Math.abs(v)"},

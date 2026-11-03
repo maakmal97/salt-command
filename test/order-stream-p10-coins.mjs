@@ -29,7 +29,7 @@ export async function run({ ok, pageWork }) {
     ok(attrsOf(p.d.getElementById("pPrices")).every((v) => !WORDS.some((w) => new RegExp("(^|[^a-z])" + w + "([^a-z]|$)").test(v))) && [...p.d.querySelectorAll(".salt-coin")].every((c) => [...c.classList].every((k) => /^salt-coin(--(sm|md|lg))?$/.test(k))),
       "10b no product word in any attribute of Order, a coin's classes its recipe and its size alone: " + JSON.stringify(attrsOf(p.d.getElementById("pPrices")).filter((v) => WORDS.some((w) => new RegExp("(^|[^a-z])" + w + "([^a-z]|$)").test(v))).slice(0, 5)));
     const light = hs.parentNode.querySelector(".supline .salt-light");
-    ok(!/\bsup\b/.test(hs.className) && !!light && light.classList.contains("salt-light--yellow") && /Limited/.test(K.txt(light)) && /limited/i.test(hs.getAttribute("aria-label")),
+    ok(!/\bsup\b/.test(hs.className) && !!light && light.classList.contains("salt-light--yellow") && /Selling fast/.test(K.txt(light)) && /selling fast/i.test(hs.getAttribute("aria-label")),
       "10b the light is a dot and its word beside the coin, no border on the mark, the head saying it: " + (light ? light.outerHTML : "none"));
     const lo = ho.parentNode.querySelector(".supline .salt-light");
     ok(!!lo && lo.className === "salt-light" && /Available/.test(K.txt(lo)), "10b a green light is the plain dot");

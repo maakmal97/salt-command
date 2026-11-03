@@ -2,7 +2,7 @@
  * What is proved here, each check red under its own mutation (test/counter-supply-home.mutations.json), on the signed-in page in jsdom
  * (test/counter-b-kit.mjs):
  *   1  Home's first column carries Availability above New order: a row a book with a light, in the list's order, its mark in the light's
- *      coin (plan version 10, 03 Nov 2026; it was a border round the mark) and the light as a dot and its words (Available, Limited, Out of stock), the dot
+ *      coin (plan version 10, 03 Nov 2026; it was a border round the mark) and the light as a dot and its words (Available, Selling fast, Low on stock, Out of stock; 04 Nov 2026), the dot
  *      yellow or red and green plain; More by DD Mon under a yellow or red with a
  *      day, never under green; no figure but the day
  *   2  a row is a button that opens Prices and brings that book's pane into view
@@ -29,7 +29,7 @@ export async function run({ ok, pageWork }) {
       by: txt(r.querySelector(".salt-inbox-row__what")), sr: txt(r.querySelector(".sr")) || (r.querySelector(".sr") || {}).textContent, all: txt(r) }));
     const col = box && box.parentNode, order = col ? [...col.children].map((c) => c.id) : [];
     ok(!!box && txt(box.querySelector(".hlab")) === "Availability" && order.indexOf("hSupply") >= 0 && order.indexOf("hSupply") === order.indexOf("hStart") - 1
-      && rows.length === 3 && read.map((r) => r.word).join("|") === "Limited|Out of stock|Available"
+      && rows.length === 3 && read.map((r) => r.word).join("|") === "Selling fast|Out of stock|Available"
       && read.every((r, i) => r.coin && !/sup|sup-/.test(r.mark) && (i === 2 ? r.st === "salt-light" : r.st === "salt-light salt-light--" + ["yellow", "red"][i])),
     "Availability stands above New order, a row a lit book in the list's order, its coin bare and the light a dot and its words, plain for green: " + JSON.stringify({ order, read }));
     ok(read[0].by === "More by " + dm(by) && read[1].by === "" && read[2].by === "" && read.every((r) => !/\d/.test(r.all.replace(r.by, ""))),
@@ -45,7 +45,7 @@ export async function run({ ok, pageWork }) {
     /* ---- 3 ---- */
     const lines = panes.map((p) => txt(p.querySelector(".supline")));
     const css = [...A.d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
-    ok(lines.join("|") === "Limited|Out of stock|Available|" && panes.slice(0, 3).every((p) => p.querySelector(".supline").getAttribute("aria-hidden") === "true" && !!p.querySelector(".supline .salt-light"))
+    ok(lines.join("|") === "Selling fast|Out of stock|Available|" && panes.slice(0, 3).every((p) => p.querySelector(".supline").getAttribute("aria-hidden") === "true" && !!p.querySelector(".supline .salt-light"))
       && !/\.pmark\.sup|\.salt-status\.supst|\.sup-(green|yellow|red)/.test(css) && /\.hsup\{min-height:44px/.test(css),
     "on Prices the word stands under each lit mark (the heading says it once), no border or status rule of the old light is left and a row is 44px: " + JSON.stringify(lines));
 

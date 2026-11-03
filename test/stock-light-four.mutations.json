@@ -1,0 +1,18 @@
+[
+  {"name":"selling fast at six days","file":"engine/position.mjs","find":"const LIGHT_DAYS={fast:7,low:3};","replace":"const LIGHT_DAYS={fast:6,low:3};"},
+  {"name":"low at two days","file":"engine/position.mjs","find":"const LIGHT_DAYS={fast:7,low:3};","replace":"const LIGHT_DAYS={fast:7,low:2};"},
+  {"name":"no amber step","file":"engine/position.mjs","find":"  if((usual>0&&usual-free>0.005)||(cover!=null&&cover<=LIGHT_DAYS.low))return 'amber';\n","replace":""},
+  {"name":"no yellow step","file":"engine/position.mjs","find":"  if(cover!=null&&cover<=LIGHT_DAYS.fast)return 'yellow';\n","replace":""},
+  {"name":"red read off the shelf, not what is free","file":"engine/position.mjs","find":"  if(free<0.005)return 'red';","replace":"  if((+shelf||0)<0.005)return 'red';"},
+  {"name":"the usual order ignored","file":"engine/position.mjs","find":"if((usual>0&&usual-free>0.005)||(cover!=null","replace":"if((cover!=null"},
+  {"name":"one usual order left is low","file":"engine/position.mjs","find":"usual-free>0.005","replace":"usual-free>=-0.005"},
+  {"name":"a week of cover is not selling fast","file":"engine/position.mjs","find":"cover<=LIGHT_DAYS.fast","replace":"cover<LIGHT_DAYS.fast"},
+  {"name":"restockSupply asks with no demand","file":"engine/position.mjs","find":"  const light=restockLight(shelf,commitUnits,demand);","replace":"  const light=restockLight(shelf,commitUnits);"},
+  {"name":"selling fast asks for a day","find":"function expAsks(light){return light==='amber'||light==='red';}","replace":"function expAsks(light){return light!=='green';}"},
+  {"name":"the Desk's light reads no usual order","find":"return {coverDays:live?rs.coverDays:null,usual:live&&rs.buy?rs.buy.median:null};}","replace":"return {coverDays:live?rs.coverDays:null,usual:null};}"},
+  {"name":"the publish snapshot carries no usual order","file":"tools/book.mjs","find":",usual:live&&rs.buy&&rs.buy.median!=null?+rs.buy.median:null};","replace":"};"},
+  {"name":"the price list's light asks with no demand","file":"tools/pricelist.mjs","find":"today, { coverDays: v.coverDays, usual: v.usual });","replace":"today);"},
+  {"name":"the Counter drops amber","file":"stmt/page.js","find":"s.light==='yellow'||s.light==='amber'||s.light==='red'","replace":"s.light==='yellow'||s.light==='red'"},
+  {"name":"amber says another word","file":"stmt/words.js","find":"  \"sup.amber\": \"Low on stock\",","replace":"  \"sup.amber\": \"Few left\","},
+  {"name":"the amber dot is amber's yellow","file":"stmt/statement-css.js","find":".salt-light--amber::before { background: var(--salt-orange); }","replace":".salt-light--amber::before { background: var(--salt-amber); }"}
+]

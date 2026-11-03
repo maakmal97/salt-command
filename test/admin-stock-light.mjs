@@ -37,8 +37,8 @@ export async function run({ ok, pageWork }) {
     const before = r.s && r.s.previousElementSibling;
     ok(!!r.s && !r.s.hidden && !!before && before.classList.contains("nsplit") && t(r.s.querySelector(".nstock__head h2")) === "Stock by book" && t(r.s.querySelector(".nstock__head .salt-status")) === "Units · measured 22 Oct"
       && J(r.rows.map((x) => x.book)) === J(["candy", "salt", "rice", "oil", "gas"]) && J(r.rows.map((x) => x.tag)) === J(["Candy", "Salt", "Rice", "Oil", "Gas"])
-      && r.rows.map((x) => x.word).join("|") === "Out of stock|Limited|Available|Available|"
-      && ["salt-status--ember", "salt-status--brass", "salt-status--verdigris", "salt-status--verdigris"].every((c, i) => r.rows[i].st.includes(c)) && r.rows[4].st === ""
+      && r.rows.map((x) => x.word).join("|") === "Out of stock|Selling fast|Available|Available|"
+      && ["salt-status--ember", "salt-status--amber", "salt-status--verdigris", "salt-status--verdigris"].every((c, i) => r.rows[i].st.includes(c)) && r.rows[4].st === ""
       && !r.s.querySelector("svg.psym"),
     "under the cards, every book, the worst light first then the least cover, its typed tag and the light in the Counter's words and tone, none for a book with no light: " + J(r.rows.map((x) => [x.book, x.word])));
     /* 2 */
@@ -56,7 +56,7 @@ export async function run({ ok, pageWork }) {
     const cells = tb ? [...tb.querySelectorAll("tbody tr")].map((tr) => [...tr.children].map(t)) : [];
     const widths = tb ? [...tb.querySelectorAll("col")].map((c) => parseFloat(c.style.getPropertyValue("width"))) : [];
     ok(!!tb && tb.className === "salt-table salt-table--plain" && J(heads) === J([["Book", true], ["Light", true], ["Shelf", false], ["Agreed", false], ["Free", false], ["Of shelf", true], ["Cover", false], ["Next lot", true]])
-      && J(cells[1]) === J(["Salt", "Limited", "14.89", "16", "−1.11", "", "0 d", "8 units · 25 Oct"]) && widths.length === 8 && widths.reduce((a, b) => a + b, 0) === 100
+      && J(cells[1]) === J(["Salt", "Selling fast", "14.89", "16", "−1.11", "", "0 d", "8 units · 25 Oct"]) && widths.length === 8 && widths.reduce((a, b) => a + b, 0) === 100
       && tb.querySelectorAll("tbody .salt-meter").length === 5 && tb.querySelector("tbody tr:nth-child(2) td:nth-child(5)").classList.contains("nfree--neg") && !tb.querySelector("tbody tr:nth-child(3) td:nth-child(5)").classList.contains("nfree--neg"),
       "from 860px a plain table: its eight columns in proportion, a book a row, the meter in its own column, a free figure under nought in ember: " + J([heads.map((h) => h[0]), cells[1], widths]));
     const css = [...A.p.d.querySelectorAll("style")].map((s) => s.textContent).join("\n");

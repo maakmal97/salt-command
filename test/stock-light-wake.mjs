@@ -18,27 +18,30 @@ export async function run({ ok }) {
     return { calls, r, threw };
   };
 
-  /* 1. GREEN TO YELLOW POSTS THE STOCK TAG ONCE, AND NOTHING ELSE */
+  /* 1. GREEN TO AMBER POSTS THE STOCK TAG ONCE, AND NOTHING ELSE (04 Nov 2026, his four steps: low needs stock) */
   {
-    const w = await wake({ salt: "green", oil: "green" }, { salt: "yellow", oil: "green" });
+    const w = await wake({ salt: "green", oil: "green" }, { salt: "amber", oil: "green" });
     const c = w.calls[0], h = c && c.init.headers;
     ok(w.calls.length === 1 && c.url === P.PUSH_URL && c.init.method === "POST" && c.init.body === '{"tag":"stock"}'
       && h["X-Push-Key"] === "push-key" && h["CF-Access-Client-Id"] === "id.access" && h["CF-Access-Client-Secret"] === "secret" && w.r === 200,
-      "a book turning green to yellow posts {\"tag\":\"stock\"} once to /push/send with the push key and the Access headers: " + JSON.stringify(w.calls));
+      "a book turning green to amber posts {\"tag\":\"stock\"} once to /push/send with the push key and the Access headers: " + JSON.stringify(w.calls));
   }
+  /* 1b. YELLOW, SELLING FAST, NEEDS NO STOCK AND WAKES NOTHING, FROM GREEN OR TO IT */
+  ok((await wake({ salt: "green" }, { salt: "yellow" })).calls.length === 0 && (await wake({ salt: "yellow" }, { salt: "amber" })).calls.length === 1,
+    "green to yellow posts nothing; yellow to amber is a turn for the worse");
   /* 2. A LIGHT THAT HOLDS POSTS NOTHING */
-  ok((await wake({ salt: "yellow", oil: "red" }, { salt: "yellow", oil: "red" })).calls.length === 0,
-    "a publish that keeps a light yellow, or red, posts nothing");
-  /* 3. YELLOW TO RED IS A TURN FOR THE WORSE */
-  ok((await wake({ salt: "yellow" }, { salt: "red" })).calls.length === 1, "a book turning yellow to red posts the stock tag");
+  ok((await wake({ salt: "amber", oil: "red" }, { salt: "amber", oil: "red" })).calls.length === 0,
+    "a publish that keeps a light amber, or red, posts nothing");
+  /* 3. AMBER TO RED IS A TURN FOR THE WORSE */
+  ok((await wake({ salt: "amber" }, { salt: "red" })).calls.length === 1, "a book turning amber to red posts the stock tag");
   /* 4. A LIGHT GETTING BETTER POSTS NOTHING */
-  ok((await wake({ salt: "red", oil: "yellow" }, { salt: "yellow", oil: "green" })).calls.length === 0,
-    "a light getting better (red to yellow, yellow to green) posts nothing");
+  ok((await wake({ salt: "red", oil: "amber" }, { salt: "amber", oil: "yellow" })).calls.length === 0,
+    "a light getting better (red to amber, amber to yellow) posts nothing");
   /* 5. A BOOK THE LAST PUBLISH DID NOT LIGHT IS NOT A TURN */
-  ok((await wake(null, { salt: "red" })).calls.length === 0 && (await wake({ salt: "green" }, { salt: "green", rice: "yellow" })).calls.length === 0,
+  ok((await wake(null, { salt: "red" })).calls.length === 0 && (await wake({ salt: "green" }, { salt: "green", rice: "amber" })).calls.length === 0,
     "with no last lights, or a book the last publish did not light, nothing is posted");
   /* 6. SEVERAL BOOKS TURNING AT ONCE POST ONCE */
-  ok((await wake({ salt: "green", oil: "green", rice: "yellow" }, { salt: "yellow", oil: "red", rice: "red" })).calls.length === 1,
+  ok((await wake({ salt: "green", oil: "green", rice: "amber" }, { salt: "amber", oil: "red", rice: "red" })).calls.length === 1,
     "three books turning in one publish post the stock tag once");
   /* 7. NO PUSH KEY, NO POST */
   ok((await wake({ salt: "green" }, { salt: "red" }, {})).calls.length === 0, "with no PUSH_KEY nothing is posted");

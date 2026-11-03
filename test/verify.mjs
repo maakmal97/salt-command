@@ -51352,19 +51352,28 @@ await (async () => {
 section("F4 (05 Oct 2026): the restock light, green while the shelf covers what is promised, yellow past it, red when out; a restock date; sealed with the list; a dot and its word beside the coin");
 await (async () => {
   const X = (await import("../engine/position.mjs")).default;
-  /* ---- 1. THE BANDS AND THEIR EDGES ---- */
-  ok(X.restockLight(10, 10) === "green" && X.restockLight(10, 0) === "green" && X.restockLight(10, 9.99) === "green",
-    "green while the shelf covers the commitments, the exact edge included");
-  ok(X.restockLight(10, 10.01) === "yellow" && X.restockLight(2.25, 1010) === "yellow",
-    "yellow the moment the commitments pass the shelf, by a hundredth");
-  ok(X.restockLight(0, 0) === "red" && X.restockLight(0, 5) === "red" && X.restockLight(-1, 0) === "red" && X.restockLight(0.004, 3) === "red" && X.restockLight(0.01, 3) === "yellow",
-    "red when the shelf is out, with or without a promise, and a negative shelf; a hundredth held is not out");
-  /* ---- 2. THE DATE: shown only on yellow or red, and never once past ---- */
+  /* ---- 1. THE STEPS AND THEIR EDGES (his four steps of 04 Nov 2026: green, yellow selling fast, amber low, red out) ---- */
+  ok(X.LIGHT_DAYS.fast === 7 && X.LIGHT_DAYS.low === 3, "selling fast is 7 days of cover or fewer, low 3: " + JSON.stringify(X.LIGHT_DAYS));
+  ok(X.restockLight(10, 0) === "green" && X.restockLight(10, 9.99) === "green" && X.restockLight(10, 0, { coverDays: 7.01, usual: 1 }) === "green"
+    && X.restockLight(10, 0, { coverDays: null, usual: null }) === "green" && X.restockLight(10, 0, { coverDays: "x" }) === "green",
+    "green with stock free and more than a week of cover, or no demand measured");
+  ok(X.restockLight(10, 0, { coverDays: 7 }) === "yellow" && X.restockLight(10, 0, { coverDays: 3.01, usual: 1 }) === "yellow",
+    "yellow, selling fast, at a week of cover or less, the edge included");
+  ok(X.restockLight(10, 0, { coverDays: 3 }) === "amber" && X.restockLight(10, 9, { coverDays: 30, usual: 1.5 }) === "amber"
+    && X.restockLight(10, 8.5, { coverDays: 30, usual: 1.5 }) === "green" && X.restockLight(2, 0, { coverDays: 1, usual: 5 }) === "amber",
+    "amber, low on stock, at three days of cover or less, or free below one usual order (one usual order left is not low)");
+  ok(X.restockLight(10, 10) === "red" && X.restockLight(10, 10.01) === "red" && X.restockLight(2.25, 1010) === "red" && X.restockLight(1, 1, { coverDays: 1 }) === "red",
+    "red, out of stock, once every unit on the shelf is promised, the exact edge included, whatever the demand");
+  ok(X.restockLight(0, 0) === "red" && X.restockLight(0, 5) === "red" && X.restockLight(-1, 0) === "red" && X.restockLight(0.004, 0) === "red" && X.restockLight(0.01, 0) === "green",
+    "red when the shelf is out and on a negative shelf; a hundredth free with no demand is not out");
+  /* ---- 2. THE DATE: shown on any light but green, and never once past ---- */
   const T = "2026-10-05";
   ok(X.restockSupply(10, 1, "2026-10-12", T).by === null && X.restockSupply(10, 1, "2026-10-12", T).light === "green",
     "a green book shows no date, though one is set");
-  ok(X.restockSupply(1, 5, "2026-10-12", T).by === "2026-10-12" && X.restockSupply(0, 0, T, T).by === T,
-    "yellow and red show the day set, today included");
+  ok(X.restockSupply(1, 5, "2026-10-12", T).by === "2026-10-12" && X.restockSupply(0, 0, T, T).by === T
+    && X.restockSupply(10, 0, "2026-10-12", T, { coverDays: 5 }).light === "yellow" && X.restockSupply(10, 0, "2026-10-12", T, { coverDays: 5 }).by === "2026-10-12"
+    && X.restockSupply(10, 0, "2026-10-12", T, { coverDays: 2 }).light === "amber" && X.restockSupply(10, 0, "2026-10-12", T, { coverDays: 2 }).by === "2026-10-12",
+    "yellow, amber and red show the day set, today included, the demand read through restockSupply");
   ok(X.restockSupply(1, 5, "2026-10-04", T).by === null && X.restockSupply(1, 5, undefined, T).by === null && X.restockSupply(1, 5, "12 Oct", T).by === null,
     "a day already past, none, or not a day, shows none");
   /* ---- 3. THE STORE'S SETTER ---- */
@@ -51407,11 +51416,19 @@ await (async () => {
     w.SALT_CLOUD = true;
     w.eval("setProd('salt');sales.push({customer:'ZZ9-TST',qty:1000,total:1000,product:'salt',pending:true});recompute();EXPECTED_READ=true;EXPECTED={};");
     const rows = () => read("actions().filter(x=>x.kind==='plan')");
-    ok(rows().length === 1 && rows()[0].sev === "soon" && /not set/.test(rows()[0].title) && rows()[0].tab === "inventory", "a yellow light with no day raises Restock date: not set, This week, and points at Stock: " + JSON.stringify(rows()));
-    /* the other books' lights are live data (oil counted out on 06 Oct 2026), so each is read against its own shelf and
-       commitments taken book by book, and none may carry salt's 1,000 promised units */
-    const L = read("expLights()"), own = read("(function(){var o={};Object.keys(expLights()).forEach(function(p){setProd(p);recompute();var c=POSITION_ENGINE.commitments(pSales(PROD),currentStock);o[p]={light:POSITION_ENGINE.restockLight(currentStock,c.commitUnits),shelf:currentStock,commit:c.commitUnits};});setProd('salt');recompute();return o;})()");
-    ok(L.salt.light === "yellow" && L.salt.commit >= 1000 && Object.keys(L).length >= 4
+    ok(rows().length === 1 && rows()[0].sev === "now" && /not set/.test(rows()[0].title) && /light red/.test(rows()[0].why) && rows()[0].tab === "inventory", "a book promised past its shelf is red, and with no day raises Restock date: not set, Now, and points at Stock: " + JSON.stringify(rows()));
+    /* 04 Nov 2026 (his four steps): amber, low on stock, asks This week; yellow, selling fast, asks nothing; both read the book's demand */
+    w.eval("sales.pop();recompute();window.__ld=lightDemand;lightDemand=function(){return {coverDays:2,usual:null};};");
+    ok(rows().length === 1 && rows()[0].sev === "soon" && /light amber/.test(rows()[0].why), "an amber light with no day raises Restock date: not set, This week: " + JSON.stringify(rows()));
+    w.eval("lightDemand=function(){return {coverDays:5,usual:null};};");
+    ok(rows().length === 0 && read("expLights()").salt.light === "yellow", "a yellow light, selling fast, asks for no day");
+    w.eval("lightDemand=window.__ld;sales.push({customer:'ZZ9-TST',qty:1000,total:1000,product:'salt',pending:true});recompute();");
+    ok(read("lightDemand('salt')").usual === read("restockFor('salt').buy.median") && read("lightDemand('salt')").coverDays === read("restockFor('salt').coverDays"),
+      "the demand is the restock plan's own: its days of cover and its median order");
+    /* the other books' lights are live data (oil counted out on 06 Oct 2026), so each is read against its own shelf,
+       commitments and demand taken book by book, and none may carry salt's 1,000 promised units */
+    const L = read("expLights()"), own = read("(function(){var o={};Object.keys(expLights()).forEach(function(p){setProd(p);recompute();var c=POSITION_ENGINE.commitments(pSales(PROD),currentStock);o[p]={light:POSITION_ENGINE.restockLight(currentStock,c.commitUnits,lightDemand(p)),shelf:currentStock,commit:c.commitUnits};});setProd('salt');recompute();return o;})()");
+    ok(L.salt.light === "red" && L.salt.commit >= 1000 && Object.keys(L).length >= 4
       && Object.keys(L).every((p) => JSON.stringify(L[p]) === JSON.stringify(own[p]) && (p === "salt" || L[p].commit < 1000)),
       "the card reads each book's own light off the engine: " + JSON.stringify(L));
     w.eval("EXPECTED={salt:'2099-01-01'};");
@@ -51444,7 +51461,7 @@ await (async () => {
       const L = w.eval("expLights()"), today = w.eval("TODAY.toISOString().slice(0,10)"), E = w.eval("EXPECTED");
       const rows = [...w.document.querySelectorAll("#expRows .expgrid > .exprow")], ids = Object.keys(L);
       const bad = ids.filter((p, i) => {
-        const r = rows[i], asks = L[p].light !== "green" && !(E[p] && E[p] >= today), clr = r && r.querySelector(`button[data-expclr="${p}"]`);
+        const r = rows[i], asks = (L[p].light === "amber" || L[p].light === "red") && !(E[p] && E[p] >= today), clr = r && r.querySelector(`button[data-expclr="${p}"]`);
         return !r || !r.classList.contains("exprow--" + L[p].light) || r.classList.contains("exprow--asks") !== asks || !!r.querySelector(".expask") !== asks
           || r.querySelector(".expword").textContent.toLowerCase() !== L[p].light || !r.querySelector(".expctl #exp_" + p) || !clr || clr.disabled !== !E[p];
       });
@@ -51466,12 +51483,14 @@ await (async () => {
     const { supplySnapshot } = await import("../tools/book.mjs");
     const raw = supplySnapshot(w), prodBefore = w.eval("PROD");
     w.eval("setProd('salt');");
-    ok(raw && raw.salt && raw.salt.shelf === w.eval("currentStock") && raw.salt.commit === w.eval("forecast().commitUnits") && w.eval("PROD") === "salt" && prodBefore === "salt",
-      "supplySnapshot carries each book's shelf and commitments, and puts the desk back");
+    ok(raw && raw.salt && raw.salt.shelf === w.eval("currentStock") && raw.salt.commit === w.eval("forecast().commitUnits") && w.eval("PROD") === "salt" && prodBefore === "salt"
+      && raw.salt.coverDays === read("lightDemand('salt')").coverDays && raw.salt.usual === read("lightDemand('salt')").usual,
+      "supplySnapshot carries each book's shelf, commitments, days of cover and usual order, and puts the desk back");
   } finally { w.close(); }
   const PL = await import("../tools/pricelist.mjs");
-  const lights = PL.supplyLights({ salt: { shelf: 1, commit: 5 }, oil: { shelf: 0, commit: 0 }, candy: { shelf: 9, commit: 1 } }, { salt: "2026-10-12", candy: "2026-10-12" }, T);
-  ok(lights.salt.light === "yellow" && lights.salt.by === "2026-10-12" && lights.oil.light === "red" && lights.oil.by === null && lights.candy.light === "green" && lights.candy.by === null,
+  const lights = PL.supplyLights({ salt: { shelf: 9, commit: 0, coverDays: 5, usual: 1 }, oil: { shelf: 0, commit: 0 }, candy: { shelf: 9, commit: 1 }, rice: { shelf: 9, commit: 1, coverDays: 30, usual: 10 } }, { salt: "2026-10-12", candy: "2026-10-12" }, T);
+  ok(lights.salt.light === "yellow" && lights.salt.by === "2026-10-12" && lights.oil.light === "red" && lights.oil.by === null && lights.candy.light === "green" && lights.candy.by === null
+    && lights.rice.light === "amber" && lights.rice.by === null,
     "supplyLights is the engine's light and day per book: " + JSON.stringify(lights));
   const cost = { repl: 50, freightRate: 0, shrinkRate: 0, avgDel: { n: 0, mean: 0 }, attrib: {}, costBasis: { txnPerDelivery: { rm: 0 }, freightPerTrip: { rm: 0 }, deliveredShare: { v: 0 } } };
   /* 18 Oct 2026: a customer's list is their card, the Set Price at each size */
@@ -51514,7 +51533,8 @@ await (async () => {
     { product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: sz, supply: { light: "yellow", by: "2026-10-14" } },
     { product: "oil", unit: "unit", basis: "board", tier: null, sizes: sz, supply: { light: "red", by: null } },
     { product: "candy", unit: "unit", basis: "board", tier: null, sizes: sz, supply: { light: "green", by: "2026-10-14" } },
-    { product: "rice", unit: "unit", basis: "board", tier: null, sizes: sz }] };
+    { product: "rice", unit: "unit", basis: "board", tier: null, sizes: sz },
+    { product: "gas", unit: "unit", basis: "board", tier: null, sizes: sz, supply: { light: "amber", by: "2026-10-14" } }] };
   const body = { ok: true, wrap: await C.wrapKey(pass, ck2), session: "sess-f4",
     env: await C.encryptWith(ck2, JSON.stringify({ statements: [{ issued: "2026-10-01", label: "October", body: "<p>Statement</p>" }] })),
     ...await sealCurrentLive(C, ck2, { at: "2026-10-05T01:00:00Z", body: "<p>Live</p>", owed: 0 }), prices: await C.encryptWith(ck2, JSON.stringify(prices)) };
@@ -51534,18 +51554,20 @@ await (async () => {
     for (let i = 0; i < 80 && !d.querySelector("#pPrices .pmark"); i++) await new Promise((r) => setTimeout(r, 50));
     const panes = [...d.querySelectorAll("#pPrices .pane")].map((p) => ({ cls: p.querySelector(".pmark").className, aria: p.querySelector(".pmark").getAttribute("aria-label"), text: p.textContent, light: (p.querySelector(".supline .salt-light") || { className: "" }).className, coin: !!p.querySelector(".pmark .salt-coin") }));
     /* plan version 10 (03 Nov 2026): the light is no longer a border on the mark: the head is a bare coin, and the light a dot and its word under it (salt-light, plain for green) */
-    ok(panes[0].light === "salt-light salt-light--yellow" && !/sup/.test(panes[0].cls) && panes[0].coin && /Limited/.test(panes[0].aria) && /More by 14 Oct/.test(panes[0].text), "yellow: a yellow dot, Limited in its name, More by 14 Oct under it: " + JSON.stringify(panes[0]));
+    ok(panes[0].light === "salt-light salt-light--yellow" && !/sup/.test(panes[0].cls) && panes[0].coin && /Selling fast/.test(panes[0].aria) && /More by 14 Oct/.test(panes[0].text), "yellow: a yellow dot, Selling fast in its name, More by 14 Oct under it: " + JSON.stringify(panes[0]));
     ok(panes[1].light === "salt-light salt-light--red" && !/sup/.test(panes[1].cls) && /Out of stock/.test(panes[1].aria) && !/More by/.test(panes[1].text), "red with no day: a red dot and no More by");
     ok(panes[2].light === "salt-light" && !/sup/.test(panes[2].cls) && /Available/.test(panes[2].aria) && !/More by/.test(panes[2].text), "green: the plain dot, and no day even when one is sealed");
-    ok(!/sup/.test(panes[3].cls) && panes[3].light === "" && panes[3].aria === d.querySelectorAll("#pPrices .pmark")[3].getAttribute("aria-label") && !/More by|Limited|Available/.test(panes[3].text), "a list sealed with no light draws the mark as it was");
+    ok(!/sup/.test(panes[3].cls) && panes[3].light === "" && panes[3].aria === d.querySelectorAll("#pPrices .pmark")[3].getAttribute("aria-label") && !/More by|Selling fast|Low on stock|Available/.test(panes[3].text), "a list sealed with no light draws the mark as it was");
+    ok(panes[4].light === "salt-light salt-light--amber" && /Low on stock/.test(panes[4].aria) && /More by 14 Oct/.test(panes[4].text), "amber: an amber dot, Low on stock in its name, More by 14 Oct under it: " + JSON.stringify(panes[4]));
     ok(!/\bstock\b|\bsalt\b|\boil\b|Salt Command/i.test(panes.map((p) => p.aria + p.text.replace(/RM[^A-Za-z]*/g, "")).join(" ")), "no customer sentence names stock, a product or the desk");
   } finally { wd.close(); }
   const css = lpF("abcd-efgh", "nf4", null), tokens = /:root\s*{[\s\S]*?\n}/.exec(css);
   ok(/\.salt-light--yellow::before\s*{\s*background:\s*var\(--salt-amber\)/.test(css) && /\.salt-light::before\s*{[^}]*background:\s*var\(--salt-verdigris\)/.test(css) && /\.salt-light--red::before\s*{\s*background:\s*var\(--salt-ember\)/.test(css) && !/\.sup-(green|yellow|red)/.test(css)
+    && /\.salt-light--amber::before\s*{\s*background:\s*var\(--salt-orange\)/.test(css) && /--salt-orange:\s*#f28c18/i.test(css)
     && tokens && /--salt-amber:\s*#[0-9a-f]{6}/i.test(tokens[0]) && !/--salt-amber:\s*#c5a059/i.test(tokens[0]), "yellow is the design system's amber token, defined in the page, and never brass");
   /* ---- 8. THE TEST ACCOUNTS hold a case of each light ---- */
   const TF = await import("../tools/testfix.mjs");
-  ok(TF.FEATURES.some(([n]) => /restock light/.test(n)) && TF.missing(TF.buildAll(new Date())).length === 0, "the test accounts' fixtures hold a case of green, yellow with its day and red, and nothing else is missing");
+  ok(TF.FEATURES.some(([n]) => /restock light/.test(n)) && TF.missing(TF.buildAll(new Date())).length === 0, "the test accounts' fixtures hold a case of green, yellow with its day, amber and red, and nothing else is missing");
 })();
 
 /* ---- 05 Oct 2026, HIS SETTLED RULE: COGS OFF THE LATEST PURCHASE, THE FLOOR AT COGS, A CEILING ON EVERY STATED BOARD ----
