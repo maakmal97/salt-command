@@ -1,104 +1,81 @@
-"""Generate the Salt Command PWA icons.
+"""Generate the Salt Desk browser tab icon: the gold cube on a clear ground.
 
-The salt crystal from the desk's own inline favicon: a diamond with a gold
-top-right face and a violet lower-left face over a cyan body, on the desk's dark ground.
-Rendered at 4x and downscaled so the facets have clean edges. Run: python tools/make_icons.py (all), or with --tab for the clear-ground tab icon alone
+The home-screen icons (icon-180, icon-192, icon-512, icon-512-maskable) are the brand's own plates, copied from
+Code\\salt-ds\\brand\\assets since v472, and this script never writes them. The tab icon is the same mark: the cube
+the rail, the bar and the printed board draw (master/salt_command.html, aria-label "Salt crystal"), its gradient
+#c5a059 to #b87333 laid on each part's own box as the SVG does (objectBoundingBox). The front edge 50,50 to 50,95 is
+a line with no width, so the SVG paints nothing there and neither does this; the plates have no front edge either.
+3 Nov 2026, his word: the tab icon had kept the crystal retired at v472. Run: python tools/make_icons.py
 """
 from PIL import Image, ImageDraw
 import os
-import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "..", "public")
 
-BG     = (24, 15, 44, 255)     # #180f2c, the desk ground
-GLOW   = (68, 40, 92)          # a faint violet lift behind the crystal
-CYAN   = (99, 230, 224)        # #63e6e0 body
-GOLD   = (245, 196, 81)        # #f5c451 top-right face
-VIOLET = (176, 124, 255)       # #b07cff lower-left face
-SS = 4                         # supersample factor
+TOP, BOTTOM = (197, 160, 89), (184, 115, 51)   # the mark's stops, #c5a059 and #b87333
+SS = 4                                           # supersample factor
+STROKE = 3                                       # the mark's stroke-width, in its 100-unit viewBox
 
-# crystal in 32-space (matches the favicon path)
-BODY   = [(16, 5), (26, 13), (16, 27), (6, 13)]
-FGOLD  = [(16, 5), (26, 13), (16, 13)]
-FVIOL  = [(6, 13), (16, 13), (16, 27)]
-
-
-def _pts(poly, S, frac):
-    """map 32-space to a centred square occupying `frac` of the canvas"""
-    c = S / 2.0
-    span = frac * S
-    return [(c + (x - 16) / 32.0 * span, c + (y - 15.5) / 32.0 * span) for (x, y) in poly]
+# the mark's parts in its 100-unit viewBox: (points, closed, filled, opacity)
+PARTS = [
+    ([(50, 5), (95, 28), (95, 72), (50, 95), (5, 72), (5, 28)], True, False, 1.0),
+    ([(50, 5), (50, 50), (95, 28)], False, False, 1.0),
+    ([(50, 50), (5, 28)], False, False, 1.0),
+    ([(50, 28), (72, 39), (50, 50), (28, 39)], True, True, 0.85),
+]
 
 
-def _layer(S, poly, S4, frac, colour, alpha):
-    lay = Image.new("RGBA", (S4, S4), (0, 0, 0, 0))
-    ImageDraw.Draw(lay).polygon(_pts(poly, S4, frac), fill=colour + (alpha,))
-    return lay
-
-
-def make(size, maskable=False):
-    S4 = size * SS
-    frac = 0.52 if maskable else 0.66
-    img = Image.new("RGBA", (S4, S4), BG)
-
-    # rounded ground for the non-maskable icons (iOS re-masks, but this looks right raw);
-    # maskable stays full-bleed so the launcher's own mask has room.
-    if not maskable:
-        ground = Image.new("RGBA", (S4, S4), (0, 0, 0, 0))
-        r = int(0.22 * S4)
-        ImageDraw.Draw(ground).rounded_rectangle([0, 0, S4 - 1, S4 - 1], radius=r, fill=BG)
-        img = Image.new("RGBA", (S4, S4), (0, 0, 0, 0))
-        img = Image.alpha_composite(img, ground)
-
-    # faint radial glow behind the crystal
-    glow = Image.new("RGBA", (S4, S4), (0, 0, 0, 0))
-    gd = ImageDraw.Draw(glow)
-    c = S4 / 2
-    for i, rad in enumerate(range(int(0.42 * S4), 0, -max(1, S4 // 90))):
-        a = int(46 * (1 - rad / (0.42 * S4)))
-        gd.ellipse([c - rad, c - rad, c + rad, c + rad], fill=GLOW + (a,))
-    img = Image.alpha_composite(img, glow)
-
-    img = Image.alpha_composite(img, _layer(size, BODY,  S4, frac, CYAN,   235))
-    img = Image.alpha_composite(img, _layer(size, FGOLD, S4, frac, GOLD,   255))
-    img = Image.alpha_composite(img, _layer(size, FVIOL, S4, frac, VIOLET, 140))
-
-    img = img.resize((size, size), Image.LANCZOS)
-    if maskable:
-        # a maskable icon must be fully opaque
-        base = Image.new("RGBA", (size, size), BG)
-        img = Image.alpha_composite(base, img)
+def _gradient(S, scale, off, pts):
+    """the gradient over this part's box, (0,0) to (1,1) in box units, padded past it"""
+    xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+    x0, y0, w, h = min(xs), min(ys), max(xs) - min(xs), max(ys) - min(ys)
+    img = Image.new("RGB", (S, S))
+    px = img.load()
+    for y in range(S):
+        v = ((y - off) / scale - y0) / h
+        for x in range(S):
+            t = min(1.0, max(0.0, (((x - off) / scale - x0) / w + v) / 2))
+            px[x, y] = tuple(round(a + (b - a) * t) for a, b in zip(TOP, BOTTOM))
     return img
 
 
 def make_tab(size=128):
-    """The browser tab's icon (24 Oct 2026, his word: no dark background): the crystal alone on a clear ground, no
-    rounded tile and no glow, drawn larger in its canvas so it reads at 16 px. The home-screen icons above keep their
-    ground, which iOS would fill black anyway."""
-    S4 = size * SS
-    img = Image.new("RGBA", (S4, S4), (0, 0, 0, 0))
-    frac = 0.92
-    img = Image.alpha_composite(img, _layer(size, BODY,  S4, frac, CYAN,   235))
-    img = Image.alpha_composite(img, _layer(size, FGOLD, S4, frac, GOLD,   255))
-    img = Image.alpha_composite(img, _layer(size, FVIOL, S4, frac, VIOLET, 140))
-    return img.resize((size, size), Image.LANCZOS)
+    S = size * SS
+    span = 100 - 2 * (5 - STROKE / 2)            # the mark's drawn extent, stroke included
+    scale = S * 0.96 / span
+    off = (S - 100 * scale) / 2
+    img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    w = STROKE * scale
+    for pts, closed, filled, opacity in PARTS:
+        mask = Image.new("L", (S, S), 0)
+        d = ImageDraw.Draw(mask)
+        xy = [(off + x * scale, off + y * scale) for x, y in pts]
+        if filled:
+            d.polygon(xy, fill=255)
+        else:
+            path = xy + [xy[0]] if closed else xy
+            d.line(path, fill=255, width=round(w))
+            for x, y in xy:                      # round joins and caps
+                d.ellipse([x - w / 2, y - w / 2, x + w / 2, y + w / 2], fill=255)
+        if opacity < 1:
+            mask = mask.point(lambda a: round(a * opacity))
+        layer = _gradient(S, scale, off, pts).convert("RGBA")
+        layer.putalpha(mask)
+        img = Image.alpha_composite(img, layer)
+    # colour and cover downscaled apart, the colour laid over the whole mark's gradient first, so the clear ground's
+    # black never bleeds into an antialiased edge (a premultiplied resize still rounds the faintest edge to black)
+    colour = _gradient(S, scale, off, PARTS[0][0])
+    colour.paste(img.convert("RGB"), mask=img.getchannel("A"))
+    out = colour.resize((size, size), Image.LANCZOS).convert("RGBA")
+    out.putalpha(img.getchannel("A").resize((size, size), Image.LANCZOS))
+    return out
 
 
 def main():
-    os.makedirs(OUT, exist_ok=True)
-    if "--tab" in sys.argv:
-        # only the tab icon: rewriting the others would move bytes the manifest and the shell cache already hold
-        p = os.path.normpath(os.path.join(OUT, "icon-tab.png"))
-        make_tab().save(p)
-        print("wrote", p, os.path.getsize(p), "bytes")
-        return
-    jobs = [("icon-180.png", 180, False), ("icon-192.png", 192, False),
-            ("icon-512.png", 512, False), ("icon-512-maskable.png", 512, True)]
-    for name, size, mask in jobs:
-        p = os.path.normpath(os.path.join(OUT, name))
-        make(size, mask).save(p)
-        print("wrote", p, os.path.getsize(p), "bytes")
+    p = os.path.normpath(os.path.join(OUT, "icon-tab.png"))
+    make_tab().save(p)
+    print("wrote", p, os.path.getsize(p), "bytes")
 
 
 if __name__ == "__main__":

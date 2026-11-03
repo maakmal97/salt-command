@@ -1040,6 +1040,12 @@ await (async () => {
       "the tab icon has a clear ground: every corner is fully transparent, with no dark tile or glow behind the crystal");
     ok(tabAll.filter((q) => q[3] > 0).every((q) => Math.max(q[0], q[1], q[2]) > 150) && tabAll.some((q) => q[3] === 255),
       "and no pixel with any cover is dark: the crystal's faces are all light, so it reads on a dark tab and a light one");
+    /* his word of 03 Nov 2026: the tab icon is the gold cube the rail and the home-screen plates draw, not the crystal retired at
+       v472 (cyan, gold and violet faces); every covered pixel is gold (red over green over blue, warm), and the shell cache moved
+       past v9 with it, since sw.js serves the icons cache first */
+    ok(tabAll.filter((q) => q[3] > 0).every((q) => q[0] >= q[1] && q[1] >= q[2] && q[0] - q[2] >= 60)
+      && +((/const CACHE = "salt-shell-v(\d+)";/.exec(readFileSync(join(REPO, "public", "sw.js"), "utf8")) || [])[1] || 0) >= 10,
+      "the tab icon is the gold cube, every covered pixel gold, and the shell cache moved with it (03 Nov 2026)");
     /* SALT DESK (his Q6 of 28 Sep 2026): the desk installs as Salt Desk, the head's name for an iPhone and the manifest's
        name and short_name, while its tab keeps Salt Command, the anchor the head block is put after. The manifest is served
        cache first and sits outside the build id, so the shell cache moved with it, or no installed desk would read it */

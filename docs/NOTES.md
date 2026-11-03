@@ -499,7 +499,7 @@ Per-Crm01 master (a Cowork/master session); once it lands, the sync above alread
 | `public/desk.html` | The built desk, served at `/desk`. **Derived from the master, do not hand-edit.** Committed on purpose. |
 | `public/data.json` | The phone payload: position, actions, party lists, the queue watermark and the build id. Written by the build via `payload.mjs`, which runs the master in jsdom. |
 | `public/sw.js` | Service worker. Shell network-first; the `/queue` API is never cached. |
-| `public/manifest.webmanifest`, `public/icon-*.png` | Home-screen install. Icons from `tools/make_icons.py`. |
+| `public/manifest.webmanifest`, `public/icon-*.png` | Home-screen install. The home-screen icons are the brand plates from `Codesalt-dsrandassets`; `icon-tab.png` (the browser tab) from `tools/make_icons.py`. |
 | `public/_headers` | CSP and security headers, applied by Cloudflare to the assets. |
 | `wrangler.jsonc` | Worker + assets + the `SALT_QUEUE` KV binding. |
 | `tools/build.mjs` | Master → `public/desk.html`, with fail-loud patch anchors. Also writes `public/rev.json`. |
@@ -541,7 +541,7 @@ Per-Crm01 master (a Cowork/master session); once it lands, the sync above alread
 | `statements/_users.json` | Desk code to username, minted once per customer and kept for life. Committed: an address, not a secret. |
 | `tools/stmt-publish.mjs` | **THE LIVE STATEMENT** (03 Sep 2026, his instruction): run by the deploy after every fold. Seals a statement of every entry from the start to this minute into each customer's record under a content key derived from the `STMT_KEY` secret, puts the newest issue's records in one bulk call, retires what the issue does not carry, clears the attempt counters on a new issue only. `--dry <dir>` writes the bulk files and touches nothing. |
 | `statements/_secrets.json` | **Laptop only, gitignored.** `{"key": <STMT_KEY>, "master": <STMT_MASTER>}`. The key derives every customer's content key and is the same string as the GitHub Actions secret; the master lets an issue carry a second wrap so the override actually opens a page. Lose the key and every account is re-issued. |
-| `tools/make_icons.py` | The OLD icon generator, superseded at v472: the home-screen icons are the brand's own plates, copied from `Code\salt-dsrandssets` (`salt-icon-512.png` for both 512s, `salt-icon-192.png`, and the 180 scaled from the 512). Regenerate there, then copy. |
+| `tools/make_icons.py` | Since 03 Nov 2026 the browser tab icon alone, the gold cube the rail draws on a clear ground (until then it drew the crystal retired at v472, which the tab kept). It never writes the home-screen icons: the home-screen icons are the brand's own plates, copied from `Code\salt-dsrandssets` (`salt-icon-512.png` for both 512s, `salt-icon-192.png`, and the 180 scaled from the 512). Regenerate there, then copy. |
 | `test/verify.mjs` | Smoke suite: Worker contract, name-drop, access gate, drain helpers, build integrity. |
 
 ## How a fold is sized, and where a round points (his instruction, 31 Aug 2026)

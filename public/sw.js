@@ -7,8 +7,9 @@
    and the manifest and icons are served cache first below and sit outside the build id, so a phone reads a new one only
    when this name moves: a change to either bumps it in the same version. Bumped 29 Sep 2026 (Step 7): /threads joins the API,
    and a phone's old cache may hold a first answer to it. Bumped 18 Oct 2026: the faces became Newsreader and Geist Mono, and the
-   old cache holds the retired files. Bumped 24 Oct 2026: the browser tab's icon, a crystal on a clear ground (icon-tab.png), joins the shell. */
-const CACHE = "salt-shell-v9";
+   old cache holds the retired files. Bumped 24 Oct 2026: the browser tab's icon, a crystal on a clear ground (icon-tab.png), joins the shell. Bumped 03 Nov 2026: that icon is the gold cube, the
+   mark the rail and the home-screen plates draw, in place of the crystal retired at v472. */
+const CACHE = "salt-shell-v10";
 
 /* "./index.html" is deliberately absent: the host serves "./" and a navigation
    cannot be answered from a redirected response. The manifest starts at "./" too. */
