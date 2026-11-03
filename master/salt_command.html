@@ -11479,7 +11479,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1420","d":"04 Nov 2026","t":"ONE PLACE FIELD ON EVERY SURFACE","n":["<b>ONE READER.</b> A map link is read by one reader on the Desk, Salt Admin and Salt Counter: Google Maps, Waze and Apple Maps, the link out of the words around it, two typed figures as a point; every short link (Google's two forms and Apple's) is opened by one opener, so the Desk now follows an iPhone's share too.","<b>SALT COUNTER.</b> The exact spot is one field: type three letters to pick from OpenStreetMap, paste a map link or type two figures, or Use my location; only the typed words go to the search, and the spot stays sealed on the phone.","<b>SALT ADMIN.</b> Add ID, Amend ID and a filed place take the same field as Shop's points: search, a pasted link or two figures, and Use my location on all four.","Routes: the Counter's new POST /place/search on a customer's session, thirty a minute; the Desk's /geo/expand opens Apple's and Google's older short links. No price or book changed."]}];
+const evolution=[{"v":"v1421","d":"04 Nov 2026","t":"EVERY ORDER SAYS THE ROAD IT CAME BY","n":["<b>HIS ANSWER A TO THE LEDGER CONVENTIONS.</b> Every sale on the book carries the road it reached it by: Site order, Salt Admin entry, Desk entry, Hand fold or Fold-raised unit. The 329 rows booked before are stamped once from their drafts; every new sale is stamped as it is booked, by the fold and the Book alike.","<b>WHERE YOU SEE IT.</b> Salt Admin shows it on a book row's card and a trip's details; the Desk shows it on each ledger card, and typing a road's name in the ledger's search keeps that road alone.","<b>NOTHING ELSE MOVES.</b> It classifies only: no price, figure or stage changes, and no customer sees it."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11627,7 +11627,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='04 Nov 2026, 01:30 KL';
+const LAST_UPDATED='04 Nov 2026, 01:49 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
