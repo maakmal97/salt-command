@@ -928,3 +928,9 @@ sale from its entry for the fold and the Book's tap alike, and the reward and lo
 were stamped once from their D1 drafts (a best fit on rows corrected since: a handful may sit on a neighbouring road). A Correction
 cannot set it (`CORRECTABLE`). Salt Admin shows it on a book row's card and a trip's details; the Desk shows it on the ledger card,
 and typing a road's word in the ledger's search keeps that road alone. A hand fold made now writes `road: "hand"` itself.
+
+**The queue takes no new sale** (4 Nov 2026, his yes): a new sale is a site order, placed by the customer or by him with Order for them. The
+drafter's pass, its dry run and `tools/drafts.mjs --from-queue` refuse a new sale stamped from 04 Nov 2026 that carries neither an `orderId` nor a
+`makerRequest` (`queueSaleFault`, `QUEUE_SALE_SINCE`), filed under `refused` with "a new sale is a site order now: place it with Order for them on
+Salt Admin". An older entry still drafts (the watermark's rule); a purchase, a gift, a redemption and a change to a booked row go on as before;
+`draftRow`, the law, is unchanged. The road `desk` stays on the rows it already holds.

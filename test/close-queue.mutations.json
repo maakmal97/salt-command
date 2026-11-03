@@ -1,0 +1,44 @@
+[
+  {
+    "name": "the queue's new sale passes again",
+    "file": "src/drafter.js",
+    "find": "  return entry.orderId || entry.makerRequest ? null : QUEUE_SALE_REFUSAL;",
+    "replace": "  return null;"
+  },
+  {
+    "name": "a Salt Admin entry is refused too",
+    "file": "src/drafter.js",
+    "find": "  return entry.orderId || entry.makerRequest ? null : QUEUE_SALE_REFUSAL;",
+    "replace": "  return entry.orderId ? null : QUEUE_SALE_REFUSAL;"
+  },
+  {
+    "name": "a lower-case direction slips through",
+    "file": "src/drafter.js",
+    "find": "String(pay.direction || \"\").toUpperCase() !== \"SELL\") return null;",
+    "replace": "String(pay.direction || \"\") !== \"SELL\") return null;"
+  },
+  {
+    "name": "a gift or a change is refused as a sale",
+    "file": "src/drafter.js",
+    "find": "if (!pay || (pay.mode != null && pay.mode !== \"new\") || ",
+    "replace": "if (!pay || "
+  },
+  {
+    "name": "an older queued sale is refused too",
+    "file": "src/drafter.js",
+    "find": "  if (typeof entry.at === \"string\" && entry.at.slice(0, 10) < QUEUE_SALE_SINCE) return null;",
+    "replace": ""
+  },
+  {
+    "name": "the switch takes the day after",
+    "file": "src/drafter.js",
+    "find": "entry.at.slice(0, 10) < QUEUE_SALE_SINCE) return null;",
+    "replace": "entry.at.slice(0, 10) <= QUEUE_SALE_SINCE) return null;"
+  },
+  {
+    "name": "a purchase is refused as a sale",
+    "file": "src/drafter.js",
+    "find": " || String(pay.direction || \"\").toUpperCase() !== \"SELL\") return null;",
+    "replace": ") return null;"
+  }
+]

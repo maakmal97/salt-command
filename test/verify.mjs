@@ -32988,6 +32988,12 @@ await (async () => {
   const d = await pass([fresh, raced, zero], [raced.at]);
   ok(d.r.ok && d.r.considered === 3 && d.r.drafted === 1 && d.r.raced === 1 && d.r.skipped.length === 1,
     "and one pass holding all three counts each where it belongs: " + say(d.r));
+  /* 4 Nov 2026 (his yes after the ledger conventions): a new sale is a site order. One from the Desk's or the laptop's queue stamped from that day is refused by
+     the pass itself and filed refused with the words that say where to place it; a site order's sale beside it drafts */
+  const deskSale = sale("2026-11-04T01:00:04.000Z", 1, "2026-11-04"), siteSale = Object.assign(sale("2026-11-04T01:00:05.000Z", 1, "2026-11-04"), { orderId: "20261104010005-abcdef" });
+  const q = await pass([deskSale, siteSale]);
+  ok(q.r.ok && q.refused(deskSale.at) && q.by(deskSale.at) === null && q.r.skipped.some((x) => /a new sale is a site order now/.test(x.why)) && q.by(siteSale.at) !== null,
+    "a new sale from the queue with no site order is refused by the pass and filed refused, while a site order's sale drafts: " + say(q.r));
 
   /* THE WAKE, through the quarter-hour net itself, with the push service stubbed */
   const kp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
@@ -43908,15 +43914,16 @@ section("05 Oct 2026: one delivery for a trip of several books, held once and de
 await (async () => {
   /* HIS DESIGN OF 05 OCT 2026: the rows one trip carries to one customer on one day share `trip`, the delivery stays on ONE
      of them, and one tap under Approve decides every row of the trip. What is owed reads the charge once because only one
-     row holds it. Invented codes only. Each assertion was proved red by mutation, one at a time. */
+     row holds it. Invented codes only. Each assertion was proved red by mutation, one at a time.
+     4 Nov 2026: dated 2026, before the queue stopped taking a new sale (QUEUE_SALE_SINCE): these are entries queued under the old rule. */
   const E = (await import("../engine/position.mjs")).default;
-  const T = "t1759622400000", row = (product, extra) => Object.assign({ trip: T, customer: "CZ9-TRP", date: "2099-10-05", product, qty: 1, total: 100 }, extra || {});
+  const T = "t1759622400000", row = (product, extra) => Object.assign({ trip: T, customer: "CZ9-TRP", date: "2026-10-05", product, qty: 1, total: 100 }, extra || {});
 
   /* ---- the engine: the one rule ---- */
   ok(E.tripFault([row("salt", { delivery: 40 }), row("rice")]) === null, "a trip of two books with one delivery holds together");
   ok(/delivery on 2 rows/.test(E.tripFault([row("salt", { delivery: 40 }), row("rice", { delivery: 5 })]) || ""), "a second delivery on one trip is refused");
   ok(/more than one customer/.test(E.tripFault([row("salt", { delivery: 40 }), row("rice", { customer: "CZ9-OTH" })]) || ""), "a trip is one customer's");
-  ok(/more than one date/.test(E.tripFault([row("salt", { delivery: 40 }), row("rice", { date: "2099-10-06" })]) || ""), "and one day's");
+  ok(/more than one date/.test(E.tripFault([row("salt", { delivery: 40 }), row("rice", { date: "2026-10-06" })]) || ""), "and one day's");
   ok(/names a book twice/.test(E.tripFault([row("salt", { delivery: 40 }), row("salt", { qty: 2 })]) || ""), "and carries one row a book");
   ok(/not one the desk mints/.test(E.tripFault([row("salt", { trip: "x9" })]) || ""), "and its id is one the desk mints");
   ok(E.partyOwedRM([row("salt", { delivery: 40 }), row("rice", { total: 10 })], "CZ9-TRP") === 150, "and what is owed counts the delivery once: goods 110 plus 40");
@@ -43929,13 +43936,13 @@ await (async () => {
     const { runDrafter } = await import("../src/drafter.js");
     const book = {
       pricing: { v: "vT", byProduct: { salt: { stockCost: 56, replCost: 56, floors: { "1": { floor: 60 } } }, rice: { stockCost: 5, replCost: 5, floors: {} } } },
-      purchases: [{ date: "2099-09-13", supplier: "SQ2-VOX", qty: 12.5, total: 700, receivedOn: "2099-09-13", receivedQty: 12.5 },
-        { date: "2099-09-13", supplier: "SQ2-VOX", product: "rice", qty: 10, total: 50, receivedOn: "2099-09-13", receivedQty: 10 }],
+      purchases: [{ date: "2026-09-13", supplier: "SQ2-VOX", qty: 12.5, total: 700, receivedOn: "2026-09-13", receivedQty: 12.5 },
+        { date: "2026-09-13", supplier: "SQ2-VOX", product: "rice", qty: 10, total: 50, receivedOn: "2026-09-13", receivedQty: 10 }],
       sales: [],
-      state: { roster: ["CZ9-TRP", "SQ2-VOX"], QUEUE_COMMITTED: "2099-10-01T00:00:00.000Z" }
+      state: { roster: ["CZ9-TRP", "SQ2-VOX"], QUEUE_COMMITTED: "2026-10-01T00:00:00.000Z" }
     };
     const sale = (at, product, total, delivery) => ({ at, payload: { mode: "new", direction: "SELL", party: "CZ9-TRP", qty: 1, total, cash: total + delivery, kg: 1,
-      date: "2099-10-05", product, delivery, handover: "delivered", trip: T } });
+      date: "2026-10-05", product, delivery, handover: "delivered", trip: T } });
     const batches = [];
     const world = () => {
       const db = new DatabaseSync(":memory:");
@@ -43953,10 +43960,10 @@ await (async () => {
     const pass = async (entries) => { const wd = world(), kv = new KV();
       await kv.put("q:phone", JSON.stringify({ device: "phone", queue: entries }));
       return Object.assign(wd, { kv, r: await runDrafter({ SALT_QUEUE: kv, SALT_LEDGER: wd.D1 }) }); };
-    const twoDv = await pass([sale("2099-10-05T01:00:00.000Z", "salt", 130, 40), sale("2099-10-05T01:00:00.001Z", "rice", 10, 5)]);
+    const twoDv = await pass([sale("2026-10-05T01:00:00.000Z", "salt", 130, 40), sale("2026-10-05T01:00:00.001Z", "rice", 10, 5)]);
     const why2 = JSON.stringify(twoDv.r.skipped);
     ok(twoDv.r.drafted === 1 && twoDv.r.skipped.length === 1 && /delivery on 2 rows/.test(why2), "the drafter refuses the second row of a trip that would carry a second delivery: " + JSON.stringify(twoDv.r));
-    const good = await pass([sale("2099-10-05T01:00:00.000Z", "salt", 130, 40), sale("2099-10-05T01:00:00.001Z", "rice", 10, 0)]);
+    const good = await pass([sale("2026-10-05T01:00:00.000Z", "salt", 130, 40), sale("2026-10-05T01:00:00.001Z", "rice", 10, 0)]);
     const rows = good.db.prepare("SELECT id,row,flags FROM draft ORDER BY id").all().map((x) => Object.assign(JSON.parse(x.row), { _f: x.flags }));
     ok(!/carrying its delivery has been drafted/.test(rows.map((x) => x._f).join(" ")), "a trip whose delivery row drafted flags neither row: " + rows.map((x) => x._f).join(" | "));
     rows.forEach((x) => delete x._f);
@@ -43964,18 +43971,18 @@ await (async () => {
 
     /* the tap: one approval takes the trip, never a site order's row */
     good.db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,drafter,drafted_at) VALUES (?,'pending','sales',?,?,'site','suite',?)")
-      .run("2099-10-05T01:00:00.002Z", JSON.stringify({ orderId: "o1" }), JSON.stringify({ customer: "CZ9-TRP", product: "oil", trip: T }), "2099-10-05T01:00:00.002Z");
+      .run("2026-10-05T01:00:00.002Z", JSON.stringify({ orderId: "o1" }), JSON.stringify({ customer: "CZ9-TRP", product: "oil", trip: T }), "2026-10-05T01:00:00.002Z");
     const KEY = "suite-key", env = { SALT_LEDGER: good.D1, SALT_WRITE_KEY: KEY, REQUIRE_ACCESS: "0", SALT_QUEUE: good.kv };
-    const res = await worker.fetch(new Request("https://x.workers.dev/drafts/" + encodeURIComponent("2099-10-05T01:00:00.000Z") + "/approve", {
+    const res = await worker.fetch(new Request("https://x.workers.dev/drafts/" + encodeURIComponent("2026-10-05T01:00:00.000Z") + "/approve", {
       method: "POST", headers: { "Content-Type": "application/json", "X-Salt-Key": KEY }, body: "{}" }), env, { waitUntil() {} });
     let j = {}; try { j = JSON.parse(await res.text()); } catch (e) { /* not json */ }
     const st = Object.fromEntries(good.db.prepare("SELECT id,status FROM draft").all().map((x) => [x.id, x.status]));
-    ok(res.status === 200 && st["2099-10-05T01:00:00.001Z"] === "approved" && JSON.stringify(j.trip) === '["2099-10-05T01:00:00.001Z"]',
+    ok(res.status === 200 && st["2026-10-05T01:00:00.001Z"] === "approved" && JSON.stringify(j.trip) === '["2026-10-05T01:00:00.001Z"]',
       "approving one row of a trip approves its other row in the same tap: " + JSON.stringify({ status: res.status, st, j }));
-    ok(st["2099-10-05T01:00:00.002Z"] === "pending", "and a row a site order made is never swept in: " + JSON.stringify(st));
+    ok(st["2026-10-05T01:00:00.002Z"] === "pending", "and a row a site order made is never swept in: " + JSON.stringify(st));
     ok(batches.length === 1 && batches[0] === 2, "the tapped row and its sibling are decided in ONE batch, one transaction: " + JSON.stringify(batches));
     /* the delivery's row refused, its sibling drafts flagged, never silently charge-free */
-    const lone = await pass([sale("2099-10-05T01:00:00.001Z", "rice", 10, 0)]);
+    const lone = await pass([sale("2026-10-05T01:00:00.001Z", "rice", 10, 0)]);
     const lf = lone.db.prepare("SELECT flags FROM draft").all().map((x) => x.flags).join(" ");
     ok(lone.r.drafted === 1 && /No row of trip t1759622400000 carrying its delivery has been drafted/.test(lf), "a trip row drafted with no row carrying its delivery is flagged: " + lf);
   }
@@ -43984,7 +43991,7 @@ await (async () => {
   const F = await import("../tools/fold.mjs");
   const fb = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   fb.roster.push("CZ9-TRP");
-  const it = (n, r) => ({ id: "2099-10-05T02:00:00.00" + n + "Z", collection: "sales", row: Object.assign({ cost: 64, cash: 0, deliveredQty: 0 }, r), entry: { at: "2099-10-05T02:00:00.00" + n + "Z", payload: {} } });
+  const it = (n, r) => ({ id: "2026-10-05T02:00:00.00" + n + "Z", collection: "sales", row: Object.assign({ cost: 64, cash: 0, deliveredQty: 0 }, r), entry: { at: "2026-10-05T02:00:00.00" + n + "Z", payload: {} } });
   const two = F.plan(fb, { ok: true, count: 2, approved: [it(1, row("salt", { total: 130, delivery: 40 })), it(2, row("rice", { total: 10, delivery: 5 }))] }, null);
   ok(two.items.length === 0 && two.refused.length === 2 && /delivery on 2 rows/.test((two.refused[0] || {}).why || ""), "the fold refuses a staged row that would give its trip a second delivery, and the trip waits whole: " + JSON.stringify(two.refused));
   const one = F.plan(fb, { ok: true, count: 2, approved: [it(1, row("salt", { total: 130, delivery: 40 })), it(2, row("rice", { total: 10 }))] }, null);
@@ -43995,7 +44002,7 @@ await (async () => {
 
   /* ---- the statement: the charge said once, for the trip ---- */
   const sb = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
-  const lone = row("salt", { rid: "st3", date: "2099-10-01", total: 120, delivery: 20, cash: 140, deliveredQty: 1, cost: 64 });
+  const lone = row("salt", { rid: "st3", date: "2026-10-01", total: 120, delivery: 20, cash: 140, deliveredQty: 1, cost: 64 });
   delete lone.trip;
   sb.sales = [row("salt", { rid: "st1", total: 130, delivery: 40, cash: 170, deliveredQty: 1, cost: 64 }), row("rice", { rid: "st2", total: 10, cash: 10, deliveredQty: 1, cost: 5 }), lone];
   sb.customerRefunds = [];
@@ -50473,6 +50480,11 @@ await (async () => {
 section("4 Nov 2026: every sale row carries the road it came by, stamped by the fold and the tap, shown on Salt Admin and the Desk");
 await (async () => {
   await (await import("./ledger-road.mjs")).run({ ok, pageWork });
+})();
+
+section("4 Nov 2026: a new sale is a site order, and the queue's roads refuse one with no site order behind it");
+await (async () => {
+  await (await import("./close-queue.mjs")).run({ ok });
 })();
 
 section("Salt Admin uses the width: two panes from 860px with nothing open by itself, and every rule of it under .adm (12 Oct 2026)");

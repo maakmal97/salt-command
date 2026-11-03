@@ -690,6 +690,18 @@ export function undoNotes(book, row, u) {
  * failed the gate on exactly that. The agreed date is what the phone typed. */
 /* 05 Oct 2026 (A4): a lot's Payment, Receipt and Default, the Workbench's purchase kinds. Linked and Rewarded stay refused. */
 const BUY_KINDS = ["Payment", "Receipt", "Default"];
+/* 4 Nov 2026 (his yes, after the ledger conventions): A NEW SALE IS A SITE ORDER. Record's form stopped taking one at v1389; the Desk's queue and the laptop's
+   still did (two on 03 Nov 2026, road desk). The queue's roads (the drafter's pass, its dry run and tools/drafts.mjs --from-queue) refuse a new sale with no site
+   order behind it and no Salt Admin request; draftRow, the law, is unchanged. A purchase, a gift, a redemption and a change to a booked row go on as before. */
+export const QUEUE_SALE_REFUSAL = "a new sale is a site order now: place it with Order for them on Salt Admin";
+/* from the day he said so: an entry stamped earlier was queued under the old rule and is still drafted, never dropped (the watermark's own rule) */
+export const QUEUE_SALE_SINCE = "2026-11-04";
+export function queueSaleFault(entry) {
+  const pay = entry && entry.payload;
+  if (!pay || (pay.mode != null && pay.mode !== "new") || String(pay.direction || "").toUpperCase() !== "SELL") return null;
+  if (typeof entry.at === "string" && entry.at.slice(0, 10) < QUEUE_SALE_SINCE) return null;
+  return entry.orderId || entry.makerRequest ? null : QUEUE_SALE_REFUSAL;
+}
 export function draftRow(entry, book) {
   const pay = entry && entry.payload;
   if (!pay || typeof pay !== "object") return { skip: "the entry carries no payload the desk can read" };
@@ -1938,8 +1950,9 @@ export async function dryRunDrafter(env) {
     if (mark && at <= mark && already.has(at)) { out.committed++; continue; }
     if (already.has(at)) { out.already++; continue; }
     const entry = byAt.get(at);
-    const admission = await checkInputAdmission(env.SALT_LEDGER, entry, book);
-    const fault = admission.error || POSITION_ENGINE.entryReservationFault(entry, reservedEntries, book);
+    const saleFault = queueSaleFault(entry);
+    const admission = saleFault ? {} : await checkInputAdmission(env.SALT_LEDGER, entry, book);
+    const fault = saleFault || admission.error || POSITION_ENGINE.entryReservationFault(entry, reservedEntries, book);
     let d = fault ? { skip: fault } : draftRow(entry, await withDraftLots(env.SALT_LEDGER, book));
     const tf = !d.skip && d.row && d.row.trip ? await tripCheck(env.SALT_LEDGER, book, d.row, out.would.map((w) => w.row), d.flags, !!(entry && entry.orderId)) : null;
     if (tf) d = { skip: tf };
@@ -2174,8 +2187,9 @@ export async function runDrafter(env, { now = () => new Date().toISOString(), mi
     out.considered++;
     if (already.has(at)) { out.already++; continue; }
     if (staleLot.has(at)) continue;
-    const admission = await admitInput(env.SALT_LEDGER, entry, book, "drafter");
-    const reservationFault = admission.error || POSITION_ENGINE.entryReservationFault(entry, reservedEntries, book);
+    const saleFault = queueSaleFault(entry);
+    const admission = saleFault ? {} : await admitInput(env.SALT_LEDGER, entry, book, "drafter");
+    const reservationFault = saleFault || admission.error || POSITION_ENGINE.entryReservationFault(entry, reservedEntries, book);
     let d = reservationFault ? { skip: reservationFault } : draftRow(entry, entry.payload && entry.payload.undo != null
       ? await withRefunds(env.SALT_LEDGER, await withDraftLots(env.SALT_LEDGER, book)) : await withDraftLots(env.SALT_LEDGER, book));
     const tf = !d.skip && d.row && d.row.trip ? await tripCheck(env.SALT_LEDGER, book, d.row, [], d.flags, !!(entry && entry.orderId)) : null;

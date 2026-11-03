@@ -226,7 +226,7 @@ function draft() {
  * shapes, from the same D1 tables, and it follows --local with them.
  */
 async function fromQueue() {
-  const { draftRow } = await import("../src/drafter.js");
+  const { draftRow, queueSaleFault } = await import("../src/drafter.js");
   const files = [];
   const arg = valOf("--from-queue");
   if (arg && !arg.startsWith("--")) files.push(arg);
@@ -273,7 +273,8 @@ async function fromQueue() {
       seen++;
       if (mark && entry.at <= mark) continue;         // already in the master
       if (already.has(entry.at)) continue;            // already drafted, here or in the cloud
-      const d = draftRow(entry, book);
+      const saleFault = queueSaleFault(entry);   /* 4 Nov 2026: a new sale is a site order, on this road too */
+      const d = saleFault ? { skip: saleFault } : draftRow(entry, book);
       if (d.skip) {
         skipped++;
         console.log("  skip  " + entry.at + "  " + d.skip);
