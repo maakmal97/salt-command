@@ -4967,7 +4967,7 @@ const CLIENT_JS = `
     var a=+((la[0]+la[1])/2).toFixed(6), b=+((lo[0]+lo[1])/2).toFixed(6); return pinPt(a,b)?{lat:a, lng:b, src:'link'}:null; }
   /* 4 Nov 2026 (his report that sharing the exact location did not work): what a phone shares is often the place's name and then its
      link, an iPhone's is Apple Maps', and some share the two figures alone; the link is read out of the words around it, Apple's point
-     read off its ll or coordinate, Apple's short link kept as a link for Salt Admin to open, and two figures taken as they are */
+     read off its ll or coordinate, Apple's short link kept as a link for us to open, and two figures taken as they are */
   function pinRead(v){
     var t=String(v||'').split('').map(function(c){ return c.charCodeAt(0)<33?' ':c; }).join('').trim();
     if(!t||t.length>4000) return null;
@@ -4977,7 +4977,7 @@ const CLIENT_JS = `
     if(!m||s.length>600) return null;
     var host=m[1].toLowerCase(), path=m[2]||'', num='(-?[0-9]{1,3}[.][0-9]+)', x;
     function pt(a,b){ a=+a; b=+b; return pinPt(a,b)?{lat:a, lng:b, src:'link'}:null; }
-    /* the pin itself first, as the Desk's mapsLink reads it: ll, coordinate, then q, and sll (the view) last */
+    /* the pin itself first: ll, coordinate, then q, and sll (the view) last */
     if(host==='maps.apple.com'){ var ak=['ll','coordinate','q','sll'];
       for(var ai=0;ai<ak.length;ai++){ x=new RegExp('[?&]'+ak[ai]+'='+num+'(,|%2C)'+num).exec(path); if(x) return pt(x[1],x[3]); }
       return null; }
