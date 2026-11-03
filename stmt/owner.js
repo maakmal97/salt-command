@@ -1562,6 +1562,7 @@ export const OWNER_JS = `
     var vsw=document.getElementById('vaultSwitch'); if(vsw) vsw.setAttribute('aria-checked',String(!!makerVault));
     makerVaultPaint();
     if(makerVault&&joinWant) joinOpenNow();
+    if(joinTried&&Object.keys(joinTried).length) drawNeeds();
   }
   /* a name beside its code, wherever a code is drawn with data-who, until the lock; a code the vault has no name for shows alone. A redraw of the page is
      painted at once by the observer, so a card opened after the unlock is named too. */
@@ -1578,7 +1579,7 @@ export const OWNER_JS = `
   /* THE SHEET: the one field. It closes on the ghost, the close control, the scrim and Escape, sending nothing; Tab stays inside. */
   function vaultShut(quiet){
     if(!vaultSheetEl||vaultSheetEl.hidden) return;
-    vaultSheetEl.hidden=true; vaultScrim.hidden=true; vaultPass.value=''; vaultSay.textContent='';
+    vaultSheetEl.hidden=true; vaultScrim.hidden=true; vaultPass.value=''; vaultSay.textContent=''; joinWant=null;
     if(!quiet){ try{ if(vaultBack&&vaultBack.isConnected&&vaultBack.focus) vaultBack.focus({preventScroll:true}); }catch(x){} }
   }
   function vaultAsk(opener){
@@ -3183,6 +3184,9 @@ export const OWNER_JS = `
     });
     idKind.dispatchEvent(new Event('change'));
     joinForm={kind:idKind,name:idName,place:idPlace,status:idStatus,filled:false};
+    /* Fable's re-check: the link is told its code only while the name is the one it sealed, so a name typed over it (in one go or after emptying) is another
+       customer and is never told; the place stays his to correct, and a nickname is put right afterwards by Amend ID */
+    idName.addEventListener('input',function(){ if(joinForm&&joinForm.name===idName) joinForm.filled=!!joinHold&&idName.value.trim()===joinHold.name; });
     var idDraft=null;
     pairDrafts.push({draft:function(){return idDraft;},clear:function(){idDraft=null;}});
     id.addEventListener('input',function(){idDraft=null;});
@@ -3227,6 +3231,7 @@ export const OWNER_JS = `
          if(geo)idBody.geo=geo;
         if(addrEnvelope)idBody.addrVault=addrEnvelope;
         if(idDraft)makerPairBody(idBody,idDraft);
+        if(joinHold&&joinForm&&joinForm.filled&&kind==='customer')joinTried[joinHold.id]=code;
         await send('/all/maker/inputs/add-id',idBody,idDraft);
         idDraft=null;
         var joinNote=await joinTold(name,locality,kind,code);
@@ -6840,7 +6845,7 @@ export const OWNER_JS = `
      filled with the name and the place, kind Customer, and he adds the ID as ever. When that Add ID is sent the join is told its code (state added), and
      once the code has an account on the sheet this page mints the hand-over as Show a code does and files it for the referee's page (once a join a load).
      The name lives in page memory (joinHold) until the lock, and goes nowhere but into the Add ID form's sealed vault envelope. */
-  var joins=[], joinsRead=false, joinHold=null, joinWant=null, joinForm=null, joinHanded={}, joinSaid={}, joinMoving={};
+  var joins=[], joinsRead=false, joinHold=null, joinWant=null, joinForm=null, joinHanded={}, joinSaid={}, joinMoving={}, joinTried={};
   function joinWaiting(r){ return r.approved===false&&r.declined!==true&&!r.revoked; }
   function joinWord(r){ return r.revoked?'Withdrawn':r.declined===true?'Declined':r.approved===false?'Waiting':({open:'Open',sent:'Sent',added:'Added',keyed:'Signing in',spent:'Used'}[r.state]||'Open'); }
   function joinPut(j){ for(var i=0;i<joins.length;i++) if(joins[i].id===j.id){ joins[i]=j; return; } joins.unshift(j); }
@@ -6865,7 +6870,7 @@ export const OWNER_JS = `
         ap.disabled=de.disabled=!!joinMoving[r.id];
         ap.addEventListener('click', function(){ moveJoin(r,'approve'); }); de.addEventListener('click', function(){ moveJoin(r,'decline'); });
         c._grow(); c._add(ap); c._add(de);
-      }else if(r.approved===true&&!r.revoked&&r.state==='open'){
+      }else if(r.approved===true&&!r.revoked&&r.state!=='spent'){
         var wd=ghost(['Withdraw','join.withdraw',key]); wd.setAttribute('data-move',''); wd.disabled=!!joinMoving[r.id];
         wd.addEventListener('click', function(){ moveJoin(r,'revoke'); });
         c._add(wd);
@@ -6880,7 +6885,7 @@ export const OWNER_JS = `
     joinMoving[r.id]=true; delete joinSaid[r.id]; drawJoins();
     try{
       var j=await refs('/all/joins/'+r.id+'/'+how, {});
-      joinPut(j.join); joinSaid[r.id]=({approve:'Approved. It opens now.',decline:'Declined. It stays shut.',revoke:'Withdrawn.'}[how]||'Done.');
+      joinPut(j.join); joinSaid[r.id]=({approve:'Approved, and it opens now.',decline:'Declined, and it stays shut.',revoke:r.state==='open'?'Withdrawn.':'Withdrawn, so they need a new link.'}[how]||'Done.');
     }catch(e){ joinSaid[r.id]=e.message; }
     delete joinMoving[r.id]; drawJoins(); drawNeeds();
   }
@@ -6888,8 +6893,9 @@ export const OWNER_JS = `
   function joinNeed(r){
     var who=codeByUser(r.by);
     return item('now','accounts','Customer','j:'+r.id, r.sentAt||r.made, {who:who, title:'New customer from '+who,
-      why:'They sent their name and place. Add them, and they sign in by themselves.', open:(wide()?function(){}:null)}, function(c){
-      mainButton(c,'Add them','need.join-add','j:'+r.id, function(){ joinAdd(r, this); });
+      why:'Add them from the name and place they sent, and they sign in by themselves.', open:(wide()?function(){}:null)}, function(c){
+      if(joinNamed(r)) mainButton(c,'Send its code','need.join-told','j:'+r.id, function(){ joinTell(r.id, joinTried[r.id]); });
+      else mainButton(c,'Add them','need.join-add','j:'+r.id, function(){ joinAdd(r, this); });
       if(joinSaid[r.id]){ var n=noteOf(c); n.textContent=joinSaid[r.id]; n.className+=' bad'; }
     });
   }
@@ -6897,7 +6903,7 @@ export const OWNER_JS = `
   function joinSignNeed(r){
     var t='Signing in '+(r.code||'the new customer');
     return item('watch','accounts','Customer','js:'+r.id, r.addedAt||r.made, {who:r.code||'Customer', title:t, counts:false,
-      why:'Their account opens once the Add ID is approved and folded. Then they sign in by themselves.', open:(wide()?function(){}:null)}, function(c){
+      why:'Their account opens once the Add ID is approved and folded, and then they sign in by themselves.', open:(wide()?function(){}:null)}, function(c){
       if(joinSaid[r.id]){ var n=noteOf(c); n.textContent=joinSaid[r.id]; n.className+=' bad'; }
     });
   }
@@ -6927,7 +6933,7 @@ export const OWNER_JS = `
     f.kind.value='customer'; f.kind.dispatchEvent(new Event('change',{bubbles:true}));
     f.name.value=joinHold.name; f.place.value=joinHold.place;
     f.name.dispatchEvent(new Event('input',{bubbles:true})); f.place.dispatchEvent(new Event('input',{bubbles:true}));
-    f.filled=true; f.status.textContent='Filled from the join link of '+codeByUser(joinHold.by)+'. Check them, then add.';
+    f.filled=true; f.status.textContent='Filled from the join link of '+codeByUser(joinHold.by)+'; check them, then add.';
     openForm('new-customer');
   }
   /* the lock lets the name go: the held copy, and the form fields it filled */
@@ -6937,16 +6943,25 @@ export const OWNER_JS = `
   }
   /* his Add ID went through for what the join filled: the join is told the code, never a name. Answers a sentence to add to the form's line, or '' */
   async function joinTold(name, locality, kind, code){
-    if(!joinHold||kind!=='customer'||name!==joinHold.name||locality!==joinHold.place) return '';
-    var id=joinHold.id; joinHold=null; if(joinForm) joinForm.filled=false;
-    try{ var j=await refs('/all/joins/'+id+'/added', {code:code}); joinPut(j.join); delete joinSaid[id]; drawJoins(); drawNeeds(); return 'The join link has its code.'; }
+    if(!joinHold||!joinForm||!joinForm.filled||kind!=='customer') return '';
+    var id=joinHold.id; joinHold=null; joinForm.filled=false;
+    return joinTell(id, code);
+  }
+  async function joinTell(id, code){
+    try{ var j=await refs('/all/joins/'+id+'/added', {code:code}); joinPut(j.join); delete joinSaid[id]; delete joinTried[id]; drawJoins(); drawNeeds(); return 'The join link has its code.'; }
     catch(e){ joinSaid[id]='Its code was not told to the link: '+e.message; drawNeeds(); return 'The join link was not told its code: '+e.message; }
+  }
+  /* an Add ID tried for a join stays in joinTried (a code, not a name) though its send or its word to the link was lost; once the unlocked vault names that
+     code the Add ID is in, and the card offers Send its code, the link told as joinTold would have */
+  function joinNamed(r){
+    var code=joinTried[r.id], names=makerVault&&makerVault.names;
+    return r.state==='sent'&&!!code&&!!names&&Object.hasOwn(names,code);
   }
   /* once the code has an account on the sheet, the hand-over is minted as Show a code mints it and filed for the page that sent the form; once a join a load */
   function joinsDrive(){
     if(!joinsRead||!sheet) return;
     joins.forEach(function(r){
-      if(r.state!=='added'||!r.code||joinHanded[r.id]) return;
+      if(r.state!=='added'||!r.code||joinHanded[r.id]||r.approved!==true||r.declined===true||r.revoked) return;
       var a=sheetRows.filter(function(x){ return x.code===r.code&&x.account; })[0]; if(!a) return;
       joinHanded[r.id]=true; joinSignIn(r, a);
     });
@@ -7629,7 +7644,7 @@ export const OWNER_JS = `
     unsentList().forEach(function(u){ L.push(unsentNeed(u)); });
     /* a link he has just moved stays where he tapped it, saying what happened, and is no longer counted */
     links.filter(function(r){ return waitingLink(r)||(moved&&moved.id===r.id&&!r.standing&&r.by); }).forEach(function(r){ L.push(linkNeed(r)); });
-    joins.forEach(function(r){ if(r.state==='sent') L.push(joinNeed(r)); else if(r.state==='added') L.push(joinSignNeed(r)); });
+    joins.forEach(function(r){ if(r.revoked||r.declined===true) return; if(r.state==='sent') L.push(joinNeed(r)); else if(r.state==='added') L.push(joinSignNeed(r)); });
     real.filter(function(a){ return a.account===false; }).forEach(function(a){ L.push(bareNeed(a)); });
     var fresh=real.filter(function(a){ return a.account&&!a.sent&&!(a.seen&&a.seen.opens); });
     if(turn||fresh.length) L.push(turn?turnCard(fresh.length>0):sendNeed(fresh));

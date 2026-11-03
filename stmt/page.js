@@ -3386,7 +3386,7 @@ const CLIENT_JS = `
     if(poll){ clearInterval(poll); poll=null; }
     liveStop();   /* Speed Wave 2 L2: Log out closes the socket */
     thClose(); thPut(null); thOut=[]; thSig=''; thWhy='';
-    bundle=null; session=''; view=false; act=false; actWant=false; prices=null; orders=[]; pools=[]; claims=[]; ordersFailed=false; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
+    bundle=null; session=''; view=false; act=false; actWant=false; prices=null; orders=[]; pools=[]; claims=[]; ordersFailed=false; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote=''; myJoins=null; myJoinNote='';
     hold=false; hidePrices=false; locked=false; payDue=null; liveAt='';
     parkMonths(); out.textContent=''; at=0; devNote=''; drawDevice();
     mfil.textContent=''; mfil.hidden=true; mfPick=null; mfnote.textContent='';
