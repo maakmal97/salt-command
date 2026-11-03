@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1428",
+  "d": "04 Nov 2026",
+  "t": "ONE PENDING CANDY SALE TO CI5-PER BOOKED",
+  "n": [
+   "<b>FOLDED:</b> one new sale, 3 unit of candy to CI5-PER, goods RM204 with RM26 delivery, order 20261103204226-drpjsq. It is pending: nothing paid and nothing handed over, so it books no revenue and draws no stock. The drafter flagged that CI5-PER has no committed candy order, so no rate of theirs exists to compare.",
+   "<b>INVENTORY:</b> nothing moved. Stock stays at 21 and the cost basis is unchanged. The candy count on the book dates from 2026-10-20."
+  ]
+ },
+ {
   "v": "v1427",
   "d": "04 Nov 2026",
   "t": "A CANDY LIFT SET FOR CI5-PER",
