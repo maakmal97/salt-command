@@ -46216,9 +46216,12 @@ await (async () => {
       "F14: a short link is named for opening, the text shared before it taken as the address, and no point read from it: " + JSON.stringify(sh));
     const refused = ["https://example.com/?ll=3.147812,101.695321", "https://maps.app.goo.gl.evil.com/AbCd", "http://maps.app.goo.gl/AbCd",
       "https://www.google.com/search?q=3.147812,101.695321", "https://google.evil.com/maps/@3.147812,101.695321,17z",
-      "https://evilwaze.com/ul?ll=3.147812,101.695321", "3.147812,101.695321", "no link here"];
+      "https://evilwaze.com/ul?ll=3.147812,101.695321", "no link here", "3.1,101.6"];
     const read2 = refused.map((s) => [s, read(s)]).filter(([, r]) => r !== null);
-    ok(read2.length === 0, "F14: a link to anywhere but a map, a lookalike host, a short link over http, bare numbers or no link at all read as nothing: " + JSON.stringify(read2));
+    ok(read2.length === 0, "F14: a link to anywhere but a map, a lookalike host, a short link over http, numbers without their decimals or no link at all read as nothing: " + JSON.stringify(read2));
+    /* 4 Nov 2026 (his word: one convention on every surface): two figures with their decimals are a pin, as a phone's location is written into a place field */
+    const fig = read("3.147812,101.695321");
+    ok(!!fig && fig.lat === 3.147812 && fig.lng === 101.695321 && fig.src === "pin" && fig.addr === null, "F14: two figures alone read as a pin: " + JSON.stringify(fig));
   } finally { try { wL.close(); } catch (e) { /* best effort */ } }
 })();
 

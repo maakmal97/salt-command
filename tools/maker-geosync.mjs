@@ -48,7 +48,9 @@ export function placeLinkText(master) {
     if (hits.length !== 1) throw new Error("Expected one incumbent link declaration: " + name);
     return hits[0].getText(tree);
   };
-  const script = "(function(){\n" + fn("mapsLink") + "\n" + fn("geohashPoint") + "\nreturn mapsLink;\n})()";
+  /* as expressions, so the owner's page, which carries this and Salt Admin's geography, declares no function twice (S3 fix) */
+  const expr = (name) => fn(name).replace(new RegExp("^function " + name + "\\("), "var " + name + "=function(") + ";";
+  const script = "(function(){\n" + expr("mapsLink") + "\n" + expr("geohashPoint") + "\nreturn mapsLink;\n})()";
   return "// GENERATED from the Desk's mapsLink by tools/maker-geosync.mjs; never edit.\n"
     + "export const PLACE_LINK_JS = " + JSON.stringify(script) + ";\n";
 }

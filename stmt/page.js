@@ -5005,7 +5005,7 @@ const CLIENT_JS = `
     li.setAttribute('data-k','pinurl'); li.setAttribute('role','combobox'); li.setAttribute('aria-autocomplete','list'); li.setAttribute('aria-controls','oPinFound'); li.setAttribute('aria-expanded','false');
     var L=el('div','salt-settings opinfound'); L.id='oPinFound'; L.setAttribute('role','listbox'); L.setAttribute('aria-label',tw('sh.pinFound')); L.hidden=true;
     var hint=el('span','salt-field__hint',draft.pinMsg||tw('sh.pinHint'));
-    function shown(list,msg){
+    function pinShown(list,msg){
       L.textContent='';
       (list||[]).forEach(function(h,i){
         var r=el('button','salt-settings__row salt-settings__row--action'); r.type='button'; r.setAttribute('role','option'); r.setAttribute('data-k','pinhit:'+i);
@@ -5017,15 +5017,15 @@ const CLIENT_JS = `
       L.hidden=!L.firstChild; li.setAttribute('aria-expanded',String(!L.hidden)); hint.textContent=msg||tw('sh.pinHint');
     }
     /* the words and a search still on its way outlive a redraw (the key landing, a window chosen): the new field asks again */
-    function look(w){
+    function pinLook(w){
       var mine=++pinSeq; draft.pinPend=true;
       pinTimer=setTimeout(function(){
         (act&&typeof actSearch==='function'?actSearch(w):api('/place/search',{q:w})).then(function(r){
           if(mine!==pinSeq||!li.isConnected) return;
           draft.pinPend=false;
           var b=r&&r.body||{}, l=b.ok&&Array.isArray(b.places)?b.places.slice(0,5):null, st=r&&r.status;
-          shown(l||[],l?(l.length?'':tw('sh.pinNone')):st===429?tw('sh.pinWait429'):st===400?tw('sh.pinNone'):tw('sh.pinDown'));
-        },function(){ if(mine===pinSeq&&li.isConnected){ draft.pinPend=false; shown([],tw('sh.pinDown')); } });
+          pinShown(l||[],l?(l.length?'':tw('sh.pinNone')):st===429?tw('sh.pinWait429'):st===400?tw('sh.pinNone'):tw('sh.pinDown'));
+        },function(){ if(mine===pinSeq&&li.isConnected){ draft.pinPend=false; pinShown([],tw('sh.pinDown')); } });
       },350);
     }
     li.addEventListener('input',function(){
@@ -5033,8 +5033,8 @@ const CLIENT_JS = `
       clearTimeout(pinTimer); draft.pinQ=v;
       if(p){ pinSeq++; draft.pin=p; draft.pinMsg=''; draft.pinPlace=''; draft.pinQ=''; draft.pinPend=false; sheetDraw(); return; }
       var w=String(v||'').replace(/ {2,}/g,' ').trim();
-      if(w.length<3||/^https?:/i.test(w)||/^-?[0-9.]+ *, *-?[0-9.]+$/.test(w)){ pinSeq++; draft.pinPend=false; shown([],''); return; }
-      look(w);
+      if(w.length<3||/^https?:/i.test(w)||/^-?[0-9.]+ *, *-?[0-9.]+$/.test(w)){ pinSeq++; draft.pinPend=false; pinShown([],''); return; }
+      pinLook(w);
     });
     li.addEventListener('change',function(){ var v=String(li.value||'').trim(); if(/^https?:/i.test(v)&&!pinRead(v)){ draft.pinMsg=tw('sh.pinBad'); hint.textContent=draft.pinMsg; } });
     f.appendChild(li); f.appendChild(L);
@@ -5042,7 +5042,7 @@ const CLIENT_JS = `
     here.addEventListener('click',pinHere); f.appendChild(here);
     f.appendChild(hint);
     clearTimeout(pinTimer);
-    if(draft.pinPend&&draft.pinQ){ var wq=String(draft.pinQ).replace(/ {2,}/g,' ').trim(); if(wq.length>=3) look(wq); }
+    if(draft.pinPend&&draft.pinQ){ var wq=String(draft.pinQ).replace(/ {2,}/g,' ').trim(); if(wq.length>=3) pinLook(wq); }
     return f;
   }
   /* COUNTER BATCH C (20 Oct 2026, item 18; his answers 3, 4, 12 and 13): SAVED SPOTS, kept on this phone only, at most three an

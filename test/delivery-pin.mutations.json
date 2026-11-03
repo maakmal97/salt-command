@@ -31,7 +31,7 @@
  {"name":"an Apple Maps link reads nothing (4 Nov 2026)","file":"stmt/place-link.js","find":":h==='maps.apple.com'?'apple':null;","replace":":null;"},
  {"name":"a place found is not taken (4 Nov 2026)","file":"stmt/page.js","find":"draft.pin={lat:+h.lat, lng:+h.lng, src:'search'};","replace":"draft.pin=null;"},
  {"name":"the search sends the account (4 Nov 2026)","file":"stmt/page.js","find":"api('/place/search',{q:w})","replace":"api('/place/search',{q:w,u:user})"},
- {"name":"the search waits for no pause (4 Nov 2026)","file":"stmt/page.js","find":"if(w.length<3||/^https?:/i.test(w)||/^-?[0-9.]+ *, *-?[0-9.]+$/.test(w)){ pinSeq++; draft.pinPend=false; shown([],''); return; }","replace":"if(true){ pinSeq++; draft.pinPend=false; shown([],''); return; }"},
+ {"name":"the search waits for no pause (4 Nov 2026)","file":"stmt/page.js","find":"if(w.length<3||/^https?:/i.test(w)||/^-?[0-9.]+ *, *-?[0-9.]+$/.test(w)){ pinSeq++; draft.pinPend=false; pinShown([],''); return; }","replace":"if(true){ pinSeq++; draft.pinPend=false; shown([],''); return; }"},
  {"name":"the search needs no session (4 Nov 2026)","file":"stmt/worker.js","find":"|| p === \"/thread\" || p === \"/pools\" || p.startsWith(\"/pools/\") || p === \"/place/search\") return handleCustomer(","replace":"|| p === \"/thread\" || p === \"/pools\" || p.startsWith(\"/pools/\")) return handleCustomer("},
  {"name":"the search is never braked (4 Nov 2026)","file":"stmt/worker.js","find":"    if (n >= PLACE_PER_MINUTE) return false;\n","replace":""},
  {"name":"typed figures are searched (4 Nov 2026)","file":"stmt/page.js","find":"if(w.length<3||/^https?:/i.test(w)||/^-?[0-9.]+ *, *-?[0-9.]+$/.test(w)){ pinSeq++;","replace":"if(w.length<3||/^https?:/i.test(w)){ pinSeq++;"},

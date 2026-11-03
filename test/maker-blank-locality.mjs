@@ -101,7 +101,7 @@ export async function run({ ok, pageWork }) {
       const fields = section.querySelectorAll("input:not([type=radio])");
       tile(section, "Role", kind);
       fields[0].value = name; fields[1].value = locality; fields[2].value = link;
-      section.querySelectorAll("button")[0].click();
+      section.querySelector('[data-act="record.add-id.send"]').click();   /* 4 Nov 2026: by its act; Use my location now stands before it */
       if (!await work.quiet()) throw new Error("Add ID did not settle.");
       return { body: calls[0], status: [...section.querySelectorAll('[role="status"]')].map((n) => n.textContent).join(" "),
         password: dom.window.document.getElementById("vaultPass").value, ...(retain ? { dom, work, close: () => dom.window.close() } : {}) };
@@ -169,7 +169,7 @@ export async function run({ ok, pageWork }) {
     const badLink = await device({ name: "Test Link", link: "https://evil.test/maps?ll=3,101" });
     ok(!unknown.body && /not on the list/.test(unknown.status)
       && !ambiguous.body && /matches more than one/.test(ambiguous.status)
-      && !badLink.body && /Maps or Waze/.test(badLink.status) && pair().revision === before,
+      && !badLink.body && /paste a map link/.test(badLink.status)   /* 4 Nov 2026: the refusal names the one place field */ && pair().revision === before,
       "blank-locality device/pair: supplied unknown/ambiguous locality and invalid exact link still refuse before writing: "
         + JSON.stringify([unknown.status, ambiguous.status, badLink.status]));
     const linked = await device({ name: "Test Pin", link: "Invented road https://waze.com/ul?ll=3.123456,101.654321" });
