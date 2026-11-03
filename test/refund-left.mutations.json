@@ -1,0 +1,5 @@
+[
+ {"name":"the tap says the refund as before (3 Nov 2026)","file":"src/orders.js","find":"    const back = await refundLeft(db, mirror, o, b.refund);","replace":"    const back = b.refund;"},
+ {"name":"refunds already on the rid are not taken off (3 Nov 2026)","file":"src/orders.js","find":"  return +Math.max(0, over - had).toFixed(2);","replace":"  return over;"},
+ {"name":"what he was shown keeps the old figure (3 Nov 2026)","file":"src/orders.js","find":"if (back > 0.004) { b.refund = back; if (b.shown) b.shown.refund = back; }","replace":"if (back > 0.004) { b.refund = back; }"}
+]

@@ -877,6 +877,17 @@ async function stagePreview(env, o, stage, entry, mirror) {
   return { ok: true, waits: ag.waits, d, hash: await stageDigest(stage, entry, d, null) };
 }
 const yesWords = (waits) => (waits ? "Booked when the first row lands" : "Booked as it is drafted");
+/** 3 Nov 2026 (Fable's low note of 27 Oct): THE REFUND A TAP SAYS IS THE ONE THE FOLD RAISES. refundOnOverpay takes off every refund already
+ *  raised on the row's rid, open or paid, so a stale one left on the row made the tap say more than the fold books. A row the
+ *  book's OPEN does not hold, or a read that fails, says what it said before. */
+export async function refundLeft(db, mirror, o, over) {
+  let bk = null;
+  try { bk = await withRefunds(db, await mirror()); } catch (e) { return over; }
+  const row = bk && bk.state && bk.state.OPEN && bk.state.OPEN.byKey && bk.state.OPEN.byKey[o.ledgerKey];
+  if (!row || !row.rid) return over;
+  const had = (bk.customerRefunds || []).reduce((a, r) => a + (r && r.rid === row.rid ? (+r.amount || 0) : 0), 0);
+  return +Math.max(0, over - had).toFixed(2);
+}
 async function stageTap(env, id, body, by, now, stage, build, mirror) {
   const at = now || new Date();
   const f = await findOrder(env, id);
@@ -892,6 +903,11 @@ async function stageTap(env, id, body, by, now, stage, build, mirror) {
   mirror = mirror || (db ? bookOnce(db) : null);   /* the tap's one read: the preview, the yes it tests and the route's tail */
   const pv = await stagePreview(env, o, stage, b.entry, mirror);
   if (!pv.ok) return pv;
+  if (b.refund > 0.004) {
+    const back = await refundLeft(db, mirror, o, b.refund);
+    if (back > 0.004) { b.refund = back; if (b.shown) b.shown.refund = back; }
+    else { delete b.refund; if (b.shown) delete b.shown.refund; }
+  }
   const preId = await recordPre(db, { order_id: id, u: o.u, stage, hash: pv.hash, entry: b.queueIt ? b.entry : null, at: at.toISOString(), by,
     shown: { from: o.status, figures: b.shown, flags: pv.d.flags, waits: pv.waits } });
   if (b.pin) await db.prepare("UPDATE preapproval SET entry_at=?1 WHERE id=?2").bind(b.pin, preId).run();

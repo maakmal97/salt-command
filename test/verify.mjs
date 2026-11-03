@@ -46983,6 +46983,21 @@ await (async () => {
   const j2 = await r2.json().catch(() => ({}));
   ok(r2.status === 200 && j2.ok && j2.preapproval && j2.preapproval.refund === 25 && !j2.preapproval.held,
     "an amendment of a paid order to RM 60 under the RM 85 paid is taken, and the answer names the RM 25 refund the fold raises: " + JSON.stringify({ status: r2.status, err: j2.error, pre: j2.preapproval }));
+  /* 3 Nov 2026 (Fable's low note of 27 Oct): RM 80 paid, amended to RM 55, with a stale RM 10 refund already on the row's rid: the fold's refundOnOverpay raises RM 15, and the answer says RM 15, not RM 25 */
+  const row3 = { rid: "s72", customer: C, product: "salt", date: "2026-10-04", qty: 1, total: 80, cash: 80 };
+  db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", 2, "h2", JSON.stringify(row3));
+  db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("customerRefunds", 1, "h3", JSON.stringify({ party: C, rid: "s72", amount: 10, since: "2026-10-04" }));
+  setState("OPEN", withPending(withPending(bk, row2), row3).state.OPEN);
+  const o3 = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: 80, total: 80, week: "" })).order;
+  await O.deskMove(senv, U, o3.id, { status: "acknowledged", mode: "collect" });
+  await O.deskMove(senv, U, o3.id, { mark: { ledgerKey: E.ovKey(row3), ack: "2026-10-05T01:00:00.000Z" } });
+  bko.book.append(null, U, o3.id, { kind: "ledger", at: new Date().toISOString(), paid: 80, moved: 0 }, bko.book.order(U, o3.id));
+  const r3 = await deskW.fetch(new Request("https://salt-command.example/orders/" + o3.id + "/restate", { method: "POST",
+    headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify({ total: 55 }) }), denv, {});
+  const j3 = await r3.json().catch(() => ({}));
+  const sh3 = JSON.parse((db.prepare("SELECT shown FROM preapproval WHERE order_id=?").get(o3.id) || {}).shown || "{}");
+  ok(r3.status === 200 && j3.ok && j3.preapproval && j3.preapproval.refund === 15 && sh3.figures && sh3.figures.refund === 15,
+    "and with RM 10 already refunded on that row the answer and what he was shown name the RM 15 the fold raises, not RM 25: " + JSON.stringify({ status: r3.status, err: j3.error, pre: j3.preapproval, shown: sh3.figures }));
   /* and the rebuild keeps every yes already filed, every column, and both of 0011's indexes */
   const old = new DatabaseSync(":memory:"), files = readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort();
   const last = files.filter((f) => /preapproval/.test(readFileSync(join(REPO, "migrations", f), "utf8"))).pop();
