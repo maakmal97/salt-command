@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1397",
+  "d": "03 Nov 2026",
+  "t": "A PAYMENT OF RM130 FOLDED AGAINST A SALT ORDER FROM CS11-AMP",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED.</b> Payment of RM130 by qr via maybank, on the statements site, order 20261103041924-bmjlca, was applied to s323, CS11-AMP's pending order of 1 unit of salt. It was preapproved by Counter Admin and the drafter raised no flags. The row is not recomputed by the drafter: the master applies it.",
+   "<b>INVENTORY UNCHANGED.</b> No unit moved on this fold and the moves list is empty. Stock stays at 6, with a stockCost of RM56, and the 1 unit sold remains to be collected."
+  ]
+ },
+ {
   "v": "v1396",
   "d": "03 Nov 2026",
   "t": "A PENDING RICE ORDER FOR CS11-AMP AT THE ASK",
