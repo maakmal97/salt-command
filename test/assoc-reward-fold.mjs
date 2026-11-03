@@ -63,9 +63,9 @@ export async function run({ ok }) {
   const one = go(mk([order("s9001")]), [pay(T(2, 1), "s9001", +(step + cost).toFixed(2), D(2))]);
   const r1 = one.ok ? rewards(one.book) : [];
   const shape = r1[0] && JSON.stringify(Object.keys(r1[0]).sort()) === JSON.stringify(["auto", "cash", "cost", "customer", "date", "deliveredQty", "given", "goodwill",
-    "note", "product", "qty", "rebate", "rebateKg", "rewardOf", "rid", "settledRM", "total"].sort());
+    "note", "product", "qty", "rebate", "rebateKg", "rewardOf", "rid", "road", "settledRM", "total"].sort());   /* road: 4 Nov 2026, the fold road */
   ok(one.ok && r1.length === 1 && shape && r1[0].rewardOf === "s9001" && r1[0].qty === 1 && r1[0].total === unit && r1[0].cost === unit && r1[0].settledRM === unit
-    && r1[0].cash === 0 && r1[0].rebate === true && r1[0].rebateKg === 1 && r1[0].goodwill === true && r1[0].deliveredQty === 0 && r1[0].auto === true && r1[0].date === D(2)
+    && r1[0].cash === 0 && r1[0].rebate === true && r1[0].rebateKg === 1 && r1[0].goodwill === true && r1[0].deliveredQty === 0 && r1[0].auto === true && r1[0].date === D(2) && r1[0].road === "fold"
     && one.moves.some((m) => typeof m === "string" && /^reward unit: /.test(m)),
     "the paying move books one reward row of its shape at the day's landed cost: " + JSON.stringify(one.ok ? r1 : one.problems));
   /* 2 */

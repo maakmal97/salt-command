@@ -63,7 +63,8 @@ export const law = (s) => s.replace(/,(\\)?"was(\\)?":\{[^{}]*\}/g, "").replace(
   .replace(/\b(?:TIER|THEIR %) (?=[A-Z][A-Z0-9]*-[A-Z0-9]+ )/g, "TIERSET ")
   .replace(/\b([a-z]+) drift ([+-]?[0-9.]+)/g, (m, p, v) => p + " TIERSET " + +v)
   .replace(/\b([a-z]+) ([0-9.]+)% (off|lift)/g, (m, p, n, d) => p + " TIERSET " + figure(d, +n))
-  .replace(/\b([a-z]+) tier to TIERSET/g, "$1 figure to TIERSET");
+  .replace(/\b([a-z]+) tier to TIERSET/g, "$1 figure to TIERSET")
+  .replace(/,(\\)?"road(\\)?":(\\)?"(?:site|admin|desk|fold)(\\)?"/g, "");   /* 4 Nov 2026: the working fold stamps the road a sale came by, which the fold before the move never wrote */
 
 export async function run({ ok }) {
   /* the two folds' words for a Their % row meet at one reading, and a different figure does not */

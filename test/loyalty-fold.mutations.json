@@ -16,5 +16,11 @@
  {"name":"the fold's walk reads the default terms","file":"engine/apply.mjs","find":"...(scheme.terms ? { TERMS: scheme.terms } : {})","replace":""},
  {"name":"one loyalty unit an order at most","file":"engine/apply.mjs","find":"    seen[cr.rid] = 1 + (seen[cr.rid] || 0);","replace":"    seen[cr.rid] = 1;"},
  {"name":"a customer made an associate keeps the unit waiting","file":"engine/apply.mjs","find":"  rewardFollow(book, code, null, (s) => !!(s && s.rewardOf && s.loyal && E.ownerCode(s.customer) === code), touched, day, c, unitMoves, \"loyalty\");\n","replace":""},
- {"name":"STALE gives no reason","file":"engine/apply.mjs","find":"whyOf ? whyOf(s.rewardOf) : \"its payment was undone\"","replace":"\"its payment was undone\""}
+ {"name":"STALE gives no reason","file":"engine/apply.mjs","find":"whyOf ? whyOf(s.rewardOf) : \"its payment was undone\"","replace":"\"its payment was undone\""},
+ {
+  "name": "a loyalty unit carries no road",
+  "file": "engine/apply.mjs",
+  "find": "loyal: true, road: \"fold\",",
+  "replace": "loyal: true,"
+ }
 ]

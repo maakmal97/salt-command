@@ -58,9 +58,9 @@ export async function run({ ok }) {
   const one = go(mk([order("s9001")]), [pay(T(2, 1), "s9001", 2000, D(2))]);
   const r1 = one.ok ? loyal(one.book) : [];
   const shape = r1[0] && j(Object.keys(r1[0]).sort()) === j(["auto", "cash", "cost", "customer", "date", "deliveredQty", "goodwill", "loyal",
-    "note", "product", "qty", "rewardOf", "rid", "total"].sort());
+    "note", "product", "qty", "rewardOf", "rid", "road", "total"].sort());   /* road: 4 Nov 2026, the fold road */
   ok(one.ok && r1.length === 1 && shape && r1[0].rewardOf === "s9001" && r1[0].qty === 1 && r1[0].total === 0 && r1[0].cost === unit && r1[0].cash === 0
-    && r1[0].goodwill === true && !r1[0].rebate && r1[0].deliveredQty === 0 && r1[0].auto === true && r1[0].loyal === true && r1[0].date === D(2)
+    && r1[0].goodwill === true && !r1[0].rebate && r1[0].deliveredQty === 0 && r1[0].auto === true && r1[0].loyal === true && r1[0].date === D(2) && r1[0].road === "fold"
     && one.moves.some((m) => typeof m === "string" && /^loyalty unit: /.test(m)),
     "the paying move books one gift row at the day's landed cost: " + j(one.ok ? r1 : one.problems));
   /* 2 */

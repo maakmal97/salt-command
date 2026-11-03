@@ -92,13 +92,19 @@
  {
   "name": "the old fold's \"tier to\" is not read",
   "file": "test/fold-replay.mjs",
-  "find": "\n  .replace(/\\b([a-z]+) tier to TIERSET/g, \"$1 figure to TIERSET\");",
-  "replace": ";"
+  "find": "\n  .replace(/\\b([a-z]+) tier to TIERSET/g, \"$1 figure to TIERSET\")\n",
+  "replace": "\n"
  },
  {
   "name": "a count's note keeps its old word",
   "file": "test/fold-replay.mjs",
   "find": ".replace(/, a drift of /g, \", a difference of \")",
   "replace": ""
+ },
+ {
+  "name": "the working fold's road is read as a difference",
+  "file": "test/fold-replay.mjs",
+  "find": "\n  .replace(/,(\\\\)?\"road(\\\\)?\":(\\\\)?\"(?:site|admin|desk|fold)(\\\\)?\"/g, \"\");",
+  "replace": ";"
  }
 ]

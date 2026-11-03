@@ -979,7 +979,7 @@ function assocFold(book, eb, code, day, touched, c, unitMoves) {
     if (book.sales.filter((s) => mine(s) && s.rewardOf === cr.rid).length >= seen[cr.rid]) continue;
     const cost = +(+cr.rate).toFixed(2), of = book.sales.find((s) => s && s.rid === cr.rid), r3 = of && E.ownerCode(of.customer) !== code ? E.ownerCode(of.customer) : null;
     const row = { customer: code, product: "salt", qty: 1, total: cost, cost, cash: 0, settledRM: cost, rebate: true, rebateKg: 1, goodwill: true,
-      deliveredQty: 0, date: day, rewardOf: cr.rid, auto: true, given: cr.given,
+      deliveredQty: 0, date: day, rewardOf: cr.rid, auto: true, given: cr.given, road: "fold",
       note: `<b>REWARD UNIT: 1 UNIT OF SALT TO ${code} AT COST, NO CHARGE.</b> Their margin on their own buying and resale reached the step of RM ${cr.step} (${walk.times} units at RM ${cr.rate} landed on ${cr.day}) with ${cr.rid}${r3 ? `, an order of ${r3} in their first week (R3)` : ""}, paid in full. Raised by the fold at RM ${cost} and settled by the reward, so it is cost and not revenue; it goes with ${r3 ? `their next salt handover once ${cr.rid} is handed over in full` : `${cr.rid}'s delivery, or with their next salt order where that has gone`}. RM ${cr.given} was given under their own price since the last reward (his information only).` };
     row.rid = c.nextRid(book.sales, "s")(1);
     book.sales.push(row);
@@ -1002,7 +1002,7 @@ function loyalFold(book, eb, code, day, touched, c, unitMoves) {
     const lc = E.latestCogs(lots, cr.day), rate = lc && lc.rate > 0 ? +lc.rate : null;   /* no lot landed by then, none raised, as the associate's */
     if (!(rate > 0)) { c.moves.push(`loyalty unit for ${cr.rid} not raised: no landed cost of salt on ${cr.day}`); continue; }
     const cost = +(+rate).toFixed(2);
-    const row = { customer: code, product: "salt", qty: 1, total: 0, cost, cash: 0, goodwill: true, deliveredQty: 0, date: day, rewardOf: cr.rid, auto: true, loyal: true,
+    const row = { customer: code, product: "salt", qty: 1, total: 0, cost, cash: 0, goodwill: true, deliveredQty: 0, date: day, rewardOf: cr.rid, auto: true, loyal: true, road: "fold",
       note: `<b>LOYALTY UNIT: 1 UNIT OF SALT TO ${code} AT COST, NO CHARGE.</b> Their salt bought at or above their own price, paid in full, reached ${walk.every} units with ${cr.rid} on ${cr.day}. Raised by the fold at RM ${cost}, the landed cost that day, as a gift, so it is cost and not revenue; it goes with ${cr.rid}'s delivery, or with their next salt order where that has gone.` };
     row.rid = c.nextRid(book.sales, "s")(1);
     book.sales.push(row);
@@ -1092,6 +1092,7 @@ function bookItem(book, it, c) {
       if (n.cost != null && !(it.append === "sales" && src.row.cost != null) && !isBooked(src)) row.cost = +n.cost;
       row.note = String(n.note).trim();
       delete row.rids; delete row.booked_seq; delete row.tap_fallback;   /* the tap's bookkeeping, not part of the row */
+      if (it.append === "sales") row.road = E.roadOf(src.entry);   /* 4 Nov 2026: the road it came by (the fold and the tap alike) */
       /* EVERY ROW GETS AN ID ON THE WAY IN (25 Aug 2026). A row with no rid cannot be named by
          the editor, so a fold that appended one without would put a row on the book that could
          never be corrected. Minted by the same function tools/rid.mjs uses, so the two cannot

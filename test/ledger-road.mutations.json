@@ -1,0 +1,56 @@
+[
+  {
+    "name": "a site order is not told from a Salt Admin entry",
+    "file": "engine/position.mjs",
+    "find": "function roadOf(entry){ return entry&&entry.orderId?'site':entry&&entry.makerRequest?'admin':'desk'; }",
+    "replace": "function roadOf(entry){ return entry&&entry.makerRequest?'admin':entry&&entry.orderId?'site':'desk'; }"
+  },
+  {
+    "name": "the hand fold has no word",
+    "file": "engine/position.mjs",
+    "find": "desk:'Desk entry',hand:'Hand fold',",
+    "replace": "desk:'Desk entry',"
+  },
+  {
+    "name": "a new sale is not stamped",
+    "file": "engine/apply.mjs",
+    "find": "      if (it.append === \"sales\") row.road = E.roadOf(src.entry);",
+    "replace": ""
+  },
+  {
+    "name": "a purchase is stamped too",
+    "file": "engine/apply.mjs",
+    "find": "      if (it.append === \"sales\") row.road = E.roadOf(src.entry);",
+    "replace": "      row.road = E.roadOf(src.entry);"
+  },
+  {
+    "name": "Salt Admin's read drops the road",
+    "file": "src/maker-inputs.js",
+    "find": ", ...(row.road ? { road: row.road } : {}) };",
+    "replace": " };"
+  },
+  {
+    "name": "a book row's card says no road",
+    "file": "stmt/owner.js",
+    "find": "    else if(roadWord(r)){ head.appendChild(document.createTextNode(' ')); var rc=chip('steel',roadWord(r)); rc.setAttribute('data-road',r.road); head.appendChild(rc); }",
+    "replace": ""
+  },
+  {
+    "name": "a trip's details name no road",
+    "file": "stmt/owner.js",
+    "find": "['Road',roads.join(', ')]",
+    "replace": "['Road','']"
+  },
+  {
+    "name": "the Desk's ledger card draws no road",
+    "file": "master/salt_command.html",
+    "find": "${ledAttr(t)}${t.road&&!t._buy?",
+    "replace": "${ledAttr(t)}${false?"
+  },
+  {
+    "name": "the ledger's search ignores the road",
+    "file": "master/salt_command.html",
+    "find": "+' '+(POSITION_ENGINE.ROADS[(t._buy||t).road]||'')).toLowerCase();",
+    "replace": ").toLowerCase();"
+  }
+]

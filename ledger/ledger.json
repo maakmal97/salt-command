@@ -1,6 +1,6 @@
 {
- "v": "v1419",
- "stamped": "04 Nov 2026, 01:01 KL",
+ "v": "v1420",
+ "stamped": "04 Nov 2026, 01:30 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -1332,7 +1332,8 @@
     "deliveredQty": 1,
     "ref": "CJ4-OKR",
     "refKg": 1,
-    "rid": "s001"
+    "rid": "s001",
+    "road": "hand"
    },
    {
     "date": "2026-06-27",
@@ -1344,7 +1345,8 @@
     "deliveredQty": 3,
     "ref": "CJ4-OKR",
     "refKg": 3,
-    "rid": "s002"
+    "rid": "s002",
+    "road": "hand"
    },
    {
     "date": "2026-06-28",
@@ -1372,7 +1374,8 @@
      }
     ],
     "note": "RM50 offset against 15 Jul order.",
-    "rid": "s003"
+    "rid": "s003",
+    "road": "hand"
    },
    {
     "date": "2026-06-29",
@@ -1382,7 +1385,8 @@
     "cost": 64,
     "cash": 85,
     "deliveredQty": 1,
-    "rid": "s004"
+    "rid": "s004",
+    "road": "hand"
    },
    {
     "date": "2026-07-01",
@@ -1392,7 +1396,8 @@
     "cost": 192,
     "cash": 300,
     "deliveredQty": 3,
-    "rid": "s005"
+    "rid": "s005",
+    "road": "hand"
    },
    {
     "date": "2026-07-02",
@@ -1402,7 +1407,8 @@
     "cost": 128,
     "cash": 200,
     "deliveredQty": 2,
-    "rid": "s006"
+    "rid": "s006",
+    "road": "hand"
    },
    {
     "date": "2026-07-03",
@@ -1427,7 +1433,8 @@
       "kg": 0
      }
     ],
-    "rid": "s007"
+    "rid": "s007",
+    "road": "hand"
    },
    {
     "date": "2026-07-05",
@@ -1455,7 +1462,8 @@
      }
     ],
     "note": "RM90 offset against 15 Jul order.",
-    "rid": "s008"
+    "rid": "s008",
+    "road": "hand"
    },
    {
     "date": "2026-07-08",
@@ -1492,7 +1500,8 @@
      }
     ],
     "note": "Squared against the 12 May loan.",
-    "rid": "s009"
+    "rid": "s009",
+    "road": "hand"
    },
    {
     "date": "2026-07-09",
@@ -1522,7 +1531,8 @@
       "note": "cleared by his R3 free unit"
      }
     ],
-    "rid": "s010"
+    "rid": "s010",
+    "road": "hand"
    },
    {
     "date": "2026-07-09",
@@ -1535,7 +1545,8 @@
     "settle": "barter",
     "deliveredQty": 1,
     "note": "In-kind service, RM90 offset.",
-    "rid": "s011"
+    "rid": "s011",
+    "road": "hand"
    },
    {
     "date": "2026-07-12",
@@ -1545,7 +1556,8 @@
     "cost": 64,
     "cash": 95,
     "deliveredQty": 1,
-    "rid": "s012"
+    "rid": "s012",
+    "road": "hand"
    },
    {
     "date": "2026-07-12",
@@ -1555,7 +1567,8 @@
     "cost": 64,
     "cash": 100,
     "deliveredQty": 1,
-    "rid": "s013"
+    "rid": "s013",
+    "road": "hand"
    },
    {
     "date": "2026-07-14",
@@ -1581,7 +1594,8 @@
      }
     ],
     "note": "Corrected from RM1,800.",
-    "rid": "s014"
+    "rid": "s014",
+    "road": "hand"
    },
    {
     "date": "2026-07-14",
@@ -1591,7 +1605,8 @@
     "cost": 600,
     "cash": 825,
     "deliveredQty": 12.5,
-    "rid": "s015"
+    "rid": "s015",
+    "road": "hand"
    },
    {
     "date": "2026-07-14",
@@ -1645,7 +1660,8 @@
      }
     ],
     "note": "Repriced; buyer later banned from sale.",
-    "rid": "s016"
+    "rid": "s016",
+    "road": "hand"
    },
    {
     "date": "2026-07-15",
@@ -1655,7 +1671,8 @@
     "cost": 64,
     "cash": 80,
     "deliveredQty": 1,
-    "rid": "s017"
+    "rid": "s017",
+    "road": "hand"
    },
    {
     "date": "2026-07-15",
@@ -1719,7 +1736,8 @@
      }
     ],
     "note": "Audited twice; offsets settled; closed in salt.",
-    "rid": "s018"
+    "rid": "s018",
+    "road": "hand"
    },
    {
     "date": "2026-07-15",
@@ -1732,7 +1750,8 @@
     "rebate": true,
     "deliveredQty": 1,
     "note": "Cleared by reseller rebate.",
-    "rid": "s019"
+    "rid": "s019",
+    "road": "desk"
    },
    {
     "date": "2026-07-15",
@@ -1744,7 +1763,8 @@
     "deliveredQty": 3,
     "rev": "R2",
     "downstream": "CM4-MK",
-    "rid": "s020"
+    "rid": "s020",
+    "road": "hand"
    },
    {
     "date": "2026-07-15",
@@ -1754,7 +1774,8 @@
     "cost": 56,
     "cash": 90,
     "deliveredQty": 1,
-    "rid": "s021"
+    "rid": "s021",
+    "road": "hand"
    },
    {
     "date": "2026-07-16",
@@ -1765,7 +1786,8 @@
     "cash": 120,
     "deliveredQty": 1,
     "rev": "R2",
-    "rid": "s022"
+    "rid": "s022",
+    "road": "hand"
    },
    {
     "date": "2026-07-17",
@@ -1776,7 +1798,8 @@
     "cash": 115,
     "deliveredQty": 1,
     "rev": "R2",
-    "rid": "s023"
+    "rid": "s023",
+    "road": "hand"
    },
    {
     "date": "2026-07-17",
@@ -1786,7 +1809,8 @@
     "cost": 25.2,
     "cash": 105,
     "deliveredQty": 0.5,
-    "rid": "s024"
+    "rid": "s024",
+    "road": "hand"
    },
    {
     "date": "2026-07-20",
@@ -1817,7 +1841,8 @@
      }
     ],
     "note": "RM90 offset by rebate unit.",
-    "rid": "s025"
+    "rid": "s025",
+    "road": "hand"
    },
    {
     "date": "2026-07-20",
@@ -1844,7 +1869,8 @@
       "note": "RM80 settled, a day early"
      }
     ],
-    "rid": "s026"
+    "rid": "s026",
+    "road": "hand"
    },
    {
     "date": "2026-07-20",
@@ -1870,7 +1896,8 @@
       "note": "cancelled before any cash or salt moved"
      }
     ],
-    "rid": "s027"
+    "rid": "s027",
+    "road": "hand"
    },
    {
     "date": "2026-07-20",
@@ -1897,7 +1924,8 @@
       "cost": 28
      }
     ],
-    "rid": "s028"
+    "rid": "s028",
+    "road": "desk"
    },
    {
     "date": "2026-07-20",
@@ -1908,7 +1936,8 @@
     "cash": 250,
     "deliveredQty": 2.5,
     "note": "Entered as new party; is CE4-CHE.",
-    "rid": "s029"
+    "rid": "s029",
+    "road": "hand"
    },
    {
     "date": "2026-07-21",
@@ -1918,7 +1947,8 @@
     "cost": 112,
     "cash": 185,
     "deliveredQty": 2,
-    "rid": "s030"
+    "rid": "s030",
+    "road": "hand"
    },
    {
     "date": "2026-07-21",
@@ -1948,7 +1978,8 @@
       "kg": 0,
       "note": "<b>CORRECTION ON S031, REBATE OFF AND GOODWILL ON, APPLIED 14 SEP.</b> The target is CN6-WM's order of 21 Jul, 0.5 unit for RM50, no cash in and 0.5 unit moved, not cancelled and not defaulted, carrying the note that he was later appointed associate. Rebate goes from true to false and goodwill from false to true: no cash, no stock and no total moves, only what the row says about itself. The row carries no cost of its own here. <b>No flag was raised</b> and the fields answer the change on their face. CN6-WM holds RM110 outstanding and 1 unit on credit, nothing defaulted, 6 orders at a RM110 median in a RM75 to RM110 range. The RM110 advance stays outstanding."
      }
-    ]
+    ],
+    "road": "hand"
    },
    {
     "date": "2026-07-21",
@@ -1979,7 +2010,8 @@
       "kg": 0,
       "note": "re-keyed CH6-TBC to CH6-SET"
      }
-    ]
+    ],
+    "road": "hand"
    },
    {
     "date": "2026-07-21",
@@ -1991,7 +2023,8 @@
     "deliveredQty": 1,
     "deliveredOn": "2026-07-23",
     "note": "RM80 overpaid; refund payable.",
-    "rid": "s033"
+    "rid": "s033",
+    "road": "hand"
    },
    {
     "date": "2026-07-21",
@@ -2004,7 +2037,8 @@
     "deliveredOn": "2026-07-23",
     "paidOn": "2026-07-21",
     "rev": "R2",
-    "rid": "s034"
+    "rid": "s034",
+    "road": "hand"
    },
    {
     "date": "2026-07-22",
@@ -2016,7 +2050,8 @@
     "deliveredQty": 0.5,
     "deliveredOn": "2026-07-23",
     "paidOn": "2026-07-23",
-    "rid": "s035"
+    "rid": "s035",
+    "road": "desk"
    },
    {
     "date": "2026-07-22",
@@ -2029,7 +2064,8 @@
     "deliveredOn": "2026-07-23",
     "paidOn": "2026-07-23",
     "note": "Margin under the 20% floor.",
-    "rid": "s036"
+    "rid": "s036",
+    "road": "hand"
    },
    {
     "date": "2026-07-23",
@@ -2039,7 +2075,8 @@
     "cost": 128,
     "cash": 220,
     "deliveredQty": 2,
-    "rid": "s037"
+    "rid": "s037",
+    "road": "desk"
    },
    {
     "date": "2026-07-23",
@@ -2049,7 +2086,8 @@
     "cost": 160,
     "cash": 230,
     "deliveredQty": 2.5,
-    "rid": "s038"
+    "rid": "s038",
+    "road": "hand"
    },
    {
     "date": "2026-07-25",
@@ -2062,7 +2100,8 @@
     "deliveredOn": "2026-07-25",
     "paidOn": "2026-08-06",
     "note": "Paid two days past term.",
-    "rid": "s039"
+    "rid": "s039",
+    "road": "hand"
    },
    {
     "date": "2026-07-26",
@@ -2091,7 +2130,8 @@
       "cost": 70.5
      }
     ],
-    "rid": "s040"
+    "rid": "s040",
+    "road": "hand"
    },
    {
     "date": "2026-07-28",
@@ -2115,7 +2155,8 @@
       "cost": 47
      }
     ],
-    "rid": "s041"
+    "rid": "s041",
+    "road": "hand"
    },
    {
     "date": "2026-07-28",
@@ -2152,7 +2193,8 @@
      }
     ],
     "note": "Paid, refunded, then paid again.",
-    "rid": "s042"
+    "rid": "s042",
+    "road": "hand"
    },
    {
     "date": "2026-07-29",
@@ -2166,7 +2208,8 @@
     "deliveredQty": 1,
     "deliveredOn": "2026-07-29",
     "note": "Advance to the associate.",
-    "rid": "s043"
+    "rid": "s043",
+    "road": "desk"
    },
    {
     "date": "2026-07-30",
@@ -2179,7 +2222,8 @@
     "deliveredOn": "2026-07-30",
     "paidOn": "2026-07-30",
     "note": "Below the floor, knowingly.",
-    "rid": "s044"
+    "rid": "s044",
+    "road": "hand"
    },
    {
     "date": "2026-07-30",
@@ -2191,7 +2235,8 @@
     "deliveredQty": 2.2,
     "deliveredOn": "2026-07-30",
     "paidOn": "2026-07-30",
-    "rid": "s045"
+    "rid": "s045",
+    "road": "hand"
    },
    {
     "date": "2026-07-30",
@@ -2224,7 +2269,8 @@
       "kg": 0,
       "note": "re-keyed CZ4-TBC to CZ4-MK"
      }
-    ]
+    ],
+    "road": "hand"
    },
    {
     "date": "2026-07-31",
@@ -2237,7 +2283,8 @@
     "deliveredOn": "2026-07-31",
     "paidOn": "2026-07-31",
     "note": "CE4-CER typo corrected.",
-    "rid": "s047"
+    "rid": "s047",
+    "road": "hand"
    },
    {
     "date": "2026-07-31",
@@ -2249,7 +2296,8 @@
     "deliveredQty": 2.5,
     "deliveredOn": "2026-07-31",
     "paidOn": "2026-07-31",
-    "rid": "s048"
+    "rid": "s048",
+    "road": "hand"
    },
    {
     "date": "2026-07-31",
@@ -2260,7 +2308,8 @@
     "deliveredQty": 0,
     "cancelled": true,
     "cancelledOn": "2026-08-05",
-    "rid": "s049"
+    "rid": "s049",
+    "road": "hand"
    },
    {
     "date": "2026-08-01",
@@ -2275,7 +2324,8 @@
     "deliveredQty": 0.5588,
     "deliveredOn": "2026-08-01",
     "note": "Goodwill on top of reconciliation.",
-    "rid": "s050"
+    "rid": "s050",
+    "road": "hand"
    },
    {
     "date": "2026-08-01",
@@ -2289,7 +2339,8 @@
     "paidOn": "2026-08-01",
     "mod": "opened at RM110, restated to RM100 on 01 Aug, then paid and collected in full on the same day",
     "note": "Repriced RM110 to RM100 same day.",
-    "rid": "s051"
+    "rid": "s051",
+    "road": "hand"
    },
    {
     "date": "2026-08-02",
@@ -2316,7 +2367,8 @@
       "note": "cancelled before anything moved"
      }
     ],
-    "rid": "s052"
+    "rid": "s052",
+    "road": "hand"
    },
    {
     "date": "2026-08-03",
@@ -2349,7 +2401,8 @@
      }
     ],
     "note": "Clerical 5/RM440 corrected to 2/RM185. <b>RESTATED 27 SEP 2026 ON HIS WORD.</b> One unit sold at RM90, paid in cash; the second unit was a gift given with the order, not a reward redemption, and is its own row, s208, booked as cost. The RM185 and RM180 figures above are superseded: RM90 is what was sold and paid. It no longer draws on CI4-OKR's reward.",
-    "rid": "s053"
+    "rid": "s053",
+    "road": "hand"
    },
    {
     "date": "2026-08-03",
@@ -2362,7 +2415,8 @@
     "deliveredOn": "2026-08-03",
     "paidOn": "2026-08-03",
     "rev": "R2",
-    "rid": "s054"
+    "rid": "s054",
+    "road": "hand"
    },
    {
     "date": "2026-08-03",
@@ -2376,7 +2430,8 @@
     "paidOn": "2026-08-03",
     "rev": "R2",
     "note": "First sale as associate.",
-    "rid": "s055"
+    "rid": "s055",
+    "road": "hand"
    },
    {
     "rid": "s208",
@@ -2417,7 +2472,8 @@
       "note": "<b>CORRECTION ON s208, 02 OCT: SETTLEDRM 47 TO 90, SETTLEDKG UNSET TO 0, NO CASH, NO STOCK.</b> Decided by the desk and recorded 02 Oct 2026 for CI4-OKR's order of 1 unit for RM90 dated 03 Aug 2026. The row's rate is RM90 a unit. The dossier gives no floor or ask for this size, so no comparison is made. CI4-OKR: median RM92.5 a unit, range RM90 to RM96.67, RM0 outstanding and no units on credit before this entry, against no stated cap. The row stays delivered, with 1 unit moved and RM0 cash on it. The dossier gives no cost for this row beyond the inventory's RM56 a unit. The drafter raised no flags, so there is nothing for the figures to answer. Outstanding: the dossier states nothing further."
      }
     ],
-    "settledKg": 0
+    "settledKg": 0,
+    "road": "hand"
    },
    {
     "date": "2026-08-04",
@@ -2448,7 +2504,8 @@
       "kg": 0,
       "note": "<b>CORRECTION ON S056, REBATE OFF AND GOODWILL ON, APPLIED 14 SEP.</b> The target is CN6-WM's order of 04 Aug, 0.5 unit for RM50, no cash in and 0.5 unit moved, neither cancelled nor defaulted, noted at the time as a rebate redeemed as salt at RM50. That description is now overtaken: rebate false, goodwill true, with the row itself not rewritten. Nothing is paid, delivered or reversed by this patch and it carries no cost. <b>The drafter flagged nothing</b> and the two fields are the whole of the change. He remains an associate on the roster, RM110 outstanding, 1 unit on credit, nothing defaulted. The RM110 stays open."
      }
-    ]
+    ],
+    "road": "hand"
    },
    {
     "date": "2026-08-04",
@@ -2478,7 +2535,8 @@
       "cost": 23.5
      }
     ],
-    "rid": "s057"
+    "rid": "s057",
+    "road": "hand"
    },
    {
     "date": "2026-08-05",
@@ -2490,7 +2548,8 @@
     "deliveredQty": 2,
     "deliveredOn": "2026-08-05",
     "paidOn": "2026-08-05",
-    "rid": "s058"
+    "rid": "s058",
+    "road": "hand"
    },
    {
     "date": "2026-08-05",
@@ -2504,7 +2563,8 @@
     "paidOn": "2026-08-05",
     "rev": "R2",
     "note": "Re-booked as R2 resell.",
-    "rid": "s059"
+    "rid": "s059",
+    "road": "hand"
    },
    {
     "date": "2026-08-06",
@@ -2517,7 +2577,8 @@
     "deliveredOn": "2026-08-06",
     "paidOn": "2026-08-06",
     "rev": "R2",
-    "rid": "s060"
+    "rid": "s060",
+    "road": "hand"
    },
    {
     "date": "2026-08-06",
@@ -2532,7 +2593,8 @@
     "deliveredOn": "2026-08-06",
     "paidOn": "2026-08-06",
     "note": "Rebate redeemed as salt, RM80.",
-    "rid": "s061"
+    "rid": "s061",
+    "road": "hand"
    },
    {
     "date": "2026-08-06",
@@ -2547,7 +2609,8 @@
     "paidOn": "2026-08-06",
     "rev": "R2",
     "note": "First oil sale.",
-    "rid": "s062"
+    "rid": "s062",
+    "road": "hand"
    },
    {
     "date": "2026-08-06",
@@ -2559,7 +2622,8 @@
     "paidOn": "2026-08-08",
     "deliveredQty": 3,
     "deliveredOn": "2026-08-08",
-    "rid": "s063"
+    "rid": "s063",
+    "road": "hand"
    },
    {
     "date": "2026-08-06",
@@ -2571,7 +2635,8 @@
     "deliveredQty": 1,
     "paidOn": "2026-08-07",
     "deliveredOn": "2026-08-07",
-    "rid": "s064"
+    "rid": "s064",
+    "road": "hand"
    },
    {
     "date": "2026-08-07",
@@ -2602,7 +2667,8 @@
       "kg": 0,
       "note": "re-keyed CH4-KS to CH4-KLS"
      }
-    ]
+    ],
+    "road": "hand"
    },
    {
     "date": "2026-08-07",
@@ -2615,7 +2681,8 @@
     "deliveredQty": 2,
     "paidOn": "2026-08-07",
     "deliveredOn": "2026-08-07",
-    "rid": "s066"
+    "rid": "s066",
+    "road": "hand"
    },
    {
     "date": "2026-08-07",
@@ -2630,7 +2697,8 @@
     "paidOn": "2026-08-07",
     "deliveredOn": "2026-08-07",
     "note": "Oil; balance of an RM260 order.",
-    "rid": "s067"
+    "rid": "s067",
+    "road": "hand"
    },
    {
     "date": "2026-08-07",
@@ -2646,7 +2714,8 @@
     "deliveredOn": "2026-08-07",
     "paidOn": "2026-08-10",
     "note": "Half paid, half rebate unit.",
-    "rid": "s068"
+    "rid": "s068",
+    "road": "hand"
    },
    {
     "date": "2026-08-07",
@@ -2659,7 +2728,8 @@
     "deliveredQty": 1,
     "deliveredOn": "2026-08-08",
     "note": "RM20 concession, unasked.",
-    "rid": "s069"
+    "rid": "s069",
+    "road": "hand"
    },
    {
     "date": "2026-08-08",
@@ -2688,7 +2758,8 @@
       "note": "RM90 paid, three days out"
      }
     ],
-    "rid": "s070"
+    "rid": "s070",
+    "road": "hand"
    },
    {
     "date": "2026-08-08",
@@ -2700,7 +2771,8 @@
     "deliveredQty": 0.5,
     "deliveredOn": "2026-08-08",
     "paidOn": "2026-08-08",
-    "rid": "s071"
+    "rid": "s071",
+    "road": "hand"
    },
    {
     "date": "2026-08-08",
@@ -2729,7 +2801,8 @@
       "note": "RM80 paid the day promised"
      }
     ],
-    "rid": "s072"
+    "rid": "s072",
+    "road": "hand"
    },
    {
     "date": "2026-08-10",
@@ -2742,7 +2815,8 @@
     "deliveredOn": "2026-08-10",
     "paidOn": "2026-08-10",
     "note": "Loyalty cut past RM1,000 buying.",
-    "rid": "s073"
+    "rid": "s073",
+    "road": "hand"
    },
    {
     "date": "2026-08-10",
@@ -2757,7 +2831,8 @@
     "deliveredQty": 4,
     "deliveredOn": "2026-08-10",
     "note": "Four earned units, backfilled.",
-    "rid": "s074"
+    "rid": "s074",
+    "road": "hand"
    },
    {
     "date": "2026-08-11",
@@ -2769,7 +2844,8 @@
     "deliveredQty": 2.5,
     "deliveredOn": "2026-08-12",
     "paidOn": "2026-08-12",
-    "rid": "s075"
+    "rid": "s075",
+    "road": "hand"
    },
    {
     "date": "2026-08-11",
@@ -2783,7 +2859,8 @@
     "deliveredOn": "2026-08-11",
     "paidOn": "2026-08-11",
     "note": "First direct oil buy.",
-    "rid": "s076"
+    "rid": "s076",
+    "road": "hand"
    },
    {
     "date": "2026-08-11",
@@ -2798,7 +2875,8 @@
     "rev": "R2",
     "paidOn": "2026-08-11",
     "note": "Sold below cost, knowingly.",
-    "rid": "s077"
+    "rid": "s077",
+    "road": "hand"
    },
    {
     "date": "2026-08-11",
@@ -2811,7 +2889,8 @@
     "deliveredOn": "2026-08-11",
     "paidOn": "2026-08-11",
     "note": "Quantity corrected.",
-    "rid": "s078"
+    "rid": "s078",
+    "road": "desk"
    },
    {
     "date": "2026-08-12",
@@ -2823,7 +2902,8 @@
     "deliveredQty": 0.5,
     "deliveredOn": "2026-08-12",
     "paidOn": "2026-08-12",
-    "rid": "s079"
+    "rid": "s079",
+    "road": "hand"
    },
    {
     "date": "2026-08-12",
@@ -2837,7 +2917,8 @@
     "paidOn": "2026-08-12",
     "ref": "CN3-WM",
     "refKg": 1,
-    "rid": "s080"
+    "rid": "s080",
+    "road": "hand"
    },
    {
     "date": "2026-08-14",
@@ -2850,7 +2931,8 @@
     "deliveredOn": "2026-08-14",
     "paidOn": "2026-08-14",
     "note": "Never an advance; reported late.",
-    "rid": "s081"
+    "rid": "s081",
+    "road": "hand"
    },
    {
     "date": "2026-08-14",
@@ -2864,7 +2946,8 @@
     "rev": "R2",
     "paidOn": "2026-08-14",
     "note": "Cost blends two lots.",
-    "rid": "s082"
+    "rid": "s082",
+    "road": "hand"
    },
    {
     "date": "2026-08-14",
@@ -2877,7 +2960,8 @@
     "deliveredOn": "2026-08-14",
     "paidOn": "2026-08-14",
     "note": "First name taken off the desk.",
-    "rid": "s083"
+    "rid": "s083",
+    "road": "hand"
    },
    {
     "date": "2026-08-14",
@@ -2891,7 +2975,8 @@
     "deliveredOn": "2026-08-14",
     "paidOn": "2026-08-14",
     "note": "RM11.50 corrected from RM115.",
-    "rid": "s084"
+    "rid": "s084",
+    "road": "hand"
    },
    {
     "date": "2026-08-15",
@@ -2904,7 +2989,8 @@
     "deliveredOn": "2026-08-15",
     "paidOn": "2026-08-15",
     "note": "Opened as CM3-OKR; renamed CH5-OUG.",
-    "rid": "s085"
+    "rid": "s085",
+    "road": "hand"
    },
    {
     "date": "2026-08-15",
@@ -2917,7 +3003,8 @@
     "deliveredOn": "2026-08-15",
     "paidOn": "2026-08-15",
     "note": "First row entered by tap.",
-    "rid": "s086"
+    "rid": "s086",
+    "road": "desk"
    },
    {
     "date": "2026-08-17",
@@ -2929,7 +3016,8 @@
     "deliveredQty": 1,
     "deliveredOn": "2026-08-17",
     "paidOn": "2026-08-17",
-    "rid": "s087"
+    "rid": "s087",
+    "road": "hand"
    },
    {
     "date": "2026-08-17",
@@ -2942,7 +3030,8 @@
     "deliveredOn": "2026-08-17",
     "paidOn": "2026-08-17",
     "note": "Thinnest opening rate on book.",
-    "rid": "s088"
+    "rid": "s088",
+    "road": "hand"
    },
    {
     "date": "2026-08-17",
@@ -2954,7 +3043,8 @@
     "deliveredQty": 2,
     "deliveredOn": "2026-08-17",
     "paidOn": "2026-08-17",
-    "rid": "s089"
+    "rid": "s089",
+    "road": "desk"
    },
    {
     "date": "2026-08-18",
@@ -2966,7 +3056,8 @@
     "deliveredQty": 0.5,
     "deliveredOn": "2026-08-18",
     "paidOn": "2026-08-18",
-    "rid": "s090"
+    "rid": "s090",
+    "road": "hand"
    },
    {
     "date": "2026-08-18",
@@ -2978,7 +3069,8 @@
     "deliveredQty": 2.5,
     "deliveredOn": "2026-08-18",
     "paidOn": "2026-08-18",
-    "rid": "s091"
+    "rid": "s091",
+    "road": "hand"
    },
    {
     "date": "2026-08-18",
@@ -3008,7 +3100,8 @@
       "note": "RM80 paid 27 Aug, nine days out"
      }
     ],
-    "paidOn": "2026-08-27"
+    "paidOn": "2026-08-27",
+    "road": "hand"
    },
    {
     "date": "2026-08-18",
@@ -3062,7 +3155,8 @@
     ],
     "note": "Corrected to 5.75 unit; deliveries found late.",
     "rid": "s093",
-    "mod": "corrected on 2026-08-25: qty 6.25 to 5.75"
+    "mod": "corrected on 2026-08-25: qty 6.25 to 5.75",
+    "road": "desk"
    },
    {
     "date": "2026-08-20",
@@ -3098,7 +3192,8 @@
      }
     ],
     "note": "First half of split 12.5 unit order.",
-    "rid": "s094"
+    "rid": "s094",
+    "road": "hand"
    },
    {
     "date": "2026-08-20",
@@ -3134,7 +3229,8 @@
     ],
     "note": "<b>COMPLETED: PAID 20 AUG, DELIVERED IN FULL 29 AUG (folded v404).</b>  Paid in full; delivery still owed.",
     "rid": "s095",
-    "deliveredOn": "2026-08-29"
+    "deliveredOn": "2026-08-29",
+    "road": "hand"
    },
    {
     "date": "2026-08-20",
@@ -3147,7 +3243,8 @@
     "deliveredOn": "2026-08-20",
     "paidOn": "2026-08-20",
     "note": "Cheapest salt ever sold.",
-    "rid": "s096"
+    "rid": "s096",
+    "road": "hand"
    },
    {
     "date": "2026-08-20",
@@ -3184,7 +3281,8 @@
      }
     ],
     "note": "Queued three times before folding.",
-    "rid": "s097"
+    "rid": "s097",
+    "road": "hand"
    },
    {
     "customer": "CS6-PER",
@@ -3213,7 +3311,8 @@
       "note": "<b>DATED 20 AUG on his word, 04 Sep.</b> The order carried no date at all: it was cancelled on 24 Aug and the cancellation was recorded while the order date never was. v381 states it outright, that two orders went to CS6-PER after the 30 Jul ban, s068 on 07 Aug and the cancelled s109 on 20 Aug. No figure moves: nothing was paid and nothing was delivered."
      }
     ],
-    "note": "<b>DATED 20 AUG on his word, 04 Sep.</b> The order carried no date at all: it was cancelled on 24 Aug and the cancellation was recorded while the order date never was. v381 states it outright, that two orders went to CS6-PER after the 30 Jul ban, s068 on 07 Aug and the cancelled s109 on 20 Aug. No figure moves: nothing was paid and nothing was delivered. "
+    "note": "<b>DATED 20 AUG on his word, 04 Sep.</b> The order carried no date at all: it was cancelled on 24 Aug and the cancellation was recorded while the order date never was. v381 states it outright, that two orders went to CS6-PER after the 30 Jul ban, s068 on 07 Aug and the cancelled s109 on 20 Aug. No figure moves: nothing was paid and nothing was delivered. ",
+    "road": "desk"
    },
    {
     "date": "2026-08-21",
@@ -3244,7 +3343,8 @@
      }
     ],
     "note": "Restated: RM190 replaced RM120 entry.",
-    "rid": "s098"
+    "rid": "s098",
+    "road": "desk"
    },
    {
     "date": "2026-08-21",
@@ -3281,7 +3381,8 @@
      }
     ],
     "note": "Folded late against a stale mirror.",
-    "rid": "s099"
+    "rid": "s099",
+    "road": "hand"
    },
    {
     "date": "2026-08-21",
@@ -3314,7 +3415,8 @@
       "kg": 0,
       "note": "restated to RM100; R3 credited"
      }
-    ]
+    ],
+    "road": "hand"
    },
    {
     "date": "2026-08-22",
@@ -3342,7 +3444,8 @@
       "cost": 44
      }
     ],
-    "rid": "s101"
+    "rid": "s101",
+    "road": "hand"
    },
    {
     "customer": "CN3-WM",
@@ -3371,7 +3474,8 @@
       "note": "<b>DATED 22 AUG on his word, 04 Sep.</b> The order carried no date at all: it was cancelled on 24 Aug and the cancellation was recorded while the order date never was. v334 of 22 Aug describes this row, CN6-WM 1.5 unit for RM185 at RM123.33 a unit, which is where the date comes from. No figure moves: nothing was paid and nothing was delivered."
      }
     ],
-    "note": "<b>DATED 22 AUG on his word, 04 Sep.</b> The order carried no date at all: it was cancelled on 24 Aug and the cancellation was recorded while the order date never was. v334 of 22 Aug describes this row, CN6-WM 1.5 unit for RM185 at RM123.33 a unit, which is where the date comes from. No figure moves: nothing was paid and nothing was delivered. "
+    "note": "<b>DATED 22 AUG on his word, 04 Sep.</b> The order carried no date at all: it was cancelled on 24 Aug and the cancellation was recorded while the order date never was. v334 of 22 Aug describes this row, CN6-WM 1.5 unit for RM185 at RM123.33 a unit, which is where the date comes from. No figure moves: nothing was paid and nothing was delivered. ",
+    "road": "hand"
    },
    {
     "customer": "CS6-BS-R",
@@ -3410,7 +3514,8 @@
     "deliveredOn": "2026-08-24",
     "paidOn": "2026-08-24",
     "cost": 132,
-    "rid": "s102"
+    "rid": "s102",
+    "road": "hand"
    },
    {
     "customer": "CS6-BS",
@@ -3443,7 +3548,8 @@
     "settledRM": 44,
     "rebate": true,
     "rebateKg": 1,
-    "goodwill": true
+    "goodwill": true,
+    "road": "hand"
    },
    {
     "customer": "CA4-DAM",
@@ -3487,7 +3593,8 @@
     "cost": 44,
     "rid": "s104",
     "mod": "corrected on 2026-08-25: qty 0.5 to 1; total 50 to 100; deliveredQty 0.5 to 1",
-    "paidOn": "2026-08-26"
+    "paidOn": "2026-08-26",
+    "road": "hand"
    },
    {
     "customer": "CM4-MK",
@@ -3525,7 +3632,8 @@
       "kg": 0,
       "note": "RM380 lands, advance closes"
      }
-    ]
+    ],
+    "road": "hand"
    },
    {
     "customer": "CR3-DAM",
@@ -3554,7 +3662,8 @@
       "note": "RM80 paid 27 Aug, three days out"
      }
     ],
-    "paidOn": "2026-08-27"
+    "paidOn": "2026-08-27",
+    "road": "hand"
    },
    {
     "customer": "CJ4-BJ",
@@ -3591,7 +3700,8 @@
     "deliveredOn": "2026-08-27",
     "handover": "delivered",
     "mod": "corrected on 2026-08-27: deliveredQty 0 to 6.25; deliveredOn (unset) to 2026-08-27; handover (unset) to delivered",
-    "cost": 315.03
+    "cost": 315.03,
+    "road": "hand"
    },
    {
     "customer": "CH6-SET",
@@ -3603,7 +3713,8 @@
     "deliveredQty": 1,
     "deliveredOn": "2026-08-26",
     "paidOn": "2026-08-26",
-    "rid": "s110"
+    "rid": "s110",
+    "road": "hand"
    },
    {
     "customer": "CZ4-MK",
@@ -3615,7 +3726,8 @@
     "deliveredQty": 5,
     "deliveredOn": "2026-08-26",
     "paidOn": "2026-08-26",
-    "rid": "s111"
+    "rid": "s111",
+    "road": "hand"
    },
    {
     "customer": "CY2-NIL",
@@ -3627,7 +3739,8 @@
     "deliveredQty": 2.5,
     "deliveredOn": "2026-08-26",
     "paidOn": "2026-08-26",
-    "rid": "s112"
+    "rid": "s112",
+    "road": "hand"
    },
    {
     "customer": "CS6-PER",
@@ -3640,7 +3753,8 @@
     "deliveredOn": "2026-08-26",
     "paidOn": "2026-08-26",
     "note": "The s016 ban is lifted.",
-    "rid": "s113"
+    "rid": "s113",
+    "road": "hand"
    },
    {
     "customer": "CZ4-MK",
@@ -3672,7 +3786,8 @@
       "kg": 0,
       "note": "RM20 over-tender moved to payable"
      }
-    ]
+    ],
+    "road": "hand"
    },
    {
     "customer": "CD7-SEG",
@@ -3685,7 +3800,8 @@
     "deliveredQty": 1,
     "deliveredOn": "2026-08-27",
     "paidOn": "2026-08-27",
-    "rid": "s115"
+    "rid": "s115",
+    "road": "hand"
    },
    {
     "customer": "CR3-DAM",
@@ -3724,7 +3840,8 @@
       "note": "<b>RM 80 PAID ON 5 SEP, on his word.</b> Half of the RM 160 CR3-DAM paid today against his two standing advances of 1 unit each. Nothing moves on the shelf: the unit went out on 2026-08-27. The row closes, and with both closed CR3-DAM is off the receivable and clear of the 1-unit retail cap he had stood 2 unit over since 31 Aug."
      }
     ],
-    "paidOn": "2026-09-05"
+    "paidOn": "2026-09-05",
+    "road": "desk"
    },
    {
     "customer": "CA4-DAM",
@@ -3756,7 +3873,8 @@
       "kg": 0,
       "note": "<b>DEFAULTED.</b> 1 unit handed over on 28 Aug for RM100, nothing paid, and on his word on 2 Sep the money will not come. The first credit in thirteen orders, and the last. The figures stay on the row so the loss is read where it happened."
      }
-    ]
+    ],
+    "road": "desk"
    },
    {
     "customer": "CH4-KS",
@@ -3794,7 +3912,8 @@
       "cost": 150
      }
     ],
-    "rid": "s118"
+    "rid": "s118",
+    "road": "hand"
    },
    {
     "customer": "CY2-NIL",
@@ -3830,7 +3949,8 @@
     "cancelled": true,
     "date": "2026-08-28",
     "mod": "corrected on 2026-09-04: date (unset) to 2026-08-28",
-    "note": "<b>DATED 28 AUG on his word, 04 Sep.</b> The order carried agreedOn 2026-08-28 and no date, so it read as undated everywhere the desk asks for one. v396 records the order that day and v486 answered the 31 Aug query against this row and upheld the book, so 28 Aug is the agreed date twice over. No figure moves: nothing was paid and nothing was delivered. "
+    "note": "<b>DATED 28 AUG on his word, 04 Sep.</b> The order carried agreedOn 2026-08-28 and no date, so it read as undated everywhere the desk asks for one. v396 records the order that day and v486 answered the 31 Aug query against this row and upheld the book, so 28 Aug is the agreed date twice over. No figure moves: nothing was paid and nothing was delivered. ",
+    "road": "hand"
    },
    {
     "customer": "CN3-WM",
@@ -3863,7 +3983,8 @@
       "kg": 0,
       "note": "<b>CORRECTION ON S124, SETTLED IN KIND AND REBATE ON, APPLIED 14 SEP.</b> The target is CN6-WM's order of 30 Aug, 1 unit for RM110, no cash in and 1 unit delivered, neither cancelled nor defaulted, noted at the time as an advance with RM110 owed. The patch sets settledRM to 110, rebate to false no longer, and rebateKg to 1: an automatic offset of his reward against that order. No cash and no stock move. Cost is the desk's own RM44 a unit, RM44 on the order. <b>The drafter raised no flag.</b> He held RM210 outstanding and 2 units on credit before this, nothing defaulted, across 7 orders at a RM100 median in a RM75 to RM110 range. Nothing is left outstanding on the row."
      }
-    ]
+    ],
+    "road": "hand"
    },
    {
     "customer": "CA7-AMP",
@@ -3897,7 +4018,8 @@
       "kg": 0,
       "note": "Entered as 1 Sep; happened on 31 Aug. Date, delivered-on and paid-on move together, no figure changes. Dictated in a Code session on 2 Sep 2026."
      }
-    ]
+    ],
+    "road": "hand"
    },
    {
     "customer": "CA7-AMP",
@@ -3932,7 +4054,8 @@
       "kg": 0,
       "note": "Entered as 1 Sep; happened on 31 Aug. Date, delivered-on and paid-on move together, no figure changes. Dictated in a Code session on 2 Sep 2026."
      }
-    ]
+    ],
+    "road": "hand"
    },
    {
     "customer": "CK4-SEN",
@@ -3963,7 +4086,8 @@
       "kg": 0,
       "note": "Entered as 1 Sep; happened on 31 Aug. Date, delivered-on and paid-on move together, no figure changes. Dictated in a Code session on 2 Sep 2026."
      }
-    ]
+    ],
+    "road": "hand"
    },
    {
     "customer": "CR3-DAM",
@@ -4002,7 +4126,8 @@
       "note": "<b>RM 80 PAID ON 5 SEP, on his word.</b> Half of the RM 160 CR3-DAM paid today against his two standing advances of 1 unit each. Nothing moves on the shelf: the unit went out on 2026-08-31. The row closes, and with both closed CR3-DAM is off the receivable and clear of the 1-unit retail cap he had stood 2 unit over since 31 Aug."
      }
     ],
-    "paidOn": "2026-09-05"
+    "paidOn": "2026-09-05",
+    "road": "hand"
    },
    {
     "customer": "CI4-OKR",
@@ -4016,7 +4141,8 @@
     "deliveredOn": "2026-09-02",
     "paidOn": "2026-09-02",
     "note": "<b>3 UNIT AT RM96.67, PAID AND COLLECTED ON THE DAY.</b> Against the RM50 shelf it returns RM140 at 48.3%. Inside his own range and clear of every floor: the drafter raised no flag. Dictated in a Code session on 2 Sep 2026 and folded on his word.",
-    "rid": "s125"
+    "rid": "s125",
+    "road": "desk"
    },
    {
     "customer": "CE4-CHE",
@@ -4030,7 +4156,8 @@
     "deliveredOn": "2026-09-02",
     "paidOn": "2026-09-02",
     "note": "<b>2 UNIT AT RM107.50, PAID AND COLLECTED ON THE DAY.</b> CE4-CHE has paid about RM92 a unit across six orders; this one is 17% above that. Against the RM50 shelf it returns RM115 at 53.5%. Dictated as CA5-CHE, not a code on the roster; folded to CE4-CHE, the party he named in the same breath for the deferred balance. Dictated in a Code session on 2 Sep 2026 and folded on his word.",
-    "rid": "s126"
+    "rid": "s126",
+    "road": "desk"
    },
    {
     "customer": "CF5-WM",
@@ -4044,7 +4171,8 @@
     "deliveredOn": "2026-09-02",
     "paidOn": "2026-09-02",
     "note": "<b>FIRST ORDER FROM CF5-WM,</b> registered a minute earlier from the phone. RM115 a unit, above the board's two-unit ask of RM100 and clear of the floors; paid in full and collected on the day. Costed at RM48 from p019, the SA5-BTR lot that landed the same morning.",
-    "rid": "s127"
+    "rid": "s127",
+    "road": "desk"
    },
    {
     "customer": "CA4-DAM",
@@ -4076,7 +4204,8 @@
       "kg": 0,
       "note": "<b>DEFAULTED on his word, 05 Sep.</b> 1.5 unit collected on 2 Sep for RM 160 with nothing paid, and on 5 Sep he said the money will not come: CA4-DAM's whole outstanding, this row and s117 before it, is written off. The figures stay on the row so the loss is read where it happened. Gross keeps the RM 160 and the ladder now provisions it in full, the same treatment SF6-KLC's RM 750 has had since 31 Jul: the provision is charged, and the desk no longer counts this as expected cash. Not banned."
      }
-    ]
+    ],
+    "road": "desk"
    },
    {
     "customer": "CM4-MK",
@@ -4090,7 +4219,8 @@
     "deliveredOn": "2026-09-02",
     "paidOn": "2026-09-02",
     "note": "<b>2 UNIT DELIVERED, PAID IN FULL ON THE DAY.</b> RM 220 at RM 110 a unit, which is his median and the same figure he paid on each of his three previous two-unit orders, on 23 Jul, 5 Aug and 17 Aug. Clear of the delivered floor of RM 140.87 on the order. Costed at RM 48 from p019, the shelf's own rate, returning RM 124 at 56.4%. The drafter raised no flag and there is nothing unusual on it: his seventh order, and like most of the six before it, it settled on the day it was placed.",
-    "rid": "s129"
+    "rid": "s129",
+    "road": "desk"
    },
    {
     "customer": "CM6-PJ",
@@ -4104,7 +4234,8 @@
     "deliveredOn": "2026-09-03",
     "paidOn": "2026-09-03",
     "note": "Collected by CM6-PJ on 3 Sep 2026, 3 unit for RM 270, RM 90 a unit, paid RM 270 and taken in full on the day, so nothing is owed and nothing is left to move. Costed at RM 48 a unit off p019, the 31 Aug SA5-BTR lot that is the current shelf, which the desk's own stock cost confirms, so the draft was not written against a stale rate: RM 144 of cost, RM 126 gross, 46.7%. The floor for 3 unit collected is RM 183.80, so the order is RM 86.20 clear of it. His second row on the book: the first was s100 on 21 Aug, 1 unit at RM 100 after that row was restated down from RM 120. The lower unit rate here is the size taper, not a discount granted.",
-    "rid": "s130"
+    "rid": "s130",
+    "road": "desk"
    },
    {
     "customer": "CS6-BS",
@@ -4118,7 +4249,8 @@
     "deliveredOn": "2026-09-03",
     "paidOn": "2026-09-03",
     "note": "2 unit delivered to CS6-BS for RM 200, RM 100 a unit, paid in full and delivered in full on 3 Sep, so the row closes on arrival and leaves nothing outstanding. Costed at the shelf's own RM 48 a unit, RM 96 against RM 200, RM 104 on the order at 52%. The floor for 2 unit delivered is RM 140.87, so the rate is RM 59.13 clear of it. His own six salt rows run RM 95 to RM 126.67 a unit on 1 to 1.5 unit, plus a free unit on 24 Aug; this is his largest salt order to date, and RM 100 a unit on double the size is the taper rather than a concession. No flag from the drafter.",
-    "rid": "s131"
+    "rid": "s131",
+    "road": "desk"
    },
    {
     "customer": "CM4-MK",
@@ -4147,7 +4279,8 @@
       "note": "<b>FULFILMENT ON CM4-MK s132: RM 60 CASH, THE ORDER CLOSES.</b> The order is 4 unit for RM 360 agreed 04 Sep with RM 300 already in. RM 60 and 0 unit move on 08 Sep against RM 60 and 0 unit outstanding, which leaves RM 0 and 0 unit. No stock moves, the units went with the original row. The drafter flagged only that this settles the order in full, and the figures answer it: cash in matches what was outstanding. No cost attaches here, the goods were costed on the order itself at the inventory's own rate. Nothing is left outstanding on the row."
      }
     ],
-    "paidOn": "2026-09-08"
+    "paidOn": "2026-09-08",
+    "road": "desk"
    },
    {
     "customer": "CM4-TO",
@@ -4161,7 +4294,8 @@
     "deliveredOn": "2026-09-04",
     "paidOn": "2026-09-04",
     "note": "<b>12.5 UNIT COLLECTED AND PAID IN FULL ON 4 SEP, RM 650 AT RM 52 A UNIT, BELOW THE FLOOR ON HIS WORD.</b> The desk's own snapshot that morning put the collected floor for 12.5 unit at RM 682.87 and the delivered floor at RM 692.87, so this clears neither: it is RM 32.87 under the one that applies. The loaded cost is RM 52.63 a unit against RM 52.00 sold, so the order loses RM 0.63 a unit before the RM 25 that timePerOrder charges for the work; costed at the shelf's RM 48 it shows RM 50 on the order at 7.7%, which is the thinnest margin on any salt row this month. He took it with the figure in front of him, and three things stand beside the decision: CH5-OUG bought 12.5 unit at RM 600 on 20 Aug, RM 48 a unit, so RM 650 is RM 50 more than his own last order at this size; he is the only customer buying 12.5 unit at wholesale rates, the other four such orders on the book being RM 750 to RM 1,300; and RM 650 for 12.5 unit is exactly SA5-BTR's live quote tier, so the lot goes out at what it costs to replace. Entered by the fold on his word, 05 Sep, after the phone entry did not arrive twice: no drafter flag was raised because no draft was made, which is why the floor figure is written here instead.",
-    "rid": "s133"
+    "rid": "s133",
+    "road": "hand"
    },
    {
     "customer": "CH5-KLC",
@@ -4175,7 +4309,8 @@
     "deliveredOn": "2026-09-05",
     "paidOn": "2026-09-05",
     "note": "<b>0.5 UNIT COLLECTED AND PAID IN FULL ON 5 SEP, RM 75 AT RM 150 A UNIT.</b> His second completed order and his first since July: s024 of 17 Jul was 0.5 unit at RM 105, and the 0.5 at RM 80 he agreed on 31 Jul was cancelled on 5 Aug. RM 150 a unit is RM 60 under that July rate and clears the 0.5-unit collected floor of RM 51.31 by RM 23.69. Costed at the shelf's RM 48, RM 24 against RM 75, RM 51 on the order at 68%. Entered by the fold on his word, 05 Sep, as the four rows of v489 were.",
-    "rid": "s134"
+    "rid": "s134",
+    "road": "hand"
    },
    {
     "customer": "CE5-SA",
@@ -4188,7 +4323,8 @@
     "paidOn": "2026-09-06",
     "note": "<b>1 UNIT TO A NEW BUYER, PAID AND HANDED OVER ON THE DAY.</b> CE5-TBC is registered with a temporary suffix: the location is to be confirmed and the code is re-keyed when it is, on his word of 06 Sep 2026. RM 110 for 1 unit, costed off the shelf at RM 48.",
     "rid": "s135",
-    "cost": 48
+    "cost": 48,
+    "road": "site"
    },
    {
     "customer": "CR3-DAM",
@@ -4228,7 +4364,8 @@
     ],
     "settledRM": 25,
     "settledKg": 0,
-    "settle": "First associate sale"
+    "settle": "First associate sale",
+    "road": "desk"
    },
    {
     "customer": "CJ4-BJ",
@@ -4282,7 +4419,8 @@
      }
     ],
     "mod": "corrected on 2026-09-20: total 835 to 850; delivery 15 to (cleared)",
-    "paidOn": "2026-10-05"
+    "paidOn": "2026-10-05",
+    "road": "desk"
    },
    {
     "customer": "CS6-BS-R",
@@ -4329,7 +4467,8 @@
      }
     ],
     "rev": "R2",
-    "paidOn": "2026-09-07"
+    "paidOn": "2026-09-07",
+    "road": "hand"
    },
    {
     "customer": "CS6-BS",
@@ -4384,7 +4523,8 @@
     ],
     "settledRM": 110,
     "rebateKg": 1,
-    "rebate": true
+    "rebate": true,
+    "road": "desk"
    },
    {
     "customer": "CA7-AMP",
@@ -4424,7 +4564,8 @@
     "paidOn": "2026-09-09",
     "cost": 350,
     "delivery": 15,
-    "mod": "corrected on 2026-09-10: total 450 to 430; cash 450 to 430; cost (unset) to 350; delivery (unset) to 15; handover collected to delivered"
+    "mod": "corrected on 2026-09-10: total 450 to 430; cash 450 to 430; cost (unset) to 350; delivery (unset) to 15; handover collected to delivered",
+    "road": "hand"
    },
    {
     "customer": "CC9-OKR",
@@ -4452,7 +4593,8 @@
       "note": "<b>CANCELLATION ON 08 SEP 2026 AGAINST THE CC5-OKR ORDER OF THAT DAY.</b> The withdrawn row was a SELL to CC5-OKR, 1 unit of salt for RM 90, and it was still pending: RM 0 cash and 0 unit had moved, so no stock was drawn and no revenue booked. The order is withdrawn and counts nowhere. The row itself is not recomputed here, ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two. It carries no cost of its own. The drafter flagged nothing. Nothing is left outstanding on it."
      }
     ],
-    "cancelled": true
+    "cancelled": true,
+    "road": "hand"
    },
    {
     "customer": "CK4-SEN",
@@ -4466,7 +4608,8 @@
     "deliveredOn": "2026-09-09",
     "paidOn": "2026-09-09",
     "note": "<b>COMPLETED SALT ROW DATED 09 SEP, PAID AND DELIVERED THE SAME DAY.</b> SELL to CK4-SEN, 6.25 unit of salt for RM505, collected, RM505 cash and 6.25 unit moved, so nothing stays open. At RM80.8 a unit it stands above the RM351.33 floor for 6.25 unit and under the RM610 ask, well under the RM880 ceiling. The draft costs it at RM48 a unit, not the inventory's own RM44, so RM300 attaches to this order. CK4-SEN stood at 1 order, a median rate of RM73.33, a range of RM73.33 to RM73.33, nothing outstanding, no units on credit against a cap of 1 and nothing defaulted. The drafter flagged nothing. Nothing is left outstanding.",
-    "rid": "s142"
+    "rid": "s142",
+    "road": "desk"
    },
    {
     "customer": "CM4-MK",
@@ -4497,7 +4640,8 @@
       "note": "<b>FULFILMENT OF RM110 ON S143, WHICH SETTLES THE ORDER.</b> CM4-MK's order of 09 Sep, 2 unit for RM220 with RM202 goods and RM18 delivery, stood delivered in full with RM110 cash in and RM110 open. RM110 and 0 unit move on 13 Sep against RM110 and 0 unit outstanding, leaving RM0 and 0 unit, which answers the drafter's single flag that this settles in full. The row is not recomputed in the note: ovAmend in the master applies the fulfilment. His median rate is RM101 a unit over a RM90 to RM110 range, nothing defaulted, and his outstanding of RM110 with 1 unit on credit goes to nil."
      }
     ],
-    "paidOn": "2026-09-13"
+    "paidOn": "2026-09-13",
+    "road": "desk"
    },
    {
     "customer": "CE4-CHE",
@@ -4511,7 +4655,8 @@
     "deliveredOn": "2026-09-10",
     "paidOn": "2026-09-10",
     "note": "<b>SALT SELL DATED 10 SEP, PAID IN FULL AND COLLECTED IN FULL.</b> SELL to CE4-CHE, 2.5 unit for RM230, all goods with no delivery, RM230 cash in and 2.5 unit handed over on 10 Sep, so nothing stays open. The total clears the RM140.53 floor for 2.5 unit, falls short of the RM270 ask and sits under the RM360 ceiling. RM92 a unit is CE4-CHE's median across 7 orders on a range of RM76.67 to RM107.50, with nothing outstanding before, no units on credit against a cap of 1 and nothing defaulted. Cost is the inventory's own RM44 a unit, RM110 on the order, not the drafter's RM120. The drafter flagged nothing and nothing is left outstanding.",
-    "rid": "s144"
+    "rid": "s144",
+    "road": "desk"
    },
    {
     "customer": "CB7-BJ",
@@ -4527,7 +4672,8 @@
     "ref": "CI4-OKR",
     "refKg": 1,
     "note": "<b>SALT SELL DATED 10 SEP, PAID IN FULL AND COLLECTED IN FULL.</b> SELL to CB7-TBC, 1 unit for RM100, all goods with no delivery, RM100 cash in and 1 unit handed over on 10 Sep, referred by CI4-OKR on stream R3, so nothing stays open. The total clears the RM56.21 floor for 1 unit, falls short of the RM120 ask and sits under the RM150 ceiling. CB7-TBC has no prior orders, so no median rate and no range, with nothing outstanding before, no units on credit against a cap of 1 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged CB7-TBC as off the roster and needing a code and a directory entry; the party record now carries the code and shows on roster, so the flag is answered and nothing is left outstanding.",
-    "rid": "s145"
+    "rid": "s145",
+    "road": "hand"
    },
    {
     "customer": "CR3-DAM-R",
@@ -4559,7 +4705,8 @@
       "kg": 0,
       "note": "<b>CORRECTION ON s146 DATED 13 SEP: THE RESALE MOVES TO CR3-DAM-R.</b> CR3-DAM's order of 10 Sep, 5 unit of salt for RM450, was booked to CR3-DAM with CR3-DAM-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CR3-DAM-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM450 was paid and 5 unit handed over on 10 Sep, so nothing is left open. The drafter flagged RM90 a unit against CR3-DAM's usual RM80; that sits inside the party's own range of RM80 to RM92.50, and the correction leaves the rate as booked."
      }
-    ]
+    ],
+    "road": "hand"
    },
    {
     "customer": "CN3-WM-R",
@@ -4591,7 +4738,8 @@
       "kg": 0,
       "note": "<b>CORRECTION ON s147 DATED 13 SEP: THE RESALE MOVES TO CN6-WM-R.</b> CN6-WM's order of 11 Sep, 1 unit of salt for RM130, was booked to CN6-WM with CN6-WM-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CN6-WM-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM130 was paid and 1 unit handed over on 11 Sep, so nothing is left open. The drafter flagged RM130 a unit against CN6-WM's usual RM110; that tops the party's own range of RM75 to RM130, and the correction leaves the rate as booked."
      }
-    ]
+    ],
+    "road": "hand"
    },
    {
     "customer": "CH6-SET",
@@ -4623,7 +4771,8 @@
       "note": "<b>CORRECTION DATED 15 SEP ON SALT SELL s148 OF 11 SEP, BOOKED TO CH6-SET.</b> The 1 unit order moves from RM120 to RM100, delivery from RM10 to RM0, cash from RM0 to RM100, delivered quantity from 0 to 1 unit and handover from delivered to collected, with paidOn and deliveredOn both set to 14 Sep. Cost is the desk's own RM44 a unit, RM44 on the order. <b>The drafter flagged that CH6-SET typically pays about RM117.50 a unit for salt across 2 orders and this one is RM100, 14.9% below that.</b> The desk let it stand on his word. He held RM120 outstanding and 0 units on credit before this row, across 3 orders at a RM115 median in a RM110 to RM120 range. Nothing is left outstanding."
      }
     ],
-    "cost": 44
+    "cost": 44,
+    "road": "desk"
    },
    {
     "customer": "CC9-OKR",
@@ -4652,7 +4801,8 @@
      }
     ],
     "cancelled": true,
-    "cancelledOn": "2026-09-16"
+    "cancelledOn": "2026-09-16",
+    "road": "hand"
    },
    {
     "customer": "CF5-WM",
@@ -4682,7 +4832,8 @@
      }
     ],
     "cancelled": true,
-    "cancelledOn": "2026-09-16"
+    "cancelledOn": "2026-09-16",
+    "road": "desk"
    },
    {
     "customer": "CS6-BS-R",
@@ -4715,7 +4866,8 @@
       "kg": 0,
       "note": "<b>CORRECTION ON s151 DATED 13 SEP: THE RESALE MOVES TO CS6-BS-R.</b> CS6-BS's order of 12 Sep, 1 unit of salt for RM130, RM100 of goods and RM30 carriage, was booked to CS6-BS with CS6-BS-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CS6-BS-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM130 was paid and 1 unit delivered on 12 Sep, so nothing is left open. The drafter raised no flag, and the correction changes no figure on the row."
      }
-    ]
+    ],
+    "road": "hand"
    },
    {
     "customer": "CS6-BS",
@@ -4745,7 +4897,8 @@
       "kg": 0,
       "note": "<b>CORRECTION ON s152 DATED 12 SEP: THE REDEMPTION IS UNDONE.</b> Against CS6-BS's 0.06 unit row of 12 Sep for RM2.64, cancelled moves to true and cancelledOn to 12 Sep, deliveredQty from 0.06 to 0, deliveredOn cleared, settledRM from RM2.64 cleared, rebate to false, rebateKg cleared and goodwill to false, on his word of 12 Sep. No cash and no stock move on the patch itself. The drafter flagged that cancelling takes the row out of the revenue, the stock it drew and anything owed; that RM44 a unit is 58.9% below CS6-BS's usual RM107 over 9 salt orders; that RM2.64 of goods is RM0.73 under the RM3.37 floor; and the advance of 0.06 unit against the cap. The cancellation leaves nothing outstanding on the row."
      }
-    ]
+    ],
+    "road": "desk"
    },
    {
     "customer": "CR3-DAM",
@@ -4761,7 +4914,8 @@
     "deliveredOn": "2026-09-12",
     "date": "2026-09-12",
     "note": "<b>SALT REDEMPTION DATED 12 SEP, SETTLED BY REWARD, NO CASH IN.</b> CR3-DAM takes 1 unit free, RM44 of goods, RM44 settled by the reward and RM0 cash, 1 unit moved and delivered on 12 Sep, nothing outstanding on the row itself. Booked as cost and not revenue on his ruling of 11 Sep 2026, the row carrying goodwill as well as rebate. The RM44 is under the RM56.21 floor for 1 unit and under the RM120 ask and RM150 ceiling. CR3-DAM has 13 orders, a median rate of RM80, a range of RM80 to RM92.50, RM25 outstanding before, 0.27 unit on credit against a cap of 2 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged the 1 unit earned and unredeemed (1 earned, 0 applied) as the desk's word, not checkable here; the figures do not answer that flag.",
-    "rid": "s153"
+    "rid": "s153",
+    "road": "desk"
    },
    {
     "customer": "CE4-CHE",
@@ -4793,7 +4947,8 @@
       "note": "<b>FULFILMENT ON S154, RM150 IN ON 16 SEP AND THE ORDER CLOSES.</b> Booked against CE4-CHE's oil sell of 12 Sep, 10 unit for RM150, RM20 of that delivery and RM130 goods, delivered in full on the day with RM0 paid. RM150 and 0 unit move on 16 Sep against RM150 and 0 unit outstanding, leaving RM0 and 0 unit. Decided at the desk. His median is RM92 a unit across 10 orders in a RM13 to RM107.50 range; he held RM150 outstanding and 10 unit on credit, nothing defaulted. No cost attaches: money only, no goods. <b>The drafter flagged that this settles in full, and the figures answer it.</b> Nothing is left outstanding."
      }
     ],
-    "paidOn": "2026-09-16"
+    "paidOn": "2026-09-16",
+    "road": "desk"
    },
    {
     "customer": "CN3-WM-R",
@@ -4825,7 +4980,8 @@
       "kg": 0,
       "note": "<b>CORRECTION ON s155 DATED 13 SEP: THE RESALE MOVES TO CN6-WM-R.</b> CN6-WM's order of 12 Sep, 1 unit of salt for RM110, all of it goods, was booked to CN6-WM with CN6-WM-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CN6-WM-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM110 was paid and 1 unit handed over on 12 Sep, so nothing is left open. The drafter raised no flag, and the correction changes no figure on the row."
      }
-    ]
+    ],
+    "road": "hand"
    },
    {
     "customer": "CA5-BAN",
@@ -4839,7 +4995,8 @@
     "deliveredOn": "2026-09-12",
     "paidOn": "2026-09-12",
     "note": "<b>SALT SELL DATED 12 SEP, PAID IN FULL AND COLLECTED IN FULL.</b> SELL to CA5-KER, 2 unit for RM200, all RM200 of it goods with no delivery charge, RM200 cash in and 2 unit handed over on 12 Sep, so nothing stays outstanding on it. The rate is RM100 a unit and clears the RM112.43 floor for 2 unit. Cost is RM44 a unit, the inventory's own rate, so RM88 on the order at 56.0%. <b>The drafter flagged the rate</b>: CA5-KER has paid RM120 a unit on both of their earlier salt orders and this one is RM100, a 17% drop. It was put to him with the row drafted and not yet written, and he confirmed the price as intended before it was folded.",
-    "rid": "s156"
+    "rid": "s156",
+    "road": "hand"
    },
    {
     "customer": "CN3-WM-R",
@@ -4872,7 +5029,8 @@
       "kg": 0,
       "note": "<b>CORRECTION ON s157 DATED 13 SEP: THE RESALE MOVES TO CN6-WM-R.</b> CN6-WM's order of 12 Sep, 1 unit of salt for RM130, RM110 of goods and RM20 delivery, was booked to CN6-WM with CN6-WM-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CN6-WM-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM130 was paid and 1 unit delivered on 12 Sep, so nothing is left open. The drafter raised no flag, and the correction changes no figure on the row."
      }
-    ]
+    ],
+    "road": "hand"
    },
    {
     "customer": "CN3-WM-R",
@@ -4904,7 +5062,8 @@
       "kg": 0,
       "note": "<b>CORRECTION ON s158 DATED 13 SEP: THE RESALE MOVES TO CN6-WM-R.</b> CN6-WM's order of 13 Sep, 1 unit for RM130, all of it goods, was booked to CN6-WM with CN6-WM-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CN6-WM-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM130 was paid and 1 unit handed over on 13 Sep, so nothing is left open. The drafter flagged RM130 a unit against CN6-WM's usual RM110; that tops the party's own range of RM75 to RM130, and the correction leaves the rate as booked."
      }
-    ]
+    ],
+    "road": "hand"
    },
    {
     "customer": "CM4-MK",
@@ -4935,7 +5094,8 @@
       "note": "<b>FULFILMENT ON S159 RECORDED 20 SEP: RM110 IN, NO UNITS, THE ORDER CLOSES.</b> CM4-MK's order of 13 Sep, 3 unit for RM330, RM310 goods and RM20 delivery, was delivered in full with RM220 in, so RM110 stayed open. RM110 and 0 unit move on 20 Sep against RM110 and 0 unit outstanding, leaving RM0 and 0 unit. The drafter flags a full settlement and the figures answer it. Across 10 orders his median is RM103.33 a unit, range RM90 to RM110, with 0.87 unit standing on credit before this. Applied by ovAmend."
      }
     ],
-    "paidOn": "2026-09-20"
+    "paidOn": "2026-09-20",
+    "road": "desk"
    },
    {
     "customer": "CS6-PER",
@@ -4950,7 +5110,8 @@
     "deliveredOn": "2026-09-13",
     "paidOn": "2026-09-13",
     "note": "<b>SALT SELL DATED 13 SEP, PAID AND DELIVERED IN FULL ON THE DAY.</b> Booked to CS6-PER, 6.25 unit for RM460, RM440 goods and RM20 delivery, RM460 cash in and 6.25 unit delivered on 13 Sep, so nothing stays open. The total clears the RM351.33 floor for 6.25 unit but sits under the RM610 ask and the RM880 ceiling. Cost is the inventory's own RM44 a unit, RM275 on the order. <b>One flag.</b> The rate of RM70.4 a unit is 12% under his usual RM80 across 6 orders. It falls inside his RM60 to RM100 range but under his RM85.52 median and under the ask, so the flag is not answered on price. He held no outstanding and no units on credit against a cap of 2 unit. <b>THE CARRIAGE MOVED OUT OF THE TOTAL ON 19 SEP 2026</b> (his instruction to separate the sell price from the delivery price). The figures are unchanged: RM20 of carriage that was inside this row's total now stands beside it, so the total reads the goods alone and what the customer owes is the two together. Nothing was re-priced and no order key moved.",
-    "rid": "s160"
+    "rid": "s160",
+    "road": "desk"
    },
    {
     "customer": "CS6-PER",
@@ -4965,7 +5126,8 @@
     "deliveredOn": "2026-09-13",
     "paidOn": "2026-09-13",
     "note": "<b>OIL SELL DATED 13 SEP, PAID AND DELIVERED IN FULL ON THE DAY.</b> Booked to CS6-PER, 10 unit for RM110, all goods with no delivery charge, RM110 cash in and 10 unit delivered on 13 Sep, so nothing stays open. The total clears the RM87.28 floor for 10 unit and sits under the RM130 ask and the RM240 ceiling, at RM11 a unit. Cost is the desk's own RM7.53 a unit, RM75.25 on the order. <b>No flag was raised.</b> He held no outstanding and no units on credit before this row against a cap of 20 unit, with nothing defaulted, across 5 orders at a RM85.52 median in a RM60 to RM100 range. Nothing is left outstanding.",
-    "rid": "s161"
+    "rid": "s161",
+    "road": "desk"
    },
    {
     "customer": "CN3-WM",
@@ -4979,7 +5141,8 @@
     "deliveredOn": "2026-09-14",
     "paidOn": "2026-09-14",
     "note": "<b>SALT SELL DATED 14 SEP, PAID AND COLLECTED IN FULL ON THE DAY.</b> Booked to CN6-WM, 1 unit for RM110, no delivery or freight, RM110 cash in and 1 unit collected on 14 Sep, so nothing on this row stays open. The total clears the RM56.21 floor for 1 unit and sits under the RM120 ask and the RM150 ceiling. Cost is the desk's own RM44 a unit, RM44 on the order. <b>No flag was raised.</b> He held RM210 outstanding and 2 units on credit before this row against a cap of 2 unit, with nothing defaulted, across 6 orders at a RM100 median in a RM75 to RM110 range. Nothing is left outstanding.",
-    "rid": "s162"
+    "rid": "s162",
+    "road": "hand"
    },
    {
     "customer": "CC9-OKR",
@@ -4993,7 +5156,8 @@
     "deliveredOn": "2026-09-15",
     "paidOn": "2026-09-15",
     "note": "<b>SALT SELL DATED 15 SEP, PAID AND COLLECTED IN FULL ON THE DAY.</b> Booked to CC5-OKR, 1 unit for RM90, no delivery or freight, RM90 cash in and 1 unit moved on 15 Sep, so nothing on this row stays open. The total clears the RM61.91 floor for 1 unit and sits under the RM140 ask and the RM150 ceiling. Cost is the desk's own RM48 a unit, RM48 on the order. <b>No flag was raised.</b> He held RM180 outstanding and 1 unit on credit before this row against a cap of 1 unit, with nothing defaulted, across 7 orders at a RM90 median in a RM80 to RM90 range. Nothing is left outstanding on this row.",
-    "rid": "s163"
+    "rid": "s163",
+    "road": "hand"
    },
    {
     "customer": "CZ6-WM",
@@ -5007,7 +5171,8 @@
     "deliveredOn": "2026-09-15",
     "paidOn": "2026-09-15",
     "note": "<b>SALT SELL DATED 15 SEP, PAID AND COLLECTED IN FULL ON THE DAY.</b> Booked to CZ6-WM, 1 unit for RM100, no delivery or freight, RM100 cash in and 1 unit moved on 15 Sep, so the row closes as it opens. The total clears the RM61.91 floor for 1 unit and sits under the RM140 ask and the RM150 ceiling. Cost is the desk's own RM48 a unit, RM48 on the order. <b>No flag was raised.</b> He held RM0 outstanding and no units on credit before this row against a cap of 1 unit, with nothing defaulted, across 2 orders at a RM100 median in a RM100 to RM100 range. Nothing is left outstanding.",
-    "rid": "s164"
+    "rid": "s164",
+    "road": "desk"
    },
    {
     "customer": "CR3-DAM",
@@ -5045,7 +5210,8 @@
       "note": "<b>FULFILMENT ON S165 RECORDED 19 SEP, RM80 CASH IN.</b> Against CR3-DAM's SELL of 1 unit for RM80 agreed 15 Sep, collected in full with not a sen in, so RM80 had stood as an advance. RM80 and 0 unit move against RM80 and 0 unit outstanding, leaving RM0 and 0 unit; the drafter flags it as settling the order in full and the figures answer the flag. The row was itself restated on 19 Sep on his word, and carries a fulfilment of 15 Sep and a correction of 18 Sep in its trail. RM80 is CR3-DAM's median, at the foot of his range of RM80 to RM92.50. Associate on the roster, 15 orders, RM265 outstanding before and 3.27 unit on credit, nothing defaulted. Cost is the inventory's own RM48 a unit."
      }
     ],
-    "paidOn": "2026-09-19"
+    "paidOn": "2026-09-19",
+    "road": "desk"
    },
    {
     "customer": "CE4-CHE",
@@ -5059,7 +5225,8 @@
     "deliveredOn": "2026-09-15",
     "paidOn": "2026-09-15",
     "note": "<b>SALT SELL DATED 15 SEP, PAID IN FULL AND COLLECTED IN FULL ON THE DAY.</b> Booked to CE4-CHE, 2.5 unit for RM230, all goods with no delivery or freight, RM230 cash in and 2.5 unit handed over on 15 Sep, so the row closes as it opens. The total clears the RM153.15 floor for 2.5 unit and sits under the RM290 ask and RM360 ceiling. Cost is the desk's own RM48 a unit, RM120 on the order. <b>No flag was raised.</b> The rate matches his RM92 median across 9 orders in a RM13 to RM107.50 range. He held RM150 outstanding and 10 unit on credit against a cap of 1 unit, nothing defaulted. That RM150 remains outstanding on its own row.",
-    "rid": "s166"
+    "rid": "s166",
+    "road": "desk"
    },
    {
     "customer": "CS6-BS-R",
@@ -5102,7 +5269,8 @@
       "cost": 75.25,
       "note": "<b>FULFILMENT ON s167 DATED 16 SEP: THE OIL ORDER IS PAID AND TAKEN IN FULL.</b> CS6-BS-R's order of 16 Sep, 10 unit of oil for RM130, all goods with no delivery or freight, collected. RM130 and 10 unit move on 16 Sep against RM130 and 10 unit outstanding, leaving RM0 and 0 unit. The row itself is not recomputed here: the master applies the amendment. <b>Flagged:</b> this settles the order in full, nothing left outstanding, and the figures answer that. CS6-BS-R stands at 14 orders, median RM96.67, range RM6 to RM120, RM570 outstanding before, no unit on credit, nothing defaulted. The row carries no cost of the inventory's own."
      }
-    ]
+    ],
+    "road": "desk"
    },
    {
     "customer": "CS6-BS-R",
@@ -5151,7 +5319,8 @@
      }
     ],
     "delivery": 15,
-    "rev": "R2"
+    "rev": "R2",
+    "road": "desk"
    },
    {
     "customer": "CN3-WM",
@@ -5182,7 +5351,8 @@
       "note": "<b>FULFILMENT ON S170 RECORDED 19 SEP, RM110 CASH IN.</b> Against CN6-WM's SELL of 1 unit for RM110 agreed 17 Sep, collected on the day with nothing paid, order 20260916154451-pmorvg. RM110 and 0 unit move against RM110 and 0 unit outstanding, leaving RM0 and 0 unit: the drafter flags this as settling the order in full, and the figures answer that. The total clears the RM51 floor stated on the row and sits at the top of CN6-WM's range of RM75 to RM110, above his median of RM100. He is an associate on the roster, 8 orders, RM210 outstanding before this and 2 unit on credit, nothing defaulted. Cost is the inventory's own RM48 a unit. Nothing left outstanding."
      }
     ],
-    "paidOn": "2026-09-19"
+    "paidOn": "2026-09-19",
+    "road": "site"
    },
    {
     "customer": "CS6-BS",
@@ -5198,7 +5368,8 @@
     "deliveredOn": "2026-09-17",
     "date": "2026-09-17",
     "note": "<b>SALT REDEEMED FREE BY CS6-BS, 1 UNIT, RM48 SETTLED BY THE REWARD ON 17 SEP.</b> Delivered in full 17 Sep, RM0 cash, RM48 settled by the reward, so the row closes on arrival. It carries rebate and goodwill, so on his ruling of 11 Sep 2026 it is booked as cost and not as revenue. The RM48 falls under the RM51 floor for this size and well under the RM160 ask and RM150 ceiling. Costed at RM48 a unit, the inventory's own rate, RM48 on the goods. <b>Flagged:</b> the 1 unit earned and unredeemed, 5 earned against 4 applied, is the desk's word and unchecked here. CS6-BS shows 11 orders, median RM100, range RM11 to RM126.67, nothing outstanding before, 1 unit on credit against a cap of 2, nothing defaulted. Nothing outstanding.",
-    "rid": "s171"
+    "rid": "s171",
+    "road": "desk"
    },
    {
     "customer": "CC9-OKR",
@@ -5213,7 +5384,8 @@
     "paidOn": "2026-09-17",
     "note": "<b>SALT SELL DATED 17 SEP, PAID AND DELIVERED IN FULL.</b> Booked to CC5-OKR, 1 unit at RM90 with RM15 of carriage beside it, RM105 in and 1 unit out on 17 Sep. <b>RESTATED 19 SEP on his word:</b> the row read 2 unit for RM105 with no delivery, so it showed RM52.50 a unit, RM75 under CC5-OKR's own card, and it cleared the floor by RM3. What happened was one unit sold at their usual RM90, one unit given free, and RM15 of carriage. The free unit is its own row and is booked as cost. <b>THE CARRIAGE MOVED OUT OF THE TOTAL ON 19 SEP 2026</b> (his instruction to separate the sell price from the delivery price). The figures are unchanged: RM15 of carriage that was inside this row's total now stands beside it, so the total reads the goods alone and what the customer owes is the two together. Nothing was re-priced and no order key moved.",
     "rid": "s172",
-    "delivery": 15
+    "delivery": 15,
+    "road": "hand"
    },
    {
     "rid": "s176",
@@ -5228,7 +5400,8 @@
     "deliveredOn": "2026-09-17",
     "date": "2026-09-17",
     "handover": "delivered",
-    "note": "<b>ONE UNIT OF SALT GIVEN FREE TO CC5-OKR ON 17 SEP, WITH THE SALE ON s172.</b> RM48 of cost settled by goodwill, no cash and no revenue, on his ruling of 11 Sep 2026 that a giveaway is booked as cost. Entered 19 Sep: it had been folded into s172's own quantity, which is what made that row read as a half-price sale."
+    "note": "<b>ONE UNIT OF SALT GIVEN FREE TO CC5-OKR ON 17 SEP, WITH THE SALE ON s172.</b> RM48 of cost settled by goodwill, no cash and no revenue, on his ruling of 11 Sep 2026 that a giveaway is booked as cost. Entered 19 Sep: it had been folded into s172's own quantity, which is what made that row read as a half-price sale.",
+    "road": "hand"
    },
    {
     "customer": "CS6-BS",
@@ -5275,7 +5448,8 @@
     "cost": 240,
     "delivery": 15,
     "mod": "corrected on 2026-09-20: cash 420 to 435; delivery (unset) to 15, then corrected on 2026-09-20: handover (unset) to delivered",
-    "handover": "delivered"
+    "handover": "delivered",
+    "road": "desk"
    },
    {
     "customer": "CH4-MAL",
@@ -5289,7 +5463,8 @@
     "deliveredOn": "2026-09-18",
     "paidOn": "2026-09-18",
     "note": "<b>OIL SELL DATED 18 SEP, PAID AND DELIVERED IN FULL.</b> Booked to CH4-MAL, 10 unit for RM130, RM13 a unit, RM130 cash received and 10 unit handed over on 18 Sep, leaving nothing outstanding on the row. The total clears the RM87.28 floor for 10 unit and runs under the RM230 ask and RM240 ceiling. Costed at RM7.53 a unit, the inventory's own rate, RM75.25 on the order and RM54.75 on the goods at 42.1%. The drafter flagged nothing. CH4-MAL shows 2 orders, median RM110, range RM11.50 to RM110, nothing outstanding before, nothing on credit against a cap of 10, nothing defaulted, and on the roster.",
-    "rid": "s174"
+    "rid": "s174",
+    "road": "desk"
    },
    {
     "rid": "s177",
@@ -5321,7 +5496,8 @@
       "note": "<b>FULFILMENT ON S177 RECORDED 20 SEP: RM350 AND 5 UNIT IN, THE ORDER CLOSES.</b> CK4-SEN's order of 18 Sep, 6.25 unit for RM500 at RM80 a unit, entered on his word of 19 Sep, stood with RM150 in and 1.25 unit out. RM350 and 5 unit move on 20 Sep against RM350 and 5 unit outstanding, leaving RM0 and 0 unit. The drafter flags that this settles the order in full and the figures answer it. RM80 a unit is his median across three orders, range RM73.33 to RM80.80. Nothing on credit. The row is applied by ovAmend, not recomputed here."
      }
     ],
-    "paidOn": "2026-09-20"
+    "paidOn": "2026-09-20",
+    "road": "hand"
    },
    {
     "rid": "s178",
@@ -5336,7 +5512,8 @@
     "deliveredQty": 0.5,
     "deliveredOn": "2026-09-18",
     "paidOn": "2026-09-18",
-    "note": "<b>SALT SELL DATED 18 SEP, PAID AND COLLECTED IN FULL.</b> Booked to CS6-DAM, a new customer introduced by CM3-OUG, 0.5 unit for RM70 at RM140 a unit, RM70 in and 0.5 unit out on 18 Sep. Entered on his word of 19 Sep with the ID."
+    "note": "<b>SALT SELL DATED 18 SEP, PAID AND COLLECTED IN FULL.</b> Booked to CS6-DAM, a new customer introduced by CM3-OUG, 0.5 unit for RM70 at RM140 a unit, RM70 in and 0.5 unit out on 18 Sep. Entered on his word of 19 Sep with the ID.",
+    "road": "hand"
    },
    {
     "rid": "s179",
@@ -5374,7 +5551,8 @@
       "note": "<b>FULFILMENT DATED 25 SEP ON s179, RM80 IN BY QR, THE ORDER NOW SETTLED.</b> Against CR3-DAM's SELL of 2 unit for RM160 at RM80 a unit agreed 18 Sep, 2 unit already collected and RM80 paid on 19 Sep. RM80 and 0 unit move on 25 Sep 2026, against RM80 and 0 unit outstanding, leaving RM0 and 0 unit. Paid on the statements site against the account, by qr via tngbiz, preapproved by phone. The rate matches his median of RM80 within a range of RM80 to RM92.50. No cost sits on a cash-only amendment. He held RM195 outstanding and 2.27 unit on credit before this, none defaulted. The drafter flagged full settlement and the figures answer it."
      }
     ],
-    "paidOn": "2026-09-25"
+    "paidOn": "2026-09-25",
+    "road": "desk"
    },
    {
     "rid": "s180",
@@ -5404,7 +5582,8 @@
      }
     ],
     "cancelled": true,
-    "cancelledOn": "2026-09-20"
+    "cancelledOn": "2026-09-20",
+    "road": "hand"
    },
    {
     "rid": "s181",
@@ -5445,7 +5624,8 @@
      }
     ],
     "cancelled": true,
-    "cancelledOn": "2026-09-20"
+    "cancelledOn": "2026-09-20",
+    "road": "hand"
    },
    {
     "customer": "CF5-WM",
@@ -5485,7 +5665,8 @@
     ],
     "deliveredOn": "2026-09-19",
     "paidOn": "2026-09-19",
-    "cost": 48
+    "cost": 48,
+    "road": "desk"
    },
    {
     "customer": "CN3-WM",
@@ -5514,7 +5695,8 @@
       "kg": 0,
       "note": "<b>FULFILMENT DATED 30 SEP: RM100 CASH AGAINST ORDER S182, RM110 STILL OWED.</b> Applied to CN3-WM's order of 19 Sep, 2.5 units for RM250 at RM100 a unit, collected in full on 19 Sep with RM40 paid. This payment moves no units and takes the outstanding on the order from RM210 to RM110, approved by the desk. The dossier gives no floor or ask for a payment, so the order's own terms stand: RM134.61 floor for the size, RM360 ask. CN3-WM: 9 orders, median RM100 a unit, range RM75 to RM110, RM310 outstanding and 3.1 units on credit before this row, nothing defaulted. No cost is carried, as no salt moves. The drafter raised no flags. Outstanding: RM110."
      }
-    ]
+    ],
+    "road": "hand"
    },
    {
     "customer": "CS6-BS-R",
@@ -5576,7 +5758,8 @@
     ],
     "rev": "R2",
     "paidOn": "2026-09-20",
-    "cost": 240
+    "cost": 240,
+    "road": "desk"
    },
    {
     "customer": "CZ5-TM",
@@ -5590,7 +5773,8 @@
     "deliveredOn": "2026-09-19",
     "paidOn": "2026-09-19",
     "note": "<b>SALT SELL DATED 19 SEP: 1 UNIT AT RM110, PAID AND COLLECTED ON THE DAY.</b> Booked to CZ5-TM, 1 unit for RM110 with no delivery or freight, RM110 cash in and 1 unit handed over on 19 Sep, so nothing stays open. The rate clears the RM51.10 floor for that size and sits under the RM160 ask and the RM140 ceiling. Costed at RM48 a unit, the inventory's own rate, for RM62 on the goods at 56.4%. The drafter flags that RM48 is the average across more than one lot rate, not the lot drawn, and that CZ5-TM has no committed salt order, so there is no rate of theirs to test this against. Credit cap 1, nothing on credit.",
-    "rid": "s184"
+    "rid": "s184",
+    "road": "desk"
    },
    {
     "customer": "CE4-CHE",
@@ -5604,7 +5788,8 @@
     "deliveredOn": "2026-09-19",
     "paidOn": "2026-09-19",
     "note": "<b>SALT SELL DATED 19 SEP: 2.5 UNIT FOR RM250, PAID AND COLLECTED ON THE DAY.</b> Booked to CE4-CHE, 2.5 unit at RM100 a unit, no delivery or freight, RM250 cash in and 2.5 unit handed over on 19 Sep, so nothing stays open. The total clears the RM127.47 floor for 2.5 unit and sits under the RM360 ask and the RM350 ceiling. Costed at RM48 a unit, the inventory's own rate, RM130 on the goods at 52%. The drafter flags that RM48 is the average across more than one lot rate, not the lot drawn; that blend is not shown here. Median RM92 a unit over 12 orders, range RM13 to RM107.50, nothing outstanding, credit cap 1 and nothing on credit.",
-    "rid": "s185"
+    "rid": "s185",
+    "road": "desk"
    },
    {
     "customer": "CE4-CHE",
@@ -5619,7 +5804,8 @@
     "deliveredOn": "2026-09-19",
     "paidOn": "2026-09-19",
     "note": "<b>OIL SELL DATED 19 SEP: 5 UNIT FOR RM50, PAID AND COLLECTED ON THE DAY.</b> Booked to CE4-CHE, 5 unit at RM10 a unit, no delivery or freight, RM50 cash in and 5 unit handed over on 19 Sep, so nothing stays open. The total clears the RM39.12 floor for 5 unit but falls under the RM60 ask, well under the RM120 ceiling. Costed at RM7.60 a unit, the inventory's own rate, RM12 on the goods at 24%. This party's median is RM92 a unit over 12 orders, range RM13 to RM107.50, with the oil rows at the low end. No flags from the drafter, nothing outstanding, credit cap 10 and nothing on credit.",
-    "rid": "s186"
+    "rid": "s186",
+    "road": "desk"
    },
    {
     "customer": "CM4-MK",
@@ -5653,7 +5839,8 @@
       "kg": 0,
       "note": "<b>CORRECTION ON S187 DATED 21 SEP: THE STREAM GOES TO R3 AND THE ROW TO CM4-MK.</b> The 19 Sep sale, 4 unit for RM340 with RM20 delivery, RM360 owed and RM360 cash in, delivered on 19 Sep, was booked to CS6-BS-R at RM85 a unit. The patch moves stream R2 to R3 and the party to CM4-MK; no cash and no stock move. At RM85 a unit it clears the RM203.95 floor for 4 unit and sits under the RM500 ask. Costed at RM48 a unit, the inventory's own rate. Flagged: RM360 against RM340 of goods, RM20 over; RM85 is 16.8% under CM4-MK's RM102.17 across 10 orders; and RM48 is a blend of lot rates, unanswered here. CS6-BS-R: 16 orders, median RM95, range RM6 to RM120, nothing outstanding, nothing on credit."
      }
-    ]
+    ],
+    "road": "hand"
    },
    {
     "customer": "CS6-BS",
@@ -5667,7 +5854,8 @@
     "deliveredOn": "2026-09-21",
     "paidOn": "2026-09-21",
     "note": "<b>SALT SELL DATED 21 SEP: 1 UNIT TO CS6-BS FOR RM90, COLLECTED, PAID AND DELIVERED.</b> RM90 of goods, no delivery or freight, RM90 cash in on 21 Sep and 1 unit handed over the same day, so the row closes on collection and leaves nothing outstanding. At RM90 a unit it clears the RM52.06 floor for 1 unit and sits under the RM160 ask. Costed at RM48 a unit, the inventory's own rate, RM42 on the goods at 46.7%. Flagged: RM90 is 15.9% under the RM107 a unit CS6-BS typically pays across 19 orders; and RM48 is a blend of lot rates, unanswered here. CS6-BS: 12 orders, median RM95, range RM11 to RM126.67, nothing outstanding, 1 unit on credit against a cap of 2.",
-    "rid": "s188"
+    "rid": "s188",
+    "road": "desk"
    },
    {
     "customer": "CS6-BS",
@@ -5683,7 +5871,8 @@
     "deliveredOn": "2026-09-21",
     "date": "2026-09-21",
     "note": "<b>SALT REDEEMED FREE BY CS6-BS, 1 UNIT, RM48 SETTLED BY THE REWARD ON 21 SEP.</b> No cash in, RM48 settled by the reward and 1 unit delivered on 21 Sep, so the row closes on arrival and leaves nothing outstanding. Rebate and goodwill both stand, so on his ruling of 11 Sep 2026 it is booked out of revenue and its RM48 is an expense, at RM48 a unit, the inventory's own rate. No rate is set against the RM51.95 floor or RM160 ask for 1 unit. Flagged: 6 earned against 5 applied leaves 1 unit, the desk's word, unanswered here. CS6-BS: 13 orders, median RM95, range RM11 to RM126.67, nothing outstanding, 1 unit on credit against a cap of 2.",
-    "rid": "s189"
+    "rid": "s189",
+    "road": "desk"
    },
    {
     "customer": "CZ4-MK",
@@ -5697,7 +5886,8 @@
     "deliveredOn": "2026-09-21",
     "paidOn": "2026-09-21",
     "note": "<b>SALT SALE DATED 21 SEP, COLLECTED AND PAID IN FULL ON THE DAY.</b> CZ4-MK took 5 unit for RM460, RM92 a unit, RM460 cash in and 5 unit moved on 21 Sep, so nothing stays open. The total clears the RM259.22 floor for 5 unit and sits RM100 under the RM560 ask, well below the RM700 ceiling. Costed at RM240, RM48 a unit, the inventory's own rate. Flagged: the shelf spans more than one lot rate, so RM48 is an average and not the lot drawn; the figures here do not answer it. CZ4-MK: 3 orders, median RM84, range RM13 to RM87, nothing outstanding, none on credit against a cap of 1.",
-    "rid": "s190"
+    "rid": "s190",
+    "road": "desk"
    },
    {
     "customer": "CZ4-MK",
@@ -5712,7 +5902,8 @@
     "deliveredOn": "2026-09-21",
     "paidOn": "2026-09-21",
     "note": "<b>CANDY SALE DATED 21 SEP, COLLECTED AND PAID IN FULL ON THE DAY.</b> CZ4-MK took 10 unit for RM460, RM46 a unit, RM460 cash in and 10 unit moved on 21 Sep, so nothing stays open. Costed at RM0 a unit from the desk's own inventory cost, RM460 on the goods at 100%. The floor, ask and ceiling for 10 unit all stand at zero, so no rate test applies. Flagged: CZ4-MK has no committed candy order on the book, so there is no rate of theirs to compare; the figures do not answer it. CZ4-MK: 3 orders, median RM84, range RM13 to RM87, nothing outstanding, none on credit against a cap of 1.",
-    "rid": "s191"
+    "rid": "s191",
+    "road": "desk"
    },
    {
     "customer": "CJ2-KUC",
@@ -5727,7 +5918,8 @@
     "deliveredOn": "2026-09-22",
     "paidOn": "2026-09-22",
     "note": "<b>CANDY SELL DATED 22 SEP, COLLECTED AND PAID IN FULL ON THE DAY.</b> CJ2-TBC took 16 unit for RM760, RM47.50 a unit, RM760 cash in and 16 unit collected on 22 Sep, so nothing stays open. Costed at RM38 a unit from the desk's own inventory cost, RM608 on the goods, leaving RM152 at 20%. The floor for 16 unit is RM608 and the ask RM880, so this clears the floor but sits under the ask, with the ceiling at RM1,824. Flagged: CJ2-TBC has no committed candy order on the book, so there is no rate of theirs to compare; the figures do not answer it. CJ2-TBC: no prior orders, nothing outstanding, none on credit against a cap of 1.",
-    "rid": "s192"
+    "rid": "s192",
+    "road": "hand"
    },
    {
     "customer": "CR3-DAM",
@@ -5757,7 +5949,8 @@
       "note": "<b>FULFILMENT DATED 25 SEP ON s193, RM90 IN BY QR, THE ADVANCE CLEARED.</b> Against CR3-DAM's SELL of 1 unit for RM90 agreed 22 Sep, collected on his word with not a sen in, so the whole RM90 stood open. RM90 and 0 unit move on 25 Sep 2026, against RM90 and 0 unit outstanding, leaving RM0 and 0 unit, with no earlier payment on the trail. Same claim, by qr via tngbiz, preapproved by phone. RM90 sits above his median of RM80 and inside his range of RM80 to RM92.50. No cost is carried here, the goods were costed on the original row. The drafter flagged full settlement and the figures answer it."
      }
     ],
-    "paidOn": "2026-09-25"
+    "paidOn": "2026-09-25",
+    "road": "desk"
    },
    {
     "customer": "CM4-TO",
@@ -5804,7 +5997,8 @@
       "cost": 264,
       "note": "<b>FULFILMENT ON 15 OCT: 5.5 UNIT OF SALT HANDED OVER TO CM4-TO AGAINST S194, SETTLING THE ORDER.</b> The order is 12.5 unit for RM750, RM60 a unit, paid in full in cash on 23 Sep and collected in parts on 23 Sep, 8 Oct and 12 Oct. This hand-over moves RM0 cash and 5.5 unit, against 5.5 unit outstanding, leaving RM0 and 0 unit owed. The drafter flagged that it settles the order in full; the figures answer it. CM4-TO has 5 orders, a median rate of RM52, a range of RM5 to RM65, RM0 outstanding before and 0 units on credit. The row is not recomputed here, and no new sale is priced, so there is no floor or ask to compare. The cost carried is the inventory's own. Open: nothing is owed."
      }
-    ]
+    ],
+    "road": "hand"
    },
    {
     "customer": "CM4-TO",
@@ -5844,7 +6038,8 @@
       "cost": 28.8,
       "note": "<b>FULFILMENT DATED 25 SEP ON S195: 9 UNIT OF RICE MOVED, THE ORDER CLOSES.</b> The target is CM4-TO's rice sell of 23 Sep 2026, 10 unit for RM50 at RM5 a unit, RM50 cash in and paid on the day, cut to 1 unit delivered by the correction of 24 Sep. This hand over moves RM0 and 9 unit against RM0 and 9 unit outstanding, leaving RM0 and 0 unit. Across 5 orders CM4-TO shows a median rate of RM52, range RM5 to RM65, nothing outstanding, 0 unit on credit and none defaulted, on the roster. The drafter flagged full settlement; the figures answer it. No cost sits on this row and the salt inventory is not drawn on."
      }
-    ]
+    ],
+    "road": "hand"
    },
    {
     "customer": "CS6-PER",
@@ -5905,7 +6100,8 @@
     "settledRM": 100,
     "rebateKg": 1,
     "rebate": true,
-    "cost": 96
+    "cost": 96,
+    "road": "desk"
    },
    {
     "customer": "CA6-CYB",
@@ -5921,7 +6117,8 @@
     "ref": "CM4-TO",
     "refKg": 2.5,
     "note": "<b>SALT SELL DATED 23 SEP, PAID AND COLLECTED IN FULL: NOTHING LEFT OPEN.</b> Booked to CA6-CYB, 2.5 unit for RM250, RM250 cash received on 23 Sep 2026 and 2.5 unit handed over the same day, referred by CM4-TO on stream R3. Costed at RM48 a unit from the desk's own inventory cost, RM120 on the goods, though the drafter's working reads RM130 at 52%. The RM250 clears the floor of RM142.48 and sits under the ask of RM330, with the ceiling at RM390. Flagged: the RM48 is an inventory average across more than one lot rate and the figures do not answer the blend; CM4-TO is on the roster but not listed as an associate; CA6-CYB has 0 orders, no median rate, no range, nothing outstanding and none on credit against a cap of 1.",
-    "rid": "s197"
+    "rid": "s197",
+    "road": "desk"
    },
    {
     "customer": "CC9-OKR",
@@ -5936,7 +6133,8 @@
     "deliveredOn": "2026-09-24",
     "paidOn": "2026-09-24",
     "note": "<b>RICE SELL DATED 24 SEP, PAID AND COLLECTED IN FULL: NOTHING LEFT OPEN.</b> Booked to CC5-OKR, 4 unit for RM20, RM20 cash received on 24 Sep 2026 and 4 unit handed over the same day, no delivery or freight. Costed at RM3.2 a unit from the desk's own inventory cost, RM12.8 on the goods, though the drafter's working reads RM7.2 at 36%. The RM20 clears the floor of RM13.6 and sits under the ask of RM32, with the ceiling at RM41. Flagged: CC5-OKR has no committed rice order, so there is no rate of theirs to compare, and the figures do not answer it. Across 10 orders their median rate is RM90 with a range of RM48 to RM90, RM138 outstanding, none defaulted, and 2 unit on credit against a cap of 1. On the roster, not an associate.",
-    "rid": "s198"
+    "rid": "s198",
+    "road": "hand"
    },
    {
     "customer": "CC9-OKR",
@@ -5951,7 +6149,8 @@
     "deliveredOn": "2026-09-24",
     "paidOn": "2026-09-24",
     "note": "<b>OIL SELL DATED 24 SEP, PAID AND COLLECTED IN FULL: NOTHING LEFT OPEN.</b> Booked to CC5-OKR, 10 unit for RM130, RM130 cash in and 10 unit handed over on 24 Sep 2026, no delivery or freight. Costed at RM7.6 a unit from the desk's own inventory cost, RM76 on the goods, though the drafter's working reads RM54 at 41.5%. The RM130 clears the floor of RM78.24 and sits exactly at the ask for 10 unit, with the ceiling at RM240. Flagged: CC5-OKR has no committed oil order, so there is no rate of theirs to compare, and the figures do not answer it. Across 11 orders their median rate is RM90 with a range of RM5 to RM90, RM138 outstanding, none defaulted, and 2 unit on credit against a cap of 10. On the roster, not an associate.",
-    "rid": "s199"
+    "rid": "s199",
+    "road": "hand"
    },
    {
     "customer": "CZ4-MK",
@@ -5966,7 +6165,8 @@
     "deliveredOn": "2026-09-24",
     "paidOn": "2026-09-24",
     "note": "<b>CANDY SELL DATED 24 SEP, COLLECTED AND PAID IN FULL ON THE DAY.</b> Booked to CZ4-MK, 4 unit for RM200, RM50 a unit, RM200 cash in and 4 unit moved on 24 Sep 2026, with no delivery or freight, so nothing stays open. Costed at RM38 a unit from the desk's own inventory cost, RM152 on the goods, though the drafter's working reads RM48 at 24%. The RM200 sits on the floor's right side at RM152 and RM40 under the ask of RM240 for 4 unit, ceiling RM456. No flag was raised. Across 5 orders their median rate is RM84 with a range of RM13 to RM92, nothing outstanding, none defaulted, and no unit on credit against a cap of 1. On the roster, not an associate.",
-    "rid": "s200"
+    "rid": "s200",
+    "road": "desk"
    },
    {
     "customer": "CC9-OKR",
@@ -5995,7 +6195,8 @@
       "note": "<b>FULFILMENT ON s201, 26 SEP: RM90 CASH IN, ORDER SETTLED IN FULL.</b> CC9-OKR paid RM90 on 26 Sep 2026 against 1 unit of salt for RM90 dated 25 Sep, delivered that day with RM0 paid. No unit moves now, so RM0 and 0 unit stay open. The row was costed at RM48 a unit, the inventory's own rate. The dossier gives no floor or ask for this size. Over 13 orders their median rate is RM90, range RM5 to RM90, RM228 outstanding and 3 units on credit before this, no cap given, none defaulted. Not an associate, on the roster. The drafter flagged a full settlement and the figures bear it out. The row's own note reads CC5-OKR."
      }
     ],
-    "paidOn": "2026-09-26"
+    "paidOn": "2026-09-26",
+    "road": "hand"
    },
    {
     "customer": "CR3-DAM",
@@ -6040,7 +6241,8 @@
      }
     ],
     "cost": 72,
-    "paidOn": "2026-10-09"
+    "paidOn": "2026-10-09",
+    "road": "site"
    },
    {
     "customer": "CA2-SEN",
@@ -6070,7 +6272,8 @@
       "note": "<b>FULFILMENT ON S203: CASH 750.</b> Fulfilment 12.5 unit on 2026-09-26 against order s203. It applies to s203, 12.5 unit for RM750 with RM750 paid on 25 Sep 2026. CA2-SEN: 2 orders on the book, median RM60 a unit, range RM60 to RM60, RM0 outstanding before this row. The drafter flagged: This SETTLES the order in full: nothing is left outstanding after it. Written by the tool, so the facts stand as the dossier gives them and no judgement is recorded on them."
      }
     ],
-    "deliveredOn": "2026-09-26"
+    "deliveredOn": "2026-09-26",
+    "road": "desk"
    },
    {
     "customer": "CM6-PJ",
@@ -6084,7 +6287,8 @@
     "deliveredOn": "2026-09-25",
     "paidOn": "2026-09-25",
     "note": "<b>SALT SELL DATED 25 SEP, PAID IN FULL AND TAKEN IN FULL.</b> Booked to CM6-PJ, 1 unit for RM100 at RM100 a unit, RM100 cash in on 25 Sep 2026 and 1 of 1 unit collected the same day, so nothing is owed and nothing is left to move. Costed at RM48 a unit from the desk's own inventory cost, RM52 on the goods at 52%. The total clears the RM58.40 floor for 1 unit and sits under the RM140 ask, ceiling RM160. On two prior orders their median rate is RM100, range RM90 to RM100, nothing outstanding, none defaulted, 0 unit on credit against a cap of 1. Not an associate, on the roster. The drafter flagged RM48 as a blended average across more than one lot rate; these figures do not settle it.",
-    "rid": "s204"
+    "rid": "s204",
+    "road": "desk"
    },
    {
     "customer": "CS6-PER",
@@ -6122,7 +6326,8 @@
     "deliveredOn": "2026-09-26",
     "handover": "collected",
     "mod": "corrected on 2026-09-26: deliveredQty 0 to 1.5; deliveredOn (unset) to 2026-09-26; handover (unset) to collected",
-    "cost": 84
+    "cost": 84,
+    "road": "site"
    },
    {
     "customer": "CS6-BS-R",
@@ -6162,7 +6367,8 @@
     "handover": "delivered",
     "rev": "R2",
     "mod": "corrected on 2026-09-27: deliveredQty 0 to 5; deliveredOn (unset) to 2026-09-27; handover (unset) to delivered",
-    "cost": 280
+    "cost": 280,
+    "road": "site"
    },
    {
     "customer": "CE5-SA",
@@ -6215,7 +6421,8 @@
     ],
     "cost": 112,
     "cancelled": true,
-    "cancelledOn": "2026-09-27"
+    "cancelledOn": "2026-09-27",
+    "road": "site"
    },
    {
     "customer": "CE4-AD",
@@ -6254,7 +6461,8 @@
     "deliveredOn": "2026-09-28",
     "handover": "delivered",
     "mod": "corrected on 2026-09-28: deliveredQty 0 to 5; deliveredOn (unset) to 2026-09-28; handover (unset) to delivered",
-    "cost": 280
+    "cost": 280,
+    "road": "site"
    },
    {
     "customer": "CE5-SA-R",
@@ -6314,7 +6522,8 @@
     ],
     "cost": 112,
     "paidOn": "2026-09-27",
-    "rev": "R2"
+    "rev": "R2",
+    "road": "site"
    },
    {
     "customer": "CE5-SA-R",
@@ -6360,7 +6569,8 @@
     ],
     "cost": 56,
     "rev": "R2",
-    "paidOn": "2026-10-01"
+    "paidOn": "2026-10-01",
+    "road": "site"
    },
    {
     "customer": "CE5-SA-R",
@@ -6420,7 +6630,8 @@
      }
     ],
     "rev": "R2",
-    "paidOn": "2026-10-01"
+    "paidOn": "2026-10-01",
+    "road": "site"
    },
    {
     "customer": "CE4-CHE",
@@ -6434,7 +6645,8 @@
     "deliveredOn": "2026-09-28",
     "paidOn": "2026-09-28",
     "note": "<b>SALT SELL DATED 28 SEP: 2.5 UNIT FOR RM230, PAID AND COLLECTED ON THE DAY.</b> Booked to CE4-CHE, 2.5 unit at RM92 a unit, no delivery or freight, RM230 cash in and 2.5 unit handed over on 28 Sep, the same terms as s144 and s166. The total clears the desk's floor of RM171.68 for 2.5 unit but sits below its ask of RM330. CE4-CHE: 14 orders, median RM92 a unit, range RM10 to RM107.5, RM0 outstanding and 0 units on credit before this batch, against a credit cap of 1. Costed at RM140, RM56 a unit, the inventory's own, leaving RM90 at 39.1% by the drafter's figures. The drafter raised no flags. Outstanding: nothing.",
-    "rid": "s213"
+    "rid": "s213",
+    "road": "desk"
    },
    {
     "customer": "CR3-DAM",
@@ -6473,7 +6685,8 @@
      }
     ],
     "cost": 56,
-    "paidOn": "2026-10-09"
+    "paidOn": "2026-10-09",
+    "road": "site"
    },
    {
     "customer": "CH4-KS",
@@ -6513,7 +6726,8 @@
      }
     ],
     "cost": 168,
-    "paidOn": "2026-09-30"
+    "paidOn": "2026-09-30",
+    "road": "site"
    },
    {
     "customer": "CK4-SEN",
@@ -6552,7 +6766,8 @@
      }
     ],
     "cost": 350,
-    "paidOn": "2026-09-30"
+    "paidOn": "2026-09-30",
+    "road": "site"
    },
    {
     "customer": "CZ5-TM",
@@ -6591,7 +6806,8 @@
     "deliveredOn": "2026-09-29",
     "handover": "collected",
     "mod": "corrected on 2026-09-29: deliveredQty 0 to 1; deliveredOn (unset) to 2026-09-29; handover (unset) to collected",
-    "cost": 56
+    "cost": 56,
+    "road": "site"
    },
    {
     "customer": "CK4-SEN",
@@ -6620,7 +6836,8 @@
      }
     ],
     "cancelled": true,
-    "cancelledOn": "2026-09-30"
+    "cancelledOn": "2026-09-30",
+    "road": "site"
    },
    {
     "customer": "CK4-SEN",
@@ -6635,7 +6852,8 @@
     "deliveredOn": "2026-09-30",
     "paidOn": "2026-09-30",
     "note": "<b>RICE SELL DATED 30 SEP: 2 UNITS FOR RM16, PAID AND COLLECTED.</b> Booked to CK4-SEN at RM8 a unit, RM16 cash and 2 units delivered the same day, approved by the desk. For 2 units it clears the floor of RM12.63 and meets the ask of RM16, below the ceiling of RM21. CK4-SEN: 5 orders, median RM80 a unit, range RM8 to RM84.8, RM538 outstanding and 6.25 units on credit before this row, against a credit cap of 1. Costed at RM3.2 a unit, RM6.4 in all, the desk's own inventory cost. The drafter flagged no committed rice order of his to compare against; the history gives none, so the ask is the only yardstick. Outstanding: nothing.",
-    "rid": "s219"
+    "rid": "s219",
+    "road": "desk"
    },
    {
     "customer": "CR3-DAM",
@@ -6665,7 +6883,8 @@
       "note": "<b>FULFILMENT ON s220 DATED 09 OCT: RM110 PAID, ORDER SETTLED IN FULL.</b> CR3-DAM's SELL of 1 unit for RM110 dated 30 Sep was collected the same day with nothing paid. This payment of RM110 by QR via Maybank clears it, preapproved by phone. No unit moves. At RM110 a unit the order is at the top of the party's range of RM80 to RM110, against a median of RM80. Before this CR3-DAM had RM265 outstanding and 2.5 units on credit. The drafter's flag, that this settles the order in full, is answered: nothing is left outstanding on s220."
      }
     ],
-    "paidOn": "2026-10-09"
+    "paidOn": "2026-10-09",
+    "road": "desk"
    },
    {
     "customer": "CC9-OKR",
@@ -6703,7 +6922,8 @@
      }
     ],
     "deliveredOn": "2026-10-02",
-    "paidOn": "2026-10-02"
+    "paidOn": "2026-10-02",
+    "road": "desk"
    },
    {
     "customer": "CC9-OKR",
@@ -6741,7 +6961,8 @@
     ],
     "deliveredOn": "2026-10-02",
     "paidOn": "2026-10-02",
-    "cost": 56
+    "cost": 56,
+    "road": "desk"
    },
    {
     "customer": "CM6-PJ",
@@ -6788,7 +7009,8 @@
     ],
     "cost": 168,
     "paidOn": "2026-10-01",
-    "agreedOn": "2026-10-02"
+    "agreedOn": "2026-10-02",
+    "road": "site"
    },
    {
     "customer": "CI4-OKR",
@@ -6832,7 +7054,8 @@
     "agreedOn": "2026-10-02",
     "paidOn": "2026-10-02",
     "deliveredOn": "2026-10-02",
-    "cost": 112
+    "cost": 112,
+    "road": "site"
    },
    {
     "customer": "CM4-MK",
@@ -6871,7 +7094,8 @@
      }
     ],
     "cost": 84,
-    "paidOn": "2026-10-03"
+    "paidOn": "2026-10-03",
+    "road": "site"
    },
    {
     "customer": "CH5-KLC",
@@ -6899,7 +7123,8 @@
      }
     ],
     "cancelled": true,
-    "cancelledOn": "2026-10-06"
+    "cancelledOn": "2026-10-06",
+    "road": "site"
    },
    {
     "customer": "CZ5-TM",
@@ -6938,7 +7163,8 @@
     "deliveredOn": "2026-10-02",
     "handover": "collected",
     "mod": "corrected on 2026-10-02: deliveredQty 0 to 1; deliveredOn (unset) to 2026-10-02; handover (unset) to collected",
-    "cost": 56
+    "cost": 56,
+    "road": "site"
    },
    {
     "customer": "CA6-CYB",
@@ -6952,7 +7178,8 @@
     "deliveredOn": "2026-10-02",
     "paidOn": "2026-10-02",
     "note": "<b>SALT SELL DATED 02 OCT: 3 UNITS FOR RM260, PAID AND COLLECTED IN FULL.</b> Booked to CA6-CYB, RM260 cash received and 3 units handed over on 02 Oct 2026, approved by the desk. The rate is RM86.67 a unit; for 3 units the desk's floor is RM205.87 and its ask RM390, so the order sits above the floor and under the ask. CA6-CYB: median RM100 a unit over 1 order, range RM100 to RM100, RM0 outstanding and 0 units on credit before this, against a cap of 1 unit. The row carries RM168, RM56 a unit, the inventory's own cost. The drafter raised no flags, so there is nothing for the figures to answer. Outstanding: nothing.",
-    "rid": "s228"
+    "rid": "s228",
+    "road": "desk"
    },
    {
     "customer": "CH6-SET",
@@ -6998,7 +7225,8 @@
      }
     ],
     "cost": 84,
-    "paidOn": "2026-10-04"
+    "paidOn": "2026-10-04",
+    "road": "site"
    },
    {
     "customer": "CS6-PER",
@@ -7036,7 +7264,8 @@
     "paidOn": "2026-10-03",
     "deliveredOn": "2026-10-03",
     "handover": "collected",
-    "mod": "corrected on 2026-10-03: deliveredQty 0 to 10; deliveredOn (unset) to 2026-10-03; handover (unset) to collected"
+    "mod": "corrected on 2026-10-03: deliveredQty 0 to 10; deliveredOn (unset) to 2026-10-03; handover (unset) to collected",
+    "road": "site"
    },
    {
     "customer": "CS6-PER",
@@ -7075,7 +7304,8 @@
       "note": "<b>PAYMENT OF RM160 ON S231, SETTLING THE ORDER IN FULL.</b> CS6-PER paid RM160 in cash at the counter on 03 Oct, recorded on the desk against order 20261003121352-viyxlq, preapproved by phone. The order was 1.5 units of salt for RM160, a rate of RM106.67 a unit. The dossier gives no salt floor or ask for this size, so none is quoted. CS6-PER: median RM85.52 a unit over 11 orders, range RM8 to RM106.67, so this is their highest rate. RM160 was outstanding before this, with 1.5 units on credit. The drafter flagged that this settles the order in full, and the figures agree: RM160 paid against RM160 owed. The row moves no goods and carries no cost of its own. Outstanding: nothing."
      }
     ],
-    "paidOn": "2026-10-03"
+    "paidOn": "2026-10-03",
+    "road": "site"
    },
    {
     "customer": "CJ4-BJ",
@@ -7089,7 +7319,8 @@
     "deliveredOn": "2026-10-05",
     "paidOn": "2026-10-05",
     "note": "<b>SALT SELL DATED 05 OCT: 6.25 UNIT FOR RM500, COLLECTED AND PAID IN FULL ON THE DAY.</b> Booked to CJ4-BJ at RM80 a unit, RM500 cash in, 6.25 unit collected, no delivery. CJ4-BJ typically pays about RM70 a unit over 6 orders, so the rate is 14.3% above their usual, as the drafter flagged. The draft carried RM350 at the old RM56 a unit; the cost is corrected to RM400, 6.25 unit at the RM64 landed on the lot bought the same day, since that lot is the shelf. The floor for the size is 6.25 times COGS of RM64, RM400, so the sale clears the floor by RM100. With s137 settled the account reads clean. Outstanding: nothing.",
-    "rid": "s232"
+    "rid": "s232",
+    "road": "desk"
    },
    {
     "customer": "CE5-SA-R",
@@ -7123,7 +7354,8 @@
       "kg": 0,
       "note": "<b>CORRECTION ON S233: COST FROM RM60 TO RM64, SAME DAY.</b> Applied to CE5-SA-R's salt sale of 05 Oct, 1 unit for RM130 plus RM40 delivery, delivered and RM170 cash in. The entry says RM64 is the COGS basis: p035, RM750 quote plus RM50 freight over 12.5 units, where the fold had set the shelf rate of RM60. The dossier gives no floor or ask for this size beyond the row's own note, so none is quoted here. CE5-SA-R's median rate is RM105, range RM5 to RM130, outstanding RM0 and 0 units on credit before. The drafter flagged RM40 overpaid, that a typed cost overrides the inventory, and a rate 18.2% above the party's usual; the figures do not answer these. Outstanding: the RM40 overpayment is recorded as paid."
      }
-    ]
+    ],
+    "road": "desk"
    },
    {
     "customer": "CE5-SA-R",
@@ -7140,7 +7372,8 @@
     "paidOn": "2026-10-05",
     "rev": "R2",
     "note": "<b>RICE SELL DATED 05 OCT: 2 UNIT FOR RM10, DELIVERED AND PAID IN FULL, BELOW THE FLOOR ON HIS WORD.</b> Booked to CE5-SA-R as R2 at RM5 a unit, RM10 cash in, delivered on the salt trip t1791145053619, which carries the delivery. The floor for 2 unit is RM12.63 and the ask RM16, so the sale is RM2.63 under the floor, as the drafter flagged. The figures do not answer that flag; he decided it. Cost stays at the drafted RM3.4 a unit, from lot p028. CE5-SA-R has outstanding RM0 and 0 units on credit against a cap of 1. Outstanding: nothing.",
-    "rid": "s234"
+    "rid": "s234",
+    "road": "desk"
    },
    {
     "customer": "CN3-WM",
@@ -7174,7 +7407,8 @@
        "trip": null
       }
      }
-    ]
+    ],
+    "road": "desk"
    },
    {
     "customer": "CN3-WM",
@@ -7209,7 +7443,8 @@
        "trip": null
       }
      }
-    ]
+    ],
+    "road": "desk"
    },
    {
     "customer": "CJ2-KUC",
@@ -7249,7 +7484,8 @@
     "deliveredOn": "2026-10-05",
     "handover": "collected",
     "mod": "corrected on 2026-10-05: deliveredQty 0 to 10; deliveredOn (unset) to 2026-10-05; handover (unset) to collected",
-    "cost": 34
+    "cost": 34,
+    "road": "site"
    },
    {
     "customer": "CE4-CHE",
@@ -7280,7 +7516,8 @@
       "note": "<b>FULFILMENT ON S238 RECORDED 07 OCT: 2.5 UNIT HANDED OVER, ORDER SETTLED.</b> CE4-CHE's salt order of 2.5 unit for RM240 was agreed and paid in full on 06 Oct at RM96 a unit, with nothing moved until now. The floor for 2.5 unit is RM160 and the ask RM330, so the total sits above the floor and below the ask. CE4-CHE has a median rate of RM92 and a range of RM6 to RM107.5, RM0 outstanding before and no units on credit. The row keeps the cost it already carries. The drafter flagged that this settles the order in full; the figures answer it, as RM0 and 0 unit remain. Open: nothing."
      }
     ],
-    "deliveredOn": "2026-10-07"
+    "deliveredOn": "2026-10-07",
+    "road": "admin"
    },
    {
     "customer": "CE4-CHE",
@@ -7295,7 +7532,8 @@
     "deliveredOn": "2026-10-06",
     "paidOn": "2026-10-06",
     "note": "<b>RICE SELL DATED 06 OCT: 10 UNIT FOR RM60, PAID AND COLLECTED ON THE DAY.</b> Booked to CE4-CHE as RM6 a unit, RM60 cash in and 10 unit handed over on 06 Oct, so nothing stays open. The floor for 10 unit is RM34 and the ask RM60, so the total sits exactly at the ask. CE4-CHE has a median of RM92 and range RM10 to RM107.5, but none of that is rice, with RM0 outstanding and 0 units on credit against a cap of 1. The row carries a cost of RM34, COGS off purchase p028. The drafter flagged that CE4-CHE has no committed rice order to compare with; the figures cannot answer that. The shelf rolls by 10 unit.",
-    "rid": "s239"
+    "rid": "s239",
+    "road": "admin"
    },
    {
     "customer": "CS6-PER",
@@ -7332,7 +7570,8 @@
      }
     ],
     "cancelled": true,
-    "cancelledOn": "2026-10-08"
+    "cancelledOn": "2026-10-08",
+    "road": "site"
    },
    {
     "customer": "CE4-CHE",
@@ -7347,7 +7586,8 @@
     "deliveredOn": "2026-10-08",
     "paidOn": "2026-10-08",
     "note": "<b>CANDY SELL DATED 08 OCT: 1 UNIT FOR RM50, PAID AND COLLECTED ON THE DAY.</b> Booked to CE4-CHE, RM50 cash in and 1 unit handed over on 08 Oct, so nothing stays open. The rate is RM50 a unit. The floor for 1 unit is RM42 and the ask RM60, so the total is above the floor and RM10 below the ask. CE4-CHE has a median rate of RM92 across all products and a range of RM6 to RM107.5, nothing outstanding, 0 units on credit against a cap of 1. The row carries RM42 a unit, COGS off the latest purchase, which is the inventory's own rate. The drafter flagged no committed candy order for CE4-CHE; the figures cannot answer that, as the median covers other products. Open: nothing.",
-    "rid": "s241"
+    "rid": "s241",
+    "road": "desk"
    },
    {
     "customer": "CA7-AMP",
@@ -7362,7 +7602,8 @@
     "deliveredOn": "2026-10-08",
     "paidOn": "2026-10-08",
     "note": "<b>OIL SELL DATED 08 OCT: 50 UNITS FOR RM450, PAID AND COLLECTED ON THE DAY.</b> Booked to CA7-AMP, RM450 cash in and 50 units handed over on 08 Oct, so nothing stays open. The rate is RM9 a unit. The floor for 50 units is RM388.57 and the ask RM450, so the total is above the floor and at the ask. CA7-AMP has a median rate of RM13 and a range of RM8.3 to RM135, nothing outstanding, 0 units on credit against a cap of 10. The row carries RM388.57, COGS off the latest purchase, which is the inventory's own rate. The drafter flagged a rate 15.5% below the party's usual RM10.65 a unit; the figures only partly answer that, as RM9 is under the median but inside the range. Open: nothing.",
-    "rid": "s242"
+    "rid": "s242",
+    "road": "desk"
    },
    {
     "customer": "CM4-MK",
@@ -7395,7 +7636,8 @@
       "note": "<b>FULFILMENT ON s243 DATED 10 OCT: RM90 CASH FROM CM4-MK, ORDER SETTLED IN FULL.</b> The order was 1 unit at RM80 plus RM10 delivery, RM90 owed, delivered on 09 Oct with RM0 cash in. The rate of RM80 a unit sits above the floor of RM58 and under the ask of RM140 for 1 unit. CM4-MK has 13 orders, a median rate of RM101, a range of RM80 to RM113.33, RM90 outstanding before and 1 unit on credit before, with no default. The RM80 rate is the lowest in his range. The drafter flagged that this settles the order in full, and the figures agree: RM90 against RM90 outstanding leaves RM0. No unit moves. Nothing is left outstanding."
      }
     ],
-    "paidOn": "2026-10-10"
+    "paidOn": "2026-10-10",
+    "road": "admin"
    },
    {
     "customer": "CJ4-BJ",
@@ -7427,7 +7669,8 @@
       "note": "<b>FULFILMENT OF RM100 ON 20 OCT AGAINST SALT ORDER s244.</b> CJ4-BJ's order of 9 Oct was 6.25 unit for RM500, delivered with RM400 cash in. RM100 and 0 unit move today, so nothing is left outstanding. The order total of RM500 is above the floor total of RM362.5 and below the ask total of RM600. CJ4-BJ has 9 orders, a median rate of RM80, a range of RM64 to RM100, RM100 outstanding and 1.25 unit on credit before this payment. The row keeps its own cost, which this fulfilment does not touch. The drafter flagged that this settles the order in full; the figures confirm it, as RM100 meets the RM100 outstanding. Nothing remains outstanding."
      }
     ],
-    "paidOn": "2026-10-20"
+    "paidOn": "2026-10-20",
+    "road": "admin"
    },
    {
     "customer": "CR3-DAM",
@@ -7482,7 +7725,8 @@
     "cost": 29,
     "settledRM": 19.6,
     "rebateKg": 0.14,
-    "rebate": true
+    "rebate": true,
+    "road": "site"
    },
    {
     "customer": "CR3-DAM",
@@ -7498,7 +7742,8 @@
     "deliveredOn": "2026-10-09",
     "date": "2026-10-09",
     "note": "<b>SALT REDEMPTION DATED 09 OCT: 0.86 UNIT FREE, SETTLED BY REWARD, NO CASH IN.</b> CR3-DAM takes 0.86 unit, RM48.16 of goods, all RM48.16 settled by the reward, RM0 cash, delivered the same day, approved by the desk. Booked as cost and not revenue, on his ruling of 11 Sep 2026, as the row carries goodwill and rebate. For this size the dossier gives a floor of RM49.88 and an ask of RM120; no cash rate arises. CR3-DAM has 20 orders, a median rate of RM80, a range of RM80 to RM110, RM25 outstanding before and 0.27 unit on credit before, against a cap of 2 units. The cost carried is the inventory's own. Drafter flag: the desk says 0.86 unit was earned and unredeemed (2 earned, 1.14 used); the figures cannot answer it. Open: nothing outstanding on the row.",
-    "rid": "s246"
+    "rid": "s246",
+    "road": "desk"
    },
    {
     "customer": "CZ5-TM",
@@ -7544,7 +7789,8 @@
     "deliveredOn": "2026-10-10",
     "handover": "collected",
     "mod": "corrected on 2026-10-10: deliveredQty 0 to 2; deliveredOn (unset) to 2026-10-10; handover (unset) to collected",
-    "cost": 116
+    "cost": 116,
+    "road": "site"
    },
    {
     "customer": "CS6-BS",
@@ -7589,7 +7835,8 @@
      }
     ],
     "cancelled": true,
-    "cancelledOn": "2026-10-10"
+    "cancelledOn": "2026-10-10",
+    "road": "site"
    },
    {
     "customer": "CH5-KLC",
@@ -7617,7 +7864,8 @@
      }
     ],
     "cancelled": true,
-    "cancelledOn": "2026-10-11"
+    "cancelledOn": "2026-10-11",
+    "road": "site"
    },
    {
     "customer": "CF5-WM",
@@ -7657,7 +7905,8 @@
       "note": "<b>FULFILMENT ON S250, 10 OCT: RM215 PAID IN CASH.</b> CF5-WM paid RM215 at the counter against the order of 2 units for RM200 plus RM15 delivery, recorded on the desk, preapproved by phone. The payment covers the whole amount owed. It moves no stock itself; the 2 units go out on the correction. CF5-WM has 4 orders, a median rate of RM100, a range of RM100 to RM115, RM215 outstanding before this payment and 0 units on credit. The drafter raised no flag. Open: RM0 unpaid. Delivery is recorded by the correction."
      }
     ],
-    "paidOn": "2026-10-10"
+    "paidOn": "2026-10-10",
+    "road": "site"
    },
    {
     "customer": "CI4-OKR",
@@ -7697,7 +7946,8 @@
     "deliveredOn": "2026-10-10",
     "handover": "collected",
     "mod": "corrected on 2026-10-10: deliveredQty 0 to 2; deliveredOn (unset) to 2026-10-10; handover (unset) to collected",
-    "cost": 84
+    "cost": 84,
+    "road": "site"
    },
    {
     "customer": "CK4-SEN",
@@ -7729,7 +7979,8 @@
       "cost": 3.4
      }
     ],
-    "cost": 3.4
+    "cost": 3.4,
+    "road": "site"
    },
    {
     "customer": "CK4-SEN",
@@ -7767,7 +8018,8 @@
     ],
     "paidOn": "2026-10-12",
     "cost": 290,
-    "deliveredOn": "2026-10-12"
+    "deliveredOn": "2026-10-12",
+    "road": "site"
    },
    {
     "customer": "CM4-MK",
@@ -7796,7 +8048,8 @@
      }
     ],
     "cancelled": true,
-    "cancelledOn": "2026-10-12"
+    "cancelledOn": "2026-10-12",
+    "road": "site"
    },
    {
     "customer": "CS6-PER",
@@ -7810,7 +8063,8 @@
     "deliveredOn": "2026-10-11",
     "paidOn": "2026-10-11",
     "note": "<b>NEW SALE ON 11 OCT: 1 UNIT OF SALT TO CS6-PER FOR RM116.</b> Collected, RM116 cash, paid and delivered the same day. At RM116 a unit it clears the floor of RM58 for that size and sits below the ask of RM140; the ceiling is RM180. CS6-PER has 12 orders, a median rate of RM85.52, a range of RM8 to RM106.67, RM0 outstanding and 0 units on credit against a cap of 2. The cost is COGS off the latest purchase, RM58 a unit, and the fold keeps it. The drafter flagged the rate as 40.2% above his usual RM82.76 across 10 orders; the figures bear that out, and RM116 also tops his previous range. Open: nothing.",
-    "rid": "s255"
+    "rid": "s255",
+    "road": "desk"
    },
    {
     "customer": "CS6-PER",
@@ -7841,7 +8095,8 @@
       "note": "<b>FULFILMENT ON S256, 12 OCT: 1.5 UNITS OF SALT DELIVERED TO CS6-PER.</b> The order was 1.5 units for RM170, collected and paid in full in cash, with nothing yet moved. At RM113.33 a unit it clears the floor of RM87 for that size and sits below the ask of RM200; the ceiling is RM270. CS6-PER has 15 orders, a median rate of RM85.52, a range of RM8 to RM116, RM0 outstanding and 0 units on credit. The drafter flagged that this settles the order in full, and it does: RM0 and 0 units remain."
      }
     ],
-    "deliveredOn": "2026-10-12"
+    "deliveredOn": "2026-10-12",
+    "road": "desk"
    },
    {
     "customer": "CS6-PER",
@@ -7873,7 +8128,8 @@
       "note": "<b>FULFILMENT ON S257, 12 OCT: 10 UNITS OF OIL DELIVERED TO CS6-PER.</b> The order was 10 units for RM110, collected and paid in full in cash, with nothing yet moved. At RM11 a unit it clears the floor of RM77.71 for that size, as stated on the sale row, and sits below the ask of RM130; the ceiling is RM240. CS6-PER has 15 orders, a median rate of RM85.52, a range of RM8 to RM116, RM0 outstanding and 0 units on credit. The drafter flagged that this settles the order in full, and the figures agree: nothing is left outstanding."
      }
     ],
-    "deliveredOn": "2026-10-12"
+    "deliveredOn": "2026-10-12",
+    "road": "desk"
    },
    {
     "customer": "CK4-SEN",
@@ -7930,7 +8186,8 @@
     "paidOn": "2026-10-13",
     "settledRM": 0,
     "settledKg": 0,
-    "cost": 6.8
+    "cost": 6.8,
+    "road": "site"
    },
    {
     "customer": "CS6-PER-R",
@@ -7970,7 +8227,8 @@
      }
     ],
     "cost": 29,
-    "paidOn": "2026-10-13"
+    "paidOn": "2026-10-13",
+    "road": "site"
    },
    {
     "customer": "CZ5-TM",
@@ -8009,7 +8267,8 @@
     "deliveredOn": "2026-10-13",
     "handover": "collected",
     "mod": "corrected on 2026-10-13: deliveredQty 0 to 1; deliveredOn (unset) to 2026-10-13; handover (unset) to collected",
-    "cost": 58
+    "cost": 58,
+    "road": "site"
    },
    {
     "customer": "CE4-CHE",
@@ -8042,7 +8301,8 @@
       "cost": 87,
       "note": "<b>FULFILMENT OF S261, 23 OCT: THE LAST 1.5 UNITS COLLECTED BY CE4-CHE, ORDER SETTLED.</b> The order is 4.5 units for RM400, paid in full on 14 Oct, with 3 units moved before. The rate of RM88.89 a unit was above the floor and below the ask. The goods total of RM400 sits above the floor total of RM261 and below the ask total of RM460. The party's median is RM92 a unit, range RM6 to RM107.5, across 19 orders. Outstanding before was RM0, nothing on credit, nothing defaulted; no credit cap is given. The drafter's flag, that this settles the order in full, is answered by the figures. Still outstanding: nothing."
      }
-    ]
+    ],
+    "road": "admin"
    },
    {
     "customer": "CR3-DAM",
@@ -8093,7 +8353,8 @@
     "deliveredOn": "2026-10-16",
     "handover": "collected",
     "cost": 29,
-    "paidOn": "2026-10-20"
+    "paidOn": "2026-10-20",
+    "road": "site"
    },
    {
     "customer": "CS6-PER",
@@ -8133,7 +8394,8 @@
     "deliveredOn": "2026-10-15",
     "handover": "collected",
     "mod": "corrected on 2026-10-15: deliveredQty 0 to 5; deliveredOn (unset) to 2026-10-15; handover (unset) to collected",
-    "cost": 17
+    "cost": 17,
+    "road": "site"
    },
    {
     "customer": "CS6-PER",
@@ -8173,7 +8435,8 @@
      }
     ],
     "cost": 77.71,
-    "paidOn": "2026-10-15"
+    "paidOn": "2026-10-15",
+    "road": "site"
    },
    {
     "customer": "CS6-PER",
@@ -8212,7 +8475,8 @@
      }
     ],
     "cost": 58,
-    "paidOn": "2026-10-15"
+    "paidOn": "2026-10-15",
+    "road": "site"
    },
    {
     "customer": "CC9-OKR",
@@ -8251,7 +8515,8 @@
      }
     ],
     "cost": 362.5,
-    "paidOn": "2026-10-15"
+    "paidOn": "2026-10-15",
+    "road": "admin"
    },
    {
     "customer": "CS6-BS-R",
@@ -8305,7 +8570,8 @@
     ],
     "cost": 116,
     "rev": "R2",
-    "paidOn": "2026-10-20"
+    "paidOn": "2026-10-20",
+    "road": "site"
    },
    {
     "customer": "CS6-PER",
@@ -8321,7 +8587,8 @@
     "deliveredOn": "2026-10-15",
     "date": "2026-10-15",
     "note": "<b>REDEMPTION ON 15 OCT: 1 UNIT OF SALT FREE TO CS6-PER, BOOKED AS COST.</b> Settled by the reward, RM0 cash, RM56 settled, delivered the same day. On his word of 11 Sep 2026 the row carries goodwill as well as rebate, so it is an expense and not revenue. The goods total of RM56 is below the desk's floor of RM58 and well below its ask of RM140 for 1 unit; that follows from it being a gift. CS6-PER has 18 orders, a median rate of RM85.52, a range of RM7 to RM116, RM0 outstanding before and 0 units on credit; the cap is 2. The cost carried is RM56 a unit, the inventory's own rate. The drafter flagged the desk's count of 1 unit earned and unredeemed (3 earned, 2 used); the figures cannot answer it, as it is the desk's word. Open: nothing is owed.",
-    "rid": "s268"
+    "rid": "s268",
+    "road": "admin"
    },
    {
     "customer": "CA5-BAN",
@@ -8377,7 +8644,8 @@
     "paidOn": "2026-10-16",
     "deliveredOn": "2026-10-16",
     "handover": "collected",
-    "cost": 348
+    "cost": 348,
+    "road": "site"
    },
    {
     "customer": "CS6-PER",
@@ -8421,7 +8689,8 @@
     "deliveredOn": "2026-10-17",
     "handover": "collected",
     "mod": "corrected on 2026-10-17: deliveredQty 0 to 2; deliveredOn (unset) to 2026-10-17; handover (unset) to collected",
-    "cost": 116
+    "cost": 116,
+    "road": "site"
    },
    {
     "customer": "CA3-KP",
@@ -8465,7 +8734,8 @@
      }
     ],
     "cost": 29,
-    "paidOn": "2026-10-18"
+    "paidOn": "2026-10-18",
+    "road": "site"
    },
    {
     "customer": "CZ5-TM",
@@ -8506,7 +8776,8 @@
      }
     ],
     "cancelled": true,
-    "cancelledOn": "2026-10-20"
+    "cancelledOn": "2026-10-20",
+    "road": "site"
    },
    {
     "customer": "CM4-TO-R",
@@ -8522,7 +8793,8 @@
     "paidOn": "2026-10-19",
     "rev": "R2",
     "note": "<b>NEW PAID SALE ON 19 OCT: 5 UNITS OF SALT TO CM4-TO-R, GOODS RM457.</b> Delivered in full and paid in full on 19 Oct, RM18 delivery on top, RM475 cash. Booked as R2 via CM4-TO, approved by Counter Admin. The goods total of RM457 is above the floor total of RM290 and below the ask total of RM495, at RM91.4 a unit against a floor of RM58 and an ask of RM99. CM4-TO-R has no orders on record, no median rate, nothing outstanding and 0 units on credit against a cap of 1. The row carries cost RM290, the drafter's COGS at RM58 a unit off the latest purchase, and the fold keeps it. The drafter flagged that CM4-TO usually pays about RM56 a unit across 4 orders and that this is 63.2% above that. The figures answer it: the rate is well clear of the floor. Nothing is left outstanding.",
-    "rid": "s273"
+    "rid": "s273",
+    "road": "admin"
    },
    {
     "customer": "CS6-PER",
@@ -8560,7 +8832,8 @@
        "rebate": null
       }
      }
-    ]
+    ],
+    "road": "admin"
    },
    {
     "customer": "CM4-TO-R",
@@ -8596,7 +8869,8 @@
        "delivery": 15
       }
      }
-    ]
+    ],
+    "road": "admin"
    },
    {
     "customer": "CM4-TO",
@@ -8612,7 +8886,8 @@
     "deliveredOn": "2026-10-20",
     "date": "2026-10-20",
     "note": "<b>REDEMPTION ON 20 OCT: 1 UNIT OF SALT FREE TO CM4-TO, BOOKED AS COST.</b> Settled by the reward, RM0 cash, delivered the same day. On his word of 11 Sep 2026 the row carries goodwill as well as rebate, so it is an expense and not revenue. The goods of RM56 are below the floor total of RM60 and the ask total of RM120, so RM56 a unit against a floor of RM60 and an ask of RM120. CM4-TO has 5 orders, a median rate of RM52, a range of RM5 to RM65, nothing outstanding and 0 units on credit, against a cap of 2. The row carries cost RM56, the inventory's own rate, and the fold keeps it. The drafter flagged that the desk's claim of 1 unit earned and unused cannot be checked here. Nothing is left outstanding.",
-    "rid": "s276"
+    "rid": "s276",
+    "road": "admin"
    },
    {
     "customer": "CM4-TO-R",
@@ -8629,7 +8904,8 @@
     "listRM": 60,
     "listQty": 1,
     "note": "<b>NEW PAID SALE ON 20 OCT: 1 UNIT OF SALT TO CM4-TO-R, GOODS RM150.</b> Collected, delivered and paid in full on 20 Oct, RM150 cash, booked as R2 via CM4-TO. The goods total of RM150 is above the floor total of RM60 and the ask total of RM120, so RM150 a unit against a floor of RM60 and an ask of RM120. CM4-TO-R has 2 orders, a median rate of RM91.4, a range of RM71.67 to RM91.4, nothing outstanding and 0 units on credit, against a cap of 1. The row carries cost RM58, the inventory's replacement rate, and the fold keeps it. The drafter flagged that CM4-TO typically pays about RM60 a unit, so this is 150% above; the figures confirm the rate is high but give no reason. Nothing is left outstanding.",
-    "rid": "s277"
+    "rid": "s277",
+    "road": "admin"
    },
    {
     "customer": "CR3-DAM",
@@ -8675,7 +8951,8 @@
      }
     ],
     "cost": 29,
-    "paidOn": "2026-10-27"
+    "paidOn": "2026-10-27",
+    "road": "site"
    },
    {
     "customer": "CJ4-BJ",
@@ -8690,7 +8967,8 @@
     "deliveredOn": "2026-10-20",
     "paidOn": "2026-10-20",
     "note": "<b>NEW SALE ON 20 OCT: 10 UNIT OF RICE TO CJ4-BJ, GOODS RM60.</b> Collected and paid in full on the day, RM60 cash, 10 unit moved. The goods total of RM60 equals the ask total of RM60 and is above the floor total of RM35, which is RM6 a unit against a floor of RM3.5 and an ask of RM6. CJ4-BJ's history is in salt: 9 orders, a median rate of RM80, a range of RM64 to RM100, RM100 outstanding and 1.25 unit on credit, against a cap of 1. This sale is paid in full, so it adds no credit. The row carries cost RM34, set at COGS off the latest purchase p028 at RM3.4 a unit, and the fold keeps it. The drafter flagged no committed rice order, so no rate of theirs to compare; the figures cannot answer that. Nothing is outstanding.",
-    "rid": "s279"
+    "rid": "s279",
+    "road": "admin"
    },
    {
     "customer": "CS6-PER",
@@ -8739,7 +9017,8 @@
      }
     ],
     "paidOn": "2026-10-21",
-    "mod": "corrected on 2026-10-22: cash 145 to 120; delivery 25 to 0; paidOn 2026-10-22 to 2026-10-21; note <b>NEW SALE ON 21 OCT: 1 UNIT OF SALT TO CS6-PER, GOODS RM120, DELIVERED, ADVANCE.</b> RM120 cash paid, plus RM25 delivery left unpaid, and 1 unit delivered on 21 Oct. The goods total of RM120 equals the ask total of RM120 and is above the floor total of RM60, so RM120 a unit against a floor of RM60 and an ask of RM120. CS6-PER's history: 23 orders, a median rate of RM85.52, a range of RM7 to RM116, nothing outstanding before this and no units on credit, against a cap of 2. The row carries cost of RM60 a unit, COGS off the latest purchase p042, and the fold keeps it. The drafter flagged the rate as 20% above their usual RM100 and the advance against the cap; the figures answer the first, since it is the ask. The RM25 delivery is outstanding. to His word of 22 Oct 2026: one order, collected, no delivery, paid in full on 21 Oct; handover delivered to collected"
+    "mod": "corrected on 2026-10-22: cash 145 to 120; delivery 25 to 0; paidOn 2026-10-22 to 2026-10-21; note <b>NEW SALE ON 21 OCT: 1 UNIT OF SALT TO CS6-PER, GOODS RM120, DELIVERED, ADVANCE.</b> RM120 cash paid, plus RM25 delivery left unpaid, and 1 unit delivered on 21 Oct. The goods total of RM120 equals the ask total of RM120 and is above the floor total of RM60, so RM120 a unit against a floor of RM60 and an ask of RM120. CS6-PER's history: 23 orders, a median rate of RM85.52, a range of RM7 to RM116, nothing outstanding before this and no units on credit, against a cap of 2. The row carries cost of RM60 a unit, COGS off the latest purchase p042, and the fold keeps it. The drafter flagged the rate as 20% above their usual RM100 and the advance against the cap; the figures answer the first, since it is the ask. The RM25 delivery is outstanding. to His word of 22 Oct 2026: one order, collected, no delivery, paid in full on 21 Oct; handover delivered to collected",
+    "road": "admin"
    },
    {
     "customer": "CS6-PER",
@@ -8780,7 +9059,8 @@
       },
       "cost": 70.74
      }
-    ]
+    ],
+    "road": "admin"
    },
    {
     "customer": "CS6-PER",
@@ -8828,7 +9108,8 @@
      }
     ],
     "deliveredOn": "2026-10-21",
-    "mod": "corrected on 2026-10-22: total 35 to 30; cash 35 to 30; deliveredOn 2026-10-22 to 2026-10-21; note <b>NEW SALE ON 21 OCT: 5 UNIT OF RICE TO CS6-PER, GOODS RM35, PAID, NOT YET HANDED OVER.</b> RM35 cash received on 21 Oct. The row is marked delivered but records 0 of 5 unit moved. The goods total of RM35 equals the ask total of RM35 and is above the floor total of RM20, which is RM7 a unit against a floor of RM4 and an ask of RM7. CS6-PER's history: 23 orders, a median rate of RM85.52, a range of RM7 to RM116, nothing outstanding, against a cap of 2. The row carries cost of RM17, COGS off the latest purchase p028 at RM3.4 a unit, which is the inventory's own rate. The drafter raised no flag. Handing over the 5 unit is outstanding. to His word of 22 Oct 2026: 5 unit of rice for RM30, collected on 21 Oct, paid in full; handover delivered to collected"
+    "mod": "corrected on 2026-10-22: total 35 to 30; cash 35 to 30; deliveredOn 2026-10-22 to 2026-10-21; note <b>NEW SALE ON 21 OCT: 5 UNIT OF RICE TO CS6-PER, GOODS RM35, PAID, NOT YET HANDED OVER.</b> RM35 cash received on 21 Oct. The row is marked delivered but records 0 of 5 unit moved. The goods total of RM35 equals the ask total of RM35 and is above the floor total of RM20, which is RM7 a unit against a floor of RM4 and an ask of RM7. CS6-PER's history: 23 orders, a median rate of RM85.52, a range of RM7 to RM116, nothing outstanding, against a cap of 2. The row carries cost of RM17, COGS off the latest purchase p028 at RM3.4 a unit, which is the inventory's own rate. The drafter raised no flag. Handing over the 5 unit is outstanding. to His word of 22 Oct 2026: 5 unit of rice for RM30, collected on 21 Oct, paid in full; handover delivered to collected",
+    "road": "admin"
    },
    {
     "customer": "CS6-PER",
@@ -8860,7 +9141,8 @@
      }
     ],
     "cancelled": true,
-    "cancelledOn": "2026-10-22"
+    "cancelledOn": "2026-10-22",
+    "road": "site"
    },
    {
     "customer": "CS6-PER",
@@ -8889,7 +9171,8 @@
      }
     ],
     "cancelled": true,
-    "cancelledOn": "2026-10-22"
+    "cancelledOn": "2026-10-22",
+    "road": "site"
    },
    {
     "customer": "CS6-PER",
@@ -8926,7 +9209,8 @@
       "note": "<b>FULFILMENT OF S285, 23 OCT: 1 UNIT DELIVERED TO CS6-PER, ORDER SETTLED.</b> This is the reward unit at RM60 total, no charge, raised at cost. RM0 and 1 unit move on 23 Oct against RM0 and 1 unit outstanding. The dossier gives no floor or ask for this reward unit, so the RM60 cannot be set against the ladder. The party's median is RM85.52 a unit, range RM6 to RM120, across 27 orders. Outstanding before was RM0, nothing on credit, nothing defaulted; no credit cap is given. The drafter's flag, that this settles the order in full, is answered: nothing remains. Still outstanding: nothing."
      }
     ],
-    "deliveredOn": "2026-10-23"
+    "deliveredOn": "2026-10-23",
+    "road": "fold"
    },
    {
     "customer": "CM4-MK",
@@ -8957,7 +9241,8 @@
      }
     ],
     "cancelled": true,
-    "cancelledOn": "2026-10-23"
+    "cancelledOn": "2026-10-23",
+    "road": "site"
    },
    {
     "customer": "CZ5-TM",
@@ -9016,7 +9301,8 @@
     "paidOn": "2026-10-23",
     "deliveredOn": "2026-10-23",
     "handover": "collected",
-    "cost": 120
+    "cost": 120,
+    "road": "site"
    },
    {
     "customer": "CE4-CHE",
@@ -9032,7 +9318,8 @@
     "listRM": 170,
     "listQty": 1.5,
     "note": "<b>NEW SALE: 1.5 UNITS OF SALT TO CE4-CHE FOR RM230, PAID AND COLLECTED ON 23 OCT.</b> RM230 cash in, 1.5 units handed over, no delivery charge, so nothing is outstanding. The rate is RM153.33 a unit. The goods total of RM230 is above the ask total of RM170 and the floor total of RM90; per unit it is above the ask of RM113.33 and the floor of RM60. The party's median is RM92 a unit, range RM6 to RM107.5, across 19 orders. Outstanding before was nil, no units on credit, nothing defaulted, and the credit cap given is 1. The row carries cost of RM90, costed at RM60 a unit off the latest purchase, which is the inventory's own rate. The drafter flagged the rate as 66.7% above the party's usual RM92; the figures confirm it is well above both the median and the ask. Still outstanding: nothing.",
-    "rid": "s288"
+    "rid": "s288",
+    "road": "admin"
    },
    {
     "customer": "CS6-PER-R",
@@ -9079,7 +9366,8 @@
     "handover": "collected",
     "rev": "R2",
     "mod": "corrected on 2026-10-23: deliveredQty 0 to 1.5; deliveredOn (unset) to 2026-10-23; handover (unset) to collected",
-    "cost": 90
+    "cost": 90,
+    "road": "site"
    },
    {
     "customer": "CA3-KP",
@@ -9143,7 +9431,8 @@
     ],
     "deliveredOn": "2026-10-24",
     "cost": 60,
-    "paidOn": "2026-10-24"
+    "paidOn": "2026-10-24",
+    "road": "admin"
    },
    {
     "customer": "CA6-SET",
@@ -9162,7 +9451,8 @@
     "listRM": 130,
     "listQty": 1,
     "note": "<b>NEW SALE: 1 UNIT OF SALT TO CA6-SET, 23 OCT 2026.</b> The goods come to RM140 at RM140 a unit, with RM30 delivery, RM170 cash received, delivered in full and paid on the same day. Against the desk's ladder for 1 unit, the goods total of RM140 sits above the ask total of RM120 and the floor total of RM60, and below the ceiling of RM180. The party has no committed salt order, so there is no median, range or history; outstanding before was RM0, no units were on credit and nothing has defaulted, against a credit cap of 1. The row carries a cost of RM60 a unit, set as COGS off the latest purchase and the inventory's own rate. The drafter flagged the missing history, and the figures cannot answer that. Referred by CN3-WM. Nothing is left outstanding.",
-    "rid": "s291"
+    "rid": "s291",
+    "road": "admin"
    },
    {
     "customer": "CM4-TO",
@@ -9198,7 +9488,8 @@
        "deliveredQty": 12.6
       }
      }
-    ]
+    ],
+    "road": "admin"
    },
    {
     "customer": "CS6-PER",
@@ -9213,7 +9504,8 @@
     "date": "2026-10-24",
     "handover": "collected",
     "note": "<b>GIFT OF 1.5 UNITS OF SALT TO CS6-PER, 24 OCT 2026.</b> Given free and collected on 24 Oct, approved by Counter Admin. Nothing is owed and nothing is paid. It is booked as a cost, not revenue, on his ruling of 11 Sep 2026, and charged against their reward on his decision of 19 Sep 2026. The cost is RM84, the inventory's own RM56 a unit. For 1.5 units the ladder gives a floor total of RM90 and an ask total of RM170, so the RM84 cost sits below the floor. The party's median rate is RM85.52, range RM6 to RM120; outstanding before was RM0, no units on credit against a cap of 2, RM0 defaulted. The drafter flagged that a gift is not a redemption; the figures answer it, as the RM84 comes off the reward. Nothing is left outstanding.",
-    "rid": "s294"
+    "rid": "s294",
+    "road": "admin"
    },
    {
     "customer": "CK4-SEN",
@@ -9281,7 +9573,8 @@
     "paidOn": "2026-10-25",
     "deliveredOn": "2026-10-25",
     "handover": "collected",
-    "cost": 174
+    "cost": 174,
+    "road": "site"
    },
    {
     "customer": "CM4-MK",
@@ -9320,7 +9613,8 @@
     ],
     "deliveredOn": "2026-10-25",
     "cost": 84,
-    "paidOn": "2026-10-26"
+    "paidOn": "2026-10-26",
+    "road": "admin"
    },
    {
     "customer": "CZ4-MK",
@@ -9372,7 +9666,8 @@
     ],
     "deliveredOn": "2026-10-27",
     "cost": 290,
-    "paidOn": "2026-10-27"
+    "paidOn": "2026-10-27",
+    "road": "admin"
    },
    {
     "customer": "CZ4-MK",
@@ -9450,7 +9745,8 @@
     ],
     "cost": 78.6,
     "deliveredOn": "2026-10-27",
-    "paidOn": "2026-10-27"
+    "paidOn": "2026-10-27",
+    "road": "admin"
    },
    {
     "customer": "CZ5-TM",
@@ -9491,7 +9787,8 @@
      }
     ],
     "cancelled": true,
-    "cancelledOn": "2026-10-27"
+    "cancelledOn": "2026-10-27",
+    "road": "site"
    },
    {
     "customer": "CZ5-TM",
@@ -9586,7 +9883,8 @@
     "paidOn": "2026-10-27",
     "cost": 58,
     "deliveredOn": "2026-10-30",
-    "handover": "collected"
+    "handover": "collected",
+    "road": "site"
    },
    {
     "customer": "CR3-DAM",
@@ -9639,7 +9937,8 @@
      }
     ],
     "cost": 56,
-    "paidOn": "2026-10-30"
+    "paidOn": "2026-10-30",
+    "road": "site"
    },
    {
     "customer": "CZ4-MK",
@@ -9686,7 +9985,8 @@
     "deliveredOn": "2026-10-29",
     "handover": "delivered",
     "mod": "corrected on 2026-10-29: deliveredQty 0 to 20; deliveredOn (unset) to 2026-10-29; handover (unset) to delivered",
-    "cost": 163.2
+    "cost": 163.2,
+    "road": "site"
    },
    {
     "customer": "CM4-TO-R",
@@ -9718,7 +10018,8 @@
      }
     ],
     "cancelled": true,
-    "cancelledOn": "2026-10-27"
+    "cancelledOn": "2026-10-27",
+    "road": "admin"
    },
    {
     "customer": "CS6-BS-R",
@@ -9766,7 +10067,8 @@
      }
     ],
     "cost": 56,
-    "paidOn": "2026-10-31"
+    "paidOn": "2026-10-31",
+    "road": "site"
    },
    {
     "customer": "CH6-SET",
@@ -9837,7 +10139,8 @@
     "cost": 140,
     "delivery": 5,
     "handover": "delivered",
-    "paidOn": "2026-10-30"
+    "paidOn": "2026-10-30",
+    "road": "admin"
    },
    {
     "customer": "CH6-SET",
@@ -9898,7 +10201,8 @@
      }
     ],
     "cost": 9.9,
-    "paidOn": "2026-10-30"
+    "paidOn": "2026-10-30",
+    "road": "admin"
    },
    {
     "customer": "CZ5-TM",
@@ -9956,7 +10260,8 @@
     "paidOn": "2026-10-29",
     "deliveredOn": "2026-10-30",
     "handover": "collected",
-    "cost": 112
+    "cost": 112,
+    "road": "site"
    },
    {
     "customer": "CK4-SEN",
@@ -10001,7 +10306,8 @@
      }
     ],
     "cost": 33,
-    "paidOn": "2026-10-30"
+    "paidOn": "2026-10-30",
+    "road": "site"
    },
    {
     "customer": "CA3-KP",
@@ -10047,7 +10353,8 @@
     "deliveredOn": "2026-10-30",
     "handover": "collected",
     "mod": "corrected on 2026-10-30: deliveredQty 0 to 0.5; deliveredOn (unset) to 2026-10-30; handover (unset) to collected",
-    "cost": 28
+    "cost": 28,
+    "road": "site"
    },
    {
     "customer": "CR3-DAM",
@@ -10085,7 +10392,8 @@
       "cost": 28
      }
     ],
-    "cost": 28
+    "cost": 28,
+    "road": "site"
    },
    {
     "customer": "CM4-TO-R",
@@ -10102,7 +10410,8 @@
     "listRM": 60,
     "listQty": 1,
     "note": "<b>NEW PAID SALE 30 OCT 2026: 1 UNIT OF SALT TO CM4-TO-R, GOODS RM140.</b> Delivered and paid in full on 30 Oct, RM10 delivery on top, RM150 cash, booked as R2 via CM4-TO, approved by Counter Admin. The goods total of RM140 is above the desk's ask total of RM120 and the floor total of RM60, and below the ceiling of RM170. CM4-TO-R: 4 orders on the book, median RM91.4 a unit, range RM71.67 to RM150, nothing outstanding, no units on credit against a cap of 1. The row carries cost at RM56 a unit, the inventory's own rate. The drafter flagged that RM140 is 133.3% above the usual RM60. The figures answer that only in part: the rate is above the party's top of RM150? No, it is below it, and within the party's range. Outstanding: nothing.",
-    "rid": "s310"
+    "rid": "s310",
+    "road": "admin"
    },
    {
     "customer": "CM4-TO-R",
@@ -10119,7 +10428,8 @@
     "listRM": 60,
     "listQty": 1,
     "note": "<b>NEW PAID SALE 30 OCT 2026: 1 UNIT OF SALT TO CM4-TO-R, GOODS RM160.</b> Delivered and paid in full on 30 Oct, RM10 delivery on top, RM170 cash, booked as R2 via CM4-TO, approved by Counter Admin. The goods total of RM160 is above the desk's ask total of RM120 and the floor total of RM60, and just under the ceiling of RM170. CM4-TO-R: 4 orders on the book, median RM91.4 a unit, range RM71.67 to RM150, nothing outstanding, no units on credit against a cap of 1. The row carries cost at RM56 a unit, the inventory's own rate. The drafter flagged that RM160 is 166.7% above the usual RM60. The figures do not answer that: the rate is above the party's highest of RM150, though below the ceiling. Outstanding: nothing.",
-    "rid": "s311"
+    "rid": "s311",
+    "road": "admin"
    },
    {
     "customer": "CE4-CHE",
@@ -10135,7 +10445,8 @@
     "listRM": 255,
     "listQty": 2.5,
     "note": "<b>NEW PAID SALE 30 OCT 2026: 2.5 UNIT OF SALT TO CE4-CHE, GOODS RM230.</b> Paid in full in cash on 30 Oct, collected and delivered in full the same day, no delivery or freight, approved by Counter Admin. The goods total of RM230 is above the desk's floor total of RM140 and below the ask total of RM255, and well under the ceiling of RM420. At RM92 a unit it is above the floor of RM56 a unit and below the ask of RM102. CE4-CHE: 20 orders on the book, median RM92 a unit, range RM6 to RM153.33, nothing outstanding, no units on credit against a cap of 1. The row carries cost of RM140, which is RM56 a unit, the inventory's own rate. The drafter raised no flags. Outstanding: nothing.",
-    "rid": "s312"
+    "rid": "s312",
+    "road": "admin"
    },
    {
     "customer": "CE4-CHE",
@@ -10150,7 +10461,8 @@
     "deliveredOn": "2026-10-30",
     "paidOn": "2026-10-30",
     "note": "<b>NEW PAID SALE 30 OCT 2026: 10 UNIT OF RICE TO CE4-CHE, GOODS RM70.</b> Paid in full in cash on 30 Oct, collected and delivered in full the same day, no delivery or freight, approved by Counter Admin. The goods total of RM70 is above the desk's ask total of RM60 and the floor total of RM35, and under the ceiling of RM99. At RM7 a unit it is above the ask of RM6 a unit. CE4-CHE: 20 orders on the book, median RM92 a unit, range RM6 to RM153.33, nothing outstanding, no units on credit against a cap of 1. The previous rice sale, s239, was RM60 for 10 unit. The row carries cost of RM33, RM3.3 a unit as the drafter set it off the latest purchase. No flags were raised. Outstanding: nothing.",
-    "rid": "s313"
+    "rid": "s313",
+    "road": "admin"
    },
    {
     "customer": "CI5-PER",
@@ -10241,7 +10553,8 @@
     "delivery": 30,
     "deliveredOn": "2026-11-01",
     "handover": "delivered",
-    "cost": 33
+    "cost": 33,
+    "road": "site"
    },
    {
     "customer": "CI5-PER",
@@ -10302,7 +10615,8 @@
     "mod": "corrected on 2026-10-31: trip (unset) to t1793443903933, then corrected on 2026-10-31: handover (unset) to delivered",
     "deliveredOn": "2026-10-31",
     "cost": 81.6,
-    "handover": "delivered"
+    "handover": "delivered",
+    "road": "site"
    },
    {
     "customer": "CI5-PER",
@@ -10359,7 +10673,8 @@
     "mod": "corrected on 2026-10-31: trip (unset) to t1793443903933, then corrected on 2026-11-01: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-01; handover (unset) to delivered",
     "deliveredOn": "2026-11-01",
     "handover": "delivered",
-    "cost": 56
+    "cost": 56,
+    "road": "site"
    },
    {
     "customer": "CE5-SA",
@@ -10416,7 +10731,8 @@
     "paidOn": "2026-10-31",
     "deliveredOn": "2026-11-01",
     "handover": "delivered",
-    "cost": 112
+    "cost": 112,
+    "road": "site"
    },
    {
     "customer": "CM6-PJ",
@@ -10432,7 +10748,8 @@
     "listRM": 120,
     "listQty": 1,
     "note": "<b>NEW SALE 31 OCT 2026: 1 UNIT OF SALT TO CM6-PJ, GOODS RM100.</b> Cash RM100, no delivery charge, collected and paid in full on 31 Oct 2026. The goods total of RM100 sits above the floorTotal of RM60 and below the askTotal of RM120 for that size; per unit, RM100 against a floor of RM60 and an ask of RM120. CM6-PJ: 4 orders on the book, median rate RM100, range RM86.67 to RM100, so this sits at the median and the top of the range. Nothing outstanding, no units on credit against a cap of 1, nothing defaulted. The row carries cost RM56, from the latest purchase p046, which is the inventory's own rate. The drafter raised no flags. Outstanding: nothing.",
-    "rid": "s319"
+    "rid": "s319",
+    "road": "admin"
    },
    {
     "customer": "CM4-TO-R",
@@ -10465,7 +10782,8 @@
       "note": "<b>FULFILMENT ON 02 NOV 2026: RM25 AGAINST S320, SETTLED IN FULL.</b> The order is 2 units of gas to CM4-TO-R, goods RM150, plus RM25 delivery, RM175 owed, dated 31 Oct 2026, delivered in full with RM150 cash already paid. This RM25 and 0 unit move on 02 Nov 2026 against RM25 and 0 unit outstanding. The dossier gives no floor or ask for this fulfilment, as it carries no goods. CM4-TO-R: 7 orders, median rate RM140, range RM71.67 to RM160, outstanding before RM25, no units on credit, nothing defaulted, on the roster. The row carries no new cost of its own. The drafter flagged that this settles the order in full; the figures answer it, as RM25 meets the RM25 outstanding. Outstanding: nothing."
      }
     ],
-    "paidOn": "2026-11-02"
+    "paidOn": "2026-11-02",
+    "road": "admin"
    },
    {
     "customer": "CN3-WM-R",
@@ -10483,7 +10801,8 @@
     "listRM": 215,
     "listQty": 2,
     "note": "<b>SALE 31 OCT 2026: 2 UNIT OF SALT TO CN3-WM-R, RM220 GOODS PLUS RM25 DELIVERY, PAID AND DELIVERED.</b> Cash RM245 paid and 2 unit delivered on 2026-10-31, booked as R2. The goods total of RM220 is above the ask total of RM215 and the floor total of RM115; the rate of RM110 a unit is above the ask of RM107.5 and the floor of RM57.5. CN3-WM-R has 8 orders, a median rate of 120, a range of 67.69 to 130, nothing outstanding before and nothing defaulted, with a credit cap of 1. The row carries cost RM112, RM56 a unit, the inventory's own rate. The drafter flagged that CN3-WM buys it to sell on; the R2 booking answers that. Nothing is left outstanding.",
-    "rid": "s330"
+    "rid": "s330",
+    "road": "desk"
    },
    {
     "customer": "CA4-SJ",
@@ -10502,7 +10821,8 @@
     "listRM": 190,
     "listQty": 1.5,
     "note": "<b>NEW SALE 01 NOV 2026: 1.5 UNITS OF SALT TO CA4-SJ, GOODS RM210.</b> Plus RM30 delivery, RM240 cash, delivered in full and paid on 01 Nov 2026, referred by CN3-WM for 1.5 units. The goods total of RM210 stands above the askTotal of RM160 and the floorTotal of RM85 for that size; per unit, RM140 against an ask of RM106.67 and a floor of RM56.67. CA4-SJ: on the roster, no orders on the book, so no median or range, nothing outstanding, no units on credit against a cap of 1, nothing defaulted. The row carries cost RM84, RM56 per unit from the latest purchase p046, which is the inventory's own rate. The drafter flagged that no earlier order exists to compare with; the figures cannot answer that, but the rate sits above ask. Outstanding: nothing.",
-    "rid": "s318"
+    "rid": "s318",
+    "road": "admin"
    },
    {
     "customer": "CM4-MK",
@@ -10518,7 +10838,8 @@
     "listRM": 390,
     "listQty": 4,
     "note": "<b>SALE 01 NOV 2026: 4 UNIT OF SALT TO CM4-MK, RM380, PAID AND DELIVERED.</b> Goods RM380 at RM95 a unit, cash RM380 paid on 2026-11-01, all 4 unit delivered the same day. The goods total sits above the floor total of RM225 and below the ask total of RM390; the rate of RM95 sits above the floor of RM56.25 and below the ask of RM97.5 a unit. CM4-MK has 16 orders, a median rate of 103.33, a range of 80 to 120, nothing outstanding before, nothing defaulted and nothing on credit against a cap of 1. The row carries cost RM224, RM56 a unit, the inventory's own rate from purchase p046. The drafter raised no flag. Nothing is left outstanding.",
-    "rid": "s329"
+    "rid": "s329",
+    "road": "desk"
    },
    {
     "customer": "CN3-WM-R",
@@ -10535,7 +10856,8 @@
     "listRM": 120,
     "listQty": 1,
     "note": "<b>NEW SALE 02 NOV 2026: 1 UNIT OF SALT TO CN3-WM-R, GOODS RM120.</b> Plus RM25 delivery, RM145 cash, delivered in full and paid on 02 Nov 2026, booked as R2 via CN3-WM. The goods total of RM120 equals the askTotal of RM120 and stands above the floorTotal of RM60 for that size; per unit, RM120 against an ask of RM120 and a floor of RM60. CN3-WM-R: 7 orders, median rate RM116.67, range RM67.69 to RM130, nothing outstanding, no units on credit against a cap of 1, nothing defaulted. The row carries cost RM56, RM56 per unit from the latest purchase p046, which is the inventory's own rate. The drafter flagged the R2 booking to CN3-WM-R; the figures agree with it, as a resale to an associate. Outstanding: nothing.",
-    "rid": "s321"
+    "rid": "s321",
+    "road": "admin"
    },
    {
     "customer": "CS6-PER",
@@ -10550,7 +10872,8 @@
     "date": "2026-11-03",
     "handover": "collected",
     "note": "<b>GIFT 03 NOV 2026: 0.5 UNIT OF SALT TO CS6-PER, FREE.</b> Collected on 03 Nov 2026, nothing owed, nothing paid. It is booked as a cost, not revenue, on his ruling of 11 Sep 2026, and charged against their reward on his decision of 19 Sep 2026. The goods value of RM28 sits below the floorTotal of RM30 and the askTotal of RM75 for that size; per unit, RM56 against a floor of RM60 and an ask of RM150. CS6-PER: 28 orders, median rate RM70.40, range RM6 to RM120, RM84 outstanding before, 1.5 units on credit against a cap of 2, nothing defaulted. The row carries cost RM28, RM56 per unit, the inventory's own rate. The drafter flagged that this is a gift, not a redemption; the figures agree, as goodwill without rebate. Outstanding: nothing new.",
-    "rid": "s322"
+    "rid": "s322",
+    "road": "admin"
    },
    {
     "customer": "CS11-AMP",
@@ -10596,7 +10919,8 @@
     "deliveredOn": "2026-11-03",
     "handover": "collected",
     "mod": "corrected on 2026-11-03: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-03; handover (unset) to collected",
-    "cost": 56
+    "cost": 56,
+    "road": "site"
    },
    {
     "customer": "CS11-AMP",
@@ -10641,7 +10965,8 @@
     "deliveredOn": "2026-11-03",
     "handover": "collected",
     "mod": "corrected on 2026-11-03: deliveredQty 0 to 5; deliveredOn (unset) to 2026-11-03; handover (unset) to collected",
-    "cost": 16.5
+    "cost": 16.5,
+    "road": "site"
    },
    {
     "customer": "CZ5-TM",
@@ -10687,7 +11012,8 @@
     "deliveredOn": "2026-11-03",
     "handover": "collected",
     "mod": "corrected on 2026-11-03: deliveredQty 0 to 2; deliveredOn (unset) to 2026-11-03; handover (unset) to collected",
-    "cost": 112
+    "cost": 112,
+    "road": "site"
    },
    {
     "customer": "CI5-PER",
@@ -10741,7 +11067,8 @@
     "deliveredOn": "2026-11-03",
     "handover": "delivered",
     "mod": "corrected on 2026-11-03: deliveredQty 0 to 10; deliveredOn (unset) to 2026-11-03; handover (unset) to delivered",
-    "cost": 81.6
+    "cost": 81.6,
+    "road": "site"
    },
    {
     "customer": "CI5-PER",
@@ -10788,7 +11115,8 @@
     "deliveredOn": "2026-11-03",
     "handover": "delivered",
     "mod": "corrected on 2026-11-03: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-03; handover (unset) to delivered",
-    "cost": 56
+    "cost": 56,
+    "road": "site"
    },
    {
     "customer": "CI5-PER",
@@ -10834,7 +11162,8 @@
     "deliveredOn": "2026-11-03",
     "handover": "delivered",
     "mod": "corrected on 2026-11-03: deliveredQty 0 to 10; deliveredOn (unset) to 2026-11-03; handover (unset) to delivered",
-    "cost": 33
+    "cost": 33,
+    "road": "site"
    }
   ],
   "contacts": [
@@ -21985,10 +22314,10 @@
      "suggest": null
     }
    },
-   "v": "v1419"
+   "v": "v1420"
   },
   "OPEN": {
-   "at": "2026-11-03T17:01:14.076Z",
+   "at": "2026-11-03T17:39:36.032Z",
    "count": 7,
    "byKey": {
     "CR3-DAM|2026-10-30|70": {
@@ -22185,7 +22514,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1419"
+   "v": "v1420"
   },
   "TERMS": {
    "ceiling": 250,
@@ -22193,7 +22522,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1419"
+   "v": "v1420"
   },
   "REWARD": {
    "stated": {
@@ -22211,7 +22540,7 @@
      }
     }
    },
-   "v": "v1419"
+   "v": "v1420"
   },
   "STOCK": {
    "today": "2026-11-04",
@@ -22265,7 +22594,7 @@
      "transit": 0
     }
    },
-   "v": "v1419"
+   "v": "v1420"
   }
  }
 }

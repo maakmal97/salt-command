@@ -18,5 +18,11 @@
  {"name":"the fold tool drops the scheme","file":"tools/fold.mjs","find":"{ nextRid, sortBook, reward: planCtx.reward, today: TODAY, pricing: planCtx.pricing }","replace":"{ nextRid, sortBook, today: TODAY, pricing: planCtx.pricing }"},
  {"name":"the unit counts as a delivery's size","file":"master/salt_command.html","find":"  const rows=pSales(C.B,p).filter(s=>!s.cancelled&&!s.rewardOf&&POSITION_ENGINE.txPhys(s)>0.009);\n  const unitsSum","replace":"  const rows=pSales(C.B,p).filter(s=>!s.cancelled&&POSITION_ENGINE.txPhys(s)>0.009);\n  const unitsSum"},
  {"name":"the unit counts as a delivery","file":"master/salt_command.html","find":"  const rows=pSales(C.B,p).filter(s=>!s.cancelled&&!s.rewardOf&&POSITION_ENGINE.txPhys(s)>0.009);\n  const said","replace":"  const rows=pSales(C.B,p).filter(s=>!s.cancelled&&POSITION_ENGINE.txPhys(s)>0.009);\n  const said"},
- {"name":"the unit is revenue on the card list","file":"master/salt_command.html","find":"if(!o||!isPerson(o)||s.rewardOf||!(s.total>0)","replace":"if(!o||!isPerson(o)||!(s.total>0)"}
+ {"name":"the unit is revenue on the card list","file":"master/salt_command.html","find":"if(!o||!isPerson(o)||s.rewardOf||!(s.total>0)","replace":"if(!o||!isPerson(o)||!(s.total>0)"},
+ {
+  "name": "a reward unit carries no road",
+  "file": "engine/apply.mjs",
+  "find": "given: cr.given, road: \"fold\",",
+  "replace": "given: cr.given,"
+ }
 ]

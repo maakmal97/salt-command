@@ -1837,6 +1837,11 @@ function vaultMapMerge(base,intended,latest,reviewed=[]){
   }
   return {map:result,conflicts,changed};
 }
+/* 4 Nov 2026 (his answer A to docs/plan-ledger-conventions.html): THE ROAD A SALE CAME BY, stamped on the row as it is booked and on the history once:
+   site (a site order, the one stream since 03 Nov 2026), admin (a Salt Admin entry), desk (the Desk's form or the laptop queue), hand (a hand fold, no draft),
+   fold (a unit the fold raised). It classifies and nothing reads it to price, book or owe. */
+const ROADS={site:'Site order',admin:'Salt Admin entry',desk:'Desk entry',hand:'Hand fold',fold:'Fold-raised unit'};
+function roadOf(entry){ return entry&&entry.orderId?'site':entry&&entry.makerRequest?'admin':'desk'; }
 function renameInBook(book,pairs){
   const map=new Map(pairs);let n=0;
   const walk=v=>{
@@ -1853,7 +1858,7 @@ return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEnt
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,
-        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,refundOnOverpay:refundOnOverpay,refundStale:refundStale,bookCash:bookCash,creditOf:creditOf,setOffCredit:setOffCredit,UNDO_FIELDS:UNDO_FIELDS,rowMoves:rowMoves,undoOf:undoOf,undoSame:undoSame,
+        ledgerRow:ledgerRow,ROADS:ROADS,roadOf:roadOf,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,refundOnOverpay:refundOnOverpay,refundStale:refundStale,bookCash:bookCash,creditOf:creditOf,setOffCredit:setOffCredit,UNDO_FIELDS:UNDO_FIELDS,rowMoves:rowMoves,undoOf:undoOf,undoSame:undoSame,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,

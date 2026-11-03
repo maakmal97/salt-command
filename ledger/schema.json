@@ -1,6 +1,6 @@
 {
-  "v": "v1419",
-  "derivedFrom": "9bb04c3a4d02a168",
+  "v": "v1420",
+  "derivedFrom": "aef97bf996e3bdf8",
   "tables": {
     "sales": {
       "rows": 329,
@@ -286,6 +286,14 @@
           ]
         },
         "rid": {
+          "present": 329,
+          "of": 329,
+          "optional": false,
+          "types": [
+            "string"
+          ]
+        },
+        "road": {
           "present": 329,
           "of": 329,
           "optional": false,
