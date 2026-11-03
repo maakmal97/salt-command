@@ -17,15 +17,18 @@ import { d1Rows, commandArgs } from "./d1json.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 /* `fallbackFrom`: the moment the version that records an approval's fall back to the fold went live (S5f-7 noteFallback); a fallback before it left no trace, so G5 reads only over the days since, and needs seven of them. */
-export const GATE = { since: "2026-10-28", earliest: "2026-11-04", minTaps: 20, minNewIds: 5, fallbackFrom: "2026-10-29T12:00:00.000Z", fallbackDays: 7 };
+/* `behindFrom`: the moment the chain began loading the Book before it re-seeds the mirror (v1393, 53e62320, its Cloud commit run created then). Before it a tap could land in the gap and fall back
+   with "the Book is at vN, behind vM", the Book a version behind and refusing no rule; G5 counts such a fallback only from then, and every other fallback from `fallbackFrom` (his word of 04 Nov 2026). */
+export const GATE = { since: "2026-10-28", earliest: "2026-11-04", minTaps: 20, minNewIds: 5, fallbackFrom: "2026-10-29T12:00:00.000Z", fallbackDays: 7, behindFrom: "2026-11-03T03:35:36.000Z" };
+export const BEHIND = /^the Book is at v\d+, behind v\d+$/;
 
 /** the chain's load, readcheck, pricing-parity and export lines out of one run's log text (a line carries its text after a timestamp) */
 export function parseLog(text) {
   const out = { loads: [], readchecks: [], parity: [], sources: [], exports: [] };
   for (const raw of String(text || "").split("\n")) {
-    const l = raw.replace(/^.*?\d{4}-\d\d-\d\dT[\d:.]+Z\s?/, "");
+    const l = raw.replace(/^.*?\d{4}-\d\d-\d\dT[\d:.]+Z\s?/, ""), stamp = /\d{4}-\d\d-\d\dT[\d:.]+Z/.exec(raw);
     let m;
-    if (/Book loaded:|Book NOT loaded:/.test(l)) out.loads.push({ line: l, ok: /Book loaded:/.test(l), closed: (m = /tap: (\d+) closed, (\d+) open/.exec(l)) ? +m[1] : null, open: m ? +m[2] : null,
+    if (/Book loaded:|Book NOT loaded:/.test(l)) out.loads.push({ line: l, at: stamp ? stamp[0] : null, ok: /Book loaded:/.test(l), closed: (m = /tap: (\d+) closed, (\d+) open/.exec(l)) ? +m[1] : null, open: m ? +m[2] : null,
       bad: /FOLD BOOKED DIFFERENTLY|STUCK|CLASH|CLASHING|parity FAILED|parity NOT CHECKED/i.test(l), agrees: /agrees with git/.test(l) });
     else if (/Book readcheck:/.test(l)) out.readchecks.push({ line: l, ok: /agree over/.test(l) && !/DIFFER|differ|FAILED|would be refused/.test(l.replace(/compaction would hold/, "")) });
     else if (/Book source:/.test(l)) out.sources.push({ line: l, ok: /equal those built from git/.test(l) });
@@ -38,12 +41,20 @@ export function parseLog(text) {
 /** the gate, from evidence: { runs: [{id, at, event, log: parseLog()}], d1: {...}, backupOpened, now }. Pure. Answers {ok, lines: [{id, text, ok: true|false|null, detail}]}. */
 export function judge(ev, cfg = GATE) {
   const L = [], line = (id, text, ok, detail) => L.push({ id, text, ok, detail });
-  const runs = ev.runs || [], loads = runs.flatMap((r) => r.log.loads), reads = runs.flatMap((r) => r.log.readchecks), par = runs.flatMap((r) => r.log.parity), srcs = runs.flatMap((r) => r.log.sources || []), exps = runs.flatMap((r) => r.log.exports);
+  const runs = ev.runs || [], loads = runs.flatMap((r) => r.log.loads.map((l) => ({ ...l, runAt: r.at }))), reads = runs.flatMap((r) => r.log.readchecks), par = runs.flatMap((r) => r.log.parity), srcs = runs.flatMap((r) => r.log.sources || []), exps = runs.flatMap((r) => r.log.exports);
   const d = ev.d1 || null;
   line("G0", "the earliest day, 4 Nov 2026, has come", ev.now ? ev.now.slice(0, 10) >= cfg.earliest : null, "today is " + (ev.now || "unknown").slice(0, 10));
   /* G1 */
-  const withTap = loads.filter((l) => l.closed !== null), badLoads = loads.filter((l) => !l.ok || l.bad || !l.agrees || (l.open !== null && l.open !== 0));
-  line("G1", "every load says tap: N closed, 0 open (a load with no entry open has no tap line), and no difference, stuck, clash or parity failure", !loads.length ? null : !badLoads.length && withTap.length >= 1, loads.length + " loads read, " + withTap.length + " with a tap line, " + badLoads.length + " not clean" + (badLoads[0] ? ": " + badLoads[0].line.slice(0, 160) : ""));
+  /* an entry open at a load is clean only when D1 names exactly that many approved drafts the tap booked that were approved before the load and after its run began (so not in the batch it folded), and
+     each was committed by a later fold; anything else open, or a load whose open entries D1 cannot show, is not (his word of 04 Nov 2026) */
+  const booked = d && Array.isArray(d.booked) ? d.booked : null, t = (s) => Date.parse(s);
+  const openAt = (l) => booked.filter((b) => t(b.decided_at) < t(l.at) && (!b.committed_at || t(b.committed_at) > t(l.at)));
+  const explained = (l) => { if (!booked || !l.at || !l.runAt) return false; const o = openAt(l); return o.length === l.open && o.every((b) => t(b.decided_at) >= t(l.runAt) && b.committed_at && t(b.committed_at) > t(l.at)); };
+  const withTap = loads.filter((l) => l.closed !== null), opened = loads.filter((l) => l.open !== null && l.open !== 0);
+  const badLoads = loads.filter((l) => !l.ok || l.bad || !l.agrees || (l.open !== null && l.open !== 0 && !explained(l)));
+  line("G1", "every load says tap: N closed, 0 open (a load with no entry open has no tap line; an entry approved after its run began and folded by a later run is clean), and no difference, stuck, clash or parity failure",
+    !loads.length || (opened.length && !booked) ? null : !badLoads.length && withTap.length >= 1,
+    loads.length + " loads read, " + withTap.length + " with a tap line, " + opened.length + " with an entry open" + (opened.length && !booked ? " (D1 unread, so not explained)" : ", " + opened.filter(explained).length + " of them approved after the run began and folded by a later run") + ", " + badLoads.length + " not clean" + (badLoads[0] ? ": " + badLoads[0].line.slice(0, 160) : ""));
   /* G2 */
   const closed = withTap.reduce((a, l) => a + l.closed, 0);
   const k = d && d.kinds;
@@ -58,8 +69,11 @@ export function judge(ev, cfg = GATE) {
     d ? `${d.left} approved and unbooked past ten minutes; ${d.voidedNotRejected === null || d.voidedNotRejected === undefined ? "entries voided whose draft was not rejected: UNREAD (the readcheck answered none)" : d.voidedNotRejected + " entries voided whose draft was not rejected"}` : "D1 unread");
   /* G5 */
   const recorded = ev.now && cfg.fallbackFrom ? Math.floor((Date.parse(ev.now) - Date.parse(cfg.fallbackFrom)) / 864e5) : null;
-  line("G5", `zero approvals that fell back to the fold (the Book refused a rule the fold would take), over ${cfg.fallbackDays} days that were recorded`, !d ? null : d.fallbacks > 0 ? false : recorded !== null && recorded >= cfg.fallbackDays ? true : null,
-    d ? `${d.fallbacks} approvals recorded as fallen back; recording began ${cfg.fallbackFrom}, ${recorded === null ? "unknown" : recorded + " of " + cfg.fallbackDays} days ago (an earlier fallback left no trace)` : "D1 unread");
+  const fbl = d && Array.isArray(d.fallbackList) ? d.fallbackList : null;
+  const counts = (f) => !(BEHIND.test(String(f.why || "")) && f.at && cfg.behindFrom && t(f.at) < t(cfg.behindFrom));
+  const counted = !d ? null : fbl ? fbl.filter(counts).length : d.fallbacks;
+  line("G5", `zero approvals that fell back to the fold (the Book refused a rule the fold would take; a Book a version behind counts from ${cfg.behindFrom}), over ${cfg.fallbackDays} days that were recorded`, !d ? null : counted > 0 ? false : recorded !== null && recorded >= cfg.fallbackDays ? true : null,
+    d ? `${fbl ? fbl.length : d.fallbacks} approvals recorded as fallen back, ${counted} counted${fbl && fbl.length > counted ? " (" + (fbl.length - counted) + " a Book behind before the chain loaded it first)" : ""}; recording began ${cfg.fallbackFrom}, ${recorded === null ? "unknown" : recorded + " of " + cfg.fallbackDays} days ago (an earlier fallback left no trace)` : "D1 unread");
   /* G6 */
   const badPar = par.filter((p) => !p.ok);
   line("G6", "the Worker's PRICING equal to the page's at every load, after a lot included", !par.length ? null : !badPar.length, par.length + " parity lines read, " + badPar.length + " not equal" + (badPar[0] ? ": " + badPar[0].line.slice(0, 160) : ""));
@@ -71,8 +85,8 @@ export function judge(ev, cfg = GATE) {
   line("G8", "no drafts.mjs --approve run in the window, and no row folded by the laptop", !d ? null : d.laptopApprovals === 0 && d.foldedUnbooked === 0, d ? `${d.laptopApprovals} approved by hand; ${d.foldedUnbooked} approved rows committed by the fold with no tap booking` : "D1 unread");
   /* G9 */
   const p = ev.pre || null;
-  line("G9", "the flip's own preconditions stand: migrations 0023 and 0024 applied, book_tap on, book_read book, book_source d1, the export steps in the chain on master, no fold handoff in HEAD", !p ? null :
-    p.migrations && p.tap === "on" && p.read === "book" && p.source === "d1" && p.exportSteps && !p.handoff, p ? JSON.stringify(p) : "unread");
+  line("G9", "the flip's own preconditions stand: migrations 0023 and 0024 applied, book_tap on, book_read book, book_source d1, the export steps in the chain on master, the chain marking what it folded before it loads the Book, no fold handoff in HEAD", !p ? null :
+    p.migrations && p.tap === "on" && p.read === "book" && p.source === "d1" && p.exportSteps && p.markBeforeLoad === true && !p.handoff, p ? JSON.stringify(p) : "unread");
   return { ok: L.every((x) => x.ok === true), lines: L, window: { since: ev.since || cfg.since, runs: runs.length } };
 }
 
@@ -99,9 +113,13 @@ export function collectD1(since, run = sh) {
   const fb = q(`SELECT COUNT(*) AS n, MIN(json_extract(row,'$.tap_fallback.at')) AS first FROM draft WHERE json_extract(CASE WHEN json_valid(row) THEN row ELSE '{}' END,'$.tap_fallback') IS NOT NULL AND decided_at >= '${since}'`);
   /* from the first approval the tap booked, and never the fold's alone (an Add ID or a rename is the fold's until the roster flag is on): a row approved before the tap was on, or one only the fold may book, is not a hand approval */
   const hand = q(`SELECT SUM(decided_by LIKE '%laptop%' OR decided_by LIKE '%drafts.mjs%' OR decided_by LIKE '%hand%') AS h, SUM(committed_at IS NOT NULL AND collection NOT IN ('roster','rename') AND json_extract(CASE WHEN json_valid(row) THEN row ELSE '{}' END,'$.booked_seq') IS NULL) AS f FROM draft WHERE status='approved' AND decided_at >= MAX('${since}', COALESCE((SELECT MIN(decided_at) FROM draft WHERE json_extract(CASE WHEN json_valid(row) THEN row ELSE '{}' END,'$.booked_seq') IS NOT NULL), '${since}'))`);
-  if (!kinds || !left || !fb || !hand) return null;
+  /* each fallback with its reason (G5), and each approved draft the tap booked with its approval and its fold (G1's open entries) */
+  const fbList = q(`SELECT json_extract(row,'$.tap_fallback.why') AS why, json_extract(row,'$.tap_fallback.at') AS at FROM draft WHERE json_extract(CASE WHEN json_valid(row) THEN row ELSE '{}' END,'$.tap_fallback') IS NOT NULL AND decided_at >= '${since}'`);
+  const booked = q(`SELECT id, decided_at, committed_at FROM draft WHERE status='approved' AND decided_at >= '${since}' AND json_extract(CASE WHEN json_valid(row) THEN row ELSE '{}' END,'$.booked_seq') IS NOT NULL`);
+  if (!kinds || !left || !fb || !hand || !fbList || !booked) return null;
   return { kinds: { booked: +kinds[0].booked || 0, newIds: +kinds[0].newIds || 0, trips: +kinds[0].trips || 0, purchases: +kinds[0].purchases || 0, received: +kinds[0].received || 0 },
-    left: +left[0].n || 0, voidedNotRejected: null, fallbacks: +fb[0].n || 0, fallbackSince: fb[0].first || null, laptopApprovals: +hand[0].h || 0, foldedUnbooked: +hand[0].f || 0 };
+    left: +left[0].n || 0, voidedNotRejected: null, fallbacks: +fb[0].n || 0, fallbackSince: fb[0].first || null, laptopApprovals: +hand[0].h || 0, foldedUnbooked: +hand[0].f || 0,
+    fallbackList: fbList.map((r) => ({ why: r.why || null, at: r.at || null })), booked: booked.map((r) => ({ id: r.id, decided_at: r.decided_at, committed_at: r.committed_at || null })) };
 }
 
 export function collectPre(run = sh) {
@@ -110,7 +128,14 @@ export function collectPre(run = sh) {
   const yml = run("git", ["show", "origin/master:.github/workflows/cloud-commit.yml"]);
   const handoff = run("git", ["ls-tree", "-r", "--name-only", "origin/master", "master/_to_fold.json", "master/_folded.json"]);
   return { migrations: !!(tbl && tbl.length >= 2), tap: flag("book_tap"), read: flag("book_read"), source: flag("book_source"),
-    exportSteps: yml.code === 0 && /Export the Book to git \(the day's record\)/.test(yml.out) && /Export the Book to the checkout for the publish/.test(yml.out), handoff: handoff.code === 0 && handoff.out.trim().length > 0 };
+    exportSteps: yml.code === 0 && /Export the Book to git \(the day's record\)/.test(yml.out) && /Export the Book to the checkout for the publish/.test(yml.out), handoff: handoff.code === 0 && handoff.out.trim().length > 0,
+    /* G1's open entries are explained by count only because a run marks what it folded committed BEFORE it loads the Book, so a draft that run folded never stands in for an unexplained one (Fable, 04 Nov 2026) */
+    markBeforeLoad: yml.code === 0 && markBeforeLoad(yml.out) };
+}
+
+export function markBeforeLoad(yml) {
+  const mark = yml.indexOf("- name: Mark the folded rows committed"), load = yml.indexOf("- name: Load the shadow Book from the book just shipped");
+  return mark >= 0 && load > mark;
 }
 
 /** the readcheck's count of entries voided whose draft was not rejected (GET /book/readcheck), or null: it needs the Book's key like every tool that reads the Book */

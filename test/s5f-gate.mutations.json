@@ -56,8 +56,8 @@
  {
   "name": "a fallback is allowed",
   "file": "tools/flip-gate.mjs",
-  "find": "d.fallbacks > 0 ? false :",
-  "replace": "false ? false :"
+  "find": "!d ? null : counted > 0 ? false :",
+  "replace": "!d ? null : false ? false :"
  },
  {
   "name": "a pricing difference is allowed",
@@ -80,8 +80,8 @@
  {
   "name": "a fold handoff in HEAD is allowed",
   "file": "tools/flip-gate.mjs",
-  "find": "p.source === \"d1\" && p.exportSteps && !p.handoff",
-  "replace": "p.source === \"d1\" && p.exportSteps"
+  "find": "p.markBeforeLoad === true && !p.handoff, p",
+  "replace": "p.markBeforeLoad === true, p"
  },
  {
   "name": "an unverified line passes the gate",
@@ -232,5 +232,125 @@
   "file": "tools/flip.mjs",
   "find": "export { realGet } from \"./flip-gate.mjs\";",
   "replace": ""
+ },
+ {
+  "name": "an open entry needs no count from D1",
+  "file": "tools/flip-gate.mjs",
+  "find": "return o.length === l.open && o.every(",
+  "replace": "return o.every("
+ },
+ {
+  "name": "an open entry approved before its run began is clean",
+  "file": "tools/flip-gate.mjs",
+  "find": "t(b.decided_at) >= t(l.runAt) && b.committed_at",
+  "replace": "b.committed_at"
+ },
+ {
+  "name": "an open entry never folded is clean",
+  "file": "tools/flip-gate.mjs",
+  "find": " && b.committed_at && t(b.committed_at) > t(l.at));",
+  "replace": ");"
+ },
+ {
+  "name": "an open entry with nothing in D1 is clean",
+  "file": "tools/flip-gate.mjs",
+  "find": "if (!booked || !l.at || !l.runAt) return false;",
+  "replace": "if (!booked || !l.at || !l.runAt) return true;"
+ },
+ {
+  "name": "open loads are judged with D1 unread",
+  "file": "tools/flip-gate.mjs",
+  "find": "!loads.length || (opened.length && !booked) ? null",
+  "replace": "!loads.length ? null"
+ },
+ {
+  "name": "any entry open at a load is clean",
+  "file": "tools/flip-gate.mjs",
+  "find": "(l.open !== null && l.open !== 0 && !explained(l))",
+  "replace": "false"
+ },
+ {
+  "name": "no entry open at a load is ever explained",
+  "file": "tools/flip-gate.mjs",
+  "find": "(l.open !== null && l.open !== 0 && !explained(l))",
+  "replace": "(l.open !== null && l.open !== 0)"
+ },
+ {
+  "name": "a load's own time is not read",
+  "file": "tools/flip-gate.mjs",
+  "find": "at: stamp ? stamp[0] : null, ok:",
+  "replace": "at: null, ok:"
+ },
+ {
+  "name": "a Book behind always counts",
+  "file": "tools/flip-gate.mjs",
+  "find": "const counts = (f) => !(BEHIND.test",
+  "replace": "const counts = (f) => true || !(BEHIND.test"
+ },
+ {
+  "name": "a Book behind never counts, after the fix too",
+  "file": "tools/flip-gate.mjs",
+  "find": " && f.at && cfg.behindFrom && t(f.at) < t(cfg.behindFrom))",
+  "replace": ")"
+ },
+ {
+  "name": "any reason reads as a Book behind",
+  "file": "tools/flip-gate.mjs",
+  "find": "export const BEHIND = /^the Book is at v\\d+, behind v\\d+$/;",
+  "replace": "export const BEHIND = /./;"
+ },
+ {
+  "name": "a Book behind with no time is let off",
+  "file": "tools/flip-gate.mjs",
+  "find": "f.at && cfg.behindFrom && t(f.at) < t(cfg.behindFrom)",
+  "replace": "cfg.behindFrom && !(t(f.at) >= t(cfg.behindFrom))"
+ },
+ {
+  "name": "G5 ignores the list of reasons",
+  "file": "tools/flip-gate.mjs",
+  "find": ": fbl ? fbl.filter(counts).length : d.fallbacks;",
+  "replace": ": 0;"
+ },
+ {
+  "name": "the fallbacks' reasons are not read",
+  "file": "tools/flip-gate.mjs",
+  "find": "fallbackList: fbList.map(",
+  "replace": "fallbackList: null && fbList.map("
+ },
+ {
+  "name": "the booked drafts are not read",
+  "file": "tools/flip-gate.mjs",
+  "find": "booked: booked.map(",
+  "replace": "booked: null && booked.map("
+ },
+ {
+  "name": "a D1 that will not list the booked drafts answers anyway",
+  "file": "tools/flip-gate.mjs",
+  "find": " || !fbList || !booked) return null;",
+  "replace": " || !fbList) return null; if (!booked) return { kinds: { booked: 0, newIds: 0, trips: 0, purchases: 0, received: 0 }, left: 0, fallbacks: 0, fallbackList: [], booked: [] };"
+ },
+ {
+  "name": "G9 does not ask the step order",
+  "file": "tools/flip-gate.mjs",
+  "find": " && p.markBeforeLoad === true && ",
+  "replace": " && "
+ },
+ {
+  "name": "a chain that loads before it marks passes",
+  "file": "tools/flip-gate.mjs",
+  "find": "return mark >= 0 && load > mark;",
+  "replace": "return mark >= 0;"
+ },
+ {
+  "name": "a chain that marks nothing passes",
+  "file": "tools/flip-gate.mjs",
+  "find": "return mark >= 0 && load > mark;",
+  "replace": "return load > mark;"
+ },
+ {
+  "name": "the gate does not read the order off the chain",
+  "file": "tools/flip-gate.mjs",
+  "find": "markBeforeLoad: yml.code === 0 && markBeforeLoad(yml.out) };",
+  "replace": "markBeforeLoad: true };"
  }
 ]

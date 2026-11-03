@@ -48,7 +48,7 @@ export async function run({ ok }) {
   /* 2: the gate */
   const run1 = { id: 1, at: "2026-10-30T01:00:00Z", log: p }, runs = [run1, { id: 2, at: "2026-10-31T01:00:00Z", log: G.parseLog(log.split("\n").slice(0, 5).join("\n").replace("tap: 3 closed", "tap: 20 closed")) }];
   const green = { runs, now: "2026-11-06T01:00:00.000Z", backupOpened: "2026-11-02", since: "2026-10-28", d1: { kinds: { booked: 30, newIds: 5, trips: 1, purchases: 1, received: 2 }, left: 0, voidedNotRejected: 0, fallbacks: 0, laptopApprovals: 0, foldedUnbooked: 0 },
-    pre: { migrations: true, tap: "on", read: "book", source: "d1", exportSteps: true, handoff: false } };
+    pre: { migrations: true, tap: "on", read: "book", source: "d1", exportSteps: true, markBeforeLoad: true, handoff: false } };
   green.runs = [{ id: 1, at: "x", log: G.parseLog(log.split("\n").slice(0, 5).join("\n").replace("tap: 3 closed", "tap: 23 closed")) }];
   const r0 = G.judge(green);
   ok(r0.ok && r0.lines.length === 10 && r0.lines.every((l) => l.ok === true), "with every line's evidence in, the gate reads true: " + JSON.stringify(r0.lines.map((l) => [l.id, l.ok])));
@@ -77,6 +77,8 @@ export async function run({ ok }) {
     ["G9", (e) => { e.pre.source = "book"; }],
     ["G9", (e) => { e.pre.handoff = true; }],
     ["G9", (e) => { e.pre.exportSteps = false; }],
+    ["G9", (e) => { e.pre.markBeforeLoad = false; }],
+    ["G9", (e) => { delete e.pre.markBeforeLoad; }],
     ["G9", (e) => { e.pre.tap = "off"; }],
   ];
   const wrong = [];
@@ -85,6 +87,41 @@ export async function run({ ok }) {
   { const e = clone(); e.d1.voidedNotRejected = null; const g4 = G.judge(e).lines.find((x) => x.id === "G4"); ok(g4.ok === null && /UNREAD/.test(g4.detail), "a voided count the readcheck did not answer leaves G4 UNVERIFIED, never true and never merely false"); }
   const none = G.judge({ runs: [], now: "2026-11-05T00:00:00.000Z" });
   ok(!none.ok && none.lines.filter((l) => l.id !== "G0").every((l) => l.ok === null) && /UNVERIFIED/.test(G.say(none)), "with no evidence every line is UNVERIFIED, never true, and the gate is not true");
+  /* 2b: an entry open at a load, and a fallback of a Book a version behind (his word of 04 Nov 2026) */
+  {
+    const openLog = G.parseLog("chain\tBook\t2026-10-30T01:00:00.1234567Z Book loaded: 488 rows and 23 documents; 0 booked, 5 revised, 0 gone, 0 returned, digest d1; parity: the Book agrees with git over 488 rows in 13 collections and 23 documents; tap: 23 closed, 1 open");
+    ok(openLog.loads[0].at === "2026-10-30T01:00:00.1234567Z" && openLog.loads[0].open === 1, "a load's own time is read off its line: " + openLog.loads[0].at);
+    const withOpen = (booked) => { const e = clone(); e.runs[0].at = "2026-10-30T00:59:00Z"; e.runs[0].log.loads = JSON.parse(JSON.stringify(openLog.loads)); e.d1.booked = booked; return e; };
+    const late = { id: "a", decided_at: "2026-10-30T00:59:30.000Z", committed_at: "2026-10-30T01:03:00.000Z" };
+    const g1 = (e) => G.judge(e).lines.find((x) => x.id === "G1");
+    ok(g1(withOpen([late])).ok === true && G.judge(withOpen([late])).ok, "an entry open at a load, approved after its run began and folded by a later run, is clean, and the gate stays true: " + g1(withOpen([late])).detail);
+    const g1bad = [
+      ["never folded", [{ ...late, committed_at: null }]],
+      ["approved before its run began", [{ ...late, decided_at: "2026-10-30T00:58:00.000Z" }]],
+      ["two open where the load says one", [late, { ...late, id: "b" }]],
+      ["none in D1", []],
+      ["folded in that same load, so not the open one", [{ ...late, committed_at: "2026-10-30T00:59:50.000Z" }]],
+    ].filter(([, b]) => g1(withOpen(b)).ok !== false).map(([n]) => n);
+    ok(!g1bad.length, "an open entry is not clean when its draft was never folded, was approved before its run began, does not match the load's count, or is not in D1: " + (g1bad.join(", ") || "all false"));
+    { const real = readFileSync(join(REPO, ".github", "workflows", "cloud-commit.yml"), "utf8"), mk = "      - name: Mark the folded rows committed\n", ld = "      - name: Load the shadow Book from the book just shipped\n";
+      const swapped = real.replace(mk, "@@MARK@@").replace(ld, mk).replace("@@MARK@@", ld);
+      ok(G.markBeforeLoad(real) && !G.markBeforeLoad(swapped) && !G.markBeforeLoad(real.replace(mk, "")), "the chain on master marks what it folded before it loads the Book, and a chain that loads first, or marks nothing, is caught");
+      const preOf = (yml) => G.collectPre((cmd, args) => (cmd === "git" && args[0] === "show" ? { code: 0, out: yml } : cmd === "git" ? { code: 0, out: "" } : { code: 0, out: JSON.stringify([{ results: [{ mode: "on", name: "x" }], success: true }]) }));
+      ok(preOf(real).markBeforeLoad === true && preOf(swapped).markBeforeLoad === false, "and the gate reads that order off master's chain"); }
+    { const e = withOpen([late]); e.runs[0].log.loads[0].at = null; ok(g1(e).ok === false, "an open entry on a load line with no time of its own is not clean"); }
+    { const e = withOpen([late]); delete e.d1.booked; ok(g1(e).ok === null && /D1 unread/.test(g1(e).detail), "a load with an entry open and D1's booked drafts unread is UNVERIFIED, never true"); }
+    const g5 = (list) => { const e = clone(); e.d1.fallbacks = list.length; e.d1.fallbackList = list; return G.judge(e).lines.find((x) => x.id === "G5"); };
+    const behind = { why: "the Book is at v1328, behind v1329", at: "2026-10-29T08:47:55.932Z" };
+    ok(g5([behind, { ...behind, why: "the Book is at v1332, behind v1334", at: "2026-10-30T10:28:21.684Z" }]).ok === true, "a fallback of a Book a version behind, from before the chain loaded it first, does not count: " + g5([behind]).detail);
+    const g5bad = [
+      ["a Book behind after the fix", [{ ...behind, at: "2026-11-03T04:00:00.000Z" }]],
+      ["a rule the Book refused, before the fix", [{ why: "the Book refuses it: a twin", at: "2026-10-29T08:47:55.932Z" }]],
+      ["a Book behind with no time", [{ ...behind, at: null }]],
+      ["a reason with no word", [{ why: null, at: "2026-10-29T08:47:55.932Z" }]],
+    ].filter(([, l]) => g5(l).ok !== false).map(([n]) => n);
+    ok(!g5bad.length, "every other fallback counts and makes G5 false: " + (g5bad.join(", ") || "all false"));
+  }
+
   const sayG = G.say(r0);
   ok(/The gate reads TRUE/.test(sayG) && !/NOT MET|UNVERIFIED/.test(sayG) && /NOT TRUE/.test(G.say(none)), "and the report says which");
 
@@ -97,6 +134,9 @@ export async function run({ ok }) {
   const sqls = seen.map((x) => x[1]).join("\n");
   ok(/collection IN \('sales','purchases','loan'\)/.test(sqls) && /collection NOT IN \('roster','rename'\)/.test(sqls) && /MIN\(decided_at\)/.test(sqls) && /booked_seq/.test(sqls) && /tap_fallback/.test(sqls) && /decided_by LIKE/.test(sqls) && /-10 minutes/.test(sqls) && /2026-10-28T00:00:00\.000Z/.test(sqls), "from the drafts decided in the window, the booking, the fallback record and the ten minutes the net is given");
   ok(G.collectD1("x", () => ({ code: 1, out: "boom" })) === null, "a D1 that will not answer is null, not zero");
+  ok(Array.isArray(cd.fallbackList) && cd.fallbackList.length === 1 && Array.isArray(cd.booked) && cd.booked.length === 1 && /tap_fallback\.why/.test(sqls) && /SELECT id, decided_at, committed_at FROM draft WHERE status='approved'/.test(sqls),
+    "each fallback is read with its reason and each booked draft with its approval and its fold");
+  ok(G.collectD1("x", (cmd, args) => (/committed_at FROM draft WHERE status='approved'/.test(args.join(" ")) ? { code: 1, out: "boom" } : fakeRun(cmd, args))) === null, "a D1 that will not list the booked drafts is null, not an empty list");
   const gh = (cmd, args) => (cmd === "gh" && args[0] === "run" && args[1] === "list" ? { code: 0, out: JSON.stringify([{ databaseId: 5, createdAt: "2026-10-30T00:00:00Z", event: "schedule", status: "completed" }, { databaseId: 4, createdAt: "2026-10-20T00:00:00Z", event: "push", status: "completed" }, { databaseId: 6, createdAt: "2026-10-31T00:00:00Z", event: "push", status: "in_progress" }]) }
     : cmd === "gh" && args[1] === "view" ? { code: 0, out: log } : { code: 1, out: "" });
   const runsGot = G.collectRuns("2026-10-28T00:00:00.000Z", gh);
