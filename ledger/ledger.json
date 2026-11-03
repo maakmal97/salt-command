@@ -1,6 +1,6 @@
 {
- "v": "v1398",
- "stamped": "03 Nov 2026, 12:48 KL",
+ "v": "v1401",
+ "stamped": "03 Nov 2026, 18:53 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -94,7 +94,7 @@
    "rice": {
     "qty": 0,
     "costPerKg": null,
-    "stated": 75
+    "stated": 70
    },
    "gas": {
     "qty": 0,
@@ -10510,8 +10510,8 @@
     "cash": 35,
     "product": "rice",
     "date": "2026-11-03",
-    "deliveredQty": 0,
-    "note": "<b>SALE 03 NOV 2026: 5 UNIT OF RICE TO CS11-AMP, RM35, PENDING.</b> Ordered on the statements site, order 20261103041936-r5eszg, acknowledged, to collect. Nothing paid and nothing handed over. The goods total of RM35 equals the askTotal of RM35 for that size and sits above the floorTotal of RM20; per unit, RM7 against a floor of RM4 and an ask of RM7. CS11-AMP: one order on the book, the pending salt row at RM130, so no rice rate to compare; RM130 outstanding before this, no units on credit before, against a cap of 1, nothing defaulted. The row carries the drafter's cost of RM3.3 per unit, costed off the latest purchase p045 and kept by the fold. The drafter flagged that no earlier rice rate of theirs exists; that is true, so the ladder is the only yardstick. Outstanding: the full RM35 and the five unit to be collected.",
+    "deliveredQty": 5,
+    "note": "<b>CORRECTION ON s324: 5 UNIT OF RICE COLLECTED BY CS11-AMP, 03 NOV 2026.</b> Order 20261103041936-r5eszg, RM35, was booked as pending with nothing handed over. The correction sets deliveredQty from 0 to 5, deliveredOn to 2026-11-03 and handover to collected. It moves no cash and leaves the RM35 total as booked, equal to the askTotal for that size and above the floorTotal. CS11-AMP has 2 orders, a median rate of 130, a range of 7 to 130, nothing outstanding before, no units on credit before and nothing defaulted. The drafter flagged that the row's 2-step trail will no longer add up to the figure set directly; that is true, and the correction is recorded beside the trail saying so. The shelf rolls out by 5 unit to CS11-AMP. Nothing is left outstanding on this row. <b>SALE 03 NOV 2026: 5 UNIT OF RICE TO CS11-AMP, RM35, PENDING.</b> Ordered on the statements site, order 20261103041936-r5eszg, acknowledged, to collect. Nothing paid and nothing handed over. The goods total of RM35 equals the askTotal of RM35 for that size and sits above the floorTotal of RM20; per unit, RM7 against a floor of RM4 and an ask of RM7. CS11-AMP: one order on the book, the pending salt row at RM130, so no rice rate to compare; RM130 outstanding before this, no units on credit before, against a cap of 1, nothing defaulted. The row carries the drafter's cost of RM3.3 per unit, costed off the latest purchase p045 and kept by the fold. The drafter flagged that no earlier rice rate of theirs exists; that is true, so the ladder is the only yardstick. Outstanding: the full RM35 and the five unit to be collected.",
     "rid": "s324",
     "amend": [
      {
@@ -10527,9 +10527,26 @@
       "cash": 35,
       "kg": 0,
       "note": "<b>PAYMENT 03 NOV 2026: RM35 FROM CS11-AMP ON s324, 5 UNIT OF RICE.</b> Paid on the statements site, order 20261103041936-r5eszg, by QR via Maybank. This moves RM35 and 0 unit against RM35 and 5 unit outstanding, leaving RM0 owed and the five unit still to be collected. The order total of RM35 is unchanged, equal to the askTotal for that size. CS11-AMP: two orders on the book, rates between RM7 and RM130 with a median of RM130; RM35 outstanding before this, no units on credit, nothing defaulted. The drafter raised no flags, so there is nothing for the figures to answer. The row keeps its own cost. Outstanding: the handover of the five unit only."
+     },
+     {
+      "date": "2026-11-03",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 5,
+      "note": "<b>CORRECTION ON s324: 5 UNIT OF RICE COLLECTED BY CS11-AMP, 03 NOV 2026.</b> Order 20261103041936-r5eszg, RM35, was booked as pending with nothing handed over. The correction sets deliveredQty from 0 to 5, deliveredOn to 2026-11-03 and handover to collected. It moves no cash and leaves the RM35 total as booked, equal to the askTotal for that size and above the floorTotal. CS11-AMP has 2 orders, a median rate of 130, a range of 7 to 130, nothing outstanding before, no units on credit before and nothing defaulted. The drafter flagged that the row's 2-step trail will no longer add up to the figure set directly; that is true, and the correction is recorded beside the trail saying so. The shelf rolls out by 5 unit to CS11-AMP. Nothing is left outstanding on this row.",
+      "was": {
+       "deliveredQty": 0,
+       "deliveredOn": null,
+       "handover": null
+      },
+      "cost": 16.5
      }
     ],
-    "paidOn": "2026-11-03"
+    "paidOn": "2026-11-03",
+    "deliveredOn": "2026-11-03",
+    "handover": "collected",
+    "mod": "corrected on 2026-11-03: deliveredQty 0 to 5; deliveredOn (unset) to 2026-11-03; handover (unset) to collected",
+    "cost": 16.5
    }
   ],
   "contacts": [
@@ -11353,7 +11370,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-03T04:40:39.518Z",
+  "QUEUE_COMMITTED": "2026-11-03T10:53:26.344Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -11404,7 +11421,7 @@
     {
      "id": "int:nocost",
      "sev": "watch",
-     "title": "5 priced sales carry no cost of their own"
+     "title": "4 priced sales carry no cost of their own"
     },
     {
      "id": "int:underfloor",
@@ -18942,15 +18959,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.11764705882352941
+         "v": 0.1111111111111111
         }
        },
        "attrib": 1,
        "shrinkRate": 0.09,
        "avgDel": {
-        "n": 18,
-        "kg": 107,
-        "mean": 5.9444
+        "n": 19,
+        "kg": 112,
+        "mean": 5.8947
        }
       },
       "policy": {
@@ -21665,11 +21682,11 @@
      "suggest": null
     }
    },
-   "v": "v1398"
+   "v": "v1401"
   },
   "OPEN": {
-   "at": "2026-11-03T04:48:55.390Z",
-   "count": 9,
+   "at": "2026-11-03T10:54:01.427Z",
+   "count": 8,
    "byKey": {
     "CS11-AMP|2026-11-03|130": {
      "d": "2026-11-03",
@@ -21684,21 +21701,6 @@
      "rid": "s323",
      "paidOn": "2026-11-03",
      "key": "CS11-AMP|2026-11-03|130"
-    },
-    "CS11-AMP|2026-11-03|35|rice": {
-     "d": "2026-11-03",
-     "p": "CS11-AMP",
-     "dir": "S",
-     "q": 5,
-     "t": 35,
-     "cash": 35,
-     "mv": 0,
-     "st": "oweStock",
-     "oweUnits": 5,
-     "pr": "rice",
-     "rid": "s324",
-     "paidOn": "2026-11-03",
-     "key": "CS11-AMP|2026-11-03|35|rice"
     },
     "CR3-DAM|2026-10-30|70": {
      "d": "2026-10-30",
@@ -21854,13 +21856,13 @@
     },
     "rice": {
      "name": "Rice",
-     "onHand": 75,
+     "onHand": 70,
      "free": 70,
-     "owedOut": 5,
+     "owedOut": 0,
      "coverDays": 24,
      "rate": 2.94,
      "owedToYou": 15,
-     "promised": 5,
+     "promised": 0,
      "short": 0
     },
     "gas": {
@@ -21894,7 +21896,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1398"
+   "v": "v1401"
   },
   "TERMS": {
    "ceiling": 250,
@@ -21902,7 +21904,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1398"
+   "v": "v1401"
   },
   "REWARD": {
    "stated": {
@@ -21920,7 +21922,7 @@
      }
     }
    },
-   "v": "v1398"
+   "v": "v1401"
   },
   "STOCK": {
    "today": "2026-11-03",
@@ -21950,9 +21952,9 @@
      "transit": 0
     },
     "rice": {
-     "shelf": 75,
+     "shelf": 70,
      "free": 70,
-     "commit": 5,
+     "commit": 0,
      "light": "green",
      "coverDays": 24,
      "transit": 0
@@ -21974,7 +21976,7 @@
      "transit": 0
     }
    },
-   "v": "v1398"
+   "v": "v1401"
   }
  }
 }

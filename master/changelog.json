@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1401",
+  "d": "03 Nov 2026",
+  "t": "COLLECTION OF 5 UNIT OF RICE RECORDED FOR CS11-AMP",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> The correction on s324 records that the 5 unit of rice ordered by CS11-AMP were collected on 03 Nov 2026, order 20261103041936-r5eszg. It was preapproved by Counter Admin. It sets deliveredQty to 5, deliveredOn to 2026-11-03 and handover to collected, and moves no cash.",
+   "<b>UNUSUAL.</b> The row carries a trail of 2 steps, and setting the figures directly does not rewrite them, so the trail no longer adds up to the correction. The correction is recorded beside the trail saying so. The shelf rolls out by 5 unit of rice to CS11-AMP."
+  ]
+ },
+ {
   "v": "v1400",
   "d": "03 Nov 2026",
   "t": "ORDER AS THEM: A DELIVERY GOES",
