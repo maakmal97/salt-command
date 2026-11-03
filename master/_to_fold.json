@@ -1,0 +1,65 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-03T10:59:18.679Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CZ5-TM",
+    "qty": 2,
+    "total": 185,
+    "cash": 0,
+    "date": "2026-11-03",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261103105134-txhixa, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+    "listRM": 185,
+    "listQty": 2,
+    "rids": [
+     "s325"
+    ],
+    "booked_seq": 89
+   },
+   "reasoning": "Sold 2 unit of salt to CZ5-TM for RM 185, RM 92.5/unit. Costed at RM 56/unit from COGS off the latest purchase p046 landed 2026-10-28: RM 1400 quote plus RM 0 freight over 25 unit, so RM 73 on the goods at 39.5%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-11-03 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-11-03T10:59:18.679Z",
+    "type": "SELL",
+    "party": "CZ5-TM",
+    "qty": 2,
+    "total": 185,
+    "status": "Pending",
+    "raw": "SELL CZ5-TM 2 salt RM 185, nothing paid, nothing moved (order 20261103105134-txhixa)",
+    "orderKey": "CZ5-TM|2026-11-03|185",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CZ5-TM",
+     "newId": null,
+     "date": "2026-11-03",
+     "qty": 2,
+     "total": 185,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261103105134-txhixa, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261103105134-txhixa"
+   },
+   "decidedAt": "2026-11-03T10:59:22.144Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
