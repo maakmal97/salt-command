@@ -4823,7 +4823,8 @@ const CLIENT_JS = `
     if(assoc&&draft.forFriend==null) return tw('sh.whyFor');
     if(!quotes().length) return tw('sh.whySize');
     if(draft.pool) return '';
-    if(draft.mode==='deliver'&&!draft.amend&&!draft.spot&&spotsRead()) return tw('sp.why');
+    /* 3 Nov 2026: never on Order as them, whose sheet draws no saved spot to pick (his report: Review stayed grey on every delivery) */
+    if(draft.mode==='deliver'&&!draft.amend&&!act&&!draft.spot&&spotsRead()) return tw('sp.why');
     if(draft.mode==='deliver'&&String(draft.place||'').trim().length<2&&!draft.pin&&!draft.pinKept) return tw('sh.whyWhere');
     if(draft.mode!=='deliver'&&draft.when==='day'&&!wantOk(draft.wantBy)) return tw('sh.whyWhen',{n:WANT_DAYS});
     return '';

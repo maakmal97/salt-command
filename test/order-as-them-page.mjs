@@ -65,6 +65,25 @@ export async function run({ ok, pageWork }) {
     ok(!!said && said.textContent === "Agreed for them at the price shown.", "B10 v2: Sent says his Place was agreed for them: " + (said && said.textContent));
   } catch (e) { ok(false, "Order as them stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
 
+  /* B11 (3 Nov 2026, his report of a delivery that would not go): on Order as them a delivery with an area typed reaches Review and Place,
+     since his sheet draws no saved spot of theirs to pick; the order goes as a delivery to that area */
+  p = await richOwnerPage({ pageWork, extra });
+  try {
+    await openAs(p, "acct.order-for");
+    await startAt(p.d); await p.work.quiet();
+    p.d.querySelector("[data-k='mode:1']").click(); await p.work.quiet();
+    const wi = p.d.getElementById("oWhere");
+    wi.value = "Orlen"; wi.dispatchEvent(new p.w.Event("input", { bubbles: true })); await p.work.quiet();
+    const go = p.d.getElementById("oGo"), foot = p.d.querySelector("#osheet .ototal");
+    ok(!!go && !go.disabled && !/Pick where it is going/.test(foot ? foot.textContent : ""),
+      "B11 a delivery with an area typed reaches Review on Order as them: " + JSON.stringify([!!go && go.disabled, foot && foot.textContent]));
+    go.click(); await p.work.quiet();
+    const before = p.posts.length;
+    p.d.getElementById("oPlace").click(); await p.work.quiet();
+    const b = (p.posts.slice(before).find((x) => x.route === "/all/maker/customers/" + U1 + "/orders") || {}).body;
+    ok(!!b && b.mode === "deliver" && b.place === "Orlen", "B11 and Place sends it as a delivery to that area: " + JSON.stringify(b));
+  } catch (e) { ok(false, "Order as them's delivery stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+
   /* B5: View as them stays read only */
   p = await richOwnerPage({ pageWork, extra });
   try {
