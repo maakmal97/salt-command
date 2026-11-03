@@ -1,6 +1,6 @@
 {
- "v": "v1429",
- "stamped": "04 Nov 2026, 06:06 KL",
+ "v": "v1430",
+ "stamped": "04 Nov 2026, 06:09 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -11206,7 +11206,7 @@
     "customer": "CI5-PER",
     "qty": 3,
     "total": 204,
-    "cash": 0,
+    "cash": 230,
     "delivery": 26,
     "product": "candy",
     "date": "2026-11-04",
@@ -11237,9 +11237,17 @@
        "handover": null
       },
       "cost": 126
+     },
+     {
+      "date": "2026-11-04",
+      "kind": "Fulfilment",
+      "cash": 230,
+      "kg": 0,
+      "note": "<b>PAYMENT ON S334, 04 NOV 2026: RM230 CASH FROM CI5-PER RECEIVED.</b> Order 20261103204226-drpjsq, 3 unit of candy, goods RM204, delivery RM26. The cash was taken at the counter on 2026-11-04 and moves 0 unit, as the goods were already delivered. The order stood at RM230 and 3 unit outstanding, and this leaves RM0 owed. CI5-PER has 7 orders, a median rate of 13, a range of 6 to 120, RM230 outstanding before and nothing defaulted. The dossier gives no floor or ask for candy and no credit cap, so no comparison is made. The drafter raised no flags. The row carries no cost of its own. Nothing is left outstanding."
      }
     ],
-    "cost": 126
+    "cost": 126,
+    "paidOn": "2026-11-04"
    }
   ],
   "contacts": [
@@ -12075,7 +12083,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-03T22:05:17.200Z",
+  "QUEUE_COMMITTED": "2026-11-03T22:06:14.377Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -22567,11 +22575,11 @@
      "suggest": null
     }
    },
-   "v": "v1429"
+   "v": "v1430"
   },
   "OPEN": {
-   "at": "2026-11-03T22:06:14.425Z",
-   "count": 11,
+   "at": "2026-11-03T22:09:57.078Z",
+   "count": 10,
    "byKey": {
     "CA7-AMP|2026-11-04|475": {
      "d": "2026-11-04",
@@ -22616,25 +22624,6 @@
      "pr": "gas",
      "rid": "s333",
      "key": "CA7-AMP|2026-11-04|150|gas"
-    },
-    "CI5-PER|2026-11-04|230|candy": {
-     "d": "2026-11-04",
-     "p": "CI5-PER",
-     "dir": "S",
-     "q": 3,
-     "t": 204,
-     "cash": 0,
-     "mv": 3,
-     "st": "dueMoney",
-     "oweRM": 230,
-     "dv": 26,
-     "pr": "candy",
-     "rid": "s334",
-     "deliveredOn": "2026-11-04",
-     "handover": "delivered",
-     "key": "CI5-PER|2026-11-04|230|candy",
-     "age": 0,
-     "exp": 230
     },
     "CR3-DAM|2026-10-30|70": {
      "d": "2026-10-30",
@@ -22784,7 +22773,7 @@
      "owedOut": 0,
      "coverDays": 6.6,
      "rate": 0.47,
-     "owedToYou": 230,
+     "owedToYou": 0,
      "promised": 0,
      "short": 0
     },
@@ -22830,7 +22819,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1429"
+   "v": "v1430"
   },
   "TERMS": {
    "ceiling": 250,
@@ -22838,7 +22827,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1429"
+   "v": "v1430"
   },
   "REWARD": {
    "stated": {
@@ -22856,7 +22845,7 @@
      }
     }
    },
-   "v": "v1429"
+   "v": "v1430"
   },
   "STOCK": {
    "today": "2026-11-04",
@@ -22910,7 +22899,7 @@
      "transit": 0
     }
    },
-   "v": "v1429"
+   "v": "v1430"
   }
  }
 }

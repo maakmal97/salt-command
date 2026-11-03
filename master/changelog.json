@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1430",
+  "d": "04 Nov 2026",
+  "t": "CASH RECEIVED ON THE CANDY ORDER FOR CI5-PER",
+  "n": [
+   "<b>ONE PAYMENT FOLDED.</b> The row records RM230 cash from CI5-PER on 2026-11-04 against order s334, taken at the counter. It was preapproved by Counter Admin and the drafter raised no flags. Nothing unusual in the entry. The row itself is applied by the master's own amendment routine, not recomputed here.",
+   "<b>INVENTORY UNCHANGED.</b> No unit moved, because the candy was already delivered under the earlier correction. The salt stock stays at 21 and the stock cost stays at RM56 per unit."
+  ]
+ },
+ {
   "v": "v1429",
   "d": "04 Nov 2026",
   "t": "DELIVERY OF 3 UNIT OF CANDY TO CI5-PER RECORDED ON S334",
