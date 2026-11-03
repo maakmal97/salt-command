@@ -1,0 +1,57 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-03T22:06:14.377Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "qty": 3,
+    "total": 204,
+    "cash": 0,
+    "date": "2026-11-04",
+    "customer": "CI5-PER",
+    "product": "candy",
+    "rids": [],
+    "booked_seq": 113
+   },
+   "reasoning": "Fulfilment against CI5-PER's order of 3 unit for RM 204 with RM 26 delivery, RM 230 owed agreed 2026-11-04. RM 230 and 0 unit move on 2026-11-04, against RM 230 and 3 unit outstanding. Leaves RM 0 and 3 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [],
+   "amends": "s334",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-11-03T22:06:14.377Z",
+    "type": "SELL",
+    "party": "CI5-PER",
+    "qty": 0,
+    "total": 230,
+    "status": "Payment",
+    "by": "desk",
+    "raw": "Payment of RM 230 on CI5-PER, order 20261103204226-drpjsq, by cash at the counter",
+    "payload": {
+     "mode": "amend",
+     "kind": "Fulfilment",
+     "direction": "SELL",
+     "party": "CI5-PER",
+     "rid": null,
+     "orderKey": "CI5-PER|2026-11-04|230|candy",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-11-04",
+     "qty": 0,
+     "total": 0,
+     "cash": 230,
+     "kg": 0,
+     "note": "Cash received at the handover, recorded on the desk, order 20261103204226-drpjsq."
+    },
+    "orderId": "20261103204226-drpjsq",
+    "counter": true
+   },
+   "decidedAt": "2026-11-03T22:06:15.931Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
