@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1411",
+  "d": "03 Nov 2026",
+  "t": "DELIVERY OF 1 UNIT OF SALT TO CI5-PER RECORDED ON S327",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> Correction on s327 sets deliveredQty to 1, deliveredOn to 2026-11-03 and handover to delivered, preapproved by Counter Admin. The drafter flagged that the row carries a trail of 2 steps which the corrected figure does not rewrite. The correction is recorded beside them saying so.",
+   "<b>INVENTORY.</b> Salt rolls by 1 unit out to CI5-PER, the difference the correction states, leaving a stated stock of 5. The cost basis does not move, as nothing landed."
+  ]
+ },
+ {
   "v": "v1410",
   "d": "03 Nov 2026",
   "t": "DELIVERY OF 10 UNIT OF OIL RECORDED ON S326",
