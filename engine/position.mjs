@@ -1161,16 +1161,29 @@ function commitments(sales,currentStock){
   return {defRows,pendRows,owedUnits,promUnits,promRM,commitUnits,
     shortUnits:+Math.max(0,commitUnits-currentStock).toFixed(2), coverable:currentStock>=commitUnits};
 }
-/* ============ THE RESTOCK LIGHT (F4, his decision of 05 Oct 2026) ============ one colour a book, from the shelf and what is
-   committed against it (commitments().commitUnits: owed out plus agreed, nothing moved). GREEN while the shelf covers the
-   commitments, YELLOW the moment they exceed the shelf (free stock below what is agreed, `coverable` false), RED when the shelf is out. Half a hundredth is no unit, as everywhere.
+/* ============ THE RESTOCK LIGHT, FOUR STEPS (his rule of 04 Nov 2026, replacing F4's three of 05 Oct 2026) ============ one colour a
+   book, the worst step that holds. Free is the shelf less what is committed against it (commitments().commitUnits: owed out plus agreed,
+   nothing moved). `demand` is the book's measured demand, restockPlan's own: `coverDays`, the days its free stock lasts at the forecast
+   (null past the forecast or with no demand), and `usual`, its median order (buy.median).
+     RED, Out of stock: nothing free, every unit on the shelf promised (F4's yellow, promised past the shelf, is now red).
+     AMBER, Low on stock: free below one usual order, or lasting LIGHT_DAYS.low days or fewer.
+     YELLOW, Selling fast: free lasting LIGHT_DAYS.fast days or fewer.
+     GREEN, Available: otherwise, and on a book with no demand measured that still has stock free.
+   The basis, replayed over every book's days from 26 Jun to 04 Nov 2026 with the engine's own forecast: cover of 7 days or fewer
+   caught 88% of the times the shelf fell under one usual order within the week (62% of those lit came true); 3 days or fewer
+   caught 65% of the times it did so within three days (71% came true). Half a hundredth is no unit, as everywhere.
    `by` is the day he expects the next lot (YYYY-MM-DD), shown only while the light is not green and the day is not past. */
-function restockLight(shelf,commitUnits){
-  const s=+shelf||0,c=+commitUnits||0;
-  return s<0.005?'red':c-s>0.005?'yellow':'green';
+const LIGHT_DAYS={fast:7,low:3};
+function restockLight(shelf,commitUnits,demand){
+  const free=(+shelf||0)-(+commitUnits||0);
+  if(free<0.005)return 'red';
+  const d=demand||{}, cover=d.coverDays==null||!isFinite(+d.coverDays)?null:+d.coverDays, usual=+d.usual||0;
+  if((usual>0&&usual-free>0.005)||(cover!=null&&cover<=LIGHT_DAYS.low))return 'amber';
+  if(cover!=null&&cover<=LIGHT_DAYS.fast)return 'yellow';
+  return 'green';
 }
-function restockSupply(shelf,commitUnits,by,today){
-  const light=restockLight(shelf,commitUnits);
+function restockSupply(shelf,commitUnits,by,today,demand){
+  const light=restockLight(shelf,commitUnits,demand);
   const ok=light!=='green'&&/^\d{4}-\d{2}-\d{2}$/.test(String(by||''))&&String(by)>=String(today||'');
   return {light:light,by:ok?String(by):null};
 }
@@ -1857,7 +1870,7 @@ function renameInBook(book,pairs){
 return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,R3_DAYS:R3_DAYS,r3Link:r3Link,r3Until:r3Until,r3In:r3In,r3Of:r3Of,loyaltyWalk:loyaltyWalk,loyalScheme:loyalScheme,cadenceOf:cadenceOf,rewardIsAssociate:rewardIsAssociate,rewardOpening:rewardOpening,rewardCut:rewardCut,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,editEntry:editEntry,editRefunds:editRefunds,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
-        daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,
+        daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,LIGHT_DAYS:LIGHT_DAYS,restockLight:restockLight,restockSupply:restockSupply,
         ledgerRow:ledgerRow,ROADS:ROADS,roadOf:roadOf,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,refundOnOverpay:refundOnOverpay,refundStale:refundStale,bookCash:bookCash,creditOf:creditOf,setOffCredit:setOffCredit,UNDO_FIELDS:UNDO_FIELDS,rowMoves:rowMoves,undoOf:undoOf,undoSame:undoSame,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,

@@ -53,7 +53,7 @@ function priceList(now) {
         sizes: [{ q: 1, price: 110 }, { q: 2.5, price: 270 }, { q: 5, price: 530 }, { q: 12.5, price: 1300 }], grid: exampleGrid() },
       { product: "oil", name: "Oil", unit: "unit", basis: "board", supply: { light: "red", by: null }, sizes: [{ q: 1, price: 40 }, { q: 3, price: 115 }] },
       { product: "candy", name: "Candy", unit: "unit", basis: "board", supply: { light: "green", by: null }, sizes: [{ q: 1, price: 12 }, { q: 4, price: 45 }] },
-      { product: "rice", name: "Rice", unit: "unit", basis: "board", sizes: [{ q: 1, price: 9 }, { q: 2, price: 17 }] }
+      { product: "rice", name: "Rice", unit: "unit", basis: "board", supply: { light: "amber", by: null }, sizes: [{ q: 1, price: 9 }, { q: 2, price: 17 }] }
     ],
     soon: [{ product: "gas", name: "Gas" }] };
   list.digest = createHash("sha256").update("testfix\n" + JSON.stringify(list.products.map((p) => [p.product, p.sizes, p.grid || null]))).digest("hex");
@@ -490,10 +490,10 @@ export const FEATURES = [
   ["an associate's card, with a reward", (f) => !!(f.card && f.card.products.some((p) => p.reward) && f.card.products.some((p) => !p.reward))],
   ["first-week orders of people an associate brought in, counted toward their reward (R3, 03 Nov 2026)", (f) => !!(f.card && f.card.products.some((p) => p.reward && +p.reward.r3 > 0))],
   ["the nearest reward on Home, its meter to the next unit (Counter Batch A)", (f) => !!(f.card && f.card.products.some((p) => p.reward && p.reward.next != null))],
-  ["the restock light: green, yellow with its day, red (F4)", (f) => { const s = ((f.prices && f.prices.products) || []).map((p) => p.supply).filter(Boolean);
-    return ["green", "red"].every((l) => s.some((x) => x.light === l)) && s.some((x) => x.light === "yellow" && /^\d{4}-\d{2}-\d{2}$/.test(x.by || "")); }],
-  ["Availability on Home: a row a book, Available, Limited with More by, Out of stock (22 Oct 2026)", (f) => { const s = ((f.prices && f.prices.products) || []).filter((p) => p.sizes && p.sizes.length).map((p) => p.supply).filter(Boolean);
-    return ["green", "yellow", "red"].every((l) => s.some((x) => x.light === l)) && s.some((x) => x.light !== "green" && /^\d{4}-\d{2}-\d{2}$/.test(x.by || "")); }],
+  ["the restock light: green, yellow with its day, amber, red (F4; the fourth step 04 Nov 2026)", (f) => { const s = ((f.prices && f.prices.products) || []).map((p) => p.supply).filter(Boolean);
+    return ["green", "amber", "red"].every((l) => s.some((x) => x.light === l)) && s.some((x) => x.light === "yellow" && /^\d{4}-\d{2}-\d{2}$/.test(x.by || "")); }],
+  ["Availability on Home: a row a book, Available, Selling fast with More by, Low on stock, Out of stock (22 Oct, 04 Nov 2026)", (f) => { const s = ((f.prices && f.prices.products) || []).filter((p) => p.sizes && p.sizes.length).map((p) => p.supply).filter(Boolean);
+    return ["green", "yellow", "amber", "red"].every((l) => s.some((x) => x.light === l)) && s.some((x) => x.light !== "green" && /^\d{4}-\d{2}-\d{2}$/.test(x.by || "")); }],
   ["order at 6.75 units, any amount off the grid (05 Oct 2026)", (f) => has(f, (o) => Math.abs(+o.qty - 6.75) < 1e-9 && !o.price && o.status !== "placed" && o.total > 0)
     && f.prices.products.some((p) => p.grid && p.grid.step > 0 && p.grid.p.length > 1)],
   ["price asked (Negotiate)", (f) => has(f, (o) => o.status === "placed" && o.price && o.price.state === "asked")],

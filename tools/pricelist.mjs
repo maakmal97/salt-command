@@ -94,12 +94,13 @@ export function since(sales, code) {
   return first;
 }
 
-/* F4: THE LIGHT A BOOK SHOWS, red, yellow or green, from tools/book.mjs supplySnapshot's two figures and the restock date he
-   set (KV `expected`); the engine's restockSupply says the colour and drops a day already past. {<book>: {light, by}} */
+/* F4: THE LIGHT A BOOK SHOWS, red, amber, yellow or green (his four steps of 04 Nov 2026), from tools/book.mjs supplySnapshot's
+   figures (the shelf, what is committed, the days of cover and the usual order) and the restock date he set (KV `expected`); the
+   engine's restockSupply says the colour and drops a day already past. {<book>: {light, by}} */
 export function supplyLights(raw, expected, today) {
   const out = {};
   for (const [p, v] of Object.entries(raw || {}))
-    out[p] = POSITION_ENGINE.restockSupply(v.shelf, v.commit, expected && expected[p], today);
+    out[p] = POSITION_ENGINE.restockSupply(v.shelf, v.commit, expected && expected[p], today, { coverDays: v.coverDays, usual: v.usual });
   return out;
 }
 

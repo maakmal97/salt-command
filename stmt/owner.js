@@ -7766,16 +7766,17 @@ export const OWNER_JS = `
     if(!needsReading){ if(nRetry.disabled) nRetry.disabled=false; if(nRetry.textContent!=='Retry') nRetry.textContent='Retry'; }
   }
   /* 22 OCT 2026 (canvas Needs you): THE LEAD IS ONE INSIGHT. What waits on his tap in money, summed off the cards that wait on a money tap of his (a payment
-     they say they sent, to confirm; an order placed, to agree), then the books that need stock off STOCK's lights (red out, yellow promised past the shelf,
-     by what is agreed over it). With nothing in money it counts what waits on him; with a read failed it never says nothing needs him. Written only when it differs. */
+     they say they sent, to confirm; an order placed, to agree), then the books that need stock off STOCK's lights (red out, or promised past the shelf by what is agreed
+     over it; amber low; 04 Nov 2026, his four steps: yellow, selling fast, needs nothing yet). With nothing in money it counts what waits on him; with a read failed it never says nothing needs him. Written only when it differs. */
   function rmShort(n){ var v=Math.round((+n||0)*100)/100; return 'RM '+v.toLocaleString('en-MY',{minimumFractionDigits:v%1?2:0,maximumFractionDigits:2}); }
   var SAY_N=['no','one','two','three','four','five','six','seven','eight','nine'];
   function sayN(n){ return SAY_N[n]||String(n); }
   function stockNeeds(){
-    var books=glanceStock&&glanceStock.books, out=0, past=[];
+    var books=glanceStock&&glanceStock.books, out=0, past=[], low=0;
     if(books) Object.keys(books).forEach(function(p){ var b=books[p]; if(!b||typeof b.shelf!=='number') return;
-      if(b.light==='red') out++; else if(b.light==='yellow') past.push(Math.max(0,(+b.commit||0)-(+b.shelf||0))); });
-    return {out:out, past:past};
+      var over=(+b.commit||0)-(+b.shelf||0);
+      if(b.light==='red'){ if(over>0.005) past.push(over); else out++; } else if(b.light==='amber') low++; });
+    return {out:out, past:past, low:low};
   }
   function drawLead(items){
     var bad=needsBad(); drawFail(bad);
@@ -7788,9 +7789,10 @@ export const OWNER_JS = `
       if(says.length) parts.push([rmShort(conf+agree),' waits on your tap now: '+says.join(', ')+'.']);
       else if(todo) parts.push([String(todo),todo===1?' thing waits on your tap now.':' things wait on your tap now.']);
       else parts.push(['',bad.length?'Nothing in what could be read.':'Nothing needs you.']);
-      var s=stockNeeds(), n=s.out+s.past.length;
+      var s=stockNeeds(), n=s.out+s.past.length+s.low;
       if(n) parts.push([n+(n===1?' book':' books'),(n===1?' needs':' need')+' stock: '+[s.out?sayN(s.out)+(s.out===1?' is out':' are out'):'',
-        s.past.length===1?'one is promised '+units(s.past[0])+' past its shelf':s.past.length?sayN(s.past.length)+' are promised past their shelf':''].filter(Boolean).join(', ')+'.']);
+        s.past.length===1?'one is promised '+units(s.past[0])+' past its shelf':s.past.length?sayN(s.past.length)+' are promised past their shelf':'',
+        s.low?sayN(s.low)+(s.low===1?' is low':' are low'):''].filter(Boolean).join(', ')+'.']);
     }
     var sig=JSON.stringify(parts);
     if(nCount.getAttribute('data-sig')===sig) return;
@@ -7901,7 +7903,9 @@ export const OWNER_JS = `
      cover: its mark, the light in the Counter's own words and colour, then the Desk's figures, the shelf, what is agreed, what is free, the days of
      cover, and the next lot's units and day. The light is the Desk's (restockLight, measured into STOCK with the figures); nothing here works one
      out. Read with the tiles and again on each tick of the Needs you poll, so a re-seed shows within the poll; a failed read leaves the tiles to say so. */
-  var STOCK_WORD={green:'Available',yellow:'Limited',red:'Out of stock'}, STOCK_RANK={red:0,yellow:1,green:2}, STOCK_TONE={green:'verdigris',yellow:'brass',red:'ember'};
+  /* 04 Nov 2026 (his four steps): the Counter's words and the design system's four light colours as chips, worst first */
+  var STOCK_WORD={green:'Available',yellow:'Selling fast',amber:'Low on stock',red:'Out of stock'}, STOCK_RANK={red:0,amber:1,yellow:2,green:3},
+    STOCK_TONE={green:'verdigris',yellow:'amber',amber:'orange',red:'ember'};
   /* a figure of the table: up to two places, a minus sign under nought, no unit (the head says Units) */
   function stockFig(n){ var v=Math.round((+n||0)*100)/100; return (v<0?'\u2212':'')+Math.abs(v).toLocaleString('en-MY',{maximumFractionDigits:2}); }
   function drawStockBooks(){
@@ -7915,7 +7919,7 @@ export const OWNER_JS = `
     var rows=ids.map(function(p){
       var b=books[p], shelf=+b.shelf||0, commit=+b.commit||0, free=+b.free||0, transit=+b.transit||0, by=glanceStock.by&&glanceStock.by[p], light=b.light in STOCK_RANK?b.light:'';
       return {p:p, light:light, shelf:stockFig(shelf), agreed:stockFig(commit), free:stockFig(free), neg:free<-0.009,
-        fill:shelf>0.009?Math.min(100,Math.round(commit/shelf*100)):commit>0.009?100:0, ember:light==='red'||light==='yellow'||commit>shelf+0.009,
+        fill:shelf>0.009?Math.min(100,Math.round(commit/shelf*100)):commit>0.009?100:0, ember:light==='red'||commit>shelf+0.009,
         cover:free<=0.009?'0 d':b.coverDays==null?'4 wk+':b.coverDays+' d',
         lot:transit>0.009?units(transit)+(by?' · '+glanceDay(by):''):by?'None yet · '+glanceDay(by):'None'};
     });

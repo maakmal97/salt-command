@@ -1463,6 +1463,10 @@ details.obs>summary{min-height:var(--tap);}
      mark's own colour and the focus colour, so it cannot say "watch this"; amber is a bright yellow, 12.0:1 on obsidian and
      11.3:1 on the panel, far more saturated than brass and clear of ember and alarm. */
   --salt-amber: #f2c230;
+  /* THE LOW-STOCK LIGHT, added 04 Nov 2026 when the restock light took a fourth step (green, yellow, amber, red): an orange between
+     amber and ember, dE 30.8 from amber, 36.6 from ember, 28.1 from the gas book's hue and 29.3 from copper, so it reads as its own step
+     beside any coin. Shared with Tide, as amber is. */
+  --salt-orange: #f28c18;
 
   /* The books. Each is its own hue, and none of them is a SEMANTIC one: ember, verdigris,
      steel and copper each mean something on the desk, so a product dot drawn in one would
@@ -3638,6 +3642,9 @@ button.salt-stepper__value:focus-visible { outline: 2px solid var(--salt-brass);
 
 .salt-status--verdigris { --salt-status-tone: var(--salt-verdigris); }
 .salt-status--ember { --salt-status-tone: var(--salt-ember); }
+/* the restock light's two warning steps as chips (04 Nov 2026): amber selling fast, orange low on stock */
+.salt-status--amber { --salt-status-tone: var(--salt-amber); }
+.salt-status--orange { --salt-status-tone: var(--salt-orange); }
 .salt-status--steel { --salt-status-tone: var(--salt-steel); }
 .salt-status--alarm { --salt-status-tone: var(--salt-alarm); }
 .salt-status--dashed { border-style: dashed; }
@@ -3722,10 +3729,11 @@ button.salt-stepper__value:focus-visible { outline: 2px solid var(--salt-brass);
 .salt-coin--rice { --salt-hue: var(--salt-product-rice); }
 .salt-coin--gas { --salt-hue: var(--salt-product-gas); }
 .salt-coin--prep { --salt-hue: var(--salt-product-prep); }
-/* the restock light beside a coin: a dot and its word, never the coin's border; mono caps in mist-bright, the dot verdigris, amber or ember */
+/* the restock light beside a coin: a dot and its word, never the coin's border; mono caps in mist-bright, the dot verdigris, amber (selling fast), orange (low on stock) or ember (04 Nov 2026) */
 .salt-light { display: inline-flex; align-items: center; gap: 8px; font-family: var(--salt-font-mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--salt-mist-bright); }
 .salt-light::before { content: ""; flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%; background: var(--salt-verdigris); }
 .salt-light--yellow::before { background: var(--salt-amber); }
+.salt-light--amber::before { background: var(--salt-orange); }
 .salt-light--red::before { background: var(--salt-ember); }
 
 /* ---- Meter: a bar is a figure. A well-inset track, a lit fill, an optional marker
@@ -4780,6 +4788,7 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
   border-bottom:1px solid var(--salt-line-faint);border-left:3px solid transparent;}
 .exprow--green{--explight:var(--salt-verdigris);}
 .exprow--yellow{--explight:var(--salt-amber);}
+.exprow--amber{--explight:var(--salt-orange);}
 .exprow--red{--explight:var(--salt-ember);}
 .exprow--asks{border-left-color:var(--explight);background:color-mix(in srgb, var(--explight) 6%, transparent);}
 .expwho{display:flex;flex-direction:column;gap:4px;min-width:0;}
@@ -7307,16 +7316,29 @@ function commitments(sales,currentStock){
   return {defRows,pendRows,owedUnits,promUnits,promRM,commitUnits,
     shortUnits:+Math.max(0,commitUnits-currentStock).toFixed(2), coverable:currentStock>=commitUnits};
 }
-/* ============ THE RESTOCK LIGHT (F4, his decision of 05 Oct 2026) ============ one colour a book, from the shelf and what is
-   committed against it (commitments().commitUnits: owed out plus agreed, nothing moved). GREEN while the shelf covers the
-   commitments, YELLOW the moment they exceed the shelf (free stock below what is agreed, `coverable` false), RED when the shelf is out. Half a hundredth is no unit, as everywhere.
+/* ============ THE RESTOCK LIGHT, FOUR STEPS (his rule of 04 Nov 2026, replacing F4's three of 05 Oct 2026) ============ one colour a
+   book, the worst step that holds. Free is the shelf less what is committed against it (commitments().commitUnits: owed out plus agreed,
+   nothing moved). `demand` is the book's measured demand, restockPlan's own: `coverDays`, the days its free stock lasts at the forecast
+   (null past the forecast or with no demand), and `usual`, its median order (buy.median).
+     RED, Out of stock: nothing free, every unit on the shelf promised (F4's yellow, promised past the shelf, is now red).
+     AMBER, Low on stock: free below one usual order, or lasting LIGHT_DAYS.low days or fewer.
+     YELLOW, Selling fast: free lasting LIGHT_DAYS.fast days or fewer.
+     GREEN, Available: otherwise, and on a book with no demand measured that still has stock free.
+   The basis, replayed over every book's days from 26 Jun to 04 Nov 2026 with the engine's own forecast: cover of 7 days or fewer
+   caught 88% of the times the shelf fell under one usual order within the week (62% of those lit came true); 3 days or fewer
+   caught 65% of the times it did so within three days (71% came true). Half a hundredth is no unit, as everywhere.
    `by` is the day he expects the next lot (YYYY-MM-DD), shown only while the light is not green and the day is not past. */
-function restockLight(shelf,commitUnits){
-  const s=+shelf||0,c=+commitUnits||0;
-  return s<0.005?'red':c-s>0.005?'yellow':'green';
+const LIGHT_DAYS={fast:7,low:3};
+function restockLight(shelf,commitUnits,demand){
+  const free=(+shelf||0)-(+commitUnits||0);
+  if(free<0.005)return 'red';
+  const d=demand||{}, cover=d.coverDays==null||!isFinite(+d.coverDays)?null:+d.coverDays, usual=+d.usual||0;
+  if((usual>0&&usual-free>0.005)||(cover!=null&&cover<=LIGHT_DAYS.low))return 'amber';
+  if(cover!=null&&cover<=LIGHT_DAYS.fast)return 'yellow';
+  return 'green';
 }
-function restockSupply(shelf,commitUnits,by,today){
-  const light=restockLight(shelf,commitUnits);
+function restockSupply(shelf,commitUnits,by,today,demand){
+  const light=restockLight(shelf,commitUnits,demand);
   const ok=light!=='green'&&/^\d{4}-\d{2}-\d{2}$/.test(String(by||''))&&String(by)>=String(today||'');
   return {light:light,by:ok?String(by):null};
 }
@@ -8003,7 +8025,7 @@ function renameInBook(book,pairs){
 return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,R3_DAYS:R3_DAYS,r3Link:r3Link,r3Until:r3Until,r3In:r3In,r3Of:r3Of,loyaltyWalk:loyaltyWalk,loyalScheme:loyalScheme,cadenceOf:cadenceOf,rewardIsAssociate:rewardIsAssociate,rewardOpening:rewardOpening,rewardCut:rewardCut,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,editEntry:editEntry,editRefunds:editRefunds,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
-        daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,
+        daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,LIGHT_DAYS:LIGHT_DAYS,restockLight:restockLight,restockSupply:restockSupply,
         ledgerRow:ledgerRow,ROADS:ROADS,roadOf:roadOf,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,refundOnOverpay:refundOnOverpay,refundStale:refundStale,bookCash:bookCash,creditOf:creditOf,setOffCredit:setOffCredit,UNDO_FIELDS:UNDO_FIELDS,rowMoves:rowMoves,undoOf:undoOf,undoSame:undoSame,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
@@ -15326,7 +15348,7 @@ function invHead(){return `<h1>On hand</h1>
   <div class="dsc dsclead">What to restock, what is on the inventory, what it cost, and how long it lasts.</div>`
   /* 17 Oct 2026: the restock date came here from Enter; only the cloud desk reaches /expected */
   +(cloudMode()?`<details class="salt-plan ordnote" id="expFold"><summary><span class="salt-plan__id" id="expN">&middot;</span><span class="salt-plan__title" id="expHead">Restock date</span></summary>
-  <div class="salt-plan__body" id="expCard"><div class="dsc">The day the next lot is expected, per book. Customers see it as More by while the light is yellow or red.</div><div id="expRows" style="margin-top:6px">Reading it.</div>
+  <div class="salt-plan__body" id="expCard"><div class="dsc">The day the next lot is expected, per book. Customers see it as More by while the light is not green; low and out ask for one.</div><div id="expRows" style="margin-top:6px">Reading it.</div>
     <div class="dsc" id="expMsg" style="margin-top:6px"></div></div></details>`:'');}
 function tabInventory(){
   /* v365: openingFor(PROD), not the bare `opening` (Salt's alone). The KPI above these
@@ -19091,11 +19113,12 @@ function actions(){
       +(f.cashKnown?` ${fmt0(cashFlow().free)} free.`:'');
     add(sev,'buy',title,Math.max(refill,short?f.promRM:0),why,'inventory');   /* v823: to the page whose card sized the lot */
   }
-  /* F4: A YELLOW OR RED LIGHT WITH NO DAY AHEAD OF IT asks him for the restock date. The engine's restockSupply says the light
-     and drops a day already past; cloud only, and only once the date has been read, so a laptop copy never asks. */
+  /* F4: AN AMBER OR RED LIGHT WITH NO DAY AHEAD OF IT asks him for the restock date (04 Nov 2026: yellow, Selling fast, is a
+     sales signal and asks nothing). The engine's restockSupply says the light, from the shelf, what is committed and the book's
+     measured demand, and drops a day already past; cloud only, and only once the date has been read, so a laptop copy never asks. */
   if(cloudMode()&&EXPECTED_READ){
-    const sp=POSITION_ENGINE.restockSupply(currentStock,f.commitUnits,EXPECTED[PROD],TODAY.toISOString().slice(0,10));
-    if(sp.light!=='green'&&!sp.by){const was=EXPECTED[PROD];
+    const sp=POSITION_ENGINE.restockSupply(currentStock,f.commitUnits,EXPECTED[PROD],TODAY.toISOString().slice(0,10),lightDemand(PROD));
+    if(expAsks(sp.light)&&!sp.by){const was=EXPECTED[PROD];
       add(sp.light==='red'?'now':'soon','plan',`Restock date: ${was?'passed, '+was:'not set'}`,0,
         `${units(currentStock)} held, ${units(f.commitUnits)} committed, light ${sp.light}. Customers read More by once it is set.`,'inventory');}
   }
@@ -20619,24 +20642,27 @@ async function ordLoad(quiet){
 }
 /* ---- F4: THE RESTOCK DATE (his decision of 05 Oct 2026). One day a book, set here and relayed through the desk's keyed
    /expected to the site's own store (KV `expected`); the publish reads it and seals it with the light, so a customer reads
-   More by DD Mon while the light is yellow or red and the day is not past. ---- */
+   More by DD Mon while the light is not green and the day is not past. 04 Nov 2026 (his four steps): the light reads the book's
+   measured demand too (lightDemand: restockFor's coverDays and median order), and only amber and red ask for a day (expAsks). ---- */
+function lightDemand(p){const rs=restockFor(p),live=rs&&!rs.empty;return {coverDays:live?rs.coverDays:null,usual:live&&rs.buy?rs.buy.median:null};}
+function expAsks(light){return light==='amber'||light==='red';}
 function expLights(){return eachBook(()=>{const c=POSITION_ENGINE.commitments(pSales(PROD),currentStock);
-  return {light:POSITION_ENGINE.restockLight(currentStock,c.commitUnits),shelf:currentStock,commit:c.commitUnits};});}
+  return {light:POSITION_ENGINE.restockLight(currentStock,c.commitUnits,lightDemand(PROD)),shelf:currentStock,commit:c.commitUnits};});}
 function expDraw(){
   const box=document.getElementById('expRows');if(!box)return;
   const L=expLights(),ids=Object.keys(L),today=TODAY.toISOString().slice(0,10);
-  const ask=ids.filter(p=>L[p].light!=='green'&&!(EXPECTED[p]&&EXPECTED[p]>=today)).length;
+  const ask=ids.filter(p=>expAsks(L[p].light)&&!(EXPECTED[p]&&EXPECTED[p]>=today)).length;
   const head=document.getElementById('expHead'),n=document.getElementById('expN'),fold=document.getElementById('expFold');
   if(head)head.textContent=ask?'Restock date: '+ask+(ask===1?' book asks':' books ask'):'Restock date';
   if(n)n.textContent=String(ask);if(fold&&ask&&!fold.dataset.shown){fold.open=true;fold.dataset.shown='1';}
   /* 18 Oct 2026, his "redesign this": one row a book, the light first in its own colour (the Counter's three tokens), the
      figures number first, what customers read now, and the day and its actions in one column that lines up down the card */
-  const LW={green:'Green',yellow:'Yellow',red:'Red'};
+  const LW={green:'Green',yellow:'Yellow',amber:'Amber',red:'Red'};
   box.innerHTML='<div class="expgrid">'+ids.map(p=>{
-    const l=L[p],d=EXPECTED[p]||'',asks=l.light!=='green'&&!(d&&d>=today);
+    const l=L[p],d=EXPECTED[p]||'',asks=expAsks(l.light)&&!(d&&d>=today);
     const note=d&&d<today?'Passed '+dShow(d)+'. Set a new day.'
       :d?(l.light==='green'?'Set for '+dShow(d)+'. Shown when the light turns.':'Customers read: More by '+dShow(d)+'.')
-      :asks?'No day set. Customers see the light alone.':'No day needed while green.';
+      :asks?'No day set. Customers see the light alone.':l.light==='green'?'No day needed while green.':'No day needed while selling fast.';
     return `<div class="exprow exprow--${esc(l.light)}${asks?' exprow--asks':''}"><div class="expwho">`
       +`<div class="expbook"><span class="explight" aria-hidden="true"></span><b>${esc((PRODUCTS[p]&&PRODUCTS[p].name)||p)}</b><span class="expword">${LW[l.light]||esc(l.light)}</span>${asks?'<span class="expask">Asks</span>':''}</div>`
       +`<div class="expfig"><span>${units(l.shelf)} held</span><span>${units(l.commit)} committed</span></div><div class="expnote">${note}</div></div>`

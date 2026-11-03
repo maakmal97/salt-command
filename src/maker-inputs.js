@@ -839,7 +839,7 @@ export function makerLedgerMini(book, recent = 20) {
  *  carried as it is and computed by nothing here: five figures a book, each a number or null, the books in the PRICING snapshot's order,
  *  and the desk's day. No lot, supplier or customer travels. 22 Oct 2026: and the light (restockLight, measured with them) when it is one
  *  of the three; a STOCK seeded before it carries none. */
-const light = (l) => (l === "green" || l === "yellow" || l === "red" ? { light: l } : {});
+const light = (l) => (l === "green" || l === "yellow" || l === "amber" || l === "red" ? { light: l } : {});
 export function makerStock(book) {
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
   const S = book.state.STOCK;

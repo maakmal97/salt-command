@@ -73,13 +73,13 @@ export function readExpected(run = execFileSync) {
 
 /* A STOCK LIGHT TURNING WAKES THE DESK (19 Oct 2026, the notifications plan: Salt Desk informs). The lights each publish seals are
    kept beside the lists in the site's store, `stocklights` ({book: light}, riding the same bulk put), and the next publish compares.
-   A book that turns yellow or red from a better colour posts {"tag":"stock"} once to the Desk's /push/send, which keeps it as the
+   A book that turns amber or red from a better colour (04 Nov 2026: yellow, selling fast, needs no stock and wakes nothing) posts {"tag":"stock"} once to the Desk's /push/send, which keeps it as the
    last inform; no book, code or figure travels. A book the last publish did not light (a first run, a new book, an unread store)
    is not a turn. Only CI holds PUSH_KEY, and a failed post is a line in the log, never a failed publish. */
-const LIGHT_RANK = { green: 0, yellow: 1, red: 2 };
+const LIGHT_RANK = { green: 0, yellow: 1, amber: 2, red: 3 };
 export const stockLights = (supply) => Object.fromEntries(Object.entries(supply || {}).map(([p, v]) => [p, v && v.light]).filter(([, l]) => l in LIGHT_RANK));
 export function stockTurned(prev, now) {
-  return Object.entries(now || {}).some(([p, l]) => LIGHT_RANK[l] > 0 && prev && prev[p] in LIGHT_RANK && LIGHT_RANK[l] > LIGHT_RANK[prev[p]]);
+  return Object.entries(now || {}).some(([p, l]) => LIGHT_RANK[l] >= LIGHT_RANK.amber && prev && prev[p] in LIGHT_RANK && LIGHT_RANK[l] > LIGHT_RANK[prev[p]]);
 }
 /* the last publish's lights; none yet, or a store that does not read, is null and nothing is compared */
 export function readStockLights(run = execFileSync) {

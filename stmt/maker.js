@@ -483,7 +483,7 @@ function stockWithDates(desk, expected, test) {
   const today = klDay(new Date().toISOString()), books = {}, by = {};
   for (const [p, b] of Object.entries(desk && desk.books && typeof desk.books === "object" ? desk.books : {})) {
     books[p] = { shelf: b && b.shelf, free: b && b.free, commit: b && b.commit, coverDays: b && b.coverDays, transit: b && b.transit,
-      ...(b && (b.light === "green" || b.light === "yellow" || b.light === "red") ? { light: b.light } : {}) };   /* the five figures and the light (22 Oct 2026), nothing else */
+      ...(b && (b.light === "green" || b.light === "yellow" || b.light === "amber" || b.light === "red") ? { light: b.light } : {}) };   /* the five figures and the light (22 Oct 2026), nothing else */
     const v = expected && typeof expected === "object" ? expected[p] : null;
     by[p] = typeof v === "string" && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(v) && v >= today ? v : null;
   }

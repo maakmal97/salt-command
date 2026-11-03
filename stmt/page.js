@@ -4230,10 +4230,10 @@ const CLIENT_JS = `
     var m=/^(\\d{4})-(\\d{2})/.exec(String(d||'')); if(!m) return '';
     return monthsIn(L)[+m[2]-1]+' '+m[1];
   }
-  /* F4: THE LIGHT, a coloured border round the book's mark, its words in the heading's name and, on yellow or red with a day
-     set, "More by DD Mon" under it. Sealed with the list, so it is as fresh as the last publish; nothing refuses an order. */
+  /* F4: THE LIGHT, a coloured border round the book's mark, its words in the heading's name and, on any but green with a day
+     set, "More by DD Mon" under it (04 Nov 2026, his four steps: Available, Selling fast, Low on stock, Out of stock). Sealed with the list, so it is as fresh as the last publish; nothing refuses an order. */
   function dmShort(s,L){ var m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(String(s||'')); return m?m[3]+' '+mon3(L)[+m[2]-1]:''; }
-  function supLit(p){ var s=p&&p.supply; return s&&(s.light==='green'||s.light==='yellow'||s.light==='red')?s:null; }
+  function supLit(p){ var s=p&&p.supply; return s&&(s.light==='green'||s.light==='yellow'||s.light==='amber'||s.light==='red')?s:null; }
   function supWord(l){ return el('span','salt-light'+(l==='green'?'':' salt-light--'+l),tw('sup.'+l)); }
   /* 22 Oct 2026 (his word, the outline alone was missed): the light's word stands under the mark too, the status in the light's colour */
   function supplyMark(h,pane,p){
@@ -7525,7 +7525,7 @@ const CLIENT_JS = `
     box.appendChild(g); return box;
   }
   /* 22 OCT 2026 (his word, the restock light made plain): AVAILABILITY, one row a book on their list, its mark in the light's border and
-     the light in words (Available, Limited, Out of stock), More by DD Mon under a yellow or red with his day; no figure. A row opens Prices at
+     the light in words (Available, Selling fast, Low on stock, Out of stock; 04 Nov 2026), More by DD Mon under any but green with his day; no figure. A row opens Prices at
      that book. Sealed with the list, so it is as fresh as the last publish, and nothing here refuses an order. */
   function homeSupply(){
     var box=el('div'), list=sold().filter(supLit); if(!bundle||!list.length) return box;

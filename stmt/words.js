@@ -494,7 +494,8 @@ export const EN = {
      the word for what is held. Green while what is on the shelf covers what is promised, yellow when it does not, red when
      the shelf is out; yellow and red carry the day he expects the next lot, once he sets one. Ordering is never refused. */
   "sup.green": "Available",
-  "sup.yellow": "Limited",
+  "sup.yellow": "Selling fast",
+  "sup.amber": "Low on stock",
   "sup.red": "Out of stock",
   "av.h": "Availability",
   "sup.by": "More by {d}",
