@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1407",
+  "d": "03 Nov 2026",
+  "t": "CASH PART-PAYMENT ON AN OIL ORDER FOR CI5-PER",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED.</b> A cash payment of RM130 for CI5-PER was applied to oil order s326 (RM130 goods, RM30 delivery, RM160 owed). The drafter raised no flag. The tool applied the row itself, so no figure was recomputed here. RM30 and 10 unit remain outstanding.",
+   "<b>INVENTORY UNCHANGED.</b> No unit moved in this fold and no lot landed, so the cost basis stays as it was."
+  ]
+ },
+ {
   "v": "v1406",
   "d": "03 Nov 2026",
   "t": "THREE PENDING ORDERS FOR CI5-PER ON ONE TRIP, NOTHING MOVED",
