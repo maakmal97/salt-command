@@ -71,13 +71,23 @@ export async function run({ ok, pageWork }) {
   try {
     await openAs(p, "acct.order-for");
     await startAt(p.d); await p.work.quiet();
+    /* B12 (4 Nov 2026, his report that the order of taps seemed to matter): a browser puts an emptied body back at its top, which jsdom does not,
+       so the body here is given a scroll position that emptying resets; a choice keeps the sheet where it was, and a new step starts at its top */
+    const sb = p.d.querySelector("#osheet .salt-sheet__body"), tc = Object.getOwnPropertyDescriptor(p.w.Node.prototype, "textContent");
+    let y = 0;
+    Object.defineProperty(sb, "scrollTop", { configurable: true, get: () => y, set: (v) => { y = Math.max(0, +v || 0); } });
+    Object.defineProperty(sb, "textContent", { configurable: true, get() { return tc.get.call(this); }, set(v) { y = 0; tc.set.call(this, v); } });
+    sb.scrollTop = 300;
     p.d.querySelector("[data-k='mode:1']").click(); await p.work.quiet();
+    ok(sb.scrollTop === 300, "B12 a choice tapped on the sheet keeps it where it was scrolled, never back at its top: " + sb.scrollTop);
     const wi = p.d.getElementById("oWhere");
     wi.value = "Orlen"; wi.dispatchEvent(new p.w.Event("input", { bubbles: true })); await p.work.quiet();
     const go = p.d.getElementById("oGo"), foot = p.d.querySelector("#osheet .ototal");
     ok(!!go && !go.disabled && !/Pick where it is going/.test(foot ? foot.textContent : ""),
       "B11 a delivery with an area typed reaches Review on Order as them: " + JSON.stringify([!!go && go.disabled, foot && foot.textContent]));
+    sb.scrollTop = 300;
     go.click(); await p.work.quiet();
+    ok(sb.scrollTop === 0, "B12 and Review's check, a new step, opens at its top: " + sb.scrollTop);
     const before = p.posts.length;
     p.d.getElementById("oPlace").click(); await p.work.quiet();
     const b = (p.posts.slice(before).find((x) => x.route === "/all/maker/customers/" + U1 + "/orders") || {}).body;

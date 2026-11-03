@@ -4895,9 +4895,14 @@ const CLIENT_JS = `
   function sheetDraw(){
     if(!osh) return;
     var fo=document.activeElement, inside=!!fo&&osh.box.contains(fo), fk=inside?fo.getAttribute('data-k'):null;
+    /* 4 Nov 2026 (his report that the order of taps seemed to matter): emptying the body scrolled it back to its top, so every choice tapped
+       (Deliver, A friend, a window) threw the sheet up and away from the field in hand; a redraw of the same step keeps its place */
+    var was=osh.drawn, keepY=osh.body.scrollTop||0;
     osh.head.textContent=''; osh.body.textContent=''; osh.foot.textContent='';
     if(draft.step==='limit'&&openN()<OMAX) draft.step='form';
     if(draft.step==='check') drawCheck(); else if(draft.step==='ask') drawAsk(); else if(draft.step==='sent') drawSent(); else if(draft.step==='limit') drawLimit(); else if(draft.step==='spot'&&draft.spotEdit) drawSpot(); else drawForm();
+    osh.drawn=draft.step+(draft.spotEdit?':spot':'');
+    osh.body.scrollTop=was===osh.drawn?keepY:0;
     osh.foot.hidden=!osh.foot.firstChild;
     if(fk){ var back=[].filter.call(osh.box.querySelectorAll('[data-k]'),function(x){ return x.getAttribute('data-k')===fk; })[0];
       if(back) try{ back.focus({preventScroll:true}); }catch(e){} }
