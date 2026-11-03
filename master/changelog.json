@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1410",
+  "d": "03 Nov 2026",
+  "t": "DELIVERY OF 10 UNIT OF OIL RECORDED ON S326",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> Order s326, 10 unit of oil to CI5-PER, now shows deliveredQty 10, deliveredOn 2026-11-03 and handover delivered. It was preapproved by Counter Admin. The drafter flagged that the row's 3-step trail will not add up to the figure set directly, and the correction is recorded beside the trail saying so.",
+   "<b>INVENTORY.</b> The oil shelf rolls out by 10 unit to CI5-PER. No lot landed, so the cost basis stays at RM56 per unit and no cost is changed on this row."
+  ]
+ },
+ {
   "v": "v1409",
   "d": "03 Nov 2026",
   "t": "CASH RECEIVED ON A RICE ORDER, GOODS STILL TO HAND OVER",
