@@ -111,7 +111,8 @@ export async function run({ ok }) {
     return pg.d.querySelector('#pOrder .oscreen[data-order="' + id + '"] button[data-yn="cancel:' + id + '"]'); };
   /* the order sheet at its limit: a size tapped on Prices opens it on the open orders when five are open */
   const openLimit = async (pg) => { pg.d.querySelector('button[data-t="prices"]').click();
-    await until(() => pg.d.querySelector("#pPrices .szrow")); pg.d.querySelector("#pPrices .szrow").click();
+    /* plan version 9: at the limit a book's Add opens the limit step, as a size tapped did */
+    await until(() => pg.d.querySelector('#pPrices [data-st="add"]')); pg.d.querySelector('#pPrices [data-st="add"]').click();
     await until(() => pg.d.querySelector("#osheet .olim button")); return pg.d.querySelector("#osheet .olim button"); };
   const openLinks = async (pg) => { pg.d.querySelector('button[data-t="card"]').click();
     await until(() => pg.d.querySelector('#pCard button[data-yn="link:' + LINK.id + '"]')); return pg.d.querySelector('#pCard button[data-yn="link:' + LINK.id + '"]'); };

@@ -256,6 +256,8 @@ export async function run({ ok }) {
     const legsAll = [...checkL.d.querySelectorAll("#osheet [data-sheet-lines] .pwith")].filter((f) => f.querySelector("svg.psym"));
     const legs = legsAll.map((f) => [t(f.querySelector(".sr")), drawnText(f).trim()]);
     checkL.d.querySelector('#osheet [data-k="close"]').click();
+    /* plan version 9: the size started is the basket's line; it is taken out before the basket is built */
+    for (const x of [...checkL.d.querySelectorAll("#pPrices [data-bkout]")]) x.click();
     for (const pn of [...checkL.d.querySelectorAll("#pPrices .pane")].filter((x) => x.querySelector(".szrow"))) {
       const sh = pn.querySelector("h2.pmark").getAttribute("aria-label").split(",")[0];
       await basketAdd(checkL, sh, pn.querySelector(".szrow").getAttribute("data-q"));

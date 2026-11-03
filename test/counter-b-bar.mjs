@@ -5,34 +5,35 @@
  * a line out and freezes the check again. Sent forgets every size placed, by what is picked on every road and by the basket. The page
  * prices nothing. Every assertion observes the signed-in page in jsdom (test/counter-b-kit.mjs); each was proved red by its own mutation
  * (test/counter-b-bar.mutations.json, tools/section.mjs).
- *   1  the bar's figure is the summed amount's own (10 units at the 10-unit figure, never twice 5), goods only, its words by the way
+ *   1  the bar's figure is the summed amount's own (10 units at the 10-unit figure), goods only, its words by the way
  *   2  Review with two marks: the check holds two lines; Place posts two bodies, two rids, one sheet id; then the bar and the lines are gone
  *   3  Remove on the check: one line left, a fresh rid and no sheet id, and the basket follows
  *   4, 5  retired by plan version 8 (03 Nov 2026): the sheet's own size field is gone, so nothing writes back and nothing is left to forget
  *   6  the bar sticks above the App bar under 1080px and to the foot of the column from 1080px
  *   7  after a partial place, Remove on the re-reviewed check keeps the sheet id, so the basket still counts once (Fable's review) */
-import { open, done, txt, ago, LIST } from "./counter-b-kit.mjs";
+import { open, done, txt, ago, LIST, stepTo } from "./counter-b-kit.mjs";
 
 export async function run({ ok, pageWork }) {
   const P = await import("../stmt/page.js");
   const pages = [];
   const page = async (o) => { const p = await open(Object.assign({ pageWork }, o)); pages.push(p); return p; };
   const pane = (p, i) => p.d.querySelectorAll("#pPrices .pgrid > .pane")[i];
-  const plus = (p, i, q) => pane(p, i).querySelector('[data-add="' + q + '"]');
+  /* plan version 9: a line is the stepper set to the amount and Add; Add sets the line, it never sums taps */
+  const put = async (p, i, q) => { stepTo(p, ["salt", "oil", "candy"][i], q); pane(p, i).querySelector('[data-st="add"]').click(); await p.settle(); };
   const bar = (p) => { const b = p.d.getElementById("bkBar"); return b && !b.hidden ? b : null; };
   const kpi = (p) => { const b = bar(p); return b ? [".salt-kpi__label", ".salt-kpi__value", ".salt-kpi__note"].map((s) => txt(b.querySelector(s))) : null; };
   try {
     /* ---- 1 ---- */
     const A = await page({ orders: [done("o1", ago(100))] });
-    plus(A, 0, 5).click(); plus(A, 0, 5).click();
+    await put(A, 0, 10);
     const k1 = kpi(A);
     const D = await page({ orders: [done("o1", ago(100), { mode: "deliver", place: "Veloria" })] });
-    plus(D, 1, 3).click();
+    await put(D, 1, 3);
     ok(JSON.stringify(k1) === '["1 in the basket","RM 980.00","to collect"]' && JSON.stringify(kpi(D)) === '["1 in the basket","RM 115.00","and delivery, set when we confirm it"]',
-      "the bar's figure is the summed amount's own off the list, 10 units at RM 980.00 and never twice the 5-unit figure, the goods alone, delivery said as his at confirmation: " + JSON.stringify([k1, kpi(D)]));
+      "the bar's figure is the summed amount's own off the list, 10 units at RM 980.00, the goods alone, delivery said as his at confirmation: " + JSON.stringify([k1, kpi(D)]));
 
     /* ---- 2 ---- */
-    plus(A, 1, 3).click();
+    await put(A, 1, 3);
     const k2 = kpi(A);
     A.d.getElementById("bkGo").click(); await A.settle();
     const lines = A.d.querySelectorAll("#osheet .mhero > *").length;
@@ -40,12 +41,12 @@ export async function run({ ok, pageWork }) {
     const ps = A.st.posts;
     ok(k2[0] === "2 in the basket" && k2[1] === "RM 1,095.00" && lines === 2 && ps.length === 2 && ps[0].product === "salt" && ps[0].qty === 10 && ps[0].total === 980
       && ps[1].product === "oil" && ps[1].qty === 3 && ps[1].total === 115 && ps[0].rid !== ps[1].rid && /^[0-9a-f]{32}$/.test(ps[0].sheet || "") && ps[0].sheet === ps[1].sheet
-      && !bar(A) && !pane(A, 0).querySelector(".bkline:not([hidden])") && !A.d.querySelector("#pPrices .bkn"),
+      && !bar(A) && !pane(A, 0).querySelector(".bkline:not([hidden])"),
       "Review opens the check with the basket's two lines; Place posts two bodies at the list's figures, two rids under one sheet id; then the bar and every line are gone: " + JSON.stringify(ps.map((b) => [b.product, b.qty, b.total, b.sheet])));
 
     /* ---- 3 ---- */
     const R = await page({ orders: [] });
-    plus(R, 0, 1).click(); plus(R, 1, 1).click();
+    await put(R, 0, 1); await put(R, 1, 1);
     R.d.getElementById("bkGo").click(); await R.settle();
     R.d.querySelector('#osheet [data-k="rm:1"]').click(); await R.settle();
     const one = R.d.querySelectorAll("#osheet .mhero > *").length;
@@ -69,7 +70,7 @@ export async function run({ ok, pageWork }) {
     /* ---- 7 ---- */
     const three = LIST(); three.products.push({ product: "candy", unit: "unit", basis: "board", sizes: [{ q: 1, price: 12 }] });
     const Q = await page({ orders: [], list: three });
-    plus(Q, 0, 1).click(); plus(Q, 1, 1).click(); plus(Q, 2, 1).click();
+    await put(Q, 0, 1); await put(Q, 1, 1); await put(Q, 2, 1);
     Q.st.refuse.add("oil");
     Q.d.getElementById("bkGo").click(); await Q.settle();
     Q.d.getElementById("oPlace").click(); await Q.settle();

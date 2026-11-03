@@ -1,75 +1,50 @@
-/* test/counter-b-plus.mjs: THE BASKET'S + AND MINUS ON PRICES (Counter Batch B, P4, item 12; his answers of 18 Oct 2026).
+/* test/counter-b-plus.mjs: THE BASKET'S LIMIT, THE GATE AND THE PRODUCT WORD ON ORDER (Counter Batch B, P4, item 12; his answers of 18 Oct 2026;
+ * re-aimed by plan version 9, 03 Nov 2026).
  *
- * A + beside each size adds it to that mark's line, and taps on one mark SUM into one line, priced at the summed amount's own figure; a +
- * greys where the sum would have no price, and every + greys with five orders open, the limit said once. The badge counts the taps on a
- * size and minus takes one off. A tap patches the controls where they stand, so focus stays; nothing names a product in an attribute.
- * Every assertion observes the signed-in page in jsdom (test/counter-b-kit.mjs); each was proved red by its own mutation
- * (test/counter-b-plus.mutations.json, tools/section.mjs).
- *   1  5 units twice is one line of 10 units (5 + 5), the badge 2, and the + that would pass the grid's max greys
- *   2  a board's sum with no price greys its +
- *   3  at five open orders every + greys and the limit is said
- *   4  focus stays on the tapped +; minus takes one off, and the last one off gives focus back to the +
- *   5  no product word in any attribute; a size's own row still opens the sheet at that size alone, the basket untouched
- *   6  no + under the overdue gate */
-import { open, ord, done, txt, ago } from "./counter-b-kit.mjs";
+ * Batch B drew a + and a - beside every size, taps on one mark SUMMED into one line, and a badge counted the taps. Plan version 9 (03 Nov 2026)
+ * took them off: each book is a stepper and one Add, and Add SETS the line (test/order-stream-p9-units.mjs holds the stepper itself). What this
+ * file still holds of the batch is what the stepper keeps: with five orders open a new line is refused with the limit said once, two orders of
+ * one sheet counting once; under the overdue gate the controls are off while the sizes still show; and no product word in any attribute.
+ * Retired by plan version 9: the taps summing into one line (5 + 5), a + greying where the sum has no price, the badge, minus and its focus,
+ * and a size's row opening the sheet (it sets the stepper now). Every assertion observes the signed-in page in jsdom (test/counter-b-kit.mjs);
+ * each was proved red by its own mutation (test/counter-b-plus.mutations.json, tools/section.mjs).
+ *   3  at five open orders Add opens the limit step and the limit is said on Order; two orders of one sheet count once
+ *   5  no product word in any attribute on Order, and a size's row sets the stepper without opening a sheet or touching the basket
+ *   6  under the overdue gate no stepper and no Add, where the sizes still show */
+import { open, ord, done, txt, ago, stepTo } from "./counter-b-kit.mjs";
 
 export async function run({ ok, pageWork }) {
   const pages = [];
   const page = async (o) => { const p = await open(Object.assign({ pageWork }, o)); pages.push(p); return p; };
-  /* the pane of the n-th mark on Prices, salt first, oil second, and a size's + in it */
+  /* the pane of the n-th mark on Order, salt first, oil second, and its Add */
   const pane = (p, i) => p.d.querySelectorAll("#pPrices .pgrid > .pane")[i];
-  const plus = (p, i, q) => pane(p, i).querySelector('[data-add="' + q + '"]');
-  const less = (p, i, q) => pane(p, i).querySelector('[data-less="' + q + '"]');
-  const badge = (p, i, q) => { const b = plus(p, i, q).parentNode.querySelector(".bkn"); return b ? b.textContent : ""; };
+  const addOf = (p, i) => pane(p, i).querySelector('[data-st="add"]');
   const line = (p, i) => { const n = pane(p, i).querySelector(".bkline"); return n && !n.hidden ? txt(n.querySelector(".bkline__t")) : null; };
   try {
-    /* ---- 1 ---- */
-    const A = await page({ orders: [done("o1", ago(100))] });
-    plus(A, 0, 5).click(); plus(A, 0, 5).click();
-    const l1 = line(A, 0), b1 = badge(A, 0, 5);
-    plus(A, 0, 10).click();
-    plus(A, 0, 5).click();
-    const off = { ten: plus(A, 0, 10).disabled, five: plus(A, 0, 5).disabled, one: plus(A, 0, 1).disabled };
-    ok(l1 === "In your order: 10 units (5 + 5)" && b1 === "2" && line(A, 0) === "In your order: 25 units (10 + 5 + 5 + 5)" && off.ten && off.five && off.one && plus(A, 0, 2.5).disabled,
-      "5 units twice is one line of 10 units (5 + 5), the badge says 2, and at 25 units every + that would pass the grid's max greys: " + JSON.stringify([l1, b1, line(A, 0), off]));
-
-    /* ---- 2 ---- */
-    plus(A, 1, 1).click();
-    ok(line(A, 1) === "In your order: 1 unit" && plus(A, 1, 3).disabled && plus(A, 1, 1).disabled,
-      "on a board, a sum with no price of its own greys the +: 1 and 1 make 2 and 1 and 3 make 4, neither on the board: " + JSON.stringify([line(A, 1), plus(A, 1, 3).disabled]));
-
     /* ---- 3 ---- */
     const five = [1, 2, 3, 4, 5].map((i) => ord("o" + i, "placed", ago(i), { sheet: i === 5 ? "sh" : undefined }));
     const F = await page({ orders: five });
-    const all = [...F.d.querySelectorAll("#pPrices [data-add]")], lim = F.d.getElementById("bkLim");
+    const lim = F.d.getElementById("bkLim");
+    addOf(F, 0).click(); await F.settle();
+    const said = F.d.querySelector("#osheet .salt-insight--copper");
     const G = await page({ orders: five.slice(0, 3).concat([ord("o5", "placed", ago(5), { sheet: "sh4" }), ord("o6", "placed", ago(6), { sheet: "sh4" })]) });
-    ok(all.length === 6 && all.every((b) => b.disabled) && !!lim && !lim.hidden && /^Five open orders is the most/.test(txt(lim))
-      && [...G.d.querySelectorAll("#pPrices [data-add]")].some((b) => !b.disabled) && G.d.getElementById("bkLim").hidden,
-      "at five open orders every + greys and the limit is said; two orders of one sheet count once: " + JSON.stringify([all.length, all.filter((b) => b.disabled).length]));
-
-    /* ---- 4 ---- */
-    const B = await page({ orders: [] });
-    const p5 = plus(B, 0, 5); p5.focus(); p5.click(); p5.click();
-    const kept = B.d.activeElement === p5 && p5.isConnected;
-    less(B, 0, 5).focus(); less(B, 0, 5).click();
-    const l4 = line(B, 0), b4 = badge(B, 0, 5);
-    less(B, 0, 5).click();
-    ok(kept && l4 === "In your order: 5 units" && b4 === "1" && line(B, 0) === null && !less(B, 0, 5) && B.d.activeElement === p5,
-      "focus stays on the tapped +; minus takes one off, and the last one off leaves the line and gives focus back to the +: " + JSON.stringify([kept, l4, b4, line(B, 0)]));
+    addOf(G, 0).click(); await G.settle();
+    ok(!!lim && !lim.hidden && /^Five open orders is the most/.test(txt(lim)) && !!said && /^Five open orders is the most/.test(txt(said)) && line(F, 0) === null
+      && G.d.getElementById("bkLim").hidden && !G.d.getElementById("osheet") && /^In your order: 1 unit$/.test(line(G, 0) || ""),
+      "at five open orders Add opens the limit step and the limit is said on Order; two orders of one sheet count once, so Add puts the line in the basket: " + JSON.stringify([said && txt(said), line(F, 0), line(G, 0)]));
 
     /* ---- 5 ---- */
-    plus(B, 0, 2.5).click(); plus(B, 1, 3).click();
+    const B = await page({ orders: [] });
+    stepTo(B, "salt", 2.5); addOf(B, 0).click(); stepTo(B, "oil", 3); addOf(B, 1).click();
     const words = /\b(salt|oil|candy|rice)\b/i, attrs = [...B.d.querySelectorAll("#pPrices *")].flatMap((e) => [...e.attributes].map((a) => a.name + "=" + a.value.replace(/salt-[a-z_-]+/g, ""))).filter((s) => words.test(s));   /* the design system's class prefix is no product word */
-    B.d.querySelector('#pPrices .pgrid > .pane .szrow[data-q="1"]').click(); await B.settle();
-    /* plan version 8: the sheet lists the one line the row's tap made (a size, not a radio) */
-    const checked = [...B.d.querySelectorAll("#osheet [data-sheet-lines] .salt-settings__row")].map((r) => txt(r.querySelector(".salt-settings__label")));
-    B.d.querySelector('#osheet [data-k="close"]').click(); await B.settle();
-    ok(!attrs.length && JSON.stringify(checked) === '["1 unit"]' && line(B, 0) === "In your order: 2.5 units" && line(B, 1) === "In your order: 3 units",
-      "no product word in any attribute on Prices, and a size's own row opens the sheet at that size alone, the basket untouched: " + JSON.stringify({ attrs, checked }));
+    pane(B, 0).querySelector('.szrow[data-q="1"]').click(); await B.settle();
+    ok(!attrs.length && !B.d.getElementById("osheet") && pane(B, 0).querySelector('.szrow[data-q="1"]').getAttribute("aria-pressed") === "true"
+      && line(B, 0) === "In your order: 2.5 units" && line(B, 1) === "In your order: 3 units",
+      "no product word in any attribute on Order, and a size's own row sets the stepper without opening a sheet or touching the basket: " + JSON.stringify({ attrs, line: line(B, 0) }));
 
     /* ---- 6 ---- */
     const H = await page({ orders: [done("o1", ago(100))], late: 1 });
-    ok(!H.d.querySelector("#pPrices [data-add]") && !!H.d.querySelector("#pPrices .szrow"), "no + under the overdue gate, where the sizes still show");
+    ok(!H.d.querySelector("#pPrices [data-st]") && !!H.d.querySelector("#pPrices .szrow") && H.d.querySelector("#pPrices .szrow").tagName === "DIV", "no stepper and no Add under the overdue gate, where the sizes still show as plain rows");
   } catch (e) { ok(false, "counter-b-plus stopped on an error: " + (e && e.stack)); }
   finally { pages.forEach((p) => p.close()); }
 }

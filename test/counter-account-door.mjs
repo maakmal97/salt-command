@@ -95,7 +95,8 @@ export async function run({ ok }) {
     await until(() => pg.d.querySelector('#pOrder [data-row="' + id + '"]')); pg.d.querySelector('#pOrder [data-row="' + id + '"]').click();
     await until(() => cancelBtn(pg, id)); return cancelBtn(pg, id); };
   const openLimit = async (pg) => { pg.d.querySelector('button[data-t="prices"]').click();
-    await until(() => pg.d.querySelector("#pPrices .szrow")); pg.d.querySelector("#pPrices .szrow").click();
+    /* plan version 9: at the limit a book's Add opens the limit step, as a size tapped did */
+    await until(() => pg.d.querySelector('#pPrices [data-st="add"]')); pg.d.querySelector('#pPrices [data-st="add"]').click();
     await until(() => pg.d.querySelector("#osheet .olim button")); return pg.d.querySelector("#osheet .olim button"); };
   const key = (pg, k) => pg.d.dispatchEvent(new pg.w.KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true }));
   const before = (a, b) => !!a && !!b && (a.compareDocumentPosition(b) & 4) !== 0;   /* a precedes b in the document */

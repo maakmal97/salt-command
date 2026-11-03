@@ -20,7 +20,7 @@ import { hoursStatus } from "../stmt/hours.js";
 import { unionByAt, pruneCommitted } from "../tools/drain.mjs";
 import { NAME_STOPWORDS, NAME_COLLISIONS, areaNameSet, publishedLocalities } from "../tools/book.mjs";
 import { opened } from "../tools/payload.mjs";
-import { startAt, basketAdd, toSheet, sizeRow } from "./counter-b-kit.mjs";   /* plan version 8: how an order starts */
+import { startAt, basketAdd, toSheet, sizeRow, emptyBasket } from "./counter-b-kit.mjs";   /* plan version 8: how an order starts */
 /* a delivery's Where to is a saved spot (Counter Batch C, his answer 4 of 20 Oct 2026): Add a spot, a preset name, the area, Use this spot */
 const spotAddTo = (d, w, place) => { d.getElementById("spAdd").click(); d.querySelector('#osheet [data-k="spn:0"]').click();
   const x = d.getElementById("oWhere"); x.value = place; x.dispatchEvent(new w.Event("input", { bubbles: true })); d.getElementById("spUse").click(); };
@@ -15932,6 +15932,7 @@ await (async () => {
     d.getElementById("oPlace").click();
     for (let i = 0; i < 100 && !(d.getElementById("osheet") && /Order placed/.test(d.getElementById("osheet").textContent)); i++) await new Promise((r) => setTimeout(r, 30));
     ok(st.posted.length === 1 && st.posted[0].forFriend === true, "and Place carries it: " + JSON.stringify(st.posted.map((x) => x.forFriend)));
+    d.querySelector('#osheet [data-k="close"]').click();   /* plan version 9: a new sheet is built from Order, so the sent one is closed first */
     await startAt(d);
     ok(JSON.stringify(who(d)) === '["Me=false","A friend=false"]' && d.getElementById("oGo").disabled, "the next order asks again: " + JSON.stringify(who(d)));
     [...d.querySelectorAll("#osheet button")].find((b) => b.textContent === "Me").click();
@@ -15945,7 +15946,7 @@ await (async () => {
       "a customer who is not an associate is never asked");
   } finally { B.w.close(); }
 })();
-section("S4 4.8: every size on Prices opens the order sheet at that size, and the list says Prices as at its moment");
+section("S4 4.8: every size on Order sets its book's stepper and Add then Continue opens the sheet at that size, and the list says Prices as at its moment");
 await (async () => {
   /* HIS "ALL RECOMMENDED" OF 24 SEP 2026. The size was found twice, once on Prices and again in the form's dropdown; a size
      row is one tap now, straight to the sheet at that size. And "For the week of" stayed on an open page for good, so the
@@ -15980,27 +15981,30 @@ await (async () => {
   const A = await drive(list("2026-09-24T03:59:00Z"));
   try {
     const { w, d, lead } = A;
-    ok(lead.includes("Prices as at 24 Sep 2026, 11:59. Tap a size to order it.") && !lead.some((t) => /week of/.test(t)),
-      "the list says when it was written, in Kuala Lumpur, and that a size is a tap: " + JSON.stringify(lead.slice(1, 2)));
+    ok(lead.includes("Prices as at 24 Sep 2026, 11:59; choose the units, then add them.") && !lead.some((t) => /week of/.test(t)),
+      "the list says when it was written, in Kuala Lumpur, and that the units are chosen, then added (plan version 9): " + JSON.stringify(lead.slice(1, 2)));
     const rows = [...d.querySelectorAll("#pPrices .szrow")];
     ok(rows.length === 4 && rows.every((r) => r.tagName === "BUTTON" && r.classList.contains("salt-ledger__row"))
       && rows.map((r) => r.textContent).join("|") === "1 unitRM 100.00|2 unitsRM 190.00|1 unitRM 45.00|3 unitsRM 120.00",
       "every size is a row of the plain ledger, and each row is a button: " + JSON.stringify(rows.map((r) => r.textContent)));
+    /* plan version 9: a size row is one tap that sets the book's stepper, in the fold under it; the sheet opens from the basket, at the size added */
     rows[3].click();
+    const stepSet = rows[3].getAttribute("aria-pressed") === "true" && !d.getElementById("osheet") && !!rows[3].closest("details.sfold");
+    await startAt(d, "oil", 3);
     const sh = d.getElementById("osheet");
     /* V4b, plan version 8: the size tapped on its product's mark is the one line on the sheet, listed with its mark, its size and its figure */
     const lns = sh ? [...sh.querySelectorAll("[data-sheet-lines] .salt-settings__row")] : [];
     const on = lns.map((r) => (r.querySelector(".mq, .pwith") || r).textContent.replace(/\s+/g, " ").trim());
     const prod = lns.map((r) => { const x = r.querySelector(".sr"); return x ? x.textContent : ""; });
-    ok(!!sh && lns.length === 1 && /3 units/.test(on[0]) && prod.join() === "Droplet" && /RM 120/.test(lns[0].textContent) && /^RM 120/.test(sh.querySelector(".salt-sheet__foot").textContent),
-      "a tap on a size opens the order sheet on that product at that size: " + JSON.stringify({ on, prod }));
+    ok(stepSet && !!sh && lns.length === 1 && /3 units/.test(on[0]) && prod.join() === "Droplet" && /RM 120/.test(lns[0].textContent) && /^RM 120/.test(sh.querySelector(".salt-sheet__foot").textContent),
+      "a tap on a size sets its stepper, and Add then Continue opens the order sheet on that product at that size: " + JSON.stringify({ stepSet, on, prod }));
     void w;
   } finally { A.w.close(); }
   const B = await drive(list("2026-09-24T16:05:00Z"));
-  try { ok(B.lead.includes("Prices as at 25 Sep 2026, 00:05. Tap a size to order it."), "the day is Kuala Lumpur's, past its midnight: " + JSON.stringify(B.lead[1])); }
+  try { ok(B.lead.includes("Prices as at 25 Sep 2026, 00:05; choose the units, then add them."), "the day is Kuala Lumpur's, past its midnight: " + JSON.stringify(B.lead[1])); }
   finally { B.w.close(); }
   const E = await drive(list(null));
-  try { ok(E.lead.includes("For the week of 21 to 27 Sep 2026. Tap a size to order it."), "a list sealed with no moment keeps its week: " + JSON.stringify(E.lead[1])); }
+  try { ok(E.lead.includes("For the week of 21 to 27 Sep 2026; choose the units, then add them."), "a list sealed with no moment keeps its week: " + JSON.stringify(E.lead[1])); }
   finally { E.w.close(); }
 })();
 section("27 Sep 2026: Prices states no rate of theirs and never says one customer's prices differ from another's");
@@ -16384,7 +16388,7 @@ await (async () => {
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 100 && !d.querySelector("#pPrices .szrow"); i++) await new Promise((r) => setTimeout(r, 30));
     await new Promise((r) => setTimeout(r, 60));
-    d.querySelector("#pPrices .szrow").click();
+    d.querySelector('#pPrices [data-st="add"]').click();   /* plan version 9: at the limit Add opens the limit step, as a size tapped did */
     /* F8 (Step 1a.2): the word stands beside the order's tile, which holds the mark and its figure */
     const rows = [...d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => ({
       word: [...r.querySelector(".salt-ledger__label").children].filter((c) => !c.classList.contains("mtile")).map((c) => c.textContent).join(""),
@@ -23627,7 +23631,7 @@ await (async () => {
     const on95 = onOf95();
     ok(leg95.length === 2 && leg95.map((f) => f.querySelector("h2.pmark").getAttribute("aria-label")).join(",") === "Cube,Droplet" && on95.join() === "Cube",
       "each product's sizes are drawn under its mark on Order, and the one tapped is the sheet's one line: " + JSON.stringify(on95));
-    d95.querySelector('#osheet [data-k="close"]').click();
+    d95.querySelector('#osheet [data-k="close"]').click(); emptyBasket(d95);
     await basketAdd(d95, "salt", leg95[0].querySelector(".szrow").getAttribute("data-q")); await basketAdd(d95, "oil", leg95[1].querySelector(".szrow").getAttribute("data-q")); await toSheet(d95);
     ok(onOf95().join() === "Cube,Droplet", "and a size of the other product joins the sheet beside it, by the basket: " + JSON.stringify(onOf95()));
     /* a product waiting for its price is a mark too, not a name */
@@ -29956,7 +29960,7 @@ await (async () => {
   const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
   const btn = (t) => [...d.querySelectorAll("#pOrder button, #osheet button")].find((b) => b.textContent === t && !b.disabled);
   /* S4 4.3: a review is New order (unless the sheet is already on the form) and then Review */
-  const review = async () => { if (!d.getElementById("oGo")) { await until(() => d.getElementById("oNew")); await startAt(d); }
+  const review = async () => { if (!d.getElementById("oGo")) { await until(() => d.getElementById("oNew")); const cl = d.querySelector('#osheet [data-k="close"]'); if (cl) cl.click(); await startAt(d); }
     await until(() => d.getElementById("oGo") && !d.getElementById("oGo").disabled); d.getElementById("oGo").click(); };
   try {
     d.getElementById("un").value = un; d.getElementById("pw").value = pw;
@@ -40348,9 +40352,10 @@ await (async () => {
       && [...D.querySelectorAll("#hAgain button.htile .salt-option__detail")].every((x) => x.classList.contains("mono")),
       "a new account is offered its list's first sizes, each saying its unit and its price in the mono face (C19): " + JSON.stringify(tiles(D)));
     D.querySelectorAll("#hAgain button.htile")[1].click();
-    /* plan version 8 (03 Nov 2026): a start tile lands on Order at its size, with no sheet and nothing in the basket */
-    const on = D.querySelector('#pPrices .szrow[data-q="2"]');
-    ok(on && D.activeElement === on && !D.getElementById("osheet") && !D.getElementById("pPrices").hidden && !D.getElementById("bkGo"), "and a tap lands on Order at that size, to choose the way there");
+    /* plan version 8 (03 Nov 2026): a start tile lands on Order at its size, with no sheet and nothing in the basket; version 9: the size is set on the book's stepper and the stepper has the focus */
+    const on = D.querySelector('#pPrices [data-st="val"]');
+    /* a board's value is an output, which takes no focus, so the focus claim is test/order-stream-p9-units.mjs's, on a grid; here the size, the row and the absence of a sheet */
+    ok(on && /^2 units?$/.test(on.textContent.trim()) && D.querySelector('#pPrices .szrow[data-q="2"]').getAttribute("aria-pressed") === "true" && !D.getElementById("osheet") && !D.getElementById("pPrices").hidden && !D.getElementById("bkGo"), "and a tap lands on Order with that size set on the stepper, to choose the way there: " + JSON.stringify([on && on.textContent, !!D.getElementById("osheet"), !!D.getElementById("bkGo")]));
   } finally { b.W.close(); }
   const c = await open({ owed: 250 });
   try {
@@ -41480,6 +41485,7 @@ await (async () => {
       "Place sends exactly the place and the line the check showed, and the stamp of the list it read (S4 4.2): " + JSON.stringify(posted.map((x) => [x.place, x.note, x.digest])));
     /* and the way back opens the form again, holding what was typed; once the placement has answered */
     for (let i = 0; i < 100 && d.getElementById("oPlace"); i++) await new Promise((r) => setTimeout(r, 50));
+    d.querySelector('#osheet [data-k="close"]').click();   /* plan version 9: a new sheet is built from Order, so the sent one is closed first */
     await startAt(d);
     spotAddTo(d, w, "Old market");
     d.getElementById("oGo").click();
@@ -43741,7 +43747,8 @@ await (async () => {
   });
   ok(headsW.length > 25 && !shortW.length, "and each of its " + headsW.length + " sections whole, every rule the system states in it (short: " + (shortW.join(" ") || "none") + ")");
   /* S2 fixes of 24 Sep 2026, each proved red by mutation on its own */
-  ok(!/font-size: [0-9.]+px/.test(R) && /\.salt-pill--md \{[^}]*font-size: 0\.875rem/.test(R),
+  /* plan version 9 (03 Nov 2026): the stepper's typed field is the one px size, 16px so a phone never zooms into it (salt-ds 1.23); every other recipe stays in rem */
+  ok(!/font-size: [0-9.]+px/.test(R.replace(/\n\.salt-stepper__input \{[^}]*\}/, "")) && /\.salt-pill--md \{[^}]*font-size: 0\.875rem/.test(R),
     "every recipe it carries sets its type in rem, so the pill, the field and the tabs grow with the prose beside them (S2R-2, U5)");
   ok(/\n\.salt-field__input:focus-visible \{[^}]*outline: 2px solid var\(--salt-brass\);[^}]*outline-offset: 2px;/.test(R) && !/--salt-focus-ring/.test(R),
     "and a focused field wears a 2px brass ring clear of its edge, a change of 3:1 (U1)");
@@ -48501,7 +48508,7 @@ await (async () => {
   await (await import("./counter-b-again.mjs")).run({ ok, pageWork });
 })();
 
-section("Counter Batch B: the basket's + and minus on Prices, taps on one mark summed at the sum's own figure, greyed past a price or at five open (P4)");
+section("Counter Batch B: the basket on Order, the limit said at five open and a sheet counted once, no product word, the gate (P4, re-aimed by plan version 9)");
 await (async () => {
   await (await import("./counter-b-plus.mjs")).run({ ok, pageWork });
 })();
@@ -48599,6 +48606,11 @@ await (async () => {
 section("v1399 One order stream, version 8: Order is where every order starts, and the sheet keeps the way, the place and the check (8a, 8b)");
 await (async () => {
   await (await import("./order-stream-p8-order.mjs")).run({ ok, pageWork });
+})();
+
+section("v1400 One order stream, version 9: a stepper a book walks its sealed sizes, and Add sets the basket's line (9b)");
+await (async () => {
+  await (await import("./order-stream-p9-units.mjs")).run({ ok, pageWork });
 })();
 
 section("Counter Batch C: the seal carries the spot's name and unit, a unit alone sealed as its own shape, nothing in the clear (P6)");

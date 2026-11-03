@@ -1,11 +1,5 @@
 [
   {
-    "name": "the bar adds the tapped size per tap",
-    "file": "stmt/page.js",
-    "find": "var sum=0, open=ls.some(function(x){ return x.t==null; }); ls.forEach(function(x){ if(x.t!=null) sum+=x.t; });",
-    "replace": "var sum=0, open=ls.some(function(x){ return x.t==null; }); ls.forEach(function(x){ var tt=bsTapsOf(x.P.product); if(tt) Object.keys(tt).forEach(function(q){ sum+=tt[q]*priceAt(x.P,+q); }); else if(x.t!=null) sum+=x.t; });"
-  },
-  {
     "name": "the bar adds a delivery",
     "file": "stmt/page.js",
     "find": "rm(+sum.toFixed(2)),bco.any?",

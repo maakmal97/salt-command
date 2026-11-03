@@ -111,11 +111,16 @@ export async function run({ ok, pageWork }) {
   const noInert = (pg) => !pg.d.querySelector("[inert]");
   /* a tap on a place writes that place into the address over the entry the page is on (the page's own replaceState), which drops the test's mark of the base entry: put it back */
   const tab = (pg, t) => { pg.d.querySelector('button[data-t="' + t + '"]').click(); pg.w.history.replaceState({ base: 1 }, ""); };
+  /* plan version 9: a sheet opens from the basket's Continue, a book's Add before it; the opener the focus comes back to is Continue. Continue reviews straight to the check, so the
+     form is stepped back to, where the note and the way are */
   const openRow = async (pg) => { tab(pg, "prices");
-    await until(() => pg.d.querySelector("#pPrices .szrow")); const row = pg.d.querySelector("#pPrices .szrow"); row.focus(); row.click();
-    await until(() => pg.d.getElementById("osheet")); return row; };
+    await until(() => pg.d.querySelector('#pPrices [data-st="add"]')); const add = pg.d.querySelector('#pPrices [data-st="add"]'); if (!add.disabled) add.click();
+    return reopen(pg); };
+  const reopen = async (pg) => { const go = pg.d.getElementById("bkGo"); go.focus(); go.click();
+    await until(() => pg.d.getElementById("osheet")); const back = pg.d.querySelector('#osheet [data-k="back"]'); if (back && !pg.d.getElementById("oGo")) back.click(); return go; };
   const openLimit = async (pg) => { tab(pg, "prices");
-    await until(() => pg.d.querySelector("#pPrices .szrow")); pg.d.querySelector("#pPrices .szrow").click();
+    /* plan version 9: at the limit a book's Add opens the limit step, as a size tapped did */
+    await until(() => pg.d.querySelector('#pPrices [data-st="add"]')); pg.d.querySelector('#pPrices [data-st="add"]').click();
     await until(() => pg.d.querySelector("#osheet .olim button")); return pg.d.querySelector("#osheet .olim button"); };
   const shown = (pg, id) => { const e = pg.d.getElementById(id); return !!e && !e.hidden; };
 
@@ -128,9 +133,9 @@ export async function run({ ok, pageWork }) {
     P.d.getElementById("oAddNote").click();
     const note = P.d.getElementById("oSay"); note.value = "gate code 4"; note.dispatchEvent(new P.w.Event("input", { bubbles: true }));
     await goBack(P); await until(() => !P.d.getElementById("osheet"));
-    ok(!P.d.getElementById("osheet") && stateIs(P, 0) && P.w.location.href === href0 && P.d.activeElement === row && noInert(P),
-      "Back closes the New order sheet, the page is back at its base entry, the focus is on the row that opened it and the page behind is let go: focus " + lbl(P.d.activeElement) + " row connected " + row.isConnected);
-    row.click(); await until(() => P.d.getElementById("osheet"));
+    ok(!P.d.getElementById("osheet") && stateIs(P, 0) && P.w.location.href === href0 && P.d.activeElement === P.d.getElementById("bkGo") && noInert(P),
+      "Back closes the New order sheet, the page is back at its base entry, the focus is on the Continue that opened it (drawn again on close) and the page behind is let go: focus " + lbl(P.d.activeElement));
+    await reopen(P);
     const kept = P.d.getElementById("oSay");
     ok(!!kept && kept.value === "gate code 4", "and what was typed in it is still there when it opens again: " + (kept ? JSON.stringify(kept.value) : "no note field"));
 

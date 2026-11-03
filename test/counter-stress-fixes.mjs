@@ -79,7 +79,8 @@ export async function run({ ok }) {
     await until(() => pg.d.querySelector('#pOrder [data-row="' + id + '"]')); pg.d.querySelector('#pOrder [data-row="' + id + '"]').click();
     await until(() => pg.d.querySelector('#pOrder .oscreen[data-order="' + id + '"]')); return pg.d.querySelector('#pOrder .oscreen[data-order="' + id + '"]'); };
   const openLimit = async (pg) => { pg.d.querySelector('button[data-t="prices"]').click();
-    await until(() => pg.d.querySelector("#pPrices .szrow")); pg.d.querySelector("#pPrices .szrow").click();
+    /* plan version 9: at the limit a book's Add opens the limit step, as a size tapped did */
+    await until(() => pg.d.querySelector('#pPrices [data-st="add"]')); pg.d.querySelector('#pPrices [data-st="add"]').click();
     await until(() => pg.d.querySelector("#osheet .olim button")); return pg.d.querySelector("#osheet .olim button"); };
   const payWays = [["the close orb", (pg) => pg.d.getElementById("payX").click()], ["the scrim", (pg) => pg.d.getElementById("payScrim").click()], ["Escape", (pg) => key(pg, "Escape")]];
   const sheetUp = (pg) => !pg.d.getElementById("paySheet").hidden;

@@ -9,7 +9,7 @@
  *   4  the check: Your credit, then You pay
  *   5  an order of theirs carrying credit the sealed figure does not hold yet is taken off; one it holds is not
  *   6  the order card: Paid by your credit, and still to pay less it */
-import { open, txt, ago, kl, LIST, ord } from "./counter-b-kit.mjs";
+import { open, txt, ago, kl, LIST, ord, stepTo } from "./counter-b-kit.mjs";
 
 const J = JSON.stringify;
 
@@ -26,7 +26,8 @@ export async function run({ ok, pageWork }) {
   const page = async (o) => { const p = await open(Object.assign({ pageWork }, o)); pages.push(p); return p; };
   const withCredit = (c, rows) => Object.assign(LIST(), { credit: c, creditRows: rows || [] });
   const pane = (p, i) => p.d.querySelectorAll("#pPrices .pgrid > .pane")[i];
-  const plus = (p, i, q) => pane(p, i).querySelector('[data-add="' + q + '"]');
+  /* plan version 9: a line is the book's stepper set to the amount, then Add */
+  const put = async (p, i, q) => { stepTo(p, ["salt", "oil"][i], q); pane(p, i).querySelector('[data-st="add"]').click(); await p.settle(); };
   const note = (p) => txt(p.d.querySelector("#bkBar .salt-kpi__note"));
   const firstPrice = (p) => txt(pane(p, 0).querySelector(".salt-ledger__value"));
   try {
@@ -35,9 +36,9 @@ export async function run({ ok, pageWork }) {
     ok(txt(A.d.getElementById("prCredit")) === "RM 25.00 credit comes off your next order" && firstPrice(A) === firstPrice(N) && !txt(N.d.getElementById("prCredit")),
       "Prices says RM 25.00 credit once at the top, every price as it was, and nothing with no credit: " + J([txt(A.d.getElementById("prCredit")), firstPrice(A), firstPrice(N)]));
     /* 3 */
-    plus(A, 0, 1).click();
+    await put(A, 0, 1);
     const B = await page({ list: withCredit(250) });
-    plus(B, 0, 1).click();
+    await put(B, 0, 1);
     ok(note(A) === "RM 25.00 credit off, you pay RM 75.00" && note(B) === "RM 100.00 credit off, you pay RM 0.00",
       "the bar takes the credit off the goods, what they pay never under RM 0: " + J([note(A), note(B)]));
     /* 4 */

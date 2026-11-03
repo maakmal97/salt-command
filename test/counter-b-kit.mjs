@@ -102,21 +102,57 @@ export function sizeRow(p, shape, q) {
   const pn = paneOf(docOf(p), shape);
   return !pn ? null : q == null ? pn.querySelector(".szrow") : [...pn.querySelectorAll(".szrow")].find((r) => r.getAttribute("data-q") === String(q)) || null;
 }
-/* tap one size: the sheet opens on that one line */
-export async function startAt(p, shape, q) {
-  const r = sizeRow(p, shape, q);
-  if (!r) throw new Error("no size row on Order for " + (shape || "the first product") + " " + q);
-  r.click();
-  if (p && p.settle) await p.settle();
-  return r;
+/* plan version 9: a book's stepper set to q, by its size in the fold, else walked there a step at a time */
+export function stepTo(p, shape, q) {
+  const pn = paneOf(docOf(p), shape);
+  if (!pn) throw new Error("no book on Order for " + shape);
+  const row = [...pn.querySelectorAll(".szrow[data-q]")].find((r) => r.getAttribute("data-q") === String(q));
+  if (row) { row.click(); return pn; }
+  const val = () => parseFloat(pn.querySelector('[data-st="val"]').textContent);
+  for (let i = 0; i < 1000 && Math.abs(val() - q) > 1e-6; i++) {
+    const btn = pn.querySelector('[data-st="' + (val() < q ? "more" : "less") + '"]');
+    if (!btn || btn.disabled) break;
+    btn.click();
+  }
+  if (Math.abs(val() - q) > 1e-6) throw new Error("the stepper does not reach " + q + " for " + shape);
+  return pn;
 }
-/* tap one size's plus, n times: the basket */
-export async function basketAdd(p, shape, q, n = 1) {
-  const pn = paneOf(docOf(p), shape), b = pn && [...pn.querySelectorAll(".szplus")].find((x) => x.getAttribute("data-add") === String(q));
-  if (!b) throw new Error("no plus on Order for " + shape + " " + q);
-  for (let i = 0; i < n; i++) b.click();
+/* the basket emptied, by each line's Remove: startAt leaves its size in the basket, so a check that builds a basket after one takes it out first */
+export function emptyBasket(p) {
+  const d = docOf(p);
+  for (let i = 0; i < 10; i++) { const x = d.querySelector("#pPrices [data-bkout]"); if (!x) break; x.click(); }
+}
+/* one size to order: the basket emptied, that size added, Continue; the sheet opens on that one line */
+export async function startAt(p, shape, q) {
+  const d = docOf(p), pn = paneOf(d, shape);
+  if (!pn) throw new Error("no book on Order for " + (shape || "the first product"));
+  /* a sheet still open (a sent one, a check) is closed first: a new sheet is built from Order, as New order replaced it before */
+  const open0 = d.querySelector('#osheet [data-k="close"]'); if (open0) open0.click();
+  emptyBasket(p);
+  stepTo(p, shape, q == null ? +pn.querySelector(".szrow[data-q]").getAttribute("data-q") : q);
+  const add = pn.querySelector('[data-st="add"]');
+  add.click();
+  /* at the limit Add opens the sheet's limit step itself */
+  if (d.getElementById("osheet")) { if (p && p.settle) await p.settle(); return add; }
+  const go = d.getElementById("bkGo");
+  if (!go || go.hidden || go.disabled) throw new Error("no Continue on Order after adding " + shape + " " + q);
+  go.click();
+  /* Continue reviews straight to the check when nothing is missing; a size tapped opened the form, so step back to it */
+  const back = d.querySelector('#osheet [data-k="back"]'); if (back && !d.getElementById("oGo")) back.click();
   if (p && p.settle) await p.settle();
-  return b;
+  return add;
+}
+/* n more of a size in the basket: its line set to what it held plus n times q */
+export async function basketAdd(p, shape, q, n = 1) {
+  const pn = paneOf(docOf(p), shape);
+  if (!pn) throw new Error("no book on Order for " + shape);
+  const ln = pn.querySelector(".bkline:not([hidden]) .bkline__t"), m = ln && /:\s*([0-9.]+)/.exec(ln.textContent);
+  const target = +((m ? +m[1] : 0) + q * n).toFixed(6);
+  stepTo(p, shape, target);
+  const add = pn.querySelector('[data-st="add"]');
+  if (!add.disabled) add.click();
+  if (p && p.settle) await p.settle();
+  return add;
 }
 /* the basket's Continue: the sheet opens on its lines */
 export async function toSheet(p) {
