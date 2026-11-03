@@ -35,11 +35,29 @@ export function makerGeoText(master) {
   return "// GENERATED from the incumbent Desk geography by tools/maker-geosync.mjs; never edit.\n"
     + "export const MAKER_GEO_JS = " + JSON.stringify(script) + ";\n";
 }
+/* 4 Nov 2026 (his word: one convention on every surface): the Desk's link reader alone, for the customer's page, which carries
+   no geography; one function, so a link reads alike on the Desk, Salt Admin and the Counter */
+const LINK_OUT = resolve(ROOT, "stmt", "place-link.js");
+export function placeLinkText(master) {
+  const scripts = [...master.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map((match) => match[1]).join("\n");
+  const tree = ts.createSourceFile("desk.js", scripts, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const fn = (name) => {
+    const hits = [];
+    const walk = (node) => { if (ts.isFunctionDeclaration(node) && node.name?.getText(tree) === name) hits.push(node); ts.forEachChild(node, walk); };
+    walk(tree);
+    if (hits.length !== 1) throw new Error("Expected one incumbent link declaration: " + name);
+    return hits[0].getText(tree);
+  };
+  const script = "(function(){\n" + fn("mapsLink") + "\n" + fn("geohashPoint") + "\nreturn mapsLink;\n})()";
+  return "// GENERATED from the Desk's mapsLink by tools/maker-geosync.mjs; never edit.\n"
+    + "export const PLACE_LINK_JS = " + JSON.stringify(script) + ";\n";
+}
 export function syncMakerGeo(master) {
   writeFileSync(OUT, makerGeoText(master));
+  writeFileSync(LINK_OUT, placeLinkText(master));
 }
 export function checkMakerGeo(master) {
-  return readFileSync(OUT, "utf8") === makerGeoText(master);
+  return readFileSync(OUT, "utf8") === makerGeoText(master) && readFileSync(LINK_OUT, "utf8") === placeLinkText(master);
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const master = readFileSync(resolve(ROOT, "master", "salt_command.html"), "utf8");

@@ -22280,17 +22280,25 @@ function colWidth(){
    apostrophe, so an apostrophe belongs to the link, and only at its end is it a quote around it (F14 review). */
 function mapsLink(text){
   const s=String(text==null?'':text).trim(),m=/https?:\/\/[^\s<>"]+/i.exec(s);
-  if(!m)return null;
-  let u;try{u=new URL(m[0].replace(/[)\].,;!?']+$/,''));}catch(e){return null;}
-  const dec=x=>{try{return decodeURIComponent(String(x).replace(/\+/g,' '));}catch(e){return String(x);}};
   const pt=(a,b)=>(Number.isFinite(a)&&Number.isFinite(b)&&Math.abs(a)<=90&&Math.abs(b)<=180&&(a||b))?{lat:Math.round(a*1e6)/1e6,lng:Math.round(b*1e6)/1e6}:null;
   const pair=t=>{const x=/^\s*(-?\d{1,3}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)\s*$/.exec(t==null?'':String(t));return x?pt(+x[1],+x[2]):null;};
+  /* 4 Nov 2026 (his word: one convention on every surface): two figures alone, with their decimals, are a pin, as a phone's
+     own location is written into the field and as some share them */
+  if(!m){const f=/^(-?\d{1,2}\.\d{3,})\s*,\s*(-?\d{1,3}\.\d{3,})$/.exec(s),p=f&&pt(+f[1],+f[2]);return p?{lat:p.lat,lng:p.lng,addr:null,src:'pin'}:null;}
+  let u;try{u=new URL(m[0].replace(/[)\].,;!?']+$/,''));}catch(e){return null;}
+  const dec=x=>{try{return decodeURIComponent(String(x).replace(/\+/g,' '));}catch(e){return String(x);}};
   const q=k=>u.searchParams.get(k);
   const words=t=>{const w=String(t==null?'':t).replace(/\s+/g,' ').trim();return w&&/\p{L}/u.test(w)&&!pair(w)&&!/\d\s*°/.test(w)?w.slice(0,200):null;};
   const before=words(s.slice(0,m.index).replace(/^\s*(use waze to drive to|drive to|meet me at|here'?s my location|my location|dropped pin)\b\s*:?/i,'').replace(/[\s:,'"-]+$/,''));
   const h=u.hostname.toLowerCase();
   if(u.protocol!=='https:'&&u.protocol!=='http:')return null;
   if(h==='maps.app.goo.gl')return (u.protocol==='https:'&&!u.username&&!u.password&&!u.port&&/^\/[A-Za-z0-9_-]{1,64}$/.test(u.pathname))?{short:u.origin+u.pathname+u.search,addr:before}:null;
+  /* 4 Nov 2026: Google's older short form and Apple's (an iPhone's share), and an Apple place page with no point, hold nothing
+     until opened, which the Worker's one opener does (stmt/place.js mapsOpen, the hosts it names and no other) */
+  const plain=u.protocol==='https:'&&!u.username&&!u.password&&!u.port;
+  if(h==='goo.gl'&&/^\/maps\/[A-Za-z0-9_-]{1,64}$/.test(u.pathname)||h==='maps.apple'&&/^\/p\/[A-Za-z0-9._~-]{1,80}$/.test(u.pathname))
+    return plain?{short:u.origin+u.pathname+u.search,addr:before}:null;
+  if(h==='maps.apple.com'&&q('place-id')&&!['ll','coordinate','q','sll','daddr'].some(k=>pair(q(k))))return plain?{short:u.href,addr:before}:null;
   const google=/^(www\.|maps\.)?google\.(com|com?\.[a-z]{2}|[a-z]{2})$/.test(h)&&(h.indexOf('maps.')===0||/^\/maps(\/|$)/.test(u.pathname));
   const src=google?'google':/(^|\.)waze\.com$/.test(h)?'waze':h==='maps.apple.com'?'apple':null;
   if(!src)return null;

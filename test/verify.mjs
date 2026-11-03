@@ -46257,6 +46257,13 @@ await (async () => {
     const after = calls.length;
     answer = () => new Response("a page, not a redirect", { status: 200 });
     const noRedir = await post({ url: SHORT });
+    /* 4 Nov 2026 (his word: one convention on every surface): Apple's short link, an iPhone's share, and Google's older form open
+       through the one opener (stmt/place.js mapsOpen), each hop checked again, as on Salt Admin */
+    const APPLE_TO = "https://maps.apple.com/place?coordinate=3.0738,101.7255&name=Kedai";
+    answer = () => new Response(null, { status: 302, headers: { location: APPLE_TO } });
+    const apple = await post({ url: "https://maps.apple/p/AbCd.12" });
+    answer = () => new Response(null, { status: 302, headers: { location: TO } });
+    const older = await post({ url: "https://goo.gl/maps/AbCd12" });
     let getSt = -1;
     try { getSt = (await deskW.fetch(req("/geo/expand", { headers: { "X-Salt-Key": KEY } }), env)).status; } catch (e) { getSt = -1; }
     back();
@@ -46266,6 +46273,8 @@ await (async () => {
     ok(after === before && badSt.every((s) => s === 400), "F14: any other host, scheme, port or credential is refused with 400 and nothing is fetched: " + JSON.stringify(badSt) + ", fetched " + (after - before));
     ok(noRedir.status === 502 && noRedir.j && noRedir.j.ok === false && !("location" in noRedir.j), "F14: a link that does not redirect answers no location: " + JSON.stringify(noRedir));
     ok(getSt === 405, "F14: a GET of /geo/expand is not a way in: " + getSt);
+    ok(apple.status === 200 && apple.j && apple.j.location === APPLE_TO && older.status === 200 && older.j && older.j.location === TO,
+      "F14 (4 Nov 2026): an Apple short link and Google's older short form open to the page holding the point: " + JSON.stringify([apple, older]));
     ok(kv.puts === 0 && kv.m.size === 0, "F14: nothing reached KV across every call: " + kv.puts + " write(s), " + kv.m.size + " key(s)");
     ok(!logged.some((l) => /AbCd|Kedai|goo\.gl|google/.test(l)), "F14: and nothing about the link was logged: " + logged.length + " line(s)");
   } finally { globalThis.fetch = realFetch; back(); }

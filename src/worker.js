@@ -20,6 +20,7 @@
 import { runDrafter, dryRunDrafter, readBook, readMirror, bookOnce, withDraftLots, withRefunds, draftRow, tripCheck, bindBook, wayBound } from "./drafter.js";
 import { bookDirect, compareReads, readMode, versionToken, snapshotWithSource, tokenFrom, BOOK_TOKEN } from "./book-read.js";
 import { drainOutbox } from "./outbox.js";
+import { mapsOpen } from "../stmt/place.js";
 import { pageMode, servedBook } from "./book-page.js";
 import { bookTap, bookNet, ridStmts, voidEntries, voidUnlessApproved, tapMode, sourceMode, noteFallback, TAP_COLS } from "./book-tap.js";
 import { compactAndMark } from "./book-compact.js";
@@ -2101,28 +2102,16 @@ async function handleVaultKey(env, m) {
  * desk reads as it reads any link. Only https://maps.app.goo.gl/<id> is opened: any other host, scheme, port or a
  * credential is refused before a fetch is made, so this is never a door to anywhere else. Nothing is stored and nothing is
  * logged: the link rides in the body, which the invocation log does not keep, and traces are off (wrangler.jsonc). Google
- * is an allowed service, and a redirect needs no key. */
-function shortMapsUrl(s) {
-  if (typeof s !== "string" || s.length > 300) return null;
-  let u;
-  try { u = new URL(s.trim()); } catch (e) { return null; }
-  return (u.protocol === "https:" && u.hostname === "maps.app.goo.gl" && !u.username && !u.password && !u.port
-    && /^\/[A-Za-z0-9_-]{1,64}$/.test(u.pathname)) ? u.origin + u.pathname + u.search : null;
-}
+ * is an allowed service, and a redirect needs no key.
+ * 4 Nov 2026 (his word: one convention on every surface): the opener is the Counter's own, stmt/place.js mapsOpen, a pure
+ * module with the fetch passed in, so a short link opens alike on the Desk, Salt Admin and the Counter: Google's two short
+ * forms and Apple's (an iPhone's share), each hop checked against those hosts again, an Apple place page read for its point. */
 async function handleGeoExpand(request) {
   let b = null;
   try { b = await request.json(); } catch (e) { return json({ ok: false, error: "bad json" }, 400); }
-  const u = shortMapsUrl(b && b.url);
-  if (!u) return json({ ok: false, error: "only a maps.app.goo.gl link is opened here" }, 400);
-  let res;
-  try { res = await fetch(u, { method: "GET", redirect: "manual", signal: AbortSignal.timeout(8000) }); }
-  catch (e) { return json({ ok: false, error: "the link did not answer" }, 502); }
-  try { if (res.body) await res.body.cancel(); } catch (e) { /* nothing to free */ }
-  const loc = res.status >= 300 && res.status < 400 ? res.headers.get("location") : null;
-  let to = null;
-  try { to = loc ? new URL(loc, u) : null; } catch (e) { to = null; }
-  if (!to || (to.protocol !== "https:" && to.protocol !== "http:")) return json({ ok: false, error: "the link did not lead to a map" }, 502);
-  return json({ ok: true, location: to.href });
+  const out = await mapsOpen(b && b.url, fetch);
+  if (!out.ok) return json({ ok: false, error: out.error }, out.status || 502);
+  return json({ ok: true, location: out.location });
 }
 
 /* THE LEDGER STORE, READ ONLY (v294).
