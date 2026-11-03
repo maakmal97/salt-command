@@ -1,0 +1,58 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-03T04:40:39.518Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "qty": 5,
+    "total": 35,
+    "cash": 0,
+    "date": "2026-11-03",
+    "customer": "CS11-AMP",
+    "product": "rice",
+    "rids": [],
+    "booked_seq": 86
+   },
+   "reasoning": "Fulfilment against CS11-AMP's order of 5 unit for RM 35 agreed 2026-11-03. RM 35 and 0 unit move on 2026-11-03, against RM 35 and 5 unit outstanding. Leaves RM 0 and 5 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [],
+   "amends": "s324",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-11-03T04:40:39.518Z",
+    "type": "SELL",
+    "party": "CS11-AMP",
+    "qty": 0,
+    "total": 35,
+    "status": "Payment",
+    "by": "customer",
+    "raw": "Payment of RM 35 on CS11-AMP, order 20261103041936-r5eszg, by qr via maybank",
+    "payload": {
+     "mode": "amend",
+     "kind": "Fulfilment",
+     "direction": "SELL",
+     "party": "CS11-AMP",
+     "rid": null,
+     "orderKey": "CS11-AMP|2026-11-03|35|rice",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-11-03",
+     "qty": 0,
+     "total": 0,
+     "cash": 35,
+     "kg": 0,
+     "note": "Paid on the statements site, order 20261103041936-r5eszg, by qr via maybank."
+    },
+    "orderId": "20261103041936-r5eszg",
+    "claim": true,
+    "claimOf": "2026-11-03T04:40:39.518Z"
+   },
+   "decidedAt": "2026-11-03T04:48:13.525Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
