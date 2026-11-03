@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="4e82725510d6ad12";
+var SALT_BUILD_ID="a4977b01566c74a0";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -11676,7 +11676,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1417","d":"03 Nov 2026","t":"THREE PAID PURCHASES FOLDED: SALT, OIL AND GAS FROM TWO SUPPLIERS","n":["<b>THREE PAID BUYS FOLDED, ALL APPROVED BY COUNTER ADMIN.</b> Salt: 25 unit from SA5-BTR for RM1400 (p050), dated 02 Nov. Oil: 50 unit from SP7-PUD for RM380 (p051). Gas: 1 unit from SP7-PUD for RM70 (p052), both dated 03 Nov. Each was paid and delivered in full. The drafter raised no flag on any of them, and nothing is left outstanding on any row.","<b>UNUSUAL: THE GAS RATE.</b> The gas is RM70 a unit, above the RM50 a unit paid on the two earlier gas buys and above the top of SP7-PUD's range of 7 to 50. The dossier gives no quote and no reason for it. The salt and oil match the quotes of 23 Sep. The salt lot landed at RM56 a unit, the same as the stock cost, so the basis stays."]}];
+const evolution=[{"v":"v1418","d":"03 Nov 2026","t":"THE EXACT SPOT READS WHAT PHONES SHARE","n":["<b>EXACT SPOT.</b> A shared location is read from an Apple Maps link, a link pasted after the place's name, maps.google.com's ?q and two figures alone, not only a bare Google Maps or Waze link; the field and its refusal name Apple Maps.","<b>SALT ADMIN.</b> A short Google or Apple link a customer shared opens to Maps at its point on the order card, through the same road as Shop's points; one that will not open says so and is asked again after five minutes.","<b>THE SHEET.</b> A choice tapped on the order sheet (Deliver, A friend, a window) keeps the sheet where it was scrolled instead of throwing it back to the top. No route, price or book changed."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11824,7 +11824,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='03 Nov 2026, 23:26 KL';
+const LAST_UPDATED='03 Nov 2026, 23:38 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
