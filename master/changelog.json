@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1395",
+  "d": "03 Nov 2026",
+  "t": "A PENDING SALT ORDER FOR CS11-AMP, NOTHING PAID OR MOVED",
+  "n": [
+   "<b>ONE PENDING SALE FOLDED.</b> CS11-AMP ordered 1 unit of salt at RM130 through the statements site on 03 Nov 2026, order 20261103041924-bmjlca. Nothing was paid and nothing handed over, so the row is pending. It is the party's first order on the book, so there is no history to compare it with.",
+   "<b>INVENTORY UNCHANGED.</b> The row draws no stock and books no revenue until something moves. Stock stays at 6 units and the cost basis stays at RM56 per unit."
+  ]
+ },
+ {
   "v": "v1394",
   "d": "03 Nov 2026",
   "t": "CS11-AMP REGISTERED AS A CUSTOMER ON SALT ADMIN",
