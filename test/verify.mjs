@@ -50470,6 +50470,11 @@ await (async () => {
   await (await import("./admin-orders-count.mjs")).run({ ok, pageWork });
 })();
 
+section("4 Nov 2026: every sale row carries the road it came by, stamped by the fold and the tap, shown on Salt Admin and the Desk");
+await (async () => {
+  await (await import("./ledger-road.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin uses the width: two panes from 860px with nothing open by itself, and every rule of it under .adm (12 Oct 2026)");
 await (async () => {
   await (await import("./admin-tablet.mjs")).run({ ok, pageWork });

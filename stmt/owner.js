@@ -5737,7 +5737,8 @@ export const OWNER_JS = `
       hand.appendChild(handSaid); card.appendChild(hand);
     }
     if(t.owed>0.004) tripPayBlock(card,t,key);
-    card.appendChild(detailBox('trip.details',key,[['Order',t.trip],['Day',t.date?fmtWhen(t.date):'']].concat(t.lines.map(function(l){ return ['Row',l.rid]; }))));
+    var roads=t.lines.map(roadWord).filter(function(w,i,a){ return w&&a.indexOf(w)===i; });
+    card.appendChild(detailBox('trip.details',key,[['Order',t.trip],['Day',t.date?fmtWhen(t.date):''],['Road',roads.join(', ')]].concat(t.lines.map(function(l){ return ['Row',l.rid]; }))));
     makerCardFoot(card,acts,key,false,false);
     return card;
   }
@@ -5747,6 +5748,9 @@ export const OWNER_JS = `
   /* 22 Oct 2026 (his word): a unit the fold raised says which it is, on the row and its card */
   var REWARD_WORD={associate:'Associate reward', loyal:'Loyalty unit'};
   var ROW_STAGE={confirmed:['brass','Agreed','tick'], paid:['verdigris','Out or paid','ticks'], done:['mist','Done','ticks'], ended:['mist','Ended','cross']};
+  /* 4 Nov 2026 (his answer A to the ledger conventions): THE ROAD AN ORDER CAME BY, the engine's ROADS word, on the row's card and the trip's details */
+  var ROAD_WORD={site:'Site order', admin:'Salt Admin entry', desk:'Desk entry', hand:'Hand fold', fold:'Fold-raised unit'};
+  function roadWord(r){ return (r&&ROAD_WORD[r.road])||''; }
   function rowCard(root,e){
     var r=e.row, key=e.id, card=makerCard(root,key), acts=el('div','maker-foot__acts'), live=!r.cancelled&&!r.writtenOff;
     card.setAttribute('data-in',e.parts); card.setAttribute('data-row',r.rid);
@@ -5755,7 +5759,9 @@ export const OWNER_JS = `
     title.appendChild(document.createTextNode(' '+units(r.qty)+', '+rm(r.total)+(r.delivery>0.004?' + '+rm(r.delivery):'')));
     card.appendChild(title);
     var st=r.cancelled?['mist','Cancelled','cross']:r.writtenOff?['mist','Written off','cross']:ROW_STAGE[r.stage]||['mist',String(r.stage)], head=el('p','lead');
-    head.appendChild(stageChip(st)); if(r.reward){ head.appendChild(document.createTextNode(' ')); head.appendChild(chip('verdigris',REWARD_WORD[r.reward])); } card.appendChild(head);
+    head.appendChild(stageChip(st)); if(r.reward){ head.appendChild(document.createTextNode(' ')); head.appendChild(chip('verdigris',REWARD_WORD[r.reward])); }
+    else if(roadWord(r)){ head.appendChild(document.createTextNode(' ')); var rc=chip('steel',roadWord(r)); rc.setAttribute('data-road',r.road); head.appendChild(rc); }
+    card.appendChild(head);
     if(r.reward) card.appendChild(el('p','salt-insight',REWARD_WORD[r.reward]+' for '+r.rewardOf+', at cost and free to them: it goes with that order or their next salt handover.'));
     card.appendChild(metrics([['Owed',rm(r.owed)],['Paid',rm(r.paid)],['Handed',String(+(+r.handed||0).toFixed(3))+' of '+units(r.qty)]]));
     if(r.waiting>0) card.appendChild(el('p','salt-insight','As it will stand once '+(r.waiting===1?'the move':'the '+r.waiting+' moves')+' waiting under Approve '+(r.waiting===1?'is':'are')+' approved.'));
