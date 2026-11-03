@@ -1,6 +1,6 @@
 {
-  "v": "v1413",
-  "derivedFrom": "cf3a441e7072a668",
+  "v": "v1417",
+  "derivedFrom": "988d8621db0965dc",
   "tables": {
     "sales": {
       "rows": 327,
@@ -352,11 +352,11 @@
       }
     },
     "purchases": {
-      "rows": 49,
+      "rows": 52,
       "fields": {
         "amend": {
           "present": 9,
-          "of": 49,
+          "of": 52,
           "optional": true,
           "types": [
             "array"
@@ -364,7 +364,7 @@
         },
         "cancelled": {
           "present": 1,
-          "of": 49,
+          "of": 52,
           "optional": true,
           "types": [
             "boolean"
@@ -372,15 +372,15 @@
         },
         "cancelledOn": {
           "present": 1,
-          "of": 49,
+          "of": 52,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "cash": {
-          "present": 44,
-          "of": 49,
+          "present": 47,
+          "of": 52,
           "optional": true,
           "types": [
             "number"
@@ -388,15 +388,15 @@
         },
         "cost": {
           "present": 1,
-          "of": 49,
+          "of": 52,
           "optional": true,
           "types": [
             "number"
           ]
         },
         "date": {
-          "present": 49,
-          "of": 49,
+          "present": 52,
+          "of": 52,
           "optional": false,
           "types": [
             "string"
@@ -404,7 +404,7 @@
         },
         "defaulted": {
           "present": 1,
-          "of": 49,
+          "of": 52,
           "optional": true,
           "types": [
             "boolean"
@@ -412,15 +412,15 @@
         },
         "freight": {
           "present": 21,
-          "of": 49,
+          "of": 52,
           "optional": true,
           "types": [
             "number"
           ]
         },
         "handover": {
-          "present": 17,
-          "of": 49,
+          "present": 20,
+          "of": 52,
           "optional": true,
           "types": [
             "string"
@@ -428,23 +428,23 @@
         },
         "mod": {
           "present": 4,
-          "of": 49,
+          "of": 52,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "note": {
-          "present": 35,
-          "of": 49,
+          "present": 38,
+          "of": 52,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "paidOn": {
-          "present": 38,
-          "of": 49,
+          "present": 41,
+          "of": 52,
           "optional": true,
           "types": [
             "string"
@@ -452,71 +452,71 @@
         },
         "pending": {
           "present": 1,
-          "of": 49,
+          "of": 52,
           "optional": true,
           "types": [
             "boolean"
           ]
         },
         "product": {
-          "present": 16,
-          "of": 49,
+          "present": 18,
+          "of": 52,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "qty": {
-          "present": 49,
-          "of": 49,
+          "present": 52,
+          "of": 52,
           "optional": false,
           "types": [
             "number"
           ]
         },
         "receivedOn": {
-          "present": 44,
-          "of": 49,
+          "present": 47,
+          "of": 52,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "receivedQty": {
-          "present": 38,
-          "of": 49,
+          "present": 41,
+          "of": 52,
           "optional": true,
           "types": [
             "number"
           ]
         },
         "rid": {
-          "present": 49,
-          "of": 49,
+          "present": 52,
+          "of": 52,
           "optional": false,
           "types": [
             "string"
           ]
         },
         "status": {
-          "present": 49,
-          "of": 49,
+          "present": 52,
+          "of": 52,
           "optional": false,
           "types": [
             "string"
           ]
         },
         "supplier": {
-          "present": 49,
-          "of": 49,
+          "present": 52,
+          "of": 52,
           "optional": false,
           "types": [
             "string"
           ]
         },
         "total": {
-          "present": 49,
-          "of": 49,
+          "present": 52,
+          "of": 52,
           "optional": false,
           "types": [
             "number"
