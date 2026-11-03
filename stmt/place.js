@@ -16,7 +16,7 @@
  * suite drives both with no network. Imports nothing (nothing under stmt/ imports from src/, tools/ or a node builtin). */
 
 const MAX_HOPS = 3, PAGE_BYTES = 400000, TIMEOUT = 8000;
-const AGENT = "SaltAdmin/1 (owner place search; contact through the site's owner)";
+const AGENT = "SaltPlaces/1 (place search and map links; contact through the site's owner)";
 
 function clean(s) {
   if (typeof s !== "string" || s.length > 400) return null;

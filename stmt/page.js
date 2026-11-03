@@ -4972,7 +4972,7 @@ const CLIENT_JS = `
     var r=null; try{ r=placeLink(t); }catch(e){ r=null; }
     if(!r) return null;
     if(r.short) return /^https:[/][/]/.test(r.short)&&r.short.length<=600?{link:r.short, src:'link'}:null;
-    return pinPt(r.lat,r.lng)?{lat:r.lat, lng:r.lng, src:'link'}:null;
+    return pinPt(r.lat,r.lng)?{lat:r.lat, lng:r.lng, src:r.src==='pin'?'pin':'link'}:null;
   }
   function pinHere(){
     var g=null; try{ g=navigator.geolocation; }catch(e){}
@@ -4996,7 +4996,7 @@ const CLIENT_JS = `
     var f=el('div','salt-field opin');
     var lb=el('label','salt-field__label',tw('sh.pinT')); lb.htmlFor='oPinUrl'; f.appendChild(lb);
     if(draft.pin){
-      f.appendChild(el('span','salt-field__hint',draft.pin.src==='search'&&draft.pinPlace?tw('sh.pinOkFound',{p:draft.pinPlace}):tw(draft.pin.link?'sh.pinOkLink':'sh.pinOk')));
+      f.appendChild(el('span','salt-field__hint',draft.pin.src==='search'&&draft.pinPlace?tw('sh.pinOkFound',{p:draft.pinPlace}):tw(draft.pin.src==='pin'?'sh.pinOkFigures':draft.pin.link?'sh.pinOkLink':'sh.pinOk')));
       var off=el('button','salt-ghost',tw('sh.pinOff')); off.type='button'; off.id='oPinOff'; off.setAttribute('data-k','pinoff');
       off.addEventListener('click',function(){ draft.pin=null; draft.pinMsg=''; draft.pinPlace=''; sheetDraw(); });
       f.appendChild(off); return f;
@@ -5023,8 +5023,8 @@ const CLIENT_JS = `
         (act&&typeof actSearch==='function'?actSearch(w):api('/place/search',{q:w})).then(function(r){
           if(mine!==pinSeq||!li.isConnected) return;
           draft.pinPend=false;
-          var b=r&&r.body||{}, l=b.ok&&Array.isArray(b.places)?b.places.slice(0,5):null;
-          shown(l||[],l?(l.length?'':tw('sh.pinNone')):tw('sh.pinDown'));
+          var b=r&&r.body||{}, l=b.ok&&Array.isArray(b.places)?b.places.slice(0,5):null, st=r&&r.status;
+          shown(l||[],l?(l.length?'':tw('sh.pinNone')):st===429?tw('sh.pinWait429'):st===400?tw('sh.pinNone'):tw('sh.pinDown'));
         },function(){ if(mine===pinSeq&&li.isConnected){ draft.pinPend=false; shown([],tw('sh.pinDown')); } });
       },350);
     }
@@ -5033,7 +5033,7 @@ const CLIENT_JS = `
       clearTimeout(pinTimer); draft.pinQ=v;
       if(p){ pinSeq++; draft.pin=p; draft.pinMsg=''; draft.pinPlace=''; draft.pinQ=''; draft.pinPend=false; sheetDraw(); return; }
       var w=String(v||'').replace(/ {2,}/g,' ').trim();
-      if(w.length<3||/^https?:/i.test(w)){ pinSeq++; draft.pinPend=false; shown([],''); return; }
+      if(w.length<3||/^https?:/i.test(w)||/^-?[0-9.]+ *, *-?[0-9.]+$/.test(w)){ pinSeq++; draft.pinPend=false; shown([],''); return; }
       look(w);
     });
     li.addEventListener('change',function(){ var v=String(li.value||'').trim(); if(/^https?:/i.test(v)&&!pinRead(v)){ draft.pinMsg=tw('sh.pinBad'); hint.textContent=draft.pinMsg; } });
@@ -5052,7 +5052,7 @@ const CLIENT_JS = `
      nowhere. A store that throws leaves the sheet as it was before them: the area field and the exact spot. */
   var SPOT_MAX=3, SPOT_NAMES=['sp.shop','sp.store','sp.warehouse'];
   function spotKey(){ return 'salt-spots:'+user; }
-  function spotPt(p){ return !!p&&typeof p==='object'&&(p.src==='gps'||p.src==='link'||p.src==='search')&&(pinPt(p.lat,p.lng)||typeof p.link==='string'); }
+  function spotPt(p){ return !!p&&typeof p==='object'&&(p.src==='gps'||p.src==='link'||p.src==='search'||p.src==='pin')&&(pinPt(p.lat,p.lng)||typeof p.link==='string'); }
   function spotOk(s){ return !!s&&typeof s.id==='string'&&typeof s.label==='string'&&s.label.trim().length>0&&typeof s.place==='string'&&s.place.trim().length>=2; }
   function spotsRead(){
     try{ var v=JSON.parse(localStorage.getItem(spotKey())||'[]');

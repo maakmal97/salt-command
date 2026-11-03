@@ -162,6 +162,8 @@ export async function run({ ok }) {
   const long = pinRead("Our shop is the blue door beside the bakery. ".repeat(16) + "https://www.google.com/maps?q=3.0738,101.7255");
   ok(order && order.lat === 3.1 && order.lng === 101.6 && long && long.lat === 3.0738,
     "P3 an Apple link reads ll before q and the view's sll, and a share of 700 words' worth of text before its link is still read: " + JSON.stringify([order, long]));
+  /* P5 (Fable's review): two figures typed are a point of their own kind, so the sheet says so rather than "your link" */
+  ok(pinRead("3.0738, 101.7255").src === "pin" && pinRead("https://www.google.com/maps?q=3.0738,101.7255").src === "link", "P5 two figures read as a point, a link as a link");
 
   const ck = await C.contentKey("test-secret", U);
   const list = { at: "2026-10-10T03:59:00Z", digest: "dp1", week: { label: "5 to 11 Oct 2026", monday: "2026-10-05" }, soon: [],
@@ -249,7 +251,11 @@ export async function run({ ok }) {
     d.getElementById("spAdd").click(); await wait(() => !!d.getElementById("spName"));
     await new Promise((r) => setTimeout(r, 200)); d.querySelector('#osheet [data-k="spn:0"]').click();
     await wait(() => !!d.getElementById("oPinUrl"));
-    const pu = d.getElementById("oPinUrl"); pu.value = "Taman Ulv"; pu.dispatchEvent(new E.w.Event("input", { bubbles: true }));
+    const pu = d.getElementById("oPinUrl");
+    /* P5 (Fable's review): figures still being typed are never sent to the search */
+    pu.value = "3.07, 101"; pu.dispatchEvent(new E.w.Event("input", { bubbles: true })); await new Promise((r) => setTimeout(r, 450));
+    ok(searched.length === 0, "P5 figures still being typed ask no search: " + JSON.stringify(searched));
+    pu.value = "Taman Ulv"; pu.dispatchEvent(new E.w.Event("input", { bubbles: true }));
     const hit = await wait(() => d.querySelector('#osheet [data-k="pinhit:0"]'));
     ok(!!hit && searched.length === 1 && JSON.stringify(searched[0]) === JSON.stringify({ q: "Taman Ulv" }) && /Taman Ulvar/.test(hit.textContent),
       "P4 three letters and a pause ask our own place search with the words alone, and the places found stand as rows: " + JSON.stringify(searched));

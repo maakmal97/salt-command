@@ -537,6 +537,8 @@ export const EN = {
   "sh.pinNone": "No place found, so paste a map link instead.",
   "sh.pinDown": "The place search is not answering, so paste a map link instead.",
   "sh.pinOkFound": "{p} is ready, sealed on this phone so only we can open it.",
+  "sh.pinOkFigures": "Your point is ready, sealed on this phone so only we can open it.",
+  "sh.pinWait429": "Too many searches just now, so wait a minute or paste a map link.",
   "sh.pinHint": "Sealed on this phone, so only we can open it.",
   "sh.pinWait": "Reading your location.",
   "sh.pinOk": "Your location is ready, sealed on this phone so only we can open it.",
