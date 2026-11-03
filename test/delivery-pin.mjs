@@ -140,6 +140,11 @@ export async function run({ ok }) {
   const ap = pinRead("https://maps.apple/p/AbCdEf.12"), named = pinRead("Kedai Ali https://maps.app.goo.gl/AbCdEf123.");
   ok(ap && ap.link === "https://maps.apple/p/AbCdEf.12" && !("lat" in ap) && named && named.link === "https://maps.app.goo.gl/AbCdEf123",
     "P2 an Apple short link is kept as the link, and a short link after the place's name is read without the words or the full stop: " + JSON.stringify([ap, named]));
+  /* Fable's review: Apple's pin before its view, whatever the order of the query, and a long share message is read for its link */
+  const order = pinRead("https://maps.apple.com/?sll=3.5,101.5&q=3.0738,101.7255&ll=3.1,101.6");
+  const long = pinRead("Our shop is the blue door beside the bakery. ".repeat(16) + "https://www.google.com/maps?q=3.0738,101.7255");
+  ok(order && order.lat === 3.1 && order.lng === 101.6 && long && long.lat === 3.0738,
+    "P3 an Apple link reads ll before q and the view's sll, and a share of 700 words' worth of text before its link is still read: " + JSON.stringify([order, long]));
 
   const ck = await C.contentKey("test-secret", U);
   const list = { at: "2026-10-10T03:59:00Z", digest: "dp1", week: { label: "5 to 11 Oct 2026", monday: "2026-10-05" }, soon: [],

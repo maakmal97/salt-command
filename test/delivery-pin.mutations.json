@@ -24,9 +24,11 @@
  {"name": "a plain http link is read", "file": "stmt/page.js", "find": "m=/^https:[/][/]([a-z0-9.-]+)", "replace": "m=/^https?:[/][/]([a-z0-9.-]+)"},
  {"name": "the check does not say the spot", "file": "stmt/page.js", "find": "    if(c.mode==='deliver'&&(c.pin||c.pinKept)) row(", "replace": "    if(false) row("},
  {"name": "a refusal to share says nothing", "file": "stmt/page.js", "find": "      if(p){ draft.pin=p; draft.pinMsg=''; } else draft.pinMsg=tw('sh.pinNo');", "replace": "      if(p){ draft.pin=p; draft.pinMsg=''; } else draft.pinMsg='';"},
- {"name":"an Apple Maps link reads nothing (4 Nov 2026)","file":"stmt/page.js","find":"    if(host==='maps.apple.com'){ x=new RegExp('[?&](ll|sll|coordinate|q)='+num+'(,|%2C)'+num).exec(path); return x?pt(x[2],x[4]):null; }\n","replace":""},
+ {"name":"an Apple Maps link reads nothing (4 Nov 2026)","file":"stmt/page.js","find":"    if(host==='maps.apple.com'){ var ak=['ll','coordinate','q','sll'];","replace":"    if(false){ var ak=['ll','coordinate','q','sll'];"},
  {"name":"an Apple short link is refused (4 Nov 2026)","file":"stmt/page.js","find":"    if(host==='maps.apple'&&/^[/]p[/][A-Za-z0-9._~-]{1,80}$/.test(path)) return {link:'https://'+host+path, src:'link'};\n","replace":""},
  {"name":"a link after words is refused (4 Nov 2026)","file":"stmt/page.js","find":"var s=(/https:[/][/][^ <>\"]+/i.exec(t)||[''])[0].replace(/[),.;!?']+$/,''),","replace":"var s=t,"},
  {"name":"two figures alone read nothing (4 Nov 2026)","file":"stmt/page.js","find":"    if(two) return pinPt(+two[1],+two[2])?{lat:+two[1], lng:+two[2], src:'link'}:null;\n","replace":""},
- {"name":"maps.google.com needs /maps (4 Nov 2026)","file":"stmt/page.js","find":"(host.indexOf('maps.')===0||/^[/]maps/.test(path))","replace":"/^[/]maps/.test(path)"}
+ {"name":"maps.google.com needs /maps (4 Nov 2026)","file":"stmt/page.js","find":"(host.indexOf('maps.')===0||/^[/]maps/.test(path))","replace":"/^[/]maps/.test(path)"},
+ {"name":"Apple reads the view before the pin (4 Nov 2026)","file":"stmt/page.js","find":"var ak=['ll','coordinate','q','sll'];","replace":"var ak=['sll','q','coordinate','ll'];"},
+ {"name":"a long share is refused whole (4 Nov 2026)","file":"stmt/page.js","find":"if(!t||t.length>4000) return null;","replace":"if(!t||t.length>600) return null;"}
 ]

@@ -4970,14 +4970,17 @@ const CLIENT_JS = `
      read off its ll or coordinate, Apple's short link kept as a link for Salt Admin to open, and two figures taken as they are */
   function pinRead(v){
     var t=String(v||'').split('').map(function(c){ return c.charCodeAt(0)<33?' ':c; }).join('').trim();
-    if(!t||t.length>600) return null;
+    if(!t||t.length>4000) return null;
     var two=/^(-?[0-9]{1,2}[.][0-9]{3,})[ ]*,[ ]*(-?[0-9]{1,3}[.][0-9]{3,})$/.exec(t);
     if(two) return pinPt(+two[1],+two[2])?{lat:+two[1], lng:+two[2], src:'link'}:null;
     var s=(/https:[/][/][^ <>"]+/i.exec(t)||[''])[0].replace(/[),.;!?']+$/,''), m=/^https:[/][/]([a-z0-9.-]+)([/?][^ ]*)?$/i.exec(s);
-    if(!m) return null;
+    if(!m||s.length>600) return null;
     var host=m[1].toLowerCase(), path=m[2]||'', num='(-?[0-9]{1,3}[.][0-9]+)', x;
     function pt(a,b){ a=+a; b=+b; return pinPt(a,b)?{lat:a, lng:b, src:'link'}:null; }
-    if(host==='maps.apple.com'){ x=new RegExp('[?&](ll|sll|coordinate|q)='+num+'(,|%2C)'+num).exec(path); return x?pt(x[2],x[4]):null; }
+    /* the pin itself first, as the Desk's mapsLink reads it: ll, coordinate, then q, and sll (the view) last */
+    if(host==='maps.apple.com'){ var ak=['ll','coordinate','q','sll'];
+      for(var ai=0;ai<ak.length;ai++){ x=new RegExp('[?&]'+ak[ai]+'='+num+'(,|%2C)'+num).exec(path); if(x) return pt(x[1],x[3]); }
+      return null; }
     if(host==='maps.apple'&&/^[/]p[/][A-Za-z0-9._~-]{1,80}$/.test(path)) return {link:'https://'+host+path, src:'link'};
     if(/(^|[.])google[.][a-z.]+$/.test(host)&&(host.indexOf('maps.')===0||/^[/]maps/.test(path))){
       x=new RegExp('!3d'+num+'!4d'+num).exec(path); if(x) return pt(x[1],x[2]);
