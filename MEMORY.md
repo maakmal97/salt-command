@@ -290,6 +290,9 @@
 ## The Desk's tab icon is the gold cube (v1415)
 - Live as v1415 (`8cc3a74d`, 03 Nov 2026; Cloud commit `41647079660`: chain green with "The phone is serving it", three suite parts green; CI `41647079705` green), his word: the tab showed the crystal retired at v472 (v1248 ran the stale `tools/make_icons.py`) while the home-screen plates and the rail drew the gold cube. `make_icons.py` now writes `icon-tab.png` alone, from the rail's own mark, and never the plates (those come from `Code\salt-ds\brand\assets`); shell cache v10. The Counter and Salt Admin keep their ring marks (not touched).
 
+## Salt Admin's Orders count is every open order (v1416)
+- Live as v1416 (`a485eea7`, 03 Nov 2026; Cloud commit `41663107601`: chain and three suite parts green; CI `41663107587` verify green), his "Yes, fix it here" after his screenshot of CN3-WM's row s182 and trip s235+s236 standing in Open, owing, uncounted. Since 17 Oct 2026 Open listed book rows, trips and same days as orders while `drawCounts` counted site orders alone. `ordOpenCount` in `stmt/owner.js` counts both, a done, ended or practice one apart; `drawCounts` paints it (every orders read redraws the bars after the list, so `paintOrdCounts` needs no copy: its mutation went unnoticed and was dropped). Section "3 Nov 2026: Salt Admin's Orders count" (`test/admin-orders-count.mjs`, 3 checks, 5 mutations red); needles re-aimed in admin-needs and admin-orders, each proved red.
+
 ## Disabled automation
 - `Salt fold (manual backup)` = `trig_01UrnjQMWA3f6GXN5R6Dzi4S`, disabled.
 
