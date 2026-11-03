@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1420",
+  "d": "04 Nov 2026",
+  "t": "ONE PLACE FIELD ON EVERY SURFACE",
+  "n": [
+   "<b>ONE READER.</b> A map link is read by one reader on the Desk, Salt Admin and Salt Counter: Google Maps, Waze and Apple Maps, the link out of the words around it, two typed figures as a point; every short link (Google's two forms and Apple's) is opened by one opener, so the Desk now follows an iPhone's share too.",
+   "<b>SALT COUNTER.</b> The exact spot is one field: type three letters to pick from OpenStreetMap, paste a map link or type two figures, or Use my location; only the typed words go to the search, and the spot stays sealed on the phone.",
+   "<b>SALT ADMIN.</b> Add ID, Amend ID and a filed place take the same field as Shop's points: search, a pasted link or two figures, and Use my location on all four.",
+   "Routes: the Counter's new POST /place/search on a customer's session, thirty a minute; the Desk's /geo/expand opens Apple's and Google's older short links. No price or book changed."
+  ]
+ },
+ {
   "v": "v1419",
   "d": "04 Nov 2026",
   "t": "TWO SALT SALES BOOKED, BOTH PAID AND DELIVERED",

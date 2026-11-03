@@ -11474,7 +11474,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1419","d":"04 Nov 2026","t":"TWO SALT SALES BOOKED, BOTH PAID AND DELIVERED","n":["<b>FOLDED: TWO NEW SALT SALES, BOTH APPROVED BY COUNTER ADMIN.</b> CM4-MK took 4 unit for RM380 on 01 Nov, and CN3-WM-R took 2 unit for RM220 goods plus RM25 delivery on 31 Oct. Both were paid and delivered in full on their dates, so nothing is left outstanding on either. Each is a plain append to sales with its own note, and no amendment or correction is in the batch.","<b>UNUSUAL AND INVENTORY:</b> the only flag is on CN3-WM-R, booked as R2 because CN3-WM buys to sell on. Both rows carry cost at RM56 a unit, the inventory's own rate, so no cost is overridden. Salt moves out by 4 unit and 2 unit and no lot landed, so the cost basis is unchanged."]}];
+const evolution=[{"v":"v1420","d":"04 Nov 2026","t":"ONE PLACE FIELD ON EVERY SURFACE","n":["<b>ONE READER.</b> A map link is read by one reader on the Desk, Salt Admin and Salt Counter: Google Maps, Waze and Apple Maps, the link out of the words around it, two typed figures as a point; every short link (Google's two forms and Apple's) is opened by one opener, so the Desk now follows an iPhone's share too.","<b>SALT COUNTER.</b> The exact spot is one field: type three letters to pick from OpenStreetMap, paste a map link or type two figures, or Use my location; only the typed words go to the search, and the spot stays sealed on the phone.","<b>SALT ADMIN.</b> Add ID, Amend ID and a filed place take the same field as Shop's points: search, a pasted link or two figures, and Use my location on all four.","Routes: the Counter's new POST /place/search on a customer's session, thirty a minute; the Desk's /geo/expand opens Apple's and Google's older short links. No price or book changed."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11622,7 +11622,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='04 Nov 2026, 01:01 KL';
+const LAST_UPDATED='04 Nov 2026, 01:30 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
