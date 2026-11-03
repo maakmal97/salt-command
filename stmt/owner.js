@@ -2850,7 +2850,7 @@ export const OWNER_JS = `
       reading=Object.assign({},full,{addr:reading.addr||full.addr});
     }
     if(!reading||reading.lat==null&&!reading.addr)
-      throw new Error('Paste a Maps or Waze link with a point or address, or leave it empty.');
+      throw new Error('Search for the place, paste a map link, or leave it empty.');
     return {addr:reading.addr||null,lat:reading.lat,lng:reading.lng,src:reading.src,at:new Date().toISOString()};
   }
   /* what is on file for a party, in the Desk's words: whether a point is held, from where and on which Kuala Lumpur day, never the address */
@@ -3168,7 +3168,7 @@ export const OWNER_JS = `
     var idName=makerField(id,['Name','record.add-id.name'],'text',''), idPlace=makerLocalityField(id,'record.add-id.place');
     idPlace.placeholder='TBC if blank';   /* 27 Oct 2026: the row holds its field alone; the hint is the field's */
     var idGate=makerVaultGate(id);
-    var idLink=makerField(id,['Map link','record.add-id.link'],'text','');idLink.placeholder='Google Maps or Waze';
+    var idLink=makerField(id,['Map link','record.add-id.link'],'text','');placeAssist(idLink,{id:'makerIdLink',act:'record.add-id.link'});
     var driftBooks=books.filter(function(item){return item.drift;});
     var idDrifts=driftBooks.map(function(item){
       var presets=item.driftPresets||[];
@@ -3296,7 +3296,7 @@ export const OWNER_JS = `
     var amendParty=addSelect(amend,['Who','record.amend-id.party'],partyItems), amendName=makerField(amend,['Name','record.amend-id.name'],'text',''),
       amendPlace=makerLocalityField(amend,'record.amend-id.place'), amendGate=makerVaultGate(amend),
       amendStatus=makerStatus(amend), amendBusy=false;
-    var amendLink=makerField(amend,['Map link','record.amend-id.link'],'text','');amendLink.placeholder='Google Maps or Waze';
+    var amendLink=makerField(amend,['Map link','record.amend-id.link'],'text','');placeAssist(amendLink,{id:'makerAmendLink',act:'record.amend-id.link'});
     /* the code after the change, as Save the change works it out (25 Oct 2026, his Ask J): unchanged where the name and place keep it */
     var amendCode=codeLine(amend,'Code after');
     var drawAmendCode=function(){ var from=amendParty.value, to=amendName.value.trim()&&amendPlace.value.trim()?makerDerivedCode(amendName.value.trim(),amendPlace.value.trim(),from.charAt(0)==='S'?'supplier':'customer',catalog.parties||[],from):null;
@@ -3339,7 +3339,7 @@ export const OWNER_JS = `
         if(!makerVault||!placeParty.value) return;
         gate.appendChild(el('p','msg',Object.hasOwn(makerVault.places,placeParty.value)?'A place is filed for them'+makerPlaceSaid(makerVault.places[placeParty.value])+' Filing a new link replaces it.':'No place is filed for them yet.'));
       }), placeStatus=makerStatus(placement), placeBusy=false;
-    var placeLocality=makerLocalityField(placement,'record.place.locality'), placeLink=makerField(placement,['New map link','record.place.link'],'text','');placeLink.placeholder='Google Maps or Waze';
+    var placeLocality=makerLocalityField(placement,'record.place.locality'), placeLink=makerField(placement,['New map link','record.place.link'],'text','');placeAssist(placeLink,{id:'makerPlaceLink',act:'record.place.link'});
     var placeDraft=null;
     pairDrafts.push({draft:function(){return placeDraft;},clear:function(){placeDraft=null;}});
     placement.addEventListener('input',function(){placeDraft=null;});
@@ -6766,11 +6766,43 @@ export const OWNER_JS = `
     /* 26 Oct 2026, his word ("type it and the relevant recommended place from OpenStreetMap appears"): three letters or more, a moment's pause,
        and up to five places stand as rows under Place, each its name and where it is; a tap (or the arrows and Enter) puts its point in
        Place and names it in the line under the list. A link or two figures are read as before. Escape or a fresh word closes the list. */
-    var found=el('div','apoints-found'); found.id='makerPointsFound'; found.setAttribute('role','listbox'); found.setAttribute('aria-label','Places found');
-    where.setAttribute('role','combobox'); where.setAttribute('aria-autocomplete','list'); where.setAttribute('aria-expanded','false'); where.setAttribute('aria-controls','makerPointsFound');
-    where.setAttribute('autocomplete','off'); where.setAttribute('spellcheck','false');
+    var picked=placeAssist(where,{id:'makerPoints',act:'points',keep:true});
+    var put=actOn(el('button','salt-settings__row salt-settings__row--action'),'points.add'); put.type='button'; put.appendChild(el('span','salt-settings__label','Add point')); add.appendChild(put);
+    put.addEventListener('click',async function(){
+      if(put.disabled) return;
+      var c=String(code.value||'').trim().toUpperCase(), place=null;
+      put.disabled=true;
+      try{ place=await pointPlace(where.value); }catch(e){ put.disabled=false; pointsSaid(null,e); return; }
+      put.disabled=false;
+      if(!/^[A-Z][0-9]{1,2}$/.test(c)){ pointsSaid('A code is one capital letter and one or two digits, such as A2.'); return; }
+      if(!place){ pointsSaid('Give the place as two figures, latitude then longitude, or paste a Maps link with a point.'); return; }
+      if(list.some(function(p){ return p.code===c; })){ pointsSaid('Point '+c+' is on the list already.'); return; }
+      if(list.length>=20){ pointsSaid('Twenty points at most.'); return; }
+      list.push({code:c,lat:place.lat,lng:place.lng}); makerPointsDraft=list; drawMakerPoints(); pointsSaid('Point '+c+' added. Save to keep it.');
+    });
+    root.appendChild(add);
+    root.appendChild(picked);
+    root.appendChild(el('p','salt-settings__foot','Type a place, or paste a Google Maps, Waze or Apple Maps link.'));
+    var saveRow=el('div','apoints-save'); root.appendChild(saveRow);
+    makerButton(saveRow,['Save the points','points.save'],function(){
+      return refs('/all/maker/points',{list:list}).then(function(value){ makerPoints=value; makerPointsDraft=null; drawMakerPoints(); pointsSaid('Points saved.'); })
+        .catch(function(error){ pointsSaid(null,error); });
+    },true);
+  }
+  /* 4 Nov 2026 (his answers: one convention on every surface): ONE PLACE FIELD. Shop's points were the first (26 Oct 2026, his word "type it and
+     the relevant recommended place from OpenStreetMap appears"): three letters or more, a moment's pause, and up to five places stand as rows under
+     the field, each its name and where it is; a tap (or the arrows and Enter) puts its point in the field as two figures and names it in the line
+     under the list; Escape or a fresh word closes the list. A pasted map link or two figures are read as before, by the one reader. Use my location
+     puts this phone's point there the same way. Add ID, Amend ID and a filed place take it too, and the customer's spot is the same field */
+  function placeAssist(where,o){
+    var found=el('div','apoints-found'); found.id=o.id+'Found'; found.setAttribute('role','listbox'); found.setAttribute('aria-label','Places found');
+    where.setAttribute('role','combobox'); where.setAttribute('aria-autocomplete','list'); where.setAttribute('aria-expanded','false'); where.setAttribute('aria-controls',o.id+'Found');
+    where.setAttribute('autocomplete','off'); where.setAttribute('spellcheck','false'); where.placeholder='Search, or paste a link';
     where.closest('label').after(found);
-    var picked=el('p','salt-settings__foot apoints-picked'); picked.setAttribute('role','status');
+    var here=actOn(el('button','salt-settings__row salt-settings__row--action apoints-here'),o.act+'.here'); here.type='button'; here.appendChild(el('span','salt-settings__label','Use my location'));
+    found.after(here);
+    var picked=el(o.keep?'p':'div',o.keep?'salt-settings__foot apoints-picked':'salt-settings__row salt-settings__row--muted apoints-picked'); picked.setAttribute('role','status');
+    if(!o.keep) here.after(picked);
     var seq=0, timer=null, hits=[], at=-1;
     var shut=function(){ found.textContent=''; hits=[]; at=-1; where.setAttribute('aria-expanded','false'); where.removeAttribute('aria-activedescendant'); };
     var choose=function(i){ var h=hits[i]; if(!h) return; where.value=h.lat.toFixed(5)+', '+h.lng.toFixed(5); picked.textContent=h.name+(h.where?', '+h.where:''); shut(); where.focus(); };
@@ -6778,7 +6810,7 @@ export const OWNER_JS = `
     var draw=function(list,note){
       found.textContent=''; hits=list||[]; at=-1;
       hits.forEach(function(h,i){
-        var r=actOn(el('button','salt-settings__row salt-settings__row--action apoints-hit'),'points.found',String(i)); r.type='button'; r.tabIndex=-1; r.id='makerPointsHit'+i; r.setAttribute('role','option'); r.setAttribute('aria-selected','false');
+        var r=actOn(el('button','salt-settings__row salt-settings__row--action apoints-hit'),o.act+'.found',String(i)); r.type='button'; r.tabIndex=-1; r.id=o.id+'Hit'+i; r.setAttribute('role','option'); r.setAttribute('aria-selected','false');
         r.appendChild(el('span','salt-settings__label',h.name)); if(h.where) r.appendChild(el('span','salt-settings__value',h.where));
         r.addEventListener('mousedown',function(e){ e.preventDefault(); }); r.addEventListener('click',function(){ choose(i); }); found.appendChild(r);
       });
@@ -6801,27 +6833,18 @@ export const OWNER_JS = `
       else if(e.key==='Enter'&&at>=0){ e.preventDefault(); choose(at); }
       else if(e.key==='Escape'){ e.preventDefault(); shut(); }
     });
-    var put=actOn(el('button','salt-settings__row salt-settings__row--action'),'points.add'); put.type='button'; put.appendChild(el('span','salt-settings__label','Add point')); add.appendChild(put);
-    put.addEventListener('click',async function(){
-      if(put.disabled) return;
-      var c=String(code.value||'').trim().toUpperCase(), place=null;
-      put.disabled=true;
-      try{ place=await pointPlace(where.value); }catch(e){ put.disabled=false; pointsSaid(null,e); return; }
-      put.disabled=false;
-      if(!/^[A-Z][0-9]{1,2}$/.test(c)){ pointsSaid('A code is one capital letter and one or two digits, such as A2.'); return; }
-      if(!place){ pointsSaid('Give the place as two figures, latitude then longitude, or paste a Maps link with a point.'); return; }
-      if(list.some(function(p){ return p.code===c; })){ pointsSaid('Point '+c+' is on the list already.'); return; }
-      if(list.length>=20){ pointsSaid('Twenty points at most.'); return; }
-      list.push({code:c,lat:place.lat,lng:place.lng}); makerPointsDraft=list; drawMakerPoints(); pointsSaid('Point '+c+' added. Save to keep it.');
+    /* his phone's point, read once and fresh, put in the field as two figures */
+    here.addEventListener('click',function(){
+      var g=null; try{ g=navigator.geolocation; }catch(e){}
+      if(!g||typeof g.getCurrentPosition!=='function'){ picked.textContent='This device does not share its location.'; return; }
+      here.disabled=true; picked.textContent='Reading your location.'; ++seq; clearTimeout(timer);
+      g.getCurrentPosition(function(pos){
+        here.disabled=false; var c=pos&&pos.coords, la=c?+c.latitude:NaN, ln=c?+c.longitude:NaN;
+        if(!isFinite(la)||!isFinite(ln)||Math.abs(la)>90||Math.abs(ln)>180){ picked.textContent='Your location could not be read.'; return; }
+        shut(); where.value=la.toFixed(5)+', '+ln.toFixed(5); picked.textContent='Your location, where you stand.';
+      },function(){ here.disabled=false; picked.textContent='Your location was not shared.'; },{enableHighAccuracy:true, maximumAge:0, timeout:15000});
     });
-    root.appendChild(add);
-    root.appendChild(picked);
-    root.appendChild(el('p','salt-settings__foot','Type a place, or paste a Google Maps, Waze or Apple Maps link.'));
-    var saveRow=el('div','apoints-save'); root.appendChild(saveRow);
-    makerButton(saveRow,['Save the points','points.save'],function(){
-      return refs('/all/maker/points',{list:list}).then(function(value){ makerPoints=value; makerPointsDraft=null; drawMakerPoints(); pointsSaid('Points saved.'); })
-        .catch(function(error){ pointsSaid(null,error); });
-    },true);
+    return picked;
   }
   function pointsSaid(text,error){
     var line=document.getElementById('makerPointsMessage');

@@ -19,5 +19,9 @@
  {"name":"U2 the place is not named","file":"stmt/owner.js","find":"picked.textContent=h.name+(h.where?', '+h.where:''); shut();","replace":"shut();"},
  {"name":"U3 the arrows do not move","file":"stmt/owner.js","find":"      if(e.key==='ArrowDown'){ e.preventDefault(); mark((at+1)%hits.length); }","replace":""},
  {"name":"U3 Escape leaves the list","file":"stmt/owner.js","find":"      else if(e.key==='Escape'){ e.preventDefault(); shut(); }","replace":""},
- {"name":"U4 a short link is not opened","file":"stmt/owner.js","find":"    if(opaque){ var opened=await refs('/all/maker/geo/open',{url:opaque});","replace":"    if(false){ var opened=await refs('/all/maker/geo/open',{url:opaque});"}
+ {"name":"U4 a short link is not opened","file":"stmt/owner.js","find":"    if(opaque){ var opened=await refs('/all/maker/geo/open',{url:opaque});","replace":"    if(false){ var opened=await refs('/all/maker/geo/open',{url:opaque});"},
+ {"name":"Use my location fills nothing (4 Nov 2026)","file":"stmt/owner.js","find":"        shut(); where.value=la.toFixed(5)+', '+ln.toFixed(5);","replace":"        shut();"},
+ {"name":"Add ID keeps its old link field (4 Nov 2026)","file":"stmt/owner.js","find":"placeAssist(idLink,{id:'makerIdLink',act:'record.add-id.link'});","replace":""},
+ {"name":"Amend ID keeps its old link field (4 Nov 2026)","file":"stmt/owner.js","find":"placeAssist(amendLink,{id:'makerAmendLink',act:'record.amend-id.link'});","replace":""},
+ {"name":"a filed place keeps its old link field (4 Nov 2026)","file":"stmt/owner.js","find":"placeAssist(placeLink,{id:'makerPlaceLink',act:'record.place.link'});","replace":""}
 ]

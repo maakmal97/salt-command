@@ -159,5 +159,25 @@ export async function run({ ok, pageWork }) {
     byAct(p.d, "points.add").click(); await new Promise((d) => setTimeout(d, 30)); await p.work.quiet();
     ok(JSON.stringify(opened) === JSON.stringify([{ url: "https://maps.apple/p/AbC.dEf" }]) && [...p.d.querySelectorAll("#makerPoints [data-point]")].map(t).join() === "C4"
       && /3[.]14883, 101[.]71343/.test(t(p.d.getElementById("makerPoints"))), "Add point with an Apple short link opens it on the Worker and adds its point");
+    /* U5 to U7 (4 Nov 2026, his answers: one convention on every surface): Use my location beside the field, and the same field on Add ID,
+       Amend ID and a filed place */
+    const asked = [];
+    Object.defineProperty(p.w.navigator, "geolocation", { configurable: true, value: { getCurrentPosition(okf, nof, opts) { asked.push(opts); okf({ coords: { latitude: 3.0738, longitude: 101.7255 } }); } } });
+    byAct(p.d, "points.here").click(); await p.work.quiet();
+    ok(place().value === "3.07380, 101.72550" && asked.length === 1 && asked[0].maximumAge === 0 && /Your location/.test(t(p.d.querySelector(".apoints-picked"))),
+      "U5 Use my location reads the phone once, fresh, and puts its point in Place as two figures: " + JSON.stringify([place().value, asked]));
+    byAct(p.d, "nav.record").click(); await p.work.quiet(); byAct(p.d, "part.record.customers").click(); await p.work.quiet();
+    const form = (title) => [...p.d.querySelectorAll("#makerInputs section.maker-input")].find((s) => s.querySelector("h3").textContent === title) || null;
+    const fields = [["New customer", "record.add-id.link", "makerIdLinkFound"], ["Change a name or place", "record.amend-id.link", "makerAmendLinkFound"], ["Place on the map", "record.place.link", "makerPlaceLinkFound"]];
+    const seen = fields.map(([title, act, id]) => { const f = form(title), i = f && byAct(f, act), h = f && byAct(f, act.replace(/[.]link$/, ".link.here"));
+      return !!i && i.getAttribute("role") === "combobox" && i.placeholder === "Search, or paste a link" && !!h && !!p.d.getElementById(id); });
+    ok(seen.every(Boolean), "U6 Add ID, Amend ID and a filed place each take the one place field, search and Use my location: " + JSON.stringify(seen));
+    const idl = byAct(form("New customer"), "record.add-id.link"), before = searched.length;
+    idl.value = "Pavi"; idl.dispatchEvent(new p.w.Event("input", { bubbles: true })); await pause();
+    const hit = p.d.querySelector("#makerIdLinkFound [role=option]");
+    if (hit) { hit.click(); await p.work.quiet(); }
+    byAct(form("Change a name or place"), "record.amend-id.link.here").click(); await p.work.quiet();
+    ok(searched.length === before + 1 && idl.value === "3.14915, 101.71295" && byAct(form("Change a name or place"), "record.amend-id.link").value === "3.07380, 101.72550",
+      "U7 a place searched on Add ID puts its point there, and Use my location on Amend ID its own: " + JSON.stringify([idl.value, searched.length - before]));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 }
