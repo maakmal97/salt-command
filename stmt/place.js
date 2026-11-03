@@ -40,6 +40,9 @@ const okPoint = (p) => !!p && Number.isFinite(p[0]) && Number.isFinite(p[1]) && 
 function landed(u) {
   const h = u.hostname.toLowerCase();
   if (/^(www\.|maps\.)?google\.(com|com?\.[a-z]{2}|[a-z]{2})$/.test(h)) return true;
+  /* 4 Nov 2026 (one opener for every surface, the Desk's included): a Waze link carrying its point is a landing too, as the Desk's
+     one-hop follower took it; it is never fetched, only answered */
+  if (/(^|\.)waze\.com$/.test(h) && okPoint(pairIn(u.searchParams.get("ll")))) return true;
   return h === "maps.apple.com" && ["coordinate", "ll", "sll"].some((k) => okPoint(pairIn(u.searchParams.get(k))));
 }
 async function hop(fetchFn, u) {

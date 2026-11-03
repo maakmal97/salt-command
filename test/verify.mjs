@@ -50162,7 +50162,8 @@ await (async () => {
     const addFields = addId.querySelectorAll("input:not([type=radio])");
     addFields[0].value = "Amy"; addFields[1].value = "Kuala Lumpur";
     addFields[2].value = "Secret Way https://waze.com/ul?ll=3.123456,101.654321";
-    addId.querySelector("button").click();
+    /* 4 Nov 2026: the forms' sends are pressed by their acts; the one place field's Use my location now stands before them */
+    addId.querySelector('[data-act="record.add-id.send"]').click();
     ok(await adminWork.quiet(), "the device-side Add ID encryption and Desk write finish");
     const sentAddId = adminCalls.find((call) => call.route === "/all/maker/inputs/add-id");
     let openedNames = null;
@@ -50191,10 +50192,10 @@ await (async () => {
       "Counter Add ID provides the incumbent official locality choices rather than a free-text-only place field");
     tile(addId, "Role", "downstream");
     addFields[0].value = "Ari"; addFields[1].value = "Kuala Lumpur"; addFields[2].value = "";
-    addId.querySelector("button").click();
+    addId.querySelector('[data-act="record.add-id.send"]').click();
     ok(await adminWork.quiet(), "the downstream ID write finishes");
     tile(addId, "Role", "bucket");
-    addId.querySelector("button").click();
+    addId.querySelector('[data-act="record.add-id.send"]').click();
     ok(await adminWork.quiet(), "the resale bucket write finishes");
     const addRequests = adminCalls.filter((call) => call.route === "/all/maker/inputs/add-id");
     ok(addRequests.length === 3 && addRequests[1].body.code === "CX1-AB-1-KL"
@@ -50207,7 +50208,7 @@ await (async () => {
     const amendId = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Change a name or place");
     const amendFields = amendId.querySelectorAll("input");
     amendFields[0].value = "Ben"; amendFields[1].value = "Pudu";
-    amendId.querySelector("button").click();
+    amendId.querySelector('[data-act="record.amend-id.send"]').click();
     ok(await adminWork.quiet(), "the device-side Amend ID encryption and Desk write finish");
     const sentAmendId = adminCalls.find((call) => call.route === "/all/maker/inputs/amend-id");
     ok(sentAmendId && sentAmendId.body.from === "CX1-AB" && sentAmendId.body.to === "CB3-PUD"
@@ -50221,7 +50222,7 @@ await (async () => {
       && !JSON.stringify(sentAmendId.body).includes("Private Road"),
       "Amend ID preserves exact points, addresses and base only inside the re-keyed ciphertext, including descendant codes");
     const placement = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Place on the map");
-    placement.querySelector("button").click();
+    placement.querySelector('[data-act="record.place.send"]').click();
     ok(await adminWork.quiet(), "the encrypted map point opens and queues");
     const sentPlacement = adminCalls.find((call) => call.route === "/all/maker/inputs/place");
     ok(sentPlacement && JSON.stringify(sentPlacement.body.places) === JSON.stringify({ "CX1-AB": [3.12, 101.69, "Pudu"] })
@@ -50230,7 +50231,7 @@ await (async () => {
     const placeTexts = placement.querySelectorAll('input[type="text"]');
     placeTexts[0].value = "Pudu";
     placeTexts[1].value = "https://www.google.com/maps/place/Invented+Road/data=!3d3.234567!4d101.765432";
-    placement.querySelector("button").click();
+    placement.querySelector('[data-act="record.place.send"]').click();
     ok(await adminWork.quiet(), "the new device-side map filing settles");
     const newPlacement = adminCalls.filter((call) => call.route === "/all/maker/inputs/place").at(-1);
     const mapFiled = newPlacement?.body.addrVault ? await openFixture(newPlacement.body.addrVault, "name-pass") : {};
@@ -50242,7 +50243,7 @@ await (async () => {
       && !JSON.stringify(newPlacement.body).includes("3.234567"),
       "Network placement can file a new Maps address and exact point encrypted while queueing only its official locality point");
     placeTexts[0].value = "Jalan Foo, Pudu";
-    placement.querySelector("button").click();
+    placement.querySelector('[data-act="record.place.send"]').click();
     ok(await adminWork.quiet(), "the street-and-locality placement settles");
     const streetPlacement = adminCalls.filter((call) => call.route === "/all/maker/inputs/place").at(-1);
     ok(JSON.stringify(streetPlacement?.body.places) === JSON.stringify({ "CX1-AB": [3.13, 101.72, "Pudu"] })
@@ -50250,7 +50251,7 @@ await (async () => {
       "a typed street, Locality files the matched locality and the phone keeps no street word");
     const placesBefore = adminCalls.filter((call) => call.route === "/all/maker/inputs/place").length;
     placeTexts[0].value = "Jalan Foo Cheras";
-    placement.querySelector("button").click();
+    placement.querySelector('[data-act="record.place.send"]').click();
     ok(await adminWork.quiet(), "the street-only placement settles");
     const cherasCalls = adminCalls.filter((call) => call.route === "/all/maker/inputs/place");
     ok(cherasCalls.slice(placesBefore).every((call) => call.body.places["CX1-AB"][2] === "Cheras")
@@ -50261,7 +50262,7 @@ await (async () => {
     devicePairRevision = 10; devicePairConflict = true;
     tile(addId, "Role", "customer");
     addFields[0].value = "Zora"; addFields[1].value = "Pudu"; addFields[2].value = "";
-    addId.querySelector("button").click();
+    addId.querySelector('[data-act="record.add-id.send"]').click();
     ok(await adminWork.quiet(), "the device CAS conflict returns without losing the form");
     const firstPairInput = adminCalls.filter((call) => call.route === "/all/maker/inputs/add-id" && call.body?.pair).at(-1);
     const reloadRecord=JSON.parse(admin.window.localStorage.getItem("saltMakerPending:/all/maker/inputs/add-id")||"null");
@@ -50274,7 +50275,7 @@ await (async () => {
       && addFields[1].value === "Pudu" && devicePairRevision === 11,
       "Counter device sends one consistent names/places revision and retains its form after a stale CAS");
     const pairWritesBeforeReview = adminCalls.filter((call) => call.route === "/all/maker/inputs/add-id").length;
-    addId.querySelector("button").click();
+    addId.querySelector('[data-act="record.add-id.send"]').click();
     ok(await adminWork.quiet(), "declining the device overlap review settles");
     ok(deviceSheets.length === 1 && devicePairRevision === 11
       && adminCalls.filter((call) => call.route === "/all/maker/inputs/add-id").length === pairWritesBeforeReview
@@ -50282,7 +50283,7 @@ await (async () => {
       "Counter device overlap Cancel keeps its retained intent and submits no replacement pair or input: "
       + JSON.stringify({prompts:deviceSheets.length,revision:devicePairRevision,status:addId.querySelector('[role=\"status\"]')?.textContent,
         calls:adminCalls.slice(-6).map(c=>({route:c.route,revision:c.body?.pair?.expectedRevision}))}));
-    deviceConflictChoice = true;addId.querySelector("button").click();
+    deviceConflictChoice = true;addId.querySelector('[data-act="record.add-id.send"]').click();
     ok(await adminWork.quiet(), "explicit device overlap approval writes the rebased pair");
     const reviewedPairInput = adminCalls.filter((call) => call.route === "/all/maker/inputs/add-id" && call.body?.pair).at(-1);
     const reviewedNames = reviewedPairInput?.body?.pair?.names ? await openFixture(reviewedPairInput.body.pair.names, "name-pass") : {};
