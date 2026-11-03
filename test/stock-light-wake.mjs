@@ -76,24 +76,24 @@ export async function wiring({ ok, run55, wr55, site0, K55 }) {
     const said1 = await run55(["--no-retire"], wr55(s1, new Map(), c1), K55);
     const lights = (() => { try { return JSON.parse(s1.get("stocklights")); } catch (e) { return null; } })();
     ok(said1.includes("returned") && c1.includes("kv key get stocklights") && lights && Object.keys(lights).length > 0
-      && Object.values(lights).every((l) => ["green", "yellow", "red"].includes(l)) && posts.length === 0,
+      && Object.values(lights).every((l) => ["green", "yellow", "amber", "red"].includes(l)) && posts.length === 0,
       "a first priced publish reads the last lights, finds none, writes this run's under stocklights and posts nothing: " + JSON.stringify({ lights, posts, said: said1.slice(-1) }));
 
-    /* the publish that turns one: the frozen book may be green throughout, so this run reads its first book yellow (main's `lit`),
-       over last lights holding that book green */
-    const first = Object.keys(lights || {})[0], turn = { lit: (s) => Object.assign({}, s, { [first]: { light: "yellow", by: null } }) };
-    const turned = JSON.stringify(Object.assign({}, lights, { [first]: "yellow" }));
+    /* the publish that turns one: the frozen book may be green throughout, so this run reads its first book amber (main's `lit`),
+       over last lights holding that book green (04 Nov 2026: amber, low on stock, is the first step that wakes) */
+    const first = Object.keys(lights || {})[0], turn = { lit: (s) => Object.assign({}, s, { [first]: { light: "amber", by: null } }) };
+    const turned = JSON.stringify(Object.assign({}, lights, { [first]: "amber" }));
     const s2 = site0(); s2.set("stocklights", JSON.stringify(Object.assign({}, lights, { [first]: "green" })));
     posts.length = 0;
     const said2 = await run55(["--no-retire"], wr55(s2, new Map(), []), K55, undefined, turn);
     ok(said2.includes("returned") && posts.length === 1 && posts[0].body === '{"tag":"stock"}' && /\/push\/send$/.test(posts[0].url)
       && s2.get("stocklights") === turned,
-      "a publish that turns a light green to yellow posts the stock tag once and keeps the new lights: " + JSON.stringify({ posts, kept: s2.get("stocklights") }));
+      "a publish that turns a light green to amber posts the stock tag once and keeps the new lights: " + JSON.stringify({ posts, kept: s2.get("stocklights") }));
 
-    /* and the publish after it, the light held yellow */
+    /* and the publish after it, the light held amber */
     posts.length = 0;
     const said3 = await run55(["--no-retire"], wr55(s2, new Map(), []), K55, undefined, turn);
-    ok(said3.includes("returned") && posts.length === 0, "the publish after, the light held yellow, posts nothing: " + JSON.stringify(posts));
+    ok(said3.includes("returned") && posts.length === 0, "the publish after, the light held amber, posts nothing: " + JSON.stringify(posts));
   } finally {
     globalThis.fetch = realF;
     if (was === undefined) delete process.env.PUSH_KEY; else process.env.PUSH_KEY = was;
