@@ -123,14 +123,12 @@ select.fld{letter-spacing:0;appearance:none;-webkit-appearance:none;color-scheme
 .psym .plet{font-family:var(--salt-font-mono);font-weight:500;letter-spacing:0}
 h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 /* F4: the light is a coloured border round the mark; the three colours are the system's own tokens (yellow is --salt-amber, the warning; brass is the mark's own colour and the focus ring) */
-.pmark.sup{display:inline-block;padding:5px;border:3px solid var(--sup);border-radius:8px}
 /* 22 Oct 2026 (his word, the outline alone was missed): the light in words is the system's status, in the light's own token */
-.salt-status.supst{--salt-status-tone:var(--sup)}
 .hsup{min-height:44px;align-items:center}
-.hsup .pmark.sup{margin:0}
-.sup-green{--sup:var(--salt-verdigris)}
-.sup-yellow{--sup:var(--salt-amber)}
-.sup-red{--sup:var(--salt-ember)}
+/* plan version 10 (03 Nov 2026): a book's head is its coin with the light beside it, a dot and its word (salt-light), never a border */
+.pane>.pmark{display:inline-block;vertical-align:middle;margin:0}
+.pane>.supline{display:inline-flex;vertical-align:middle;margin:0 0 0 12px}
+.hsup .pmark{margin:0}
 .pwith{display:inline-flex;align-items:center;gap:7px}
 /* HIS NOTE OF 28 SEP 2026: IN A CARD THE MARK IS A BUTTON, ITS CAPTION UNDER IT. The pressed ghost's edge and glass, the mark at
    28px, the caption in the mono face: the size in words, "2.5 units" (12 Oct 2026, his word: the mark stands alone, so no shape word
@@ -1527,6 +1525,21 @@ export function psymSvg(product, px) {
     + (L ? '<text class="plet" x="12" y="' + L.y + '" font-size="' + L.s + '" text-anchor="middle" fill="currentColor">' + L.l + "</text>" : "")
     + "</svg>";
 }
+/* PLAN VERSION 10 (the canvas of 03 Nov 2026, salt-ds 1.25.0): THE MARK AS A COIN. The book's hue as a ring, the shape inside in brass, his
+   letter under the shape in salt, on the recipe's 48 grid; three sizes, sm 44, md 56 and lg 72, never smaller: a mark in a line of text keeps
+   psymSvg. The hue rides the book's index (data-b, the statement lines' own), never a product word, and COIN_CSS maps the index to the hue.
+   The coin is hidden from a reader: whatever holds it names the shape. The page's coin is its twin. */
+export const COIN_BOOKS = Object.keys(PSYM);
+export const coinLetterSize = (l) => (l.length <= 1 ? 13 : l.length <= 3 ? 12 : 11);
+export function coinSvg(product, size) {
+  const k = String(product || "").toLowerCase(), b = COIN_BOOKS.indexOf(k), L = b >= 0 && Object.hasOwn(PLET, k) ? PLET[k] : "";
+  return '<span class="salt-coin salt-coin--' + (size || "md") + '"' + (b >= 0 ? ' data-b="' + b + '"' : "") + ' aria-hidden="true">'
+    + '<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><circle class="salt-coin__ring" cx="24" cy="24" r="22.5"/>'
+    + '<g transform="translate(13.8 6.3) scale(0.85)"><path class="salt-coin__shape" d="' + (b >= 0 ? PSYM[k] : RING) + '"/></g>'
+    + (L ? '<text class="salt-coin__let" x="24" y="39.5" text-anchor="middle" font-size="' + coinLetterSize(L) + '">' + esc(L) + "</text>" : "")
+    + "</svg></span>";
+}
+export const COIN_CSS = COIN_BOOKS.map((k, i) => '.salt-coin[data-b="' + i + '"]{--salt-hue:var(--salt-product-' + k + ')}').join("");
 /** IN A CARD THE MARK IS A BUTTON WITH ITS CAPTION UNDER IT (his note of 28 Sep 2026): the size in words, "2.5 units", drawn, and
  *  a reader told the shape and the size once (`.sr`). No shape word is drawn (his word of 12 Oct 2026: the mark stands alone).
  *  The statement's lines are cards too; the page's mtile is its twin. */
@@ -1866,7 +1879,7 @@ export function boardPage(guest, nonce) {
   const rm = (n) => "RM " + Number(n || 0).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });   /* C5 */
   const body = products.length
     ? products.map((p) => '<div class="pane salt-glass-card salt-glass-card--radius-md">'
-        + '<h2 class="pmark" aria-label="' + esc(PSHAPE[String(p.product || "").toLowerCase()] || PSHAPE._) + '">' + psymSvg(p.product, 30) + "</h2>"
+        + '<h2 class="pmark" aria-label="' + esc(PSHAPE[String(p.product || "").toLowerCase()] || PSHAPE._) + '">' + coinSvg(p.product, "md") + "</h2>"
         + '<div class="tblw"><table><thead><tr><th class="l">' + wd("board.size") + "</th><th>" + wd("board.price") + "</th></tr></thead><tbody>"
         + p.sizes.map((r) => "<tr><td class=\"l\">" + esc(unitsOf(r.q, p.unit))
             + "</td><td>" + esc(rm(r.price)) + "</td></tr>").join("")
@@ -1966,7 +1979,7 @@ function guestPage(inner, nonce, title) {
     + '<meta name="robots" content="noindex,nofollow,noarchive">'
     + '<meta name="referrer" content="no-referrer">'
     + "<title>" + title + "</title>"
-    + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>" 
+    + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + COIN_CSS + "</style></head><body>" 
     + '<div class="panel">' + inner + "</div></body></html>";
 }
 
@@ -2124,7 +2137,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     /* his page is Salt Admin, as its manifest says; the customer's is Salt Counter */
     + '<meta name="apple-mobile-web-app-title" content="' + (owner ? "Salt Admin" : "Salt Counter") + '">'
     + "<title>" + (owner ? "Salt Admin" : "Salt Counter") + "</title>"
-    + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>" + AURORA
+    + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + COIN_CSS + "</style></head><body>" + AURORA
     + (owner
       ? '<div id="roster" class="gate adm">'
         /* 20 Oct 2026 (canvas V32): the bar heads the whole shell, the rail and the column under it, so from 1080px it spans both */
@@ -2737,6 +2750,20 @@ const CLIENT_JS = `
     }
     return svg;
   }
+  /* PLAN VERSION 10: the coin (coinSvg's twin): the ring in the book's hue by its index, the shape, his letter under it; hidden from a reader */
+  var COINB=Object.keys(PSYM).filter(function(k){ return k!=='_'; });
+  function coin(product,size){
+    var NS='http://www.w3.org/2000/svg', k=String(product||'').toLowerCase(), b=COINB.indexOf(k);
+    var L=b>=0&&Object.prototype.hasOwnProperty.call(PLET,k)?PLET[k].l:'';
+    var w=el('span','salt-coin salt-coin--'+(size||'md')); if(b>=0) w.setAttribute('data-b',String(b)); w.setAttribute('aria-hidden','true');
+    var svg=document.createElementNS(NS,'svg'); svg.setAttribute('viewBox','0 0 48 48'); svg.setAttribute('aria-hidden','true'); svg.setAttribute('focusable','false');
+    var c=document.createElementNS(NS,'circle'); c.setAttribute('class','salt-coin__ring'); c.setAttribute('cx','24'); c.setAttribute('cy','24'); c.setAttribute('r','22.5'); svg.appendChild(c);
+    var g=document.createElementNS(NS,'g'); g.setAttribute('transform','translate(13.8,6.3)scale(0.85)');
+    var d=document.createElementNS(NS,'path'); d.setAttribute('class','salt-coin__shape'); d.setAttribute('d',b>=0?PSYM[k]:PSYM._); g.appendChild(d); svg.appendChild(g);
+    if(L){ var t=document.createElementNS(NS,'text'); t.setAttribute('class','salt-coin__let'); t.setAttribute('x','24'); t.setAttribute('y','39.5'); t.setAttribute('text-anchor','middle');
+      t.setAttribute('font-size',String(L.length<=1?13:L.length<=3?12:11)); t.textContent=L; svg.appendChild(t); }
+    w.appendChild(svg); return w;
+  }
   /* a size and its mark, as one phrase: "2.5 unit" then the cube; outside a card alone (his note of 28 Sep 2026) */
   function withMark(product,text,px){
     var w=el('span','pwith'); w.appendChild(document.createTextNode(text));
@@ -2746,7 +2773,7 @@ const CLIENT_JS = `
   }
   /* a book's heading: its mark alone, named by the shape (and by its light, where it has one); no shape word is drawn (his word of 12 Oct 2026) */
   function pmarkHead(tag,product){
-    var h=el(tag,'pmark'); h.setAttribute('aria-label',pshape(product)); h.appendChild(psym(product,28));
+    var h=el(tag,'pmark'); h.setAttribute('aria-label',pshape(product)); h.appendChild(coin(product,'md'));
     return h;
   }
   /* a mark leading a note: the lines of a sheet that several products share; a reader is told the shape and nothing but the mark is drawn */
@@ -2758,7 +2785,7 @@ const CLIENT_JS = `
      once (mtileSvg's twin). The shape word is never drawn (his word of 12 Oct 2026). */
   function mtile(product,q,u,px){
     var w=el('span','mtile'), words=unitsOf(q,u); w.appendChild(el('span','sr',pshape(product)+' '+words));
-    w.appendChild(psym(product,px||28));
+    w.appendChild(px&&px<28?psym(product,px):coin(product,'sm'));
     var f=el('span','mq',words); f.setAttribute('aria-hidden','true'); w.appendChild(f);
     return w;
   }
@@ -4198,11 +4225,10 @@ const CLIENT_JS = `
      set, "More by DD Mon" under it. Sealed with the list, so it is as fresh as the last publish; nothing refuses an order. */
   function dmShort(s,L){ var m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(String(s||'')); return m?m[3]+' '+mon3(L)[+m[2]-1]:''; }
   function supLit(p){ var s=p&&p.supply; return s&&(s.light==='green'||s.light==='yellow'||s.light==='red')?s:null; }
-  function supWord(l){ return el('span','salt-status supst sup-'+l,tw('sup.'+l)); }
+  function supWord(l){ return el('span','salt-light'+(l==='green'?'':' salt-light--'+l),tw('sup.'+l)); }
   /* 22 Oct 2026 (his word, the outline alone was missed): the light's word stands under the mark too, the status in the light's colour */
   function supplyMark(h,pane,p){
     var s=supLit(p); if(!s) return;
-    h.className+=' sup sup-'+s.light;
     h.setAttribute('aria-label',pshape(p.product)+', '+tw('sup.'+s.light));
     var ln=pane.appendChild(el('p','supline')); ln.setAttribute('aria-hidden','true'); ln.appendChild(supWord(s.light));   /* the heading says it once */
     if(s.light!=='green'&&dmShort(s.by,'en')) pane.appendChild(el('p','sub2',tw('sup.by',{d:Dd(dmShort,s.by)})));
@@ -7471,7 +7497,7 @@ const CLIENT_JS = `
     box.appendChild(hHead(tw('av.h')));
     list.forEach(function(p){
       var s=supLit(p), b=el('button','salt-inbox-row hsup'); b.type='button';
-      var m=el('span','pmark sup sup-'+s.light); m.appendChild(psym(p.product,28)); m.appendChild(el('span','sr',pshape(p.product))); b.appendChild(m);
+      var m=el('span','pmark'); m.appendChild(coin(p.product,'sm')); m.appendChild(el('span','sr',pshape(p.product))); b.appendChild(m);
       var main=el('span','salt-inbox-row__main'); main.appendChild(supWord(s.light));
       if(s.light!=='green'&&dmShort(s.by,'en')) main.appendChild(el('span','salt-inbox-row__what',tw('sup.by',{d:Dd(dmShort,s.by)})));
       b.appendChild(main);
@@ -7497,7 +7523,7 @@ const CLIENT_JS = `
          word drawn, 12 Oct 2026); a reader hears the shape and the size in words, once */
       /* C19 (29 Sep 2026): the size under the mark says its unit, and the price is a figure in the mono face */
       var fq=el('span','mq',unitsOf(a.q,P.unit)); fq.setAttribute('aria-hidden','true');
-      l.appendChild(el('span','sr',pshape(a.product)+' '+unitsOf(a.q,P.unit))); l.appendChild(psym(a.product,28)); l.appendChild(fq);
+      l.appendChild(el('span','sr',pshape(a.product)+' '+unitsOf(a.q,P.unit))); l.appendChild(coin(a.product,'lg')); l.appendChild(fq);
       t.appendChild(l);
       t.appendChild(el('span','salt-option__detail'+(a.start?' mono':''),a.start?rm(z.price):tw('ha.'+(a.mode==='deliver'?'deliv':'coll')+(a.forFriend?'F':''),{rm:rm(z.price), p:a.place})));
       b.appendChild(t);
@@ -7544,7 +7570,7 @@ const CLIENT_JS = `
       var lpc=Math.max(0,Math.min(100,Math.round(lp.loyal.next*100)));
       box.appendChild(hHead(tw('hr.hLoyal')));
       var lc=el('div','hreward hloyal salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-sm');
-      var lt=el('span','hreward__top'); lt.appendChild(el('span','sr',pshape(lp.product))); lt.appendChild(psym(lp.product,28));
+      var lt=el('span','hreward__top'); lt.appendChild(el('span','sr',pshape(lp.product))); lt.appendChild(coin(lp.product,'sm'));
       lt.appendChild(el('span','hreward__left',tw('rew.nextAria',{p:lpc}))); lc.appendChild(lt);
       var lm=el('span','salt-meter rmeter'), ll=el('span','salt-meter__line');
       ll.appendChild(el('span',null,tw('rew.next'))); ll.appendChild(el('b',null,lpc+'%'));
@@ -7558,7 +7584,7 @@ const CLIENT_JS = `
     var rw=p.reward, pc=Math.round(rw.next*100);
     box.appendChild(hHead(tw('hr.h')));
     var b=el('button','hreward salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-sm salt-glass-card--link'); b.type='button';
-    var top=el('span','hreward__top'), sr=el('span','sr',pshape(p.product)); top.appendChild(sr); top.appendChild(psym(p.product,28));
+    var top=el('span','hreward__top'), sr=el('span','sr',pshape(p.product)); top.appendChild(sr); top.appendChild(coin(p.product,'sm'));
     top.appendChild(el('span','hreward__left',tw(rw.left>0?(rw.held?'rew.held':'rew.ask'):'rew.nextAria',{left:Uq(rw.left,p.unit), p:pc})));
     b.appendChild(top);
     var mtr=el('span','salt-meter rmeter'), ln=el('span','salt-meter__line');
