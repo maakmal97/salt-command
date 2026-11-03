@@ -4270,7 +4270,7 @@ const CLIENT_JS = `
     pw.appendChild(el('span','pway__t',w.mode==='deliver'?(pl?tw('pr.wayDeliv',{p:pl}):tw('pr.wayDelivNone')):tw('pr.wayColl')));
     if(!tapTo) return;
     var ch=el('button','salt-ghost pway__go',tw('pr.wayChange')); ch.type='button'; ch.id='pWayGo';
-    ch.addEventListener('click',function(){ sheetOpen(null,null,ch);
+    ch.addEventListener('click',function(){ pickBasket(); sheetOpen(null,null,ch);
       var m=osh&&osh.box.querySelector('[data-k^="mode:"][aria-pressed="true"]'); if(m) try{ m.focus({preventScroll:true}); }catch(e){} });
     pw.appendChild(ch);
   }
@@ -4341,17 +4341,43 @@ const CLIENT_JS = `
     var w=wayNow();
     var bco=creditOff(+sum.toFixed(2));
     bar.appendChild(kpiTile('brass',tw(ls.length===1?'bk.lines1':'bk.linesN',{n:ls.length}),rm(+sum.toFixed(2)),bco.any?tw('sh.creditOff',{c:rm(bco.c), p:rm(bco.pay)}):tw(w&&w.mode==='deliver'?'sh.plusDeliv':'sh.toCollect')));
-    var go=el('button','salt-pill salt-pill--md',tw('sh.review')); go.type='button'; go.id='bkGo'; go.disabled=open;
+    var go=el('button','salt-pill salt-pill--md',tw('bk.go')); go.type='button'; go.id='bkGo'; go.disabled=open;
     go.addEventListener('click',function(){ bsReview(go); });
     bar.appendChild(go);
     if(had) try{ go.focus({preventScroll:true}); }catch(e){}
   }
   function bsReview(go){
     var ls=bsLines(); if(!ls.length||ls.some(function(x){ return x.t==null; })||ro()||hold||!lapse.hidden) return;
-    draft.pick={}; ls.forEach(function(x){ draft.pick[x.P.product]=String(x.a); });
-    draft.src='basket'; draft.sheetKeep=''; draft.amend=''; draft.pool='';
+    pickBasket(); draft.sheetKeep=''; draft.amend=''; draft.pool='';
     sheetOpen(null,null,go);
     if(osh&&draft.step==='form'&&!formWhy()) reviewSheet();
+  }
+  /* PLAN VERSION 8 (his answers F and G of 02 Nov 2026): ORDER IS WHERE EVERY ORDER STARTS. Orders' New order, Home's start tiles and their
+     Collect and Deliver land on Order (Prices renamed), at the tile's book with its size in view; nothing is put in the basket for them */
+  function goOrder(product,q){
+    placeShow('prices',true); wayDraw();
+    var pn=product&&supPanes[product]; if(!pn) return;
+    if(pn.scrollIntoView) pn.scrollIntoView({block:'start'});
+    var r=q!=null&&[].filter.call(pn.querySelectorAll('.szrow[data-q]'),function(x){ return x.getAttribute('data-q')===String(q); })[0];
+    if(r) try{ r.focus({preventScroll:true}); }catch(e){}
+  }
+  /* the basket's priced lines as the sheet's, or none: the sheet never holds a size the page did not choose */
+  function pickBasket(){
+    var ls=bsOn()?bsLines().filter(function(x){ return x.t!=null; }):[];
+    draft.pick={}; ls.forEach(function(x){ draft.pick[x.P.product]=String(x.a); });
+    draft.src=ls.length?'basket':'';
+  }
+  /* A NEW ORDER'S SHEET KEEPS THE WAY, THE PLACE, WHEN, THE NOTE AND THE CHECK: its lines are listed, each its mark, its size and its figure,
+     and the units change on Order. With no line it sets the way alone */
+  function sheetLines(B){
+    var qs=quotes();
+    if(!qs.length){ B.appendChild(el('p','lead',tw('sh.wayOnly'))); return; }
+    var L=el('div','salt-settings'); L.setAttribute('data-sheet-lines','');
+    qs.forEach(function(x){ var r=el('div','salt-settings__row'), lb=el('span','salt-settings__label');
+      lb.appendChild(withMark(x.p.product,unitsOf(x.q,x.p.unit),22)); r.appendChild(lb);
+      r.appendChild(el('span','salt-settings__value',x.over?'':rm(x.total))); L.appendChild(r); });
+    B.appendChild(L);
+    B.appendChild(el('p','salt-field__hint',tw('sh.unitsOn')));
   }
   /* the sheet opened from the basket writes what changes in it back, so the two never differ; a tally that no longer adds up is dropped */
   function bsFromPick(){
@@ -4527,7 +4553,7 @@ const CLIENT_JS = `
          on the product they order most at their usual size, else its first size, else the list's first */
       var K=draft.pick||{}; draft.pick={};
       Object.keys(K).forEach(function(k){ if(oCanPick(k,K[k])) draft.pick[k]=K[k]; });
-      if(!picked()){ var S0=sold(), P0=(U&&S0.filter(function(x){ return x.product===U.product; })[0])||S0[0];
+      if(!picked()&&amend){ var S0=sold(), P0=(U&&S0.filter(function(x){ return x.product===U.product; })[0])||S0[0];
         draft.pick[P0.product]=String(U&&U.product===P0.product&&oSoldHas(U.product,U.q)?U.q:P0.sizes[0].q); }
     }
     /* the way and the place are the last order's, and the hint says so while the place is still that one */
@@ -4993,7 +5019,7 @@ const CLIENT_JS = `
     /* V4b: a size no longer on the list leaves the sheet; with one product on the list a size is always chosen, as before */
     if(!draft.pick) draft.pick={};
     Object.keys(draft.pick).forEach(function(k){ if(!oCanPick(k,draft.pick[k])) delete draft.pick[k]; });
-    if(S.length===1&&!picked()) draft.pick[S[0].product]=String(S[0].sizes[0].q);
+    if(draft.amend&&S.length===1&&!picked()) draft.pick[S[0].product]=String(S[0].sizes[0].q);
     /* S4 4.7: AN ASSOCIATE IS ASKED WHO IT IS FOR, FIRST (v702's tick, which was the last field and easy to pass). Nothing is
        chosen for them: Review waits for the answer, and every order asks again. Nobody else is asked. */
     if(assoc) B.appendChild(oChoice(tw('sh.whoFor'),[['me',tw('sh.me')],['friend',tw('sh.friend')]],draft.forFriend==null?'':(draft.forFriend?'friend':'me'),'for',
@@ -5014,9 +5040,9 @@ const CLIENT_JS = `
     if(draft.pool){ formFoot(); return; }
     /* V4b (his point 5 of 28 Sep 2026): EVERY PRODUCT ON THEIR LIST, EACH WITH ITS SIZES, a size of each they want. A
        product is its mark in the legend (v695: named by its shape); a chosen size tapped again comes off the sheet */
-    if(S.length>1) B.appendChild(el('p','sub2',tw('sh.multi')));
     var U=oUsual();
-    S.forEach(function(P,i){
+    if(!draft.amend) sheetLines(B);
+    else S.forEach(function(P,i){
       var fs=el('fieldset','salt-options'), lg=el('legend','salt-options__legend'), cur=draft.pick[P.product];
       lg.appendChild(withMark(P.product,'',22)); fs.appendChild(lg);
       var grid=el('div','salt-options__grid salt-options__grid--2');
@@ -5146,6 +5172,8 @@ const CLIENT_JS = `
   function formFoot(){
     bsFromPick();
     var F=osh.foot; F.textContent='';
+    if(!draft.amend&&!draft.pool&&!quotes().length){ var dn=el('button','salt-ghost',tw('sh.done')); dn.type='button'; dn.id='oDone'; dn.setAttribute('data-k','done');
+      dn.addEventListener('click',sheetDismiss); F.appendChild(dn); F.hidden=false; return; }
     var qs=quotes(), why=formWhy(), t=el('div','ototal'), sum=0;
     qs.forEach(function(x){ sum+=x.total; });
     t.appendChild(el('b','salt-kpi__value',qs.length?rm(+sum.toFixed(2)):''));
@@ -5512,7 +5540,7 @@ const CLIENT_JS = `
           top.appendChild(el('p','salt-insight',tw(hoursError?'hours.unavailable':'hours.closed')));
         }
         var nb=el('button','btn salt-pill salt-pill--md',tw('sh.new')); nb.type='button'; nb.id='oNew';
-        nb.addEventListener('click',function(){ sheetOpen(null,null,nb); });
+        nb.addEventListener('click',function(){ goOrder(); });
         top.appendChild(nb);
       }
       if(osh&&draft.step==='limit') sheetDraw();
@@ -7348,7 +7376,7 @@ const CLIENT_JS = `
     [['collect','sh.collect','hs.coll'],['deliver','sh.deliver',w&&w.place.trim()?'hs.delivLast':'hs.delivNew']].forEach(function(x){
       var b=el('button','salt-option__face salt-option__face--tap hstart'), t=el('span','salt-option__text'); b.type='button'; b.setAttribute('data-start',x[0]);
       t.appendChild(el('span','salt-option__label',tw(x[1]))); t.appendChild(el('span','salt-option__detail',tw(x[2]))); b.appendChild(t);
-      b.addEventListener('click',function(){ draft.mode=x[0]; startPlace=x[0]==='deliver'&&w&&w.place.trim()?w.place:''; sheetOpen(null,null,b); });
+      b.addEventListener('click',function(){ draft.mode=x[0]; startPlace=x[0]==='deliver'&&w&&w.place.trim()?w.place:''; goOrder(); });
       g.appendChild(b);
     });
     box.appendChild(g); return box;
@@ -7391,7 +7419,7 @@ const CLIENT_JS = `
       t.appendChild(l);
       t.appendChild(el('span','salt-option__detail'+(a.start?' mono':''),a.start?rm(z.price):tw('ha.'+(a.mode==='deliver'?'deliv':'coll')+(a.forFriend?'F':''),{rm:rm(z.price), p:a.place})));
       b.appendChild(t);
-      b.addEventListener('click',function(){ if(a.start) sheetOpen(a.product,a.q,b); else againOpen(a,b); });
+      b.addEventListener('click',function(){ if(a.start) goOrder(a.product,a.q); else againOpen(a,b); });
       g.appendChild(b);
     });
     box.appendChild(g);
