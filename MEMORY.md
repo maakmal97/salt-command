@@ -288,6 +288,11 @@
   B11 in `test/order-as-them-page.mjs`, red by its own mutation; the saved-spots needle in `test/counter-c-spots.mutations.json` re-aimed. Full suite
   11,854 passed, 1 failed (S1b, laptop only). A customer's own sheet is unchanged.
 
+## The restock light in four steps (v1426)
+- Live as v1426 (`4f643e64`, 04 Nov 2026; Cloud commit `41710800634`: chain green with "The phone is serving it", the statements deployed and published, three suite parts green; CI `41710800684` green), his word "change the rule": engine `restockLight(shelf, commit, demand)` and `LIGHT_DAYS {fast: 7, low: 3}`: red Out of stock with nothing free, amber Low on stock under one usual order (`restockPlan`'s `buy.median`) or 3 days of cover, yellow Selling fast at 7 days, green Available. Promised past the shelf (Limited) is now red. Only amber and red ask for a restock date (`expAsks`) and wake the Desk (`LIGHT_RANK`). salt-ds 1.26.0 (#38): `--salt-orange` #f28c18, `salt-light--amber`, `salt-status--amber`/`--orange`. FIX_VERSION 18 (rice amber). At the push salt read Selling fast (5.1 days of cover), every other book Available.
+- Basis (replay of every book's days 26 Jun to 04 Nov 2026, scratch only): cover of 7 days or fewer caught 88% of the times the shelf fell under one usual order within a week, 62% of those lit came true; 3 days caught 65% within three days, 71% came true. Salt sat under 7 days on 104 of 129 days, so it will read Selling fast most days.
+- Not done: QR Command has not pulled 1.26.0 (a new token), and the Claude Design project and the Design System artifact are not re-synced to salt-ds `10eebdb`.
+
 ## The Desk's tab icon is the gold cube (v1415)
 - Live as v1415 (`8cc3a74d`, 03 Nov 2026; Cloud commit `41647079660`: chain green with "The phone is serving it", three suite parts green; CI `41647079705` green), his word: the tab showed the crystal retired at v472 (v1248 ran the stale `tools/make_icons.py`) while the home-screen plates and the rail drew the gold cube. `make_icons.py` now writes `icon-tab.png` alone, from the rail's own mark, and never the plates (those come from `Code\salt-ds\brand\assets`); shell cache v10. The Counter and Salt Admin keep their ring marks (not touched).
 
