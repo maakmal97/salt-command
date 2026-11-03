@@ -1,0 +1,80 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-03T10:53:26.344Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s324",
+    "qty": 5,
+    "total": 35,
+    "cash": 35,
+    "date": "2026-11-03",
+    "product": "rice",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 5
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-11-03"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "collected"
+     }
+    ],
+    "customer": "CS11-AMP",
+    "rids": [],
+    "booked_seq": 87
+   },
+   "reasoning": "Correction against CS11-AMP's order of 5 unit for RM 35 dated 2026-11-03 (s324). Sets deliveredQty from 0 to 5, deliveredOn from unset to 2026-11-03, handover from unset to collected. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This row carries a trail of 2 steps. Setting the figure directly does not rewrite them, so the trail will no longer add up to it; the correction is recorded beside them saying so."
+   ],
+   "amends": "s324",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-11-03T10:53:26.344Z",
+    "type": "SELL",
+    "party": "CS11-AMP",
+    "qty": 5,
+    "total": 0,
+    "status": "Handover",
+    "raw": "5 unit collected to CS11-AMP, order 20261103041936-r5eszg, on 2026-11-03",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CS11-AMP",
+     "rid": null,
+     "orderKey": "CS11-AMP|2026-11-03|35|rice",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-11-03",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 5,
+      "deliveredOn": "2026-11-03",
+      "handover": "collected"
+     },
+     "note": "5 unit collected for order 20261103041936-r5eszg."
+    },
+    "orderId": "20261103041936-r5eszg"
+   },
+   "decidedAt": "2026-11-03T10:53:27.974Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
