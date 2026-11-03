@@ -52147,9 +52147,14 @@ await (async () => {
   const wf = readFileSync(join(REPO, ".github", "workflows", "cloud-commit.yml"), "utf8");
   const at = wf.indexOf("- name: Load the shadow Book");
   const stepText = wf.slice(at, Math.min(wf.indexOf("\n      # ----", at), wf.indexOf("\n      - name:", at + 10)));   /* S3: the readcheck step follows, with its own continue-on-error */
-  ok(at > wf.indexOf("- name: Re-seed the mirror") && at < wf.indexOf("- name: Deploy the statements site")
+  ok(at > wf.indexOf("- name: Mark the folded rows committed") && at > wf.indexOf("- name: Extract the ledger from the master just shipped") && at < wf.indexOf("- name: Deploy the statements site")
     && /continue-on-error: true/.test(stepText) && /steps\.plan\.outputs\.deploy == '1'/.test(stepText) && /node tools\/book-load\.mjs/.test(stepText),
-    "the chain loads the Book after the D1 re-seed, only on a deploy, and a failed load never blocks the fold");
+    "the chain loads the Book after the marks and the extract, only on a deploy, and a failed load never blocks the fold");
+  /* 3 Nov 2026: a tap sends the mirror's version and the Book refuses one ahead of it, so the mirror re-seeded first left every approval in the gap
+     falling back (29 Oct 2026, "the Book is at v1328, behind v1329"). The Book loads first; the re-seed no longer makes its own extract. */
+  const reseed = wf.indexOf("- name: Re-seed the mirror from the master just shipped"), reText = wf.slice(reseed, wf.indexOf("\n      - name:", reseed + 10));
+  ok(at > 0 && reseed > at && !/node tools\/ledger\.mjs/.test(reText) && /node tools\/d1\.mjs --seed/.test(reText),
+    "and before the mirror is re-seeded, so the Book is never behind the version a tap sends");
 })();
 
 section("Book S2b: the Book reads back what it holds and agrees with git, and any difference is named (20 Oct 2026)");
