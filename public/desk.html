@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="12ff40af35c89596";
+var SALT_BUILD_ID="2b8707525fb07a6b";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -10507,6 +10507,9 @@ const TIER_OF={
   },
   "CAY4-DAM": {
     "salt": 0.1
+  },
+  "CI5-PER": {
+    "candy": 0.25
   }
 };
 const PEOPLE={
@@ -10633,7 +10636,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-11-03T19:49:02.854Z";
+const QUEUE_COMMITTED="2026-11-03T20:25:25.013Z";
 /* <b>BOARD SIZES CHANGED ON 19 OCT: SALT, 3.5 AND 4.5 UNIT HIDDEN.</b> Counter Admin decided this at 15:38. The entry reads "Board sizes on salt: hiding 3.5 unit, 4.5 unit" and sets 0 prices, so no rate is set against the desk's floor or ask and no party is involved. The board's own price remains the ask at every size. The drafter flagged that two sizes leave the board; that is exactly what the entry does, and both stay priceable at the counter and off a quote, they simply stop being printed. The row moves no stock, no cash and no ledger row, so it carries no cost and nothing is left outstanding. */
 /* RETIRED AT v656 on 2026-09-16, his decision of 15 Sep off the pricing workbook: the board is the ladder, so a stated price no longer decides it and oil's five are cleared rather than left unread. The stranger's ask on oil moves from his RM130, 240, 330, 400 and 450 to Bronze at RM230, 440, 650, 850 and 1,040, with 80 and 100 unit at RM1,640 and RM2,000. The old five sat a hair over break-even (the 50 unit tier read 0.93x, RM32.20 UNDER its floor) because they were typed in July against a cost that has moved since; the ladder is struck on today's COGS and moves with it. No customer's price moves with this: every named customer is quoted their own tier capped at what they pay, and a stranger has no history to cap against. The hide list is untouched and still takes a size off the board. */
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
@@ -11717,7 +11720,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1426","d":"04 Nov 2026","t":"THE RESTOCK LIGHT IN FOUR STEPS","n":["<b>HIS RULE.</b> Each book's light is now the worst of four steps, read off what is free (the shelf less what is committed) and the book's measured demand: <b>Out of stock</b> (red) with nothing free; <b>Low on stock</b> (amber) with less free than one usual order, or 3 days of cover or fewer; <b>Selling fast</b> (yellow) with 7 days of cover or fewer; <b>Available</b> (green) otherwise, or with no demand measured.","<b>THE BASIS.</b> Replayed over every book's days from 26 Jun to 04 Nov 2026 with the engine's own forecast: 7 days of cover caught 88% of the times the shelf fell under one usual order within a week (62% of those lit came true); 3 days caught 65% of the times it did so within three days (71% came true). Before, the light read only the shelf and what was promised, so salt with 5 days of cover read Available.","<b>WHERE IT SHOWS.</b> Salt Counter's Prices and Home's Availability say Selling fast and Low on stock beside Available and Out of stock; Salt Admin's Stock by book chips the four in verdigris, amber, orange and ember; the Desk's Restock date card. Promised past the shelf, Limited until now, is Out of stock.","<b>WHAT ASKS.</b> Low on stock and Out of stock ask for a restock date on To do and wake the Desk when a book turns to them; Selling fast asks nothing. More by DD Mon shows under any light but green. salt-ds 1.26.0 adds the orange (#f28c18). Ordering is never refused."]}];
+const evolution=[{"v":"v1427","d":"04 Nov 2026","t":"A CANDY LIFT SET FOR CI5-PER","n":["<b>ONE ROW FOLDED.</b> A tier setting for CI5-PER: the candy figure is now a 25% lift. It is a price setting only, so no cash, no goods and no party balance moved, and the board itself is untouched. Nothing about it was unusual: the drafter raised no flags and no amendment or count is in the batch.","<b>INVENTORY UNCHANGED.</b> Stock stands at 21 with no moves in the batch. The cost basis stays at RM56 a unit, so there is no new landing and no change to the floors."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11865,7 +11868,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='04 Nov 2026, 04:14 KL';
+const LAST_UPDATED='04 Nov 2026, 04:31 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

@@ -1,6 +1,6 @@
 {
- "v": "v1425",
- "stamped": "04 Nov 2026, 03:49 KL",
+ "v": "v1427",
+ "stamped": "04 Nov 2026, 04:31 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -11823,6 +11823,9 @@
    },
    "CAY4-DAM": {
     "salt": 0.1
+   },
+   "CI5-PER": {
+    "candy": 0.25
    }
   },
   "AWARDS": {
@@ -12033,7 +12036,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-03T19:49:02.854Z",
+  "QUEUE_COMMITTED": "2026-11-03T20:25:25.013Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -19130,23 +19133,23 @@
       "CI5-PER": [
        [
         1,
-        60
+        70
        ],
        [
         5,
-        300
+        336
        ],
        [
         10,
-        550
+        607
        ],
        [
         20,
-        1100
+        1194
        ],
        [
         30,
-        1500
+        1612
        ]
       ],
       "CF5-WM": [
@@ -19644,7 +19647,7 @@
       "CE5-SA": 0,
       "CG5-SB": 0,
       "CY2-NIL": 0,
-      "CI5-PER": 0,
+      "CI5-PER": 0.25,
       "CF5-WM": 0,
       "CA6-CYB": 0,
       "CZ6-WM": 0,
@@ -22510,10 +22513,10 @@
      "suggest": null
     }
    },
-   "v": "v1425"
+   "v": "v1427"
   },
   "OPEN": {
-   "at": "2026-11-03T19:49:59.112Z",
+   "at": "2026-11-03T20:31:49.891Z",
    "count": 10,
    "byKey": {
     "CA7-AMP|2026-11-04|475": {
@@ -22754,7 +22757,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1425"
+   "v": "v1427"
   },
   "TERMS": {
    "ceiling": 250,
@@ -22762,7 +22765,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1425"
+   "v": "v1427"
   },
   "REWARD": {
    "stated": {
@@ -22780,7 +22783,7 @@
      }
     }
    },
-   "v": "v1425"
+   "v": "v1427"
   },
   "STOCK": {
    "today": "2026-11-04",
@@ -22789,7 +22792,7 @@
      "shelf": 21,
      "free": 21,
      "commit": 5,
-     "light": "green",
+     "light": "yellow",
      "coverDays": 4.9,
      "transit": 0
     },
@@ -22797,7 +22800,7 @@
      "shelf": 40,
      "free": 40,
      "commit": 50,
-     "light": "yellow",
+     "light": "red",
      "coverDays": 6.6,
      "transit": 0
     },
@@ -22821,7 +22824,7 @@
      "shelf": 2,
      "free": 2,
      "commit": 2,
-     "light": "green",
+     "light": "red",
      "coverDays": 8.5,
      "transit": 0
     },
@@ -22834,7 +22837,7 @@
      "transit": 0
     }
    },
-   "v": "v1425"
+   "v": "v1427"
   }
  }
 }

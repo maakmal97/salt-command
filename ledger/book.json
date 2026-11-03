@@ -984,6 +984,9 @@
     },
     "CAY4-DAM": {
       "salt": 0.1
+    },
+    "CI5-PER": {
+      "candy": 0.25
     }
   },
   "PEOPLE": {
@@ -1104,7 +1107,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-11-03T19:49:02.854Z",
+  "QUEUE_COMMITTED": "2026-11-03T20:25:25.013Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
