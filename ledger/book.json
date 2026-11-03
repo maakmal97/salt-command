@@ -642,7 +642,8 @@
     "CJ5-CHE",
     "CA6-SET",
     "CA4-SJ",
-    "CS11-AMP"
+    "CS11-AMP",
+    "CAY4-DAM"
   ],
   "associates": [
     "CS6-BS",
@@ -932,6 +933,11 @@
       3.15,
       101.77,
       "Ampang"
+    ],
+    "CAY4-DAM": [
+      3.07,
+      101.55,
+      "Damansara"
     ]
   },
   "TIER_OF": {
@@ -972,6 +978,9 @@
     },
     "CS11-AMP": {
       "salt": 0.2
+    },
+    "CAY4-DAM": {
+      "salt": 0.1
     }
   },
   "PEOPLE": {
@@ -1092,7 +1101,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-11-03T16:22:02.435Z",
+  "QUEUE_COMMITTED": "2026-11-03T18:57:59.683Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
