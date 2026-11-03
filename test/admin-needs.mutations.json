@@ -122,8 +122,8 @@
  {
   "name": "a practice order is counted in Orders",
   "file": "stmt/owner.js",
-  "find": "return !o.test&&ordOpen(o); }).length);",
-  "replace": "return ordOpen(o); }).length);"
+  "find": "return (m.orders||[]).filter(function(o){ return !o.test&&ordOpen(o); }).length+",
+  "replace": "return (m.orders||[]).filter(function(o){ return ordOpen(o); }).length+"
  },
  {
   "name": "a practice thread is counted in Customers",
@@ -140,8 +140,8 @@
  {
   "name": "Record carries a count again",
   "file": "stmt/owner.js",
-  "find": "    setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordOpen(o); }).length);",
-  "replace": "    setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordOpen(o); }).length);\n    setCount('record', pendingRows().length);"
+  "find": "    setCount('orders', ordOpenCount());",
+  "replace": "    setCount('orders', ordOpenCount());\n    setCount('record', pendingRows().length);"
  },
  {
   "name": "the lead counts a practice item",

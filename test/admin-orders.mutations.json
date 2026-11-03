@@ -632,7 +632,7 @@
   {
     "name": "Orders counts what waits on him, not the orders open",
     "file": "stmt/owner.js",
-    "find": "    setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordOpen(o); }).length);",
+    "find": "    setCount('orders', ordOpenCount());",
     "replace": "    setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordWaits(o); }).length+waitingClaims().filter(function(c){ return !c.test; }).length);"
   },
   {

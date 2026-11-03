@@ -4865,6 +4865,13 @@ export const OWNER_JS = `
     var pay=waitingClaims().filter(function(x){ return !x.test; }).length, pn=document.querySelector('.amore__list [data-n="payments"]');
     if(pn) pn.textContent=pay?String(pay):'';
   }
+  /* 3 Nov 2026 (his word: CN3-WM's book row and trip stood in Open and were never counted): THE ORDERS COUNT IS EVERY OPEN ORDER THE LIST HOLDS, a site order
+     still open and, since 17 Oct 2026, a row of the book, an order of several books or a buyer's same day not done or ended (the Desk's flowStage), as
+     drawOrderList files them. Painted by drawCounts, which every read of the orders runs after the list; a practice order is not counted. */
+  function ordOpenCount(){
+    var m=makerData||{}, live=function(g){ return !!g&&g.stage!=='done'&&g.stage!=='ended'; };
+    return (m.orders||[]).filter(function(o){ return !o.test&&ordOpen(o); }).length+[].concat(m.rows||[],m.trips||[],m.sameDay||[]).filter(live).length;
+  }
   function markOrderRows(){
     [].forEach.call(document.querySelectorAll('#makerOrderList [data-order], #makerOrderList [data-rowof]'), function(r){
       if((r.getAttribute('data-order')||r.getAttribute('data-rowof'))===ordOpened&&!r.classList.contains('oask')) r.setAttribute('aria-current','true'); else r.removeAttribute('aria-current'); });
@@ -7671,10 +7678,10 @@ export const OWNER_JS = `
       return (isFinite(ta)&&ta!==tb)?ta-tb:a.n-b.n;
     });
   }
-  /* the count on each item of the bars: Needs you counts what waits on him; Orders counts the orders still open (not ended or completed); Customers what asks him. Record and Shop have none. A practice item is never counted. */
+  /* the count on each item of the bars: Needs you counts what waits on him; Orders counts the orders still open (not ended or completed), book rows and trips with them (ordOpenCount); Customers what asks him. Record and Shop have none. A practice item is never counted. */
   function drawCounts(items){
     setCount('needs', items.filter(function(i){ return i.sev==='now'&&!i.practice&&i.counts; }).length);
-    setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordOpen(o); }).length);
+    setCount('orders', ordOpenCount());
     setCount('customers', makerThreads.filter(function(t){ return !t.test&&makerThreadAsked(t); }).length+links.filter(waitingLink).length);
     barLive(draftGroups(pendingRows()).length);
   }

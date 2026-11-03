@@ -50452,6 +50452,11 @@ await (async () => {
   await (await import("./admin-orders.mjs")).run({ ok, pageWork });
 })();
 
+section("3 Nov 2026: Salt Admin's Orders count is every open order, the book's rows and trips with the site's");
+await (async () => {
+  await (await import("./admin-orders-count.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin uses the width: two panes from 860px with nothing open by itself, and every rule of it under .adm (12 Oct 2026)");
 await (async () => {
   await (await import("./admin-tablet.mjs")).run({ ok, pageWork });

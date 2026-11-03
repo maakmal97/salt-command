@@ -1,0 +1,32 @@
+[
+  {
+    "name": "the count reads site orders alone",
+    "file": "stmt/owner.js",
+    "find": "+[].concat(m.rows||[],m.trips||[],m.sameDay||[]).filter(live).length;",
+    "replace": ";"
+  },
+  {
+    "name": "a done or ended book entry is counted",
+    "file": "stmt/owner.js",
+    "find": "return !!g&&g.stage!=='done'&&g.stage!=='ended';",
+    "replace": "return !!g;"
+  },
+  {
+    "name": "the trips are not counted",
+    "file": "stmt/owner.js",
+    "find": "[].concat(m.rows||[],m.trips||[],m.sameDay||[])",
+    "replace": "[].concat(m.rows||[],m.sameDay||[])"
+  },
+  {
+    "name": "a practice order is counted",
+    "file": "stmt/owner.js",
+    "find": "return (m.orders||[]).filter(function(o){ return !o.test&&ordOpen(o); }).length",
+    "replace": "return (m.orders||[]).filter(function(o){ return ordOpen(o); }).length"
+  },
+  {
+    "name": "the bars count site orders alone again",
+    "file": "stmt/owner.js",
+    "find": "    setCount('orders', ordOpenCount());\n    setCount('customers',",
+    "replace": "    setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordOpen(o); }).length);\n    setCount('customers',"
+  }
+]
