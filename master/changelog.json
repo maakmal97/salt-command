@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1406",
+  "d": "03 Nov 2026",
+  "t": "THREE PENDING ORDERS FOR CI5-PER ON ONE TRIP, NOTHING MOVED",
+  "n": [
+   "<b>THREE NEW SALES FOLDED.</b> Three orders from CI5-PER on trip t7649425302058788 were added to sales, all placed on the statements site on 03 Nov 2026 and preapproved by Counter Admin: 10 unit of oil at RM130 with RM30 delivery, 1 unit of salt at RM120, and 10 unit of rice at RM60. Nothing was paid and nothing handed over, so every row is pending. The oil row carries the trip's one delivery.",
+   "<b>UNUSUAL, AND THE SHELF.</b> The rice order is for 10 unit against a credit cap of 1 in the dossier, and the drafter raised no flag on it. The oil and salt rows sit at their askTotal and the rice row at its askTotal. Pending rows draw no stock and book no revenue, so the inventory did not move and the stock cost is unchanged."
+  ]
+ },
+ {
   "v": "v1405",
   "d": "03 Nov 2026",
   "t": "UNITS ON ORDER, A STEPPER A BOOK",

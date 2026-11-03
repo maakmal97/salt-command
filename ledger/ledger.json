@@ -1,6 +1,6 @@
 {
- "v": "v1404",
- "stamped": "03 Nov 2026, 19:07 KL",
+ "v": "v1406",
+ "stamped": "03 Nov 2026, 20:25 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -10593,6 +10593,44 @@
      }
     ],
     "paidOn": "2026-11-03"
+   },
+   {
+    "customer": "CI5-PER",
+    "qty": 10,
+    "total": 130,
+    "cash": 0,
+    "delivery": 30,
+    "trip": "t7649425302058788",
+    "product": "oil",
+    "date": "2026-11-03",
+    "deliveredQty": 0,
+    "note": "<b>SALE 03 NOV 2026: 10 UNIT OF OIL TO CI5-PER, RM130, DELIVERY RM30, PENDING.</b> Ordered on the statements site, order 20261103122319-nxwlbg, acknowledged, to be delivered. Nothing paid and nothing handed over. The goods total of RM130 equals the askTotal of RM130 and is above the floorTotal of RM85 for that size. CI5-PER has 3 orders, a median rate of 13, a range of 6 to 120, nothing outstanding before, no units on credit before against a cap of 10, and nothing defaulted. The row is costed at COGS off the latest purchase p047, RM 8.16 per unit. The drafter raised no flags. This row carries the trip's one delivery. The full RM130 plus RM30 delivery is left outstanding, with 10 unit still to hand over.",
+    "rid": "s326"
+   },
+   {
+    "customer": "CI5-PER",
+    "qty": 1,
+    "total": 120,
+    "cash": 0,
+    "trip": "t7649425302058788",
+    "date": "2026-11-03",
+    "deliveredQty": 0,
+    "note": "<b>SALE 03 NOV 2026: 1 UNIT OF SALT TO CI5-PER, RM120, PENDING.</b> Ordered on the statements site, order 20261103122319-ome5ea, acknowledged, to be delivered. Nothing paid and nothing handed over. The goods total of RM120 equals the askTotal of RM120 and is above the floorTotal of RM60 for that size. CI5-PER has 3 orders, a median rate of 13, a range of 6 to 120, so this rate is the top of its range. Nothing was outstanding before, no units on credit before against a cap of 1, and nothing defaulted. The row carries RM56 per unit, COGS off the latest purchase p046. The drafter raised no flags. Its delivery rides another row. The full RM120 is left outstanding, with 1 unit still to hand over.",
+    "listRM": 120,
+    "listQty": 1,
+    "rid": "s327"
+   },
+   {
+    "customer": "CI5-PER",
+    "qty": 10,
+    "total": 60,
+    "cash": 0,
+    "trip": "t7649425302058788",
+    "product": "rice",
+    "date": "2026-11-03",
+    "deliveredQty": 0,
+    "note": "<b>SALE 03 NOV 2026: 10 UNIT OF RICE TO CI5-PER, RM60, PENDING.</b> Ordered on the statements site, order 20261103122320-shzdaa, acknowledged, to be delivered. Nothing paid and nothing handed over. The goods total of RM60 equals the askTotal of RM60 and is above the floorTotal of RM35 for that size. CI5-PER has 3 orders, a median rate of 13, a range of 6 to 120, nothing outstanding before, no units on credit before, and nothing defaulted. The dossier gives a credit cap of 1 against 10 unit ordered, and the drafter raised no flag on it. The row is costed at COGS off the latest purchase p045, RM 3.3 per unit. Its delivery rides another row. The full RM60 is left outstanding, with 10 unit still to hand over.",
+    "rid": "s328"
    }
   ],
   "contacts": [
@@ -11416,7 +11454,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-03T11:06:26.800Z",
+  "QUEUE_COMMITTED": "2026-11-03T12:24:59.238Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -11505,6 +11543,16 @@
      "title": "CN3-WM-R bought the same thing twice in 2 days"
     },
     {
+     "id": "dup:CI5-PER:2026-10-31:2026-11-03:130",
+     "sev": "note",
+     "title": "CI5-PER bought the same thing twice in 3 days"
+    },
+    {
+     "id": "dup:CI5-PER:2026-10-31:2026-11-03:120",
+     "sev": "note",
+     "title": "CI5-PER bought the same thing twice in 3 days"
+    },
+    {
      "id": "dup:CN3-WM-R:2026-09-12:2026-09-12:110",
      "sev": "note",
      "title": "CN3-WM-R bought the same thing twice in 0 days"
@@ -11540,6 +11588,11 @@
      "title": "CR3-DAM bought the same thing twice in 3 days"
     },
     {
+     "id": "dup:CI5-PER:2026-10-31:2026-11-03:60",
+     "sev": "note",
+     "title": "CI5-PER bought the same thing twice in 3 days"
+    },
+    {
      "id": "dup:CA4-DAM:2026-07-20:2026-07-22:50",
      "sev": "note",
      "title": "CA4-DAM bought the same thing twice in 2 days"
@@ -11567,7 +11620,7 @@
     {
      "id": "cust:oneanddone",
      "sev": "note",
-     "title": "17 of 52 customers have bought exactly once"
+     "title": "16 of 52 customers have bought exactly once"
     },
     {
      "id": "cust:noreply",
@@ -12397,40 +12450,6 @@
       "rare": true
      }
     },
-    "CF5-WM": {
-     "salt": {
-      "name": "occasional mid",
-      "orders": 3,
-      "tenureDays": 62,
-      "sinceLastDays": 24,
-      "perMonth": 1.47,
-      "unitsPerMonth": 2.45,
-      "smallShare": 0.33,
-      "bigShare": 0,
-      "frequent": false,
-      "small": false,
-      "bigger": false,
-      "loyal": false,
-      "rare": false
-     }
-    },
-    "CA6-CYB": {
-     "salt": {
-      "name": "rare and large",
-      "orders": 2,
-      "tenureDays": 41,
-      "sinceLastDays": 32,
-      "perMonth": 1.48,
-      "unitsPerMonth": 4.08,
-      "smallShare": 0,
-      "bigShare": 0.5,
-      "frequent": false,
-      "small": false,
-      "bigger": true,
-      "loyal": false,
-      "rare": false
-     }
-    },
     "CI5-PER": {
      "salt": {
       "name": "one-off",
@@ -12471,6 +12490,40 @@
       "unitsPerMonth": 10.15,
       "smallShare": 0,
       "bigShare": 1,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false
+     }
+    },
+    "CF5-WM": {
+     "salt": {
+      "name": "occasional mid",
+      "orders": 3,
+      "tenureDays": 62,
+      "sinceLastDays": 24,
+      "perMonth": 1.47,
+      "unitsPerMonth": 2.45,
+      "smallShare": 0.33,
+      "bigShare": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": false,
+      "loyal": false,
+      "rare": false
+     }
+    },
+    "CA6-CYB": {
+     "salt": {
+      "name": "rare and large",
+      "orders": 2,
+      "tenureDays": 41,
+      "sinceLastDays": 32,
+      "perMonth": 1.48,
+      "unitsPerMonth": 4.08,
+      "smallShare": 0,
+      "bigShare": 0.5,
       "frequent": false,
       "small": false,
       "bigger": true,
@@ -14754,6 +14807,60 @@
         7445
        ]
       ],
+      "CI5-PER": [
+       [
+        0.5,
+        75
+       ],
+       [
+        1,
+        120
+       ],
+       [
+        1.5,
+        160
+       ],
+       [
+        2,
+        215
+       ],
+       [
+        2.5,
+        255
+       ],
+       [
+        3,
+        305
+       ],
+       [
+        4,
+        390
+       ],
+       [
+        5,
+        475
+       ],
+       [
+        6.25,
+        580
+       ],
+       [
+        12.5,
+        945
+       ],
+       [
+        25,
+        1860
+       ],
+       [
+        50,
+        3720
+       ],
+       [
+        100,
+        7445
+       ]
+      ],
       "CF5-WM": [
        [
         0.5,
@@ -14809,60 +14916,6 @@
        ]
       ],
       "CA6-CYB": [
-       [
-        0.5,
-        75
-       ],
-       [
-        1,
-        120
-       ],
-       [
-        1.5,
-        160
-       ],
-       [
-        2,
-        215
-       ],
-       [
-        2.5,
-        255
-       ],
-       [
-        3,
-        305
-       ],
-       [
-        4,
-        390
-       ],
-       [
-        5,
-        475
-       ],
-       [
-        6.25,
-        580
-       ],
-       [
-        12.5,
-        945
-       ],
-       [
-        25,
-        1860
-       ],
-       [
-        50,
-        3720
-       ],
-       [
-        100,
-        7445
-       ]
-      ],
-      "CI5-PER": [
        [
         0.5,
         75
@@ -15921,9 +15974,9 @@
       "CE5-SA": 0,
       "CG5-SB": 0,
       "CY2-NIL": 0,
+      "CI5-PER": 0,
       "CF5-WM": 0,
       "CA6-CYB": 0,
-      "CI5-PER": 0,
       "CZ6-WM": 0,
       "CA3-KP": 0,
       "CA5-SEN": 0.3,
@@ -16052,6 +16105,10 @@
        "pct": -0.15,
        "why": "good record"
       },
+      "CI5-PER": {
+       "pct": -0.15,
+       "why": "good record"
+      },
       "CF5-WM": {
        "pct": -0.15,
        "why": "good record"
@@ -16059,10 +16116,6 @@
       "CA6-CYB": {
        "pct": 0,
        "why": ""
-      },
-      "CI5-PER": {
-       "pct": -0.15,
-       "why": "good record"
       },
       "CZ6-WM": {
        "pct": 0,
@@ -17033,6 +17086,28 @@
         450
        ]
       ],
+      "CI5-PER": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
       "CF5-WM": [
        [
         10,
@@ -17056,28 +17131,6 @@
        ]
       ],
       "CA6-CYB": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
-      "CI5-PER": [
        [
         10,
         130
@@ -17528,9 +17581,9 @@
       "CE5-SA": 0,
       "CG5-SB": 0,
       "CY2-NIL": 0,
+      "CI5-PER": 0,
       "CF5-WM": 0,
       "CA6-CYB": 0,
-      "CI5-PER": 0,
       "CZ6-WM": 0,
       "CA3-KP": 0,
       "CA5-SEN": 0,
@@ -18413,6 +18466,28 @@
         1500
        ]
       ],
+      "CI5-PER": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
       "CF5-WM": [
        [
         1,
@@ -18436,28 +18511,6 @@
        ]
       ],
       "CA6-CYB": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
-      ],
-      "CI5-PER": [
        [
         1,
         60
@@ -18908,9 +18961,9 @@
       "CE5-SA": 0,
       "CG5-SB": 0,
       "CY2-NIL": 0,
+      "CI5-PER": 0,
       "CF5-WM": 0,
       "CA6-CYB": 0,
-      "CI5-PER": 0,
       "CZ6-WM": 0,
       "CA3-KP": 0,
       "CA5-SEN": 0,
@@ -19526,6 +19579,20 @@
         60
        ]
       ],
+      "CI5-PER": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        60
+       ]
+      ],
       "CF5-WM": [
        [
         1,
@@ -19541,20 +19608,6 @@
        ]
       ],
       "CA6-CYB": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        60
-       ]
-      ],
-      "CI5-PER": [
        [
         1,
         8
@@ -19853,9 +19906,9 @@
       "CE5-SA": 0,
       "CG5-SB": 0,
       "CY2-NIL": 0,
+      "CI5-PER": 0,
       "CF5-WM": 0,
       "CA6-CYB": 0,
-      "CI5-PER": 0,
       "CZ6-WM": 0,
       "CA3-KP": 0,
       "CA5-SEN": 0,
@@ -20587,6 +20640,24 @@
         1500
        ]
       ],
+      "CI5-PER": [
+       [
+        1,
+        75
+       ],
+       [
+        5,
+        375
+       ],
+       [
+        10,
+        750
+       ],
+       [
+        20,
+        1500
+       ]
+      ],
       "CF5-WM": [
        [
         1,
@@ -20606,24 +20677,6 @@
        ]
       ],
       "CA6-CYB": [
-       [
-        1,
-        75
-       ],
-       [
-        5,
-        375
-       ],
-       [
-        10,
-        750
-       ],
-       [
-        20,
-        1500
-       ]
-      ],
-      "CI5-PER": [
        [
         1,
         75
@@ -20998,9 +21051,9 @@
       "CE5-SA": 0,
       "CG5-SB": 0,
       "CY2-NIL": 0,
+      "CI5-PER": 0,
       "CF5-WM": 0,
       "CA6-CYB": 0,
-      "CI5-PER": 0,
       "CZ6-WM": 0,
       "CA3-KP": 0,
       "CA5-SEN": 0,
@@ -21460,6 +21513,16 @@
         125
        ]
       ],
+      "CI5-PER": [
+       [
+        12,
+        60
+       ],
+       [
+        30,
+        125
+       ]
+      ],
       "CF5-WM": [
        [
         12,
@@ -21471,16 +21534,6 @@
        ]
       ],
       "CA6-CYB": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CI5-PER": [
        [
         12,
         60
@@ -21703,9 +21756,9 @@
       "CE5-SA": 0,
       "CG5-SB": 0,
       "CY2-NIL": 0,
+      "CI5-PER": 0,
       "CF5-WM": 0,
       "CA6-CYB": 0,
-      "CI5-PER": 0,
       "CZ6-WM": 0,
       "CA3-KP": 0,
       "CA5-SEN": 0,
@@ -21728,11 +21781,11 @@
      "suggest": null
     }
    },
-   "v": "v1404"
+   "v": "v1406"
   },
   "OPEN": {
-   "at": "2026-11-03T11:07:29.862Z",
-   "count": 8,
+   "at": "2026-11-03T12:25:31.866Z",
+   "count": 11,
    "byKey": {
     "CZ5-TM|2026-11-03|185": {
      "d": "2026-11-03",
@@ -21747,6 +21800,54 @@
      "rid": "s325",
      "paidOn": "2026-11-03",
      "key": "CZ5-TM|2026-11-03|185"
+    },
+    "CI5-PER|2026-11-03|160|oil": {
+     "d": "2026-11-03",
+     "p": "CI5-PER",
+     "dir": "S",
+     "q": 10,
+     "t": 130,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 160,
+     "oweUnits": 10,
+     "dv": 30,
+     "pr": "oil",
+     "rid": "s326",
+     "trip": "t7649425302058788",
+     "key": "CI5-PER|2026-11-03|160|oil"
+    },
+    "CI5-PER|2026-11-03|120": {
+     "d": "2026-11-03",
+     "p": "CI5-PER",
+     "dir": "S",
+     "q": 1,
+     "t": 120,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 120,
+     "oweUnits": 1,
+     "rid": "s327",
+     "trip": "t7649425302058788",
+     "key": "CI5-PER|2026-11-03|120"
+    },
+    "CI5-PER|2026-11-03|60|rice": {
+     "d": "2026-11-03",
+     "p": "CI5-PER",
+     "dir": "S",
+     "q": 10,
+     "t": 60,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 60,
+     "oweUnits": 10,
+     "pr": "rice",
+     "rid": "s328",
+     "trip": "t7649425302058788",
+     "key": "CI5-PER|2026-11-03|60|rice"
     },
     "CR3-DAM|2026-10-30|70": {
      "d": "2026-10-30",
@@ -21873,9 +21974,9 @@
      "free": 3,
      "owedOut": 2,
      "coverDays": 0.7,
-     "rate": 4.15,
+     "rate": 4.2,
      "owedToYou": 310,
-     "promised": 2,
+     "promised": 3,
      "short": 0
     },
     "oil": {
@@ -21884,10 +21985,10 @@
      "free": 0,
      "owedOut": 0,
      "coverDays": 0,
-     "rate": 3.36,
+     "rate": 3.85,
      "owedToYou": 0,
-     "promised": 0,
-     "short": 0
+     "promised": 10,
+     "short": 10
     },
     "candy": {
      "name": "Candy",
@@ -21905,10 +22006,10 @@
      "onHand": 70,
      "free": 70,
      "owedOut": 0,
-     "coverDays": 24,
-     "rate": 2.94,
+     "coverDays": 21.2,
+     "rate": 3.49,
      "owedToYou": 15,
-     "promised": 0,
+     "promised": 10,
      "short": 0
     },
     "gas": {
@@ -21942,7 +22043,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1404"
+   "v": "v1406"
   },
   "TERMS": {
    "ceiling": 250,
@@ -21950,7 +22051,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1404"
+   "v": "v1406"
   },
   "REWARD": {
    "stated": {
@@ -21968,7 +22069,7 @@
      }
     }
    },
-   "v": "v1404"
+   "v": "v1406"
   },
   "STOCK": {
    "today": "2026-11-03",
@@ -21976,7 +22077,7 @@
     "salt": {
      "shelf": 5,
      "free": 3,
-     "commit": 2,
+     "commit": 3,
      "light": "green",
      "coverDays": 0.7,
      "transit": 0
@@ -21984,7 +22085,7 @@
     "oil": {
      "shelf": 0,
      "free": 0,
-     "commit": 0,
+     "commit": 10,
      "light": "red",
      "coverDays": 0,
      "transit": 0
@@ -22000,9 +22101,9 @@
     "rice": {
      "shelf": 70,
      "free": 70,
-     "commit": 0,
+     "commit": 10,
      "light": "green",
-     "coverDays": 24,
+     "coverDays": 21.2,
      "transit": 0
     },
     "gas": {
@@ -22022,7 +22123,7 @@
      "transit": 0
     }
    },
-   "v": "v1404"
+   "v": "v1406"
   }
  }
 }
