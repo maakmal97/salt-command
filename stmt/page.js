@@ -775,6 +775,13 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .ledgrp .salt-table td.l,.adm .ledgrp .salt-table th.l{text-align:left}
 .adm .ledgrp small{display:block;color:var(--salt-mist)}
 .adm .ledgrp .rnone{margin:0}
+/* 4 NOV 2026 (his word: the three tables aligned): ONE COLUMN LAYOUT for Open, Pending and the latest twenty, fixed and the same in each, so a column
+   stands in one place down the page; under 1000px each still scrolls inside its own box, and a long word is cut, never pushed into the next column. */
+.adm .ledgrp .ledtable{table-layout:fixed;min-width:1000px}
+.adm .ledgrp .ledtable th,.adm .ledgrp .ledtable td{overflow:hidden;text-overflow:ellipsis}
+.adm .ledgrp .ledtable small{white-space:normal}
+.adm .ledtable .lc1{width:10%}.adm .ledtable .lc2{width:12%}.adm .ledtable .lc3{width:11%}.adm .ledtable .lc4{width:10%}.adm .ledtable .lc5{width:7%}
+.adm .ledtable .lc6{width:11%}.adm .ledtable .lc7{width:14%}.adm .ledtable .lc8{width:11%}.adm .ledtable .lc9{width:14%}
 /* 20 OCT 2026 (his word, canvas V63): THE WEEK CHART. A row a day, 44px, the name, a 00 to 24 track and the times; the open span a brass bar,
    a span past midnight's tail hatched at the start of the next day's row. A tapped day opens below its row on slate: Opens and Closes, then
    its quick buttons, every one 44px. */

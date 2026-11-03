@@ -67,6 +67,13 @@ export async function run({ ok, pageWork }) {
       "each table sits in its own scrolling box that a keyboard can reach and a reader can name");
     const css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n").split("\n").filter((l) => /ledgrp|#oLedger/.test(l));
     ok(css.length >= 5 && css.every((l) => !/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/.test(l)), "the ledger's rules are written in the system's tokens, never a colour: " + css.length + " rules");
+    /* 7 (4 Nov 2026, his word: the three tables aligned): one column layout, the same nine columns at the same widths in each, fixed */
+    const groups = [...d.querySelectorAll("#oLedger table")].map((t) => { const cg = t.firstElementChild; return cg && cg.tagName === "COLGROUP" ? [...cg.children].map((c) => c.className).join() : ""; });
+    const all = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
+    const widths = [...Array(9)].map((_, i) => { const m = new RegExp("\\.adm \\.ledtable \\.lc" + (i + 1) + "\\{width:([0-9.]+)%\\}").exec(all); return m ? +m[1] : NaN; });
+    ok(groups.length === 3 && groups.every((g) => g === "lc1,lc2,lc3,lc4,lc5,lc6,lc7,lc8,lc9") && [...d.querySelectorAll("#oLedger table")].every((t) => t.classList.contains("ledtable"))
+      && /\.adm \.ledgrp \.ledtable\{table-layout:fixed;min-width:1000px\}/.test(all) && Math.abs(widths.reduce((a, b) => a + b, 0) - 100) < 1e-9,
+      "7 the three tables share one fixed column layout, nine columns making the whole width, so each column stands in one place: " + JSON.stringify([groups, widths]));
   } finally { p.w.close(); }
 
   /* 5 */
