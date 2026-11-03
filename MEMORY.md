@@ -293,6 +293,20 @@
 ## Salt Admin's Orders count is every open order (v1416)
 - Live as v1416 (`a485eea7`, 03 Nov 2026; Cloud commit `41663107601`: chain and three suite parts green; CI `41663107587` verify green), his "Yes, fix it here" after his screenshot of CN3-WM's row s182 and trip s235+s236 standing in Open, owing, uncounted. Since 17 Oct 2026 Open listed book rows, trips and same days as orders while `drawCounts` counted site orders alone. `ordOpenCount` in `stmt/owner.js` counts both, a done, ended or practice one apart; `drawCounts` paints it (every orders read redraws the bars after the list, so `paintOrdCounts` needs no copy: its mutation went unnoticed and was dropped). Section "3 Nov 2026: Salt Admin's Orders count" (`test/admin-orders-count.mjs`, 3 checks, 5 mutations red); needles re-aimed in admin-needs and admin-orders, each proved red.
 
+## The exact spot reads what phones share (v1418)
+- Live as v1418 (`6c5ec66f`, 03 Nov 2026; Cloud commit `41666117393`: chain green with "The phone is serving it" on build `a4977b01566c74a0`, three suite
+  parts green; CI green), his report that sharing the exact location did not work and that the order of taps seemed to matter. Found: `pinRead` in
+  `stmt/page.js` took only a bare Google Maps or Waze link, so Apple Maps (an iPhone's share), a link after the place's name, `maps.google.com/?q` and two
+  figures were refused; Salt Admin drew a short link as "open it on the Desk". The Review logic was proved order-free in jsdom (every order of A friend,
+  Deliver, area and spot); what moved on a phone was `sheetDraw` emptying the scrolling body, throwing the sheet to its top on every choice. Parts
+  `80a88c6a` (reader; Apple `ll`, `coordinate`, `q`, `sll` in that order, `maps.apple/p` kept as a link, text 4000, link 600), `2c6e0254` (Salt Admin opens a
+  link spot through `pointPlace`, `/all/maker/geo/open`), `57303e17` (`osh.drawn` keeps the scroll on the same step), `03426470` and `7671475f` (Fable's
+  findings: a failed open held five minutes, `missAt`), `e78a9390` (no app named in the served comments, S1 1.10 and S9 9.2). Sections: delivery-pin P1 to P3,
+  admin-ac-spot 6 and 7, order-as-them B12; every new mutation red. Fable reviewed and re-checked: closed. Full suite 11,893 passed, 3 failed (S1b laptop only,
+  and the two comment checks, fixed and green).
+- Left, said: the Desk cannot follow an Apple short link (`maps.apple/p`): `mapsLink` and `/geo/expand` know only `maps.app.goo.gl`, so such a spot is
+  opened on Salt Admin but cannot be filed as their place on the Desk (Fable medium, accepted as a follow-up).
+
 ## Disabled automation
 - `Salt fold (manual backup)` = `trig_01UrnjQMWA3f6GXN5R6Dzi4S`, disabled.
 
