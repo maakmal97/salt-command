@@ -92,8 +92,9 @@
   {
     "name": "every redraw opens it again",
     "file": "stmt/owner.js",
-    "find": "      if(held){ adSpotPaint(held); return; }",
+    "find": "      if(held&&!(held.missAt&&Date.now()-held.missAt>300000)){ adSpotPaint(held); return; }",
     "replace": "      if(false){ adSpotPaint(held); return; }"
   },
- {"name":"a shared short link is never opened on Salt Admin (4 Nov 2026)","file":"stmt/owner.js","find":"          if(lp) p=Object.assign({},p,{lat:lp.lat, lng:lp.lng});\n","replace":""}
+ {"name":"a shared short link is never opened on Salt Admin (4 Nov 2026)","file":"stmt/owner.js","find":"          if(lp) p=Object.assign({},p,{lat:lp.lat, lng:lp.lng});\n","replace":""},
+ {"name":"a link that will not open is opened on every redraw (4 Nov 2026)","file":"stmt/owner.js","find":"      if(held&&!(held.missAt&&Date.now()-held.missAt>300000)){","replace":"      if(held&&!held.missAt){"}
 ]

@@ -1823,7 +1823,7 @@ export const OWNER_JS = `
         var a=el('a','salt-ghost adspot__maps'); a.href=spotHref(+p.lat,+p.lng); a.setAttribute('data-spot-maps','');
         if(/^https:/.test(a.getAttribute('href'))){ a.target='_blank'; a.rel='noopener'; }
         a.appendChild(pinSvg()); a.appendChild(document.createTextNode('Maps')); row.appendChild(a);
-      }else if(p.src!=='unit') part.appendChild(el('p','msg','Their link did not open to a point, so ask them to share it again.'));
+      }else if(p.src!=='unit') part.appendChild(el('p','msg','Their link could not be opened to a point just now.'));
       var lk=ghost(['Lock','vault.lock','spot:'+key]); lk.addEventListener('click',function(){ makerVaultLock(); }); row.appendChild(lk);
       part.appendChild(row);
       part.appendChild(el('p','msg','File it as their place on the Desk.'));
@@ -1831,7 +1831,8 @@ export const OWNER_JS = `
     }
     async function adSpotOpen(){
       var generation=makerSpotGen, held=makerSpotOpened[order.u+'/'+order.pin];
-      if(held){ adSpotPaint(held); return; }
+      /* a link that did not open is held five minutes, then asked again, so each minute's redraw does not open it afresh (Fable) */
+      if(held&&!(held.missAt&&Date.now()-held.missAt>300000)){ adSpotPaint(held); return; }
       said('Opening the address.');
       try{
         if(!makerVault.slip) throw new Error('No slip key is filed.');
@@ -1848,9 +1849,9 @@ export const OWNER_JS = `
           var lp=null; try{ lp=await pointPlace(p.link); }catch(e){ lp=null; }
           if(generation!==makerSpotGen||!makerVault||document.hidden) return;
           if(lp) p=Object.assign({},p,{lat:lp.lat, lng:lp.lng});
-          else landed=false;   /* a link that did not open is asked again on the next open, never kept as pointless (Fable) */
+          else { landed=false; p=Object.assign({},p,{missAt:Date.now()}); }
         }
-        if(landed){ makerSpotOpened[order.u+'/'+order.pin]=p; kmRepaint(); }
+        makerSpotOpened[order.u+'/'+order.pin]=p; if(landed) kmRepaint();
         if(box.isConnected) adSpotPaint(p);
       }catch(error){
         if(generation===makerSpotGen) said(/not kept/.test(String(error&&error.message))?'The address they shared is no longer kept.':'The address could not be opened: '+(error&&error.message||error));

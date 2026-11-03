@@ -15,7 +15,7 @@ import { readPin } from "../stmt/pin.js";
 
 const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
 const b64 = (v) => Buffer.from(v).toString("base64");
-const U = "abcd-efgh", IDP = "a".repeat(32), IDU = "b".repeat(32), IDX = "c".repeat(32), IDL = "d".repeat(32);
+const U = "abcd-efgh", IDP = "a".repeat(32), IDU = "b".repeat(32), IDX = "c".repeat(32), IDL = "d".repeat(32), IDM = "e".repeat(32);
 /* a spot sealed as their phone seals it (stmt/page.js pinSeal): an ephemeral pair, ECDH with his public half, HKDF under 'salt-pin v1', AES-GCM */
 async function pinSeal(pubJwk, value) {
   const S = webcrypto.subtle, E = { name: "ECDH", namedCurve: "P-256" };
@@ -40,11 +40,14 @@ export async function run({ ok, pageWork }) {
   const fix = await slipFixture();
   const sealed = { [IDP]: await pinSeal(fix.pub, { lat: 3.15, lng: 101.71, label: "Back door", unit: "Unit 12, floor 3" }),
     [IDU]: await pinSeal(fix.pub, { unit: "Unit 7", src: "unit" }),
-    [IDL]: await pinSeal(fix.pub, { link: "https://maps.app.goo.gl/AbCdEf123", src: "link", label: "Gate" }) };
+    [IDL]: await pinSeal(fix.pub, { link: "https://maps.app.goo.gl/AbCdEf123", src: "link", label: "Gate" }),
+    [IDM]: await pinSeal(fix.pub, { link: "https://maps.apple/p/ZzYy99", src: "link" }) };
   const base = { u: U, product: "salt", delivery: 10, msgs: [], history: [], payments: [], paid: 0, mode: "deliver", place: "Lirau", qty: 1, total: 50, status: "acknowledged", at: "2026-10-10T02:00:00.000Z" };
-  const orders = [{ ...base, id: "ord-sp", pin: IDP }, { ...base, id: "ord-su", pin: IDU }, { ...base, id: "ord-sx", pin: IDX, test: true }, { ...base, id: "ord-sl", pin: IDL }];
+  const orders = [{ ...base, id: "ord-sp", pin: IDP }, { ...base, id: "ord-su", pin: IDU }, { ...base, id: "ord-sx", pin: IDX, test: true }, { ...base, id: "ord-sl", pin: IDL },
+    { ...base, id: "ord-sm", pin: IDM }];
+  let geoFail = false;
   const p = await richOwnerPage({ pageWork, slip: true, review: (j) => ({ ...j, orders: (j.orders || []).concat(orders) }),
-    extra: (route) => { if (route === "/all/maker/geo/open") return { ok: true, location: "https://www.google.com/maps/place/Gate/@3.0738,101.7255,17z" };
+    extra: (route) => { if (route === "/all/maker/geo/open") return geoFail ? { ok: false, error: "The link did not lead to a point." } : { ok: true, location: "https://www.google.com/maps/place/Gate/@3.0738,101.7255,17z" };
       const m = /^\/all\/maker\/pins\/[^/]+\/([0-9a-f]{32})$/.exec(route); return m ? (sealed[m[1]] ? { ok: true, pin: sealed[m[1]] } : undefined) : undefined; } });
   try {
     await p.work.quiet();
@@ -86,7 +89,15 @@ export async function run({ ok, pageWork }) {
     C = await open("ord-sl");
     const SL = C && C.querySelector("[data-pin-gate] [data-maker-pin]"), slMaps = SL && SL.querySelector("a[data-spot-maps]");
     const geo = p.wire.filter((x) => /\/all\/maker\/geo\/open/.test(typeof x === "string" ? x : x.route || x.url || "")).length;
-    ok(!!slMaps && /3\.0738,101\.7255/.test(slMaps.getAttribute("href")) && geo === 1 && !/try it on the Desk/.test(t(SL)),
+    ok(!!slMaps && /3\.0738,101\.7255/.test(slMaps.getAttribute("href")) && geo === 1 && !/could not be opened/.test(t(SL)),
       "6 a short link they shared opens through Salt Admin's map road to Maps at its point: " + t(SL) + " " + (slMaps && slMaps.getAttribute("href")) + " geo " + geo);
+    /* 7 (Fable's re-check): a link that will not open says so, and a redraw of the card holds that answer rather than opening it again */
+    geoFail = true;
+    const geoN = () => p.wire.filter((x) => /\/all\/maker\/geo\/open/.test(typeof x === "string" ? x : x.route || x.url || "")).length;
+    C = await open("ord-sm");
+    const SM = C && C.querySelector("[data-pin-gate] [data-maker-pin]"), firstGeo = geoN();
+    await click(byAct(d, "order.open", "ord-sm")); await click(byAct(d, "order.open", "ord-sm"));
+    ok(!!SM && /could not be opened to a point just now/.test(t(SM)) && !SM.querySelector("a[data-spot-maps]") && firstGeo === 2 && geoN() === 2,
+      "7 a link that will not open says so with no Maps, and a redraw does not open it again: " + t(SM) + " geo " + firstGeo + "/" + geoN());
   } finally { p.w.close(); }
 }
