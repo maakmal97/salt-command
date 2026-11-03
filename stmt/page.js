@@ -337,12 +337,17 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .panel h2:not(.salt-settings__head),.panel h1.gh{font-size:var(--salt-text-lg);margin:0 0 4px}
 .panel p.lead{color:var(--salt-mist-bright);font-size:.875rem;line-height:1.6;margin:0 0 18px}
 /* Counter Batch B: the basket's + beside each size, its minus and its count once tallied, and the pane's line of what is in it */
-.szwrap{display:flex;align-items:center;gap:8px}
-.szwrap>.szrow{flex:1 1 auto;min-width:0}
-.szadd{display:flex;align-items:center;gap:6px;flex:0 0 auto}
-.szadd .salt-orb{width:var(--salt-tap);height:var(--salt-tap);min-width:var(--salt-tap);min-height:var(--salt-tap);display:inline-flex;align-items:center;justify-content:center}
-.szadd .salt-orb:disabled{opacity:.45;cursor:not-allowed}
-.bkn{min-width:1.5em;text-align:center;font-family:var(--salt-font-mono);font-variant-numeric:tabular-nums;color:var(--salt-copper)}
+/* plan version 9 (03 Nov 2026): a book's stepper (salt-stepper), its figure and Add on one row, the sizes one fold under it */
+.pane .salt-stepper{margin-top:8px}
+.strow{display:flex;align-items:center;gap:12px;margin-top:12px}
+.stfig{font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);color:var(--salt-salt);font-variant-numeric:tabular-nums}
+.strow .salt-status[hidden]{display:none}
+.stadd{margin-left:auto}
+.sfold{margin-top:8px}
+.sfold>summary{min-height:var(--salt-tap);display:flex;align-items:center;cursor:pointer;list-style:none;font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:.08em;text-transform:uppercase;color:var(--salt-brass)}
+.sfold>summary::-webkit-details-marker{display:none}
+.sfold>summary:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px}
+.szrow[aria-pressed="true"] .salt-ledger__value{color:var(--salt-brass)}
 .bkline[hidden]{display:none}
 .bkline{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:10px}
 .bkline__t{font-size:var(--salt-text-md);color:var(--salt-salt)}
@@ -4214,7 +4219,7 @@ const CLIENT_JS = `
     /* S4 4.8: THE STAMP SAYS WHEN THE LIST WAS WRITTEN, "Prices as at Thu 24 Sep, 11:59" in Kuala Lumpur, where "for the week
        of" stayed on an open page for good; a list sealed before it carried a time keeps its week. Every size is a tap. */
     var tapTo=!ro()&&!hold;
-    bsRows=[]; bsPanes=[]; supPanes={};
+    bsPanes=[]; supPanes={}; stPanes={};
     pPrices.appendChild(el('p','lead',tw((prices.at&&pricesAt(prices.at)?'pr.asAt':'pr.week')+(tapTo?'Tap':''),
       {d:Dd(pricesAt,prices.at), w:prices.week&&prices.week.label||''})));
     pPrices.appendChild(el('p','lead',tw('pr.goods',{deliv:Wk('deliv')})));
@@ -4233,20 +4238,20 @@ const CLIENT_JS = `
          for it beside each product, never named; a customer now sees no level at all, in words or in a mark. The name
          still travels inside the sealed list, and nothing here reads it. 27 Sep 2026: a pane is its mark and its sizes. */
       pane.appendChild(h3); supplyMark(h3,pane,p); supPanes[p.product]=pane;
-      /* S4 4.8: a size is a row of the plain ledger, and each row is one tap that opens the order sheet at that size */
+      /* PLAN VERSION 9: the units are chosen here, on the book's stepper; its sizes stand one fold under it, each a tap that sets the stepper.
+         Where nothing is ordered from here (his read-only view, the overdue gate) the sizes are the plain ledger, as before */
+      if(tapTo) stepBox(p,pane);
       var L=el('div','salt-ledger salt-ledger--plain');
       p.sizes.forEach(function(r){
         var row=el(tapTo?'button':'div','salt-ledger__row szrow'), line=el('span','salt-ledger__line');
         line.appendChild(el('span','salt-ledger__label',unitsOf(r.q,p.unit)));
-        var v=el('span','salt-ledger__value',rm(r.price)); line.appendChild(v); row.appendChild(line);
-        if(tapTo){ row.type='button'; row.setAttribute('data-q',String(r.q)); v.appendChild(oGlyph('next','ochev'));
-          row.addEventListener('click',function(){ sheetOpen(p.product,r.q,row); }); }
-        /* COUNTER BATCH B: the size's + beside its row, never inside it */
-        if(tapTo){ var sw=el('div','szwrap'); sw.appendChild(row); sw.appendChild(bsAdd(p,r.q)); L.appendChild(sw); }
-        else L.appendChild(row);
+        line.appendChild(el('span','salt-ledger__value',rm(r.price))); row.appendChild(line);
+        if(tapTo){ row.type='button'; row.setAttribute('data-q',String(r.q)); row.setAttribute('aria-pressed','false');
+          row.addEventListener('click',function(){ stepTo(p.product,+r.q,true); }); }
+        L.appendChild(row);
       });
-      pane.appendChild(L);
-      if(tapTo){ var bkl=el('div','bkline'); bkl.hidden=true; pane.appendChild(bkl); bsPanes.push({P:p, node:bkl}); }
+      if(tapTo&&stPanes[p.product]){ var fd=el('details','sfold'); fd.appendChild(el('summary',null,tw('st.sizes'))); fd.appendChild(L); pane.appendChild(fd); stepPatch(p.product,false); }
+      else pane.appendChild(L);
       grid.appendChild(pane);
     });
     /* his instruction of 15 Sep 2026: a product with no tier set is not priced, and says so */
@@ -4280,64 +4285,38 @@ const CLIENT_JS = `
      up to the line), lost on a reload and at sign-out. A + greys where the sum has no price (past the grid, off a board) and, with five
      orders open, every + greys and the limit is said: a basket is one sheet and counts once. Minus never refuses. A tap patches the controls,
      the line and the bar where they stand, so focus stays. The page prices nothing: every figure is priceAt over the sealed list. */
-  var bsRows=[], bsPanes=[], supPanes={};
+  var bsPanes=[], supPanes={}, stPanes={};
   function bsOf(p){ var b=draft.bk||{}; return Object.prototype.hasOwnProperty.call(b,p)?+b[p]:0; }
   function bsTapsOf(p){ var t=(draft.bkTaps||{})[p]||{}, s=0, k=Object.keys(t); k.forEach(function(q){ s+=(+q)*t[q]; }); return k.length&&Math.abs(s-bsOf(p))<1e-6?t:null; }
   function bsSet(p,amt){ draft.bk=draft.bk||{}; if(amt>1e-9) draft.bk[p]=String(+amt.toFixed(6)); else { delete draft.bk[p]; if(draft.bkTaps) delete draft.bkTaps[p]; } }
   function bsDrop(p){ bsSet(p,0); }
   function bsOn(){ return !ro()&&!hold&&!hidePrices; }
-  function bsCanAdd(P,q){ return bsOn()&&openN()<OMAX&&priceAt(P,+(bsOf(P.product)+(+q)).toFixed(6))!=null; }
-  function bsAdd(P,q){
-    var box=el('span','szadd'), w=pshape(P.product)+' '+unitsOf(q,P.unit);
-    var plus=el('button','salt-orb szplus'); plus.type='button'; plus.setAttribute('data-add',String(q));
-    plus.appendChild(oGlyph('plus')); plus.appendChild(el('span','sr',tw('bk.add',{w:w})));
-    plus.addEventListener('click',function(){ if(!bsCanAdd(P,q)) return;
-      var t=bsTapsOf(P.product)||{}; t[q]=(t[q]||0)+1;
-      bsSet(P.product,bsOf(P.product)+(+q)); (draft.bkTaps=draft.bkTaps||{})[P.product]=t; bsPatch(); });
-    box.appendChild(plus);
-    bsRows.push({P:P, q:q, box:box, plus:plus, w:w});
-    return box;
-  }
   /* the controls a size, the line a pane and the limit, patched in place */
   function bsPatch(){
     var lim=document.getElementById('bkLim'); if(lim) lim.hidden=!(bsOn()&&openN()>=OMAX);
-    bsRows.forEach(function(R){
-      R.plus.disabled=!bsCanAdd(R.P,R.q);
-      var t=bsTapsOf(R.P.product), n=t&&t[R.q]||0, mi=R.box.querySelector('.szless'), nb=R.box.querySelector('.bkn');
-      if(n>0){
-        if(!nb){ nb=el('span','bkn'); nb.setAttribute('aria-hidden','true'); R.box.insertBefore(nb,R.plus); }
-        nb.textContent=String(n);
-        if(!mi){ mi=el('button','salt-orb szless'); mi.type='button'; mi.setAttribute('data-less',String(R.q)); mi.appendChild(oGlyph('minus')); mi.appendChild(el('span','sr'));
-          mi.addEventListener('click',function(){ var tt=bsTapsOf(R.P.product);
-            if(!tt||!tt[R.q]){ bsDrop(R.P.product); }
-            else { tt[R.q]--; if(!tt[R.q]) delete tt[R.q]; bsSet(R.P.product,bsOf(R.P.product)-(+R.q)); if(draft.bkTaps&&draft.bkTaps[R.P.product]) draft.bkTaps[R.P.product]=tt; }
-            bsPatch(); });
-          R.box.insertBefore(mi,nb); }
-        mi.querySelector('.sr').textContent=tw('bk.less',{w:R.w, n:n});
-      } else { if(mi){ var had=mi===document.activeElement; mi.remove(); if(had) try{ R.plus.focus({preventScroll:true}); }catch(e){} } if(nb) nb.remove(); }
-    });
     bsPanes.forEach(function(B){
       var p=B.P.product, a=bsOf(p), t=bsTapsOf(p), N=B.node; N.textContent=''; N.hidden=!(a>0)||!bsOn(); if(N.hidden) return;
       var parts=t?Object.keys(t).sort(function(x,y){ return +y-(+x); }).reduce(function(s,q){ for(var i=0;i<t[q];i++) s.push(String(+q)); return s; },[]):[];
       N.appendChild(el('span','bkline__t',parts.length>1?tw('bk.inTaps',{q:unitsOf(a,B.P.unit), t:parts.join(' + ')}):tw('bk.in',{q:unitsOf(a,B.P.unit)})));
-      if(priceAt(B.P,a)==null){ var g=gridOf(B.P); N.appendChild(el('span','salt-field__hint',g&&a>g.max?tw('bk.over',{m:g.max}):g?offWhy(g,a):tw('bk.noPrice'))); }
+      if(priceAt(B.P,a)==null&&!overMax(B.P,a)){ var g=gridOf(B.P); N.appendChild(el('span','salt-field__hint',g&&a>g.max?tw('bk.over',{m:g.max}):g?offWhy(g,a):tw('bk.noPrice'))); }
       var rb=el('button','salt-ghost bkline__out',tw('bk.remove')); rb.type='button'; rb.setAttribute('data-bkout','');
       rb.appendChild(el('span','sr',' '+pshape(p)));
-      rb.addEventListener('click',function(){ bsDrop(p); bsPatch(); var f=bsRows.filter(function(R){ return R.P.product===p; })[0]; if(f) try{ f.plus.focus({preventScroll:true}); }catch(e){} });
+      rb.addEventListener('click',function(){ bsDrop(p); bsPatch(); var S=stPanes[p]; if(S) try{ S.val.focus({preventScroll:true}); }catch(e){} });
       N.appendChild(rb);
     });
+    Object.keys(stPanes).forEach(function(k){ stepPatch(k,false); });
     bsBarDraw();
   }
   /* THE BAR: how many lines, the goods at the list's figures added as the sheet's foot adds them, delivery left to his confirmation, and
      Review. Under 1080px a foot sticking above the App bar (the pay foot's pattern), from 1080px a card at the foot of the list's column.
      Review is grey while a line has no price; it copies the priced lines into the sheet and opens its check */
-  function bsLines(){ var out=[]; sold().forEach(function(P){ var a=bsOf(P.product); if(a>0) out.push({P:P, a:a, t:priceAt(P,a)}); }); return out; }
+  function bsLines(){ var out=[]; sold().forEach(function(P){ var a=bsOf(P.product), t=a>0?priceAt(P,a):null; if(a>0) out.push({P:P, a:a, t:t, over:t==null&&overMax(P,a)}); }); return out; }
   function bsBarDraw(){
     var bar=document.getElementById('bkBar');
     if(!bar){ if(!pPrices.querySelector('.pgrid')) return; bar=el('div','bkbar'); bar.id='bkBar'; pPrices.appendChild(bar); }
     var ls=bsOn()?bsLines():[], fo=document.activeElement, had=!!fo&&bar.contains(fo);
     bar.textContent=''; bar.hidden=!ls.length; if(!ls.length) return;
-    var sum=0, open=ls.some(function(x){ return x.t==null; }); ls.forEach(function(x){ if(x.t!=null) sum+=x.t; });
+    var sum=0, open=ls.some(function(x){ return x.t==null&&!x.over; }); ls.forEach(function(x){ if(x.t!=null) sum+=x.t; });
     var w=wayNow();
     var bco=creditOff(+sum.toFixed(2));
     bar.appendChild(kpiTile('brass',tw(ls.length===1?'bk.lines1':'bk.linesN',{n:ls.length}),rm(+sum.toFixed(2)),bco.any?tw('sh.creditOff',{c:rm(bco.c), p:rm(bco.pay)}):tw(w&&w.mode==='deliver'?'sh.plusDeliv':'sh.toCollect')));
@@ -4347,7 +4326,7 @@ const CLIENT_JS = `
     if(had) try{ go.focus({preventScroll:true}); }catch(e){}
   }
   function bsReview(go){
-    var ls=bsLines(); if(!ls.length||ls.some(function(x){ return x.t==null; })||ro()||hold||!lapse.hidden) return;
+    var ls=bsLines(); if(!ls.length||ls.some(function(x){ return x.t==null&&!x.over; })||ro()||hold||!lapse.hidden) return;
     pickBasket(); draft.sheetKeep=''; draft.amend=''; draft.pool='';
     sheetOpen(null,null,go);
     if(osh&&draft.step==='form'&&!formWhy()) reviewSheet();
@@ -4358,12 +4337,112 @@ const CLIENT_JS = `
     placeShow('prices',true); wayDraw();
     var pn=product&&supPanes[product]; if(!pn) return;
     if(pn.scrollIntoView) pn.scrollIntoView({block:'start'});
-    var r=q!=null&&[].filter.call(pn.querySelectorAll('.szrow[data-q]'),function(x){ return x.getAttribute('data-q')===String(q); })[0];
-    if(r) try{ r.focus({preventScroll:true}); }catch(e){}
+    var S=stPanes[product]; if(!S) return;
+    if(q!=null&&stepIx(S,+q)>=0) stepTo(product,+q,false);
+    try{ S.val.focus({preventScroll:true}); }catch(e){}
+  }
+  /* PLAN VERSION 9 (his answer F, the canvas of 03 Nov 2026): A STEPPER A BOOK. Minus and plus walk the book's own sealed sizes, the ones the
+     Worker takes (stepWalk: every point of the grid that sizeOk keeps and the list prices, then every board size), the figure beside it the
+     list's own (priceAt); the page prices nothing. On a grid walked freely (no only, no multiples) the figure is a tap to type any size, and
+     past the grid's top a size is an ask, as the sheet's typed size was. It starts at the basket's line, else their usual, else the smallest;
+     Add puts that amount in the basket, setting the line, never adding to it. A step is said aloud, the units and the figure */
+  function stepWalk(P){ var g=gridOf(P), out=[];
+    if(g) for(var i=0;i<g.p.length;i++){ var q=+(g.min+i*g.step).toFixed(6); if(typeof g.p[i]==='number'&&sizeOk(g,q)) out.push(q); }
+    (P.sizes||[]).forEach(function(z){ if(!out.some(function(x){ return Math.abs(x-(+z.q))<1e-6; })) out.push(+z.q); });
+    return out.sort(function(a,b){ return a-b; }); }
+  function stepTyped(P){ var g=gridOf(P); return !!g&&!(g.only&&g.only.length)&&!(g.multiples&&g.multiples.length); }
+  function stepIx(S,q){ for(var i=0;i<S.W.length;i++) if(Math.abs(S.W[i]-q)<1e-6) return i; return -1; }
+  function stepOk(P,q){ return q>0&&(priceAt(P,q)!=null||overMax(P,q)); }
+  function stepStart(P,W){ var b=bsOf(P.product); if(b>0&&stepOk(P,b)) return b;
+    var U=oUsual(); if(U&&U.product===P.product&&W.some(function(x){ return Math.abs(x-(+U.q))<1e-6; })) return +U.q;
+    return W[0]; }
+  function stepBox(P,pane){
+    var W=stepWalk(P), k=P.product; if(!W.length) return;
+    draft.stq=draft.stq||{}; if(!stepOk(P,+draft.stq[k])) draft.stq[k]=stepStart(P,W);
+    var S={P:P, W:W, pane:pane, typing:false}, w=pshape(k);
+    var g=el('div','salt-stepper'); g.setAttribute('role','group'); g.setAttribute('aria-label',tw('st.how',{w:w}));
+    S.less=el('button','salt-orb'); S.less.type='button'; S.less.setAttribute('data-st','less'); S.less.setAttribute('aria-label',tw('st.less',{w:w})); S.less.appendChild(oGlyph('minus'));
+    S.more=el('button','salt-orb'); S.more.type='button'; S.more.setAttribute('data-st','more'); S.more.setAttribute('aria-label',tw('st.more',{w:w})); S.more.appendChild(oGlyph('plus'));
+    S.val=el(stepTyped(P)?'button':'output','salt-stepper__value'); if(S.val.tagName==='BUTTON') S.val.type='button'; else S.val.tabIndex=-1; S.val.setAttribute('data-st','val');
+    S.q=el('span','salt-stepper__q'); S.val.appendChild(S.q);
+    g.appendChild(S.less); g.appendChild(S.val); g.appendChild(S.more); pane.appendChild(g);
+    S.why=el('p','salt-stepper__why'); S.why.setAttribute('role','alert'); S.why.hidden=true; pane.appendChild(S.why);
+    S.say=el('p','sr'); S.say.setAttribute('aria-live','polite'); pane.appendChild(S.say);
+    var row=el('div','strow'); S.fig=el('span','stfig'); S.usual=el('span','salt-status salt-status--brass',tw('sh.usual'));
+    S.add=el('button','salt-ghost salt-ghost--lit stadd'); S.add.type='button'; S.add.setAttribute('data-st','add');
+    row.appendChild(S.fig); row.appendChild(S.usual); row.appendChild(S.add); pane.appendChild(row);
+    S.less.addEventListener('click',function(){ stepBy(k,-1); });
+    S.more.addEventListener('click',function(){ stepBy(k,1); });
+    if(S.val.tagName==='BUTTON') S.val.addEventListener('click',function(){ stepType(k); });
+    S.add.addEventListener('click',function(){ stepAdd(k); });
+    var bkl=el('div','bkline'); bkl.hidden=true; pane.appendChild(bkl); bsPanes.push({P:P, node:bkl});
+    stPanes[k]=S;
+  }
+  function stepBy(k,d){
+    var S=stPanes[k]; if(!S||!bsOn()) return;
+    var q=+draft.stq[k], i=stepIx(S,q), n=-1;
+    if(i>=0) n=i+d;
+    else for(var j=0;j<S.W.length;j++){ if(d>0&&S.W[j]>q){ n=j; break; } if(d<0&&S.W[j]<q) n=j; }
+    if(n<0||n>=S.W.length) return;
+    stepTo(k,S.W[n],false);
+  }
+  function stepTo(k,q,focus){
+    var S=stPanes[k]; if(!S) return;
+    draft.stq[k]=+q; (draft.stTouch=draft.stTouch||{})[k]=1; S.why.hidden=true; stepPatch(k,true);
+    if(focus) try{ S.val.focus({preventScroll:true}); }catch(e){}
+  }
+  function stepPatch(k,say){
+    var S=stPanes[k]; if(!S) return;
+    draft.stq=draft.stq||{};   /* a sign-out empties draft before the panes are drawn again */
+    /* untouched, it follows the basket and their usual, which the orders read after the list may only now know */
+    if(!(draft.stTouch&&draft.stTouch[k])) draft.stq[k]=stepStart(S.P,S.W);
+    var P=S.P, q=+draft.stq[k], i=stepIx(S,q), t=priceAt(P,q), over=t==null&&overMax(P,q), b=bsOf(k), u=unitsOf(q,P.unit);
+    S.q.textContent=u;
+    if(S.val.tagName==='BUTTON') S.val.setAttribute('aria-label',tw('st.type',{q:u}));
+    S.less.disabled=!bsOn()||i===0||(i<0&&!S.W.some(function(x){ return x<q; }));
+    S.more.disabled=!bsOn()||i<0&&!S.W.some(function(x){ return x>q; })||i===S.W.length-1;
+    S.fig.textContent=t!=null?rm(t):over?tw('st.ask'):'';
+    var U=oUsual(); S.usual.hidden=!(U&&U.product===k&&Math.abs(+U.q-q)<1e-6);
+    var inB=b>0, same=inB&&Math.abs(b-q)<1e-6;
+    S.add.textContent=tw(!inB?'st.add':same?'st.in':'st.update');
+    S.add.disabled=same||!bsOn()||(t==null&&!over);
+    [].forEach.call(S.pane.querySelectorAll('.szrow[data-q]'),function(r){ r.setAttribute('aria-pressed',String(Math.abs(+r.getAttribute('data-q')-q)<1e-6)); });
+    if(say) S.say.textContent=u+', '+(t!=null?rm(t):tw('st.ask'));
+  }
+  function stepAdd(k){
+    var S=stPanes[k]; if(!S||!bsOn()) return;
+    var q=+draft.stq[k]; if(!stepOk(S.P,q)) return;
+    /* at the limit a new line opens the sheet's limit step, the open orders each with its Cancel, as a size tapped did */
+    if(!(bsOf(k)>0)&&openN()>=OMAX){ sheetOpen(k,q,S.add); return; }
+    bsSet(k,q); if(draft.bkTaps) delete draft.bkTaps[k];
+    bsPatch();
+    S.say.textContent=tw('bk.in',{q:unitsOf(q,S.P.unit)});
+    try{ S.val.focus({preventScroll:true}); }catch(e){}
+  }
+  /* a typed size: Return or leaving the field sets it, Escape keeps the last; a size the walk does not take is refused with why, in one sentence */
+  function stepType(k){
+    var S=stPanes[k]; if(!S||S.typing||!bsOn()) return;
+    var P=S.P, g=gridOf(P); S.typing=true;
+    var inp=el('input','salt-stepper__input'); inp.type='text'; inp.autocomplete='off'; inp.setAttribute('data-st','input');
+    inp.inputMode=g&&g.step%1===0&&g.min%1===0?'numeric':'decimal'; inp.setAttribute('enterkeyhint','done');
+    inp.setAttribute('aria-label',tw('st.typeIn',{w:pshape(k)})); inp.value=String(+draft.stq[k]);
+    S.val.hidden=true; S.val.parentNode.insertBefore(inp,S.val);
+    var done=false;
+    var end=function(keep){
+      if(done) return; done=true;
+      var v=keep?'':String(inp.value||'').trim(), q=+v;
+      inp.remove(); S.val.hidden=false; S.typing=false;
+      if(v!==''&&stepOk(P,q)) stepTo(k,+q.toFixed(6),false);
+      else if(v!==''){ S.why.textContent=!(q>0)?tw('bk.noPrice'):q>ASK_CAP?tw('st.cap',{m:ASK_CAP}):sentence(offWhy(g,q)); S.why.hidden=false; }
+      try{ S.val.focus({preventScroll:true}); }catch(e){}
+    };
+    inp.addEventListener('keydown',function(ev){ if(ev.key==='Enter'){ ev.preventDefault(); end(false); } else if(ev.key==='Escape'){ ev.stopPropagation(); end(true); } });
+    inp.addEventListener('blur',function(){ end(false); });
+    try{ inp.focus(); inp.select(); }catch(e){}
   }
   /* the basket's priced lines as the sheet's, or none: the sheet never holds a size the page did not choose */
   function pickBasket(){
-    var ls=bsOn()?bsLines().filter(function(x){ return x.t!=null; }):[];
+    var ls=bsOn()?bsLines().filter(function(x){ return x.t!=null||x.over; }):[];
     draft.pick={}; ls.forEach(function(x){ draft.pick[x.P.product]=String(x.a); });
     draft.src=ls.length?'basket':'';
   }
@@ -4598,7 +4677,9 @@ const CLIENT_JS = `
     behind();
     bkDrop('o');
     wayDraw(); bsPatch();
-    focusBack(s.opener);
+    /* the basket's Continue is drawn again by bsPatch: focus goes back to the one standing now */
+    var op=s.opener; if(op&&!op.isConnected&&op.id&&document.getElementById(op.id)) op=document.getElementById(op.id);
+    focusBack(op);
   }
   /* the customer's own ways out (the scrim, Close, Escape) wait while Place is on its way: closed then, the answer had
      nowhere to be drawn, an order landed unsaid or a refusal was dropped, and the same order could be placed again */
