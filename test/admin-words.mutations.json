@@ -28,7 +28,7 @@
  {"name": "the Approve sheet's row loses its tile", "file": "stmt/owner.js", "find": "!item.amends?bookTile(item.product,item.qty):null);", "replace": "!item.amends?el('span',null,item.product):null);"},
  {"name": "the tile caption says the shape", "file": "stmt/page.js", "find": "var f=el('span','mq',words); f.setAttribute('aria-hidden','true');", "replace": "var f=el('span','mq',pshape(product)+', '+words); f.setAttribute('aria-hidden','true');"},
  {"name": "the tile tells a reader nothing of its shape", "file": "stmt/page.js", "find": "w.appendChild(el('span','sr',pshape(product)+' '+words));", "replace": "w.appendChild(el('span','sr',words));"},
- {"name": "the tile loses its mark", "file": "stmt/page.js", "find": "w.appendChild(psym(product,px||28));\n    var f=el('span','mq',words);", "replace": "var f=el('span','mq',words);"},
+ {"name": "the tile loses its mark", "file": "stmt/page.js", "find": "w.appendChild(px&&px<28?psym(product,px):coin(product,'sm'));\n    var f=el('span','mq',words);", "replace": "var f=el('span','mq',words);"},
  {"name": "a mark tells a reader the book's name", "file": "stmt/owner.js", "find": "w.appendChild(el('span','sr',pshape(product))); return w; }\n  function bookTile", "replace": "w.appendChild(el('span','sr',product)); return w; }\n  function bookTile"},
  {"name": "a legend names its book", "file": "stmt/owner.js", "find": "legend.appendChild(productTag(L[3])); }", "replace": "legend.appendChild(document.createTextNode(L[3])); }"},
  {"name": "the report card heading says the book", "file": "stmt/owner.js", "find": "h2=el('h2','aprodtag'); h2.appendChild(productTag(p.product));", "replace": "h2=el('h2','aprodtag'); h2.appendChild(document.createTextNode(p.name||p.product));"},

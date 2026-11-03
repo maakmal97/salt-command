@@ -413,7 +413,7 @@ export async function run({ ok, pageWork }) {
       + seenWords.length + " words read; " + JSON.stringify(named.slice(0, 5)) + "; " + typed.length + " tags");
     /* the Sheets that ask restate a row with its book's tile, and they go when they are answered, so each is read while it is open: an order's Cancel and a trip's Confirm */
     const sheets = [];
-    const asked = async (open, keep) => { open(); await all.work.quiet(); const sh = all.d.getElementById("ynSheet"); sheets.push([sh.querySelectorAll(".mtile").length, drawnWords(sh), [...sh.querySelectorAll(".mtile")].every((t) => t.querySelector("svg.psym") && SHAPE_WORD.test(t.querySelector(".sr")?.textContent || ""))]); byAct(all.d, keep).click(); await all.work.quiet(); };
+    const asked = async (open, keep) => { open(); await all.work.quiet(); const sh = all.d.getElementById("ynSheet"); sheets.push([sh.querySelectorAll(".mtile").length, drawnWords(sh), [...sh.querySelectorAll(".mtile")].every((t) => t.querySelector(".salt-coin, svg.psym") && SHAPE_WORD.test(t.querySelector(".sr")?.textContent || ""))]); byAct(all.d, keep).click(); await all.work.quiet(); };
     byAct(all.d, "nav.orders").click(); await all.work.quiet();
     await asked(() => byAct(cardOf(all.d, "ord-r1"), "order.cancel").click(), "order.ask-keep");
     byAct(all.d, "nav.orders").click(); byAct(all.d, "part.orders.approve").click(); await all.work.quiet();

@@ -117,13 +117,15 @@ export async function run({ ok }) {
   /* the shape words drawn under root, each as many times as it stands (a mark whose shape word is drawn is a mark that is not alone) */
   const shapesDrawn = (root) => { const s = drawnText(root); return SHAPES.flatMap((w) => s.match(new RegExp("\\b" + w + "\\b", "g")) || []); };
   /* a mark with no name: the reader is told its shape by the heading's own label, by the .sr that follows it, or by its tile's .sr. A nameless mark is a hole. */
-  const nameless = (d) => [...d.querySelectorAll("svg.psym:not(.glyph)")].filter((s) => {
+  /* plan version 10 (03 Nov 2026): a mark that stands alone is a coin (span.salt-coin), a mark under 28px keeps svg.psym; both are marks and both are named by their shape */
+  const MARKS = "svg.psym:not(.glyph), .salt-coin";
+  const nameless = (d) => [...d.querySelectorAll(MARKS)].filter((s) => {
     const host = s.closest("[aria-label]"), nx = s.nextElementSibling, tile = s.closest(".mtile, .mstack"), tsr = tile && tile.querySelector(".sr");
     return !((host && SHAPES.some((x) => host.getAttribute("aria-label").startsWith(x)))
       || (nx && nx.classList.contains("sr") && SHAPES.includes(t(nx))) || (tsr && SHAPES.some((x) => t(tsr).startsWith(x))));
   });
   const seen = { marks: 0 };
-  const marks = (d) => { seen.marks = Math.max(seen.marks, d.querySelectorAll("svg.psym:not(.glyph)").length); return nameless(d); };
+  const marks = (d) => { seen.marks = Math.max(seen.marks, d.querySelectorAll(MARKS).length); return nameless(d); };
 
   try {
     /* ---- 1 and 2: every state, on the list and on the order's own screen */
@@ -302,7 +304,7 @@ export async function run({ ok }) {
     ok(css8.includes(".mtile{") && !/\.pshape|\.mq \.nb|max-width:11ch/.test(css8), "and the page carries no rule for a shape word, nor for the caption's comma break");
     const board = new JSDOM(P.boardPage({ prices: { week: { label: "5 to 11 Oct 2026" }, products: [
       { product: "salt", unit: "unit", sizes: [{ q: 1, price: 130 }] }, { product: "oil", unit: "unit", sizes: [{ q: 1, price: 44 }] }, { product: "tin", unit: "unit", sizes: [{ q: 1, price: 9 }] }] } }, "n7c3")).window.document;
-    const bh = [...board.querySelectorAll("h2.pmark")].map((h) => [h.getAttribute("aria-label"), drawnText(h).trim(), !!h.querySelector("svg.psym")]);
+    const bh = [...board.querySelectorAll("h2.pmark")].map((h) => [h.getAttribute("aria-label"), drawnText(h).trim(), !!h.querySelector(".salt-coin")]);
     ok(JSON.stringify(bh) === JSON.stringify([["Cube", "", true], ["Droplet", "", true], ["Ring", "", true]]) && shapesDrawn(board.body).length === 0,
       "a guest's board is each mark alone, named by its shape for the reader, the Ring for a book with none: " + JSON.stringify(bh));
 

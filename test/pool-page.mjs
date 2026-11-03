@@ -69,7 +69,7 @@ export async function page({ ok }) {
        its element still stands apart */
     const spaced = d.getElementById("hPool").innerHTML.replace(/<[^>]*>/g, " ");
     const all = text(d.getElementById("hPool")), bare = d.getElementById("hPool").cloneNode(true);
-    ok(!/\b(salt|oil|candy|rice|ambassador|titanium|platinum|gold|silver|bronze|desk|command)\b/i.test(spaced.replace(/Cube/g, "")) && !/—/.test(all) && row(P1.id).querySelector("svg.psym"),
+    ok(!/\b(salt|oil|candy|rice|ambassador|titanium|platinum|gold|silver|bronze|desk|command)\b/i.test(spaced.replace(/Cube/g, "")) && !/—/.test(all) && row(P1.id).querySelector(".salt-coin, svg.psym"),
       "the card names no product, no level and no brand, and carries the mark: " + JSON.stringify(all.slice(0, 120)));
     row(P2.id).click();
     ok(await wait(() => !!d.querySelector('.oscreen[data-order="' + mine.id + '"]')), "a row they are in opens their order");

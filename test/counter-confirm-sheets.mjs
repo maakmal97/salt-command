@@ -128,8 +128,8 @@ export async function run({ ok }) {
 
     /* 3 and 4: what it says */
     const mt = sh.querySelector(".mtile"), say = t(sh);
-    ok(!!mt && t(mt.querySelector(".sr")) === "Cube 2.5 units" && t(mt.querySelector(".mq")) === "2.5 units" && t(mt.querySelector("svg.psym text.plet")) === PLET.salt,
-      "the Sheet restates the order by its mark with its letter, the shape and the size read aloud, and the size alone under the mark (no shape word drawn, 12 Oct 2026): " + JSON.stringify(t(mt)));
+    ok(!!mt && t(mt.querySelector(".sr")) === "Cube 2.5 units" && t(mt.querySelector(".mq")) === "2.5 units" && t(mt.querySelector(".salt-coin text.salt-coin__let")) === PLET.salt && !mt.querySelector("svg.psym"),
+      "the Sheet restates the order by its coin with its letter (plan version 10), the shape and the size read aloud, and the size alone under the mark (no shape word drawn, 12 Oct 2026): " + JSON.stringify(t(mt)));
     ok(t(sh.querySelector(".salt-ledger__value")) === money(270) && /^Placed /.test(t(sh.querySelector(".salt-ledger__flag"))) && /Placed$/.test(t(sh.querySelector(".salt-ledger__label"))),
       "and by its word and its figure and the day it was placed: " + JSON.stringify([t(sh.querySelector(".salt-ledger__label")), t(sh.querySelector(".salt-ledger__value")), t(sh.querySelector(".salt-ledger__flag"))]));
     ok(say.includes(W.EN["yn.orderLost"]) && say.includes(W.EN["yn.orderNone"]) && !say.includes("refunded"),

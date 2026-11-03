@@ -1,0 +1,17 @@
+[
+ {"name":"C1 the head keeps the plain mark","file":"stmt/page.js","find":"h.setAttribute('aria-label',pshape(product)); h.appendChild(coin(product,'md'));","replace":"h.setAttribute('aria-label',pshape(product)); h.appendChild(psym(product,28));"},
+ {"name":"C2 the hue by no index","file":"stmt/page.js","find":"if(b>=0) w.setAttribute('data-b',String(b)); w.setAttribute('aria-hidden','true');","replace":"w.setAttribute('aria-hidden','true');"},
+ {"name":"C3 the hue by the product word","file":"stmt/page.js","find":"var w=el('span','salt-coin salt-coin--'+(size||'md'));","replace":"var w=el('span','salt-coin salt-coin--'+(size||'md')+' salt-coin--'+k);"},
+ {"name":"C4 the coin is read aloud","file":"stmt/page.js","find":"if(b>=0) w.setAttribute('data-b',String(b)); w.setAttribute('aria-hidden','true');","replace":"if(b>=0) w.setAttribute('data-b',String(b));"},
+ {"name":"C5 no letter","file":"stmt/page.js","find":"t.setAttribute('font-size',String(L.length<=1?13:L.length<=3?12:11)); t.textContent=L; svg.appendChild(t); }","replace":"t.setAttribute('font-size',String(L.length<=1?13:L.length<=3?12:11)); t.textContent=L; }"},
+ {"name":"C6 the ring left out","file":"stmt/page.js","find":"c.setAttribute('r','22.5'); svg.appendChild(c);","replace":"c.setAttribute('r','22.5');"},
+ {"name":"C7 the light still a border","file":"stmt/page.js","find":"    var s=supLit(p); if(!s) return;\n    h.setAttribute","replace":"    var s=supLit(p); if(!s) return;\n    h.className+=' sup sup-'+s.light;\n    h.setAttribute"},
+ {"name":"C8 the light a tinted word","file":"stmt/page.js","find":"  function supWord(l){ return el('span','salt-light'+(l==='green'?'':' salt-light--'+l),tw('sup.'+l)); }","replace":"  function supWord(l){ return el('span','salt-status supst sup-'+l,tw('sup.'+l)); }"},
+ {"name":"C9 Availability keeps the plain mark","file":"stmt/page.js","find":"      var m=el('span','pmark'); m.appendChild(coin(p.product,'sm'));","replace":"      var m=el('span','pmark'); m.appendChild(psym(p.product,28));"},
+ {"name":"C10 a card keeps the plain mark","file":"stmt/page.js","find":"    w.appendChild(px&&px<28?psym(product,px):coin(product,'sm'));","replace":"    w.appendChild(psym(product,px||28));"},
+ {"name":"C11 the start tile's coin small","file":"stmt/page.js","find":"l.appendChild(coin(a.product,'lg'));","replace":"l.appendChild(coin(a.product,'sm'));"},
+ {"name":"C12 the guest board keeps the plain mark","file":"stmt/page.js","find":"coinSvg(p.product, \"md\") + \"</h2>\"","replace":"psymSvg(p.product, 30) + \"</h2>\""},
+ {"name":"C13 one letter size","file":"stmt/page.js","find":"export const coinLetterSize = (l) => (l.length <= 1 ? 13 : l.length <= 3 ? 12 : 11);","replace":"export const coinLetterSize = (l) => 13;"},
+ {"name":"C14 no hues on the pages","file":"stmt/page.js","find":"SITE_RECIPES + PAGE_CSS + COIN_CSS + \"</style></head><body>\" + AURORA","replace":"SITE_RECIPES + PAGE_CSS + \"</style></head><body>\" + AURORA"},
+ {"name":"C15 the coin recipe left off the Counter's stylesheet","file":"stmt/statement-css.js","find":".salt-coin__ring { fill: var(--salt-well); stroke: var(--salt-hue); stroke-width: 2; }","replace":""}
+]

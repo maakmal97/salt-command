@@ -27,7 +27,7 @@ export async function run({ ok, pageWork }) {
     const tab = C.d.querySelector('button[data-t="card"]');
     const rw = { head: t(box && box.querySelector(".hlab")), left: t(rc && rc.querySelector(".hreward__left")), pc: t(rc && rc.querySelector(".salt-meter__line b")),
       fill: rc ? rc.querySelector(".salt-meter").style.getPropertyValue("--salt-fill") : "", n: box ? box.querySelectorAll(".hreward").length : 0,
-      mark: !!(rc && rc.querySelector("svg.psym")), tag: rc && rc.tagName, taps: rc ? rc.querySelectorAll("button,a,[tabindex]").length : -1, see: t(rc).includes("See your card"),
+      mark: !!(rc && rc.querySelector(".salt-coin, svg.psym")), tag: rc && rc.tagName, taps: rc ? rc.querySelectorAll("button,a,[tabindex]").length : -1, see: t(rc).includes("See your card"),
       tab: !!tab && (tab.hidden || tab.closest("[hidden]") !== null) };
     ok(rw.head === "Your next reward" && rw.left === "70% of the way to your next unit" && rw.pc === "70%" && rw.fill === "70" && rw.n === 1 && rw.mark
       && rw.tag === "DIV" && rw.taps === 0 && !rw.see && !/RM|unit[s]? to|[0-9]+\.[0-9]/.test(t(rc).replace("70%", "")) && rw.tab,
