@@ -1,0 +1,80 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-03T13:22:54.428Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s325",
+    "qty": 2,
+    "total": 185,
+    "cash": 185,
+    "date": "2026-11-03",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 2
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-11-03"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "collected"
+     }
+    ],
+    "customer": "CZ5-TM",
+    "rids": [],
+    "booked_seq": 101
+   },
+   "reasoning": "Correction against CZ5-TM's order of 2 unit for RM 185 dated 2026-11-03 (s325). Sets deliveredQty from 0 to 2, deliveredOn from unset to 2026-11-03, handover from unset to collected. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This row carries a trail of 2 steps. Setting the figure directly does not rewrite them, so the trail will no longer add up to it; the correction is recorded beside them saying so."
+   ],
+   "amends": "s325",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-11-03T13:22:54.428Z",
+    "type": "SELL",
+    "party": "CZ5-TM",
+    "qty": 2,
+    "total": 0,
+    "status": "Handover",
+    "raw": "2 unit collected to CZ5-TM, order 20261103105134-txhixa, on 2026-11-03",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CZ5-TM",
+     "rid": null,
+     "orderKey": "CZ5-TM|2026-11-03|185",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-11-03",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 2,
+      "deliveredOn": "2026-11-03",
+      "handover": "collected"
+     },
+     "note": "2 unit collected for order 20261103105134-txhixa."
+    },
+    "orderId": "20261103105134-txhixa"
+   },
+   "decidedAt": "2026-11-03T13:22:56.478Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
