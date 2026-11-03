@@ -276,6 +276,14 @@
   Argued, not fixed: measure's row-two-controls on the stepper (one control of two halves, as iOS's stepper in a row) and head-no-list on Their % (its book
   tabs sit between head and list); Orders' To do Insight wraps at 390 when it carries "more on their yes" (a live two-clause sentence, kept whole).
 
+## Order as them: a delivery goes (v1400)
+- Live as v1400 (`4e4cef44`, 03 Nov 2026; Cloud commit `41622705769`: chain green with "The phone is serving it" on build `02cddf23d1be434f`, the statements
+  deployed and published, three suite parts green; CI `41622705633` green), his "Yes, fix it" after his screenshot of a delivery that would not go. Cause
+  (since v1377): `formWhy` in `stmt/page.js` asked for a saved spot whenever `spotsRead()` read the store, an empty list included, while the sheet leaves
+  saved spots out on Order as them (`act`), so Review stayed grey on every delivery he placed for a customer. Fix `c1ea38ec`: `&&!act` on that check;
+  B11 in `test/order-as-them-page.mjs`, red by its own mutation; the saved-spots needle in `test/counter-c-spots.mutations.json` re-aimed. Full suite
+  11,854 passed, 1 failed (S1b, laptop only). A customer's own sheet is unchanged.
+
 ## Disabled automation
 - `Salt fold (manual backup)` = `trig_01UrnjQMWA3f6GXN5R6Dzi4S`, disabled.
 
