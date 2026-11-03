@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1419",
+  "d": "04 Nov 2026",
+  "t": "TWO SALT SALES BOOKED, BOTH PAID AND DELIVERED",
+  "n": [
+   "<b>FOLDED: TWO NEW SALT SALES, BOTH APPROVED BY COUNTER ADMIN.</b> CM4-MK took 4 unit for RM380 on 01 Nov, and CN3-WM-R took 2 unit for RM220 goods plus RM25 delivery on 31 Oct. Both were paid and delivered in full on their dates, so nothing is left outstanding on either. Each is a plain append to sales with its own note, and no amendment or correction is in the batch.",
+   "<b>UNUSUAL AND INVENTORY:</b> the only flag is on CN3-WM-R, booked as R2 because CN3-WM buys to sell on. Both rows carry cost at RM56 a unit, the inventory's own rate, so no cost is overridden. Salt moves out by 4 unit and 2 unit and no lot landed, so the cost basis is unchanged."
+  ]
+ },
+ {
   "v": "v1418",
   "d": "03 Nov 2026",
   "t": "THE EXACT SPOT READS WHAT PHONES SHARE",
