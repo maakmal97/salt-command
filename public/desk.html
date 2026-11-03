@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="1e109573a109cea6";
+var SALT_BUILD_ID="1856a5495d8c9c0a";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -11578,7 +11578,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1398","d":"03 Nov 2026","t":"PAYMENT OF RM35 ON A RICE ORDER, GOODS STILL TO COLLECT","n":["<b>ONE PAYMENT FOLDED.</b> CS11-AMP paid RM35 on 03 Nov 2026 by QR via Maybank against order s324, the five unit of rice. It was preapproved by Counter Admin and the drafter raised no flags. The tool applies the fulfilment to the row itself, so the amount is not recomputed here.","<b>INVENTORY UNCHANGED.</b> Nothing was handed over, so no stock moved and no lot landed. The cost basis stays as it was."]}];
+const evolution=[{"v":"v1399","d":"03 Nov 2026","t":"ORDER IS WHERE EVERY ORDER STARTS","n":["<b>PRICES IS NOW ORDER.</b> Your answer G: Salt Counter's second place, after Home, is named Order. New order on Orders, Home's start tiles and Home's Collect and Deliver all land there, at the tile's book with its size in view; nothing is put in the basket for them.","<b>THE SHEET KEEPS THE WAY, THE PLACE AND THE CHECK.</b> A new order's sheet no longer chooses sizes: it lists the lines from the size tapped or from the basket, with their figures, and says the units change on Order. Opened from the way's Change with nothing in the basket, it sets the way alone and closes with Done. An amendment and a group order keep their own sizes.","<b>THE BASKET'S PILL READS CONTINUE.</b> It opens the sheet; the sheet's Review opens the check, as before. Plan version 8 of 10."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11726,7 +11726,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='03 Nov 2026, 12:48 KL';
+const LAST_UPDATED='03 Nov 2026, 17:44 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
