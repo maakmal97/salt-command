@@ -307,6 +307,19 @@
 - Left, said: the Desk cannot follow an Apple short link (`maps.apple/p`): `mapsLink` and `/geo/expand` know only `maps.app.goo.gl`, so such a spot is
   opened on Salt Admin but cannot be filed as their place on the Desk (Fable medium, accepted as a follow-up).
 
+## One place field on every surface (v1420)
+- Live as v1420 (`ea9c1376`, 04 Nov 2026; Cloud commit `41685098311`: chain green with "The phone is serving it" on build `46637b024501e220`, the
+  statements deployed and published, three suite parts green; CI `41685098218` green), his word "make sure the best link readers, input method, or input
+  design ... are applied to all surfaces" and his answers: OpenStreetMap search on the Counter too (his yes to customers' typed words going to Photon), Use
+  my location on all four Salt Admin place fields. One reader: the Desk's `mapsLink` (master) also takes goo.gl/maps, maps.apple/p and an Apple place-id
+  page as `short`, and two figures with decimals as `src:'pin'`; `tools/maker-geosync.mjs` writes `stmt/place-link.js` (that reader alone, as var
+  expressions) for the Counter, whose `pinRead` is an adapter. One opener: the Desk's `/geo/expand` calls `stmt/place.js` `mapsOpen` (src/ imports
+  it), which now also lands on a Waze link with `ll`; user agent `SaltPlaces/1`. One field: Shop's points' search is `placeAssist` in `stmt/owner.js`, on
+  the points, Add ID, Amend ID and a filed place, each with Use my location (`.here` acts); the Counter's spot is one combobox (`pinField`: search through
+  the new `POST /place/search` on their session, 30 a minute an account in KV `psearch:`, or `actSearch` on Order as them; a pick seals `src:'search'`).
+  Fable reviewed: sound, four low notes, three applied. Full suite 11,910 passed, 2 failed (S1b laptop only; the acts table, fixed). Not verified live: a
+  real customer search through Photon.
+
 ## Disabled automation
 - `Salt fold (manual backup)` = `trig_01UrnjQMWA3f6GXN5R6Dzi4S`, disabled.
 
@@ -329,6 +342,7 @@
 - `GET|POST /hush` (A5: the hushed Whiteboard tips, KV `hush`, `{tip id: day or null}`; `POST {id, until}` or `{id, clear: true}`; Counter Maker writes it through `inputs/hush`), keyed
 - `GET /stmt/rev` (Desk build id only; internal Counter service binding, keyed by `X-Stmt-Desk` using the shared `STMT_DESK_KEY`)
 - Counter Maker `POST /all/maker/geo/open {url}` (a short Google or Apple Maps link, or an Apple place id, opened for its point; Google and Apple hosts only) and `POST /all/maker/geo/search {q}` (the typed words to Photon, photon.komoot.io, Malaysia and Singapore, five places): v1263, 26 Oct 2026, his choice of Photon and his yes to Apple; nothing kept.
+- Counter: `POST /place/search` (v1420: a customer's typed place words to Photon on their session, thirty a minute an account; Order as them uses `/all/maker/geo/search`).
 - Counter: `GET /pools` and `POST /pools/<id>/join` (a customer session; the group order); Maker `GET|POST /all/maker/pools` and `POST /all/maker/pools/<id>/close` (verified owner only).
 - The endpoints above are keyed via `X-Salt-Key` except `/stmt/rev`, which uses `X-Stmt-Desk`.
 
