@@ -1,6 +1,6 @@
 {
- "v": "v1395",
- "stamped": "03 Nov 2026, 12:24 KL",
+ "v": "v1396",
+ "stamped": "03 Nov 2026, 12:28 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -10485,6 +10485,17 @@
     "listRM": 130,
     "listQty": 1,
     "rid": "s323"
+   },
+   {
+    "customer": "CS11-AMP",
+    "qty": 5,
+    "total": 35,
+    "cash": 0,
+    "product": "rice",
+    "date": "2026-11-03",
+    "deliveredQty": 0,
+    "note": "<b>SALE 03 NOV 2026: 5 UNIT OF RICE TO CS11-AMP, RM35, PENDING.</b> Ordered on the statements site, order 20261103041936-r5eszg, acknowledged, to collect. Nothing paid and nothing handed over. The goods total of RM35 equals the askTotal of RM35 for that size and sits above the floorTotal of RM20; per unit, RM7 against a floor of RM4 and an ask of RM7. CS11-AMP: one order on the book, the pending salt row at RM130, so no rice rate to compare; RM130 outstanding before this, no units on credit before, against a cap of 1, nothing defaulted. The row carries the drafter's cost of RM3.3 per unit, costed off the latest purchase p045 and kept by the fold. The drafter flagged that no earlier rice rate of theirs exists; that is true, so the ladder is the only yardstick. Outstanding: the full RM35 and the five unit to be collected.",
+    "rid": "s324"
    }
   ],
   "contacts": [
@@ -11308,7 +11319,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-03T04:23:41.148Z",
+  "QUEUE_COMMITTED": "2026-11-03T04:26:51.391Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -15208,6 +15219,60 @@
         7445
        ]
       ],
+      "CS11-AMP": [
+       [
+        0.5,
+        85
+       ],
+       [
+        1,
+        130
+       ],
+       [
+        1.5,
+        180
+       ],
+       [
+        2,
+        235
+       ],
+       [
+        2.5,
+        280
+       ],
+       [
+        3,
+        335
+       ],
+       [
+        4,
+        430
+       ],
+       [
+        5,
+        520
+       ],
+       [
+        6.25,
+        635
+       ],
+       [
+        12.5,
+        1005
+       ],
+       [
+        25,
+        1970
+       ],
+       [
+        50,
+        3945
+       ],
+       [
+        100,
+        7895
+       ]
+      ],
       "CD4-CS": [
        [
         0.5,
@@ -15314,60 +15379,6 @@
        [
         100,
         8120
-       ]
-      ],
-      "CS11-AMP": [
-       [
-        0.5,
-        85
-       ],
-       [
-        1,
-        130
-       ],
-       [
-        1.5,
-        180
-       ],
-       [
-        2,
-        235
-       ],
-       [
-        2.5,
-        280
-       ],
-       [
-        3,
-        335
-       ],
-       [
-        4,
-        430
-       ],
-       [
-        5,
-        520
-       ],
-       [
-        6.25,
-        635
-       ],
-       [
-        12.5,
-        1005
-       ],
-       [
-        25,
-        1970
-       ],
-       [
-        50,
-        3945
-       ],
-       [
-        100,
-        7895
        ]
       ],
       "CR3-PUD": [
@@ -15792,9 +15803,9 @@
       "CA4-SJ": 0.3,
       "CN5-TAI": 0,
       "CH5-KLC": 0,
+      "CS11-AMP": 0.2,
       "CD4-CS": 0,
       "CA6-SET": 0.3,
-      "CS11-AMP": 0.2,
       "CR3-PUD": 0,
       "CD7-SEG": 0,
       "CB7-BJ": 0,
@@ -15956,15 +15967,15 @@
        "pct": 0,
        "why": ""
       },
+      "CS11-AMP": {
+       "pct": 0,
+       "why": ""
+      },
       "CD4-CS": {
        "pct": 0,
        "why": ""
       },
       "CA6-SET": {
-       "pct": 0,
-       "why": ""
-      },
-      "CS11-AMP": {
        "pct": 0,
        "why": ""
       },
@@ -17135,6 +17146,28 @@
         450
        ]
       ],
+      "CS11-AMP": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
       "CD4-CS": [
        [
         10,
@@ -17158,28 +17191,6 @@
        ]
       ],
       "CA6-SET": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
-      "CS11-AMP": [
        [
         10,
         130
@@ -17399,9 +17410,9 @@
       "CA4-SJ": 0,
       "CN5-TAI": 0,
       "CH5-KLC": 0,
+      "CS11-AMP": 0,
       "CD4-CS": 0,
       "CA6-SET": 0,
-      "CS11-AMP": 0,
       "CR3-PUD": 0,
       "CD7-SEG": 0,
       "CB7-BJ": 0,
@@ -18515,6 +18526,28 @@
         1500
        ]
       ],
+      "CS11-AMP": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
       "CD4-CS": [
        [
         1,
@@ -18538,28 +18571,6 @@
        ]
       ],
       "CA6-SET": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
-      ],
-      "CS11-AMP": [
        [
         1,
         60
@@ -18779,9 +18790,9 @@
       "CA4-SJ": 0,
       "CN5-TAI": 0,
       "CH5-KLC": 0,
+      "CS11-AMP": 0,
       "CD4-CS": 0,
       "CA6-SET": 0,
-      "CS11-AMP": 0,
       "CR3-PUD": 0,
       "CD7-SEG": 0,
       "CB7-BJ": 0,
@@ -19540,6 +19551,20 @@
         60
        ]
       ],
+      "CS11-AMP": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        60
+       ]
+      ],
       "CD4-CS": [
        [
         1,
@@ -19555,20 +19580,6 @@
        ]
       ],
       "CA6-SET": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        60
-       ]
-      ],
-      "CS11-AMP": [
        [
         1,
         8
@@ -19724,9 +19735,9 @@
       "CA4-SJ": 0,
       "CN5-TAI": 0,
       "CH5-KLC": 0,
+      "CS11-AMP": 0,
       "CD4-CS": 0,
       "CA6-SET": 0,
-      "CS11-AMP": 0,
       "CR3-PUD": 0,
       "CD7-SEG": 0,
       "CB7-BJ": 0,
@@ -20645,6 +20656,24 @@
         1500
        ]
       ],
+      "CS11-AMP": [
+       [
+        1,
+        75
+       ],
+       [
+        5,
+        375
+       ],
+       [
+        10,
+        750
+       ],
+       [
+        20,
+        1500
+       ]
+      ],
       "CD4-CS": [
        [
         1,
@@ -20664,24 +20693,6 @@
        ]
       ],
       "CA6-SET": [
-       [
-        1,
-        75
-       ],
-       [
-        5,
-        375
-       ],
-       [
-        10,
-        750
-       ],
-       [
-        20,
-        1500
-       ]
-      ],
-      "CS11-AMP": [
        [
         1,
         75
@@ -20869,9 +20880,9 @@
       "CA4-SJ": 0,
       "CN5-TAI": 0,
       "CH5-KLC": 0,
+      "CS11-AMP": 0,
       "CD4-CS": 0,
       "CA6-SET": 0,
-      "CS11-AMP": 0,
       "CR3-PUD": 0,
       "CD7-SEG": 0,
       "CB7-BJ": 0,
@@ -21430,6 +21441,16 @@
         125
        ]
       ],
+      "CS11-AMP": [
+       [
+        12,
+        60
+       ],
+       [
+        30,
+        125
+       ]
+      ],
       "CD4-CS": [
        [
         12,
@@ -21441,16 +21462,6 @@
        ]
       ],
       "CA6-SET": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CS11-AMP": [
        [
         12,
         60
@@ -21574,9 +21585,9 @@
       "CA4-SJ": 0,
       "CN5-TAI": 0,
       "CH5-KLC": 0,
+      "CS11-AMP": 0,
       "CD4-CS": 0,
       "CA6-SET": 0,
-      "CS11-AMP": 0,
       "CR3-PUD": 0,
       "CD7-SEG": 0,
       "CB7-BJ": 0,
@@ -21588,11 +21599,11 @@
      "suggest": null
     }
    },
-   "v": "v1395"
+   "v": "v1396"
   },
   "OPEN": {
-   "at": "2026-11-03T04:24:28.565Z",
-   "count": 8,
+   "at": "2026-11-03T04:28:07.132Z",
+   "count": 9,
    "byKey": {
     "CS11-AMP|2026-11-03|130": {
      "d": "2026-11-03",
@@ -21607,6 +21618,21 @@
      "oweUnits": 1,
      "rid": "s323",
      "key": "CS11-AMP|2026-11-03|130"
+    },
+    "CS11-AMP|2026-11-03|35|rice": {
+     "d": "2026-11-03",
+     "p": "CS11-AMP",
+     "dir": "S",
+     "q": 5,
+     "t": 35,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 35,
+     "oweUnits": 5,
+     "pr": "rice",
+     "rid": "s324",
+     "key": "CS11-AMP|2026-11-03|35|rice"
     },
     "CR3-DAM|2026-10-30|70": {
      "d": "2026-10-30",
@@ -21765,10 +21791,10 @@
      "onHand": 75,
      "free": 75,
      "owedOut": 0,
-     "coverDays": 27.1,
-     "rate": 2.66,
+     "coverDays": 25.6,
+     "rate": 2.94,
      "owedToYou": 15,
-     "promised": 0,
+     "promised": 5,
      "short": 0
     },
     "gas": {
@@ -21802,7 +21828,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1395"
+   "v": "v1396"
   },
   "TERMS": {
    "ceiling": 250,
@@ -21810,7 +21836,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1395"
+   "v": "v1396"
   },
   "REWARD": {
    "stated": {
@@ -21828,7 +21854,7 @@
      }
     }
    },
-   "v": "v1395"
+   "v": "v1396"
   },
   "STOCK": {
    "today": "2026-11-03",
@@ -21860,9 +21886,9 @@
     "rice": {
      "shelf": 75,
      "free": 75,
-     "commit": 0,
+     "commit": 5,
      "light": "green",
-     "coverDays": 27.1,
+     "coverDays": 25.6,
      "transit": 0
     },
     "gas": {
@@ -21882,7 +21908,7 @@
      "transit": 0
     }
    },
-   "v": "v1395"
+   "v": "v1396"
   }
  }
 }
