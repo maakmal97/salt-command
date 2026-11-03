@@ -1,6 +1,6 @@
 {
- "v": "v1401",
- "stamped": "03 Nov 2026, 18:53 KL",
+ "v": "v1402",
+ "stamped": "03 Nov 2026, 18:55 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -107,7 +107,7 @@
     "stated": 25
    }
   },
-  "STATED_STOCK": 6,
+  "STATED_STOCK": 5,
   "COUNT_ON": {
    "salt": "2026-10-28",
    "oil": "2026-11-02",
@@ -10480,8 +10480,8 @@
     "total": 130,
     "cash": 130,
     "date": "2026-11-03",
-    "deliveredQty": 0,
-    "note": "<b>SALE 03 NOV 2026: 1 UNIT OF SALT TO CS11-AMP, RM130, PENDING.</b> Ordered on the statements site, order 20261103041924-bmjlca, acknowledged, to collect. Nothing paid and nothing handed over. The goods total of RM130 sits above the floorTotal of RM60 and the askTotal of RM120 for that size; per unit, RM130 against a floor of RM60 and an ask of RM120. CS11-AMP: no orders on the book, so no median rate or range, nothing outstanding before, no units on credit against a cap of 1, nothing defaulted. The row carries the drafter's cost of RM56 per unit, the inventory's own rate. The drafter flagged that there is no earlier rate of theirs to compare; that is true, so the ladder is the only yardstick. Outstanding: the full RM130 and the unit to be collected.",
+    "deliveredQty": 1,
+    "note": "<b>CORRECTION ON s323: 1 UNIT OF SALT COLLECTED BY CS11-AMP, 03 NOV 2026.</b> Order 20261103041924-bmjlca, RM130, was booked as pending with nothing handed over. The correction sets deliveredQty from 0 to 1, deliveredOn from unset to 2026-11-03 and handover from unset to collected. It moves no cash and leaves the RM130 total as booked. The dossier gives no floorTotal or askTotal for this size, so no comparison is made. CS11-AMP has 2 orders, a median rate of 130, a range of 7 to 130, nothing outstanding before, no units on credit and nothing defaulted. No credit cap is given. The drafter flagged that the 2-step trail will no longer add up to the figure set directly; that is true, and the correction is recorded beside the trail saying so. The shelf rolls out by 1 unit to CS11-AMP. Nothing is left outstanding on this row. <b>SALE 03 NOV 2026: 1 UNIT OF SALT TO CS11-AMP, RM130, PENDING.</b> Ordered on the statements site, order 20261103041924-bmjlca, acknowledged, to collect. Nothing paid and nothing handed over. The goods total of RM130 sits above the floorTotal of RM60 and the askTotal of RM120 for that size; per unit, RM130 against a floor of RM60 and an ask of RM120. CS11-AMP: no orders on the book, so no median rate or range, nothing outstanding before, no units on credit against a cap of 1, nothing defaulted. The row carries the drafter's cost of RM56 per unit, the inventory's own rate. The drafter flagged that there is no earlier rate of theirs to compare; that is true, so the ladder is the only yardstick. Outstanding: the full RM130 and the unit to be collected.",
     "listRM": 130,
     "listQty": 1,
     "rid": "s323",
@@ -10499,9 +10499,26 @@
       "cash": 130,
       "kg": 0,
       "note": "<b>FULFILMENT 03 NOV 2026: RM130 PAID ON S323 BY CS11-AMP.</b> Paid on the statements site, order 20261103041924-bmjlca, by qr via maybank, against the order of 1 unit of salt for RM130 agreed the same day. Cash moves by RM130 and no unit moves. The goods total of RM130 is the figure on the order; the dossier gives no floorTotal or askTotal for it, so I make no comparison with the ladder. CS11-AMP: two orders on the book, a median rate of 130, a range of 7 to 130, RM165 outstanding before this, no units on credit before, nothing defaulted. The cost on the row is left as drafted. The drafter flagged nothing. Leaves RM0 owing on s323 and the 1 unit still to be collected. The rice order s324 of RM35 is untouched."
+     },
+     {
+      "date": "2026-11-03",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 1,
+      "note": "<b>CORRECTION ON s323: 1 UNIT OF SALT COLLECTED BY CS11-AMP, 03 NOV 2026.</b> Order 20261103041924-bmjlca, RM130, was booked as pending with nothing handed over. The correction sets deliveredQty from 0 to 1, deliveredOn from unset to 2026-11-03 and handover from unset to collected. It moves no cash and leaves the RM130 total as booked. The dossier gives no floorTotal or askTotal for this size, so no comparison is made. CS11-AMP has 2 orders, a median rate of 130, a range of 7 to 130, nothing outstanding before, no units on credit and nothing defaulted. No credit cap is given. The drafter flagged that the 2-step trail will no longer add up to the figure set directly; that is true, and the correction is recorded beside the trail saying so. The shelf rolls out by 1 unit to CS11-AMP. Nothing is left outstanding on this row.",
+      "was": {
+       "deliveredQty": 0,
+       "deliveredOn": null,
+       "handover": null
+      },
+      "cost": 56
      }
     ],
-    "paidOn": "2026-11-03"
+    "paidOn": "2026-11-03",
+    "deliveredOn": "2026-11-03",
+    "handover": "collected",
+    "mod": "corrected on 2026-11-03: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-03; handover (unset) to collected",
+    "cost": 56
    },
    {
     "customer": "CS11-AMP",
@@ -11370,7 +11387,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-03T10:53:26.344Z",
+  "QUEUE_COMMITTED": "2026-11-03T10:54:59.865Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -11421,7 +11438,7 @@
     {
      "id": "int:nocost",
      "sev": "watch",
-     "title": "4 priced sales carry no cost of their own"
+     "title": "3 priced sales carry no cost of their own"
     },
     {
      "id": "int:underfloor",
@@ -12857,15 +12874,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.296875
+         "v": 0.29457364341085274
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08940786291715609,
        "avgDel": {
-        "n": 248,
-        "kg": 613.31,
-        "mean": 2.473
+        "n": 249,
+        "kg": 614.31,
+        "mean": 2.4671
        }
       },
       "policy": {
@@ -21682,26 +21699,12 @@
      "suggest": null
     }
    },
-   "v": "v1401"
+   "v": "v1402"
   },
   "OPEN": {
-   "at": "2026-11-03T10:54:01.427Z",
-   "count": 8,
+   "at": "2026-11-03T10:55:55.166Z",
+   "count": 7,
    "byKey": {
-    "CS11-AMP|2026-11-03|130": {
-     "d": "2026-11-03",
-     "p": "CS11-AMP",
-     "dir": "S",
-     "q": 1,
-     "t": 130,
-     "cash": 130,
-     "mv": 0,
-     "st": "oweStock",
-     "oweUnits": 1,
-     "rid": "s323",
-     "paidOn": "2026-11-03",
-     "key": "CS11-AMP|2026-11-03|130"
-    },
     "CR3-DAM|2026-10-30|70": {
      "d": "2026-10-30",
      "p": "CR3-DAM",
@@ -21823,13 +21826,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 6,
+     "onHand": 5,
      "free": 5,
-     "owedOut": 1,
+     "owedOut": 0,
      "coverDays": 1.3,
      "rate": 4.05,
      "owedToYou": 310,
-     "promised": 1,
+     "promised": 0,
      "short": 0
     },
     "oil": {
@@ -21896,7 +21899,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1401"
+   "v": "v1402"
   },
   "TERMS": {
    "ceiling": 250,
@@ -21904,7 +21907,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1401"
+   "v": "v1402"
   },
   "REWARD": {
    "stated": {
@@ -21922,15 +21925,15 @@
      }
     }
    },
-   "v": "v1401"
+   "v": "v1402"
   },
   "STOCK": {
    "today": "2026-11-03",
    "books": {
     "salt": {
-     "shelf": 6,
+     "shelf": 5,
      "free": 5,
-     "commit": 1,
+     "commit": 0,
      "light": "green",
      "coverDays": 1.3,
      "transit": 0
@@ -21976,7 +21979,7 @@
      "transit": 0
     }
    },
-   "v": "v1401"
+   "v": "v1402"
   }
  }
 }
