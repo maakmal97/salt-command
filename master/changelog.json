@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1408",
+  "d": "03 Nov 2026",
+  "t": "TWO CASH PAYMENTS RECORDED FOR CI5-PER ON 03 NOV 2026",
+  "n": [
+   "<b>TWO PAYMENTS FOLDED.</b> Both rows are fulfilment amendments against CI5-PER orders s326 (oil) and s327 (salt), each paid in cash at the counter and preapproved by Counter Admin. The drafter raised no flags. The dossier shows no ladder figures for either, so no rate is compared with the floor or ask.",
+   "<b>INVENTORY UNCHANGED.</b> No units moved on either row and no lot landed, so the stock cost stays as it was and nothing is added to the roll. Both orders still await handover."
+  ]
+ },
+ {
   "v": "v1407",
   "d": "03 Nov 2026",
   "t": "CASH PART-PAYMENT ON AN OIL ORDER FOR CI5-PER",
