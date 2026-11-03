@@ -23,6 +23,7 @@ export async function run({ ok, pageWork }) {
   const extra = (route) => route === "/open" && refuseOpen > 0 ? (refuseOpen--, { refuse: "Busy, try again." }) : route === "/open" ? opened
     : route === "/all/maker/slip/key" ? { ok: true, key: { kty: "EC", crv: "P-256", x: "eA", y: "eQ" } }
     : route === "/all/maker/inputs" ? { ok: true, catalog: { parties: ["CA5-SEN", "CS6-BS-R", "CB1-XY"] } }
+    : route === "/all/maker/geo/search" ? { ok: true, places: [{ name: "Taman Ulvar", where: "Cheras", lat: 3.0811, lng: 101.7402 }] }
     : route === "/all/maker/customers/" + U1 + "/orders" ? { ok: true, order: placed, agreed }
     : route === "/all/orders/" + U1 ? { ok: true, orders: [placed], claims: [], links: [], max: 0 } : undefined;
   const openAs = async (p, act) => {
@@ -93,6 +94,24 @@ export async function run({ ok, pageWork }) {
     const b = (p.posts.slice(before).find((x) => x.route === "/all/maker/customers/" + U1 + "/orders") || {}).body;
     ok(!!b && b.mode === "deliver" && b.place === "Orlen", "B11 and Place sends it as a delivery to that area: " + JSON.stringify(b));
   } catch (e) { ok(false, "Order as them's delivery stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+
+  /* B13 (4 Nov 2026, one convention on every surface): on Order as them their spot's place search goes through his own road, never theirs */
+  p = await richOwnerPage({ pageWork, extra });
+  try {
+    await openAs(p, "acct.order-for");
+    await startAt(p.d); await p.work.quiet();
+    p.d.querySelector("[data-k='mode:1']").click(); await p.work.quiet();
+    const pu = p.d.getElementById("oPinUrl");
+    if (pu) { pu.value = "Taman Ulv"; pu.dispatchEvent(new p.w.Event("input", { bubbles: true })); }
+    let hit = null;
+    /* the harness holds the page's timers: the search's pause (350 ms) is run by hand, as Shop's points' check does */
+    await p.work.quiet(); p.timers.filter((x) => x.ms === 350 && !x.off).forEach((x) => { x.off = true; x.f(); }); await p.work.quiet();
+    hit = p.d.querySelector("#osheet [data-k='pinhit:0']");
+    if (hit) { hit.click(); await p.work.quiet(); }
+    const routes = p.posts.map((x) => x.route);
+    ok(!!pu && !!hit && routes.includes("/all/maker/geo/search") && !routes.includes("/place/search") && !!p.d.getElementById("oPinOff"),
+      "B13 their spot's place search on Order as them asks his own road and a place found becomes the spot: " + JSON.stringify([routes, !!pu, !!hit]));
+  } catch (e) { ok(false, "Order as them's place search stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
 
   /* B5: View as them stays read only */
   p = await richOwnerPage({ pageWork, extra });

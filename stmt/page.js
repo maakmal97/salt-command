@@ -38,6 +38,7 @@ import { OWNER_JS } from "./owner.js";
 import { MAX_OPEN, OPEN_STATES, WANT_DAYS } from "./orders.js";
 import { slotSpan, slotNext, WINDOWS } from "./window.js";
 import { openParts } from "./hours.js";
+import { PLACE_LINK_JS } from "./place-link.js";
 import GEO_ENGINE from "./geo.js";
 import { TEST_USERS, TEST_PASS } from "./testfix.js";
 import { EN, WORDS, fill, fillHtml, unitsIn } from "./words.js";
@@ -2417,6 +2418,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
       .replace("/*__PAYHREF__*/", () => payHref.toString())
       /* 10 Oct 2026: a delivery's time window, the Worker's own rule carried as it is (stmt/window.js), so the sheet offers
          exactly the windows the Worker takes */
+      .replace("/*__PLACELINK__*/", () => "var placeLink=" + PLACE_LINK_JS + ";")
       .replace("/*__WINDOW__*/", () => [slotSpan, slotNext, openParts].map(String).join("\n")).replace("__WINDOWS__", JSON.stringify(WINDOWS))
       /* S4 4.6: the open-order limit the Worker refuses at, so the page can say it before the form */
       .replace("__MAX_OPEN__", String(MAX_OPEN)).replace("__WANT_DAYS__", String(WANT_DAYS)).replace("__OPEN_STATES__", JSON.stringify(OPEN_STATES)).replace("__TEST_USERS__", JSON.stringify(TEST_USERS))
@@ -4647,7 +4649,7 @@ const CLIENT_JS = `
       draft.slot=amend.slot||'';
     } else if(draft.slot==null) draft.slot='';
     /* 10 Oct 2026: the exact spot is asked afresh on every sheet and kept nowhere; an amendment keeps the order's own */
-    draft.pin=null; draft.pinMsg=''; draft.pinLinkOpen=false; draft.pinBusy=false; draft.pinKept=!!(amend&&amend.pinned);
+    draft.pin=null; draft.pinMsg=''; draft.pinPlace=''; draft.pinQ=''; draft.pinPend=false; draft.pinBusy=false; draft.pinKept=!!(amend&&amend.pinned);
     draft.spot=null; draft.spotEdit=null;   /* Counter Batch C: no spot picked on opening (his answer 4) */
     draft.startPlace=sp;   /* except the saved spot a To your last place or an Order again names */
     draft.ownSlot=amend&&amend.slot&&amend.slotSpan?{slot:amend.slot, span:amend.slotSpan}:null;
@@ -4956,45 +4958,21 @@ const CLIENT_JS = `
   function winHm(w){ return (w<10?'0':'')+w+':00'; }
   function winDay(slot){ return String(slot||'').slice(0,10); }
   function winPart(span,i){ return String(span||'').split('-')[i]||''; }
-  /* 10 Oct 2026: A DELIVERY'S EXACT SPOT. Read once on this phone (Use my location) or out of a Google Maps or Waze link they
+  /* 10 Oct 2026: A DELIVERY'S EXACT SPOT. Read once on this phone (Use my location), found by search, or out of a map link they
      paste, read here; a short Google link, which only a redirect opens, is kept as the link for the desk to open. Sealed at
      Place to our key, as a slip is but under its own info (pinSeal), so the site holds ciphertext alone and only our vault
      opens it. Kept nowhere on the phone */
   function pinPt(a,b){ return typeof a==='number'&&typeof b==='number'&&isFinite(a)&&isFinite(b)&&a>=-90&&a<=90&&b>=-180&&b<=180&&!(a===0&&b===0); }
-  function pinHash(h){ var B='0123456789bcdefghjkmnpqrstuvwxyz', la=[-90,90], lo=[-180,180], even=true;
-    for(var i=0;i<h.length;i++){ var c=B.indexOf(h.charAt(i)); if(c<0) return null;
-      for(var k=4;k>=0;k--){ var r=even?lo:la, mid=(r[0]+r[1])/2; if((c>>k)&1) r[0]=mid; else r[1]=mid; even=!even; } }
-    var a=+((la[0]+la[1])/2).toFixed(6), b=+((lo[0]+lo[1])/2).toFixed(6); return pinPt(a,b)?{lat:a, lng:b, src:'link'}:null; }
-  /* 4 Nov 2026 (his report that sharing the exact location did not work): what a phone shares is often the place's name and then its
-     link, an iPhone's is Apple Maps', and some share the two figures alone; the link is read out of the words around it, Apple's point
-     read off its ll or coordinate, Apple's short link kept as a link for us to open, and two figures taken as they are */
+  /* 4 Nov 2026 (his word: one convention on every surface): a link, or two figures, is read by the one reader every page of ours
+     reads with, so a share reads alike everywhere: Google Maps, Waze and Apple Maps, the link out of the words around it, the two figures
+     alone; a short link, which only a redirect opens, is kept as the link for us to open */
+  /*__PLACELINK__*/
   function pinRead(v){
-    var t=String(v||'').split('').map(function(c){ return c.charCodeAt(0)<33?' ':c; }).join('').trim();
-    if(!t||t.length>4000) return null;
-    var two=/^(-?[0-9]{1,2}[.][0-9]{3,})[ ]*,[ ]*(-?[0-9]{1,3}[.][0-9]{3,})$/.exec(t);
-    if(two) return pinPt(+two[1],+two[2])?{lat:+two[1], lng:+two[2], src:'link'}:null;
-    var s=(/https:[/][/][^ <>"]+/i.exec(t)||[''])[0].replace(/[),.;!?']+$/,''), m=/^https:[/][/]([a-z0-9.-]+)([/?][^ ]*)?$/i.exec(s);
-    if(!m||s.length>600) return null;
-    var host=m[1].toLowerCase(), path=m[2]||'', num='(-?[0-9]{1,3}[.][0-9]+)', x;
-    function pt(a,b){ a=+a; b=+b; return pinPt(a,b)?{lat:a, lng:b, src:'link'}:null; }
-    /* the pin itself first: ll, coordinate, then q, and sll (the view) last */
-    if(host==='maps.apple.com'){ var ak=['ll','coordinate','q','sll'];
-      for(var ai=0;ai<ak.length;ai++){ x=new RegExp('[?&]'+ak[ai]+'='+num+'(,|%2C)'+num).exec(path); if(x) return pt(x[1],x[3]); }
-      return null; }
-    if(host==='maps.apple'&&/^[/]p[/][A-Za-z0-9._~-]{1,80}$/.test(path)) return {link:'https://'+host+path, src:'link'};
-    if(/(^|[.])google[.][a-z.]+$/.test(host)&&(host.indexOf('maps.')===0||/^[/]maps/.test(path))){
-      x=new RegExp('!3d'+num+'!4d'+num).exec(path); if(x) return pt(x[1],x[2]);
-      x=new RegExp('[?&](q|query|ll|destination|center)=(loc:)?'+num+'(,|%2C)[+]?'+num).exec(path); if(x) return pt(x[3],x[5]);
-      x=new RegExp('@'+num+','+num).exec(path); if(x) return pt(x[1],x[2]);
-      return null;
-    }
-    if(host==='maps.app.goo.gl'&&path.length>2||host==='goo.gl'&&/^[/]maps[/]./.test(path)) return {link:'https://'+host+path, src:'link'};
-    if(/(^|[.])waze[.]com$/.test(host)){
-      x=new RegExp('[?&]ll='+num+'(,|%2C)'+num).exec(path); if(x) return pt(x[1],x[3]);
-      x=new RegExp('[?&]to=ll[.]'+num+'(,|%2C)'+num).exec(path); if(x) return pt(x[1],x[3]);
-      x=/^[/]ul[/]h([0-9b-hjkmnp-z]{5,12})/.exec(path); if(x) return pinHash(x[1]);
-    }
-    return null;
+    var t=String(v||''); if(!t.trim()||t.length>4000) return null;
+    var r=null; try{ r=placeLink(t); }catch(e){ r=null; }
+    if(!r) return null;
+    if(r.short) return /^https:[/][/]/.test(r.short)&&r.short.length<=600?{link:r.short, src:'link'}:null;
+    return pinPt(r.lat,r.lng)?{lat:r.lat, lng:r.lng, src:'link'}:null;
   }
   function pinHere(){
     var g=null; try{ g=navigator.geolocation; }catch(e){}
@@ -5009,29 +4987,62 @@ const CLIENT_JS = `
         end(pinPt(a,b)?{lat:a, lng:b, acc:Math.round(+c.accuracy||0), src:'gps'}:null); },
       function(){ end(null); },{enableHighAccuracy:true, maximumAge:0, timeout:15000}); }catch(e){ end(null); }
   }
+  /* 4 Nov 2026 (his answers: one convention on every surface, OpenStreetMap search): THE EXACT SPOT IS ONE FIELD, as his collection
+     points' Place is: three letters or more and a moment's pause list up to five places found (OpenStreetMap, through our server, only
+     the words travel), a tap on one takes its point; a pasted map link or two figures are read at once; Use my location beside it. The
+     list and its line change in place, so typing is never redrawn under the thumb */
+  var pinTimer=null, pinSeq=0;
   function pinField(){
     var f=el('div','salt-field opin');
-    f.appendChild(el('span','salt-field__label',tw('sh.pinT')));
+    var lb=el('label','salt-field__label',tw('sh.pinT')); lb.htmlFor='oPinUrl'; f.appendChild(lb);
     if(draft.pin){
-      f.appendChild(el('span','salt-field__hint',tw(draft.pin.link?'sh.pinOkLink':'sh.pinOk')));
+      f.appendChild(el('span','salt-field__hint',draft.pin.src==='search'&&draft.pinPlace?tw('sh.pinOkFound',{p:draft.pinPlace}):tw(draft.pin.link?'sh.pinOkLink':'sh.pinOk')));
       var off=el('button','salt-ghost',tw('sh.pinOff')); off.type='button'; off.id='oPinOff'; off.setAttribute('data-k','pinoff');
-      off.addEventListener('click',function(){ draft.pin=null; draft.pinMsg=''; draft.pinLinkOpen=false; sheetDraw(); });
+      off.addEventListener('click',function(){ draft.pin=null; draft.pinMsg=''; draft.pinPlace=''; sheetDraw(); });
       f.appendChild(off); return f;
     }
-    var row=el('div','salt-options__grid salt-options__grid--2');
-    var here=el('button','salt-ghost',tw('sh.pinHere')); here.type='button'; here.id='oPinHere'; here.setAttribute('data-k','pinhere'); here.disabled=!!draft.pinBusy;
-    here.addEventListener('click',pinHere); row.appendChild(here);
-    var lk=el('button','salt-ghost',tw('sh.pinLink')); lk.type='button'; lk.id='oPinLink'; lk.setAttribute('data-k','pinlink');
-    lk.addEventListener('click',function(){ draft.pinLinkOpen=true; draft.pinMsg=''; sheetDraw(); var x=document.getElementById('oPinUrl'); if(x) try{ x.focus(); }catch(e){} });
-    row.appendChild(lk); f.appendChild(row);
-    if(draft.pinLinkOpen){
-      var li=el('input','salt-field__input'); li.id='oPinUrl'; li.type='url'; li.autocomplete='off'; li.placeholder=tw('sh.pinLinkPh'); li.setAttribute('data-k','pinurl');
-      li.setAttribute('aria-label',tw('sh.pinLink'));
-      li.addEventListener('input',function(){ var p=pinRead(li.value); if(p){ draft.pin=p; draft.pinMsg=''; sheetDraw(); } });
-      li.addEventListener('change',function(){ var p=pinRead(li.value); if(p){ draft.pin=p; draft.pinMsg=''; } else if(String(li.value||'').trim()) draft.pinMsg=tw('sh.pinBad'); sheetDraw(); });
-      f.appendChild(li);
+    var li=el('input','salt-field__input'); li.id='oPinUrl'; li.type='text'; li.autocomplete='off'; li.spellcheck=false; li.placeholder=tw('sh.pinLinkPh'); li.value=draft.pinQ||'';
+    li.setAttribute('data-k','pinurl'); li.setAttribute('role','combobox'); li.setAttribute('aria-autocomplete','list'); li.setAttribute('aria-controls','oPinFound'); li.setAttribute('aria-expanded','false');
+    var L=el('div','salt-settings opinfound'); L.id='oPinFound'; L.setAttribute('role','listbox'); L.setAttribute('aria-label',tw('sh.pinFound')); L.hidden=true;
+    var hint=el('span','salt-field__hint',draft.pinMsg||tw('sh.pinHint'));
+    function shown(list,msg){
+      L.textContent='';
+      (list||[]).forEach(function(h,i){
+        var r=el('button','salt-settings__row salt-settings__row--action'); r.type='button'; r.setAttribute('role','option'); r.setAttribute('data-k','pinhit:'+i);
+        r.appendChild(el('span','salt-settings__label',String(h.name||''))); if(h.where) r.appendChild(el('span','salt-settings__value',String(h.where)));
+        r.addEventListener('click',function(){ if(!pinPt(+h.lat,+h.lng)) return; pinSeq++;
+          draft.pin={lat:+h.lat, lng:+h.lng, src:'search'}; draft.pinPlace=String(h.name||'').slice(0,80); draft.pinMsg=''; draft.pinQ=''; draft.pinPend=false; sheetDraw(); });
+        L.appendChild(r);
+      });
+      L.hidden=!L.firstChild; li.setAttribute('aria-expanded',String(!L.hidden)); hint.textContent=msg||tw('sh.pinHint');
     }
-    f.appendChild(el('span','salt-field__hint',draft.pinMsg||tw('sh.pinHint')));
+    /* the words and a search still on its way outlive a redraw (the key landing, a window chosen): the new field asks again */
+    function look(w){
+      var mine=++pinSeq; draft.pinPend=true;
+      pinTimer=setTimeout(function(){
+        (act&&typeof actSearch==='function'?actSearch(w):api('/place/search',{q:w})).then(function(r){
+          if(mine!==pinSeq||!li.isConnected) return;
+          draft.pinPend=false;
+          var b=r&&r.body||{}, l=b.ok&&Array.isArray(b.places)?b.places.slice(0,5):null;
+          shown(l||[],l?(l.length?'':tw('sh.pinNone')):tw('sh.pinDown'));
+        },function(){ if(mine===pinSeq&&li.isConnected){ draft.pinPend=false; shown([],tw('sh.pinDown')); } });
+      },350);
+    }
+    li.addEventListener('input',function(){
+      var v=li.value, p=pinRead(v);
+      clearTimeout(pinTimer); draft.pinQ=v;
+      if(p){ pinSeq++; draft.pin=p; draft.pinMsg=''; draft.pinPlace=''; draft.pinQ=''; draft.pinPend=false; sheetDraw(); return; }
+      var w=String(v||'').replace(/ {2,}/g,' ').trim();
+      if(w.length<3||/^https?:/i.test(w)){ pinSeq++; draft.pinPend=false; shown([],''); return; }
+      look(w);
+    });
+    li.addEventListener('change',function(){ var v=String(li.value||'').trim(); if(/^https?:/i.test(v)&&!pinRead(v)){ draft.pinMsg=tw('sh.pinBad'); hint.textContent=draft.pinMsg; } });
+    f.appendChild(li); f.appendChild(L);
+    var here=el('button','salt-ghost',tw('sh.pinHere')); here.type='button'; here.id='oPinHere'; here.setAttribute('data-k','pinhere'); here.disabled=!!draft.pinBusy;
+    here.addEventListener('click',pinHere); f.appendChild(here);
+    f.appendChild(hint);
+    clearTimeout(pinTimer);
+    if(draft.pinPend&&draft.pinQ){ var wq=String(draft.pinQ).replace(/ {2,}/g,' ').trim(); if(wq.length>=3) look(wq); }
     return f;
   }
   /* COUNTER BATCH C (20 Oct 2026, item 18; his answers 3, 4, 12 and 13): SAVED SPOTS, kept on this phone only, at most three an
@@ -5041,7 +5052,7 @@ const CLIENT_JS = `
      nowhere. A store that throws leaves the sheet as it was before them: the area field and the exact spot. */
   var SPOT_MAX=3, SPOT_NAMES=['sp.shop','sp.store','sp.warehouse'];
   function spotKey(){ return 'salt-spots:'+user; }
-  function spotPt(p){ return !!p&&typeof p==='object'&&(p.src==='gps'||p.src==='link')&&(pinPt(p.lat,p.lng)||typeof p.link==='string'); }
+  function spotPt(p){ return !!p&&typeof p==='object'&&(p.src==='gps'||p.src==='link'||p.src==='search')&&(pinPt(p.lat,p.lng)||typeof p.link==='string'); }
   function spotOk(s){ return !!s&&typeof s.id==='string'&&typeof s.label==='string'&&s.label.trim().length>0&&typeof s.place==='string'&&s.place.trim().length>=2; }
   function spotsRead(){
     try{ var v=JSON.parse(localStorage.getItem(spotKey())||'[]');
@@ -5055,7 +5066,7 @@ const CLIENT_JS = `
   function spotPick(s){ draft.spot={id:s.id, label:s.label, place:s.place, unit:s.unit||'', pt:s.pt||null, once:!!s.once}; draft.place=s.place; draft.pin=s.pt||null; }
   function spotOpen(s){
     draft.spotEdit={id:s?s.id:'', label:s?s.label:'', place:s?s.place:'', unit:s?s.unit:'', save:!(s&&s.once), once:!!(s&&s.once)};
-    draft.pin=s&&s.pt||null; draft.pinMsg=''; draft.pinLinkOpen=false; draft.step='spot'; sheetDraw();
+    draft.pin=s&&s.pt||null; draft.pinMsg=''; draft.step='spot'; sheetDraw();
   }
   function spotList(L){
     var fs=el('fieldset','salt-options ospots'); fs.appendChild(el('legend','salt-options__legend',tw('sh.whereTo')));

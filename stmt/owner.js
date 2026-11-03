@@ -882,6 +882,11 @@ export const OWNER_JS = `
     try{ var c=await readParty(); return (c.parties||[]).filter(function(code){ return !/[-]R$/.test(code); }); }
     catch(e){ return []; }
   }
+  /* 4 Nov 2026 (one convention on every surface): their spot's place search on Order as them goes through his own road, as Shop's points do */
+  async function actSearch(q){
+    try{ return {status:200, body:await refs('/all/maker/geo/search',{q:q})}; }
+    catch(e){ return {status:e.status||0, body:{ok:false}}; }
+  }
   async function actKey(){
     try{ return {status:200, body:await refs('/all/maker/slip/key')}; }
     catch(e){ return {status:e.status||0, body:{ok:false}}; }

@@ -105,6 +105,21 @@ export async function run({ ok }) {
   ok(relay.status === 200 && !!rj.pin && rj.pin.ct === sealed.ct && (await dreq("/desk/pins/" + U + "/" + "0".repeat(32))).status === 404
     && (await stmtW.fetch(new Request("https://site.test/desk/pins/" + U + "/" + t.pin.id), senv)).status !== 200,
     "the desk's keyed relay reads the ciphertext as filed, an unknown one is not kept, and nothing reads it without the desk's key");
+  /* W1 (4 Nov 2026, his answers: one convention on every surface, OpenStreetMap search): their place search, on their session alone, sends
+     Photon the words and nothing of the account, and is braked at thirty a minute */
+  const realFetch = globalThis.fetch, asked = [];
+  globalThis.fetch = async (u) => { asked.push(String(u)); return new Response(JSON.stringify({ features: [{ geometry: { coordinates: [101.7402, 3.0811] }, properties: { name: "Taman Ulvar", city: "Kuala Lumpur" } }] }), { status: 200 }); };
+  try {
+    const nosess = await stmtW.fetch(new Request("https://site.test/place/search", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q: "Taman Ulv" }) }), senv);
+    const nAsked = asked.length;
+    const found = await post("/place/search", { q: "Taman Ulv" }), fj = await found.json().catch(() => ({}));
+    ok(nosess.status !== 200 && nAsked === 0 && found.status === 200 && fj.places && fj.places[0].name === "Taman Ulvar" && asked.length === 1
+      && /^https:[/][/]photon[.]komoot[.]io[/]api[/][?]q=Taman%20Ulv&/.test(asked[0]) && !asked[0].includes(U) && !asked[0].includes(tok),
+      "W1 their place search answers on their session alone, and Photon is asked the words and nothing of the account: " + JSON.stringify([nosess.status, asked]));
+    let last = null;
+    for (let i = 0; i < 30; i++) last = await post("/place/search", { q: "Taman Ulv" });
+    ok(last.status === 429 && asked.length === 30, "W1 and past thirty a minute an account is told to wait, Photon not asked: " + JSON.stringify([last.status, asked.length]));
+  } finally { globalThis.fetch = realFetch; }
 
   /* 4. THE PAGE: Use my location reads once, Place seals it to the key and sends the envelope; links are read on the phone */
   const { landingPage } = await import("../stmt/page.js"), C = await import("../tools/stmt-crypto.mjs"), { JSDOM } = await import("jsdom");
@@ -125,9 +140,11 @@ export async function run({ ok }) {
   ok(wz && Math.abs(wz.lat - 3.14) < 0.05 && Math.abs(wz.lng - 101.69) < 0.05, "a Waze short link's geohash is read on the phone, no redirect: " + JSON.stringify(wz));
   const short = pinRead("https://maps.app.goo.gl/AbCdEf123");
   ok(short && short.link === "https://maps.app.goo.gl/AbCdEf123" && !("lat" in short), "a short Google link, which only a redirect opens, is kept as the link for the desk");
-  const none = ["https://example.com/maps/@3.1,101.6,15z", "http://www.google.com/maps/@3.1,101.6,15z", "https://www.google.com/maps/place/Somewhere", "Jalan 1", "https://waze.com/ul/h"]
+  /* 4 Nov 2026 (one convention on every surface): the page reads with the Desk's own mapsLink, which reads a plain http map link's
+     point as it reads an https one; nothing is fetched from a point, so the http case left this list. A short link must still be https. */
+  const none = ["https://example.com/maps/@3.1,101.6,15z", "https://www.google.com/maps/place/Somewhere", "Jalan 1", "https://waze.com/ul/h", "http://maps.app.goo.gl/AbCdEf123"]
     .filter((u) => pinRead(u) !== null);
-  ok(none.length === 0, "a link of any other site, not https, or with no point in it reads as nothing: " + JSON.stringify(none));
+  ok(none.length === 0, "a link of any other site, a short link not over https, or a link with no point in it reads as nothing: " + JSON.stringify(none));
   /* 4 Nov 2026 (his report that the exact location did not work): what phones share, read as served */
   const shared = [
     ["https://maps.apple.com/?ll=3.0738,101.7255&q=Dropped%20Pin", 3.0738, 101.7255],
@@ -151,7 +168,7 @@ export async function run({ ok }) {
     products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }] }] };
   const prices = Object.assign({ at: list.at, week: list.week.monday, digest: list.digest }, await C.encryptWith(ck, JSON.stringify(list)));
   const drive = async (key, geo) => {
-    const posted = [], asked = [];
+    const posted = [], asked = [], searched = [];
     const body = { ok: true, wrap: await C.wrapKey(PASS, ck), session: "sess-pin", prices,
       env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
     const dom = new JSDOM(landingPage(U, "npin", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
@@ -163,6 +180,7 @@ export async function run({ ok }) {
         const reply = (status, b) => ({ ok: status === 200, status, type: "basic", json: async () => b });
         if (p === "/open") return reply(200, body);
         if (p === "/slip/key") return reply(200, { ok: true, key });
+        if (p === "/place/search" && m === "POST") { searched.push(JSON.parse(init.body)); return reply(200, { ok: true, places: [{ name: "Taman Ulvar", where: "Cheras, Kuala Lumpur", lat: 3.0811, lng: 101.7402 }] }); }
         if (p === "/orders" && m === "GET") return reply(200, { ok: true, orders: [] });
         if (p === "/orders" && m === "POST") { const j = JSON.parse(init.body); posted.push(j);
           return reply(200, { ok: true, order: { id: "20261010050000-pppp", product: "salt", qty: j.qty, status: "placed", mode: j.mode, at: "2026-10-10T05:00:00Z", total: j.total, history: [], msgs: [] } }); }
@@ -173,7 +191,7 @@ export async function run({ ok }) {
     d.getElementById("un").value = U; d.getElementById("pw").value = PASS;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 200 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 25));
-    return { w, d, posted, asked };
+    return { w, d, posted, asked, searched };
   };
   const wait = async (f) => { for (let i = 0; i < 160 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
   const A = await drive(pub, { latitude: 3.1412, longitude: 101.6865, accuracy: 12 });
@@ -186,7 +204,8 @@ export async function run({ ok }) {
     await wait(() => !!d.getElementById("spName"));
     await new Promise((r) => setTimeout(r, 200));   /* the key is read once the step first draws, and only a form is redrawn when it lands: a redraw by the name picks it up */
     d.querySelector('#osheet [data-k="spn:0"]').click();
-    ok(await wait(() => !!d.getElementById("oPinHere")) && !!d.getElementById("oPinLink"), "the Add a spot step offers Use my location and a map link once the key is filed");
+    /* 4 Nov 2026 (one convention on every surface): the spot is one field, search or a pasted link, with Use my location beside it */
+    ok(await wait(() => !!d.getElementById("oPinHere")) && !!d.getElementById("oPinUrl"), "the Add a spot step offers Use my location and the one place field once the key is filed");
     ok(d.getElementById("spUse").disabled, "with neither the area nor the spot, Use this spot waits");
     d.getElementById("oPinHere").click();
     ok(await wait(() => !!d.getElementById("oPinOff")) && asked.length === 1 && asked[0].maximumAge === 0 && d.getElementById("spUse").disabled,
@@ -221,4 +240,28 @@ export async function run({ ok }) {
     ok(await wait(() => d.getElementById("osheet").textContent.includes(W.EN["sh.pinNo"])) && !d.getElementById("oPinOff") && d.getElementById("spUse").disabled,
       "a phone that will not share its location says so, and Use this spot waits for the area");
   } finally { D.w.close(); }
+  /* P4 (4 Nov 2026, his answers: one convention on every surface, OpenStreetMap search): three letters and a pause search through our own
+     route with the words alone; a place picked is the spot, sealed at Place with its point and src search */
+  const E = await drive(pub, null);
+  try {
+    const { d, posted, searched } = E;
+    await startAt(d); d.querySelector('#osheet [data-k="mode:1"]').click();
+    d.getElementById("spAdd").click(); await wait(() => !!d.getElementById("spName"));
+    await new Promise((r) => setTimeout(r, 200)); d.querySelector('#osheet [data-k="spn:0"]').click();
+    await wait(() => !!d.getElementById("oPinUrl"));
+    const pu = d.getElementById("oPinUrl"); pu.value = "Taman Ulv"; pu.dispatchEvent(new E.w.Event("input", { bubbles: true }));
+    const hit = await wait(() => d.querySelector('#osheet [data-k="pinhit:0"]'));
+    ok(!!hit && searched.length === 1 && JSON.stringify(searched[0]) === JSON.stringify({ q: "Taman Ulv" }) && /Taman Ulvar/.test(hit.textContent),
+      "P4 three letters and a pause ask our own place search with the words alone, and the places found stand as rows: " + JSON.stringify(searched));
+    hit.click();
+    ok(await wait(() => !!d.getElementById("oPinOff")) && /Taman Ulvar is ready/.test(d.getElementById("osheet").textContent),
+      "P4 a tap on a place takes its point and says which place it is");
+    d.getElementById("oWhere").value = "Ulvar"; d.getElementById("oWhere").dispatchEvent(new E.w.Event("input", { bubbles: true }));
+    d.getElementById("spUse").click();
+    await wait(() => !d.getElementById("spUse") && !d.getElementById("oGo").disabled);
+    d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    await wait(() => posted.length === 1);
+    const env = posted[0] && posted[0].pin, got = env && typeof env === "object" ? await open(pair.privateKey, env, "salt-pin v1") : null;
+    ok(got && got.lat === 3.0811 && got.lng === 101.7402 && got.src === "search", "P4 and Place seals the place found as the spot: " + JSON.stringify(got));
+  } finally { E.w.close(); }
 }

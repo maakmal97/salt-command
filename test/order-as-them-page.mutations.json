@@ -38,5 +38,6 @@
  {"name": "their customer is not said on the check", "file": "stmt/page.js", "find": "    if(c.buyer) row(tw('sh.buyer'),c.buyer);", "replace": ""},
  {"name":"a delivery on Order as them waits for a saved spot (3 Nov 2026)","file":"stmt/page.js","find":"&&!draft.amend&&!act&&!draft.spot&&spotsRead()) return tw('sp.why');","replace":"&&!draft.amend&&!draft.spot&&spotsRead()) return tw('sp.why');"},
  {"name":"a choice throws the sheet to its top (4 Nov 2026)","file":"stmt/page.js","find":"    osh.body.scrollTop=was===osh.drawn?keepY:0;\n","replace":"    osh.body.scrollTop=0;\n"},
- {"name":"a new step keeps the old place (4 Nov 2026)","file":"stmt/page.js","find":"    osh.body.scrollTop=was===osh.drawn?keepY:0;\n","replace":"    osh.body.scrollTop=keepY;\n"}
+ {"name":"a new step keeps the old place (4 Nov 2026)","file":"stmt/page.js","find":"    osh.body.scrollTop=was===osh.drawn?keepY:0;\n","replace":"    osh.body.scrollTop=keepY;\n"},
+ {"name":"Order as them searches their road (4 Nov 2026)","file":"stmt/page.js","find":"(act&&typeof actSearch==='function'?actSearch(w):api('/place/search',{q:w}))","replace":"api('/place/search',{q:w})"}
 ]

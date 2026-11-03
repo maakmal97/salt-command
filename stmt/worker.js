@@ -38,6 +38,7 @@
  * NO IMPORT FROM src/ OR tools/. The suite proves it: this Worker must bundle on its own, and
  * must never be able to reach the ledger's code even by accident.
  */
+import { placeSearch } from "./place.js";
 import { landingPage, boardPage, shutPage, notFoundPage, joinPage, MON3, mtileSvg } from "./page.js";
 import { mintJoin, readJoin, listJoins, joinsBy, setJoin, sendJoin, addedJoin, keyJoin, waitJoin, joinOpen, joinMine, joinOwner, JOIN_OPEN_MAX } from "./join.js";
 import { testShell } from "./testsurface.js";
@@ -363,6 +364,17 @@ async function readJson(request) {
 }
 const OID_RE = /^[0-9]{14}-[a-z0-9]{1,8}$/;
 
+/* the place search's brake: a count a minute an account in KV, kept two minutes; a store that throws lets the search through */
+const PLACE_PER_MINUTE = 30;
+async function placeBrake(env, u) {
+  const k = "psearch:" + u + ":" + Math.floor(Date.now() / 60000);
+  try {
+    const n = +(await env.STMT.get(k)) || 0;
+    if (n >= PLACE_PER_MINUTE) return false;
+    await env.STMT.put(k, String(n + 1), { expirationTtl: 120 });
+  } catch (e) { /* the brake is best effort */ }
+  return true;
+}
 async function handleCustomer(request, env, p, m, ctx) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
   const u = await sessionUser(request, env);
@@ -439,6 +451,16 @@ async function handleCustomer(request, env, p, m, ctx) {
   if (p === "/slip/key") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     return json({ ok: true, key: await slipPub(env) });
+  }
+  /* 4 Nov 2026 (his answers: one convention on every surface, OpenStreetMap search): the words a customer types for their exact spot go
+     to Photon exactly as his own points' words do (stmt/place.js placeSearch: Malaysia and Singapore, five places; only the words travel,
+     never the account, and nothing is kept or logged). On their session alone, thirty a minute an account (placeBrake). */
+  if (p === "/place/search") {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const b = await readJson(request);
+    if (!await placeBrake(env, u)) return json({ ok: false, error: "too many searches just now; wait a minute" }, 429);
+    const out = await placeSearch(b && b.q, fetch);
+    return json(out.ok ? { ok: true, places: out.places } : { ok: false, error: out.error }, out.ok ? 200 : (out.status || 502));
   }
   /* PHASE 7B (his yes of 11 Oct 2026): THE ACCOUNT NUMBERS THE PAY SHEET SHOWS beside the reference, from KV `paynum`, which only
      `node tools/paysync.mjs --numbers` writes and git never holds (stmt/paynum.js whitelists it to `number` a key). On their
@@ -2137,7 +2159,7 @@ const worker = {
     if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout" || p === "/account" || p === "/account/stamp"
       || p === "/account/claim" || p === "/claims" || p === "/slip/key" || p === "/pay/accounts" || p === "/devices" || p === "/devices/signout" || p === "/push/unsubscribe"
       || p === "/passkey/new" || p === "/passkey/save" || p === "/passkey/link" || p === "/passkey/wrap" || p === "/passkey/remove"
-      || p === "/thread" || p === "/pools" || p.startsWith("/pools/")) return handleCustomer(request, env, p, m, ctx);
+      || p === "/thread" || p === "/pools" || p.startsWith("/pools/") || p === "/place/search") return handleCustomer(request, env, p, m, ctx);
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
     if (p === "/my/joins") return handleMyJoins(request, env, m, url.origin);
