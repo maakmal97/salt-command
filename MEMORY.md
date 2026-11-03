@@ -287,6 +287,9 @@
   B11 in `test/order-as-them-page.mjs`, red by its own mutation; the saved-spots needle in `test/counter-c-spots.mutations.json` re-aimed. Full suite
   11,854 passed, 1 failed (S1b, laptop only). A customer's own sheet is unchanged.
 
+## The Desk's tab icon is the gold cube (v1415)
+- Live as v1415 (`8cc3a74d`, 03 Nov 2026; Cloud commit `41647079660`: chain green with "The phone is serving it", three suite parts green; CI `41647079705` green), his word: the tab showed the crystal retired at v472 (v1248 ran the stale `tools/make_icons.py`) while the home-screen plates and the rail drew the gold cube. `make_icons.py` now writes `icon-tab.png` alone, from the rail's own mark, and never the plates (those come from `Code\salt-ds\brand\assets`); shell cache v10. The Counter and Salt Admin keep their ring marks (not touched).
+
 ## Disabled automation
 - `Salt fold (manual backup)` = `trig_01UrnjQMWA3f6GXN5R6Dzi4S`, disabled.
 
