@@ -1,6 +1,6 @@
 {
- "v": "v1397",
- "stamped": "03 Nov 2026, 12:29 KL",
+ "v": "v1398",
+ "stamped": "03 Nov 2026, 12:48 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -10507,12 +10507,29 @@
     "customer": "CS11-AMP",
     "qty": 5,
     "total": 35,
-    "cash": 0,
+    "cash": 35,
     "product": "rice",
     "date": "2026-11-03",
     "deliveredQty": 0,
     "note": "<b>SALE 03 NOV 2026: 5 UNIT OF RICE TO CS11-AMP, RM35, PENDING.</b> Ordered on the statements site, order 20261103041936-r5eszg, acknowledged, to collect. Nothing paid and nothing handed over. The goods total of RM35 equals the askTotal of RM35 for that size and sits above the floorTotal of RM20; per unit, RM7 against a floor of RM4 and an ask of RM7. CS11-AMP: one order on the book, the pending salt row at RM130, so no rice rate to compare; RM130 outstanding before this, no units on credit before, against a cap of 1, nothing defaulted. The row carries the drafter's cost of RM3.3 per unit, costed off the latest purchase p045 and kept by the fold. The drafter flagged that no earlier rice rate of theirs exists; that is true, so the ladder is the only yardstick. Outstanding: the full RM35 and the five unit to be collected.",
-    "rid": "s324"
+    "rid": "s324",
+    "amend": [
+     {
+      "date": "2026-11-03",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-11-03",
+      "kind": "Fulfilment",
+      "cash": 35,
+      "kg": 0,
+      "note": "<b>PAYMENT 03 NOV 2026: RM35 FROM CS11-AMP ON s324, 5 UNIT OF RICE.</b> Paid on the statements site, order 20261103041936-r5eszg, by QR via Maybank. This moves RM35 and 0 unit against RM35 and 5 unit outstanding, leaving RM0 owed and the five unit still to be collected. The order total of RM35 is unchanged, equal to the askTotal for that size. CS11-AMP: two orders on the book, rates between RM7 and RM130 with a median of RM130; RM35 outstanding before this, no units on credit, nothing defaulted. The drafter raised no flags, so there is nothing for the figures to answer. The row keeps its own cost. Outstanding: the handover of the five unit only."
+     }
+    ],
+    "paidOn": "2026-11-03"
    }
   ],
   "contacts": [
@@ -11336,7 +11353,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-03T04:26:51.391Z",
+  "QUEUE_COMMITTED": "2026-11-03T04:40:39.518Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -11387,7 +11404,7 @@
     {
      "id": "int:nocost",
      "sev": "watch",
-     "title": "4 priced sales carry no cost of their own"
+     "title": "5 priced sales carry no cost of their own"
     },
     {
      "id": "int:underfloor",
@@ -12545,6 +12562,21 @@
       "frequent": false,
       "small": true,
       "bigger": false,
+      "loyal": false,
+      "rare": false
+     },
+     "rice": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 0,
+      "sinceLastDays": 0,
+      "perMonth": 1.01,
+      "unitsPerMonth": 5.07,
+      "smallShare": 0,
+      "bigShare": 1,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
       "loyal": false,
       "rare": false
      }
@@ -21633,10 +21665,10 @@
      "suggest": null
     }
    },
-   "v": "v1397"
+   "v": "v1398"
   },
   "OPEN": {
-   "at": "2026-11-03T04:29:58.445Z",
+   "at": "2026-11-03T04:48:55.390Z",
    "count": 9,
    "byKey": {
     "CS11-AMP|2026-11-03|130": {
@@ -21659,13 +21691,13 @@
      "dir": "S",
      "q": 5,
      "t": 35,
-     "cash": 0,
+     "cash": 35,
      "mv": 0,
-     "st": "part",
-     "oweRM": 35,
+     "st": "oweStock",
      "oweUnits": 5,
      "pr": "rice",
      "rid": "s324",
+     "paidOn": "2026-11-03",
      "key": "CS11-AMP|2026-11-03|35|rice"
     },
     "CR3-DAM|2026-10-30|70": {
@@ -21823,9 +21855,9 @@
     "rice": {
      "name": "Rice",
      "onHand": 75,
-     "free": 75,
-     "owedOut": 0,
-     "coverDays": 25.6,
+     "free": 70,
+     "owedOut": 5,
+     "coverDays": 24,
      "rate": 2.94,
      "owedToYou": 15,
      "promised": 5,
@@ -21862,7 +21894,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1397"
+   "v": "v1398"
   },
   "TERMS": {
    "ceiling": 250,
@@ -21870,7 +21902,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1397"
+   "v": "v1398"
   },
   "REWARD": {
    "stated": {
@@ -21888,7 +21920,7 @@
      }
     }
    },
-   "v": "v1397"
+   "v": "v1398"
   },
   "STOCK": {
    "today": "2026-11-03",
@@ -21919,10 +21951,10 @@
     },
     "rice": {
      "shelf": 75,
-     "free": 75,
+     "free": 70,
      "commit": 5,
      "light": "green",
-     "coverDays": 25.6,
+     "coverDays": 24,
      "transit": 0
     },
     "gas": {
@@ -21942,7 +21974,7 @@
      "transit": 0
     }
    },
-   "v": "v1397"
+   "v": "v1398"
   }
  }
 }

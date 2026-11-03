@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1398",
+  "d": "03 Nov 2026",
+  "t": "PAYMENT OF RM35 ON A RICE ORDER, GOODS STILL TO COLLECT",
+  "n": [
+   "<b>ONE PAYMENT FOLDED.</b> CS11-AMP paid RM35 on 03 Nov 2026 by QR via Maybank against order s324, the five unit of rice. It was preapproved by Counter Admin and the drafter raised no flags. The tool applies the fulfilment to the row itself, so the amount is not recomputed here.",
+   "<b>INVENTORY UNCHANGED.</b> Nothing was handed over, so no stock moved and no lot landed. The cost basis stays as it was."
+  ]
+ },
+ {
   "v": "v1397",
   "d": "03 Nov 2026",
   "t": "A PAYMENT OF RM130 FOLDED AGAINST A SALT ORDER FROM CS11-AMP",
