@@ -41,6 +41,10 @@
      mark's own colour and the focus colour, so it cannot say "watch this"; amber is a bright yellow, 12.0:1 on obsidian and
      11.3:1 on the panel, far more saturated than brass and clear of ember and alarm. */
   --salt-amber: #f2c230;
+  /* THE LOW-STOCK LIGHT, added 04 Nov 2026 when the restock light took a fourth step (green, yellow, amber, red): an orange between
+     amber and ember, dE 30.8 from amber, 36.6 from ember, 28.1 from the gas book's hue and 29.3 from copper, so it reads as its own step
+     beside any coin. Shared with Tide, as amber is. */
+  --salt-orange: #f28c18;
 
   /* The books. Each is its own hue, and none of them is a SEMANTIC one: ember, verdigris,
      steel and copper each mean something on the desk, so a product dot drawn in one would
@@ -2216,6 +2220,9 @@ button.salt-stepper__value:focus-visible { outline: 2px solid var(--salt-brass);
 
 .salt-status--verdigris { --salt-status-tone: var(--salt-verdigris); }
 .salt-status--ember { --salt-status-tone: var(--salt-ember); }
+/* the restock light's two warning steps as chips (04 Nov 2026): amber selling fast, orange low on stock */
+.salt-status--amber { --salt-status-tone: var(--salt-amber); }
+.salt-status--orange { --salt-status-tone: var(--salt-orange); }
 .salt-status--steel { --salt-status-tone: var(--salt-steel); }
 .salt-status--alarm { --salt-status-tone: var(--salt-alarm); }
 .salt-status--dashed { border-style: dashed; }
@@ -2300,10 +2307,11 @@ button.salt-stepper__value:focus-visible { outline: 2px solid var(--salt-brass);
 .salt-coin--rice { --salt-hue: var(--salt-product-rice); }
 .salt-coin--gas { --salt-hue: var(--salt-product-gas); }
 .salt-coin--prep { --salt-hue: var(--salt-product-prep); }
-/* the restock light beside a coin: a dot and its word, never the coin's border; mono caps in mist-bright, the dot verdigris, amber or ember */
+/* the restock light beside a coin: a dot and its word, never the coin's border; mono caps in mist-bright, the dot verdigris, amber (selling fast), orange (low on stock) or ember (04 Nov 2026) */
 .salt-light { display: inline-flex; align-items: center; gap: 8px; font-family: var(--salt-font-mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--salt-mist-bright); }
 .salt-light::before { content: ""; flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%; background: var(--salt-verdigris); }
 .salt-light--yellow::before { background: var(--salt-amber); }
+.salt-light--amber::before { background: var(--salt-orange); }
 .salt-light--red::before { background: var(--salt-ember); }
 
 /* ---- Meter: a bar is a figure. A well-inset track, a lit fill, an optional marker

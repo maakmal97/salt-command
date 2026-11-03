@@ -278,6 +278,7 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
   border-bottom:1px solid var(--salt-line-faint);border-left:3px solid transparent;}
 .exprow--green{--explight:var(--salt-verdigris);}
 .exprow--yellow{--explight:var(--salt-amber);}
+.exprow--amber{--explight:var(--salt-orange);}
 .exprow--red{--explight:var(--salt-ember);}
 .exprow--asks{border-left-color:var(--explight);background:color-mix(in srgb, var(--explight) 6%, transparent);}
 .expwho{display:flex;flex-direction:column;gap:4px;min-width:0;}
