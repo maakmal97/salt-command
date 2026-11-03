@@ -2995,6 +2995,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `points.code` | Collection points | The point code: one capital letter and one or two digits, such as A2. |
 | `points.place` | Collection points, New point, Place | Its place: words searched on OpenStreetMap as he types, a Google Maps, Waze or Apple Maps link (a short one opened on the Worker), or two figures. |
 | `points.found` | Collection points, under Place (key: its row) | A place the search found: puts its point in Place and names it under the list. |
+| `points.here` | Collection points, under Place | Use my location: this phone's point, read once and fresh, put in Place as two figures (4 Nov 2026, one place field on every surface). |
 | `points.remove` | Collection points (key: the point code) | Takes the point off the list, unsaved. |
 | `points.save` | Collection points | Saves the list. |
 | `pool.close` | Group order card (key: the pool id) | Closes it and sends each joined order for acknowledgement, or sends the ones left again. |
@@ -3007,13 +3008,15 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `queue.withdraw` | Server-held entry card (key: the entry id) | Withdraws the uploaded entry, or finishes a withdrawal begun. |
 | `record.add-id.drift` | Record, Add ID, one for each book with a Set Price (key: the book) | The starting %: not set, a preset or another %. |
 | `record.add-id.drift-value` | Record, Add ID, one for each book with a Set Price (key: the book) | The starting % when it is another %, from 0 to 2. |
-| `record.add-id.link` | Record, Add ID | A Maps or Waze link, read on this device. |
+| `record.add-id.link` | Record, Add ID | The one place field: words searched on OpenStreetMap, a Google Maps, Waze or Apple Maps link, or two figures, read on this device (a short link opened on the Worker). |
+| `record.add-id.link.here` | Record, Add ID, under the map link | Use my location: this phone's point put in the field as two figures. |
 | `record.add-id.name` | Record, Add ID | The name, which never leaves this device in the clear. |
 | `record.add-id.parent` | Record, Add ID | The parent or associate, for a downstream buyer or a resale account. |
 | `record.add-id.place` | Record, Add ID | The locality, from the official list. |
 | `record.add-id.role` | Record, Add ID | Customer, supplier, reseller, referral, downstream buyer or resale account. |
 | `record.add-id.send` | Record, Add ID | Encrypts on this device and sends the ID for review. |
-| `record.amend-id.link` | Record, Amend ID | A Maps or Waze link, read on this device. |
+| `record.amend-id.link` | Record, Amend ID | The one place field: a search, a Google Maps, Waze or Apple Maps link, or two figures. |
+| `record.amend-id.link.here` | Record, Amend ID, under the map link | Use my location: this phone's point put in the field as two figures. |
 | `record.amend-id.name` | Record, Amend ID | The new name, kept on this device. |
 | `record.amend-id.party` | Record, Amend ID | The party to re-key. |
 | `record.amend-id.place` | Record, Amend ID | The new locality. |
@@ -3055,7 +3058,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.loan.send` | Record, borrow or lend | Sends the loan for review. |
 | `record.offset.date` | Record, automatic offsets | The date. |
 | `record.offset.send` | Record, automatic offsets, one for each offer (key: the row id) | Sends that offset for review. |
-| `record.place.link` | Record, map placement | A new Maps or Waze link. |
+| `record.place.link` | Record, map placement | The one place field for a new point: a search, a map link, or two figures. |
+| `record.place.link.here` | Record, a filed place, under the map link | Use my location: this phone's point put in the field as two figures. |
 | `record.place.locality` | Record, map placement | The locality. |
 | `record.place.party` | Record, map placement | The party with a filed point. |
 | `record.place.send` | Record, map placement | Queues the placement. |
