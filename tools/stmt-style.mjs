@@ -121,6 +121,8 @@ export const RECIPE_HEADS = [
   "/* ---- Nav bar ---- */",
   /* PLAN VERSION 9 (03 Nov 2026, salt-ds 1.24.0): a book's units chosen on Order, a step at a time */
   "/* ---- Stepper (",
+  /* PLAN VERSION 10 (03 Nov 2026, salt-ds 1.25.0): a book's mark as a coin, and the restock light as a dot and its word beside it */
+  "/* ---- Coin (",
 ];
 export function siteRecipes() {
   const css = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");

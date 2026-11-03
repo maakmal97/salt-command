@@ -2280,6 +2280,32 @@ button.salt-stepper__value:focus-visible { outline: 2px solid var(--salt-brass);
 .salt-producttag--more { color: var(--salt-mist-bright); letter-spacing: 0.04em; }
 .salt-producttag__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--salt-hue, currentColor); box-shadow: 0 0 6px -1px currentColor; flex: 0 0 auto; }
 
+/* ---- Coin (1.25.0, 03 Nov 2026, the one order stream's version 10: the marks as coins). A book's mark on a 48 grid: the ring in the
+   book's hue (salt-coin__ring, a circle r 22.5 about 24, 24), the shape inside in brass (salt-coin__shape, the 24-grid mark scaled 0.85
+   about 24, 16.5), the letter under the shape in salt (salt-coin__let, mono, baseline 39.5, 13 for a letter, 12 for three, 11 for four).
+   The drawing is the consumer's, the material is here. Three sizes: lg 72 (a start tile), md 56 (a book's head, the default), sm 44 (a
+   row, a check, a light); never under 44, and a mark inside a line of text keeps the plain shape. The element names the shape
+   (role="img"), never the product. ---- */
+.salt-coin { --salt-hue: var(--salt-brass); display: inline-block; flex: 0 0 auto; width: 56px; height: 56px; color: var(--salt-brass); line-height: 0; }
+.salt-coin--sm { width: 44px; height: 44px; }
+.salt-coin--md { width: 56px; height: 56px; }
+.salt-coin--lg { width: 72px; height: 72px; }
+.salt-coin svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.salt-coin__ring { fill: var(--salt-well); stroke: var(--salt-hue); stroke-width: 2; }
+.salt-coin__shape { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+.salt-coin__let { font-family: var(--salt-font-mono); font-weight: 600; fill: var(--salt-salt); }
+.salt-coin--salt { --salt-hue: var(--salt-product-salt); }
+.salt-coin--oil { --salt-hue: var(--salt-product-oil); }
+.salt-coin--candy { --salt-hue: var(--salt-product-candy); }
+.salt-coin--rice { --salt-hue: var(--salt-product-rice); }
+.salt-coin--gas { --salt-hue: var(--salt-product-gas); }
+.salt-coin--prep { --salt-hue: var(--salt-product-prep); }
+/* the restock light beside a coin: a dot and its word, never the coin's border; mono caps in mist-bright, the dot verdigris, amber or ember */
+.salt-light { display: inline-flex; align-items: center; gap: 8px; font-family: var(--salt-font-mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--salt-mist-bright); }
+.salt-light::before { content: ""; flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%; background: var(--salt-verdigris); }
+.salt-light--yellow::before { background: var(--salt-amber); }
+.salt-light--red::before { background: var(--salt-ember); }
+
 /* ---- Meter: a bar is a figure. A well-inset track, a lit fill, an optional marker
    for a threshold. The fill is set as --salt-fill on the element, 0 to 100. ---- */
 
