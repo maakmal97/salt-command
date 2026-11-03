@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1413",
+  "d": "03 Nov 2026",
+  "t": "COLLECTION OF 2 UNIT OF SALT BY CZ5-TM RECORDED",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> The correction on s325 records that CZ5-TM collected 2 unit of salt on 2026-11-03, setting deliveredQty, deliveredOn and handover. It was preapproved by Counter Admin. The drafter flagged that the 2-step trail will no longer add up to the figure set directly; the correction is recorded beside it saying so.",
+   "<b>INVENTORY.</b> The shelf rolls by 2 unit out to CZ5-TM, the difference the correction states. No lot landed, so the cost basis does not move."
+  ]
+ },
+ {
   "v": "v1412",
   "d": "03 Nov 2026",
   "t": "DELIVERY OF 10 UNIT OF RICE TO CI5-PER RECORDED ON S328",

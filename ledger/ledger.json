@@ -1,6 +1,6 @@
 {
- "v": "v1412",
- "stamped": "03 Nov 2026, 21:12 KL",
+ "v": "v1413",
+ "stamped": "03 Nov 2026, 21:23 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -107,7 +107,7 @@
     "stated": 25
    }
   },
-  "STATED_STOCK": 4,
+  "STATED_STOCK": 2,
   "COUNT_ON": {
    "salt": "2026-10-28",
    "oil": "2026-11-02",
@@ -10571,8 +10571,8 @@
     "total": 185,
     "cash": 185,
     "date": "2026-11-03",
-    "deliveredQty": 0,
-    "note": "<b>SALE 03 NOV 2026: 2 UNIT OF SALT TO CZ5-TM, RM185, PENDING.</b> Ordered on the statements site, order 20261103105134-txhixa, acknowledged, to collect. Nothing paid and nothing handed over. The goods total of RM185 is above the floorTotal of RM115 and below the askTotal of RM215 for that size. CZ5-TM has 10 orders, a median rate of 105, a range of 90 to 110, nothing outstanding before, no units on credit before against a cap of 1, and nothing defaulted. The row carries RM56 per unit, the inventory's own rate. The drafter raised no flags. Nothing moves on the shelf until collection. The full RM185 is left outstanding, with 2 unit still to hand over.",
+    "deliveredQty": 2,
+    "note": "<b>CORRECTION ON S325, 03 NOV 2026: COLLECTION OF 2 UNIT OF SALT BY CZ5-TM RECORDED.</b> Order 20261103105134-txhixa, 2 unit, goods RM185, cash RM185, paid on 2026-11-03. The correction sets deliveredQty from 0 to 2, deliveredOn from unset to 2026-11-03 and handover from unset to collected. The dossier gives no floor or ask for this correction, so none is compared. CZ5-TM has 11 orders, a median rate of 100, a range of 90 to 110, nothing outstanding before and nothing defaulted. The drafter flagged that the 2-step trail will no longer add up to the figure set directly; the correction is recorded beside it saying so, and the figures do not remove that. It was preapproved by Counter Admin. It carries the inventory's own cost. Nothing is left outstanding. <b>SALE 03 NOV 2026: 2 UNIT OF SALT TO CZ5-TM, RM185, PENDING.</b> Ordered on the statements site, order 20261103105134-txhixa, acknowledged, to collect. Nothing paid and nothing handed over. The goods total of RM185 is above the floorTotal of RM115 and below the askTotal of RM215 for that size. CZ5-TM has 10 orders, a median rate of 105, a range of 90 to 110, nothing outstanding before, no units on credit before against a cap of 1, and nothing defaulted. The row carries RM56 per unit, the inventory's own rate. The drafter raised no flags. Nothing moves on the shelf until collection. The full RM185 is left outstanding, with 2 unit still to hand over.",
     "listRM": 185,
     "listQty": 2,
     "rid": "s325",
@@ -10590,9 +10590,26 @@
       "cash": 185,
       "kg": 0,
       "note": "<b>PAYMENT 03 NOV 2026: RM185 FROM CZ5-TM ON ORDER S325.</b> Paid on the statements site, order 20261103105134-txhixa, by transfer via tng, against the order of 2 unit for RM185 dated 03 Nov 2026. Preapproved by Counter Admin. The goods total of RM185 was set when the order was taken and this row does not reprice it. CZ5-TM has 11 orders, a median rate of 100, a range of 90 to 110, RM185 outstanding before this payment, no units on credit before and nothing defaulted. The drafter raised no flags. The row moves no unit and carries no cost of its own. It clears the RM185 owed, leaving RM0 outstanding. The 2 unit are still to be handed over."
+     },
+     {
+      "date": "2026-11-03",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 2,
+      "note": "<b>CORRECTION ON S325, 03 NOV 2026: COLLECTION OF 2 UNIT OF SALT BY CZ5-TM RECORDED.</b> Order 20261103105134-txhixa, 2 unit, goods RM185, cash RM185, paid on 2026-11-03. The correction sets deliveredQty from 0 to 2, deliveredOn from unset to 2026-11-03 and handover from unset to collected. The dossier gives no floor or ask for this correction, so none is compared. CZ5-TM has 11 orders, a median rate of 100, a range of 90 to 110, nothing outstanding before and nothing defaulted. The drafter flagged that the 2-step trail will no longer add up to the figure set directly; the correction is recorded beside it saying so, and the figures do not remove that. It was preapproved by Counter Admin. It carries the inventory's own cost. Nothing is left outstanding.",
+      "was": {
+       "deliveredQty": 0,
+       "deliveredOn": null,
+       "handover": null
+      },
+      "cost": 112
      }
     ],
-    "paidOn": "2026-11-03"
+    "paidOn": "2026-11-03",
+    "deliveredOn": "2026-11-03",
+    "handover": "collected",
+    "mod": "corrected on 2026-11-03: deliveredQty 0 to 2; deliveredOn (unset) to 2026-11-03; handover (unset) to collected",
+    "cost": 112
    },
    {
     "customer": "CI5-PER",
@@ -11563,7 +11580,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-03T13:11:36.465Z",
+  "QUEUE_COMMITTED": "2026-11-03T13:22:54.428Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -11614,7 +11631,7 @@
     {
      "id": "int:nocost",
      "sev": "watch",
-     "title": "4 priced sales carry no cost of their own"
+     "title": "3 priced sales carry no cost of their own"
     },
     {
      "id": "int:underfloor",
@@ -13065,15 +13082,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.3
+         "v": 0.29770992366412213
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08940786291715609,
        "avgDel": {
-        "n": 250,
-        "kg": 615.31,
-        "mean": 2.4612
+        "n": 251,
+        "kg": 617.31,
+        "mean": 2.4594
        }
       },
       "policy": {
@@ -21890,26 +21907,12 @@
      "suggest": null
     }
    },
-   "v": "v1412"
+   "v": "v1413"
   },
   "OPEN": {
-   "at": "2026-11-03T13:12:14.631Z",
-   "count": 8,
+   "at": "2026-11-03T13:23:33.202Z",
+   "count": 7,
    "byKey": {
-    "CZ5-TM|2026-11-03|185": {
-     "d": "2026-11-03",
-     "p": "CZ5-TM",
-     "dir": "S",
-     "q": 2,
-     "t": 185,
-     "cash": 185,
-     "mv": 0,
-     "st": "oweStock",
-     "oweUnits": 2,
-     "rid": "s325",
-     "paidOn": "2026-11-03",
-     "key": "CZ5-TM|2026-11-03|185"
-    },
     "CR3-DAM|2026-10-30|70": {
      "d": "2026-10-30",
      "p": "CR3-DAM",
@@ -22031,13 +22034,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 4,
+     "onHand": 2,
      "free": 2,
-     "owedOut": 2,
+     "owedOut": 0,
      "coverDays": 0.5,
      "rate": 4.2,
      "owedToYou": 310,
-     "promised": 2,
+     "promised": 0,
      "short": 0
     },
     "oil": {
@@ -22104,7 +22107,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1412"
+   "v": "v1413"
   },
   "TERMS": {
    "ceiling": 250,
@@ -22112,7 +22115,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1412"
+   "v": "v1413"
   },
   "REWARD": {
    "stated": {
@@ -22130,15 +22133,15 @@
      }
     }
    },
-   "v": "v1412"
+   "v": "v1413"
   },
   "STOCK": {
    "today": "2026-11-03",
    "books": {
     "salt": {
-     "shelf": 4,
+     "shelf": 2,
      "free": 2,
-     "commit": 2,
+     "commit": 0,
      "light": "green",
      "coverDays": 0.5,
      "transit": 0
@@ -22184,7 +22187,7 @@
      "transit": 0
     }
    },
-   "v": "v1412"
+   "v": "v1413"
   }
  }
 }
