@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="adf627defdee6cf2";
+var SALT_BUILD_ID="b01e78230963b8d4";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -3104,6 +3104,62 @@ label.salt-field__label {
 /* The tight slider (1.16.0, Salt Admin Customers, 25 Oct 2026): four places whose longest word is ten letters fit whole at 390px, the tracking
    halved and the option's own padding thinned; nothing else about the recipe moves. */
 .salt-segment--tight .salt-segment__opt { letter-spacing: 0.06em; padding: 0 2px; }
+
+/* ---- Stepper (1.24.0, 03 Nov 2026, the one order stream's version 9: the units are chosen on the page): how many, a step at a time.
+   A role="group" named for what it counts, on the panel with the field's 3:1 edge, holds two orbs, minus and plus, 44px, either side of
+   the value: an <output> where the steps are a short list, or a <button> where any size may be typed, its figure on a dashed edge, which a
+   tap turns into salt-stepper__input (16px, so the page never zooms). The walk is the consumer's, never the recipe's; an end greys its orb.
+   A refusal under it is salt-stepper__why, one sentence in ember. ---- */
+.salt-stepper {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--salt-edge-field);
+  border-radius: var(--salt-radius-pill);
+  background: var(--salt-panel);
+}
+.salt-stepper .salt-orb { width: 44px; height: 44px; }
+.salt-stepper .salt-orb:disabled, .salt-stepper .salt-orb:disabled:hover { opacity: 0.38; border-color: var(--salt-edge-field); background: transparent; cursor: not-allowed; }
+.salt-stepper__value {
+  min-height: 44px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  background: none;
+  border: 0;
+  border-radius: var(--salt-radius-pill);
+  color: var(--salt-salt);
+  font-family: var(--salt-font-mono);
+  font-size: 1rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+button.salt-stepper__value { cursor: text; }
+button.salt-stepper__value .salt-stepper__q { border-bottom: 1px dashed var(--salt-edge-field); padding-bottom: 1px; }
+button.salt-stepper__value:hover .salt-stepper__q { border-bottom-color: var(--salt-brass); }
+button.salt-stepper__value:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: -2px; }
+.salt-stepper__input {
+  width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+  text-align: center;
+  background: var(--salt-well);
+  border: 1px solid var(--salt-brass);
+  border-radius: var(--salt-radius-pill);
+  color: var(--salt-salt);
+  color-scheme: dark;
+  font-family: var(--salt-font-mono);
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.salt-stepper__input:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
+.salt-stepper__why { margin: 6px 0 0; font-family: var(--salt-font-display); font-size: 0.875rem; line-height: 1.4; color: var(--salt-ember); }
 
 /* ---- Switch (1.18.0, 26 Oct 2026, his word on Salt Admin's This device: "like settings on an iPhone"): one thing on or off.
    A <button role="switch" aria-checked>, 52 by 44 for the tap, drawing a 48 by 28 track and a 22px knob. Off is the well
@@ -11581,7 +11637,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1404","d":"03 Nov 2026","t":"PAYMENT OF RM185 FROM CZ5-TM ON ORDER S325","n":["<b>PAYMENT FOLDED.</b> One fulfilment row: CZ5-TM paid RM185 by transfer via tng on 03 Nov 2026 against order s325 for 2 unit. It was preapproved by Counter Admin and the drafter raised no flags. Nothing unusual in the row itself.","<b>SHELF UNCHANGED.</b> The payment moves cash only, so no unit leaves the shelf. The 2 unit remain to be handed over."]}];
+const evolution=[{"v":"v1405","d":"03 Nov 2026","t":"UNITS ON ORDER, A STEPPER A BOOK","n":["<b>EACH BOOK ON ORDER IS A STEPPER.</b> Your answer F: minus and plus walk that book's own sizes, the ones the Worker takes (salt 0.5 to 5 in halves, then 6.25, 12.5, 25, 50 and 100; PrEP 12 and 30; the others in ones), the price beside it read off their list and said aloud. It starts at what is in the basket, else their usual (with the chip), else the smallest; a Home start tile sets it to the tile's size.","<b>ADD SETS THE LINE.</b> Add to basket puts that amount in the basket, then reads In basket, or Update basket when the stepper moves; taps no longer add up. The + and minus per size are gone; the sizes stand one fold under the stepper as Prices by size, each a tap that sets it.","<b>TYPE ANY SIZE.</b> On a book walked in ones the figure is a tap to type a size; one off the walk is refused in a sentence, and past the top it is an ask that rides the basket to the check's Negotiate, as the sheet's typed size did. At five open orders Add opens the limit step, as a size tap did. Salt-ds 1.24.0 carries the stepper. Plan version 9 of 10."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11729,7 +11785,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='03 Nov 2026, 19:07 KL';
+const LAST_UPDATED='03 Nov 2026, 19:56 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
