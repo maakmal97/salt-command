@@ -75,7 +75,8 @@ export async function run({ ok, pageWork }) {
       C.w.localStorage.setItem(KEY, JSON.stringify([{ id: "a1", label: "Shop", place: "Veloria" }, { id: "a2", label: "Home", place: "Orlen" }]));
       const tile = C.d.querySelector('[data-start="deliver"]');
       const said = tile ? txt(tile) : "";
-      if (tile) { tile.click(); await C.settle(); }
+      /* plan version 8: the tile lands on Order, and the sheet the next size opens carries the last place */
+      if (tile) { tile.click(); await C.settle(); await startAt(C.d); await C.settle(); }
       const fromHome = list(C);
       await close(C); await sheet(C);
       const fromOrders = list(C);

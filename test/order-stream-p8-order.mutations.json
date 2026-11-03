@@ -2,7 +2,7 @@
  {"name":"A1 the place is still named Prices","file":"stmt/words.js","find":"  \"place.prices\": \"Order\",","replace":"  \"place.prices\": \"Prices\","},
  {"name":"A2 New order opens the sheet","file":"stmt/page.js","find":"nb.addEventListener('click',function(){ goOrder(); });","replace":"nb.addEventListener('click',function(){ sheetOpen(null,null,nb); });"},
  {"name":"A3 a start tile opens the sheet","file":"stmt/page.js","find":"if(a.start) goOrder(a.product,a.q); else","replace":"if(a.start) sheetOpen(a.product,a.q,b); else"},
- {"name":"A4 Collect and Deliver open the sheet","file":"stmt/page.js","find":"draft.mode=x[0]; goOrder(); });","replace":"draft.mode=x[0]; sheetOpen(null,null,b); });"},
+ {"name":"A4 Collect and Deliver open the sheet","file":"stmt/page.js","find":"startPlace=x[0]==='deliver'&&w&&w.place.trim()?w.place:''; goOrder(); });","replace":"startPlace=x[0]==='deliver'&&w&&w.place.trim()?w.place:''; sheetOpen(null,null,b); });"},
  {"name":"A5 the tile's size is not focused","file":"stmt/page.js","find":"    if(r) try{ r.focus({preventScroll:true}); }catch(e){}\n  }","replace":"  }"},
  {"name":"A6 the way is not said on landing","file":"stmt/page.js","find":"placeShow('prices',true); wayDraw();","replace":"placeShow('prices',true);"},
  {"name":"B1 the sheet keeps its sizes","file":"stmt/page.js","find":"    if(!draft.amend) sheetLines(B);\n    else S.forEach","replace":"    if(false) sheetLines(B);\n    else S.forEach"},
