@@ -22,5 +22,11 @@
   "file": "src/orders.js",
   "find": "status: 409, fresh: true, error: \"that Withdraw was answered already",
   "replace": "status: 409, error: \"that Withdraw was answered already"
+ },
+ {
+  "name": "a passed offer lets a repeat through to the order book",
+  "file": "src/orders.js",
+  "find": "(o.price.state !== \"offered\" && !(rid && o.price.state === \"withdrawn\"))",
+  "replace": "(o.price.state !== \"offered\" && !(rid && (o.price.state === \"withdrawn\" || o.price.state === \"passed\")))"
  }
 ]

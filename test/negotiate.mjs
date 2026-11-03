@@ -254,4 +254,16 @@ export async function run({ ok, skip }) {
   const wE = await call("/orders/" + w.id + "/withdraw", { rid: rid() }), stE = (await orderOf(w.id)).price.state;
   ok(raise.status === 200 && wD.status === 409 && wD.j.fresh === true && /a newer offer of yours is open/.test(wD.j.error || "") && stR === "offered" && yes === 1 && wE.status === 200 && stE === "withdrawn",
     "and the old id repeated over his newer offer is refused as fresh, leaving that offer and its yes standing, and a new id withdraws it: " + JSON.stringify([raise.status, raise.j.error, wD.status, wD.j.fresh, wD.j.error, stR, yes, wE.status, stE]));
+
+  /* 15. 3 Nov 2026: the old id repeated over a newer offer THEY SAID NO THANKS TO is refused at the read (no offer open), so it is never said withdrawn */
+  const np = (await ask(2, 200, {}, U2)).order;
+  const pvN = await call("/orders/" + np.id + "/preview", { total: 185 });
+  await call("/orders/" + np.id + "/offer", { total: 185, delivery: 0, hash: pvN.j.offerHash, rid: rid() });
+  const nRid = rid(), nA = await call("/orders/" + np.id + "/withdraw", { rid: nRid });
+  const pvN2 = await call("/orders/" + np.id + "/preview", { total: 230 });
+  const nOff = await call("/orders/" + np.id + "/offer", { total: 230, delivery: 0, hash: pvN2.j.offerHash || pvN2.j.hash, rid: rid() });
+  const nPass = await O.customerMove(senv, U2, np.id, "pass", { rid: rid() });
+  const nB = await call("/orders/" + np.id + "/withdraw", { rid: nRid }), stN = (await orderOf(np.id)).price.state;
+  ok(nA.status === 200 && nOff.status === 200 && stN === "passed" && nB.status === 409 && !nB.j.again && /no offer of yours is open/.test(nB.j.error || ""),
+    "and the old id repeated over a newer offer they said no thanks to is refused, no offer being open, and never said withdrawn: " + JSON.stringify([nA.status, nOff.status, nOff.j.error, nPass && (nPass.error || nPass.ok), stN, nB.status, nB.j.fresh, nB.j.error]));
 }
