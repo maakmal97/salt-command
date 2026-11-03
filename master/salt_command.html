@@ -11512,7 +11512,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1425","d":"04 Nov 2026","t":"THREE PENDING ORDERS FROM CA7-AMP ON SALT, OIL AND GAS","n":["<b>THREE PENDING SALES FOLDED, ALL FOR CA7-AMP, DATED 04 NOV 2026.</b> Salt 5 unit for RM475, oil 50 unit for RM450 and gas 2 unit for RM150, each ordered on the statements site and preapproved by Counter Admin. Nothing was paid and nothing handed over, so each row is pending. The gas drafter flag, that CA7-AMP has no committed gas order, is noted and the figures do not remove it.","<b>INVENTORY UNCHANGED.</b> Pending rows draw no stock and book no revenue until something moves. Stock stays at 21, with the cost basis at RM56 per unit."]}];
+const evolution=[{"v":"v1426","d":"04 Nov 2026","t":"THE RESTOCK LIGHT IN FOUR STEPS","n":["<b>HIS RULE.</b> Each book's light is now the worst of four steps, read off what is free (the shelf less what is committed) and the book's measured demand: <b>Out of stock</b> (red) with nothing free; <b>Low on stock</b> (amber) with less free than one usual order, or 3 days of cover or fewer; <b>Selling fast</b> (yellow) with 7 days of cover or fewer; <b>Available</b> (green) otherwise, or with no demand measured.","<b>THE BASIS.</b> Replayed over every book's days from 26 Jun to 04 Nov 2026 with the engine's own forecast: 7 days of cover caught 88% of the times the shelf fell under one usual order within a week (62% of those lit came true); 3 days caught 65% of the times it did so within three days (71% came true). Before, the light read only the shelf and what was promised, so salt with 5 days of cover read Available.","<b>WHERE IT SHOWS.</b> Salt Counter's Prices and Home's Availability say Selling fast and Low on stock beside Available and Out of stock; Salt Admin's Stock by book chips the four in verdigris, amber, orange and ember; the Desk's Restock date card. Promised past the shelf, Limited until now, is Out of stock.","<b>WHAT ASKS.</b> Low on stock and Out of stock ask for a restock date on To do and wake the Desk when a book turns to them; Selling fast asks nothing. More by DD Mon shows under any light but green. salt-ds 1.26.0 adds the orange (#f28c18). Ordering is never refused."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11660,7 +11660,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='04 Nov 2026, 03:49 KL';
+const LAST_UPDATED='04 Nov 2026, 04:14 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

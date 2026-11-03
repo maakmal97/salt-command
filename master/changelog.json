@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1426",
+  "d": "04 Nov 2026",
+  "t": "THE RESTOCK LIGHT IN FOUR STEPS",
+  "n": [
+   "<b>HIS RULE.</b> Each book's light is now the worst of four steps, read off what is free (the shelf less what is committed) and the book's measured demand: <b>Out of stock</b> (red) with nothing free; <b>Low on stock</b> (amber) with less free than one usual order, or 3 days of cover or fewer; <b>Selling fast</b> (yellow) with 7 days of cover or fewer; <b>Available</b> (green) otherwise, or with no demand measured.",
+   "<b>THE BASIS.</b> Replayed over every book's days from 26 Jun to 04 Nov 2026 with the engine's own forecast: 7 days of cover caught 88% of the times the shelf fell under one usual order within a week (62% of those lit came true); 3 days caught 65% of the times it did so within three days (71% came true). Before, the light read only the shelf and what was promised, so salt with 5 days of cover read Available.",
+   "<b>WHERE IT SHOWS.</b> Salt Counter's Prices and Home's Availability say Selling fast and Low on stock beside Available and Out of stock; Salt Admin's Stock by book chips the four in verdigris, amber, orange and ember; the Desk's Restock date card. Promised past the shelf, Limited until now, is Out of stock.",
+   "<b>WHAT ASKS.</b> Low on stock and Out of stock ask for a restock date on To do and wake the Desk when a book turns to them; Selling fast asks nothing. More by DD Mon shows under any light but green. salt-ds 1.26.0 adds the orange (#f28c18). Ordering is never refused."
+  ]
+ },
+ {
   "v": "v1425",
   "d": "04 Nov 2026",
   "t": "THREE PENDING ORDERS FROM CA7-AMP ON SALT, OIL AND GAS",
