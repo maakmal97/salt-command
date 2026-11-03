@@ -190,5 +190,17 @@
   "file": "src/worker.js",
   "find": "if (tap.kind === \"fallback\") { console.log(\"tap fallback \" + id + \": \"",
   "replace": "if (false) { console.log(\"tap fallback \" + id + \": \""
- }
+ },
+  {
+    "name": "the book reason is not kept on his yes (3 Nov 2026)",
+    "file": "src/drafter.js",
+    "find": "decided_at=?2, shown=json_set(CASE WHEN json_valid(shown) THEN shown ELSE '{}' END,'$.refused',?4) WHERE id=?3",
+    "replace": "decided_at=?2 WHERE id=?3 AND ?4 IS NOT NULL"
+  },
+  {
+    "name": "the order card reads no reason (3 Nov 2026)",
+    "file": "src/orders.js",
+    "find": "return typeof r === \"string\" && r ? r : \"\";",
+    "replace": "return \"\";"
+  }
 ]

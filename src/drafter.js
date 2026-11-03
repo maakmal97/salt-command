@@ -2064,7 +2064,9 @@ export async function applyPre(db, pre, draft, book, now) {
     if (!row) return null;
     const tap = await bookTap(db, [row], by, at);
     if (tap.kind === "refused" || (tap.kind === "booked" && tap.booked.some((b) => b.folded))) {
-      await db.prepare("UPDATE preapproval SET status='differs', draft_id=?1, decided_at=?2 WHERE id=?3").bind(draft.id, at, pre.id).run();
+      /* 3 Nov 2026: THE BOOK'S REASON IS KEPT beside what he was shown (`shown.refused`), never on the row, so the order card can say it; the hash is not read again once a yes differs */
+      const why = (tap.kind === "refused" ? tap.refused.map((x) => x && x.why).filter(Boolean).join("; ") : "") || (tap.kind === "refused" ? "the book would not take it" : "the fold has already booked it");
+      await db.prepare("UPDATE preapproval SET status='differs', draft_id=?1, decided_at=?2, shown=json_set(CASE WHEN json_valid(shown) THEN shown ELSE '{}' END,'$.refused',?4) WHERE id=?3").bind(draft.id, at, pre.id, String(why).slice(0, 200)).run();
       return "differs";
     }
     if (tap.kind === "booked") booked = tap.booked;

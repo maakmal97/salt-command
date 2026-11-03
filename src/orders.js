@@ -456,6 +456,8 @@ const livePre = async (db, orderId, stage) => {
   catch (e) { return null; }
 };
 const preById = async (db, id) => db.prepare("SELECT * FROM preapproval WHERE id=?1").bind(id).first();
+/* 3 Nov 2026: the book's own reason for a yes it would not book (applyPre keeps it as shown.refused), said on the order card instead of "differs" */
+export const refusedOf = (pre) => { try { const r = (JSON.parse((pre && pre.shown) || "{}") || {}).refused; return typeof r === "string" && r ? r : ""; } catch (e) { return ""; } };
 /* a newer yes on the same order and stage replaces one still waiting for a row the SITE makes: the newest is what he
    last said. Never one carrying its own entry (cash taken, a move offered again): each of those is a row of its own,
    and voided before it was queued it was never booked, the site already counting the cash. S6 fix: nor a claim's.
@@ -577,7 +579,7 @@ export async function acceptOrder(env, id, body, by, now, mirror) {
   const out = { draft: entry.at, drafted };
   if (pre.status === "applied") return Object.assign(out, { approved: true }, await ackOnApproval(env, pre));
   if (pre.status === "differs") {
-    await markOrder(env, o.u, id, { sync: { state: "waiting", why: "its pending row differs from what you saw, so it waits under Approve; approving it there moves the order", at: new Date().toISOString() } });
+    await markOrder(env, o.u, id, { sync: { state: "waiting", why: refusedOf(pre) ? "the book would not take its row (" + refusedOf(pre) + "), so it waits under Approve" : "its pending row differs from what you saw, so it waits under Approve; approving it there moves the order", at: new Date().toISOString() } });
     return Object.assign(out, { ok: true, approved: false, differs: true });
   }
   return Object.assign(out, { ok: true, approved: false, waiting: true });
@@ -753,7 +755,7 @@ export async function takeOffer(env, id, now, mirror) {
   const out = { draft: p.entry_at, drafted };
   if (p.status === "applied") return Object.assign(out, { approved: true }, await ackOnApproval(env, p));
   if (p.status === "differs") {
-    await markOrder(env, o.u, id, { sync: { state: "waiting", why: "they took your offer, but its row differs from what you offered, so it waits under Approve; approving it there moves the order", at: new Date().toISOString() } });
+    await markOrder(env, o.u, id, { sync: { state: "waiting", why: refusedOf(p) ? "they took your offer, but the book would not take its row (" + refusedOf(p) + "), so it waits under Approve" : "they took your offer, but its row differs from what you offered, so it waits under Approve; approving it there moves the order", at: new Date().toISOString() } });
     return Object.assign(out, { ok: true, approved: false, differs: true });
   }
   return Object.assign(out, { ok: true, approved: false, waiting: true });

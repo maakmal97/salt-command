@@ -211,6 +211,11 @@ export async function run({ ok }) {
   const apq = await applyPre(W6b.D1, preq, dr(q1, "sales", rowq, entq), {}, "2026-10-27T10:00:00.000Z");
   ok(apq === "differs" && W6b.row(q1).status === "pending" && W6b.db.prepare("SELECT status FROM preapproval WHERE id='p7'").get().status === "differs" && (await W6b.events()).length === 0,
     "a refusal by the law leaves the draft pending and his yes marked as differing: " + apq);
+  /* 3 Nov 2026: the book's reason is kept beside what he was shown, the hash untouched, and the order card's words read it */
+  const p7 = W6b.db.prepare("SELECT shown, hash FROM preapproval WHERE id='p7'").get(), sh7 = JSON.parse(p7.shown);
+  const { refusedOf } = await import("../src/orders.js");
+  ok(typeof sh7.refused === "string" && sh7.refused.length > 0 && sh7.offer && sh7.offer.total === 1 && p7.hash === preq.hash && refusedOf(p7) === sh7.refused && refusedOf({ shown: J({ offer: {} }) }) === "",
+    "and the book's reason is kept on his yes, what he was shown and its hash as they were, for the order card to say: " + J(sh7));
   const W6c = await world({ flag: "off" }); const z1 = W6c.sale(IDN(1), 2);
   const rowz = W6c.rowOf(z1), entz = JSON.parse(W6c.row(z1).entry);
   const prez = { id: "p8", hash: await offerDigest(entz, { collection: "sales", row: rowz, flags: [] }), stage: "ack", shown: J({ offer: { total: 200 } }) };
