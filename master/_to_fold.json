@@ -1,0 +1,66 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-03T04:26:51.391Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CS11-AMP",
+    "qty": 5,
+    "total": 35,
+    "cash": 0,
+    "product": "rice",
+    "date": "2026-11-03",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261103041936-r5eszg, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+    "rids": [
+     "s324"
+    ],
+    "booked_seq": 84
+   },
+   "reasoning": "Sold 5 unit of rice to CS11-AMP for RM 35, RM 7/unit. Costed at RM 3.3/unit from COGS off the latest purchase p045 landed 2026-10-25: RM 320 quote plus RM 10 freight over 100 unit, so RM 18.5 on the goods at 52.9%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-11-03 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CS11-AMP has no committed rice order on the book, so there is no rate of theirs to compare this against."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-11-03T04:26:51.391Z",
+    "type": "SELL",
+    "party": "CS11-AMP",
+    "qty": 5,
+    "total": 35,
+    "status": "Pending",
+    "raw": "SELL CS11-AMP 5 rice RM 35, nothing paid, nothing moved (order 20261103041936-r5eszg)",
+    "orderKey": "CS11-AMP|2026-11-03|35|rice",
+    "payload": {
+     "mode": "new",
+     "product": "rice",
+     "direction": "SELL",
+     "party": "CS11-AMP",
+     "newId": null,
+     "date": "2026-11-03",
+     "qty": 5,
+     "total": 35,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261103041936-r5eszg, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261103041936-r5eszg"
+   },
+   "decidedAt": "2026-11-03T04:26:54.868Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
