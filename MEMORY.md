@@ -323,6 +323,9 @@
 ## Every order says the road it came by (v1421)
 - Live as v1421 (`24dd9536`, 04 Nov 2026; Cloud commit `41688110145`: chain and three suite parts green, the phone serving `480ba14b5e1428b8`; CI `41688110199` verify green), his answer A to `docs/plan-ledger-conventions.html` (artifact https://claude.ai/artifact/DHtHjz7LSasn8hQiRKjeCe): every sale row carries `road` (site, admin, desk, hand, fold), classification only. Engine `ROADS`, `roadOf`; `applyEntry` stamps a new sale for the fold and the tap; reward and loyalty units carry fold. History stamped from D1 drafts: 142 hand, 78 desk, 72 site, 36 admin, 1 fold (a best fit on rows corrected since). The Book load at v1421 read "334 revised" with parity over 531 rows; statements of 53 accounts unchanged. Salt Admin: a book row's card and a trip's details; the Desk: the ledger card's tag and its search. Fable reviewed (S1 law, the stale extract, the one-time tap differ: none occurred). The laptop queue still books sales as desk (two on 03 Nov); his calls left open: purchases, and closing the laptop queue for new sales.
 
+## The Ledger check aligned (v1422)
+- Live as v1422 (`8944f4e2`, 04 Nov 2026, its commit titled v1421 because a fold took that number meanwhile; Cloud commit `41696958875`: chain green with "The phone is serving it" on build `4bea05ba8fe4b60a`, three suite parts green; CI `41696958896` green), his word after a screenshot, answered "Three, aligned": Salt Admin's Orders > Ledger check draws Open, Pending and the latest twenty each with one `colgroup` (`lc1` to `lc9`, `drawLedger` in `stmt/owner.js`) under `.ledtable` (fixed layout, 1000px minimum, widths in `stmt/page.js`). Measured in a browser: every column starts at the same pixel at 1440 and 1180, nothing clipped; at 390 each scrolls in its own box. Check 7 in `test/admin-ledger.mjs`, three mutations red. Display only.
+
 ## Disabled automation
 - `Salt fold (manual backup)` = `trig_01UrnjQMWA3f6GXN5R6Dzi4S`, disabled.
 
