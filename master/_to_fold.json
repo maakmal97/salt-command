@@ -1,0 +1,67 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-03T20:43:22.469Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CI5-PER",
+    "qty": 3,
+    "total": 204,
+    "cash": 0,
+    "delivery": 26,
+    "product": "candy",
+    "date": "2026-11-04",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261103204226-drpjsq, acknowledged, to be delivered, delivery RM 26. Nothing paid and nothing handed over yet.",
+    "rids": [
+     "s334"
+    ],
+    "booked_seq": 111
+   },
+   "reasoning": "Sold 3 unit of candy to CI5-PER for RM 204, with RM 26 of delivery beside it, RM 230 owed, RM 68/unit. Costed at RM 42/unit from COGS off the latest purchase p031 landed 2026-09-24: RM 630 quote plus RM 0 freight over 15 unit, so RM 78 on the goods at 38.2%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-11-04 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CI5-PER has no committed candy order on the book, so there is no rate of theirs to compare this against."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-11-03T20:43:22.469Z",
+    "type": "SELL",
+    "party": "CI5-PER",
+    "qty": 3,
+    "total": 204,
+    "status": "Pending",
+    "raw": "SELL CI5-PER 3 candy RM 230, nothing paid, nothing moved (order 20261103204226-drpjsq)",
+    "orderKey": "CI5-PER|2026-11-04|230|candy",
+    "payload": {
+     "mode": "new",
+     "product": "candy",
+     "direction": "SELL",
+     "party": "CI5-PER",
+     "newId": null,
+     "date": "2026-11-04",
+     "qty": 3,
+     "total": 204,
+     "delivery": 26,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261103204226-drpjsq, acknowledged, to be delivered, delivery RM 26. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261103204226-drpjsq"
+   },
+   "decidedAt": "2026-11-03T20:43:25.959Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
