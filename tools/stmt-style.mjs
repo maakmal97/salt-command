@@ -119,6 +119,8 @@ export const RECIPE_HEADS = [
   "/* ---- Settings (",
   /* SALT ADMIN NEEDS YOU (22 Oct 2026, his canvas): the kinds are a text tab row on the system's Nav bar, so its link is carried */
   "/* ---- Nav bar ---- */",
+  /* PLAN VERSION 9 (03 Nov 2026, salt-ds 1.24.0): a book's units chosen on Order, a step at a time */
+  "/* ---- Stepper (",
 ];
 export function siteRecipes() {
   const css = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");

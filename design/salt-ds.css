@@ -1478,6 +1478,62 @@ label.salt-field__label {
    halved and the option's own padding thinned; nothing else about the recipe moves. */
 .salt-segment--tight .salt-segment__opt { letter-spacing: 0.06em; padding: 0 2px; }
 
+/* ---- Stepper (1.24.0, 03 Nov 2026, the one order stream's version 9: the units are chosen on the page): how many, a step at a time.
+   A role="group" named for what it counts, on the panel with the field's 3:1 edge, holds two orbs, minus and plus, 44px, either side of
+   the value: an <output> where the steps are a short list, or a <button> where any size may be typed, its figure on a dashed edge, which a
+   tap turns into salt-stepper__input (16px, so the page never zooms). The walk is the consumer's, never the recipe's; an end greys its orb.
+   A refusal under it is salt-stepper__why, one sentence in ember. ---- */
+.salt-stepper {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--salt-edge-field);
+  border-radius: var(--salt-radius-pill);
+  background: var(--salt-panel);
+}
+.salt-stepper .salt-orb { width: 44px; height: 44px; }
+.salt-stepper .salt-orb:disabled, .salt-stepper .salt-orb:disabled:hover { opacity: 0.38; border-color: var(--salt-edge-field); background: transparent; cursor: not-allowed; }
+.salt-stepper__value {
+  min-height: 44px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  background: none;
+  border: 0;
+  border-radius: var(--salt-radius-pill);
+  color: var(--salt-salt);
+  font-family: var(--salt-font-mono);
+  font-size: 1rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+button.salt-stepper__value { cursor: text; }
+button.salt-stepper__value .salt-stepper__q { border-bottom: 1px dashed var(--salt-edge-field); padding-bottom: 1px; }
+button.salt-stepper__value:hover .salt-stepper__q { border-bottom-color: var(--salt-brass); }
+button.salt-stepper__value:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: -2px; }
+.salt-stepper__input {
+  width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+  text-align: center;
+  background: var(--salt-well);
+  border: 1px solid var(--salt-brass);
+  border-radius: var(--salt-radius-pill);
+  color: var(--salt-salt);
+  color-scheme: dark;
+  font-family: var(--salt-font-mono);
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.salt-stepper__input:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
+.salt-stepper__why { margin: 6px 0 0; font-family: var(--salt-font-display); font-size: 0.875rem; line-height: 1.4; color: var(--salt-ember); }
+
 /* ---- Switch (1.18.0, 26 Oct 2026, his word on Salt Admin's This device: "like settings on an iPhone"): one thing on or off.
    A <button role="switch" aria-checked>, 52 by 44 for the tap, drawing a 48 by 28 track and a 22px knob. Off is the well
    with a mist knob and no colour; on, the track fills verdigris and the knob, salt, slides right, 0.2s, not at all under
