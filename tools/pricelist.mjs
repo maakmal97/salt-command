@@ -100,7 +100,7 @@ export function since(sales, code) {
 export function supplyLights(raw, expected, today) {
   const out = {};
   for (const [p, v] of Object.entries(raw || {}))
-    out[p] = POSITION_ENGINE.restockSupply(v.shelf, v.commit, expected && expected[p], today, { coverDays: v.coverDays, usual: v.usual });
+    out[p] = POSITION_ENGINE.restockSupply(v.shelf, v.commit, expected && expected[p], today, { agreed: v.agreed, coverDays: v.coverDays, usual: v.usual });
   return out;
 }
 

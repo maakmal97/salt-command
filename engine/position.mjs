@@ -1162,11 +1162,14 @@ function commitments(sales,currentStock){
     shortUnits:+Math.max(0,commitUnits-currentStock).toFixed(2), coverable:currentStock>=commitUnits};
 }
 /* ============ THE RESTOCK LIGHT, FOUR STEPS (his rule of 04 Nov 2026, replacing F4's three of 05 Oct 2026) ============ one colour a
-   book, the worst step that holds. Free is the shelf less what is committed against it (commitments().commitUnits: owed out plus agreed,
-   nothing moved). `demand` is the book's measured demand, restockPlan's own: `coverDays`, the days its free stock lasts at the forecast
+   book, the worst step that holds. `commitUnits` is commitments().commitUnits, owed out (paid ahead) plus agreed with nothing moved;
+   `demand.agreed` is the agreed part (commitments().promUnits). Free is the shelf less what is owed out; after is free less what is agreed.
+   `demand` also carries the book's measured demand, restockPlan's own: `coverDays`, the days its free stock lasts at the forecast
    (null past the forecast or with no demand), and `usual`, its median order (buy.median).
-     RED, Out of stock: nothing free, every unit on the shelf promised (F4's yellow, promised past the shelf, is now red).
-     AMBER, Low on stock: free below one usual order, or lasting LIGHT_DAYS.low days or fewer.
+     RED, Out of stock: nothing free, the shelf empty or every unit on it paid for ahead. An agreed order never makes a book red
+       (his word of 04 Nov 2026: a pending order showing Out of stock would deter people from ordering).
+     AMBER, Low on stock: what is agreed takes it under one usual order or to nothing (the most an agreed order can do), or free
+       lasting LIGHT_DAYS.low days or fewer.
      YELLOW, Selling fast: free lasting LIGHT_DAYS.fast days or fewer.
      GREEN, Available: otherwise, and on a book with no demand measured that still has stock free.
    The basis, replayed over every book's days from 26 Jun to 04 Nov 2026 with the engine's own forecast: cover of 7 days or fewer
@@ -1175,10 +1178,10 @@ function commitments(sales,currentStock){
    `by` is the day he expects the next lot (YYYY-MM-DD), shown only while the light is not green and the day is not past. */
 const LIGHT_DAYS={fast:7,low:3};
 function restockLight(shelf,commitUnits,demand){
-  const free=(+shelf||0)-(+commitUnits||0);
+  const d=demand||{}, agreed=Math.max(0,+d.agreed||0), after=(+shelf||0)-(+commitUnits||0), free=after+agreed;
   if(free<0.005)return 'red';
-  const d=demand||{}, cover=d.coverDays==null||!isFinite(+d.coverDays)?null:+d.coverDays, usual=+d.usual||0;
-  if((usual>0&&usual-free>0.005)||(cover!=null&&cover<=LIGHT_DAYS.low))return 'amber';
+  const cover=d.coverDays==null||!isFinite(+d.coverDays)?null:+d.coverDays, usual=+d.usual||0;
+  if(after<0.005||(usual>0&&usual-after>0.005)||(cover!=null&&cover<=LIGHT_DAYS.low))return 'amber';
   if(cover!=null&&cover<=LIGHT_DAYS.fast)return 'yellow';
   return 'green';
 }

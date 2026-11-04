@@ -7766,8 +7766,8 @@ export const OWNER_JS = `
     if(!needsReading){ if(nRetry.disabled) nRetry.disabled=false; if(nRetry.textContent!=='Retry') nRetry.textContent='Retry'; }
   }
   /* 22 OCT 2026 (canvas Needs you): THE LEAD IS ONE INSIGHT. What waits on his tap in money, summed off the cards that wait on a money tap of his (a payment
-     they say they sent, to confirm; an order placed, to agree), then the books that need stock off STOCK's lights (red out, or promised past the shelf by what is agreed
-     over it; amber low; 04 Nov 2026, his four steps: yellow, selling fast, needs nothing yet). With nothing in money it counts what waits on him; with a read failed it never says nothing needs him. Written only when it differs. */
+     they say they sent, to confirm; an order placed, to agree), then the books that need stock off STOCK's lights (red out; amber promised past the shelf by what is agreed over it, or low;
+     04 Nov 2026, his four steps: an agreed order makes a book amber at most, and yellow, selling fast, needs nothing yet). With nothing in money it counts what waits on him; with a read failed it never says nothing needs him. Written only when it differs. */
   function rmShort(n){ var v=Math.round((+n||0)*100)/100; return 'RM '+v.toLocaleString('en-MY',{minimumFractionDigits:v%1?2:0,maximumFractionDigits:2}); }
   var SAY_N=['no','one','two','three','four','five','six','seven','eight','nine'];
   function sayN(n){ return SAY_N[n]||String(n); }
@@ -7775,7 +7775,7 @@ export const OWNER_JS = `
     var books=glanceStock&&glanceStock.books, out=0, past=[], low=0;
     if(books) Object.keys(books).forEach(function(p){ var b=books[p]; if(!b||typeof b.shelf!=='number') return;
       var over=(+b.commit||0)-(+b.shelf||0);
-      if(b.light==='red'){ if(over>0.005) past.push(over); else out++; } else if(b.light==='amber') low++; });
+      if(b.light==='red') out++; else if(b.light==='amber'){ if(over>0.005) past.push(over); else low++; } });
     return {out:out, past:past, low:low};
   }
   function drawLead(items){

@@ -241,10 +241,11 @@ export function termsSnapshot(w) {
 /* F4 (his decision of 05 Oct 2026): THE SHELF AND WHAT IS COMMITTED AGAINST IT, per book, off the desk's own window: the
    units held and the engine's commitments (owed out plus agreed, nothing moved). The light is the engine's
    restockSupply over these two figures (tools/pricelist.mjs supplyLights), never worked out here. 04 Nov 2026 (his four-step light):
-   and the book's measured demand beside them, restockFor's coverDays and its median order as `usual`, null with no demand. Set, read, put back,
+   and the book's measured demand beside them, restockFor's coverDays and its median order as `usual`, null with no demand; and
+   `agreed`, the committed units agreed with nothing moved, which can make a book Low on stock but never Out of stock (his word, 04 Nov 2026). Set, read, put back,
    as pricingSnapshot does, because both figures are the active book's. Null where the desk will not read. */
 export function supplySnapshot(w) {
-  const r = reader(w)("(function(){var o={},keep=PROD;try{PROD_IDS.forEach(function(p){PROD=p;recompute();var rs=restockFor(p),live=rs&&!rs.empty;o[p]={shelf:currentStock,commit:POSITION_ENGINE.commitments(pSales(p),currentStock).commitUnits,coverDays:live&&rs.coverDays!=null?+rs.coverDays:null,usual:live&&rs.buy&&rs.buy.median!=null?+rs.buy.median:null};});}finally{PROD=keep;recompute();}return JSON.stringify(o);})()");
+  const r = reader(w)("(function(){var o={},keep=PROD;try{PROD_IDS.forEach(function(p){PROD=p;recompute();var rs=restockFor(p),live=rs&&!rs.empty;var cm=POSITION_ENGINE.commitments(pSales(p),currentStock);o[p]={shelf:currentStock,commit:cm.commitUnits,agreed:cm.promUnits,coverDays:live&&rs.coverDays!=null?+rs.coverDays:null,usual:live&&rs.buy&&rs.buy.median!=null?+rs.buy.median:null};});}finally{PROD=keep;recompute();}return JSON.stringify(o);})()");
   return r.ok && typeof r.value === "string" ? JSON.parse(r.value) : null;
 }
 
@@ -260,8 +261,8 @@ export function supplySnapshot(w) {
 export function stockSnapshot(w) {
   const r = reader(w)("(function(){var o={},keep=PROD,two=function(n){return +(+n||0).toFixed(2);};try{PROD_IDS.forEach(function(p){PROD=p;recompute();var rs=restockFor(p),"
     + "t=pPurch(p).filter(function(x){return !x.cancelled&&!x.defaulted;}).reduce(function(a,x){return a+Math.max(0,(+x.qty||0)-poRecvUnits(x));},0);"
-    + "var cu=POSITION_ENGINE.commitments(pSales(p),currentStock).commitUnits;"
-    + "o[p]={shelf:two(currentStock),free:two(currentStock-defUnits),commit:two(cu),light:POSITION_ENGINE.restockLight(currentStock,cu,{coverDays:rs&&!rs.empty?rs.coverDays:null,usual:rs&&!rs.empty&&rs.buy?rs.buy.median:null}),"
+    + "var cm=POSITION_ENGINE.commitments(pSales(p),currentStock),cu=cm.commitUnits;"
+    + "o[p]={shelf:two(currentStock),free:two(currentStock-defUnits),commit:two(cu),light:POSITION_ENGINE.restockLight(currentStock,cu,{agreed:cm.promUnits,coverDays:rs&&!rs.empty?rs.coverDays:null,usual:rs&&!rs.empty&&rs.buy?rs.buy.median:null}),"
     + "coverDays:rs&&!rs.empty&&rs.coverDays!=null?+rs.coverDays:null,transit:two(t)};});}finally{PROD=keep;recompute();}"
     + "return JSON.stringify({today:TODAY.toISOString().slice(0,10),books:o});})()");
   if (!r.ok || typeof r.value !== "string") throw new Error("the stock did not read: " + (r.why || "no value"));
