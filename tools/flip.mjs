@@ -24,7 +24,7 @@ import { writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { d1Rows, commandArgs } from "./d1json.mjs";
-import { judge, collect, say } from "./flip-gate.mjs";
+import { judge, collect, say, bookHeaders } from "./flip-gate.mjs";
 import { DATA_DIR } from "./book.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -42,14 +42,11 @@ export function realIo(env = process.env) {
     d1: (sql) => d1Rows(sh("npx", ["wrangler", "d1", "execute", "salt_ledger", "--remote", "--json", ...commandArgs(sql)])),
     d1Write: (sql) => sh("npx", ["wrangler", "d1", "execute", "salt_ledger", "--remote", "--json", ...commandArgs(sql)]),
     post: async (path, body) => {
-      const h = { "content-type": "application/json", "X-Book-Key": String(env.SALT_BOOK_KEY || "") };
-      if (env.CF_ACCESS_CLIENT_ID && env.CF_ACCESS_CLIENT_SECRET) { h["CF-Access-Client-Id"] = env.CF_ACCESS_CLIENT_ID; h["CF-Access-Client-Secret"] = env.CF_ACCESS_CLIENT_SECRET; }
+      const h = { "content-type": "application/json", ...bookHeaders(env) };
       const r = await fetch(base + path, { method: "POST", headers: h, body: JSON.stringify(body || {}) }); return { status: r.status, body: await r.json().catch(() => ({})) };
     },
     get: async (path) => {
-      const h = { "X-Book-Key": String(env.SALT_BOOK_KEY || "") };
-      if (env.CF_ACCESS_CLIENT_ID && env.CF_ACCESS_CLIENT_SECRET) { h["CF-Access-Client-Id"] = env.CF_ACCESS_CLIENT_ID; h["CF-Access-Client-Secret"] = env.CF_ACCESS_CLIENT_SECRET; }
-      const r = await fetch(base + path, { headers: h }); return { status: r.status, body: await r.json().catch(() => ({})) };
+      const r = await fetch(base + path, { headers: bookHeaders(env) }); return { status: r.status, body: await r.json().catch(() => ({})) };
     },
     writeFile: (f, text) => { mkdirSync(dirname(f), { recursive: true }); writeFileSync(f, text); },
     now: () => new Date().toISOString(),

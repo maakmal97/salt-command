@@ -260,5 +260,20 @@ export async function run({ ok }) {
     ok(r.status === 1 && /G0 /.test(r.stdout) && /G9 /.test(r.stdout) && /The gate reads NOT TRUE/.test(r.stdout),
       "the gate's command line runs and says it is not true, rather than deadlocking on its cycle with flip.mjs: " + JSON.stringify({ status: r.status, out: String(r.stdout).slice(0, 80), err: String(r.stderr).slice(0, 160) }));
     ok(typeof F.realGet === "function" && F.realGet === G.realGet, "flip.mjs still exports realGet, the gate's one: a caller of either gets the same function");
+    /* the owner's own Access login carries the laptop past the Desk's Access, beside or instead of CI's service token (04 Nov 2026) */
+    {
+      const own = G.bookHeaders({ SALT_BOOK_KEY: "bk", SALT_ACCESS_JWT: " jwt.a.b\n" }), ci = G.bookHeaders({ SALT_BOOK_KEY: "bk", CF_ACCESS_CLIENT_ID: "id", CF_ACCESS_CLIENT_SECRET: "sec" }), none = G.bookHeaders({});
+      ok(own["X-Book-Key"] === "bk" && own["cf-access-token"] === "jwt.a.b" && own["Cf-Access-Jwt-Assertion"] === "jwt.a.b" && !own["CF-Access-Client-Id"]
+        && ci["CF-Access-Client-Id"] === "id" && ci["CF-Access-Client-Secret"] === "sec" && !ci["cf-access-token"] && !("cf-access-token" in none) && none["X-Book-Key"] === "",
+        "a Book route's headers carry the Book key and the owner's own Access login when SALT_ACCESS_JWT is set (trimmed), the service token when that is set, and no login when neither is");
+      const seen = [], was = globalThis.fetch;
+      globalThis.fetch = async (u, o) => { seen.push({ u: String(u), h: { ...(o && o.headers) }, m: (o && o.method) || "GET" }); return new Response("{}", { status: 200 }); };
+      try {
+        const env = { SALT_BASE: "http://127.0.0.1:9", SALT_BOOK_KEY: "bk", SALT_ACCESS_JWT: "jwt.a.b" };
+        await G.realGet(env)("/book/readcheck"); const io = F.realIo(env); await io.get("/book/ledger"); await io.post("/book/compact", {});
+      } finally { globalThis.fetch = was; }
+      ok(seen.length === 3 && seen.every((s) => s.h["cf-access-token"] === "jwt.a.b" && s.h["X-Book-Key"] === "bk") && seen[2].m === "POST" && seen[2].h["content-type"] === "application/json",
+        "the gate's read, the flip's read and the flip's compaction each send the owner's login and the Book key: " + JSON.stringify(seen.map((s) => [s.m, s.u.slice(-14), !!s.h["cf-access-token"]])));
+    }
   }
 }

@@ -388,5 +388,41 @@
   "file": "tools/flip-gate.mjs",
   "find": "    if (!r.error) return r.rows;\n  }\n  return null;",
   "replace": "    if (!r.error || i === tries - 1) return r.rows || [{}];\n  }\n  return null;"
+ },
+ {
+  "name": "the owner's login is not sent",
+  "file": "tools/flip-gate.mjs",
+  "find": "  return { ...h, ...deskAccess(String(env.SALT_ACCESS_JWT || \"\").trim()) };",
+  "replace": "  return h;"
+ },
+ {
+  "name": "the owner's login is sent untrimmed",
+  "file": "tools/flip-gate.mjs",
+  "find": "deskAccess(String(env.SALT_ACCESS_JWT || \"\").trim())",
+  "replace": "deskAccess(String(env.SALT_ACCESS_JWT || \"\"))"
+ },
+ {
+  "name": "the service token is dropped",
+  "file": "tools/flip-gate.mjs",
+  "find": "  if (env.CF_ACCESS_CLIENT_ID && env.CF_ACCESS_CLIENT_SECRET) { h[\"CF-Access-Client-Id\"] = env.CF_ACCESS_CLIENT_ID; h[\"CF-Access-Client-Secret\"] = env.CF_ACCESS_CLIENT_SECRET; }\n  return { ...h,",
+  "replace": "  return { ...h,"
+ },
+ {
+  "name": "the gate's read sends no headers",
+  "file": "tools/flip-gate.mjs",
+  "find": "const r = await fetch(base + path, { headers: bookHeaders(env) }); return { status: r.status, body: await r.json().catch(() => ({})) };\n  };",
+  "replace": "const r = await fetch(base + path, {}); return { status: r.status, body: await r.json().catch(() => ({})) };\n  };"
+ },
+ {
+  "name": "the flip's compaction sends only its content type",
+  "file": "tools/flip.mjs",
+  "find": "const h = { \"content-type\": \"application/json\", ...bookHeaders(env) };",
+  "replace": "const h = { \"content-type\": \"application/json\" };"
+ },
+ {
+  "name": "the flip's read sends no headers",
+  "file": "tools/flip.mjs",
+  "find": "const r = await fetch(base + path, { headers: bookHeaders(env) });",
+  "replace": "const r = await fetch(base + path, {});"
  }
 ]

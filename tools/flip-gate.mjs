@@ -14,6 +14,7 @@ import { spawnSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { d1Rows, commandArgs } from "./d1json.mjs";
+import { deskAccess } from "./vault-pair-client.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 /* `fallbackFrom`: the moment the version that records an approval's fall back to the fold went live (S5f-7 noteFallback); a fallback before it left no trace, so G5 reads only over the days since, and needs seven of them. */
@@ -164,12 +165,19 @@ export const say = (r) => r.lines.map((x) => `  ${x.ok === true ? "ok        " :
 
 /** a GET of the Book's keyed routes (the readcheck), for the gate. It lives here and not in flip.mjs: flip.mjs imports this file, so a command line
     that imported flip.mjs back deadlocked on the cycle and exited 13 with "unsettled top-level await" (29 Oct 2026). flip.mjs re-exports it. */
+/** the headers a Book route needs from the laptop: the Book's key, and a way past the Desk's Access: CI's service token, or the owner's own login
+    (SALT_ACCESS_JWT, `cloudflared access token`), the road the vault tools take (tools/vault-pair-client.mjs deskAccess). The Worker lets the owner
+    through to every /book route; the laptop holds no copy of the service token's secret (his word of 04 Nov 2026). */
+export function bookHeaders(env = process.env) {
+  const h = { "X-Book-Key": String(env.SALT_BOOK_KEY || "") };
+  if (env.CF_ACCESS_CLIENT_ID && env.CF_ACCESS_CLIENT_SECRET) { h["CF-Access-Client-Id"] = env.CF_ACCESS_CLIENT_ID; h["CF-Access-Client-Secret"] = env.CF_ACCESS_CLIENT_SECRET; }
+  return { ...h, ...deskAccess(String(env.SALT_ACCESS_JWT || "").trim()) };
+}
+
 export function realGet(env = process.env) {
   const base = (env.SALT_BASE || "https://salt-command.qyts8mh72kyg.workers.dev").replace(/\/+$/, "");
   return async (path) => {
-    const h = { "X-Book-Key": String(env.SALT_BOOK_KEY || "") };
-    if (env.CF_ACCESS_CLIENT_ID && env.CF_ACCESS_CLIENT_SECRET) { h["CF-Access-Client-Id"] = env.CF_ACCESS_CLIENT_ID; h["CF-Access-Client-Secret"] = env.CF_ACCESS_CLIENT_SECRET; }
-    const r = await fetch(base + path, { headers: h }); return { status: r.status, body: await r.json().catch(() => ({})) };
+    const r = await fetch(base + path, { headers: bookHeaders(env) }); return { status: r.status, body: await r.json().catch(() => ({})) };
   };
 }
 
