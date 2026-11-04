@@ -1,6 +1,6 @@
 {
- "v": "v1432",
- "stamped": "04 Nov 2026, 13:40 KL",
+ "v": "v1433",
+ "stamped": "04 Nov 2026, 13:43 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -11192,15 +11192,38 @@
    },
    {
     "customer": "CA7-AMP",
-    "qty": 2,
-    "total": 150,
+    "qty": 1,
+    "total": 70,
     "cash": 0,
     "product": "gas",
     "date": "2026-11-04",
     "deliveredQty": 0,
-    "note": "<b>SALE 04 NOV 2026: 2 UNIT OF GAS TO CA7-AMP, RM150, PENDING.</b> Order 20261103194901-tqsyeg, acknowledged, to collect. Nothing paid and nothing handed over. Goods RM150 against a floor of RM140 and an ask of RM150 for 2 unit, so it sits at the ask, RM75 a unit against an ask of RM75. CA7-AMP has 4 orders, a median rate of 13, a range of 8.3 to 135, nothing outstanding before and nothing defaulted. The credit cap is 1 unit. The row carries RM70 a unit from the latest purchase, the inventory's own rate. The drafter flagged that CA7-AMP has no committed gas order, so there is no rate of theirs to compare; the figures cannot answer that. The full RM150 is left outstanding.",
+    "note": "<b>CORRECTED 04 NOV 2026: SIZE TO 1 UNIT, GOODS TO RM70, DELIVERY TO 0.</b> <b>CORRECTION 04 NOV 2026 ON S333: GAS ORDER TO CA7-AMP CUT FROM 2 UNIT TO 1.</b> Recorded after acceptance of order 20261103194901-tqsyeg and preapproved by Counter Admin. Quantity moves from 2 to 1, goods from RM150 to RM70, delivery from unset to 0. The old goods total of RM150 matched the ask total of RM150 for 2 unit, above the floor of RM140. The dossier gives no floor or ask for 1 unit, so the new RM70 cannot be set against the desk's figures here. CA7-AMP has 7 orders, a median rate of 13, a range of 8.3 to 135 and RM1075 outstanding before this. The drafter flagged that CA7-AMP has no committed gas order to compare with, and the figures cannot answer that. No cash or stock moves, and the row remains pending with the whole RM70 outstanding. <b>SALE 04 NOV 2026: 2 UNIT OF GAS TO CA7-AMP, RM150, PENDING.</b> Order 20261103194901-tqsyeg, acknowledged, to collect. Nothing paid and nothing handed over. Goods RM150 against a floor of RM140 and an ask of RM150 for 2 unit, so it sits at the ask, RM75 a unit against an ask of RM75. CA7-AMP has 4 orders, a median rate of 13, a range of 8.3 to 135, nothing outstanding before and nothing defaulted. The credit cap is 1 unit. The row carries RM70 a unit from the latest purchase, the inventory's own rate. The drafter flagged that CA7-AMP has no committed gas order, so there is no rate of theirs to compare; the figures cannot answer that. The full RM150 is left outstanding.",
     "road": "site",
-    "rid": "s333"
+    "rid": "s333",
+    "delivery": 0,
+    "mod": "corrected on 2026-11-04: qty 2 to 1; total 150 to 70; delivery (unset) to 0",
+    "amend": [
+     {
+      "date": "2026-11-04",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-11-04",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION 04 NOV 2026 ON S333: GAS ORDER TO CA7-AMP CUT FROM 2 UNIT TO 1.</b> Recorded after acceptance of order 20261103194901-tqsyeg and preapproved by Counter Admin. Quantity moves from 2 to 1, goods from RM150 to RM70, delivery from unset to 0. The old goods total of RM150 matched the ask total of RM150 for 2 unit, above the floor of RM140. The dossier gives no floor or ask for 1 unit, so the new RM70 cannot be set against the desk's figures here. CA7-AMP has 7 orders, a median rate of 13, a range of 8.3 to 135 and RM1075 outstanding before this. The drafter flagged that CA7-AMP has no committed gas order to compare with, and the figures cannot answer that. No cash or stock moves, and the row remains pending with the whole RM70 outstanding.",
+      "was": {
+       "qty": 2,
+       "total": 150,
+       "delivery": null
+      }
+     }
+    ]
    },
    {
     "customer": "CI5-PER",
@@ -12097,7 +12120,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-04T05:39:23.367Z",
+  "QUEUE_COMMITTED": "2026-11-04T05:42:27.371Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -22589,10 +22612,10 @@
      "suggest": null
     }
    },
-   "v": "v1432"
+   "v": "v1433"
   },
   "OPEN": {
-   "at": "2026-11-04T05:40:08.420Z",
+   "at": "2026-11-04T05:43:43.053Z",
    "count": 11,
    "byKey": {
     "CA7-AMP|2026-11-04|475": {
@@ -22624,20 +22647,20 @@
      "rid": "s332",
      "key": "CA7-AMP|2026-11-04|450|oil"
     },
-    "CA7-AMP|2026-11-04|150|gas": {
+    "CA7-AMP|2026-11-04|70|gas": {
      "d": "2026-11-04",
      "p": "CA7-AMP",
      "dir": "S",
-     "q": 2,
-     "t": 150,
+     "q": 1,
+     "t": 70,
      "cash": 0,
      "mv": 0,
      "st": "part",
-     "oweRM": 150,
-     "oweUnits": 2,
+     "oweRM": 70,
+     "oweUnits": 1,
      "pr": "gas",
      "rid": "s333",
-     "key": "CA7-AMP|2026-11-04|150|gas"
+     "key": "CA7-AMP|2026-11-04|70|gas"
     },
     "CM4-MK|2026-11-04|360": {
      "d": "2026-11-04",
@@ -22822,10 +22845,10 @@
      "onHand": 2,
      "free": 2,
      "owedOut": 0,
-     "coverDays": 8.5,
-     "rate": 0.23,
+     "coverDays": 11.8,
+     "rate": 0.17,
      "owedToYou": 0,
-     "promised": 2,
+     "promised": 1,
      "short": 0
     },
     "prep": {
@@ -22848,7 +22871,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1432"
+   "v": "v1433"
   },
   "TERMS": {
    "ceiling": 250,
@@ -22856,7 +22879,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1432"
+   "v": "v1433"
   },
   "REWARD": {
    "stated": {
@@ -22874,7 +22897,7 @@
      }
     }
    },
-   "v": "v1432"
+   "v": "v1433"
   },
   "STOCK": {
    "today": "2026-11-04",
@@ -22914,9 +22937,9 @@
     "gas": {
      "shelf": 2,
      "free": 2,
-     "commit": 2,
+     "commit": 1,
      "light": "amber",
-     "coverDays": 8.5,
+     "coverDays": 11.8,
      "transit": 0
     },
     "prep": {
@@ -22928,7 +22951,7 @@
      "transit": 0
     }
    },
-   "v": "v1432"
+   "v": "v1433"
   }
  }
 }

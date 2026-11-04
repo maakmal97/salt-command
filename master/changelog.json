@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1433",
+  "d": "04 Nov 2026",
+  "t": "A GAS ORDER FOR CA7-AMP CORRECTED DOWN TO ONE UNIT",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> Order s333 for CA7-AMP, a gas sale of 04 Nov 2026, was amended after acceptance: size from 2 unit to 1, goods from RM150 to RM70, delivery set to 0. It was preapproved by Counter Admin. The row stays pending with nothing paid and nothing handed over.",
+   "<b>INVENTORY UNCHANGED.</b> No cash and no stock moved, so the roll stands as it was. The drafter flagged that CA7-AMP has no committed gas order on the book to compare with."
+  ]
+ },
+ {
   "v": "v1432",
   "d": "04 Nov 2026",
   "t": "ONE PENDING SALE OF SALT TO CM4-MK, NOTHING MOVED",
