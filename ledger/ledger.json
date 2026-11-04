@@ -1,6 +1,6 @@
 {
- "v": "v1430",
- "stamped": "04 Nov 2026, 06:09 KL",
+ "v": "v1432",
+ "stamped": "04 Nov 2026, 13:40 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -11248,6 +11248,20 @@
     ],
     "cost": 126,
     "paidOn": "2026-11-04"
+   },
+   {
+    "customer": "CM4-MK",
+    "qty": 3,
+    "total": 305,
+    "cash": 0,
+    "delivery": 55,
+    "date": "2026-11-04",
+    "deliveredQty": 0,
+    "note": "<b>PENDING SALE 04 NOV 2026: 3 UNIT OF SALT TO CM4-MK, RM305 GOODS PLUS RM55 DELIVERY.</b> Order 20261104053637-erprew, acknowledged, to be delivered. Nothing paid and nothing handed over, so RM360 is owed and no stock is drawn. The goods rate is RM101.67 a unit, against a floor of RM56.67 and an ask of RM101.67 for 3 unit; the goods total of RM305 equals the ask total of RM305 and is above the floor total of RM170. CM4-MK has 17 orders, a median rate of 101, a range of 80 to 120, nothing outstanding before and nothing defaulted. The credit cap is given as 1, so the RM360 owed is far past it, and the dossier gives no unit for that cap. The row carries cost at RM56 a unit, the inventory's own rate from the latest purchase. The drafter raised no flags. The full RM360 is left outstanding.",
+    "listRM": 305,
+    "listQty": 3,
+    "road": "site",
+    "rid": "s335"
    }
   ],
   "contacts": [
@@ -12083,7 +12097,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-03T22:06:14.377Z",
+  "QUEUE_COMMITTED": "2026-11-04T05:39:23.367Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -22575,11 +22589,11 @@
      "suggest": null
     }
    },
-   "v": "v1430"
+   "v": "v1432"
   },
   "OPEN": {
-   "at": "2026-11-03T22:09:57.078Z",
-   "count": 10,
+   "at": "2026-11-04T05:40:08.420Z",
+   "count": 11,
    "byKey": {
     "CA7-AMP|2026-11-04|475": {
      "d": "2026-11-04",
@@ -22624,6 +22638,21 @@
      "pr": "gas",
      "rid": "s333",
      "key": "CA7-AMP|2026-11-04|150|gas"
+    },
+    "CM4-MK|2026-11-04|360": {
+     "d": "2026-11-04",
+     "p": "CM4-MK",
+     "dir": "S",
+     "q": 3,
+     "t": 305,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 360,
+     "oweUnits": 3,
+     "dv": 55,
+     "rid": "s335",
+     "key": "CM4-MK|2026-11-04|360"
     },
     "CR3-DAM|2026-10-30|70": {
      "d": "2026-10-30",
@@ -22749,10 +22778,10 @@
      "onHand": 21,
      "free": 21,
      "owedOut": 0,
-     "coverDays": 4.9,
-     "rate": 4.48,
+     "coverDays": 4.8,
+     "rate": 4.63,
      "owedToYou": 310,
-     "promised": 5,
+     "promised": 8,
      "short": 0
     },
     "oil": {
@@ -22819,7 +22848,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1430"
+   "v": "v1432"
   },
   "TERMS": {
    "ceiling": 250,
@@ -22827,7 +22856,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1430"
+   "v": "v1432"
   },
   "REWARD": {
    "stated": {
@@ -22845,7 +22874,7 @@
      }
     }
    },
-   "v": "v1430"
+   "v": "v1432"
   },
   "STOCK": {
    "today": "2026-11-04",
@@ -22853,16 +22882,16 @@
     "salt": {
      "shelf": 21,
      "free": 21,
-     "commit": 5,
+     "commit": 8,
      "light": "yellow",
-     "coverDays": 4.9,
+     "coverDays": 4.8,
      "transit": 0
     },
     "oil": {
      "shelf": 40,
      "free": 40,
      "commit": 50,
-     "light": "red",
+     "light": "amber",
      "coverDays": 6.6,
      "transit": 0
     },
@@ -22886,7 +22915,7 @@
      "shelf": 2,
      "free": 2,
      "commit": 2,
-     "light": "red",
+     "light": "amber",
      "coverDays": 8.5,
      "transit": 0
     },
@@ -22899,7 +22928,7 @@
      "transit": 0
     }
    },
-   "v": "v1430"
+   "v": "v1432"
   }
  }
 }
