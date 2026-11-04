@@ -1,0 +1,80 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-04T05:42:27.371Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s333",
+    "qty": 2,
+    "total": 150,
+    "cash": 0,
+    "date": "2026-11-04",
+    "product": "gas",
+    "changes": [
+     {
+      "field": "qty",
+      "from": 2,
+      "to": 1
+     },
+     {
+      "field": "total",
+      "from": 150,
+      "to": 70
+     },
+     {
+      "field": "delivery",
+      "from": null,
+      "to": 0
+     }
+    ],
+    "customer": "CA7-AMP",
+    "rids": [],
+    "booked_seq": 115
+   },
+   "reasoning": "Correction against CA7-AMP's order of 2 unit for RM 150 dated 2026-11-04 (s333). Sets qty from 2 to 1, total from 150 to 70, delivery from unset to 0. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CA7-AMP has no committed gas order on the book, so there is no rate of theirs to compare this against."
+   ],
+   "amends": "s333",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-11-04T05:42:27.371Z",
+    "type": "SELL",
+    "party": "CA7-AMP",
+    "qty": 1,
+    "total": 70,
+    "status": "Amendment",
+    "raw": "Amended CA7-AMP, order 20261103194901-tqsyeg: size 2 to 1, goods RM 150 to 70",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CA7-AMP",
+     "rid": null,
+     "orderKey": "CA7-AMP|2026-11-04|150|gas",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-11-04",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "qty": 1,
+      "total": 70,
+      "delivery": 0
+     },
+     "note": "Amended after Accept for order 20261103194901-tqsyeg: size 2 to 1, goods RM 150 to 70."
+    },
+    "orderId": "20261103194901-tqsyeg"
+   },
+   "decidedAt": "2026-11-04T05:42:28.950Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
