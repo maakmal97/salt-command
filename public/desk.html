@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="4bedd319eb248a8b";
+var SALT_BUILD_ID="1344f029fe6e3ed9";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -7522,11 +7522,14 @@ function commitments(sales,currentStock){
     shortUnits:+Math.max(0,commitUnits-currentStock).toFixed(2), coverable:currentStock>=commitUnits};
 }
 /* ============ THE RESTOCK LIGHT, FOUR STEPS (his rule of 04 Nov 2026, replacing F4's three of 05 Oct 2026) ============ one colour a
-   book, the worst step that holds. Free is the shelf less what is committed against it (commitments().commitUnits: owed out plus agreed,
-   nothing moved). `demand` is the book's measured demand, restockPlan's own: `coverDays`, the days its free stock lasts at the forecast
+   book, the worst step that holds. `commitUnits` is commitments().commitUnits, owed out (paid ahead) plus agreed with nothing moved;
+   `demand.agreed` is the agreed part (commitments().promUnits). Free is the shelf less what is owed out; after is free less what is agreed.
+   `demand` also carries the book's measured demand, restockPlan's own: `coverDays`, the days its free stock lasts at the forecast
    (null past the forecast or with no demand), and `usual`, its median order (buy.median).
-     RED, Out of stock: nothing free, every unit on the shelf promised (F4's yellow, promised past the shelf, is now red).
-     AMBER, Low on stock: free below one usual order, or lasting LIGHT_DAYS.low days or fewer.
+     RED, Out of stock: nothing free, the shelf empty or every unit on it paid for ahead. An agreed order never makes a book red
+       (his word of 04 Nov 2026: a pending order showing Out of stock would deter people from ordering).
+     AMBER, Low on stock: what is agreed takes it under one usual order or to nothing (the most an agreed order can do), or free
+       lasting LIGHT_DAYS.low days or fewer.
      YELLOW, Selling fast: free lasting LIGHT_DAYS.fast days or fewer.
      GREEN, Available: otherwise, and on a book with no demand measured that still has stock free.
    The basis, replayed over every book's days from 26 Jun to 04 Nov 2026 with the engine's own forecast: cover of 7 days or fewer
@@ -7535,10 +7538,10 @@ function commitments(sales,currentStock){
    `by` is the day he expects the next lot (YYYY-MM-DD), shown only while the light is not green and the day is not past. */
 const LIGHT_DAYS={fast:7,low:3};
 function restockLight(shelf,commitUnits,demand){
-  const free=(+shelf||0)-(+commitUnits||0);
+  const d=demand||{}, agreed=Math.max(0,+d.agreed||0), after=(+shelf||0)-(+commitUnits||0), free=after+agreed;
   if(free<0.005)return 'red';
-  const d=demand||{}, cover=d.coverDays==null||!isFinite(+d.coverDays)?null:+d.coverDays, usual=+d.usual||0;
-  if((usual>0&&usual-free>0.005)||(cover!=null&&cover<=LIGHT_DAYS.low))return 'amber';
+  const cover=d.coverDays==null||!isFinite(+d.coverDays)?null:+d.coverDays, usual=+d.usual||0;
+  if(after<0.005||(usual>0&&usual-after>0.005)||(cover!=null&&cover<=LIGHT_DAYS.low))return 'amber';
   if(cover!=null&&cover<=LIGHT_DAYS.fast)return 'yellow';
   return 'green';
 }
@@ -11722,7 +11725,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1430","d":"04 Nov 2026","t":"CASH RECEIVED ON THE CANDY ORDER FOR CI5-PER","n":["<b>ONE PAYMENT FOLDED.</b> The row records RM230 cash from CI5-PER on 2026-11-04 against order s334, taken at the counter. It was preapproved by Counter Admin and the drafter raised no flags. Nothing unusual in the entry. The row itself is applied by the master's own amendment routine, not recomputed here.","<b>INVENTORY UNCHANGED.</b> No unit moved, because the candy was already delivered under the earlier correction. The salt stock stays at 21 and the stock cost stays at RM56 per unit."]}];
+const evolution=[{"v":"v1431","d":"04 Nov 2026","t":"AN AGREED ORDER NEVER READS OUT OF STOCK","n":["<b>HIS WORD.</b> A pending order showing Out of stock would deter people from ordering, so an order agreed with nothing moved can now make a book <b>Low on stock</b> at most. Out of stock is only an empty shelf, or every unit on it paid for ahead.","<b>HOW IT READS.</b> Agreed units taking a book under one usual order, or to nothing, read Low on stock; leaving one usual order or more they change nothing. Selling fast and Available read as before, off the days of cover.","<b>TODAY.</b> Oil (40 held, 50 agreed) and gas (2 held, 2 agreed) read Low on stock, not Out of stock; salt and candy Selling fast; rice and PrEP Available. On Salt Admin a book agreed past its shelf is said as promised past its shelf, among the books that need stock."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11870,7 +11873,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='04 Nov 2026, 06:09 KL';
+const LAST_UPDATED='04 Nov 2026, 09:26 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -19327,7 +19330,7 @@ function actions(){
      sales signal and asks nothing). The engine's restockSupply says the light, from the shelf, what is committed and the book's
      measured demand, and drops a day already past; cloud only, and only once the date has been read, so a laptop copy never asks. */
   if(cloudMode()&&EXPECTED_READ){
-    const sp=POSITION_ENGINE.restockSupply(currentStock,f.commitUnits,EXPECTED[PROD],TODAY.toISOString().slice(0,10),lightDemand(PROD));
+    const sp=POSITION_ENGINE.restockSupply(currentStock,f.commitUnits,EXPECTED[PROD],TODAY.toISOString().slice(0,10),lightDemand(PROD,f.promUnits));
     if(expAsks(sp.light)&&!sp.by){const was=EXPECTED[PROD];
       add(sp.light==='red'?'now':'soon','plan',`Restock date: ${was?'passed, '+was:'not set'}`,0,
         `${units(currentStock)} held, ${units(f.commitUnits)} committed, light ${sp.light}. Customers read More by once it is set.`,'inventory');}
@@ -20853,11 +20856,12 @@ async function ordLoad(quiet){
 /* ---- F4: THE RESTOCK DATE (his decision of 05 Oct 2026). One day a book, set here and relayed through the desk's keyed
    /expected to the site's own store (KV `expected`); the publish reads it and seals it with the light, so a customer reads
    More by DD Mon while the light is not green and the day is not past. 04 Nov 2026 (his four steps): the light reads the book's
-   measured demand too (lightDemand: restockFor's coverDays and median order), and only amber and red ask for a day (expAsks). ---- */
-function lightDemand(p){const rs=restockFor(p),live=rs&&!rs.empty;return {coverDays:live?rs.coverDays:null,usual:live&&rs.buy?rs.buy.median:null};}
+   measured demand too (lightDemand: restockFor's coverDays and median order, beside the units agreed with nothing moved, which make a
+   book Low on stock at most, never Out of stock), and only amber and red ask for a day (expAsks). ---- */
+function lightDemand(p,agreed){const rs=restockFor(p),live=rs&&!rs.empty;return {agreed:+agreed||0,coverDays:live?rs.coverDays:null,usual:live&&rs.buy?rs.buy.median:null};}
 function expAsks(light){return light==='amber'||light==='red';}
 function expLights(){return eachBook(()=>{const c=POSITION_ENGINE.commitments(pSales(PROD),currentStock);
-  return {light:POSITION_ENGINE.restockLight(currentStock,c.commitUnits,lightDemand(PROD)),shelf:currentStock,commit:c.commitUnits};});}
+  return {light:POSITION_ENGINE.restockLight(currentStock,c.commitUnits,lightDemand(PROD,c.promUnits)),shelf:currentStock,commit:c.commitUnits};});}
 function expDraw(){
   const box=document.getElementById('expRows');if(!box)return;
   const L=expLights(),ids=Object.keys(L),today=TODAY.toISOString().slice(0,10);
