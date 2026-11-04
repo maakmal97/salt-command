@@ -51363,7 +51363,14 @@ await (async () => {
     && X.restockLight(10, 8.5, { coverDays: 30, usual: 1.5 }) === "green" && X.restockLight(2, 0, { coverDays: 1, usual: 5 }) === "amber",
     "amber, low on stock, at three days of cover or less, or free below one usual order (one usual order left is not low)");
   ok(X.restockLight(10, 10) === "red" && X.restockLight(10, 10.01) === "red" && X.restockLight(2.25, 1010) === "red" && X.restockLight(1, 1, { coverDays: 1 }) === "red",
-    "red, out of stock, once every unit on the shelf is promised, the exact edge included, whatever the demand");
+    "red, out of stock, once every unit on the shelf is paid for ahead, the exact edge included, whatever the demand");
+  /* 04 Nov 2026, his word: a pending order showing Out of stock would deter people from ordering, so what is agreed makes a book amber at most */
+  ok(X.restockLight(10, 10, { agreed: 10 }) === "amber" && X.restockLight(40, 50, { agreed: 50, coverDays: 6.6, usual: 10 }) === "amber"
+    && X.restockLight(2, 2, { agreed: 2, coverDays: 8.5, usual: 2 }) === "amber" && X.restockLight(10, 10.01, { agreed: 0.02 }) === "amber",
+    "agreed orders at or past the shelf read Low on stock, never Out of stock (oil at 40 held and 50 agreed, gas at 2 and 2)");
+  ok(X.restockLight(10, 12, { agreed: 1 }) === "red" && X.restockLight(0, 3, { agreed: 3 }) === "red" && X.restockLight(10, 4, { agreed: 4, usual: 5 }) === "green"
+    && X.restockLight(10, 6, { agreed: 4, usual: 5 }) === "amber" && X.restockLight(10, 4, { agreed: 4, coverDays: 6 }) === "yellow",
+    "paid-ahead units past the shelf, or an empty shelf, still read red; agreed units leaving one usual order or more change nothing; under one usual order is low");
   ok(X.restockLight(0, 0) === "red" && X.restockLight(0, 5) === "red" && X.restockLight(-1, 0) === "red" && X.restockLight(0.004, 0) === "red" && X.restockLight(0.01, 0) === "green",
     "red when the shelf is out and on a negative shelf; a hundredth free with no demand is not out");
   /* ---- 2. THE DATE: shown on any light but green, and never once past ---- */
@@ -51416,7 +51423,7 @@ await (async () => {
     w.SALT_CLOUD = true;
     w.eval("setProd('salt');sales.push({customer:'ZZ9-TST',qty:1000,total:1000,product:'salt',pending:true});recompute();EXPECTED_READ=true;EXPECTED={};");
     const rows = () => read("actions().filter(x=>x.kind==='plan')");
-    ok(rows().length === 1 && rows()[0].sev === "now" && /not set/.test(rows()[0].title) && /light red/.test(rows()[0].why) && rows()[0].tab === "inventory", "a book promised past its shelf is red, and with no day raises Restock date: not set, Now, and points at Stock: " + JSON.stringify(rows()));
+    ok(rows().length === 1 && rows()[0].sev === "soon" && /not set/.test(rows()[0].title) && /light amber/.test(rows()[0].why) && rows()[0].tab === "inventory", "a book agreed past its shelf is amber, never red, and with no day raises Restock date: not set, This week, and points at Stock: " + JSON.stringify(rows()));
     /* 04 Nov 2026 (his four steps): amber, low on stock, asks This week; yellow, selling fast, asks nothing; both read the book's demand */
     w.eval("sales.pop();recompute();window.__ld=lightDemand;lightDemand=function(){return {coverDays:2,usual:null};};");
     ok(rows().length === 1 && rows()[0].sev === "soon" && /light amber/.test(rows()[0].why), "an amber light with no day raises Restock date: not set, This week: " + JSON.stringify(rows()));
@@ -51427,8 +51434,8 @@ await (async () => {
       "the demand is the restock plan's own: its days of cover and its median order");
     /* the other books' lights are live data (oil counted out on 06 Oct 2026), so each is read against its own shelf,
        commitments and demand taken book by book, and none may carry salt's 1,000 promised units */
-    const L = read("expLights()"), own = read("(function(){var o={};Object.keys(expLights()).forEach(function(p){setProd(p);recompute();var c=POSITION_ENGINE.commitments(pSales(PROD),currentStock);o[p]={light:POSITION_ENGINE.restockLight(currentStock,c.commitUnits,lightDemand(p)),shelf:currentStock,commit:c.commitUnits};});setProd('salt');recompute();return o;})()");
-    ok(L.salt.light === "red" && L.salt.commit >= 1000 && Object.keys(L).length >= 4
+    const L = read("expLights()"), own = read("(function(){var o={};Object.keys(expLights()).forEach(function(p){setProd(p);recompute();var c=POSITION_ENGINE.commitments(pSales(PROD),currentStock);o[p]={light:POSITION_ENGINE.restockLight(currentStock,c.commitUnits,lightDemand(p,c.promUnits)),shelf:currentStock,commit:c.commitUnits};});setProd('salt');recompute();return o;})()");
+    ok(L.salt.light === "amber" && L.salt.commit >= 1000 && Object.keys(L).length >= 4
       && Object.keys(L).every((p) => JSON.stringify(L[p]) === JSON.stringify(own[p]) && (p === "salt" || L[p].commit < 1000)),
       "the card reads each book's own light off the engine: " + JSON.stringify(L));
     w.eval("EXPECTED={salt:'2099-01-01'};");
@@ -51484,13 +51491,13 @@ await (async () => {
     const raw = supplySnapshot(w), prodBefore = w.eval("PROD");
     w.eval("setProd('salt');");
     ok(raw && raw.salt && raw.salt.shelf === w.eval("currentStock") && raw.salt.commit === w.eval("forecast().commitUnits") && w.eval("PROD") === "salt" && prodBefore === "salt"
-      && raw.salt.coverDays === read("lightDemand('salt')").coverDays && raw.salt.usual === read("lightDemand('salt')").usual,
+      && raw.salt.coverDays === read("lightDemand('salt')").coverDays && raw.salt.usual === read("lightDemand('salt')").usual && raw.salt.agreed === w.eval("forecast().promUnits"),
       "supplySnapshot carries each book's shelf, commitments, days of cover and usual order, and puts the desk back");
   } finally { w.close(); }
   const PL = await import("../tools/pricelist.mjs");
-  const lights = PL.supplyLights({ salt: { shelf: 9, commit: 0, coverDays: 5, usual: 1 }, oil: { shelf: 0, commit: 0 }, candy: { shelf: 9, commit: 1 }, rice: { shelf: 9, commit: 1, coverDays: 30, usual: 10 } }, { salt: "2026-10-12", candy: "2026-10-12" }, T);
+  const lights = PL.supplyLights({ salt: { shelf: 9, commit: 0, coverDays: 5, usual: 1 }, oil: { shelf: 0, commit: 0 }, candy: { shelf: 9, commit: 1 }, rice: { shelf: 9, commit: 1, coverDays: 30, usual: 10 }, gas: { shelf: 2, commit: 2, agreed: 2, coverDays: 30, usual: 1 } }, { salt: "2026-10-12", candy: "2026-10-12" }, T);
   ok(lights.salt.light === "yellow" && lights.salt.by === "2026-10-12" && lights.oil.light === "red" && lights.oil.by === null && lights.candy.light === "green" && lights.candy.by === null
-    && lights.rice.light === "amber" && lights.rice.by === null,
+    && lights.rice.light === "amber" && lights.rice.by === null && lights.gas.light === "amber",
     "supplyLights is the engine's light and day per book: " + JSON.stringify(lights));
   const cost = { repl: 50, freightRate: 0, shrinkRate: 0, avgDel: { n: 0, mean: 0 }, attrib: {}, costBasis: { txnPerDelivery: { rm: 0 }, freightPerTrip: { rm: 0 }, deliveredShare: { v: 0 } } };
   /* 18 Oct 2026: a customer's list is their card, the Set Price at each size */

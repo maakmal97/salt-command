@@ -1,7 +1,7 @@
 /* test/stock-light-relay.mjs: THE RESTOCK LIGHT MADE PLAIN, P1, THE LIGHT IN STOCK (22 Oct 2026; docs/plan-restock-light.html, his word).
  * What is proved here, each check red under its own mutation (test/stock-light-relay.mutations.json):
- *   1  the snapshot carries each book's light, the engine's restockLight asked of that book's own shelf, commitments and measured demand
- *      (its days of cover and median order, 04 Nov 2026), as it answered
+ *   1  the snapshot carries each book's light, the engine's restockLight asked of that book's own shelf, commitments, the part agreed
+ *      and measured demand (its days of cover and median order, 04 Nov 2026), as it answered
  *   2  makerStock carries a light that is green, yellow, amber or red beside the five figures, and nothing for any other or for none
  *   3  the Counter's relay carries it the same way, and the /all/test example carries one
  * The expected figures are written out by hand, never computed by the code under test. */
@@ -14,6 +14,7 @@ const J = JSON.stringify;
 export async function run({ ok }) {
   /* 1: the engine's rule is stood in for by one that answers by the call, so the wiring is what is measured */
   const { w } = await readBook();
+  const agreedOf = (p) => w.eval("(function(){var k=PROD;PROD=" + J(p) + ";recompute();var a=POSITION_ENGINE.commitments(pSales(PROD),currentStock).promUnits;PROD=k;recompute();return a;})()");
   const usualOf = (p) => w.eval("(function(){var r=restockFor(" + J(p) + ");return r&&!r.empty&&r.buy?r.buy.median:null;})()");
   try {
     w.eval("window.__slr=[];window.__slrWas=POSITION_ENGINE.restockLight;POSITION_ENGINE.restockLight=function(s,c,d){__slr.push([s,c,d]);return ['green','yellow','red'][(__slr.length-1)%3];};");
@@ -22,11 +23,12 @@ export async function run({ ok }) {
     const ids = w.eval("PROD_IDS.slice()"), seen = JSON.parse(calls);
     ok(seen.length === ids.length && ids.every((p, i) => S.books[p].light === ["green", "yellow", "red"][i % 3]
       && Math.abs(seen[i][0] - S.books[p].shelf) < 0.006 && Math.abs(seen[i][1] - S.books[p].commit) < 0.006
-      && seen[i][2] && seen[i][2].coverDays === S.books[p].coverDays && seen[i][2].usual === usualOf(p)),
+      && seen[i][2] && seen[i][2].coverDays === S.books[p].coverDays && seen[i][2].usual === usualOf(p) && seen[i][2].agreed === agreedOf(p)),
     "the snapshot carries each book's light as the engine's restockLight answered it, asked of that book's shelf, its commitments and its demand: " + calls + " " + J(S.books));
     const real = stockSnapshot(w).books;
     /* the four steps written out (his rule of 04 Nov 2026): nothing free red, under one usual order or 3 days amber, 7 days yellow, else green */
-    const rule = (b, u) => { const free = b.shelf - b.commit; return free < 0.005 ? "red" : (u > 0 && u - free > 0.005) || (b.coverDays != null && b.coverDays <= 3) ? "amber" : b.coverDays != null && b.coverDays <= 7 ? "yellow" : "green"; };
+    /* 04 Nov 2026, his word: red reads only what is free (the shelf less what is paid ahead); what is agreed makes it amber at most */
+    const rule = (b, u) => { const after = b.shelf - b.commit; return b.free < 0.005 ? "red" : after < 0.005 || (u > 0 && u - after > 0.005) || (b.coverDays != null && b.coverDays <= 3) ? "amber" : b.coverDays != null && b.coverDays <= 7 ? "yellow" : "green"; };
     ok(ids.every((p) => real[p].light === rule(real[p], usualOf(p))),
       "with the engine's own rule, red with nothing free, amber low, yellow selling fast, else green: " + J(real));
   } finally { w.close(); }
