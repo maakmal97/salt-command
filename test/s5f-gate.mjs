@@ -19,6 +19,7 @@ const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export async function run({ ok }) {
   const G = await import("../tools/flip-gate.mjs");
   const F = await import("../tools/flip.mjs");
+  G.D1_RETRY.pause = 0; /* the stand-ins fail on purpose: a retry here waits for nothing */
   const { noteFallback } = await import("../src/book-tap.js");
 
   /* 1: the log lines, as the chain writes them */
@@ -134,6 +135,13 @@ export async function run({ ok }) {
   const sqls = seen.map((x) => x[1]).join("\n");
   ok(/collection IN \('sales','purchases','loan'\)/.test(sqls) && /collection NOT IN \('roster','rename'\)/.test(sqls) && /MIN\(decided_at\)/.test(sqls) && /booked_seq/.test(sqls) && /tap_fallback/.test(sqls) && /decided_by LIKE/.test(sqls) && /-10 minutes/.test(sqls) && /2026-10-28T00:00:00\.000Z/.test(sqls), "from the drafts decided in the window, the booking, the fallback record and the ten minutes the net is given");
   ok(G.collectD1("x", () => ({ code: 1, out: "boom" })) === null, "a D1 that will not answer is null, not zero");
+  {
+    const flaky = (fails) => { let n = 0; return () => (n++ < fails ? { code: 1, out: "fetch failed" } : { code: 0, out: JSON.stringify([{ results: [{ mode: "on" }], success: true }]) }); };
+    const tries = (fails) => { let n = 0; const f = flaky(fails); G.d1("SELECT 1", () => { n++; return f(); }); return n; };
+    ok(JSON.stringify(G.d1("SELECT 1", flaky(2))) === '[{"mode":"on"}]' && G.d1("SELECT 1", flaky(3)) === null && tries(0) === 1 && tries(5) === 3,
+      "a D1 read that fails is tried again, three times in all, and answered by the first clean read; three failures are null, and a clean read is asked once");
+    ok(G.d1("SELECT 1", () => ({ code: 0, out: JSON.stringify([{ error: { text: "no such table" } }]) })) === null, "a retried read is still judged by d1Rows: a refusal is null, never rows");
+  }
   ok(Array.isArray(cd.fallbackList) && cd.fallbackList.length === 1 && Array.isArray(cd.booked) && cd.booked.length === 1 && /tap_fallback\.why/.test(sqls) && /SELECT id, decided_at, committed_at FROM draft WHERE status='approved'/.test(sqls),
     "each fallback is read with its reason and each booked draft with its approval and its fold");
   ok(G.collectD1("x", (cmd, args) => (/committed_at FROM draft WHERE status='approved'/.test(args.join(" ")) ? { code: 1, out: "boom" } : fakeRun(cmd, args))) === null, "a D1 that will not list the booked drafts is null, not an empty list");
@@ -246,7 +254,7 @@ export async function run({ ok }) {
   {
     const bin = mkdtempSync(join(tmpdir(), "flip-gate-bin-"));
     const env = {}; for (const [k, v] of Object.entries(process.env)) if (!/^path$/i.test(k)) env[k] = v;
-    env.PATH = bin; env.SALT_BASE = "http://127.0.0.1:9";
+    env.PATH = bin; env.SALT_BASE = "http://127.0.0.1:9"; env.SALT_D1_PAUSE = "0";
     const r = spawnSync(process.execPath, [join(REPO, "tools", "flip-gate.mjs")], { cwd: REPO, encoding: "utf8", env, timeout: 60000 });
     rmSync(bin, { recursive: true, force: true });
     ok(r.status === 1 && /G0 /.test(r.stdout) && /G9 /.test(r.stdout) && /The gate reads NOT TRUE/.test(r.stdout),

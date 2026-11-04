@@ -352,5 +352,41 @@
   "file": "tools/flip-gate.mjs",
   "find": "markBeforeLoad: yml.code === 0 && markBeforeLoad(yml.out) };",
   "replace": "markBeforeLoad: true };"
+ },
+ {
+  "name": "a failed D1 read is not tried again",
+  "file": "tools/flip-gate.mjs",
+  "find": "for (let i = 0; i < tries; i++) {\n    if (i && pause)",
+  "replace": "for (let i = 0; i < 1; i++) {\n    if (i && pause)"
+ },
+ {
+  "name": "a failed D1 read is tried past three",
+  "file": "tools/flip-gate.mjs",
+  "find": "for (let i = 0; i < tries; i++) {\n    if (i && pause)",
+  "replace": "for (let i = 0; i < tries + 2; i++) {\n    if (i && pause)"
+ },
+ {
+  "name": "the first failure answers the read",
+  "file": "tools/flip-gate.mjs",
+  "find": "    if (!r.error) return r.rows;\n  }\n  return null;",
+  "replace": "    return r.error ? null : r.rows;\n  }\n  return null;"
+ },
+ {
+  "name": "a clean read is asked three times",
+  "file": "tools/flip-gate.mjs",
+  "find": "    if (!r.error) return r.rows;\n  }\n  return null;",
+  "replace": "    if (!r.error && i === tries - 1) return r.rows;\n  }\n  return null;"
+ },
+ {
+  "name": "three failures read as no rows",
+  "file": "tools/flip-gate.mjs",
+  "find": "    if (!r.error) return r.rows;\n  }\n  return null;",
+  "replace": "    if (!r.error) return r.rows;\n  }\n  return [{}];"
+ },
+ {
+  "name": "a retried read is not judged",
+  "file": "tools/flip-gate.mjs",
+  "find": "    if (!r.error) return r.rows;\n  }\n  return null;",
+  "replace": "    if (!r.error || i === tries - 1) return r.rows || [{}];\n  }\n  return null;"
  }
 ]

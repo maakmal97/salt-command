@@ -92,7 +92,17 @@ export function judge(ev, cfg = GATE) {
 
 /* ---- the collectors: each answers its evidence or null, and says so ---- */
 const sh = (cmd, args, input) => { const r = spawnSync(cmd, args, { cwd: REPO, encoding: "utf8", shell: process.platform === "win32", maxBuffer: 256 * 1024 * 1024, input }); return { code: r.status === null ? 1 : r.status, out: (r.stdout || "") + (r.stderr || "") }; };
-export function d1(sql, run = sh) { const r = d1Rows(run("npx", ["wrangler", "d1", "execute", "salt_ledger", "--remote", "--json", ...commandArgs(sql)])); return r.error ? null : r.rows; }
+/* a read wrangler could not make ("fetch failed", a timeout) is tried again, up to `tries` in all, `pause` ms apart: one blip had nulled every D1 line on two runs in four (04 Nov 2026).
+   Each answer is still read by d1Rows, so a retry makes no line true that a clean read would not; after the last failure the read is null, as before. */
+export const D1_RETRY = { tries: 3, pause: process.env.SALT_D1_PAUSE === "0" ? 0 : 2000 };
+export function d1(sql, run = sh, tries = D1_RETRY.tries, pause = D1_RETRY.pause) {
+  for (let i = 0; i < tries; i++) {
+    if (i && pause) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, pause);
+    const r = d1Rows(run("npx", ["wrangler", "d1", "execute", "salt_ledger", "--remote", "--json", ...commandArgs(sql)]));
+    if (!r.error) return r.rows;
+  }
+  return null;
+}
 
 /** the chain's runs in the window, each with its parsed log (gh; the log of a run is available once it has finished) */
 export function collectRuns(since, run = sh) {
