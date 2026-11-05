@@ -64,7 +64,9 @@ export function saltTokens() {
     served at /s/<token> and /g/<id>, where a relative url asks /s/fonts/ and /g/fonts/, and the Worker
     serves the faces at /fonts/ alone. The desk's copy is untouched. */
 export function fontFaceCss() {
-  const css = readFileSync(join(REPO, "design", "fonts.css"), "utf8").split("url(fonts/").join("url(/fonts/");
+  /* THE COMMENT IS LEFT OUT (06 Nov 2026): the vendored file's own note names the other sites that inline these rules, and a customer is served this
+     constant. The rules are the file's, to the character. */
+  const css = readFileSync(join(REPO, "design", "fonts.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s+/, "").split("url(fonts/").join("url(/fonts/");
   if (/url\((?!\/fonts\/)/.test(css)) throw new Error("stmt-style: a face in design/fonts.css is not under fonts/, so the site would not serve it");
   return css;
 }

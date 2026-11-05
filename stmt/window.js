@@ -9,7 +9,7 @@
  * every whitelist and every equality the order already passes through takes them as they are.
  *
  * slotSpan and slotNext are ES5 and call nothing outside themselves but each other and stmt/hours.js openParts, the one rule
- * of the weekly hours, carried beside them: the Counter's page carries their source as it carries payHref, so the sheet
+ * of the weekly hours, carried beside them: the Counter's page carries their source as it is, so the sheet
  * offers exactly what the Worker takes. No backslash, no backtick, no arrow function, let or const in any; the suite reads
  * them for those.
  *

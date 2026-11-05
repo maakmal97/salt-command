@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 /* tools/paysync.mjs: THE PAYMENT RAILS THE ORDER PAGE MAY OFFER, generated from the pay master.
  *
- * A customer who has been told his order is ready picks how he will pay, and the page hands him
- * ONE link into QR Command (Code\qr-command), the read-only site that draws the codes and copies
- * the account numbers. Which accounts exist, what each is called and which rails each carries
+ * A customer who has been told his order is ready picks how he will pay, and the sheet draws the code
+ * or the numbers itself. Which accounts exist, what each is called and which rails each carries
  * are decided in the pay store (Code\qr-command\data\accounts.json) and nowhere else, so this
  * file reads that record and writes stmt/pay.js from it, the way tools/stmt-style.mjs writes
  * stmt/statement-css.js: one source, a generated copy where the source cannot reach, and the
@@ -12,8 +11,7 @@
  * WHAT SHIPS IS THE NAME AND THE RAILS, AND NOTHING THAT PAYS. No account number, no payload,
  * no biller reference, no member number, no owner, no colour. The statements site is a second
  * Worker that holds nothing but ciphertext and a verifier, and this must not make it the third
- * place an account number is written down. The number lives on the QR Command page the link
- * opens, behind its own Copy button. The suite asserts no run of five digits reaches stmt/pay.js.
+ * place an account number is written down. The suite asserts no run of five digits reaches stmt/pay.js.
  *
  * THE NUMBER, THE CODE AND THE JOMPAY DETAILS NEVER TRAVEL BY GIT, AND NO LONGER BY THIS TOOL EITHER (his rule of 06 Nov 2026): the Counter's
  * Worker reads them from Salt QR itself, out of the customer's sight (stmt/paycodes.js), so the old laptop writer of the numbers and its KV key are retired.
@@ -24,15 +22,7 @@
  *   jompay    the account carries a JomPAY biller code
  * A suspended account (`maintenance`) is carried with its flag so the page can leave it out.
  *
- * THE LINK IS BUILT HERE TOO (the owner's D8, 24 Sep 2026): `payHref(key, rail, amount, ref)`
- * rides in stmt/pay.js and writes QR Command's #<key>/<rail>/<amount>/<reference>, the account the
- * customer chose, Transfer or Scan a code, the figure to the sen and their username as the
- * reference, so the pay page opens at that rail with that amount. It answers "" for anything the
- * page could not open: an unknown or suspended account, a rail it is not on or not one of the two,
- * a figure or a reference QR Command would drop. The amount and the reference are arguments,
- * never data in this file. Written in ES5 without a backslash, and reading only PAY_SITE and PAY,
- * the names the page's own script gives the site and the list, so the page may carry its source
- * (`payHref.toString()`, which leaves the `export` off) as it is.
+ * THERE IS NO LINK (his rule of 06 Nov 2026): the page draws every detail itself from GET /pay/accounts and names no address of Salt QR.
  *
  *   node tools/paysync.mjs --sync            write stmt/pay.js from the master
  *   node tools/paysync.mjs --check           exit 1 if stmt/pay.js is not what the master produces
@@ -48,18 +38,9 @@ const OUT = join(REPO, "stmt", "pay.js");
    Code\qr-command\data\accounts.json, committed in that repo; this read the retired file. */
 export const PAY_MASTER = process.env.QR_MASTER || "C:/Users/maakm/Claude/Code/qr-command/data";
 export const QR_REPO = process.env.QR_REPO || "C:/Users/maakm/Claude/Code/qr-command";
-const WORKERS_SUBDOMAIN = "qyts8mh72kyg";
 
 export function mastersPresent() {
   return existsSync(join(PAY_MASTER, "accounts.json")) && existsSync(join(QR_REPO, "wrangler.jsonc"));
-}
-
-/** The address of QR Command, read from its own config so a rename there cannot strand a link. */
-export function paySiteUrl() {
-  const cfg = readFileSync(join(QR_REPO, "wrangler.jsonc"), "utf8");
-  const m = /^\s*"name"\s*:\s*"([^"]+)"/m.exec(cfg);
-  if (!m) throw new Error("qr-command's wrangler.jsonc names no Worker");
-  return "https://" + m[1] + "." + WORKERS_SUBDOMAIN + ".workers.dev";
 }
 
 /** What the page may know about each account: the key, the name, the bank and the rails. */
@@ -75,38 +56,19 @@ export function shipAccounts(doc) {
   }));
 }
 
-/* The link builder, shipped as source (see the header). Its two checks are QR Command's own
-   (linkOf in its app.js): 1e8 sen is a million ringgit, the first figure a six-digit amount
-   refuses, and a reference is up to twenty letters, digits and hyphens. */
-const PAY_HREF = [
-  "/** QR Command at the account, the rail and the amount, with the username as the reference; \"\" when the page could not open it. */",
-  "export function payHref(key, rail, amount, ref) {",
-  "  var a = null, sen = Math.round(Number(amount) * 100);",
-  "  for (var i = 0; i < PAY.length; i++) if (PAY[i].key === key) a = PAY[i];",
-  "  if (!a || a.maintenance || (rail !== \"qr\" && rail !== \"transfer\") || !a[rail]) return \"\";",
-  "  if (!(sen > 0 && sen < 1e8) || !/^[A-Za-z0-9-]{1,20}$/.test(String(ref))) return \"\";",
-  "  return PAY_SITE + \"/#\" + [a.key, rail, (sen / 100).toFixed(2), ref].map(encodeURIComponent).join(\"/\");",
-  "}"
-].join("\n");
-
-export function renderPayJs(site, accounts) {
+export function renderPayJs(accounts) {
   return "/* GENERATED by `node tools/paysync.mjs --sync`. Do not edit.\n"
     + " *\n"
     + " * The payment rails the order page may offer, read out of the pay store\n"
-    + " * (Code\\qr-command\\data\\accounts.json) and QR Command's own address, and the one link into it.\n"
-    + " * Names and rails only: no account number, payload or reference is here, by design. Edit the\n"
-    + " * store, then sync.\n"
+    + " * (the pay store's accounts.json). Names and rails only: no account number, payload,\n"
+    + " * reference or address is here, by design. Edit the store, then sync.\n"
     + " */\n"
-    + "export const PAY_SITE = " + JSON.stringify(site) + ";\n"
-    + "export const PAY_ACCOUNTS = " + JSON.stringify(accounts, null, 1) + ";\n"
-    + "/* payHref reads the list as PAY, the name the page's own script gives it */\n"
-    + "const PAY = PAY_ACCOUNTS;\n"
-    + PAY_HREF + "\n";
+    + "export const PAY_ACCOUNTS = " + JSON.stringify(accounts, null, 1) + ";\n";
 }
 
 export function payJs() {
   const doc = JSON.parse(readFileSync(join(PAY_MASTER, "accounts.json"), "utf8").replace(/^\uFEFF/, ""));
-  return renderPayJs(paySiteUrl(), shipAccounts(doc));
+  return renderPayJs(shipAccounts(doc));
 }
 
 async function main() {
