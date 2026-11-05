@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="4e316bb6723e1365";
+var SALT_BUILD_ID="6d89cd24ba26bcb0";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -11732,7 +11732,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1440","d":"05 Nov 2026","t":"ONE PENDING SALE OF SALT TO CI4-OKR, NOTHING MOVED","n":["<b>ONE PENDING SALE FOLDED.</b> S337 books 2 unit of salt to CI4-OKR for RM195 goods plus RM25 delivery, preapproved by Counter Admin. Nothing is paid and nothing handed over, so the row is pending, draws no stock and books no revenue yet. The drafter raised no flags and nothing was unusual.","<b>INVENTORY UNCHANGED.</b> Stock stays at 18 unit and the cost basis stays at RM56 a unit. No lot landed and no count was taken in this fold."]}];
+const evolution=[{"v":"v1441","d":"05 Nov 2026","t":"SALT ADMIN MESSAGES AS ROWS","n":["<b>HIS SCREENSHOT.</b> On Salt Admin, Customers, Messages, each thread was Needs you&#39;s card squeezed into the 360px column beside the thread: its last line ran into the next card and a large Open pill stood in the middle.","<b>A THREAD IS A ROW.</b> As an account is: the code, then the state, its age and the last line on one line, cut to fit (copper while it waits), what they owe on the right, <b>Reply</b> only on one waiting and a chevron on the rest. A tap anywhere on the row opens it.","<b>ITS OWN COLUMN.</b> With no thread open the list is one 640px column; a thread opened stands beside a 280 to 360px list, its row marked, and Close gives the column back. With nobody waiting the line reads Nothing waits for your reply, never a nought.","<b>CHECKS.</b> Messages checks 1, 2, 5 and 6 and the laptop layout check, 17 mutations red. Order as them gains B14, a shared spot standing in for the area, which the mutation delivery-pin never noticed now turns red; B11 reads Review&#39;s not-ready state again."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11880,7 +11880,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='05 Nov 2026, 15:35 KL';
+const LAST_UPDATED='05 Nov 2026, 16:30 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
