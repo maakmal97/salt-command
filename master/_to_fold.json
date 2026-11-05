@@ -1,0 +1,46 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-05T06:33:44.320Z",
+   "status": "approved",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CI4-OKR": {
+      "salt": -0.15
+     }
+    },
+    "unit": "pct",
+    "rids": [],
+    "booked_seq": 120
+   },
+   "reasoning": "Sets their % for 1 customer: CI4-OKR Salt 15% off. It moves no cash and no stock; a % lift moves that customer's own price and never the board.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-11-05T06:33:44.320Z",
+    "type": "TIER",
+    "party": "CI4-OKR",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CI4-OKR: salt -15% lift",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CI4-OKR": {
+       "salt": -0.15
+      }
+     },
+     "unit": "pct"
+    },
+    "makerRequest": "956905d3c5aa4812be8f14a3e254eb635cf4ffc69f9b645d8beedd6ce3fd2366"
+   },
+   "decidedAt": "2026-11-05T06:34:15.713Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
