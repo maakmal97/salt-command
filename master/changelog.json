@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1435",
+  "d": "05 Nov 2026",
+  "t": "S335 DELIVERY CORRECTED TO RM45 AND RM350 PAID ON CM4-MK",
+  "n": [
+   "<b>TWO AMENDMENTS TO S335 FOLDED.</b> A correction cut the delivery on CM4-MK's order of 3 unit from RM55 to RM45, leaving the goods at RM305. A fulfilment then recorded RM350 cash at the counter on 05 Nov. Both were preapproved by Counter Admin. The dossier gives no floor or ask total for this order, so no ladder comparison is made.",
+   "<b>INVENTORY UNCHANGED.</b> The 3 unit had already left the shelf, so the correction moves no stock and the fulfilment moves none either. Stock stays at 18 and the cost stays at RM56 a unit. The drafter's credit flag on the correction cannot be answered from the figures, as no cap is given."
+  ]
+ },
+ {
   "v": "v1434",
   "d": "05 Nov 2026",
   "t": "3 UNIT OF SALT DELIVERED TO CM4-MK ON ORDER S335",

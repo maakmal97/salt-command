@@ -1,6 +1,6 @@
 {
- "v": "v1434",
- "stamped": "05 Nov 2026, 11:11 KL",
+ "v": "v1435",
+ "stamped": "05 Nov 2026, 11:13 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -11276,18 +11276,18 @@
     "customer": "CM4-MK",
     "qty": 3,
     "total": 305,
-    "cash": 0,
-    "delivery": 55,
+    "cash": 350,
+    "delivery": 45,
     "date": "2026-11-04",
     "deliveredQty": 3,
-    "note": "<b>CORRECTION ON S335: 3 UNIT OF SALT DELIVERED TO CM4-MK ON 05 NOV 2026.</b> Order 20261104053637-erprew, booked on 04 Nov as 3 unit for RM305 goods plus RM55 delivery, is now marked delivered on 05 Nov, preapproved by Counter Admin. Nothing is paid, so the full RM360 goes out as an advance. The dossier gives the goods total of RM305 but no floor or ask total, so the fold makes no comparison against the ladder here. CM4-MK has 18 orders, a median rate of 101.67, a range of 80 to 120, RM360 outstanding before this and nothing defaulted. The dossier gives no credit cap, so the drafter's flag cannot be answered from the figures. The shelf rolls by 3 unit. The stock carries RM56 a unit. The full RM360 is left outstanding. <b>PENDING SALE 04 NOV 2026: 3 UNIT OF SALT TO CM4-MK, RM305 GOODS PLUS RM55 DELIVERY.</b> Order 20261104053637-erprew, acknowledged, to be delivered. Nothing paid and nothing handed over, so RM360 is owed and no stock is drawn. The goods rate is RM101.67 a unit, against a floor of RM56.67 and an ask of RM101.67 for 3 unit; the goods total of RM305 equals the ask total of RM305 and is above the floor total of RM170. CM4-MK has 17 orders, a median rate of 101, a range of 80 to 120, nothing outstanding before and nothing defaulted. The credit cap is given as 1, so the RM360 owed is far past it, and the dossier gives no unit for that cap. The row carries cost at RM56 a unit, the inventory's own rate from the latest purchase. The drafter raised no flags. The full RM360 is left outstanding.",
+    "note": "<b>CORRECTION ON S335: DELIVERY RM55 TO RM45, 3 UNIT OF SALT TO CM4-MK.</b> Order 20261104053637-erprew, dated 04 Nov, keeps 3 unit and RM305 goods; only the delivery changes, from RM55 to RM45. It moves no cash and no stock, and was preapproved by Counter Admin. The dossier gives no floor or ask total, so there is no ladder comparison. CM4-MK has 18 orders, a median rate of 101.67, a range of 80 to 120, RM360 outstanding before this and nothing defaulted. The drafter flagged an advance against the credit cap; no cap is given, so the figures cannot answer it. The stock carries RM56 a unit. The row's cash stays at nil until the payment row. <b>CORRECTION ON S335: 3 UNIT OF SALT DELIVERED TO CM4-MK ON 05 NOV 2026.</b> Order 20261104053637-erprew, booked on 04 Nov as 3 unit for RM305 goods plus RM55 delivery, is now marked delivered on 05 Nov, preapproved by Counter Admin. Nothing is paid, so the full RM360 goes out as an advance. The dossier gives the goods total of RM305 but no floor or ask total, so the fold makes no comparison against the ladder here. CM4-MK has 18 orders, a median rate of 101.67, a range of 80 to 120, RM360 outstanding before this and nothing defaulted. The dossier gives no credit cap, so the drafter's flag cannot be answered from the figures. The shelf rolls by 3 unit. The stock carries RM56 a unit. The full RM360 is left outstanding. <b>PENDING SALE 04 NOV 2026: 3 UNIT OF SALT TO CM4-MK, RM305 GOODS PLUS RM55 DELIVERY.</b> Order 20261104053637-erprew, acknowledged, to be delivered. Nothing paid and nothing handed over, so RM360 is owed and no stock is drawn. The goods rate is RM101.67 a unit, against a floor of RM56.67 and an ask of RM101.67 for 3 unit; the goods total of RM305 equals the ask total of RM305 and is above the floor total of RM170. CM4-MK has 17 orders, a median rate of 101, a range of 80 to 120, nothing outstanding before and nothing defaulted. The credit cap is given as 1, so the RM360 owed is far past it, and the dossier gives no unit for that cap. The row carries cost at RM56 a unit, the inventory's own rate from the latest purchase. The drafter raised no flags. The full RM360 is left outstanding.",
     "listRM": 305,
     "listQty": 3,
     "road": "site",
     "rid": "s335",
     "deliveredOn": "2026-11-05",
     "handover": "delivered",
-    "mod": "corrected on 2026-11-05: deliveredQty 0 to 3; deliveredOn (unset) to 2026-11-05; handover (unset) to delivered",
+    "mod": "corrected on 2026-11-05: deliveredQty 0 to 3; deliveredOn (unset) to 2026-11-05; handover (unset) to delivered, then corrected on 2026-11-05: delivery 55 to 45",
     "amend": [
      {
       "date": "2026-11-04",
@@ -11308,9 +11308,27 @@
        "handover": null
       },
       "cost": 168
+     },
+     {
+      "date": "2026-11-05",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S335: DELIVERY RM55 TO RM45, 3 UNIT OF SALT TO CM4-MK.</b> Order 20261104053637-erprew, dated 04 Nov, keeps 3 unit and RM305 goods; only the delivery changes, from RM55 to RM45. It moves no cash and no stock, and was preapproved by Counter Admin. The dossier gives no floor or ask total, so there is no ladder comparison. CM4-MK has 18 orders, a median rate of 101.67, a range of 80 to 120, RM360 outstanding before this and nothing defaulted. The drafter flagged an advance against the credit cap; no cap is given, so the figures cannot answer it. The stock carries RM56 a unit. The row's cash stays at nil until the payment row.",
+      "was": {
+       "delivery": 55
+      }
+     },
+     {
+      "date": "2026-11-05",
+      "kind": "Fulfilment",
+      "cash": 350,
+      "kg": 0,
+      "note": "<b>PAYMENT OF RM350 ON S335 FROM CM4-MK, 05 NOV 2026.</b> Cash received at the counter against order 20261104053637-erprew, 3 unit for RM305 goods plus delivery, preapproved by Counter Admin. The drafter reckoned RM360 owed, so this leaves RM10 outstanding; the delivery correction to RM45 is a separate row. The 3 unit are already delivered, so no stock moves. The dossier gives no floor or ask total, so no ladder comparison. CM4-MK has 18 orders, a median rate of 101.67, a range of 80 to 120, RM360 outstanding before this and nothing defaulted. The drafter raised no flag. The stock carries RM56 a unit."
      }
     ],
-    "cost": 168
+    "cost": 168,
+    "paidOn": "2026-11-05"
    }
   ],
   "contacts": [
@@ -12146,7 +12164,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-05T03:10:32.751Z",
+  "QUEUE_COMMITTED": "2026-11-05T03:11:17.307Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -22638,11 +22656,11 @@
      "suggest": null
     }
    },
-   "v": "v1434"
+   "v": "v1435"
   },
   "OPEN": {
-   "at": "2026-11-05T03:11:06.217Z",
-   "count": 11,
+   "at": "2026-11-05T03:13:53.007Z",
+   "count": 10,
    "byKey": {
     "CA7-AMP|2026-11-04|475": {
      "d": "2026-11-04",
@@ -22687,24 +22705,6 @@
      "pr": "gas",
      "rid": "s333",
      "key": "CA7-AMP|2026-11-04|70|gas"
-    },
-    "CM4-MK|2026-11-04|360": {
-     "d": "2026-11-04",
-     "p": "CM4-MK",
-     "dir": "S",
-     "q": 3,
-     "t": 305,
-     "cash": 0,
-     "mv": 3,
-     "st": "dueMoney",
-     "oweRM": 360,
-     "dv": 55,
-     "rid": "s335",
-     "deliveredOn": "2026-11-05",
-     "handover": "delivered",
-     "key": "CM4-MK|2026-11-04|360",
-     "age": 0,
-     "exp": 360
     },
     "CR3-DAM|2026-10-30|70": {
      "d": "2026-10-30",
@@ -22832,7 +22832,7 @@
      "owedOut": 0,
      "coverDays": 4.2,
      "rate": 4.4,
-     "owedToYou": 670,
+     "owedToYou": 310,
      "promised": 5,
      "short": 0
     },
@@ -22900,7 +22900,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1434"
+   "v": "v1435"
   },
   "TERMS": {
    "ceiling": 250,
@@ -22908,7 +22908,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1434"
+   "v": "v1435"
   },
   "REWARD": {
    "stated": {
@@ -22926,7 +22926,7 @@
      }
     }
    },
-   "v": "v1434"
+   "v": "v1435"
   },
   "STOCK": {
    "today": "2026-11-05",
@@ -22980,7 +22980,7 @@
      "transit": 0
     }
    },
-   "v": "v1434"
+   "v": "v1435"
   }
  }
 }
