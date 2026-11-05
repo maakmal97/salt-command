@@ -18,6 +18,7 @@
  */
 import { PAY_ACCOUNTS } from "./pay.js";
 import { payloadError } from "./paycrc.js";
+import QR from "./qr.js";
 import { STATE_WAIT_MS } from "./paystate.js";
 
 export const PAYCODES_KEY = "paycodes";
@@ -84,7 +85,7 @@ export async function payCodes(env, list = PAY_ACCOUNTS, now = Date.now()) {
 }
 
 /** What GET /pay/accounts answers: per account not suspended, only what its rails need.
- *  qr the payload (rail qr); number and bank (rail transfer); biller and ref1 (rail jompay, both or neither). `list` carries the live flags. */
+ *  qr the payload and rows its modules (rail qr); number and bank (rail transfer); biller and ref1 (rail jompay, both or neither). `list` carries the live flags. */
 export function shapeAccounts(codes, list = PAY_ACCOUNTS) {
   const out = {};
   if (!Array.isArray(codes)) return out;
@@ -93,7 +94,10 @@ export function shapeAccounts(codes, list = PAY_ACCOUNTS) {
     const c = codes.find((x) => x.key === a.key);
     if (!c) continue;
     const o = {};
-    if (a.qr && c.payload) o.qr = c.payload;
+    if (a.qr && c.payload) {
+      /* the modules ride beside the payload, one string of 0 and 1 a row, so the sheet draws the code and carries no encoder (the Worker's own, stmt/qr.js) */
+      try { o.rows = QR.qrMatrix(c.payload).map((r) => r.join("")); o.qr = c.payload; } catch (e) { /* too long to draw: no code */ }
+    }
     if (a.transfer && c.acct) { o.number = c.acct; o.bank = c.bank || a.bank; }
     if (a.jompay && c.biller && c.ref1) { o.biller = c.biller; o.ref1 = c.ref1; }
     if (Object.keys(o).length) out[a.key] = o;
