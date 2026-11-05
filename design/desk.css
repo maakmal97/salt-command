@@ -769,3 +769,11 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .look-swatch--night{background:radial-gradient(circle 14px at 70% 50%,var(--desk-look-night-accent) 0 13px,transparent 14px),var(--desk-look-night-ground);}
 .look-swatch--tide{background:radial-gradient(circle 14px at 70% 50%,var(--desk-look-tide-accent) 0 13px,transparent 14px),var(--desk-look-tide-ground);}
 .look-note{margin:var(--salt-space-3) 0 0;font-size:var(--salt-text-sm);color:var(--salt-prose);}
+/* 5 Nov 2026, his word ("like Mail or Messages on a Mac", Salt Admin first in v1442): THE FRAME (salt-ds salt-frame--side). From 1080px the rail
+   and the bar never move and #deskcol, the column under the bar, is the one box that scrolls, so the page itself never does: the frame is the screen
+   less the page's 22px top and a 24px foot under it (22 + frame + 24 = the screen) */
+@media (min-width:1080px){
+  .wrap{padding-bottom:24px;}
+  .shell{--salt-frame-h:calc(100dvh - 46px);}
+  .shell>.rail{max-height:none;}
+}
