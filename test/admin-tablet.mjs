@@ -157,10 +157,10 @@ export async function run({ ok, pageWork }) {
     const two = at(q, ".adm #makerDrafts"), card = at(q, ".adm #makerDrafts>.maker-card"), note = at(q, ".adm #makerDrafts>.rnone");
     ok(/display: grid/.test(two) && /grid-template-columns: repeat\(2, ?minmax\(0, ?1fr\)\)/.test(two) && /margin: 0/.test(card) && /grid-column: 1 ?\/ ?-1/.test(note),
       "and the rows to approve lie two up, a row's own margin giving way to the grid's gap and the line that says none wait across both: " + [two, card, note].join(" | "));
-    const chat = at(q, ".adm .chatgrid"), heads = at(q, ".adm .chatgrid>h2,.adm .chatgrid>#makerChatStatus"), list = at(q, ".adm #makerChatList"), open = at(q, ".adm #makerChatOpen");
-    ok(/display: grid/.test(chat) && /grid-template-columns: minmax\(280px, ?360px\) minmax\(0, ?1fr\)/.test(chat) && /grid-column: 1 ?\/ ?-1/.test(heads) && /flex-direction: column/.test(list)
+    const shut = at(q, ".adm .chatgrid"), chat = at(q, ".adm .chatgrid.open"), heads = at(q, ".adm .chatgrid>h2,.adm .chatgrid>#makerChatStatus"), list = at(q, ".adm #makerChatList"), open = at(q, ".adm #makerChatOpen");
+    ok(/display: grid/.test(shut) && /grid-template-columns: minmax\(0(px)?, ?640px\)/.test(shut) && /grid-template-columns: minmax\(280px, ?360px\) minmax\(0, ?1fr\)/.test(chat) && /grid-column: 1 ?\/ ?-1/.test(heads) && /flex-direction: column/.test(list)
       && /position: sticky/.test(open) && /overflow-y: auto/.test(open) && /max-height: calc[(]100vh - 48px[)]/.test(open) && !/salt-bar-h/.test(open),
-    "Messages stands the thread list, 280 to 360px, beside the thread, which is sticky and scrolls inside itself: " + [chat, heads, list, open].join(" | "));
+    "Messages gives the list a 640px column until a thread opens (5 Nov 2026), then stands it, 280 to 360px, beside the thread, which is sticky and scrolls inside itself: " + [shut, chat, heads, list, open].join(" | "));
     const sec = d.querySelector('section[data-in="customers.messages"]');
     ok(!!sec && sec.classList.contains("chatgrid") && [...sec.children].map((c) => c.id || c.tagName.toLowerCase()).join() === "makerChatTitle,makerChatStatus,makerChatList,makerChatOpen" && sec.querySelector("#makerChatOpen").hidden,
       "the thread list and the thread are two columns of one section, the thread empty until a tap: " + (sec && [...sec.children].map((c) => c.id || c.tagName.toLowerCase()).join()));

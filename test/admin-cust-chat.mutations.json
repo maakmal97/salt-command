@@ -6,27 +6,45 @@
     "replace": "return 'watch'===g[0];"
   },
   {
-    "name": "1 their last line",
+    "name": "1 the state, its age and the last line",
     "file": "stmt/owner.js",
-    "find": "title.appendChild(el('span','need-u need-line',(last.by==='desk'?'You: ':'')+cut(last.text||'')));",
-    "replace": ""
+    "find": "(last.by==='desk'?'You: ':'')+cut(last.text||'')].filter(Boolean).join(' · ');",
+    "replace": "''].filter(Boolean).join(' · ');"
+  },
+  {
+    "name": "1 a waiting line is copper",
+    "file": "stmt/owner.js",
+    "find": "'salt-settings__sub athrow__line'+(asked?' salt-settings__sub--why':'')",
+    "replace": "'salt-settings__sub athrow__line'"
   },
   {
     "name": "1 what they owe",
     "file": "stmt/owner.js",
-    "find": "key:'t:'+th.u, at:last.at||'', late:asked, who:who, title:who, u:th.u, rm:owe,",
-    "replace": "key:'t:'+th.u, at:last.at||'', late:asked, who:who, title:who, u:th.u, rm:0,"
+    "find": "        if(owe>0.004) row.appendChild(el('span','salt-settings__value salt-settings__value--lg',rmShort(owe)));\n",
+    "replace": ""
   },
   {
-    "name": "2 Reply for one waiting",
+    "name": "1 a thread is Needs you's card again",
     "file": "stmt/owner.js",
-    "find": "var b=asked?pill(['Reply','chat.reply-open',th.u]):ghost(['Open','chat.reply-open',th.u]);",
-    "replace": "var b=ghost(['Open','chat.reply-open',th.u]);"
+    "find": "var row=el('div','salt-settings__row athrow')",
+    "replace": "var row=el('div','salt-action ncard athrow')"
   },
   {
-    "name": "2 a tap opens it",
+    "name": "2 Reply on one answered too",
     "file": "stmt/owner.js",
-    "find": "c.addEventListener('click', function(ev){ if(ev.target===c) openMakerThread(th.u); });",
+    "find": "        if(asked){ var b=asMove(pill(['Reply','chat.reply-open',th.u]));",
+    "replace": "        if(true){ var b=asMove(pill(['Reply','chat.reply-open',th.u]));"
+  },
+  {
+    "name": "2 Reply a filled pill again",
+    "file": "stmt/owner.js",
+    "find": "var b=asMove(pill(['Reply','chat.reply-open',th.u]));",
+    "replace": "var b=pill(['Reply','chat.reply-open',th.u]);"
+  },
+  {
+    "name": "2 a tap on the row opens nothing",
+    "file": "stmt/owner.js",
+    "find": "row.addEventListener('click', function(ev){ if(ev.target.closest&&ev.target.closest('button,a,input,select,textarea')) return; openMakerThread(th.u); });",
     "replace": ""
   },
   {
@@ -51,6 +69,24 @@
     "name": "4 the Insight",
     "file": "stmt/owner.js",
     "find": "status.className='msg salt-insight salt-insight--copper';",
+    "replace": ""
+  },
+  {
+    "name": "5 an open thread leaves the list its whole column",
+    "file": "stmt/owner.js",
+    "find": "    if(root.parentElement) root.parentElement.classList.add('open'); drawThreadList();\n",
+    "replace": ""
+  },
+  {
+    "name": "5 Close keeps the thread's column",
+    "file": "stmt/owner.js",
+    "find": "root.hidden=true;if(root.parentElement) root.parentElement.classList.remove('open');stopMakerChat();",
+    "replace": "root.hidden=true;stopMakerChat();"
+  },
+  {
+    "name": "6 a nought waits again",
+    "file": "stmt/owner.js",
+    "find": "!waiting.length?'Nothing waits for your reply.':",
     "replace": ""
   }
 ]

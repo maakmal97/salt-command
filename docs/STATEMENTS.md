@@ -2654,7 +2654,7 @@ His yes to Asks A to J (relayed by the moderator, 25 Oct 2026), canvas Salt Admi
 - **This customer and the associate reward on the account** (Ask B), read by the account's roster code: `GET /all/maker/customer-of/<code>` and
   `/all/maker/reward-of/<code>` (the Counter relays to the Desk's `/_internal/maker/customer-of|reward-of/<code>`, behind Access and the bridge key, GET
   only; `makerCustomerReadingOf`, `makerRewardReadingOf`). A code is one dash, so a bucket (-R) and a username are refused. Nothing prices from either.
-- **Messages**: a thread is Needs you's card, Waiting under To do and Answered under FYI; the open thread is the system's Thread and Bubble.
+- **Messages**: a thread is a settings row (5 Nov 2026), Waiting under To do and Answered under FYI, Reply only on one waiting, the list a 640px column until a thread opens beside it; the open thread is the system's Thread and Bubble.
 - **Links**: a link is Needs you's card under Waiting on you, Standing link, Made by associates and Older links, Opens in the figure's place; its address,
   QR and moves open under it.
 - **Associates**: a book is its typed tag and how many; cards on a phone, one plain table from 860px; the reward the system's Meter; the code opens the account.

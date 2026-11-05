@@ -50928,7 +50928,7 @@ await (async () => {
   await (await import("./admin-cust-reads.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Admin Customers P5: a thread is Needs you's card, the open thread the system's Thread (26 Oct 2026)");
+section("Salt Admin Customers P5: a thread is a settings row (5 Nov 2026), the open thread the system's Thread (26 Oct 2026)");
 await (async () => {
   await (await import("./admin-cust-chat.mjs")).run({ ok, pageWork });
 })();

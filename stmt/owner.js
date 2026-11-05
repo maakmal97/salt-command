@@ -1954,15 +1954,16 @@ export const OWNER_JS = `
       apply=true;
       drawThreadList();
       var waiting=makerThreads.filter(function(thread){return !thread.test&&makerThreadAsked(thread);});
-      status.textContent=makerThreads.length?waiting.length+(waiting.length===1?' waits':' wait')+' for your reply.':'No messages yet.';
+      status.textContent=!makerThreads.length?'No messages yet.':!waiting.length?'Nothing waits for your reply.':waiting.length+(waiting.length===1?' waits':' wait')+' for your reply.';
       status.className='msg salt-insight salt-insight--copper';
       if(makerThreadUser) drawMakerThreadLines();
     }catch(error){ nGot('threads', error); apply=failNew('threads', error)||quiet!==true; if(apply) refusal(status,error); }
     finally{ makerThreadsReading=false; if(apply) drawNeeds(); }
   }
-  /* 26 OCT 2026 (canvas Salt Admin Customers, P5): A THREAD IS NEEDS YOU'S CARD. Waiting (theirs last) under To do, Answered under FYI; within each what they
-     owe first, then the oldest; the kind and its age, the code and their last line, Reply (or Open) and what they owe. The open thread is the system's
-     Thread: their lines left, his right, each with who and when. */
+  /* 5 NOV 2026 (his screenshot of Messages: Needs you's card in the 360px column beside the thread ran its line into the next card and stood a big
+     pill in the middle): A THREAD IS A SETTINGS ROW, as an account is (2 Nov 2026). Waiting (theirs last) under To do, Answered under FYI, each a head
+     over ONE list; within each what they owe first, then the oldest. The code over one line, the state and its age and the last line said, cut to the
+     row (copper while it waits); what they owe on the right; Reply, a lit ghost, only on one waiting, a chevron on the rest; a tap anywhere opens it. */
   function drawThreadList(){
     var list=document.getElementById('makerChatList'); if(!list) return;
     list.textContent='';
@@ -1972,21 +1973,26 @@ export const OWNER_JS = `
       var rows=makerThreads.map(function(th, i){ return [th, i]; }).filter(function(x){ return (makerThreadAsked(x[0])&&!x[0].test?'now':'watch')===g[0]; })
         .sort(function(x, y){ return (owedOn(y[0].u)-owedOn(x[0].u))||(x[1]-y[1]); }).map(function(x){ return x[0]; });
       if(!rows.length) return;
-      var box=el('section','ngroup'), h=el('h2','salt-eyebrow salt-eyebrow--'+SEVC[g[0]]+' nsev', g[1]);
-      box.setAttribute('data-sev', g[0]); box.setAttribute('aria-label', g[1]); h.setAttribute('data-sev', g[0]); box.appendChild(h); list.appendChild(box);
+      var box=el('section','athreads'), ul=el('div','salt-settings');
+      box.setAttribute('data-sev', g[0]); box.setAttribute('aria-label', g[1]); box.appendChild(el('h2','salt-settings__head',g[1]));
       rows.forEach(function(th){
-        var ms=th.msgs||[], last=ms[ms.length-1]||{}, asked=g[0]==='now', who=th.test?'Practice':codeByUser(th.u), owe=owedOn(th.u);
-        var c=needCard({sev:g[0], kind:'messages', word:asked?'Waiting':'Answered', key:'t:'+th.u, at:last.at||'', late:asked, who:who, title:who, u:th.u, rm:owe, practice:!!th.test,
-          act:'chat.open', open:true, onTap:function(){ openMakerThread(th.u); }});
-        c.setAttribute('data-thread', th.u);
-        var title=c.querySelector('.salt-action__title');
-        title.appendChild(el('span','need-u need-line',(last.by==='desk'?'You: ':'')+cut(last.text||'')));
-        title.setAttribute('aria-label',(asked?'Waiting':'Answered')+': '+who+(last.text?', '+cut(last.text):''));
-        var b=asked?pill(['Reply','chat.reply-open',th.u]):ghost(['Open','chat.reply-open',th.u]);
-        b.addEventListener('click', function(){ openMakerThread(th.u); }); c._add(b);
-        c.addEventListener('click', function(ev){ if(ev.target===c) openMakerThread(th.u); });
-        box.appendChild(c);
+        var ms=th.msgs||[], last=ms[ms.length-1]||{}, asked=g[0]==='now', who=th.test?'Practice':codeByUser(th.u), owe=owedOn(th.u), age=last.at?ageOf(last.at):'';
+        var said=[(asked?'Waiting':'Answered')+(age?' '+age:''), (last.by==='desk'?'You: ':'')+cut(last.text||'')].filter(Boolean).join(' · ');
+        var row=el('div','salt-settings__row athrow'), open=actOn(el('a','salt-settings__text'),'chat.open',th.u), lab=el('span','salt-settings__label');
+        row.setAttribute('data-thread', th.u); row.setAttribute('data-sev', g[0]); if(th.test) row.setAttribute('data-practice','');
+        lab.appendChild(whoTag(el('span','acode',who),who)); open.appendChild(lab);
+        open.appendChild(el('span','salt-settings__sub athrow__line'+(asked?' salt-settings__sub--why':''),said)); row.appendChild(open);
+        open.setAttribute('href','#customers'); open.setAttribute('aria-label',(asked?'Waiting':'Answered')+(age?', '+age:'')+': '+who+(last.text?', '+cut(last.text):'')+(owe>0.004?', owes '+rmShort(owe):''));
+        open.addEventListener('click', function(ev){ ev.preventDefault(); openMakerThread(th.u); });
+        if(owe>0.004) row.appendChild(el('span','salt-settings__value salt-settings__value--lg',rmShort(owe)));
+        if(asked){ var b=asMove(pill(['Reply','chat.reply-open',th.u])); b.addEventListener('click', function(){ openMakerThread(th.u); }); row.appendChild(b); }
+        else row.appendChild(rowMark());
+        if(makerThreadUser===th.u){ row.setAttribute('aria-current','true'); open.setAttribute('aria-current','true'); }
+        /* as a phone's settings row, a tap anywhere on the row opens it; Reply keeps its own tap */
+        row.addEventListener('click', function(ev){ if(ev.target.closest&&ev.target.closest('button,a,input,select,textarea')) return; openMakerThread(th.u); });
+        ul.appendChild(row);
       });
+      box.appendChild(ul); list.appendChild(box);
     });
   }
   function drawMakerThreadLines(){
@@ -2004,6 +2010,7 @@ export const OWNER_JS = `
   function openMakerThread(user){
     makerThreadUser=user;
     var root=document.getElementById('makerChatOpen');root.hidden=false;root.textContent='';
+    if(root.parentElement) root.parentElement.classList.add('open'); drawThreadList();
     root.setAttribute('data-key',user);
     var ah=el('div','chathead'), aw=el('div','chathead__who'), ac=sheet&&sheet[user], owe=ac&&ac.flag==='owes'&&ac.t?+ac.t.owed||0:0;
     aw.appendChild(el('span','salt-eyebrow salt-eyebrow--copper','Messages')); aw.appendChild(whoTag(el('h3','chathead__code',codeByUser(user)),codeOfUser(user))); ah.appendChild(aw);
@@ -2096,7 +2103,7 @@ export const OWNER_JS = `
         catch(error){status.textContent='Not discarded: '+error.message;}
       });
     };
-    close.onclick=function(){makerThreadUser=null;root.hidden=true;stopMakerChat();};
+    close.onclick=function(){makerThreadUser=null;root.hidden=true;if(root.parentElement) root.parentElement.classList.remove('open');stopMakerChat();drawThreadList();};
     if(draft.storageError) draft.note=draft.storageError;
     else if(draft.saved&&!draft.pending) draft.note='An unsent reply is kept on this phone. Open it to send it again, or discard it.';
     makerChatState();drawMakerThreadLines();startMakerChat();

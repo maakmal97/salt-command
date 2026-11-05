@@ -1042,9 +1042,11 @@ body.ended>*:not(#aEnded){display:none}
   .adm #makerDrafts>.maker-card{margin:0}
   .adm #makerDrafts>.rnone{grid-column:1/-1}
   .adm #makerDrafts>.aphead,.adm #makerDrafts>.apdone{grid-column:1/-1}
-  .adm .chatgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:0 20px;align-items:start}
+  /* 5 Nov 2026: with no thread open the list is one 640px column, as Shop's lists are; a thread opened stands beside a 280 to 360px list */
+  .adm .chatgrid{display:grid;grid-template-columns:minmax(0,640px);gap:0 20px;align-items:start}
+  .adm .chatgrid.open{grid-template-columns:minmax(280px,360px) minmax(0,1fr)}
   .adm .chatgrid>h2,.adm .chatgrid>#makerChatStatus{grid-column:1/-1}
-  .adm #makerChatList{display:flex;flex-direction:column;gap:8px}
+  .adm #makerChatList{display:flex;flex-direction:column;gap:24px}
   .adm #makerChatOpen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
 }
 /* 11 OCT 2026 (PHASE 1c, his decision 9): THE + ORB AND RECORD'S MENU. One raised orb stands over the page, above the App bar on a phone and in
@@ -1295,7 +1297,9 @@ body.ended>*:not(#aEnded){display:none}
 .adm .amore{display:flex;flex-direction:column;gap:24px}
 /* 26 Oct 2026 (the Customers canvas, P5): the threads are Needs you's cards, their last line quiet beside the code; the open thread the system's Thread, its head
    the code and what they owe */
-.adm #makerChatList{display:flex;flex-direction:column;gap:16px}
+.adm #makerChatList{display:flex;flex-direction:column;gap:24px}
+/* 5 Nov 2026: a thread's last line is cut to the row, never its Reply; the move keeps its own width */
+.adm .athrow>.salt-ghost{flex:none}
 /* 26 Oct 2026 (the Customers canvas, P6): a link is Needs you's card, Opens over its count in the figure's place; its address, QR and moves under it */
 .adm #glist{display:flex;flex-direction:column;gap:16px}
 /* 26 Oct 2026 (the Customers canvas, P7): a book's typed tag and how many; the associates cards on a phone and one plain table from 860px; the reward a Meter */
@@ -1335,7 +1339,6 @@ body.ended>*:not(#aEnded){display:none}
 .adm .ncard .nfig--opens{flex-direction:column;align-items:flex-end;justify-content:center;gap:4px}
 .adm .nfig__k{margin:0;line-height:1}
 .adm .ncard.off{opacity:.7}
-.adm #makerChatList .ngroup{gap:10px}
 .adm .ncard .need-line{font-family:var(--salt-font-display);font-size:var(--salt-text-sm)}
 .adm .chathead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-width:0}
 .adm .chathead__who{display:flex;flex-direction:column;gap:4px;min-width:0}
