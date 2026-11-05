@@ -4927,9 +4927,12 @@ const CLIENT_JS = `
     x.appendChild(oGlyph('close')); x.addEventListener('click',sheetDismiss); osh.head.appendChild(x);
   }
   /* a question answered by pressed ghosts: the system's Option group holds them, and the chosen one is pressed, never filled */
-  function oChoice(legend,opts,cur,key,pick){
+  /* 5 Nov 2026 (his report: two grey answers read as nothing to do): a question with no answer yet carries Choose one beside it */
+  function oChoice(legend,opts,cur,key,pick,need){
     var fs=el('fieldset','salt-options');
-    if(legend) fs.appendChild(el('legend','salt-options__legend',legend));
+    if(legend){ var lg=el('legend','salt-options__legend',legend);
+      if(need){ lg.appendChild(document.createTextNode(' ')); lg.appendChild(el('span','salt-status salt-status--brass',tw('sh.choose'))); }
+      fs.appendChild(lg); }
     var g=el('div','salt-options__grid salt-options__grid--2');
     /* data-k by position: a product's word never reaches the page, an attribute included */
     opts.forEach(function(o,i){
@@ -4940,15 +4943,25 @@ const CLIENT_JS = `
     });
     fs.appendChild(g); return fs;
   }
-  function formWhy(){
-    if(assoc&&draft.forFriend==null) return tw('sh.whyFor');
-    if(!quotes().length) return tw('sh.whySize');
-    if(draft.pool) return '';
+  /* what the sheet still needs, and the control that asks it (5 Nov 2026: Review's tap takes them there) */
+  function formMiss(){
+    if(assoc&&draft.forFriend==null) return [tw('sh.whyFor'),'[data-k="for:0"]'];
+    if(!quotes().length) return [tw('sh.whySize'),'[data-k^="size"]'];
+    if(draft.pool) return ['',''];
     /* 3 Nov 2026: never on Order as them, whose sheet draws no saved spot to pick (his report: Review stayed grey on every delivery) */
-    if(draft.mode==='deliver'&&!draft.amend&&!act&&!draft.spot&&spotsRead()) return tw('sp.why');
-    if(draft.mode==='deliver'&&String(draft.place||'').trim().length<2&&!draft.pin&&!draft.pinKept) return tw('sh.whyWhere');
-    if(draft.mode!=='deliver'&&draft.when==='day'&&!wantOk(draft.wantBy)) return tw('sh.whyWhen',{n:WANT_DAYS});
-    return '';
+    if(draft.mode==='deliver'&&!draft.amend&&!act&&!draft.spot&&spotsRead()) return [tw('sp.why'),'.ospots input,#spAdd'];
+    if(draft.mode==='deliver'&&String(draft.place||'').trim().length<2&&!draft.pin&&!draft.pinKept) return [tw('sh.whyWhere'),'#oWhere'];
+    if(draft.mode!=='deliver'&&draft.when==='day'&&!wantOk(draft.wantBy)) return [tw('sh.whyWhen',{n:WANT_DAYS}),'#oWant'];
+    return ['',''];
+  }
+  function formWhy(){ return formMiss()[0]; }
+  /* REVIEW TAPPED BEFORE THE SHEET IS READY (5 Nov 2026, his report: a grey Review said nothing): the line under the total
+     already says why, so the tap takes them to the control that asks it, in view and in focus */
+  function formShow(){
+    var m=formMiss(), t=m[1]&&osh?osh.body.querySelector(m[1]):null;
+    if(!t) return;
+    try{ t.scrollIntoView({block:'center', behavior:'smooth'}); }catch(e){}
+    try{ t.focus({preventScroll:true}); }catch(e){}
   }
   /* FUTURE-DATED ORDERS (29 Sep 2026): the day they want it by, tomorrow to WANT_DAYS days on in Kuala Lumpur, the
      Worker's wantByFault the check behind it; left for as soon as it can come, nothing is sent */
@@ -5166,7 +5179,7 @@ const CLIENT_JS = `
     /* S4 4.7: AN ASSOCIATE IS ASKED WHO IT IS FOR, FIRST (v702's tick, which was the last field and easy to pass). Nothing is
        chosen for them: Review waits for the answer, and every order asks again. Nobody else is asked. */
     if(assoc) B.appendChild(oChoice(tw('sh.whoFor'),[['me',tw('sh.me')],['friend',tw('sh.friend')]],draft.forFriend==null?'':(draft.forFriend?'friend':'me'),'for',
-      function(v){ draft.forFriend=(v==='friend'); sheetDraw(); }));
+      function(v){ draft.forFriend=(v==='friend'); sheetDraw(); },draft.forFriend==null));
     /* plan version 4, part 3e: ON ORDER AS THEM, WHICH OF THEIR CUSTOMERS, by code off the Desk's roster (Record's own list, stmt/owner.js actParties),
        or Not named; never on their own page, which knows no code */
     if(act&&assoc&&draft.forFriend&&!draft.amend&&!draft.pool){
@@ -5323,8 +5336,10 @@ const CLIENT_JS = `
     var fco=creditOff(+sum.toFixed(2));
     t.appendChild(el('span','sub2',why||(fco.any&&qs.length?tw('sh.creditOff',{c:rm(fco.c), p:rm(fco.pay)}):tw(draft.mode==='deliver'?'sh.plusDeliv':'sh.toCollect'))));
     F.appendChild(t);
-    var go=el('button','salt-pill salt-pill--md',tw('sh.review')); go.type='button'; go.id='oGo'; go.disabled=!!why; go.setAttribute('data-k','review');
-    go.addEventListener('click',reviewSheet);
+    var go=el('button','salt-pill salt-pill--md',tw('sh.review')); go.type='button'; go.id='oGo'; go.setAttribute('data-k','review');
+    /* 5 Nov 2026: never greyed; not ready, it says so to a reader and a tap goes to what is missing */
+    if(why) go.setAttribute('aria-disabled','true');
+    go.addEventListener('click',function(){ if(formWhy()) formShow(); else reviewSheet(); });
     F.appendChild(go); F.hidden=false;
   }
   /* REVIEW FREEZES THE ORDER. The check draws from this copy and Place sends this copy, so what is placed is what

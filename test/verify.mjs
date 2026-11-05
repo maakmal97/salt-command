@@ -15634,7 +15634,7 @@ await (async () => {
     ok(pressed("Deliver to me") === "true" && pressed("I will collect") === "false" && !where && !!d.getElementById("spAdd") && !/Same as last time/.test(d.getElementById("osheet").textContent),
       "the way is the last order's; the place is no longer the last one given, no spot is picked and no Same as last time hint is drawn (Counter Batch C, his answer 4 of 20 Oct 2026): " + JSON.stringify({ where: where && where.value }));
     const foot = d.querySelector("#osheet .salt-sheet__foot");
-    ok(foot && foot.contains(d.getElementById("oGo")) && d.getElementById("oGo").classList.contains("salt-pill") && /^RM 250/.test(foot.textContent) && d.getElementById("oGo").disabled && /Pick where it is going, or add a spot[.]/.test(foot.textContent),
+    ok(foot && foot.contains(d.getElementById("oGo")) && d.getElementById("oGo").classList.contains("salt-pill") && /^RM 250/.test(foot.textContent) && (d.getElementById("oGo").getAttribute("aria-disabled") === "true") && /Pick where it is going, or add a spot[.]/.test(foot.textContent),
       "the total and Review, the one filled control, sit in the sheet's foot, Review waiting for a spot and saying so (Counter Batch C, his answer 4 of 20 Oct 2026): " + JSON.stringify(foot && foot.textContent));
     d.querySelector("#osheet .salt-sheet").dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     await startAt(d, "salt", 1);
@@ -15928,10 +15928,10 @@ await (async () => {
   try {
     const { d, st } = A;
     const why = () => d.querySelector("#osheet .ototal .sub2").textContent;
-    ok(JSON.stringify(who(d)) === '["Me=false","A friend=false"]' && d.getElementById("oGo").disabled && why() === "Say who it is for.",
+    ok(JSON.stringify(who(d)) === '["Me=false","A friend=false"]' && (d.getElementById("oGo").getAttribute("aria-disabled") === "true") && why() === "Say who it is for.",
       "an associate's sheet opens on Who is it for?, neither chosen, and Review waits for the answer and says why: " + JSON.stringify([who(d), why()]));
     [...d.querySelectorAll("#osheet button")].find((b) => b.textContent === "A friend").click();
-    ok(JSON.stringify(who(d)) === '["Me=false","A friend=true"]' && !d.getElementById("oGo").disabled, "a tap answers it and lets Review go");
+    ok(JSON.stringify(who(d)) === '["Me=false","A friend=true"]' && !(d.getElementById("oGo").getAttribute("aria-disabled") === "true"), "a tap answers it and lets Review go");
     d.getElementById("oGo").click();
     const forRow = [...d.querySelectorAll("#osheet .salt-ledger__row")].find((r) => r.querySelector(".salt-ledger__label").textContent === "For");
     ok(!!forRow && forRow.querySelector(".salt-ledger__value").textContent === "A friend", "the check says who it is for");
@@ -15940,7 +15940,7 @@ await (async () => {
     ok(st.posted.length === 1 && st.posted[0].forFriend === true, "and Place carries it: " + JSON.stringify(st.posted.map((x) => x.forFriend)));
     d.querySelector('#osheet [data-k="close"]').click();   /* plan version 9: a new sheet is built from Order, so the sent one is closed first */
     await startAt(d);
-    ok(JSON.stringify(who(d)) === '["Me=false","A friend=false"]' && d.getElementById("oGo").disabled, "the next order asks again: " + JSON.stringify(who(d)));
+    ok(JSON.stringify(who(d)) === '["Me=false","A friend=false"]' && (d.getElementById("oGo").getAttribute("aria-disabled") === "true"), "the next order asks again: " + JSON.stringify(who(d)));
     [...d.querySelectorAll("#osheet button")].find((b) => b.textContent === "Me").click();
     d.getElementById("oGo").click(); d.getElementById("oPlace").click();
     for (let i = 0; i < 100 && st.posted.length < 2; i++) await new Promise((r) => setTimeout(r, 30));
@@ -15948,7 +15948,7 @@ await (async () => {
   } finally { await new Promise((r) => setTimeout(r, 100)); A.w.close(); }
   const B = await drive(false);
   try {
-    ok(who(B.d) === null && !/Who is it for/.test(B.d.getElementById("osheet").textContent) && !B.d.getElementById("oGo").disabled,
+    ok(who(B.d) === null && !/Who is it for/.test(B.d.getElementById("osheet").textContent) && !(B.d.getElementById("oGo").getAttribute("aria-disabled") === "true"),
       "a customer who is not an associate is never asked");
   } finally { B.w.close(); }
 })();
@@ -22367,7 +22367,7 @@ await (async () => {
     D.querySelector('button[data-t="order"]').click();
     await until(() => D.getElementById("oNew"));
     await startAt(D);
-    await until(() => D.getElementById("oGo") && !D.getElementById("oGo").disabled);
+    await until(() => D.getElementById("oGo") && !(D.getElementById("oGo").getAttribute("aria-disabled") === "true"));
     st.lapsed = true;
     D.getElementById("oGo").click();
     await until(() => btn("Place order")); btn("Place order").click();
@@ -26923,7 +26923,7 @@ await (async () => {
     g1.D.querySelector('button[data-t="order"]').click();
     await until(() => g1.D.getElementById("oNew"));
     await startAt(g1.D);   /* S4 4.3: the order is a sheet */
-    await until(() => g1.D.getElementById("oGo") && !g1.D.getElementById("oGo").disabled);
+    await until(() => g1.D.getElementById("oGo") && !(g1.D.getElementById("oGo").getAttribute("aria-disabled") === "true"));
     g1.st.dead.add(sessOf(g1));
     const before = g1.st.reopened;
     g1.D.getElementById("oGo").click();
@@ -27685,7 +27685,7 @@ await (async () => {
     g1.D.querySelector('button[data-t="order"]').click();
     await until(() => g1.D.getElementById("oNew"));
     await startAt(g1.D);   /* S4 4.3: the order is a sheet */
-    await until(() => g1.D.getElementById("oGo") && !g1.D.getElementById("oGo").disabled);
+    await until(() => g1.D.getElementById("oGo") && !(g1.D.getElementById("oGo").getAttribute("aria-disabled") === "true"));
     g1.st.dead.add(g1.st.sB);
     g1.D.getElementById("oGo").click();
     await until(() => g1.D.getElementById("oPlace"));
@@ -29971,7 +29971,7 @@ await (async () => {
   const btn = (t) => [...d.querySelectorAll("#pOrder button, #osheet button")].find((b) => b.textContent === t && !b.disabled);
   /* S4 4.3: a review is New order (unless the sheet is already on the form) and then Review */
   const review = async () => { if (!d.getElementById("oGo")) { await until(() => d.getElementById("oNew")); const cl = d.querySelector('#osheet [data-k="close"]'); if (cl) cl.click(); await startAt(d); }
-    await until(() => d.getElementById("oGo") && !d.getElementById("oGo").disabled); d.getElementById("oGo").click(); };
+    await until(() => d.getElementById("oGo") && !(d.getElementById("oGo").getAttribute("aria-disabled") === "true")); d.getElementById("oGo").click(); };
   try {
     d.getElementById("un").value = un; d.getElementById("pw").value = pw;
     d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
@@ -40349,7 +40349,7 @@ await (async () => {
     const hero = () => D.querySelector("#osheet .mhero .mtile");
     /* Counter Batch C, his answer 4 of 20 Oct 2026: a delivery opens with no spot picked, so the tile opens the form at its size and
        way, Review waiting for a spot; one added, the check reads as before */
-    const onSize = D.querySelector("#osheet [data-sheet-lines] .salt-settings__row"), waits = !!(D.getElementById("oGo") && D.getElementById("oGo").disabled) && !!D.getElementById("spAdd");
+    const onSize = D.querySelector("#osheet [data-sheet-lines] .salt-settings__row"), waits = !!(D.getElementById("oGo") && (D.getElementById("oGo").getAttribute("aria-disabled") === "true")) && !!D.getElementById("spAdd");
     if (D.getElementById("spAdd")) { spotAddTo(D, a.W, "Veloria"); if (D.getElementById("oGo")) D.getElementById("oGo").click(); }
     ok(onSize && /2 units/.test(onSize.textContent) && waits && /Check your order/.test(sheet()) && hero() && said(hero()) === "Cube 2 units|2 units" && /PriceRM 200/.test(sheet()) && /HowDelivered to Veloria/.test(sheet())
       && !/Side gate/.test(sheet()) && D.getElementById("oPlace") && D.getElementById("oPlace").textContent === "Place order",
@@ -41507,7 +41507,7 @@ await (async () => {
     d.getElementById("oGo").click();
     button("Change").click();
     const back = d.querySelector('#osheet [data-k="spot:0"]');
-    ok(!!back && !back.disabled && !d.getElementById("oGo").disabled,
+    ok(!!back && !back.disabled && !(d.getElementById("oGo").getAttribute("aria-disabled") === "true"),
       "Change goes back to the form, the spot kept picked and the choice open again");
   } finally { w.close(); }
 })();
@@ -48275,7 +48275,7 @@ await (async () => {
     for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
     await startAt(d);
     const soon = d.querySelector('#osheet [data-k="when:0"]'), day = d.querySelector('#osheet [data-k="when:1"]');
-    ok(!!soon && !!day && soon.getAttribute("aria-pressed") === "true" && !d.getElementById("oWant") && !d.getElementById("oGo").disabled,
+    ok(!!soon && !!day && soon.getAttribute("aria-pressed") === "true" && !d.getElementById("oWant") && !(d.getElementById("oGo").getAttribute("aria-disabled") === "true"),
       "the sheet asks when, as soon as it can already chosen, with no day to fill");
     day.click();
     const di = d.getElementById("oWant"), go = () => d.getElementById("oGo");
@@ -48655,6 +48655,11 @@ await (async () => {
 section("2 Nov 2026: a delivery with a floor or unit is placed after a failed key read, and on the practice surface");
 await (async () => {
   await (await import("./counter-deliver-nokey.mjs")).run({ ok });
+})();
+
+section("5 Nov 2026: a sheet that is not ready says Choose one, and Review takes them to what is missing");
+await (async () => {
+  await (await import("./order-why-plain.mjs")).run({ ok });
 })();
 
 section("Counter Batch C: the Desk reads the spot's name and unit after the unlock, a unit alone never filed (P7)");
@@ -50348,7 +50353,7 @@ await (async () => {
     ok(!!(await until(() => doc.getElementById("oNew"))) && !doc.getElementById("makerFor"),
       "Order for them opens the customer's own page and sealed prices, not a second pricing rule");
     await startAt(doc);
-    await until(() => doc.getElementById("oGo") && !doc.getElementById("oGo").disabled);
+    await until(() => doc.getElementById("oGo") && !(doc.getElementById("oGo").getAttribute("aria-disabled") === "true"));
     doc.getElementById("oGo").click();
     await until(() => doc.getElementById("oPlace"));
     doc.getElementById("oPlace").click();

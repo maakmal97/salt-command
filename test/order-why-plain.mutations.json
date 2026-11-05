@@ -1,0 +1,10 @@
+[
+ {"name":"W1 no Choose one beside the unanswered question","file":"stmt/page.js","find":"      if(need){ lg.appendChild(document.createTextNode(' '));","replace":"      if(0){ lg.appendChild(document.createTextNode(' '));"},
+ {"name":"W1 Review greyed again","file":"stmt/page.js","find":"    if(why) go.setAttribute('aria-disabled','true');\n","replace":"    go.disabled=!!why; if(why) go.setAttribute('aria-disabled','true');\n"},
+ {"name":"W1 Review never says it is not ready","file":"stmt/page.js","find":"    if(why) go.setAttribute('aria-disabled','true');\n","replace":""},
+ {"name":"W2 a tap on Review before an answer does nothing","file":"stmt/page.js","find":"if(formWhy()) formShow(); else reviewSheet();","replace":"if(formWhy()) return; else reviewSheet();"},
+ {"name":"W2 the question asked has no control to go to","file":"stmt/page.js","find":"return [tw('sh.whyFor'),'[data-k=\"for:0\"]'];","replace":"return [tw('sh.whyFor'),''];"},
+ {"name":"W2 the control is focused but never brought into view","file":"stmt/page.js","find":"    try{ t.scrollIntoView({block:'center', behavior:'smooth'}); }catch(e){}\n","replace":""},
+ {"name":"W3 the tag stays once answered","file":"stmt/page.js","find":"function(v){ draft.forFriend=(v==='friend'); sheetDraw(); },draft.forFriend==null));","replace":"function(v){ draft.forFriend=(v==='friend'); sheetDraw(); },true));"},
+ {"name":"W4 a missing spot points at no control","file":"stmt/page.js","find":"return [tw('sp.why'),'.ospots input,#spAdd'];","replace":"return [tw('sp.why'),'.ospots input'];"}
+]

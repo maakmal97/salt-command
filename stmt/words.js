@@ -510,6 +510,7 @@ export const EN = {
   "sh.whereSame": "Same as last time. An area, not an address.",
   "sh.where": "An area, not an address.",
   "sh.whoFor": "Who is it for?",
+  "sh.choose": "Choose one",
   "sh.me": "Me",
   "sh.friend": "A friend",
   "sh.size": "Size",
