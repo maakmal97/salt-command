@@ -48279,12 +48279,12 @@ await (async () => {
       "the sheet asks when, as soon as it can already chosen, with no day to fill");
     day.click();
     const di = d.getElementById("oWant"), go = () => d.getElementById("oGo");
-    ok(!!di && di.type === "date" && di.min === kl(1) && di.max === kl(60) && go().disabled && /Pick a day/.test(d.getElementById("osheet").textContent),
+    ok(!!di && di.type === "date" && di.min === kl(1) && di.max === kl(60) && (go().getAttribute("aria-disabled") === "true") && /Pick a day/.test(d.getElementById("osheet").textContent),
       "By a day opens a date from tomorrow to sixty days on, and Review waits for one: " + JSON.stringify([di && di.min, di && di.max]));
     di.value = kl(0); di.dispatchEvent(new w.Event("input", { bubbles: true }));
-    const heldToday = go().disabled;
+    const heldToday = (go().getAttribute("aria-disabled") === "true");
     di.value = kl(4); di.dispatchEvent(new w.Event("input", { bubbles: true }));
-    ok(heldToday && !go().disabled, "today is held, and a day in range lets Review go");
+    ok(heldToday && !(go().getAttribute("aria-disabled") === "true"), "today is held, and a day in range lets Review go");
     go().click();
     const shown = d.getElementById("osheet").textContent, dd = kl(4);
     ok(/Wanted by/.test(shown) && shown.includes(String(+dd.slice(8)).padStart(2, "0") + " "), "the check says the day before anything is placed: " + dd);

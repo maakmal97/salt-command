@@ -45,12 +45,12 @@ export async function run({ ok, pageWork }) {
     const A = await page({ orders: [ord("s0", "done", ago(300))] });
     let confirms = 0; A.w.confirm = () => { confirms++; return true; };
     await sheet(A);
-    ok(list(A).length === 0 && !!A.d.getElementById("spAdd") && review(A).disabled && /Pick where it is going, or add a spot\./.test(txt(A.d.querySelector("#osheet .ototal"))),
+    ok(list(A).length === 0 && !!A.d.getElementById("spAdd") && (review(A).getAttribute("aria-disabled") === "true") && /Pick where it is going, or add a spot\./.test(txt(A.d.querySelector("#osheet .ototal"))),
       "with none saved, Where to holds Add a spot alone and Review waits, saying why");
     /* ---- 2 ---- */
     await add(A, { name: 0, unit: "Level 2", area: "Veloria" });
     const s2 = stored(A);
-    ok(J(list(A).map((x) => [x.label, x.on])) === J([["Shop", true]]) && !review(A).disabled && s2.length === 1 && s2[0].label === "Shop" && s2[0].unit === "Level 2" && s2[0].place === "Veloria",
+    ok(J(list(A).map((x) => [x.label, x.on])) === J([["Shop", true]]) && !(review(A).getAttribute("aria-disabled") === "true") && s2.length === 1 && s2[0].label === "Shop" && s2[0].unit === "Level 2" && s2[0].place === "Veloria",
       "a spot added and saved is picked, kept under this account's key, and Review goes: " + J(s2));
     /* ---- 3 ---- */
     await close(A); await sheet(A);
@@ -66,7 +66,7 @@ export async function run({ ok, pageWork }) {
     A.w.localStorage.setItem(KEY, JSON.stringify([{ id: "a1", label: "Shop", place: "Veloria" }, { id: "a2", label: "Home", place: "Orlen" }]));
     await sheet(A);
     const two = list(A);
-    ok(two.length === 2 && two.every((x) => !x.on) && review(A).disabled && /Pick where it is going, or add a spot\./.test(txt(A.d.querySelector("#osheet .ototal"))),
+    ok(two.length === 2 && two.every((x) => !x.on) && (review(A).getAttribute("aria-disabled") === "true") && /Pick where it is going, or add a spot\./.test(txt(A.d.querySelector("#osheet .ototal"))),
       "with two spots saved a new sheet still opens with none picked and Review waits, saying why (Batch C, his answer 4): " + J(two));
     await close(A); A.w.localStorage.setItem(KEY, kept1);
     /* ---- 3c (3 Nov 2026) ---- */
@@ -104,7 +104,7 @@ export async function run({ ok, pageWork }) {
       "Remove drops the one, with no confirm, and Add a spot is back: " + J(stored(A).map((s) => s.label)));
     /* ---- 7 ---- */
     await add(A, { name: 2, area: "Ostra", save: false });
-    ok(stored(A).length === 2 && J(list(A).map((x) => [x.label, x.on])) === J([["Shop", false], ["Mum's", false], ["Warehouse", true]]) && !review(A).disabled,
+    ok(stored(A).length === 2 && J(list(A).map((x) => [x.label, x.on])) === J([["Shop", false], ["Mum's", false], ["Warehouse", true]]) && !(review(A).getAttribute("aria-disabled") === "true"),
       "Save on this phone off keeps nothing, and the spot serves this order: " + J(list(A)));
     await close(A);
     /* ---- 8 ---- */

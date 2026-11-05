@@ -15,7 +15,7 @@
  {"name":"the desk's relay is not keyed","file":"stmt/worker.js","find":" || p.startsWith(\"/desk/pins/\")","replace":""},
  {"name":"the spot is offered with no key filed","file":"stmt/page.js","find":"else if(!draft.amend&&SLIPKEY) B.appendChild(pinField());","replace":"else if(!draft.amend) B.appendChild(pinField());"},
  {"name":"the location is read from a cache","file":"stmt/page.js","find":"{enableHighAccuracy:true, maximumAge:0, timeout:15000}","replace":"{enableHighAccuracy:true, maximumAge:600000, timeout:15000}"},
- {"name":"the spot does not stand in for the area","file":"stmt/page.js","find":"String(draft.place||'').trim().length<2&&!draft.pin&&!draft.pinKept) return tw('sh.whyWhere');","replace":"String(draft.place||'').trim().length<2) return tw('sh.whyWhere');"},
+ {"name":"the spot does not stand in for the area","file":"stmt/page.js","find":"String(draft.place||'').trim().length<2&&!draft.pin&&!draft.pinKept) return [tw('sh.whyWhere'),","replace":"String(draft.place||'').trim().length<2) return [tw('sh.whyWhere'),"},
  {"name":"the spot leaves in the clear","file":"stmt/page.js","find":"      if(c.pinSealed) body.pin=c.pinSealed;\n","replace":"      if(c.pinSealed) body.pin=c.pin;\n"},
  {"name":"the seal is a slip's","file":"stmt/page.js","find":"JSON.stringify(Object.assign({v:1, at:new Date().toISOString()},p))),'salt-pin v1');","replace":"JSON.stringify(Object.assign({v:1, at:new Date().toISOString()},p))));"},
  {"name":"the check does not say the spot","file":"stmt/page.js","find":"    if(c.mode==='deliver'&&(c.pin||c.pinKept)) row(","replace":"    if(false) row("},

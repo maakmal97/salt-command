@@ -136,7 +136,7 @@ export async function page({ ok }) {
     d.querySelector("[data-pool-join]").click();
     await wait(() => !!d.querySelector("#osheet .salt-ghost"));
     const asks = text(d.getElementById("osheet")), go = d.getElementById("oGo");
-    ok(asks.includes(W.EN["sh.me"]) && asks.includes(W.EN["sh.friend"]) && !!go && go.disabled && !d.getElementById("oPlace"),
+    ok(asks.includes(W.EN["sh.me"]) && asks.includes(W.EN["sh.friend"]) && !!go && (go.getAttribute("aria-disabled") === "true") && !d.getElementById("oPlace"),
       "an associate's Join asks Me or A friend first, and Review waits for the answer: " + JSON.stringify(asks.slice(0, 120)));
     [...d.querySelectorAll("#osheet .salt-ghost")].find((b) => b.textContent === W.EN["sh.friend"]).click();
     d.getElementById("oGo").click();
