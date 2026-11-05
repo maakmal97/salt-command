@@ -1,0 +1,78 @@
+<title>JomPAY on Salt Counter</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="bundle.css">
+<div class="hs salt-root salt-root--padded stack">
+<header class="stack">
+<span class="kicker">Salt Counter · Plan · 05 Nov 2026 · Draft 3</span>
+<h1>JomPAY on Salt Counter</h1>
+<p class="lede">A customer chooses JomPAY on the pay sheet, beside Transfer and Scan a code, and is handed to Salt QR's JomPAY view at the right biller code, Ref-1 and amount. Their username never sits where a JomPAY form reads it as Ref-1. Plan only: nothing is built until your answers.</p>
+</header>
+
+<section class="sec glass stack" data-tone="lead">
+<div class="sec-head"><span class="kicker">Verdict</span><h2>Most of the road is already there</h2><span class="meta">Verified in code, 05 Nov 2026</span></div>
+<div class="item verdict"><span class="badge good">Already there</span><p>Salt QR has the JomPAY view, the order book accepts JomPAY as a method, and Salt Admin already names it.</p></div>
+<div class="item verdict"><span class="badge warn">Missing</span><p>The Counter's link refuses the JomPAY rail, and its pay sheet has no JomPAY option.</p></div>
+<div class="item verdict"><span class="badge bad">Suspended today</span><p>Instapay, the one JomPAY account, is suspended in Salt QR, so JomPAY shows only once you lift it in Salt QR's admin.</p></div>
+</section>
+
+<section class="sec glass stack" data-tone="bad">
+<div class="sec-head"><span class="kicker">The risk</span><h2>Ref-1 names your wallet</h2></div>
+<p>On a JomPAY form, Ref-1 is the Instapay id the money is paid into, a fixed 13-digit number. If the sheet told a customer to put their username "in the reference", they would type it as Ref-1. The bank refuses letters there, so no money goes astray, but the payment fails while their claim is filed. Every JomPAY word on the sheet says Ref-1 comes from Salt QR, and the username is never shown as a reference on JomPAY.</p>
+</section>
+
+<section class="sec glass stack" data-tone="counter">
+<div class="sec-head"><span class="kicker">Basis</span><h2>What the code says</h2></div>
+<ol class="points">
+<li><b>Salt QR.</b> One account runs JomPAY, <code>instapay</code>: biller 11445 and its Ref-1, with Ref-2 shown as a dash by your rule of 14 Sep 2026. Its link reader already takes the JomPAY rail.</li>
+<li><b>The Counter's link.</b> <code>payHref</code> (tools/paysync.mjs) writes only the QR and Transfer rails. <code>stmt/pay.js</code> already marks which accounts run JomPAY.</li>
+<li><b>The pay sheet.</b> It offers Transfer, Scan a code and cash (stmt/page.js). Its accounts list follows the link, so JomPAY needs only the link and an option.</li>
+<li><b>The order book.</b> <code>pickRail</code> already takes JomPAY with an account that runs it. Salt Admin shows the method as "JomPAY to Instapay".</li>
+<li><b>Live suspensions.</b> The sheet lays Salt QR's live suspensions over its list each time it opens. The practice accounts get the same live list, so today their sheet would hide JomPAY too.</li>
+</ol>
+</section>
+
+<section class="sec glass stack" data-tone="good">
+<div class="sec-head"><span class="kicker">Parts</span><h2>One version, one commit a part</h2><span class="meta">Full suite · Fable on the diff</span></div>
+<div class="tablewrap"><table class="stack"><caption>Parts</caption><thead><tr><th scope="col">Part</th><th scope="col">Where</th><th scope="col">What</th></tr></thead><tbody>
+<tr><th scope="row">P0</th><td data-label="Where">Salt QR, deployed first</td><td data-label="What">On a JomPAY link, Amount only under the plate (B1), or the link's reference as Ref-2 (B2). Ref-1 is always the store's, asserted. A JomPAY link's rail is not remembered, so the list does not shrink to one account next time.</td></tr>
+<tr><th scope="row">P1</th><td data-label="Where">tools/paysync.mjs</td><td data-label="What">The link takes the JomPAY rail for an open account that runs it. Under B1 it carries no reference, so it skips the reference check on JomPAY, and Salt QR's read-back of the link is re-aimed for an empty fourth part. Synced into stmt/pay.js; the check that pinned the refusal is re-aimed.</td></tr>
+<tr><th scope="row">P2</th><td data-label="Where">stmt/page.js</td><td data-label="What">The JomPAY option, shown only while an account takes it; the rail falls back to Transfer if that option goes. Every JomPAY branch: the caption, the check step's mark and words, Show again, the filled pill, the reference row.</td></tr>
+<tr><th scope="row">P3</th><td data-label="Where">stmt/words.js</td><td data-label="What">JomPAY; From your bank account, by biller code; Show the JomPAY details; the caption, check and Show again lines. Under B1 no line names their username. No word promises a card.</td></tr>
+<tr><th scope="row">P4</th><td data-label="Where">stmt/worker.js, testfix</td><td data-label="What">A practice account's live suspensions come from its fixture, with Instapay open, so the practice sheet offers JomPAY; a FEATURES case for it. Its link still opens the real Salt QR, which may say Under maintenance.</td></tr>
+<tr><th scope="row">P5</th><td data-label="Where">Docs</td><td data-label="What">docs/STATEMENTS.md, Salt QR's docs, both MEMORY files.</td></tr>
+</tbody></table></div>
+</section>
+
+<section class="sec glass stack" data-tone="bridge">
+<div class="sec-head"><span class="kicker">Said</span><h2>Not in this version</h2></div>
+<ol class="points">
+<li><b>A claim naming a suspended account is accepted.</b> The order book checks against the suspensions baked in at deploy, not the live ones, on every rail. This is older than JomPAY. The fix is its own version: read the live flags once in the Worker and pass them into the order book. If that read fails, the baked flags stand.</li>
+<li><b>Credit cards.</b> JomPAY takes a card only at banks that offer it, and only if the biller accepts cards. Whether biller 11445 does is unverified, so no word on the sheet promises one.</li>
+</ol>
+</section>
+
+<section class="sec glass stack" data-tone="lead">
+<div class="sec-head"><span class="kicker">Your call</span><h2>Four asks</h2></div>
+<h3>A. Where the JomPAY details show</h3>
+<div class="ask">
+<button class="opt" type="button"><b>1. In Salt QR (recommended)</b><small>Handed over like Scan a code. Biller code and Ref-1 stay in one place, and the Counter holds no new data.</small></button>
+<button class="opt" type="button"><b>2. On the Counter's sheet</b><small>Biller code and Ref-1 beside the amount, like the account number. A second copy of Ref-1 to keep right.</small></button>
+</div>
+<h3>B. The reference on JomPAY</h3>
+<div class="ask">
+<button class="opt" type="button"><b>1. Keep your 14 Sep rule (recommended)</b><small>Ref-2 stays a dash and no reference is shown. You match the payment by their I have sent it and the amount, as for Scan a code.</small></button>
+<button class="opt" type="button"><b>2. Their username in Ref-2</b><small>Reverses 14 Sep. Only after an RM 1 JomPAY to biller 11445, with a hyphenated Ref-2, shows it in Instapay's history.</small></button>
+</div>
+<h3>C. The option's mark</h3>
+<div class="ask">
+<button class="opt" type="button"><b>1. A JomPAY glyph in salt-ds first (recommended)</b><small>Drawn in the design system, then carried to the Counter, as every design change is.</small></button>
+<button class="opt" type="button"><b>2. Reuse the bank glyph</b><small>Nothing new to draw, but Transfer and JomPAY would look alike.</small></button>
+</div>
+<h3>D. The words</h3>
+<div class="ask">
+<button class="opt" type="button"><b>1. As drafted in P3 (recommended)</b><small>JomPAY; From your bank account, by biller code; Show the JomPAY details.</small></button>
+<button class="opt" type="button"><b>2. Your own</b><small>Give the words and they go in as typed.</small></button>
+</div>
+</section>
+</div>
