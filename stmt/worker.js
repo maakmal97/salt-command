@@ -56,11 +56,12 @@ import { FONTS } from "./fonts.js";
 import { refusal, clip } from "./words.js";
 import { PK_TTL, PK_ALGS, PK_ID_RE, PKT_RE, pkKey, pkdPrefix, pkdKey, b64u, unb64, mintChallenge, spendChallenge, clientOk, authOk, sigOk, wrapShape, handleOf } from "./passkey.js";
 import { takeSlip, keepSlip, slipTooBig, slipPub, readSlip, SLIP_ID_RE } from "./slip.js";
-import { payNumbers } from "./paynum.js";
+import { payCodes, shapeAccounts } from "./paycodes.js";
 import { payDown, liveAccounts } from "./paystate.js";
+import { PAY_ACCOUNTS } from "./pay.js";
 import { takePin, keepPin, readPin } from "./pin.js";
 import { handleMaker, publicHours, customerAmend, takeNudge, fileConfirm } from "./maker.js";
-import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord, withExamples, examplesRefs, exampleBulletin, examplePaynum, isExample,
+import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord, withExamples, examplesRefs, exampleBulletin, examplePay, isExample,
   exampleMove, exampleReplace, exampleClaim, exampleMint, exampleRevoke, exampleThread, exampleSay, exampleDeskSay, examplePools, exampleJoin, examplePlace, exampleReset } from "./testfix.js";
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
@@ -462,16 +463,23 @@ async function handleCustomer(request, env, p, m, ctx) {
     const out = await placeSearch(b && b.q, fetch);
     return json(out.ok ? { ok: true, places: out.places } : { ok: false, error: out.error }, out.ok ? 200 : (out.status || 502));
   }
-  /* PHASE 7B (his yes of 11 Oct 2026): THE ACCOUNT NUMBERS THE PAY SHEET SHOWS beside the reference, from KV `paynum`, which only
-     `node tools/paysync.mjs --numbers` writes and git never holds (stmt/paynum.js whitelists it to `number` a key). On their
-     session alone, no-store; {} while none is filed. A test account is answered its fixture's invented number, and the real
-     record is never read for it. Not an /all route: the owner's read-only view never asks.
-     WITH THEM, `down` (17 Oct 2026): which accounts QR Command has under maintenance now, read live off its /state.json
-     (stmt/paystate.js), so the sheet drops one he suspends without a deploy; absent when that read fails, the baked flags standing. */
+  /* WHAT THE PAY SHEET SHOWS (his rule of 06 Nov 2026: a customer never goes to Salt QR). The Worker reads Salt QR's /data.js out of their
+     sight through the QRCMD binding (stmt/paycodes.js: six fields an account, a payload whose checksum fails refused, the last good read
+     filed in KV `paycodes` and answered under three days old) and answers, per account not suspended and only what its rails need:
+     qr (the payload), number and bank (transfer), biller and ref1 (JomPAY). On their session alone, no-store; {} while nothing can be read.
+     A test account is answered its fixture's INVENTED details and `down`, and the real file is never read for it. Not an /all route:
+     the owner's read-only view never asks.
+     WITH THEM, `down` (17 Oct 2026): which accounts Salt QR has under maintenance now, read FRESH off its /state.json (stmt/paystate.js,
+     never cached), so the sheet drops one he suspends without a deploy; absent when that read fails, the baked flags standing. */
   if (p === "/pay/accounts") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
-    const down = await payDown(env);
-    const accounts = isTest(u) ? await examplePaynum(env, u) : await payNumbers(env, liveAccounts(down));
+    if (isTest(u)) {
+      const ex = await examplePay(env, u);
+      const down = ex.down ? Object.assign({}, ...PAY_ACCOUNTS.map((a) => ({ [a.key]: a.maintenance === true })), ex.down) : null;
+      return json(down ? { ok: true, accounts: shapeAccounts(ex.accounts, liveAccounts(down)), down } : { ok: true, accounts: {} });
+    }
+    const [down, codes] = await Promise.all([payDown(env), payCodes(env)]);
+    const accounts = codes ? shapeAccounts(codes, liveAccounts(down)) : {};
     return json(down ? { ok: true, accounts, down } : { ok: true, accounts });
   }
   /* S9 9.4, FOR THE CUSTOMER'S OWN THIS DEVICE CARD (9.9): their phones and computers, on their session, and signing the

@@ -27,13 +27,13 @@
  */
 import { decideCustomer, decideReplace, decideAccountClaim, decideThread, applyEvent, customerView, claimView, ordersOf, ridOf, fixtureThreadMove, fixtureAccountMove, fixtureReset, joinLive, poolUnits, POOL_ON_KV } from "./orders.js";
 import { refusal } from "./words.js";
-import { numbersOf } from "./paynum.js";
+import { cleanList } from "./paycodes.js";
 import { hoursConfig } from "./hours.js";
 
 import { TEST_USER, TEST_LOCKED, TEST_FRESH, TESTS, TEST_USERS, isTest } from "./testusers.js";
 export { TEST_USER, TEST_LOCKED, TEST_FRESH, TESTS, TEST_USERS, isTest };
 export const TEST_PASS = "0000-0000-0000-0000";
-export const FIX_VERSION = 18;   /* 18: rice Low on stock, the restock light's fourth step (04 Nov 2026); 17: the associate's card counts two first-week orders of people they brought in (R3, 03 Nov 2026); 16: an order he placed on their page, Placed for you (Order as them, 02 Nov 2026); 15: 0000-0002 holds RM 15 of credit and an order RM 25 of it paid at our confirmation (27 Oct 2026); 14: 0000-0002 a plain customer, the share of their next loyalty unit and an order that brings it (21 Oct 2026); 13: the associate reward, an order that takes them over and a unit given (20 Oct 2026); 12: Order again's tag, an order naming the done one it was placed again from (20 Oct 2026) */   /* 11: the third account, 0000-0002, fresh with room to order (the test surface, 19 Oct 2026); 10: two orders ready at a collection point, one moved to another (Counter Batch A, 18 Oct 2026); 9: an invented account number for the pay sheet, so the publish seals the fixture afresh (Phase 7b, 11 Oct 2026); 8: the look, asked at every sign-in (11 Oct 2026); 7: his Accept for their yes, a raise and another window waiting on them, and one lapsed (10 Oct 2026) */
+export const FIX_VERSION = 19;   /* 19: invented pay details (a code, an account number, a JomPAY biller and Ref-1) in place of the paynum number, `pay` (06 Nov 2026); 18: rice Low on stock, the restock light's fourth step (04 Nov 2026); 17: the associate's card counts two first-week orders of people they brought in (R3, 03 Nov 2026); 16: an order he placed on their page, Placed for you (Order as them, 02 Nov 2026); 15: 0000-0002 holds RM 15 of credit and an order RM 25 of it paid at our confirmation (27 Oct 2026); 14: 0000-0002 a plain customer, the share of their next loyalty unit and an order that brings it (21 Oct 2026); 13: the associate reward, an order that takes them over and a unit given (20 Oct 2026); 12: Order again's tag, an order naming the done one it was placed again from (20 Oct 2026) */   /* 11: the third account, 0000-0002, fresh with room to order (the test surface, 19 Oct 2026); 10: two orders ready at a collection point, one moved to another (Counter Batch A, 18 Oct 2026); 9: an invented account number for the pay sheet, so the publish seals the fixture afresh (Phase 7b, 11 Oct 2026); 8: the look, asked at every sign-in (11 Oct 2026); 7: his Accept for their yes, a raise and another window waiting on them, and one lapsed (10 Oct 2026) */
 export const fixKey = (u) => "testfix:" + u;
 
 /** The fixture for this account as read, or null: a test account's alone, and only the one it was sealed for. */
@@ -280,11 +280,15 @@ export async function exampleRevoke(env, u, id) {
   return { ref: r };
 }
 
-/** The invented account numbers the pay sheet shows a test account (Phase 7b): the fixture's `paynum`, {key: {number}}, through the
- *  same whitelist as the real record, and {} with no fixture. The real record in KV `paynum` is never read for a test account. */
-export async function examplePaynum(env, u) {
-  const fix = await fixNow(env, u);
-  return numbersOf({ v: 1, accounts: (fix && fix.paynum) || null });
+/** The INVENTED pay details the sheet shows a test account (06 Nov 2026): the fixture's `pay` = {accounts: [{key, payload, acct, bank, biller, ref1}], down: {key: bool}},
+ *  the accounts through the same whitelist as Salt QR's file (a payload must still pass its checksum), `down` only real booleans, and
+ *  {accounts: [], down: null} with no fixture. Salt QR is never read for a test account, so none of his payloads, numbers or codes can reach one. */
+export async function examplePay(env, u) {
+  const fix = await fixNow(env, u), p = fix && fix.pay && typeof fix.pay === "object" ? fix.pay : null;
+  if (!p) return { accounts: [], down: null };
+  const down = {};
+  if (p.down && typeof p.down === "object" && !Array.isArray(p.down)) for (const k of Object.keys(p.down)) if (typeof p.down[k] === "boolean") down[k] = p.down[k];
+  return { accounts: cleanList(p.accounts), down };
 }
 
 /** COUNTER BATCH A (18 Oct 2026): THE TEST ACCOUNTS' COLLECTION POINT, invented and never one of his: "Z9" and "Z8", on public squares.
