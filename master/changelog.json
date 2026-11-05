@@ -1,5 +1,19 @@
 [
  {
+  "v": "v1442",
+  "d": "05 Nov 2026",
+  "t": "SALT ADMIN IN LAYERS",
+  "n": [
+   "<b>HIS WORD.</b> Salt Admin on a laptop works in layers, as Mail and Messages do on a Mac: the bar and the rail never move, a place&#39;s list scrolls on its own, and an open record scrolls inside itself.",
+   "<b>THE FRAME.</b> From 1080px the page itself never scrolls, only the column right of the rail. Needs you&#39;s open card, an account, an order, a thread, a Record form and Shop&#39;s open day each stand as a pane holding to the column&#39;s top.",
+   "<b>THE ONE ACTION IN VIEW.</b> Each record&#39;s main action is pinned at its foot, seamless, the pill alone: a thread&#39;s box and Send, Send a sign-in link, an order&#39;s stage pill (Agree, Ready, Handed over), a form&#39;s pill, Set the notice, Save the points. Decline, Cancel and Sign out everywhere stay last in the scroll.",
+   "<b>A THREAD AT ITS NEWEST LINE.</b> A thread opens on its newest line, older lines a scroll up; a line that lands while he reads the newest keeps him there, one that lands while he has scrolled up leaves him where he is.",
+   "<b>ON A PHONE.</b> The page scrolls as before; the main action rides just above the bar of places, and the + stands down while one shows.",
+   "<b>DESIGN.</b> salt-ds 1.28.0 and 1.28.1 hold the frame and the pane; the Desk takes the same frame in a later version. No route or request changed.",
+   "<b>CHECKS.</b> A new section of 22 checks with 23 mutations, each red; older checks and 25 needles re-aimed to the pinned foot, each proved red."
+  ]
+ },
+ {
   "v": "v1441",
   "d": "05 Nov 2026",
   "t": "SALT ADMIN MESSAGES AS ROWS",
