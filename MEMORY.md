@@ -309,6 +309,21 @@
   on 04 Nov 11:56 and were put back (docs/STATEMENTS.md: they stay on disk as issued); `docs/order-flow-map.html` and `plan-ledger-conventions.html` committed
   (cited from code); `audit-last-10-orders.html` and `keys-and-surfaces*.html` kept local through `.git/info/exclude` (a map of keys, public repo).
 
+## Salt Admin in layers (v1442)
+- Live as v1442 (`c5c66a05`, 05 Nov 2026; Cloud commit `42007688334`: chain green with "The phone is serving it" on build `3cc457c654583e55`, three suite parts
+  green; CI `42007688335` green), his word ("like Mail or Messages on a Mac") and his four answers, all as recommended, with salt-ds 1.28.0 (#40, `salt-frame`,
+  `salt-pane`, a settings row's control `flex:none`) and 1.28.1 (#41, his word on the shots: the foot seamless, "not with the black square behind the main
+  action"). From 1080px `#roster` is the frame: the bar and rail fixed, `.amain` the one scroll box, the page 0px of scroll (`--salt-frame-h` 100dvh less 46px,
+  the gate's margin-bottom -36px against the body's 60px foot). `#nopen`, `#aopen`, `#makerReview`, `#makerChatOpen`, `.recpane` and `#makerDayPane` are panes,
+  sized by `paneFit` in `stmt/owner.js` (`--salt-pane-h`, the room under the pane's top, read on the column's scroll, a resize and a MutationObserver). The one main
+  action is a sticky `salt-pane__foot`: a thread's box and Send (`.chatfoot`; Close in the head, No reply needed after the lines), an account's Send a sign-in link
+  (`.afoot`, the card's last child), an order's `.ordlead` (`.ofoot`, last, outside `ordLayout`'s columns), a form's primary `makerButton` (`.mfoot`, wrapped when
+  its parent is `section.maker-input`), Set the notice, Save the points, Set it, Done, Needs you's `npane__go`. A thread opens at its newest line and stays there
+  while he reads it (`drawMakerThreadLines(first)`, `threadBox`). Under 1080px the foot rides the screen's foot (`--salt-pane-foot-at` on the shell's own rule)
+  and `#oAdd` stands down while one shows (`data-footed`). Measured in Chromium at 390, 1180x820, 1440x900 and 1920x1032: every main action and the newest line
+  in view on open. Section "5 Nov 2026: Salt Admin in layers" (`test/admin-frame.mjs`, 22 checks, 23 mutations red); 25 needles re-aimed, each red. Full suite
+  11,981 passed, 1 failed (S1b, laptop only). QR Command took nothing (no token or face moved). Not built: the Desk's frame (his answer D, a follow-up).
+
 ## The restock light in four steps (v1426)
 - Live as v1426 (`4f643e64`, 04 Nov 2026; Cloud commit `41710800634`: chain green with "The phone is serving it", the statements deployed and published, three suite parts green; CI `41710800684` green), his word "change the rule": engine `restockLight(shelf, commit, demand)` and `LIGHT_DAYS {fast: 7, low: 3}`: red Out of stock with nothing free, amber Low on stock under one usual order (`restockPlan`'s `buy.median`) or 3 days of cover, yellow Selling fast at 7 days, green Available. Promised past the shelf (Limited) is now red. Only amber and red ask for a restock date (`expAsks`) and wake the Desk (`LIGHT_RANK`). salt-ds 1.26.0 (#38): `--salt-orange` #f28c18, `salt-light--amber`, `salt-status--amber`/`--orange`. FIX_VERSION 18 (rice amber). At the push salt read Selling fast (5.1 days of cover), every other book Available.
 - Basis (replay of every book's days 26 Jun to 04 Nov 2026, scratch only): cover of 7 days or fewer caught 88% of the times the shelf fell under one usual order within a week, 62% of those lit came true; 3 days caught 65% within three days, 71% came true. Salt read other than green on 106 of 129 replayed days (64 yellow, 40 amber, 2 red), so it will rarely read Available.
