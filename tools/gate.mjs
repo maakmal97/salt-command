@@ -35,7 +35,6 @@ export const CHECKS = [
   ["the site's fonts are design/fonts, as bytes", ["tools/stmt-fonts.mjs", "--check"]],
   ["the site's QR encoder is engine/qr.mjs", ["tools/qrsync.mjs", "--check"]],
   ["the pay code check is Salt QR's (stands down without it)", ["tools/paycrcsync.mjs", "--check"]],
-  ["the pay code check is Salt QR's (stands down without it)", ["tools/paycrcsync.mjs", "--check"]],
   ["the site's distance is engine/geo.mjs", ["tools/geosite.mjs", "--check"]],
   ["the extract is the book", ["tools/ledger.mjs", "--check"]],
 ];
