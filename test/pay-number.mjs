@@ -4,15 +4,13 @@
  * The sheet puts his banks first, as Option tiles with none chosen; then the figure, All or Part, and "What this pays" folded away;
  * then the way, Transfer or Scan a code. With a bank chosen and Transfer, the sheet shows that bank's account number in groups of
  * four with Copy (digits only to the clipboard) above the reference. The number is NEVER in git (rule 3, the repo is public): it is
- * written from the laptop into the Counter's KV `paynum` by `node tools/paysync.mjs --numbers`, and served on a customer's session
+ * read by the Counter's Worker from Salt QR (stmt/paycodes.js; the old KV `paynum` and its laptop writer retired 06 Nov 2026), and served on a customer's session
  * at GET /pay/accounts. A bank with no number there keeps the link into the pay page, and an "I am back" ghost moves the sheet to
  * Did you send, so the question no longer waits on the page losing and regaining focus.
  *
  * EVERY NUMBER, NAME AND CODE HERE IS INVENTED. The source holds no run of ten digits: a number is joined from parts at run time, so
  * the source scan (below) can hold this file to the same rule as the rest.
- *   1  the writer: the picker, its refusals, the whitelist, the last four digits alone on screen, the wrangler arguments
- *   2  the route GET /pay/accounts: the session gate, the whitelist, no-store, the empty answer, a failed read, the test accounts' overlay
- *   4  the practice accounts' invented number, sealed with the fixture
+ *   (1, 2 and 4, the writer, the route and the practice accounts' number, retired 06 Nov 2026: the route is test/pay-codes.mjs)
  *   5  the leak scan and the source scan, each on invented data, then 6 a guest board with the numbers filed, then 7 both on the repository
  *   3  the sheet, in jsdom
  *   (each check below was proved red by its own mutation: test/pay-number.mutations.json, run with tools/section.mjs) */
@@ -105,206 +103,14 @@ export function longRuns(files) {
 }
 
 export async function run({ ok, okOff, pageWork, KV }) {
-  const PS = await import("../tools/paysync.mjs");
-
-  /* ---- 1: the writer, on an invented pay store */
-  const n1 = DIG("5550", "1234", "5678"), n2 = DIG("5550", "9999", "0001", "2"), nSusp = DIG("5550", "0000", "1111"), nNoBank = DIG("5550", "2222", "3333");
-  const store = { payee: "Invented Payee Sdn Bhd", owners: [{ name: "Invented Owner", legal: "Invented Owner Legal" }], accounts: [
-    { key: "maybank", name: "Maybank", bank: "Maybank", sub: n1.slice(0, 4) + " " + n1.slice(4, 8) + " " + n1.slice(8), payload: "000201INVENTED", mid: "999111", biller: "", holder: "Invented Holder", owner: "Invented Owner" },
-    { key: "ambank", name: "AmBank", bank: "AmBank", sub: n2, payload: "000201OTHER", mid: "999222", holder: "Another Invented Holder" },
-    { key: "spay", name: "ShopeePay", bank: "ShopeePay", sub: nSusp, maintenance: true },
-    { key: "codeonly", name: "Code only", bank: "", sub: nNoBank, payload: "000201CODE" }] };
-  const known = new Set(["maybank", "ambank", "spay", "codeonly"]);
-  const got = PS.pickNumbers(store, known);
-  ok(Object.keys(got.accounts).join() === "maybank,ambank" && got.accounts.maybank.number === n1 && got.accounts.ambank.number === n2 && !got.refused.length,
-    "the picker takes the accounts that offer a transfer and are not suspended, with the spaces of the store's number stripped, and passes over a suspended account and one with no bank: "
-    + JSON.stringify({ keys: Object.keys(got.accounts), refused: got.refused }));
-  const rec = PS.numbersRecord(got.accounts, "2026-10-11T00:00:00.000Z"), txt = JSON.stringify(rec);
-  ok(Object.keys(rec).join() === "v,at,accounts" && rec.v === 1 && Object.values(rec.accounts).every((a) => Object.keys(a).join() === "number")
-    && !/Invented|INVENTED|OTHER|CODE|999111|999222/.test(txt),
-    "the record is the version, the day and a number a key, and holds no holder, owner, payee, bank, member number or payload: " + txt.replace(/[0-9]{6,}/g, "#"));
-
-  /* the refusals: a number outside 10 to 15 digits, with a letter or a dash, an absent one; a key pay.js lacks */
-  const bad = (sub) => PS.pickNumbers({ accounts: [{ key: "maybank", name: "M", bank: "Maybank", sub }] }, known);
-  const refusals = { short: bad(n1.slice(0, 9)), long: bad(n1 + n2.slice(0, 4)), letter: bad(n1.slice(0, 9) + "x"), dash: bad(n1.slice(0, 5) + "-" + n1.slice(5)), none: bad(undefined), blank: bad("   ") };
-  ok(Object.values(refusals).every((r) => r.refused.length === 1 && !Object.keys(r.accounts).length) && bad(n1.slice(0, 10)).refused.length === 0 && bad(n1.slice(0, 10) + n2.slice(0, 5)).refused.length === 0,
-    "a number of nine digits, sixteen, one with a letter, one with a dash, none at all and a blank are each refused, and ten and fifteen digits pass: " + JSON.stringify(Object.fromEntries(Object.entries(refusals).map(([k, r]) => [k, r.refused.length]))));
-  const lack = PS.pickNumbers(store, new Set(["maybank"]));
-  ok(lack.refused.length === 1 && /^ambank: /.test(lack.refused[0]) && Object.keys(lack.accounts).join() === "maybank",
-    "an account stmt/pay.js lacks is refused by its key, saying to run --sync first: " + JSON.stringify(lack.refused));
-  ok(PS.pickNumbers({ accounts: [{ key: "spay", name: "S", bank: "S", maintenance: true, sub: nSusp }] }, known).refused.join() === "no account offers a transfer with a number",
-    "and a store with nothing to serve is refused too, never written as an empty record");
-
-  /* what the tool says: a key and the last four digits, never a whole number, in a refusal, the table or a difference */
-  const allSaid = [].concat(PS.numbersTable(got.accounts), PS.numbersDiff(rec, { v: 1, accounts: { maybank: { number: n2 }, zz: { number: n1 } } }), Object.values(refusals).flatMap((r) => r.refused), lack.refused).join("\n");
-  ok(PS.lastFour(n1) === n1.slice(-4) && /\.\.\.\.\.5678/.test(allSaid) && !/[0-9]{5}/.test(allSaid)
-    && PS.numbersDiff(rec, { v: 1, accounts: { maybank: { number: n1 } } }).join().includes("ambank"),
-    "the table, the difference and every refusal name a key and the last four digits, and no run of five digits: " + allSaid.replace(/[0-9]{5,}/g, "#"));
-  const same = PS.numbersDiff(rec, { v: 1, accounts: { maybank: { number: n1 }, ambank: { number: n2 } } });
-  const unlike = PS.numbersDiff(rec, { v: 1, accounts: { maybank: { number: n1 }, ambank: { number: n1 }, extra: { number: n2 } } });
-  ok(same.length === 0 && unlike.length === 2 && /ambank.*differs/.test(unlike[0]) && /extra.*not in the store/.test(unlike[1]),
-    "the readback compares number by number: equal is no difference, a different number and one only on the Counter are each named: " + JSON.stringify(unlike));
-
-  /* the wrangler calls, with a stub: the Counter's own KV, binding STMT, the key paynum, from a file, never the value on the line */
-  let put = null, get = null;
-  PS.wrPutNumbers("x.json", (cmd, args, opts) => { put = { cmd, args, opts }; return ""; });
-  PS.wrGetNumbers((cmd, args, opts) => { get = { cmd, args, opts }; return "{}"; });
-  ok(!!put && put.args.join(" ") === "wrangler kv key put paynum --path x.json --binding STMT --remote -c wrangler.stmt.jsonc" && put.opts.cwd === REPO && put.opts.shell === (process.platform === "win32")
-    && !!get && get.args.join(" ") === "wrangler kv key get paynum --binding STMT --remote -c wrangler.stmt.jsonc",
-    "the write is wrangler kv key put on the Counter's STMT binding, key paynum, from a file, and the readback is the get of the same: " + JSON.stringify([put && put.args, get && get.args]));
-
-  /* every error the tool prints, through the real tool in a child process: a pay store of invented accounts in a temp folder, and a stand-in for npx
-     (never wrangler) that answers what the case needs. Each case puts a number where its error is read from, a key in the store, wrangler's own
-     line, the Counter's answer, the parser's quotation of a file, and none may reach the screen; a case shows "#" where the number was.
-     THE TOOL CAN NEVER REACH THE REAL wrangler FROM HERE (his word of 12 Oct 2026: on a logged-in laptop it would write an invented number to the
-     LIVE Counter's `paynum`). Four locks: the tool takes its executable from PAYSYNC_NPX, set here to the stand-in's absolute path; the child's PATH
-     holds one folder, a decoy `npx` that only leaves a mark if it is ever run, so no real npx is on it; the Cloudflare credentials are left out of
-     its environment; and tool() refuses, without starting anything, unless PAYSYNC_NPX names a file in this temp folder that carries the stand-in's
-     own first line. The stand-in and the decoy use shell builtins alone (type and exit; printf and exit), since PATH holds nothing else. */
-  const tmp = mkdtempSync(join(tmpdir(), "paysync-test-")), SECRET = DIG("5550", "7777", "4321"), WIN = process.platform === "win32";
-  const PATHKEY = Object.keys(process.env).find((k) => k.toUpperCase() === "PATH") || "PATH", MARK = "paysync-test stand-in";
-  const standin = join(tmp, "standin", WIN ? "paysync-npx.cmd" : "paysync-npx"), decoyDir = join(tmp, "decoy"), reached = join(decoyDir, "reached.txt");
-  const lay = (store, npx) => {   /* npx = [the stream it speaks on, what it says, its exit code] */
-    const data = join(tmp, "data"), repo = join(tmp, "repo");
-    for (const d of [data, repo, join(tmp, "standin"), decoyDir]) mkdirSync(d, { recursive: true });
-    writeFileSync(join(data, "accounts.json"), store); writeFileSync(join(repo, "wrangler.jsonc"), '{\n  "name": "invented-pay"\n}\n');
-    const to = npx[0] === "err" ? 1 : 0;
-    if (WIN) {
-      writeFileSync(join(tmp, "standin", "out.txt"), npx[1]);
-      writeFileSync(standin, "@rem " + MARK + "\r\n" + '@type "%~dp0out.txt"' + (to ? " 1>&2" : "") + "\r\n@exit /b " + npx[2] + "\r\n");
-      writeFileSync(join(decoyDir, "npx.cmd"), '@echo reached> "%~dp0reached.txt"\r\n@exit /b 99\r\n');
-    } else {
-      writeFileSync(standin, "#!/bin/sh\n# " + MARK + "\nprintf '%s' '" + npx[1].replace(/'/g, "'\\''") + "'" + (to ? " >&2" : "") + "\nexit " + npx[2] + "\n"); chmodSync(standin, 0o755);
-      writeFileSync(join(decoyDir, "npx"), '#!/bin/sh\necho reached > "${0%/*}/reached.txt"\nexit 99\n'); chmodSync(join(decoyDir, "npx"), 0o755);
-    }
-    return { QR_MASTER: data, QR_REPO: repo, PAYSYNC_NPX: standin, [PATHKEY]: decoyDir };
-  };
-  const inPlace = (p) => { try { return !!p && p.startsWith(tmp) && readFileSync(p, "utf8").includes(MARK); } catch (e) { return false; } };
-  const kept = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^(CLOUDFLARE|CF)_/i.test(k)));
-  const tool = (args, env) => {
-    if (!inPlace(env.PAYSYNC_NPX)) return { code: null, said: "", refused: true };   /* nothing is started without the stand-in */
-    const r = spawnSync(process.execPath, [join(REPO, "tools", "paysync.mjs"), ...args], { cwd: REPO, env: Object.assign({}, kept, { NODE_OPTIONS: "--no-warnings" }, env), encoding: "utf8", timeout: 60000 });   /* node's own notice names a process id */
-    return { code: r.status, said: String(r.stdout) + String(r.stderr) };
-  };
-  const goodStore = JSON.stringify({ accounts: [{ key: "maybank", name: "Maybank", bank: "Maybank", sub: n1 }] });
-  const cases = {}; let decoyReached = false;
-  try {
-    cases.key = tool(["--numbers", "--dry"], lay(JSON.stringify({ accounts: [{ key: "k" + SECRET, name: "Odd", bank: "Odd Bank", sub: n1 }] }), ["out", "", 0]));
-    cases.wrangler = tool(["--check-numbers"], lay(goodStore, ["err", "[ERROR] A request to the API failed for " + SECRET + " (code 10000)\n", 1]));
-    cases.notJson = tool(["--check-numbers"], lay(goodStore, ["out", "x" + SECRET, 0]));
-    cases.differs = tool(["--check-numbers"], lay(goodStore, ["out", JSON.stringify({ v: 1, accounts: { ["k" + SECRET]: { number: n2 } } }), 0]));
-    cases.push = tool(["--numbers"], lay(goodStore, ["err", "[ERROR] The write for " + SECRET + " was refused\n", 1]));
-    cases.parse = tool(["--numbers", "--dry"], lay("x" + SECRET, ["out", "", 0]));
-    decoyReached = existsSync(reached);
-  } finally { try { rmSync(tmp, { recursive: true, force: true }); } catch (e) { /* the system's temp folder */ } }
-  const clean = (r) => !/[0-9]{5}/.test(r.said) && r.said.includes("#");
-  ok(PS.hide("a" + n1 + " b" + n1.slice(-4)) === "a# b" + n1.slice(-4),
-    "the mask takes any run of five digits and leaves four: " + PS.hide("a" + n1 + " b" + n1.slice(-4)));
-  ok(Object.keys(cases).length === 6 && !Object.values(cases).some((r) => r.refused) && !decoyReached && !Object.keys(kept).some((k) => /^(CLOUDFLARE|CF)_/i.test(k)),
-    "the tool was started only with its stand-in for npx, named by absolute path, never reached the decoy that stands where PATH would look for npx, and carried no Cloudflare credential: "
-    + JSON.stringify({ refused: Object.entries(cases).filter(([k, r]) => r.refused).map(([k]) => k), decoyReached }));
-  ok(Object.values(cases).every((r) => r.code === 1 && clean(r)) && /STOPPED: nothing was written/.test(cases.key.said) && /STOPPED: wrangler could not read/.test(cases.wrangler.said)
-    && /STOPPED: wrangler could not read/.test(cases.notJson.said) && /FAIL +KV `paynum` differs/.test(cases.differs.said) && /\.\.\.\.\.5678/.test(cases.differs.said)
-    && /PUSH FAILED/.test(cases.push.said) && /SyntaxError/.test(cases.parse.said),
-    "every error the tool prints hides a run of five digits, a key in the store, wrangler's line, a Counter answer that is not JSON, one that differs, a failed write and a store that will not parse, and the last four digits still show: "
-    + JSON.stringify(Object.fromEntries(Object.entries(cases).map(([k, r]) => [k, [r.code, clean(r)]]))));
-
-  /* ---- 2: the route, GET /pay/accounts, through the real Worker on a stand-in KV */
+  /* 06 Nov 2026: the writer (`paysync --numbers`), KV `paynum` and the route's old checks are retired with the road (his rule: the Counter's Worker reads
+     Salt QR itself). The route, the reader and the practice accounts' invented details are test/pay-codes.mjs. What stays here is the sheet in jsdom, the
+     leak scan and the source scan, below. Invented numbers, joined at run time. */
+  const PS = await import("../tools/paysync.mjs"), CR = await import("../tools/stmt-crypto.mjs");
+  const n1 = DIG("5550", "1234", "5678"), n2 = DIG("5550", "9999", "0001", "2");
   const stmtW = (await import("../stmt/worker.js")).default;
-  const O = await import("../stmt/orders.js");
-  const TF = await import("../stmt/testfix.js");
-  const PN = await import("../stmt/paynum.js");
-  const PAY_ACCOUNTS_W = (await import("../stmt/pay.js")).PAY_ACCOUNTS;
   const kv = new KV();
   const env = { STMT: kv, STMT_DESK_KEY: "desk-key" };
-  const asker = async (u) => ({ "X-Stmt-Session": await O.mintSession(env, u) });
-  const call = async (path, headers = {}, method = "GET", e = env) => {
-    let r; try { r = await stmtW.fetch(new Request("https://k7m3p2.example" + path, { method, headers }), e); } catch (err) { return { status: 0, cc: null, b: {}, raw: "{}", threw: String(err.message) }; }
-    let b = null; try { b = await r.json(); } catch (err) { b = null; }
-    return { status: r.status, cc: r.headers.get("cache-control"), b: b || {}, raw: JSON.stringify(b || {}) };
-  };
-  const hide = (s) => s.replace(/[0-9]{6,}/g, "#");
-  const S = await asker("abcd-efgh");
-  const none = await call("/pay/accounts", S);
-  ok(none.status === 200 && none.b.ok === true && JSON.stringify(none.b.accounts) === "{}" && none.cc === "no-store",
-    "with no paynum filed the route answers an empty list, never an error, and is no-store: " + JSON.stringify([none.status, none.b, none.cc]));
-  const anon = await call("/pay/accounts", {});
-  ok(anon.status === 401 && !("accounts" in anon.b), "without a session it is the site's usual refusal and carries no accounts: " + JSON.stringify([anon.status, anon.b]));
-
-  const record = () => JSON.stringify({ v: 1, at: "2026-10-11T00:00:00.000Z", payee: "Invented Payee Sdn Bhd", accounts: {
-    maybank: { number: n1, holder: "Invented Holder", owner: "Invented Owner", mid: "999111", payload: "000201INVENTED", bank: "Maybank" },
-    ambank: { number: n2 }, spay: { number: nSusp }, nokey: { number: n1 }, gx: { number: "12345678" }, wise: { number: n1.slice(0, 9) + "x" }, ryt: "not an object" } });
-  await kv.put("paynum", record());
-  const some = await call("/pay/accounts", S);
-  ok(some.status === 200 && some.b.ok === true && Object.keys(some.b.accounts).join() === "maybank,ambank"
-    && Object.values(some.b.accounts).every((a) => Object.keys(a).join() === "number") && some.b.accounts.maybank.number === n1 && some.b.accounts.ambank.number === n2,
-    "the route serves the accounts the page offers for a transfer, a well-formed number each, and passes over a suspended account, a key the rails lack, a short number, one with a letter and a malformed entry: " + hide(some.raw));
-  ok(!/Invented|INVENTED|holder|owner|payee|payload|mid|999111/i.test(some.raw.replace(/maybank|ambank/g, "")),
-    "and a field added to the record by mistake, a holder, owner, payee, member number or payload, never leaves: " + hide(some.raw));
-  const post = await call("/pay/accounts", { ...S, "content-type": "application/json" }, "POST");
-  ok(post.status === 405 && !("accounts" in post.b), "only a read is answered: " + post.status);
-  await kv.put("paynum", JSON.stringify({ ...JSON.parse(record()), v: 2 }));
-  ok(JSON.stringify((await call("/pay/accounts", S)).b.accounts) === "{}", "a record of another version is not served");
-  await kv.put("paynum", record());
-  const lame = { STMT: { get: async (k, t) => { if (k === "paynum") throw new Error("KV is down"); return kv.get(k, t); }, put: (k, v, o) => kv.put(k, v, o), delete: (k) => kv.delete(k) }, STMT_DESK_KEY: "desk-key" };
-  const down = await call("/pay/accounts", S, "GET", lame);
-  ok(down.status === 200 && JSON.stringify(down.b.accounts) === "{}", "and a KV read that fails answers an empty list, so the sheet falls back to the link: " + down.status);
-
-  /* QR COMMAND'S LIVE STATE (17 Oct 2026): its /state.json through the QRCMD binding wins over the baked flag, a key at a time; only a real
-     boolean against a known key is taken; an account it has down is never served; a failed read leaves `down` out and the baked flags stand */
-  const qrAsked = [];
-  const qr = (answer) => ({ ...env, QRCMD: { fetch: async (u) => { qrAsked.push(String(u)); if (answer instanceof Error) throw answer; return answer; } } });
-  const stateOf = (m, status = 200) => new Response(JSON.stringify({ maintenance: m, order: [] }), { status, headers: { "content-type": "application/json" } });
-  const live = await call("/pay/accounts", S, "GET", qr(stateOf({ maybank: true, spay: false, ambank: "yes", nokey: true })));
-  ok(live.status === 200 && Object.keys(live.b.accounts).join() === "ambank,spay" && live.b.down && live.b.down.maybank === true && live.b.down.spay === false
-    && live.b.down.ambank === false && !("nokey" in live.b.down) && Object.keys(live.b.down).length === PAY_ACCOUNTS_W.length && /\/state\.json$/.test(qrAsked[qrAsked.length - 1]),
-    "QR Command's live state wins over the baked flag: maybank, live down, is not served; spay, baked down and live up, is; a string and a key the rails lack are passed over: " + hide(live.raw));
-  for (const [why, answer] of [["throws", new Error("unreachable")], ["answers 500", stateOf({ maybank: true }, 500)], ["answers no maintenance", new Response("{}")], ["answers not JSON", new Response("<html>")]]) {
-    const r = await call("/pay/accounts", S, "GET", qr(answer));
-    ok(r.status === 200 && !("down" in r.b) && Object.keys(r.b.accounts).join() === "maybank,ambank", "when QR Command " + why + ", `down` is left out and the baked flags stand: " + hide(r.raw));
-  }
-  ok(!("down" in (await call("/pay/accounts", S)).b), "and with no QRCMD bound, `down` is left out");
-  const PST = await import("../stmt/paystate.js");
-  ok(JSON.stringify(PST.downOf({ maintenance: { a: true } }, [{ key: "a", maintenance: false }, { key: "b", maintenance: true }, { key: "c", maintenance: false }])) === JSON.stringify({ a: true, b: true, c: false })
-    && PST.downOf({ maintenance: [] }) === null && PST.downOf(null) === null && PST.liveAccounts(null) === PAY_ACCOUNTS_W,
-    "downOf takes the live word where there is one and the baked flag elsewhere, and an unreadable state is null");
-
-  /* the whitelist alone, on an invented list: only a transfer account that is not suspended, only its own key, never an inherited one */
-  const list = [{ key: "a", transfer: true, maintenance: false }, { key: "b", transfer: false, maintenance: false }, { key: "c", transfer: true, maintenance: true }, { key: "e", transfer: true, maintenance: false }];
-  const picked = PN.numbersOf({ v: 1, accounts: Object.assign(Object.create({ e: { number: n2 } }), { a: { number: n1, holder: "x" }, b: { number: n1 }, c: { number: n1 }, d: { number: n1 } }) }, list);
-  ok(JSON.stringify(picked) === JSON.stringify({ a: { number: n1 } }),
-    "and the picker serves a, which offers a transfer and is open, and not b (no transfer rail), c (suspended), d (not on the list) or e (inherited, not the record's own): " + hide(JSON.stringify(picked)));
-
-  /* a test account is answered its fixture's invented number, and the real record is never read for it */
-  const ZERO = "0".repeat(13), T = TF.TEST_USER;
-  await kv.put("u:" + T, JSON.stringify({ test: true, wrap: { salt: "pn-salt" } }));
-  const TS = await asker(T);
-  const noFix = await call("/pay/accounts", TS);
-  await kv.put(TF.fixKey(T), JSON.stringify({ v: TF.FIX_VERSION, salt: "pn-salt", at: "2026-10-11T00:00:00.000Z", paynum: { maybank: { number: ZERO, holder: "Invented Holder" }, nokey: { number: ZERO } } }));
-  const fixed = await call("/pay/accounts", TS);
-  ok(noFix.status === 200 && JSON.stringify(noFix.b.accounts) === "{}", "a test account with no fixture sealed yet is answered an empty list, though the real record is filed: " + hide(noFix.raw));
-  ok(fixed.status === 200 && JSON.stringify(fixed.b.accounts) === JSON.stringify({ maybank: { number: ZERO } }) && !fixed.raw.includes(n1) && !fixed.raw.includes(n2),
-    "with its fixture it is answered the fixture's invented number through the same whitelist, and none of the real record's: " + hide(fixed.raw));
-
-  /* ---- 4: the practice accounts hold an invented number, sealed with the fixture, and a fixture sealed before is not served */
-  const TX = await import("../tools/testfix.mjs"), CR = await import("../tools/stmt-crypto.mjs");
-  const all = TX.buildAll(new Date("2026-10-11T04:00:00Z")), line = TX.FEATURES.map(([nm]) => nm).find((nm) => /bank account number beside the reference/.test(nm));
-  ok(Object.values(all).length === 3 && Object.values(all).every((f) => JSON.stringify(f.paynum) === JSON.stringify({ maybank: { number: ZERO } })) && !!line && !TX.missing(all).includes(line),
-    "each practice account carries the invented all-zero number for one bank, and the fixture's line for it is met: " + JSON.stringify(Object.values(all).map((f) => f.paynum)));
-  const bare = Object.fromEntries(Object.entries(all).map(([s, f]) => [s, Object.assign({}, f, { paynum: undefined })]));
-  const real = Object.fromEntries(Object.entries(all).map(([s, f]) => [s, Object.assign({}, f, { paynum: { maybank: { number: n1 } } })]));
-  ok(TX.missing(bare).includes(line) && TX.missing(real).includes(line),
-    "and a fixture without a number, or with one that is not all zeros, is red by its line: " + JSON.stringify([TX.missing(bare).includes(line), TX.missing(real).includes(line)]));
-  const ckT = await CR.contentKey("test-secret", T), recT = { test: true, wrap: await CR.wrapKey(TF.TEST_PASS, ckT) };
-  const sealed = await TX.sealFixture(all[T], recT, TF.TEST_PASS);
-  ok(JSON.stringify(sealed.paynum) === JSON.stringify({ maybank: { number: ZERO } }) && sealed.v === TF.FIX_VERSION && TF.FIX_VERSION >= 9,
-    "the sealed fixture carries it, at a fixture version past the one that held none, so the next publish seals every practice account afresh: " + JSON.stringify([sealed.v, TF.FIX_VERSION]));
-  await kv.put("u:" + T, JSON.stringify(recT)); await kv.put(TF.fixKey(T), JSON.stringify(sealed));
-  const sealedAns = await call("/pay/accounts", TS);
-  await kv.put(TF.fixKey(T), JSON.stringify(Object.assign({}, sealed, { v: TF.FIX_VERSION - 1 })));
-  const older = await call("/pay/accounts", TS);
-  ok(JSON.stringify(sealedAns.b.accounts) === JSON.stringify({ maybank: { number: ZERO } }) && JSON.stringify(older.b.accounts) === "{}",
-    "the Worker answers the sealed fixture's number, and a fixture sealed at an earlier version is not served until the publish seals it again: " + hide(JSON.stringify([sealedAns.b, older.b])));
 
   /* ---- 5: the leak scan, on an invented pay store: a number as stored, closed up, regrouped, dashed or inside a longer run; a payload;
           a name in any case; a short code only as a whole number; and a report that names a field and a count, never a value */
@@ -351,7 +157,7 @@ export async function run({ ok, okOff, pageWork, KV }) {
     "a refused run is reported by its file, its line and its length, never its digits: " + JSON.stringify(where));
 
   /* ---- 6: a guest board is a page of prices that forbids script outright, and no filed number reaches it, nor the shut page */
-  await kv.put("paynum", record());
+  await kv.put("paycodes", JSON.stringify({ v: 1, at: Date.now(), accounts: [{ key: "maybank", acct: n1 }] }));
   await kv.put("g:aaaa-bbbb", JSON.stringify({ id: "aaaa-bbbb" }));
   await kv.put("guestboard", JSON.stringify({ week: { label: "Week of 05 Oct 2026" }, products: [{ product: "salt", unit: "unit", fellBack: false, sizes: [{ q: 1, price: 12.5 }, { q: 5, price: 55 }] }] }));
   const board = await stmtW.fetch(new Request("https://k7m3p2.example/g/aaaa-bbbb"), env), boardHtml = await board.text();
