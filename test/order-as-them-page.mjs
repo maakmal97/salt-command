@@ -84,8 +84,8 @@ export async function run({ ok, pageWork }) {
     const wi = p.d.getElementById("oWhere");
     wi.value = "Orlen"; wi.dispatchEvent(new p.w.Event("input", { bubbles: true })); await p.work.quiet();
     const go = p.d.getElementById("oGo"), foot = p.d.querySelector("#osheet .ototal");
-    ok(!!go && !go.disabled && !/Pick where it is going/.test(foot ? foot.textContent : ""),
-      "B11 a delivery with an area typed reaches Review on Order as them: " + JSON.stringify([!!go && go.disabled, foot && foot.textContent]));
+    ok(!!go && go.getAttribute("aria-disabled") !== "true" && !/Pick where it is going/.test(foot ? foot.textContent : ""),
+      "B11 a delivery with an area typed reaches Review on Order as them: " + JSON.stringify([!!go && go.getAttribute("aria-disabled"), foot && foot.textContent]));
     sb.scrollTop = 300;
     go.click(); await p.work.quiet();
     ok(sb.scrollTop === 0, "B12 and Review's check, a new step, opens at its top: " + sb.scrollTop);
@@ -111,6 +111,10 @@ export async function run({ ok, pageWork }) {
     const routes = p.posts.map((x) => x.route);
     ok(!!pu && !!hit && routes.includes("/all/maker/geo/search") && !routes.includes("/place/search") && !!p.d.getElementById("oPinOff"),
       "B13 their spot's place search on Order as them asks his own road and a place found becomes the spot: " + JSON.stringify([routes, !!pu, !!hit]));
+    /* B14 (5 Nov 2026): the exact spot stands in for the area words, so with no area typed Review is ready and says nothing is missing */
+    const go14 = p.d.getElementById("oGo"), foot14 = p.d.querySelector("#osheet .ototal"), area14 = p.d.getElementById("oWhere");
+    ok(!!area14 && !area14.value && !!go14 && !go14.hasAttribute("aria-disabled") && !/Say roughly where/.test(foot14 ? foot14.textContent : ""),
+      "B14 a spot shared with no area typed lets Review go on Order as them: " + JSON.stringify([area14 && area14.value, go14 && go14.getAttribute("aria-disabled"), foot14 && foot14.textContent]));
   } catch (e) { ok(false, "Order as them's place search stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
 
   /* B5: View as them stays read only */
