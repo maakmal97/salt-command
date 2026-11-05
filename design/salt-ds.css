@@ -2625,7 +2625,8 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
    record's ONE main action, a box and Send, Record, Save or Set, the stage's pill, so it is in view without scrolling; what ends or
    removes (Decline, Cancel, Sign out everywhere) is never the foot and stays last in the scroll. On a page that scrolls (a phone,
    a tablet) the foot rides the screen's foot, --salt-pane-foot-at above it (the phone's bar of places). The head is veiled glass, so
-   what scrolls under it never reads through; the foot is seamless, the pill alone (1.28.1). ---- */
+   what scrolls under it never reads through; the foot is seamless, the pill alone (1.28.1). A surface whose bar sits right of
+   the rail, over the column alone (the Desk), is salt-frame--side, its bar and __main inside __col (1.29.0). ---- */
 .salt-pane { display: flex; flex-direction: column; min-width: 0; }
 .salt-pane__head {
   position: sticky;
@@ -2660,9 +2661,20 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
     box-sizing: border-box;
   }
   .salt-frame__bar { grid-column: 1 / -1; }
+  /* 1.29.0: the frame holds the bar, so it never sticks: the frame is a scroll container (overflow hidden), and a sticky bar's top would count
+     from the frame's own top and push the bar down over what is under it */
+  .salt-frame .salt-frame__bar { position: relative; top: auto; }
   .salt-frame > .salt-rail { grid-column: 1; position: static; align-self: stretch; height: auto; min-height: 0; }
   .salt-frame__main { grid-column: 2; align-self: stretch; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
   .salt-frame__main .salt-pane { position: sticky; top: 0; max-height: var(--salt-pane-h, 100%); overflow-y: auto; overscroll-behavior: contain; }
+  /* 1.29.0, the Desk (5 Nov 2026): --side keeps the rail the frame's full height and sets the bar over the column alone, right of the rail (his
+     word of 21 Oct 2026); the column (__col) is the bar and under it __main, the one box that scrolls. The bar stays the column's child, so under
+     1080px, where the page scrolls, it is sticky in the column as before */
+  .salt-frame--side { grid-template-rows: minmax(0, 1fr); }
+  .salt-frame--side > .salt-rail { grid-row: 1; }
+  .salt-frame__col { grid-column: 2; grid-row: 1; align-self: stretch; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  .salt-frame__col > .salt-frame__bar { flex: none; }
+  .salt-frame__col > .salt-frame__main { flex: 1 1 auto; }
 }
 
 /* ---- Desk bar (synced to the desk 22 Sep 2026; complete since 21 Oct 2026, his word: "very sharp and complete, and

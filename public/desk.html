@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="a76cf3a10d992136";
+var SALT_BUILD_ID="9694d76554428903";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -4252,7 +4252,8 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
    record's ONE main action, a box and Send, Record, Save or Set, the stage's pill, so it is in view without scrolling; what ends or
    removes (Decline, Cancel, Sign out everywhere) is never the foot and stays last in the scroll. On a page that scrolls (a phone,
    a tablet) the foot rides the screen's foot, --salt-pane-foot-at above it (the phone's bar of places). The head is veiled glass, so
-   what scrolls under it never reads through; the foot is seamless, the pill alone (1.28.1). ---- */
+   what scrolls under it never reads through; the foot is seamless, the pill alone (1.28.1). A surface whose bar sits right of
+   the rail, over the column alone (the Desk), is salt-frame--side, its bar and __main inside __col (1.29.0). ---- */
 .salt-pane { display: flex; flex-direction: column; min-width: 0; }
 .salt-pane__head {
   position: sticky;
@@ -4287,9 +4288,20 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
     box-sizing: border-box;
   }
   .salt-frame__bar { grid-column: 1 / -1; }
+  /* 1.29.0: the frame holds the bar, so it never sticks: the frame is a scroll container (overflow hidden), and a sticky bar's top would count
+     from the frame's own top and push the bar down over what is under it */
+  .salt-frame .salt-frame__bar { position: relative; top: auto; }
   .salt-frame > .salt-rail { grid-column: 1; position: static; align-self: stretch; height: auto; min-height: 0; }
   .salt-frame__main { grid-column: 2; align-self: stretch; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
   .salt-frame__main .salt-pane { position: sticky; top: 0; max-height: var(--salt-pane-h, 100%); overflow-y: auto; overscroll-behavior: contain; }
+  /* 1.29.0, the Desk (5 Nov 2026): --side keeps the rail the frame's full height and sets the bar over the column alone, right of the rail (his
+     word of 21 Oct 2026); the column (__col) is the bar and under it __main, the one box that scrolls. The bar stays the column's child, so under
+     1080px, where the page scrolls, it is sticky in the column as before */
+  .salt-frame--side { grid-template-rows: minmax(0, 1fr); }
+  .salt-frame--side > .salt-rail { grid-row: 1; }
+  .salt-frame__col { grid-column: 2; grid-row: 1; align-self: stretch; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  .salt-frame__col > .salt-frame__bar { flex: none; }
+  .salt-frame__col > .salt-frame__main { flex: 1 1 auto; }
 }
 
 /* ---- Desk bar (synced to the desk 22 Sep 2026; complete since 21 Oct 2026, his word: "very sharp and complete, and
@@ -5536,6 +5548,14 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .look-swatch--night{background:radial-gradient(circle 14px at 70% 50%,var(--desk-look-night-accent) 0 13px,transparent 14px),var(--desk-look-night-ground);}
 .look-swatch--tide{background:radial-gradient(circle 14px at 70% 50%,var(--desk-look-tide-accent) 0 13px,transparent 14px),var(--desk-look-tide-ground);}
 .look-note{margin:var(--salt-space-3) 0 0;font-size:var(--salt-text-sm);color:var(--salt-prose);}
+/* 5 Nov 2026, his word ("like Mail or Messages on a Mac", Salt Admin first in v1442): THE FRAME (salt-ds salt-frame--side). From 1080px the rail
+   and the bar never move and #deskcol, the column under the bar, is the one box that scrolls, so the page itself never does: the frame is the screen
+   less the page's 22px top and a 24px foot under it (22 + frame + 24 = the screen) */
+@media (min-width:1080px){
+  .wrap{padding-bottom:24px;}
+  .shell{--salt-frame-h:calc(100dvh - 46px);}
+  .shell>.rail{max-height:none;}
+}
 /* ==== END DESIGN desk ==== */
 </style>
 </head>
@@ -5545,7 +5565,9 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 <div class="wrap">
 <div class="navveil" id="navveil"></div>
 <h2 class="sr-only">Salt Command: one dashboard for inventory, margin, receivables, cost-linked pricing and transaction entry.</h2>
-<div class="shell">
+<!-- 5 Nov 2026, his word ("like Mail or Messages on a Mac"): from 1080px THE FRAME (salt-ds salt-frame--side). The rail and the bar never move and
+     #deskcol, the column under the bar, is the one box that scrolls; under 1080px both are plain blocks and the page scrolls as before. -->
+<div class="shell salt-frame salt-frame--side">
   <nav class="rail salt-rail" id="tabs" aria-label="Sections">
     <div class="railbrand salt-rail__brand">
       <svg class="mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Salt crystal"><defs><linearGradient id="saltCrystalRail" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c5a059"/><stop offset="100%" stop-color="#b87333"/></linearGradient></defs><polygon points="50,5 95,28 95,72 50,95 5,72 5,28" fill="none" stroke="url(#saltCrystalRail)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,5 50,50 95,28" fill="none" stroke="url(#saltCrystalRail)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,50 5,28" fill="none" stroke="url(#saltCrystalRail)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,50 50,95" fill="none" stroke="url(#saltCrystalRail)" stroke-width="3" stroke-linejoin="round"/><polygon points="50,28 72,39 50,50 28,39" fill="url(#saltCrystalRail)" opacity="0.85"/></svg>
@@ -5573,8 +5595,8 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
     <!-- 18 Oct 2026, his word: this device's alerts left Site orders for the rail, beside the theme (ordAlertDraw). -->
     <div class="rail-alert" id="ordAlert" role="group" aria-label="Alerts"></div>
   </nav>
-  <main class="main">
-    <div class="deskbar salt-deskbar" id="deskbar">
+  <main class="main salt-frame__col">
+    <div class="deskbar salt-deskbar salt-frame__bar" id="deskbar">
       <div class="dhbrand salt-deskbar__brand"><svg class="mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Salt crystal"><defs><linearGradient id="saltCrystalBar" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c5a059"/><stop offset="100%" stop-color="#b87333"/></linearGradient></defs><polygon points="50,5 95,28 95,72 50,95 5,72 5,28" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,5 50,50 95,28" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,50 5,28" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,50 50,95" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polygon points="50,28 72,39 50,50 28,39" fill="url(#saltCrystalBar)" opacity="0.85"/></svg><div class="dhtext"><div class="dhname salt-deskbar__name">Salt Command</div><div class="meta" id="meta"></div></div></div>
       <!-- 21 Oct 2026, his word: the bar says what is live, on every view (deskLiveDraw); 23 Oct 2026, his word: it no longer says where you are -->
       <div class="dhlive salt-deskbar__live">
@@ -5585,12 +5607,14 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
       <!-- 12 Sep 2026: the date, the stamp and the status ride under the name (#meta, in .dhtext); the provisional notice keeps a row of its own -->
       <div id="provBar"></div>
     </div>
+    <div class="deskcol salt-frame__main" id="deskcol">
     <div class="sec on" id="sec-today"></div>
     <div class="sec" id="sec-money"></div>
     <div class="sec" id="sec-stock"></div>
     <div class="sec" id="sec-price"></div>
     <div class="sec" id="sec-people"></div>
     <div class="sec" id="sec-book"></div>
+    </div>
   </main>
 </div>
 </div>
@@ -23646,6 +23670,8 @@ function switchTab(s){
   /* a tab is a new page, so it opens at the top. Without this you land halfway down
      the next tab because the window keeps the scroll offset of the one you left. */
   try{window.scrollTo({top:0,left:0,behavior:'auto'});}catch(e){window.scrollTo(0,0);}
+  /* 5 Nov 2026: in the frame (from 1080px) the page never scrolls and the column does, so it opens at its top too */
+  try{const c=document.getElementById('deskcol');if(c)c.scrollTop=0;}catch(e){}
   /* v273: if the page was ALREADY at the top no scroll event fires, so the back-to-top
      button would stay lit from the tab you just left. Ask it to re-read directly. */
   try{if(window._totopSync)window._totopSync();}catch(e){}
@@ -23847,16 +23873,24 @@ function undoEntry(at){
    reads scroll position, so it must never be allowed to block the scroll it is watching. */
 (function(){
   const b=document.getElementById('totop'); if(!b)return;
-  const at=()=>window.pageYOffset||document.documentElement.scrollTop||0;
-  /* 12 Sep 2026: the same read tells the header it is stuck, so the cap above it fades in only once the desk has moved */
-  const sync=()=>{b.classList.toggle('on',at()>Math.max(320,window.innerHeight*.6));document.body.classList.toggle('dbstuck',at()>4);};
+  const page=()=>window.pageYOffset||document.documentElement.scrollTop||0;
+  /* 5 Nov 2026: from 1080px the desk is a frame (salt-frame--side): the page never scrolls and #deskcol, the column under the bar, does. framed()
+     asks the column itself whether it is the scroll box, so the read follows the width without a second copy of the breakpoint */
+  const col=document.getElementById('deskcol');
+  const framed=()=>{try{return !!col&&/auto|scroll/.test(getComputedStyle(col).overflowY);}catch(e){return false;}};
+  const at=()=>framed()?col.scrollTop:page();
+  /* 12 Sep 2026: the same read tells the header it is stuck, so the cap above it fades in only once the desk has moved. The cap reads the PAGE's
+     scroll alone: in the frame the bar is outside what scrolls, nothing slides over it, so it never casts one */
+  const sync=()=>{b.classList.toggle('on',at()>Math.max(320,window.innerHeight*.6));document.body.classList.toggle('dbstuck',page()>4);};
   window.addEventListener('scroll',sync,{passive:true});
+  if(col)col.addEventListener('scroll',sync,{passive:true});
   window.addEventListener('resize',sync,{passive:true});
   b.addEventListener('click',()=>{
     /* honour the reduced-motion setting: a smooth scroll IS motion, and the CSS override
        cannot reach a behaviour passed in script */
     const still=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
-    try{window.scrollTo({top:0,behavior:still?'auto':'smooth'});}catch(e){window.scrollTo(0,0);}
+    const box=framed()?col:window;
+    try{box.scrollTo({top:0,behavior:still?'auto':'smooth'});}catch(e){if(box===window)window.scrollTo(0,0);else col.scrollTop=0;}
   });
   sync();
   /* a tab change replaces the whole content column, so the old scroll position may no longer
