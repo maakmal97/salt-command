@@ -2624,8 +2624,8 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
    in the column under the pane's own top), its head (__head) held at its top and its foot (__foot) at its foot. The foot holds the
    record's ONE main action, a box and Send, Record, Save or Set, the stage's pill, so it is in view without scrolling; what ends or
    removes (Decline, Cancel, Sign out everywhere) is never the foot and stays last in the scroll. On a page that scrolls (a phone,
-   a tablet) the foot rides the screen's foot, --salt-pane-foot-at above it (the phone's bar of places). The foot and the head are
-   veiled glass, so what scrolls under them never reads through. ---- */
+   a tablet) the foot rides the screen's foot, --salt-pane-foot-at above it (the phone's bar of places). The head is veiled glass, so
+   what scrolls under it never reads through; the foot is seamless, the pill alone (1.28.1). ---- */
 .salt-pane { display: flex; flex-direction: column; min-width: 0; }
 .salt-pane__head {
   position: sticky;
@@ -2644,10 +2644,10 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   flex-direction: column;
   gap: var(--salt-space-3);
   padding: var(--salt-space-3) 0;
-  border-top: 1px solid var(--salt-line-faint);
-  background: var(--salt-veil);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  /* 1.28.1, his word of 5 Nov 2026 ("seamless, not with the black square behind the main action"): the foot draws nothing of its own, no fill,
+     no frost and no hairline; the pill floats at the foot over what scrolls under it */
+  background: none;
+  border: 0;
 }
 .salt-pane__foot > .salt-pill { width: 100%; margin: 0; }
 @media (min-width: 1080px) {

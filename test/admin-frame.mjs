@@ -59,8 +59,9 @@ export async function run({ ok, pageWork }) {
       "F1.2 the column right of the rail is the one box that scrolls, and the rail stands still beside it, the row's height: " + J([main, rail]));
     ok(/position: sticky/.test(pane) && /top: 0/.test(pane) && /max-height: var\(--salt-pane-h/.test(pane) && /overflow-y: auto/.test(pane),
       "F1.3 a pane holds to the column's top and scrolls inside itself, up to the height the page gives it: " + pane);
-    ok(/position: sticky/.test(foot) && /bottom: var\(--salt-pane-foot-at,\s*0px\)/.test(foot) && /margin-top: auto/.test(foot) && /background: var\(--salt-veil\)/.test(foot),
-      "F1.4 a pane's foot is held at its foot (or the screen's, a set distance above it), veiled so nothing reads through: " + foot);
+    /* 5 Nov 2026, his word on the shots: "seamless and not with the black square behind the main action" (salt-ds 1.28.1): no fill, no frost, no hairline */
+    ok(/position: sticky/.test(foot) && /bottom: var\(--salt-pane-foot-at,\s*0px\)/.test(foot) && /margin-top: auto/.test(foot) && /background: none/.test(foot) && !/backdrop-filter|salt-veil|border-top/.test(foot),
+      "F1.4 a pane's foot is held at its foot (or the screen's, a set distance above it), seamless: the pill alone, no box behind it: " + foot);
     const keep = top(".salt-settings__row > .salt-ghost,.salt-settings__row > .salt-switch,.salt-settings__row > .salt-orb,.salt-settings__row > .salt-status");
     const { top: ptop } = ownerCss();
     ok(/flex: (none|0 0 auto)/.test(keep) && !ptop(".adm .athrow > .salt-ghost"), "F1.5 a control in a settings row keeps its own width, from the recipe, and the page's own rule for a thread's Reply is gone: " + keep);

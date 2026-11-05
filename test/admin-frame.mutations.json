@@ -3,6 +3,7 @@
  {"name":"F1.2 the column does not scroll","file":"stmt/statement-css.js","find":".salt-frame__main { grid-column: 2; align-self: stretch; min-width: 0; min-height: 0; overflow-y: auto;","replace":".salt-frame__main { grid-column: 2; align-self: stretch; min-width: 0; min-height: 0; overflow-y: visible;"},
  {"name":"F1.3 a pane scrolls with the column","file":"stmt/statement-css.js","find":".salt-frame__main .salt-pane { position: sticky;","replace":".salt-frame__main .salt-pane { position: relative;"},
  {"name":"F1.4 a foot is not held","file":"stmt/statement-css.js","find":"bottom: var(--salt-pane-foot-at, 0px);","replace":"bottom: auto;"},
+ {"name":"F1.4 a box stands behind the pill","file":"stmt/statement-css.js","find":"  background: none;\\n  border: 0;\\n}\\n.salt-pane__foot > .salt-pill","replace":"  background: var(--salt-veil);\\n  border: 0;\\n}\\n.salt-pane__foot > .salt-pill"},
  {"name":"F1.5 a chip in a row may be squeezed","file":"stmt/statement-css.js","find":".salt-settings__row > .salt-status { flex: none; }","replace":".salt-settings__row > .salt-status { }"},
  {"name":"F2.1 the column is not the frame's","file":"stmt/page.js","find":"+ '<div class=\"amain salt-frame__main\">'","replace":"+ '<div class=\"amain\">'"},
  {"name":"F2.2 Shop's open day is not a pane","file":"stmt/page.js","find":"<aside id=\"makerDayPane\" class=\"hpane salt-pane\"","replace":"<aside id=\"makerDayPane\" class=\"hpane\""},
