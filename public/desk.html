@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="b5abbce92bc3d4ed";
+var SALT_BUILD_ID="8846fcee1e346fea";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -2002,7 +2002,8 @@ details.obs>summary{min-height:var(--tap);}
   gap: var(--salt-space-7);
   flex-wrap: wrap;
   font-family: var(--salt-font-mono);
-  color: #a0aab0;
+  /* 1.29.1: a token, never a literal; the typed grey was mist-light less 6 a channel, and stayed Night's grey on Tide */
+  color: var(--salt-mist-light);
   font-variant-numeric: tabular-nums;
 }
 .salt-metrics--sm { font-size: var(--salt-text-sm); gap: var(--salt-space-6); }
