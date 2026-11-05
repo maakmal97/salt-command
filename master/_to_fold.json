@@ -1,0 +1,80 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-05T15:51:10.648Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s337",
+    "qty": 2,
+    "total": 195,
+    "cash": 220,
+    "date": "2026-11-05",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 2
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-11-05"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "delivered"
+     }
+    ],
+    "customer": "CI4-OKR",
+    "rids": [],
+    "booked_seq": 128
+   },
+   "reasoning": "Correction against CI4-OKR's order of 2 unit for RM 195 dated 2026-11-05 (s337). Sets deliveredQty from 0 to 2, deliveredOn from unset to 2026-11-05, handover from unset to delivered. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This row carries a trail of 2 steps. Setting the figure directly does not rewrite them, so the trail will no longer add up to it; the correction is recorded beside them saying so."
+   ],
+   "amends": "s337",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-11-05T15:51:10.648Z",
+    "type": "SELL",
+    "party": "CI4-OKR",
+    "qty": 2,
+    "total": 0,
+    "status": "Handover",
+    "raw": "2 unit delivered to CI4-OKR, order 20261105072811-klzwuq, on 2026-11-05",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CI4-OKR",
+     "rid": null,
+     "orderKey": "CI4-OKR|2026-11-05|220",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-11-05",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 2,
+      "deliveredOn": "2026-11-05",
+      "handover": "delivered"
+     },
+     "note": "2 unit delivered for order 20261105072811-klzwuq."
+    },
+    "orderId": "20261105072811-klzwuq"
+   },
+   "decidedAt": "2026-11-05T15:51:13.921Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
