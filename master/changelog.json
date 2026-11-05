@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1446",
+  "d": "05 Nov 2026",
+  "t": "DELIVERY OF S337 RECORDED AND SALT SHELF ROLLED BY 2 UNIT",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> The delivery of 2 unit of salt to CI4-OKR on 05 Nov 2026 is recorded against s337, setting deliveredQty, deliveredOn and handover. It was preapproved by Counter Admin. The drafter flagged that the row's 2-step trail will not add up to the corrected figure; the correction is recorded beside the trail saying so.",
+   "<b>INVENTORY.</b> The shelf rolls by 2 unit out to CI4-OKR. Stock stands at 17.5, below the reorder point of 50. The stock cost stays at RM56 a unit and nothing landed."
+  ]
+ },
+ {
   "v": "v1445",
   "d": "05 Nov 2026",
   "t": "A CORRECTION TO ONE SALT ORDER, GOODS TOTAL LOWERED",
