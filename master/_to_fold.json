@@ -1,0 +1,75 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-05T15:14:43.833Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s336",
+    "qty": 0.5,
+    "total": 75,
+    "cash": 0,
+    "date": "2026-11-05",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "total",
+      "from": 75,
+      "to": 70
+     },
+     {
+      "field": "delivery",
+      "from": null,
+      "to": 0
+     }
+    ],
+    "customer": "CA3-KP",
+    "rids": [],
+    "booked_seq": 127
+   },
+   "reasoning": "Correction against CA3-KP's order of 0.5 unit for RM 75 dated 2026-11-05 (s336). Sets total from 75 to 70, delivery from unset to 0. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This is an ADVANCE: 0.5 unit goes out with RM 70 unpaid. Check it against CA3-KP's credit cap."
+   ],
+   "amends": "s336",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-11-05T15:14:43.833Z",
+    "type": "SELL",
+    "party": "CA3-KP",
+    "qty": 0.5,
+    "total": 70,
+    "status": "Amendment",
+    "raw": "Amended CA3-KP, order 20261105033625-wxe1kq: goods RM 75 to 70",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CA3-KP",
+     "rid": null,
+     "orderKey": "CA3-KP|2026-11-05|75",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-11-05",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "qty": 0.5,
+      "total": 70,
+      "delivery": 0
+     },
+     "note": "Amended after Accept for order 20261105033625-wxe1kq: goods RM 75 to 70."
+    },
+    "orderId": "20261105033625-wxe1kq"
+   },
+   "decidedAt": "2026-11-05T15:14:47.368Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
