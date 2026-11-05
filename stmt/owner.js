@@ -145,7 +145,7 @@ export const OWNER_JS = `
     if(fresh&&PLACE_READ[placeNow]) PLACE_READ[placeNow]();
     if(PART_READ[placeNow+'.'+partNow]) PART_READ[placeNow+'.'+partNow]();
     if(o.push){ var to=addrFor(placeNow, partNow); if(location.hash!==to){ try{ history.pushState(null,'',to); }catch(e){} } }
-    if(fresh){ try{ window.scrollTo(0,0); }catch(e){} }
+    if(fresh) pageTop();
     needsWatch();
   }
   /* Back, Forward and an address typed in: the place the address names, and nothing written back. Not while an account is viewed
@@ -521,8 +521,10 @@ export const OWNER_JS = `
     [hob, open, orderFor, pwb, sob].forEach(function(b){ if(none){ b.disabled=true; b.title=why; } });
     if(!none&&!a.pwMaster){ pwb.disabled=true; pwb.title='Password not stored yet.'; }
     sign.appendChild(rows);
-    sign.appendChild(sendPill(a, pn, function(){ standDraw(); mark.hidden=!!a.sent||none||!!a.test; }));
-    sign.appendChild(pn);
+    /* 5 Nov 2026 (the pane): the one filled pill and its answer are the card's foot, pinned at the foot of the open account */
+    var afoot=el('div','salt-pane__foot afoot');
+    afoot.appendChild(sendPill(a, pn, function(){ standDraw(); mark.hidden=!!a.sent||none||!!a.test; }));
+    afoot.appendChild(pn);
     hob.addEventListener('click', function(){ if(!none) showHandover(a, hob); });
     /* S9 9.5: View as them, their own page, read only */
     open.addEventListener('click', function(){ openAcct(a); });
@@ -572,7 +574,7 @@ export const OWNER_JS = `
     if(!none){ c.appendChild(sty); drawStory(sty, a); loadStory(a); }
     /* what ends or removes, last and alone in its list */
     var endList=el('div','salt-settings aend'); endList.appendChild(pwb); endList.appendChild(sob);
-    c.appendChild(endList); c.appendChild(gn);
+    c.appendChild(endList); c.appendChild(gn); c.appendChild(afoot);
     return c;
   }
   /* 26 OCT 2026 (canvas Salt Admin Customers, P3 and P4; his yes to Asks A, B and G): WHAT PRICES A CUSTOMER STANDS ON THEIR CARD. Their % moved here from
@@ -1923,6 +1925,35 @@ export const OWNER_JS = `
   }
   var makerThreads=[], makerThreadUser=null, makerThreadTimer=null, makerThreadsReading=false, makerChatDrafts={};
   var chatMs=2000;   /* Speed Wave 2 L2: a minute while the live socket is up */
+  /* 5 NOV 2026, HIS WORD ("like Mail or Messages on a Mac"): THE FRAME (salt-ds 1.28.0). From 1080px the column right of the rail is the one box
+     that scrolls and a record open beside a list is a pane holding to its top: it is given the room left in the column under its own top, so its
+     foot, the record's one main action, is in view without scrolling. Read again as the column scrolls, the window changes or the column redraws.
+     Under 1080px the page scrolls as before, a foot rides the screen's foot, and while one shows the + orb stands down (data-footed). */
+  function frameEl(){ return document.querySelector('.adm .salt-frame__main'); }
+  function framed(){ return !!(window.matchMedia&&window.matchMedia('(min-width:1080px)').matches); }
+  function pageTop(){ try{ window.scrollTo(0,0); }catch(e){} var m=frameEl(); if(m) m.scrollTop=0; }
+  var fitAsked=false;
+  function paneFit(){
+    fitAsked=false;
+    var m=frameEl(); if(!m) return;
+    var on=framed(), mr=on?m.getBoundingClientRect():null, pad=on?parseFloat(window.getComputedStyle(m).paddingBottom)||0:0;
+    [].forEach.call(document.querySelectorAll('.adm .salt-pane'), function(p){
+      if(!on||!p.getClientRects().length){ p.style.removeProperty('--salt-pane-h'); return; }
+      var top=Math.max(p.getBoundingClientRect().top, mr.top);
+      p.style.setProperty('--salt-pane-h', Math.max(240, Math.floor(mr.bottom-pad-top))+'px');
+    });
+    var footed=!on&&[].some.call(document.querySelectorAll('.adm .salt-pane__foot'), function(f){ return f.getClientRects().length>0; });
+    var g=document.getElementById('roster'); if(g){ if(footed) g.setAttribute('data-footed',''); else g.removeAttribute('data-footed'); }
+  }
+  function fitSoon(){ if(fitAsked) return; fitAsked=true; if(window.requestAnimationFrame) window.requestAnimationFrame(paneFit); else setTimeout(paneFit,16); }
+  (function(){
+    var m=frameEl(); if(!m) return;
+    m.addEventListener('scroll', fitSoon, {passive:true});
+    window.addEventListener('resize', fitSoon);
+    if(window.MutationObserver) new MutationObserver(fitSoon).observe(m,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','class']});
+  })();
+  /* what a thread scrolls in: its pane in the frame, the page under 1080px */
+  function threadBox(){ var p=document.getElementById('makerChatOpen'); return framed()&&p?p:(document.scrollingElement||document.documentElement); }
   function stopMakerChat(){
     if(makerThreadTimer!==null) clearInterval(makerThreadTimer);
     makerThreadTimer=null;
@@ -1995,9 +2026,12 @@ export const OWNER_JS = `
       box.appendChild(ul); list.appendChild(box);
     });
   }
-  function drawMakerThreadLines(){
+  /* 5 Nov 2026, his word: A THREAD OPENS AT ITS NEWEST LINE, as Messages does, older lines a scroll up. A line that lands while he reads the newest
+     keeps him there; one that lands while he has scrolled up to read leaves him where he is (the poll redraws every line every 2 seconds). */
+  function drawMakerThreadLines(first){
     var root=document.getElementById('makerChatLines');
     if(!root) return;
+    var box=threadBox(), end=first===true||box.scrollHeight-box.scrollTop-box.clientHeight<48, keep=box.scrollTop;
     root.textContent='';
     var thread=makerThreads.filter(function(value){ return value.u===makerThreadUser; })[0];
     (thread&&thread.msgs||[]).forEach(function(line){
@@ -2006,13 +2040,14 @@ export const OWNER_JS = `
       meta.appendChild(el('span','maker-facts',(mine?'You':codeByUser(makerThreadUser))+', '+stampDay(line.at))); b.appendChild(meta);
       root.appendChild(b);
     });
+    box.scrollTop=end?box.scrollHeight:keep;
   }
   function openMakerThread(user){
     makerThreadUser=user;
     var root=document.getElementById('makerChatOpen');root.hidden=false;root.textContent='';
     if(root.parentElement) root.parentElement.classList.add('open'); drawThreadList();
     root.setAttribute('data-key',user);
-    var ah=el('div','chathead'), aw=el('div','chathead__who'), ac=sheet&&sheet[user], owe=ac&&ac.flag==='owes'&&ac.t?+ac.t.owed||0:0;
+    var ah=el('div','chathead salt-pane__head'), aw=el('div','chathead__who'), ac=sheet&&sheet[user], owe=ac&&ac.flag==='owes'&&ac.t?+ac.t.owed||0:0;
     aw.appendChild(el('span','salt-eyebrow salt-eyebrow--copper','Messages')); aw.appendChild(whoTag(el('h3','chathead__code',codeByUser(user)),codeOfUser(user))); ah.appendChild(aw);
     if(owe>0.004){ var af=el('div','ahead__fig'); af.appendChild(el('span','salt-eyebrow salt-eyebrow--mist','They owe')); af.appendChild(el('span','ahead__rm',rmShort(owe))); ah.appendChild(af); }
     root.appendChild(ah);
@@ -2031,15 +2066,19 @@ export const OWNER_JS = `
         }
       }catch(error){draft.storageError=error.message;}
     }
+    /* 5 Nov 2026 (the pane): after the lines what else he may do, then the foot, pinned: his box, its answer and Send */
+    var more=el('div','chatmore'), foot=el('div','salt-pane__foot chatfoot');
+    root.appendChild(more); root.appendChild(foot);
     var label=el('label','maker-field');label.appendChild(el('span','lbl salt-field__label','Answer them'));
     var text=el('textarea','fld salt-field__input');text.maxLength=200;text.value=draft.text;
     text.setAttribute('data-thread-reply',user);actOn(text,'chat.reply');text.oninput=function(){draft.text=text.value;};
-    label.appendChild(text);root.appendChild(label);
-    var status=el('p','msg');status.setAttribute('role','status');root.appendChild(status);
+    label.appendChild(text);foot.appendChild(label);
+    var status=el('p','msg');status.setAttribute('role','status');foot.appendChild(status);
     var send=el('button','btn salt-pill salt-pill--md','Send'),
       quiet=el('button','salt-ghost','No reply needed'),cancel=el('button','salt-ghost','Discard unsent reply'),
       restore=el('button','salt-ghost','Open unsent reply'),close=el('button','salt-ghost','Close');
-    [send,quiet,restore,cancel,close].forEach(function(button){button.type='button';root.appendChild(button);});
+    [send,quiet,restore,cancel,close].forEach(function(button){button.type='button';});
+    foot.appendChild(send); [quiet,restore,cancel].forEach(function(button){more.appendChild(button);}); ah.appendChild(close);
     actOn(send,'chat.send');actOn(quiet,'chat.no-reply');actOn(restore,'chat.open-retained');actOn(cancel,'chat.cancel-retry');actOn(close,'chat.close');
     function makerChatState(){
       var busy=!!draft.busy;
@@ -2106,7 +2145,7 @@ export const OWNER_JS = `
     close.onclick=function(){makerThreadUser=null;root.hidden=true;if(root.parentElement) root.parentElement.classList.remove('open');stopMakerChat();drawThreadList();};
     if(draft.storageError) draft.note=draft.storageError;
     else if(draft.saved&&!draft.pending) draft.note='An unsent reply is kept on this phone. Open it to send it again, or discard it.';
-    makerChatState();drawMakerThreadLines();startMakerChat();
+    makerChatState();paneFit();drawMakerThreadLines(true);startMakerChat();
   }
   /* 16 Oct 2026: THE MINI LEDGER. Open orders, Pending orders and the latest twenty, read off the Desk's mirror of the folded book by the engine's own rules (GET
      /all/maker/ledger: txStat for the stage, txOwed, txPaid and txAdvance for what is owed, txEffDeliv for what was handed over). This page states no status
@@ -2259,7 +2298,8 @@ export const OWNER_JS = `
       var retained=el('div','');retained.hidden=true;root.appendChild(retained);
       var set=el('button','btn salt-pill salt-pill--md anotice-set','Set the notice'), busy=false, needsRead=false, intended=null;
       [set,clear,refresh].forEach(function(button){button.type='button';});
-      root.appendChild(set);
+      /* 5 Nov 2026 (the pane): Set the notice is the part's foot, pinned at the screen's foot */
+      var setFoot=el('div','salt-pane__foot anotice-foot'); setFoot.appendChild(set); root.appendChild(setFoot);
       actOn(set,'notice.set');actOn(clear,'notice.clear');actOn(refresh,'notice.read');ynTag(set,'notice:set');ynTag(clear,'notice:clear');
       function state(){set.disabled=busy||needsRead;clear.disabled=busy||needsRead;refresh.disabled=busy;refresh.hidden=!needsRead;text.disabled=busy;}
       root.addEventListener('maker-notice-read',function(event){
@@ -2464,7 +2504,12 @@ export const OWNER_JS = `
         controls.forEach(function(control,index){control.disabled=disabled[index];});
         busy=false;b.disabled=false;
       }
-    }); parent.appendChild(b);parent.appendChild(cancel);return b;
+    });
+    /* 5 Nov 2026 (the pane): a form's one filled pill, and its Discard while an entry is half sent, are the form's foot, pinned at the foot of
+       the open form; every other button stands where it was drawn */
+    var host=parent;
+    if(primary&&parent.matches&&parent.matches('section.maker-input')){ host=el('div','salt-pane__foot mfoot'); parent.appendChild(host); }
+    host.appendChild(b);host.appendChild(cancel);return b;
   }
       /* a locality is public when the official list carries it or this phone verified it (placeFromText) and kept the word */
       /* a filed locality is always an official place name, so a saved entry is checked against the bundled official names; no word is stored */
@@ -3978,7 +4023,7 @@ export const OWNER_JS = `
     PRICING_ORDER.slice().reverse().forEach(function(s){ var row=lists.pricing.querySelector('[data-key="'+s+'"]'); if(row) row.parentNode.insertBefore(row,row.parentNode.firstChild); });
     /* PHASE 4a (12 Oct 2026): THE FORM OPEN IS A PANE. The retained input and the menu are one column and the forms the pane beside it, moved into
        them and never drawn again; the grid is one column below 860px, where the form takes the menu's place and has its way back. */
-    var grid=el('div','recgrid'), list=el('div','reclist'), pane=el('div','recpane');
+    var grid=el('div','recgrid'), list=el('div','reclist'), pane=el('div','recpane salt-pane');
     grid.id='makerFormGrid'; pane.appendChild(el('p','rnone recnone','Choose a form to open it here.'));
     grid.appendChild(list); grid.appendChild(pane); box.insertBefore(grid,back.nextSibling);
     [].slice.call(box.children).forEach(function(n){
@@ -4942,10 +4987,10 @@ export const OWNER_JS = `
     if(n<2) return;
     box=el('div','ordcols ordcols--2');
     var cols=[0,1].map(function(k){ var c=el('div','ordcol'); c.setAttribute('data-ocol',['decision','record'][k]); box.appendChild(c); return c; });
-    var foot=card.querySelector(':scope > .maker-foot');
+    var foot=card.querySelector(':scope > .maker-foot'), ofoot=card.querySelector(':scope > .ofoot');
     card.insertBefore(box,kids[0]||null);
     kids.forEach(function(x){
-      if(x===foot) return;
+      if(x===foot||x===ofoot) return;
       cols[x.getAttribute('data-ocol')==='record'?1:0].appendChild(x);
     });
   }
@@ -4963,7 +5008,7 @@ export const OWNER_JS = `
     try{
       var card=document.getElementById('makerReview');
       if(card){ if(!card.hasAttribute('tabindex')) card.setAttribute('tabindex','-1'); if(card.focus) card.focus({preventScroll:true}); }
-      if(!ordSide()) window.scrollTo(0,0);
+      if(!ordSide()) pageTop();
       else if(card&&card.scrollIntoView) card.scrollIntoView({block:'nearest'});
     }catch(x){}
   }
@@ -5400,7 +5445,8 @@ export const OWNER_JS = `
       /* the stage's one filled pill stands in lead, 16px under its group; the stage's other moves are rows under it */
       var againAck=makerAgainAck(order), quoteStart=null, lead=el('div','ordlead'), stageRows=el('div','salt-settings ostagerows'), stage=null;
       function stageOf(name,cls){ stage=part(name,cls); return stage; }
-      function stageEnd(){ var p=stage||part(null); p.appendChild(lead); p.appendChild(stageRows); }
+      /* 5 Nov 2026 (the pane): the stage's one pill is the card's foot, pinned at the foot of the open order, its other moves rows of the stage */
+      function stageEnd(){ var p=stage||part(null), f=card.querySelector(':scope > .ofoot')||card.appendChild(el('div','salt-pane__foot ofoot')); f.appendChild(lead); p.appendChild(stageRows); }
       /* his decision of 06 Oct 2026: the size, the goods' price and the delivery charge stay amendable after Accept, one Correction for approval.
          16 Oct 2026 (plan 5, part 2): Change the order stands under the head, where the figures it changes are read, in place of below the money; it opens
          the same Sheet and sends the same restate (stage amend), so nothing about what it books moved */
@@ -5695,6 +5741,7 @@ export const OWNER_JS = `
       if(cashed&&(makerCashHeld[order.id]||makerCashStorageError)) [].forEach.call(card.querySelectorAll('button,input,select'),function(n){
         if(!n.hasAttribute('data-maker-cash-undo')&&!n.hasAttribute('data-maker-cash-retry')) n.disabled=true; });
       makerCardFoot(card,acts,order.id,cashed,false);
+      var ofoot=card.querySelector(':scope > .ofoot'); if(ofoot) card.appendChild(ofoot);
       if(quoteStart) quoteStart();
       return card;
     }
@@ -6542,7 +6589,7 @@ export const OWNER_JS = `
       box.appendChild(chips);
     }
     var pv=el('p','salt-settings__foot maker-preview'); pv.id='makerHoursPreview'; pv.setAttribute('role','status'); box.appendChild(pv);
-    var done=el('div','maker-done');
+    var done=el('div','maker-done salt-pane__foot');
     makerButton(done,['Done','hours.save',name],function(){
       var before=hrsSaved;
       return refs('/all/maker/hours',{schedule:hrsWeekOut()})
@@ -6683,7 +6730,7 @@ export const OWNER_JS = `
       :st.source==='default'?'No weekly hours set; customers can still order.':'Customers can still order; you answer when you open.');
     sub.id='makerHoursStatus'; box.appendChild(sub);
     if(on){
-      var go=el('div','anow-set');
+      var go=el('div','anow-set salt-pane__foot');
       makerButton(go,['Set it','hours.override-set'],function(){
         var when=Date.parse(until.value+'+08:00');
         if(!Number.isFinite(when)){ hoursSaid('now','Choose an end time.'); return; }
@@ -6797,7 +6844,7 @@ export const OWNER_JS = `
     root.appendChild(add);
     root.appendChild(picked);
     root.appendChild(el('p','salt-settings__foot','Type a place, or paste a Google Maps, Waze or Apple Maps link.'));
-    var saveRow=el('div','apoints-save'); root.appendChild(saveRow);
+    var saveRow=el('div','apoints-save salt-pane__foot'); root.appendChild(saveRow);
     makerButton(saveRow,['Save the points','points.save'],function(){
       return refs('/all/maker/points',{list:list}).then(function(value){ makerPoints=value; makerPointsDraft=null; drawMakerPoints(); pointsSaid('Points saved.'); })
         .catch(function(error){ pointsSaid(null,error); });
@@ -7227,7 +7274,7 @@ export const OWNER_JS = `
      every way of its row, the second choice (Decline, Show a code, Record payment) among them, the first filled and the rest ghosts. An order's or an
      account's card stands under it (item.below), where its own ways are, so the head of an order draws none of its own. */
   function needPane(o){
-    var c=el('section','npane'), body=el('div','npane__body'), go=el('div','npane__go'), age=o.age!=null?o.age:ageOf(o.at), tt=o.title||o.who||'';
+    var c=el('section','npane'), body=el('div','npane__body'), go=el('div','npane__go salt-pane__foot'), age=o.age!=null?o.age:ageOf(o.at), tt=o.title||o.who||'';
     c.setAttribute('data-pane', o.key); c.setAttribute('aria-label', 'The open card');
     var k=el('span','salt-eyebrow salt-eyebrow--'+SEVC[o.sev]+' npane__kind', o.word);
     if(age){ k.appendChild(document.createTextNode(' · ')); k.appendChild(el('span','nage'+(o.late?' nage--late':''),age)); }

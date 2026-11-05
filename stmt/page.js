@@ -861,7 +861,8 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
   .adm .hpane{padding:0;margin-top:0}
   .adm .hpane .maker-dayedit{margin:0}
 }
-.adm .anotice-set{box-sizing:border-box;width:100%;height:48px;min-height:48px;padding:0 16px;margin-top:16px}
+.adm .anotice-set{box-sizing:border-box;width:100%;height:48px;min-height:48px;padding:0 16px;margin:0}
+.adm .anotice-foot{margin-top:16px}
 .adm .maker-slip{display:block;max-width:100%;height:auto}
 /* 12 OCT 2026 (PHASE 2b): THE CLAIM CARD. A waiting claim is a row of the system's Inbox row and the one opened is its card under it. Its slip is a thumbnail
    that is itself the control (44px at least both ways), enlarged in place by a tap and shrunk by the next */
@@ -931,7 +932,13 @@ body.ended>*:not(#aEnded){display:none}
 .adm .alist .salt-inbox-row__title{gap:6px}
 .adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 @media (min-width:1080px){
-  .gate.adm{max-width:1180px;margin-top:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:20px;align-items:start;padding-bottom:48px}
+  /* 5 Nov 2026, his word ("like Mail or Messages on a Mac"): THE FRAME (salt-frame). The bar and the rail never move and the column right of the
+     rail is the one box that scrolls, so the page itself never does: the frame is the screen less the body's 22px top and a 24px margin under it, and it
+     takes back 36px of the body's 60px foot, so the page is exactly the screen tall (22 + frame + 24 = the screen) */
+  .gate.adm{max-width:1180px;margin-top:0;gap:20px;padding-bottom:0;margin-bottom:-36px;--salt-frame-h:calc(100dvh - 46px)}
+  .adm .amain{padding-bottom:24px}
+  /* a pane holds to the column's very top (the frame's own scroll), not 24px under the screen's */
+  .adm .salt-frame__main .salt-pane{top:0}
   .adm .abar{grid-column:1/-1;margin-bottom:0}
   .adm .amain{flex:1 1 auto;min-width:0}
   .adm #oShop{max-width:760px}
@@ -966,7 +973,7 @@ body.ended>*:not(#aEnded){display:none}
   .adm .nsplit,.adm .asplit{display:grid;gap:20px;align-items:start}
   .adm .nsplit,.adm #oAccts.open .asplit{grid-template-columns:minmax(0,1fr) minmax(0,440px)}
   .adm .asplit{grid-template-columns:minmax(0,1fr)}
-  .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
+  .adm #nopen,.adm #aopen{overflow-y:auto}
   .adm #aopen [data-back]{display:none}
   .adm .nsplit{grid-template-columns:minmax(0,1fr) 360px}
   .adm #nopen{margin-top:calc(0.75rem * 1.4 + 10px);padding:20px;display:flex;flex-direction:column;gap:14px;box-sizing:border-box}
@@ -999,7 +1006,9 @@ body.ended>*:not(#aEnded){display:none}
 @media (min-width:860px) and (max-width:1079.98px){
   /* the App bar stays fixed along the foot until 1080px, so the sticky card's foot is kept above it (it was 40px under it at 1024x768) */
   .adm #makerReview{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
-  .adm #nopen,.adm #aopen{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
+  .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
+  /* here these panes scroll inside themselves, so a foot rides the pane's own foot */
+  .adm #nopen,.adm #aopen,.adm #makerReview,.adm .recpane{--salt-pane-foot-at:0px}
   .gate.adm{max-width:none}
   .adm .amain>#oShop,.adm .amain>#unsentBar{max-width:600px;margin-left:auto;margin-right:auto}
 }
@@ -1027,11 +1036,11 @@ body.ended>*:not(#aEnded){display:none}
   .adm #oOrders>.abody>#oApprove{max-width:600px}
   .adm .recgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:20px;align-items:start}
   .adm .recgrid.open .recnone{display:none}
-  .adm .recpane{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
+  .adm .recpane{overflow-y:auto}
   .adm #makerFormBack{display:none}
 }
 @media (min-width:860px) and (max-width:1079.98px){
-  .adm .recpane{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
+  .adm .recpane{position:sticky;top:24px;max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
 }
 /* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): FROM 1080px THE PAGE USES THE LAPTOP'S WIDTH. Shop is one column of 760px (it was 600), the rows to approve lie two up (the
    queue's fold, under them, keeps the whole width), and Messages stands the thread beside the thread list, sticky and scrolling inside itself, as Customers stands an account
@@ -1047,13 +1056,23 @@ body.ended>*:not(#aEnded){display:none}
   .adm .chatgrid.open{grid-template-columns:minmax(280px,360px) minmax(0,1fr)}
   .adm .chatgrid>h2,.adm .chatgrid>#makerChatStatus{grid-column:1/-1}
   .adm #makerChatList{display:flex;flex-direction:column;gap:24px}
-  .adm #makerChatOpen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
 }
 /* 11 OCT 2026 (PHASE 1c, his decision 9): THE + ORB AND RECORD'S MENU. One raised orb stands over the page, above the App bar on a phone and in
    the corner from 1080px, below the bar and the sheets (z-index 40 against 50 and 70); the room kept under the last section on a phone is the
    orb's and its gap, so nothing is covered. Record's forms are rows of the system's Inbox row, one list a part. */
 .adm #oAdd{position:fixed;right:16px;bottom:calc(var(--salt-bar-h) + 16px + env(safe-area-inset-bottom,0px));z-index:40}
 @media (max-width:1079.98px){.adm .amain{padding-bottom:72px}}
+/* 5 Nov 2026 (the frame and the pane): under 1080px the page scrolls, so a record's one main action, its foot, rides the screen's foot over the
+   bar of places; while one shows the + orb stands down, as it would stand on the foot (data-footed, set by the page's script) */
+@media (max-width:1079.98px){.gate.adm{--salt-pane-foot-at:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px))}.adm[data-footed] #oAdd{display:none}.adm .salt-pane__head{position:static}}
+/* a foot in the open card reaches its glass edges, so nothing scrolls by at its sides */
+.adm #nopen .salt-pane__foot{margin-left:-20px;margin-right:-20px;padding-left:20px;padding-right:20px}
+/* the order's stage pill in its foot: no gap above it, and an empty foot is not drawn; across two columns it keeps the decision's width */
+.adm .ofoot>.ordlead{margin:0}
+.adm .ofoot:has(>.ordlead:empty){display:none}
+@media (min-width:1180px){.adm .ordcols--2~.ofoot>.ordlead{width:calc(50% - 12px)}}
+/* a form's foot: its pill, Discard beside it while an entry is half sent */
+.adm .mfoot{flex-direction:row;flex-wrap:wrap;align-items:center}
 /* 21 Oct 2026 (P10): from 1080px the + is the rail's own button under his places, and no orb floats over the page */
 @media (min-width:1080px){.adm #oAdd{display:none}}
 .adm .arailadd{margin-top:8px;padding-top:8px;border-top:1px solid var(--salt-line)}
@@ -1074,8 +1093,10 @@ body.ended>*:not(#aEnded){display:none}
 .adm .maker-input>.maker-field--short{grid-column:auto;min-width:0}
 .adm .maker-field>.lbl{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .maker-input input[type=number]{text-align:right}
-.adm .maker-input>.btn.salt-pill{width:100%;height:48px;margin-top:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-@media (min-width:860px){.adm .maker-input>.btn.salt-pill{width:auto;min-width:240px;max-width:100%;justify-self:end}}
+/* 5 Nov 2026 (the pane): the pill is in the form's pinned foot; it crosses the foot on a phone and stands 240px at its right edge from 860px, as before */
+.adm .maker-input>.mfoot{margin-top:16px}
+.adm .maker-input>.mfoot>.btn.salt-pill{flex:1 1 auto;width:auto;height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (min-width:860px){.adm .maker-input>.mfoot{justify-content:flex-end}.adm .maker-input>.mfoot>.btn.salt-pill{flex:0 1 auto;min-width:240px;max-width:100%}}
 .adm .maker-input.unsent{display:flex;flex-direction:column;gap:10px;margin:0 0 10px}
 .adm .unsent-open{display:flex;flex-direction:column;gap:10px}
 .adm .unsent-card .need-tap{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:8px;width:100%;min-width:0;cursor:pointer;font:inherit;color:inherit}
@@ -1298,8 +1319,6 @@ body.ended>*:not(#aEnded){display:none}
 /* 26 Oct 2026 (the Customers canvas, P5): the threads are Needs you's cards, their last line quiet beside the code; the open thread the system's Thread, its head
    the code and what they owe */
 .adm #makerChatList{display:flex;flex-direction:column;gap:24px}
-/* 5 Nov 2026: a thread's last line is cut to the row, never its Reply; the move keeps its own width */
-.adm .athrow>.salt-ghost{flex:none}
 /* 26 Oct 2026 (the Customers canvas, P6): a link is Needs you's card, Opens over its count in the figure's place; its address, QR and moves under it */
 .adm #glist{display:flex;flex-direction:column;gap:16px}
 /* 26 Oct 2026 (the Customers canvas, P7): a book's typed tag and how many; the associates cards on a phone and one plain table from 860px; the reward a Meter */
@@ -1345,7 +1364,13 @@ body.ended>*:not(#aEnded){display:none}
 .adm .chathead__who .salt-eyebrow{margin:0}
 .adm .chathead__code{margin:0;font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm #makerChatOpen{display:flex;flex-direction:column;gap:12px}
-.adm #makerChatOpen>button{min-height:48px}
+/* 5 Nov 2026 (the pane): the head holds the code, what they owe and Close; the lines; what else he may do; the foot his box and Send */
+.adm #makerChatOpen .salt-ghost{min-height:48px}
+.adm .chathead.salt-pane__head{padding:4px 0 8px}
+.adm .chathead>.salt-ghost{flex:none}
+.adm .chatmore{display:flex;flex-wrap:wrap;gap:8px}
+.adm .chatfoot .maker-field{margin:0;flex:none}
+.adm .chatfoot>.msg:empty{display:none}
 .adm .amore[hidden],.adm .amore .asec[hidden]{display:none}
 .adm .apct__books{margin:0}
 .adm .apct__tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 4px}
@@ -2150,9 +2175,9 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     + "<title>" + (owner ? "Salt Admin" : "Salt Counter") + "</title>"
     + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + COIN_CSS + "</style></head><body>" + AURORA
     + (owner
-      ? '<div id="roster" class="gate adm">'
+      ? '<div id="roster" class="gate adm salt-frame">'
         /* 20 Oct 2026 (canvas V32): the bar heads the whole shell, the rail and the column under it, so from 1080px it spans both */
-        + '<header class="salt-deskbar abar"><div class="salt-deskbar__brand"><span class="aring">' + aico("key") + '</span>'
+        + '<header class="salt-deskbar salt-frame__bar abar"><div class="salt-deskbar__brand"><span class="aring">' + aico("key") + '</span>'
         + '<div class="abartext"><div class="salt-deskbar__name">Salt Admin</div><div class="salt-deskbar__meta"><span class="abarlive" id="aBarLive"></span><span class="clk" data-clock></span></div></div>'
         /* 22 Oct 2026 (canvas Needs you): the hours are a glowing status chip at the bar's top right, a 44px button to Shop hours (barDraw in stmt/owner.js) */
         + '<button type="button" class="salt-status ashop" id="aBarHours" data-act="bar.hours" hidden></button></div>'
@@ -2170,7 +2195,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + (test ? "" : '<div class="salt-rail__group arailadd"><button type="button" class="salt-rail__tab salt-rail__tab--solo" id="oAddRail" data-act="rail.add">'
           + '<span class="salt-appbar__place"><span class="salt-appbar__icon">' + aico("add") + "</span><span>New entry</span></span></button></div>")
         + '<div class="salt-rail__foot" id="mFoot"></div></nav>'
-        + '<div class="amain">'
+        + '<div class="amain salt-frame__main">'
         /* 18 OCT 2026, HIS WORD: THE DESK'S SHELL. The system's Desk bar heads every place, as it heads the Desk: the ring and the name, the clock
            under it. It took the rail's brand and the eyebrow each place repeated ("Salt Admin" and the clock). */
         /* 12 OCT 2026 (PHASE 4c): THE UNSENT-ENTRY BANNER, over every place and shown by the owner's script only while an entry sent from this phone waits unconfirmed on it */
@@ -2197,7 +2222,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         /* S9 fix: from 860px the list stands beside the account a card is about, as Accounts does (Phase 6) */
         + '<div class="nsplit"><div>'
         + '<div id="nlist" class="nlist"></div>'
-        + '</div><div id="nopen" class="salt-glass-card salt-glass-card--radius-lg" aria-label="The open card" hidden></div><p class="rnone panenone">Choose a card to see it in full.</p></div>'
+        + '</div><div id="nopen" class="salt-glass-card salt-glass-card--radius-lg salt-pane" aria-label="The open card" hidden></div><p class="rnone panenone">Choose a card to see it in full.</p></div>'
         /* 22 Oct 2026 (his word, the restock light made plain; canvas Needs you): every book's light and figures, under the cards (stmt/owner.js drawStockBooks) */
         + '<section id="nStock" class="nstock" aria-label="Stock by book" hidden></section>'
         + "</div>"
@@ -2210,7 +2235,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div class="abody">'
         + '<section id="oSplit" data-in="orders.todo orders.open orders.done orders.ended" aria-label="Orders">'
         + '<p class="salt-insight salt-insight--copper olead" id="makerReviewStatus">Reading.</p>'
-        + '<div class="ordgrid"><div id="makerOrderList" class="ordlist"></div><div id="makerReview" class="ordopen"></div></div></section>'
+        + '<div class="ordgrid"><div id="makerOrderList" class="ordlist"></div><div id="makerReview" class="ordopen salt-pane"></div></div></section>'
         + ordMore(test)
         + '<section id="oApprove" data-in="orders.approve" aria-label="Rows to approve">'
         + '<p class="lead" id="makerDraftStatus"></p>'
@@ -2248,11 +2273,11 @@ export function landingPage(user, nonce, owner, bulletin, test) {
           + '<span class="nktab__n"></span></button>').join("") + "</div></nav>"
         + '<p class="lead" id="scount"></p>'
         + "</div>"
-        + '<div class="asplit"><div id="rlist" class="alist"></div><div id="aopen" hidden></div></div>'
+        + '<div class="asplit"><div id="rlist" class="alist"></div><div id="aopen" class="salt-pane" hidden></div></div>'
         + "</div>"
         + '<section class="chatgrid" data-in="customers.messages" aria-labelledby="makerChatTitle"><h2 id="makerChatTitle">Messages</h2>'
         + '<p id="makerChatStatus" class="msg" role="status" aria-live="polite"></p>'
-        + '<div id="makerChatList"></div><div id="makerChatOpen" hidden></div></section>'
+        + '<div id="makerChatList"></div><div id="makerChatOpen" class="salt-pane" hidden></div></section>'
         + '<div id="oLinks" data-in="customers.links">'
         + "<h2>Guest links</h2>"
         + '<p class="lead">A guest link opens the Set Price list for everybody; naming whose friend it is stays your note.</p>'
@@ -2294,7 +2319,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         /* 26 Oct 2026, his word (Hours "the same change" as Notice and Practice): every part of Hours a group of settings, in one column */
         + '<section id="makerNowCard" class="anow" aria-label="Now"><div id="makerNow"><p class="salt-settings__foot" id="makerHoursStatus">Reading.</p></div>'
         + '<p id="makerHoursMessage" class="msg" role="status" aria-live="polite"></p></section>'
-        + '<div class="hsplit"><div id="makerSchedule"></div><aside id="makerDayPane" class="hpane" aria-label="The open day"></aside></div></section>'
+        + '<div class="hsplit"><div id="makerSchedule"></div><aside id="makerDayPane" class="hpane salt-pane" aria-label="The open day"></aside></div></section>'
         + '<section class="apoints-sec" data-in="shop.hours" aria-labelledby="makerPointsTitle"><h2 id="makerPointsTitle" class="salt-settings__head">Collection points</h2>'
         + '<p class="msg" id="makerPointsStatus">Reading.</p>'
         + '<div id="makerPoints"></div><p id="makerPointsMessage" class="msg" role="status" aria-live="polite"></p></section>'
