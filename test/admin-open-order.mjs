@@ -45,7 +45,8 @@ export async function run({ ok, pageWork }) {
       const pills = [...card.querySelectorAll(".salt-pill")].filter((b) => !b.hidden);
       ok(!!agree && t(agree.querySelector(".salt-settings__head")) === "Agree" && J(rows) === J(["Goods, RM"]) && agree.querySelector(".salt-settings [data-act=\"order.total\"]")
         && pills.length === 1 && pills[0].getAttribute("data-act") === "order.accept", "V3: Agree's terms are rows of a settings list and the one filled pill is Agree: " + J([rows, pills.map(t)]));
-      const ctl = [...card.querySelectorAll("button,input,select,summary,a[href]")].filter((b) => !b.hidden && !b.closest("[hidden]") && !b.closest(".maker-foot")).pop();
+      /* 5 Nov 2026 (the pane): the pinned foot (Agree) is the card's last child but not its end, so the end is read without it, as without the maker foot */
+      const ctl = [...card.querySelectorAll("button,input,select,summary,a[href]")].filter((b) => !b.hidden && !b.closest("[hidden]") && !b.closest(".maker-foot") && !b.closest(".ofoot")).pop();
       const asked = []; answerSheets(p.w, asked, () => false);
       ok(!!ctl && ctl.getAttribute("data-act") === "order.decline" && ctl.matches(".salt-settings__row--action.salt-settings__row--danger") && ctl.parentElement.matches(".salt-settings.ordend")
         && ctl.parentElement.querySelectorAll("button:not([hidden])").length === 1, "V4: Decline the order is the card's last control, an ember row alone in its list: " + t(ctl));
@@ -71,7 +72,8 @@ export async function run({ ok, pageWork }) {
       const pills = [...acct.querySelectorAll(".salt-pill")].filter((b) => !b.hidden);
       const end = acct.querySelector(":scope > .salt-settings.aend"), acts = end ? [...end.children].map((b) => b.getAttribute("data-act")) : [];
       ok(pills.length === 1 && pills[0].getAttribute("data-act") === "acct.signin-link" && J(acts) === J(["acct.password", "acct.signout-all"])
-        && [...end.children].every((b) => b.matches(".salt-settings__row--danger")) && !!end && acct.lastElementChild === end.nextElementSibling && end.nextElementSibling.matches("p.anote"),
+        && [...end.children].every((b) => b.matches(".salt-settings__row--danger")) /* 5 Nov 2026 (the pane): after the ends' list and its answer comes only the pinned foot, Send a sign-in link */
+        && !!end && end.nextElementSibling.matches("p.anote") && end.nextElementSibling.nextElementSibling === acct.lastElementChild && acct.lastElementChild.matches(".salt-pane__foot.afoot"),
         "V8: the account holds one filled pill, Send a sign-in link, and Copy password and Sign out everywhere are ember rows in its last list: " + J([pills.map(t), acts]));
       const asked = []; let yes = false; answerSheets(p.w, asked, () => yes);
       const so = byAct(acct, "acct.signout-all"), n0 = p.posts.length;

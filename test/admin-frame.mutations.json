@@ -9,7 +9,7 @@
  {"name":"F2.2 Shop's open day is not a pane","file":"stmt/page.js","find":"<aside id=\"makerDayPane\" class=\"hpane salt-pane\"","replace":"<aside id=\"makerDayPane\" class=\"hpane\""},
  {"name":"F3.1 the body's foot makes the page scroll","file":"stmt/page.js","find":"padding-bottom:0;margin-bottom:-36px;","replace":"padding-bottom:0;margin-bottom:0;"},
  {"name":"F3.2 a pane stands 24px under the column's top","file":"stmt/page.js","find":"  .adm .salt-frame__main .salt-pane{top:0}","replace":"  .adm .salt-frame__main .salt-pane{top:24px}"},
- {"name":"F4.1 a phone's foot sits under the bar of places","file":"stmt/page.js","find":".gate.adm{--salt-pane-foot-at:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px))}","replace":".gate.adm{--salt-pane-foot-at:0px}"},
+ {"name":"F4.1 a phone's foot sits under the bar of places","file":"stmt/page.js","find":"padding-bottom:var(--salt-bar-h);--salt-pane-foot-at:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px))}","replace":"padding-bottom:var(--salt-bar-h);--salt-pane-foot-at:0px}"},
  {"name":"F4.2 the + orb stands on the foot","file":"stmt/page.js","find":".adm[data-footed] #oAdd{display:none}","replace":".adm[data-footed] #oAdd{}"},
  {"name":"F5 Send is not in the foot","file":"stmt/owner.js","find":"foot.appendChild(send); [quiet,restore,cancel]","replace":"more.appendChild(send); [quiet,restore,cancel]"},
  {"name":"F6.1 a thread opens at its oldest line","file":"stmt/owner.js","find":"drawMakerThreadLines(true);startMakerChat();","replace":"drawMakerThreadLines();startMakerChat();"},

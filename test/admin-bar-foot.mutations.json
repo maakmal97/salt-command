@@ -38,8 +38,8 @@
  {
   "name": "the shell keeps no room for the bar on a phone",
   "file": "stmt/page.js",
-  "find": ".gate.adm{margin-top:0;padding-bottom:var(--salt-bar-h)}",
-  "replace": ".gate.adm{margin-top:0;padding-bottom:0}"
+  "find": ".gate.adm{margin-top:0;padding-bottom:var(--salt-bar-h);",
+  "replace": ".gate.adm{margin-top:0;padding-bottom:0;"
  },
  {
   "name": "the shell forgets the safe area under the bar",

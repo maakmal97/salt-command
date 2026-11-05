@@ -947,7 +947,7 @@ body.ended>*:not(#aEnded){display:none}
 @media (max-width:1079.98px){
   /* the phone frame (28 Sep 2026): his shell starts at the body's 16px and clears the App bar by the same 16px; here,
      after the shell's own rule, or that rule would win */
-  .gate.adm{margin-top:0;padding-bottom:var(--salt-bar-h)}
+  .gate.adm{margin-top:0;padding-bottom:var(--salt-bar-h);--salt-pane-foot-at:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px))}
 }
 /* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): NEEDS YOU AND CUSTOMERS ARE A LIST AND A DETAIL FROM 860px, as Orders and Record are. The account a card is about
    (Needs you) or a row opened (Customers) stands in #nopen / #aopen beside the list, sticky and scrolling inside itself; nothing opens by itself, so until a tap the
@@ -1063,8 +1063,9 @@ body.ended>*:not(#aEnded){display:none}
 .adm #oAdd{position:fixed;right:16px;bottom:calc(var(--salt-bar-h) + 16px + env(safe-area-inset-bottom,0px));z-index:40}
 @media (max-width:1079.98px){.adm .amain{padding-bottom:72px}}
 /* 5 Nov 2026 (the frame and the pane): under 1080px the page scrolls, so a record's one main action, its foot, rides the screen's foot over the
-   bar of places; while one shows the + orb stands down, as it would stand on the foot (data-footed, set by the page's script) */
-@media (max-width:1079.98px){.gate.adm{--salt-pane-foot-at:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px))}.adm[data-footed] #oAdd{display:none}.adm .salt-pane__head{position:static}}
+   bar of places (--salt-pane-foot-at, set on the shell above); while one shows the + orb stands down, as it would stand on the foot (data-footed,
+   set by the page's script) */
+@media (max-width:1079.98px){.adm[data-footed] #oAdd{display:none}.adm .salt-pane__head{position:static}}
 /* the order's stage pill in its foot: no gap above it, and an empty foot is not drawn; across two columns it keeps the decision's width */
 .adm .ofoot>.ordlead{margin:0}
 .adm .ofoot:has(>.ordlead:empty){display:none}
