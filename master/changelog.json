@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1444",
+  "d": "05 Nov 2026",
+  "t": "COLLECTION OF 0.5 UNIT RECORDED AGAINST S336",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> The correction on s336 records that CA3-KP collected 0.5 unit of salt on 05 Nov 2026. It sets deliveredQty, deliveredOn and handover on the existing row and moves no cash. It was preapproved by Counter Admin. The drafter flagged an advance with RM75 unpaid, and the dossier gives no credit cap to check it against.",
+   "<b>INVENTORY.</b> The shelf rolls out 0.5 unit to CA3-KP, the difference the correction states. No lot landed, so the cost basis stays as it was."
+  ]
+ },
+ {
   "v": "v1443",
   "d": "05 Nov 2026",
   "t": "PAYMENT OF RM220 ON S337 RECORDED, DELIVERY STILL OWED",
