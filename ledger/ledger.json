@@ -1,6 +1,6 @@
 {
- "v": "v1437",
- "stamped": "05 Nov 2026, 14:34 KL",
+ "v": "v1438",
+ "stamped": "05 Nov 2026, 15:19 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -11176,7 +11176,25 @@
     "listRM": 475,
     "listQty": 5,
     "road": "site",
-    "rid": "s331"
+    "rid": "s331",
+    "amend": [
+     {
+      "date": "2026-11-04",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-11-05",
+      "kind": "Cancellation",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CANCELLATION OF S331: 5 UNIT OF SALT TO CA7-AMP, RM475, WITHDRAWN 05 NOV.</b> The order of 04 Nov was pending, acknowledged, to collect, with cash 0 and nothing moved. Its goods total of RM475 sat at the ask of RM475 and above the floor of RM280 for 5 unit. Counter Admin decided the cancellation on 05 Nov, so the order counts nowhere and no stock is drawn. CA7-AMP has 7 orders, a median rate of 13, a range of 8.3 to 135, RM995 outstanding before this, nothing defaulted and no units on credit. The drafter raised no flags. Nothing is left outstanding on this order."
+     }
+    ],
+    "cancelled": true,
+    "cancelledOn": "2026-11-05"
    },
    {
     "customer": "CA7-AMP",
@@ -11188,7 +11206,25 @@
     "deliveredQty": 0,
     "note": "<b>SALE 04 NOV 2026: 50 UNIT OF OIL TO CA7-AMP, RM450, PENDING.</b> Order 20261103194857-w8fu2q, acknowledged, to collect. Nothing paid and nothing handed over. Goods RM450 against a floor of RM380 and an ask of RM450 for 50 unit, so it sits at the ask, RM9 a unit against an ask of RM9. CA7-AMP has 4 orders, a median rate of 13, a range of 8.3 to 135, nothing outstanding before and nothing defaulted. The credit cap is 10 unit. The row carries the latest purchase cost of RM7.6 a unit, which is the inventory's own rate. The drafter flagged nothing. The full RM450 is left outstanding.",
     "road": "site",
-    "rid": "s332"
+    "rid": "s332",
+    "amend": [
+     {
+      "date": "2026-11-04",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-11-05",
+      "kind": "Cancellation",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CANCELLATION OF S332: 50 UNIT OF OIL TO CA7-AMP, RM450, WITHDRAWN 05 NOV.</b> The order of 04 Nov was pending, acknowledged, to collect, with cash 0 and nothing moved. Its goods total of RM450 sat at the ask recorded on the original row and above the floor of RM380 for this size. Counter Admin decided the cancellation on 05 Nov, so the order counts nowhere. CA7-AMP has 7 orders, a median rate of 13, a range of 8.3 to 135, RM995 outstanding before this, nothing defaulted and no units on credit. The drafter raised no flags. Nothing is left outstanding on this order."
+     }
+    ],
+    "cancelled": true,
+    "cancelledOn": "2026-11-05"
    },
    {
     "customer": "CA7-AMP",
@@ -11222,8 +11258,17 @@
        "total": 150,
        "delivery": null
       }
+     },
+     {
+      "date": "2026-11-05",
+      "kind": "Cancellation",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CANCELLATION OF S333: 1 UNIT OF GAS TO CA7-AMP, RM70, WITHDRAWN 05 NOV.</b> The order of 04 Nov was itself a correction, cut from 2 unit to 1, and stood pending with cash 0, nothing moved and no handover. The cancellation, decided by Counter Admin on 05 Nov, withdraws it, so it counts nowhere. CA7-AMP has 7 orders, a median rate of 13, a range of 8.3 to 135, and RM995 outstanding before this, with nothing defaulted and no units on credit. The dossier gives no gas floor or ask, so the rate is not compared. No cost is restated. The drafter raised no flags. Nothing is left outstanding on this order."
      }
-    ]
+    ],
+    "cancelled": true,
+    "cancelledOn": "2026-11-05"
    },
    {
     "customer": "CI5-PER",
@@ -12180,7 +12225,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-05T06:33:44.320Z",
+  "QUEUE_COMMITTED": "2026-11-05T07:18:14.981Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -12346,7 +12391,7 @@
     {
      "id": "cust:oneanddone",
      "sev": "note",
-     "title": "15 of 52 customers have bought exactly once"
+     "title": "16 of 52 customers have bought exactly once"
     },
     {
      "id": "cust:noreply",
@@ -12765,38 +12810,6 @@
       "rare": false
      }
     },
-    "CA7-AMP": {
-     "salt": {
-      "name": "one-off",
-      "orders": 1,
-      "tenureDays": 66,
-      "sinceLastDays": 66,
-      "perMonth": 0.46,
-      "unitsPerMonth": 0.46,
-      "smallShare": 1,
-      "bigShare": 0,
-      "frequent": false,
-      "small": true,
-      "bigger": false,
-      "loyal": false,
-      "rare": true
-     },
-     "oil": {
-      "name": "rare and large",
-      "orders": 3,
-      "tenureDays": 66,
-      "sinceLastDays": 28,
-      "perMonth": 1.38,
-      "unitsPerMonth": 48.43,
-      "smallShare": 0,
-      "bigShare": 1,
-      "frequent": false,
-      "small": false,
-      "bigger": true,
-      "loyal": false,
-      "rare": false
-     }
-    },
     "CC9-OKR": {
      "salt": {
       "name": "small and often",
@@ -12910,6 +12923,38 @@
       "bigger": false,
       "loyal": false,
       "rare": true
+     }
+    },
+    "CA7-AMP": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 66,
+      "sinceLastDays": 66,
+      "perMonth": 0.46,
+      "unitsPerMonth": 0.46,
+      "smallShare": 1,
+      "bigShare": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": true
+     },
+     "oil": {
+      "name": "rare and large",
+      "orders": 3,
+      "tenureDays": 66,
+      "sinceLastDays": 28,
+      "perMonth": 1.38,
+      "unitsPerMonth": 48.43,
+      "smallShare": 0,
+      "bigShare": 1,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false
      }
     },
     "CI4-OKR": {
@@ -14576,60 +14621,6 @@
         7205
        ]
       ],
-      "CA7-AMP": [
-       [
-        0.5,
-        75
-       ],
-       [
-        1,
-        120
-       ],
-       [
-        1.5,
-        160
-       ],
-       [
-        2,
-        215
-       ],
-       [
-        2.5,
-        255
-       ],
-       [
-        3,
-        305
-       ],
-       [
-        4,
-        390
-       ],
-       [
-        5,
-        475
-       ],
-       [
-        6.25,
-        580
-       ],
-       [
-        12.5,
-        945
-       ],
-       [
-        25,
-        1860
-       ],
-       [
-        50,
-        3720
-       ],
-       [
-        100,
-        7445
-       ]
-      ],
       "CC9-OKR": [
        [
         0.5,
@@ -14847,6 +14838,60 @@
        ]
       ],
       "CA4-DAM": [
+       [
+        0.5,
+        75
+       ],
+       [
+        1,
+        120
+       ],
+       [
+        1.5,
+        160
+       ],
+       [
+        2,
+        215
+       ],
+       [
+        2.5,
+        255
+       ],
+       [
+        3,
+        305
+       ],
+       [
+        4,
+        390
+       ],
+       [
+        5,
+        475
+       ],
+       [
+        6.25,
+        580
+       ],
+       [
+        12.5,
+        945
+       ],
+       [
+        25,
+        1860
+       ],
+       [
+        50,
+        3720
+       ],
+       [
+        100,
+        7445
+       ]
+      ],
+      "CA7-AMP": [
        [
         0.5,
         75
@@ -16751,12 +16796,12 @@
       "CK4-SEN": -0.2,
       "CN3-WM": 0,
       "CR3-DAM": -0.1,
-      "CA7-AMP": 0,
       "CC9-OKR": 0,
       "CE4-AD": 0,
       "CM6-HCM": 0,
       "CZ5-TM": -0.25,
       "CA4-DAM": 0,
+      "CA7-AMP": 0,
       "CI4-OKR": -0.15,
       "CA5-BAN": 0,
       "CA2-SEN": 0,
@@ -16829,10 +16874,6 @@
        "pct": 0.1,
        "why": "paid late"
       },
-      "CA7-AMP": {
-       "pct": 0,
-       "why": "paid 13% over, good record"
-      },
       "CC9-OKR": {
        "pct": -0.2,
        "why": "good record"
@@ -16852,6 +16893,10 @@
       "CA4-DAM": {
        "pct": 0.3,
        "why": "written off"
+      },
+      "CA7-AMP": {
+       "pct": 0,
+       "why": "paid 13% over, good record"
       },
       "CI4-OKR": {
        "pct": -0.15,
@@ -17490,28 +17535,6 @@
         450
        ]
       ],
-      "CA7-AMP": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
       "CC9-OKR": [
        [
         10,
@@ -17601,6 +17624,28 @@
        ]
       ],
       "CA4-DAM": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
+      "CA7-AMP": [
        [
         10,
         130
@@ -18385,12 +18430,12 @@
       "CK4-SEN": 0,
       "CN3-WM": 0,
       "CR3-DAM": 0,
-      "CA7-AMP": 0,
       "CC9-OKR": 0,
       "CE4-AD": 0,
       "CM6-HCM": 0,
       "CZ5-TM": 0,
       "CA4-DAM": 0,
+      "CA7-AMP": 0,
       "CI4-OKR": 0,
       "CA5-BAN": 0,
       "CA2-SEN": 0,
@@ -18893,28 +18938,6 @@
         1500
        ]
       ],
-      "CA7-AMP": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
-      ],
       "CC9-OKR": [
        [
         1,
@@ -19004,6 +19027,28 @@
        ]
       ],
       "CA4-DAM": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
+      "CA7-AMP": [
        [
         1,
         60
@@ -19788,12 +19833,12 @@
       "CK4-SEN": 0,
       "CN3-WM": 0,
       "CR3-DAM": 0,
-      "CA7-AMP": 0,
       "CC9-OKR": 0,
       "CE4-AD": 0,
       "CM6-HCM": 0,
       "CZ5-TM": 0,
       "CA4-DAM": 0,
+      "CA7-AMP": 0,
       "CI4-OKR": 0,
       "CA5-BAN": 0,
       "CA2-SEN": 0,
@@ -20173,20 +20218,6 @@
         60
        ]
       ],
-      "CA7-AMP": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        60
-       ]
-      ],
       "CC9-OKR": [
        [
         1,
@@ -20244,6 +20275,20 @@
        ]
       ],
       "CA4-DAM": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        60
+       ]
+      ],
+      "CA7-AMP": [
        [
         1,
         8
@@ -20748,12 +20793,12 @@
       "CK4-SEN": 0,
       "CN3-WM": 0,
       "CR3-DAM": 0,
-      "CA7-AMP": 0,
       "CC9-OKR": 0,
       "CE4-AD": 0,
       "CM6-HCM": 0,
       "CZ5-TM": 0,
       "CA4-DAM": 0,
+      "CA7-AMP": 0,
       "CI4-OKR": 0,
       "CA5-BAN": 0,
       "CA2-SEN": 0,
@@ -21177,24 +21222,6 @@
         1500
        ]
       ],
-      "CA7-AMP": [
-       [
-        1,
-        75
-       ],
-       [
-        5,
-        375
-       ],
-       [
-        10,
-        750
-       ],
-       [
-        20,
-        1500
-       ]
-      ],
       "CC9-OKR": [
        [
         1,
@@ -21268,6 +21295,24 @@
        ]
       ],
       "CA4-DAM": [
+       [
+        1,
+        75
+       ],
+       [
+        5,
+        375
+       ],
+       [
+        10,
+        750
+       ],
+       [
+        20,
+        1500
+       ]
+      ],
+      "CA7-AMP": [
        [
         1,
         75
@@ -21912,12 +21957,12 @@
       "CK4-SEN": 0,
       "CN3-WM": 0,
       "CR3-DAM": 0,
-      "CA7-AMP": 0,
       "CC9-OKR": 0,
       "CE4-AD": 0,
       "CM6-HCM": 0,
       "CZ5-TM": 0,
       "CA4-DAM": 0,
+      "CA7-AMP": 0,
       "CI4-OKR": 0,
       "CA5-BAN": 0,
       "CA2-SEN": 0,
@@ -22213,16 +22258,6 @@
         125
        ]
       ],
-      "CA7-AMP": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
       "CC9-OKR": [
        [
         12,
@@ -22264,6 +22299,16 @@
        ]
       ],
       "CA4-DAM": [
+       [
+        12,
+        60
+       ],
+       [
+        30,
+        125
+       ]
+      ],
+      "CA7-AMP": [
        [
         12,
         60
@@ -22628,12 +22673,12 @@
       "CK4-SEN": 0,
       "CN3-WM": 0,
       "CR3-DAM": 0,
-      "CA7-AMP": 0,
       "CC9-OKR": 0,
       "CE4-AD": 0,
       "CM6-HCM": 0,
       "CZ5-TM": 0,
       "CA4-DAM": 0,
+      "CA7-AMP": 0,
       "CI4-OKR": 0,
       "CA5-BAN": 0,
       "CA2-SEN": 0,
@@ -22672,11 +22717,11 @@
      "suggest": null
     }
    },
-   "v": "v1437"
+   "v": "v1438"
   },
   "OPEN": {
-   "at": "2026-11-05T06:35:02.684Z",
-   "count": 11,
+   "at": "2026-11-05T07:19:31.714Z",
+   "count": 8,
    "byKey": {
     "CA3-KP|2026-11-05|75": {
      "d": "2026-11-05",
@@ -22691,50 +22736,6 @@
      "oweUnits": 0.5,
      "rid": "s336",
      "key": "CA3-KP|2026-11-05|75"
-    },
-    "CA7-AMP|2026-11-04|475": {
-     "d": "2026-11-04",
-     "p": "CA7-AMP",
-     "dir": "S",
-     "q": 5,
-     "t": 475,
-     "cash": 0,
-     "mv": 0,
-     "st": "part",
-     "oweRM": 475,
-     "oweUnits": 5,
-     "rid": "s331",
-     "key": "CA7-AMP|2026-11-04|475"
-    },
-    "CA7-AMP|2026-11-04|450|oil": {
-     "d": "2026-11-04",
-     "p": "CA7-AMP",
-     "dir": "S",
-     "q": 50,
-     "t": 450,
-     "cash": 0,
-     "mv": 0,
-     "st": "part",
-     "oweRM": 450,
-     "oweUnits": 50,
-     "pr": "oil",
-     "rid": "s332",
-     "key": "CA7-AMP|2026-11-04|450|oil"
-    },
-    "CA7-AMP|2026-11-04|70|gas": {
-     "d": "2026-11-04",
-     "p": "CA7-AMP",
-     "dir": "S",
-     "q": 1,
-     "t": 70,
-     "cash": 0,
-     "mv": 0,
-     "st": "part",
-     "oweRM": 70,
-     "oweUnits": 1,
-     "pr": "gas",
-     "rid": "s333",
-     "key": "CA7-AMP|2026-11-04|70|gas"
     },
     "CR3-DAM|2026-10-30|70": {
      "d": "2026-10-30",
@@ -22860,10 +22861,10 @@
      "onHand": 18,
      "free": 18,
      "owedOut": 0,
-     "coverDays": 4.2,
-     "rate": 4.43,
+     "coverDays": 4.4,
+     "rate": 4.2,
      "owedToYou": 310,
-     "promised": 5.5,
+     "promised": 0.5,
      "short": 0
     },
     "oil": {
@@ -22871,11 +22872,11 @@
      "onHand": 40,
      "free": 40,
      "owedOut": 0,
-     "coverDays": 6.5,
-     "rate": 5.81,
+     "coverDays": 11.4,
+     "rate": 3.48,
      "owedToYou": 0,
-     "promised": 50,
-     "short": 10
+     "promised": 0,
+     "short": 0
     },
     "candy": {
      "name": "Candy",
@@ -22904,10 +22905,10 @@
      "onHand": 2,
      "free": 2,
      "owedOut": 0,
-     "coverDays": 12.4,
-     "rate": 0.16,
+     "coverDays": 19.7,
+     "rate": 0.1,
      "owedToYou": 0,
-     "promised": 1,
+     "promised": 0,
      "short": 0
     },
     "prep": {
@@ -22930,7 +22931,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1437"
+   "v": "v1438"
   },
   "TERMS": {
    "ceiling": 250,
@@ -22938,7 +22939,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1437"
+   "v": "v1438"
   },
   "REWARD": {
    "stated": {
@@ -22956,7 +22957,7 @@
      }
     }
    },
-   "v": "v1437"
+   "v": "v1438"
   },
   "STOCK": {
    "today": "2026-11-05",
@@ -22964,17 +22965,17 @@
     "salt": {
      "shelf": 18,
      "free": 18,
-     "commit": 5.5,
+     "commit": 0.5,
      "light": "yellow",
-     "coverDays": 4.2,
+     "coverDays": 4.4,
      "transit": 0
     },
     "oil": {
      "shelf": 40,
      "free": 40,
-     "commit": 50,
-     "light": "amber",
-     "coverDays": 6.5,
+     "commit": 0,
+     "light": "green",
+     "coverDays": 11.4,
      "transit": 0
     },
     "candy": {
@@ -22996,9 +22997,9 @@
     "gas": {
      "shelf": 2,
      "free": 2,
-     "commit": 1,
-     "light": "amber",
-     "coverDays": 12.4,
+     "commit": 0,
+     "light": "green",
+     "coverDays": 19.7,
      "transit": 0
     },
     "prep": {
@@ -23010,7 +23011,7 @@
      "transit": 0
     }
    },
-   "v": "v1437"
+   "v": "v1438"
   }
  }
 }
