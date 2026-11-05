@@ -1065,8 +1065,6 @@ body.ended>*:not(#aEnded){display:none}
 /* 5 Nov 2026 (the frame and the pane): under 1080px the page scrolls, so a record's one main action, its foot, rides the screen's foot over the
    bar of places; while one shows the + orb stands down, as it would stand on the foot (data-footed, set by the page's script) */
 @media (max-width:1079.98px){.gate.adm{--salt-pane-foot-at:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px))}.adm[data-footed] #oAdd{display:none}.adm .salt-pane__head{position:static}}
-/* a foot in the open card reaches its glass edges, so nothing scrolls by at its sides */
-.adm #nopen .salt-pane__foot{margin-left:-20px;margin-right:-20px;padding-left:20px;padding-right:20px}
 /* the order's stage pill in its foot: no gap above it, and an empty foot is not drawn; across two columns it keeps the decision's width */
 .adm .ofoot>.ordlead{margin:0}
 .adm .ofoot:has(>.ordlead:empty){display:none}
