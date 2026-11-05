@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1443",
+  "d": "05 Nov 2026",
+  "t": "PAYMENT OF RM220 ON S337 RECORDED, DELIVERY STILL OWED",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED.</b> CI4-OKR paid RM220 by qr via tng against order s337, preapproved by Counter Admin. The payment is cash only: it moves no units and the drafter raised no flags. The fold applies it through the master's own amend routine.",
+   "<b>INVENTORY UNCHANGED.</b> Stock stays at 18 and the cost basis at RM56 a unit. The 2 units on s337 are not yet delivered, so nothing is drawn."
+  ]
+ },
+ {
   "v": "v1442",
   "d": "05 Nov 2026",
   "t": "SALT ADMIN IN LAYERS",

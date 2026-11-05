@@ -1,6 +1,6 @@
 {
- "v": "v1440",
- "stamped": "05 Nov 2026, 15:35 KL",
+ "v": "v1443",
+ "stamped": "05 Nov 2026, 19:46 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -11392,7 +11392,7 @@
     "customer": "CI4-OKR",
     "qty": 2,
     "total": 195,
-    "cash": 0,
+    "cash": 220,
     "delivery": 25,
     "date": "2026-11-05",
     "deliveredQty": 0,
@@ -11400,7 +11400,24 @@
     "listRM": 195,
     "listQty": 2,
     "road": "site",
-    "rid": "s337"
+    "rid": "s337",
+    "amend": [
+     {
+      "date": "2026-11-05",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-11-05",
+      "kind": "Fulfilment",
+      "cash": 220,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON S337: RM220 PAID BY CI4-OKR, QR VIA TNG, 05 NOV.</b> It settles the order of 2 unit for RM195 goods plus RM25 delivery, so RM220 was owed and RM0 is now outstanding. Cash moves, but 0 unit move: the 2 unit are still to be delivered, so no stock is drawn here. The goods total of RM195 sits between the floor total of RM115 and the ask total of RM215 for this size. CI4-OKR has 7 orders, a median rate of 92.5, a range of 60 to 97.5, RM220 outstanding before this, nothing defaulted; the credit cap is 2 and no units are on credit. The drafter raised no flags. The row keeps its cost. Outstanding: the delivery of 2 unit."
+     }
+    ],
+    "paidOn": "2026-11-05"
    }
   ],
   "contacts": [
@@ -12239,7 +12256,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-05T07:34:31.844Z",
+  "QUEUE_COMMITTED": "2026-11-05T10:45:36.897Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -12270,7 +12287,7 @@
     {
      "id": "cust:cadence:salt",
      "sev": "watch",
-     "title": "14 customers are past their own habit on salt"
+     "title": "13 customers are past their own habit on salt"
     },
     {
      "id": "cust:cadence:oil",
@@ -12290,7 +12307,7 @@
     {
      "id": "int:nocost",
      "sev": "watch",
-     "title": "3 priced sales carry no cost of their own"
+     "title": "4 priced sales carry no cost of their own"
     },
     {
      "id": "int:underfloor",
@@ -12942,13 +12959,13 @@
     "CI4-OKR": {
      "salt": {
       "name": "occasional mid",
-      "orders": 4,
+      "orders": 5,
       "tenureDays": 107,
-      "sinceLastDays": 34,
-      "perMonth": 1.14,
-      "unitsPerMonth": 2.28,
-      "smallShare": 0.25,
-      "bigShare": 0.25,
+      "sinceLastDays": 0,
+      "perMonth": 1.42,
+      "unitsPerMonth": 2.84,
+      "smallShare": 0.2,
+      "bigShare": 0.2,
       "frequent": false,
       "small": false,
       "bigger": false,
@@ -22731,10 +22748,10 @@
      "suggest": null
     }
    },
-   "v": "v1440"
+   "v": "v1443"
   },
   "OPEN": {
-   "at": "2026-11-05T07:35:16.108Z",
+   "at": "2026-11-05T11:46:20.579Z",
    "count": 9,
    "byKey": {
     "CA3-KP|2026-11-05|75": {
@@ -22757,13 +22774,13 @@
      "dir": "S",
      "q": 2,
      "t": 195,
-     "cash": 0,
+     "cash": 220,
      "mv": 0,
-     "st": "part",
-     "oweRM": 220,
+     "st": "oweStock",
      "oweUnits": 2,
      "dv": 25,
      "rid": "s337",
+     "paidOn": "2026-11-05",
      "key": "CI4-OKR|2026-11-05|220"
     },
     "CR3-DAM|2026-10-30|70": {
@@ -22888,9 +22905,9 @@
     "salt": {
      "name": "Salt",
      "onHand": 18,
-     "free": 18,
-     "owedOut": 0,
-     "coverDays": 4.3,
+     "free": 16,
+     "owedOut": 2,
+     "coverDays": 3.9,
      "rate": 4.3,
      "owedToYou": 310,
      "promised": 2.5,
@@ -22960,7 +22977,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1440"
+   "v": "v1443"
   },
   "TERMS": {
    "ceiling": 250,
@@ -22968,7 +22985,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1440"
+   "v": "v1443"
   },
   "REWARD": {
    "stated": {
@@ -22986,17 +23003,17 @@
      }
     }
    },
-   "v": "v1440"
+   "v": "v1443"
   },
   "STOCK": {
    "today": "2026-11-05",
    "books": {
     "salt": {
      "shelf": 18,
-     "free": 18,
+     "free": 16,
      "commit": 2.5,
      "light": "yellow",
-     "coverDays": 4.3,
+     "coverDays": 3.9,
      "transit": 0
     },
     "oil": {
@@ -23040,7 +23057,7 @@
      "transit": 0
     }
    },
-   "v": "v1440"
+   "v": "v1443"
   }
  }
 }
