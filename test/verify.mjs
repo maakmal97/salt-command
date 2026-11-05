@@ -8628,6 +8628,11 @@ await (async () => {
   await (await import("./pay-number.mjs")).run({ ok, okOff, pageWork, KV });
 })();
 
+section("6 Nov 2026: the Counter fetches the code, the number and the JomPAY details from Salt QR out of the customer's sight, and a practice account gets invented ones");
+await (async () => {
+  await (await import("./pay-codes.mjs")).run({ ok, KV });
+})();
+
 section("One word per state, and the mark alone: Placed, Confirmed, Declined, More by, no shape word drawn, on the page and the banners (11 and 12 Oct 2026)");
 await (async () => {
   await (await import("./counter-state-words.mjs")).run({ ok });

@@ -5,7 +5,7 @@
  {"name":"the card is a button","file":"stmt/page.js","find":"var lc=el('div','hreward hloyal","replace":"var lc=el('button','hreward hloyal"},
  {"name":"a card with no share draws one","file":"stmt/page.js","find":"      if(!lp) return box;\n      var lpc=","replace":"      if(!lp) lp={product:'salt',loyal:{next:0}};\n      var lpc="},
  {"name":"the Rewards tab for everybody","file":"stmt/page.js","find":"placeHide('card',!assoc);","replace":"placeHide('card',false);"},
- {"name":"0000-0002 stays an associate","file":"tools/testfix.mjs","find":"    orders: O, claims: [], refs: [], card, assoc: false, thread: null, pools, bulletin: null, look: \"asked\", paynum };","replace":"    orders: O, claims: [], refs: [], card, assoc: true, thread: null, pools, bulletin: null, look: \"asked\", paynum };"},
+ {"name":"0000-0002 stays an associate","file":"tools/testfix.mjs","find":"    orders: O, claims: [], refs: [], card, assoc: false, thread: null, pools, bulletin: null, look: \"asked\", pay: invented() };","replace":"    orders: O, claims: [], refs: [], card, assoc: true, thread: null, pools, bulletin: null, look: \"asked\", pay: invented() };"},
  {"name":"the share is not the plan's","file":"tools/testfix.mjs","find":"products: [{ product: \"salt\", loyal: { next: 0.7 } }] };","replace":"products: [{ product: \"salt\", loyal: { next: 0.9 } }] };"},
  {"name":"the seal calls every account an associate","file":"tools/testfix.mjs","find":"salt: rec.wrap.salt, assoc: fix.assoc === true,","replace":"salt: rec.wrap.salt, assoc: true,"},
  {"name":"the Worker calls every test account an associate","file":"stmt/testfix.js","find":"{ assoc: fix.assoc === true, env: fix.env || rec.env,","replace":"{ assoc: true, env: fix.env || rec.env,"}

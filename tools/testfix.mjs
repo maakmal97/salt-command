@@ -24,6 +24,27 @@ import { unwrapKey, encryptWith } from "./stmt-crypto.mjs";
 import { liveFor, holdTerm, stageDays, ceilingRM } from "./make_statements.mjs";
 import { priceSteps } from "./pricelist.mjs";
 import { slotNext } from "../stmt/window.js";
+import { crc16, payloadError } from "../stmt/paycrc.js";
+
+/* 06 Nov 2026: THE PAY DETAILS A PRACTICE ACCOUNT SHOWS, INVENTED, never his. A DuitNow payload of an invented merchant (a made-up name and id, a
+   made-up reverse-domain scheme), with the checksum Salt QR's own rule (stmt/paycrc.js, generated) computes, so it passes payloadError and
+   decodes; an invented 12-digit number; an invented JomPAY biller code and Ref-1. The values are joined from parts so the source holds no run
+   of ten digits (the source scan, test/pay-number.mjs). Two accounts: maybank (a code and a transfer) and instapay (a code, a transfer and
+   JomPAY); every invented account is open. The practice road of GET /pay/accounts reads this and never Salt QR (stmt/testfix.js examplePay). */
+const tlv = (tag, v) => tag + String(v.length).padStart(2, "0") + v;
+export function inventedPayload(merchantId, name) {
+  const body = tlv("00", "01") + tlv("01", "12") + tlv("26", tlv("00", "com.example.invented") + tlv("01", merchantId)) + tlv("52", "5499") + tlv("53", "458")
+    + tlv("58", "MY") + tlv("59", name) + tlv("60", "KUALA LUMPUR") + "6304";
+  return body + crc16(body);
+}
+export function invented() {
+  return {
+    accounts: [
+      { key: "maybank", payload: inventedPayload(["9990", "0000", "0001"].join(""), "INVENTED SHOP"), acct: ["9990", "0000", "0001"].join(""), bank: "Maybank", biller: "", ref1: "" },
+      { key: "instapay", payload: inventedPayload(["9990", "0000", "0002"].join(""), "INVENTED STALL"), acct: ["9990", "0000", "0002"].join(""), bank: "Instapay",
+        biller: ["99", "901"].join(""), ref1: ["9990", "0000", "0003", "1"].join("") }],
+    down: { maybank: false, instapay: false } };
+}
 
 /* the invented account on the invented book: no roster holds either code */
 export const FIX_CODE = "TX0-FIX";
@@ -145,9 +166,9 @@ function fresh(now, u) {
   const card = { at: now.toISOString(), products: [{ product: "salt", loyal: { next: 0.7 } }] };
   /* 27 Oct 2026 (docs/plan-refund-credit.html P4): RM 40 of refunds of theirs, RM 25 spent on the ready salt order at our confirmation, RM 15 left */
   list.credit = 15; list.creditRows = sales.filter((s) => +s.credit > 0).map((s) => ({ d: s.date, p: s.product, rm: s.credit }));
-  const book = { sales, customerRefunds: [] }, paynum = { maybank: { number: "0".repeat(13) } };
+  const book = { sales, customerRefunds: [] };
   return { v: FIX_VERSION, u, state: "fresh", at: now.toISOString(), code: FIX_CODE, book, live: liveFor(book, FIX_CODE, now, U), prices: list,
-    orders: O, claims: [], refs: [], card, assoc: false, thread: null, pools, bulletin: null, look: "asked", paynum };
+    orders: O, claims: [], refs: [], card, assoc: false, thread: null, pools, bulletin: null, look: "asked", pay: invented() };
 }
 
 /** The fixture for the moment `now`, in one state: the invented book, the orders, the claims, the links, the card and the rest. */
@@ -378,9 +399,9 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
     /* 11 Oct 2026: THE LOOK. A device is asked Night or Tide once, then never; a test account says "asked" in its sealed bundle, so
        the page asks at every sign-in whatever the device holds and the Sheet can be tried again. The setting under Account is the same. */
     look: "asked",
-    /* Phase 7b (11 Oct 2026): THE ACCOUNT NUMBER THE PAY SHEET SHOWS beside the reference, INVENTED: all zeros, one bank. A test account
-       is answered this through the Worker's overlay and never reads the real record (KV paynum, written from the laptop). */
-    paynum: { maybank: { number: "0".repeat(13) } } };
+    /* 06 Nov 2026: THE PAY DETAILS THE SHEET SHOWS (a code, the account number, the JomPAY biller code and Ref-1), INVENTED (`invented()` above). A
+       test account is answered these through the Worker's overlay and never reads Salt QR. */
+    pay: invented() };
 }
 
 /* ---- WHAT A CUSTOMER SEES, AND THE CASE OF EACH HERE ------------------------------------------------------------
@@ -521,7 +542,9 @@ export const FEATURES = [
   ["an order paid before anything moved, so Cancel this order asks in its Sheet and names the refund (Phase 7d, 11 Oct 2026)", (f) => has(f, (o) => ["placed", "acknowledged"].includes(o.status)
     && +o.paid > 0.004 && !(+o.moved > 0) && !(o.payments || []).some((p) => p.claim === "waiting"))],
   ["the look: the choice Sheet asked at every sign-in, and the setting under Account (11 Oct 2026)", (f) => f.look === "asked"],
-  ["the bank account number beside the reference on the pay sheet (Phase 7b)", (f) => !!f.paynum && Object.values(f.paynum).some((a) => /^0{10,15}$/.test(a && a.number))],
+  ["the invented pay details beside the reference on the pay sheet: a code, an account number, and a JomPAY biller code with its Ref-1 (06 Nov 2026)", (f) => !!f.pay
+    && f.pay.accounts.some((a) => a.key === "maybank" && !payloadError(a.payload) && /^[0-9]{12}$/.test(a.acct) && /INVENTED/.test(a.payload))
+    && f.pay.accounts.some((a) => !!a.biller && !!a.ref1 && !payloadError(a.payload)) && Object.values(f.pay.down).every((d) => d === false)],
   ["a book priced soon", (f) => !!(f.prices && f.prices.soon && f.prices.soon.length)],
   /* Counter Batch C: drawn on every customer's Account, the test accounts' included, from no data of theirs */
   ["Help under Account, four answers (Counter Batch C)", () => true],
@@ -579,6 +602,6 @@ export async function sealFixture(fix, rec, pass) {
     env: await seal({ v: 1, issued: fix.at.slice(0, 10), statements: [], look: fix.look }),
     prices: Object.assign({ at: fix.prices.at, week: fix.prices.week.monday, digest: fix.prices.digest },
       Object.keys(priceSteps(fix.prices)).length ? { steps: priceSteps(fix.prices) } : {}, await seal(fix.prices)),
-    card: Object.assign({ at: fix.card.at }, await seal(fix.card)), refs: fix.refs, bulletin: fix.bulletin, thread: fix.thread, pools: fix.pools, paynum: fix.paynum,
+    card: Object.assign({ at: fix.card.at }, await seal(fix.card)), refs: fix.refs, bulletin: fix.bulletin, thread: fix.thread, pools: fix.pools, pay: fix.pay,
     makerBook: fix.book, makerOrders: fix.orders };
 }
