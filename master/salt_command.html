@@ -3053,6 +3053,9 @@ button.salt-stepper__value:focus-visible { outline: 2px solid var(--salt-brass);
   white-space: nowrap;
 }
 .salt-settings__row > .salt-field__input { flex: 0 1 200px; min-width: 0; box-sizing: border-box; }
+/* 1.28.0: a control at a row's right keeps its own size, so a long name or second line ends in its ellipsis and never squeezes the
+   control under its tap (a lit ghost was drawn 42px wide beside a long last line, 5 Nov 2026) */
+.salt-settings__row > .salt-ghost, .salt-settings__row > .salt-switch, .salt-settings__row > .salt-orb, .salt-settings__row > .salt-status { flex: none; }
 /* 1.19.0 (26 Oct 2026, the same word, for every part of his settings): a group's heading above the list and its one grey line under it,
    as a phone's settings have them; a row that does something (opens, copies) with its mark at the right; a row that ends something, in
    ember; a row of words alone (a notice's line), which may run to a second line; and a cell that is a whole field (a box to write in). */
@@ -4034,6 +4037,55 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
 .salt-rail__part--on::before, .salt-rail__part[aria-current="page"]::before { background: var(--salt-brass); }
 .salt-rail__foot { border-top: 1px solid var(--salt-line-faint); padding-top: 10px; font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); letter-spacing: 0.12em; text-transform: uppercase; color: var(--salt-mist); }
 @media (max-width: 560px) { .salt-rail__tab { font-size: 0.84375rem; } }
+
+/* ---- Frame and pane (1.28.0, his word of 5 Nov 2026, "like Mail or Messages on a Mac").
+   From 1080px a surface with a rail is a FRAME: its bar (__bar) and its rail never move, and the column right of the rail (__main)
+   is the one box that scrolls, so the page itself never does. A list there scrolls with that column; with nothing open it alone
+   scrolls. A record opened beside it (a thread, an order, an account, a form) is a PANE, the inline sibling of the Sheet: in the
+   frame it holds to the column's top and scrolls inside itself, up to the height the page gives it (--salt-pane-h, the room left
+   in the column under the pane's own top), its head (__head) held at its top and its foot (__foot) at its foot. The foot holds the
+   record's ONE main action, a box and Send, Record, Save or Set, the stage's pill, so it is in view without scrolling; what ends or
+   removes (Decline, Cancel, Sign out everywhere) is never the foot and stays last in the scroll. On a page that scrolls (a phone,
+   a tablet) the foot rides the screen's foot, --salt-pane-foot-at above it (the phone's bar of places). The foot and the head are
+   veiled glass, so what scrolls under them never reads through. ---- */
+.salt-pane { display: flex; flex-direction: column; min-width: 0; }
+.salt-pane__head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--salt-veil);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.salt-pane__foot {
+  position: sticky;
+  bottom: var(--salt-pane-foot-at, 0px);
+  z-index: 2;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--salt-space-3);
+  padding: var(--salt-space-3) 0;
+  border-top: 1px solid var(--salt-line-faint);
+  background: var(--salt-veil);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.salt-pane__foot > .salt-pill { width: 100%; margin: 0; }
+@media (min-width: 1080px) {
+  .salt-frame {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    height: var(--salt-frame-h, 100dvh);
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+  .salt-frame__bar { grid-column: 1 / -1; }
+  .salt-frame > .salt-rail { grid-column: 1; position: static; align-self: stretch; height: auto; min-height: 0; }
+  .salt-frame__main { grid-column: 2; align-self: stretch; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  .salt-frame__main .salt-pane { position: sticky; top: 0; max-height: var(--salt-pane-h, 100%); overflow-y: auto; overscroll-behavior: contain; }
+}
 
 /* ---- Desk bar (synced to the desk 22 Sep 2026; complete since 21 Oct 2026, his word: "very sharp and complete, and
    persists in all views, to the right of the navigation pane", in the rail's own material, which he kept over a solid
