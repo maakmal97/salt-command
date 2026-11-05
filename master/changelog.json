@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1434",
+  "d": "05 Nov 2026",
+  "t": "3 UNIT OF SALT DELIVERED TO CM4-MK ON ORDER S335",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> Correction on s335 records that the 3 unit ordered by CM4-MK on 04 Nov were delivered on 05 Nov, preapproved by Counter Admin. It sets deliveredQty to 3, deliveredOn to 2026-11-05 and handover to delivered. The drafter flagged an advance, with RM360 unpaid, to be checked against the credit cap.",
+   "<b>INVENTORY.</b> The shelf rolls by 3 unit, out to CM4-MK. No lot landed, so the cost basis stays at RM56 a unit."
+  ]
+ },
+ {
   "v": "v1433",
   "d": "04 Nov 2026",
   "t": "A GAS ORDER FOR CA7-AMP CORRECTED DOWN TO ONE UNIT",
