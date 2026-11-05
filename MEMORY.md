@@ -294,8 +294,20 @@
   `salt-status--brass`) beside an unanswered question; Review is never `disabled`, `aria-disabled` while `formWhy` says why, and its tap runs `formShow`, which
   brings into view and focuses the control `formMiss` names (who for, size, spot or Add a spot, `#oWhere`, `#oWant`). Section "5 Nov 2026: a sheet that is not
   ready" (`test/order-why-plain.mjs`, W1 to W4, 8 mutations red); 26 older checks read `aria-disabled`, three needles follow `formMiss`'s pairs. Full suite
-  11,950 passed, 7 failed before the re-aims (S1b laptop only; the rest re-aimed and green). Unnoticed before and after: delivery-pin's mutation "the spot does
-  not stand in for the area" (master e65a88b0 too; cause not read).
+  11,950 passed, 7 failed before the re-aims (S1b laptop only; the rest re-aimed and green). The v1439 sweep missed B11 (`go.disabled` through a variable),
+  hollow until v1441.
+
+## Salt Admin's Messages as rows (v1441)
+- Live as v1441 (`cf3b9a79`, 05 Nov 2026; Cloud commit `41995029099`: chain and three suite parts green; CI `41995029278` green), his screenshot of Customers > Messages: Needs you's card in the 360px column ran its line into the next card.
+  `drawThreadList` (stmt/owner.js) draws a thread as a settings row (`.athrow`, as `acctRowNodes`): code, sub "Waiting 2 h · line" (copper) or "Answered 3 d ·
+  You: line", owed on the right, Reply (`asMove`) only while waiting, `rowMark` otherwise, a tap anywhere opens; `.chatgrid` is one 640px column until
+  `openMakerThread` adds `open` (280 to 360px list beside the thread), Close removes it; `.athrow>.salt-ghost{flex:none}` (a long line shrank Reply to 42px;
+  the real fix is a salt-ds settings-row rule, not done). "Nothing waits for your reply." Measured in Chromium at 390, 1180, 1440. admin-cust-chat checks 1, 2,
+  5, 6 (15 mutations), admin-tablet 2 needles. Same version: B14 in order-as-them-page (a spot with no area lets Review go) carries the delivery-pin mutation
+  that went unnoticed; B11 reads `aria-disabled`. Full suite 11,958 passed, 2 failed (S1b laptop only; a tablet needle, re-aimed and green).
+- 05 Nov 2026, the main checkout tidied on his word: `statements/2026-08` and `2026-09` (sealed issues, `_passwords.json` inside) had gone to the Recycle Bin
+  on 04 Nov 11:56 and were put back (docs/STATEMENTS.md: they stay on disk as issued); `docs/order-flow-map.html` and `plan-ledger-conventions.html` committed
+  (cited from code); `audit-last-10-orders.html` and `keys-and-surfaces*.html` kept local through `.git/info/exclude` (a map of keys, public repo).
 
 ## The restock light in four steps (v1426)
 - Live as v1426 (`4f643e64`, 04 Nov 2026; Cloud commit `41710800634`: chain green with "The phone is serving it", the statements deployed and published, three suite parts green; CI `41710800684` green), his word "change the rule": engine `restockLight(shelf, commit, demand)` and `LIGHT_DAYS {fast: 7, low: 3}`: red Out of stock with nothing free, amber Low on stock under one usual order (`restockPlan`'s `buy.median`) or 3 days of cover, yellow Selling fast at 7 days, green Available. Promised past the shelf (Limited) is now red. Only amber and red ask for a restock date (`expAsks`) and wake the Desk (`LIGHT_RANK`). salt-ds 1.26.0 (#38): `--salt-orange` #f28c18, `salt-light--amber`, `salt-status--amber`/`--orange`. FIX_VERSION 18 (rice amber). At the push salt read Selling fast (5.1 days of cover), every other book Available.
