@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1436",
+  "d": "05 Nov 2026",
+  "t": "A PENDING HALF UNIT OF SALT BOOKED FOR CA3-KP",
+  "n": [
+   "<b>ONE NEW SALE FOLDED.</b> Order 20261105033625-wxe1kq, 0.5 unit of salt to CA3-KP for RM75, was appended to sales as pending. Nothing is paid and nothing has moved, so it draws no stock and books no revenue yet. It was preapproved by Counter Admin and carried no drafter flags.",
+   "<b>INVENTORY UNCHANGED.</b> Stock stays at 18 unit and the stock cost at RM56 a unit. The 0.5 unit is promised but not drawn, so the position moves only when the goods are handed over."
+  ]
+ },
+ {
   "v": "v1435",
   "d": "05 Nov 2026",
   "t": "S335 DELIVERY CORRECTED TO RM45 AND RM350 PAID ON CM4-MK",
