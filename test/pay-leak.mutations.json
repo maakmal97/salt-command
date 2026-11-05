@@ -1,0 +1,18 @@
+[
+  {"name": "a served comment names Salt QR", "file": "stmt/page.js", "find": "var CODE_PX=8;", "replace": "var CODE_PX=8; /* the code Salt QR holds */"},
+  {"name": "the served script names the old binding", "file": "stmt/page.js", "find": "var CODE_PX=8;", "replace": "var CODE_PX=8; var QRCMD=0;"},
+  {"name": "a served word names the payment page", "file": "stmt/words.js", "find": "\"pay.codeSave\": \"Save the code\"", "replace": "\"pay.codeSave\": \"Save the code from the payment page\""},
+  {"name": "the served styles name the other site", "file": "stmt/statement-css.js", "find": "export const FONT_FACE_CSS = \"", "replace": "export const FONT_FACE_CSS = \"/* inlined by the Counter and QR Command */"},
+  {"name": "the rails carry an address", "file": "stmt/pay.js", "find": "export const PAY_ACCOUNTS = [", "replace": "export const PAY_SITE = \"https://x.example\";\nexport const PAY_ACCOUNTS = ["},
+  {"name": "the rails carry a link builder", "file": "stmt/pay.js", "find": "export const PAY_ACCOUNTS = [", "replace": "export function payHref() { return \"\"; }\nexport const PAY_ACCOUNTS = ["},
+  {"name": "the sync tool reads the address again", "file": "tools/paysync.mjs", "find": "export function shipAccounts(doc) {", "replace": "export function paySiteUrl() { return \"\"; }\nexport function shipAccounts(doc) {"},
+  {"name": "the sheet opens a window", "file": "stmt/page.js", "find": "l.click(); l.remove();", "replace": "l.click(); window.open(u); l.remove();"},
+  {"name": "the sheet sets a target", "file": "stmt/page.js", "find": "again.type='button'; again.id='payAgain';", "replace": "again.type='button'; again.id='payAgain'; again.target='_blank';"},
+  {"name": "the sheet names an address", "file": "stmt/page.js", "find": "var CODE_PX=8;", "replace": "var CODE_PX=8, CODE_HOME='https://example.org/';"},
+  {"name": "the download's address is not the blob", "file": "stmt/page.js", "find": "l.href=u; l.download='pay-code.png';", "replace": "l.href='/code'; l.download='pay-code.png';"},
+  {"name": "the code panel carries a link", "file": "stmt/page.js", "find": "meta.appendChild(el('p','salt-qr__title',a.name));", "replace": "var lk=el('a'); lk.href=a.name; meta.appendChild(lk); meta.appendChild(el('p','salt-qr__title',a.name));"},
+  {"name": "the route says where the code came from", "file": "stmt/worker.js", "find": "return json(down ? { ok: true, accounts, down } : { ok: true, accounts });", "replace": "return json({ ok: true, accounts, via: \"Salt QR\" });"},
+  {"name": "the practice answer says where the code came from", "file": "stmt/worker.js", "find": "return json(down ? { ok: true, accounts: shapeAccounts(ex.accounts, liveAccounts(down)), down } : { ok: true, accounts: {} });", "replace": "return json(down ? { ok: true, accounts: shapeAccounts(ex.accounts, liveAccounts(down)), down, via: \"qr-command\" } : { ok: true, accounts: {} });"},
+  {"name": "the scan does not read the Worker's own name", "file": "test/pay-leak.mjs", "find": ".concat(live ? [live] : [])", "replace": ".concat([])"},
+  {"name": "the scan reads no customer page", "file": "test/pay-leak.mjs", "find": "\"the practice page\": P.landingPage(\"0000-0000\", \"n2\", null, null, true),", "replace": "\"the practice page\": P.landingPage(\"0000-0000\", \"n2\", null, null, true).slice(0, 5000),"}
+]

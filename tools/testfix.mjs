@@ -545,6 +545,10 @@ export const FEATURES = [
   ["the invented pay details beside the reference on the pay sheet: a code, an account number, and a JomPAY biller code with its Ref-1 (06 Nov 2026)", (f) => !!f.pay
     && f.pay.accounts.some((a) => a.key === "maybank" && !payloadError(a.payload) && /^[0-9]{12}$/.test(a.acct) && /INVENTED/.test(a.payload))
     && f.pay.accounts.some((a) => !!a.biller && !!a.ref1 && !payloadError(a.payload)) && Object.values(f.pay.down).every((d) => d === false)],
+  ["the sheet draws a code: a practice account's maybank carries an invented payload that passes the checksum and is short enough to draw (06 Nov 2026)", (f) => !!f.pay
+    && f.pay.accounts.some((a) => a.key === "maybank" && !payloadError(a.payload) && a.payload.length > 40 && a.payload.length <= 362) && f.pay.down.maybank === false],
+  ["the sheet shows JomPAY details: a practice account's instapay carries an invented biller code and Ref-1 and is open (06 Nov 2026)", (f) => !!f.pay
+    && f.pay.accounts.some((a) => a.key === "instapay" && /^[0-9]{4,6}$/.test(a.biller) && /^[0-9]{1,32}$/.test(a.ref1)) && f.pay.down.instapay === false],
   ["a book priced soon", (f) => !!(f.prices && f.prices.soon && f.prices.soon.length)],
   /* Counter Batch C: drawn on every customer's Account, the test accounts' included, from no data of theirs */
   ["Help under Account, four answers (Counter Batch C)", () => true],

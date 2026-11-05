@@ -29,6 +29,7 @@ export async function run({ ok, KV }) {
   const SC = await import("../tools/stmt-crypto.mjs");
   const stmtW = (await import("../stmt/worker.js")).default;
   const { PAY_ACCOUNTS } = await import("../stmt/pay.js");
+  const QRM = (await import("../stmt/qr.js")).default;
 
   /* an invented store: owner, holder and member number ride in the file's source and must never leave; maybank carries a JomPAY pair its rails lack */
   const pl = (id, name) => TX.inventedPayload(DIG("8880", "0000", id), name);
@@ -124,11 +125,11 @@ export async function run({ ok, KV }) {
   const a = r1.b.accounts || {};
   ok(r1.status === 200 && r1.b.ok === true && r1.cc === "no-store" && Object.keys(a).join() === "wise,maybank,ambank,instapay",
     "the route answers the accounts the sheet offers, no-store, suspended spay and the key nokey left out: " + Object.keys(a).join());
-  ok(a.maybank && Object.keys(a.maybank).join() === "qr,number,bank" && a.maybank.qr === store[0].payload && a.maybank.number === DIG("8880", "0000", "0001") && a.maybank.bank === "Maybank",
-    "an account on the qr and transfer rails answers qr, number and bank, and never the JomPAY pair its rails lack though the file holds one: " + hide(JSON.stringify(a.maybank)).slice(0, 100));
+  ok(a.maybank && Object.keys(a.maybank).join() === "rows,qr,number,bank" && a.maybank.qr === store[0].payload && a.maybank.rows.join("") === QRM.qrMatrix(store[0].payload).map((r) => r.join("")).join("") && a.maybank.number === DIG("8880", "0000", "0001") && a.maybank.bank === "Maybank",
+    "an account on the qr and transfer rails answers the code (its payload and its modules, rows of 0 and 1), the number and the bank, and never the JomPAY pair its rails lack though the file holds one: " + hide(JSON.stringify(a.maybank)).slice(0, 100));
   ok(a.wise && Object.keys(a.wise).join() === "number,bank" && a.wise.number === DIG("8880", "0000", "0002") && !("qr" in a.wise),
     "an account on the transfer rail alone answers the number and the bank and no code, whatever payload the file holds: " + hide(JSON.stringify(a.wise)));
-  ok(a.instapay && Object.keys(a.instapay).join() === "qr,number,bank,biller,ref1" && a.instapay.biller === "88803" && a.instapay.ref1 === DIG("8880", "0000", "0004", "9"),
+  ok(a.instapay && Object.keys(a.instapay).join() === "rows,qr,number,bank,biller,ref1" && a.instapay.biller === "88803" && a.instapay.ref1 === DIG("8880", "0000", "0004", "9"),
     "an account that runs JomPAY answers the biller code and Ref-1 beside its code and number: " + hide(JSON.stringify(a.instapay)).slice(0, 120));
   const lone = mkEnv(qr(new Response(dataJs([A("instapay", { payload: pl("0003", "INVENTED THREE"), acct: DIG("8880", "0000", "0003"), bank: "Instapay", biller: "88803" })])), stateOf({})));
   const loneAns = (await call(lone, "/pay/accounts", await asker(lone, "abcd-efgh"))).b.accounts.instapay || {};
@@ -181,6 +182,13 @@ export async function run({ ok, KV }) {
   ok(TX.missing(noPay).includes(line) && TX.missing(noJom).includes(line) && TX.missing(shut).includes(line), "a fixture without details, without the JomPAY pair, or with an invented account shut is red by its line");
   ok(inv.accounts.every((c) => CRC.payloadError(c.payload) === null && /INVENTED/.test(c.payload) && /^[0-9]{12}$/.test(c.acct)) && inv.accounts.some((c) => c.key === "instapay" && c.biller && c.ref1) && PC.cleanList(inv.accounts).length === 2,
     "the invented payloads pass Salt QR's own checksum, name an invented merchant, and the invented numbers are twelve digits");
+  const lineCode = TX.FEATURES.map(([nm]) => nm).find((nm) => /^the sheet draws a code/.test(nm)), lineJom = TX.FEATURES.map(([nm]) => nm).find((nm) => /^the sheet shows JomPAY details/.test(nm));
+  const brokenCode = Object.fromEntries(Object.entries(all).map(([s, f]) => [s, Object.assign({}, f, { pay: Object.assign({}, f.pay, { accounts: f.pay.accounts.map((c) => c.key === "maybank" ? Object.assign({}, c, { payload: c.payload.slice(0, -1) + "0" }) : c) }) })]));
+  const shutJom = Object.fromEntries(Object.entries(all).map(([s, f]) => [s, Object.assign({}, f, { pay: Object.assign({}, f.pay, { down: { maybank: false, instapay: true } }) })]));
+  const shutMay = Object.fromEntries(Object.entries(all).map(([s, f]) => [s, Object.assign({}, f, { pay: Object.assign({}, f.pay, { down: { maybank: true, instapay: false } }) })]));
+  ok(!!lineCode && !!lineJom && !TX.missing(all).includes(lineCode) && !TX.missing(all).includes(lineJom) && TX.missing(noPay).includes(lineCode) && TX.missing(noPay).includes(lineJom)
+    && TX.missing(brokenCode).includes(lineCode) && TX.missing(shutMay).includes(lineCode) && TX.missing(noJom).includes(lineJom) && TX.missing(shutJom).includes(lineJom),
+    "the fixture's two lines, the sheet draws a code and the sheet shows JomPAY details, are met by the invented details and red without them, with a broken checksum, without the pair or with instapay shut: " + JSON.stringify([!!lineCode, !!lineJom]));
   const ck = await SC.contentKey("test-secret", T), recT = { test: true, wrap: await SC.wrapKey(TF.TEST_PASS, ck) };
   const sealed = await TX.sealFixture(all[T], recT, TF.TEST_PASS);
   ok(JSON.stringify(sealed.pay) === JSON.stringify(inv) && !("paynum" in sealed) && sealed.v === TF.FIX_VERSION, "the sealed fixture carries the invented details and no paynum");

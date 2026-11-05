@@ -16,6 +16,8 @@ import { webcrypto } from "node:crypto";
 const BUILD = "b".repeat(16);
 
 export async function run({ ok }) {
+  /* what GET /pay/accounts answers (invented, 06 Nov 2026): the sheet offers a bank only once it has what that bank's rail draws */
+  const PAYACC = { ok: true, accounts: { maybank: { number: ["5550", "0001", "1234"].join(""), bank: "Maybank" } } };
   const { landingPage } = await import("../stmt/page.js");
   const C = await import("../tools/stmt-crypto.mjs");
   const { JSDOM } = await import("jsdom");
@@ -56,6 +58,7 @@ export async function run({ ok }) {
       try { win.localStorage.setItem("salt-look", "tide"); } catch (e) { /* the look is kept, so its Sheet does not stand over the page this check reads */ }
       win.fetch = async (path, init) => {
         const p = String(path), m = (init && init.method) || "GET";
+        if (p === "/pay/accounts") return answer(200, PAYACC);
         if (p === "/open" || p === "/account") return answer(200, body);
         if (p === "/orders" && m === "GET") return st.down ? answer(401, { ok: false }) : answer(200, { ok: true, orders: JSON.parse(JSON.stringify(st.orders)), claims: [] });
         if (p === "/my/refs" && m === "GET") return answer(200, { ok: true, max: 10, refs: [] });

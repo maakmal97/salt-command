@@ -91,6 +91,14 @@ const sealCurrentLive = async (C, ck, doc) => {
     live: Object.assign({ at: stamped.at, buildId: stamped.buildId }, await C.encryptWith(ck, JSON.stringify(stamped)))
   };
 };
+/* WHAT GET /pay/accounts ANSWERS, INVENTED (06 Nov 2026): the pay sheet draws the code and the numbers from this alone, so a page stub that opens the sheet answers it.
+   maybank (a code and a number), instapay (those and a JomPAY pair), wise and ambank (a number), spay (suspended in the rails, so never offered). Numbers are joined from
+   parts: the source holds no run of ten digits. */
+const PAYACC = await (async () => {
+  const PCm = await import("../stmt/paycodes.js"), TXm = await import("../tools/testfix.mjs"), { PAY_ACCOUNTS: PAm } = await import("../stmt/pay.js");
+  const shaped = PCm.shapeAccounts(TXm.invented().accounts, PAm), n = (k) => ["5550", "00" + k, "1234"].join("");
+  return { ok: true, accounts: Object.assign({}, shaped, { wise: { number: n("01"), bank: "Wise" }, ambank: { number: n("02"), bank: "AmBank" }, spay: { number: n("03"), bank: "S Pay" } }) };
+})();
 /* THE INVENTORY RATE, WORKED BY THE SUITE FROM A BOOK'S OWN ROWS (26 Sep 2026, his instruction that every book's stock
    cost is derived from its lots). Never through the desk's stockCostFor or the engine's stockBasis, which are what it
    checks. A book's stock: its stated count (PROD_OPENING.stated, and salt's STATED_STOCK), else opening plus what landed
@@ -8633,6 +8641,11 @@ await (async () => {
   await (await import("./pay-codes.mjs")).run({ ok, KV });
 })();
 
+section("6 Nov 2026: a customer never learns that Salt QR exists: the page, its words, its script and every answer name nothing of it, and the sheet links nowhere");
+await (async () => {
+  await (await import("./pay-leak.mjs")).run({ ok, KV });
+})();
+
 section("One word per state, and the mark alone: Placed, Confirmed, Declined, More by, no shape word drawn, on the page and the banners (11 and 12 Oct 2026)");
 await (async () => {
   await (await import("./counter-state-words.mjs")).run({ ok });
@@ -9666,7 +9679,7 @@ section("Statements — the price list, the order book and the desk's relay (v49
 await (async () => {
   const PL = await import("../tools/pricelist.mjs");
   const { shipAccounts, renderPayJs, mastersPresent, payJs } = await import("../tools/paysync.mjs");
-  const { PAY_SITE, PAY_ACCOUNTS } = await import("../stmt/pay.js");
+  const { PAY_ACCOUNTS } = await import("../stmt/pay.js");
   const { pendingEntry, reconcileOrders, nudgeOrders, ordersWaiting } = await import("../src/orders.js");
   const deskWorker = (await import("../src/worker.js")).default;
   const PE = (await import("../engine/pricing.mjs")).default;
@@ -9745,13 +9758,12 @@ await (async () => {
     { key: "y", name: "Y", bank: "Y Bank", maintenance: true }] });
   ok(ship.length === 2 && ship[0].qr && ship[0].transfer && ship[0].jompay && !ship[1].qr && ship[1].transfer && !ship[1].jompay && ship[1].maintenance,
     "a rail is derived from the record: a payload is a code, a bank is a transfer, a biller is JomPAY");
-  const rendered = renderPayJs("https://q.example", ship);
-  ok(!/12345678|123456|60111|000201|1234 5678/.test(rendered) && rendered.includes('"key": "x"') && rendered.includes('"https://q.example"'),
-    "and what is rendered carries the key, the name, the bank and the rails, and no number, payload, member number or reference");
+  const rendered = renderPayJs(ship);
+  ok(!/12345678|123456|60111|000201|1234 5678/.test(rendered) && rendered.includes('"key": "x"') && !/https?:/.test(rendered) && !/PAY_SITE|payHref/.test(rendered),
+    "and what is rendered carries the key, the name, the bank and the rails, and no number, payload, member number, reference, address or link");
   const payTxt = readFileSync(join(REPO, "stmt", "pay.js"), "utf8");
-  ok(!/[0-9]{5}/.test(payTxt) && PAY_ACCOUNTS.length >= 10 && PAY_ACCOUNTS.every(a => a.key && a.name)
-    && /^https:\/\/[a-z0-9]+\.qyts8mh72kyg\.workers\.dev$/.test(PAY_SITE),
-    "the shipped stmt/pay.js holds no run of five digits, names every account, and points at QR Command on the account's own subdomain");
+  ok(!/[0-9]{5}/.test(payTxt) && PAY_ACCOUNTS.length >= 10 && PAY_ACCOUNTS.every(a => a.key && a.name) && !/https?:/.test(payTxt),
+    "the shipped stmt/pay.js holds no run of five digits, names every account, and carries no address");
   ok(PAY_ACCOUNTS.some(a => a.key === "tngbiz" && a.qr) && PAY_ACCOUNTS.some(a => a.jompay) && PAY_ACCOUNTS.some(a => a.transfer && !a.qr),
     "it carries the Touch 'n Go Business code, a JomPAY biller and a transfer-only account");
   if (mastersPresent()) ok(payJs() === payTxt, "stmt/pay.js is what the pay master produces (run tools/paysync.mjs --sync if this fails)");
@@ -9771,8 +9783,8 @@ await (async () => {
   const page = await stmtWorker.fetch(sreq("/?u=" + un), senv);
   const html = await page.text();
   const payInPage = (/[ ,]PAY=(\[[\s\S]*?\]);/.exec(html) || [])[1] || "MISSING";
-  ok(html.includes('data-t="prices"') && html.includes('data-t="order"') && html.includes('data-t="stmt"') && /PAY_SITE="https/.test(html),
-    "the page carries three tabs, statements, prices and order, and the address of QR Command");
+  ok(html.includes('data-t="prices"') && html.includes('data-t="order"') && html.includes('data-t="stmt"') && !/PAY_SITE|qyts8mh72kyg/.test(html),
+    "the page carries three tabs, statements, prices and order, and no address to pay at");
   ok(payInPage !== "MISSING" && !/[0-9]{5}/.test(payInPage) && !html.includes("CX0-AA"),
     "the accounts on the page are names and rails with no number, and no code is on it");
   ok(/worker-src 'self'/.test(page.headers.get("content-security-policy") || ""), "the CSP admits the site's own service worker and nothing else new");
@@ -10208,65 +10220,8 @@ await (async () => {
   }
 })();
 
-section("Statements: the pay link opens QR Command at the account, the rail and the amount (S6)");
-await (async () => {
-  /* THE ONE LINK INTO THE PAY PAGE (the owner's D8, 24 Sep 2026): stmt/pay.js builds QR Command's
-     #<key>/<rail>/<amount>/<reference> and carries nothing that pays. Driven on a rendered fixture,
-     so the live store's accounts can neither pass it nor fail it. */
-  const { shipAccounts, renderPayJs, QR_REPO } = await import("../tools/paysync.mjs");
-  const accts = shipAccounts({ accounts: [
-    { key: "m", name: "M", bank: "M Bank", payload: "p", acct: "a" },
-    { key: "w", name: "W", bank: "W Bank", acct: "a" },
-    { key: "s", name: "S", bank: "S Bank", payload: "p", acct: "a", maintenance: true },
-    { key: "j", name: "J", biller: "b", ref1: "r" }] });
-  const src = renderPayJs("https://q.example", accts);
-  const { payHref } = await import("data:text/javascript," + encodeURIComponent(src));
-  const u = "k7m2-p9qr";
-  ok(payHref("m", "transfer", 70, u) === "https://q.example/#m/transfer/70.00/k7m2-p9qr"
-    && payHref("m", "qr", "215.5", "0000-0000") === "https://q.example/#m/qr/215.50/0000-0000"
-    && payHref("m", "qr", 999999.99, u) === "https://q.example/#m/qr/999999.99/k7m2-p9qr",
-    "the link names the account, the way, the figure to the sen and the username as the reference");
-  const wrongly = [["w", "qr", 70, u], ["s", "transfer", 70, u], ["j", "jompay", 70, u], ["x", "qr", 70, u], ["m", "cash", 70, u],
-    ["m", "qr", 0, u], ["m", "qr", -5, u], ["m", "qr", "abc", u], ["m", "qr", 1e6, u],
-    ["m", "qr", 70, ""], ["m", "qr", 70, "a b"], ["m", "qr", 70, "a/b"], ["m", "qr", 70, "a".repeat(21)]]
-    .filter((c) => payHref(...c) !== "");
-  ok(wrongly.length === 0,
-    "and it answers nothing for an account, a way, a figure or a reference the page could not open: " + JSON.stringify(wrongly));
-  /* AS IT IS: its source, run as a classic script beside the page's own declaration of the site and the
-     list (CLIENT_JS calls the list PAY), writes the same links, so no name is missing there */
-  const decl = (/var [^;\n]*__PAY_ACCOUNTS__[^;\n]*;/.exec(readFileSync(join(REPO, "stmt", "page.js"), "utf8")) || [""])[0];
-  let paged;
-  try {
-    const f = new Function(decl.replace("__PAY_SITE__", JSON.stringify("https://q.example")).replace("__PAY_ACCOUNTS__", JSON.stringify(accts))
-      + "\n" + payHref.toString() + "\nreturn payHref;")();
-    paged = [f("m", "transfer", 70, u), f("w", "qr", 70, u)];
-  } catch (e) { paged = String(e && e.message); }
-  ok(!/[\\`]|=>|\blet\b|\bconst\b/.test(payHref.toString()) && decl.includes("__PAY_SITE__")
-    && JSON.stringify(paged) === JSON.stringify(["https://q.example/#m/transfer/70.00/k7m2-p9qr", ""]),
-    "its source is ES5 with no backslash or backtick and reads only what the page's own script declares, so the page can carry it "
-    + "inside its template literal as it is: " + JSON.stringify(paged));
-
-  /* THE TWO REPOS AGREE ON THE FORMAT. QR Command's parser, lifted out of the app.js it ships, reads
-     every part back; where QR Command is not on the machine (CI) this stands down. */
-  const qrApp = join(QR_REPO, "public", "app.js");
-  if (existsSync(qrApp)) {
-    const app = readFileSync(qrApp, "utf8");
-    const at = app.indexOf("function linkOf(");
-    /* the landing order, named where it bites: QR Command ships first, so a checkout without its parser is red with the cause */
-    if (at < 0) ok(false, "QR Command's checkout at " + QR_REPO + " has no linkOf, so nothing can read the link back: land QR Command's "
-      + "payer's link first and fast-forward that checkout, or point QR_REPO at one that has it. The landing order, not the change under test");
-    else {
-      let d = 0, j = app.indexOf("{", at);
-      for (; j >= 0 && j < app.length; j++) { if (app[j] === "{") d++; else if (app[j] === "}" && --d === 0) break; }
-      const rails = (/var RAILS = \[[\s\S]*?\n  \];/.exec(app) || [""])[0];
-      const linkOf = new Function(rails + "\n" + app.slice(at, j + 1) + "\nreturn linkOf;")();
-      const cases = [["m", "transfer", 70, u], ["m", "qr", "215.5", "0000-0000"], ["m", "qr", 999999.99, u]];
-      const back = cases.map((c) => linkOf(payHref(...c).slice("https://q.example/".length)));
-      ok(back.every((L, n) => L.key === cases[n][0] && L.rail === cases[n][1] && Number(L.amount) === Number(cases[n][2]) && L.ref === cases[n][3]),
-        "and QR Command's own parser, as it ships, reads every part back, so the Counter never links to what the page cannot open: " + JSON.stringify(back));
-    }
-  } else okOff(true, "QR Command is not on this machine, so the link goes unread by its parser");
-})();
+/* 06 Nov 2026: the section "the pay link opens QR Command at the account, the rail and the amount" retired with the link. The Counter's pay sheet draws everything itself and links
+   nowhere (test/pay-leak.mjs, test/pay-number.mjs); stmt/pay.js carries names and rails only (above); payHref, PAY_SITE and the read of qr-command's linkOf are gone. */
 
 section("Statements — the QR, the sort and the Salt identity");
 await (async () => {
@@ -24109,7 +24064,7 @@ await (async () => {
   };
   const html = P.landingPage("abcd-efgh", "n133", null);
   const js = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join("\n");
-  const own = lits(js.replace(/^\s*var (WORDS|PAY_SITE|GL|GLS|BULL)=.*$/gm, ""));
+  const own = lits(js.replace(/^\s*var (WORDS|PAY|GL|GLS|BULL)=.*$/gm, ""));
   const css = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n");
   const classes = new Set([...css.matchAll(/\.([A-Za-z_][\w-]*)/g)].map((m) => m[1]).concat([...html.matchAll(/class="([^"]*)"/g)].flatMap((m) => m[1].split(" "))));
   /* the rails' own names and the currency, which no table words, and the Worker's English for a moved list, which the page
@@ -29964,6 +29919,7 @@ await (async () => {
       if (!win.TextDecoder) win.TextDecoder = TextDecoder;
       win.scrollTo = () => {};
       win.fetch = async (path, init) => {
+        if (String(path) === "/pay/accounts") return { ok: true, status: 200, json: async () => PAYACC };
         const p = String(path), m = (init && init.method) || "GET", j = init && init.body ? JSON.parse(init.body) : null;
         if (p === "/open") return answer(200, body);
         if (p === "/orders" && m === "GET") return answer(200, { ok: true, orders: [ord] });
@@ -41213,6 +41169,7 @@ await (async () => {
     /* the saved app: the account opens only there (Step 1b) */
     win.matchMedia = (q) => ({ matches: /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
     win.fetch = async (path, init) => {
+        if (String(path) === "/pay/accounts") return { ok: true, status: 200, json: async () => PAYACC };
       const p = String(path), m = (init && init.method) || "GET";
       if (p === "/open") return res(200, body);
       if (p === "/orders" && m === "GET") return st.ordersDown ? res(401, { ok: false }) : res(200, { ok: true, orders: list() });
@@ -41317,6 +41274,7 @@ await (async () => {
     if (!win.TextDecoder) win.TextDecoder = TextDecoder;
     win.scrollTo = () => {};
     win.fetch = async (path, init) => {
+        if (String(path) === "/pay/accounts") return { ok: true, status: 200, json: async () => PAYACC };
       const p = String(path), m = (init && init.method) || "GET";
       const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders } : null;
       return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
@@ -42036,14 +41994,13 @@ await (async () => {
     + JSON.stringify({ alone, beside }));
 })();
 
-section("S6 6.4: every Pay opens one sheet: the figure, All or Part, Transfer or Scan a code, his account chosen by them, the username as reference, and the pay page through payHref");
+section("S6 6.4: every Pay opens one sheet: the figure, All or Part, Transfer or Scan a code, his account chosen by them, the username as reference, and nothing that links out");
 await (async () => {
   /* STAGE 6 OF THE COUNTER REDESIGN, his D8 as he amended it (24 Sep 2026): NO default account; they choose which of
-     his accounts to pay into, from those payHref will link; two ways up front; the username is the reference; Show the
-     account number or Show the code opens the pay page through payHref; the Counter carries no number and never names
-     the pay page. Forced state: a fixture live document owing RM 70 now and one confirmed order owing RM 200. */
+     his accounts to pay into, from those the sheet can draw; the ways up front; the username is the reference on a code and
+     a transfer; I have paid is the one filled pill, and the sheet links nowhere (his rule of 06 Nov 2026). Forced state: a fixture live document owing RM 70 now and one confirmed order owing RM 200. */
   const { landingPage: lp } = await import("../stmt/page.js");
-  const { payHref, PAY_ACCOUNTS } = await import("../stmt/pay.js");
+  const { PAY_ACCOUNTS } = await import("../stmt/pay.js");
   const C = await import("../tools/stmt-crypto.mjs");
   const { webcrypto: wc } = await import("node:crypto");
   const { JSDOM: JD } = await import("jsdom");
@@ -42062,6 +42019,7 @@ await (async () => {
     if (!win.TextDecoder) win.TextDecoder = TextDecoder;
     win.scrollTo = () => {};
     win.fetch = async (path, init) => {
+        if (String(path) === "/pay/accounts") return { ok: true, status: 200, json: async () => PAYACC };
       const p = String(path), m = (init && init.method) || "GET";
       const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: [ord] } : null;
       return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
@@ -42077,49 +42035,50 @@ await (async () => {
   /* S6 fix: his accounts are Option tiles, one tap each */
   const into = () => [...d.querySelectorAll('#payBody input[name="payInto"]')].map((o) => o.value);
   const pickInto = (k) => { const s = d.querySelector('#payBody input[name="payInto"][value="' + k + '"]'); s.checked = true; s.dispatchEvent(new w.Event("change", { bubbles: true })); };
-  const linked = (rail, amt) => PAY_ACCOUNTS.filter((a) => payHref(a.key, rail, amt, u)).map((a) => a.key);
+  const linked = (rail) => PAY_ACCOUNTS.filter((a) => a[rail] && !a.maintenance && PAYACC.accounts[a.key] && (rail === "qr" ? PAYACC.accounts[a.key].rows : PAYACC.accounts[a.key].number)).map((a) => a.key);
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => d.getElementById("payNow"));
     d.getElementById("payNow").click();
+    await until(() => d.querySelector('#payBody input[name="payInto"][value="maybank"]'));
     const first = { open: !sh().hidden, title: t(d.getElementById("payT")), tile: t(d.querySelector("#payBody .salt-kpi__label")) + " " + t(d.querySelector("#payBody .salt-kpi__value")),
       seg: [...d.querySelectorAll("#payBody .payseg button")].map((b) => t(b) + ":" + b.getAttribute("aria-pressed")),
       ways: [...d.querySelectorAll('#payBody input.salt-option__input[name="payHow"]')].map((r) => r.value + (r.checked ? "*" : "")),
       labels: [...d.querySelectorAll("#payBody .payhow .salt-option__label")].map(t), select: !!d.querySelector('#payBody input[name="payInto"]'),
-      go: go().tagName + (go().disabled ? " disabled" : ""), cap: cap(), ref: t(d.querySelector("#payBody .payref .salt-ledger__value")),
+      go: go().tagName + (go().disabled ? " disabled" : ""), cap: cap(), ref: t(d.querySelector("#payBody #payRef .salt-ledger__value")),
       copy: !!d.querySelector('#payBody .payref button[aria-label="Copy the reference"]'), pills: sh().querySelectorAll(".salt-pill").length };
     ok(first.open && first.title === "Pay RM 70.00" && first.tile === "To pay now RM 70.00" && first.seg.join() === "All, RM 70.00:true,Part of it:false"
-      && first.ways.join() === "transfer*,qr" && first.labels.join() === "Transfer to an account,Scan a code" && first.select
+      && first.ways.join() === "transfer*,qr,jompay" && first.labels.join() === "Transfer to an account,Scan a code,JomPAY" && first.select
       && first.go === "BUTTON disabled" && first.cap === "Choose which of our accounts to pay into." && first.ref === u && first.copy && first.pills === 1,
-      "To pay now's Pay opens the sheet on the figure and what it is for, All chosen, the two ways with Transfer chosen as the mockup draws it and no account chosen for them, the username as the reference with Copy, and Show waiting: "
+      "To pay now's Pay opens the sheet on the figure and what it is for, All chosen, the three ways with Transfer chosen as the mockup draws it and no account chosen for them, the username as the reference with Copy, and I have paid waiting: "
       + JSON.stringify(first));
     how("transfer");
     const tIn = into(), tPicked = (d.querySelector('#payBody input[name="payInto"]:checked') || { value: "" }).value, tGo = go().tagName + (go().disabled ? " disabled" : ""), tCap = cap();
     pickInto("maybank");
     const a1 = go(), live = t(sh());
-    ok(JSON.stringify(tIn) === JSON.stringify(linked("transfer", 70)) && tIn.includes("wise") && !tIn.includes("spay") && tPicked === ""
+    ok(JSON.stringify(tIn) === JSON.stringify(linked("transfer")) && tIn.includes("wise") && !tIn.includes("spay") && tPicked === ""
       && tGo === "BUTTON disabled" && tCap === "Choose which of our accounts to pay into."
-      && a1.tagName === "A" && a1.getAttribute("href") === payHref("maybank", "transfer", 70, u) && a1.target === "_blank" && t(a1) === "Show the account number"
-      && cap() === "Opens our payment page with the account number. Once you have paid, tap Paid? Go back there, and tell us here."
+      && a1.tagName === "BUTTON" && !a1.disabled && t(a1) === "I have paid" && !sh().querySelector("a[href]")
+      && /^Pay it in your banking app, with the reference[.] Then come back here/.test(cap())
       && /to Maybank$/.test(t(d.querySelectorAll("#payBody .salt-option__detail")[0])),
-      "Transfer offers every account payHref links and no suspended one, chooses none, and once they choose Maybank, Show opens the pay page at that account, rail and figure: "
-      + JSON.stringify({ tIn, tPicked, href: a1.getAttribute("href") }));
+      "Transfer offers every account that gave a number and no suspended one, chooses none, and once they choose Maybank the pill lights as I have paid and nothing on the sheet is a link: "
+      + JSON.stringify({ tIn, tPicked, go: t(a1) }));
     how("qr");
     const qIn = into(), qGo = go();
     [...d.querySelectorAll("#payBody .payseg button")].find((b) => t(b) === "Part of it").click();
     const amt = d.getElementById("payAmt"); amt.value = "40"; amt.dispatchEvent(new w.Event("input", { bubbles: true }));
-    const part = { title: t(d.getElementById("payT")), href: go().getAttribute("href") };
+    const part = { title: t(d.getElementById("payT")), amount: t(d.querySelector("#payAmtRow .salt-ledger__value")) };
     amt.value = "90"; amt.dispatchEvent(new w.Event("input", { bubbles: true }));
     const over = { go: go().tagName + (go().disabled ? " disabled" : ""), cap: cap() };
-    ok(JSON.stringify(qIn) === JSON.stringify(linked("qr", 70)) && !qIn.includes("wise") && qGo.getAttribute("href") === payHref("maybank", "qr", 70, u) && t(qGo) === "Show the code"
-      && part.title === "Pay RM 40.00" && part.href === payHref("maybank", "qr", 40, u) && over.go === "BUTTON disabled" && over.cap === "Say how much you are paying, up to RM 70.00.",
-      "Scan a code offers only the accounts with a code and keeps Maybank, Part of it sends the figure typed, and more than is owed opens nothing: "
+    ok(JSON.stringify(qIn) === JSON.stringify(linked("qr")) && !qIn.includes("wise") && qGo.tagName === "BUTTON" && t(qGo) === "I have paid"
+      && part.title === "Pay RM 40.00" && part.amount === "RM 40.00" && over.go === "BUTTON disabled" && over.cap === "Say how much you are paying, up to RM 70.00.",
+      "Scan a code offers only the accounts with a code and keeps Maybank, Part of it carries the figure typed to the title and the amount row, and more than is owed lights nothing: "
       + JSON.stringify({ qIn, part, over }));
     const text = live + " " + t(sh());
     /* 19 Oct 2026: products as whole words, over the sheet spaced at every tag */
-    ok(!/QR Command/i.test(text) && !/[0-9]{8,}/.test(text) && !/\b(salt|oil)\b/i.test(live + " " + sh().innerHTML.replace(/<[^>]*>/g, " ")),
-      "the sheet names no pay page, carries no account number and no product word: " + text.slice(0, 120));
+    ok(!/QR Command|Salt QR|payment page/i.test(text) && !/\b(salt|oil)\b/i.test(live + " " + sh().innerHTML.replace(/<[^>]*>/g, " ")),
+      "the sheet names no other site and no product word: " + text.slice(0, 120));
     d.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     const closed = sh().hidden;
     d.querySelector('button[data-t="order"]').click();
@@ -42141,7 +42100,6 @@ await (async () => {
      To pay now until his Received or Not found. Forced state: fixtures in the shapes the store writes (claimed,
      payments[].claim, the notes sent/received/not found; the account's claims[] with state and answered). */
   const { landingPage: lp } = await import("../stmt/page.js");
-  const { payHref } = await import("../stmt/pay.js");
   const C = await import("../tools/stmt-crypto.mjs");
   const { webcrypto: wc } = await import("node:crypto");
   const { JSDOM: JD } = await import("jsdom");
@@ -42161,6 +42119,7 @@ await (async () => {
       if (!win.TextDecoder) win.TextDecoder = TextDecoder;
       win.scrollTo = () => {}; win.open = () => null;
       win.fetch = async (path, init) => {
+        if (String(path) === "/pay/accounts") return { ok: true, status: 200, json: async () => PAYACC };
         const p = String(path), m = (init && init.method) || "GET", j = init && init.body ? JSON.parse(init.body) : null;
         const res = (status, x) => ({ ok: status === 200, status, json: async () => x });
         if (p === "/open") return res(200, body);
@@ -42199,20 +42158,20 @@ await (async () => {
     d.querySelector('#pOrder [data-row="oA"]').click();
     [...scr().querySelectorAll(".oact button")].find((b) => /^Pay RM/.test(t(b))).click();
     const r = d.querySelector('#payBody input[name="payHow"][value="transfer"]'); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true }));
+    await until(() => d.querySelector('#payBody input[name="payInto"][value="maybank"]'));
     const s = d.querySelector('#payBody input[name="payInto"][value="maybank"]'); s.checked = true; s.dispatchEvent(new w.Event("change", { bubbles: true }));
-    const besideCode = asked() || /Did you send|I have paid|I sent/i.test(t(sh));
+    const besideCode = asked() || /Did you send/i.test(t(sh));
     away();
     const unasked = asked();
     tap("payGo");
-    const stillThere = !asked();
-    away();
+    const stillThere = asked();
     const check = { title: t(d.getElementById("payT")), q: t(d.querySelector("#payBody .paycheck h3")), how: t(d.querySelector("#payBody .paycheck .sub2")),
-      ins: t(d.querySelector("#payBody .salt-insight")), again: (d.querySelector("#payBody a.payagain") || { getAttribute: () => "" }).getAttribute("href"),
+      ins: t(d.querySelector("#payBody .salt-insight")), again: (d.getElementById("payAgain") || { tagName: "(none)" }).tagName + " " + (d.getElementById("payAgain") || { getAttribute: () => "" }).getAttribute("href"),
       foot: [...d.querySelectorAll("#payFoot button")].map((b) => t(b) + ":" + b.className.split(" ")[0]) };
     ok(!besideCode && !unasked && stillThere && check.title === "Pay RM 150.00" && check.q === "Did you send RM 150.00?"
       && check.how === "By transfer to Maybank, reference " + u + "." && /^Tell us only once it has gone from your bank\. It shows as sent, waiting until we confirm it arrived/.test(check.ins)
-      && check.again === payHref("maybank", "transfer", 150, u) && check.foot.join() === "Not yet:salt-ghost,Yes, I sent RM 150.00:salt-pill" && !st.sent.length,
-      "nothing beside the account number says it was sent; only once they have been to the pay page and back does the sheet ask, Did you send RM 150.00, with Not yet: "
+      && check.again === "BUTTON null" && check.foot.join() === "Not yet:salt-ghost,Yes, I sent RM 150.00:salt-pill" && !st.sent.length,
+      "nothing beside the account number says it was sent, a trip away with nothing copied asks nothing, and I have paid asks at once, Did you send RM 150.00, with Not yet and Show again as a button: "
       + JSON.stringify({ besideCode, unasked, stillThere, check }));
     const notYet = [...d.querySelectorAll("#payFoot button")].find((b) => t(b) === "Not yet"); if (notYet) notYet.click();
     away();
@@ -42226,7 +42185,7 @@ await (async () => {
     ok(once && refused.open && refused.said === "That was not recorded. Try again." /* C16: a codeless refusal takes the page's words, never its own */ && refused.yes
       && st.sent.every((x) => x[0] === "/orders/oA/pay") && st.sent[0][1].rid && st.sent[1][1].rid === st.sent[0][1].rid
       && JSON.stringify(Object.assign({}, st.sent[1][1], { rid: 1 })) === JSON.stringify({ amount: 150, method: "transfer", account: "maybank", rid: 1 }),
-      "Not yet asks nothing more until the pay page is opened again; a refused Yes answers beside itself and a retry carries the same id: "
+      "Not yet asks nothing more until a detail is copied or saved again; a refused Yes answers beside itself and a retry carries the same id: "
       + JSON.stringify({ once, refused, sent: st.sent }));
     /* 2 Nov 2026 (his Orders canvas, page 2): the Bill's settings rows; a row's flag is its second line */
     const lines = [...scr().querySelectorAll('[data-part="money"] .salt-settings__row')].map((x) => [".salt-settings__label", ".salt-settings__value", ".salt-settings__sub"].map((q) => t(x.querySelector(q))).join("|"));
@@ -43206,6 +43165,7 @@ await (async () => {
       win.scrollTo = () => {}; win.open = () => null;
       if (stored) win.localStorage.setItem("salt-stmt-payq", stored);
       win.fetch = async (path, init) => {
+        if (String(path) === "/pay/accounts") return { ok: true, status: 200, json: async () => PAYACC };
         const p = String(path), m = (init && init.method) || "GET";
         const res = (status, x) => ({ ok: status === 200, status, json: async () => x });
         if (p === "/open") return res(200, body);
@@ -46764,6 +46724,7 @@ await (async () => {
       win.HTMLCanvasElement.prototype.toBlob = function (cb) { sent.drawn.push([this.width, this.height]); cb(new win.Blob([JPEG], { type: "image/jpeg" })); };
       win.Image = class { set src(v) { this._s = v; setTimeout(() => this.onload && this.onload(), 0); } get src() { return this._s; } get naturalWidth() { return 3200; } get naturalHeight() { return 1800; } };
       win.fetch = async (path, init) => {
+        if (String(path) === "/pay/accounts") return { ok: true, status: 200, json: async () => PAYACC };
         const p = String(path), m = (init && init.method) || "GET", j = init && init.body ? JSON.parse(init.body) : null;
         if (p === "/open") return answer(200, body);
         if (p === "/orders" && m === "GET") return answer(200, { ok: true, orders: [cur], claims: [] });
