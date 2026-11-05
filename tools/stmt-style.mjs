@@ -94,6 +94,9 @@ export const RECIPE_HEADS = [
   "/* ---- Glass card ---- */", "/* ---- Eyebrow ---- */", "/* ---- KPI tile:", "/* ---- Action:",
   "/* ---- Approve card:", "/* ---- Insight:", "/* ---- Meter:", "/* ---- Ledger list ---- */",
   "/* ---- Queue chip:", "/* ---- QR panel.", "/* ---- Desk rail", "/* ---- Plan:",
+  /* 5 NOV 2026, HIS WORD ("like Mail or Messages on a Mac"): his page's frame from 1080px, the bar and the rail fixed and the column
+     the one scroll box, and the pane a record opens in, its one main action pinned at its foot (salt-ds 1.28.0) */
+  "/* ---- Frame and pane",
   /* PHASE 5 OF THE SALT ADMIN REDESIGN (12 Oct 2026): the three recipes his page was drawing by hand. Metric row, a label over a
      figure, which the approve card's figures were drawn on maker-facts lines for lack of (#142) and the report card's three
      cells restated; Table, the hours grid; Product tag, the book's name on a row of his page, its hue the book's own accent
