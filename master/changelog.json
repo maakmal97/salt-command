@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1448",
+  "d": "06 Nov 2026",
+  "t": "SALT DESK IN LAYERS",
+  "n": [
+   "<b>HIS WORD.</b> Salt Desk takes the frame Salt Admin took in v1442, as Mail and Messages do on a Mac: the rail and the bar never move and only the column under the bar scrolls.",
+   "<b>THE FRAME.</b> From 1080px the page itself scrolls 0px. The bar stays right of the rail, over the column alone, so the Desk wears the design system&#39;s side form (salt-ds 1.29.0). Under 1080px nothing changes.",
+   "<b>BACK TO TOP.</b> It reads the column in the frame and the page under it, and a tab opens at the column&#39;s top.",
+   "<b>MEASURED.</b> In Chromium at 390, 1180 by 820, 1440 by 900 and 1920 by 1032: the rail and the bar unmoved while the column scrolls 1,500px."
+  ]
+ },
+ {
   "v": "v1447",
   "d": "05 Nov 2026",
   "t": "CASH OF RM70 RECEIVED ON CA3-KP ORDER S336, SETTLED IN FULL",
