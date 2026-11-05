@@ -11606,7 +11606,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1448","d":"06 Nov 2026","t":"SALT DESK IN LAYERS","n":["<b>HIS WORD.</b> Salt Desk takes the frame Salt Admin took in v1442, as Mail and Messages do on a Mac: the rail and the bar never move and only the column under the bar scrolls.","<b>THE FRAME.</b> From 1080px the page itself scrolls 0px. The bar stays right of the rail, over the column alone, so the Desk wears the design system&#39;s side form (salt-ds 1.29.0). Under 1080px nothing changes.","<b>BACK TO TOP.</b> It reads the column in the frame and the page under it, and a tab opens at the column&#39;s top.","<b>MEASURED.</b> In Chromium at 390, 1180 by 820, 1440 by 900 and 1920 by 1032: the rail and the bar unmoved while the column scrolls 1,500px."]}];
+const evolution=[{"v":"v1449","d":"06 Nov 2026","t":"THE METRICS GREY IS A TOKEN","n":["<b>HIS WORD.</b> The grey of a metrics line was typed into the design system as a literal, the one text colour there that was not a token.","<b>THE TOKEN.</b> It is mist-light now (salt-ds 1.29.1), the system&#39;s grey for prose: on Night 6 points lighter, on Tide Tide&#39;s own grey where it had kept Night&#39;s. The design system&#39;s contrast check now refuses a literal there.","<b>WHERE.</b> The Desk&#39;s and Salt Admin&#39;s figure lines under a card. Nothing else moved."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11754,7 +11754,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='06 Nov 2026, 02:10 KL';
+const LAST_UPDATED='06 Nov 2026, 02:19 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
