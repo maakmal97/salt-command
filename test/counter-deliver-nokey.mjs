@@ -66,7 +66,7 @@ async function drive({ keys, test = false }) {
     const x = d.getElementById("spUnit"); x.value = UNIT; x.dispatchEvent(new w.Event("input", { bubbles: true }));
     const a = d.getElementById("oWhere"); a.value = "Veloria"; a.dispatchEvent(new w.Event("input", { bubbles: true }));
     d.getElementById("spUse").click();
-    await wait(() => !d.getElementById("spUse") && d.getElementById("oGo") && !d.getElementById("oGo").disabled);
+    await wait(() => !d.getElementById("spUse") && d.getElementById("oGo") && !(d.getElementById("oGo").getAttribute("aria-disabled") === "true"));
     d.getElementById("oGo").click();
     await wait(() => !!d.getElementById("oPlace"));
     d.getElementById("oPlace").click();

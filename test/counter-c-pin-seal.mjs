@@ -85,7 +85,7 @@ export async function run({ ok }) {
     const waited = !!(d.getElementById("spUse") && d.getElementById("spUse").disabled);
     type(A, "oWhere", area);
     d.getElementById("spUse").click();
-    await wait(() => !d.getElementById("spUse") && !d.getElementById("oGo").disabled);
+    await wait(() => !d.getElementById("spUse") && !(d.getElementById("oGo").getAttribute("aria-disabled") === "true"));
     d.getElementById("oGo").click();
     const check = d.getElementById("osheet").textContent;
     const n = A.posted.length; d.getElementById("oPlace").click();
@@ -152,7 +152,7 @@ export async function run({ ok }) {
     await startAt(F.d); F.d.querySelector('#osheet [data-k="mode:1"]').click();
     await wait(() => !!F.d.querySelector('#osheet [data-k="spot:0"]'));
     F.d.querySelector('#osheet [data-k="spot:0"]').click();
-    await wait(() => !!F.d.getElementById("oGo") && !F.d.getElementById("oGo").disabled);
+    await wait(() => !!F.d.getElementById("oGo") && !(F.d.getElementById("oGo").getAttribute("aria-disabled") === "true"));
     await wait(() => F.keyed.n > 0); await new Promise((r) => setTimeout(r, 30));   /* the key, so Place can seal */
     F.d.getElementById("oGo").click(); F.d.getElementById("oPlace").click();
     await wait(() => F.posted.length > 0);

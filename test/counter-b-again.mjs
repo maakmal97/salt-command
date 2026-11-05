@@ -43,7 +43,7 @@ export async function run({ ok, pageWork }) {
     const line = txt(A.d.querySelector('.oscreen [data-part="again"] p'));
     A.d.querySelector('.oscreen [data-part="again"] [data-again]').click(); await A.settle();
     /* a delivery opens on the form, no spot picked, Review waiting (Counter Batch C, his answer 4 of 20 Oct 2026): the area is added as a spot, then Review */
-    const waits = !!A.d.getElementById("spAdd") && A.d.getElementById("oGo").disabled;
+    const waits = !!A.d.getElementById("spAdd") && (A.d.getElementById("oGo").getAttribute("aria-disabled") === "true");
     addSpot(A.d, A.w, "Veloria"); await A.settle();
     A.d.getElementById("oGo").click(); await A.settle();
     const sheet = A.d.getElementById("osheet"), checkTxt = txt(sheet);

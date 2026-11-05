@@ -201,7 +201,7 @@ export async function run({ ok }) {
     const { d, posted, asked } = A;
     await startAt(d);
     d.querySelector('#osheet [data-k="mode:1"]').click();
-    ok(!d.getElementById("oPinHere") && d.getElementById("oGo").disabled, "the form itself no longer draws the exact spot; with no spot picked Review waits (Counter Batch C, his answer 4 of 20 Oct 2026)");
+    ok(!d.getElementById("oPinHere") && (d.getElementById("oGo").getAttribute("aria-disabled") === "true"), "the form itself no longer draws the exact spot; with no spot picked Review waits (Counter Batch C, his answer 4 of 20 Oct 2026)");
     d.getElementById("spAdd").click();
     await wait(() => !!d.getElementById("spName"));
     await new Promise((r) => setTimeout(r, 200));   /* the key is read once the step first draws, and only a form is redrawn when it lands: a redraw by the name picks it up */
@@ -214,7 +214,7 @@ export async function run({ ok }) {
       "Use my location reads the phone once, fresh; the spot no longer stands in for the area, which the step still asks for before Use (Counter Batch C, his answer 4 of 20 Oct 2026): " + JSON.stringify(asked));
     d.getElementById("oWhere").value = "Veloria"; d.getElementById("oWhere").dispatchEvent(new A.w.Event("input", { bubbles: true }));
     d.getElementById("spUse").click();
-    await wait(() => !d.getElementById("spUse") && !d.getElementById("oGo").disabled);
+    await wait(() => !d.getElementById("spUse") && !(d.getElementById("oGo").getAttribute("aria-disabled") === "true"));
     d.getElementById("oGo").click();
     ok(d.getElementById("osheet").textContent.includes(W.EN["sh.pinShared"]), "the check says the spot is shared, sealed");
     d.getElementById("oPlace").click();
@@ -264,7 +264,7 @@ export async function run({ ok }) {
       "P4 a tap on a place takes its point and says which place it is");
     d.getElementById("oWhere").value = "Ulvar"; d.getElementById("oWhere").dispatchEvent(new E.w.Event("input", { bubbles: true }));
     d.getElementById("spUse").click();
-    await wait(() => !d.getElementById("spUse") && !d.getElementById("oGo").disabled);
+    await wait(() => !d.getElementById("spUse") && !(d.getElementById("oGo").getAttribute("aria-disabled") === "true"));
     d.getElementById("oGo").click(); d.getElementById("oPlace").click();
     await wait(() => posted.length === 1);
     const env = posted[0] && posted[0].pin, got = env && typeof env === "object" ? await open(pair.privateKey, env, "salt-pin v1") : null;
