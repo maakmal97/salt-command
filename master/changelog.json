@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1439",
+  "d": "05 Nov 2026",
+  "t": "THE ORDER SHEET SAYS WHAT IT STILL NEEDS",
+  "n": [
+   "<b>HIS REPORT.</b> On an associate&#39;s New order, both answers to Who is it for? and Review were grey, and nothing said what was missing. His answer: keep asking who it is for on every order, and make it plain.",
+   "<b>CHOOSE ONE.</b> A question with no answer yet carries a brass <b>Choose one</b> tag beside it. How it reaches you and When already start on I will collect and ASAP.",
+   "<b>REVIEW IS NEVER GREY.</b> It tells a screen reader it is not ready, the line under the total says why, and a tap brings the control that asks what is missing into view and focus: Who is it for, a size, a spot, the area or a day.",
+   "<b>CHECKS.</b> A new section, W1 to W4, with eight mutations all red. The older checks now read Review&#39;s not-ready state from aria-disabled."
+  ]
+ },
+ {
   "v": "v1438",
   "d": "05 Nov 2026",
   "t": "THREE PENDING ORDERS OF CA7-AMP CANCELLED",

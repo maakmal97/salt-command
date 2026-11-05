@@ -11526,7 +11526,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1438","d":"05 Nov 2026","t":"THREE PENDING ORDERS OF CA7-AMP CANCELLED","n":["<b>THREE CANCELLATIONS FOLDED.</b> Orders s331 (5 unit of salt, RM475), s332 (50 unit of oil, RM450) and s333 (1 unit of gas, RM70), all dated 04 Nov and all to CA7-AMP, were withdrawn on 05 Nov on the decision of Counter Admin. Each was pending with nothing paid and nothing handed over. The drafter raised no flags on any of them.","<b>INVENTORY UNCHANGED.</b> No goods had moved on any of the three, so no stock returns and no revenue is reversed. The salt stock stays at 18 and the stock cost at RM56 a unit. The three orders no longer count anywhere in the book."]}];
+const evolution=[{"v":"v1439","d":"05 Nov 2026","t":"THE ORDER SHEET SAYS WHAT IT STILL NEEDS","n":["<b>HIS REPORT.</b> On an associate&#39;s New order, both answers to Who is it for? and Review were grey, and nothing said what was missing. His answer: keep asking who it is for on every order, and make it plain.","<b>CHOOSE ONE.</b> A question with no answer yet carries a brass <b>Choose one</b> tag beside it. How it reaches you and When already start on I will collect and ASAP.","<b>REVIEW IS NEVER GREY.</b> It tells a screen reader it is not ready, the line under the total says why, and a tap brings the control that asks what is missing into view and focus: Who is it for, a size, a spot, the area or a day.","<b>CHECKS.</b> A new section, W1 to W4, with eight mutations all red. The older checks now read Review&#39;s not-ready state from aria-disabled."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11674,7 +11674,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='05 Nov 2026, 15:19 KL';
+const LAST_UPDATED='05 Nov 2026, 15:29 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
