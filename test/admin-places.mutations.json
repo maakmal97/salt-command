@@ -338,8 +338,8 @@
  {
   "name": "his page is not marked .adm",
   "file": "stmt/page.js",
-  "find": "'<div id=\"roster\" class=\"gate adm\">'",
-  "replace": "'<div id=\"roster\" class=\"gate\">'"
+  "find": "'<div id=\"roster\" class=\"gate adm salt-frame\">'",
+  "replace": "'<div id=\"roster\" class=\"gate salt-frame\">'"
  },
  {
   "name": "a shared rule is moved under .adm (the customer's lead)",

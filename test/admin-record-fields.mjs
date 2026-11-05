@@ -64,8 +64,9 @@ export async function run({ ok, pageWork }) {
       "every figure, a wheel too, is in mono and set to the right: " + nums.length + " fields, " + wheels.length + " wheels");
     /* 5 */
     const send = byAct(trade, "record.trade.send");
-    ok(!!send && send.parentElement === trade && send.classList.contains("salt-pill") && send.classList.contains("btn")
-      && /\.adm \.maker-input>\.btn\.salt-pill\{width:100%;height:48px;margin-top:16px;white-space:nowrap/.test(outside) && /@media \(min-width:860px\)\{\.adm \.maker-input>\.btn\.salt-pill\{width:auto;min-width:240px;max-width:100%;justify-self:end\}\}/.test(css),
+    /* 5 Nov 2026 (the pane): the pill stands in the form's pinned foot (.mfoot), a child of the form; it still crosses that foot on a phone and stands 240px at its right from 860px */
+    ok(!!send && send.parentElement.parentElement === trade && send.parentElement.matches(".salt-pane__foot.mfoot") && send.classList.contains("salt-pill") && send.classList.contains("btn")
+      && /\.adm \.maker-input>\.mfoot>\.btn\.salt-pill\{flex:1 1 auto;width:auto;height:48px;white-space:nowrap/.test(outside) && /@media \(min-width:860px\)\{\.adm \.maker-input>\.mfoot\{justify-content:flex-end\}\.adm \.maker-input>\.mfoot>\.btn\.salt-pill\{flex:0 1 auto;min-width:240px;max-width:100%\}\}/.test(css),
       "a form's one pill crosses its foot on a phone, one line, and from 860px stands at its right edge, 240px at least");
     /* 6 */
     const addBook = byAct(trade, "record.trade.add-book");

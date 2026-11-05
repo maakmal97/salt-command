@@ -328,7 +328,8 @@ export async function run({ ok, pageWork }) {
     byAct(d, "acct.open", "abcd-efgh").click(); await work.quiet();
     s.refuse["/all/signin/abcd-efgh"] = "the link maker would not start";
     byAct(aopen(), "acct.signin-link").click(); await work.quiet();
-    const made = aopen().querySelector(".anote:not(.athread__v)");   /* 26 Oct 2026: the card's thread line "Waiting 15 d for your reply" is an .anote too */
+    /* 5 Nov 2026 (the pane): Send a sign-in link and its answer are the card's foot, last, so the answer is read there (the card's thread line and Sign out's answer are .anote too) */
+    const made = aopen().querySelector(".afoot > .anote");
     ok(!!made && made.firstChild.textContent === "Could not make a link: " + GENERAL_SENTENCE && made.querySelectorAll("details > .rraw").length === 1
       && made.querySelector(".rraw").textContent === "the link maker would not start",
     "a link that could not be made says so in a plain sentence on the account card, the server's words under Details: " + (made ? made.textContent : "nothing drawn"));

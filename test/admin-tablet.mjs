@@ -20,7 +20,7 @@ import { FONT_FACE_CSS, STATEMENT_CSS, SITE_RECIPES } from "../stmt/statement-cs
 /* the owner page's own stylesheet, read as rules, by query (spaces taken out) and selector (a list is written "a,b"). It starts where PAGE_CSS says the owner page's rules begin: what
    comes before is the customer's, which has its own rules at 768px and 860px (test/counter-tablet.mjs) */
 const OWNER_MARK = "EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER PAGE'S";
-function ownerCss() {
+export function ownerCss() {
   const html = landingPage("", "tablet-nonce", { master: "fixture-master", accounts: [] });
   const all = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1].slice((FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES).length);
   const from = all.indexOf(OWNER_MARK), css = from < 0 ? "" : all.slice(all.lastIndexOf("/*", from));
@@ -52,8 +52,10 @@ export async function run({ ok, pageWork }) {
     const grid = at("(min-width:860px)", ".adm .nsplit,.adm .asplit"), cols = at("(min-width:860px)", ".adm .nsplit,.adm #oAccts.open .asplit"), alone = at("(min-width:860px)", ".adm .asplit"), pane = at("(min-width:860px)", ".adm #nopen,.adm #aopen");
     ok(/display: grid/.test(grid) && /grid-template-columns: minmax\(0,1fr\) minmax\(0,440px\)/.test(cols) && /grid-template-columns: minmax\(0,1fr\)(;|$)/.test(alone),
       "from 860px Needs you stands its list and card side by side and Customers does once an account is open, the account up to 440px, the list alone across the page before: " + [grid, cols, alone].join(" | "));
-    ok(/position: sticky/.test(pane) && /overflow-y: auto/.test(pane) && /max-height: calc[(]100vh - 48px[)]/.test(pane) && !/salt-bar-h/.test(pane),
-      "the account is sticky and scrolls inside itself: " + pane);
+    /* 5 Nov 2026 (the frame): sticky 24px down only to 1080px, where the App bar still stands; from 1080px the account is the frame's pane (salt-pane), held to the column's top */
+    const band2 = at("(min-width:860px)and(max-width:1079.98px)", ".adm #nopen,.adm #aopen");
+    ok(/overflow-y: auto/.test(pane) && /position: sticky/.test(band2) && /top: 24px/.test(band2) && d.getElementById("aopen").classList.contains("salt-pane") && d.getElementById("nopen").classList.contains("salt-pane"),
+      "the account is sticky and scrolls inside itself: " + pane + " | " + band2);
     const band = at("(min-width:860px)and(max-width:1079.98px)", ".adm #nopen,.adm #aopen");
     ok(/max-height: calc[(]100vh - 48px - var[(]--salt-bar-h[)]/.test(band),
       "between 860 and 1080px, where the App bar is still fixed, the account's height gives up the bar's: " + band);
@@ -159,7 +161,8 @@ export async function run({ ok, pageWork }) {
       "and the rows to approve lie two up, a row's own margin giving way to the grid's gap and the line that says none wait across both: " + [two, card, note].join(" | "));
     const shut = at(q, ".adm .chatgrid"), chat = at(q, ".adm .chatgrid.open"), heads = at(q, ".adm .chatgrid>h2,.adm .chatgrid>#makerChatStatus"), list = at(q, ".adm #makerChatList"), open = at(q, ".adm #makerChatOpen");
     ok(/display: grid/.test(shut) && /grid-template-columns: minmax\(0(px)?, ?640px\)/.test(shut) && /grid-template-columns: minmax\(280px, ?360px\) minmax\(0, ?1fr\)/.test(chat) && /grid-column: 1 ?\/ ?-1/.test(heads) && /flex-direction: column/.test(list)
-      && /position: sticky/.test(open) && /overflow-y: auto/.test(open) && /max-height: calc[(]100vh - 48px[)]/.test(open) && !/salt-bar-h/.test(open),
+      /* 5 Nov 2026 (the frame): the thread is the frame's pane (salt-pane), so the page keeps no sticky rule of its own for it */
+      && !open && d.getElementById("makerChatOpen").classList.contains("salt-pane"),
     "Messages gives the list a 640px column until a thread opens (5 Nov 2026), then stands it, 280 to 360px, beside the thread, which is sticky and scrolls inside itself: " + [shut, chat, heads, list, open].join(" | "));
     const sec = d.querySelector('section[data-in="customers.messages"]');
     ok(!!sec && sec.classList.contains("chatgrid") && [...sec.children].map((c) => c.id || c.tagName.toLowerCase()).join() === "makerChatTitle,makerChatStatus,makerChatList,makerChatOpen" && sec.querySelector("#makerChatOpen").hidden,

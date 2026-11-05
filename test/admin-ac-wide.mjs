@@ -46,8 +46,9 @@ export async function run({ ok, pageWork }) {
     const colOf = (sel) => { const x = card.querySelector(sel); return x && x.closest(".ordcol") ? x.closest(".ordcol").getAttribute("data-ocol") : "none"; };
     /* 2 Nov 2026: the parts go by what each says it is (data-ocol); at 1440 two columns, as at 1180 */
     const map3 = { band: colOf(".ohead"), lead: colOf(".ordlead"), steps: colOf(".ordsteps"), bill: colOf(".ordmoney"), log: colOf(".undohist"), msg: colOf(".omsgs"), foot: colOf(".maker-foot") };
-    ok(!!box && box.classList.contains("ordcols--2") && box.children.length === 2 && J(map3) === J({ band: "decision", lead: "decision", steps: "decision", bill: "record", log: "record", msg: "record", foot: "none" })
-      && card.lastElementChild.classList.contains("maker-foot") && /\.adm \.ordcols\{display:grid;gap:24px;/.test(css) && !/ordcols--3/.test(css),
+    /* 5 Nov 2026 (the pane): the stage's pill (the lead) is the card's pinned foot, under both columns and last, the maker foot just before it */
+    ok(!!box && box.classList.contains("ordcols--2") && box.children.length === 2 && J(map3) === J({ band: "decision", lead: "none", steps: "decision", bill: "record", log: "record", msg: "record", foot: "none" })
+      && card.lastElementChild.classList.contains("ofoot") && card.lastElementChild.contains(card.querySelector(".ordlead")) && card.lastElementChild.previousElementSibling.classList.contains("maker-foot") && /\.adm \.ordcols\{display:grid;gap:24px;/.test(css) && !/ordcols--3/.test(css),
       "at 1440 the card is two columns, the decision and the record, gap 24px, the foot under them: " + J(map3));
     /* 4 */
     const field = card.querySelector('[data-sect="money"]') && card.querySelector('.omoney [data-act="order.pay-amount"]');

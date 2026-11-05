@@ -392,8 +392,8 @@
   {
     "name": "the terms stand under Agree",
     "file": "stmt/owner.js",
-    "find": "function stageEnd(){ var p=stage||part(null); p.appendChild(lead); p.appendChild(stageRows); }",
-    "replace": "function stageEnd(){ var p=stage||part(null); p.insertBefore(lead,p.children[1]||null); p.appendChild(stageRows); }"
+    "find": "f.appendChild(lead); p.appendChild(stageRows); }",
+    "replace": "p.insertBefore(lead,p.children[1]||null); p.appendChild(stageRows); }"
   },
   {
     "name": "the band draws the mark again",
@@ -422,7 +422,7 @@
   {
     "name": "the main action stands below the stage's rows",
     "file": "stmt/owner.js",
-    "find": "p.appendChild(lead); p.appendChild(stageRows); }",
+    "find": "f.appendChild(lead); p.appendChild(stageRows); }",
     "replace": "p.appendChild(stageRows); p.appendChild(lead); }"
   },
   {

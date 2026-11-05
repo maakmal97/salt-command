@@ -229,8 +229,9 @@ export async function run({ ok, pageWork }) {
     /* 25 Oct 2026 (Ask E): the terms in view lead, then Agree and Decline in one row; Change terms and its fold are gone */
     /* 2 Nov 2026 (his Orders canvas, page 2): his decision (Goods, Agree), then the Messages thread open (quick replies, the box, Send, Save this line, No reply needed; no Answer fold),
        then This customer, and Decline the order last */
-    const want = ["order.total", "order.accept", "order.quick-reply", "order.quick-reply", "order.reply-text", "order.reply",
-      "order.quick-keep", "order.no-reply", "order.customer", "order.decline"];
+    /* 5 Nov 2026 (the pane, his answer B): Agree, the one pill, is the card's pinned foot, so it is the card's last control, after Decline the order */
+    const want = ["order.total", "order.quick-reply", "order.quick-reply", "order.reply-text", "order.reply",
+      "order.quick-keep", "order.no-reply", "order.customer", "order.decline", "order.accept"];
     const got = p.acts("ord-p1");
     ok(same(got, want), "the card has the controls it had, less the reason, which is asked on the Decline's Sheet, and Details for its reference: " + JSON.stringify(got));
     /* his decision 6 of 11 Oct 2026: the card reads its own preview on opening, once, and has no Preview button */
@@ -353,7 +354,8 @@ export async function run({ ok, pageWork }) {
     ok(/display: none/.test(phone) && /\.adm \.recgrid\.open \.reclist/.test(phoneAny) && /\.adm \.recnone/.test(phoneAny),
       "below 860px a form open takes the menu's place, and the pane's invitation to choose one is not drawn: " + phoneAny.slice(0, 240));
     const pane = at("(min-width:860px)", ".adm .recpane")[0] || "", band = at("(min-width:860px)and(max-width:1079.98px)", ".adm .recpane")[0] || "";
-    ok(/position: sticky/.test(pane) && /overflow-y: auto/.test(pane) && /max-height: calc[(]100vh - 48px[)]/.test(pane) && !/salt-bar-h/.test(pane) && /salt-bar-h/.test(band),
+    /* 5 Nov 2026 (the frame): sticky 24px down only to 1080px; from 1080px the pane is the frame's (salt-pane, read on the grid below), held to the column's top */
+    ok(/overflow-y: auto/.test(pane) && /position: sticky/.test(band) && /top: 24px/.test(band) && /salt-bar-h/.test(band),
       "the pane is sticky and scrolls inside itself, and between 860 and 1080px its height gives up the App bar's: " + pane + " | " + band);
     const back = at("(min-width:860px)", ".adm #makerFormBack")[0] || "", wide = at("(min-width:860px)", ".adm #oRecord")[0] || "";
     const approve = at("(min-width:860px)", ".adm #oOrders>.abody>#oApprove")[0] || "";
@@ -367,7 +369,8 @@ export async function run({ ok, pageWork }) {
   try {
     await p.tap("nav.record");
     const grid = p.d.getElementById("makerFormGrid"), list = grid && grid.querySelector(".reclist"), pane = grid && grid.querySelector(".recpane");
-    ok(!!grid && !!list && !!pane && [...grid.children].map((c) => c.className).join() === "reclist,recpane" && grid.classList.contains("recgrid") && !grid.classList.contains("open")
+    /* 5 Nov 2026 (the frame): the form's pane is the frame's pane too */
+    ok(!!grid && !!list && !!pane && [...grid.children].map((c) => c.className).join() === "reclist,recpane salt-pane" && grid.classList.contains("recgrid") && !grid.classList.contains("open")
       && !!list.querySelector("#makerMenu") && !!list.querySelector("section[data-formmenu]") && pane.querySelectorAll("section.maker-input[data-form]").length === 15
       && !list.querySelector("section[data-form]") && !!pane.querySelector(".recnone"),
     "the menu and the retained input stand in one column and the 15 forms in the pane beside it, with an invitation to choose one: " + (grid && [...grid.children].map((c) => c.className).join()));

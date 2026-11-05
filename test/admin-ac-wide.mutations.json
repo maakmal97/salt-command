@@ -44,8 +44,8 @@
   {
     "name": "the foot in a column",
     "file": "stmt/owner.js",
-    "find": "      if(x===foot) return;\n",
-    "replace": "\n"
+    "find": "      if(x===foot||x===ofoot) return;\n",
+    "replace": "      if(x===ofoot) return;\n"
   },
   {
     "name": "the columns 20px apart",

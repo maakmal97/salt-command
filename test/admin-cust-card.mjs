@@ -69,8 +69,9 @@ export async function run({ ok, pageWork }) {
     /* 2 Nov 2026 (his Orders canvas, page 2): Sign-in is rows (Show a code, View as them, Order for them) with the one filled pill under them; Copy password and
        Sign out everywhere are danger rows alone in .aend at the card's end */
     const endActs = [...a.querySelectorAll(".aend > button")].map((b) => b.getAttribute("data-act")), aend = a.querySelector(".salt-settings.aend");
-    ok(!sign.classList.contains("salt-glass-card") && t(sign.querySelector("h2.salt-settings__head")) === "Sign-in" && J(acts) === J(["acct.show-code", "acct.view-as", "acct.order-for", "acct.signin-link"])
-      && sign.querySelectorAll(".salt-pill").length === 1 && sign.querySelector(".apill").getAttribute("data-act") === "acct.signin-link"
+    ok(!sign.classList.contains("salt-glass-card") && t(sign.querySelector("h2.salt-settings__head")) === "Sign-in" && J(acts) === J(["acct.show-code", "acct.view-as", "acct.order-for"])
+      /* 5 Nov 2026 (the pane, his answer B): Send a sign-in link, the one pill, is the card's pinned foot, its last child, after the ends */
+      && a.querySelectorAll(".salt-pill").length === 1 && a.lastElementChild.matches(".salt-pane__foot.afoot") && a.lastElementChild.querySelector(".apill").getAttribute("data-act") === "acct.signin-link"
       && J(endActs) === J(["acct.password", "acct.signout-all"]) && aend.lastElementChild.classList.contains("asignout")
       && [...aend.children].every((b) => b.classList.contains("salt-settings__row--action") && b.classList.contains("salt-settings__row--danger"))
       && !!(sign.compareDocumentPosition(aend) & 4) && !a.querySelector('input[type="checkbox"]') && t(byAct(sign, "acct.show-code")) === "Show a code",

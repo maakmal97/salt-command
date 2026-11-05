@@ -149,13 +149,15 @@ export async function run({ ok, pageWork }) {
     const decl = byAct(d, "order.decline", "ord-p1");
     ok(same(moves(), []) && !foot().classList.contains("has") && same(rowActs("ord-p1"), ["order.accept"]) && same(pillsOf("ord-p1").map((b) => b.getAttribute("data-act")), ["order.accept"])
       && isRow(decl) && decl.classList.contains("salt-settings__row--danger") && !decl.closest(".maker-foot") && same(tail("ord-p1"), ["order.decline"]) && decl.parentElement.classList.contains("ordend")
-      && p.cardOf("ord-p1").lastElementChild.previousElementSibling === decl.parentElement && !leadOf("ord-p1").querySelector(".ordterms"),
+      /* 5 Nov 2026 (the pane): the card ends with its feet (the maker foot, then the pinned foot holding the lead), so the ends' list is the last thing before them, and Decline is never in either */
+      && [...p.cardOf("ord-p1").children].filter((x) => !x.matches(".maker-foot, .ofoot")).pop() === decl.parentElement && !decl.closest(".ofoot") && !leadOf("ord-p1").querySelector(".ordterms"),
       "a placed order's Agree is the card's one filled pill and Decline the order its last row, an ember action row, never in a sticky foot, and no terms line restates the band: " + JSON.stringify([moves(), rowActs("ord-p1"), tail("ord-p1")]));
     const terms = p.cardOf("ord-p1").querySelector(".oagreesec > .oagree");
     ok(!byAct(d, "order.terms", "ord-p1") && !p.cardOf("ord-p1").querySelector('details[data-fold="terms"]') && !!terms && !!terms.querySelector('label.salt-settings__row > .salt-settings__label + [data-act="order.total"]'),
       "and the terms are in view, no Change terms and no fold: the goods' price is a settings row of the card, its input at the right");
     const oDec = terms.closest(".odecide");
-    ok(!!(leadOf("ord-p1").compareDocumentPosition(p.cardOf("ord-p1").querySelector(".obill")) & 4) && leadOf("ord-p1").previousElementSibling === terms && leadOf("ord-p1").parentElement === terms.closest(".oagreesec")
+    /* 5 Nov 2026 (the pane, his answer B): Agree is no longer drawn under the terms but pinned in the card's foot, its last child, so the terms stand under the head and the track and the lead is the foot's */
+    ok(leadOf("ord-p1").parentElement === p.cardOf("ord-p1").lastElementChild && leadOf("ord-p1").parentElement.matches(".salt-pane__foot.ofoot") && !!terms.closest(".oagreesec") && !terms.closest(".oagreesec").contains(leadOf("ord-p1"))
       && oDec.previousElementSibling.classList.contains("salt-steps") && p.cardOf("ord-p1").querySelector(".salt-steps").previousElementSibling.classList.contains("ohead") && oDec.nextElementSibling.classList.contains("obill"),
       "and the terms stand under the card's head and its track, Agree under them, ahead of the Bill");
     /* 19 Oct 2026 (his word): the track is the Counter's marked steps, a drawn mark on each of the four, Next on the step to come */
@@ -173,7 +175,8 @@ export async function run({ ok, pageWork }) {
     ok(same(moves(), []) && same(tail("ord-p2"), ["order.decline"]) && isRow(byAct(d, "order.decline", "ord-p2")) && !byAct(d, "order.accept"),
       "a delivery with no charge chosen has Decline the order as the card's last row and no Agree: " + JSON.stringify([moves(), rowActs("ord-p2"), tail("ord-p2")]));
     const wait = () => leadOf("ord-p2").querySelector("[data-accept-wait]");
-    ok(!!wait() && wait().textContent === "Choose the delivery charge" && !wait().disabled && !!leadOf("ord-p2").closest(".odecide") && p.cardOf("ord-p2").contains(leadOf("ord-p2")),
+    /* 5 Nov 2026 (the pane): the lead is the card's pinned foot, not a part of his decision */
+    ok(!!wait() && wait().textContent === "Choose the delivery charge" && !wait().disabled && !!leadOf("ord-p2").closest(".ofoot") && p.cardOf("ord-p2").contains(leadOf("ord-p2")),
       "and the lead says Choose the delivery charge, as a button that sends nothing, never a half-filled Agree: " + (wait() || {}).textContent);
     const fold = (id, k) => p.cardOf(id).querySelector('details[data-fold="' + k + '"]');
     const compP2 = p.cardOf("ord-p2").querySelector('.omsgs form.salt-composer [data-act="order.reply-text"]');
@@ -209,7 +212,8 @@ export async function run({ ok, pageWork }) {
     await p.tapRow("ord-r1");
     /* 2 Nov 2026: the Handover part holds the units (a settings row, Handed over) and the tiles that make it a close, then the one pill; Cancel the order is the last row */
     const hp = byAct(d, "order.handed-units", "ord-r1").closest(".odecide__part");
-    ok(same(moves(), []) && same(tail("ord-r1"), ["order.cancel"]) && [byAct(d, "order.handed"), byAct(d, "order.handed-units"), byAct(d, "order.handed-rest")].every((e) => !!e && hp.contains(e)) && leadOf("ord-r1").contains(byAct(d, "order.handed"))
+    /* 5 Nov 2026 (the pane): Handed over, the one pill, is the card's pinned foot; its units and the tiles stay in the Handover part */
+    ok(same(moves(), []) && same(tail("ord-r1"), ["order.cancel"]) && [byAct(d, "order.handed-units"), byAct(d, "order.handed-rest")].every((e) => !!e && hp.contains(e)) && !!byAct(d, "order.handed") && leadOf("ord-r1").contains(byAct(d, "order.handed")) && !!byAct(d, "order.handed").closest(".ofoot")
       && byAct(d, "order.handed-units", "ord-r1").closest("label.salt-settings__row") && !!(byAct(d, "order.handed-units").compareDocumentPosition(byAct(d, "order.handed")) & 4),
       "a ready order's Cancel the order is its last row, and Handed over with its units and the tiles that make it a close stand at the top, the units first: " + JSON.stringify(moves()));
     byAct(d, "order.pay", "ord-r1").click(); await p.work.quiet();

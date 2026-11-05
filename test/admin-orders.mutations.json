@@ -152,8 +152,8 @@
   {
     "name": "the card stands before the list",
     "file": "stmt/page.js",
-    "find": "<div class=\"ordgrid\"><div id=\"makerOrderList\" class=\"ordlist\"></div><div id=\"makerReview\" class=\"ordopen\"></div></div>",
-    "replace": "<div class=\"ordgrid\"><div id=\"makerReview\" class=\"ordopen\"></div><div id=\"makerOrderList\" class=\"ordlist\"></div></div>"
+    "find": "<div class=\"ordgrid\"><div id=\"makerOrderList\" class=\"ordlist\"></div><div id=\"makerReview\" class=\"ordopen salt-pane\"></div></div>",
+    "replace": "<div class=\"ordgrid\"><div id=\"makerReview\" class=\"ordopen salt-pane\"></div><div id=\"makerOrderList\" class=\"ordlist\"></div></div>"
   },
   {
     "name": "a question on an order is only FYI",
@@ -392,8 +392,8 @@
   {
     "name": "a row tap always takes him to the top",
     "file": "stmt/owner.js",
-    "find": "      if(!ordSide()) window.scrollTo(0,0);\n      else if(card&&card.scrollIntoView) card.scrollIntoView({block:'nearest'});",
-    "replace": "      window.scrollTo(0,0);"
+    "find": "      if(!ordSide()) pageTop();\n      else if(card&&card.scrollIntoView) card.scrollIntoView({block:'nearest'});",
+    "replace": "      pageTop();"
   },
   {
     "name": "the card is not brought into view from 860px",
@@ -404,8 +404,8 @@
   {
     "name": "a row tap scrolls the wrong way round",
     "file": "stmt/owner.js",
-    "find": "if(!ordSide()) window.scrollTo(0,0);",
-    "replace": "if(ordSide()) window.scrollTo(0,0);"
+    "find": "if(!ordSide()) pageTop();",
+    "replace": "if(ordSide()) pageTop();"
   },
   {
     "name": "the sticky card's foot goes under the App bar",
@@ -530,14 +530,14 @@
   {
     "name": "the pane does not scroll inside itself",
     "file": "stmt/page.js",
-    "find": "  .adm .recpane{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}",
-    "replace": "  .adm .recpane{position:sticky;top:24px}"
+    "find": "  .adm .recpane{overflow-y:auto}",
+    "replace": "  .adm .recpane{}"
   },
   {
     "name": "the pane's height ignores the App bar",
     "file": "stmt/page.js",
-    "find": "  .adm .recpane{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}",
-    "replace": "  .adm .recpane{max-height:calc(100vh - 48px)}"
+    "find": "  .adm .recpane{position:sticky;top:24px;max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}",
+    "replace": "  .adm .recpane{position:sticky;top:24px;max-height:calc(100vh - 48px)}"
   },
   {
     "name": "an order stands in two stages",

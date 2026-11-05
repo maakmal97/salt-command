@@ -117,8 +117,8 @@
  {
   "name": "C5 the invitation is back beside the table",
   "file": "stmt/page.js",
-  "find": "<div id=\"aopen\" hidden></div></div>",
-  "replace": "<div id=\"aopen\" hidden></div><p class=\"rnone panenone\">Choose a card to see it in full.</p></div>"
+  "find": "<div id=\"aopen\" class=\"salt-pane\" hidden></div></div>",
+  "replace": "<div id=\"aopen\" class=\"salt-pane\" hidden></div><p class=\"rnone panenone\">Choose a card to see it in full.</p></div>"
  },
  {
   "name": "C5 the list shares its column from the start",

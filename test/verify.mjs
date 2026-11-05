@@ -17560,7 +17560,8 @@ await (async () => {
        decision 7 of 11 Oct 2026), so a share sheet he closes on the second leaves that link made and says so, and a browser
        with no share sheet copies it, or says not */
     const pill = () => D.querySelector("#aopen .scard .apill");
-    const note = () => ((D.querySelector("#aopen .scard .anote") || {}).textContent || "");
+    /* 5 Nov 2026 (the pane): Send a sign-in link and its answer are the card's pinned foot (.afoot); the first .anote of the card is another's line */
+    const note = () => ((D.querySelector("#aopen .scard .afoot > .anote") || {}).textContent || "");
     for (let i = 0; i < 400 && !(pill() && !pill().disabled); i++) await new Promise((r) => setTimeout(r, 25));
     ok(pill() && !pill().disabled && await work.quiet() && pill().textContent === "Send a sign-in link" && (await kv.list({ prefix: "ot:" })).keys.length === 0,
       "its row opens the account, its link not made: " + note() + " " + (pill() ? pill().textContent : "no pill"));
@@ -40282,7 +40283,8 @@ await (async () => {
   ok(phone.hcol === "flex|24px|0px|24px" && phone.rows === "8px|0px" && phone.orows === "8px|0px",
     "Home's sections stand one 24px gap apart, each column's, with nothing after the last, and a list's last row, on Home or in Orders, keeps no margin of its own: "
     + JSON.stringify(phone));
-  ok(desk.body.join() === "22px,18px,60px,18px" && desk.shell === "48px" && desk.door === "4px|4px" && deskOwn.roster === "0px|48px"
+  /* 5 Nov 2026 (the frame): from 1080px Salt Admin's shell is the frame, the screen tall, no padding under it (its 24px margin is the frame's height) */
+  ok(desk.body.join() === "22px,18px,60px,18px" && desk.shell === "48px" && desk.door === "4px|4px" && deskOwn.roster === "0px|0px"
     && desk.hcol.split("|")[2] === "24px" && desk.rows === "8px|8px" && desk.orows === "8px|8px",
     "from 1080px nothing moves: the desk keeps its own frame, 22px from the top as the Desk is since 18 Oct 2026, Salt Admin with no margin above: " + JSON.stringify({ desk, roster: deskOwn.roster }));
 })();
@@ -50495,6 +50497,11 @@ await (async () => {
 section("Salt Admin uses the width: two panes from 860px with nothing open by itself, and every rule of it under .adm (12 Oct 2026)");
 await (async () => {
   await (await import("./admin-tablet.mjs")).run({ ok, pageWork });
+})();
+
+section("5 Nov 2026: Salt Admin in layers, the bar and rail fixed, a record's main action pinned at its foot, a thread at its newest line");
+await (async () => {
+  await (await import("./admin-frame.mjs")).run({ ok, pageWork });
 })();
 
 section("The Counter on a tablet: a dialog below 860px, the drawer and the list beside the open order from 860px, the order sheet's tiles two up, none of its rules under .adm (12 Oct 2026)");

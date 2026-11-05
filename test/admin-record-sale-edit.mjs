@@ -56,7 +56,8 @@ export async function run({ ok, pageWork }) {
     const seq = [A("record.trade.edit"), A("record.trade.direction"), tileGroup(f, "Book"), A("record.trade.party"), A("record.trade.date"), A("record.trade.units"), A("record.trade.total"), A("record.trade.add-book")];
     const tail = f.querySelector(".maker-trade-tail"), tailNames = tail ? [...tail.querySelectorAll(":scope > .salt-settings__row > .salt-settings__label")].map(t) : [];
     ok(seq.every((x, i) => !!x && (i === 0 || after(seq[i - 1], x))) && !!tail && after(seq[7], tail) && J(tailNames) === J(["Handover", "Freight", "Handed over", "Cash paid"])
-      && after(tail, A("record.trade.send")) && pill() === "Record the purchase" && A("record.trade.send").parentElement === f
+      /* 5 Nov 2026 (the pane): the pill is the form's pinned foot, a child of the form */
+      && after(tail, A("record.trade.send")) && pill() === "Record the purchase" && A("record.trade.send").parentElement.parentElement === f && A("record.trade.send").parentElement.matches(".mfoot")
       && !f.querySelector(":scope > .salt-settings:not(.maker-trade-tail) [data-act='record.trade.cash'], :scope > .salt-settings:not(.maker-trade-tail) [data-act='record.trade.moved']"),
       "the form stands in his order: Row, Type, Book, Who, Date, Units, Price, Add a book, then Handover, Freight (a sale's Delivery), Handed over and Cash paid in one tail list, then Record the purchase (the pill with no row chosen, 03 Nov 2026): "
         + J([seq.map((x) => !!x), tailNames, pill()]));
