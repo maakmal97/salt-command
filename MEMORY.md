@@ -324,6 +324,20 @@
   in view on open. Section "5 Nov 2026: Salt Admin in layers" (`test/admin-frame.mjs`, 22 checks, 23 mutations red); 25 needles re-aimed, each red. Full suite
   11,981 passed, 1 failed (S1b, laptop only). QR Command took nothing (no token or face moved). Not built: the Desk's frame (his answer D, a follow-up).
 
+## Salt Desk in layers (v1448) and the metrics grey (v1449)
+- Live as v1448 (`284fa5a7`, 06 Nov 2026; Cloud commit `42081731999`: chain green with "The phone is serving it", three suite parts green; CI `42081732855` green), the
+  follow-up to v1442 (his answer D): from 1080px the Desk is a frame, the rail and bar unmoved and `#deskcol` (under the bar) the one scroll box, the page 0px of scroll
+  (`.wrap` 24px foot, `--salt-frame-h` 100dvh less 46px). The bar stays right of the rail, so salt-ds 1.29.0 (#42) added `salt-frame--side` and `__col` (main), and a
+  frame's bar is `position: relative` (the frame's overflow made a sticky bar count from the frame's top and fall 22px over the column). Back to top reads `framed()`
+  (the column's computed overflow) and the bar's cap (`dbstuck`) the page alone; a tab resets the column. No pane: the Desk opens records in place. Measured in
+  Chromium at 390 (unchanged), 1180x820, 1440x900, 1920x1032. Section "5 Nov 2026: Salt Desk in layers" (`test/desk-frame.mjs`, 16 checks, 21 mutations red); no
+  older check needed re-aiming. Full suite 11,996 passed, 2 failed: S1b (laptop only) and Phase 7b's pay-store scan, which finds a biller value in
+  `docs/plan-jompay-counter.html` (ba2d1144, 05 Nov, another session's plan; laptop only, the pay store is not in CI).
+- v1449 (`558501f7`, 06 Nov 2026; Cloud commit `42083162124`: chain and three suite parts green; CI green), his "Yes, make it a token": `.salt-metrics` coloured
+  its line with a typed grey; salt-ds 1.29.1 (#43) uses `--salt-mist-light` (Night 6 points lighter, Tide its own grey), and salt-ds's contrast script now fails a
+  literal there. Display only: six touched sections green. QR Command took neither version (its pull is tokens and faces; only its stamp moved).
+- Design System artifact re-synced: version 41 (1.29.0), 42 (its Not synced section corrected: the 23 brand plates were already in), 43 (1.29.1).
+
 ## The restock light in four steps (v1426)
 - Live as v1426 (`4f643e64`, 04 Nov 2026; Cloud commit `41710800634`: chain green with "The phone is serving it", the statements deployed and published, three suite parts green; CI `41710800684` green), his word "change the rule": engine `restockLight(shelf, commit, demand)` and `LIGHT_DAYS {fast: 7, low: 3}`: red Out of stock with nothing free, amber Low on stock under one usual order (`restockPlan`'s `buy.median`) or 3 days of cover, yellow Selling fast at 7 days, green Available. Promised past the shelf (Limited) is now red. Only amber and red ask for a restock date (`expAsks`) and wake the Desk (`LIGHT_RANK`). salt-ds 1.26.0 (#38): `--salt-orange` #f28c18, `salt-light--amber`, `salt-status--amber`/`--orange`. FIX_VERSION 18 (rice amber). At the push salt read Selling fast (5.1 days of cover), every other book Available.
 - Basis (replay of every book's days 26 Jun to 04 Nov 2026, scratch only): cover of 7 days or fewer caught 88% of the times the shelf fell under one usual order within a week, 62% of those lit came true; 3 days caught 65% within three days, 71% came true. Salt read other than green on 106 of 129 replayed days (64 yellow, 40 amber, 2 red), so it will rarely read Available.
