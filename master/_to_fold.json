@@ -1,0 +1,66 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-05T07:34:31.844Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CI4-OKR",
+    "qty": 2,
+    "total": 195,
+    "cash": 0,
+    "delivery": 25,
+    "date": "2026-11-05",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261105072811-klzwuq, acknowledged, to be delivered, delivery RM 25. Nothing paid and nothing handed over yet.",
+    "listRM": 195,
+    "listQty": 2,
+    "rids": [
+     "s337"
+    ],
+    "booked_seq": 124
+   },
+   "reasoning": "Sold 2 unit of salt to CI4-OKR for RM 195, with RM 25 of delivery beside it, RM 220 owed, RM 97.5/unit. Costed at RM 56/unit from COGS off the latest purchase p050 landed 2026-11-02: RM 1400 quote plus RM 0 freight over 25 unit, so RM 83 on the goods at 42.6%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-11-05 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-11-05T07:34:31.844Z",
+    "type": "SELL",
+    "party": "CI4-OKR",
+    "qty": 2,
+    "total": 195,
+    "status": "Pending",
+    "raw": "SELL CI4-OKR 2 salt RM 220, nothing paid, nothing moved (order 20261105072811-klzwuq)",
+    "orderKey": "CI4-OKR|2026-11-05|220",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CI4-OKR",
+     "newId": null,
+     "date": "2026-11-05",
+     "qty": 2,
+     "total": 195,
+     "delivery": 25,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261105072811-klzwuq, acknowledged, to be delivered, delivery RM 25. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261105072811-klzwuq"
+   },
+   "decidedAt": "2026-11-05T07:34:36.171Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
