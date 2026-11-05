@@ -1,0 +1,80 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-05T03:10:32.751Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s335",
+    "qty": 3,
+    "total": 305,
+    "cash": 0,
+    "date": "2026-11-04",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 3
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-11-05"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "delivered"
+     }
+    ],
+    "customer": "CM4-MK",
+    "rids": [],
+    "booked_seq": 116
+   },
+   "reasoning": "Correction against CM4-MK's order of 3 unit for RM 305 dated 2026-11-04 (s335). Sets deliveredQty from 0 to 3, deliveredOn from unset to 2026-11-05, handover from unset to delivered. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This is an ADVANCE: 3 unit goes out with RM 360 unpaid. Check it against CM4-MK's credit cap."
+   ],
+   "amends": "s335",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-11-05T03:10:32.751Z",
+    "type": "SELL",
+    "party": "CM4-MK",
+    "qty": 3,
+    "total": 0,
+    "status": "Handover",
+    "raw": "3 unit delivered to CM4-MK, order 20261104053637-erprew, on 2026-11-05",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CM4-MK",
+     "rid": null,
+     "orderKey": "CM4-MK|2026-11-04|360",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-11-05",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 3,
+      "deliveredOn": "2026-11-05",
+      "handover": "delivered"
+     },
+     "note": "3 unit delivered for order 20261104053637-erprew."
+    },
+    "orderId": "20261104053637-erprew"
+   },
+   "decidedAt": "2026-11-05T03:10:34.488Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
