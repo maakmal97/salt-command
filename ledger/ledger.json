@@ -1,6 +1,6 @@
 {
- "v": "v1446",
- "stamped": "05 Nov 2026, 23:51 KL",
+ "v": "v1447",
+ "stamped": "05 Nov 2026, 23:55 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -11379,7 +11379,7 @@
     "customer": "CA3-KP",
     "qty": 0.5,
     "total": 70,
-    "cash": 0,
+    "cash": 70,
     "date": "2026-11-05",
     "deliveredQty": 0.5,
     "note": "<b>CORRECTION ON S336, 05 NOV 2026: GOODS TOTAL FOR CA3-KP LOWERED FROM RM75 TO RM70.</b> The order of 0.5 unit, collected the same day, now has delivery set to 0 where it was unset. Preapproved by Counter Admin. It moves no cash and no stock and leaves the row unpaid. The party's history shows a median rate of 150 and a range of 140 to 150 a unit, and CA3-KP has 4 orders and nothing defaulted. The dossier gives no floor or ask for this size, so no comparison is made. Before this, RM75 was outstanding and 0.5 unit was on credit. The drafter flagged an advance against the credit cap, and the figures do not answer it: the dossier gives no cap, so it remains unchecked. Outstanding: the RM70 payment. <b>CORRECTION ON S336, 05 NOV 2026: 0.5 UNIT OF SALT COLLECTED BY CA3-KP.</b> Three fields change: deliveredQty from 0 to 0.5, deliveredOn from unset to 2026-11-05, handover from unset to collected. The order is RM75 goods for 0.5 unit, with nothing paid. The dossier gives no floorTotal or askTotal for this size, so the total cannot be set against the desk's ladder. CA3-KP has 4 orders, a median rate of 150, a range of 140 to 150, RM75 outstanding before this and nothing defaulted. The drafter flagged an advance against the credit cap. No cap is in the dossier, so the figures do not answer the flag. The correction sets no cost. Outstanding: the RM75 payment. <b>SALE S336: 0.5 UNIT OF SALT TO CA3-KP, RM75, PENDING.</b> Order 20261105033625-wxe1kq, dated 05 Nov, to collect. Nothing is paid and nothing handed over, so it draws no stock and books no revenue yet. The goods total of RM75 sits at the desk's ask total of RM75 for this size, and above the floor total of RM30. The rate of RM150 a unit equals the askPerUnit and is above the floorPerUnit of RM60. CA3-KP has 3 orders, a median rate of 140, a range of 140 to 150, nothing outstanding before this and nothing defaulted; the credit cap is 1 and no credit is used. The row carries RM56 a unit, the inventory's own rate. The drafter raised no flags. Outstanding: the RM75 payment and the collection.",
@@ -11421,10 +11421,18 @@
        "total": 75,
        "delivery": null
       }
+     },
+     {
+      "date": "2026-11-05",
+      "kind": "Fulfilment",
+      "cash": 70,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON S336, 05 NOV 2026: RM70 CASH RECEIVED FROM CA3-KP.</b> Order 20261105033625-wxe1kq, paid in cash at the counter and preapproved by Counter Admin. The order is 0.5 unit for a goods total of RM70, collected the same day, with RM70 and 0 unit outstanding before this. The cash moves from RM0 to RM70 and no stock moves. The drafter flagged that this settles the order in full; the figures answer it, as RM70 meets RM70 and RM0 remains. CA3-KP has 4 orders, a median rate of 140, a range of 140 to 150, RM70 outstanding before this, nothing defaulted. The row carries no cost of its own. Nothing else is outstanding."
      }
     ],
     "cost": 28,
-    "delivery": 0
+    "delivery": 0,
+    "paidOn": "2026-11-05"
    },
    {
     "customer": "CI4-OKR",
@@ -12311,7 +12319,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-05T15:51:10.648Z",
+  "QUEUE_COMMITTED": "2026-11-05T15:52:16.604Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -22803,29 +22811,12 @@
      "suggest": null
     }
    },
-   "v": "v1446"
+   "v": "v1447"
   },
   "OPEN": {
-   "at": "2026-11-05T15:51:59.649Z",
-   "count": 8,
+   "at": "2026-11-05T15:55:48.503Z",
+   "count": 7,
    "byKey": {
-    "CA3-KP|2026-11-05|70": {
-     "d": "2026-11-05",
-     "p": "CA3-KP",
-     "dir": "S",
-     "q": 0.5,
-     "t": 70,
-     "cash": 0,
-     "mv": 0.5,
-     "st": "dueMoney",
-     "oweRM": 70,
-     "rid": "s336",
-     "deliveredOn": "2026-11-05",
-     "handover": "collected",
-     "key": "CA3-KP|2026-11-05|70",
-     "age": 0,
-     "exp": 70
-    },
     "CR3-DAM|2026-10-30|70": {
      "d": "2026-10-30",
      "p": "CR3-DAM",
@@ -22952,7 +22943,7 @@
      "owedOut": 0,
      "coverDays": 3.8,
      "rate": 4.3,
-     "owedToYou": 380,
+     "owedToYou": 310,
      "promised": 0,
      "short": 0
     },
@@ -23020,7 +23011,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1446"
+   "v": "v1447"
   },
   "TERMS": {
    "ceiling": 250,
@@ -23028,7 +23019,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1446"
+   "v": "v1447"
   },
   "REWARD": {
    "stated": {
@@ -23046,7 +23037,7 @@
      }
     }
    },
-   "v": "v1446"
+   "v": "v1447"
   },
   "STOCK": {
    "today": "2026-11-05",
@@ -23100,7 +23091,7 @@
      "transit": 0
     }
    },
-   "v": "v1446"
+   "v": "v1447"
   }
  }
 }
