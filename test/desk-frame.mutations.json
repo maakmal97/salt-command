@@ -1,0 +1,128 @@
+[
+ {
+  "name": "D1.1 the side form keeps the bar's row",
+  "file": "master/salt_command.html",
+  "find": "  .salt-frame--side { grid-template-rows: minmax(0, 1fr); }",
+  "replace": "  .salt-frame--side { }"
+ },
+ {
+  "name": "D1.1 the rail sits under the bar's row",
+  "file": "master/salt_command.html",
+  "find": ".salt-frame--side > .salt-rail { grid-row: 1; }",
+  "replace": ".salt-frame--side > .salt-rail { }"
+ },
+ {
+  "name": "D1.2 the column is a plain block",
+  "file": "master/salt_command.html",
+  "find": "align-self: stretch; display: flex; flex-direction: column;",
+  "replace": "align-self: stretch; display: block;"
+ },
+ {
+  "name": "D1.3 the scroll box does not take the rest",
+  "file": "master/salt_command.html",
+  "find": ".salt-frame__col > .salt-frame__main { flex: 1 1 auto; }",
+  "replace": ".salt-frame__col > .salt-frame__main { }"
+ },
+ {
+  "name": "D1.4 a frame's bar sticks",
+  "file": "master/salt_command.html",
+  "find": ".salt-frame .salt-frame__bar { position: relative; top: auto; }",
+  "replace": ".salt-frame .salt-frame__bar { }"
+ },
+ {
+  "name": "D2.1 the shell is the plain frame",
+  "file": "master/salt_command.html",
+  "find": "<div class=\"shell salt-frame salt-frame--side\">",
+  "replace": "<div class=\"shell salt-frame\">"
+ },
+ {
+  "name": "D2.2 main is not the column",
+  "file": "master/salt_command.html",
+  "find": "<main class=\"main salt-frame__col\">",
+  "replace": "<main class=\"main\">"
+ },
+ {
+  "name": "D2.2 the bar is not the frame's bar",
+  "file": "master/salt_command.html",
+  "find": "salt-deskbar salt-frame__bar\" id=\"deskbar\"",
+  "replace": "salt-deskbar\" id=\"deskbar\""
+ },
+ {
+  "name": "D2.3 the scroll box is not the frame's",
+  "file": "master/salt_command.html",
+  "find": "<div class=\"deskcol salt-frame__main\" id=\"deskcol\">",
+  "replace": "<div class=\"deskcol\" id=\"deskcol\">"
+ },
+ {
+  "name": "D2.3 a page outside the scroll box",
+  "file": "master/salt_command.html",
+  "find": "    <div class=\"sec\" id=\"sec-book\"></div>\n    </div>",
+  "replace": "    </div>\n    <div class=\"sec\" id=\"sec-book\"></div>"
+ },
+ {
+  "name": "D3.1 the frame is the screen less the top alone",
+  "file": "master/salt_command.html",
+  "find": "--salt-frame-h:calc(100dvh - 46px)",
+  "replace": "--salt-frame-h:calc(100dvh - 22px)"
+ },
+ {
+  "name": "D3.1 the page keeps its 80px foot",
+  "file": "master/salt_command.html",
+  "find": ".wrap{padding-bottom:24px;}",
+  "replace": ""
+ },
+ {
+  "name": "D3.2 the rail keeps its own height",
+  "file": "master/salt_command.html",
+  "find": ".shell>.rail{max-height:none;}",
+  "replace": ""
+ },
+ {
+  "name": "D3.3 the frame binds at every width",
+  "file": "master/salt_command.html",
+  "find": "@media (min-width:1080px){\n  .wrap{padding-bottom:24px;}\n  .shell{--salt-frame-h:calc(100dvh - 46px);}",
+  "replace": "  .shell{--salt-frame-h:calc(100dvh - 46px);}\n@media (min-width:1080px){\n  .wrap{padding-bottom:24px;}"
+ },
+ {
+  "name": "D4.1 Back to top reads the page alone",
+  "file": "master/salt_command.html",
+  "find": "const at=()=>framed()?col.scrollTop:page();",
+  "replace": "const at=()=>page();"
+ },
+ {
+  "name": "D4.1 the column's scroll is not heard",
+  "file": "master/salt_command.html",
+  "find": "  if(col)col.addEventListener('scroll',sync,{passive:true});",
+  "replace": ""
+ },
+ {
+  "name": "D4.2 the cap reads the column too",
+  "file": "master/salt_command.html",
+  "find": "document.body.classList.toggle('dbstuck',page()>4)",
+  "replace": "document.body.classList.toggle('dbstuck',at()>4)"
+ },
+ {
+  "name": "D4.3 the tap takes the page to its top",
+  "file": "master/salt_command.html",
+  "find": "const box=framed()?col:window;",
+  "replace": "const box=window;"
+ },
+ {
+  "name": "D4.4 the column is always the scroll box",
+  "file": "master/salt_command.html",
+  "find": "try{return !!col&&/auto|scroll/.test(getComputedStyle(col).overflowY);}",
+  "replace": "try{return !!col;}"
+ },
+ {
+  "name": "D4.5 the tap takes the column at every width",
+  "file": "master/salt_command.html",
+  "find": "const box=framed()?col:window;",
+  "replace": "const box=col;"
+ },
+ {
+  "name": "D5.1 a tab keeps the column where it was",
+  "file": "master/salt_command.html",
+  "find": "  try{const c=document.getElementById('deskcol');if(c)c.scrollTop=0;}catch(e){}\n",
+  "replace": ""
+ }
+]

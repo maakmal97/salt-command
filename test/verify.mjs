@@ -50504,6 +50504,11 @@ await (async () => {
   await (await import("./admin-frame.mjs")).run({ ok, pageWork });
 })();
 
+section("5 Nov 2026: Salt Desk in layers, the rail and bar fixed from 1080px, the column under the bar the one scroll box");
+await (async () => {
+  await (await import("./desk-frame.mjs")).run({ ok });
+})();
+
 section("The Counter on a tablet: a dialog below 860px, the drawer and the list beside the open order from 860px, the order sheet's tiles two up, none of its rules under .adm (12 Oct 2026)");
 await (async () => {
   await (await import("./counter-tablet.mjs")).run({ ok });
