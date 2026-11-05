@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1445",
+  "d": "05 Nov 2026",
+  "t": "A CORRECTION TO ONE SALT ORDER, GOODS TOTAL LOWERED",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> The correction on s336 for CA3-KP lowers the goods total from RM75 to RM70 and sets delivery to 0, with the quantity stated as 0.5 unit. It was preapproved by Counter Admin. It moves no cash and no stock.",
+   "<b>INVENTORY UNCHANGED.</b> Stock stays at 17.5 unit, below the reorder point of 50, and the cost basis stays at RM56 a unit. The drafter's advance flag stands: RM70 is still unpaid and CA3-KP's credit position needs checking."
+  ]
+ },
+ {
   "v": "v1444",
   "d": "05 Nov 2026",
   "t": "COLLECTION OF 0.5 UNIT RECORDED AGAINST S336",

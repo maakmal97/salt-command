@@ -1,6 +1,6 @@
 {
-  "v": "v1444",
-  "derivedFrom": "8390f87a9295e803",
+  "v": "v1445",
+  "derivedFrom": "4660407aacf32624",
   "tables": {
     "sales": {
       "rows": 336,
@@ -126,7 +126,7 @@
           ]
         },
         "delivery": {
-          "present": 60,
+          "present": 61,
           "of": 336,
           "optional": true,
           "types": [
