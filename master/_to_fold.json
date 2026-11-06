@@ -1,0 +1,67 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-06T07:48:28.178Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CD3-TBC",
+    "qty": 2,
+    "total": 225,
+    "cash": 0,
+    "date": "2026-11-06",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261106073559-ezyxla, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+    "listRM": 225,
+    "listQty": 2,
+    "rids": [
+     "s338"
+    ],
+    "booked_seq": 130
+   },
+   "reasoning": "Sold 2 unit of salt to CD3-TBC for RM 225, RM 112.5/unit. Costed at RM 56/unit from COGS off the latest purchase p050 landed 2026-11-02: RM 1400 quote plus RM 0 freight over 25 unit, so RM 113 on the goods at 50.2%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-11-06 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CD3-TBC has no committed salt order on the book, so there is no rate of theirs to compare this against."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-11-06T07:48:28.178Z",
+    "type": "SELL",
+    "party": "CD3-TBC",
+    "qty": 2,
+    "total": 225,
+    "status": "Pending",
+    "raw": "SELL CD3-TBC 2 salt RM 225, nothing paid, nothing moved (order 20261106073559-ezyxla)",
+    "orderKey": "CD3-TBC|2026-11-06|225",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CD3-TBC",
+     "newId": null,
+     "date": "2026-11-06",
+     "qty": 2,
+     "total": 225,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261106073559-ezyxla, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261106073559-ezyxla"
+   },
+   "decidedAt": "2026-11-06T07:48:30.173Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
