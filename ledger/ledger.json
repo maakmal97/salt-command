@@ -1,6 +1,6 @@
 {
- "v": "v1456",
- "stamped": "06 Nov 2026, 17:26 KL",
+ "v": "v1457",
+ "stamped": "06 Nov 2026, 18:10 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -11518,15 +11518,35 @@
     "qty": 1,
     "total": 125,
     "cash": 0,
-    "delivery": 45,
+    "delivery": 32,
     "trip": "t1789008851105631",
     "date": "2026-11-06",
     "deliveredQty": 0,
-    "note": "<b>SALE S339: 1 UNIT OF SALT TO CB8-SEG, RM125 GOODS, PLUS RM45 DELIVERY, PENDING.</b> Order 20261106075045-ndpkra, preapproved by Counter Admin, dated 2026-11-06, to be delivered on trip t1789008851105631. Nothing is paid and nothing handed over. The goods total of RM125 sits above the askTotal of RM120 and well above the floorTotal of RM60 for 1 unit; the rate of RM125 a unit is above the askPerUnit of RM120 and the floorPerUnit of RM60. CB8-SEG has 0 orders, so no median or range, nothing outstanding and nothing defaulted, against a credit cap of 1. The row carries RM56 a unit, the inventory's own rate. The drafter flagged that CB8-SEG has no committed salt order to compare against; the figures confirm there is none. Outstanding: RM170 in all and the delivery.",
+    "note": "<b>CORRECTION ON S339: DELIVERY RM45 TO RM32.</b> Order 20261106075045-ndpkra, 1 unit of salt to CB8-SEG, amended after Accept and preapproved by Counter Admin, dated 2026-11-06. The goods total stays at RM125 and the quantity at 1 unit. The dossier gives no floorTotal or askTotal, so the goods are not judged against the desk's ladder. CB8-SEG has a median rate of RM125, range RM8 to RM125, RM178 outstanding before this, nothing defaulted, no units on credit; no credit cap is given. The drafter flagged no committed salt order of theirs to compare against; the dossier shows none. No cash or stock moves, so the cost stays the inventory's own. Outstanding: the goods, the RM32 delivery and the handover on the trip. <b>SALE S339: 1 UNIT OF SALT TO CB8-SEG, RM125 GOODS, PLUS RM45 DELIVERY, PENDING.</b> Order 20261106075045-ndpkra, preapproved by Counter Admin, dated 2026-11-06, to be delivered on trip t1789008851105631. Nothing is paid and nothing handed over. The goods total of RM125 sits above the askTotal of RM120 and well above the floorTotal of RM60 for 1 unit; the rate of RM125 a unit is above the askPerUnit of RM120 and the floorPerUnit of RM60. CB8-SEG has 0 orders, so no median or range, nothing outstanding and nothing defaulted, against a credit cap of 1. The row carries RM56 a unit, the inventory's own rate. The drafter flagged that CB8-SEG has no committed salt order to compare against; the figures confirm there is none. Outstanding: RM170 in all and the delivery.",
     "listRM": 125,
     "listQty": 1,
     "road": "site",
-    "rid": "s339"
+    "rid": "s339",
+    "mod": "corrected on 2026-11-06: delivery 45 to 32",
+    "amend": [
+     {
+      "date": "2026-11-06",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-11-06",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S339: DELIVERY RM45 TO RM32.</b> Order 20261106075045-ndpkra, 1 unit of salt to CB8-SEG, amended after Accept and preapproved by Counter Admin, dated 2026-11-06. The goods total stays at RM125 and the quantity at 1 unit. The dossier gives no floorTotal or askTotal, so the goods are not judged against the desk's ladder. CB8-SEG has a median rate of RM125, range RM8 to RM125, RM178 outstanding before this, nothing defaulted, no units on credit; no credit cap is given. The drafter flagged no committed salt order of theirs to compare against; the dossier shows none. No cash or stock moves, so the cost stays the inventory's own. Outstanding: the goods, the RM32 delivery and the handover on the trip.",
+      "was": {
+       "delivery": 45
+      }
+     }
+    ]
    },
    {
     "customer": "CB8-SEG",
@@ -11573,8 +11593,17 @@
        "total": 500,
        "delivery": 25
       }
+     },
+     {
+      "date": "2026-11-06",
+      "kind": "Cancellation",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CANCELLATION OF S341: 5 UNITS OF SALT TO CD3-TBC WITHDRAWN.</b> Cancelled on 2026-11-06, the same day as the order, by Counter Admin at 09:32. The order stood at RM475 goods with RM35 delivery, RM510 owed, after an earlier correction. The dossier gives no floorTotal or askTotal for this size, so no comparison is made. CD3-TBC has a median rate of RM95, range RM95 to RM95, RM510 outstanding before this, nothing defaulted, no units on credit; no credit cap is given. Nothing was paid or handed over, so no cash or stock moves and the cost stays the inventory's own. The drafter raised no flags. Outstanding: nothing on this order, which now counts nowhere."
      }
-    ]
+    ],
+    "cancelled": true,
+    "cancelledOn": "2026-11-06"
    }
   ],
   "contacts": [
@@ -12426,7 +12455,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-06T09:26:04.239Z",
+  "QUEUE_COMMITTED": "2026-11-06T09:39:14.972Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -12453,6 +12482,11 @@
      "id": "px:headroom:salt",
      "sev": "act",
      "title": "The buying rate can rise RM -1 a unit, -1.8%, before a card breaches"
+    },
+    {
+     "id": "parity:commit:all",
+     "sev": "act",
+     "title": "Every book reports the same 1 unit promised out"
     },
     {
      "id": "cust:cadence:salt",
@@ -12592,7 +12626,7 @@
     {
      "id": "cust:oneanddone",
      "sev": "note",
-     "title": "18 of 54 customers have bought exactly once"
+     "title": "17 of 53 customers have bought exactly once"
     },
     {
      "id": "cust:noreply",
@@ -15956,60 +15990,6 @@
         7445
        ]
       ],
-      "CD3-TBC": [
-       [
-        0.5,
-        80
-       ],
-       [
-        1,
-        125
-       ],
-       [
-        1.5,
-        170
-       ],
-       [
-        2,
-        225
-       ],
-       [
-        2.5,
-        270
-       ],
-       [
-        3,
-        320
-       ],
-       [
-        4,
-        410
-       ],
-       [
-        5,
-        500
-       ],
-       [
-        6.25,
-        610
-       ],
-       [
-        12.5,
-        975
-       ],
-       [
-        25,
-        1915
-       ],
-       [
-        50,
-        3835
-       ],
-       [
-        100,
-        7670
-       ]
-      ],
       "CA3-KP": [
        [
         0.5,
@@ -17089,6 +17069,60 @@
         100,
         7670
        ]
+      ],
+      "CD3-TBC": [
+       [
+        0.5,
+        80
+       ],
+       [
+        1,
+        125
+       ],
+       [
+        1.5,
+        170
+       ],
+       [
+        2,
+        225
+       ],
+       [
+        2.5,
+        270
+       ],
+       [
+        3,
+        320
+       ],
+       [
+        4,
+        410
+       ],
+       [
+        5,
+        500
+       ],
+       [
+        6.25,
+        610
+       ],
+       [
+        12.5,
+        975
+       ],
+       [
+        25,
+        1915
+       ],
+       [
+        50,
+        3835
+       ],
+       [
+        100,
+        7670
+       ]
       ]
      },
      "partners": [
@@ -17126,7 +17160,6 @@
       "CY2-NIL": 0,
       "CF5-WM": 0,
       "CA6-CYB": 0,
-      "CD3-TBC": 0.1,
       "CA3-KP": 0,
       "CZ6-WM": 0,
       "CA5-SEN": 0.3,
@@ -17146,7 +17179,8 @@
       "CN4-MC": 0,
       "CA4-P1": 0,
       "CJ5-CHE": 0,
-      "CAY4-DAM": 0.1
+      "CAY4-DAM": 0.1,
+      "CD3-TBC": 0.1
      },
      "suggest": {
       "CS6-BS": {
@@ -17269,10 +17303,6 @@
        "pct": 0,
        "why": ""
       },
-      "CD3-TBC": {
-       "pct": 0,
-       "why": ""
-      },
       "CA3-KP": {
        "pct": -0.2,
        "why": "good record"
@@ -17350,6 +17380,10 @@
        "why": ""
       },
       "CAY4-DAM": {
+       "pct": 0,
+       "why": ""
+      },
+      "CD3-TBC": {
        "pct": 0,
        "why": ""
       }
@@ -18316,28 +18350,6 @@
         450
        ]
       ],
-      "CD3-TBC": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
       "CA3-KP": [
        [
         10,
@@ -18777,6 +18789,28 @@
         50,
         450
        ]
+      ],
+      "CD3-TBC": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
       ]
      },
      "partners": [
@@ -18814,7 +18848,6 @@
       "CY2-NIL": 0,
       "CF5-WM": 0,
       "CA6-CYB": 0,
-      "CD3-TBC": 0,
       "CA3-KP": 0,
       "CZ6-WM": 0,
       "CA5-SEN": 0,
@@ -18834,7 +18867,8 @@
       "CN4-MC": 0,
       "CA4-P1": 0,
       "CJ5-CHE": 0,
-      "CAY4-DAM": 0
+      "CAY4-DAM": 0,
+      "CD3-TBC": 0
      },
      "suggest": null
     },
@@ -19765,28 +19799,6 @@
         1500
        ]
       ],
-      "CD3-TBC": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
-      ],
       "CA3-KP": [
        [
         1,
@@ -20226,6 +20238,28 @@
         30,
         1500
        ]
+      ],
+      "CD3-TBC": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
       ]
      },
      "partners": [
@@ -20263,7 +20297,6 @@
       "CY2-NIL": 0,
       "CF5-WM": 0,
       "CA6-CYB": 0,
-      "CD3-TBC": 0,
       "CA3-KP": 0,
       "CZ6-WM": 0,
       "CA5-SEN": 0,
@@ -20283,7 +20316,8 @@
       "CN4-MC": 0,
       "CA4-P1": 0,
       "CJ5-CHE": 0,
-      "CAY4-DAM": 0
+      "CAY4-DAM": 0,
+      "CD3-TBC": 0
      },
      "suggest": null
     },
@@ -20923,20 +20957,6 @@
         60
        ]
       ],
-      "CD3-TBC": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        60
-       ]
-      ],
       "CA3-KP": [
        [
         1,
@@ -21216,6 +21236,20 @@
         10,
         60
        ]
+      ],
+      "CD3-TBC": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        60
+       ]
       ]
      },
      "partners": [
@@ -21253,7 +21287,6 @@
       "CY2-NIL": 0,
       "CF5-WM": 0,
       "CA6-CYB": 0,
-      "CD3-TBC": 0,
       "CA3-KP": 0,
       "CZ6-WM": 0,
       "CA5-SEN": 0,
@@ -21273,7 +21306,8 @@
       "CN4-MC": 0,
       "CA4-P1": 0,
       "CJ5-CHE": 0,
-      "CAY4-DAM": 0
+      "CAY4-DAM": 0,
+      "CD3-TBC": 0
      },
      "suggest": null
     },
@@ -22041,24 +22075,6 @@
         1500
        ]
       ],
-      "CD3-TBC": [
-       [
-        1,
-        75
-       ],
-       [
-        5,
-        375
-       ],
-       [
-        10,
-        750
-       ],
-       [
-        20,
-        1500
-       ]
-      ],
       "CA3-KP": [
        [
         1,
@@ -22418,6 +22434,24 @@
         20,
         1500
        ]
+      ],
+      "CD3-TBC": [
+       [
+        1,
+        75
+       ],
+       [
+        5,
+        375
+       ],
+       [
+        10,
+        750
+       ],
+       [
+        20,
+        1500
+       ]
       ]
      },
      "partners": [
@@ -22455,7 +22489,6 @@
       "CY2-NIL": 0,
       "CF5-WM": 0,
       "CA6-CYB": 0,
-      "CD3-TBC": 0,
       "CA3-KP": 0,
       "CZ6-WM": 0,
       "CA5-SEN": 0,
@@ -22475,7 +22508,8 @@
       "CN4-MC": 0,
       "CA4-P1": 0,
       "CJ5-CHE": 0,
-      "CAY4-DAM": 0
+      "CAY4-DAM": 0,
+      "CD3-TBC": 0
      },
      "suggest": null
     },
@@ -22947,16 +22981,6 @@
         125
        ]
       ],
-      "CD3-TBC": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
       "CA3-KP": [
        [
         12,
@@ -23156,6 +23180,16 @@
         30,
         125
        ]
+      ],
+      "CD3-TBC": [
+       [
+        12,
+        60
+       ],
+       [
+        30,
+        125
+       ]
       ]
      },
      "partners": [
@@ -23193,7 +23227,6 @@
       "CY2-NIL": 0,
       "CF5-WM": 0,
       "CA6-CYB": 0,
-      "CD3-TBC": 0,
       "CA3-KP": 0,
       "CZ6-WM": 0,
       "CA5-SEN": 0,
@@ -23213,18 +23246,19 @@
       "CN4-MC": 0,
       "CA4-P1": 0,
       "CJ5-CHE": 0,
-      "CAY4-DAM": 0
+      "CAY4-DAM": 0,
+      "CD3-TBC": 0
      },
      "suggest": null
     }
    },
-   "v": "v1456"
+   "v": "v1457"
   },
   "OPEN": {
-   "at": "2026-11-06T09:27:02.029Z",
-   "count": 10,
+   "at": "2026-11-06T10:10:52.976Z",
+   "count": 9,
    "byKey": {
-    "CB8-SEG|2026-11-06|170": {
+    "CB8-SEG|2026-11-06|157": {
      "d": "2026-11-06",
      "p": "CB8-SEG",
      "dir": "S",
@@ -23233,12 +23267,12 @@
      "cash": 0,
      "mv": 0,
      "st": "part",
-     "oweRM": 170,
+     "oweRM": 157,
      "oweUnits": 1,
-     "dv": 45,
+     "dv": 32,
      "rid": "s339",
      "trip": "t1789008851105631",
-     "key": "CB8-SEG|2026-11-06|170"
+     "key": "CB8-SEG|2026-11-06|157"
     },
     "CB8-SEG|2026-11-06|8|rice": {
      "d": "2026-11-06",
@@ -23255,21 +23289,6 @@
      "rid": "s340",
      "trip": "t1789008851105631",
      "key": "CB8-SEG|2026-11-06|8|rice"
-    },
-    "CD3-TBC|2026-11-06|510": {
-     "d": "2026-11-06",
-     "p": "CD3-TBC",
-     "dir": "S",
-     "q": 5,
-     "t": 475,
-     "cash": 0,
-     "mv": 0,
-     "st": "part",
-     "oweRM": 510,
-     "oweUnits": 5,
-     "dv": 35,
-     "rid": "s341",
-     "key": "CD3-TBC|2026-11-06|510"
     },
     "CR3-DAM|2026-10-30|70": {
      "d": "2026-10-30",
@@ -23395,10 +23414,10 @@
      "onHand": 15.5,
      "free": 15.5,
      "owedOut": 0,
-     "coverDays": 3.8,
-     "rate": 4.38,
+     "coverDays": 4,
+     "rate": 4.14,
      "owedToYou": 310,
-     "promised": 6,
+     "promised": 1,
      "short": 0
     },
     "oil": {
@@ -23465,7 +23484,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1456"
+   "v": "v1457"
   },
   "TERMS": {
    "ceiling": 250,
@@ -23473,7 +23492,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1456"
+   "v": "v1457"
   },
   "REWARD": {
    "stated": {
@@ -23491,7 +23510,7 @@
      }
     }
    },
-   "v": "v1456"
+   "v": "v1457"
   },
   "STOCK": {
    "today": "2026-11-06",
@@ -23499,9 +23518,9 @@
     "salt": {
      "shelf": 15.5,
      "free": 15.5,
-     "commit": 6,
+     "commit": 1,
      "light": "yellow",
-     "coverDays": 3.8,
+     "coverDays": 4,
      "transit": 0
     },
     "oil": {
@@ -23545,7 +23564,7 @@
      "transit": 0
     }
    },
-   "v": "v1456"
+   "v": "v1457"
   }
  }
 }
