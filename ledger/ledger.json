@@ -1,6 +1,6 @@
 {
- "v": "v1461",
- "stamped": "07 Nov 2026, 00:28 KL",
+ "v": "v1462",
+ "stamped": "07 Nov 2026, 01:29 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -11518,16 +11518,16 @@
     "qty": 1,
     "total": 125,
     "cash": 0,
-    "delivery": 32,
+    "delivery": 22,
     "trip": "t1789008851105631",
     "date": "2026-11-06",
     "deliveredQty": 1,
-    "note": "<b>CORRECTION ON S339: 1 UNIT OF SALT DELIVERED TO CB8-SEG, 07 NOV 2026.</b> Order 20261106075045-ndpkra, preapproved by Counter Admin. It sets deliveredQty from 0 to 1, deliveredOn to 2026-11-07 and handover to delivered, and rolls the shelf by 1 unit. The dossier gives no floor or ask for salt, so the goods of RM125 cannot be set against the ladder. CB8-SEG has a median rate of RM125, range RM8 to RM125, nothing defaulted, no units on credit before this, RM165 outstanding. The drafter flagged the 2-step trail, which no longer adds up, and an advance with RM157 unpaid: the dossier gives no credit cap, so the figures cannot answer it. Cost is the draft's own. Outstanding: RM157. <b>CORRECTION ON S339: DELIVERY RM45 TO RM32.</b> Order 20261106075045-ndpkra, 1 unit of salt to CB8-SEG, amended after Accept and preapproved by Counter Admin, dated 2026-11-06. The goods total stays at RM125 and the quantity at 1 unit. The dossier gives no floorTotal or askTotal, so the goods are not judged against the desk's ladder. CB8-SEG has a median rate of RM125, range RM8 to RM125, RM178 outstanding before this, nothing defaulted, no units on credit; no credit cap is given. The drafter flagged no committed salt order of theirs to compare against; the dossier shows none. No cash or stock moves, so the cost stays the inventory's own. Outstanding: the goods, the RM32 delivery and the handover on the trip. <b>SALE S339: 1 UNIT OF SALT TO CB8-SEG, RM125 GOODS, PLUS RM45 DELIVERY, PENDING.</b> Order 20261106075045-ndpkra, preapproved by Counter Admin, dated 2026-11-06, to be delivered on trip t1789008851105631. Nothing is paid and nothing handed over. The goods total of RM125 sits above the askTotal of RM120 and well above the floorTotal of RM60 for 1 unit; the rate of RM125 a unit is above the askPerUnit of RM120 and the floorPerUnit of RM60. CB8-SEG has 0 orders, so no median or range, nothing outstanding and nothing defaulted, against a credit cap of 1. The row carries RM56 a unit, the inventory's own rate. The drafter flagged that CB8-SEG has no committed salt order to compare against; the figures confirm there is none. Outstanding: RM170 in all and the delivery.",
+    "note": "<b>CORRECTION ON S339: DELIVERY FOR CB8-SEG CHANGED FROM RM32 TO RM22, 07 NOV 2026.</b> Order 20261106075045-ndpkra, preapproved by Counter Admin. It sets qty to 1, total to 125 and delivery to 22, and moves no cash. The dossier gives no floorTotal, askTotal, floorPerUnit or askPerUnit for this size, so no comparison with the desk's floor and ask is made. CB8-SEG has a median rate of RM125, range RM8 to RM125, nothing defaulted, 2 units on credit before this and RM165 outstanding. The drafter flagged an advance with RM147 unpaid and asked for a check against the credit cap. No cap figure is in the dossier, so the figures do not answer the flag. Outstanding: the RM147 payment. <b>CORRECTION ON S339: 1 UNIT OF SALT DELIVERED TO CB8-SEG, 07 NOV 2026.</b> Order 20261106075045-ndpkra, preapproved by Counter Admin. It sets deliveredQty from 0 to 1, deliveredOn to 2026-11-07 and handover to delivered, and rolls the shelf by 1 unit. The dossier gives no floor or ask for salt, so the goods of RM125 cannot be set against the ladder. CB8-SEG has a median rate of RM125, range RM8 to RM125, nothing defaulted, no units on credit before this, RM165 outstanding. The drafter flagged the 2-step trail, which no longer adds up, and an advance with RM157 unpaid: the dossier gives no credit cap, so the figures cannot answer it. Cost is the draft's own. Outstanding: RM157. <b>CORRECTION ON S339: DELIVERY RM45 TO RM32.</b> Order 20261106075045-ndpkra, 1 unit of salt to CB8-SEG, amended after Accept and preapproved by Counter Admin, dated 2026-11-06. The goods total stays at RM125 and the quantity at 1 unit. The dossier gives no floorTotal or askTotal, so the goods are not judged against the desk's ladder. CB8-SEG has a median rate of RM125, range RM8 to RM125, RM178 outstanding before this, nothing defaulted, no units on credit; no credit cap is given. The drafter flagged no committed salt order of theirs to compare against; the dossier shows none. No cash or stock moves, so the cost stays the inventory's own. Outstanding: the goods, the RM32 delivery and the handover on the trip. <b>SALE S339: 1 UNIT OF SALT TO CB8-SEG, RM125 GOODS, PLUS RM45 DELIVERY, PENDING.</b> Order 20261106075045-ndpkra, preapproved by Counter Admin, dated 2026-11-06, to be delivered on trip t1789008851105631. Nothing is paid and nothing handed over. The goods total of RM125 sits above the askTotal of RM120 and well above the floorTotal of RM60 for 1 unit; the rate of RM125 a unit is above the askPerUnit of RM120 and the floorPerUnit of RM60. CB8-SEG has 0 orders, so no median or range, nothing outstanding and nothing defaulted, against a credit cap of 1. The row carries RM56 a unit, the inventory's own rate. The drafter flagged that CB8-SEG has no committed salt order to compare against; the figures confirm there is none. Outstanding: RM170 in all and the delivery.",
     "listRM": 125,
     "listQty": 1,
     "road": "site",
     "rid": "s339",
-    "mod": "corrected on 2026-11-06: delivery 45 to 32, then corrected on 2026-11-07: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-07; handover (unset) to delivered",
+    "mod": "corrected on 2026-11-06: delivery 45 to 32, then corrected on 2026-11-07: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-07; handover (unset) to delivered, then corrected on 2026-11-07: delivery 32 to 22",
     "amend": [
      {
       "date": "2026-11-06",
@@ -11558,6 +11558,16 @@
        "handover": null
       },
       "cost": 56
+     },
+     {
+      "date": "2026-11-07",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S339: DELIVERY FOR CB8-SEG CHANGED FROM RM32 TO RM22, 07 NOV 2026.</b> Order 20261106075045-ndpkra, preapproved by Counter Admin. It sets qty to 1, total to 125 and delivery to 22, and moves no cash. The dossier gives no floorTotal, askTotal, floorPerUnit or askPerUnit for this size, so no comparison with the desk's floor and ask is made. CB8-SEG has a median rate of RM125, range RM8 to RM125, nothing defaulted, 2 units on credit before this and RM165 outstanding. The drafter flagged an advance with RM147 unpaid and asked for a check against the credit cap. No cap figure is in the dossier, so the figures do not answer the flag. Outstanding: the RM147 payment.",
+      "was": {
+       "delivery": 32
+      }
      }
     ],
     "deliveredOn": "2026-11-07",
@@ -12546,7 +12556,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-06T16:28:08.269Z",
+  "QUEUE_COMMITTED": "2026-11-06T17:28:43.809Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -23370,13 +23380,13 @@
      "suggest": null
     }
    },
-   "v": "v1461"
+   "v": "v1462"
   },
   "OPEN": {
-   "at": "2026-11-06T16:28:41.523Z",
+   "at": "2026-11-06T17:29:24.845Z",
    "count": 9,
    "byKey": {
-    "CB8-SEG|2026-11-06|157": {
+    "CB8-SEG|2026-11-06|147": {
      "d": "2026-11-06",
      "p": "CB8-SEG",
      "dir": "S",
@@ -23385,15 +23395,15 @@
      "cash": 0,
      "mv": 1,
      "st": "dueMoney",
-     "oweRM": 157,
-     "dv": 32,
+     "oweRM": 147,
+     "dv": 22,
      "rid": "s339",
      "deliveredOn": "2026-11-07",
      "handover": "delivered",
      "trip": "t1789008851105631",
-     "key": "CB8-SEG|2026-11-06|157",
+     "key": "CB8-SEG|2026-11-06|147",
      "age": 0,
-     "exp": 157
+     "exp": 147
     },
     "CB8-SEG|2026-11-06|8|rice": {
      "d": "2026-11-06",
@@ -23540,7 +23550,7 @@
      "owedOut": 0,
      "coverDays": 3.1,
      "rate": 4.05,
-     "owedToYou": 467,
+     "owedToYou": 457,
      "promised": 0,
      "short": 0
     },
@@ -23608,7 +23618,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1461"
+   "v": "v1462"
   },
   "TERMS": {
    "ceiling": 250,
@@ -23616,7 +23626,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1461"
+   "v": "v1462"
   },
   "REWARD": {
    "stated": {
@@ -23634,7 +23644,7 @@
      }
     }
    },
-   "v": "v1461"
+   "v": "v1462"
   },
   "STOCK": {
    "today": "2026-11-07",
@@ -23688,7 +23698,7 @@
      "transit": 0
     }
    },
-   "v": "v1461"
+   "v": "v1462"
   }
  }
 }
