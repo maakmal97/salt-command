@@ -650,7 +650,8 @@
     "CA6-SET",
     "CA4-SJ",
     "CS11-AMP",
-    "CAY4-DAM"
+    "CAY4-DAM",
+    "CB8-SEG"
   ],
   "associates": [
     "CS6-BS",
@@ -945,6 +946,11 @@
       3.07,
       101.55,
       "Damansara"
+    ],
+    "CB8-SEG": [
+      3.19,
+      101.66,
+      "Segambut"
     ]
   },
   "TIER_OF": {
@@ -994,6 +1000,9 @@
     },
     "CI4-OKR": {
       "salt": -0.15
+    },
+    "CB8-SEG": {
+      "salt": 0.1
     }
   },
   "PEOPLE": {
@@ -1114,7 +1123,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-11-05T15:52:16.604Z",
+  "QUEUE_COMMITTED": "2026-11-06T06:14:34.207Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
