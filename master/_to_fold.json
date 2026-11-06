@@ -1,0 +1,56 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-06T17:29:26.401Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "qty": 1,
+    "total": 125,
+    "cash": 0,
+    "date": "2026-11-06",
+    "customer": "CB8-SEG",
+    "rids": [],
+    "booked_seq": 144
+   },
+   "reasoning": "Fulfilment against CB8-SEG's order of 1 unit for RM 125 with RM 32 delivery, RM 157 owed agreed 2026-11-06. RM 147 and 0 unit move on 2026-11-07, against RM 157 and 0 unit outstanding. Leaves RM 10 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [],
+   "amends": "s339",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-11-06T17:29:26.401Z",
+    "type": "SELL",
+    "party": "CB8-SEG",
+    "qty": 0,
+    "total": 147,
+    "status": "Payment",
+    "by": "desk",
+    "raw": "Payment of RM 147 on CB8-SEG, order 20261106075045-ndpkra, by cash at the counter",
+    "payload": {
+     "mode": "amend",
+     "kind": "Fulfilment",
+     "direction": "SELL",
+     "party": "CB8-SEG",
+     "rid": null,
+     "orderKey": "CB8-SEG|2026-11-06|157",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-11-07",
+     "qty": 0,
+     "total": 0,
+     "cash": 147,
+     "kg": 0,
+     "note": "Cash received at the handover, recorded on the desk, order 20261106075045-ndpkra."
+    },
+    "orderId": "20261106075045-ndpkra",
+    "counter": true
+   },
+   "decidedAt": "2026-11-06T17:29:28.215Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
