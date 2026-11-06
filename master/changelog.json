@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1459",
+  "d": "06 Nov 2026",
+  "t": "DELIVERY OF S342 RECORDED, 2.5 UNIT OF SALT OUT",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> The correction on s342 records that the 2.5 unit of salt sold to CS6-BS-R on 06 Nov 2026 were delivered that day. It sets deliveredQty, deliveredOn and handover. It moves no cash. The sale was preapproved by Counter Admin, and the drafter's two flags, the rate and the advance, are answered in the row note.",
+   "<b>INVENTORY.</b> The 2.5 unit leave the salt shelf to CS6-BS-R. No lot landed, so the cost basis stays at RM56 per unit, the same as the replacement cost."
+  ]
+ },
+ {
   "v": "v1458",
   "d": "06 Nov 2026",
   "t": "A PENDING SALT ORDER FOR CS6-BS-R BELOW THE ASK",

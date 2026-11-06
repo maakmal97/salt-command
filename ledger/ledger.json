@@ -1,6 +1,6 @@
 {
- "v": "v1458",
- "stamped": "06 Nov 2026, 21:14 KL",
+ "v": "v1459",
+ "stamped": "06 Nov 2026, 21:17 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -107,7 +107,7 @@
     "stated": 25
    }
   },
-  "STATED_STOCK": 15.5,
+  "STATED_STOCK": 13,
   "COUNT_ON": {
    "salt": "2026-10-28",
    "oil": "2026-11-02",
@@ -11612,13 +11612,39 @@
     "cash": 0,
     "delivery": 5,
     "date": "2026-11-06",
-    "deliveredQty": 0,
-    "rev": "R2",
-    "note": "<b>SALE S342: 2.5 UNITS OF SALT TO CS6-BS-R, RM225 GOODS, PENDING.</b> Order 20261106131252-8zufhg, preapproved by Counter Admin, dated 2026-11-06, to be delivered, delivery RM5, so RM230 is owed. The goods total of RM225 is above the floorTotal of RM140 and below the askTotal of RM255 for 2.5 units; at RM90 per unit it is above the floorPerUnit of RM56 and below the askPerUnit of RM102. CS6-BS-R has a median rate of RM96.67, range RM6 to RM120, nothing outstanding before this, nothing defaulted, against a credit cap of 1. The cost is the inventory's own, RM56 per unit off the latest purchase. The drafter flagged the rate as 14.3% below the usual RM105; the figures confirm it is below the median, though above the floor. Outstanding: the payment, the goods and the handover.",
+    "deliveredQty": 2.5,
+    "note": "<b>CORRECTION ON S342: 2.5 UNITS OF SALT DELIVERED TO CS6-BS-R, 06 NOV 2026.</b> Order 20261106131252-8zufhg, preapproved by Counter Admin. It sets deliveredQty from 0 to 2.5, deliveredOn to 2026-11-06 and handover to delivered, and rolls the shelf by 2.5 unit. Goods of RM225 sit above the floorTotal of RM140 and below the askTotal of RM255; RM90 per unit is above the floorPerUnit of RM56 and below the askPerUnit of RM102. CS6-BS-R has a median rate of RM96.67, range RM6 to RM120, nothing defaulted, no units on credit before this. The drafter flagged the rate as 14.3% below the usual RM105, which the median confirms, and flagged an advance with RM230 unpaid: the sale note gives a credit cap of 1, so 2.5 unit exceeds it. The cost stays RM56 per unit. Outstanding: the RM230 payment. <b>SALE S342: 2.5 UNITS OF SALT TO CS6-BS-R, RM225 GOODS, PENDING.</b> Order 20261106131252-8zufhg, preapproved by Counter Admin, dated 2026-11-06, to be delivered, delivery RM5, so RM230 is owed. The goods total of RM225 is above the floorTotal of RM140 and below the askTotal of RM255 for 2.5 units; at RM90 per unit it is above the floorPerUnit of RM56 and below the askPerUnit of RM102. CS6-BS-R has a median rate of RM96.67, range RM6 to RM120, nothing outstanding before this, nothing defaulted, against a credit cap of 1. The cost is the inventory's own, RM56 per unit off the latest purchase. The drafter flagged the rate as 14.3% below the usual RM105; the figures confirm it is below the median, though above the floor. Outstanding: the payment, the goods and the handover.",
     "listRM": 225,
     "listQty": 2.5,
     "road": "site",
-    "rid": "s342"
+    "rid": "s342",
+    "deliveredOn": "2026-11-06",
+    "handover": "delivered",
+    "rev": "R2",
+    "mod": "corrected on 2026-11-06: deliveredQty 0 to 2.5; deliveredOn (unset) to 2026-11-06; handover (unset) to delivered",
+    "amend": [
+     {
+      "date": "2026-11-06",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-11-06",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 2.5,
+      "note": "<b>CORRECTION ON S342: 2.5 UNITS OF SALT DELIVERED TO CS6-BS-R, 06 NOV 2026.</b> Order 20261106131252-8zufhg, preapproved by Counter Admin. It sets deliveredQty from 0 to 2.5, deliveredOn to 2026-11-06 and handover to delivered, and rolls the shelf by 2.5 unit. Goods of RM225 sit above the floorTotal of RM140 and below the askTotal of RM255; RM90 per unit is above the floorPerUnit of RM56 and below the askPerUnit of RM102. CS6-BS-R has a median rate of RM96.67, range RM6 to RM120, nothing defaulted, no units on credit before this. The drafter flagged the rate as 14.3% below the usual RM105, which the median confirms, and flagged an advance with RM230 unpaid: the sale note gives a credit cap of 1, so 2.5 unit exceeds it. The cost stays RM56 per unit. Outstanding: the RM230 payment.",
+      "was": {
+       "deliveredQty": 0,
+       "deliveredOn": null,
+       "handover": null
+      },
+      "cost": 140
+     }
+    ],
+    "cost": 140
    }
   ],
   "contacts": [
@@ -12470,7 +12496,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-06T13:13:33.009Z",
+  "QUEUE_COMMITTED": "2026-11-06T13:15:07.089Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -12499,9 +12525,14 @@
      "title": "The buying rate can rise RM -1 a unit, -1.8%, before a card breaches"
     },
     {
+     "id": "parity:commit:all",
+     "sev": "act",
+     "title": "Every book reports the same 1 unit promised out"
+    },
+    {
      "id": "cust:cadence:salt",
      "sev": "watch",
-     "title": "15 customers are past their own habit on salt"
+     "title": "14 customers are past their own habit on salt"
     },
     {
      "id": "cust:cadence:oil",
@@ -12678,13 +12709,13 @@
     "CS6-BS": {
      "salt": {
       "name": "consistent mid",
-      "orders": 21,
+      "orders": 22,
       "tenureDays": 117,
-      "sinceLastDays": 8,
-      "perMonth": 5.46,
-      "unitsPerMonth": 13.14,
-      "smallShare": 0.48,
-      "bigShare": 0.33,
+      "sinceLastDays": 0,
+      "perMonth": 5.72,
+      "unitsPerMonth": 13.79,
+      "smallShare": 0.45,
+      "bigShare": 0.32,
       "frequent": true,
       "small": false,
       "bigger": false,
@@ -13987,15 +14018,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.3161764705882353
+         "v": 0.32116788321167883
         }
        },
        "attrib": 1,
        "shrinkRate": 0.0864222266746811,
        "avgDel": {
-        "n": 256,
-        "kg": 628.81,
-        "mean": 2.4563
+        "n": 257,
+        "kg": 631.31,
+        "mean": 2.4565
        }
       },
       "policy": {
@@ -23262,10 +23293,10 @@
      "suggest": null
     }
    },
-   "v": "v1458"
+   "v": "v1459"
   },
   "OPEN": {
-   "at": "2026-11-06T13:14:18.448Z",
+   "at": "2026-11-06T13:17:46.135Z",
    "count": 10,
    "byKey": {
     "CB8-SEG|2026-11-06|157": {
@@ -23307,15 +23338,18 @@
      "q": 2.5,
      "t": 225,
      "cash": 0,
-     "mv": 0,
-     "st": "part",
+     "mv": 2.5,
+     "st": "dueMoney",
      "oweRM": 230,
-     "oweUnits": 2.5,
      "dv": 5,
      "rid": "s342",
      "as": "CS6-BS",
      "st2": "R2",
-     "key": "CS6-BS-R|2026-11-06|230"
+     "deliveredOn": "2026-11-06",
+     "handover": "delivered",
+     "key": "CS6-BS-R|2026-11-06|230",
+     "age": 0,
+     "exp": 230
     },
     "CR3-DAM|2026-10-30|70": {
      "d": "2026-10-30",
@@ -23438,13 +23472,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 15.5,
-     "free": 15.5,
+     "onHand": 13,
+     "free": 13,
      "owedOut": 0,
-     "coverDays": 3.9,
+     "coverDays": 3.4,
      "rate": 4.26,
-     "owedToYou": 310,
-     "promised": 3.5,
+     "owedToYou": 540,
+     "promised": 1,
      "short": 0
     },
     "oil": {
@@ -23511,7 +23545,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1458"
+   "v": "v1459"
   },
   "TERMS": {
    "ceiling": 250,
@@ -23519,7 +23553,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1458"
+   "v": "v1459"
   },
   "REWARD": {
    "stated": {
@@ -23537,17 +23571,17 @@
      }
     }
    },
-   "v": "v1458"
+   "v": "v1459"
   },
   "STOCK": {
    "today": "2026-11-06",
    "books": {
     "salt": {
-     "shelf": 15.5,
-     "free": 15.5,
-     "commit": 3.5,
+     "shelf": 13,
+     "free": 13,
+     "commit": 1,
      "light": "yellow",
-     "coverDays": 3.9,
+     "coverDays": 3.4,
      "transit": 0
     },
     "oil": {
@@ -23591,7 +23625,7 @@
      "transit": 0
     }
    },
-   "v": "v1458"
+   "v": "v1459"
   }
  }
 }
