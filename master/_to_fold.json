@@ -1,0 +1,157 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-11-06T16:27:56.037Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s340",
+    "qty": 1,
+    "total": 8,
+    "cash": 0,
+    "date": "2026-11-06",
+    "product": "rice",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 1
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-11-07"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "delivered"
+     }
+    ],
+    "customer": "CB8-SEG",
+    "rids": [],
+    "booked_seq": 141
+   },
+   "reasoning": "Correction against CB8-SEG's order of 1 unit for RM 8 dated 2026-11-06 (s340). Sets deliveredQty from 0 to 1, deliveredOn from unset to 2026-11-07, handover from unset to delivered. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CB8-SEG has no committed rice order on the book, so there is no rate of theirs to compare this against.",
+    "This is an ADVANCE: 1 unit goes out with RM 8 unpaid. Check it against CB8-SEG's credit cap."
+   ],
+   "amends": "s340",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-11-06T16:27:56.037Z",
+    "type": "SELL",
+    "party": "CB8-SEG",
+    "qty": 1,
+    "total": 0,
+    "status": "Handover",
+    "raw": "1 unit delivered to CB8-SEG, order 20261106075045-x030lw, on 2026-11-07",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CB8-SEG",
+     "rid": null,
+     "orderKey": "CB8-SEG|2026-11-06|8|rice",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-11-07",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 1,
+      "deliveredOn": "2026-11-07",
+      "handover": "delivered"
+     },
+     "note": "1 unit delivered for order 20261106075045-x030lw."
+    },
+    "orderId": "20261106075045-x030lw"
+   },
+   "decidedAt": "2026-11-06T16:27:58.600Z",
+   "decidedBy": "preapproved by Counter Admin"
+  },
+  {
+   "id": "2026-11-06T16:28:08.269Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s339",
+    "qty": 1,
+    "total": 125,
+    "cash": 0,
+    "date": "2026-11-06",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 1
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-11-07"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "delivered"
+     }
+    ],
+    "customer": "CB8-SEG",
+    "rids": [],
+    "booked_seq": 142
+   },
+   "reasoning": "Correction against CB8-SEG's order of 1 unit for RM 125 dated 2026-11-06 (s339). Sets deliveredQty from 0 to 1, deliveredOn from unset to 2026-11-07, handover from unset to delivered. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This row carries a trail of 2 steps. Setting the figure directly does not rewrite them, so the trail will no longer add up to it; the correction is recorded beside them saying so.",
+    "CB8-SEG has no committed salt order on the book, so there is no rate of theirs to compare this against.",
+    "This is an ADVANCE: 1 unit goes out with RM 157 unpaid. Check it against CB8-SEG's credit cap."
+   ],
+   "amends": "s339",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-11-06T16:28:08.269Z",
+    "type": "SELL",
+    "party": "CB8-SEG",
+    "qty": 1,
+    "total": 0,
+    "status": "Handover",
+    "raw": "1 unit delivered to CB8-SEG, order 20261106075045-ndpkra, on 2026-11-07",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CB8-SEG",
+     "rid": null,
+     "orderKey": "CB8-SEG|2026-11-06|157",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-11-07",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 1,
+      "deliveredOn": "2026-11-07",
+      "handover": "delivered"
+     },
+     "note": "1 unit delivered for order 20261106075045-ndpkra."
+    },
+    "orderId": "20261106075045-ndpkra"
+   },
+   "decidedAt": "2026-11-06T16:28:10.300Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
