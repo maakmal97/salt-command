@@ -651,7 +651,8 @@
     "CA4-SJ",
     "CS11-AMP",
     "CAY4-DAM",
-    "CB8-SEG"
+    "CB8-SEG",
+    "CD3-TBC"
   ],
   "associates": [
     "CS6-BS",
@@ -1003,6 +1004,9 @@
     },
     "CB8-SEG": {
       "salt": 0.1
+    },
+    "CD3-TBC": {
+      "salt": 0.1
     }
   },
   "PEOPLE": {
@@ -1123,7 +1127,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-11-06T06:14:34.207Z",
+  "QUEUE_COMMITTED": "2026-11-06T06:19:14.606Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
