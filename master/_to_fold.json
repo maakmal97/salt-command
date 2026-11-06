@@ -1,0 +1,132 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-11-06T08:15:22.779Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CB8-SEG",
+    "qty": 1,
+    "total": 125,
+    "cash": 0,
+    "delivery": 45,
+    "trip": "t1789008851105631",
+    "date": "2026-11-06",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261106075045-ndpkra, acknowledged, to be delivered, delivery RM 45. Nothing paid and nothing handed over yet.",
+    "listRM": 125,
+    "listQty": 1,
+    "rids": [
+     "s339"
+    ],
+    "booked_seq": 131
+   },
+   "reasoning": "Sold 1 unit of salt to CB8-SEG for RM 125, with RM 45 of delivery beside it, RM 170 owed, RM 125/unit. Costed at RM 56/unit from COGS off the latest purchase p050 landed 2026-11-02: RM 1400 quote plus RM 0 freight over 25 unit, so RM 69 on the goods at 55.2%. One row of trip t1789008851105631, its sheet's: it carries the sheet's one delivery, and is approved on its own. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-11-06 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CB8-SEG has no committed salt order on the book, so there is no rate of theirs to compare this against."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-11-06T08:15:22.779Z",
+    "type": "SELL",
+    "party": "CB8-SEG",
+    "qty": 1,
+    "total": 125,
+    "status": "Pending",
+    "raw": "SELL CB8-SEG 1 salt RM 170, nothing paid, nothing moved (order 20261106075045-ndpkra)",
+    "orderKey": "CB8-SEG|2026-11-06|170",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CB8-SEG",
+     "newId": null,
+     "date": "2026-11-06",
+     "qty": 1,
+     "total": 125,
+     "delivery": 45,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261106075045-ndpkra, acknowledged, to be delivered, delivery RM 45. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null,
+     "trip": "t1789008851105631"
+    },
+    "orderId": "20261106075045-ndpkra"
+   },
+   "decidedAt": "2026-11-06T08:15:28.368Z",
+   "decidedBy": "preapproved by Counter Admin"
+  },
+  {
+   "id": "2026-11-06T08:15:33.043Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CB8-SEG",
+    "qty": 1,
+    "total": 8,
+    "cash": 0,
+    "trip": "t1789008851105631",
+    "product": "rice",
+    "date": "2026-11-06",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261106075045-x030lw, acknowledged, to be delivered. Nothing paid and nothing handed over yet.",
+    "rids": [
+     "s340"
+    ],
+    "booked_seq": 132
+   },
+   "reasoning": "Sold 1 unit of rice to CB8-SEG for RM 8, RM 8/unit. Costed at RM 3.3/unit from COGS off the latest purchase p045 landed 2026-10-25: RM 320 quote plus RM 10 freight over 100 unit, so RM 4.7 on the goods at 58.8%. One row of trip t1789008851105631, its sheet's: the delivery rides the sheet's first order, so none is charged here, and it is approved on its own. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-11-06 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CB8-SEG has no committed rice order on the book, so there is no rate of theirs to compare this against."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-11-06T08:15:33.043Z",
+    "type": "SELL",
+    "party": "CB8-SEG",
+    "qty": 1,
+    "total": 8,
+    "status": "Pending",
+    "raw": "SELL CB8-SEG 1 rice RM 8, nothing paid, nothing moved (order 20261106075045-x030lw)",
+    "orderKey": "CB8-SEG|2026-11-06|8|rice",
+    "payload": {
+     "mode": "new",
+     "product": "rice",
+     "direction": "SELL",
+     "party": "CB8-SEG",
+     "newId": null,
+     "date": "2026-11-06",
+     "qty": 1,
+     "total": 8,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261106075045-x030lw, acknowledged, to be delivered. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null,
+     "trip": "t1789008851105631"
+    },
+    "orderId": "20261106075045-x030lw"
+   },
+   "decidedAt": "2026-11-06T08:15:39.128Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
