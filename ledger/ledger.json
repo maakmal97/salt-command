@@ -1,6 +1,6 @@
 {
- "v": "v1451",
- "stamped": "06 Nov 2026, 14:20 KL",
+ "v": "v1452",
+ "stamped": "06 Nov 2026, 15:49 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -11481,6 +11481,19 @@
     "handover": "delivered",
     "mod": "corrected on 2026-11-05: deliveredQty 0 to 2; deliveredOn (unset) to 2026-11-05; handover (unset) to delivered",
     "cost": 112
+   },
+   {
+    "customer": "CD3-TBC",
+    "qty": 2,
+    "total": 225,
+    "cash": 0,
+    "date": "2026-11-06",
+    "deliveredQty": 0,
+    "note": "<b>SALE S338: 2 UNIT OF SALT TO CD3-TBC, RM225 GOODS, PENDING.</b> Order 20261106073559-ezyxla, preapproved by Counter Admin, dated 2026-11-06, to collect. Nothing is paid and nothing handed over. The goods total of RM225 sits above the askTotal of RM215 and well above the floorTotal of RM115 for 2 unit; the rate of RM112.5 a unit is above the askPerUnit of RM107.5 and the floorPerUnit of RM57.5. CD3-TBC has 0 orders, so no median or range, nothing outstanding and nothing defaulted, against a credit cap of 1. The row carries RM56 a unit, the inventory's own rate. The drafter flagged that CD3-TBC has no committed salt order to compare against; the figures confirm there is none. Outstanding: the full RM225 and the handover.",
+    "listRM": 225,
+    "listQty": 2,
+    "road": "site",
+    "rid": "s338"
    }
   ],
   "contacts": [
@@ -12332,7 +12345,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-06T06:19:14.606Z",
+  "QUEUE_COMMITTED": "2026-11-06T07:48:28.178Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -12498,7 +12511,7 @@
     {
      "id": "cust:oneanddone",
      "sev": "note",
-     "title": "16 of 52 customers have bought exactly once"
+     "title": "17 of 53 customers have bought exactly once"
     },
     {
      "id": "cust:noreply",
@@ -16132,6 +16145,60 @@
         7445
        ]
       ],
+      "CD3-TBC": [
+       [
+        0.5,
+        80
+       ],
+       [
+        1,
+        125
+       ],
+       [
+        1.5,
+        170
+       ],
+       [
+        2,
+        225
+       ],
+       [
+        2.5,
+        270
+       ],
+       [
+        3,
+        320
+       ],
+       [
+        4,
+        410
+       ],
+       [
+        5,
+        500
+       ],
+       [
+        6.25,
+        610
+       ],
+       [
+        12.5,
+        975
+       ],
+       [
+        25,
+        1915
+       ],
+       [
+        50,
+        3835
+       ],
+       [
+        100,
+        7670
+       ]
+      ],
       "CA4-SJ": [
        [
         0.5,
@@ -16941,60 +17008,6 @@
         100,
         7670
        ]
-      ],
-      "CD3-TBC": [
-       [
-        0.5,
-        80
-       ],
-       [
-        1,
-        125
-       ],
-       [
-        1.5,
-        170
-       ],
-       [
-        2,
-        225
-       ],
-       [
-        2.5,
-        270
-       ],
-       [
-        3,
-        320
-       ],
-       [
-        4,
-        410
-       ],
-       [
-        5,
-        500
-       ],
-       [
-        6.25,
-        610
-       ],
-       [
-        12.5,
-        975
-       ],
-       [
-        25,
-        1915
-       ],
-       [
-        50,
-        3835
-       ],
-       [
-        100,
-        7670
-       ]
       ]
      },
      "partners": [
@@ -17037,6 +17050,7 @@
       "CA5-SEN": 0.3,
       "CJ4-OKR": 0,
       "CH4-MAL": 0,
+      "CD3-TBC": 0.1,
       "CA4-SJ": 0.3,
       "CN5-TAI": 0,
       "CH5-KLC": 0,
@@ -17051,8 +17065,7 @@
       "CA4-P1": 0,
       "CJ5-CHE": 0,
       "CAY4-DAM": 0.1,
-      "CB8-SEG": 0.1,
-      "CD3-TBC": 0.1
+      "CB8-SEG": 0.1
      },
      "suggest": {
       "CS6-BS": {
@@ -17195,6 +17208,10 @@
        "pct": -0.1,
        "why": "good record"
       },
+      "CD3-TBC": {
+       "pct": 0,
+       "why": ""
+      },
       "CA4-SJ": {
        "pct": 0,
        "why": ""
@@ -17252,10 +17269,6 @@
        "why": ""
       },
       "CB8-SEG": {
-       "pct": 0,
-       "why": ""
-      },
-      "CD3-TBC": {
        "pct": 0,
        "why": ""
       }
@@ -18332,6 +18345,28 @@
         450
        ]
       ],
+      "CD3-TBC": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
       "CA4-SJ": [
        [
         10,
@@ -18661,28 +18696,6 @@
         50,
         450
        ]
-      ],
-      "CD3-TBC": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
       ]
      },
      "partners": [
@@ -18725,6 +18738,7 @@
       "CA5-SEN": 0,
       "CJ4-OKR": 0,
       "CH4-MAL": 0,
+      "CD3-TBC": 0,
       "CA4-SJ": 0,
       "CN5-TAI": 0,
       "CH5-KLC": 0,
@@ -18739,8 +18753,7 @@
       "CA4-P1": 0,
       "CJ5-CHE": 0,
       "CAY4-DAM": 0,
-      "CB8-SEG": 0,
-      "CD3-TBC": 0
+      "CB8-SEG": 0
      },
      "suggest": null
     },
@@ -19781,6 +19794,28 @@
         1500
        ]
       ],
+      "CD3-TBC": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
       "CA4-SJ": [
        [
         1,
@@ -20110,28 +20145,6 @@
         30,
         1500
        ]
-      ],
-      "CD3-TBC": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
       ]
      },
      "partners": [
@@ -20174,6 +20187,7 @@
       "CA5-SEN": 0,
       "CJ4-OKR": 0,
       "CH4-MAL": 0,
+      "CD3-TBC": 0,
       "CA4-SJ": 0,
       "CN5-TAI": 0,
       "CH5-KLC": 0,
@@ -20188,8 +20202,7 @@
       "CA4-P1": 0,
       "CJ5-CHE": 0,
       "CAY4-DAM": 0,
-      "CB8-SEG": 0,
-      "CD3-TBC": 0
+      "CB8-SEG": 0
      },
      "suggest": null
     },
@@ -20899,6 +20912,20 @@
         60
        ]
       ],
+      "CD3-TBC": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        60
+       ]
+      ],
       "CA4-SJ": [
        [
         1,
@@ -21108,20 +21135,6 @@
         10,
         60
        ]
-      ],
-      "CD3-TBC": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        60
-       ]
       ]
      },
      "partners": [
@@ -21164,6 +21177,7 @@
       "CA5-SEN": 0,
       "CJ4-OKR": 0,
       "CH4-MAL": 0,
+      "CD3-TBC": 0,
       "CA4-SJ": 0,
       "CN5-TAI": 0,
       "CH5-KLC": 0,
@@ -21178,8 +21192,7 @@
       "CA4-P1": 0,
       "CJ5-CHE": 0,
       "CAY4-DAM": 0,
-      "CB8-SEG": 0,
-      "CD3-TBC": 0
+      "CB8-SEG": 0
      },
      "suggest": null
     },
@@ -22037,6 +22050,24 @@
         1500
        ]
       ],
+      "CD3-TBC": [
+       [
+        1,
+        75
+       ],
+       [
+        5,
+        375
+       ],
+       [
+        10,
+        750
+       ],
+       [
+        20,
+        1500
+       ]
+      ],
       "CA4-SJ": [
        [
         1,
@@ -22306,24 +22337,6 @@
         20,
         1500
        ]
-      ],
-      "CD3-TBC": [
-       [
-        1,
-        75
-       ],
-       [
-        5,
-        375
-       ],
-       [
-        10,
-        750
-       ],
-       [
-        20,
-        1500
-       ]
       ]
      },
      "partners": [
@@ -22366,6 +22379,7 @@
       "CA5-SEN": 0,
       "CJ4-OKR": 0,
       "CH4-MAL": 0,
+      "CD3-TBC": 0,
       "CA4-SJ": 0,
       "CN5-TAI": 0,
       "CH5-KLC": 0,
@@ -22380,8 +22394,7 @@
       "CA4-P1": 0,
       "CJ5-CHE": 0,
       "CAY4-DAM": 0,
-      "CB8-SEG": 0,
-      "CD3-TBC": 0
+      "CB8-SEG": 0
      },
      "suggest": null
     },
@@ -22903,6 +22916,16 @@
         125
        ]
       ],
+      "CD3-TBC": [
+       [
+        12,
+        60
+       ],
+       [
+        30,
+        125
+       ]
+      ],
       "CA4-SJ": [
        [
         12,
@@ -23052,16 +23075,6 @@
         30,
         125
        ]
-      ],
-      "CD3-TBC": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
       ]
      },
      "partners": [
@@ -23104,6 +23117,7 @@
       "CA5-SEN": 0,
       "CJ4-OKR": 0,
       "CH4-MAL": 0,
+      "CD3-TBC": 0,
       "CA4-SJ": 0,
       "CN5-TAI": 0,
       "CH5-KLC": 0,
@@ -23118,18 +23132,31 @@
       "CA4-P1": 0,
       "CJ5-CHE": 0,
       "CAY4-DAM": 0,
-      "CB8-SEG": 0,
-      "CD3-TBC": 0
+      "CB8-SEG": 0
      },
      "suggest": null
     }
    },
-   "v": "v1451"
+   "v": "v1452"
   },
   "OPEN": {
-   "at": "2026-11-06T06:20:16.410Z",
-   "count": 7,
+   "at": "2026-11-06T07:49:16.753Z",
+   "count": 8,
    "byKey": {
+    "CD3-TBC|2026-11-06|225": {
+     "d": "2026-11-06",
+     "p": "CD3-TBC",
+     "dir": "S",
+     "q": 2,
+     "t": 225,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 225,
+     "oweUnits": 2,
+     "rid": "s338",
+     "key": "CD3-TBC|2026-11-06|225"
+    },
     "CR3-DAM|2026-10-30|70": {
      "d": "2026-10-30",
      "p": "CR3-DAM",
@@ -23255,9 +23282,9 @@
      "free": 15.5,
      "owedOut": 0,
      "coverDays": 4,
-     "rate": 4.09,
+     "rate": 4.18,
      "owedToYou": 310,
-     "promised": 0,
+     "promised": 2,
      "short": 0
     },
     "oil": {
@@ -23324,7 +23351,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1451"
+   "v": "v1452"
   },
   "TERMS": {
    "ceiling": 250,
@@ -23332,7 +23359,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1451"
+   "v": "v1452"
   },
   "REWARD": {
    "stated": {
@@ -23350,7 +23377,7 @@
      }
     }
    },
-   "v": "v1451"
+   "v": "v1452"
   },
   "STOCK": {
    "today": "2026-11-06",
@@ -23358,7 +23385,7 @@
     "salt": {
      "shelf": 15.5,
      "free": 15.5,
-     "commit": 0,
+     "commit": 2,
      "light": "yellow",
      "coverDays": 4,
      "transit": 0
@@ -23404,7 +23431,7 @@
      "transit": 0
     }
    },
-   "v": "v1451"
+   "v": "v1452"
   }
  }
 }

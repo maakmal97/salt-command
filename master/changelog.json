@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1452",
+  "d": "06 Nov 2026",
+  "t": "A PENDING SALT ORDER FOR CD3-TBC, NOTHING YET PAID OR MOVED",
+  "n": [
+   "<b>FOLDED: ONE NEW SALT SALE, PENDING.</b> Order 20261106073559-ezyxla for 2 unit to CD3-TBC at RM225, to collect, was appended to sales as s338, preapproved by Counter Admin. CD3-TBC has no earlier orders, so there is no history to compare against.",
+   "<b>INVENTORY UNCHANGED.</b> The sale is pending, so it draws no stock and books no revenue until something moves. The shelf stays at 15.5 unit, counted on 2026-10-28, and the cost basis stays at RM56 a unit."
+  ]
+ },
+ {
   "v": "v1451",
   "d": "06 Nov 2026",
   "t": "CD3-TBC REGISTERED AS A SALT CUSTOMER",
