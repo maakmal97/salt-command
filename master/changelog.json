@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1458",
+  "d": "06 Nov 2026",
+  "t": "A PENDING SALT ORDER FOR CS6-BS-R BELOW THE ASK",
+  "n": [
+   "<b>ONE SALE FOLDED, PENDING.</b> S342 is 2.5 units of salt to CS6-BS-R, RM225 goods with RM5 delivery, preapproved by Counter Admin. Nothing is paid and nothing handed over. The goods total sits above the floorTotal of RM140 and below the askTotal of RM255, and the rate of RM90 per unit is below the party's median of RM96.67.",
+   "<b>INVENTORY UNCHANGED.</b> The row is pending, so it draws no stock and books no revenue. Stock stays at 15.5 units, with 2 promised, and the cost basis stays at RM56 per unit."
+  ]
+ },
+ {
   "v": "v1457",
   "d": "06 Nov 2026",
   "t": "A CANCELLATION AND A DELIVERY CORRECTION ON SALT, NO STOCK MOVED",

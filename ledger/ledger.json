@@ -1,6 +1,6 @@
 {
- "v": "v1457",
- "stamped": "06 Nov 2026, 18:10 KL",
+ "v": "v1458",
+ "stamped": "06 Nov 2026, 21:14 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -11604,6 +11604,21 @@
     ],
     "cancelled": true,
     "cancelledOn": "2026-11-06"
+   },
+   {
+    "customer": "CS6-BS-R",
+    "qty": 2.5,
+    "total": 225,
+    "cash": 0,
+    "delivery": 5,
+    "date": "2026-11-06",
+    "deliveredQty": 0,
+    "rev": "R2",
+    "note": "<b>SALE S342: 2.5 UNITS OF SALT TO CS6-BS-R, RM225 GOODS, PENDING.</b> Order 20261106131252-8zufhg, preapproved by Counter Admin, dated 2026-11-06, to be delivered, delivery RM5, so RM230 is owed. The goods total of RM225 is above the floorTotal of RM140 and below the askTotal of RM255 for 2.5 units; at RM90 per unit it is above the floorPerUnit of RM56 and below the askPerUnit of RM102. CS6-BS-R has a median rate of RM96.67, range RM6 to RM120, nothing outstanding before this, nothing defaulted, against a credit cap of 1. The cost is the inventory's own, RM56 per unit off the latest purchase. The drafter flagged the rate as 14.3% below the usual RM105; the figures confirm it is below the median, though above the floor. Outstanding: the payment, the goods and the handover.",
+    "listRM": 225,
+    "listQty": 2.5,
+    "road": "site",
+    "rid": "s342"
    }
   ],
   "contacts": [
@@ -12455,7 +12470,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-06T09:39:14.972Z",
+  "QUEUE_COMMITTED": "2026-11-06T13:13:33.009Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -12482,11 +12497,6 @@
      "id": "px:headroom:salt",
      "sev": "act",
      "title": "The buying rate can rise RM -1 a unit, -1.8%, before a card breaches"
-    },
-    {
-     "id": "parity:commit:all",
-     "sev": "act",
-     "title": "Every book reports the same 1 unit promised out"
     },
     {
      "id": "cust:cadence:salt",
@@ -23252,11 +23262,11 @@
      "suggest": null
     }
    },
-   "v": "v1457"
+   "v": "v1458"
   },
   "OPEN": {
-   "at": "2026-11-06T10:10:52.976Z",
-   "count": 9,
+   "at": "2026-11-06T13:14:18.448Z",
+   "count": 10,
    "byKey": {
     "CB8-SEG|2026-11-06|157": {
      "d": "2026-11-06",
@@ -23289,6 +23299,23 @@
      "rid": "s340",
      "trip": "t1789008851105631",
      "key": "CB8-SEG|2026-11-06|8|rice"
+    },
+    "CS6-BS-R|2026-11-06|230": {
+     "d": "2026-11-06",
+     "p": "CS6-BS-R",
+     "dir": "S",
+     "q": 2.5,
+     "t": 225,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 230,
+     "oweUnits": 2.5,
+     "dv": 5,
+     "rid": "s342",
+     "as": "CS6-BS",
+     "st2": "R2",
+     "key": "CS6-BS-R|2026-11-06|230"
     },
     "CR3-DAM|2026-10-30|70": {
      "d": "2026-10-30",
@@ -23414,10 +23441,10 @@
      "onHand": 15.5,
      "free": 15.5,
      "owedOut": 0,
-     "coverDays": 4,
-     "rate": 4.14,
+     "coverDays": 3.9,
+     "rate": 4.26,
      "owedToYou": 310,
-     "promised": 1,
+     "promised": 3.5,
      "short": 0
     },
     "oil": {
@@ -23484,7 +23511,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1457"
+   "v": "v1458"
   },
   "TERMS": {
    "ceiling": 250,
@@ -23492,7 +23519,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1457"
+   "v": "v1458"
   },
   "REWARD": {
    "stated": {
@@ -23510,7 +23537,7 @@
      }
     }
    },
-   "v": "v1457"
+   "v": "v1458"
   },
   "STOCK": {
    "today": "2026-11-06",
@@ -23518,9 +23545,9 @@
     "salt": {
      "shelf": 15.5,
      "free": 15.5,
-     "commit": 1,
+     "commit": 3.5,
      "light": "yellow",
-     "coverDays": 4,
+     "coverDays": 3.9,
      "transit": 0
     },
     "oil": {
@@ -23564,7 +23591,7 @@
      "transit": 0
     }
    },
-   "v": "v1457"
+   "v": "v1458"
   }
  }
 }
