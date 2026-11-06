@@ -1,0 +1,71 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-06T13:13:33.009Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CS6-BS-R",
+    "qty": 2.5,
+    "total": 225,
+    "cash": 0,
+    "delivery": 5,
+    "date": "2026-11-06",
+    "deliveredQty": 0,
+    "rev": "R2",
+    "note": "Ordered on the statements site, order 20261106131252-8zufhg, acknowledged, on behalf of a friend, to be delivered, delivery RM 5. Nothing paid and nothing handed over yet.",
+    "listRM": 225,
+    "listQty": 2.5,
+    "rids": [
+     "s342"
+    ],
+    "booked_seq": 138
+   },
+   "reasoning": "Sold 2.5 unit of salt to CS6-BS-R for RM 225, with RM 5 of delivery beside it, RM 230 owed, RM 90/unit. Costed at RM 56/unit from COGS off the latest purchase p050 landed 2026-11-02: RM 1400 quote plus RM 0 freight over 25 unit, so RM 85 on the goods at 37.8%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-11-06 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "Booked to CS6-BS-R as R2: CS6-BS buys it to sell on.",
+    "CS6-BS typically pays about RM 105/unit for salt across 23 orders; this one is RM 90, 14.3% below that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-11-06T13:13:33.009Z",
+    "type": "SELL",
+    "party": "CS6-BS-R",
+    "qty": 2.5,
+    "total": 225,
+    "status": "Pending",
+    "raw": "SELL CS6-BS-R 2.5 salt RM 230, nothing paid, nothing moved (order 20261106131252-8zufhg)",
+    "orderKey": "CS6-BS-R|2026-11-06|230",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CS6-BS",
+     "newId": null,
+     "date": "2026-11-06",
+     "qty": 2.5,
+     "total": 225,
+     "delivery": 5,
+     "cash": 0,
+     "kg": 0,
+     "assoc": "CS6-BS",
+     "stream": "R2",
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261106131252-8zufhg, acknowledged, on behalf of a friend, to be delivered, delivery RM 5. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261106131252-8zufhg",
+    "prepay": true
+   },
+   "decidedAt": "2026-11-06T13:13:37.753Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
