@@ -1,0 +1,154 @@
+{
+ "ok": true,
+ "count": 3,
+ "approved": [
+  {
+   "id": "2026-11-06T19:23:53.617Z",
+   "status": "approved",
+   "collection": "count",
+   "row": {
+    "product": "candy",
+    "qty": 2,
+    "date": "2026-11-07",
+    "was": 3,
+    "drift": -1,
+    "rids": [],
+    "booked_seq": 148
+   },
+   "reasoning": "Counted 2 unit of candy by hand on 2026-11-07, against 3 on the book: a difference of -1. The last count was 2026-10-20. A count wins over the ledger, and the fold sets the stated stock and moves COUNT_ON to this date.",
+   "flags": [
+    "The book says 3 and you counted 2: -1 unit unaccounted for. A COUNT ALWAYS WINS, so this becomes the inventory and the gap books as shrinkage across every unit sold."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-11-06T19:23:53.617Z",
+    "type": "COUNT",
+    "party": "stock count",
+    "qty": 2,
+    "total": null,
+    "status": "count",
+    "raw": "Stock count: 2 unit candy on hand on 2026-11-07",
+    "payload": {
+     "mode": "count",
+     "product": "candy",
+     "direction": null,
+     "party": null,
+     "date": "2026-11-07",
+     "qty": 2,
+     "total": null,
+     "cash": null,
+     "kg": 2,
+     "assoc": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null
+    },
+    "makerRequest": "aeee88301f318d48e2872de3e84ea83bdde26b01d4162cea9d21df7fd977355c"
+   },
+   "decidedAt": "2026-11-06T19:24:34.664Z",
+   "decidedBy": "Counter Admin"
+  },
+  {
+   "id": "2026-11-06T19:24:11.452Z",
+   "status": "approved",
+   "collection": "count",
+   "row": {
+    "product": "rice",
+    "qty": 43,
+    "date": "2026-11-07",
+    "was": 59,
+    "drift": -16,
+    "rids": [],
+    "booked_seq": 149
+   },
+   "reasoning": "Counted 43 unit of rice by hand on 2026-11-07, against 59 on the book: a difference of -16. The last count was 2026-11-02. A count wins over the ledger, and the fold sets the stated stock and moves COUNT_ON to this date.",
+   "flags": [
+    "The book says 59 and you counted 43: -16 unit unaccounted for. A COUNT ALWAYS WINS, so this becomes the inventory and the gap books as shrinkage across every unit sold."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-11-06T19:24:11.452Z",
+    "type": "COUNT",
+    "party": "stock count",
+    "qty": 43,
+    "total": null,
+    "status": "count",
+    "raw": "Stock count: 43 unit rice on hand on 2026-11-07",
+    "payload": {
+     "mode": "count",
+     "product": "rice",
+     "direction": null,
+     "party": null,
+     "date": "2026-11-07",
+     "qty": 43,
+     "total": null,
+     "cash": null,
+     "kg": 43,
+     "assoc": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null
+    },
+    "makerRequest": "fedca603fcd0b4c4542bf71b785200a7a910b288f960fa048aef2b70837a91ba"
+   },
+   "decidedAt": "2026-11-06T19:24:35.070Z",
+   "decidedBy": "Counter Admin"
+  },
+  {
+   "id": "2026-11-06T19:24:24.493Z",
+   "status": "approved",
+   "collection": "count",
+   "row": {
+    "product": "salt",
+    "qty": 5,
+    "date": "2026-11-07",
+    "was": 12,
+    "drift": -7,
+    "rids": [],
+    "booked_seq": 150
+   },
+   "reasoning": "Counted 5 unit of salt by hand on 2026-11-07, against 12 on the book: a difference of -7. The last count was 2026-10-28. A count wins over the ledger, and the fold sets the stated stock and moves COUNT_ON to this date.",
+   "flags": [
+    "The book says 12 and you counted 5: -7 unit unaccounted for. A COUNT ALWAYS WINS, so this becomes the inventory and the gap books as shrinkage across every unit sold.",
+    "5 unit of this inventory is OWED OUT and already paid for. If the count is right, that stock is not there to deliver, which is a different problem from shrinkage and a worse one."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-11-06T19:24:24.493Z",
+    "type": "COUNT",
+    "party": "stock count",
+    "qty": 5,
+    "total": null,
+    "status": "count",
+    "raw": "Stock count: 5 unit salt on hand on 2026-11-07",
+    "payload": {
+     "mode": "count",
+     "product": "salt",
+     "direction": null,
+     "party": null,
+     "date": "2026-11-07",
+     "qty": 5,
+     "total": null,
+     "cash": null,
+     "kg": 5,
+     "assoc": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null
+    },
+    "makerRequest": "c215a27723e80433ab0d7ec81181604b8496ad2f5dc45af4cda587e9e42e396c"
+   },
+   "decidedAt": "2026-11-06T19:24:35.502Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
