@@ -1,0 +1,81 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-06T13:15:07.089Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s342",
+    "qty": 2.5,
+    "total": 225,
+    "cash": 0,
+    "date": "2026-11-06",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 2.5
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-11-06"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "delivered"
+     }
+    ],
+    "customer": "CS6-BS-R",
+    "rids": [],
+    "booked_seq": 139
+   },
+   "reasoning": "Correction against CS6-BS-R's order of 2.5 unit for RM 225 dated 2026-11-06 (s342). Sets deliveredQty from 0 to 2.5, deliveredOn from unset to 2026-11-06, handover from unset to delivered. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CS6-BS typically pays about RM 105/unit for salt across 23 orders; this one is RM 90, 14.3% below that.",
+    "This is an ADVANCE: 2.5 unit goes out with RM 230 unpaid. Check it against CS6-BS's credit cap."
+   ],
+   "amends": "s342",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-11-06T13:15:07.089Z",
+    "type": "SELL",
+    "party": "CS6-BS-R",
+    "qty": 2.5,
+    "total": 0,
+    "status": "Handover",
+    "raw": "2.5 unit delivered to CS6-BS-R, order 20261106131252-8zufhg, on 2026-11-06",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CS6-BS-R",
+     "rid": null,
+     "orderKey": "CS6-BS-R|2026-11-06|230",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-11-06",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 2.5,
+      "deliveredOn": "2026-11-06",
+      "handover": "delivered"
+     },
+     "note": "2.5 unit delivered for order 20261106131252-8zufhg."
+    },
+    "orderId": "20261106131252-8zufhg"
+   },
+   "decidedAt": "2026-11-06T13:15:10.780Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
