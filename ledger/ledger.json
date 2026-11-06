@@ -1,6 +1,6 @@
 {
- "v": "v1455",
- "stamped": "06 Nov 2026, 16:34 KL",
+ "v": "v1456",
+ "stamped": "06 Nov 2026, 17:26 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -11544,16 +11544,37 @@
    {
     "customer": "CD3-TBC",
     "qty": 5,
-    "total": 500,
+    "total": 475,
     "cash": 0,
-    "delivery": 25,
+    "delivery": 35,
     "date": "2026-11-06",
     "deliveredQty": 0,
-    "note": "<b>SALE S341: 5 UNITS OF SALT TO CD3-TBC, RM500 GOODS, PENDING.</b> Order 20261106083110-edenpg, preapproved by Counter Admin, dated 2026-11-06, to be delivered, with delivery of RM25. Nothing is paid and nothing handed over. The goods total of RM500 exceeds the askTotal of RM475 and the floorTotal of RM280 for 5 units; the rate of RM100 a unit exceeds the askPerUnit of RM95 and the floorPerUnit of RM56. CD3-TBC has 1 earlier order (s338, 2 units, cancelled), so no median or range, nothing outstanding and nothing defaulted, against a credit cap of 1. The row carries RM56 a unit, the inventory's own rate. The drafter flagged that CD3-TBC has no committed salt order to compare against; the figures confirm there is none. Outstanding: the full RM500, the RM25 delivery and the handover.",
+    "note": "<b>CORRECTION ON S341: GOODS RM500 TO RM475, DELIVERY RM25 TO RM35.</b> Order 20261106083110-edenpg, 5 units of salt to CD3-TBC, amended after Accept, preapproved by Counter Admin, dated 2026-11-06. The goods total of RM475 now equals the askTotal of RM475 and exceeds the floorTotal of RM280 for 5 units; at RM500 it stood above the ask. CD3-TBC has a median rate of RM100, range RM100 to RM100, RM525 outstanding before this, nothing defaulted. No cash or stock moves, so the cost stays the inventory's own. The drafter flagged no committed salt order of theirs to compare against; the dossier shows none. Outstanding: the goods, the RM35 delivery and the handover. <b>SALE S341: 5 UNITS OF SALT TO CD3-TBC, RM500 GOODS, PENDING.</b> Order 20261106083110-edenpg, preapproved by Counter Admin, dated 2026-11-06, to be delivered, with delivery of RM25. Nothing is paid and nothing handed over. The goods total of RM500 exceeds the askTotal of RM475 and the floorTotal of RM280 for 5 units; the rate of RM100 a unit exceeds the askPerUnit of RM95 and the floorPerUnit of RM56. CD3-TBC has 1 earlier order (s338, 2 units, cancelled), so no median or range, nothing outstanding and nothing defaulted, against a credit cap of 1. The row carries RM56 a unit, the inventory's own rate. The drafter flagged that CD3-TBC has no committed salt order to compare against; the figures confirm there is none. Outstanding: the full RM500, the RM25 delivery and the handover.",
     "listRM": 500,
     "listQty": 5,
     "road": "site",
-    "rid": "s341"
+    "rid": "s341",
+    "mod": "corrected on 2026-11-06: total 500 to 475; delivery 25 to 35",
+    "amend": [
+     {
+      "date": "2026-11-06",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-11-06",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S341: GOODS RM500 TO RM475, DELIVERY RM25 TO RM35.</b> Order 20261106083110-edenpg, 5 units of salt to CD3-TBC, amended after Accept, preapproved by Counter Admin, dated 2026-11-06. The goods total of RM475 now equals the askTotal of RM475 and exceeds the floorTotal of RM280 for 5 units; at RM500 it stood above the ask. CD3-TBC has a median rate of RM100, range RM100 to RM100, RM525 outstanding before this, nothing defaulted. No cash or stock moves, so the cost stays the inventory's own. The drafter flagged no committed salt order of theirs to compare against; the dossier shows none. Outstanding: the goods, the RM35 delivery and the handover.",
+      "was": {
+       "total": 500,
+       "delivery": 25
+      }
+     }
+    ]
    }
   ],
   "contacts": [
@@ -12405,7 +12426,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-06T08:32:51.194Z",
+  "QUEUE_COMMITTED": "2026-11-06T09:26:04.239Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -23197,10 +23218,10 @@
      "suggest": null
     }
    },
-   "v": "v1455"
+   "v": "v1456"
   },
   "OPEN": {
-   "at": "2026-11-06T08:34:30.471Z",
+   "at": "2026-11-06T09:27:02.029Z",
    "count": 10,
    "byKey": {
     "CB8-SEG|2026-11-06|170": {
@@ -23235,20 +23256,20 @@
      "trip": "t1789008851105631",
      "key": "CB8-SEG|2026-11-06|8|rice"
     },
-    "CD3-TBC|2026-11-06|525": {
+    "CD3-TBC|2026-11-06|510": {
      "d": "2026-11-06",
      "p": "CD3-TBC",
      "dir": "S",
      "q": 5,
-     "t": 500,
+     "t": 475,
      "cash": 0,
      "mv": 0,
      "st": "part",
-     "oweRM": 525,
+     "oweRM": 510,
      "oweUnits": 5,
-     "dv": 25,
+     "dv": 35,
      "rid": "s341",
-     "key": "CD3-TBC|2026-11-06|525"
+     "key": "CD3-TBC|2026-11-06|510"
     },
     "CR3-DAM|2026-10-30|70": {
      "d": "2026-10-30",
@@ -23444,7 +23465,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1455"
+   "v": "v1456"
   },
   "TERMS": {
    "ceiling": 250,
@@ -23452,7 +23473,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1455"
+   "v": "v1456"
   },
   "REWARD": {
    "stated": {
@@ -23470,7 +23491,7 @@
      }
     }
    },
-   "v": "v1455"
+   "v": "v1456"
   },
   "STOCK": {
    "today": "2026-11-06",
@@ -23524,7 +23545,7 @@
      "transit": 0
     }
    },
-   "v": "v1455"
+   "v": "v1456"
   }
  }
 }
