@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1460",
+  "d": "06 Nov 2026",
+  "t": "CASH OF RM230 SETTLES THE S342 SALT ORDER",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED:</b> RM230 cash at the counter on 06 Nov 2026 was recorded against s342 for CS6-BS-R, preapproved by Counter Admin. It settles the order in full, leaving RM0 and 0 unit outstanding. Nothing was unusual in the figures themselves.",
+   "<b>INVENTORY UNCHANGED:</b> the fulfilment moves cash only and no units, so the shelf stays at 13 and the stock cost stays at RM56."
+  ]
+ },
+ {
   "v": "v1459",
   "d": "06 Nov 2026",
   "t": "DELIVERY OF S342 RECORDED, 2.5 UNIT OF SALT OUT",
