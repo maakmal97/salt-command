@@ -1,0 +1,96 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-06T06:14:34.207Z",
+   "status": "approved",
+   "collection": "roster",
+   "row": {
+    "code": "CB8-SEG",
+    "kind": "customer",
+    "parent": null,
+    "note": null,
+    "geo": [
+     3.19,
+     101.66,
+     "Segambut"
+    ],
+    "tiers": {
+     "salt": 0.1
+    },
+    "unit": "pct"
+   },
+   "reasoning": "Registers CB8-SEG as a customer. It starts them at Salt 0.1. It touches no figure: the fold appends the code to the roster. THE NAME AND THE PLACE ARE NOT HERE AND MUST NOT BE: the directory is typed at the laptop and never travels.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-11-06T06:14:34.207Z",
+    "type": "ADDID",
+    "party": "CB8-SEG",
+    "qty": null,
+    "total": null,
+    "status": "addid",
+    "raw": "Add CB8-SEG to the roster as customer",
+    "payload": {
+     "mode": "addid",
+     "code": "CB8-SEG",
+     "kind": "customer",
+     "parent": null,
+     "rev": null,
+     "note": null,
+     "geo": [
+      3.19,
+      101.66,
+      "Segambut"
+     ],
+     "tiers": {
+      "salt": 0.1
+     },
+     "unit": "pct"
+    }
+   },
+   "decidedAt": "2026-11-06T06:15:04.867Z",
+   "decidedBy": "Counter Admin",
+   "vaultReceipt": {
+    "id": "2026-11-06T06:14:34.207Z",
+    "fingerprint": "ec8cc2f6775d4730e0681f3270b9f1ec720b882cc5df09046819683de694bc48",
+    "request_fingerprint": "34cde0250f67052cceec3974cddf7894a2887c00d11abbdafacf824a245cc6b3",
+    "revision": 12,
+    "operation": "add-id"
+   },
+   "vaultOutbox": {
+    "id": "2026-11-06T06:14:34.207Z",
+    "entry": {
+     "at": "2026-11-06T06:14:34.207Z",
+     "type": "ADDID",
+     "party": "CB8-SEG",
+     "qty": null,
+     "total": null,
+     "status": "addid",
+     "raw": "Add CB8-SEG to the roster as customer",
+     "payload": {
+      "mode": "addid",
+      "code": "CB8-SEG",
+      "kind": "customer",
+      "parent": null,
+      "rev": null,
+      "note": null,
+      "geo": [
+       3.19,
+       101.66,
+       "Segambut"
+      ],
+      "tiers": {
+       "salt": 0.1
+      },
+      "unit": "pct"
+     }
+    },
+    "state": "complete",
+    "completed_at": "2026-11-06T06:14:56.697Z"
+   }
+  }
+ ]
+}
