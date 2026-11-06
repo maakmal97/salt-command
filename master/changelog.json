@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1455",
+  "d": "06 Nov 2026",
+  "t": "A PENDING SALT ORDER FOR CD3-TBC, NOTHING MOVED",
+  "n": [
+   "<b>ONE PENDING SALE FOLDED.</b> Sale s341, 5 units of salt to CD3-TBC at RM500 goods with RM25 delivery, was appended to sales from an order placed on the statements site. It is pending: nothing is paid and nothing handed over. It sits above the desk's ask, and CD3-TBC has no committed salt order to compare against.",
+   "<b>INVENTORY UNCHANGED.</b> The row draws no stock and books no revenue until something moves. Stock stays at 15.5 units, with 2 promised, and the cost basis stays at RM56 a unit."
+  ]
+ },
+ {
   "v": "v1454",
   "d": "06 Nov 2026",
   "t": "ONE SALT ORDER WITHDRAWN BY ITS CUSTOMER, NOTHING MOVED",
