@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1461",
+  "d": "07 Nov 2026",
+  "t": "TWO DELIVERIES TO CB8-SEG RECORDED, RICE AND SALT",
+  "n": [
+   "<b>TWO CORRECTIONS FOLDED:</b> s340 (1 unit of rice, RM8 goods) and s339 (1 unit of salt, RM125 goods), both to CB8-SEG, both marked delivered on 07 Nov 2026 and both preapproved by Counter Admin. Each sets deliveredQty to 1, deliveredOn to 2026-11-07 and handover to delivered. Both were advances with nothing paid, and CB8-SEG has no committed order of its own to compare against.",
+   "<b>INVENTORY:</b> the shelf rolls out by 1 unit of rice and 1 unit of salt, 2 units in all. Nothing landed, so the cost basis stays at RM56 per unit. The s339 trail of 2 steps no longer adds up to the figure set directly; the correction is recorded beside it."
+  ]
+ },
+ {
   "v": "v1460",
   "d": "06 Nov 2026",
   "t": "CASH OF RM230 SETTLES THE S342 SALT ORDER",
