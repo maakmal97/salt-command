@@ -1,6 +1,6 @@
 {
- "v": "v1466",
- "stamped": "07 Nov 2026, 02:58 KL",
+ "v": "v1467",
+ "stamped": "07 Nov 2026, 03:11 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -11726,7 +11726,7 @@
     "customer": "CE4-AD",
     "qty": 5,
     "total": 475,
-    "cash": 0,
+    "cash": 510,
     "delivery": 35,
     "date": "2026-11-07",
     "deliveredQty": 0,
@@ -11734,7 +11734,24 @@
     "listRM": 475,
     "listQty": 5,
     "road": "site",
-    "rid": "s343"
+    "rid": "s343",
+    "amend": [
+     {
+      "date": "2026-11-07",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-11-07",
+      "kind": "Fulfilment",
+      "cash": 510,
+      "kg": 0,
+      "note": "<b>PAYMENT OF RM510 ON SALE S343, CE4-AD, PAID NOT DELIVERED.</b> Order 20261106184918-f5ea3g, paid on 07 Nov 2026 by QR via TNG, preapproved by Counter Admin. It covers RM475 goods and RM35 delivery. The goods of RM475 sit above the floorTotal of RM280 and level with the askTotal of RM475. CE4-AD has a median rate of RM94, range RM80 to RM95, and RM510 was outstanding before this payment, with no units on credit and nothing defaulted. The drafter raised no flags, and the figures leave nothing to answer. The cost stays the inventory's own rate of RM56 per unit. This leaves RM0 owing and 5 units still to be delivered."
+     }
+    ],
+    "paidOn": "2026-11-07"
    }
   ],
   "contacts": [
@@ -12591,7 +12608,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-06T18:57:30.341Z",
+  "QUEUE_COMMITTED": "2026-11-06T19:02:37.963Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -12622,7 +12639,7 @@
     {
      "id": "cust:cadence:salt",
      "sev": "watch",
-     "title": "15 customers are past their own habit on salt"
+     "title": "14 customers are past their own habit on salt"
     },
     {
      "id": "cust:cadence:oil",
@@ -12642,7 +12659,7 @@
     {
      "id": "int:nocost",
      "sev": "watch",
-     "title": "3 priced sales carry no cost of their own"
+     "title": "4 priced sales carry no cost of their own"
     },
     {
      "id": "int:underfloor",
@@ -12662,7 +12679,7 @@
     {
      "id": "promo:revive:salt",
      "sev": "note",
-     "title": "Three messages are worth about RM 670 on salt"
+     "title": "Three messages are worth about RM 650 on salt"
     },
     {
      "id": "dup:CS6-BS-R:2026-09-16:2026-09-19:420",
@@ -13179,18 +13196,18 @@
     "CE4-AD": {
      "salt": {
       "name": "rare and large",
-      "orders": 3,
+      "orders": 4,
       "tenureDays": 102,
-      "sinceLastDays": 41,
-      "perMonth": 0.9,
-      "unitsPerMonth": 4.48,
+      "sinceLastDays": 0,
+      "perMonth": 1.19,
+      "unitsPerMonth": 5.97,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": true
+      "rare": false
      }
     },
     "CC9-OKR": {
@@ -17383,7 +17400,7 @@
        "why": "paid late"
       },
       "CE4-AD": {
-       "pct": -0.15,
+       "pct": -0.2,
        "why": "good record"
       },
       "CC9-OKR": {
@@ -23415,10 +23432,10 @@
      "suggest": null
     }
    },
-   "v": "v1466"
+   "v": "v1467"
   },
   "OPEN": {
-   "at": "2026-11-06T18:58:25.162Z",
+   "at": "2026-11-06T19:11:17.249Z",
    "count": 8,
    "byKey": {
     "CE4-AD|2026-11-07|510": {
@@ -23427,13 +23444,13 @@
      "dir": "S",
      "q": 5,
      "t": 475,
-     "cash": 0,
+     "cash": 510,
      "mv": 0,
-     "st": "part",
-     "oweRM": 510,
+     "st": "oweStock",
      "oweUnits": 5,
      "dv": 35,
      "rid": "s343",
+     "paidOn": "2026-11-07",
      "key": "CE4-AD|2026-11-07|510"
     },
     "CR3-DAM|2026-10-30|70": {
@@ -23558,9 +23575,9 @@
     "salt": {
      "name": "Salt",
      "onHand": 12,
-     "free": 12,
-     "owedOut": 0,
-     "coverDays": 3,
+     "free": 7,
+     "owedOut": 5,
+     "coverDays": 1.9,
      "rate": 4.29,
      "owedToYou": 310,
      "promised": 5,
@@ -23630,7 +23647,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1466"
+   "v": "v1467"
   },
   "TERMS": {
    "ceiling": 250,
@@ -23638,7 +23655,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1466"
+   "v": "v1467"
   },
   "REWARD": {
    "stated": {
@@ -23656,17 +23673,17 @@
      }
     }
    },
-   "v": "v1466"
+   "v": "v1467"
   },
   "STOCK": {
    "today": "2026-11-07",
    "books": {
     "salt": {
      "shelf": 12,
-     "free": 12,
+     "free": 7,
      "commit": 5,
      "light": "amber",
-     "coverDays": 3,
+     "coverDays": 1.9,
      "transit": 0
     },
     "oil": {
@@ -23710,7 +23727,7 @@
      "transit": 0
     }
    },
-   "v": "v1466"
+   "v": "v1467"
   }
  }
 }

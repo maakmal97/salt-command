@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1467",
+  "d": "07 Nov 2026",
+  "t": "PAYMENT OF RM510 RECEIVED ON SALE S343, GOODS STILL OWED",
+  "n": [
+   "<b>ONE PAYMENT FOLDED.</b> CE4-AD paid RM510 on 07 Nov 2026 by QR via TNG against order s343, covering RM475 goods and RM35 delivery. The payment was preapproved by Counter Admin and the drafter raised no flags. Nothing was handed over, so 5 units remain owed to CE4-AD.",
+   "<b>INVENTORY UNCHANGED.</b> No units moved and no lot landed. Stock stays at 12, with 5 promised against s343, and the cost basis stays at RM56 per unit."
+  ]
+ },
+ {
   "v": "v1466",
   "d": "07 Nov 2026",
   "t": "CD3-TBC RE-KEYED TO CD4-DAM, NO CASH OR STOCK MOVED",
