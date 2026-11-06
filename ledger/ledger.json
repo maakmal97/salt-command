@@ -1,6 +1,6 @@
 {
- "v": "v1452",
- "stamped": "06 Nov 2026, 15:49 KL",
+ "v": "v1453",
+ "stamped": "06 Nov 2026, 16:16 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -11494,6 +11494,34 @@
     "listQty": 2,
     "road": "site",
     "rid": "s338"
+   },
+   {
+    "customer": "CB8-SEG",
+    "qty": 1,
+    "total": 125,
+    "cash": 0,
+    "delivery": 45,
+    "trip": "t1789008851105631",
+    "date": "2026-11-06",
+    "deliveredQty": 0,
+    "note": "<b>SALE S339: 1 UNIT OF SALT TO CB8-SEG, RM125 GOODS, PLUS RM45 DELIVERY, PENDING.</b> Order 20261106075045-ndpkra, preapproved by Counter Admin, dated 2026-11-06, to be delivered on trip t1789008851105631. Nothing is paid and nothing handed over. The goods total of RM125 sits above the askTotal of RM120 and well above the floorTotal of RM60 for 1 unit; the rate of RM125 a unit is above the askPerUnit of RM120 and the floorPerUnit of RM60. CB8-SEG has 0 orders, so no median or range, nothing outstanding and nothing defaulted, against a credit cap of 1. The row carries RM56 a unit, the inventory's own rate. The drafter flagged that CB8-SEG has no committed salt order to compare against; the figures confirm there is none. Outstanding: RM170 in all and the delivery.",
+    "listRM": 125,
+    "listQty": 1,
+    "road": "site",
+    "rid": "s339"
+   },
+   {
+    "customer": "CB8-SEG",
+    "qty": 1,
+    "total": 8,
+    "cash": 0,
+    "trip": "t1789008851105631",
+    "product": "rice",
+    "date": "2026-11-06",
+    "deliveredQty": 0,
+    "note": "<b>SALE S340: 1 UNIT OF RICE TO CB8-SEG, RM8 GOODS, PENDING.</b> Order 20261106075045-x030lw, preapproved by Counter Admin, dated 2026-11-06, on trip t1789008851105631, its delivery carried on the salt row. Nothing is paid and nothing handed over. The goods total of RM8 equals the askTotal of RM8 and sits above the floorTotal of RM5 for 1 unit; the rate of RM8 a unit matches the askPerUnit of RM8 and exceeds the floorPerUnit of RM5. CB8-SEG has 0 orders, so no median or range, nothing outstanding and nothing defaulted, against a credit cap of 1. The row carries RM3.3 a unit, the inventory's own rate. The drafter flagged that CB8-SEG has no committed rice order to compare against; the figures confirm there is none. Outstanding: the full RM8 and the handover.",
+    "road": "site",
+    "rid": "s340"
    }
   ],
   "contacts": [
@@ -12345,7 +12373,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-06T07:48:28.178Z",
+  "QUEUE_COMMITTED": "2026-11-06T08:15:33.043Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -12511,7 +12539,7 @@
     {
      "id": "cust:oneanddone",
      "sev": "note",
-     "title": "17 of 53 customers have bought exactly once"
+     "title": "18 of 54 customers have bought exactly once"
     },
     {
      "id": "cust:noreply",
@@ -16523,6 +16551,60 @@
         8120
        ]
       ],
+      "CB8-SEG": [
+       [
+        0.5,
+        80
+       ],
+       [
+        1,
+        125
+       ],
+       [
+        1.5,
+        170
+       ],
+       [
+        2,
+        225
+       ],
+       [
+        2.5,
+        270
+       ],
+       [
+        3,
+        320
+       ],
+       [
+        4,
+        410
+       ],
+       [
+        5,
+        500
+       ],
+       [
+        6.25,
+        610
+       ],
+       [
+        12.5,
+        975
+       ],
+       [
+        25,
+        1915
+       ],
+       [
+        50,
+        3835
+       ],
+       [
+        100,
+        7670
+       ]
+      ],
       "CR3-PUD": [
        [
         0.5,
@@ -16954,60 +17036,6 @@
         100,
         7670
        ]
-      ],
-      "CB8-SEG": [
-       [
-        0.5,
-        80
-       ],
-       [
-        1,
-        125
-       ],
-       [
-        1.5,
-        170
-       ],
-       [
-        2,
-        225
-       ],
-       [
-        2.5,
-        270
-       ],
-       [
-        3,
-        320
-       ],
-       [
-        4,
-        410
-       ],
-       [
-        5,
-        500
-       ],
-       [
-        6.25,
-        610
-       ],
-       [
-        12.5,
-        975
-       ],
-       [
-        25,
-        1915
-       ],
-       [
-        50,
-        3835
-       ],
-       [
-        100,
-        7670
-       ]
       ]
      },
      "partners": [
@@ -17057,6 +17085,7 @@
       "CS11-AMP": 0.2,
       "CD4-CS": 0,
       "CA6-SET": 0.3,
+      "CB8-SEG": 0.1,
       "CR3-PUD": 0,
       "CD7-SEG": 0,
       "CB7-BJ": 0,
@@ -17064,8 +17093,7 @@
       "CN4-MC": 0,
       "CA4-P1": 0,
       "CJ5-CHE": 0,
-      "CAY4-DAM": 0.1,
-      "CB8-SEG": 0.1
+      "CAY4-DAM": 0.1
      },
      "suggest": {
       "CS6-BS": {
@@ -17236,6 +17264,10 @@
        "pct": 0,
        "why": ""
       },
+      "CB8-SEG": {
+       "pct": 0,
+       "why": ""
+      },
       "CR3-PUD": {
        "pct": 0,
        "why": ""
@@ -17265,10 +17297,6 @@
        "why": ""
       },
       "CAY4-DAM": {
-       "pct": 0,
-       "why": ""
-      },
-      "CB8-SEG": {
        "pct": 0,
        "why": ""
       }
@@ -18499,6 +18527,28 @@
         450
        ]
       ],
+      "CB8-SEG": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
       "CR3-PUD": [
        [
         10,
@@ -18674,28 +18724,6 @@
         50,
         450
        ]
-      ],
-      "CB8-SEG": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
       ]
      },
      "partners": [
@@ -18745,6 +18773,7 @@
       "CS11-AMP": 0,
       "CD4-CS": 0,
       "CA6-SET": 0,
+      "CB8-SEG": 0,
       "CR3-PUD": 0,
       "CD7-SEG": 0,
       "CB7-BJ": 0,
@@ -18752,8 +18781,7 @@
       "CN4-MC": 0,
       "CA4-P1": 0,
       "CJ5-CHE": 0,
-      "CAY4-DAM": 0,
-      "CB8-SEG": 0
+      "CAY4-DAM": 0
      },
      "suggest": null
     },
@@ -19948,6 +19976,28 @@
         1500
        ]
       ],
+      "CB8-SEG": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
       "CR3-PUD": [
        [
         1,
@@ -20123,28 +20173,6 @@
         30,
         1500
        ]
-      ],
-      "CB8-SEG": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
       ]
      },
      "partners": [
@@ -20194,6 +20222,7 @@
       "CS11-AMP": 0,
       "CD4-CS": 0,
       "CA6-SET": 0,
+      "CB8-SEG": 0,
       "CR3-PUD": 0,
       "CD7-SEG": 0,
       "CB7-BJ": 0,
@@ -20201,8 +20230,7 @@
       "CN4-MC": 0,
       "CA4-P1": 0,
       "CJ5-CHE": 0,
-      "CAY4-DAM": 0,
-      "CB8-SEG": 0
+      "CAY4-DAM": 0
      },
      "suggest": null
     },
@@ -21010,6 +21038,20 @@
         60
        ]
       ],
+      "CB8-SEG": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        60
+       ]
+      ],
       "CR3-PUD": [
        [
         1,
@@ -21121,20 +21163,6 @@
         10,
         60
        ]
-      ],
-      "CB8-SEG": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        60
-       ]
       ]
      },
      "partners": [
@@ -21184,6 +21212,7 @@
       "CS11-AMP": 0,
       "CD4-CS": 0,
       "CA6-SET": 0,
+      "CB8-SEG": 0,
       "CR3-PUD": 0,
       "CD7-SEG": 0,
       "CB7-BJ": 0,
@@ -21191,8 +21220,7 @@
       "CN4-MC": 0,
       "CA4-P1": 0,
       "CJ5-CHE": 0,
-      "CAY4-DAM": 0,
-      "CB8-SEG": 0
+      "CAY4-DAM": 0
      },
      "suggest": null
     },
@@ -22176,6 +22204,24 @@
         1500
        ]
       ],
+      "CB8-SEG": [
+       [
+        1,
+        75
+       ],
+       [
+        5,
+        375
+       ],
+       [
+        10,
+        750
+       ],
+       [
+        20,
+        1500
+       ]
+      ],
       "CR3-PUD": [
        [
         1,
@@ -22319,24 +22365,6 @@
         20,
         1500
        ]
-      ],
-      "CB8-SEG": [
-       [
-        1,
-        75
-       ],
-       [
-        5,
-        375
-       ],
-       [
-        10,
-        750
-       ],
-       [
-        20,
-        1500
-       ]
       ]
      },
      "partners": [
@@ -22386,6 +22414,7 @@
       "CS11-AMP": 0,
       "CD4-CS": 0,
       "CA6-SET": 0,
+      "CB8-SEG": 0,
       "CR3-PUD": 0,
       "CD7-SEG": 0,
       "CB7-BJ": 0,
@@ -22393,8 +22422,7 @@
       "CN4-MC": 0,
       "CA4-P1": 0,
       "CJ5-CHE": 0,
-      "CAY4-DAM": 0,
-      "CB8-SEG": 0
+      "CAY4-DAM": 0
      },
      "suggest": null
     },
@@ -22986,6 +23014,16 @@
         125
        ]
       ],
+      "CB8-SEG": [
+       [
+        12,
+        60
+       ],
+       [
+        30,
+        125
+       ]
+      ],
       "CR3-PUD": [
        [
         12,
@@ -23065,16 +23103,6 @@
         30,
         125
        ]
-      ],
-      "CB8-SEG": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
       ]
      },
      "partners": [
@@ -23124,6 +23152,7 @@
       "CS11-AMP": 0,
       "CD4-CS": 0,
       "CA6-SET": 0,
+      "CB8-SEG": 0,
       "CR3-PUD": 0,
       "CD7-SEG": 0,
       "CB7-BJ": 0,
@@ -23131,17 +23160,16 @@
       "CN4-MC": 0,
       "CA4-P1": 0,
       "CJ5-CHE": 0,
-      "CAY4-DAM": 0,
-      "CB8-SEG": 0
+      "CAY4-DAM": 0
      },
      "suggest": null
     }
    },
-   "v": "v1452"
+   "v": "v1453"
   },
   "OPEN": {
-   "at": "2026-11-06T07:49:16.753Z",
-   "count": 8,
+   "at": "2026-11-06T08:16:12.211Z",
+   "count": 10,
    "byKey": {
     "CD3-TBC|2026-11-06|225": {
      "d": "2026-11-06",
@@ -23156,6 +23184,38 @@
      "oweUnits": 2,
      "rid": "s338",
      "key": "CD3-TBC|2026-11-06|225"
+    },
+    "CB8-SEG|2026-11-06|170": {
+     "d": "2026-11-06",
+     "p": "CB8-SEG",
+     "dir": "S",
+     "q": 1,
+     "t": 125,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 170,
+     "oweUnits": 1,
+     "dv": 45,
+     "rid": "s339",
+     "trip": "t1789008851105631",
+     "key": "CB8-SEG|2026-11-06|170"
+    },
+    "CB8-SEG|2026-11-06|8|rice": {
+     "d": "2026-11-06",
+     "p": "CB8-SEG",
+     "dir": "S",
+     "q": 1,
+     "t": 8,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 8,
+     "oweUnits": 1,
+     "pr": "rice",
+     "rid": "s340",
+     "trip": "t1789008851105631",
+     "key": "CB8-SEG|2026-11-06|8|rice"
     },
     "CR3-DAM|2026-10-30|70": {
      "d": "2026-10-30",
@@ -23281,10 +23341,10 @@
      "onHand": 15.5,
      "free": 15.5,
      "owedOut": 0,
-     "coverDays": 4,
-     "rate": 4.18,
+     "coverDays": 3.9,
+     "rate": 4.23,
      "owedToYou": 310,
-     "promised": 2,
+     "promised": 3,
      "short": 0
     },
     "oil": {
@@ -23314,10 +23374,10 @@
      "onHand": 60,
      "free": 60,
      "owedOut": 0,
-     "coverDays": 19.6,
-     "rate": 2.95,
+     "coverDays": 19.8,
+     "rate": 3.01,
      "owedToYou": 15,
-     "promised": 0,
+     "promised": 1,
      "short": 0
     },
     "gas": {
@@ -23351,7 +23411,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1452"
+   "v": "v1453"
   },
   "TERMS": {
    "ceiling": 250,
@@ -23359,7 +23419,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1452"
+   "v": "v1453"
   },
   "REWARD": {
    "stated": {
@@ -23377,7 +23437,7 @@
      }
     }
    },
-   "v": "v1452"
+   "v": "v1453"
   },
   "STOCK": {
    "today": "2026-11-06",
@@ -23385,9 +23445,9 @@
     "salt": {
      "shelf": 15.5,
      "free": 15.5,
-     "commit": 2,
+     "commit": 3,
      "light": "yellow",
-     "coverDays": 4,
+     "coverDays": 3.9,
      "transit": 0
     },
     "oil": {
@@ -23409,9 +23469,9 @@
     "rice": {
      "shelf": 60,
      "free": 60,
-     "commit": 0,
+     "commit": 1,
      "light": "green",
-     "coverDays": 19.6,
+     "coverDays": 19.8,
      "transit": 0
     },
     "gas": {
@@ -23431,7 +23491,7 @@
      "transit": 0
     }
    },
-   "v": "v1452"
+   "v": "v1453"
   }
  }
 }
