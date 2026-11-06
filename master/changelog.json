@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1463",
+  "d": "07 Nov 2026",
+  "t": "CASH RECEIVED AGAINST ONE DELIVERED SALT ORDER",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED.</b> A cash payment of RM147 from CB8-SEG on 07 Nov 2026 was applied to order s339, preapproved by Counter Admin. It moves no goods and no shelf stock. The dossier gives no floor or ask for the order, so no rate comparison is made. RM10 of the order remains outstanding.",
+   "<b>INVENTORY UNCHANGED.</b> The shelf stays at 12 units, the cost basis stays at RM56 per unit, and no lot landed or left in this fold."
+  ]
+ },
+ {
   "v": "v1462",
   "d": "07 Nov 2026",
   "t": "DELIVERY ON ONE SALT ORDER CORRECTED FROM RM32 TO RM22",

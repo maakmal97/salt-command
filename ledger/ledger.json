@@ -1,6 +1,6 @@
 {
- "v": "v1462",
- "stamped": "07 Nov 2026, 01:29 KL",
+ "v": "v1463",
+ "stamped": "07 Nov 2026, 01:32 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -11517,7 +11517,7 @@
     "customer": "CB8-SEG",
     "qty": 1,
     "total": 125,
-    "cash": 0,
+    "cash": 147,
     "delivery": 22,
     "trip": "t1789008851105631",
     "date": "2026-11-06",
@@ -11568,11 +11568,19 @@
       "was": {
        "delivery": 32
       }
+     },
+     {
+      "date": "2026-11-07",
+      "kind": "Fulfilment",
+      "cash": 147,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON S339: RM147 CASH RECEIVED FROM CB8-SEG, 07 NOV 2026.</b> Order 20261106075045-ndpkra, preapproved by Counter Admin. The drafter read it as payment at the counter against an order of 1 unit for RM125 plus delivery, RM157 owed agreed on 06 Nov 2026. The row moves RM147 and 0 unit, so it leaves RM10 and 0 unit outstanding. The dossier gives no floorTotal, askTotal, floorPerUnit or askPerUnit for this order, so the rate is not set against the desk's ladder. CB8-SEG has a median rate of RM125, range RM8 to RM125, nothing defaulted, RM155 outstanding and 2 units on credit before this; no credit cap is given. The drafter raised no flags. The cost is not recomputed here. Outstanding: the RM10 balance."
      }
     ],
     "deliveredOn": "2026-11-07",
     "handover": "delivered",
-    "cost": 56
+    "cost": 56,
+    "paidOn": "2026-11-07"
    },
    {
     "customer": "CB8-SEG",
@@ -12556,7 +12564,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-06T17:28:43.809Z",
+  "QUEUE_COMMITTED": "2026-11-06T17:29:26.401Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -23380,31 +23388,12 @@
      "suggest": null
     }
    },
-   "v": "v1462"
+   "v": "v1463"
   },
   "OPEN": {
-   "at": "2026-11-06T17:29:24.845Z",
-   "count": 9,
+   "at": "2026-11-06T17:32:38.671Z",
+   "count": 8,
    "byKey": {
-    "CB8-SEG|2026-11-06|147": {
-     "d": "2026-11-06",
-     "p": "CB8-SEG",
-     "dir": "S",
-     "q": 1,
-     "t": 125,
-     "cash": 0,
-     "mv": 1,
-     "st": "dueMoney",
-     "oweRM": 147,
-     "dv": 22,
-     "rid": "s339",
-     "deliveredOn": "2026-11-07",
-     "handover": "delivered",
-     "trip": "t1789008851105631",
-     "key": "CB8-SEG|2026-11-06|147",
-     "age": 0,
-     "exp": 147
-    },
     "CB8-SEG|2026-11-06|8|rice": {
      "d": "2026-11-06",
      "p": "CB8-SEG",
@@ -23550,7 +23539,7 @@
      "owedOut": 0,
      "coverDays": 3.1,
      "rate": 4.05,
-     "owedToYou": 457,
+     "owedToYou": 310,
      "promised": 0,
      "short": 0
     },
@@ -23618,7 +23607,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1462"
+   "v": "v1463"
   },
   "TERMS": {
    "ceiling": 250,
@@ -23626,7 +23615,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1462"
+   "v": "v1463"
   },
   "REWARD": {
    "stated": {
@@ -23644,7 +23633,7 @@
      }
     }
    },
-   "v": "v1462"
+   "v": "v1463"
   },
   "STOCK": {
    "today": "2026-11-07",
@@ -23698,7 +23687,7 @@
      "transit": 0
     }
    },
-   "v": "v1462"
+   "v": "v1463"
   }
  }
 }
