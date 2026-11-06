@@ -1,6 +1,6 @@
 {
- "v": "v1467",
- "stamped": "07 Nov 2026, 03:11 KL",
+ "v": "v1468",
+ "stamped": "07 Nov 2026, 03:25 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -89,12 +89,12 @@
    "candy": {
     "qty": 0,
     "costPerKg": null,
-    "stated": 3
+    "stated": 2
    },
    "rice": {
     "qty": 0,
     "costPerKg": null,
-    "stated": 59
+    "stated": 43
    },
    "gas": {
     "qty": 0,
@@ -107,12 +107,12 @@
     "stated": 25
    }
   },
-  "STATED_STOCK": 12,
+  "STATED_STOCK": 5,
   "COUNT_ON": {
-   "salt": "2026-10-28",
+   "salt": "2026-11-07",
    "oil": "2026-11-02",
-   "candy": "2026-10-20",
-   "rice": "2026-11-02",
+   "candy": "2026-11-07",
+   "rice": "2026-11-07",
    "gas": "2026-11-02",
    "prep": "2026-11-02"
   },
@@ -452,6 +452,27 @@
     "qty": 75,
     "was": 67,
     "drift": 8
+   },
+   {
+    "product": "candy",
+    "date": "2026-11-07",
+    "qty": 2,
+    "was": 3,
+    "drift": -1
+   },
+   {
+    "product": "rice",
+    "date": "2026-11-07",
+    "qty": 43,
+    "was": 59,
+    "drift": -16
+   },
+   {
+    "product": "salt",
+    "date": "2026-11-07",
+    "qty": 5,
+    "was": 12,
+    "drift": -7
    }
   ],
   "purchases": [
@@ -12608,7 +12629,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-06T19:02:37.963Z",
+  "QUEUE_COMMITTED": "2026-11-06T19:24:24.493Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -12635,6 +12656,11 @@
      "id": "px:headroom:salt",
      "sev": "act",
      "title": "The buying rate can rise RM -1 a unit, -1.8%, before a card breaches"
+    },
+    {
+     "id": "upkeep:shrink:salt",
+     "sev": "act",
+     "title": "The unexplained plug runs at 15.2% of everything handled"
     },
     {
      "id": "cust:cadence:salt",
@@ -12800,11 +12826,6 @@
      "id": "rhythm:restock:salt",
      "sev": "note",
      "title": "The next fortnight looks ordinary, so buy at the desk's rate"
-    },
-    {
-     "id": "upkeep:shrink:salt",
-     "sev": "note",
-     "title": "The unexplained plug runs at 4.4% of everything handled"
     },
     {
      "id": "parity:declared:prep",
@@ -14130,12 +14151,12 @@
        "repl": 56,
        "freightRate": 2,
        "leak": {
-        "ratio": 0.0455,
-        "leak": 0.5,
-        "sold": 11,
+        "ratio": 0.1795,
+        "leak": 7,
+        "sold": 39,
         "cycles": 3,
-        "from": "2026-10-24",
-        "to": "2026-10-28"
+        "from": "2026-10-27",
+        "to": "2026-11-07"
        },
        "costRule": {
         "kind": "latestCogs",
@@ -14161,7 +14182,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.0864222266746811,
+       "shrinkRate": 0.09577239030254459,
        "avgDel": {
         "n": 258,
         "kg": 632.31,
@@ -19105,11 +19126,11 @@
        "freightRate": 0,
        "leak": {
         "ratio": 0.3333,
-        "leak": 2,
-        "sold": 6,
+        "leak": 3,
+        "sold": 9,
         "cycles": 3,
-        "from": "2026-09-27",
-        "to": "2026-10-20"
+        "from": "2026-10-06",
+        "to": "2026-11-07"
        },
        "costRule": {
         "kind": "latestCogs",
@@ -19135,7 +19156,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.06666666666666667,
+       "shrinkRate": 0.08888888888888889,
        "avgDel": {
         "n": 7,
         "kg": 39,
@@ -20547,12 +20568,12 @@
        "repl": 3.2,
        "freightRate": 0.15,
        "leak": {
-        "ratio": 0.0645,
-        "leak": 6,
-        "sold": 93,
+        "ratio": 0.2361,
+        "leak": 17,
+        "sold": 72,
         "cycles": 3,
-        "from": "2026-09-27",
-        "to": "2026-11-02"
+        "from": "2026-10-06",
+        "to": "2026-11-07"
        },
        "costRule": {
         "kind": "latestCogs",
@@ -20578,7 +20599,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.09,
+       "shrinkRate": 0.17,
        "avgDel": {
         "n": 21,
         "kg": 123,
@@ -23432,10 +23453,10 @@
      "suggest": null
     }
    },
-   "v": "v1467"
+   "v": "v1468"
   },
   "OPEN": {
-   "at": "2026-11-06T19:11:17.249Z",
+   "at": "2026-11-06T19:25:24.176Z",
    "count": 8,
    "byKey": {
     "CE4-AD|2026-11-07|510": {
@@ -23574,10 +23595,10 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 12,
-     "free": 7,
+     "onHand": 5,
+     "free": 0,
      "owedOut": 5,
-     "coverDays": 1.9,
+     "coverDays": 0,
      "rate": 4.29,
      "owedToYou": 310,
      "promised": 5,
@@ -23596,10 +23617,10 @@
     },
     "candy": {
      "name": "Candy",
-     "onHand": 3,
-     "free": 3,
+     "onHand": 2,
+     "free": 2,
      "owedOut": 0,
-     "coverDays": 4.2,
+     "coverDays": 2.8,
      "rate": 0.4,
      "owedToYou": 0,
      "promised": 0,
@@ -23607,10 +23628,10 @@
     },
     "rice": {
      "name": "Rice",
-     "onHand": 59,
-     "free": 59,
+     "onHand": 43,
+     "free": 43,
      "owedOut": 0,
-     "coverDays": 20.8,
+     "coverDays": 16.2,
      "rate": 2.84,
      "owedToYou": 15,
      "promised": 0,
@@ -23640,14 +23661,14 @@
     }
    },
    "countedOn": {
-    "salt": "2026-10-28",
+    "salt": "2026-11-07",
     "oil": "2026-11-02",
-    "candy": "2026-10-20",
-    "rice": "2026-11-02",
+    "candy": "2026-11-07",
+    "rice": "2026-11-07",
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1467"
+   "v": "v1468"
   },
   "TERMS": {
    "ceiling": 250,
@@ -23655,7 +23676,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1467"
+   "v": "v1468"
   },
   "REWARD": {
    "stated": {
@@ -23673,17 +23694,17 @@
      }
     }
    },
-   "v": "v1467"
+   "v": "v1468"
   },
   "STOCK": {
    "today": "2026-11-07",
    "books": {
     "salt": {
-     "shelf": 12,
-     "free": 7,
+     "shelf": 5,
+     "free": 0,
      "commit": 5,
-     "light": "amber",
-     "coverDays": 1.9,
+     "light": "red",
+     "coverDays": 0,
      "transit": 0
     },
     "oil": {
@@ -23695,19 +23716,19 @@
      "transit": 0
     },
     "candy": {
-     "shelf": 3,
-     "free": 3,
+     "shelf": 2,
+     "free": 2,
      "commit": 0,
-     "light": "yellow",
-     "coverDays": 4.2,
+     "light": "amber",
+     "coverDays": 2.8,
      "transit": 0
     },
     "rice": {
-     "shelf": 59,
-     "free": 59,
+     "shelf": 43,
+     "free": 43,
      "commit": 0,
      "light": "green",
-     "coverDays": 20.8,
+     "coverDays": 16.2,
      "transit": 0
     },
     "gas": {
@@ -23727,7 +23748,7 @@
      "transit": 0
     }
    },
-   "v": "v1467"
+   "v": "v1468"
   }
  }
 }
