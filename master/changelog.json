@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1454",
+  "d": "06 Nov 2026",
+  "t": "ONE SALT ORDER WITHDRAWN BY ITS CUSTOMER, NOTHING MOVED",
+  "n": [
+   "<b>CANCELLATION FOLDED:</b> one row, the withdrawal of s338, a salt order of 2 units for RM225 to CD3-TBC, withdrawn on the statements site by the customer on 2026-11-06 and recorded by Counter Admin. The tool applies the cancellation through the master's own amend routine, so the order counts nowhere.",
+   "<b>INVENTORY UNCHANGED:</b> nothing had been handed over, so no stock moved. Salt stands at 15.5 units against a reorder point of 52, with 4 units promised before this withdrawal, and the stock cost stays at RM56 a unit."
+  ]
+ },
+ {
   "v": "v1453",
   "d": "06 Nov 2026",
   "t": "TWO PENDING ORDERS FOR CB8-SEG ON ONE DELIVERY TRIP",
