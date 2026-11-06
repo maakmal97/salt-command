@@ -1,6 +1,6 @@
 {
- "v": "v1465",
- "stamped": "07 Nov 2026, 02:54 KL",
+ "v": "v1466",
+ "stamped": "07 Nov 2026, 02:58 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -11483,7 +11483,7 @@
     "cost": 112
    },
    {
-    "customer": "CD3-TBC",
+    "customer": "CD4-DAM",
     "qty": 2,
     "total": 225,
     "cash": 0,
@@ -11630,7 +11630,7 @@
     "paidOn": "2026-11-07"
    },
    {
-    "customer": "CD3-TBC",
+    "customer": "CD4-DAM",
     "qty": 5,
     "total": 475,
     "cash": 0,
@@ -11966,7 +11966,7 @@
    "CS11-AMP",
    "CAY4-DAM",
    "CB8-SEG",
-   "CD3-TBC"
+   "CD4-DAM"
   ],
   "associates": [
    "CS6-BS",
@@ -12321,6 +12321,11 @@
     3.19,
     101.66,
     "Segambut"
+   ],
+   "CD4-DAM": [
+    3.07,
+    101.55,
+    "Damansara"
    ]
   },
   "TIER_OF": {
@@ -12374,7 +12379,7 @@
    "CB8-SEG": {
     "salt": 0.1
    },
-   "CD3-TBC": {
+   "CD4-DAM": {
     "salt": 0.1
    }
   },
@@ -12586,7 +12591,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-06T18:53:50.196Z",
+  "QUEUE_COMMITTED": "2026-11-06T18:57:30.341Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -17228,7 +17233,7 @@
         7670
        ]
       ],
-      "CD3-TBC": [
+      "CD4-DAM": [
        [
         0.5,
         80
@@ -17338,7 +17343,7 @@
       "CA4-P1": 0,
       "CJ5-CHE": 0,
       "CAY4-DAM": 0.1,
-      "CD3-TBC": 0.1
+      "CD4-DAM": 0.1
      },
      "suggest": {
       "CS6-BS": {
@@ -17541,7 +17546,7 @@
        "pct": 0,
        "why": ""
       },
-      "CD3-TBC": {
+      "CD4-DAM": {
        "pct": 0,
        "why": ""
       }
@@ -18948,7 +18953,7 @@
         450
        ]
       ],
-      "CD3-TBC": [
+      "CD4-DAM": [
        [
         10,
         130
@@ -19026,7 +19031,7 @@
       "CA4-P1": 0,
       "CJ5-CHE": 0,
       "CAY4-DAM": 0,
-      "CD3-TBC": 0
+      "CD4-DAM": 0
      },
      "suggest": null
     },
@@ -20397,7 +20402,7 @@
         1500
        ]
       ],
-      "CD3-TBC": [
+      "CD4-DAM": [
        [
         1,
         60
@@ -20475,7 +20480,7 @@
       "CA4-P1": 0,
       "CJ5-CHE": 0,
       "CAY4-DAM": 0,
-      "CD3-TBC": 0
+      "CD4-DAM": 0
      },
      "suggest": null
     },
@@ -21395,7 +21400,7 @@
         60
        ]
       ],
-      "CD3-TBC": [
+      "CD4-DAM": [
        [
         1,
         8
@@ -21465,7 +21470,7 @@
       "CA4-P1": 0,
       "CJ5-CHE": 0,
       "CAY4-DAM": 0,
-      "CD3-TBC": 0
+      "CD4-DAM": 0
      },
      "suggest": null
     },
@@ -22593,7 +22598,7 @@
         1500
        ]
       ],
-      "CD3-TBC": [
+      "CD4-DAM": [
        [
         1,
         75
@@ -22667,7 +22672,7 @@
       "CA4-P1": 0,
       "CJ5-CHE": 0,
       "CAY4-DAM": 0,
-      "CD3-TBC": 0
+      "CD4-DAM": 0
      },
      "suggest": null
     },
@@ -23339,7 +23344,7 @@
         125
        ]
       ],
-      "CD3-TBC": [
+      "CD4-DAM": [
        [
         12,
         60
@@ -23405,15 +23410,15 @@
       "CA4-P1": 0,
       "CJ5-CHE": 0,
       "CAY4-DAM": 0,
-      "CD3-TBC": 0
+      "CD4-DAM": 0
      },
      "suggest": null
     }
    },
-   "v": "v1465"
+   "v": "v1466"
   },
   "OPEN": {
-   "at": "2026-11-06T18:54:35.715Z",
+   "at": "2026-11-06T18:58:25.162Z",
    "count": 8,
    "byKey": {
     "CE4-AD|2026-11-07|510": {
@@ -23625,7 +23630,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1465"
+   "v": "v1466"
   },
   "TERMS": {
    "ceiling": 250,
@@ -23633,7 +23638,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1465"
+   "v": "v1466"
   },
   "REWARD": {
    "stated": {
@@ -23651,7 +23656,7 @@
      }
     }
    },
-   "v": "v1465"
+   "v": "v1466"
   },
   "STOCK": {
    "today": "2026-11-07",
@@ -23705,7 +23710,7 @@
      "transit": 0
     }
    },
-   "v": "v1465"
+   "v": "v1466"
   }
  }
 }
