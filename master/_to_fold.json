@@ -1,0 +1,46 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-07T14:26:59.640Z",
+   "status": "approved",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CM6-PJ": {
+      "salt": -0.25
+     }
+    },
+    "unit": "pct",
+    "rids": [],
+    "booked_seq": 155
+   },
+   "reasoning": "Sets their % for 1 customer: CM6-PJ Salt 25% off. It moves no cash and no stock; a % lift moves that customer's own price and never the board.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-11-07T14:26:59.640Z",
+    "type": "TIER",
+    "party": "CM6-PJ",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CM6-PJ: salt -25% lift",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CM6-PJ": {
+       "salt": -0.25
+      }
+     },
+     "unit": "pct"
+    },
+    "makerRequest": "2fbc900e5d494851b160a0f3d655ff1106f63a66cb2788119dee7687054baef1"
+   },
+   "decidedAt": "2026-11-07T14:27:46.833Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
