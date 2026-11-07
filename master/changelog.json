@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1469",
+  "d": "07 Nov 2026",
+  "t": "AN OIL COUNT OF 30 UNITS REPLACES THE BOOK FIGURE OF 40",
+  "n": [
+   "<b>ONE COUNT FOLDED.</b> Oil was counted at 30 units on 07 Nov 2026 against 40 on the book, a gap of -10 units. The count wins over the ledger, so stated oil stock is set to 30 and the oil count date moves from 02 Nov 2026 to 07 Nov 2026.",
+   "<b>UNUSUAL.</b> The dossier gives no reason for the 10 missing units, and none is assumed. No lot landed and no sale, so the cost basis does not move. The salt position is untouched."
+  ]
+ },
+ {
   "v": "v1468",
   "d": "07 Nov 2026",
   "t": "THREE STOCK COUNTS: CANDY, RICE AND SALT ALL SHORT",
