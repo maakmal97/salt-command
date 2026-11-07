@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1474",
+  "d": "07 Nov 2026",
+  "t": "ONE PENDING SALT SALE TO CM6-PJ, NOTHING MOVED",
+  "n": [
+   "<b>FOLDED:</b> one new sale, S345, 1 unit of salt to CM6-PJ at RM100 goods, preapproved by Counter Admin. Nothing is paid and nothing is handed over, so the row stays pending. It was unremarkable: the rate is CM6-PJ's usual one and the drafter raised no flags.",
+   "<b>INVENTORY:</b> unchanged. A pending row draws no stock and books no revenue, so stock stays at 10 units and the cost basis stays at RM56 per unit."
+  ]
+ },
+ {
   "v": "v1473",
   "d": "07 Nov 2026",
   "t": "A SALT COUNT OF 10 UNIT SETS THE STATED STOCK",
