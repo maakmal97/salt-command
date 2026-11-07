@@ -1024,6 +1024,9 @@
     },
     "CD4-DAM": {
       "salt": 0.1
+    },
+    "CM6-PJ": {
+      "salt": -0.25
     }
   },
   "PEOPLE": {
@@ -1144,7 +1147,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-11-07T14:24:22.220Z",
+  "QUEUE_COMMITTED": "2026-11-07T14:26:59.640Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
