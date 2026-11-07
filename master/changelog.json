@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1480",
+  "d": "08 Nov 2026",
+  "t": "DELIVERY OF 1 UNIT OF SALT TO CI5-PER RECORDED ON S346",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> Correction on S346 records delivery of 1 unit of salt to CI5-PER on 08 Nov 2026, preapproved by Counter Admin. It sets deliveredQty from 0 to 1, deliveredOn to 2026-11-08 and handover to delivered. It moves no cash. The row carries a trail of 3 steps, which the drafter flagged, and the correction is recorded beside them.",
+   "<b>SHELF ROLLED BY 1 UNIT.</b> The shelf of salt falls by 1 unit, out to CI5-PER, the difference the correction states. No lot landed, so the cost basis does not move."
+  ]
+ },
+ {
   "v": "v1479",
   "d": "07 Nov 2026",
   "t": "COLLECTION OF 1 UNIT OF SALT BY CZ5-TM RECORDED ON S344",
