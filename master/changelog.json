@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1479",
+  "d": "07 Nov 2026",
+  "t": "COLLECTION OF 1 UNIT OF SALT BY CZ5-TM RECORDED ON S344",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> The correction on s344 records that CZ5-TM collected 1 unit of salt on 07 Nov 2026: deliveredQty moves from 0 to 1, deliveredOn is set to 07 Nov 2026 and handover to collected. It was preapproved by Counter Admin. The drafter flagged that the row's trail of 2 steps will no longer add up to the figure set directly.",
+   "<b>INVENTORY.</b> The shelf rolls out by 1 unit to CZ5-TM. No cash moves, as RM100 was already received on 07 Nov 2026, and nothing landed, so the stock cost stays as it was at RM56."
+  ]
+ },
+ {
   "v": "v1478",
   "d": "07 Nov 2026",
   "t": "S346 DELIVERY CORRECTED TO RM30 AND PAID WITH RM5 OVER",

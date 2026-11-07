@@ -1,6 +1,6 @@
 {
- "v": "v1478",
- "stamped": "07 Nov 2026, 23:17 KL",
+ "v": "v1479",
+ "stamped": "07 Nov 2026, 23:38 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -107,7 +107,7 @@
     "stated": 25
    }
   },
-  "STATED_STOCK": 9,
+  "STATED_STOCK": 8,
   "COUNT_ON": {
    "salt": "2026-11-07",
    "oil": "2026-11-07",
@@ -11801,8 +11801,8 @@
     "total": 100,
     "cash": 100,
     "date": "2026-11-07",
-    "deliveredQty": 0,
-    "note": "<b>PAID 07 NOV 2026: RM100 RECEIVED.</b> <b>SALE S344: 1 UNIT OF SALT TO CZ5-TM, RM100 GOODS, PENDING.</b> Order 20261107141123-w03djq, preapproved by Counter Admin, dated 07 Nov 2026, to collect, no delivery charge. Nothing paid, nothing handed over. Goods of RM100 sit above the floorTotal of RM60 and below the askTotal of RM120; RM100 per unit is above the floorPerUnit of RM60 and below the askPerUnit of RM120. CZ5-TM has a median rate of RM100, range RM90 to RM110, so this is its usual rate. Outstanding before: RM0, no units on credit, nothing defaulted, credit cap 1. The drafter raised no flags. The cost stays RM56 per unit, the inventory's own rate from purchase p050. Outstanding: the RM100 payment and the collection of 1 unit.",
+    "deliveredQty": 1,
+    "note": "<b>COLLECTION RECORDED ON S344.</b> Order 20261107141123-w03djq to CZ5-TM, 1 unit of salt, goods RM100, paid on 07 Nov 2026, preapproved by Counter Admin. The correction sets deliveredQty from 0 to 1, deliveredOn to 07 Nov 2026 and handover to collected. The dossier gives no floor or ask for this size, so no comparison with the desk's ladder is made. CZ5-TM has a median rate of RM100, range RM90 to RM110, 12 orders, nothing outstanding before this row and nothing defaulted. It moves no cash and rolls the shelf out by 1 unit. The cost stays the inventory's own. The drafter flagged that the trail of 2 steps no longer adds up to the figure set directly; the figures do not answer that, and the correction is recorded beside the trail. Outstanding: nothing, the goods being paid and the unit handed over. <b>PAID 07 NOV 2026: RM100 RECEIVED.</b> <b>SALE S344: 1 UNIT OF SALT TO CZ5-TM, RM100 GOODS, PENDING.</b> Order 20261107141123-w03djq, preapproved by Counter Admin, dated 07 Nov 2026, to collect, no delivery charge. Nothing paid, nothing handed over. Goods of RM100 sit above the floorTotal of RM60 and below the askTotal of RM120; RM100 per unit is above the floorPerUnit of RM60 and below the askPerUnit of RM120. CZ5-TM has a median rate of RM100, range RM90 to RM110, so this is its usual rate. Outstanding before: RM0, no units on credit, nothing defaulted, credit cap 1. The drafter raised no flags. The cost stays RM56 per unit, the inventory's own rate from purchase p050. Outstanding: the RM100 payment and the collection of 1 unit.",
     "listRM": 100,
     "listQty": 1,
     "road": "site",
@@ -11821,9 +11821,26 @@
       "cash": 100,
       "kg": 0,
       "note": "<b>PAYMENT ON S344: RM100 FROM CZ5-TM, PREAPPROVED BY COUNTER ADMIN.</b> Dated 07 Nov 2026, order 20261107141123-w03djq, paid by qr via tng on the statements site. It is a fulfilment of cash only: RM100 moves and 0 unit. The goods total of RM100 matches the order exactly, so the payment settles it in full. CZ5-TM has 12 orders, median rate RM100, range RM90 to RM110, so this is its usual rate. Outstanding before: RM100, no units on credit, nothing defaulted. The drafter raised no flags. The cost stays as the sale set it. Outstanding: RM0 in payment, and the collection of 1 unit."
+     },
+     {
+      "date": "2026-11-07",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 1,
+      "note": "<b>COLLECTION RECORDED ON S344.</b> Order 20261107141123-w03djq to CZ5-TM, 1 unit of salt, goods RM100, paid on 07 Nov 2026, preapproved by Counter Admin. The correction sets deliveredQty from 0 to 1, deliveredOn to 07 Nov 2026 and handover to collected. The dossier gives no floor or ask for this size, so no comparison with the desk's ladder is made. CZ5-TM has a median rate of RM100, range RM90 to RM110, 12 orders, nothing outstanding before this row and nothing defaulted. It moves no cash and rolls the shelf out by 1 unit. The cost stays the inventory's own. The drafter flagged that the trail of 2 steps no longer adds up to the figure set directly; the figures do not answer that, and the correction is recorded beside the trail. Outstanding: nothing, the goods being paid and the unit handed over.",
+      "was": {
+       "deliveredQty": 0,
+       "deliveredOn": null,
+       "handover": null
+      },
+      "cost": 56
      }
     ],
-    "paidOn": "2026-11-07"
+    "paidOn": "2026-11-07",
+    "deliveredOn": "2026-11-07",
+    "handover": "collected",
+    "mod": "corrected on 2026-11-07: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-07; handover (unset) to collected",
+    "cost": 56
    },
    {
     "customer": "CM6-PJ",
@@ -12772,7 +12789,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-07T15:16:54.000Z",
+  "QUEUE_COMMITTED": "2026-11-07T15:37:19.785Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -12823,7 +12840,7 @@
     {
      "id": "int:nocost",
      "sev": "watch",
-     "title": "6 priced sales carry no cost of their own"
+     "title": "5 priced sales carry no cost of their own"
     },
     {
      "id": "int:underfloor",
@@ -12968,7 +12985,7 @@
     {
      "id": "upkeep:shrink:salt",
      "sev": "note",
-     "title": "The unexplained plug runs at 4.9% of everything handled"
+     "title": "The unexplained plug runs at 4.8% of everything handled"
     },
     {
      "id": "parity:declared:prep",
@@ -14294,9 +14311,9 @@
        "repl": 56,
        "freightRate": 2,
        "leak": {
-        "ratio": 0.0519,
+        "ratio": 0.0506,
         "leak": 2,
-        "sold": 38.5,
+        "sold": 39.5,
         "cycles": 3,
         "from": "2026-10-28",
         "to": "2026-11-07"
@@ -14321,15 +14338,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.3237410071942446
+         "v": 0.32142857142857145
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08909370199692782,
        "avgDel": {
-        "n": 259,
-        "kg": 633.31,
-        "mean": 2.4452
+        "n": 260,
+        "kg": 634.31,
+        "mean": 2.4397
        }
       },
       "policy": {
@@ -23596,11 +23613,11 @@
      "suggest": null
     }
    },
-   "v": "v1478"
+   "v": "v1479"
   },
   "OPEN": {
-   "at": "2026-11-07T15:17:12.863Z",
-   "count": 10,
+   "at": "2026-11-07T15:38:05.102Z",
+   "count": 9,
    "byKey": {
     "CE4-AD|2026-11-07|510": {
      "d": "2026-11-07",
@@ -23616,20 +23633,6 @@
      "rid": "s343",
      "paidOn": "2026-11-07",
      "key": "CE4-AD|2026-11-07|510"
-    },
-    "CZ5-TM|2026-11-07|100": {
-     "d": "2026-11-07",
-     "p": "CZ5-TM",
-     "dir": "S",
-     "q": 1,
-     "t": 100,
-     "cash": 100,
-     "mv": 0,
-     "st": "oweStock",
-     "oweUnits": 1,
-     "rid": "s344",
-     "paidOn": "2026-11-07",
-     "key": "CZ5-TM|2026-11-07|100"
     },
     "CI5-PER|2026-11-07|150": {
      "d": "2026-11-07",
@@ -23767,13 +23770,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 9,
+     "onHand": 8,
      "free": 2,
-     "owedOut": 7,
+     "owedOut": 6,
      "coverDays": 0.7,
      "rate": 4.44,
      "owedToYou": 310,
-     "promised": 7,
+     "promised": 6,
      "short": 0
     },
     "oil": {
@@ -23840,7 +23843,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1478"
+   "v": "v1479"
   },
   "TERMS": {
    "ceiling": 250,
@@ -23848,7 +23851,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1478"
+   "v": "v1479"
   },
   "REWARD": {
    "stated": {
@@ -23866,15 +23869,15 @@
      }
     }
    },
-   "v": "v1478"
+   "v": "v1479"
   },
   "STOCK": {
    "today": "2026-11-07",
    "books": {
     "salt": {
-     "shelf": 9,
+     "shelf": 8,
      "free": 2,
-     "commit": 7,
+     "commit": 6,
      "light": "amber",
      "coverDays": 0.7,
      "transit": 0
@@ -23920,7 +23923,7 @@
      "transit": 0
     }
    },
-   "v": "v1478"
+   "v": "v1479"
   }
  }
 }
