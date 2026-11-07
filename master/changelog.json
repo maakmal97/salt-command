@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1471",
+  "d": "07 Nov 2026",
+  "t": "SALT COUNT OF 5 UNIT AGREES WITH BOOK, S344 PAID",
+  "n": [
+   "<b>COUNT AND PAYMENT FOLDED.</b> The salt count of 5 unit on 07 Nov 2026 matched the book at 5, a difference of 0, so the stated stock and the count date were set with no gap to explain. The floors did not move. The RM100 payment on s344 for CZ5-TM was recorded against its order.",
+   "<b>UNUSUAL:</b> the payment moves cash only. The 1 unit on s344 is still to be collected, so it stays on the shelf and the inventory does not roll."
+  ]
+ },
+ {
   "v": "v1470",
   "d": "07 Nov 2026",
   "t": "ONE PENDING SALE OF SALT TO CZ5-TM, NO STOCK MOVED",

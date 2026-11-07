@@ -1,6 +1,6 @@
 {
- "v": "v1470",
- "stamped": "07 Nov 2026, 22:18 KL",
+ "v": "v1471",
+ "stamped": "07 Nov 2026, 22:24 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -480,6 +480,13 @@
     "qty": 30,
     "was": 40,
     "drift": -10
+   },
+   {
+    "product": "salt",
+    "date": "2026-11-07",
+    "qty": 5,
+    "was": 5,
+    "drift": 0
    }
   ],
   "purchases": [
@@ -11785,14 +11792,31 @@
     "customer": "CZ5-TM",
     "qty": 1,
     "total": 100,
-    "cash": 0,
+    "cash": 100,
     "date": "2026-11-07",
     "deliveredQty": 0,
-    "note": "<b>SALE S344: 1 UNIT OF SALT TO CZ5-TM, RM100 GOODS, PENDING.</b> Order 20261107141123-w03djq, preapproved by Counter Admin, dated 07 Nov 2026, to collect, no delivery charge. Nothing paid, nothing handed over. Goods of RM100 sit above the floorTotal of RM60 and below the askTotal of RM120; RM100 per unit is above the floorPerUnit of RM60 and below the askPerUnit of RM120. CZ5-TM has a median rate of RM100, range RM90 to RM110, so this is its usual rate. Outstanding before: RM0, no units on credit, nothing defaulted, credit cap 1. The drafter raised no flags. The cost stays RM56 per unit, the inventory's own rate from purchase p050. Outstanding: the RM100 payment and the collection of 1 unit.",
+    "note": "<b>PAID 07 NOV 2026: RM100 RECEIVED.</b> <b>SALE S344: 1 UNIT OF SALT TO CZ5-TM, RM100 GOODS, PENDING.</b> Order 20261107141123-w03djq, preapproved by Counter Admin, dated 07 Nov 2026, to collect, no delivery charge. Nothing paid, nothing handed over. Goods of RM100 sit above the floorTotal of RM60 and below the askTotal of RM120; RM100 per unit is above the floorPerUnit of RM60 and below the askPerUnit of RM120. CZ5-TM has a median rate of RM100, range RM90 to RM110, so this is its usual rate. Outstanding before: RM0, no units on credit, nothing defaulted, credit cap 1. The drafter raised no flags. The cost stays RM56 per unit, the inventory's own rate from purchase p050. Outstanding: the RM100 payment and the collection of 1 unit.",
     "listRM": 100,
     "listQty": 1,
     "road": "site",
-    "rid": "s344"
+    "rid": "s344",
+    "amend": [
+     {
+      "date": "2026-11-07",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-11-07",
+      "kind": "Fulfilment",
+      "cash": 100,
+      "kg": 0,
+      "note": "<b>PAYMENT ON S344: RM100 FROM CZ5-TM, PREAPPROVED BY COUNTER ADMIN.</b> Dated 07 Nov 2026, order 20261107141123-w03djq, paid by qr via tng on the statements site. It is a fulfilment of cash only: RM100 moves and 0 unit. The goods total of RM100 matches the order exactly, so the payment settles it in full. CZ5-TM has 12 orders, median rate RM100, range RM90 to RM110, so this is its usual rate. Outstanding before: RM100, no units on credit, nothing defaulted. The drafter raised no flags. The cost stays as the sale set it. Outstanding: RM0 in payment, and the collection of 1 unit."
+     }
+    ],
+    "paidOn": "2026-11-07"
    }
   ],
   "contacts": [
@@ -12649,7 +12673,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-07T14:17:40.013Z",
+  "QUEUE_COMMITTED": "2026-11-07T14:24:22.220Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -12680,7 +12704,7 @@
     {
      "id": "upkeep:shrink:salt",
      "sev": "act",
-     "title": "The unexplained plug runs at 15.2% of everything handled"
+     "title": "The unexplained plug runs at 14.3% of everything handled"
     },
     {
      "id": "cust:cadence:salt",
@@ -12705,7 +12729,7 @@
     {
      "id": "int:nocost",
      "sev": "watch",
-     "title": "4 priced sales carry no cost of their own"
+     "title": "5 priced sales carry no cost of their own"
     },
     {
      "id": "int:underfloor",
@@ -13300,16 +13324,16 @@
     },
     "CZ5-TM": {
      "salt": {
-      "name": "consistent mid",
-      "orders": 9,
+      "name": "small and often",
+      "orders": 10,
       "tenureDays": 49,
-      "sinceLastDays": 4,
-      "perMonth": 5.59,
-      "unitsPerMonth": 8.08,
-      "smallShare": 0.56,
+      "sinceLastDays": 0,
+      "perMonth": 6.21,
+      "unitsPerMonth": 8.7,
+      "smallShare": 0.6,
       "bigShare": 0,
       "frequent": true,
-      "small": false,
+      "small": true,
       "bigger": false,
       "loyal": true,
       "rare": false
@@ -14171,8 +14195,8 @@
        "repl": 56,
        "freightRate": 2,
        "leak": {
-        "ratio": 0.1795,
-        "leak": 7,
+        "ratio": 0.1667,
+        "leak": 6.5,
         "sold": 39,
         "cycles": 3,
         "from": "2026-10-27",
@@ -17449,7 +17473,7 @@
        "why": "good record"
       },
       "CZ5-TM": {
-       "pct": -0.25,
+       "pct": -0.3,
        "why": "good record"
       },
       "CM6-HCM": {
@@ -23473,10 +23497,10 @@
      "suggest": null
     }
    },
-   "v": "v1470"
+   "v": "v1471"
   },
   "OPEN": {
-   "at": "2026-11-07T14:18:31.116Z",
+   "at": "2026-11-07T14:25:04.466Z",
    "count": 9,
    "byKey": {
     "CE4-AD|2026-11-07|510": {
@@ -23500,12 +23524,12 @@
      "dir": "S",
      "q": 1,
      "t": 100,
-     "cash": 0,
+     "cash": 100,
      "mv": 0,
-     "st": "part",
-     "oweRM": 100,
+     "st": "oweStock",
      "oweUnits": 1,
      "rid": "s344",
+     "paidOn": "2026-11-07",
      "key": "CZ5-TM|2026-11-07|100"
     },
     "CR3-DAM|2026-10-30|70": {
@@ -23630,8 +23654,8 @@
     "salt": {
      "name": "Salt",
      "onHand": 5,
-     "free": 0,
-     "owedOut": 5,
+     "free": -1,
+     "owedOut": 6,
      "coverDays": 0,
      "rate": 4.34,
      "owedToYou": 310,
@@ -23702,7 +23726,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1470"
+   "v": "v1471"
   },
   "TERMS": {
    "ceiling": 250,
@@ -23710,7 +23734,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1470"
+   "v": "v1471"
   },
   "REWARD": {
    "stated": {
@@ -23728,14 +23752,14 @@
      }
     }
    },
-   "v": "v1470"
+   "v": "v1471"
   },
   "STOCK": {
    "today": "2026-11-07",
    "books": {
     "salt": {
      "shelf": 5,
-     "free": 0,
+     "free": -1,
      "commit": 6,
      "light": "red",
      "coverDays": 0,
@@ -23782,7 +23806,7 @@
      "transit": 0
     }
    },
-   "v": "v1470"
+   "v": "v1471"
   }
  }
 }
