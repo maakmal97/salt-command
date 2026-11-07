@@ -1,6 +1,6 @@
 {
- "v": "v1472",
- "stamped": "07 Nov 2026, 22:28 KL",
+ "v": "v1473",
+ "stamped": "07 Nov 2026, 22:34 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -107,7 +107,7 @@
     "stated": 25
    }
   },
-  "STATED_STOCK": 5,
+  "STATED_STOCK": 10,
   "COUNT_ON": {
    "salt": "2026-11-07",
    "oil": "2026-11-07",
@@ -487,6 +487,13 @@
     "qty": 5,
     "was": 5,
     "drift": 0
+   },
+   {
+    "product": "salt",
+    "date": "2026-11-07",
+    "qty": 10,
+    "was": 5,
+    "drift": 5
    }
   ],
   "purchases": [
@@ -12676,7 +12683,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-07T14:26:59.640Z",
+  "QUEUE_COMMITTED": "2026-11-07T14:33:50.141Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -12703,11 +12710,6 @@
      "id": "px:headroom:salt",
      "sev": "act",
      "title": "The buying rate can rise RM -1 a unit, -1.8%, before a card breaches"
-    },
-    {
-     "id": "upkeep:shrink:salt",
-     "sev": "act",
-     "title": "The unexplained plug runs at 14.3% of everything handled"
     },
     {
      "id": "cust:cadence:salt",
@@ -12873,6 +12875,11 @@
      "id": "rhythm:restock:salt",
      "sev": "note",
      "title": "The next fortnight looks ordinary, so buy at the desk's rate"
+    },
+    {
+     "id": "upkeep:shrink:salt",
+     "sev": "note",
+     "title": "The unexplained plug runs at 5.1% of everything handled"
     },
     {
      "id": "parity:declared:prep",
@@ -14198,11 +14205,11 @@
        "repl": 56,
        "freightRate": 2,
        "leak": {
-        "ratio": 0.1667,
-        "leak": 6.5,
-        "sold": 39,
+        "ratio": 0.0533,
+        "leak": 2,
+        "sold": 37.5,
         "cycles": 3,
-        "from": "2026-10-27",
+        "from": "2026-10-28",
         "to": "2026-11-07"
        },
        "costRule": {
@@ -14229,7 +14236,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.09577239030254459,
+       "shrinkRate": 0.08909370199692782,
        "avgDel": {
         "n": 258,
         "kg": 632.31,
@@ -23500,10 +23507,10 @@
      "suggest": null
     }
    },
-   "v": "v1472"
+   "v": "v1473"
   },
   "OPEN": {
-   "at": "2026-11-07T14:28:33.224Z",
+   "at": "2026-11-07T14:34:45.296Z",
    "count": 9,
    "byKey": {
     "CE4-AD|2026-11-07|510": {
@@ -23656,14 +23663,14 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 5,
-     "free": -1,
+     "onHand": 10,
+     "free": 4,
      "owedOut": 6,
-     "coverDays": 0,
+     "coverDays": 1.2,
      "rate": 4.34,
      "owedToYou": 310,
      "promised": 6,
-     "short": 1
+     "short": 0
     },
     "oil": {
      "name": "Oil",
@@ -23729,7 +23736,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1472"
+   "v": "v1473"
   },
   "TERMS": {
    "ceiling": 250,
@@ -23737,7 +23744,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1472"
+   "v": "v1473"
   },
   "REWARD": {
    "stated": {
@@ -23755,17 +23762,17 @@
      }
     }
    },
-   "v": "v1472"
+   "v": "v1473"
   },
   "STOCK": {
    "today": "2026-11-07",
    "books": {
     "salt": {
-     "shelf": 5,
-     "free": -1,
+     "shelf": 10,
+     "free": 4,
      "commit": 6,
-     "light": "red",
-     "coverDays": 0,
+     "light": "amber",
+     "coverDays": 1.2,
      "transit": 0
     },
     "oil": {
@@ -23809,7 +23816,7 @@
      "transit": 0
     }
    },
-   "v": "v1472"
+   "v": "v1473"
   }
  }
 }

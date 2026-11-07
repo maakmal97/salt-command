@@ -103,7 +103,7 @@
       "stated": 25
     }
   },
-  "STATED_STOCK": 5,
+  "STATED_STOCK": 10,
   "COUNT_ON": {
     "salt": "2026-11-07",
     "oil": "2026-11-07",
@@ -164,7 +164,8 @@
     {"product":"rice","date":"2026-11-07","qty":43,"was":59,"drift":-16},
     {"product":"salt","date":"2026-11-07","qty":5,"was":12,"drift":-7},
     {"product":"oil","date":"2026-11-07","qty":30,"was":40,"drift":-10},
-    {"product":"salt","date":"2026-11-07","qty":5,"was":5,"drift":0}
+    {"product":"salt","date":"2026-11-07","qty":5,"was":5,"drift":0},
+    {"product":"salt","date":"2026-11-07","qty":10,"was":5,"drift":5}
   ],
   "purchases": [
     {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -1147,7 +1148,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-11-07T14:26:59.640Z",
+  "QUEUE_COMMITTED": "2026-11-07T14:33:50.141Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -1213,6 +1214,7 @@
       "RETIRED AT v549 on 2026-09-09, his instruction. The key held one hand-typed lot: 50 unit by 2026-08-28, stated on the 24th. He read it on 9 September with the date twelve days gone and four lots landed since (25 unit on 26 Aug, 25 on 31 Aug, 25 on 03 Sep and 50 on 08 Sep), and said he generally has no information on when he purchases. The Sourcing section is now about the CURRENT lot, and the cadence is measured off the book rather than typed. One standing fact from the retired basis is kept here because it is not a plan: the purchase ceiling of RM4,500 resets on the 28th of each month and anything beyond it comes out of rolling cash. The rest was the 24 Aug reasoning, that the 100 unit tier was the recommendation and he took the 50, at a landed RM45.20 a unit against RM43.60."
     ],
     "STATED_STOCK": [
+      "COUNTED AT v1473 on 2026-11-07: the salt inventory held 10 against 5 on the roll, a difference of 5. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-11-07. <b>COUNT OF SALT, 07 NOV 2026: 10 UNIT FOUND AGAINST 5 ON THE BOOK.</b> Counted by hand and decided by Counter Admin on 07 Nov 2026. The difference is +5 unit. The dossier gives no reason for the gap and none is offered here. The drafter flagged that a count always wins, so the gap books as shrinkage across every unit sold; the figures agree, as the stated inventory becomes 10. The last salt count was also dated 2026-11-07. Floors: floor1 stays RM60, floor2 RM115, floor125 RM700, ask1 RM120. The selfUse moves from 110.34 to 105.34. The stock cost stays RM56 per unit. Outstanding: the cause of the +5 is not recorded.",
       "COUNTED AT v1471 on 2026-11-07: the salt inventory held 5 against 5 on the roll, a difference of 0. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-11-07. <b>COUNT OF SALT: 5 UNIT ON 07 NOV 2026, BOOK 5, DIFFERENCE 0.</b> Counted by hand, set as the stated stock, and the salt count date moves to 07 Nov 2026. The last count was also 07 Nov 2026. Nothing is unaccounted for, so no gap sits anywhere and the dossier gives no reason to look for one. The floors are the same before and after: floor1 RM60, floor2 RM115, floor125 RM700, ask1 RM120, selfUse 110.34. The drafter flagged that the book and the count agree, and the figures answer it: the difference is 0. Cost basis is unchanged at RM56 per unit. Nothing is left outstanding on this row.",
       "COUNTED AT v1468 on 2026-11-07: the salt inventory held 5 against 12 on the roll, a difference of -7. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-11-07. <b>COUNT SALT: 5 UNITS COUNTED AGAINST 12 ON THE BOOK.</b> Counted by hand on 07 Nov 2026, decided by Counter Admin. The gap is -7 units; the last count was 28 Oct 2026. The count wins, so the stated salt inventory becomes 5 and the count date moves to 07 Nov 2026. The dossier gives no reason for the gap. The drafter flagged two things: the 7 units books as shrinkage across every unit sold, and 5 units are owed out and already paid for. The count leaves exactly 5, so the stock only just covers that delivery. Floors stay at floor1 60, floor2 115, floor125 700 and ask1 120, while selfUse moves from 103.34 to 110.34. The stock cost stays RM56 per unit. Outstanding: the delivery of the 5 units owed.",
       "ROLLED AT v1461: 1 unit to CB8-SEG on 2026-11-07, so 13 less 1 is 12. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Rice and salt each fall by 1 unit to CB8-SEG.",

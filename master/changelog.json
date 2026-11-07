@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1473",
+  "d": "07 Nov 2026",
+  "t": "A SALT COUNT OF 10 UNIT SETS THE STATED STOCK",
+  "n": [
+   "<b>COUNT FOLDED.</b> One row: a hand count of salt on 07 Nov 2026 found 10 unit against 5 on the book, a difference of +5. The count wins over the ledger, so the stated salt inventory is now 10 and the salt count date stays at 2026-11-07. Nothing else moved in this batch.",
+   "<b>FLOORS AND COST.</b> The floor1 stays RM60, floor2 RM115, floor125 RM700 and ask1 RM120. Only selfUse moves, from 110.34 to 105.34. The stock cost stays RM56 per unit, as no lot landed."
+  ]
+ },
+ {
   "v": "v1472",
   "d": "07 Nov 2026",
   "t": "CM6-PJ SALT PRICE SET 25% OFF",
