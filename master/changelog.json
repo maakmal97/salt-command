@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1476",
+  "d": "07 Nov 2026",
+  "t": "CASH RECEIVED CLOSES THE S345 ORDER FOR CM6-PJ",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED:</b> RM100 cash taken at the counter on 07 Nov 2026 against order s345 of CM6-PJ, preapproved by Counter Admin. It settles the order in full, so CM6-PJ owes nothing on it and no units are left to move.",
+   "<b>INVENTORY UNCHANGED:</b> no stock moved, since the unit left on collection earlier the same day. The cost basis stays as it stood and no lot landed."
+  ]
+ },
+ {
   "v": "v1475",
   "d": "07 Nov 2026",
   "t": "S345 COLLECTED: 1 UNIT OF SALT OUT TO CM6-PJ",
