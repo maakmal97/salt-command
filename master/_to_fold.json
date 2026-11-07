@@ -1,0 +1,55 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-11-07T06:49:21.170Z",
+   "status": "approved",
+   "collection": "count",
+   "row": {
+    "product": "oil",
+    "qty": 30,
+    "date": "2026-11-07",
+    "was": 40,
+    "drift": -10,
+    "rids": [],
+    "booked_seq": 151
+   },
+   "reasoning": "Counted 30 unit of oil by hand on 2026-11-07, against 40 on the book: a difference of -10. The last count was 2026-11-02. A count wins over the ledger, and the fold sets the stated stock and moves COUNT_ON to this date.",
+   "flags": [
+    "The book says 40 and you counted 30: -10 unit unaccounted for. A COUNT ALWAYS WINS, so this becomes the inventory and the gap books as shrinkage across every unit sold."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-11-07T06:49:21.170Z",
+    "type": "COUNT",
+    "party": "stock count",
+    "qty": 30,
+    "total": null,
+    "status": "count",
+    "raw": "Stock count: 30 unit oil on hand on 2026-11-07",
+    "payload": {
+     "mode": "count",
+     "product": "oil",
+     "direction": null,
+     "party": null,
+     "date": "2026-11-07",
+     "qty": 30,
+     "total": null,
+     "cash": null,
+     "kg": 30,
+     "assoc": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null
+    },
+    "makerRequest": "d5ac103669637525ec18f304f2a5a48d95b336640b6b0563d759f96fdbb653bc"
+   },
+   "decidedAt": "2026-11-07T06:49:46.792Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
