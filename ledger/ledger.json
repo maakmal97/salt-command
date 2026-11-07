@@ -1,6 +1,6 @@
 {
- "v": "v1477",
- "stamped": "07 Nov 2026, 23:07 KL",
+ "v": "v1478",
+ "stamped": "07 Nov 2026, 23:17 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -11876,15 +11876,43 @@
     "customer": "CI5-PER",
     "qty": 1,
     "total": 120,
-    "cash": 0,
-    "delivery": 25,
+    "cash": 150,
+    "delivery": 30,
     "date": "2026-11-07",
     "deliveredQty": 0,
-    "note": "<b>SALE S346: 1 UNIT OF SALT TO CI5-PER, RM120 GOODS, PENDING.</b> Order 20261107150425-x8ozlw, placed on the statements site, acknowledged, preapproved by Counter Admin, dated 07 Nov 2026, to be delivered with delivery RM25. Nothing paid, nothing handed over. The goods of RM120 sit at the askTotal of RM120, above the floorTotal of RM60 (RM120 a unit against floorPerUnit RM60 and askPerUnit RM120). CI5-PER has a median rate of RM13, range RM6 to RM120, 7 orders, and RM0 outstanding before this row, with 0 units on credit and nothing defaulted, against a credit cap of 1. The drafter flagged nothing. The cost stays the inventory's own at RM56 per unit, and it draws no stock until something moves. Outstanding: RM145 payment, RM120 goods and RM25 delivery, and the delivery itself.",
+    "note": "<b>DELIVERY NOW RM30.</b> <b>CORRECTION ON S346: DELIVERY RAISED FROM RM25 TO RM30.</b> Order 20261107150425-x8ozlw to CI5-PER, 1 unit of salt, goods RM120, preapproved by Counter Admin, dated 07 Nov 2026. Quantity and goods are unchanged, so the goods of RM120 still sit at the askTotal of RM120, above the floorTotal of RM60. CI5-PER has a median rate of RM68, range RM6 to RM120, 8 orders, RM145 outstanding before this row, and nothing defaulted. The drafter flagged nothing. It moves no cash and no stock. The cost stays the inventory's own. Outstanding: the goods of RM120 and the delivery of RM30, and the handover of the unit. <b>SALE S346: 1 UNIT OF SALT TO CI5-PER, RM120 GOODS, PENDING.</b> Order 20261107150425-x8ozlw, placed on the statements site, acknowledged, preapproved by Counter Admin, dated 07 Nov 2026, to be delivered with delivery RM25. Nothing paid, nothing handed over. The goods of RM120 sit at the askTotal of RM120, above the floorTotal of RM60 (RM120 a unit against floorPerUnit RM60 and askPerUnit RM120). CI5-PER has a median rate of RM13, range RM6 to RM120, 7 orders, and RM0 outstanding before this row, with 0 units on credit and nothing defaulted, against a credit cap of 1. The drafter flagged nothing. The cost stays the inventory's own at RM56 per unit, and it draws no stock until something moves. Outstanding: RM145 payment, RM120 goods and RM25 delivery, and the delivery itself.",
     "listRM": 120,
     "listQty": 1,
     "road": "site",
-    "rid": "s346"
+    "rid": "s346",
+    "mod": "corrected on 2026-11-07: delivery 25 to 30",
+    "amend": [
+     {
+      "date": "2026-11-07",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-11-07",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S346: DELIVERY RAISED FROM RM25 TO RM30.</b> Order 20261107150425-x8ozlw to CI5-PER, 1 unit of salt, goods RM120, preapproved by Counter Admin, dated 07 Nov 2026. Quantity and goods are unchanged, so the goods of RM120 still sit at the askTotal of RM120, above the floorTotal of RM60. CI5-PER has a median rate of RM68, range RM6 to RM120, 8 orders, RM145 outstanding before this row, and nothing defaulted. The drafter flagged nothing. It moves no cash and no stock. The cost stays the inventory's own. Outstanding: the goods of RM120 and the delivery of RM30, and the handover of the unit.",
+      "was": {
+       "delivery": 25
+      }
+     },
+     {
+      "date": "2026-11-07",
+      "kind": "Fulfilment",
+      "cash": 150,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON S346: RM150 CASH AT THE COUNTER, RM5 OVER.</b> Order 20261107150425-x8ozlw to CI5-PER, paid on 07 Nov 2026 and preapproved by Counter Admin. The drafter measured it against RM145 outstanding, the figure before the delivery correction. Goods stay RM120, at the askTotal of RM120 and above the floorTotal of RM60. CI5-PER has a median rate of RM68, range RM6 to RM120, and nothing defaulted. The drafter flagged RM5 paid beyond the order, and the fold raises a refund payable for it, open until returned. The figures answer the flag only as far as RM145 stands. No unit moves. Outstanding: the handover of 1 unit, and the refund."
+     }
+    ],
+    "paidOn": "2026-11-07"
    }
   ],
   "contacts": [
@@ -12744,7 +12772,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-07T15:06:14.254Z",
+  "QUEUE_COMMITTED": "2026-11-07T15:16:54.000Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -12775,7 +12803,7 @@
     {
      "id": "cust:cadence:salt",
      "sev": "watch",
-     "title": "14 customers are past their own habit on salt"
+     "title": "13 customers are past their own habit on salt"
     },
     {
      "id": "cust:cadence:oil",
@@ -12795,7 +12823,7 @@
     {
      "id": "int:nocost",
      "sev": "watch",
-     "title": "5 priced sales carry no cost of their own"
+     "title": "6 priced sales carry no cost of their own"
     },
     {
      "id": "int:underfloor",
@@ -13511,11 +13539,11 @@
     "CI5-PER": {
      "salt": {
       "name": "small and often",
-      "orders": 2,
+      "orders": 3,
       "tenureDays": 7,
-      "sinceLastDays": 4,
-      "perMonth": 2.03,
-      "unitsPerMonth": 2.03,
+      "sinceLastDays": 0,
+      "perMonth": 3.04,
+      "unitsPerMonth": 3.04,
       "smallShare": 1,
       "bigShare": 0,
       "frequent": true,
@@ -17564,7 +17592,7 @@
        "why": "paid 13% over, good record"
       },
       "CI5-PER": {
-       "pct": -0.15,
+       "pct": -0.2,
        "why": "good record"
       },
       "CA5-BAN": {
@@ -23568,10 +23596,10 @@
      "suggest": null
     }
    },
-   "v": "v1477"
+   "v": "v1478"
   },
   "OPEN": {
-   "at": "2026-11-07T15:07:12.486Z",
+   "at": "2026-11-07T15:17:12.863Z",
    "count": 10,
    "byKey": {
     "CE4-AD|2026-11-07|510": {
@@ -23603,20 +23631,20 @@
      "paidOn": "2026-11-07",
      "key": "CZ5-TM|2026-11-07|100"
     },
-    "CI5-PER|2026-11-07|145": {
+    "CI5-PER|2026-11-07|150": {
      "d": "2026-11-07",
      "p": "CI5-PER",
      "dir": "S",
      "q": 1,
      "t": 120,
-     "cash": 0,
+     "cash": 150,
      "mv": 0,
-     "st": "part",
-     "oweRM": 145,
+     "st": "oweStock",
      "oweUnits": 1,
-     "dv": 25,
+     "dv": 30,
      "rid": "s346",
-     "key": "CI5-PER|2026-11-07|145"
+     "paidOn": "2026-11-07",
+     "key": "CI5-PER|2026-11-07|150"
     },
     "CR3-DAM|2026-10-30|70": {
      "d": "2026-10-30",
@@ -23740,9 +23768,9 @@
     "salt": {
      "name": "Salt",
      "onHand": 9,
-     "free": 3,
-     "owedOut": 6,
-     "coverDays": 1,
+     "free": 2,
+     "owedOut": 7,
+     "coverDays": 0.7,
      "rate": 4.44,
      "owedToYou": 310,
      "promised": 7,
@@ -23812,7 +23840,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1477"
+   "v": "v1478"
   },
   "TERMS": {
    "ceiling": 250,
@@ -23820,7 +23848,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1477"
+   "v": "v1478"
   },
   "REWARD": {
    "stated": {
@@ -23838,17 +23866,17 @@
      }
     }
    },
-   "v": "v1477"
+   "v": "v1478"
   },
   "STOCK": {
    "today": "2026-11-07",
    "books": {
     "salt": {
      "shelf": 9,
-     "free": 3,
+     "free": 2,
      "commit": 7,
      "light": "amber",
-     "coverDays": 1,
+     "coverDays": 0.7,
      "transit": 0
     },
     "oil": {
@@ -23892,7 +23920,7 @@
      "transit": 0
     }
    },
-   "v": "v1477"
+   "v": "v1478"
   }
  }
 }

@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1478",
+  "d": "07 Nov 2026",
+  "t": "S346 DELIVERY CORRECTED TO RM30 AND PAID WITH RM5 OVER",
+  "n": [
+   "<b>TWO AMENDMENTS FOLDED:</b> a correction on s346 raised delivery from RM25 to RM30, with quantity 1 and goods RM120 unchanged, and a cash fulfilment of RM150 followed against it. Both were preapproved by Counter Admin and dated 07 Nov 2026.",
+   "<b>UNUSUAL:</b> the drafter's payment reasoning still works from RM145 outstanding, the figure before the delivery correction, and the fulfilment flags RM5 over. The dossier does not show how the fold settles this against the new RM30 delivery. No stock moved, as the unit is not yet handed over."
+  ]
+ },
+ {
   "v": "v1477",
   "d": "07 Nov 2026",
   "t": "ONE PENDING SALT ORDER FOR CI5-PER, NOTHING MOVED",
