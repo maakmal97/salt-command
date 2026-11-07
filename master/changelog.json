@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1477",
+  "d": "07 Nov 2026",
+  "t": "ONE PENDING SALT ORDER FOR CI5-PER, NOTHING MOVED",
+  "n": [
+   "<b>FOLDED: ONE NEW SALE, S346.</b> A pending order of 1 unit of salt to CI5-PER, goods RM120 with delivery RM25, preapproved by Counter Admin. Nothing was paid and nothing handed over, so it is appended with its note as drafted. The goods sit at the askTotal of RM120. The drafter raised no flags and the dossier shows none to answer.",
+   "<b>INVENTORY: UNCHANGED.</b> The row is pending, so it draws no stock and books no revenue yet. Stock stays at 9 units and the cost basis stays at RM56 per unit."
+  ]
+ },
+ {
   "v": "v1476",
   "d": "07 Nov 2026",
   "t": "CASH RECEIVED CLOSES THE S345 ORDER FOR CM6-PJ",
