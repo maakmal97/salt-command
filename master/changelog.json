@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1470",
+  "d": "07 Nov 2026",
+  "t": "ONE PENDING SALE OF SALT TO CZ5-TM, NO STOCK MOVED",
+  "n": [
+   "<b>FOLDED:</b> one new pending sale, s344, of 1 unit of salt to CZ5-TM for RM100, ordered on the statements site and to be collected. Nothing was paid and nothing was handed over. It was preapproved by Counter Admin and the drafter raised no flags.",
+   "<b>INVENTORY:</b> unchanged. A pending row draws no stock and books no revenue until something moves, so the stock stays at 5 units and the cost basis at RM56 per unit."
+  ]
+ },
+ {
   "v": "v1469",
   "d": "07 Nov 2026",
   "t": "AN OIL COUNT OF 30 UNITS REPLACES THE BOOK FIGURE OF 40",

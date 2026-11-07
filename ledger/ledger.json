@@ -1,6 +1,6 @@
 {
- "v": "v1469",
- "stamped": "07 Nov 2026, 14:50 KL",
+ "v": "v1470",
+ "stamped": "07 Nov 2026, 22:18 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -11780,6 +11780,19 @@
      }
     ],
     "paidOn": "2026-11-07"
+   },
+   {
+    "customer": "CZ5-TM",
+    "qty": 1,
+    "total": 100,
+    "cash": 0,
+    "date": "2026-11-07",
+    "deliveredQty": 0,
+    "note": "<b>SALE S344: 1 UNIT OF SALT TO CZ5-TM, RM100 GOODS, PENDING.</b> Order 20261107141123-w03djq, preapproved by Counter Admin, dated 07 Nov 2026, to collect, no delivery charge. Nothing paid, nothing handed over. Goods of RM100 sit above the floorTotal of RM60 and below the askTotal of RM120; RM100 per unit is above the floorPerUnit of RM60 and below the askPerUnit of RM120. CZ5-TM has a median rate of RM100, range RM90 to RM110, so this is its usual rate. Outstanding before: RM0, no units on credit, nothing defaulted, credit cap 1. The drafter raised no flags. The cost stays RM56 per unit, the inventory's own rate from purchase p050. Outstanding: the RM100 payment and the collection of 1 unit.",
+    "listRM": 100,
+    "listQty": 1,
+    "road": "site",
+    "rid": "s344"
    }
   ],
   "contacts": [
@@ -12636,7 +12649,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-07T06:49:21.170Z",
+  "QUEUE_COMMITTED": "2026-11-07T14:17:40.013Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -13285,23 +13298,6 @@
       "rare": true
      }
     },
-    "CM6-HCM": {
-     "salt": {
-      "name": "one-off",
-      "orders": 1,
-      "tenureDays": 116,
-      "sinceLastDays": 116,
-      "perMonth": 0.26,
-      "unitsPerMonth": 3.28,
-      "smallShare": 0,
-      "bigShare": 1,
-      "frequent": false,
-      "small": false,
-      "bigger": true,
-      "loyal": false,
-      "rare": true
-     }
-    },
     "CZ5-TM": {
      "salt": {
       "name": "consistent mid",
@@ -13317,6 +13313,23 @@
       "bigger": false,
       "loyal": true,
       "rare": false
+     }
+    },
+    "CM6-HCM": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 116,
+      "sinceLastDays": 116,
+      "perMonth": 0.26,
+      "unitsPerMonth": 3.28,
+      "smallShare": 0,
+      "bigShare": 1,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": true
      }
     },
     "CA4-DAM": {
@@ -15172,60 +15185,6 @@
         7445
        ]
       ],
-      "CM6-HCM": [
-       [
-        0.5,
-        75
-       ],
-       [
-        1,
-        120
-       ],
-       [
-        1.5,
-        160
-       ],
-       [
-        2,
-        215
-       ],
-       [
-        2.5,
-        255
-       ],
-       [
-        3,
-        305
-       ],
-       [
-        4,
-        390
-       ],
-       [
-        5,
-        475
-       ],
-       [
-        6.25,
-        580
-       ],
-       [
-        12.5,
-        945
-       ],
-       [
-        25,
-        1860
-       ],
-       [
-        50,
-        3720
-       ],
-       [
-        100,
-        7445
-       ]
-      ],
       "CZ5-TM": [
        [
         0.5,
@@ -15278,6 +15237,60 @@
        [
         100,
         6840
+       ]
+      ],
+      "CM6-HCM": [
+       [
+        0.5,
+        75
+       ],
+       [
+        1,
+        120
+       ],
+       [
+        1.5,
+        160
+       ],
+       [
+        2,
+        215
+       ],
+       [
+        2.5,
+        255
+       ],
+       [
+        3,
+        305
+       ],
+       [
+        4,
+        390
+       ],
+       [
+        5,
+        475
+       ],
+       [
+        6.25,
+        580
+       ],
+       [
+        12.5,
+        945
+       ],
+       [
+        25,
+        1860
+       ],
+       [
+        50,
+        3720
+       ],
+       [
+        100,
+        7445
        ]
       ],
       "CA4-DAM": [
@@ -17349,8 +17362,8 @@
       "CR3-DAM": -0.1,
       "CE4-AD": 0,
       "CC9-OKR": 0,
-      "CM6-HCM": 0,
       "CZ5-TM": -0.25,
+      "CM6-HCM": 0,
       "CA4-DAM": 0,
       "CI4-OKR": -0.15,
       "CA7-AMP": 0,
@@ -17435,13 +17448,13 @@
        "pct": -0.2,
        "why": "good record"
       },
-      "CM6-HCM": {
-       "pct": 0,
-       "why": ""
-      },
       "CZ5-TM": {
        "pct": -0.25,
        "why": "good record"
+      },
+      "CM6-HCM": {
+       "pct": 0,
+       "why": ""
       },
       "CA4-DAM": {
        "pct": 0.3,
@@ -18140,7 +18153,7 @@
         450
        ]
       ],
-      "CM6-HCM": [
+      "CZ5-TM": [
        [
         10,
         130
@@ -18162,7 +18175,7 @@
         450
        ]
       ],
-      "CZ5-TM": [
+      "CM6-HCM": [
        [
         10,
         130
@@ -19037,8 +19050,8 @@
       "CR3-DAM": 0,
       "CE4-AD": 0,
       "CC9-OKR": 0,
-      "CM6-HCM": 0,
       "CZ5-TM": 0,
+      "CM6-HCM": 0,
       "CA4-DAM": 0,
       "CI4-OKR": 0,
       "CA7-AMP": 0,
@@ -19589,7 +19602,7 @@
         1500
        ]
       ],
-      "CM6-HCM": [
+      "CZ5-TM": [
        [
         1,
         60
@@ -19611,7 +19624,7 @@
         1500
        ]
       ],
-      "CZ5-TM": [
+      "CM6-HCM": [
        [
         1,
         60
@@ -20486,8 +20499,8 @@
       "CR3-DAM": 0,
       "CE4-AD": 0,
       "CC9-OKR": 0,
-      "CM6-HCM": 0,
       "CZ5-TM": 0,
+      "CM6-HCM": 0,
       "CA4-DAM": 0,
       "CI4-OKR": 0,
       "CA7-AMP": 0,
@@ -20899,7 +20912,7 @@
         60
        ]
       ],
-      "CM6-HCM": [
+      "CZ5-TM": [
        [
         1,
         8
@@ -20913,7 +20926,7 @@
         60
        ]
       ],
-      "CZ5-TM": [
+      "CM6-HCM": [
        [
         1,
         8
@@ -21476,8 +21489,8 @@
       "CR3-DAM": 0,
       "CE4-AD": 0,
       "CC9-OKR": 0,
-      "CM6-HCM": 0,
       "CZ5-TM": 0,
+      "CM6-HCM": 0,
       "CA4-DAM": 0,
       "CI4-OKR": 0,
       "CA7-AMP": 0,
@@ -21941,7 +21954,7 @@
         1500
        ]
       ],
-      "CM6-HCM": [
+      "CZ5-TM": [
        [
         1,
         75
@@ -21959,7 +21972,7 @@
         1500
        ]
       ],
-      "CZ5-TM": [
+      "CM6-HCM": [
        [
         1,
         75
@@ -22678,8 +22691,8 @@
       "CR3-DAM": 0,
       "CE4-AD": 0,
       "CC9-OKR": 0,
-      "CM6-HCM": 0,
       "CZ5-TM": 0,
+      "CM6-HCM": 0,
       "CA4-DAM": 0,
       "CI4-OKR": 0,
       "CA7-AMP": 0,
@@ -22999,7 +23012,7 @@
         125
        ]
       ],
-      "CM6-HCM": [
+      "CZ5-TM": [
        [
         12,
         60
@@ -23009,7 +23022,7 @@
         125
        ]
       ],
-      "CZ5-TM": [
+      "CM6-HCM": [
        [
         12,
         60
@@ -23416,8 +23429,8 @@
       "CR3-DAM": 0,
       "CE4-AD": 0,
       "CC9-OKR": 0,
-      "CM6-HCM": 0,
       "CZ5-TM": 0,
+      "CM6-HCM": 0,
       "CA4-DAM": 0,
       "CI4-OKR": 0,
       "CA7-AMP": 0,
@@ -23460,11 +23473,11 @@
      "suggest": null
     }
    },
-   "v": "v1469"
+   "v": "v1470"
   },
   "OPEN": {
-   "at": "2026-11-07T06:50:28.453Z",
-   "count": 8,
+   "at": "2026-11-07T14:18:31.116Z",
+   "count": 9,
    "byKey": {
     "CE4-AD|2026-11-07|510": {
      "d": "2026-11-07",
@@ -23480,6 +23493,20 @@
      "rid": "s343",
      "paidOn": "2026-11-07",
      "key": "CE4-AD|2026-11-07|510"
+    },
+    "CZ5-TM|2026-11-07|100": {
+     "d": "2026-11-07",
+     "p": "CZ5-TM",
+     "dir": "S",
+     "q": 1,
+     "t": 100,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 100,
+     "oweUnits": 1,
+     "rid": "s344",
+     "key": "CZ5-TM|2026-11-07|100"
     },
     "CR3-DAM|2026-10-30|70": {
      "d": "2026-10-30",
@@ -23606,10 +23633,10 @@
      "free": 0,
      "owedOut": 5,
      "coverDays": 0,
-     "rate": 4.29,
+     "rate": 4.34,
      "owedToYou": 310,
-     "promised": 5,
-     "short": 0
+     "promised": 6,
+     "short": 1
     },
     "oil": {
      "name": "Oil",
@@ -23675,7 +23702,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1469"
+   "v": "v1470"
   },
   "TERMS": {
    "ceiling": 250,
@@ -23683,7 +23710,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1469"
+   "v": "v1470"
   },
   "REWARD": {
    "stated": {
@@ -23701,7 +23728,7 @@
      }
     }
    },
-   "v": "v1469"
+   "v": "v1470"
   },
   "STOCK": {
    "today": "2026-11-07",
@@ -23709,7 +23736,7 @@
     "salt": {
      "shelf": 5,
      "free": 0,
-     "commit": 5,
+     "commit": 6,
      "light": "red",
      "coverDays": 0,
      "transit": 0
@@ -23755,7 +23782,7 @@
      "transit": 0
     }
    },
-   "v": "v1469"
+   "v": "v1470"
   }
  }
 }
