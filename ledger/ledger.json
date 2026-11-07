@@ -1,6 +1,6 @@
 {
- "v": "v1474",
- "stamped": "07 Nov 2026, 22:50 KL",
+ "v": "v1475",
+ "stamped": "07 Nov 2026, 22:57 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -107,7 +107,7 @@
     "stated": 25
    }
   },
-  "STATED_STOCK": 10,
+  "STATED_STOCK": 9,
   "COUNT_ON": {
    "salt": "2026-11-07",
    "oil": "2026-11-07",
@@ -11831,12 +11831,38 @@
     "total": 100,
     "cash": 0,
     "date": "2026-11-07",
-    "deliveredQty": 0,
-    "note": "<b>SALE S345: 1 UNIT OF SALT TO CM6-PJ, RM100 GOODS, PENDING.</b> Order 20261107145005-0yhjjw, placed on the statements site, preapproved by Counter Admin, dated 07 Nov 2026, to collect, no delivery charge. Nothing paid, nothing handed over. Goods of RM100 sit above the floorTotal of RM60 and below the askTotal of RM120; RM100 per unit is above the floorPerUnit of RM60 and below the askPerUnit of RM120. CM6-PJ has a median rate of RM100, range RM86.67 to RM100, so this is its usual rate. Outstanding before: RM0, no units on credit, nothing defaulted, credit cap 1. The drafter raised no flags. The cost stays RM56 per unit, the inventory's own rate from purchase p050. Outstanding: the RM100 payment and the collection of 1 unit.",
+    "deliveredQty": 1,
+    "note": "<b>CORRECTION ON S345: 1 UNIT COLLECTED BY CM6-PJ ON 07 NOV 2026, RM100 STILL UNPAID.</b> Order 20261107145005-0yhjjw, preapproved by Counter Admin. deliveredQty moves from 0 to 1, deliveredOn from unset to 07 Nov 2026, handover from unset to collected. Total and cash are untouched, so the goods of RM100 stay between the floorTotal of RM60 and the askTotal of RM120. CM6-PJ has a median rate of RM100, range RM86.67 to RM100, and RM100 outstanding before this row, with 0 units on credit and nothing defaulted. The drafter flagged this as an advance with RM100 unpaid; the figures show the unit has gone out on credit, so the cap needs checking. The cost stays the inventory's own. Outstanding: the RM100 payment. <b>SALE S345: 1 UNIT OF SALT TO CM6-PJ, RM100 GOODS, PENDING.</b> Order 20261107145005-0yhjjw, placed on the statements site, preapproved by Counter Admin, dated 07 Nov 2026, to collect, no delivery charge. Nothing paid, nothing handed over. Goods of RM100 sit above the floorTotal of RM60 and below the askTotal of RM120; RM100 per unit is above the floorPerUnit of RM60 and below the askPerUnit of RM120. CM6-PJ has a median rate of RM100, range RM86.67 to RM100, so this is its usual rate. Outstanding before: RM0, no units on credit, nothing defaulted, credit cap 1. The drafter raised no flags. The cost stays RM56 per unit, the inventory's own rate from purchase p050. Outstanding: the RM100 payment and the collection of 1 unit.",
     "listRM": 100,
     "listQty": 1,
     "road": "site",
-    "rid": "s345"
+    "rid": "s345",
+    "deliveredOn": "2026-11-07",
+    "handover": "collected",
+    "mod": "corrected on 2026-11-07: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-07; handover (unset) to collected",
+    "amend": [
+     {
+      "date": "2026-11-07",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-11-07",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 1,
+      "note": "<b>CORRECTION ON S345: 1 UNIT COLLECTED BY CM6-PJ ON 07 NOV 2026, RM100 STILL UNPAID.</b> Order 20261107145005-0yhjjw, preapproved by Counter Admin. deliveredQty moves from 0 to 1, deliveredOn from unset to 07 Nov 2026, handover from unset to collected. Total and cash are untouched, so the goods of RM100 stay between the floorTotal of RM60 and the askTotal of RM120. CM6-PJ has a median rate of RM100, range RM86.67 to RM100, and RM100 outstanding before this row, with 0 units on credit and nothing defaulted. The drafter flagged this as an advance with RM100 unpaid; the figures show the unit has gone out on credit, so the cap needs checking. The cost stays the inventory's own. Outstanding: the RM100 payment.",
+      "was": {
+       "deliveredQty": 0,
+       "deliveredOn": null,
+       "handover": null
+      },
+      "cost": 56
+     }
+    ],
+    "cost": 56
    }
   ],
   "contacts": [
@@ -12696,7 +12722,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-07T14:50:06.955Z",
+  "QUEUE_COMMITTED": "2026-11-07T14:57:20.248Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -12892,7 +12918,7 @@
     {
      "id": "upkeep:shrink:salt",
      "sev": "note",
-     "title": "The unexplained plug runs at 5.1% of everything handled"
+     "title": "The unexplained plug runs at 4.9% of everything handled"
     },
     {
      "id": "parity:declared:prep",
@@ -13496,18 +13522,18 @@
     },
     "CM6-PJ": {
      "salt": {
-      "name": "small and rare",
-      "orders": 5,
+      "name": "small and often",
+      "orders": 6,
       "tenureDays": 78,
-      "sinceLastDays": 7,
-      "perMonth": 1.95,
-      "unitsPerMonth": 3.51,
-      "smallShare": 0.6,
-      "bigShare": 0.4,
-      "frequent": false,
+      "sinceLastDays": 0,
+      "perMonth": 2.34,
+      "unitsPerMonth": 3.9,
+      "smallShare": 0.67,
+      "bigShare": 0.33,
+      "frequent": true,
       "small": true,
-      "bigger": true,
-      "loyal": false,
+      "bigger": false,
+      "loyal": true,
       "rare": false
      }
     },
@@ -14218,9 +14244,9 @@
        "repl": 56,
        "freightRate": 2,
        "leak": {
-        "ratio": 0.0533,
+        "ratio": 0.0519,
         "leak": 2,
-        "sold": 37.5,
+        "sold": 38.5,
         "cycles": 3,
         "from": "2026-10-28",
         "to": "2026-11-07"
@@ -14245,15 +14271,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.32608695652173914
+         "v": 0.3237410071942446
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08909370199692782,
        "avgDel": {
-        "n": 258,
-        "kg": 632.31,
-        "mean": 2.4508
+        "n": 259,
+        "kg": 633.31,
+        "mean": 2.4452
        }
       },
       "policy": {
@@ -23520,10 +23546,10 @@
      "suggest": null
     }
    },
-   "v": "v1474"
+   "v": "v1475"
   },
   "OPEN": {
-   "at": "2026-11-07T14:50:53.509Z",
+   "at": "2026-11-07T14:58:03.314Z",
    "count": 10,
    "byKey": {
     "CE4-AD|2026-11-07|510": {
@@ -23562,12 +23588,15 @@
      "q": 1,
      "t": 100,
      "cash": 0,
-     "mv": 0,
-     "st": "part",
+     "mv": 1,
+     "st": "dueMoney",
      "oweRM": 100,
-     "oweUnits": 1,
      "rid": "s345",
-     "key": "CM6-PJ|2026-11-07|100"
+     "deliveredOn": "2026-11-07",
+     "handover": "collected",
+     "key": "CM6-PJ|2026-11-07|100",
+     "age": 0,
+     "exp": 100
     },
     "CR3-DAM|2026-10-30|70": {
      "d": "2026-10-30",
@@ -23690,13 +23719,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 10,
-     "free": 4,
+     "onHand": 9,
+     "free": 3,
      "owedOut": 6,
-     "coverDays": 1.2,
+     "coverDays": 1,
      "rate": 4.39,
-     "owedToYou": 310,
-     "promised": 7,
+     "owedToYou": 410,
+     "promised": 6,
      "short": 0
     },
     "oil": {
@@ -23763,7 +23792,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1474"
+   "v": "v1475"
   },
   "TERMS": {
    "ceiling": 250,
@@ -23771,7 +23800,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1474"
+   "v": "v1475"
   },
   "REWARD": {
    "stated": {
@@ -23789,17 +23818,17 @@
      }
     }
    },
-   "v": "v1474"
+   "v": "v1475"
   },
   "STOCK": {
    "today": "2026-11-07",
    "books": {
     "salt": {
-     "shelf": 10,
-     "free": 4,
-     "commit": 7,
+     "shelf": 9,
+     "free": 3,
+     "commit": 6,
      "light": "amber",
-     "coverDays": 1.2,
+     "coverDays": 1,
      "transit": 0
     },
     "oil": {
@@ -23843,7 +23872,7 @@
      "transit": 0
     }
    },
-   "v": "v1474"
+   "v": "v1475"
   }
  }
 }
