@@ -16,8 +16,8 @@ import { webcrypto } from "node:crypto";
 const BUILD = "b".repeat(16);
 
 export async function run({ ok }) {
-  /* what GET /pay/accounts answers (invented, 06 Nov 2026): the sheet offers a bank only once it has what that bank's rail draws */
-  const PAYACC = { ok: true, accounts: { maybank: { number: ["5550", "0001", "1234"].join(""), bank: "Maybank" } } };
+  /* what GET /pay/accounts answers (invented, 06 Nov 2026): the sheet offers a way and a bank only once it has what that rail draws */
+  const PAYACC = { ok: true, accounts: (await import("../stmt/paycodes.js")).shapeAccounts((await import("../tools/testfix.mjs")).invented().accounts, (await import("../stmt/pay.js")).PAY_ACCOUNTS) };
   const { landingPage } = await import("../stmt/page.js");
   const C = await import("../tools/stmt-crypto.mjs");
   const { JSDOM } = await import("jsdom");

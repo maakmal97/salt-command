@@ -201,7 +201,7 @@ export async function run({ ok, okOff, pageWork, KV }) {
   const wins = [];
   /* a customer's page signed in on an invented account owing three parts, 303 in all; `numbers` is what GET /pay/accounts answers, `down`
      a Worker that cannot be reached for it. `calls` is every request the page made, `copied` every string put on the clipboard. */
-  const openPage = async ({ numbers = {}, down = false, live = null, canvas = false, share = null } = {}) => {
+  const openPage = async ({ numbers = {}, down = false, live = null, canvas = false, share = null, noBlob = false } = {}) => {
     const pass = "fixture-pass-7b", ck = await CR.contentKey("test-secret", UN), list = [part(0), part(1), part(2)], sum = 303;
     const pay = { term: 1, hide: 3, lock: 4, window: 60, now: { rm: sum, due: list[0].due, parts: list }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
     const stamped = { at: new Date(Date.now() - 3600e3).toISOString(), body: "<p>Live</p>", owed: sum, pay, buildId: BUILD };
@@ -219,13 +219,13 @@ export async function run({ ok, okOff, pageWork, KV }) {
       if (canvas) {
         win.HTMLCanvasElement.prototype.getContext = function () { const c = this; return { fillStyle: "", fillRect: (x, y, w, h) => { fillRects.push({ x, y, w, h, cw: c.width }); } }; };
         win.HTMLCanvasElement.prototype.toDataURL = () => "data:image/png;base64,iVBORw0KGgo=";
-        win.HTMLCanvasElement.prototype.toBlob = function (cb) { cb(new win.Blob(["png"], { type: "image/png" })); };
+        win.HTMLCanvasElement.prototype.toBlob = function (cb) { cb(noBlob ? null : new win.Blob(["png"], { type: "image/png" })); };
       }
       win.URL.createObjectURL = () => "blob:https://site.test/pay-code"; win.URL.revokeObjectURL = () => {};
       win.HTMLAnchorElement.prototype.click = function () { downloads.push({ href: this.getAttribute("href"), download: this.getAttribute("download") }); };
-      if (share === "ok" || share === "abort") {
+      if (share === "ok" || share === "abort" || share === "deny") {
         Object.defineProperty(win.navigator, "canShare", { value: () => true, configurable: true });
-        Object.defineProperty(win.navigator, "share", { value: async (d) => { shares.push(d); if (share === "abort") { const e = new Error("closed"); e.name = "AbortError"; throw e; } }, configurable: true });
+        Object.defineProperty(win.navigator, "share", { value: async (d) => { shares.push(d); if (share === "abort" || share === "deny") { const e = new Error("closed"); e.name = share === "abort" ? "AbortError" : "NotAllowedError"; throw e; } }, configurable: true });
       }
       Object.defineProperty(win.navigator, "clipboard", { value: { writeText: async (s) => { copied.push(String(s)); } }, configurable: true });
       win.fetch = async (path, init) => {
@@ -362,9 +362,10 @@ export async function run({ ok, okOff, pageWork, KV }) {
 
     /* a bank with no number to show is not offered on Transfer, and with the Worker unreachable the sheet says so and offers none */
     const tilesOf = (X) => [...X.d.querySelectorAll('#payBody input[name="payInto"]')].map((r) => r.value);
+    const waysOf2 = (X) => [...X.d.querySelectorAll('#payBody input[name="payHow"]')].map((r) => r.value + (r.checked ? "*" : "")).join();
     const E = await openPage({ numbers: { maybank: { number: "12345678" }, ambank: { number: NUMBER } } }), D = await openPage({ down: true, numbers: BASE });
     E.open(); D.open(); await D.work.quiet(); await until(() => !!D.d.getElementById("payNone"), 60);
-    ok(tilesOf(E).join() === "ambank" && tilesOf(D).length === 0 && kind(D.go()) === "BUTTON disabled" && tx(D.d.getElementById("payNone")) === "We cannot show our accounts right now. Close this and try again in a moment.",
+    ok(tilesOf(E).join() === "ambank" && tilesOf(D).length === 0 && waysOf2(D) === "transfer*,qr" && kind(D.go()) === "BUTTON disabled" && tx(D.d.getElementById("payNone")) === "We cannot show our accounts right now. Close this and try again in a moment.",
       "a number the page will not draw is not offered, and with the Worker unreachable the sheet offers no account, says so in one line and keeps the pill dark: " + JSON.stringify([tilesOf(E), tilesOf(D)]));
     const askedDown = D.asked();
     D.d.getElementById("payX").click(); E.d.getElementById("payX").click();
@@ -389,17 +390,29 @@ export async function run({ ok, okOff, pageWork, KV }) {
       "the code is the QR panel with one rect a run of dark modules and four modules of quiet round it, titled with the account: " + JSON.stringify([!!panel, svg && svg.querySelectorAll("g rect").length, wantRuns]));
     const scanRows = [...F.d.querySelectorAll("#payBody .payref > .salt-ledger__row")].map((r) => tx(r.querySelector(".salt-ledger__label")));
     ok(scanRows.join() === "Amount,Reference" && !F.d.getElementById("payAcctNo") && !new RegExp(NUMBER.slice(0, 8)).test(F.d.getElementById("paySheet").textContent.replace(/\s/g, "")) && tx(F.go()) === "I have paid" && kind(F.go()) === "BUTTON"
-      && /^Pay it from your banking app[.]/.test(tx(F.d.querySelector("#payFoot .paycap"))) && tx(F.d.getElementById("paySave")) === "Save the code" && /cannot scan its own screen/.test(tx(F.d.querySelector("#paySave + p"))),
+      && /^Pay it from your banking app[.]/.test(tx(F.d.querySelector("#payFoot .paycap"))) && tx(F.d.getElementById("paySave")) === "Save the code" && /^Press and hold the code to save it to Photos, then open it from your bank app[.]$/.test(tx(F.d.querySelector("#paySave + p"))),
       "a code shows the amount and the reference, no account number, Save the code and its one-sentence hint, and the pill is I have paid: " + JSON.stringify(scanRows));
     ok(F.d.querySelectorAll("#paySheet a[href], #paySheet [target]").length === 0 && F.d.querySelectorAll("#paySheet img").length === 0, "and no link, and with no canvas no picture, only the drawn rects");
+    F.d.getElementById("paySave").click();
+    ok(tx(F.d.querySelector("#payBody .payref + .msg")) === "The code could not be saved here. Press and hold it to save it instead." && F.shares.length === 0 && F.downloads.length === 0 && F.q() === null,
+      "with no picture to offer, Save the code says so in a line, and shares nothing, downloads nothing and marks nothing");
     F.d.getElementById("payX").click();
     /* a code the Worker sends malformed is not drawn: ragged rows, a character that is no module, too few rows, an account not in the list */
     const ragged = MAYROWS.slice(); ragged[3] = ragged[3].slice(1);
     const bad = await openPage({ numbers: { maybank: Object.assign({}, BASE.maybank, { rows: ragged }), instapay: Object.assign({}, BASE.instapay, { rows: BASE.instapay.rows.map((r, i) => i === 0 ? r.replace(/./, "x") : r) }),
       ambank: Object.assign({}, BASE.maybank, { rows: Array(10).fill("10".repeat(5)) }), gx: Object.assign({}, BASE.maybank, { rows: Array(74).fill("10".repeat(37)) }), boostbank: { number: NUMBER } } });
-    bad.open(); bad.way("qr");
-    ok(tilesOf(bad).length === 0, "rows that are ragged, hold a character that is no module or are too few are not drawn, and the account is not offered on the code: " + JSON.stringify(tilesOf(bad)));
+    bad.open();
+    ok(!bad.d.querySelector('#payBody input[name="payHow"][value="qr"]') && !!bad.d.querySelector('#payBody input[name="payHow"][value="transfer"]') && !!bad.d.querySelector('#payBody input[name="payHow"][value="jompay"]'),
+      "rows that are ragged, hold a character that is no module or are too few are not drawn, and with no account left on the code that way is not offered at all: " + [...bad.d.querySelectorAll('#payBody input[name="payHow"]')].map((r) => r.value).join());
     bad.d.getElementById("payX").click();
+
+    /* a way with no account to show is not offered, as JomPAY is not: only a number, no Scan a code; only a code, no Transfer; JomPAY with its pair */
+    const W1 = await openPage({ numbers: { ambank: { number: NUMBER } } }), W2 = await openPage({ numbers: { maybank: { rows: MAYROWS } } });
+    W1.open(); W2.open();
+    const waysOf = (X) => [...X.d.querySelectorAll('#payBody input[name="payHow"]')].map((r) => r.value + (r.checked ? "*" : "")).join();
+    ok(waysOf(W1) === "transfer*" && waysOf(W2) === "qr*" && tilesOf(W2).join() === "maybank" && tilesOf(W1).join() === "ambank",
+      "with only a number the sheet offers Transfer alone, with only a code Scan a code alone (chosen, so the sheet is never on a way with nothing to show), and neither says the accounts cannot be shown: " + waysOf(W1) + " | " + waysOf(W2));
+    W1.d.getElementById("payX").click(); W2.d.getElementById("payX").click();
 
     /* with a canvas the same modules are painted onto it and the code stands as a PNG picture a long press can save; Save offers the file */
     const C1 = await openPage({ numbers: BASE, canvas: true, share: "ok" });
@@ -408,17 +421,28 @@ export async function run({ ok, okOff, pageWork, KV }) {
     ok(!!img && /^data:image[/]png;base64,/.test(img.getAttribute("src")) && !C1.d.querySelector(".paycode svg") && img.getAttribute("alt") === "The DuitNow QR code for Maybank"
       && fills.length === 1 + wantRuns && fills[0].w === (nrow) * 8 && fills.slice(1).every((f) => f.h === 8 && f.w % 8 === 0) && fills.slice(1).reduce((n, f) => n + f.w / 8, 0) === MAYROWS.join("").split("1").length - 1,
       "with a canvas the code is a data: PNG picture, never a blob, painted from the same runs, eight pixels a module: " + JSON.stringify([!!img, fills.length, wantRuns]));
-    C1.d.getElementById("paySave").click(); await until(() => C1.shares.length >= 1 && !!C1.d.querySelector("#payBody .payref + .msg"), 60);
+    C1.d.getElementById("paySave").click(); const insideTap = C1.shares.length === 1;
+    await until(() => C1.shares.length >= 1 && !!C1.d.querySelector("#payBody .payref + .msg"), 60);
     const sh = C1.shares[0], saved = C1.q();
-    ok(C1.shares.length === 1 && sh.files.length === 1 && sh.files[0].type === "image/png" && /[.]png$/.test(sh.files[0].name) && !/[0-9]{4}/.test(sh.files[0].name) && C1.downloads.length === 0
+    ok(insideTap && C1.shares.length === 1 && sh.files.length === 1 && sh.files[0].type === "image/png" && /[.]png$/.test(sh.files[0].name) && !/[0-9]{4}/.test(sh.files[0].name) && C1.downloads.length === 0
       && tx(C1.d.querySelector("#payBody .payref + .msg")) === "Saved." && !!saved && saved.away.rail === "qr" && saved.away.acct === "maybank",
-      "Save the code offers the picture through the phone's share sheet as a PNG file, says Saved, and marks the visit away as Copy does: " + JSON.stringify([C1.shares.length, sh && sh.files.map((f) => f.type + ":" + f.name), saved && saved.away]));
+      "Save the code offers the picture through the phone's share sheet, called inside the tap itself with nothing awaited, as a PNG file, says Saved, and marks the visit away as Copy does: " + JSON.stringify([C1.shares.length, sh && sh.files.map((f) => f.type + ":" + f.name), saved && saved.away]));
     C1.d.getElementById("payX").click();
     const C2 = await openPage({ numbers: BASE, canvas: true, share: "none" });
     C2.open(); C2.way("qr"); C2.pick("maybank"); C2.d.getElementById("paySave").click(); await until(() => C2.downloads.length >= 1, 60);
     ok(C2.downloads.length === 1 && C2.downloads[0].download === "pay-code.png" && /^blob:/.test(C2.downloads[0].href) && C2.shares.length === 0 && C2.q() && C2.q().away.rail === "qr",
       "where the phone cannot share a file, Save the code downloads the PNG from a blob address, and marks the visit away: " + JSON.stringify(C2.downloads));
     C2.d.getElementById("payX").click();
+    const C4 = await openPage({ numbers: BASE, canvas: true, share: "deny" });
+    C4.open(); C4.way("qr"); C4.pick("maybank"); C4.d.getElementById("paySave").click(); await until(() => C4.downloads.length >= 1, 60);
+    ok(C4.shares.length === 1 && C4.downloads.length === 1 && C4.downloads[0].download === "pay-code.png" && tx(C4.d.querySelector("#payBody .payref + .msg")) === "Saved.",
+      "a share the phone refuses falls to the download and says Saved: " + JSON.stringify([C4.shares.length, C4.downloads.length]));
+    C4.d.getElementById("payX").click();
+    const C5 = await openPage({ numbers: BASE, canvas: true, share: "ok", noBlob: true });
+    C5.open(); C5.way("qr"); C5.pick("maybank"); C5.d.getElementById("paySave").click(); await C5.work.quiet();
+    ok(C5.shares.length === 0 && C5.downloads.length === 0 && C5.q() === null && tx(C5.d.querySelector("#payBody .payref + .msg")) === "The code could not be saved here. Press and hold it to save it instead.",
+      "a picture that could not be made says so in a line and shares, downloads and marks nothing, never a dead tap");
+    C5.d.getElementById("payX").click();
     const C3 = await openPage({ numbers: BASE, canvas: true, share: "abort" });
     C3.open(); C3.way("qr"); C3.pick("maybank"); C3.d.getElementById("paySave").click(); await until(() => C3.shares.length >= 1, 60); await C3.work.quiet();
     ok(C3.shares.length === 1 && C3.downloads.length === 0 && C3.q() === null && !tx(C3.d.querySelector("#payBody .payref + .msg")),

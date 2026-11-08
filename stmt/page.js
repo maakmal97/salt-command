@@ -7109,6 +7109,8 @@ const CLIENT_JS = `
     });
   }
   function jomOn(){ return payInto('jompay').length>0; }
+  /* a way is shown while some account gives what it draws; with nothing answered at all every way stands and the sheet says so (item: hide, never apologise per way) */
+  function wayOn(rail){ return !Object.keys(PAYX).length||payInto(rail).length>0; }
   /* label: a key, worded as the sheet draws */
   /* V2: the invoice is fixed as the sheet opens, as its figure is, so a poll landing while they pay moves neither */
   function acctCtx(){ var L=nowOf(); return {kind:'acct', fig:invTotal(L), label:'pay.now', lines:L, note:function(){ return null; }}; }
@@ -7165,6 +7167,7 @@ const CLIENT_JS = `
   }
   function codePanel(a,rows){
     var box=el('div','salt-qr paycode'), cv=el('div','salt-qr__code'), c=codeCanvas(rows), url='', meta=el('div','salt-qr__meta'), alt=tw('pay.codeAlt',{a:a.name});
+    codePrep(a.key,c);
     try{ url=c?c.toDataURL('image/png'):''; }catch(e){ url=''; }
     if(/^data:image[/]png;base64,/.test(url)){ var im=el('img'); im.src=url; im.alt=alt; im.width=c.width; im.height=c.height; cv.appendChild(im); }
     else cv.appendChild(codeSvg(rows,alt));
@@ -7173,24 +7176,35 @@ const CLIENT_JS = `
     box.appendChild(meta);
     return box;
   }
-  /* Save the code: the picture through the share sheet where the phone takes files, else a download; either is leaving for the bank's app,
-     so it marks the visit as Copy does. A share they close is nothing saved and nothing marked. */
-  async function codeSave(rows,say){
-    var c=codeCanvas(rows); if(!c) return;
-    var blob=await new Promise(function(ok){ c.toBlob(ok,'image/png'); });
-    if(!blob||!PS) return;
-    var shared=false;
-    try{
-      var f=new File([blob],'pay-code.png',{type:'image/png'});
-      if(navigator.canShare&&navigator.canShare({files:[f]})){ await navigator.share({files:[f]}); shared=true; }
-    }catch(e){ if(e&&e.name==='AbortError') return; shared=false; }
-    if(!shared){
-      var u=URL.createObjectURL(blob), l=document.createElement('a'); l.href=u; l.download='pay-code.png'; document.body.appendChild(l); l.click(); l.remove();
-      setTimeout(function(){ URL.revokeObjectURL(u); },4000);
-    }
+  /* THE FILE IS READY BEFORE THE TAP (06 Nov 2026, Fable): a phone lets navigator.share run only inside the gesture, so the PNG and its File are made as the code is
+     drawn and the tap calls share with nothing awaited before it. */
+  function codePrep(key,c){
     if(!PS) return;
-    if(payAmt()) payAway(payAmt());
-    PS.said=tw('pay.codeSaved'); say.textContent=PS.said; say.hidden=false;
+    PS.codeFor=key; PS.codeFile=null;
+    if(!c) return;
+    try{ c.toBlob(function(b){
+      if(!b||!PS||PS.codeFor!==key) return;
+      try{ PS.codeFile=new File([b],'pay-code.png',{type:'image/png'}); }catch(e){ PS.codeFile=null; }
+    },'image/png'); }catch(e){ PS.codeFile=null; }
+  }
+  /* Save the code: the picture through the share sheet where the phone takes files, else a download (also where a share is refused); either is leaving for the
+     bank's app, so it marks the visit as Copy does. A share they close is nothing saved and nothing marked. No picture to offer says so in a line. */
+  function codeSave(say){
+    var f=PS&&PS.codeFile;
+    function line(t){ if(!PS) return; PS.said=t; say.textContent=t; say.hidden=false; }
+    if(!f){ line(tw('pay.codeFail')); return; }
+    function done(){ if(!PS) return; if(payAmt()) payAway(payAmt()); line(tw('pay.codeSaved')); }
+    function download(){
+      var u=URL.createObjectURL(f), l=document.createElement('a'); l.href=u; l.download='pay-code.png'; document.body.appendChild(l); l.click(); l.remove();
+      setTimeout(function(){ URL.revokeObjectURL(u); },4000); done();
+    }
+    try{
+      if(navigator.canShare&&navigator.canShare({files:[f]})){
+        navigator.share({files:[f]}).then(done,function(e){ if(e&&e.name==='AbortError') return; download(); });
+        return;
+      }
+    }catch(e){ /* a share that throws falls to the download */ }
+    download();
   }
   /* quiet (=== true) when the page is leaving it (a lock, another account): focus has nowhere to go back to */
   function closePay(quiet){
@@ -7274,7 +7288,8 @@ const CLIENT_JS = `
   /* the figure being paid: all of it, or the part typed, never above all of it */
   function payAmt(){ if(!PS.part) return PS.ctx.fig; var v=parseFloat(PS.amt); return v>0&&v<=PS.ctx.fig+0.004?+v.toFixed(2):0; }
   function payTitle(){ document.getElementById('payT').textContent=tw('pay.payRm',{rm:rm(payAmt()||PS.ctx.fig)}); }
-  var HOW=[{v:'transfer', label:'pay.transfer', g:'bank'}, {v:'qr', label:'pay.scan', g:'qr', detail:'pay.scanDetail'},
+  var HOW=[{v:'transfer', label:'pay.transfer', g:'bank', only:function(){ return wayOn('transfer'); }},
+    {v:'qr', label:'pay.scan', g:'qr', detail:'pay.scanDetail', only:function(){ return wayOn('qr'); }},
     {v:'jompay', label:'pay.jompay', g:'jompay', detail:'pay.jompayDetail', only:jomOn}];
   /* ---- S6 6.8: CASH WHEN IT ARRIVES, OFFERED ONLY WHERE THE RULE ALLOWS, AND SAYING WHY WHEN NOT. A third way on an
      order's sheet, never on To pay now's, whose goods they already have. Withheld while goods they hold are unpaid, this
@@ -7308,7 +7323,10 @@ const CLIENT_JS = `
     body.textContent=''; payTitle();
     if(c.kind==='order'&&PS.rail==='cod'&&readyDue(oFind(c.id))) PS.rail='transfer';
     /* JomPAY is offered while some account gives its details; if they go while it is chosen, the way falls back to Transfer, and an account the sheet can no longer draw is not kept */
-    if(PS.rail==='jompay'&&!jomOn()) PS.rail='transfer';
+    if(PS.rail!=='cod'){
+      var vis=['transfer','qr','jompay'].filter(function(x){ return x==='jompay'?jomOn():wayOn(x); });
+      if(vis.length&&vis.indexOf(PS.rail)<0) PS.rail=vis[0];
+    }
     if(PS.acct&&PS.rail!=='cod'&&!payInto(PS.rail).some(function(x){ return x.key===PS.acct; })) PS.acct='';
     var cash=PS.rail==='cod';
     /* PHASE 7B: HIS BANKS FIRST, as the system's Option tiles, one tap each, none chosen; then the figure beside them */
@@ -7390,7 +7408,7 @@ const CLIENT_JS = `
     if(rw){
       body.appendChild(codePanel(ac,rw));
       var sv=el('button','salt-ghost',tw('pay.codeSave')); sv.type='button'; sv.id='paySave';
-      sv.addEventListener('click',function(){ codeSave(rw,said); });
+      sv.addEventListener('click',function(){ codeSave(said); });
       body.appendChild(sv); body.appendChild(el('p','sub2',tw('pay.codeHint')));
     }
     if(num) detail('payAcctNo','pay.acctNo',groupFours(num),ac.bank||ac.name,num,'pay.acctCopy','acctno');

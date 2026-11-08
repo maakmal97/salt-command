@@ -97,7 +97,7 @@ const sealCurrentLive = async (C, ck, doc) => {
 const PAYACC = await (async () => {
   const PCm = await import("../stmt/paycodes.js"), TXm = await import("../tools/testfix.mjs"), { PAY_ACCOUNTS: PAm } = await import("../stmt/pay.js");
   const shaped = PCm.shapeAccounts(TXm.invented().accounts, PAm), n = (k) => ["5550", "00" + k, "1234"].join("");
-  return { ok: true, accounts: Object.assign({}, shaped, { wise: { number: n("01"), bank: "Wise" }, ambank: { number: n("02"), bank: "AmBank" }, spay: { number: n("03"), bank: "S Pay" } }) };
+  return { ok: true, accounts: Object.assign({}, shaped, { wise: { number: n("01") }, ambank: { number: n("02") }, spay: { number: n("03") } }) };
 })();
 /* THE INVENTORY RATE, WORKED BY THE SUITE FROM A BOOK'S OWN ROWS (26 Sep 2026, his instruction that every book's stock
    cost is derived from its lots). Never through the desk's stockCostFor or the engine's stockBasis, which are what it

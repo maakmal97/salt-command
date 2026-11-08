@@ -52,7 +52,7 @@ export async function run({ ok, KV }) {
   ok(a > 0 && b > a && sheet.length > 15000 && !/window[.]open|[.]target\s*=|setAttribute\('target'|[.]rel\s*=|location[.](href|assign|replace)|https?:\/\/(?!www[.]w3[.]org\/2000\/svg)/.test(sheet),
     "the sheet's source opens no window, sets no target, moves no location and holds no address (only the SVG namespace): " + sheet.length + " characters read");
   const hrefs = sheet.match(/[.]href\s*=[^;]*;/g) || [];
-  ok(hrefs.length === 1 && /^[.]href=u;$/.test(hrefs[0]) && /var u=URL[.]createObjectURL\(blob\)/.test(sheet),
+  ok(hrefs.length === 1 && /^[.]href=u;$/.test(hrefs[0]) && /var u=URL[.]createObjectURL\(f\)/.test(sheet),
     "the one address the sheet sets is the blob of the PNG it has just made, for Save the code's download: " + JSON.stringify(hrefs));
   ok(!/<a[ >]/.test(sheet) && (sheet.match(/el\('a'/g) || []).length === 0, "and the sheet draws no anchor of its own");
 
