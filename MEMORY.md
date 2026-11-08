@@ -324,6 +324,14 @@
   in view on open. Section "5 Nov 2026: Salt Admin in layers" (`test/admin-frame.mjs`, 22 checks, 23 mutations red); 25 needles re-aimed, each red. Full suite
   11,981 passed, 1 failed (S1b, laptop only). QR Command took nothing (no token or face moved). Not built: the Desk's frame (his answer D, a follow-up).
 
+## Every Desk conclusion leads to its path (v1484)
+- Live as v1484 (`76e2fff7`, 09 Nov 2026; Cloud commit `42532267644`: chain green with "The phone is serving it", three suite parts green; CI `42532267657` green), his word
+  (each ledger row and conclusion leads to the correct path, one simple workflow per action) and his answer "Show, then act". The audit (every tap on the 13 pages probed in jsdom,
+  all 397 ledger rows) found every button reached a real page but always its top, never the rows or party named, and nothing linked Salt Admin. Show: `goRows` (`ledF.rids`, `#ledRids`),
+  `goParty`; Act: the Desk's `/admin?to=` held to `ADMIN_TO` in `src/worker.js`, Salt Admin's `WANTS` (`row/<rid>` the sale form, `acct/<code>` the account, a `-R` bucket its
+  associate's, `tip/<id>` Desk reminders). The table of every conclusion's road: docs/DESK.md "Every conclusion's path". Fable: sound, one low note applied and re-checked.
+  Full suite 12,063 passed, 2 failed before three needles were re-aimed (S1b laptop only). Not yet opened by him.
+
 ## Pay without leaving Salt Counter (v1482)
 - Live as v1482 (`02f695bf`, 09 Nov 2026; Cloud commit `42512546825`: chain green with "The phone is serving it", the statements deployed and published, three
   suite parts green; CI `42512546837` green), from `docs/plan-jompay-counter.html` draft 5 (artifact https://claude.ai/artifact/PbAgoiGgFLvz4uz4iQJ6aS): his A to D
