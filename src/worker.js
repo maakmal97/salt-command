@@ -82,10 +82,15 @@ const LOCKED_HTML = '<!doctype html><html lang="en"><meta charset="utf-8">'
   + '<h1 style="font-size:1.1em;margin:.5em 0">Salt Command is locked</h1>'
   + '<p style="color:#8b98a9;margin:0">This deployment expects Cloudflare Access in front of it, and this request arrived without it. Re-enable Access for salt-command in Zero Trust, then reload.</p>'
   + '</div></body></html>';
-/* the bar's Approve: Salt Admin's Approve (Orders, then Approve), an https address only */
-export function adminRedirect(env) {
+/* the bar's Approve: Salt Admin's Approve (Orders, then Approve), an https address only.
+ * 9 Nov 2026, his word (every conclusion leads to the correct path): `?to=` names the Salt Admin place a Desk conclusion is acted on,
+ * one of a fixed list (ADMIN_TO): a place and part, a row (`row/<rid>`, its sale form), an account (`acct/<code>`) or a Desk reminder
+ * (`tip/<id>`). Anything else lands on Approve as before, so the Desk can never send Salt Admin an address it does not know. */
+export const ADMIN_TO = /^(needs|orders\/(todo|open|done|ended|approve|payments|group|ledger)|customers\/(accounts|messages|links|associates)|record\/(entry|customers|pricing)|row\/[slp]\d{1,6}|acct\/[A-Z0-9]{2,4}(-[A-Z0-9]{1,6}){1,2}|tip\/[A-Za-z0-9:._+-]{1,120})$/;
+export function adminRedirect(env, want) {
   let to = null;
-  try { const u = new URL(String(env.ADMIN_URL || "")); if (u.protocol === "https:") { u.hash = "orders/approve"; to = u.href; } } catch (e) { to = null; }
+  const hash = typeof want === "string" && ADMIN_TO.test(want) ? want : "orders/approve";
+  try { const u = new URL(String(env.ADMIN_URL || "")); if (u.protocol === "https:") { u.hash = hash; to = u.href; } } catch (e) { to = null; }
   if (!to) return json({ ok: false, error: "Salt Admin's address is not set" }, 404);
   return new Response(null, { status: 302, headers: { location: to, "cache-control": "no-store" } });
 }
@@ -3043,7 +3048,7 @@ export default {
     /* 21 Oct 2026: THE BAR'S APPROVE. The desk's bar opens Salt Admin's Approve through here, so the site's address is in the
      * Worker's config (ADMIN_URL, Salt Admin's /all) and never in the public desk. Behind the same Access gate as the desk;
      * unset, it answers 404 rather than guess an address. */
-    if (p === "/admin" && (m === "GET" || m === "HEAD")) return adminRedirect(env);
+    if (p === "/admin" && (m === "GET" || m === "HEAD")) return adminRedirect(env, url.searchParams.get("to"));
 
     /* What build is live. The phone polls this every ten seconds and reloads when the id
      * differs from the one baked into the page it is running, which is how a deploy from
