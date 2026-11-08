@@ -50481,6 +50481,11 @@ await (async () => {
   await (await import("./desk-frame.mjs")).run({ ok });
 })();
 
+section("9 Nov 2026: every Desk conclusion leads to the correct path, Show on the Desk and Act on Salt Admin");
+await (async () => {
+  await (await import("./desk-paths.mjs")).run({ ok, pageWork });
+})();
+
 section("The Counter on a tablet: a dialog below 860px, the drawer and the list beside the open order from 860px, the order sheet's tiles two up, none of its rules under .adm (12 Oct 2026)");
 await (async () => {
   await (await import("./counter-tablet.mjs")).run({ ok });

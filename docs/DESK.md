@@ -935,3 +935,28 @@ drafter's pass, its dry run and `tools/drafts.mjs --from-queue` refuse a new sal
 `makerRequest` (`queueSaleFault`, `QUEUE_SALE_SINCE`), filed under `refused` with "a new sale is a site order now: place it with Order for them on
 Salt Admin". An older entry still drafts (the watermark's rule); a purchase, a gift, a redemption and a change to a booked row go on as before;
 `draftRow`, the law, is unchanged. The road `desk` stays on the rows it already holds.
+
+## Every conclusion's path: Show, then act (9 Nov 2026, his word and his answer "Show, then act")
+
+Every conclusion on the Desk (a To do row, a Noticed card) and every ledger row has one shape. **Show** opens exactly what it names, on the Desk:
+the rows a finding names alone (`goRows`, the Ledger's filter by rid, `ledF.rids`, said in `#ledRids`, Clear the way back), a party's statement
+(`goParty`, the Ledger's own party filter), or, for a finding about the book as a whole, its page. **Act** opens the one Salt Admin place where it
+is decided, through the Desk's `GET /admin?to=<address>` (`adminTo`, `adminLink`; a new tab, as the bar's Approve), which passes only the
+addresses `ADMIN_TO` in `src/worker.js` lists and lands anything else on Approve; Salt Admin's address stays in the Worker's config.
+
+| Conclusion | Show | Act on Salt Admin |
+|---|---|---|
+| A ledger row (tap opens its trail) | the trail | Change on Salt Admin, `row/<rid>`: the row in Record's sale form (`amendFor`, as Ledger check's tap) |
+| Buy or reorder | On hand | Enter the lot, `record/entry` |
+| Restock date | On hand, where the date is set | none: set on the Desk |
+| N waiting on you | none | Needs you, `needs` |
+| Chase | Their rows | Record it, `row/<oldest unpaid rid>` |
+| Refund | Their rows | Mark it paid, `acct/<code>`: their account card, whose Refunds card files the edit entry |
+| Rule breaks, past their habit, reward | Rules, Clients, Associates | none |
+| Twins, no cost, undated, stale pending, same-day trail, under the floor | The N rows (`rows` on the observation) | each row's own Change |
+| Any other Noticed card | its page | none |
+| Every Noticed card | | Hide on Salt Admin, `tip/<id>`: Desk reminders with it chosen (`applyTip`) |
+
+Salt Admin reads `row/`, `acct/` and `tip/` in `addrOf` as a want (`WANTS`, `wantGo`), each key checked, its own address replaced first so Back
+leaves it; a want opens a form or a card and sends nothing. Codes and rids only ever reach an address, never a name (rule 2). Section "9 Nov 2026:
+every Desk conclusion leads to the correct path" (`test/desk-paths.mjs`, 30 mutations red). A refund on a `-R` bucket opens its associate's account.

@@ -47,7 +47,7 @@
 {
 "name": "/admin goes to Salt Admin's front",
 "file": "src/worker.js",
-"find": "u.hash = \"orders/approve\"; ",
+"find": "u.hash = hash; ",
 "replace": ""
 },
 {
