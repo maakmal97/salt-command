@@ -8641,6 +8641,11 @@ await (async () => {
   await (await import("./pay-codes.mjs")).run({ ok, KV });
 })();
 
+section("9 Nov 2026: a claim names no account Salt QR has suspended now, read as the pay sheet reads it");
+await (async () => {
+  await (await import("./pay-claim-down.mjs")).run({ ok, KV });
+})();
+
 section("6 Nov 2026: a customer never learns that Salt QR exists: the page, its words, its script and every answer name nothing of it, and the sheet links nowhere");
 await (async () => {
   await (await import("./pay-leak.mjs")).run({ ok, KV });

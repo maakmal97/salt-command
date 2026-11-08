@@ -1,0 +1,15 @@
+[
+  {"name": "the account claim road is not checked", "file": "stmt/worker.js", "find": "    const down = await railDown(env, f.body);\n    if (down) return refuse(down);\n", "replace": ""},
+  {"name": "an order's moves are not checked", "file": "stmt/worker.js", "find": "  if (down) return refuse(down);\n  const r = await customerMove(", "replace": "  const r = await customerMove("},
+  {"name": "an order's rail choice is not checked", "file": "stmt/worker.js", "find": "(mm[2] === \"method\" || mm[2] === \"pay\") && !isTest(u)", "replace": "(mm[2] === \"pay\") && !isTest(u)"},
+  {"name": "every move reads Salt QR's state", "file": "stmt/worker.js", "find": "(mm[2] === \"method\" || mm[2] === \"pay\") && !isTest(u)", "replace": "true"},
+  {"name": "JomPAY is not checked", "file": "stmt/worker.js", "find": "/^(transfer|qr|jompay|tngbiz)$/", "replace": "/^(transfer|qr|tngbiz)$/"},
+  {"name": "the stored word is not read", "file": "stmt/worker.js", "find": "(await payDownKept(env)).effective", "replace": "(await payDownKept(env)).fresh"},
+  {"name": "an account up is refused too", "file": "stmt/paystate.js", "find": "return key && effective[key] === true ? key : null;", "replace": "return key && key in effective ? key : null;"},
+  {"name": "the Touch 'n Go Business code is read by no key", "file": "stmt/paystate.js", "find": "m === \"tngbiz\" ? \"tngbiz\" : m === \"transfer\"", "replace": "m === \"transfer\""},
+  {"name": "no flags read refuses everything", "file": "stmt/paystate.js", "find": "  if (!effective || !body || typeof body !== \"object\") return null;\n  const m = String(body.method", "replace": "  if (!body || typeof body !== \"object\") return null;\n  effective = effective || new Proxy({}, { get: () => true });\n  const m = String(body.method"},
+  {"name": "a practice account reads Salt QR", "file": "stmt/worker.js", "find": "    const ex = isTest(u) ? await exampleClaim(env, u, f.body) : null;", "replace": "    await payDownKept(env);\n    const ex = isTest(u) ? await exampleClaim(env, u, f.body) : null;"},
+  {"name": "the refusal is a 400", "file": "stmt/worker.js", "find": "refusal(\"railDown\"), { status: 409 }", "replace": "refusal(\"railDown\"), { status: 400 }"}
+,
+  {"name": "a practice account's order move reads Salt QR", "file": "stmt/worker.js", "find": "(mm[2] === \"method\" || mm[2] === \"pay\") && !isTest(u)", "replace": "(mm[2] === \"method\" || mm[2] === \"pay\")"}
+]

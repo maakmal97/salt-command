@@ -90,6 +90,7 @@ export const EN = {
   "e.cashPrepay": "cash on handover is not offered on an order paid in advance",
   "e.railAccount": "that account does not take that rail",
   "e.tngOff": "the Touch 'n Go Business code is not available",
+  "e.railDown": "that account is not taking payments just now; choose another way to pay",
   "e.claimHowMuch": "say how much you sent",
   "e.claimsMax": "there are already {n} payments of yours waiting for us to confirm",
   "e.rateEarly": "an order is rated once all of it is with you",

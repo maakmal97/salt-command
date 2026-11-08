@@ -75,3 +75,13 @@ export async function payDownKept(env, now = Date.now(), list = PAY_ACCOUNTS) {
   } catch (e) { /* none stored */ }
   return { fresh: null, effective: null };
 }
+
+/** THE CLAIM FOLLOWS THE SHEET (09 Nov 2026): the account a rail choice or a claim names, by the method and account its body sends, when the
+ *  effective flags (payDownKept) have it suspended now; null otherwise, and always null with no flags read (the baked check in pickRail stands).
+ *  A claim naming no method takes the order's own, chosen earlier, as the baked check always has. */
+export function railDownKey(body, effective) {
+  if (!effective || !body || typeof body !== "object") return null;
+  const m = String(body.method || "");
+  const key = m === "tngbiz" ? "tngbiz" : m === "transfer" || m === "qr" || m === "jompay" ? String(body.account || "") : "";
+  return key && effective[key] === true ? key : null;
+}

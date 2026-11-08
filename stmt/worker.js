@@ -57,7 +57,7 @@ import { refusal, clip } from "./words.js";
 import { PK_TTL, PK_ALGS, PK_ID_RE, PKT_RE, pkKey, pkdPrefix, pkdKey, b64u, unb64, mintChallenge, spendChallenge, clientOk, authOk, sigOk, wrapShape, handleOf } from "./passkey.js";
 import { takeSlip, keepSlip, slipTooBig, slipPub, readSlip, SLIP_ID_RE } from "./slip.js";
 import { payCodes, shapeAccounts } from "./paycodes.js";
-import { payDownKept, liveAccounts } from "./paystate.js";
+import { payDownKept, liveAccounts, railDownKey } from "./paystate.js";
 import { PAY_ACCOUNTS } from "./pay.js";
 import { takePin, keepPin, readPin } from "./pin.js";
 import { handleMaker, publicHours, customerAmend, takeNudge, fileConfirm } from "./maker.js";
@@ -188,6 +188,15 @@ const refused = () => json(Object.assign({ ok: false }, refusal("refused")), 401
 const tooManyNow = () => json(Object.assign({ ok: false }, refusal("tooMany")), 429);
 /* a refusal from the order book's rules (stmt/orders.js), with its code and slots where it has them */
 const refuse = (r, extra) => json(Object.assign({ ok: false, error: r.error }, r.code ? { code: r.code } : {}, r.vars ? { vars: r.vars } : {}, extra || {}), r.status || 400);
+/* 09 Nov 2026: THE CLAIM FOLLOWS THE SHEET. The account a rail choice or a claim names is refused while Salt QR has it suspended,
+   by the flags the pay sheet draws by (payDownKept: the fresh word, else the baked flags OR the last fresh word); only a body naming
+   an account pays the read. A test account never reaches here: its fixture answers first, and its road never reads Salt QR. */
+async function railDown(env, body) {
+  const m = body && typeof body === "object" ? String(body.method || "") : "";
+  if (!/^(transfer|qr|jompay|tngbiz)$/.test(m)) return null;
+  const key = railDownKey(body, (await payDownKept(env)).effective);
+  return key ? Object.assign(refusal("railDown"), { status: 409 }) : null;
+}
 const signinAgain = (code) => json(Object.assign({ ok: false }, refusal(code), { session: false }), 401);
 
 /* EVERY OPEN IS AN OPEN (24 Sep 2026). `seen:` was written on a password open alone, so a customer who
@@ -419,6 +428,8 @@ async function handleCustomer(request, env, p, m, ctx) {
     /* a test account's waits in its fixture, as a customer's waits on him, and its slip is not filed */
     const ex = isTest(u) ? await exampleClaim(env, u, f.body) : null;
     if (ex) return ex.error ? refuse(ex) : json({ ok: true, claim: claimView(ex.claim) });
+    const down = await railDown(env, f.body);
+    if (down) return refuse(down);
     const r = await claimAccount(env, u, f.body);
     if (r.error) return refuse(r);
     await keepSlip(env, u, f.slip, r.claim && r.claim.slip);
@@ -593,6 +604,9 @@ async function handleCustomer(request, env, p, m, ctx) {
   if (f.error) return refuse(f);
   /* the test account's examples move by the same rules, in its fixture; a slip on one is not filed */
   if (isExample(u, mm[1])) { const x = await exampleMove(env, u, mm[1], mm[2], f.body); return x.error ? refuse(x) : json({ ok: true, order: customerView(x.order) }); }
+  /* 09 Nov 2026: a rail chosen or a claim made names no account Salt QR has suspended now, read as the sheet reads it */
+  const down = (mm[2] === "method" || mm[2] === "pay") && !isTest(u) ? await railDown(env, f.body) : null;
+  if (down) return refuse(down);
   const r = await customerMove(env, u, mm[1], mm[2], f.body);
   if (r.error) return refuse(r);
   /* their Accept on his offer: the desk is told at once, its minute's pass the net; its answer is never theirs to read */

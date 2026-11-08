@@ -483,7 +483,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   **which draws the code, the number or the JomPAY details itself: no link, address or name of QR Command is ever served**
   (his rule of 06 Nov 2026; the Worker reads them through `QRCMD`, `stmt/paycodes.js`, and a practice account gets invented
   ones), and I have paid asks once, Did you send it: a claim reads "sent, waiting for
-  us to confirm" until his answer (D7). **The bulletin** is KV `bulletin`, set through the desk's keyed `/bulletin` and
+  us to confirm" until his answer (D7); a claim or a rail naming an account QR Command has suspended now, read as the sheet reads it, is refused
+  (`railDownKey`, 09 Nov 2026). **The bulletin** is KV `bulletin`, set through the desk's keyed `/bulletin` and
   checked by `siteWords`: in Home's Today card, one line at a time, the next every six seconds with Pause, every line standing
   under reduced motion and never a live region (Counter Batch A, his decision of 18 Oct 2026, reversing D14's still card), and a
   Set asks before it wakes every phone.
