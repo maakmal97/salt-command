@@ -324,6 +324,18 @@
   in view on open. Section "5 Nov 2026: Salt Admin in layers" (`test/admin-frame.mjs`, 22 checks, 23 mutations red); 25 needles re-aimed, each red. Full suite
   11,981 passed, 1 failed (S1b, laptop only). QR Command took nothing (no token or face moved). Not built: the Desk's frame (his answer D, a follow-up).
 
+## Pay without leaving Salt Counter (v1482)
+- Live as v1482 (`02f695bf`, 09 Nov 2026; Cloud commit `42512546825`: chain green with "The phone is serving it", the statements deployed and published, three
+  suite parts green; CI `42512546837` green), from `docs/plan-jompay-counter.html` draft 5 (artifact https://claude.ai/artifact/PbAgoiGgFLvz4uz4iQJ6aS): his A to D
+  as recommended, his rule of 06 Nov 2026 (customers never go to Salt QR or learn it exists) and Ask E "leave it" (Salt QR's address stays in both public repos'
+  config). The Counter's Worker reads Salt QR's `/data.js` and `/state.json` through `QRCMD` (`stmt/paycodes.js`, `stmt/paycrc.js` generated from qr-command's
+  `tools/store.js` by `tools/paycrcsync.mjs`), KV `paycodes` (last good, three days) and `paydown` (last fresh word, adds a suspension and never lifts one), 1 MB
+  cap; `/pay/accounts` answers `rows`, `number`, `biller`, `ref1`; the sheet draws the code (Save the code), Transfer, and JomPAY (Biller code, Ref-1, Ref-2
+  Leave it empty, no username reference); I have paid on every way; `PAY_SITE`, `payHref`, KV `paynum` and `paysync --numbers` retired; practice accounts get
+  invented details (FIX_VERSION 19). salt-ds 1.29.2 (#44) holds the JomPAY glyph. Fable: plan three times, diff twice (six findings applied, re-checked sound).
+  Live Counter page scanned: no Salt QR address or name. Instapay (the one JomPAY account) is suspended in Salt QR, so JomPAY shows once he lifts it there.
+  Not verified: Save the code on a real iPhone; the Design System artifact not re-synced for 1.29.2.
+
 ## Salt Desk in layers (v1448) and the metrics grey (v1449)
 - Live as v1448 (`284fa5a7`, 06 Nov 2026; Cloud commit `42081731999`: chain green with "The phone is serving it", three suite parts green; CI `42081732855` green), the
   follow-up to v1442 (his answer D): from 1080px the Desk is a frame, the rail and bar unmoved and `#deskcol` (under the bar) the one scroll box, the page 0px of scroll
