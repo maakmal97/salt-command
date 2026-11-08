@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="af5929d14297c356";
+var SALT_BUILD_ID="7bec2264dd5c6c95";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -11860,7 +11860,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1481","d":"09 Nov 2026","t":"ONE SALT DISCOUNT SET FOR CE4-CHE","n":["<b>ONE TIER SETTING FOLDED.</b> The batch holds a single row: CE4-CHE's salt figure set to 20% off, decided by Counter Admin on 09 Nov 2026 at 18:14 UTC on the 08th. It is a percentage lift on that customer's own price and does not touch the board. The drafter raised no flags.","<b>INVENTORY UNCHANGED.</b> No cash and no stock moved. The shelf stays at 7 units, stock cost RM56 per unit, and nothing is owed out beyond the 5 already recorded."]}];
+const evolution=[{"v":"v1482","d":"09 Nov 2026","t":"PAY WITHOUT LEAVING SALT COUNTER","n":["<b>HIS RULE.</b> Customers never go to the payment page or learn it exists. The Counter&#39;s pay sheet now draws the code, the account number and the JomPAY details itself; the Counter&#39;s Worker reads them from the payment page&#39;s bundle through its private service binding, so nothing on the customer&#39;s page or phone points there.","<b>THREE WAYS.</b> Scan a code draws the DuitNow code with Save the code (press and hold it to save it to Photos, then open it from the bank app); Transfer shows the bank and the number with Copy; JomPAY, new, shows the biller code and Ref-1 with Copy and Ref-2 Leave it empty, with no username reference (his B1). I have paid is the filled pill on every way.","<b>SAFE BY DEFAULT.</b> A code whose checksum fails is never drawn. A suspension holds even while the payment page cannot be read: the last fresh word may add one and never lifts one. The practice accounts are handed invented details, never his. The laptop&#39;s account-number store is retired: one source.","<b>CHECKS.</b> New sections pay-codes (54 checks, 58 mutations) and pay-leak (11, 16), Phase 7b re-aimed (60), every mutation red; the drawn code decoded at the sheet&#39;s size. Fable reviewed the plan three times and the diff twice: sound. Full suite 12,045 passed, S1b red on this laptop only. salt-ds 1.29.2 carries the JomPAY glyph."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12008,7 +12008,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='09 Nov 2026, 02:14 KL';
+const LAST_UPDATED='09 Nov 2026, 02:56 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
