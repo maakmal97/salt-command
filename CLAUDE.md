@@ -479,8 +479,10 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   (`txAdvance`), overdue and coming up (`txPendRM`), each part overdue from the day its goods were collected or
   delivered (the engine's `txUnpaidSince`) and past its term `RULES.holdDays` (1) day later, read from the master;
   the pricing profile keeps `RULES.creditDays`. To pay now heads Home, with one filled
-  Pay; every Pay opens one sheet (D8: no account chosen for them, the username the reference, QR
-  Command through `payHref`, never named), and on return it asks once, Did you send it: a claim reads "sent, waiting for
+  Pay; every Pay opens one sheet (D8: no account chosen for them, the username the reference on Scan a code and Transfer),
+  **which draws the code, the number or the JomPAY details itself: no link, address or name of QR Command is ever served**
+  (his rule of 06 Nov 2026; the Worker reads them through `QRCMD`, `stmt/paycodes.js`, and a practice account gets invented
+  ones), and I have paid asks once, Did you send it: a claim reads "sent, waiting for
   us to confirm" until his answer (D7). **The bulletin** is KV `bulletin`, set through the desk's keyed `/bulletin` and
   checked by `siteWords`: in Home's Today card, one line at a time, the next every six seconds with Pause, every line standing
   under reduced motion and never a live region (Counter Batch A, his decision of 18 Oct 2026, reversing D14's still card), and a

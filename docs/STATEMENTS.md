@@ -1115,41 +1115,29 @@ it does with the quoted total. An associate with no bucket on the roster is refu
 sent and `paid` what he has received (S6), `moved` and `movedOn` what he says he handed over, and either may lead. Payment is offered
 **from the acknowledgement**, in **one pay sheet for every Pay** (To pay now, an order, the held page;
 S6 6.4, his D8 as amended, then Phase 7b of 11 Oct 2026): **his banks first**, one Option tile a tap, **none chosen for them**
-(from those `payHref` links, a suspended one never offered); then the figure, All or Part, and What this pays, the invoice's
-lines in a shut Plan fold; then two ways, Transfer or Scan a code, Transfer chosen as it opens (the way, never the account). Their
-username is the reference. **With a bank chosen on Transfer the sheet shows two rows: the account number, in groups of four for
-reading with Copy (digits alone to the clipboard) and the bank's name, then the reference with its Copy.** Scan a code shows no
-number. **The number is never in git** (rule 3): it is Counter KV `paynum`, `{v: 1, at, accounts: {<key>: {number}}}`, written from
-the laptop by `node tools/paysync.mjs --numbers` (the pay store's number with its spaces stripped, refused unless 10 to 15 digits
-or if `stmt/pay.js` lacks the key, nothing else carried, each key shown by its last four digits) and read back by `--check-numbers`.
-It is served on a customer's session at `GET /pay/accounts`, whitelisted to `number` and to the accounts the page offers for a
-transfer, `no-store`, `{ok: true, accounts: {}}` when none is filed or the read fails; the page asks at sign-in and again at a
-sheet's open once the last answer is a minute old, and never on his read-only view. **An account QR Command has under maintenance
-now is never offered** (his instruction of 17 Oct 2026): the same answer carries `down`, `{<key>: bool}` for every account
-`stmt/pay.js` names, read live off QR Command's public `/state.json` through the service binding `QRCMD` (`stmt/paystate.js`), its
-word winning over the baked flag a key at a time, as on QR Command's own phone; the page lays it on `PAY`, so `payHref` and the bank
-tiles follow, a bank chosen before the answer included, and no number is served for it. An unbound, failed or
-malformed read leaves `down` out and the baked flags stand; QR Command's own page still refuses a suspended code. **The practice accounts are answered their fixture's invented all-zero number** through the test-account
-overlay (`paynum` in `tools/testfix.mjs`, `FIX_VERSION` 9) and never the real record. **With a number** the filled pill is I have
-paid, straight to Did you send, and a ghost Open the payment page keeps the `payHref` link; **with none, and on Scan a code**, the
-filled pill is the link as it was (Show the account number, or Show the code) and a ghost I am back moves to the same question, the
-window's blur and focus staying as the fallback. **On return the sheet asks once** (S6 6.5, his D7), and after a reload too (kept on the device two hours as
-`salt-stmt-payq`, never the username): "Did you send RM 70?", with Not yet, never a tap
-beside the number; Yes posts a CLAIM (an order's to `/orders/<id>/pay`, To pay now's to `/account/claim`), which
-reads "sent, waiting for us to confirm" on the order, its row and To pay now until his Received or Not found, each
-shown when it comes; Pay then asks only for what no claim covers, **never the same money twice**: To pay now nets what was
-sent on an order whose row is one of its parts (matched by `rowOn` and the whole figure), and the order nets what was sent
-against the account that reaches its row, the lines walked as `claimAlloc` takes them (since V2: the rows with goods out
-oldest first, then the orders at Ready with nothing handed over; an order at Ready with no `rowOn` takes none). The accounts it may name are `stmt/pay.js`, generated from the pay master by `node tools/paysync.mjs --sync` with no
-number, payload or reference shipped (the suite holds `stmt/pay.js` to no run of five digits, and, on the laptop, holds every
-tracked file free of every private value of the pay store, count only; every tracked text file but `master/`, `public/`, `ledger/` and `MEMORY.md` holds no
-run of ten digits but a run of zeros, eight zeros and up to four digits, an order id's fourteen-digit stamp and its dash, a binary literal, a whole UUID, a hex digest, a blob or a 13-digit epoch beside a letter,
-and four named constants, so a number joined from parts is how a test invents one; `tools/paysync.mjs` masks any run of five digits in every error it prints, and takes its executable from
-`PAYSYNC_NPX` when set, which the suite points at a stand-in so no test can reach the real wrangler). **`payHref` in it is the one link builder** (D8, 24 Sep
-2026): `#<key>/<rail>/<amount>/<reference>`, Transfer or Scan a code, the figure to the sen, the
-username as the reference, and "" for anything QR Command would not open. It reads only `PAY_SITE`
-and `PAY`, the names `CLIENT_JS` declares, so the page carries `payHref.toString()` as it is. The suite reads the link
-back through QR Command's own `linkOf`, so a format change ships there first. **The customer types
+(the accounts `/pay/accounts` gave that way's details, a suspended one never offered); then the figure, All or Part, and What this pays, the invoice's
+lines in a shut Plan fold; then the ways, Transfer, Scan a code and JomPAY, Transfer chosen as it opens (the way, never the account).
+**The customer never leaves the Counter and never learns where the details come from** (his rule of 06 Nov 2026, `docs/plan-jompay-counter.html`):
+no link, address or name of the pay site is served. The Counter's Worker reads the pay site's bundle (`/data.js`, anchored on
+`self.QR_CODES = ... ;
+self.QR_BUILD`, JSON.parse, never eval) through the service binding `QRCMD` (`stmt/paycodes.js`), keeps each account's
+payload, number, bank, biller and Ref-1 for the keys `stmt/pay.js` names, drops a payload whose CRC fails (`stmt/paycrc.js`, GENERATED from the pay
+site's `tools/store.js` by `tools/paycrcsync.mjs`, whose `--check` stands down where that repo is absent), and files the last good read in Counter KV
+`paycodes`, answered when the binding fails only while under three days old. `GET /pay/accounts` on a customer's session (`no-store`, never on his
+read-only view) answers `{ok, accounts: {<key>: {qr?, rows?, number?, bank?, biller?, ref1?}}, down?}`, each field only for a way the account runs:
+the code's modules as `rows` (the page carries no encoder), the number and bank for Transfer, the biller code and Ref-1 for JomPAY. **Scan a code**
+draws the code on the sheet in the QR recipe with Save the code (the PNG through the share sheet, else a download; the image itself saved by a
+long press), since a phone cannot scan its own screen. **Transfer** shows the number in fours with Copy and the bank. **JomPAY** shows Biller code and
+Ref-1 with Copy and Ref-2 "Leave it empty"; their username is never offered as a JomPAY reference (his B1), and the way shows only while an account
+gives both, falling back to Transfer if it goes. Amount carries Copy on every way, their username the reference on Scan a code and Transfer. **An
+account the pay site has under maintenance now is never offered** (his instruction of 17 Oct 2026): `down` is read fresh off its `/state.json` through
+`QRCMD` (`stmt/paystate.js`), never from the KV copy, its word winning over the baked flag a key at a time; unreadable, the baked flags stand. **The
+practice accounts are answered invented details from their fixture** (`pay` in `tools/testfix.mjs`, FIX_VERSION 19: an invented code passing the CRC,
+number, biller and Ref-1) and never reach `payCodes`. The filled pill is I have paid on every way, straight to Did you send; Copy and Save mark the visit
+away as the net, and Show again redraws the same details. The accounts the page may name are `stmt/pay.js`, generated by `node tools/paysync.mjs --sync`
+with names and ways only (the suite holds `stmt/pay.js` to no run of five digits, and every tracked file free of every private value of the pay store,
+count only; a number joined from parts is how a test invents one). `test/pay-leak.mjs` holds the served page, words, scripts, styles and every customer
+answer free of the pay site's address, Worker name and name; `test/vendor/jsqr.js` (test only, Apache-2.0) decodes the drawn code. **The customer types
 what they sent, and it is a CLAIM** (S6 6.5, his D7; the site takes no money and no rail tells it anything): an entry on
 `payments[]` with `claim: "waiting"`, summed as `claimed`, never `paid`, until his Received (a `verdict` event naming the
 claim by its moment) makes it paid. Claims accumulate; together with what is paid they may not pass what is owed; a claim
