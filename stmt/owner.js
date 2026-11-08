@@ -101,8 +101,14 @@ export const OWNER_JS = `
     maker:['orders',''], more:['shop',''], accounts:['customers','accounts'], links:['customers','links'], cards:['customers','associates']};
   /* 17 Oct 2026: Approve moved from Record to Orders, as the Desk's Order book took it; the old address #record/approve lands there */
   var PART_ADDR={'record/approve':['orders','approve']};
+  /* 9 Nov 2026, his word (every Desk conclusion leads to the correct path): the Desk's Act links land here through its /admin, which passes only
+     the addresses its ADMIN_TO lists. Three name one thing rather than a place: row/<rid> opens that row in the sale form (as Ledger check's tap),
+     acct/<code> that account's card, tip/<id> Desk reminders with that reminder chosen. Each is a want, read once and then left for the place. */
+  var WANTS={row:/^[slp][0-9]{1,6}$/, acct:/^[A-Z0-9]{2,4}(-[A-Z0-9]{1,6}){1,2}$/, tip:/^[A-Za-z0-9:._+-]{1,120}$/};
   function addrOf(h){
     var t=String(h||'').replace(/^#/,'').split('/'), k=t[0];
+    if(Object.prototype.hasOwnProperty.call(WANTS,k)&&t.length===2){ var key=''; try{ key=decodeURIComponent(t[1]); }catch(e){ key=''; }
+      return WANTS[k].test(key)?{place:k==='acct'?'customers':'record', part:k==='acct'?'accounts':k==='tip'?'pricing':'entry', want:[k,key]}:null; }
     if(Object.prototype.hasOwnProperty.call(PART_ADDR,k+'/'+t[1])){ var m=PART_ADDR[k+'/'+t[1]]; return {place:m[0], part:m[1]}; }
     if(!Object.prototype.hasOwnProperty.call(ADDR,k)) return null;
     var a=ADDR[k], part=t[1]||a[1];
@@ -154,6 +160,7 @@ export const OWNER_JS = `
     if(view) return;
     var a=location.hash?addrOf(location.hash):{place:'needs', part:''};
     if(!a) return;
+    if(a.want){ try{ history.replaceState(null,'',addrFor(placeNow,partNow)); }catch(e){} wantGo(a.want); return; }
     var part=a.part||(PARTS[a.place]||[])[0]||'';
     if(a.place===placeNow&&part===partNow) return;
     showPlace(a.place, part);
@@ -833,7 +840,16 @@ export const OWNER_JS = `
   }
   /* Repayment opens Record's own form for that loan: the form is the one that sends, so a repayment waits under Approve like any other. A form not built yet is
      filled when it is (repayWant, applied once Record's forms are drawn). */
-  var repayWant=null;
+  var repayWant=null, tipWant=null;
+  /* 9 Nov 2026: Desk reminders with one chosen, from a Noticed card's Hide on Salt Admin; a reminder the Desk no longer shows opens the form as it is */
+  function applyTip(){
+    if(!tipWant) return;
+    var form=document.querySelector('#makerInputs [data-form="desk-reminders"]'); if(!form) return;
+    var pick=form.querySelector('[data-act="record.tip.tip"]');
+    if(pick&&[].some.call(pick.options,function(o){ return o.value===tipWant; })){ pick.value=tipWant; pick.dispatchEvent(new Event('change',{bubbles:true})); }
+    tipWant=null; openForm('desk-reminders');
+  }
+  function tipFor(id){ tipWant=id; showPlace('record','pricing',{fresh:true,push:true}); applyTip(); }
   function applyRepay(){
     if(!repayWant) return;
     var form=document.querySelector('#makerInputs [data-form="repayment"]'); if(!form) return;
@@ -4029,7 +4045,7 @@ export const OWNER_JS = `
     [].slice.call(box.children).forEach(function(n){
       if(n.hasAttribute('data-formmenu')) list.appendChild(n); else if(n.hasAttribute('data-form')) pane.appendChild(n);
     });
-    applyRepay(); applyAmend();
+    applyRepay(); applyAmend(); applyTip();
     catalog=catalog||{};
     menuCount('repayment',(catalog.loans||[]).length);
     menuCount('rewards',(catalog.rewards||[]).filter(function(offer){ return offer.action; }).length);
@@ -7550,6 +7566,15 @@ export const OWNER_JS = `
     if(tradeEditPick(rid)) openForm('sale-or-purchase');
   }
   function amendFor(rid){ amendWant=rid; showPlace('record','entry',{fresh:true,push:true}); applyAmend(); }
+  /* 9 Nov 2026: an account by its code, from the Desk's Act (a refund to mark paid); a -R bucket is its associate's, having no account of its own;
+     a code with no account opens the list */
+  function acctFor(code){
+    var own=String(code).replace(/-R$/,''), list=(OWNER&&OWNER.accounts||[]).filter(function(x){ return x.username; });
+    var a=list.filter(function(x){ return x.code===code; })[0]||list.filter(function(x){ return x.code===own; })[0];
+    if(a) openNeed(a.username); else showPlace('customers','accounts',{fresh:true,push:true});
+  }
+  /* the want's own address is replaced first, by the place he was on: the want then pushes its place, so Back leaves it rather than opening it again */
+  function wantGo(w){ if(w[0]==='row') amendFor(w[1]); else if(w[0]==='acct') acctFor(w[1]); else if(w[0]==='tip') tipFor(w[1]); }
   function owedGo(r, sect){
     var o=siteOrderOf(r);
     if(o) openOrderAt(o.id, sect); else amendFor(r.rid);
@@ -8291,7 +8316,8 @@ export const OWNER_JS = `
   /* an address he opened the page on (#orders, #customers/links, the old #maker): the place it names, over the home */
   if(location.hash){
     var first=addrOf(location.hash);
-    if(first){
+    if(first&&first.want){ try{ history.replaceState(null,'',addrFor('needs','')); }catch(e){} wantGo(first.want); }
+    else if(first){
       showPlace(first.place, first.part, {fresh:true});
       try{ history.replaceState(null,'',addrFor(placeNow, partNow)); }catch(e){}
     }
