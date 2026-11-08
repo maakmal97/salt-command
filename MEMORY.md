@@ -336,6 +336,12 @@
   Live Counter page scanned: no Salt QR address or name. Instapay (the one JomPAY account) is suspended in Salt QR, so JomPAY shows once he lifts it there.
   Not verified: Save the code on a real iPhone; the Design System artifact not re-synced for 1.29.2.
 
+- v1483 (`9506d250`, 09 Nov 2026; Cloud commit `42526554900`: chain and three suite parts green; CI `42526554898` green), the follow-up v1482 named: a claim
+  (`/account/claim`, an order's `pay`) or a rail choice (`method`) whose body names an account suspended now, by the flags the sheet draws by (`payDownKept`), is
+  refused 409 `e.railDown` in the Worker before the move (`railDownKey` in `stmt/paystate.js`, `railDown` in `stmt/worker.js`); practice accounts never read Salt QR.
+  Said, not fixed (Fable, low): a same-rid retry inside seconds of a suspension answers the refusal, not the claim already recorded; a `pay` naming no method takes
+  the order's earlier account unchecked (the page always sends one). Section "9 Nov 2026: a claim names ..." (18 checks, 12 mutations red).
+
 ## Salt Desk in layers (v1448) and the metrics grey (v1449)
 - Live as v1448 (`284fa5a7`, 06 Nov 2026; Cloud commit `42081731999`: chain green with "The phone is serving it", three suite parts green; CI `42081732855` green), the
   follow-up to v1442 (his answer D): from 1080px the Desk is a frame, the rail and bar unmoved and `#deskcol` (under the bar) the one scroll box, the page 0px of scroll
