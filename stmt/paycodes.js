@@ -19,7 +19,7 @@
 import { PAY_ACCOUNTS } from "./pay.js";
 import { payloadError } from "./paycrc.js";
 import QR from "./qr.js";
-import { STATE_WAIT_MS } from "./paystate.js";
+import { STATE_WAIT_MS, MAX_BYTES, tooBig } from "./paystate.js";
 
 export const PAYCODES_KEY = "paycodes";
 export const KEEP_MS = 3 * 864e5;   /* a copy older than this is never answered */
@@ -66,7 +66,10 @@ export async function payCodes(env, list = PAY_ACCOUNTS, now = Date.now()) {
   if (env && env.QRCMD && typeof env.QRCMD.fetch === "function") {
     try {
       const r = await env.QRCMD.fetch("https://qr-command/data.js", { headers: { "cache-control": "no-store" }, signal: AbortSignal.timeout(STATE_WAIT_MS) });
-      if (r.ok) fresh = codesOf(await r.text(), list);
+      if (r.ok && !tooBig(r)) {
+        const t = await r.text();
+        if (t.length <= MAX_BYTES) fresh = codesOf(t, list);
+      }
     } catch (e) { fresh = null; }
   }
   if (fresh && fresh.length) {
@@ -85,7 +88,7 @@ export async function payCodes(env, list = PAY_ACCOUNTS, now = Date.now()) {
 }
 
 /** What GET /pay/accounts answers: per account not suspended, only what its rails need.
- *  qr the payload and rows its modules (rail qr); number and bank (rail transfer); biller and ref1 (rail jompay, both or neither). `list` carries the live flags. */
+ *  rows the code's modules, never its payload (rail qr); number (rail transfer; the bank's name is stmt/pay.js's); biller and ref1 (rail jompay, both or neither). `list` carries the live flags. */
 export function shapeAccounts(codes, list = PAY_ACCOUNTS) {
   const out = {};
   if (!Array.isArray(codes)) return out;
@@ -96,9 +99,9 @@ export function shapeAccounts(codes, list = PAY_ACCOUNTS) {
     const o = {};
     if (a.qr && c.payload) {
       /* the modules ride beside the payload, one string of 0 and 1 a row, so the sheet draws the code and carries no encoder (the Worker's own, stmt/qr.js) */
-      try { o.rows = QR.qrMatrix(c.payload).map((r) => r.join("")); o.qr = c.payload; } catch (e) { /* too long to draw: no code */ }
+      try { o.rows = QR.qrMatrix(c.payload).map((r) => r.join("")); } catch (e) { /* too long to draw: no code */ }
     }
-    if (a.transfer && c.acct) { o.number = c.acct; o.bank = c.bank || a.bank; }
+    if (a.transfer && c.acct) o.number = c.acct;
     if (a.jompay && c.biller && c.ref1) { o.biller = c.biller; o.ref1 = c.ref1; }
     if (Object.keys(o).length) out[a.key] = o;
   }

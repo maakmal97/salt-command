@@ -125,11 +125,11 @@ export async function run({ ok, KV }) {
   const a = r1.b.accounts || {};
   ok(r1.status === 200 && r1.b.ok === true && r1.cc === "no-store" && Object.keys(a).join() === "wise,maybank,ambank,instapay",
     "the route answers the accounts the sheet offers, no-store, suspended spay and the key nokey left out: " + Object.keys(a).join());
-  ok(a.maybank && Object.keys(a.maybank).join() === "rows,qr,number,bank" && a.maybank.qr === store[0].payload && a.maybank.rows.join("") === QRM.qrMatrix(store[0].payload).map((r) => r.join("")).join("") && a.maybank.number === DIG("8880", "0000", "0001") && a.maybank.bank === "Maybank",
-    "an account on the qr and transfer rails answers the code (its payload and its modules, rows of 0 and 1), the number and the bank, and never the JomPAY pair its rails lack though the file holds one: " + hide(JSON.stringify(a.maybank)).slice(0, 100));
-  ok(a.wise && Object.keys(a.wise).join() === "number,bank" && a.wise.number === DIG("8880", "0000", "0002") && !("qr" in a.wise),
-    "an account on the transfer rail alone answers the number and the bank and no code, whatever payload the file holds: " + hide(JSON.stringify(a.wise)));
-  ok(a.instapay && Object.keys(a.instapay).join() === "rows,qr,number,bank,biller,ref1" && a.instapay.biller === "88803" && a.instapay.ref1 === DIG("8880", "0000", "0004", "9"),
+  ok(a.maybank && Object.keys(a.maybank).join() === "rows,number" && !("qr" in a.maybank) && !("bank" in a.maybank) && a.maybank.rows.join("") === QRM.qrMatrix(store[0].payload).map((r) => r.join("")).join("") && a.maybank.number === DIG("8880", "0000", "0001"),
+    "an account on the qr and transfer rails answers the code's modules (rows of 0 and 1, never its payload) and the number (the bank's name is the page's own), and never the JomPAY pair its rails lack though the file holds one: " + hide(JSON.stringify(a.maybank)).slice(0, 100));
+  ok(a.wise && Object.keys(a.wise).join() === "number" && a.wise.number === DIG("8880", "0000", "0002"),
+    "an account on the transfer rail alone answers the number and no code, whatever payload the file holds: " + hide(JSON.stringify(a.wise)));
+  ok(a.instapay && Object.keys(a.instapay).join() === "rows,number,biller,ref1" && a.instapay.biller === "88803" && a.instapay.ref1 === DIG("8880", "0000", "0004", "9"),
     "an account that runs JomPAY answers the biller code and Ref-1 beside its code and number: " + hide(JSON.stringify(a.instapay)).slice(0, 120));
   const lone = mkEnv(qr(new Response(dataJs([A("instapay", { payload: pl("0003", "INVENTED THREE"), acct: DIG("8880", "0000", "0003"), bank: "Instapay", biller: "88803" })])), stateOf({})));
   const loneAns = (await call(lone, "/pay/accounts", await asker(lone, "abcd-efgh"))).b.accounts.instapay || {};
@@ -147,6 +147,40 @@ export async function run({ ok, KV }) {
   await E4.STMT.put("paycodes", JSON.stringify({ v: 1, at: Date.now(), down: { maybank: true }, maintenance: { maybank: true }, accounts: PC.cleanList(store) }));
   const r4 = await call(E4, "/pay/accounts", await asker(E4, "abcd-efgh"));
   ok(!("down" in r4.b) && "maybank" in r4.b.accounts && "wise" in r4.b.accounts, "with both reads failing the KV copy serves the codes but a suspension in it is never read: `down` stays absent and maybank is served");
+  /* a suspension made live holds while the state cannot be read (Fable, 06 Nov 2026): the last fresh word is kept in KV `paydown`; a stored word adds a suspension and never lifts one */
+  const stateFail = new Error("state down"), swing = { fail: false, state: { ambank: true, spay: false } };
+  const EK = mkEnv(mk((u) => { if (/data\.js$/.test(u)) return new Response(text); if (swing.fail) throw stateFail; return stateOf(swing.state); }));
+  const SK = await asker(EK, "abcd-efgh");
+  const k1 = await call(EK, "/pay/accounts", SK);
+  swing.fail = true;
+  const k2 = await call(EK, "/pay/accounts", SK);
+  const filedDown = JSON.parse((await EK.STMT.get("paydown")) || "{\"down\":{}}");
+  ok(!("ambank" in k1.b.accounts) && k1.b.down.ambank === true && filedDown.v === 1 && filedDown.down.ambank === true && filedDown.down.spay === false,
+    "a fresh read files its word in KV paydown ({v, at, down}), and an account suspended live is not served: " + Object.keys(k1.b.accounts).join());
+  ok(!("ambank" in k2.b.accounts) && !("down" in k2.b) && "maybank" in k2.b.accounts && "wise" in k2.b.accounts,
+    "a key suspended in the last fresh word and absent from the baked flags is still not served when the state read fails, and `down` is left out: " + Object.keys(k2.b.accounts).join());
+  ok(!("spay" in k2.b.accounts), "a stored word never un-suspends a baked flag: spay, baked down and live up in the stored word, stays unserved while the read fails");
+  const oldDown = JSON.parse((await EK.STMT.get("paydown")) || "{}"); oldDown.at = Date.now() - 4 * 864e5; await EK.STMT.put("paydown", JSON.stringify(oldDown));
+  const k3 = await call(EK, "/pay/accounts", SK);
+  ok("ambank" in k3.b.accounts && !("spay" in k3.b.accounts), "a stored word over three days old is not read, and the baked flags stand alone: " + Object.keys(k3.b.accounts).join());
+  const EN = mkEnv(mk((u) => { if (/data\.js$/.test(u)) return new Response(text); throw stateFail; }));
+  const k4 = await call(EN, "/pay/accounts", await asker(EN, "abcd-efgh"));
+  ok("ambank" in k4.b.accounts && !("spay" in k4.b.accounts) && !(await EN.STMT.get("paydown")), "with no word stored the baked flags apply alone, and a failed read files nothing");
+  const EL = mkEnv(mk((u) => { if (/data\.js$/.test(u)) return new Response(text); return stateOf({ ambank: false }); }));
+  await EL.STMT.put("paydown", JSON.stringify({ v: 1, at: Date.now(), down: { ambank: true } }));
+  const k5 = await call(EL, "/pay/accounts", await asker(EL, "abcd-efgh"));
+  ok("ambank" in k5.b.accounts && k5.b.down.ambank === false && JSON.parse((await EL.STMT.get("paydown")) || "{\"down\":{}}").down.ambank === false, "a fresh word lifts what an older one held, and is filed over it");
+
+  /* the binding's answer is capped at a megabyte: over by content-length or by its text, the filed copy answers instead */
+  const big = "x".repeat(1048577), capKv = new KV();
+  await PC.payCodes({ QRCMD: mk(new Response(text)), STMT: capKv }, PAY_ACCOUNTS, T0);
+  const small = dataJs([A("maybank", { payload: pl("0001", "INVENTED ONE"), acct: DIG("8880", "0000", "0001"), bank: "Maybank" })]);   /* one account, so a read that is let through shows */
+  const overHeader = await PC.payCodes({ QRCMD: mk(new Response(small, { headers: { "content-length": "2000000" } })), STMT: capKv }, PAY_ACCOUNTS, T0 + 1000);
+  const overText = await PC.payCodes({ QRCMD: mk(new Response(small + "/* " + big + " */")), STMT: capKv }, PAY_ACCOUNTS, T0 + 1000);
+  const textOk = await PC.payCodes({ QRCMD: mk(new Response(text)), STMT: capKv }, PAY_ACCOUNTS, T0 + 1000);
+  const stateBig = await (await import("../stmt/paystate.js")).payDown({ QRCMD: mk(new Response(JSON.stringify({ maintenance: { ambank: true } }), { headers: { "content-length": "2000000" } })) });
+  ok(overHeader && overHeader.length === 5 && overText && overText.length === 5 && textOk.length === 5 && stateBig === null && JSON.stringify(overHeader) === JSON.stringify(first) && JSON.stringify(overText) === JSON.stringify(first),
+    "an answer over a megabyte, by its content-length or by its text, is refused and the filed copy answers, and so is a state file over it: " + [overHeader && overHeader.length, overText && overText.length].join());
   const E5 = mkEnv(mk((u) => { if (/data\.js$/.test(u)) throw new Error("data down"); return stateOf({}); }));
   const r5 = await call(E5, "/pay/accounts", await asker(E5, "abcd-efgh"));
   ok(r5.status === 200 && JSON.stringify(r5.b.accounts) === "{}", "with nothing readable and no copy the answer is an empty list, never an error: " + r5.status);
@@ -161,7 +195,7 @@ export async function run({ ok, KV }) {
   await E6.STMT.put(TF.fixKey(T), JSON.stringify({ v: TF.FIX_VERSION, salt: "pc-salt", at: "2026-11-06T00:00:00.000Z", pay: inv }));
   const fixed = await call(E6, "/pay/accounts", TS);
   ok(noFix.status === 200 && JSON.stringify(noFix.b.accounts) === "{}" && !("down" in noFix.b), "a practice account with no fixture sealed yet is answered an empty list, though Salt QR and a real copy are there: " + noFix.raw.slice(0, 80));
-  ok(fixed.status === 200 && Object.keys(fixed.b.accounts).join() === "maybank,instapay" && fixed.b.accounts.maybank.qr === inv.accounts[0].payload && fixed.b.accounts.instapay.biller === inv.accounts[1].biller
+  ok(fixed.status === 200 && Object.keys(fixed.b.accounts).join() === "maybank,instapay" && fixed.b.accounts.maybank.rows.join("") === QRM.qrMatrix(inv.accounts[0].payload).map((r) => r.join("")).join("") && !("qr" in fixed.b.accounts.maybank) && fixed.b.accounts.instapay.biller === inv.accounts[1].biller
     && fixed.b.accounts.instapay.ref1 === inv.accounts[1].ref1 && fixed.b.down.maybank === false && fixed.b.down.instapay === false,
     "with its fixture it is answered its invented code, number, biller and Ref-1 and its own `down` with every invented account open, though Salt QR holds maybank down: " + hide(fixed.raw).slice(0, 140));
   ok(E6.QRCMD.calls.length === 0 && !fixed.raw.includes(store[0].acct) && !fixed.raw.includes(store[0].payload) && !fixed.raw.includes(DIG("8880", "0000", "0003")),
@@ -169,7 +203,7 @@ export async function run({ ok, KV }) {
   const badFix = Object.assign({}, inv, { accounts: inv.accounts.map((c) => Object.assign({}, c, { payload: c.payload.slice(0, -1) + (c.payload.endsWith("A") ? "B" : "A") })), down: { maybank: "no", instapay: false } });
   await E6.STMT.put(TF.fixKey(T), JSON.stringify({ v: TF.FIX_VERSION, salt: "pc-salt", at: "2026-11-06T00:00:00.000Z", pay: badFix }));
   const badAns = await call(E6, "/pay/accounts", TS);
-  ok(badAns.b.accounts.maybank && !("qr" in badAns.b.accounts.maybank) && !("qr" in badAns.b.accounts.instapay) && badAns.b.down.maybank === false,
+  ok(badAns.b.accounts.maybank && !("rows" in badAns.b.accounts.maybank) && !("rows" in badAns.b.accounts.instapay) && badAns.b.down.maybank === false,
     "a fixture's payload is held to the same checksum, and a `down` that is no boolean is not taken: " + hide(badAns.raw).slice(0, 120));
   await E6.STMT.put(TF.fixKey(T), JSON.stringify({ v: TF.FIX_VERSION - 1, salt: "pc-salt", at: "2026-11-06T00:00:00.000Z", pay: inv }));
   ok(JSON.stringify((await call(E6, "/pay/accounts", TS)).b.accounts) === "{}", "and a fixture sealed at an earlier version is not served until the publish seals it again");

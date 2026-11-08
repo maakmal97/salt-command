@@ -57,7 +57,7 @@ import { refusal, clip } from "./words.js";
 import { PK_TTL, PK_ALGS, PK_ID_RE, PKT_RE, pkKey, pkdPrefix, pkdKey, b64u, unb64, mintChallenge, spendChallenge, clientOk, authOk, sigOk, wrapShape, handleOf } from "./passkey.js";
 import { takeSlip, keepSlip, slipTooBig, slipPub, readSlip, SLIP_ID_RE } from "./slip.js";
 import { payCodes, shapeAccounts } from "./paycodes.js";
-import { payDown, liveAccounts } from "./paystate.js";
+import { payDownKept, liveAccounts } from "./paystate.js";
 import { PAY_ACCOUNTS } from "./pay.js";
 import { takePin, keepPin, readPin } from "./pin.js";
 import { handleMaker, publicHours, customerAmend, takeNudge, fileConfirm } from "./maker.js";
@@ -466,7 +466,7 @@ async function handleCustomer(request, env, p, m, ctx) {
   /* WHAT THE PAY SHEET SHOWS (his rule of 06 Nov 2026: a customer never goes to Salt QR). The Worker reads Salt QR's /data.js out of their
      sight through the QRCMD binding (stmt/paycodes.js: six fields an account, a payload whose checksum fails refused, the last good read
      filed in KV `paycodes` and answered under three days old) and answers, per account not suspended and only what its rails need:
-     qr (the payload), number and bank (transfer), biller and ref1 (JomPAY). On their session alone, no-store; {} while nothing can be read.
+     rows (the code's modules), number (transfer), biller and ref1 (JomPAY). On their session alone, no-store; {} while nothing can be read.
      A test account is answered its fixture's INVENTED details and `down`, and the real file is never read for it. Not an /all route:
      the owner's read-only view never asks.
      WITH THEM, `down` (17 Oct 2026): which accounts Salt QR has under maintenance now, read FRESH off its /state.json (stmt/paystate.js,
@@ -478,8 +478,9 @@ async function handleCustomer(request, env, p, m, ctx) {
       const down = ex.down ? Object.assign({}, ...PAY_ACCOUNTS.map((a) => ({ [a.key]: a.maintenance === true })), ex.down) : null;
       return json(down ? { ok: true, accounts: shapeAccounts(ex.accounts, liveAccounts(down)), down } : { ok: true, accounts: {} });
     }
-    const [down, codes] = await Promise.all([payDown(env), payCodes(env)]);
-    const accounts = codes ? shapeAccounts(codes, liveAccounts(down)) : {};
+    /* a suspension stays while the state is unreadable: the last fresh word is kept beside the copy (payDownKept), and a stored word only adds one */
+    const [kept, codes] = await Promise.all([payDownKept(env), payCodes(env)]), down = kept.fresh;
+    const accounts = codes ? shapeAccounts(codes, liveAccounts(kept.effective)) : {};
     return json(down ? { ok: true, accounts, down } : { ok: true, accounts });
   }
   /* S9 9.4, FOR THE CUSTOMER'S OWN THIS DEVICE CARD (9.9): their phones and computers, on their session, and signing the
