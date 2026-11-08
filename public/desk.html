@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="26cf22fbc7e4b1ff";
+var SALT_BUILD_ID="b1558cc015be1f6c";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -503,6 +503,8 @@ th.l,td.l{position:sticky;left:0;}
 .ledwrap .lcard .lmove{display:none;}
 .ledwrap .lcard.lopenq .lmove.llast,.ledwrap .lcard.lexp .lmove{display:grid;}
 .ledwrap .lcard.lexp .lmove.lclose:not(:first-child){border-top:1px dashed var(--line);}
+.ledwrap .lcard .lchange{display:none;}
+.ledwrap .lcard.lexp .lchange{display:flex;justify-content:flex-end;padding:8px 0 2px;}
 .ledwrap .lrow .lc-e{display:flex;flex-direction:column;align-items:flex-start;gap:1px;align-self:start;}
 .ledwrap .tag.ltype{font-size:9.5px;letter-spacing:.14em;}
 .lnil{color:var(--dim);}
@@ -11860,7 +11862,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1483","d":"09 Nov 2026","t":"A CLAIM ON A SUSPENDED ACCOUNT IS REFUSED","n":["<b>THE CLAIM FOLLOWS THE SHEET.</b> A customer&#39;s I have paid, on an order or against the account, and their choice of a way to pay, are refused when they name an account he has suspended on the payment page, read live as the pay sheet reads it. Before, only the flag baked in at the last deploy was checked, so a claim could name an account he had just suspended.","<b>SAFE WHEN UNREADABLE.</b> While the payment page cannot be read, the last fresh word still holds a suspension; with no word at all the baked flags stand and nothing is refused that was taken before. A claim naming no way to pay takes the order&#39;s own, as before. The practice accounts never read the payment page.","<b>CHECKS.</b> New section pay-claim-down (18 checks, 12 mutations, every one red). Fable reviewed: sound, two low notes applied and re-checked closed; a retry inside seconds of a suspension answering the refusal rather than the claim already recorded is said, not fixed. Full suite 12,069 passed, S1b red on this laptop only."]}];
+const evolution=[{"v":"v1484","d":"09 Nov 2026","t":"EVERY CONCLUSION LEADS TO ITS PATH","n":["<b>HIS WORD.</b> Every ledger row and every conclusion on the Desk leads to the correct path, one simple workflow for each action. His answer: Show, then act.","<b>SHOW.</b> A Noticed finding that names rows (twins, no cost, undated, stale pending, a same-day trail, under the floor) opens those rows alone on the Ledger, said in its bar, Clear the way back. A chase or a refund opens that party&#39;s rows. Everything else opens its page, as before.","<b>ACT.</b> Each conclusion decided on Salt Admin links the place it is decided: a lot to enter, Needs you, the oldest unpaid row of a chase, the account of a refund, and Hide for any Noticed card. An open ledger row carries Change on Salt Admin, which opens that row in the sale form. The links go through the Desk&#39;s own /admin, which passes only a fixed list of addresses."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12008,7 +12010,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='09 Nov 2026, 05:41 KL';
+const LAST_UPDATED='09 Nov 2026, 06:50 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -14302,7 +14304,7 @@ function tabToday(){
     <div class="actk salt-action__kind">${KIND[x.kind]||'Item'}</div>
     <div class="salt-action__body"><div class="actt salt-action__title">${x.title}${x.books.length?' '+x.books.map(p=>prodTag({product:p})).join(' '):''}</div><div class="actw salt-action__why">${x.why}</div></div>
     <div class="actm salt-action__money${x.rm>0.009?'':' salt-action__money--nil'}" title="${x.rm>0.009?'At stake: what this item itself exposes':'No figure: it costs nothing to leave and something to ignore'}">${x.rm>0.009?fmt0(x.rm):NIL}</div>
-    <div class="actb salt-action__go">${x.copy?`<button class="navlink salt-ghost" data-remind="${tdRemind.push(x.copy)-1}" onclick="copyRemind(+this.dataset.remind,this)">Copy reminder</button> `:''}${x.tab?`<button class="navlink salt-ghost" onclick="switchTab('${x.tab}')">${TAB_LABEL[x.tab]||x.tab} &rarr;</button>`:''}</div>
+    <div class="actb salt-action__go">${x.copy?`<button class="navlink salt-ghost" data-remind="${tdRemind.push(x.copy)-1}" onclick="copyRemind(+this.dataset.remind,this)">Copy reminder</button> `:''}${x.party?`<button class="navlink salt-ghost" data-party="${esc(x.party)}" onclick="goParty(this.dataset.party)">Their rows &rarr;</button>`:x.tab?`<button class="navlink salt-ghost" onclick="switchTab('${x.tab}')">${TAB_LABEL[x.tab]||x.tab} &rarr;</button>`:''}${x.admin?' '+adminLink(x.admin[0],x.admin[1]):''}</div>
     ${x.rm>0.009&&peak>0?`<div class="actbar salt-action__bar" title="${fmt0(x.rm)} of the ${fmt0(peak)} largest item"><i style="width:${Math.max(1.5,x.rm/peak*100).toFixed(1)}%"></i></div>`:''}</div>`;
   /* v385: A DATED SEVERITY THAT IS EMPTY STILL SAYS SO. The two count cards that used to
      stand above the list are gone as duplicates, and on a book with nothing due this week
@@ -16021,6 +16023,17 @@ function goRid(rid){switchTab('ledger');
   /* 1 Nov 2026: a row older than seven days sits behind the fold, and a filter leaves rows out: open the fold, clear the filters, look again */
   if(!card()){ledOlder=true;ledF={q:'',state:'',party:'',month:'',product:''};switchTab('ledger');}
   return goEl(card());}
+/* 9 Nov 2026, HIS WORD: EVERY CONCLUSION LEADS TO THE CORRECT PATH, ONE SHAPE FOR ALL. A finding that names rows opened the Ledger's
+   newest seven days, where its rows mostly were not; a call about one party opened a page about every party. Show now opens exactly
+   what it names: goRows the rows alone (the Ledger's filter by rid, said in its bar, Clear the way back), goParty that party's
+   statement (the Ledger's own party filter). Act opens the one Salt Admin place where the decision is made, through the Desk's own
+   /admin (adminTo): the address is the Worker's, never in this page, and the place one of a fixed list there. */
+function goRows(rows,why){const r=String(rows||'').split(/\s+/).filter(Boolean);if(!r.length)return false;
+  ledOlder=true;ledF={q:'',state:'',party:'',month:'',product:'',rids:r,why:String(why||'')};switchTab('ledger');return false;}
+function goParty(code){if(!code)return false;ledOlder=true;ledF={q:'',state:'',party:String(code),month:'',product:''};switchTab('ledger');return false;}
+const adminTo=to=>'admin?to='+encodeURIComponent(to);
+/* the act link: a new tab, as the bar's Approve opens Salt Admin, so the Desk stays where he was */
+const adminLink=(to,lab)=>`<a class="navlink salt-ghost" href="${esc(adminTo(to))}" target="_blank" rel="noopener">${lab} &rarr;</a>`;
 /* v465: THE WHOLE BOOK, FIRST TO LATEST, AND SORTABLE. The ledger used to open on the last three
    days and fold the rest behind a summary, and a folded row reads as a missing one. Every row now
    shows, in book order, and any column heading sorts the list the way a sheet does: once ascending,
@@ -16074,6 +16087,7 @@ function ledAttr(t){const r=t._buy||t;
   if(r.ref)return ` <span class="tag salt-status inkind" title="credited to the associate who introduced it">R3 &middot; ${ID(r.ref)}</span>`+cov;
   return cov;}
 function ledMatches(t,si,am,code){
+  if(ledF.rids&&ledF.rids.indexOf(ridOf(t))<0)return false;   /* 9 Nov 2026: the rows a finding names, and no other */
   if(ledF.party&&t.who!==ledF.party)return false;
   /* t.date is absent on a row agreed but never moved, so this threw on every month
      in the list and the dropdown silently did nothing at all. An undated row has no month
@@ -16523,9 +16537,12 @@ function tabLedger(){
     const kProd=(PRODUCTS[prodOf(rowT)]||{}).name||'';
     return {live:live,date:t.date||'',
       k:{e:idx,date:t.date||null,type:t.type,product:kProd,party:ID(t.who),qty:+t.qty||0,price:price,total:+t.total||0,margin:margin,state:finalState},
-      h:`<div class="lcard ${cardCls}" id="ent-${code}"${rid?` data-rid="${rid}" data-type="${t.type}" tabindex="0"`:""}>${pen}${openLine}${trail}</div>`};}).filter(Boolean);
+      /* 9 Nov 2026: A ROW IS CHANGED ON SALT ADMIN, AND THE OPEN TRAIL SAYS SO. The Desk reads; every change of a row (a payment, a
+         handover, a correction, a cancellation) is made in Salt Admin's sale form, which this opens on this row. It shows with the trail. */
+      h:`<div class="lcard ${cardCls}" id="ent-${code}"${rid?` data-rid="${rid}" data-type="${t.type}" tabindex="0"`:""}>${pen}${openLine}${trail}`
+        +(rid?`<div class="lchange">${adminLink('row/'+rid,'Change on Salt Admin')}</div>`:'')+`</div>`};}).filter(Boolean);
   const shown=rows.length,total=all.length;
-  const filtered=!!(ledF.q||ledF.state||ledF.party||ledF.month||ledF.product);
+  const filtered=!!(ledF.q||ledF.state||ledF.party||ledF.month||ledF.product||ledF.rids);
   /* v465: THE WHOLE BOOK, IN THE ORDER ASKED FOR. A blank key sorts last in both directions, as a
      sheet does with an empty cell; ties keep book order. */
   const cmp=(a,b)=>{const ka=a.k[ledSort.key],kb=b.k[ledSort.key];
@@ -16563,7 +16580,7 @@ function tabLedger(){
     <select id="ledProduct">${selOpt('',ledF.product,'All products')}${PROD_IDS.map(p=>selOpt(p,ledF.product,PRODUCTS[p].name)).join('')}</select>
     ${filtered?'<button class="ubtn salt-ghost" id="ledClear">Clear</button>':''}
     <span class="ledct">${shown} of ${total}</span>
-  </div>`;
+  </div>${ledF.rids?`<div class="dsc ledrids" id="ledRids" data-rids="${esc(ledF.rids.join(' '))}">${ledF.rids.length===1?'The row':'The '+ledF.rids.length+' rows'}${ledF.why?' '+esc(ledF.why):''}. Clear shows every row.</div>`:''}`;
   return `<h1>Ledger</h1>
   <div class="dsc dsclead">Every transaction the desk holds, latest first, with the trail of what moved when.</div>
   <div class="note">One line per order, <b>Opened &rarr; steps &rarr; Closed</b>, figures only; the notes stay on each row in the book. The last seven days show first and the rest fold below them. Sort by any column from its heading, and again to reverse; the E-numbers keep their place in the book.</div>
@@ -17954,7 +17971,7 @@ function observations(){
       if((s.amend||[]).length!==(t.amend||[]).length)tell.push('a trail on one and not the other');
       if(Math.abs((+s.cash||0)-(+t.cash||0))>0.009)tell.push('different cash received');
       const twin=!tell.length;
-      add({id:key,fam:'integrity',sev:twin?'act':'note',conf:'measured',rm:+s.total,tab:'ledger',
+      add({id:key,fam:'integrity',sev:twin?'act':'note',conf:'measured',rm:+s.total,tab:'ledger',rows:[ridOf(s),ridOf(t)],
         title:twin
           ? `${ID(s.customer)} carries the same order twice and nothing tells them apart`
           : `${ID(s.customer)} bought the same thing twice in ${nDays(gap)}`,
@@ -17974,7 +17991,7 @@ function observations(){
   const nocost=sales.filter(s=>s.cost==null&&(+s.total>0.0001)&&(+s.qty>0.0001)&&!s.cancelled&&txStat(s).order!=='Pending');
   if(nocost.length){
     const w=nocost.reduce((a,s)=>a+(+s.qty||0),0);
-    add({id:'int:nocost',fam:'integrity',sev:'watch',conf:'measured',rm:null,tab:'ledger',
+    add({id:'int:nocost',fam:'integrity',sev:'watch',conf:'measured',rm:null,tab:'ledger',rows:nocost.map(ridOf),
       title:`${nocost.length} priced ${nocost.length===1?'sale carries':'sales carry'} no cost of ${nocost.length===1?'its':'their'} own`,
       why:`Each falls back to the weighted average, which is today's blend rather than what that salt actually cost. Where the buying rate has moved, that flatters one order and understates another. ${nocost.length===1?`It covers ${units(w)}.`:`Between them they cover ${units(w)}.`} Queue lots in receipt order and consume them in delivery order, then state the cost on the row.`,
       ev:nocost.slice(0,6).map(s=>`${s.date||'not dated'} ${ID(s.customer)}: ${units(+s.qty)} for ${fmt0(+s.total)}`)});
@@ -17997,7 +18014,7 @@ function observations(){
     return !!(lateMoney||shortMoney);
   });
   if(undated.length){
-    add({id:'int:undated',fam:'integrity',sev:undated.length>=4?'watch':'note',conf:'measured',rm:null,tab:'ledger',
+    add({id:'int:undated',fam:'integrity',sev:undated.length>=4?'watch':'note',conf:'measured',rm:null,tab:'ledger',rows:undated.map(ridOf),
       title:`${undated.length} ${undated.length===1?'delivery is':'deliveries are'} dated by assumption on a day that was not clean`,
       why:`Salt went out and the money did not follow on the same day, yet no delivery date is recorded, so txDates falls back to the order date and marks it assumed. That is the case where the assumption can actually be wrong. It matters because the inventory walk consumes lots in delivery order: a wrong date consumes the wrong lot, mis-costs the sale, and can drive the reconstructed inventory below zero, which then reads as a stockout when it is a dating fault. Rows paid in full on the day are excluded, because there the assumption cannot be wrong.`,
       ev:undated.slice(0,8).map(s=>{const settled=(+s.cash||0)+(+s.settledRM||0);
@@ -18009,7 +18026,7 @@ function observations(){
   const stale=pend.filter(s=>s.date&&dbet(s.date)>=7);
   if(stale.length){
     const rm=stale.reduce((a,s)=>a+(+s.total||0),0), q=stale.reduce((a,s)=>a+(+s.qty||0),0);
-    add({id:'int:stalepend',fam:'integrity',sev:'watch',conf:'measured',rm:rm,tab:'receivables',
+    add({id:'int:stalepend',fam:'integrity',sev:'watch',conf:'measured',rm:rm,tab:'receivables',rows:stale.map(ridOf),
       title:`${stale.length} pending ${stale.length===1?'order has':'orders have'} sat a week or more`,
       why:`${units(q)} worth ${fmt0(rm)} agreed with nothing moved either way. Pending counts nowhere by design, so it costs nothing on the books and everything in attention: the salt is not reserved, the money is not owed, and the customer may well think it is settled. Convert it or close it.`,
       ev:stale.map(s=>`${s.date||'not dated'} ${ID(s.customer)}: ${units(+s.qty)} for ${fmt0(+s.total)}, ${nDays(dbet(s.date))}`)});
@@ -18019,7 +18036,7 @@ function observations(){
      rule is deliberately narrow: only a trail whose WHOLE length is one step qualifies. */
   const foldable=sales.filter(s=>(s.amend||[]).length===1&&s.amend[0].date===s.date);
   if(foldable.length){
-    add({id:'int:samedaytrail',fam:'integrity',sev:'note',conf:'measured',rm:null,tab:'ledger',
+    add({id:'int:samedaytrail',fam:'integrity',sev:'note',conf:'measured',rm:null,tab:'ledger',rows:foldable.map(ridOf),
       title:`${foldable.length} ${foldable.length===1?'order draws':'orders draw'} a movement identical to its own opening`,
       why:`The whole trail is one step dated on the order date, so it restates the canonical row rather than recording a change. The card reads Opened, then a movement that moves nothing new, then Closed. State deliveredOn and paidOn on the row and delete the trail. This applies ONLY where the entire trail is one step: stripping the first step of a multi-step trail would understate every later state by whatever the opening moved, because replayAmend starts from zero and accumulates.`,
       ev:foldable.slice(0,6).map(s=>`${s.date||'not dated'} ${ID(s.customer)}: single ${esc(s.amend[0].kind||'step')} step on the order date`)});
@@ -18037,7 +18054,7 @@ function observations(){
     }).sort((a,b)=>{const x=a.date||'',y=b.date||'';return x<y?1:x>y?-1:0;});
     if(breach.length){
       const worst=breach.slice(0,5);
-      add({id:'int:underfloor',fam:'integrity',sev:'watch',conf:'measured',rm:null,tab:'pricing',
+      add({id:'int:underfloor',fam:'integrity',sev:'watch',conf:'measured',rm:null,tab:'pricing',rows:breach.map(ridOf),
         title:`${breach.length} recent ${breach.length===1?'sale sits':'sales sit'} under the ladder's floor at today's cost`,
         why:`Measured against an effective cost of ${fmt(eff)} a unit and the floor the ladder sets at each size. These were priced when cost was lower, so this is cost catching up with a price rather than a mistake at the time. It matters because it is what those same customers will expect to pay next.`,
         /* v280: the floor is one markup on the lot cost now, so this reads it from the same
@@ -18196,6 +18213,11 @@ function observations(){
 }
 
 /* ============ RENDERING AND THE HUSH CONTROLS ============ */
+/* 9 Nov 2026: Show opens what the finding names: its rows alone where it names rows (a rid the book has not minted yet is left out), else its page.
+   Hide opens Salt Admin's Desk reminders with this one chosen; the id said in words beside it was the only way there. */
+function obsShow(o){const r=(o.rows||[]).filter(Boolean);
+  return r.length?`<button class="navlink salt-ghost" data-rows="${esc(r.join(' '))}" onclick="goRows(this.dataset.rows,'the finding names')">${r.length===1?'The row':'The '+r.length+' rows'} &rarr;</button>`
+    :`<button class="navlink salt-ghost" onclick="switchTab('${o.tab}')">${TAB_LABEL[o.tab]||o.tab} &rarr;</button>`;}
 function obsCard(o){
   const S=OBS_SEV[o.sev]||OBS_SEV.note, K=OBS_CONF[o.conf]||OBS_CONF.measured;
   const hushed=!!o.st;
@@ -18210,11 +18232,11 @@ function obsCard(o){
       <p style="margin:0 0 9px">${o.why}</p>
       ${(o.ev&&o.ev.length)?`<div class="obsev"><div class="obsevh">What it stands on</div><ul>${o.ev.map(e=>`<li>${e}</li>`).join('')}</ul></div>`:''}
       <div class="obsact">
-        <button class="navlink salt-ghost" onclick="switchTab('${o.tab}')">${TAB_LABEL[o.tab]||o.tab} &rarr;</button>
+        ${obsShow(o)}
         ${hushed
           ? `<span class="dsc">${o.st.act==='snooze'?`Snoozed to <b>${esc(o.st.until||'')}</b>`:'Dismissed'}${o.st.why?`: ${esc(o.st.why)}`:''}${o.st._q?' &middot; <span class="attn">queued, not yet filed</span>':''}</span>
 `
-          : `<span class="dsc obsid">${esc(o.id)} &middot; Hush on Salt Admin</span>`}
+          : adminLink('tip/'+o.id,'Hide on Salt Admin')}
       </div>
     </div>
   </details>`;
@@ -19460,6 +19482,7 @@ function actions(){
         :`Refill ${fmt0(refill)} at ${fmt(rq?rq.rate:c.eff)}/unit, no quote on this book.`)
       +(f.cashKnown?` ${fmt0(cashFlow().free)} free.`:'');
     add(sev,'buy',title,Math.max(refill,short?f.promRM:0),why,'inventory');   /* v823: to the page whose card sized the lot */
+    out[out.length-1].admin=['record/entry','Enter the lot on Salt Admin'];   /* 9 Nov 2026: a lot bought is entered there, as a purchase */
   }
   /* F4: AN AMBER OR RED LIGHT WITH NO DAY AHEAD OF IT asks him for the restock date (04 Nov 2026: yellow, Selling fast, is a
      sales signal and asks nothing). The engine's restockSupply says the light, from the shelf, what is committed and the book's
@@ -19485,6 +19508,7 @@ function actions(){
         +[['new','new'],['paid','say they paid'],['cash','cash to record'],['asked','waiting on an answer']]
           .filter(x=>n(x[0])).map(x=>n(x[0])+' '+x[1]).join(', ')+'. Decided on Salt Admin.';
       add(ow.placed.length?'now':'soon','orders',title,ow.rm,why,null);
+      out[out.length-1].admin=['needs','Needs you on Salt Admin'];   /* 9 Nov 2026: it had no button at all */
     }
   }
   /* ============ 3. MONEY OUT WITH OTHER PEOPLE, ONE ROW PER PERSON (v385) ============
@@ -19515,6 +19539,9 @@ function actions(){
       +ds.map(x=>`${fmt0(x.g)} ${x.held==null?'undated':`at ${x.held}d`}${x.pr>0?` (${(x.pr*100).toFixed(0)}% provisioned)`:''}`).join('; ')
       +`. ${fmt0(net)} realistic.`
       +(isBanned(who)?' Banned from sale; the ban ends the trade, not the debt.':''),'receivables');
+    /* 9 Nov 2026: Show is their statement; what they pay is recorded on Salt Admin in the sale form of their oldest unpaid row, the
+       one Ledger check opens (a row with no rid yet has no Act) */
+    Object.assign(out[out.length-1],{party:who,admin:ridOf(ds[0].s)?['row/'+ridOf(ds[0].s),'Record it on Salt Admin']:null});
     /* v812: past the term, the card carries a reminder he can copy and send as it stands */
     if(past)out[out.length-1].copy=remindText(ds,gross);});
   if(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status==='recoverable'){
@@ -19528,8 +19555,10 @@ function actions(){
      never reach Now however old it got, and the rail's Today badge counts only the Now rows: an
      open refund badged nothing anywhere. The rule is his own instruction, which is what a rule is
      here; it is not an ageing, because he did not ask for one. Today's is 23 days old. */
-  customerRefunds.filter(r=>!r.paidOn).forEach(r=>add('now','pay',`Refund ${ID(r.party)} ${fmt0(r.amount)}`,r.amount,
-    `Owed since ${r.since}, ${nDays(dAge(r.since))}. Money of theirs you are holding. ${esc(r.note||'')}`,'receivables'));
+  /* 9 Nov 2026: Show is their statement; paid out, it is marked on their account's Refunds card on Salt Admin (the edit entry, Ask A) */
+  customerRefunds.filter(r=>!r.paidOn).forEach(r=>{add('now','pay',`Refund ${ID(r.party)} ${fmt0(r.amount)}`,r.amount,
+    `Owed since ${r.since}, ${nDays(dAge(r.since))}. Money of theirs you are holding. ${esc(r.note||'')}`,'receivables');
+    Object.assign(out[out.length-1],{party:r.party,admin:['acct/'+r.party,'Mark it paid on Salt Admin']});});
   /* 5. rules already broken, grouped by person. Four separate rows about one man is a
      list you stop reading; one row naming all four rules is a decision about him. */
   const br={};boundaryScan().filter(x=>x.sev==='breach').forEach(x=>{(br[x.who]=br[x.who]||[]).push(x);});

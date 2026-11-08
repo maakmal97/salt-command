@@ -11657,7 +11657,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1483","d":"09 Nov 2026","t":"A CLAIM ON A SUSPENDED ACCOUNT IS REFUSED","n":["<b>THE CLAIM FOLLOWS THE SHEET.</b> A customer&#39;s I have paid, on an order or against the account, and their choice of a way to pay, are refused when they name an account he has suspended on the payment page, read live as the pay sheet reads it. Before, only the flag baked in at the last deploy was checked, so a claim could name an account he had just suspended.","<b>SAFE WHEN UNREADABLE.</b> While the payment page cannot be read, the last fresh word still holds a suspension; with no word at all the baked flags stand and nothing is refused that was taken before. A claim naming no way to pay takes the order&#39;s own, as before. The practice accounts never read the payment page.","<b>CHECKS.</b> New section pay-claim-down (18 checks, 12 mutations, every one red). Fable reviewed: sound, two low notes applied and re-checked closed; a retry inside seconds of a suspension answering the refusal rather than the claim already recorded is said, not fixed. Full suite 12,069 passed, S1b red on this laptop only."]}];
+const evolution=[{"v":"v1484","d":"09 Nov 2026","t":"EVERY CONCLUSION LEADS TO ITS PATH","n":["<b>HIS WORD.</b> Every ledger row and every conclusion on the Desk leads to the correct path, one simple workflow for each action. His answer: Show, then act.","<b>SHOW.</b> A Noticed finding that names rows (twins, no cost, undated, stale pending, a same-day trail, under the floor) opens those rows alone on the Ledger, said in its bar, Clear the way back. A chase or a refund opens that party&#39;s rows. Everything else opens its page, as before.","<b>ACT.</b> Each conclusion decided on Salt Admin links the place it is decided: a lot to enter, Needs you, the oldest unpaid row of a chase, the account of a refund, and Hide for any Noticed card. An open ledger row carries Change on Salt Admin, which opens that row in the sale form. The links go through the Desk&#39;s own /admin, which passes only a fixed list of addresses."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11805,7 +11805,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='09 Nov 2026, 05:41 KL';
+const LAST_UPDATED='09 Nov 2026, 06:50 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
