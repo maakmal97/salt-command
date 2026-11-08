@@ -1,5 +1,15 @@
 [
  {
+  "v": "v1483",
+  "d": "09 Nov 2026",
+  "t": "A CLAIM ON A SUSPENDED ACCOUNT IS REFUSED",
+  "n": [
+   "<b>THE CLAIM FOLLOWS THE SHEET.</b> A customer&#39;s I have paid, on an order or against the account, and their choice of a way to pay, are refused when they name an account he has suspended on the payment page, read live as the pay sheet reads it. Before, only the flag baked in at the last deploy was checked, so a claim could name an account he had just suspended.",
+   "<b>SAFE WHEN UNREADABLE.</b> While the payment page cannot be read, the last fresh word still holds a suspension; with no word at all the baked flags stand and nothing is refused that was taken before. A claim naming no way to pay takes the order&#39;s own, as before. The practice accounts never read the payment page.",
+   "<b>CHECKS.</b> New section pay-claim-down (18 checks, 12 mutations, every one red). Fable reviewed: sound, two low notes applied and re-checked closed; a retry inside seconds of a suspension answering the refusal rather than the claim already recorded is said, not fixed. Full suite 12,069 passed, S1b red on this laptop only."
+  ]
+ },
+ {
   "v": "v1482",
   "d": "09 Nov 2026",
   "t": "PAY WITHOUT LEAVING SALT COUNTER",
