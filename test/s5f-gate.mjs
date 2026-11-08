@@ -109,6 +109,21 @@ export async function run({ ok }) {
       ok(G.markBeforeLoad(real) && !G.markBeforeLoad(swapped) && !G.markBeforeLoad(real.replace(mk, "")), "the chain on master marks what it folded before it loads the Book, and a chain that loads first, or marks nothing, is caught");
       const preOf = (yml) => G.collectPre((cmd, args) => (cmd === "git" && args[0] === "show" ? { code: 0, out: yml } : cmd === "git" ? { code: 0, out: "" } : { code: 0, out: JSON.stringify([{ results: [{ mode: "on", name: "x" }], success: true }]) }));
       ok(preOf(real).markBeforeLoad === true && preOf(swapped).markBeforeLoad === false, "and the gate reads that order off master's chain"); }
+    /* a run that stood down to finish the last fold's deploy (09 Nov 2026): its emitted notice, never the step's echoed script, lets an entry approved before it stand open */
+    {
+      const notice = "chain\tUNKNOWN STEP\t2026-11-06T09:55:36.3Z ##[notice]master/_folded.json is in HEAD: the last fold was pushed and its deploy did not finish. Deploying it, marking its rows and clearing the handoff; nothing new is staged on this run.";
+      const script = "chain\tUNKNOWN STEP\t2026-11-06T09:55:36.1Z \u001b[36;1m    echo \"::notice::master/_folded.json is in HEAD: the last fold was pushed and its deploy did not finish. Deploying it, marking its rows and clearing the handoff; nothing new is staged on this run.\"\u001b[0m";
+      ok(G.parseLog(notice).stoodDown === true && G.parseLog(script).stoodDown === false && G.parseLog("").stoodDown === false, "a run's log says it stood down only by the emitted notice, never by the step's own script echoed into it");
+      const early = { ...late, decided_at: "2026-10-30T00:58:00.000Z" };
+      /* the run before: one that staged at 00:50 (and, between, one more that stood down at 00:57) */
+      const prior = (stood) => [{ id: 6, at: "2026-10-30T00:30:00Z", log: { loads: [], readchecks: [], parity: [], sources: [], exports: [], stoodDown: false } }, { id: 7, at: "2026-10-30T00:50:00Z", log: { loads: [], readchecks: [], parity: [], sources: [], exports: [], stoodDown: false } }, ...(stood ? [{ id: 8, at: "2026-10-30T00:57:00Z", log: { loads: [], readchecks: [], parity: [], sources: [], exports: [], stoodDown: true } }] : [])];
+      const stood = (b, flag, before = prior(true)) => { const e = withOpen(b); e.runs[0].log.stoodDown = flag; e.runs = before.concat(e.runs); return g1(e); };
+      ok(stood([early], true).ok === true && stood([early], false).ok === false, "an entry approved before a run that stood down, and folded by a later run, is clean; the same entry before a run that did not stand down is not");
+      ok(stood([{ ...early, committed_at: null }], true).ok === false && stood([early, { ...early, id: "b" }], true).ok === false,
+        "a stand-down still needs each open entry folded by a later run and the load's own count");
+      ok(stood([{ ...early, decided_at: "2026-10-30T00:40:00.000Z" }], true).ok === false && stood([early], true, []).ok === false && stood([{ ...early, decided_at: "2026-10-30T00:52:00.000Z" }], true).ok === true,
+        "the waiver reaches back only to the newest earlier run that did not stand down: an entry approved before that run is not clean, nor any with no such run; one after it, past a second stand-down, is");
+    }
     { const e = withOpen([late]); e.runs[0].log.loads[0].at = null; ok(g1(e).ok === false, "an open entry on a load line with no time of its own is not clean"); }
     { const e = withOpen([late]); delete e.d1.booked; ok(g1(e).ok === null && /D1 unread/.test(g1(e).detail), "a load with an entry open and D1's booked drafts unread is UNVERIFIED, never true"); }
     const g5 = (list) => { const e = clone(); e.d1.fallbacks = list.length; e.d1.fallbackList = list; return G.judge(e).lines.find((x) => x.id === "G5"); };

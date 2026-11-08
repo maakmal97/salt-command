@@ -242,7 +242,7 @@
  {
   "name": "an open entry approved before its run began is clean",
   "file": "tools/flip-gate.mjs",
-  "find": "t(b.decided_at) >= t(l.runAt) && b.committed_at",
+  "find": "t(b.decided_at) >= from && b.committed_at",
   "replace": "b.committed_at"
  },
  {
@@ -424,5 +424,65 @@
   "file": "tools/flip.mjs",
   "find": "const r = await fetch(base + path, { headers: bookHeaders(env) });",
   "replace": "const r = await fetch(base + path, {});"
+ },
+ {
+  "name": "a stand-down is never read",
+  "file": "tools/flip-gate.mjs",
+  "find": "nothing new is staged on this run\\./.test(l)) out.stoodDown = true;",
+  "replace": "nothing new is staged on this run\\./.test(l)) out.stoodDown = false;"
+ },
+ {
+  "name": "the echoed script counts as a stand-down",
+  "file": "tools/flip-gate.mjs",
+  "find": "if (/^##\\[notice\\]master\\/_folded\\.json is in HEAD: ",
+  "replace": "if (/master\\/_folded\\.json is in HEAD: "
+ },
+ {
+  "name": "a run's stand-down does not reach its loads",
+  "file": "tools/flip-gate.mjs",
+  "find": "stoodDown: r.log.stoodDown === true }",
+  "replace": "stoodDown: false }"
+ },
+ {
+  "name": "every load counts as stood down",
+  "file": "tools/flip-gate.mjs",
+  "find": "stoodDown: r.log.stoodDown === true }",
+  "replace": "stoodDown: true }"
+ },
+ {
+  "name": "a stand-down lets an unfolded entry stand",
+  "file": "tools/flip-gate.mjs",
+  "find": "o.every((b) => t(b.decided_at) >= from && b.committed_at && t(b.committed_at) > t(l.at))",
+  "replace": "o.every((b) => (l.stoodDown || (t(b.decided_at) >= from && b.committed_at && t(b.committed_at) > t(l.at))))"
+ },
+ {
+  "name": "a stand-down skips the count",
+  "file": "tools/flip-gate.mjs",
+  "find": "return o.length === l.open && o.every(",
+  "replace": "return (l.stoodDown || o.length === l.open) && o.every("
+ },
+ {
+  "name": "the waiver reaches back without a bound",
+  "file": "tools/flip-gate.mjs",
+  "find": "return before.length ? Math.max(...before) : NaN; };",
+  "replace": "return -Infinity; };"
+ },
+ {
+  "name": "with no earlier staging run the waiver is open",
+  "file": "tools/flip-gate.mjs",
+  "find": "return before.length ? Math.max(...before) : NaN; };",
+  "replace": "return before.length ? Math.max(...before) : -Infinity; };"
+ },
+ {
+  "name": "a stood-down run counts as the bound",
+  "file": "tools/flip-gate.mjs",
+  "find": "const stagedAt = runs.filter((r) => r.log.stoodDown !== true).map(",
+  "replace": "const stagedAt = runs.map("
+ },
+ {
+  "name": "the bound is the oldest earlier run",
+  "file": "tools/flip-gate.mjs",
+  "find": "return before.length ? Math.max(...before) : NaN; };",
+  "replace": "return before.length ? Math.min(...before) : NaN; };"
  }
 ]

@@ -25,11 +25,14 @@ export const BEHIND = /^the Book is at v\d+, behind v\d+$/;
 
 /** the chain's load, readcheck, pricing-parity and export lines out of one run's log text (a line carries its text after a timestamp) */
 export function parseLog(text) {
-  const out = { loads: [], readchecks: [], parity: [], sources: [], exports: [] };
+  const out = { loads: [], readchecks: [], parity: [], sources: [], exports: [], stoodDown: false };
   for (const raw of String(text || "").split("\n")) {
     const l = raw.replace(/^.*?\d{4}-\d\d-\d\dT[\d:.]+Z\s?/, ""), stamp = /\d{4}-\d\d-\d\dT[\d:.]+Z/.exec(raw);
     let m;
-    if (/Book loaded:|Book NOT loaded:/.test(l)) out.loads.push({ line: l, at: stamp ? stamp[0] : null, ok: /Book loaded:/.test(l), closed: (m = /tap: (\d+) closed, (\d+) open/.exec(l)) ? +m[1] : null, open: m ? +m[2] : null,
+    /* the chain's guard EMITTED its stand-down (the runner writes ::notice:: as ##[notice]; the step's own script, echoed into every run's log, never counts):
+       the last fold's deploy had not finished, so this run deployed it and staged nothing new, by design (seen on 06 Nov 2026 after two deploys failed on Cloudflare's side; his word of 09 Nov 2026) */
+    if (/^##\[notice\]master\/_folded\.json is in HEAD: .*nothing new is staged on this run\./.test(l)) out.stoodDown = true;
+    else if (/Book loaded:|Book NOT loaded:/.test(l)) out.loads.push({ line: l, at: stamp ? stamp[0] : null, ok: /Book loaded:/.test(l), closed: (m = /tap: (\d+) closed, (\d+) open/.exec(l)) ? +m[1] : null, open: m ? +m[2] : null,
       bad: /FOLD BOOKED DIFFERENTLY|STUCK|CLASH|CLASHING|parity FAILED|parity NOT CHECKED/i.test(l), agrees: /agrees with git/.test(l) });
     else if (/Book readcheck:/.test(l)) out.readchecks.push({ line: l, ok: /agree over/.test(l) && !/DIFFER|differ|FAILED|would be refused/.test(l.replace(/compaction would hold/, "")) });
     else if (/Book source:/.test(l)) out.sources.push({ line: l, ok: /equal those built from git/.test(l) });
@@ -42,7 +45,7 @@ export function parseLog(text) {
 /** the gate, from evidence: { runs: [{id, at, event, log: parseLog()}], d1: {...}, backupOpened, now }. Pure. Answers {ok, lines: [{id, text, ok: true|false|null, detail}]}. */
 export function judge(ev, cfg = GATE) {
   const L = [], line = (id, text, ok, detail) => L.push({ id, text, ok, detail });
-  const runs = ev.runs || [], loads = runs.flatMap((r) => r.log.loads.map((l) => ({ ...l, runAt: r.at }))), reads = runs.flatMap((r) => r.log.readchecks), par = runs.flatMap((r) => r.log.parity), srcs = runs.flatMap((r) => r.log.sources || []), exps = runs.flatMap((r) => r.log.exports);
+  const runs = ev.runs || [], loads = runs.flatMap((r) => r.log.loads.map((l) => ({ ...l, runAt: r.at, stoodDown: r.log.stoodDown === true }))), reads = runs.flatMap((r) => r.log.readchecks), par = runs.flatMap((r) => r.log.parity), srcs = runs.flatMap((r) => r.log.sources || []), exps = runs.flatMap((r) => r.log.exports);
   const d = ev.d1 || null;
   line("G0", "the earliest day, 4 Nov 2026, has come", ev.now ? ev.now.slice(0, 10) >= cfg.earliest : null, "today is " + (ev.now || "unknown").slice(0, 10));
   /* G1 */
@@ -50,12 +53,15 @@ export function judge(ev, cfg = GATE) {
      each was committed by a later fold; anything else open, or a load whose open entries D1 cannot show, is not (his word of 04 Nov 2026) */
   const booked = d && Array.isArray(d.booked) ? d.booked : null, t = (s) => Date.parse(s);
   const openAt = (l) => booked.filter((b) => t(b.decided_at) < t(l.at) && (!b.committed_at || t(b.committed_at) > t(l.at)));
-  const explained = (l) => { if (!booked || !l.at || !l.runAt) return false; const o = openAt(l); return o.length === l.open && o.every((b) => t(b.decided_at) >= t(l.runAt) && b.committed_at && t(b.committed_at) > t(l.at)); };
+  /* a stood-down run waives "approved after its run began" only back to the newest earlier run that did not stand down: an entry approved before THAT run was its to stage (Fable, 09 Nov 2026); with none, the waiver gives nothing */
+  const stagedAt = runs.filter((r) => r.log.stoodDown !== true).map((r) => t(r.at)).filter((x) => !Number.isNaN(x));
+  const fromOf = (l) => { if (!l.stoodDown) return t(l.runAt); const before = stagedAt.filter((x) => x < t(l.runAt)); return before.length ? Math.max(...before) : NaN; };
+  const explained = (l) => { if (!booked || !l.at || !l.runAt) return false; const o = openAt(l), from = fromOf(l); return o.length === l.open && o.every((b) => t(b.decided_at) >= from && b.committed_at && t(b.committed_at) > t(l.at)); };
   const withTap = loads.filter((l) => l.closed !== null), opened = loads.filter((l) => l.open !== null && l.open !== 0);
   const badLoads = loads.filter((l) => !l.ok || l.bad || !l.agrees || (l.open !== null && l.open !== 0 && !explained(l)));
-  line("G1", "every load says tap: N closed, 0 open (a load with no entry open has no tap line; an entry approved after its run began and folded by a later run is clean), and no difference, stuck, clash or parity failure",
+  line("G1", "every load says tap: N closed, 0 open (a load with no entry open has no tap line; an entry approved after its run began, or before a run that stood down to finish the last fold's deploy, and folded by a later run is clean), and no difference, stuck, clash or parity failure",
     !loads.length || (opened.length && !booked) ? null : !badLoads.length && withTap.length >= 1,
-    loads.length + " loads read, " + withTap.length + " with a tap line, " + opened.length + " with an entry open" + (opened.length && !booked ? " (D1 unread, so not explained)" : ", " + opened.filter(explained).length + " of them approved after the run began and folded by a later run") + ", " + badLoads.length + " not clean" + (badLoads[0] ? ": " + badLoads[0].line.slice(0, 160) : ""));
+    loads.length + " loads read, " + withTap.length + " with a tap line, " + opened.length + " with an entry open" + (opened.length && !booked ? " (D1 unread, so not explained)" : ", " + opened.filter(explained).length + " of them approved after the run began, or before a stood-down run, and folded by a later run") + ", " + badLoads.length + " not clean" + (badLoads[0] ? ": " + badLoads[0].line.slice(0, 160) : ""));
   /* G2 */
   const closed = withTap.reduce((a, l) => a + l.closed, 0);
   const k = d && d.kinds;
