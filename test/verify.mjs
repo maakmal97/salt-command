@@ -43780,7 +43780,8 @@ await (async () => {
   ok(r404.status === 404, "and a face that is not there is the site's usual 404");
   const genF = await import("../stmt/statement-css.js");
   const pgF = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
-  ok(genF.FONT_FACE_CSS === fcss.split("url(fonts/").join("url(/fonts/") && (pgF.match(/FONT_FACE_CSS \+ STATEMENT_CSS \+ SITE_RECIPES \+ PAGE_CSS/g) || []).length === 2,
+  /* the vendored file's comment is left out of what a customer is served (06 Nov 2026); the rules are the file's to the character */
+  ok(genF.FONT_FACE_CSS === fcss.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s+/, "").split("url(fonts/").join("url(/fonts/") &&(pgF.match(/FONT_FACE_CSS \+ STATEMENT_CSS \+ SITE_RECIPES \+ PAGE_CSS/g) || []).length === 2,
     "the page carries the same @font-face rules, first, on both pages the Worker serves");
 })();
 

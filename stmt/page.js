@@ -7076,7 +7076,7 @@ const CLIENT_JS = `
     api('/pay/accounts').then(function(r){
       payNumAsked=false;
       var a=r.body&&r.body.ok&&r.body.accounts, dn=r.body&&r.body.ok&&r.body.down;
-      if(!a||typeof a!=='object'){ if(PS&&PS.step==='pay') drawPay(); return; }
+      if(!a||typeof a!=='object'){ if(PS&&PS.step==='pay'&&!(document.activeElement&&document.activeElement.id==='payAmt')) drawPay(); return; }
       PAYX=a; payNumAt=Date.now();
       if(dn&&typeof dn==='object') PAY.forEach(function(x){ if(typeof dn[x.key]==='boolean') x.maintenance=dn[x.key]; });
       if(PS&&PS.step==='pay') drawPay();
