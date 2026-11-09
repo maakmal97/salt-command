@@ -1,5 +1,5 @@
 [
- {"name": "gas retired on the live book", "file": "ledger/book.json", "find": "\"since\": \"2026-10-27\",\n      \"retired\": false,\n      \"note\": \"Opened 27 Oct 2026 on his word, by renaming", "replace": "\"since\": \"2026-10-27\",\n      \"retired\": true,\n      \"note\": \"Opened 27 Oct 2026 on his word, by renaming"},
+ {"name": "gas retired on the live book", "file": "ledger/book.json", "find": "rice). Letter P, a flame mark. No lot, no sale and no count yet, so the fold will refuse a sale on it until its first lot is entered by hand.\",\n      \"retired\": false,", "replace": "rice). Letter P, a flame mark. No lot, no sale and no count yet, so the fold will refuse a sale on it until its first lot is entered by hand.\",\n      \"retired\": true,"},
  {"name": "prep off the word list", "file": "src/orders.js", "find": "\"rice\", \"gas\", \"prep\"]", "replace": "\"rice\", \"gas\"]"},
  {"name": "gas lettered P again", "file": "stmt/page.js", "find": "gas: \"POP\", prep: \"PrEP\" };", "replace": "gas: \"P\", prep: \"PrEP\" };"},
  {"name": "prep letter at full size", "file": "stmt/page.js", "find": "const s = l.length > 1 ? Math.min(PLET_AT.s, 13 / (0.6 * l.length)) : PLET_AT.s;", "replace": "const s = PLET_AT.s;"},
