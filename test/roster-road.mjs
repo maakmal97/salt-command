@@ -260,4 +260,9 @@ const gated = await get("/book/roster", good, { REQUIRE_ACCESS: "1", ACCESS_TEAM
   const f3 = await fetchRoster("https://x.test", keys, 0, { fetchImpl: answer({ status: 503, body: {} }, new Error("lost"), { status: 200, body: { ok: true, max: 1, events: [] } }), wait: 0 });
   ok(f3.max === 1 && seen.length === 3, "a 5xx and a lost connection are retried");
   ok((await fetchRoster("https://x.test", {}, 0, { fetchImpl: answer({ status: 200, body: {} }) })).error.includes("SALT_BOOK_KEY"), "a missing key is said, not sent");
+  /* 10 Nov 2026: the flip runs this from the laptop at its step 4, past Access on his own login; with the service token's headers alone it read Access's login page and stopped the flip */
+  seen.length = 0;
+  const f4 = await fetchRoster("https://x.test", { SALT_BOOK_KEY: "bk", SALT_ACCESS_JWT: " jwt.a.b\n" }, 0, { fetchImpl: answer({ status: 200, body: { ok: true, max: 2, events: [] } }), wait: 0 });
+  ok(f4.max === 2 && seen[0].headers["X-Book-Key"] === "bk" && seen[0].headers["cf-access-token"] === "jwt.a.b" && seen[0].headers["Cf-Access-Jwt-Assertion"] === "jwt.a.b",
+    "from the laptop it sends his own Access login beside the Book's key, as the gate and the flip do: " + JSON.stringify(seen[0] && seen[0].headers && Object.keys(seen[0].headers)));
 }

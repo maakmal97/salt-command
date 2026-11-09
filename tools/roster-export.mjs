@@ -23,6 +23,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { mintUsernames, renameUsers, renameLocs, renameSuiteText } from "./fold.mjs";
 import { freeSpares, oneCodeEach } from "./stmt-pool.mjs";
 import { usersJson } from "./stmt-crypto.mjs";
+import { bookHeaders } from "./flip-gate.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -30,8 +31,9 @@ const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export async function fetchRoster(base, env, after, { tries = 3, wait = 2000, fetchImpl = fetch } = {}) {
   const key = String(env.SALT_BOOK_KEY || "");
   if (!key) return { error: "SALT_BOOK_KEY is not set, so the Book was not read" };
-  const headers = { "X-Book-Key": key };
-  if (env.CF_ACCESS_CLIENT_ID && env.CF_ACCESS_CLIENT_SECRET) { headers["CF-Access-Client-Id"] = env.CF_ACCESS_CLIENT_ID; headers["CF-Access-Client-Secret"] = env.CF_ACCESS_CLIENT_SECRET; }
+  /* the gate's own headers (10 Nov 2026): the Book key, CI's service token, or his own Access login (SALT_ACCESS_JWT), since the flip runs this from the laptop at its step 4
+     and the laptop holds no service token; with only the token's headers Access answered its login page, "HTTP 200", and the flip stopped there */
+  const headers = bookHeaders(env);
   let last = "";
   for (let i = 1; i <= tries; i++) {
     try {

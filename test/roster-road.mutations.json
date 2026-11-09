@@ -200,7 +200,7 @@
  {
   "name": "the key is not sent",
   "file": "tools/roster-export.mjs",
-  "find": "const headers = { \"X-Book-Key\": key };",
+  "find": "const headers = bookHeaders(env);",
   "replace": "const headers = {};"
  },
  {
@@ -310,5 +310,11 @@
   "file": "engine/pinned.mjs",
   "find": "code.startsWith(p + \"-\")",
   "replace": "code.startsWith(p)"
+ },
+ {
+  "name": "the roster export drops his own Access login",
+  "file": "tools/roster-export.mjs",
+  "find": "const headers = bookHeaders(env);",
+  "replace": "const headers = bookHeaders({ ...env, SALT_ACCESS_JWT: '' });"
  }
 ]
