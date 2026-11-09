@@ -313,6 +313,11 @@ export async function run({ ok }) {
       rmSync(bin, { recursive: true, force: true });
       ok(r.status === 1 && /"crashed": "fetch failed/.test(r.stdout) && /"wayBack":/.test(r.stdout) && !/triggerUncaughtException/.test(r.stderr),
         "a throw in the flip's command line prints where it stopped and whether the way back was written, with exit 1: " + JSON.stringify({ status: r.status, out: String(r.stdout).slice(0, 160), err: String(r.stderr).slice(-160) }));
+      /* 10 Nov 2026: a shell joins the arguments with spaces and quotes none, so the flip's commit message reached git as six words and step 4 stopped. Only npx and npm take one, on Windows alone */
+      ok(G.shellFor("npx", "win32") && G.shellFor("npm", "win32") && !G.shellFor("git", "win32") && !G.shellFor("gh", "win32") && !G.shellFor("node", "win32") && !G.shellFor("npx", "linux"),
+        "the shell is used for npx and npm on Windows alone, never for git, gh or node");
+      const said = F.realIo({}).sh("node", ["-e", "process.stdout.write(JSON.stringify(process.argv.slice(1)))", "The flip: the roster export's watermark", "--", "x"]);
+      ok(said.code === 0 && said.out === JSON.stringify(["The flip: the roster export's watermark", "--", "x"]), "an argument with spaces and an apostrophe reaches the program whole, as the commit message must: " + said.out.slice(0, 160));
     }
   }
 }

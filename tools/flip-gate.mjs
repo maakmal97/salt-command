@@ -98,7 +98,10 @@ export function judge(ev, cfg = GATE) {
 }
 
 /* ---- the collectors: each answers its evidence or null, and says so ---- */
-const sh = (cmd, args, input) => { const r = spawnSync(cmd, args, { cwd: REPO, encoding: "utf8", shell: process.platform === "win32", maxBuffer: 256 * 1024 * 1024, input }); return { code: r.status === null ? 1 : r.status, out: (r.stdout || "") + (r.stderr || "") }; };
+/* the shell only where Windows needs one: npx and npm are .cmd files, which node will not start without it. Everything else (git, gh, node) starts direct, because a shell joins the
+   arguments with spaces and quotes none: the flip's commit message "The flip: the roster export's watermark" reached git as six words and the commit failed (10 Nov 2026) */
+export const shellFor = (cmd, platform = process.platform) => platform === "win32" && (cmd === "npx" || cmd === "npm");
+const sh = (cmd, args, input) => { const r = spawnSync(cmd, args, { cwd: REPO, encoding: "utf8", shell: shellFor(cmd), maxBuffer: 256 * 1024 * 1024, input }); return { code: r.status === null ? 1 : r.status, out: (r.stdout || "") + (r.stderr || "") }; };
 /* a read wrangler could not make ("fetch failed", a timeout) is tried again, up to `tries` in all, `pause` ms apart: one blip had nulled every D1 line on two runs in four (04 Nov 2026).
    Each answer is still read by d1Rows, so a retry makes no line true that a clean read would not; after the last failure the read is null, as before. */
 export const D1_RETRY = { tries: 3, pause: process.env.SALT_D1_PAUSE === "0" ? 0 : 2000 };

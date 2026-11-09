@@ -520,5 +520,23 @@
   "file": "tools/flip.mjs",
   "find": "  catch (e) { r = { ok: false, crashed:",
   "replace": "  catch (e) { throw e; r = { ok: false, crashed:"
+ },
+ {
+  "name": "git starts through the shell again",
+  "file": "tools/flip-gate.mjs",
+  "find": "platform === \"win32\" && (cmd === \"npx\" || cmd === \"npm\");",
+  "replace": "platform === \"win32\";"
+ },
+ {
+  "name": "the flip's own spawns go back to the shell on Windows",
+  "file": "tools/flip.mjs",
+  "find": "encoding: \"utf8\", shell: shellFor(cmd), maxBuffer: 64",
+  "replace": "encoding: \"utf8\", shell: process.platform === \"win32\", maxBuffer: 64"
+ },
+ {
+  "name": "npx starts with no shell",
+  "file": "tools/flip-gate.mjs",
+  "find": "platform === \"win32\" && (cmd === \"npx\" || cmd === \"npm\");",
+  "replace": "platform === \"win32\" && cmd === \"npm\";"
  }
 ]

@@ -24,7 +24,7 @@ import { writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { d1Rows, commandArgs } from "./d1json.mjs";
-import { judge, collect, say, bookHeaders, bookFetch } from "./flip-gate.mjs";
+import { judge, collect, say, bookHeaders, bookFetch, shellFor } from "./flip-gate.mjs";
 import { DATA_DIR } from "./book.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -35,7 +35,7 @@ export { realGet } from "./flip-gate.mjs";
 
 /** the real io: wrangler for D1, gh for Actions, git, node for the repo's own tools, fetch for the Book's keyed routes. Replaced by the suite. */
 export function realIo(env = process.env) {
-  const sh = (cmd, args) => { const r = spawnSync(cmd, args, { cwd: REPO, encoding: "utf8", shell: process.platform === "win32", maxBuffer: 64 * 1024 * 1024 }); return { code: r.status === null ? 1 : r.status, out: (r.stdout || "") + (r.stderr || "") }; };
+  const sh = (cmd, args) => { const r = spawnSync(cmd, args, { cwd: REPO, encoding: "utf8", shell: shellFor(cmd), maxBuffer: 64 * 1024 * 1024 }); return { code: r.status === null ? 1 : r.status, out: (r.stdout || "") + (r.stderr || "") }; };
   const base = (env.SALT_BASE || "https://salt-command.qyts8mh72kyg.workers.dev").replace(/\/+$/, "");
   return {
     sh,
