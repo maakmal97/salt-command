@@ -1,5 +1,15 @@
 [
  {
+  "v": "v1491",
+  "d": "09 Nov 2026",
+  "t": "NO SCROLLBAR ON ANY SURFACE",
+  "n": [
+   "<b>HIS WORD.</b> A page that scrolled drew a scrollbar about 15px wide on Windows and read narrower than one that did not; he wants no scrollbar at all. salt-ds 1.30.0 (#45) draws none on any element, the page and every box inside it, so every page is the same width whether it scrolls or not. Touch, the wheel, a trackpad and the keyboard still scroll.",
+   "<b>EVERY SURFACE.</b> The Desk pulls it and drops its own thin bars on the rail and the sliding tables; Salt Counter and Salt Admin carry the section by its header (tools/stmt-style.mjs); QR Command's pull carries it beside the tokens. Measured in Chromium with Windows bars drawn, at 390, 1180 and 1440 on the Desk, Salt Admin and the Counter: no bar, the content as wide scrolling as not, wheel and keyboard still scrolling; with the bars forced back the same probe read 15px narrower.",
+   "<b>CHECKS.</b> New section no-scrollbars (8 checks, 13 mutations, every one red). Display only. Full suite 12,092 passed, 0 failed."
+  ]
+ },
+ {
   "v": "v1490",
   "d": "09 Nov 2026",
   "t": "COLLECTION OF 1 UNIT OF GAS BY CM4-TO-R RECORDED ON S347",

@@ -11657,7 +11657,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1490","d":"09 Nov 2026","t":"COLLECTION OF 1 UNIT OF GAS BY CM4-TO-R RECORDED ON S347","n":["<b>ONE CORRECTION FOLDED.</b> It records that 1 unit of gas on S347 was collected by CM4-TO-R on 09 Nov 2026, setting deliveredQty to 1, deliveredOn to 2026-11-09 and handover to collected. It was preapproved by Counter Admin. Unusual: it is an advance, as the RM70 on the order is unpaid, and the drafter asks for a check against the credit cap of CM4-TO. The dossier gives no cap figure.","<b>INVENTORY.</b> Gas rolls down by 1 unit, out to CM4-TO-R. No cash moves, no lot landed and the cost basis is unchanged."]}];
+const evolution=[{"v":"v1491","d":"09 Nov 2026","t":"NO SCROLLBAR ON ANY SURFACE","n":["<b>HIS WORD.</b> A page that scrolled drew a scrollbar about 15px wide on Windows and read narrower than one that did not; he wants no scrollbar at all. salt-ds 1.30.0 (#45) draws none on any element, the page and every box inside it, so every page is the same width whether it scrolls or not. Touch, the wheel, a trackpad and the keyboard still scroll.","<b>EVERY SURFACE.</b> The Desk pulls it and drops its own thin bars on the rail and the sliding tables; Salt Counter and Salt Admin carry the section by its header (tools/stmt-style.mjs); QR Command's pull carries it beside the tokens. Measured in Chromium with Windows bars drawn, at 390, 1180 and 1440 on the Desk, Salt Admin and the Counter: no bar, the content as wide scrolling as not, wheel and keyboard still scrolling; with the bars forced back the same probe read 15px narrower.","<b>CHECKS.</b> New section no-scrollbars (8 checks, 13 mutations, every one red). Display only. Full suite 12,092 passed, 0 failed."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11805,7 +11805,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='09 Nov 2026, 15:47 KL';
+const LAST_UPDATED='09 Nov 2026, 16:34 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
