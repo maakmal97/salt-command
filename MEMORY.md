@@ -27,7 +27,11 @@
 - `0013_maker_requests.sql`, `0014_input_admission.sql`, `0015_vault_pair.sql` and `0016_vault_write_gate.sql` applied individually on 03 Oct 2026, with schema readback after each. Both `0012` indexes remain. Pair bootstrap/readback is revision 1; write gate reopened with zero active writers and pending outbox.
 
 ## Known red in the suite
-- None. The S1 fold replay (`test/fold-replay.mjs`) was red from 21 Oct (17 of 20 alone, 14 to 15 of 20 in the full suite) and was fixed on 25 Oct 2026, his word "Fix S1". A fold reads the PRICING snapshot and the
+- S1b (`test/engine-stages.mjs`), "red on this laptop only" from 27 Oct to 9 Nov 2026, is fixed (his question "Can S1b be solved?"): it compared the code before the 16 Oct lift
+  (`f61c5504`) with the WORKING `src/orders.js`, which has changed taps by design since v1272, so it could never pass again; CI was green only because its clone is
+  shallow and the section skips itself. The byte-equality is now `f61c5504` against the lift `35ebb39e` (`LIFT`), both read from git with their own engine copies; every
+  behavioural, purity and boundary check still runs on the working code. Section green (11 checks), 6 mutations red. It still proves nothing in CI (shallow).
+- Otherwise none. The S1 fold replay (`test/fold-replay.mjs`) was red from 21 Oct (17 of 20 alone, 14 to 15 of 20 in the full suite) and was fixed on 25 Oct 2026, his word "Fix S1". A fold reads the PRICING snapshot and the
   reward scheme from a `ledger.json` beside the book it resolved when `tools/book.mjs` first loaded: no file when S1 ran alone on the frozen book, today's when an earlier section had loaded it on the live book. The working
   fold has re-priced a restated row from that snapshot since 20 Oct and the old fold (43fc5b0a) never did, so the same batches passed alone and failed in the suite. Both folds are now loaded with `--ledger` pointing at no file;
   the window is fixed at the batch of 24 Oct 2026 (`WINDOW_END`, 8344070c) instead of sliding onto rows the old fold can never match; and `law()` reads the Their % wording of 21 Oct ("TIER ... drift +0.3" against

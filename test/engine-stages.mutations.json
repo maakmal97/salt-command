@@ -28,5 +28,11 @@
   "file": "engine/stages.mjs",
   "find": ", price != null ? { total: price, asked: +(+o.total).toFixed(2) } : {});",
   "replace": ", {});"
+ },
+ {
+  "name": "the lift is compared at a later commit, whose taps changed by design (v1272 and after)",
+  "file": "test/engine-stages.mjs",
+  "find": "export const LIFT = \"35ebb39e\";",
+  "replace": "export const LIFT = \"226376ae\";"
  }
 ]

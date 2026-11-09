@@ -19,15 +19,24 @@ const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const git = (...a) => execFileSync("git", a, { cwd: REPO, encoding: "utf8", maxBuffer: 1 << 28 });
 const at = (p) => pathToFileURL(join(REPO, p)).href;
 
-/* src/orders.js as it was, its relative imports made absolute; the two engine files it reads are the old copies, so a change to
-   engine/position.mjs shows up as a difference rather than moving both sides */
-function oldFiles(dir) {
-  const eng = (f) => { const p = join(dir, "old-" + f); writeFileSync(p, git("show", OLD_ORDERS + ":engine/" + f)); return pathToFileURL(p).href; };
+/* 9 Nov 2026, his question "can S1b be solved?": THE PROOF IS OF THE LIFT, SO BOTH SIDES ARE READ FROM GIT. The lift (35ebb39e) moved the
+   entries without changing one; the working src/orders.js has changed what a tap does by design since (cash past what is owed, v1272, and
+   later), so comparing the working copy with the code before the lift went red on 27 Oct and could never go green again, and in CI's shallow
+   clone the section skips itself. The byte-equality is now OLD_ORDERS against LIFT, each its own copies of the engine files it reads; the
+   working src/orders.js still drives every behavioural check below it. */
+export const LIFT = "35ebb39e";
+/* src/orders.js as it stood at a commit, its relative imports made absolute; the engine files it reads (position, pricing and, from the lift,
+   stages) are that commit's copies, so a change to the working engine/position.mjs shows up as a difference rather than moving both sides */
+function oldFiles(dir, sha, tag) {
+  const eng = (f, edit = (t) => t) => { const p = join(dir, tag + "-" + f); writeFileSync(p, edit(git("show", sha + ":engine/" + f))); return pathToFileURL(p).href; };
   const pos = eng("position.mjs"), pri = eng("pricing.mjs");
-  const text = git("show", OLD_ORDERS + ":src/orders.js")
+  const hasStages = git("ls-tree", "--name-only", sha, "engine/").split("\n").includes("engine/stages.mjs");
+  const stg = hasStages ? eng("stages.mjs", (t) => t.replace(/from "\.\/position\.mjs"/g, `from "${pos}"`).replace(/from "\.\.\/src\/([^"]+)"/g, (_, p) => `from "${at("src/" + p)}"`)) : null;
+  const text = git("show", sha + ":src/orders.js")
     .replace(/from "\.\.\/engine\/position\.mjs"/g, `from "${pos}"`).replace(/from "\.\.\/engine\/pricing\.mjs"/g, `from "${pri}"`)
+    .replace(/from "\.\.\/engine\/stages\.mjs"/g, () => `from "${stg}"`)
     .replace(/from "\.\/([^"]+)"/g, (_, p) => `from "${at("src/" + p)}"`);
-  const file = join(dir, "orders-old.mjs");
+  const file = join(dir, "orders-" + tag + ".mjs");
   writeFileSync(file, text);
   return pathToFileURL(file).href;
 }
@@ -85,7 +94,8 @@ export async function run({ ok }) {
   const dir = mkdtempSync(join(tmpdir(), "engstages-"));
   const realDate = globalThis.Date;
   try {
-    const OLD = await import(oldFiles(dir));
+    const OLD = await import(oldFiles(dir, OLD_ORDERS, "old"));
+    const LIFTED = await import(oldFiles(dir, LIFT, "lift"));
     const NEW = await import(at("src/orders.js") + "?stages");
     const S = await import(at("engine/stages.mjs") + "?direct");
     const D = await import(at("src/drafter.js"));
@@ -257,8 +267,8 @@ export async function run({ ok }) {
     const redateOrder = rIdx >= 0 ? mkOrder(rows[rIdx], 90, { wantBy: "2026-10-20" }) : null;
 
     globalThis.Date = FixedDate;
-    const results = { old: [], neu: [] };
-    for (const [key, M] of [["old", OLD], ["neu", NEW]]) {
+    const results = { old: [], lift: [], neu: [] };
+    for (const [key, M] of [["old", OLD], ["lift", LIFTED], ["neu", NEW]]) {
       CLOCK = RealDate.UTC(2026, 9, 16, 3, 0, 0);
       const out = [];
       for (let i = 0; i < orders.length; i++) out.push({ name: "order " + rows[i].rid, ...(await onOrder(M, orders[i], rows[i])) });
@@ -269,11 +279,11 @@ export async function run({ ok }) {
     }
     globalThis.Date = realDate;
 
-    /* ---- byte-equal, step by step ---- */
+    /* ---- byte-equal, step by step: before the lift against the lift ---- */
     let steps = 0, equal = 0;
     const bad = [];
     for (let i = 0; i < results.old.length; i++) {
-      const a = results.old[i], b = results.neu[i];
+      const a = results.old[i], b = results.lift[i];
       for (let j = 0; j < Math.max(a.log.length, b.log.length); j++) {
         steps++;
         const x = a.log[j], y = b.log[j];
@@ -283,7 +293,7 @@ export async function run({ ok }) {
         else if (bad.length < 5) bad.push(a.name + " / " + (x && x.tag));
       }
     }
-    ok(steps > 300 && equal === steps, `S1b: ${equal} of ${steps} stage steps return and queue byte-equal to src/orders.js before the lift (${results.old.length} worlds)${bad.length ? ": " + bad.join(", ") : ""}`);
+    ok(steps > 300 && equal === steps, `S1b: ${equal} of ${steps} stage steps at the lift (${LIFT}) return and queue byte-equal to src/orders.js before it (${results.old.length} worlds)${bad.length ? ": " + bad.join(", ") : ""}`);
 
     /* the proof is not vacuous: the stages did make the entries, on the new side */
     const all = results.neu.flatMap((r) => r.log.map((s) => ({ ...s, world: r.name })));
