@@ -1,5 +1,15 @@
 [
  {
+  "v": "v1496",
+  "d": "10 Nov 2026",
+  "t": "SALT'S FLOOR CARRIES THE NON-REVENUE SALT",
+  "n": [
+   "<b>HIS DECISION.</b> Salt's Floor is no longer COGS alone. It is COGS times 1 plus the non-revenue share, times the size, up to the next RM 5. The share is measured live from the book: the count shortfall (the August promotion's sample inside it), gifts and rewards with reward cover, and written off, over the units handed over and paid for. A unit settled in kind is paid for. At this version the share reads 21.3%, so on COGS of RM 50 a unit the Floor's rate is RM 60.65: RM 65 at 1 unit, RM 760 at 12.5.",
+   "<b>FLOOR FIRST.</b> The Set Price and the Ceiling stay struck on the COGS Floor until he decides them, so no customer's price moves, except a discount the new Floor would overtake, which is held at the Floor. What moves: the Floor itself, what a partner pays, and the line the drafter flags and refuses under. COGS, margin on cost, stock value and the reward step read COGS as before. Oil, candy, rice, gas and PrEP are untouched.",
+   "<b>SAID.</b> The share moves with every handover, gift and count, so the Floor can step by RM 5 between publishes. A redeemed reward unit counts as paid for, his word on settled in kind. A partner's buying now carries a margin over COGS and so counts toward the associate reward step. Checks: test/floor-nrs.mjs, 15 checks, 17 mutations red; an independent review applied and re-checked."
+  ]
+ },
+ {
   "v": "v1495",
   "d": "09 Nov 2026",
   "t": "FULFILMENT ON S348: CASH 230",
