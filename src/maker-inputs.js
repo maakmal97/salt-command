@@ -374,10 +374,10 @@ export function makerTradeReading(body, book) {
   const fl = floorFor(book, body.product, qty);
   if (fl) {
     const under = goods < fl.floor - 0.005;
-    reading.floor = { rm: fl.floor, at: fl.at, exact: fl.exact, under,
+    reading.floor = { rm: fl.floor, at: fl.at, exact: fl.exact, nrs: fl.nrs || null, under,
       short: under ? +(fl.floor - goods).toFixed(2) : 0,
       warn: under ? "RM " + (+goods.toFixed(2)) + " for the goods is RM " + (+(fl.floor - goods).toFixed(2)) + " under the Floor of RM "
-        + fl.floor + ", which is COGS times the size rounded up to the next RM 5." : null };
+        + fl.floor + (fl.nrs ? ", which is COGS plus " + (+(fl.nrs * 100).toFixed(1)) + "% for the units that left unpaid, times the size, rounded up to the next RM 5." : ", which is COGS times the size rounded up to the next RM 5.") : null };
   }
   if (typeof body.party === "string" && code(body.party, book.state.roster || [])) {
     const who = POSITION_ENGINE.ownerCode(body.party), rates = theirRates(book, who, body.product);
@@ -669,7 +669,8 @@ export function makerDriftPreview(book, who, product, pct) {
     try { now = PRICING_ENGINE.quoteAt(q, K, I.policy, held); at = PRICING_ENGINE.quoteAt(q, K, I.policy, pct); floor = PRICING_ENGINE.floorTotal(q, K, I.policy); }
     catch (e) { continue; }
     if (!(now > 0) || !(at > 0) || !(floor > 0)) continue;
-    const ceiling = two(cx * floor);
+    /* 10 Nov 2026: the Ceiling is struck on the COGS Floor (the engine's floorBase), as the walk strikes it, while the Floor carries the non-revenue share */
+    const ceiling = two(cx * PRICING_ENGINE.floorBase(q, K, I.policy));
     rows.push({ q, now: two(now), at: two(at), floor: two(floor), ceiling, usual: usual != null && Math.abs(q - usual) < 0.009,
       edge: at <= floor + 0.009 ? "floor" : at >= ceiling - (+I.policy.LADDER?.round?.to || 5) + 0.009 ? "ceiling" : null });
   }

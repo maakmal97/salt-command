@@ -22,6 +22,10 @@ const RULES={
   /* 05 Oct 2026: a book losing this share of what it buys or more prints the stack's after-leak figure beside its floor, as
      information only, the floor being COGS and nothing pricing off the leak */
   leakInfoFrom:0.25,
+  /* 10 Nov 2026, his decision: salt's Floor carries the non-revenue salt, measured live from the book (the snapshot engine's nrsShare):
+     the count shortfall, gifts and rewards with reward cover, and written off, over the units paid for, and a unit settled in kind is paid
+     for. A book not named here keeps the COGS Floor. The Set Price and the Ceiling stay on COGS until he says. No semicolon here. */
+  nrsFloor:{salt:{shortfall:true,gifts:true,writtenOff:true}},
   /* 18 Oct 2026, his decision: the Floor is the order total rounded UP to the next multiple of this, RM 5. The engine's floorTotal reads
      it as the policy's `floorTo`, and costTotal is the same total to the sen for a reader that measures cost and not a price. No semicolon here. */
   floorTo:5,

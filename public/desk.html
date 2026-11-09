@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="693672ba2595b94a";
+var SALT_BUILD_ID="aeedfc069d0142e3";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -5644,6 +5644,10 @@ const RULES={
   /* 05 Oct 2026: a book losing this share of what it buys or more prints the stack's after-leak figure beside its floor, as
      information only, the floor being COGS and nothing pricing off the leak */
   leakInfoFrom:0.25,
+  /* 10 Nov 2026, his decision: salt's Floor carries the non-revenue salt, measured live from the book (the snapshot engine's nrsShare):
+     the count shortfall, gifts and rewards with reward cover, and written off, over the units paid for, and a unit settled in kind is paid
+     for. A book not named here keeps the COGS Floor. The Set Price and the Ceiling stay on COGS until he says. No semicolon here. */
+  nrsFloor:{salt:{shortfall:true,gifts:true,writtenOff:true}},
   /* 18 Oct 2026, his decision: the Floor is the order total rounded UP to the next multiple of this, RM 5. The engine's floorTotal reads
      it as the policy's `floorTo`, and costTotal is the same total to the sen for a reader that measures cost and not a price. No semicolon here. */
   floorTo:5,
@@ -8462,11 +8466,18 @@ function costStack(I){
      and `afterLeak` below carries the stack's after-leak figure for a surface to print as information; nothing prices
      off it. */
   const CR=I.costRule||null;
+  /* 10 NOV 2026, HIS DECISION: SALT'S FLOOR CARRIES THE NON-REVENUE SALT. I.nrs is the snapshot's live reading for a book RULES.nrsFloor
+     names: the units that left and earned nothing (the count shortfall, gifts and rewards with reward cover, written off) over the
+     units that left and were paid for (a unit settled in kind is paid for, his word). The paid-for units must return the cost of
+     both, so the Floor's rate is the pricing basis times (1 + share): `floorEx`, read by floorTotal and by nothing that measures
+     cost. effEx, costTotal and every COGS reader stay on the purchase and its freight. A book with no reading has no floorEx. */
+  const nrs=(I.nrs&&+I.nrs.share>0&&isFinite(+I.nrs.share))?+I.nrs.share:0;
   const ruled=!!(CR&&CR.kind==='buyPlusPct'&&+CR.pct>=0);
   const landedRule=!!(CR&&(CR.kind==='landed'||CR.kind==='latestCogs'));
   if(ruled)eff=+(lot*(1+ +CR.pct/100)).toFixed(6);
   else if(landedRule)eff=+landed.toFixed(6);
-  return {rule:(CR&&CR.kind)?CR.kind:null,rulePct:ruled?+CR.pct:null,rulePlaceholder:!!(ruled&&CR.placeholder),
+  const exRate=ruled?+(lot*(1+ +CR.pct/100)).toFixed(6):(landedRule?+landed.toFixed(6):+yielded.toFixed(6));
+  return Object.assign(nrs>0?{nrs:nrs,floorEx:+(exRate*(1+nrs)).toFixed(6)}:{},{rule:(CR&&CR.kind)?CR.kind:null,rulePct:ruled?+CR.pct:null,rulePlaceholder:!!(ruled&&CR.placeholder),
           latest:LC?{rid:LC.rid||null,date:LC.date||null,quote:+LC.quote,freight:+LC.freight||0,units:+LC.units}:null,
           afterLeak:+yielded.toFixed(4),
           repl:+lot.toFixed(2),lot:+lot.toFixed(4),freight:+freight.toFixed(4),
@@ -8483,13 +8494,13 @@ function costStack(I){
           /* v553: and the RULED basis lands here too, because the FLOOR reads effEx, not eff. A rule
              that moved the headline and left the floor on the leak would have been the worst of
              both: a board priced one way and refused another. */
-          effEx:ruled?+(lot*(1+ +CR.pct/100)).toFixed(6):(landedRule?+landed.toFixed(6):+yielded.toFixed(6)),delPerOrder:COST_BASIS.txnPerDelivery.rm,
+          effEx:exRate,delPerOrder:COST_BASIS.txnPerDelivery.rm,
           locked:false,lockedOn:null,lockAge:null,
           /* v403: gated on lockOn. With the lock off there is nothing to be stale AGAINST,
              and the ungated read was a constant true on this desk since PRICE_LOCK_ON went
              false: a flag that always fires teaches its reader to ignore it. No current
              consumer reads it; the gate is so the first one that does is not lied to. */
-          stale:(I.lockOn&&LK.state==='stale'),sim:(pxOver.cost!=null||pxOver.shrink!=null)};
+          stale:(I.lockOn&&LK.state==='stale'),sim:(pxOver.cost!=null||pxOver.shrink!=null)});
 }
 
 /* ============ THE SUPPLIER'S OWN ELASTICITY, FITTED RATHER THAN TYPED ============
@@ -8661,9 +8672,16 @@ function costTotal(q,C,P,eff,opts){
    multiple of five by floating point (35.0000001) stays there, so the up-round never lifts an exact RM 35 to RM 40. */
 const FLOOR_TO_FALLBACK=5;
 function floorTotal(q,C,P,eff,opts){
-  const t=costTotal(q,C,P,eff,opts), to=(P&&P.floorTo>0)?+P.floorTo:FLOOR_TO_FALLBACK;
+  /* 10 Nov 2026: the Floor's own rate where the stack carries one (floorEx, the non-revenue share on top); a rate a caller states wins */
+  const per=eff!=null?eff:(C&&C.floorEx!=null?C.floorEx:null);
+  const t=costTotal(q,C,P,per,opts), to=(P&&P.floorTo>0)?+P.floorTo:FLOOR_TO_FALLBACK;
   return +(Math.ceil(t/to-1e-6)*to).toFixed(2);
 }
+/* 10 NOV 2026, HIS ANSWER "FLOOR FIRST, SET AND CEILING TO BE DETERMINED": the COGS Floor, COGS times the size up to the next RM 5,
+   as floorTotal was for every book until that day. The Set Price's multiples and the Ceiling are struck on THIS, so a Floor that
+   carries the non-revenue share moves the Floor and what a partner pays and no customer's price, except one it would leave under
+   the Floor. Equal to floorTotal on a book whose stack has no floorEx. */
+function floorBase(q,C,P){return floorTotal(q,C,P,C.effEx!=null?C.effEx:C.eff);}
 /* The reference prices at any size. The floor is exact, because rounding a floor down would put
    it under itself; the ask rounds UP to the ten, which is the house rule. MARGIN IS STRUCK ON THE
    LOT COST AND THE MARKUP ON COGS, and the two bases are meant to be different numbers. */
@@ -8847,21 +8865,22 @@ function driftWalk(sizes,C,P,pct){
   const k=pctPos(pct).k;
   let rS=Infinity, rP=Infinity, mS=-Infinity, mP=-Infinity;
   return sizes.map(q=>{
-    const fl=floorTotal(q,C,P), ceil=+(cx*fl).toFixed(4), lo=up(fl), hi=Math.max(down(ceil),lo), m=setMultiple(q,R);
+    /* fb is the COGS Floor the multiples, the margin lift and the Ceiling are struck on; fl is the Floor the price is held over (10 Nov 2026) */
+    const fl=floorTotal(q,C,P), fb=floorBase(q,C,P), ceil=+(cx*fb).toFixed(4), lo=up(fl), hi=Math.max(down(ceil),lo), m=setMultiple(q,R);
     /* top is the floor times the multiple at this %: on his ends the engine's driftMultiple, else fl*m*(1+k) in that order, as it always was */
     const step=(r,mg,top)=>{
       const rate=Math.min(r,top/q);
       let p=down(rate*q);
-      if(mg>-Infinity)p=Math.max(p,up(+(fl+mg).toFixed(2)));
+      if(mg>-Infinity)p=Math.max(p,up(+(fb+mg).toFixed(2)));
       const capped=p>hi+1e-9;
       p=Math.min(Math.max(p,lo),hi);
       /* where the Ceiling holds the price, the running rate follows it down to the Ceiling's own, so the next size is held to it: the
          Ceiling's rate rises with the Floor's round-up (3 times a step), and without this a high % could be quoted more a unit on more units */
-      return {rate:capped?Math.min(rate,hi/q):rate,p:p,mg:Math.max(mg,p-fl)};
+      return {rate:capped?Math.min(rate,hi/q):rate,p:p,mg:Math.max(mg,p-fb)};
     };
-    const s=step(rS,mS,fl*m*1);rS=s.rate;mS=s.mg;
+    const s=step(rS,mS,fb*m*1);rS=s.rate;mS=s.mg;
     let p=s.p;
-    if(Math.abs(k)>1e-9){const x=step(rP,mP,R.ends?fl*driftMultiple(q,R,k):fl*m*(1+k));rP=x.rate;mP=x.mg;p=x.p;}
+    if(Math.abs(k)>1e-9){const x=step(rP,mP,R.ends?fb*driftMultiple(q,R,k):fb*m*(1+k));rP=x.rate;mP=x.mg;p=x.p;}
     return {q:q,floor:+fl.toFixed(2),ceiling:+ceil.toFixed(2),set:s.p,p:p,d:k};
   });
 }
@@ -9102,7 +9121,7 @@ function quoteOff(snap,code,qty){
 
 return {cardAt:cardAt,costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
-        floorTotal:floorTotal,costTotal:costTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,
+        floorTotal:floorTotal,floorBase:floorBase,costTotal:costTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,
         setMultiple:setMultiple,driftOk:driftOk,pctBook:pctBook,driftMultiple:driftMultiple,shareAt:shareAt,LIFT_MIN:LIFT_MIN,LIFT_MAX:LIFT_MAX,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,suggestWhy:suggestWhy,
         gridOf:gridOf,gridSizes:gridSizes,onGrid:onGrid,walkSizes:walkSizes,fixedWalk:fixedWalk,quoteAt:quoteAt,quoteGrid:quoteGrid};
 })();
@@ -9263,17 +9282,37 @@ function sampleUnits(C,p){return C.B.selfUseLog.filter(r=>(r.product||C.B.defaul
 function shrinkRate(C,p){const h=C.W.buyUnits+openingFor(C.B,p).qty;
   return h>0?Math.max(0,C.W.selfUse-sampleUnits(C,p))/h:0;}
 
+/* 10 NOV 2026, HIS DECISION: THE NON-REVENUE SHARE A BOOK'S FLOOR CARRIES, MEASURED LIVE (his answer; RULES.nrsFloor names the book and
+   which of his three categories count). Units that left and earned nothing: the count shortfall (the walk's selfUse, the promotion's
+   sample inside it), gifts and rewards with reward cover, and written off. Over the units handed over and paid for; a unit settled in
+   kind is paid for (his word). Null where nothing reads: no rule, nothing lost, or nothing paid for. */
+function nrsShare(C,p){
+  const K=((C.R.RULES||{}).nrsFloor||{})[p];if(!K)return null;
+  let gifts=0,off=0;
+  pSales(C.B,p).forEach(s=>{
+    if(s.cancelled)return;
+    const q=POSITION_ENGINE.txPhys(s);
+    if(s.goodwill){gifts+=q;return;}
+    if(s.defaulted){off+=q;return;}
+    gifts+=Math.min(q,Math.max(0,+s.coverUnits||0));
+  });
+  const short=Math.max(0,+C.W.selfUse||0), paid=(+C.W.soldUnits||0)-gifts-off;
+  const lost=(K.shortfall?short:0)+(K.gifts?gifts:0)+(K.writtenOff?off:0);
+  if(!(paid>0)||!(lost>0))return null;
+  return {share:+(lost/paid).toFixed(6),shortfall:+short.toFixed(2),gifts:+gifts.toFixed(2),writtenOff:+off.toFixed(2),paid:+paid.toFixed(2)};
+}
 /* the records the pricing engine takes */
 function inputs(C,p){
   const R=C.R,o=C.over||{cost:null,shrink:null};
-  return {prod:p, lockOn:R.PRICE_LOCK_ON, lockState:priceLockState(C,p), lockBase:R.PRICE_LOCK[p]||null,
+  const nr=nrsShare(C,p);
+  return Object.assign(nr?{nrs:nr}:{},{prod:p, lockOn:R.PRICE_LOCK_ON, lockState:priceLockState(C,p), lockBase:R.PRICE_LOCK[p]||null,
     over:{cost:o.cost,shrink:o.shrink}, lot:latestLot(C,p), meanLot:meanLotQty(C,p), quoteRate:quoteRate(C,p),
     repl:replRate(C,p), freightRate:freightRate(C,p), leak:leakCharge(C,p),
     costRule:(C.B.costRule||{})[p]||null,
     latest:(x=>x&&{rid:x.rid,date:x.date,quote:x.quote,freight:x.freight,units:x.units,rate:x.rate})(POSITION_ENGINE.latestCogs(pPurch(C.B,p))),
     costBasis:{freightPerTrip:{rm:R.COST_BASIS.freightPerTrip.rm},txnPerDelivery:{rm:R.COST_BASIS.txnPerDelivery.rm},
       deliveredShare:{v:delShare(C,p).v}},
-    attrib:R.SHRINK_ATTRIB, shrinkRate:shrinkRate(C,p), avgDel:avgDelivery(C,p)};
+    attrib:R.SHRINK_ATTRIB, shrinkRate:shrinkRate(C,p), avgDel:avgDelivery(C,p)});
 }
 function policy(C,p){
   const R=C.R,pq=C.B.quotes[p]||null;
@@ -9414,7 +9453,7 @@ function pricing(B,R,today,over=null){
 }
 
 return {pSales,pPurch,openingFor,countedFor,posInputs,stockCost,hiddenFor,setPricesFor,sizesFor,shownSizes,shSizes,ladderFor,
-  latestLot,meanLotQty,priceLockState,delShare,avgDelivery,replRate,replCost,quoteRate,freightRate,leakCharge,shrinkRate,
+  latestLot,meanLotQty,priceLockState,delShare,avgDelivery,replRate,replCost,quoteRate,freightRate,leakCharge,shrinkRate,nrsShare,
   inputs,policy,fiveTiers,figures,
   ownerOf,isResellAcct,isPerson,pbPriced,isPartner,lateOf,buyerProfile,driftBook,pctBook,driftSignals,driftOfNow,driftOf,suggestOf,tierCustomers,cost,cardQuote,pricing};
 })();
@@ -13949,7 +13988,7 @@ function snapCtx(){return snapCtx._c||(snapCtx._c={
   get today(){return TODAY;},get over(){return pxOver;},
   memo(k,f){return renderMemo(k,f);},
   fn:{lateOf(code){return lateOf(code);},buyerProfile(p,code){return buyerProfile(code,p);},driftOfNow(p,code){return driftOfNow(code,p);},driftOf(p,code){return driftOf(code,p);}},
-  W:{get buyUnits(){return buyUnits;},get selfUse(){return selfUse;},get wavgBuy(){return wavgBuy;},get stockCost(){return stockCostFor(PROD);}}});}
+  W:{get buyUnits(){return buyUnits;},get selfUse(){return selfUse;},get soldUnits(){return soldUnits;},get wavgBuy(){return wavgBuy;},get stockCost(){return stockCostFor(PROD);}}});}
 function posInputs(pr){return SNAPSHOT_ENGINE.posInputs(snapCtx(),pr||PROD);}
 function recompute(){
   restockFor._c=null;   // the restock plan is read off this book, so it is dropped with it
@@ -21987,7 +22026,7 @@ function tabPricing(){
       ${LD.anchorG!=null?sR('Anchor',(LD.anchorG*100).toFixed(0)+'% margin',`typed, at ${units(LD.anchorQ)}, on the floor`):sR('Anchor',LD.anchorX.toFixed(3)+'x',`typed, at ${units(LD.anchorQ)} on cogs`)}
       ${sR('Taper',(sT.b!=null?sT.b.toFixed(3):NIL),sT.b!=null?`fitted to ${esc(sSup)}&rsquo;s quote ladder${sT.r2!=null?`, r&sup2; ${sT.r2.toFixed(2)}`:''}, ${units(LD.at.lo)} to ${units(LD.at.hi)}${sBor?`; <b>${esc(sOwn)}&rsquo;s own ladder is on the book and is not the one this is fitted to</b>`:''}`:'no supplier ladder to fit')}
       ${sR('Ceiling',LD.ceiling.toFixed(2)+'x','does not bind at any printed size')}
-      ${sC.rule==='latestCogs'?sR('Floor','COGS',`${fmt(sC.effEx)} a unit${sC.latest?`, the latest purchase${sC.latest.rid?' '+esc(sC.latest.rid):''}: ${fmt(sC.latest.quote)} quote plus ${fmt(sC.latest.freight)} freight over ${units(sC.latest.units)}`:''}; times the size, up to the next RM 5; no leak, delivery or time in it`)
+      ${sC.rule==='latestCogs'?sR('Floor','COGS',`${fmt(sC.effEx)} a unit${sC.latest?`, the latest purchase${sC.latest.rid?' '+esc(sC.latest.rid):''}: ${fmt(sC.latest.quote)} quote plus ${fmt(sC.latest.freight)} freight over ${units(sC.latest.units)}`:''}${sC.floorEx!=null?`; plus ${(sC.nrs*100).toFixed(1)}% for the units that left unpaid, ${fmt(sC.floorEx)} a unit`:''}; times the size, up to the next RM 5; no ${sC.floorEx!=null?'':'leak, '}delivery or time in it`)
         :sR('Floor','break-even',`${fmt(sC.effEx)} a unit after the leak, from the last three lots and the last three counts; delivery and his time are not in it`)}
       ${sC.rule==='latestCogs'&&sC.shrink>=RULES.leakInfoFrom?sR('After the leak',fmt(sC.afterLeak),`information only: ${(sC.shrink*100).toFixed(0)}% of what is bought never sells; nothing prices off it`):''}
       <!-- round 5: the asks' own markups, for the board-column reason: the curve ends read
@@ -22011,7 +22050,7 @@ function tabPricing(){
       ${sSZ.map(q=>{const L=priceLadder(q);const cogs=L.cogs,fl=L.floor.total,g=L.marginX;const raw=g!=null?fl/(1-g):null;
         return `<tr><td class="l salt-table__label">${units(q)}</td><td class="mono">${fmt(cogs)}</td><td class="mono">+${fmt(fl-cogs)}</td><td class="mono"><b>${fmt(fl)}</b></td><td class="mono">${g!=null?(g*100).toFixed(1)+'%':NIL}</td><td class="mono">${raw!=null?fmt(raw):NIL}</td><td class="mono"><b>${fmt0(L.ask.total)}</b>${L.ask.lawStepped?' <span class="iref">stepped</span>':''}</td></tr>`;}).join('')}
     </tbody></table></div>
-    <div class="dsc" style="margin-top:8px">${sC.rule==='latestCogs'?`COGS is ${fmt(sC.landed)} a unit off the latest purchase, quote plus freight; the Floor is that times the size, up to the next RM 5; it earns nothing and carries no leak.`:`COGS is ${fmt(sC.landed)} a unit landed; the leak adds ${((sC.shrink/(1-sC.shrink))*100).toFixed(1)}% of it, so the floor is ${fmt(sC.effEx)} a unit and earns nothing.`} ${driftBook(PROD)?(()=>{const pts=(TIER_RULE[PROD].points||[]).slice().sort((x,y)=>x[0]-y[0]),p0=pts[0],p1=pts[pts.length-1];return `The Set Price is the Floor times a multiple sliding in the log of size from ${p0?p0[1]:NIL} at ${p0?units(p0[0]):NIL} to ${p1?p1[1]:NIL} at ${p1?units(p1[0]):NIL}, down to the RM 5, lifted so its margin never falls under a smaller size's, and held between the Floor and ${TIER_RULE[PROD].ceilingX} times it. A customer's % lifts the multiple at every size. The margin columns are the old derived price, for reference.`;})():TIER_RULE[PROD]?`The Set Price is the one price he typed for the size, held between the Floor and ${TIER_RULE[PROD].ceilingX} times it.`:'The ask is rounded up to the ten, then may step down to keep the rate from rising with size, never below its floor.'}</div>
+    <div class="dsc" style="margin-top:8px">${sC.rule==='latestCogs'?`COGS is ${fmt(sC.landed)} a unit off the latest purchase, quote plus freight; the Floor is ${sC.floorEx!=null?`${fmt(sC.floorEx)} a unit, COGS plus ${(sC.nrs*100).toFixed(1)}% for the units that left unpaid,`:'that'} times the size, up to the next RM 5; it earns nothing${sC.floorEx!=null?', and the Set Price and the Ceiling are struck on COGS':' and carries no leak'}.`:`COGS is ${fmt(sC.landed)} a unit landed; the leak adds ${((sC.shrink/(1-sC.shrink))*100).toFixed(1)}% of it, so the floor is ${fmt(sC.effEx)} a unit and earns nothing.`} ${driftBook(PROD)?(()=>{const pts=(TIER_RULE[PROD].points||[]).slice().sort((x,y)=>x[0]-y[0]),p0=pts[0],p1=pts[pts.length-1];return `The Set Price is the Floor times a multiple sliding in the log of size from ${p0?p0[1]:NIL} at ${p0?units(p0[0]):NIL} to ${p1?p1[1]:NIL} at ${p1?units(p1[0]):NIL}, down to the RM 5, lifted so its margin never falls under a smaller size's, and held between the Floor and ${TIER_RULE[PROD].ceilingX} times it. A customer's % lifts the multiple at every size. The margin columns are the old derived price, for reference.`;})():TIER_RULE[PROD]?`The Set Price is the one price he typed for the size, held between the Floor and ${TIER_RULE[PROD].ceilingX} times it.`:'The ask is rounded up to the ten, then may step down to keep the rate from rising with size, never below its floor.'}</div>
     ${sFlat>=2?`<div class="insight salt-insight" style="border-left-color:var(--gold)"><b>The taper stops at ${units(LD.at.hi)}, so ${sFlat} of the ${sSZ.length} printed sizes carry the same ${sHi.markupX.toFixed(2)}x.</b></div>`
       :''}`;})()}
     ${pbCard()}

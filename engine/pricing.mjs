@@ -142,11 +142,18 @@ function costStack(I){
      and `afterLeak` below carries the stack's after-leak figure for a surface to print as information; nothing prices
      off it. */
   const CR=I.costRule||null;
+  /* 10 NOV 2026, HIS DECISION: SALT'S FLOOR CARRIES THE NON-REVENUE SALT. I.nrs is the snapshot's live reading for a book RULES.nrsFloor
+     names: the units that left and earned nothing (the count shortfall, gifts and rewards with reward cover, written off) over the
+     units that left and were paid for (a unit settled in kind is paid for, his word). The paid-for units must return the cost of
+     both, so the Floor's rate is the pricing basis times (1 + share): `floorEx`, read by floorTotal and by nothing that measures
+     cost. effEx, costTotal and every COGS reader stay on the purchase and its freight. A book with no reading has no floorEx. */
+  const nrs=(I.nrs&&+I.nrs.share>0&&isFinite(+I.nrs.share))?+I.nrs.share:0;
   const ruled=!!(CR&&CR.kind==='buyPlusPct'&&+CR.pct>=0);
   const landedRule=!!(CR&&(CR.kind==='landed'||CR.kind==='latestCogs'));
   if(ruled)eff=+(lot*(1+ +CR.pct/100)).toFixed(6);
   else if(landedRule)eff=+landed.toFixed(6);
-  return {rule:(CR&&CR.kind)?CR.kind:null,rulePct:ruled?+CR.pct:null,rulePlaceholder:!!(ruled&&CR.placeholder),
+  const exRate=ruled?+(lot*(1+ +CR.pct/100)).toFixed(6):(landedRule?+landed.toFixed(6):+yielded.toFixed(6));
+  return Object.assign(nrs>0?{nrs:nrs,floorEx:+(exRate*(1+nrs)).toFixed(6)}:{},{rule:(CR&&CR.kind)?CR.kind:null,rulePct:ruled?+CR.pct:null,rulePlaceholder:!!(ruled&&CR.placeholder),
           latest:LC?{rid:LC.rid||null,date:LC.date||null,quote:+LC.quote,freight:+LC.freight||0,units:+LC.units}:null,
           afterLeak:+yielded.toFixed(4),
           repl:+lot.toFixed(2),lot:+lot.toFixed(4),freight:+freight.toFixed(4),
@@ -163,13 +170,13 @@ function costStack(I){
           /* v553: and the RULED basis lands here too, because the FLOOR reads effEx, not eff. A rule
              that moved the headline and left the floor on the leak would have been the worst of
              both: a board priced one way and refused another. */
-          effEx:ruled?+(lot*(1+ +CR.pct/100)).toFixed(6):(landedRule?+landed.toFixed(6):+yielded.toFixed(6)),delPerOrder:COST_BASIS.txnPerDelivery.rm,
+          effEx:exRate,delPerOrder:COST_BASIS.txnPerDelivery.rm,
           locked:false,lockedOn:null,lockAge:null,
           /* v403: gated on lockOn. With the lock off there is nothing to be stale AGAINST,
              and the ungated read was a constant true on this desk since PRICE_LOCK_ON went
              false: a flag that always fires teaches its reader to ignore it. No current
              consumer reads it; the gate is so the first one that does is not lied to. */
-          stale:(I.lockOn&&LK.state==='stale'),sim:(pxOver.cost!=null||pxOver.shrink!=null)};
+          stale:(I.lockOn&&LK.state==='stale'),sim:(pxOver.cost!=null||pxOver.shrink!=null)});
 }
 
 /* ============ THE SUPPLIER'S OWN ELASTICITY, FITTED RATHER THAN TYPED ============
@@ -341,9 +348,16 @@ function costTotal(q,C,P,eff,opts){
    multiple of five by floating point (35.0000001) stays there, so the up-round never lifts an exact RM 35 to RM 40. */
 const FLOOR_TO_FALLBACK=5;
 function floorTotal(q,C,P,eff,opts){
-  const t=costTotal(q,C,P,eff,opts), to=(P&&P.floorTo>0)?+P.floorTo:FLOOR_TO_FALLBACK;
+  /* 10 Nov 2026: the Floor's own rate where the stack carries one (floorEx, the non-revenue share on top); a rate a caller states wins */
+  const per=eff!=null?eff:(C&&C.floorEx!=null?C.floorEx:null);
+  const t=costTotal(q,C,P,per,opts), to=(P&&P.floorTo>0)?+P.floorTo:FLOOR_TO_FALLBACK;
   return +(Math.ceil(t/to-1e-6)*to).toFixed(2);
 }
+/* 10 NOV 2026, HIS ANSWER "FLOOR FIRST, SET AND CEILING TO BE DETERMINED": the COGS Floor, COGS times the size up to the next RM 5,
+   as floorTotal was for every book until that day. The Set Price's multiples and the Ceiling are struck on THIS, so a Floor that
+   carries the non-revenue share moves the Floor and what a partner pays and no customer's price, except one it would leave under
+   the Floor. Equal to floorTotal on a book whose stack has no floorEx. */
+function floorBase(q,C,P){return floorTotal(q,C,P,C.effEx!=null?C.effEx:C.eff);}
 /* The reference prices at any size. The floor is exact, because rounding a floor down would put
    it under itself; the ask rounds UP to the ten, which is the house rule. MARGIN IS STRUCK ON THE
    LOT COST AND THE MARKUP ON COGS, and the two bases are meant to be different numbers. */
@@ -527,21 +541,22 @@ function driftWalk(sizes,C,P,pct){
   const k=pctPos(pct).k;
   let rS=Infinity, rP=Infinity, mS=-Infinity, mP=-Infinity;
   return sizes.map(q=>{
-    const fl=floorTotal(q,C,P), ceil=+(cx*fl).toFixed(4), lo=up(fl), hi=Math.max(down(ceil),lo), m=setMultiple(q,R);
+    /* fb is the COGS Floor the multiples, the margin lift and the Ceiling are struck on; fl is the Floor the price is held over (10 Nov 2026) */
+    const fl=floorTotal(q,C,P), fb=floorBase(q,C,P), ceil=+(cx*fb).toFixed(4), lo=up(fl), hi=Math.max(down(ceil),lo), m=setMultiple(q,R);
     /* top is the floor times the multiple at this %: on his ends the engine's driftMultiple, else fl*m*(1+k) in that order, as it always was */
     const step=(r,mg,top)=>{
       const rate=Math.min(r,top/q);
       let p=down(rate*q);
-      if(mg>-Infinity)p=Math.max(p,up(+(fl+mg).toFixed(2)));
+      if(mg>-Infinity)p=Math.max(p,up(+(fb+mg).toFixed(2)));
       const capped=p>hi+1e-9;
       p=Math.min(Math.max(p,lo),hi);
       /* where the Ceiling holds the price, the running rate follows it down to the Ceiling's own, so the next size is held to it: the
          Ceiling's rate rises with the Floor's round-up (3 times a step), and without this a high % could be quoted more a unit on more units */
-      return {rate:capped?Math.min(rate,hi/q):rate,p:p,mg:Math.max(mg,p-fl)};
+      return {rate:capped?Math.min(rate,hi/q):rate,p:p,mg:Math.max(mg,p-fb)};
     };
-    const s=step(rS,mS,fl*m*1);rS=s.rate;mS=s.mg;
+    const s=step(rS,mS,fb*m*1);rS=s.rate;mS=s.mg;
     let p=s.p;
-    if(Math.abs(k)>1e-9){const x=step(rP,mP,R.ends?fl*driftMultiple(q,R,k):fl*m*(1+k));rP=x.rate;mP=x.mg;p=x.p;}
+    if(Math.abs(k)>1e-9){const x=step(rP,mP,R.ends?fb*driftMultiple(q,R,k):fb*m*(1+k));rP=x.rate;mP=x.mg;p=x.p;}
     return {q:q,floor:+fl.toFixed(2),ceiling:+ceil.toFixed(2),set:s.p,p:p,d:k};
   });
 }
@@ -782,7 +797,7 @@ function quoteOff(snap,code,qty){
 
 return {cardAt:cardAt,costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
-        floorTotal:floorTotal,costTotal:costTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,
+        floorTotal:floorTotal,floorBase:floorBase,costTotal:costTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,
         setMultiple:setMultiple,driftOk:driftOk,pctBook:pctBook,driftMultiple:driftMultiple,shareAt:shareAt,LIFT_MIN:LIFT_MIN,LIFT_MAX:LIFT_MAX,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,suggestWhy:suggestWhy,
         gridOf:gridOf,gridSizes:gridSizes,onGrid:onGrid,walkSizes:walkSizes,fixedWalk:fixedWalk,quoteAt:quoteAt,quoteGrid:quoteGrid};
 })();

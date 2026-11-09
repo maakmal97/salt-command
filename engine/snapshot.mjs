@@ -155,17 +155,37 @@ function sampleUnits(C,p){return C.B.selfUseLog.filter(r=>(r.product||C.B.defaul
 function shrinkRate(C,p){const h=C.W.buyUnits+openingFor(C.B,p).qty;
   return h>0?Math.max(0,C.W.selfUse-sampleUnits(C,p))/h:0;}
 
+/* 10 NOV 2026, HIS DECISION: THE NON-REVENUE SHARE A BOOK'S FLOOR CARRIES, MEASURED LIVE (his answer; RULES.nrsFloor names the book and
+   which of his three categories count). Units that left and earned nothing: the count shortfall (the walk's selfUse, the promotion's
+   sample inside it), gifts and rewards with reward cover, and written off. Over the units handed over and paid for; a unit settled in
+   kind is paid for (his word). Null where nothing reads: no rule, nothing lost, or nothing paid for. */
+function nrsShare(C,p){
+  const K=((C.R.RULES||{}).nrsFloor||{})[p];if(!K)return null;
+  let gifts=0,off=0;
+  pSales(C.B,p).forEach(s=>{
+    if(s.cancelled)return;
+    const q=POSITION_ENGINE.txPhys(s);
+    if(s.goodwill){gifts+=q;return;}
+    if(s.defaulted){off+=q;return;}
+    gifts+=Math.min(q,Math.max(0,+s.coverUnits||0));
+  });
+  const short=Math.max(0,+C.W.selfUse||0), paid=(+C.W.soldUnits||0)-gifts-off;
+  const lost=(K.shortfall?short:0)+(K.gifts?gifts:0)+(K.writtenOff?off:0);
+  if(!(paid>0)||!(lost>0))return null;
+  return {share:+(lost/paid).toFixed(6),shortfall:+short.toFixed(2),gifts:+gifts.toFixed(2),writtenOff:+off.toFixed(2),paid:+paid.toFixed(2)};
+}
 /* the records the pricing engine takes */
 function inputs(C,p){
   const R=C.R,o=C.over||{cost:null,shrink:null};
-  return {prod:p, lockOn:R.PRICE_LOCK_ON, lockState:priceLockState(C,p), lockBase:R.PRICE_LOCK[p]||null,
+  const nr=nrsShare(C,p);
+  return Object.assign(nr?{nrs:nr}:{},{prod:p, lockOn:R.PRICE_LOCK_ON, lockState:priceLockState(C,p), lockBase:R.PRICE_LOCK[p]||null,
     over:{cost:o.cost,shrink:o.shrink}, lot:latestLot(C,p), meanLot:meanLotQty(C,p), quoteRate:quoteRate(C,p),
     repl:replRate(C,p), freightRate:freightRate(C,p), leak:leakCharge(C,p),
     costRule:(C.B.costRule||{})[p]||null,
     latest:(x=>x&&{rid:x.rid,date:x.date,quote:x.quote,freight:x.freight,units:x.units,rate:x.rate})(POSITION_ENGINE.latestCogs(pPurch(C.B,p))),
     costBasis:{freightPerTrip:{rm:R.COST_BASIS.freightPerTrip.rm},txnPerDelivery:{rm:R.COST_BASIS.txnPerDelivery.rm},
       deliveredShare:{v:delShare(C,p).v}},
-    attrib:R.SHRINK_ATTRIB, shrinkRate:shrinkRate(C,p), avgDel:avgDelivery(C,p)};
+    attrib:R.SHRINK_ATTRIB, shrinkRate:shrinkRate(C,p), avgDel:avgDelivery(C,p)});
 }
 function policy(C,p){
   const R=C.R,pq=C.B.quotes[p]||null;
@@ -306,7 +326,7 @@ function pricing(B,R,today,over=null){
 }
 
 return {pSales,pPurch,openingFor,countedFor,posInputs,stockCost,hiddenFor,setPricesFor,sizesFor,shownSizes,shSizes,ladderFor,
-  latestLot,meanLotQty,priceLockState,delShare,avgDelivery,replRate,replCost,quoteRate,freightRate,leakCharge,shrinkRate,
+  latestLot,meanLotQty,priceLockState,delShare,avgDelivery,replRate,replCost,quoteRate,freightRate,leakCharge,shrinkRate,nrsShare,
   inputs,policy,fiveTiers,figures,
   ownerOf,isResellAcct,isPerson,pbPriced,isPartner,lateOf,buyerProfile,driftBook,pctBook,driftSignals,driftOfNow,driftOf,suggestOf,tierCustomers,cost,cardQuote,pricing};
 })();

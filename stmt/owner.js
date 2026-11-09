@@ -4250,7 +4250,7 @@ export const OWNER_JS = `
             readingRow('Goods, a unit',rm(got.price),'Goods '+rm(got.goods)+'.');
             readingRow('Margin over cost',rm(got.margin.rm)+(got.margin.pct==null?'':' · '+Math.round(got.margin.pct)+'%'),'',got.margin.belowCost);
           }
-          if(got.floor) readingRow('Floor for '+units(got.qty),rm(got.floor.rm),'Cost times the size.');
+          if(got.floor) readingRow('Floor for '+units(got.qty),rm(got.floor.rm),got.floor.nrs?'Cost plus '+(Math.round(got.floor.nrs*1000)/10)+'% for unpaid units, times the size.':'Cost times the size.');
           if(got.card) readingRow('Their price',rm(got.card.rm),'Their % on the Set Price.');
           var h=got.history;
           if(h)readingRow('Their usual a unit',rm(h.median),h.count+' order'+(h.count===1?'':'s')+', '+rm(h.low)+' to '+rm(h.high)

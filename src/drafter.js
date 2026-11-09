@@ -435,7 +435,8 @@ export function floorFor(book, product, qty) {
       const x = PRICING_ENGINE.floorTotal(qty, C, snap.inputs.policy);
       /* 19 Oct 2026: the Floor is the cost rounded up to the next RM 5, so what the order costs is its own figure (costTotal), never the Floor */
       const cost = PRICING_ENGINE.costTotal(qty, C, snap.inputs.policy);
-      if (isNum(x)) return { floor: +x.toFixed(2), cost: isNum(cost) ? +cost.toFixed(2) : null, at: qty, exact: true, time };
+      /* 10 Nov 2026: `nrs`, the non-revenue share the Floor carries over COGS where the stack has one (salt), so a flag can say what the Floor is made of */
+      if (isNum(x)) return { floor: +x.toFixed(2), cost: isNum(cost) ? +cost.toFixed(2) : null, at: qty, exact: true, time, nrs: isNum(C.nrs) && C.nrs > 0 ? C.nrs : null };
     } catch (e) { /* fall through to the carded sizes */ }
   }
   /* the carded sizes are what the snapshot holds; an odd size takes the nearest carded one
@@ -578,7 +579,7 @@ export function flagsFor(entry, row, book, priced) {
     /* 19 Oct 2026: THE FLOOR IS THE PRICE FLOOR, NOT THE COST. It is the cost rounded up to the next RM 5, so the flag names the
        Floor for the comparison and the exact cost (costTotal) where it says what the order costs. The carded-size road holds
        the Floor alone and says only what it is made of. */
-    const costs = isNum(fl.cost) ? `the order costs RM ${round(fl.cost)} to take out: ${made}; the Floor is that rounded up to the next RM 5` : `the Floor is ${made}, rounded up to the next RM 5`;
+    const costs = isNum(fl.cost) ? `the order costs RM ${round(fl.cost)} to take out: ${made}; the Floor is that${fl.nrs ? ` plus ${+(fl.nrs * 100).toFixed(1)}% for the units that left unpaid,` : ""} rounded up to the next RM 5` : `the Floor is ${made}, rounded up to the next RM 5`;
     flags.push(`RM ${round(total)} for the goods is RM ${round(fl.floor - total)} under the Floor of RM ${round(fl.floor)}${at}: ${costs}.`);
   }
 
