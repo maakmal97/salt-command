@@ -1,6 +1,6 @@
 {
-  "v": "v1488",
-  "derivedFrom": "b6851789c13e4765",
+  "v": "v1489",
+  "derivedFrom": "5cc481431055dd73",
   "tables": {
     "sales": {
       "rows": 346,
@@ -206,7 +206,7 @@
           ]
         },
         "paidOn": {
-          "present": 254,
+          "present": 253,
           "of": 346,
           "optional": true,
           "types": [
