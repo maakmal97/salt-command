@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1490",
+  "d": "09 Nov 2026",
+  "t": "COLLECTION OF 1 UNIT OF GAS BY CM4-TO-R RECORDED ON S347",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> It records that 1 unit of gas on S347 was collected by CM4-TO-R on 09 Nov 2026, setting deliveredQty to 1, deliveredOn to 2026-11-09 and handover to collected. It was preapproved by Counter Admin. Unusual: it is an advance, as the RM70 on the order is unpaid, and the drafter asks for a check against the credit cap of CM4-TO. The dossier gives no cap figure.",
+   "<b>INVENTORY.</b> Gas rolls down by 1 unit, out to CM4-TO-R. No cash moves, no lot landed and the cost basis is unchanged."
+  ]
+ },
+ {
   "v": "v1489",
   "d": "09 Nov 2026",
   "t": "PAYMENT ON ONE GAS ORDER UNDONE ON SALT ADMIN",
