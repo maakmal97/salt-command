@@ -138,6 +138,8 @@ export async function run({ ok }) {
       for (const b of Object.values(c.byProduct || {})) if (b && b.inputs && b.inputs.cost) delete b.inputs.cost.shrinkRate;
       return j(c); };
     const sug = () => desk.w.eval("JSON.stringify(tierCustomers().map(function(c){return [c.id||c,suggestOf(c.id||c,'salt')];}))");
+    /* 10 Nov 2026: salt's Floor carries a live non-revenue share that this fixture's own rows would move; this section is about something else, so the share is set aside in its window (test/floor-nrs.mjs holds it) */
+    desk.w.eval("RULES.nrsFloor={};recompute();");
     const before = strip(pricingSnapshot(desk.w)), sb = sug(), code = desk.w.eval("(networkStats()[0]||{}).id");
     const row = { customer: code, product: "salt", qty: 1, total: 0, cost: unit, cash: 0, goodwill: true, deliveredQty: 1, deliveredOn: D(2), handover: "delivered",
       date: D(2), rewardOf: "s1", auto: true, loyal: true, rid: "s99999", note: "test" };

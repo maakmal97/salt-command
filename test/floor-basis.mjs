@@ -88,8 +88,8 @@ export async function run({ ok }) {
   }
   const S = snap.byProduct.salt, CS = E.costStack(S.inputs.cost);
   const wk = E.driftWalk(S.inputs.policy.tierRule.rungs, CS, S.inputs.policy, 1);
-  ok(cn > 8 && held === cn && wk.every((r) => Math.abs(r.ceiling - 3 * r.floor) < 0.01),
-    "a typed board is held to three times the floor on its own grid, and salt's walk carries a ceiling of three times: " + JSON.stringify({ cn, held, salt: wk.slice(0, 2).map((r) => [r.floor, r.ceiling]) }));
+  ok(cn > 8 && held === cn && wk.every((r) => Math.abs(r.ceiling - 3 * E.floorBase(r.q, CS, S.inputs.policy)) < 0.01),
+    "a typed board is held to three times the floor on its own grid, and salt's walk carries a ceiling of three times its COGS Floor (10 Nov 2026): " + JSON.stringify({ cn, held, salt: wk.slice(0, 2).map((r) => [r.floor, r.ceiling]) }));
 
   /* 4. THE GRIDS: salt the five, oil the ten, candy and rice the ringgit */
   ok(JSON.stringify(books.map((p) => snap.byProduct[p].inputs.policy.LADDER.round.to)) === "[5,10,1,1]" && RULES.LADDER.round.to === 5

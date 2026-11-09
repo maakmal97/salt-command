@@ -41,7 +41,7 @@ export async function fixturePricing() {
   try {
     w.eval(`sales.splice(0,sales.length,...${JSON.stringify(HISTORY)});BASE_SALES.splice(0,BASE_SALES.length,...${JSON.stringify(HISTORY)});
       purchases.splice(0,purchases.length,${JSON.stringify(LOT)});BASE_PURCHASES.splice(0,BASE_PURCHASES.length,${JSON.stringify(LOT)});
-      roster.splice(0,roster.length,'CX1-ZED');associates.splice(0,associates.length);INTRODUCTIONS.length=0;PROD='salt';recompute();`);
+      roster.splice(0,roster.length,'CX1-ZED');associates.splice(0,associates.length);INTRODUCTIONS.length=0;RULES.nrsFloor={};PROD='salt';recompute();`);   /* 10 Nov 2026: salt's Floor carries a live non-revenue share that this fixture's own rows would move; this section is about something else, so the share is set aside in its window (test/floor-nrs.mjs holds it) */
     const pricing = pricingSnapshot(w); pricing.v = "trade-fixture"; return pricing;
   } finally { w.close(); }
 }
@@ -52,7 +52,7 @@ export async function run({ ok, pageWork }) {
   try {
     w.eval(`sales.splice(0,sales.length,...${JSON.stringify(HISTORY)});BASE_SALES.splice(0,BASE_SALES.length,...${JSON.stringify(HISTORY)});
       purchases.splice(0,purchases.length,${JSON.stringify(LOT)});BASE_PURCHASES.splice(0,BASE_PURCHASES.length,${JSON.stringify(LOT)});
-      roster.splice(0,roster.length,'CX1-ZED');associates.splice(0,associates.length);INTRODUCTIONS.length=0;PROD='salt';recompute();`);
+      roster.splice(0,roster.length,'CX1-ZED');associates.splice(0,associates.length);INTRODUCTIONS.length=0;RULES.nrsFloor={};PROD='salt';recompute();`);   /* 10 Nov 2026: salt's Floor carries a live non-revenue share that this fixture's own rows would move; this section is about something else, so the share is set aside in its window (test/floor-nrs.mjs holds it) */
     pricing = pricingSnapshot(w);
   } finally { w.close(); }
   const book = { version: "reading-fixture", sales: HISTORY, purchases: [LOT], pricing,

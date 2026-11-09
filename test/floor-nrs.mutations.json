@@ -1,0 +1,104 @@
+[
+ {
+  "name": "the Floor rate ignores the share",
+  "file": "engine/pricing.mjs",
+  "find": "floorEx:+(exRate*(1+nrs)).toFixed(6)",
+  "replace": "floorEx:+(exRate).toFixed(6)"
+ },
+ {
+  "name": "floorTotal never reads the Floor rate",
+  "file": "engine/pricing.mjs",
+  "find": "const per=eff!=null?eff:(C&&C.floorEx!=null?C.floorEx:null);",
+  "replace": "const per=eff!=null?eff:null;"
+ },
+ {
+  "name": "the Ceiling is struck on the new Floor",
+  "file": "engine/pricing.mjs",
+  "find": "ceil=+(cx*fb).toFixed(4)",
+  "replace": "ceil=+(cx*fl).toFixed(4)"
+ },
+ {
+  "name": "the Set Price is struck on the new Floor",
+  "file": "engine/pricing.mjs",
+  "find": "const s=step(rS,mS,fb*m*1)",
+  "replace": "const s=step(rS,mS,fl*m*1)"
+ },
+ {
+  "name": "a held % is struck on the new Floor",
+  "file": "engine/pricing.mjs",
+  "find": "R.ends?fb*driftMultiple(q,R,k):fb*m*(1+k)",
+  "replace": "R.ends?fl*driftMultiple(q,R,k):fl*m*(1+k)"
+ },
+ {
+  "name": "floorBase is the new Floor",
+  "file": "engine/pricing.mjs",
+  "find": "function floorBase(q,C,P){return floorTotal(q,C,P,C.effEx!=null?C.effEx:C.eff);}",
+  "replace": "function floorBase(q,C,P){return floorTotal(q,C,P);}"
+ },
+ {
+  "name": "a gift is not counted",
+  "file": "engine/snapshot.mjs",
+  "find": "if(s.goodwill){gifts+=q;return;}",
+  "replace": "if(s.goodwill){return;}"
+ },
+ {
+  "name": "a written-off row is not counted",
+  "file": "engine/snapshot.mjs",
+  "find": "if(s.defaulted){off+=q;return;}",
+  "replace": "if(s.defaulted){return;}"
+ },
+ {
+  "name": "reward cover is not counted",
+  "file": "engine/snapshot.mjs",
+  "find": "gifts+=Math.min(q,Math.max(0,+s.coverUnits||0));",
+  "replace": ";"
+ },
+ {
+  "name": "a cancelled row is counted",
+  "file": "engine/snapshot.mjs",
+  "find": "pSales(C.B,p).forEach(s=>{\n    if(s.cancelled)return;",
+  "replace": "pSales(C.B,p).forEach(s=>{"
+ },
+ {
+  "name": "gifts and write-offs stay among the paid-for units",
+  "file": "engine/snapshot.mjs",
+  "find": "paid=(+C.W.soldUnits||0)-gifts-off;",
+  "replace": "paid=(+C.W.soldUnits||0);"
+ },
+ {
+  "name": "a unit settled in kind is counted as lost",
+  "file": "engine/snapshot.mjs",
+  "find": "if(s.defaulted){off+=q;return;}",
+  "replace": "if(s.defaulted){off+=q;return;}if(s.rebate){gifts+=+s.rebateKg||0;}"
+ },
+ {
+  "name": "the shortfall counts whatever the rule says",
+  "file": "engine/snapshot.mjs",
+  "find": "(K.shortfall?short:0)",
+  "replace": "short"
+ },
+ {
+  "name": "the rule names no book",
+  "file": "engine/rules.mjs",
+  "find": "nrsFloor:{salt:{shortfall:true,gifts:true,writtenOff:true}},",
+  "replace": "nrsFloor:{},"
+ },
+ {
+  "name": "the snapshot hands the stack no share",
+  "file": "engine/snapshot.mjs",
+  "find": "Object.assign(nr?{nrs:nr}:{},{prod:p",
+  "replace": "Object.assign({},{prod:p"
+ },
+ {
+  "name": "a rate a caller states no longer wins",
+  "file": "engine/pricing.mjs",
+  "find": "const per=eff!=null?eff:(C&&C.floorEx!=null?C.floorEx:null);",
+  "replace": "const per=(C&&C.floorEx!=null?C.floorEx:eff);"
+ },
+ {
+  "name": "the page hands the engine no units sold",
+  "file": "master/salt_command.html",
+  "find": "get soldUnits(){return soldUnits;},get wavgBuy()",
+  "replace": "get wavgBuy()"
+ }
+]

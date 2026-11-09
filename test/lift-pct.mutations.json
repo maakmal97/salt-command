@@ -2,7 +2,7 @@
  {
   "name": "the walk drops the ringgit margin lift: 12.5 unit comes down to the 960 the multiple alone gives, and a margin falls across the grid",
   "file": "engine/pricing.mjs",
-  "find": "if(mg>-Infinity)p=Math.max(p,up(+(fl+mg).toFixed(2)));",
+  "find": "if(mg>-Infinity)p=Math.max(p,up(+(fb+mg).toFixed(2)));",
   "replace": "/* no margin lift */"
  },
  {
@@ -26,8 +26,8 @@
  {
   "name": "a customer's % is ignored in the walk: every price is the Set Price",
   "file": "engine/pricing.mjs",
-  "find": "const x=step(rP,mP,R.ends?fl*driftMultiple(q,R,k):fl*m*(1+k));",
-  "replace": "const x=step(rP,mP,fl*m);"
+  "find": "const x=step(rP,mP,R.ends?fb*driftMultiple(q,R,k):fb*m*(1+k));",
+  "replace": "const x=step(rP,mP,fb*m);"
  },
  {
   "name": "the price rounds to the nearest five, not down",

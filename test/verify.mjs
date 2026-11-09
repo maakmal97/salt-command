@@ -4567,8 +4567,11 @@ await (async () => {
     const top = lots.map((x, i) => ({ x, i, d: x.receivedOn || x.date || "" })).sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : a.i - b.i)).pop();
     const per = top ? (top.x.total + (+top.x.freight || 0)) / top.x.qty : NaN;
     const fl = read("shownSizes(PROD).map(function(q){return [q,floorTotal(q),costTotal(q)];})");
-    ok(fl.length > 0 && fl.every(([q, v, c]) => Math.abs(c - +(per * q).toFixed(2)) < 0.006 && v === Math.ceil(c / 5 - 1e-6) * 5),
-      `${bk}: the cost is COGS off the latest lot times the size to the sen and the floor is that up to the next RM 5, RM ${per.toFixed(2)} a unit: ${JSON.stringify(fl)}`);
+    /* 10 Nov 2026: salt's Floor is struck on its own rate, COGS times 1 plus the non-revenue share (floorEx); no other book has one */
+    const fx = read("(pxCost().floorEx!=null?pxCost().floorEx:null)"), nr = read("(pxCost().nrs||null)");
+    ok(fl.length > 0 && (fx != null) === (bk === "salt") && (fx == null || Math.abs(fx - per * (1 + nr)) < 0.0001)
+      && fl.every(([q, v, c]) => Math.abs(c - +(per * q).toFixed(2)) < 0.006 && v === Math.ceil(+((fx != null ? fx : per) * q).toFixed(2) / 5 - 1e-6) * 5),
+      `${bk}: the cost is COGS off the latest lot times the size to the sen and the floor is that, on salt with its non-revenue share on top, up to the next RM 5, RM ${per.toFixed(2)} a unit: ${JSON.stringify([fx, nr, fl])}`);
   }
   w.eval("setProd('salt');recompute();");
   w.eval("setProd('oil');recompute();");
@@ -13757,6 +13760,8 @@ await (async () => {
 
     /* the fixture: salt at 12.5 unit, one sale just over the engine floor, one under it, one open and under it, each
        row's own cost set so the retired 20% line would have caught the first */
+    /* 10 Nov 2026: salt's Floor carries a live non-revenue share that this fixture's own rows would move; this section is about something else, so the share is set aside in its window (test/floor-nrs.mjs holds it) */
+    wR.eval("RULES.nrsFloor={};recompute();");
     const ft = rdR("floorTotal(12.5)"), day = rdR("new Date(TODAY.getTime()+86400000).toISOString().slice(0,10)");
     const cost = +(((ft - 50) + 0.8 * (ft + 1)) / 2).toFixed(2);
     const scan = () => rdR("(function(){var b=boundaryScan().filter(function(x){return x.rule==='Margin floor';});"
@@ -15014,6 +15019,8 @@ await (async () => {
        is not a priced order and drops out of how they buy. The claim here is that no PRICE moves, so the profile is taken
        out of what is compared rather than letting a correct reading turn the price check red. */
     const snap34 = () => { const s = ps34(w34); delete s.takenAt; delete s.profileOf; delete s.profileRule; w34.eval("setProd('salt');recompute();"); return JSON.stringify(s); };
+    /* 10 Nov 2026: a write-off is one of the three categories salt's Floor now carries, so it rightly moves the Floor; the claim here is that nothing ELSE moves, so the share is set aside in this window (test/floor-nrs.mjs holds it) */
+    w34.eval("RULES.nrsFloor={};recompute();");
     const A = read34(), recvA = recvText34(), apprA = approachText34(), snapA = snap34();
     w34.eval("BASE_SALES.find(function(s){return s.rid==='z634d';}).defaulted=true;applyOverlay();recompute();");
     const B = read34(), recvB = recvText34(), apprB = approachText34(), snapB = snap34();
@@ -48666,6 +48673,10 @@ await (async () => {
 section("06 Oct 2026: a partner pays cost, the Floor (RM 5 up since 18 Oct 2026) on every book, nobody else's price moved");
 await (async () => {
   await (await import("./partner.mjs")).run({ ok });
+})();
+section("10 Nov 2026: salt's Floor carries the non-revenue salt, measured live, and the Set Price and the Ceiling stay on COGS");
+await (async () => {
+  await (await import("./floor-nrs.mjs")).run({ ok });
 })();
 section("18 Oct 2026: the Floor rounds up to the next RM 5, the Ceiling is three times it on every book, the partner pays the Floor");
 await (async () => {
