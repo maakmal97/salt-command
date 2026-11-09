@@ -1,6 +1,6 @@
 {
- "v": "v1494",
- "stamped": "09 Nov 2026, 23:32 KL",
+ "v": "v1495",
+ "stamped": "09 Nov 2026, 23:37 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -107,7 +107,7 @@
     "stated": 25
    }
   },
-  "STATED_STOCK": 48,
+  "STATED_STOCK": 45.5,
   "COUNT_ON": {
    "salt": "2026-11-09",
    "oil": "2026-11-07",
@@ -12066,7 +12066,7 @@
     "total": 230,
     "cash": 230,
     "date": "2026-11-09",
-    "deliveredQty": 0,
+    "deliveredQty": 2.5,
     "note": "<b>CORRECTED ON 09 NOV 2026: TOTAL RM205 TO RM230, DELIVERY 0.</b> <b>CORRECTION ON 09 NOV 2026: ORDER s348 FOR CE4-CHE, GOODS TOTAL RM205 TO RM230, DELIVERY SET TO 0.</b> Preapproved by Counter Admin. Quantity stays 2.5 unit. It moves no cash and no stock; it changes only what the row says about itself. The new rate is RM92 a unit, equal to the party's median rate of RM92 (range RM6 to RM153.33, 23 orders). The goods total of RM230 is compared with the desk's floor and ask for 2.5 unit; the dossier gives no ladder figures for it, so no comparison is made. The cost is the row's own and the correction does not set it. The drafter raised no flags. RM205 was outstanding before, with no units on credit and nothing defaulted. RM230 is still unpaid and 2.5 unit unhanded. <b>NEW SALE ON 09 NOV 2026: 2.5 UNIT OF SALT TO CE4-CHE FOR RM205, PENDING.</b> Preapproved by Counter Admin. Nothing paid and nothing handed over, so no stock is drawn and no revenue booked yet. The rate is RM82 a unit. The goods total of RM205 is above the desk's floor of RM125 and below its ask of RM225 for 2.5 unit; per unit, RM82 sits between the floor of RM50 and the ask of RM90. CE4-CHE has a median rate of RM92, range RM6 to RM153.33, 22 orders, nothing outstanding before, no units on credit and nothing defaulted. The dossier shows a credit cap of 1, with no unit given. The cost is the RM50 a unit the drafter set off the latest purchase, and the fold keeps it. The drafter flagged the rate as 10.9% below the median of RM92; the figures confirm it, though it stays above the floor. RM205 remains unpaid and 2.5 unit unhanded.",
     "listRM": 205,
     "listQty": 2.5,
@@ -12099,9 +12099,19 @@
       "cash": 230,
       "kg": 0,
       "note": "<b>FULFILMENT ON 09 NOV 2026: ORDER s348 FOR CE4-CHE SETTLED, RM230 CASH AND 2.5 UNIT HANDED OVER.</b> Decided by Counter Admin, same day as the order. The goods total of RM230 is RM92 a unit, equal to the party's median of RM92 (range RM6 to RM153.33, 23 orders). The dossier gives no floor or ask for this size, so none is cited. Before this, RM205 stood outstanding on the draft, with no units on credit and nothing defaulted. The drafter raised no flags. The cost is the inventory's own rate of RM50 a unit and the draft's cost is kept. Nothing remains outstanding on the order: RM0 and 0 unit."
+     },
+     {
+      "date": "2026-11-09",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 2.5,
+      "note": "<b>FULFILMENT ON S348: CASH 230.</b> Fulfilment 2.5 unit on 2026-11-09 against order s348. It applies to s348, 2.5 unit for RM230 with RM230 paid on 9 Nov 2026. CE4-CHE: 23 orders on the book, median RM92 a unit, range RM6 to RM153.33, RM0 outstanding before this row. The drafter flagged: This SETTLES the order in full: nothing is left outstanding after it. Written by the tool, so the facts stand as the dossier gives them and no judgement is recorded on them.",
+      "cost": 125
      }
     ],
-    "paidOn": "2026-11-09"
+    "paidOn": "2026-11-09",
+    "deliveredOn": "2026-11-09",
+    "cost": 125
    }
   ],
   "contacts": [
@@ -12964,7 +12974,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-09T15:31:30.813Z",
+  "QUEUE_COMMITTED": "2026-11-09T15:32:41.647Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -13015,7 +13025,7 @@
     {
      "id": "int:nocost",
      "sev": "watch",
-     "title": "5 priced sales carry no cost of their own"
+     "title": "4 priced sales carry no cost of their own"
     },
     {
      "id": "rhythm:weekend:salt",
@@ -14483,7 +14493,7 @@
        "leak": {
         "ratio": 0,
         "leak": 0,
-        "sold": 40.5,
+        "sold": 43,
         "cycles": 3,
         "from": "2026-10-28",
         "to": "2026-11-09"
@@ -14514,9 +14524,9 @@
        "attrib": 1,
        "shrinkRate": 0.09478494960245415,
        "avgDel": {
-        "n": 261,
-        "kg": 635.31,
-        "mean": 2.4341
+        "n": 262,
+        "kg": 637.81,
+        "mean": 2.4344
        }
       },
       "policy": {
@@ -23783,11 +23793,11 @@
      "suggest": null
     }
    },
-   "v": "v1494"
+   "v": "v1495"
   },
   "OPEN": {
-   "at": "2026-11-09T15:33:03.724Z",
-   "count": 10,
+   "at": "2026-11-09T15:37:10.028Z",
+   "count": 9,
    "byKey": {
     "CM4-TO-R|2026-11-09|70|gas": {
      "d": "2026-11-09",
@@ -23808,20 +23818,6 @@
      "key": "CM4-TO-R|2026-11-09|70|gas",
      "age": 0,
      "exp": 70
-    },
-    "CE4-CHE|2026-11-09|230": {
-     "d": "2026-11-09",
-     "p": "CE4-CHE",
-     "dir": "S",
-     "q": 2.5,
-     "t": 230,
-     "cash": 230,
-     "mv": 0,
-     "st": "oweStock",
-     "oweUnits": 2.5,
-     "rid": "s348",
-     "paidOn": "2026-11-09",
-     "key": "CE4-CHE|2026-11-09|230"
     },
     "CE4-AD|2026-11-07|510": {
      "d": "2026-11-07",
@@ -23959,13 +23955,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 48,
+     "onHand": 45.5,
      "free": 40.5,
-     "owedOut": 7.5,
+     "owedOut": 5,
      "coverDays": 9.9,
      "rate": 4.14,
      "owedToYou": 310,
-     "promised": 7.5,
+     "promised": 5,
      "short": 0
     },
     "oil": {
@@ -24032,7 +24028,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1494"
+   "v": "v1495"
   },
   "TERMS": {
    "ceiling": 250,
@@ -24040,7 +24036,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1494"
+   "v": "v1495"
   },
   "REWARD": {
    "stated": {
@@ -24058,15 +24054,15 @@
      }
     }
    },
-   "v": "v1494"
+   "v": "v1495"
   },
   "STOCK": {
    "today": "2026-11-09",
    "books": {
     "salt": {
-     "shelf": 48,
+     "shelf": 45.5,
      "free": 40.5,
-     "commit": 7.5,
+     "commit": 5,
      "light": "green",
      "coverDays": 9.9,
      "transit": 0
@@ -24112,7 +24108,7 @@
      "transit": 0
     }
    },
-   "v": "v1494"
+   "v": "v1495"
   }
  }
 }
