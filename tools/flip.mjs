@@ -24,7 +24,7 @@ import { writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { d1Rows, commandArgs } from "./d1json.mjs";
-import { judge, collect, say, bookHeaders } from "./flip-gate.mjs";
+import { judge, collect, say, bookHeaders, bookFetch } from "./flip-gate.mjs";
 import { DATA_DIR } from "./book.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -43,10 +43,10 @@ export function realIo(env = process.env) {
     d1Write: (sql) => sh("npx", ["wrangler", "d1", "execute", "salt_ledger", "--remote", "--json", ...commandArgs(sql)]),
     post: async (path, body) => {
       const h = { "content-type": "application/json", ...bookHeaders(env) };
-      const r = await fetch(base + path, { method: "POST", headers: h, body: JSON.stringify(body || {}) }); return { status: r.status, body: await r.json().catch(() => ({})) };
+      const r = await bookFetch(base + path, { method: "POST", headers: h, body: JSON.stringify(body || {}) }); return { status: r.status, body: await r.json().catch(() => ({})) };
     },
     get: async (path) => {
-      const r = await fetch(base + path, { headers: bookHeaders(env) }); return { status: r.status, body: await r.json().catch(() => ({})) };
+      const r = await bookFetch(base + path, { headers: bookHeaders(env) }); return { status: r.status, body: await r.json().catch(() => ({})) };
     },
     writeFile: (f, text) => { mkdirSync(dirname(f), { recursive: true }); writeFileSync(f, text); },
     now: () => new Date().toISOString(),
@@ -157,7 +157,10 @@ const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv
 if (isMain) {
   const a = process.argv.slice(2), val = (f) => { const i = a.indexOf(f); return i >= 0 ? a[i + 1] : null; };
   const io = realIo();
-  const r = a.includes("--verify") ? await verify(io) : a.includes("--back") ? await back(io, { go: val("--back"), exported: a.includes("--exported"), noExport: a.includes("--no-export") }) : await flip(io, { go: val("--go"), backupOpened: val("--backup-opened"), since: val("--since") });
+  /* a throw (a Book call that failed three times) is said as a stop, with whether the way back was written, never as a bare stack (10 Nov 2026) */
+  let r;
+  try { r = a.includes("--verify") ? await verify(io) : a.includes("--back") ? await back(io, { go: val("--back"), exported: a.includes("--exported"), noExport: a.includes("--no-export") }) : await flip(io, { go: val("--go"), backupOpened: val("--backup-opened"), since: val("--since") }); }
+  catch (e) { r = { ok: false, crashed: String((e && e.message) || e).slice(0, 200) + (e && e.cause && e.cause.code ? " (" + e.cause.code + ")" : ""), wayBack: existsSync(WAY_BACK) ? WAY_BACK + " exists: read it, the run may have moved flags" : "no way back file: the flip itself had not begun" }; }
   console.log(JSON.stringify(r, (k, v) => (k === "gate" ? undefined : v), 1));
   if (r.pre && !r.ok) console.log("\n" + r.pre.checks.map((c) => (c.ok ? "  ok   " : "  NOT  ") + c.text).join("\n"));
   process.exit(r.ok ? 0 : 1);

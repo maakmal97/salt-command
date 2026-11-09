@@ -290,5 +290,29 @@ export async function run({ ok }) {
       ok(seen.length === 3 && seen.every((s) => s.h["cf-access-token"] === "jwt.a.b" && s.h["X-Book-Key"] === "bk") && seen[2].m === "POST" && seen[2].h["content-type"] === "application/json",
         "the gate's read, the flip's read and the flip's compaction each send the owner's login and the Book key: " + JSON.stringify(seen.map((s) => [s.m, s.u.slice(-14), !!s.h["cf-access-token"]])));
     }
+    /* 10 Nov 2026, his flip window: a pooled connection the far end closed while the checks ran gh and wrangler threw "fetch failed" (write ECONNABORTED) at the flip's first read, twice, nothing moved */
+    {
+      const was = globalThis.fetch, env = { SALT_BASE: "http://127.0.0.1:9" };
+      let n = 0, got;
+      globalThis.fetch = async () => { n++; if (n === 1) throw new TypeError("fetch failed"); return new Response('{"ok":true}', { status: 200 }); };
+      try { got = await F.realIo(env).get("/book/readcheck"); } catch (e) { got = { status: 0, body: {}, threw: e.message }; } finally { globalThis.fetch = was; }
+      ok(n === 2 && got.status === 200 && got.body.ok === true, "a Book call whose connection drops is tried again on a fresh one and answers: " + JSON.stringify({ n, got }));
+      let m = 0, threw = null;
+      globalThis.fetch = async () => { m++; throw new TypeError("fetch failed"); };
+      try { await F.realIo(env).post("/book/compact", {}); } catch (e) { threw = e.message; } finally { globalThis.fetch = was; }
+      ok(threw === "fetch failed" && m === 3, "a Book call that fails three times throws, tried no more: " + JSON.stringify({ m, threw }));
+      let k = 0;
+      globalThis.fetch = async () => { k++; return new Response('{"ok":false}', { status: 503 }); };
+      try { got = await G.realGet(env)("/book/readcheck"); } finally { globalThis.fetch = was; }
+      ok(k === 1 && got.status === 503, "an answer, even a refusal, is never tried again: " + JSON.stringify({ k, status: got.status }));
+      /* the command line says a throw as a stop, never a bare stack: --verify with no wrangler on PATH and a Book that refuses the connection */
+      const bin = mkdtempSync(join(tmpdir(), "flip-crash-bin-"));
+      const cenv = {}; for (const [kk, v] of Object.entries(process.env)) if (!/^path$/i.test(kk)) cenv[kk] = v;
+      cenv.PATH = bin; cenv.SALT_BASE = "http://127.0.0.1:9";
+      const r = spawnSync(process.execPath, [join(REPO, "tools", "flip.mjs"), "--verify"], { cwd: REPO, encoding: "utf8", env: cenv, timeout: 60000 });
+      rmSync(bin, { recursive: true, force: true });
+      ok(r.status === 1 && /"crashed": "fetch failed/.test(r.stdout) && /"wayBack":/.test(r.stdout) && !/triggerUncaughtException/.test(r.stderr),
+        "a throw in the flip's command line prints where it stopped and whether the way back was written, with exit 1: " + JSON.stringify({ status: r.status, out: String(r.stdout).slice(0, 160), err: String(r.stderr).slice(-160) }));
+    }
   }
 }

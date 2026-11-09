@@ -180,10 +180,21 @@ export function bookHeaders(env = process.env) {
   return { ...h, ...deskAccess(String(env.SALT_ACCESS_JWT || "").trim()) };
 }
 
+/** a Book call from the laptop, tried again when its connection drops (10 Nov 2026, his flip window): the gate and the flip spend minutes in gh and wrangler,
+    run with spawnSync, which freezes fetch's keep-alive timers, so the next call can write to a pooled socket the far end has closed ("fetch failed", write
+    ECONNABORTED). Twice that night the flip's first read after its checks threw so, with nothing moved. Only a thrown fetch is tried again, never an answer;
+    a compaction tried again is safe, since a retry after the Book compacted finds nothing open (S5f-3). */
+export async function bookFetch(url, opts, tries = 3) {
+  for (let i = 1; ; i++) {
+    try { return await fetch(url, opts); }
+    catch (e) { if (i >= tries) throw e; await new Promise((ok) => setTimeout(ok, 1000 * i)); }
+  }
+}
+
 export function realGet(env = process.env) {
   const base = (env.SALT_BASE || "https://salt-command.qyts8mh72kyg.workers.dev").replace(/\/+$/, "");
   return async (path) => {
-    const r = await fetch(base + path, { headers: bookHeaders(env) }); return { status: r.status, body: await r.json().catch(() => ({})) };
+    const r = await bookFetch(base + path, { headers: bookHeaders(env) }); return { status: r.status, body: await r.json().catch(() => ({})) };
   };
 }
 

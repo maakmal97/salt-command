@@ -410,8 +410,8 @@
  {
   "name": "the gate's read sends no headers",
   "file": "tools/flip-gate.mjs",
-  "find": "const r = await fetch(base + path, { headers: bookHeaders(env) }); return { status: r.status, body: await r.json().catch(() => ({})) };\n  };",
-  "replace": "const r = await fetch(base + path, {}); return { status: r.status, body: await r.json().catch(() => ({})) };\n  };"
+  "find": "const r = await bookFetch(base + path, { headers: bookHeaders(env) }); return { status: r.status, body: await r.json().catch(() => ({})) };\n  };",
+  "replace": "const r = await bookFetch(base + path, {}); return { status: r.status, body: await r.json().catch(() => ({})) };\n  };"
  },
  {
   "name": "the flip's compaction sends only its content type",
@@ -422,8 +422,8 @@
  {
   "name": "the flip's read sends no headers",
   "file": "tools/flip.mjs",
-  "find": "const r = await fetch(base + path, { headers: bookHeaders(env) });",
-  "replace": "const r = await fetch(base + path, {});"
+  "find": "const r = await bookFetch(base + path, { headers: bookHeaders(env) });",
+  "replace": "const r = await bookFetch(base + path, {});"
  },
  {
   "name": "a stand-down is never read",
@@ -484,5 +484,41 @@
   "file": "tools/flip-gate.mjs",
   "find": "return before.length ? Math.max(...before) : NaN; };",
   "replace": "return before.length ? Math.min(...before) : NaN; };"
+ },
+ {
+  "name": "a dropped Book call is never tried again",
+  "file": "tools/flip-gate.mjs",
+  "find": "export async function bookFetch(url, opts, tries = 3) {",
+  "replace": "export async function bookFetch(url, opts, tries = 1) {"
+ },
+ {
+  "name": "a Book call is tried once more than three times",
+  "file": "tools/flip-gate.mjs",
+  "find": "catch (e) { if (i >= tries) throw e;",
+  "replace": "catch (e) { if (i >= tries + 1) throw e;"
+ },
+ {
+  "name": "a refusal is tried again as if the connection dropped",
+  "file": "tools/flip-gate.mjs",
+  "find": "    try { return await fetch(url, opts); }",
+  "replace": "    try { const x = await fetch(url, opts); if (i < tries && x.status >= 500) throw new Error(\"retry\"); return x; }"
+ },
+ {
+  "name": "the flip's read goes back to a bare fetch",
+  "file": "tools/flip.mjs",
+  "find": "const r = await bookFetch(base + path, { headers: bookHeaders(env) });",
+  "replace": "const r = await fetch(base + path, { headers: bookHeaders(env) });"
+ },
+ {
+  "name": "the flip's compaction goes back to a bare fetch",
+  "file": "tools/flip.mjs",
+  "find": "const r = await bookFetch(base + path, { method: \"POST\"",
+  "replace": "const r = await fetch(base + path, { method: \"POST\""
+ },
+ {
+  "name": "the flip's command line lets a throw out as a stack",
+  "file": "tools/flip.mjs",
+  "find": "  catch (e) { r = { ok: false, crashed:",
+  "replace": "  catch (e) { throw e; r = { ok: false, crashed:"
  }
 ]
