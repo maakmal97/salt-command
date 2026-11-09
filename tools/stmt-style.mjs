@@ -128,6 +128,8 @@ export const RECIPE_HEADS = [
   "/* ---- Stepper (",
   /* PLAN VERSION 10 (03 Nov 2026, salt-ds 1.25.0): a book's mark as a coin, and the restock light as a dot and its word beside it */
   "/* ---- Coin (",
+  /* 9 NOV 2026, HIS WORD (salt-ds 1.30.0): no scrollbar drawn on any surface, so a page that scrolls and one that does not are the same width */
+  "/* ---- No scrollbars (",
 ];
 export function siteRecipes() {
   const css = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");
