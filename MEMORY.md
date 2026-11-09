@@ -354,6 +354,9 @@
   Said, not fixed (Fable, low): a same-rid retry inside seconds of a suspension answers the refusal, not the claim already recorded; a `pay` naming no method takes
   the order's earlier account unchecked (the page always sends one). Section "9 Nov 2026: a claim names ..." (18 checks, 12 mutations red).
 
+## No scrollbar on any surface (v1491)
+- Live as v1491 (`a6f12cdb`, 09 Nov 2026; Cloud commit `42587028250`: chain green with "The phone is serving it", the statements deployed and published, three suite parts green; CI `42587028203` green), his word: a page that scrolled drew a classic Windows bar about 15px wide and read narrower. salt-ds 1.30.0 (#45) section "No scrollbars": `* { scrollbar-width: none !important }` and `::-webkit-scrollbar { display: none }`, every element. The Desk dropped its own thin bars (`.rail`, `.tscroll`, `.viewsw`); the Counter and Salt Admin carry the section by its header (`RECIPE_HEADS`); QR Command`s designsync now carries it beside the tokens (`SECTIONS`, qr-command `61700ab` on main, its deploy his). Measured in Chromium launched without `--hide-scrollbars` (headless hides bars, so a probe without that flag reads 0 either way): 0px bar and equal width at 390, 1180, 1440 on all three, 15px with bars forced back. Section "9 Nov 2026: no scrollbar" (`test/no-scrollbars.mjs`, 8 checks, 13 mutations red). Full suite 12,092 passed, 0 failed. Design System artifact version 45.
+
 ## Salt Desk in layers (v1448) and the metrics grey (v1449)
 - Live as v1448 (`284fa5a7`, 06 Nov 2026; Cloud commit `42081731999`: chain green with "The phone is serving it", three suite parts green; CI `42081732855` green), the
   follow-up to v1442 (his answer D): from 1080px the Desk is a frame, the rail and bar unmoved and `#deskcol` (under the bar) the one scroll box, the page 0px of scroll
