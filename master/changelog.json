@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1487",
+  "d": "09 Nov 2026",
+  "t": "A COLLECTION RECORDED ON ONE GAS ORDER, SHELF ROLLED BY 1 UNIT",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> Correction to s347, the 1 unit gas order for CM4-TO-R dated 09 Nov 2026: deliveredQty to 1, deliveredOn to 2026-11-09 and handover to collected. No cash moved and the goods total stays at RM70.",
+   "<b>INVENTORY.</b> The shelf rolls by 1 unit of gas, out to CM4-TO-R, the difference the correction states. Nothing landed, so the cost basis is unchanged."
+  ]
+ },
+ {
   "v": "v1486",
   "d": "09 Nov 2026",
   "t": "CASH RECEIVED ON A PENDING GAS ORDER",
