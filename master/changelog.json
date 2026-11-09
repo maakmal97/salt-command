@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1486",
+  "d": "09 Nov 2026",
+  "t": "CASH RECEIVED ON A PENDING GAS ORDER",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED.</b> RM70 cash received at the counter on 09 Nov 2026 against CM4-TO-R's pending order s347 for 1 unit of gas, preapproved by Counter Admin. Nothing unusual: the drafter raised no flags. The order is now paid, but the unit is still to collect.",
+   "<b>INVENTORY.</b> Nothing moved, as no unit has been handed over. Stock stays at 7 units with the cost basis unchanged."
+  ]
+ },
+ {
   "v": "v1485",
   "d": "09 Nov 2026",
   "t": "ONE PENDING GAS SALE TO CM4-TO-R BOOKED, NO STOCK MOVED",
