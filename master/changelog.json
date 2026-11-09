@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1488",
+  "d": "09 Nov 2026",
+  "t": "A COLLECTION OF GAS UNDONE ON S347",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> The correction to s347 clears deliveredOn, deliveredQty and handover, undoing the collection of 1 unit of gas by CM4-TO-R on 09 Nov 2026. It was decided by Counter Admin. The unusual point is that the row's trail of 3 steps is not rewritten, so it no longer adds up; the correction is recorded beside it saying so.",
+   "<b>INVENTORY.</b> The gas goes back on the shelf by 1 unit. Salt stock stays at 7 and cost stays at RM56 per unit, as no lot landed."
+  ]
+ },
+ {
   "v": "v1487",
   "d": "09 Nov 2026",
   "t": "A COLLECTION RECORDED ON ONE GAS ORDER, SHELF ROLLED BY 1 UNIT",

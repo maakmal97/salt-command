@@ -1,6 +1,6 @@
 {
- "v": "v1487",
- "stamped": "09 Nov 2026, 14:34 KL",
+ "v": "v1488",
+ "stamped": "09 Nov 2026, 15:23 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -99,7 +99,7 @@
    "gas": {
     "qty": 0,
     "costPerKg": 50,
-    "stated": 1
+    "stated": 2
    },
    "prep": {
     "qty": 0,
@@ -11954,8 +11954,8 @@
     "cash": 70,
     "product": "gas",
     "date": "2026-11-09",
-    "deliveredQty": 1,
-    "note": "<b>CORRECTION TO S347: 1 UNIT OF GAS COLLECTED BY CM4-TO-R ON 09 NOV 2026.</b> Preapproved by Counter Admin, order 20261109062116-iuxz9q. It sets deliveredQty from 0 to 1, deliveredOn from unset to 2026-11-09 and handover from unset to collected. The goods total stays RM70 and cash stays RM70, already paid on 09 Nov. The shelf rolls out by 1 unit. CM4-TO-R has a median rate of RM91.4, range RM70 to RM160, 8 orders, nothing outstanding before, nothing defaulted and no units on credit. The cost stays as the fold set it at the sale. The drafter flagged that the row carries a trail of 2 steps which a directly set figure will not rewrite, so the trail will no longer add up; the correction is recorded beside them saying so. Nothing is left outstanding. <b>NEW PENDING SALE OF 1 UNIT OF GAS TO CM4-TO-R, GOODS RM70.</b> Order 20261109062116-iuxz9q, ordered on the statements site, acknowledged, on behalf of a friend, to collect, dated 09 Nov 2026, preapproved by Counter Admin and booked as R2. Nothing is paid and nothing handed over. The goods total of RM70 equals the floorTotal of RM70 and is below the askTotal of RM75. CM4-TO-R has a median rate of RM140, range RM71.67 to RM160, 7 orders, nothing outstanding and nothing defaulted, with credit cap 1 and no units on credit before. The cost is the inventory's own, set at RM70 per unit off the latest purchase p052. The drafter flagged the R2 booking, as CM4-TO buys to sell on; the figures do not contradict it. Outstanding: RM70 unpaid and 1 unit to collect.",
+    "deliveredQty": 0,
+    "note": "<b>CORRECTION TO S347: COLLECTION OF 1 UNIT OF GAS BY CM4-TO-R ON 09 NOV 2026 UNDONE.</b> Decided by Counter Admin. It sets deliveredOn from 2026-11-09 to cleared, deliveredQty from 1 to 0 and handover from collected to cleared, undoing step 2 of the trail. The goods total stays RM70 and cash stays RM70, paid on 09 Nov. The shelf rolls back by 1 unit. CM4-TO-R has a median rate of RM91.4, range RM70 to RM160, 8 orders, nothing outstanding before, nothing defaulted and no units on credit. The cost stays as the fold set it at the sale. The drafter flagged that the trail of 3 steps will not be rewritten by a directly set figure, so it no longer adds up; the correction is recorded beside it saying so. The dossier gives no reason for the undo. The 1 unit paid for is now undelivered. <b>CORRECTION TO S347: 1 UNIT OF GAS COLLECTED BY CM4-TO-R ON 09 NOV 2026.</b> Preapproved by Counter Admin, order 20261109062116-iuxz9q. It sets deliveredQty from 0 to 1, deliveredOn from unset to 2026-11-09 and handover from unset to collected. The goods total stays RM70 and cash stays RM70, already paid on 09 Nov. The shelf rolls out by 1 unit. CM4-TO-R has a median rate of RM91.4, range RM70 to RM160, 8 orders, nothing outstanding before, nothing defaulted and no units on credit. The cost stays as the fold set it at the sale. The drafter flagged that the row carries a trail of 2 steps which a directly set figure will not rewrite, so the trail will no longer add up; the correction is recorded beside them saying so. Nothing is left outstanding. <b>NEW PENDING SALE OF 1 UNIT OF GAS TO CM4-TO-R, GOODS RM70.</b> Order 20261109062116-iuxz9q, ordered on the statements site, acknowledged, on behalf of a friend, to collect, dated 09 Nov 2026, preapproved by Counter Admin and booked as R2. Nothing is paid and nothing handed over. The goods total of RM70 equals the floorTotal of RM70 and is below the askTotal of RM75. CM4-TO-R has a median rate of RM140, range RM71.67 to RM160, 7 orders, nothing outstanding and nothing defaulted, with credit cap 1 and no units on credit before. The cost is the inventory's own, set at RM70 per unit off the latest purchase p052. The drafter flagged the R2 booking, as CM4-TO buys to sell on; the figures do not contradict it. Outstanding: RM70 unpaid and 1 unit to collect.",
     "road": "site",
     "rid": "s347",
     "amend": [
@@ -11984,15 +11984,30 @@
        "deliveredOn": null,
        "handover": null
       },
-      "cost": 70
+      "cost": 70,
+      "undone": "2026-11-09"
+     },
+     {
+      "date": "2026-11-09",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION TO S347: COLLECTION OF 1 UNIT OF GAS BY CM4-TO-R ON 09 NOV 2026 UNDONE.</b> Decided by Counter Admin. It sets deliveredOn from 2026-11-09 to cleared, deliveredQty from 1 to 0 and handover from collected to cleared, undoing step 2 of the trail. The goods total stays RM70 and cash stays RM70, paid on 09 Nov. The shelf rolls back by 1 unit. CM4-TO-R has a median rate of RM91.4, range RM70 to RM160, 8 orders, nothing outstanding before, nothing defaulted and no units on credit. The cost stays as the fold set it at the sale. The drafter flagged that the trail of 3 steps will not be rewritten by a directly set figure, so it no longer adds up; the correction is recorded beside it saying so. The dossier gives no reason for the undo. The 1 unit paid for is now undelivered.",
+      "was": {
+       "deliveredQty": 1,
+       "deliveredOn": "2026-11-09",
+       "handover": "collected"
+      },
+      "undoes": 2,
+      "took": {
+       "units": 1
+      }
      }
     ],
     "paidOn": "2026-11-09",
-    "deliveredOn": "2026-11-09",
-    "handover": "collected",
-    "rev": "R2",
-    "mod": "corrected on 2026-11-09: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-09; handover (unset) to collected",
-    "cost": 70
+    "mod": "corrected on 2026-11-09: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-09; handover (unset) to collected, then corrected on 2026-11-09: deliveredQty 1 to 0; deliveredOn 2026-11-09 to (cleared); handover collected to (cleared)",
+    "cost": 70,
+    "rev": "R2"
    }
   ],
   "contacts": [
@@ -12855,7 +12870,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-09T06:33:33.589Z",
+  "QUEUE_COMMITTED": "2026-11-09T07:19:57.427Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -21739,7 +21754,7 @@
      "suggest": null
     },
     "gas": {
-     "stockCost": 70,
+     "stockCost": 60,
      "replCost": 70,
      "floors": {
       "1": {
@@ -21814,15 +21829,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.5
+         "v": 1
         }
        },
        "attrib": 1,
        "shrinkRate": 0,
        "avgDel": {
-        "n": 2,
-        "kg": 3,
-        "mean": 1.5
+        "n": 1,
+        "kg": 2,
+        "mean": 2
        }
       },
       "policy": {
@@ -23679,12 +23694,29 @@
      "suggest": null
     }
    },
-   "v": "v1487"
+   "v": "v1488"
   },
   "OPEN": {
-   "at": "2026-11-09T06:34:17.423Z",
-   "count": 8,
+   "at": "2026-11-09T07:23:29.080Z",
+   "count": 9,
    "byKey": {
+    "CM4-TO-R|2026-11-09|70|gas": {
+     "d": "2026-11-09",
+     "p": "CM4-TO-R",
+     "dir": "S",
+     "q": 1,
+     "t": 70,
+     "cash": 70,
+     "mv": 0,
+     "st": "oweStock",
+     "oweUnits": 1,
+     "pr": "gas",
+     "rid": "s347",
+     "as": "CM4-TO",
+     "st2": "R2",
+     "paidOn": "2026-11-09",
+     "key": "CM4-TO-R|2026-11-09|70|gas"
+    },
     "CE4-AD|2026-11-07|510": {
      "d": "2026-11-07",
      "p": "CE4-AD",
@@ -23865,13 +23897,13 @@
     },
     "gas": {
      "name": "Gas",
-     "onHand": 1,
+     "onHand": 2,
      "free": 1,
-     "owedOut": 0,
+     "owedOut": 1,
      "coverDays": 5.5,
      "rate": 0.15,
      "owedToYou": 0,
-     "promised": 0,
+     "promised": 1,
      "short": 0
     },
     "prep": {
@@ -23894,7 +23926,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1487"
+   "v": "v1488"
   },
   "TERMS": {
    "ceiling": 250,
@@ -23902,7 +23934,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1487"
+   "v": "v1488"
   },
   "REWARD": {
    "stated": {
@@ -23920,7 +23952,7 @@
      }
     }
    },
-   "v": "v1487"
+   "v": "v1488"
   },
   "STOCK": {
    "today": "2026-11-09",
@@ -23958,9 +23990,9 @@
      "transit": 0
     },
     "gas": {
-     "shelf": 1,
+     "shelf": 2,
      "free": 1,
-     "commit": 0,
+     "commit": 1,
      "light": "amber",
      "coverDays": 5.5,
      "transit": 0
@@ -23974,7 +24006,7 @@
      "transit": 0
     }
    },
-   "v": "v1487"
+   "v": "v1488"
   }
  }
 }

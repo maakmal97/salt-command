@@ -1,6 +1,6 @@
 {
-  "v": "v1487",
-  "derivedFrom": "88345b287d5b2c7a",
+  "v": "v1488",
+  "derivedFrom": "b6851789c13e4765",
   "tables": {
     "sales": {
       "rows": 346,
@@ -110,7 +110,7 @@
           ]
         },
         "deliveredOn": {
-          "present": 282,
+          "present": 281,
           "of": 346,
           "optional": true,
           "types": [
@@ -158,7 +158,7 @@
           ]
         },
         "handover": {
-          "present": 192,
+          "present": 191,
           "of": 346,
           "optional": true,
           "types": [
