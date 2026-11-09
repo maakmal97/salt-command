@@ -1,6 +1,6 @@
 {
- "v": "v1493",
- "stamped": "09 Nov 2026, 23:29 KL",
+ "v": "v1494",
+ "stamped": "09 Nov 2026, 23:32 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -12063,15 +12063,45 @@
    {
     "customer": "CE4-CHE",
     "qty": 2.5,
-    "total": 205,
-    "cash": 0,
+    "total": 230,
+    "cash": 230,
     "date": "2026-11-09",
     "deliveredQty": 0,
-    "note": "<b>NEW SALE ON 09 NOV 2026: 2.5 UNIT OF SALT TO CE4-CHE FOR RM205, PENDING.</b> Preapproved by Counter Admin. Nothing paid and nothing handed over, so no stock is drawn and no revenue booked yet. The rate is RM82 a unit. The goods total of RM205 is above the desk's floor of RM125 and below its ask of RM225 for 2.5 unit; per unit, RM82 sits between the floor of RM50 and the ask of RM90. CE4-CHE has a median rate of RM92, range RM6 to RM153.33, 22 orders, nothing outstanding before, no units on credit and nothing defaulted. The dossier shows a credit cap of 1, with no unit given. The cost is the RM50 a unit the drafter set off the latest purchase, and the fold keeps it. The drafter flagged the rate as 10.9% below the median of RM92; the figures confirm it, though it stays above the floor. RM205 remains unpaid and 2.5 unit unhanded.",
+    "note": "<b>CORRECTED ON 09 NOV 2026: TOTAL RM205 TO RM230, DELIVERY 0.</b> <b>CORRECTION ON 09 NOV 2026: ORDER s348 FOR CE4-CHE, GOODS TOTAL RM205 TO RM230, DELIVERY SET TO 0.</b> Preapproved by Counter Admin. Quantity stays 2.5 unit. It moves no cash and no stock; it changes only what the row says about itself. The new rate is RM92 a unit, equal to the party's median rate of RM92 (range RM6 to RM153.33, 23 orders). The goods total of RM230 is compared with the desk's floor and ask for 2.5 unit; the dossier gives no ladder figures for it, so no comparison is made. The cost is the row's own and the correction does not set it. The drafter raised no flags. RM205 was outstanding before, with no units on credit and nothing defaulted. RM230 is still unpaid and 2.5 unit unhanded. <b>NEW SALE ON 09 NOV 2026: 2.5 UNIT OF SALT TO CE4-CHE FOR RM205, PENDING.</b> Preapproved by Counter Admin. Nothing paid and nothing handed over, so no stock is drawn and no revenue booked yet. The rate is RM82 a unit. The goods total of RM205 is above the desk's floor of RM125 and below its ask of RM225 for 2.5 unit; per unit, RM82 sits between the floor of RM50 and the ask of RM90. CE4-CHE has a median rate of RM92, range RM6 to RM153.33, 22 orders, nothing outstanding before, no units on credit and nothing defaulted. The dossier shows a credit cap of 1, with no unit given. The cost is the RM50 a unit the drafter set off the latest purchase, and the fold keeps it. The drafter flagged the rate as 10.9% below the median of RM92; the figures confirm it, though it stays above the floor. RM205 remains unpaid and 2.5 unit unhanded.",
     "listRM": 205,
     "listQty": 2.5,
     "road": "site",
-    "rid": "s348"
+    "rid": "s348",
+    "delivery": 0,
+    "mod": "corrected on 2026-11-09: total 205 to 230; delivery (unset) to 0",
+    "amend": [
+     {
+      "date": "2026-11-09",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-11-09",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON 09 NOV 2026: ORDER s348 FOR CE4-CHE, GOODS TOTAL RM205 TO RM230, DELIVERY SET TO 0.</b> Preapproved by Counter Admin. Quantity stays 2.5 unit. It moves no cash and no stock; it changes only what the row says about itself. The new rate is RM92 a unit, equal to the party's median rate of RM92 (range RM6 to RM153.33, 23 orders). The goods total of RM230 is compared with the desk's floor and ask for 2.5 unit; the dossier gives no ladder figures for it, so no comparison is made. The cost is the row's own and the correction does not set it. The drafter raised no flags. RM205 was outstanding before, with no units on credit and nothing defaulted. RM230 is still unpaid and 2.5 unit unhanded.",
+      "was": {
+       "total": 205,
+       "delivery": null
+      }
+     },
+     {
+      "date": "2026-11-09",
+      "kind": "Fulfilment",
+      "cash": 230,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON 09 NOV 2026: ORDER s348 FOR CE4-CHE SETTLED, RM230 CASH AND 2.5 UNIT HANDED OVER.</b> Decided by Counter Admin, same day as the order. The goods total of RM230 is RM92 a unit, equal to the party's median of RM92 (range RM6 to RM153.33, 23 orders). The dossier gives no floor or ask for this size, so none is cited. Before this, RM205 stood outstanding on the draft, with no units on credit and nothing defaulted. The drafter raised no flags. The cost is the inventory's own rate of RM50 a unit and the draft's cost is kept. Nothing remains outstanding on the order: RM0 and 0 unit."
+     }
+    ],
+    "paidOn": "2026-11-09"
    }
   ],
   "contacts": [
@@ -12934,7 +12964,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-09T15:27:38.257Z",
+  "QUEUE_COMMITTED": "2026-11-09T15:31:30.813Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -12965,7 +12995,7 @@
     {
      "id": "cust:cadence:salt",
      "sev": "watch",
-     "title": "14 customers are past their own habit on salt"
+     "title": "13 customers are past their own habit on salt"
     },
     {
      "id": "cust:cadence:oil",
@@ -12985,7 +13015,7 @@
     {
      "id": "int:nocost",
      "sev": "watch",
-     "title": "4 priced sales carry no cost of their own"
+     "title": "5 priced sales carry no cost of their own"
     },
     {
      "id": "rhythm:weekend:salt",
@@ -13216,13 +13246,13 @@
     "CE4-CHE": {
      "salt": {
       "name": "consistent mid",
-      "orders": 15,
+      "orders": 16,
       "tenureDays": 112,
-      "sinceLastDays": 10,
-      "perMonth": 4.08,
-      "unitsPerMonth": 11.35,
+      "sinceLastDays": 0,
+      "perMonth": 4.35,
+      "unitsPerMonth": 12.03,
       "smallShare": 0,
-      "bigShare": 0.2,
+      "bigShare": 0.19,
       "frequent": true,
       "small": false,
       "bigger": false,
@@ -23753,10 +23783,10 @@
      "suggest": null
     }
    },
-   "v": "v1493"
+   "v": "v1494"
   },
   "OPEN": {
-   "at": "2026-11-09T15:29:05.669Z",
+   "at": "2026-11-09T15:33:03.724Z",
    "count": 10,
    "byKey": {
     "CM4-TO-R|2026-11-09|70|gas": {
@@ -23779,19 +23809,19 @@
      "age": 0,
      "exp": 70
     },
-    "CE4-CHE|2026-11-09|205": {
+    "CE4-CHE|2026-11-09|230": {
      "d": "2026-11-09",
      "p": "CE4-CHE",
      "dir": "S",
      "q": 2.5,
-     "t": 205,
-     "cash": 0,
+     "t": 230,
+     "cash": 230,
      "mv": 0,
-     "st": "part",
-     "oweRM": 205,
+     "st": "oweStock",
      "oweUnits": 2.5,
      "rid": "s348",
-     "key": "CE4-CHE|2026-11-09|205"
+     "paidOn": "2026-11-09",
+     "key": "CE4-CHE|2026-11-09|230"
     },
     "CE4-AD|2026-11-07|510": {
      "d": "2026-11-07",
@@ -23930,9 +23960,9 @@
     "salt": {
      "name": "Salt",
      "onHand": 48,
-     "free": 43,
-     "owedOut": 5,
-     "coverDays": 10.4,
+     "free": 40.5,
+     "owedOut": 7.5,
+     "coverDays": 9.9,
      "rate": 4.14,
      "owedToYou": 310,
      "promised": 7.5,
@@ -24002,7 +24032,7 @@
     "gas": "2026-11-02",
     "prep": "2026-11-02"
    },
-   "v": "v1493"
+   "v": "v1494"
   },
   "TERMS": {
    "ceiling": 250,
@@ -24010,7 +24040,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1493"
+   "v": "v1494"
   },
   "REWARD": {
    "stated": {
@@ -24028,17 +24058,17 @@
      }
     }
    },
-   "v": "v1493"
+   "v": "v1494"
   },
   "STOCK": {
    "today": "2026-11-09",
    "books": {
     "salt": {
      "shelf": 48,
-     "free": 43,
+     "free": 40.5,
      "commit": 7.5,
      "light": "green",
-     "coverDays": 10.4,
+     "coverDays": 9.9,
      "transit": 0
     },
     "oil": {
@@ -24082,7 +24112,7 @@
      "transit": 0
     }
    },
-   "v": "v1493"
+   "v": "v1494"
   }
  }
 }

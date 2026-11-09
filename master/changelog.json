@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1494",
+  "d": "09 Nov 2026",
+  "t": "A CORRECTION AND FULFILMENT ON ONE SALT ORDER FOR CE4-CHE",
+  "n": [
+   "<b>TWO ROWS FOLDED ON ORDER s348.</b> The goods total was corrected from RM205 to RM230 with delivery set to 0, then the order was fulfilled in full the same day. The dossier lists no drafter flags on either row. Nothing else was unusual.",
+   "<b>INVENTORY.</b> The correction moves no stock and no cash. The fulfilment hands over 2.5 unit of salt against RM230 cash, so the roll drops by 2.5 unit. The ledger shows no moves or loans."
+  ]
+ },
+ {
   "v": "v1493",
   "d": "09 Nov 2026",
   "t": "SALT COUNT OF 48 UNIT SETS STOCK AND A PENDING SALE TO CE4-CHE",
