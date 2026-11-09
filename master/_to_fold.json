@@ -1,0 +1,116 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-11-09T15:24:46.879Z",
+   "status": "approved",
+   "collection": "count",
+   "row": {
+    "product": "salt",
+    "qty": 48,
+    "date": "2026-11-09",
+    "was": 7,
+    "drift": 41,
+    "rids": [],
+    "booked_seq": 173
+   },
+   "reasoning": "Counted 48 unit of salt by hand on 2026-11-09, against 7 on the book: a difference of +41. The last count was 2026-11-07. A count wins over the ledger, and the fold sets the stated stock and moves COUNT_ON to this date.",
+   "flags": [
+    "The book says 7 and you counted 48: +41 unit unaccounted for. A COUNT ALWAYS WINS, so this becomes the inventory and the gap books as shrinkage across every unit sold."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-11-09T15:24:46.879Z",
+    "type": "COUNT",
+    "party": "stock count",
+    "qty": 48,
+    "total": null,
+    "status": "count",
+    "raw": "Stock count: 48 unit salt on hand on 2026-11-09",
+    "payload": {
+     "mode": "count",
+     "product": "salt",
+     "direction": null,
+     "party": null,
+     "date": "2026-11-09",
+     "qty": 48,
+     "total": null,
+     "cash": null,
+     "kg": 48,
+     "assoc": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null
+    },
+    "makerRequest": "c3ba621bd730a2a5aae4f4f3b37aa83f4aa3cc0850ccd37a76f7285baae0c13a"
+   },
+   "decidedAt": "2026-11-09T15:26:58.884Z",
+   "decidedBy": "Counter Admin"
+  },
+  {
+   "id": "2026-11-09T15:27:38.257Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CE4-CHE",
+    "qty": 2.5,
+    "total": 205,
+    "cash": 0,
+    "date": "2026-11-09",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261109152736-sdfs4q, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+    "listRM": 205,
+    "listQty": 2.5,
+    "rids": [
+     "s348"
+    ],
+    "booked_seq": 174
+   },
+   "reasoning": "Sold 2.5 unit of salt to CE4-CHE for RM 205, RM 82/unit. Costed at RM 50/unit from COGS off the latest purchase p053 landed 2026-11-09: RM 2500 quote plus RM 0 freight over 50 unit, so RM 80 on the goods at 39%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-11-09 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CE4-CHE typically pays about RM 92/unit for salt across 15 orders; this one is RM 82, 10.9% below that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-11-09T15:27:38.257Z",
+    "type": "SELL",
+    "party": "CE4-CHE",
+    "qty": 2.5,
+    "total": 205,
+    "status": "Pending",
+    "raw": "SELL CE4-CHE 2.5 salt RM 205, nothing paid, nothing moved (order 20261109152736-sdfs4q)",
+    "orderKey": "CE4-CHE|2026-11-09|205",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CE4-CHE",
+     "newId": null,
+     "date": "2026-11-09",
+     "qty": 2.5,
+     "total": 205,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261109152736-sdfs4q, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261109152736-sdfs4q"
+   },
+   "decidedAt": "2026-11-09T15:27:41.414Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
