@@ -258,6 +258,12 @@ export async function run({ ok }) {
     v.io.get = async () => ({ status: 200, body: { ok: true, bookRev: 9, source: "book" } });
     const vr = await F.verify(v.io);
     ok(vr.ok && vr.checks.length === 5, "verify reads source, roster, a green readcheck naming the Book, nothing unbooked and no fallback: " + JSON.stringify(vr.checks.map((c) => [c.id, c.ok])));
+    /* 10 Nov 2026: after the flip the mirror stands still, so a difference from it is not a fault; an entry or a compaction is */
+    const rcOf = async (body) => { const w = mkIo({ flags: { book_tap: "on", book_read: "book", book_source: "book", book_roster: "on", book_outbox: "off", book_page: "on" } }); w.io.get = async () => ({ status: 200, body }); return (await F.verify(w.io)).checks.find((c) => c.id === "readcheck").ok; };
+    ok(await rcOf({ ok: false, source: "book", bookRev: 368, differ: ["state.OPEN", "state.PRICING", "sales"] }), "a readcheck differing from the frozen mirror only in its documents and sales passes the verify");
+    ok(!await rcOf({ ok: false, source: "book", differ: ["state.PRICING", "entry d7 (its draft is still pending)"] }) && !await rcOf({ ok: false, source: "book", differ: ["entry d8 (stuck: the base cannot take it)"] }) && !await rcOf({ ok: false, source: "book", differ: ["compaction would be refused (x)"] }) && !await rcOf({ ok: false, source: "book", differ: ["the Book did not answer"] }),
+      "an entry under a draft not approved, a stuck entry, a compaction refused and a silent Book each fail it");
+    ok(!await rcOf({ ok: false, source: "book" }) && !await rcOf({ ok: true, source: "d1" }) && !await rcOf({ ok: false, source: "book", error: "x", differ: ["sales"] }), "a not-ok with nothing named, a readcheck on d1 and an error each fail it");
     const v2 = mkIo({ flags: { book_tap: "on", book_read: "book", book_source: "d1", book_roster: "off", book_outbox: "off", book_page: "on" }, unbooked: 2 });
     const vr2 = await F.verify(v2.io);
     ok(!vr2.ok && vr2.checks.filter((c) => !c.ok).map((c) => c.id).join() === "source,roster,readcheck,unbooked", "and it fails on each thing that is wrong: " + vr2.checks.filter((c) => !c.ok).map((c) => c.id).join());

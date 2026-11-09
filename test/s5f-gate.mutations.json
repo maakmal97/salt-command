@@ -158,8 +158,8 @@
  {
   "name": "verify takes any readcheck",
   "file": "tools/flip.mjs",
-  "find": "rc.status === 200 && rc.body.ok === true && rc.body.source === \"book\"",
-  "replace": "true"
+  "find": "add(\"readcheck\", rc.status === 200 && rc.body.source === \"book\"",
+  "replace": "add(\"readcheck\", true || rc.status === 200 && rc.body.source === \"book\""
  },
  {
   "name": "a fallback record shorter than seven days passes",
@@ -538,5 +538,41 @@
   "file": "tools/flip-gate.mjs",
   "find": "platform === \"win32\" && (cmd === \"npx\" || cmd === \"npm\");",
   "replace": "platform === \"win32\" && cmd === \"npm\";"
+ },
+ {
+  "name": "the verify wants the frozen mirror equal again",
+  "file": "tools/flip.mjs",
+  "find": "(rc.body.ok === true || differ.length > 0) && !sick.length",
+  "replace": "rc.body.ok === true && !sick.length"
+ },
+ {
+  "name": "the verify passes an entry under a draft not approved",
+  "file": "tools/flip.mjs",
+  "find": "/^entry |^compaction|did not answer/",
+  "replace": "/^compaction|did not answer/"
+ },
+ {
+  "name": "the verify passes a compaction refused",
+  "file": "tools/flip.mjs",
+  "find": "/^entry |^compaction|did not answer/",
+  "replace": "/^entry |did not answer/"
+ },
+ {
+  "name": "the verify passes a readcheck on d1",
+  "file": "tools/flip.mjs",
+  "find": "rc.status === 200 && rc.body.source === \"book\" && !rc.body.error",
+  "replace": "rc.status === 200 && !rc.body.error"
+ },
+ {
+  "name": "the verify passes a not-ok that names nothing",
+  "file": "tools/flip.mjs",
+  "find": "(rc.body.ok === true || differ.length > 0) && !sick.length",
+  "replace": "!sick.length"
+ },
+ {
+  "name": "the verify passes an error",
+  "file": "tools/flip.mjs",
+  "find": "rc.body.source === \"book\" && !rc.body.error &&",
+  "replace": "rc.body.source === \"book\" &&"
  }
 ]

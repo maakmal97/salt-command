@@ -122,7 +122,12 @@ export async function verify(io) {
   add("source", flagOf(io, "book_source") === "book", "book_source reads book");
   add("roster", flagOf(io, "book_roster") === "on", "book_roster reads on");
   const rc = await io.get("/book/readcheck");
-  add("readcheck", rc.status === 200 && rc.body.ok === true && rc.body.source === "book", "the readcheck is green and says source book: " + JSON.stringify({ ok: rc.body.ok, source: rc.body.source, rev: rc.body.bookRev }));
+  /* 10 Nov 2026, the first verify after the flip: the readcheck compares the Book with D1's mirror, which nothing re-seeds once the Book is the source, so PRICING and OPEN (stamped
+     book@<rev>) and, after the first tap, the sales differ from it by design. What still says the Book is unwell is an entry the base cannot take or one under a draft not approved, a
+     compaction that would be refused, or a side that did not answer: those fail the line; a difference from the frozen mirror is counted and said */
+  const differ = Array.isArray(rc.body.differ) ? rc.body.differ.map(String) : [];
+  const sick = differ.filter((d) => /^entry |^compaction|did not answer/.test(d));
+  add("readcheck", rc.status === 200 && rc.body.source === "book" && !rc.body.error && (rc.body.ok === true || differ.length > 0) && !sick.length, "the readcheck answers for the Book as the source, no entry stuck or under a draft not approved, a compaction that would hold: " + JSON.stringify({ source: rc.body.source, rev: rc.body.bookRev, sick, frozenMirror: differ.length - sick.length }));
   const unb = io.d1("SELECT COUNT(*) AS n FROM draft WHERE status='approved' AND committed_at IS NULL AND json_extract(CASE WHEN json_valid(row) THEN row ELSE '{}' END,'$.booked_seq') IS NULL");
   add("unbooked", !unb.error && +unb.rows[0].n === 0, "approved drafts unbooked: " + (unb.error ? "unread" : unb.rows[0].n));
   const fb = io.d1("SELECT COUNT(*) AS n FROM draft WHERE json_extract(CASE WHEN json_valid(row) THEN row ELSE '{}' END,'$.tap_fallback') IS NOT NULL AND decided_at >= strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 day')");
