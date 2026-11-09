@@ -50481,6 +50481,11 @@ await (async () => {
   await (await import("./desk-frame.mjs")).run({ ok });
 })();
 
+section("9 Nov 2026: no scrollbar on any Salt surface, so a page that scrolls and one that does not are the same width");
+await (async () => {
+  await (await import("./no-scrollbars.mjs")).run({ ok });
+})();
+
 section("9 Nov 2026: every Desk conclusion leads to the correct path, Show on the Desk and Act on Salt Admin");
 await (async () => {
   await (await import("./desk-paths.mjs")).run({ ok, pageWork });

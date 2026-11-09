@@ -1,0 +1,80 @@
+[
+ {
+  "name": "B1.1 the Desk keeps the bar width, not important",
+  "file": "master/salt_command.html",
+  "find": "* { scrollbar-width: none !important; }",
+  "replace": "* { scrollbar-width: none; }"
+ },
+ {
+  "name": "B1.1 the Desk has no rule on every element",
+  "file": "master/salt_command.html",
+  "find": "* { scrollbar-width: none !important; }",
+  "replace": "* { }"
+ },
+ {
+  "name": "B1.2 the Desk draws the WebKit bar",
+  "file": "master/salt_command.html",
+  "find": "::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }",
+  "replace": "::-webkit-scrollbar { width: 0; }"
+ },
+ {
+  "name": "B2.1 the Counter carries no width rule",
+  "file": "stmt/statement-css.js",
+  "find": "* { scrollbar-width: none !important; }",
+  "replace": "* { }"
+ },
+ {
+  "name": "B2.1 the Counter keeps the width, not important",
+  "file": "stmt/statement-css.js",
+  "find": "* { scrollbar-width: none !important; }",
+  "replace": "* { scrollbar-width: none; }"
+ },
+ {
+  "name": "B2.2 the Counter draws the WebKit bar",
+  "file": "stmt/statement-css.js",
+  "find": "::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }",
+  "replace": "::-webkit-scrollbar { width: 0; }"
+ },
+ {
+  "name": "B3.1 the Desk rail draws a thin bar",
+  "file": "master/salt_command.html",
+  "find": ".rail{position:sticky;top:22px;",
+  "replace": ".rail{scrollbar-width:thin;position:sticky;top:22px;"
+ },
+ {
+  "name": "B3.1 the Desk tables draw a WebKit bar",
+  "file": "master/salt_command.html",
+  "find": ".tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;}",
+  "replace": ".tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;}\n.tscroll::-webkit-scrollbar{height:6px;}"
+ },
+ {
+  "name": "B3.2 the Counter colours a bar",
+  "file": "stmt/page.js",
+  "find": "[hidden]{display:none!important}",
+  "replace": "[hidden]{display:none!important}\nhtml{scrollbar-color:red transparent}"
+ },
+ {
+  "name": "B3.2 Salt Admin draws its column a bar",
+  "file": "stmt/page.js",
+  "find": "/* 11 OCT 2026: EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER PAGE'S",
+  "replace": ".adm .amain{scrollbar-width:auto}\n/* 11 OCT 2026: EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER PAGE'S"
+ },
+ {
+  "name": "B4.1 the Desk rail no longer scrolls",
+  "file": "master/salt_command.html",
+  "find": "max-height:calc(100dvh - 44px - var(--safetop));overflow-y:auto;overscroll-behavior:contain;}",
+  "replace": "max-height:calc(100dvh - 44px - var(--safetop));overscroll-behavior:contain;}"
+ },
+ {
+  "name": "B4.1 the Desk tables no longer slide",
+  "file": "master/salt_command.html",
+  "find": ".tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;}",
+  "replace": ".tscroll{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;}"
+ },
+ {
+  "name": "B4.2 Salt Admin column no longer scrolls",
+  "file": "stmt/statement-css.js",
+  "find": "align-self: stretch; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }",
+  "replace": "align-self: stretch; min-width: 0; min-height: 0; overscroll-behavior: contain; }"
+ }
+]
