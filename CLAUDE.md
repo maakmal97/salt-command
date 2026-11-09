@@ -46,7 +46,11 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      engine's `latestCogs`, `COST_RULE` kind `latestCogs` on every book, his rule of 05 Oct 2026).
      **The Floor is COGS times the size, the ORDER TOTAL rounded up to the next RM 5** (the engine's
      `floorTotal`, his decision of 18 Oct 2026), one per size and nothing else: no leak, no delivery, no
-     time. `costTotal` is the exact cost, for the readers that measure cost and not price (the price
+     time. **Salt's Floor also carries the non-revenue salt, measured live** (his decision of 10 Nov 2026, `RULES.nrsFloor`,
+     the snapshot engine's `nrsShare`): COGS times 1 plus the share, the count shortfall, gifts and rewards with reward cover, and
+     written off, over the units paid for, a unit settled in kind being paid for. **The Set Price and the Ceiling stay struck on
+     the COGS Floor** (`floorBase`, his answer "Floor first, Set and Ceiling to be determined"), so only the Floor, the partner's
+     price and a discount it overtakes move. `costTotal` is the exact cost, for the readers that measure cost and not price (the price
      band's segment floor, the floor-per-unit chart); COGS of goods sold, stock value, `afterLeak` and
      `refundOnOverpay` do not read the Floor. The leak is measured and printed beside the Floor as
      information only (`afterLeak`, on a book losing `RULES.leakInfoFrom` or more). **The Ceiling is 3
