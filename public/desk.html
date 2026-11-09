@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="225c8a7adf5d0304";
+var SALT_BUILD_ID="8d1888ea39022372";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -277,15 +277,10 @@ body{margin:0;-webkit-font-smoothing:antialiased;}
 /* v273: the rail scrolls on its own. It is sticky, so once the page moved past it the rail
    stopped moving with it; at fifteen tabs on a short viewport the Actions group and the
    Whiteboard button underneath it could not be reached at all. It now carries its own
-   height limit and its own scrollbar, so the content column and the rail scroll
-   independently and neither one drags the other. */
+   height limit, so the content column and the rail scroll independently and neither one
+   drags the other. No bar is drawn (salt-ds 1.30.0, his word of 09 Nov 2026). */
 .rail{position:sticky;top:22px;
-  max-height:calc(100dvh - 44px - var(--safetop));overflow-y:auto;overscroll-behavior:contain;
-  scrollbar-width:thin;scrollbar-color:color-mix(in srgb, var(--salt-salt) 22%, transparent) transparent;}
-.rail::-webkit-scrollbar{width:7px;}
-.rail::-webkit-scrollbar-track{background:transparent;}
-.rail::-webkit-scrollbar-thumb{background:color-mix(in srgb, var(--salt-salt) 16%, transparent);border-radius:999px;}
-.rail:hover::-webkit-scrollbar-thumb{background:color-mix(in srgb, var(--salt-salt) 28%, transparent);}
+  max-height:calc(100dvh - 44px - var(--safetop));overflow-y:auto;overscroll-behavior:contain;}
 .railbrand{display:flex;align-items:center;gap:11px;padding:2px 4px 14px;border-bottom:1px solid var(--line);margin-bottom:12px;}
 .kick{font-size:10px;letter-spacing:2.4px;text-transform:uppercase;color:var(--gold);font-weight:700;}
 .railtitle{font-size:14px;font-weight:800;letter-spacing:-.2px;color:var(--ink);margin-top:1px;}
@@ -1229,10 +1224,7 @@ details.obshush:hover{opacity:.85;}
 
    The rail becomes ONE scrolling row rather than a wrapped block of fifteen buttons, which
    on a 390px screen pushed the content most of a screen down before it began. */
-.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;
-  scrollbar-width:thin;scrollbar-color:color-mix(in srgb, var(--salt-salt) 20%, transparent) transparent;}
-.tscroll::-webkit-scrollbar{height:6px;}
-.tscroll::-webkit-scrollbar-thumb{background:color-mix(in srgb, var(--salt-salt) 16%, transparent);border-radius:999px;}
+.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;}
 /* v773, HIS INSTRUCTION OF 21 SEP 2026, over a picture of the board with BRONZE half off the
    screen: THE COLUMN'S MEANING IS A HINT, NOT A SECOND LINE. Three headings carried a 9px line
    saying what the column was, and a nine-word line holds a column open at the width of its
@@ -1287,8 +1279,7 @@ details.obshush:hover{opacity:.85;}
   .qfield select,.qfield input{font-size:16px;padding:11px 10px;}
   .qrow{gap:9px;}
   /* control strips scroll rather than wrap, for the same reason the rail does */
-  .viewsw{display:flex;flex-wrap:nowrap;overflow-x:auto;max-width:100%;scrollbar-width:none;}
-  .viewsw::-webkit-scrollbar{display:none;}
+  .viewsw{display:flex;flex-wrap:nowrap;overflow-x:auto;max-width:100%;}
   .viewsw button{flex:0 0 auto;}
   /* A field under 16px makes iOS Safari zoom on focus and never zoom back (v392). The
      ledger filter strip sat at 12 and 13px; 16px on the phone only. */
@@ -1885,6 +1876,14 @@ details.obs>summary{min-height:var(--tap);}
   position: relative;
   z-index: 1;
 }
+
+/* ---- No scrollbars (1.30.0) ---- */
+/* His word of 09 Nov 2026: no scrollbar is drawn anywhere, on the page itself or on any box inside it (a frame's column, a pane, a sheet,
+   a table that slides at 390). A classic scrollbar (Windows) takes about 15px of the width, so a page that scrolled read narrower than one
+   that did not; with none drawn every page is the same width. Only the bar goes: touch, the wheel, a trackpad and the keyboard still
+   scroll. Every element and !important, so no surface draws its own thin bar back; a surface never restates this. */
+* { scrollbar-width: none !important; }
+::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
 
 /* ---- Aurora ---- */
 
@@ -5241,9 +5240,6 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .ledsum .v.warn{color:var(--salt-copper);}
 .tscroll.more::after{background:linear-gradient(90deg,transparent,color-mix(in srgb, var(--salt-obsidian) 85%, transparent));}
 .tscroll.morel::before{background:linear-gradient(270deg,transparent,color-mix(in srgb, var(--salt-obsidian) 85%, transparent));}
-.tscroll{scrollbar-color:color-mix(in srgb, var(--salt-brass) 30%, transparent) transparent;}
-.tscroll::-webkit-scrollbar-thumb{background:color-mix(in srgb, var(--salt-brass) 30%, transparent);}
-.rail::-webkit-scrollbar-thumb{background:color-mix(in srgb, var(--salt-brass) 30%, transparent);}
 .evo .row{border-bottom-color:var(--salt-line-faint);}
 .evo .dot{background:var(--salt-brass);box-shadow:0 0 0 3px color-mix(in srgb, var(--salt-brass) 15%, transparent);}
 .evo .v{color:var(--salt-brass);}

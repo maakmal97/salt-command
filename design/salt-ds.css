@@ -257,6 +257,14 @@
   z-index: 1;
 }
 
+/* ---- No scrollbars (1.30.0) ---- */
+/* His word of 09 Nov 2026: no scrollbar is drawn anywhere, on the page itself or on any box inside it (a frame's column, a pane, a sheet,
+   a table that slides at 390). A classic scrollbar (Windows) takes about 15px of the width, so a page that scrolled read narrower than one
+   that did not; with none drawn every page is the same width. Only the bar goes: touch, the wheel, a trackpad and the keyboard still
+   scroll. Every element and !important, so no surface draws its own thin bar back; a surface never restates this. */
+* { scrollbar-width: none !important; }
+::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
+
 /* ---- Aurora ---- */
 
 .salt-aurora {
