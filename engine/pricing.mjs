@@ -616,7 +616,12 @@ function driftWalk(sizes,C,P,pct){
     const s=step(rS,mS,fb*m*1);rS=s.rate;mS=s.mg;
     let p=s.p;
     /* on a band their % is a place between the three posts as quoted at this size (bandTop over the walked Median, the Floor and the Ceiling) */
-    if(Math.abs(k)>1e-9){const x=step(rP,mP,band?bandTop(s.p,lo,hi,k):R.ends?fb*driftMultiple(q,R,k):fb*m*(1+k));rP=x.rate;mP=x.mg;p=x.p;}
+    if(Math.abs(k)>1e-9){const x=step(rP,mP,band?bandTop(s.p,lo,hi,k):R.ends?fb*driftMultiple(q,R,k):fb*m*(1+k));rP=x.rate;mP=x.mg;p=x.p;
+      /* THE % NEVER CROSSES THE MEDIAN, AND -100% IS THE FLOOR ITSELF (10 Nov 2026). The place is struck on the Median as quoted, which is rounded, so
+         the % path's running rate can sit a hair under the Median's own where the Ceiling holds the Median: a lift is then held at the Median or over
+         it, size by size (a discount cannot pass it: its target, its rate and its margin are each the Median's or less). And the margin lift is not the Floor's business: at -100% the price is the Floor, what a
+         partner pays, on any cost. */
+      if(band)p=k<=BAND_MIN+1e-9?lo:k>0?Math.max(p,s.p):p;}
     return {q:q,floor:+fl.toFixed(2),ceiling:+(band?hi:ceil).toFixed(2),set:s.p,p:p,d:k};
   });
 }

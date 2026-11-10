@@ -498,7 +498,7 @@ export async function main(argv = process.argv, { run = execFileSync, out = join
     const { guestBoard } = await import("./pricelist.mjs");
     const bookNow = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
     plan.puts.push({ key: "guestboard", value: JSON.stringify(guestBoard(bookNow, pricing, new Date())) });
-    console.log("and the guest board, the Set Price, which every guest link reads");
+    console.log("and the guest board, the Median Price, which every guest link reads");
   }
   /* each test account's fixture, read off its record in the store: a read that fails leaves that fixture as it is and
      says so, since the test accounts are his and count nowhere, and the publish of every real account goes on */

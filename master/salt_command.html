@@ -8030,7 +8030,7 @@ function vaultPendingOk(record,publicWord=()=>false){
     'shares','rids','undo','introducer'];   /* introducer: R3, the associate whose join link brought a customer in (plan version 6) */
   const enumWords=['customer','supplier','reseller','referral','downstream','bucket','cash','goods','in','out',
     'SELL','BUY','Correction','Fulfilment','Cancellation','Payment','Receipt','Default','R1','R2','R3','salt','oil','candy','rice','gas','prep','delivered','collected',
-    'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big','pct'];
+    'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big','pct','band'];   /* band: the unit a salt % travels with since the price band (10 Nov 2026) */
   const house=object(record)&&typeof record.path==='string'&&/\/house-sizes$/.test(record.path);
   const offset=object(record)&&typeof record.path==='string'&&/^\/?all\/maker\/inputs\/offset$/.test(record.path);
   const appointment=object(record)&&typeof record.path==='string'&&/^\/?all\/maker\/inputs\/appoint-existing$/.test(record.path);
@@ -8750,7 +8750,12 @@ function driftWalk(sizes,C,P,pct){
     const s=step(rS,mS,fb*m*1);rS=s.rate;mS=s.mg;
     let p=s.p;
     /* on a band their % is a place between the three posts as quoted at this size (bandTop over the walked Median, the Floor and the Ceiling) */
-    if(Math.abs(k)>1e-9){const x=step(rP,mP,band?bandTop(s.p,lo,hi,k):R.ends?fb*driftMultiple(q,R,k):fb*m*(1+k));rP=x.rate;mP=x.mg;p=x.p;}
+    if(Math.abs(k)>1e-9){const x=step(rP,mP,band?bandTop(s.p,lo,hi,k):R.ends?fb*driftMultiple(q,R,k):fb*m*(1+k));rP=x.rate;mP=x.mg;p=x.p;
+      /* THE % NEVER CROSSES THE MEDIAN, AND -100% IS THE FLOOR ITSELF (10 Nov 2026). The place is struck on the Median as quoted, which is rounded, so
+         the % path's running rate can sit a hair under the Median's own where the Ceiling holds the Median: a lift is then held at the Median or over
+         it, size by size (a discount cannot pass it: its target, its rate and its margin are each the Median's or less). And the margin lift is not the Floor's business: at -100% the price is the Floor, what a
+         partner pays, on any cost. */
+      if(band)p=k<=BAND_MIN+1e-9?lo:k>0?Math.max(p,s.p):p;}
     return {q:q,floor:+fl.toFixed(2),ceiling:+(band?hi:ceil).toFixed(2),set:s.p,p:p,d:k};
   });
 }
@@ -9274,7 +9279,8 @@ function suggestOf(C,p,code){
   const R=C.R.TIER_RULE[p];if(!R||!R.drift)return null;
   return viaMemo(C,'suggest|'+(ownerOf(code)||code)+'|'+p,()=>{
     const who=ownerOf(code)||code,S=R.suggest||{},K=cost(C,p),P=Object.assign({},policy(C,p),{tierRule:R});
-    const rows=pSales(C.B,p).filter(x=>POSITION_ENGINE.ownsCode(who,x.customer)&&pbPriced(x)&&x.date&&x.total>0&&x.qty>0)
+    /* 10 Nov 2026 (his ask D): a sale he let stand outside the band as a one-off (row.oneOff) is left out of the evidence */
+    const rows=pSales(C.B,p).filter(x=>POSITION_ENGINE.ownsCode(who,x.customer)&&pbPriced(x)&&!x.oneOff&&x.date&&x.total>0&&x.qty>0)
       .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).slice(-(+S.recent||5));
     const ratios=rows.map(x=>{const set=PRICING_ENGINE.quoteAt(x.qty,K,P,0);return set>0?(POSITION_ENGINE.txGoods(x)/x.qty)/(set/x.qty):null;}).filter(v=>v!=null);
     /* 10 Nov 2026: on a band each of those sales is also placed on it at its own size (the engine's bandPct between today's Floor, Median and Ceiling) */
@@ -13415,13 +13421,13 @@ function tierPrice(code,q){
 function ladderFor(p){return SNAPSHOT_ENGINE.ladderFor(snapCtx(),p||PROD);}
 /* ============ 05 OCT 2026, HIS DECISION: SALT IS A SET PRICE AND A DRIFT (Model B) ============
    The five levels are gone (18 Oct 2026). Per size: the Floor (COGS times the size), the Ceiling (ceilingX
-   times the floor) and the Set Price, the floor times a multiple sliding in the log of size between R.points (18 Oct 2026: 2.5, 2,
+   times the floor) and the Median Price, the floor times a multiple sliding in the log of size between R.points (18 Oct 2026: 2.5, 2,
    1.67 and 1.33 at 0.5, 1, 6.25 and 12.5), down to the grid, lifted to the floor, capped at the ceiling and walked (engine driftWalk; on 05 Oct 2026, at COGS RM64) it read RM90, 160,
    220, 280, 330, 380, 430, 480, 520, 560, 660 and 1,090 on the rungs, every rung walked with the grid's own sizes (05 Oct
    2026, any amount: `grid`, from min in steps to max, each point priced by the engine's quoteAt and sealed per customer, so
-   the rate never rises across the whole grid). A stranger is quoted the Set Price. Each customer
+   the rate never rises across the whole grid). A stranger is quoted the Median Price. Each customer
    holds a % from -0.3 to +0.3, set by him (TIER_OF, folded as `tierset`), nought where none is held (18 Oct 2026, nothing automatic prices;
-   21 Oct 2026, his decision: a negative % is a discount on the Set Price, never under the Floor), applied inside the engine's driftWalk (driftAt in the ENGINE block). */
+   21 Oct 2026, his decision: a negative % is a discount on the Median Price, never under the Floor), applied inside the engine's driftWalk (driftAt in the ENGINE block). */
 /* TIER_RULE lives in engine/rules.mjs (inlined in the ENGINE block above) */
 /* 05 OCT 2026, HIS DECISION: EACH BOOK'S GRID, {min, step, max}, read off its rule: the quantities the Counter quotes at once.
    Above max the only way in is Negotiate. Null for a book with none. */
@@ -13477,9 +13483,9 @@ const REF={
 };
 /* ============ THE BOARD'S ONE COLUMN: THE SET PRICE ============
    18 Oct 2026: the five levels went and so did the stated Tier 1, so the board reads one column beside the Floor and the Ceiling.
-   Row zero of the engine's ladderRow is the Set Price (code T2, load bearing), the same figure the cell here carries. */
+   Row zero of the engine's ladderRow is the Median Price (code T2, load bearing), the same figure the cell here carries. */
 const REF_POINTS=[
-  {k:'ask',   label:'Set Price', m:null, why:'what a stranger is quoted, the least any customer but a partner pays'}
+  {k:'ask',   label:'Median Price', m:null, why:'what a stranger is quoted, the least any customer but a partner pays'}
 ];
 /* The lot cost a price has to beat: the salt, after the leak, plus ONE delivery for the order. */
 function lotCost(q,opts){ return PRICING_ENGINE.lotCost(q,pxCost(),opts); }
@@ -16789,7 +16795,7 @@ function ifrsPanel(){
     <h3 style="margin-top:16px;font-size:14px">Inventory</h3>
     <table class="salt-table fintab istmt" style="margin-top:8px"><tbody>
       ${L('At cost',F.atCost,{ref:'IAS 2.10',n:`${units(F.closeUnits)} at ${fmt(stockCostFor(PROD)+F.freightPerUnit)} landed`})}
-      ${L('Net realisable value',F.nrv,{ref:'IAS 2.6',n:F.nrvTested?`${fmt(F.nrvRate)}/unit less costs to sell, ${driftBook(P)?'at the Set Price, the least a customer but a partner is quoted':'at the stated price, the same for everybody'}`:'no selling price established for this product'})}
+      ${L('Net realisable value',F.nrv,{ref:'IAS 2.6',n:F.nrvTested?`${fmt(F.nrvRate)}/unit less costs to sell, ${driftBook(P)?'at the Median Price, the least a customer but a partner is quoted':'at the stated price, the same for everybody'}`:'no selling price established for this product'})}
       ${L('<b>Carrying amount</b>',F.carrying,{cls:'tot',ref:'IAS 2.9',n:F.nrvTested?(F.writeDown>0?`written down by ${fmt0(F.writeDown)}`:'cost is lower, so cost'):'cost, untested against NRV'})}
     </tbody></table>
     <!-- the untested-NRV paragraph went at v401: the NRV row already reads "no selling price
@@ -18937,13 +18943,13 @@ function ifrsPL(p){
      amount rather than quietly treated as passing. */
   /* ============ NRV IS THE LOWEST PRICE ANY CUSTOMER IS QUOTED (IAS 2.6, v656; the levels went on 18 Oct 2026) ============
      IAS 2.6 asks for the estimated selling price IN THE ORDINARY COURSE OF BUSINESS, and the prudent end of that range is the lowest
-     price a customer is quoted: on a book with a Set Price, the Set Price itself (a % of nought, a partner aside), and on a stated board
+     price a customer is quoted: on a book with a Median Price, the Median Price itself (a % of nought, a partner aside), and on a stated board
      its one price. It keeps the lower-of-cost-and-NRV test worth running; the Ceiling is never the basis. */
   const hasBoard=(P===DEFAULT_PROD);
   const nrvRate=hasBoard?(function(){try{
     const q=Math.max(0.5,del.mean||1), toSell=(delShare(P).v*COST_BASIS.txnPerDelivery.rm)/Math.max(0.01,q);
     const row=(typeof TIER_RULE!=='undefined'&&TIER_RULE[P])?PRICING_ENGINE.fiveTierAt(q,pxCost(),pxPolicy()):null;
-    /* on a book with a Set Price the prudent end of the ordinary course is the lowest price quoted: the Set Price, a % lift of nought */
+    /* on a book with a Median Price the prudent end of the ordinary course is the lowest price quoted: the Median Price, a % lift of nought */
     if(row&&row.drift){const lo=PRICING_ENGINE.driftAt(q,pxCost(),pxPolicy(),0);return lo?+(lo.p/q-toSell).toFixed(4):null;}
     if(row&&row.prices&&row.prices.length>1)return +(row.prices[1]/q-toSell).toFixed(4);
     const x=pxQuote(q,pxSignals().net,0);
@@ -18972,7 +18978,7 @@ function pxCost(){ return renderMemo('pxCost|'+PROD+'|'+pxOver.cost+'|'+pxOver.s
 /* the board for the book in view, on its own rungs; null for a book with no rule */
 function fiveTiersNow(){return SNAPSHOT_ENGINE.fiveTiers(snapCtx(),PROD,pxCost);}
 /* ============ EACH CUSTOMER'S HELD FIGURE, BEFORE ANY QUOTE READS IT ============
-   TIER_OF on the book is code to product to figure (18 Oct 2026: a % on the Set Price; 21 Oct 2026: -0.3 to +0.3): set on Salt Admin or at
+   TIER_OF on the book is code to product to figure (18 Oct 2026: a % on the Median Price; 21 Oct 2026: -0.3 to +0.3): set on Salt Admin or at
    Add ID, queued, drafted as `tierset`, approved and folded, so it moves only on his word. The five price levels this once held
    are gone. Every quote the desk makes to a named customer reads it through cardQuote. */
 /* 23 SEP 2026, HIS WORDS: "each customer will be quoted differently for salt, but everyone will have the same quote for oil,
@@ -18991,11 +18997,11 @@ function buyerProfile(code,prod){return SNAPSHOT_ENGINE.buyerProfile(snapCtx(),p
 /* V5c: THE LATE PAYER, across every book and their bucket, read by the engine's walk (payDelays, lateOffer) */
 function lateOf(code){return SNAPSHOT_ENGINE.lateOf(snapCtx(),code);}
 /* ============ 18 OCT 2026, HIS DECISION: EACH CUSTOMER'S % LIFT ON A DRIFT BOOK ============
-   A book whose TIER_RULE carries `drift` (salt) quotes a named customer the Set Price moved by their %, d from -0.3 to +0.3 (his decision
+   A book whose TIER_RULE carries `drift` (salt) quotes a named customer the Median Price moved by their %, d from -0.3 to +0.3 (his decision
    of 21 Oct 2026, which was 0 to 2), a negative % a discount on it, never under the Floor. THE FIGURE IS HIS: a number held in TIER_OF[code][book], set on Salt Admin or
    at Add ID, queued and folded as `tierset`, a null clearing it, and nought where none is held. Nothing automatic prices: the engine's
    autoDrift over the record (buyerProfile, payDelays, lateOf, txWrittenOff) only fills the card's good and bad, and suggestOf is its
-   suggestion, from what they paid over the Set Price on their last salt sales and how they pay (suggestPct). */
+   suggestion, from what they paid over the Median Price on their last salt sales and how they pay (suggestPct). */
 function driftBook(p){return SNAPSHOT_ENGINE.driftBook(snapCtx(),p||PROD);}
 function pctBook(p){return SNAPSHOT_ENGINE.pctBook(snapCtx(),p||PROD);}   /* 22 Oct 2026: a book that takes Their %, every book with a rule */
 function driftSignals(code,prod){return SNAPSHOT_ENGINE.driftSignals(snapCtx(),prod||PROD,code);}
@@ -19014,7 +19020,7 @@ function tierQueued(){const o={},add=(c,t)=>{o[c]=Object.assign(o[c]||{},t);};
 /* ============ 05 OCT 2026: THE DRIFT CARD ============
    One row a customer on each drift book: the drift read off their record (good and bad beside it), the one he has set if he
    has, what it quotes at 1, 3 and 12.5 unit, and a box to set or clear his. Set and Clear queue a `tierset` carrying the
-   number, folded into TIER_OF as a tier was. Up at half a unit and one unit there is almost no room above the Set Price, so
+   number, folded into TIER_OF as a tier was. Up at half a unit and one unit there is almost no room above the Median Price, so
    a row drifting up says the signal there is terms or prepayment. */
 /* a % as the card says it: +10%, or 0% */
 function driftSay(d){const n=Math.round((+d||0)*100);return n>0?'+'+n+'%':n<0?n+'%':'0%';}
@@ -19047,12 +19053,12 @@ function driftCard(){
       const at=atSizes(p).map(q=>{const x=cardQuote(id,q);return x!=null?units(q)+' '+fmt0(x):null;}).filter(Boolean).join(' &middot; ');
       const sg=suggestOf(id,p)||{pct:0,paidOver:0,risk:0};
       const state=(w?'waiting '+(wv==null?'to clear':driftSay(wv))+' &middot; ':'')+(dr.hand!=null?'set by you &middot; ':'')+suggestSay(sg);
-      rows.push(`<tr><td class="l salt-table__label mono">${ID(id)}</td><td class="l salt-table__label"><div style="line-height:1.3">${PRODUCTS[p].name} <b>${Math.abs(dr.d)>0.0001?driftSay(dr.d):'Set Price'}</b><br><span class="iref">${state}</span><br><span class="iref">${at}</span></div>${partnerNote(id)}</td></tr>`);
+      rows.push(`<tr><td class="l salt-table__label mono">${ID(id)}</td><td class="l salt-table__label"><div style="line-height:1.3">${PRODUCTS[p].name} <b>${Math.abs(dr.d)>0.0001?driftSay(dr.d):'Median Price'}</b><br><span class="iref">${state}</span><br><span class="iref">${at}</span></div>${partnerNote(id)}</td></tr>`);
     });});}
   finally{PROD=keep;recompute();}
-  return `<div class="card"><div class="cardh">Each customer's % on the Set Price or the board <span class="sub">yours to set; the suggestion is the engine's</span></div>
+  return `<div class="card"><div class="cardh">Each customer's % on the Median Price or the board <span class="sub">yours to set; the suggestion is the engine's</span></div>
     <div class="tscroll"><table class="salt-table tiertab"><thead><tr><th class="l salt-table__label">Customer</th><th class="l salt-table__label">Their %, and what it quotes</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>
-    <div class="insight salt-insight">${hand} of ${rows.length} are set by you, ${up} sit above the Set Price and ${down} below it; a % runs from -30 to +30, never under the Floor or over the Ceiling.</div></div>`;
+    <div class="insight salt-insight">${hand} of ${rows.length} are set by you, ${up} sit above the Median Price and ${down} below it; salt runs from -100% at the Floor to +100% at the Ceiling, a board from -30% to +30%.</div></div>`;
 }
 /* ---- layer 3: five readings, each worth a few points, summed then clamped ---- */
 /* Analysis asks a book's signals 18 times a render; keyed like pxCost, whose cost boardHeadroom moves mid-render */
@@ -19178,7 +19184,7 @@ function earnedPerUnit(){
   const rows=pricedSales.filter(s=>s.qty>0&&s.total>0&&!s.cancelled).map(s=>{
     const perUnit=txGoods(s)/s.qty, lot=costOf(s);
     return {id:s.customer,date:s.date,q:s.qty,rm:s.total,perUnit:+perUnit.toFixed(2),
-      band:bandOf(s.qty),oneOff:isOneOff(s.customer),
+      band:bandOf(s.qty),oneOff:isOneOff(s.customer)||!!s.oneOff,
       lotCost:+lot.toFixed(2),pkLot:+(perUnit-lot).toFixed(2),profLot:+((perUnit-lot)*s.qty).toFixed(2),
       pkEff:+(perUnit-eff).toFixed(2),profEff:+((perUnit-eff)*s.qty).toFixed(2)};});
   const agg=b=>{const a=rows.filter(r=>r.band===b);
@@ -21316,8 +21322,8 @@ function pxMarket(){
   const all=seg(()=>true),small=seg(s=>s.qty<PX.bulkFrom),bulk=seg(s=>s.qty>=PX.bulkFrom);
   /* wholesale stripped of anything marked a one-off, because a single outlier at
      RM104/unit is what makes the wholesale average look survivable */
-  const bulkEx=seg(s=>s.qty>=PX.bulkFrom&&!isOneOff(s.customer));
-  const excluded=rows.filter(s=>s.qty>=PX.bulkFrom&&isOneOff(s.customer));
+  const bulkEx=seg(s=>s.qty>=PX.bulkFrom&&!isOneOff(s.customer)&&!s.oneOff);
+  const excluded=rows.filter(s=>s.qty>=PX.bulkFrom&&(isOneOff(s.customer)||!!s.oneOff));
   /* the buying rate at which the realised bulk price would clear the floor
      unchanged. v385: null when wholesale has never traded, because there is no realised price to hold.
      27 Sep 2026: SOLVED ON THE ENGINE'S OWN STACK, not backed out by hand. The floor is straight-line in the
@@ -21455,12 +21461,12 @@ function pbOwnRate(code,prod){const rows=pbOrders(code,prod).map(s=>(s.total)/s.
 /* v651 and v652, HIS DECISIONS OF 15 AND 16 SEP 2026: A NAMED CUSTOMER'S PRICE AT ANY SIZE, the one rule every quote to them
    reads: the printed board, the approach offer, Today's worth and the reward cover's gap. The price of their tier for the
    product in view, off the ladder walked through that size, never under the floor, through the engine's one cardPrice, as
-   tools/pricelist.mjs quotes the customer's own page. A book with neither a Set Price nor a stated board has nothing to
+   tools/pricelist.mjs quotes the customer's own page. A book with neither a Median Price nor a stated board has nothing to
    quote: null, as their page reads the price as coming soon. 27 SEP 2026, HIS DECISION: what they paid before no longer
    lowers it (the cap is retired, engine's cardPrice), so their own rate is not read here. A typed board is quoted to everybody. */
 function isPartner(code){return SNAPSHOT_ENGINE.isPartner(snapCtx(),code);}
 function cardQuote(code,q){return SNAPSHOT_ENGINE.cardQuote(snapCtx(),PROD,code,q);}
-/* each size is the customer's card price for it, the Set Price lifted by their % or the typed board */
+/* each size is the customer's card price for it, the Median Price lifted by their % or the typed board */
 function pbPrices(code){
   return shownSizes(PROD).slice().sort((a,b)=>a-b).map(q=>({q,price:cardQuote(code,q)})).filter(x=>x.price!=null);}
 /* v564: AND THE SITE'S ADDRESS, for the QR. It comes down the same keyed road as the usernames
@@ -21477,7 +21483,7 @@ function pbCard(){
   const sizes=shownSizes(PROD).slice().sort((a,b)=>a-b);
   return `<div class="card" id="pbCard" style="margin-top:12px">
     <div class="cardh">Print a board <span class="sub">the mark, the figures, the username and a QR to his page</span></div>
-    <div class="dsc">Choose the customer, tick the sizes, then Print, or save it as JPG, PDF or HTML; on the phone the share sheet offers Save Image and Save to Files. The sheet is the crystal, one line per size, his username and a QR that opens his own statements page. The prices are their own: on salt the Set Price lifted by their %, set on Clients; on the other books the board; never under the Floor. The same list their statement page shows. Copy as text puts the same lines and the link on the clipboard.</div>
+    <div class="dsc">Choose the customer, tick the sizes, then Print, or save it as JPG, PDF or HTML; on the phone the share sheet offers Save Image and Save to Files. The sheet is the crystal, one line per size, his username and a QR that opens his own statements page. The prices are their own: on salt the Median Price lifted by their %, set on Clients; on the other books the board; never under the Floor. The same list their statement page shows. Copy as text puts the same lines and the link on the clipboard.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
       <select id="pbWho" aria-label="Customer" style="min-height:44px;padding:8px 10px;font-size:16px">${who.map(id=>`<option value="${esc(id)}">${esc(codeOf(id))}</option>`).join('')}</select>
       <button class="vbtn salt-pill salt-pill--sm" id="pbPrint" type="button">Print</button>
@@ -21789,7 +21795,7 @@ function tabPricing(){
         :`buying can reach ${fmt(hr.safeTo)}/unit before a live price fails, ${hr.pct}% above today; <b>${hr.firstTier}</b> falls first at ${fmt(hr.firstAt)}`}</div></div>
   </div>
 
-  <h2 style="margin-top:18px">The board <span class="sub" style="font-weight:400">${driftBook(PROD)?'the Floor, the Set Price a stranger is quoted, and the Ceiling; a customer&rsquo;s % lifts the Set Price towards the Ceiling'
+  <h2 style="margin-top:18px">The board <span class="sub" style="font-weight:400">${driftBook(PROD)?'the Floor, the Median Price a stranger is quoted, and the Ceiling; a customer&rsquo;s % lifts the Median Price towards the Ceiling'
     :TIER_RULE[PROD]?'the Floor, the one price for everybody, and the Ceiling':'one ladder, tapered at the rate the supplier tapers'}</span> <span class="rule"></span></h2>
   ${(()=>{const tb=tierBoard();
     /* ============ THE ASK SAYS WHICH FLOOR IT CLEARS (v381) ============
@@ -21814,8 +21820,8 @@ function tabPricing(){
        the floor are one number, equal to the ringgit at every size on both books, so the column can
        carry all three names honestly and the multiple beside it is ask over that: over 1.00x earns,
        1.00x earns nothing, under 1.00x is a price he has stated below break-even. */
-    /* THE BOARD READS THREE FIGURES (18 Oct 2026, his decision: the five levels and the stated Tier 1 are gone): the Floor, the Set Price
-       and the Ceiling, each size a row, the Set Price's cell carrying its rate, its margin and its multiple of break-even. Five columns
+    /* THE BOARD READS THREE FIGURES (18 Oct 2026, his decision: the five levels and the stated Tier 1 are gone): the Floor, the Median Price
+       and the Ceiling, each size a row, the Median Price's cell carrying its rate, its margin and its multiple of break-even. Five columns
        is what 325px of a 375px screen has room for (v330), and the table scrolls sideways in a .tscroll beyond that. */
     const five=fiveTiersNow(), fiveBy={};
     if(five)five.forEach(g=>{fiveBy[g.q]=g;});
@@ -21831,10 +21837,10 @@ function tabPricing(){
       :`<th>${label}</th>`;
     const head=`<tr><th class="l salt-table__label">Size</th><th>COGS</th>`
       +hth('Floor','break-even, the least he may go to')
-      +hth('Set Price','what a stranger is quoted, the least any customer but a partner pays')
+      +hth('Median Price','what a stranger is quoted, the least any customer but a partner pays')
       +hth('Ceiling','the most anyone is quoted',true)
       +`</tr>`;
-    /* the Set Price's cell: the total, the rate, the margin on price and the multiple of break-even; each turns crimson on its own
+    /* the Median Price's cell: the total, the rate, the margin on price and the multiple of break-even; each turns crimson on its own
        test, and a price under break-even is crimson on the total itself. */
     const tCell=cl=>{
       if(!cl)return '';
@@ -21867,7 +21873,7 @@ function tabPricing(){
        the only figure that distinguishes a decision from a fault. */
     const flagged=[];
     tb.forEach(r=>{const L=priceLadder(r.q);
-      if(L.ask.under>0.009)flagged.push({who:'the Set Price',q:r.q,rm:L.ask.under});});
+      if(L.ask.under>0.009)flagged.push({who:'the Median Price',q:r.q,rm:L.ask.under});});
     return `<div class="card"><div class="tscroll"><table class="salt-table pxboard fivetier"><thead>${head}</thead><tbody>${rows}</tbody></table></div>
     <!-- v393: the break-even definition that stood here went with the rest of the standing
          prose. The setup table below states it as a figure, which is the register this asks for. -->
@@ -21887,8 +21893,8 @@ function tabPricing(){
          neither can grow into the limit. The definition of the two floors is in the fold below. -->
     <!-- v749: the sentence the five-tier card carried, moved with the levels. ONE SENTENCE, because stripMethod
          keeps an .insight only as far as its first full stop. -->
-    ${driftBook(PROD)?`<div class="insight salt-insight">The Set Price is a stranger's quote; a customer's % moves it between the Floor and the Ceiling.</div>`:''}
-    ${!driftBook(PROD)&&TIER_RULE[PROD]?`<div class="insight salt-insight">The Set Price is one price for everybody, held between the Floor and ${(TIER_RULE[PROD].ceilingX||3)} times it.</div>`:''}
+    ${driftBook(PROD)?`<div class="insight salt-insight">The Median Price is a stranger's quote; a customer's % moves it between the Floor and the Ceiling.</div>`:''}
+    ${!driftBook(PROD)&&TIER_RULE[PROD]?`<div class="insight salt-insight">The Median Price is one price for everybody, held between the Floor and ${(TIER_RULE[PROD].ceilingX||3)} times it.</div>`:''}
     ${flagged.length?`<div class="insight salt-insight" style="border-left-color:var(--crim)"><b>${flagged.length} price${flagged.length===1?'':'s'} on this board sit${flagged.length===1?'s':''} under break-even</b>: ${flagged.map(f=>f.who+' at '+units(f.q)+', short '+fmt(f.rm)).join('; ')}.</div>`:''}
     ${!flagged.length?`<div class="insight salt-insight" style="border-left-color:var(--grn)">Every price on the board clears break-even.</div>`:''}
     <!-- v393: THE MARGIN SETUP IS THE BOARD'S DERIVATION, SO IT SITS IN THE BOARD'S CARD.
@@ -21924,12 +21930,12 @@ function tabPricing(){
          stated prices and an interpolation between them, which the row in the table above states in
          full. Heading a derivation "ask" while the board prints two of them is how a reader comes to
          believe the wrong one was derived. -->
-    <div class="cardh" style="margin-top:14px">From cost to the Set Price <span class="sub">${sC.rule==='latestCogs'?'COGS is the floor':'COGS, then the leak, is the floor'}; ${driftBook(PROD)||TIER_RULE[PROD]?'the Set Price is the board&rsquo;s price':'the floor at the size&rsquo;s margin is the price'}</span></div>
-    <div class="tblw"><table class="salt-table fintab istmt"><thead><tr><th class="l salt-table__label">Size</th><th>COGS</th><th>Leak</th><th>Floor</th><th>Margin</th><th>Floor &divide; (1 &minus; margin)</th><th>Set Price</th></tr></thead><tbody>
+    <div class="cardh" style="margin-top:14px">From cost to the Median Price <span class="sub">${sC.rule==='latestCogs'?'COGS is the floor':'COGS, then the leak, is the floor'}; ${driftBook(PROD)||TIER_RULE[PROD]?'the Median Price is the board&rsquo;s price':'the floor at the size&rsquo;s margin is the price'}</span></div>
+    <div class="tblw"><table class="salt-table fintab istmt"><thead><tr><th class="l salt-table__label">Size</th><th>COGS</th><th>Leak</th><th>Floor</th><th>Margin</th><th>Floor &divide; (1 &minus; margin)</th><th>Median Price</th></tr></thead><tbody>
       ${sSZ.map(q=>{const L=priceLadder(q);const cogs=L.cogs,fl=L.floor.total,g=L.marginX;const raw=g!=null?fl/(1-g):null;
         return `<tr><td class="l salt-table__label">${units(q)}</td><td class="mono">${fmt(cogs)}</td><td class="mono">+${fmt(fl-cogs)}</td><td class="mono"><b>${fmt(fl)}</b></td><td class="mono">${g!=null?(g*100).toFixed(1)+'%':NIL}</td><td class="mono">${raw!=null?fmt(raw):NIL}</td><td class="mono"><b>${fmt0(L.ask.total)}</b>${L.ask.lawStepped?' <span class="iref">stepped</span>':''}</td></tr>`;}).join('')}
     </tbody></table></div>
-    <div class="dsc" style="margin-top:8px">${sC.rule==='latestCogs'?`COGS is ${fmt(sC.landed)} a unit off the latest purchase, quote plus freight; the Floor is ${sC.floorEx!=null?`${fmt(sC.floorEx)} a unit, COGS plus ${(sC.nrs*100).toFixed(1)}% for the units that left unpaid,`:'that'} times the size, up to the next RM 5; it earns nothing${sC.floorEx!=null?', and the Set Price and the Ceiling are struck on COGS':' and carries no leak'}.`:`COGS is ${fmt(sC.landed)} a unit landed; the leak adds ${((sC.shrink/(1-sC.shrink))*100).toFixed(1)}% of it, so the floor is ${fmt(sC.effEx)} a unit and earns nothing.`} ${driftBook(PROD)?(()=>{const pts=(TIER_RULE[PROD].points||[]).slice().sort((x,y)=>x[0]-y[0]),p0=pts[0],p1=pts[pts.length-1];return `The Set Price is the Floor times a multiple sliding in the log of size from ${p0?p0[1]:NIL} at ${p0?units(p0[0]):NIL} to ${p1?p1[1]:NIL} at ${p1?units(p1[0]):NIL}, down to the RM 5, lifted so its margin never falls under a smaller size's, and held between the Floor and ${TIER_RULE[PROD].ceilingX} times it. A customer's % lifts the multiple at every size. The margin columns are the old derived price, for reference.`;})():TIER_RULE[PROD]?`The Set Price is the one price he typed for the size, held between the Floor and ${TIER_RULE[PROD].ceilingX} times it.`:'The ask is rounded up to the ten, then may step down to keep the rate from rising with size, never below its floor.'}</div>
+    <div class="dsc" style="margin-top:8px">${sC.rule==='latestCogs'?`COGS is ${fmt(sC.landed)} a unit off the latest purchase, quote plus freight; the Floor is ${sC.floorEx!=null?`${fmt(sC.floorEx)} a unit, COGS plus ${(sC.nrs*100).toFixed(1)}% for the units that left unpaid,`:'that'} times the size, up to the next RM 5; it earns nothing${sC.floorEx!=null?(TIER_RULE[PROD]&&TIER_RULE[PROD].band?', the Median Price is struck on COGS and the Ceiling on the price your supplier quotes':', and the Median Price and the Ceiling are struck on COGS'):' and carries no leak'}.`:`COGS is ${fmt(sC.landed)} a unit landed; the leak adds ${((sC.shrink/(1-sC.shrink))*100).toFixed(1)}% of it, so the floor is ${fmt(sC.effEx)} a unit and earns nothing.`} ${driftBook(PROD)?(()=>{const pts=(TIER_RULE[PROD].points||[]).slice().sort((x,y)=>x[0]-y[0]),p0=pts[0],p1=pts[pts.length-1];return `The Median Price is the Floor times a multiple sliding in the log of size from ${p0?p0[1]:NIL} at ${p0?units(p0[0]):NIL} to ${p1?p1[1]:NIL} at ${p1?units(p1[0]):NIL}, down to the RM 5, lifted so its margin never falls under a smaller size's, and held between the Floor and ${TIER_RULE[PROD].ceilingX} times it. A customer's % lifts the multiple at every size. The margin columns are the old derived price, for reference.`;})():TIER_RULE[PROD]?`The Median Price is the one price he typed for the size, held between the Floor and ${TIER_RULE[PROD].ceilingX} times it.`:'The ask is rounded up to the ten, then may step down to keep the rate from rising with size, never below its floor.'}</div>
     ${sFlat>=2?`<div class="insight salt-insight" style="border-left-color:var(--gold)"><b>The taper stops at ${units(LD.at.hi)}, so ${sFlat} of the ${sSZ.length} printed sizes carry the same ${sHi.markupX.toFixed(2)}x.</b></div>`
       :''}`;})()}
     ${pbCard()}
@@ -22249,7 +22255,7 @@ function tabPricing(){
 
   </details>
   <details class="obsec"><summary>What the two charts plot <span class="q">and what is deliberately not on them</span><span class="ct">nothing fitted</span></summary>
-  <div class="dsc">Left: the Set Price per unit at each printed size, against the cost floor it has to clear, which is the same figure as effective cost and as break-even; the Floor itself is that rounded up to the next RM 5. A flat line is a ladder that has stopped rewarding size, and the gap between the Set Price and the cost floor it clears is all the room there is. Right: every priced order ever written, plotted at the rate actually paid on the day it was agreed, grouped into three lot bands taken from this book&rsquo;s own board, with today&rsquo;s Set Price for each band drawn as a dashed line. There is no fitted curve on either chart and no elasticity anywhere on this desk.</div>
+  <div class="dsc">Left: the Median Price per unit at each printed size, against the cost floor it has to clear, which is the same figure as effective cost and as break-even; the Floor itself is that rounded up to the next RM 5. A flat line is a ladder that has stopped rewarding size, and the gap between the Median Price and the cost floor it clears is all the room there is. Right: every priced order ever written, plotted at the rate actually paid on the day it was agreed, grouped into three lot bands taken from this book&rsquo;s own board, with today&rsquo;s Median Price for each band drawn as a dashed line. There is no fitted curve on either chart and no elasticity anywhere on this desk.</div>
   </details>
   <details class="obsec"><summary>Price response <span class="q">what has sold at each price</span></summary>
   <div class="dsc" style="margin-bottom:9px">What you have actually sold at each price. Volume tells you where the business really sits; revenue tells you which price is carrying it. Prices are grouped to the nearest ringgit, and the axis lists only the prices you have traded at, so the gaps are not to scale.</div>
@@ -22460,11 +22466,11 @@ function drawBoardCharts(){
            and labelling it as a different thing, under a caption explaining a RM20 gap that has
            not existed for a week. The same v502 retirement took the "collect only" tag at v564. */
         const c=pxCost(),tb=tierBoard();
-        /* THE THREE FIGURES (18 Oct 2026, his decision: the levels are gone): the Set Price, the Floor and the Ceiling, each a rate a unit. The
+        /* THE THREE FIGURES (18 Oct 2026, his decision: the levels are gone): the Median Price, the Floor and the Ceiling, each a rate a unit. The
            Ceiling is the engine's own figure on the board's row, drawn where the book has one. */
         const fiveC=fiveTiersNow()||[], ceilOf=q=>{const g=fiveC.find(x=>Math.abs(x.q-q)<0.009);return g&&g.ceiling!=null&&q>0?+(g.ceiling/q).toFixed(2):null;};
         const ds=[
-          {label:'Set Price',borderColor:tcol('brass'),backgroundColor:tcol('brass'),tension:.25,pointRadius:3,borderWidth:2,
+          {label:'Median Price',borderColor:tcol('brass'),backgroundColor:tcol('brass'),tension:.25,pointRadius:3,borderWidth:2,
             data:tb.map(r=>{let p=null;try{p=priceLadder(r.q).ask.rate;}catch(e){}return p;})},
           /* v567: ONE LINE, NAMED FOR ALL THREE THINGS IT IS. v566 swept a duplicate floor series
              off this chart and left its TWIN standing one line below: "effective cost" drew
