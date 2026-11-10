@@ -436,7 +436,9 @@ export function planBatch(book, staged, notes, ctx) {
     : !PRICING_ENGINE.unitOk(ruleOf(p), it.row && it.row.unit) ? (ruleOf(p).band && it.row && it.row.unit === "pct" ? "on the old scale" : "without the % unit")
     : Date.parse((it.entry && it.entry.at) || it.id) < liftAt ? "before " + PRICING_RULES.RULES.liftSince : null;
   const oldLift = (it, p, v) => oldWhy(it, p, v) !== null;
-  const oldLiftNote = (c, ps, why) => `dropped the old figure: ${c}'s ${ps.join(" and ")} figure was set ${why}, in the old unit (-1 to +1), so ${c} stays on the Median Price at 0%`;
+  /* Fable's review, 10 Nov 2026: a customer already on the book KEEPS the figure they hold (the note said 0%, which was untrue of anyone holding one);
+     a new one (Add ID, `fresh`) starts on the Median Price */
+  const oldLiftNote = (c, ps, why, fresh) => `dropped the old figure: ${c}'s ${ps.join(" and ")} figure was set ${why}, in the old unit (-1 to +1), so ${c} ${fresh ? "stays on the Median Price at 0%" : "keeps the figure it held"}`;
   const out = { items: [], refused: [], moves: [] };
   let tagged = 0;
   let rows = (staged && staged.approved) || [];
@@ -809,7 +811,7 @@ export function planBatch(book, staged, notes, ctx) {
          reading them, which is the part that is true whatever the numbers are. */
       if (appoints) entry.does.push(`appoint ${r.code} an associate: R2 and R3 credit reaches them, their credit cap moves from the retail one to the associate one, their turnover hurdles to the associate hurdle, and they leave the customer reward table for the network bench`);
       if (entry.roster.resell) entry.does.push(`append ${entry.roster.resell} to the roster as their resell account, which holds what they buy to sell on`);
-      if (rtOld.length) entry.does.push(oldLiftNote(r.code, rtOld, oldWhy(it, rtOld[0], rt[rtOld[0]])));
+      if (rtOld.length) entry.does.push(oldLiftNote(r.code, rtOld, oldWhy(it, rtOld[0], rt[rtOld[0]]), true));
       /* R3 (plan version 6, his answers R3 and E3): an Add ID that names its introducer files the referee's first week, from the day it books,
          as an INTRODUCTIONS entry with a window. Never a refusal, which would hold the batch: an introduction that cannot be filed is said and the
          registration stands. One link a customer, whoever names them second (Fable's review). */
@@ -860,7 +862,13 @@ export function planBatch(book, staged, notes, ctx) {
       /* v643: a customer's held figure for each product (v646), checked against the book it folds into; a null clears it */
       const codes = Object.keys(r.tiers || {}), off = codes.filter((c) => !(book.roster || []).includes(c) || E.isBucket(c));
       const pairs = codes.flatMap((c) => Object.entries((r.tiers[c] && typeof r.tiers[c] === "object") ? r.tiers[c] : {}).map(([p, v]) => [c, p, v]));
-      const noProd = codes.filter((c) => !pairs.some((x) => x[0] === c)), offP = pairs.filter((x) => !(book.PRODUCTS || {})[x[1]]), bad = pairs.filter((x) => x[2] !== null && !oldLift(it, x[1], x[2]) && !tierOk(x[1], x[2]));   /* 05 Oct 2026: a figure of his on a drift book (18 Oct 2026: a % lift; 21 Oct 2026: -0.3 to +0.3), held as a tier was; none on any other */
+      const noProd = codes.filter((c) => !pairs.some((x) => x[0] === c)), offP = pairs.filter((x) => !(book.PRODUCTS || {})[x[1]]), clash = pairs.filter((x) => x[2] !== null && !oldLift(it, x[1], x[2]) && tierOk(x[1], x[2]) && PRICING_ENGINE.carryClash(ruleOf(x[1]), x[0], x[2])), bad = pairs.filter((x) => x[2] !== null && !oldLift(it, x[1], x[2]) && !tierOk(x[1], x[2]));   /* 05 Oct 2026: a figure of his on a drift book (18 Oct 2026: a % lift; 21 Oct 2026: -0.3 to +0.3), held as a tier was; none on any other */
+      /* Fable's review, 10 Nov 2026: THE CARRY-OVER'S LAST CHECK IS HERE. The entry gates judge on the snapshot's rule, which can trail the code's for a
+         moment after a deploy; a figure equal to the one a carried customer held on the old scale would be read as their place on the band, never as typed */
+      if (clash.length && !(off.length || noProd.length || offP.length || bad.length)) {
+        out.refused.push({ id: it.id, why: clash.map((x) => `${sayLift(x[2])} is the figure ${x[0]} held on the old scale, which is read as its place on the band until the carry-over is filed: choose 1% either side`).join(" and ") });
+        continue;
+      }
       if (!codes.length || off.length || noProd.length || offP.length || bad.length) {
         out.refused.push({ id: it.id, why: !codes.length ? "a % entry names no customer" : off.length ? `${off.join(" and ")} is not a customer on the roster`
           : noProd.length ? `the % entry for ${noProd.join(" and ")} names no product` : offP.length ? `${offP.map((x) => x[1]).join(" and ")} is not a product on this book` : bad.map((x) => sayLift(x[2]) + (driftBooks().includes(x[1]) ? notPct(x[1]) : " is not held per customer on this book")).join(" and ") });
@@ -889,6 +897,11 @@ export function planBatch(book, staged, notes, ctx) {
       const pairs = E.renamePairs(roster, r.from, r.to);
       const taken = pairs.map((x) => x[1]).filter((c) => roster.includes(c));
       if (taken.length) { out.refused.push({ id: it.id, why: `${taken.join(" and ")} already belongs to another party` }); continue; }
+      /* Fable's review, 10 Nov 2026: THE CARRY-OVER IS KEYED BY CODE (TIER_RULE.salt.band.carry), and a rename re-keys the book, never the rule. A customer
+         whose held figure is still read through it would be priced at the raw old figure under the new code, so the rename waits until their place on the
+         band is booked (the tierset of the carry-over). Nothing is refused once the book holds anything but the old figure. */
+      const carried = pairs.map((x) => x[0]).filter((c) => driftBooks().some((p) => PRICING_ENGINE.carryClash(ruleOf(p), c, ((book.TIER_OF || {})[c] || {})[p])));
+      if (carried.length) { out.refused.push({ id: it.id, why: `${carried.join(" and ")} still holds a % read through the price band's carry-over, which is kept by code: book the carry-over's % first, then rename` }); continue; }
       const pinned = pairs.map((x) => x[0]).filter(pinnedInMaster);
       if (pinned.length) { out.refused.push({ id: it.id, why: `${pinned.join(" and ")} is written into the desk's own code, which a fold never edits, so this rename is left for a hand fold` }); continue; }
       entry.rename = { from: r.from, to: r.to, pairs, geo: r.geo || null };

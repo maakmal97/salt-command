@@ -220,10 +220,29 @@ export async function run({ ok }) {
   const applied = (x) => A.applyBatch(JSON.parse(JSON.stringify(bk)), { ok: true, count: 1, approved: [x] }, { version: "v0", date: "10 Nov 2026", title: "T", notes: [], rows: { [x.id]: { note: "n", what: "w" } }, stockNote: "s" }, Object.assign(Object.create(F.planCtx), { nextRid, sortBook }));
   const pBand = plan(fts(-0.6, "band")), pOld = plan(fts(-0.2, "pct")), pOut = plan(fts(1.2, "band")), pOil = plan(fts(-0.45, "pct", "oil")), aBand = applied(fts(-0.6, "band")), aOld = applied(fts(-0.2, "pct"));
   ok(pBand.refused.length === 0 && fl(pBand.items[0].tiers) === fl({ "CZ9-DA": { salt: -0.6 } }) && aBand.ok && fl(aBand.book.TIER_OF["CZ9-DA"]) === fl({ salt: -0.6 })
-    && pOld.refused.length === 0 && fl(pOld.items[0].tiers) === "{}" && /on the old scale/.test(pOld.items[0].does.join()) && /Median Price at 0%/.test(pOld.items[0].does.join()) && aOld.ok && !(aOld.book.TIER_OF || {})["CZ9-DA"]
+    && pOld.refused.length === 0 && fl(pOld.items[0].tiers) === "{}" && /on the old scale/.test(pOld.items[0].does.join()) && /keeps the figure it held/.test(pOld.items[0].does.join()) && !/at 0%/.test(pOld.items[0].does.join()) && aOld.ok && !(aOld.book.TIER_OF || {})["CZ9-DA"]
     && /-100 to \+100/.test((pOut.refused[0] || {}).why || "") && /-30 to \+30/.test((pOil.refused[0] || {}).why || ""),
   "the fold files -60% on salt sent as band, drops a salt figure sent as pct as set on the old scale, and refuses 120% on salt and -45% on oil in each book's range: "
     + fl([pBand.items[0] && pBand.items[0].tiers, pOld.items[0] && pOld.items[0].does, (pOut.refused[0] || {}).why, (pOil.refused[0] || {}).why]));
+
+  /* Fable's review, 10 Nov 2026: THE BOOKING LAW IS THE CARRY-OVER'S LAST CHECK. The entry gates judge on the snapshot's rule, which can trail the code's
+     after a deploy, so the fold refuses a figure equal to the one a carried customer held (it would be read as their place, never as typed); and a rename
+     re-keys the book, never the rule's table, so a customer still read through the carry-over is not renamed until their place is booked. */
+  const cR = codes.find((c) => bk.roster.includes(c) && !/-R$/.test(c)), fR = carry[cR].from, tR = carry[cR].to;
+  const bkC = (held) => { const b = JSON.parse(JSON.stringify(bk)); b.TIER_OF = Object.assign({}, b.TIER_OF, { [cR]: Object.assign({}, (b.TIER_OF || {})[cR], held === undefined ? {} : { salt: held }) }); return b; };
+  const ftsC = (v) => ({ id: stamp, collection: "tierset", row: { tiers: { [cR]: { salt: v } }, unit: "band" }, entry: { at: stamp, payload: {} } });
+  const planOn = (b, x) => F.plan(b, { ok: true, count: 1, approved: [x] }, null);
+  const cFrom = planOn(bkC(fR), ftsC(fR)), cTo = planOn(bkC(fR), ftsC(tR)), cOther = planOn(bkC(fR), fts(fR, "band"));
+  ok(cFrom.refused.length === 1 && new RegExp(cR + " held on the old scale").test(cFrom.refused[0].why) && /choose 1% either side/.test(cFrom.refused[0].why)
+    && cTo.refused.length === 0 && fl(cTo.items[0].tiers) === fl({ [cR]: { salt: tR } }) && cOther.refused.length === 0,
+  "the fold refuses a carried customer's old figure as the entry gates do, and files their place on the band or the same figure for anyone else: "
+    + fl([cFrom.refused, cTo.refused, cOther.refused]));
+  const rnm = { id: stamp, collection: "rename", row: { from: cR, to: "CZ8-NEW" }, entry: { at: stamp, payload: {} } };
+  const rHeld = planOn(bkC(fR), rnm), rBooked = planOn(bkC(tR), rnm), rNone = planOn(bkC(undefined), rnm);
+  const viaCarry = (p) => p.refused.some((x) => /carry-over/.test(x.why));
+  ok(rHeld.refused.length === 1 && viaCarry(rHeld) && new RegExp("^" + cR + " still holds a % read through").test(rHeld.refused[0].why) && !viaCarry(rBooked) && !viaCarry(rNone),
+  "a rename of a customer still read through the carry-over is refused until their place is booked, and one who holds their place or nothing is not held back by it: "
+    + fl([rHeld.refused, rBooked.refused, rNone.refused]));
 
   /* the surfaces read the same range: Salt Admin's stepper and the Desk's routes */
   const owner = fs.readFileSync(new URL("../stmt/owner.js", import.meta.url), "utf8"), worker = fs.readFileSync(new URL("../src/worker.js", import.meta.url), "utf8");

@@ -182,7 +182,7 @@
  {
   "name": "the Add ID drops the old figure without saying so",
   "file": "engine/apply.mjs",
-  "find": "if (rtOld.length) entry.does.push(oldLiftNote(r.code, rtOld, oldWhy(it, rtOld[0], rt[rtOld[0]])));",
+  "find": "if (rtOld.length) entry.does.push(oldLiftNote(r.code, rtOld, oldWhy(it, rtOld[0], rt[rtOld[0]]), true));",
   "replace": "/* no note */"
  },
  {
@@ -256,5 +256,11 @@
   "file": "engine/snapshot.mjs",
   "find": "Object.assign({},PRICING_ENGINE.liftRange(R),places?{places:places}:{})",
   "replace": "Object.assign({},places?{places:places}:{})"
+ },
+ {
+  "name": "the drop note of an Add ID says the new customer keeps a figure",
+  "file": "engine/apply.mjs",
+  "find": "rt[rtOld[0]]), true));",
+  "replace": "rt[rtOld[0]])));"
  }
 ]

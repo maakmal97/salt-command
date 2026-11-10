@@ -256,5 +256,23 @@
   "file": "engine/pricing.mjs",
   "find": "return r.length?(r.length%2?r[(r.length-1)/2]:(r[r.length/2-1]+r[r.length/2])/2):null;};",
   "replace": "return r.length?r[r.length-1]:null;};"
+ },
+ {
+  "name": "the fold does not ask for the carry-over",
+  "file": "engine/apply.mjs",
+  "find": "&& tierOk(x[1], x[2]) && PRICING_ENGINE.carryClash(ruleOf(x[1]), x[0], x[2]))",
+  "replace": "&& tierOk(x[1], x[2]) && false)"
+ },
+ {
+  "name": "a rename of a customer still read through the carry-over goes through",
+  "file": "engine/apply.mjs",
+  "find": "if (carried.length) { out.refused.push",
+  "replace": "if (false) { out.refused.push"
+ },
+ {
+  "name": "the drop note says 0% of a customer already on the book",
+  "file": "engine/apply.mjs",
+  "find": "${fresh ? \"stays on the Median Price at 0%\" : \"keeps the figure it held\"}",
+  "replace": "stays on the Median Price at 0%"
  }
 ]

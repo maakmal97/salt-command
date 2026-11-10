@@ -8054,8 +8054,9 @@ await (async () => {
        by two copies agreeing, which is what v407's own lesson asked for: it exists because v406
        fixed one of the pair and not its twin. What that predicate DOES is driven behaviourally in
        the drafter's own section; this is the wiring, which nothing else can see. */
-    ok(/const aPriceSomeonePaid = \(s\) => !s\.goodwill && isNum\(s\.total\) && s\.total > 0/.test(d),
-      "a price someone paid is one predicate: not a giveaway, not nought, and a real quantity");
+    /* 10 Nov 2026 (his ask D): nor a one-off, a price he let stand outside the band on one order (row.oneOff) */
+    ok(/const aPriceSomeonePaid = \(s\) => !s\.goodwill && !s\.oneOff && isNum\(s\.total\) && s\.total > 0/.test(d),
+      "a price someone paid is one predicate: not a giveaway, not a one-off, not nought, and a real quantity");
     ok((d.match(/aPriceSomeonePaid\(s\)/g) || []).length === 2
       && (d.match(/isNum\(s\.total\) && s\.total > 0/g) || []).length === 1,
       "and both the party-median set and the observed range read that one predicate, which is written once");
