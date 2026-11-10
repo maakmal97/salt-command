@@ -11,6 +11,7 @@ import POSITION_ENGINE from "./position.mjs";
 import PRICING_ENGINE from "./pricing.mjs";
 import PRICING_RULES from "./rules.mjs";
 import { nextRidReserving } from "./rid.mjs";
+import { markOk } from "./oneoff.mjs";
 import { verifiedVaultRegistration } from "../src/vault-pair.js";
 
 const E = POSITION_ENGINE;
@@ -141,6 +142,14 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
       reasons.inTransit = "the lot is on order and nothing has arrived";
     }
     if (asked("product")) { if (f.product === "salt") delete row.product; else row.product = f.product; }
+    /* 10 Nov 2026 (his ask D): THE ONE-OFF MARK, beside the fields and never among them (no correction form sets it): an amendment of an agreed
+       order outside the price band carries the mark with his reason, and one that brings a marked row back inside the band carries null. A
+       sale's alone, and only in the shape the tap makes; the writer refuses any other, as it refuses a fault. */
+    if (dir !== "BUY" && pay.oneOff !== undefined) {
+      if (pay.oneOff === null) delete row.oneOff;
+      else if (!markOk(pay.oneOff)) throw new Error("the one-off mark on this correction is not one the desk makes");
+      else row.oneOff = { why: pay.oneOff.why, side: pay.oneOff.side, by: pay.oneOff.by };
+    }
 
     /* THEN THE ATTRIBUTION, once, from the three fields read together. A per-field write would
        see them half-applied and book the row to a code that was only ever half-chosen. */
@@ -220,6 +229,8 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
       /* plan 4 (16 Oct 2026): AND IT SAYS WHAT IT REPLACED (`was`), so the change can be undone from its own record. An undo's step names
          the step it undoes and moves nothing on the walk (its units are the step's it undoes, now passed over), and that step is marked undone. */
       const step = { date: pay.date || null, kind: "Correction", cash: 0, kg: undo ? 0 : (Math.abs(moved) > 0.0009 ? moved : 0), note: note || line, was };
+      /* and the one-off mark it replaced or took off, so an undo of this step can put it back with the figures (engine/stages.mjs restateTap) */
+      if (dir !== "BUY" && pay.oneOff !== undefined && before.oneOff) step.oneOffWas = before.oneOff;
       if (undo) {
         step.undoes = undo.i;
         /* what the undo took back, by the engine's readings, which the site order follows (src/orders.js tellSite) */
@@ -634,6 +645,11 @@ export function planBatch(book, staged, notes, ctx) {
           if (applies) { joined.push(sim); tripJoins.set(tripOn, joined); }   /* a trip-mate only if the correction itself applies (Fable's re-check) */
         }
         entry.pay = { date: pay.date || null, kind: "Correction", cash: 0, kg: 0, fields };
+        /* 10 Nov 2026 (his ask D): the one-off mark an amendment sets (his reason, the side and the ringgit) or clears (null) rides with the patch */
+        if (dir === "SELL" && pay.oneOff !== undefined) {
+          if (pay.oneOff !== null && !markOk(pay.oneOff)) { out.refused.push({ id: it.id, why: `the correction on ${it.amends} carries a one-off mark that is not one the desk makes` }); continue; }
+          entry.pay.oneOff = pay.oneOff;
+        }
         /* plan 4: an undo names the step it undoes, and is refused unless that step is still the newest move on the row as this batch
            leaves it and the figures are the ones undoing it sets: a move folded since, in this batch or before, refuses it */
         if (pay.undo != null) {

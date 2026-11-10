@@ -82,16 +82,17 @@ export function makerKeyMatches(request, env) {
 export function makerOrderFault(action, body) {
   if (!body || typeof body !== "object" || Array.isArray(body)) return "Send a JSON object.";
   const fields = {
-    preview: ["delivery", "total"],
-    accept: ["delivery", "total", "hash", "slot"],
+    /* 10 Nov 2026 (his ask D): oneOff, his reason for a price outside the band, on the four roads where he types one */
+    preview: ["delivery", "total", "oneOff"],
+    accept: ["delivery", "total", "hash", "slot", "oneOff"],
     /* version 2: his Accept sent for their yes, and taken back; each under its tap's immutable id */
-    offer: ["delivery", "total", "hash", "slot", "rid"],
+    offer: ["delivery", "total", "hash", "slot", "rid", "oneOff"],
     withdraw: ["rid"],
     handed: ["qty", "close", "rid"],
     cash: ["amount", "rid"],
     received: ["amount", "claim", "covered", "rid"],
     again: ["stage", "rid", "drop"],
-    restate: ["qty", "total", "delivery", "rid", "undo"],
+    restate: ["qty", "total", "delivery", "rid", "undo", "oneOff"],
     notfound: ["rid", "claim", "amount"],
     move: ["rid", "status", "note", "message", "noReply", "mode", "point"],
     amend: ["u", "product", "qty", "mode", "place", "forFriend", "rid", "week", "digest", "wantBy", "slot"],
@@ -118,6 +119,8 @@ export function makerOrderFault(action, body) {
   /* 10 Oct 2026: a delivery's time window, written as stmt/window.js writes it (SLOT_RE there) */
   if (body.slot !== undefined && body.slot !== "" && (typeof body.slot !== "string" || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}T(00|04|08|12|16|20)$/.test(body.slot)))
     return "A time window is a day and one of the six four-hour windows.";
+  /* its length and its line are the tap's to refuse, in one sentence (engine/oneoff.mjs reasonOf) */
+  if (body.oneOff !== undefined && typeof body.oneOff !== "string") return "A reason is a line of text.";
   if (body.close !== undefined && typeof body.close !== "boolean") return "Close must be a boolean.";
   if (body.covered !== undefined && typeof body.covered !== "boolean") return "Covered must be a boolean.";
   if (body.hash !== undefined && (typeof body.hash !== "string" || !/^[a-f0-9]{64}$/.test(body.hash)))

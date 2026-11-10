@@ -44,7 +44,7 @@ const allowedOwner = (identity) =>
 /* his order controls, the same shape the Desk's makerOrderFault holds, checked here too because an example order never
    reaches the Desk's route */
 function orderMoveFault(action, body) {
-  const fields = action === "notfound" ? ["rid", "claim", "amount"] : action === "restate" ? ["rid", "qty", "total", "delivery", "undo"] : ["rid", "status", "note", "message", "noReply", "mode", "point"];
+  const fields = action === "notfound" ? ["rid", "claim", "amount"] : action === "restate" ? ["rid", "qty", "total", "delivery", "undo", "oneOff"] : ["rid", "status", "note", "message", "noReply", "mode", "point"];
   if (Object.keys(body).some((key) => !fields.includes(key))) return "Unsupported order action fields.";
   if (!RID_RE.test(String(body.rid || ""))) return "Send the action's immutable request id.";
   if (action === "restate") {
@@ -52,6 +52,8 @@ function orderMoveFault(action, body) {
     if (!figs.length) return "Say which figure changes.";
     if (figs.some((key) => typeof body[key] !== "number" || !Number.isFinite(body[key]) || body[key] < 0 || body[key] > 1000000)) return "Order figures must be finite, non-negative numbers.";
     if (body.undo !== undefined && (!Number.isInteger(body.undo) || body.undo < 1 || figs.length !== 3)) return "An undo names its step and the figures it puts back.";
+    /* 10 Nov 2026 (his ask D): his reason for a goods total outside the price band; the Desk reads its line and its length */
+    if (body.oneOff !== undefined && (typeof body.oneOff !== "string" || body.oneOff.length > 200)) return "A reason is a line of text.";
     return body.qty === 0 || body.total === 0 ? "A size and a price are above nothing." : "";
   }
   if (action === "notfound")
@@ -149,6 +151,8 @@ async function deskCall(env, path, method, body) {
   if (!response.ok || !result || result.ok !== true)
     throw Object.assign(new Error(result && result.error || "The Desk maker operation failed."),
       { status: response.ok ? 502 : response.status, state: result && result.state,
+        /* 10 Nov 2026 (his ask D): a price outside the band, asked once: the figures Salt Admin draws its Reason field from */
+        outside: result && result.outside, underFloor: !!(result && result.underFloor === true),
         twin: result && result.twin, queuedTwin: result && result.queuedTwin, restate: result && result.restate, fresh: !!(result && result.fresh === true) });
   return result;
 }
@@ -980,6 +984,8 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
       ...(error.twin ? { twin: error.twin } : {}),
       ...(error.queuedTwin ? { queuedTwin: error.queuedTwin } : {}),
       ...(error.restate && typeof error.restate === "object" ? { restate: error.restate } : {}),
+      ...(error.outside && typeof error.outside === "object" ? { outside: error.outside } : {}),
+      ...(error.underFloor === true ? { underFloor: true } : {}),
       ...(error.fresh === true ? { fresh: true } : {}) }, status);
   }
   return json({ ok: false, error: "not found" }, 404);

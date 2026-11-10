@@ -8,7 +8,8 @@
  * queued before. It is NOT in tools/engine.mjs's list, so the master's ENGINE block does not carry it, and nothing under stmt/ may
  * import it. The digest (stageDigest) and the drafter (draftRow) stay in src/drafter.js, which this reads for withPending and floorFor. */
 import POSITION_ENGINE from "./position.mjs";
-import { withPending, floorFor } from "../src/drafter.js";
+import { withPending, floorFor, bandFor } from "../src/drafter.js";
+import { reasonOf, outsideBand, bandRefusal, markOf, markOk } from "./oneoff.mjs";
 
 /* ---- WORDS AND FIGURES THE STAGES SHARE ------------------------------------------------------------------------------- */
 export const rm = (n) => "RM " + (Math.abs(n - Math.round(n)) < 0.005 ? String(Math.round(n)) : n.toFixed(2));
@@ -736,6 +737,8 @@ export function restateTap(o, at, body, ctx) {
   if (!num(total) || !(total > 0) || total > 1000000) return { error: "the goods' price has to be a figure above nothing" };
   if (!num(delivery) || delivery < 0 || delivery > 1000000) return { error: "the delivery charge has to be a figure from nothing" };
   if (delivery > 0 && o.mode !== "deliver") return { error: "a collection carries no delivery charge" };
+  const ro = reasonOf(body);   /* 10 Nov 2026 (his ask D): his reason for a figure outside the band, one line */
+  if (ro.error) return { error: ro.error };
   const figs = { qty: +qty.toFixed(3), total: +total.toFixed(2), delivery: +delivery.toFixed(2) };
   const was = { qty: +o.qty, total: +(+o.total).toFixed(2), delivery: +(+(o.delivery || 0)).toFixed(2) };
   if (Math.abs(figs.qty - was.qty) < 0.0004 && figs.total === was.total && figs.delivery === was.delivery) return { status: 409, error: "that is what the order already says" };
@@ -747,10 +750,24 @@ export function restateTap(o, at, body, ctx) {
   const over = +((+o.paid || 0) + (+o.credit || 0) - owed).toFixed(2);   /* 27 Oct 2026: their credit is paid on the row too */
   if (!book || book.version == null) return { status: 503, error: "the mirror is being seeded: try again in a minute" };
   /* never under the floor at the size, and the board is never repriced: what changes is this one order's figure */
+  /* 10 Nov 2026 (his ask D): ON A BOOK WITH A PRICE BAND a goods total under the Floor or over the Ceiling at the size is asked once (409, `outside`)
+     and, sent again with his reason, stands as a one-off: the Correction carries the mark beside its fields, and one that brings a marked row back
+     inside the band carries null, which takes the mark off. An undo is never asked (it puts back figures already agreed) and puts back the mark the
+     step it undoes replaced. A book with no band refuses under its Floor in the words it always had, and knows no Ceiling. */
+  let out = null, mark;   /* mark undefined: the row's one-off mark is left as it is */
+  const undoing = !!body && body.undo !== undefined;
   if (figs.qty !== was.qty || figs.total !== was.total) {
     const fl = floorFor(book, o.product || "salt", figs.qty);
     if (!fl || !fl.exact) return { status: 409, error: "no floor is known at " + figs.qty + " unit, so no price can be set on it" };
-    if (figs.total < fl.floor - 0.005) return { status: 409, error: rm(figs.total) + " is under the floor of " + rm(fl.floor) + " at " + figs.qty + " unit, so it cannot be set" };
+    const band = bandFor(book, o.product || "salt", figs.qty);
+    out = outsideBand(figs.total, fl, band);
+    if (out && !ro.why && !undoing) { const r = bandRefusal(out, fl, figs.qty); return Object.assign({ status: r.status, error: r.error, outside: r.outside }, r.underFloor ? { underFloor: true } : {}); }
+    if (!out && figs.total < fl.floor - 0.005) return { status: 409, error: rm(figs.total) + " is under the floor of " + rm(fl.floor) + " at " + figs.qty + " unit, so it cannot be set" };
+    if (band) {
+      const marked = (book.sales || []).find((s) => s && !s.cancelled && POSITION_ENGINE.ovKey(s) === ledgerKeyOf(o));
+      /* a row not on the book yet (its pending row still on its way) may carry a mark this read cannot see, so it is cleared all the same */
+      mark = out ? (ro.why ? markOf(out, ro.why) : undefined) : (!marked || marked.oneOff ? null : undefined);
+    }
   }
   /* money on its way to the row (a claim against the account, cash, a payment typed on the desk) is measured once it lands:
      the refund is read off the row as it stands when each entry folds, so the figure waits for that money */
@@ -764,6 +781,7 @@ export function restateTap(o, at, body, ctx) {
   if (live && live.status === "waiting") return { status: 409, error: "an earlier amendment of this order is waiting to be drafted" };
   const entry = amendEntry(o, o.code, figs, was, at);
   entry.orderId = o.id;
+  if (mark !== undefined) entry.payload.oneOff = mark;
   /* plan 4 (16 Oct 2026): AN UNDO OF THE ORDER'S NEWEST CHANGE OF TERMS comes this road, so the order keeps its row: the change must still be
      the newest move on the row, nothing on its way to it, and these figures the ones it replaced; the Correction then carries exactly what
      undoing it sets, which the drafter and the fold check again, and the site's restate says it is an undo, which tells the customer */
@@ -781,6 +799,9 @@ export function restateTap(o, at, body, ctx) {
       return { status: 409, error: "the undo changed since it was read: read the order again" };
     entry.payload.fields = Object.assign({}, u.fields);
     entry.payload.undo = u.i;
+    /* the figures put back sit outside the band: the mark the undone step replaced (the fold keeps it on the step, oneOffWas) comes back with them */
+    const kept = out && row.amend && row.amend[u.i] ? row.amend[u.i].oneOffWas : null;
+    if (markOk(kept)) entry.payload.oneOff = { why: kept.why, side: kept.side, by: kept.by };
     undone = u.i;
   }
   const shown = Object.assign({ was }, figs);

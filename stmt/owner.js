@@ -3255,7 +3255,7 @@ export const OWNER_JS = `
       var tlo=typeof item.driftMin==='number'?item.driftMin/100:-0.3, thi=typeof item.driftMax==='number'?item.driftMax/100:0.3;
       typed.min=String(tlo);typed.max=String(thi);typed.removeAttribute('inputmode');typed.step='0.05';typed.placeholder=tlo+' to '+thi;typed.closest('label').hidden=true;
       select.addEventListener('change',function(){typed.closest('label').hidden=select.value!=='typed';});
-      return {product:item.product,select:select,typed:typed};
+      return {product:item.product,select:select,typed:typed,lo:tlo,hi:thi};
     });
     /* 25 Oct 2026 (Record redesign P7, his Ask J): the code they will get, worked out as Add the customer works it out, shown as the name and place are typed;
        nothing is shown until there is a code to show */
@@ -3292,8 +3292,9 @@ export const OWNER_JS = `
           var driftItem=idDrifts[driftIndex], choice=driftItem.select.value, driftValue;
           if(choice==='typed'){
             var raw=driftItem.typed.value.trim();driftValue=Number(raw);
-            if(!raw||!Number.isFinite(driftValue)||driftValue<-0.3||driftValue>0.3){
-              idStatus.textContent='Enter a % from -0.3 to 0.3 (0.2 is 20%, -0.1 is 10% off).';idBusy=false;return;
+            /* 10 Nov 2026: the ends are the book's own, as the field's are (salt -1 to 1 on the band, a board -0.3 to 0.3) */
+            if(!raw||!Number.isFinite(driftValue)||driftValue<driftItem.lo-1e-9||driftValue>driftItem.hi+1e-9){
+              idStatus.textContent='Enter a % from '+driftItem.lo+' to '+driftItem.hi+' (0.2 is 20%, -0.1 is 10% off).';idBusy=false;return;
             }
           }else if(choice!=='')driftValue=Number(choice);
           else continue;
@@ -3491,6 +3492,7 @@ export const OWNER_JS = `
   function makerAction(path, body, message, key){
     if(makerBusy) return Promise.resolve();
     makerBusy=true;
+    delete makerOutside[key];
     return refs(path,body).then(function(result){
       makerBusy=false;
       return loadMaker().then(function(){
@@ -3503,6 +3505,7 @@ export const OWNER_JS = `
     },function(error){
       makerBusy=false;
       if(error&&error.detail&&error.detail.fresh) makerFresh[key]=true;
+      if(error&&error.detail&&error.detail.outside){ makerOutside[key]={outside:error.detail.outside, say:error.raw}; makerSay(key,error.raw); return false; }
       makerSay(key,error.message,error);
       return false;
     });
@@ -3518,6 +3521,13 @@ export const OWNER_JS = `
   var makerRids={};
   /* 1 Nov 2026: a refusal marked fresh (a Withdraw's id answered once, now over a newer offer) drops the id, so the next tap is a new request */
   var makerFresh={};
+  /* 10 Nov 2026 (his ask D): A PRICE OUTSIDE THE BAND IS ASKED ONCE. The Desk refuses a goods total he types under the Floor or over the Ceiling of a book with a
+     price band (409, outside) and says by how much; the card shows its sentence, a Reason field and Let it stand, which sends the same figures again with his
+     reason (oneOff), and the row then stands as a marked one-off. makerOutside keeps the refusal a tap was given, by the card's key, for the Sheet that asks;
+     makerOneOff the reason he gave on a placed order, by its id, until its goods total changes. The reason is his alone: it goes to the Desk, never to a customer. */
+  var makerOutside={}, makerOneOff={}, makerOneDraft={};
+  var ONE_OFF_WORDS={reason:'Reason', go:'Let it stand', title:'Outside the price band', keep:'Not now', sent:'Change sent. You approve it next, under Approve.'};
+  function oneOffOk(text){ var t=String(text==null?'':text).trim(); return t.length>=3&&t.length<=120; }
   function makerMove(order,body,message){
     var key=order.id+JSON.stringify(body), rid=makerRids[key]||(makerRids[key]=mintRid());
     return makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/'+(body.claim?'notfound':'move'),
@@ -5543,7 +5553,7 @@ export const OWNER_JS = `
         function makerPlacedWin(){ return order.mode==='deliver'?((follower?(makerWin[group[0].id]||{}).value:win.value)||''):''; }
         function makerPlacedKey(){
           var d=makerPlacedDelivery();
-          return d==null?'':JSON.stringify([{total:Number(total.value),delivery:d},makerPlacedWin()].concat(order.test?[(makerPayFirst[order.id]||{}).on===true]:[]));
+          return d==null?'':JSON.stringify([{total:Number(total.value),delivery:d},makerPlacedWin()].concat(order.test?[(makerPayFirst[order.id]||{}).on===true]:[]).concat(makerOneOff[order.id]?[makerOneOff[order.id]]:[]));
         }
         function makerPlacedShow(q){
           qsay.className='salt-insight'; qsay.textContent='Figures read: check them before you agree.';
@@ -5560,8 +5570,10 @@ export const OWNER_JS = `
             var s=makerQuotes[order.id]; if(!s||!s.hash) return;
             /* version 2: a raise or another window goes to them as an offer, for their yes; never on a sheet, which the Desk refuses */
             if(yes){ var ob={total:s.total,delivery:s.delivery,hash:s.offerHash}; if(order.mode==='deliver'&&wv) ob.slot=wv;
+              if(s.oneOff) ob.oneOff=s.oneOff;
               makerTap(order,'offer',ob,'Sent to them for their yes.'); return; }
             var body={total:s.total,delivery:s.delivery,hash:s.hash};
+            if(s.oneOff) body.oneOff=s.oneOff;
             if(order.test) body.prepay=s.prepay===true;
             if(order.mode==='deliver'&&!order.slot&&!order.wantBy&&wv) body.slot=wv;
             makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/accept',body,'Agreed and sent to the Desk.',order.id);
@@ -5585,6 +5597,7 @@ export const OWNER_JS = `
           var delivery=makerPlacedDelivery();
           if(delivery==null){ previewTurn++; makerPlacedSay('Choose the delivery charge, and the figures read themselves.'); return; }
           var payload={total:Number(total.value),delivery:delivery}, key=makerPlacedKey(), turn=++previewTurn;
+          if(makerOneOff[order.id]) payload.oneOff=makerOneOff[order.id];
           if(order.test) payload.prepay=(makerPayFirst[order.id]||{}).on===true;
           /* an in-flight preview is not yet usable: clear any existing quote/Accept at once, not only on success */
           delete makerQuotes[order.id];
@@ -5595,17 +5608,32 @@ export const OWNER_JS = `
             if(makerPv[order.id]===pv) delete makerPv[order.id];
             if(turn!==previewTurn||!card.isConnected) return;
             makerQuotes[order.id]={total:payload.total,delivery:payload.delivery,prepay:payload.prepay,hash:result.hash,offerHash:result.offerHash,result:result,key:key,sig:sig};
+            if(payload.oneOff) makerQuotes[order.id].oneOff=payload.oneOff;
             chip.kept={value:chip.value,other:chip.other}; win.kept=win.value;
             makerPlacedShow(makerQuotes[order.id]);
           }).catch(function(error){
             if(makerPv[order.id]===pv) delete makerPv[order.id];
             if(turn!==previewTurn||!card.isConnected) return;
             delete makerQuotes[order.id];
+            if(error&&error.detail&&error.detail.outside){ makerPlacedAsk(error); return; }
             var back=makerPlacedRevert();
             makerPlacedSay(back+error.message,true,error);
             if(makerPlacedDelivery()!=null) makerButton(qfigs,['Read the figures again','order.reread'],makerPlacedRead,false);
           });
         }
+        /* the Desk asked for a reason: its sentence, one Reason line and Let it stand, which reads the figures again with it; a new goods total is asked afresh */
+        function makerPlacedAsk(error){
+          makerPlacedSay(error.raw,true);
+          var why=makerField(qfigs,[ONE_OFF_WORDS.reason,'order.one-off-reason'],'text',makerOneDraft[order.id]||'');
+          why.maxLength=120; why.required=true; why.setAttribute('data-one-off','');
+          var go=makerButton(qfigs,[ONE_OFF_WORDS.go,'order.one-off'],function(){
+            if(!oneOffOk(why.value)) return;
+            makerOneOff[order.id]=why.value.trim(); delete makerOneDraft[order.id]; makerPlacedRead();
+          },false);
+          go.setAttribute('data-one-off-go',''); go.disabled=!oneOffOk(why.value);
+          why.addEventListener('input',function(){ makerOneDraft[order.id]=why.value; go.disabled=!oneOffOk(why.value); });
+        }
+        total.addEventListener('input',function(){ delete makerOneOff[order.id]; delete makerOneDraft[order.id]; });
         total.addEventListener('input',makerPlacedInvalidate);
         total.addEventListener('change',makerPlacedRead);
         quoteStart=function(){
@@ -6003,8 +6031,27 @@ export const OWNER_JS = `
         if(body.qty!==undefined&&body.total===undefined) body.total=t;
         if(!Object.keys(body).length){ makerSay(order.id,'Change a figure first.'); return; }
         amendMemo[order.id]={base:base, vals:[aq.input.value,at.input.value,ad.input.value]};
-        makerTap(order,'restate',body,'Change sent. You approve it next, under Approve.').then(function(){ if(!makerRids[order.id+'restate'+JSON.stringify(body)]) delete amendMemo[order.id]; });
+        makerTap(order,'restate',body,'Change sent. You approve it next, under Approve.').then(function(done){
+          if(!makerRids[order.id+'restate'+JSON.stringify(body)]) delete amendMemo[order.id];
+          var asked=makerOutside[order.id]; delete makerOutside[order.id];
+          if(done===false&&asked) amendWhy(order,opener,body,asked);
+        });
       }});
+  }
+  /* 10 Nov 2026 (his ask D): the change sits outside the price band, so the Desk asked for his reason: the same Sheet says its sentence and takes one Reason line,
+     and Let it stand sends the same figures again with it, under a request id of its own */
+  function amendWhy(order,opener,body,asked){
+    var wrap=el('label','salt-field'), input=actOn(el('input','salt-field__input'),'order.amend-reason',order.id);
+    input.type='text'; input.maxLength=120; input.required=true; input.setAttribute('data-one-off','');
+    wrap.appendChild(el('span','salt-field__label',ONE_OFF_WORDS.reason)); wrap.appendChild(input);
+    makerAsk(order,opener,'amend',{title:ONE_OFF_WORDS.title, plain:true, go:ONE_OFF_WORDS.go, keep:ONE_OFF_WORDS.keep, say:[asked.say], extra:[wrap],
+      yes:function(){
+        if(!oneOffOk(input.value)) return;
+        var sent=Object.assign({},body,{oneOff:input.value.trim()});
+        makerTap(order,'restate',sent,ONE_OFF_WORDS.sent).then(function(done){ if(done) delete amendMemo[order.id]; });
+      }});
+    var go=document.getElementById('ynGo');
+    if(go){ go.disabled=true; input.addEventListener('input',function(){ go.disabled=!oneOffOk(input.value); }); }
   }
   /* ---- 16 OCT 2026, PLAN 4 OF docs/plans-counter-admin.html: EASY REVERT (his answers: the newest move only; a site order's customer told by a banner) ----
      On an agreed order's card, on each line of an order of several books and on Correct a row, History reads a sale's booked moves from the Desk, newest

@@ -58,6 +58,7 @@ import { bookTap, ridStmts, voidEntries, voidUnlessApproved, tapMode, noteFallba
 export { bindBook, wayBound };
 import PRICING_ENGINE from "../engine/pricing.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
+import { markOk, oneOffFlag, ONE_OFF_CLEARED } from "../engine/oneoff.mjs";
 import { admitInput, checkInputAdmission, finishInputAdmission, queueWithdrawalKey } from "./input-admission.js";
 
 export async function readBook(db) {
@@ -454,6 +455,19 @@ export function floorFor(book, product, qty) {
   return f != null ? { floor: f, at: pick, exact: false, time } : null;
 }
 
+/* 10 Nov 2026 (his ask D): THE PRICE BAND AT A SIZE, on a book whose rule carries one (salt): the Ceiling the walk strikes there, the curve on the
+   supplier's price down to RM 5 and never under the Floor (the engine's driftAt, read and never worked out here). Null on a book with no band, on
+   a snapshot without its inputs and at a size the engine does not answer, so every road of such a book reads as it always did. */
+export function bandFor(book, product, qty) {
+  const snap = book.pricing && book.pricing.byProduct && book.pricing.byProduct[product || "salt"];
+  const I = snap && snap.inputs, P = I && I.policy;
+  if (!P || !P.tierRule || !P.tierRule.band || !I.cost || !(isNum(qty) && qty > 0)) return null;
+  try {
+    const w = PRICING_ENGINE.driftAt(qty, PRICING_ENGINE.costStack(I.cost), P, 0);
+    return w && isNum(w.ceiling) && w.ceiling > 0 ? { ceiling: +w.ceiling.toFixed(2) } : null;
+  } catch (e) { return null; }
+}
+
 /* ---- what a party pays: flag 2 below and the card's "usual" read this one copy (S11 11.1) ---- */
 /* Only rows that actually MOVED count as history. A pending row is an intention: nothing was
    paid and nothing went out, so it is not evidence of what a party pays. This matters here
@@ -472,7 +486,10 @@ const committedSales = (book) => (book.sales || []).filter((s) => !s.cancelled &
    pulled salt's observed low to RM0, which made the low-side check unfireable (round six).
    Both filters are fixed together: v407's own lesson was that fixing one and not its twin
    leaves the fault live on the other side. */
-const aPriceSomeonePaid = (s) => !s.goodwill && isNum(s.total) && s.total > 0 && isNum(s.qty) && s.qty > 0;
+/* 10 Nov 2026 (his ask D): NOR IS A ONE-OFF, a price he let stand outside the band on one order with his reason (row.oneOff): it is not what the
+   book trades at nor what they usually pay, so the product's range (flag 1), their own rates (flag 2, the card's usual) and Salt Admin's readings
+   of both leave it out. */
+const aPriceSomeonePaid = (s) => !s.goodwill && !s.oneOff && isNum(s.total) && s.total > 0 && isNum(s.qty) && s.qty > 0;
 /* v407, round seven: the party's own set takes the same two filters as the product's range. v406
    added the zero-total filter to the observed range and not to the party's own history, so one free
    unit still dragged a party's median down: CS6-BS read RM 108.50 against a real RM 110, which
@@ -776,6 +793,11 @@ export function draftRow(entry, book) {
 
       const chk = checkCorrection(fields, book, target, isSale);
       if (chk.errs.length) return { skip: chk.errs.join("; ") };
+      /* 10 Nov 2026 (his ask D): THE ONE-OFF MARK RIDES BESIDE THE FIELDS, never among them (it is not a field a correction form may set): the mark
+         an amendment outside the band carries with his reason, or null where the amendment brings the row back inside it. A sale's alone, and
+         only in the shape the tap makes (engine/oneoff.mjs). */
+      if (pay.oneOff !== undefined && (!isSale || (pay.oneOff !== null && !markOk(pay.oneOff))))
+        return { skip: isSale ? "the one-off mark on this correction is not one the desk makes" : "a one-off marks a sale's price, and this row is a purchase" };
       /* plan 4 (16 Oct 2026): AN UNDO is the newest move on the row and exactly the figures undoing it sets, or it is not drafted */
       let undone = null;
       if (pay.undo != null) {
@@ -861,6 +883,8 @@ export function draftRow(entry, book) {
       }
 
       if (revival) flags.push(`Revives a cancelled ${isSale ? "order" : "lot"}: ${round(target.qty)} unit for RM ${round(target.total)} is on the book again.`);
+      if (pay.oneOff) flags.push(oneOffFlag(pay.oneOff));
+      else if (pay.oneOff === null && target.oneOff) flags.push(ONE_OFF_CLEARED);
       if (undone) for (const n of undoNotes(book, target, undone)) flags.push(n);
 
       const words = chk.changes.map((c) => `${c.field} from ${c.from == null ? "unset" : c.from} to ${c.to == null ? "cleared" : c.to}`);
@@ -1817,6 +1841,14 @@ export function draftRow(entry, book) {
   }
   /* 21 Oct 2026: a customer's order that takes them to their next loyalty unit; the row is in both digests, so the mark is named only when set */
   if (entry && entry.rwd === "cross" && entry.rwdLoyal === true && dir === "SELL") row.rwdLoyal = true;
+  /* 10 Nov 2026 (his ask D): a price he let stand outside the band on this one order, with his reason: the mark the evidence readers leave out.
+     Copied from the entry in the tap's own shape or the row is not drafted; the row is in both digests, so it is named only when set */
+  const oneOffFlags = [];
+  if (pay.oneOff != null) {
+    if (dir !== "SELL" || !markOk(pay.oneOff)) return { skip: dir === "SELL" ? "the one-off mark on this entry is not one the desk makes" : "a one-off marks a sale's price, and this entry is a purchase" };
+    row.oneOff = { why: pay.oneOff.why, side: pay.oneOff.side, by: pay.oneOff.by };
+    oneOffFlags.push(oneOffFlag(row.oneOff));
+  }
 
   /* v606: THE RATE AND THE MARGIN ARE BOTH STRUCK ON THE GOODS, on his ruling of 12 Sep 2026
      that the delivery charge is a pass-through at cost, neither more nor less. It is revenue
@@ -1855,7 +1887,7 @@ export function draftRow(entry, book) {
     collection: dir === "BUY" ? "purchases" : "sales",
     row,
     reasoning: bits.join(" "),
-    flags: assocFlags.concat(coverFlags, flagsFor(entry, row, book, priced), row.cost != null ? basisFlags(priced) : [])
+    flags: assocFlags.concat(coverFlags, flagsFor(entry, row, book, priced), row.cost != null ? basisFlags(priced) : [], oneOffFlags)
   };
 }
 
@@ -2009,6 +2041,8 @@ export async function stageDigest(stage, entry, d, pricing) {
     : { stage: stage === "cash" ? "pay" : stage, kind: pay.kind || null, party: pay.party || null, orderKey: pay.orderKey || null,
         date: pay.date || null, cash: isNum(pay.cash) ? pay.cash : null, kg: isNum(pay.kg) ? pay.kg : null, fields: pay.fields || null,
         amendKind: d.amendKind || null, flags: d.flags || [] };
+  /* 10 Nov 2026 (his ask D): an amendment's one-off mark, set or cleared, is part of what he said yes to; absent, the digest is as it was */
+  if (stage !== "ack" && pay.oneOff !== undefined) shown.oneOff = pay.oneOff;
   return sha(canon(shown));
 }
 /* 05 Oct 2026 (Negotiate, his decisions): HIS OFFER IS HIS YES TO A ROW BEFORE THEY ANSWER, an ack pre-approval whose shown

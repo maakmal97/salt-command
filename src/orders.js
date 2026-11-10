@@ -23,7 +23,7 @@
 import { sendPush } from "./push.js";
 import { boundOf, onItsWay, landedBy } from "./way.js";
 import { wayBound, versionToken, snapshotWithSource, tokenFrom, BookDown, BOOK_TOKEN } from "./book-read.js";
-import { readBook, bookOnce, withRefunds, draftRow, cogsFor, floorFor, usualFor, pricingOf, stageDigest, runDrafter, settlePre, withPending, noteQueued, offerDigest, isOfferPre } from "./drafter.js";
+import { readBook, bookOnce, withRefunds, draftRow, cogsFor, floorFor, bandFor, usualFor, pricingOf, stageDigest, runDrafter, settlePre, withPending, noteQueued, offerDigest, isOfferPre } from "./drafter.js";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { admitInput, admitInputs } from "./input-admission.js";
 import { makerRequestFingerprint } from "./maker-request.js";
@@ -31,6 +31,7 @@ import PRICING_ENGINE from "../engine/pricing.mjs";
 /* S1b: THE ENTRY EACH STAGE MAKES lives in engine/stages.mjs (pure); this reads, calls it, and queues. The builders stay named here for every importer. */
 import { rewardCrossOf, rewardReading, loyalReading, rwdOf, withCredit, rowPaidFor } from "../engine/stages.mjs";
 import { creditFor } from "./credit.js";
+import { reasonOf, outsideBand, bandRefusal, markOf, markOk } from "../engine/oneoff.mjs";
 import { rm, chargeOf, priceOf, advanceOf, acceptEntry, siteTwins, twinCandidates, klDate, onFault, dayOf, onLive, tripOf, tripLines, floorRefusal, ackRowWanted, stageAgainst, jobEntry, againEntry, keyGivenBack,
   handoverTap, receivedTap, cashTap, restateTap, pastRoom, againRoomOrder, claimRows, claimOrderFlight, claimEntry,
   stageAt, keyAfter, closedKey, ledgerKeyOf, partyOnBook, bucketFor, termsFromRow, settledFromRow, rowOut } from "../engine/stages.mjs";
@@ -308,7 +309,8 @@ async function pendingDay(env, x) {
   const typed = e && e.payload && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(e.payload.date || "")) ? e.payload.date : null;
   return typed || klDate(new Date(String((e && e.at) || id)));
 }
-async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
+/* 10 Nov 2026 (his ask D): `why` is his reason for a price outside the band, a line reasonOf read; null asks */
+async function previewAck(env, o, code, delivery, now, ctx, price, mirror, why) {
   if (!env.SALT_LEDGER) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" };
   /* the charge is the site's own rule (decideDesk): typed for a delivery, nought for a collection; Step 2: the goods at the
      price he sets on this order, when he sets one, so the row, its key and the digest are all drafted on it */
@@ -377,8 +379,17 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
     if (oneDay && leadHere) entry.payload.trip = trip;
   }
   const fl = floorFor(book, product, qty);
-  const under = floorRefusal(price, fl, qty);   /* never under the floor at this size (rule 5), engine/stages.mjs */
+  /* 10 Nov 2026 (his ask D): ON A BOOK WITH A PRICE BAND a price he types under the Floor or over the Ceiling at this size is asked once (409,
+     `outside`: by how much, and what it means in ringgit), and with his reason it stands as a one-off: the entry carries the mark, the drafter puts
+     it on the row and says it in the flags, so the digest his yes answers holds it. A row offered again keeps the reason its rejected draft
+     carried, read against the band as it stands. An offer they took is never asked (`unasked`: he was asked when he made it). A book with no band
+     refuses under its Floor as it always did; an order agreed at what they placed (no price typed) is not read here at all. */
+  const typed = price != null ? price : (ctx && ctx.again && why ? goods : null);
+  let out = typed != null ? outsideBand(typed, fl, bandFor(book, product, qty)) : null;
+  if (out && !why) { if (!(ctx && ctx.unasked)) return bandRefusal(out, fl, qty); out = null; }
+  const under = out ? null : floorRefusal(price, fl, qty);   /* never under the floor at this size (rule 5), engine/stages.mjs */
   if (under) return under;
+  if (out) entry.payload.oneOff = markOf(out, why);
   /* 27 Oct 2026 (docs/plan-refund-credit.html P3): THEIR CREDIT, every open refund of theirs less what an unfolded Accept carries, comes off this
      order at his Accept as cash already paid, up to goods and delivery together; an order for a friend books to their bucket and spends none */
   let credit = 0;
@@ -420,18 +431,22 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
     entry.payload.second ? { second: true } : {},   /* plan version 3: a second sale keyed apart from an equal one today, named on the card */
     cardAt(book.pricing, code, product, qty));
 }
+/* the reason a rejected pending row carried, for the row offered again; none where its entry held no one-off mark */
+const keptWhy = (d) => { const m = d && d.entry && d.entry.payload && d.entry.payload.oneOff; return markOk(m) ? m.why : null; };
 /** POST /orders/<id>/preview {delivery}: the pending row an Accept would make now. Stores nothing. */
 export async function previewOrder(env, id, body, now) {
   const f = await findOrder(env, id);
   if (!f.ok) return f;
   const o = f.order;
   if (!o.code) return { ok: false, status: 409, error: "no desk code is mapped to this account yet: publish the statements again" };
-  const again = o.status !== "placed" && ROWED_ON_SITE.includes(o.status) && !!(await rejectedOf(env.SALT_LEDGER, id, "ack"));
+  const rej = o.status !== "placed" && ROWED_ON_SITE.includes(o.status) ? await rejectedOf(env.SALT_LEDGER, id, "ack") : null, again = !!rej;
   if (o.status !== "placed" && !again) return { ok: false, status: 409, error: "this order is " + o.status + ", so its pending row is not Accept's to make" };
   /* offered again (11.13), the charge and the goods are the ones already on the order: the customer was told them */
   const pr = again ? { price: null } : priceOf(body);
   if (pr.error) return { ok: false, status: 400, error: pr.error };
-  const p = await previewAck(env, o, o.code, again ? (+o.delivery || 0) : chargeOf(body), now || new Date(), { orders: f.orders, again }, pr.price);
+  const ro = again ? { why: keptWhy(rej) } : reasonOf(body);
+  if (ro.error) return { ok: false, status: 400, error: ro.error };
+  const p = await previewAck(env, o, o.code, again ? (+o.delivery || 0) : chargeOf(body), now || new Date(), { orders: f.orders, again }, pr.price, undefined, ro.why);
   if (!p.ok) return p;
   /* 05 Oct 2026 (Negotiate): on an order whose price they asked for, the digest his Offer sends back is the offer's own,
      on the row's figures and flags (offerDigest), and the ask rides along for the card: their own figure, if they gave one */
@@ -541,7 +556,7 @@ export async function acceptOrder(env, id, body, by, now, mirror) {
     : { ok: true, approved: true, again: true, draft: live.draft_id, order: o };
   if (live) return { ok: false, status: 409, error: live.status === "differs" ? "its row differs from what you saw and waits under Approve"
     : isOfferPre(live) ? "an offer is open on this order, waiting on their answer" : "its row is being drafted: look again in a moment" };
-  const again = o.status !== "placed" && ROWED_ON_SITE.includes(o.status) && !!(await rejectedOf(db, id, "ack"));
+  const rej = o.status !== "placed" && ROWED_ON_SITE.includes(o.status) ? await rejectedOf(db, id, "ack") : null, again = !!rej;
   if (o.status !== "placed" && !again) return { ok: false, status: 409, error: "this order is " + o.status + ", so there is nothing to accept" };
   /* 17 Oct 2026 (Fable's review): a rejected pending row whose order has its row on the book by another road (s218's pair, on s219) is agreed already:
      Accept again would book a second row beside it */
@@ -549,11 +564,13 @@ export async function acceptOrder(env, id, body, by, now, mirror) {
   if (o.mode === "deliver" && delivery == null) return { ok: false, status: 400, error: "choose the delivery charge first" };
   const pr = again ? { price: null } : priceOf(body);
   if (pr.error) return { ok: false, status: 400, error: pr.error };
+  const ro = again ? { why: keptWhy(rej) } : reasonOf(body);
+  if (ro.error) return { ok: false, status: 400, error: ro.error };
   const win = again ? { slot: null } : slotOf(body, o, at);
   if (win.error) return { ok: false, status: win.status, error: win.error };
   if (!again && needsYes(o, { total: pr.price, slot: win.slot }))
     return { ok: false, status: 409, needsYes: true, error: "this raises their price or changes their window: send it to them for their yes" };
-  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders, again }, pr.price, mirror);
+  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders, again }, pr.price, mirror, ro.why);
   if (!pv.ok) return pv;
   const entry = pv.entry;
   delete pv.entry;
@@ -624,13 +641,15 @@ export async function offerOrder(env, id, body, by, now) {
   const pr = priceOf(body);
   if (pr.error) return { ok: false, status: 400, error: pr.error };
   if (pr.price == null) return { ok: false, status: 400, error: "type your price for the goods first" };
+  const ro = reasonOf(body);
+  if (ro.error) return { ok: false, status: 400, error: ro.error };
   const delivery = o.mode === "deliver" ? chargeOf(body) : 0;
   if (delivery == null) return { ok: false, status: 400, error: "choose the delivery charge first" };
   if (!body || typeof body.hash !== "string") return { ok: false, status: 400, error: "an offer answers a preview: send the digest the preview gave" };
   const live = await livePre(db, id, "ack");
   if (live && !isOfferPre(live)) return { ok: false, status: 409, error: "a yes of yours on this order is already on its way to its row" };
   /* the row at his figure, drafted as Accept would draft it: under the floor it is refused here, before anything is told */
-  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders }, pr.price);
+  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders }, pr.price, undefined, ro.why);
   if (!pv.ok) return pv;
   const entry = pv.entry;
   delete pv.entry;
@@ -659,6 +678,8 @@ async function acceptOffer(env, f, body, by, at) {
   if (body && typeof body.rid === "string" && o.price && o.price.offer && o.price.offer.id === body.rid) return { ok: true, again: true, order: o, offer: o.price.offer };
   const pr = priceOf(body);
   if (pr.error) return { ok: false, status: 400, error: pr.error };
+  const ro = reasonOf(body);
+  if (ro.error) return { ok: false, status: 400, error: ro.error };
   const delivery = o.mode === "deliver" ? chargeOf(body) : 0;
   if (delivery == null) return { ok: false, status: 400, error: "choose the delivery charge first" };
   const win = slotOf(body, o, at);
@@ -669,7 +690,7 @@ async function acceptOffer(env, f, body, by, at) {
   if (!body || typeof body.hash !== "string") return { ok: false, status: 400, error: "an offer answers a preview: send the digest the preview gave" };
   const live = await livePre(db, id, "ack");
   if (live && !isOfferPre(live)) return { ok: false, status: 409, error: "a yes of yours on this order is already on its way to its row" };
-  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders }, pr.price);
+  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders }, pr.price, undefined, ro.why);
   if (!pv.ok) return pv;
   const entry = pv.entry;
   delete pv.entry;
@@ -736,10 +757,10 @@ export async function takeOffer(env, id, now, mirror) {
        moves a second entry to a free millisecond, never dropping it, so two takes would be two rows) */
     const v = await db.prepare("UPDATE preapproval SET status='void', decided_at=?1 WHERE id=?2 AND status='waiting'").bind(at.toISOString(), pre.id).run();
     if (!(v && v.meta && v.meta.changes === 1)) return { ok: true, again: true };
-    return queueOffer(env, f, off, bad, at, mirror);
+    return queueOffer(env, f, off, bad, at, mirror, shownWhy(shown));
   }
   if (!pre.entry_at) {
-    const pv = await previewAck(env, o, o.code, off.delivery || 0, at, { orders: f.orders }, off.total, mirror);
+    const pv = await previewAck(env, o, o.code, off.delivery || 0, at, { orders: f.orders, unasked: true }, off.total, mirror, shownWhy(shown));
     if (!pv.ok) {
       await markOrder(env, o.u, id, { sync: { state: "waiting", why: "they took your offer, but its row could not be drafted: " + pv.error, at: new Date().toISOString() } });
       return pv;
@@ -763,11 +784,13 @@ export async function takeOffer(env, id, now, mirror) {
 /* A TAKEN OFFER WITH NO YES THAT FITS IT IS NEVER STRANDED (06 Oct 2026, Fable's review): its row is queued at the offer's
    figure under a yes that cannot match (its reason for a digest), so the drafter marks it and it waits under Approve, where
    approving it moves the order as any Accept that came out other than he saw. Once queued, a take finds that yes. */
-async function queueOffer(env, f, off, why, at, mirror) {
+/* the reason his offer was made with, kept on the row his yes was shown (the preapproval, D1: his alone, never the site's) */
+const shownWhy = (shown) => { const m = shown && shown.row && shown.row.oneOff; return markOk(m) ? m.why : null; };
+async function queueOffer(env, f, off, why, at, mirror, oneWhy) {
   const o = f.order, db = env.SALT_LEDGER, offer = o.price.offer || {};
   const delivery = off && typeof off.delivery === "number" ? off.delivery : 0;
   const say = (w) => markOrder(env, o.u, o.id, { sync: { state: "waiting", why: w, at: new Date().toISOString() } });
-  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders }, +offer.total, mirror);
+  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders, unasked: true }, +offer.total, mirror, oneWhy || null);
   if (!pv.ok) { await say("they took your offer, but its row could not be drafted: " + pv.error); return pv; }
   const entry = pv.entry;
   await queueSale(env, entry, false, mirror);   /* which may move entry.at to a free millisecond */
@@ -899,7 +922,7 @@ async function stageTap(env, id, body, by, now, stage, build, mirror) {
   if (!o.ledgerKey) return { ok: false, status: 409, error: "its pending row is not queued yet: accept it first" };
   const b = build(o, at);
   if (b.again) return againOrder(env, id, { stage: b.again }, by, now);
-  if (b.error) return { ok: false, status: b.status || 400, error: b.error };
+  if (b.error) return Object.assign({ ok: false, status: b.status || 400, error: b.error }, b.outside ? { outside: b.outside } : {}, b.underFloor ? { underFloor: true } : {});
   mirror = mirror || (db ? bookOnce(db) : null);   /* the tap's one read: the preview, the yes it tests and the route's tail */
   const pv = await stagePreview(env, o, stage, b.entry, mirror);
   if (!pv.ok) return pv;

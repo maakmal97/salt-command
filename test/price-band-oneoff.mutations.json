@@ -1,0 +1,338 @@
+[
+ {
+  "name": "a total under the Floor is not outside the band",
+  "file": "engine/oneoff.mjs",
+  "find": "if (total < floor - 0.005) return { side: \"under\", by: +(floor - total).toFixed(2), floor, ceiling };",
+  "replace": ""
+ },
+ {
+  "name": "a total over the Ceiling is not outside the band",
+  "file": "engine/oneoff.mjs",
+  "find": "if (ceiling != null && total > ceiling + 0.005) return { side: \"over\", by: +(total - ceiling).toFixed(2), floor, ceiling };",
+  "replace": ""
+ },
+ {
+  "name": "the ask under the Floor drops underFloor",
+  "file": "engine/oneoff.mjs",
+  "find": "out.side === \"under\" ? { underFloor: true, floor: { rm: fl.floor, at: fl.at, exact: fl.exact } } : {},",
+  "replace": "{},"
+ },
+ {
+  "name": "the ask says nothing of what it means in ringgit",
+  "file": "engine/oneoff.mjs",
+  "find": "\" unit: a loss of \" + rm(out.by) + \" on this order. Give a reason and it stands as a one-off.\"",
+  "replace": "\" unit. Give a reason and it stands as a one-off.\""
+ },
+ {
+  "name": "the ask carries no figures",
+  "file": "engine/oneoff.mjs",
+  "find": "{ outside: { side: out.side, by: out.by, floor: out.floor, ceiling: out.ceiling }, error });",
+  "replace": "{ error });"
+ },
+ {
+  "name": "a reason of one character passes",
+  "file": "engine/oneoff.mjs",
+  "find": "t.length >= 3 && t.length <= 120",
+  "replace": "t.length >= 1 && t.length <= 120"
+ },
+ {
+  "name": "a reason of any length passes",
+  "file": "engine/oneoff.mjs",
+  "find": "t.length >= 3 && t.length <= 120",
+  "replace": "t.length >= 3"
+ },
+ {
+  "name": "a reason is not trimmed",
+  "file": "engine/oneoff.mjs",
+  "find": "const t = typeof b.oneOff === \"string\" ? b.oneOff.trim() : null;",
+  "replace": "const t = typeof b.oneOff === \"string\" ? b.oneOff : null;"
+ },
+ {
+  "name": "a reason that is no line is taken as none",
+  "file": "engine/oneoff.mjs",
+  "find": "return lineOk(t) ? { why: t } : { error: ONE_OFF_BAD };",
+  "replace": "return lineOk(t) ? { why: t } : { why: null };"
+ },
+ {
+  "name": "the mark is not put on the entry at Accept",
+  "file": "src/orders.js",
+  "find": "  if (out) entry.payload.oneOff = markOf(out, why);",
+  "replace": ""
+ },
+ {
+  "name": "a reason marks a price inside the band",
+  "file": "src/orders.js",
+  "find": "  if (out) entry.payload.oneOff = markOf(out, why);",
+  "replace": "  if (why) entry.payload.oneOff = markOf(out || { side: \"under\", by: 1 }, why);"
+ },
+ {
+  "name": "Accept is not asked",
+  "file": "src/orders.js",
+  "find": "{ orders: f.orders, again }, pr.price, mirror, ro.why);",
+  "replace": "{ orders: f.orders, again }, pr.price, mirror, ro.why || \"none given\");"
+ },
+ {
+  "name": "Accept drops his reason",
+  "file": "src/orders.js",
+  "find": "{ orders: f.orders, again }, pr.price, mirror, ro.why);",
+  "replace": "{ orders: f.orders, again }, pr.price, mirror, null);"
+ },
+ {
+  "name": "the preview drops his reason",
+  "file": "src/orders.js",
+  "find": "{ orders: f.orders, again }, pr.price, undefined, ro.why);",
+  "replace": "{ orders: f.orders, again }, pr.price, undefined, null);"
+ },
+ {
+  "name": "the drafted row carries no mark",
+  "file": "src/drafter.js",
+  "find": "    oneOffFlags.push(oneOffFlag(row.oneOff));",
+  "replace": "    oneOffFlags.push(oneOffFlag(row.oneOff)); delete row.oneOff;"
+ },
+ {
+  "name": "the drafted row's card has no One-off flag",
+  "file": "src/drafter.js",
+  "find": "    oneOffFlags.push(oneOffFlag(row.oneOff));",
+  "replace": ""
+ },
+ {
+  "name": "a book with no band has a Ceiling to ask about",
+  "file": "src/drafter.js",
+  "find": "if (!P || !P.tierRule || !P.tierRule.band || !I.cost || !(isNum(qty) && qty > 0)) return null;",
+  "replace": "if (!P || !P.tierRule || !I.cost || !(isNum(qty) && qty > 0)) return null;"
+ },
+ {
+  "name": "an offer for their yes drops his reason",
+  "file": "src/orders.js",
+  "find": "already on its way to its row\" };\n  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders }, pr.price, undefined, ro.why);",
+  "replace": "already on its way to its row\" };\n  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders }, pr.price, undefined, null);"
+ },
+ {
+  "name": "Negotiate's offer drops his reason",
+  "file": "src/orders.js",
+  "find": "before anything is told */\n  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders }, pr.price, undefined, ro.why);",
+  "replace": "before anything is told */\n  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders }, pr.price, undefined, null);"
+ },
+ {
+  "name": "their yes drafts the row without the reason he gave",
+  "file": "src/orders.js",
+  "find": "{ orders: f.orders, unasked: true }, off.total, mirror, shownWhy(shown));",
+  "replace": "{ orders: f.orders, unasked: true }, off.total, mirror, null);"
+ },
+ {
+  "name": "the offer sent to the site carries his reason",
+  "file": "src/orders.js",
+  "find": "{ offer: { id: offer.id, kind: \"accept\", total, delivery, slot: win.slot, until: offer.until }, rid }",
+  "replace": "{ offer: { id: offer.id, kind: \"accept\", total, delivery, slot: win.slot, until: offer.until, note: ro.why }, rid }"
+ },
+ {
+  "name": "an amendment outside the band is not asked",
+  "file": "engine/stages.mjs",
+  "find": "if (out && !ro.why && !undoing) {",
+  "replace": "if (out && !ro.why && undoing) {"
+ },
+ {
+  "name": "the amendment's ask drops underFloor",
+  "file": "engine/stages.mjs",
+  "find": "r.underFloor ? { underFloor: true } : {}); }",
+  "replace": "{}); }"
+ },
+ {
+  "name": "the Desk's tap drops the amendment's figures",
+  "file": "src/orders.js",
+  "find": "b.outside ? { outside: b.outside } : {}, b.underFloor ? { underFloor: true } : {});",
+  "replace": "{}, b.underFloor ? { underFloor: true } : {});"
+ },
+ {
+  "name": "the Correction carries no mark",
+  "file": "engine/stages.mjs",
+  "find": "  if (mark !== undefined) entry.payload.oneOff = mark;",
+  "replace": ""
+ },
+ {
+  "name": "a row back inside the band keeps its mark",
+  "file": "engine/stages.mjs",
+  "find": "(!marked || marked.oneOff ? null : undefined);",
+  "replace": "(undefined);"
+ },
+ {
+  "name": "an unmarked row inside the band is cleared all the same",
+  "file": "engine/stages.mjs",
+  "find": "(!marked || marked.oneOff ? null : undefined);",
+  "replace": "(null);"
+ },
+ {
+  "name": "a book with no band takes an amendment under its Floor",
+  "file": "engine/stages.mjs",
+  "find": "if (!out && figs.total < fl.floor - 0.005) return",
+  "replace": "if (false) return"
+ },
+ {
+  "name": "the amendment's card has no One-off flag",
+  "file": "src/drafter.js",
+  "find": "if (pay.oneOff) flags.push(oneOffFlag(pay.oneOff));",
+  "replace": "if (false) flags.push(oneOffFlag(pay.oneOff));"
+ },
+ {
+  "name": "the amendment's card does not say the mark comes off",
+  "file": "src/drafter.js",
+  "find": "else if (pay.oneOff === null && target.oneOff) flags.push(ONE_OFF_CLEARED);",
+  "replace": ""
+ },
+ {
+  "name": "an amendment's digest ignores its mark",
+  "file": "src/drafter.js",
+  "find": "  if (stage !== \"ack\" && pay.oneOff !== undefined) shown.oneOff = pay.oneOff;",
+  "replace": ""
+ },
+ {
+  "name": "the fold does not put the mark on the row",
+  "file": "engine/apply.mjs",
+  "find": "else row.oneOff = { why: pay.oneOff.why, side: pay.oneOff.side, by: pay.oneOff.by };",
+  "replace": "else void 0;"
+ },
+ {
+  "name": "the fold does not take the mark off",
+  "file": "engine/apply.mjs",
+  "find": "if (pay.oneOff === null) delete row.oneOff;",
+  "replace": "if (pay.oneOff === null) void 0;"
+ },
+ {
+  "name": "the fold takes a mark of any shape",
+  "file": "engine/apply.mjs",
+  "find": "else if (!markOk(pay.oneOff)) throw new Error(\"the one-off mark on this correction is not one the desk makes\");",
+  "replace": "else if (false) throw new Error(\"the one-off mark on this correction is not one the desk makes\");"
+ },
+ {
+  "name": "the fold marks a purchase",
+  "file": "engine/apply.mjs",
+  "find": "    if (dir !== \"BUY\" && pay.oneOff !== undefined) {",
+  "replace": "    if (pay.oneOff !== undefined) {"
+ },
+ {
+  "name": "the step forgets the mark it replaced",
+  "file": "engine/apply.mjs",
+  "find": "      if (dir !== \"BUY\" && pay.oneOff !== undefined && before.oneOff) step.oneOffWas = before.oneOff;",
+  "replace": ""
+ },
+ {
+  "name": "their usual counts a one-off",
+  "file": "src/drafter.js",
+  "find": "!s.goodwill && !s.oneOff && isNum(s.total)",
+  "replace": "!s.goodwill && isNum(s.total)"
+ },
+ {
+  "name": "the Counter's bridge drops the ask's figures",
+  "file": "stmt/maker.js",
+  "find": "outside: result && result.outside, underFloor: !!(result && result.underFloor === true),",
+  "replace": "outside: undefined, underFloor: !!(result && result.underFloor === true),"
+ },
+ {
+  "name": "the Counter's bridge drops underFloor",
+  "file": "stmt/maker.js",
+  "find": "outside: result && result.outside, underFloor: !!(result && result.underFloor === true),",
+  "replace": "outside: result && result.outside, underFloor: false,"
+ },
+ {
+  "name": "Salt Admin is not told the ask's figures",
+  "file": "stmt/maker.js",
+  "find": "      ...(error.outside && typeof error.outside === \"object\" ? { outside: error.outside } : {}),",
+  "replace": ""
+ },
+ {
+  "name": "the Desk's gate refuses a reason on the preview",
+  "file": "src/maker.js",
+  "find": "    preview: [\"delivery\", \"total\", \"oneOff\"],",
+  "replace": "    preview: [\"delivery\", \"total\"],"
+ },
+ {
+  "name": "the Desk's gate refuses a reason on an amendment",
+  "file": "src/maker.js",
+  "find": "    restate: [\"qty\", \"total\", \"delivery\", \"rid\", \"undo\", \"oneOff\"],",
+  "replace": "    restate: [\"qty\", \"total\", \"delivery\", \"rid\", \"undo\"],"
+ },
+ {
+  "name": "the Counter's bridge refuses a reason on an amendment",
+  "file": "stmt/maker.js",
+  "find": "action === \"restate\" ? [\"rid\", \"qty\", \"total\", \"delivery\", \"undo\", \"oneOff\"] :",
+  "replace": "action === \"restate\" ? [\"rid\", \"qty\", \"total\", \"delivery\", \"undo\"] :"
+ },
+ {
+  "name": "a placed order's ask draws no Reason line",
+  "file": "stmt/owner.js",
+  "find": "            if(error&&error.detail&&error.detail.outside){ makerPlacedAsk(error); return; }",
+  "replace": ""
+ },
+ {
+  "name": "Let it stand does not wait for a reason",
+  "file": "stmt/owner.js",
+  "find": "go.setAttribute('data-one-off-go',''); go.disabled=!oneOffOk(why.value);",
+  "replace": "go.setAttribute('data-one-off-go',''); go.disabled=false;"
+ },
+ {
+  "name": "the ask is said in the page's general sentence",
+  "file": "stmt/owner.js",
+  "find": "          makerPlacedSay(error.raw,true);",
+  "replace": "          makerPlacedSay(error.message,true);"
+ },
+ {
+  "name": "the Reason line takes any length",
+  "file": "stmt/owner.js",
+  "find": "          why.maxLength=120; why.required=true; why.setAttribute('data-one-off','');",
+  "replace": "          why.required=true; why.setAttribute('data-one-off','');"
+ },
+ {
+  "name": "a reason of two characters lights Let it stand",
+  "file": "stmt/owner.js",
+  "find": "return t.length>=3&&t.length<=120; }",
+  "replace": "return t.length>=1&&t.length<=120; }"
+ },
+ {
+  "name": "the figures are read again without the reason",
+  "file": "stmt/owner.js",
+  "find": "          if(makerOneOff[order.id]) payload.oneOff=makerOneOff[order.id];",
+  "replace": ""
+ },
+ {
+  "name": "Agree sends no reason",
+  "file": "stmt/owner.js",
+  "find": "            if(s.oneOff) body.oneOff=s.oneOff;",
+  "replace": ""
+ },
+ {
+  "name": "Ask them sends no reason",
+  "file": "stmt/owner.js",
+  "find": "              if(s.oneOff) ob.oneOff=s.oneOff;",
+  "replace": ""
+ },
+ {
+  "name": "a new goods total keeps the old reason",
+  "file": "stmt/owner.js",
+  "find": "        total.addEventListener('input',function(){ delete makerOneOff[order.id]; delete makerOneDraft[order.id]; });",
+  "replace": ""
+ },
+ {
+  "name": "an amendment's ask is not kept for the Sheet",
+  "file": "stmt/owner.js",
+  "find": "      if(error&&error.detail&&error.detail.outside){ makerOutside[key]={outside:error.detail.outside, say:error.raw}; makerSay(key,error.raw); return false; }",
+  "replace": ""
+ },
+ {
+  "name": "an amendment's ask opens no Reason Sheet",
+  "file": "stmt/owner.js",
+  "find": "          if(done===false&&asked) amendWhy(order,opener,body,asked);",
+  "replace": ""
+ },
+ {
+  "name": "the amendment is sent again without the reason",
+  "file": "stmt/owner.js",
+  "find": "var sent=Object.assign({},body,{oneOff:input.value.trim()});",
+  "replace": "var sent=Object.assign({},body);"
+ },
+ {
+  "name": "the Sheet's Let it stand does not wait for a reason",
+  "file": "stmt/owner.js",
+  "find": "    if(go){ go.disabled=true; input.addEventListener('input',function(){ go.disabled=!oneOffOk(input.value); }); }",
+  "replace": ""
+ }
+]
