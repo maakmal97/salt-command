@@ -50,13 +50,13 @@ export async function run({ ok }) {
   });
   ok(grid.length === 99 && setMoved === 0 && ceilMoved === 0,
     "at every one of salt's grid sizes to 25 the Set Price and the Ceiling with a share are those without: " + JSON.stringify({ n: grid.length, setMoved, ceilMoved }));
-  ok(floorSame === 0 && partnerOff === 0 && E.quoteAt(1, C2, P, "partner") === 60 && E.quoteAt(1, C0, P, "partner") === 50 && E.quoteAt(1, C2, P, 0) === 100,
+  ok(floorSame === 0 && partnerOff === 0 && E.quoteAt(1, C2, P, "partner") === 60 && E.quoteAt(1, C0, P, "partner") === 50 && E.quoteAt(1, C2, P, 0) === 120,
     "the walk reports the new Floor, a partner pays it, and a stranger still pays the Set Price: " + JSON.stringify({ floorSame, partnerOff, partner: [E.quoteAt(1, C0, P, "partner"), E.quoteAt(1, C2, P, "partner")], set: E.quoteAt(1, C2, P, 0) }));
 
   /* 3. A DISCOUNT THE FLOOR OVERTAKES IS HELD AT THE FLOOR */
   const low0 = E.quoteAt(12.5, C0, P, -0.3), low2 = E.quoteAt(12.5, C2, P, -0.3), up2 = E.quoteAt(12.5, C2, P, 0.3), up0 = E.quoteAt(12.5, C0, P, 0.3);
-  ok(low0 === 765 && low2 === 765 && E.floorTotal(12.5, C2, P) === 750 && E.quoteAt(12.5, stack(0.25), P, -0.3) === E.floorTotal(12.5, stack(0.25), P) && E.floorTotal(12.5, stack(0.25), P) === 785 && up2 === up0,
-    "-30% at 12.5 is RM 765 on COGS and over a Floor of RM 750, and is held at the Floor once the Floor passes it (RM 785 at a share of 0.25); +30% does not move: " + JSON.stringify([low0, low2, E.quoteAt(12.5, stack(0.25), P, -0.3), up0, up2]));
+  ok(low0 === 900 && low2 === 900 && E.floorTotal(12.5, C2, P) === 750 && E.quoteAt(12.5, stack(0.5), P, -0.3) === E.floorTotal(12.5, stack(0.5), P) && E.floorTotal(12.5, stack(0.5), P) === 940 && up2 === up0,
+    "-30% at 12.5 is RM 900 on COGS and over a Floor of RM 750, and is held at the Floor once the Floor passes it (RM 940 at a share of 0.5); +30% does not move: " + JSON.stringify([low0, low2, E.quoteAt(12.5, stack(0.5), P, -0.3), up0, up2]));
 
   /* 4. THE SHARE, FROM ROWS */
   const sales = [

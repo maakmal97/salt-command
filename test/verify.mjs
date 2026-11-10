@@ -51688,22 +51688,22 @@ await (async () => {
   const R = rd("TIER_RULE.salt"), P = { ...rd("pxPolicy()"), tierRule: R };
   /* 1. THE MULTIPLE at his four points, held beyond them, and halfway in the log of size at 2.5 unit (between 1 and 6.25) */
   const m = (q) => +E.setMultiple(q, R).toFixed(4);
-  ok(m(0.5) === 2.5 && m(1) === 2 && m(6.25) === 1.67 && m(12.5) === 1.33 && m(0.25) === 2.5 && m(25) === 1.33 && m(2.5) === 1.835,
-    "the Set multiple is 2.5, 2, 1.67 and 1.33 at 0.5, 1, 6.25 and 12.5, held beyond them, and 1.835 at 2.5 unit, halfway in the log: " + JSON.stringify([0.5, 1, 6.25, 12.5, 0.25, 25, 2.5].map(m)));
+  ok(m(0.5) === 3 && m(1) === 2.4 && m(6.25) === 2.004 && m(12.5) === 1.596 && m(0.25) === 3 && m(25) === 1.596 && m(2.5) === 2.202,
+    "the Set multiple is 3, 2.4, 2.004 and 1.596 at 0.5, 1, 6.25 and 12.5, held beyond them, and 2.202 at 2.5 unit, halfway in the log: " + JSON.stringify([0.5, 1, 6.25, 12.5, 0.25, 25, 2.5].map(m)));
   /* 2. HIS TWO WORKED BOARDS, on RM 64 and RM 59 of COGS */
   const Cof = (c) => ({ eff: c, effEx: c, landed: c });
   const setAt = (c) => E.driftWalk(E.walkSizes(R, R.rungs), Cof(c), P, 0).filter((r) => R.rungs.some((q) => Math.abs(q - r.q) < 0.009)).map((r) => r.set);
   /* 18 OCT 2026: the Floor rounds up to the RM 5 and the curve is his four points, walked over the whole grid (the board's own path), so the rungs
      read these figures; they were 95, 160, 230 ... and 80, 150, 205 ... on the two ends and the ten of 05 Oct */
-  ok(JSON.stringify(setAt(64)) === "[85,130,185,240,290,350,395,450,500,545,665,1080,2125,4255,8510]"
-    && JSON.stringify(setAt(59)) === "[75,120,170,225,275,320,370,420,465,500,615,1000,1960,3920,7845]",
-    "the Set Price reads 85, 130 ... 1,080, 2,125, 4,255, 8,510 on RM 64 of COGS and 75, 120 ... 1,000, 1,960, 3,920, 7,845 on RM 59: " + JSON.stringify([setAt(64), setAt(59)]));
+  ok(JSON.stringify(setAt(64)) === "[105,155,225,290,350,420,475,540,600,655,800,1275,2550,5105,10210]"
+    && JSON.stringify(setAt(59)) === "[90,140,205,270,330,385,445,500,560,605,740,1180,2350,4705,9415]",
+    "the Set Price reads 105, 155 ... 1,275, 2,550, 5,105, 10,210 on RM 64 of COGS and 90, 140 ... 1,180, 2,350, 4,705, 9,415 on RM 59: " + JSON.stringify([setAt(64), setAt(59)]));
   /* 3. THE % LIFT at 12.5 unit on RM 64: floor 800, Set 1,080, ceiling 2,400. A % scales the multiple inside the walk, so -30% reads 865, -10% 1,000, 10% 1,175,
      20% 1,275 and 30% 1,380, each on the whole grid beneath */
   const at125 = [-0.3, -0.1, 0, 0.1, 0.2, 0.3].map((d) => E.driftAt(12.5, Cof(64), P, d).p);
-  /* 22 Oct 2026, his curve: -30% is 1.20 times the Floor at 12.5 (960) and +30% 1.45 (1,160), each held up by the margin a smaller size reached */
-  ok(JSON.stringify(at125) === "[980,1045,1080,1115,1150,1180]",
-    "at 12.5 unit on RM 64 a % of -30, -10, 0, 10, 20 and 30 reads 980, 1,045, 1,080, 1,115, 1,150 and 1,180 on his curve, walked over the five grid: " + JSON.stringify(at125));
+  /* 22 Oct 2026, his curve: -30% is 1.44 times the Floor at 12.5 (1,152) and +30% 1.74 (1,392); 1.2 times the 22 Oct ends since 10 Nov 2026, each held up by the margin a smaller size reached */
+  ok(JSON.stringify(at125) === "[1150,1235,1275,1315,1355,1395]",
+    "at 12.5 unit on RM 64 a % of -30, -10, 0, 10, 20 and 30 reads 1,150, 1,235, 1,275, 1,315, 1,355 and 1,395 on his curve, walked over the five grid: " + JSON.stringify(at125));
   /* 4. EVERY DRIFT STAYS IN THE BOX, on the ten, on its side of the Set Price, and never rises in rate with size where a ten
      down would still clear the floor */
   const bad4 = [];

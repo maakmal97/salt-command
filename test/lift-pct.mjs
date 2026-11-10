@@ -41,20 +41,20 @@ export async function run({ ok }) {
 
   /* 1. THE FOUR POINTS AND THE WALK, on RM 58 a unit */
   const m = (q) => +E.setMultiple(q, R).toFixed(4);
-  ok(JSON.stringify(R.points) === "[[0.5,2.5],[1,2],[6.25,1.67],[12.5,1.33]]"
-    && [0.5, 1, 6.25, 12.5, 0.25, 25].map(m).join() === "2.5,2,1.67,1.33,2.5,1.33" && m(2.5) === 1.835,
-  "the multiple is 2.5, 2, 1.67 and 1.33 at 0.5, 1, 6.25 and 12.5, flat beyond them, and 1.835 at 2.5 unit, halfway in the log between 1 and 6.25: " + JSON.stringify([0.5, 1, 6.25, 12.5, 0.25, 25, 2.5].map(m)));
+  ok(JSON.stringify(R.points) === "[[0.5,3],[1,2.4],[6.25,2.004],[12.5,1.596]]"
+    && [0.5, 1, 6.25, 12.5, 0.25, 25].map(m).join() === "3,2.4,2.004,1.596,3,1.596" && m(2.5) === 2.202,
+  "the multiple is 3, 2.4, 2.004 and 1.596 at 0.5, 1, 6.25 and 12.5, flat beyond them, and 2.202 at 2.5 unit, halfway in the log between 1 and 6.25: " + JSON.stringify([0.5, 1, 6.25, 12.5, 0.25, 25, 2.5].map(m)));
   const at = [0.5, 1, 6.25, 12.5, 20, 25];
   const pure = at.map((q) => down5(E.floorTotal(q, Cof(58), P) * E.setMultiple(q, R)));
   const set58 = at.map((q) => E.quoteAt(q, Cof(58), P, 0));
-  ok(pure.join() === "75,120,605,960,1540,1925" && set58.join() === "75,120,605,980,1540,1925",
-    "from RM 58 a unit the floor times the multiple, down to the five, is 75, 120, 605, 960, 1,540 and 1,925, and the Set Price lifts 12.5 unit to 980 by the margin 11.5 unit reached: " + JSON.stringify({ pure, set58 }));
+  ok(pure.join() === "90,140,730,1155,1850,2310" && set58.join() === "90,140,730,1155,1850,2310",
+    "from RM 58 a unit the floor times the multiple, down to the five, is 90, 140, 730, 1,155, 1,850 and 2,310, and the Set Price needs no margin lift on these sizes (the walk's lift is held by its mutation): " + JSON.stringify({ pure, set58 }));
   const lifted = at.map((q) => E.quoteAt(q, Cof(58), P, 0.2));
-  ok(lifted.join() === "85,130,665,1040,1635,2040", "and 20% on the Set Price reads 85, 130, 665, 1,040, 1,635 and 2,040 at the same sizes, two thirds of the way to his +30% curve (22 Oct 2026), inside the walk: " + JSON.stringify(lifted));
+  ok(lifted.join() === "90,160,795,1230,1960,2450", "and 20% on the Set Price reads 90, 160, 795, 1,230, 1,960 and 2,450 at the same sizes, two thirds of the way to his +30% curve (22 Oct 2026), inside the walk: " + JSON.stringify(lifted));
 
   const off30 = at.map((q) => E.quoteAt(q, Cof(58), P, -0.3));
-  ok(off30.join() === "60,95,520,885,1390,1740",
-    "and -30% on the Set Price reads 60, 95, 520, 885, 1,390 and 1,740 at the same sizes, his -30% curve (2.00 at 0.5, 1.20 at 12.5; 22 Oct 2026) inside the walk and above the Floor (30, 60, 365 at 0.5, 1, 6.25): " + JSON.stringify(off30));
+  ok(off30.join() === "70,115,625,1045,1670,2085",
+    "and -30% on the Set Price reads 70, 115, 625, 1,045, 1,670 and 2,085 at the same sizes, his -30% curve (2.40 at 0.5, 1.44 at 12.5; 22 Oct 2026, 1.2 times since 10 Nov 2026) inside the walk and above the Floor (30, 60, 365 at 0.5, 1, 6.25): " + JSON.stringify(off30));
 
   /* 22 Oct 2026: his +30% curve reaches 3.00 at half a unit, the Ceiling itself, so the Ceiling is proved on a rule held at 2.8 times the Floor */
   const P28 = { ...P, tierRule: { ...R, ceilingX: 2.8 } };

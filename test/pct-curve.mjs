@@ -32,26 +32,26 @@ export async function run({ ok }) {
 
   /* 1. the curve */
   const M = (q, k) => E.driftMultiple(q, salt, k);
-  check(near(M(0.5, -0.3), 2) && near(M(0.5, 0), 2.5) && near(M(0.5, 0.3), 3) && near(M(12.5, -0.3), 1.2) && near(M(12.5, 0), 1.33)
-    && near(M(12.5, 0.3), 1.45) && near(M(25, -0.3), 1.2) && near(M(25, 0.3), 1.45) && near(M(0.25, -0.3), 2),
-  "his ends: -30% 2.00 at 0.5 and 1.20 at 12.5, +30% 3.00 and 1.45, the Set Price between, flat beyond the first and last points: "
+  check(near(M(0.5, -0.3), 2.4) && near(M(0.5, 0), 3) && near(M(0.5, 0.3), 3.6) && near(M(12.5, -0.3), 1.44) && near(M(12.5, 0), 1.596)
+    && near(M(12.5, 0.3), 1.74) && near(M(25, -0.3), 1.44) && near(M(25, 0.3), 1.74) && near(M(0.25, -0.3), 2.4),
+  "his ends: -30% 2.40 at 0.5 and 1.44 at 12.5, +30% 3.60 and 1.74 (1.2 times the 22 Oct ends, 10 Nov 2026), the Set Price between, flat beyond the first and last points: "
     + JSON.stringify([0.5, 12.5, 25].map((q) => [M(q, -0.3), M(q, 0), M(q, 0.3)])));
   const steps = [1, 3, 6.25].every((q) => { const d = PCTS.slice(1).map((k, i) => M(q, k) - M(q, PCTS[i]));
     return d.slice(0, 6).every((x) => near(x, d[0], 1e-9)) && d.slice(6).every((x) => near(x, d[6], 1e-9)) && d[0] > 0 && d[6] > 0; });
   check(steps, "every 5% step is an equal share of the way from the Set Price to its end, below and above, at every size");
-  const s6 = (salt.points[2][1] - 1.33) / (2.5 - 1.33);
-  check(near(M(6.25, -0.3), 1.2 + s6 * 0.8, 1e-9) && near(M(6.25, 0.3), 1.45 + s6 * 1.55, 1e-9),
-    "each end keeps the Set Price's shape: at 6.25 the end sits the same share between its two multiples as the Set Price sits between 2.5 and 1.33");
+  const s6 = (salt.points[2][1] - 1.596) / (3 - 1.596);
+  check(near(M(6.25, -0.3), 1.44 + s6 * 0.96, 1e-9) && near(M(6.25, 0.3), 1.74 + s6 * 1.86, 1e-9),
+    "each end keeps the Set Price's shape: at 6.25 the end sits the same share between its two multiples as the Set Price sits between 3 and 1.596");
   const noEnds = { ...salt }; delete noEnds.ends;
-  check(near(E.driftMultiple(6.25, noEnds, -0.2), 1.67 * 0.8) && near(E.driftMultiple(1, noEnds, 0.3), 2 * 1.3),
+  check(near(E.driftMultiple(6.25, noEnds, -0.2), 2.004 * 0.8) && near(E.driftMultiple(1, noEnds, 0.3), 2.4 * 1.3),
     "a rule with no ends keeps the multiple times (1 + %)");
 
   /* 2. the walk on salt */
   const P = { LADDER: RULES_MOD.LADDER, floorTo: RULES_MOD.RULES.floorTo, minPerUnit: 0, timePerOrder: 0, lotFloor: {}, tierRule: salt };
   const K = { eff: 58, effEx: 58, landed: 58 }, down5 = (v) => Math.floor(v / 5 + 1e-9) * 5;
   const F = (q) => E.floorTotal(q, K, P), Q = (q, k) => E.quoteAt(q, K, P, k);
-  check(Q(0.5, -0.3) === Math.max(F(0.5), down5(F(0.5) * 2)) && Q(0.5, 0.3) === Math.min(down5(3 * F(0.5)), down5(F(0.5) * 3)),
-    "half a unit at -30% is the Floor times 2 and at +30% times 3, down to the RM 5: " + [F(0.5), Q(0.5, -0.3), Q(0.5, 0.3)].join(", "));
+  check(Q(0.5, -0.3) === Math.max(F(0.5), down5(F(0.5) * 2.4)) && Q(0.5, 0.3) === Math.min(down5(3 * F(0.5)), down5(F(0.5) * 3.6)),
+    "half a unit at -30% is the Floor times 2.4 and at +30% the Ceiling, 3 times (3.6 is held), down to the RM 5: " + [F(0.5), Q(0.5, -0.3), Q(0.5, 0.3)].join(", "));
   const qs = E.gridSizes(E.gridOf(salt));
   const banded = PCTS.every((k) => qs.every((q) => { const p = Q(q, k); return p >= F(q) - 0.009 && p <= 3 * F(q) + 0.009; }));
   check(banded, "on the curve no price is under the Floor or over the Ceiling, at every % and every quarter");
