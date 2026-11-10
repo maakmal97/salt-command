@@ -259,7 +259,8 @@ function driftSignals(C,prod,code){
    `auto`, `G` and `B` are the record's reading (autoDrift) kept for the card, and the suggestion is suggestOf below. */
 function driftOfNow(C,p,code){
   const R=C.R.TIER_RULE[p];if(!PRICING_ENGINE.pctBook(R))return null;
-  const who=ownerOf(code)||code,h=(C.B.tierOf[who]||{})[p],hand=PRICING_ENGINE.driftOk(h)?+h:null;
+  /* 10 Nov 2026: the held figure is read through the band's carry-over (heldPct) and judged on this book's own range */
+  const who=ownerOf(code)||code,h=PRICING_ENGINE.heldPct(R,who,(C.B.tierOf[who]||{})[p]),hand=PRICING_ENGINE.driftOk(h,R)?+h:null;
   const sig=driftSignals(C,p,who),a=PRICING_ENGINE.autoDrift(sig,R.auto);
   return Object.assign({},a,{auto:a.d,hand:hand,d:hand!=null?hand:0,sig:sig});
 }
@@ -273,7 +274,9 @@ function suggestOf(C,p,code){
     const rows=pSales(C.B,p).filter(x=>POSITION_ENGINE.ownsCode(who,x.customer)&&pbPriced(x)&&x.date&&x.total>0&&x.qty>0)
       .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).slice(-(+S.recent||5));
     const ratios=rows.map(x=>{const set=PRICING_ENGINE.quoteAt(x.qty,K,P,0);return set>0?(POSITION_ENGINE.txGoods(x)/x.qty)/(set/x.qty):null;}).filter(v=>v!=null);
-    return PRICING_ENGINE.suggestPct(driftSignals(C,p,who),ratios,S,R.auto);
+    /* 10 Nov 2026: on a band each of those sales is also placed on it at its own size (the engine's bandPct between today's Floor, Median and Ceiling) */
+    const places=R.band?rows.map(x=>{const w=PRICING_ENGINE.driftAt(x.qty,K,P,0);return w&&w.set>0?PRICING_ENGINE.bandPct(POSITION_ENGINE.txGoods(x),w.floor,w.set,w.ceiling):null;}).filter(v=>v!=null):null;
+    return PRICING_ENGINE.suggestPct(driftSignals(C,p,who),ratios,S,R.auto,Object.assign({},PRICING_ENGINE.liftRange(R),places?{places:places}:{}));
   });
 }
 function tierCustomers(C){

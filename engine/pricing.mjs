@@ -420,7 +420,7 @@ function ladderRow(sizes,C,P){
   const col=(k)=>sizes.map(q=>{try{const L=priceLadder(q,C,P);
     return L&&L[k]&&L[k].total!=null?+L[k].total:null;}catch(e){return null;}});
   return [{
-    code:'T2', name:'Set Price', dflt:true,
+    code:'T2', name:'Median Price', dflt:true,
     who:'what a stranger is quoted, the least any customer but a partner pays',
     prices:col('ask')
   }];
@@ -507,7 +507,65 @@ function setMultiple(q,R){
 }
 /* a held % is a number from -0.3 to +0.3 (his decision of 21 Oct 2026); anything else is not one */
 const LIFT_MIN=-0.3, LIFT_MAX=0.3;
-function driftOk(v){return typeof v==='number'&&isFinite(v)&&v>=LIFT_MIN-1e-9&&v<=LIFT_MAX+1e-9;}
+/* ============ 10 NOV 2026, HIS DECISION: ONE PRICE BAND FOR SALT (docs/plan-salt-price-band.html, version 1) ============
+   A rule carrying `band` runs Their % from -100% (the Floor, what a partner pays) through 0% (the Median Price, the Set Price renamed in
+   copy) to +100% (the Ceiling), in even percentage steps: bandTop below. Its Ceiling is a curve struck on a TYPED anchor, the supplier's
+   price for a 12.5-unit lot a unit, never COGS: bandCeiling. A rule with no band keeps -30% to +30% and `ceilingX` times the Floor.
+   liftRange is the one place the range is read. driftOk(v, R) asks whether v is a % on R's book; with NO rule it takes the widest
+   range, so a reader that forgot its rule can never read a held salt figure as nought and move a price (a gate always hands its rule). */
+const BAND_MIN=-1, BAND_MAX=1;
+function liftRange(R){return R&&R.band?{min:BAND_MIN,max:BAND_MAX}:{min:LIFT_MIN,max:LIFT_MAX};}
+function driftOk(v,R){const g=R?liftRange(R):{min:BAND_MIN,max:BAND_MAX};return typeof v==='number'&&isFinite(v)&&v>=g.min-1e-9&&v<=g.max+1e-9;}
+/* THE CEILING ON A BAND. C.supplier is the anchor he types, {units, total}: RM 700 for 12.5 units, RM 56 a unit. C.rates are the
+   Ceiling's rate a unit at sizes, typed at an anchor of C.per (his two ends: RM 200 at half a unit, RM 100 at 12.5, then RM 83.93 at
+   100), sliding in the log of size between them and flat beyond; the rate moves with the anchor in proportion. Unrounded here: the walk
+   takes the ORDER TOTAL down to the grid and never under the Floor. Null for a rule with no such curve. */
+function bandCeiling(q,R){
+  const B=R&&R.band&&R.band.ceiling;if(!B||!(q>0))return null;
+  const pts=(B.rates||[]).map(x=>[+x[0],+x[1]]).filter(x=>x[0]>0&&x[1]>0&&isFinite(x[1])).sort((a,b)=>a[0]-b[0]);
+  const anchor=B.supplier&&+B.supplier.units>0?+B.supplier.total/+B.supplier.units:NaN, per=+B.per;
+  if(!pts.length||!(anchor>0)||!(per>0))return null;
+  let r=pts[pts.length-1][1];
+  if(!(q>pts[0][0]))r=pts[0][1];
+  else for(let i=0;i<pts.length-1;i++){
+    if(q<pts[i+1][0]){const a=pts[i],b=pts[i+1];r=a[1]+(b[1]-a[1])*Math.log(q/a[0])/Math.log(b[0]/a[0]);break;}
+  }
+  return r*(anchor/per)*q;
+}
+/* A PLACE ON THE BAND. k is the %, -1 to +1; M the Median Price at the size as quoted, lo the Floor and hi the Ceiling there. Above
+   nought the price is M times (hi/M) to the power k, below it M times (lo/M) to the power -k: every 10 points is the same percentage
+   step at that size, -100% is the Floor and +100% the Ceiling. The walk then takes it down to the grid and holds it. */
+function bandTop(M,lo,hi,k){
+  if(!(M>0)||!k)return M;
+  const end=k<0?lo:hi, t=Math.min(1,Math.abs(k));
+  return end>0?M*Math.pow(end/M,t):M;
+}
+/* the place on the band a price sits at: bandTop read backwards, held -1 to +1; nought where the posts leave no room */
+function bandPct(price,lo,M,hi){
+  if(!(price>0)||!(M>0))return 0;
+  const end=price<M?lo:hi;
+  if(!(end>0)||Math.abs(Math.log(end/M))<1e-12)return 0;
+  const t=Math.log(price/M)/Math.log(end/M);
+  return (price<M?-1:1)*Math.min(1,Math.max(0,t));
+}
+/* THE CARRY-OVER OF THE SWITCH (his approval of the list, 10 Nov 2026). R.band.carry is {code: {from, to}}: a customer whose held
+   figure is still the one they held on the old -30% to +30% curve (`from`) is read at `to`, the place on the band whose price at
+   their usual size is nearest what they paid before, so the scale and every held figure change in the same instant. Once their
+   figure is set again on the band it no longer equals `from` and is read as it stands; carryClash is the gate that refuses setting
+   one back to exactly `from` while the table lists it. The table leaves with the version after every carried figure is booked. */
+function heldPct(R,code,v){
+  const c=R&&R.band&&R.band.carry&&R.band.carry[code];
+  return c&&typeof v==='number'&&typeof c.from==='number'&&typeof c.to==='number'&&Math.abs(v-c.from)<1e-9?c.to:v;
+}
+/* THE RANGE IN WORDS, for a refusal, and THE UNIT A FIGURE TRAVELS WITH: a band book's figure is sent as "band" (the form of 10 Nov 2026), so a
+   page cached from before the switch, which still sends "pct" meaning the old -30% to +30% curve, is told apart by unit and never by time. */
+function rangeSay(R){const g=liftRange(R),a=Math.round(g.min*100),b=Math.round(g.max*100);return {pct:a+'% to +'+b+'%',plain:a+' to +'+b,num:g.min+' to '+g.max};}
+function unitOf(R){return R&&R.band?'band':'pct';}
+function unitOk(R,u){return R&&R.band?u==='band':(u==='pct'||u==='band');}
+function carryClash(R,code,v){
+  const c=R&&R.band&&R.band.carry&&R.band.carry[code];
+  return !!(c&&typeof v==='number'&&Math.abs(v-c.from)<1e-9&&Math.abs(c.to-c.from)>1e-9);
+}
 /* ============ 22 OCT 2026, HIS DECISION: THEIR % RUNS ON HIS CURVE, ON EVERY BOOK ============
    A book takes Their % when its rule is a Set Price (`drift`) or carries `pct` (a stated board, oil, candy and rice): pctBook.
    On a Set Price, `ends` {low:[at the first point, at the last], high:[...]} are the multiples of the Floor he set for -30% and
@@ -517,10 +575,10 @@ function driftOk(v){return typeof v==='number'&&isFinite(v)&&v>=LIFT_MIN-1e-9&&v
    On a stated board, `shares` {low:[at the smallest rung, at the largest], high:[...]} are what -30% and +30% make of his typed
    board, sliding in the log of size between the two rungs and flat beyond them, and a % is that share of the way from the board. */
 function pctBook(R){return !!(R&&(R.drift||R.pct));}
-function pctPos(pct){const k=driftOk(pct)?Math.max(LIFT_MIN,Math.min(LIFT_MAX,+pct)):0;return {k:k,t:k<0?k/LIFT_MIN:k>0?k/LIFT_MAX:0};}
+function pctPos(pct,R){const g=liftRange(R),k=driftOk(pct,R||{})?Math.max(g.min,Math.min(g.max,+pct)):0;return {k:k,t:k<0?k/g.min:k>0?k/g.max:0};}
 function endPair(e){return Array.isArray(e)&&e.length===2&&e.every(v=>typeof v==='number'&&isFinite(v)&&v>0)?e:null;}
 function driftMultiple(q,R,pct){
-  const m=setMultiple(q,R),x=pctPos(pct);
+  const m=setMultiple(q,R),x=pctPos(pct,R);
   if(!R||!R.ends)return m*(1+x.k);
   if(!x.t)return m;
   const end=endPair(x.k<0?R.ends.low:R.ends.high);if(!end)return m;
@@ -529,7 +587,7 @@ function driftMultiple(q,R,pct){
   return m+x.t*(end[1]+s*(end[0]-end[1])-m);
 }
 function shareAt(q,R,pct){
-  const x=pctPos(pct);if(!x.t||!R||!R.shares||!(q>0))return 1;
+  const x=pctPos(pct,R);if(!x.t||!R||!R.shares||!(q>0))return 1;
   const end=endPair(x.k<0?R.shares.low:R.shares.high);if(!end)return 1;
   const rungs=(R.rungs||[]).map(Number).filter(v=>v>0).sort((a,b)=>a-b);if(!rungs.length)return 1;
   const a=rungs[0],b=rungs[rungs.length-1],u=q<=a||b<=a?0:q>=b?1:Math.log(q/a)/Math.log(b/a);
@@ -537,12 +595,13 @@ function shareAt(q,R,pct){
 }
 function driftWalk(sizes,C,P,pct){
   const R=P.tierRule||{}, to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to, down=v=>Math.floor(v/to+1e-9)*to;
-  const cx=+R.ceilingX>0?+R.ceilingX:3;
-  const k=pctPos(pct).k;
+  const cx=+R.ceilingX>0?+R.ceilingX:3, band=!!R.band;
+  const k=pctPos(pct,R).k;
   let rS=Infinity, rP=Infinity, mS=-Infinity, mP=-Infinity;
   return sizes.map(q=>{
     /* fb is the COGS Floor the multiples, the margin lift and the Ceiling are struck on; fl is the Floor the price is held over (10 Nov 2026) */
-    const fl=floorTotal(q,C,P), fb=floorBase(q,C,P), ceil=+(cx*fb).toFixed(4), lo=up(fl), hi=Math.max(down(ceil),lo), m=setMultiple(q,R);
+    /* 10 Nov 2026: on a band the Ceiling is the curve on the supplier's price (bandCeiling), else ceilingX times the COGS Floor; either way down to the grid, never under the Floor */
+    const fl=floorTotal(q,C,P), fb=floorBase(q,C,P), bc=band?bandCeiling(q,R):null, ceil=+(bc!=null?bc:cx*fb).toFixed(4), lo=up(fl), hi=Math.max(down(ceil),lo), m=setMultiple(q,R);
     /* top is the floor times the multiple at this %: on his ends the engine's driftMultiple, else fl*m*(1+k) in that order, as it always was */
     const step=(r,mg,top)=>{
       const rate=Math.min(r,top/q);
@@ -556,8 +615,9 @@ function driftWalk(sizes,C,P,pct){
     };
     const s=step(rS,mS,fb*m*1);rS=s.rate;mS=s.mg;
     let p=s.p;
-    if(Math.abs(k)>1e-9){const x=step(rP,mP,R.ends?fb*driftMultiple(q,R,k):fb*m*(1+k));rP=x.rate;mP=x.mg;p=x.p;}
-    return {q:q,floor:+fl.toFixed(2),ceiling:+ceil.toFixed(2),set:s.p,p:p,d:k};
+    /* on a band their % is a place between the three posts as quoted at this size (bandTop over the walked Median, the Floor and the Ceiling) */
+    if(Math.abs(k)>1e-9){const x=step(rP,mP,band?bandTop(s.p,lo,hi,k):R.ends?fb*driftMultiple(q,R,k):fb*m*(1+k));rP=x.rate;mP=x.mg;p=x.p;}
+    return {q:q,floor:+fl.toFixed(2),ceiling:+(band?hi:ceil).toFixed(2),set:s.p,p:p,d:k};
   });
 }
 /* ============ 05 OCT 2026, HIS DECISION: ANY QUANTITY AT AN AUTOMATIC PRICE ============
@@ -641,15 +701,20 @@ function autoDrift(s,A){
    written off. The suggestion is paidOver plus risk less good to the nearest S.step, held LIFT_MIN to LIFT_MAX, and nought for a customer
    with fewer than S.minSettled settled rows. Returns {pct, paidOver, risk, good}. Prices nothing: the desk and Counter Admin show it, and
    his tap sets it (a tierset), like any figure of his. */
-function suggestPct(sig,ratios,S,A){
-  const s=S||{}, x=sig||{}, n=(k,v)=>s[k]!=null?+s[k]:v;
+function suggestPct(sig,ratios,S,A,O){
+  const s=S||{}, x=sig||{}, n=(k,v)=>s[k]!=null?+s[k]:v, o=O||{}, lim={min:o.min!=null?+o.min:LIFT_MIN,max:o.max!=null?+o.max:LIFT_MAX};
+  const medOf=l=>{const r=(l||[]).filter(v=>typeof v==='number'&&isFinite(v)).slice(-n('recent',5)).sort((a,b)=>a-b);
+    return r.length?(r.length%2?r[(r.length-1)/2]:(r[r.length/2-1]+r[r.length/2])/2):null;};
   if((+x.settled||0)<n('minSettled',3))return {pct:0,paidOver:0,risk:0,good:0};
   const rs=(ratios||[]).filter(v=>typeof v==='number'&&isFinite(v)&&v>0).slice(-n('recent',5)).sort((a,b)=>a-b);
   const med=rs.length?(rs.length%2?rs[(rs.length-1)/2]:(rs[rs.length/2-1]+rs[rs.length/2])/2):1;
   const paidOver=Math.max(0,med-1);
   const risk=(+x.writtenOff||0)>0.009?n('writtenOff',0.3):(x.lateLong||(+x.overdueDays||0)>n('overdueDays',14))?n('longLate',0.2):x.late?n('late',0.1):0;
   const rec=autoDrift(x,A), good=rec.B>0?0:+(n('good',0.3)*rec.G).toFixed(4);
-  const step=n('step',0.05), pct=Math.min(LIFT_MAX,Math.max(LIFT_MIN,Math.round((paidOver+risk-good)/step+1e-9)*step));
+  /* 10 Nov 2026: on a band the snapshot hands in o.places, where each of those sales sat on the band (bandPct at the sale's own size), and the
+     suggestion starts from their median place, not under nought, in place of the ratio; paidOver stays the ratio, for the words */
+  const pm=Array.isArray(o.places)?medOf(o.places):null, base=pm!=null?Math.max(0,pm):paidOver;
+  const step=n('step',0.05), pct=Math.min(lim.max,Math.max(lim.min,Math.round((base+risk-good)/step+1e-9)*step));
   return {pct:+pct.toFixed(2)||0,paidOver:+paidOver.toFixed(4),risk:risk,good:good};
 }
 /* THE SUGGESTION'S REASON, in a few words, from what suggestPct returned: 'paid 10% over', 'written off', 'paid very late', 'paid late', or
@@ -689,7 +754,7 @@ function fiveTierAt(q,C,P){
 function fixedWalk(sizes,C,P,d){
   const R=P.tierRule, to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to, down=v=>Math.floor(v/to+1e-9)*to;
   const rungs=R.rungs.map(Number).sort((a,b)=>a-b);
-  const k=R.pct&&typeof d==='number'?pctPos(d).k:0;
+  const k=R.pct&&typeof d==='number'?pctPos(d,R).k:0;
   let prev=Infinity, prevD=Infinity;
   return fiveTiers(sizes,C,P).map(r=>{
     let p=r.prices&&r.prices.length?r.prices[r.prices.length-1]:null;
@@ -798,7 +863,8 @@ function quoteOff(snap,code,qty){
 return {cardAt:cardAt,costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         floorTotal:floorTotal,floorBase:floorBase,costTotal:costTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,
-        setMultiple:setMultiple,driftOk:driftOk,pctBook:pctBook,driftMultiple:driftMultiple,shareAt:shareAt,LIFT_MIN:LIFT_MIN,LIFT_MAX:LIFT_MAX,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,suggestWhy:suggestWhy,
+        setMultiple:setMultiple,driftOk:driftOk,pctBook:pctBook,driftMultiple:driftMultiple,shareAt:shareAt,LIFT_MIN:LIFT_MIN,LIFT_MAX:LIFT_MAX,
+        liftRange:liftRange,rangeSay:rangeSay,unitOf:unitOf,unitOk:unitOk,bandCeiling:bandCeiling,bandTop:bandTop,bandPct:bandPct,heldPct:heldPct,carryClash:carryClash,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,suggestWhy:suggestWhy,
         gridOf:gridOf,gridSizes:gridSizes,onGrid:onGrid,walkSizes:walkSizes,fixedWalk:fixedWalk,quoteAt:quoteAt,quoteGrid:quoteGrid};
 })();
 export default PRICING_ENGINE;
