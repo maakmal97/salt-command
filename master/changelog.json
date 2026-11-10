@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1499",
+  "d": "10 Nov 2026",
+  "t": "PREP REMOVED ENTIRELY AS A PRODUCT",
+  "n": [
+   "<b>HIS WORD: REMOVE PREP ENTIRELY AS A PRODUCT.</b> Five books now: salt, oil, candy, rice and gas. PrEP is gone from the book (its entry, its opening, its count date, its price set, its cost rule and its quote), from the pricing rules (its board, its sizes and its rounding), from the Counter's marks, shapes and letters and its word lists, and from the design system (salt-ds 1.31.0: its hue, its product, tag and coin classes and its two icons).",
+   "<b>ITS ONE ROW WENT WITH IT, HIS ANSWER \"DELETE THE COUNT TOO\".</b> The count of 02 Nov 2026 that put 25 units on its shelf, and that count's note, are deleted, not written off: no loss is recorded. It never sold, bought or lent, so no revenue, cost or cash moves.",
+   "<b>THE BOOK WAS EDITED FIRST, BY AN IMPORT.</b> The day's export took the Book at revision 377 with nothing open; the same book less PrEP, proved equal to it in every other key, was loaded back with the import the flip left for a rare hand edit, parity over 561 rows. tools/product.mjs gains --remove, which refuses salt, any book with a sale, a lot or a loan, stock rows without --with-rows, and a note naming another book; tools/book-load.mjs sends the owner's Access login, so the laptop can import without the CI token.",
+   "The grid's `multiples`, made for PrEP's packs of 12 and 30, stays: no book uses it now. 12 new checks for the removal and 2 for the login, each proved red by its own mutation; older checks re-aimed to five books; the frozen test book and the pinned pricing carry no PrEP."
+  ]
+ },
+ {
   "v": "v1498",
   "d": "10 Nov 2026",
   "t": "THE DESK CLEANED UP, AND TWO WHAT-IF PLANNERS",
