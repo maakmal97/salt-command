@@ -962,3 +962,32 @@ addresses `ADMIN_TO` in `src/worker.js` lists and lands anything else on Approve
 Salt Admin reads `row/`, `acct/` and `tip/` in `addrOf` as a want (`WANTS`, `wantGo`), each key checked, its own address replaced first so Back
 leaves it; a want opens a form or a card and sends nothing. Codes and rids only ever reach an address, never a name (rule 2). Section "9 Nov 2026:
 every Desk conclusion leads to the correct path" (`test/desk-paths.mjs`, 30 mutations red). A refund on a `-R` bucket opens its associate's account.
+
+## The Desk cleanup and the what-if planners (10 Nov 2026, his word; plan `docs/plan-desk-cleanup.html`)
+
+His word: fix the bugs, keep only what is worth showing, and make the Desk more interactive for planning. His answers: remove the
+repeats outright; build the Restock planner and Month ahead (Cash on hand not built); plan inputs on this device.
+
+- **One card a debt.** A credit rule a chase past its term already answers rides on that Chase card as chips; a Rule
+  card is drawn only for a breach no such chase covers (`actions()`, step 5).
+- **A partner at the Floor keeps rule 5**: `boundaryScan` raises no Margin floor row for a partner's sale at or over the Floor;
+  under the Floor it still does.
+- **Noticed draws three or more repeat-order notes as one card.** Each pair is still its own observation (its id, its hush, the
+  snapshot's `obs`); only the drawing groups them (`tabPlans`, `dupOf`). A headroom under nought raises no card: the integrity
+  note on sales under the floor names them.
+- **Gone, his word**: Rules' Desk digest, Position at a glance and Latest ledger; Today's Money at stake chart; Financials' per-order
+  and monthly cost tables (five lines of six read "not measured"); Sourcing's three loss tiles are one, The gap; an associate's
+  stream with nothing in it is not drawn. Kept, against draft 1: "Pays your time to" (`COST_BOOK.hourRM` is set) and the
+  Associates fold "What counts, and why" (the one place the reward scheme is written).
+- **Analysis** holds only the last correction of a field against its row and never a note's prose; its empty-inventory tile counts
+  a level within 0.05 of nought, never one rebuilt under it. **The Ledger trail** draws one Correction line a day.
+- **The planners read and never write.** `planGet`/`planSet` keep `{dem, cost, run, lots}` in localStorage `salt-plan-v1`, clamped
+  on every read (demand -50% to +50% in tens, buying cost -30% to +30% in fives, at most 12 lots inside 60 days). Nothing is
+  queued, priced or booked, and the buying cost moves no Floor (rule 1).
+  - **Restock planner**, Stock > Next 30 days (`whatIfCard`): a lot reaches the forecast only through `fwdOpts().whatIf`, so no
+    other reader of `forecast()` sees it; it lands and is paid for on its day; the book table says what each book read without
+    it (`per[p].base`). One tap adds a book's next lot as `restockFor` sizes it.
+  - **Month ahead**, Money > Financials (`planMonth`, `monthAhead`): each live book's measured daily rate for 30 days at its last
+    60 days' realised price a unit and today's replacement cost. Demand and buying cost move the second column only; running
+    costs come off both. An estimate: no season, no price change, no lot timing.
+- A prose block added to Financials or Receivables carries an id, or the render sweep (`stripMethod`) may delete it.
