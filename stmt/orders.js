@@ -571,7 +571,7 @@ export const onStep = (q, g, past = false) => {
   const k = (q - g.min) / g.step;
   return q >= g.min - 1e-9 && (past || q <= g.max + 1e-9) && Math.abs(k - Math.round(k)) < 1e-6 && sizeAllowed(q, g);
 };
-/** A grid with `multiples` (PrEP, 27 Oct 2026: 12 or 30 pills, N times either) takes a size only if it is a whole number of one of them. */
+/** A grid with `multiples` (made for PrEP on 27 Oct 2026, the book removed 10 Nov 2026; no book uses it now) takes a size only if it is a whole number of one of them. */
 export const sizeAllowed = (q, g) => {
   /* `only` (salt: halves to 5, then 6.25, 12.5, 25, 50, 100) is the sizes orderable up to the max; past it Negotiate takes any step */
   if (Array.isArray(g.only) && g.only.length && q <= g.max + 1e-9 && !g.only.some((x) => isNum(x) && Math.abs(x - q) < 1e-6)) return false;
