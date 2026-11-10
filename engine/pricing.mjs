@@ -633,7 +633,7 @@ function gridOf(R){
   const G=R&&R.grid;if(!G||typeof G!=='object')return null;
   const min=+G.min,step=+G.step,max=+G.max;
   if(!(min>0)||!(step>0)||!(max>=min)||!isFinite(max))return null;
-  /* 27 Oct 2026, HIS WORD ON PrEP: `multiples` narrows the grid to sizes that are a whole number of any one of them (12 or 30
+  /* 27 Oct 2026, HIS WORD ON PrEP (the book removed 10 Nov 2026; the mechanism kept, no book uses it): `multiples` narrows the grid to sizes that are a whole number of any one of them (12 or 30
      pills, N times either). The grid still runs min to max in steps so every point is priced and p[i] stays at min+i*step;
      only the sizes a customer may ORDER are cut (sizeOk), by the Worker, the page and onGrid. */
   const mul=Array.isArray(G.multiples)?G.multiples.map(Number).filter(x=>x>0&&isFinite(x)):[];

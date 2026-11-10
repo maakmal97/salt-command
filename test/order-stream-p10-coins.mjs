@@ -10,7 +10,7 @@ export async function run({ ok, pageWork }) {
   const K = await import("./counter-b-kit.mjs");
   const P = await import("../stmt/page.js");
   const { JSDOM } = await import("jsdom");
-  const WORDS = ["oil", "candy", "rice", "gas", "prep"];
+  const WORDS = ["oil", "candy", "rice", "gas"];
   const attrsOf = (e) => [...e.querySelectorAll("*")].concat([e]).flatMap((x) => [...x.attributes].map((a) => a.value.toLowerCase()));
   const pages = [];
   try {
@@ -44,13 +44,13 @@ export async function run({ ok, pageWork }) {
     const tile = fresh.d.querySelector("#pHome .htile");
     ok(!!tile && !!tile.querySelector(".salt-coin.salt-coin--lg") && !tile.querySelector("svg.psym"), "10b Home's start tiles carry the large coin");
     /* the guest board */
-    const html = P.boardPage({ prices: { week: { label: "this week" }, products: [{ product: "prep", unit: "unit", sizes: [{ q: 12, price: 60 }] }, { product: "gas", unit: "unit", sizes: [{ q: 1, price: 75 }] }] } }, "nonce10");
+    const html = P.boardPage({ prices: { week: { label: "this week" }, products: [{ product: "rice", unit: "unit", sizes: [{ q: 1, price: 8 }] }, { product: "gas", unit: "unit", sizes: [{ q: 1, price: 75 }] }] } }, "nonce10");
     const g = new JSDOM(html).window.document;
     const gc = [...g.querySelectorAll("h2.pmark .salt-coin")];
-    ok(gc.length === 2 && gc.every((c) => c.classList.contains("salt-coin--md")) && gc[0].getAttribute("data-b") === String(Object.keys(P.PSYM).indexOf("prep")),
+    ok(gc.length === 2 && gc.every((c) => c.classList.contains("salt-coin--md")) && gc[0].getAttribute("data-b") === String(Object.keys(P.PSYM).indexOf("rice")),
       "10b the guest board's heads are coins, by the book's index");
-    ok(gc[0].querySelector("text").getAttribute("font-size") === "11" && gc[1].querySelector("text").getAttribute("font-size") === "12" && P.coinSvg("salt", "sm").includes('font-size="13"'),
-      "10b the letter's size follows its length: one 13, three 12, four 11");
+    ok(gc[0].querySelector("text").getAttribute("font-size") === "13" && gc[1].querySelector("text").getAttribute("font-size") === "12" && P.coinSvg("salt", "sm").includes('font-size="13"'),
+      "10b the letter's size follows its length: one 13, three 12");
     const css = [...g.querySelectorAll("style")].map((s) => s.textContent).join("");
     const land = P.landingPage("abcd-efgh", "n10", null);
     ok(Object.keys(P.PSYM).every((k, i) => css.includes('.salt-coin[data-b="' + i + '"]{--salt-hue:var(--salt-product-' + k + ")}") && land.includes('.salt-coin[data-b="' + i + '"]')),

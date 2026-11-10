@@ -800,6 +800,10 @@ export function planBatch(book, staged, notes, ctx) {
       const rt = r.tiers || {}, rtOff = Object.keys(rt).filter((p) => !(book.PRODUCTS || {})[p]), rtOld = Object.keys(rt).filter((p) => oldLift(it, p, rt[p])), rtBad = Object.keys(rt).filter((p) => !rtOld.includes(p) && !tierOk(p, rt[p]));   /* a % lift on a book with a Set Price, nothing on any other */   // v645, per product since v646
       if (rtOff.length || rtBad.length) { out.refused.push({ id: it.id, why: rtOff.length ? `${rtOff.join(" and ")} is not a product on this book` : `${rtBad.map((p) => sayLift(rt[p]) + (driftBooks().includes(p) ? notPct(p) : " is not held per customer on this book")).join(" and ")}` }); continue; }
       const rtKept = Object.fromEntries(Object.entries(rt).filter(([p]) => !rtOld.includes(p)));
+      /* Fable's re-check, 10 Nov 2026: THE ADD ID ROAD ASKS FOR THE CARRY-OVER TOO. A code in the table can come this road (an appointment of a customer
+         already here, or a code a rename freed and Add ID mints again), and a figure equal to the old holder's would be read as their place on the band */
+      const rtClash = Object.keys(rtKept).filter((p) => PRICING_ENGINE.carryClash(ruleOf(p), r.code, rtKept[p]));
+      if (rtClash.length) { out.refused.push({ id: it.id, why: rtClash.map((p) => `${sayLift(rtKept[p])} is the figure ${r.code} held on the old scale, which is read as its place on the band until the carry-over is filed: choose 1% either side`).join(" and ") }); continue; }
       entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null, geo: r.geo || null, tiers: Object.keys(rtKept).length ? rtKept : null, partner };
       if (partner) entry.does.push(`make ${r.code} a partner: they pay the Floor, up to the next RM 5, on every book; they keep every associate property`);
       if (entry.roster.register) entry.does.push(`append ${r.code} to the roster (the directory is not touched)`);

@@ -47,16 +47,6 @@
       "retired": false,
       "note": "Opened 27 Oct 2026 on his word, by renaming the retired spare book (no row, opening or price). Letter P, a flame mark. No lot, no sale and no count yet, so the fold will refuse a sale on it until its first lot is entered by hand.",
       "reward": false
-    },
-    "prep": {
-      "id": "prep",
-      "name": "PrEP",
-      "unit": "unit",
-      "accent": "var(--salt-product-prep)",
-      "since": "2026-10-27",
-      "retired": false,
-      "reward": false,
-      "note": "Opened 27 Oct 2026 on his word. Letter PrEP, a heart-shaped pill mark. No lot, no sale and no count yet, so the fold will refuse a sale on it until its first lot is entered by hand."
     }
   },
   "PROD_ORDER": [
@@ -64,8 +54,7 @@
     "oil",
     "candy",
     "rice",
-    "gas",
-    "prep"
+    "gas"
   ],
   "opening": {
     "qty": 4.9,
@@ -96,11 +85,6 @@
       "qty": 0,
       "costPerKg": 50,
       "stated": null
-    },
-    "prep": {
-      "qty": 0,
-      "costPerKg": 3.3333333333333335,
-      "stated": null
     }
   },
   "STATED_STOCK": 20.14,
@@ -109,8 +93,7 @@
     "oil": "2026-10-06",
     "candy": "2026-10-06",
     "rice": "2026-10-06",
-    "gas": null,
-    "prep": null
+    "gas": null
   },
   "COUNTS": [
     {"product":"salt","date":"2026-08-24","qty":null,"was":null,"drift":null,"note":"anchor: the count the 15:70:15 leak split of 24 Aug was taken at; the figure itself was not recorded, so it bounds the next cycle and charges nothing Noted 27 Sep 2026: v351 did record it, 21.5 against 25.25; that drift of -3.75 is carried in the 55.2 self-use split, so this row still charges nothing."},
@@ -911,8 +894,7 @@
         }
       ]
     },
-    "gas": null,
-    "prep": null
+    "gas": null
   },
   "CASH_COUNT_RETIRED": {
     "on": "2026-07-28",
@@ -943,10 +925,6 @@
     "gas": {
       "prices": {},
       "hide": []
-    },
-    "prep": {
-      "prices": {},
-      "hide": []
     }
   },
   "COST_RULE": {
@@ -969,10 +947,6 @@
     "gas": {
       "kind": "latestCogs",
       "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
-    },
-    "prep": {
-      "kind": "latestCogs",
-      "note": "His settled rule of 05 Oct 2026, every book alike: COGS off the latest purchase, quote plus trip freight over its units; the floor is that times the size and nothing else."
     }
   },
   "REWARD_OPEN": {

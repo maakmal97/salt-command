@@ -274,5 +274,11 @@
   "file": "engine/apply.mjs",
   "find": "${fresh ? \"stays on the Median Price at 0%\" : \"keeps the figure it held\"}",
   "replace": "stays on the Median Price at 0%"
+ },
+ {
+  "name": "the Add ID road does not ask for the carry-over",
+  "file": "engine/apply.mjs",
+  "find": "if (rtClash.length) { out.refused.push",
+  "replace": "if (false) { out.refused.push"
  }
 ]

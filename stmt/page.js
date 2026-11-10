@@ -1511,26 +1511,24 @@ export const PSYM = {
      semicircle through its rounded ends and the capsule meets the square's sides. */
   candy: 'M12 2.6 L21.4 12 L12 21.4 L2.6 12 Z',
   rice: 'M12.84 19.64 L19.64 12.84 A5.99 5.99 0 0 0 11.16 4.36 L4.36 11.16 A5.99 5.99 0 0 0 12.84 19.64 Z M7.76 7.76 L16.24 16.24',
-  /* 27 Oct 2026, his two new books: a heart-shaped pill for PrEP, a heart split by the seam a pill carries, and for the
-     book keyed gas (named Aroma on 27 Oct 2026, named Gas again on 28 Oct) a twelve-point starburst, an explosion carrying POP, his choice
-     of A over a diffuser flask. Both fill the same square (2.6 to 21.4 about the centre). The seam stops clear of the
-     letters and the burst's inner radius (7.7) is wide enough for three, so neither mark needs a PLET_ROOM drawing. */
-  gas: 'M12 2.6 L13.99 4.56 L16.7 3.86 L17.44 6.56 L20.14 7.3 L19.44 10.01 L21.4 12 L19.44 13.99 L20.14 16.7 L17.44 17.44 L16.7 20.14 L13.99 19.44 L12 21.4 L10.01 19.44 L7.3 20.14 L6.56 17.44 L3.86 16.7 L4.56 13.99 L2.6 12 L4.56 10.01 L3.86 7.3 L6.56 6.56 L7.3 3.86 L10.01 4.56 Z',
-  prep: 'M12 21.4 C5 16.4 2.6 12.6 2.6 8.6 C2.6 5.2 5 2.6 7.9 2.6 C9.6 2.6 11.2 3.6 12 5.2 C12.8 3.6 14.4 2.6 16.1 2.6 C19 2.6 21.4 5.2 21.4 8.6 C21.4 12.6 19 16.4 12 21.4 Z M12 5.2 L12 8 M12 16.6 L12 21.4'
+  /* 27 Oct 2026, his new book keyed gas (named Aroma on 27 Oct 2026, named Gas again on 28 Oct) a twelve-point starburst, an explosion carrying POP, his choice
+     of A over a diffuser flask. It fills the same square (2.6 to 21.4 about the centre), and the burst's inner radius (7.7)
+     is wide enough for three letters, so it needs no PLET_ROOM drawing. PrEP's heart went with its book (10 Nov 2026). */
+  gas: 'M12 2.6 L13.99 4.56 L16.7 3.86 L17.44 6.56 L20.14 7.3 L19.44 10.01 L21.4 12 L19.44 13.99 L20.14 16.7 L17.44 17.44 L16.7 20.14 L13.99 19.44 L12 21.4 L10.01 19.44 L7.3 20.14 L6.56 17.44 L3.86 16.7 L4.56 13.99 L2.6 12 L4.56 10.01 L3.86 7.3 L6.56 6.56 L7.3 3.86 L10.01 4.56 Z'
 };
 const RING = 'M12 3.4 A8.6 8.6 0 1 1 11.99 3.4 Z';
 /* A CONTROL STILL NEEDS A NAME, and the name is the SHAPE, never the product. A button holding
    only a decorative mark is unusable with a screen reader; an aria-label naming the product would
    put the word back for exactly the readers who cannot see that it was taken away. The shape is
    what is on the screen, so saying it aloud gives away no more than looking does. */
-export const PSHAPE = { salt: "Cube", oil: "Droplet", candy: "Lozenge", rice: "Capsule", gas: "Starburst", prep: "Heart", _: "Ring" };
+export const PSHAPE = { salt: "Cube", oil: "Droplet", candy: "Lozenge", rice: "Capsule", gas: "Starburst", _: "Ring" };
 /* ---- F8, HIS ANSWERS OF 28 SEP 2026 ("everywhere", then "Yes everywhere", the statement and the guest board included):
    A LETTER OF HIS IN EVERY BOOK'S MARK, WHEREVER IT IS DRAWN ----
    None is its product's initial, in English, and together they spell no product word: a letter names nothing
    and the mark is still the thing. psymSvg and the page's psym draw it always (v913's `lettered` switch is retired), and no
    mark is drawn under 20 px, where the letter, a third of the mark, would be too small to read. Any
    product with no letter keep the Ring, bare, and the aria stays the shape. */
-export const PLET = { salt: "I", oil: "G", candy: "E", rice: "V", gas: "POP", prep: "PrEP" };
+export const PLET = { salt: "I", oil: "G", candy: "E", rice: "V", gas: "POP" };
 /* EVERY LETTER THE SAME SIZE ON THE SAME LINE (his redraw of 28 Sep 2026): the mono face (.plet) at size 8 in the 24
    grid, its capitals centred on the mark's centre, so the baseline sits half a capital (0.73 of the size) below 12. */
 const PLET_AT = { y: 14.92, s: 8 };
@@ -1541,7 +1539,7 @@ const PLET_ROOM = {
   rice: "M12.84 19.64 L19.64 12.84 A5.99 5.99 0 0 0 11.16 4.36 L4.36 11.16 A5.99 5.99 0 0 0 12.84 19.64 Z"
 };
 /* one letter's drawing, its letter and place beside it, for the page's script; null for a product with none */
-/* A WORD IN THE MARK shrinks to fit (PrEP, his word of 27 Oct 2026): one capital is PLET_AT; a longer one is set so its width,
+/* A WORD IN THE MARK shrinks to fit (his word of 27 Oct 2026; POP today): one capital is PLET_AT; a longer one is set so its width,
    about 0.6 of its size a letter, stays under 13 in the 24 grid, its baseline on the same half-capital below the centre. */
 const pletSize = (l) => { const s = l.length > 1 ? Math.min(PLET_AT.s, 13 / (0.6 * l.length)) : PLET_AT.s; return { y: +(12 + 0.365 * s).toFixed(2), s: +s.toFixed(2) }; };
 const pletOf = (k) => (Object.hasOwn(PLET, k) && Object.hasOwn(PSYM, k)
@@ -5332,7 +5330,7 @@ const CLIENT_JS = `
     formFoot();
   }
   /* ANY AMOUNT (05 Oct 2026): typed in units, read off the grid as it is typed, its figure and its rate said under it */
-  /* why a size is not on the grid: its steps, or, where the grid carries multiples (PrEP), which sizes it takes */
+  /* why a size is not on the grid: its steps, or, where the grid carries multiples, which sizes it takes */
   function offWhy(g,q){ return g.multiples&&g.multiples.length?tw('e.offMult',{l:g.multiples.join(tw('w.or'))}):g.only&&g.only.length&&+q<=g.max+1e-9?tw('e.offOnly'):tw('e.offStep',{s:g.step, n:g.min}); }
   function anyHint(P,v){ var g=gridOf(P), q=+v, t=v===''?null:priceAt(P,q);
     if(v===''||!(q>0)) return g.multiples&&g.multiples.length?tw('sh.anyMult',{l:g.multiples.join(tw('w.or')), m:g.max}):g.only&&g.only.length?tw('sh.anyOnly',{m:g.max}):tw('sh.anyHint',{n:g.min, s:g.step, m:g.max});

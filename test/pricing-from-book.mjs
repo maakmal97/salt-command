@@ -62,7 +62,7 @@ export async function run({ ok }) {
   /* 2: the figures */
   const got = pricingFromBook(book, FIXTURE_NOW);
   const products = Object.keys(fixture.byProduct);
-  ok(products.length >= 6 && products.every((p) => r8(got.byProduct[p]) === r8(fixture.byProduct[p])) && r8(got.sizes) === r8(fixture.sizes),
+  ok(products.length >= 5 && products.every((p) => r8(got.byProduct[p]) === r8(fixture.byProduct[p])) && r8(got.sizes) === r8(fixture.sizes),
     "pricing() from the book alone is the page's byProduct for every book (" + products.join(", ") + ") and its sizes, on the pinned fixture");
   ok(Object.keys(got.byProduct.salt.cards).length > 10 && Object.keys(got.byProduct.salt.lift || {}).length > 10 && got.byProduct.salt.ladder.length > 5, "and that includes the customers' cards, the lift of a % book and the ladder, not an empty shell");
   const later = pricingFromBook(book, FIXTURE_NOW + 40 * 86400000);

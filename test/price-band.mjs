@@ -243,6 +243,14 @@ export async function run({ ok }) {
   ok(rHeld.refused.length === 1 && viaCarry(rHeld) && new RegExp("^" + cR + " still holds a % read through").test(rHeld.refused[0].why) && !viaCarry(rBooked) && !viaCarry(rNone),
   "a rename of a customer still read through the carry-over is refused until their place is booked, and one who holds their place or nothing is not held back by it: "
     + fl([rHeld.refused, rBooked.refused, rNone.refused]));
+  /* and the Add ID road asks too (the re-check): a code in the table can be minted again once a rename has freed it */
+  const cN = codes.find((c) => !bk.roster.includes(c)) || "CZ7-NEW";
+  if (!carry[cN]) R.band.carry[cN] = { from: 0.3, to: 0.49 };
+  const adC = (v) => ({ id: stamp, collection: "roster", row: { code: cN, kind: "customer", tiers: { salt: v }, unit: "band" }, entry: { at: stamp, payload: {} } });
+  let aFrom, aTo;
+  try { aFrom = planOn(bk, adC(R.band.carry[cN].from)); aTo = planOn(bk, adC(R.band.carry[cN].to)); } finally { if (cN === "CZ7-NEW") delete R.band.carry[cN]; }
+  ok(aFrom.refused.length === 1 && new RegExp(cN + " held on the old scale").test(aFrom.refused[0].why) && !aTo.refused.some((x) => /old scale/.test(x.why)),
+  "an Add ID naming a carried code with the old holder's figure is refused, and with their place on the band it is not held back by the carry-over: " + fl([aFrom.refused, aTo.refused]));
 
   /* the surfaces read the same range: Salt Admin's stepper and the Desk's routes */
   const owner = fs.readFileSync(new URL("../stmt/owner.js", import.meta.url), "utf8"), worker = fs.readFileSync(new URL("../src/worker.js", import.meta.url), "utf8");

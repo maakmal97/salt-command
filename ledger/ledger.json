@@ -1,6 +1,6 @@
 {
- "v": "v1497",
- "stamped": "10 Nov 2026, 14:31 KL",
+ "v": "v1498",
+ "stamped": "10 Nov 2026, 22:59 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -33,16 +33,6 @@
     "since": "2026-08-06",
     "unit": "unit"
    },
-   "prep": {
-    "accent": "var(--salt-product-prep)",
-    "id": "prep",
-    "name": "PrEP",
-    "note": "Opened 27 Oct 2026 on his word. Letter PrEP, a heart-shaped pill mark. No lot, no sale and no count yet, so the fold will refuse a sale on it until its first lot is entered by hand.",
-    "retired": false,
-    "reward": false,
-    "since": "2026-10-27",
-    "unit": "unit"
-   },
    "rice": {
     "accent": "var(--salt-product-rice)",
     "id": "rice",
@@ -68,8 +58,7 @@
    "oil",
    "candy",
    "rice",
-   "gas",
-   "prep"
+   "gas"
   ],
   "opening": {
    "costPerKg": 64,
@@ -91,11 +80,6 @@
     "qty": 5,
     "stated": 30
    },
-   "prep": {
-    "costPerKg": 3.3333333333333335,
-    "qty": 0,
-    "stated": 25
-   },
    "rice": {
     "costPerKg": null,
     "qty": 0,
@@ -112,7 +96,6 @@
    "candy": "2026-11-07",
    "gas": "2026-11-02",
    "oil": "2026-11-07",
-   "prep": "2026-11-02",
    "rice": "2026-11-07",
    "salt": "2026-11-10"
   },
@@ -438,13 +421,6 @@
     "product": "oil",
     "qty": 0,
     "was": 20
-   },
-   {
-    "date": "2026-11-02",
-    "drift": 25,
-    "product": "prep",
-    "qty": 25,
-    "was": 0
    },
    {
     "date": "2026-11-02",
@@ -12967,7 +12943,6 @@
      }
     ]
    },
-   "prep": null,
    "rice": {
     "kind": "live quote",
     "quotedOn": "2026-09-23",
@@ -13006,10 +12981,6 @@
     "kind": "latestCogs",
     "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
    },
-   "prep": {
-    "kind": "latestCogs",
-    "note": "His settled rule of 05 Oct 2026, every book alike: COGS off the latest purchase, quote plus trip freight over its units; the floor is that times the size and nothing else."
-   },
    "rice": {
     "kind": "latestCogs",
     "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
@@ -13029,10 +13000,6 @@
     "prices": {}
    },
    "oil": {
-    "hide": [],
-    "prices": {}
-   },
-   "prep": {
     "hide": [],
     "prices": {}
    },
@@ -13083,11 +13050,6 @@
    },
    "shrinkAttrib": 1,
    "obs": [
-    {
-     "id": "px:headroom:salt",
-     "sev": "act",
-     "title": "The buying rate can rise RM -1 a unit, -2%, before a card breaches"
-    },
     {
      "id": "cust:cadence:salt",
      "sev": "watch",
@@ -13257,11 +13219,6 @@
      "id": "upkeep:shrink:salt",
      "sev": "note",
      "title": "The unexplained plug runs at 0% of everything handled"
-    },
-    {
-     "id": "parity:declared:prep",
-     "sev": "note",
-     "title": "PrEP is declared but has nothing on the books"
     }
    ],
    "profileOf": {
@@ -23151,750 +23108,12 @@
       "CD4-DAM": 0
      },
      "suggest": null
-    },
-    "prep": {
-     "stockCost": 3.3333,
-     "replCost": 3.33,
-     "floors": {
-      "12": {
-       "floor": 40
-      },
-      "30": {
-       "floor": 100
-      }
-     },
-     "inputs": {
-      "cost": {
-       "prod": "prep",
-       "lockOn": false,
-       "lockState": {
-        "state": "none",
-        "lock": null,
-        "cur": null
-       },
-       "lockBase": null,
-       "over": {
-        "cost": null,
-        "shrink": null
-       },
-       "lot": null,
-       "meanLot": null,
-       "quoteRate": 3.33,
-       "repl": null,
-       "freightRate": 0,
-       "leak": null,
-       "costRule": {
-        "kind": "latestCogs",
-        "note": "His settled rule of 05 Oct 2026, every book alike: COGS off the latest purchase, quote plus trip freight over its units; the floor is that times the size and nothing else."
-       },
-       "latest": null,
-       "costBasis": {
-        "freightPerTrip": {
-         "rm": 0
-        },
-        "txnPerDelivery": {
-         "rm": 0
-        },
-        "deliveredShare": {
-         "v": 0.2
-        }
-       },
-       "attrib": 1,
-       "shrinkRate": 0,
-       "avgDel": {
-        "n": 0,
-        "kg": 0,
-        "mean": null
-       }
-      },
-      "policy": {
-       "LADDER": {
-        "floor": 0.33,
-        "ceiling": 2,
-        "anchorQ": 2.5,
-        "anchorX": 0.958,
-        "at": {
-         "lo": 0.5,
-         "hi": 12.5
-        },
-        "basis": "floor",
-        "anchorG": 0.47,
-        "gLo": 0.25,
-        "gHi": 0.667,
-        "round": {
-         "to": 1,
-         "up": true
-        },
-        "taper": "supplier"
-       },
-       "minPerUnit": 0,
-       "timePerOrder": 0,
-       "floorTo": 5,
-       "lotFloor": {},
-       "stated": {},
-       "tierRule": {
-        "pct": true,
-        "shares": {
-         "low": [
-          0.8,
-          0.9
-         ],
-         "high": [
-          1.2,
-          1.09
-         ]
-        },
-        "presets": {
-         "-30%": -0.3,
-         "-20%": -0.2,
-         "-15%": -0.15,
-         "-10%": -0.1,
-         "-5%": -0.05,
-         "Set Price": 0,
-         "+5%": 0.05,
-         "+10%": 0.1,
-         "+15%": 0.15,
-         "+20%": 0.2,
-         "+30%": 0.3
-        },
-        "fixed": {
-         "12": 60,
-         "30": 125
-        },
-        "rungs": [
-         12,
-         30
-        ],
-        "ceilingX": 3,
-        "grid": {
-         "min": 12,
-         "step": 6,
-         "max": 120,
-         "multiples": [
-          12,
-          30
-         ]
-        }
-       },
-       "tiers": [],
-       "boardSizes": [
-        12,
-        30
-       ]
-      }
-     },
-     "sizes": [
-      12,
-      30
-     ],
-     "rungs": [
-      12,
-      30
-     ],
-     "ladder": [
-      {
-       "q": 12,
-       "prices": [
-        40,
-        60
-       ],
-       "fixed": true
-      },
-      {
-       "q": 30,
-       "prices": [
-        100,
-        125
-       ],
-       "fixed": true
-      }
-     ],
-     "cards": {
-      "CS6-BS": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CS6-PER": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CE4-CHE": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CM4-TO": [
-       [
-        12,
-        40
-       ],
-       [
-        30,
-        100
-       ]
-      ],
-      "CJ4-BJ": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CM4-MK": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CK4-SEN": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CZ4-MK": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CN3-WM": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CR3-DAM": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CE4-AD": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CC9-OKR": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CZ5-TM": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CM6-HCM": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CA4-DAM": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CI4-OKR": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CA7-AMP": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CI5-PER": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CA5-BAN": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CA2-SEN": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CM6-PJ": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CH4-KS": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CH6-SET": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CR4-PJ": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CM4-SK": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CJ2-KUC": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CE5-SA": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CG5-SB": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CY2-NIL": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CF5-WM": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CA6-CYB": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CA3-KP": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CZ6-WM": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CA5-SEN": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CJ4-OKR": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CH4-MAL": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CA4-SJ": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CN5-TAI": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CH5-KLC": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CS11-AMP": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CD4-CS": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CA6-SET": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CB8-SEG": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CR3-PUD": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CD7-SEG": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CB7-BJ": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CS6-DAM": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CN4-MC": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CA4-P1": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CJ5-CHE": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CAY4-DAM": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ],
-      "CD4-DAM": [
-       [
-        12,
-        60
-       ],
-       [
-        30,
-        125
-       ]
-      ]
-     },
-     "partners": [
-      "CM4-TO"
-     ],
-     "lift": {
-      "CS6-BS": 0,
-      "CS6-PER": 0,
-      "CE4-CHE": 0,
-      "CM4-TO": "partner",
-      "CJ4-BJ": 0,
-      "CM4-MK": 0,
-      "CK4-SEN": 0,
-      "CZ4-MK": 0,
-      "CN3-WM": 0,
-      "CR3-DAM": 0,
-      "CE4-AD": 0,
-      "CC9-OKR": 0,
-      "CZ5-TM": 0,
-      "CM6-HCM": 0,
-      "CA4-DAM": 0,
-      "CI4-OKR": 0,
-      "CA7-AMP": 0,
-      "CI5-PER": 0,
-      "CA5-BAN": 0,
-      "CA2-SEN": 0,
-      "CM6-PJ": 0,
-      "CH4-KS": 0,
-      "CH6-SET": 0,
-      "CR4-PJ": 0,
-      "CM4-SK": 0,
-      "CJ2-KUC": 0,
-      "CE5-SA": 0,
-      "CG5-SB": 0,
-      "CY2-NIL": 0,
-      "CF5-WM": 0,
-      "CA6-CYB": 0,
-      "CA3-KP": 0,
-      "CZ6-WM": 0,
-      "CA5-SEN": 0,
-      "CJ4-OKR": 0,
-      "CH4-MAL": 0,
-      "CA4-SJ": 0,
-      "CN5-TAI": 0,
-      "CH5-KLC": 0,
-      "CS11-AMP": 0,
-      "CD4-CS": 0,
-      "CA6-SET": 0,
-      "CB8-SEG": 0,
-      "CR3-PUD": 0,
-      "CD7-SEG": 0,
-      "CB7-BJ": 0,
-      "CS6-DAM": 0,
-      "CN4-MC": 0,
-      "CA4-P1": 0,
-      "CJ5-CHE": 0,
-      "CAY4-DAM": 0,
-      "CD4-DAM": 0
-     },
-     "suggest": null
     }
    },
-   "v": "v1497"
+   "v": "v1498"
   },
   "OPEN": {
-   "at": "2026-11-10T14:51:34.034Z",
+   "at": "2026-11-10T15:01:51.634Z",
    "count": 9,
    "byKey": {
     "CK4-SEN|2026-11-10|290": {
@@ -24099,28 +23318,16 @@
      "owedToYou": 0,
      "promised": 0,
      "short": 0
-    },
-    "prep": {
-     "name": "PrEP",
-     "onHand": 25,
-     "free": 25,
-     "owedOut": 0,
-     "coverDays": null,
-     "rate": 0,
-     "owedToYou": 0,
-     "promised": 0,
-     "short": 0
     }
    },
    "countedOn": {
     "candy": "2026-11-07",
     "gas": "2026-11-02",
     "oil": "2026-11-07",
-    "prep": "2026-11-02",
     "rice": "2026-11-07",
     "salt": "2026-11-10"
    },
-   "v": "v1497"
+   "v": "v1498"
   },
   "TERMS": {
    "ceiling": 250,
@@ -24128,7 +23335,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1497"
+   "v": "v1498"
   },
   "REWARD": {
    "stated": {
@@ -24146,7 +23353,7 @@
      }
     }
    },
-   "v": "v1497"
+   "v": "v1498"
   },
   "STOCK": {
    "today": "2026-11-10",
@@ -24190,17 +23397,9 @@
      "light": "amber",
      "coverDays": 5.7,
      "transit": 0
-    },
-    "prep": {
-     "shelf": 25,
-     "free": 25,
-     "commit": 0,
-     "light": "green",
-     "coverDays": null,
-     "transit": 0
     }
    },
-   "v": "v1497"
+   "v": "v1498"
   }
  }
 }

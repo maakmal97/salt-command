@@ -23650,18 +23650,18 @@ await (async () => {
   const { JSDOM: JD8 } = await import("jsdom");
   const C8 = await import("../tools/stmt-crypto.mjs");
   const OW8 = await import("../src/orders.js");
-  const BOOKS8 = ["salt", "oil", "candy", "rice", "gas", "prep"];
+  const BOOKS8 = ["salt", "oil", "candy", "rice", "gas"];   /* PrEP removed entirely, his word of 10 Nov 2026 */
 
   /* ---- the table ---- */
-  ok(JSON.stringify(P8.PLET) === JSON.stringify({ salt: "I", oil: "G", candy: "E", rice: "V", gas: "POP", prep: "PrEP" }),
-    "his letters: I in the cube, G in the droplet, E in the lozenge, V in the capsule, POP in the starburst, PrEP in the heart-shaped pill: " + JSON.stringify(P8.PLET));
+  ok(JSON.stringify(P8.PLET) === JSON.stringify({ salt: "I", oil: "G", candy: "E", rice: "V", gas: "POP" }),
+    "his letters: I in the cube, G in the droplet, E in the lozenge, V in the capsule, POP in the starburst: " + JSON.stringify(P8.PLET));
   /* each book's words, held to the lock's own list both ways: a word the list gains and no book here
      owns goes red, so a new name cannot slip past the initial check (a new book joins OWN8, lettered or not) */
-  const OWN8 = { salt: ["salt"], oil: ["oil"], candy: ["candy"], rice: ["rice"], gas: ["gas"], prep: ["prep"] };
+  const OWN8 = { salt: ["salt"], oil: ["oil"], candy: ["candy"], rice: ["rice"], gas: ["gas"] };
   const owned8 = Object.values(OWN8).flat(), letters8 = Object.values(P8.PLET).join("");
   ok(OW8.PRODUCT_WORDS.every((w) => owned8.includes(w)) && owned8.every((w) => OW8.PRODUCT_WORDS.includes(w))
-    && Object.keys(P8.PLET).every((k) => OWN8[k] && (k === "prep" ? P8.PLET[k] === "PrEP" : k === "gas" ? P8.PLET[k] === "POP" : /^[A-Z]$/.test(P8.PLET[k]) && OWN8[k].every((w) => w[0].toUpperCase() !== P8.PLET[k])))   /* PrEP and POP are his words, set small in the heart and the starburst (27 Oct 2026) */
-    && !OW8.PRODUCT_WORDS.filter((w) => w !== "prep").some((w) => [...w.replace(/-/g, "").toUpperCase()].every((c) => letters8.includes(c))),
+    && Object.keys(P8.PLET).every((k) => OWN8[k] && (k === "gas" ? P8.PLET[k] === "POP" : /^[A-Z]$/.test(P8.PLET[k]) && OWN8[k].every((w) => w[0].toUpperCase() !== P8.PLET[k])))   /* POP is his word, set small in the starburst (27 Oct 2026) */
+    && !OW8.PRODUCT_WORDS.some((w) => [...w.replace(/-/g, "").toUpperCase()].every((c) => letters8.includes(c))),
     "each is one capital, none is its book's initial, and together they spell no product word: " + letters8);
 
   /* ---- psymSvg, the server's twin: the letter always, and nothing turns it off ---- */
@@ -23690,11 +23690,11 @@ await (async () => {
   const at8 = BOOKS8.map((k) => (/<text[^>]* x="([\d.]+)" y="([\d.]+)" font-size="([\d.]+)"/.exec(P8.psymSvg(k, 28)) || []).slice(1).map(Number));
   /* PrEP is his word, not a capital (27 Oct 2026): it is set smaller so its width stays inside the heart, on the same centred line */
   /* and POP, his word of 27 Oct 2026, is set the same way inside the starburst */
-  const one8 = at8.filter((a, i) => !["prep", "gas"].includes(BOOKS8[i])), words8 = ["prep", "gas"].map((k) => [k, at8[BOOKS8.indexOf(k)]]);
+  const one8 = at8.filter((a, i) => !["gas"].includes(BOOKS8[i])), words8 = ["gas"].map((k) => [k, at8[BOOKS8.indexOf(k)]]);
   ok(at8.every((a) => a.length === 3) && new Set(one8.map((a) => a.join())).size === 1 && one8[0][0] === 12 && one8[0][2] === 8
     && at8.every((a) => a[0] === 12 && Math.abs(a[1] - 0.365 * a[2] - 12) < 0.01)
     && words8.every(([k, w]) => w[2] < 8 && w[2] * 0.6 * P8.PLET[k].length <= 13.01),
-    "every capital is the same size, 8 in the 24 grid, on the same line, centred on the mark's centre, and the words PrEP and POP smaller on that line: " + JSON.stringify(at8));
+    "every capital is the same size, 8 in the 24 grid, on the same line, centred on the mark's centre, and the word POP smaller on that line: " + JSON.stringify(at8));
   const pts8 = (d) => { const t = d.match(/[MLCAZ]|-?\d*\.?\d+/g) || [], out = []; let i = 0, c = "", x = 0, y = 0, x0 = 0, y0 = 0; const n = () => +t[i++];
     while (i < t.length) {
       if (/[MLCAZ]/.test(t[i])) c = t[i++];
@@ -23851,9 +23851,9 @@ await (async () => {
   const gr8 = await W8.fetch(new Request("https://k7m3p2.example/g/" + g8.id), genv8), board8 = await gr8.text();
   const gd8 = new JD8(board8).window.document, gm8 = census8(gd8);
   const gcss8 = [...gd8.querySelectorAll("style")].map((s) => s.textContent).join("\n");
-  ok(gr8.status === 200 && gm8.length === 7 && gm8.filter((m) => !m.ring).map((m) => m.lets).join("") === "IGEVPOPPrEP" && gm8.filter((m) => m.ring).every((m) => !m.lets)
+  ok(gr8.status === 200 && gm8.length === 6 && gm8.filter((m) => !m.ring).map((m) => m.lets).join("") === "IGEVPOP" && gm8.filter((m) => m.ring).every((m) => !m.lets)
     && gm8.every((m) => m.px >= 20),
-    "the guest board draws its six books' marks with their letters, the Ring bare, none under 20px: " + JSON.stringify(gm8));
+    "the guest board draws its five books' marks with their letters, the Ring bare, none under 20px: " + JSON.stringify(gm8));
   ok(/\.psym \.plet\{font-family:var\(--salt-font-mono\)/.test(gcss8) && /font-family: 'Geist Mono'/.test(gcss8)
     && /font-src 'self'/.test(gr8.headers.get("content-security-policy") || ""),
     "and the board's own styles carry the letter's mono face, whose file its policy lets load");
@@ -39903,7 +39903,7 @@ await (async () => {
   const { openMaster } = await import("../tools/payload.mjs");
   const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const MAPS6 = ["PRODUCTS", "PROD_OPENING", "COUNT_ON", "PRICE_SET", "COST_RULE", "QUOTES"];
-  const opened = ["candy", "rice", "gas", "prep"];
+  const opened = ["candy", "rice", "gas"];   /* prep, opened 27 Oct 2026, removed 10 Nov 2026 */
   /* v789: WHICH BOOKS ARE EMPTY IS ASKED OF THE BOOK, NOT TYPED HERE. All three were empty the day
      they were opened; the v788 fold then put a sale and a lot on candy and two lots on rice, so a
      list typed into this test said "empty" about books that trade. Rule 2 of the parity scan is
@@ -39913,7 +39913,7 @@ await (async () => {
     + bk.purchases.filter((r) => (r.product || "salt") === id).length;
 
   ok(opened.every((id) => MAPS6.every((k) => book[k] && id in book[k]) && book.PROD_ORDER.includes(id)),
-    "candy, rice, gas and prep are registered in all six per-product maps and the order");
+    "candy, rice and gas are registered in all six per-product maps and the order");
   /* 25 Sep 2026, test only: WHAT A BOOK WITH NOTHING ON IT CARRIES IS ASKED OF EVERY BOOK, NOT OF THREE BY NAME.
      This line said nothing opened carries a stated count, and on 24 Sep 2026 (v836) he counted rice at 94, a count
      that wins over the ledger and that the book is right to hold: a book that trades gets counted. A stated count
@@ -39933,7 +39933,7 @@ await (async () => {
 
   const { w } = await openMaster();
   const ids = JSON.parse(w.eval("JSON.stringify(PROD_IDS)"));
-  ok(ids.length === 6 && opened.every((id) => ids.includes(id)), "the desk carries six live books, gas and prep the fifth and sixth: " + JSON.stringify(ids));
+  ok(ids.length === 5 && opened.every((id) => ids.includes(id)) && !ids.includes("prep"), "the desk carries five live books, gas the fifth, PrEP removed: " + JSON.stringify(ids));
 
   /* A FIGURE IS STATED WHERE IT IS TRUE. creditCapFor falls back to the default book, so the
      sentence that begins "Credit caps are per book" stated salt's 1 unit as candy's own the
@@ -48654,7 +48654,7 @@ section("05 Oct 2026: any quantity at an automatic price, one rule over each boo
 await (async () => {
   await (await import("./any-quantity.mjs")).run({ ok });
 })();
-section("27 Oct 2026: gas and PrEP are the fifth and sixth books, the Counter's words are the live books");
+section("27 Oct 2026: gas is the fifth book and PrEP is removed (10 Nov 2026), the Counter's words are the live books");
 await (async () => {
   await (await import("./gas-prep-books.mjs")).run({ ok });
 })();
@@ -52285,6 +52285,11 @@ await (async () => {
   calls = 0;
   const nokey = await BL.post("https://x", body, {}, { wait: 0, fetchImpl: async () => { calls++; return {}; } });
   ok(!nokey.ok && calls === 0 && /SALT_BOOK_KEY/.test(nokey.error), "with no key it says so and sends nothing");
+  /* 10 Nov 2026, PrEP's removal: the laptop's import passes the Desk's Access on the owner's own login, as the gate and the flip do */
+  let sentH = null;
+  await BL.post("https://x", body, { SALT_BOOK_KEY: "k", SALT_ACCESS_JWT: " jwt-under-test " }, { wait: 0, fetchImpl: async (u, o) => { sentH = o.headers; return { status: 200, json: async () => ({ ok: true }) }; } });
+  ok(!!sentH && sentH["X-Book-Key"] === "k" && sentH["cf-access-token"] === "jwt-under-test" && sentH["Cf-Access-Jwt-Assertion"] === "jwt-under-test" && !("CF-Access-Client-Id" in sentH),
+    "a load from the laptop carries the owner's Access login, trimmed, beside the Book's key, and no service token it does not hold: " + JSON.stringify(sentH && Object.keys(sentH)));
   const wf = readFileSync(join(REPO, ".github", "workflows", "cloud-commit.yml"), "utf8");
   const at = wf.indexOf("- name: Load the shadow Book");
   const stepText = wf.slice(at, Math.min(wf.indexOf("\n      # ----", at), wf.indexOf("\n      - name:", at + 10)));   /* S3: the readcheck step follows, with its own continue-on-error */
