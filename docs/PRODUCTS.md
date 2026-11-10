@@ -256,8 +256,8 @@ the case was anticipated.
 A customer orders each book in its smallest unit step: **oil 10 to 50 in tens, candy 1 to 50, rice 1 to 100 and gas 1 to 20 in ones**
 (his words of 27 Oct 2026 for the last three; they were 1 to 30, 1 to 10 and new). **Two books name their sizes instead of a step**
 (27 Oct 2026): salt's grid carries `only`, the halves from 0.5 to 5 then 6.25, 12.5, 25, 50 and 100, no other size to 100, over a grid
-that keeps its quarter step so the walk and every priced point are unchanged; PrEP's carries `multiples` [12, 30], any 12N or 30N pills,
-over a grid of 12 to 120 in sixes. Both are read by the engine (`gridOf`, `onGrid`), the price list (`priceSteps` carries them), the Worker
+that keeps its quarter step so the walk and every priced point are unchanged; PrEP's carried `multiples` [12, 30], any 12N or 30N pills,
+over a grid of 12 to 120 in sixes (the book removed 10 Nov 2026; the mechanism stays, no book uses it). Both are read by the engine (`gridOf`, `onGrid`), the price list (`priceSteps` carries them), the Worker
 (`sizeAllowed` in `onStep`) and the page (`sizeOk`); `only` cuts only up to the max, and past it Negotiate takes any point of the step. There is one setting, the `grid` of the book's `TIER_RULE` in the master, `{min, step, max}`: `min` is the
 smallest order, `step` the order step, `max` where Negotiate begins. The publish carries it in the clear beside the stamp
 (`priceSteps`); the page's field takes `min` and `step` from it, and the Worker's `onStep` (`stmt/orders.js`, from `checkPlacement`,
@@ -281,3 +281,13 @@ heart-shaped pill lettered PrEP, the one word in a mark: `pletSize` in `stmt/pag
 the heart. Their hues are salt-ds 1.20.0's `--salt-product-gas` (flame) and `--salt-product-prep` (magenta), which replaced the spare hue.
 Their names join `PRODUCT_WORDS`, the position engine's word list and the Admin's book-name pattern. The suite section is
 `test/gas-prep-books.mjs`.
+
+**PrEP was removed entirely on his word of 10 Nov 2026 (v1499)**, with the one road for it, `node tools/product.mjs --remove prep --with-rows`:
+every map key, `PROD_ORDER`, every customer's % on it and its own NOTES lines, and its one row, the count of 02 Nov 2026 (25 units), deleted
+with it on his answer "delete the count too", so no write-off is recorded. `--remove` refuses salt, any book with a sale, a lot or a loan
+(revenue, cost or cash in every total: his word on that history first), stock rows without `--with-rows`, and a note naming another book.
+The hue, the mark, the shape, the letter and the word lists left by their own roads (salt-ds 1.31.0, `stmt/page.js`, `src/orders.js`,
+`engine/position.mjs`, `stmt/owner.js`), and the pricing rules (`TIER_RULE`, `sizesBy`, `LADDER_BY`). **With the Book as the source the
+book edit is an import**: the day's export (dispatch `cloud-commit.yml` with `export`, which compacts so nothing is open), the command on
+that export, `node tools/ledger.mjs`, then `node tools/book-load.mjs --import` with `SALT_BOOK_KEY` and `SALT_ACCESS_JWT`; then the code version.
+The suite's frozen book and `pricing-before-s1c.json` take the same removal, or every pricing section reads the old book.
