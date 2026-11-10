@@ -88,9 +88,9 @@ export async function open({ ok, pageWork, orders = [], assoc = false, late = 0,
  * A new order's sheet has no size choice: an order starts on Order (the place that was Prices), at a size tapped there or at the basket's
  * Continue. Every check that starts an order goes through these three, and only these touch the size rows and the plus, so the next
  * change to Order (version 9: a stepper and one Add a book) changes them alone. `p` is a page from open() or a bare document; a product
- * is named by its mark's shape (Cube salt, Droplet oil, Lozenge candy, Capsule rice, Starburst gas, Heart prep), and none means the
+ * is named by its mark's shape (Cube salt, Droplet oil, Lozenge candy, Capsule rice, Starburst gas), and none means the
  * first pane, where the old sheet opened. The click lands before the first await, so a caller may skip the await when it settles itself. */
-export const SHAPE = { salt: "Cube", oil: "Droplet", candy: "Lozenge", rice: "Capsule", gas: "Starburst", prep: "Heart" };
+export const SHAPE = { salt: "Cube", oil: "Droplet", candy: "Lozenge", rice: "Capsule", gas: "Starburst" };
 const docOf = (p) => (p && p.d ? p.d : p);
 const paneOf = (d, shape) => {
   const panes = [...d.querySelectorAll("#pPrices .pane")].filter((x) => x.querySelector(".szrow"));
