@@ -33,16 +33,6 @@
     "since": "2026-08-06",
     "unit": "unit"
    },
-   "prep": {
-    "accent": "var(--salt-product-prep)",
-    "id": "prep",
-    "name": "PrEP",
-    "note": "Opened 27 Oct 2026 on his word. Letter PrEP, a heart-shaped pill mark. No lot, no sale and no count yet, so the fold will refuse a sale on it until its first lot is entered by hand.",
-    "retired": false,
-    "reward": false,
-    "since": "2026-10-27",
-    "unit": "unit"
-   },
    "rice": {
     "accent": "var(--salt-product-rice)",
     "id": "rice",
@@ -68,8 +58,7 @@
    "oil",
    "candy",
    "rice",
-   "gas",
-   "prep"
+   "gas"
   ],
   "opening": {
    "costPerKg": 64,
@@ -91,11 +80,6 @@
     "qty": 5,
     "stated": 30
    },
-   "prep": {
-    "costPerKg": 3.3333333333333335,
-    "qty": 0,
-    "stated": 25
-   },
    "rice": {
     "costPerKg": null,
     "qty": 0,
@@ -112,7 +96,6 @@
    "candy": "2026-11-07",
    "gas": "2026-11-02",
    "oil": "2026-11-07",
-   "prep": "2026-11-02",
    "rice": "2026-11-07",
    "salt": "2026-11-10"
   },
@@ -438,13 +421,6 @@
     "product": "oil",
     "qty": 0,
     "was": 20
-   },
-   {
-    "date": "2026-11-02",
-    "drift": 25,
-    "product": "prep",
-    "qty": 25,
-    "was": 0
    },
    {
     "date": "2026-11-02",
@@ -12967,7 +12943,6 @@
      }
     ]
    },
-   "prep": null,
    "rice": {
     "kind": "live quote",
     "quotedOn": "2026-09-23",
@@ -13006,10 +12981,6 @@
     "kind": "latestCogs",
     "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
    },
-   "prep": {
-    "kind": "latestCogs",
-    "note": "His settled rule of 05 Oct 2026, every book alike: COGS off the latest purchase, quote plus trip freight over its units; the floor is that times the size and nothing else."
-   },
    "rice": {
     "kind": "latestCogs",
     "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
@@ -13029,10 +13000,6 @@
     "prices": {}
    },
    "oil": {
-    "hide": [],
-    "prices": {}
-   },
-   "prep": {
     "hide": [],
     "prices": {}
    },
@@ -13257,11 +13224,6 @@
      "id": "upkeep:shrink:salt",
      "sev": "note",
      "title": "The unexplained plug runs at 0% of everything handled"
-    },
-    {
-     "id": "parity:declared:prep",
-     "sev": "note",
-     "title": "PrEP is declared but has nothing on the books"
     }
    ],
    "profileOf": {
@@ -17848,6 +17810,10 @@
       },
       "CZ4-MK": {
        "pct": -0.2,
+       "why": "good record"
+      },
+      "CK4-SEN": {
+       "pct": -0.25,
        "why": "good record"
       },
       "CN3-WM": {
@@ -24099,24 +24065,12 @@
      "owedToYou": 0,
      "promised": 0,
      "short": 0
-    },
-    "prep": {
-     "name": "PrEP",
-     "onHand": 25,
-     "free": 25,
-     "owedOut": 0,
-     "coverDays": null,
-     "rate": 0,
-     "owedToYou": 0,
-     "promised": 0,
-     "short": 0
     }
    },
    "countedOn": {
     "candy": "2026-11-07",
     "gas": "2026-11-02",
     "oil": "2026-11-07",
-    "prep": "2026-11-02",
     "rice": "2026-11-07",
     "salt": "2026-11-10"
    },
@@ -24189,14 +24143,6 @@
      "commit": 0,
      "light": "amber",
      "coverDays": 5.7,
-     "transit": 0
-    },
-    "prep": {
-     "shelf": 25,
-     "free": 25,
-     "commit": 0,
-     "light": "green",
-     "coverDays": null,
      "transit": 0
     }
    },

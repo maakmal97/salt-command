@@ -11,6 +11,7 @@
  *   node tools/product.mjs --rename gas rice [--orders-done]
  *   node tools/product.mjs --retire gas
  *   node tools/product.mjs --unretire gas
+ *   node tools/product.mjs --remove prep [--with-rows]
  *
  * Every one writes ledger/book.json and then runs booksync --sync, because the master's BOOK
  * block is generated and a book edited without a sync fails CI until somebody notices.
@@ -26,7 +27,14 @@
  * therefore quietly drop its revenue out of the whole-book figures, and nothing would say so.
  * So the flag is only ever allowed on a book with nothing on it. Retiring a book that traded
  * is a different question, with an answer somebody has to choose; this refuses rather than
- * guesses. */
+ * guesses.
+ *
+ * --remove TAKES A BOOK OUT ALTOGETHER (his word of 10 Nov 2026, PrEP): every map key, PROD_ORDER, every customer's %
+ * on it, and the book's own lines in NOTES. A book with money on it (a sale, a lot or a loan) is always refused: that is
+ * revenue, cost and cash in every consolidated total, and its history is his to decide. A book whose only rows are stock
+ * records (a count, self use, lost demand) is refused too unless --with-rows says he chose to delete them with it. A note
+ * naming this book and another is refused rather than cut, so no other book's record is touched. The hue and the mark are
+ * design and leave by their own roads (salt-ds, stmt/page.js PSYM, PSHAPE, PLET). */
 import { readFileSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
@@ -137,6 +145,40 @@ function rename(b, from, to, done) {
   console.log(`renamed ${from} to ${to}: ${moved} rows, ${tiers} customer tiers, and every map key.`);
 }
 
+const MONEY = ["sales", "purchases", "loans"];
+function remove(b, id, withRows) {
+  if (!b.PRODUCTS[id]) die(`${id} is not a product on this book.`);
+  if (id === "salt") die("salt is the book's default: a row that names no product is salt, so it cannot be removed. See docs/PRODUCTS.md section 6.");
+  const money = MONEY.reduce((n, k) => n + (b[k] || []).filter((r) => ((r && r.product) || "salt") === id).length, 0);
+  if (money) die(`${id} has ${money} sale(s), lot(s) or loan(s). Removing it would take revenue, cost or cash out of every consolidated total; that history needs his word, and this refuses rather than guesses.`);
+  const stock = rowsOf(b, id);
+  if (stock && !withRows) die(`${id} has ${stock} stock row(s) (a count, self use or lost demand). Run it again with --with-rows only on his word that they go with the book.`);
+  const others = Object.keys(b.PRODUCTS).filter((p) => p !== id);
+  const word = (p) => new RegExp("\\b" + p + "\\b", "i");
+  let notes = 0;
+  for (const k of Object.keys(b.NOTES || {})) {
+    const v = b.NOTES[k];
+    if (!Array.isArray(v)) { if (typeof v === "string" && word(id).test(v)) die(`NOTES.${k} is one note naming ${id}: cut it by hand.`); continue; }
+    const keep = [];
+    for (const s of v) {
+      const t = typeof s === "string" ? s : JSON.stringify(s);
+      if (!word(id).test(t)) { keep.push(s); continue; }
+      const also = others.filter((p) => p !== "salt" && word(p).test(t));
+      if (also.length) die(`a note in NOTES.${k} names ${id} and ${also.join(", ")}: cut it by hand, so no other book's record moves.`);
+      notes++;
+    }
+    b.NOTES[k] = keep;
+  }
+  let maps = 0;
+  for (const k of MAPS) if (b[k] && id in b[k]) { delete b[k][id]; maps++; }
+  b.PROD_ORDER = (b.PROD_ORDER || []).filter((p) => p !== id);
+  let tiers = 0;
+  for (const code of Object.keys(b.TIER_OF || {})) { const t = b.TIER_OF[code]; if (t && id in t) { delete t[id]; tiers++; } }
+  let rows = 0;
+  for (const k of ROWS) if (Array.isArray(b[k])) { const n = b[k].length; b[k] = b[k].filter((r) => ((r && r.product) || "salt") !== id); rows += n - b[k].length; }
+  console.log(`removed ${id}: ${maps} map keys, PROD_ORDER, ${tiers} customer %, ${rows} stock row(s), ${notes} note(s).`);
+}
+
 function retire(b, id, on) {
   if (!b.PRODUCTS[id]) die(`${id} is not a product on this book.`);
   if (on) {
@@ -162,11 +204,12 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   else if (a.includes("--rename")) { const i = a.indexOf("--rename"); rename(b, a[i + 1], a[i + 2], a.includes("--orders-done")); }
   else if (a.includes("--retire")) retire(b, flag("--retire"), true);
   else if (a.includes("--unretire")) retire(b, flag("--unretire"), false);
-  else die("no command. One of --list, --add, --rename, --retire, --unretire.");
+  else if (a.includes("--remove")) remove(b, flag("--remove"), a.includes("--with-rows"));
+  else die("no command. One of --list, --add, --rename, --retire, --unretire, --remove.");
 
   write(b);
   sync();
   console.log("book written and the master's BOOK block synced. Build and run the suite.");
 }
 
-export { rowsOf, MAPS, ROWS };
+export { rowsOf, remove, MAPS, ROWS };

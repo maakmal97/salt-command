@@ -5608,8 +5608,7 @@ const PRICE_ENGINE={
     oil:[10,20,30,40,50],   /* 19 Sep 2026: five sizes, his board. 80 and 100 went with the tiers. */
     candy:[1,5,10,20,30],   /* 23 Sep 2026: his three rates and a size inside each */
     rice:[1,5,10],
-    gas:[1,5,10,20],   /* 27 Oct 2026 */
-    prep:[12,30]
+    gas:[1,5,10,20]   /* 27 Oct 2026 */
   },
   /* which rungs are PRINTED. A product with no entry prints every rung it has. Empty since
      round 5: oil's grid IS its board now, so the mechanism stands and nothing uses it. */
@@ -5677,8 +5676,7 @@ const LADDER_BY={
   /* 23 Sep 2026: stated a unit in single ringgit, so they round to the ringgit and not the ten */
   candy:{round:{to:1, up:true}},
   rice:{round:{to:1, up:true}},
-  gas:{round:{to:1, up:true}},
-  prep:{round:{to:1, up:true}}
+  gas:{round:{to:1, up:true}}
 };
 
 const TIER_RULE={
@@ -5728,11 +5726,9 @@ const TIER_RULE={
      `ceilingX` times that floor, capped down to the book's grid. Three times the floor on every book (18 Oct 2026, his decision;
      oil and candy were twice, rice two and a half). A typed price inside the band does not move. */
   rice:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:3, grid:{min:1, step:1, max:100}},
-  /* 27 OCT 2026, HIS WORD: gas RM75 a unit on a cost of RM50 (1.5 times), bought in ones, the board at 1 and any more by Negotiate. PrEP 12 pills
-     for RM60 or 30 pills for RM125 on a cost of RM100 per 30 (1.5 and 1.25 times), and any whole number of either pack: the grid runs 12 to 120 in
-     sixes so every point is priced, `multiples` cuts what may be ordered to 12N and 30N (the Worker's onStep, the page, onGrid); past 120, Negotiate. */
-  gas:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":75}, rungs:[1], ceilingX:3, grid:{min:1, step:1, max:20}},
-  prep:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"12":60,"30":125}, rungs:[12,30], ceilingX:3, grid:{min:12, step:6, max:120, multiples:[12,30]}}
+  /* 27 OCT 2026, HIS WORD: gas RM75 a unit on a cost of RM50 (1.5 times), bought in ones, the board at 1 and any more by Negotiate. PrEP, opened
+     the same day, was removed entirely as a product on his word of 10 Nov 2026. */
+  gas:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":75}, rungs:[1], ceilingX:3, grid:{min:1, step:1, max:20}}
 };
 
 const SHRINK_ATTRIB=1;
@@ -8013,7 +8009,7 @@ function vaultPendingOk(record,publicWord=()=>false){
     'id','until','cancelledOn','unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill','hide','orderCode','second','extras','cover',
     'shares','rids','undo','introducer'];   /* introducer: R3, the associate whose join link brought a customer in (plan version 6) */
   const enumWords=['customer','supplier','reseller','referral','downstream','bucket','cash','goods','in','out',
-    'SELL','BUY','Correction','Fulfilment','Cancellation','Payment','Receipt','Default','R1','R2','R3','salt','oil','candy','rice','gas','prep','delivered','collected',
+    'SELL','BUY','Correction','Fulfilment','Cancellation','Payment','Receipt','Default','R1','R2','R3','salt','oil','candy','rice','gas','delivered','collected',
     'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big','pct'];
   const house=object(record)&&typeof record.path==='string'&&/\/house-sizes$/.test(record.path);
   const offset=object(record)&&typeof record.path==='string'&&/^\/?all\/maker\/inputs\/offset$/.test(record.path);
@@ -8686,7 +8682,7 @@ function gridOf(R){
   const G=R&&R.grid;if(!G||typeof G!=='object')return null;
   const min=+G.min,step=+G.step,max=+G.max;
   if(!(min>0)||!(step>0)||!(max>=min)||!isFinite(max))return null;
-  /* 27 Oct 2026, HIS WORD ON PrEP: `multiples` narrows the grid to sizes that are a whole number of any one of them (12 or 30
+  /* 27 Oct 2026, HIS WORD ON PrEP (the book removed 10 Nov 2026; the mechanism kept, no book uses it): `multiples` narrows the grid to sizes that are a whole number of any one of them (12 or 30
      pills, N times either). The grid still runs min to max in steps so every point is priced and p[i] stays at min+i*step;
      only the sizes a customer may ORDER are cut (sizeOk), by the Worker, the page and onGrid. */
   const mul=Array.isArray(G.multiples)?G.multiples.map(Number).filter(x=>x>0&&isFinite(x)):[];
@@ -9301,7 +9297,6 @@ const COUNTS=[
   {"date":"2026-10-29","drift":1,"product":"gas","qty":2,"was":1},
   {"date":"2026-11-02","drift":0,"product":"gas","qty":1,"was":1},
   {"date":"2026-11-02","drift":-20,"product":"oil","qty":0,"was":20},
-  {"date":"2026-11-02","drift":25,"product":"prep","qty":25,"was":0},
   {"date":"2026-11-02","drift":8,"product":"rice","qty":75,"was":67},
   {"date":"2026-11-07","drift":-1,"product":"candy","qty":2,"was":3},
   {"date":"2026-11-07","drift":-16,"product":"rice","qty":43,"was":59},
@@ -9323,7 +9318,7 @@ const INTRODUCTIONS=[
 const ONE_OFFS=[
   {"date":"2026-07-14","id":"CM6-HCM","note":"One-off; RM104/unit is an outlier."}
 ];
-const PROD_ORDER=["salt","oil","candy","rice","gas","prep"];
+const PROD_ORDER=["salt","oil","candy","rice","gas"];
 const associates=["CS6-BS","CJ4-OKR","CS6-PER","CN3-WM","CI4-OKR","CE4-AD","CR3-DAM","CE5-SA","CA6-CYB","CM4-TO"];
 const contacts=[
   {"date":"2026-08-06","how":"message","next":null,"note":"said hello","outcome":"noreply","party":"CM4-SK"},
@@ -9784,10 +9779,6 @@ const COST_RULE={
     "kind": "latestCogs",
     "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
   },
-  "prep": {
-    "kind": "latestCogs",
-    "note": "His settled rule of 05 Oct 2026, every book alike: COGS off the latest purchase, quote plus trip freight over its units; the floor is that times the size and nothing else."
-  },
   "rice": {
     "kind": "latestCogs",
     "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
@@ -9801,7 +9792,6 @@ const COUNT_ON={
   "candy": "2026-11-07",
   "gas": "2026-11-02",
   "oil": "2026-11-07",
-  "prep": "2026-11-02",
   "rice": "2026-11-07",
   "salt": "2026-11-10"
 };
@@ -10134,10 +10124,6 @@ const PRICE_SET={
     "hide": [],
     "prices": {}
   },
-  "prep": {
-    "hide": [],
-    "prices": {}
-  },
   "rice": {
     "hide": [],
     "prices": {}
@@ -10181,16 +10167,6 @@ const PRODUCTS={
     "since": "2026-08-06",
     "unit": "unit"
   },
-  "prep": {
-    "accent": "var(--salt-product-prep)",
-    "id": "prep",
-    "name": "PrEP",
-    "note": "Opened 27 Oct 2026 on his word. Letter PrEP, a heart-shaped pill mark. No lot, no sale and no count yet, so the fold will refuse a sale on it until its first lot is entered by hand.",
-    "retired": false,
-    "reward": false,
-    "since": "2026-10-27",
-    "unit": "unit"
-  },
   "rice": {
     "accent": "var(--salt-product-rice)",
     "id": "rice",
@@ -10225,7 +10201,6 @@ const PRODUCTS={
 /* ROLLED AT v1410 (oil): 10 unit to CI5-PER on 2026-11-03, so 0 less 10 is -10. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* ROLLED AT v1401 (rice): 5 unit to CS11-AMP on 2026-11-03, so 75 less 5 is 70. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* COUNTED AT v1372 on 2026-11-02: the rice inventory held 75 against 67 on the roll, a difference of 8. A COUNT AND NOT A ROLL, so COUNT_ON.rice moves to 2026-11-02. <b>COUNT RICE 02 NOV 2026: 75 UNITS COUNTED AGAINST 67 ON THE BOOK.</b> The difference is +8. The last count was 2026-10-20. The count wins, so the stated rice inventory becomes 75 and COUNT_ON.rice moves to 2026-11-02. The drafter flagged the 8 units as unaccounted for, booking the gap as shrinkage across every unit sold; the dossier gives no cause and none is stated here. The floors hold at floor1 5, floor2 10, floor125 45 and ask1 8, but selfUse moves from 26 to 18. Outstanding: the reason for the gap. */
-/* COUNTED AT v1372 on 2026-11-02: the prep inventory held 25 against 0 on the roll, a difference of 25. A COUNT AND NOT A ROLL, so COUNT_ON.prep moves to 2026-11-02. <b>COUNT PREP 02 NOV 2026: 25 UNITS COUNTED AGAINST 0 ON THE BOOK.</b> The difference is +25. No earlier count date is recorded for prep. The count wins, so the stated prep inventory becomes 25 and COUNT_ON.prep is set to 2026-11-02. The drafter flagged the 25 units as unaccounted for, booking the gap as shrinkage across every unit sold; the dossier gives no cause and none is stated here. The floors do not move: floor1 5, floor2 10, floor125 45, ask1 5, selfUse 0. Outstanding: the reason for the gap. */
 /* COUNTED AT v1372 on 2026-11-02: the oil inventory held 0 against 20 on the roll, a difference of -20. A COUNT AND NOT A ROLL, so COUNT_ON.oil moves to 2026-11-02. <b>COUNT OIL 02 NOV 2026: 0 UNITS COUNTED AGAINST 20 ON THE BOOK.</b> The difference is -20. The last count was 2026-10-27. The count wins, so the stated oil inventory becomes 0 and COUNT_ON.oil moves to 2026-11-02. The drafter flagged that the 20 units are unaccounted for and the gap books as shrinkage across every unit sold; the dossier gives no cause and none is stated here. The floors stay at floor1 10, floor2 20, floor125 105 and ask1 10, but selfUse moves from 174 to 194. Outstanding: the reason for the gap. */
 /* COUNTED AT v1372 on 2026-11-02: the gas inventory held 1 against 1 on the roll, a difference of 0. A COUNT AND NOT A ROLL, so COUNT_ON.gas moves to 2026-11-02. <b>COUNT GAS 02 NOV 2026: 1 UNIT COUNTED AGAINST 1 ON THE BOOK.</b> The difference is 0, so nothing is unaccounted for. The last count was 2026-10-29. The fold sets the stated gas inventory to 1 and moves COUNT_ON.gas to 2026-11-02. The floors do not move: floor1 stays at 50, floor2 at 100, floor125 at 625, ask1 at 75, and selfUse at 0. The row carries no cost and no party. The drafter flagged that this is the first count since the last one with nothing unaccounted for, and the figures answer that: the count and the book agree. Outstanding: nothing. */
 /* ROLLED AT v1369 (gas): 1 unit from SP7-PUD on 2026-11-01, so 0 plus 1 is 1. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
@@ -10314,11 +10289,6 @@ const PROD_OPENING={
     "qty": 5,
     "stated": 30
   },
-  "prep": {
-    "costPerKg": 3.3333333333333335,
-    "qty": 0,
-    "stated": 25
-  },
   "rice": {
     "costPerKg": null,
     "qty": 0,
@@ -10383,7 +10353,6 @@ const QUOTES={
       }
     ]
   },
-  "prep": null,
   "rice": {
     "kind": "live quote",
     "quotedOn": "2026-09-23",
@@ -15056,7 +15025,7 @@ function drawAnalysis(){
       const buys=lots.map(p=>({x:p.qty,y:+(p.total/p.qty).toFixed(2),
         r:6+Math.sqrt(p.total/maxLot)*14,
         d:p.date,who:p.supplier,def:!!p.defaulted}));
-      /* found on a desk check: oil, candy, rice, gas and prep have never defaulted a lot, so this
+      /* found on a desk check: oil, candy, rice and gas have never defaulted a lot, so this
          legend carried "Defaulted" for a series with no points in it, same shape as the
          one-off series drawEarnChart guards below. Salt's write-offs keep the entry. */
       const defBuys=buys.filter(b=>b.def);
