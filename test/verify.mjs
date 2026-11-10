@@ -52258,6 +52258,11 @@ await (async () => {
   calls = 0;
   const nokey = await BL.post("https://x", body, {}, { wait: 0, fetchImpl: async () => { calls++; return {}; } });
   ok(!nokey.ok && calls === 0 && /SALT_BOOK_KEY/.test(nokey.error), "with no key it says so and sends nothing");
+  /* 10 Nov 2026, PrEP's removal: the laptop's import passes the Desk's Access on the owner's own login, as the gate and the flip do */
+  let sentH = null;
+  await BL.post("https://x", body, { SALT_BOOK_KEY: "k", SALT_ACCESS_JWT: " jwt-under-test " }, { wait: 0, fetchImpl: async (u, o) => { sentH = o.headers; return { status: 200, json: async () => ({ ok: true }) }; } });
+  ok(!!sentH && sentH["X-Book-Key"] === "k" && sentH["cf-access-token"] === "jwt-under-test" && sentH["Cf-Access-Jwt-Assertion"] === "jwt-under-test" && !("CF-Access-Client-Id" in sentH),
+    "a load from the laptop carries the owner's Access login, trimmed, beside the Book's key, and no service token it does not hold: " + JSON.stringify(sentH && Object.keys(sentH)));
   const wf = readFileSync(join(REPO, ".github", "workflows", "cloud-commit.yml"), "utf8");
   const at = wf.indexOf("- name: Load the shadow Book");
   const stepText = wf.slice(at, Math.min(wf.indexOf("\n      # ----", at), wf.indexOf("\n      - name:", at + 10)));   /* S3: the readcheck step follows, with its own continue-on-error */

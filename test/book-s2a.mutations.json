@@ -19,5 +19,7 @@
   {"name":"PRICING.takenAt is held, so a replayed fold reads as a revision","file":"src/book.js","find":"const { takenAt, ...steady } = pricing; const doc = canon(steady);","replace":"const doc = canon(pricing);"},
   {"name":"the object reads the binding outside its allowlist","file":"src/book.js","find":"    const s = this.state.storage;\n    const w = s.sql.exec(","replace":"    const s = this.state.storage, nb = this.env.BOOK;\n    const w = s.sql.exec("},
   {"name":"the mirror is re-seeded with its own extract again (3 Nov 2026)","file":".github/workflows/cloud-commit.yml","find":"          set -euo pipefail\n          node tools/d1.mjs --seed","replace":"          set -euo pipefail\n          node tools/ledger.mjs\n          node tools/d1.mjs --seed"},
-  {"name":"the re-seed step is not found after the load (3 Nov 2026)","file":".github/workflows/cloud-commit.yml","find":"      - name: Re-seed the mirror from the master just shipped","replace":"      - name: Re-seed D1 from the master"}
+  {"name":"the re-seed step is not found after the load (3 Nov 2026)","file":".github/workflows/cloud-commit.yml","find":"      - name: Re-seed the mirror from the master just shipped","replace":"      - name: Re-seed D1 from the master"},
+  {"name":"the owner's login is not sent","file":"tools/book-load.mjs","find":"  Object.assign(headers, deskAccess(String(env.SALT_ACCESS_JWT || \"\").trim()));\n","replace":""},
+  {"name":"the login is not trimmed","file":"tools/book-load.mjs","find":"deskAccess(String(env.SALT_ACCESS_JWT || \"\").trim())","replace":"deskAccess(String(env.SALT_ACCESS_JWT || \"\"))"}
 ]

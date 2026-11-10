@@ -28,6 +28,7 @@ import { readFileSync, appendFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { deskAccess } from "./vault-pair-client.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -117,6 +118,9 @@ export async function post(base, body, env, { tries = 3, wait = 2000, fetchImpl 
     headers["CF-Access-Client-Id"] = env.CF_ACCESS_CLIENT_ID;
     headers["CF-Access-Client-Secret"] = env.CF_ACCESS_CLIENT_SECRET;
   }
+  /* 10 Nov 2026 (PrEP's removal, the first laptop import): the laptop holds no service token, so the owner's own login passes the Desk's Access,
+     SALT_ACCESS_JWT from `cloudflared access token`, as the gate and the flip send it (tools/flip-gate.mjs bookHeaders) */
+  Object.assign(headers, deskAccess(String(env.SALT_ACCESS_JWT || "").trim()));
   let last = "";
   for (let i = 1; i <= tries; i++) {
     try {
