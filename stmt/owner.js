@@ -659,6 +659,8 @@ export const OWNER_JS = `
     });
     tabs.appendChild(row); s.appendChild(tabs);
     var card=(cat.driftCards||[]).filter(function(x){ return x.code===code&&x.product===st.book; })[0]||{};
+    /* 10 Nov 2026: the stepper runs the book's own range (salt's band -100 to +100, a board -30 to +30) and sends the book's unit */
+    var pbook=(cat.products||[]).filter(function(x){ return x.product===st.book; })[0]||{}, lim={min:typeof pbook.driftMin==='number'?pbook.driftMin:-30, max:typeof pbook.driftMax==='number'?pbook.driftMax:30}, punit=pbook.driftUnit||'pct';
     var held=card.held?Math.round(+card.value*100):0, sug=typeof card.suggest==='number'?Math.round(card.suggest*100):null;
     if(st.pct[st.book]==null) st.pct[st.book]=held;
     var L=el('div','salt-settings apct__list');
@@ -672,7 +674,7 @@ export const OWNER_JS = `
     var at=null, sig='';
     var sendB=makerButton(acts,['Send','acct.pct.send',code],async function(send){
       var whole=st.pct[st.book]; if(whole===held) return;
-      var body={code:code,product:st.book,tier:Number((whole/100).toFixed(2)),unit:'pct'}, check=JSON.stringify(body);
+      var body={code:code,product:st.book,tier:Number((whole/100).toFixed(2)),unit:punit}, check=JSON.stringify(body);
       if(check!==sig){ sig=check; at=new Date().toISOString(); }
       body.at=at;
       try{ await send('/all/maker/inputs/tier-set',body); answer.textContent='Sent. Their % changes once you approve it.'; loadMaker(); }
@@ -685,7 +687,7 @@ export const OWNER_JS = `
     var clr=null;
     if(card.held){
       clr=makerButton(acts,['Set back to 0','acct.pct.clear',code],async function(send){
-        var body={code:code,product:st.book,tier:null,unit:'pct'}, check=JSON.stringify(body);
+        var body={code:code,product:st.book,tier:null,unit:punit}, check=JSON.stringify(body);
         if(check!==sig){ sig=check; at=new Date().toISOString(); }
         body.at=at;
         try{ await send('/all/maker/inputs/tier-set',body); answer.textContent='Sent. Their % goes back to 0 once you approve it.'; loadMaker(); }
@@ -714,14 +716,14 @@ export const OWNER_JS = `
     }
     function pctPaint(){
       var whole=st.pct[st.book];
-      out.textContent=pctWord(whole); down.disabled=whole<=-30; up.disabled=whole>=30;
+      out.textContent=pctWord(whole); down.disabled=whole<=lim.min; up.disabled=whole>=lim.max;
       sendB.textContent='Send '+pctWord(whole); sendB.disabled=whole===held;
       var key=code+'/'+st.book+'/'+whole;
       if(pctReads[key]){ pctDraw(pctReads[key]); return; }
       refs('/all/maker/drift-preview/'+key).then(function(j){ pctReads[key]=j.preview; if(st.pct[st.book]===whole&&s.isConnected) pctDraw(j.preview); }, function(error){ if(st.pct[st.book]===whole) refusal(answer,error); });
     }
-    down.addEventListener('click', function(){ st.pct[st.book]=Math.max(-30, st.pct[st.book]-5); pctPaint(); });
-    up.addEventListener('click', function(){ st.pct[st.book]=Math.min(30, st.pct[st.book]+5); pctPaint(); });
+    down.addEventListener('click', function(){ st.pct[st.book]=Math.max(lim.min, Math.ceil(st.pct[st.book]/5)*5-5); pctPaint(); });
+    up.addEventListener('click', function(){ st.pct[st.book]=Math.min(lim.max, Math.floor(st.pct[st.book]/5)*5+5); pctPaint(); });
     pctPaint();
     return s;
   }
@@ -769,7 +771,7 @@ export const OWNER_JS = `
     ml.appendChild(a1); ml.appendChild(a2); m.appendChild(ml);
     var tr=el('div','salt-meter__track'); tr.appendChild(el('div','salt-meter__fill')); m.appendChild(tr);
     m.style.setProperty('--salt-fill',String(Math.max(0,Math.min(100,Math.round(r.progress/r.step*100))))); rowOf(L, m, 'ameterrow');
-    acctLine(L,'Step, '+r.times+' units’ cost',rmShort(r.step)); acctLine(L,'Given under Set Price',rmShort(r.given)); acctLine(L,'A unit, net to you',rmShort(r.net));
+    acctLine(L,'Step, '+r.times+' units’ cost',rmShort(r.step)); acctLine(L,'Given under Median Price',rmShort(r.given)); acctLine(L,'A unit, net to you',rmShort(r.net));
     /* R3 (plan version 6): each person they brought in, their first week's last day and the orders of it counted */
     (Array.isArray(r.r3)?r.r3:[]).forEach(function(w){ if(w&&w.code) acctLine(L,'Brought in '+w.code,w.orders+' counted, to '+dayMon(w.last)); });
     box.appendChild(L);
@@ -1138,7 +1140,7 @@ export const OWNER_JS = `
       var declined=r.declined===true, pending=r.approved===false&&!declined, shut=pending||declined;
       var word=pending?'Waiting':declined?'Declined':r.revoked?'Withdrawn':r.standing?'Standing':r.opens?'Opened':'Never opened';
       var age=pending?ageOf(r.made):r.opens?stampDay(r.last):stampDay(r.made);
-      var lead=r.standing?'':isAssoc(r)?(shut?'Made by ':'Via '):'', who=r.standing?'Set Price list':isAssoc(r)?codeByUser(r.by):(r.label||'Link');
+      var lead=r.standing?'':isAssoc(r)?(shut?'Made by ':'Via '):'', who=r.standing?'Median Price list':isAssoc(r)?codeByUser(r.by):(r.label||'Link');
       var card=el('div','glink salt-glass-card salt-glass-card--radius-md'+(r.revoked?' off':'')); card.setAttribute('data-link',r.id);
       card.open=!!(openLinks[r.id]||(moved&&moved.id===r.id)||(linkSaid&&linkSaid.id===r.id)); card.hidden=!card.open;
       var c=needCard({sev:sev, kind:'links', word:word, key:'g:'+r.id, at:'', age:age, late:pending, who:who, title:who, rm:0, act:'link.open',
@@ -1155,7 +1157,7 @@ export const OWNER_JS = `
       c._add(go);
       c.addEventListener('click', function(ev){ if(ev.target===c) c.querySelector('.need-tap').click(); });
       group.appendChild(c);
-      card.appendChild(el('h4','gwho',r.standing?'For strangers, opens the Set Price list'
+      card.appendChild(el('h4','gwho',r.standing?'For strangers, opens the Median Price list'
         :declined?('Made by '+(r.by?codeByUser(r.by):'an associate')+', not approved, so it stays shut')
         :(pending?('Made by '+(r.by?codeByUser(r.by):'an associate')+', shut until you approve it')
         :isAssoc(r)?('Made by '+codeByUser(r.by))
@@ -1275,8 +1277,10 @@ export const OWNER_JS = `
     'Choose an associate on the roster.':'Choose an associate from the list.',
     'That offset is not on offer: the reward is spent or held, the order is settled, or it already has a correction waiting.':'That offset is no longer on offer. Read the offers again.',
     'Choose a customer on the roster, not a resale account.':'Choose a customer, not a resale account.',
-    'This book has no Set Price to put a % on.':'This book has no Set Price to put a % on.',
-    'A supplier has no % on the Set Price.':'A supplier has no % on the Set Price.',
+    'This book has no Set Price to put a % on.':'This book has no Median Price to put a % on.',
+    'A supplier has no % on the Median Price.':'A supplier has no % on the Median Price.',
+    'Choose a % from -100% to +100% (-1 to 1), or clear it.':'Choose a % from -100 to +100, or clear it.',
+    'That is the figure they held on the old scale. Choose 1% either side.':'That is their old-scale figure, so choose 1% either side.',
     'Choose a % from -30% to +30% (-0.3 to 0.3), or clear it.':'Choose a % from -30 to +30, or clear it.',
     'Choose the sizes to hide from the board.':'Choose the sizes to leave off the printed list.',
     "A size to hide must be one of this book's board sizes.":"Choose sizes from this book's printed list.",
@@ -1315,7 +1319,8 @@ export const OWNER_JS = `
     'Choose a parent already on the roster.':'Choose their associate from the list.',
     'The map point is outside Malaysia or has invalid locality text.':'The map point must be inside Malaysia.',
     'Only a customer, reseller or referral holds a starting %.':'Only a customer, a reseller or an introducer starts with a %.',
-    'A starting % must name an active book with a Set Price.':'Start a % only on a book that has a Set Price.',
+    'A starting % must name an active book with a Median Price.':'Start a % only on a book that has a Median Price.',
+    'A starting % is a number from -1 to 1 (-100% to +100%).':'A starting % is from -100 to +100.',
     'A starting % is a number from -0.3 to 0.3 (-30% to +30%).':'A starting % is from -30 to +30.',
     'Each map point must belong to a roster party and remain inside Malaysia.':'Each point must belong to a customer and sit inside Malaysia.',
     'Set hours or mark closed for each day of the week.':'Set hours, or mark closed, for each day.',
@@ -3247,7 +3252,8 @@ export const OWNER_JS = `
           label:preset.name};}))
         .concat([{value:'typed',label:'Other %'}])); id.appendChild(select);
       var typed=makerField(id,['Other %','record.add-id.drift-value',item.product,item.product],'number','',0.05);
-      typed.min='-0.3';typed.max='0.3';typed.removeAttribute('inputmode');typed.step='0.05';typed.placeholder='-0.3 to 0.3';typed.closest('label').hidden=true;
+      var tlo=typeof item.driftMin==='number'?item.driftMin/100:-0.3, thi=typeof item.driftMax==='number'?item.driftMax/100:0.3;
+      typed.min=String(tlo);typed.max=String(thi);typed.removeAttribute('inputmode');typed.step='0.05';typed.placeholder=tlo+' to '+thi;typed.closest('label').hidden=true;
       select.addEventListener('change',function(){typed.closest('label').hidden=select.value!=='typed';});
       return {product:item.product,select:select,typed:typed};
     });
@@ -3313,7 +3319,7 @@ export const OWNER_JS = `
         }
         var idBody={at:new Date().toISOString(),code:code,kind:kind,
           parent:parentCode,tiers:tiers,vault:envelope};
-        if(tiers)idBody.unit='pct';
+        if(tiers)idBody.unit='band';
          if(geo)idBody.geo=geo;
         if(addrEnvelope)idBody.addrVault=addrEnvelope;
         if(idDraft)makerPairBody(idBody,idDraft);
@@ -4251,7 +4257,7 @@ export const OWNER_JS = `
             readingRow('Margin over cost',rm(got.margin.rm)+(got.margin.pct==null?'':' · '+Math.round(got.margin.pct)+'%'),'',got.margin.belowCost);
           }
           if(got.floor) readingRow('Floor for '+units(got.qty),rm(got.floor.rm),got.floor.nrs?'Cost plus '+(Math.round(got.floor.nrs*1000)/10)+'% for unpaid units, times the size.':'Cost times the size.');
-          if(got.card) readingRow('Their price',rm(got.card.rm),'Their % on the Set Price.');
+          if(got.card) readingRow('Their price',rm(got.card.rm),'Their % on the Median Price.');
           var h=got.history;
           if(h)readingRow('Their usual a unit',rm(h.median),h.count+' order'+(h.count===1?'':'s')+', '+rm(h.low)+' to '+rm(h.high)
             +(h.offMedianPct==null?'':': this is '+(h.offMedianPct>=0?h.offMedianPct+'% above':(-h.offMedianPct)+'% below'))+'. Recent: '
@@ -5270,7 +5276,7 @@ export const OWNER_JS = `
     m.style.setProperty('--salt-fill',String(Math.max(0,Math.min(100,Math.round((r.progress+add)/r.step*100)))));
     box.appendChild(m);
     box.appendChild(el('p','salt-insight orwdnote','Margin past '+r.times+' units at landed cost ('+rm(r.step)+' at '+rm(r.rate)+' today). Once paid, 1 unit joins this order at cost, one delivery: '
-      +rm(r.rate)+', less '+rm(r.given)+' given under their Set Price since the last reward, '+rm(r.net)+' net. Salt only.'));
+      +rm(r.rate)+', less '+rm(r.given)+' given under their Median Price since the last reward, '+rm(r.net)+' net. Salt only.'));
   }
   /* 21 Oct 2026 (the loyalty plan's This customer card, canvas V55): ON A CUSTOMER'S SALT ORDER, his page only, read once an order by its ledgerKey
      (GET /all/maker/customer-reading/<key>, behind Access and the bridge key) and held by its id: their last six rates as a line, a unit now at their
@@ -5329,7 +5335,7 @@ export const OWNER_JS = `
     var at=null;
     makerButton(s,['Use it','order.customer.use',order.id],async function(send){
       if(!at) at=new Date().toISOString();
-      try{ await send('/all/maker/inputs/tier-set',{code:r.code,product:'salt',tier:Number((+r.suggest.pct).toFixed(2)),unit:'pct',at:at}); answer.textContent='Sent. Their % changes once you approve it.'; delete custReads[order.id]; loadMaker(); }
+      try{ await send('/all/maker/inputs/tier-set',{code:r.code,product:'salt',tier:Number((+r.suggest.pct).toFixed(2)),unit:'band',at:at}); answer.textContent='Sent. Their % changes once you approve it.'; delete custReads[order.id]; loadMaker(); }
       catch(error){ refusal(answer,error); }
     },false,function(){ at=null; });
     s.appendChild(answer);

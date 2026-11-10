@@ -813,7 +813,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     && !/^\/_internal\/maker\/reward\/[A-Za-z0-9%._-]{3,160}$/.test(p)
     && !/^\/_internal\/maker\/customer-reading\/[A-Za-z0-9%._-]{3,160}$/.test(p)
     && !/^\/_internal\/maker\/(reward-of|customer-of)\/[A-Z][A-Z0-9-]{2,24}$/.test(p)
-    && !/^\/_internal\/maker\/drift-preview\/[A-Z][A-Z0-9-]{2,24}\/[a-z]{2,12}\/-?[0-9]{1,2}$/.test(p)
+    && !/^\/_internal\/maker\/drift-preview\/[A-Z][A-Z0-9-]{2,24}\/[a-z]{2,12}\/-?[0-9]{1,3}$/.test(p)
     && !/^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|offer|withdraw|handed|cash|received|again|amend|notfound|move|restate|take)$/.test(p))
     return json({ ok: false, error: "not found" }, 404);
   if (!env.COUNTER_MAKER_KEY) return json({ ok: false, error: "Counter maker bridge is not configured" }, 503);
@@ -1031,12 +1031,13 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       : makerCustomerReadingOf(book, ofAt[2], new Date(Date.now() + 8 * 36e5).toISOString().slice(0, 10));
     return reading.error && reading.associate === undefined && reading.customer === undefined ? json({ ok: false, error: reading.error }, 400) : json({ ok: true, reading });
   }
-  const prevAt = /^\/_internal\/maker\/drift-preview\/([A-Z][A-Z0-9-]{2,24})\/([a-z]{2,12})\/(-?[0-9]{1,2})$/.exec(p);
+  const prevAt = /^\/_internal\/maker\/drift-preview\/([A-Z][A-Z0-9-]{2,24})\/([a-z]{2,12})\/(-?[0-9]{1,3})$/.exec(p);
   if (prevAt) {
     /* 22 Oct 2026: Their % shown live on Salt Admin before it goes to Approve, a whole % in steps of 5; a read that writes nothing */
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     const whole = +prevAt[3];
-    if (whole % 5 !== 0 || whole < -30 || whole > 30) return json({ ok: false, error: "Choose a % from -30 to +30 in steps of 5." }, 400);
+    /* 10 Nov 2026: any whole %, since a figure carried onto the band is not a step of 5; the range is the book's own and makerDriftPreview refuses past it */
+    if (!Number.isInteger(whole) || whole < -100 || whole > 100) return json({ ok: false, error: "Choose a whole % from -100 to +100." }, 400);
     if (!env.SALT_LEDGER) return json({ ok: false, error: "The Desk mirror is required." }, 503);
     const book = await readBook(env.SALT_LEDGER);
     if (!book.version) return json({ ok: false, error: "The mirror is being seeded." }, 503);

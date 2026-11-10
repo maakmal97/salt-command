@@ -410,7 +410,10 @@ export function planBatch(book, staged, notes, ctx) {
   const TODAY = ctx.today, pinnedInMaster = ctx.pinnedInMaster;
   const driftBooks = () => ctx.driftBooks;
   /* a figure of his is a % lift on a book that has a Set Price and nothing on any other: oil, candy and rice are fixed boards */
-  const tierOk = (p, v) => driftBooks().includes(p) && PRICING_ENGINE.driftOk(v);
+  /* 10 Nov 2026: the range is the book's own (salt's band runs -1 to +1, a stated board -0.3 to +0.3), read off its rule */
+  const ruleOf = (p) => PRICING_RULES.TIER_RULE[p] || {};
+  const tierOk = (p, v) => driftBooks().includes(p) && PRICING_ENGINE.driftOk(v, ruleOf(p));
+  const notPct = (p) => " is not a % from " + PRICING_ENGINE.rangeSay(ruleOf(p)).plain + " (" + PRICING_ENGINE.rangeSay(ruleOf(p)).num + ")";
   /* 18 OCT 2026, HIS DECISION: A SALT FIGURE SET IN THE OLD UNIT (a drift, -1 to +1) IS DROPPED, NEVER READ AS A %:
      0.3 then meant 30% of the floor, now 30% on the Set Price, and everyone starts at 0%. The batch is not refused: the customer books on the Set Price with
      no figure held, and a note says the old figure was dropped. A tierset whose only content was such a figure folds as a no-op. A clear (null) carries no figure.
@@ -419,10 +422,10 @@ export function planBatch(book, staged, notes, ctx) {
      stamped before RULES.liftSince, whatever its unit. */
   const liftAt = Date.parse(PRICING_RULES.RULES.liftSince);
   const oldWhy = (it, p, v) => !(driftBooks().includes(p) && v !== null && v !== undefined) ? null
-    : (it.row && it.row.unit) !== "pct" ? "without the % unit"
+    : !PRICING_ENGINE.unitOk(ruleOf(p), it.row && it.row.unit) ? (ruleOf(p).band && it.row && it.row.unit === "pct" ? "on the old scale" : "without the % unit")
     : Date.parse((it.entry && it.entry.at) || it.id) < liftAt ? "before " + PRICING_RULES.RULES.liftSince : null;
   const oldLift = (it, p, v) => oldWhy(it, p, v) !== null;
-  const oldLiftNote = (c, ps, why) => `dropped the old figure: ${c}'s ${ps.join(" and ")} figure was set ${why}, in the old unit (-1 to +1), so ${c} stays on the Set Price at 0%`;
+  const oldLiftNote = (c, ps, why) => `dropped the old figure: ${c}'s ${ps.join(" and ")} figure was set ${why}, in the old unit (-1 to +1), so ${c} stays on the Median Price at 0%`;
   const out = { items: [], refused: [], moves: [] };
   let tagged = 0;
   let rows = (staged && staged.approved) || [];
@@ -777,7 +780,7 @@ export function planBatch(book, staged, notes, ctx) {
       if (appoints && (book.associates || []).includes(r.code)) { out.refused.push({ id: it.id, why: `${r.code} is already an associate` }); continue; }
       const resell = POSITION_ENGINE.appointBucket(r.kind, r.code);
       const rt = r.tiers || {}, rtOff = Object.keys(rt).filter((p) => !(book.PRODUCTS || {})[p]), rtOld = Object.keys(rt).filter((p) => oldLift(it, p, rt[p])), rtBad = Object.keys(rt).filter((p) => !rtOld.includes(p) && !tierOk(p, rt[p]));   /* a % lift on a book with a Set Price, nothing on any other */   // v645, per product since v646
-      if (rtOff.length || rtBad.length) { out.refused.push({ id: it.id, why: rtOff.length ? `${rtOff.join(" and ")} is not a product on this book` : `${rtBad.map((p) => sayLift(rt[p]) + (driftBooks().includes(p) ? " is not a % from -30 to +30 (-0.3 to 0.3)" : " is not held per customer on this book")).join(" and ")}` }); continue; }
+      if (rtOff.length || rtBad.length) { out.refused.push({ id: it.id, why: rtOff.length ? `${rtOff.join(" and ")} is not a product on this book` : `${rtBad.map((p) => sayLift(rt[p]) + (driftBooks().includes(p) ? notPct(p) : " is not held per customer on this book")).join(" and ")}` }); continue; }
       const rtKept = Object.fromEntries(Object.entries(rt).filter(([p]) => !rtOld.includes(p)));
       entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null, geo: r.geo || null, tiers: Object.keys(rtKept).length ? rtKept : null, partner };
       if (partner) entry.does.push(`make ${r.code} a partner: they pay the Floor, up to the next RM 5, on every book; they keep every associate property`);
@@ -844,7 +847,7 @@ export function planBatch(book, staged, notes, ctx) {
       const noProd = codes.filter((c) => !pairs.some((x) => x[0] === c)), offP = pairs.filter((x) => !(book.PRODUCTS || {})[x[1]]), bad = pairs.filter((x) => x[2] !== null && !oldLift(it, x[1], x[2]) && !tierOk(x[1], x[2]));   /* 05 Oct 2026: a figure of his on a drift book (18 Oct 2026: a % lift; 21 Oct 2026: -0.3 to +0.3), held as a tier was; none on any other */
       if (!codes.length || off.length || noProd.length || offP.length || bad.length) {
         out.refused.push({ id: it.id, why: !codes.length ? "a % entry names no customer" : off.length ? `${off.join(" and ")} is not a customer on the roster`
-          : noProd.length ? `the % entry for ${noProd.join(" and ")} names no product` : offP.length ? `${offP.map((x) => x[1]).join(" and ")} is not a product on this book` : bad.map((x) => sayLift(x[2]) + (driftBooks().includes(x[1]) ? " is not a % from -30 to +30 (-0.3 to 0.3)" : " is not held per customer on this book")).join(" and ") });
+          : noProd.length ? `the % entry for ${noProd.join(" and ")} names no product` : offP.length ? `${offP.map((x) => x[1]).join(" and ")} is not a product on this book` : bad.map((x) => sayLift(x[2]) + (driftBooks().includes(x[1]) ? notPct(x[1]) : " is not held per customer on this book")).join(" and ") });
         continue;
       }
       const oldTs = pairs.filter((x) => oldLift(it, x[1], x[2])), keptTs = pairs.filter((x) => !oldLift(it, x[1], x[2]));

@@ -217,13 +217,15 @@ function driftCards(book, roster, products) {
   const cards = [];
   for (const id of roster.filter(driftCustomerCode)) {
     for (const product of driftProducts) {
+      /* 10 Nov 2026: judged on the book's own range, and the held figure read through the band's carry-over, as the engine prices it */
+      const rule = book.pricing.byProduct[product].inputs?.policy?.tierRule || {};
       const set = object(held[id]) && Object.hasOwn(held[id], product)
-        && PRICING_ENGINE.driftOk(held[id][product]);
+        && PRICING_ENGINE.driftOk(held[id][product], rule);
       const lift = book.pricing.byProduct[product].lift, sug = book.pricing.byProduct[product].suggest;
-      const current = object(lift) && PRICING_ENGINE.driftOk(lift[id]) ? lift[id] : null;
+      const current = object(lift) && PRICING_ENGINE.driftOk(lift[id], rule) ? lift[id] : null;
       const given = object(sug) && object(sug[id]) ? sug[id] : null;
-      const suggest = given && PRICING_ENGINE.driftOk(given.pct) ? given.pct : null;
-      cards.push({ code: id, product, held: !!set, value: set ? held[id][product] : null, current, suggest, why: suggest !== null && suggestWhyOk(given.why) ? given.why : "" });
+      const suggest = given && PRICING_ENGINE.driftOk(given.pct, rule) ? given.pct : null;
+      cards.push({ code: id, product, held: !!set, value: set ? PRICING_ENGINE.heldPct(rule, id, held[id][product]) : null, current, suggest, why: suggest !== null && suggestWhyOk(given.why) ? given.why : "" });
     }
   }
   return cards;
@@ -304,8 +306,9 @@ function customerReadingFor(book, owner, rid, today) {
   const lots = (book.purchases || []).filter((p) => (p.product || "salt") === "salt"), lc = POSITION_ENGINE.latestCogs(lots, today || undefined);
   const cost = lc && lc.rate > 0 ? two(lc.rate) : null;
   const snap = book.pricing && book.pricing.byProduct && book.pricing.byProduct.salt;
-  const sug = snap && object(snap.suggest) && object(snap.suggest[owner]) && PRICING_ENGINE.driftOk(snap.suggest[owner].pct) ? snap.suggest[owner] : null;
-  const held = snap && object(snap.lift) && PRICING_ENGINE.driftOk(snap.lift[owner]) ? snap.lift[owner] : 0;
+  const saltRule = snap && snap.inputs && snap.inputs.policy && snap.inputs.policy.tierRule || {};
+  const sug = snap && object(snap.suggest) && object(snap.suggest[owner]) && PRICING_ENGINE.driftOk(snap.suggest[owner].pct, saltRule) ? snap.suggest[owner] : null;
+  const held = snap && object(snap.lift) && PRICING_ENGINE.driftOk(snap.lift[owner], saltRule) ? snap.lift[owner] : 0;
   const suggest = sug ? { pct: sug.pct, why: suggestWhyOk(sug.why) ? sug.why : "" } : null;
   let gain = null;
   if (suggest && suggest.pct > held + 1e-9 && med && snap.inputs && snap.inputs.cost && snap.inputs.policy && cost != null) {
@@ -656,8 +659,8 @@ export function makerDriftPreview(book, who, product, pct) {
   if ((book.state.partners || []).includes(who)) return { error: "A partner pays the Floor and has no %." };
   const snap = book.pricing?.byProduct?.[product], I = snap?.inputs, rule = I?.policy?.tierRule;
   if (!PRICING_ENGINE.pctBook(rule) || !I.cost) return { error: "This book takes no %." };
-  if (!PRICING_ENGINE.driftOk(pct)) return { error: "Choose a % from -30% to +30%." };
-  const held = object(snap.lift) && PRICING_ENGINE.driftOk(snap.lift[who]) ? snap.lift[who] : 0;
+  if (!PRICING_ENGINE.driftOk(pct, rule)) return { error: "Choose a % from " + PRICING_ENGINE.rangeSay(rule).pct + "." };
+  const held = object(snap.lift) && PRICING_ENGINE.driftOk(snap.lift[who], rule) ? snap.lift[who] : 0;
   const qs = (book.sales || []).filter((s) => s && (s.product || "salt") === product && POSITION_ENGINE.ownsCode(who, s.customer) && !s.goodwill
     && !s.cancelled && +s.total > 0 && +s.qty > 0).map((s) => +s.qty).sort((a, b) => a - b);
   const usual = qs.length ? qs[Math.floor(qs.length / 2)] : null;
@@ -670,9 +673,11 @@ export function makerDriftPreview(book, who, product, pct) {
     catch (e) { continue; }
     if (!(now > 0) || !(at > 0) || !(floor > 0)) continue;
     /* 10 Nov 2026: the Ceiling is struck on the COGS Floor (the engine's floorBase), as the walk strikes it, while the Floor carries the non-revenue share */
-    const ceiling = two(cx * PRICING_ENGINE.floorBase(q, K, I.policy));
+    /* 10 Nov 2026: on a band the Ceiling is the walk's own, the curve on the supplier's price down to RM 5 (the engine's driftAt) */
+    const walked = rule.band ? PRICING_ENGINE.driftAt(q, K, I.policy, 0) : null;
+    const ceiling = two(walked ? walked.ceiling : cx * PRICING_ENGINE.floorBase(q, K, I.policy));
     rows.push({ q, now: two(now), at: two(at), floor: two(floor), ceiling, usual: usual != null && Math.abs(q - usual) < 0.009,
-      edge: at <= floor + 0.009 ? "floor" : at >= ceiling - (+I.policy.LADDER?.round?.to || 5) + 0.009 ? "ceiling" : null });
+      edge: at <= floor + 0.009 ? "floor" : at >= ceiling - (walked ? 0.009 : (+I.policy.LADDER?.round?.to || 5) - 0.009) ? "ceiling" : null });
   }
   return { code: who, product, held, pct, rows };
 }
@@ -691,11 +696,13 @@ export function makerInputCatalog(book, hush = {}, pending = [], registrations =
     const cost = costFor(book, product).cost;
     const driftPresets = PRICING_ENGINE.pctBook(rule) && object(rule.presets)
       ? Object.entries(rule.presets).filter(([name, value]) => typeof name === "string" && name
-        && PRICING_ENGINE.driftOk(value)).map(([name, value]) => ({ name, value }))
+        && PRICING_ENGINE.driftOk(value, rule)).map(([name, value]) => ({ name, value }))
       : [];
+    /* 10 Nov 2026: the book's own range in whole %, and the unit its figure travels with, for Salt Admin's stepper and forms */
+    const range = PRICING_ENGINE.liftRange(rule);
     /* 22 Oct 2026: `drift` says the book takes Their %, a Set Price or a stated board carrying `pct` */
     return { product, fixed: !!(rule && rule.fixed), drift: PRICING_ENGINE.pctBook(rule),
-      ...(PRICING_ENGINE.pctBook(rule) ? { driftPresets } : {}), saleReady: cost > 0, purchaseReady: cost !== null };
+      ...(PRICING_ENGINE.pctBook(rule) ? { driftPresets, driftMin: Math.round(range.min * 100), driftMax: Math.round(range.max * 100), driftUnit: PRICING_ENGINE.unitOf(rule) } : {}), saleReady: cost > 0, purchaseReady: cost !== null };
   });
   return {
     version: book.version, products, parties, ...owedBothWays(book, today),
@@ -886,13 +893,16 @@ export function makerTierSet(body, book) {
   const snapshot = book.pricing && book.pricing.byProduct && book.pricing.byProduct[body.product];
   const rule = snapshot && snapshot.inputs && snapshot.inputs.policy && snapshot.inputs.policy.tierRule;
   if (!PRICING_ENGINE.pctBook(rule)) return { error: "This book takes no %." };
-  if (!driftCustomerCode(body.code)) return { error: "A supplier has no % on the Set Price." };
-  if (body.tier !== null && !PRICING_ENGINE.driftOk(body.tier))
-    return { error: "Choose a % from -30% to +30% (-0.3 to 0.3), or clear it." };
+  if (!driftCustomerCode(body.code)) return { error: "A supplier has no % on the Median Price." };
+  if (body.tier !== null && !PRICING_ENGINE.driftOk(body.tier, rule))
+    return { error: "Choose a % from " + PRICING_ENGINE.rangeSay(rule).pct + " (" + PRICING_ENGINE.rangeSay(rule).num + "), or clear it." };
+  /* 10 Nov 2026, the switch's carry-over: the figure they held on the old curve is read as its place on the band while the carry table lists them */
+  if (body.tier !== null && PRICING_ENGINE.carryClash(rule, body.code, body.tier))
+    return { error: "That is the figure they held on the old scale. Choose 1% either side." };
   /* 19 Oct 2026: a figure travels with its unit. A Counter Admin page cached from before the % lift still sends 0.3 meaning 30% of the floor; it is refused here, by unit and not by time. */
-  if (body.tier !== null && body.unit !== "pct") return { error: OLD_UNIT };
+  if (body.tier !== null && !PRICING_ENGINE.unitOk(rule, body.unit)) return { error: OLD_UNIT };
   return proposed(POSITION_ENGINE.tierSetEntry({
-    at: body.at, tiers: { [body.code]: { [body.product]: body.tier } }, unit: body.tier !== null ? "pct" : null
+    at: body.at, tiers: { [body.code]: { [body.product]: body.tier } }, unit: body.tier !== null ? PRICING_ENGINE.unitOf(rule) : null
   }), book);
 }
 
@@ -910,7 +920,7 @@ export function makerPartner(body, book, pending = []) {
       && book.pricing.byProduct[product].inputs.policy.tierRule;
     return !!rule && !!rule.drift && !rule.fixed;
   });
-  if (!driftBook) return { error: "A partner is made on a book with a Set Price." };
+  if (!driftBook) return { error: "A partner is made on a book with a Median Price." };
   if (!code(body.code, book.state.roster || []) || POSITION_ENGINE.isBucket(body.code))
     return { error: "Choose a customer on the roster, not a resale account." };
   if ((book.state.partners || []).includes(body.code)) return { error: body.code + " is already a partner." };
@@ -1280,19 +1290,20 @@ export function makerLedgerInput(operation, body, book, pending = []) {
     if (tiers != null) {
       if (!["customer", "reseller", "referral"].includes(body.kind))
         return { error: "Only a customer, reseller or referral holds a starting %." };
-      if (!object(tiers) || !Object.keys(tiers).length) return { error: "A starting % must name an active book with a Set Price." };
-      if (body.unit !== "pct") return { error: OLD_UNIT };
+      if (!object(tiers) || !Object.keys(tiers).length) return { error: "A starting % must name an active book with a Median Price." };
+      if (body.unit !== "pct" && body.unit !== "band") return { error: OLD_UNIT };
       for (const [product, tier] of Object.entries(tiers)) {
         const snapshot = book.pricing?.byProduct?.[product], rule = snapshot?.inputs?.policy?.tierRule;
-        if (active(product, book) && PRICING_ENGINE.pctBook(rule) && !PRICING_ENGINE.driftOk(tier))
-          return { error: "A starting % is a number from -0.3 to 0.3 (-30% to +30%)." };
+        if (active(product, book) && PRICING_ENGINE.pctBook(rule) && !PRICING_ENGINE.unitOk(rule, body.unit)) return { error: OLD_UNIT };
+        if (active(product, book) && PRICING_ENGINE.pctBook(rule) && !PRICING_ENGINE.driftOk(tier, rule))
+          return { error: "A starting % is a number from " + PRICING_ENGINE.rangeSay(rule).num + " (" + PRICING_ENGINE.rangeSay(rule).pct + ")." };
         if (!active(product, book) || !PRICING_ENGINE.pctBook(rule))
           return { error: "A starting % must name an active book that takes a %." };
       }
     }
     entry = POSITION_ENGINE.addIdEntry({ at: body.at, code: body.code, kind: body.kind,
       parent: body.parent || null, rev: body.kind === "reseller" ? "R2" : body.kind === "referral" ? "R3" : null,
-      geo: body.geo || null, tiers, unit: tiers != null ? "pct" : null, introducer: body.introducer || null });
+      geo: body.geo || null, tiers, unit: tiers != null ? body.unit : null, introducer: body.introducer || null });
   } else if (operation === "amend-id") {
     if (!exact(body, ["at", "from", "to", "geo", "vault", "addrVault"])
       || !realCode(body.from, roster) || POSITION_ENGINE.isBucket(body.from)

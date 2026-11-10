@@ -121,7 +121,7 @@ async function deskCall(env, path, method, body) {
     || /^\/_internal\/maker\/reward\/[A-Za-z0-9%._-]{3,160}$/.test(path) && method === "GET"
     || /^\/_internal\/maker\/customer-reading\/[A-Za-z0-9%._-]{3,160}$/.test(path) && method === "GET"
     || /^\/_internal\/maker\/(reward-of|customer-of)\/[A-Z][A-Z0-9-]{2,24}$/.test(path) && method === "GET"
-    || /^\/_internal\/maker\/drift-preview\/[A-Z][A-Z0-9-]{2,24}\/[a-z]{2,12}\/-?[0-9]{1,2}$/.test(path) && method === "GET"
+    || /^\/_internal\/maker\/drift-preview\/[A-Z][A-Z0-9-]{2,24}\/[a-z]{2,12}\/-?[0-9]{1,3}$/.test(path) && method === "GET"
     || path === "/_internal/maker/ledger" && ["GET", "POST"].includes(method)
     || path === "/_internal/maker/stock" && method === "GET"
     || path === "/_internal/maker/inputs/offset" && method === "POST"
@@ -413,7 +413,7 @@ function internalOperation(path) {
   if (cust) return { kind: "customer-reading", key: cust[1] };
   const of = /^\/all\/maker\/(reward-of|customer-of)\/([A-Z][A-Z0-9-]{2,24})$/.exec(path);
   if (of) return { kind: "reading-of", which: of[1], code: of[2] };
-  const prev = /^\/all\/maker\/drift-preview\/([A-Z][A-Z0-9-]{2,24})\/([a-z]{2,12})\/(-?[0-9]{1,2})$/.exec(path);
+  const prev = /^\/all\/maker\/drift-preview\/([A-Z][A-Z0-9-]{2,24})\/([a-z]{2,12})\/(-?[0-9]{1,3})$/.exec(path);
   if (prev) return { kind: "drift-preview", code: prev[1], product: prev[2], pct: prev[3] };
   if (path === "/all/maker/ledger") return { kind: "ledger" };
   if (path === "/all/maker/stock") return { kind: "stock" };

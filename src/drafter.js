@@ -1252,13 +1252,15 @@ export function draftRow(entry, book) {
     const products = (book.state && book.state.PRODUCTS) || {};
     const tierLine = (t) => Object.keys(t).map((p) => `${(products[p] && products[p].name) || p} ${t[p]}`).join(", ");
     if (pay.tiers != null) {
-      const driftB = (p) => !!(((((book.pricing || {}).byProduct || {})[p] || {}).inputs || {}).policy || {}).tierRule && PRICING_ENGINE.pctBook(book.pricing.byProduct[p].inputs.policy.tierRule);
+      const ruleB = (p) => (((((book.pricing || {}).byProduct || {})[p] || {}).inputs || {}).policy || {}).tierRule || null;
+      const driftB = (p) => PRICING_ENGINE.pctBook(ruleB(p));
       const ps = (typeof pay.tiers === "object" && !Array.isArray(pay.tiers)) ? Object.keys(pay.tiers) : [];
       if (!ps.length) return { skip: "a starting % names no product" };
       for (const p of ps) {
         if (!products[p]) return { skip: `${p} is not a product on this book` };
         /* a book with a Set Price starts on a figure he picks (18 Oct 2026: a % lift; 21 Oct 2026: -0.3 to +0.3); any other book takes none */
-        if (!(driftB(p) && PRICING_ENGINE.driftOk(pay.tiers[p]))) return { skip: driftB(p) ? `${pay.tiers[p]} is not a % from -30 to +30 (-0.3 to 0.3)` : `${pay.tiers[p]} is not held per customer on this book` };
+        /* 10 Nov 2026: the range is the book's own, salt's band -1 to +1 */
+        if (!(driftB(p) && PRICING_ENGINE.driftOk(pay.tiers[p], ruleB(p)))) return { skip: driftB(p) ? `${pay.tiers[p]} is not a % from ${PRICING_ENGINE.rangeSay(ruleB(p)).plain} (${PRICING_ENGINE.rangeSay(ruleB(p)).num})` : `${pay.tiers[p]} is not held per customer on this book` };
       }
       if (!["customer", "reseller", "referral"].includes(kind)) return { skip: `a ${kind} holds no starting %` };
     }
@@ -1273,7 +1275,9 @@ export function draftRow(entry, book) {
        duplicate here is appointing an associate twice, and the fold refuses that outright. */
     const stream = POSITION_ENGINE.ADDID_APPOINTS[kind] || null;
     /* 19 Oct 2026: a starting % with no unit is the old form's (-1 to +1); the fold drops it, as it drops one stamped before the switch */
-    if (pay.tiers && pay.unit !== "pct") flags.push(`The starting % carries no unit, so it is from the old form: the fold drops it and ${code} starts on the Set Price at 0%.`);
+    /* 10 Nov 2026: and a salt figure sent as "pct" is from the form before the band: the unit a figure travels with is its book's (the engine's unitOk) */
+    const tierRuleOf = (p) => (((((book.pricing || {}).byProduct || {})[p] || {}).inputs || {}).policy || {}).tierRule || null;
+    if (pay.tiers && Object.keys(pay.tiers).some((p) => !PRICING_ENGINE.unitOk(tierRuleOf(p), pay.unit))) flags.push(`The starting % carries no unit, so it is from the old form: the fold drops it and ${code} starts on the Median Price at 0%.`);
     if (roster.includes(code) && !stream) {
       flags.push(`${code} is ALREADY on the roster. Folding this would list the party twice, and the desk walks the roster to build its own tables.`);
     }
@@ -1302,7 +1306,7 @@ export function draftRow(entry, book) {
       : "";
     return {
       collection: "roster",
-      row: Object.assign({ code, kind, parent, note: pay.note || null }, geoOf(pay.geo) ? { geo: geoOf(pay.geo) } : {}, pay.tiers ? { tiers: { ...pay.tiers } } : {}, pay.tiers && pay.unit === "pct" ? { unit: "pct" } : {}, introducer ? { introducer } : {}),
+      row: Object.assign({ code, kind, parent, note: pay.note || null }, geoOf(pay.geo) ? { geo: geoOf(pay.geo) } : {}, pay.tiers ? { tiers: { ...pay.tiers } } : {}, pay.tiers && (pay.unit === "pct" || pay.unit === "band") ? { unit: pay.unit } : {}, introducer ? { introducer } : {}),
       flags,
       reasoning: `${stream && roster.includes(code) ? "Appoints" : "Registers"} ${code} as a ${kind}${parent ? ` under ${parent}` : ""}.`
         + (pay.tiers ? ` It starts them at ${tierLine(pay.tiers)}.` : "")
@@ -1397,10 +1401,11 @@ export function draftRow(entry, book) {
     const roster = (book.state && book.state.roster) || [], held = (book.state && book.state.TIER_OF) || {};
     const products = (book.state && book.state.PRODUCTS) || {};
     const name = (p) => (products[p] && products[p].name) || p;
-    const driftB = (p) => !!(((((book.pricing || {}).byProduct || {})[p] || {}).inputs || {}).policy || {}).tierRule && PRICING_ENGINE.pctBook(book.pricing.byProduct[p].inputs.policy.tierRule);
+    const ruleB = (p) => (((((book.pricing || {}).byProduct || {})[p] || {}).inputs || {}).policy || {}).tierRule || null;
+    const driftB = (p) => PRICING_ENGINE.pctBook(ruleB(p));
     const say = (v) => v == null ? "not set" : typeof v === "number" ? (v < 0 ? (+(-v * 100).toFixed(2)) + "% off" : (+(v * 100).toFixed(2)) + "% lift") : isObj(v) ? JSON.stringify(v) : String(v);
     const row = { tiers: {} }, flags = [];
-    if (pay.unit === "pct") row.unit = "pct";
+    if (pay.unit === "pct" || pay.unit === "band") row.unit = pay.unit;
     for (const c of codes) {
       if (!roster.includes(c)) return { skip: `${c} is not on the roster` };
       if (POSITION_ENGINE.isBucket(c)) return { skip: `${c} is a resale account, and it holds its associate's %` };
@@ -1411,10 +1416,12 @@ export function draftRow(entry, book) {
         const t = tiers[c][p], was = isObj(held[c]) ? held[c][p] : null;
         if (!products[p]) return { skip: `${p} is not a product on this book` };
         /* on a book with a Set Price what is held is a figure of his (18 Oct 2026: a % lift; 21 Oct 2026: -0.3 to +0.3); a null clears it; any other book holds none */
-        if (t !== null && !(driftB(p) && PRICING_ENGINE.driftOk(t))) return { skip: driftB(p) ? `${say(t)} is not a % from -30 to +30 (-0.3 to 0.3)` : `${say(t)} is not held per customer on this book` };
+        if (t !== null && !(driftB(p) && PRICING_ENGINE.driftOk(t, ruleB(p)))) return { skip: driftB(p) ? `${say(t)} is not a % from ${PRICING_ENGINE.rangeSay(ruleB(p)).plain} (${PRICING_ENGINE.rangeSay(ruleB(p)).num})` : `${say(t)} is not held per customer on this book` };
+        /* 10 Nov 2026, the switch's carry-over: a figure equal to the one they held on the old curve would be read through the carry table as its place on the band, so it is refused while the table lists them */
+        if (t !== null && PRICING_ENGINE.carryClash(ruleB(p), c, t)) return { skip: `${say(t)} is the figure ${c} held on the old scale, which is read as its place on the band until the carry-over is filed: choose 1% either side` };
         row.tiers[c][p] = t;
-        if (t !== null && pay.unit !== "pct") flags.push(`${c}'s ${name(p)} figure carries no unit, so it is from the old form: the fold drops it and ${c} stays on the Set Price.`);
-        if (was && JSON.stringify(was) !== JSON.stringify(t)) flags.push(`${c}'s ${name(p)} moves from ${say(was)} to ${say(t)}.`);
+        if (t !== null && !PRICING_ENGINE.unitOk(ruleB(p), pay.unit)) flags.push(`${c}'s ${name(p)} figure carries no unit, so it is from the old form: the fold drops it and ${c} stays on the Median Price.`);
+        if (was != null && JSON.stringify(PRICING_ENGINE.heldPct(ruleB(p), c, was)) !== JSON.stringify(t)) flags.push(`${c}'s ${name(p)} moves from ${say(PRICING_ENGINE.heldPct(ruleB(p), c, was))} to ${say(t)}.`);
       }
     }
     return {
