@@ -270,7 +270,7 @@ const LADDER_BY={
 
 const TIER_RULE={
   /* 18 Oct 2026, HIS DECISION: SALT'S SET PRICE IS THE MINIMUM ANY NON-PARTNER PAYS, a multiple of the Floor on his four points
-     (`points`, [size, multiple]: 2.5 at half a unit, 2 at one, 1.67 at 6.25, 1.33 at 12.5), sliding in the log of size between
+     (`points`, [size, multiple]; 2.5 at half a unit, 2 at one, 1.67 at 6.25, 1.33 at 12.5 until 10 Nov 2026, 1.2 times those since), sliding in the log of size between
      them and flat beyond the ends. A customer's figure is a % on it (-0.3 to +0.3 since his decision of 21 Oct 2026, held in TIER_OF), applied inside the walk
      (the engine's driftWalk); nothing automatic prices. `drift` stays as the marker that makes salt a per-customer book, and
      `auto` only feeds the record's good and bad on the card. `suggest` is the suggestion's constants (the engine's
@@ -279,9 +279,12 @@ const TIER_RULE={
      perfect record earns, times the record's good score, only with nothing late, overdue or written off (21 Oct 2026). */
   /* 22 OCT 2026, HIS DECISION: THEIR % RUNS ON HIS CURVE. `ends` are the Floor multiples at -30% (low) and +30% (high), at the first
      point and the last, each curve the Set Price's own shape, and a % an equal share of the way at every size (the engine's driftMultiple). */
+  /* 10 NOV 2026, HIS WORD, PENDING THE PRICE BAND PLAN (docs/plan-salt-price-band.html): the Set Price RM 20 higher at 1 unit, 20% at
+     every size (his answer A), so every point's multiple is 1.2 times what it was (2.5, 2, 1.67, 1.33), and the ends move by the same
+     factor (2, 1.2 and 3, 1.45; his answer) so each % keeps its distance from the Set Price. At half a unit the Ceiling holds it (RM 75). */
   salt:{drift:true, ceilingX:3,
-        points:[[0.5,2.5],[1,2],[6.25,1.67],[12.5,1.33]],
-        ends:{low:[2,1.2], high:[3,1.45]},
+        points:[[0.5,3],[1,2.4],[6.25,2.004],[12.5,1.596]],
+        ends:{low:[2.4,1.44], high:[3.6,1.74]},
         suggest:{writtenOff:0.3, longLate:0.2, late:0.1, overdueDays:14, recent:5, step:0.05, minSettled:3, good:0.3},
         auto:{wP:0.35, wF:0.25, wV:0.2, wT:0.2, minSettled:3, perMonth:4, unitsPerMonth:10, orders:12, staleDays:60, overdueDays:14, U:0.5, D:0.5, cap:0.5},
         presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3},

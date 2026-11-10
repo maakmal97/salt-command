@@ -66,8 +66,9 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      books shares `trip` and its one delivery sits on ONE row** (`tripFault`; one tap approves the trip).
    - **SALT'S PRICE IS THE SET PRICE AND THEIR %** (his decisions of 05, 18 and 21 Oct 2026). **The Set Price is what a
      stranger is quoted**, and a customer pays less only on a negative % of his: per size the Floor times a
-     multiple (2.5 at half a unit, 2 at 1, 1.67 at 6.25, 1.33 at 12.5, sliding in the log of size, flat
-     above 12.5; `TIER_RULE.salt.points`). The grid runs half a unit to 25 in quarters and is walked smallest
+     multiple (3 at half a unit, 2.4 at 1, 2.004 at 6.25, 1.596 at 12.5, sliding in the log of size, flat
+     above 12.5; `TIER_RULE.salt.points`; 1.2 times the old 2.5, 2, 1.67, 1.33 by his word of 10 Nov 2026, RM 120 at 1 unit, pending
+     the price band plan). The grid runs half a unit to 25 in quarters and is walked smallest
      first (the engine's `driftWalk`, read through `driftAt`, `quoteAt` and `quoteGrid`): the rate is the
      lesser of the last and this size's multiple on the EXACT rate, never compounded, so the quoted rate may rise
      by under RM 5 a unit between quarters; the price goes down to RM 5; it is lifted so the ringgit margin over
@@ -79,7 +80,7 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
    - **THEIR % is his and nothing else's, ON EVERY BOOK** (`TIER_OF[code][book]`, a number from -0.3 to +0.3, -30% to +30%,
      the engine's `LIFT_MIN` and `LIFT_MAX` read by `driftOk`, his decisions of 21 and 22 Oct 2026; 0 is the Set Price or
      the board). **It runs on his curve** (22 Oct 2026, the engine's `driftMultiple`): salt's `ends` are the Floor multiples
-     at -30% (2.00 at 0.5 unit, 1.20 at 12.5) and +30% (3.00, 1.45), each end the Set Price's own shape, and a % is that
+     at -30% (2.40 at 0.5 unit, 1.44 at 12.5) and +30% (3.60, 1.74; both 1.2 times, 10 Nov 2026), each end the Set Price's own shape, and a % is that
      share of the way from the Set Price, so every 5% step is equal at every size, inside the walk, held between the Floor
      and the Ceiling. **Everyone starts at 0%**. He sets it on the customer's own card under Salt Admin's Customers (moved from Record, his yes of 25 Oct 2026), a whole % by a stepper in steps of 5, its prices shown
      live off the Desk before it goes to Approve (`makerDriftPreview`), or picks at Add ID

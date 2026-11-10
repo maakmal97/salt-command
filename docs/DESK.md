@@ -26,8 +26,8 @@
   book's grid. The price grid's `LADDER.round.to` is 5, so a RM 35 Floor is not re-rounded to RM 40.
 - **Salt is the Set Price and their %** (his decisions of 05, 18 and 21 Oct 2026). `TIER_RULE.salt` carries `drift` (the
   flag that marks a book with a Set Price), `points`, `ceilingX`, `auto`, `suggest` and `presets`. **The Set Price is what a
-  stranger is quoted**; since 21 Oct 2026 a customer on a negative % of his pays less, never under the Floor. The multiple of the Floor is 2.5 at half a unit,
-  2 at 1, 1.67 at 6.25 and 1.33 at 12.5, sliding in the log of size between points and flat above 12.5. The engine's
+  stranger is quoted**; since 21 Oct 2026 a customer on a negative % of his pays less, never under the Floor. The multiple of the Floor is 3 at half a unit,
+  2.4 at 1, 2.004 at 6.25 and 1.596 at 12.5 (since 10 Nov 2026, his word: 1.2 times the old 2.5, 2, 1.67, 1.33, RM 120 at 1 unit, pending the price band plan), sliding in the log of size between points and flat above 12.5. The engine's
   `driftWalk` walks the grid (half a unit to 25 in quarters) smallest first: the rate is the lesser of the last size's and
   `Floor * multiple * (1 + %) / q`, on the exact rate and never compounded; the price is that rate times the size, down
   to RM 5; it is then lifted so the ringgit margin over the Floor never falls below the largest margin of any smaller
@@ -35,8 +35,8 @@
   unit between quarters: the rate law is on the exact rate. `quoteAt` and `quoteGrid` are the one rule at any size, so
   for every % in use and every grid point `quoteGrid(...).p[i]` is `quoteAt(min + i * step, ...)`, and a
   partner's `quoteAt` is the `floorTotal`, the snapshot's `floors[q]` and the drafter's `floorFor(q).floor`.
-- **Their % on his curve, on every book** (22 Oct 2026). Salt's `TIER_RULE.ends` are his Floor multiples for -30% (2.00 at 0.5 unit,
-  1.20 at 12.5) and +30% (3.00, 1.45); `driftMultiple(q, R, pct)` puts each end on the Set Price's own shape (the share s the Set Price
+- **Their % on his curve, on every book** (22 Oct 2026). Salt's `TIER_RULE.ends` are his Floor multiples for -30% (2.40 at 0.5 unit,
+  1.44 at 12.5) and +30% (3.60, 1.74; 1.2 times the old 2.00, 1.20 and 3.00, 1.45 since 10 Nov 2026); `driftMultiple(q, R, pct)` puts each end on the Set Price's own shape (the share s the Set Price
   sits between its first and last multiples) and a % at t = pct / 0.3 of the way from the Set Price to its end, so each 5% step is equal
   at every size; the walk reads it in place of the multiple times (1 + %), which a rule without `ends` keeps. Oil, candy and rice carry
   `pct` and `shares` (-30% 0.8 of the board at the smallest rung and 0.9 at the largest, +30% 1.2 and 1.09, salt's proportions, his
