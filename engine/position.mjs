@@ -1781,7 +1781,7 @@ function vaultPendingOk(record,publicWord=()=>false){
     'shares','rids','undo','introducer'];   /* introducer: R3, the associate whose join link brought a customer in (plan version 6) */
   const enumWords=['customer','supplier','reseller','referral','downstream','bucket','cash','goods','in','out',
     'SELL','BUY','Correction','Fulfilment','Cancellation','Payment','Receipt','Default','R1','R2','R3','salt','oil','candy','rice','gas','prep','delivered','collected',
-    'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big','pct'];
+    'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big','pct','band'];   /* band: the unit a salt % travels with since the price band (10 Nov 2026) */
   const house=object(record)&&typeof record.path==='string'&&/\/house-sizes$/.test(record.path);
   const offset=object(record)&&typeof record.path==='string'&&/^\/?all\/maker\/inputs\/offset$/.test(record.path);
   const appointment=object(record)&&typeof record.path==='string'&&/^\/?all\/maker\/inputs\/appoint-existing$/.test(record.path);

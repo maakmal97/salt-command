@@ -186,22 +186,22 @@ export async function run({ ok }) {
       window.Chart.prototype.unbindEvents=function(){this.unbound=(this.unbound||0)+1;};window.Chart.prototype.bindEvents=function(){this.rebound=(this.rebound||0)+1;};window.Chart.register=function(){};
       window.Chart.defaults={font:{},animation:{},plugins:{tooltip:{},legend:{labels:{}}},elements:{line:{},point:{}}};
       window.__td=function(id){return window.__made.filter(function(c){return c.canvas&&(id?c.canvas.id===id:/^td/.test(c.canvas.id));});};`);
-    /* Today's own two charts: drawn once, and a tap away and back puts the same ones back */
+    /* Today's own chart (10 Nov 2026: Cover alone, Money at stake by kind left the page): drawn once, and a tap away and back puts the same one back */
     const today = rd(`(function(){
       CHART_KEEP.clear();window.__made.length=0;
       switchTab('today');var first=__td().length,a=__td();
       switchTab('money');switchTab('today');switchTab('money');switchTab('today');
-      var k=document.getElementById('tdKindChart');
+      var k=document.getElementById('tdCoverChart');
       return {first:first,after:__td().length,seated:a.length>0&&k===a[0].canvas&&k.isConnected,live:a.every(function(c){return !c.gone;}),kept:CHART_KEEP.size};})()`);
-    ok(today.first === 2 && today.after === 2 && today.seated && today.live,
-      "Today's two charts are drawn once; a tap away and back, twice over, builds none and puts the kept canvas where the page has an empty one: " + JSON.stringify(today));
+    ok(today.first === 1 && today.after === 1 && today.seated && today.live,
+      "Today's chart is drawn once; a tap away and back, twice over, builds none and puts the kept canvas where the page has an empty one: " + JSON.stringify(today));
     const moved = rd(`(function(){
       var before=__td().length,old=__td();
       window.__r=BASE_SALES.filter(function(s){return (s.total-(+s.cash||0))>1&&!s.cancelled&&(+s.deliveredQty||0)>0;}).sort(function(a,b){return (b.total-(+b.cash||0))-(a.total-(+a.cash||0));})[0];
-      window.__was=window.__r.cash;window.__r.cash=window.__r.total;applyOverlay();
+      window.__was=window.__r.deliveredQty;window.__r.deliveredQty=0;applyOverlay();
       switchTab('money');switchTab('today');
       var built=__td().length-before,goneOld=old.filter(function(c){return c.gone;}).length;
-      window.__r.cash=window.__was;applyOverlay();
+      window.__r.deliveredQty=window.__was;applyOverlay();
       return {built:built,goneOld:goneOld};})()`);
     ok(moved.built >= 1 && moved.goneOld >= 1, "a change in the book redraws the chart whose picture it changes, and lets the old one go: " + JSON.stringify(moved));
 
@@ -268,11 +268,11 @@ export async function run({ ok }) {
         L('tide');CHART_KEEP.clear();window.__made.length=0;
         switchTab('today');var first=__td().length;switchTab('money');switchTab('today');var again=__td().length;
         L('night');var night=__td().length;
-        var kinds=__td('tdKindChart');
+        var kinds=__td('tdCoverChart');
         var cfgSame=kinds.length===2&&JSON.stringify(kinds[0].cfg)===JSON.stringify(kinds[1].cfg);
         return {first:first,again:again,night:night,cfgSame:cfgSame,theme:lookNow()};
       }finally{hex.forEach(function(k){de.style.removeProperty('--'+k);});L('night');}})()`);
-    ok(look.first === 2 && look.again === 2 && look.night === 4 && look.cfgSame && look.theme === "night",
+    ok(look.first === 1 && look.again === 1 && look.night === 2 && look.cfgSame && look.theme === "night",
       "a theme switch rebuilds the charts of the part showing though both looks gave the same config: " + JSON.stringify(look));
 
     /* the tokens: read once a look, and the other look's values the moment it is chosen */

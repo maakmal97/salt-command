@@ -1,0 +1,186 @@
+/* test/desk-cleanup.mjs: THE DESK CLEANUP AND ITS TWO PLANNERS (10 Nov 2026, his word: fix the bugs, keep only what is worth showing, and
+ * make the Desk more interactive for planning; his answers: remove the repeats, the Restock planner and Month ahead, inputs on this device).
+ * Plan: docs/plan-desk-cleanup.html. Every check reads what the Desk draws or computes on the frozen book, never the source's text.
+ *   F1  a debt past its term is one card: the credit rules it breaks ride on its Chase card as chips, and no Rule card repeats it
+ *   F2  a partner's open sale at the Floor is no Margin floor breach; the same sale to anyone else still is
+ *   F3  three or more repeat-order notes are one card naming each, and the counts beside the folds count cards
+ *   F4  with a live price already under the Floor, no card says the buying rate "can rise" by a negative figure
+ *   F5  Rules says a party over a cap once, however many of its rows are over it
+ *   F6  Financials' Gross margin is the sum of the books' own, never a dash because one row states no cost
+ *   F7  a row corrected twice in a day draws one Correction line for that day
+ *   F8  Analysis holds only the last correction of a field against its row, and counts a shelf truly empty, never one rebuilt under zero
+ *   C1  Rules holds its register alone; Today no Money at stake chart; Financials no unmeasured line; Sourcing one gap tile; Associates no empty fold
+ *   P1  the plan store is this device's, clamped on every read, and garbage reads as nothing
+ *   P2  a what-if lot lands in its book's inventory and leaves the cash on its day, is said to be a what-if, and books nothing
+ *   P3  Month ahead: demand moves revenue, the buying cost the cost of goods, running costs what is left; the first column never moves
+ *   P4  a stepper stops at its end
+ * Every assertion is red under its own mutation (test/desk-cleanup.mutations.json). */
+import { openMaster } from "../tools/payload.mjs";
+
+const J = JSON.stringify;
+const text = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
+
+export async function run({ ok }) {
+  const { w } = await openMaster();
+  try {
+    const d = w.document, E = (s) => w.eval(s);
+    const html = (part) => { const el = d.createElement("div"); el.innerHTML = E(`builders[${J(part)}]()`); return el; };
+
+    /* F1 */
+    const acts = E("allActions().map(x=>({sev:x.sev,kind:x.kind,party:x.party||'',title:String(x.title),why:String(x.why)}))");
+    const credit = E("(function(){const o={};Object.values(eachBook(()=>boundaryScan().filter(x=>x.sev==='breach'&&/^Credit /.test(x.rule)).map(x=>x.who))).forEach(L=>L.forEach(w=>{o[w]=1;}));return Object.keys(o)})()");
+    const chased = acts.filter((a) => a.kind === "collect" && a.sev === "now" && credit.includes(a.party));
+    ok(chased.length > 0 && chased.every((a) => a.sev === "now" && /class="rchip"/.test(a.why)),
+      "F1.1 a chase for a party breaking a credit rule stands at Now and carries the rule as a chip: " + J(chased.map((a) => [a.party, a.sev, /rchip/.test(a.why)])));
+    const rules = acts.filter((a) => a.kind === "rule");
+    ok(chased.length > 0 && !rules.some((r) => !/Margin|Banned|ban/i.test(r.why) && chased.some((c) => r.title.includes(c.party)) && !/rchip">(?!Credit )/.test(r.why)),
+      "F1.2 no Rule card repeats a debt its Chase card already carries: " + J(rules.map((r) => r.title.replace(/<[^>]+>/g, ""))));
+
+    /* F2: every open sale read as priced exactly at its cost and at its Floor (the readers stubbed, the book untouched), its buyer a
+       partner and then not: at the Floor a partner keeps rule 5, anyone else is at cost and breaches */
+    const f2 = E(`(function(){
+      const keep=[txUnitCost,floorTotal,isPartner];
+      const scan=part=>{txUnitCost=s=>txPrice(s);floorTotal=()=>0;isPartner=()=>part;
+        try{return boundaryScan().filter(x=>x.rule==='Margin floor'&&x.sev==='breach'&&x.who&&x.who!==NIL).length;}
+        finally{txUnitCost=keep[0];floorTotal=keep[1];isPartner=keep[2];}};
+      const loss=(()=>{txUnitCost=s=>txPrice(s)*1.2;floorTotal=()=>0;isPartner=()=>true;
+        try{return boundaryScan().filter(x=>x.rule==='Margin floor'&&x.sev==='breach'&&x.who&&x.who!==NIL).length;}
+        finally{txUnitCost=keep[0];floorTotal=keep[1];isPartner=keep[2];}})();
+      return {partner:scan(true),stranger:scan(false),loss};})()`);
+    ok(f2.stranger > 0 && f2.partner === 0, "F2.1 a partner's open sale at the Floor breaks no margin rule, and anyone else's at cost still does: " + J(f2));
+
+    ok(f2.loss > 0, "F2.2 a partner's sale under its own lot's cost is a loss and still a breach: " + J(f2));
+
+    /* F3 */
+    const dups = E("observations().live.filter(o=>o.sev==='note'&&/^dup:/.test(o.id)).length");
+    E("switchTab('today')");
+    const obs = [...d.querySelectorAll("#sec-today details.obs .obst")].map(text);
+    const group = [...d.querySelectorAll("#sec-today details.obs")].find((x) => /repeat orders/.test(text(x.querySelector(".obst"))));
+    ok(dups >= 3 && !obs.some((t) => /bought the same thing twice/.test(t)) && !!group && group.querySelectorAll(".obsev li").length === dups,
+      `F3.1 ${dups} repeat-order notes are one card listing each: ` + J([obs.filter((t) => /twice|repeat/.test(t)).length, group && group.querySelectorAll(".obsev li").length]));
+    const integrity = [...d.querySelectorAll("#sec-today details.obsec")].find((x) => /^Integrity/.test(text(x.querySelector("summary"))));
+    ok(!!integrity && +text(integrity.querySelector("summary .ct")) === integrity.querySelectorAll("details.obs").length,
+      "F3.2 the count beside Integrity is the cards under it: " + J(integrity && [text(integrity.querySelector("summary .ct")), integrity.querySelectorAll("details.obs").length]));
+
+    /* F4: the walk answering a live price already under the Floor */
+    const f4 = E(`(function(){const keep=boardHeadroom;
+      boardHeadroom=()=>({live:50,safeTo:49,headroom:-1,pct:-2,firstTier:'X',firstAt:50,hits:[],unbounded:false});
+      const all=()=>{const X=observations();return X.live.concat(X.hushed);};
+      const neg=all().filter(o=>/^px:headroom/.test(o.id)).length;
+      boardHeadroom=()=>({live:50,safeTo:53,headroom:3,pct:6,firstTier:'X',firstAt:54,hits:[],unbounded:false});
+      const pos=all().filter(o=>/^px:headroom/.test(o.id)).map(o=>o.title);
+      boardHeadroom=keep;return {neg,pos};})()`);
+    ok(f4.neg === 0 && f4.pos.length >= 1 && /can rise/.test(f4.pos[0]),
+      "F4.1 a headroom under nought raises no card, one over it still does: " + J(f4));
+
+    /* F5 */
+    const over = [...html("overview").querySelectorAll(".pchip")].map(text).filter((t) => /over the/.test(t));
+    const rowsOver = E("Math.max(0,...Object.values(eachBook(()=>{const n={};arList.filter(s=>overCap(s)).forEach(s=>{n[s.customer]=(n[s.customer]||0)+1;});return Math.max(0,...Object.values(n));})))");
+    ok(rowsOver >= 2 && over.length > 0 && over.every((t) => (t.match(/over the/g) || []).length <= E("PROD_IDS.length") && !/(over the [^·]+ cap) · \1/.test(t)),
+      "F5.1 a party with " + rowsOver + " rows over one cap is said over it once: " + J(over));
+
+    /* F6 */
+    const f6 = E("(function(){const G=eachBook(()=>grossMargin);return {nul:consoMoney().margin==null,sum:Object.values(G).reduce((a,x)=>a+(+x||0),0),fmt:fmt0(Object.values(G).reduce((a,x)=>a+(+x||0),0))};})()");
+    const tile = [...html("financials").querySelectorAll(".conso .kpi")].find((k) => text(k.querySelector(".salt-kpi__label")) === "Gross margin");
+    ok(f6.nul && f6.sum > 0 && !!tile && text(tile.querySelector(".salt-kpi__value")) === f6.fmt.replace(/&nbsp;/g, " "),
+      "F6.1 with a book stating no cost on a row, the business's Gross margin is still the books' own added: " + J([f6, tile && text(tile.querySelector(".salt-kpi__value"))]));
+
+    /* F7 */
+    const twice = E("sales.filter(s=>s.rid&&(()=>{const n={};(s.amend||[]).filter(a=>a.kind==='Correction'&&!a.undone).forEach(a=>{const k=String(a.date).slice(0,10);n[k]=(n[k]||0)+1;});return Object.values(n).some(v=>v>1);})()).map(s=>s.rid)");
+    E("switchTab('ledger')"); E(`goRows(${J(twice.join(" "))},'the check names')`);
+    const cards = [...d.querySelectorAll("#sec-book .lcards > *")];
+    const repeats = cards.map((c) => { const L = [...c.querySelectorAll(".ltext")].map((x) => x.innerHTML).filter(Boolean); return L.length - new Set(L).size; });
+    ok(twice.length > 0 && cards.length >= twice.length && repeats.every((n) => n === 0),
+      `F7.1 ${twice.length} rows corrected twice in a day each draw a day's changes once: ` + J([cards.length, repeats]));
+
+    /* F8 */
+    E("switchTab('analysis')");
+    const rev = [...d.querySelectorAll("#sec-book .pend.def tbody tr")].map((r) => text(r.children[0]) + ":" + text(r.children[2]).split(" ")[0]);
+    ok(rev.length > 0 && new Set(rev).size === rev.length && !rev.some((k) => /:note$/.test(k)),
+      "F8.1 the review holds one line a row's field, its last correction: " + J(rev));
+    const f8 = E("eachBook(()=>{const sh=stockHistory();return [sh.filter(r=>r.lvl<-0.05).length,sh.filter(r=>Math.abs(r.lvl)<=0.05).length];})");
+    const book = Object.keys(f8).find((p) => f8[p][0] > 0);
+    E(`setProdView(${J(book || "salt")})`); E("switchTab('analysis')");
+    const dry = [...d.querySelectorAll("#sec-book .kpi")].find((k) => /empty inventory/.test(text(k.querySelector(".salt-kpi__label"))));
+    ok(!!book && !!dry && +text(dry.querySelector(".salt-kpi__value")) === f8[book][1],
+      "F8.2 a day rebuilt under zero is not a day with an empty shelf: " + J([book, f8[book || "salt"], dry && text(dry.querySelector(".salt-kpi__value"))]));
+    E("setProdView('salt')");
+    /* a note amended is prose, never a figure held against the row: every corrected row made to claim one */
+    const f83 = E(`(function(){const keep=modClaims;
+      modClaims=(t,dir)=>keep(t,dir).concat(keep(t,dir).some(c=>c.verdict)?[{on:'2026-01-01',field:'note',was:'a',now:'b',reads:'c',verdict:'differs'}]:[]);
+      try{const el=document.createElement('div');el.innerHTML=tabAnalysis();return [...el.querySelectorAll('.pend.def tbody tr')].filter(r=>/^note /.test(r.children[2].textContent.trim())).length;}
+      finally{modClaims=keep;}})()`);
+    ok(f83 === 0, "F8.3 a note's prose is never held against its row: " + f83);
+
+    /* C1 */
+    const ov = html("overview"), heads = [...ov.querySelectorAll("h2,.cardh")].map(text);
+    ok(!!ov.querySelector(".kpi") === false && !heads.some((h) => /digest|at a glance|Latest ledger/i.test(h)) && /Boundaries/.test(heads.join("|")),
+      "C1.1 Rules is its register, with no digest, glance or ledger of another page: " + J(heads));
+    E("switchTab('today')");
+    ok(!d.getElementById("tdKindChart") && !!d.getElementById("tdCoverChart"), "C1.2 Today draws Cover and no Money at stake chart");
+    const fin = html("financials");
+    ok(!/not measured/.test(fin.textContent) && !/Per order, whatever the size|Every month, whether anything sells/.test(fin.textContent),
+      "C1.3 Financials carries no line that measures nothing");
+    const src = html("sourcing"), labels = [...src.querySelectorAll(".salt-kpi__label")].map(text);
+    ok(labels.includes("The gap") && !labels.some((l) => /^Lost to (leakage|price|both)/.test(l)), "C1.4 Sourcing says the gap once: " + J(labels.filter((l) => /gap|Lost|revenue/i.test(l))));
+    const nw = html("network");
+    ok(nw.querySelectorAll("details.obsec").length > 0 && ![...nw.querySelectorAll("details.obsec")].some((f) => /^(0|none)$/.test(text(f.querySelector("summary .ct"))) || text(f.querySelector(".card")) === "None."),
+      "C1.5 Associates draws no fold that holds nothing");
+
+    /* P1 */
+    w.localStorage.removeItem("salt-plan-v1");
+    const p0 = E("planGet()");
+    w.localStorage.setItem("salt-plan-v1", J({ dem: 999, cost: -7, run: -5, lots: [{ prod: "nope", qty: 1, rate: 1, day: 0 }, { prod: "salt", qty: -1, rate: 5, day: 0 }, { prod: "salt", qty: 2, rate: 5, day: 99 }, { prod: "salt", qty: 2.5, rate: 56, day: 3 }] }));
+    const p1 = E("planGet()");
+    w.localStorage.setItem("salt-plan-v1", "{not json");
+    const p2 = E("planGet()");
+    ok(J(p0) === J({ dem: 0, cost: 0, run: 0, lots: [] }) && J(p2) === J(p0) && p1.dem === 50 && p1.cost === -5 && p1.run === 0 && J(p1.lots) === J([{ prod: "salt", qty: 2.5, rate: 56, day: 3 }]),
+      "P1.1 the plan reads as nothing until set, and a stored value out of range is brought inside it: " + J([p0, p1, p2]));
+    w.localStorage.removeItem("salt-plan-v1");
+
+    /* P2 */
+    E("switchTab('forward')");
+    const before = E("(function(){const A=fwdAll();return {end:A.cash.cashEnd,dry:A.per.salt.f.dry,last:A.per.salt.f.rows[A.per.salt.f.rows.length-1].inventory,buys:purchases.length,sales:sales.length,q:queue.length};})()");
+    const def = E("planLotDefaults().salt");
+    d.querySelector("#whatIf button[onclick=\"planLotQuick('salt')\"]").click();
+    const after = E("(function(){const A=fwdAll();return {end:A.cash.cashEnd,dry:A.per.salt.f.dry,base:A.per.salt.base.dry,first:A.per.salt.f.rows[0].inventory-A.per.salt.base.rows[0].inventory,buys:purchases.length,sales:sales.length,q:queue.length,lots:planGet().lots};})()");
+    ok(after.lots.length === 1 && after.lots[0].qty === def.qty && Math.abs(after.first - def.qty) < 0.011 && after.base === before.dry && (after.dry == null || after.dry >= before.dry),
+      "P2.1 a what-if lot lands in its own book's inventory, beside the book's own reading: " + J([def, before, after]));
+    ok(Math.abs((before.end - after.end) - def.qty * def.rate) < 0.011, "P2.2 and leaves the cash by what it costs: " + J([before.end, after.end, def.qty * def.rate]));
+    const sec = text(d.querySelector("#sec-stock"));
+    ok(/What if, not the book/.test(sec) && /a what-if lot/.test(sec) && /A what-if lot paid for/.test(sec) && /was /.test(sec) === (after.dry !== before.dry),
+      "P2.3 the page says which figures are a what-if, and what the book read without it");
+    ok(after.buys === before.buys && after.sales === before.sales && after.q === before.q && J(Object.keys(E("(function(){const o={};for(let i=0;i<localStorage.length;i++)o[localStorage.key(i)]=1;return o;})()")).filter((k) => /plan/.test(k))) === J(["salt-plan-v1"]),
+      "P2.4 nothing is bought, sold or queued by it: " + J([before, after.buys, after.sales, after.q]));
+    d.querySelector("#whatIf button[onclick=\"planLotDrop(0)\"]").click();
+    const gone = E("(function(){const A=fwdAll();return [A.cash.cashEnd,A.per.salt.f.dry,planGet().lots.length];})()");
+    ok(J(gone) === J([before.end, before.dry, 0]), "P2.5 removed, the forecast is the book's again: " + J(gone));
+
+    E(`planSet({lots:Array.from({length:12},()=>({prod:'salt',qty:1,rate:50,day:1}))})`);
+    const full = [...d.querySelectorAll("#whatIf button[onclick^='planLotQuick'], #whatIf button[onclick='planLotAdd()']")];
+    ok(full.length > 1 && full.every((b) => b.disabled) && E("planGet().lots.length") === 12, "P2.6 at twelve lots the page takes no more: " + J(full.map((b) => b.disabled)));
+    E("planSet({lots:[]})");
+
+    /* P3 */
+    const m0 = E("planMonth({dem:0,cost:0,run:0,lots:[]})"), m1 = E("planMonth({dem:20,cost:10,run:300,lots:[]})");
+    const near = (a, b) => Math.abs(a - b) < 0.01;
+    ok(m0.books.length > 0 && m0.base.rev > 0 && near(m1.base.rev, m0.base.rev) && near(m1.base.cogs, m0.base.cogs) && near(m1.plan.rev, m0.base.rev * 1.2),
+      "P3.1 demand moves the second column's revenue and never the first: " + J([m0.base.rev, m1.base.rev, m1.plan.rev]));
+    ok(near(m1.plan.cogs, m0.base.cogs * 1.2 * 1.1), "P3.2 the buying cost moves the cost of goods on the units demand leaves: " + J([m0.base.cogs, m1.plan.cogs]));
+    ok(near(m1.plan.net, m1.plan.margin - 300) && near(m1.base.net, m1.base.margin - 300) && near(m0.base.net, m0.base.margin),
+      "P3.3 running costs come off what is left in both columns: " + J([m1.plan.margin, m1.plan.net, m1.base.net]));
+    E("switchTab('financials')"); E("planSet({dem:20,cost:10,run:300})");
+    const card = d.getElementById("monthAhead"), even = Math.ceil(300 / m1.plan.perOrder);
+    ok(!!card && new RegExp("^" + even + " orders? a month").test(text(card.querySelector(".insight"))) && text(d.getElementById("plan-dem")) === "+20%" && text(d.getElementById("plan-cost")) === "+10%",
+      "P3.4 the card says the steps and how many orders cover the running costs: " + J(card && [text(card.querySelector(".insight")), even]));
+
+    /* P4 */
+    E("planSet({dem:50,cost:-30})");
+    const ends = [...d.querySelectorAll("#monthAhead .salt-stepper .salt-orb")].map((b) => b.disabled);
+    E("planStep('dem',10)"); E("planStep('cost',-5)");
+    const held = E("[planGet().dem,planGet().cost]");
+    ok(J(ends) === J([false, true, true, false]) && J(held) === J([50, -30]), "P4.1 a stepper greys at its end and steps no further: " + J([ends, held]));
+    E("planReset()");
+    ok(J(E("planGet()")) === J({ dem: 0, cost: 0, run: 0, lots: [] }) && !d.querySelector("#monthAhead button[onclick=\"planReset()\"]"), "P4.2 Reset puts the month back as the book runs");
+  } finally { w.close(); }
+}

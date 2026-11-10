@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="df6a041853015c5b";
+var SALT_BUILD_ID="0a788a3819fd034a";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -5904,12 +5904,24 @@ const TIER_RULE={
   /* 10 NOV 2026, HIS WORD, PENDING THE PRICE BAND PLAN (docs/plan-salt-price-band.html): the Set Price RM 20 higher at 1 unit, 20% at
      every size (his answer A), so every point's multiple is 1.2 times what it was (2.5, 2, 1.67, 1.33), and the ends move by the same
      factor (2, 1.2 and 3, 1.45; his answer) so each % keeps its distance from the Set Price. At half a unit the Ceiling holds it (RM 75). */
+  /* 10 NOV 2026, HIS DECISION: ONE PRICE BAND FOR SALT (docs/plan-salt-price-band.html, version 1). `band` makes Their % run -100% (the
+     Floor) through 0% (the Median Price, these points, unchanged) to +100% (the Ceiling) in even percentage steps (the engine's bandTop),
+     and strikes the Ceiling on the SUPPLIER'S price for a 12.5-unit lot, `supplier`, typed and changed when the supplier's list changes,
+     never COGS: `rates` are the Ceiling a unit at half a unit, 12.5 and 100 as typed at an anchor of `per` (RM 200 and RM 100, his two
+     ends, then RM 83.93), sliding in the log of size (the engine's bandCeiling), the order total down to RM 5 and never under the Floor.
+     The `ends` of 22 Oct (2.4, 1.44 and 3.6, 1.74) left with it. `carry` is the switch's carry-over, the list he approved: a figure
+     still held from the old curve (`from`) is read at its place on the band (`to`), the engine's heldPct. `ceilingX` is read by no band. */
   salt:{drift:true, ceilingX:3,
+        band:{ceiling:{supplier:{units:12.5, total:700}, per:56, rates:[[0.5,200],[12.5,100],[100,83.93]]},
+              carry:{"CA4-SJ":{from:0.3, to:0.49}, "CA5-SEN":{from:0.3, to:0.46}, "CA6-SET":{from:0.3, to:0.49}, "CAY4-DAM":{from:0.1, to:0.17}, 
+                     "CB8-SEG":{from:0.1, to:0.17}, "CD4-DAM":{from:0.1, to:0.17}, "CH6-SET":{from:-0.15, to:-0.14}, "CI4-OKR":{from:-0.15, to:-0.14}, 
+                     "CM6-PJ":{from:-0.25, to:-0.24}, "CR3-DAM":{from:-0.1, to:-0.08}, "CS11-AMP":{from:0.2, to:0.31}, "CS6-PER":{from:-0.05, to:-0.04}, 
+                     "CZ4-MK":{from:-0.15, to:-0.12}, 
+                     "CZ5-TM":{from:-0.25, to:-0.24}}},
         points:[[0.5,3],[1,2.4],[6.25,2.004],[12.5,1.596]],
-        ends:{low:[2.4,1.44], high:[3.6,1.74]},
         suggest:{writtenOff:0.3, longLate:0.2, late:0.1, overdueDays:14, recent:5, step:0.05, minSettled:3, good:0.3},
         auto:{wP:0.35, wF:0.25, wV:0.2, wT:0.2, minSettled:3, perMonth:4, unitsPerMonth:10, orders:12, staleDays:60, overdueDays:14, U:0.5, D:0.5, cap:0.5},
-        presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3},
+        presets:{"-50%":-0.5, "-30%":-0.3, "-20%":-0.2, "-10%":-0.1, "Median Price":0, "+10%":0.1, "+20%":0.2, "+30%":0.3, "+50%":0.5},
         rungs:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5,25,50,100],
         /* 05 Oct 2026, his decision: the walk runs through every quarter of the grid, so the rate never rises from one quarter to the
            next (the engine's walkSizes). 27 OCT 2026, HIS WORD: salt is ordered in halves from 0.5 to 5, then 6.25, 12.5, 25, 50 and 100
@@ -5927,21 +5939,21 @@ const TIER_RULE={
   /* 22 OCT 2026, HIS DECISION: THEIR % ON EVERY BOOK. A stated board carries `pct`, and `shares` are what -30% (low) and +30% (high)
      make of his typed board at the smallest rung and the largest, sliding in the log of size (the engine's shareAt); salt's proportions
      to start, his answer that day, so 0% is still his board for everybody. */
-  oil:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"10":130,"20":240,"30":330,"40":400,"50":450}, rungs:[10,20,30,40,50], ceilingX:3, grid:{min:10, step:10, max:50}},
+  oil:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Median Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"10":130,"20":240,"30":330,"40":400,"50":450}, rungs:[10,20,30,40,50], ceilingX:3, grid:{min:10, step:10, max:50}},
   /* 23 SEP 2026, HIS INSTRUCTION: candy and rice are single tier too, stated a unit. Candy RM60 a unit under 10,
      RM55 from 10 to 29 (his answer that day), RM50 from 30. Rice RM8 a unit, RM7 from 5, RM6 from 10. A size
      between rungs is its rung's rate times the size, which is what a rate a unit means; both books round to the
      ringgit (LADDER_BY) so a rate of RM8 is not rounded to a ten. */
-  candy:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":60,"10":550,"30":1500}, rungs:[1,10,30], ceilingX:3, grid:{min:1, step:1, max:50}},
+  candy:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Median Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":60,"10":550,"30":1500}, rungs:[1,10,30], ceilingX:3, grid:{min:1, step:1, max:50}},
   /* 05 OCT 2026, HIS DECISION: each stated board is held between its floor, COGS times the size, and a ceiling of
      `ceilingX` times that floor, capped down to the book's grid. Three times the floor on every book (18 Oct 2026, his decision;
      oil and candy were twice, rice two and a half). A typed price inside the band does not move. */
-  rice:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:3, grid:{min:1, step:1, max:100}},
+  rice:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Median Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:3, grid:{min:1, step:1, max:100}},
   /* 27 OCT 2026, HIS WORD: gas RM75 a unit on a cost of RM50 (1.5 times), bought in ones, the board at 1 and any more by Negotiate. PrEP 12 pills
      for RM60 or 30 pills for RM125 on a cost of RM100 per 30 (1.5 and 1.25 times), and any whole number of either pack: the grid runs 12 to 120 in
      sixes so every point is priced, `multiples` cuts what may be ordered to 12N and 30N (the Worker's onStep, the page, onGrid); past 120, Negotiate. */
-  gas:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":75}, rungs:[1], ceilingX:3, grid:{min:1, step:1, max:20}},
-  prep:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"12":60,"30":125}, rungs:[12,30], ceilingX:3, grid:{min:12, step:6, max:120, multiples:[12,30]}}
+  gas:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Median Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"1":75}, rungs:[1], ceilingX:3, grid:{min:1, step:1, max:20}},
+  prep:{pct:true, shares:{low:[0.8,0.9], high:[1.2,1.09]}, presets:{"-30%":-0.3, "-20%":-0.2, "-15%":-0.15, "-10%":-0.1, "-5%":-0.05, "Median Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3}, fixed:{"12":60,"30":125}, rungs:[12,30], ceilingX:3, grid:{min:12, step:6, max:120, multiples:[12,30]}}
 };
 
 const SHRINK_ATTRIB=1;
@@ -8223,7 +8235,7 @@ function vaultPendingOk(record,publicWord=()=>false){
     'shares','rids','undo','introducer'];   /* introducer: R3, the associate whose join link brought a customer in (plan version 6) */
   const enumWords=['customer','supplier','reseller','referral','downstream','bucket','cash','goods','in','out',
     'SELL','BUY','Correction','Fulfilment','Cancellation','Payment','Receipt','Default','R1','R2','R3','salt','oil','candy','rice','gas','prep','delivered','collected',
-    'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big','pct'];
+    'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big','pct','band'];   /* band: the unit a salt % travels with since the price band (10 Nov 2026) */
   const house=object(record)&&typeof record.path==='string'&&/\/house-sizes$/.test(record.path);
   const offset=object(record)&&typeof record.path==='string'&&/^\/?all\/maker\/inputs\/offset$/.test(record.path);
   const appointment=object(record)&&typeof record.path==='string'&&/^\/?all\/maker\/inputs\/appoint-existing$/.test(record.path);
@@ -8747,7 +8759,7 @@ function ladderRow(sizes,C,P){
   const col=(k)=>sizes.map(q=>{try{const L=priceLadder(q,C,P);
     return L&&L[k]&&L[k].total!=null?+L[k].total:null;}catch(e){return null;}});
   return [{
-    code:'T2', name:'Set Price', dflt:true,
+    code:'T2', name:'Median Price', dflt:true,
     who:'what a stranger is quoted, the least any customer but a partner pays',
     prices:col('ask')
   }];
@@ -8834,7 +8846,65 @@ function setMultiple(q,R){
 }
 /* a held % is a number from -0.3 to +0.3 (his decision of 21 Oct 2026); anything else is not one */
 const LIFT_MIN=-0.3, LIFT_MAX=0.3;
-function driftOk(v){return typeof v==='number'&&isFinite(v)&&v>=LIFT_MIN-1e-9&&v<=LIFT_MAX+1e-9;}
+/* ============ 10 NOV 2026, HIS DECISION: ONE PRICE BAND FOR SALT (docs/plan-salt-price-band.html, version 1) ============
+   A rule carrying `band` runs Their % from -100% (the Floor, what a partner pays) through 0% (the Median Price, the Set Price renamed in
+   copy) to +100% (the Ceiling), in even percentage steps: bandTop below. Its Ceiling is a curve struck on a TYPED anchor, the supplier's
+   price for a 12.5-unit lot a unit, never COGS: bandCeiling. A rule with no band keeps -30% to +30% and `ceilingX` times the Floor.
+   liftRange is the one place the range is read. driftOk(v, R) asks whether v is a % on R's book; with NO rule it takes the widest
+   range, so a reader that forgot its rule can never read a held salt figure as nought and move a price (a gate always hands its rule). */
+const BAND_MIN=-1, BAND_MAX=1;
+function liftRange(R){return R&&R.band?{min:BAND_MIN,max:BAND_MAX}:{min:LIFT_MIN,max:LIFT_MAX};}
+function driftOk(v,R){const g=R?liftRange(R):{min:BAND_MIN,max:BAND_MAX};return typeof v==='number'&&isFinite(v)&&v>=g.min-1e-9&&v<=g.max+1e-9;}
+/* THE CEILING ON A BAND. C.supplier is the anchor he types, {units, total}: RM 700 for 12.5 units, RM 56 a unit. C.rates are the
+   Ceiling's rate a unit at sizes, typed at an anchor of C.per (his two ends: RM 200 at half a unit, RM 100 at 12.5, then RM 83.93 at
+   100), sliding in the log of size between them and flat beyond; the rate moves with the anchor in proportion. Unrounded here: the walk
+   takes the ORDER TOTAL down to the grid and never under the Floor. Null for a rule with no such curve. */
+function bandCeiling(q,R){
+  const B=R&&R.band&&R.band.ceiling;if(!B||!(q>0))return null;
+  const pts=(B.rates||[]).map(x=>[+x[0],+x[1]]).filter(x=>x[0]>0&&x[1]>0&&isFinite(x[1])).sort((a,b)=>a[0]-b[0]);
+  const anchor=B.supplier&&+B.supplier.units>0?+B.supplier.total/+B.supplier.units:NaN, per=+B.per;
+  if(!pts.length||!(anchor>0)||!(per>0))return null;
+  let r=pts[pts.length-1][1];
+  if(!(q>pts[0][0]))r=pts[0][1];
+  else for(let i=0;i<pts.length-1;i++){
+    if(q<pts[i+1][0]){const a=pts[i],b=pts[i+1];r=a[1]+(b[1]-a[1])*Math.log(q/a[0])/Math.log(b[0]/a[0]);break;}
+  }
+  return r*(anchor/per)*q;
+}
+/* A PLACE ON THE BAND. k is the %, -1 to +1; M the Median Price at the size as quoted, lo the Floor and hi the Ceiling there. Above
+   nought the price is M times (hi/M) to the power k, below it M times (lo/M) to the power -k: every 10 points is the same percentage
+   step at that size, -100% is the Floor and +100% the Ceiling. The walk then takes it down to the grid and holds it. */
+function bandTop(M,lo,hi,k){
+  if(!(M>0)||!k)return M;
+  const end=k<0?lo:hi, t=Math.min(1,Math.abs(k));
+  return end>0?M*Math.pow(end/M,t):M;
+}
+/* the place on the band a price sits at: bandTop read backwards, held -1 to +1; nought where the posts leave no room */
+function bandPct(price,lo,M,hi){
+  if(!(price>0)||!(M>0))return 0;
+  const end=price<M?lo:hi;
+  if(!(end>0)||Math.abs(Math.log(end/M))<1e-12)return 0;
+  const t=Math.log(price/M)/Math.log(end/M);
+  return (price<M?-1:1)*Math.min(1,Math.max(0,t));
+}
+/* THE CARRY-OVER OF THE SWITCH (his approval of the list, 10 Nov 2026). R.band.carry is {code: {from, to}}: a customer whose held
+   figure is still the one they held on the old -30% to +30% curve (`from`) is read at `to`, the place on the band whose price at
+   their usual size is nearest what they paid before, so the scale and every held figure change in the same instant. Once their
+   figure is set again on the band it no longer equals `from` and is read as it stands; carryClash is the gate that refuses setting
+   one back to exactly `from` while the table lists it. The table leaves with the version after every carried figure is booked. */
+function heldPct(R,code,v){
+  const c=R&&R.band&&R.band.carry&&R.band.carry[code];
+  return c&&typeof v==='number'&&typeof c.from==='number'&&typeof c.to==='number'&&Math.abs(v-c.from)<1e-9?c.to:v;
+}
+/* THE RANGE IN WORDS, for a refusal, and THE UNIT A FIGURE TRAVELS WITH: a band book's figure is sent as "band" (the form of 10 Nov 2026), so a
+   page cached from before the switch, which still sends "pct" meaning the old -30% to +30% curve, is told apart by unit and never by time. */
+function rangeSay(R){const g=liftRange(R),a=Math.round(g.min*100),b=Math.round(g.max*100);return {pct:a+'% to +'+b+'%',plain:a+' to +'+b,num:g.min+' to '+g.max};}
+function unitOf(R){return R&&R.band?'band':'pct';}
+function unitOk(R,u){return R&&R.band?u==='band':(u==='pct'||u==='band');}
+function carryClash(R,code,v){
+  const c=R&&R.band&&R.band.carry&&R.band.carry[code];
+  return !!(c&&typeof v==='number'&&Math.abs(v-c.from)<1e-9&&Math.abs(c.to-c.from)>1e-9);
+}
 /* ============ 22 OCT 2026, HIS DECISION: THEIR % RUNS ON HIS CURVE, ON EVERY BOOK ============
    A book takes Their % when its rule is a Set Price (`drift`) or carries `pct` (a stated board, oil, candy and rice): pctBook.
    On a Set Price, `ends` {low:[at the first point, at the last], high:[...]} are the multiples of the Floor he set for -30% and
@@ -8844,10 +8914,10 @@ function driftOk(v){return typeof v==='number'&&isFinite(v)&&v>=LIFT_MIN-1e-9&&v
    On a stated board, `shares` {low:[at the smallest rung, at the largest], high:[...]} are what -30% and +30% make of his typed
    board, sliding in the log of size between the two rungs and flat beyond them, and a % is that share of the way from the board. */
 function pctBook(R){return !!(R&&(R.drift||R.pct));}
-function pctPos(pct){const k=driftOk(pct)?Math.max(LIFT_MIN,Math.min(LIFT_MAX,+pct)):0;return {k:k,t:k<0?k/LIFT_MIN:k>0?k/LIFT_MAX:0};}
+function pctPos(pct,R){const g=liftRange(R),k=driftOk(pct,R||{})?Math.max(g.min,Math.min(g.max,+pct)):0;return {k:k,t:k<0?k/g.min:k>0?k/g.max:0};}
 function endPair(e){return Array.isArray(e)&&e.length===2&&e.every(v=>typeof v==='number'&&isFinite(v)&&v>0)?e:null;}
 function driftMultiple(q,R,pct){
-  const m=setMultiple(q,R),x=pctPos(pct);
+  const m=setMultiple(q,R),x=pctPos(pct,R);
   if(!R||!R.ends)return m*(1+x.k);
   if(!x.t)return m;
   const end=endPair(x.k<0?R.ends.low:R.ends.high);if(!end)return m;
@@ -8856,7 +8926,7 @@ function driftMultiple(q,R,pct){
   return m+x.t*(end[1]+s*(end[0]-end[1])-m);
 }
 function shareAt(q,R,pct){
-  const x=pctPos(pct);if(!x.t||!R||!R.shares||!(q>0))return 1;
+  const x=pctPos(pct,R);if(!x.t||!R||!R.shares||!(q>0))return 1;
   const end=endPair(x.k<0?R.shares.low:R.shares.high);if(!end)return 1;
   const rungs=(R.rungs||[]).map(Number).filter(v=>v>0).sort((a,b)=>a-b);if(!rungs.length)return 1;
   const a=rungs[0],b=rungs[rungs.length-1],u=q<=a||b<=a?0:q>=b?1:Math.log(q/a)/Math.log(b/a);
@@ -8864,12 +8934,13 @@ function shareAt(q,R,pct){
 }
 function driftWalk(sizes,C,P,pct){
   const R=P.tierRule||{}, to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to, down=v=>Math.floor(v/to+1e-9)*to;
-  const cx=+R.ceilingX>0?+R.ceilingX:3;
-  const k=pctPos(pct).k;
+  const cx=+R.ceilingX>0?+R.ceilingX:3, band=!!R.band;
+  const k=pctPos(pct,R).k;
   let rS=Infinity, rP=Infinity, mS=-Infinity, mP=-Infinity;
   return sizes.map(q=>{
     /* fb is the COGS Floor the multiples, the margin lift and the Ceiling are struck on; fl is the Floor the price is held over (10 Nov 2026) */
-    const fl=floorTotal(q,C,P), fb=floorBase(q,C,P), ceil=+(cx*fb).toFixed(4), lo=up(fl), hi=Math.max(down(ceil),lo), m=setMultiple(q,R);
+    /* 10 Nov 2026: on a band the Ceiling is the curve on the supplier's price (bandCeiling), else ceilingX times the COGS Floor; either way down to the grid, never under the Floor */
+    const fl=floorTotal(q,C,P), fb=floorBase(q,C,P), bc=band?bandCeiling(q,R):null, ceil=+(bc!=null?bc:cx*fb).toFixed(4), lo=up(fl), hi=Math.max(down(ceil),lo), m=setMultiple(q,R);
     /* top is the floor times the multiple at this %: on his ends the engine's driftMultiple, else fl*m*(1+k) in that order, as it always was */
     const step=(r,mg,top)=>{
       const rate=Math.min(r,top/q);
@@ -8883,8 +8954,14 @@ function driftWalk(sizes,C,P,pct){
     };
     const s=step(rS,mS,fb*m*1);rS=s.rate;mS=s.mg;
     let p=s.p;
-    if(Math.abs(k)>1e-9){const x=step(rP,mP,R.ends?fb*driftMultiple(q,R,k):fb*m*(1+k));rP=x.rate;mP=x.mg;p=x.p;}
-    return {q:q,floor:+fl.toFixed(2),ceiling:+ceil.toFixed(2),set:s.p,p:p,d:k};
+    /* on a band their % is a place between the three posts as quoted at this size (bandTop over the walked Median, the Floor and the Ceiling) */
+    if(Math.abs(k)>1e-9){const x=step(rP,mP,band?bandTop(s.p,lo,hi,k):R.ends?fb*driftMultiple(q,R,k):fb*m*(1+k));rP=x.rate;mP=x.mg;p=x.p;
+      /* THE % NEVER CROSSES THE MEDIAN, AND -100% IS THE FLOOR ITSELF (10 Nov 2026). The place is struck on the Median as quoted, which is rounded, so
+         the % path's running rate can sit a hair under the Median's own where the Ceiling holds the Median: a lift is then held at the Median or over
+         it, size by size (a discount cannot pass it: its target, its rate and its margin are each the Median's or less). And the margin lift is not the Floor's business: at -100% the price is the Floor, what a
+         partner pays, on any cost. */
+      if(band)p=k<=BAND_MIN+1e-9?lo:k>0?Math.max(p,s.p):p;}
+    return {q:q,floor:+fl.toFixed(2),ceiling:+(band?hi:ceil).toFixed(2),set:s.p,p:p,d:k};
   });
 }
 /* ============ 05 OCT 2026, HIS DECISION: ANY QUANTITY AT AN AUTOMATIC PRICE ============
@@ -8968,15 +9045,20 @@ function autoDrift(s,A){
    written off. The suggestion is paidOver plus risk less good to the nearest S.step, held LIFT_MIN to LIFT_MAX, and nought for a customer
    with fewer than S.minSettled settled rows. Returns {pct, paidOver, risk, good}. Prices nothing: the desk and Counter Admin show it, and
    his tap sets it (a tierset), like any figure of his. */
-function suggestPct(sig,ratios,S,A){
-  const s=S||{}, x=sig||{}, n=(k,v)=>s[k]!=null?+s[k]:v;
+function suggestPct(sig,ratios,S,A,O){
+  const s=S||{}, x=sig||{}, n=(k,v)=>s[k]!=null?+s[k]:v, o=O||{}, lim={min:o.min!=null?+o.min:LIFT_MIN,max:o.max!=null?+o.max:LIFT_MAX};
+  const medOf=l=>{const r=(l||[]).filter(v=>typeof v==='number'&&isFinite(v)).slice(-n('recent',5)).sort((a,b)=>a-b);
+    return r.length?(r.length%2?r[(r.length-1)/2]:(r[r.length/2-1]+r[r.length/2])/2):null;};
   if((+x.settled||0)<n('minSettled',3))return {pct:0,paidOver:0,risk:0,good:0};
   const rs=(ratios||[]).filter(v=>typeof v==='number'&&isFinite(v)&&v>0).slice(-n('recent',5)).sort((a,b)=>a-b);
   const med=rs.length?(rs.length%2?rs[(rs.length-1)/2]:(rs[rs.length/2-1]+rs[rs.length/2])/2):1;
   const paidOver=Math.max(0,med-1);
   const risk=(+x.writtenOff||0)>0.009?n('writtenOff',0.3):(x.lateLong||(+x.overdueDays||0)>n('overdueDays',14))?n('longLate',0.2):x.late?n('late',0.1):0;
   const rec=autoDrift(x,A), good=rec.B>0?0:+(n('good',0.3)*rec.G).toFixed(4);
-  const step=n('step',0.05), pct=Math.min(LIFT_MAX,Math.max(LIFT_MIN,Math.round((paidOver+risk-good)/step+1e-9)*step));
+  /* 10 Nov 2026: on a band the snapshot hands in o.places, where each of those sales sat on the band (bandPct at the sale's own size), and the
+     suggestion starts from their median place, not under nought, in place of the ratio; paidOver stays the ratio, for the words */
+  const pm=Array.isArray(o.places)?medOf(o.places):null, base=pm!=null?Math.max(0,pm):paidOver;
+  const step=n('step',0.05), pct=Math.min(lim.max,Math.max(lim.min,Math.round((base+risk-good)/step+1e-9)*step));
   return {pct:+pct.toFixed(2)||0,paidOver:+paidOver.toFixed(4),risk:risk,good:good};
 }
 /* THE SUGGESTION'S REASON, in a few words, from what suggestPct returned: 'paid 10% over', 'written off', 'paid very late', 'paid late', or
@@ -9016,7 +9098,7 @@ function fiveTierAt(q,C,P){
 function fixedWalk(sizes,C,P,d){
   const R=P.tierRule, to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to, down=v=>Math.floor(v/to+1e-9)*to;
   const rungs=R.rungs.map(Number).sort((a,b)=>a-b);
-  const k=R.pct&&typeof d==='number'?pctPos(d).k:0;
+  const k=R.pct&&typeof d==='number'?pctPos(d,R).k:0;
   let prev=Infinity, prevD=Infinity;
   return fiveTiers(sizes,C,P).map(r=>{
     let p=r.prices&&r.prices.length?r.prices[r.prices.length-1]:null;
@@ -9125,7 +9207,8 @@ function quoteOff(snap,code,qty){
 return {cardAt:cardAt,costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         floorTotal:floorTotal,floorBase:floorBase,costTotal:costTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,
-        setMultiple:setMultiple,driftOk:driftOk,pctBook:pctBook,driftMultiple:driftMultiple,shareAt:shareAt,LIFT_MIN:LIFT_MIN,LIFT_MAX:LIFT_MAX,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,suggestWhy:suggestWhy,
+        setMultiple:setMultiple,driftOk:driftOk,pctBook:pctBook,driftMultiple:driftMultiple,shareAt:shareAt,LIFT_MIN:LIFT_MIN,LIFT_MAX:LIFT_MAX,
+        liftRange:liftRange,rangeSay:rangeSay,unitOf:unitOf,unitOk:unitOk,bandCeiling:bandCeiling,bandTop:bandTop,bandPct:bandPct,heldPct:heldPct,carryClash:carryClash,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,suggestWhy:suggestWhy,
         gridOf:gridOf,gridSizes:gridSizes,onGrid:onGrid,walkSizes:walkSizes,fixedWalk:fixedWalk,quoteAt:quoteAt,quoteGrid:quoteGrid};
 })();
 /* ==== END ENGINE pricing ==== */
@@ -9389,7 +9472,8 @@ function driftSignals(C,prod,code){
    `auto`, `G` and `B` are the record's reading (autoDrift) kept for the card, and the suggestion is suggestOf below. */
 function driftOfNow(C,p,code){
   const R=C.R.TIER_RULE[p];if(!PRICING_ENGINE.pctBook(R))return null;
-  const who=ownerOf(code)||code,h=(C.B.tierOf[who]||{})[p],hand=PRICING_ENGINE.driftOk(h)?+h:null;
+  /* 10 Nov 2026: the held figure is read through the band's carry-over (heldPct) and judged on this book's own range */
+  const who=ownerOf(code)||code,h=PRICING_ENGINE.heldPct(R,who,(C.B.tierOf[who]||{})[p]),hand=PRICING_ENGINE.driftOk(h,R)?+h:null;
   const sig=driftSignals(C,p,who),a=PRICING_ENGINE.autoDrift(sig,R.auto);
   return Object.assign({},a,{auto:a.d,hand:hand,d:hand!=null?hand:0,sig:sig});
 }
@@ -9400,10 +9484,13 @@ function suggestOf(C,p,code){
   const R=C.R.TIER_RULE[p];if(!R||!R.drift)return null;
   return viaMemo(C,'suggest|'+(ownerOf(code)||code)+'|'+p,()=>{
     const who=ownerOf(code)||code,S=R.suggest||{},K=cost(C,p),P=Object.assign({},policy(C,p),{tierRule:R});
-    const rows=pSales(C.B,p).filter(x=>POSITION_ENGINE.ownsCode(who,x.customer)&&pbPriced(x)&&x.date&&x.total>0&&x.qty>0)
+    /* 10 Nov 2026 (his ask D): a sale he let stand outside the band as a one-off (row.oneOff) is left out of the evidence */
+    const rows=pSales(C.B,p).filter(x=>POSITION_ENGINE.ownsCode(who,x.customer)&&pbPriced(x)&&!x.oneOff&&x.date&&x.total>0&&x.qty>0)
       .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).slice(-(+S.recent||5));
     const ratios=rows.map(x=>{const set=PRICING_ENGINE.quoteAt(x.qty,K,P,0);return set>0?(POSITION_ENGINE.txGoods(x)/x.qty)/(set/x.qty):null;}).filter(v=>v!=null);
-    return PRICING_ENGINE.suggestPct(driftSignals(C,p,who),ratios,S,R.auto);
+    /* 10 Nov 2026: on a band each of those sales is also placed on it at its own size (the engine's bandPct between today's Floor, Median and Ceiling) */
+    const places=R.band?rows.map(x=>{const w=PRICING_ENGINE.driftAt(x.qty,K,P,0);return w&&w.set>0?PRICING_ENGINE.bandPct(POSITION_ENGINE.txGoods(x),w.floor,w.set,w.ceiling):null;}).filter(v=>v!=null):null;
+    return PRICING_ENGINE.suggestPct(driftSignals(C,p,who),ratios,S,R.auto,Object.assign({},PRICING_ENGINE.liftRange(R),places?{places:places}:{}));
   });
 }
 function tierCustomers(C){
@@ -9518,7 +9605,8 @@ const COUNTS=[
   {"date":"2026-11-07","drift":-10,"product":"oil","qty":30,"was":40},
   {"date":"2026-11-07","drift":0,"product":"salt","qty":5,"was":5},
   {"date":"2026-11-07","drift":5,"product":"salt","qty":10,"was":5},
-  {"date":"2026-11-09","drift":41,"product":"salt","qty":48,"was":7}
+  {"date":"2026-11-09","drift":41,"product":"salt","qty":48,"was":7},
+  {"date":"2026-11-10","drift":1.5,"product":"salt","qty":47,"was":45.5}
 ];
 const INTRODUCTIONS=[
   {"by":"CJ4-OKR","customer":"CC9-OKR","note":"Declared network, counted retrospectively on his word of 13 Sep 2026."},
@@ -9955,8 +10043,10 @@ const sales=[
   {"amend":[{"cash":0,"date":"2026-11-07","kg":0,"kind":"Fulfilment","note":"as booked"},{"cash":100,"date":"2026-11-07","kg":0,"kind":"Fulfilment","note":"<b>PAYMENT ON S344: RM100 FROM CZ5-TM, PREAPPROVED BY COUNTER ADMIN.</b> Dated 07 Nov 2026, order 20261107141123-w03djq, paid by qr via tng on the statements site. It is a fulfilment of cash only: RM100 moves and 0 unit. The goods total of RM100 matches the order exactly, so the payment settles it in full. CZ5-TM has 12 orders, median rate RM100, range RM90 to RM110, so this is its usual rate. Outstanding before: RM100, no units on credit, nothing defaulted. The drafter raised no flags. The cost stays as the sale set it. Outstanding: RM0 in payment, and the collection of 1 unit."},{"cash":0,"cost":56,"date":"2026-11-07","kg":1,"kind":"Correction","note":"<b>COLLECTION RECORDED ON S344.</b> Order 20261107141123-w03djq to CZ5-TM, 1 unit of salt, goods RM100, paid on 07 Nov 2026, preapproved by Counter Admin. The correction sets deliveredQty from 0 to 1, deliveredOn to 07 Nov 2026 and handover to collected. The dossier gives no floor or ask for this size, so no comparison with the desk's ladder is made. CZ5-TM has a median rate of RM100, range RM90 to RM110, 12 orders, nothing outstanding before this row and nothing defaulted. It moves no cash and rolls the shelf out by 1 unit. The cost stays the inventory's own. The drafter flagged that the trail of 2 steps no longer adds up to the figure set directly; the figures do not answer that, and the correction is recorded beside the trail. Outstanding: nothing, the goods being paid and the unit handed over.","was":{"deliveredOn":null,"deliveredQty":0,"handover":null}}],"cash":100,"cost":56,"customer":"CZ5-TM","date":"2026-11-07","deliveredOn":"2026-11-07","deliveredQty":1,"handover":"collected","listQty":1,"listRM":100,"mod":"corrected on 2026-11-07: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-07; handover (unset) to collected","note":"<b>COLLECTION RECORDED ON S344.</b> Order 20261107141123-w03djq to CZ5-TM, 1 unit of salt, goods RM100, paid on 07 Nov 2026, preapproved by Counter Admin. The correction sets deliveredQty from 0 to 1, deliveredOn to 07 Nov 2026 and handover to collected. The dossier gives no floor or ask for this size, so no comparison with the desk's ladder is made. CZ5-TM has a median rate of RM100, range RM90 to RM110, 12 orders, nothing outstanding before this row and nothing defaulted. It moves no cash and rolls the shelf out by 1 unit. The cost stays the inventory's own. The drafter flagged that the trail of 2 steps no longer adds up to the figure set directly; the figures do not answer that, and the correction is recorded beside the trail. Outstanding: nothing, the goods being paid and the unit handed over. <b>PAID 07 NOV 2026: RM100 RECEIVED.</b> <b>SALE S344: 1 UNIT OF SALT TO CZ5-TM, RM100 GOODS, PENDING.</b> Order 20261107141123-w03djq, preapproved by Counter Admin, dated 07 Nov 2026, to collect, no delivery charge. Nothing paid, nothing handed over. Goods of RM100 sit above the floorTotal of RM60 and below the askTotal of RM120; RM100 per unit is above the floorPerUnit of RM60 and below the askPerUnit of RM120. CZ5-TM has a median rate of RM100, range RM90 to RM110, so this is its usual rate. Outstanding before: RM0, no units on credit, nothing defaulted, credit cap 1. The drafter raised no flags. The cost stays RM56 per unit, the inventory's own rate from purchase p050. Outstanding: the RM100 payment and the collection of 1 unit.","paidOn":"2026-11-07","qty":1,"rid":"s344","road":"site","total":100},
   {"amend":[{"cash":0,"date":"2026-11-07","kg":0,"kind":"Fulfilment","note":"as booked"},{"cash":0,"cost":56,"date":"2026-11-07","kg":1,"kind":"Correction","note":"<b>CORRECTION ON S345: 1 UNIT COLLECTED BY CM6-PJ ON 07 NOV 2026, RM100 STILL UNPAID.</b> Order 20261107145005-0yhjjw, preapproved by Counter Admin. deliveredQty moves from 0 to 1, deliveredOn from unset to 07 Nov 2026, handover from unset to collected. Total and cash are untouched, so the goods of RM100 stay between the floorTotal of RM60 and the askTotal of RM120. CM6-PJ has a median rate of RM100, range RM86.67 to RM100, and RM100 outstanding before this row, with 0 units on credit and nothing defaulted. The drafter flagged this as an advance with RM100 unpaid; the figures show the unit has gone out on credit, so the cap needs checking. The cost stays the inventory's own. Outstanding: the RM100 payment.","was":{"deliveredOn":null,"deliveredQty":0,"handover":null}},{"cash":100,"date":"2026-11-07","kg":0,"kind":"Fulfilment","note":"<b>FULFILMENT ON S345: RM100 CASH FROM CM6-PJ ON 07 NOV 2026, ORDER SETTLED.</b> Order 20261107145005-0yhjjw, preapproved by Counter Admin. Cash moves from 0 to RM100 against the goods total of RM100, taken at the counter on the day. Quantity and total are untouched, so the goods stay between the floorTotal of RM60 and the askTotal of RM120. CM6-PJ has a median rate of RM100, range RM86.67 to RM100, RM100 outstanding before this row and 1 unit on credit, with nothing defaulted. The drafter flagged that this settles the order in full; the figures agree, as RM100 against RM100 leaves RM0 and 0 units outstanding. The cost stays the inventory's own. Outstanding: nothing."}],"cash":100,"cost":56,"customer":"CM6-PJ","date":"2026-11-07","deliveredOn":"2026-11-07","deliveredQty":1,"handover":"collected","listQty":1,"listRM":100,"mod":"corrected on 2026-11-07: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-07; handover (unset) to collected","note":"<b>CORRECTION ON S345: 1 UNIT COLLECTED BY CM6-PJ ON 07 NOV 2026, RM100 STILL UNPAID.</b> Order 20261107145005-0yhjjw, preapproved by Counter Admin. deliveredQty moves from 0 to 1, deliveredOn from unset to 07 Nov 2026, handover from unset to collected. Total and cash are untouched, so the goods of RM100 stay between the floorTotal of RM60 and the askTotal of RM120. CM6-PJ has a median rate of RM100, range RM86.67 to RM100, and RM100 outstanding before this row, with 0 units on credit and nothing defaulted. The drafter flagged this as an advance with RM100 unpaid; the figures show the unit has gone out on credit, so the cap needs checking. The cost stays the inventory's own. Outstanding: the RM100 payment. <b>SALE S345: 1 UNIT OF SALT TO CM6-PJ, RM100 GOODS, PENDING.</b> Order 20261107145005-0yhjjw, placed on the statements site, preapproved by Counter Admin, dated 07 Nov 2026, to collect, no delivery charge. Nothing paid, nothing handed over. Goods of RM100 sit above the floorTotal of RM60 and below the askTotal of RM120; RM100 per unit is above the floorPerUnit of RM60 and below the askPerUnit of RM120. CM6-PJ has a median rate of RM100, range RM86.67 to RM100, so this is its usual rate. Outstanding before: RM0, no units on credit, nothing defaulted, credit cap 1. The drafter raised no flags. The cost stays RM56 per unit, the inventory's own rate from purchase p050. Outstanding: the RM100 payment and the collection of 1 unit.","paidOn":"2026-11-07","qty":1,"rid":"s345","road":"site","total":100},
   {"amend":[{"cash":0,"date":"2026-11-07","kg":0,"kind":"Fulfilment","note":"as booked"},{"cash":0,"date":"2026-11-07","kg":0,"kind":"Correction","note":"<b>CORRECTION ON S346: DELIVERY RAISED FROM RM25 TO RM30.</b> Order 20261107150425-x8ozlw to CI5-PER, 1 unit of salt, goods RM120, preapproved by Counter Admin, dated 07 Nov 2026. Quantity and goods are unchanged, so the goods of RM120 still sit at the askTotal of RM120, above the floorTotal of RM60. CI5-PER has a median rate of RM68, range RM6 to RM120, 8 orders, RM145 outstanding before this row, and nothing defaulted. The drafter flagged nothing. It moves no cash and no stock. The cost stays the inventory's own. Outstanding: the goods of RM120 and the delivery of RM30, and the handover of the unit.","was":{"delivery":25}},{"cash":150,"date":"2026-11-07","kg":0,"kind":"Fulfilment","note":"<b>FULFILMENT ON S346: RM150 CASH AT THE COUNTER, RM5 OVER.</b> Order 20261107150425-x8ozlw to CI5-PER, paid on 07 Nov 2026 and preapproved by Counter Admin. The drafter measured it against RM145 outstanding, the figure before the delivery correction. Goods stay RM120, at the askTotal of RM120 and above the floorTotal of RM60. CI5-PER has a median rate of RM68, range RM6 to RM120, and nothing defaulted. The drafter flagged RM5 paid beyond the order, and the fold raises a refund payable for it, open until returned. The figures answer the flag only as far as RM145 stands. No unit moves. Outstanding: the handover of 1 unit, and the refund."},{"cash":0,"cost":56,"date":"2026-11-08","kg":1,"kind":"Correction","note":"<b>DELIVERY OF 1 UNIT RECORDED ON S346.</b> Order 20261107150425-x8ozlw to CI5-PER, 1 unit of salt, goods RM120, delivery RM30, cash RM150, paid on 07 Nov 2026, preapproved by Counter Admin. The correction sets deliveredQty from 0 to 1, deliveredOn to 2026-11-08 and handover to delivered. The dossier gives no floorTotal or askTotal for this row, so no comparison is made here. CI5-PER has a median rate of RM68, range RM6 to RM120, 8 orders, nothing outstanding and nothing defaulted. The drafter flagged that the trail of 3 steps will no longer add up to the figure set directly; the correction is recorded beside them, so the flag is answered by that record and not by any figure. It moves no cash and takes 1 unit off the shelf. The cost stays the inventory's own. Outstanding: nothing.","was":{"deliveredOn":null,"deliveredQty":0,"handover":null}}],"cash":150,"cost":56,"customer":"CI5-PER","date":"2026-11-07","deliveredOn":"2026-11-08","deliveredQty":1,"delivery":30,"handover":"delivered","listQty":1,"listRM":120,"mod":"corrected on 2026-11-07: delivery 25 to 30, then corrected on 2026-11-08: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-08; handover (unset) to delivered","note":"<b>DELIVERY OF 1 UNIT RECORDED ON S346.</b> Order 20261107150425-x8ozlw to CI5-PER, 1 unit of salt, goods RM120, delivery RM30, cash RM150, paid on 07 Nov 2026, preapproved by Counter Admin. The correction sets deliveredQty from 0 to 1, deliveredOn to 2026-11-08 and handover to delivered. The dossier gives no floorTotal or askTotal for this row, so no comparison is made here. CI5-PER has a median rate of RM68, range RM6 to RM120, 8 orders, nothing outstanding and nothing defaulted. The drafter flagged that the trail of 3 steps will no longer add up to the figure set directly; the correction is recorded beside them, so the flag is answered by that record and not by any figure. It moves no cash and takes 1 unit off the shelf. The cost stays the inventory's own. Outstanding: nothing. <b>DELIVERY NOW RM30.</b> <b>CORRECTION ON S346: DELIVERY RAISED FROM RM25 TO RM30.</b> Order 20261107150425-x8ozlw to CI5-PER, 1 unit of salt, goods RM120, preapproved by Counter Admin, dated 07 Nov 2026. Quantity and goods are unchanged, so the goods of RM120 still sit at the askTotal of RM120, above the floorTotal of RM60. CI5-PER has a median rate of RM68, range RM6 to RM120, 8 orders, RM145 outstanding before this row, and nothing defaulted. The drafter flagged nothing. It moves no cash and no stock. The cost stays the inventory's own. Outstanding: the goods of RM120 and the delivery of RM30, and the handover of the unit. <b>SALE S346: 1 UNIT OF SALT TO CI5-PER, RM120 GOODS, PENDING.</b> Order 20261107150425-x8ozlw, placed on the statements site, acknowledged, preapproved by Counter Admin, dated 07 Nov 2026, to be delivered with delivery RM25. Nothing paid, nothing handed over. The goods of RM120 sit at the askTotal of RM120, above the floorTotal of RM60 (RM120 a unit against floorPerUnit RM60 and askPerUnit RM120). CI5-PER has a median rate of RM13, range RM6 to RM120, 7 orders, and RM0 outstanding before this row, with 0 units on credit and nothing defaulted, against a credit cap of 1. The drafter flagged nothing. The cost stays the inventory's own at RM56 per unit, and it draws no stock until something moves. Outstanding: RM145 payment, RM120 goods and RM25 delivery, and the delivery itself.","paidOn":"2026-11-07","qty":1,"rid":"s346","road":"site","total":120},
-  {"amend":[{"cash":0,"date":"2026-11-09","kg":0,"kind":"Fulfilment","note":"as booked"},{"cash":70,"date":"2026-11-09","kg":0,"kind":"Fulfilment","note":"<b>FULFILMENT OF RM70 ON S347, GAS TO CM4-TO-R.</b> Cash received at the handover on the desk, 09 Nov 2026, order 20261109062116-iuxz9q, preapproved by Counter Admin. It is set against the order of 1 unit for RM70, which had RM70 and 1 unit outstanding. The payment clears the money in full, and the sale itself was already booked at its agreed goods total of RM70. CM4-TO-R has a median rate of RM91.4, range RM70 to RM160, 8 orders, RM70 outstanding before this payment, nothing defaulted and no units on credit. The drafter raised no flags, so there is nothing for the figures to answer. The cost stays as the inventory's own, set when the sale was booked. Outstanding: RM0 unpaid and 1 unit still to collect.","undone":"2026-11-09"},{"cash":0,"cost":70,"date":"2026-11-09","kg":1,"kind":"Correction","note":"<b>CORRECTION TO S347: 1 UNIT OF GAS COLLECTED BY CM4-TO-R ON 09 NOV 2026.</b> Preapproved by Counter Admin, order 20261109062116-iuxz9q. It sets deliveredQty from 0 to 1, deliveredOn from unset to 2026-11-09 and handover from unset to collected. The goods total stays RM70 and cash stays RM70, already paid on 09 Nov. The shelf rolls out by 1 unit. CM4-TO-R has a median rate of RM91.4, range RM70 to RM160, 8 orders, nothing outstanding before, nothing defaulted and no units on credit. The cost stays as the fold set it at the sale. The drafter flagged that the row carries a trail of 2 steps which a directly set figure will not rewrite, so the trail will no longer add up; the correction is recorded beside them saying so. Nothing is left outstanding.","undone":"2026-11-09","was":{"deliveredOn":null,"deliveredQty":0,"handover":null}},{"cash":0,"date":"2026-11-09","kg":0,"kind":"Correction","note":"<b>CORRECTION TO S347: COLLECTION OF 1 UNIT OF GAS BY CM4-TO-R ON 09 NOV 2026 UNDONE.</b> Decided by Counter Admin. It sets deliveredOn from 2026-11-09 to cleared, deliveredQty from 1 to 0 and handover from collected to cleared, undoing step 2 of the trail. The goods total stays RM70 and cash stays RM70, paid on 09 Nov. The shelf rolls back by 1 unit. CM4-TO-R has a median rate of RM91.4, range RM70 to RM160, 8 orders, nothing outstanding before, nothing defaulted and no units on credit. The cost stays as the fold set it at the sale. The drafter flagged that the trail of 3 steps will not be rewritten by a directly set figure, so it no longer adds up; the correction is recorded beside it saying so. The dossier gives no reason for the undo. The 1 unit paid for is now undelivered.","took":{"units":1},"undoes":2,"was":{"deliveredOn":"2026-11-09","deliveredQty":1,"handover":"collected"}},{"cash":0,"date":"2026-11-09","kg":0,"kind":"Correction","note":"<b>CORRECTION TO S347: PAYMENT OF RM70 ON 1 UNIT OF GAS BY CM4-TO-R UNDONE ON 09 NOV 2026.</b> Decided by Counter Admin. It sets cash from 70 to 0 and paidOn from 09 Nov 2026 to cleared. The goods total stays RM70, with no delivery charge. It moves no cash into stock and no stock. CM4-TO-R has a median rate of RM91.4, range RM70 to RM160, 8 orders, nothing outstanding before, nothing defaulted and no units on credit. The cost stays as the fold set it at the sale. The drafter flagged that the trail of 4 steps will not be rewritten by a directly set figure, so it no longer adds up; the correction is recorded beside it saying so. The dossier gives no reason for the undo. The RM70 is now unpaid and owed by CM4-TO-R.","took":{"cash":70},"undoes":1,"was":{"cash":70,"paidOn":"2026-11-09"}},{"cash":0,"cost":70,"date":"2026-11-09","kg":1,"kind":"Correction","note":"<b>CORRECTION TO S347: COLLECTION OF 1 UNIT OF GAS BY CM4-TO-R RECORDED ON 09 NOV 2026.</b> Preapproved by Counter Admin. It sets deliveredQty from 0 to 1, deliveredOn from unset to 2026-11-09 and handover from unset to collected. The goods total stays RM70 and cash stays RM0. The dossier gives no floor or ask for gas to compare against. CM4-TO-R has a median rate of RM91.4, range RM70 to RM160, 8 orders, RM70 outstanding before, nothing defaulted and no units on credit. The cost stays as the fold set it at the sale. The drafter flagged that the trail of 5 steps will no longer add up to the directly set figure; the correction is recorded beside it saying so. It also flagged an advance against the credit cap of CM4-TO; the dossier gives no cap, so the figures do not answer it. The RM70 remains unpaid and owed by CM4-TO-R.","was":{"deliveredOn":null,"deliveredQty":0,"handover":null}}],"cash":0,"cost":70,"customer":"CM4-TO-R","date":"2026-11-09","deliveredOn":"2026-11-09","deliveredQty":1,"handover":"collected","mod":"corrected on 2026-11-09: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-09; handover (unset) to collected, then corrected on 2026-11-09: deliveredQty 1 to 0; deliveredOn 2026-11-09 to (cleared); handover collected to (cleared), then corrected on 2026-11-09: cash 70 to 0; paidOn 2026-11-09 to (cleared), then corrected on 2026-11-09: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-09; handover (unset) to collected","note":"<b>CORRECTION TO S347: COLLECTION OF 1 UNIT OF GAS BY CM4-TO-R RECORDED ON 09 NOV 2026.</b> Preapproved by Counter Admin. It sets deliveredQty from 0 to 1, deliveredOn from unset to 2026-11-09 and handover from unset to collected. The goods total stays RM70 and cash stays RM0. The dossier gives no floor or ask for gas to compare against. CM4-TO-R has a median rate of RM91.4, range RM70 to RM160, 8 orders, RM70 outstanding before, nothing defaulted and no units on credit. The cost stays as the fold set it at the sale. The drafter flagged that the trail of 5 steps will no longer add up to the directly set figure; the correction is recorded beside it saying so. It also flagged an advance against the credit cap of CM4-TO; the dossier gives no cap, so the figures do not answer it. The RM70 remains unpaid and owed by CM4-TO-R. <b>CORRECTION TO S347: PAYMENT OF RM70 ON 1 UNIT OF GAS BY CM4-TO-R UNDONE ON 09 NOV 2026.</b> Decided by Counter Admin. It sets cash from 70 to 0 and paidOn from 09 Nov 2026 to cleared. The goods total stays RM70, with no delivery charge. It moves no cash into stock and no stock. CM4-TO-R has a median rate of RM91.4, range RM70 to RM160, 8 orders, nothing outstanding before, nothing defaulted and no units on credit. The cost stays as the fold set it at the sale. The drafter flagged that the trail of 4 steps will not be rewritten by a directly set figure, so it no longer adds up; the correction is recorded beside it saying so. The dossier gives no reason for the undo. The RM70 is now unpaid and owed by CM4-TO-R. <b>CORRECTION TO S347: COLLECTION OF 1 UNIT OF GAS BY CM4-TO-R ON 09 NOV 2026 UNDONE.</b> Decided by Counter Admin. It sets deliveredOn from 2026-11-09 to cleared, deliveredQty from 1 to 0 and handover from collected to cleared, undoing step 2 of the trail. The goods total stays RM70 and cash stays RM70, paid on 09 Nov. The shelf rolls back by 1 unit. CM4-TO-R has a median rate of RM91.4, range RM70 to RM160, 8 orders, nothing outstanding before, nothing defaulted and no units on credit. The cost stays as the fold set it at the sale. The drafter flagged that the trail of 3 steps will not be rewritten by a directly set figure, so it no longer adds up; the correction is recorded beside it saying so. The dossier gives no reason for the undo. The 1 unit paid for is now undelivered. <b>CORRECTION TO S347: 1 UNIT OF GAS COLLECTED BY CM4-TO-R ON 09 NOV 2026.</b> Preapproved by Counter Admin, order 20261109062116-iuxz9q. It sets deliveredQty from 0 to 1, deliveredOn from unset to 2026-11-09 and handover from unset to collected. The goods total stays RM70 and cash stays RM70, already paid on 09 Nov. The shelf rolls out by 1 unit. CM4-TO-R has a median rate of RM91.4, range RM70 to RM160, 8 orders, nothing outstanding before, nothing defaulted and no units on credit. The cost stays as the fold set it at the sale. The drafter flagged that the row carries a trail of 2 steps which a directly set figure will not rewrite, so the trail will no longer add up; the correction is recorded beside them saying so. Nothing is left outstanding. <b>NEW PENDING SALE OF 1 UNIT OF GAS TO CM4-TO-R, GOODS RM70.</b> Order 20261109062116-iuxz9q, ordered on the statements site, acknowledged, on behalf of a friend, to collect, dated 09 Nov 2026, preapproved by Counter Admin and booked as R2. Nothing is paid and nothing handed over. The goods total of RM70 equals the floorTotal of RM70 and is below the askTotal of RM75. CM4-TO-R has a median rate of RM140, range RM71.67 to RM160, 7 orders, nothing outstanding and nothing defaulted, with credit cap 1 and no units on credit before. The cost is the inventory's own, set at RM70 per unit off the latest purchase p052. The drafter flagged the R2 booking, as CM4-TO buys to sell on; the figures do not contradict it. Outstanding: RM70 unpaid and 1 unit to collect.","product":"gas","qty":1,"rev":"R2","rid":"s347","road":"site","total":70},
-  {"amend":[{"cash":0,"date":"2026-11-09","kg":0,"kind":"Fulfilment","note":"as booked"},{"cash":0,"date":"2026-11-09","kg":0,"kind":"Correction","note":"<b>CORRECTION ON 09 NOV 2026: ORDER s348 FOR CE4-CHE, GOODS TOTAL RM205 TO RM230, DELIVERY SET TO 0.</b> Preapproved by Counter Admin. Quantity stays 2.5 unit. It moves no cash and no stock; it changes only what the row says about itself. The new rate is RM92 a unit, equal to the party's median rate of RM92 (range RM6 to RM153.33, 23 orders). The goods total of RM230 is compared with the desk's floor and ask for 2.5 unit; the dossier gives no ladder figures for it, so no comparison is made. The cost is the row's own and the correction does not set it. The drafter raised no flags. RM205 was outstanding before, with no units on credit and nothing defaulted. RM230 is still unpaid and 2.5 unit unhanded.","was":{"delivery":null,"total":205}},{"cash":230,"date":"2026-11-09","kg":0,"kind":"Fulfilment","note":"<b>FULFILMENT ON 09 NOV 2026: ORDER s348 FOR CE4-CHE SETTLED, RM230 CASH AND 2.5 UNIT HANDED OVER.</b> Decided by Counter Admin, same day as the order. The goods total of RM230 is RM92 a unit, equal to the party's median of RM92 (range RM6 to RM153.33, 23 orders). The dossier gives no floor or ask for this size, so none is cited. Before this, RM205 stood outstanding on the draft, with no units on credit and nothing defaulted. The drafter raised no flags. The cost is the inventory's own rate of RM50 a unit and the draft's cost is kept. Nothing remains outstanding on the order: RM0 and 0 unit."},{"cash":0,"cost":125,"date":"2026-11-09","kg":2.5,"kind":"Fulfilment","note":"<b>FULFILMENT ON S348: CASH 230.</b> Fulfilment 2.5 unit on 2026-11-09 against order s348. It applies to s348, 2.5 unit for RM230 with RM230 paid on 9 Nov 2026. CE4-CHE: 23 orders on the book, median RM92 a unit, range RM6 to RM153.33, RM0 outstanding before this row. The drafter flagged: This SETTLES the order in full: nothing is left outstanding after it. Written by the tool, so the facts stand as the dossier gives them and no judgement is recorded on them."}],"cash":230,"cost":125,"customer":"CE4-CHE","date":"2026-11-09","deliveredOn":"2026-11-09","deliveredQty":2.5,"delivery":0,"listQty":2.5,"listRM":205,"mod":"corrected on 2026-11-09: total 205 to 230; delivery (unset) to 0","note":"<b>CORRECTED ON 09 NOV 2026: TOTAL RM205 TO RM230, DELIVERY 0.</b> <b>CORRECTION ON 09 NOV 2026: ORDER s348 FOR CE4-CHE, GOODS TOTAL RM205 TO RM230, DELIVERY SET TO 0.</b> Preapproved by Counter Admin. Quantity stays 2.5 unit. It moves no cash and no stock; it changes only what the row says about itself. The new rate is RM92 a unit, equal to the party's median rate of RM92 (range RM6 to RM153.33, 23 orders). The goods total of RM230 is compared with the desk's floor and ask for 2.5 unit; the dossier gives no ladder figures for it, so no comparison is made. The cost is the row's own and the correction does not set it. The drafter raised no flags. RM205 was outstanding before, with no units on credit and nothing defaulted. RM230 is still unpaid and 2.5 unit unhanded. <b>NEW SALE ON 09 NOV 2026: 2.5 UNIT OF SALT TO CE4-CHE FOR RM205, PENDING.</b> Preapproved by Counter Admin. Nothing paid and nothing handed over, so no stock is drawn and no revenue booked yet. The rate is RM82 a unit. The goods total of RM205 is above the desk's floor of RM125 and below its ask of RM225 for 2.5 unit; per unit, RM82 sits between the floor of RM50 and the ask of RM90. CE4-CHE has a median rate of RM92, range RM6 to RM153.33, 22 orders, nothing outstanding before, no units on credit and nothing defaulted. The dossier shows a credit cap of 1, with no unit given. The cost is the RM50 a unit the drafter set off the latest purchase, and the fold keeps it. The drafter flagged the rate as 10.9% below the median of RM92; the figures confirm it, though it stays above the floor. RM205 remains unpaid and 2.5 unit unhanded.","paidOn":"2026-11-09","qty":2.5,"rid":"s348","road":"site","total":230}
+  {"amend":[{"cash":0,"date":"2026-11-09","kg":0,"kind":"Fulfilment","note":"as booked"},{"cash":70,"date":"2026-11-09","kg":0,"kind":"Fulfilment","note":"<b>FULFILMENT OF RM70 ON S347, GAS TO CM4-TO-R.</b> Cash received at the handover on the desk, 09 Nov 2026, order 20261109062116-iuxz9q, preapproved by Counter Admin. It is set against the order of 1 unit for RM70, which had RM70 and 1 unit outstanding. The payment clears the money in full, and the sale itself was already booked at its agreed goods total of RM70. CM4-TO-R has a median rate of RM91.4, range RM70 to RM160, 8 orders, RM70 outstanding before this payment, nothing defaulted and no units on credit. The drafter raised no flags, so there is nothing for the figures to answer. The cost stays as the inventory's own, set when the sale was booked. Outstanding: RM0 unpaid and 1 unit still to collect.","undone":"2026-11-09"},{"cash":0,"cost":70,"date":"2026-11-09","kg":1,"kind":"Correction","note":"<b>CORRECTION TO S347: 1 UNIT OF GAS COLLECTED BY CM4-TO-R ON 09 NOV 2026.</b> Preapproved by Counter Admin, order 20261109062116-iuxz9q. It sets deliveredQty from 0 to 1, deliveredOn from unset to 2026-11-09 and handover from unset to collected. The goods total stays RM70 and cash stays RM70, already paid on 09 Nov. The shelf rolls out by 1 unit. CM4-TO-R has a median rate of RM91.4, range RM70 to RM160, 8 orders, nothing outstanding before, nothing defaulted and no units on credit. The cost stays as the fold set it at the sale. The drafter flagged that the row carries a trail of 2 steps which a directly set figure will not rewrite, so the trail will no longer add up; the correction is recorded beside them saying so. Nothing is left outstanding.","undone":"2026-11-09","was":{"deliveredOn":null,"deliveredQty":0,"handover":null}},{"cash":0,"date":"2026-11-09","kg":0,"kind":"Correction","note":"<b>CORRECTION TO S347: COLLECTION OF 1 UNIT OF GAS BY CM4-TO-R ON 09 NOV 2026 UNDONE.</b> Decided by Counter Admin. It sets deliveredOn from 2026-11-09 to cleared, deliveredQty from 1 to 0 and handover from collected to cleared, undoing step 2 of the trail. The goods total stays RM70 and cash stays RM70, paid on 09 Nov. The shelf rolls back by 1 unit. CM4-TO-R has a median rate of RM91.4, range RM70 to RM160, 8 orders, nothing outstanding before, nothing defaulted and no units on credit. The cost stays as the fold set it at the sale. The drafter flagged that the trail of 3 steps will not be rewritten by a directly set figure, so it no longer adds up; the correction is recorded beside it saying so. The dossier gives no reason for the undo. The 1 unit paid for is now undelivered.","took":{"units":1},"undoes":2,"was":{"deliveredOn":"2026-11-09","deliveredQty":1,"handover":"collected"}},{"cash":0,"date":"2026-11-09","kg":0,"kind":"Correction","note":"<b>CORRECTION TO S347: PAYMENT OF RM70 ON 1 UNIT OF GAS BY CM4-TO-R UNDONE ON 09 NOV 2026.</b> Decided by Counter Admin. It sets cash from 70 to 0 and paidOn from 09 Nov 2026 to cleared. The goods total stays RM70, with no delivery charge. It moves no cash into stock and no stock. CM4-TO-R has a median rate of RM91.4, range RM70 to RM160, 8 orders, nothing outstanding before, nothing defaulted and no units on credit. The cost stays as the fold set it at the sale. The drafter flagged that the trail of 4 steps will not be rewritten by a directly set figure, so it no longer adds up; the correction is recorded beside it saying so. The dossier gives no reason for the undo. The RM70 is now unpaid and owed by CM4-TO-R.","took":{"cash":70},"undoes":1,"was":{"cash":70,"paidOn":"2026-11-09"}},{"cash":0,"cost":70,"date":"2026-11-09","kg":1,"kind":"Correction","note":"<b>CORRECTION TO S347: COLLECTION OF 1 UNIT OF GAS BY CM4-TO-R RECORDED ON 09 NOV 2026.</b> Preapproved by Counter Admin. It sets deliveredQty from 0 to 1, deliveredOn from unset to 2026-11-09 and handover from unset to collected. The goods total stays RM70 and cash stays RM0. The dossier gives no floor or ask for gas to compare against. CM4-TO-R has a median rate of RM91.4, range RM70 to RM160, 8 orders, RM70 outstanding before, nothing defaulted and no units on credit. The cost stays as the fold set it at the sale. The drafter flagged that the trail of 5 steps will no longer add up to the directly set figure; the correction is recorded beside it saying so. It also flagged an advance against the credit cap of CM4-TO; the dossier gives no cap, so the figures do not answer it. The RM70 remains unpaid and owed by CM4-TO-R.","was":{"deliveredOn":null,"deliveredQty":0,"handover":null}},{"cash":0,"date":"2026-11-10","kg":0,"kind":"Correction","note":"corrected on 2026-11-10: total 70 to 80; delivery (unset) to 0","was":{"delivery":null,"total":70}},{"cash":80,"date":"2026-11-10","kg":0,"kind":"Fulfilment"}],"cash":80,"cost":70,"customer":"CM4-TO-R","date":"2026-11-09","deliveredOn":"2026-11-09","deliveredQty":1,"delivery":0,"handover":"collected","mod":"corrected on 2026-11-09: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-09; handover (unset) to collected, then corrected on 2026-11-09: deliveredQty 1 to 0; deliveredOn 2026-11-09 to (cleared); handover collected to (cleared), then corrected on 2026-11-09: cash 70 to 0; paidOn 2026-11-09 to (cleared), then corrected on 2026-11-09: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-09; handover (unset) to collected, then corrected on 2026-11-10: total 70 to 80; delivery (unset) to 0","note":"<b>CORRECTION TO S347: COLLECTION OF 1 UNIT OF GAS BY CM4-TO-R RECORDED ON 09 NOV 2026.</b> Preapproved by Counter Admin. It sets deliveredQty from 0 to 1, deliveredOn from unset to 2026-11-09 and handover from unset to collected. The goods total stays RM70 and cash stays RM0. The dossier gives no floor or ask for gas to compare against. CM4-TO-R has a median rate of RM91.4, range RM70 to RM160, 8 orders, RM70 outstanding before, nothing defaulted and no units on credit. The cost stays as the fold set it at the sale. The drafter flagged that the trail of 5 steps will no longer add up to the directly set figure; the correction is recorded beside it saying so. It also flagged an advance against the credit cap of CM4-TO; the dossier gives no cap, so the figures do not answer it. The RM70 remains unpaid and owed by CM4-TO-R. <b>CORRECTION TO S347: PAYMENT OF RM70 ON 1 UNIT OF GAS BY CM4-TO-R UNDONE ON 09 NOV 2026.</b> Decided by Counter Admin. It sets cash from 70 to 0 and paidOn from 09 Nov 2026 to cleared. The goods total stays RM70, with no delivery charge. It moves no cash into stock and no stock. CM4-TO-R has a median rate of RM91.4, range RM70 to RM160, 8 orders, nothing outstanding before, nothing defaulted and no units on credit. The cost stays as the fold set it at the sale. The drafter flagged that the trail of 4 steps will not be rewritten by a directly set figure, so it no longer adds up; the correction is recorded beside it saying so. The dossier gives no reason for the undo. The RM70 is now unpaid and owed by CM4-TO-R. <b>CORRECTION TO S347: COLLECTION OF 1 UNIT OF GAS BY CM4-TO-R ON 09 NOV 2026 UNDONE.</b> Decided by Counter Admin. It sets deliveredOn from 2026-11-09 to cleared, deliveredQty from 1 to 0 and handover from collected to cleared, undoing step 2 of the trail. The goods total stays RM70 and cash stays RM70, paid on 09 Nov. The shelf rolls back by 1 unit. CM4-TO-R has a median rate of RM91.4, range RM70 to RM160, 8 orders, nothing outstanding before, nothing defaulted and no units on credit. The cost stays as the fold set it at the sale. The drafter flagged that the trail of 3 steps will not be rewritten by a directly set figure, so it no longer adds up; the correction is recorded beside it saying so. The dossier gives no reason for the undo. The 1 unit paid for is now undelivered. <b>CORRECTION TO S347: 1 UNIT OF GAS COLLECTED BY CM4-TO-R ON 09 NOV 2026.</b> Preapproved by Counter Admin, order 20261109062116-iuxz9q. It sets deliveredQty from 0 to 1, deliveredOn from unset to 2026-11-09 and handover from unset to collected. The goods total stays RM70 and cash stays RM70, already paid on 09 Nov. The shelf rolls out by 1 unit. CM4-TO-R has a median rate of RM91.4, range RM70 to RM160, 8 orders, nothing outstanding before, nothing defaulted and no units on credit. The cost stays as the fold set it at the sale. The drafter flagged that the row carries a trail of 2 steps which a directly set figure will not rewrite, so the trail will no longer add up; the correction is recorded beside them saying so. Nothing is left outstanding. <b>NEW PENDING SALE OF 1 UNIT OF GAS TO CM4-TO-R, GOODS RM70.</b> Order 20261109062116-iuxz9q, ordered on the statements site, acknowledged, on behalf of a friend, to collect, dated 09 Nov 2026, preapproved by Counter Admin and booked as R2. Nothing is paid and nothing handed over. The goods total of RM70 equals the floorTotal of RM70 and is below the askTotal of RM75. CM4-TO-R has a median rate of RM140, range RM71.67 to RM160, 7 orders, nothing outstanding and nothing defaulted, with credit cap 1 and no units on credit before. The cost is the inventory's own, set at RM70 per unit off the latest purchase p052. The drafter flagged the R2 booking, as CM4-TO buys to sell on; the figures do not contradict it. Outstanding: RM70 unpaid and 1 unit to collect.","paidOn":"2026-11-10","product":"gas","qty":1,"rev":"R2","rid":"s347","road":"site","total":80},
+  {"amend":[{"cash":0,"date":"2026-11-09","kg":0,"kind":"Fulfilment","note":"as booked"},{"cash":0,"date":"2026-11-09","kg":0,"kind":"Correction","note":"<b>CORRECTION ON 09 NOV 2026: ORDER s348 FOR CE4-CHE, GOODS TOTAL RM205 TO RM230, DELIVERY SET TO 0.</b> Preapproved by Counter Admin. Quantity stays 2.5 unit. It moves no cash and no stock; it changes only what the row says about itself. The new rate is RM92 a unit, equal to the party's median rate of RM92 (range RM6 to RM153.33, 23 orders). The goods total of RM230 is compared with the desk's floor and ask for 2.5 unit; the dossier gives no ladder figures for it, so no comparison is made. The cost is the row's own and the correction does not set it. The drafter raised no flags. RM205 was outstanding before, with no units on credit and nothing defaulted. RM230 is still unpaid and 2.5 unit unhanded.","was":{"delivery":null,"total":205}},{"cash":230,"date":"2026-11-09","kg":0,"kind":"Fulfilment","note":"<b>FULFILMENT ON 09 NOV 2026: ORDER s348 FOR CE4-CHE SETTLED, RM230 CASH AND 2.5 UNIT HANDED OVER.</b> Decided by Counter Admin, same day as the order. The goods total of RM230 is RM92 a unit, equal to the party's median of RM92 (range RM6 to RM153.33, 23 orders). The dossier gives no floor or ask for this size, so none is cited. Before this, RM205 stood outstanding on the draft, with no units on credit and nothing defaulted. The drafter raised no flags. The cost is the inventory's own rate of RM50 a unit and the draft's cost is kept. Nothing remains outstanding on the order: RM0 and 0 unit."},{"cash":0,"cost":125,"date":"2026-11-09","kg":2.5,"kind":"Fulfilment","note":"<b>FULFILMENT ON S348: CASH 230.</b> Fulfilment 2.5 unit on 2026-11-09 against order s348. It applies to s348, 2.5 unit for RM230 with RM230 paid on 9 Nov 2026. CE4-CHE: 23 orders on the book, median RM92 a unit, range RM6 to RM153.33, RM0 outstanding before this row. The drafter flagged: This SETTLES the order in full: nothing is left outstanding after it. Written by the tool, so the facts stand as the dossier gives them and no judgement is recorded on them."}],"cash":230,"cost":125,"customer":"CE4-CHE","date":"2026-11-09","deliveredOn":"2026-11-09","deliveredQty":2.5,"delivery":0,"listQty":2.5,"listRM":205,"mod":"corrected on 2026-11-09: total 205 to 230; delivery (unset) to 0","note":"<b>CORRECTED ON 09 NOV 2026: TOTAL RM205 TO RM230, DELIVERY 0.</b> <b>CORRECTION ON 09 NOV 2026: ORDER s348 FOR CE4-CHE, GOODS TOTAL RM205 TO RM230, DELIVERY SET TO 0.</b> Preapproved by Counter Admin. Quantity stays 2.5 unit. It moves no cash and no stock; it changes only what the row says about itself. The new rate is RM92 a unit, equal to the party's median rate of RM92 (range RM6 to RM153.33, 23 orders). The goods total of RM230 is compared with the desk's floor and ask for 2.5 unit; the dossier gives no ladder figures for it, so no comparison is made. The cost is the row's own and the correction does not set it. The drafter raised no flags. RM205 was outstanding before, with no units on credit and nothing defaulted. RM230 is still unpaid and 2.5 unit unhanded. <b>NEW SALE ON 09 NOV 2026: 2.5 UNIT OF SALT TO CE4-CHE FOR RM205, PENDING.</b> Preapproved by Counter Admin. Nothing paid and nothing handed over, so no stock is drawn and no revenue booked yet. The rate is RM82 a unit. The goods total of RM205 is above the desk's floor of RM125 and below its ask of RM225 for 2.5 unit; per unit, RM82 sits between the floor of RM50 and the ask of RM90. CE4-CHE has a median rate of RM92, range RM6 to RM153.33, 22 orders, nothing outstanding before, no units on credit and nothing defaulted. The dossier shows a credit cap of 1, with no unit given. The cost is the RM50 a unit the drafter set off the latest purchase, and the fold keeps it. The drafter flagged the rate as 10.9% below the median of RM92; the figures confirm it, though it stays above the floor. RM205 remains unpaid and 2.5 unit unhanded.","paidOn":"2026-11-09","qty":2.5,"rid":"s348","road":"site","total":230},
+  {"amend":[{"cash":0,"date":"2026-11-10","kg":0,"kind":"Fulfilment","note":"as booked"},{"cash":60,"date":"2026-11-10","kg":0,"kind":"Fulfilment"},{"cash":0,"cost":25,"date":"2026-11-10","kg":0.5,"kind":"Correction","note":"corrected on 2026-11-10: deliveredQty 0 to 0.5; deliveredOn (unset) to 2026-11-10; handover (unset) to collected","was":{"deliveredOn":null,"deliveredQty":0,"handover":null}}],"cash":60,"cost":25,"customer":"CS6-PER-R","date":"2026-11-10","deliveredOn":"2026-11-10","deliveredQty":0.5,"handover":"collected","listQty":0.5,"listRM":60,"mod":"corrected on 2026-11-10: deliveredQty 0 to 0.5; deliveredOn (unset) to 2026-11-10; handover (unset) to collected","note":"Booked when it was approved and written into this book by the export of 2026-11-10. Written by the tool, not a model: the figures are the row's own.","paidOn":"2026-11-10","qty":0.5,"rev":"R2","rid":"s349","road":"site","total":60},
+  {"cash":0,"customer":"CK4-SEN","date":"2026-11-10","deliveredQty":0,"listQty":3,"listRM":290,"note":"Booked when it was approved and written into this book by the export of 2026-11-10. Written by the tool, not a model: the figures are the row's own.","qty":3,"rid":"s350","road":"site","total":290}
 ];
 const selfUseLog=[
   {"date":"2026-08-23","kg":6.8,"note":"Self use, the 20 in his 20:80; dated at the count.","product":"oil","why":"personal"},
@@ -10009,7 +10099,7 @@ const COUNT_ON={
   "oil": "2026-11-07",
   "prep": "2026-11-02",
   "rice": "2026-11-07",
-  "salt": "2026-11-09"
+  "salt": "2026-11-10"
 };
 const PEOPLE={
   "banned": [
@@ -10537,7 +10627,7 @@ const PROD_OPENING={
   }
 };
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-11-09T15:32:41.647Z";
+const QUEUE_COMMITTED="2026-11-10T13:49:41.342Z";
 /* v793, 23 Sep 2026: his quotes as relayed with the pricing_v2 workbook. Salt SA5-BTR is multiples of 12.5 unit at RM700 each, RM56 a unit flat and held as the one 12.5 unit tier bought in whole lots, replacing the 6.25 to 100 unit taper of 20 Aug. Oil SP7-PUD names 10@100 and 50@380 alone; 15, 20 and 30 are dropped. Candy SM4-KEP 10@55, 20@47, 30@38, 50@30 a unit. Rice SM4-KEP 100@320. */
 /* v776, 22 Sep 2026: QUOTES IS THE BOOK'S OWN MAP, AND supplierQuote AND oilQuote ARE GONE. The two live quotes sat under two top-level keys NAMED AFTER THEIR PRODUCTS, the one per-product thing in this book that was not a map, and the desk's QUOTES was an accessor over them, {salt:()=>supplierQuote, oil:()=>oilQuote}. A third product therefore needed a third key, a third global and an edit in three files, and tools/foldcall.mjs read the pair as a literal two-entry object, so an unregistered product yielded null and its purchase folded with no quote in the dossier while nothing errored. v228's own comment beside the supply panel already stated the shape it wanted, one panel driven by QUOTES so a third product needs an entry there and nothing here, and the panel has told him to add one to QUOTES ever since; this is that, finished. quoteFor reads the map directly, the accessor is retired, and QUOTES leaves NOT_LEDGER for LEDGER because it is a record now and not a lookup. oilQuote's own product field goes with it: the key is the product, and nothing ever read the field. */
 /* v505, 07 Sep 2026: the 25 unit tier is RM 1,200 on his word; the other four tiers stand as quoted on 20 Aug. */
@@ -10678,6 +10768,7 @@ const REWARD_OPEN={
     "upTo": "s276"
   }
 };
+/* COUNTED AT the tap on 2026-11-10: the salt inventory held 47 against 45.5 on the roll, a difference of 1.5. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-11-10. */
 /* ROLLED AT v1495: 2.5 unit to CE4-CHE on 2026-11-09, so 48 less 2.5 is 45.5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* COUNTED AT v1493 on 2026-11-09: the salt inventory held 48 against 7 on the roll, a difference of 41. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-11-09. <b>COUNT OF SALT ON 09 NOV 2026: 48 UNIT COUNTED AGAINST 7 ON THE BOOK.</b> Decided by Counter Admin. The difference is +41 unit. The count wins over the ledger, so the stated salt inventory is set to 48 and the salt count date moves from 07 Nov to 09 Nov. The previous count was on 07 Nov. The drafter flagged the 41 unit as unaccounted for, booked as shrinkage across every unit sold. The dossier gives no cause for the gap, so none is stated. The floors for 1 unit (RM50), 2 unit (RM100) and 1.25 unit (RM625) and the ask for 1 unit (RM100) do not move. The self-use figure moves from 105.34 to 114.34. No party or cost is attached to this row. Nothing is left outstanding on it. */
 /* ROLLED AT v1492: 50 unit from SA5-BTR on 2026-11-09, so 7 plus 50 is 57. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 50 unit of salt from SA5-BTR landed on 09 Nov 2026 and are added to the roll. */
@@ -10874,7 +10965,7 @@ const REWARD_OPEN={
 /* ROLLED AT v439: 1 unit to CA7-JTR on 2026-09-01, 6 unit to CK4-SEN on 2026-09-01, 1 unit to CR3-DAM on 2026-09-01, so 8.25 less 8 is 0.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Eight of the eight and a quarter unit on the shelf went out today across four rows, leaving 0.25 unit against 3 unit already promised: CE4-CHE's half unit owed out and CY2-NIL's 2.5 unit pending. The book is 2.75 unit short of its own commitments and sourcing is now the first decision on it. */
 /* ROLLED AT v404: 5 unit to CE4-AD on 2026-08-29, so 13.25 less 5 is 8.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* ROLLED AT v399: 3 unit to CH4-KS on 2026-08-28, so 16.25 less 3 is 13.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
-const STATED_STOCK=45.5;
+const STATED_STOCK=46.5;
 const TIER_OF={
   "CA4-SJ": {
     "salt": 0.3
@@ -11910,7 +12001,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1497","d":"10 Nov 2026","t":"SALT'S SET PRICE 20% HIGHER AT EVERY SIZE","n":["<b>HIS WORD, PENDING THE PRICE BAND PLAN.</b> The Set Price for 1 unit of salt is RM 20 higher, RM 120 against RM 100, and every other size moves the same 20% (his answer A): each of the Set Price's four multiples of the COGS Floor is 1.2 times what it was, 3 at half a unit, 2.4 at 1, 2.004 at 6.25 and 1.596 at 12.5. On COGS of RM 50 a unit the Set Price reads RM 75 at half a unit (held by the Ceiling), RM 120 at 1, RM 225 at 2, RM 510 at 5, RM 625 at 6.25 and RM 995 at 12.5.","<b>THEIR % MOVES WITH IT.</b> The -30% and +30% curves are 1.2 times too (his answer), so every customer's % keeps its distance from the Set Price: at 1 unit -30% reads RM 95 and +30% RM 140; at 12.5, RM 900 and RM 1,090. At half a unit every positive % reads RM 75, the Ceiling.","<b>WHAT DOES NOT MOVE.</b> The Floor, what a partner pays, the Ceiling, oil, candy, rice, gas and PrEP. Two readers measure against the Set Price and so shift: the suggestion reads past sales as paid less over the Set Price, and an older salt row that is amended is restamped at its new price for the loyalty unit. Checks re-aimed, 12,117 passed, none failed; an independent review found the engine sound."]}];
+const evolution=[{"v":"v1498","d":"10 Nov 2026","t":"THE DESK CLEANED UP, AND TWO WHAT-IF PLANNERS","n":["<b>HIS WORD: FIX THE BUGS, KEEP WHAT IS WORTH SHOWING, MAKE IT INTERACTIVE FOR PLANNING.</b> A debt past its term is one card on To do, the credit rules it breaks as chips on its Chase card, where it stood twice. A partner's sale at the Floor is no margin breach. Sixteen notes of a repeat order are one card. The card that read \"the buying rate can rise RM -1\" is gone. Rules says a party over a cap once. Financials' Gross margin for the business is the books' own added, never a dash. The Ledger trail draws a day's corrections once. Analysis holds only the last correction of a field against its row, and counts a shelf truly empty.","<b>GONE, HIS ANSWER \"REMOVE THEM\".</b> Rules' Desk digest, Position at a glance and Latest ledger, each a repeat of its own page; To do's Money at stake chart; Financials' cost tables that read \"not measured\"; Sourcing's three loss tiles, now one, The gap; an associate's stream with nothing in it. The emoji left the headings.","<b>TWO PLANNERS THAT BOOK NOTHING.</b> Stock, Next 30 days: add a lot you are thinking of, one tap for a book's next lot as its restock plan sizes it, and the inventory and cash redraw with it, each book saying what it read without it. Money, Financials: Month ahead, with steppers for demand and buying cost and your running costs a month, says revenue, margin, what is left and how many orders cover the costs. Both are estimates kept on this device; no price, Floor, queue or ledger row moves.","31 new checks, each proved red by its own mutation; an independent review found it sound and its four notes are applied."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12058,7 +12149,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='10 Nov 2026, 14:31 KL';
+const LAST_UPDATED='10 Nov 2026, 22:59 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -13539,13 +13630,13 @@ function tierPrice(code,q){
 function ladderFor(p){return SNAPSHOT_ENGINE.ladderFor(snapCtx(),p||PROD);}
 /* ============ 05 OCT 2026, HIS DECISION: SALT IS A SET PRICE AND A DRIFT (Model B) ============
    The five levels are gone (18 Oct 2026). Per size: the Floor (COGS times the size), the Ceiling (ceilingX
-   times the floor) and the Set Price, the floor times a multiple sliding in the log of size between R.points (18 Oct 2026: 2.5, 2,
+   times the floor) and the Median Price, the floor times a multiple sliding in the log of size between R.points (18 Oct 2026: 2.5, 2,
    1.67 and 1.33 at 0.5, 1, 6.25 and 12.5), down to the grid, lifted to the floor, capped at the ceiling and walked (engine driftWalk; on 05 Oct 2026, at COGS RM64) it read RM90, 160,
    220, 280, 330, 380, 430, 480, 520, 560, 660 and 1,090 on the rungs, every rung walked with the grid's own sizes (05 Oct
    2026, any amount: `grid`, from min in steps to max, each point priced by the engine's quoteAt and sealed per customer, so
-   the rate never rises across the whole grid). A stranger is quoted the Set Price. Each customer
+   the rate never rises across the whole grid). A stranger is quoted the Median Price. Each customer
    holds a % from -0.3 to +0.3, set by him (TIER_OF, folded as `tierset`), nought where none is held (18 Oct 2026, nothing automatic prices;
-   21 Oct 2026, his decision: a negative % is a discount on the Set Price, never under the Floor), applied inside the engine's driftWalk (driftAt in the ENGINE block). */
+   21 Oct 2026, his decision: a negative % is a discount on the Median Price, never under the Floor), applied inside the engine's driftWalk (driftAt in the ENGINE block). */
 /* TIER_RULE lives in engine/rules.mjs (inlined in the ENGINE block above) */
 /* 05 OCT 2026, HIS DECISION: EACH BOOK'S GRID, {min, step, max}, read off its rule: the quantities the Counter quotes at once.
    Above max the only way in is Negotiate. Null for a book with none. */
@@ -13601,9 +13692,9 @@ const REF={
 };
 /* ============ THE BOARD'S ONE COLUMN: THE SET PRICE ============
    18 Oct 2026: the five levels went and so did the stated Tier 1, so the board reads one column beside the Floor and the Ceiling.
-   Row zero of the engine's ladderRow is the Set Price (code T2, load bearing), the same figure the cell here carries. */
+   Row zero of the engine's ladderRow is the Median Price (code T2, load bearing), the same figure the cell here carries. */
 const REF_POINTS=[
-  {k:'ask',   label:'Set Price', m:null, why:'what a stranger is quoted, the least any customer but a partner pays'}
+  {k:'ask',   label:'Median Price', m:null, why:'what a stranger is quoted, the least any customer but a partner pays'}
 ];
 /* The lot cost a price has to beat: the salt, after the leak, plus ONE delivery for the order. */
 function lotCost(q,opts){ return PRICING_ENGINE.lotCost(q,pxCost(),opts); }
@@ -13832,6 +13923,9 @@ function boundaryScan(){
   pricedSales.forEach(s=>{const p=txPrice(s);if(!(p>0))return;
     const c=txUnitCost(s,wavgBuy),m=(p-c)/p*100,need=floorTotal(s.qty),under=txGoods(s)<need-0.009;
     if(m>=0.009&&!under)return;
+    /* 10 Nov 2026: a partner pays the Floor by rule 5, so a partner's sale at or over the Floor is the rule kept, never a breach */
+    /* the review's finding: only AT cost; a partner's sale under its own lot's cost is a loss and stays a breach */
+    if(!under&&m>-0.5&&isPartner(s.customer))return;
     const gap=Math.max(0,need-txGoods(s));
     const open=txStat(s).order!=='Completed'&&txStat(s).order!=='In-Kind';
     if(m>=0.009&&!open){closedN++;closedRM+=gap;return;}
@@ -14181,14 +14275,10 @@ function tabOverview(){
      once. The v385 scoping notes that made each reading its own book's still hold, one book at a time, inside the walk.
      The register still leads after the digest (v403), so a breach tapped on Today lands within the first screen. */
   const B=eachBook(p=>{const S=pSales(p),P=pPurch(p);
-    return {pendRM:+S.reduce((a,s)=>a+txPendRM(s),0).toFixed(2),pendN:S.filter(s=>txPendUnits(s)>0.009).length,
-      lotsIn:P.filter(x=>!x.defaulted&&!x.pending&&poOpenUnits(x)>0.0001).length,
-      itUnits:+P.filter(x=>!x.defaulted&&!x.pending).reduce((a,x)=>a+poOpenUnits(x),0).toFixed(2),
-      bills:+P.reduce((a,x)=>a+poOwed(x),0).toFixed(2),arGross,ar,revTotal,revCollected,grossMargin,held:currentStock,defUnits,
-      stockVal:+(currentStock*stockCostFor(p)).toFixed(2),buyRM,buyUnits,srNet:supRecovNet,srGross:supRecovGross,
+    return {arGross,ar,held:currentStock,defUnits,srNet:supRecovNet,srGross:supRecovGross,
       defRows:S.filter(s=>txDeferUnits(s)>0.009).map(s=>({who:s.customer,u:txDeferUnits(s)})),
       adv:arList.map(s=>({who:s.customer,rm:outstandingOf(s),over:overCap(s)})),
-      bnd:boundaryScan(),risks:commitRisks(),cust:byCustomer()};});
+      bnd:boundaryScan(),risks:commitRisks()};});
   const ids=Object.keys(B), sum=k=>+ids.reduce((a,p)=>a+B[p][k],0).toFixed(2);
   const tag=p=>prodTag({product:p});
   const split=(k,f)=>ids.filter(p=>Math.abs(B[p][k])>0.009).map(p=>esc(PRODUCTS[p].name)+' '+f(B[p][k])).join(' &middot; ');
@@ -14198,44 +14288,20 @@ function tabOverview(){
       if(seen[key])seen[key].books.push(p);else{seen[key]={x:x,books:[p]};out.push(seen[key]);}}));
     return out.map(e=>e.books.length===ids.length?e.x:Object.assign({},e.x,{rule:e.x.rule+' '+e.books.map(tag).join(' ')}));};
   const bnd=once('bnd'), risks=once('risks');
-  /* concentration over the whole business: each customer's revenue added across the books, then the same shares */
-  const rev={};ids.forEach(p=>B[p].cust.forEach(c=>{rev[c.id]=(rev[c.id]||0)+c.rev;}));
-  const cr=Object.values(rev).sort((a,b)=>b-a), tot=cr.reduce((a,x)=>a+x,0)||1;
-  const hhi=cr.reduce((a,x)=>a+Math.pow(x/tot*100,2),0), topPct=cr.length?cr[0]/tot*100:0;
-  const conRisk=hhi>3000?'high':hhi>1800?'moderate':'low';
-  const conCol=conRisk==='high'?'var(--crim)':conRisk==='moderate'?'var(--amber)':'var(--grn)';
-  const pendRM=sum('pendRM'), pendN=ids.reduce((a,p)=>a+B[p].pendN,0), arG=sum('arGross'), arNet=sum('ar');
-  const uncollected=+(sum('revTotal')-sum('revCollected')).toFixed(2), bills=sum('bills'), lotsIn=ids.reduce((a,p)=>a+B[p].lotsIn,0);
-  const srNet=sum('srNet'), srGross=sum('srGross'), totDue=+(arNet+srNet).toFixed(2), margin=sum('grossMargin'), revAll=sum('revTotal');
+  /* 10 Nov 2026, his word: the digest, Position at a glance and Latest ledger left Rules; each repeated a tile of its own page */
+  const arG=sum('arGross'), arNet=sum('ar'), srNet=sum('srNet'), srGross=sum('srGross');
   /* advances by party across the books, because the money adds and he calls a person, not a book */
   const adv={};ids.forEach(p=>B[p].adv.forEach(a=>{const e=adv[a.who]=adv[a.who]||{rm:0,over:[]};e.rm+=a.rm;if(a.over)e.over.push(p);}));
   const advRows=Object.keys(adv).map(k=>({who:k,rm:+adv[k].rm.toFixed(2),over:adv[k].over})).sort((a,b)=>b.rm-a.rm);
   const defAll=ids.flatMap(p=>B[p].defRows.map(d=>Object.assign({p},d)));
-  const recent=ids.flatMap(p=>pSales(p).filter(s=>s.date)).sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0).slice(0,5);
-  const kpi=(cls,l,v,n)=>`<div class="kpi salt-kpi ${cls}"><div class="l salt-kpi__label">${l}</div><div class="v salt-kpi__value">${v}</div><div class="n salt-kpi__note">${n}</div></div>`;
   return `<h1>Rules</h1>
   <div class="pscope"><span class="pbadge">Every book</span></div>
-  <div class="dsc dsclead">Every rule the desk trades by, what breaks one today, and where each book stands.</div>
-  <h2>Desk digest <span class="sub" style="font-weight:400">the headline from every page</span> <span class="rule"></span></h2>
-  <div class="kpis k4">
-    ${kpi('','Order book &middot; pending',fmt0(pendRM),pendN?`${pendN} order${pendN===1?'':'s'}, off the books`:'nothing pending')}
-    ${kpi('p','Financials &middot; still to come in',fmt0(arG),(uncollected-arG)>0.009?`${fmt0(uncollected-arG)} of what is sold settled in kind`:(uncollected>0.009?'all of it a cash receivable':'everything sold is collected'))}
-    ${kpi('','Clients &middot; concentration',`<span style="color:${conCol}">${hhi.toFixed(0)}</span>`,`${conRisk}; top buyer ${topPct.toFixed(0)}% of ${cr.length}, across the books`)}
-    ${kpi('g','Sourcing &middot; in transit',`${lotsIn} lot${lotsIn===1?'':'s'}`,`${lotsIn?split('itUnits',units)+'; ':''}${bills>0.009?`${fmt0(bills)} bills unpaid`:'all lots paid'}${srNet>0.009?`; ${fmt0(srNet)} refund due`:''}`)}
-  </div>
+  <div class="dsc dsclead">What breaks a rule today, what is owed out and what is owed in.</div>
   ${boundaryPanel(bnd,risks)}
-  ${defAll.length?`<div class="pend"><h3>&#128230; Deferred deliveries <span class="cd" style="color:var(--amber);border-color:var(--amber)">${defAll.length} owed out</span></h3><div class="pchips">${defAll.map(d=>`<span class="pchip"><b>${ID(d.who)}</b> ${units(d.u)} ${tag(d.p)}</span>`).join('')}${ids.filter(p=>B[p].defUnits>B[p].held).map(p=>`<span class="pchip bad">${esc(PRODUCTS[p].name)}: exceeds ${units(B[p].held)} on hand</span>`).join('')}</div></div>`:''}
-  ${arG>0.5?`<div class="pend"><h3>&#128179; Advances out <span class="cd" style="color:var(--amber);border-color:var(--amber)">${fmt0(arG)} owed to you</span></h3><div class="pchips">${advRows.map(a=>`<span class="pchip${a.over.length?' bad':''}"><b>${ID(a.who)}</b> ${fmt0(a.rm)}${a.over.map(p=>' &middot; over the '+units(capForParty(a.who,p))+' '+esc(PRODUCTS[p].name.toLowerCase())+' cap').join('')}</span>`).join('')}<span class="pchip warn">${fmt0(arNet)} net of provisioning</span></div></div>`:''}
-  ${(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status!=='closed')?`<div class="pend def"><h3>&#9888; Supplier default: ${ID(supplierReceivable.party)} <span class="cd crim">${supplierReceivable.status==='writtenOff'?fmt0(srGross)+' written off':fmt0(srNet)+' net'}</span></h3><div class="dsc">${supplierReceivable.status==='writtenOff'?`Paid 08 Jul and the lot never arrived; the ${fmt0(srGross)} provision stays charged, so any recovery is upside.`:`Paid 08 Jul and the lot never arrived; recoverable pending the settlement meeting, ${fmt0(srNet)} net.`}</div><div class="pchips">${supplierReceivable.status==='writtenOff'?`<span class="pchip bad">written off ${supplierReceivable.writtenOffOn}</span><span class="pchip">${nDays(dAge(supplierReceivable.since))} out</span><span class="pchip bad">${fmt0(srGross)} charged to margin</span>`:`<span class="pchip">${nDays(dAge(supplierReceivable.since))} out</span><span class="pchip warn">${(provRate(dbet(supplierReceivable.since))*100).toFixed(0)}% provisioned</span><span class="pchip">${fmt0(srGross)} gross</span><span class="pchip warn">${fmt0(srNet)} net</span>`}</div></div>`:''}
-  <h2>Position at a glance <span class="sub" style="font-weight:400">money added across the books, each book's part beside it</span> <span class="rule"></span></h2>
-  <div class="kpis k3">
-    ${kpi('','Inventory at cost',fmt0(sum('stockVal')),split('held',units)||'nothing on hand')}
-    ${kpi('p','Revenue',fmt0(revAll),split('revTotal',fmt0))}
-    ${kpi('gold','Margin',fmt0(margin),`${revAll>0?(margin/revAll*100).toFixed(1):'0.0'}% on ${fmt0(revAll)} sold; ${split('grossMargin',fmt0)}`)}
-    ${kpi('r','Receivables (net)',fmt0(totDue),(arNet>0.009||srNet>0.009)?`${fmt0(arNet)} trade${srNet>0.009?` + ${fmt0(srNet)} refund`:''}`:'nothing owed to you')}
-    ${kpi('','Bought to date',fmt0(sum('buyRM')),split('buyRM',fmt0)||'no lot recorded yet')}
-  </div>
-  <div class="card"><div class="cardh">&#128220; Latest ledger <span class="sub">most recent orders, every book</span></div><table class="salt-table"><thead><tr><th class="l salt-table__label">Date</th><th class="l salt-table__label">Party</th><th>Qty</th><th>Total</th><th>State</th></tr></thead><tbody>${recent.map(s=>{const si=txStat(s);return `<tr><td class="l salt-table__label">${s.date}</td><td class="l salt-table__label mono">${ID(s.customer)}<br>${tag(prodOf(s))}</td><td>${units(s.qty)}</td><td>${fmt0(s.total)}</td><td><span class="tag salt-status ${si.cls}">${si.order}</span></td></tr>`;}).join('')}</tbody></table></div>`;
+  ${defAll.length?`<div class="pend"><h3>Deferred deliveries <span class="cd" style="color:var(--amber);border-color:var(--amber)">${defAll.length} owed out</span></h3><div class="pchips">${defAll.map(d=>`<span class="pchip"><b>${ID(d.who)}</b> ${units(d.u)} ${tag(d.p)}</span>`).join('')}${ids.filter(p=>B[p].defUnits>B[p].held).map(p=>`<span class="pchip bad">${esc(PRODUCTS[p].name)}: exceeds ${units(B[p].held)} on hand</span>`).join('')}</div></div>`:''}
+  ${arG>0.5?`<div class="pend"><h3>Advances out <span class="cd" style="color:var(--amber);border-color:var(--amber)">${fmt0(arG)} owed to you</span></h3><div class="pchips">${advRows.map(a=>`<span class="pchip${a.over.length?' bad':''}"><b>${ID(a.who)}</b> ${fmt0(a.rm)}${[...new Set(a.over)].map(p=>' &middot; over the '+units(capForParty(a.who,p))+' '+esc(PRODUCTS[p].name.toLowerCase())+' cap').join('')}</span>`).join('')}<span class="pchip warn">${fmt0(arNet)} net of provisioning</span></div></div>`:''}
+  ${(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status!=='closed')?`<div class="pend def"><h3>Supplier default: ${ID(supplierReceivable.party)} <span class="cd crim">${supplierReceivable.status==='writtenOff'?fmt0(srGross)+' written off':fmt0(srNet)+' net'}</span></h3><div class="dsc">${supplierReceivable.status==='writtenOff'?`Paid 08 Jul and the lot never arrived; the ${fmt0(srGross)} provision stays charged, so any recovery is upside.`:`Paid 08 Jul and the lot never arrived; recoverable pending the settlement meeting, ${fmt0(srNet)} net.`}</div><div class="pchips">${supplierReceivable.status==='writtenOff'?`<span class="pchip bad">written off ${supplierReceivable.writtenOffOn}</span><span class="pchip">${nDays(dAge(supplierReceivable.since))} out</span><span class="pchip bad">${fmt0(srGross)} charged to margin</span>`:`<span class="pchip">${nDays(dAge(supplierReceivable.since))} out</span><span class="pchip warn">${(provRate(dbet(supplierReceivable.since))*100).toFixed(0)}% provisioned</span><span class="pchip">${fmt0(srGross)} gross</span><span class="pchip warn">${fmt0(srNet)} net</span>`}</div></div>`:''}
+`;
 }
 
 /* ============ TAB: TODAY (v147) ============ */
@@ -14398,13 +14464,8 @@ function tabToday(){
   <div class="card"><div class="tscroll"><table class="salt-table"><thead><tr><th class="l salt-table__label">Book</th><th>Held</th><th title="promised out and not yet handed over">Out</th><th title="days of inventory at the fortnight's rate">Cover</th><th title="owed to you on this book">Owed</th></tr></thead>
     <tbody>${bandRows}</tbody></table></div>
     <div class="dsc" style="margin-top:8px">Cash, trading net: <b style="color:${cf.net<0?'var(--crim)':'inherit'}">${fmt0(cf.net)}</b>, with ${fmt0(cf.dueOut)} promised away against it${owedAll>0.009?`, and ${fmt0(owedAll)} owed to you across the books`:''}.</div></div>
-  <div class="tdsplit">
-    <div class="card"><div class="cardh">Money at stake <span class="sub">by kind</span></div>
-      <div class="chartbox" style="height:186px"><canvas id="tdKindChart"></canvas></div>
-      </div>
-    <div class="card"><div class="cardh">Cover <span class="sub">days of inventory, each book against its trigger</span></div>
+  <div class="card"><div class="cardh">Cover <span class="sub">days of inventory, each book against its trigger</span></div>
       <div class="chartbox" style="height:186px"><canvas id="tdCoverChart"></canvas></div></div>
-  </div>
   `;
 }
 
@@ -14495,7 +14556,7 @@ function fwdOpts(){
   const buy=(fwdBuy&&p.length)?{qty:p.reduce((a,x)=>a+x.qty,0),
     rate:+(p.reduce((a,x)=>a+x.total,0)/p.reduce((a,x)=>a+x.qty,0)).toFixed(2),
     onDay:0,payDay:0,who:p[0].supplier}:null;
-  return {days:fwdDays,buy,plans:fwdPlans};
+  return {days:fwdDays,buy,plans:fwdPlans,whatIf:planGet().lots.filter(l=>l.prod===PROD)};
 }
 /* ============ v796, HIS INSTRUCTION OF 23 SEP 2026: NEXT 30 DAYS IS EVERY BOOK AT ONCE ============
    Each live book is walked on its own, as it always was, for its own inventory, its own rate and its own lots. The cash is
@@ -14503,7 +14564,9 @@ function fwdOpts(){
    (a refund, the supplier default) going in once, and forecast() walks that list through its own day loop, so there is
    still one walk and not a second copy of it. A book's own event carries its tag. */
 function fwdAll(){
-  const per=eachBook(()=>({f:forecast(Object.assign({},fwdOpts(),{plans:false})),buys:pPurch(PROD).filter(x=>x.pending&&!x.cancelled)}));
+  /* base is the book alone, beside f whenever a what-if lot is drawn, so the table can say what the lot moved */
+  const per=eachBook(()=>{const o=Object.assign({},fwdOpts(),{plans:false}),f=forecast(o);
+    return {f,base:o.whatIf.length?forecast(Object.assign({},o,{whatIf:[]})):f,buys:pPurch(PROD).filter(x=>x.pending&&!x.cancelled)};});
   const ids=Object.keys(per);
   const merge=k=>{const keys=p=>per[p].f[k].map(x=>JSON.stringify(x));
     const common=keys(ids[0]).filter(key=>ids.every(p=>keys(p).includes(key)));
@@ -14522,9 +14585,9 @@ function tabForward(){
   const buyWord=buys.map(p=>`${units(A.per[p].buys.reduce((a,x)=>a+x.qty,0))} of ${esc(PRODUCTS[p].name.toLowerCase())}`).join(' and ');
   const sw=[14,30,60].map(n=>`<button data-n="${n}"${fwdDays===n?' class="on"':''} onclick="fwdSet(${n})">${nDays(n)}</button>`).join('');
   const evRows=[];
-  A.lots.forEach(x=>evRows.push({day:x.day,what:`${units(x.kg)} arrives from ${ID(x.who)}${tags(x)}`,kind:'stock in',rm:x.rm}));
+  A.lots.forEach(x=>evRows.push({day:x.day,what:x.whatIf?`${units(x.kg)}, a what-if lot${tags(x)}`:`${units(x.kg)} arrives from ${ID(x.who)}${tags(x)}`,kind:'stock in',rm:x.rm}));
   A.cin.forEach(x=>evRows.push({day:x.day,what:`${ID(x.who)} ${x.label}, ${fmt0(x.gross)} gross${(x.held!=null?x.held:x.age)!=null?`, ${x.held!=null?x.held:x.age}d out`:''}${x.gross>x.rm+0.009?`, ${((1-x.rm/x.gross)*100).toFixed(0)}% provisioned`:''}${tags(x)}`,kind:'cash in',rm:x.rm}));
-  A.cout.forEach(x=>evRows.push({day:x.day,what:`${ID(x.who)} ${x.label}${tags(x)}`,kind:'cash out',rm:-x.rm}));
+  A.cout.forEach(x=>evRows.push({day:x.day,what:x.whatIf?`A what-if lot paid for${tags(x)}`:`${ID(x.who)} ${x.label}${tags(x)}`,kind:'cash out',rm:-x.rm}));
   (f.planRows||[]).forEach(x=>{if(x._taken)evRows.push({day:x.day,what:esc(x.label),kind:'drawing',rm:-x._taken});});
   evRows.sort((a,b)=>a.day-b.day||Math.abs(b.rm)-Math.abs(a.rm));
   const iso=n=>new Date(TODAY.getTime()+n*86400000).toISOString().slice(0,10);
@@ -14533,16 +14596,17 @@ function tabForward(){
   /* the book that empties first leads, because that is the order to place */
   const dryOf=p=>A.per[p].f.dry, first=ids.filter(p=>dryOf(p)!=null).sort((a,b)=>dryOf(a)-dryOf(b))[0];
   const emptyCell=g=>g.dry==null?`past ${nDays(g.days)}`:g.dry===0?'<b style="color:var(--crim)">today</b>':g.dryDate;
-  const bookRows=ids.map(p=>{const g=A.per[p].f;return `<tr><td class="l salt-table__label">${tag(p)}</td><td class="mono">${units(g.rate)}</td><td class="mono">${emptyCell(g)}</td><td class="mono">${g.commitUnits>0.009?units(g.commitUnits):NIL}</td></tr>`;}).join('');
+  const bookRows=ids.map(p=>{const g=A.per[p].f;return `<tr><td class="l salt-table__label">${tag(p)}</td><td class="mono">${units(g.rate)}</td><td class="mono">${emptyCell(g)}${emptyCell(A.per[p].base)!==emptyCell(g)?` <span style="color:var(--dim)">was ${emptyCell(A.per[p].base)}</span>`:''}</td><td class="mono">${g.commitUnits>0.009?units(g.commitUnits):NIL}</td></tr>`;}).join('');
   return `<h1>Next 30 days</h1>
   <div class="pscope"><span class="pbadge">Every book</span></div>
-  <div class="dsc dsclead" style="margin-bottom:11px">Each book's inventory and the cash, day by day, at the daily rate its restock plan measures; an order not yet placed is in none of it.</div>
+  <div class="dsc dsclead" style="margin-bottom:11px">Each book's inventory and the cash, day by day, at the daily rate its restock plan measures; an order not yet placed is in none of it, unless you add it below as a what-if.</div>
   <div style="display:flex;flex-wrap:wrap;gap:9px;align-items:center">
     <span class="viewsw" id="fwdSw">${sw}</span>
     ${buys.length?`<button class="vbtn salt-pill salt-pill--sm" style="${fwdBuy?'':'opacity:.55'}" onclick="fwdToggle('buy')">${fwdBuy?'&#10003; ':''}Include the agreed buy</button>`:''}
     ${(typeof PLANS_CASH!=='undefined'&&PLANS_CASH.length)?`<button class="vbtn salt-pill salt-pill--sm" style="${fwdPlans?'':'opacity:.55'}" onclick="fwdToggle('plans')">${fwdPlans?'&#10003; ':''}Include the planned drawing</button>`:''}
   </div>
   ${/* v385: one sentence carries the scenario, because stripMethod cuts an .insight to its first sentence */''}${(fwdBuy&&buys.length||fwdPlans)?`<div class="insight salt-insight" style="margin-top:11px"><b>Scenario, not the book</b>: ${[fwdBuy&&buys.length?`the agreed ${buyWord}, drawn as though it lands and is paid for today`:'',fwdPlans?`${PLANS_CASH.map(p=>esc(p.label)).join('; ')}${taken>0.009?`, taking ${fmt0(taken)} out on this path`:''}`:''].filter(Boolean).join('; and ')}. Nothing here is recorded anywhere, and turning the switch off removes it entirely.</div>`:''}
+  ${whatIfCard()}
   <div class="kpis k2" style="margin-top:13px">
     <div class="kpi salt-kpi ${first&&dryOf(first)===0?'r':first?'gold':'g'}"><div class="l salt-kpi__label">First to run empty</div><div class="v salt-kpi__value">${first?esc(PRODUCTS[first].name):NIL}</div><div class="n salt-kpi__note">${first?(dryOf(first)===0?'nothing on the inventory now':`day ${dryOf(first)}, ${A.per[first].f.dryDate}`):`every book holds past ${nDays(fwdDays)}`}</div></div>
     <div class="kpi salt-kpi ${f.cashEnd<0?'r':'p'}"><div class="l salt-kpi__label">Cash ${cash?`at day ${f.days}`:`movement, ${nDays(f.days)}`}</div><div class="v salt-kpi__value">${f.cashEnd<0?'&minus;':''}${fmt0(Math.abs(f.cashEnd))}</div><div class="n salt-kpi__note">${cash?`low ${f.cashLow.rm<0?'&minus;':''}${fmt0(Math.abs(f.cashLow.rm))} on ${iso(f.cashLow.day)}`:`a change from today, never a balance${f.cashLow.rm<-0.009?`; ${f.cashLow.rm<0?'&minus;':''}${fmt0(Math.abs(f.cashLow.rm))} at its worst on ${iso(f.cashLow.day)}`:''}`}</div></div>
@@ -14865,13 +14929,11 @@ function tabSourcing(){
       <td class="stkx" style="color:var(--gold)">${fmt0(r.lostPrice)}</td></tr>`).join('');
     const T=L.tot, gap=+(T.maxRev-T.expRev).toFixed(2);
     return hd('')+`<div class="card">
-    <div class="kpis k6" style="margin-bottom:12px">
+    <div class="kpis k4" style="margin-bottom:12px">
       <div class="kpi salt-kpi"><div class="l salt-kpi__label">Still on the inventory</div><div class="v salt-kpi__value">${units(T.left)}</div><div class="n salt-kpi__note">${fmt0(T.costLeft)} of ${PN} at what it cost</div></div>
       <div class="kpi salt-kpi gold"><div class="l salt-kpi__label">Maximum revenue</div><div class="v salt-kpi__value">${fmt0(T.maxRev)}</div><div class="n salt-kpi__note">your own best at each order size, blending to ${fmt(L.mixBest)}/unit</div></div>
       <div class="kpi salt-kpi g"><div class="l salt-kpi__label">Expected revenue</div><div class="v salt-kpi__value">${fmt0(T.expRev)}</div><div class="n salt-kpi__note">${fmt(L.mean)}/unit &plusmn;${fmt(L.sd)} over ${L.n} order${L.n===1?'':'s'}${L.windowed?' in 60 days':', the whole book'}, less ${(L.shrink*100).toFixed(1)}% leakage</div></div>
-      <div class="kpi salt-kpi r"><div class="l salt-kpi__label">Lost to leakage</div><div class="v salt-kpi__value">${fmt0(T.lostLeak)}</div><div class="n salt-kpi__note">${PN} that never reaches a customer</div></div>
-      <div class="kpi salt-kpi p"><div class="l salt-kpi__label">Lost to price</div><div class="v salt-kpi__value">${fmt0(T.lostPrice)}</div><div class="n salt-kpi__note">the units that do, sold under your best</div></div>
-      <div class="kpi salt-kpi"><div class="l salt-kpi__label">Lost to both</div><div class="v salt-kpi__value">${fmt0(T.lostBoth)}</div><div class="n salt-kpi__note">the better price on the units the leak ate, which is why the first two do not sum to the ${fmt0(gap)} gap</div></div>
+      <div class="kpi salt-kpi r"><div class="l salt-kpi__label">The gap</div><div class="v salt-kpi__value">${fmt0(gap)}</div><div class="n salt-kpi__note">${fmt0(T.lostLeak)} to leakage, ${fmt0(T.lostPrice)} to price under your best, ${fmt0(T.lostBoth)} to both</div></div>
     </div>
     ${stkCols('lot')}<div class="stkwrap"><table class="salt-table"><thead><tr><th class="l salt-table__label">Lot</th><th>Left</th><th class="stkx">Cost of it</th><th>Ceiling</th><th>Expected</th><th class="stkx">Leak cost</th><th class="stkx">Price cost</th></tr></thead><tbody>${rows}</tbody></table></div>
     <div class="cardh" style="margin-top:14px">The mix behind the ceiling <span class="sub">the order sizes this book actually writes, each at its own best and average</span></div>
@@ -15090,7 +15152,8 @@ function tabAnalysis(){
      oil, at cost, and is not parked under promotion, leakage, his own use or testers. */
   const PN=PRODUCTS[PROD].name.toLowerCase();
   const sh=stockHistory();
-  const dry=sh.filter(r=>r.lvl<=0.05).length;
+  /* 10 Nov 2026: a rebuilt level under zero is a dating artefact, which the finding below says in words; the tile counts the days the shelf was truly empty */
+  const dry=sh.filter(r=>Math.abs(r.lvl)<=0.05).length;
   return `<div class="kpis k4">
     <div class="kpi salt-kpi gold"><div class="l salt-kpi__label">Gross margin</div><div class="v salt-kpi__value">${fmt0(grossMargin)}</div><div class="n salt-kpi__note">${marginPct.toFixed(1)}% of ${fmt0(revTotal)}</div></div>
     <div class="kpi salt-kpi p"><div class="l salt-kpi__label">Non-revenue ${esc(PN)}</div><div class="v salt-kpi__value">${fmt0(shrinkRM)}</div><div class="n salt-kpi__note">${units(selfUse)} out without a sale, at ${fmt(wavgBuy)}</div></div>
@@ -15108,7 +15171,12 @@ function tabAnalysis(){
       const cl=modClaims(t,x[0]).filter(c=>c.verdict);
       if(!cl.length)return;
       seen.push(t);
-      cl.forEach((c,i)=>{if(c.verdict==='unknown'||c.verdict==='differs')bad.push({t:t,c:c,i:i});});}));
+      /* 10 Nov 2026: 25 warnings stood, 23 of them an earlier correction a later one on the same field had replaced, or a note's prose read
+         as a field. Only the LAST correction of each field is held against the row, and a claim whose field is a sentence is no claim. */
+      const last={};cl.forEach((c,i)=>{last[c.field]=i;});
+      cl.forEach((c,i)=>{if(last[c.field]!==i||c.field==='note')return;
+        if(c.verdict==='unknown'&&(/\s/.test(String(c.field))||/^on \d/.test(String(c.was))||String(c.was).split(' ').length>5))return;
+        if(c.verdict==='unknown'||c.verdict==='differs')bad.push({t:t,c:c,i:i});});}));
     if(!seen.length)return '';
     if(!bad.length)return `<div class="pend" style="margin-top:14px"><h3>Every stated correction reads back against its row <span class="cd">${seen.length} corrected</span></h3></div>`;
     const saved=anCorrectionDeleted(),dismissed=new Set(saved||[]);
@@ -15825,7 +15893,7 @@ function tabInventory(){
     <div class="kpi salt-kpi p"><div class="l salt-kpi__label">Avg cost</div><div class="v salt-kpi__value">${fmt(wavgBuy)}<span style="font-size:12px;color:var(--mut)">/unit</span></div><div class="n salt-kpi__note">received + opening</div></div>
     <div class="kpi salt-kpi r"><div class="l salt-kpi__label">Non-revenue ${esc(PN)}</div><div class="v salt-kpi__value">${units(selfUse)}</div><div class="n salt-kpi__note">&asymp; ${fmt0(selfUse*wavgBuy)} at cost</div></div>
   </div>
-  ${oversold?`<div class="pend def"><h3>&#9888; Oversold <span class="cd crim">short ${units(-free)}</span></h3><div class="dsc">You owe <b>${units(defUnits)}</b> of ${PN} against <b>${units(currentStock)}</b> on hand. Restock before you can deliver.</div></div>`:''}
+  ${oversold?`<div class="pend def"><h3>Oversold <span class="cd crim">short ${units(-free)}</span></h3><div class="dsc">You owe <b>${units(defUnits)}</b> of ${PN} against <b>${units(currentStock)}</b> on hand. Restock before you can deliver.</div></div>`:''}
 
   <h2 style="margin-top:18px">How long the inventory lasts <span class="rule"></span></h2>
   <div class="kpis k4">
@@ -16510,8 +16578,14 @@ function tabLedger(){
         .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:a.idx-b.idx);
       let lastMove=-1;rest.forEach((L,i)=>{if(L.kind!=='Correction')lastMove=i;});
       if(completed){if(lastMove>=0)rest[lastMove].closed=true;else out[0].closed=true;}
+      /* 10 Nov 2026: modAt answers a DAY's changes, so four corrections on one day drew four lines, each holding all four's changes.
+         One line a day carries that day's changes; a later correction of the same day is in it already. */
+      const richDay={};
       rest.forEach(L=>{
-        if(L.kind==='Correction'||L.kind==='Modification')L.rich=modAt(L.date)||('<span class="chg chgraw">'+(L.kind==='Modification'?'restated':'corrected')+'</span>');
+        if(L.kind==='Correction'||L.kind==='Modification'){
+          if(richDay[L.date])return;
+          richDay[L.date]=true;
+          L.rich=modAt(L.date)||('<span class="chg chgraw">'+(L.kind==='Modification'?'restated':'corrected')+'</span>');}
         const prev=out[out.length-1];
         if(L.closed==null)L.closed=prev.closed;
         if(prev.kind==='Agreed'&&L.date===dOf(t.date)&&(L.units>0.0001||L.cash>0.0001))out[out.length-1]=L;
@@ -16913,7 +16987,7 @@ function ifrsPanel(){
     <h3 style="margin-top:16px;font-size:14px">Inventory</h3>
     <table class="salt-table fintab istmt" style="margin-top:8px"><tbody>
       ${L('At cost',F.atCost,{ref:'IAS 2.10',n:`${units(F.closeUnits)} at ${fmt(stockCostFor(PROD)+F.freightPerUnit)} landed`})}
-      ${L('Net realisable value',F.nrv,{ref:'IAS 2.6',n:F.nrvTested?`${fmt(F.nrvRate)}/unit less costs to sell, ${driftBook(P)?'at the Set Price, the least a customer but a partner is quoted':'at the stated price, the same for everybody'}`:'no selling price established for this product'})}
+      ${L('Net realisable value',F.nrv,{ref:'IAS 2.6',n:F.nrvTested?`${fmt(F.nrvRate)}/unit less costs to sell, ${driftBook(P)?'at the Median Price, the least a customer but a partner is quoted':'at the stated price, the same for everybody'}`:'no selling price established for this product'})}
       ${L('<b>Carrying amount</b>',F.carrying,{cls:'tot',ref:'IAS 2.9',n:F.nrvTested?(F.writeDown>0?`written down by ${fmt0(F.writeDown)}`:'cost is lower, so cost'):'cost, untested against NRV'})}
     </tbody></table>
     <!-- the untested-NRV paragraph went at v401: the NRV row already reads "no selling price
@@ -17314,13 +17388,8 @@ function costPanel(){
       <td style="color:${perUnit<0?'var(--crim)':'var(--ink)'}">${fmt(perUnit)}</td>
       <td style="color:${mins==null?'var(--dim)':mins<20?'var(--crim)':mins<45?'var(--salt-copper)':'var(--ink)'}"><b>${mins==null?NIL:Math.round(mins)+' min'}</b></td></tr>`;}).join('');
 
-  const stack=s0.perOrderParts.map(p=>`<tr><td class="l salt-table__label">${p.k}</td>
-    <td>${p.rm!=null?fmt(p.rm):'<span style="color:var(--crim)">not measured</span>'}</td>
-    <td class="l salt-table__label" style="color:var(--mut)">${esc((COST_BOOK.perOrder[p.k.toLowerCase()]||{}).what||'')}${p.assumed?' <span class="tag salt-status salt-status--dashed prov">assumed, never observed</span>':''}</td></tr>`).join('');
-  const monthly=Object.keys(COST_BOOK.perMonth).map(k=>{const m=COST_BOOK.perMonth[k];
-    return `<tr><td class="l salt-table__label">${k.charAt(0).toUpperCase()+k.slice(1)}</td>
-      <td>${m.rm!=null?fmt(m.rm):'<span style="color:var(--crim)">not measured</span>'}</td>
-      <td class="l salt-table__label" style="color:var(--mut)">${esc(m.what||'')}</td></tr>`;}).join('');
+  /* 10 Nov 2026, his word: the per-order and monthly cost tables read "not measured" on five lines of six and are gone; what the
+     business costs to run a month is his own figure now, typed on Month ahead above */
 
   /* what one more ringgit of per-order cost does to each end of the ladder: the
      sensitivity is the argument, because it is the same ringgit either way */
@@ -17380,20 +17449,10 @@ function costPanel(){
      and the reader scrolled a cost stack to reach it. Shut, it still states the two figures it
      exists for, which is the rule: a summary that says only its own title is a title with a
      chevron on it. The h2 it used to sit under IS the summary now, so the fold costs no heading. */
-  return `<details class="obsec" style="margin-top:20px"><summary>The cost of doing business <span class="q">per unit, then per order</span><span class="ct">${fmt(c.eff)} + ${s0.perOrder>0?fmt(s0.perOrder):NIL}</span></summary>
-  <div class="kpis k3">
+  return `<details class="obsec" style="margin-top:20px"><summary>The cost of doing business <span class="q">per unit, then per order</span><span class="ct">${fmt(c.eff)} a unit</span></summary>
+  <div class="kpis k2">
     <div class="kpi salt-kpi"><div class="l salt-kpi__label">Goods, per unit</div><div class="v salt-kpi__value">${fmt(c.eff)}</div><div class="n salt-kpi__note">${fmt(c.repl)} plus ${(c.shrink*100).toFixed(2)}% of the leak${c.absorbed>0.009?'; you absorb '+fmt(c.absorbed)+' more':''}</div></div>
-    <div class="kpi salt-kpi ${s0.knownParts<s0.totalParts?'r':'g'}"><div class="l salt-kpi__label">Per order</div><div class="v salt-kpi__value">${s0.perOrder>0?fmt(s0.perOrder):NIL}</div><div class="n salt-kpi__note">${s0.knownParts} of ${s0.totalParts} lines measured</div></div>
     <div class="kpi salt-kpi"><div class="l salt-kpi__label">Provisioned against</div><div class="v salt-kpi__value">${R.badDebtPct==null?NIL:R.badDebtPct+'%'}</div><div class="n salt-kpi__note">${fmt0(R.badDebtRM)} discounted on ${fmt0(R.revenueRM)} written</div></div>
-  </div>
-
-  <div class="two" style="margin-top:13px">
-    <div class="card"><div class="cardh">Per order, whatever the size</div>
-      <table class="salt-table"><thead><tr><th class="l salt-table__label">Line</th><th>RM</th><th class="l salt-table__label">What it is</th></tr></thead><tbody>${stack}</tbody></table>
-      </div>
-    <div class="card"><div class="cardh">Every month, whether anything sells</div>
-      <table class="salt-table"><thead><tr><th class="l salt-table__label">Line</th><th>RM</th><th class="l salt-table__label">What it is</th></tr></thead><tbody>${monthly}</tbody></table>
-      <div class="dsc" style="margin-top:8px">Spread over ${pricedSales.length} orders across ${months} month${months===1?'':'s'}, every <b>RM100 a month</b> of standing cost is about <b>${fmt(100/Math.max(1,pricedSales.length/months))}</b> an order at the current rate of trade.</div></div>
   </div>
 
   <h3 style="margin-top:18px;font-size:14px">What an order is worth, once the trip is in it <span class="sub" style="font-weight:400">${esc(tier.name)} card</span></h3>
@@ -18159,7 +18218,9 @@ function observations(){
   /* ---------- PRICING ---------- */
   try{
     const H=boardHeadroom(false);
-    if(H&&H.live>0){
+    /* 10 Nov 2026: with a live price already under today's Floor the walk answers -1, and the card read "the buying rate can rise
+       RM -1". That case is the integrity note on sales under the floor, which names them; no headroom is left to state here. */
+    if(H&&H.live>0&&!(H.headroom<0)){
       const pct=H.pct==null?null:H.pct;
       const urgent=!H.unbounded&&pct!=null&&pct<10;
       add({id:'px:headroom:'+PROD,fam:'pricing',sev:urgent?'act':(pct!=null&&pct<20?'watch':'note'),conf:'measured',rm:null,tab:'pricing',
@@ -18296,10 +18357,20 @@ function tabPlans(){
   const acts=live.filter(o=>o.sev==='act').length;
   const watch=live.filter(o=>o.sev==='watch').length;
   const stake=live.reduce((a,o)=>a+(o.rm>0.009?o.rm:0),0);
+  /* 10 Nov 2026: SIXTEEN NOTES SAYING ONE THING ARE ONE NOTE. A repeat order told apart by its dates is a note a pair, and the
+     pairs buried the rest of Integrity. Three or more are drawn as one card listing them, its button opening every row; each
+     pair is still its own observation (its id, its hush on Salt Admin), so nothing the snapshot carries moves. */
+  const dupOf=L=>{const D=L.filter(o=>o.sev==='note'&&/^dup:/.test(o.id));return D.length>=3?D:[];};
+  const dupCard=D=>obsCard({id:D[0].id,sev:'note',conf:'measured',tab:'ledger',rm:D.reduce((a,o)=>a+(+o.rm||0),0),
+    rows:[...new Set(D.flatMap(o=>o.rows||[]))],title:`${D.length} repeat orders inside a few days, each told apart by its dates`,
+    why:'The same party, size and total twice within days, with something on the rows telling them apart, so each reads as a real second order. Listed once so they do not bury the rest.',
+    ev:D.map(o=>o.title+(o.rm>0.009?', '+fmt0(o.rm):''))});
   const fam=k=>{const L=live.filter(o=>o.fam===k);if(!L.length)return '';
+    const D=dupOf(L), rest=D.length?L.filter(o=>D.indexOf(o)<0):L, n=rest.length+(D.length?1:0);
     return `<details class="obsec"${L.some(o=>o.sev==='act')?' open':''}>
-      <summary>${OBS_FAM[k].lbl} <span class="q">${OBS_FAM[k].q}</span><span class="ct${L.length?'':' zero'}">${L.length}</span></summary>
-      <div style="padding-bottom:12px">${L.map(obsCard).join('')}</div></details>`;};
+      <summary>${OBS_FAM[k].lbl} <span class="q">${OBS_FAM[k].q}</span><span class="ct${n?'':' zero'}">${n}</span></summary>
+      <div style="padding-bottom:12px">${rest.map(obsCard).join('')}${D.length?dupCard(D):''}</div></details>`;};
+  const liveN=live.length-(dupOf(live).length?dupOf(live).length-1:0);
 
   /* v385: SPLIT, NOT SHORTENED, AND THE BRANCH NOBODY RENDERS TODAY WAS ALREADY OVER THE LINE.
      stripMethod cuts an .insight past NOTE_MIN to its FIRST sentence, and here the caveat is the
@@ -18318,7 +18389,7 @@ function tabPlans(){
 
   /* 18 OCT 2026, HIS WORD: the Whiteboard is no page of its own. It stands under To do as Noticed, open while an item costs
      something to ignore, so what to do and what the desk noticed are one page. */
-  return `<details class="obsec noticed"${acts?' open':''}><summary>Noticed <span class="q">what the desk saw in the book on this load</span><span class="ct${live.length?'':' zero'}">${live.length}</span></summary><div style="padding-bottom:12px">
+  return `<details class="obsec noticed"${acts?' open':''}><summary>Noticed <span class="q">what the desk saw in the book on this load</span><span class="ct${liveN?'':' zero'}">${liveN}</span></summary><div style="padding-bottom:12px">
   <div class="kpis k4">
     <div class="kpi salt-kpi ${acts?'r':'g'}"><div class="l salt-kpi__label">Act</div><div class="v salt-kpi__value">${acts}</div><div class="n salt-kpi__note">${acts?'costs something to ignore':'nothing pressing'}</div></div>
     <div class="kpi salt-kpi ${watch?'gold':'g'}"><div class="l salt-kpi__label">Watch</div><div class="v salt-kpi__value">${watch}</div><div class="n salt-kpi__note">${watch?'moving the wrong way':'nothing slipping'}</div></div>
@@ -19061,13 +19132,13 @@ function ifrsPL(p){
      amount rather than quietly treated as passing. */
   /* ============ NRV IS THE LOWEST PRICE ANY CUSTOMER IS QUOTED (IAS 2.6, v656; the levels went on 18 Oct 2026) ============
      IAS 2.6 asks for the estimated selling price IN THE ORDINARY COURSE OF BUSINESS, and the prudent end of that range is the lowest
-     price a customer is quoted: on a book with a Set Price, the Set Price itself (a % of nought, a partner aside), and on a stated board
+     price a customer is quoted: on a book with a Median Price, the Median Price itself (a % of nought, a partner aside), and on a stated board
      its one price. It keeps the lower-of-cost-and-NRV test worth running; the Ceiling is never the basis. */
   const hasBoard=(P===DEFAULT_PROD);
   const nrvRate=hasBoard?(function(){try{
     const q=Math.max(0.5,del.mean||1), toSell=(delShare(P).v*COST_BASIS.txnPerDelivery.rm)/Math.max(0.01,q);
     const row=(typeof TIER_RULE!=='undefined'&&TIER_RULE[P])?PRICING_ENGINE.fiveTierAt(q,pxCost(),pxPolicy()):null;
-    /* on a book with a Set Price the prudent end of the ordinary course is the lowest price quoted: the Set Price, a % lift of nought */
+    /* on a book with a Median Price the prudent end of the ordinary course is the lowest price quoted: the Median Price, a % lift of nought */
     if(row&&row.drift){const lo=PRICING_ENGINE.driftAt(q,pxCost(),pxPolicy(),0);return lo?+(lo.p/q-toSell).toFixed(4):null;}
     if(row&&row.prices&&row.prices.length>1)return +(row.prices[1]/q-toSell).toFixed(4);
     const x=pxQuote(q,pxSignals().net,0);
@@ -19096,7 +19167,7 @@ function pxCost(){ return renderMemo('pxCost|'+PROD+'|'+pxOver.cost+'|'+pxOver.s
 /* the board for the book in view, on its own rungs; null for a book with no rule */
 function fiveTiersNow(){return SNAPSHOT_ENGINE.fiveTiers(snapCtx(),PROD,pxCost);}
 /* ============ EACH CUSTOMER'S HELD FIGURE, BEFORE ANY QUOTE READS IT ============
-   TIER_OF on the book is code to product to figure (18 Oct 2026: a % on the Set Price; 21 Oct 2026: -0.3 to +0.3): set on Salt Admin or at
+   TIER_OF on the book is code to product to figure (18 Oct 2026: a % on the Median Price; 21 Oct 2026: -0.3 to +0.3): set on Salt Admin or at
    Add ID, queued, drafted as `tierset`, approved and folded, so it moves only on his word. The five price levels this once held
    are gone. Every quote the desk makes to a named customer reads it through cardQuote. */
 /* 23 SEP 2026, HIS WORDS: "each customer will be quoted differently for salt, but everyone will have the same quote for oil,
@@ -19115,11 +19186,11 @@ function buyerProfile(code,prod){return SNAPSHOT_ENGINE.buyerProfile(snapCtx(),p
 /* V5c: THE LATE PAYER, across every book and their bucket, read by the engine's walk (payDelays, lateOffer) */
 function lateOf(code){return SNAPSHOT_ENGINE.lateOf(snapCtx(),code);}
 /* ============ 18 OCT 2026, HIS DECISION: EACH CUSTOMER'S % LIFT ON A DRIFT BOOK ============
-   A book whose TIER_RULE carries `drift` (salt) quotes a named customer the Set Price moved by their %, d from -0.3 to +0.3 (his decision
+   A book whose TIER_RULE carries `drift` (salt) quotes a named customer the Median Price moved by their %, d from -0.3 to +0.3 (his decision
    of 21 Oct 2026, which was 0 to 2), a negative % a discount on it, never under the Floor. THE FIGURE IS HIS: a number held in TIER_OF[code][book], set on Salt Admin or
    at Add ID, queued and folded as `tierset`, a null clearing it, and nought where none is held. Nothing automatic prices: the engine's
    autoDrift over the record (buyerProfile, payDelays, lateOf, txWrittenOff) only fills the card's good and bad, and suggestOf is its
-   suggestion, from what they paid over the Set Price on their last salt sales and how they pay (suggestPct). */
+   suggestion, from what they paid over the Median Price on their last salt sales and how they pay (suggestPct). */
 function driftBook(p){return SNAPSHOT_ENGINE.driftBook(snapCtx(),p||PROD);}
 function pctBook(p){return SNAPSHOT_ENGINE.pctBook(snapCtx(),p||PROD);}   /* 22 Oct 2026: a book that takes Their %, every book with a rule */
 function driftSignals(code,prod){return SNAPSHOT_ENGINE.driftSignals(snapCtx(),prod||PROD,code);}
@@ -19138,7 +19209,7 @@ function tierQueued(){const o={},add=(c,t)=>{o[c]=Object.assign(o[c]||{},t);};
 /* ============ 05 OCT 2026: THE DRIFT CARD ============
    One row a customer on each drift book: the drift read off their record (good and bad beside it), the one he has set if he
    has, what it quotes at 1, 3 and 12.5 unit, and a box to set or clear his. Set and Clear queue a `tierset` carrying the
-   number, folded into TIER_OF as a tier was. Up at half a unit and one unit there is almost no room above the Set Price, so
+   number, folded into TIER_OF as a tier was. Up at half a unit and one unit there is almost no room above the Median Price, so
    a row drifting up says the signal there is terms or prepayment. */
 /* a % as the card says it: +10%, or 0% */
 function driftSay(d){const n=Math.round((+d||0)*100);return n>0?'+'+n+'%':n<0?n+'%':'0%';}
@@ -19171,12 +19242,12 @@ function driftCard(){
       const at=atSizes(p).map(q=>{const x=cardQuote(id,q);return x!=null?units(q)+' '+fmt0(x):null;}).filter(Boolean).join(' &middot; ');
       const sg=suggestOf(id,p)||{pct:0,paidOver:0,risk:0};
       const state=(w?'waiting '+(wv==null?'to clear':driftSay(wv))+' &middot; ':'')+(dr.hand!=null?'set by you &middot; ':'')+suggestSay(sg);
-      rows.push(`<tr><td class="l salt-table__label mono">${ID(id)}</td><td class="l salt-table__label"><div style="line-height:1.3">${PRODUCTS[p].name} <b>${Math.abs(dr.d)>0.0001?driftSay(dr.d):'Set Price'}</b><br><span class="iref">${state}</span><br><span class="iref">${at}</span></div>${partnerNote(id)}</td></tr>`);
+      rows.push(`<tr><td class="l salt-table__label mono">${ID(id)}</td><td class="l salt-table__label"><div style="line-height:1.3">${PRODUCTS[p].name} <b>${Math.abs(dr.d)>0.0001?driftSay(dr.d):'Median Price'}</b><br><span class="iref">${state}</span><br><span class="iref">${at}</span></div>${partnerNote(id)}</td></tr>`);
     });});}
   finally{PROD=keep;recompute();}
-  return `<div class="card"><div class="cardh">Each customer's % on the Set Price or the board <span class="sub">yours to set; the suggestion is the engine's</span></div>
+  return `<div class="card"><div class="cardh">Each customer's % on the Median Price or the board <span class="sub">yours to set; the suggestion is the engine's</span></div>
     <div class="tscroll"><table class="salt-table tiertab"><thead><tr><th class="l salt-table__label">Customer</th><th class="l salt-table__label">Their %, and what it quotes</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>
-    <div class="insight salt-insight">${hand} of ${rows.length} are set by you, ${up} sit above the Set Price and ${down} below it; a % runs from -30 to +30, never under the Floor or over the Ceiling.</div></div>`;
+    <div class="insight salt-insight">${hand} of ${rows.length} are set by you, ${up} sit above the Median Price and ${down} below it; salt runs from -100% at the Floor to +100% at the Ceiling, a board from -30% to +30%.</div></div>`;
 }
 /* ---- layer 3: five readings, each worth a few points, summed then clamped ---- */
 /* Analysis asks a book's signals 18 times a render; keyed like pxCost, whose cost boardHeadroom moves mid-render */
@@ -19302,7 +19373,7 @@ function earnedPerUnit(){
   const rows=pricedSales.filter(s=>s.qty>0&&s.total>0&&!s.cancelled).map(s=>{
     const perUnit=txGoods(s)/s.qty, lot=costOf(s);
     return {id:s.customer,date:s.date,q:s.qty,rm:s.total,perUnit:+perUnit.toFixed(2),
-      band:bandOf(s.qty),oneOff:isOneOff(s.customer),
+      band:bandOf(s.qty),oneOff:isOneOff(s.customer)||!!s.oneOff,
       lotCost:+lot.toFixed(2),pkLot:+(perUnit-lot).toFixed(2),profLot:+((perUnit-lot)*s.qty).toFixed(2),
       pkEff:+(perUnit-eff).toFixed(2),profEff:+((perUnit-eff)*s.qty).toFixed(2)};});
   const agg=b=>{const a=rows.filter(r=>r.band===b);
@@ -19411,6 +19482,10 @@ function forecastNow(o){
   /* PLANNED drawings, off unless asked for. A leaveRM plan takes whatever sits above a
      floor on the day, so its size is not known until the walk reaches it; it is resolved
      during the walk rather than scheduled here. */
+  /* 10 Nov 2026: the what-if lots of Next 30 days, each landing and paid for on its own day; never the book's */
+  (o.whatIf||[]).forEach(b=>{const rm=+(b.qty*b.rate).toFixed(2);
+    lots.push({day:b.day,kg:b.qty,who:'',label:'what-if lot',rm,whatIf:true});
+    cout.push({day:b.day,rm,who:'',label:'what-if lot',whatIf:true,prod:PROD});});
   const plansOn=!!o.plans, planRows=[];
   if(plansOn&&typeof PLANS_CASH!=='undefined')PLANS_CASH.forEach(p=>{
     const day=p.after==='buy'?(buy?Math.max(0,buy.payDay!=null?+buy.payDay:(+buy.onDay||0)):0):(+p.day||0);
@@ -19610,7 +19685,15 @@ function actions(){
   /* 5. rules already broken, grouped by person. Four separate rows about one man is a
      list you stop reading; one row naming all four rules is a decision about him. */
   const br={};boundaryScan().filter(x=>x.sev==='breach').forEach(x=>{(br[x.who]=br[x.who]||[]).push(x);});
-  Object.keys(br).forEach(who=>{const xs=br[who];
+  Object.keys(br).forEach(who=>{let xs=br[who];
+    /* 10 Nov 2026: A DEBT IS ONE CARD. A debt past its term stood twice under Now, as Chase and again as a Rule card saying the
+       same ringgit, so three debts read as seven items. A credit rule the chase past its term already answers rides on that card as its
+       chips; a breach no such chase covers (a cap passed inside the term, a ban, a margin) keeps a card of its own. */
+    const card=out.find(o=>o.kind==='collect'&&o.party===who), credit=xs.filter(x=>/^Credit /.test(x.rule));
+    if(card&&card.sev==='now'&&credit.length){
+      card.why+=`<div class="rchips">${[...new Set(credit.map(x=>x.rule))].map(r=>`<span class="rchip">${esc(r)}</span>`).join('')}</div>`;
+      xs=xs.filter(x=>!/^Credit /.test(x.rule));
+      if(!xs.length)return;}
     /* v163: the REASONING behind each rule is set out in full in Boundaries on the Overview
        tab, and reprinting it here put four paragraphs about one man on the one tab meant to
        be read at a glance. It was the largest single source of repetition on the desk: every
@@ -20543,7 +20626,7 @@ function tabConcentration(){
      the 7px is the .sub rule at :438, a full-width BUTTON style that lands on this span by
      cascade (width:100% plus the 7px margin-left .cardh .sub adds). That is desk-wide, on
      every card header with a sub, so it is not fixed from this view. */
-  const crCard=`<div class="card"><div class="cardh">&#127873; Customer rewards <span class="sub">${rewardRuleTxt(PROD)}${PROD==='salt'&&loyalRuleTxt()?'':', whole ledger'}</span>${crReady.length?`<span class="sub" style="color:var(--gold)">${crReady.map(r=>ID(r.id)).join(', ')} holding</span>`:''}</div>
+  const crCard=`<div class="card"><div class="cardh">Customer rewards <span class="sub">${rewardRuleTxt(PROD)}${PROD==='salt'&&loyalRuleTxt()?'':', whole ledger'}</span>${crReady.length?`<span class="sub" style="color:var(--gold)">${crReady.map(r=>ID(r.id)).join(', ')} holding</span>`:''}</div>
     <table class="salt-table"><thead><tr><th class="l salt-table__label">Customer</th><th>Margin</th><th>Earned</th><th>Taken</th><th>Left</th><th>To next</th><th>Loyalty</th></tr></thead><tbody>${crBody}</tbody></table>
     ${rewardWalkOf(null)?'<p class="dsc" style="margin-top:9px">From the switch a customer redeems nothing: what they hold stands, and only an associate\u2019s reward is redeemed.'+(PROD==='salt'&&loyalRuleTxt()?' Their reward is the loyalty unit: '+loyalRuleTxt()+'. The fold gives it with the order that reaches it; they see a share only.':'')+'</p>':cr.some(r=>r.free>=1-1e-9)?'<p class="dsc" style="margin-top:9px">Redeem or offset on Salt Admin.</p>':''}</div>`;
   /* ============ v385: DO, THEN WATCH, THEN STUDY ============
@@ -20852,7 +20935,8 @@ function resellerCard(r){
      exactly true WITH THE CARD SHUT, which is only worth doing if the card is ever shut. The
      count is already on the summary, so a reader sees how many rows are behind it without
      opening anything. */
-  const ledgerSec=(title,q,n,inner)=>`<details class="obsec"><summary>${title} <span class="q">${q}</span><span class="ct${n>0?'':' zero'}">${n>0?n:'none'}</span></summary><div class="card">${n>0?inner:'<div class="dsc">None.</div>'}</div></details>`;
+  /* 10 Nov 2026: a stream with nothing in it is not drawn; seven folds on the page opened on the one word None */
+  const ledgerSec=(title,q,n,inner)=>n>0?`<details class="obsec"><summary>${title} <span class="q">${q}</span><span class="ct">${n}</span></summary><div class="card">${inner}</div></details>`:'';
   const body=`${rebateLine}
     ${ledgerSec('Buy (R1)','their own purchases',buys.length,`<table class="salt-table"><thead><tr><th class="l salt-table__label">Date</th><th>Qty</th><th>Total</th><th>State</th></tr></thead><tbody>${buyRows}<tr class="tot"><td class="l salt-table__label">Total</td><td></td><td>${fmt0(r.direct)}</td><td></td></tr></tbody></table>`)}
     ${ledgerSec('Resell (R2)','sold on your behalf',resells.length,`<table class="salt-table"><thead><tr><th class="l salt-table__label">Date</th><th>End customer</th><th>Qty</th><th>You received</th><th>State</th></tr></thead><tbody>${resellRows}<tr class="tot"><td class="l salt-table__label" colspan="3">Total</td><td>${fmt0(r.indirect)}</td><td></td></tr></tbody></table>`)}
@@ -20904,9 +20988,9 @@ function tabNetwork(){
        IT IS AN .insight RATHER THAN A .dsc DELIBERATELY. Without the figures it no longer
        matches FIGURE, so as a .dsc the strip would cull it; an insight is trimmed at
        NOTE_MIN but never removed, and this one is comfortably under. */
-    return `<div class="pend"><h3>&#9733; ${ID(x.id)} has departed <span class="cd gold">${esc(dd.memorial)}</span></h3>
+    return `<div class="pend"><h3>${ID(x.id)} has departed <span class="cd gold">${esc(dd.memorial)}</span></h3>
       <div class="insight salt-insight">Left ${dd.since}, ${esc(dd.reason)}; his referrals stay attributed to him.</div></div>`;}).join(''):''}
-  ${vac.length?`<div class="pend def"><h3>&#9888; Vacant: ${esc(vac[0].title)} <span class="cd">${esc(vac[0].short||'')}</span></h3>
+  ${vac.length?`<div class="pend def"><h3>Vacant: ${esc(vac[0].title)} <span class="cd">${esc(vac[0].short||'')}</span></h3>
     <div class="insight salt-insight">Open since ${vac[0].since}${dep.length?`; the seat brought <b>${fmt0(dep[0].r3)}</b> against <b>${fmt0(dep[0].direct)}</b> of buying, and nobody is doing it today.`:''}</div></div>`:''}`;
   // overall summary: total R1/R2/R3 across the network
   const tR1=ns.reduce((a,x)=>a+x.direct,0),tR2=ns.reduce((a,x)=>a+x.indirect,0),tIntro=ns.reduce((a,x)=>a+x.marginIntro,0);
@@ -21440,8 +21524,8 @@ function pxMarket(){
   const all=seg(()=>true),small=seg(s=>s.qty<PX.bulkFrom),bulk=seg(s=>s.qty>=PX.bulkFrom);
   /* wholesale stripped of anything marked a one-off, because a single outlier at
      RM104/unit is what makes the wholesale average look survivable */
-  const bulkEx=seg(s=>s.qty>=PX.bulkFrom&&!isOneOff(s.customer));
-  const excluded=rows.filter(s=>s.qty>=PX.bulkFrom&&isOneOff(s.customer));
+  const bulkEx=seg(s=>s.qty>=PX.bulkFrom&&!isOneOff(s.customer)&&!s.oneOff);
+  const excluded=rows.filter(s=>s.qty>=PX.bulkFrom&&(isOneOff(s.customer)||!!s.oneOff));
   /* the buying rate at which the realised bulk price would clear the floor
      unchanged. v385: null when wholesale has never traded, because there is no realised price to hold.
      27 Sep 2026: SOLVED ON THE ENGINE'S OWN STACK, not backed out by hand. The floor is straight-line in the
@@ -21579,12 +21663,12 @@ function pbOwnRate(code,prod){const rows=pbOrders(code,prod).map(s=>(s.total)/s.
 /* v651 and v652, HIS DECISIONS OF 15 AND 16 SEP 2026: A NAMED CUSTOMER'S PRICE AT ANY SIZE, the one rule every quote to them
    reads: the printed board, the approach offer, Today's worth and the reward cover's gap. The price of their tier for the
    product in view, off the ladder walked through that size, never under the floor, through the engine's one cardPrice, as
-   tools/pricelist.mjs quotes the customer's own page. A book with neither a Set Price nor a stated board has nothing to
+   tools/pricelist.mjs quotes the customer's own page. A book with neither a Median Price nor a stated board has nothing to
    quote: null, as their page reads the price as coming soon. 27 SEP 2026, HIS DECISION: what they paid before no longer
    lowers it (the cap is retired, engine's cardPrice), so their own rate is not read here. A typed board is quoted to everybody. */
 function isPartner(code){return SNAPSHOT_ENGINE.isPartner(snapCtx(),code);}
 function cardQuote(code,q){return SNAPSHOT_ENGINE.cardQuote(snapCtx(),PROD,code,q);}
-/* each size is the customer's card price for it, the Set Price lifted by their % or the typed board */
+/* each size is the customer's card price for it, the Median Price lifted by their % or the typed board */
 function pbPrices(code){
   return shownSizes(PROD).slice().sort((a,b)=>a-b).map(q=>({q,price:cardQuote(code,q)})).filter(x=>x.price!=null);}
 /* v564: AND THE SITE'S ADDRESS, for the QR. It comes down the same keyed road as the usernames
@@ -21601,7 +21685,7 @@ function pbCard(){
   const sizes=shownSizes(PROD).slice().sort((a,b)=>a-b);
   return `<div class="card" id="pbCard" style="margin-top:12px">
     <div class="cardh">Print a board <span class="sub">the mark, the figures, the username and a QR to his page</span></div>
-    <div class="dsc">Choose the customer, tick the sizes, then Print, or save it as JPG, PDF or HTML; on the phone the share sheet offers Save Image and Save to Files. The sheet is the crystal, one line per size, his username and a QR that opens his own statements page. The prices are their own: on salt the Set Price lifted by their %, set on Clients; on the other books the board; never under the Floor. The same list their statement page shows. Copy as text puts the same lines and the link on the clipboard.</div>
+    <div class="dsc">Choose the customer, tick the sizes, then Print, or save it as JPG, PDF or HTML; on the phone the share sheet offers Save Image and Save to Files. The sheet is the crystal, one line per size, his username and a QR that opens his own statements page. The prices are their own: on salt the Median Price lifted by their %, set on Clients; on the other books the board; never under the Floor. The same list their statement page shows. Copy as text puts the same lines and the link on the clipboard.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
       <select id="pbWho" aria-label="Customer" style="min-height:44px;padding:8px 10px;font-size:16px">${who.map(id=>`<option value="${esc(id)}">${esc(codeOf(id))}</option>`).join('')}</select>
       <button class="vbtn salt-pill salt-pill--sm" id="pbPrint" type="button">Print</button>
@@ -21913,7 +21997,7 @@ function tabPricing(){
         :`buying can reach ${fmt(hr.safeTo)}/unit before a live price fails, ${hr.pct}% above today; <b>${hr.firstTier}</b> falls first at ${fmt(hr.firstAt)}`}</div></div>
   </div>
 
-  <h2 style="margin-top:18px">The board <span class="sub" style="font-weight:400">${driftBook(PROD)?'the Floor, the Set Price a stranger is quoted, and the Ceiling; a customer&rsquo;s % lifts the Set Price towards the Ceiling'
+  <h2 style="margin-top:18px">The board <span class="sub" style="font-weight:400">${driftBook(PROD)?'the Floor, the Median Price a stranger is quoted, and the Ceiling; a customer&rsquo;s % lifts the Median Price towards the Ceiling'
     :TIER_RULE[PROD]?'the Floor, the one price for everybody, and the Ceiling':'one ladder, tapered at the rate the supplier tapers'}</span> <span class="rule"></span></h2>
   ${(()=>{const tb=tierBoard();
     /* ============ THE ASK SAYS WHICH FLOOR IT CLEARS (v381) ============
@@ -21938,8 +22022,8 @@ function tabPricing(){
        the floor are one number, equal to the ringgit at every size on both books, so the column can
        carry all three names honestly and the multiple beside it is ask over that: over 1.00x earns,
        1.00x earns nothing, under 1.00x is a price he has stated below break-even. */
-    /* THE BOARD READS THREE FIGURES (18 Oct 2026, his decision: the five levels and the stated Tier 1 are gone): the Floor, the Set Price
-       and the Ceiling, each size a row, the Set Price's cell carrying its rate, its margin and its multiple of break-even. Five columns
+    /* THE BOARD READS THREE FIGURES (18 Oct 2026, his decision: the five levels and the stated Tier 1 are gone): the Floor, the Median Price
+       and the Ceiling, each size a row, the Median Price's cell carrying its rate, its margin and its multiple of break-even. Five columns
        is what 325px of a 375px screen has room for (v330), and the table scrolls sideways in a .tscroll beyond that. */
     const five=fiveTiersNow(), fiveBy={};
     if(five)five.forEach(g=>{fiveBy[g.q]=g;});
@@ -21955,10 +22039,10 @@ function tabPricing(){
       :`<th>${label}</th>`;
     const head=`<tr><th class="l salt-table__label">Size</th><th>COGS</th>`
       +hth('Floor','break-even, the least he may go to')
-      +hth('Set Price','what a stranger is quoted, the least any customer but a partner pays')
+      +hth('Median Price','what a stranger is quoted, the least any customer but a partner pays')
       +hth('Ceiling','the most anyone is quoted',true)
       +`</tr>`;
-    /* the Set Price's cell: the total, the rate, the margin on price and the multiple of break-even; each turns crimson on its own
+    /* the Median Price's cell: the total, the rate, the margin on price and the multiple of break-even; each turns crimson on its own
        test, and a price under break-even is crimson on the total itself. */
     const tCell=cl=>{
       if(!cl)return '';
@@ -21991,7 +22075,7 @@ function tabPricing(){
        the only figure that distinguishes a decision from a fault. */
     const flagged=[];
     tb.forEach(r=>{const L=priceLadder(r.q);
-      if(L.ask.under>0.009)flagged.push({who:'the Set Price',q:r.q,rm:L.ask.under});});
+      if(L.ask.under>0.009)flagged.push({who:'the Median Price',q:r.q,rm:L.ask.under});});
     return `<div class="card"><div class="tscroll"><table class="salt-table pxboard fivetier"><thead>${head}</thead><tbody>${rows}</tbody></table></div>
     <!-- v393: the break-even definition that stood here went with the rest of the standing
          prose. The setup table below states it as a figure, which is the register this asks for. -->
@@ -22011,8 +22095,8 @@ function tabPricing(){
          neither can grow into the limit. The definition of the two floors is in the fold below. -->
     <!-- v749: the sentence the five-tier card carried, moved with the levels. ONE SENTENCE, because stripMethod
          keeps an .insight only as far as its first full stop. -->
-    ${driftBook(PROD)?`<div class="insight salt-insight">The Set Price is a stranger's quote; a customer's % moves it between the Floor and the Ceiling.</div>`:''}
-    ${!driftBook(PROD)&&TIER_RULE[PROD]?`<div class="insight salt-insight">The Set Price is one price for everybody, held between the Floor and ${(TIER_RULE[PROD].ceilingX||3)} times it.</div>`:''}
+    ${driftBook(PROD)?`<div class="insight salt-insight">The Median Price is a stranger's quote; a customer's % moves it between the Floor and the Ceiling.</div>`:''}
+    ${!driftBook(PROD)&&TIER_RULE[PROD]?`<div class="insight salt-insight">The Median Price is one price for everybody, held between the Floor and ${(TIER_RULE[PROD].ceilingX||3)} times it.</div>`:''}
     ${flagged.length?`<div class="insight salt-insight" style="border-left-color:var(--crim)"><b>${flagged.length} price${flagged.length===1?'':'s'} on this board sit${flagged.length===1?'s':''} under break-even</b>: ${flagged.map(f=>f.who+' at '+units(f.q)+', short '+fmt(f.rm)).join('; ')}.</div>`:''}
     ${!flagged.length?`<div class="insight salt-insight" style="border-left-color:var(--grn)">Every price on the board clears break-even.</div>`:''}
     <!-- v393: THE MARGIN SETUP IS THE BOARD'S DERIVATION, SO IT SITS IN THE BOARD'S CARD.
@@ -22048,12 +22132,12 @@ function tabPricing(){
          stated prices and an interpolation between them, which the row in the table above states in
          full. Heading a derivation "ask" while the board prints two of them is how a reader comes to
          believe the wrong one was derived. -->
-    <div class="cardh" style="margin-top:14px">From cost to the Set Price <span class="sub">${sC.rule==='latestCogs'?'COGS is the floor':'COGS, then the leak, is the floor'}; ${driftBook(PROD)||TIER_RULE[PROD]?'the Set Price is the board&rsquo;s price':'the floor at the size&rsquo;s margin is the price'}</span></div>
-    <div class="tblw"><table class="salt-table fintab istmt"><thead><tr><th class="l salt-table__label">Size</th><th>COGS</th><th>Leak</th><th>Floor</th><th>Margin</th><th>Floor &divide; (1 &minus; margin)</th><th>Set Price</th></tr></thead><tbody>
+    <div class="cardh" style="margin-top:14px">From cost to the Median Price <span class="sub">${sC.rule==='latestCogs'?'COGS is the floor':'COGS, then the leak, is the floor'}; ${driftBook(PROD)||TIER_RULE[PROD]?'the Median Price is the board&rsquo;s price':'the floor at the size&rsquo;s margin is the price'}</span></div>
+    <div class="tblw"><table class="salt-table fintab istmt"><thead><tr><th class="l salt-table__label">Size</th><th>COGS</th><th>Leak</th><th>Floor</th><th>Margin</th><th>Floor &divide; (1 &minus; margin)</th><th>Median Price</th></tr></thead><tbody>
       ${sSZ.map(q=>{const L=priceLadder(q);const cogs=L.cogs,fl=L.floor.total,g=L.marginX;const raw=g!=null?fl/(1-g):null;
         return `<tr><td class="l salt-table__label">${units(q)}</td><td class="mono">${fmt(cogs)}</td><td class="mono">+${fmt(fl-cogs)}</td><td class="mono"><b>${fmt(fl)}</b></td><td class="mono">${g!=null?(g*100).toFixed(1)+'%':NIL}</td><td class="mono">${raw!=null?fmt(raw):NIL}</td><td class="mono"><b>${fmt0(L.ask.total)}</b>${L.ask.lawStepped?' <span class="iref">stepped</span>':''}</td></tr>`;}).join('')}
     </tbody></table></div>
-    <div class="dsc" style="margin-top:8px">${sC.rule==='latestCogs'?`COGS is ${fmt(sC.landed)} a unit off the latest purchase, quote plus freight; the Floor is ${sC.floorEx!=null?`${fmt(sC.floorEx)} a unit, COGS plus ${(sC.nrs*100).toFixed(1)}% for the units that left unpaid,`:'that'} times the size, up to the next RM 5; it earns nothing${sC.floorEx!=null?', and the Set Price and the Ceiling are struck on COGS':' and carries no leak'}.`:`COGS is ${fmt(sC.landed)} a unit landed; the leak adds ${((sC.shrink/(1-sC.shrink))*100).toFixed(1)}% of it, so the floor is ${fmt(sC.effEx)} a unit and earns nothing.`} ${driftBook(PROD)?(()=>{const pts=(TIER_RULE[PROD].points||[]).slice().sort((x,y)=>x[0]-y[0]),p0=pts[0],p1=pts[pts.length-1];return `The Set Price is the Floor times a multiple sliding in the log of size from ${p0?p0[1]:NIL} at ${p0?units(p0[0]):NIL} to ${p1?p1[1]:NIL} at ${p1?units(p1[0]):NIL}, down to the RM 5, lifted so its margin never falls under a smaller size's, and held between the Floor and ${TIER_RULE[PROD].ceilingX} times it. A customer's % lifts the multiple at every size. The margin columns are the old derived price, for reference.`;})():TIER_RULE[PROD]?`The Set Price is the one price he typed for the size, held between the Floor and ${TIER_RULE[PROD].ceilingX} times it.`:'The ask is rounded up to the ten, then may step down to keep the rate from rising with size, never below its floor.'}</div>
+    <div class="dsc" style="margin-top:8px">${sC.rule==='latestCogs'?`COGS is ${fmt(sC.landed)} a unit off the latest purchase, quote plus freight; the Floor is ${sC.floorEx!=null?`${fmt(sC.floorEx)} a unit, COGS plus ${(sC.nrs*100).toFixed(1)}% for the units that left unpaid,`:'that'} times the size, up to the next RM 5; it earns nothing${sC.floorEx!=null?(TIER_RULE[PROD]&&TIER_RULE[PROD].band?', the Median Price is struck on COGS and the Ceiling on the price your supplier quotes':', and the Median Price and the Ceiling are struck on COGS'):' and carries no leak'}.`:`COGS is ${fmt(sC.landed)} a unit landed; the leak adds ${((sC.shrink/(1-sC.shrink))*100).toFixed(1)}% of it, so the floor is ${fmt(sC.effEx)} a unit and earns nothing.`} ${driftBook(PROD)?(()=>{const pts=(TIER_RULE[PROD].points||[]).slice().sort((x,y)=>x[0]-y[0]),p0=pts[0],p1=pts[pts.length-1];return `The Median Price is the Floor times a multiple sliding in the log of size from ${p0?p0[1]:NIL} at ${p0?units(p0[0]):NIL} to ${p1?p1[1]:NIL} at ${p1?units(p1[0]):NIL}, down to the RM 5, lifted so its margin never falls under a smaller size's, and held between the Floor and ${TIER_RULE[PROD].ceilingX} times it. A customer's % lifts the multiple at every size. The margin columns are the old derived price, for reference.`;})():TIER_RULE[PROD]?`The Median Price is the one price he typed for the size, held between the Floor and ${TIER_RULE[PROD].ceilingX} times it.`:'The ask is rounded up to the ten, then may step down to keep the rate from rising with size, never below its floor.'}</div>
     ${sFlat>=2?`<div class="insight salt-insight" style="border-left-color:var(--gold)"><b>The taper stops at ${units(LD.at.hi)}, so ${sFlat} of the ${sSZ.length} printed sizes carry the same ${sHi.markupX.toFixed(2)}x.</b></div>`
       :''}`;})()}
     ${pbCard()}
@@ -22373,7 +22457,7 @@ function tabPricing(){
 
   </details>
   <details class="obsec"><summary>What the two charts plot <span class="q">and what is deliberately not on them</span><span class="ct">nothing fitted</span></summary>
-  <div class="dsc">Left: the Set Price per unit at each printed size, against the cost floor it has to clear, which is the same figure as effective cost and as break-even; the Floor itself is that rounded up to the next RM 5. A flat line is a ladder that has stopped rewarding size, and the gap between the Set Price and the cost floor it clears is all the room there is. Right: every priced order ever written, plotted at the rate actually paid on the day it was agreed, grouped into three lot bands taken from this book&rsquo;s own board, with today&rsquo;s Set Price for each band drawn as a dashed line. There is no fitted curve on either chart and no elasticity anywhere on this desk.</div>
+  <div class="dsc">Left: the Median Price per unit at each printed size, against the cost floor it has to clear, which is the same figure as effective cost and as break-even; the Floor itself is that rounded up to the next RM 5. A flat line is a ladder that has stopped rewarding size, and the gap between the Median Price and the cost floor it clears is all the room there is. Right: every priced order ever written, plotted at the rate actually paid on the day it was agreed, grouped into three lot bands taken from this book&rsquo;s own board, with today&rsquo;s Median Price for each band drawn as a dashed line. There is no fitted curve on either chart and no elasticity anywhere on this desk.</div>
   </details>
   <details class="obsec"><summary>Price response <span class="q">what has sold at each price</span></summary>
   <div class="dsc" style="margin-bottom:9px">What you have actually sold at each price. Volume tells you where the business really sits; revenue tells you which price is carrying it. Prices are grouped to the nearest ringgit, and the axis lists only the prices you have traded at, so the gaps are not to scale.</div>
@@ -22584,11 +22668,11 @@ function drawBoardCharts(){
            and labelling it as a different thing, under a caption explaining a RM20 gap that has
            not existed for a week. The same v502 retirement took the "collect only" tag at v564. */
         const c=pxCost(),tb=tierBoard();
-        /* THE THREE FIGURES (18 Oct 2026, his decision: the levels are gone): the Set Price, the Floor and the Ceiling, each a rate a unit. The
+        /* THE THREE FIGURES (18 Oct 2026, his decision: the levels are gone): the Median Price, the Floor and the Ceiling, each a rate a unit. The
            Ceiling is the engine's own figure on the board's row, drawn where the book has one. */
         const fiveC=fiveTiersNow()||[], ceilOf=q=>{const g=fiveC.find(x=>Math.abs(x.q-q)<0.009);return g&&g.ceiling!=null&&q>0?+(g.ceiling/q).toFixed(2):null;};
         const ds=[
-          {label:'Set Price',borderColor:tcol('brass'),backgroundColor:tcol('brass'),tension:.25,pointRadius:3,borderWidth:2,
+          {label:'Median Price',borderColor:tcol('brass'),backgroundColor:tcol('brass'),tension:.25,pointRadius:3,borderWidth:2,
             data:tb.map(r=>{let p=null;try{p=priceLadder(r.q).ask.rate;}catch(e){}return p;})},
           /* v567: ONE LINE, NAMED FOR ALL THREE THINGS IT IS. v566 swept a duplicate floor series
              off this chart and left its TWIN standing one line below: "effective cost" drew
@@ -23312,7 +23396,12 @@ function consoBlock(){
     +`<div class="conso"><div class="kpis k4">`
     +cell('Revenue',fmt0(C.rev),split('rev'))
     +cell('Collected',fmt0(C.cash),split('cash'))
-    +cell('Gross margin',C.margin==null?NIL:fmt0(C.margin),C.margin==null?'a product has an uncosted row':split('margin'))
+    +(()=>{if(C.margin!=null)return cell('Gross margin',fmt0(C.margin),split('margin'));
+        /* 10 Nov 2026: one row with no cost of its own blanked the whole business's margin, while each book's own tile and its
+           P&L stated theirs at the average cost. The tile is the sum of those, and says which books lean on the average. */
+        const G=eachBook(()=>grossMargin), lean=C.rows.filter(r=>r.margin==null).map(r=>codeOfProd(r.id));
+        return cell('Gross margin',fmt0(Object.keys(G).reduce((a,p)=>a+(+G[p]||0),0)),
+          C.rows.map(r=>codeOfProd(r.id)+' '+fmt0(+G[r.id]||0)).join(' &middot; ')+'; '+lean.join(', ')+' at the average cost where a row states none');})()
     +cell('Spent on inventory',fmt0(C.spend),split('spend'))
     +`</div></div>`;
 }
@@ -23396,7 +23485,7 @@ function consoCashBlock(){
   const cf=cashFlow(), R=riskRates();
   return consoHd('Cash and supplier risk')
   +`<div class="kpis k5">
-    <div class="kpi salt-kpi ${cf.net<0?'r':'g'}"><div class="l salt-kpi__label">Trading net</div><div class="v salt-kpi__value">${fmt0(cf.net)}</div><div class="n salt-kpi__note">what trading has generated, both books</div></div>
+    <div class="kpi salt-kpi ${cf.net<0?'r':'g'}"><div class="l salt-kpi__label">Trading net</div><div class="v salt-kpi__value">${fmt0(cf.net)}</div><div class="n salt-kpi__note">what trading has generated, every book</div></div>
     <div class="kpi salt-kpi gold"><div class="l salt-kpi__label">Promised away</div><div class="v salt-kpi__value">${fmt0(cf.dueOut)}</div><div class="n salt-kpi__note">bills and refunds already committed</div></div>
     <div class="kpi salt-kpi p"><div class="l salt-kpi__label">Still to come in</div><div class="v salt-kpi__value">${fmt0(cf.dueIn)}</div><div class="n salt-kpi__note">net of provisioning</div></div>
     <div class="kpi salt-kpi r"><div class="l salt-kpi__label">Supplier bills unpaid</div><div class="v salt-kpi__value">${fmt0(cf.billsOut)}</div><div class="n salt-kpi__note">${cf.billsOut>0.009?(cf.refundsOut>0.009?`and ${fmt0(cf.refundsOut)} of refunds on top`:'no refunds on top'):(cf.refundsOut>0.009?`every lot paid for; ${fmt0(cf.refundsOut)} of refunds still owed`:'every lot paid for')}</div></div>
@@ -23457,7 +23546,121 @@ function setProdView(pr){
   PROD=pr; try{localStorage.setItem('saltProd',pr);}catch(e){}
   recompute(); render();
 }
-const builders={today:()=>tabToday()+tabPlans(),forward:tabForward,sourcing:()=>{const b=perProduct(tabSourcing,{skipEmpty:true});return srcHead()+(b||'<div class="card"><div class="insight salt-insight">No purchases or sales on any book yet, so there is nothing to source against.</div></div>');},analysis:()=>anaHead()+perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>invHead()+perProduct(tabInventory,{head:()=>units(currentStock)+' on hand'}),financials:()=>consoBlock()+consoCashBlock()+perProduct(tabFinancials),ledger:tabLedger,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),pricing:()=>pxHead()+perProduct(tabPricing)};
+/* ============ WHAT-IF PLANNERS (10 Nov 2026, his word: more interactive, to help with business planning) ============
+   Two planners, his choice of the three offered: lots he is thinking of buying, on Next 30 days, and the month ahead under his own
+   demand, buying cost and running costs, on Financials. Both READ the book and the engine and write nothing: the inputs are kept on
+   this device alone (localStorage `salt-plan-v1`, his answer), nothing is queued, priced or booked, and every figure they draw is
+   marked a what-if. A view never changes a pricing rule (rule 1): the buying cost here moves no Floor and no price. */
+const PLAN_KEY='salt-plan-v1';
+function planGet(){
+  let p={};try{p=JSON.parse(localStorage.getItem(PLAN_KEY)||'{}')||{};}catch(e){p={};}
+  const n=(v,lo,hi)=>Math.min(hi,Math.max(lo,isFinite(+v)?+v:0));
+  return {dem:Math.round(n(p.dem,-50,50)/10)*10,cost:Math.round(n(p.cost,-30,30)/5)*5,run:Math.round(n(p.run,0,1e6)),
+    lots:(Array.isArray(p.lots)?p.lots:[]).filter(l=>l&&PROD_IDS.includes(l.prod)&&+l.qty>0&&+l.rate>0&&+l.day>=0&&+l.day<=60)
+      .slice(0,12).map(l=>({prod:l.prod,qty:+(+l.qty).toFixed(2),rate:+(+l.rate).toFixed(2),day:Math.round(+l.day)}))};
+}
+function planSet(patch){
+  const p=Object.assign(planGet(),patch);
+  try{localStorage.setItem(PLAN_KEY,JSON.stringify(p));}catch(e){}
+  render();
+}
+function planStep(k,d){planSet({[k]:planGet()[k]+d});}
+function planReset(){planSet({dem:0,cost:0,run:0});}
+/* the lot each book's own restock plan would buy next (restockFor's lot), or with no quote the need at today's replacement rate */
+function planLotDefaults(){
+  return eachBook(p=>{const r=restockFor(p)||{},c=pxCost();
+    return (r.lot&&r.lot.qty>0&&r.lot.rate>0)?{qty:r.lot.qty,rate:r.lot.rate}:{qty:Math.max(1,Math.ceil(+r.need||1)),rate:+(+c.repl||0).toFixed(2)};});
+}
+function planLotQuick(p){const d=planLotDefaults()[p];if(!d||!(d.rate>0))return;planSet({lots:planGet().lots.concat([{prod:p,qty:d.qty,rate:d.rate,day:0}])});}
+function planLotFill(){
+  const s=document.getElementById('wiProd');if(!s)return;
+  let D={};try{D=JSON.parse(s.dataset.d||'{}');}catch(e){}
+  const d=D[s.value];if(!d)return;
+  document.getElementById('wiQty').value=d.qty;document.getElementById('wiRate').value=d.rate;
+}
+function planLotAdd(){
+  const g=id=>document.getElementById(id), bad=el=>{el.setAttribute('aria-invalid','true');el.focus();};
+  const qty=+g('wiQty').value, rate=+g('wiRate').value, day=+g('wiDay').value;
+  if(!(qty>0))return bad(g('wiQty'));
+  if(!(rate>0))return bad(g('wiRate'));
+  if(!(day>=0&&day<=60))return bad(g('wiDay'));
+  planSet({lots:planGet().lots.concat([{prod:g('wiProd').value,qty,rate,day}])});
+}
+function planLotDrop(i){const L=planGet().lots;L.splice(i,1);planSet({lots:L});}
+function whatIfCard(){
+  const P=planGet(),D=planLotDefaults(),ids=Object.keys(D).filter(p=>D[p].rate>0),tag=p=>prodTag({product:p});
+  if(!ids.length)return '';
+  const iso=n=>new Date(TODAY.getTime()+n*86400000).toISOString().slice(0,10);
+  const tot=P.lots.reduce((a,l)=>a+l.qty*l.rate,0);
+  const full=P.lots.length>=12;   /* planGet keeps twelve: at twelve the page stops taking more, rather than dropping one unsaid */
+  const quick=ids.map(p=>`<button type="button" class="vbtn salt-pill salt-pill--sm" onclick="planLotQuick('${p}')"${full?' disabled':''}>+ ${esc(PRODUCTS[p].name)} ${units(D[p].qty)}</button>`).join('');
+  const rows=P.lots.map((l,i)=>`<tr><td class="l salt-table__label">${tag(l.prod)}</td><td class="mono">${units(l.qty)}</td><td class="mono">${fmt(l.rate)}</td><td class="mono">${fmt0(l.qty*l.rate)}</td><td class="l salt-table__label">${l.day===0?'today':iso(l.day)}</td><td><button type="button" class="ubtn salt-ghost" aria-label="Remove this what-if lot" onclick="planLotDrop(${i})">Remove</button></td></tr>`).join('');
+  return `<h2 style="margin-top:18px">What if you buy <span class="sub" style="font-weight:400">a lot you are thinking of; nothing is booked</span> <span class="rule"></span></h2>
+  <div class="card" id="whatIf">
+    <div class="dsc" id="wiLead" style="margin-bottom:9px">Each book's next lot as its restock plan sizes it, one tap; or any lot below.</div>
+    <div style="display:flex;flex-wrap:wrap;gap:9px;align-items:center">${quick}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:9px;align-items:flex-end;margin-top:13px">
+      <div class="qfield" style="flex:1 1 120px"><label for="wiProd">Book</label><select id="wiProd" data-d="${esc(JSON.stringify(D))}" onchange="planLotFill()">${ids.map(p=>`<option value="${p}">${esc(PRODUCTS[p].name)}</option>`).join('')}</select></div>
+      <div class="qfield" style="flex:1 1 90px"><label for="wiQty">Units</label><input id="wiQty" type="number" min="0" step="0.5" inputmode="decimal" value="${D[ids[0]].qty}"></div>
+      <div class="qfield" style="flex:1 1 90px"><label for="wiRate">RM a unit</label><input id="wiRate" type="number" min="0" step="0.01" inputmode="decimal" value="${D[ids[0]].rate}"></div>
+      <div class="qfield" style="flex:1 1 90px"><label for="wiDay">Lands in, days</label><input id="wiDay" type="number" min="0" max="60" step="1" inputmode="numeric" value="0"></div>
+      <button type="button" class="vbtn salt-pill salt-pill--sm" onclick="planLotAdd()"${full?' disabled':''}>${full?'Twelve lots at most':'Add the lot'}</button>
+    </div>
+    ${P.lots.length?`<div class="tscroll" style="margin-top:13px"><table class="salt-table"><thead><tr><th class="l salt-table__label">Book</th><th>Units</th><th>Rate</th><th>Cost</th><th class="l salt-table__label">Lands</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="insight salt-insight" style="margin-top:10px"><b>What if, not the book</b>: ${P.lots.length} lot${P.lots.length===1?'':'s'} worth ${fmt0(tot)}, drawn below as though bought and paid on landing.</div>
+    <div style="margin-top:9px"><button type="button" class="ubtn salt-ghost" onclick="planSet({lots:[]})">Remove every what-if lot</button></div>`:''}
+  </div>`;
+}
+/* THE MONTH AHEAD. Each live book's measured daily rate for thirty days, at the price a unit its last sixty days of priced sales
+   realised and today's replacement cost; his demand and buying cost move the second column only, his running costs both. An
+   estimate and said to be one: no seasonality, no price change, no lot timing. */
+function planMonth(P){
+  const since=new Date(TODAY.getTime()-60*86400000);
+  const B=eachBook(()=>{
+    const R=pricedSales.filter(s=>s.date&&new Date(s.date)>=since&&(+s.qty||0)>0&&txGoods(s)>0&&!s.gift&&!s.goodwill&&!s.rebate);
+    const u=R.reduce((a,s)=>a+(+s.qty||0),0), rm=R.reduce((a,s)=>a+txGoods(s),0);
+    return {rate:+coverStats().rate||0,price:u>0?rm/u:null,avgQty:R.length?u/R.length:null,cost:+pxCost().repl||0};});
+  const books=Object.keys(B).filter(p=>B[p].price!=null&&B[p].rate>0);
+  const side=(dem,cost)=>{let rev=0,cogs=0,orders=0;
+    books.forEach(p=>{const b=B[p],u=b.rate*30*(1+dem/100);rev+=u*b.price;cogs+=u*b.cost*(1+cost/100);orders+=u/b.avgQty;});
+    const margin=rev-cogs;
+    return {rev,cogs,margin,orders,net:margin-P.run,perOrder:orders>0?margin/orders:0};};
+  return {base:side(0,0),plan:side(P.dem,P.cost),books};
+}
+function monthAhead(){
+  const P=planGet(),M=planMonth(P),a=M.base,b=M.plan;
+  if(!M.books.length)return '';
+  const pc=v=>(v>0?'+':v<0?'&minus;':'')+Math.abs(v)+'%';
+  const rm=v=>(v<-0.5?'&minus;':'')+fmt0(Math.abs(v));
+  const step=(k,by,lo,hi,name)=>`<div class="qfield" style="flex:1 1 150px"><label>${name}</label><div class="salt-stepper" role="group" aria-label="${name}">
+      <button type="button" class="salt-orb" aria-label="${name} down ${by}%" onclick="planStep('${k}',-${by})"${P[k]<=lo?' disabled':''}>&minus;</button>
+      <output class="salt-stepper__value" id="plan-${k}">${pc(P[k])}</output>
+      <button type="button" class="salt-orb" aria-label="${name} up ${by}%" onclick="planStep('${k}',${by})"${P[k]>=hi?' disabled':''}>+</button></div></div>`;
+  const moved=P.dem!==0||P.cost!==0;
+  const line=(l,x,y,cls)=>`<tr${cls?` class="${cls}"`:''}><td class="l salt-table__label">${l}</td><td class="mono">${x}</td><td class="mono">${y}</td></tr>`;
+  const even=(P.run>0&&b.perOrder>0)?Math.ceil(P.run/b.perOrder):null;
+  return consoHd('Month ahead')
+    +`<div class="card" id="monthAhead">
+    <div class="dsc" id="maLead" style="margin-bottom:11px">The next 30 days if each book keeps its measured daily rate, at the last 60 days' price a unit and today's replacement cost. An estimate, kept on this device; it prices and books nothing.</div>
+    <div style="display:flex;flex-wrap:wrap;gap:11px;align-items:flex-end">
+      ${step('dem',10,-50,50,'Demand')}
+      ${step('cost',5,-30,30,'Buying cost')}
+      <div class="qfield" style="flex:1 1 150px"><label for="planRun">Running costs, RM a month</label><input id="planRun" type="number" min="0" step="10" inputmode="numeric" value="${P.run||''}" placeholder="0" onchange="planSet({run:+this.value||0})"></div>
+      ${(moved||P.run>0)?`<button type="button" class="ubtn salt-ghost" onclick="planReset()">Reset</button>`:''}
+    </div>
+    <div class="tscroll" style="margin-top:13px"><table class="salt-table"><thead><tr><th class="l salt-table__label">30 days</th><th>As the book runs</th><th>${moved?`Demand ${pc(P.dem)}, cost ${pc(P.cost)}`:'With your changes'}</th></tr></thead><tbody>
+      ${line('Revenue',fmt0(a.rev),fmt0(b.rev))}
+      ${line('Cost of goods',rm(-a.cogs),rm(-b.cogs))}
+      ${line('Gross margin',`${fmt0(a.margin)} <span style="color:var(--dim)">${a.rev>0?(a.margin/a.rev*100).toFixed(0):0}%</span>`,`${rm(b.margin)} <span style="color:var(--dim)">${b.rev>0?(b.margin/b.rev*100).toFixed(0):0}%</span>`)}
+      ${line('Running costs',P.run>0?rm(-P.run):NIL,P.run>0?rm(-P.run):NIL)}
+      ${line('<b>Left after costs</b>',`<b>${rm(a.net)}</b>`,`<b>${rm(b.net)}</b>`)}
+      ${line('Orders',Math.round(a.orders),Math.round(b.orders))}
+    </tbody></table></div>
+    ${even!=null?`<div class="insight salt-insight" style="margin-top:10px"><b>${even} order${even===1?'':'s'} a month</b> cover the ${fmt0(P.run)} of running costs, against ${Math.round(b.orders)} expected.</div>`
+      :`<div class="dsc" id="maHint" style="margin-top:9px">Type what the business costs to run each month and the table says what is left, and how many orders cover it.</div>`}
+  </div>`;
+}
+const builders={today:()=>tabToday()+tabPlans(),forward:tabForward,sourcing:()=>{const b=perProduct(tabSourcing,{skipEmpty:true});return srcHead()+(b||'<div class="card"><div class="insight salt-insight">No purchases or sales on any book yet, so there is nothing to source against.</div></div>');},analysis:()=>anaHead()+perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>invHead()+perProduct(tabInventory,{head:()=>units(currentStock)+' on hand'}),financials:()=>consoBlock()+consoCashBlock()+monthAhead()+perProduct(tabFinancials),ledger:tabLedger,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),pricing:()=>pxHead()+perProduct(tabPricing)};
 /* ============ SEVEN VIEWS OVER FIFTEEN TABS (v341, move 4 of the rebuild) ============
    The fifteen tabs were fifteen reports stacked: a megabyte to open for one figure, with the
    method prose standing open on every one. A view leads with one tab open, folds that tab's

@@ -3898,8 +3898,8 @@ await (async () => {
        `${pr}: and never at another book's (${wrong} at ${otherRate}, the row printing ${cell})`);
 
     /* THE RATE OF TRADE IS ORDERS PER MONTH AND THE MONTHS ARE COUNTED, NOT ASSUMED. */
-    const per = html("fmt(100/Math.max(1,pricedSales.length/Math.max(1,finRows().length)))");
-    ok(fin.includes(`<b>${per}</b> an order`), `${pr}: a standing cost is spread over the orders this book actually places in a month (${per})`);
+    /* 10 Nov 2026, his word: the standing-cost line left with the unmeasured cost tables; what the business costs to run a month is his own
+       figure on Month ahead, held by test/desk-cleanup.mjs P3. */
   }
 
   /* NEITHER DRAW SWALLOWS A THROW. Both held an empty catch INSIDE their ensureChart
@@ -6556,7 +6556,7 @@ await (async () => {
       return w.eval("(function(){var k=[].slice.call(document.querySelectorAll('.sec.on .kpi')).filter(function(x){return " + needle + ".test(x.textContent);})[0];return k?k.textContent.replace(/[ \\t\\n\\r]+/g,' ').trim():'';})()");
     };
     const owe = card("receivables", "/You owe, in cash/");
-    const sup = card("overview", "/Sourcing/");   /* v819: the digest names the page, Sourcing */
+    const sup = card("financials", "/Supplier bills unpaid/");   /* 10 Nov 2026: the digest left Rules, his word; Financials' own tile is the card */
     const cout = JSON.parse(w.eval("JSON.stringify((forecast({days:30})||{}).cout||[])"));
     const billRM = +cout.filter((c) => /supplier bill/.test(c.label || "")).reduce((a, c) => a + (+c.rm || 0), 0).toFixed(2);
     const owedBy = {};
@@ -6597,11 +6597,12 @@ await (async () => {
   ok(onCard(fix.owe) - onCard(base.owe) === WANT,
     `and that figure moves by RM ${onCard(fix.owe) - onCard(base.owe)}, which must be RM ${WANT} (${fix.owe.slice(0, 96)})`);
 
-  ok(base.sup !== "" && fix.sup !== "", "the Rules page carries a Sourcing card at all");
-  ok(onCard(base.sup) !== null && onCard(fix.sup) !== null,
+  const onSup = (t) => { const m = /Supplier bills unpaid\s*RM\s*([\d,]+(?:\.\d+)?)/.exec(t || ""); return m ? +m[1].replace(/,/g, "") : null; };
+  ok(base.sup !== "" && fix.sup !== "", "Financials carries a Supplier bills unpaid tile at all");
+  ok(onSup(base.sup) !== null && onSup(fix.sup) !== null,
     "and its figure can be read out of its words too: " + JSON.stringify([base.sup.slice(0, 72), fix.sup.slice(0, 72)]));
-  ok(onCard(fix.sup) - onCard(base.sup) === WANT,
-    `and it moves by RM ${onCard(fix.sup) - onCard(base.sup)}, which must be RM ${WANT} (${fix.sup.slice(0, 96)})`);
+  ok(onSup(fix.sup) - onSup(base.sup) === WANT,
+    `and it moves by RM ${onSup(fix.sup) - onSup(base.sup)}, which must be RM ${WANT} (${fix.sup.slice(0, 96)})`);
 
   /* THE FORECAST IS THE READER THAT MATTERED MOST: the other three put a wrong number on a card,
      this one moved the day the cash runs out. */
@@ -43613,7 +43614,7 @@ await (async () => {
   /* the tiles: every tile carries the recipe's name, and its three parts theirs */
   const tiles = (bodyX.match(/class="kpi(?=[" ])/g) || []).length;
   const named = (bodyX.match(/class="kpi salt-kpi(?=[" ])/g) || []).length;
-  ok(tiles >= 80 && named === tiles, "every KPI tile is a .salt-kpi (" + named + " of " + tiles + ")");
+  ok(tiles >= 70 && named === tiles,   /* 10 Nov 2026: the Desk cleanup took a dozen repeated tiles off; 76 stand */ "every KPI tile is a .salt-kpi (" + named + " of " + tiles + ")");
   const lab = (bodyX.match(/<div class="l salt-kpi__label">/g) || []).length;
   const val = (bodyX.match(/<div class="v salt-kpi__value"/g) || []).length;
   ok(lab === tiles && val === tiles, "and each carries the recipe's label and figure (" + lab + " labels, " + val + " figures)");
@@ -44116,10 +44117,8 @@ await (async () => {
     const held = {}; liveBooks().forEach((p) => { PROD = p; recompute(); held[PRODUCTS[p].name] = currentStock; });
     setProdView("oil");
     const d = document.createElement("div"); d.innerHTML = tabOverview();
-    const kpi = (l) => [].find.call(d.querySelectorAll(".kpi"), (k) => T(k.querySelector(".l")) === l);
     const tables = d.querySelectorAll("table");
     return { prod: PROD, scope: T(d.querySelector(".pscope")), conso: Math.round(consoMoney().rev),
-      rev: T(kpi("Revenue").querySelector(".v")), inv: T(kpi("Inventory at cost").querySelector(".n")), invV: T(kpi("Inventory at cost").querySelector(".v")),
       bnd: [].map.call(tables[0].querySelectorAll("tbody tr"), (r) => ({ t: T(r.cells[0]), tags: [].map.call(r.cells[0].querySelectorAll(".prodtag"), (x) => x.title) })),
       held, live: liveBooks().map((p) => PRODUCTS[p].name) };
   }
@@ -44161,28 +44160,16 @@ await (async () => {
     } finally { BASE_SALES.length = n0; applyOverlay(); recompute(); }
   }
   const v = JSON.parse(w.eval("JSON.stringify((" + probe.toString() + ")())"));
-  const lg = JSON.parse(w.eval("JSON.stringify((" + probeLedger.toString() + ")())"));
   const own = JSON.parse(w.eval("JSON.stringify((" + probeFixture.toString() + ")())"));
   const fmtRM = (n) => "RM " + n.toLocaleString("en-US");
-  ok(v.rev === fmtRM(v.conso), "revenue is added across the books and agrees with the Financials head: " + JSON.stringify([v.rev, v.conso]));
-  /* 26 Sep 2026 (plan fold 4.3): each count is held to that book's own shelf, and a book holding nothing is left off rather
-     than demanded: this read every live book and went red on the fold that took oil's shelf to nought (24 Sep) */
-  const noted = v.inv.split(" · ").map((s) => /^(.+) (-?[0-9.,]+) unit$/.exec(s));
-  const onHand = Object.keys(v.held).filter((n) => Math.abs(v.held[n]) > 0.009);
-  ok(/^RM /.test(v.invV) && (onHand.length
-      ? noted.every((m) => m && onHand.includes(m[1]) && Math.abs(+m[2].replace(/,/g, "") - v.held[m[1]]) < 0.01)
-        && new Set(noted.map((m) => m[1])).size === onHand.length && noted.length === onHand.length
-      : v.inv === "nothing on hand"),
-    "units stay with their book: the inventory figure is money, and its note gives each book holding stock its own count: " + JSON.stringify([v.invV, v.inv, v.held]));
+  /* 10 Nov 2026, his word: Position at a glance and Latest ledger left Rules, each a repeat of its own page (test/desk-cleanup.mjs C1.1),
+     so the revenue, inventory and latest-ledger checks went with them; the register and the default are the page. */
   const cc = own.bnd.find((r) => r.who === "CZ9-CCA") || null;
   ok(own.prod === "oil" && cc && /^Breach Credit cap/.test(cc.t) && JSON.stringify(cc.tags) === '["Salt"]' && v.bnd.filter((r) => /^Watch Margin floor/.test(r.t)).every((r) => r.tags.length === 1),
     "salt's breach is on Rules with oil in view, and a row one book raised names that book: " + JSON.stringify([own.prod, cc, v.bnd.map((r) => r.t)]));
   ok(own.sr && own.prod === "oil" && own.def.includes(fmtRM(4321) + " written off"),
     "the supplier default reads salt's figure whichever book is in view: " + JSON.stringify([own.def, own.sr ? "the section's RM 4,321" : "the book declares no supplierReceivable to write one into"]));
-  const fx = (c) => lg.rows.find((r) => r.fx === c) || { tags: [] };
-  ok(JSON.stringify(fx("CZ9-LGA").tags) === '["Salt"]' && JSON.stringify(fx("CZ9-LGB").tags) === '["Oil"]' && lg.rows.every((r) => r.tags.length === 1)
-      && lg.prod === "oil" && v.prod === "oil" && /Every book/.test(v.scope),
-    "the latest ledger mixes the books, each tagged, and the book in view is left as it was: " + JSON.stringify({ rows: lg.rows, prod: [v.prod, lg.prod] }));
+  ok(v.prod === "oil" && /Every book/.test(v.scope), "and the book in view is left as it was: " + JSON.stringify([v.prod, v.scope]));
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 
@@ -50499,6 +50486,11 @@ await (async () => {
 section("5 Nov 2026: Salt Desk in layers, the rail and bar fixed from 1080px, the column under the bar the one scroll box");
 await (async () => {
   await (await import("./desk-frame.mjs")).run({ ok });
+})();
+
+section("10 Nov 2026: the Desk cleanup, one card a debt, the repeats cut, and the two what-if planners that book nothing");
+await (async () => {
+  await (await import("./desk-cleanup.mjs")).run({ ok });
 })();
 
 section("9 Nov 2026: no scrollbar on any Salt surface, so a page that scrolls and one that does not are the same width");
