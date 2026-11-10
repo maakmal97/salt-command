@@ -21,13 +21,14 @@
 - **The Floor is the order total up to the next RM 5; the Ceiling is 3 times it** (his decisions of 18 Oct 2026).
   `floorTotal` is COGS times the size rounded up to the next RM 5, one per size on every book; `costTotal` is the
   exact cost, for the readers that measure cost and not price (the price band's segment floor `flOf`, `flRate` and
-  `f1`, the floor-per-unit chart). `ceilingX` is 3 on every book (oil and candy were 2, rice 2.5). A stated board
+  `f1`, the floor-per-unit chart). `ceilingX` is 3 on every book (oil and candy were 2, rice 2.5); salt's own Ceiling left it for the band's curve on 10 Nov 2026 (below). A stated board
   (`fixed`: oil, candy and rice, his typed rungs, unchanged) is held between the Floor and the Ceiling, capped down to the
   book's grid. The price grid's `LADDER.round.to` is 5, so a RM 35 Floor is not re-rounded to RM 40.
-- **Salt is the Set Price and their %** (his decisions of 05, 18 and 21 Oct 2026). `TIER_RULE.salt` carries `drift` (the
-  flag that marks a book with a Set Price), `points`, `ceilingX`, `auto`, `suggest` and `presets`. **The Set Price is what a
+- **Salt is the Median Price and their %** (his decisions of 05, 18 and 21 Oct 2026; named the Set Price until 10 Nov 2026, his word: every
+  word he reads says Median Price, and the identifiers stay). `TIER_RULE.salt` carries `drift` (the
+  flag that marks a book with a Median Price), `points`, `ceilingX`, `band`, `auto`, `suggest` and `presets`. **The Median Price is what a
   stranger is quoted**; since 21 Oct 2026 a customer on a negative % of his pays less, never under the Floor. The multiple of the Floor is 3 at half a unit,
-  2.4 at 1, 2.004 at 6.25 and 1.596 at 12.5 (since 10 Nov 2026, his word: 1.2 times the old 2.5, 2, 1.67, 1.33, RM 120 at 1 unit, pending the price band plan), sliding in the log of size between points and flat above 12.5. The engine's
+  2.4 at 1, 2.004 at 6.25 and 1.596 at 12.5 (since 10 Nov 2026, his word: 1.2 times the old 2.5, 2, 1.67, 1.33, RM 120 at 1 unit; the price band's version 1 moved none of it), sliding in the log of size between points and flat above 12.5. The engine's
   `driftWalk` walks the grid (half a unit to 25 in quarters) smallest first: the rate is the lesser of the last size's and
   `Floor * multiple * (1 + %) / q`, on the exact rate and never compounded; the price is that rate times the size, down
   to RM 5; it is then lifted so the ringgit margin over the Floor never falls below the largest margin of any smaller
@@ -35,34 +36,78 @@
   unit between quarters: the rate law is on the exact rate. `quoteAt` and `quoteGrid` are the one rule at any size, so
   for every % in use and every grid point `quoteGrid(...).p[i]` is `quoteAt(min + i * step, ...)`, and a
   partner's `quoteAt` is the `floorTotal`, the snapshot's `floors[q]` and the drafter's `floorFor(q).floor`.
-- **Their % on his curve, on every book** (22 Oct 2026). Salt's `TIER_RULE.ends` are his Floor multiples for -30% (2.40 at 0.5 unit,
-  1.44 at 12.5) and +30% (3.60, 1.74; 1.2 times the old 2.00, 1.20 and 3.00, 1.45 since 10 Nov 2026); `driftMultiple(q, R, pct)` puts each end on the Set Price's own shape (the share s the Set Price
-  sits between its first and last multiples) and a % at t = pct / 0.3 of the way from the Set Price to its end, so each 5% step is equal
+- **Their % on his curve, on every book** (22 Oct 2026). **Salt left this curve for the band on 10 Nov 2026 (the next entry), so no rule carries `ends` now and `driftMultiple` is kept for one that does.** A rule's `ends` are Floor multiples (salt's stood at these) for -30% (2.40 at 0.5 unit,
+  1.44 at 12.5) and +30% (3.60, 1.74; 1.2 times the old 2.00, 1.20 and 3.00, 1.45 since 10 Nov 2026); `driftMultiple(q, R, pct)` puts each end on the Median Price's own shape (the share s the Median Price
+  sits between its first and last multiples) and a % at t = pct / 0.3 of the way from the Median Price to its end, so each 5% step is equal
   at every size; the walk reads it in place of the multiple times (1 + %), which a rule without `ends` keeps. Oil, candy and rice carry
   `pct` and `shares` (-30% 0.8 of the board at the smallest rung and 0.9 at the largest, +30% 1.2 and 1.09, salt's proportions, his
   answer that day): `shareAt` slides in the log of size, and `fixedWalk(sizes, C, P, d)` takes it off the board, down to the book's step,
   between the Floor and the Ceiling, the rate never rising with size. `pctBook(R)` (drift or pct) is the one gate: the snapshot's `lift`,
   `cardQuote`, `cardAt`'s `quoteOff`, the drafter, the fold's `driftBooks()` (a TIER_RULE line opening `drift:` or `pct:`), the catalog,
-  `makerTierSet`, Add ID and the price list (a held non-zero % on a board is their card). The suggestion stays on a Set Price book.
-  **Salt Admin shows it live**: the form takes a whole % in steps of 5 and asks `GET /all/maker/drift-preview/<code>/<book>/<whole %>`
+  `makerTierSet`, Add ID and the price list (a held non-zero % on a board is their card). The suggestion stays on a Median Price book.
+  **Salt Admin shows it live**: the form takes a whole % in steps of 5, between the ends the catalog gives for the book (`driftMin`, `driftMax`), and asks `GET /all/maker/drift-preview/<code>/<book>/<whole %>`
   (relayed to the Desk's keyed `/_internal/maker/drift-preview/...`, `makerDriftPreview`, a read that writes nothing) 300 ms after he stops
   typing: now and at the typed % at the board's sizes and their usual size, beside the Floor, every figure `quoteAt` on the snapshot.
-- **Their %** (`TIER_OF[code].salt`, -0.3 to +0.3 since his decision of 21 Oct 2026, `LIFT_MIN` and `LIFT_MAX` in the engine,
-  held until he changes it; `cardQuote` reads it through `driftOf`). It is the move on the Set Price, a negative one a discount, applied inside the walk and the same at every size, and nought is the Set Price. **Everyone
+- **The price band, version 1** (his decisions of 10 Nov 2026, `docs/plan-salt-price-band.html`; `TIER_RULE.salt.band`). Three posts at every size: the
+  Floor (`floorTotal`, the share in), the Median Price (the walk's `set`, unchanged) and the Ceiling, `bandCeiling(q, R)`: `band.ceiling.rates` (RM a unit
+  at `per`: 200 at half a unit, 100 at 12.5, 83.93 at 100, linear in the log of size, flat beyond) times the typed `supplier.total / supplier.units` over
+  `per`, times the size; the walk takes the total DOWN to RM 5 and never under the Floor (`hi`), and reports it as `ceiling`. A rule with no band keeps
+  `ceilingX` times the COGS Floor. **Their % is a place between the posts**: `bandTop(M, lo, hi, k)` is M times (hi/M) to the k above nought and M times
+  (lo/M) to the |k| below, struck on the Median as quoted (`s.p`) and stepped through the walk's own rate and margin laws, then held: a lift never under the
+  Median (the % path's running rate can sit a hair under the Median's where the Ceiling holds the Median) and -100% the Floor itself, with no margin lift,
+  so it is what a partner pays on any cost. `bandPct` reads a price back to its place. `liftRange(R)` is -1 to +1 on a rule with `band` and `LIFT_MIN` to
+  `LIFT_MAX` otherwise; `driftOk(v, R)` judges on it (with no rule, the widest) and `rangeSay(R)` words a refusal. **A band figure travels as unit
+  `band`** (`unitOf`, `unitOk`): Salt Admin's forms send the catalog's `driftUnit`, `makerTierSet` and Add ID refuse `pct` naming salt in the old-unit
+  words, the drafter flags it and the fold's `oldWhy` drops it as set "on the old scale"; the page's saved-entry whitelist (`vaultPendingOk`'s
+  `enumWords`) names `band`. **The carry-over of the switch**: `band.carry` is `{code: {from, to}}`, the list he approved
+  (`docs/plan-salt-price-band-carry.html`); `heldPct(R, code, v)` reads a figure still equal to `from` as `to` in the snapshot's `driftOfNow`, the catalog's
+  cards and the drafter's "moves from" flag, and `carryClash` refuses a new figure equal to `from` at `makerTierSet` and in the drafter. After the deploy
+  one `tierset` (unit `band`) of the `to` figures goes to Approve; the version after it is booked removes the table and `carryClash`. **The suggestion on
+  the band** starts from the median place (`bandPct` at each sale's own size, never under nought) of their last five sales, handed to `suggestPct` as
+  `O.places` with `liftRange`; the words keep the ratio paid over. **What to know**: the Ceiling moves only with the typed supplier's price, so on RM 56 a
+  COGS past about RM 52.60 a unit lets the Ceiling hold the Median at the largest sizes, and past RM 62.65 at 12.5 units; a salt discount moves with the
+  Floor's live share; +100% reads RM 5 under the Ceiling at some sizes over 12.5, where the rate law holds it; a held figure of the old drift unit
+  (past -0.3 or +0.3) would now read as a %, and the book held none at the switch (checked on the export of 10 Nov 2026). Checks: `test/price-band.mjs`
+  (the laws on eight costs), `test/lift-pct.mjs`, `test/floor-nrs.mjs`.
+- **A typed figure outside the band is asked once, then stands marked** (his answer D of 10 Nov 2026; `engine/oneoff.mjs`, pure, in no generated
+  block and imported by nothing under `stmt/`). The roads where he types a goods total on one order of a band book, Accept and its preview
+  (`previewAck`), both offer roads and an amendment of an agreed order (`restateTap`), read `outsideBand(total, floorFor, bandFor)`: under the
+  Floor at the size or over the Ceiling there (`bandFor` in `src/drafter.js` reads the walk's `ceiling`, null on a book with no band). With no
+  reason the answer is `bandRefusal`, 409 with `outside: {side, by, floor, ceiling}` (and `underFloor` on that side): "RM 45 under the Floor of
+  RM 65 at 1 unit: a loss of RM 45 on this order. Give a reason and it stands as a one-off." or "RM 20 over the Ceiling of RM 175 at 1 unit. ...".
+  The loss is measured against the Floor, the share and the RM 5 in, as his plan words it. Sent again with `oneOff` (his reason, `reasonOf`: one
+  line of 3 to 120 characters, no `<` or `>`; 400 otherwise) the entry carries `markOf`, `{why, side, by}`; the drafter copies it onto the new
+  row or beside a Correction's fields (never among them; `markOk` or the row is not drafted), flags it ("One-off: RM 45 under the Floor, his reason:
+  ...") and `stageDigest` holds it, so his yes answers it; `applyAmend` sets it on the row, deletes it on `null` (an amendment back inside the
+  band, flagged "Back inside the price band ...") and keeps what it replaced as the step's `oneOffWas`, which an undo through `restateTap` puts
+  back. An offer keeps the reason on the row his yes was shown (`preapproval.shown.row`), so their take drafts with it and is never asked
+  (`unasked`); an offer made before the version drafts unmarked. A row offered again keeps the reason its rejected draft carried. **Left out of
+  the evidence**: `aPriceSomeonePaid` (the product's range, their own rates, the card's usual, Salt Admin's readings of both), the snapshot's
+  `suggestOf`, and the Desk's price readers beside `ONE_OFFS` (which stays the list of customers set aside whole, and is not written by this).
+  **Salt Admin**: the placed card and Change the order show the Desk's sentence, one Reason line and Let it stand, which sends the same figures
+  with the reason (acts `order.one-off-reason`, `order.one-off`, `order.amend-reason`, drawn only after the refusal; both allow-lists,
+  `src/maker.js` and `stmt/maker.js`, take `oneOff`, and the bridge relays `outside`). **Salt Counter**: nothing; the reason goes to the Desk
+  and the ledger row, never to the site, and no customer view names it. `payFault`, `rowRoom`, COGS, refunds and stock read nothing of it.
+  **Not built, said**: no surface types a Median point, so that half of the plan's paragraph has nothing to check; Pricing's 30-day tally of
+  one-offs; Salt Admin's Correct a row (`ledger-amend`) still refuses under the Floor on salt in its old words and knows no Ceiling; an undo off
+  the site road does not restore a mark; the Desk page's own overlay (`ovAmend`) does not carry the mark until the row is booked; the reason is
+  free text on a public repo's ledger and nothing scans it for a name. Checks: `test/price-band-oneoff.mjs`.
+- **Their %** (`TIER_OF[code][book]`: -1 to +1 on salt's band since 10 Nov 2026, -0.3 to +0.3 on a stated board since his decision of 21 Oct 2026,
+  `liftRange`, held until he changes it; `cardQuote` reads it through `driftOf`). It is the move on the Median Price, a negative one a discount, applied inside the walk, and nought is the Median Price. **Everyone
   starts at 0%** (the held figures were removed in the 18 Oct 2026 version, and the fold drops a `tierset` or an Add ID
   figure stamped before `RULES.liftSince`, which was in the old unit, with a note, and refuses nothing for it). He sets it on the Their % card (Network), Counter
-  Admin's Their % form or Add ID (presets -30%, -20%, -15%, -10%, -5%, Set Price, +5%, +10%, +15%, +20% and +30%, or another % from -0.3 to 0.3; the field
+  Admin's Their % form or Add ID (salt's presets -50%, -30%, -20%, -10%, Median Price, +10%, +20%, +30% and +50%, a board's -30% to +30% as before, or another % inside the book's range; the field
   drops the decimal pad so an iPhone shows a minus key); it is queued,
   folded as `tierset`, and a null clears it. Under about 7% a % moves nothing at half a unit to 1 unit, which the card says
   once. **Nothing automatic prices.** `autoDrift` over `driftSignals` fills the card's good and bad only. The card's
   suggestion is `suggestOf` (the engine's `suggestPct`): the median over their last five salt sales of the rate paid
-  over the Set Price rate at that size, less one and not under nought, plus a share for a write-off (30%), a long late
+  over the Median Price rate at that size, less one and not under nought (on salt's band the median place of those sales instead, above), plus a share for a write-off (30%), a long late
   or 14 days overdue (20%) or a late (10%), less, with nothing late, overdue or written off, a good record's discount (`suggest.good`, 0.3, times `autoDrift`'s good
-  score `G`; his answer of 21 Oct 2026), to the nearest 5%, held -30% to +30%, and nought under `minSettled` settled rows;
+  score `G`; his answer of 21 Oct 2026), to the nearest 5%, held to the book's range, and nought under `minSettled` settled rows;
   `suggestWhy` says "good record". The Desk's card says it as "Suggested +10%: paid late"; Salt Admin's Use the suggestion fills the
   box. The snapshot carries each customer's quotes as `cards`, their % as `lift` and the suggestion as `suggest`, which
   the price list reads (`basis: "card"`); an older reader that looks for the former map finds nothing and falls back to the board.
-- **Salt's Floor carries the non-revenue salt** (his decision of 10 Nov 2026). `RULES.nrsFloor` names the book and the categories; the snapshot engine's `nrsShare` reads the share live from the walk and the rows: the count shortfall (`selfUse`, the promotion's sample inside it), gifts and rewards with reward cover, and written off, over the units handed over less those (a unit settled in kind is paid for). `inputs().nrs` carries it, `costStack` returns `nrs` and `floorEx` (COGS times 1 plus the share), and `floorTotal` reads `floorEx`. `floorBase` is the COGS Floor: `driftWalk` strikes the Set Price's multiples, the margin lift and the Ceiling on it and holds the price over `floorTotal`, so no customer's price moves unless a discount falls under the new Floor. `costTotal`, `effEx`, COGS of goods sold, stock value and the reward step stay on COGS. The page's `snapCtx().W` must hand the engine `soldUnits`, or the share reads nothing. Open, his calls: whether the Set Price and the Ceiling follow; the share moves with every handover and count, so the Floor can tick by RM 5 between publishes. A redeemed reward unit (`rebate`) is paid for, his answer of 10 Nov 2026. Checks: `test/floor-nrs.mjs`.
+- **Salt's Floor carries the non-revenue salt** (his decision of 10 Nov 2026). `RULES.nrsFloor` names the book and the categories; the snapshot engine's `nrsShare` reads the share live from the walk and the rows: the count shortfall (`selfUse`, the promotion's sample inside it), gifts and rewards with reward cover, and written off, over the units handed over less those (a unit settled in kind is paid for). `inputs().nrs` carries it, `costStack` returns `nrs` and `floorEx` (COGS times 1 plus the share), and `floorTotal` reads `floorEx`. `floorBase` is the COGS Floor: `driftWalk` strikes the Median Price's multiples and the margin lift on it (and the Ceiling, on a rule with no band) and holds the price over `floorTotal`, so a stranger's price does not move; since the band (10 Nov 2026) a salt discount is a place between the Median and this Floor, so it moves with the share. `costTotal`, `effEx`, COGS of goods sold, stock value and the reward step stay on COGS. The page's `snapCtx().W` must hand the engine `soldUnits`, or the share reads nothing. Open, his calls: whether the Median Price follows (the Ceiling left COGS for the supplier's price on 10 Nov 2026); the share moves with every handover and count, so the Floor can tick by RM 5 between publishes. A redeemed reward unit (`rebate`) is paid for, his answer of 10 Nov 2026. Checks: `test/floor-nrs.mjs`.
 - **A partner pays the Floor** (his decisions of 06 and 18 Oct 2026). Quoted `floorTotal` at every size on every book,
   RM 5 round-up included, through `quoteAt` with `d` of `'partner'`. **Set from the phone** (his decision of 09 Oct
   2026): the Their % card's Make partner queues `partnerEntry` (`mode: 'partner'`, the code alone, not an Add ID so the
@@ -70,7 +115,7 @@
   the fold files the code in `partners` and appoints an associate with their -R account if they are none, so a partner
   keeps every associate property. The desk shows the standing at once and the card reads waiting under Approve.
   `test/partner-control.mjs`.
-- **NRV is the Set Price on a book that has one, the stated price on a board** (IAS 2.6): the least a customer but a
+- **NRV is the Median Price on a book that has one, the stated price on a board** (IAS 2.6): the least a customer but a
   partner is quoted at 0%, so the IAS 2.9 test can bind; the Ceiling is never the basis, nor a customer's discount (21 Oct 2026).
 - **There are no price levels** (removed 18 Oct 2026). `TIER_NAMES`, the `fiveTiers` multiples branch, `levelAt`,
   `levelShapeOk`, `tier1Anchors`, `tier1Walk`, `tier1Ask`, the proposals (`tierProposal`, `ruleProposal`) and the
@@ -79,14 +124,14 @@
   lists stay as the guard that stops a level word reaching a customer. What is not a pricing level stays: a
   supplier's quote tiers (`QUOTES.*.tiers`, `buyTaper`, the restock `tier`), an associate's rank, stars and share, and
   an order rating. The superseded reasoning is in `docs/NOTES.md`.
-- **One rule at any size, the engine's `quoteAt`.** `cardQuote` is `quoteAt`: on a book with a Set Price, the Set Price
-  lifted by their %, **walked through every grid point beneath the size** (`walkSizes`), so the rate never rises across
+- **One rule at any size, the engine's `quoteAt`.** `cardQuote` is `quoteAt`: on a book with a Median Price, the Median Price
+  moved by their %, **walked through every grid point beneath the size** (`walkSizes`), so the rate never rises across
   the grid by a step or more; on a stated board the rung's rate times the size, rounded down to the ringgit between rungs,
   his typed rungs exact (`fixedWalk`). `cardPrice` is called by the price list off the snapshot's `cards`, and on the
   desk by `cardQuote`, which every quote to a named customer reads: the printed board (`pbPrices`), the approach offer
   and Today's worth (`nextBest`, no offer with no price), and the reward cover, whose gap is to their card price.
-- **Words** (18 Oct 2026): every surface says Floor, Set Price and Ceiling, and his figure is Their % (presets "Set Price,
-  +5% ... +30%"). No tier, level or drift word is visible on the Desk, Salt Admin or the Counter;
+- **Words** (18 Oct 2026; Median Price since 10 Nov 2026): every surface says Floor, Median Price and Ceiling, and his figure is Their % (presets
+  "-50% ... Median Price ... +50%" on salt). No tier, level or drift word is visible on the Desk, Salt Admin or the Counter;
   `test/pricing-words.mjs` draws every part of every book and reads the source sentences. The stock count's own gap is
   the Difference.
 - **One delivery for a trip of several books** (his design of 05 Oct 2026): the rows one trip

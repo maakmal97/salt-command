@@ -60,7 +60,7 @@ Per-product configuration, all driven off `PROD_IDS`:
 | `stockCostFor(p)` | the inventory rate per product, **derived from that product's lots** since 26 Sep 2026: the walk's `stockCost` (engine `stockBasis`), the stock allocated newest-first onto the received lots at their goods rate, the opening beyond them. `PROD_STOCK_COST` and salt's `STOCK_COST` are gone; nothing is typed. |
 | `QUOTES` | product to a function over the two quote globals; see section 8 |
 | `LADDER_BY` | per-product overrides merged onto the base `LADDER`, read by `ladderFor` |
-| `TIER_RULE` | the pricing rule per product: salt's Set Price (`drift`, `points`, `ceilingX`, `suggest`, `presets`) or a stated board (`fixed`, `rungs`, `grid`, `ceilingX`). There are no price levels and no `TIER_NAMES` (18 Oct 2026). |
+| `TIER_RULE` | the pricing rule per product: salt's Median Price (`drift`, `points`, `ceilingX`, `suggest`, `presets`) or a stated board (`fixed`, `rungs`, `grid`, `ceilingX`). There are no price levels and no `TIER_NAMES` (18 Oct 2026). |
 | `RULES.creditUnits` | retail and associate credit caps per product, read by `creditCapFor` |
 | `RULES.reorderUnits` | the typed reorder point, now only the fallback for a book with no demand; `reorderFor` reads the measured one from `restockFor` (24 Sep 2026) |
 | `PRICE_ENGINE.anchors` | the cost-ladder anchor prices per product, with a derive-from-default fallback in `anchorsFor` |
@@ -101,7 +101,7 @@ data-driven: the price list, the guest board, the order form's segment, the orde
 the associate's card all loop over whatever the published data carries. The associates' two
 cards carry every book's sales progress and the reward on the tiered books alone (F9 revised, 28 Sep 2026:
 `associateSnapshot` and `associateCard` in `tools/book.mjs` loop `PROD_ORDER` and fill `reward` only on the
-desk's `tieredBooks()`), so a new book reaches them at once, and its reward only with a Set Price. There is no
+desk's `tieredBooks()`), so a new book reaches them at once, and its reward only with a Median Price. There is no
 hard-coded list of two anywhere in `stmt/page.js`, `stmt/orders.js`, `stmt/refs.js` or
 `stmt/send.js`.
 

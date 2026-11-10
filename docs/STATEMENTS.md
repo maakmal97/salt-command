@@ -367,7 +367,7 @@ of `tools/make_statements.mjs`) changed to match before the next issue, since th
 
 **EVERY GUEST LINK OPENS ONE BOARD, THE SET PRICE** (18 Oct 2026, his decision: the five price levels are gone). The
 publish writes the one guest board under the KV key `guestboard` (`guestBoard(book, pricing, now)` in `tools/pricelist.mjs`:
-the engine's `quoteAt` at a lift of nought, so salt's Set Price and a stated board's own price for oil, candy and rice),
+the engine's `quoteAt` at a lift of nought, so salt's Median Price and a stated board's own price for oil, candy and rice),
 and `handleGuest` reads that key for every link, whoever minted it and whatever its record carries. A record from before
 (a `tier`, a `level`, a `standing` mark for a level) is read and ignored, so an id already handed out keeps opening the
 board; the old keys `board:1`, `board:2`, `tboard:*`, `gboard:*` and `tiers` are left in the store and nothing reads them.
@@ -836,7 +836,7 @@ and "Nothing on your account yet". Nothing about the statements changed.
 **THE CUSTOMER SEES NO LEVEL** (S4 4.10, his D11 of 24 Sep 2026, reversing v659's "a very subtle tier
 level, in symbol and colour"). Prices drew a glyph in the level's colour beside each product (`MARK`, v659
 to S4); it is gone, and nothing on the page reads a level. There are no price levels since 18 Oct 2026, and the
-sealed list carries none: a customer is quoted the Set Price lifted by their %, which the page never names. **Nor their own rate, nor a word that prices differ between customers** (his instruction of 27 Sep
+sealed list carries none: a customer is quoted the Median Price lifted by their %, which the page never names. **Nor their own rate, nor a word that prices differ between customers** (his instruction of 27 Sep
 2026): a product's pane is its mark and its sizes, the lead says nothing of history or of a week, and the
 retired words are deleted from `stmt/words.js`, whose every word is served in the page's source. Since the
 cap was retired the same day, the sealed list carries no `rate` or `orders`, and `basis` is `tier` or `board`;
@@ -855,12 +855,12 @@ would put names, encrypted, into the committed `_kv` records, where today there 
 **The price list is a second sealed document beside the live statement.** The deploy writes
 it in the same publish, under the same content key, so the site still holds nothing it can
 read. `tools/pricelist.mjs` is the whole rule: since v651 (his decisions of 15 Sep 2026) each board
-size is the customer's quote for that product: the Set Price lifted by their %, or a stated board's price, never under
+size is the customer's quote for that product: the Median Price lifted by their %, or a stated board's price, never under
 the Floor and never over the Ceiling (18 Oct 2026): the engine's `cardPrice`, which the desk's
 printed board calls too, and the suite holds the two equal. **The cap is retired** (his decision of
 27 Sep 2026): until then the tier was a ceiling, lowered to the best unit rate of their last four orders
 before the week's Monday (v655), rounded down to the ten (v660); now what they paid before lowers
-nothing, and nothing on the list is weekly. The v510 draw toward the ask retired with v651. **A product with neither a Set Price nor a board is not priced**: the list carries it in `soon`,
+nothing, and nothing on the list is weekly. The v510 draw toward the ask retired with v651. **A product with neither a Median Price nor a board is not priced**: the list carries it in `soon`,
 the page says its price is coming soon, and the order sheet does not offer it. One
 price per size, for the goods (v502): delivery is not on the list. It is a figure
 he types **when he acknowledges the order** (v694; it was at ready until then, and the order becomes
@@ -2187,14 +2187,14 @@ and `/words` private routes carry the Maker review's offered-again stages and th
 decisions use `handleDraftDecide`, so double decisions and site-order effects retain the normal
 checks. Typed inputs are `inputs/stock-count`, `inputs/sale`, `inputs/purchase`, `inputs/tier-set`, `inputs/house-sizes`, `inputs/hush`,
 `inputs/loan`, `inputs/repay`, `inputs/gift`, `inputs/redeem`, `inputs/add-id`, `inputs/amend-id`
-and `inputs/place`. On a book with a Set Price, `inputs/tier-set` accepts the existing `tierset` shape with a
+and `inputs/place`. On a book with a Median Price, `inputs/tier-set` accepts the existing `tierset` shape with a
 numeric `0..2` (their %, 0% to 200%) like the Desk (zero is held) or `null` to set it back to 0; supplier codes
 and resale buckets are excluded, and fixed books remain refused. The Counter shows the % held and the engine's
 suggestion, as a %, from the seeded snapshot and offers no control on fixed books. Add ID is separate: a book with a
-Set Price offers Not set by default, the active rule's presets (Set Price, +5%, +10%, +15%, +20%, +30%) and another %,
+Median Price offers Not set by default, the active rule's presets (salt's -50% to +50% with Median Price at 0) and another %,
 `0..2`; a valid choice travels in the existing `addid`
 entry and pair-vault route, while an invalid typed value is refused before vault preparation.
-Not set leaves the % unheld, which is 0%, the Set Price. No pricing is done on either road. These inputs use the existing
+Not set leaves the % unheld, which is 0%, the Median Price. No pricing is done on either road. These inputs use the existing
 Position Engine constructors and drafter checks, go
 through the existing queue and wait for review. Loans and repayments retain their loan rows; gifts
 use the goodwill sale shape; redemption derives reward balance on the Desk and offsets the oldest
@@ -2753,7 +2753,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `acct.open-card` | Accounts row with nothing to do but look (key: the username) | Opens that account's card, as a tap on the row does. |
 | `acct.partner` | Account card, Partner (key: the code) | Makes them a partner on a second tap within four seconds: a name-free partner entry for review; a partner pays the Floor. |
 | `acct.pct.book` | Account card, Their % (key: the book) | Shows that book's %. |
-| `acct.pct.clear` | Account card, Their % (key: the code) | Sends their % back to 0, the Set Price, for review. |
+| `acct.pct.clear` | Account card, Their % (key: the code) | Sends their % back to 0, the Median Price, for review. |
 | `acct.pct.down` | Account card, Their % | Lowers the % by 5, to -30% at most; their prices show at it. |
 | `acct.pct.send` | Account card, Their % (key: the code) | Sends their % at the stepper's figure for review; off while it is what is set. |
 | `acct.pct.suggest` | Account card, Their % | Sets the stepper to the engine's suggested %; it sends nothing. |
@@ -2994,8 +2994,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `pool.target` | Group orders | The target, in units. |
 | `queue.details` | Server-held entry card (key: the entry id) | Opens the entry's reference, when it was sent and its state, as a list of names and values. |
 | `queue.withdraw` | Server-held entry card (key: the entry id) | Withdraws the uploaded entry, or finishes a withdrawal begun. |
-| `record.add-id.drift` | Record, Add ID, one for each book with a Set Price (key: the book) | The starting %: not set, a preset or another %. |
-| `record.add-id.drift-value` | Record, Add ID, one for each book with a Set Price (key: the book) | The starting % when it is another %, from 0 to 2. |
+| `record.add-id.drift` | Record, Add ID, one for each book with a Median Price (key: the book) | The starting %: not set, a preset or another %. |
+| `record.add-id.drift-value` | Record, Add ID, one for each book with a Median Price (key: the book) | The starting % when it is another %, inside the book's own range. |
 | `record.add-id.link` | Record, Add ID | The one place field: words searched on OpenStreetMap, a Google Maps, Waze or Apple Maps link, or two figures, read on this device (a short link opened on the Worker). |
 | `record.add-id.link.here` | Record, Add ID, under the map link | Use my location: this phone's point put in the field as two figures. |
 | `record.add-id.name` | Record, Add ID | The name, which never leaves this device in the clear. |
