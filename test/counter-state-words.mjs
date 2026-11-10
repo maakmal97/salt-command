@@ -313,7 +313,7 @@ export async function run({ ok }) {
     const screens = (d) => ["pHome", "pPrices", "pOrder", "pCard", "osheet", "ynSheet", "paySheet"].map((id) => d.getElementById(id)).filter(Boolean).map(words).join(" ");
     const bits9 = { page: screens(S.d), placed: screens(L.d), sheet: screens(checkL.d), board: words(board.body), tiles: t(sv.body) }, everyText = Object.values(bits9).join(" ");
     const where9 = Object.entries(bits9).filter(([, v]) => SO.wordsIn(v, PRODUCTS).length).map(([k, v]) => [k, (v.match(/.{0,30}\b(salt|oil|candy|rice|gas)\b.{0,30}/i) || [""])[0]]);
-    ok(SO.wordsIn(everyText, PRODUCTS).length === 0 && !SHAPES.some((s) => SO.wordsIn(s, PRODUCTS).length) && !PRODUCTS.some((w) => new RegExp("(^|[^a-z])" + w, "i").test(SHAPES.join(" "))) && SHAPES.length === 7,
+    ok(SO.wordsIn(everyText, PRODUCTS).length === 0 && !SHAPES.some((s) => SO.wordsIn(s, PRODUCTS).length) && !PRODUCTS.some((w) => new RegExp("(^|[^a-z])" + w, "i").test(SHAPES.join(" "))) && SHAPES.length === 6,   /* five books and the Ring: the Heart went with PrEP, 10 Nov 2026 */
       "no product word and no level word in the captions, headings and lines of any screen, what the reader is told included, and none among the five shape words: " + JSON.stringify(where9));
 
     /* ---- 10: his words, through the Worker's lock */
