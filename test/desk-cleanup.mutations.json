@@ -1,0 +1,157 @@
+[
+ {
+  "name": "F1.1 the chase carries no chip",
+  "find": "      card.why+=`<div class=\"rchips\">${[...new Set(credit.map(x=>x.rule))].map(r=>`<span class=\"rchip\">${esc(r)}</span>`).join('')}</div>`;",
+  "replace": ""
+ },
+ {
+  "name": "F1.2 a credit breach keeps its own Rule card",
+  "find": "      xs=xs.filter(x=>!/^Credit /.test(x.rule));\n      if(!xs.length)return;}",
+  "replace": "}"
+ },
+ {
+  "name": "F2.1 a partner at the Floor is a breach again",
+  "find": "    if(!under&&m>-0.5&&isPartner(s.customer))return;",
+  "replace": ""
+ },
+ {
+  "name": "F3.1 the repeat notes are never grouped",
+  "find": "return D.length>=3?D:[];};",
+  "replace": "return D.length>=999?D:[];};"
+ },
+ {
+  "name": "F3.2 the fold counts items, not cards",
+  "find": "<span class=\"ct${n?'':' zero'}\">${n}</span></summary>\n      <div style=\"padding-bottom:12px\">${rest.map(obsCard)",
+  "replace": "<span class=\"ct${n?'':' zero'}\">${L.length}</span></summary>\n      <div style=\"padding-bottom:12px\">${rest.map(obsCard)"
+ },
+ {
+  "name": "F4.1 a negative headroom is a card again",
+  "find": "    if(H&&H.live>0&&!(H.headroom<0)){",
+  "replace": "    if(H&&H.live>0){"
+ },
+ {
+  "name": "F5.1 the cap is said once a row",
+  "find": "${[...new Set(a.over)].map(p=>",
+  "replace": "${a.over.map(p=>"
+ },
+ {
+  "name": "F6.1 the margin tile adds nothing",
+  "find": "return cell('Gross margin',fmt0(Object.keys(G).reduce((a,p)=>a+(+G[p]||0),0)),",
+  "replace": "return cell('Gross margin',fmt0(Object.keys(G).reduce((a,p)=>a+0,0)),"
+ },
+ {
+  "name": "F7.1 every correction of a day draws the day's changes",
+  "find": "          if(richDay[L.date])return;",
+  "replace": ""
+ },
+ {
+  "name": "F8.1 every correction of a field is held against the row",
+  "find": "      cl.forEach((c,i)=>{if(last[c.field]!==i||c.field==='note')return;",
+  "replace": "      cl.forEach((c,i)=>{if(c.field==='note')return;"
+ },
+ {
+  "name": "F8.3 a note's prose is a claim",
+  "find": "      cl.forEach((c,i)=>{if(last[c.field]!==i||c.field==='note')return;",
+  "replace": "      cl.forEach((c,i)=>{if(last[c.field]!==i)return;"
+ },
+ {
+  "name": "F8.2 a day under zero counts as empty",
+  "find": "  const dry=sh.filter(r=>Math.abs(r.lvl)<=0.05).length;",
+  "replace": "  const dry=sh.filter(r=>r.lvl<=0.05).length;"
+ },
+ {
+  "name": "C1.1 the glance is back on Rules",
+  "find": "  ${boundaryPanel(bnd,risks)}",
+  "replace": "  <h2>Position at a glance</h2>${boundaryPanel(bnd,risks)}"
+ },
+ {
+  "name": "C1.2 the Money at stake chart is back",
+  "find": "<canvas id=\"tdCoverChart\"></canvas>",
+  "replace": "<canvas id=\"tdCoverChart\"></canvas><canvas id=\"tdKindChart\"></canvas>"
+ },
+ {
+  "name": "C1.3 an unmeasured line is back",
+  "find": "<span class=\"ct\">${fmt(c.eff)} a unit</span></summary>",
+  "replace": "<span class=\"ct\">${fmt(c.eff)} a unit, the rest not measured</span></summary>"
+ },
+ {
+  "name": "C1.4 the gap tile is Lost to both",
+  "find": "<div class=\"l salt-kpi__label\">The gap</div>",
+  "replace": "<div class=\"l salt-kpi__label\">Lost to both</div>"
+ },
+ {
+  "name": "C1.5 an empty fold is drawn",
+  "find": "const ledgerSec=(title,q,n,inner)=>n>0?",
+  "replace": "const ledgerSec=(title,q,n,inner)=>n>=0?"
+ },
+ {
+  "name": "P1.1 demand is not clamped",
+  "find": "return {dem:Math.round(n(p.dem,-50,50)/10)*10,",
+  "replace": "return {dem:Math.round(n(p.dem,-5000,5000)/10)*10,"
+ },
+ {
+  "name": "P1.1 a lot of an unknown book is kept",
+  "find": ".filter(l=>l&&PROD_IDS.includes(l.prod)&&+l.qty>0",
+  "replace": ".filter(l=>l&&+l.qty>0"
+ },
+ {
+  "name": "P2.1 the forecast never reads a what-if lot",
+  "find": "whatIf:planGet().lots.filter(l=>l.prod===PROD)};",
+  "replace": "whatIf:[]};"
+ },
+ {
+  "name": "P2.2 a what-if lot costs nothing",
+  "find": "    cout.push({day:b.day,rm,who:'',label:'what-if lot',whatIf:true,prod:PROD});});",
+  "replace": "});"
+ },
+ {
+  "name": "P2.3 the page does not say what if",
+  "find": "<b>What if, not the book</b>: ",
+  "replace": "<b>Lots</b>: "
+ },
+ {
+  "name": "P2.5 Remove removes nothing",
+  "find": "function planLotDrop(i){const L=planGet().lots;L.splice(i,1);planSet({lots:L});}",
+  "replace": "function planLotDrop(i){const L=planGet().lots;planSet({lots:L});}"
+ },
+ {
+  "name": "P3.1 demand moves the first column",
+  "find": "  return {base:side(0,0),plan:side(P.dem,P.cost),books};",
+  "replace": "  return {base:side(P.dem,0),plan:side(P.dem,P.cost),books};"
+ },
+ {
+  "name": "P3.2 the buying cost moves nothing",
+  "find": "cogs+=u*b.cost*(1+cost/100);",
+  "replace": "cogs+=u*b.cost;"
+ },
+ {
+  "name": "P3.3 running costs come off nothing",
+  "find": "return {rev,cogs,margin,orders,net:margin-P.run,",
+  "replace": "return {rev,cogs,margin,orders,net:margin,"
+ },
+ {
+  "name": "P3.4 the break-even is never said",
+  "find": "  const even=(P.run>0&&b.perOrder>0)?Math.ceil(P.run/b.perOrder):null;",
+  "replace": "  const even=null;"
+ },
+ {
+  "name": "P4.1 a stepper never greys",
+  "find": "onclick=\"planStep('${k}',${by})\"${P[k]>=hi?' disabled':''}>",
+  "replace": "onclick=\"planStep('${k}',${by})\">"
+ },
+ {
+  "name": "P4.2 Reset keeps the running costs",
+  "find": "function planReset(){planSet({dem:0,cost:0,run:0});}",
+  "replace": "function planReset(){planSet({dem:0,cost:0});}"
+ },
+ {
+  "name": "F2.2 a partner's loss is exempt too",
+  "find": "    if(!under&&m>-0.5&&isPartner(s.customer))return;",
+  "replace": "    if(!under&&isPartner(s.customer))return;"
+ },
+ {
+  "name": "P2.6 a thirteenth lot is taken",
+  "find": "  const full=P.lots.length>=12;",
+  "replace": "  const full=false;"
+ }
+]
