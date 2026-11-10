@@ -1,9 +1,9 @@
 [
  {
-  "name": "the low end at 12.5 moves from 1.44 to 1.5",
-  "file": "engine/rules.mjs",
-  "find": "ends:{low:[2.4,1.44], high:[3.6,1.74]}",
-  "replace": "ends:{low:[2.4,1.5], high:[3.6,1.74]}"
+  "name": "a discount is read off the high end",
+  "file": "engine/pricing.mjs",
+  "find": "const end=endPair(x.k<0?R.ends.low:R.ends.high);if(!end)return m;",
+  "replace": "const end=endPair(R.ends.high);if(!end)return m;"
  },
  {
   "name": "the step is no longer an equal share: the position is squared",
@@ -20,8 +20,8 @@
  {
   "name": "the walk reads the old law, the multiple times (1 + %)",
   "file": "engine/pricing.mjs",
-  "find": "const x=step(rP,mP,R.ends?fb*driftMultiple(q,R,k):fb*m*(1+k));",
-  "replace": "const x=step(rP,mP,fb*m*(1+k));"
+  "find": "band?bandTop(s.p,lo,hi,k):R.ends?fb*driftMultiple(q,R,k):fb*m*(1+k)",
+  "replace": "band?bandTop(s.p,lo,hi,k):fb*m*(1+k)"
  },
  {
   "name": "the stated board's share is not taken",
@@ -78,15 +78,15 @@
   "replace": ""
  },
  {
-  "name": "the preview takes 35%",
+  "name": "the preview takes a figure past the book's range",
   "file": "src/maker-inputs.js",
-  "find": "  if (!PRICING_ENGINE.driftOk(pct)) return { error: \"Choose a % from -30% to +30%.\" };\n",
+  "find": "  if (!PRICING_ENGINE.driftOk(pct, rule)) return { error: \"Choose a % from \" + PRICING_ENGINE.rangeSay(rule).pct + \".\" };\n",
   "replace": ""
  },
  {
-  "name": "the Desk route takes any whole %",
+  "name": "the Desk route takes a whole % past 100",
   "file": "src/worker.js",
-  "find": "    if (whole % 5 !== 0 || whole < -30 || whole > 30) return json({ ok: false, error: \"Choose a % from -30 to +30 in steps of 5.\" }, 400);\n",
+  "find": "    if (!Number.isInteger(whole) || whole < -100 || whole > 100) return json({ ok: false, error: \"Choose a whole % from -100 to +100.\" }, 400);\n",
   "replace": ""
  },
  {
@@ -104,14 +104,14 @@
  {
   "name": "the stepper moves by something other than a share of 5",
   "file": "stmt/owner.js",
-  "find": "st.pct[st.book]=Math.min(30, st.pct[st.book]+5);",
-  "replace": "st.pct[st.book]=Math.min(30, st.pct[st.book]+7);"
+  "find": "st.pct[st.book]=Math.min(lim.max, Math.floor(st.pct[st.book]/5)*5+5); pctPaint();",
+  "replace": "st.pct[st.book]=Math.min(lim.max, Math.floor(st.pct[st.book]/5)*5+7); pctPaint();"
  },
  {
   "name": "the form sends the whole % instead of the fraction",
   "file": "stmt/owner.js",
-  "find": "tier:Number((whole/100).toFixed(2)),unit:'pct'}, check=JSON.stringify(body);",
-  "replace": "tier:whole,unit:'pct'}, check=JSON.stringify(body);"
+  "find": "tier:Number((whole/100).toFixed(2)),unit:punit}, check=JSON.stringify(body);",
+  "replace": "tier:whole,unit:punit}, check=JSON.stringify(body);"
  },
  {
   "name": "the form forgets what it read",
@@ -124,5 +124,23 @@
   "file": "engine/pricing.mjs",
   "find": "if(hit)return {card:hit[1],cardNote:\"their price at \"+qty+\" unit\"};",
   "replace": "if(hit)return {card:hit[1],cardNote:\"the board, one price for everybody\"};"
+ },
+ {
+  "name": "the stepper stops at the old +30 whatever the catalog says",
+  "file": "stmt/owner.js",
+  "find": "lim={min:typeof pbook.driftMin==='number'?pbook.driftMin:-30, max:typeof pbook.driftMax==='number'?pbook.driftMax:30}",
+  "replace": "lim={min:-30, max:30}"
+ },
+ {
+  "name": "the form sends pct whatever the book's unit",
+  "file": "stmt/owner.js",
+  "find": "punit=pbook.driftUnit||'pct';",
+  "replace": "punit='pct';"
+ },
+ {
+  "name": "the saved-entry whitelist does not know the band unit, so the page refuses to send a salt %",
+  "file": "stmt/maker-geo.js",
+  "find": "'mid','big','pct','band'];",
+  "replace": "'mid','big','pct'];"
  }
 ]

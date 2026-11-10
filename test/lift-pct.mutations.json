@@ -14,8 +14,8 @@
  {
   "name": "the multiple slides in the size, not in the log of the size, between his points",
   "file": "engine/pricing.mjs",
-  "find": "Math.log(q/a[0])/Math.log(b[0]/a[0])",
-  "replace": "(q-a[0])/(b[0]-a[0])"
+  "find": "return a[1]+(b[1]-a[1])*Math.log(q/a[0])/Math.log(b[0]/a[0]);}",
+  "replace": "return a[1]+(b[1]-a[1])*(q-a[0])/(b[0]-a[0]);}"
  },
  {
   "name": "the multiple is clamped at the first point only: beyond 12.5 it keeps sliding down",
@@ -24,10 +24,10 @@
   "replace": "  if(q>=last[0])return last[1]-0.01*(q-last[0]);\n"
  },
  {
-  "name": "a customer's % is ignored in the walk: every price is the Set Price",
+  "name": "a customer's % is ignored in the walk: every price is the Median Price",
   "file": "engine/pricing.mjs",
-  "find": "const x=step(rP,mP,R.ends?fb*driftMultiple(q,R,k):fb*m*(1+k));",
-  "replace": "const x=step(rP,mP,fb*m);"
+  "find": "const x=step(rP,mP,band?bandTop(s.p,lo,hi,k):R.ends?fb*driftMultiple(q,R,k):fb*m*(1+k));",
+  "replace": "const x=step(rP,mP,s.p);"
  },
  {
   "name": "the price rounds to the nearest five, not down",
@@ -50,8 +50,8 @@
  {
   "name": "a lifted price carries an extra five on top of the % the customer holds",
   "file": "engine/pricing.mjs",
-  "find": "return {q:q,floor:+fl.toFixed(2),ceiling:+ceil.toFixed(2),set:s.p,p:p,d:k};",
-  "replace": "return {q:q,floor:+fl.toFixed(2),ceiling:+ceil.toFixed(2),set:s.p,p:p>s.p?p+5:p,d:k};"
+  "find": "return {q:q,floor:+fl.toFixed(2),ceiling:+(band?hi:ceil).toFixed(2),set:s.p,p:p,d:k};",
+  "replace": "return {q:q,floor:+fl.toFixed(2),ceiling:+(band?hi:ceil).toFixed(2),set:s.p,p:p>s.p?p+5:p,d:k};"
  },
  {
   "name": "driftAt walks the size alone, not the grid beneath it, so it can disagree with the grid by a step",
@@ -66,16 +66,16 @@
   "replace": "else if(R.drift)ps=qs.map(q=>{const w=driftWalk([q],C,P,d);return +cardPrice(null,floorTotal(q,C,P),w[0].p).toFixed(2);});"
  },
  {
-  "name": "a % may be as low as -1 (the old drift's range)",
+  "name": "a % may be as low as -2, on any book",
   "file": "engine/pricing.mjs",
-  "find": "v>=LIFT_MIN-1e-9&&v<=LIFT_MAX+1e-9;}",
-  "replace": "v>=-1-1e-9&&v<=LIFT_MAX+1e-9;}"
+  "find": "v>=g.min-1e-9&&v<=g.max+1e-9;}",
+  "replace": "v>=-2-1e-9&&v<=g.max+1e-9;}"
  },
  {
   "name": "a % may be up to 3",
   "file": "engine/pricing.mjs",
-  "find": "v>=LIFT_MIN-1e-9&&v<=LIFT_MAX+1e-9;}",
-  "replace": "v>=LIFT_MIN-1e-9&&v<=3;}"
+  "find": "v>=g.min-1e-9&&v<=g.max+1e-9;}",
+  "replace": "v>=g.min-1e-9&&v<=3;}"
  },
  {
   "name": "the automatic drift prices again: a customer with none held is quoted what the record reads",
@@ -194,8 +194,8 @@
  {
   "name": "the unit gate never fires: a salt figure queued with no unit from a page cached before the deploy, stamped after the switch, folds as a % lift",
   "file": "engine/apply.mjs",
-  "find": "(it.row && it.row.unit) !== \"pct\" ? \"without the % unit\"",
-  "replace": "false ? \"without the % unit\""
+  "find": ": !PRICING_ENGINE.unitOk(ruleOf(p), it.row && it.row.unit) ? (ruleOf(p).band",
+  "replace": ": false ? (ruleOf(p).band"
  },
  {
   "name": "the reason leaves out how far over the Set Price they paid",
@@ -234,15 +234,27 @@
   "replace": "good=+(n('good',0.3)*rec.G).toFixed(4)"
  },
  {
-  "name": "the presets lose -30%",
+  "name": "the presets lose -50%",
   "file": "engine/rules.mjs",
-  "find": "        presets:{\"-30%\":-0.3, ",
-  "replace": "        presets:{"
+  "find": "presets:{\"-50%\":-0.5, ",
+  "replace": "presets:{"
  },
  {
   "name": "a good record earns no discount (good weight nought)",
   "file": "engine/rules.mjs",
   "find": "minSettled:3, good:0.3},",
   "replace": "minSettled:3, good:0},"
+ },
+ {
+  "name": "the snapshot hands the suggestion no places, so a band book's paid-over is the old ratio",
+  "file": "engine/snapshot.mjs",
+  "find": "PRICING_ENGINE.liftRange(R),places?{places:places}:{}));",
+  "replace": "PRICING_ENGINE.liftRange(R),{}));"
+ },
+ {
+  "name": "the snapshot suggests inside the old range on a band book",
+  "file": "engine/snapshot.mjs",
+  "find": "Object.assign({},PRICING_ENGINE.liftRange(R),places?{places:places}:{})",
+  "replace": "Object.assign({},places?{places:places}:{})"
  }
 ]

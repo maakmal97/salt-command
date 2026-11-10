@@ -38,8 +38,8 @@
   {
     "name": "their % wrong generated body",
     "file": "stmt/owner.js",
-    "find": "var body={code:code,product:st.book,tier:Number((whole/100).toFixed(2)),unit:'pct'}, check=JSON.stringify(body);",
-    "replace": "var body={code:'CX2-ZED',product:st.book,tier:Number((whole/100).toFixed(2)),unit:'pct'}, check=JSON.stringify(body);"
+    "find": "var body={code:code,product:st.book,tier:Number((whole/100).toFixed(2)),unit:punit}, check=JSON.stringify(body);",
+    "replace": "var body={code:'CX2-ZED',product:st.book,tier:Number((whole/100).toFixed(2)),unit:punit}, check=JSON.stringify(body);"
   },
   {
     "name": "partner confirmed cache not released",

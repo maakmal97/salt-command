@@ -40,7 +40,7 @@ export async function run({ ok, pageWork }) {
     const c1 = card("ord-r1");
     ok(!!c1 && !c1.hidden && t(c1.querySelector(".salt-eyebrow")) === "Associate reward" && t(c1.querySelector(".salt-status")) === "Reaches a reward"
       && /salt-status--brass/.test(c1.querySelector(".salt-status").className) && meter(c1) === "RM 530.00 + RM 70.00 | Next reward 10 units’ cost"
-      && t(c1.querySelector(".orwdnote")) === "Margin past 10 units at landed cost (RM 580.00 at RM 58.00 today). Once paid, 1 unit joins this order at cost, one delivery: RM 58.00, less RM 20.00 given under their Set Price since the last reward, RM 38.00 net. Salt only."
+      && t(c1.querySelector(".orwdnote")) === "Margin past 10 units at landed cost (RM 580.00 at RM 58.00 today). Once paid, 1 unit joins this order at cost, one delivery: RM 58.00, less RM 20.00 given under their Median Price since the last reward, RM 38.00 net. Salt only."
       && c1.querySelector(".salt-meter").style.getPropertyValue("--salt-fill") === "100",
       "a placed order reads the preview: " + t(c1));
     await click(byAct(d, "part.orders.open")); await click(byAct(d, "order.open", "ord-r2"));

@@ -118,8 +118,20 @@ export async function run({ ok }) {
       }
       return c;
     };
+    /* 10 Nov 2026 (the price band): THE UNIT'S NAME CHANGED, THE FIGURE DID NOT. Every salt figure staged in this window travels as unit "pct", which on
+       the band is the form before it: the working fold drops it with a note (test/price-band.mjs holds that). The replay is about what a fold does with
+       a figure it takes, so the working fold is handed the same batch with a salt figure's unit named as the band names it; the figure, and every other
+       byte, is the staged one, and the fold before the move still reads the batch as staged. */
+    const bandUnit = (staged) => {
+      const c = JSON.parse(JSON.stringify(staged));
+      for (const it of (c.approved || [])) {
+        const r = it.row || {}, t = it.collection === "roster" ? [r.tiers] : it.collection === "tierset" ? Object.values(r.tiers || {}) : [];
+        if (r.unit === "pct" && t.some((x) => x && typeof x === "object" && typeof x.salt === "number")) r.unit = "band";
+      }
+      return c;
+    };
     const go = (F, b, forOld) => {
-      const book = JSON.parse(b.book), staged = forOld ? noOldLift(b.staged) : b.staged;
+      const book = JSON.parse(b.book), staged = forOld ? noOldLift(b.staged) : bandUnit(b.staged);
       try {
         const p = F.plan(JSON.parse(b.book), staged, null);
         const notes = notesFor(p, b.master);
@@ -141,8 +153,9 @@ export async function run({ ok }) {
     /* the engine's applyBatch leaves its argument alone and returns the folded book, equal to what the fold wrote */
     const ENG = await import("../engine/apply.mjs"), { nextRid } = await import("../tools/rid.mjs"), { sortBook } = await import("../tools/sort-ledger.mjs");
     const b0 = bs[0], book0 = JSON.parse(b0.book), frozen = JSON.stringify(book0);
-    const p0 = NEW.plan(JSON.parse(b0.book), b0.staged, null), n0 = notesFor(p0, b0.master);
-    const out = ENG.applyBatch(book0, b0.staged, n0, Object.assign(Object.create(NEW.planCtx), { nextRid, sortBook }));
+    const s0 = bandUnit(b0.staged);   /* 10 Nov 2026: the newest batch sets a salt figure, handed over in the band's unit as above */
+    const p0 = NEW.plan(JSON.parse(b0.book), s0, null), n0 = notesFor(p0, b0.master);
+    const out = ENG.applyBatch(book0, s0, n0, Object.assign(Object.create(NEW.planCtx), { nextRid, sortBook }));
     ok(JSON.stringify(book0) === frozen, "S1: applyBatch leaves the book it is given exactly as it was");
     /* nothing aliases the staged batch, and a refused item folds nothing and leaves the book as it was */
     const outText = out.ok && text(out.book);

@@ -53,10 +53,20 @@ export async function run({ ok }) {
   ok(floorSame === 0 && partnerOff === 0 && E.quoteAt(1, C2, P, "partner") === 60 && E.quoteAt(1, C0, P, "partner") === 50 && E.quoteAt(1, C2, P, 0) === 120,
     "the walk reports the new Floor, a partner pays it, and a stranger still pays the Set Price: " + JSON.stringify({ floorSame, partnerOff, partner: [E.quoteAt(1, C0, P, "partner"), E.quoteAt(1, C2, P, "partner")], set: E.quoteAt(1, C2, P, 0) }));
 
-  /* 3. A DISCOUNT THE FLOOR OVERTAKES IS HELD AT THE FLOOR */
+  /* 10 Nov 2026: salt's Ceiling is now the band's curve, on the supplier's price, so it cannot move with the share; a rule with no band still strikes
+     its Ceiling and a held % on the COGS Floor, with a share or without */
+  const NB = (() => { const x = { ...R }; delete x.band; return x; })(), PN = { ...P, tierRule: NB };
+  const n0 = E.driftWalk(grid, C0, PN, 0.2), n2 = E.driftWalk(grid, C2, PN, 0.2);
+  ok(n2.every((x, i) => x.ceiling === n0[i].ceiling && x.ceiling === 3 * E.floorBase(x.q, C2, PN) && x.p === n0[i].p && x.set === n0[i].set) && n2.some((x) => x.p > x.set),
+    "on a rule with no band the Ceiling is 3 times the COGS Floor and a held 20% the same price, with a share or without: " + JSON.stringify(n2.slice(0, 3).map((x) => [x.q, x.p, x.ceiling])));
+
+  /* 3. A DISCOUNT IS A PLACE BETWEEN THE MEDIAN AND THE FLOOR (the band, 10 Nov 2026), SO IT MOVES WITH THE FLOOR AND IS NEVER UNDER IT */
   const low0 = E.quoteAt(12.5, C0, P, -0.3), low2 = E.quoteAt(12.5, C2, P, -0.3), up2 = E.quoteAt(12.5, C2, P, 0.3), up0 = E.quoteAt(12.5, C0, P, 0.3);
-  ok(low0 === 900 && low2 === 900 && E.floorTotal(12.5, C2, P) === 750 && E.quoteAt(12.5, stack(0.5), P, -0.3) === E.floorTotal(12.5, stack(0.5), P) && E.floorTotal(12.5, stack(0.5), P) === 940 && up2 === up0,
-    "-30% at 12.5 is RM 900 on COGS and over a Floor of RM 750, and is held at the Floor once the Floor passes it (RM 940 at a share of 0.5); +30% does not move: " + JSON.stringify([low0, low2, E.quoteAt(12.5, stack(0.5), P, -0.3), up0, up2]));
+  const low5 = E.quoteAt(12.5, stack(0.5), P, -0.3), down5 = (v) => Math.floor(v / 5 + 1e-9) * 5, place = (fl) => down5(995 * Math.pow(fl / 995, 0.3));
+  ok(E.quoteAt(12.5, C0, P, 0) === 995 && E.floorTotal(12.5, C0, P) === 625 && E.floorTotal(12.5, C2, P) === 750 && E.floorTotal(12.5, stack(0.5), P) === 940
+    && low0 === 865 && low2 === 910 && low5 === 975 && low0 === place(625) && low2 === place(750) && low5 === place(940)
+    && E.quoteAt(12.5, stack(0.5), P, -1) === 940 && E.quoteAt(12.5, C0, P, -1) === 625 && up2 === up0 && up0 === 1065,
+    "-30% at 12.5 is three tenths of the way from the Median (RM 995) to the Floor: RM 865 over a COGS Floor of RM 625, RM 910 over RM 750 (a share of 0.2) and RM 975 over RM 940 (0.5); -100% is that Floor; +30% (RM 1,065, toward the Ceiling) does not move: " + JSON.stringify([low0, low2, E.quoteAt(12.5, stack(0.5), P, -0.3), up0, up2]));
 
   /* 4. THE SHARE, FROM ROWS */
   const sales = [

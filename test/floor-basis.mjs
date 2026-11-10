@@ -2,7 +2,8 @@
    RM 5, THE CEILING IS THREE TIMES IT ON EVERY BOOK, AND A PARTNER PAYS THE FLOOR.
    1. floorTotal is costTotal up to the next RM 5 and never down; costTotal is the total to the sen; the multiple is the policy's.
    2. The partner's quote, the snapshot's floors and the drafter's floor are floorTotal at every size of every book, and a partner's grid too.
-   3. ceilingX is 3 on salt, oil, candy and rice, and a typed board is held to three times the floor on the book's own grid.
+   3. ceilingX is 3 on salt, oil, candy and rice, and a typed board is held to three times the floor on the book's own grid; salt's own Ceiling is
+      the band's curve since 10 Nov 2026 (test/price-band.mjs), its ceilingX kept for a rule with no band.
    4. salt's grid is the five, oil's stays the ten, candy's and rice's the ringgit.
    Mutations: test/floor-basis.mutations.json. */
 import { FROZEN_BOOK } from "./frozen.mjs";
@@ -88,8 +89,10 @@ export async function run({ ok }) {
   }
   const S = snap.byProduct.salt, CS = E.costStack(S.inputs.cost);
   const wk = E.driftWalk(S.inputs.policy.tierRule.rungs, CS, S.inputs.policy, 1);
-  ok(cn > 8 && held === cn && wk.every((r) => Math.abs(r.ceiling - 3 * E.floorBase(r.q, CS, S.inputs.policy)) < 0.01),
-    "a typed board is held to three times the floor on its own grid, and salt's walk carries a ceiling of three times its COGS Floor (10 Nov 2026): " + JSON.stringify({ cn, held, salt: wk.slice(0, 2).map((r) => [r.floor, r.ceiling]) }));
+  /* 10 Nov 2026 (the price band): salt's Ceiling is the curve on the supplier's price, down to RM 5 and never under the Floor; the boards keep three times */
+  const SR = S.inputs.policy.tierRule, curveAt = (r) => Math.max(Math.floor(E.bandCeiling(r.q, SR) / 5 + 1e-9) * 5, r.floor);
+  ok(cn > 8 && held === cn && !!SR.band && wk.length > 2 && wk.every((r) => r.ceiling === curveAt(r)) && wk.some((r) => Math.abs(r.ceiling - 3 * E.floorBase(r.q, CS, S.inputs.policy)) > 4.99),
+    "a typed board is held to three times the floor on its own grid, and salt's walk carries the band's Ceiling, the curve on the supplier's price and no longer three times its COGS Floor: " + JSON.stringify({ cn, held, salt: wk.slice(0, 2).map((r) => [r.floor, r.ceiling]) }));
 
   /* 4. THE GRIDS: salt the five, oil the ten, candy and rice the ringgit */
   ok(JSON.stringify(books.map((p) => snap.byProduct[p].inputs.policy.LADDER.round.to)) === "[5,10,1,1]" && RULES.LADDER.round.to === 5

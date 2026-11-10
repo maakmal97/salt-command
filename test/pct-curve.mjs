@@ -12,6 +12,9 @@
       Floor; refuses a partner, a supplier, a bucket, a book with no % and a figure out of range; the Desk route takes only a whole % in steps
       of 5; the Counter relays it under /all only; the Salt Admin form takes a whole % in steps of 5, draws the table off the read, drops a late
       reply, and sends the fraction.
+   10 Nov 2026, THE PRICE BAND: salt's own rule left this curve for the band (test/price-band.mjs), so parts 1 and 2 walk the curve on a rule that
+   still carries `ends` (salt's as it stood, the band taken off), which keeps the engine's driftMultiple proved; the boards, the gates, the
+   preview and the form are as they were, with salt's range -100% to +100% and its unit "band".
    Mutations: test/pct-curve.mutations.json. */
 import RULES_MOD from "../engine/rules.mjs";
 import { JSDOM } from "jsdom";
@@ -30,8 +33,9 @@ export async function run({ ok }) {
   const near = (a, b, e = 1e-9) => Math.abs(a - b) < e;
   const PCTS = [-0.3, -0.25, -0.2, -0.15, -0.1, -0.05, 0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3];
 
-  /* 1. the curve */
-  const M = (q, k) => E.driftMultiple(q, salt, k);
+  /* 1. the curve, on salt's rule as it stood until 10 Nov 2026: his ends, and no band */
+  const curve = (() => { const x = { ...salt, ends: { low: [2.4, 1.44], high: [3.6, 1.74] } }; delete x.band; return x; })();
+  const M = (q, k) => E.driftMultiple(q, curve, k);
   check(near(M(0.5, -0.3), 2.4) && near(M(0.5, 0), 3) && near(M(0.5, 0.3), 3.6) && near(M(12.5, -0.3), 1.44) && near(M(12.5, 0), 1.596)
     && near(M(12.5, 0.3), 1.74) && near(M(25, -0.3), 1.44) && near(M(25, 0.3), 1.74) && near(M(0.25, -0.3), 2.4),
   "his ends: -30% 2.40 at 0.5 and 1.44 at 12.5, +30% 3.60 and 1.74 (1.2 times the 22 Oct ends, 10 Nov 2026), the Set Price between, flat beyond the first and last points: "
@@ -42,20 +46,20 @@ export async function run({ ok }) {
   const s6 = (salt.points[2][1] - 1.596) / (3 - 1.596);
   check(near(M(6.25, -0.3), 1.44 + s6 * 0.96, 1e-9) && near(M(6.25, 0.3), 1.74 + s6 * 1.86, 1e-9),
     "each end keeps the Set Price's shape: at 6.25 the end sits the same share between its two multiples as the Set Price sits between 3 and 1.596");
-  const noEnds = { ...salt }; delete noEnds.ends;
+  const noEnds = { ...curve }; delete noEnds.ends;
   check(near(E.driftMultiple(6.25, noEnds, -0.2), 2.004 * 0.8) && near(E.driftMultiple(1, noEnds, 0.3), 2.4 * 1.3),
     "a rule with no ends keeps the multiple times (1 + %)");
 
-  /* 2. the walk on salt */
-  const P = { LADDER: RULES_MOD.LADDER, floorTo: RULES_MOD.RULES.floorTo, minPerUnit: 0, timePerOrder: 0, lotFloor: {}, tierRule: salt };
+  /* 2. the walk on that curve */
+  const P = { LADDER: RULES_MOD.LADDER, floorTo: RULES_MOD.RULES.floorTo, minPerUnit: 0, timePerOrder: 0, lotFloor: {}, tierRule: curve };
   const K = { eff: 58, effEx: 58, landed: 58 }, down5 = (v) => Math.floor(v / 5 + 1e-9) * 5;
   const F = (q) => E.floorTotal(q, K, P), Q = (q, k) => E.quoteAt(q, K, P, k);
   check(Q(0.5, -0.3) === Math.max(F(0.5), down5(F(0.5) * 2.4)) && Q(0.5, 0.3) === Math.min(down5(3 * F(0.5)), down5(F(0.5) * 3.6)),
     "half a unit at -30% is the Floor times 2.4 and at +30% the Ceiling, 3 times (3.6 is held), down to the RM 5: " + [F(0.5), Q(0.5, -0.3), Q(0.5, 0.3)].join(", "));
-  const qs = E.gridSizes(E.gridOf(salt));
+  const qs = E.gridSizes(E.gridOf(curve));
   const banded = PCTS.every((k) => qs.every((q) => { const p = Q(q, k); return p >= F(q) - 0.009 && p <= 3 * F(q) + 0.009; }));
   check(banded, "on the curve no price is under the Floor or over the Ceiling, at every % and every quarter");
-  const set = E.driftWalk(E.walkSizes(salt, qs), K, P, 0);
+  const set = E.driftWalk(E.walkSizes(curve, qs), K, P, 0);
   check(qs.every((q, i) => Q(q, 0) === set[i].set), "0% is the Set Price board to the ringgit");
   check(PCTS.every((k) => { const g = E.quoteGrid(K, P, k); return g && g.p.every((p, i) => p === Q(qs[i], k)); }),
     "quoteGrid and quoteAt walk one path at every % on the curve");
@@ -120,9 +124,9 @@ export async function run({ ok }) {
   check(!oilPv.error && oilPv.held === -0.3 && oilPv.rows.every((r) => r.at <= Math.max(r.now, r.at) && r.now <= r.at),
     "on oil the preview reads their -30% now against the board at 0%");
   check(!!MI.makerDriftPreview(book, "CP1-ZED", "salt", 0.1).error && !!MI.makerDriftPreview(book, "SP1-ZED", "salt", 0.1).error
-    && !!MI.makerDriftPreview(book, "AX1-ZED-R", "salt", 0.1).error && !!MI.makerDriftPreview(book, "CX1-ZED", "salt", 0.35).error
-    && !!MI.makerDriftPreview(book, "CX1-ZED", "candy", 0.1).error,
-  "the preview refuses a partner, a supplier, a bucket, a figure past 30% and a book that is not on the mirror");
+    && !!MI.makerDriftPreview(book, "AX1-ZED-R", "salt", 0.1).error && !!MI.makerDriftPreview(book, "CX1-ZED", "salt", 1.05).error && !MI.makerDriftPreview(book, "CX1-ZED", "salt", 0.35).error
+    && !!MI.makerDriftPreview(book, "CX1-ZED", "oil", 0.35).error && !!MI.makerDriftPreview(book, "CX1-ZED", "candy", 0.1).error,
+  "the preview refuses a partner, a supplier, a bucket, a figure past the book's own range (105% on salt, 35% on oil; 35% on salt is taken since 10 Nov 2026) and a book that is not on the mirror");
   const listOf = (code) => PL.priceList(code, { PRODUCTS: book.state.PRODUCTS, PROD_ORDER: ["oil"], sales: [] },
     { sizes: [], byProduct: { oil: { ...book.pricing.byProduct.oil, sizes: [10, 30, 50], ladder: [10, 30, 50].map((q) => ({ q, fixed: true, prices: [E.quoteAt(q, E.costStack(book.pricing.byProduct.oil.inputs.cost), book.pricing.byProduct.oil.inputs.policy, 0)] })), partners: [] } } },
     new Date(at)).products[0];
@@ -141,8 +145,9 @@ export async function run({ ok }) {
   const deskReq = (pct) => new Request("https://desk.test/_internal/maker/drift-preview/CX1-ZED/salt/" + pct, { headers: { "X-Counter-Maker-Key": "k".repeat(40) } });
   const env = { COUNTER_MAKER_KEY: "k".repeat(40) };
   const shape = async (pct) => { try { const r = await worker.fetch(deskReq(pct), env, {}); return r.status; } catch (e) { return "throw:" + e.message; } };
-  const [s7, s35, s15] = [await shape("7"), await shape("35"), await shape("-15")];
-  check(s7 === 400 && s35 === 400 && s15 !== 404, "the Desk route takes only a whole % in steps of 5 from -30 to +30: " + [s7, s35, s15].join(", "));
+  /* 10 Nov 2026: any whole % from -100 to +100 (a figure carried onto the band is not a step of 5); past it 400, and the book's own range is makerDriftPreview's */
+  const [s135, s101, s7, s15, s4] = [await shape("135"), await shape("-101"), await shape("7"), await shape("-15"), await shape("1000")];
+  check(s135 === 400 && s101 === 400 && s7 === 503 && s15 === 503 && s4 === 404, "the Desk route takes any whole % from -100 to +100 (it then asks for the mirror) and refuses 135 and -101, four digits being no route at all: " + [s135, s101, s7, s15, s4].join(", "));
   const forwarded = [];
   const cenv = { DESK_MAKER: { fetch: async (req) => { forwarded.push(new URL(req.url).pathname); return new Response(JSON.stringify({ ok: true, preview: { rows: [] } }), { headers: { "content-type": "application/json" } }); } }, COUNTER_MAKER_KEY: "counter-maker-test-key-0123456789abcdef" };
   const ident = { email: "maakmal97@icloud.com" };
@@ -157,7 +162,7 @@ export async function run({ ok }) {
   const adminOpen = { ok: true, byMaster: true, session: "", wrapMaster: await wrapKey("fixture-master", content) };
   const calls = [], reads = []; let slow = null;
   const context = { ok: true, products: ["salt", "oil"], catalog: {
-    products: [{ product: "salt", drift: true }, { product: "oil", fixed: true, drift: true }],
+    products: [{ product: "salt", drift: true, driftMin: -100, driftMax: 100, driftUnit: "band" }, { product: "oil", fixed: true, drift: true, driftMin: -30, driftMax: 30, driftUnit: "pct" }],
     parties: ["CX1-ZED"], tierCustomers: ["CX1-ZED"], driftCustomers: ["CX1-ZED"], partners: [], partnerWaiting: [],
     driftCards: [{ code: "CX1-ZED", product: "salt", held: false, value: null, current: 0, suggest: -0.15, why: "good record" }] } };
   const answer = (key) => { const pct = +key.split("/").pop(); return { ok: true, preview: { code: "CX1-ZED", product: key.split("/")[1], held: 0, pct: pct / 100,
@@ -212,10 +217,15 @@ export async function run({ ok }) {
       "a reply that lands after a newer ask is dropped: the rows stay the +15% read (RM 620 at 6.25 units), not the late -20% one (RM 585)");
     const n = reads.length; await step("acct.pct.down", 5); await new Promise((r) => setTimeout(r, 400));
     check(reads.length === n && val() === "\u221210%" && table().textContent.includes("\u221210%"), "going back to a figure already read draws it again with no new read");
+    /* 10 Nov 2026: the stepper's ends are the book's own, off the catalog: salt passes +30% and stops at +100% */
+    await step("acct.pct.up", 9); await waitFor(() => val() === "+35%");
+    const past30 = val() === "+35%" && !act("acct.pct.up").disabled;
+    await step("acct.pct.up", 14); await waitFor(() => val() === "+100%");
+    check(past30 && val() === "+100%" && act("acct.pct.up").disabled && !act("acct.pct.down").disabled, "on salt the stepper passes +30% and stops at +100%, the end the catalog gives: " + val());
     act("acct.pct.suggest").click();
     check(val() === "\u221215%", "Use the suggestion fills the whole %: -15");
     act("acct.pct.send", "CX1-ZED").click();
     await waitFor(() => calls.length === 1);
-    check(calls.length === 1 && calls[0].tier === -0.15 && calls[0].unit === "pct", "Send carries the fraction the drafter reads, -0.15: " + JSON.stringify(calls));
+    check(calls.length === 1 && calls[0].tier === -0.15 && calls[0].unit === "band", "Send carries the fraction the drafter reads, -0.15, with the book's unit (band on salt): " + JSON.stringify([calls, val(), act("acct.pct.send", "CX1-ZED").disabled, text(form().querySelector(".apct__answer")), act("acct.pct.send", "CX1-ZED").textContent]));
   } finally { dom.window.close(); }
 }

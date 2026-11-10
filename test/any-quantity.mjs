@@ -44,8 +44,14 @@ export async function run({ ok }) {
   /* the worked example is pinned to the COGS it was worked at, RM 64 a unit (lot p035 of 05 Oct 2026), never the live lot's:
      a new salt lot moves the live board by rule 5 and must not turn this red */
   const C64 = { ...CS, repl: 60, lot: 60, freight: 4, landed: 64, inventoriable: 64, eff: 64, effEx: 64 };
-  ok(E.quoteAt(6.25, C64, PS, 0) === 800 && E.quoteAt(1, C64, PS, 0) === 155 && E.quoteAt(12.5, C64, PS, 0) === 1275,
-    "the stranger's board at RM 64 COGS, on his four points (18 Oct 2026): 1 unit RM 155, 6.25 unit RM 800 and 12.5 unit RM 1,275 (his points 1.2 times, 10 Nov 2026): " + JSON.stringify([1, 6.25, 12.5].map((q) => E.quoteAt(q, C64, PS, 0))));
+  /* 10 Nov 2026 (the price band): at RM 64 a unit the four points pass the band's Ceiling, which stands on a supplier's price of RM 56 a unit (RM 755 at
+     6.25 and RM 1,250 at 12.5), so the points are read on the rule with the band taken off, and the Ceiling's hold is its own claim */
+  const PSN = { ...PS, tierRule: (() => { const x = { ...PS.tierRule }; delete x.band; return x; })() };
+  ok(E.quoteAt(6.25, C64, PSN, 0) === 800 && E.quoteAt(1, C64, PSN, 0) === 155 && E.quoteAt(12.5, C64, PSN, 0) === 1275,
+    "the stranger's board at RM 64 COGS, on his four points (18 Oct 2026): 1 unit RM 155, 6.25 unit RM 800 and 12.5 unit RM 1,275 (his points 1.2 times, 10 Nov 2026): " + JSON.stringify([1, 6.25, 12.5].map((q) => E.quoteAt(q, C64, PSN, 0))));
+  ok(!!PS.tierRule.band && E.quoteAt(1, C64, PS, 0) === 155 && E.quoteAt(6.25, C64, PS, 0) === 755 && E.quoteAt(12.5, C64, PS, 0) === 1250
+    && E.driftAt(6.25, C64, PS, 0).ceiling === 755 && E.driftAt(12.5, C64, PS, 0).ceiling === 1250,
+    "and on the band the Ceiling holds the Median where a cost of RM 64 would pass it: RM 755 at 6.25 unit and RM 1,250 at 12.5, 1 unit still RM 155: " + JSON.stringify([1, 6.25, 12.5].map((q) => E.quoteAt(q, C64, PS, 0))));
 
   /* 3. THE RATE NEVER RISES BY MORE THAN ONE GRID STEP across each book's grid, for every account (18 Oct 2026, his choice on salt: the
      law is on the exact rate, the price rounds down to the five, so a rate may rise by under a step over the size between two quarters); where the floor holds

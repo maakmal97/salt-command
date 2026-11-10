@@ -1,0 +1,260 @@
+[
+ {
+  "name": "the Ceiling is three times the COGS Floor again",
+  "file": "engine/pricing.mjs",
+  "find": "bc=band?bandCeiling(q,R):null",
+  "replace": "bc=null"
+ },
+ {
+  "name": "the Ceiling's curve is flat between its points",
+  "file": "engine/pricing.mjs",
+  "find": "r=a[1]+(b[1]-a[1])*Math.log(q/a[0])/Math.log(b[0]/a[0]);break;",
+  "replace": "r=a[1];break;"
+ },
+ {
+  "name": "the Ceiling slides in size, not in the log of size",
+  "file": "engine/pricing.mjs",
+  "find": "r=a[1]+(b[1]-a[1])*Math.log(q/a[0])/Math.log(b[0]/a[0]);break;",
+  "replace": "r=a[1]+(b[1]-a[1])*(q-a[0])/(b[0]-a[0]);break;"
+ },
+ {
+  "name": "the Ceiling ignores the supplier's price",
+  "file": "engine/pricing.mjs",
+  "find": "return r*(anchor/per)*q;",
+  "replace": "return r*q;"
+ },
+ {
+  "name": "the Ceiling's total is not taken down to RM 5",
+  "file": "engine/pricing.mjs",
+  "find": "ceiling:+(band?hi:ceil).toFixed(2)",
+  "replace": "ceiling:+(ceil).toFixed(2)"
+ },
+ {
+  "name": "the Ceiling may sit under the Floor",
+  "file": "engine/pricing.mjs",
+  "find": "hi=Math.max(down(ceil),lo)",
+  "replace": "hi=down(ceil)"
+ },
+ {
+  "name": "the Ceiling's last point is RM 90 a unit",
+  "file": "engine/rules.mjs",
+  "find": "[100,83.93]]",
+  "replace": "[100,90]]"
+ },
+ {
+  "name": "the supplier's lot is RM 750",
+  "file": "engine/rules.mjs",
+  "find": "supplier:{units:12.5, total:700}",
+  "replace": "supplier:{units:12.5, total:750}"
+ },
+ {
+  "name": "the Median's first point moves",
+  "file": "engine/rules.mjs",
+  "find": "points:[[0.5,3],[1,2.4],[6.25,2.004],[12.5,1.596]]",
+  "replace": "points:[[0.5,3],[1,2.5],[6.25,2.004],[12.5,1.596]]"
+ },
+ {
+  "name": "salt's range is the old one",
+  "file": "engine/pricing.mjs",
+  "find": "function liftRange(R){return R&&R.band?{min:BAND_MIN,max:BAND_MAX}:{min:LIFT_MIN,max:LIFT_MAX};}",
+  "replace": "function liftRange(R){return {min:LIFT_MIN,max:LIFT_MAX};}"
+ },
+ {
+  "name": "every book takes the band's range",
+  "file": "engine/pricing.mjs",
+  "find": "function liftRange(R){return R&&R.band?{min:BAND_MIN,max:BAND_MAX}:{min:LIFT_MIN,max:LIFT_MAX};}",
+  "replace": "function liftRange(R){return {min:BAND_MIN,max:BAND_MAX};}"
+ },
+ {
+  "name": "the range in words has no plus sign",
+  "file": "engine/pricing.mjs",
+  "find": "return {pct:a+'% to +'+b+'%',plain:a+' to +'+b,num:g.min+' to '+g.max};",
+  "replace": "return {pct:a+'% to '+b+'%',plain:a+' to +'+b,num:g.min+' to '+g.max};"
+ },
+ {
+  "name": "a place on the band is a straight line, not an even percentage step",
+  "file": "engine/pricing.mjs",
+  "find": "return end>0?M*Math.pow(end/M,t):M;",
+  "replace": "return end>0?M+(end-M)*t:M;"
+ },
+ {
+  "name": "a discount is read on the Ceiling's side",
+  "file": "engine/pricing.mjs",
+  "find": "const end=k<0?lo:hi, t=Math.min(1,Math.abs(k));",
+  "replace": "const end=hi, t=Math.min(1,Math.abs(k));"
+ },
+ {
+  "name": "bandPct is not held at the ends",
+  "file": "engine/pricing.mjs",
+  "find": "return (price<M?-1:1)*Math.min(1,Math.max(0,t));",
+  "replace": "return (price<M?-1:1)*Math.max(0,t);"
+ },
+ {
+  "name": "bandPct reads a straight line",
+  "file": "engine/pricing.mjs",
+  "find": "const t=Math.log(price/M)/Math.log(end/M);",
+  "replace": "const t=(price-M)/(end-M);"
+ },
+ {
+  "name": "the walk prices a % on the old curve",
+  "file": "engine/pricing.mjs",
+  "find": "band?bandTop(s.p,lo,hi,k):R.ends?",
+  "replace": "R.ends?"
+ },
+ {
+  "name": "the band is struck on the exact Median, not the one quoted",
+  "file": "engine/pricing.mjs",
+  "find": "band?bandTop(s.p,lo,hi,k):R.ends?",
+  "replace": "band?bandTop(fb*m,lo,hi,k):R.ends?"
+ },
+ {
+  "name": "a held figure is not carried",
+  "file": "engine/pricing.mjs",
+  "find": "&&Math.abs(v-c.from)<1e-9?c.to:v;",
+  "replace": "&&Math.abs(v-c.from)<1e-9?v:v;"
+ },
+ {
+  "name": "every figure of a carried customer is carried",
+  "file": "engine/pricing.mjs",
+  "find": "&&Math.abs(v-c.from)<1e-9?c.to:v;",
+  "replace": "?c.to:v;"
+ },
+ {
+  "name": "the snapshot reads the held figure raw",
+  "file": "engine/snapshot.mjs",
+  "find": "h=PRICING_ENGINE.heldPct(R,who,(C.B.tierOf[who]||{})[p])",
+  "replace": "h=(C.B.tierOf[who]||{})[p]"
+ },
+ {
+  "name": "the snapshot judges a held figure on the old range",
+  "file": "engine/snapshot.mjs",
+  "find": "hand=PRICING_ENGINE.driftOk(h,R)?+h:null",
+  "replace": "hand=PRICING_ENGINE.driftOk(h,{})?+h:null"
+ },
+ {
+  "name": "carryClash never fires",
+  "file": "engine/pricing.mjs",
+  "find": "return !!(c&&typeof v==='number'&&Math.abs(v-c.from)<1e-9&&Math.abs(c.to-c.from)>1e-9);",
+  "replace": "return false;"
+ },
+ {
+  "name": "a salt figure sent as pct is taken",
+  "file": "engine/pricing.mjs",
+  "find": "function unitOk(R,u){return R&&R.band?u==='band':(u==='pct'||u==='band');}",
+  "replace": "function unitOk(R,u){return u==='pct'||u==='band';}"
+ },
+ {
+  "name": "a board's figure with no unit is taken",
+  "file": "engine/pricing.mjs",
+  "find": "function unitOk(R,u){return R&&R.band?u==='band':(u==='pct'||u==='band');}",
+  "replace": "function unitOk(R,u){return R&&R.band?u==='band':true;}"
+ },
+ {
+  "name": "salt's unit is pct",
+  "file": "engine/pricing.mjs",
+  "find": "function unitOf(R){return R&&R.band?'band':'pct';}",
+  "replace": "function unitOf(R){return 'pct';}"
+ },
+ {
+  "name": "the tier-set road does not ask for the carry-over",
+  "file": "src/maker-inputs.js",
+  "find": "if (body.tier !== null && PRICING_ENGINE.carryClash(rule, body.code, body.tier))",
+  "replace": "if (false)"
+ },
+ {
+  "name": "the tier-set road does not read the unit",
+  "file": "src/maker-inputs.js",
+  "find": "if (body.tier !== null && !PRICING_ENGINE.unitOk(rule, body.unit)) return { error: OLD_UNIT };",
+  "replace": ""
+ },
+ {
+  "name": "the preview refuses in the old range's words",
+  "file": "src/maker-inputs.js",
+  "find": "if (!PRICING_ENGINE.driftOk(pct, rule)) return { error: \"Choose a % from \" + PRICING_ENGINE.rangeSay(rule).pct + \".\" };",
+  "replace": "if (!PRICING_ENGINE.driftOk(pct, rule)) return { error: \"Choose a % from -30% to +30%.\" };"
+ },
+ {
+  "name": "a carried customer's card shows the old figure",
+  "file": "src/maker-inputs.js",
+  "find": "value: set ? PRICING_ENGINE.heldPct(rule, id, held[id][product]) : null",
+  "replace": "value: set ? held[id][product] : null"
+ },
+ {
+  "name": "the catalog hands no range",
+  "file": "src/maker-inputs.js",
+  "find": "driftMin: Math.round(range.min * 100), driftMax: Math.round(range.max * 100), driftUnit: PRICING_ENGINE.unitOf(rule)",
+  "replace": "driftUnit: PRICING_ENGINE.unitOf(rule)"
+ },
+ {
+  "name": "the drafter lets a carried customer's old figure through",
+  "file": "src/drafter.js",
+  "find": "if (t !== null && PRICING_ENGINE.carryClash(ruleB(p), c, t)) return",
+  "replace": "if (false) return"
+ },
+ {
+  "name": "the drafter does not flag the old form on a tier-set",
+  "file": "src/drafter.js",
+  "find": "if (t !== null && !PRICING_ENGINE.unitOk(ruleB(p), pay.unit)) flags.push(",
+  "replace": "if (false) flags.push("
+ },
+ {
+  "name": "the fold judges a figure on the widest range",
+  "file": "engine/apply.mjs",
+  "find": "const tierOk = (p, v) => driftBooks().includes(p) && PRICING_ENGINE.driftOk(v, ruleOf(p));",
+  "replace": "const tierOk = (p, v) => driftBooks().includes(p) && PRICING_ENGINE.driftOk(v);"
+ },
+ {
+  "name": "the fold files a salt figure sent as pct",
+  "file": "engine/apply.mjs",
+  "find": ": !PRICING_ENGINE.unitOk(ruleOf(p), it.row && it.row.unit) ? (ruleOf(p).band",
+  "replace": ": !PRICING_ENGINE.unitOk({}, it.row && it.row.unit) ? (ruleOf(p).band"
+ },
+ {
+  "name": "Salt Admin's stepper stops at 30",
+  "file": "stmt/owner.js",
+  "find": "down.disabled=whole<=lim.min; up.disabled=whole>=lim.max;",
+  "replace": "down.disabled=whole<=-30; up.disabled=whole>=30;"
+ },
+ {
+  "name": "the Desk's preview route stops at 30",
+  "file": "src/worker.js",
+  "find": "whole < -100 || whole > 100",
+  "replace": "whole < -30 || whole > 30"
+ },
+ {
+  "name": "a lift may sit under the Median where the Ceiling holds it",
+  "file": "engine/pricing.mjs",
+  "find": "if(band)p=k<=BAND_MIN+1e-9?lo:k>0?Math.max(p,s.p):p;}",
+  "replace": "if(band)p=k<=BAND_MIN+1e-9?lo:p;}"
+ },
+ {
+  "name": "-100% takes the margin lift and can sit RM 5 over the Floor",
+  "file": "engine/pricing.mjs",
+  "find": "if(band)p=k<=BAND_MIN+1e-9?lo:k>0?Math.max(p,s.p):p;}",
+  "replace": "if(band)p=k>0?Math.max(p,s.p):p;}"
+ },
+ {
+  "name": "the suggestion ignores where their sales sat on the band",
+  "file": "engine/pricing.mjs",
+  "find": "base=pm!=null?Math.max(0,pm):paidOver;",
+  "replace": "base=paidOver;"
+ },
+ {
+  "name": "a place under the Median lowers the suggestion",
+  "file": "engine/pricing.mjs",
+  "find": "base=pm!=null?Math.max(0,pm):paidOver;",
+  "replace": "base=pm!=null?pm:paidOver;"
+ },
+ {
+  "name": "the suggestion is held to the old range whatever it is handed",
+  "file": "engine/pricing.mjs",
+  "find": "lim={min:o.min!=null?+o.min:LIFT_MIN,max:o.max!=null?+o.max:LIFT_MAX};",
+  "replace": "lim={min:LIFT_MIN,max:LIFT_MAX};"
+ },
+ {
+  "name": "the suggestion reads the highest place, not the median",
+  "file": "engine/pricing.mjs",
+  "find": "return r.length?(r.length%2?r[(r.length-1)/2]:(r[r.length/2-1]+r[r.length/2])/2):null;};",
+  "replace": "return r.length?r[r.length-1]:null;};"
+ }
+]

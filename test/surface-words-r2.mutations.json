@@ -104,8 +104,8 @@
   {
     "name": "Guest links back to two sentences",
     "file": "stmt/page.js",
-    "find": "A guest link opens the Set Price list for everybody; naming whose friend it is stays your note.</p>",
-    "replace": "A guest link opens the Set Price list, the same for everybody. Name the customer whose friend it is, as your own note.</p>"
+    "find": "A guest link opens the Median Price list for everybody; naming whose friend it is stays your note.</p>",
+    "replace": "A guest link opens the Median Price list, the same for everybody. Name the customer whose friend it is, as your own note.</p>"
   },
   {
     "name": "a refund's button armed with seven words again",
@@ -188,8 +188,8 @@
   {
     "name": "the Their % Insight is two sentences again",
     "file": "master/salt_command.html",
-    "find": "${down} below it; a % runs from -30 to +30,",
-    "replace": "${down} below it. A % runs from -30 to +30,"
+    "find": "${down} below it; salt runs from -100% at the Floor",
+    "replace": "${down} below it. Salt runs from -100% at the Floor"
   },
   {
     "name": "W17: the test surface Reset arms with its old words",

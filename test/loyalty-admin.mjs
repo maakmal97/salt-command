@@ -22,8 +22,8 @@ export async function run({ ok, pageWork }) {
   const desk = await readBook(), L = JSON.parse(j(desk.ledger));
   desk.dom.window.close();
   const snap = L.PRICING.byProduct.salt;
-  snap.lift = { ...(snap.lift || {}), "CQ1-ZUL": 0, "CQ2-ZUL": 0.2 };
-  snap.suggest = { ...(snap.suggest || {}), "CQ1-ZUL": { pct: 0.1, why: "paid late" }, "CQ2-ZUL": { pct: 0.1, why: "paid late" } };
+  snap.lift = { ...(snap.lift || {}), "CQ1-ZUL": 0, "CQ2-ZUL": 0.3 };
+  snap.suggest = { ...(snap.suggest || {}), "CQ1-ZUL": { pct: 0.3, why: "paid late" }, "CQ2-ZUL": { pct: 0.3, why: "paid late" } };
   snap.cards = { ...(snap.cards || {}), "CQ1-ZUL": snap.cards[Object.keys(snap.cards)[0]], "CQ2-ZUL": snap.cards[Object.keys(snap.cards)[0]] };
   L.roster = L.roster.concat(["CQ1-ZUL", "CQ2-ZUL"]);
   const mk = (c, rid, date, q) => ({ rid, customer: c, product: "salt", date, qty: q, total: 100 * q, cost: 58 * q, listRM: 100 * q, listQty: q,
@@ -34,8 +34,8 @@ export async function run({ ok, pageWork }) {
   const book = { version: L.PRICING.v, state: { ...L, sales }, sales, purchases: L.purchases, pricing: L.PRICING };
   const r = M.makerCustomerReading(book, "CQ1-ZUL|2031-01-16|500", "2031-01-19");
   const I = snap.inputs, K = PRICING_ENGINE.costStack(I.cost), at = (d) => PRICING_ENGINE.quoteAt(5, K, I.policy, d);
-  const want = +(20 * (at(0.1) - at(0)) / 5).toFixed(2);
-  ok(r.customer === true && r.suggest.pct === 0.1 && r.suggest.why === "paid late" && r.gain && r.gain.size === 5 && r.gain.pct === want
+  const want = +(20 * (at(0.3) - at(0)) / 5).toFixed(2);
+  ok(r.customer === true && r.suggest.pct === 0.3 && r.suggest.why === "paid late" && r.gain && r.gain.size === 5 && r.gain.pct === want
     && r.gain.net === +(r.gain.pct - r.gain.unit).toFixed(2) && r.gain.unit === r.cost && r.cost > 0 && r.loyal.units === 19 && r.loyal.every === 20
     && r.cadence.every === 5 && r.dueIn === 2 && r.rates.length === 4 && r.pair === true && r.unitNow > 0,
     "the reading: the snapshot's suggestion, the halves at their median size for 20 units, the walk's meter: " + j([r.suggest, r.gain, want, r.loyal, r.cadence, r.dueIn, r.pair]));
@@ -110,7 +110,7 @@ export async function run({ ok, pageWork }) {
     const sent = p.posts.slice(before);
     const reads = p.wire.filter((w) => String(w.route || w.url || w).includes("/all/maker/customer-reading/" + encodeURIComponent("CQ1-ZUL|2026-10-10|100"))).length;
     ok(!!use && sent.length === 1 && sent[0].route === "/all/maker/inputs/tier-set" && sent[0].body.code === "CQ1-ZUL" && sent[0].body.product === "salt"
-      && sent[0].body.tier === 0.1 && sent[0].body.unit === "pct" && typeof sent[0].body.at === "string" && reads >= 2,
+      && sent[0].body.tier === 0.1 && sent[0].body.unit === "band" && typeof sent[0].body.at === "string" && reads >= 2,
       "Use it sends one tier-set with the suggested %, and the card reads again: " + j([sent, reads]));
     /* 7 */
     const c1b = card("ord-c1");

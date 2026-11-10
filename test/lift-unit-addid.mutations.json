@@ -2,13 +2,13 @@
  {
   "name": "the drafter drops the unit from an Add ID row",
   "file": "src/drafter.js",
-  "find": "pay.tiers && pay.unit === \"pct\" ? { unit: \"pct\" } : {}",
+  "find": "pay.tiers && (pay.unit === \"pct\" || pay.unit === \"band\") ? { unit: pay.unit } : {}",
   "replace": "{}"
  },
  {
   "name": "the drafter stays quiet about a starting % with no unit",
   "file": "src/drafter.js",
-  "find": "if (pay.tiers && pay.unit !== \"pct\") flags.push(",
+  "find": "if (pay.tiers && Object.keys(pay.tiers).some((p) => !PRICING_ENGINE.unitOk(tierRuleOf(p), pay.unit))) flags.push(",
   "replace": "if (false) flags.push("
  }
 ]

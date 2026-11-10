@@ -26,7 +26,7 @@ export async function run({ ok, pageWork }) {
     /* 2 */
     const title = (id) => [...card(id).querySelector(".salt-action__title").children].map(t).join(" "), kind = (id) => t(card(id).querySelector(".nkind")), fig = (id) => t(card(id).querySelector(".nfig"));
     ok(/^Waiting · \d+ d$/.test(kind("w1")) && title("w1") === "Made by CX1-ZED" && title("r1") === "Via CX1-ZED" && title("d1") === "Made by CX1-ZED" && title("o1") === "A shop"
-      && title("s1") === "Set Price list" && kind("o1") === "Opened · 12 Oct 2026" && kind("d1").startsWith("Declined") && kind("r1").startsWith("Withdrawn") && kind("s1").startsWith("Standing")
+      && title("s1") === "Median Price list" && kind("o1") === "Opened · 12 Oct 2026" && kind("d1").startsWith("Declined") && kind("r1").startsWith("Withdrawn") && kind("s1").startsWith("Standing")
       && fig("o1") === "Opens2" && fig("s1") === "Opens0" && fig("w1") === "" && fig("d1") === "",
       "its kind and age, who it is for, and its opens under Opens, none for a shut link: " + J(["w1", "r1", "d1", "o1", "s1"].map((id) => [kind(id), title(id), fig(id)])));
     /* 3 */

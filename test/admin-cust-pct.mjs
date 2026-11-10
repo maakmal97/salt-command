@@ -2,7 +2,7 @@
  * under its own mutation (test/admin-cust-pct.mutations.json):
  *   1  Their % stands on the account: a book a tab, the suggestion and why, the stepper at what is set, Send at that % off while nothing changes,
  *      Use the suggestion
- *   2  the stepper moves in whole steps of 5 between -30% and +30%, and their prices at the new % are the Desk's preview, against the Floor
+ *   2  the stepper moves in whole steps of 5 between its book's ends (salt -100% to +100%, a board -30% to +30%), and their prices at the new % are the Desk's preview, against the Floor
  *   3  Send sends one tier-set at that %, as a fraction, and nothing else; Use the suggestion fills it; Set back to 0 sends a null
  *   4  a book with nothing set and no suggestion offers neither Use nor Set back to 0
  *   5  This customer and the associate reward are read by the account's code and drawn on the card: the figures, the meter, the step
@@ -22,7 +22,7 @@ export async function run({ ok, pageWork }) {
   const rwd = { associate: true, times: 10, rate: 56, step: 560, progress: 380, given: 15, net: 41, unit: null };
   const p = await richOwnerPage({ pageWork,
     inputsAnswer: (j) => ({ ...j, catalog: { ...j.catalog,
-      products: [{ product: "salt", drift: true, saleReady: true }, { product: "oil", drift: true, saleReady: true }],
+      products: [{ product: "salt", drift: true, saleReady: true, driftMin: -100, driftMax: 100, driftUnit: "band" }, { product: "oil", drift: true, saleReady: true, driftMin: -30, driftMax: 30, driftUnit: "pct" }],
       driftCustomers: ["CX1-ZED"], partners: [], partnerWaiting: [],
       driftCards: [{ code: "CX1-ZED", product: "salt", held: true, value: -0.1, current: -0.1, suggest: -0.15, why: "good record" }, { code: "CX1-ZED", product: "oil", held: false, value: null, current: 0, suggest: null, why: "" }] } }),
     extra: (route) => {
@@ -57,14 +57,14 @@ export async function run({ ok, pageWork }) {
       && J([...pct().querySelectorAll(".apct__table thead th")].map(t)) === J(["Units", "Now", "At −15%", "Floor"]) && J(rows()) === J(["1 unit|RM 110|RM 105|RM 60", "5 units|RM 440|RM 400|RM 300"])
       && p.wire.slice(reads0).some((w) => w.startsWith("/all/maker/drift-preview/CX1-ZED/salt/-15 GET")),
       "a step moves 5 and their prices are the Desk's preview at the new %, against the Floor: " + J(rows()));
-    for (let i = 0; i < 4; i++) await click(btn("acct.pct.down"));
-    ok(t(pct().querySelector(".apct__val")) === "−30%" && btn("acct.pct.down").disabled && !btn("acct.pct.up").disabled, "the stepper stops at −30%");
-    for (let i = 0; i < 3; i++) await click(btn("acct.pct.up"));
+    for (let i = 0; i < 17; i++) await click(btn("acct.pct.down"));
+    ok(t(pct().querySelector(".apct__val")) === "−100%" && btn("acct.pct.down").disabled && !btn("acct.pct.up").disabled, "the stepper on salt stops at −100%, the end the catalog gives it");
+    for (let i = 0; i < 17; i++) await click(btn("acct.pct.up"));
     /* 3 */
     p.posts.length = 0;
     await click(btn("acct.pct.send"));
     const tier = p.posts.filter((x) => x.route === "/all/maker/inputs/tier-set");
-    ok(tier.length === 1 && tier[0].body.code === "CX1-ZED" && tier[0].body.product === "salt" && tier[0].body.tier === -0.15 && tier[0].body.unit === "pct" && typeof tier[0].body.at === "string" && p.posts.length === 1,
+    ok(tier.length === 1 && tier[0].body.code === "CX1-ZED" && tier[0].body.product === "salt" && tier[0].body.tier === -0.15 && tier[0].body.unit === "band" && typeof tier[0].body.at === "string" && p.posts.length === 1,
       "Send sends one tier-set at that %, as a fraction, and nothing else: " + J(p.posts));
     a = await open("CX1-ZED");
     await click(btn("acct.pct.down")); await click(btn("acct.pct.suggest"));
@@ -77,6 +77,8 @@ export async function run({ ok, pageWork }) {
     ok(pct().querySelectorAll('[data-act="acct.pct.book"]')[1].getAttribute("aria-selected") === "true" && t(pct().querySelector(".apct__val")) === "0%" && btn("acct.pct.suggest").disabled
       && t(btn("acct.pct.suggest")) === "No suggestion" && !byAct(pct(), "acct.pct.clear", "CX1-ZED") && t(pct().querySelector(".apct__list > .salt-settings__row")) === "SuggestedNone",
       "a book with nothing set offers neither Use nor Set back to 0");
+    for (let i = 0; i < 7; i++) await click(btn("acct.pct.down"));
+    ok(t(pct().querySelector(".apct__val")) === "−30%" && btn("acct.pct.down").disabled && !btn("acct.pct.up").disabled, "and a board's stepper stops at −30%, its own end");
     /* 5 */
     const c = d.querySelector("#aopen .acust"), r = d.querySelector("#aopen .arwd");
     /* 3 Nov 2026 (the account on Shop's grid): the figures are settings rows (data-line), the head a mist settings head carrying the book's tag */
@@ -86,7 +88,7 @@ export async function run({ ok, pageWork }) {
       && /Loyalty 7 of 20 units/.test(t(c.querySelector(".salt-meter"))) && c.querySelector(".salt-meter").style.getPropertyValue("--salt-fill") === "35" && !!c.querySelector("svg.acust__spark")
       && p.wire.some((w) => w.startsWith("/all/maker/customer-of/CX1-ZED GET")),
       "This customer is read by the account's code and drawn: " + J(lines(c)));
-    ok(!!r && !r.hidden && headOf(r) === "Associate reward" && J(lines(r)) === J(["Step, 10 units’ cost=RM 560", "Given under Set Price=RM 15", "A unit, net to you=RM 41"])
+    ok(!!r && !r.hidden && headOf(r) === "Associate reward" && J(lines(r)) === J(["Step, 10 units’ cost=RM 560", "Given under Median Price=RM 15", "A unit, net to you=RM 41"])
       && r.querySelector(".salt-meter").style.getPropertyValue("--salt-fill") === "68" && p.wire.some((w) => w.startsWith("/all/maker/reward-of/CX1-ZED GET")),
       "the associate reward is read by code and drawn: " + J(lines(r)));
     /* 6 */

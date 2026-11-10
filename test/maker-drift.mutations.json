@@ -20,26 +20,26 @@
  {
   "name": "the maker input takes a salt figure with no unit: a page cached from before the % lift can queue 0.3 as 30%",
   "file": "src/maker-inputs.js",
-  "find": "if (body.tier !== null && body.unit !== \"pct\") return { error: OLD_UNIT };",
+  "find": "if (body.tier !== null && !PRICING_ENGINE.unitOk(rule, body.unit)) return { error: OLD_UNIT };",
   "replace": ""
  },
  {
   "name": "Their % form sends its figure with no unit",
   "file": "stmt/owner.js",
-  "find": "tier:Number((whole/100).toFixed(2)),unit:'pct'}",
+  "find": "tier:Number((whole/100).toFixed(2)),unit:punit}",
   "replace": "tier:Number((whole/100).toFixed(2))}"
  },
  {
   "name": "the stepper steps by 10, not a whole 5",
   "file": "stmt/owner.js",
-  "find": "st.pct[st.book]=Math.max(-30, st.pct[st.book]-5);",
-  "replace": "st.pct[st.book]=Math.max(-30, st.pct[st.book]-10);"
+  "find": "st.pct[st.book]=Math.max(lim.min, Math.ceil(st.pct[st.book]/5)*5-5);",
+  "replace": "st.pct[st.book]=Math.max(lim.min, Math.ceil(st.pct[st.book]/5)*5-10);"
  },
  {
-  "name": "the stepper runs past +30",
+  "name": "the stepper runs past its book's high end",
   "file": "stmt/owner.js",
-  "find": "up.disabled=whole>=30;",
-  "replace": "up.disabled=whole>=35;"
+  "find": "up.disabled=whole>=lim.max;",
+  "replace": "up.disabled=whole>=lim.max+5;"
  },
  {
   "name": "the account card gets a typed % field back, which has no minus key on a decimal pad",

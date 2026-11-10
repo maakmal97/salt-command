@@ -5,8 +5,8 @@
   "replace": "lbl:'Pricing drift', q:'margin moving under prices that are not'"
  },
  {
-  "name": "the % card's note on the -30 to +30 range is gone",
-  "find": "; a % runs from -30 to +30, never under the Floor or over the Ceiling.</div></div>`;",
+  "name": "the % card's note on the -100% to +100% and -30% to +30% ranges is gone",
+  "find": "; salt runs from -100% at the Floor to +100% at the Ceiling, a board from -30% to +30%.</div></div>`;",
   "replace": ".</div></div>`;"
  },
  {
@@ -49,7 +49,7 @@
  {
   "name": "the Worker's refusal for a supplier talks of drift again",
   "file": "src/maker-inputs.js",
-  "find": "\"A supplier has no % on the Set Price.\"",
+  "find": "\"A supplier has no % on the Median Price.\"",
   "replace": "\"A supplier cannot hold customer drift.\""
  },
  {
@@ -78,7 +78,7 @@
  },
  {
   "name": "the printed board card says drift again",
-  "find": "on salt the Set Price lifted by their %, set on Clients",
-  "replace": "on salt the Set Price moved by their drift, set on Clients"
+  "find": "on salt the Median Price lifted by their %, set on Clients",
+  "replace": "on salt the Median Price moved by their drift, set on Clients"
  }
 ]

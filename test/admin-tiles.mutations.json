@@ -290,7 +290,7 @@
  {
   "name": "the typed starting % gets the decimal pad back, which has no minus key on an iPhone",
   "file": "stmt/owner.js",
-  "find": "typed.min='-0.3';typed.max='0.3';typed.removeAttribute('inputmode');",
-  "replace": "typed.min='-0.3';typed.max='0.3';typed.inputMode='decimal';"
+  "find": "typed.min=String(tlo);typed.max=String(thi);typed.removeAttribute('inputmode');",
+  "replace": "typed.min=String(tlo);typed.max=String(thi);typed.inputMode='decimal';"
  }
 ]

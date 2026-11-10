@@ -6,16 +6,16 @@
   "replace": "{\nconst TIER_NAMES=[];\n}"
  },
  {
-  "name": "the engine's ladder row is named something else than the Set Price (inlined in the master)",
+  "name": "the engine's ladder row is named something else than the Median Price (inlined in the master)",
   "file": "master/salt_command.html",
-  "find": "code:'T2', name:'Set Price', dflt:true,",
+  "find": "code:'T2', name:'Median Price', dflt:true,",
   "replace": "code:'T2', name:'Ask', dflt:true,"
  },
  {
   "name": "the engine's ladder row takes another code than T2 (inlined in the master)",
   "file": "master/salt_command.html",
-  "find": "code:'T2', name:'Set Price', dflt:true,",
-  "replace": "code:'T3', name:'Set Price', dflt:true,"
+  "find": "code:'T2', name:'Median Price', dflt:true,",
+  "replace": "code:'T3', name:'Median Price', dflt:true,"
  },
  {
   "name": "a levelAt function comes back in the engine's position module",

@@ -14,8 +14,8 @@
  {
   "name": "the Ceiling is struck on the new Floor",
   "file": "engine/pricing.mjs",
-  "find": "ceil=+(cx*fb).toFixed(4)",
-  "replace": "ceil=+(cx*fl).toFixed(4)"
+  "find": "ceil=+(bc!=null?bc:cx*fb).toFixed(4)",
+  "replace": "ceil=+(bc!=null?bc:cx*fl).toFixed(4)"
  },
  {
   "name": "the Set Price is struck on the new Floor",
@@ -100,5 +100,11 @@
   "file": "master/salt_command.html",
   "find": "get soldUnits(){return soldUnits;},get wavgBuy()",
   "replace": "get wavgBuy()"
+ },
+ {
+  "name": "a discount's place is struck toward the COGS Floor, not the Floor",
+  "file": "engine/pricing.mjs",
+  "find": "band?bandTop(s.p,lo,hi,k):R.ends?",
+  "replace": "band?bandTop(s.p,up(fb),hi,k):R.ends?"
  }
 ]
