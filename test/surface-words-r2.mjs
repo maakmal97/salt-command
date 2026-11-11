@@ -19,7 +19,7 @@
  *   W13  the refusal for a size to hide that is not on the board is a sentence with its apostrophe
  *   W14  the Desk's empty Associates Insight is one sentence
  *   W15  the Desk's unsent-entries grey line is one sentence in both of its states
- *   W16  the Desk's Their % Insight is one sentence
+ *   W16  the Desk's Their % line on Clients is one sentence (the card left on 11 Nov 2026)
  *   W17  (1 Nov 2026, the pass's leftovers) the test surface's armed Reset reads Tap again to confirm, like every armed button
  *   W18  a guest link waiting on him says so in one sentence of fourteen words at most
  *   W19  Salt Admin's vault sheet leads with one sentence of fourteen words at most
@@ -156,7 +156,8 @@ export async function run({ ok, pageWork }) {
     const both = [grey(true), grey(false)];
     w.eval("qIsUnsent=globalThis.__un;queue=[];OVERLAY_UNSENT=false;");
     ok(both.every((s) => /^Held in this browser only/.test(s) && sentence(s, 20)), "W15: the Desk's unsent-entries grey line is one sentence in both of its states: " + J(both));
-    const pct = insightOf(w.eval("driftCard()"));
-    ok(/^[0-9]+ of [0-9]+ are set by you/.test(pct) && one(pct), "W16: the Desk's Their % Insight is one sentence: " + J(pct));
+    w.eval("setProd('salt');recompute();");
+    const pct = plain((String(w.eval("pctLine()")).match(/id="pctLine">([\s\S]*?)<\/div>/) || [, ""])[1]);
+    ok(/^On salt, [0-9]+ of [0-9]+ hold a %/.test(pct) && one(pct), "W16: the Desk's Their % line is one sentence: " + J(pct));
   } finally { w.close(); }
 }

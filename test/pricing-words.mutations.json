@@ -5,34 +5,9 @@
   "replace": "lbl:'Pricing drift', q:'margin moving under prices that are not'"
  },
  {
-  "name": "the % card's note on the -100% to +100% and -30% to +30% ranges is gone",
-  "find": "; salt runs from -100% at the Floor to +100% at the Ceiling, a board from -30% to +30%.</div></div>`;",
-  "replace": ".</div></div>`;"
- },
- {
-  "name": "the suggestion says Proposed, not Suggested",
-  "find": "return 'Suggested '+driftSay(sg.pct)",
-  "replace": "return 'Proposed '+driftSay(sg.pct)"
- },
- {
-  "name": "the suggestion drops its reason",
-  "find": "(w.length?': '+w.join(', '):'')",
-  "replace": "''"
- },
- {
-  "name": "a % of 5 reads 0.05 on the card",
-  "find": "return n>0?'+'+n+'%':n<0?n+'%':'0%';}",
-  "replace": "return n>0?String(d):n<0?n+'%':'0%';}"
- },
- {
   "name": "the Network card heading is Price drift",
   "find": "<h2 style=\"margin-top:18px\">Their % <span class=\"rule\"></span></h2>",
   "replace": "<h2 style=\"margin-top:18px\">Price drift <span class=\"rule\"></span></h2>"
- },
- {
-  "name": "the partner row says no drift applies",
-  "find": "pays the Floor; no % applies",
-  "replace": "pays the Floor; no drift applies"
  },
  {
   "name": "Salt Admin's % card is headed Price drift",
@@ -78,7 +53,12 @@
  },
  {
   "name": "the printed board card says drift again",
-  "find": "on salt the Median Price lifted by their %, set on Clients",
-  "replace": "on salt the Median Price moved by their drift, set on Clients"
+  "find": "on salt the Median Price lifted by their %, set on Salt Admin",
+  "replace": "on salt the Median Price moved by their drift, set on Salt Admin"
+ },
+ {
+  "name": "Clients' Their % line says drift",
+  "find": "hold a % you set and ${sugg}",
+  "replace": "hold a drift you set and ${sugg}"
  }
 ]

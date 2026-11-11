@@ -10,6 +10,7 @@
  *   F7  a row corrected twice in a day draws one Correction line for that day
  *   F8  Analysis holds only the last correction of a field against its row, and counts a shelf truly empty, never one rebuilt under zero
  *   C1  Rules holds its register alone; Today no Money at stake chart; Financials no unmeasured line; Sourcing one gap tile; Associates no empty fold
+ *   C2  Clients' Their % is one line counted off TIER_OF with the link to Salt Admin; Associates says a departure and a vacancy in one line
  *   P1  the plan store is this device's, clamped on every read, and garbage reads as nothing
  *   P2  a what-if lot lands in its book's inventory and leaves the cash on its day, is said to be a what-if, and books nothing
  *   P3  Month ahead: demand moves revenue, the buying cost the cost of goods, running costs what is left; the first column never moves
@@ -126,6 +127,32 @@ export async function run({ ok }) {
     const nw = html("network");
     ok(nw.querySelectorAll("details.obsec").length > 0 && ![...nw.querySelectorAll("details.obsec")].some((f) => /^(0|none)$/.test(text(f.querySelector("summary .ct"))) || text(f.querySelector(".card")) === "None."),
       "C1.5 Associates draws no fold that holds nothing");
+
+    /* C2 (11 Nov 2026, his answers "off the Desk" and "one line"): Clients draws no table of every customer's %, one line counting who
+       holds one (read off TIER_OF itself) and who the engine suggests another, with the link to Salt Admin's accounts; a book where nobody
+       holds one says so; Associates says the departure and the vacancy in one line under the tree, and draws no card for either */
+    E("setProd('salt');recompute();");
+    const cl = html("concentration"), pl = text(cl.querySelector("#pctLine"));
+    const want = E(`(function(){const ids=tierCustomers().filter(id=>partners.indexOf(id)<0);
+      const held=ids.filter(id=>{const o=TIER_OF[ownerOf(id)||id];return !!o&&typeof o.salt==='number';}).length;
+      const sugg=ids.filter(id=>{const g=suggestOf(id,'salt'),dr=driftOf(id,'salt');return !!g&&Math.abs(g.pct||0)>0.0001&&Math.abs(g.pct-(dr.d||0))>0.0001;}).length;
+      return [held,ids.length,sugg];})()`);
+    ok(!cl.querySelector(".tiertab") && !/what it quotes/.test(text(cl)) && pl === `On salt, ${want[0]} of ${want[1]} hold a % you set and ${want[2]} ${want[2] === 1 ? "is" : "are"} suggested another.`
+      && want[0] > 0 && !!cl.querySelector('a[href="admin?to=customers%2Faccounts"]'),
+      "C2.1 Clients draws one Their % line, counted off TIER_OF, and the link to Salt Admin, never a row a customer: " + J([pl, want, cl.querySelectorAll("tr").length]));
+    /* a suggestion equal to the % they already hold is no suggestion: every customer stubbed to hold +10% and be suggested +10% */
+    const same = E(`(function(){const kd=driftOf,ks=suggestOf;driftOf=()=>({hand:0.1,d:0.1});suggestOf=()=>({pct:0.1});
+      try{const e=document.createElement('div');e.innerHTML=pctLine();return e.querySelector('#pctLine').textContent;}finally{driftOf=kd;suggestOf=ks;}})()`);
+    ok(/ and 0 are suggested another\.$/.test(same), "C2.4 a suggestion equal to the % they hold is not counted: " + J(same));
+    E("setProd('gas');recompute();");
+    const glp = text(html("concentration").querySelector("#pctLine"));
+    E("setProd('salt');recompute();");
+    ok(glp === "Nobody holds a % on gas, and none is suggested.", "C2.2 a book where nobody holds a % says so: " + J(glp));
+    const nw2 = html("network"), st = text(nw2.querySelector("#nwStand"));
+    const dep2 = E("PEOPLE.departed.map(b=>b.id+' left '+b.since)"), vac2 = E("PEOPLE.roles.filter(r=>!r.holder).map(r=>r.short||r.title)");
+    ok(!nw2.querySelector(".pend") && dep2.length > 0 && vac2.length > 0 && dep2.every((c) => st.includes(c))
+      && st.includes("the " + vac2[0] + " seat is open since") && /DEPARTED/.test(text(nw2)),
+      "C2.3 Associates says the departure and the vacancy in one line, draws no card for either, and the tree still marks the departed: " + J([st, dep2, vac2]));
 
     /* P1 */
     w.localStorage.removeItem("salt-plan-v1");

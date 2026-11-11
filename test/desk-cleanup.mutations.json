@@ -153,5 +153,50 @@
   "name": "P2.6 a thirteenth lot is taken",
   "find": "  const full=P.lots.length>=12;",
   "replace": "  const full=false;"
+ },
+ {
+  "name": "C2.1 the Their % table returns",
+  "find": "  <h2 style=\"margin-top:18px\">Their % <span class=\"rule\"></span></h2>\n  ${pctLine()}",
+  "replace": "  <h2 style=\"margin-top:18px\">Their % <span class=\"rule\"></span></h2>\n  ${pctLine()}<table class=\"salt-table tiertab\"><tr><td>x</td></tr></table>"
+ },
+ {
+  "name": "C2.1 every customer counted as holding a %",
+  "find": "if(dr.hand!=null)held++;",
+  "replace": "held++;"
+ },
+ {
+  "name": "C2.4 a suggestion equal to what they hold is counted",
+  "find": "&&Math.abs((sg.pct||0)-(dr.d||0))>0.0001)sugg++;",
+  "replace": ")sugg++;"
+ },
+ {
+  "name": "C2.1 a partner counted",
+  "find": "const ids=tierCustomers().filter(id=>!isPartner(id));if(!ids.length)return '';",
+  "replace": "const ids=tierCustomers();if(!ids.length)return '';"
+ },
+ {
+  "name": "C2.1 no link to Salt Admin",
+  "find": "${adminLink('customers/accounts','Set it on Salt Admin')}",
+  "replace": ""
+ },
+ {
+  "name": "C2.2 an empty book reads its zeros",
+  "find": "${held||sugg?`On ${nm}",
+  "replace": "${true?`On ${nm}"
+ },
+ {
+  "name": "C2.3 a departure card returns",
+  "find": "  ${standLine}`;",
+  "replace": "  ${standLine}<div class=\"pend\"><h3>x</h3></div>`;"
+ },
+ {
+  "name": "C2.3 the seat dropped",
+  "find": "[gone.join(', '),seat].filter(Boolean)",
+  "replace": "[gone.join(', ')].filter(Boolean)"
+ },
+ {
+  "name": "C2.3 the departure dropped",
+  "find": "const gone=dep.map(x=>ID(x.id)+' left '",
+  "replace": "const gone=[].map(x=>ID(x.id)+' left '"
  }
 ]

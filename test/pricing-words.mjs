@@ -37,23 +37,14 @@ export async function run({ ok }) {
     }
     ok(drawn > 48 && found.length === 0, "no part of the Desk, on any book, draws a level name, a tier number or the word drift: " + drawn + " parts read " + JSON.stringify(found.slice(0, 4)));
 
-    /* the % card: named Their %, the range note once (21 Oct 2026: -30 to +30, which replaced the 7% note), the suggestion as a % with its reason, the partner on the Floor */
+    /* 11 Nov 2026, his answer "off the Desk": the Their % card left Clients for Salt Admin's account card; Clients says one line for the book in view */
     w.eval("setProd('salt');recompute();");
-    const card = String(w.eval("driftCard()")).replace(/<[^>]+>/g, " ").replace(/&middot;/g, "·").replace(/\s+/g, " ");
-    /* 1 Nov 2026: the card's Insight is one sentence, the range after a semicolon (it was two: ... below it. A % runs from -30 to +30 ...) */
-    ok(/Each customer's % on the Median Price/.test(card) && (card.match(/; salt runs from -100% at the Floor to \+100% at the Ceiling, a board from -30% to \+30%/g) || []).length === 1 && !/Under about 7%/.test(card)
-      && /Their %, and what it quotes/.test(card) && !/\bSuggested 0\b/.test(card) && !FORBID.test(card),
-      "the % card reads Their %, carries the one note that salt runs from -100% to +100% and a board from -30% to +30%, and names no level or drift: " + card.slice(0, 200));
+    const card = String(w.eval("pctLine()")).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+    ok(/^ ?On salt, \d+ of \d+ hold a % you set and \d+ (is|are) suggested another\. Set it on Salt Admin/.test(card) && !FORBID.test(card),
+      "Clients' Their % line counts who holds a % and who is suggested one, points to Salt Admin, and names no level or drift: " + card.slice(0, 200));
     /* cards the parts draw only on a condition are read by their own function */
     const pb = String(w.eval("pbCard()")).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
-    ok(/Median Price lifted by their %, set on Clients/.test(pb) && !FORBID.test(pb) && !/drift/i.test(pb), "and the printed board's card says the Median Price lifted by their %: " + pb.slice(200, 420));
-    const say = (sg) => String(w.eval("suggestSay(" + JSON.stringify(sg) + ")"));
-    ok(say({ pct: 0.1, paidOver: 0, risk: 0.1 }) === "Suggested +10%: paid late"
-      && say({ pct: 0.3, paidOver: 0, risk: 0.3 }) === "Suggested +30%: written off"
-      && say({ pct: 0.25, paidOver: 0.1, risk: 0.1 }) === "Suggested +25%: paid 10% over, paid late"
-      && say({ pct: 0, paidOver: 0, risk: 0 }) === "No % suggested",
-      "the suggestion line shows the % and its reason in a few words, and says so when there is none");
-    ok(String(w.eval("[driftSay(0),driftSay(0.05),driftSay(0.2)].join('|')")) === "0%|+5%|+20%", "and a % is said as +5%, +20%, or 0% for the Set Price");
+    ok(/Median Price lifted by their %, set on Salt Admin/.test(pb) && !FORBID.test(pb) && !/drift/i.test(pb), "and the printed board's card says the Median Price lifted by their %: " + pb.slice(200, 420));
   } finally { w.close(); }
 
   /* ---- Salt Admin, the Worker's refusals and the drafter's flags: every sentence in the source ---- */

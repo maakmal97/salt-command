@@ -16681,8 +16681,8 @@ await (async () => {
     ok(as.h1 === "Associates" && co.h1 === "Coverage" && co.hash === "#map",
       "Associates keeps its name, and the map is headed Coverage at its old address: " + JSON.stringify({ as, co }));
     const card = String(w77.eval("pbCard()")), empty = String(w77.eval("(function(){var m={textContent:''};pbEmpty({rows:[],soon:true,code:'CX0-AA',product:'salt'},m);return m.textContent;})()"));
-    ok(/set on Clients/.test(card) && !/Customers/.test(card) && /nothing to print\./.test(empty) && !/tier/.test(empty),
-      "the board card sends him to Clients for their %, and says plainly when a book has no price to print: " + JSON.stringify(empty));
+    ok(/set on Salt Admin/.test(card) && !/Customers/.test(card) && /nothing to print\./.test(empty) && !/tier/.test(empty),
+      "the board card sends him to Salt Admin for their % (11 Nov 2026: the card left Clients), and says plainly when a book has no price to print: " + JSON.stringify(empty));
   } finally { try { w77.close(); } catch (e) { /* best effort */ } }
 })();
 section("v678: Kuala Lumpur is shaded by its eleven constituencies, and a point in it is named by them first");
@@ -44907,7 +44907,8 @@ await (async () => {
     const t = v.per.today, c = v.per.concentration;
     ok(t.quotes >= 20 && t.tierAt > 0 && t.tierAt < t.quotes / 2,
       "one Today render builds the row at the size for fewer than half its card quotes, once a size: " + JSON.stringify(t));
-    ok(c.quotes >= 60 && c.tierAt > 0 && c.tierAt < c.quotes / 2,
+    /* 11 Nov 2026: the Their % card (a quote a customer a size a book) left Clients, so a render quotes about 38 times, not 60 */
+    ok(c.quotes >= 30 && c.tierAt > 0 && c.tierAt < c.quotes / 2,
       "one Who buys render builds the row once a size, not once a quote: " + JSON.stringify(c));
     ok(v.parts === 13 && v.size > 1000 && v.unstable.length === 0 && v.diff.length === 0,
       "every part of every view draws the same with the row kept for the render as built fresh: " + JSON.stringify({ diff: v.diff, unstable: v.unstable }));
