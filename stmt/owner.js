@@ -3277,6 +3277,8 @@ export const OWNER_JS = `
       var tlo=typeof item.driftMin==='number'?item.driftMin/100:-0.3, thi=typeof item.driftMax==='number'?item.driftMax/100:0.3;
       typed.min=String(tlo);typed.max=String(thi);typed.removeAttribute('inputmode');typed.step='0.05';typed.placeholder=tlo+' to '+thi;typed.closest('label').hidden=true;
       select.addEventListener('change',function(){typed.closest('label').hidden=select.value!=='typed';});
+      /* 11 Nov 2026, his word (always start a stranger at +30%): salt's starting % is +30% unless he chooses another; the Median Price and every other preset stay his to pick */
+      if(item.product==='salt'&&presets.some(function(p){ return String(p.value)==='0.3'; })){ select.value='0.3'; id.appendChild(el('p','salt-settings__foot ostart30','Starts at +30%.')); }
       return {product:item.product,select:select,typed:typed,lo:tlo,hi:thi};
     });
     /* 25 Oct 2026 (Record redesign P7, his Ask J): the code they will get, worked out as Add the customer works it out, shown as the name and place are typed;
@@ -3297,7 +3299,7 @@ export const OWNER_JS = `
       idDrifts.forEach(function(item){item.select.disabled=!canStart;item.typed.disabled=!canStart;});
     });
     idKind.dispatchEvent(new Event('change'));
-    joinForm={kind:idKind,name:idName,place:idPlace,status:idStatus,filled:false};
+    joinForm={kind:idKind,name:idName,place:idPlace,status:idStatus,drifts:idDrifts,filled:false};
     /* Fable's re-check: the link is told its code only while the name is the one it sealed, so a name typed over it (in one go or after emptying) is another
        customer and is never told; the place stays his to correct, and a nickname is put right afterwards by Amend ID */
     idName.addEventListener('input',function(){ if(joinForm&&joinForm.name===idName) joinForm.filled=!!joinHold&&idName.value.trim()===joinHold.name; });
@@ -7146,6 +7148,7 @@ export const OWNER_JS = `
     var f=joinForm; if(!joinHold||!f||!f.name.isConnected) return;
     f.kind.value='customer'; f.kind.dispatchEvent(new Event('change',{bubbles:true}));
     f.name.value=joinHold.name; f.place.value=joinHold.place;
+    (f.drifts||[]).forEach(function(d){ if(d.product==='salt'){ d.select.value='0.3'; d.select.dispatchEvent(new Event('change',{bubbles:true})); } });   /* 11 Nov 2026: a new customer starts at +30% */
     f.name.dispatchEvent(new Event('input',{bubbles:true})); f.place.dispatchEvent(new Event('input',{bubbles:true}));
     f.filled=true; f.status.textContent='Filled from the join link of '+codeByUser(joinHold.by)+(codeOfUser(joinHold.by)?', their first week counting for them':'')+'; check them, then add.';
     openForm('new-customer');
