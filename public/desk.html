@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="80b71c135aa4bf75";
+var SALT_BUILD_ID="711a7bd8a2ff88a5";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12006,7 +12006,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1505","d":"12 Nov 2026","t":"A SHORT MAP LINK OPENS ON PLACE ON THE MAP, AND A LINK THAT WILL NOT SAYS WHY","n":["<b>HIS SCREENSHOT: PLACE THEM REFUSED A GOOGLE SHORT LINK.</b> The opener held each step of a short link to the 400 characters a pasted link is held to, and Google answers a short link with the whole address and its tracking words: 395 characters for a Kuala Lumpur apartment block, over 400 for a longer name. A step may now run to 2,000 characters; the link he pastes is still held to 400.","<b>A LINK THAT WILL NOT OPEN SAYS WHY.</b> Salt Admin said only that the Counter could not do that; the opener's three refusals now have plain words, such as a link that did not lead to a map point.","Nothing prices, books or moves money. Two new checks, each proved red by its own mutation."]}];
+const evolution=[{"v":"v1506","d":"12 Nov 2026","t":"SALT ADMIN'S APPROVE, LEANER: A CARD SAYS WHAT IT SETS, AND AN APPROVAL GOES IN TWO TAPS","n":["<b>HIS REVIEW OF THE APPROVE CARD.</b> Approving one card took three taps (Approve, Confirm, then Confirm 1 on a Sheet that listed back what he had just ticked). Approvals now go on Confirm; the Sheet asks only when a Reject is among the picks, because a rejected row a site order made is written onto that order.","<b>A CARD SAYS WHAT IT SETS.</b> A Their % card read Price % and RM 0.00, so its Details had to be opened to learn the figure. It now shows the book's tag and the figure as the stepper says it (Salt −20%, was −10%), its Approve names the figure, and an entry with no size and no sum shows the first sentence of the drafter's reading instead of RM 0.00.","<b>ONE COUNT, NO EMPTY PARTS.</b> The lead no longer counts rows beside the head's count of cards; Approve all stands only from two cards; the drafter's queue fold is not drawn while nothing is sent; the bar says 1 to approve and 1 to reject.","Nothing prices, books or moves money: the same decide-many request, sent one tap sooner. A new section of 14 checks, each proved red by its own mutation (20); the older Approve checks re-aimed; full suite 12,239 passed, 0 failed."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12159,7 +12159,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='12 Nov 2026, 02:36 KL';
+const LAST_UPDATED='12 Nov 2026, 04:51 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
