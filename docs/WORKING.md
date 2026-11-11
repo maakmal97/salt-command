@@ -158,6 +158,14 @@ Each of these stayed green, or read clean, through a real fault.
   window, let only booleans cross, and carry a control). Build patterns from a regexp literal's
   `.source`. Run every new assertion against `git show HEAD:<file>` and the working copy, and see it
   red.
+- **A page drawn from source when the Worker is bundled.** The Counter's page carries some Worker
+  functions as their own text (`String(fn)`: `slotSpan`, `slotNext`, `openParts`, `haversineKm`).
+  wrangler bundles the Worker with esbuild's keepNames, which writes `__name(f, "f")` inside any such
+  function that declares a named function, and every check that draws `landingPage` from
+  `stmt/page.js` sees source with no `__name` at all. So every delivery sheet threw at its windows on
+  the live page while the suite stayed green (found 11 Nov 2026). `CLIENT_JS` now defines `__name`
+  doing nothing, first in its scope; a new script that carries Worker source needs the same, and
+  `test/bundled-page.mjs` draws the page from an esbuild bundle as wrangler builds it.
 - **A guard for a page that has gone.** jsdom from 30.1.0 keeps a closed window's document and
   tells the page nothing, so `docLive()` (`!!document&&!!document.body`) read true after `close()`:
   removing any of its eleven guards left the four closed-page sections green, their only check being
