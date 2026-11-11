@@ -902,11 +902,6 @@ export const OWNER_JS = `
     try{ var c=await readParty(); return (c.parties||[]).filter(function(code){ return !/[-]R$/.test(code); }); }
     catch(e){ return []; }
   }
-  /* 4 Nov 2026 (one convention on every surface): their spot's place search on Order as them goes through his own road, as Shop's points do */
-  async function actSearch(q){
-    try{ return {status:200, body:await refs('/all/maker/geo/search',{q:q})}; }
-    catch(e){ return {status:e.status||0, body:{ok:false}}; }
-  }
   async function actKey(){
     try{ return {status:200, body:await refs('/all/maker/slip/key')}; }
     catch(e){ return {status:e.status||0, body:{ok:false}}; }
@@ -1833,7 +1828,7 @@ export const OWNER_JS = `
   }
   /* Salt Admin A to C (20 Oct 2026), P4, HIS ANSWER: THE DELIVERY ADDRESS, their sealed spot, opened here too after the one unlock (it was the
      Desk's alone). Sealed while shut, with Unlock; open, the Address (the spot's name), its floor or unit and Maps from the point, each from the
-     seal and nothing stored but in page memory: the opened part carries data-maker-pin, and makerVaultLock (the lock, a hidden page, a lapse)
+     seal and nothing stored but in page memory (11 Nov 2026: the Name, then the Address as they typed it, with Maps searching it): the opened part carries data-maker-pin, and makerVaultLock (the lock, a hidden page, a lapse)
      takes it off and lets the held copy go. A unit alone has no Maps. Filing it as their place
      stays on the Desk. */
   function spotHref(lat,lng){
@@ -1863,17 +1858,22 @@ export const OWNER_JS = `
     function said(text){ head(false); note.textContent=text; box.appendChild(note); }
     function adSpotPaint(p){
       head(false);
-      var part=el('div','adspot__open'), led=el('div','salt-ledger salt-ledger--plain'), label=typeof p.label==='string'?p.label.slice(0,24):'', unit=typeof p.unit==='string'?p.unit.slice(0,40):'';
+      var part=el('div','adspot__open'), led=el('div','salt-ledger salt-ledger--plain'), label=typeof p.label==='string'?p.label.slice(0,24):'', unit=typeof p.unit==='string'?p.unit.slice(0,40):'', addr=typeof p.addr==='string'?p.addr.slice(0,200):'';
       part.setAttribute('data-maker-pin','');
-      if(label) led.appendChild(ordLine('Address',label));
+      /* 11 Nov 2026: a spot is a name and its typed address, or a point; one filed before carried a floor or unit */
+      if(label) led.appendChild(ordLine('Name',label));
+      if(addr) led.appendChild(ordLine('Address',addr));
       if(unit) led.appendChild(ordLine('Floor or unit',unit));
       if(led.firstChild) part.appendChild(led);
       var row=el('div','adspot__acts');
-      if(p.src!=='unit'&&isFinite(p.lat)&&isFinite(p.lng)&&Math.abs(+p.lat)<=90&&Math.abs(+p.lng)<=180){
+      if(p.src==='addr'&&addr){
+        var q=el('a','salt-ghost adspot__maps'); q.href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(addr); q.target='_blank'; q.rel='noopener'; q.setAttribute('data-spot-maps','');
+        q.appendChild(pinSvg()); q.appendChild(document.createTextNode('Maps')); row.appendChild(q);
+      }else if(p.src!=='unit'&&isFinite(p.lat)&&isFinite(p.lng)&&Math.abs(+p.lat)<=90&&Math.abs(+p.lng)<=180){
         var a=el('a','salt-ghost adspot__maps'); a.href=spotHref(+p.lat,+p.lng); a.setAttribute('data-spot-maps','');
         if(/^https:/.test(a.getAttribute('href'))){ a.target='_blank'; a.rel='noopener'; }
         a.appendChild(pinSvg()); a.appendChild(document.createTextNode('Maps')); row.appendChild(a);
-      }else if(p.src!=='unit') part.appendChild(el('p','msg','Their link could not be opened to a point just now.'));
+      }else if(p.src!=='unit'&&p.src!=='addr') part.appendChild(el('p','msg','Their link could not be opened to a point just now.'));
       var lk=ghost(['Lock','vault.lock','spot:'+key]); lk.addEventListener('click',function(){ makerVaultLock(); }); row.appendChild(lk);
       part.appendChild(row);
       part.appendChild(el('p','msg','File it as their place on the Desk.'));
