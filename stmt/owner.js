@@ -1216,6 +1216,10 @@ export const OWNER_JS = `
   var REFUSAL_GENERAL='The Counter could not do that. Try again.';
   /*REFUSALS*/
   var REFUSALS={
+    /* 12 Nov 2026: the map link opener's own words (stmt/place.js mapsOpen), which fell to the general sentence on Place on the map */
+    'The link did not lead to a point.':'That link did not lead to a map point. Paste the full link, or tap Use my location.',
+    'The link did not answer.':'The map link did not answer. Try again, or paste the full link.',
+    'Only a Google Maps or Apple Maps link is opened here.':'Only a Google Maps or Apple Maps link is opened here.',
     'Say which figure changes.':'Change at least one of the units, the price or the delivery.',
     'A size and a price are above nothing.':'Units and price must each be above zero.',
     'A reply is 1 to 200 characters.':'A reply is 1 to 200 characters.',

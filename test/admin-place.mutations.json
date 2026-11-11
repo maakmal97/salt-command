@@ -23,5 +23,8 @@
  {"name":"Use my location fills nothing (4 Nov 2026)","file":"stmt/owner.js","find":"        shut(); where.value=la.toFixed(5)+', '+ln.toFixed(5);","replace":"        shut();"},
  {"name":"Add ID keeps its old link field (4 Nov 2026)","file":"stmt/owner.js","find":"placeAssist(idLink,{id:'makerIdLink',act:'record.add-id.link'});","replace":""},
  {"name":"Amend ID keeps its old link field (4 Nov 2026)","file":"stmt/owner.js","find":"placeAssist(amendLink,{id:'makerAmendLink',act:'record.amend-id.link'});","replace":""},
- {"name":"a filed place keeps its old link field (4 Nov 2026)","file":"stmt/owner.js","find":"placeAssist(placeLink,{id:'makerPlaceLink',act:'record.place.link'});","replace":""}
+ {"name":"a filed place keeps its old link field (4 Nov 2026)","file":"stmt/owner.js","find":"placeAssist(placeLink,{id:'makerPlaceLink',act:'record.place.link'});","replace":""},
+ {"name":"W6 a hop is held to the link's own 400","file":"stmt/place.js","find":"const kept = clean(to.href, HOP_MAX);","replace":"const kept = clean(to.href);"},
+ {"name":"W6 a hop of any length is followed","file":"stmt/place.js","find":"const LINK_MAX = 400, HOP_MAX = 2000;","replace":"const LINK_MAX = 400, HOP_MAX = 1e9;"},
+ {"name":"U8 the opener's refusal falls to the general sentence","file":"stmt/owner.js","find":"    'The link did not lead to a point.':'That link did not lead to a map point. Paste the full link, or tap Use my location.',\n","replace":""}
 ]
