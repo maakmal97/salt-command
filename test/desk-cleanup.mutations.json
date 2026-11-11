@@ -15,16 +15,6 @@
   "replace": ""
  },
  {
-  "name": "F3.1 the repeat notes are never grouped",
-  "find": "return D.length>=3?D:[];};",
-  "replace": "return D.length>=999?D:[];};"
- },
- {
-  "name": "F3.2 the fold counts items, not cards",
-  "find": "<span class=\"ct${n?'':' zero'}\">${n}</span></summary>\n      <div style=\"padding-bottom:12px\">${rest.map(obsCard)",
-  "replace": "<span class=\"ct${n?'':' zero'}\">${L.length}</span></summary>\n      <div style=\"padding-bottom:12px\">${rest.map(obsCard)"
- },
- {
   "name": "F4.1 a negative headroom is a card again",
   "find": "    if(H&&H.live>0&&!(H.headroom<0)){",
   "replace": "    if(H&&H.live>0){"
@@ -198,5 +188,60 @@
   "name": "C2.3 the departure dropped",
   "find": "const gone=dep.map(x=>ID(x.id)+' left '",
   "replace": "const gone=[].map(x=>ID(x.id)+' left '"
+ },
+ {
+  "name": "F3.1 repeat orders are drawn again",
+  "find": "if(/^dup:/.test(o.id)||o.id==='cust:oneanddone')return;",
+  "replace": "if(o.id==='cust:oneanddone')return;"
+ },
+ {
+  "name": "F3.1 bought once is drawn again",
+  "find": "if(/^dup:/.test(o.id)||o.id==='cust:oneanddone')return;",
+  "replace": "if(/^dup:/.test(o.id))return;"
+ },
+ {
+  "name": "F3.2 the message card stands beside its habit card",
+  "find": "const rv=byId[o.id.replace('cust:cadence','promo:revive')];",
+  "replace": "const rv=null;"
+ },
+ {
+  "name": "F3.2 the message card is drawn as well",
+  "find": "if(/^promo:revive:/.test(o.id)&&ids.has(o.id.replace('promo:revive','cust:cadence')))return;",
+  "replace": ""
+ },
+ {
+  "name": "F3.3 a hushed habit card leaves its message card",
+  "find": "const ids=new Set(live.concat(hushed).map(o=>o.id)),",
+  "replace": "const ids=new Set(live.map(o=>o.id)),"
+ },
+ {
+  "name": "F3.4 the rhythm gate opens",
+  "find": "if(gate.test(o.id)&&o.sev!=='watch')return;",
+  "replace": ""
+ },
+ {
+  "name": "F3.5 the weekend stands apart",
+  "find": "if(/^rhythm:weekend:/.test(o.id)&&byId[o.id.replace('weekend','dow')])return;",
+  "replace": ""
+ },
+ {
+  "name": "F3.5 the weekday card keeps the weekend's watch",
+  "find": "out.push(we?Object.assign({},o,{sev:'note',why:",
+  "replace": "out.push(we?Object.assign({},o,{sev:we.sev,why:"
+ },
+ {
+  "name": "F3.7 At stake adds every figure",
+  "find": "const stake=live.reduce((a,o)=>a+(o.sev!=='note'&&o.rm>0.009?o.rm:0),0);",
+  "replace": "const stake=live.reduce((a,o)=>a+(o.rm>0.009?o.rm:0),0);"
+ },
+ {
+  "name": "F3.6 the count is the observations, not the cards",
+  "find": "  const liveN=live.length;",
+  "replace": "  const liveN=X.live.length;"
+ },
+ {
+  "name": "F3.6 the tag legend returns",
+  "find": "  <div class=\"insight salt-insight\">${esc(rhythmCount)}</div>",
+  "replace": "  <div class=\"insight salt-insight\">Tags: <b>measured</b>.</div>\n  <div class=\"insight salt-insight\">${esc(rhythmCount)}</div>"
  }
 ]

@@ -3,7 +3,7 @@
  * Plan: docs/plan-desk-cleanup.html. Every check reads what the Desk draws or computes on the frozen book, never the source's text.
  *   F1  a debt past its term is one card: the credit rules it breaks ride on its Chase card as chips, and no Rule card repeats it
  *   F2  a partner's open sale at the Floor is no Margin floor breach; the same sale to anyone else still is
- *   F3  three or more repeat-order notes are one card naming each, and the counts beside the folds count cards
+ *   F3  Noticed: one customer card a book, rhythm only where it changes buying, no repeat order, At stake each figure once (11 Nov 2026)
  *   F4  with a live price already under the Floor, no card says the buying rate "can rise" by a negative figure
  *   F5  Rules says a party over a cap once, however many of its rows are over it
  *   F6  Financials' Gross margin is the sum of the books' own, never a dash because one row states no cost
@@ -52,16 +52,45 @@ export async function run({ ok }) {
 
     ok(f2.loss > 0, "F2.2 a partner's sale under its own lot's cost is a loss and still a breach: " + J(f2));
 
-    /* F3 */
-    const dups = E("observations().live.filter(o=>o.sev==='note'&&/^dup:/.test(o.id)).length");
+    /* F3 (11 Nov 2026, his three answers): Noticed draws one customer card a book, rhythm only where it changes buying, no repeat order.
+       Synthetic items through noticedDraw, so every branch is driven whatever the book holds today; then the page itself. */
+    const nd = (live, hushed = []) => E(`noticedDraw(${J(live)},${J(hushed)}).map(o=>({id:o.id,sev:o.sev,title:o.title,why:o.why,rm:o.rm}))`);
+    const it = (id, sev, title, why = "w", rm = 0) => ({ id, fam: "x", sev, title, why, rm, conf: "measured" });
+    const syn = nd([it("cust:cadence:salt", "watch", "13 customers are past their own habit on salt", "split", 1912),
+      it("promo:revive:salt", "note", "Three messages are worth about RM 853 on salt", "CA2, CJ4, CH4 lead", 853),
+      it("cust:cadence:oil", "watch", "6 customers are past their own habit on oil", "split", 374),
+      it("promo:revive:rice", "note", "Two messages are worth about RM 50 on rice", "CI5 lead", 50),
+      it("dup:CX1:2026-01-01:2026-01-03:90", "note", "CX1 bought the same thing twice in 2 days"), it("cust:oneanddone", "note", "17 of 53 bought once"),
+      it("rhythm:payday:salt", "note", "The pay window runs level with mid-month"), it("rhythm:holiday:salt", "note", "Next holiday 44 days out"),
+      it("rhythm:restock:salt", "note", "The next fortnight looks ordinary"), it("rhythm:restock:oil", "watch", "Buy about 12% more"),
+      it("rhythm:dow:salt", "note", "Friday is the busiest day", "Friday 2.30."), it("rhythm:weekend:salt", "watch", "Weekends run quieter", "28% less."),
+      it("int:nocost", "watch", "4 priced sales carry no cost")], [it("cust:cadence:candy", "watch", "hushed")].concat([]));
+    const sid = syn.map((o) => o.id), s1 = syn.find((o) => o.id === "cust:cadence:salt") || {};
+    ok(!sid.some((i) => /^dup:|oneanddone/.test(i)), "F3.1 no repeat order and no 'bought once' is drawn: " + J(sid));
+    ok(!sid.includes("promo:revive:salt") && s1.sev === "watch" && s1.rm === 1912 && s1.title === "13 customers are past their own habit on salt: three messages are worth about RM 853"
+      && /^CA2, CJ4, CH4 lead /.test(s1.why) && sid.includes("cust:cadence:oil") && sid.includes("promo:revive:rice"),
+      "F3.2 a book's habit card carries its message card, its own id, watch and figure; a message card with no habit card stands alone: " + J(s1));
+    const hz = nd([it("promo:revive:candy", "note", "Two messages are worth RM 9 on candy")], [it("cust:cadence:candy", "watch", "hushed")]);
+    ok(hz.length === 0, "F3.3 a message card whose habit card is hushed goes with it: " + J(hz));
+    ok(!sid.some((i) => /^rhythm:(payday|holiday):/.test(i) || i === "rhythm:restock:salt") && sid.includes("rhythm:restock:oil"),
+      "F3.4 the pay window, a holiday and the fortnight draw only when they reach watch: " + J(sid.filter((i) => /^rhythm/.test(i))));
+    const dw = syn.find((o) => o.id === "rhythm:dow:salt") || {};
+    ok(!sid.includes("rhythm:weekend:salt") && dw.sev === "note" && /Friday 2\.30\. Weekends run quieter: 28% less\./.test(dw.why),
+      "F3.5 the weekday pattern is one note, the weekend beside it: " + J(dw));
     E("switchTab('today')");
-    const obs = [...d.querySelectorAll("#sec-today details.obs .obst")].map(text);
-    const group = [...d.querySelectorAll("#sec-today details.obs")].find((x) => /repeat orders/.test(text(x.querySelector(".obst"))));
-    ok(dups >= 3 && !obs.some((t) => /bought the same thing twice/.test(t)) && !!group && group.querySelectorAll(".obsev li").length === dups,
-      `F3.1 ${dups} repeat-order notes are one card listing each: ` + J([obs.filter((t) => /twice|repeat/.test(t)).length, group && group.querySelectorAll(".obsev li").length]));
-    const integrity = [...d.querySelectorAll("#sec-today details.obsec")].find((x) => /^Integrity/.test(text(x.querySelector("summary"))));
-    ok(!!integrity && +text(integrity.querySelector("summary .ct")) === integrity.querySelectorAll("details.obs").length,
-      "F3.2 the count beside Integrity is the cards under it: " + J(integrity && [text(integrity.querySelector("summary .ct")), integrity.querySelectorAll("details.obs").length]));
+    const nt = d.querySelector("#sec-today details.noticed"), drawn = E("(function(){const X=observations();return noticedDraw(X.live,X.hushed).map(o=>({sev:o.sev,rm:o.rm||0}))})()");
+    const stk = [...nt.querySelectorAll(".salt-kpi")].find((k) => /At stake/.test(text(k.querySelector(".salt-kpi__label"))));
+    const stakeWant = drawn.reduce((a, o) => a + (o.sev !== "note" && o.rm > 0.009 ? o.rm : 0), 0);
+    const all = E("observations().live.reduce((a,o)=>a+(o.rm>0.009?o.rm:0),0)");
+    ok(text(stk.querySelector(".salt-kpi__value")) === E(`fmt0(${stakeWant})`) && stakeWant < all && +text(nt.querySelector(":scope > summary .ct")) === drawn.length
+      && nt.querySelectorAll("details.obs").length === drawn.length && !/Tags:/.test(text(nt)),
+      "F3.6 At stake is what Act and Watch name, each once, the count is the cards drawn, and no tag legend: " + J([text(stk), stakeWant, all, drawn.length]));
+    /* a note that names a figure is drawn but at stake it is not: one invented note of RM 999 beside today's items */
+    const noteStake = E(`(function(){const keep=observations;observations=function(){const X=keep();
+      return Object.assign({},X,{live:X.live.concat([{id:'promo:test:salt',fam:'promo',sev:'note',conf:'measured',rm:999,tab:'pricing',title:'a note with a figure',why:'w'}])});};
+      try{const e=document.createElement('div');e.innerHTML=tabPlans();const k=[...e.querySelectorAll('.salt-kpi')].find(x=>/At stake/.test(x.querySelector('.salt-kpi__label').textContent));
+        return [k.querySelector('.salt-kpi__value').textContent.trim(),!!/a note with a figure/.test(e.textContent)];}finally{observations=keep;}})()`);
+    ok(noteStake[0] === text(stk.querySelector(".salt-kpi__value")) && noteStake[1], "F3.7 a note's figure is drawn on its card and left out of At stake: " + J(noteStake));
 
     /* F4: the walk answering a live price already under the Floor */
     const f4 = E(`(function(){const keep=boardHeadroom;
