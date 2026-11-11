@@ -87,7 +87,7 @@ measurement of the desk.
   into that section as a table of cases, not a new section. Removing a section names in its commit what it protected and
   which section still covers it, and the section count and `npm test` time before and after. Budget: CI's slowest `tests`
   part under 5 min (about 4 on 13 Oct 2026); past it, prune by `test/suite-costs.json` before adding a fourth part.
-- **Shape.** `npm run test:serial` is `node --max-old-space-size=4096 test/verify.mjs`, 2 to 7 minutes, the one-process road. Each
+- **Shape.** `npm run test:serial` is `node --max-old-space-size=4096 test/verify.mjs`, 21 to 27 minutes on the laptop (measured 12 Nov 2026), the one-process road; `npm test`, the split, is the default full run (8.3 minutes). Each
   section body is `await (async () => { ... })();`, because a top-level block stays pinned for the
   whole run; `section()` closes every window in `payload.mjs`'s `opened` set synchronously, because
   the suite starves the event loop and a timer-based close never runs. A script using `openMaster`
