@@ -6473,6 +6473,16 @@ function loyalWho(book,id){
   if(rewardIsAssociate(state,book.sales||[],id))return 'associate';
   return '';
 }
+/* THE DAY A ROW WAS WRITTEN OFF, lifted out of the loyalty walk on 11 Nov 2026 so the snapshot's nrsShare dates one the same way: the
+   fold's stamp, else the newest Correction on the row from its first handover, else the first handover plus the lock (`lock`,
+   TERMS.lockDays, 4 where none is passed), the order's own date only with none of those. */
+function writeOffDay(s,lock){
+  if(s.defaultedOn)return String(s.defaultedOn);
+  const held=txHandSteps(s),first=held.length&&held[0].d?String(held[0].d):null;
+  const steps=(s.amend||[]).filter(a=>a&&!a.undone&&a.kind==='Correction'&&a.date&&(!first||String(a.date)>=first)).map(a=>String(a.date)).sort();
+  if(steps.length)return steps[steps.length-1];
+  return first?dayIso(dayNo(first)+(lock!=null?+lock:4)):String(s.date||'');
+}
 function loyaltyWalk(book,id,today){
   const sch=loyalScheme(book);if(!sch)return null;
   const who=loyalWho(book,id);if(who)return {walks:false,why:who};
@@ -6481,13 +6491,7 @@ function loyaltyWalk(book,id,today){
   /* the day of a write-off (Fable's review): the fold's stamp, else the newest Correction on the row from its first handover (the one that wrote it
      off, or one after it), else the first handover plus the lock, as payDelays dates one; the order's own date only with none of those */
   const lock=rules.lockDays!=null?+rules.lockDays:4;
-  const offDay=s=>{
-    if(s.defaultedOn)return String(s.defaultedOn);
-    const held=txHandSteps(s),first=held.length&&held[0].d?String(held[0].d):null;
-    const steps=(s.amend||[]).filter(a=>a&&!a.undone&&a.kind==='Correction'&&a.date&&(!first||String(a.date)>=first)).map(a=>String(a.date)).sort();
-    if(steps.length)return steps[steps.length-1];
-    return first?dayIso(dayNo(first)+lock):String(s.date||'');
-  };
+  const offDay=s=>writeOffDay(s,lock);
   const offs=mine.filter(s=>s.defaulted).map(offDay).filter(Boolean).sort();
   /* why they are paused on a day: their delays as they stood that day, one settled later read as still open on it */
   const pausedOn=day=>{
@@ -8111,7 +8115,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,R3_DAYS:R3_DAYS,r3Link:r3Link,r3Until:r3Until,r3In:r3In,r3Of:r3Of,loyaltyWalk:loyaltyWalk,loyalScheme:loyalScheme,cadenceOf:cadenceOf,rewardIsAssociate:rewardIsAssociate,rewardOpening:rewardOpening,rewardCut:rewardCut,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,editEntry:editEntry,editRefunds:editRefunds,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
+return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,R3_DAYS:R3_DAYS,r3Link:r3Link,r3Until:r3Until,r3In:r3In,r3Of:r3Of,loyaltyWalk:loyaltyWalk,loyalScheme:loyalScheme,cadenceOf:cadenceOf,rewardIsAssociate:rewardIsAssociate,rewardOpening:rewardOpening,rewardCut:rewardCut,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,editEntry:editEntry,editRefunds:editRefunds,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,writeOffDay:writeOffDay,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,LIGHT_DAYS:LIGHT_DAYS,restockLight:restockLight,restockSupply:restockSupply,
@@ -8279,7 +8283,8 @@ function costStack(I){
   if(ruled)eff=+(lot*(1+ +CR.pct/100)).toFixed(6);
   else if(landedRule)eff=+landed.toFixed(6);
   const exRate=ruled?+(lot*(1+ +CR.pct/100)).toFixed(6):(landedRule?+landed.toFixed(6):+yielded.toFixed(6));
-  return Object.assign(nrs>0?{nrs:nrs,floorEx:+(exRate*(1+nrs)).toFixed(6)}:{},{rule:(CR&&CR.kind)?CR.kind:null,rulePct:ruled?+CR.pct:null,rulePlaceholder:!!(ruled&&CR.placeholder),
+  /* 11 Nov 2026, his answer H: `nrsAt` and `nrsBy`, the day the share was last measured and what measured it (a count, a loss, a lot), for the words */
+  return Object.assign(nrs>0?Object.assign({nrs:nrs,floorEx:+(exRate*(1+nrs)).toFixed(6)},I.nrs.at?{nrsAt:String(I.nrs.at),nrsBy:I.nrs.by||null}:{}):{},{rule:(CR&&CR.kind)?CR.kind:null,rulePct:ruled?+CR.pct:null,rulePlaceholder:!!(ruled&&CR.placeholder),
           latest:LC?{rid:LC.rid||null,date:LC.date||null,quote:+LC.quote,freight:+LC.freight||0,units:+LC.units}:null,
           afterLeak:+yielded.toFixed(4),
           repl:+lot.toFixed(2),lot:+lot.toFixed(4),freight:+freight.toFixed(4),
@@ -9155,24 +9160,41 @@ function sampleUnits(C,p){return C.B.selfUseLog.filter(r=>(r.product||C.B.defaul
 function shrinkRate(C,p){const h=C.W.buyUnits+openingFor(C.B,p).qty;
   return h>0?Math.max(0,C.W.selfUse-sampleUnits(C,p))/h:0;}
 
-/* 10 NOV 2026, HIS DECISION: THE NON-REVENUE SHARE A BOOK'S FLOOR CARRIES, MEASURED LIVE (his answer; RULES.nrsFloor names the book and
-   which of his three categories count). Units that left and earned nothing: the count shortfall (the walk's selfUse, the promotion's
-   sample inside it), gifts and rewards with reward cover, and written off. Over the units handed over and paid for; a unit settled in
-   kind is paid for (his word). Null where nothing reads: no rule, nothing lost, or nothing paid for. */
+/* 10 NOV 2026, HIS DECISION: THE NON-REVENUE SHARE A BOOK'S FLOOR CARRIES (RULES.nrsFloor names the book and which of his three
+   categories count). Units that left and earned nothing: the count shortfall (the walk's selfUse, the promotion's sample inside it),
+   gifts and rewards with reward cover, and written off. Over the units handed over and paid for; a unit settled in kind is paid for
+   (his word). Null where nothing reads: no rule, nothing lost, or nothing paid for.
+   11 NOV 2026, HIS ANSWER H: IT IS RE-MEASURED ONLY WHEN HE STATES THE SHELF OR THE COST, never by trading, so the Floor and a salt
+   discount, which is a place between the Median and that Floor, stand still between those days. The anchor (`nrsAnchor`) is the
+   latest day of a count, a recorded loss or a landed lot, read off the book; what was handed over, given or written off ON OR AFTER
+   that day waits for the next one (a row's own steps, the engine's txHandSteps; a write-off by its day, writeOffDay). The shortfall
+   is the walk's as it stands: the roll holds it still between counts, and a recorded loss, which moves it, is an anchor itself.
+   Still live, said: a loan in kind (the walk's soldUnits carries it undated), reward cover put on an older row, and a row dated
+   before the anchor that is entered or corrected after it. A book with no count, loss or lot reads live, as it did. */
+function nrsAnchor(C,p){
+  const dp=C.B.defaultProd||'salt', mine=r=>r&&(r.product||dp)===p&&r.date;
+  const last=rows=>(rows||[]).filter(mine).map(r=>String(r.date)).sort().pop()||null;
+  const lc=C.B.purchases?POSITION_ENGINE.latestCogs(pPurch(C.B,p)):null;
+  return [['count',last(C.B.counts)],['loss',last(C.B.selfUseLog)],['lot',lc&&lc.date?String(lc.date):null]]
+    .reduce((a,x)=>x[1]&&(!a||x[1]>a.at)?{at:x[1],by:x[0]}:a,null);
+}
 function nrsShare(C,p){
   const K=((C.R.RULES||{}).nrsFloor||{})[p];if(!K)return null;
-  let gifts=0,off=0;
+  const A=nrsAnchor(C,p), at=A?A.at:null, lock=(C.R.RULES||{}).lockDays;
+  let gifts=0,off=0,later=0;
   pSales(C.B,p).forEach(s=>{
+    const aft=at?POSITION_ENGINE.txHandSteps(s).reduce((t,x)=>t+(x.d>=at?x.u:0),0):0;   /* a step with no day reads as before it */
+    later+=aft;                                   /* off the walk's soldUnits, which counts a cancelled row's units too */
     if(s.cancelled)return;
-    const q=POSITION_ENGINE.txPhys(s);
+    const q=Math.max(0,POSITION_ENGINE.txPhys(s)-aft);
     if(s.goodwill){gifts+=q;return;}
-    if(s.defaulted){off+=q;return;}
+    if(s.defaulted&&!(at&&POSITION_ENGINE.writeOffDay(s,lock)>=at)){off+=q;return;}
     gifts+=Math.min(q,Math.max(0,+s.coverUnits||0));
   });
-  const short=Math.max(0,+C.W.selfUse||0), paid=(+C.W.soldUnits||0)-gifts-off;
+  const short=Math.max(0,+C.W.selfUse||0), paid=(+C.W.soldUnits||0)-later-gifts-off;
   const lost=(K.shortfall?short:0)+(K.gifts?gifts:0)+(K.writtenOff?off:0);
   if(!(paid>0)||!(lost>0))return null;
-  return {share:+(lost/paid).toFixed(6),shortfall:+short.toFixed(2),gifts:+gifts.toFixed(2),writtenOff:+off.toFixed(2),paid:+paid.toFixed(2)};
+  return Object.assign({share:+(lost/paid).toFixed(6),shortfall:+short.toFixed(2),gifts:+gifts.toFixed(2),writtenOff:+off.toFixed(2),paid:+paid.toFixed(2)},A||{});
 }
 /* the records the pricing engine takes */
 function inputs(C,p){
@@ -11832,6 +11854,11 @@ function dShow(iso){
   /* no lookbehind: Safari before 16.4 cannot parse one, and it would blank the whole script */
   return (iso==null?'':String(iso)).replace(/(^|[^\w-])(\d{4})-(\d{2})-(\d{2})(?![\w-])/g,
     (m,p,y,mo,d)=>(+mo>=1&&+mo<=12&&+d>=1&&+d<=31)?p+d+' '+MAP_MON[+mo-1]+' '+y:m);
+}
+/* 11 Nov 2026, his answer H: when the Floor's unpaid share was last measured, in words, from the cost stack's nrsAt and nrsBy; nothing where it reads live */
+function nrsWhen(c){
+  if(!c||!c.nrsAt)return '';
+  return ' as measured at '+({count:'the count of ',loss:'the loss recorded on ',lot:'the lot landed on '}[c.nrsBy]||'')+dShow(c.nrsAt);
 }
 function dSweep(root){
   if(!root||typeof document==='undefined')return;
@@ -21873,7 +21900,7 @@ function tabPricing(){
       ${LD.anchorG!=null?sR('Anchor',(LD.anchorG*100).toFixed(0)+'% margin',`typed, at ${units(LD.anchorQ)}, on the floor`):sR('Anchor',LD.anchorX.toFixed(3)+'x',`typed, at ${units(LD.anchorQ)} on cogs`)}
       ${sR('Taper',(sT.b!=null?sT.b.toFixed(3):NIL),sT.b!=null?`fitted to ${esc(sSup)}&rsquo;s quote ladder${sT.r2!=null?`, r&sup2; ${sT.r2.toFixed(2)}`:''}, ${units(LD.at.lo)} to ${units(LD.at.hi)}${sBor?`; <b>${esc(sOwn)}&rsquo;s own ladder is on the book and is not the one this is fitted to</b>`:''}`:'no supplier ladder to fit')}
       ${sR('Ceiling',LD.ceiling.toFixed(2)+'x','does not bind at any printed size')}
-      ${sC.rule==='latestCogs'?sR('Floor','COGS',`${fmt(sC.effEx)} a unit${sC.latest?`, the latest purchase${sC.latest.rid?' '+esc(sC.latest.rid):''}: ${fmt(sC.latest.quote)} quote plus ${fmt(sC.latest.freight)} freight over ${units(sC.latest.units)}`:''}${sC.floorEx!=null?`; plus ${(sC.nrs*100).toFixed(1)}% for the units that left unpaid, ${fmt(sC.floorEx)} a unit`:''}; times the size, up to the next RM 5; no ${sC.floorEx!=null?'':'leak, '}delivery or time in it`)
+      ${sC.rule==='latestCogs'?sR('Floor','COGS',`${fmt(sC.effEx)} a unit${sC.latest?`, the latest purchase${sC.latest.rid?' '+esc(sC.latest.rid):''}: ${fmt(sC.latest.quote)} quote plus ${fmt(sC.latest.freight)} freight over ${units(sC.latest.units)}`:''}${sC.floorEx!=null?`; plus ${(sC.nrs*100).toFixed(1)}% for the units that left unpaid${nrsWhen(sC)}, ${fmt(sC.floorEx)} a unit`:''}; times the size, up to the next RM 5; no ${sC.floorEx!=null?'':'leak, '}delivery or time in it`)
         :sR('Floor','break-even',`${fmt(sC.effEx)} a unit after the leak, from the last three lots and the last three counts; delivery and his time are not in it`)}
       ${sC.rule==='latestCogs'&&sC.shrink>=RULES.leakInfoFrom?sR('After the leak',fmt(sC.afterLeak),`information only: ${(sC.shrink*100).toFixed(0)}% of what is bought never sells; nothing prices off it`):''}
       <!-- round 5: the asks' own markups, for the board-column reason: the curve ends read
@@ -21897,7 +21924,7 @@ function tabPricing(){
       ${sSZ.map(q=>{const L=priceLadder(q);const cogs=L.cogs,fl=L.floor.total,g=L.marginX;const raw=g!=null?fl/(1-g):null;
         return `<tr><td class="l salt-table__label">${units(q)}</td><td class="mono">${fmt(cogs)}</td><td class="mono">+${fmt(fl-cogs)}</td><td class="mono"><b>${fmt(fl)}</b></td><td class="mono">${g!=null?(g*100).toFixed(1)+'%':NIL}</td><td class="mono">${raw!=null?fmt(raw):NIL}</td><td class="mono"><b>${fmt0(L.ask.total)}</b>${L.ask.lawStepped?' <span class="iref">stepped</span>':''}</td></tr>`;}).join('')}
     </tbody></table></div>
-    <div class="dsc" style="margin-top:8px">${sC.rule==='latestCogs'?`COGS is ${fmt(sC.landed)} a unit off the latest purchase, quote plus freight; the Floor is ${sC.floorEx!=null?`${fmt(sC.floorEx)} a unit, COGS plus ${(sC.nrs*100).toFixed(1)}% for the units that left unpaid,`:'that'} times the size, up to the next RM 5; it earns nothing${sC.floorEx!=null?(TIER_RULE[PROD]&&TIER_RULE[PROD].band?', the Median Price is struck on COGS and the Ceiling on the price your supplier quotes':', and the Median Price and the Ceiling are struck on COGS'):' and carries no leak'}.`:`COGS is ${fmt(sC.landed)} a unit landed; the leak adds ${((sC.shrink/(1-sC.shrink))*100).toFixed(1)}% of it, so the floor is ${fmt(sC.effEx)} a unit and earns nothing.`} ${driftBook(PROD)?(()=>{const pts=(TIER_RULE[PROD].points||[]).slice().sort((x,y)=>x[0]-y[0]),p0=pts[0],p1=pts[pts.length-1];return `The Median Price is the Floor times a multiple sliding in the log of size from ${p0?p0[1]:NIL} at ${p0?units(p0[0]):NIL} to ${p1?p1[1]:NIL} at ${p1?units(p1[0]):NIL}, down to the RM 5, lifted so its margin never falls under a smaller size's, and held between the Floor and ${TIER_RULE[PROD].ceilingX} times it. A customer's % lifts the multiple at every size. The margin columns are the old derived price, for reference.`;})():TIER_RULE[PROD]?`The Median Price is the one price he typed for the size, held between the Floor and ${TIER_RULE[PROD].ceilingX} times it.`:'The ask is rounded up to the ten, then may step down to keep the rate from rising with size, never below its floor.'}</div>
+    <div class="dsc" style="margin-top:8px">${sC.rule==='latestCogs'?`COGS is ${fmt(sC.landed)} a unit off the latest purchase, quote plus freight; the Floor is ${sC.floorEx!=null?`${fmt(sC.floorEx)} a unit, COGS plus ${(sC.nrs*100).toFixed(1)}% for the units that left unpaid${nrsWhen(sC)},`:'that'} times the size, up to the next RM 5; it earns nothing${sC.floorEx!=null?(TIER_RULE[PROD]&&TIER_RULE[PROD].band?', the Median Price is struck on COGS and the Ceiling on the price your supplier quotes':', and the Median Price and the Ceiling are struck on COGS'):' and carries no leak'}.`:`COGS is ${fmt(sC.landed)} a unit landed; the leak adds ${((sC.shrink/(1-sC.shrink))*100).toFixed(1)}% of it, so the floor is ${fmt(sC.effEx)} a unit and earns nothing.`} ${driftBook(PROD)?(()=>{const pts=(TIER_RULE[PROD].points||[]).slice().sort((x,y)=>x[0]-y[0]),p0=pts[0],p1=pts[pts.length-1];return `The Median Price is the Floor times a multiple sliding in the log of size from ${p0?p0[1]:NIL} at ${p0?units(p0[0]):NIL} to ${p1?p1[1]:NIL} at ${p1?units(p1[0]):NIL}, down to the RM 5, lifted so its margin never falls under a smaller size's, and held between the Floor and ${TIER_RULE[PROD].ceilingX} times it. A customer's % lifts the multiple at every size. The margin columns are the old derived price, for reference.`;})():TIER_RULE[PROD]?`The Median Price is the one price he typed for the size, held between the Floor and ${TIER_RULE[PROD].ceilingX} times it.`:'The ask is rounded up to the ten, then may step down to keep the rate from rising with size, never below its floor.'}</div>
     ${sFlat>=2?`<div class="insight salt-insight" style="border-left-color:var(--gold)"><b>The taper stops at ${units(LD.at.hi)}, so ${sFlat} of the ${sSZ.length} printed sizes carry the same ${sHi.markupX.toFixed(2)}x.</b></div>`
       :''}`;})()}
     ${pbCard()}

@@ -155,24 +155,41 @@ function sampleUnits(C,p){return C.B.selfUseLog.filter(r=>(r.product||C.B.defaul
 function shrinkRate(C,p){const h=C.W.buyUnits+openingFor(C.B,p).qty;
   return h>0?Math.max(0,C.W.selfUse-sampleUnits(C,p))/h:0;}
 
-/* 10 NOV 2026, HIS DECISION: THE NON-REVENUE SHARE A BOOK'S FLOOR CARRIES, MEASURED LIVE (his answer; RULES.nrsFloor names the book and
-   which of his three categories count). Units that left and earned nothing: the count shortfall (the walk's selfUse, the promotion's
-   sample inside it), gifts and rewards with reward cover, and written off. Over the units handed over and paid for; a unit settled in
-   kind is paid for (his word). Null where nothing reads: no rule, nothing lost, or nothing paid for. */
+/* 10 NOV 2026, HIS DECISION: THE NON-REVENUE SHARE A BOOK'S FLOOR CARRIES (RULES.nrsFloor names the book and which of his three
+   categories count). Units that left and earned nothing: the count shortfall (the walk's selfUse, the promotion's sample inside it),
+   gifts and rewards with reward cover, and written off. Over the units handed over and paid for; a unit settled in kind is paid for
+   (his word). Null where nothing reads: no rule, nothing lost, or nothing paid for.
+   11 NOV 2026, HIS ANSWER H: IT IS RE-MEASURED ONLY WHEN HE STATES THE SHELF OR THE COST, never by trading, so the Floor and a salt
+   discount, which is a place between the Median and that Floor, stand still between those days. The anchor (`nrsAnchor`) is the
+   latest day of a count, a recorded loss or a landed lot, read off the book; what was handed over, given or written off ON OR AFTER
+   that day waits for the next one (a row's own steps, the engine's txHandSteps; a write-off by its day, writeOffDay). The shortfall
+   is the walk's as it stands: the roll holds it still between counts, and a recorded loss, which moves it, is an anchor itself.
+   Still live, said: a loan in kind (the walk's soldUnits carries it undated), reward cover put on an older row, and a row dated
+   before the anchor that is entered or corrected after it. A book with no count, loss or lot reads live, as it did. */
+function nrsAnchor(C,p){
+  const dp=C.B.defaultProd||'salt', mine=r=>r&&(r.product||dp)===p&&r.date;
+  const last=rows=>(rows||[]).filter(mine).map(r=>String(r.date)).sort().pop()||null;
+  const lc=C.B.purchases?POSITION_ENGINE.latestCogs(pPurch(C.B,p)):null;
+  return [['count',last(C.B.counts)],['loss',last(C.B.selfUseLog)],['lot',lc&&lc.date?String(lc.date):null]]
+    .reduce((a,x)=>x[1]&&(!a||x[1]>a.at)?{at:x[1],by:x[0]}:a,null);
+}
 function nrsShare(C,p){
   const K=((C.R.RULES||{}).nrsFloor||{})[p];if(!K)return null;
-  let gifts=0,off=0;
+  const A=nrsAnchor(C,p), at=A?A.at:null, lock=(C.R.RULES||{}).lockDays;
+  let gifts=0,off=0,later=0;
   pSales(C.B,p).forEach(s=>{
+    const aft=at?POSITION_ENGINE.txHandSteps(s).reduce((t,x)=>t+(x.d>=at?x.u:0),0):0;   /* a step with no day reads as before it */
+    later+=aft;                                   /* off the walk's soldUnits, which counts a cancelled row's units too */
     if(s.cancelled)return;
-    const q=POSITION_ENGINE.txPhys(s);
+    const q=Math.max(0,POSITION_ENGINE.txPhys(s)-aft);
     if(s.goodwill){gifts+=q;return;}
-    if(s.defaulted){off+=q;return;}
+    if(s.defaulted&&!(at&&POSITION_ENGINE.writeOffDay(s,lock)>=at)){off+=q;return;}
     gifts+=Math.min(q,Math.max(0,+s.coverUnits||0));
   });
-  const short=Math.max(0,+C.W.selfUse||0), paid=(+C.W.soldUnits||0)-gifts-off;
+  const short=Math.max(0,+C.W.selfUse||0), paid=(+C.W.soldUnits||0)-later-gifts-off;
   const lost=(K.shortfall?short:0)+(K.gifts?gifts:0)+(K.writtenOff?off:0);
   if(!(paid>0)||!(lost>0))return null;
-  return {share:+(lost/paid).toFixed(6),shortfall:+short.toFixed(2),gifts:+gifts.toFixed(2),writtenOff:+off.toFixed(2),paid:+paid.toFixed(2)};
+  return Object.assign({share:+(lost/paid).toFixed(6),shortfall:+short.toFixed(2),gifts:+gifts.toFixed(2),writtenOff:+off.toFixed(2),paid:+paid.toFixed(2)},A||{});
 }
 /* the records the pricing engine takes */
 function inputs(C,p){

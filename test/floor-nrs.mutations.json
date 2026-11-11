@@ -44,8 +44,8 @@
  {
   "name": "a written-off row is not counted",
   "file": "engine/snapshot.mjs",
-  "find": "if(s.defaulted){off+=q;return;}",
-  "replace": "if(s.defaulted){return;}"
+  "find": "if(s.defaulted&&!(at&&POSITION_ENGINE.writeOffDay(s,lock)>=at)){off+=q;return;}",
+  "replace": "if(s.defaulted&&!(at&&POSITION_ENGINE.writeOffDay(s,lock)>=at)){return;}"
  },
  {
   "name": "reward cover is not counted",
@@ -56,20 +56,20 @@
  {
   "name": "a cancelled row is counted",
   "file": "engine/snapshot.mjs",
-  "find": "pSales(C.B,p).forEach(s=>{\n    if(s.cancelled)return;",
-  "replace": "pSales(C.B,p).forEach(s=>{"
+  "find": "    if(s.cancelled)return;\n    const q=Math.max(0,POSITION_ENGINE.txPhys(s)-aft);",
+  "replace": "    const q=Math.max(0,POSITION_ENGINE.txPhys(s)-aft);"
  },
  {
   "name": "gifts and write-offs stay among the paid-for units",
   "file": "engine/snapshot.mjs",
-  "find": "paid=(+C.W.soldUnits||0)-gifts-off;",
-  "replace": "paid=(+C.W.soldUnits||0);"
+  "find": "paid=(+C.W.soldUnits||0)-later-gifts-off;",
+  "replace": "paid=(+C.W.soldUnits||0)-later;"
  },
  {
   "name": "a unit settled in kind is counted as lost",
   "file": "engine/snapshot.mjs",
-  "find": "if(s.defaulted){off+=q;return;}",
-  "replace": "if(s.defaulted){off+=q;return;}if(s.rebate){gifts+=+s.rebateKg||0;}"
+  "find": "if(s.defaulted&&!(at&&POSITION_ENGINE.writeOffDay(s,lock)>=at)){off+=q;return;}",
+  "replace": "if(s.defaulted&&!(at&&POSITION_ENGINE.writeOffDay(s,lock)>=at)){off+=q;return;}if(s.rebate){gifts+=+s.rebateKg||0;}"
  },
  {
   "name": "the shortfall counts whatever the rule says",

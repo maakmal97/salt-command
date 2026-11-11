@@ -153,7 +153,8 @@ function costStack(I){
   if(ruled)eff=+(lot*(1+ +CR.pct/100)).toFixed(6);
   else if(landedRule)eff=+landed.toFixed(6);
   const exRate=ruled?+(lot*(1+ +CR.pct/100)).toFixed(6):(landedRule?+landed.toFixed(6):+yielded.toFixed(6));
-  return Object.assign(nrs>0?{nrs:nrs,floorEx:+(exRate*(1+nrs)).toFixed(6)}:{},{rule:(CR&&CR.kind)?CR.kind:null,rulePct:ruled?+CR.pct:null,rulePlaceholder:!!(ruled&&CR.placeholder),
+  /* 11 Nov 2026, his answer H: `nrsAt` and `nrsBy`, the day the share was last measured and what measured it (a count, a loss, a lot), for the words */
+  return Object.assign(nrs>0?Object.assign({nrs:nrs,floorEx:+(exRate*(1+nrs)).toFixed(6)},I.nrs.at?{nrsAt:String(I.nrs.at),nrsBy:I.nrs.by||null}:{}):{},{rule:(CR&&CR.kind)?CR.kind:null,rulePct:ruled?+CR.pct:null,rulePlaceholder:!!(ruled&&CR.placeholder),
           latest:LC?{rid:LC.rid||null,date:LC.date||null,quote:+LC.quote,freight:+LC.freight||0,units:+LC.units}:null,
           afterLeak:+yielded.toFixed(4),
           repl:+lot.toFixed(2),lot:+lot.toFixed(4),freight:+freight.toFixed(4),

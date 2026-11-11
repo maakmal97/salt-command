@@ -232,6 +232,16 @@ function loyalWho(book,id){
   if(rewardIsAssociate(state,book.sales||[],id))return 'associate';
   return '';
 }
+/* THE DAY A ROW WAS WRITTEN OFF, lifted out of the loyalty walk on 11 Nov 2026 so the snapshot's nrsShare dates one the same way: the
+   fold's stamp, else the newest Correction on the row from its first handover, else the first handover plus the lock (`lock`,
+   TERMS.lockDays, 4 where none is passed), the order's own date only with none of those. */
+function writeOffDay(s,lock){
+  if(s.defaultedOn)return String(s.defaultedOn);
+  const held=txHandSteps(s),first=held.length&&held[0].d?String(held[0].d):null;
+  const steps=(s.amend||[]).filter(a=>a&&!a.undone&&a.kind==='Correction'&&a.date&&(!first||String(a.date)>=first)).map(a=>String(a.date)).sort();
+  if(steps.length)return steps[steps.length-1];
+  return first?dayIso(dayNo(first)+(lock!=null?+lock:4)):String(s.date||'');
+}
 function loyaltyWalk(book,id,today){
   const sch=loyalScheme(book);if(!sch)return null;
   const who=loyalWho(book,id);if(who)return {walks:false,why:who};
@@ -240,13 +250,7 @@ function loyaltyWalk(book,id,today){
   /* the day of a write-off (Fable's review): the fold's stamp, else the newest Correction on the row from its first handover (the one that wrote it
      off, or one after it), else the first handover plus the lock, as payDelays dates one; the order's own date only with none of those */
   const lock=rules.lockDays!=null?+rules.lockDays:4;
-  const offDay=s=>{
-    if(s.defaultedOn)return String(s.defaultedOn);
-    const held=txHandSteps(s),first=held.length&&held[0].d?String(held[0].d):null;
-    const steps=(s.amend||[]).filter(a=>a&&!a.undone&&a.kind==='Correction'&&a.date&&(!first||String(a.date)>=first)).map(a=>String(a.date)).sort();
-    if(steps.length)return steps[steps.length-1];
-    return first?dayIso(dayNo(first)+lock):String(s.date||'');
-  };
+  const offDay=s=>writeOffDay(s,lock);
   const offs=mine.filter(s=>s.defaulted).map(offDay).filter(Boolean).sort();
   /* why they are paused on a day: their delays as they stood that day, one settled later read as still open on it */
   const pausedOn=day=>{
@@ -1870,7 +1874,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,R3_DAYS:R3_DAYS,r3Link:r3Link,r3Until:r3Until,r3In:r3In,r3Of:r3Of,loyaltyWalk:loyaltyWalk,loyalScheme:loyalScheme,cadenceOf:cadenceOf,rewardIsAssociate:rewardIsAssociate,rewardOpening:rewardOpening,rewardCut:rewardCut,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,editEntry:editEntry,editRefunds:editRefunds,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
+return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,R3_DAYS:R3_DAYS,r3Link:r3Link,r3Until:r3Until,r3In:r3In,r3Of:r3Of,loyaltyWalk:loyaltyWalk,loyalScheme:loyalScheme,cadenceOf:cadenceOf,rewardIsAssociate:rewardIsAssociate,rewardOpening:rewardOpening,rewardCut:rewardCut,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,editEntry:editEntry,editRefunds:editRefunds,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,writeOffDay:writeOffDay,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,LIGHT_DAYS:LIGHT_DAYS,restockLight:restockLight,restockSupply:restockSupply,

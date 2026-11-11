@@ -48666,6 +48666,10 @@ section("10 Nov 2026: salt's Floor carries the non-revenue salt, measured live, 
 await (async () => {
   await (await import("./floor-nrs.mjs")).run({ ok });
 })();
+section("11 Nov 2026: the Floor's unpaid share is re-measured only at a count, a recorded loss or a landed lot (answer H)");
+await (async () => {
+  await (await import("./floor-nrs-anchor.mjs")).run({ ok });
+})();
 section("18 Oct 2026: the Floor rounds up to the next RM 5, the Ceiling is three times it on every book, the partner pays the Floor");
 await (async () => {
   await (await import("./floor-basis.mjs")).run({ ok });

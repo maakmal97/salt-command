@@ -1,0 +1,152 @@
+[
+ {
+  "name": "a handover on the measure's own day is counted",
+  "file": "engine/snapshot.mjs",
+  "find": "t+(x.d>=at?x.u:0)",
+  "replace": "t+(x.d>at?x.u:0)"
+ },
+ {
+  "name": "units handed over after the measure stay in the units paid for",
+  "file": "engine/snapshot.mjs",
+  "find": "paid=(+C.W.soldUnits||0)-later-gifts-off",
+  "replace": "paid=(+C.W.soldUnits||0)-gifts-off"
+ },
+ {
+  "name": "a gift after the measure is counted",
+  "file": "engine/snapshot.mjs",
+  "find": "const q=Math.max(0,POSITION_ENGINE.txPhys(s)-aft);",
+  "replace": "const q=POSITION_ENGINE.txPhys(s);"
+ },
+ {
+  "name": "a write-off after the measure is counted at once",
+  "file": "engine/snapshot.mjs",
+  "find": "if(s.defaulted&&!(at&&POSITION_ENGINE.writeOffDay(s,lock)>=at)){off+=q;return;}",
+  "replace": "if(s.defaulted){off+=q;return;}"
+ },
+ {
+  "name": "a write-off on the measure's own day is counted",
+  "file": "engine/snapshot.mjs",
+  "find": "POSITION_ENGINE.writeOffDay(s,lock)>=at)",
+  "replace": "POSITION_ENGINE.writeOffDay(s,lock)>at)"
+ },
+ {
+  "name": "a cancelled row's later units stay in the units paid for",
+  "file": "engine/snapshot.mjs",
+  "find": "later+=aft; ",
+  "replace": "if(!s.cancelled)later+=aft; "
+ },
+ {
+  "name": "the book's own lock is not read",
+  "file": "engine/snapshot.mjs",
+  "find": "lock=(C.R.RULES||{}).lockDays;",
+  "replace": "lock=4;"
+ },
+ {
+  "name": "a count is no measure",
+  "file": "engine/snapshot.mjs",
+  "find": "[['count',last(C.B.counts)],",
+  "replace": "[['count',null],"
+ },
+ {
+  "name": "a recorded loss is no measure",
+  "file": "engine/snapshot.mjs",
+  "find": "['loss',last(C.B.selfUseLog)]",
+  "replace": "['loss',null]"
+ },
+ {
+  "name": "a landed lot is no measure",
+  "file": "engine/snapshot.mjs",
+  "find": "['lot',lc&&lc.date?String(lc.date):null]",
+  "replace": "['lot',null]"
+ },
+ {
+  "name": "the oldest statement is the measure, not the newest",
+  "file": "engine/snapshot.mjs",
+  "find": "x[1]&&(!a||x[1]>a.at)",
+  "replace": "x[1]&&(!a||x[1]<a.at)"
+ },
+ {
+  "name": "another book's count measures salt",
+  "file": "engine/snapshot.mjs",
+  "find": "mine=r=>r&&(r.product||dp)===p&&r.date;",
+  "replace": "mine=r=>r&&r.date;"
+ },
+ {
+  "name": "the reading does not say its day",
+  "file": "engine/snapshot.mjs",
+  "find": "paid:+paid.toFixed(2)},A||{});",
+  "replace": "paid:+paid.toFixed(2)},{});"
+ },
+ {
+  "name": "the share reads live again",
+  "file": "engine/snapshot.mjs",
+  "find": "const A=nrsAnchor(C,p), at=A?A.at:null,",
+  "replace": "const A=nrsAnchor(C,p), at=null,"
+ },
+ {
+  "name": "a write-off's day ignores the fold's stamp",
+  "file": "engine/position.mjs",
+  "find": "  if(s.defaultedOn)return String(s.defaultedOn);\n  const held=txHandSteps(s),first=",
+  "replace": "  const held=txHandSteps(s),first="
+ },
+ {
+  "name": "a write-off's day reads an undone Correction",
+  "file": "engine/position.mjs",
+  "find": "filter(a=>a&&!a.undone&&a.kind==='Correction'&&a.date&&(!first||String(a.date)>=first))",
+  "replace": "filter(a=>a&&a.kind==='Correction'&&a.date&&(!first||String(a.date)>=first))"
+ },
+ {
+  "name": "a write-off's day is the oldest Correction",
+  "file": "engine/position.mjs",
+  "find": "  if(steps.length)return steps[steps.length-1];\n  return first?dayIso(dayNo(first)+(lock",
+  "replace": "  if(steps.length)return steps[0];\n  return first?dayIso(dayNo(first)+(lock"
+ },
+ {
+  "name": "a write-off's day forgets the lock where none is given",
+  "file": "engine/position.mjs",
+  "find": "dayNo(first)+(lock!=null?+lock:4)",
+  "replace": "dayNo(first)+(lock!=null?+lock:0)"
+ },
+ {
+  "name": "a write-off's day ignores the lock it is given",
+  "file": "engine/position.mjs",
+  "find": "dayNo(first)+(lock!=null?+lock:4)",
+  "replace": "dayNo(first)+4"
+ },
+ {
+  "name": "the cost stack drops the day",
+  "file": "engine/pricing.mjs",
+  "find": "I.nrs.at?{nrsAt:String(I.nrs.at),nrsBy:I.nrs.by||null}:{}",
+  "replace": "{}"
+ },
+ {
+  "name": "the cost stack drops what measured it",
+  "file": "engine/pricing.mjs",
+  "find": "nrsBy:I.nrs.by||null}",
+  "replace": "nrsBy:null}"
+ },
+ {
+  "name": "the Desk's words name no measure",
+  "file": "master/salt_command.html",
+  "find": "({count:'the count of ',loss:'the loss recorded on ',lot:'the lot landed on '}[c.nrsBy]||'')",
+  "replace": "''"
+ },
+ {
+  "name": "the Desk says a day for a live reading",
+  "file": "master/salt_command.html",
+  "find": "  if(!c||!c.nrsAt)return '';\n  return ' as measured at '",
+  "replace": "  if(!c)return '';\n  return ' as measured at '"
+ },
+ {
+  "name": "the Floor's row does not say the day",
+  "file": "master/salt_command.html",
+  "find": "for the units that left unpaid${nrsWhen(sC)}, ${fmt(sC.floorEx)} a unit",
+  "replace": "for the units that left unpaid, ${fmt(sC.floorEx)} a unit"
+ },
+ {
+  "name": "the Floor's note does not say the day",
+  "file": "master/salt_command.html",
+  "find": "for the units that left unpaid${nrsWhen(sC)},`:'that'}",
+  "replace": "for the units that left unpaid,`:'that'}"
+ }
+]
