@@ -5088,7 +5088,8 @@ export const OWNER_JS = `
      and the same empty body, and the ghost, the close control, the scrim and Escape send nothing. What is approved is the ROW AS DRAFTED, never recomputed. */
   function deskAskRow(item){
     var rid=draftRid(item);
-    return askRow((rid?rid+' · ':'')+(draftParty(item)||'no code'), item.amends?'':rm(item.total), [moveWord(item), item.amends||item.qty==null?'':units(item.qty)].filter(Boolean).join(', '), item.product&&item.qty!=null&&!item.amends?bookTile(item.product,item.qty):null);
+    var ts=tierSets(item);
+    return askRow((rid?rid+' · ':'')+(draftParty(item)||'no code'), item.amends||noFigure(item)?'':rm(item.total), [moveWord(item), item.amends||item.qty==null?'':units(item.qty)].concat(ts.map(function(s){ return (ts.length>1?s.code+' ':'')+s.product+' '+tierWord(s.v); })).filter(Boolean).join(', '),item.product&&item.qty!=null&&!item.amends?bookTile(item.product,item.qty):null);
   }
   function deskAskRows(draft){ return groupOf(draft).drafts.map(deskAskRow); }
   /* a row's Approve and Reject, and a trip's: Approve, or Approve both for two books and Approve all for more */
@@ -6291,7 +6292,7 @@ export const OWNER_JS = `
       return k==='hand'?'Approve: handover on '+n+' lines':k==='pay'?'Approve: payment on '+n+' lines':k==='join'?'Approve: one order of '+n+' lines':approveWord(n); }
     if(k==='sell') return 'Approve the sale';
     if(k==='buy') return 'Approve the purchase';
-    if(k==='other') return 'Approve';
+    if(k==='other'){ var ts=g.drafts.length===1?tierSets(g.lead):[]; return ts.length===1?'Approve '+tierWord(ts[0].v):'Approve'; }
     if(!rid) return 'Approve: '+AP_WORD[k].toLowerCase();
     if(k==='close') return 'Approve: '+rid+' closed';
     if(k==='cancel') return 'Approve: '+rid+' cancelled';
@@ -6455,7 +6456,11 @@ export const OWNER_JS = `
         if(r.fg) card.appendChild(nowAfter(r.fg));
       });
       else if(!draft.amends){
-        g.drafts.forEach(function(d){ card.appendChild(bookLine(d.qty,d.product||'salt',d.total)); var figs=readingFigures(d); if(figs.length){ var fr=metrics(figs); fr.classList.add('apfigs'); card.appendChild(fr); } });
+        g.drafts.forEach(function(d){
+          if(tierSets(d).length) tierLines(d).forEach(function(p){ card.appendChild(p); });
+          else if(noFigure(d)){ if(d.reasoning) card.appendChild(el('p','maker-facts apsays',firstSentence(d.reasoning))); }
+          else card.appendChild(bookLine(d.qty,d.product||'salt',d.total));
+          var figs=readingFigures(d); if(figs.length){ var fr=metrics(figs); fr.classList.add('apfigs'); card.appendChild(fr); } });
         if(g.trip) card.appendChild(el('p','salt-insight',g.drafts.length===2?'Two books, one trip: Approve decides both.':g.drafts.length+' books, one trip: Approve decides all of them.'));
       }
       if(fg&&fg.approvedBefore) card.appendChild(el('p','salt-insight aphalf','Half approved: '+(fg.approvedBefore===1?'one move':fg.approvedBefore+' moves')+' on this row approved before, waiting to be booked; '+(g.drafts.length===1?'this one waits for you.':'these wait for you.')));
@@ -7259,8 +7264,33 @@ export const OWNER_JS = `
     p.appendChild(document.createTextNode(units(qty)+(product?' ':''))); if(product) p.appendChild(bookTag(product));
     p.appendChild(document.createTextNode(', '+rm(total))); return p;
   }
-  var ENTRY_WORD={SELL:'Sale', BUY:'Purchase', AMEND:'Correction', TIER:'Price %', REPAY:'Repayment', RENAME:'Name or place change', REDEEM:'Reward', PRICE:'Price change', PLACE:'Map placement', PARTNER:'Partner', OBS:'Reminder', GIFT:'Gift', COUNT:'Stock count', ADDID:'New customer', LOAN:'Loan'};
+  var ENTRY_WORD={SELL:'Sale', BUY:'Purchase', AMEND:'Correction', TIER:'Their %',REPAY:'Repayment', RENAME:'Name or place change', REDEEM:'Reward', PRICE:'Price change', PLACE:'Map placement', PARTNER:'Partner', OBS:'Reminder', GIFT:'Gift', COUNT:'Stock count', ADDID:'New customer', LOAN:'Loan'};
   function entryWord(e){ return ENTRY_WORD[e&&e.type]||(e&&e.type)||'Entry'; }
+  /* 12 Nov 2026 (his Approve review): A CARD SAYS WHAT IT APPROVES. A Their % row is each book and the figure it sets, read off the row as drafted, and what it was
+     where the drafter's flag says it moves; an entry with no size and no sum draws no money line (it drew RM 0.00) but the first sentence of the drafter's reading */
+  function tierSets(d){
+    var t=(d.collection==='tierset'&&d.row&&d.row.tiers)||{}, out=[];
+    Object.keys(t).forEach(function(c){ var ps=t[c]||{}; Object.keys(ps).forEach(function(p){ out.push({code:c, product:p, v:ps[p]}); }); });
+    return out;
+  }
+  function tierWord(v){ return v==null?'0%':pctWord(Math.round(Number(v)*100)); }
+  /* the drafter says a figure as "20% off", "30% lift" or "not set"; the card says it as the stepper does */
+  function tierWas(d,s){
+    var said=function(w){ var m=/^([0-9.]+)% (off|lift)$/.exec(w); return m?pctWord(Math.round(+m[1])*(m[2]==='off'?-1:1)):w==='not set'?'0%':w; };
+    var hit=null; (d.flags||[]).forEach(function(f){ var m=/^([^ ]+?)'s (.+?) moves from (.+?) to (.+?)[.]$/.exec(String(f)); if(m&&m[1]===s.code&&String(m[2]).toLowerCase()===String(s.product).toLowerCase()) hit=said(m[3]); });
+    return hit;
+  }
+  function tierLines(d){
+    var sets=tierSets(d), many=Object.keys((d.row||{}).tiers||{}).length>1;
+    return sets.map(function(s){
+      var p=el('p','maker-facts aptier'), was=tierWas(d,s);
+      if(many) p.appendChild(document.createTextNode(s.code+' '));
+      p.appendChild(productTag(s.product)); p.appendChild(document.createTextNode(' '+tierWord(s.v)+(was?', was '+was:'')));
+      return p;
+    });
+  }
+  function firstSentence(s){ s=noBook(String(s||'')).trim(); var m=/^.*?[.!?](?=[ ]|$)/.exec(s); return m?m[0]:s; }
+  function noFigure(d){ return d.qty==null&&d.total==null; }
   /* what a Desk row is, in the order a person says it: the kind, the size, the sum; its book is the mark its card draws before these words (needCard, mark) */
   function rowWhat(d){ var e=d.entry||{}; return [entryWord(e), d.qty==null?'':units(d.qty), rm(d.total)].filter(Boolean).join(', '); }
   function ghost(t, lit){ var L=labOf(t), b=actOn(el('button','salt-ghost'+(lit?' salt-ghost--lit':''),L[0]),L[1],L[2]); b.type='button'; return b; }
