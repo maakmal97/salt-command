@@ -35,8 +35,9 @@ export const ord = (id, status, at, extra = {}) => Object.assign({ id, status, a
 /* handed over in full: moved is the size, done */
 export const done = (id, at, extra = {}) => ord(id, "done", at, Object.assign({ moved: extra.qty || 1, movedOn: at.slice(0, 10), paid: extra.total || 100 }, extra));
 
-export async function open({ ok, pageWork, orders = [], assoc = false, late = 0, list = LIST(), poll = true, width = 0, hours = null, card = null, body: liveBody = "<p>Live</p>" } = {}) {
-  const P = await import("../stmt/page.js");
+/* page: the module whose landingPage draws it, stmt/page.js unless a test gives another (11 Nov 2026: the bundle as wrangler builds it, test/bundled-page.mjs) */
+export async function open({ ok, pageWork, orders = [], assoc = false, late = 0, list = LIST(), poll = true, width = 0, hours = null, card = null, body: liveBody = "<p>Live</p>", page = null } = {}) {
+  const P = page || await import("../stmt/page.js");
   const C = await import("../tools/stmt-crypto.mjs");
   const { JSDOM } = await import("jsdom");
   const u = "abcd-efgh", pass = "fixture-pass-bb", ck = await C.contentKey("test-secret", u);
