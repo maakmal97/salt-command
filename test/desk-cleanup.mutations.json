@@ -243,5 +243,75 @@
   "name": "F3.6 the tag legend returns",
   "find": "  <div class=\"insight salt-insight\">${esc(rhythmCount)}</div>",
   "replace": "  <div class=\"insight salt-insight\">Tags: <b>measured</b>.</div>\n  <div class=\"insight salt-insight\">${esc(rhythmCount)}</div>"
+ },
+ {
+  "name": "L1 the year leaves non-revenue out",
+  "find": "net=v=>gm(v)-v.frt-v.nrs-v.sell-v.provAR-v.provSup;",
+  "replace": "net=v=>gm(v)-v.frt-v.sell-v.provAR-v.provSup;"
+ },
+ {
+  "name": "L1 the year leaves freight out",
+  "find": "net=v=>gm(v)-v.frt-v.nrs-v.sell-v.provAR-v.provSup;",
+  "replace": "net=v=>gm(v)-v.nrs-v.sell-v.provAR-v.provSup;"
+ },
+ {
+  "name": "L2 freight charged on revenue, not units",
+  "find": "v.frt=v.kg*F.freightPerUnit;",
+  "replace": "v.frt=v.rev*F.freightPerUnit/100;"
+ },
+ {
+  "name": "L3 the IFRS fold returns",
+  "find": "  ${costPanel()}`;",
+  "replace": "  ${costPanel()}<details><summary>Statement of profit or loss</summary></details>`;"
+ },
+ {
+  "name": "L3 the value test row is gone",
+  "find": "<tr><td class=\"l salt-table__label\">Lower of cost and net realisable value</td>",
+  "replace": "<tr><td class=\"l salt-table__label\">Value</td>"
+ },
+ {
+  "name": "L4 a recovery month is floored",
+  "find": "add(d.slice(0,7),S-prev);prev=S;",
+  "replace": "add(d.slice(0,7),Math.max(0,S-prev));prev=S;"
+ },
+ {
+  "name": "L6 the latest month takes no pin",
+  "find": "  add(days[days.length-1].slice(0,7),pin);\n",
+  "replace": "\n"
+ },
+ {
+  "name": "L6 the undated part is not said",
+  "find": "${Math.abs(NM.pin)>0.009?",
+  "replace": "${false?"
+ },
+ {
+  "name": "L5 with no count the year reads nothing",
+  "find": "if(!NM)fy.nrs=F.nonRev;",
+  "replace": ""
+ },
+ {
+  "name": "L5 with no count it says nothing",
+  "find": "'no count states a figure, so the year carries it alone'",
+  "replace": "''"
+ },
+ {
+  "name": "L2 the freight row says no basis",
+  "find": "${fmt0(F.freightTot)} typed on ${F.lots} lot${F.lots===1?'':'s'}",
+  "replace": "${fmt0(F.freightTot)}"
+ },
+ {
+  "name": "L6 a same-day lot is always read in",
+  "find": "].map(([r,h])=>op+r-h-last[d].qty).reduce((b,x)=>Math.abs(x-prev)<Math.abs(b-prev)-1e-9?x:b);",
+  "replace": "].map(([r,h])=>op+r-h-last[d].qty)[0];"
+ },
+ {
+  "name": "L6 a lot dated by its order",
+  "find": "const landed=x=>String(x.receivedOn||x.date||'');",
+  "replace": "const landed=x=>String(x.date||'');"
+ },
+ {
+  "name": "L6 a count after today is read",
+  "find": "typeof c.qty==='number'&&String(c.date)<=now)",
+  "replace": "typeof c.qty==='number')"
  }
 ]

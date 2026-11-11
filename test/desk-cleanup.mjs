@@ -11,6 +11,7 @@
  *   F8  Analysis holds only the last correction of a field against its row, and counts a shelf truly empty, never one rebuilt under zero
  *   C1  Rules holds its register alone; Today no Money at stake chart; Financials no unmeasured line; Sourcing one gap tile; Associates no empty fold
  *   C2  Clients' Their % is one line counted off TIER_OF with the link to Salt Admin; Associates says a departure and a vacancy in one line
+ *   L1-L5 one P&L: the year is the operating profit, freight and non-revenue in their months, no IFRS fold (12 Nov 2026)
  *   P1  the plan store is this device's, clamped on every read, and garbage reads as nothing
  *   P2  a what-if lot lands in its book's inventory and leaves the cash on its day, is said to be a what-if, and books nothing
  *   P3  Month ahead: demand moves revenue, the buying cost the cost of goods, running costs what is left; the first column never moves
@@ -182,6 +183,36 @@ export async function run({ ok }) {
     ok(!nw2.querySelector(".pend") && dep2.length > 0 && vac2.length > 0 && dep2.every((c) => st.includes(c))
       && st.includes("the " + vac2[0] + " seat is open since") && /DEPARTED/.test(text(nw2)),
       "C2.3 Associates says the departure and the vacancy in one line, draws no card for either, and the tree still marks the departed: " + J([st, dep2, vac2]));
+
+    /* L1 to L5 (12 Nov 2026, his answer "one P&L"): the monthly table carries freight in and non-revenue, each in its month, so the
+       year is the operating profit ifrsPL states; the IFRS fold is gone and its value test is one row under Inventory */
+    const plOf = (p) => E(`(function(){setProdView(${J(p)});const F=ifrsPL(${J(p)});const e=document.createElement('div');e.innerHTML=tabFinancials();
+      const rows=[...e.querySelectorAll('table.pgrid tr')].map(r=>[...r.children].map(c=>c.textContent.trim()));
+      const cy=l=>{const r=rows.find(x=>x[0].indexOf(l)===0);return r?r[r.length-1]:null;};
+      return {op:cy('Operating profit'),opWant:fmt0(F.opProfit).replace(CUR+' ',''),frt:cy('Freight in'),frtWant:F.freightCos>0.004?fmt0(-F.freightCos).replace(CUR+' ',''):NIL,
+        nrv:cy('Lower of cost'),ifrs:/Statement of profit or loss/.test(e.textContent),text:e.textContent};})()`);
+    const books = E("PROD_IDS"), pls = books.map((p) => [p, plOf(p)]);
+    ok(pls.every(([, r]) => r.op === r.opWant), "L1 every book's year is the operating profit: " + J(pls.map(([p, r]) => [p, r.op, r.opWant])));
+    ok(pls.every(([, r]) => r.frt === r.frtWant) && /Freight in.{0,40}typed on \d+ lots?/.test(pls[0][1].text), "L2 freight in is charged on the units sold, the year its whole: " + J(pls.map(([p, r]) => [p, r.frt, r.frtWant])));
+    ok(pls.every(([, r]) => !r.ifrs && /^(cost|written down by .+|untested)$/.test(r.nrv || "")), "L3 the IFRS fold is gone and its value test is one row: " + J(pls.map(([p, r]) => [p, r.ifrs, r.nrv])));
+    const nm = E(`(function(){setProdView('salt');const N=nrsMonths('salt');const s=Object.values(N.by).reduce((a,v)=>a+v,0);return {sum:+s.toFixed(2),selfUse,pin:N.pin,neg:Object.values(N.by).some(v=>v<-0.009)};})()`);
+    const saltText = pls.find(([p]) => p === "salt")[1].text;
+    ok(Math.abs(nm.sum - nm.selfUse) < 0.011 && (Math.abs(nm.pin) > 0.009) === / the counts do not date sits in the latest/.test(saltText),
+      "L4 the months add to the shortfall Stock reads, and the part the counts do not date is said: " + J(nm));
+    const none = E(`(function(){const keep=COUNTS.slice();COUNTS.length=0;try{setProdView('salt');const F=ifrsPL('salt');const e=document.createElement('div');e.innerHTML=tabFinancials();
+      const r=[...e.querySelectorAll('table.pgrid tr')].map(x=>[...x.children].map(c=>c.textContent.trim())).find(x=>x[0].indexOf('Non-revenue')===0);
+      const o=[...e.querySelectorAll('table.pgrid tr')].map(x=>[...x.children].map(c=>c.textContent.trim())).find(x=>x[0].indexOf('Operating profit')===0);
+      return {cy:r[r.length-1],want:fmt0(-F.nonRev).replace(CUR+' ',''),months:r.slice(1,-1).every(c=>c===NIL),said:/no count states a figure/.test(r[0]),op:o[o.length-1],opWant:fmt0(F.opProfit).replace(CUR+' ','')};}finally{COUNTS.push(...keep);}})()`);
+    ok(none.cy === none.want && none.months && none.said && none.op === none.opWant, "L5 with no count holding a figure the year carries non-revenue alone, and says so: " + J(none));
+    /* L6: the walk on invented counts and lots. A 25-unit lot landed after the 31 Oct count is read after it; a lot ordered 10 Oct and
+       landed 5 Nov is dated by its landing; a count after today is left out; what the counts leave (25 against 20) sits in the latest month */
+    const syn6 = E(`nrsMonths(PROD,{counts:[{date:'2026-09-30',qty:90,product:PROD},{date:'2026-10-31',qty:80,product:PROD},{date:'2026-11-15',qty:155,product:PROD},{date:'2099-01-01',qty:0,product:PROD}],
+      logs:[],lots:[{date:'2026-09-01',u:100},{date:'2026-10-31',u:25},{date:'2026-10-10',receivedOn:'2026-11-05',u:50}],sales:[],op:0,total:25,recv:x=>x.u,now:'2026-11-20'})`);
+    ok(J(syn6.by) === J({ "2026-09": 10, "2026-10": 10, "2026-11": 5 }) && syn6.pin === 5,
+      "L6 a same-day lot after its count, a lot dated by its landing, a count after today, and the residual in the latest month: " + J(syn6));
+    const pinSaid = E(`(function(){const k=nrsMonths;nrsMonths=()=>({by:{},pin:5,last:'2026-11-15'});try{const e=document.createElement('div');e.innerHTML=tabFinancials();return / the counts do not date sits in the latest/.test(e.textContent);}finally{nrsMonths=k;}})()`);
+    ok(pinSaid === true, "L6.2 the part the counts do not date is said on the row");
+    E("setProdView('salt')");
 
     /* P1 */
     w.localStorage.removeItem("salt-plan-v1");

@@ -3696,7 +3696,7 @@ await (async () => {
   /* a drawing is reported once. Two rows shipped for four versions and neither was wrong on its face. */
   for (const pr of read("PROD_IDS")) {
     w.eval(`PROD=${JSON.stringify(pr)};recompute();`);
-    ok(count(html("ifrsPanel()"), "Owner&rsquo;s use") <= 1, `${pr}: the statement reports the owner's drawing once`);
+    ok(count(html("tabFinancials()"), "Owner&rsquo;s use") <= 1, `${pr}: the statement reports the owner's drawing once`);   /* 12 Nov 2026: one P&L, the IFRS fold gone */
   }
   w.eval(`PROD=${JSON.stringify(keep)};recompute();`);
 
@@ -3837,9 +3837,10 @@ await (async () => {
     const monthly = +((fy.rev || 0) - (fy.cogs || 0)).toFixed(2);
     ok(+(monthly - F.gross).toFixed(2) === F.freightCos,
       `${pr}: the monthly gross margin and the statement's gross profit part by the freight in (${F.freightCos})`);
-    const panel = html("ifrsPanel()");
+    /* 12 Nov 2026: the one P&L states the bridge as its own row, Freight in, under the gross margin */
+    const panel = html("tabFinancials()");
     if (F.freightCos > 0.009)
-      ok(panel.includes(`under the gross margin above`), `${pr}: and the statement states that bridge rather than leaving it to be derived`);
+      ok(/<td class="l salt-table__label">Freight in(<div|<\/td>)/.test(panel), `${pr}: and the statement states that bridge rather than leaving it to be derived`);
 
     /* TWO FIGURES, TWO STATED BASES, EACH PROVED FROM THE BOOK (09 Sep 2026). This used to demand
        the statement's freight per unit equal the pricing engine's, "both the rate over the mean lot",
@@ -5257,7 +5258,8 @@ await (async () => {
   ok(/CY 2027, nothing yet/.test(jan), "on 1 January the CY column names its year and says it is empty");
   ok(/Dec 26/.test(jan) && !/Dec 26[^ ]/.test(jan), "the month column outside the CY year carries that year, so it cannot be read as part of it");
   ok(/Every figure is in ringgit/.test(jan) && /calendar year to date/.test(jan), "the period line reaches the screen and survives stripMethod");
-  ok(/whole book since it opened/.test(jan), "the IFRS statement names its own period, which is not the P&L's");
+  /* 12 Nov 2026: one P&L, the IFRS statement gone; the line whose period is not a month's, non-revenue, says how it is dated */
+  ok(/Non-revenue \w+ (at RM [\d.,]+\/unit, in the month of the count that found it|no count states a figure)/.test(jan), "non-revenue names how it is dated, which is not a sale's month");
   ok(/on the revenue in this column/.test(jan), "Still uncollected names the revenue it is measured on");
   ok(/as at today, not a movement in the period/.test(jan), "Closing stock says it is a point in time, not a flow");
   /* v428: THIS ASSERTION DEFENDED THE WRONG WORD FOR EIGHTEEN VERSIONS OF ITS OWN LIFETIME. v410
