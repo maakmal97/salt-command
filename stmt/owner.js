@@ -5132,7 +5132,8 @@ export const OWNER_JS = `
     var open=(makerData.orders||[]).filter(ordOpen);
     var pendingRows=(makerData.drafts||[]).filter(function(d){ return d.status==='pending'; });
     makerOpenOrders=open;
-    if(draftStatus) draftStatus.textContent=pendingRows.length+(pendingRows.length===1?' row':' rows')+' waiting for your approval';
+    /* 12 Nov 2026 (his Approve review): the list's head counts the cards he decides, so the lead no longer counts rows beside it; it keeps only Reading, a refusal or an answer, and is not drawn while empty */
+    if(draftStatus) draftStatus.textContent='';
     /* a row for each order of its stage, a done or ended one (fifty a stage at most) as well; an order whose cash is held is marked Waiting on you
        with its Undo, whatever else it is, and a held cash with no order on the read is a row of its own, in Placed */
     var held=Object.keys(makerCashHeld), entries=[], known={}, settled={}, closedAll={};
@@ -6437,9 +6438,13 @@ export const OWNER_JS = `
     var ticks=live.filter(apTickable);
     if(ticks.length){
       var hr=el('div','aphead'); hr.appendChild(el('span','aphead__n',ticks.length+' to decide'));
-      var all=actOn(el('button','salt-ghost','Approve all'),'approve.all'); all.type='button';
-      all.addEventListener('click',function(){ ticks.forEach(function(g){ if(!apGone(g)) apPick[g.lead.id]='a'; }); apDone=null; drawMaker(); });
-      hr.appendChild(all); draftRoot.appendChild(hr);
+      /* 12 Nov 2026 (his Approve review): Approve all beside one card is that card's Approve, so it stands from two */
+      if(ticks.length>1){
+        var all=actOn(el('button','salt-ghost','Approve all'),'approve.all'); all.type='button';
+        all.addEventListener('click',function(){ ticks.forEach(function(g){ if(!apGone(g)) apPick[g.lead.id]='a'; }); apDone=null; drawMaker(); });
+        hr.appendChild(all);
+      }
+      draftRoot.appendChild(hr);
     }
     live.forEach(function(g){
       var draft=g.lead, card=makerCard(draftRoot,'draft:'+draft.id,'salt-approve apcard'), head=el('div','salt-approve__head apphead');
@@ -6512,6 +6517,8 @@ export const OWNER_JS = `
       if(counted) counted.textContent=String(held.length);
       /* plan 1: a queue key the Desk could not read is said first, by its name, and never read as an empty queue */
       var bad=unreadableKeys();
+      /* 12 Nov 2026 (his Approve review): with nothing sent and no key unread the fold says nothing worth a line, so it is not drawn */
+      var fold=document.getElementById('makerQueue'); if(fold) fold.hidden=!held.length&&!bad.length;
       if(bad.length){ var ub=el('p','msg bad',unreadableLine(bad)); ub.setAttribute('data-unreadable',''); queueRoot.appendChild(ub); }
       if(!held.length&&!bad.length) queueRoot.appendChild(el('p','rnone','Nothing is waiting for the Desk.'));
       held.forEach(function(entry){

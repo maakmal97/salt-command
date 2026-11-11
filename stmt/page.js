@@ -681,6 +681,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
    empty answer line) and the shut queue fold's body */
 .adm .salt-approve>.maker-say:empty{display:none}
 .adm #makerQueue .salt-plan__body>*+*{margin-top:12px}
+.adm #makerDraftStatus:empty{display:none}
 .adm #makerQueue .salt-plan__body .maker-card{margin:12px 0 0}
 /* 12 OCT 2026 (PHASE 2a): THE STAGE FOOT. The moves of the card's stage stand together at its foot, the filled one first and the quiet ones beside it, with
    the card's answer line under them; a foot with moves stays along the card's foot as it scrolls (the page's, clear of the App bar, or the card's own from 860px).
