@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="c6a969fa3c166675";
+var SALT_BUILD_ID="d96cdbef98a51e5c";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -9572,7 +9572,7 @@ function pricing(B,R,today,over=null){
 }
 
 return {pSales,pPurch,openingFor,countedFor,posInputs,stockCost,hiddenFor,setPricesFor,sizesFor,shownSizes,shSizes,ladderFor,
-  latestLot,meanLotQty,priceLockState,delShare,avgDelivery,replRate,replCost,quoteRate,freightRate,leakCharge,shrinkRate,nrsShare,
+  latestLot,meanLotQty,priceLockState,delShare,avgDelivery,replRate,replCost,quoteRate,freightRate,leakCharge,shrinkRate,nrsShare,heldBefore,
   inputs,policy,fiveTiers,figures,
   ownerOf,isResellAcct,isPerson,pbPriced,isPartner,lateOf,buyerProfile,driftBook,pctBook,driftSignals,driftOfNow,driftOf,suggestOf,tierCustomers,cost,cardQuote,pricing};
 })();
@@ -12006,7 +12006,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1508","d":"12 Nov 2026","t":"TODAY'S NOTICED, CUT TO WHAT ASKS SOMETHING OF YOU","n":["<b>HIS THREE ANSWERS.</b> A book's habit card and its message card named the same customers: one card a book now, the three to message leading, the habit count beside it. The weekday pattern is one note with the weekend beside it; the pay window, a holiday and the fortnight are drawn only when they move what to buy. A repeat order the Desk had already judged a real second order, and the count of customers who bought once, are no longer drawn. Noticed went from 19 cards to 10.","<b>AT STAKE COUNTS EACH FIGURE ONCE.</b> It added every figure on Noticed, so repeat orders already sold and the message cards' customers, already inside their habit card, were counted again: RM 5,299 where RM 2,420 stood. It is now what an Act or a Watch names. The tag legend line went.","Drawing only: every observation keeps its id, its hush and its place in the pricing snapshot. Seven new checks, each proved red by its own mutation."]}];
+const evolution=[{"v":"v1509","d":"12 Nov 2026","t":"ONE P&L ON FINANCIALS, ITS YEAR THE OPERATING PROFIT","n":["<b>HIS ANSWER \"ONE P&L\".</b> The monthly table ended at a result RM 6,279 above the truer figure on salt, which sat in a folded IFRS statement: it never charged freight in or the non-revenue salt. It now carries both, at the statement's own rates, and ends at Operating profit, so its year equals the statement on every book (salt RM 15,479). The IFRS fold is gone; its value test is one row under Inventory, and the debtors row says how much is written off.","<b>NON-REVENUE IN THE MONTH OF THE COUNT THAT FOUND IT.</b> The shortfall is walked at each count; a lot or a handover on the count's own day is read on the side that moves it least; losses logged before the first count stand in their months; what the counts leave sits in the latest month and is said. A month under nought is stock a count found again. Freight in falls on the units sold in the month.","Said, not built: a surplus (the shortfall is never under nought), and a book with no count once it trades across two calendar years. A real loss on a count day can hide behind that day's other moves until the next count; the year is never touched. Twelve new checks, each red by its own mutation; Fable reviewed the design and the diff, and re-checked its findings closed."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12159,7 +12159,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='12 Nov 2026, 07:18 KL';
+const LAST_UPDATED='12 Nov 2026, 07:51 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -16733,6 +16733,38 @@ function tabLedger(){
    (barter, rebate units) is included with a matching in-kind expense so it nets to
    nil cash; provisions follow the desk ladder and are charged in the month the
    receivable arose. Cash view = money actually in, by the same order month. */
+/* 12 NOV 2026, HIS ANSWER "ONE P&L": THE MONTHLY TABLE CARRIES WHAT THE IFRS STATEMENT CARRIED, so its year is the operating profit.
+   Non-revenue units are dated by the count that found them (Fable's option A of 12 Nov 2026): the shortfall is walked at each
+   counted day (same-day moves read either side of the count, below), the opening plus every unit received by then less every unit handed over by then (the engine's heldBefore at the
+   next day) less the count, and a month's charge is how far the walk moved across it. Losses logged before the first count with a
+   figure stand in their own months. The latest month takes the gap to the walk's own selfUse (`pin`: an undated loan, a row entered
+   after its count), so the units add to what Stock and the Floor read. A count that finds stock earlier counts missed gives a month
+   under nought, a recovery, never floored. No count with a figure: null, and the table carries the charge in the year alone. */
+/* X, the suite's alone: {counts, logs, lots, sales, op, total, recv, now} in place of the book's */
+function nrsMonths(p,X){
+  X=X||{};
+  const nx=d=>new Date(Date.parse(d+'T00:00:00Z')+864e5).toISOString().slice(0,10);
+  const now=X.now||obsISO(TODAY), last={};(X.counts||COUNTS).filter(c=>(c.product||DEFAULT_PROD)===p&&c.date&&typeof c.qty==='number'&&String(c.date)<=now).forEach(c=>{last[String(c.date)]=c;});
+  const days=Object.keys(last).sort();if(!days.length)return null;
+  const op=X.op!=null?X.op:+(openingFor(p).qty||0), lots=X.lots||pPurch(p).filter(x=>poLive(x)), sales=X.sales||pSales(p), recvOf=X.recv||poRecvUnits, H=SNAPSHOT_ENGINE.heldBefore, by={};
+  const add=(m,u)=>{if(Math.abs(u)>1e-6)by[m]=(by[m]||0)+u;};
+  const landed=x=>String(x.receivedOn||x.date||'');   /* the engine dates a lot by its landing (Fable's review, 12 Nov 2026) */
+  const logs=(X.logs||(typeof selfUseLog!=='undefined'?selfUseLog:[])).filter(r=>(r.product||DEFAULT_PROD)===p&&r.date&&String(r.date)<days[0]);
+  logs.forEach(r=>add(String(r.date).slice(0,7),+r.kg||0));
+  let prev=logs.reduce((a,r)=>a+(+r.kg||0),0);
+  /* A COUNT IS TAKEN DURING ITS DAY, so a lot landed or a sale handed over that same day may stand either side of it (Fable's review
+     of 12 Nov 2026: 28 Oct's count came before that day's 25-unit lot). Each side is read, and the one that moves the shortfall least
+     from the count before stands: a misplaced lot moves it by the whole lot, which no real loss does. */
+  days.forEach(d=>{const lotsBy=end=>lots.filter(x=>end?landed(x)<=d:landed(x)<d).reduce((a,x)=>a+recvOf(x),0);
+    const heldBy=end=>sales.reduce((a,s)=>a+H(s,end?nx(d):d),0);
+    const r1=lotsBy(true),r0=lotsBy(false),h1=heldBy(true),h0=heldBy(false);
+    const S=[[r1,h1],[r0,h1],[r1,h0],[r0,h0]].map(([r,h])=>op+r-h-last[d].qty).reduce((b,x)=>Math.abs(x-prev)<Math.abs(b-prev)-1e-9?x:b);
+    add(d.slice(0,7),S-prev);prev=S;});
+  const total=X.total!=null?X.total:p===PROD?+selfUse||0:prev, pin=+(total-prev).toFixed(2);
+  add(days[days.length-1].slice(0,7),pin);
+  Object.keys(by).forEach(k=>by[k]=+by[k].toFixed(4));
+  return {by,pin,last:days[days.length-1]};
+}
 function finRows(){
   const m={};
   const bump=(mo,k,v)=>{if(!m[mo])m[mo]={rev:0,cogs:0,cash:0,inkind:0,provAR:0,provSup:0,kg:0};m[mo][k]+=v;};
@@ -16970,45 +17002,7 @@ function drawFinCharts(){
   });
 }
 /* The statement, presented the way a reader who knows the standards expects to see it. */
-function ifrsPanel(){
-  const F=ifrsPL(PROD), P=PRODUCTS[PROD], c=pxCost();
-  const L=(lab,v,opt)=>{opt=opt||{};
-    return `<tr class="${opt.cls||''}"><td class="l salt-table__label">${lab}${opt.ref?`<div class="iref">${esc(opt.ref)}</div>`:''}</td>
-      <td class="mono" style="${opt.neg?'color:var(--crim)':''}">${v==null?NIL:(opt.neg?'('+fmt0(Math.abs(v))+')':fmt0(v))}</td>
-      <td class="l salt-table__label isub">${esc(opt.n||'')}</td></tr>`;};
-  /* SAME RULE AS THE COST PANEL (v401): Study, so it folds, and the summary carries the operating
-     result rather than the title alone. The h2 became the summary. The date it carried is the
-     desk's own as-of and is on the header already; "movement costs at today's rates" is the one
-     thing here that the P&L above deliberately does NOT do, so that half stays. */
-  return `<details class="obsec" style="margin-top:18px"><summary>Statement of profit or loss <span class="tag salt-status buychip">IFRS</span> <span class="q">whole book since it opened, movement costs at today's rates</span><span class="ct">${fmt0(F.opProfit)} operating</span></summary>
-  <div class="card">
-    <table class="salt-table fintab istmt"><tbody>
-      ${L('Revenue',F.rev,{ref:'IFRS 15',n:`${units(F.soldUnits)} recognised on transfer of control`})}
-      ${L('Cost of sales: goods',-F.goods,{neg:true,ref:'IAS 2.11',n:'at the rate of the lot each order drew from'})}
-      ${L('Cost of sales: freight in',-F.freightCos,{neg:true,ref:'IAS 2.11',n:`${fmt0(F.freightTot)} typed on ${F.lots} lot${F.lots===1?'':'s'}, ${fmt(F.freightPerUnit)}/unit`})}
-      ${L('<b>Gross profit</b>',F.gross,{cls:'tot',n:`${F.grossPct==null?'no revenue yet':`${F.grossPct}% of revenue`}${F.freightCos>0.009?`, and ${fmt0(F.freightCos)} under the gross margin above, which charges goods only`:''}`})}
-      ${L('Selling and distribution',-F.selling,{neg:true,ref:'IAS 2.16(d)',n:`${F.delAssumed} of ${F.delN} orders delivered at ${fmt0(COST_BASIS.txnPerDelivery.rm)}, the rest collected`})}
-      ${L('Non-revenue '+P.name.toLowerCase(),-F.nonRev,{neg:true,ref:'IAS 2.16(a)',n:F.nonRevUnits?`${units(F.nonRevUnits)} out without a sale, at ${fmt(F.unitCost)}`:'none'})}
-      ${L('Impairment: trade receivables',-+(F.ecl+F.wOff).toFixed(2),{neg:true,ref:'IFRS 9',n:F.wOff?`${fmt0(F.wOff)} written off${F.ecl?`, ${fmt0(F.ecl)} loss allowance on open balances`:''}`:F.ecl?'loss allowance on open balances':'no open balance'})}
-      ${L('Impairment: supplier prepayment',-F.supImp,{neg:true,ref:'IAS 36',n:F.supImp?`${ID(supplierReceivable.party)}, paid and never delivered`:'none'})}
-      ${L('<b>Operating profit</b>',F.opProfit,{cls:'tot',n:F.opPct==null?'no revenue yet':`${F.opPct}% of revenue`})}
-    </tbody></table>
-    <div class="dsc" style="margin-top:9px">Pricing basis ${fmt(c.eff)}, balance-sheet cost ${fmt(c.landed)}: the three lines under gross profit are in the price but cannot sit in inventory.</div>
-    <h3 style="margin-top:16px;font-size:14px">Inventory</h3>
-    <table class="salt-table fintab istmt" style="margin-top:8px"><tbody>
-      ${L('At cost',F.atCost,{ref:'IAS 2.10',n:`${units(F.closeUnits)} at ${fmt(stockCostFor(PROD)+F.freightPerUnit)} landed`})}
-      ${L('Net realisable value',F.nrv,{ref:'IAS 2.6',n:F.nrvTested?`${fmt(F.nrvRate)}/unit less costs to sell, ${driftBook(P)?'at the Median Price, the least a customer but a partner is quoted':'at the stated price, the same for everybody'}`:'no selling price established for this product'})}
-      ${L('<b>Carrying amount</b>',F.carrying,{cls:'tot',ref:'IAS 2.9',n:F.nrvTested?(F.writeDown>0?`written down by ${fmt0(F.writeDown)}`:'cost is lower, so cost'):'cost, untested against NRV'})}
-    </tbody></table>
-    <!-- the untested-NRV paragraph went at v401: the NRV row already reads "no selling price
-         established for this product", the carrying row already reads "cost, untested against
-         NRV", and the ref column already cites IAS 2.6. Three statements of one fact, of which
-         the paragraph was the only one that was never on screen: it carries no figure, so the
-         cull deleted it on every oil render, and folding this panel would have PUBLISHED it
-         rather than tidying it away. IAS 2.9 is the standard the paragraph cited and the row
-         did not, so the citation moved onto the row rather than going with the prose. -->
-  </div></details>`;
-}
+/* 12 Nov 2026: ifrsPanel left with his answer "one P&L"; ifrsPL stays, the monthly table charges its rates. */
 /* v801: on a phone the P&L draws one group of columns beside CY; the switch picks which, per book's own table */
 function finGroup(b){const t=b.parentNode.parentNode.querySelector('table.pgrid');if(!t)return;t.className=t.className.replace(/fg-p[mqh]/,'fg-'+b.getAttribute('data-g'));
   [].forEach.call(b.parentNode.children,x=>x.classList.toggle('on',x===b));}
@@ -17025,8 +17019,14 @@ function tabFinancials(){
      column at desktop width. A phone cannot hold ten at any size worth reading, so there the table carries a switch,
      months, quarters or halves, each beside CY, and draws one group at a time (design/desk.css). */
   const thisMo=TODAY.toISOString().slice(0,7), fyYear=thisMo.slice(0,4);
+  /* 12 Nov 2026: freight in by the units sold in the month, non-revenue by the count that found it, selling by the month's share of
+     the units sold; each at the rates ifrsPL charges, so the year column is its operating profit */
+  const F=ifrsPL(PROD), NM=nrsMonths(PROD), unitsAll=all.reduce((a,[,v])=>a+v.kg,0);
+  all.forEach(([mo,v])=>{v.frt=v.kg*F.freightPerUnit;v.sell=unitsAll>0?F.selling*v.kg/unitsAll:0;v.nrs=0;});
+  if(NM)Object.keys(NM.by).forEach(mo=>{let e=all.find(x=>x[0]===mo);if(!e){e=[mo,{rev:0,cogs:0,cash:0,inkind:0,provAR:0,provSup:0,kg:0,frt:0,nrs:0,sell:0}];all.push(e);all.sort((a,b)=>a[0]<b[0]?-1:1);}
+    e[1].nrs=NM.by[mo]*F.unitCost;});
   const first=all.length?all.map(x=>x[0]).sort()[0]:thisMo;
-  const seed=()=>({rev:0,cogs:0,cash:0,inkind:0,provAR:0,provSup:0,kg:0});
+  const seed=()=>({rev:0,cogs:0,cash:0,inkind:0,provAR:0,provSup:0,kg:0,frt:0,nrs:0,sell:0});
   const sumOf=ms=>ms.reduce((a,[,v])=>{Object.keys(v).forEach(k=>a[k]=(a[k]||0)+v[k]);return a;},seed());
   const moOf=i=>{const d=new Date(Date.UTC(+fyYear,+thisMo.slice(5,7)-1-i,1));return d.toISOString().slice(0,7);};
   const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -17046,7 +17046,9 @@ function tabFinancials(){
   cols.forEach((c,i)=>{c.cls=c.g+(i===0||cols[i-1].g!==c.g?' g0':'')+(c.old?' pold':'');});
   /* v427: A CARRIED BALANCE IS NOT A PERIOD CHARGE: the tile below takes the whole book, the rows take the period */
   const bookAll=sumOf(all);
-  const gm=v=>v.rev-v.cogs, gmp=v=>v.rev>0?gm(v)/v.rev*100:0, net=v=>gm(v)-v.provAR-v.provSup;
+  const gm=v=>v.rev-v.cogs, gmp=v=>v.rev>0?gm(v)/v.rev*100:0, net=v=>gm(v)-v.frt-v.nrs-v.sell-v.provAR-v.provSup;
+  /* with no count holding a figure the charge is dated nowhere, so it stands in the year alone (fyNrs) */
+  const fyNrs=NM?fy.nrs:F.nonRev; if(!NM)fy.nrs=F.nonRev;
   /* THE FIGURE WITHOUT ITS CURRENCY, said once in the corner cell; a nil reads as a dash */
   const n0=v=>fmt0(v).replace(CUR+' ','');
   /* v385: a negative uncollected figure is an overtender held against goods, and the row says which a minus is */
@@ -17063,18 +17065,22 @@ function tabFinancials(){
     <tr><td class="l salt-table__label">Revenue</td>${col('rev')}${fyc(n0(fy.rev))}</tr>
     <tr><td class="l salt-table__label">Cost of goods</td>${col('cogs',1)}${fyc(n0(-fy.cogs),'color:var(--crim)')}</tr>
     <tr class="tot"><td class="l salt-table__label">Gross margin</td>${each(c=>td(c,`<b>${n0(gm(c.v))}</b><em class="finpct">${gmp(c.v).toFixed(1)}%</em>`))}${fyc(`<b>${n0(gm(fy))}</b><em class="finpct">${gmp(fy).toFixed(1)}%</em>`)}</tr>
-    <tr><td class="l salt-table__label">Provision held: debtors</td>${col('provAR',1)}${fyc(fy.provAR?n0(-fy.provAR):NIL,'color:var(--crim)')}</tr>
+    <tr><td class="l salt-table__label">Freight in${F.lots?`<div style="font-size:11px;font-weight:400;color:var(--mut)">${fmt0(F.freightTot)} typed on ${F.lots} lot${F.lots===1?'':'s'}, ${fmt(F.freightPerUnit)}/unit sold</div>`:''}</td>${col('frt',1)}${fyc(fy.frt>0.004?n0(-fy.frt):NIL,'color:var(--crim)')}</tr>
+    <tr><td class="l salt-table__label">Non-revenue ${esc(PRODUCTS[PROD].name.toLowerCase())}<div style="font-size:11px;font-weight:400;color:var(--mut)">${NM?`at ${fmt(F.unitCost)}/unit, in the month of the count that found it${Math.abs(NM.pin)>0.009?` &middot; ${units(NM.pin)} the counts do not date sits in the latest`:''}`:'no count states a figure, so the year carries it alone'}</div></td>${NM?col('nrs',1):each(c=>td(c,NIL))}${fyc(Math.abs(fyNrs)>0.004?n0(-fyNrs):NIL,fyNrs>0.004?'color:var(--crim)':'')}</tr>
+    ${F.selling>0.009?`<tr><td class="l salt-table__label">Selling and distribution</td>${col('sell',1)}${fyc(n0(-fy.sell),'color:var(--crim)')}</tr>`:''}
+    <tr><td class="l salt-table__label">Provision held: debtors${F.wOff>0.009?`<div style="font-size:11px;font-weight:400;color:var(--mut)">${fmt0(F.wOff)} written off, ${fmt0(F.ecl)} loss allowance on open balances</div>`:''}</td>${col('provAR',1)}${fyc(fy.provAR?n0(-fy.provAR):NIL,'color:var(--crim)')}</tr>
     <tr><td class="l salt-table__label">Provision held: supplier default</td>${col('provSup',1)}${fyc(fy.provSup?n0(-fy.provSup):NIL,'color:var(--crim)')}</tr>
-    <tr class="tot"><td class="l salt-table__label">Result after provisions</td>${each(c=>td(c,`<b>${n0(net(c.v))}</b>`))}${fyc(`<b>${n0(net(fy))}</b>`)}</tr>
+    <tr class="tot"><td class="l salt-table__label">Operating profit</td>${each(c=>td(c,`<b>${n0(net(c.v))}</b>`))}${fyc(`<b>${n0(net(fy))}</b>`)}</tr>
     ${grp('Cash against it')}
     <tr><td class="l salt-table__label">Collected in cash</td>${col('cash')}${fyc(n0(fy.cash))}</tr>
     <tr><td class="l salt-table__label">Settled in kind</td>${col('inkind')}${fyc(n0(fy.inkind))}</tr>
     <tr class="tot"><td class="l salt-table__label">Still uncollected<div style="font-size:11px;font-weight:400;color:var(--mut)">on the revenue in this column, not the whole book</div></td>${each(c=>td(c,unc(c.v)))}${fyc(unc(fy))}</tr>
     ${grp('Inventory behind it')}
     <tr class="tot"><td class="l salt-table__label">Closing inventory<div style="font-size:11px;font-weight:400;color:var(--mut)">as at today, not a movement in the period &middot; ${units(currentStock)} at ${fmt(stockCostFor(PROD))}/unit, before freight in</div></td>${cols.map(c=>`<td class="${c.cls}"></td>`).join('')}${fyc(n0(currentStock*stockCostFor(PROD)))}</tr>
+    <tr><td class="l salt-table__label">Lower of cost and net realisable value</td>${cols.map(c=>`<td class="${c.cls}"></td>`).join('')}${fyc(F.nrvTested?(F.writeDown>0.009?'written down by '+n0(F.writeDown):'cost'):'untested')}</tr>
   </tbody></table>
-  ${(all.undated&&all.undated.length)?`<div class="fincap" style="color:var(--amber)"><b>${all.undated.length} order${all.undated.length===1?'':'s'} carrying ${fmt0(all.undated.reduce((a,t)=>a+((+t.total||0)-txPendRM(t)),0))} of revenue ${all.undated.length===1?'is':'are'} held out of this statement, because ${all.undated.length===1?'it has':'they have'} no date and a month is the only key it has.</b> ${all.undated.map(t=>{const n=(+t.total||0)-txPendRM(t);return ID(t.customer)+' '+fmt0(n)+(Math.abs(n-(+t.total||0))>0.005?' of '+fmt0(t.total)+' ordered':'');}).join(', ')}. ${all.undated.length===1?'It counts':'They count'} on Overview and in the IFRS statement below, which do not need one, so the two figures differ by exactly this much. Give the row a date and it joins the month it belongs to.</div>`:''}
-  <div class="fincap">Every figure is in ringgit, goods at each lot's own rate and freight in only in the IFRS statement. The months are the last six the book has traded in, whichever year; the quarters and halves are this calendar year's, each summing its own months; <b>CY ${fyYear}</b> is the calendar year to date, so on the 1st of January it is empty while a month beside it is not; and Closing inventory is as at today. The IFRS statement below covers the whole book since it opened, which is why its revenue is the larger figure. The two <b>Provision held</b> rows are each period's debts measured at <b>today's</b> ladder, so a period's figure moves as its own debts age even though nothing happened in it.</div>`;
+  ${(all.undated&&all.undated.length)?`<div class="fincap" style="color:var(--amber)"><b>${all.undated.length} order${all.undated.length===1?'':'s'} carrying ${fmt0(all.undated.reduce((a,t)=>a+((+t.total||0)-txPendRM(t)),0))} of revenue ${all.undated.length===1?'is':'are'} held out of this statement, because ${all.undated.length===1?'it has':'they have'} no date and a month is the only key it has.</b> ${all.undated.map(t=>{const n=(+t.total||0)-txPendRM(t);return ID(t.customer)+' '+fmt0(n)+(Math.abs(n-(+t.total||0))>0.005?' of '+fmt0(t.total)+' ordered':'');}).join(', ')}. ${all.undated.length===1?'It counts':'They count'} on Overview, which needs no date, so the two figures differ by exactly this much. Give the row a date and it joins the month it belongs to.</div>`:''}
+  <div class="fincap">Every figure is in ringgit, goods at each lot's own rate, freight in by the units sold, and non-revenue at today's cost a unit in the month of the count that found it, so a month under nought is stock a count found again. The months are the last six the book has traded in, whichever year; the quarters and halves are this calendar year's, each summing its own months; <b>CY ${fyYear}</b> is the calendar year to date, so on the 1st of January it is empty while a month beside it is not; and Closing inventory is as at today. The two <b>Provision held</b> rows are each period's debts measured at <b>today's</b> ladder, so a period's figure moves as its own debts age even though nothing happened in it.</div>`;
   /* TWO TABLES RESTATING EACH OTHER ARE ONE TABLE (v401). The cash table's first row was
      `col(v.rev)` -- the SAME EXPRESSION as the P&L's Revenue row, under a different word, in a
      second table under a second heading, on both books. So the part carried the year's revenue
@@ -17106,7 +17112,7 @@ function tabFinancials(){
   <div class="card" style="margin-top:14px"><div class="cardh">The year, by month <span class="sub">revenue and gross margin</span></div><div class="chartbox" style="height:180px"><canvas id="finMonthChart"></canvas></div></div>
   <h2 style="margin-top:18px">Profit and loss, and the cash against it <span class="sub" style="font-weight:400">accrual by order date, pending excluded</span> <span class="rule"></span></h2>
   <div class="card">${pl}</div>
-  ${costPanel()}${ifrsPanel()}`;
+  ${costPanel()}`;
 }
 
 /* ---- what it actually costs to put one order in one customer's hands ---------------
