@@ -929,9 +929,46 @@ export function makerPartner(body, book, pending = []) {
       + ((book.state.associates || []).includes(body.code) ? "" : ", appointed an associate on the R2 stream with " + bucket + " as their resell account") }), book);
 }
 
+/* 11 NOV 2026, THE PRICE BAND'S VERSION 2 (his answer: the switch and the re-anchor on Salt Admin, approved): Off, On or Use this point, drafted
+   through the drafter's marketEditRow. A point is a price in steps of RM 5 at a size the book is ordered in; outside the band (the snapshot's
+   Floor and Ceiling at the size, the day's move left out) it is refused once with what it means, and stands with his reason (`why`, answer D).
+   Nothing is queued twice: a market edit of the same book already waiting is a twin. */
+export function makerMarket(body, book, pending = []) {
+  const keys = ["at", "kind", "product", "q", "price", "why"];
+  if (Object.keys(body).some((key) => !keys.includes(key))) return { error: "A market edit carries only its timestamp, kind, book, and for a point its size, price and reason." };
+  if (!timestamp(body.at)) return { error: "A market edit needs its canonical request timestamp." };
+  if (!ready(book)) return { error: "The Desk mirror is being seeded." };
+  const product = body.product == null ? "salt" : body.product;
+  const snap = ((book.pricing || {}).byProduct || {})[product], I = snap && snap.inputs, R = I && I.policy && I.policy.tierRule;
+  if (!R || !R.band || !R.market) return { error: "That book has no market move." };
+  if (pending.some((entry) => entry && entry.at !== body.at && entry.payload && entry.payload.mode === "edit" && POSITION_ENGINE.MARKET_KINDS.includes(entry.payload.kind) && (entry.payload.product || "salt") === product))
+    return { error: "A market change for that book is already waiting under Approve.", twin: true };
+  if (body.kind !== "anchor") {
+    if (body.q != null || body.price != null || body.why != null) return { error: "A switch carries no size, price or reason." };
+    return proposed(POSITION_ENGINE.marketEditEntry({ at: body.at, kind: body.kind, product }), book);
+  }
+  const q = +body.q, price = +body.price;
+  if (!(q > 0) || !PRICING_ENGINE.onGrid(q, PRICING_ENGINE.gridOf(R))) return { error: "Choose a size the book is ordered in." };
+  if (!(price > 0) || Math.abs(price / 5 - Math.round(price / 5)) > 1e-9) return { error: "A Median point is a price in steps of RM 5." };
+  let w;
+  try { const plain = Object.assign({}, I.policy); delete plain.market; w = PRICING_ENGINE.driftAt(q, PRICING_ENGINE.costStack(I.cost), plain, 0); }
+  catch (e) { w = null; }
+  if (!w) return { error: "The Median at that size could not be read." };
+  const why = typeof body.why === "string" ? body.why.trim() : "";
+  if (body.why != null && !(why.length >= 3 && why.length <= 120 && !/[<>]/.test(why))) return { error: "A reason is one line of 3 to 120 characters, with no < or >." };
+  const side = price < w.floor - 0.009 ? "under" : price > w.ceiling + 0.009 ? "over" : null;
+  if (side && !why) {
+    const by = +Math.abs(price - (side === "under" ? w.floor : w.ceiling)).toFixed(2);
+    return { error: side === "under" ? `RM ${by} under the Floor of RM ${w.floor} at ${q} unit: every stranger would be quoted under cost. Give a reason and it stands, marked on Pricing.`
+      : `RM ${by} over the Ceiling of RM ${w.ceiling} at ${q} unit. Give a reason and it stands, marked on Pricing.`, outside: { side, by, floor: w.floor, ceiling: w.ceiling }, restate: true };
+  }
+  return proposed(POSITION_ENGINE.marketEditEntry({ at: body.at, kind: "anchor", product, q, price, why: side ? why : null }), book);
+}
+
 /* S5f-5 (Ask A): a hand edit of one open refund, for Salt Admin's refund card: marked paid on a day, or removed as stale. The refund is named by party, since and amount (it has no id), drafted through the drafter's own
    `edit` branch, which checks it is the ONE open refund those pick out when the Book's read carries the refunds. Nothing is queued twice: an edit of the same refund already waiting is a twin. */
 export function makerEdit(body, book, pending = []) {
+  if (object(body) && POSITION_ENGINE.MARKET_KINDS.includes(body.kind)) return makerMarket(body, book, pending);
   const keys = ["at", "kind", "party", "since", "amount", "paidOn", "note"];
   if (!object(body) || Object.keys(body).some((key) => !keys.includes(key))) return { error: "A refund edit carries only its timestamp, kind, party, day, amount, the day it was paid and a note." };
   if (!timestamp(body.at)) return { error: "A refund edit needs its canonical request timestamp." };

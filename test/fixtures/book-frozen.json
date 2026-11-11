@@ -1210,6 +1210,20 @@
     ],
     "REWARD_OPEN": [
       "THE SWITCH TO THE STEP AT LANDED COST, 2026-10-20 (his rules of 20 Oct 2026, his answer to Ask 3). Each associate opens on the units the count before the switch had earned and the share of the next one, so nothing they hold or see moves; from here a unit is 10 units' landed cost of margin on their own buying and resale, counted once paid in full. Written once by tools/reward-open.mjs; the fold adds one the day a customer becomes an associate."
+    ],
+    "MARKET": [
+      "11 Nov 2026: the suite's frozen book holds the market move OFF, so no check's salt price moves with the calendar once the move starts (engine/rules.mjs TIER_RULE.salt.market.since). The market's own checks turn it on in their own book."
     ]
+  },
+  "MARKET": {
+    "salt": {
+      "switch": [
+        {
+          "on": false,
+          "from": "2026-01-01",
+          "at": "frozen"
+        }
+      ]
+    }
   }
 }

@@ -1,0 +1,230 @@
+[
+ {
+  "name": "the move never reaches the walk",
+  "file": "engine/pricing.mjs",
+  "find": "if(Math.abs(mk)>1e-9){const z=step(rM,mM,bandTop(s0.p,lo,hi,mk));",
+  "replace": "if(false){const z=step(rM,mM,bandTop(s0.p,lo,hi,mk));"
+ },
+ {
+  "name": "their % stays on the plain Median",
+  "file": "engine/pricing.mjs",
+  "find": "band?bandTop(s.p,lo,hi,k):R.ends",
+  "replace": "band?bandTop(s0.p,lo,hi,k):R.ends"
+ },
+ {
+  "name": "-100% follows the plain Median",
+  "file": "engine/pricing.mjs",
+  "find": "if(band)p=k<=BAND_MIN+1e-9?lo:k>0?Math.max(p,s.p):p;",
+  "replace": "if(band)p=k<=BAND_MIN+1e-9?lo+(s.p-s0.p):k>0?Math.max(p,s.p):p;"
+ },
+ {
+  "name": "the moved Median keeps no running rate",
+  "file": "engine/pricing.mjs",
+  "find": "rM=z.rate;mM=z.mg;",
+  "replace": "rM=Infinity;mM=-Infinity;"
+ },
+ {
+  "name": "a rule with no band moves too",
+  "file": "engine/pricing.mjs",
+  "find": "const mk=band&&typeof P.market==='number'",
+  "replace": "const mk=typeof P.market==='number'"
+ },
+ {
+  "name": "the shelf takes no lot",
+  "file": "engine/snapshot.mjs",
+  "find": "if(u>0&&inWin(x.receivedOn||x.date))shelf+=u;",
+  "replace": "if(u>0&&inWin(x.receivedOn||x.date))shelf+=0;"
+ },
+ {
+  "name": "the shelf ignores a count",
+  "file": "engine/snapshot.mjs",
+  "find": "let shelf=last?+last.qty:",
+  "replace": "let shelf=false?+last.qty:"
+ },
+ {
+  "name": "the move jumps to its target",
+  "file": "engine/snapshot.mjs",
+  "find": "k=+(k+clampN(target-k,-step,step)).toFixed(4);",
+  "replace": "k=+target.toFixed(4);"
+ },
+ {
+  "name": "a long cover is nought",
+  "file": "engine/snapshot.mjs",
+  "find": "  return +M.long||0;\n}",
+  "replace": "  return 0;\n}"
+ },
+ {
+  "name": "the target is not held",
+  "file": "engine/snapshot.mjs",
+  "find": "let target=clampN(sp+(acts?pc.pts:0),lo,hi),stood=false;",
+  "replace": "let target=sp+(acts?pc.pts:0),stood=false;"
+ },
+ {
+  "name": "the pace prices before it is measured",
+  "file": "engine/snapshot.mjs",
+  "find": "let target=clampN(sp+(acts?pc.pts:0),lo,hi),stood=false;",
+  "replace": "let target=clampN(sp+pc.pts,lo,hi),stood=false;"
+ },
+ {
+  "name": "his switch is not read",
+  "file": "engine/snapshot.mjs",
+  "find": "if(!switchOn(C,p,t)){k=0;downTo=null;",
+  "replace": "if(false){k=0;downTo=null;"
+ },
+ {
+  "name": "on again it picks up where it was",
+  "file": "engine/snapshot.mjs",
+  "find": "if(!switchOn(C,p,t)){k=0;downTo=null;log.push({day:t,k:0,on:false});continue;}",
+  "replace": "if(!switchOn(C,p,t)){var kept=k;k=0;downTo=null;log.push({day:t,k:0,on:false});k=kept;continue;}"
+ },
+ {
+  "name": "no stand-down",
+  "file": "engine/snapshot.mjs",
+  "find": "if(stood)target=Math.min(target,0);",
+  "replace": "if(false)target=Math.min(target,0);"
+ },
+ {
+  "name": "the stand-down holds one day",
+  "file": "engine/snapshot.mjs",
+  "find": "downTo=addDays(t,(+st.hold||7)-1);",
+  "replace": "downTo=addDays(t,-1);"
+ },
+ {
+  "name": "today's sales move today",
+  "file": "engine/snapshot.mjs",
+  "find": "s.date&&String(s.date)<t&&+s.qty>0).map(s=>({date:String(s.date),qty:+s.qty}));}",
+  "replace": "s.date&&String(s.date)<=t&&+s.qty>0).map(s=>({date:String(s.date),qty:+s.qty}));}"
+ },
+ {
+  "name": "today's handovers move today's shelf",
+  "file": "engine/snapshot.mjs",
+  "find": "const inWin=d=>!!d&&String(d)<t&&(from==null||String(d)>from);",
+  "replace": "const inWin=d=>!!d&&String(d)<=t&&(from==null||String(d)>from);"
+ },
+ {
+  "name": "no start day",
+  "file": "engine/snapshot.mjs",
+  "find": "if(!day||String(day)<String(start))return",
+  "replace": "if(!day)return"
+ },
+ {
+  "name": "the reason in other words",
+  "file": "engine/snapshot.mjs",
+  "find": "let w='Median '+(Math.abs(e.k)<1e-9?'0':pts(e.k))+': '+cov;",
+  "replace": "let w='Market '+(Math.abs(e.k)<1e-9?'0':pts(e.k))+': '+cov;"
+ },
+ {
+  "name": "a point stands before its day",
+  "file": "engine/snapshot.mjs",
+  "find": "&&(!day||!a.from||String(a.from)<=day));",
+  "replace": "&&true);"
+ },
+ {
+  "name": "the evidence reads the day's move",
+  "file": "engine/snapshot.mjs",
+  "find": "const R=C.R,pq=C.B.quotes[p]||null,mk=plain?null:marketK(C,p);",
+  "replace": "const R=C.R,pq=C.B.quotes[p]||null,mk=marketK(C,p);"
+ },
+ {
+  "name": "the cards leave the move out",
+  "file": "engine/snapshot.mjs",
+  "find": "K=cost(C,p),P=policy(C,p);   /* 11 Nov 2026: the policy's rule",
+  "replace": "K=cost(C,p),P=policy(C,p,true);   /* 11 Nov 2026: the policy's rule"
+ },
+ {
+  "name": "the snapshot carries no move",
+  "file": "engine/snapshot.mjs",
+  "find": "(m=>m?{market:{day:m.day,k:m.k,on:m.on!==false&&!m.before,why:marketWhy(m)}}:{})(marketOf(C,p))",
+  "replace": "({})"
+ },
+ {
+  "name": "a declined order is not a loss",
+  "file": "engine/snapshot.mjs",
+  "find": "+dec.filter(s=>POSITION_ENGINE.txGoods(s)>x+0.009).length)/seen;",
+  "replace": "+0)/seen;"
+ },
+ {
+  "name": "nine sales suggest",
+  "file": "engine/snapshot.mjs",
+  "find": "sold.length>=10&&Math.abs(best-mq)>=5-1e-9",
+  "replace": "sold.length>=9&&Math.abs(best-mq)>=5-1e-9"
+ },
+ {
+  "name": "every buyer is new",
+  "file": "engine/snapshot.mjs",
+  "find": ".filter(o=>firstOf[o]>=a).length;",
+  "replace": ".filter(o=>true).length;"
+ },
+ {
+  "name": "the replay starts at since",
+  "file": "engine/snapshot.mjs",
+  "find": "const w=marketWalk(C,p,todayISO(C),first);if(!w)return null;",
+  "replace": "const w=marketWalk(C,p,todayISO(C));if(!w)return null;"
+ },
+ {
+  "name": "a twin is queued",
+  "file": "src/maker-inputs.js",
+  "find": "if (pending.some((entry) => entry && entry.at !== body.at && entry.payload && entry.payload.mode === \"edit\" && POSITION_ENGINE.MARKET_KINDS",
+  "replace": "if (false && pending.some((entry) => entry && entry.at !== body.at && entry.payload && entry.payload.mode === \"edit\" && POSITION_ENGINE.MARKET_KINDS"
+ },
+ {
+  "name": "a point outside the band is not asked",
+  "file": "src/maker-inputs.js",
+  "find": "  if (side && !why) {\n    const by",
+  "replace": "  if (false) {\n    const by"
+ },
+ {
+  "name": "any price is a point",
+  "file": "src/maker-inputs.js",
+  "find": "> 1e-9) return { error: \"A Median point is a price in steps of RM 5.\" };",
+  "replace": "> 9) return { error: \"A Median point is a price in steps of RM 5.\" };"
+ },
+ {
+  "name": "the multiple is struck wrong",
+  "file": "src/drafter.js",
+  "find": "x = +(price / fb).toFixed(6);",
+  "replace": "x = +(price / fb / 2).toFixed(6);"
+ },
+ {
+  "name": "a point with no size is filed",
+  "file": "engine/apply.mjs",
+  "find": "if (r.kind === \"anchor\" && !(+r.q > 0 && +r.x > 0",
+  "replace": "if (false && !(+r.q > 0 && +r.x > 0"
+ },
+ {
+  "name": "off files as on",
+  "file": "engine/apply.mjs",
+  "find": "{ on: mk.kind === \"marketOn\", from: mk.from, at: mk.at }",
+  "replace": "{ on: true, from: mk.from, at: mk.at }"
+ },
+ {
+  "name": "the suite's book holds the move on",
+  "file": "test/fixtures/book-frozen.json",
+  "find": "          \"on\": false,",
+  "replace": "          \"on\": true,"
+ },
+ {
+  "name": "a new ID starts at nought",
+  "file": "engine/apply.mjs",
+  "find": "if (typeof st === \"number\" && !(p in rt)) {",
+  "replace": "if (false) {"
+ },
+ {
+  "name": "a chosen nought is overwritten",
+  "file": "engine/apply.mjs",
+  "find": "if (typeof st === \"number\" && !(p in rt)) {",
+  "replace": "if (typeof st === \"number\") {"
+ },
+ {
+  "name": "a supplier starts too",
+  "file": "engine/apply.mjs",
+  "find": "const fresh = !onRoster && STATEMENT_KINDS.includes(r.kind) && !partner",
+  "replace": "const fresh = !onRoster && !partner"
+ },
+ {
+  "name": "the guest board shows the Median",
+  "file": "tools/pricelist.mjs",
+  "find": "typeof P.tierRule.start === \"number\" ? P.tierRule.start : 0) }))",
+  "replace": "typeof P.tierRule.start === \"number\" ? 0 : 0) }))"
+ }
+]

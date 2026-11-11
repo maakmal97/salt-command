@@ -65,6 +65,8 @@ export const LEDGER = {
   CASH_COUNT_RETIRED: "CASH_COUNT_RETIRED",
   ONE_OFFS: "ONE_OFFS",
   QUEUE_COMMITTED: "QUEUE_COMMITTED",
+  /* 11 Nov 2026: his market switch and re-anchored points (the price band's version 2), read through MARKET_BOOK so a book with none reads {} */
+  MARKET: "MARKET_BOOK",
 };
 export const LEDGER_KEYS = Object.keys(LEDGER);
 

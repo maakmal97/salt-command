@@ -800,6 +800,11 @@ export function planBatch(book, staged, notes, ctx) {
       const rt = r.tiers || {}, rtOff = Object.keys(rt).filter((p) => !(book.PRODUCTS || {})[p]), rtOld = Object.keys(rt).filter((p) => oldLift(it, p, rt[p])), rtBad = Object.keys(rt).filter((p) => !rtOld.includes(p) && !tierOk(p, rt[p]));   /* a % lift on a book with a Set Price, nothing on any other */   // v645, per product since v646
       if (rtOff.length || rtBad.length) { out.refused.push({ id: it.id, why: rtOff.length ? `${rtOff.join(" and ")} is not a product on this book` : `${rtBad.map((p) => sayLift(rt[p]) + (driftBooks().includes(p) ? notPct(p) : " is not held per customer on this book")).join(" and ")}` }); continue; }
       const rtKept = Object.fromEntries(Object.entries(rt).filter(([p]) => !rtOld.includes(p)));
+      /* 11 NOV 2026, HIS WORD: "ALWAYS START A STRANGER AT +30%". A new ID that is a customer or an associate (a statement kind, never a partner or a
+         bucket) and names no figure on a band book starts at that book's `start` place (salt +30%); a figure he chose, nought included, stands */
+      const fresh = !onRoster && STATEMENT_KINDS.includes(r.kind) && !partner && !POSITION_ENGINE.isBucket(r.code), started = [];
+      if (fresh) for (const p of driftBooks()) { const st = ruleOf(p).band && ruleOf(p).start; if (typeof st === "number" && !(p in rt)) { rtKept[p] = st; started.push(p); } }
+      if (started.length) entry.does.push(`start ${r.code} at ${started.map((p) => sayLift(rtKept[p]) + " on " + p).join(" and ")}, where a new customer starts`);
       entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null, geo: r.geo || null, tiers: Object.keys(rtKept).length ? rtKept : null, partner };
       if (partner) entry.does.push(`make ${r.code} a partner: they pay the Floor, up to the next RM 5, on every book; they keep every associate property`);
       if (entry.roster.register) entry.does.push(`append ${r.code} to the roster (the directory is not touched)`);
@@ -874,6 +879,12 @@ export function planBatch(book, staged, notes, ctx) {
       entry.tiers = keptTs.length ? keptTiers : {};   /* a tierset of old figures alone folds as a no-op: the item is filed, the book unchanged */
       if (keptTs.length) entry.does.push(`set ${keptTs.map(([c, p, v]) => `${c}'s ${p} figure to ${sayLift(v)}`).join(", ")}`);
       for (const c of [...new Set(oldTs.map((x) => x[0]))]) entry.does.push(oldLiftNote(c, oldTs.filter((x) => x[0] === c).map((x) => x[1]), oldWhy(it, oldTs.find((x) => x[0] === c)[1], oldTs.find((x) => x[0] === c)[2])));
+    } else if (it.collection === "edit" && E.MARKET_KINDS.includes(r.kind)) {
+      /* 11 Nov 2026: his market switch or a re-anchored Median point, a MARKET document entry (the price band's version 2); a re-run finds it filed by its moment and does nothing */
+      if (typeof r.product !== "string" || !/^\d{4}-\d\d-\d\d$/.test(String(r.from || "")) || typeof r.at !== "string") { out.refused.push({ id: it.id, why: "a market edit names its book, its day and its moment" }); continue; }
+      if (r.kind === "anchor" && !(+r.q > 0 && +r.x > 0 && isFinite(+r.x) && +r.price > 0)) { out.refused.push({ id: it.id, why: "a Median point names its size, its price and its multiple" }); continue; }
+      entry.market = Object.assign({ kind: r.kind, product: r.product, from: r.from, at: r.at }, r.kind === "anchor" ? { q: +r.q, x: +r.x, price: +r.price } : {}, r.outside ? { outside: r.outside } : {});
+      entry.does.push(r.kind === "anchor" ? `re-anchor the ${r.product} Median at ${r.q} unit to RM ${r.price} (${(+r.x).toFixed(4)} times the COGS Floor) from ${r.from}` : `switch the ${r.product} market move ${r.kind === "marketOn" ? "on" : "off"} from ${r.from}`);
     } else if (it.collection === "edit") {
       /* S5f-5: a hand edit of one open refund (Ask A). It is checked against the book it folds into, since the refund can be paid, removed or closed between the draft and the fold. */
       const hit = E.editRefunds(book.customerRefunds, r);
@@ -1196,6 +1207,12 @@ function bookItem(book, it, c) {
         Object.keys(now).forEach((p) => { if (now[p] == null) delete now[p]; });
         if (Object.keys(now).length) book.TIER_OF[c] = now; else delete book.TIER_OF[c];
       }
+    }
+    else if (it.market) {   /* 11 Nov 2026: the MARKET document, filed once by the entry's moment */
+      const mk = it.market, doc = book.MARKET = (book.MARKET && typeof book.MARKET === "object") ? book.MARKET : {}, M = doc[mk.product] = doc[mk.product] || {};
+      const list = mk.kind === "anchor" ? (M.anchors = M.anchors || []) : (M.switch = M.switch || []);
+      if (!list.some((x) => x && x.at === mk.at))
+        list.push(mk.kind === "anchor" ? Object.assign({ q: mk.q, x: mk.x, price: mk.price, from: mk.from, at: mk.at }, mk.outside ? { outside: mk.outside } : {}) : { on: mk.kind === "marketOn", from: mk.from, at: mk.at });
     }
     else if (it.edit) {   /* S5f-5: one open refund, named by party, since and amount; a re-run finds it paid or gone and does nothing */
       const ed = it.edit, hit = E.editRefunds(book.customerRefunds, ed);

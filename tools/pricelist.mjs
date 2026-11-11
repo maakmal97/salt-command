@@ -220,7 +220,9 @@ export function guestBoard(book, pricing, now) {
     const sizesHere = (Array.isArray(P.boardSizes) && P.boardSizes.length) ? P.boardSizes
       : ((Array.isArray(snap.sizes) && snap.sizes.length) ? snap.sizes : ((pricing && pricing.sizes) || []));
     const sizes = sizesHere.slice().sort((a, b) => a - b)
-      .map((q) => ({ q, price: PRICING_ENGINE.quoteAt(q, C, P, 0) }))
+      /* 11 NOV 2026, HIS WORD: "ALWAYS START A STRANGER AT +30%": on a band book the board is the place its rule names as `start` (salt +30%), the
+         day's market move in, where a new ID starts too (engine/apply.mjs); a stated board keeps its own price */
+      .map((q) => ({ q, price: PRICING_ENGINE.quoteAt(q, C, P, P.tierRule && P.tierRule.band && typeof P.tierRule.start === "number" ? P.tierRule.start : 0) }))
       .filter((r) => isNum(r.price) && r.price > 0);
     if (!sizes.length) continue;
     out.products.push({

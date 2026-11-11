@@ -720,6 +720,42 @@ export function queueSaleFault(entry) {
   if (typeof entry.at === "string" && entry.at.slice(0, 10) < QUEUE_SALE_SINCE) return null;
   return entry.orderId || entry.makerRequest ? null : QUEUE_SALE_REFUSAL;
 }
+/* 11 NOV 2026, THE PRICE BAND'S VERSION 2: HIS MARKET SWITCH AND A RE-ANCHORED MEDIAN POINT (an `edit` row; engine/position.mjs marketEditEntry).
+   The day it takes effect from is the KL day he asked. A point is struck off the snapshot: its multiple is his price over the COGS Floor at the size
+   (floorBase, what every point is a multiple of), so the row he approves holds the multiple; the flag says what the walk then quotes there and
+   what it quoted. Outside the band (under the Floor or over the Ceiling at the size) it needs his reason, his answer D; arithmetic only. */
+export function marketEditRow(entry, pay, book) {
+  const product = String(pay.product || "salt"), snap = ((book.pricing || {}).byProduct || {})[product], I = snap && snap.inputs;
+  const R = I && I.policy && I.policy.tierRule;
+  if (!R || !R.band || !R.market) return { skip: `${product} has no market move to switch or re-anchor` };
+  const from = POSITION_ENGINE.klDayOf(entry.at);
+  if (!from) return { skip: "a market edit needs the moment it was asked for" };
+  if (pay.kind !== "anchor") {
+    const on = pay.kind === "marketOn";
+    return { collection: "edit", row: { kind: pay.kind, product, from, at: entry.at }, flags: [],
+      reasoning: on ? `Switches the ${product} market move back on from ${from}: it climbs from nought, 5 points a day at most, towards what stock says.`
+        : `Switches the ${product} market move off from ${from}: every ${product} price goes back to the plain Median at the next publish, a partner's and the Floor unchanged.` };
+  }
+  const q = +pay.q, price = +pay.price;
+  if (!(q > 0) || !PRICING_ENGINE.onGrid(q, PRICING_ENGINE.gridOf(R))) return { skip: `${pay.q} is not a size ${product} is ordered in` };
+  if (!(price > 0) || Math.abs(price / 5 - Math.round(price / 5)) > 1e-9) return { skip: "a Median point is a price in steps of RM 5" };
+  let K, plain, fb;
+  try { K = PRICING_ENGINE.costStack(I.cost); plain = Object.assign({}, I.policy); delete plain.market; fb = PRICING_ENGINE.floorBase(q, K, plain); }
+  catch (e) { return { skip: "the pricing snapshot could not be read, so the point was not struck" }; }
+  if (!(fb > 0)) return { skip: "the COGS Floor at that size could not be read" };
+  const was = PRICING_ENGINE.driftAt(q, K, plain, 0), x = +(price / fb).toFixed(6);
+  const now = PRICING_ENGINE.driftAt(q, K, Object.assign({}, plain, { tierRule: PRICING_ENGINE.withPoints(R, [[q, x]]) }), 0);
+  if (!was || !now) return { skip: "the Median at that size could not be read" };
+  const side = price < was.floor - 0.009 ? "under" : price > was.ceiling + 0.009 ? "over" : null;
+  const why = typeof pay.why === "string" ? pay.why.trim() : "";
+  if (side && !(why.length >= 3 && why.length <= 120 && !/[<>]/.test(why))) return { skip: `RM ${price} is ${side === "under" ? "under the Floor of RM " + was.floor : "over the Ceiling of RM " + was.ceiling} at ${q} unit: a point outside the band needs his reason` };
+  const flags = [`The Median at ${q} unit goes from RM ${was.set} to RM ${now.set}${Math.abs(now.set - price) > 0.009 ? ` (the walk quotes RM ${now.set} for RM ${price}: the rate never rises with size)` : ""}; every size between its neighbouring points moves with it, and every customer's price rides on it.`];
+  if (side) flags.push(`Outside the band: RM ${Math.abs(+(price - (side === "under" ? was.floor : was.ceiling)).toFixed(2))} ${side} the ${side === "under" ? "Floor" : "Ceiling"}, his reason: ${why}. It shows on Pricing every day until he changes it.`);
+  const row = { kind: "anchor", product, from, at: entry.at, q, price, x };
+  if (side) row.outside = { side, why };
+  return { collection: "edit", row, flags,
+    reasoning: `Re-anchors the ${product} Median at ${q} unit from ${from}: RM ${price} on today's COGS Floor of RM ${+fb.toFixed(2)} is ${x.toFixed(4)} times it, which it keeps as the cost moves, as every point does.` };
+}
 export function draftRow(entry, book) {
   const pay = entry && entry.payload;
   if (!pay || typeof pay !== "object") return { skip: "the entry carries no payload the desk can read" };
@@ -1456,6 +1492,7 @@ export function draftRow(entry, book) {
   }
   /* S5f-5 (Ask A): A HAND EDIT OF ONE OPEN REFUND, marked paid or taken off. It moves no stock, no sale and no cash on a row; it is named by party, since and amount and must be the one open refund those pick out (the fold
      checks again against the book it folds into). With the mirror read the refunds are not in the book, so only the Book's read can check it here, and the flag says so when it cannot. */
+  if (pay.mode === "edit" && POSITION_ENGINE.MARKET_KINDS.includes(pay.kind)) return marketEditRow(entry, pay, book);
   if (pay.mode === "edit") {
     if (!["refundPaid", "refundRemove"].includes(pay.kind)) return { skip: `${pay.kind} is not an edit this desk drafts` };
     if (typeof pay.party !== "string" || !pay.party || typeof pay.since !== "string" || !(+pay.amount > 0)) return { skip: "an edit names the refund by its party, its day and its amount" };

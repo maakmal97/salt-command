@@ -286,8 +286,21 @@ const TIER_RULE={
      never COGS: `rates` are the Ceiling a unit at half a unit, 12.5 and 100 as typed at an anchor of `per` (RM 200 and RM 100, his two
      ends, then RM 83.93), sliding in the log of size (the engine's bandCeiling), the order total down to RM 5 and never under the Floor.
      The `ends` of 22 Oct (2.4, 1.44 and 3.6, 1.74) left with it. The switch's carry-over table left on 11 Nov 2026, once his Approve had booked every carried figure. `ceilingX` is read by no band. */
+  /* 11 NOV 2026, THE PRICE BAND'S VERSION 2, THE MARKET MOVE (docs/plan-salt-price-band.html Step 3; his answer B of 10 Nov 2026 and his answers
+     of 11 Nov 2026): each day the Median moves along the band by a few points, read by the snapshot engine's marketOf. `since` is the first
+     day it prices (the day the version shipped, his answer: from the day it ships); before it the move is nought. SUPPLY is the one plain
+     cover (his answer of 11 Nov 2026): free stock at the start of the day over the recency-weighted rate, `supply` [[days up to, points]] and
+     `long` past the last; `pace` is the last `short` days against the last `long` days, `fast` and `slow` its ratios and `k` its points, and
+     with `acts` false it is said and never priced (the plan's rule: a signal acts by itself only once it has a measured basis). The two
+     add, held between `min` and `max`, and the move goes `step` a day at most towards it. `stand`: margin a day falling `weeks` weeks
+     running while the move is up holds the move at nought or under for `hold` days, and says so. His switch and his re-anchored points are
+     the book's MARKET document, set only by entries he approves. */
   salt:{drift:true, ceilingX:3,
         band:{ceiling:{supplier:{units:12.5, total:700}, per:56, rates:[[0.5,200],[12.5,100],[100,83.93]]}},
+        /* 11 Nov 2026, his word: "Always start a stranger at +30%": a new ID that names no figure starts here (the fold), and the guest board shows it */
+        start:0.3,
+        market:{since:"2026-11-12", step:0.05, min:-0.15, max:0.2, supply:[[3,0.15],[7,0.05],[14,0]], long:-0.1,
+                pace:{short:14, long:56, fast:1.25, slow:0.75, k:0.05, acts:false}, stand:{weeks:2, hold:7}},
         points:[[0.5,3],[1,2.4],[6.25,2.004],[12.5,1.596]],
         suggest:{writtenOff:0.3, longLate:0.2, late:0.1, overdueDays:14, recent:5, step:0.05, minSettled:3, good:0.3},
         auto:{wP:0.35, wF:0.25, wV:0.2, wT:0.2, minSettled:3, perMonth:4, unitsPerMonth:10, orders:12, staleDays:60, overdueDays:14, U:0.5, D:0.5, cap:0.5},

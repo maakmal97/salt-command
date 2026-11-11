@@ -224,13 +224,191 @@ function inputs(C,p){
       deliveredShare:{v:delShare(C,p).v}},
     attrib:R.SHRINK_ATTRIB, shrinkRate:shrinkRate(C,p), avgDel:avgDelivery(C,p)});
 }
-function policy(C,p){
-  const R=C.R,pq=C.B.quotes[p]||null;
-  return {LADDER:ladderFor(C,p), minPerUnit:R.PRICE_ENGINE.minPerUnit||0, timePerOrder:R.PRICE_ENGINE.timePerOrder||0, floorTo:(R.RULES&&R.RULES.floorTo)||0, lotFloor:R.PRICE.lotFloor||{},
+/* 11 Nov 2026: the policy carries the day's market move on a band book (marketOf) and his re-anchored points (ruleFor). `plain` leaves the move
+   out: the evidence (a past sale's place, the 90-day reading) is read against the plain Median, never the day's move. */
+function policy(C,p,plain){
+  const R=C.R,pq=C.B.quotes[p]||null,mk=plain?null:marketK(C,p);
+  return Object.assign({LADDER:ladderFor(C,p), minPerUnit:R.PRICE_ENGINE.minPerUnit||0, timePerOrder:R.PRICE_ENGINE.timePerOrder||0, floorTo:(R.RULES&&R.RULES.floorTo)||0, lotFloor:R.PRICE.lotFloor||{},
     stated:setPricesFor(C,p),
-    tierRule:R.TIER_RULE[p]||null,
+    tierRule:ruleFor(C,p),
     tiers:(pq&&pq.tiers)?pq.tiers:[],
-    boardSizes:sizesFor(C,p)};
+    boardSizes:sizesFor(C,p)},mk?{market:mk}:{});
+}
+
+/* ============ 11 NOV 2026, THE PRICE BAND'S VERSION 2: THE MARKET (docs/plan-salt-price-band.html Steps 3 and 4, "Dependable") ============
+   Pure arithmetic on the book, no model and no state: the move on a day is a walk from the rule's `since`, a day at a time, so the Desk, the
+   drafter's snapshot, the price lists and the replay of the past read one figure for one day. Each day is read off the book AS IT STOOD WHEN
+   THE DAY BEGAN (rows dated before it), so trading through the day moves no price until the next. His switch and his points are the book's
+   MARKET document ({[book]: {switch: [{on, from}], anchors: [{q, x, from, price}]}}), written only by entries he approves; an absent document
+   is on, with no points of his. Said, not modelled: a loan in kind, a lot part received over several days (all on its receivedOn), a row
+   dated earlier and entered later (the walk reads it as of its date, so a past day can read anew). */
+const isoOf=d=>d.toISOString().slice(0,10);
+const dayAt=s=>new Date(String(s)+'T00:00:00Z');
+const addDays=(s,n)=>isoOf(new Date(dayAt(s).getTime()+n*864e5));
+const clampN=(v,lo,hi)=>Math.min(hi,Math.max(lo,v));
+function marketDoc(C,p){const M=(C.B.market||{})[p];return M&&typeof M==='object'?M:{};}
+function marketRule(C,p){const R=C.R.TIER_RULE[p];return R&&R.band&&R.market&&R.market.since?R.market:null;}
+/* his re-anchored points over the rule's own, each from its day, the newest at a size winning; a band book alone */
+function ruleFor(C,p){
+  const R=C.R.TIER_RULE[p];if(!R||!R.band)return R||null;
+  const day=C.today?todayISO(C):null;
+  const A=(marketDoc(C,p).anchors||[]).filter(a=>a&&+a.q>0&&+a.x>0&&isFinite(+a.x)&&(!day||!a.from||String(a.from)<=day));
+  return A.length?PRICING_ENGINE.withPoints(R,A.map(a=>[a.q,a.x])):R;
+}
+function switchOn(C,p,t){let on=true;(marketDoc(C,p).switch||[]).forEach(s=>{if(s&&s.from&&String(s.from)<=t)on=s.on!==false;});return on;}
+/* the units a row handed over on the days `inWin` passes, its trail read as heldBefore reads it */
+function movedIn(s,inWin){
+  const moves=(s.amend||[]).filter(a=>a&&a.date&&!a.undone&&((a.kind==='Fulfilment'&&+a.kg>0.0001)||(a.kind==='Correction'&&Math.abs(+a.kg||0)>0.0001)));
+  const rest=POSITION_ENGINE.txPhys(s)-moves.reduce((t,a)=>t+ +a.kg,0);
+  return moves.reduce((t,a)=>t+(inWin(a.date)?+a.kg:0),0)+(rest>0.0001&&inWin(s.deliveredOn||s.date)?rest:0);
+}
+/* THE SHELF AT THE START OF DAY t (his answer: one plain cover): the last count dated before it (its qty), else the opening; plus the units of
+   each live lot received since, less every handover and recorded loss since. An estimate: a count is taken as the day's end. */
+function shelfAt(C,p,t){
+  const dp=C.B.defaultProd||'salt';
+  const cs=(C.B.counts||[]).filter(c=>c&&(c.product||dp)===p&&c.date&&String(c.date)<t&&c.qty!=null&&isFinite(+c.qty)).sort((a,b)=>String(a.date)<String(b.date)?-1:String(a.date)>String(b.date)?1:0);
+  const last=cs[cs.length-1], from=last?String(last.date):null;
+  const inWin=d=>!!d&&String(d)<t&&(from==null||String(d)>from);
+  let shelf=last?+last.qty:+(openingFor(C.B,p).qty||0);
+  pPurch(C.B,p).forEach(x=>{if(!POSITION_ENGINE.poLive(x))return;const u=POSITION_ENGINE.poRecvUnits(x);if(u>0&&inWin(x.receivedOn||x.date))shelf+=u;});
+  pSales(C.B,p).forEach(s=>{shelf-=movedIn(s,inWin);});
+  (C.B.selfUseLog||[]).forEach(r=>{if(r&&(r.product||dp)===p&&inWin(r.date))shelf-=(+r.kg||0);});
+  return shelf;
+}
+function demandBefore(C,p,t){return pSales(C.B,p).filter(s=>pbPriced(s)&&!s.rewardOf&&!s.goodwill&&s.date&&String(s.date)<t&&+s.qty>0).map(s=>({date:String(s.date),qty:+s.qty}));}
+/* the cover on day t: the engine's restockPlan over the demand before it and the shelf at its start, no rhythm, dues or holidays. days is
+   Infinity past the forecast; none, no demand measured */
+function marketCover(C,p,t){
+  const rows=demandBefore(C,p,t), free=+Math.max(0,shelfAt(C,p,t)).toFixed(2);
+  const plan=POSITION_ENGINE.restockPlan({rows:rows,today:dayAt(t),free:free,leadDays:1});
+  if(plan.empty)return {free:free,days:null,none:true};
+  return {free:free,days:plan.coverDays==null?Infinity:+plan.coverDays};
+}
+function supplyPts(cv,M){
+  if(!cv||cv.none||cv.days==null)return 0;
+  for(const s of (M.supply||[]))if(cv.days<=+s[0]+1e-9)return +s[1];
+  return +M.long||0;
+}
+function marketPace(C,p,t,M){
+  const P=M.pace||{},rows=demandBefore(C,p,t),u=n=>rows.filter(r=>r.date>=addDays(t,-n)).reduce((a,r)=>a+r.qty,0);
+  const l=u(+P.long||56)/(+P.long||56), s=u(+P.short||14)/(+P.short||14);
+  if(!(l>0))return {ratio:null,pts:0};
+  const ratio=+(s/l).toFixed(4);
+  return {ratio:ratio,pts:ratio>=(+P.fast||1.25)-1e-9?(+P.k||0):ratio<=(+P.slow||0.75)+1e-9?-(+P.k||0):0};
+}
+/* margin a day over [a, b): the goods less the row's own cost, priced sales with a cost; a row with none is left out */
+function marginDay(C,p,a,b){
+  const rows=pSales(C.B,p).filter(s=>pbPriced(s)&&!s.goodwill&&!s.rewardOf&&s.date&&String(s.date)>=a&&String(s.date)<b&&typeof s.cost==='number'&&isFinite(s.cost));
+  const days=Math.max(1,Math.round((dayAt(b)-dayAt(a))/864e5));
+  return rows.reduce((t,s)=>t+POSITION_ENGINE.txGoods(s)-s.cost,0)/days;
+}
+/* margin a day fell `n` weeks running, the newest full week (the seven days before t) under the one before, and so on */
+function fellRunning(C,p,t,n){
+  const w=[];for(let i=0;i<=n;i++)w.push(marginDay(C,p,addDays(t,-7*(i+1)),addDays(t,-7*i)));
+  for(let i=0;i<n;i++)if(!(w[i]<w[i+1]-0.005))return false;
+  return true;
+}
+/* THE WALK OF THE MOVE from `from` (the rule's since) to `day`, inclusive: each day's target is the supply's points (and the pace's, only once it
+   acts), held between min and max, capped at nought while stood down; the move goes at most `step` towards it. Switched off, the move is nought
+   that day, and on again it climbs from nought. Answers the last day's entry with the whole log, or null for a book with no market rule. */
+function marketWalk(C,p,day,from){
+  const M=marketRule(C,p);if(!M)return null;
+  const start=from||M.since;
+  if(!day||String(day)<String(start))return {day:day,k:0,on:false,before:true,since:start,log:[]};
+  const step=+M.step||0.05,lo=+M.min,hi=+M.max,st=M.stand||{},log=[];
+  let k=0,downTo=null;
+  for(let t=String(start);t<=String(day);t=addDays(t,1)){
+    if(!switchOn(C,p,t)){k=0;downTo=null;log.push({day:t,k:0,on:false});continue;}
+    const cv=marketCover(C,p,t),sp=supplyPts(cv,M),pc=marketPace(C,p,t,M),acts=!!(M.pace&&M.pace.acts);
+    let target=clampN(sp+(acts?pc.pts:0),lo,hi),stood=false;
+    if(downTo&&t<=downTo)stood=true;
+    else{downTo=null;if(k>1e-9&&+st.weeks>0&&fellRunning(C,p,t,+st.weeks)){downTo=addDays(t,(+st.hold||7)-1);stood=true;}}
+    if(stood)target=Math.min(target,0);
+    k=+(k+clampN(target-k,-step,step)).toFixed(4);
+    log.push({day:t,k:k,on:true,target:+target.toFixed(4),cover:cv.days===Infinity?null:cv.days,long:cv.days===Infinity,none:!!cv.none,free:cv.free,
+      supply:sp,pace:pc.ratio,pacePts:pc.pts,paceActs:acts,stood:stood});
+  }
+  return Object.assign({},log[log.length-1],{since:start,log:log});
+}
+/* the day's move for a book, null off a band book or before the rule's since; marketK the number the walk reads */
+function marketOf(C,p){if(!marketRule(C,p)||!C.today)return null;const d=todayISO(C);return viaMemo(C,'market|'+p+'|'+d,()=>marketWalk(C,p,d));}
+function marketK(C,p){const m=marketOf(C,p);return m&&m.on&&Math.abs(m.k)>1e-9?m.k:null;}
+/* THE REASON, in his words, the one place they are made (the Desk's Pricing and Salt Admin both show it): "Median +5: 4.2 days of cover" */
+function marketWhy(e){
+  if(!e)return '';
+  const pts=v=>(v>0?'+':v<0?'-':'')+Math.round(Math.abs(v)*100);
+  if(e.before)return 'The market move starts on '+e.since+'.';
+  if(e.on===false)return 'Switched off: every price is on the plain Median.';
+  const cov=e.none?'no demand measured':e.long?'over 14 days of cover':(+e.cover).toFixed(1)+' days of cover';
+  let w='Median '+(Math.abs(e.k)<1e-9?'0':pts(e.k))+': '+cov;
+  if(e.stood)w+=', held at nought or under: margin a day fell two weeks running while the move was up';
+  else if(Math.abs(e.target-e.k)>1e-9)w+=', moving 5 a day towards '+pts(e.target);
+  if(e.pace!=null&&e.pacePts&&!e.paceActs)w+='; pace '+Math.round(Math.abs(e.pace-1)*100)+'% '+(e.pace>1?'above':'below')+' normal, said and not priced';
+  return w+'.';
+}
+/* THE REPLAY OF THE PAST ("proved on the past before it runs"): the walk from the book's first priced day to today, each day's move and what it
+   would have quoted at q on TODAY's posts (today's cost and Median: the move is what is replayed), beside the median goods paid that day at q */
+function marketReplay(C,p,q){
+  const M=marketRule(C,p);if(!M||!C.today)return null;
+  const rows=pSales(C.B,p).filter(s=>pbPriced(s)&&!s.goodwill&&!s.rewardOf&&s.date&&+s.qty>0);
+  const first=rows.map(s=>String(s.date)).sort()[0];if(!first)return null;
+  const w=marketWalk(C,p,todayISO(C),first);if(!w)return null;
+  const K=cost(C,p),P0=policy(C,p,true),med=a=>{const s=a.slice().sort((x,y)=>x-y),m=Math.floor(s.length/2);return s.length?(s.length%2?s[m]:(s[m-1]+s[m])/2):null;};
+  const at=k=>{const x=PRICING_ENGINE.driftAt(q,K,Object.assign({},P0,k?{market:k}:{}),0);return x?x.p:null;};
+  const memo={};
+  return w.log.map(e=>{const key=e.k.toFixed(4);if(!(key in memo))memo[key]=at(e.k);
+    const paid=rows.filter(s=>String(s.date)===e.day&&Math.abs(+s.qty-q)<0.009&&!s.oneOff).map(s=>POSITION_ENGINE.txGoods(s));
+    return {day:e.day,k:e.k,on:e.on,quote:memo[key],paid:med(paid),n:paid.length};});
+}
+/* THE 90-DAY READING (Step 4): at each size with sales in the window, the usual goods paid, the profit-best price and the plain Median, with the
+   count behind each. The profit-best is the price among those paid that earns the most per buyer seen, (price less exact cost) times the share
+   who would take it: those who paid it or more, and those who cancelled at a higher price (a cancelled order is a buyer who declined at its
+   price, the plan's losses, and would have taken a lower one); a one-off, a gift or a reward is left out. Only prices that sold are in the book, so it is a floor on the true answer. A re-anchor is SUGGESTED, never made, where the
+   profit-best and the Median differ by RM 5 or more at a size with 10 or more sales; his tap makes it. `smaller` counts, as said and not
+   priced, the sales over 8% above the usual whose buyer's next order was smaller. */
+function priceReading(C,p,days){
+  const R=C.R.TIER_RULE[p];if(!R||!R.band||!C.today)return null;
+  const to=todayISO(C),from=addDays(to,-(days||90)),K=cost(C,p),P0=policy(C,p,true);
+  const all=pSales(C.B,p).filter(s=>s.date&&String(s.date)>=from&&String(s.date)<to&&!s.goodwill&&!s.rewardOf&&!s.oneOff&&+s.qty>0&&POSITION_ENGINE.txGoods(s)>0);
+  const cancelled=s=>POSITION_ENGINE.txStat(s).order==='Cancelled';
+  const sizes=[...new Set(all.map(s=>+(+s.qty).toFixed(4)))].sort((a,b)=>a-b);
+  const med=a=>{const s=a.slice().sort((x,y)=>x-y),m=Math.floor(s.length/2);return s.length?(s.length%2?s[m]:(s[m-1]+s[m])/2):null;};
+  const allP=pSales(C.B,p).filter(s=>s.date&&+s.qty>0&&!s.goodwill&&!s.rewardOf).sort((a,b)=>String(a.date)<String(b.date)?-1:1);
+  return sizes.map(q=>{
+    const rows=all.filter(s=>Math.abs(+s.qty-q)<0.009),sold=rows.filter(s=>!cancelled(s)&&pbPriced(s)),dec=rows.filter(cancelled);
+    const prices=sold.map(s=>POSITION_ENGINE.txGoods(s)),usual=med(prices),c=PRICING_ENGINE.costTotal(q,K,P0),seen=sold.length+dec.length;
+    let best=null,bestM=-Infinity;
+    [...new Set(prices)].sort((a,b)=>a-b).forEach(x=>{const m=(x-c)*(prices.filter(v=>v>=x-0.009).length+dec.filter(s=>POSITION_ENGINE.txGoods(s)>x+0.009).length)/seen;if(m>bestM+1e-9){bestM=m;best=x;}});
+    const mq=PRICING_ENGINE.quoteAt(q,K,P0,0);
+    const smaller=usual==null?0:sold.filter(s=>{if(!(POSITION_ENGINE.txGoods(s)>usual*1.08))return false;
+      const nx=allP.find(x=>POSITION_ENGINE.ownsCode(ownerOf(s.customer)||s.customer,x.customer)&&String(x.date)>String(s.date));return !!nx&&+nx.qty<+s.qty-0.009;}).length;
+    const suggest=best!=null&&mq!=null&&sold.length>=10&&Math.abs(best-mq)>=5-1e-9;
+    return {q:q,sales:sold.length,declined:dec.length,usual:usual,best:best,median:mq,cost:+(+c).toFixed(2),smaller:smaller,suggest:suggest};
+  });
+}
+/* THE WEEKLY SCORECARD (Dependable): the seven days before today against the eight weeks before them. Margin a day, orders, new buyers (a first
+   salt order), regulars won back (four orders or more before, this one after more than one and a half times their own usual gap), and what
+   the move added or cost: each sale of the week priced again at its customer's held place with the day's move and with none (an estimate,
+   since an order is priced when agreed and their place can have changed since). */
+function marketScore(C,p){
+  const M=marketRule(C,p);if(!M||!C.today)return null;
+  const to=todayISO(C),a=addDays(to,-7),rows=pSales(C.B,p).filter(s=>pbPriced(s)&&!s.goodwill&&!s.rewardOf&&s.date&&+s.qty>0);
+  const inW=(s,x,y)=>String(s.date)>=x&&String(s.date)<y;
+  const prior=[];for(let i=1;i<=8;i++)prior.push(marginDay(C,p,addDays(a,-7*i),addDays(a,-7*(i-1))));
+  const week=rows.filter(s=>inW(s,a,to)),firstOf={};
+  rows.slice().sort((x,y)=>String(x.date)<String(y.date)?-1:1).forEach(s=>{const o=ownerOf(s.customer)||s.customer;if(!(o in firstOf))firstOf[o]=String(s.date);});
+  const newB=[...new Set(week.map(s=>ownerOf(s.customer)||s.customer))].filter(o=>firstOf[o]>=a).length;
+  let back=0;
+  [...new Set(week.map(s=>ownerOf(s.customer)||s.customer))].forEach(o=>{
+    const ds=[...new Set(rows.filter(s=>POSITION_ENGINE.ownsCode(o,s.customer)).map(s=>String(s.date)))].sort(),i=ds.findIndex(d=>d>=a);
+    if(i<4)return;const gaps=[];for(let j=1;j<i;j++)gaps.push((dayAt(ds[j])-dayAt(ds[j-1]))/864e5);
+    const g=gaps.slice().sort((x,y)=>x-y)[Math.floor(gaps.length/2)];if(g>0&&(dayAt(ds[i])-dayAt(ds[i-1]))/864e5>1.5*g)back++;});
+  const w=marketWalk(C,p,addDays(to,-1)),byDay={};((w&&w.log)||[]).forEach(e=>{byDay[e.day]=e.k;});
+  const K=cost(C,p),P0=policy(C,p,true);let added=0;
+  week.forEach(s=>{const k=byDay[String(s.date)]||0;if(!k||isPartner(C,s.customer))return;const d=driftS(C,p,s.customer),pc=d?d.d:0;
+    const x=PRICING_ENGINE.quoteAt(+s.qty,K,Object.assign({},P0,{market:k}),pc),y=PRICING_ENGINE.quoteAt(+s.qty,K,P0,pc);if(x!=null&&y!=null)added+=x-y;});
+  const mean=prior.reduce((t,v)=>t+v,0)/prior.length;
+  return {from:a,to:to,margin:+marginDay(C,p,a,to).toFixed(2),prior:+mean.toFixed(2),orders:week.length,newBuyers:newB,wonBack:back,added:+added.toFixed(2)};
 }
 /* the board for a book, on its own rungs (its stated prices, or its floor, Set Price and Ceiling); null for a book with no rule. `cost` is a function, read only when there is a rule */
 function fiveTiers(C,p,cost){
@@ -307,7 +485,7 @@ function driftOf(C,p,code){return viaMemo(C,'drift|'+(ownerOf(code)||code)+'|'+p
 function suggestOf(C,p,code){
   const R=C.R.TIER_RULE[p];if(!R||!R.drift)return null;
   return viaMemo(C,'suggest|'+(ownerOf(code)||code)+'|'+p,()=>{
-    const who=ownerOf(code)||code,S=R.suggest||{},K=cost(C,p),P=Object.assign({},policy(C,p),{tierRule:R});
+    const who=ownerOf(code)||code,S=R.suggest||{},K=cost(C,p),P=policy(C,p,true);   /* 11 Nov 2026: the plain Median, his points in, the day's move out */
     /* 10 Nov 2026 (his ask D): a sale he let stand outside the band as a one-off (row.oneOff) is left out of the evidence */
     const rows=pSales(C.B,p).filter(x=>POSITION_ENGINE.ownsCode(who,x.customer)&&pbPriced(x)&&!x.oneOff&&x.date&&x.total>0&&x.qty>0)
       .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).slice(-(+S.recent||5));
@@ -328,7 +506,7 @@ function cost(C,p){const o=C.over||{cost:null,shrink:null};return viaMemo(C,'pxC
 /* a named customer's price at any size: a partner the Floor (RM 5 up); a stated board the board; a drift book the Set Price moved by their drift */
 function cardQuote(C,p,code,q){
   if(!(q>0))return null;
-  const o=C.over||{cost:null,shrink:null},K=cost(C,p),P=Object.assign({},policy(C,p),{tierRule:C.R.TIER_RULE[p]});
+  const o=C.over||{cost:null,shrink:null},K=cost(C,p),P=policy(C,p);   /* 11 Nov 2026: the policy's rule is his points over the rule's, and it carries the day's move */
   if(isPartner(C,code))return PRICING_ENGINE.quoteAt(q,K,P,'partner');   // 06 Oct 2026, his decision: a partner pays cost; 18 Oct 2026, the Floor, rounded up to the next RM 5
   const row=viaMemo(C,'tierAt|'+p+'|'+q+'|'+o.cost+'|'+o.shrink,()=>PRICING_ENGINE.fiveTierAt(q,K,P));
   if(row&&row.fixed){const dr=pctBook(C,p)?driftS(C,p,code):null;return PRICING_ENGINE.quoteAt(q,K,P,dr?dr.d:0);}
@@ -361,7 +539,9 @@ function pricing(B,R,today,over=null){
     if(pctBook(C,p)){lift={};suggest=driftBook(C,p)?{}:null;ids.forEach(id=>{if(isPartner(C,id)){lift[id]='partner';return;}const d=driftOf(C,p,id);if(d&&typeof d.d==='number'&&isFinite(d.d))lift[id]=d.d;const g=suggestOf(C,p,id);if(g&&suggest)suggest[id]={pct:g.pct,why:PRICING_ENGINE.suggestWhy(g).join(', ')};});}
     out[p]=Object.assign({stockCost:r4(f.stockCost), replCost:r4(f.replCost), floors, inputs:f.inputs, sizes:f.sizes, rungs:f.rungs,
       ladder:(f.ladder||[]).map(r=>Object.assign({q:r.q,prices:r.prices,fixed:!!r.fixed},r.drift?{drift:true}:{})), cards, partners:B.partners.slice()},
-      lift?{lift,suggest}:{});
+      lift?{lift,suggest}:{},
+      /* 11 Nov 2026: the day's market move, its reason and his switch, for the drafter, Salt Admin and the price list's reader */
+      (m=>m?{market:{day:m.day,k:m.k,on:m.on!==false&&!m.before,why:marketWhy(m)}}:{})(marketOf(C,p)));
   }
   return out;
 }
@@ -369,6 +549,7 @@ function pricing(B,R,today,over=null){
 return {pSales,pPurch,openingFor,countedFor,posInputs,stockCost,hiddenFor,setPricesFor,sizesFor,shownSizes,shSizes,ladderFor,
   latestLot,meanLotQty,priceLockState,delShare,avgDelivery,replRate,replCost,quoteRate,freightRate,leakCharge,shrinkRate,nrsShare,
   inputs,policy,fiveTiers,figures,
+  ruleFor,shelfAt,marketCover,marketPace,marketWalk,marketOf,marketK,marketWhy,marketReplay,priceReading,marketScore,switchOn,
   ownerOf,isResellAcct,isPerson,pbPriced,isPartner,lateOf,buyerProfile,driftBook,pctBook,driftSignals,driftOfNow,driftOf,suggestOf,tierCustomers,cost,cardQuote,pricing};
 })();
 

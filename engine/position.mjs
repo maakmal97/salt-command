@@ -472,6 +472,19 @@ function editEntry({at,kind,party,since,amount,paidOn=null,note=null,raw}){
     raw:raw===undefined?(kind==='refundPaid'?'Mark paid: the RM '+amount+' refund to '+party+' of '+since+', returned on '+paidOn:'Remove the RM '+amount+' refund to '+party+' of '+since+' from the book'):raw,
     payload:{mode:'edit',kind,party,since,amount,...(paidOn?{paidOn}:{}),...(note?{note}:{})}};
 }
+/* 11 NOV 2026, THE PRICE BAND'S VERSION 2 (his answer of 11 Nov 2026: on Salt Admin, approved): HIS MARKET SWITCH AND A RE-ANCHORED MEDIAN POINT, an
+   edit of the book's MARKET document. marketOff holds every price on the plain Median from the day it is asked for, marketOn lets the move climb
+   again from nought, and anchor sets the Median's multiple at a size (the drafter strikes it off the price he typed and the COGS Floor there, so
+   his yes answers the multiple). A point outside the band carries his reason (`why`, his answer D). It moves no stock, no sale and no cash. */
+const MARKET_KINDS=['marketOff','marketOn','anchor'];
+function marketEditEntry({at,kind,product='salt',q=null,price=null,why=null,raw}){
+  const say=kind==='marketOff'?'Switch the market move off: every '+product+' price on the plain Median':kind==='marketOn'?'Switch the market move on: it climbs from nought, 5 points a day at most'
+    :'Re-anchor the Median: RM '+price+' at '+q+' unit'+(why?', outside the band: '+why:'');
+  return {at,type:'EDIT',party:null,qty:null,total:null,status:'edit',raw:raw===undefined?say:raw,
+    payload:Object.assign({mode:'edit',kind,product},kind==='anchor'?{q:+q,price:+price}:{},why?{why:String(why)}:{})};
+}
+/* the KL day of an entry's moment, the day a switch or a point takes effect from */
+function klDayOf(at){const t=Date.parse(at);return isFinite(t)?new Date(t+8*36e5).toISOString().slice(0,10):null;}
 /* the open refunds an edit's three names pick out: exactly one is an edit that can be applied */
 function editRefunds(list,p){
   return (list||[]).map((r,i)=>[r,i]).filter(([r])=>r&&!r.paidOn&&r.party===p.party&&r.since===p.since&&+r.amount===+p.amount);
@@ -1888,7 +1901,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,R3_DAYS:R3_DAYS,r3Link:r3Link,r3Until:r3Until,r3In:r3In,r3Of:r3Of,loyaltyWalk:loyaltyWalk,loyalScheme:loyalScheme,cadenceOf:cadenceOf,rewardIsAssociate:rewardIsAssociate,rewardOpening:rewardOpening,rewardCut:rewardCut,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,editEntry:editEntry,editRefunds:editRefunds,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,writeOffDay:writeOffDay,payDelays:payDelays,lateOffer:lateOffer,
+return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,R3_DAYS:R3_DAYS,r3Link:r3Link,r3Until:r3Until,r3In:r3In,r3Of:r3Of,loyaltyWalk:loyaltyWalk,loyalScheme:loyalScheme,cadenceOf:cadenceOf,rewardIsAssociate:rewardIsAssociate,rewardOpening:rewardOpening,rewardCut:rewardCut,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,editEntry:editEntry,editRefunds:editRefunds,MARKET_KINDS:MARKET_KINDS,marketEditEntry:marketEditEntry,klDayOf:klDayOf,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,writeOffDay:writeOffDay,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,LIGHT_DAYS:LIGHT_DAYS,restockLight:restockLight,restockSupply:restockSupply,

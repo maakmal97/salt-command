@@ -32,7 +32,9 @@ export function inputsFromBook(book) {
     supplierReceivable: book.supplierReceivable !== undefined ? book.supplierReceivable : null,
     counts: book.COUNTS || [], selfUseLog: book.selfUseLog || [], quotes: book.QUOTES || {}, priceSet: book.PRICE_SET !== undefined ? book.PRICE_SET : null,
     costRule: book.COST_RULE || {}, defaultProd: DEFAULT_PROD, refunds: book.customerRefunds || [],
-    roster: book.roster || [], partners: book.partners || [], tierOf: book.TIER_OF || {}, prodOrder: book.PROD_ORDER || []
+    roster: book.roster || [], partners: book.partners || [], tierOf: book.TIER_OF || {}, prodOrder: book.PROD_ORDER || [],
+    /* 11 Nov 2026: his market switch and re-anchored points (the price band's version 2); absent is on, with none */
+    market: book.MARKET && typeof book.MARKET === "object" ? book.MARKET : {}
   };
 }
 

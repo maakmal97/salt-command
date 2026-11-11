@@ -495,6 +495,15 @@ function fiveTiers(sizes,C,P){
    pct is the customer's held %, -0.3 to +0.3 (driftOk, LIFT_MIN to LIFT_MAX; his decision of 21 Oct 2026, which was 0 to 2), applied inside
    the walk to the multiple at every size; 0 is the Set Price. A negative % is a discount on it, still never under the Floor.
    Nothing automatic sets it: autoDrift reads the record for the card and prices nothing, and suggestPct only suggests. */
+/* 11 Nov 2026 (the price band's version 2): his re-anchored Median points over a rule's own, [[size, multiple]], a point at a size he
+   anchored replaced and one between two inserted; the one merge the snapshot (ruleFor) and the drafter's reading of a new point both read */
+function withPoints(R,list){
+  const A=(list||[]).map(x=>[+x[0],+x[1]]).filter(x=>x[0]>0&&x[1]>0&&isFinite(x[1]));
+  if(!R||!A.length)return R;
+  const by={};(R.points||[]).forEach(x=>{by[(+x[0]).toFixed(4)]=[+x[0],+x[1]];});
+  A.forEach(x=>{by[x[0].toFixed(4)]=x;});
+  return Object.assign({},R,{points:Object.keys(by).map(k=>by[k]).sort((a,b)=>a[0]-b[0])});
+}
 function setMultiple(q,R){
   const pts=(R.points||[]).map(x=>[+x[0],+x[1]]).filter(x=>x[0]>0&&isFinite(x[1])).sort((a,b)=>a[0]-b[0]);
   if(!pts.length)return 1;
@@ -585,7 +594,12 @@ function driftWalk(sizes,C,P,pct){
   const R=P.tierRule||{}, to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to, down=v=>Math.floor(v/to+1e-9)*to;
   const cx=+R.ceilingX>0?+R.ceilingX:3, band=!!R.band;
   const k=pctPos(pct,R).k;
-  let rS=Infinity, rP=Infinity, mS=-Infinity, mP=-Infinity;
+  /* 11 NOV 2026, THE PRICE BAND'S VERSION 2, THE MARKET MOVE (his answers B and of 11 Nov 2026): P.market is the day's move in points of the scale
+     (the snapshot's marketOf, -0.15 to +0.2), read on a band alone. The Median moves to that place between the Floor and the Ceiling, walked by the
+     same laws on a path of its own; a customer's % is then a place between the Floor, the MOVED Median and the Ceiling (his answer: their % rides
+     on it), so -100% stays the Floor and +100% the Ceiling, and a partner, quoted the Floor apart from this walk, never moves. */
+  const mk=band&&typeof P.market==='number'&&isFinite(P.market)?Math.max(BAND_MIN,Math.min(BAND_MAX,P.market)):0;
+  let rS=Infinity, rP=Infinity, mS=-Infinity, mP=-Infinity, rM=Infinity, mM=-Infinity;
   return sizes.map(q=>{
     /* fb is the COGS Floor the multiples, the margin lift and the Ceiling are struck on; fl is the Floor the price is held over (10 Nov 2026) */
     /* 10 Nov 2026: on a band the Ceiling is the curve on the supplier's price (bandCeiling), else ceilingX times the COGS Floor; either way down to the grid, never under the Floor */
@@ -601,7 +615,10 @@ function driftWalk(sizes,C,P,pct){
          Ceiling's rate rises with the Floor's round-up (3 times a step), and without this a high % could be quoted more a unit on more units */
       return {rate:capped?Math.min(rate,hi/q):rate,p:p,mg:Math.max(mg,p-fb)};
     };
-    const s=step(rS,mS,fb*m*1);rS=s.rate;mS=s.mg;
+    const s0=step(rS,mS,fb*m*1);rS=s0.rate;mS=s0.mg;
+    /* the moved Median: a place mk on the band over the plain one, held on its own side of it (a rise never under it, a fall never over it) */
+    let s=s0;
+    if(Math.abs(mk)>1e-9){const z=step(rM,mM,bandTop(s0.p,lo,hi,mk));rM=z.rate;mM=z.mg;s={rate:z.rate,mg:z.mg,p:mk>0?Math.max(z.p,s0.p):Math.min(z.p,s0.p)};}
     let p=s.p;
     /* on a band their % is a place between the three posts as quoted at this size (bandTop over the walked Median, the Floor and the Ceiling) */
     if(Math.abs(k)>1e-9){const x=step(rP,mP,band?bandTop(s.p,lo,hi,k):R.ends?fb*driftMultiple(q,R,k):fb*m*(1+k));rP=x.rate;mP=x.mg;p=x.p;
@@ -610,7 +627,7 @@ function driftWalk(sizes,C,P,pct){
          it, size by size (a discount cannot pass it: its target, its rate and its margin are each the Median's or less). And the margin lift is not the Floor's business: at -100% the price is the Floor, what a
          partner pays, on any cost. */
       if(band)p=k<=BAND_MIN+1e-9?lo:k>0?Math.max(p,s.p):p;}
-    return {q:q,floor:+fl.toFixed(2),ceiling:+(band?hi:ceil).toFixed(2),set:s.p,p:p,d:k};
+    return Object.assign({q:q,floor:+fl.toFixed(2),ceiling:+(band?hi:ceil).toFixed(2),set:s.p,p:p,d:k},Math.abs(mk)>1e-9?{plain:s0.p,market:mk}:{});
   });
 }
 /* ============ 05 OCT 2026, HIS DECISION: ANY QUANTITY AT AN AUTOMATIC PRICE ============
@@ -856,7 +873,7 @@ function quoteOff(snap,code,qty){
 return {cardAt:cardAt,costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         floorTotal:floorTotal,floorBase:floorBase,costTotal:costTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,
-        setMultiple:setMultiple,driftOk:driftOk,pctBook:pctBook,driftMultiple:driftMultiple,shareAt:shareAt,LIFT_MIN:LIFT_MIN,LIFT_MAX:LIFT_MAX,
+        setMultiple:setMultiple,withPoints:withPoints,driftOk:driftOk,pctBook:pctBook,driftMultiple:driftMultiple,shareAt:shareAt,LIFT_MIN:LIFT_MIN,LIFT_MAX:LIFT_MAX,
         liftRange:liftRange,rangeSay:rangeSay,unitOf:unitOf,unitOk:unitOk,bandCeiling:bandCeiling,bandTop:bandTop,bandPct:bandPct,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,suggestWhy:suggestWhy,
         gridOf:gridOf,gridSizes:gridSizes,onGrid:onGrid,walkSizes:walkSizes,fixedWalk:fixedWalk,quoteAt:quoteAt,quoteGrid:quoteGrid};
 })();

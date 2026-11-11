@@ -48696,6 +48696,11 @@ await (async () => {
   await (await import("./price-band-oneoff.mjs")).run({ ok, skip: skipOff });
 })();
 
+section("11 Nov 2026: the price band's market move: bounded, said, switched by him, re-anchored on his tap, and read on the past");
+await (async () => {
+  await (await import("./price-band-market.mjs")).run({ ok });
+})();
+
 section("18 Oct 2026: the five price levels are gone from the engine, the Desk, the drafter and the fold");
 await (async () => {
   /* HIS DECISION OF 18 OCT 2026: salt is a Set Price and a per-customer %, and no book is priced by a named level. What remains is the Set Price
