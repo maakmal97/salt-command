@@ -1220,6 +1220,7 @@ export const OWNER_JS = `
     'The link did not lead to a point.':'That link did not lead to a map point. Paste the full link, or tap Use my location.',
     'The link did not answer.':'The map link did not answer. Try again, or paste the full link.',
     'Only a Google Maps or Apple Maps link is opened here.':'Only a Google Maps or Apple Maps link is opened here.',
+    'A public locality must be on the official place list or gazetteer; exact addresses stay encrypted.':'That place cannot be filed beside a point. Choose another from the list.',
     'Say which figure changes.':'Change at least one of the units, the price or the delivery.',
     'A size and a price are above nothing.':'Units and price must each be above zero.',
     'A reply is 1 to 200 characters.':'A reply is 1 to 200 characters.',

@@ -15,6 +15,7 @@
  *   U4  Add point with an Apple short link opens it on the Worker and adds its point
  *   W6  a short link whose answer runs past 400 characters opens to its point (12 Nov 2026); one past 2,000 is still refused
  *   U8  a link that leads to no point says so in plain words on Place on the map, never the general sentence
+ *   U9  the Desk's refusal of a locality not on its lists says so in plain words too
  * Drawn by the maker harness (test/maker-act.mjs). */
 import fs from "fs";
 import { richOwnerPage, byAct } from "./maker-act.mjs";
@@ -194,7 +195,9 @@ export async function run({ ok, pageWork }) {
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* U8 (12 Nov 2026): a link the opener cannot follow says why on Place on the map, never the general sentence */
-  const q = await richOwnerPage({ pageWork, slip: true, extra: (route) => route === "/all/maker/geo/expand" ? { ok: false, error: "The link did not lead to a point." } : undefined });
+  let opens = false;
+  const q = await richOwnerPage({ pageWork, slip: true, extra: (route) => route === "/all/maker/geo/expand" ? (opens ? { ok: true, location: LONG } : { ok: false, error: "The link did not lead to a point." })
+    : route === "/all/maker/inputs/place" ? { ok: false, error: "A public locality must be on the official place list or gazetteer; exact addresses stay encrypted." } : undefined });
   try {
     await q.work.quiet();
     const click = async (e) => { if (e) e.click(); await q.work.quiet(); };
@@ -208,5 +211,14 @@ export async function run({ ok, pageWork }) {
     const said = pf ? [...pf.querySelectorAll('[role="status"]')].map(t).join(" / ") : "";
     ok(/That link did not lead to a map point[.] Paste the full link, or tap Use my location[.]/.test(said) && !/could not do that/.test(said),
       "U8 a short link that leads to no point says so on Place on the map: " + said);
+    /* U9 (12 Nov 2026): the Desk's locality refusal, which his tap met once the link opened, in plain words too */
+    opens = true;
+    const loc = pf && byAct(pf, "record.place.locality");
+    if (loc) loc.value = "Bandar Tun Razak, Kuala Lumpur";
+    if (link) link.value = "https://maps.app.goo.gl/Gone02";
+    await click(pf && byAct(pf, "record.place.send"));
+    const said9 = pf ? [...pf.querySelectorAll('[role="status"]')].map(t).join(" / ") : "";
+    ok(/That place cannot be filed beside a point[.] Choose another from the list[.]/.test(said9) && !/could not do that/.test(said9),
+      "U9 the Desk's locality refusal says so on Place on the map: " + said9);
   } catch (e) { ok(false, "U8 stopped on an error: " + (e && e.message)); } finally { q.w.close(); }
 }

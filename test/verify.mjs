@@ -48899,6 +48899,11 @@ await (async () => {
   await (await import("./maker-blank-locality.mjs")).run({ ok, pageWork });
 })();
 
+section("12 Nov 2026: a locality already filed in PLACED is public, so Place on the map files it again");
+await (async () => {
+  await (await import("./vault-filed-locality.mjs")).run({ ok });
+})();
+
 section("S1: the fold replays 20 staged batches, fixed at the one of 24 Oct 2026, byte-equal to the fold before the booking law moved");
 await (async () => {
   await (await import("./fold-replay.mjs")).run({ ok });
