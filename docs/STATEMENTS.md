@@ -742,6 +742,17 @@ The suite section "Account leads with this device, and the door names the app" (
   back to the basket; Remove on the check takes a line out while nothing is placed. It is page memory: lost on a reload and at sign-out.
 - **Sent forgets what was placed** on every road (his answer 3, reversing V4b's keep): the next sheet does not offer a size just placed.
 
+### A spot made simple, Shop, and the way always asked (11 Nov 2026)
+
+- His word: "either enter their address (plain text or using links), or use exact location (GPS), and a label. That is it." Add a spot asks a
+  **Name** (plain words, grey suggestion Home, Shop or Work, 2 to 24) and an **Address** (typed, 5 to 200, or a map link pasted into the same field,
+  read by `pinRead`) **or Use my location**; a point taken stands in the address's place with Remove. No preset names, floor or unit, area, place
+  search or Save box: a spot is kept by itself (three at most), or for this order alone on Order as them or when the store cannot be read. The name
+  is the order's `place`, in the clear; the address is sealed (`salt-pin v1`, `{addr, src: 'addr', label}`) and read on the Desk and Salt Admin after
+  the one unlock (Name, Address, Maps searching the words), never filed or measured. A spot kept before this day is read back with its floor and
+  area as its address. Order is named **Shop** (`place.prices`); **every new order asks collect or deliver** (`formMiss`, `sh.whyWay`), Sent
+  forgets the way, and Home's tiles and Order again are the answer. Sections "Counter Batch C: spots on the phone" and "11 Nov 2026: Shop and Orders".
+
 ### Counter Batch C: saved spots, the sealed name and unit, the confirm time, Help, the sliders (his answers of 20 Oct 2026)
 
 - **Saved spots** (item 18; his answers 3, 4, 12 and 13). A delivery's Where to is the spots kept on this phone for this account, localStorage
