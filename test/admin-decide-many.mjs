@@ -48,7 +48,7 @@ export async function run({ ok, pageWork }) {
     const allA = [T(1), T(2), T(4)].every((id) => btn(id, "draft.approve").getAttribute("aria-pressed") === "true");
     await tap(btn(T(4), "draft.reject"));
     const line = t(bar.querySelector(".apbar__line"));
-    ok(allA && !bar.hidden && line === "2 approve · 1 reject", "Approve all chooses Approve on every card that can go; the bar counts both ways: " + J([allA, line]));
+    ok(allA && !bar.hidden && line === "2 to approve · 1 to reject", "Approve all chooses Approve on every card that can go; the bar counts both ways: " + J([allA, line]));
     await tap(byAct(p.d, "approve.clear"));
     ok(bar.hidden && [T(1), T(2), T(4)].every((id) => btn(id, "draft.approve").getAttribute("aria-pressed") === "false"), "Clear lets every choice go and hides the bar");
     /* 3 */

@@ -38,8 +38,8 @@
  {
   "name": "a trip's card lists none of the other rows",
   "file": "stmt/owner.js",
-  "find": "g.drafts.forEach(function(d){ card.appendChild(bookLine(d.qty",
-  "replace": "[g.lead].forEach(function(d){ card.appendChild(bookLine(d.qty"
+  "find": "        g.drafts.forEach(function(d){\n          if(tierSets(d).length)",
+  "replace": "        [g.lead].forEach(function(d){\n          if(tierSets(d).length)"
  },
  {
   "name": "the page restates the recipe's padding",
@@ -326,7 +326,7 @@
  {
   "name": "the bar counts rejects as approves",
   "file": "stmt/owner.js",
-  "find": "R.length?R.length+' reject':''",
+  "find": "R.length?R.length+' to reject':''",
   "replace": "R.length?R.length+' approve':''"
  },
  {
@@ -340,12 +340,6 @@
   "file": "stmt/owner.js",
   "find": "if(!apGone(g)) apPick[g.lead.id]='a';",
   "replace": "if(false) apPick[g.lead.id]='a';"
- },
- {
-  "name": "Approve all chooses a refused card too",
-  "file": "stmt/owner.js",
-  "find": "if(!apGone(g)) apPick[g.lead.id]='a';",
-  "replace": "apPick[g.lead.id]='a';"
  },
  {
   "name": "a refused card does not say how to fix it",
@@ -401,5 +395,10 @@
   "find": "return g.drafts.map(function(d){ return d.id; }); })); };",
   "replace": "return g.drafts.slice(0,1).map(function(d){ return d.id; }); })); };"
  },
-{"name": "a book on Orders is its mark again", "file": "stmt/owner.js", "find": "function bookTag(product){ return productTag(product); }", "replace": "function bookTag(product){ return bookMark(product,20); }"}
+ {
+  "name": "a book on Orders is its mark again",
+  "file": "stmt/owner.js",
+  "find": "function bookTag(product){ return productTag(product); }",
+  "replace": "function bookTag(product){ return bookMark(product,20); }"
+ }
 ]

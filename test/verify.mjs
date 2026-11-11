@@ -50849,6 +50849,11 @@ await (async () => {
   await (await import("./admin-approve-card.mjs")).run({ ok, pageWork });
 })();
 
+section("12 Nov 2026: Salt Admin's Approve, leaner: a card says what it sets, approvals go on Confirm, one count");
+await (async () => {
+  await (await import("./admin-approve-lean.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin: an order of several books is one card, handed over, paid and made one order as one (plan 3, 16 Oct 2026)");
 await (async () => {
   await (await import("./admin-trips.mjs")).run({ ok, pageWork });
