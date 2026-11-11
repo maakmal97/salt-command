@@ -1024,6 +1024,11 @@ repeats outright; build the Restock planner and Month ahead (Cash on hand not bu
   and monthly cost tables (five lines of six read "not measured"); Sourcing's three loss tiles are one, The gap; an associate's
   stream with nothing in it is not drawn. Kept, against draft 1: "Pays your time to" (`COST_BOOK.hourRM` is set) and the
   Associates fold "What counts, and why" (the one place the reward scheme is written).
+- **Round two (11 Nov 2026), his answers "off the Desk" and "one line".** Clients' Their % card (a row a customer a book, 260
+  rows, 80% of the page, 218 saying nothing) is gone with `driftSay`, `suggestSay`, `tierQueued`, `atSizes`, `partnerQueued` and
+  `partnerNote`; he sets a % on Salt Admin's account card. Clients keeps the heading and `pctLine()`, one line for the book in view
+  (who holds a % he set, read as the card read it, and who the engine suggests another) and the link `admin?to=customers/accounts`.
+  Associates says a departure and a vacancy in one line under the tree (`#nwStand`); the tree still marks the departed founder.
 - **Analysis** holds only the last correction of a field against its row and never a note's prose; its empty-inventory tile counts
   a level within 0.05 of nought, never one rebuilt under it. **The Ledger trail** draws one Correction line a day.
 - **The planners read and never write.** `planGet`/`planSet` keep `{dem, cost, run, lots}` in localStorage `salt-plan-v1`, clamped
