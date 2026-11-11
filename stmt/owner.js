@@ -6387,22 +6387,25 @@ export const OWNER_JS = `
     var gs=apGroups(), A=gs.filter(function(g){ return apPick[g.lead.id]==='a'; }), R=gs.filter(function(g){ return apPick[g.lead.id]==='r'; });
     bar.textContent=''; bar.hidden=!(A.length+R.length);
     if(bar.hidden) return;
-    bar.appendChild(el('span','apbar__line',[A.length?A.length+' approve':'',R.length?R.length+' reject':''].filter(Boolean).join(' · ')));
+    bar.appendChild(el('span','apbar__line',[A.length?A.length+' to approve':'',R.length?R.length+' to reject':''].filter(Boolean).join(' · ')));
     var clear=actOn(el('button','salt-ghost','Clear'),'approve.clear'); clear.type='button';
     clear.addEventListener('click',function(){ apPick={}; drawMaker(); });
     var go=actOn(el('button','salt-pill salt-pill--sm','Confirm'),'approve.confirm'); go.type='button'; ynTag(go,'approve:confirm');
     go.addEventListener('click',function(){ apConfirm(go,A,R); });
     bar.appendChild(clear); bar.appendChild(go);
   }
+  /* 12 Nov 2026 (his Approve review): ticking a card and tapping Confirm is already the second look, so a batch of approvals goes on Confirm. The Sheet asks
+     only when a Reject is among them: a rejected row a site order made is written onto that order, and that is asked first. */
   function apConfirm(go,A,R){
     var n=A.length+R.length, extra=[];
     if(A.length){ extra.push(el('p','salt-eyebrow apsheet apsheet--a',A.length+' to approve')); A.forEach(function(g){ g.drafts.forEach(function(d){ extra.push(deskAskRow(d)); }); }); }
     if(R.length){ extra.push(el('p','salt-eyebrow apsheet apsheet--r',R.length+' to reject')); R.forEach(function(g){ g.drafts.forEach(function(d){ extra.push(deskAskRow(d)); }); }); }
-    return ownerAsk(go,'approve:confirm',{title:'Decide '+n+(n===1?' card?':' cards?'), extra:extra, plain:true,
+    var asked=R.length?ownerAsk(go,'approve:confirm',{title:'Decide '+n+(n===1?' card?':' cards?'), extra:extra, plain:true,
       say:['Each is decided as drafted. One that cannot go stays here with why and how to fix it; the rest go.'],
-      go:'Confirm '+n, keep:'Not yet'}).then(function(yes){
+      go:'Confirm '+n, keep:'Not yet'}):Promise.resolve(true);
+    return asked.then(function(yes){
       if(!yes||makerBusy) return;
-      makerBusy=true;
+      makerBusy=true; go.disabled=true;
       var ids=function(gs){ return [].concat.apply([],gs.map(function(g){ return g.drafts.map(function(d){ return d.id; }); })); };
       var lead={}, grp={}; A.concat(R).forEach(function(g){ g.drafts.forEach(function(d){ lead[d.id]=g.lead.id; grp[d.id]=g; }); });
       return refs('/all/maker/drafts/decide-many',{approve:ids(A), reject:ids(R)}).then(function(j){
