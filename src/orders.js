@@ -125,6 +125,16 @@ export async function bulletinRelay(env, method, body) {
   return b;
 }
 
+/** Band version 2: the quotes customers were shown, shown and placed by book and size over `days` Kuala Lumpur days, read off the site
+ *  through the binding. Nothing is priced from it. */
+export async function quotesRelay(env, days) {
+  const r = await site(env, "/desk/quotes?days=" + encodeURIComponent(days == null ? "" : days));
+  if (!r) return { ok: false, status: 503, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
+  const b = await r.json().catch(() => ({}));
+  if (!r.ok || !b.ok) return { ok: false, status: r.status, error: b.error || ("the statements site answered http " + r.status) };
+  return b;
+}
+
 /** F4: the restock date of each book, relayed to the site's own store (KV `expected`); the site checks the day. A product is
  *  named by its shape alone here, the book being the desk's to validate. */
 export async function expectedRelay(env, method, body) {

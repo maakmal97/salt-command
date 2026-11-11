@@ -28,7 +28,7 @@ import { boundOf, unfolded } from "./way.js";
 import { runBackup, backupAlarm, runBookExport, bookExportAlarm, BACKUP_CRON } from "./backup.js";
 import { approveFigures } from "./approve-figures.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, TIEOUT_KEY, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades, wakeAdmin, ADMIN_ON } from "./orders.js";
+import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, TIEOUT_KEY, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, quotesRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades, wakeAdmin, ADMIN_ON } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault, fixtureCheck } from "./maker.js";
 import { makerCustomerReading, makerRewardReadingOf, makerCustomerReadingOf } from "./maker-inputs.js";
 import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerEdit, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerLedgerMini, makerStock, makerUndo, makerRows, openRefunds, makerRewardReading, makerDriftPreview } from "./maker-inputs.js";
@@ -2967,7 +2967,7 @@ export default {
     if ((p === "/queue" || /^\/queue\/[^/]+\/withdraw$/.test(p) || p === "/ledger" || p.startsWith("/ledger/")
       || p === "/drafts" || p.startsWith("/drafts/")
       || p === "/book/page"   /* S5d: the Book's view is the whole ledger, cost and margin included */
-      || p === "/orders" || p.startsWith("/orders/") || p === "/stmt-users" || p === "/bulletin" || p === "/expected" || p === "/hush"
+      || p === "/orders" || p.startsWith("/orders/") || p === "/stmt-users" || p === "/bulletin" || p === "/expected" || p === "/quotes" || p === "/hush"
       || p.startsWith("/claims/")   /* S6: a claim against an account, read and answered like an order */
       || p === "/threads" || p.startsWith("/threads/")   /* Step 7: an account's thread, read and answered like an order's */
       || p === "/vault/addr" || p === "/vault/pair" || p === "/geo/expand"   /* F14: an exact point is more than a name, and a short link opened is his */
@@ -3116,6 +3116,12 @@ export default {
       const r = await expectedRelay(env, "POST", b);
       /* the date is sealed into every price list at publish, and it lives outside git: ask for one (10 Oct 2026) */
       if (r.ok) await wantPublish(env, "restock date");
+      return json(r, r.ok ? 200 : (r.status || 502));
+    }
+    /* band version 2: what customers were shown and what they placed, by book and size (read only, keyed) */
+    if (p === "/quotes") {
+      if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+      const r = await quotesRelay(env, url.searchParams.get("days"));
       return json(r, r.ok ? 200 : (r.status || 502));
     }
     /* A5: the hushed Whiteboard tips, one store for the desk and Counter Maker */

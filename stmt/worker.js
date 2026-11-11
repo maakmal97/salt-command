@@ -60,6 +60,7 @@ import { payCodes, shapeAccounts } from "./paycodes.js";
 import { payDownKept, liveAccounts, railDownKey } from "./paystate.js";
 import { PAY_ACCOUNTS } from "./pay.js";
 import { takePin, keepPin, readPin } from "./pin.js";
+import { fileQuote, markPlaced, daysOf, quoteSummary, checkQuote } from "./quotes.js";   /* band version 2: every quote shown is recorded */
 import { handleMaker, publicHours, customerAmend, takeNudge, fileConfirm } from "./maker.js";
 import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord, withExamples, examplesRefs, exampleBulletin, examplePay, isExample,
   exampleMove, exampleReplace, exampleClaim, exampleMint, exampleRevoke, exampleThread, exampleSay, exampleDeskSay, examplePools, exampleJoin, examplePlace, exampleReset } from "./testfix.js";
@@ -446,6 +447,13 @@ async function handleCustomer(request, env, p, m, ctx) {
   }
   /* A GROUP ORDER (the pool): the open ones and any they joined lately, read on the page's poll; and their join, through the
      order's own road (one collected order at their own list price, its digest checked as at Place). A test account's are its fixture's. */
+  /* BAND VERSION 2: the quote the check shows, recorded by username and day; a practice account is answered and filed nowhere */
+  if (p === "/quote") {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const b = await readJson(request);
+    const r = isTest(u) ? (() => { const c = checkQuote(b); return c.error ? { error: c.error, status: 400 } : { ok: true }; })() : await fileQuote(env, u, b);
+    return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true });
+  }
   if (p === "/pools") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     return json({ ok: true, pools: (isTest(u) ? await examplePools(env, u) : await poolsOf(env, u)).map(poolView) });
@@ -539,6 +547,8 @@ async function handleCustomer(request, env, p, m, ctx) {
     /* filed only once the order is recorded and names it: a refused Place, or a retry answered with an order naming another,
        files nothing */
     if (tp.pin && !isTest(u)) await keepPin(env, u, tp.pin, r.order && r.order.pin);
+    /* band version 2: the quote this order came from is marked placed (a practice account filed none) */
+    if (!isTest(u) && !(pb && pb.ask === true)) await markPlaced(env, u, { product: r.order && r.order.product, qty: r.order && r.order.qty, sheet: pb && pb.sheet });
     return json({ ok: true, order: customerView(r.order) });
   }
   if (p === "/push/subscribe") {
@@ -1116,6 +1126,13 @@ async function handleDesk(request, env, p, m) {
     if (r.error) return json({ ok: false, error: r.error }, 400);
     await env.STMT.put("expected", JSON.stringify(r.expected));
     return json({ ok: true, expected: r.expected });
+  }
+  /* band version 2: shown and placed by book and size, summed over the KV lists in the window */
+  if (p === "/desk/quotes") {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    const days = daysOf(new URL(request.url).searchParams.get("days"));
+    if (days == null) return json({ ok: false, error: "days is a whole number from 1 to 120" }, 400);
+    return json(await quoteSummary(env, days));
   }
   if (p === "/desk/orders") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
@@ -2182,11 +2199,11 @@ const worker = {
     if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout" || p === "/account" || p === "/account/stamp"
       || p === "/account/claim" || p === "/claims" || p === "/slip/key" || p === "/pay/accounts" || p === "/devices" || p === "/devices/signout" || p === "/push/unsubscribe"
       || p === "/passkey/new" || p === "/passkey/save" || p === "/passkey/link" || p === "/passkey/wrap" || p === "/passkey/remove"
-      || p === "/thread" || p === "/pools" || p.startsWith("/pools/") || p === "/place/search") return handleCustomer(request, env, p, m, ctx);
+      || p === "/thread" || p === "/pools" || p.startsWith("/pools/") || p === "/place/search" || p === "/quote") return handleCustomer(request, env, p, m, ctx);
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
     if (p === "/my/joins") return handleMyJoins(request, env, m, url.origin);
-    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/owner-wake" || p === "/desk/expected" || p === "/desk/waiting" || p === "/desk/claims" || p.startsWith("/desk/claims/") || p.startsWith("/desk/slips/") || p.startsWith("/desk/pins/")
+    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/owner-wake" || p === "/desk/expected" || p === "/desk/quotes" || p === "/desk/waiting" || p === "/desk/claims" || p.startsWith("/desk/claims/") || p.startsWith("/desk/slips/") || p.startsWith("/desk/pins/")
       || p === "/desk/threads" || p.startsWith("/desk/threads/")) return handleDesk(request, env, p, m);
     /* the notice, in the clear, for the page's poll; anything past it is still the site's 404 */
     if (p === "/bulletin") {
