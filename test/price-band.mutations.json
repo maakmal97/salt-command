@@ -108,34 +108,10 @@
   "replace": "band?bandTop(fb*m,lo,hi,k):R.ends?"
  },
  {
-  "name": "a held figure is not carried",
-  "file": "engine/pricing.mjs",
-  "find": "&&Math.abs(v-c.from)<1e-9?c.to:v;",
-  "replace": "&&Math.abs(v-c.from)<1e-9?v:v;"
- },
- {
-  "name": "every figure of a carried customer is carried",
-  "file": "engine/pricing.mjs",
-  "find": "&&Math.abs(v-c.from)<1e-9?c.to:v;",
-  "replace": "?c.to:v;"
- },
- {
-  "name": "the snapshot reads the held figure raw",
-  "file": "engine/snapshot.mjs",
-  "find": "h=PRICING_ENGINE.heldPct(R,who,(C.B.tierOf[who]||{})[p])",
-  "replace": "h=(C.B.tierOf[who]||{})[p]"
- },
- {
   "name": "the snapshot judges a held figure on the old range",
   "file": "engine/snapshot.mjs",
   "find": "hand=PRICING_ENGINE.driftOk(h,R)?+h:null",
   "replace": "hand=PRICING_ENGINE.driftOk(h,{})?+h:null"
- },
- {
-  "name": "carryClash never fires",
-  "file": "engine/pricing.mjs",
-  "find": "return !!(c&&typeof v==='number'&&Math.abs(v-c.from)<1e-9&&Math.abs(c.to-c.from)>1e-9);",
-  "replace": "return false;"
  },
  {
   "name": "a salt figure sent as pct is taken",
@@ -156,12 +132,6 @@
   "replace": "function unitOf(R){return 'pct';}"
  },
  {
-  "name": "the tier-set road does not ask for the carry-over",
-  "file": "src/maker-inputs.js",
-  "find": "if (body.tier !== null && PRICING_ENGINE.carryClash(rule, body.code, body.tier))",
-  "replace": "if (false)"
- },
- {
   "name": "the tier-set road does not read the unit",
   "file": "src/maker-inputs.js",
   "find": "if (body.tier !== null && !PRICING_ENGINE.unitOk(rule, body.unit)) return { error: OLD_UNIT };",
@@ -174,22 +144,10 @@
   "replace": "if (!PRICING_ENGINE.driftOk(pct, rule)) return { error: \"Choose a % from -30% to +30%.\" };"
  },
  {
-  "name": "a carried customer's card shows the old figure",
-  "file": "src/maker-inputs.js",
-  "find": "value: set ? PRICING_ENGINE.heldPct(rule, id, held[id][product]) : null",
-  "replace": "value: set ? held[id][product] : null"
- },
- {
   "name": "the catalog hands no range",
   "file": "src/maker-inputs.js",
   "find": "driftMin: Math.round(range.min * 100), driftMax: Math.round(range.max * 100), driftUnit: PRICING_ENGINE.unitOf(rule)",
   "replace": "driftUnit: PRICING_ENGINE.unitOf(rule)"
- },
- {
-  "name": "the drafter lets a carried customer's old figure through",
-  "file": "src/drafter.js",
-  "find": "if (t !== null && PRICING_ENGINE.carryClash(ruleB(p), c, t)) return",
-  "replace": "if (false) return"
  },
  {
   "name": "the drafter does not flag the old form on a tier-set",
@@ -258,27 +216,75 @@
   "replace": "return r.length?r[r.length-1]:null;};"
  },
  {
-  "name": "the fold does not ask for the carry-over",
-  "file": "engine/apply.mjs",
-  "find": "&& tierOk(x[1], x[2]) && PRICING_ENGINE.carryClash(ruleOf(x[1]), x[0], x[2]))",
-  "replace": "&& tierOk(x[1], x[2]) && false)"
- },
- {
-  "name": "a rename of a customer still read through the carry-over goes through",
-  "file": "engine/apply.mjs",
-  "find": "if (carried.length) { out.refused.push",
-  "replace": "if (false) { out.refused.push"
- },
- {
   "name": "the drop note says 0% of a customer already on the book",
   "file": "engine/apply.mjs",
   "find": "${fresh ? \"stays on the Median Price at 0%\" : \"keeps the figure it held\"}",
   "replace": "stays on the Median Price at 0%"
  },
  {
-  "name": "the Add ID road does not ask for the carry-over",
+  "name": "the carry-over table is back in the rule",
+  "file": "engine/rules.mjs",
+  "find": "rates:[[0.5,200],[12.5,100],[100,83.93]]}}",
+  "replace": "rates:[[0.5,200],[12.5,100],[100,83.93]]},carry:{\"CA4-SJ\":{from:0.3,to:0.49}}}"
+ },
+ {
+  "name": "the engine still exports a reader of the table",
+  "file": "engine/pricing.mjs",
+  "find": "bandPct:bandPct,driftWalk:driftWalk,",
+  "replace": "bandPct:bandPct,heldPct:function(R,c,v){return v;},driftWalk:driftWalk,"
+ },
+ {
+  "name": "the snapshot reads a held figure at another place",
+  "file": "engine/snapshot.mjs",
+  "find": "h=(C.B.tierOf[who]||{})[p],",
+  "replace": "h=((C.B.tierOf[who]||{})[p]>0.05?+((C.B.tierOf[who]||{})[p]+0.19).toFixed(2):(C.B.tierOf[who]||{})[p]<-0.01&&(C.B.tierOf[who]||{})[p]>-0.3?+((C.B.tierOf[who]||{})[p]+0.01).toFixed(2):(C.B.tierOf[who]||{})[p]),"
+ },
+ {
+  "name": "the tier-set road refuses the figure the customer holds",
+  "file": "src/maker-inputs.js",
+  "find": "  /* 19 Oct 2026: a figure travels with its unit.",
+  "replace": "  if (body.tier !== null && body.tier === ((book.state.TIER_OF || {})[body.code] || {})[body.product]) return { error: \"old\" };\n  /* 19 Oct 2026: a figure travels with its unit."
+ },
+ {
+  "name": "a card shows another figure than the book holds",
+  "file": "src/maker-inputs.js",
+  "find": "value: set ? held[id][product] : null",
+  "replace": "value: set ? +(held[id][product] + 0.19).toFixed(2) : null"
+ },
+ {
+  "name": "the drafter refuses the figure the customer holds",
+  "file": "src/drafter.js",
+  "find": "        row.tiers[c][p] = t;",
+  "replace": "        if (t !== null && t === was) return { skip: \"old\" };\n        row.tiers[c][p] = t;"
+ },
+ {
+  "name": "the drafter flags a change from another figure than the book holds",
+  "file": "src/drafter.js",
+  "find": "moves from ${say(was)} to",
+  "replace": "moves from ${say(+(was + 0.19).toFixed(2))} to"
+ },
+ {
+  "name": "the fold refuses the figure the customer holds",
   "file": "engine/apply.mjs",
-  "find": "if (rtClash.length) { out.refused.push",
-  "replace": "if (false) { out.refused.push"
+  "find": "      const oldTs = pairs.filter(",
+  "replace": "      if (pairs.some((x) => x[2] !== null && ((book.TIER_OF || {})[x[0]] || {})[x[1]] === x[2])) { out.refused.push({ id: it.id, why: \"old\" }); continue; }\n      const oldTs = pairs.filter("
+ },
+ {
+  "name": "a rename of a customer holding a figure is refused",
+  "file": "engine/apply.mjs",
+  "find": "      const pinned = pairs.map(",
+  "replace": "      if (((book.TIER_OF || {})[r.from] || {}).salt != null) { out.refused.push({ id: it.id, why: \"held\" }); continue; }\n      const pinned = pairs.map("
+ },
+ {
+  "name": "an Add ID at a positive figure is refused",
+  "file": "engine/apply.mjs",
+  "find": "      entry.roster = { code: r.code",
+  "replace": "      if (Object.values(rtKept).some((v) => v > 0.05)) { out.refused.push({ id: it.id, why: \"old\" }); continue; }\n      entry.roster = { code: r.code"
+ },
+ {
+  "name": "a rename leaves a keyed figure under the old code",
+  "file": "engine/position.mjs",
+  "find": "if(!Array.isArray(v)&&map.has(k)){v[map.get(k)]=v[k];delete v[k];n++;}",
+  "replace": "if(false){v[map.get(k)]=v[k];delete v[k];n++;}"
  }
 ]

@@ -86,12 +86,6 @@ export async function run({ ok }) {
   }
   const dir = mkdtempSync(join(tmpdir(), "foldreplay-"));
   const realNow = Date.now;
-  /* 10 Nov 2026 (Fable's review of the price band): THE SWITCH'S CARRY-OVER IS SET ASIDE FOR THE REPLAY. The working fold refuses a salt figure equal to
-     the one a carried customer held on the old scale (carryClash, the booking law's last check), and several of these batches are the very rows that set
-     those figures, which the fold before the move filed. That refusal is the switch's own law, with its own checks (test/price-band.mjs); the replay is of
-     everything else, so the table is taken off the rule while it runs and put back after, and it leaves with the table. */
-  const bandRule = ((await import("../engine/rules.mjs")).default.TIER_RULE.salt || {}).band || null, carryKept = bandRule && bandRule.carry;
-  if (bandRule && carryKept) delete bandRule.carry;
   try {
     Date.now = () => Date.UTC(2026, 9, 14, 3, 0, 0);   /* pinned: the LAST_UPDATED stamp and the default today */
     const oldFile = join(dir, "fold-old.mjs");
@@ -189,5 +183,5 @@ export async function run({ ok }) {
     ok(pc.items.length === 1 && pc.items[0].count && pc.items[0].count.date === "2031-02-03", "S1: planBatch dates an undated count by ctx.today");
     ok(law(outText || "") === law(JSON.parse(go(OLD, b0, true)).book), "S1: and returns the book the fold before the move wrote");
     ok(bs.length >= 1 && equal === bs.length && folded >= 1, `S1: ${equal} of ${bs.length} staged batches replay byte-equal, ${folded} of them folded rather than refused`);
-  } finally { Date.now = realNow; if (bandRule && carryKept) bandRule.carry = carryKept; rmSync(dir, { recursive: true, force: true }); }
+  } finally { Date.now = realNow; rmSync(dir, { recursive: true, force: true }); }
 }
