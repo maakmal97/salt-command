@@ -464,6 +464,9 @@
 - Cause: wrangler's esbuild keepNames writes `__name(f, "f")` inside the Worker functions the page carries as source (`slotSpan`, `slotNext`, `openParts`; `haversineKm` on Salt Admin), and the page had no `__name`, so every delivery sheet, customers' too, threw at its windows (since when unverified: the cloud clone is shallow). `CLIENT_JS` now defines it doing nothing. Section "11 Nov 2026: the page as wrangler bundles it" (`test/bundled-page.mjs`, 3 checks, 4 mutations red); trap in docs/WORKING.md section 3. The sheet's `sh.unitsOn` and `sh.wayOnly` say Shop.
 - Not versioned: the cloud session had no Cloudflare credentials for the queue reads a bump needs; no version number moved and `public/` is unchanged. Serial suite on the branch 12,172 passed, 3 failed: one fixed before the merge, two the container-only Desk live socket checks named above.
 
+## A short map link opens on Place on the map (v1505)
+- Live as v1505 (`62fae5bb`, 12 Nov 2026; Cloud commit `43081677916`: chain green with "The phone is serving it", the statements deployed and published, three suite parts green; CI `43081677471` green), his screenshot of Salt Admin's Place on the map refusing a `maps.app.goo.gl` link with the general sentence. Cause: `stmt/place.js` `clean()` held each hop's Location to the 400 a pasted link is held to; Google's answer for that link was 395 characters from the laptop (from a Worker, unverified, likely over). Fix `c2c4028d`: `HOP_MAX` 2,000 for a hop, `LINK_MAX` 400 for the link; the opener's three refusals in `REFUSALS`. admin-place W6 and U8 (28 mutations red). Full serial suite 12,223 passed, 0 failed. The Desk's `/geo/expand` and the Counter's `/all/maker/geo/open` share the opener, so both take the longer hop. Not yet retried by him.
+
 ## Disabled automation
 - `Salt fold (manual backup)` = `trig_01UrnjQMWA3f6GXN5R6Dzi4S`, disabled.
 
