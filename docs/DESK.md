@@ -1029,6 +1029,13 @@ repeats outright; build the Restock planner and Month ahead (Cash on hand not bu
   `partnerNote`; he sets a % on Salt Admin's account card. Clients keeps the heading and `pctLine()`, one line for the book in view
   (who holds a % he set, read as the card read it, and who the engine suggests another) and the link `admin?to=customers/accounts`.
   Associates says a departure and a vacancy in one line under the tree (`#nwStand`); the tree still marks the departed founder.
+- **Round three (11 Nov 2026), Today's Noticed, his three answers (one customer card a book; rhythm only where it changes buying;
+  repeat orders off Noticed).** Drawing only: `noticedDraw(live, hushed)` decides what Noticed draws from `observations()`, so every
+  observation keeps its id, its hush and its place in the snapshot's `obs`. A book's habit card (`cust:cadence:<book>`) carries its
+  message card (`promo:revive:<book>`) under the habit card's id, watch and figure, and a message card whose habit card is hushed goes
+  with it; the weekday card (`rhythm:dow`) carries the weekend; the pay window, a holiday and the fortnight draw only at watch; no
+  `dup:` pair and no `cust:oneanddone` is drawn. **At stake is what an Act or a Watch names, each once** (it added every figure,
+  RM 5,299 against RM 2,420 on 11 Nov 2026). The tag legend line went; the v1498 repeat-order grouping (`dupOf`, `dupCard`) with it.
 - **Analysis** holds only the last correction of a field against its row and never a note's prose; its empty-inventory tile counts
   a level within 0.05 of nought, never one rebuilt under it. **The Ledger trail** draws one Correction line a day.
 - **The planners read and never write.** `planGet`/`planSet` keep `{dem, cost, run, lots}` in localStorage `salt-plan-v1`, clamped
