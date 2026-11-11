@@ -232,14 +232,15 @@ function loyalWho(book,id){
   if(rewardIsAssociate(state,book.sales||[],id))return 'associate';
   return '';
 }
-/* THE DAY A ROW WAS WRITTEN OFF, lifted out of the loyalty walk on 11 Nov 2026 so the snapshot's nrsShare dates one the same way: the
-   fold's stamp, else the newest Correction on the row from its first handover, else the first handover plus the lock (`lock`,
-   TERMS.lockDays, 4 where none is passed), the order's own date only with none of those. */
-function writeOffDay(s,lock){
+/* THE DAY A ROW WAS WRITTEN OFF, lifted out of the loyalty walk on 11 Nov 2026 so the snapshot's nrsShare reads the same trail: the
+   fold's stamp, else the newest Correction on the row from its first handover (the OLDEST where `oldest` is passed, which is how
+   nrsShare dates one, so a later note on the row never moves its day), else the first handover plus the lock (`lock`, the caller's
+   lockDays: the walk's from TERMS, the share's from RULES; 4 where none is passed), the order's own date only with none of those. */
+function writeOffDay(s,lock,oldest){
   if(s.defaultedOn)return String(s.defaultedOn);
   const held=txHandSteps(s),first=held.length&&held[0].d?String(held[0].d):null;
   const steps=(s.amend||[]).filter(a=>a&&!a.undone&&a.kind==='Correction'&&a.date&&(!first||String(a.date)>=first)).map(a=>String(a.date)).sort();
-  if(steps.length)return steps[steps.length-1];
+  if(steps.length)return steps[oldest?0:steps.length-1];
   return first?dayIso(dayNo(first)+(lock!=null?+lock:4)):String(s.date||'');
 }
 function loyaltyWalk(book,id,today){

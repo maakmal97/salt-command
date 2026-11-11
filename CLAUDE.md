@@ -46,11 +46,12 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      engine's `latestCogs`, `COST_RULE` kind `latestCogs` on every book, his rule of 05 Oct 2026).
      **The Floor is COGS times the size, the ORDER TOTAL rounded up to the next RM 5** (the engine's
      `floorTotal`, his decision of 18 Oct 2026), one per size and nothing else: no leak, no delivery, no
-     time. **Salt's Floor also carries the non-revenue salt, measured live** (his decision of 10 Nov 2026, `RULES.nrsFloor`,
-     the snapshot engine's `nrsShare`): COGS times 1 plus the share, the count shortfall, gifts and rewards with reward cover, and
+     time. **Salt's Floor also carries the non-revenue salt, re-measured only at a count, a recorded loss or a landed lot** (his decision of
+     10 Nov 2026 and his answer H, built 11 Nov; `RULES.nrsFloor`, the snapshot engine's `nrsShare` over `nrsAnchor`: what was handed
+     over, given or written off on or after that day waits for the next, so trading moves no Floor): COGS times 1 plus the share, the count shortfall, gifts and rewards with reward cover, and
      written off, over the units paid for, a unit settled in kind being paid for. **The Median Price stays struck on
      the COGS Floor** (`floorBase`, his answer "Floor first, Set and Ceiling to be determined"), so the Floor and the partner's
-     price move with the share, and with them a salt discount, which is a place between the Median and that Floor. `costTotal` is the exact cost, for the readers that measure cost and not price (the price
+     price move with the share, and with them a salt discount, which is a place between the Median and that Floor; all three stand still between two measures. `costTotal` is the exact cost, for the readers that measure cost and not price (the price
      band's segment floor, the floor-per-unit chart); COGS of goods sold, stock value, `afterLeak` and
      `refundOnOverpay` do not read the Floor. The leak is measured and printed beside the Floor as
      information only (`afterLeak`, on a book losing `RULES.leakInfoFrom` or more). **The Ceiling is 3

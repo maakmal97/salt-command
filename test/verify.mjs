@@ -13698,6 +13698,10 @@ await (async () => {
   const CARDS = "(function(){return observations().all.filter(function(c){return c.id==='int:underfloor'||c.id==='int:nocost';}).map(function(c){return {id:c.id,title:c.title,why:c.why,ev:c.ev};});})()";
   const count = (cards, id) => { const c = cards.find((x) => x.id === id); return c ? parseInt(c.title, 10) : 0; };
   try {
+    /* 11 Nov 2026: the six rows below are pushed with no recompute, so the walk the Floor's unpaid share divides by is the one from before
+       them while the share reads the rows themselves (handed over after its last measure, they come off units the walk never counted);
+       this section is about the two cards, so the share is set aside in its window (test/floor-nrs.mjs and floor-nrs-anchor.mjs hold it) */
+    wW.eval("RULES.nrsFloor={};recompute();");
     const day = rdW("new Date(TODAY.getTime()+86400000).toISOString().slice(0,10)");
     const ft = rdW("floorTotal(12.5)");
     /* 27 Sep 2026: floorPct is retired from the master, so the retired band's 20% margin on price is stated here */

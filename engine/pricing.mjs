@@ -142,7 +142,7 @@ function costStack(I){
      and `afterLeak` below carries the stack's after-leak figure for a surface to print as information; nothing prices
      off it. */
   const CR=I.costRule||null;
-  /* 10 NOV 2026, HIS DECISION: SALT'S FLOOR CARRIES THE NON-REVENUE SALT. I.nrs is the snapshot's live reading for a book RULES.nrsFloor
+  /* 10 NOV 2026, HIS DECISION: SALT'S FLOOR CARRIES THE NON-REVENUE SALT. I.nrs is the snapshot's reading, as at its last measure (answer H), for a book RULES.nrsFloor
      names: the units that left and earned nothing (the count shortfall, gifts and rewards with reward cover, written off) over the
      units that left and were paid for (a unit settled in kind is paid for, his word). The paid-for units must return the cost of
      both, so the Floor's rate is the pricing basis times (1 + share): `floorEx`, read by floorTotal and by nothing that measures

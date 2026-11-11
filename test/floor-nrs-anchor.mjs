@@ -2,9 +2,11 @@
    SHELF OR THE COST: a count, a recorded loss or a landed lot. Trading between those days moves nothing, so the Floor, the partner's
    price and a salt discount (a place between the Median and that Floor) stand still.
    1. With nothing after the anchor the reading is the live one, and it says its day and what measured it.
-   2. A handover, a gift, a write-off and a later part of a handover dated on or after the anchor move nothing; nor a cancelled row's units.
-   3. A new count, a recorded loss and a landed lot each bring them in; another book's count and a lot not landed do not.
-   4. A write-off is dated by the engine's writeOffDay, the one the loyalty walk reads.
+   2. A handover, a gift, a write-off and a later part of a handover dated on or after the anchor move nothing; nor a cancelled row's units;
+      nor units taken back or a handover undone on or after it (Fable's review).
+   3. A new count, a recorded loss and a landed lot each bring them in; another book's count and a lot not landed do not; nor a day
+      ahead of today; a count still queued on the page is a count of today.
+   4. A write-off is dated by the engine's writeOffDay, the one the loyalty walk reads, by its OLDEST Correction where no stamp is.
    5. On the frozen book a sale handed over after the anchor moves no salt floor and no discounted price; a count after it does.
    6. The cost stack carries the day, and the Desk says it beside the share.
    Mutations: test/floor-nrs-anchor.mutations.json. */
@@ -19,8 +21,8 @@ export async function run({ ok }) {
   const RULE = { salt: { shortfall: true, gifts: true, writtenOff: true } };
   const lot = (on, more) => Object.assign({ rid: "p1", qty: 50, receivedQty: 50, total: 2500, date: on, receivedOn: on, status: "paid" }, more || {});
   const sold = (rows) => rows.filter((s) => (s.product || "salt") === "salt").reduce((t, s) => t + (+s.deliveredQty || 0), 0);
-  const ctx = (sales, B, lock) => ({ B: Object.assign({ sales, defaultProd: "salt" }, B || {}), W: { selfUse: 10, soldUnits: sold(sales) }, R: { RULES: { nrsFloor: RULE, lockDays: lock || 4 } } });
-  const read = (sales, B, lock) => S.nrsShare(ctx(sales, B, lock), "salt");
+  const ctx = (sales, B, lock, today) => Object.assign({ B: Object.assign({ sales, defaultProd: "salt" }, B || {}), W: { selfUse: 10, soldUnits: sold(sales) }, R: { RULES: { nrsFloor: RULE, lockDays: lock || 4 } } }, today ? { today: new Date(today + "T00:00:00Z") } : {});
+  const read = (sales, B, lock, today) => S.nrsShare(ctx(sales, B, lock, today), "salt");
   const bare = (r) => r && { share: r.share, shortfall: r.shortfall, gifts: r.gifts, writtenOff: r.writtenOff, paid: r.paid };
   const same = (a, b) => JSON.stringify(bare(a)) === JSON.stringify(bare(b));
 
@@ -64,6 +66,23 @@ export async function run({ ok }) {
   ok(same(wOnly, held) && same(wDay, held) && wEarly && wEarly.writtenOff === 4 && wEarly.paid === 86,
     "a row written off on 06 Nov, or on the count's own day, stays paid for until the next measure, and one written off on 04 Nov is counted: " + JSON.stringify([bare(wOnly), bare(wDay), bare(wEarly)]));
 
+  /* 2b. UNITS TAKEN BACK, AND A HANDOVER UNDONE, ON OR AFTER THE ANCHOR (Fable's review of H): the row is read as it stood when the day began */
+  const sRow = (over) => before.map((s) => s.rid === "s" ? Object.assign({}, s, over) : s), F = { kind: "Fulfilment", date: "2026-11-01", kg: 2, cash: 500 };
+  const back = read(sRow({ deliveredQty: 1, amend: [F, { kind: "Correction", date: "2026-11-06", kg: -1 }] }), AT);
+  const undo = read(sRow({ deliveredQty: 0, amend: [Object.assign({}, F, { undone: "2026-11-06" }), { kind: "Correction", date: "2026-11-06", kg: 0, undoes: 0 }] }), AT);
+  const redo = read(sRow({ deliveredQty: 2, amend: [Object.assign({}, F, { undone: "2026-11-06" }), { kind: "Correction", date: "2026-11-06", kg: 0, undoes: 0 }, { kind: "Fulfilment", date: "2026-11-06", kg: 2 }] }), AT);
+  ok(same(back, held) && same(undo, held) && same(redo, held),
+    "a unit taken back on 06 Nov, a handover undone on 06 Nov, and one undone and made again that day, each leave the reading as it stood at the count of 05 Nov: " + JSON.stringify([back, undo, redo].map((r) => r && r.paid)));
+  const early = read(sRow({ deliveredQty: 0, amend: [Object.assign({}, F, { undone: "2026-11-03" }), { kind: "Correction", date: "2026-11-03", kg: 0, undoes: 0 }] }), AT);
+  const flag = read(sRow({ deliveredQty: 0, amend: [Object.assign({}, F, { undone: true })] }), AT);
+  const both = read(sRow({ deliveredQty: 2, amend: [F, { kind: "Fulfilment", date: "2026-11-06", kg: 3, undone: "2026-11-07" }, { kind: "Correction", date: "2026-11-07", kg: 0, undoes: 1 }] }), AT);
+  const earlyBack = read(sRow({ deliveredQty: 1, amend: [F, { kind: "Correction", date: "2026-11-03", kg: -1 }] }), AT);
+  ok(early && early.paid === 86 && flag && flag.paid === 86 && same(both, held) && earlyBack && earlyBack.paid === 87,
+    "a handover undone on 03 Nov, before the count, is out (86 paid for), as is one flagged undone with no day; one made and undone after the count was never in; a unit taken back on 03 Nov is out (87): " + JSON.stringify([early, flag, both, earlyBack].map((r) => r && r.paid)));
+  const part = read(later, Object.assign({}, AT, { counts: AT.counts.concat([{ date: "2026-11-08", product: "salt", qty: 12 }]) }));
+  ok(part && part.at === "2026-11-08" && part.paid === 111 && part.gifts === 10,
+    "a count on 08 Nov leaves out the part of a handover made that same day (3 units), and takes the rest in: " + JSON.stringify(part));
+
   /* 3. A COUNT, A LOSS AND A LANDED LOT EACH RE-MEASURE; NOTHING ELSE DOES */
   const count = read(later, Object.assign({}, AT, { counts: AT.counts.concat([{ date: "2026-11-09", product: "salt", qty: 12 }]) }));
   const loss = read(later, Object.assign({}, AT, { selfUseLog: [{ date: "2026-11-09", kg: 1, why: "spillage", product: "salt" }] }));
@@ -78,6 +97,17 @@ export async function run({ ok }) {
   ok(mid && mid.at === "2026-11-07" && mid.paid === 100 && mid.gifts === 8 && mid.writtenOff === 4,
     "a count on 07 Nov takes in what left before that day (the handover of 05 Nov, the gift and the write-off of 06 Nov) and leaves that day's own: " + JSON.stringify(mid));
 
+  /* 3b. A DAY AHEAD OF TODAY IS NO MEASURE, AND A COUNT STILL QUEUED ON THE PAGE IS A COUNT OF TODAY (Fable's review of H) */
+  const ahead = read(later, Object.assign({}, AT, { counts: AT.counts.concat([{ date: "2026-12-10", product: "salt", qty: 12 }]), selfUseLog: [{ date: "2026-12-01", kg: 1, why: "spillage", product: "salt" }],
+    purchases: AT.purchases.concat([lot("2027-01-02", { rid: "p5" })]) }), 4, "2026-11-08");
+  ok(same(ahead, held) && ahead.at === "2026-11-05" && ahead.by === "count",
+    "read on 08 Nov, a count dated 10 Dec, a loss dated 01 Dec and a lot dated 02 Jan are not yet measures: the count of 05 Nov stands: " + JSON.stringify(ahead && [ahead.at, ahead.by, ahead.paid]));
+  const queued = read(later, Object.assign({}, AT, { statedStockBy: { salt: 30 } }), 4, "2026-11-08"), queuedOil = read(later, Object.assign({}, AT, { statedStockBy: { oil: 30 } }), 4, "2026-11-08");
+  ok(queued && queued.at === "2026-11-08" && queued.by === "count" && same(queued, part) && same(queuedOil, held) && queuedOil.at === "2026-11-05",
+    "a salt count still queued on the page reads as a count of today, 08 Nov, as the fold will make it, and another book's queued count does not: " + JSON.stringify([queued && [queued.at, queued.paid], queuedOil && queuedOil.at]));
+  const tie = read(before, Object.assign({}, AT, { purchases: [lot("2026-11-05")], selfUseLog: [{ date: "2026-11-05", kg: 1, why: "spillage", product: "salt" }] }));
+  ok(tie && tie.at === "2026-11-05" && tie.by === "count", "a count, a loss and a lot on one day: the count is named: " + JSON.stringify(tie && [tie.at, tie.by]));
+
   /* 4. THE DAY OF A WRITE-OFF */
   const off = { rid: "o", qty: 1, deliveredQty: 1, total: 100, defaulted: true, date: "2026-10-01", deliveredOn: "2026-10-02" };
   const corr = Object.assign({}, off, { amend: [{ kind: "Correction", date: "2026-10-20", kg: 0 }, { kind: "Correction", date: "2026-10-09", kg: 0 }, { kind: "Correction", date: "2026-10-25", kg: 0, undone: true }] });
@@ -85,6 +115,11 @@ export async function run({ ok }) {
     && PE.writeOffDay(off, 4) === "2026-10-06" && PE.writeOffDay(off, 7) === "2026-10-09" && PE.writeOffDay(off) === "2026-10-06",
     "a write-off's day is the fold's stamp, else the newest Correction standing on the row, else the first handover plus the lock (4 days where none is given): "
       + JSON.stringify([PE.writeOffDay(Object.assign({}, corr, { defaultedOn: "2026-11-02" }), 4), PE.writeOffDay(corr, 4), PE.writeOffDay(off, 4), PE.writeOffDay(off, 7), PE.writeOffDay(off)]));
+  ok(PE.writeOffDay(corr, 4, true) === "2026-10-09" && PE.writeOffDay(Object.assign({}, corr, { defaultedOn: "2026-11-02" }), 4, true) === "2026-11-02",
+    "asked for the oldest, it is the oldest Correction standing from the first handover, and the stamp still wins: " + JSON.stringify([PE.writeOffDay(corr, 4, true), PE.writeOffDay(Object.assign({}, corr, { defaultedOn: "2026-11-02" }), 4, true)]));
+  const noted = read(before.map((s) => s.rid === "w" ? Object.assign({}, s, { defaulted: true, amend: [{ kind: "Correction", date: "2026-11-02", kg: 0 }, { kind: "Correction", date: "2026-11-08", kg: 0, note: "a note" }] }) : s), AT);
+  ok(noted && noted.writtenOff === 4 && noted.paid === 86,
+    "a row written off on 02 Nov and noted again on 08 Nov is still written off at the count of 05 Nov: a later Correction never re-dates it: " + JSON.stringify(bare(noted)));
   const byCorr = (on) => read(before.map((s) => s.rid === "w" ? Object.assign({}, s, { defaulted: true, amend: [{ kind: "Correction", date: on, kg: 0 }] }) : s), AT);
   ok(same(byCorr("2026-11-06"), held) && byCorr("2026-11-02").writtenOff === 4,
     "with no stamp the Correction that wrote the row off dates it: 06 Nov waits, 02 Nov is counted: " + JSON.stringify([bare(byCorr("2026-11-06")), bare(byCorr("2026-11-02"))]));

@@ -5435,7 +5435,7 @@ const RULES={
   /* 05 Oct 2026: a book losing this share of what it buys or more prints the stack's after-leak figure beside its floor, as
      information only, the floor being COGS and nothing pricing off the leak */
   leakInfoFrom:0.25,
-  /* 10 Nov 2026, his decision: salt's Floor carries the non-revenue salt, measured live from the book (the snapshot engine's nrsShare):
+  /* 10 Nov 2026, his decision: salt's Floor carries the non-revenue salt, measured from the book at its last count, loss or landed lot (the snapshot engine's nrsShare, his answer H of 11 Nov 2026):
      the count shortfall, gifts and rewards with reward cover, and written off, over the units paid for, and a unit settled in kind is paid
      for. A book not named here keeps the COGS Floor. The Set Price and the Ceiling stay on COGS until he says. No semicolon here. */
   nrsFloor:{salt:{shortfall:true,gifts:true,writtenOff:true}},
@@ -6473,14 +6473,15 @@ function loyalWho(book,id){
   if(rewardIsAssociate(state,book.sales||[],id))return 'associate';
   return '';
 }
-/* THE DAY A ROW WAS WRITTEN OFF, lifted out of the loyalty walk on 11 Nov 2026 so the snapshot's nrsShare dates one the same way: the
-   fold's stamp, else the newest Correction on the row from its first handover, else the first handover plus the lock (`lock`,
-   TERMS.lockDays, 4 where none is passed), the order's own date only with none of those. */
-function writeOffDay(s,lock){
+/* THE DAY A ROW WAS WRITTEN OFF, lifted out of the loyalty walk on 11 Nov 2026 so the snapshot's nrsShare reads the same trail: the
+   fold's stamp, else the newest Correction on the row from its first handover (the OLDEST where `oldest` is passed, which is how
+   nrsShare dates one, so a later note on the row never moves its day), else the first handover plus the lock (`lock`, the caller's
+   lockDays: the walk's from TERMS, the share's from RULES; 4 where none is passed), the order's own date only with none of those. */
+function writeOffDay(s,lock,oldest){
   if(s.defaultedOn)return String(s.defaultedOn);
   const held=txHandSteps(s),first=held.length&&held[0].d?String(held[0].d):null;
   const steps=(s.amend||[]).filter(a=>a&&!a.undone&&a.kind==='Correction'&&a.date&&(!first||String(a.date)>=first)).map(a=>String(a.date)).sort();
-  if(steps.length)return steps[steps.length-1];
+  if(steps.length)return steps[oldest?0:steps.length-1];
   return first?dayIso(dayNo(first)+(lock!=null?+lock:4)):String(s.date||'');
 }
 function loyaltyWalk(book,id,today){
@@ -8272,7 +8273,7 @@ function costStack(I){
      and `afterLeak` below carries the stack's after-leak figure for a surface to print as information; nothing prices
      off it. */
   const CR=I.costRule||null;
-  /* 10 NOV 2026, HIS DECISION: SALT'S FLOOR CARRIES THE NON-REVENUE SALT. I.nrs is the snapshot's live reading for a book RULES.nrsFloor
+  /* 10 NOV 2026, HIS DECISION: SALT'S FLOOR CARRIES THE NON-REVENUE SALT. I.nrs is the snapshot's reading, as at its last measure (answer H), for a book RULES.nrsFloor
      names: the units that left and earned nothing (the count shortfall, gifts and rewards with reward cover, written off) over the
      units that left and were paid for (a unit settled in kind is paid for, his word). The paid-for units must return the cost of
      both, so the Floor's rate is the pricing basis times (1 + share): `floorEx`, read by floorTotal and by nothing that measures
@@ -9166,29 +9167,47 @@ function shrinkRate(C,p){const h=C.W.buyUnits+openingFor(C.B,p).qty;
    (his word). Null where nothing reads: no rule, nothing lost, or nothing paid for.
    11 NOV 2026, HIS ANSWER H: IT IS RE-MEASURED ONLY WHEN HE STATES THE SHELF OR THE COST, never by trading, so the Floor and a salt
    discount, which is a place between the Median and that Floor, stand still between those days. The anchor (`nrsAnchor`) is the
-   latest day of a count, a recorded loss or a landed lot, read off the book; what was handed over, given or written off ON OR AFTER
-   that day waits for the next one (a row's own steps, the engine's txHandSteps; a write-off by its day, writeOffDay). The shortfall
-   is the walk's as it stands: the roll holds it still between counts, and a recorded loss, which moves it, is an anchor itself.
-   Still live, said: a loan in kind (the walk's soldUnits carries it undated), reward cover put on an older row, and a row dated
-   before the anchor that is entered or corrected after it. A book with no count, loss or lot reads live, as it did. */
+   latest day, today at the latest, of a count, a recorded loss or a landed lot, read off the book; a count still queued on the
+   page (the overlay's statedStockBy, which moves the page's shortfall) is a count of today, so the page previews what the fold
+   will make. Each row is read as it stood when that day began (`heldBefore`): what it handed over on or after the day is left
+   out, what it took back or had undone on or after it is still in, and a write-off dated on or after it (writeOffDay) is still a
+   sale. The shortfall is the walk's as it stands: the roll holds it still between counts, and a recorded loss, which moves it, is
+   an anchor itself. Still live, said: a loan in kind (the walk's soldUnits carries it undated), reward cover put on an older
+   row, a row, a count or a loss dated before the anchor and entered or corrected after it, a lot's units restated under what
+   landed, and a loan settled with units left. A book with no count, loss or lot reads live, as it did.
+   A WRITE-OFF WITH NO STAMP is dated here by the OLDEST Correction from its first handover, not the newest the loyalty walk reads
+   (Fable's review of H): no road stamps a sale's defaultedOn, and by the newest a later note on a written-off row would take the
+   write-off out of the share until the next measure and bring it back, a Floor that bounces. The oldest can only be early. */
 function nrsAnchor(C,p){
-  const dp=C.B.defaultProd||'salt', mine=r=>r&&(r.product||dp)===p&&r.date;
+  const dp=C.B.defaultProd||'salt', now=C.today?todayISO(C):null;
+  const mine=r=>r&&(r.product||dp)===p&&r.date&&(!now||String(r.date)<=now);
   const last=rows=>(rows||[]).filter(mine).map(r=>String(r.date)).sort().pop()||null;
-  const lc=C.B.purchases?POSITION_ENGINE.latestCogs(pPurch(C.B,p)):null;
-  return [['count',last(C.B.counts)],['loss',last(C.B.selfUseLog)],['lot',lc&&lc.date?String(lc.date):null]]
+  const lc=C.B.purchases?POSITION_ENGINE.latestCogs(pPurch(C.B,p),now):null;
+  const queued=now&&C.B.statedStockBy&&C.B.statedStockBy[p]!=null?now:null;
+  return [['count',queued||last(C.B.counts)],['loss',last(C.B.selfUseLog)],['lot',lc&&lc.date?String(lc.date):null]]
     .reduce((a,x)=>x[1]&&(!a||x[1]>a.at)?{at:x[1],by:x[0]}:a,null);
+}
+/* the units a row had handed over when day `at` began: what it holds now, less every standing move dated on or after that day (a
+   Correction that took units back among them, which adds them again), plus a move made before it and undone on or after it. With
+   nothing on or after the day it is txPhys to the unit, whatever the trail says. */
+function heldBefore(s,at){
+  const phys=POSITION_ENGINE.txPhys(s);if(!at)return phys;
+  const moves=(s.amend||[]).filter(a=>a&&a.date&&((a.kind==='Fulfilment'&&+a.kg>0.0001)||(a.kind==='Correction'&&Math.abs(+a.kg||0)>0.0001)));
+  const stand=moves.filter(a=>!a.undone), rest=phys-stand.reduce((t,a)=>t+ +a.kg,0);
+  const since=stand.reduce((t,a)=>t+(String(a.date)>=at?+a.kg:0),0)+(rest>0.0001&&String(s.deliveredOn||s.date||'')>=at?rest:0);
+  const undone=moves.reduce((t,a)=>t+(typeof a.undone==='string'&&a.undone>=at&&String(a.date)<at?+a.kg:0),0);
+  return Math.max(0,phys-since+undone);
 }
 function nrsShare(C,p){
   const K=((C.R.RULES||{}).nrsFloor||{})[p];if(!K)return null;
   const A=nrsAnchor(C,p), at=A?A.at:null, lock=(C.R.RULES||{}).lockDays;
   let gifts=0,off=0,later=0;
   pSales(C.B,p).forEach(s=>{
-    const aft=at?POSITION_ENGINE.txHandSteps(s).reduce((t,x)=>t+(x.d>=at?x.u:0),0):0;   /* a step with no day reads as before it */
-    later+=aft;                                   /* off the walk's soldUnits, which counts a cancelled row's units too */
+    const q=heldBefore(s,at);
+    later+=POSITION_ENGINE.txPhys(s)-q;           /* off the walk's soldUnits, which counts a cancelled row's units too */
     if(s.cancelled)return;
-    const q=Math.max(0,POSITION_ENGINE.txPhys(s)-aft);
     if(s.goodwill){gifts+=q;return;}
-    if(s.defaulted&&!(at&&POSITION_ENGINE.writeOffDay(s,lock)>=at)){off+=q;return;}
+    if(s.defaulted&&!(at&&POSITION_ENGINE.writeOffDay(s,lock,true)>=at)){off+=q;return;}
     gifts+=Math.min(q,Math.max(0,+s.coverUnits||0));
   });
   const short=Math.max(0,+C.W.selfUse||0), paid=(+C.W.soldUnits||0)-later-gifts-off;

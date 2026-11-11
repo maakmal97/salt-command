@@ -2,8 +2,14 @@
  {
   "name": "a handover on the measure's own day is counted",
   "file": "engine/snapshot.mjs",
-  "find": "t+(x.d>=at?x.u:0)",
-  "replace": "t+(x.d>at?x.u:0)"
+  "find": "String(s.deliveredOn||s.date||'')>=at?rest:0",
+  "replace": "String(s.deliveredOn||s.date||'')>at?rest:0"
+ },
+ {
+  "name": "a later part of a handover made on the measure's own day is counted",
+  "file": "engine/snapshot.mjs",
+  "find": "t+(String(a.date)>=at?+a.kg:0)",
+  "replace": "t+(String(a.date)>at?+a.kg:0)"
  },
  {
   "name": "units handed over after the measure stay in the units paid for",
@@ -12,28 +18,70 @@
   "replace": "paid=(+C.W.soldUnits||0)-gifts-off"
  },
  {
-  "name": "a gift after the measure is counted",
+  "name": "a row is read as it stands now, not as at the measure",
   "file": "engine/snapshot.mjs",
-  "find": "const q=Math.max(0,POSITION_ENGINE.txPhys(s)-aft);",
-  "replace": "const q=POSITION_ENGINE.txPhys(s);"
+  "find": "    const q=heldBefore(s,at);",
+  "replace": "    const q=POSITION_ENGINE.txPhys(s);"
+ },
+ {
+  "name": "a row booked whole after the measure is counted",
+  "file": "engine/snapshot.mjs",
+  "find": "+(rest>0.0001&&String(s.deliveredOn||s.date||'')>=at?rest:0);",
+  "replace": ";"
+ },
+ {
+  "name": "units taken back after the measure leave at once",
+  "file": "engine/snapshot.mjs",
+  "find": "t+(String(a.date)>=at?+a.kg:0)",
+  "replace": "t+(String(a.date)>=at&&+a.kg>0?+a.kg:0)"
+ },
+ {
+  "name": "a handover undone after the measure leaves at once",
+  "file": "engine/snapshot.mjs",
+  "find": "return Math.max(0,phys-since+undone);",
+  "replace": "return Math.max(0,phys-since);"
+ },
+ {
+  "name": "a handover undone before the measure still counts",
+  "file": "engine/snapshot.mjs",
+  "find": "typeof a.undone==='string'&&a.undone>=at&&String(a.date)<at",
+  "replace": "typeof a.undone==='string'&&String(a.date)<at"
+ },
+ {
+  "name": "an undone flag with no day counts as standing",
+  "file": "engine/snapshot.mjs",
+  "find": "typeof a.undone==='string'&&a.undone>=at&&String(a.date)<at",
+  "replace": "String(a.undone)>=at&&String(a.date)<at"
+ },
+ {
+  "name": "a handover made and undone after the measure counts",
+  "file": "engine/snapshot.mjs",
+  "find": "typeof a.undone==='string'&&a.undone>=at&&String(a.date)<at",
+  "replace": "typeof a.undone==='string'&&a.undone>=at"
  },
  {
   "name": "a write-off after the measure is counted at once",
   "file": "engine/snapshot.mjs",
-  "find": "if(s.defaulted&&!(at&&POSITION_ENGINE.writeOffDay(s,lock)>=at)){off+=q;return;}",
+  "find": "if(s.defaulted&&!(at&&POSITION_ENGINE.writeOffDay(s,lock,true)>=at)){off+=q;return;}",
   "replace": "if(s.defaulted){off+=q;return;}"
  },
  {
   "name": "a write-off on the measure's own day is counted",
   "file": "engine/snapshot.mjs",
-  "find": "POSITION_ENGINE.writeOffDay(s,lock)>=at)",
-  "replace": "POSITION_ENGINE.writeOffDay(s,lock)>at)"
+  "find": "POSITION_ENGINE.writeOffDay(s,lock,true)>=at)",
+  "replace": "POSITION_ENGINE.writeOffDay(s,lock,true)>at)"
+ },
+ {
+  "name": "the share dates a write-off by its newest Correction",
+  "file": "engine/snapshot.mjs",
+  "find": "POSITION_ENGINE.writeOffDay(s,lock,true)>=at)",
+  "replace": "POSITION_ENGINE.writeOffDay(s,lock)>=at)"
  },
  {
   "name": "a cancelled row's later units stay in the units paid for",
   "file": "engine/snapshot.mjs",
-  "find": "later+=aft; ",
-  "replace": "if(!s.cancelled)later+=aft; "
+  "find": "    later+=POSITION_ENGINE.txPhys(s)-q; ",
+  "replace": "    if(!s.cancelled)later+=POSITION_ENGINE.txPhys(s)-q; "
  },
  {
   "name": "the book's own lock is not read",
@@ -44,8 +92,8 @@
  {
   "name": "a count is no measure",
   "file": "engine/snapshot.mjs",
-  "find": "[['count',last(C.B.counts)],",
-  "replace": "[['count',null],"
+  "find": "[['count',queued||last(C.B.counts)],",
+  "replace": "[['count',queued],"
  },
  {
   "name": "a recorded loss is no measure",
@@ -66,10 +114,40 @@
   "replace": "x[1]&&(!a||x[1]<a.at)"
  },
  {
+  "name": "a tie on one day names the lot",
+  "file": "engine/snapshot.mjs",
+  "find": "x[1]&&(!a||x[1]>a.at)",
+  "replace": "x[1]&&(!a||x[1]>=a.at)"
+ },
+ {
   "name": "another book's count measures salt",
   "file": "engine/snapshot.mjs",
-  "find": "mine=r=>r&&(r.product||dp)===p&&r.date;",
-  "replace": "mine=r=>r&&r.date;"
+  "find": "mine=r=>r&&(r.product||dp)===p&&r.date&&",
+  "replace": "mine=r=>r&&r.date&&"
+ },
+ {
+  "name": "a count or loss dated ahead of today is a measure",
+  "file": "engine/snapshot.mjs",
+  "find": "&&r.date&&(!now||String(r.date)<=now);",
+  "replace": "&&r.date;"
+ },
+ {
+  "name": "a lot dated ahead of today is a measure",
+  "file": "engine/snapshot.mjs",
+  "find": "POSITION_ENGINE.latestCogs(pPurch(C.B,p),now)",
+  "replace": "POSITION_ENGINE.latestCogs(pPurch(C.B,p))"
+ },
+ {
+  "name": "a count queued on the page is no measure",
+  "file": "engine/snapshot.mjs",
+  "find": "const queued=now&&C.B.statedStockBy&&C.B.statedStockBy[p]!=null?now:null;",
+  "replace": "const queued=null;"
+ },
+ {
+  "name": "another book's queued count measures salt",
+  "file": "engine/snapshot.mjs",
+  "find": "C.B.statedStockBy[p]!=null?now:null;",
+  "replace": "Object.keys(C.B.statedStockBy).length?now:null;"
  },
  {
   "name": "the reading does not say its day",
@@ -96,10 +174,16 @@
   "replace": "filter(a=>a&&a.kind==='Correction'&&a.date&&(!first||String(a.date)>=first))"
  },
  {
-  "name": "a write-off's day is the oldest Correction",
+  "name": "a write-off's day is always the oldest Correction",
   "file": "engine/position.mjs",
-  "find": "  if(steps.length)return steps[steps.length-1];\n  return first?dayIso(dayNo(first)+(lock",
-  "replace": "  if(steps.length)return steps[0];\n  return first?dayIso(dayNo(first)+(lock"
+  "find": "return steps[oldest?0:steps.length-1];",
+  "replace": "return steps[0];"
+ },
+ {
+  "name": "a write-off's day is never the oldest Correction",
+  "file": "engine/position.mjs",
+  "find": "return steps[oldest?0:steps.length-1];",
+  "replace": "return steps[steps.length-1];"
  },
  {
   "name": "a write-off's day forgets the lock where none is given",
