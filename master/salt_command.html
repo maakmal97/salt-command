@@ -5698,15 +5698,9 @@ const TIER_RULE={
      and strikes the Ceiling on the SUPPLIER'S price for a 12.5-unit lot, `supplier`, typed and changed when the supplier's list changes,
      never COGS: `rates` are the Ceiling a unit at half a unit, 12.5 and 100 as typed at an anchor of `per` (RM 200 and RM 100, his two
      ends, then RM 83.93), sliding in the log of size (the engine's bandCeiling), the order total down to RM 5 and never under the Floor.
-     The `ends` of 22 Oct (2.4, 1.44 and 3.6, 1.74) left with it. `carry` is the switch's carry-over, the list he approved: a figure
-     still held from the old curve (`from`) is read at its place on the band (`to`), the engine's heldPct. `ceilingX` is read by no band. */
+     The `ends` of 22 Oct (2.4, 1.44 and 3.6, 1.74) left with it. The switch's carry-over table left on 11 Nov 2026, once his Approve had booked every carried figure. `ceilingX` is read by no band. */
   salt:{drift:true, ceilingX:3,
-        band:{ceiling:{supplier:{units:12.5, total:700}, per:56, rates:[[0.5,200],[12.5,100],[100,83.93]]},
-              carry:{"CA4-SJ":{from:0.3, to:0.49}, "CA5-SEN":{from:0.3, to:0.46}, "CA6-SET":{from:0.3, to:0.49}, "CAY4-DAM":{from:0.1, to:0.17}, 
-                     "CB8-SEG":{from:0.1, to:0.17}, "CD4-DAM":{from:0.1, to:0.17}, "CH6-SET":{from:-0.15, to:-0.14}, "CI4-OKR":{from:-0.15, to:-0.14}, "CK4-SEN":{from:-0.2, to:-0.19}, 
-                     "CM6-PJ":{from:-0.25, to:-0.24}, "CR3-DAM":{from:-0.1, to:-0.08}, "CS11-AMP":{from:0.2, to:0.31}, "CS6-PER":{from:-0.05, to:-0.04}, 
-                     "CZ4-MK":{from:-0.15, to:-0.12}, 
-                     "CZ5-TM":{from:-0.25, to:-0.24}}},
+        band:{ceiling:{supplier:{units:12.5, total:700}, per:56, rates:[[0.5,200],[12.5,100],[100,83.93]]}},
         points:[[0.5,3],[1,2.4],[6.25,2.004],[12.5,1.596]],
         suggest:{writtenOff:0.3, longLate:0.2, late:0.1, overdueDays:14, recent:5, step:0.05, minSettled:3, good:0.3},
         auto:{wP:0.35, wF:0.25, wV:0.2, wT:0.2, minSettled:3, perMonth:4, unitsPerMonth:10, orders:12, staleDays:60, overdueDays:14, U:0.5, D:0.5, cap:0.5},
@@ -8693,24 +8687,11 @@ function bandPct(price,lo,M,hi){
   const t=Math.log(price/M)/Math.log(end/M);
   return (price<M?-1:1)*Math.min(1,Math.max(0,t));
 }
-/* THE CARRY-OVER OF THE SWITCH (his approval of the list, 10 Nov 2026). R.band.carry is {code: {from, to}}: a customer whose held
-   figure is still the one they held on the old -30% to +30% curve (`from`) is read at `to`, the place on the band whose price at
-   their usual size is nearest what they paid before, so the scale and every held figure change in the same instant. Once their
-   figure is set again on the band it no longer equals `from` and is read as it stands; carryClash is the gate that refuses setting
-   one back to exactly `from` while the table lists it. The table leaves with the version after every carried figure is booked. */
-function heldPct(R,code,v){
-  const c=R&&R.band&&R.band.carry&&R.band.carry[code];
-  return c&&typeof v==='number'&&typeof c.from==='number'&&typeof c.to==='number'&&Math.abs(v-c.from)<1e-9?c.to:v;
-}
 /* THE RANGE IN WORDS, for a refusal, and THE UNIT A FIGURE TRAVELS WITH: a band book's figure is sent as "band" (the form of 10 Nov 2026), so a
    page cached from before the switch, which still sends "pct" meaning the old -30% to +30% curve, is told apart by unit and never by time. */
 function rangeSay(R){const g=liftRange(R),a=Math.round(g.min*100),b=Math.round(g.max*100);return {pct:a+'% to +'+b+'%',plain:a+' to +'+b,num:g.min+' to '+g.max};}
 function unitOf(R){return R&&R.band?'band':'pct';}
 function unitOk(R,u){return R&&R.band?u==='band':(u==='pct'||u==='band');}
-function carryClash(R,code,v){
-  const c=R&&R.band&&R.band.carry&&R.band.carry[code];
-  return !!(c&&typeof v==='number'&&Math.abs(v-c.from)<1e-9&&Math.abs(c.to-c.from)>1e-9);
-}
 /* ============ 22 OCT 2026, HIS DECISION: THEIR % RUNS ON HIS CURVE, ON EVERY BOOK ============
    A book takes Their % when its rule is a Set Price (`drift`) or carries `pct` (a stated board, oil, candy and rice): pctBook.
    On a Set Price, `ends` {low:[at the first point, at the last], high:[...]} are the multiples of the Floor he set for -30% and
@@ -9014,7 +8995,7 @@ return {cardAt:cardAt,costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderM
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         floorTotal:floorTotal,floorBase:floorBase,costTotal:costTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,
         setMultiple:setMultiple,driftOk:driftOk,pctBook:pctBook,driftMultiple:driftMultiple,shareAt:shareAt,LIFT_MIN:LIFT_MIN,LIFT_MAX:LIFT_MAX,
-        liftRange:liftRange,rangeSay:rangeSay,unitOf:unitOf,unitOk:unitOk,bandCeiling:bandCeiling,bandTop:bandTop,bandPct:bandPct,heldPct:heldPct,carryClash:carryClash,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,suggestWhy:suggestWhy,
+        liftRange:liftRange,rangeSay:rangeSay,unitOf:unitOf,unitOk:unitOk,bandCeiling:bandCeiling,bandTop:bandTop,bandPct:bandPct,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,suggestWhy:suggestWhy,
         gridOf:gridOf,gridSizes:gridSizes,onGrid:onGrid,walkSizes:walkSizes,fixedWalk:fixedWalk,quoteAt:quoteAt,quoteGrid:quoteGrid};
 })();
 /* ==== END ENGINE pricing ==== */
@@ -9315,8 +9296,8 @@ function driftSignals(C,prod,code){
    `auto`, `G` and `B` are the record's reading (autoDrift) kept for the card, and the suggestion is suggestOf below. */
 function driftOfNow(C,p,code){
   const R=C.R.TIER_RULE[p];if(!PRICING_ENGINE.pctBook(R))return null;
-  /* 10 Nov 2026: the held figure is read through the band's carry-over (heldPct) and judged on this book's own range */
-  const who=ownerOf(code)||code,h=PRICING_ENGINE.heldPct(R,who,(C.B.tierOf[who]||{})[p]),hand=PRICING_ENGINE.driftOk(h,R)?+h:null;
+  /* 10 Nov 2026: the held figure is judged on this book's own range (11 Nov 2026: read as it stands, the switch's carry-over booked and gone) */
+  const who=ownerOf(code)||code,h=(C.B.tierOf[who]||{})[p],hand=PRICING_ENGINE.driftOk(h,R)?+h:null;
   const sig=driftSignals(C,p,who),a=PRICING_ENGINE.autoDrift(sig,R.auto);
   return Object.assign({},a,{auto:a.d,hand:hand,d:hand!=null?hand:0,sig:sig});
 }
@@ -11820,7 +11801,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1500","d":"11 Nov 2026","t":"ONE PRICE BAND FOR SALT, AND A FLOOR THAT STANDS STILL BETWEEN COUNTS","n":["<b>HIS DECISIONS OF 10 NOV 2026: THE PRICE BAND, VERSION 1.</b> Salt has three posts at every size. The Floor is what a partner pays. The Median Price is what a stranger is quoted: it is the Set Price under a new name, and no figure of it moved at any of the 399 sizes. The Ceiling leaves COGS for the price his supplier quotes for 12.5 units, typed, RM 700, RM 56 a unit: RM 200 a unit at half a unit, sliding in the log of size to RM 100 at 12.5 and RM 83.93 at 100, the order total down to RM 5 and never under the Floor. It moves only when he retypes that price. Oil, candy, rice and gas keep 3 times the Floor.","<b>THEIR % RUNS FROM -100% TO +100% ON SALT.</b> -100% is the Floor, 0% the Median Price and +100% the Ceiling, in even percentage steps, down to RM 5, a lift never under the Median. The boards keep -30% to +30%. A salt figure now travels as unit band. One in the unit before the band is refused at Salt Admin, flagged by the drafter and dropped by the fold with a note, never read as a %.","<b>THE CARRY-OVER HE APPROVED ON 10 NOV 2026.</b> 17 customers held a salt % other than 0. Each is read at the place on the band where the price at their usual lot is what it was: nobody moves at their usual lot, CH6-SET, CI4-OKR and CZ4-MK pay RM 110 for 1 unit where they paid RM 105, and other sizes to 12.5 units shift by up to RM 35. The list rides in the rule with the switch (15 codes), so no price sits on the wrong scale between the deploy and the book. One card under Approve then files the figures. Until it is booked, setting a carried customer back to exactly the old figure, or renaming one, is refused with the reason.","<b>A PRICE HE TYPES OUTSIDE THE BAND IS ASKED ONCE (HIS ANSWER D).</b> A salt goods total under the Floor or over the Ceiling at its size, at Accept, in an offer or in an amendment of an agreed order, is refused with how far outside it is and the ringgit it gives away. Sent again with one line of his reason it goes through, the row marked a one-off and left out of the evidence a price or a suggestion reads. An amendment back inside the band takes the mark off, and an undo puts back the one it replaced.","<b>HIS ANSWER H: THE FLOOR'S UNPAID SHARE IS RE-MEASURED ONLY AT A COUNT, A RECORDED LOSS OR A LANDED LOT.</b> It ticked with every handover, and a salt discount, now a place between the Median Price and the Floor, would have shifted by RM 5 now and then. Each row is read as it stood when the measure's day began, so selling, gifts, write-offs, units taken back and an undo between two measures move no Floor, no partner's price and no discount. Today it reads 21.1% as measured at the count of 10 Nov 2026, and Pricing says the day beside the share. At the switch the Floor at 50 and 100 units, lots nobody has bought, reads RM 5 over what the Desk quoted while it ticked.","Proved: 94 new checks in three sections (the band, the one-off, the share's measure), each red by its own mutation, 146 in all, and the older checks re-aimed; a Fable review of the band and two of the share, every finding applied or said, each re-checked by the same reviewer; the full suite 12,199 passed, 0 failed. Found and fixed on the way: Salt Admin's typed % at Add ID kept the old -0.3 to 0.3 limit, the band unit was missing from the saved-entry list, a lift could fall under the Median at the largest sizes, and a write-off would have been dated by a later note. Not built, said: versions 2 and 3 of the plan, a place to retype the supplier's price from the Desk, the band check on Correct a row, and a stamp of the day on a written-off sale."]}];
+const evolution=[{"v":"v1501","d":"11 Nov 2026","t":"THE CARRY-OVER TABLE LEAVES, EVERY CARRIED PLACE BOOKED","n":["<b>HIS APPROVE OF 11 NOV 2026 BOOKED THE CARRY-OVER.</b> One card under Approve filed the place on the band of each of the 15 customers who held a salt % on the old curve, and the day's export wrote them into git's book. Replayed on a copy of the book with the booked figures in place of the old: 1,560 card prices, none moved.","<b>THE TABLE AND ITS GUARDS ARE GONE.</b> The rule holds no carry-over and the engine no reader of one, so a held figure is read as it stands. Three refusals leave with it: setting a carried customer back to exactly their old figure (at Salt Admin, in the drafter and in the fold), renaming one, and an Add ID at that figure. Priced with the table in and with it out on the exported book: the same 1,560 card prices and the same 260 held figures, the snapshot equal but for the rule itself.","Proved: the band's section re-aimed to hold an old figure up to every road that refused it (38 checks, 47 mutations, each red), a Fable review that found it sound on seven named risks and re-checked its two notes closed, and the full suite 12,198 passed, 0 failed, before the reviewer's one added check, whose section then ran green. No price, Floor, Median Price or Ceiling moved."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
