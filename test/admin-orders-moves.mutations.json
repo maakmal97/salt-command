@@ -14,7 +14,7 @@
   {
     "name": "Withdraw sends without its request id",
     "file": "stmt/owner.js",
-    "find": "var done=main==='Withdraw'?makerTap(o,'withdraw',{},'Offer withdrawn; the order stands as they placed it.')",
+    "find": "var done=main==='Withdraw'?makerTap(o,'withdraw',{},makerWithdrawSaid(o))",
     "replace": "var done=main==='Withdraw'?makerAction('/all/maker/orders/'+encodeURIComponent(o.id)+'/withdraw',{},'Offer withdrawn.',o.id)"
   },
   {
@@ -38,20 +38,20 @@
   {
     "name": "a collection's Ready asks on the row",
     "file": "stmt/owner.js",
-    "find": "if(main==='Agree'||(main==='Ready'&&o.mode!=='deliver')||(main==='Received'&&(ordPays(o).length!==1||payOnBook(o,ordPays(o)[0])))){ openOrder(e.id); return; }",
-    "replace": "if(main==='Agree'||(main==='Received'&&(ordPays(o).length!==1||payOnBook(o,ordPays(o)[0])))){ openOrder(e.id); return; }"
+    "find": "if(main==='Agree'||main==='Offer'||(main==='Ready'&&o.mode!=='deliver')||(main==='Received'&&(ordPays(o).length!==1||payOnBook(o,ordPays(o)[0])))){ openOrder(e.id); return; }",
+    "replace": "if(main==='Agree'||main==='Offer'||(main==='Received'&&(ordPays(o).length!==1||payOnBook(o,ordPays(o)[0])))){ openOrder(e.id); return; }"
   },
   {
     "name": "two payments ask on the row",
     "file": "stmt/owner.js",
-    "find": "if(main==='Agree'||(main==='Ready'&&o.mode!=='deliver')||(main==='Received'&&(ordPays(o).length!==1||payOnBook(o,ordPays(o)[0])))){ openOrder(e.id); return; }",
-    "replace": "if(main==='Agree'||(main==='Ready'&&o.mode!=='deliver')||(main==='Received'&&(payOnBook(o,ordPays(o)[0])))){ openOrder(e.id); return; }"
+    "find": "if(main==='Agree'||main==='Offer'||(main==='Ready'&&o.mode!=='deliver')||(main==='Received'&&(ordPays(o).length!==1||payOnBook(o,ordPays(o)[0])))){ openOrder(e.id); return; }",
+    "replace": "if(main==='Agree'||main==='Offer'||(main==='Ready'&&o.mode!=='deliver')||(main==='Received'&&(payOnBook(o,ordPays(o)[0])))){ openOrder(e.id); return; }"
   },
   {
     "name": "Agree asks on the row",
     "file": "stmt/owner.js",
-    "find": "if(main==='Agree'||(main==='Ready'&&o.mode!=='deliver')||",
-    "replace": "if((main==='Ready'&&o.mode!=='deliver')||"
+    "find": "if(main==='Agree'||main==='Offer'||(main==='Ready'&&o.mode!=='deliver')||",
+    "replace": "if(main==='Offer'||(main==='Ready'&&o.mode!=='deliver')||"
   },
   {
     "name": "Message opens the order with its box out of focus",

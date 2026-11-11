@@ -1,0 +1,62 @@
+[
+  {
+    "name": "the card does not say their ask",
+    "file": "stmt/owner.js",
+    "find": "if(asked){ var askLine",
+    "replace": "if(false){ var askLine"
+  },
+  {
+    "name": "Goods start at the list price",
+    "file": "stmt/owner.js",
+    "find": "quote.total==null?(askRM!=null?askRM:order.total):quote.total",
+    "replace": "quote.total==null?order.total:quote.total"
+  },
+  {
+    "name": "an open ask is agreed, not offered",
+    "file": "stmt/owner.js",
+    "find": "askOpen=makerAsked(order), yes=askOpen||makerNeedsYes(order,q.total,wv)",
+    "replace": "askOpen=false, yes=makerNeedsYes(order,q.total,wv)"
+  },
+  {
+    "name": "a Negotiate offer does not hold the card",
+    "file": "stmt/owner.js",
+    "find": "return !!p&&(p.state==='taken'||",
+    "replace": "return !!p&&p.from==='accept'&&(p.state==='taken'||"
+  },
+  {
+    "name": "an asked delivery draws When",
+    "file": "stmt/owner.js",
+    "find": "if(deliver&&!order.wantBy&&!makerAsked(order)){",
+    "replace": "if(deliver&&!order.wantBy){"
+  },
+  {
+    "name": "no list price reads RM 0",
+    "file": "stmt/owner.js",
+    "find": "(+order.total>0?'The list price is '+rm(order.total)+'.':'It has no list price.')",
+    "replace": "'The list price is '+rm(order.total)+'.'"
+  },
+  {
+    "name": "the row still says Agree",
+    "file": "stmt/owner.js",
+    "find": "makerAccHeld(o)?'':makerAsked(o)?'Offer':'Agree';",
+    "replace": "makerAccHeld(o)?'':'Agree';"
+  },
+  {
+    "name": "the ask refusal is unmapped",
+    "file": "stmt/owner.js",
+    "find": "    'they asked for a price on this order: send them an offer, which they take or decline':'They asked for a better price. Send them an offer.',\n",
+    "replace": ""
+  },
+  {
+    "name": "a composed refusal is unmapped",
+    "file": "stmt/owner.js",
+    "find": "    if(s.indexOf('this order is ')===0) return 'This order has moved on. Read the orders again.';\n",
+    "replace": ""
+  },
+  {
+    "name": "the sheet refusal is unmapped",
+    "file": "stmt/owner.js",
+    "find": "    'a sheet of several lines is agreed by one Accept: lower it to what they placed, keep their window, or Decline':'A sheet of several orders is agreed in one go: keep their price and window, or decline it.',\n",
+    "replace": ""
+  }
+]

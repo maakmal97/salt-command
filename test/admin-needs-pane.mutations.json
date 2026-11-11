@@ -38,8 +38,8 @@
   {
     "name": "the order's card folds its terms",
     "file": "stmt/owner.js",
-    "find": "stageOf('Agree','oagreesec').appendChild(form);",
-    "replace": "var tfd=el('details','ordfold ordfold--rowed'); tfd.appendChild(form); stageOf('Agree','oagreesec').appendChild(tfd);"
+    "find": "agreeSec.appendChild(form);",
+    "replace": "var tfd=el('details','ordfold ordfold--rowed'); tfd.appendChild(form); agreeSec.appendChild(tfd);"
   },
   {
     "name": "no order's card under it",

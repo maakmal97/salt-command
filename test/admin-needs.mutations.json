@@ -176,7 +176,7 @@
  {
   "name": "an order has an Agree",
   "file": "stmt/owner.js",
-  "find": "mainButton(c,'Agree','need.agree','o:'+o.id, to);",
+  "find": "mainButton(c,makerAsked(o)?'Offer':'Agree','need.agree','o:'+o.id, to);",
   "replace": ""
  },
  {
@@ -620,13 +620,13 @@
  {
   "name": "a card's title does not lead with the verb",
   "file": "stmt/owner.js",
-  "find": "{who:who, head:'Agree ', rest:shP.length>1?\"'s sheet\":\"'s order\"",
+  "find": "{who:who, head:makerAsked(o)?'Offer on ':'Agree ', rest:shP.length>1?\"'s sheet\":\"'s order\"",
   "replace": "{who:who, rest:shP.length>1?\"'s sheet\":\"'s order\""
  },
  {
   "name": "an order's Agree on the card does nothing",
   "file": "stmt/owner.js",
-  "find": "mainButton(c,'Agree','need.agree','o:'+o.id, to);",
+  "find": "mainButton(c,makerAsked(o)?'Offer':'Agree','need.agree','o:'+o.id, to);",
   "replace": "mainButton(c,'Agree','need.agree','o:'+o.id, function(){});"
  },
  {

@@ -50472,6 +50472,11 @@ await (async () => {
   await (await import("./admin-orders-count.mjs")).run({ ok, pageWork });
 })();
 
+section("11 Nov 2026: Salt Admin answers a customer's price ask with an offer");
+await (async () => {
+  await (await import("./admin-price-ask.mjs")).run({ ok, pageWork });
+})();
+
 section("4 Nov 2026: every sale row carries the road it came by, stamped by the fold and the tap, shown on Salt Admin and the Desk");
 await (async () => {
   await (await import("./ledger-road.mjs")).run({ ok, pageWork });

@@ -98,8 +98,8 @@
  {
   "name": "Withdraw sends without its request id",
   "file": "stmt/owner.js",
-  "find": "makerTap(o,'withdraw',{},'Offer withdrawn. The order stands as they placed it.')",
-  "replace": "makerAction('/all/maker/orders/'+encodeURIComponent(o.id)+'/withdraw',{},'Offer withdrawn.',o.id)"
+  "find": "makerTap(o,'withdraw',{},makerWithdrawSaid(o)).then(function(done){",
+  "replace": "makerAction('/all/maker/orders/'+encodeURIComponent(o.id)+'/withdraw',{},'Offer withdrawn.',o.id).then(function(done){"
  },
  {
   "name": "a fresh refusal keeps the old request id",

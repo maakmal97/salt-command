@@ -50,8 +50,8 @@
   {
     "name": "a raise is accepted",
     "file": "stmt/owner.js",
-    "find": "(yes?'Ask them, ':'Agree, ')",
-    "replace": "('Agree, ')"
+    "find": "(askOpen?'Offer them, ':yes?'Ask them, ':'Agree, ')",
+    "replace": "(askOpen?'Offer them, ':'Agree, ')"
   },
   {
     "name": "Accept is not labelled with the delivery",

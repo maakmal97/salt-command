@@ -386,8 +386,8 @@
   {
     "name": "the terms fold again",
     "file": "stmt/owner.js",
-    "find": "stageOf('Agree','oagreesec').appendChild(form);",
-    "replace": "var tfd=el('details'); tfd.setAttribute('data-fold','terms'); tfd.appendChild(form); stageOf('Agree','oagreesec').appendChild(tfd);"
+    "find": "agreeSec.appendChild(form);",
+    "replace": "var tfd=el('details'); tfd.setAttribute('data-fold','terms'); tfd.appendChild(form); agreeSec.appendChild(tfd);"
   },
   {
     "name": "the terms stand under Agree",
