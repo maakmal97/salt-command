@@ -296,8 +296,8 @@ function driftSignals(C,prod,code){
    `auto`, `G` and `B` are the record's reading (autoDrift) kept for the card, and the suggestion is suggestOf below. */
 function driftOfNow(C,p,code){
   const R=C.R.TIER_RULE[p];if(!PRICING_ENGINE.pctBook(R))return null;
-  /* 10 Nov 2026: the held figure is read through the band's carry-over (heldPct) and judged on this book's own range */
-  const who=ownerOf(code)||code,h=PRICING_ENGINE.heldPct(R,who,(C.B.tierOf[who]||{})[p]),hand=PRICING_ENGINE.driftOk(h,R)?+h:null;
+  /* 10 Nov 2026: the held figure is judged on this book's own range (11 Nov 2026: read as it stands, the switch's carry-over booked and gone) */
+  const who=ownerOf(code)||code,h=(C.B.tierOf[who]||{})[p],hand=PRICING_ENGINE.driftOk(h,R)?+h:null;
   const sig=driftSignals(C,p,who),a=PRICING_ENGINE.autoDrift(sig,R.auto);
   return Object.assign({},a,{auto:a.d,hand:hand,d:hand!=null?hand:0,sig:sig});
 }

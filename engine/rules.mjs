@@ -285,15 +285,9 @@ const TIER_RULE={
      and strikes the Ceiling on the SUPPLIER'S price for a 12.5-unit lot, `supplier`, typed and changed when the supplier's list changes,
      never COGS: `rates` are the Ceiling a unit at half a unit, 12.5 and 100 as typed at an anchor of `per` (RM 200 and RM 100, his two
      ends, then RM 83.93), sliding in the log of size (the engine's bandCeiling), the order total down to RM 5 and never under the Floor.
-     The `ends` of 22 Oct (2.4, 1.44 and 3.6, 1.74) left with it. `carry` is the switch's carry-over, the list he approved: a figure
-     still held from the old curve (`from`) is read at its place on the band (`to`), the engine's heldPct. `ceilingX` is read by no band. */
+     The `ends` of 22 Oct (2.4, 1.44 and 3.6, 1.74) left with it. The switch's carry-over table left on 11 Nov 2026, once his Approve had booked every carried figure. `ceilingX` is read by no band. */
   salt:{drift:true, ceilingX:3,
-        band:{ceiling:{supplier:{units:12.5, total:700}, per:56, rates:[[0.5,200],[12.5,100],[100,83.93]]},
-              carry:{"CA4-SJ":{from:0.3, to:0.49}, "CA5-SEN":{from:0.3, to:0.46}, "CA6-SET":{from:0.3, to:0.49}, "CAY4-DAM":{from:0.1, to:0.17}, 
-                     "CB8-SEG":{from:0.1, to:0.17}, "CD4-DAM":{from:0.1, to:0.17}, "CH6-SET":{from:-0.15, to:-0.14}, "CI4-OKR":{from:-0.15, to:-0.14}, "CK4-SEN":{from:-0.2, to:-0.19}, 
-                     "CM6-PJ":{from:-0.25, to:-0.24}, "CR3-DAM":{from:-0.1, to:-0.08}, "CS11-AMP":{from:0.2, to:0.31}, "CS6-PER":{from:-0.05, to:-0.04}, 
-                     "CZ4-MK":{from:-0.15, to:-0.12}, 
-                     "CZ5-TM":{from:-0.25, to:-0.24}}},
+        band:{ceiling:{supplier:{units:12.5, total:700}, per:56, rates:[[0.5,200],[12.5,100],[100,83.93]]}},
         points:[[0.5,3],[1,2.4],[6.25,2.004],[12.5,1.596]],
         suggest:{writtenOff:0.3, longLate:0.2, late:0.1, overdueDays:14, recent:5, step:0.05, minSettled:3, good:0.3},
         auto:{wP:0.35, wF:0.25, wV:0.2, wT:0.2, minSettled:3, perMonth:4, unitsPerMonth:10, orders:12, staleDays:60, overdueDays:14, U:0.5, D:0.5, cap:0.5},

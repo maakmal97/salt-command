@@ -217,7 +217,7 @@ function driftCards(book, roster, products) {
   const cards = [];
   for (const id of roster.filter(driftCustomerCode)) {
     for (const product of driftProducts) {
-      /* 10 Nov 2026: judged on the book's own range, and the held figure read through the band's carry-over, as the engine prices it */
+      /* 10 Nov 2026: judged on the book's own range */
       const rule = book.pricing.byProduct[product].inputs?.policy?.tierRule || {};
       const set = object(held[id]) && Object.hasOwn(held[id], product)
         && PRICING_ENGINE.driftOk(held[id][product], rule);
@@ -225,7 +225,7 @@ function driftCards(book, roster, products) {
       const current = object(lift) && PRICING_ENGINE.driftOk(lift[id], rule) ? lift[id] : null;
       const given = object(sug) && object(sug[id]) ? sug[id] : null;
       const suggest = given && PRICING_ENGINE.driftOk(given.pct, rule) ? given.pct : null;
-      cards.push({ code: id, product, held: !!set, value: set ? PRICING_ENGINE.heldPct(rule, id, held[id][product]) : null, current, suggest, why: suggest !== null && suggestWhyOk(given.why) ? given.why : "" });
+      cards.push({ code: id, product, held: !!set, value: set ? held[id][product] : null, current, suggest, why: suggest !== null && suggestWhyOk(given.why) ? given.why : "" });
     }
   }
   return cards;
@@ -896,9 +896,6 @@ export function makerTierSet(body, book) {
   if (!driftCustomerCode(body.code)) return { error: "A supplier has no % on the Median Price." };
   if (body.tier !== null && !PRICING_ENGINE.driftOk(body.tier, rule))
     return { error: "Choose a % from " + PRICING_ENGINE.rangeSay(rule).pct + " (" + PRICING_ENGINE.rangeSay(rule).num + "), or clear it." };
-  /* 10 Nov 2026, the switch's carry-over: the figure they held on the old curve is read as its place on the band while the carry table lists them */
-  if (body.tier !== null && PRICING_ENGINE.carryClash(rule, body.code, body.tier))
-    return { error: "That is the figure they held on the old scale. Choose 1% either side." };
   /* 19 Oct 2026: a figure travels with its unit. A Counter Admin page cached from before the % lift still sends 0.3 meaning 30% of the floor; it is refused here, by unit and not by time. */
   if (body.tier !== null && !PRICING_ENGINE.unitOk(rule, body.unit)) return { error: OLD_UNIT };
   return proposed(POSITION_ENGINE.tierSetEntry({

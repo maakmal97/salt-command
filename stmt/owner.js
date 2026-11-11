@@ -1280,7 +1280,6 @@ export const OWNER_JS = `
     'This book has no Set Price to put a % on.':'This book has no Median Price to put a % on.',
     'A supplier has no % on the Median Price.':'A supplier has no % on the Median Price.',
     'Choose a % from -100% to +100% (-1 to 1), or clear it.':'Choose a % from -100 to +100, or clear it.',
-    'That is the figure they held on the old scale. Choose 1% either side.':'That is their old-scale figure, so choose 1% either side.',
     'Choose a % from -30% to +30% (-0.3 to 0.3), or clear it.':'Choose a % from -30 to +30, or clear it.',
     'Choose the sizes to hide from the board.':'Choose the sizes to leave off the printed list.',
     "A size to hide must be one of this book's board sizes.":"Choose sizes from this book's printed list.",

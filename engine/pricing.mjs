@@ -549,24 +549,11 @@ function bandPct(price,lo,M,hi){
   const t=Math.log(price/M)/Math.log(end/M);
   return (price<M?-1:1)*Math.min(1,Math.max(0,t));
 }
-/* THE CARRY-OVER OF THE SWITCH (his approval of the list, 10 Nov 2026). R.band.carry is {code: {from, to}}: a customer whose held
-   figure is still the one they held on the old -30% to +30% curve (`from`) is read at `to`, the place on the band whose price at
-   their usual size is nearest what they paid before, so the scale and every held figure change in the same instant. Once their
-   figure is set again on the band it no longer equals `from` and is read as it stands; carryClash is the gate that refuses setting
-   one back to exactly `from` while the table lists it. The table leaves with the version after every carried figure is booked. */
-function heldPct(R,code,v){
-  const c=R&&R.band&&R.band.carry&&R.band.carry[code];
-  return c&&typeof v==='number'&&typeof c.from==='number'&&typeof c.to==='number'&&Math.abs(v-c.from)<1e-9?c.to:v;
-}
 /* THE RANGE IN WORDS, for a refusal, and THE UNIT A FIGURE TRAVELS WITH: a band book's figure is sent as "band" (the form of 10 Nov 2026), so a
    page cached from before the switch, which still sends "pct" meaning the old -30% to +30% curve, is told apart by unit and never by time. */
 function rangeSay(R){const g=liftRange(R),a=Math.round(g.min*100),b=Math.round(g.max*100);return {pct:a+'% to +'+b+'%',plain:a+' to +'+b,num:g.min+' to '+g.max};}
 function unitOf(R){return R&&R.band?'band':'pct';}
 function unitOk(R,u){return R&&R.band?u==='band':(u==='pct'||u==='band');}
-function carryClash(R,code,v){
-  const c=R&&R.band&&R.band.carry&&R.band.carry[code];
-  return !!(c&&typeof v==='number'&&Math.abs(v-c.from)<1e-9&&Math.abs(c.to-c.from)>1e-9);
-}
 /* ============ 22 OCT 2026, HIS DECISION: THEIR % RUNS ON HIS CURVE, ON EVERY BOOK ============
    A book takes Their % when its rule is a Set Price (`drift`) or carries `pct` (a stated board, oil, candy and rice): pctBook.
    On a Set Price, `ends` {low:[at the first point, at the last], high:[...]} are the multiples of the Floor he set for -30% and
@@ -870,7 +857,7 @@ return {cardAt:cardAt,costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderM
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         floorTotal:floorTotal,floorBase:floorBase,costTotal:costTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,
         setMultiple:setMultiple,driftOk:driftOk,pctBook:pctBook,driftMultiple:driftMultiple,shareAt:shareAt,LIFT_MIN:LIFT_MIN,LIFT_MAX:LIFT_MAX,
-        liftRange:liftRange,rangeSay:rangeSay,unitOf:unitOf,unitOk:unitOk,bandCeiling:bandCeiling,bandTop:bandTop,bandPct:bandPct,heldPct:heldPct,carryClash:carryClash,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,suggestWhy:suggestWhy,
+        liftRange:liftRange,rangeSay:rangeSay,unitOf:unitOf,unitOk:unitOk,bandCeiling:bandCeiling,bandTop:bandTop,bandPct:bandPct,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,suggestWhy:suggestWhy,
         gridOf:gridOf,gridSizes:gridSizes,onGrid:onGrid,walkSizes:walkSizes,fixedWalk:fixedWalk,quoteAt:quoteAt,quoteGrid:quoteGrid};
 })();
 export default PRICING_ENGINE;

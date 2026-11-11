@@ -800,10 +800,6 @@ export function planBatch(book, staged, notes, ctx) {
       const rt = r.tiers || {}, rtOff = Object.keys(rt).filter((p) => !(book.PRODUCTS || {})[p]), rtOld = Object.keys(rt).filter((p) => oldLift(it, p, rt[p])), rtBad = Object.keys(rt).filter((p) => !rtOld.includes(p) && !tierOk(p, rt[p]));   /* a % lift on a book with a Set Price, nothing on any other */   // v645, per product since v646
       if (rtOff.length || rtBad.length) { out.refused.push({ id: it.id, why: rtOff.length ? `${rtOff.join(" and ")} is not a product on this book` : `${rtBad.map((p) => sayLift(rt[p]) + (driftBooks().includes(p) ? notPct(p) : " is not held per customer on this book")).join(" and ")}` }); continue; }
       const rtKept = Object.fromEntries(Object.entries(rt).filter(([p]) => !rtOld.includes(p)));
-      /* Fable's re-check, 10 Nov 2026: THE ADD ID ROAD ASKS FOR THE CARRY-OVER TOO. A code in the table can come this road (an appointment of a customer
-         already here, or a code a rename freed and Add ID mints again), and a figure equal to the old holder's would be read as their place on the band */
-      const rtClash = Object.keys(rtKept).filter((p) => PRICING_ENGINE.carryClash(ruleOf(p), r.code, rtKept[p]));
-      if (rtClash.length) { out.refused.push({ id: it.id, why: rtClash.map((p) => `${sayLift(rtKept[p])} is the figure ${r.code} held on the old scale, which is read as its place on the band until the carry-over is filed: choose 1% either side`).join(" and ") }); continue; }
       entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null, geo: r.geo || null, tiers: Object.keys(rtKept).length ? rtKept : null, partner };
       if (partner) entry.does.push(`make ${r.code} a partner: they pay the Floor, up to the next RM 5, on every book; they keep every associate property`);
       if (entry.roster.register) entry.does.push(`append ${r.code} to the roster (the directory is not touched)`);
@@ -866,13 +862,7 @@ export function planBatch(book, staged, notes, ctx) {
       /* v643: a customer's held figure for each product (v646), checked against the book it folds into; a null clears it */
       const codes = Object.keys(r.tiers || {}), off = codes.filter((c) => !(book.roster || []).includes(c) || E.isBucket(c));
       const pairs = codes.flatMap((c) => Object.entries((r.tiers[c] && typeof r.tiers[c] === "object") ? r.tiers[c] : {}).map(([p, v]) => [c, p, v]));
-      const noProd = codes.filter((c) => !pairs.some((x) => x[0] === c)), offP = pairs.filter((x) => !(book.PRODUCTS || {})[x[1]]), clash = pairs.filter((x) => x[2] !== null && !oldLift(it, x[1], x[2]) && tierOk(x[1], x[2]) && PRICING_ENGINE.carryClash(ruleOf(x[1]), x[0], x[2])), bad = pairs.filter((x) => x[2] !== null && !oldLift(it, x[1], x[2]) && !tierOk(x[1], x[2]));   /* 05 Oct 2026: a figure of his on a drift book (18 Oct 2026: a % lift; 21 Oct 2026: -0.3 to +0.3), held as a tier was; none on any other */
-      /* Fable's review, 10 Nov 2026: THE CARRY-OVER'S LAST CHECK IS HERE. The entry gates judge on the snapshot's rule, which can trail the code's for a
-         moment after a deploy; a figure equal to the one a carried customer held on the old scale would be read as their place on the band, never as typed */
-      if (clash.length && !(off.length || noProd.length || offP.length || bad.length)) {
-        out.refused.push({ id: it.id, why: clash.map((x) => `${sayLift(x[2])} is the figure ${x[0]} held on the old scale, which is read as its place on the band until the carry-over is filed: choose 1% either side`).join(" and ") });
-        continue;
-      }
+      const noProd = codes.filter((c) => !pairs.some((x) => x[0] === c)), offP = pairs.filter((x) => !(book.PRODUCTS || {})[x[1]]), bad = pairs.filter((x) => x[2] !== null && !oldLift(it, x[1], x[2]) && !tierOk(x[1], x[2]));   /* 05 Oct 2026: a figure of his on a drift book (18 Oct 2026: a % lift; 21 Oct 2026: -0.3 to +0.3), held as a tier was; none on any other */
       if (!codes.length || off.length || noProd.length || offP.length || bad.length) {
         out.refused.push({ id: it.id, why: !codes.length ? "a % entry names no customer" : off.length ? `${off.join(" and ")} is not a customer on the roster`
           : noProd.length ? `the % entry for ${noProd.join(" and ")} names no product` : offP.length ? `${offP.map((x) => x[1]).join(" and ")} is not a product on this book` : bad.map((x) => sayLift(x[2]) + (driftBooks().includes(x[1]) ? notPct(x[1]) : " is not held per customer on this book")).join(" and ") });
@@ -901,11 +891,6 @@ export function planBatch(book, staged, notes, ctx) {
       const pairs = E.renamePairs(roster, r.from, r.to);
       const taken = pairs.map((x) => x[1]).filter((c) => roster.includes(c));
       if (taken.length) { out.refused.push({ id: it.id, why: `${taken.join(" and ")} already belongs to another party` }); continue; }
-      /* Fable's review, 10 Nov 2026: THE CARRY-OVER IS KEYED BY CODE (TIER_RULE.salt.band.carry), and a rename re-keys the book, never the rule. A customer
-         whose held figure is still read through it would be priced at the raw old figure under the new code, so the rename waits until their place on the
-         band is booked (the tierset of the carry-over). Nothing is refused once the book holds anything but the old figure. */
-      const carried = pairs.map((x) => x[0]).filter((c) => driftBooks().some((p) => PRICING_ENGINE.carryClash(ruleOf(p), c, ((book.TIER_OF || {})[c] || {})[p])));
-      if (carried.length) { out.refused.push({ id: it.id, why: `${carried.join(" and ")} still holds a % read through the price band's carry-over, which is kept by code: book the carry-over's % first, then rename` }); continue; }
       const pinned = pairs.map((x) => x[0]).filter(pinnedInMaster);
       if (pinned.length) { out.refused.push({ id: it.id, why: `${pinned.join(" and ")} is written into the desk's own code, which a fold never edits, so this rename is left for a hand fold` }); continue; }
       entry.rename = { from: r.from, to: r.to, pairs, geo: r.geo || null };

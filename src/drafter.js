@@ -1441,11 +1441,9 @@ export function draftRow(entry, book) {
         if (!products[p]) return { skip: `${p} is not a product on this book` };
         /* on a book with a Set Price what is held is a figure of his (18 Oct 2026: a % lift; 21 Oct 2026: -0.3 to +0.3); a null clears it; any other book holds none */
         if (t !== null && !(driftB(p) && PRICING_ENGINE.driftOk(t, ruleB(p)))) return { skip: driftB(p) ? `${say(t)} is not a % from ${PRICING_ENGINE.rangeSay(ruleB(p)).plain} (${PRICING_ENGINE.rangeSay(ruleB(p)).num})` : `${say(t)} is not held per customer on this book` };
-        /* 10 Nov 2026, the switch's carry-over: a figure equal to the one they held on the old curve would be read through the carry table as its place on the band, so it is refused while the table lists them */
-        if (t !== null && PRICING_ENGINE.carryClash(ruleB(p), c, t)) return { skip: `${say(t)} is the figure ${c} held on the old scale, which is read as its place on the band until the carry-over is filed: choose 1% either side` };
         row.tiers[c][p] = t;
         if (t !== null && !PRICING_ENGINE.unitOk(ruleB(p), pay.unit)) flags.push(`${c}'s ${name(p)} figure carries no unit, so it is from the old form: the fold drops it and ${c} stays on the Median Price.`);
-        if (was != null && JSON.stringify(PRICING_ENGINE.heldPct(ruleB(p), c, was)) !== JSON.stringify(t)) flags.push(`${c}'s ${name(p)} moves from ${say(PRICING_ENGINE.heldPct(ruleB(p), c, was))} to ${say(t)}.`);
+        if (was != null && JSON.stringify(was) !== JSON.stringify(t)) flags.push(`${c}'s ${name(p)} moves from ${say(was)} to ${say(t)}.`);
       }
     }
     return {
