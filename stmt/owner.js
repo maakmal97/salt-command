@@ -5088,8 +5088,9 @@ export const OWNER_JS = `
      and the same empty body, and the ghost, the close control, the scrim and Escape send nothing. What is approved is the ROW AS DRAFTED, never recomputed. */
   function deskAskRow(item){
     var rid=draftRid(item);
+    /* a Their % row says its figure, its book the typed tag (no book is named in words on Salt Admin) */
     var ts=tierSets(item);
-    return askRow((rid?rid+' · ':'')+(draftParty(item)||'no code'), item.amends||noFigure(item)?'':rm(item.total), [moveWord(item), item.amends||item.qty==null?'':units(item.qty)].concat(ts.map(function(s){ return (ts.length>1?s.code+' ':'')+s.product+' '+tierWord(s.v); })).filter(Boolean).join(', '),item.product&&item.qty!=null&&!item.amends?bookTile(item.product,item.qty):null);
+    return askRow((rid?rid+' · ':'')+(draftParty(item)||'no code'), item.amends||noFigure(item)?'':rm(item.total), [moveWord(item), item.amends||item.qty==null?'':units(item.qty)].concat(ts.map(function(s){ return (ts.length>1?s.code+' ':'')+tierWord(s.v); })).filter(Boolean).join(', '),ts.length===1?productTag(ts[0].product):item.product&&item.qty!=null&&!item.amends?bookTile(item.product,item.qty):null);
   }
   function deskAskRows(draft){ return groupOf(draft).drafts.map(deskAskRow); }
   /* a row's Approve and Reject, and a trip's: Approve, or Approve both for two books and Approve all for more */
