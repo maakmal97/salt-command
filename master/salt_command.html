@@ -18156,26 +18156,44 @@ function obsCard(o){
   </details>`;
 }
 
+/* 11 Nov 2026, HIS THREE ANSWERS ON NOTICED: one customer card a book, rhythm only where it changes buying, and repeat orders off
+   Noticed. DRAWING ONLY: every observation keeps its id, its hush and its place in the snapshot's obs; this is what Noticed draws.
+   - A book's habit card and its message card name the same people: one card, the habit card's id (so Hide on Salt Admin hushes it),
+     its watch and its figure, the message card's three names leading. A message card whose habit card is hushed goes with it.
+   - The weekday pattern is one card (the busiest and quietest day, the weekend beside it), a note: the restock signal already weighs
+     each weekday. The pay window, a holiday and the fortnight draw only when they move what to buy, which is when they reach watch.
+   - A repeat order told apart by its dates is a real second order, so it is not drawn; "bought once" repeats Clients' tile. */
+function noticedDraw(live,hushed){
+  const ids=new Set(live.concat(hushed).map(o=>o.id)), byId=Object.fromEntries(live.map(o=>[o.id,o]));
+  const gate=/^rhythm:(payday|holiday|restock):/;
+  const out=[];
+  live.forEach(o=>{
+    if(/^dup:/.test(o.id)||o.id==='cust:oneanddone')return;
+    if(gate.test(o.id)&&o.sev!=='watch')return;
+    if(/^rhythm:weekend:/.test(o.id)&&byId[o.id.replace('weekend','dow')])return;
+    if(/^promo:revive:/.test(o.id)&&ids.has(o.id.replace('promo:revive','cust:cadence')))return;
+    if(/^rhythm:dow:/.test(o.id)){const we=byId[o.id.replace('dow','weekend')];
+      out.push(we?Object.assign({},o,{sev:'note',why:o.why+' '+we.title+': '+we.why}):o);return;}
+    if(/^rhythm:weekend:/.test(o.id)){out.push(Object.assign({},o,{sev:'note'}));return;}
+    if(/^cust:cadence:/.test(o.id)){const rv=byId[o.id.replace('cust:cadence','promo:revive')];
+      out.push(rv?Object.assign({},o,{title:o.title+': '+rv.title.charAt(0).toLowerCase()+rv.title.slice(1).replace(/ on [^ ]+$/,''),why:rv.why+' '+o.why}):o);return;}
+    out.push(o);});
+  return out;
+}
 function tabPlans(){
   const X=observations(), R=X.R, F=X.F;
-  const live=X.live, hushed=X.hushed;
+  const hushed=X.hushed, live=noticedDraw(X.live,hushed);
   const acts=live.filter(o=>o.sev==='act').length;
   const watch=live.filter(o=>o.sev==='watch').length;
-  const stake=live.reduce((a,o)=>a+(o.rm>0.009?o.rm:0),0);
-  /* 10 Nov 2026: SIXTEEN NOTES SAYING ONE THING ARE ONE NOTE. A repeat order told apart by its dates is a note a pair, and the
-     pairs buried the rest of Integrity. Three or more are drawn as one card listing them, its button opening every row; each
-     pair is still its own observation (its id, its hush on Salt Admin), so nothing the snapshot carries moves. */
-  const dupOf=L=>{const D=L.filter(o=>o.sev==='note'&&/^dup:/.test(o.id));return D.length>=3?D:[];};
-  const dupCard=D=>obsCard({id:D[0].id,sev:'note',conf:'measured',tab:'ledger',rm:D.reduce((a,o)=>a+(+o.rm||0),0),
-    rows:[...new Set(D.flatMap(o=>o.rows||[]))],title:`${D.length} repeat orders inside a few days, each told apart by its dates`,
-    why:'The same party, size and total twice within days, with something on the rows telling them apart, so each reads as a real second order. Listed once so they do not bury the rest.',
-    ev:D.map(o=>o.title+(o.rm>0.009?', '+fmt0(o.rm):''))});
+  /* 11 Nov 2026: At stake is what an Act or a Watch names, each once. It added every figure on Noticed, so a repeat order already
+     sold and the message card's three customers (inside their habit card's figure) were counted: RM 5,299 against RM 2,420. */
+  const stake=live.reduce((a,o)=>a+(o.sev!=='note'&&o.rm>0.009?o.rm:0),0);
+  /* 10 Nov 2026 drew three or more repeat-order notes as one card; since 11 Nov 2026 none is drawn (noticedDraw). */
   const fam=k=>{const L=live.filter(o=>o.fam===k);if(!L.length)return '';
-    const D=dupOf(L), rest=D.length?L.filter(o=>D.indexOf(o)<0):L, n=rest.length+(D.length?1:0);
     return `<details class="obsec"${L.some(o=>o.sev==='act')?' open':''}>
-      <summary>${OBS_FAM[k].lbl} <span class="q">${OBS_FAM[k].q}</span><span class="ct${n?'':' zero'}">${n}</span></summary>
-      <div style="padding-bottom:12px">${rest.map(obsCard).join('')}${D.length?dupCard(D):''}</div></details>`;};
-  const liveN=live.length-(dupOf(live).length?dupOf(live).length-1:0);
+      <summary>${OBS_FAM[k].lbl} <span class="q">${OBS_FAM[k].q}</span><span class="ct">${L.length}</span></summary>
+      <div style="padding-bottom:12px">${L.map(obsCard).join('')}</div></details>`;};
+  const liveN=live.length;
 
   /* v385: SPLIT, NOT SHORTENED, AND THE BRANCH NOBODY RENDERS TODAY WAS ALREADY OVER THE LINE.
      stripMethod cuts an .insight past NOTE_MIN to its FIRST sentence, and here the caveat is the
@@ -18198,10 +18216,9 @@ function tabPlans(){
   <div class="kpis k4">
     <div class="kpi salt-kpi ${acts?'r':'g'}"><div class="l salt-kpi__label">Act</div><div class="v salt-kpi__value">${acts}</div><div class="n salt-kpi__note">${acts?'costs something to ignore':'nothing pressing'}</div></div>
     <div class="kpi salt-kpi ${watch?'gold':'g'}"><div class="l salt-kpi__label">Watch</div><div class="v salt-kpi__value">${watch}</div><div class="n salt-kpi__note">${watch?'moving the wrong way':'nothing slipping'}</div></div>
-    <div class="kpi salt-kpi p"><div class="l salt-kpi__label">At stake</div><div class="v salt-kpi__value">${stake>0.009?fmt0(stake):NIL}</div><div class="n salt-kpi__note">where an item names a figure</div></div>
+    <div class="kpi salt-kpi p"><div class="l salt-kpi__label">At stake</div><div class="v salt-kpi__value">${stake>0.009?fmt0(stake):NIL}</div><div class="n salt-kpi__note">named by Act and Watch</div></div>
     <div class="kpi salt-kpi"><div class="l salt-kpi__label">Hushed</div><div class="v salt-kpi__value">${hushed.length}</div><div class="n salt-kpi__note">${hushed.length?'dismissed or snoozed':'nothing hidden'}</div></div>
   </div>
-  <div class="insight salt-insight">Tags: <b>measured</b>, <b>thin</b> (under-sampled), <b>no sample</b>.</div>
   <div class="insight salt-insight">${esc(rhythmCount)}</div>
   ${rhythmCaveat?`<div class="insight salt-insight">${esc(rhythmCaveat)}</div>`:''}
   ${fam('rhythm')}${fam('integrity')}${fam('customer')}${fam('pricing')}${fam('promo')}${fam('upkeep')}
