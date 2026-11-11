@@ -6,7 +6,7 @@
       nor units taken back or a handover undone on or after it (Fable's review).
    3. A new count, a recorded loss and a landed lot each bring them in; another book's count and a lot not landed do not; nor a day
       ahead of today; a count still queued on the page is a count of today.
-   4. A write-off is dated by the engine's writeOffDay, the one the loyalty walk reads, by its OLDEST Correction where no stamp is.
+   4. A write-off is dated by the engine's writeOffDay, the one the loyalty walk reads, asked for the step that set the flag.
    5. On the frozen book a sale handed over after the anchor moves no salt floor and no discounted price; a count after it does.
    6. The cost stack carries the day, and the Desk says it beside the share.
    Mutations: test/floor-nrs-anchor.mutations.json. */
@@ -116,10 +116,23 @@ export async function run({ ok }) {
     "a write-off's day is the fold's stamp, else the newest Correction standing on the row, else the first handover plus the lock (4 days where none is given): "
       + JSON.stringify([PE.writeOffDay(Object.assign({}, corr, { defaultedOn: "2026-11-02" }), 4), PE.writeOffDay(corr, 4), PE.writeOffDay(off, 4), PE.writeOffDay(off, 7), PE.writeOffDay(off)]));
   ok(PE.writeOffDay(corr, 4, true) === "2026-10-09" && PE.writeOffDay(Object.assign({}, corr, { defaultedOn: "2026-11-02" }), 4, true) === "2026-11-02",
-    "asked for the oldest, it is the oldest Correction standing from the first handover, and the stamp still wins: " + JSON.stringify([PE.writeOffDay(corr, 4, true), PE.writeOffDay(Object.assign({}, corr, { defaultedOn: "2026-11-02" }), 4, true)]));
+    "asked exactly, with no step that names the flag, it is the oldest Correction standing that moved no units, and the stamp still wins: " + JSON.stringify([PE.writeOffDay(corr, 4, true), PE.writeOffDay(Object.assign({}, corr, { defaultedOn: "2026-11-02" }), 4, true)]));
   const noted = read(before.map((s) => s.rid === "w" ? Object.assign({}, s, { defaulted: true, amend: [{ kind: "Correction", date: "2026-11-02", kg: 0 }, { kind: "Correction", date: "2026-11-08", kg: 0, note: "a note" }] }) : s), AT);
   ok(noted && noted.writtenOff === 4 && noted.paid === 86,
     "a row written off on 02 Nov and noted again on 08 Nov is still written off at the count of 05 Nov: a later Correction never re-dates it: " + JSON.stringify(bare(noted)));
+  /* the re-check's fault: a site order's handover is itself a Correction, so the oldest Correction is its handover day. The step that set the flag says so in its own `was`. */
+  const wOff = (amend, more) => read(before.map((s) => s.rid === "w" ? Object.assign({}, s, { defaulted: true, amend }, more || {}) : s), AT);
+  const HAND = { kind: "Correction", date: "2026-10-12", kg: 2, was: { deliveredQty: 0, deliveredOn: null } }, SET = (on) => ({ kind: "Correction", date: on, kg: 0, was: { defaulted: null } });
+  const site = wOff([HAND, SET("2026-11-06")], { deliveredOn: undefined }), siteOld = wOff([HAND, { kind: "Correction", date: "2026-11-06", kg: 0 }], { deliveredOn: undefined });
+  ok(same(site, held) && same(siteOld, held),
+    "a site order handed over by a Correction on 12 Oct and written off on 06 Nov waits for the next measure, whether the step names the flag or not: " + JSON.stringify([bare(site), bare(siteOld)]));
+  const named = wOff([{ kind: "Correction", date: "2026-10-15", kg: 0, note: "a note" }, SET("2026-11-06")]), namedEarly = wOff([SET("2026-11-02"), { kind: "Correction", date: "2026-11-08", kg: 0, note: "a note" }]);
+  ok(same(named, held) && namedEarly && namedEarly.writtenOff === 4,
+    "the step that names the flag dates it: noted on 15 Oct and written off on 06 Nov waits, written off on 02 Nov and noted on 08 Nov is counted: " + JSON.stringify([bare(named), bare(namedEarly)]));
+  const again = wOff([SET("2026-10-20"), { kind: "Correction", date: "2026-10-25", kg: 0, was: { defaulted: true } }, SET("2026-11-06")]);
+  const undoStep = wOff([{ kind: "Correction", date: "2026-10-14", kg: 0, undoes: 0 }, { kind: "Correction", date: "2026-11-06", kg: 0 }]);
+  ok(same(again, held) && same(undoStep, held),
+    "a row written off, revived and written off again on 06 Nov reads the later day, and an undo's own step is never the day: " + JSON.stringify([bare(again), bare(undoStep)]));
   const byCorr = (on) => read(before.map((s) => s.rid === "w" ? Object.assign({}, s, { defaulted: true, amend: [{ kind: "Correction", date: on, kg: 0 }] }) : s), AT);
   ok(same(byCorr("2026-11-06"), held) && byCorr("2026-11-02").writtenOff === 4,
     "with no stamp the Correction that wrote the row off dates it: 06 Nov waits, 02 Nov is counted: " + JSON.stringify([bare(byCorr("2026-11-06")), bare(byCorr("2026-11-02"))]));

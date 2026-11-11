@@ -233,14 +233,27 @@ function loyalWho(book,id){
   return '';
 }
 /* THE DAY A ROW WAS WRITTEN OFF, lifted out of the loyalty walk on 11 Nov 2026 so the snapshot's nrsShare reads the same trail: the
-   fold's stamp, else the newest Correction on the row from its first handover (the OLDEST where `oldest` is passed, which is how
-   nrsShare dates one, so a later note on the row never moves its day), else the first handover plus the lock (`lock`, the caller's
-   lockDays: the walk's from TERMS, the share's from RULES; 4 where none is passed), the order's own date only with none of those. */
-function writeOffDay(s,lock,oldest){
+   fold's stamp, else the newest Correction on the row from its first handover, else the first handover plus the lock (`lock`, the
+   caller's lockDays: the walk's from TERMS, the share's from RULES; 4 where none is passed), the order's own date only with none of
+   those. `exact` is how nrsShare asks (Fable's two reviews of answer H): no road stamps a sale, and by the newest Correction a later
+   note on a written-off row would re-date it, while by the oldest a site order, whose handover is itself a Correction, would be
+   written off on its handover day. So: the newest Correction whose own `was` names `defaulted` (the fold has written what a
+   Correction changed since 16 Oct 2026, and a row written off again after being revived reads the later one), else the oldest
+   Correction that moved no units and is not an undo (the two rows written off before that), else the lock. */
+function writeOffDay(s,lock,exact){
   if(s.defaultedOn)return String(s.defaultedOn);
   const held=txHandSteps(s),first=held.length&&held[0].d?String(held[0].d):null;
-  const steps=(s.amend||[]).filter(a=>a&&!a.undone&&a.kind==='Correction'&&a.date&&(!first||String(a.date)>=first)).map(a=>String(a.date)).sort();
-  if(steps.length)return steps[oldest?0:steps.length-1];
+  const corr=(s.amend||[]).filter(a=>a&&!a.undone&&a.kind==='Correction'&&a.date&&(!first||String(a.date)>=first));
+  const days=rows=>rows.map(a=>String(a.date)).sort();
+  if(exact){
+    const set=days(corr.filter(a=>a.was&&Object.prototype.hasOwnProperty.call(a.was,'defaulted')));
+    if(set.length)return set[set.length-1];
+    const plain=days(corr.filter(a=>!(Math.abs(+a.kg||0)>0.0001)&&a.undoes==null));
+    if(plain.length)return plain[0];
+  }else{
+    const steps=days(corr);
+    if(steps.length)return steps[steps.length-1];
+  }
   return first?dayIso(dayNo(first)+(lock!=null?+lock:4)):String(s.date||'');
 }
 function loyaltyWalk(book,id,today){

@@ -72,12 +72,6 @@
   "replace": "POSITION_ENGINE.writeOffDay(s,lock,true)>at)"
  },
  {
-  "name": "the share dates a write-off by its newest Correction",
-  "file": "engine/snapshot.mjs",
-  "find": "POSITION_ENGINE.writeOffDay(s,lock,true)>=at)",
-  "replace": "POSITION_ENGINE.writeOffDay(s,lock)>=at)"
- },
- {
   "name": "a cancelled row's later units stay in the units paid for",
   "file": "engine/snapshot.mjs",
   "find": "    later+=POSITION_ENGINE.txPhys(s)-q; ",
@@ -168,24 +162,6 @@
   "replace": "  const held=txHandSteps(s),first="
  },
  {
-  "name": "a write-off's day reads an undone Correction",
-  "file": "engine/position.mjs",
-  "find": "filter(a=>a&&!a.undone&&a.kind==='Correction'&&a.date&&(!first||String(a.date)>=first))",
-  "replace": "filter(a=>a&&a.kind==='Correction'&&a.date&&(!first||String(a.date)>=first))"
- },
- {
-  "name": "a write-off's day is always the oldest Correction",
-  "file": "engine/position.mjs",
-  "find": "return steps[oldest?0:steps.length-1];",
-  "replace": "return steps[0];"
- },
- {
-  "name": "a write-off's day is never the oldest Correction",
-  "file": "engine/position.mjs",
-  "find": "return steps[oldest?0:steps.length-1];",
-  "replace": "return steps[steps.length-1];"
- },
- {
   "name": "a write-off's day forgets the lock where none is given",
   "file": "engine/position.mjs",
   "find": "dayNo(first)+(lock!=null?+lock:4)",
@@ -232,5 +208,53 @@
   "file": "master/salt_command.html",
   "find": "for the units that left unpaid${nrsWhen(sC)},`:'that'}",
   "replace": "for the units that left unpaid,`:'that'}"
+ },
+ {
+  "name": "a write-off's day reads an undone Correction",
+  "file": "engine/position.mjs",
+  "find": "filter(a=>a&&!a.undone&&a.kind==='Correction'&&a.date&&(!first||String(a.date)>=first));",
+  "replace": "filter(a=>a&&a.kind==='Correction'&&a.date&&(!first||String(a.date)>=first));"
+ },
+ {
+  "name": "the loyalty walk's day is the oldest Correction",
+  "file": "engine/position.mjs",
+  "find": "    if(steps.length)return steps[steps.length-1];",
+  "replace": "    if(steps.length)return steps[0];"
+ },
+ {
+  "name": "the share dates a write-off as the loyalty walk does",
+  "file": "engine/snapshot.mjs",
+  "find": "POSITION_ENGINE.writeOffDay(s,lock,true)>=at)",
+  "replace": "POSITION_ENGINE.writeOffDay(s,lock)>=at)"
+ },
+ {
+  "name": "the step that names the flag is not read",
+  "file": "engine/position.mjs",
+  "find": "    if(set.length)return set[set.length-1];\n",
+  "replace": ""
+ },
+ {
+  "name": "the first step that named the flag is read, not the last",
+  "file": "engine/position.mjs",
+  "find": "    if(set.length)return set[set.length-1];",
+  "replace": "    if(set.length)return set[0];"
+ },
+ {
+  "name": "a Correction that moved units can be the day",
+  "file": "engine/position.mjs",
+  "find": "corr.filter(a=>!(Math.abs(+a.kg||0)>0.0001)&&a.undoes==null)",
+  "replace": "corr.filter(a=>a.undoes==null)"
+ },
+ {
+  "name": "an undo's own step can be the day",
+  "file": "engine/position.mjs",
+  "find": "corr.filter(a=>!(Math.abs(+a.kg||0)>0.0001)&&a.undoes==null)",
+  "replace": "corr.filter(a=>!(Math.abs(+a.kg||0)>0.0001))"
+ },
+ {
+  "name": "the newest plain Correction is the day, not the oldest",
+  "file": "engine/position.mjs",
+  "find": "    if(plain.length)return plain[0];",
+  "replace": "    if(plain.length)return plain[plain.length-1];"
  }
 ]

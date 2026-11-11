@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="cbc824f7cba4b0b5";
+var SALT_BUILD_ID="ea268834691286b1";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -6679,14 +6679,27 @@ function loyalWho(book,id){
   return '';
 }
 /* THE DAY A ROW WAS WRITTEN OFF, lifted out of the loyalty walk on 11 Nov 2026 so the snapshot's nrsShare reads the same trail: the
-   fold's stamp, else the newest Correction on the row from its first handover (the OLDEST where `oldest` is passed, which is how
-   nrsShare dates one, so a later note on the row never moves its day), else the first handover plus the lock (`lock`, the caller's
-   lockDays: the walk's from TERMS, the share's from RULES; 4 where none is passed), the order's own date only with none of those. */
-function writeOffDay(s,lock,oldest){
+   fold's stamp, else the newest Correction on the row from its first handover, else the first handover plus the lock (`lock`, the
+   caller's lockDays: the walk's from TERMS, the share's from RULES; 4 where none is passed), the order's own date only with none of
+   those. `exact` is how nrsShare asks (Fable's two reviews of answer H): no road stamps a sale, and by the newest Correction a later
+   note on a written-off row would re-date it, while by the oldest a site order, whose handover is itself a Correction, would be
+   written off on its handover day. So: the newest Correction whose own `was` names `defaulted` (the fold has written what a
+   Correction changed since 16 Oct 2026, and a row written off again after being revived reads the later one), else the oldest
+   Correction that moved no units and is not an undo (the two rows written off before that), else the lock. */
+function writeOffDay(s,lock,exact){
   if(s.defaultedOn)return String(s.defaultedOn);
   const held=txHandSteps(s),first=held.length&&held[0].d?String(held[0].d):null;
-  const steps=(s.amend||[]).filter(a=>a&&!a.undone&&a.kind==='Correction'&&a.date&&(!first||String(a.date)>=first)).map(a=>String(a.date)).sort();
-  if(steps.length)return steps[oldest?0:steps.length-1];
+  const corr=(s.amend||[]).filter(a=>a&&!a.undone&&a.kind==='Correction'&&a.date&&(!first||String(a.date)>=first));
+  const days=rows=>rows.map(a=>String(a.date)).sort();
+  if(exact){
+    const set=days(corr.filter(a=>a.was&&Object.prototype.hasOwnProperty.call(a.was,'defaulted')));
+    if(set.length)return set[set.length-1];
+    const plain=days(corr.filter(a=>!(Math.abs(+a.kg||0)>0.0001)&&a.undoes==null));
+    if(plain.length)return plain[0];
+  }else{
+    const steps=days(corr);
+    if(steps.length)return steps[steps.length-1];
+  }
   return first?dayIso(dayNo(first)+(lock!=null?+lock:4)):String(s.date||'');
 }
 function loyaltyWalk(book,id,today){
@@ -9380,9 +9393,11 @@ function shrinkRate(C,p){const h=C.W.buyUnits+openingFor(C.B,p).qty;
    an anchor itself. Still live, said: a loan in kind (the walk's soldUnits carries it undated), reward cover put on an older
    row, a row, a count or a loss dated before the anchor and entered or corrected after it, a lot's units restated under what
    landed, and a loan settled with units left. A book with no count, loss or lot reads live, as it did.
-   A WRITE-OFF WITH NO STAMP is dated here by the OLDEST Correction from its first handover, not the newest the loyalty walk reads
-   (Fable's review of H): no road stamps a sale's defaultedOn, and by the newest a later note on a written-off row would take the
-   write-off out of the share until the next measure and bring it back, a Floor that bounces. The oldest can only be early. */
+   A WRITE-OFF WITH NO STAMP is dated here by the step that set the flag (writeOffDay asked `exact`, Fable's two reviews of H), not
+   by the newest Correction the loyalty walk reads: no road stamps a sale's defaultedOn, and by the newest a later note on a
+   written-off row would take the write-off out of the share until the next measure and bring it back, a Floor that bounces.
+   Also said: a trail stating more units than the row holds, with a step on or after the day, under-reads that row (one such row
+   on the book, cancelled and holding none), and a queued count typed for an earlier day previews as today's. */
 function nrsAnchor(C,p){
   const dp=C.B.defaultProd||'salt', now=C.today?todayISO(C):null;
   const mine=r=>r&&(r.product||dp)===p&&r.date&&(!now||String(r.date)<=now);

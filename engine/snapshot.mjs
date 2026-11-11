@@ -169,9 +169,11 @@ function shrinkRate(C,p){const h=C.W.buyUnits+openingFor(C.B,p).qty;
    an anchor itself. Still live, said: a loan in kind (the walk's soldUnits carries it undated), reward cover put on an older
    row, a row, a count or a loss dated before the anchor and entered or corrected after it, a lot's units restated under what
    landed, and a loan settled with units left. A book with no count, loss or lot reads live, as it did.
-   A WRITE-OFF WITH NO STAMP is dated here by the OLDEST Correction from its first handover, not the newest the loyalty walk reads
-   (Fable's review of H): no road stamps a sale's defaultedOn, and by the newest a later note on a written-off row would take the
-   write-off out of the share until the next measure and bring it back, a Floor that bounces. The oldest can only be early. */
+   A WRITE-OFF WITH NO STAMP is dated here by the step that set the flag (writeOffDay asked `exact`, Fable's two reviews of H), not
+   by the newest Correction the loyalty walk reads: no road stamps a sale's defaultedOn, and by the newest a later note on a
+   written-off row would take the write-off out of the share until the next measure and bring it back, a Floor that bounces.
+   Also said: a trail stating more units than the row holds, with a step on or after the day, under-reads that row (one such row
+   on the book, cancelled and holding none), and a queued count typed for an earlier day previews as today's. */
 function nrsAnchor(C,p){
   const dp=C.B.defaultProd||'salt', now=C.today?todayISO(C):null;
   const mine=r=>r&&(r.product||dp)===p&&r.date&&(!now||String(r.date)<=now);
