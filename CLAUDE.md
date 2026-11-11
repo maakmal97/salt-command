@@ -93,10 +93,8 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      (Ceiling over Median) to the % above nought and (Floor over Median) to it below, inside the walk, down to RM 5, a lift never
      under the Median, held between the Floor and the Ceiling. **A salt figure travels as unit `band`; `pct` naming salt is the form
      before the band** (`unitOf`, `unitOk`): refused at Salt Admin's inputs, flagged by the drafter and dropped by the fold with a
-     note, never read as a %. **The switch's carry-over is a table in the rule** (`band.carry`, `{code: {from, to}}`, the list he
-     approved, `docs/plan-salt-price-band-carry.html`): a figure still held from the old curve is read at its place on the band by
-     the snapshot (`heldPct`), setting one back to exactly `from` is refused (`carryClash`), and the table leaves with the version
-     after a `tierset` of the `to` figures is booked. The old curve (`driftMultiple` over a rule's `ends`) stays in the engine
+     note, never read as a %. **The switch's carry-over is booked and gone** (the list he approved, `docs/plan-salt-price-band-carry.html`; his Approve of 11 Nov 2026 booked the
+     15 places): the book holds each carried customer's place on the band, read as it stands, and no table or reader of one is in the rule or the engine. The old curve (`driftMultiple` over a rule's `ends`) stays in the engine
      for a rule that carries `ends`; none does. **Everyone starts at 0%**. He sets it on the customer's own card under Salt Admin's
      Customers (moved from Record, his yes of 25 Oct 2026), a whole % by a stepper in steps of 5 between the ends the catalog gives
      (`driftMin`, `driftMax`, sent with `driftUnit`), its prices shown live off the Desk before it goes to Approve

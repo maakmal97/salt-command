@@ -59,10 +59,10 @@
   `LIFT_MAX` otherwise; `driftOk(v, R)` judges on it (with no rule, the widest) and `rangeSay(R)` words a refusal. **A band figure travels as unit
   `band`** (`unitOf`, `unitOk`): Salt Admin's forms send the catalog's `driftUnit`, `makerTierSet` and Add ID refuse `pct` naming salt in the old-unit
   words, the drafter flags it and the fold's `oldWhy` drops it as set "on the old scale"; the page's saved-entry whitelist (`vaultPendingOk`'s
-  `enumWords`) names `band`. **The carry-over of the switch**: `band.carry` is `{code: {from, to}}`, the list he approved
-  (`docs/plan-salt-price-band-carry.html`); `heldPct(R, code, v)` reads a figure still equal to `from` as `to` in the snapshot's `driftOfNow`, the catalog's
-  cards and the drafter's "moves from" flag, and `carryClash` refuses a new figure equal to `from` at `makerTierSet` and in the drafter. After the deploy
-  one `tierset` (unit `band`) of the `to` figures goes to Approve; the version after it is booked removes the table and `carryClash`. **The suggestion on
+  `enumWords`) names `band`. **The carry-over of the switch** is booked and gone: from v1500 the rule held `band.carry`, `{code: {from, to}}`, the list he approved
+  (`docs/plan-salt-price-band-carry.html`), read by `heldPct` and guarded by `carryClash`; his Approve of 11 Nov 2026 booked one `tierset` (unit `band`)
+  of the 15 `to` figures at seq 187, the day's export put them in git's book, and the next version took the table, both functions and the five gates
+  (a tierset back to `from` at `makerTierSet`, in the drafter and in the fold, a rename of a carried code, an Add ID at that figure) out. A held figure is read as it stands. **The suggestion on
   the band** starts from the median place (`bandPct` at each sale's own size, never under nought) of their last five sales, handed to `suggestPct` as
   `O.places` with `liftRange`; the words keep the ratio paid over. **What to know**: the Ceiling moves only with the typed supplier's price, so on RM 56 a
   COGS past about RM 52.60 a unit lets the Ceiling hold the Median at the largest sizes, and past RM 62.65 at 12.5 units; a salt discount moves with the
