@@ -1351,6 +1351,21 @@ export const OWNER_JS = `
     'this order has already been approved for a row and cannot be changed':'This order is already approved for a row and cannot be changed.',
     'this order is already under review or agreed':'This order is already under review or agreed.',
     'an offer is open on this order':'An offer is open on this order. Withdraw it first.',
+    /* 11 Nov 2026: the Desk's Negotiate refusals, which fell to the general sentence (2MHS-H9Y's Agree, refused seven times as "could not do that") */
+    'they asked for a price on this order: send them an offer, which they take or decline':'They asked for a better price. Send them an offer.',
+    'they have taken your offer: its row is drafted at it, so there is nothing to accept here':'They have taken your offer. Its row is drafted at that price.',
+    'they have said yes already: its row is drafted at it':'They have already said yes. Its row is drafted at that price.',
+    'the ask is closed: the order stands at its listed price, so Accept or decline it':'Their ask is closed. Agree it at the list price, or decline it.',
+    'an offer is open on this order, waiting on their answer':'Your offer is open, waiting on their answer.',
+    /* 11 Nov 2026: and every other sentence Accept, offer and Withdraw refuse with (test/admin-price-ask.mjs reads them off src/orders.js) */
+    'no desk code is mapped to this account yet: publish the statements again':'This account is not on the Desk yet. Publish the statements, then try again.',
+    'the desk has no ledger binding, so no row can be drafted':'The Desk cannot draft a row just now. Try again shortly.',
+    'Accept answers a preview: send the digest the preview gave':'Read the figures again, then agree.',
+    'an offer answers a preview: send the digest the preview gave':'Read the figures again, then offer.',
+    'its row is on the book already, so there is nothing to accept again':'Its row is on the book already.',
+    'its row is being drafted: look again in a moment':'Its row is being drafted. Look again in a moment.',
+    'its row differs from what you saw and waits under Approve':'Its row came out different, so it waits under Approve.',
+    'a sheet of several lines is agreed by one Accept: lower it to what they placed, keep their window, or Decline':'A sheet of several orders is agreed in one go: keep their price and window, or decline it.',
     'a time window is a day and one of the six four-hour windows':'Choose a day and one of the six four-hour windows.',
     'only a delivery takes a time window':'Only a delivery takes a time window.',
     'they chose their own day, and it stands':'They chose their own day, and it stands.',
@@ -1368,6 +1383,7 @@ export const OWNER_JS = `
   function plainRefusal(raw){
     var s=String(raw==null?'':raw), left;
     if(Object.prototype.hasOwnProperty.call(REFUSALS,s)) return REFUSALS[s];
+    if(s.indexOf('this order is ')===0) return 'This order has moved on. Read the orders again.';
     if(s.indexOf('Money is already on its way to this row.')===0) return 'Money is already on its way to this row. Decide that first.';
     left=/^This row can still take RM ([0-9][0-9,]*[.][0-9]+)/.exec(s);
     if(left) return 'This row can only take RM '+left[1]+' more.';
@@ -1485,8 +1501,15 @@ export const OWNER_JS = `
   }
   /* what needs their yes, the Worker's needsYes: goods above what they placed it at, or a window other than theirs */
   function makerNeedsYes(order,total,slot){ return (total>(+order.total||0)+0.004)||(!!slot&&!!order.slot&&slot!==order.slot); }
-  /* his Accept sent for their yes, open or said yes to: the order waits on them, or on its row */
-  function makerAccHeld(order){ var p=order&&order.price; return !!p&&p.from==='accept'&&(p.state==='taken'||(p.state==='offered'&&!!p.offer&&new Date().toISOString()<=String(p.offer.until))); }
+  /* an offer of his on the order, open or said yes to: the order waits on them, or on its row. 11 Nov 2026: his answer to THEIR ASK too (Negotiate, a
+     price the customer asked for, from not accept), which Salt Admin never drew, so an asked order showed Agree and the Desk refused it */
+  function makerAccHeld(order){ var p=order&&order.price; return !!p&&(p.state==='taken'||(p.state==='offered'&&!!p.offer&&new Date().toISOString()<=String(p.offer.until))); }
+  /* 11 Nov 2026: THEY ASKED FOR A PRICE (the Counter's Negotiate) and no offer of his holds the order. The Desk agrees it only by an offer they take
+     (src/orders.js acceptOrder refuses Accept while the ask is open), so the card's pill is Offer them, never Agree. An offer of his that lapsed
+     reopens the ask; their No thanks or his Take back closes it (passed, withdrawn), and Agree at the listed price is his again */
+  /* Fable, 11 Nov 2026: an ask past the grid has no list price, and the order book cancels it when his offer is taken back with nothing paid */
+  function makerWithdrawSaid(o){ return !(+o.total>0)&&!(+o.paid>0)?'Offer withdrawn. With no list price, the order is cancelled.':'Offer withdrawn. The order stands as they placed it.'; }
+  function makerAsked(order){ var p=order&&order.price; return !!p&&p.from!=='accept'&&(p.state==='asked'||p.state==='offered')&&!makerAccHeld(order); }
   var makerClaims=[], makerClaimRequests={}, makerSlipGeneration=0, makerSlipUrls=[], makerSlipDraw=null;
   /* 12 Oct 2026 (Phase 2b, his decisions 3, 4 and 6 of 11 Oct): THE CLAIM CARD. A waiting account claim is a row of the system's Inbox row and the one
      opened is its card under it, one at a time. The card reads the claim's rows ITSELF when it is opened (the Desk's preview through the Counter, stored
@@ -4671,7 +4694,7 @@ export const OWNER_JS = `
   function ordMove(o){
     if(o.test) return '';
     var owed=ordDue(o), out=(+o.qty||0)>0&&(+o.moved||0)>=(+o.qty||0)-0.0005;
-    if(o.status==='placed') return makerAccHeld(o)&&o.price.state==='offered'?'Withdraw':makerAccHeld(o)?'':'Agree';
+    if(o.status==='placed') return makerAccHeld(o)&&o.price.state==='offered'?'Withdraw':makerAccHeld(o)?'':makerAsked(o)?'Offer':'Agree';
     if(o.status!=='acknowledged'&&o.status!=='ready') return '';
     if(ordPays(o).length) return 'Received';
     if(!out) return o.status==='acknowledged'?'Ready':'Handed';
@@ -4898,7 +4921,7 @@ export const OWNER_JS = `
     if(main==='Message'){ openOrder(e.id); ordFocus={id:e.id, at:'[data-act="order.reply-text"]'}; focusOrderAt(); if(!reviewReading) ordFocus=null; return; }
     /* Agree reads its figures on the card; a collection is made ready at one of his points, chosen on the card's Sheet; two payments are read on the card */
     /* 28 Oct 2026 (Fable): a claim past what is owed is Already recorded, which books nothing; it is answered on the card, its Sheet saying so beside Not found */
-    if(main==='Agree'||(main==='Ready'&&o.mode!=='deliver')||(main==='Received'&&(ordPays(o).length!==1||payOnBook(o,ordPays(o)[0])))){ openOrder(e.id); return; }
+    if(main==='Agree'||main==='Offer'||(main==='Ready'&&o.mode!=='deliver')||(main==='Received'&&(ordPays(o).length!==1||payOnBook(o,ordPays(o)[0])))){ openOrder(e.id); return; }
     ordAsk[e.id]=main; ordRowRedraw(e);
   }
   function ordMoveSend(e,main){
@@ -4906,7 +4929,7 @@ export const OWNER_JS = `
     /* Fable's re-check, 28 Oct 2026: a read since the ask may have left the claim past what is owed; that is the card's to answer, never the row's */
     if(main==='Received'&&(ordPays(o).length!==1||payOnBook(o,ordPays(o)[0]))){ delete ordAsk[e.id]; openOrder(e.id); return; }
     delete ordAsk[e.id]; ordBusy[e.id]=main; ordRowRedraw(e);
-    var done=main==='Withdraw'?makerTap(o,'withdraw',{},'Offer withdrawn; the order stands as they placed it.')
+    var done=main==='Withdraw'?makerTap(o,'withdraw',{},makerWithdrawSaid(o))
       :main==='Ready'?makerMove(o,{status:'ready',mode:'deliver'},'Order marked ready to deliver.')
       :main==='Handed'?makerTap(o,'handed',{qty:Number(o.qty)},'Handover sent to the Desk.')
       :main==='Received'?orderReceived(o,ordPays(o)[0]):Promise.resolve(false);
@@ -5489,17 +5512,22 @@ export const OWNER_JS = `
       if(order.status==='placed'&&makerAccHeld(order)){
         var ap=order.price, apf=ap.offer||{};
         stageOf(ap.state==='taken'?'Their yes':'Waiting for them').appendChild(el('p','maker-facts',(ap.state==='taken'?'They agreed to ':'Waiting for their yes to ')+rm(apf.total)
-          +(order.mode==='deliver'?' + '+rm(apf.delivery||0):'')+(apf.slot&&apf.slotSpan?', '+String(apf.slotSpan).replace('-',' to ')+' on '+mwDayLabel(String(apf.slot).slice(0,10)):'')
+          +(order.mode==='deliver'&&typeof apf.delivery==='number'?' + '+rm(apf.delivery):'')+(apf.slot&&apf.slotSpan?', '+String(apf.slotSpan).replace('-',' to ')+' on '+mwDayLabel(String(apf.slot).slice(0,10)):'')
           +(ap.state==='taken'?'. The row waits under Approve.':', until '+fmtWhen(apf.until)+'.')));
-        if(ap.state!=='taken') asRow(makerButton(stageRows,['Take back the offer','order.withdraw-offer'],function(){ makerTap(order,'withdraw',{},'Offer withdrawn. The order stands as they placed it.'); },false)).setAttribute('data-withdraw','');
+        if(ap.state!=='taken') asRow(makerButton(stageRows,['Take back the offer','order.withdraw-offer'],function(){ makerTap(order,'withdraw',{},makerWithdrawSaid(order)); },false)).setAttribute('data-withdraw','');
       }else if(order.status==='placed'){
         /* 22 Oct 2026 (canvas Needs you, his word): THE AGREE INPUTS TWO BY TWO, Goods and Delivery side by side, then When across both: the goods' price, the
            delivery charge (none chosen until he chooses) and the one choice of when, ASAP needing no day and each window carrying its own */
         /* 2 Nov 2026 (his canvas): the four figures under their head, then Agree as a settings list (Goods, Delivery, When) and its one pill */
         var figs=part('The figures','ofigsec');
         var quote=makerQuotes[order.id]||(makerPv[order.id]&&makerPv[order.id].payload)||{}, form=el('div','oagree');
-        stageOf('Agree','oagreesec').appendChild(form);
-        var total=makerField(form,['Goods, RM','order.total'],'number',quote.total==null?order.total:quote.total);
+        /* 11 Nov 2026: their ask is said first and the goods start at their figure, so one tap offers what they asked; he may type another */
+        var asked=makerAsked(order), askRM=asked&&typeof order.price.proposed==='number'&&order.price.proposed>0?order.price.proposed:null;
+        var agreeSec=stageOf(asked?'Offer':'Agree','oagreesec');
+        if(asked){ var askLine=el('p','maker-facts',(askRM!=null?'They asked for '+rm(askRM)+'. ':'They asked for a better price. ')+(+order.total>0?'The list price is '+rm(order.total)+'.':'It has no list price.'));
+          askLine.setAttribute('data-ask',''); agreeSec.appendChild(askLine); }
+        agreeSec.appendChild(form);
+        var total=makerField(form,['Goods, RM','order.total'],'number',quote.total==null?(askRM!=null?askRM:order.total):quote.total);
         /* 18 Oct 2026 (Salt Admin clarity, part 3): THE CARD LEADS WITH THE ANSWER. Agree is the filled pill at the top, the terms it will send written beside
            it in one line and kept in step with the choices; the price, the delivery charge and the time are folded under Change terms, shut until a tap.
            Until the figures are read the pill is a stand-in, never a send: it asks for the charge (and opens it) or says it is reading. */
@@ -5562,15 +5590,17 @@ export const OWNER_JS = `
           var old=card.querySelector('[data-accept]'); if(old) old.remove();
           var wait=lead.querySelector('[data-accept-wait]'); if(wait) wait.remove();
           /* a sheet's lines take its first order's window, as they take its one delivery charge */
-          var wv=makerPlacedWin(), yes=makerNeedsYes(order,q.total,wv);
+          /* 11 Nov 2026: an open ask is answered by an offer whatever the figure (the Desk's offerOrder files it as Negotiate's, on the same preview's offer digest) */
+          var wv=makerPlacedWin(), askOpen=makerAsked(order), yes=askOpen||makerNeedsYes(order,q.total,wv);
           [].forEach.call(document.querySelectorAll('[data-reward="'+order.id+'"]'),function(n){ rewardPaint(n,order); });   /* the reward's figures come with the read */
           /* 25 Oct 2026 (canvas Salt Admin Orders): the pill says the one sum it sends, the goods and the delivery together, so it fits its half of the row; the terms stand above it */
-          var accept=makerButton(row3,[(yes?'Ask them, ':'Agree, ')+rmShort((+q.result.quote||0)+(+q.result.delivery||0)),yes?'order.send-yes':'order.accept'],function(){
+          var accept=makerButton(row3,[(askOpen?'Offer them, ':yes?'Ask them, ':'Agree, ')+rmShort((+q.result.quote||0)+(+q.result.delivery||0)),yes?'order.send-yes':'order.accept'],function(){
             var s=makerQuotes[order.id]; if(!s||!s.hash) return;
-            /* version 2: a raise or another window goes to them as an offer, for their yes; never on a sheet, which the Desk refuses */
-            if(yes){ var ob={total:s.total,delivery:s.delivery,hash:s.offerHash}; if(order.mode==='deliver'&&wv) ob.slot=wv;
+            /* version 2: a raise or another window goes to them as an offer, for their yes; never on a sheet, which the Desk refuses. An answer to
+               their ask carries no window: Negotiate's offer holds the goods and the charge alone */
+            if(yes){ var ob={total:s.total,delivery:s.delivery,hash:s.offerHash}; if(order.mode==='deliver'&&wv&&!askOpen) ob.slot=wv;
               if(s.oneOff) ob.oneOff=s.oneOff;
-              makerTap(order,'offer',ob,'Sent to them for their yes.'); return; }
+              makerTap(order,'offer',ob,askOpen?'Offer sent. They take it or say no thanks.':'Sent to them for their yes.'); return; }
             var body={total:s.total,delivery:s.delivery,hash:s.hash};
             if(s.oneOff) body.oneOff=s.oneOff;
             if(order.test) body.prepay=s.prepay===true;
@@ -5676,7 +5706,8 @@ export const OWNER_JS = `
         }
         /* 10 Oct 2026 (his Q3): a delivery that asked for no time may be answered with a window, sent with Accept; theirs stands */
         var win=makerWin[order.id]||(makerWin[order.id]={value:'',day:''});
-        if(deliver&&!order.wantBy){
+        /* 11 Nov 2026 (Fable): an answer to their ask carries no window (Negotiate's offer is goods and charge), so no When is drawn while it is open */
+        if(deliver&&!order.wantBy&&!makerAsked(order)){
           /* 22 Oct 2026 (canvas Needs you): ONE WHEN, across Goods and Delivery: theirs first (ASAP, which needs no day, or the window they chose), then every
              window still ahead on the days the Counter offers, each saying its own day (Today, Tomorrow, Fri 24 Oct). Its values are the slots the radios sent */
           var now=Date.now(), days=makerWinDays(now), theirs=order.slot?String(order.slot).slice(0,10):'';
@@ -7745,7 +7776,7 @@ export const OWNER_JS = `
     if(!needAsk[key]) mainButton(c,'Withdraw','need.withdraw',key, function(){ delete needNote[key]; needAsk[key]=true; drawNeeds(); });
     else askBox(c,key,'Take back your offer of '+rm((+apf.total||0)+(+apf.delivery||0))+' to '+codeByUser(o.u)+'?', function(){
       needBusy[key]=true; drawNeeds();
-      makerTap(o,'withdraw',{},'Offer withdrawn. The order stands as they placed it.').then(function(done){
+      makerTap(o,'withdraw',{},makerWithdrawSaid(o)).then(function(done){
         delete needBusy[key];
         if(done) delete needAsk[key]; else needNote[key]=done===undefined?'Busy, try again.':makerSaid[o.id]||'Not withdrawn. Try again.';
         drawNeeds();
@@ -7794,14 +7825,14 @@ export const OWNER_JS = `
       else if(held&&o.price.state==='offered') L.push(item('soon','orders','Offer','f:'+o.id, o.price.offeredAt||o.at, {who:who, head:'Offer to ', mark:o.product, order:o.id,
         what:'Waits on their yes until '+fmtWhen(apf.until), practice:t, open:to, rm:(+apf.total||0)+(+apf.delivery||0), ways:true}, function(c){ offerButton(c,o,apf); }));
       else if(held){}
-      else if(o.status==='placed') L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, head:'Agree ', rest:shP.length>1?"'s sheet":"'s order", mark:o.product, what:shP.length>1?shP.length+' orders on one sheet':orderWhat(o), practice:t, open:to, order:o.id,
+      else if(o.status==='placed') L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, head:makerAsked(o)?'Offer on ':'Agree ', rest:shP.length>1?"'s sheet":"'s order", mark:o.product, what:shP.length>1?shP.length+' orders on one sheet':orderWhat(o), practice:t, open:to, order:o.id,
         rm:shP.length>1?shP.reduce(function(s,x){ return s+(+x.total||0); },0):+o.total||0, tap:'agree', late:!!(clockOf(o)||{}).late}, function(c){
         /* Agree needs the delivery charge and the window, which the full card asks for, so the button opens it; the clock stands in the opened card */
         var k=c._full&&clockOf(o);
         if(k){ var nc=el('p','need-clock'+(k.late?' need-clock--late':'')); nc.setAttribute('data-clock','');
           nc.appendChild(el('strong','oclock__min',k.waited+' min')); nc.appendChild(document.createTextNode(' waiting'+(k.usual!=null?', usually '+k.usual:'')));
           c._body.appendChild(nc); }
-        mainButton(c,'Agree','need.agree','o:'+o.id, to);
+        mainButton(c,makerAsked(o)?'Offer':'Agree','need.agree','o:'+o.id, to);
       }));
       /* a question of theirs on the order that he has not answered (the Worker's awaitingAnswer), as an account's thread is Now when asked */
       if(orderAsked(o)){
