@@ -422,16 +422,15 @@ export async function run({ ok }) {
       "An answer whose card has gone, the order having left the open list, falls to the list's own line and is not lost: " + list());
     const approveRow = () => card(draftId) && card(draftId).querySelector('button[data-act="draft.approve"]');
     await until(() => approveRow());
-    /* multi-tick Approve (22 Oct 2026): Approve is a choice that sends nothing; the bar's Confirm asks on the page's Sheet and sends one decide-many */
+    /* multi-tick Approve (22 Oct 2026): Approve is a choice that sends nothing; the bar's Confirm sends one decide-many (12 Nov 2026: with no Sheet for approvals) */
     approveRow().click();
     const barGo = () => doc.querySelector('#apBar [data-act="approve.confirm"]');
     await until(() => barGo() && !doc.getElementById("apBar").hidden);
     ok(many.length === 0 && card(draftId).classList.contains("ap--a") && approveRow().getAttribute("aria-pressed") === "true",
       "Approve on a Desk row's card only chooses it: the card lights, aria-pressed is set and nothing is sent");
     ok(!!barGo(), "Choosing Approve shows the bar's Confirm");
-    barGo()?.click(); await until(() => doc.getElementById("ynGo"));
-    ok(many.length === 0, "Confirm asks on the page's Sheet and sends nothing until its action is tapped");
-    doc.getElementById("ynGo")?.click(); await until(() => many.length === 1);
+    barGo()?.click(); await until(() => many.length === 1);
+    ok(!doc.getElementById("ynGo"), "Confirm sends an approval at once, asking on no Sheet");
     ok(JSON.stringify(many[0]) === JSON.stringify({ approve: [draftId], reject: [] }),
       "A Desk row's yes is one decide-many request carrying the row's id: " + JSON.stringify(many));
     await until(() => field("20261003090001-ack", "Your line"));

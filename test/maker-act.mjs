@@ -331,7 +331,7 @@ export async function drawEverything(p) {
   p.snap("the rows to approve, the queue shut");
   /* 22 Oct 2026 (multi-tick Approve): Approve and Reject choose; the bar's Confirm asks on the sheet, let go with Keep, and Clear lets the choice go */
   await click(byAct(row, "draft.approve")); p.snap("a Desk row chosen to approve, the bar standing");
-  await click(byAct(d, "approve.confirm")); p.snap("Confirm, asking on the sheet"); await click(byAct(d, "ask.keep"));
+  /* 12 Nov 2026 (his Approve review): an approval alone goes on Confirm with no Sheet, so the Sheet is drawn for a rejection */
   await click(byAct(d.querySelector('#makerDrafts [data-maker-card="draft:d-1"]'), "draft.reject")); p.snap("the row chosen to reject instead");
   await click(byAct(d, "approve.confirm")); p.snap("Confirm with a rejection, asking on the sheet"); await click(byAct(d, "ask.keep"));
   await click(byAct(d, "approve.clear"));

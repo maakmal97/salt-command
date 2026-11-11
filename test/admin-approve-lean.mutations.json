@@ -104,7 +104,7 @@
  {
   "name": "the Sheet row says no figure",
   "file": "stmt/owner.js",
-  "find": ".concat(ts.map(function(s){ return (ts.length>1?s.code+' ':'')+s.product+' '+tierWord(s.v); }))",
+  "find": ".concat(ts.map(function(s){ return (ts.length>1?s.code+' ':'')+tierWord(s.v); }))",
   "replace": ""
  },
  {
@@ -112,5 +112,11 @@
   "file": "stmt/owner.js",
   "find": "if(!apGone(g)) apPick[g.lead.id]='a';",
   "replace": "apPick[g.lead.id]='a';"
+ },
+ {
+  "name": "the Sheet row's book is no tag",
+  "file": "stmt/owner.js",
+  "find": "ts.length===1?productTag(ts[0].product):item.product",
+  "replace": "item.product"
  }
 ]

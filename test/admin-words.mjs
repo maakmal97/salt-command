@@ -367,7 +367,8 @@ export async function run({ ok, pageWork }) {
       "each order on Orders names its book by its typed tag and draws no mark, and a mark still drawn says its size beneath, no word for the book and no shape word, a reader told the shape and the size: " + orows.length + " rows; " + tiles.length + " tiles; " + JSON.stringify(wrong.slice(0, 2)));
     byAct(d, "nav.orders").click(); await work.quiet();
     byAct(d, "part.orders.approve").click(); await work.quiet();
-    byAct(d.querySelector('#makerDrafts [data-maker-card="draft:d-2"]'), "draft.approve").click(); await work.quiet();
+    /* 12 Nov 2026 (his Approve review): the Sheet asks only on a Reject, so the trip is chosen to reject to draw it */
+    byAct(d.querySelector('#makerDrafts [data-maker-card="draft:d-2"]'), "draft.reject").click(); await work.quiet();
     byAct(d, "approve.confirm").click(); await work.quiet();
     const sheet = [...d.querySelectorAll(".salt-sheet .mtile")].map((t) => [t.querySelector(".mq")?.textContent, (t.querySelector(".sr")?.textContent || "").split(" ")[0]]);
     ok(sheet.length === 2 && sheet.every((s) => s[0] === "1 unit" && SHAPES.includes(s[1])) && new Set(sheet.map((s) => s[1])).size === 2,
@@ -420,7 +421,8 @@ export async function run({ ok, pageWork }) {
     byAct(all.d, "nav.orders").click(); await all.work.quiet();
     await asked(() => byAct(cardOf(all.d, "ord-r1"), "order.cancel").click(), "order.ask-keep");
     byAct(all.d, "nav.orders").click(); byAct(all.d, "part.orders.approve").click(); await all.work.quiet();
-    await asked(() => { byAct(all.d.querySelector('#makerDrafts [data-maker-card="draft:d-2"]'), "draft.approve").click(); byAct(all.d, "approve.confirm").click(); }, "ask.keep");
+    /* 12 Nov 2026 (his Approve review): the Sheet asks only on a Reject */
+    await asked(() => { byAct(all.d.querySelector('#makerDrafts [data-maker-card="draft:d-2"]'), "draft.reject").click(); byAct(all.d, "approve.confirm").click(); }, "ask.keep");
     ok(sheets.length === 2 && sheets.every(([tiles, said, marked]) => tiles >= 1 && marked && said.length > 3 && !said.some(([t]) => BOOK_NAMED.test(t))) && !sheets.flatMap(([, said]) => said).some(([t, hidden]) => !hidden && SHAPE_WORD.test(t)),
       "the Sheets that ask draw a tile for the order or the rows they restate, and name no book and draw no shape word while they are open: " + JSON.stringify(sheets.map(([tiles, said]) => [tiles, said.length])));
     const noBook = all.w.__owner("noBook");
