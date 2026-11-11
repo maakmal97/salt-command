@@ -1,0 +1,18 @@
+[
+  {"name": "M1 the card gives no reason", "find": "esc(SNAPSHOT_ENGINE.marketWhy(m))", "replace": "''"},
+  {"name": "M1 the log keeps two days, not fourteen", "find": ".slice(-14).reverse()", "replace": ".slice(-2).reverse()"},
+  {"name": "M2.1 the card always offers Switch on", "find": "(sw?adminLink('market/off','Switch off'):adminLink('market/on','Switch on'))", "replace": "adminLink('market/on','Switch on')"},
+  {"name": "M2.2 the card always offers Switch off", "find": "(sw?adminLink('market/off','Switch off'):adminLink('market/on','Switch on'))", "replace": "adminLink('market/off','Switch off')"},
+  {"name": "M3.1 every size gets a Use link", "find": "(r.suggest?adminLink(", "replace": "(true?adminLink("},
+  {"name": "M3.1 the Use link carries the Median, not the profit-best", "find": "'anchor/'+r.q+'/'+r.best", "replace": "'anchor/'+r.q+'/'+r.median"},
+  {"name": "M3.2 the tap line is gone", "find": "It is his tap, never automatic.", "replace": "It is made for him."},
+  {"name": "M4 an outside point is not marked", "find": "(a.outside?'. <b>Outside the band: '", "replace": "(false?'. <b>Outside the band: '"},
+  {"name": "M5.1 the Quotes column is always drawn", "find": "(Q?'<th>Quotes</th>':'')", "replace": "'<th>Quotes</th>'"},
+  {"name": "M5.2 an answer that is not ok is taken", "find": "j&&j.ok===true&&", "replace": "j&&"},
+  {"name": "M5.3 shown and placed swapped", "find": "qq.shown+' shown, '+qq.placed+' placed'", "replace": "qq.placed+' shown, '+qq.shown+' placed'"},
+  {"name": "M6 new buyers renamed", "find": "<td class=\"l salt-table__label\">New buyers</td>", "replace": "<td class=\"l salt-table__label\">Buyers</td>"},
+  {"name": "M6 the move's effect is not called an estimate", "find": "<span class=\"iref\">estimate</span>", "replace": ""},
+  {"name": "M7.1 the replay body is drawn while shut", "find": "(mkRepOpen?mkRepBody():'')+'</div></details>'", "replace": "mkRepBody()+'</div></details>'"},
+  {"name": "M7.2 the replay lacks its quote column", "find": "<th>Quote at 1 unit</th>", "replace": "<th>Quote</th>"},
+  {"name": "M7.3 the panels are drawn for any book", "find": "if(PROD!=='salt')return '';\n  const C=snapCtx()", "replace": "const C=snapCtx()"}
+]
