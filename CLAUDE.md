@@ -685,7 +685,7 @@ npm install        # once
 npm run build      # master -> public/desk.html, after any master edit
 npm run dev        # build, then wrangler dev (live KV)
 npm test           # the suite split across processes (tools/suite-split.mjs), 5 to 12 minutes here; CI runs it too
-npm run test:serial  # the same suite in one process, 3 to 7 minutes; 4 GB heap
+npm run test:serial  # the same suite in one process, 3 to 7 minutes; 4 GB heap. THE DEFAULT full run on this laptop (his yes of 11 Nov 2026): faster here than the split; CI keeps the split
 npm run deploy     # build, then wrangler deploy
 node tools/update.mjs
 node tools/standing.mjs   # the standing-state table a task closes with, about a minute
