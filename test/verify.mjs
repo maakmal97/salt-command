@@ -15607,7 +15607,7 @@ await (async () => {
       "the sizes stand on Order, each row carrying its own price, units above one and unit at one: " + JSON.stringify(rowsO));
     const lines = [...d.querySelectorAll("#osheet [data-sheet-lines] .salt-settings__row")].map((r) => r.textContent.replace(/\s+/g, " ").trim());
     ok(!d.querySelector('#osheet input[name^="osize"]') && !d.querySelector("#osheet .oany") && lines.length === 1 && /2\.5 units/.test(lines[0]) && /RM 250\.00/.test(lines[0])
-      && /Change the units on Order[.]/.test(d.getElementById("osheet").textContent),
+      && /Change the units on Shop[.]/.test(d.getElementById("osheet").textContent),
       "the sheet chooses no size: it lists the line the tap made, with its figure, and says the units change on Order: " + JSON.stringify(lines));
     const pressed = (t) => { const b = [...d.querySelectorAll("#osheet button.salt-ghost")].find((x) => x.textContent === t); return b && b.getAttribute("aria-pressed"); };
     /* 11 Nov 2026 (his answer "Always ask"): the way is never the last order's; the kit answered collect, so Deliver is chosen here */
@@ -48569,6 +48569,11 @@ await (async () => {
 section("11 Nov 2026: Shop and Orders, and every new order asks collect or deliver");
 await (async () => {
   await (await import("./order-way-ask.mjs")).run({ ok, pageWork });
+})();
+
+section("11 Nov 2026: the page as wrangler bundles it, every delivery reaching its windows and Review");
+await (async () => {
+  await (await import("./bundled-page.mjs")).run({ ok, pageWork });
 })();
 
 section("v1377 Order as them: his Place on their page takes what theirs takes, refuses a note, an ask and a group order, seals the spot, reads the public slip key (1a)");

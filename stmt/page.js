@@ -2545,6 +2545,11 @@ const TEST_DOOR = `
    single nonce, and so nothing about a statement is ever a fetchable asset. */
 const CLIENT_JS = `
 (function(){/*__TS__*/
+  /* 11 NOV 2026 (his report: a delivery's sheet showed no Review): THE BUNDLER'S __name, DOING NOTHING. wrangler bundles the Worker with
+     esbuild's keepNames, which writes __name(f, "f") inside every function that declares a named function or names an arrow, and this page
+     carries some Worker functions as their own source (slotSpan, slotNext and openParts for the windows, and the one distance on his page). Each
+     arrived calling a __name the page never had, so every delivery sheet threw at its windows and drew neither When nor Review. */
+  var __name=function(f){ return f; };
   /* THE TICKET INVALIDATES A FLOW THAT IS NO LONGER WANTED (04 Sep 2026 audit). A submit takes
      about a second in PBKDF2, and go.disabled does not stop the Enter key submitting a form at
      all, so a reader who pressed Enter twice had two flows in the air. Measured: he taps Lock now,

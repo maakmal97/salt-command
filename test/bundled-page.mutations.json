@@ -1,0 +1,4 @@
+[{"name":"the page has no __name","file":"stmt/page.js","find":"  var __name=function(f){ return f; };\n","replace":""},
+{"name":"the page's __name under another name","file":"stmt/page.js","find":"  var __name=function(f){ return f; };","replace":"  var __named=function(f){ return f; };"},
+{"name":"the distance left out of his page","file":"stmt/page.js","find":"(owner ? String(GEO_ENGINE.haversineKm) + \"\\n\" + OWNER_JS : \"\")","replace":"(owner ? OWNER_JS : \"\")"},
+{"name":"the bundle built without keepNames","file":"test/bundled-page.mjs","find":"keepNames: true, outfile","replace":"keepNames: false, outfile"}]
