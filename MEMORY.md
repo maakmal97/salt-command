@@ -459,6 +459,11 @@
 - Sections "Counter Batch C: spots on the phone" (13 checks, 18 mutations) and "11 Nov 2026: Shop and Orders" (5 checks, 7 mutations), plus Salt Admin's spot 8 and the Desk's 2b; a Sonnet builder re-aimed thirteen older sections. Serial suite in the worktree: 12,209 passed, 3 failed, all three fixed and their sections green after (one was CRLF in this worktree: the system git has `autocrlf=true`, so a new worktree checks files out CRLF; convert before a suite run).
 - Said, not fixed: six mutations in "Counter: Back closes a Sheet" are unnoticed on clean master too (look choice, Salt Admin's Sheets push, any address, hash or path trusted). Not measured at 1180 or 1440, nor in Tide; seen at 390 in Night.
 
+## A delivery's sheet reaches its windows again (#205, unversioned)
+- Merged 11 Nov 2026 as `d726f0b3` (PR #205, squash; his "just finish the work here"; CI verify and three test parts green on the head); the live Counter served it from 17:10 UTC, and a delivery with a spot added, driven on the live page's own HTML, drew When you want it and a Review that goes. His report: on Order for them a delivery showed no Review.
+- Cause: wrangler's esbuild keepNames writes `__name(f, "f")` inside the Worker functions the page carries as source (`slotSpan`, `slotNext`, `openParts`; `haversineKm` on Salt Admin), and the page had no `__name`, so every delivery sheet, customers' too, threw at its windows (since when unverified: the cloud clone is shallow). `CLIENT_JS` now defines it doing nothing. Section "11 Nov 2026: the page as wrangler bundles it" (`test/bundled-page.mjs`, 3 checks, 4 mutations red); trap in docs/WORKING.md section 3. The sheet's `sh.unitsOn` and `sh.wayOnly` say Shop.
+- Not versioned: the cloud session had no Cloudflare credentials for the queue reads a bump needs; no version number moved and `public/` is unchanged. Serial suite on the branch 12,172 passed, 3 failed: one fixed before the merge, two the container-only Desk live socket checks named above.
+
 ## Disabled automation
 - `Salt fold (manual backup)` = `trig_01UrnjQMWA3f6GXN5R6Dzi4S`, disabled.
 
