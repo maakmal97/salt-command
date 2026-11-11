@@ -1362,7 +1362,7 @@
       "stated": null
     }
   },
-  "QUEUE_COMMITTED": "2026-11-10T15:12:55.127Z",
+  "QUEUE_COMMITTED": "2026-11-11T07:50:18.465Z",
   "QUOTES": {
     "candy": {
       "kind": "live quote",
@@ -1499,31 +1499,31 @@
   "STATED_STOCK": 43.5,
   "TIER_OF": {
     "CA4-SJ": {
-      "salt": 0.3
+      "salt": 0.49
     },
     "CA5-SEN": {
-      "salt": 0.3
+      "salt": 0.46
     },
     "CA6-SET": {
-      "salt": 0.3
+      "salt": 0.49
     },
     "CAY4-DAM": {
-      "salt": 0.1
+      "salt": 0.17
     },
     "CB8-SEG": {
-      "salt": 0.1
+      "salt": 0.17
     },
     "CD4-DAM": {
-      "salt": 0.1
+      "salt": 0.17
     },
     "CE4-CHE": {
       "salt": -0.2
     },
     "CH6-SET": {
-      "salt": -0.15
+      "salt": -0.14
     },
     "CI4-OKR": {
-      "salt": -0.15
+      "salt": -0.14
     },
     "CI5-PER": {
       "candy": 0.25
@@ -1532,30 +1532,33 @@
       "salt": 0
     },
     "CK4-SEN": {
-      "salt": -0.2
+      "salt": -0.19
+    },
+    "CM4-SK": {
+      "salt": -0.45
     },
     "CM6-PJ": {
-      "salt": -0.25
+      "salt": -0.24
     },
     "CR3-DAM": {
-      "salt": -0.1
+      "salt": -0.08
     },
     "CS11-AMP": {
-      "salt": 0.2
+      "salt": 0.31
     },
     "CS6-BS": {
       "salt": -0.2
     },
     "CS6-PER": {
-      "salt": -0.05
+      "salt": -0.04
     },
     "CZ4-MK": {
       "candy": -0.25,
       "oil": -0.1,
-      "salt": -0.15
+      "salt": -0.12
     },
     "CZ5-TM": {
-      "salt": -0.25
+      "salt": -0.24
     }
   },
   "opening": {

@@ -10444,7 +10444,7 @@ const PROD_OPENING={
   }
 };
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-11-10T15:12:55.127Z";
+const QUEUE_COMMITTED="2026-11-11T07:50:18.465Z";
 /* v793, 23 Sep 2026: his quotes as relayed with the pricing_v2 workbook. Salt SA5-BTR is multiples of 12.5 unit at RM700 each, RM56 a unit flat and held as the one 12.5 unit tier bought in whole lots, replacing the 6.25 to 100 unit taper of 20 Aug. Oil SP7-PUD names 10@100 and 50@380 alone; 15, 20 and 30 are dropped. Candy SM4-KEP 10@55, 20@47, 30@38, 50@30 a unit. Rice SM4-KEP 100@320. */
 /* v776, 22 Sep 2026: QUOTES IS THE BOOK'S OWN MAP, AND supplierQuote AND oilQuote ARE GONE. The two live quotes sat under two top-level keys NAMED AFTER THEIR PRODUCTS, the one per-product thing in this book that was not a map, and the desk's QUOTES was an accessor over them, {salt:()=>supplierQuote, oil:()=>oilQuote}. A third product therefore needed a third key, a third global and an edit in three files, and tools/foldcall.mjs read the pair as a literal two-entry object, so an unregistered product yielded null and its purchase folded with no quote in the dossier while nothing errored. v228's own comment beside the supply panel already stated the shape it wanted, one panel driven by QUOTES so a third product needs an entry there and nothing here, and the panel has told him to add one to QUOTES ever since; this is that, finished. quoteFor reads the map directly, the accessor is retired, and QUOTES leaves NOT_LEDGER for LEDGER because it is a record now and not a lookup. oilQuote's own product field goes with it: the key is the product, and nothing ever read the field. */
 /* v505, 07 Sep 2026: the 25 unit tier is RM 1,200 on his word; the other four tiers stand as quoted on 20 Aug. */
@@ -10784,31 +10784,31 @@ const REWARD_OPEN={
 const STATED_STOCK=43.5;
 const TIER_OF={
   "CA4-SJ": {
-    "salt": 0.3
+    "salt": 0.49
   },
   "CA5-SEN": {
-    "salt": 0.3
+    "salt": 0.46
   },
   "CA6-SET": {
-    "salt": 0.3
+    "salt": 0.49
   },
   "CAY4-DAM": {
-    "salt": 0.1
+    "salt": 0.17
   },
   "CB8-SEG": {
-    "salt": 0.1
+    "salt": 0.17
   },
   "CD4-DAM": {
-    "salt": 0.1
+    "salt": 0.17
   },
   "CE4-CHE": {
     "salt": -0.2
   },
   "CH6-SET": {
-    "salt": -0.15
+    "salt": -0.14
   },
   "CI4-OKR": {
-    "salt": -0.15
+    "salt": -0.14
   },
   "CI5-PER": {
     "candy": 0.25
@@ -10817,30 +10817,33 @@ const TIER_OF={
     "salt": 0
   },
   "CK4-SEN": {
-    "salt": -0.2
+    "salt": -0.19
+  },
+  "CM4-SK": {
+    "salt": -0.45
   },
   "CM6-PJ": {
-    "salt": -0.25
+    "salt": -0.24
   },
   "CR3-DAM": {
-    "salt": -0.1
+    "salt": -0.08
   },
   "CS11-AMP": {
-    "salt": 0.2
+    "salt": 0.31
   },
   "CS6-BS": {
     "salt": -0.2
   },
   "CS6-PER": {
-    "salt": -0.05
+    "salt": -0.04
   },
   "CZ4-MK": {
     "candy": -0.25,
     "oil": -0.1,
-    "salt": -0.15
+    "salt": -0.12
   },
   "CZ5-TM": {
-    "salt": -0.25
+    "salt": -0.24
   }
 };
 const opening={
