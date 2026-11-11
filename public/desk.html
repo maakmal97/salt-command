@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="2c880782aaea65d2";
+var SALT_BUILD_ID="14c9a59362857e06";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12006,7 +12006,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1502","d":"11 Nov 2026","t":"A CUSTOMER'S PRICE ASK IS ANSWERED WITH AN OFFER ON SALT ADMIN","n":["<b>HIS REPORT OF 11 NOV 2026: AN ORDER OF 12.5 UNITS AT RM 880 WOULD NOT AGREE.</b> The customer had asked for a price on the Counter (RM 800). The Desk agrees an asked order only by an offer they take, and Salt Admin never read an ask, so its card offered Agree and each tap fell to the general refusal.","<b>SALT ADMIN NOW ANSWERS AN ASK WITH AN OFFER.</b> The card says what they asked and the list price, starts Goods at their figure, and its one pill is Offer them; the row and Needs you say Offer. An offer of his to an ask holds the card as Waiting for them, with Take back the offer.","<b>NO DESK REFUSAL ON ACCEPT, OFFER OR WITHDRAW FALLS TO THE GENERAL SENTENCE.</b> Thirteen sentences added to the refusal table; a check reads every one off the Desk's code, so a new one without words is red. His offer of RM 875 on that order was sent the same evening."]}];
+const evolution=[{"v":"v1503","d":"11 Nov 2026","t":"CLIENTS AND ASSOCIATES, CUT TO WHAT THEY SAY","n":["<b>HIS ANSWER \"OFF THE DESK\".</b> Clients' Their % card is gone: a row a customer a book, 260 rows and four fifths of the page, and 218 of them said nothing. He sets a % on Salt Admin's account card, which shows its prices live. Clients keeps one line for the book in view, who holds a % he set and who the engine suggests another, and the link that opens Salt Admin's accounts. The printed board's card says the % is set on Salt Admin.","<b>HIS ANSWER \"ONE LINE\".</b> Associates says the departure and the open seat in one line under the tree, where two cards stood above the figures; the tree still marks the departed founder.","Nothing prices, books or moves money. Eleven new checks, each proved red by its own mutation; the older checks that read the card are re-aimed."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12159,7 +12159,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='11 Nov 2026, 18:43 KL';
+const LAST_UPDATED='11 Nov 2026, 19:17 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -19212,52 +19212,18 @@ function suggestOf(code,prod){return SNAPSHOT_ENGINE.suggestOf(snapCtx(),prod||P
 /* every customer on the roster, those who have bought first and largest first; a resale account stands with its associate
    and a supplier holds no figure. One who has not bought yet is listed too, so a figure can be set before they do. */
 function tierCustomers(){return SNAPSHOT_ENGINE.tierCustomers(snapCtx());}
-/* what waits for approval, code to product to figure, a null clearing one; a registration's starting figure waits too (v645) */
-function tierQueued(){const o={},add=(c,t)=>{o[c]=Object.assign(o[c]||{},t);};
-  queue.forEach(q=>{const p=q&&q.payload;if(!p)return;if(p.mode==='tierset')Object.keys(p.tiers||{}).forEach(c=>add(c,p.tiers[c]));else if(p.mode==='addid'&&p.tiers)add(p.code,p.tiers);});
-  return o;}
-/* ============ 05 OCT 2026: THE DRIFT CARD ============
-   One row a customer on each drift book: the drift read off their record (good and bad beside it), the one he has set if he
-   has, what it quotes at 1, 3 and 12.5 unit, and a box to set or clear his. Set and Clear queue a `tierset` carrying the
-   number, folded into TIER_OF as a tier was. Up at half a unit and one unit there is almost no room above the Median Price, so
-   a row drifting up says the signal there is terms or prepayment. */
-/* a % as the card says it: +10%, or 0% */
-function driftSay(d){const n=Math.round((+d||0)*100);return n>0?'+'+n+'%':n<0?n+'%':'0%';}
-/* the engine's suggestion in a line: the % and, in a few words, why */
-function suggestSay(sg){
-  if(!sg||!(Math.abs(sg.pct)>0.0001))return 'No % suggested';
-  const w=PRICING_ENGINE.suggestWhy(sg);
-  return 'Suggested '+driftSay(sg.pct)+(w.length?': '+w.join(', '):'');
-}
-/* 09 Oct 2026, HIS DECISION: A PARTNER IS AN ASSOCIATE WHO PAYS COST. It is made on Salt Admin (a name-free `partner` entry for a code already on the
-   roster). The desk shows the standing of one queued before B5 of #62 at once, as the fold will file it: the code in `partners`, and an
-   associate (with the -R account) if they were none, so cardQuote reads the floor and the bench lists them before the fold lands. */
-function partnerQueued(code){return queue.some(q=>q&&q.payload&&q.payload.mode==='partner'&&q.payload.code===code);}
-function partnerNote(id){
-  if(partners.indexOf(id)>=0||isBucket(id))return '';
-  return partnerQueued(id)?'<span class="iref">Waiting under Approve: partner, pays the Floor</span>':'';
-}
-/* the three sizes the card quotes: salt's 1, 3 and 12.5; a stated board's smallest, middle and largest rung (22 Oct 2026) */
-function atSizes(p){const R=TIER_RULE[p]||{};if(R.drift)return [1,3,12.5];const r=(R.rungs||[]).map(Number).sort((a,b)=>a-b);return r.length?[...new Set([r[0],r[Math.floor(r.length/2)],r[r.length-1]])]:[];}
-function driftCard(){
-  const ids=tierCustomers(),books=PROD_IDS.filter(p=>pctBook(p));if(!ids.length||!books.length)return '';
-  const keep=PROD,waiting=tierQueued();let hand=0,up=0,down=0;const rows=[];
-  try{books.forEach(p=>{PROD=p;recompute();
-    ids.forEach(id=>{
-      if(isPartner(id)){   /* 06 Oct 2026, his decision: a partner pays cost, so no drift moves their price and none is set here */
-        const atP=atSizes(p).map(q=>{const x=cardQuote(id,q);return x!=null?units(q)+' '+fmt0(x):null;}).filter(Boolean).join(' &middot; ');
-        rows.push(`<tr><td class="l salt-table__label mono">${ID(id)}</td><td class="l salt-table__label"><div style="line-height:1.3">${PRODUCTS[p].name} <b>Partner</b>${partnerQueued(id)?' &middot; waiting under Approve':''}<br><span class="iref">pays the Floor; no % applies</span><br><span class="iref">${atP}</span></div></td></tr>`);return;}
-      const dr=driftOf(id,p),w=!!waiting[id]&&p in waiting[id],wv=w?waiting[id][p]:undefined;
-      if(dr.hand!=null)hand++;if(dr.d>0.0001)up++;if(dr.d<-0.0001)down++;
-      const at=atSizes(p).map(q=>{const x=cardQuote(id,q);return x!=null?units(q)+' '+fmt0(x):null;}).filter(Boolean).join(' &middot; ');
-      const sg=suggestOf(id,p)||{pct:0,paidOver:0,risk:0};
-      const state=(w?'waiting '+(wv==null?'to clear':driftSay(wv))+' &middot; ':'')+(dr.hand!=null?'set by you &middot; ':'')+suggestSay(sg);
-      rows.push(`<tr><td class="l salt-table__label mono">${ID(id)}</td><td class="l salt-table__label"><div style="line-height:1.3">${PRODUCTS[p].name} <b>${Math.abs(dr.d)>0.0001?driftSay(dr.d):'Median Price'}</b><br><span class="iref">${state}</span><br><span class="iref">${at}</span></div>${partnerNote(id)}</td></tr>`);
-    });});}
-  finally{PROD=keep;recompute();}
-  return `<div class="card"><div class="cardh">Each customer's % on the Median Price or the board <span class="sub">yours to set; the suggestion is the engine's</span></div>
-    <div class="tscroll"><table class="salt-table tiertab"><thead><tr><th class="l salt-table__label">Customer</th><th class="l salt-table__label">Their %, and what it quotes</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>
-    <div class="insight salt-insight">${hand} of ${rows.length} are set by you, ${up} sit above the Median Price and ${down} below it; salt runs from -100% at the Floor to +100% at the Ceiling, a board from -30% to +30%.</div></div>`;
+/* 11 Nov 2026, HIS ANSWER "OFF THE DESK": THE THEIR % CARD LEFT CLIENTS. It drew a row a customer a book, 260 rows and 80% of the
+   page's height, and 218 of them said nothing (no % set, nothing waiting, no suggestion). He sets a % on Salt Admin's account card,
+   which shows its prices live; Clients keeps one line for the book in view, and the link that opens Salt Admin's accounts. */
+function pctLine(){
+  if(!pctBook(PROD))return '';
+  const ids=tierCustomers().filter(id=>!isPartner(id));if(!ids.length)return '';
+  let held=0,sugg=0;
+  ids.forEach(id=>{const dr=driftOf(id,PROD);if(dr.hand!=null)held++;
+    const sg=suggestOf(id,PROD);if(sg&&Math.abs(sg.pct||0)>0.0001&&Math.abs((sg.pct||0)-(dr.d||0))>0.0001)sugg++;});
+  const nm=PRODUCTS[PROD].name.toLowerCase();
+  return `<div class="insight salt-insight" id="pctLine">${held||sugg?`On ${nm}, ${held} of ${ids.length} hold a % you set and ${sugg} ${sugg===1?'is':'are'} suggested another.`:`Nobody holds a % on ${nm}, and none is suggested.`}</div>
+  <div style="margin-top:8px">${adminLink('customers/accounts','Set it on Salt Admin')}</div>`;
 }
 /* ---- layer 3: five readings, each worth a few points, summed then clamped ---- */
 /* Analysis asks a book's signals 18 times a render; keyed like pxCost, whose cost boardHeadroom moves mid-render */
@@ -20685,7 +20651,7 @@ function tabConcentration(){
   <div style="margin-top:16px">${crCard}</div>
 
   <h2 style="margin-top:18px">Their % <span class="rule"></span></h2>
-  ${driftCard()}
+  ${pctLine()}
 
   <h2 style="margin-top:18px">Where the book leans <span class="rule"></span></h2>
   <div class="chartbox" style="height:230px"><canvas id="ccPareto"></canvas></div>
@@ -20978,6 +20944,11 @@ function tabNetwork(){
     .join('');
   const vac=PEOPLE.roles.filter(r=>!r.holder);
   const dep=prin.filter(x=>isDeparted(x.id)).concat(bench.filter(x=>isDeparted(x.id)));
+  /* 11 Nov 2026, his answer "one line": a departure and a vacancy were a card each above the figures. They are settled facts,
+     said once under the tree; the tree still marks the departed founder on his own node. */
+  const gone=dep.map(x=>ID(x.id)+' left '+departOf(x.id).since);
+  const seat=vac.length?(gone.length?'the ':'The ')+esc(vac[0].short||vac[0].title)+' seat is open since '+vac[0].since:'';
+  const standLine=gone.length||seat?`<div class="insight salt-insight" id="nwStand" style="margin:-8px 0 14px;text-align:center">${[gone.join(', '),seat].filter(Boolean).join('; ')}.</div>`:'';
   const tree=`<div style="text-align:center;margin:6px 0 18px">
     <div style="display:inline-block;background:var(--card2);border:1px solid var(--gold);border-radius:10px;padding:8px 20px;font-weight:600;color:var(--gold)">You</div>
     <div style="height:16px;border-left:1px solid var(--line);width:0;margin:2px auto"></div>
@@ -20989,19 +20960,7 @@ function tabNetwork(){
          standing rather than because trade passes through him, is what the tree DRAWS: one
          stem each, straight to you, his shorter than theirs. -->
   </div>
-  ${dep.length?dep.map(x=>{const dd=departOf(x.id);
-    /* v401: A DEPARTURE IS A STATE, NOT AN ESSAY. This was 569 rendered characters: the date,
-       the reason, the whole book note, and then his R1 and R3 again, which his own card and
-       the vacancy below both already carry. What is left is the state, the declared reason
-       and, from v403 on his call of 29 Aug, NO FOLDED ESSAY: the book note is one clause
-       and this changelog holds the story that was cut.
-       IT IS AN .insight RATHER THAN A .dsc DELIBERATELY. Without the figures it no longer
-       matches FIGURE, so as a .dsc the strip would cull it; an insight is trimmed at
-       NOTE_MIN but never removed, and this one is comfortably under. */
-    return `<div class="pend"><h3>${ID(x.id)} has departed <span class="cd gold">${esc(dd.memorial)}</span></h3>
-      <div class="insight salt-insight">Left ${dd.since}, ${esc(dd.reason)}; his referrals stay attributed to him.</div></div>`;}).join(''):''}
-  ${vac.length?`<div class="pend def"><h3>Vacant: ${esc(vac[0].title)} <span class="cd">${esc(vac[0].short||'')}</span></h3>
-    <div class="insight salt-insight">Open since ${vac[0].since}${dep.length?`; the seat brought <b>${fmt0(dep[0].r3)}</b> against <b>${fmt0(dep[0].direct)}</b> of buying, and nobody is doing it today.`:''}</div></div>`:''}`;
+  ${standLine}`;
   // overall summary: total R1/R2/R3 across the network
   const tR1=ns.reduce((a,x)=>a+x.direct,0),tR2=ns.reduce((a,x)=>a+x.indirect,0),tIntro=ns.reduce((a,x)=>a+x.marginIntro,0);
   const nDs=ns.reduce((a,x)=>a+(x.dsResell||0),0);                       // end customers sold to on your behalf
@@ -21695,7 +21654,7 @@ function pbCard(){
   const sizes=shownSizes(PROD).slice().sort((a,b)=>a-b);
   return `<div class="card" id="pbCard" style="margin-top:12px">
     <div class="cardh">Print a board <span class="sub">the mark, the figures, the username and a QR to his page</span></div>
-    <div class="dsc">Choose the customer, tick the sizes, then Print, or save it as JPG, PDF or HTML; on the phone the share sheet offers Save Image and Save to Files. The sheet is the crystal, one line per size, his username and a QR that opens his own statements page. The prices are their own: on salt the Median Price lifted by their %, set on Clients; on the other books the board; never under the Floor. The same list their statement page shows. Copy as text puts the same lines and the link on the clipboard.</div>
+    <div class="dsc">Choose the customer, tick the sizes, then Print, or save it as JPG, PDF or HTML; on the phone the share sheet offers Save Image and Save to Files. The sheet is the crystal, one line per size, his username and a QR that opens his own statements page. The prices are their own: on salt the Median Price lifted by their %, set on Salt Admin; on the other books the board; never under the Floor. The same list their statement page shows. Copy as text puts the same lines and the link on the clipboard.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
       <select id="pbWho" aria-label="Customer" style="min-height:44px;padding:8px 10px;font-size:16px">${who.map(id=>`<option value="${esc(id)}">${esc(codeOf(id))}</option>`).join('')}</select>
       <button class="vbtn salt-pill salt-pill--sm" id="pbPrint" type="button">Print</button>
