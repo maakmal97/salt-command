@@ -1,5 +1,5 @@
 [
- {"name":"A1 the place is still named Prices","file":"stmt/words.js","find":"  \"place.prices\": \"Order\",","replace":"  \"place.prices\": \"Prices\","},
+ {"name":"A1 the place is still named Order","file":"stmt/words.js","find":"  \"place.prices\": \"Shop\",","replace":"  \"place.prices\": \"Order\","},
  {"name":"A2 New order opens the sheet","file":"stmt/page.js","find":"nb.addEventListener('click',function(){ goOrder(); });","replace":"nb.addEventListener('click',function(){ sheetOpen(null,null,nb); });"},
  {"name":"A3 a start tile opens the sheet","file":"stmt/page.js","find":"if(a.start) goOrder(a.product,a.q); else","replace":"if(a.start) sheetOpen(a.product,a.q,b); else"},
  {"name":"A4 Collect and Deliver open the sheet","file":"stmt/page.js","find":"startPlace=x[0]==='deliver'&&w&&w.place.trim()?w.place:''; goOrder(); });","replace":"startPlace=x[0]==='deliver'&&w&&w.place.trim()?w.place:''; sheetOpen(null,null,b); });"},

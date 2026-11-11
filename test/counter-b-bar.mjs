@@ -20,6 +20,8 @@ export async function run({ ok, pageWork }) {
   const pane = (p, i) => p.d.querySelectorAll("#pPrices .pgrid > .pane")[i];
   /* plan version 9: a line is the stepper set to the amount and Add; Add sets the line, it never sums taps */
   const put = async (p, i, q) => { stepTo(p, ["salt", "oil", "candy"][i], q); pane(p, i).querySelector('[data-st="add"]').click(); await p.settle(); };
+  /* 11 Nov 2026 (his answer "Always ask"): the sheet asks the way, so a check that places chooses collect first */
+  const collect = async (p) => { const m = p.d.querySelector('#osheet [data-k="mode:0"]:not([aria-pressed="true"])'); if (m) { m.click(); await p.settle(); } const g = p.d.getElementById("oGo"); if (g && g.getAttribute("aria-disabled") !== "true") { g.click(); await p.settle(); } };
   const bar = (p) => { const b = p.d.getElementById("bkBar"); return b && !b.hidden ? b : null; };
   const kpi = (p) => { const b = bar(p); return b ? [".salt-kpi__label", ".salt-kpi__value", ".salt-kpi__note"].map((s) => txt(b.querySelector(s))) : null; };
   try {
@@ -28,6 +30,7 @@ export async function run({ ok, pageWork }) {
     await put(A, 0, 10);
     const k1 = kpi(A);
     const D = await page({ orders: [done("o1", ago(100), { mode: "deliver", place: "Veloria" })] });
+    D.d.querySelector('[data-start="deliver"]').click(); await D.settle();   // 11 Nov 2026: no order presets the way; Home's Deliver tile answers it
     await put(D, 1, 3);
     ok(JSON.stringify(k1) === '["1 in the basket","RM 980.00","to collect"]' && JSON.stringify(kpi(D)) === '["1 in the basket","RM 115.00","and delivery, set when we confirm it"]',
       "the bar's figure is the summed amount's own off the list, 10 units at RM 980.00, the goods alone, delivery said as his at confirmation: " + JSON.stringify([k1, kpi(D)]));
@@ -36,6 +39,7 @@ export async function run({ ok, pageWork }) {
     await put(A, 1, 3);
     const k2 = kpi(A);
     A.d.getElementById("bkGo").click(); await A.settle();
+    await collect(A);
     const lines = A.d.querySelectorAll("#osheet .mhero > *").length;
     A.d.getElementById("oPlace").click(); await A.settle();
     const ps = A.st.posts;
@@ -47,7 +51,7 @@ export async function run({ ok, pageWork }) {
     /* ---- 3 ---- */
     const R = await page({ orders: [] });
     await put(R, 0, 1); await put(R, 1, 1);
-    R.d.getElementById("bkGo").click(); await R.settle();
+    R.d.getElementById("bkGo").click(); await R.settle(); await collect(R);
     R.d.querySelector('#osheet [data-k="rm:1"]').click(); await R.settle();
     const one = R.d.querySelectorAll("#osheet .mhero > *").length;
     R.d.getElementById("oPlace").click(); await R.settle();
@@ -73,7 +77,7 @@ export async function run({ ok, pageWork }) {
     await put(Q, 0, 1); await put(Q, 1, 1); await put(Q, 2, 1);
     Q.st.refuse.add("oil");
     Q.d.getElementById("bkGo").click(); await Q.settle();
-    Q.d.getElementById("oPlace").click(); await Q.settle();
+    await collect(Q); Q.d.getElementById("oPlace").click(); await Q.settle();
     Q.d.getElementById("oBack").click(); await Q.settle();
     Q.d.getElementById("oGo").click(); await Q.settle();
     Q.d.querySelector('#osheet [data-k="rm:1"]').click(); await Q.settle();

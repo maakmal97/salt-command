@@ -13,7 +13,6 @@
  {"name":"a refused Place files its spot","file":"stmt/worker.js","find":"    if (r.error) return refuse(r, \"prices\" in r ? { prices: r.prices } : {});\n    /* filed only once","replace":"    if (tp.pin) await keepPin(env, u, tp.pin, tp.pin.id);\n    if (r.error) return refuse(r, \"prices\" in r ? { prices: r.prices } : {});\n    /* filed only once"},
  {"name":"a test account's spot rides on its order","file":"stmt/worker.js","find":"    if (isTest(u) && pb) delete pb.pin;\n","replace":""},
  {"name":"the desk's relay is not keyed","file":"stmt/worker.js","find":" || p.startsWith(\"/desk/pins/\")","replace":""},
- {"name":"the spot is offered with no key filed","file":"stmt/page.js","find":"else if(!draft.amend&&SLIPKEY) B.appendChild(pinField());","replace":"else if(!draft.amend) B.appendChild(pinField());"},
  {"name":"the location is read from a cache","file":"stmt/page.js","find":"{enableHighAccuracy:true, maximumAge:0, timeout:15000}","replace":"{enableHighAccuracy:true, maximumAge:600000, timeout:15000}"},
  {"name":"the spot leaves in the clear","file":"stmt/page.js","find":"      if(c.pinSealed) body.pin=c.pinSealed;\n","replace":"      if(c.pinSealed) body.pin=c.pin;\n"},
  {"name":"the seal is a slip's","file":"stmt/page.js","find":"JSON.stringify(Object.assign({v:1, at:new Date().toISOString()},p))),'salt-pin v1');","replace":"JSON.stringify(Object.assign({v:1, at:new Date().toISOString()},p))));"},
@@ -28,11 +27,7 @@
  {"name":"maps.google.com needs /maps (4 Nov 2026)","file":"stmt/place-link.js","find":"(h.indexOf('maps.')===0||","replace":"(false||"},
  {"name":"a link after words is refused (4 Nov 2026)","file":"stmt/place-link.js","find":"const s=String(text==null?'':text).trim(),m=","replace":"const s=String(text==null?'':text).trim(),m=/^ *[a-z]/i.test(text)&&!/^ *https?:/i.test(text)?null:"},
  {"name":"an Apple Maps link reads nothing (4 Nov 2026)","file":"stmt/place-link.js","find":":h==='maps.apple.com'?'apple':null;","replace":":null;"},
- {"name":"a place found is not taken (4 Nov 2026)","file":"stmt/page.js","find":"draft.pin={lat:+h.lat, lng:+h.lng, src:'search'};","replace":"draft.pin=null;"},
- {"name":"the search sends the account (4 Nov 2026)","file":"stmt/page.js","find":"api('/place/search',{q:w})","replace":"api('/place/search',{q:w,u:user})"},
- {"name":"the search waits for no pause (4 Nov 2026)","file":"stmt/page.js","find":"if(w.length<3||/^https?:/i.test(w)||/^-?[0-9.]+ *, *-?[0-9.]+$/.test(w)){ pinSeq++; draft.pinPend=false; pinShown([],''); return; }","replace":"if(true){ pinSeq++; draft.pinPend=false; shown([],''); return; }"},
  {"name":"the search needs no session (4 Nov 2026)","file":"stmt/worker.js","find":"|| p === \"/thread\" || p === \"/pools\" || p.startsWith(\"/pools/\") || p === \"/place/search\") return handleCustomer(","replace":"|| p === \"/thread\" || p === \"/pools\" || p.startsWith(\"/pools/\")) return handleCustomer("},
  {"name":"the search is never braked (4 Nov 2026)","file":"stmt/worker.js","find":"    if (n >= PLACE_PER_MINUTE) return false;\n","replace":""},
- {"name":"typed figures are searched (4 Nov 2026)","file":"stmt/page.js","find":"if(w.length<3||/^https?:/i.test(w)||/^-?[0-9.]+ *, *-?[0-9.]+$/.test(w)){ pinSeq++;","replace":"if(w.length<3||/^https?:/i.test(w)){ pinSeq++;"},
  {"name":"two figures read as a link (4 Nov 2026)","file":"stmt/page.js","find":"src:r.src==='pin'?'pin':'link'}","replace":"src:'link'}"}
 ]

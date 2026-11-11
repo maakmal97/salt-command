@@ -4,6 +4,9 @@
  * what the page offers (one rule, stmt/window.js, carried to the page as text), the order keeps the window and its span,
  * Salt Admin's card says it, and no ledger entry carries it. Every assertion was proved red by its own mutation. */
 import { startAt } from "./counter-b-kit.mjs";
+import { webcrypto } from "node:crypto";
+/* 11 Nov 2026: a delivery seals its address to the slip key, so this Counter files one */
+const SLIP_PUB = await (async () => { const k = await webcrypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]); const j = await webcrypto.subtle.exportKey("jwk", k.publicKey); return { kty: j.kty, crv: j.crv, x: j.x, y: j.y }; })();
 const U = "wrnd-zwse", PASS = "fixture-pass-window-01";
 
 export async function run({ ok }) {
@@ -123,6 +126,7 @@ export async function run({ ok }) {
         const p = String(path), m = (init && init.method) || "GET";
         const reply = (status, b) => ({ ok: status === 200, status, type: "basic", json: async () => b });
         if (p === "/open") return reply(200, body);
+        if (p === "/slip/key") return reply(200, { ok: true, key: SLIP_PUB });
         if (p === "/hours") { if (opt.failFirst && !opt.failed) { opt.failed = true; return reply(503, { ok: false }); } return reply(200, Object.assign({ open: true, source: "schedule", nextChange: null, nextOpen: null }, { config: hours })); }
         if (p === "/orders" && m === "GET") return reply(200, { ok: true, orders: opt.orders || [] });
         if (p === "/orders" && m === "POST") { const j = JSON.parse(init.body); posted.push(j);
@@ -155,8 +159,7 @@ export async function run({ ok }) {
     ok(/Delivery will be between 09:00 and 10:00 on /.test(hint), "a window partly inside the hours says the part inside: " + hint);
     /* Counter Batch C, his answer 4 of 20 Oct 2026: the area lives in a spot, picked through Add a spot, so the window is chosen first and the spot after */
     d.getElementById("spAdd").click(); await new Promise((r) => setTimeout(r, 60));
-    d.querySelector('#osheet [data-k="spn:0"]').click(); await new Promise((r) => setTimeout(r, 60));
-    d.getElementById("oWhere").value = "Taman Contoh"; d.getElementById("oWhere").dispatchEvent(new w.Event("input", { bubbles: true }));
+    for (const [id, v] of [["spName", "Home"], ["spAddr", "12 Jalan Taman Contoh"]]) { d.getElementById(id).value = v; d.getElementById(id).dispatchEvent(new w.Event("input", { bubbles: true })); }
     d.getElementById("spUse").click(); await new Promise((r) => setTimeout(r, 60));
     d.getElementById("oGo").click();
     const check = d.getElementById("osheet").textContent;

@@ -1,7 +1,7 @@
 /* test/order-stream-p8-order.mjs: ORDER IS WHERE EVERY ORDER STARTS (plan version 8, 8a and 8b, his answers F and G of 02 Nov 2026 and the
  * canvas of 03 Nov 2026). Each check red under its own mutation (test/order-stream-p8-order.mutations.json). The Counter page is the real
  * stmt/page.js in jsdom (test/counter-b-kit.mjs open()), every code and name invented:
- *   8a Prices is named Order and stands second after Home; Orders' New order, Home's start tiles and Home's Collect and Deliver land on
+ *   8a Prices is named Shop (Order until 11 Nov 2026, his word) and stands second after Home; Orders' New order, Home's start tiles and Home's Collect and Deliver land on
  *      Order, never on the sheet, a tile at its book with its size in focus and the way chosen kept
  *   8b a new order's sheet keeps the way, the place, when, the note and the check: no size is chosen in it; its lines are the basket's (or
  *      the size tapped), listed with their figures, and the units change on Order; opened on the way alone it lists none, offers no
@@ -16,8 +16,8 @@ export async function run({ ok, pageWork }) {
     const p = await K.open({ ok, pageWork }); pages.push(p);
     const bar = [...p.d.querySelectorAll("#tabs button[data-t]")].filter((b) => !b.closest(".salt-rail"));
     const rail = [...p.d.querySelectorAll(".salt-rail button[data-t]")];
-    ok([bar, rail].every((l) => l.length >= 4 && l[0].getAttribute("data-t") === "home" && l[1].getAttribute("data-t") === "prices" && K.txt(l[1]) === "Order"),
-      "8a Prices is named Order and stands second after Home, on the bar and the rail: " + JSON.stringify(rail.map(K.txt)));
+    ok([bar, rail].every((l) => l.length >= 4 && l[0].getAttribute("data-t") === "home" && l[1].getAttribute("data-t") === "prices" && K.txt(l[1]) === "Shop"),
+      "8a Prices is named Shop (Order until 11 Nov 2026, his word) and stands second after Home, on the bar and the rail: " + JSON.stringify(rail.map(K.txt)));
     ok(!p.d.body.innerHTML.includes(">Prices<"), "8a no place is named Prices any more");
     /* a fresh account: Home's start tiles and its Collect and Deliver */
     const tile = p.d.querySelector("#pHome .htile");

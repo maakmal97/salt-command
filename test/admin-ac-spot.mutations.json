@@ -62,7 +62,7 @@
   {
     "name": "no spot name",
     "file": "stmt/owner.js",
-    "find": "      if(label) led.appendChild(ordLine('Address',label));",
+    "find": "      if(label) led.appendChild(ordLine('Name',label));",
     "replace": "      void label;"
   },
   {
@@ -80,8 +80,8 @@
   {
     "name": "a unit alone gets Maps",
     "file": "stmt/owner.js",
-    "find": "      if(p.src!=='unit'&&isFinite(p.lat)&&isFinite(p.lng)&&Math.abs(+p.lat)<=90&&Math.abs(+p.lng)<=180){",
-    "replace": "      if(true){"
+    "find": "      }else if(p.src!=='unit'&&isFinite(p.lat)&&isFinite(p.lng)&&Math.abs(+p.lat)<=90&&Math.abs(+p.lng)<=180){",
+    "replace": "      }else if(true){"
   },
   {
     "name": "the opened part unmarked",
@@ -95,6 +95,28 @@
     "find": "      if(held&&!(held.missAt&&Date.now()-held.missAt>300000)){ adSpotPaint(held); return; }",
     "replace": "      if(false){ adSpotPaint(held); return; }"
   },
- {"name":"a shared short link is never opened on Salt Admin (4 Nov 2026)","file":"stmt/owner.js","find":"          if(lp) p=Object.assign({},p,{lat:lp.lat, lng:lp.lng});\n","replace":""},
- {"name":"a link that will not open is opened on every redraw (4 Nov 2026)","file":"stmt/owner.js","find":"      if(held&&!(held.missAt&&Date.now()-held.missAt>300000)){","replace":"      if(held&&!held.missAt){"}
+  {
+    "name": "a shared short link is never opened on Salt Admin (4 Nov 2026)",
+    "file": "stmt/owner.js",
+    "find": "          if(lp) p=Object.assign({},p,{lat:lp.lat, lng:lp.lng});\n",
+    "replace": ""
+  },
+  {
+    "name": "a link that will not open is opened on every redraw (4 Nov 2026)",
+    "file": "stmt/owner.js",
+    "find": "      if(held&&!(held.missAt&&Date.now()-held.missAt>300000)){",
+    "replace": "      if(held&&!held.missAt){"
+  },
+  {
+    "name": "a typed address not drawn",
+    "file": "stmt/owner.js",
+    "find": "      if(addr) led.appendChild(ordLine('Address',addr));\n",
+    "replace": ""
+  },
+  {
+    "name": "no Maps for a typed address",
+    "file": "stmt/owner.js",
+    "find": "      if(p.src==='addr'&&addr){",
+    "replace": "      if(false){"
+  }
 ]

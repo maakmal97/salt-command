@@ -31,7 +31,7 @@ export async function run({ ok, pageWork }) {
     const l0 = wayLine(A), on0 = onOrder(A);
     A.d.getElementById("pWayGo").click(); await A.settle();
     const p0 = pressed(A);
-    ok(on1 && on0 && l1 === "Delivering to Veloria" && l0 === "Collecting" && p1 === "mode:1" && !where && waiting && p0 === "mode:0" && txt(A.d.querySelector("#hStart .hlab")) === "New order",
+    ok(on1 && on0 && l1 === "Delivering" && l0 === "Collecting" && p1 === "mode:1" && !where && waiting && p0 === "mode:0" && txt(A.d.querySelector("#hStart .hlab")) === "New order",
       "Deliver to me lands on Order saying Delivering, and Change opens the sheet with Deliver pressed, no spot picked and no line to review (the last place is no longer filled: Counter Batch C, his answer 4 of 20 Oct 2026); I will collect says Collecting and presses Collect: " + JSON.stringify([on1, on0, l1, l0, p1, p0]));
 
     /* ---- 2 ---- */

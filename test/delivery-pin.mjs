@@ -196,6 +196,9 @@ export async function run({ ok }) {
     return { w, d, posted, asked, searched };
   };
   const wait = async (f) => { for (let i = 0; i < 160 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+  /* 11 Nov 2026 (his word): Add a spot is a name and an address or a point; the place search and its combobox left the Counter, so the checks that drove
+     them (P4, P5's figures-still-typed, the key-gated offer) are retired; Use my location and a pasted link remain, as does an address typed with no point */
+  const type = (w, d, id, v) => { const x = d.getElementById(id); x.value = v; x.dispatchEvent(new w.Event("input", { bubbles: true })); };
   const A = await drive(pub, { latitude: 3.1412, longitude: 101.6865, accuracy: 12 });
   try {
     const { d, posted, asked } = A;
@@ -204,15 +207,12 @@ export async function run({ ok }) {
     ok(!d.getElementById("oPinHere") && (d.getElementById("oGo").getAttribute("aria-disabled") === "true"), "the form itself no longer draws the exact spot; with no spot picked Review waits (Counter Batch C, his answer 4 of 20 Oct 2026)");
     d.getElementById("spAdd").click();
     await wait(() => !!d.getElementById("spName"));
-    await new Promise((r) => setTimeout(r, 200));   /* the key is read once the step first draws, and only a form is redrawn when it lands: a redraw by the name picks it up */
-    d.querySelector('#osheet [data-k="spn:0"]').click();
-    /* 4 Nov 2026 (one convention on every surface): the spot is one field, search or a pasted link, with Use my location beside it */
-    ok(await wait(() => !!d.getElementById("oPinHere")) && !!d.getElementById("oPinUrl"), "the Add a spot step offers Use my location and the one place field once the key is filed");
-    ok(d.getElementById("spUse").disabled, "with neither the area nor the spot, Use this spot waits");
+    ok(!!d.getElementById("oPinHere") && !!d.getElementById("spAddr") && !d.getElementById("oPinUrl"), "the Add a spot step offers Use my location and the address field");
+    ok(d.getElementById("spUse").disabled, "with neither the name nor an address or point, Use this spot waits");
     d.getElementById("oPinHere").click();
     ok(await wait(() => !!d.getElementById("oPinOff")) && asked.length === 1 && asked[0].maximumAge === 0 && d.getElementById("spUse").disabled,
-      "Use my location reads the phone once, fresh; the spot no longer stands in for the area, which the step still asks for before Use (Counter Batch C, his answer 4 of 20 Oct 2026): " + JSON.stringify(asked));
-    d.getElementById("oWhere").value = "Veloria"; d.getElementById("oWhere").dispatchEvent(new A.w.Event("input", { bubbles: true }));
+      "Use my location reads the phone once, fresh; the point stands in for the address, the name is still asked for before Use: " + JSON.stringify(asked));
+    type(A.w, d, "spName", "Veloria");
     d.getElementById("spUse").click();
     await wait(() => !d.getElementById("spUse") && !(d.getElementById("oGo").getAttribute("aria-disabled") === "true"));
     d.getElementById("oGo").click();
@@ -220,54 +220,59 @@ export async function run({ ok }) {
     d.getElementById("oPlace").click();
     ok(await wait(() => posted.length === 1), "Place sends the order");
     const env = posted[0] && posted[0].pin, got = env && typeof env === "object" ? await open(pair.privateKey, env, "salt-pin v1") : null;
-    ok(got && got.lat === 3.1412 && got.lng === 101.6865 && got.src === "gps" && !JSON.stringify(posted[0]).includes("101.6865") && posted[0].place === "Veloria",
-      "and the spot leaves sealed to his key, opened only by it, with nothing of the point in the clear (the order carries the spot's area as its place): " + JSON.stringify(got));
+    ok(got && got.lat === 3.1412 && got.lng === 101.6865 && got.src === "gps" && got.label === "Veloria" && !JSON.stringify(posted[0]).includes("101.6865") && posted[0].place === "Veloria",
+      "and the spot leaves sealed to his key, opened only by it, with nothing of the point in the clear (the order carries the spot's name as its place): " + JSON.stringify(got));
   } finally { await new Promise((r) => setTimeout(r, 80)); A.w.close(); }
-  /* no key filed, no spot offered; a phone that will not share says so and the area is asked for */
+  /* an address typed, no point: sealed as {addr, src addr, label}, the address never in the clear */
+  const T = await drive(pub, null);
+  try {
+    const { d, w, posted } = T;
+    await startAt(d); d.querySelector('#osheet [data-k="mode:1"]').click();
+    d.getElementById("spAdd").click(); await wait(() => !!d.getElementById("spName"));
+    type(w, d, "spName", "Shop"); type(w, d, "spAddr", "12 Jalan Contoh, Taman Ulvar");
+    d.getElementById("spUse").click();
+    await wait(() => !d.getElementById("spUse") && !(d.getElementById("oGo").getAttribute("aria-disabled") === "true"));
+    d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    await wait(() => posted.length === 1);
+    const env = posted[0] && posted[0].pin, got = env && typeof env === "object" ? await open(pair.privateKey, env, "salt-pin v1") : null;
+    ok(got && got.src === "addr" && got.addr === "12 Jalan Contoh, Taman Ulvar" && got.label === "Shop" && !JSON.stringify(posted[0]).includes("Ulvar") && posted[0].place === "Shop",
+      "an address typed with no point is sealed as the address with the spot's name, never in the clear: " + JSON.stringify(got));
+  } finally { T.w.close(); }
+  /* no key filed: a delivery is refused at Place and sends nothing (test/counter-deliver-nokey.mjs holds the words) */
   const B = await drive(null, null);
   try {
-    const { d } = B;
+    const { d, w, posted } = B;
     await startAt(d); d.querySelector('#osheet [data-k="mode:1"]').click();
-    await new Promise((r) => setTimeout(r, 150));
-    d.getElementById("spAdd").click(); await new Promise((r) => setTimeout(r, 100));
-    ok(!d.getElementById("oPinHere") && !!d.getElementById("oWhere"), "with no key filed no spot is offered, and the area is asked as ever");
+    d.getElementById("spAdd").click(); await wait(() => !!d.getElementById("spName"));
+    type(w, d, "spName", "Shop"); type(w, d, "spAddr", "12 Jalan Contoh");
+    d.getElementById("spUse").click();
+    await wait(() => !d.getElementById("spUse") && !(d.getElementById("oGo").getAttribute("aria-disabled") === "true"));
+    d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    await new Promise((r) => setTimeout(r, 300));
+    ok(posted.length === 0, "with no key filed a delivery's Place sends nothing: " + posted.length);
   } finally { B.w.close(); }
   const D = await drive(pub, null);
   try {
     const { d } = D;
     await startAt(d); d.querySelector('#osheet [data-k="mode:1"]').click();
     d.getElementById("spAdd").click(); await wait(() => !!d.getElementById("spName"));
-    await new Promise((r) => setTimeout(r, 200)); d.querySelector('#osheet [data-k="spn:0"]').click();
     await wait(() => !!d.getElementById("oPinHere")); d.getElementById("oPinHere").click();
     ok(await wait(() => d.getElementById("osheet").textContent.includes(W.EN["sh.pinNo"])) && !d.getElementById("oPinOff") && d.getElementById("spUse").disabled,
-      "a phone that will not share its location says so, and Use this spot waits for the area");
+      "a phone that will not share its location says so, and Use this spot waits");
   } finally { D.w.close(); }
-  /* P4 (4 Nov 2026, his answers: one convention on every surface, OpenStreetMap search): three letters and a pause search through our own
-     route with the words alone; a place picked is the spot, sealed at Place with its point and src search */
+  /* a pasted map link is read on the phone to a point, the address field giving way to Your link is ready */
   const E = await drive(pub, null);
   try {
-    const { d, posted, searched } = E;
+    const { d, w, posted } = E;
     await startAt(d); d.querySelector('#osheet [data-k="mode:1"]').click();
     d.getElementById("spAdd").click(); await wait(() => !!d.getElementById("spName"));
-    await new Promise((r) => setTimeout(r, 200)); d.querySelector('#osheet [data-k="spn:0"]').click();
-    await wait(() => !!d.getElementById("oPinUrl"));
-    const pu = d.getElementById("oPinUrl");
-    /* P5 (Fable's review): figures still being typed are never sent to the search */
-    pu.value = "3.07, 101"; pu.dispatchEvent(new E.w.Event("input", { bubbles: true })); await new Promise((r) => setTimeout(r, 450));
-    ok(searched.length === 0, "P5 figures still being typed ask no search: " + JSON.stringify(searched));
-    pu.value = "Taman Ulv"; pu.dispatchEvent(new E.w.Event("input", { bubbles: true }));
-    const hit = await wait(() => d.querySelector('#osheet [data-k="pinhit:0"]'));
-    ok(!!hit && searched.length === 1 && JSON.stringify(searched[0]) === JSON.stringify({ q: "Taman Ulv" }) && /Taman Ulvar/.test(hit.textContent),
-      "P4 three letters and a pause ask our own place search with the words alone, and the places found stand as rows: " + JSON.stringify(searched));
-    hit.click();
-    ok(await wait(() => !!d.getElementById("oPinOff")) && /Taman Ulvar is ready/.test(d.getElementById("osheet").textContent),
-      "P4 a tap on a place takes its point and says which place it is");
-    d.getElementById("oWhere").value = "Ulvar"; d.getElementById("oWhere").dispatchEvent(new E.w.Event("input", { bubbles: true }));
+    type(w, d, "spName", "Work"); type(w, d, "spAddr", "https://www.google.com/maps?q=3.0738,101.7255");
+    ok(await wait(() => !!d.getElementById("oPinOff")) && !d.getElementById("spAddr"), "a pasted map link is read to a point and the address field gives way to Remove");
     d.getElementById("spUse").click();
     await wait(() => !d.getElementById("spUse") && !(d.getElementById("oGo").getAttribute("aria-disabled") === "true"));
     d.getElementById("oGo").click(); d.getElementById("oPlace").click();
     await wait(() => posted.length === 1);
     const env = posted[0] && posted[0].pin, got = env && typeof env === "object" ? await open(pair.privateKey, env, "salt-pin v1") : null;
-    ok(got && got.lat === 3.0811 && got.lng === 101.7402 && got.src === "search", "P4 and Place seals the place found as the spot: " + JSON.stringify(got));
+    ok(got && got.lat === 3.0738 && got.lng === 101.7255 && got.src === "link" && got.label === "Work", "and Place seals the link's point with the spot's name: " + JSON.stringify(got));
   } finally { E.w.close(); }
 }

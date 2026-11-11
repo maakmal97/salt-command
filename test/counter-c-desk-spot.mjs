@@ -10,7 +10,8 @@
  *   3  File all leaves a unit alone out, and its own file tap writes nothing
  *   4  filing writes the point alone, never the name or the unit
  *   5  a slip's seal carrying a name opens as nothing and names nothing
- *   6  the lock drops the name and unit with the point */
+ *   6  the lock drops the name and unit with the point
+ *   2b (11 Nov 2026) an address they typed is read with its name, measures no fee and is not offered for filing */
 import { webcrypto } from "node:crypto";
 const S = webcrypto.subtle, enc = new TextEncoder(), b64 = (u8) => Buffer.from(u8).toString("base64");
 async function seal(pub, obj, info) {
@@ -35,8 +36,9 @@ export async function run({ ok }) {
   const at = "2026-10-20T05:30:00.000Z";
   const both = J(await seal(key.pub, { v: 1, lat: 3.1, lng: 101.7, acc: 9, src: "gps", at, label: "Shop", unit: "Level 2" }, "salt-pin v1"));
   const unitOnly = J(await seal(key.pub, { v: 1, at, label: "Warehouse", unit: "Unit 12A", src: "unit" }, "salt-pin v1"));
+  const addrOnly = J(await seal(key.pub, { v: 1, at, label: "Home", addr: "12 Jalan Qelvor, Block B", src: "addr" }, "salt-pin v1"));
   const slip = J(await seal(key.pub, { v: 1, lat: 3.1, lng: 101.7, src: "gps", at, label: "Shop", unit: "Level 2" }, "salt-slip v1"));
-  const P1 = "71".repeat(16), P2 = "72".repeat(16), P3 = "73".repeat(16);
+  const P1 = "71".repeat(16), P2 = "72".repeat(16), P3 = "73".repeat(16), P4 = "74".repeat(16);
   w.eval("try{cloudMode=function(){return true;};}catch(e){};(function(){NAME_VAULT=" + names + ";qSyncState='server';window.prompt=function(){return 'pw';};"
     + "window.__gets=[];pinDraw=function(){};"
     + "var A=function(st,j){return Promise.resolve({ok:st===200,status:st,json:function(){return Promise.resolve(j);}});};"
@@ -44,13 +46,14 @@ export async function run({ ok }) {
     + "if(s==='vault/addr')return A(200,{ok:true,vault:" + places + "});if(s==='vault/key')return A(200,{ok:true,vault:" + J(key.vault) + "});"
     + "if(s==='pins/" + U + "/" + P1 + "')return A(200,{ok:true,pin:" + both + "});if(s==='pins/" + U + "/" + P2 + "')return A(200,{ok:true,pin:" + unitOnly + "});"
     + "if(s==='pins/" + U + "/" + P3 + "')return A(200,{ok:true,pin:" + slip + "});"
+    + "if(s==='pins/" + U + "/" + P4 + "')return A(200,{ok:true,pin:" + addrOnly + "});"
     + "if(s.indexOf('pins/')===0)return A(404,{ok:false,error:'that location is not kept'});return A(200,{ok:true});};})();");
   try { Object.defineProperty(w.navigator, "geolocation", { configurable: true, value: undefined }); } catch (e) { /* none there */ }
   const order = (id, pin, code) => ({ id, u: U, code, status: "placed", mode: "deliver", product: "salt", qty: 1, total: 100, pin, at, history: [], msgs: [] });
-  const O1 = order("20261020050000-aaa1", P1, CODE), O2 = order("20261020050000-aaa2", P2, OTHER), O3 = order("20261020050000-aaa3", P3, CODE);
-  w.eval("ORD_OPEN=" + J([O1, O2, O3]) + ";");
+  const O1 = order("20261020050000-aaa1", P1, CODE), O2 = order("20261020050000-aaa2", P2, OTHER), O3 = order("20261020050000-aaa3", P3, CODE), O4 = order("20261020050000-aaa4", P4, OTHER);
+  w.eval("ORD_OPEN=" + J([O1, O2, O3, O4]) + ";");
   await w.eval("vaultReveal('pw')");
-  await w.eval("Promise.all([ordPinPoint(" + J(O1) + "),ordPinPoint(" + J(O2) + "),ordPinPoint(" + J(O3) + ")]).then(function(r){window.__pts=r;})");
+  await w.eval("Promise.all([ordPinPoint(" + J(O1) + "),ordPinPoint(" + J(O2) + "),ordPinPoint(" + J(O3) + "),ordPinPoint(" + J(O4) + ")]).then(function(r){window.__pts=r;})");
   /* ---- 1 ---- */
   const one = rd("{st:ORD_PIN['" + O1.id + "'],line:ordPinLine(" + J(O1) + ")}");
   const nameAt = one.line.indexOf("Shop · Level 2"), openAt = one.line.indexOf("open on this device");
@@ -62,6 +65,11 @@ export async function run({ ok }) {
   ok(two.p === null && two.st && two.st.st === "unit" && !two.st.pt && two.line.indexOf("Warehouse · Unit 12A") >= 0
     && /A unit, no exact spot: the fee is measured to their filed place\./.test(two.line) && !/data-pinfile/.test(two.line) && !/holds no point/.test(two.line),
     "a unit alone reads its own line, measures no fee and is not offered for filing: " + J(two.line));
+  /* ---- 2b ---- */
+  const four = rd("{p:window.__pts[3],st:ORD_PIN['" + O4.id + "'],line:ordPinLine(" + J(O4) + ")}");
+  ok(four.p === null && four.st && four.st.st === "addr" && four.line.indexOf("Home · 12 Jalan Qelvor, Block B") >= 0
+    && /An address, no exact spot: the fee is measured to their filed place./.test(four.line) && !/data-pinfile/.test(four.line) && !/holds no point/.test(four.line),
+    "2b an address they typed is read with its name, measures no fee and is not offered for filing: " + J(four.line));
   /* ---- 3 ---- */
   w.eval("vaultPlaces={};window.__calls=0;window.__filed=null;wbVaultFile=function(edit,editPlaces){window.__calls++;var m={};editPlaces(m);window.__filed=m;return Promise.resolve(null);};");
   const batch = rd("ordPinBatch().map(function(x){return x.o.code;})");

@@ -16,7 +16,7 @@ import * as C from "../tools/stmt-crypto.mjs";
 const kl = (n) => new Date(Date.now() + 8 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
 const wait = async (f, n = 300) => { for (let i = 0; i < n && !f(); i++) await new Promise((r) => setTimeout(r, 15)); return f(); };
 const txt = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
-const UNIT = "Unit 12A";
+const UNIT = "Unit 12A";   /* an address now (11 Nov 2026), sealed with the spot's name */
 
 /* keys: what each /slip/key read answers in turn, the last repeated; 404 as a failed read, null as no key filed */
 async function drive({ keys, test = false }) {
@@ -60,11 +60,8 @@ async function drive({ keys, test = false }) {
     d.querySelector('#osheet [data-k="mode:1"]').click();
     await wait(() => !!d.getElementById("spAdd"));
     d.getElementById("spAdd").click();
-    await wait(() => !!d.querySelector('#osheet [data-k="spn:0"]') && !!d.getElementById("spUnit"));
-    d.querySelector('#osheet [data-k="spn:0"]').click();
-    await wait(() => !!d.getElementById("spUnit"));
-    const x = d.getElementById("spUnit"); x.value = UNIT; x.dispatchEvent(new w.Event("input", { bubbles: true }));
-    const a = d.getElementById("oWhere"); a.value = "Veloria"; a.dispatchEvent(new w.Event("input", { bubbles: true }));
+    await wait(() => !!d.getElementById("spName"));
+    for (const [id, v] of [["spName", "Shop"], ["spAddr", UNIT + ", Veloria"]]) { const x = d.getElementById(id); x.value = v; x.dispatchEvent(new w.Event("input", { bubbles: true })); }   /* 11 Nov 2026: a spot is a name and an address */
     d.getElementById("spUse").click();
     await wait(() => !d.getElementById("spUse") && d.getElementById("oGo") && !(d.getElementById("oGo").getAttribute("aria-disabled") === "true"));
     d.getElementById("oGo").click();

@@ -7,14 +7,19 @@
 import { webcrypto } from "node:crypto";
 
 const BUILD = "c".repeat(16);
+/* 11 Nov 2026: every delivery seals its address, so the invented Counter files a slip key (a fresh P-256 pair, its public half answered) */
+export const SLIP_PUB = await (async () => { const k = await webcrypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]); const j = await webcrypto.subtle.exportKey("jwk", k.publicKey); return { kty: j.kty, crv: j.crv, x: j.x, y: j.y }; })();
 export const kl = (n) => new Date(Date.now() + 8 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
 export const ago = (h) => new Date(Date.now() - h * 3600e3).toISOString();
 export const txt = (e) => { if (!e) return ""; const c = e.cloneNode(true); c.querySelectorAll("svg,.sr").forEach((x) => x.remove()); return c.textContent.replace(/\s+/g, " ").trim(); };
-/* a delivery's Where to is a saved spot (Counter Batch C, his answer 4 of 20 Oct 2026): Add a spot, a preset name, the area, Use this spot; the spot is picked */
+/* a delivery's Where to is a spot (Counter Batch C; 11 Nov 2026 his word: a name and an address or a point): Add a spot, the name, the
+   address, Use this spot; the spot is picked. The name is the order's place, so it is the place an older check names; the address is
+   sealed and never reaches the order in the clear */
 export function addSpot(d, w, place, name = 0) {
   d.getElementById("spAdd").click();
-  d.querySelector('#osheet [data-k="spn:' + name + '"]').click();
-  const x = d.getElementById("oWhere"); x.value = place; x.dispatchEvent(new w.Event("input", { bubbles: true }));
+  const type = (id, v) => { const x = d.getElementById(id); x.value = v; x.dispatchEvent(new w.Event("input", { bubbles: true })); };
+  type("spName", String(place).slice(0, 24));
+  type("spAddr", "12 Jalan " + place);
   d.getElementById("spUse").click();
 }
 export const until = async (f, n = 300) => { for (let i = 0; i < n && !f(); i++) await new Promise((r) => setTimeout(r, 15)); return f(); };
@@ -65,6 +70,7 @@ export async function open({ ok, pageWork, orders = [], assoc = false, late = 0,
         st.orders.push(o);
         return j({ ok: true, order: { id: o.id } });
       }
+      if (p === "/slip/key") return j({ ok: true, key: SLIP_PUB });
       if (p === "/links") return j({ ok: true, links: [], max: 3 });
       if (p === "/pools") return j({ ok: true, pools: [] });
       /* Counter Batch C: the hours, and the measured confirm time on them, when a test gives them; unread otherwise, as before */
@@ -137,6 +143,11 @@ export async function startAt(p, shape, q) {
   const go = d.getElementById("bkGo");
   if (!go || go.hidden || go.disabled) throw new Error("no Continue on Order after adding " + shape + " " + q);
   go.click();
+  /* 11 Nov 2026 (his answer "Always ask"): a new sheet waits for its way; the older checks were written when it opened on collect, so
+     the kit answers I will collect for them (test/order-way-ask.mjs reads the sheet before anything is chosen) */
+  if (p && p.settle) await p.settle();
+  const way = d.querySelector('#osheet [data-k="mode:0"]');
+  if (way && !d.querySelector('#osheet [data-k^="mode:"][aria-pressed="true"]')) { way.click(); if (p && p.settle) await p.settle(); }
   /* Continue reviews straight to the check when nothing is missing; a size tapped opened the form, so step back to it */
   const back = d.querySelector('#osheet [data-k="back"]'); if (back && !d.getElementById("oGo")) back.click();
   if (p && p.settle) await p.settle();

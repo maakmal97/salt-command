@@ -6,6 +6,7 @@
 import { startAt } from "./counter-b-kit.mjs";
 import { richOwnerPage, byAct, enter } from "./maker-act.mjs";
 import * as C from "../tools/stmt-crypto.mjs";
+import { SLIP_PUB } from "./counter-b-kit.mjs";
 
 const U1 = "abcd-efgh";
 
@@ -21,7 +22,7 @@ export async function run({ ok, pageWork }) {
     prices: Object.assign({ at: list.at, week: list.week.monday, digest: list.digest }, await C.encryptWith(ck, JSON.stringify(list))) };
   let refuseOpen = 0, agreed = { accepted: true };
   const extra = (route) => route === "/open" && refuseOpen > 0 ? (refuseOpen--, { refuse: "Busy, try again." }) : route === "/open" ? opened
-    : route === "/all/maker/slip/key" ? { ok: true, key: { kty: "EC", crv: "P-256", x: "eA", y: "eQ" } }
+    : route === "/all/maker/slip/key" ? { ok: true, key: SLIP_PUB }   /* a real P-256 public key: every delivery seals its address (11 Nov 2026) */
     : route === "/all/maker/inputs" ? { ok: true, catalog: { parties: ["CA5-SEN", "CS6-BS-R", "CB1-XY"] } }
     : route === "/all/maker/geo/search" ? { ok: true, places: [{ name: "Taman Ulvar", where: "Cheras", lat: 3.0811, lng: 101.7402 }] }
     : route === "/all/maker/customers/" + U1 + "/orders" ? { ok: true, order: placed, agreed }
@@ -45,11 +46,18 @@ export async function run({ ok, pageWork }) {
       "B1 Order for them opens their own page with New order and says he is ordering for them; the old box is gone: " + JSON.stringify([!!nb, lead(p)]));
     await startAt(p.d); await p.work.quiet();   /* plan version 8: New order lands on Order; the sheet opens at a size tapped there */
     ok(!p.d.getElementById("oAddNote") && !p.d.getElementById("oSay"), "B2 the sheet has no note on Order as them");
+    /* 11 Nov 2026: a delivery goes through Add a spot on his sheet too (one kept for this order alone); a spot of theirs saved on his device is never read or written */
+    p.w.localStorage.setItem("salt-spots:" + U1, JSON.stringify([{ id: "t1", label: "Veloria", addr: "1 Jalan Contoh", pt: null }]));
     const way = p.d.querySelector("[data-k='mode:1']");
     if (way) { way.click(); await p.work.quiet(); }
     const slips = p.wire.map((x) => x.split(" ")[0]).filter((r) => /slip/.test(r));
-    ok(slips.includes("/all/maker/slip/key") && !slips.includes("/slip/key") && !!p.d.querySelector(".opin") && !p.d.getElementById("spAdd"),
-      "B8 on Deliver the exact spot is offered, its key read through his route, and no saved spot of theirs is read or kept on his device: " + JSON.stringify([slips, !!p.d.querySelector(".opin")]));
+    ok(!!p.d.getElementById("spAdd") && !p.d.querySelector("#osheet [data-k^='spot:']") && !p.d.getElementById("oWhere"),
+      "B8 on Deliver Add a spot is offered, with no saved spot of theirs on his device listed and no inline area field: " + JSON.stringify([!!p.d.getElementById("spAdd"), !!p.d.querySelector("#osheet [data-k^='spot:']")]));
+    p.d.getElementById("spAdd").click(); await p.work.quiet();
+    const slips2 = p.wire.map((x) => x.split(" ")[0]).filter((r) => /slip/.test(r));
+    ok(slips2.includes("/all/maker/slip/key") && !slips2.includes("/slip/key"), "B8 and the spot's key is read through his route, never theirs: " + JSON.stringify(slips2));
+    p.d.querySelector("#osheet [data-k='back']") && p.d.querySelector("#osheet [data-k='back']").click();
+    await p.work.quiet();
     const back = p.d.querySelector("[data-k='mode:0']");
     if (back) { back.click(); await p.work.quiet(); }
     const go = p.d.getElementById("oGo");
@@ -81,41 +89,41 @@ export async function run({ ok, pageWork }) {
     sb.scrollTop = 300;
     p.d.querySelector("[data-k='mode:1']").click(); await p.work.quiet();
     ok(sb.scrollTop === 300, "B12 a choice tapped on the sheet keeps it where it was scrolled, never back at its top: " + sb.scrollTop);
-    const wi = p.d.getElementById("oWhere");
-    wi.value = "Orlen"; wi.dispatchEvent(new p.w.Event("input", { bubbles: true })); await p.work.quiet();
+    /* a delivery is a name and an address through Add a spot (kept for this order alone on his device) */
+    p.d.getElementById("spAdd").click(); await p.work.quiet();
+    for (const [id, v] of [["spName", "Orlen"], ["spAddr", "5 Jalan Orlen, Taman Contoh"]]) { const x = p.d.getElementById(id); x.value = v; x.dispatchEvent(new p.w.Event("input", { bubbles: true })); }
+    await p.work.quiet();
+    p.d.getElementById("spUse").click(); await p.work.quiet();
     const go = p.d.getElementById("oGo"), foot = p.d.querySelector("#osheet .ototal");
-    ok(!!go && go.getAttribute("aria-disabled") !== "true" && !/Pick where it is going/.test(foot ? foot.textContent : ""),
-      "B11 a delivery with an area typed reaches Review on Order as them: " + JSON.stringify([!!go && go.getAttribute("aria-disabled"), foot && foot.textContent]));
+    ok(!!go && go.getAttribute("aria-disabled") !== "true" && !/Pick where it is going/.test(foot ? foot.textContent : "") && String(p.w.localStorage.getItem("salt-spots:" + U1) || "").indexOf("Orlen") < 0,
+      "B11 a delivery with a spot added reaches Review on Order as them, the spot kept for this order alone, never on his device: " + JSON.stringify([!!go && go.getAttribute("aria-disabled"), foot && foot.textContent]));
     sb.scrollTop = 300;
     go.click(); await p.work.quiet();
     ok(sb.scrollTop === 0, "B12 and Review's check, a new step, opens at its top: " + sb.scrollTop);
     const before = p.posts.length;
     p.d.getElementById("oPlace").click(); await p.work.quiet();
     const b = (p.posts.slice(before).find((x) => x.route === "/all/maker/customers/" + U1 + "/orders") || {}).body;
-    ok(!!b && b.mode === "deliver" && b.place === "Orlen", "B11 and Place sends it as a delivery to that area: " + JSON.stringify(b));
+    ok(!!b && b.mode === "deliver" && b.place === "Orlen" && !!b.pin && !JSON.stringify(b).includes("Jalan Orlen"), "B11 and Place sends it as a delivery to the spot's name, its address sealed: " + JSON.stringify(b));
   } catch (e) { ok(false, "Order as them's delivery stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
 
-  /* B13 (4 Nov 2026, one convention on every surface): on Order as them their spot's place search goes through his own road, never theirs */
+  /* B13 (11 Nov 2026, his word: Add a spot is a name and an address or a point, the place search left the Counter): on Order as them a pasted map link is read
+     to a point on the phone and becomes the spot, sealed to his key; the old B13 (the search through his own road) and B14 (a point standing for the area) are retired */
   p = await richOwnerPage({ pageWork, extra });
   try {
     await openAs(p, "acct.order-for");
     await startAt(p.d); await p.work.quiet();
     p.d.querySelector("[data-k='mode:1']").click(); await p.work.quiet();
-    const pu = p.d.getElementById("oPinUrl");
-    if (pu) { pu.value = "Taman Ulv"; pu.dispatchEvent(new p.w.Event("input", { bubbles: true })); }
-    let hit = null;
-    /* the harness holds the page's timers: the search's pause (350 ms) is run by hand, as Shop's points' check does */
-    await p.work.quiet(); p.timers.filter((x) => x.ms === 350 && !x.off).forEach((x) => { x.off = true; x.f(); }); await p.work.quiet();
-    hit = p.d.querySelector("#osheet [data-k='pinhit:0']");
-    if (hit) { hit.click(); await p.work.quiet(); }
-    const routes = p.posts.map((x) => x.route);
-    ok(!!pu && !!hit && routes.includes("/all/maker/geo/search") && !routes.includes("/place/search") && !!p.d.getElementById("oPinOff"),
-      "B13 their spot's place search on Order as them asks his own road and a place found becomes the spot: " + JSON.stringify([routes, !!pu, !!hit]));
-    /* B14 (5 Nov 2026): the exact spot stands in for the area words, so with no area typed Review is ready and says nothing is missing */
-    const go14 = p.d.getElementById("oGo"), foot14 = p.d.querySelector("#osheet .ototal"), area14 = p.d.getElementById("oWhere");
-    ok(!!area14 && !area14.value && !!go14 && !go14.hasAttribute("aria-disabled") && !/Say roughly where/.test(foot14 ? foot14.textContent : ""),
-      "B14 a spot shared with no area typed lets Review go on Order as them: " + JSON.stringify([area14 && area14.value, go14 && go14.getAttribute("aria-disabled"), foot14 && foot14.textContent]));
-  } catch (e) { ok(false, "Order as them's place search stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+    p.d.getElementById("spAdd").click(); await p.work.quiet();
+    for (const [id, v] of [["spName", "Work"], ["spAddr", "https://www.google.com/maps?q=3.0738,101.7255"]]) { const x = p.d.getElementById(id); x.value = v; x.dispatchEvent(new p.w.Event("input", { bubbles: true })); await p.work.quiet(); }
+    const off = p.d.getElementById("oPinOff");
+    p.d.getElementById("spUse").click(); await p.work.quiet();
+    p.d.getElementById("oGo").click(); await p.work.quiet();
+    const before = p.posts.length;
+    p.d.getElementById("oPlace").click(); await p.work.quiet();
+    const b13 = (p.posts.slice(before).find((x) => x.route === "/all/maker/customers/" + U1 + "/orders") || {}).body;
+    ok(!!off && !!b13 && b13.place === "Work" && !!b13.pin && !JSON.stringify(b13).includes("3.0738"),
+      "B13 a pasted map link on Order as them is read to a point, becomes the spot and leaves sealed: " + JSON.stringify([!!off, b13 && b13.place, !!(b13 && b13.pin)]));
+  } catch (e) { ok(false, "Order as them's pasted link stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
 
   /* B5: View as them stays read only */
   p = await richOwnerPage({ pageWork, extra });
