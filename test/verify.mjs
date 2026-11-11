@@ -48635,6 +48635,11 @@ await (async () => {
   await (await import("./order-why-plain.mjs")).run({ ok });
 })();
 
+section("11 Nov 2026: salt price band version 2, every quote a customer is shown is recorded and the Desk reads the count");
+await (async () => {
+  await (await import("./counter-quotes.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter Batch C: the Desk reads the spot's name and unit after the unlock, a unit alone never filed (P7)");
 await (async () => {
   await (await import("./counter-c-desk-spot.mjs")).run({ ok });
