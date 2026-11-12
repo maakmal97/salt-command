@@ -1,11 +1,78 @@
 [
-  {"name": "F1 a lot lands on its order day again", "file": "engine/snapshot.mjs", "find": "landingsOf(x).forEach(l=>{if(inWin(l[0]))shelf+=l[1];});", "replace": "{const u=POSITION_ENGINE.poRecvUnits(x);if(u>0&&inWin(x.receivedOn||x.date))shelf+=u;}"},
-  {"name": "F3 a served book's MARKET is left out", "find": "  if(M){Object.keys(MARKET_BOOK).forEach(x=>delete MARKET_BOOK[x]);Object.assign(MARKET_BOOK,M);}", "replace": ""},
-  {"name": "F3 a served book with no MARKET empties the switch", "find": "if(b.MARKET&&typeof b.MARKET==='object'&&!Array.isArray(b.MARKET))M=copy(b.MARKET);", "replace": "M=b.MARKET&&typeof b.MARKET==='object'?copy(b.MARKET):{};"},
-  {"name": "F4 their price is the card today alone", "file": "src/drafter.js", "find": "const card = card0 != null && +listed > 0 ? Math.min(card0, +listed) : card0;", "replace": "const card = card0;"},
-  {"name": "F10 a point at any size", "file": "src/maker-inputs.js", "find": "  if (q > 12.5 + 1e-9) return { error: \"A Median point is set at 12.5 units or under.\" };\n", "replace": ""},
-  {"name": "F11 the start ignores the entry's moment", "file": "engine/apply.mjs", "find": " && !(sf && Date.parse((it.entry && it.entry.at) || it.id) < Date.parse(sf))", "replace": ""},
-  {"name": "F12 the card says nothing of the start", "file": "src/drafter.js", "find": "        + startLine(book, roster, code, kind, pay)\n", "replace": ""},
-  {"name": "F12 the start line ignores a figure he named", "file": "src/drafter.js", "find": " || (pay && pay.tiers && \"salt\" in pay.tiers)) return \"\";", "replace": ") return \"\";"},
-  {"name": "F13 the reading reads every key", "file": "stmt/quotes.js", "find": "      if (!meta && reads >= QUOTE_READS) { partial = true; continue; }\n", "replace": ""}
+  {
+    "name": "F1 a lot lands on its order day again",
+    "file": "engine/snapshot.mjs",
+    "find": "landingsOf(x).forEach(l=>{if(inWin(l[0]))shelf+=l[1];});",
+    "replace": "{const u=POSITION_ENGINE.poRecvUnits(x);if(u>0&&inWin(x.receivedOn||x.date))shelf+=u;}"
+  },
+  {
+    "name": "F3 a served book's MARKET is left out",
+    "find": ".concat(M?[[MARKET_BOOK,M]]:[]);",
+    "replace": ";"
+  },
+  {
+    "name": "F3 a served book with no MARKET empties the switch",
+    "find": "if(b.MARKET&&typeof b.MARKET==='object'&&!Array.isArray(b.MARKET))M=copy(b.MARKET);",
+    "replace": "M=b.MARKET&&typeof b.MARKET==='object'?copy(b.MARKET):{};"
+  },
+  {
+    "name": "F4 their price is the card today alone",
+    "file": "src/drafter.js",
+    "find": "const card = card0 != null && +listed > 0 ? Math.min(card0, +listed) : card0;",
+    "replace": "const card = card0;"
+  },
+  {
+    "name": "F10 a point at any size",
+    "file": "src/maker-inputs.js",
+    "find": "  if (q > 12.5 + 1e-9) return { error: \"A Median point is set at 12.5 units or under.\" };\n",
+    "replace": ""
+  },
+  {
+    "name": "F11 the start ignores the entry's moment",
+    "file": "engine/apply.mjs",
+    "find": " && !(sf && Date.parse((it.entry && it.entry.at) || it.id) < Date.parse(sf))",
+    "replace": ""
+  },
+  {
+    "name": "F12 the card says nothing of the start",
+    "file": "src/drafter.js",
+    "find": "(startLine(book, roster, code, kind, pay, entry && entry.at))",
+    "replace": "(\"\")"
+  },
+  {
+    "name": "F12 the start line ignores a figure he named",
+    "file": "src/drafter.js",
+    "find": " || (pay && pay.tiers && \"salt\" in pay.tiers)) return \"\";",
+    "replace": ") return \"\";"
+  },
+  {
+    "name": "F13 the reading reads every key",
+    "file": "stmt/quotes.js",
+    "find": "      if (!meta && reads >= QUOTE_READS) { partial = true; continue; }\n",
+    "replace": ""
+  },
+  {
+    "name": "F12 the card still says it touches no figure",
+    "file": "src/drafter.js",
+    "find": "((sl) => sl ? sl + \" The fold appends the code to the roster.\" :",
+    "replace": "((sl) => sl ? sl + \" It touches no figure: the fold appends the code to the roster.\" :"
+  },
+  {
+    "name": "F12 the card ignores the start's moment",
+    "file": "src/drafter.js",
+    "find": "  if (R && R.startFrom && Date.parse(at) < Date.parse(R.startFrom)) return \"\";",
+    "replace": ""
+  },
+  {
+    "name": "F10 the drafter takes a point at any size",
+    "file": "src/drafter.js",
+    "find": "  if (q > 12.5 + 1e-9) return { skip: \"a Median point is set at 12.5 units or under\" };",
+    "replace": ""
+  },
+  {
+    "name": "F4 an amendment takes the card today again",
+    "file": "engine/apply.mjs",
+    "find": "it.target.listRM = +(was != null ? Math.min(card, was) : +card).toFixed(2);",
+    "replace": "it.target.listRM = +(+card).toFixed(2);"
+  }
 ]

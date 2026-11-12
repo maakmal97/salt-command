@@ -390,8 +390,9 @@ export function costFor(book, product) {
    discount he gave under their price, his information only. A partner's card is the Floor. No card, no stamp. */
 /* 13 Nov 2026 (Fable): a new statement customer naming no salt figure is started by the fold at the rule's `start` (engine/apply.mjs `fresh`), so the
    Approve card says so; read off the PRICING snapshot's rule, nothing on the entry */
-export function startLine(book, roster, code, kind, pay) {
+export function startLine(book, roster, code, kind, pay, at) {
   const sp = ((book && book.pricing && book.pricing.byProduct) || {}).salt, R = sp && sp.inputs && sp.inputs.policy && sp.inputs.policy.tierRule, st = R && R.band ? R.start : null;
+  if (R && R.startFrom && Date.parse(at) < Date.parse(R.startFrom)) return "";   /* stamped before the start shipped, the fold gives 0% (engine/apply.mjs) */
   if (typeof st !== "number" || (roster || []).includes(code) || !["customer", "reseller", "referral"].includes(kind) || (pay && pay.partner) || (pay && pay.tiers && "salt" in pay.tiers)) return "";
   return ` It names no salt figure, so the fold starts them at ${st > 0 ? "+" : ""}${Math.round(st * 100)}% on salt, where a new customer starts.`;
 }
@@ -747,6 +748,7 @@ export function marketEditRow(entry, pay, book) {
   }
   const q = +pay.q, price = +pay.price;
   if (!(q > 0) || !PRICING_ENGINE.onGrid(q, PRICING_ENGINE.gridOf(R))) return { skip: `${pay.q} is not a size ${product} is ordered in` };
+  if (q > 12.5 + 1e-9) return { skip: "a Median point is set at 12.5 units or under" };   /* 13 Nov 2026, as makerMarket refuses (Fable's re-check) */
   if (!(price > 0) || Math.abs(price / 5 - Math.round(price / 5)) > 1e-9) return { skip: "a Median point is a price in steps of RM 5" };
   let K, plain, fb;
   try { K = PRICING_ENGINE.costStack(I.cost); plain = Object.assign({}, I.policy); delete plain.market; fb = PRICING_ENGINE.floorBase(q, K, plain); }
@@ -1380,9 +1382,8 @@ export function draftRow(entry, book) {
       reasoning: `${stream && roster.includes(code) ? "Appoints" : "Registers"} ${code} as a ${kind}${parent ? ` under ${parent}` : ""}.`
         + (pay.tiers ? ` It starts them at ${tierLine(pay.tiers)}.` : "")
         /* 13 Nov 2026 (Fable): a new statement customer naming no salt figure is started by the fold at the rule's `start`, so the card says so */
-        + startLine(book, roster, code, kind, pay)
         + (introducer ? ` ${introducer} brought them in: their orders placed in the ${POSITION_ENGINE.R3_DAYS} days from the day this folds count toward ${introducer}'s reward step once paid in full.` : "")
-        + ` It touches no figure: the fold appends ${roster.includes(code) ? "nothing new" : "the code"} to the roster.`
+        + ((sl) => sl ? sl + " The fold appends the code to the roster." : ` It touches no figure: the fold appends ${roster.includes(code) ? "nothing new" : "the code"} to the roster.`)(startLine(book, roster, code, kind, pay, entry && entry.at))
         + appointBits
         + " THE NAME AND THE PLACE ARE NOT HERE AND MUST NOT BE: the directory is typed at the laptop and never travels.",
     };

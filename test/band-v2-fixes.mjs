@@ -81,8 +81,32 @@ export async function run({ ok }) {
     const entry = { at: "2026-11-13T04:00:00.000Z", type: "ADDID", party: "ZQ4-AAA", qty: null, total: null, status: "addid", raw: "Add ZQ4-AAA to the roster as: customer",
       payload: { mode: "addid", code: "ZQ4-AAA", kind: "customer", parent: null, rev: null, note: null, geo: null, tiers: null } };
     const d = D.draftRow(entry, { state: fb, pricing, ledger: [], version: "v1514" });
-    ok(d && /It names no salt figure, so the fold starts them at \+30% on salt/.test(d.reasoning || ""),
-      "F12 the Approve card's reading of that Add ID says the fold starts them at +30%: " + J(d && (d.reasoning || d.skip)).slice(0, 300));
+    ok(d && /It names no salt figure, so the fold starts them at \+30% on salt/.test(d.reasoning || "") && !/It touches no figure/.test(d.reasoning || ""),
+      "F12 the Approve card's reading of that Add ID says the fold starts them at +30%, and no longer that it touches no figure: " + J(d && (d.reasoning || d.skip)).slice(0, 300));
+    const old = Object.assign({}, entry, { at: new Date(Date.parse(RULES.TIER_RULE.salt.startFrom) - 60e3).toISOString() });
+    const d0 = D.draftRow(old, { state: fb, pricing, ledger: [], version: "v1514" });
+    ok(d0 && !/starts them at/.test(d0.reasoning || "") && /It touches no figure/.test(d0.reasoning || ""),
+      "F12 an Add ID stamped before the start shipped, which the fold leaves at 0%, says nothing of +30%: " + J(d0 && (d0.reasoning || d0.skip)).slice(0, 200));
+    /* F10, the drafter too: a point over 12.5 queued another way is refused at drafting */
+    const pt = { at: "2026-11-13T04:00:00.000Z", type: "EDIT", party: null, qty: null, total: null, status: "edit", raw: "Median point", payload: { mode: "edit", kind: "anchor", product: "salt", q: 25, price: 2000 } };
+    const dp = D.draftRow(pt, { state: fb, pricing, ledger: [], version: "v1514" });
+    ok(dp && dp.skip === "a Median point is set at 12.5 units or under", "F10 the drafter refuses a Median point over 12.5 units too: " + J(dp && (dp.skip || dp.reasoning)).slice(0, 200));
+  }
+
+  /* F4, an amendment: at the same size their price stays the lower of what it was and the card today; a new size takes the card */
+  {
+    const { applyBatch } = await import("../engine/apply.mjs");
+    const fb = frozenBook(), pricing = pricingFromBook(fb, new Date("2026-11-13T04:00:00Z"));
+    const code = Object.keys(pricing.byProduct.salt.cards)[0], card = (q) => (pricing.byProduct.salt.cards[code].find((x) => x[0] === q) || [])[1];
+    const row = { rid: "s9990", date: "2026-11-01", customer: code, product: "salt", qty: 1, total: card(1) - 5, cash: 0, cost: 60, listRM: card(1) - 10, listQty: 1 };
+    const book = Object.assign({}, fb, { sales: (fb.sales || []).concat([row]) });
+    const fix = (fields, at) => applyBatch(book, { approved: [{ id: at, status: "approved", collection: "sales", amends: "s9990", amendKind: "Correction", row: {},
+      entry: { at, type: "AMEND", payload: { mode: "amend", kind: "Correction", fields } } }] }, {}, { driftBooks: ["salt"], pinnedInMaster: () => false, today: "2026-11-13", pricing, nextRid: () => "s9991", sortBook: (b) => b });
+    let a = null, b = null, err = null;
+    try { a = fix({ total: card(1) - 4 }, "2026-11-13T04:00:00.000Z"); b = fix({ qty: 2, total: card(2) }, "2026-11-13T04:00:01.000Z"); } catch (e) { err = e.message; }
+    const rowOf = (o) => o && ((o.book || o).sales || []).find((s) => s.rid === "s9990");
+    ok(!err && rowOf(a) && rowOf(a).listRM === card(1) - 10 && rowOf(b) && rowOf(b).listRM === card(2) && rowOf(b).listQty === 2,
+      "F4 an amendment at the same size keeps their price as it was, below the card today; one at a new size takes the card: " + J([err, rowOf(a) && rowOf(a).listRM, card(1), rowOf(b) && rowOf(b).listRM, card(2)]));
   }
 
   /* F13 */

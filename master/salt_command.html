@@ -5714,7 +5714,7 @@ const TIER_RULE={
         start:0.3,
         /* 13 Nov 2026 (Fable): only an Add ID stamped at or after the moment the start shipped takes it; one approved before, still open in the Book's view, keeps 0% */
         startFrom:"2026-11-12T16:00:00Z",
-        market:{since:"2026-11-12", step:0.05, min:-0.15, max:0.2, supply:[[3,0.15],[7,0.05],[14,0]], long:-0.1,
+        market:{since:"2026-11-13", step:0.05, min:-0.15, max:0.2, supply:[[3,0.15],[7,0.05],[14,0]], long:-0.1,
                 pace:{short:14, long:56, fast:1.25, slow:0.75, k:0.05, acts:false}, stand:{weeks:2, hold:7}},
         points:[[0.5,3],[1,2.4],[6.25,2.004],[12.5,1.596]],
         suggest:{writtenOff:0.3, longLate:0.2, late:0.1, overdueDays:14, recent:5, step:0.05, minSettled:3, good:0.3},
@@ -12387,12 +12387,11 @@ function bookApply(j){
        a book that holds none is not refused for it, and the page keeps what it had */
     if(b.MARKET&&typeof b.MARKET==='object'&&!Array.isArray(b.MARKET))M=copy(b.MARKET);
     L=lists.map(k=>[BOOK_LISTS[k],copy(b[k])]).concat(Object.keys(BOOK_BASES).map(k=>[BOOK_BASES[k],copy(b[k])]));
-    D=docs.map(k=>[BOOK_DOCS[k],copy(b[k])]);P=copy(b.PRICE_SET);
+    D=docs.map(k=>[BOOK_DOCS[k],copy(b[k])]).concat(M?[[MARKET_BOOK,M]]:[]);P=copy(b.PRICE_SET);   /* replaced in place with the rest; applyOverlay moves DATA_STAMP after */
   }catch(e){return 'a value that is not JSON';}
   L.forEach(([a,c])=>{a.length=0;c.forEach(x=>a.push(x));});
   D.forEach(([o,c])=>{Object.keys(o).forEach(x=>delete o[x]);Object.assign(o,c);});
   Object.keys(BASE_PRICESET).forEach(x=>delete BASE_PRICESET[x]);Object.assign(BASE_PRICESET,P);
-  if(M){Object.keys(MARKET_BOOK).forEach(x=>delete MARKET_BOOK[x]);Object.assign(MARKET_BOOK,M);}
   PROD_IDS.length=0;PROD_ORDER.filter(prodLive).concat(Object.keys(PRODUCTS).filter(p=>PROD_ORDER.indexOf(p)<0&&prodLive(p))).forEach(p=>PROD_IDS.push(p));
   BOOK_STATED=b.STATED_STOCK;BOOK_MARK=b.QUEUE_COMMITTED;BOOKED_IDS=new Set(Array.isArray(j.booked)?j.booked:[]);
   if(!PRODUCTS[PROD])PROD=DEFAULT_PROD;

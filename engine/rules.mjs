@@ -301,7 +301,7 @@ const TIER_RULE={
         start:0.3,
         /* 13 Nov 2026 (Fable): only an Add ID stamped at or after the moment the start shipped takes it; one approved before, still open in the Book's view, keeps 0% */
         startFrom:"2026-11-12T16:00:00Z",
-        market:{since:"2026-11-12", step:0.05, min:-0.15, max:0.2, supply:[[3,0.15],[7,0.05],[14,0]], long:-0.1,
+        market:{since:"2026-11-13", step:0.05, min:-0.15, max:0.2, supply:[[3,0.15],[7,0.05],[14,0]], long:-0.1,
                 pace:{short:14, long:56, fast:1.25, slow:0.75, k:0.05, acts:false}, stand:{weeks:2, hold:7}},
         points:[[0.5,3],[1,2.4],[6.25,2.004],[12.5,1.596]],
         suggest:{writtenOff:0.3, longLate:0.2, late:0.1, overdueDays:14, recent:5, step:0.05, minSettled:3, good:0.3},

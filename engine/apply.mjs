@@ -1113,7 +1113,10 @@ function bookItem(book, it, c) {
       const f = it.pay && it.pay.fields;
       if (it.dir !== "BUY" && f && (f.qty != null || f.total != null || f.product != null || f.party != null) && it.target.listRM != null && c.pricing) {
         const card = PRICING_ENGINE.cardAt(c.pricing, E.ownerCode(it.target.customer), prodOf(it.target), +it.target.qty).card;
-        if (prodOf(it.target) === "salt" && card != null && isFinite(card) && card > 0) { it.target.listRM = +(+card).toFixed(2); it.target.listQty = +it.target.qty; }
+        /* 13 Nov 2026 (Fable's re-check): at the same size their price stands at what it was, the lower of that and the card today, so a market
+           move since Accept never reads an amended order as under their price; a new size takes the card today, as before */
+        const was = +it.target.listQty === +it.target.qty && +it.target.listRM > 0 ? +it.target.listRM : null;
+        if (prodOf(it.target) === "salt" && card != null && isFinite(card) && card > 0) { it.target.listRM = +(was != null ? Math.min(card, was) : +card).toFixed(2); it.target.listQty = +it.target.qty; }
         else { delete it.target.listRM; delete it.target.listQty; }
       }
     } else if (it.append === "sales" || it.append === "purchases") {
