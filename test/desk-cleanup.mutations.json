@@ -271,13 +271,13 @@
  },
  {
   "name": "L4 a recovery month is floored",
-  "find": "add(d.slice(0,7),S-prev);prev=S;",
-  "replace": "add(d.slice(0,7),Math.max(0,S-prev));prev=S;"
+  "find": "    add(d,S-prev);prev=S;});",
+  "replace": "    add(d,Math.max(0,S-prev));prev=S;});"
  },
  {
   "name": "L6 the latest month takes no pin",
-  "find": "  add(days[days.length-1].slice(0,7),pin);\n",
-  "replace": "\n"
+  "find": "  add(days[days.length-1],pin);\n  return {on,pin,last:days[days.length-1]};",
+  "replace": "\n  return {on,pin,last:days[days.length-1]};"
  },
  {
   "name": "L6 the undated part is not said",
@@ -306,12 +306,87 @@
  },
  {
   "name": "L6 a lot dated by its order",
-  "find": "const landed=x=>String(x.receivedOn||x.date||'');",
-  "replace": "const landed=x=>String(x.date||'');"
+  "find": "whole=String(x.receivedOn||x.date||'');",
+  "replace": "whole=String(x.date||'');"
  },
  {
   "name": "L6 a count after today is read",
   "find": "typeof c.qty==='number'&&String(c.date)<=now)",
   "replace": "typeof c.qty==='number')"
+ },
+ {
+  "name": "S1 the tile at the average cost",
+  "find": "&asymp; ${fmt0(selfUse*nrRate)} at ${fmt(nrRate)}/unit, as the P&amp;L charges it",
+  "replace": "&asymp; ${fmt0(selfUse*wavgBuy)} at ${fmt(nrRate)}/unit, as the P&amp;L charges it"
+ },
+ {
+  "name": "S2 a loss row at the average cost",
+  "find": "<td>${units(suUnits)}</td><td>${fmt0(suUnits*nrRate)}</td>",
+  "replace": "<td>${units(suUnits)}</td><td>${fmt0(suUnits*wavgBuy)}</td>"
+ },
+ {
+  "name": "S3 the received line sums the lots' whole quantity",
+  "find": "const u=receivedPO.reduce((a,p)=>a+poRecvUnits(p),0),",
+  "replace": "const u=receivedPO.reduce((a,p)=>a+poRecvUnits(p),0)+1,"
+ },
+ {
+  "name": "S3 every lot a line again",
+  "find": "    ...(receivedPO.length?[(()=>{",
+  "replace": "    ...receivedPO.map(p=>['Received '+p.date,'+'+units(poRecvUnits(p)),NIL]),...([].length?[(()=>{"
+ },
+ {
+  "name": "S4 the repeat fold returns",
+  "find": "  ${''/* 12 Nov 2026, his answer: 'Why each loss is booked where it is' repeated the card above, entry for entry, and went */}",
+  "replace": "  ${sec('Why each loss is booked where it is','x',1,'x')}"
+ },
+ {
+  "name": "D1 an undone step lands",
+  "find": "if(a&&a.kind==='Fulfilment'&&!a.undone&&+a.kg>0.0001&&a.date){o.push",
+  "replace": "if(a&&a.kind==='Fulfilment'&&+a.kg>0.0001&&a.date){o.push"
+ },
+ {
+  "name": "D2 the walk lands a lot whole on receivedOn",
+  "find": "  B.filter(poLive).forEach(p=>lotLandings(p).forEach(([k,u])=>{inOn[k]=(inOn[k]||0)+u;}));",
+  "replace": "  B.filter(poLive).forEach(p=>{const k=p.receivedOn||p.date;inOn[k]=(inOn[k]||0)+poRecvUnits(p);});"
+ },
+ {
+  "name": "D2 the walk spreads shrink evenly again",
+  "find": "  const shrinkPerDay=ND?0:(days>0?selfUse/days:0);",
+  "replace": "  const shrinkPerDay=days>0?selfUse/days:0;"
+ },
+ {
+  "name": "D3 a goodwill row is a sale under floor",
+  "find": "      if(s.goodwill||(isPartner(s.customer)&&!isResellAcct(s.customer)&&!s.oneOff))return false;",
+  "replace": "      if((isPartner(s.customer)&&!isResellAcct(s.customer)&&!s.oneOff))return false;"
+ },
+ {
+  "name": "D3 the partner is a sale under floor",
+  "find": "      if(s.goodwill||(isPartner(s.customer)&&!isResellAcct(s.customer)&&!s.oneOff))return false;",
+  "replace": "      if(s.goodwill)return false;"
+ },
+ {
+  "name": "D4 nothing handed over still wants a cost",
+  "find": "txStat(s).order!=='Pending'&&txPhys(s)>0.0001);",
+  "replace": "txStat(s).order!=='Pending');"
+ },
+ {
+  "name": "D1 an as-booked step lands before the lot",
+  "find": "  if(x.receivedOn&&o.length===1&&Math.abs(o[0][1]-tot)<0.0001&&o[0][0]<String(x.receivedOn))return [[String(x.receivedOn),tot]];\n",
+  "replace": "\n"
+ },
+ {
+  "name": "D1 steps past what landed are read as landings",
+  "find": "  if(acc>tot+0.0001)return tot>0.0001?[[whole,tot]]:[];\n",
+  "replace": "\n"
+ },
+ {
+  "name": "D3 the partner's resale is left out",
+  "find": "(isPartner(s.customer)&&!isResellAcct(s.customer)&&!s.oneOff)",
+  "replace": "(isPartner(s.customer)&&!s.oneOff)"
+ },
+ {
+  "name": "D3 a partner's one-off is left out",
+  "find": "(isPartner(s.customer)&&!isResellAcct(s.customer)&&!s.oneOff)",
+  "replace": "(isPartner(s.customer)&&!isResellAcct(s.customer))"
  }
 ]

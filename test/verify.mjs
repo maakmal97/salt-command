@@ -7328,8 +7328,11 @@ await (async () => {
     w.eval("setProd('salt');recompute();switchTab('inventory');");
     const walk = JSON.parse(w.eval("JSON.stringify((function(){var out=[];[].forEach.call(document.querySelectorAll('.sec.on tr'),function(tr){var td=tr.querySelectorAll('td');if(td.length>=2)out.push([td[0].textContent.trim(),td[1].textContent.trim()]);});return out;})())"));
     const num = (t) => +String(t).replace(/[^0-9.+-]/g, "");
-    const recv = walk.find(([a]) => a === "Received 15 Aug 2026"), lot = walk.find(([a]) => a === "Purchase 15 Aug 2026"), open = walk.find(([a]) => a === "Still to arrive 15 Aug 2026");
-    ok(recv && num(recv[1]) === 6, `the walk's Received row prints what landed, 6 of 10 unit (${recv && recv[1]})`);
+    /* 12 Nov 2026: the walk is totals, one Received line for every lot; it must still sum what LANDED, 6 of this lot's 10 */
+    const landed3 = +w.eval("receivedPO.reduce(function(a,p){return a+poRecvUnits(p);},0).toFixed(2)");
+    const recv = walk.find(([a]) => /^Received, \d+ lots?$/.test(a)), lot = walk.find(([a]) => a === "Purchase 15 Aug 2026"), open = walk.find(([a]) => a === "Still to arrive 15 Aug 2026");
+    ok(recv && num(recv[1]) === landed3 && w.eval("receivedPO.some(function(p){return p.rid==='f10'&&poRecvUnits(p)===6;})") === true,
+      `the walk's Received line sums what landed, the 6 of 10 unit inside it (${recv && recv[1]} against ${landed3})`);
     ok(lot && num(lot[1]) === 6 && open && num(open[1]) === 4, `the lot list prints the 6 in the basis and the 4 still to arrive (${lot && lot[1]}, ${open && open[1]})`);
     const tot = walk.find(([a]) => /^On hand/.test(a));
     const i0 = walk.findIndex(([a]) => /^Opening/.test(a)), i1 = walk.findIndex(([a]) => /^On hand/.test(a));
@@ -7495,8 +7498,9 @@ await (async () => {
        lot now (an undated lot sorted first under a comparator that answered -1 to undefined), so its two
        cells print a date. The receivables, inventory, pricing, plans and sourcing cells stand. 11 since 05 Oct 2026: the
        pricing part's replacement caption names the latest landed lot the price is struck on (latestCogs), the newest
-       DATED one, where it named the trailing window's undated lot. */
-    ok(count(seen.today || "", "landed not dated") === (lockOn6 ? 1 : 0) && nd >= 11, `the lock rule on Today ${lockOn6 ? "says so too" : "is gated with the lock off, and stays silent"}, ${nd} cells across the desk`);
+       DATED one, where it named the trailing window's undated lot. 10 since 12 Nov 2026: Stock's reconciliation is totals (his answer
+       "totals, lots once"), so its row for the undated lot is inside "Received, N lots"; Lots and sourcing still names it not dated. */
+    ok(count(seen.today || "", "landed not dated") === (lockOn6 ? 1 : 0) && nd >= 10, `the lock rule on Today ${lockOn6 ? "says so too" : "is gated with the lock off, and stays silent"}, ${nd} cells across the desk`);
   } finally { for (const f of [B6, M6]) { try { rm6(f); } catch (e) { /* best effort */ } } }
 })();
 
@@ -10712,7 +10716,9 @@ await (async () => {
        them, so it could carry up to 0.02 of rounding against a margin of 0.01. Unrounded the
        arithmetic is exact. The plug is spread evenly over the days after day 0, so 7 unit in raises
        it by 7: day 0 moves nothing, and the loan day moves 7 less one day's share. */
-    const days7 = withIn.length - 1, want7 = 7 - 7 / Math.max(1, days7);
+    /* 12 Nov 2026: with a count holding a figure the plug falls on the count that found it (nrsDays), not spread, so the loan day
+       moves by the whole 7 and the 7's share of the plug lands on the latest count; with none the even spread stands as before */
+    const nd7 = w.eval("!!nrsDays(PROD)") === true, days7 = withIn.length - 1, want7 = nd7 ? 7 : 7 - 7 / Math.max(1, days7);
     const d0 = withIn[0].raw - without[0].raw, dL = (withIn[i].raw - withIn[i - 1].raw) - (without[i].raw - without[i - 1].raw);
     ok(i > 0 && Math.abs(d0) < 1e-9 && Math.abs(dL - want7) < 1e-9, `the history walk lands the 7 unit on ${LD}, not on day 0 (day 0 moved ${d0.toFixed(4)}, the loan day ${dL.toFixed(4)}, want ${want7.toFixed(4)})`);
     try { w.close(); } catch (e) { }

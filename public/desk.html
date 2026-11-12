@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="d96cdbef98a51e5c";
+var SALT_BUILD_ID="ce17d2c6f470f8d5";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12006,7 +12006,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1509","d":"12 Nov 2026","t":"ONE P&L ON FINANCIALS, ITS YEAR THE OPERATING PROFIT","n":["<b>HIS ANSWER \"ONE P&L\".</b> The monthly table ended at a result RM 6,279 above the truer figure on salt, which sat in a folded IFRS statement: it never charged freight in or the non-revenue salt. It now carries both, at the statement's own rates, and ends at Operating profit, so its year equals the statement on every book (salt RM 15,479). The IFRS fold is gone; its value test is one row under Inventory, and the debtors row says how much is written off.","<b>NON-REVENUE IN THE MONTH OF THE COUNT THAT FOUND IT.</b> The shortfall is walked at each count; a lot or a handover on the count's own day is read on the side that moves it least; losses logged before the first count stand in their months; what the counts leave sits in the latest month and is said. A month under nought is stock a count found again. Freight in falls on the units sold in the month.","Said, not built: a surplus (the shortfall is never under nought), and a book with no count once it trades across two calendar years. A real loss on a count day can hide behind that day's other moves until the next count; the year is never touched. Twelve new checks, each red by its own mutation; Fable reviewed the design and the diff, and re-checked its findings closed."]}];
+const evolution=[{"v":"v1511","d":"12 Nov 2026","t":"THE DESK STOPS MISREADING ITS OWN BOOK","n":["<b>HIS \"YES, DATA FAULTS\".</b> Of the three faults the Desk reported, two were the Desk's. The reconstructed inventory on Analysis spread the whole shrinkage evenly over the book's life and landed a lot whole on its received day, though p026 landed half on 19 Sep and half on 20 Sep: salt dipped to -21.35 and oil went under nought on 13 days. A lot now lands on each day a part of it landed, and shrinkage falls on the count that found it, as the P&L dates it: oil, candy, rice and gas never dip, salt on 6 days by at most 2.6 units, each a sale dated before the lot that served it landed.","<b>TWO CARDS THAT MISJUDGED.</b> The under-floor card named three sales and none was under the Floor: two were reward units at cost, one the partner, who pays the Floor of the day by rule. It now leaves those out, keeping the partner's resale and a typed one-off. The no-cost card counted a paid order not yet handed over, whose cost comes with the handover.","Left for him: s212, s221 and s230 truly carry no cost, a Correction each on Salt Admin. Twelve new checks, each red by its own mutation; Fable reviewed and re-checked closed."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12159,7 +12159,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='12 Nov 2026, 07:51 KL';
+const LAST_UPDATED='12 Nov 2026, 09:47 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -15053,13 +15053,14 @@ function stockHistory(){
      Oil's deliveries coming off Salt's inventory. Same lesson the KPI below learned at v365.
      These are posInputs()'s four, exactly, so the walk and the engine's own selfUse are
      computed from one set of rows and the line lands on the count. */
-  const B=pPurch(PROD), S=pSales(PROD), op=openingFor(PROD);
-  const ds=[].concat(B.filter(poLive).map(p=>p.receivedOn||p.date),
-                     S.map(s=>s.date)).filter(Boolean).sort();
+  const B=pPurch(PROD), S=pSales(PROD), op=openingFor(PROD), ND=nrsDays(PROD);
+  /* the first day reaches every landing and every day shrink is taken (Fable's review of 12 Nov 2026), so the walk ends on the count */
+  const ds=[].concat(B.filter(poLive).flatMap(p=>lotLandings(p).map(l=>l[0])),
+                     S.map(s=>s.date),ND?Object.keys(ND.on):[]).filter(Boolean).sort();
   if(!ds.length)return [];
   const d0=new Date(ds[0]), days=Math.max(1,Math.round((TODAY-d0)/MS));
   const inOn={},outOn={};
-  B.filter(poLive).forEach(p=>{const k=p.receivedOn||p.date;inOn[k]=(inOn[k]||0)+poRecvUnits(p);});
+  B.filter(poLive).forEach(p=>lotLandings(p).forEach(([k,u])=>{inOn[k]=(inOn[k]||0)+u;}));   /* 12 Nov 2026: by each landing */
   if(PROD===DEFAULT_PROD)(typeof loans!=='undefined'?loans:[]).forEach(l=>{if(l.direction==='in'&&l.status!=='settled'&&l.date)inOn[l.date]=(inOn[l.date]||0)+loanLeft(l);});   // v518: borrowed salt lands the day it was borrowed
   /* ALL sales, not just priced ones: recompute draws the inventory down with sales.reduce
      over txPhys, so filtering to priced trade here would leave the walk ending somewhere
@@ -15087,11 +15088,13 @@ function stockHistory(){
   /* shrinkage is a plug for the whole period with no date on it, so it is spread across
      the days that have actually passed. Nothing is taken on day 0, which is the opening
      position rather than a day of trading. */
-  const shrinkPerDay=days>0?selfUse/days:0;
+  /* 12 Nov 2026: shrink falls on the count that found it (nrsDays), as the P&L dates it; a book with no count with a figure keeps the
+     even spread. The walk still ends on the count either way, since nrsDays adds to selfUse. */
+  const shrinkPerDay=ND?0:(days>0?selfUse/days:0);
   const rows=[];let lvl=op.qty-loanUnits;
   for(let i=0;i<=days;i++){
     const d=new Date(d0.getTime()+i*MS), k=d.toISOString().slice(0,10);
-    lvl=lvl+(inOn[k]||0)-(outOn[k]||0)-(i?shrinkPerDay:0);
+    lvl=lvl+(inOn[k]||0)-(outOn[k]||0)-(i?shrinkPerDay:0)-(ND&&ND.on[k]||0);
     rows.push({iso:k,lvl:+lvl.toFixed(2),raw:lvl});
   }
   return rows;
@@ -15237,7 +15240,7 @@ function tabAnalysis(){
   })()}
 
   <h2 style="margin-top:20px">The inventory, reconstructed <span class="rule"></span></h2>
-  <div class="dsc" style="margin-bottom:9px">Rebuilt daily against the ${units(reorderFor(PROD))} trigger, ending on the counted <b>${units(currentStock)}</b>. Shrinkage is undated and spread evenly, so the shape is right and a single day is not.</div>
+  <div class="dsc" style="margin-bottom:9px">Rebuilt daily against the ${units(reorderFor(PROD))} trigger, ending on the counted <b>${units(currentStock)}</b>. ${nrsDays(PROD)?'Shrinkage falls on the count that found it, and a lot on each day a part of it landed.':'No count states a figure, so shrinkage is spread evenly: the shape is right and a single day is not.'}</div>
   ${(()=>{const neg=sh.filter(r=>r.raw<-0.01);
     const d=pSales(PROD).map(txDates), ds={};d.forEach(x=>ds[x.dSrc]=(ds[x.dSrc]||0)+1);   /* round six: bare `sales` put whole-book counts inside every product block */
     if(neg.length)return `<div class="pend def" style="margin-bottom:11px"><h3>The line goes below zero on ${nDays(neg.length)}, and that is a finding <span class="cd crim">low ${units((sh.length?Math.min.apply(null,sh.map(r=>r.raw)):0))}</span></h3>
@@ -15836,6 +15839,9 @@ function tabInventory(){
   const free=+(currentStock-defUnits).toFixed(2);           // free to sell = on hand minus salt you owe (deferred)
   const oversold=free<0;
   const PN=PRODUCTS[PROD].name.toLowerCase();
+  /* 12 Nov 2026: non-revenue is valued here at the rate the P&L charges it (ifrsPL's unitCost, the average cost plus the freight in a
+     unit received carries), so the tile and Financials say one figure for one loss; it read RM 5,812 here against RM 5,882 there */
+  const nrRate=ifrsPL(PROD).unitCost;
   const LN=pLoans();                                    // v385: this product's loans, not the book's
   const loanUnits=LN.reduce((a,l)=>a+(l.preOpening||l.direction==='in'?0:loanLeft(l)),0), loanIn=loanInUnits(LN);   // v518: out and in kept apart; soldUnits carries the net
   const loanPre=LN.reduce((a,l)=>a+(l.preOpening?(l.valueKg||0):0),0);
@@ -15847,16 +15853,18 @@ function tabInventory(){
        quantity, so a lot half received would have walked in whole here and listed its open half
        again under Still to arrive, and the lines would not have summed to the figure beneath
        them. No lot on the book is part received today. Same fault in the lot list below. */
-    ...receivedPO.map(p=>['Received '+(p.date||'not dated'),'+'+units(poRecvUnits(p)),fmt(poRate(p))+'/unit']),
+    /* 12 Nov 2026, his answer "totals, lots once": one line for every lot received; Lots and sourcing below lists them */
+    ...(receivedPO.length?[(()=>{const u=receivedPO.reduce((a,p)=>a+poRecvUnits(p),0),rm=receivedPO.reduce((a,p)=>a+poRecvUnits(p)*poRate(p),0);
+      return ['Received, '+receivedPO.length+' lot'+(receivedPO.length===1?'':'s'),'+'+units(+u.toFixed(2)),u>0?fmt(rm/u)+'/unit':NIL];})()]:[]),
     ['Sold and delivered',(v=>v>0.001?'-'+units(v):units(0))(+(soldUnits-(loanUnits-loanIn)).toFixed(2)),NIL],   // soldUnits already carries the loan; the loan gets its own line below. The text minus sits outside units(), so it is guarded here (round six: "-0 unit")
     loanUnits>0?['Loan out (settled)','-'+units(loanUnits),NIL]:null,
     loanIn>0?['Borrowed in (to return)','+'+units(loanIn),NIL]:null,   // v518
-    selfUse>0?['Non-revenue '+PN,'-'+units(selfUse),'&asymp; '+fmt0(selfUse*wavgBuy)]:null,   /* v531: one bucket */
+    selfUse>0?['Non-revenue '+PN,'-'+units(selfUse),'&asymp; '+fmt0(selfUse*nrRate)]:null,   /* v531: one bucket */
     /* v429: v406 gave the walk a surplus and gave the PROSE a sentence about it, and left this
        table without a row, so on a count ABOVE the ledger the lines summed to less than the
        counted total printed beneath them and the reconciliation did not reconcile. It is the exact
        mirror of the self-use line above and belongs beside it. */
-    surplus>0.001?['Surplus (count above ledger)','+'+units(surplus),'&asymp; '+fmt0(surplus*wavgBuy)]:null,
+    surplus>0.001?['Surplus (count above ledger)','+'+units(surplus),'&asymp; '+fmt0(surplus*nrRate)]:null,
   ].filter(Boolean);
   // lots: received (in cost), plus excluded (in-transit / defaulted)
   const lotsIn=[['Opening',units(op.qty),op.costPerKg?fmt(op.costPerKg):NIL,'in basis'],
@@ -15901,7 +15909,7 @@ function tabInventory(){
     <div class="kpi salt-kpi ${oversold?'r':'gold'}"><div class="l salt-kpi__label">Free to sell</div><div class="v salt-kpi__value">${units(free)}</div><div class="n salt-kpi__note">${defUnits>0.009?`${units(defUnits)} owed out`:'nothing reserved'}</div></div>
     <div class="kpi salt-kpi g"><div class="l salt-kpi__label">Inventory value</div><div class="v salt-kpi__value">${fmt0(stockVal)}</div><div class="n salt-kpi__note">at ${fmt(stockCostFor(PROD))}/unit, the lots the inventory holds</div></div>
     <div class="kpi salt-kpi p"><div class="l salt-kpi__label">Avg cost</div><div class="v salt-kpi__value">${fmt(wavgBuy)}<span style="font-size:12px;color:var(--mut)">/unit</span></div><div class="n salt-kpi__note">received + opening</div></div>
-    <div class="kpi salt-kpi r"><div class="l salt-kpi__label">Non-revenue ${esc(PN)}</div><div class="v salt-kpi__value">${units(selfUse)}</div><div class="n salt-kpi__note">&asymp; ${fmt0(selfUse*wavgBuy)} at cost</div></div>
+    <div class="kpi salt-kpi r"><div class="l salt-kpi__label">Non-revenue ${esc(PN)}</div><div class="v salt-kpi__value">${units(selfUse)}</div><div class="n salt-kpi__note">&asymp; ${fmt0(selfUse*nrRate)} at ${fmt(nrRate)}/unit, as the P&amp;L charges it</div></div>
   </div>
   ${oversold?`<div class="pend def"><h3>Oversold <span class="cd crim">short ${units(-free)}</span></h3><div class="dsc">You owe <b>${units(defUnits)}</b> of ${PN} against <b>${units(currentStock)}</b> on hand. Restock before you can deliver.</div></div>`:''}
 
@@ -15919,11 +15927,11 @@ function tabInventory(){
   <h2 style="margin-top:18px">Where the shrinkage went <span class="rule"></span></h2>
   <div class="card">${suRows.length
     ? stkCols('leak')+`<div class="stkwrap"><table class="salt-table"><thead><tr><th class="l salt-table__label">Date</th><th class="l salt-table__label">Where</th><th>Unit</th><th>At cost</th><th class="l salt-table__label stkx">Note</th></tr></thead><tbody>`
-      +suRows.map(r=>`<tr><td class="l salt-table__label">${r.date}</td><td class="l salt-table__label">${LOSS_LABEL[r.why]||esc(r.why)+' (unrecognised cause)'}</td><td>${units(r.kg)}</td><td>${fmt0(r.kg*wavgBuy)}</td><td class="l salt-table__label stkx">${esc(lead1(plain(r.note)))}</td></tr>`).join('')
-      +`<tr class="tot"><td class="l salt-table__label" colspan="2">Attributed</td><td>${units(suUnits)}</td><td>${fmt0(suUnits*wavgBuy)}</td><td class="stkx"></td></tr>`
+      +suRows.map(r=>`<tr><td class="l salt-table__label">${r.date}</td><td class="l salt-table__label">${LOSS_LABEL[r.why]||esc(r.why)+' (unrecognised cause)'}</td><td>${units(r.kg)}</td><td>${fmt0(r.kg*nrRate)}</td><td class="l salt-table__label stkx">${esc(lead1(plain(r.note)))}</td></tr>`).join('')
+      +`<tr class="tot"><td class="l salt-table__label" colspan="2">Attributed</td><td>${units(suUnits)}</td><td>${fmt0(suUnits*nrRate)}</td><td class="stkx"></td></tr>`
       +(resid<-0.009
-        ? `<tr class="tot"><td class="l salt-table__label" colspan="2">Over-attributed</td><td>${units(-resid)}</td><td>${fmt0(-resid*wavgBuy)}</td><td class="l salt-table__label stkx">the split was struck against a larger gap than the book now carries</td></tr>`
-        : `<tr class="tot"><td class="l salt-table__label" colspan="2">Still unexplained</td><td>${units(resid>0.009?resid:0)}</td><td>${resid>0.009?fmt0(resid*wavgBuy):NIL}</td><td class="l salt-table__label stkx">${resid>0.009?'the plug that remains':'the split accounts for the whole gap'}</td></tr>`)
+        ? `<tr class="tot"><td class="l salt-table__label" colspan="2">Over-attributed</td><td>${units(-resid)}</td><td>${fmt0(-resid*nrRate)}</td><td class="l salt-table__label stkx">the split was struck against a larger gap than the book now carries</td></tr>`
+        : `<tr class="tot"><td class="l salt-table__label" colspan="2">Still unexplained</td><td>${units(resid>0.009?resid:0)}</td><td>${resid>0.009?fmt0(resid*nrRate):NIL}</td><td class="l salt-table__label stkx">${resid>0.009?'the plug that remains':'the split accounts for the whole gap'}</td></tr>`)
       +`</tbody></table></div>`
     : (()=>{
       /* v385, TWICE THE v379 SHAPE, AND THE PROSE WAS INVISIBLE ANYWAY. This paragraph divided
@@ -15936,10 +15944,10 @@ function tabInventory(){
       const handled=+(buyUnits+op.qty).toFixed(2);
       if(selfUse<0.009)return `<div class="kpis k3"><div class="kpi salt-kpi gold"><div class="l salt-kpi__label">Unexplained</div><div class="v salt-kpi__value">none</div><div class="n salt-kpi__note">the ledger and the count agree</div></div></div>`;
       const share=handled>0.009?((selfUse/handled)*100).toFixed(1)+'%':NIL;
-      const mar=grossMargin>0.009?((selfUse*wavgBuy)/grossMargin*100).toFixed(0)+'%':NIL;
+      const mar=grossMargin>0.009?((selfUse*nrRate)/grossMargin*100).toFixed(0)+'%':NIL;
       return `<div class="kpis k3">
         <div class="kpi salt-kpi r"><div class="l salt-kpi__label">Gone missing</div><div class="v salt-kpi__value">${units(selfUse)}</div><div class="n salt-kpi__note">${handled>0.009?share+' of the '+units(handled)+' handled':'nothing bought to measure it against'}</div></div>
-        <div class="kpi salt-kpi r"><div class="l salt-kpi__label">At cost</div><div class="v salt-kpi__value">${fmt0(selfUse*wavgBuy)}</div><div class="n salt-kpi__note">at the ${fmt(wavgBuy)}/unit average</div></div>
+        <div class="kpi salt-kpi r"><div class="l salt-kpi__label">At cost</div><div class="v salt-kpi__value">${fmt0(selfUse*nrRate)}</div><div class="n salt-kpi__note">at ${fmt(nrRate)}/unit, as the P&amp;L charges it</div></div>
         <div class="kpi salt-kpi p"><div class="l salt-kpi__label">Of gross margin</div><div class="v salt-kpi__value">${mar}</div><div class="n salt-kpi__note">${grossMargin>0.009?'of every ringgit the desk has earned':'no margin yet to measure it against'}</div></div>
       </div>
       <div class="dsc" style="margin-top:9px">Self-use and loss are read from the counts: the gap between the ledger and what was counted is the figure above, and the count always wins.</div>`;})()}</div>
@@ -15953,8 +15961,7 @@ function tabInventory(){
     return h>0.009
       ? `<b>${(pxShrinkRate()*100).toFixed(1)}%</b> of the ${units(h)} handled is charged into the price, and each new lot lowers it.`
       : `Nothing has been bought on this book, so there is no volume to measure the leak against.`;})()}</div>
-  ${sec('Why each loss is booked where it is',suRows.length?`${units(suUnits)} attributed across ${suRows.length} entr${suRows.length===1?'y':'ies'}`:'nothing attributed yet',suRows.length,
-    suRows.map(r=>`<div class="dsc" style="margin-top:9px"><b>${r.date} &middot; ${LOSS_LABEL[r.why]||esc(r.why)+' (unrecognised cause)'} &middot; ${units(r.kg)}</b><br>${esc(plain(r.note))}</div>`).join(''))}
+  ${''/* 12 Nov 2026, his answer: 'Why each loss is booked where it is' repeated the card above, entry for entry, and went */}
 
   ${sec('Inventory reconciliation',`opening to ${units(currentStock)} on hand, with ${units(selfUse)} booked as non-revenue ${PN}`,recon.length,
     `<table class="salt-table"><thead><tr><th class="l salt-table__label">Line</th><th>Qty</th><th>Cost</th></tr></thead><tbody>${recon.map(r=>`<tr><td class="l salt-table__label">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}<tr class="tot"><td class="l salt-table__label">On hand ${stockCounted?'(counted)':'(ledger, never counted)'}</td><td>${units(currentStock)}</td><td>${fmt(wavgBuy)}/unit avg</td></tr></tbody></table>
@@ -16740,30 +16747,50 @@ function tabLedger(){
    figure stand in their own months. The latest month takes the gap to the walk's own selfUse (`pin`: an undated loan, a row entered
    after its count), so the units add to what Stock and the Floor read. A count that finds stock earlier counts missed gives a month
    under nought, a recovery, never floored. No count with a figure: null, and the table carries the charge in the year alone. */
-/* X, the suite's alone: {counts, logs, lots, sales, op, total, recv, now} in place of the book's */
-function nrsMonths(p,X){
+/* 12 Nov 2026: WHEN A LOT'S UNITS LANDED. A lot landed in parts carries a Fulfilment step a part (p026 took 18.75 unit on 19 Sep and
+   18.75 on 20 Sep); what the steps do not account for lands on receivedOn, else the lot's date, so the total is poRecvUnits exactly.
+   The walk and nrsDays read it, so a sale on the day of a first half no longer leaves a shelf the walk thinks empty. */
+function lotLandings(x,recvOf){
+  const tot=(recvOf||poRecvUnits)(x), whole=String(x.receivedOn||x.date||'');let acc=0;const o=[];
+  (x.amend||[]).forEach(a=>{if(a&&a.kind==='Fulfilment'&&!a.undone&&+a.kg>0.0001&&a.date){o.push([String(a.date),+a.kg]);acc+=+a.kg;}});
+  /* Fable's review of 12 Nov 2026: one step for the whole lot dated before a stated receivedOn is the order "as booked" (p019: 25 unit
+     on 31 Aug, landed 2 Sep), so the lot lands on receivedOn; and steps past what was received (a receivedQty corrected with no step)
+     are no landing record, so the lot lands whole on its day */
+  if(x.receivedOn&&o.length===1&&Math.abs(o[0][1]-tot)<0.0001&&o[0][0]<String(x.receivedOn))return [[String(x.receivedOn),tot]];
+  if(acc>tot+0.0001)return tot>0.0001?[[whole,tot]]:[];
+  const rest=+(tot-acc).toFixed(4);if(Math.abs(rest)>0.0001)o.push([whole,rest]);
+  return o;
+}
+/* X, the suite's alone: {counts, logs, lots, sales, op, total, recv, now} in place of the book's. nrsDays is the walk by day (the
+   reconstructed inventory takes its shrink there); nrsMonths adds it up by month for the P&L. */
+function nrsDays(p,X){
   X=X||{};
   const nx=d=>new Date(Date.parse(d+'T00:00:00Z')+864e5).toISOString().slice(0,10);
   const now=X.now||obsISO(TODAY), last={};(X.counts||COUNTS).filter(c=>(c.product||DEFAULT_PROD)===p&&c.date&&typeof c.qty==='number'&&String(c.date)<=now).forEach(c=>{last[String(c.date)]=c;});
   const days=Object.keys(last).sort();if(!days.length)return null;
-  const op=X.op!=null?X.op:+(openingFor(p).qty||0), lots=X.lots||pPurch(p).filter(x=>poLive(x)), sales=X.sales||pSales(p), recvOf=X.recv||poRecvUnits, H=SNAPSHOT_ENGINE.heldBefore, by={};
-  const add=(m,u)=>{if(Math.abs(u)>1e-6)by[m]=(by[m]||0)+u;};
-  const landed=x=>String(x.receivedOn||x.date||'');   /* the engine dates a lot by its landing (Fable's review, 12 Nov 2026) */
+  const op=X.op!=null?X.op:+(openingFor(p).qty||0), lots=X.lots||pPurch(p).filter(x=>poLive(x)), sales=X.sales||pSales(p), recvOf=X.recv||poRecvUnits, H=SNAPSHOT_ENGINE.heldBefore, on={};
+  const add=(d,u)=>{if(Math.abs(u)>1e-6)on[d]=(on[d]||0)+u;};
+  const lands=lots.flatMap(x=>lotLandings(x,recvOf));   /* by its landings (Fable's review: receivedOn, then each part) */
   const logs=(X.logs||(typeof selfUseLog!=='undefined'?selfUseLog:[])).filter(r=>(r.product||DEFAULT_PROD)===p&&r.date&&String(r.date)<days[0]);
-  logs.forEach(r=>add(String(r.date).slice(0,7),+r.kg||0));
+  logs.forEach(r=>add(String(r.date),+r.kg||0));
   let prev=logs.reduce((a,r)=>a+(+r.kg||0),0);
   /* A COUNT IS TAKEN DURING ITS DAY, so a lot landed or a sale handed over that same day may stand either side of it (Fable's review
      of 12 Nov 2026: 28 Oct's count came before that day's 25-unit lot). Each side is read, and the one that moves the shortfall least
      from the count before stands: a misplaced lot moves it by the whole lot, which no real loss does. */
-  days.forEach(d=>{const lotsBy=end=>lots.filter(x=>end?landed(x)<=d:landed(x)<d).reduce((a,x)=>a+recvOf(x),0);
+  days.forEach(d=>{const lotsBy=end=>lands.reduce((a,[ld,u])=>a+((end?ld<=d:ld<d)?u:0),0);
     const heldBy=end=>sales.reduce((a,s)=>a+H(s,end?nx(d):d),0);
     const r1=lotsBy(true),r0=lotsBy(false),h1=heldBy(true),h0=heldBy(false);
     const S=[[r1,h1],[r0,h1],[r1,h0],[r0,h0]].map(([r,h])=>op+r-h-last[d].qty).reduce((b,x)=>Math.abs(x-prev)<Math.abs(b-prev)-1e-9?x:b);
-    add(d.slice(0,7),S-prev);prev=S;});
+    add(d,S-prev);prev=S;});
   const total=X.total!=null?X.total:p===PROD?+selfUse||0:prev, pin=+(total-prev).toFixed(2);
-  add(days[days.length-1].slice(0,7),pin);
+  add(days[days.length-1],pin);
+  return {on,pin,last:days[days.length-1]};
+}
+function nrsMonths(p,X){
+  const D=nrsDays(p,X);if(!D)return null;
+  const by={};Object.keys(D.on).forEach(d=>{const m=d.slice(0,7);by[m]=(by[m]||0)+D.on[d];});
   Object.keys(by).forEach(k=>by[k]=+by[k].toFixed(4));
-  return {by,pin,last:days[days.length-1]};
+  return {by,pin:D.pin,last:D.last};
 }
 function finRows(){
   const m={};
@@ -18111,7 +18138,8 @@ function observations(){
   /* v596, HIS REPORT OF 12 SEP 2026: A PENDING ORDER IS NOT A SALE. It carries no cost by design, since the cost is
      stated when the salt moves, and the card listed CH6-SET, CC5-OKR and CF5-WM, three pending orders, as priced
      sales without one. */
-  const nocost=sales.filter(s=>s.cost==null&&(+s.total>0.0001)&&(+s.qty>0.0001)&&!s.cancelled&&txStat(s).order!=='Pending');
+  /* 12 Nov 2026: a sale with nothing handed over yet takes its cost at the handover, so it is not missing one */
+  const nocost=sales.filter(s=>s.cost==null&&(+s.total>0.0001)&&(+s.qty>0.0001)&&!s.cancelled&&txStat(s).order!=='Pending'&&txPhys(s)>0.0001);
   if(nocost.length){
     const w=nocost.reduce((a,s)=>a+(+s.qty||0),0);
     add({id:'int:nocost',fam:'integrity',sev:'watch',conf:'measured',rm:null,tab:'ledger',rows:nocost.map(ridOf),
@@ -18170,6 +18198,9 @@ function observations(){
   if(eff!=null&&isFinite(eff)){
     const breach=D.filter(s=>{
       const q=+s.qty||0,tot=+s.total||0; if(!(q>0)||!(tot>0))return false;
+      /* 12 Nov 2026: a goodwill row (a reward unit at cost) is no price, and a partner pays the Floor of the day by rule (rule 5), so
+         a Floor raised since (the non-revenue share of 10 Nov 2026) moves their next order by itself; neither is a sale under floor */
+      if(s.goodwill||(isPartner(s.customer)&&!isResellAcct(s.customer)&&!s.oneOff))return false;   /* their -R resale and a typed one-off stay in (Fable) */
       /* v596, HIS REPORT OF 12 SEP 2026: the filter still used the band formula v280 retired, while the evidence below
          prints floorTotal, so a sale over the ladder's floor passed as under it and read 'short RM -147'. One floor
          now, the one the evidence prints, and a pending order is not a sale. */

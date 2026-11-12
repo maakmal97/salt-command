@@ -1086,6 +1086,25 @@ repeats outright; build the Restock planner and Month ahead (Cash on hand not bu
   so the pin then cancels a recovery), and a book with no count once it trades across two calendar years (the year would carry the
   whole book). `X` is the suite's own sources (`test/desk-cleanup.mjs` L6). Fable's re-check: the nearest-candidate rule can hide a real loss on a count day up to that
   day's same-day movement, in a month only when that count is its last; the next count puts it back, and the year is never touched.
+- **Round five (12 Nov 2026), Stock's On hand, his answers "totals, lots once" and "cut the repeat, keep the method".** Every
+  non-revenue figure on the page is valued at `ifrsPL`'s `unitCost` (`nrRate`, the average cost plus a unit's freight in), so the
+  tile, the shrinkage card and the reconciliation say what the P&L charges (the tile read RM 5,812 against RM 5,882). The Inventory
+  reconciliation is totals: one "Received, N lots" line summing what landed; Lots and sourcing lists the lots once. The fold "Why each
+  loss is booked where it is", which repeated the shrinkage card entry for entry, is gone; "How it is measured" stays.
+- **The data faults (12 Nov 2026), his "Yes, data faults".** Three of the Desk's integrity readings misjudged the book:
+  - **`lotLandings(lot)`**: a lot lands on each day its Fulfilment steps say (p026: 18.75 unit on 19 Sep, 18.75 on 20 Sep), the rest on
+    `receivedOn||date`; one step for the whole lot dated before a stated `receivedOn` is the order as booked and lands on `receivedOn`
+    (p019); steps past what was received land the lot whole on its day. `nrsDays` and the reconstructed inventory read it.
+  - **The reconstructed inventory (`stockHistory`) takes shrink on the count that found it** (`nrsDays`, the per-day walk `nrsMonths`
+    now adds up) instead of spreading `selfUse` evenly, which a book with no count with a figure still does; its first day reaches every
+    landing and shrink day. Salt dipped on 6 days to -21.35, oil on 13: salt now on 6 days at most 2.6 unit each, all the book's own
+    dating (sales dated before the lot that served them landed), oil, candy, rice and gas on none; every book ends on its count.
+  - **The under-floor card** leaves out goodwill rows (reward units at cost) and a partner's own orders (they pay the Floor of the day by
+    rule), keeping their -R resale and a typed one-off; it named 3 rows, none a real breach. **The no-cost card** leaves out a sale with
+    nothing handed over (its cost is stamped at the handover). The three rows it names, s212, s221 and s230, are his to correct (cost
+    RM 3.40, RM 80, RM 34 on the latest lot at their handover).
+  - Said, not fixed (Fable): the partner exclusion goes by who is a partner today, so a row from before they were one is left out too;
+    a sale handed over before the walk's first day would be dropped (none today); loans are undated in the shrink walk and land in its pin.
 - **Analysis** holds only the last correction of a field against its row and never a note's prose; its empty-inventory tile counts
   a level within 0.05 of nought, never one rebuilt under it. **The Ledger trail** draws one Correction line a day.
 - **The planners read and never write.** `planGet`/`planSet` keep `{dem, cost, run, lots}` in localStorage `salt-plan-v1`, clamped
