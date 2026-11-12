@@ -3553,7 +3553,7 @@ export const OWNER_JS = `
      reason (oneOff), and the row then stands as a marked one-off. makerOutside keeps the refusal a tap was given, by the card's key, for the Sheet that asks;
      makerOneOff the reason he gave on a placed order, by its id, until its goods total changes. The reason is his alone: it goes to the Desk, never to a customer. */
   var makerOutside={}, makerOneOff={}, makerOneDraft={};
-  var ONE_OFF_WORDS={reason:'Reason', go:'Let it stand', title:'Outside the price band', keep:'Not now', sent:'Change sent. You approve it next, under Approve.'};
+  var ONE_OFF_WORDS={reason:'Reason', give:'Give a reason', go:'Let it stand', title:'Outside the price band', keep:'Not now', sent:'Change sent. You approve it next, under Approve.'};
   function oneOffOk(text){ var t=String(text==null?'':text).trim(); return t.length>=3&&t.length<=120; }
   function makerMove(order,body,message){
     var key=order.id+JSON.stringify(body), rid=makerRids[key]||(makerRids[key]=mintRid());
@@ -5565,12 +5565,18 @@ export const OWNER_JS = `
           var accept=card.querySelector('[data-accept]'); if(accept) accept.remove();
           waitDraw(bad);
         }
-        function waitDraw(bad){
+        /* 12 Nov 2026 (his screenshot of an ask under the Floor): THE STAND-IN SAYS WHAT IT WAITS FOR AND LEADS THERE. A figure outside the band is read
+           and asked a reason, which the pill called Figures not read, greyed, with the Desk's sentence a screen above it: now it says Give a reason and
+           its tap brings the Reason line into view; a read that failed is read again by the pill itself. It is grey only while a read is on its way. */
+        function waitDraw(bad,ask){
           var old=lead.querySelector('[data-accept-wait]'); if(old) old.remove();
           var pick=makerPlacedDelivery()==null&&!follower&&order.mode==='deliver';
-          var b=el('button','btn salt-pill salt-pill--md',pick?'Choose the delivery charge':bad?'Figures not read':'Reading the figures'); b.type='button';
+          var b=el('button','btn salt-pill salt-pill--md',pick?'Choose the delivery charge':ask?ONE_OFF_WORDS.give:bad?'Read the figures again':'Reading the figures'); b.type='button';
           b.setAttribute('data-accept-wait',''); actOn(b,'order.accept-wait');
-          if(pick) b.addEventListener('click',function(){ tf.open=true; if(feeSel&&feeSel.focus) feeSel.focus(); }); else b.disabled=true;
+          if(pick) b.addEventListener('click',function(){ tf.open=true; if(feeSel&&feeSel.focus) feeSel.focus(); });
+          else if(ask) b.addEventListener('click',function(){ var w=card.querySelector('[data-one-off]'); if(!w) return; if(w.scrollIntoView) w.scrollIntoView({block:'center'}); w.focus(); });
+          else if(bad) b.addEventListener('click',makerPlacedRead);
+          else b.disabled=true;
           row3.insertBefore(b,row3.firstChild);
         }
         /* any failed or in-flight preview, and any changed input, clears the usable quote/hash and takes Accept away:
@@ -5660,7 +5666,7 @@ export const OWNER_JS = `
         }
         /* the Desk asked for a reason: its sentence, one Reason line and Let it stand, which reads the figures again with it; a new goods total is asked afresh */
         function makerPlacedAsk(error){
-          makerPlacedSay(error.raw,true);
+          makerPlacedSay(error.raw,true); waitDraw(true,true);
           var why=makerField(qfigs,[ONE_OFF_WORDS.reason,'order.one-off-reason'],'text',makerOneDraft[order.id]||'');
           why.maxLength=120; why.required=true; why.setAttribute('data-one-off','');
           var go=makerButton(qfigs,[ONE_OFF_WORDS.go,'order.one-off'],function(){
