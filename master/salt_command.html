@@ -11801,7 +11801,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1509","d":"12 Nov 2026","t":"ONE P&L ON FINANCIALS, ITS YEAR THE OPERATING PROFIT","n":["<b>HIS ANSWER \"ONE P&L\".</b> The monthly table ended at a result RM 6,279 above the truer figure on salt, which sat in a folded IFRS statement: it never charged freight in or the non-revenue salt. It now carries both, at the statement's own rates, and ends at Operating profit, so its year equals the statement on every book (salt RM 15,479). The IFRS fold is gone; its value test is one row under Inventory, and the debtors row says how much is written off.","<b>NON-REVENUE IN THE MONTH OF THE COUNT THAT FOUND IT.</b> The shortfall is walked at each count; a lot or a handover on the count's own day is read on the side that moves it least; losses logged before the first count stand in their months; what the counts leave sits in the latest month and is said. A month under nought is stock a count found again. Freight in falls on the units sold in the month.","Said, not built: a surplus (the shortfall is never under nought), and a book with no count once it trades across two calendar years. A real loss on a count day can hide behind that day's other moves until the next count; the year is never touched. Twelve new checks, each red by its own mutation; Fable reviewed the design and the diff, and re-checked its findings closed."]}];
+const evolution=[{"v":"v1510","d":"12 Nov 2026","t":"STOCK ON HAND, ONE FIGURE FOR ONE LOSS AND THE LOTS ONCE","n":["<b>ONE FIGURE FOR ONE LOSS.</b> The non-revenue tile valued the units at the average cost, RM 5,812 on salt, while Financials charges the same units at that cost plus their freight in, RM 5,882. Every non-revenue figure on On hand (the tile, the shrinkage card, the reconciliation) now reads the P&L's rate.","<b>HIS ANSWERS \"TOTALS, LOTS ONCE\" AND \"CUT THE REPEAT\".</b> The Inventory reconciliation listed all 34 salt lots, as Lots and sourcing does below it: it is now five lines, one Received line summing what landed, and adds to what is on hand. The fold that repeated the shrinkage card entry for entry is gone; How it is measured stays.","Display and valuation only: nothing prices, books or moves money. Five new checks, each red by its own mutation; two older checks re-aimed to the totals."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -11954,7 +11954,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='12 Nov 2026, 07:51 KL';
+const LAST_UPDATED='12 Nov 2026, 08:18 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
