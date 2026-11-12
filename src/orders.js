@@ -414,7 +414,13 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror, why) 
   const priced0 = product === "salt" ? cogsFor(book, product, agreed.date || null) : { cost: null };
   /* 21 Oct 2026: AND ONE THAT TAKES A CUSTOMER TO THEIR NEXT LOYALTY UNIT, at or above their card for the size and not paused today: the same word,
      the row marked rwdLoyal, which both digests name as part of the row */
-  const today0 = new Date(now.getTime() + 8 * 36e5).toISOString().slice(0, 10), card0 = product === "salt" ? cardAt(book.pricing, code, product, qty).card : null;
+  /* 13 Nov 2026 (Fable's review of the market): their own price is the lower of the card today and the total their sealed list quoted when they placed
+     it, so a market move between Place and Accept never reads their order as under their price (the loyalty unit, the associate's reward); the
+     drafter stamps the same (listStamp, entry.payload.listed) */
+  const listed = product === "salt" && +o.total > 0 ? +(+o.total).toFixed(2) : null;
+  if (listed != null) entry.payload.listed = listed;
+  const today0 = new Date(now.getTime() + 8 * 36e5).toISOString().slice(0, 10), cardT = product === "salt" ? cardAt(book.pricing, code, product, qty).card : null,
+    card0 = cardT != null && listed != null ? Math.min(cardT, listed) : cardT;
   const rc = product === "salt" && priced0.cost != null ? rewardCrossOf(book, code, qty, goods, priced0.cost, { card: card0, today: today0 }) : { cross: false };
   if (rc.cross && rc.loyal) { entry.rwd = "cross"; entry.rwdLoyal = true; }
   else if (rc.cross) { entry.rwd = "cross"; entry.rwdStep = rc.step; entry.rwdRate = rc.rate; }

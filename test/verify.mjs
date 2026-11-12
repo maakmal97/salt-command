@@ -50556,6 +50556,13 @@ await (async () => {
   await (await import("./desk-cleanup.mjs")).run({ ok });
 })();
 
+section("13 Nov 2026: Fable's review of the price band's version 2, the findings applied");
+await (async () => {
+  const m = await import("./band-v2-fixes.mjs");
+  await m.run({ ok });
+  await m.runPage({ ok });
+})();
+
 section("11 Nov 2026: the price band's market on the Desk, the move, the 90-day reading, the week and the replay");
 await (async () => {
   await (await import("./desk-market.mjs")).run({ ok });

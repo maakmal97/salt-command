@@ -14,5 +14,5 @@
   {"name": "M6 the move's effect is not called an estimate", "find": "<span class=\"iref\">estimate</span>", "replace": ""},
   {"name": "M7.1 the replay body is drawn while shut", "find": "(mkRepOpen?mkRepBody():'')+'</div></details>'", "replace": "mkRepBody()+'</div></details>'"},
   {"name": "M7.2 the replay lacks its quote column", "find": "<th>Quote at 1 unit</th>", "replace": "<th>Quote</th>"},
-  {"name": "M7.3 the panels are drawn for any book", "find": "if(PROD!=='salt')return '';\n  const C=snapCtx()", "replace": "const C=snapCtx()"}
+  {"name": "M7.3 the panels are drawn for any book", "find": "if(!MR||!MR.band||!MR.market)return '';", "replace": ""}
 ]

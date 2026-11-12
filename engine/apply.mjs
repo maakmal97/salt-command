@@ -803,7 +803,7 @@ export function planBatch(book, staged, notes, ctx) {
       /* 11 NOV 2026, HIS WORD: "ALWAYS START A STRANGER AT +30%". A new ID that is a customer or an associate (a statement kind, never a partner or a
          bucket) and names no figure on a band book starts at that book's `start` place (salt +30%); a figure he chose, nought included, stands */
       const fresh = !onRoster && STATEMENT_KINDS.includes(r.kind) && !partner && !POSITION_ENGINE.isBucket(r.code), started = [];
-      if (fresh) for (const p of driftBooks()) { const st = ruleOf(p).band && ruleOf(p).start; if (typeof st === "number" && !(p in rt)) { rtKept[p] = st; started.push(p); } }
+      if (fresh) for (const p of driftBooks()) { const st = ruleOf(p).band && ruleOf(p).start; const sf = ruleOf(p).startFrom; if (typeof st === "number" && !(p in rt) && !(sf && Date.parse((it.entry && it.entry.at) || it.id) < Date.parse(sf))) { rtKept[p] = st; started.push(p); } }
       if (started.length) entry.does.push(`start ${r.code} at ${started.map((p) => sayLift(rtKept[p]) + " on " + p).join(" and ")}, where a new customer starts`);
       entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null, geo: r.geo || null, tiers: Object.keys(rtKept).length ? rtKept : null, partner };
       if (partner) entry.does.push(`make ${r.code} a partner: they pay the Floor, up to the next RM 5, on every book; they keep every associate property`);

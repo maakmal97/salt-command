@@ -170,7 +170,7 @@
   {
     "name": "Q8b the reading ignores the counts on the key",
     "file": "stmt/quotes.js",
-    "find": "const t = k.metadata && k.metadata.t && typeof k.metadata.t === \"object\" ? k.metadata.t : tally(await listOf(env, k.name));",
-    "replace": "const t = tally(await listOf(env, k.name));"
+    "find": "const meta = k.metadata && k.metadata.t && typeof k.metadata.t === \"object\" ? k.metadata.t : null;",
+    "replace": "const meta = null;"
   }
 ]

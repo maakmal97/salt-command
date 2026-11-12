@@ -262,6 +262,17 @@ function movedIn(s,inWin){
   const rest=POSITION_ENGINE.txPhys(s)-moves.reduce((t,a)=>t+ +a.kg,0);
   return moves.reduce((t,a)=>t+(inWin(a.date)?+a.kg:0),0)+(rest>0.0001&&inWin(s.deliveredOn||s.date)?rest:0);
 }
+/* 13 Nov 2026 (Fable's review of the market): WHEN A LOT'S UNITS LANDED, the Desk's lotLandings (v1511) to the letter: a Fulfilment step a part,
+   the rest on receivedOn, else the lot's date; one step for the whole lot dated before a stated receivedOn lands on receivedOn; steps past what was
+   received land the lot whole on its day. A lot received by a Fulfilment days after its order no longer reads as stock on the day it was ordered. */
+function landingsOf(x){
+  const tot=POSITION_ENGINE.poRecvUnits(x),whole=String(x.receivedOn||x.date||'');let acc=0;const o=[];
+  (x.amend||[]).forEach(a=>{if(a&&a.kind==='Fulfilment'&&!a.undone&&+a.kg>0.0001&&a.date){o.push([String(a.date),+a.kg]);acc+=+a.kg;}});
+  if(x.receivedOn&&o.length===1&&Math.abs(o[0][1]-tot)<0.0001&&o[0][0]<String(x.receivedOn))return [[String(x.receivedOn),tot]];
+  if(acc>tot+0.0001)return tot>0.0001?[[whole,tot]]:[];
+  const rest=+(tot-acc).toFixed(4);if(Math.abs(rest)>0.0001)o.push([whole,rest]);
+  return o;
+}
 /* THE SHELF AT THE START OF DAY t (his answer: one plain cover): the last count dated before it (its qty), else the opening; plus the units of
    each live lot received since, less every handover and recorded loss since. An estimate: a count is taken as the day's end. */
 function shelfAt(C,p,t){
@@ -270,7 +281,7 @@ function shelfAt(C,p,t){
   const last=cs[cs.length-1], from=last?String(last.date):null;
   const inWin=d=>!!d&&String(d)<t&&(from==null||String(d)>from);
   let shelf=last?+last.qty:+(openingFor(C.B,p).qty||0);
-  pPurch(C.B,p).forEach(x=>{if(!POSITION_ENGINE.poLive(x))return;const u=POSITION_ENGINE.poRecvUnits(x);if(u>0&&inWin(x.receivedOn||x.date))shelf+=u;});
+  pPurch(C.B,p).forEach(x=>{if(!POSITION_ENGINE.poLive(x))return;landingsOf(x).forEach(l=>{if(inWin(l[0]))shelf+=l[1];});});
   pSales(C.B,p).forEach(s=>{shelf-=movedIn(s,inWin);});
   (C.B.selfUseLog||[]).forEach(r=>{if(r&&(r.product||dp)===p&&inWin(r.date))shelf-=(+r.kg||0);});
   return shelf;

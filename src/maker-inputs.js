@@ -965,6 +965,8 @@ export function makerMarket(body, book, pending = []) {
   }
   const q = +body.q, price = +body.price;
   if (!(q > 0) || !PRICING_ENGINE.onGrid(q, PRICING_ENGINE.gridOf(R))) return { error: "Choose a size the book is ordered in." };
+  /* 13 Nov 2026 (Fable): a point is set where his Median points are, at 12.5 units or under, as Salt Admin offers; the curve is flat above */
+  if (q > 12.5 + 1e-9) return { error: "A Median point is set at 12.5 units or under." };
   if (!(price > 0) || Math.abs(price / 5 - Math.round(price / 5)) > 1e-9) return { error: "A Median point is a price in steps of RM 5." };
   let w;
   try { const plain = Object.assign({}, I.policy); delete plain.market; w = PRICING_ENGINE.driftAt(q, PRICING_ENGINE.costStack(I.cost), plain, 0); }

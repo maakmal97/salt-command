@@ -388,11 +388,20 @@ export function costFor(book, product) {
    card says for its size (listRM) and that size (listQty), read off the PRICING snapshot (the engine's cardAt, the figure the Accept preview
    showed unless a % or a lot moved between the two) and never a figure carried on the entry. It prices nothing: the walk reads it as the
    discount he gave under their price, his information only. A partner's card is the Floor. No card, no stamp. */
-export function listStamp(row, book) {
+/* 13 Nov 2026 (Fable): a new statement customer naming no salt figure is started by the fold at the rule's `start` (engine/apply.mjs `fresh`), so the
+   Approve card says so; read off the PRICING snapshot's rule, nothing on the entry */
+export function startLine(book, roster, code, kind, pay) {
+  const sp = ((book && book.pricing && book.pricing.byProduct) || {}).salt, R = sp && sp.inputs && sp.inputs.policy && sp.inputs.policy.tierRule, st = R && R.band ? R.start : null;
+  if (typeof st !== "number" || (roster || []).includes(code) || !["customer", "reseller", "referral"].includes(kind) || (pay && pay.partner) || (pay && pay.tiers && "salt" in pay.tiers)) return "";
+  return ` It names no salt figure, so the fold starts them at ${st > 0 ? "+" : ""}${Math.round(st * 100)}% on salt, where a new customer starts.`;
+}
+export function listStamp(row, book, listed) {
   if (!row || (row.product || "salt") !== "salt" || !(+row.qty > 0)) return row;
   const sch = POSITION_ENGINE.rewardScheme({ state: (book && book.state) || {} });
   if (!sch || !row.date || row.date < sch.since) return row;
-  const card = PRICING_ENGINE.cardAt(book && book.pricing, POSITION_ENGINE.ownerCode(row.customer), "salt", +row.qty).card;
+  const card0 = PRICING_ENGINE.cardAt(book && book.pricing, POSITION_ENGINE.ownerCode(row.customer), "salt", +row.qty).card;
+  /* 13 Nov 2026: a site order carries the total its sealed list quoted at Place; their price is the lower of that and the card today */
+  const card = card0 != null && +listed > 0 ? Math.min(card0, +listed) : card0;
   if (card != null && isFinite(card) && card > 0) { row.listRM = +(+card).toFixed(2); row.listQty = +row.qty; }
   return row;
 }
@@ -1370,6 +1379,8 @@ export function draftRow(entry, book) {
       flags,
       reasoning: `${stream && roster.includes(code) ? "Appoints" : "Registers"} ${code} as a ${kind}${parent ? ` under ${parent}` : ""}.`
         + (pay.tiers ? ` It starts them at ${tierLine(pay.tiers)}.` : "")
+        /* 13 Nov 2026 (Fable): a new statement customer naming no salt figure is started by the fold at the rule's `start`, so the card says so */
+        + startLine(book, roster, code, kind, pay)
         + (introducer ? ` ${introducer} brought them in: their orders placed in the ${POSITION_ENGINE.R3_DAYS} days from the day this folds count toward ${introducer}'s reward step once paid in full.` : "")
         + ` It touches no figure: the fold appends ${roster.includes(code) ? "nothing new" : "the code"} to the roster.`
         + appointBits
@@ -1868,7 +1879,7 @@ export function draftRow(entry, book) {
   }
 
   if (pay.note) row.note = String(pay.note);
-  listStamp(row, book);
+  listStamp(row, book, entry && entry.payload && entry.payload.listed);
   /* 20 Oct 2026: the step his Accept promised the reward at, on the Pending row of an order that takes them over (rewardCrossOf) */
   if (entry && entry.rwd === "cross" && +entry.rwdStep > 0 && dir === "SELL") {
     row.rwdStep = +(+entry.rwdStep).toFixed(2);

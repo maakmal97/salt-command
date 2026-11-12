@@ -305,6 +305,8 @@ export function pricingSnapshot(w) {
          out wrong. This is the production path: it is what the D1 mirror carries and what the
          below-floor flag is read against, so the snapshot must be taken on the book it names. */
       w.eval("PROD=" + JSON.stringify(p) + ";if(typeof recompute==='function')recompute();");
+      /* 13 Nov 2026 (Fable): one book's reads share one render memo, as a render does, so the market walk is made once a book, not once a card */
+      w.eval("if(typeof RENDER_MEMO!=='undefined')RENDER_MEMO={};");
       stockCost = numOrNull(call("stockCostFor(" + JSON.stringify(p) + ")"));
       repl = numOrNull(call("replCost()"));
       /* v337: THE ENGINE'S OWN INPUTS, so the drafter can price any size with the module rather
@@ -339,7 +341,7 @@ export function pricingSnapshot(w) {
         floors[q] = { floor: numOrNull(call("floorTotal(" + q + ")")) };   // v502: one floor per size
       }
     } catch (e) { /* a product the desk cannot price yields nulls, which the drafter must handle */ }
-    finally { if (before != null) { try { w.eval("PROD=" + JSON.stringify(before) + ";if(typeof recompute==='function')recompute();"); } catch (e) { } } }
+    finally { try { w.eval("if(typeof RENDER_MEMO!=='undefined')RENDER_MEMO=null;"); } catch (e) { } if (before != null) { try { w.eval("PROD=" + JSON.stringify(before) + ";if(typeof recompute==='function')recompute();"); } catch (e) { } } }
     /* 11 Nov 2026 (the price band's version 2): the day's market move, its reason and his switch, the engine's pricing() field, for the drafter, Salt Admin and the price list's reader */
     const market = call("(function(){try{var m=SNAPSHOT_ENGINE.marketOf(snapCtx()," + JSON.stringify(p) + ");return m?{day:m.day,k:m.k,on:m.on!==false&&!m.before,why:SNAPSHOT_ENGINE.marketWhy(m)}:null;}catch(e){return null;}})()");
     byProduct[p] = Object.assign({ stockCost, replCost: repl, floors, inputs, sizes: sizesHere, rungs, ladder, cards, partners: call("typeof partners!=='undefined'?partners.slice():[]") }, lift ? { lift, suggest } : {}, market ? { market } : {});

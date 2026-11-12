@@ -5,7 +5,7 @@
  * KV `quote:<KL day>:<username>`: a list `[{at, u, sheet, lines: [{b, q, p, placed?}]}]`, the last 30 a day an account, expiring after
  * 120 days. A leaf: it imports nothing, so the Counter keeps no tie to src/ or tools/. */
 export const QUOTE_BOOKS = Object.freeze(["salt", "oil", "candy", "rice", "gas"]);
-export const QUOTE_LINES = 10, QUOTE_DAY_CAP = 30, QUOTE_TTL = 120 * 86400, QUOTE_DAYS_MAX = 120, QUOTE_DAYS_DEFAULT = 90;
+export const QUOTE_READS = 200, QUOTE_LINES = 10, QUOTE_DAY_CAP = 30, QUOTE_TTL = 120 * 86400, QUOTE_DAYS_MAX = 120, QUOTE_DAYS_DEFAULT = 90;
 const SHEET_RE = /^[A-Za-z0-9_-]{8,64}$/;
 export const klDay = (ms = Date.now()) => new Date(ms + 8 * 3600e3).toISOString().slice(0, 10);
 export const quoteKey = (day, u) => "quote:" + day + ":" + u;
@@ -72,13 +72,17 @@ export function daysOf(raw) {
 /** The Desk's reading: shown and placed by book and size over the last `days` Kuala Lumpur days, today included. */
 export async function quoteSummary(env, days, now = Date.now()) {
   const to = klDay(now), from = klDay(now - (days - 1) * 864e5), books = {};
-  let cursor;
+  let cursor, reads = 0, partial = false;
   do {
     const r = await env.STMT.list({ prefix: "quote:", cursor });
     for (const k of r.keys) {
       const day = k.name.split(":")[1];
       if (!(day >= from && day <= to)) continue;
-      const t = k.metadata && k.metadata.t && typeof k.metadata.t === "object" ? k.metadata.t : tally(await listOf(env, k.name));
+      const meta = k.metadata && k.metadata.t && typeof k.metadata.t === "object" ? k.metadata.t : null;
+      /* 13 Nov 2026 (Fable): a key with no counts on it is read whole, at most QUOTE_READS a reading, past which the answer says partial */
+      if (!meta && reads >= QUOTE_READS) { partial = true; continue; }
+      if (!meta) reads++;
+      const t = meta || tally(await listOf(env, k.name));
       for (const bq of Object.keys(t)) {
         const [b, q] = bq.split("|"), n = t[bq];
         if (!QUOTE_BOOKS.includes(b) || !Array.isArray(n)) continue;
@@ -88,5 +92,5 @@ export async function quoteSummary(env, days, now = Date.now()) {
     }
     cursor = r.list_complete ? undefined : r.cursor;
   } while (cursor);
-  return { ok: true, days, from, to, books };
+  return Object.assign({ ok: true, days, from, to, books }, partial ? { partial: true } : {});
 }
